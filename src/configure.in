@@ -1,0 +1,870 @@
+
+AC_PREREQ(2.13)
+
+#--------------------------------------------------------------------------
+# Redefine the cache macros so that a cache file is not created.
+# The cache file can cause problems when configuring for multiple machines.
+#--------------------------------------------------------------------------
+
+define([AC_CACHE_LOAD], )dnl
+define([AC_CACHE_SAVE], )dnl
+
+AC_INIT(cgnslib.c)
+
+#--------------------------------------------------------------------------
+# get the CGNS version
+#--------------------------------------------------------------------------
+
+AC_MSG_CHECKING([CGNS version])
+CGNSVERS=`grep CGNS_DOTVERS cgnslib.h | sed "s/#define *CGNS_DOTVERS *//"`
+AC_MSG_RESULT($CGNSVERS)
+
+#--------------------------------------------------------------------------
+# get the C compiler
+# If a C compiler not found, fail since can't build library
+#--------------------------------------------------------------------------
+
+AC_MSG_CHECKING([if gcc is requested])
+AC_ARG_ENABLE(gcc,
+  [  --enable-gcc            use gcc if it exists [default=cc]],,
+  enableval=no)
+test ! "$enableval" = "no" && enableval=yes
+use_gcc=$enableval
+AC_MSG_RESULT($use_gcc)
+
+if test $use_gcc = yes; then
+  AC_PROG_CC
+else
+  if test -z "$CC"; then
+    AC_CHECK_PROG(CC, cc, cc, , , /usr/ucb/cc)
+    if test -z "$CC"; then
+      AC_CHECK_PROG(CC, gcc, gcc)
+      if test -z "$CC"; then
+        AC_MSG_ERROR([no acceptable cc found in \$PATH])
+      fi
+    fi
+  fi
+  AC_PROG_CC_WORKS
+  AC_PROG_CC_GNU
+fi
+
+if test "$ac_cv_prog_gcc" = "yes"; then
+  test -z "$CFLAGS" && CFLAGS=-O2
+  # probably dont need this
+  # CFLAGS="$CFLAGS -fwritable-strings -ffloat-store"
+fi
+
+CEOUT="-o \$(SPACE)"
+COOUT="-o \$(SPACE)"
+
+# check if the compiler supports prototyping - required
+
+AC_LANG_C
+AC_MSG_CHECKING([if compiler supports prototyping])
+AC_TRY_COMPILE(
+[extern int func(int,int);
+int func(int i, int j){return i + j;}],
+[func(0,1)],proto=yes,proto=no)
+AC_MSG_RESULT($proto)
+test $proto = no && \
+  AC_MSG_ERROR([compiler does not support prototyping])
+
+#--------------------------------------------------------------------------
+# get object and executable extensions
+#--------------------------------------------------------------------------
+
+AC_OBJEXT
+AC_EXEEXT
+LIBEXT=a
+
+#--------------------------------------------------------------------------
+# get the Fortran compiler
+# don't need it to build library, so don't fail if not found
+# or the compiler doesn't work (don't use AC_PROG_F77)
+# If running under CYGWIN, make sure we get g77 instead of Visual Fortran
+#--------------------------------------------------------------------------
+
+if test -z "$F77"; then
+  if test "$ac_cv_cygwin" = "yes"; then
+    AC_CHECK_PROGS(F77, g77 f2c)
+  else
+    if test $use_gcc = yes; then
+      AC_CHECK_PROGS(F77, g77 f77 f90 f95 f2c)
+    else
+      AC_CHECK_PROGS(F77, f77 f90 f95 g77 f2c)
+    fi
+  fi
+fi
+if test -z "$F77"; then
+  has_f77=no
+  F77=f77
+  AC_MSG_WARN(no Fortran compiler was found)
+else
+  has_f77=yes
+  AC_PROG_F77_GNU
+  if test "$ac_cv_prog_g77" = "yes"; then
+    test -z "$FFLAGS" && FFLAGS=-O2
+    test ! "$F77" = "f95" && FFLAGS="$FFLAGS -Wno-globals"
+  fi
+  rm -f conftest*
+fi
+FEOUT="-o \$(SPACE)"
+
+#--------------------------------------------------------------------------
+# check if debug requested
+#--------------------------------------------------------------------------
+
+AC_MSG_CHECKING([if debugging is enabled])
+AC_ARG_ENABLE(debug,
+  [  --enable-debug[=OPTS]   build for debugging [default=no]],,
+  enableval=no)
+if test "$enableval" = "no"; then
+  debug=no
+else
+  if test "$enableval" = "" || test "$enableval" = "yes"; then
+    opt=-g
+  else
+    opt=$enableval
+  fi
+  CFLAGS="$opt $CFLAGS"
+  FFLAGS="$opt $FFLAGS"
+  debug=yes
+fi
+AC_MSG_RESULT($debug)
+
+#--------------------------------------------------------------------------
+# check for programs - initialize library archiver
+#--------------------------------------------------------------------------
+
+AR="ar cr"
+AC_CHECK_PROG(RANLIB,ranlib,ranlib,:)
+if test $debug = yes; then
+  STRIP=:
+else
+  AC_CHECK_PROG(STRIP,strip,strip,:)
+fi
+AROUT=
+
+#--------------------------------------------------------------------------
+# check for header files
+#--------------------------------------------------------------------------
+
+AC_HEADER_STDC
+test "$ac_cv_header_stdc" = "no" && \
+  AC_MSG_WARN(Standard C header files not found - may not compile)
+
+#--------------------------------------------------------------------------
+# check for typedefs and structures
+#--------------------------------------------------------------------------
+
+CFGFLAGS=
+
+AC_C_CONST
+test "ac_cv_c_const" = "no" && \
+  CFGFLAGS="$CFGFLAGS -Dconst="
+
+AC_TYPE_SIZE_T
+test "$ac_cv_type_size_t" = "no" && \
+  CFGFLAGS="$CFGFLAGS -Dsize_t=unsigned"
+
+#--------------------------------------------------------------------------
+# get the system name and set system dependent compile flags
+#--------------------------------------------------------------------------
+
+test ! -x cgsystem && \
+  chmod +x cgsystem
+
+AC_MSG_CHECKING([if system was specified])
+AC_ARG_WITH(system,
+  [  --with-system[=SYSTEM]  specify system],withsys=$withval)
+if test -z "$withsys" || test "$withsys" = "no"; then
+  AC_MSG_RESULT(no)
+  AC_MSG_CHECKING([if 64bit support is requested])
+  AC_ARG_ENABLE(64bit,
+    [  --enable-64bit          enable 64bit support (where applicable)],,
+    enableval=no)
+  test ! "$enableval" = "no" && enableval=yes
+  do64bit=$enableval
+  AC_MSG_RESULT($do64bit)
+  test $do64bit = yes && opts=-64
+  AC_MSG_CHECKING(cgsystem)
+  SYSTEM=`./cgsystem $opts`
+  AC_MSG_RESULT($SYSTEM)
+  if test $do64bit = yes; then
+    is64bit=`echo $SYSTEM | grep 64`
+    test -z "$is64bit" && \
+      AC_MSG_WARN(64bit support not found for your machine)
+  fi
+else
+  SYSTEM=$withsys
+  AC_MSG_RESULT($SYSTEM)
+fi
+
+is64bit=`echo $SYSTEM | grep 64`
+if test -z "$is64bit"; then
+  is64bit=no
+else
+  is64bit=yes
+fi
+
+if test "$ac_cv_prog_gcc" = "no"; then
+  case $SYSTEM in
+    CRAY)   AR="bld rz" ;;
+    HPPA11) SYSCFLAGS="+DA2.0"
+            SYSFFLAGS="+DA2.0" ;;
+    HPPA64) SYSCFLAGS="+DA2.0W"
+            SYSFFLAGS="+DA2.0W" ;;
+    HPIT)   SYSCFLAGS="+DD32"
+            SYSFFLAGS="+DD32" ;;
+    HPIT64) SYSCFLAGS="+DD64"
+            SYSFFLAGS="+DD64" ;;
+    IBM64)  SYSCFLAGS="-q64"
+            SYSFFLAGS="-q64"
+            AR="ar -X64 cr"
+            test $debug = no && STRIP="strip -X64" ;;
+    SGI6)   SYSCFLAGS="-n32"
+            SYSFFLAGS="-n32" ;;
+    SGI64)  SYSCFLAGS="-64"
+            SYSFFLAGS="-64" ;;
+    SUN64)  SYSCFLAGS="-xarch=v9"
+            SYSFFLAGS="-xarch=v9" ;;
+    DARWIN) CFLAGS="$CFLAGS -I/usr/include/sys" ;;
+  esac
+else
+  if test "$is64bit" = "yes"; then
+    gcc64bit=`$CC -dumpmachine | grep 64`
+    if test -z "$gcc64bit"; then
+      case $SYSTEM in
+        HPPA64)  SYSCFLAGS="#-march=2.0" ;;
+        HPIT64)  SYSCFLAGS="#-m64" ;;
+        IBM64)   SYSCFLAGS="-maix64" ;;
+        LINUX64) SYSCFLAGS="-m64" ;;
+        SGI64)   SYSCFLAGS="-mabi=64" ;;
+        SUN64)   SYSCFLAGS="-mcpu=v9 -m64" ;;
+      esac
+    fi
+  else
+    case $SYSTEM in
+      SGI6) SYSCFLAGS="-mabi=n32" ;;
+    esac
+  fi
+fi
+
+# see if we can build a 64-bit code
+
+if test "$is64bit" = "yes"; then
+  CFLAGS_SAVE=$CFLAGS
+  CFLAGS="$CFLAGS $SYSCFLAGS"
+  AC_CHECK_SIZEOF([char *], 4)
+  test $ac_cv_sizeof_char_p -lt 8 && \
+    AC_MSG_WARN(does not appear your compiler can build 64-bit code)
+  CFLAGS=$CFLAGS_SAVE
+fi
+
+#--------------------------------------------------------------------------
+# set the Fortran interface
+#--------------------------------------------------------------------------
+
+AC_MSG_CHECKING([if Fortran interface is enabled])
+AC_ARG_WITH(fortran,
+  [  --with-fortran[=F2C]    enable Fortran interface [default=yes]],
+  withfortran=$withval,withfortran=yes)
+test -z "$withfortran" && withfortran=yes
+AC_MSG_RESULT($withfortran)
+
+if test $withfortran = no; then
+  fortran=no
+  F2CFLAGS=
+else
+  fortran=yes
+  if test $withfortran = yes; then
+    need_f2c=yes
+  else
+    case $withfortran in
+      LOWERCASE | LOWERCASE_ | LOWERCASE__) ;;
+      UPPERCASE | UPPERCASE_ | UPPERCASE__) ;;
+      *) AC_MSG_ERROR([unknown Fortran to C interface $withfortran]) ;;
+    esac
+    need_f2c=no
+    F2CFLAGS=-D$withfortran
+  fi
+
+  if test $need_f2c = yes; then
+    if test "$ac_cv_prog_g77" = "yes"; then
+      if test "$ac_cv_prog_gcc" = "no"; then
+        SYSFFLAGS=-fno-second-underscore
+      else
+        SYSFFLAGS="-fno-second-underscore $SYSCFLAGS"
+      fi
+      F2CFLAGS="-DLOWERCASE_"
+      need_f2c=no
+    else
+      if test "$ac_cv_prog_gcc" = "no"; then
+        case $SYSTEM in
+          CRAY | VAX | WIN32) need_f2c=no ;;
+        esac
+      fi
+    fi
+  fi
+
+  if test $need_f2c = yes; then
+    f2c=
+    AC_MSG_CHECKING([Fortran to C interface])
+    if test $has_f77 = yes; then
+      LIBS_SAVE="$LIBS"
+      AC_LANG_SAVE
+      for func in ffunc_ ffunc FFUNC FFUNC_ ffunc__ FFUNC__; do
+        AC_LANG_C
+        echo "void $func(){}" > conftest.c
+        AC_TRY_EVAL(ac_compile)
+        mv conftest.$OBJEXT conffunc.$OBJEXT
+        AC_LANG_FORTRAN77
+        LIBS="conffunc.$OBJEXT $LIBS_SAVE"
+        AC_TRY_LINK(,ffunc,linked=yes)
+        rm -f conffunc* conftest*
+        if test "$linked" = "yes"; then
+          case $func in
+            ffunc)   f2c=LOWERCASE ;;
+            ffunc_)  f2c=LOWERCASE_ ;;
+            ffunc__) f2c=LOWERCASE__ ;;
+            FFUNC)   f2c=UPPERCASE ;;
+            FFUNC_)  f2c=UPPERCASE_ ;;
+            FFUNC__) f2c=UPPERCASE__ ;;
+          esac
+          break
+        fi
+      done
+      LIBS="$LIBS_SAVE"
+      AC_LANG_RESTORE
+    fi
+    if test -z "$f2c"; then
+      f2c=LOWERCASE_
+      case $SYSTEM in
+        APOLLO)   f2c=LOWERCASE ;;
+        BSDM68K)  f2c=UPPERCASE ;;
+        BSDMIPS)  f2c=UPPERCASE ;;
+        HP*)      f2c=LOWERCASE ;;
+        IBM)      f2c=LOWERCASE ;;
+        MACOSX)   f2c=LOWERCASE ;;
+        M88K)     f2c=UPPERCASE ;;
+        NEXT)     f2c=LOWERCASE ;;
+      esac
+      AC_MSG_RESULT([assuming $f2c])
+    else
+      AC_MSG_RESULT($f2c)
+    fi
+    F2CFLAGS="-D$f2c"
+  fi
+
+  # check for catenization operator
+
+  AC_MSG_CHECKING([for concatenation operator])
+  AC_LANG_C
+
+  AC_EGREP_CPP(function,
+  [#define CONCAT(a,b) a##b
+   CONCAT(func,tion)
+  ],concat=yes,concat=no)
+
+  # above doesn't work on SGI for some reason,
+  # while the following does
+
+  if test $concat = no; then
+    AC_TRY_LINK(
+      [#define CONCAT(a,b) a##b
+       void function(){}],
+      [CONCAT(func,tion)()],concat=yes,concat=no)
+  fi
+
+  AC_MSG_RESULT($concat)
+  test $concat = no && F2CFLAGS="$F2CFLAGS -DNO_CONCATENATION"
+fi
+
+#--------------------------------------------------------------------------
+# check if building shared library - currently very limited support
+#--------------------------------------------------------------------------
+
+AC_MSG_CHECKING([if building a shared library])
+AC_ARG_ENABLE(shared,
+    [  --enable-shared[=all]   build a shared library [default=no]],,
+    enableval=no)
+test ! "$enableval" = "no" && \
+test ! "$enableval" = "all" && \
+  enableval=yes
+shared=$enableval
+AC_MSG_RESULT($shared)
+
+if test $shared = all; then
+  exts="so sl a"
+  shared=yes
+else
+  exts="a so sl"
+fi
+if test $shared = yes; then
+  cgnsdir=`pwd`
+  if test "$ac_cv_prog_gcc" = "no"; then
+    case $SYSTEM in
+      HP*)   CFGFLAGS="+z $CFGFLAGS"
+             AR="ld -b -E +s +b $cgnsdir/\$(SYSTEM):."
+             LIBEXT=sl ;;
+      SGI*)  AR="\$(CC) -shared $SYSCFLAGS -Wl,-rpath,$cgnsdir/\$(SYSTEM)"
+             LIBEXT=so ;;
+      ALPHA) AR="\$(CC) -shared $SYSCFLAGS"
+             LIBEXT=so ;;
+      SUN*)  CFGFLAGS="-KPIC $CFGFLAGS"
+             AR="\$(CC) -G $SYSCFLAGS -Wl,-R,$cgnsdir/\$(SYSTEM)"
+             LIBEXT=so ;;
+      *) AC_WARN([don't know how to build shared lib for $SYSTEM])
+         shared=no ;;
+    esac
+  else
+    if test "$ac_cv_cygwin" = "yes"; then
+      AC_WARN([can't yet build shared library under CYGWIN])
+      shared=no
+    else
+      CFGFLAGS="-fPIC $CFGFLAGS"
+      AR="\$(CC) -shared $SYSCFLAGS -Wl,-rpath,$cgnsdir/\$(SYSTEM)"
+      LIBEXT=so
+    fi
+  fi
+  if test $shared = yes; then
+    AROUT="-o \$(SPACE)"
+    RANLIB="\$(STRIP)"
+  fi
+fi
+
+#---------------------------------------------------------------------------
+# locate expat includes and library if using XML
+#---------------------------------------------------------------------------
+
+EXPATINC=""
+EXPATLIB=""
+
+withxml=no
+test ! -z $BUILD_XML && withxml=$BUILD_XML
+
+#AC_MSG_CHECKING([if using XML])
+#AC_ARG_WITH(xml,
+#  [  --with-xml[=DIR]        use XML [default=no]],
+#  withxml=$withval,withxml=no)
+#if test "$withxml" = "no"; then
+#  AC_MSG_RESULT(no)
+#else
+if test ! "$withxml" == "no"; then
+  if test -z "$withxml" || test "$withxml" = "yes"; then
+    expatdir=""
+#    AC_MSG_RESULT(yes)
+    AC_CHECK_HEADER(expat.h,installed=yes,installed=no)
+    if test "$installed" = "yes"; then
+      EXPATLIB=-lexpat
+    else
+      AC_MSG_CHECKING([for local expat distribution])
+      for d in \
+        `ls -dr * 2>/dev/null` \
+        `ls -dr ../* 2>/dev/null` \
+        `ls -dr ../../* 2>/dev/null` \
+        `ls -dr ../../../* 2>/dev/null` ; do
+        if test -f "$d/lib/expat.h"; then
+          expatdir=`(cd $d; pwd)`
+          AC_MSG_RESULT($expatdir)
+          break
+        fi
+      done
+      test -z "$expatdir" && AC_MSG_RESULT(not found)
+    fi
+  else
+    expatdir=$withxml
+    withxml=yes
+#    AC_MSG_RESULT($expatdir)
+  fi
+
+  if test -z "$EXPATLIB"; then
+    test -z "$expatdir" && \
+      AC_MSG_ERROR(need specify the expat directory with --with-xml=DIR)
+    if test -f "$expatdir/lib/expat.h"; then
+      EXPATINC=-I$expatdir/lib
+      for a in $exts ; do
+        if test -f $expatdir/libs/libexpat.$a; then
+          EXPATLIB=$expatdir/libs/libexpat.$a
+          break
+        fi
+        if test -f $expatdir/.libs/libexpat.$a; then
+          EXPATLIB=$expatdir/.libs/libexpat.$a
+          break
+        fi
+      done
+      test -z "$EXPATLIB" && EXPATLIB=$expatdir/libexpat.a
+    else
+      if test -f "$expatdir/expat.h"; then
+        EXPATINC=-I$expatdir
+        for a in $exts ; do
+          if test -f $expatdir/libexpat.$a; then
+            EXPATLIB=$expatdir/libexpat.$a
+            break
+          fi
+          if test -f $expatdir/.lib/libexpat.$a; then
+            EXPATLIB=$expatdir/.lib/libexpat.$a
+            break
+          fi
+        done
+        test -z "$EXPATLIB" && EXPATLIB=$expatdir/libexpat.a
+      else
+        AC_MSG_ERROR($expatdir directory does not contain expat.h or lib/expat.h)
+      fi
+    fi
+  fi
+fi
+
+#---------------------------------------------------------------------------
+# locate HDF5 includes and library if using HDF5
+#---------------------------------------------------------------------------
+
+HDF5INC=""
+HDF5LIB=""
+
+AC_MSG_CHECKING([if using HDF5])
+AC_ARG_WITH(hdf5,
+  [  --with-hdf5[=DIR]       use HDF5 [default=no]],
+  withhdf5=$withval,withhdf5=no)
+if test "$withhdf5" = "no"; then
+  AC_MSG_RESULT(no)
+else
+  if test -z "$withhdf5" || test "$withhdf5" = "yes"; then
+    hdf5dir=""
+    AC_MSG_RESULT(yes)
+    AC_CHECK_HEADER(hdf5.h,installed=yes,installed=no)
+    if test "$installed" = "yes"; then
+      HDF5LIB=-lhdf5
+    else
+      AC_MSG_CHECKING([for local HDF5 distribution])
+      for d in \
+        `ls -dr * 2>/dev/null` \
+        `ls -dr ../* 2>/dev/null` \
+        `ls -dr ../../* 2>/dev/null` \
+        `ls -dr ../../../* 2>/dev/null` ; do
+        if test -f "$d/include/hdf5.h" || test -f "$d/src/hdf5.h"; then
+          hdf5dir=`(cd $d; pwd)`
+          AC_MSG_RESULT($hdf5dir)
+          break
+        fi
+      done
+      test -z "$hdf5dir" && AC_MSG_RESULT(not found)
+    fi
+  else
+    hdf5dir=$withhdf5
+    withhdf5=yes
+    AC_MSG_RESULT($hdf5dir)
+  fi
+
+  if test -z "$HDF5LIB"; then
+    test -z "$hdf5dir" && \
+      AC_MSG_ERROR(need specify the HDF5 directory with --with-hdf5=DIR)
+    if test -f "$hdf5dir/include/hdf5.h"; then
+      HDF5INC=-I$hdf5dir/include
+      for a in $exts ; do
+        if test -f $hdf5dir/lib/libhdf5.$a; then
+          HDF5LIB=$hdf5dir/lib/libhdf5.$a
+          break
+        fi
+      done
+      test -z "$HDF5LIB" && HDF5LIB=$hdf5dir/lib/libhdf5.a
+    else
+      if test -f "$hdf5dir/src/hdf5.h"; then
+        HDF5INC=-I$hdf5dir/src
+        for a in $exts ; do
+          if test -f $hdf5dir/src/.libs/libhdf5.$a; then
+            HDF5LIB=$hdf5dir/src/.libs/libhdf5.$a
+            break
+          fi
+        done
+        test -z "$HDF5LIB" && HDF5LIB=$hdf5dir/src/.libs/libhdf5.a
+      else
+        AC_MSG_ERROR($hdf5dir directory does not contain include/hdf5.h or src/hdf5.h)
+      fi
+    fi
+  fi
+fi
+
+#---------------------------------------------------------------------------
+# locate zlib and szip libraries
+#---------------------------------------------------------------------------
+
+XMLZLIB=""
+ZLIBLIB=""
+
+if test "$withhdf5" = "yes" || test "$withxml" = "yes"; then
+
+  AC_MSG_CHECKING([if using zlib])
+  AC_ARG_WITH(zlib,
+    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=yes]],
+    withzlib=$withval,withzlib="")
+  if test "$withzlib" = "no"; then
+    AC_MSG_RESULT(no)
+  else
+    if test -z "$withzlib" || test "$withzlib" = "yes"; then
+      zlibdir=""
+      AC_MSG_RESULT(yes)
+      AC_CHECK_HEADER(zlib.h,installed=yes,installed=no)
+      if test "$installed" = "yes"; then
+        test "$withxml" = "yes" && XMLZLIB=-DUSE_ZLIB
+        ZLIBLIB=-lz
+      else
+        AC_MSG_CHECKING([for local zlib distribution])
+        for d in \
+          `ls -dr * 2>/dev/null` \
+          `ls -dr ../* 2>/dev/null` \
+          `ls -dr ../../* 2>/dev/null` \
+          `ls -dr ../../../* 2>/dev/null` ; do
+          if test -f "$d/zlib.h"; then
+            zlibdir=`(cd $d; pwd)`
+            AC_MSG_RESULT($zlibdir)
+            break
+          fi
+        done
+        test -z "$zlibdir" && AC_MSG_RESULT(not found)
+      fi
+    else
+      if test -f "$withzlib/zlib.h"; then
+        zlibdir=$withzlib
+      else
+        zlibdir=`dirname $withzlib`
+      fi
+      withzlib=yes
+      AC_MSG_RESULT($zlibdir)
+    fi
+
+    if test -z "$ZLIBLIB"; then
+      test -z "$zlibdir" && \
+        AC_MSG_ERROR(need specify the zlib directory with --with-zlib=DIR)
+      if test -f "$zlibdir/zlib.h"; then
+        for a in $exts ; do
+          if test -f $zlibdir/libz.$a; then
+            ZLIBLIB=$zlibdir/libz.$a
+            break
+          fi
+        done
+        test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/libz.a
+        test "$withxml" = "yes" && XMLZLIB="-DUSE_ZLIB -I$zlibdir"
+      else
+        AC_MSG_ERROR($zlibdir directory does not contain zlib.h)
+      fi
+    fi
+  
+  fi
+fi
+
+SZIPLIB=""
+
+if test "$withhdf5" = "yes"; then
+  AC_MSG_CHECKING([if using szip])
+  AC_ARG_WITH(szip,
+    [  --with-szip[=LIB]       use szip with HDF5 [default=no]],
+    sziplib=$withval,sziplib="no")
+  if test "x$sziplib" = "xno"; then
+    AC_MSG_RESULT(no)
+  else
+    if test -z "$sziplib" || test "$sziplib" = "yes"; then
+      AC_MSG_RESULT(yes)
+      AC_CHECK_LIB(sz, SZ_BufftoBuffCompress, SZIPLIB=-lsz)
+      if test -z "$SZIPLIB"; then
+        AC_MSG_CHECKING([for local szip library])
+        for d in \
+          `ls -dr * 2>/dev/null` \
+          `ls -dr ../* 2>/dev/null` \
+          `ls -dr ../../* 2>/dev/null` \
+          `ls -dr ../../../* 2>/dev/null` ; do
+          for a in $exts ; do
+            if test -f "$d/libsz.$a"; then
+              SZIPLIB=`(cd $d; pwd)`/libsz.$a
+              AC_MSG_RESULT($SZIPLIB)
+              break
+            fi
+          done
+          test ! -z "$SZIPLIB" && break
+        done
+      fi
+    else
+      AC_MSG_RESULT($sziplib)
+      SZIPLIB=$sziplib
+    fi
+  fi
+fi
+
+#--------------------------------------------------------------------------
+# check for libraries
+#--------------------------------------------------------------------------
+
+if test "$withhdf5" = "yes"; then
+  AC_CHECK_LIB([m], [ceil])
+
+  if test "`uname`" = "SunOS" -o "`uname -sr`" = "HP-UX B.11.00"; then
+    dnl ...for Solaris
+    AC_CHECK_LIB([nsl], [xdr_int])
+  fi
+fi
+
+#--------------------------------------------------------------------------
+# check for large file support (files > 2Gb)
+#--------------------------------------------------------------------------
+
+AC_MSG_CHECKING([if large file support is requested])
+AC_ARG_ENABLE(lfs,
+  [  --enable-lfs            enable large file support (files > 2Gb)],,
+  enableval="no")
+test ! "$enableval" = "no" && enableval=yes
+AC_MSG_RESULT($enableval)
+if test $enableval = yes; then
+  CFLAGS_SAVE=$CFLAGS
+  AC_MSG_CHECKING([for large file support options])
+  LFS=`getconf LFS_CFLAGS 2>/dev/null`
+  if test "$LFS" = ""; then
+    AC_MSG_RESULT(none)
+  else
+    AC_MSG_RESULT($LFS)
+  fi
+  test "$LFS" = "undefined" && LFS=""
+  CFLAGS="$CFLAGS $LFS"
+  cat >>confdefs.h <<\EOF
+#include <sys/types.h>
+EOF
+  AC_CHECK_SIZEOF(off_t, 4)
+  if test $ac_cv_sizeof_off_t = 8; then
+    has_lfs=yes
+  else
+    AC_MSG_CHECKING([for off64_t])
+    AC_TRY_COMPILE([#include <sys/types.h>], [off64_t n = 0;],
+      has_lfs=yes, has_lfs=no)
+    AC_MSG_RESULT($has_lfs)
+    if test $has_lfs = yes; then
+      AC_CHECK_FUNC(open64, LFS="-DHAS_OPEN64 $LFS")
+      AC_CHECK_FUNC(lseek64, LFS="-DHAS_LSEEK64 $LFS")
+    fi
+  fi
+  CFLAGS=$CFLAGS_SAVE
+  test $has_lfs = yes && CFGFLAGS="$LFS $CFGFLAGS"
+fi
+
+#--------------------------------------------------------------------------
+# installation program and directory
+#--------------------------------------------------------------------------
+
+test ! -x install-sh && \
+  chmod +x install-sh
+AC_PROG_INSTALL
+
+if test -z $prefix || test $prefix = NONE; then
+  prefix=/usr/local
+fi
+if test -z $exec_prefix || test $exec_prefix = NONE; then
+  exec_prefix=$prefix
+fi
+
+AC_MSG_CHECKING([where to install library])
+eval "LIBDIR=$libdir"
+AC_MSG_RESULT($LIBDIR)
+
+AC_MSG_CHECKING([where to install headers])
+eval "INCLUDEDIR=$includedir"
+AC_MSG_RESULT($INCLUDEDIR)
+
+#--------------------------------------------------------------------------
+# substitutions and write Makefile and make.defs
+#--------------------------------------------------------------------------
+
+BUILDOPTS=""
+ADFINCS=""
+ADFOBJS=""
+
+if test "$withhdf5" = "yes"; then
+  BUILDOPTS="$BUILDOPTS -DBUILD_HDF5"
+  ADFOBJS="\$(OBJDIR)/ADFH.\$(O)"
+  ADFINCS="adfh/ADFH.h"
+fi
+
+if test "$withxml" = "yes"; then
+  BUILDOPTS="$BUILDOPTS -DBUILD_XML"
+  ADFOBJS="$ADFOBJS \$(OBJDIR)/ADFX.\$(O)"
+  ADFINCS="$ADFINCS adfx/ADFX.h"
+fi
+
+if test $fortran = no; then
+  F2COBJS=#F2COBJS
+else
+  F2COBJS=F2COBJS
+fi
+
+AC_SUBST(SYSTEM)
+AC_SUBST(CGNSVERS)
+AC_SUBST(LIBEXT)
+AC_SUBST(BUILDOPTS)
+
+AC_SUBST(ADFOBJS)
+AC_SUBST(ADFINCS)
+AC_SUBST(F2COBJS)
+
+AC_SUBST(HDF5INC)
+AC_SUBST(HDF5LIB)
+AC_SUBST(ZLIBLIB)
+AC_SUBST(SZIPLIB)
+
+AC_SUBST(EXPATINC)
+AC_SUBST(EXPATLIB)
+AC_SUBST(XMLZLIB)
+
+AC_SUBST(SYSCFLAGS)
+AC_SUBST(COOUT)
+AC_SUBST(CEOUT)
+AC_SUBST(LIBS)
+
+AC_SUBST(F2CFLAGS)
+AC_SUBST(CFGFLAGS)
+
+AC_SUBST(STRIP)
+
+AC_SUBST(SYSFFLAGS)
+AC_SUBST(FEOUT)
+AC_SUBST(FLIBS)
+
+AC_SUBST(AR)
+AC_SUBST(AROUT)
+AC_SUBST(RANLIB)
+
+AC_SUBST(LIBDIR)
+AC_SUBST(INCLUDEDIR)
+
+echo "creating make.system"
+echo "SYSTEM=$SYSTEM" > make.system
+
+AC_OUTPUT(Makefile make.defs tests/Makefile tools/Makefile)
+
+#--------------------------------------------------------------------------
+# copy make.defs to make.$SYSTEM - backup old version if it exists
+#--------------------------------------------------------------------------
+
+if test -f make.$SYSTEM; then
+  cmp=`diff make.defs make.$SYSTEM`
+  if test -z "$cmp"; then
+    echo "make.defs and make.$SYSTEM are the same - removing make.defs"
+    rm -f make.defs
+  else
+    echo ""
+    echo "make.$SYSTEM already exists, and differs from make.defs"
+    echo "renaming make.$SYSTEM to make.$SYSTEM.orig"
+    test -f make.$SYSTEM.orig && \
+      rm -f make.$SYSTEM.orig
+    mv make.$SYSTEM make.$SYSTEM.orig
+  fi
+fi
+if test -f make.defs && test ! -f make.$SYSTEM; then
+  echo "renaming make.defs to make.$SYSTEM"
+  mv make.defs make.$SYSTEM
+fi
+
+#--------------------------------------------------------------------------
+# remove the old object files (if any)
+#--------------------------------------------------------------------------
+
+test -d $SYSTEM && /bin/rm -f $SYSTEM/*.$OBJEXT
+test -d tests && /bin/rm -f tests/*.$OBJEXT
+test -d tools && /bin/rm -f tests/*.$OBJEXT
+

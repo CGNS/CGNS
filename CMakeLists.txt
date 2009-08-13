@@ -1,0 +1,82 @@
+cmake_minimum_required(VERSION 2.4)
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build Type, should be Release")
+project("cgns")
+
+# Allow for building a package
+set(CPACK_PACKAGE_VERSION "3.0.4")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "cgns")
+set(CPACK_GENERATOR "STGZ;TGZ;ZIP")
+set(CPACK_SOURCE_GENERATOR "STGZ;TGZ;ZIP")
+include(CPack)
+
+enable_testing()
+
+###########
+# Fortran #
+###########
+
+# Allow fortran support to be toggled
+set(ENABLE_FORTRAN "OFF" CACHE BOOL "Enable or disable the use of Fortran")
+
+# If we are using fortran, enable it and configure the C-Fortran interface
+# It would be nice to automatically detect this setting
+if(ENABLE_FORTRAN)
+	enable_language("Fortran")
+	message(STATUS "Fortran Enabled")
+
+	set(FORTRAN_NAMING_HELP 
+		"Configures how to link the Fortran components into the C library.
+	
+		Options are:
+	
+		LOWERCASE
+		LOWERCASE_
+		LOWERCASE__
+		UPPERCASE
+		UPPERRCASE_
+		UPPERRCASE__
+	
+		LOWERCASE_ is known to work with gfortran.  If this setting does not work with your compiler, try the others until one does.
+		")
+
+	set(LIST  "LOWERCASE" "LOWERCASE_" "LOWERCASE__" "UPPERCASE" "UPPERCASE_" "UPPERCASE__")
+	foreach(nc ${LIST})
+		try_compile(NAMING_TEST_RESULT
+			"${CMAKE_BINARY_DIR}/fortran_test"
+			"${CMAKE_SOURCE_DIR}/fortran_test"
+			projectName ${nc})
+		if(${NAMING_TEST_RESULT} STREQUAL "TRUE")
+			set(FORTRAN_NAMING "${nc}" CACHE STRING ${FORTRAN_NAMING_HELP})
+			message(STATUS "Trying Fortran naming convention ${FORTRAN_NAMING}: success")
+			message(STATUS "Setting fortran naming convention to ${FORTRAN_NAMING}")
+			#add_definitions(-D${FORTRAN_NAMING})
+			break()
+		else(${NAMING_TEST_RESULT} STREQUAL "TRUE")
+			message(STATUS "Trying Fortran naming convention ${nc}: failure")
+		endif(${NAMING_TEST_RESULT} STREQUAL "TRUE")
+	endforeach(nc ${LIST})
+	if(NOT ${FORTRAN_NAMING})
+		set(FORTRAN_NAMING "LOWERCASE" CACHE STRING ${FORTRAN_NAMING_HELP})
+	endif(NOT ${FORTRAN_NAMING})
+endif(ENABLE_FORTRAN)
+
+########
+# HDF5 #
+########
+
+# Setup the variables for HDF5
+set(HDF5_INCLUDE_DIR "/usr/local/include" CACHE PATH "Directory containing HDF5 headers")
+set(HDF5_LIBRARY_DIR "/usr/local/lib" CACHE FILEPATH "Directory containing HDF5 library")
+
+set(HDF5_NEED_MPI "OFF" CACHE BOOL "Does the HDF5 library require linking to mpi? (Only true if using parallel HDF5)")
+if(HDF5_NEED_MPI)
+	set(MPI_INCLUDE_DIR "/usr/local/include" CACHE FILEPATH "Directory containing MPI headers")
+	set(MPI_LIBRARY_DIR "/usr/local/lib" CACHE FILEPATH "Directory containing MPI library")
+endif(HDF5_NEED_MPI)
+
+########
+# CGNS #
+########
+
+# Include the src directory
+add_subdirectory(src)
