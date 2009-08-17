@@ -1,4 +1,4 @@
-#LyX 1.6.2 created this file. For more info see http://www.lyx.org/
+#LyX 1.6.3 created this file. For more info see http://www.lyx.org/
 \lyxformat 345
 \begin_document
 \begin_header
@@ -51,6 +51,17 @@ Installation Instructions
 \end_layout
 
 \begin_layout Enumerate
+Install HDF5 on your system
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+HDF5 uses the standard GNU autotools, so './configure', 'make', 'sudo make
+ install' should install HDF5 without problems on most systems.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
 Unpack the tar ball containing the source code into some directory.
 \end_layout
 
@@ -79,7 +90,7 @@ status open
 \begin_layout Plain Layout
 
 \family typewriter
-user@hostname:build_path$cmake /path/to/cgns/sources/
+user@hostname:build_path$ cmake /path/to/cgns/sources/
 \end_layout
 
 \end_inset
@@ -109,7 +120,7 @@ status open
 \begin_layout Plain Layout
 
 \family typewriter
-user@hostname:build_path$ccmake .
+user@hostname:build_path$ ccmake .
 \end_layout
 
 \end_inset
@@ -118,10 +129,23 @@ user@hostname:build_path$ccmake .
 \end_layout
 
 \begin_layout Enumerate
-Unless a precompiled version of hdf5 is to be used, 'BUILD_LOCAL_HDF5' should
- be left as true.
+The paths to the HDF5 libraries and header files must be set in 'HDF5_LIBRARY_DI
+R' and 'HDF5_INCLUDE_DIR' respectively.
 \end_layout
 
+\begin_deeper
+\begin_layout Enumerate
+If HDF5 is built with parallel-IO support via MPI, the 'HDF5_NEEDS_MPI'
+ flag must be set to true.
+\end_layout
+
+\begin_layout Enumerate
+If HDF5 is built with zlib and szip support, these need to be flagged with
+ 'HDF5_NEEDS_ZLIB' and 'HDF5_NEEDS_SZIP' as well as the paths for those
+ libraries.
+\end_layout
+
+\end_deeper
 \begin_layout Enumerate
 Fortran can be enabled by toggling the 'ENABLE_FORTRAN' variable.
 \end_layout
@@ -169,7 +193,7 @@ status open
 \begin_layout Plain Layout
 
 \family typewriter
-user@hostname:build_path$make
+user@hostname:build_path$ make
 \end_layout
 
 \end_inset
@@ -204,7 +228,7 @@ status open
 \begin_layout Plain Layout
 
 \family typewriter
-user@hostname:build_path$make install
+user@hostname:build_path$ make install
 \end_layout
 
 \end_inset

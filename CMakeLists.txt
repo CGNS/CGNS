@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 2.4)
+cmake_minimum_required(VERSION 2.6)
+if(COMMAND cmake_policy)
+	cmake_policy(SET CMP0003 NEW)
+endif(COMMAND cmake_policy)
+
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build Type, should be Release")
 project("cgns")
 
@@ -68,10 +72,22 @@ endif(ENABLE_FORTRAN)
 set(HDF5_INCLUDE_DIR "/usr/local/include" CACHE PATH "Directory containing HDF5 headers")
 set(HDF5_LIBRARY_DIR "/usr/local/lib" CACHE FILEPATH "Directory containing HDF5 library")
 
+set(HDF5_NEED_ZLIB "OFF" CACHE BOOL "Does the HDF5 library require linking to zlib?")
+if(HDF5_NEED_ZLIB)
+	set(ZLIB_INCLUDE_DIR "" CACHE FILEPATH "Directory containing zlib headers")
+	set(ZLIB_LIBRARY_DIR "" CACHE FILEPATH "Directory containing zlib library")
+endif(HDF5_NEED_ZLIB)
+
+set(HDF5_NEED_SZIP "OFF" CACHE BOOL "Does the HDF5 library require linking to zlib?")
+if(HDF5_NEED_SZIP)
+	set(SZIP_INCLUDE_DIR "" CACHE FILEPATH "Directory containing szip headers")
+	set(SZIP_LIBRARY_DIR "" CACHE FILEPATH "Directory containing szip library")
+endif(HDF5_NEED_SZIP)
+
 set(HDF5_NEED_MPI "OFF" CACHE BOOL "Does the HDF5 library require linking to mpi? (Only true if using parallel HDF5)")
 if(HDF5_NEED_MPI)
-	set(MPI_INCLUDE_DIR "/usr/local/include" CACHE FILEPATH "Directory containing MPI headers")
-	set(MPI_LIBRARY_DIR "/usr/local/lib" CACHE FILEPATH "Directory containing MPI library")
+	set(MPI_INCLUDE_DIR "" CACHE FILEPATH "Directory containing MPI headers")
+	set(MPI_LIBRARY_DIR "" CACHE FILEPATH "Directory containing MPI library")
 endif(HDF5_NEED_MPI)
 
 ########
