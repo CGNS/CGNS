@@ -24,3 +24,11 @@ set(glwish_FILES
 	tkAppInit.c)
 
 add_executable(glwish ${glwish_FILES})
+
+install(TARGETS
+	glwish
+	RUNTIME DESTINATION bin)
+
+install(FILES
+	stripcr.tcl
+	DESTINATION share/cgnstools)

@@ -130,3 +130,30 @@ set(interpolate_cgns_FILES
 
 add_executable(interpolate_cgns ${interpolate_cgns_FILES})
 add_dependencies(interpolate_cgns cgns_static calclib)
+
+install(TARGETS
+	plot3d_to_cgns
+	cgns_to_plot3d
+	patran_to_cgns
+	tecplot_to_cgns
+	cgns_to_tecplot
+	cgns_to_vtk
+	convert_location
+	convert_variables
+	convert_dataclass
+	extract_subset
+	interpolate_cgns
+	RUNTIME DESTINATION bin)
+
+install(FILES
+	conserved.cnv
+	convert.tcl
+	dimensional.cnv
+	patran.tcl
+	plot3d.tcl
+	primitive.cnv
+	tecplot.tcl
+	util.tcl
+	utilities.mnu
+	vtk.tcl
+	DESTINATION share/cgnstools)

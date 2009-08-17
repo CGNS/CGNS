@@ -25,3 +25,17 @@ set(cgnscalc_FILES
 
 add_executable(calcwish ${cgnscalc_FILES})
 add_dependencies(calcwish calclib cgns_static)
+
+install(TARGETS
+	calcwish
+	RUNTIME DESTINATION bin)
+
+install(PROGRAMS
+	cgnscalc.sh
+	DESTINATION bin
+	RENAME cgnscalc)
+
+install(FILES
+	cgnscalc.tcl
+	unitconv.tcl
+	DESTINATION share/cgnstools)

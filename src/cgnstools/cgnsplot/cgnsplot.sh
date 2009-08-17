@@ -53,6 +53,9 @@ for d in $dir $dir/$CG_SYSTEM $dir/cgnsplot \
   fi
 done
 if test -z "$cgnsplot" ; then
+  cgnsplot="/usr/local/share/cgnstools/cgnsplot.tcl"
+fi
+if test -z "$cgnsplot" ; then
   echo "Error: cgnsplot.tcl script not found"
   exit 1
 fi

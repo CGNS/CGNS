@@ -53,6 +53,9 @@ for d in $dir $dir/$CG_SYSTEM $dir/cgnscalc \
   fi
 done
 if test -z "$cgnscalc" ; then
+   cgnscalc="/usr/local/share/cgnstools/cgnscalc.tcl"
+fi
+if test -z "$cgnscalc" ; then
   echo "Error: cgnscalc.tcl script not found"
   exit 1
 fi

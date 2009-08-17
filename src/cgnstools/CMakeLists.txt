@@ -12,5 +12,12 @@ add_subdirectory(cgnsplot)
 	# not compatible with CGNS>=2.5
 	# this code needs to be updated
 
+add_subdirectory(common)
+
 add_subdirectory(tkogl)
 add_subdirectory(utilities)
+
+
+
+install(FILES
+	DESTINATION share/cgnstools)

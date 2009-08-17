@@ -24,4 +24,8 @@ set(calclib_FILES
 
 add_library(calclib STATIC ${calclib_FILES})
 
+install(TARGETS
+	calclib
+	ARCHIVE DESTINATION lib)
+
 # Add test

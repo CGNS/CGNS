@@ -26,3 +26,16 @@ set(cgnsplot_FILES
 
 add_executable(plotwish ${cgnsplot_FILES})
 add_dependencies(plotwish cgns_static tkogl)
+
+install(TARGETS
+	plotwish
+	RUNTIME DESTINATION bin)
+
+install(PROGRAMS
+	cgnsplot.sh
+	DESTINATION bin
+	RENAME cgnsplot)
+
+install(FILES
+	cgnsplot.tcl
+	DESTINATION share/cgnstools)
