@@ -17,7 +17,12 @@ add_subdirectory(common)
 add_subdirectory(tkogl)
 add_subdirectory(utilities)
 
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/cgconfig
+"CG_SYSTEM=${CMAKE_SYSTEM_NAME}; export CG_SYSTEM
+CG_BIN_DIR=${CMAKE_INSTALL_PREFIX}/bin; export CG_BIN_DIR
+CG_LIB_DIR=${CMAKE_INSTALL_PREFIX}/share/cgnstools; export CG_LIB_DIR
+")
 
-
-install(FILES
-	DESTINATION share/cgnstools)
+install(PROGRAMS
+	${CMAKE_CURRENT_BINARY_DIR}/cgconfig
+	DESTINATION bin)
