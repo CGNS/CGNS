@@ -2,6 +2,23 @@
 # cgnstools #
 #############
 
+set(TK_INCLUDE_DIR "" CACHE PATH "Directory containing TK headers")
+set(TK_LIBRARY_DIR "" CACHE PATH "Directory containing TK library")
+
+set(TCL_INCLUDE_DIR "" CACHE PATH "Directory containing TCL headers")
+set(TCL_LIBRARY_DIR "" CACHE PATH "Directory containing TCL library")
+
+set(GL_INCLUDE_DIR "" CACHE PATH "Directory containing GL headers")
+set(GL_LIBRARY_DIR "" CACHE PATH "Directory containing GL library")
+
+set(GLU_INCLUDE_DIR "" CACHE PATH "Directory containing GLU headers")
+set(GLU_LIBRARY_DIR "" CACHE PATH "Directory containing GLU library")
+
+set(XMU_INCLUDE_DIR "" CACHE PATH "Directory containing XMU headers")
+set(XMU_LIBRARY_DIR "" CACHE PATH "Directory containing XMU library")
+
+add_subdirectory(adfviewer)
+
 add_subdirectory(calclib)
 add_subdirectory(cgnscalc)
 

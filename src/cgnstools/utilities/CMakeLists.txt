@@ -2,25 +2,25 @@
 # utilities #
 #############
 
-include_directories(/usr/include/tcl/)
+include_directories(${TCL_INCLUDE_DIR})
 include_directories(../..)
 include_directories(../calclib)
 include_directories(../common)
 
 # cgns_info
 link_directories(. ${HDF5_LIBRARY_DIR})
-link_libraries(cgns_static calclib libhdf5.so libm.so libz.so)
+link_libraries(cgns_static calclib hdf5 m)
 if(HDF5_NEED_ZLIB)
 	link_directories(${ZLIB_LIBRARY_DIR})
-	link_libraries(libz.so)
+	link_libraries(z)
 endif(HDF5_NEED_ZLIB)
 if(HDF5_NEED_SZIP)
 	link_directories(${SZIP_LIBRARY_DIR})
-	link_libraries(szlib.so)
+	link_libraries(szlib)
 endif(HDF5_NEED_SZIP)
 if(HDF5_NEED_MPI)
 	link_directories(${MPI_LIBRARY_DIR})
-	link_libraries(libmpi.so)
+	link_libraries(mpi)
 endif(HDF5_NEED_MPI)
 
 set(cgns_info_FILES 

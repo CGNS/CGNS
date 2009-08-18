@@ -2,7 +2,7 @@
 # tkogl #
 #########
 
-include_directories(/usr/include/tcl/)
+include_directories(${TCL_INCLUDE_DIR})
 
 set(tkogl_FILES 
 	tkogl.c
@@ -18,7 +18,9 @@ set(tkogl_FILES
 
 add_library(tkogl STATIC ${tkogl_FILES})
 
-link_libraries(tkogl libtk.so libtcl.so libGL.so libGLU.so libXmu.so)
+link_directories(. ${TCL_LIBRARY_DIR} ${TK_LIBRARY_DIR})
+link_directories(${GL_LIBRARY_DIR} ${GLU_LIBRARY_DIR} ${XMU_LIBRARY_DIR})
+link_libraries(tkogl tk tcl GL GLU Xmu)
 
 set(glwish_FILES 
 	tkAppInit.c)

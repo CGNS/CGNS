@@ -1,9 +1,10 @@
-############
-# cgnsplot #
-############
+#############
+# adfviewer #
+#############
 
 include_directories(${TCL_INCLUDE_DIR})
 include_directories(../common)
+include_directories(../../adf)
 link_directories(. ${HDF5_LIBRARY_DIR} ${TCL_LIBRARY_DIR} ${TK_LIBRARY_DIR})
 link_directories(${GL_LIBRARY_DIR} ${GLU_LIBRARY_DIR} ${XMU_LIBRARY_DIR})
 link_libraries(cgns_static tkogl hdf5 m tcl tk GL GLU Xmu)
@@ -20,23 +21,33 @@ if(HDF5_NEED_MPI)
 	link_libraries(mpi)
 endif(HDF5_NEED_MPI)
 
-set(cgnsplot_FILES 
-	cgnstcl.c
-	plotwish.c
-	../common/hash.c)
+set(adfviewer_FILES 
+	adfwish.c
+	adftcl.c)
 
-add_executable(plotwish ${cgnsplot_FILES})
-add_dependencies(plotwish cgns_static tkogl)
+add_executable(adfwish ${adfviewer_FILES})
+add_dependencies(adfwish cgns_static tkogl)
 
 install(TARGETS
-	plotwish
+	adfwish
 	RUNTIME DESTINATION bin)
 
 install(PROGRAMS
-	cgnsplot.sh
+	adfviewer.sh
 	DESTINATION bin
-	RENAME cgnsplot)
+	RENAME adfviewer)
+
+install(PROGRAMS
+	cgnsnodes.sh
+	DESTINATION bin
+	RENAME cgnsnodes)
 
 install(FILES
-	cgnsplot.tcl
+	adfviewer.tcl
+	cgns.tcl
+	cgnsnodes.tcl
+	export.tcl
+	import.tcl
+	tools.tcl
+	tclIndex
 	DESTINATION share/cgnstools)
