@@ -20,10 +20,12 @@ set(XMU_LIBRARY_DIR "" CACHE PATH "Directory containing XMU library")
 add_subdirectory(adfviewer)
 
 add_subdirectory(calclib)
-add_subdirectory(cgnscalc)
 
-#add_subdirectory(cgnsplot)
+#add_subdirectory(cgnscalc)
 	#gui starts, but no functions work
+
+add_subdirectory(cgnsplot)
+
 
 #add_subdirectory(cgnssh) 
 	# posit label is no longer defined
