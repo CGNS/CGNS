@@ -145,7 +145,6 @@ typedef struct _ADFH_MTA {
   hid_t g_proplink;     
   hid_t g_propdataset;  
 
-  /* FORTRAN FLAG - mp 12/08 */
   int   g_flags;     
   hid_t g_files[ADFH_MAXIMUM_FILES];
 
@@ -1523,7 +1522,6 @@ void ADFH_Create(const double  pid,
     if (new_str_att(gid, A_NAME, pname, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_LABEL, "", ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
-	/* FORTRAN FLAG - mp 12/08 */
         new_int_att(gid, A_FLAGS, mta_root->g_flags, err)) return;
 #else
     order = 0;
@@ -1532,7 +1530,6 @@ void ADFH_Create(const double  pid,
         new_str_att(gid, A_LABEL, "", ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
         new_int_att(gid, A_ORDER, order, err) ||
-	/* FORTRAN FLAG - mp 12/08 */
         new_int_att(gid, A_FLAGS, mta_root->g_flags, err)) return;
 #endif
     *id = to_ADF_ID(gid);
@@ -1792,7 +1789,6 @@ void ADFH_Database_Open(const char   *name,
     mta_root->g_init = 0;
   }
   mta_root->g_error_state = 0;
-  /* FORTRAN FLAG - mp 12/08 */
   /* flags is int seen as bitfield, fortran flag is first 0x0001 
      it is found set to 1 in *all* MLL-based HDF5 files 
   */
