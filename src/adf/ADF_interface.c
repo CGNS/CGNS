@@ -3717,7 +3717,7 @@ else { /** Multiple data chunks **/
             chunk_end_byte += chunk_size ;
 
               /** If start of block not in this chunk then continue **/
-            if ( start_byte >= chunk_end_byte )
+            if ( start_byte > chunk_end_byte )
 	       continue ;
 
             /** Set offset into the current chunk **/
