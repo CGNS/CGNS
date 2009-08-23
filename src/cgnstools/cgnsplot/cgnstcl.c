@@ -15,6 +15,10 @@
 #include "hash.h"
 #include "cgnames.h"
 
+#ifndef CONST
+# define CONST
+#endif
+
 #ifndef CG_MODE_READ
 # define CG_MODE_READ MODE_READ
 #endif
@@ -3062,7 +3066,8 @@ char **argv;
 {
     float bbox[3][2], matrix[16];
     int n, all = 0;
-    char **args, sbb[65];
+    CONST char **args;
+    char sbb[65];
 
     if (argc > 1) all = atoi(argv[1]);
     get_bounds (all, bbox);
@@ -3098,7 +3103,7 @@ char **argv;
 #endif
 {
     int zone, regn, nc;
-    char **args;
+    CONST char **args;
     Zone *z;
     Regn *r;
     static char slist[17];
@@ -3208,7 +3213,7 @@ char **argv;
     if (vis) {
         if (argc == 3) {
             int nb, n = 0;
-            char **args;
+            CONST char **args;
             if (TCL_OK != Tcl_SplitList (interp, argv[2], &nb, &args))
                 return TCL_ERROR;
             if (nb == 3) {
@@ -4165,7 +4170,7 @@ char **argv;
 
     if (argc == 3) {
         int np;
-        char **args;
+        CONST char **args;
         if (TCL_OK != Tcl_SplitList (interp, argv[2], &np, &args))
             return TCL_ERROR;
         if (np != 4) {
@@ -4216,7 +4221,7 @@ char **argv;
 #endif
 {
     int n, np, i, j, k, index, n0, n1;
-    char **args;
+    CONST char **args;
     float plane[4], bbox[3][2], s[8], ds;
     float node[8][3], pnode[6][3];
     static char slist[17];
@@ -4323,7 +4328,7 @@ char **argv;
 #endif
 {
     int n, np;
-    char **args;
+    CONST char **args;
 
     if (argc < 2 || argc > 4) {
         Tcl_SetResult (interp, "usage: OGLcutconfig color [usecutclr] [ignorevis]",
