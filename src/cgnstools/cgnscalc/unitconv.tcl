@@ -50,7 +50,7 @@ if {[info exists env(TCL_PROC_DIR)]} {
 
 #---------- initialize
 
-if [catch {do_config -win} msg] {error_exit $msg}
+if [catch {config_defaults 1} msg] {error_exit $msg}
 
 if {$tcl_platform(platform) == "windows"} {
   set vers [join [split $tcl_version .] {}]
@@ -63,8 +63,8 @@ if {[tclreg_init -base "HKEY_CURRENT_USER/Software/CGNS" \
 }
 units:create .
 
-if {[info commands etLoadIcon] != ""} {
-  update idletasks
-  catch {etLoadIcon unitconv}
+catch {
+  config_icon . [list unitconv cgns] \
+    [list $cmd_dir $cmd_dir/images $cmd_dir/../common]
 }
 

@@ -176,7 +176,7 @@ proc do_about {} {
 "CGNScalc Version 1.1
 
 Bruce Wedan
-brucewedan@hotmail.com" img_about 0 Close
+brucewedan@gmail.com" img_about 0 Close
 }
 
 #---------- toolbar
@@ -624,10 +624,8 @@ pack $oper -side top -fill x -padx 2 -pady 2 -anchor n
 
 set f [frame $oper.but]
 pack $f -side left -fill both -expand 1
-button $f.1 -relief raised -text "Bksp" -width 4 \
-  -command {tkEntryBackspace $ProgData(cmds)}
-button $f.2 -relief raised -text "Clear" -width 4 \
-  -command {$ProgData(cmds) delete 0 end}
+button $f.1 -relief raised -text "Bksp" -width 4 -command command_backspace
+button $f.2 -relief raised -text "Clear" -width 4 -command command_clear
 pack $f.1 $f.2 -side top -fill x  -expand 1
 
 set operators {
@@ -724,6 +722,40 @@ help_init {cgnscalc CGNScalc} {cgns CGNS}
 
 #----- procedures
 
+proc command_insert {text} {
+  global ProgData
+  if {[$ProgData(cmds) selection present]} {
+    set first [$ProgData(cmds) index sel.first]
+    set last  [$ProgData(cmds) index sel.last]
+    $ProgData(cmds) selection clear
+    $ProgData(cmds) delete $first $last
+    $ProgData(cmds) icursor $first
+  }
+  $ProgData(cmds) insert insert $text
+  focus $ProgData(cmds)
+}
+
+proc command_clear {} {
+  global ProgData
+  if {[$ProgData(cmds) selection present]} {
+    set first [$ProgData(cmds) index sel.first]
+    set last  [$ProgData(cmds) index sel.last]
+    $ProgData(cmds) selection clear
+    $ProgData(cmds) delete $first $last
+    $ProgData(cmds) icursor $first
+  } else {
+    $ProgData(cmds) delete 0 end
+  }
+}
+
+proc command_backspace {} {
+  global ProgData
+  set n [$ProgData(cmds) index insert]
+  if {$n > 0} {
+    $ProgData(cmds) delete [expr $n - 1] $n
+  }
+}
+
 proc writemsg {msg} {
   .msg.text insert end "$msg\n"
   .msg.text yview -pickplace end
@@ -743,17 +775,15 @@ proc add_variable {} {
 }
 
 proc add_name {name} {
-  global ProgData
   set_prefix ""
   set_suffix ""
-  tkEntryInsert $ProgData(cmds) "$name"
+  command_insert "$name"
 }
 
 proc add_function {name} {
-  global ProgData
   set_prefix ""
   set_suffix ""
-  tkEntryInsert $ProgData(cmds) "$name\("
+  command_insert "$name\("
 }
 
 proc add_symbol {sym} {
@@ -793,8 +823,8 @@ proc set_suffix {s} {
 }
 
 proc add_trigfunc {name} {
-  global ProgData Prefix Suffix
-  tkEntryInsert $ProgData(cmds) "$Prefix$name$Suffix\("
+  global Prefix Suffix
+  command_insert "$Prefix$name$Suffix\("
   set_prefix ""
   set_suffix ""
 }
@@ -873,7 +903,7 @@ proc select_history {dir} {
     set Index $n
     $ProgData(cmds) delete 0 end
     if {$Index < $Count} {
-      tkEntryInsert $ProgData(cmds) $History($Index)
+      command_insert $History($Index)
     }
     if {[winfo exists .histlist]} {
       .histlist.top.list selection clear 0 end
@@ -891,7 +921,7 @@ proc set_history {} {
   if {$n != ""} {
     set Index $n
     $ProgData(cmds) delete 0 end
-    tkEntryInsert $ProgData(cmds) $History($Index)
+    command_insert $History($Index)
     update_history
   }
 }
@@ -1174,7 +1204,7 @@ proc load_cgns {fname} {
   global ProgData
   if {$fname == ""} {
     set fname [FileOpen "Load CGNS File" $ProgData(CGNSfile) . \
-      {{{CGNS Files} {.cgns .cgn .adf}} {{All Files} *}}]
+      {{{CGNS Files} {.cgns .cga .cgh .cgx}} {{All Files} *}}]
     if {$fname == ""} return
   }
   if {![file isfile $fname]} {
@@ -1236,10 +1266,9 @@ proc save_cgns {} {
 wm withdraw .
 update idletasks
 wm minsize . [winfo reqwidth .] [winfo reqheight .]
-if {[info commands etLoadIcon] != ""} {
-  if [catch {etLoadIcon cgnsCalc}] {
-    catch {etLoadIcon cgns}
-  }
+catch {
+  config_icon . [list cgnscalc cgns] \
+    [list $cmd_dir $cmd_dir/images $cmd_dir/../common]
 }
 focus $ProgData(cmds)
 wm deiconify .
