@@ -30,6 +30,7 @@ set auto_index(setup_fonts) "source $dir/config.tcl"
 set auto_index(setup_windows) "source $dir/config.tcl"
 set auto_index(config_init) "source $dir/config.tcl"
 set auto_index(config_defaults) "source $dir/config.tcl"
+set auto_index(config_icon) "source $dir/config.tcl"
 
 # dialog.tcl
 

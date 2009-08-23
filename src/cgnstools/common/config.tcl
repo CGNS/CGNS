@@ -268,3 +268,35 @@ proc config_defaults {{native ""}} {
 #  option add *Button.highlightThickness 0
 }
 
+proc config_icon {w iconlist {pathlist .}} {
+  global tcl_platform
+
+  if {$tcl_platform(platform) == "windows" &&
+      [info commands LoadIcon] != ""} {
+    foreach i $iconlist {
+      foreach p $pathlist {
+        if [file exists $p/$i.ico] {
+          update idletasks
+          LoadIcon @$p/$i.ico
+          return
+        }
+      }
+    }
+  }
+  foreach i $iconlist {
+    foreach p $pathlist {
+      if [file exists $p/$i-icon.xbm] {
+        wm iconbitmap $w @$p/$i-icon.xbm
+        if [file exists $p/$i-mask.xbm] {
+          wm iconmask $w @$p/$i-mask.xbm
+        }
+        return
+      }
+      if [file exists $p/$i.xbm] {
+        wm iconbitmap $w @$p/$i.xbm
+        wm iconmask $w @$p/$i.xbm
+        return
+      }
+    }
+  }
+}

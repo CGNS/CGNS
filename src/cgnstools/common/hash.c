@@ -259,7 +259,7 @@ void *userdata;
 #define MAXINT  (((unsigned) ~ 0) >> 1)
 #define MAXLEN  128
 
-void HastStats (
+void HashStats (
 #ifdef PROTOTYPE
     HASH hash)
 #else
