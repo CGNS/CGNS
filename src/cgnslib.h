@@ -86,12 +86,14 @@ freely, subject to the following restrictions:
 
 /* legacy code support */
 
+#ifdef LEGACY_SUPPORT
 #define MODE_READ	CG_MODE_READ
 #define MODE_WRITE	CG_MODE_WRITE
 #define MODE_MODIFY	CG_MODE_MODIFY
 #define Null            CG_Null
 #define UserDefined	CG_UserDefined
 #define Celcius		Celsius
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -931,7 +933,7 @@ CGNSDLL int cg_diffusion_write(int const * diffusion_model);
  *      EMMagneticFieldModel_t Nodes                                     *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_model_read(const char *ModelLabel, ModelType_t *ModelType);
+CGNSDLL int cg_model_read(char const *ModelLabel, ModelType_t *ModelType);
 CGNSDLL int cg_model_write(char const * ModelLabel, ModelType_t ModelType);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
