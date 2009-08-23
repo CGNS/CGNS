@@ -8,6 +8,10 @@
 #include "calc.h"
 #include "cgnslib.h"
 
+#ifndef CONST
+# define CONST
+#endif
+
 static Tcl_Interp *global_interp;
 static char message[1024] = "";
 
@@ -849,12 +853,12 @@ char **argv;
 #endif
 {
     int i, n, nargs;
-    char **args;
+    CONST char **args;
 
     for (n = 1; n < argc; n++) {
         if (TCL_OK == Tcl_SplitList (interp, argv[n], &nargs, &args)) {
             for (i = 0; i < nargs; i++)
-                sym_delsym (args[i]);
+                sym_delsym ((char *)args[i]);
             Tcl_Free ((char *)args);
         }
         else
