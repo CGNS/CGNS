@@ -809,7 +809,8 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 
              /* check data */
                 if (strcmp(section[0][n].connect->data_type,"I4")) {
-                    cgi_error("Datatype %d not supported for element connectivity");
+                    cgi_error("Datatype %s not supported for element connectivity",
+                        section[0][n].connect->data_type);
                     return 1;
                 }
                 if (cg_npe(section[0][n].el_type, &npe)) return 1;
@@ -825,6 +826,14 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                     section[0][n].connect->dim_vals[0] = npe*nelements;
                     section[0][n].connect->dim_vals[1] = 0;
                     if (cg->mode == CG_MODE_MODIFY && !linked) {
+                        /* read the data into memory */
+                        if (section[0][n].connect->data == 0) {
+                            if (cgi_read_node(section[0][n].connect->id,
+                                section[0][n].connect->name,
+                                section[0][n].connect->data_type,
+                                &ndim, dim_vals, &vdata, READ_DATA)) return 1;
+                            section[0][n].connect->data = vdata;
+                        }
                         if (cgio_set_dimensions(cg->cgio,
                                 section[0][n].connect->id, "I4",
                                 1, section[0][n].connect->dim_vals)) {
@@ -841,29 +850,54 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 
                 } else {    /* starting with version 1200 */
                     int size, modified = 0;
-                    if (cg->version < 3000 && section[0][n].el_type == MIXED) {
-                        int ne, *elem_data = (int *)section[0][n].connect->data;
-                        for (size = 0, ne = 0; ne < nelements; ne++) {
-                            el_type = (ElementType_t)elem_data[size];
-                            if (el_type > PYRA_5) {
+                    if (cg->version < 3000 && section[0][n].el_type >= MIXED) {
+                        int ne, *elem_data;
+                        if (section[0][n].connect->data == 0) {
+                            if (cgi_read_node(section[0][n].connect->id,
+                                section[0][n].connect->name,
+                                section[0][n].connect->data_type,
+                                &ndim, dim_vals, &vdata, READ_DATA)) return 1;
+                            section[0][n].connect->data = vdata;
+                        }
+                        elem_data = (int *)section[0][n].connect->data;
+                        if (section[0][n].el_type == MIXED) {
+                            for (size = 0, ne = 0; ne < nelements; ne++) {
+                                el_type = (ElementType_t)elem_data[size];
+                                if (el_type > PYRA_5) {
+                                    modified++;
+                                    el_type++;
+                                    elem_data[size] = el_type;
+                                }
+                                if (el_type > NGON_n)
+                                    npe = el_type - NGON_n;
+                                else
+                                    cg_npe (el_type, &npe);
+                                if (npe <= 0) {
+                                    cgi_error("Error exit: invalid element type in MIXED elements");
+                                    return 1;
+                                }
+                                size += (npe + 1);
+                            }
+                        }
+                        else {
+                            for (size = 0, ne = 0; ne < nelements; ne++) {
+                                el_type = (ElementType_t)elem_data[size];
                                 modified++;
-                                el_type++;
-                                elem_data[size] = el_type;
+                                npe = el_type + 1 - NGON_n;
+                                if (npe < 0) {
+                                    cgi_error("Error exit: invalid element type in NGON_n elements");
+                                    return 1;
+                                }
+                                elem_data[size] = npe;
+                                size += (npe + 1);
                             }
-                            if (el_type > NGON_n)
-                                npe = el_type - NGON_n;
-                            else
-                                cg_npe (el_type, &npe);
-                            if (npe <= 0) {
-                                cgi_error("Error exit: invalid element type in MIXED elements");
-                                return 1;
-                            }
-                            size += (npe + 1);
                         }
                     }
                     size = cgi_element_data_size(section[0][n].el_type, nelements,
                                                  section[0][n].connect->data);
-                    if (section[0][n].connect->dim_vals[0] != size ||
+                    if (size < 0) return 1;
+                    /* size may be zero, since elements not read */
+                    if ((size && section[0][n].connect->dim_vals[0] != size) ||
                         section[0][n].connect->data_dim != 1) {
                         cgi_error("Error exit:  Element connectivity incorrectly defined");
                         return 1;
@@ -901,7 +935,8 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 
                 /* check data */
                 if (strcmp(section[0][n].parent->data_type,"I4")) {
-                    cgi_error("Datatype %d not supported for element 'parent_data'");
+                    cgi_error("Datatype %s not supported for element 'parent_data'",
+                        section[0][n].parent->data_type);
                     return 1;
                 }
 		if(section[0][n].parent->range[0] > 0 &&
@@ -3588,6 +3623,7 @@ int cgi_read_array(cgns_array *array, char *parent_label, double parent_id) {
      /* These data arrays are not loaded in memory, just their addresses */
     if (strcmp(parent_label,"GridCoordinates_t")==0 ||
         strcmp(parent_label,"FlowSolution_t")==0 ||
+        strcmp(parent_label,"Elements_t")==0 ||
         strcmp(parent_label,"DiscreteData_t")==0) {
         data_flag=SKIP_DATA;
         array->data=0;
@@ -4851,10 +4887,12 @@ int cgi_write_section(double parent_id, cgns_section *section) {
         "I4", 1, &dim_vals, section->range)) return 1;
 
      /* ElementConnectivity */
-    if (cgi_write_array(section->id, section->connect)) return 1;
+    if (section->connect &&
+        cgi_write_array(section->id, section->connect)) return 1;
 
      /* ParentData */
-    if (section->parent && cgi_write_array(section->id, section->parent)) return 1;
+    if (section->parent &&
+        cgi_write_array(section->id, section->parent)) return 1;
 
      /* Descriptor_t */
     for (n=0; n<section->ndescr; n++)
@@ -6804,6 +6842,7 @@ int cgi_element_data_size(ElementType_t type, int nelems, const int *connect) {
     int ne, npe, size = 0;
 
     if (type == MIXED) {
+        if (connect == 0) return 0;
         for (ne = 0; ne < nelems; ne++) {
             type = (ElementType_t)connect[size++];
             if (type > NGON_n)
@@ -6818,6 +6857,7 @@ int cgi_element_data_size(ElementType_t type, int nelems, const int *connect) {
         }
     }
     else if (type == NGON_n || type == NFACE_n) {
+        if (connect == 0) return 0;
         for (ne = 0; ne < nelems; ne++) {
             npe = connect[size++];
             size += npe;
@@ -10865,7 +10905,7 @@ void cgi_free_family(cgns_family *family) {
         free(family->descr);
     }
     if (family->nfambc) {
-        for (n=0; n>family->nfambc; n++)
+        for (n=0; n<family->nfambc; n++)
             cgi_free_fambc(&family->fambc[n]);
         free(family->fambc);
     }
@@ -11112,7 +11152,8 @@ void cgi_free_boco(cgns_boco *boco) {
         for (n=0; n<boco->ndataset; n++)
 	{
 	    /* If dataset[n].ptset came from boco->ptset, don't want to
-	     * attempt to free it.
+	     * attempt to free it. This is stuff Ken put in here. I don't
+	     * think this every happens - but just in case
 	     */
 	    if(boco->dataset[n].ptset == boco->ptset)
 		boco->dataset[n].ptset = 0;
@@ -11746,6 +11787,11 @@ void cgi_free_caverage(cgns_caverage *caverage) {
 void cgi_free_user_data(cgns_user_data *user_data) {
     int n;
     if (user_data->link) free(user_data->link);
+    if (user_data->ndescr) {
+        for (n=0; n<user_data->ndescr; n++)
+            cgi_free_descr(&user_data->descr[n]);
+        free(user_data->descr);
+    }
     if (user_data->narrays) {
         for (n=0; n<user_data->narrays; n++)
             cgi_free_array(&user_data->array[n]);
@@ -11755,7 +11801,10 @@ void cgi_free_user_data(cgns_user_data *user_data) {
         cgi_free_ptset(user_data->ptset);
         free(user_data->ptset);
     }
-
+    if (user_data->units) {
+        cgi_free_units(user_data->units);
+        free(user_data->units);
+    }
     if (user_data->nuser_data) {
         for (n=0; n < user_data->nuser_data; n++)
             cgi_free_user_data(&user_data->user_data[n]);

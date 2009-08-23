@@ -32,48 +32,60 @@ typedef int int_3[3];
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-#define CGNS_DELETE_SHIFT(nchild, child) {                                      \
-  for (n=0; n<parent->nchild && strcmp(parent->child[n].name,node_name); n++);  \
-  if (n==parent->nchild) {                                                      \
-    cgi_error("Error in cg_delete: Can't find node '%s'",node_name);            \
-    return 1;                                                                   \
-  }                                                                             \
-  for (m=n+1; m<parent->nchild; m++) parent->child[m-1] = parent->child[m];     \
-  parent->nchild --;                                                            \
+#define CGNS_DELETE_SHIFT(nchild, child, func_free) {				\
+  for (n=0; n<parent->nchild && strcmp(parent->child[n].name,node_name); n++);	\
+  if (n==parent->nchild) {							\
+    cgi_error("Error in cg_delete: Can't find node '%s'",node_name);		\
+    return 1;									\
+  }										\
+  func_free(&parent->child[n]);							\
+  for (m=n+1; m<parent->nchild; m++) parent->child[m-1] = parent->child[m];	\
+  if (--parent->nchild == 0) {							\
+    free(parent->child);							\
+    parent->child=0;								\
+  }										\
 }
 
-#define ADDRESS4MULTIPLE(parent_type, nchild, child, child_type) {    	        \
-  parent_type *parent = (parent_type *)posit->posit;                                   \
-  child = 0;                                                                    \
-  if (local_mode == CG_MODE_WRITE) {                                               \
+#define CGNS_DELETE_CHILD(child, func_free) {					\
+ if (parent->child) {								\
+   func_free(parent->child);							\
+   free(parent->child);								\
+ }										\
+ parent->child = 0;								\
+}
+
+#define ADDRESS4MULTIPLE(parent_type, nchild, child, child_type) {		\
+  parent_type *parent = (parent_type *)posit->posit;				\
+  child = 0;									\
+  if (local_mode == CG_MODE_WRITE) {						\
     for (n=0; n<parent->nchild && strcmp(parent->child[n].name,given_name);n++);\
-    if (n==parent->nchild) {                                                    \
-      if (parent->nchild==0) parent->child = CGNS_NEW(child_type, 1);           \
+    if (n==parent->nchild) {							\
+      if (parent->nchild==0) parent->child = CGNS_NEW(child_type, 1);		\
       else parent->child = CGNS_RENEW(child_type,parent->nchild+1, parent->child);\
-      child = &parent->child[parent->nchild];                                   \
-      parent->nchild++;                                                         \
-    } else {                                                                    \
-      if (cg->mode == CG_MODE_WRITE) error1=1;                                     \
-      else {                                                                    \
-        parent_id = parent->id;                                                 \
-        child= &(parent->child[n]);                                             \
-      }                                                                         \
-    }                                                                           \
-  } else if (local_mode == CG_MODE_READ) {                                         \
-    if (given_no > parent->nchild || given_no<=0) error2=1;                     \
-    else child = &parent->child[given_no-1];                                    \
-  }                                                                             \
+      child = &parent->child[parent->nchild];					\
+      parent->nchild++;								\
+    } else {									\
+      if (cg->mode == CG_MODE_WRITE) error1=1;					\
+      else {									\
+        parent_id = parent->id;							\
+        child= &(parent->child[n]);						\
+      }										\
+    }										\
+  } else if (local_mode == CG_MODE_READ) {					\
+    if (given_no > parent->nchild || given_no<=0) error2=1;			\
+    else child = &parent->child[given_no-1];					\
+  }										\
 }
 
 #define ADDRESS4SINGLE_ALLOC(parent_type, child) {				\
-  parent_type *parent = (parent_type *)posit->posit;					\
+  parent_type *parent = (parent_type *)posit->posit;				\
   child = &parent->child;							\
   parent_id = parent->id;							\
 }
 
-#define ADDRESS4SINGLE(parent_type, child, child_type, size) {                  \
-  parent_type *parent = (parent_type *)posit->posit;                                   \
-  if (local_mode==CG_MODE_WRITE) {							\
+#define ADDRESS4SINGLE(parent_type, child, child_type, size) {			\
+  parent_type *parent = (parent_type *)posit->posit;				\
+  if (local_mode==CG_MODE_WRITE) {						\
     if (parent->child==0) parent->child = CGNS_NEW(child_type, size);		\
     else {									\
       if (cg->mode == CG_MODE_WRITE) error1=1;					\

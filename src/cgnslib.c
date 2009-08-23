@@ -219,8 +219,10 @@ char const * AverageInterfaceTypeName[NofValidAverageInterfaceTypes] =
 int n_open = 0;
 int cgns_file_size = 0;
 int file_number_offset = 0;
-int VersionList[] = {3000, 2530, 2520, 2510, 2500, 2460, 2420, 2400,
-                     2300, 2200, 2100, 2000, 1270, 1200, 1100, 1050};
+int VersionList[] = {3000,
+                     2540, 2530, 2520, 2510, 2500,
+                     2460, 2420, 2400,
+                     2300, 2200, 2100,2000, 1270, 1200, 1100, 1050};
 #define nVersions (sizeof(VersionList)/sizeof(int))
 
 /***********************************************************************
@@ -252,6 +254,11 @@ int cg_open(char const * filename, int mode, int *file_number) {
     int not_found, dim_vals, cgio;
     double dummy_id;
     float FileVersion;
+
+#ifdef __CG_MALLOC_H__
+    fprintf(stderr, "before open:files %d/%d: memory %d/%d\n", n_open,
+        cgns_file_size, cgmemnow(), cgmemmax());
+#endif
 
     /* determine accessibility of a file :
        If the requested access is permitted, a value of 0 is returned. */
@@ -395,6 +402,11 @@ int cg_open(char const * filename, int mode, int *file_number) {
         cg->base = 0;
     }
 
+#ifdef __CG_MALLOC_H__
+    fprintf(stderr, "after  open:files %d/%d: memory %d/%d\n", n_open,
+        cgns_file_size, cgmemnow(), cgmemmax());
+#endif
+
     return CG_OK;
 }
 
@@ -477,6 +489,11 @@ int cg_close(int file_number) {
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
 
+#ifdef __CG_MALLOC_H__
+    fprintf(stderr, "before close:files %d/%d: memory %d/%d\n", n_open,
+        cgns_file_size, cgmemnow(), cgmemmax());
+#endif
+
     if (cgns_compress && cg->mode == CG_MODE_MODIFY &&
        (cg->deleted || cgns_compress == 1)) {
         if (cgio_compress_file (cg->cgio, cg->filename)) {
@@ -505,6 +522,11 @@ int cg_close(int file_number) {
       cgns_file_size = 0;
       n_cgns_files = 0;
     }
+
+#ifdef __CG_MALLOC_H__
+    fprintf(stderr, "after  close:files %d/%d: memory %d/%d\n",
+        n_open, cgns_file_size, cgmemnow(), cgmemmax());
+#endif
 
     return CG_OK;
 }
@@ -1314,16 +1336,33 @@ int cg_elements_read(int file_number, int B, int Z, int S, int *elements,
     num = section->range[1] - section->range[0] +1;
     count = cgi_element_data_size(section->el_type, num, section->connect->data);
     if (count < 0) return CG_ERROR;
-    if (count != ElementDataSize) {
+    if (count && count != ElementDataSize) {
         cgi_error("Error in recorded element connectivity array...");
         return CG_ERROR;
     }
 
-    memcpy(elements, (int *)section->connect->data, ElementDataSize*sizeof(int));
+    if (section->connect->data) {
+        memcpy(elements, section->connect->data, ElementDataSize*sizeof(int));
+    }
+    else {
+        if (cgio_read_all_data(cg->cgio, section->connect->id, elements)) {
+            cg_io_error("cgio_read_all_data");
+            return CG_ERROR;
+        }
+    }
 
     if (section->parent && parent_data) {
-        memcpy(parent_data, section->parent->data, num*4*sizeof(int));
+        if (section->parent->data) {
+            memcpy(parent_data, section->parent->data, num*4*sizeof(int));
+        }
+        else {
+            if (cgio_read_all_data(cg->cgio, section->parent->id, parent_data)) {
+                cg_io_error("cgio_read_all_data");
+                return CG_ERROR;
+            }
+        }
     }
+
     return CG_OK;
 }
 
@@ -1869,36 +1908,7 @@ int cg_conn_read(int file_number, int B, int Z, int I, int *pnts,
 }
 
 int cg_conn_read_short(int file_number, int B, int Z, int I, int *pnts) {
-#if 0
-    cgns_conn *conn;
-    int ierr, cell_dim;
-
-     /* Find address */
-    cg = cgi_get_file(file_number);
-    if (cg == 0) return CG_ERROR;
-
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
-
-    conn = cgi_get_conn(cg, B, Z, I);
-    if (conn==0) return CG_ERROR;
-
-    cell_dim = cg->base[B-1].cell_dim;
-
-     /* read point-set of current zone from ADF file - always I4 integer */
-    if (conn->ptset.npts>0) {
-        if (cgio_read_all_data(cg->cgio, conn->ptset.id, (void *)pnts)) {
-            cg_io_error("cgio_read_all_data");
-            return CG_ERROR;
-        }
-    } else {
-        cgi_warning("Interface receiver patch #%d of zone #%d, base #%d, contains no points",
-            I, Z, B);
-    }
-
-    return CG_OK;
-#else
     return cg_conn_read(file_number, B, Z, I, pnts, DataTypeNull, NULL);
-#endif
 }
 
 int cg_conn_id(int file_number, int B, int Z, int I, double *conn_id) {
@@ -3044,7 +3054,7 @@ int cg_diffusion_read(int *diffusion_model) {
     return CG_OK;
 }
 
-int cg_model_read(const char *ModelLabel, ModelType_t *ModelType) {
+int cg_model_read(char const *ModelLabel, ModelType_t *ModelType) {
     cgns_model *model;
     int ier=0;
 
@@ -4419,6 +4429,10 @@ int cg_geo_write(int file_number, int B, int F, char const * geo_name,
         return CG_ERROR;
     }
     geo->file = (char *)malloc((length+1)*sizeof(char));
+    if (geo->file == NULL) {
+        cgi_error("Error allocation geo->file");
+        return CG_ERROR;
+    }
     strcpy(geo->file, filename);
 
      /* save data in file */
@@ -4741,8 +4755,7 @@ int cg_section_write(int file_number, int B, int Z, char const * SectionName, El
 
      /* Write element connectivity in internal data structure */
     section->connect = CGNS_NEW(cgns_array, 1);
-    section->connect->data = (void *)malloc(ElementDataSize*sizeof(int));
-    memcpy(section->connect->data, elements, ElementDataSize*sizeof(int));
+    section->connect->data = 0;
     strcpy(section->connect->name,"ElementConnectivity");
     strcpy(section->connect->data_type,"I4");
     section->connect->data_dim=1;
@@ -4765,8 +4778,11 @@ int cg_section_write(int file_number, int B, int Z, char const * SectionName, El
     section->connect->exponents=0;
     section->connect->convert=0;
 
-    /* save data in file */
     if (cgi_write_section(zone->id, section)) return CG_ERROR;
+    if (cgio_write_all_data(cg->cgio, section->connect->id, elements)) {
+        cg_io_error("cgio_write_all_data");
+        return CG_ERROR;
+    }
     return CG_OK;
 }
 
@@ -4798,13 +4814,8 @@ int cg_parent_data_write(int file_number, int B, int Z, int S, int const * paren
     parent = section->parent;
 
     num = section->range[1]-section->range[0]+1;
+    parent->data = 0;
     strcpy(parent->data_type, "I4");
-    parent->data = (void *)malloc(num*4*sizeof(int));
-    if (!parent->data) {
-        cgi_error("Error allocating parent->data");
-        return CG_ERROR;
-    }
-    memcpy(parent->data, parent_data, num*4*sizeof(int));
     strcpy(parent->name, "ParentData");
     parent->data_dim =2;
     parent->dim_vals[0]=num;
@@ -4819,7 +4830,11 @@ int cg_parent_data_write(int file_number, int B, int Z, int S, int const * paren
     parent->exponents=0;
     parent->convert=0;
 
-    if(cgi_write_array(section->id, section->parent)) return CG_ERROR;
+    if (cgi_write_array(section->id, section->parent)) return CG_ERROR;
+    if (cgio_write_all_data(cg->cgio, section->parent->id, parent_data)) {
+        cg_io_error("cgio_write_all_data");
+        return CG_ERROR;
+    }
     return CG_OK;
 }
 
@@ -4887,7 +4902,7 @@ int cg_grid_write(int file_number, int B, int Z, char const * zcoorname, int *G)
 
     index_dim = zone->index_dim;
     zcoor->rind_planes = (int *)malloc(index_dim*2*sizeof(int));
-    if (!zcoor->rind_planes) {
+    if (zcoor->rind_planes == NULL) {
         cgi_error("Error allocating zcoor->rind_plane.");
         return CG_ERROR;
     }
@@ -4982,7 +4997,7 @@ int cg_sol_write(int file_number, int B, int Z, char const * solname,
 
     index_dim = zone->index_dim;
     sol->rind_planes = (int *)malloc(index_dim*2*sizeof(int));
-    if (!sol->rind_planes) {
+    if (sol->rind_planes == NULL) {
         cgi_error("Error allocating sol->rind_plane.");
         return CG_ERROR;
     }
@@ -5495,191 +5510,9 @@ int cg_conn_write(int file_number, int B, int Z,  char const * connectname, Grid
 int cg_conn_write_short(int file_number, int B, int Z,  char const * connectname,
           GridLocation_t location, GridConnectivityType_t type, PointSetType_t ptset_type,
           int npnts, int const * pnts, char const * donorname, int *I) {
-#if 0
-    cgns_zone *zone;
-    cgns_zconn *zconn;
-    cgns_conn *conn;
-    int i, size_of_zone, length;
-    int PointListSize, cell_dim;
-    int index, index_dim;
-    double GL_id, C_id;
-
-     /* verify input */
-    if (cgi_check_strlen(connectname)) return CG_ERROR;
-    if (cgi_check_strlen(donorname)) return CG_ERROR;
-    if (type <0 || type >= NofValidGridConnectivityTypes) {
-        cgi_error("Invalid input:  GridConnectivityType=%d ?",type);
-        return CG_ERROR;
-    }
-    if (location != Vertex && location != CellCenter &&
-        location != FaceCenter && location != IFaceCenter &&
-        location != JFaceCenter && location != KFaceCenter) {
-        cgi_error("Invalid input:  GridLocation=%d ?",location);
-        return CG_ERROR;
-    }
-    if (type == Overset && location != Vertex && location != CellCenter) {
-        cgi_error("GridLocation must be Vertex or CellCenter for Overset");
-        return CG_ERROR;
-    }
-    if (ptset_type!=PointList && ptset_type!=PointRange) {
-        cgi_error("Invalid input:  ptset_type=%d ?",ptset_type);
-        return CG_ERROR;
-    }
-    if (!(ptset_type==PointRange && npnts==2) && !(ptset_type==PointList && npnts>0)) {
-        cgi_error("Invalid input:  npoint=%d, point set type=%s",
-               npnts, PointSetTypeName[ptset_type]);
-        return CG_ERROR;
-    }
-
-     /* get memory address of file */
-    cg = cgi_get_file(file_number);
-    if (cg == 0) return CG_ERROR;
-
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
-
-     /* get memory address of zone */
-    zone = cgi_get_zone(cg, B, Z);
-    if (zone==0) return CG_ERROR;
-
-    if ((location == IFaceCenter || location == JFaceCenter ||
-         location == KFaceCenter) && zone->type != Structured) {
-        cgi_error("GridLocation [IJK]FaceCenter only valid for Structured grids");
-        return CG_ERROR;
-    }
-
-     /* Allocate ZoneGridConnectivity data struct. if not already created */
-    if (zone->zconn == 0) {
-        zone->zconn = CGNS_NEW(cgns_zconn, 1);
-        zconn = zone->zconn;
-        strcpy(zconn->name,"ZoneGridConnectivity");
-
-     /* initialize new ZoneGridConnectivity data structure */
-        zconn->id = 0;
-        zconn->link= 0;
-        zconn->ndescr = 0;
-        zconn->n1to1 = 0;
-        zconn->nconns = 0;
-        zconn->nholes = 0;
-        zconn->nuser_data= 0;
-    } else zconn = zone->zconn;
-
-     /* IndexDimension & CellDimension */
-    index_dim = zone->index_dim;
-    cell_dim=cg->base[B-1].cell_dim;
-
-     /* verify input */
-    size_of_zone = 1;
-    for (i=0; i<index_dim; i++) size_of_zone*=zone->nijk[i];
-    if (npnts<0 || npnts>size_of_zone) {
-        cgi_error("Inconsistent number of points in point set");
-        return CG_ERROR;
-    }
-
-     /* Compute PointListSize */
-    if (ptset_type==PointRange) {
-        PointListSize = 1;
-        for (i=0; i<index_dim; i++) {
-            PointListSize *= (pnts[i+index_dim]-pnts[i]+1);
-        }
-    } else  PointListSize=npnts;
-
-     /* Overwrite a GridConnectivity_t Node: */
-    for (index=0; index<zconn->nconns; index++) {
-        if (strcmp(connectname, zconn->conn[index].name)==0) {
-
-             /* in CG_MODE_WRITE, children names must be unique */
-            if (cg->mode==CG_MODE_WRITE) {
-                cgi_error("Duplicate child name found: %s",connectname);
-                return CG_ERROR;
-            }
-
-             /* overwrite an existing GridConnectivity_t Node */
-             /* delete the existing GridConnectivity_t Node from file */
-            if (cgi_delete_node(zconn->id, zconn->conn[index].id))
-                return CG_ERROR;
-             /* save the old in-memory address to overwrite */
-            conn = &(zconn->conn[index]);
-            cgi_free_conn(conn);
-            break;
-        }
-    }
-     /* ... or add a GridConnectivity_t Node: */
-    if (index==zconn->nconns) {
-        if (zconn->nconns == 0) {
-            zconn->conn = CGNS_NEW(cgns_conn, zconn->nconns+1);
-        } else {
-            zconn->conn = CGNS_RENEW(cgns_conn, zconn->nconns+1, zconn->conn);
-        }
-        conn = &(zconn->conn[zconn->nconns]);
-        zconn->nconns++;
-    }
-    (*I) = index+1;
-
-     /* write conn info to internal memory */
-    strcpy(conn->name,connectname);
-    conn->type = type;
-    conn->location = location;
-    conn->ptset.id = 0;
-    conn->ptset.link = 0;
-    conn->ptset.type = ptset_type;
-    strcpy(conn->ptset.data_type,"I4");
-    conn->ptset.npts = npnts;
-    conn->ptset.size_of_patch = PointListSize;
-
-     /* ... initialize: */
-    conn->id=0;
-    conn->link=0;
-    conn->ndescr=0;
-    conn->ordinal=0;
-    conn->nuser_data=0;
-    conn->cprop=0;
-
-     /* ... donor: */
-    strcpy(conn->donor,donorname);
-    conn->interpolants = 0;
-    conn->dptset.id = 0;
-    conn->dptset.link = 0;
-    strcpy(conn->dptset.name,PointSetTypeName[PointSetTypeNull]);
-    conn->dptset.type = PointSetTypeNull;
-    strcpy(conn->dptset.data_type, "MT");
-    conn->dptset.npts = 0;
-    conn->dptset.size_of_patch = 0;
-
-     /* Create node ZoneGridConnectivity_t node, if not yet created */
-    if (zconn->id==0) {
-        if (cgi_new_node(zone->id, "ZoneGridConnectivity", "ZoneGridConnectivity_t",
-            &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
-    }
-     /* Create node GridConnectivity_t node */
-    length = strlen(conn->donor);
-    if (cgi_new_node(zconn->id, conn->name, "GridConnectivity_t", &conn->id,
-        "C1", 1, &length, conn->donor)) return CG_ERROR;
-
-     /* Create node GridConnectivityType_t */
-    length = strlen(GridConnectivityTypeName[conn->type]);
-    if (cgi_new_node(conn->id,"GridConnectivityType","GridConnectivityType_t",
-        &C_id, "C1", 1, &length, GridConnectivityTypeName[conn->type])) return CG_ERROR;
-
-     /* write GridLocation */
-    if (conn->location != Vertex) {
-        length = strlen(GridLocationName[conn->location]);
-        if (cgi_new_node(conn->id, "GridLocation", "GridLocation_t", &GL_id,
-            "C1", 1, &length, GridLocationName[conn->location])) return CG_ERROR;
-    }
-
-     /* Write Point Sets to disk */
-    if (npnts>0) {
-        char_33 PointSetName;
-        strcpy (PointSetName, PointSetTypeName[conn->ptset.type]);
-        if (cgi_write_ptset(conn->id, PointSetName, &conn->ptset, index_dim,
-            (void *)pnts)) return CG_ERROR;
-    }
-    return CG_OK;
-#else
     return cg_conn_write (file_number, B, Z,  connectname, location,
           type, ptset_type, npnts, pnts, donorname,
           ZoneTypeNull, PointSetTypeNull, DataTypeNull, 0, NULL, I);
-#endif
 }
 
 int cg_conn_average_write(int file_number, int B, int Z, int I,
@@ -5832,7 +5665,7 @@ int cg_conn_periodic_write(int file_number, int B, int Z, int I,
     for (n=0; n<cperio->narrays; n++) {
         strcpy(cperio->array[n].data_type, "R4");
         cperio->array[n].data = (void *)malloc(base->phys_dim*sizeof(float));
-        if (!cperio->array[n].data) {
+        if (cperio->array[n].data == NULL) {
             cgi_error("Error allocating cperio->array[n].data");
             return CG_ERROR;
         }
@@ -6424,7 +6257,7 @@ int cg_boco_normal_write(int file_number, int B, int Z, int BC, int const * Norm
 
         strcpy(normal->data_type, cgi_adf_datatype(NormalDataType));
         normal->data = (void *)malloc(npnts*phys_dim*size_of(normal->data_type));
-        if (!normal->data) {
+        if (normal->data == NULL) {
             cgi_error("Error allocating normal->data");
             return CG_ERROR;
         }
@@ -6773,7 +6606,7 @@ int cg_bc_area_write(int file_number, int B, int Z, int BC,
 
     strcpy(bcarea->array[0].data_type, "R4");
     bcarea->array[0].data = (void *)malloc(sizeof(float));
-    if (!bcarea->array[0].data) {
+    if (bcarea->array[0].data == NULL) {
         cgi_error("Error allocating bcarea->array[0].data");
         return CG_ERROR;
     }
@@ -6785,7 +6618,7 @@ int cg_bc_area_write(int file_number, int B, int Z, int BC,
 
     strcpy(bcarea->array[1].data_type, "C1");
     bcarea->array[1].data = (void *)malloc(32*sizeof(char));
-    if (!bcarea->array[1].data) {
+    if (bcarea->array[1].data == NULL) {
         cgi_error("Error allocating bcarea->array[1].data");
         return CG_ERROR;
     }
@@ -7172,7 +7005,7 @@ int cg_gravity_write(int file_number, int B, float const *gravity_vector) {
      /* Create DataArray_t GravityVector under gravity */
     strcpy(gravity->vector->data_type, "R4");
     gravity->vector->data = (void *)malloc(base->phys_dim*sizeof(float));
-    if (!gravity->vector->data) {
+    if (gravity->vector->data == NULL) {
         cgi_error("Error allocating gravity->vector->data");
         return CG_ERROR;
     }
@@ -7246,7 +7079,7 @@ int cg_axisym_write(int file_number, int B, float const *ref_point, float const 
     for (n=0; n<axisym->narrays; n++) {
         strcpy(axisym->array[n].data_type, "R4");
         axisym->array[n].data = (void *)malloc(base->phys_dim*sizeof(float));
-        if (!axisym->array[n].data) {
+        if (axisym->array[n].data == NULL) {
             cgi_error("Error allocating axisym->array[n].data");
             return CG_ERROR;
         }
@@ -7971,7 +7804,7 @@ int cg_exponents_write(DataType_t DataType, void const * exponents) {
      /* Save Data */
     strcpy(exponent->data_type, cgi_adf_datatype(DataType));
     exponent->data = (void *)malloc(5*size_of(exponent->data_type));
-    if (!exponent->data) {
+    if (exponent->data == NULL) {
         cgi_error("Error allocating exponent->data");
         return CG_ERROR;
     }
@@ -8069,7 +7902,7 @@ int cg_conversion_write(DataType_t DataType, void const * ConversionFactors) {
      /* Save data */
     strcpy(conversion->data_type, cgi_adf_datatype(DataType));
     conversion->data = (void *)malloc(2*size_of(conversion->data_type));
-    if (!conversion->data) {
+    if (conversion->data == NULL) {
         cgi_error("Error allocating conversion->data");
         return CG_ERROR;
     }
@@ -8336,7 +8169,7 @@ int cg_rotating_write(float const *rot_rate, float const *rot_center) {
     for (n=0; n<rotating->narrays; n++) {
         strcpy(rotating->array[n].data_type, "R4");
         rotating->array[n].data = (void *)malloc(base->phys_dim*sizeof(float));
-        if (!rotating->array[n].data) {
+        if (rotating->array[n].data == NULL) {
             cgi_error("Error allocating rotating->array[n].data");
             return CG_ERROR;
         }
@@ -8687,6 +8520,41 @@ int cg_coord_partial_write(int file_number, int B, int Z, DataType_t type,
     return CG_OK;
 }
 
+static int read_element_data(cgns_section *section) {
+    if (section->connect->data == 0) {
+        int ndim, dims[CGIO_MAX_DIMENSIONS];
+        void *data;
+        if (cgi_read_node(section->connect->id, section->connect->name,
+                section->connect->data_type, &ndim, dims,
+                &data, READ_DATA)) return 1;
+        if (ndim != 1 || dims[0] != section->connect->dim_vals[0]) {
+            free(data);
+            cgi_error("mismatch in element connectivity size");
+            return 1;
+        }
+        section->connect->data = data;
+    }
+    return 0;
+}
+
+static int read_parent_data(cgns_section *section) {
+    if (section->parent->data == 0) {
+        int ndim, dims[CGIO_MAX_DIMENSIONS];
+        void *data;
+        if (cgi_read_node(section->parent->id, section->parent->name,
+                section->parent->data_type, &ndim, dims,
+                &data, READ_DATA)) return 1;
+        if (ndim != 2 || dims[0] != section->parent->dim_vals[0] ||
+            dims[1] != section->parent->dim_vals[1]) {
+            free(data);
+            cgi_error("mismatch in parent data size");
+            return 1;
+        }
+        section->parent->data = data;
+    }
+    return 0;
+}
+
 int cg_section_partial_write(int file_number, int B, int Z,
 			     char const * SectionName, ElementType_t type,
 			     int start, int end, int nbndry,
@@ -8741,158 +8609,197 @@ int cg_section_partial_write(int file_number, int B, int Z,
             }
 
             /* get fill-in element type */
-            if (type == MIXED)
-                elemsize = 2;
-            else {
+            if (type < MIXED) {
                 if (cg_npe(type, &elemsize)) return CG_ERROR;
                 if (elemsize <= 0) {
                     cgi_error("Invalid element type");
                     return CG_ERROR;
                 }
             }
+            else
+                elemsize = 2;
+              
+            offset  = start < section->range[0] ?
+                          section->range[0] - start : 0;
+            oldsize = section->range[1] - section->range[0] + 1;
+            
+            /* can we just use the user's data ? */
 
-            oldelems = (int *)section->connect->data;
-            oldsize = section->connect->dim_vals[0];
-            newsize = ElementDataSize;
+            if (start >= section->range[0] && end <= section->range[1] &&
+                type < MIXED && section->connect->data == 0) {
+                int s_start, s_end, s_stride;
+                int m_start, m_end, m_stride, m_dim;
 
-            if (end < section->range[0]) {
-                newsize += oldsize;
-                num = section->range[0] - end - 1;
-                if (num > 0) newsize += (elemsize * num);
-            } else if (start > section->range[1]) {
-                newsize += oldsize;
-                num = start - section->range[1] - 1;
-                if (num > 0) newsize += (elemsize * num);
-            } else {
-                /* overlap */
-                if (start > section->range[0]) {
-                    size = cgi_element_data_size(type,
-                               start - section->range[0], oldelems);
-                    if (size < 0) return CG_ERROR;
-                    newsize += size;
-                }
-                if (end < section->range[1]) {
-                    num = end - section->range[0] + 1;
-                    offset = cgi_element_data_size(type, num, oldelems);
-                    if (offset < 0) return CG_ERROR;
-                    size = oldsize - offset;
-                    newsize += size;
+                size = cgi_element_data_size(type, end - start + 1, 0);
+                if (size < 0) return CG_ERROR;
+                s_start  = cgi_element_data_size(type,
+                               start - section->range[0], 0) + 1;
+                s_end    = cgi_element_data_size(type,
+                               end - section->range[0] + 1, 0);
+                s_stride = 1;
+                m_start  = 1;
+                m_end    = size;
+                m_dim    = size;
+                m_stride = 1;
+        
+                if (cgio_write_data(cg->cgio, section->connect->id,
+                        &s_start, &s_end, &s_stride, 1, &m_dim,
+                        &m_start, &m_end, &m_stride, elements)) {
+                    cg_io_error("cgio_write_data");
+                    return CG_ERROR;
                 }
             }
+            else {
 
-            /* create new element connectivity array */
+                /* got to do it in memory */
 
-            newelems = (int *) malloc (newsize * sizeof(int));
-            if (NULL == newelems) {
-                cgi_error("Error allocating new connectivity data");
-                return CG_ERROR;
-            }
-            n = 0;
-            if (start <= section->range[0]) {
-                memcpy(newelems, elements, ElementDataSize*sizeof(int));
-                n += ElementDataSize;
+                if (read_element_data(section)) return CG_ERROR;
+                oldelems = (int *)section->connect->data;
+                oldsize = section->connect->dim_vals[0];
+                newsize = ElementDataSize;
+
                 if (end < section->range[0]) {
+                    newsize += oldsize;
                     num = section->range[0] - end - 1;
+                    if (num > 0) newsize += (elemsize * num);
+                } else if (start > section->range[1]) {
+                    newsize += oldsize;
+                    num = start - section->range[1] - 1;
+                    if (num > 0) newsize += (elemsize * num);
+                } else {
+                    /* overlap */
+                    if (start > section->range[0]) {
+                        size = cgi_element_data_size(type,
+                                   start - section->range[0], oldelems);
+                        if (size < 0) return CG_ERROR;
+                        newsize += size;
+                    }
+                    if (end < section->range[1]) {
+                        num = end - section->range[0] + 1;
+                        offset = cgi_element_data_size(type, num, oldelems);
+                        if (offset < 0) return CG_ERROR;
+                        size = oldsize - offset;
+                        newsize += size;
+                    }
+                }
+
+                /* create new element connectivity array */
+
+                newelems = (int *) malloc (newsize * sizeof(int));
+                if (NULL == newelems) {
+                    cgi_error("Error allocating new connectivity data");
+                    return CG_ERROR;
+                }
+                n = 0;
+                if (start <= section->range[0]) {
+                    memcpy(newelems, elements, ElementDataSize*sizeof(int));
+                    n += ElementDataSize;
+                    if (end < section->range[0]) {
+                        num = section->range[0] - end - 1;
+                        while (num-- > 0) {
+                            if (type >= MIXED) {
+                                newelems[n++] = (type == MIXED ? (int)NODE : 1);
+                                newelems[n++] = 0;
+                            } else {
+                                for (i = 0; i < elemsize; i++)
+                                    newelems[n++] = 0;
+                            }
+                        }
+                        memcpy(&newelems[n], oldelems, oldsize*sizeof(int));
+                        n += oldsize;
+                    } else if (end < section->range[1]) {
+                        num = end - section->range[0] + 1;
+                        offset = cgi_element_data_size(type, num, oldelems);
+                        if (offset < 0) return CG_ERROR;
+                        size = oldsize - offset;
+                        memcpy(&newelems[n], &oldelems[offset], size*sizeof(int));
+                        n += size;
+                    }
+                } else if (start > section->range[1]) {
+                    memcpy(newelems, oldelems, oldsize*sizeof(int));
+                    n += oldsize;
+                    num = start - section->range[1] - 1;
                     while (num-- > 0) {
-                        if (type == MIXED) {
-                            newelems[n++] = (int)NODE;
+                        if (type >= MIXED) {
+                            newelems[n++] = (type == MIXED ? (int)NODE : 1);
                             newelems[n++] = 0;
                         } else {
                             for (i = 0; i < elemsize; i++)
                                 newelems[n++] = 0;
                         }
                     }
-                    memcpy(&newelems[n], oldelems, oldsize*sizeof(int));
-                    n += oldsize;
-                } else if (end < section->range[1]) {
-                    num = end - section->range[0] + 1;
-                    offset = cgi_element_data_size(type, num, oldelems);
-                    if (offset < 0) return CG_ERROR;
-                    size = oldsize - offset;
-                    memcpy(&newelems[n], &oldelems[offset], size*sizeof(int));
+                    memcpy(&newelems[n], elements, ElementDataSize*sizeof(int));
+                    n += ElementDataSize;
+                } else {
+                    num = start - section->range[0];
+                    size = cgi_element_data_size(type, num, oldelems);
+                    memcpy(newelems, oldelems, size*sizeof(int));
                     n += size;
-                }
-            } else if (start > section->range[1]) {
-                memcpy(newelems, oldelems, oldsize*sizeof(int));
-                n += oldsize;
-                num = start - section->range[1] - 1;
-                while (num-- > 0) {
-                    if (type == MIXED) {
-                        newelems[n++] = (int)NODE;
-                        newelems[n++] = 0;
-                    } else {
-                        for (i = 0; i < elemsize; i++)
-                            newelems[n++] = 0;
+                    memcpy(&newelems[n], elements, ElementDataSize*sizeof(int));
+                    n += ElementDataSize;
+                    if (end < section->range[1]) {
+                        num = end - section->range[0] + 1;
+                        offset = cgi_element_data_size(type, num, oldelems);
+                        if (offset < 0) return CG_ERROR;
+                        size = oldsize - offset;
+                        memcpy(&newelems[n], &oldelems[offset], size*sizeof(int));
+                        n += size;
                     }
                 }
-                memcpy(&newelems[n], elements, ElementDataSize*sizeof(int));
-                n += ElementDataSize;
-            } else {
-                num = start - section->range[0];
-                size = cgi_element_data_size(type, num, oldelems);
-                memcpy(newelems, oldelems, size*sizeof(int));
-                n += size;
-                memcpy(&newelems[n], elements, ElementDataSize*sizeof(int));
-                n += ElementDataSize;
-                if (end < section->range[1]) {
-                    num = end - section->range[0] + 1;
-                    offset = cgi_element_data_size(type, num, oldelems);
-                    if (offset < 0) return CG_ERROR;
-                    size = oldsize - offset;
-                    memcpy(&newelems[n], &oldelems[offset], size*sizeof(int));
-                    n += size;
+                if (n != newsize) {
+                    cgi_error("my counting is off !!!\n");
+                    return CG_ERROR;
                 }
-            }
-            if (n != newsize) {
-                cgi_error("my counting is off !!!\n");
-                return CG_ERROR;
-            }
 
-            free(section->connect->data);
-            section->connect->dim_vals[0] = newsize;
-            section->connect->data = newelems;
+                /* save these before updating for parent data */
+              
+                offset  = start < section->range[0] ?
+                          section->range[0] - start : 0;
+                oldsize = section->range[1] - section->range[0] + 1;
 
-            /* save for parent data */
+                free(section->connect->data);
+                section->connect->dim_vals[0] = newsize;
+                section->connect->data = newelems;
 
-            offset  = start < section->range[0] ?
-                      section->range[0] - start : 0;
-            oldsize = section->range[1] - section->range[0] + 1;
+                /* update ranges */
 
-            /* update ranges */
+                if (start < section->range[0]) section->range[0] = start;
+                if (end   > section->range[1]) section->range[1] = end;
 
-            if (start < section->range[0]) section->range[0] = start;
-            if (end   > section->range[1]) section->range[1] = end;
+                /* update ElementRange */
 
-            /* update ElementRange */
+                if (cgio_get_node_id(cg->cgio, section->id, "ElementRange", &id)) {
+                    cg_io_error("cgio_get_node_id");
+                    return CG_ERROR;
+                }
+                if (cgio_write_all_data(cg->cgio, id, section->range)) {
+                    cg_io_error("cgio_write_all_data");
+                    return CG_ERROR;
+                }
 
-            if (cgio_get_node_id(cg->cgio, section->id, "ElementRange", &id)) {
-                cg_io_error("cgio_get_node_id");
-                return CG_ERROR;
-            }
-            if (cgio_write_all_data(cg->cgio, id, section->range)) {
-                cg_io_error("cgio_write_all_data");
-                return CG_ERROR;
-            }
+                /* update ElementConnectivity */
 
-            /* update ElementConnectivity */
-
-            if (cgio_set_dimensions(cg->cgio, section->connect->id,
-                    section->connect->data_type, 1,
-                    section->connect->dim_vals)) {
-                cg_io_error("cgio_set_dimensions");
-                return CG_ERROR;
-            }
-            if (cgio_write_all_data(cg->cgio, section->connect->id, newelems)) {
-                cg_io_error("cgio_write_all_data");
-                return CG_ERROR;
+                if (cgio_set_dimensions(cg->cgio, section->connect->id,
+                        section->connect->data_type, 1,
+                        section->connect->dim_vals)) {
+                    cg_io_error("cgio_set_dimensions");
+                    return CG_ERROR;
+                }
+                if (cgio_write_all_data(cg->cgio, section->connect->id, newelems)) {
+                    cg_io_error("cgio_write_all_data");
+                    return CG_ERROR;
+                }
             }
 
             /* update the parent data array if it exists */
 
-            if (section->parent) {
-                int i, j;
+            newsize = section->range[1] - section->range[0] + 1;
+
+            if (section->parent && newsize != section->parent->dim_vals[0]) {
+                int j;
+
+                if (read_parent_data(section)) return CG_ERROR;
                 oldelems = (int *)section->parent->data;
-                newsize = section->range[1] - section->range[0] + 1;
                 newelems = (int *)malloc(4 * newsize * sizeof(int));
                 if (NULL == newelems) {
                     cgi_error("Error alocating new parent data");
@@ -8900,13 +8807,17 @@ int cg_section_partial_write(int file_number, int B, int Z,
                 }
                 for (n = 0; n < 4*newsize; n++)
                     newelems[n] = 0;
+                    
                 /* add previous data */
+                    
                 for (i = 0, num = 0; num < 4; num++) {
                     j = num * newsize + offset;
                     for (n = 0; n < oldsize; n++)
                         newelems[j++] = oldelems[i++];
                 }
+                    
                 /* overwrite with new range */
+                    
                 offset = start - section->range[0];
                 for (num = 0; num < 4; num++) {
                     j = num * newsize + offset;
@@ -8926,7 +8837,8 @@ int cg_section_partial_write(int file_number, int B, int Z,
                     cg_io_error("cgio_set_dimensions");
                     return CG_ERROR;
                 }
-                if (cgio_write_all_data(cg->cgio, section->parent->id, newelems)) {
+                if (cgio_write_all_data(cg->cgio, section->parent->id,
+                        newelems)) {
                     cg_io_error("cgio_write_all_data");
                     return CG_ERROR;
                 }
@@ -8935,7 +8847,9 @@ int cg_section_partial_write(int file_number, int B, int Z,
             return CG_OK;
         }
     }
+
      /* add a Elements_t Node: */
+
     if (zone->nsections == 0) {
         zone->section = CGNS_NEW(cgns_section, zone->nsections+1);
     } else {
@@ -8953,8 +8867,7 @@ int cg_section_partial_write(int file_number, int B, int Z,
     section->el_bound = nbndry;
 
     section->connect = CGNS_NEW(cgns_array, 1);
-    section->connect->data = (void *)malloc(ElementDataSize*sizeof(int));
-    memcpy(section->connect->data, elements, ElementDataSize*sizeof(int));
+    section->connect->data = 0;
     strcpy(section->connect->name,"ElementConnectivity");
     strcpy(section->connect->data_type,"I4");
     section->connect->data_dim=1;
@@ -8977,8 +8890,11 @@ int cg_section_partial_write(int file_number, int B, int Z,
     section->connect->exponents=0;
     section->connect->convert=0;
 
-    /* save data in file */
     if (cgi_write_section(zone->id, section)) return CG_ERROR;
+    if (cgio_write_all_data(cg->cgio, section->connect->id, elements)) {
+        cg_io_error("cgio_write_all_data");
+        return CG_ERROR;
+    }
     return CG_OK;
 }
 
@@ -9001,13 +8917,13 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
 
     /* check input range */
 
-    size = section->range[1] - section->range[0] + 1;
-    if (start < section->range[0] || end > section->range[1] ||
-        start > end) {
+    if (start < section->range[0] || end > section->range[1] || start > end) {
         cgi_error("Invalid element range for section '%s' parent data",
             section->name);
         return CG_ERROR;
     }
+
+    size   = section->range[1] - section->range[0] + 1;
     offset = start - section->range[0];
     parent = section->parent;
 
@@ -9019,18 +8935,48 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
             cgi_error("internal errror - invalid parent data size !!!");
             return CG_ERROR;
         }
+        
+        if (start >= section->range[0] && end <= section->range[1] &&
+            section->parent->data == 0) {
+            int s_start[2], s_end[2], s_stride[2];
+            int m_start[2], m_end[2], m_stride[2], m_dim[2];
 
-        data = (int *)parent->data;
-
-        for (i = 0, num = 0; num < 4; num++) {
-            j = num * size + offset;
-            for (n = start; n <= end; n++)
-                data[j++] = parent_data[i++];
+            s_start[0] = start - section->range[0] + 1;
+            s_end[0]   = end - section->range[0] + 1;
+            s_stride[0]= 1;
+            s_start[1] = 1;
+            s_end[1]   = 4;
+            s_stride[1]= 1;
+            m_start[0] = 1;
+            m_end[0]   = end - start + 1;
+            m_stride[0]= 1;
+            m_start[1] = 1;
+            m_end[1]   = 4;
+            m_stride[1]= 1;
+            m_dim[0]   = m_end[0];
+            m_dim[1]   = 4;
+        
+            if (cgio_write_data(cg->cgio, section->parent->id,
+                    s_start, s_end, s_stride, 2, m_dim,
+                    m_start, m_end, m_stride, parent_data)) {
+                cg_io_error("cgio_write_data");
+                return CG_ERROR;
+            }
         }
+        else {
+            if (read_parent_data(section)) return CG_ERROR;
+            data = (int *)parent->data;
 
-        if (cgio_write_all_data(cg->cgio, parent->id, data)) {
-            cg_io_error("cgio_write_all_data");
-            return CG_ERROR;
+            for (i = 0, num = 0; num < 4; num++) {
+                j = num * size + offset;
+                for (n = start; n <= end; n++)
+                    data[j++] = parent_data[i++];
+            }
+
+            if (cgio_write_all_data(cg->cgio, parent->id, data)) {
+                cg_io_error("cgio_write_all_data");
+                return CG_ERROR;
+            }
         }
 
         return CG_OK;
@@ -9038,24 +8984,11 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
 
     /* create the parent data */
 
-    data = (int *) malloc (4*size*sizeof(int));
-    if (NULL == data) {
-        cgi_error("Error allocating parent data");
-        return CG_ERROR;
-    }
-    for (n = 0; n < 4*size; n++)
-        data[n] = 0;
-    for (i = 0, num = 0; num < 4; num++) {
-        j = num * size + offset;
-        for (n = start; n <= end; n++)
-            data[j++] = parent_data[i++];
-    }
-
     section->parent = CGNS_NEW(cgns_array, 1);
     parent = section->parent;
     strcpy(parent->data_type, "I4");
     strcpy(parent->name, "ParentData");
-    parent->data = (void *)data;
+    parent->data = 0;
     parent->data_dim =2;
     parent->dim_vals[0]=size;
     parent->dim_vals[1]=4;
@@ -9069,8 +9002,28 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
     parent->exponents=0;
     parent->convert=0;
 
-    if(cgi_write_array(section->id, section->parent)) return CG_ERROR;
+    if (start != section->range[0] || end != section->range[1]) {
+        data = (int *) malloc (4*size*sizeof(int));
+        if (NULL == data) {
+            cgi_error("Error allocating parent data");
+            return CG_ERROR;
+        }
+        for (n = 0; n < 4*size; n++)
+            data[n] = 0;
+        for (i = 0, num = 0; num < 4; num++) {
+            j = num * size + offset;
+            for (n = start; n <= end; n++)
+                data[j++] = parent_data[i++];
+        }
+        parent->data = (void *)data;
+    }
 
+    if (cgi_write_array(section->id, section->parent)) return CG_ERROR;
+    if (parent->data == 0 &&
+        cgio_write_all_data(cg->cgio, section->parent->id, parent_data)) {
+        cg_io_error("cgio_write_all_data");
+        return CG_ERROR;
+    }
     return CG_OK;
 }
 
@@ -9092,31 +9045,84 @@ int cg_elements_partial_read(int file_number, int B, int Z, int S,
     /* check the requested element range against the stored element range,
     * and the validity of the requested range
     */
-    if(start > end || start < section->range[0] ||
-       end > section->range[1]) {
+    if(start > end || start < section->range[0] || end > section->range[1]) {
 	cgi_error("Error in requested element data range.");
         return CG_ERROR;
     }
-    data = (int *)section->connect->data;
+    
+    /* if the elements are fixed size, read directly into user memory */
+    if (section->connect->data == 0 && section->el_type < MIXED) {
+        int s_start, s_end, s_stride;
+        int m_start, m_end, m_stride, m_dim;
 
-    offset = cgi_element_data_size(section->el_type,
-                 start - section->range[0], data);
-    size = cgi_element_data_size(section->el_type,
-                 end - start + 1, &data[offset]);
-
-    memcpy(elements, &data[offset], size*sizeof(int));
+        size = cgi_element_data_size(section->el_type, end - start + 1, 0);
+        if (size < 0) return CG_ERROR;
+        s_start  = cgi_element_data_size(section->el_type,
+                       start - section->range[0], 0) + 1;
+        s_end    = cgi_element_data_size(section->el_type,
+                       end - section->range[0] + 1, 0);
+        s_stride = 1;
+        m_start  = 1;
+        m_end    = size;
+        m_dim    = size;
+        m_stride = 1;
+        
+        if (cgio_read_data(cg->cgio, section->connect->id,
+                &s_start, &s_end, &s_stride, 1, &m_dim,
+                &m_start, &m_end, &m_stride, elements)) {
+            cg_io_error("cgio_read_data");
+            return CG_ERROR;
+        }
+    }
+    else {
+        /* need to get the elements to compute locations */
+        if (read_element_data(section)) return CG_ERROR;
+        data = (int *)section->connect->data;
+        offset = cgi_element_data_size(section->el_type,
+                     start - section->range[0], data);
+        size = cgi_element_data_size(section->el_type,
+                     end - start + 1, &data[offset]);
+        memcpy(elements, &data[offset], size*sizeof(int));
+    }
 
     if (section->parent && parent_data) {
-        int i, j, n, nn;
-	data = (int *)section->parent->data;
-
         offset = start - section->range[0];
         size = section->range[1] - section->range[0] + 1;
+        if (section->connect->data == 0 && section->el_type < MIXED) {
+            int s_start[2], s_end[2], s_stride[2];
+            int m_start[2], m_end[2], m_stride[2], m_dim[2];
 
-        for (n = 0, j = 0; j < 4; j++) {
-            nn = j * size + offset;
-            for (i = start; i <= end; i++)
-                parent_data[n++] = data[nn++];
+            s_start[0] = start - section->range[0] + 1;
+            s_end[0]   = end - section->range[0] + 1;
+            s_stride[0]= 1;
+            s_start[1] = 1;
+            s_end[1]   = 4;
+            s_stride[1]= 1;
+            m_start[0] = 1;
+            m_end[0]   = end - start + 1;
+            m_stride[0]= 1;
+            m_start[1] = 1;
+            m_end[1]   = 4;
+            m_stride[1]= 1;
+            m_dim[0]   = m_end[0];
+            m_dim[1]   = 4;
+        
+            if (cgio_read_data(cg->cgio, section->parent->id,
+                    s_start, s_end, s_stride, 2, m_dim,
+                    m_start, m_end, m_stride, parent_data)) {
+                cg_io_error("cgio_read_data");
+                return CG_ERROR;
+            }
+        }
+        else {
+            int i, j, n, nn;
+            if (read_parent_data(section)) return CG_ERROR;
+            data = (int *)section->parent->data;
+            for (n = 0, j = 0; j < 4; j++) {
+                nn = j * size + offset;
+                for (i = start; i <= end; i++)
+                    parent_data[n++] = data[nn++];
+            }
         }
     }
     return CG_OK;
@@ -9141,7 +9147,14 @@ int cg_ElementPartialSize(int file_number, int B, int Z, int S,
         cgi_error("Invalid range for section '%s'", section->name);
         return CG_ERROR;
     }
+    if (section->el_type < MIXED) {
+        size = cgi_element_data_size(section->el_type, end - start + 1, 0);
+        if (size < 0) return CG_ERROR;
+        *ElementDataSize = size;
+        return CG_OK;
+    }
 
+    if (read_element_data(section)) return CG_ERROR;
     data = (int *)section->connect->data;
     offset = cgi_element_data_size(section->el_type,
                  start - section->range[0], data);
@@ -9470,58 +9483,95 @@ int cg_delete_node(char *node_name) {
         cgns_base *parent = (cgns_base *)posit->posit;
 
      /* Case 1: node_label = can have multiple occurence:  */
-        if (strcmp(node_label,"Zone_t")==0) CGNS_DELETE_SHIFT(nzones, zone)
-        else if (strcmp(node_label,"Family_t")==0) CGNS_DELETE_SHIFT(nfamilies, family)
-        else if (strcmp(node_label,"IntegralData_t")==0) CGNS_DELETE_SHIFT(nintegrals, integral)
-        else if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
+        if (strcmp(node_label,"Zone_t")==0)
+            CGNS_DELETE_SHIFT(nzones, zone, cgi_free_zone)
+        else if (strcmp(node_label,"Family_t")==0)
+            CGNS_DELETE_SHIFT(nfamilies, family, cgi_free_family)
+        else if (strcmp(node_label,"IntegralData_t")==0)
+            CGNS_DELETE_SHIFT(nintegrals, integral, cgi_free_integral)
+        else if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
 
      /* Case 2: node_label = can only occur once under parent: */
         else if (strcmp(node_name,"SimulationType")==0) {
             parent->type = SimulationTypeNull;
             parent->type_id = 0;
         }
-        else if (strcmp(node_label,"BaseIterativeData_t")==0) parent->biter=0;
-        else if (strcmp(node_name,"GlobalConvergenceHistory")==0) parent->converg=0;
-        else if (strcmp(node_name,"FlowEquationSet")==0) parent->equations=0;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
-        else if (strcmp(node_name,"ReferenceState")==0) parent->state=0;
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"Gravity")==0) parent->gravity=0;
-        else if (strcmp(node_name,"Axisymmetry")==0) parent->axisym=0;
-        else if (strcmp(node_name,"RotatingCoordinates")==0) parent->rotating=0;
+        else if (strcmp(node_label,"BaseIterativeData_t")==0)
+            CGNS_DELETE_CHILD(biter, cgi_free_biter)
+        else if (strcmp(node_name,"GlobalConvergenceHistory")==0)
+            CGNS_DELETE_CHILD(converg, cgi_free_converg)
+        else if (strcmp(node_name,"FlowEquationSet")==0)
+            CGNS_DELETE_CHILD(equations, cgi_free_equations)
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(node_name,"ReferenceState")==0)
+            CGNS_DELETE_CHILD(state, cgi_free_state)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"Gravity")==0)
+            CGNS_DELETE_CHILD(gravity, cgi_free_gravity)
+        else if (strcmp(node_name,"Axisymmetry")==0)
+            CGNS_DELETE_CHILD(axisym, cgi_free_axisym)
+        else if (strcmp(node_name,"RotatingCoordinates")==0)
+            CGNS_DELETE_CHILD(rotating, cgi_free_rotating)
 
 /* Children of Zone_t */
     } else if (strcmp(posit->label,"Zone_t")==0) {
         cgns_zone *parent = (cgns_zone *)posit->posit;
-        if (strcmp(node_label,"GridCoordinates_t")==0) CGNS_DELETE_SHIFT(nzcoor, zcoor)
-        else if (strcmp(node_label,"DiscreteData_t")==0) CGNS_DELETE_SHIFT(ndiscrete, discrete)
-        else if (strcmp(node_label,"Elements_t")==0) CGNS_DELETE_SHIFT(nsections, section)
-        else if (strcmp(node_label,"FlowSolution_t")==0) CGNS_DELETE_SHIFT(nsols, sol)
-        else if (strcmp(node_label,"RigidGridMotion_t")==0)CGNS_DELETE_SHIFT(nrmotions, rmotion)
-        else if (strcmp(node_label,"ArbitraryGridMotion_t")==0) CGNS_DELETE_SHIFT(namotions, amotion)
-        else if (strcmp(node_label,"IntegralData_t")==0) CGNS_DELETE_SHIFT(nintegrals, integral)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_name,"ZoneBC")==0) parent->zboco=0;
-        else if (strcmp(node_name,"Ordinal")==0) parent->ordinal=0;
-        else if (strcmp(node_name,"ZoneGridConnectivity")==0) parent->zconn=0;
-        else if (strcmp(node_label,"ZoneIterativeData_t")==0) parent->ziter=0;
-        else if (strcmp(node_name,"ReferenceState")==0) parent->state=0;
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"FamilyName")==0) parent->family_name[0]='\0';
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
-        else if (strcmp(node_name,"FlowEquationSet")==0) parent->equations=0;
-        else if (strcmp(node_name,"ZoneConvergenceHistory")==0) parent->converg=0;
-        else if (strcmp(node_name,"RotatingCoordinates")==0) parent->rotating=0;
+        if (strcmp(node_label,"GridCoordinates_t")==0)
+            CGNS_DELETE_SHIFT(nzcoor, zcoor, cgi_free_zcoor)
+        else if (strcmp(node_label,"DiscreteData_t")==0)
+            CGNS_DELETE_SHIFT(ndiscrete, discrete, cgi_free_discrete)
+        else if (strcmp(node_label,"Elements_t")==0)
+            CGNS_DELETE_SHIFT(nsections, section, cgi_free_section)
+        else if (strcmp(node_label,"FlowSolution_t")==0)
+            CGNS_DELETE_SHIFT(nsols, sol, cgi_free_sol)
+        else if (strcmp(node_label,"RigidGridMotion_t")==0)
+            CGNS_DELETE_SHIFT(nrmotions, rmotion, cgi_free_rmotion)
+        else if (strcmp(node_label,"ArbitraryGridMotion_t")==0)
+            CGNS_DELETE_SHIFT(namotions, amotion, cgi_free_amotion)
+        else if (strcmp(node_label,"IntegralData_t")==0)
+            CGNS_DELETE_SHIFT(nintegrals, integral, cgi_free_integral)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_name,"ZoneBC")==0)
+            CGNS_DELETE_CHILD(zboco, cgi_free_zboco)
+        else if (strcmp(node_name,"Ordinal")==0)
+            parent->ordinal=0;
+        else if (strcmp(node_name,"ZoneGridConnectivity")==0)
+            CGNS_DELETE_CHILD(zconn, cgi_free_zconn)
+        else if (strcmp(node_label,"ZoneIterativeData_t")==0)
+            CGNS_DELETE_CHILD(ziter, cgi_free_ziter)
+        else if (strcmp(node_name,"ReferenceState")==0)
+            CGNS_DELETE_CHILD(state, cgi_free_state)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"FamilyName")==0)
+            parent->family_name[0]='\0';
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(node_name,"FlowEquationSet")==0)
+            CGNS_DELETE_CHILD(equations, cgi_free_equations)
+        else if (strcmp(node_name,"ZoneConvergenceHistory")==0)
+            CGNS_DELETE_CHILD(converg, cgi_free_converg)
+        else if (strcmp(node_name,"RotatingCoordinates")==0)
+            CGNS_DELETE_CHILD(rotating, cgi_free_rotating)
      /* ZoneType can not be deleted */
 
 /* Children of GridCoordinates_t */
     } else if (strcmp(posit->label,"GridCoordinates_t")==0) {
         cgns_zcoor *parent = (cgns_zcoor *)posit->posit;
-        if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(ncoords, coord)
-        else if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
+        if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(ncoords, coord, cgi_free_array)
+        else if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
         else if (strcmp(node_name,"Rind")==0) {
             if (posit_base && posit_zone) {
                 index_dim = cg->base[posit_base-1].zone[posit_zone-1].index_dim;
@@ -9531,27 +9581,40 @@ int cg_delete_node(char *node_name) {
             }
             for (n=0; n<2*index_dim; n++) parent->rind_planes[n] = 0;
         }
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
 
 /* Children of DataArray_t */
     } else if (strcmp(posit->label,"DataArray_t")==0) {
         cgns_array *parent = (cgns_array *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalExponents")==0) parent->exponents=0;
-        else if (strcmp(node_name,"DataConversion")==0) parent->convert=0;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalExponents")==0)
+            CGNS_DELETE_CHILD(exponents, cgi_free_exponents)
+        else if (strcmp(node_name,"DataConversion")==0)
+            CGNS_DELETE_CHILD(convert, cgi_free_convert)
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
 
 /* Children of FlowSolution_t */
     } else if (strcmp(posit->label,"FlowSolution_t")==0) {
         cgns_sol *parent = (cgns_sol *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(nfields, field)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
-        else if (strcmp(node_name,"GridLocation")==0) parent->location=GridLocationNull;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(nfields, field, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(node_name,"GridLocation")==0)
+            parent->location=GridLocationNull;
         else if (strcmp(node_name,"Rind")==0) {
             if (posit_base && posit_zone) {
                 index_dim = cg->base[posit_base-1].zone[posit_zone-1].index_dim;
@@ -9565,105 +9628,183 @@ int cg_delete_node(char *node_name) {
 /* Children of ZoneGridConnectivity_t */
     } else if (strcmp(posit->label,"ZoneGridConnectivity_t")==0) {
         cgns_zconn *parent = (cgns_zconn *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"GridConnectivity1to1_t")==0) CGNS_DELETE_SHIFT(n1to1, one21)
-        else if (strcmp(node_label,"GridConnectivity_t")==0) CGNS_DELETE_SHIFT(nconns, conn)
-        else if (strcmp(node_label,"OversetHoles_t")==0) CGNS_DELETE_SHIFT(nholes, hole)
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"GridConnectivity1to1_t")==0)
+            CGNS_DELETE_SHIFT(n1to1, one21, cgi_free_1to1)
+        else if (strcmp(node_label,"GridConnectivity_t")==0)
+            CGNS_DELETE_SHIFT(nconns, conn, cgi_free_conn)
+        else if (strcmp(node_label,"OversetHoles_t")==0)
+            CGNS_DELETE_SHIFT(nholes, hole, cgi_free_hole)
 
 /* Children of OversetHoles_t */
     } else if (strcmp(posit->label,"OversetHoles_t")==0) {
         cgns_hole *parent = (cgns_hole *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_name,"GridLocation")==0) parent->location=GridLocationNull;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_name,"GridLocation")==0)
+            parent->location=GridLocationNull;
      /* IndexRange_t & IndexArray_t can't be deleted */
 
 /* Children of GridConnectivity_t */
     } else if (strcmp(posit->label,"GridConnectivity_t")==0) {
         cgns_conn *parent = (cgns_conn *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-/* test */  else if (strcmp(node_name,"InterpolantsDonor")==0) {
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_name,"InterpolantsDonor")==0) {
             if (parent->dptset.type==CellListDonor) {
-                cgi_error("Node '%s' under '%s' can not be deleted",node_name,posit->label);
+                cgi_error("Node '%s' under '%s' can not be deleted",
+                    node_name,posit->label);
                 return CG_ERROR;
             } else {
-                CGNS_DELETE_SHIFT(narrays, interpolants)
+                CGNS_DELETE_SHIFT(narrays, interpolants, cgi_free_array)
             }
         }
-        else if (strcmp(node_name,"GridLocation")==0) parent->location=GridLocationNull;
-        else if (strcmp(node_name,"Ordinal")==0) parent->ordinal=0;
-/* test */  else if (strcmp(node_name,"GridConnectivityType")==0) parent->type=GridConnectivityTypeNull;
-        else if (strcmp(node_name,"GridConnectivityProperty")==0) parent->cprop=0;
+        else if (strcmp(node_name,"GridLocation")==0)
+            parent->location=GridLocationNull;
+        else if (strcmp(node_name,"Ordinal")==0)
+            parent->ordinal=0;
+        else if (strcmp(node_name,"GridConnectivityType")==0)
+            parent->type=GridConnectivityTypeNull;
+        else if (strcmp(node_name,"GridConnectivityProperty")==0)
+            CGNS_DELETE_CHILD(cprop, cgi_free_cprop)
      /* IndexArray_t & IndexRange_t can't be deleted */
 
 /* Children of GridConnectivity1to1_t */
     } else if (strcmp(posit->label,"GridConnectivity1to1_t")==0) {
         cgns_1to1 *parent = (cgns_1to1 *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_name,"Ordinal")==0) parent->ordinal=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_name,"Ordinal")==0)
+            parent->ordinal=0;
+        else if (strcmp(node_name,"GridConnectivityProperty")==0)
+            CGNS_DELETE_CHILD(cprop, cgi_free_cprop)
      /* PointRange, PointRangeDonor, Transform can't be deleted */
 
 /* Children of ZoneBC_t */
     } else if (strcmp(posit->label,"ZoneBC_t")==0) {
         cgns_zboco *parent = (cgns_zboco *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"BC_t")==0) CGNS_DELETE_SHIFT(nbocos, boco)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
-        else if (strcmp(node_name,"ReferenceState")==0) parent->state=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"BC_t")==0)
+            CGNS_DELETE_SHIFT(nbocos, boco, cgi_free_boco)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(node_name,"ReferenceState")==0)
+            CGNS_DELETE_CHILD(state, cgi_free_state)
 
 /* Children of BC_t */
     } else if (strcmp(posit->label,"BC_t")==0) {
         cgns_boco *parent = (cgns_boco *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"BCDataSet_t")==0) CGNS_DELETE_SHIFT(ndataset, dataset)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
-        else if (strcmp(node_name,"GridLocation")==0) parent->location=GridLocationNull;
-        else if (strcmp(node_name,"InwardNormalIndex")==0) parent->Nindex=0;
-        else if (strcmp(node_name,"InwardNormalList")==0) parent->normal=0;
-        else if (strcmp(node_name,"ReferenceState")==0) parent->state=0;
-        else if (strcmp(node_name,"FamilyName")==0) parent->family_name[0]='\0';
-        else if (strcmp(node_name,"Ordinal")==0) parent->ordinal=0;
-        else if (strcmp(node_name,"BCProperty")==0) parent->bprop=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"BCDataSet_t")==0) {
+ #if 0
+            CGNS_DELETE_SHIFT(ndataset, dataset, cgi_free_dataset)
+ #else
+            for (n = 0; n < parent->ndataset &&
+                strcmp(parent->dataset[n].name, node_name); n++);
+            if (n == parent->ndataset) {
+                cgi_error("Error in cg_delete: Can't find node '%s'",node_name);
+                return 1;
+            }
+            if (parent->dataset[n].ptset == parent->ptset)
+                parent->dataset[n].ptset = 0;
+            cgi_free_dataset(&parent->dataset[n]);
+            for (m = n+1; m < parent->ndataset; m++)
+                parent->dataset[m-1] = parent->dataset[m];
+            if (--parent->ndataset == 0) {
+                free(parent->dataset);
+                parent->dataset = 0;
+            }
+ #endif
+        }
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(node_name,"GridLocation")==0)
+            parent->location=GridLocationNull;
+        else if (strcmp(node_name,"InwardNormalIndex")==0) {
+            if (parent->Nindex) free(parent->Nindex);
+            parent->Nindex=0;
+        }
+        else if (strcmp(node_name,"InwardNormalList")==0)
+            CGNS_DELETE_CHILD(normal, cgi_free_array)
+        else if (strcmp(node_name,"ReferenceState")==0)
+            CGNS_DELETE_CHILD(state, cgi_free_state)
+        else if (strcmp(node_name,"FamilyName")==0)
+            parent->family_name[0]='\0';
+        else if (strcmp(node_name,"Ordinal")==0)
+            parent->ordinal=0;
+        else if (strcmp(node_name,"BCProperty")==0)
+            CGNS_DELETE_CHILD(bprop, cgi_free_bprop)
      /* IndexRange_t PointRange & IndexArray_t PointList can't be deleted */
 
 /* Children of BCDataSet_t */
     } else if (strcmp(posit->label,"BCDataSet_t")==0) {
         cgns_dataset *parent = (cgns_dataset *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
-        else if (strcmp(node_name,"DirichletData")==0) parent->dirichlet=0;
-        else if (strcmp(node_name,"NeumannData")==0) parent->neumann=0;
-        else if (strcmp(node_name,"ReferenceState")==0) parent->state=0;
-	else if (strcmp(node_name,"GridLocation")==0) parent->location=GridLocationNull;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(node_name,"DirichletData")==0)
+            CGNS_DELETE_CHILD(dirichlet, cgi_free_bcdata)
+        else if (strcmp(node_name,"NeumannData")==0)
+            CGNS_DELETE_CHILD(neumann, cgi_free_bcdata)
+        else if (strcmp(node_name,"ReferenceState")==0)
+            CGNS_DELETE_CHILD(state, cgi_free_state)
+	else if (strcmp(node_name,"GridLocation")==0)
+	    parent->location=GridLocationNull;
 	/* IndexRange_t PointRange & IndexArray_t PointList can't be deleted */
 
 /* Children of BCData_t */
     } else if (strcmp(posit->label,"BCData_t")==0) {
         cgns_bcdata *parent = (cgns_bcdata *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
 
 /* Children of DiscreteData_t */
     } else if (strcmp(posit->label,"DiscreteData_t")==0) {
         cgns_discrete *parent = (cgns_discrete *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
-        else if (strcmp(node_name,"GridLocation")==0) parent->location=GridLocationNull;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(node_name,"GridLocation")==0)
+            parent->location=GridLocationNull;
         else if (strcmp(node_name,"Rind")==0) {
             if (posit_base && posit_zone) {
                 index_dim = cg->base[posit_base-1].zone[posit_zone-1].index_dim;
@@ -9677,29 +9818,57 @@ int cg_delete_node(char *node_name) {
 /* Children of FlowEquationSet_t */
     } else if (strcmp(posit->label,"FlowEquationSet_t")==0) {
         cgns_equations *parent = (cgns_equations *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
-        else if (strcmp(node_name,"GoverningEquations")==0) parent->governing=0;
-        else if (strcmp(node_name,"GasModel")==0) parent->gas=0;
-        else if (strcmp(node_name,"ViscosityModel")==0) parent->visc=0;
-        else if (strcmp(node_name,"ThermalRelaxationModel")==0) parent->relaxation=0;
-        else if (strcmp(node_name,"ThermalConductivityModel")==0) parent->conduct=0;
-        else if (strcmp(node_name,"ChemicalKineticsModel")==0) parent->chemkin=0;
-	else if (strcmp(node_name,"EMElectricFieldModel")==0) parent->elecfield=0;
-	else if (strcmp(node_name,"EMMagneticFieldModel")==0) parent->magnfield=0;
-	else if (strcmp(node_name,"EMConductivityModel")==0) parent->emconduct=0;
-        else if (strcmp(node_name,"TurbulenceModel")==0) parent->turbulence=0;
-        else if (strcmp(node_name,"TurbulenceClosure")==0) parent->closure=0;
-        else if (strcmp(node_name,"EquationDimension")==0) parent->equation_dim=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(node_name,"GoverningEquations")==0)
+            CGNS_DELETE_CHILD(governing, cgi_free_governing)
+        else if (strcmp(node_name,"GasModel")==0)
+            CGNS_DELETE_CHILD(gas, cgi_free_model)
+        else if (strcmp(node_name,"ViscosityModel")==0)
+            CGNS_DELETE_CHILD(visc, cgi_free_model)
+        else if (strcmp(node_name,"ThermalRelaxationModel")==0)
+            CGNS_DELETE_CHILD(relaxation, cgi_free_model)
+        else if (strcmp(node_name,"ThermalConductivityModel")==0)
+            CGNS_DELETE_CHILD(conduct, cgi_free_model)
+        else if (strcmp(node_name,"ChemicalKineticsModel")==0)
+            CGNS_DELETE_CHILD(chemkin, cgi_free_model)
+	else if (strcmp(node_name,"EMElectricFieldModel")==0)
+            CGNS_DELETE_CHILD(elecfield, cgi_free_model)
+	else if (strcmp(node_name,"EMMagneticFieldModel")==0)
+            CGNS_DELETE_CHILD(magnfield, cgi_free_model)
+	else if (strcmp(node_name,"EMConductivityModel")==0)
+            CGNS_DELETE_CHILD(emconduct, cgi_free_model)
+        else if (strcmp(node_name,"TurbulenceModel")==0) {
+            if (parent->turbulence) {
+                if (parent->turbulence->diffusion_model)
+                    free(parent->turbulence->diffusion_model);
+                cgi_free_model(parent->turbulence);
+                free(parent->turbulence);
+            }
+            parent->turbulence=0;
+        }
+        else if (strcmp(node_name,"TurbulenceClosure")==0)
+            CGNS_DELETE_CHILD(closure, cgi_free_model)
+        else if (strcmp(node_name,"EquationDimension")==0)
+            parent->equation_dim=0;
 
 /* Children of GoverningEquations_t */
     } else if (strcmp(posit->label,"GoverningEquations_t")==0) {
         cgns_governing *parent = (cgns_governing *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_name,"DiffusionModel")==0) parent->diffusion_model=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_name,"DiffusionModel")==0) {
+            if (parent->diffusion_model) free(parent->diffusion_model);
+            parent->diffusion_model=0;
+        }
 
 /* Children of xxxModel_t */
     } else if (strcmp(posit->label,"GasModel_t")==0 ||
@@ -9713,91 +9882,141 @@ int cg_delete_node(char *node_name) {
 	   strcmp(posit->label,"EMMagneticFieldModel_t")==0 ||
 	   strcmp(posit->label,"EMConductivityModel_t")==0) {
         cgns_model *parent = (cgns_model *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
-        else if (strcmp(posit->label,"TurbulenceModel_t")==0 && strcmp(node_name,"DiffusionModel")==0)
-        parent->diffusion_model=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(posit->label,"TurbulenceModel_t")==0 &&
+                 strcmp(node_name,"DiffusionModel")==0) {
+            if (parent->diffusion_model) free(parent->diffusion_model);
+            parent->diffusion_model=0;
+        }
 
 /* Children of ConvergenceHistory_t */
     } else if (strcmp(posit->label,"ConvergenceHistory_t")==0) {
         cgns_converg *parent = (cgns_converg *)posit->posit;
-        if (strcmp(node_name,"NormDefinitions")==0) parent->NormDefinitions=0;
-        else if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        if (strcmp(node_name,"NormDefinitions")==0)
+            CGNS_DELETE_CHILD(NormDefinitions, cgi_free_descr)
+        else if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
 
 /* Children of IntegralData_t */
     } else if (strcmp(posit->label,"IntegralData_t")==0) {
         cgns_integral *parent = (cgns_integral *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
 
 /* Children of ReferenceState_t */
     } else if (strcmp(posit->label,"ReferenceState_t")==0) {
         cgns_state *parent = (cgns_state *)posit->posit;
-        if (strcmp(node_name,"ReferenceStateDescription")==0) parent->StateDescription=0;
-        else if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        if (strcmp(node_name,"ReferenceStateDescription")==0)
+            CGNS_DELETE_CHILD(StateDescription, cgi_free_descr)
+        else if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
 
 /* Children of Family_t */
     } else if (strcmp(posit->label,"Family_t")==0) {
         cgns_family *parent = (cgns_family *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"GeometryReference_t")==0) CGNS_DELETE_SHIFT(ngeos, geo)
-        else if (strcmp(node_label,"FamilyBC_t")==0) CGNS_DELETE_SHIFT(nfambc, fambc)
-        else if (strcmp(node_name,"Ordinal")==0) parent->ordinal=0;
-	else if (strcmp(node_name,"RotatingCoordinates")==0) parent->rotating=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"GeometryReference_t")==0)
+            CGNS_DELETE_SHIFT(ngeos, geo, cgi_free_geo)
+        else if (strcmp(node_label,"FamilyBC_t")==0)
+            CGNS_DELETE_SHIFT(nfambc, fambc, cgi_free_fambc)
+        else if (strcmp(node_name,"Ordinal")==0)
+            parent->ordinal=0;
+	else if (strcmp(node_name,"RotatingCoordinates")==0)
+            CGNS_DELETE_CHILD(rotating, cgi_free_rotating)
+
 /* Children of FamilyBC_t */
     } else if (strcmp(posit->label,"FamilyBC_t")==0) {
         cgns_fambc *parent = (cgns_fambc *)posit->posit;
-	if (strcmp(node_label,"BCDataSet_t")==0) CGNS_DELETE_SHIFT(ndataset, dataset)
+	if (strcmp(node_label,"BCDataSet_t")==0)
+	    CGNS_DELETE_SHIFT(ndataset, dataset, cgi_free_dataset)
 
 /* Children of GeometryReference_t */
     } else if (strcmp(posit->label,"GeometryReference_t")==0) {
         cgns_geo *parent = (cgns_geo *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"GeometryEntity_t")==0) CGNS_DELETE_SHIFT(npart, part)
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"GeometryEntity_t")==0)
+            CGNS_DELETE_SHIFT(npart, part, cgi_free_part)
      /* GeometryFile and GeometryFormat can not be deleted */
 
 /* Children of Elements_t */
     } else if (strcmp(posit->label,"Elements_t")==0) {
         cgns_section *parent = (cgns_section *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_name,"ParentData")==0) parent->parent=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_name,"ParentData")==0)
+            CGNS_DELETE_CHILD(parent, cgi_free_array)
      /* ElementRange and ElementConnectivity can not be deleted */
 
 /* Children of RigidGridMotion_t */
     } else if (strcmp(posit->label,"RigidGridMotion_t")==0) {
         cgns_rmotion *parent = (cgns_rmotion *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
 
 /* Children of ArbitraryGridMotion_t */
     } else if (strcmp(posit->label,"ArbitraryGridMotion_t")==0) {
         cgns_amotion *parent = (cgns_amotion *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
-        else if (strcmp(node_name,"GridLocation")==0) parent->location=GridLocationNull;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(node_name,"GridLocation")==0)
+            parent->location=GridLocationNull;
         else if (strcmp(node_name,"Rind")==0) {
             if (posit_base && posit_zone) {
                 index_dim = cg->base[posit_base-1].zone[posit_zone-1].index_dim;
@@ -9811,104 +10030,154 @@ int cg_delete_node(char *node_name) {
 /* Children of BaseIterativeData_t */
     } else if (strcmp(posit->label,"BaseIterativeData_t")==0) {
         cgns_biter *parent = (cgns_biter *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
 
 /* Children of ZoneIterativeData_t */
     } else if (strcmp(posit->label,"ZoneIterativeData_t")==0) {
         cgns_ziter *parent = (cgns_ziter *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
 
 /* Children of UserDefinedData_t */
     } else if (strcmp(posit->label,"UserDefinedData_t")==0) {
         cgns_user_data *parent = (cgns_user_data *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-	else if (strcmp(node_name,"GridLocation")==0) parent->location=GridLocationNull;
-	else if (strcmp(node_name,"FamilyName")==0) parent->family_name[0]='\0';
-	else if (strcmp(node_name,"Ordinal")==0) parent->ordinal=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+	else if (strcmp(node_name,"GridLocation")==0)
+	    parent->location=GridLocationNull;
+	else if (strcmp(node_name,"FamilyName")==0)
+	    parent->family_name[0]='\0';
+	else if (strcmp(node_name,"Ordinal")==0)
+	    parent->ordinal=0;
 	/* IndexRange_t PointRange & IndexArray_t PointList can't be deleted */
 
 /* Children of Gravity_t */
     } else if (strcmp(posit->label,"Gravity_t")==0) {
         cgns_gravity *parent = (cgns_gravity *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
 
 /* Children of Axisymmetry_t */
     } else if (strcmp(posit->label,"Axisymmetry_t")==0) {
         cgns_axisym *parent = (cgns_axisym *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
 
 /* RotatingCoordinates_t */
     } else if (strcmp(posit->label,"RotatingCoordinates_t")==0) {
         cgns_rotating *parent = (cgns_rotating *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_label,"DataArray_t")==0) CGNS_DELETE_SHIFT(narrays, array)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
 
 /* BCProperty_t */
     } else if (strcmp(posit->label,"BCProperty_t")==0) {
         cgns_bprop *parent = (cgns_bprop *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_name,"WallFunction")==0) parent->bcwall = 0;
-        else if (strcmp(node_name,"Area")==0) parent->bcarea = 0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_name,"WallFunction")==0)
+            CGNS_DELETE_CHILD(bcwall, cgi_free_bcwall)
+        else if (strcmp(node_name,"Area")==0)
+            CGNS_DELETE_CHILD(bcarea, cgi_free_bcarea)
 
 /* WallFunction_t */
     } else if (strcmp(posit->label,"WallFunction_t")==0) {
         cgns_bcwall *parent = (cgns_bcwall *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
         /* node WallFunctionType can't be deleted */
 
 /* Area_t */
     } else if (strcmp(posit->label,"Area_t")==0) {
         cgns_bcarea *parent = (cgns_bcarea *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
         /* nodes AreaType, SurfaceArea and RegionName can't be deleted */
 
 /* GridConnectivityProperty_t */
     } else if (strcmp(posit->label,"GridConnectivityProperty_t")==0) {
         cgns_cprop *parent = (cgns_cprop *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_name,"Periodic")==0) parent->cperio=0;
-        else if (strcmp(node_name,"AverageInterface")==0) parent->caverage=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_name,"Periodic")==0)
+            CGNS_DELETE_CHILD(cperio, cgi_free_cperio)
+        else if (strcmp(node_name,"AverageInterface")==0)
+            CGNS_DELETE_CHILD(caverage, cgi_free_caverage)
 
 /* Periodic_t */
     } else if (strcmp(posit->label,"Periodic_t")==0) {
         cgns_cperio *parent = (cgns_cperio *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
-        else if (strcmp(node_name,"DataClass")==0) parent->data_class = DataClassNull;
-        else if (strcmp(node_name,"DimensionalUnits")==0) parent->units=0;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = DataClassNull;
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
         /* RotationCenter, RotationAngle and Translation can't be deleted */
 
 /* AverageInterface_t */
     } else if (strcmp(posit->label,"AverageInterface_t")==0) {
         cgns_caverage *parent = (cgns_caverage *)posit->posit;
-        if (strcmp(node_label,"Descriptor_t")==0) CGNS_DELETE_SHIFT(ndescr, descr)
-        else if (strcmp(node_label,"UserDefinedData_t")==0) CGNS_DELETE_SHIFT(nuser_data, user_data)
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
         /* AverageInterfaceType can't be deleted */
 
     } else {
