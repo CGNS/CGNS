@@ -1,0 +1,80 @@
+include ../make.defs
+
+COPTS  = $(CFLAGS) -I../common -I$(CGNSDIR)
+LDLIST = $(LDLIBS) $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
+
+#--------------------------------------------------
+
+ALL =	cgnscheck$(EXE) cgnsversion$(EXE)
+
+all : $(ALL)
+
+#--------------------------------------------------
+
+cgnscheck$(EXE) : cgnscheck.$(O) getargs.$(O) hash.$(O) cgnames.$(O) $(CGNSLIB)
+	$(CC) $(LDFLAGS) -o $@ cgnscheck.$(O) getargs.$(O) hash.$(O) \
+	cgnames.$(O) $(LDLIST)
+	$(STRIP) $@
+
+cgnscheck.$(O) : cgnscheck.c
+
+cgnscheck.c : $(CGNSDIR)/tools/cgnscheck.c
+	-$(RM) cgnscheck.c
+	cp $(CGNSDIR)/tools/cgnscheck.c cgnscheck.c
+
+#--------------------------------------------------
+
+cgnsversion$(EXE) : cgnsversion.$(O) getargs.$(O) $(CGNSLIB)
+	$(CC) $(LDFLAGS) -o $@ cgnsversion.$(O) getargs.$(O) $(LDLIST)
+	$(STRIP) $@
+
+cgnsversion.$(O) : cgnsversion.c
+
+cgnsversion.c : $(CGNSDIR)/tools/cgnsversion.c
+	-$(RM) cgnsversion.c
+	cp $(CGNSDIR)/tools/cgnsversion.c cgnsversion.c
+
+#--------------------------------------------------
+
+getargs.$(O) : ../common/getargs.c ../common/getargs.h
+	$(CC) $(COPTS) -o getargs.$(O) -c ../common/getargs.c
+
+hash.$(O) : ../common/hash.c ../common/hash.h
+	$(CC) $(COPTS) -o hash.$(O) -c ../common/hash.c
+
+cgnames.$(O) : ../common/cgnames.c ../common/cgnames.h
+	$(CC) $(COPTS) -o cgnames.$(O) -c ../common/cgnames.c
+
+install : install-dirs install-prog
+
+install-dirs :
+	@if [ ! -d $(EXE_INSTALL_DIR) ] ; then \
+	  echo "Making directory $(EXE_INSTALL_DIR)"; \
+	  mkdir -p $(EXE_INSTALL_DIR); \
+	  chmod 755 $(EXE_INSTALL_DIR); \
+	fi;
+
+install-prog : cgnscheck$(EXE) cgnsversion$(EXE)
+	@echo "installing cgnscheck$(EXE) to $(EXE_INSTALL_DIR)"
+	@$(INSTALL_PROG) cgnscheck$(EXE) $(EXE_INSTALL_DIR)
+	@echo "installing cgnsversion$(EXE) to $(EXE_INSTALL_DIR)"
+	@$(INSTALL_PROG) cgnsversion$(EXE) $(EXE_INSTALL_DIR)
+
+uninstall :
+	@echo "uninstalling cgnscheck$(EXE)"
+	@if [ -f $(EXE_INSTALL_DIR)/cgnscheck$(EXE) ] ; then \
+	  /bin/rm -f $(EXE_INSTALL_DIR)/cgnscheck$(EXE); \
+	fi;
+	@echo "uninstalling cgnsversion$(EXE)"
+	@if [ -f $(EXE_INSTALL_DIR)/cgnsversion$(EXE) ] ; then \
+	  /bin/rm -f $(EXE_INSTALL_DIR)/cgnsversion$(EXE); \
+	fi;
+
+#---------------------------------------------------------------
+
+.c.$(O) :
+	$(CC) $(COPTS) -c $<
+
+clean:
+	-$(RM) *.$(O) $(ALL) cgnscheck.c cgnsversion.c
+
