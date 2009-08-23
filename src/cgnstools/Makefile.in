@@ -19,12 +19,12 @@ clean :
 	done;
 
 distclean : clean
-	-$(RM) config.*
-	-$(RM) make.defs Makefile cgconfig
-	-$(RM) make.defs.bak Makefile.bak cgconfig.bak
-	@for d in cgnsview cgnscalc cgnsplot tools utilities calclib tkogl ; do \
-	  -$(RM) $$d/Makefile; \
-	done;
+	-@$(RM) config.*
+	-@$(RM) make.defs Makefile cgconfig
+	-@$(RM) make.defs.bak Makefile.bak cgconfig.bak
+	-@$(RM) calclib/Makefile cgnscalc/Makefile cgnsplot/Makefile
+	-@$(RM) cgnssh/Makefile cgnsview/Makefile tkogl/Makefile
+	-@$(RM) tools/Makefile utilities/Makefile
 
 cgnsview  : prog-cgnsview
 cgnscalc  : prog-cgnscalc
