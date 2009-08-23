@@ -1,0 +1,101 @@
+# makefile to build CGNS tools
+
+include make.defs
+
+# if OGL was not found, cgnsplot will not be included in the
+# default build, otherwise this target is the same as for all
+
+default : @PROGLIST@
+install : @INSTLIST@
+
+all : cgnsview cgnscalc cgnsplot tools utilities
+install-all : install-cgnsview install-cgnscalc install-cgnsplot \
+	      install-tools install-utilities
+
+clean :
+	@for d in cgnsview cgnscalc cgnsplot tools utilities calclib tkogl ; do \
+	  echo "----- $$d -----"; \
+	  cd $$d; $(MAKE) clean; cd ..; \
+	done;
+
+distclean : clean
+	-$(RM) config.*
+	-$(RM) make.defs Makefile cgconfig
+	-$(RM) make.defs.bak Makefile.bak cgconfig.bak
+	@for d in cgnsview cgnscalc cgnsplot tools utilities calclib tkogl ; do \
+	  -$(RM) $$d/Makefile; \
+	done;
+
+cgnsview  : prog-cgnsview
+cgnscalc  : prog-cgnscalc
+cgnsplot  : prog-cgnsplot
+tools	  : prog-tools
+utilities : prog-utilities
+
+uninstall :
+	@for d in cgnsview cgnscalc cgnsplot tools utilities ; do \
+	  echo "----- $$d -----"; \
+	  cd $$d; $(MAKE) uninstall; cd ..; \
+	done;
+	-@if [ -d $(WSH_INSTALL_DIR) ] ; then \
+	  rmdir $(WSH_INSTALL_DIR); \
+	fi;
+	-@if [ -d $(EXE_INSTALL_DIR) -a \
+	      ! $(EXE_INSTALL_DIR) = $(BIN_INSTALL_DIR) ] ; then \
+	  rmdir $(EXE_INSTALL_DIR); \
+	fi;
+	-@if [ -d $(LIB_INSTALL_DIR)/help ] ; then \
+	  rmdir $(LIB_INSTALL_DIR)/help; \
+	fi;
+	-@if [ -d $(LIB_INSTALL_DIR) ] ; then \
+	  rmdir $(LIB_INSTALL_DIR); \
+	fi;
+
+prog-cgnsview :
+	@echo "----- cgnsview -----"
+	@cd cgnsview && $(MAKE)
+
+prog-cgnscalc : lib-calclib
+	@echo "----- cgnscalc -----"
+	@cd cgnscalc && $(MAKE)
+
+prog-cgnsplot : lib-tkogl
+	@echo "----- cgnsplot -----"
+	@cd cgnsplot && $(MAKE)
+
+prog-tools :
+	@echo "----- tools -----"
+	@cd tools && $(MAKE)
+
+prog-utilities : lib-calclib
+	@echo "----- utilities -----"
+	@cd utilities && $(MAKE)
+
+lib-calclib :
+	@echo "----- calclib -----"
+	@cd calclib && $(MAKE)
+
+lib-tkogl :
+	@echo "----- tkogl -----"
+	@cd tkogl && $(MAKE)
+
+install-cgnsview :
+	@echo "----- cgnsview -----"
+	@cd cgnsview && $(MAKE) install
+
+install-cgnscalc : lib-calclib
+	@echo "----- cgnscalc -----"
+	@cd cgnscalc && $(MAKE) install
+
+install-cgnsplot : lib-tkogl
+	@echo "----- cgnsplot -----"
+	@cd cgnsplot && $(MAKE) install
+
+install-tools :
+	@echo "----- tools -----"
+	@cd tools && $(MAKE) install
+
+install-utilities : lib-calclib
+	@echo "----- utilities -----"
+	@cd utilities && $(MAKE) install
+
