@@ -2162,7 +2162,7 @@ proc set_variable {w n} {
 #---------- read cgns file
 
 set FileList {
-  {{CGNS Files} {.cgns .cgn .adf}}
+  {{CGNS Files} {.cgns .cga .cgh .cgx}}
   {{All Files} {*}}
 }
 
@@ -2201,15 +2201,11 @@ proc load_cgns {{filename ""}} {
   wm title . "CGNSplot : [file tail $filename]"
   set ProgData(cgnsfile) $filename
 }
-
-if {[info commands etLoadIcon] != ""} {
-  wm withdraw .
-  update idletasks
-  if [catch {etLoadIcon cgnsplot}] {
-    catch {etLoadIcon cgns}
-  }
-  wm deiconify .
+catch {
+  config_icon . [list cgnsplot cgns] \
+    [list $cmd_dir $cmd_dir/images $cmd_dir/../common]
 }
+wm deiconify .
 
 if {$argc} {
   set file [lindex $argv [expr $argc - 1]]
