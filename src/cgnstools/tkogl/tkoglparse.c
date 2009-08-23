@@ -808,7 +808,7 @@ InitHashTables ()
    for (i = 0; i < sizeof (enumTable)/sizeof(parseItem); i++) {
       enumEntry = Tcl_CreateHashEntry (&enumHashTable, 
 				       enumTable [i].name, &newEntry);
-      Tcl_SetHashValue (enumEntry, (ClientData) (enumTable [i].code));
+      Tcl_SetHashValue (enumEntry, (ClientData)((size_t)(enumTable [i].code)));
       assert (newEntry);
    }	       
 
@@ -967,7 +967,7 @@ SearchEnumVal (interp, name, val)
       Tcl_AppendResult (interp, "Not a valid enum:", name, (char*) NULL);
       return TCL_ERROR;
    }
-   *val = (GLenum) (Tcl_GetHashValue (entry));
+   *val = (GLenum)((size_t)(Tcl_GetHashValue (entry)));
    return TCL_OK;
 }
 
@@ -982,7 +982,7 @@ SearchEnumName (interp, val, name)
    char buf [20];
    entry = Tcl_FirstHashEntry (&enumHashTable, &search);
    while (entry != NULL) {
-      if ((GLenum) (Tcl_GetHashValue (entry)) == val) {
+      if ((GLenum)((size_t)(Tcl_GetHashValue (entry))) == val) {
 	 *name = Tcl_GetHashKey (&enumHashTable, entry);
 	 return TCL_OK;
       }

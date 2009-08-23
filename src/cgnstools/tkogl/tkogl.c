@@ -22,6 +22,10 @@
 #include "printstr.h"
 #include "feedback.h"
 
+#ifndef CONST
+# define CONST
+#endif
+
 /*
  * A data structure of the following type is kept for each glxwin
  * widget managed by this file:
@@ -265,7 +269,8 @@ EXPORT(int,Tkogl_Init)(Tcl_Interp* interp)
 
     /*** Create Tkogl main tcl commands ***/
 
-    Tcl_CreateCommand(interp, "OGLwin", OGLwinCmd, (ClientData)topLevel, NULL);
+    Tcl_CreateCommand(interp, "OGLwin", (Tcl_CmdProc *)OGLwinCmd,
+        (ClientData)topLevel, (Tcl_CmdDeleteProc *)0);
 
     /*** Init standard extensions ***/
     if (RegisterTkOGLExtension (interp, "nurbssurface", NurbsSurface)!= TCL_OK)
@@ -508,8 +513,9 @@ OGLwinCmd(clientData, interp, argc, argv)
 			  OGLwinEventProc,
 			  (ClientData) glxwinPtr);
 
-    Tcl_CreateCommand(interp, Tk_PathName(glxwinPtr->tkwin), OGLwinWidgetCmd,
-		      (ClientData) glxwinPtr, NULL);
+    Tcl_CreateCommand(interp, Tk_PathName(glxwinPtr->tkwin),
+        (Tcl_CmdProc *)OGLwinWidgetCmd, (ClientData) glxwinPtr,
+        (Tcl_CmdDeleteProc *)0);
 
 
     if (OGLwinConfigure(interp, glxwinPtr, argc-2, argv+2, 0) != TCL_OK) {
@@ -600,7 +606,7 @@ OGLwinCmd(clientData, interp, argc, argv)
     if (glxwinPtr->context != NULL) {
         Tcl_CmdInfo info;
         if (!Tcl_GetCommandInfo (interp, glxwinPtr->context, &info) ||
-	        info.proc != OGLwinWidgetCmd) {
+	        info.proc != (Tcl_CmdProc *)OGLwinWidgetCmd) {
 	        Tcl_AppendResult (interp, "Not a gl window: ", glxwinPtr->context,
 			    (char*) NULL);	  
     	    Tk_DestroyWindow(glxwinPtr->tkwin);
@@ -1148,7 +1154,7 @@ OGLwinConfigure(interp, glxwinPtr, argc, argv, flags)
 					 * Tk_ConfigureWidget. */
 {
     if (Tk_ConfigureWidget(interp, glxwinPtr->tkwin, configSpecs,
-	    argc, argv, (char *) glxwinPtr, flags) != TCL_OK) {
+	    argc, (CONST char **)argv, (char *) glxwinPtr, flags) != TCL_OK) {
 	return TCL_ERROR;
     }
 
