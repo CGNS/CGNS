@@ -1,11 +1,14 @@
 #include <sys/types.h>
-#if !defined(_WIN32) || defined(__NUTC__)
-#include <sys/times.h>
-#endif
 #include <sys/stat.h>
 #include <time.h>
 #ifndef CLK_TCK
 # define CLK_TCK CLOCKS_PER_SEC
+#endif
+
+/* keep the old code in here just in case */
+#if 0
+#if !defined(_WIN32) || defined(__NUTC__)
+#include <sys/times.h>
 #endif
 
 double elapsed_time (void)
@@ -23,6 +26,12 @@ double elapsed_time (void)
     return (usrtime + systime);
 #endif
 }
+#else
+double elapsed_time (void)
+{
+    return (double)clock() / (double)CLK_TCK;
+}
+#endif
 
 double file_size (char *fname)
 {
