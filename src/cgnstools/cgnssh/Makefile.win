@@ -1,0 +1,30 @@
+include ..\make.win
+
+CFLAGS = $(COPTS) -I..\common -I$(CGNSDIR) -I$(ADFINC)
+
+#--------------------------------------------------
+
+all : cgnssh.exe
+
+#---------------------------------------------------------------
+
+cgnssh.exe : cgnssh.obj cgnstcl.obj cgnames.obj
+	$(LINK) $(LFLAGS) /subsystem:console \
+	-out:$@ cgnssh.obj cgnstcl.obj cgnames.obj \
+	$(CGNSLIB) $(CLIBS) $(HDF5LIBS) $(TCLLIB)
+
+cgnssh.obj : cgnssh.c
+	$(CC) $(CFLAGS) $(TCLINC) -c cgnssh.c
+
+cgnstcl.obj : cgnstcl.c
+	$(CC) $(CFLAGS) $(TCLINC) -c cgnstcl.c
+
+cgnames.obj : ..\common\cgnames.c
+	$(CC) $(CFLAGS) -Focgnames.obj -c ..\common\cgnames.c
+
+clean:
+	-$(RM) *.obj
+	-$(RM) *.pdb
+	-$(RM) *.ilk
+	-$(RM) *.exe
+

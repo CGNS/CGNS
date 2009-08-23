@@ -1,0 +1,29 @@
+
+include ../make.defs
+
+COPTS  = $(CFLAGS) -I../common -I$(CGNSDIR) -I$(ADFINC) $(TKINCS)
+LDLIST = $(LDLIBS) $(TKLIBS) $(X11LIBS) $(CLIBS)
+
+#--------------------------------------------------
+
+all : cgnssh$(EXE)
+
+#---------------------------------------------------------------
+
+cgnssh$(EXE) : cgnssh.$(O) cgnstcl.$(O) cgnames.$(O)
+	$(CC) $(LDFLAGS) -o $@ cgnssh.$(O) cgnstcl.$(O) cgnames.$(O) \
+	$(CGNSLIB) $(HDF5LIBS) $(LDLIST)
+	$(STRIP) $@
+
+cgnssh.$(O)  : cgnssh.c
+cgnstcl.$(O) : cgnstcl.c
+
+cgnames.$(O) : ../common/cgnames.c ../common/cgnames.h
+	$(CC) $(COPTS) -o cgnames.$(O) -c ../common/cgnames.c
+
+.c.$(O) :
+	$(CC) $(COPTS) -c $<
+
+clean:
+	-$(RM) *.$(O) cgnssh$(EXE)
+
