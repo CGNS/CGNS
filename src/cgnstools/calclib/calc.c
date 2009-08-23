@@ -8,6 +8,10 @@
 #include "calc.h"
 #include "vecerr.h"
 
+#if CGNS_VERSION < 3000
+# define Celsius Celcius
+#endif
+
 #ifndef CG_MODE_READ
 # define CG_MODE_READ   MODE_READ
 # define CG_MODE_MODIFY MODE_MODIFY
@@ -15,7 +19,7 @@
 
 #ifdef READ_NODE
 #include "cgns_header.h"
-#include "ADF.h"
+#include "cgns_io.h"
 #endif
 
 int cgnsFile = 0;
@@ -73,10 +77,10 @@ typedef struct {
 } UnitSpec;
 
 static UnitSpec unitspec[] = {
-    {"cel", 3, Celcius},
+    {"cel", 3, Celsius},
     {"cen", 1, Centimeter},
     {"cm",  1, Centimeter},
-    {"c",   3, Celcius},
+    {"c",   3, Celsius},
     {"d",   4, Degree},
     {"fa",  3, Fahrenheit},
     {"fo",  1, Foot},
@@ -118,15 +122,16 @@ static VECDATA *read_node (
 char *nodename;
 #endif
 {
-    int errcode, n, np, bytes, dt;
-    int ndim, dims[ADF_MAX_DIMENSIONS];
+    cgns_file *cgfile;
+    int n, np, bytes, dt, cgio;
+    int ndim, dims[CGIO_MAX_DIMENSIONS];
     char *values;
-    char type[ADF_DATA_TYPE_LENGTH+1];
-    char errmsg[ADF_MAX_ERROR_STR_LENGTH+1];
+    char type[CGIO_MAX_DATATYPE_LENGTH+1];
+    char errmsg[CGIO_MAX_ERROR_LENGTH+1];
     double rootid, nodeid;
     VECDATA *vd;
 
-    static struct ADFdataTypes {
+    static struct dataTypes {
         char *name;
         int bytes;
     } data_types[6] = {
@@ -140,25 +145,22 @@ char *nodename;
 
     /* get node ID for node */
 
-#if CGNS_VERSION > 2500
-    cg_root_id (cgnsFile, &rootid);
-#else
-    rootid = cg->rootid;
-#endif
-    ADF_Get_Node_ID (rootid, nodename, &nodeid, &errcode);
-    if (errcode > 0) {
-        ADF_Error_Message (errcode, errmsg);
+    cgfile = cgi_get_file (cgnsFile);
+    cgio = cgfile->cgio;
+    rootid = cgfile->rootid;
+
+    if (cgio_get_node_id (cgio, rootid, nodename, &nodeid)) {
+        cgio_error_message (CGIO_MAX_ERROR_LENGTH, errmsg);
         cgnsCalcFatal (errmsg);
     }
 
     /* get the type of data */
 
-    ADF_Get_Data_Type (nodeid, type, &errcode);
-    if (errcode > 0) {
-        ADF_Error_Message (errcode, errmsg);
+    if (cgio_get_data_type (cgio, nodeid, type)) {
+        cgio_error_message (CGIO_MAX_ERROR_LENGTH, errmsg);
         cgnsCalcFatal (errmsg);
     }
-    for (n = 0; n < ADF_DATA_TYPE_LENGTH && type[n]; n++) {
+    for (n = 0; n < CGIO_MAX_DATATYPE_LENGTH && type[n]; n++) {
         if (islower (type[n]))
             type[n] = toupper (type[n]);
     }
@@ -175,18 +177,17 @@ char *nodename;
 
     /* get data dimensions */
 
-    ADF_Get_Number_of_Dimensions (nodeid, &ndim, &errcode);
-    if (errcode > 0) {
-        ADF_Error_Message (errcode, errmsg);
+    if (cgio_get_dimensions (cgio, nodeid, &ndim, dims)) {
+        cgio_error_message (CGIO_MAX_ERROR_LENGTH, errmsg);
         cgnsCalcFatal (errmsg);
     }
-    ADF_Get_Dimension_Values (nodeid, dims, &errcode);
-    if (errcode > 0) {
-        ADF_Error_Message (errcode, errmsg);
-        cgnsCalcFatal (errmsg);
+    np = 0;
+    if (ndim > 0) {
+        for (np = 1, n = 0; n < ndim; n++)
+            np *= dims[n];
     }
-    for (np = 1, n = 0; n < ndim; n++)
-        np *= dims[n];
+    if (np == 0)
+        cgnsCalcFatal ("no data for node");
 
     /* read the data */
 
@@ -194,9 +195,8 @@ char *nodename;
     if (NULL == values)
         cgnsCalcFatal ("malloc failed for node data");
 
-    ADF_Read_All_Data (nodeid, values, &errcode);
-    if (errcode > 0) {
-        ADF_Error_Message (errcode, errmsg);
+    if (cgio_read_all_data (cgio, nodeid, values)) {
+        cgio_error_message (CGIO_MAX_ERROR_LENGTH, errmsg);
         cgnsCalcFatal (errmsg);
     }
 
