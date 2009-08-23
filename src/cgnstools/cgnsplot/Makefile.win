@@ -1,0 +1,80 @@
+include ..\make.win
+
+CFLAGS = $(COPTS) -I..\common -I$(CGNSDIR) $(TCLINC)
+
+#--------------------------------------------------
+
+all : plotwish.exe
+dll : cgnstcl.dll
+
+install : install-prog install-help
+
+install-prog : plotwish.exe $(INSTALLDIR)
+	-$(INSTALL) plotwish.exe $(INSTALLDIR)
+	-$(INSTALL) cgnsplot.tcl $(INSTALLDIR)
+	-$(INSTALL) cgnsplot.bat $(INSTALLDIR)
+	-$(INSTALL) *.ico $(INSTALLDIR)
+
+install-help : $(INSTALLDIR)\help\cgnsplot\images
+	-$(INSTALL) help\*.html $(INSTALLDIR)\help\cgnsplot
+	-$(INSTALL) help\images\*.* $(INSTALLDIR)\help\cgnsplot\images
+
+$(INSTALLDIR) :
+	-mkdir $(INSTALLDIR)
+
+$(INSTALLDIR)\help\cgnsplot\images : $(INSTALLDIR)\help\cgnsplot
+	-mkdir $(INSTALLDIR)\help\cgnsplot\images
+
+$(INSTALLDIR)\help\cgnsplot : $(INSTALLDIR)\help
+	-mkdir $(INSTALLDIR)\help\cgnsplot
+
+$(INSTALLDIR)\help :
+	-mkdir $(INSTALLDIR)\help
+
+#--------------------------------------------------
+
+plotwish.exe : winmain.obj cgnstcl.obj hash.obj cgnames.obj
+	$(LINK) $(LFLAGS) /nodefaultlib /subsystem:windows \
+	-out:$@ winmain.obj cgnstcl.obj hash.obj cgnames.obj \
+	$(CGNSLIB) $(BUILDLIBS) $(CLIBS) $(TKOGLLIB) $(TCLLIB) $(TKLIB) \
+	$(guilibs) $(ogllibs)
+
+winmain.obj : winmain.c
+cgnstcl.obj : cgnstcl.c
+	$(CC) $(CFLAGS) $(PLOTOPTS) -c cgnstcl.c
+
+#--------------------------------------------------
+
+cgnstcl.dll : cgnstcl-dll.obj hash.obj cgnames.obj $(CGNSLIB)
+	$(LINK) -dll -out:cgnstcl.dll cgnstcl-dll.obj \
+	hash.obj cgnames.obj $(CGNSLIB) $(CLIBS) $(TCLLIB) $(TKLIB) \
+	$(dlllibs) $(ogllibs)
+
+cgnstcl-dll.obj : cgnstcl.c
+	$(CC) $(CFLAGS) $(PLOTOPTS) -DBUILD_DLL -Fo$@ -c cgnstcl.c
+
+#--------------------------------------------------
+
+hash.obj : ..\common\hash.c ..\common\hash.h
+	$(CC) $(CFLAGS) -Fohash.obj -c ..\common\hash.c
+
+cgnames.obj : ..\common\cgnames.c ..\common\cgnames.h
+	$(CC) $(CFLAGS) -Focgnames.obj -c ..\common\cgnames.c
+
+#--------------------------------------------------
+
+.c.obj :
+	$(CC) $(CFLAGS) -Fo$@ -c $<
+
+.obj.exe :
+	$(LINK) $(LFLAGS) /out:$@ $< $(CGNSLIB)
+
+clean:
+	-$(RM) *.obj
+	-$(RM) *.lib
+	-$(RM) *.exp
+	-$(RM) *.exe
+	-$(RM) *.pdb
+	-$(RM) *.ilk
+	-$(RM) *.dll
+
