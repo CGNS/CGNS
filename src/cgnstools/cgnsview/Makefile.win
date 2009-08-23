@@ -1,0 +1,78 @@
+include ..\make.win
+
+CFLAGS = $(COPTS) -I..\common -I$(CGNSDIR)
+
+#--------------------------------------------------
+
+all : adfwish.exe
+dll : adftcl.dll
+
+#--------------------------------------------------
+
+adfwish.exe : winmain.obj adftcl.obj
+	$(LINK) $(LFLAGS) /nodefaultlib /subsystem:windows \
+	-out:$@ winmain.obj adftcl.obj \
+	$(CGNSLIB) $(CLIBS) $(BUILDLIBS) $(TCLLIB) $(TKLIB) $(guilibs)
+
+winmain.obj : winmain.c
+	$(CC) $(CFLAGS) $(TCLINC) -c winmain.c
+
+adftcl.obj : adftcl.c
+	$(CC) $(CFLAGS) $(TCLINC) -c adftcl.c
+
+#--------------------------------------------------
+
+adftcl.dll : adftcl-dll.obj $(CGNSLIB)
+	$(LINK) -dll -out:adftcl.dll adftcl-dll.obj \
+	$(CGNSLIB) $(CLIBS) $(TCLLIB) $(TKLIB) $(dlllibs)
+
+adftcl-dll.obj : adftcl.c
+	$(CC) $(CFLAGS) $(TCLINC) -DBUILD_DLL -Fo$@ -c adftcl.c
+
+#---------------------------------------------------------------
+
+install : install-prog install-help
+
+install-prog : adfwish.exe $(INSTALLDIR)
+	-$(INSTALL) adfwish.exe $(INSTALLDIR)
+	-$(INSTALL) adfviewer.bat $(INSTALLDIR)
+	-$(INSTALL) cgnsnodes.bat $(INSTALLDIR)
+	-$(INSTALL) *.tcl $(INSTALLDIR)
+	-$(INSTALL) *.ico $(INSTALLDIR)
+	-$(INSTALL) ..\common\tclIndex $(INSTALLDIR)
+	-$(INSTALL) ..\common\*.tcl $(INSTALLDIR)
+	-$(INSTALL) ..\common\*.ico $(INSTALLDIR)
+
+install-help : $(INSTALLDIR)\help\adfviewer\images
+	-$(INSTALL) help\*.html $(INSTALLDIR)\help\adfviewer
+	-$(INSTALL) help\images\*.* $(INSTALLDIR)\help\adfviewer\images
+
+$(INSTALLDIR) :
+	-mkdir $(INSTALLDIR)
+
+$(INSTALLDIR)\help\adfviewer\images : $(INSTALLDIR)\help\adfviewer
+	-mkdir $(INSTALLDIR)\help\adfviewer\images
+
+$(INSTALLDIR)\help\adfviewer : $(INSTALLDIR)\help
+	-mkdir $(INSTALLDIR)\help\adfviewer
+
+$(INSTALLDIR)\help :
+	-mkdir $(INSTALLDIR)\help
+
+#--------------------------------------------------
+
+.c.obj :
+	$(CC) $(CFLAGS) -Fo$@ -c $<
+
+.obj.exe :
+	$(LINK) $(LFLAGS) /out:$@ $< $(CGNSLIB) $(BUILDLIBS)
+
+clean:
+	-$(RM) *.obj
+	-$(RM) *.lib
+	-$(RM) *.exp
+	-$(RM) *.pdb
+	-$(RM) *.ilk
+	-$(RM) *.exe
+	-$(RM) *.dll
+
