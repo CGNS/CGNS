@@ -30,6 +30,11 @@
 #define REGION_BASE "Region"
 #endif
 
+/*--- variables ---*/
+
+static int num_vars = 0;
+static char **var_names = 0;
+
 /*--- node bit flags ---*/
 
 #define USED_BIT    1
@@ -43,6 +48,7 @@ typedef struct {
     int flags;      /* references to node */
     DOUBLE x, y, z; /* coordinates */
     DOUBLE dist;    /* distance from origin */
+    DOUBLE *vars;   /* variables */
 } cgnsNODE;
 
 /*--- node mapping data ---*/
@@ -156,6 +162,9 @@ double x, y, z;
         node->y = y;
         node->z = z;
         node->dist = 0.0;
+        node->vars = 0;
+        if (num_vars)
+            node->vars = (DOUBLE *) calloc (num_vars, sizeof(DOUBLE));
     }
     return (node);
 }
@@ -1161,9 +1170,9 @@ double x, y, z;
     /* find position to place node id */
 
     if (NULL != GetNode (nodeid, &pos)) {
-        nodemap[pos].node->x = x;
-        nodemap[pos].node->y = y;
-        nodemap[pos].node->z = z;
+        nodemap[pos].node->x = (DOUBLE)x;
+        nodemap[pos].node->y = (DOUBLE)y;
+        nodemap[pos].node->z = (DOUBLE)z;
         return (-1);
     }
 
@@ -1195,6 +1204,31 @@ double x, y, z;
         cgnsImportFatal ("cgnsImportNode:malloc failed for a new node");
     num_nodes++;
     return (nodeid);
+}
+
+/*---------- cgnsImportSetNode ------------------------------------------
+ * set node coordinates for node ID
+ *-----------------------------------------------------------------------*/
+
+int cgnsImportSetNode (
+#ifdef PROTOTYPE
+    int nodeid, double x, double y, double z)
+#else
+    nodeid, x, y, z)
+int nodeid;
+double x, y, z;
+#endif
+{
+    int n;
+    cgnsNODE *node = GetNode (nodeid, &n);
+
+    if (NULL != node) {
+        node->x = (DOUBLE)x;
+        node->y = (DOUBLE)y;
+        node->z = (DOUBLE)z;
+        return (node->id);
+    }
+    return (0);
 }
 
 /*---------- cgnsImportGetNode ------------------------------------------
@@ -1239,6 +1273,92 @@ int *cgnsImportNodeList (
     for (n = 0; n < num_nodes; n++)
         nodeids[n+1] = nodemap[n].nodeid;
     return (nodeids);
+}
+
+/*---------- cgnsImportAddVariable -------------------------------------
+ * create a node variable
+ *----------------------------------------------------------------------*/
+
+int cgnsImportAddVariable (
+#ifdef PROTOTYPE
+    char *varname)
+#else
+    varname)
+char *varname;
+#endif
+{
+    int n;
+    cgnsNODE *node;
+
+    if (varname == NULL || !*varname) return -1;
+    for (n = 0; n < num_vars; n++) {
+        if (0 == strcmp(varname, var_names[n])) return n;
+    }
+    if (num_vars)
+        var_names = (char **) realloc (var_names, (num_vars + 1) * sizeof(char *));
+    else
+        var_names = (char **) malloc (sizeof(char *));
+    if (var_names == NULL)
+        cgnsImportFatal ("AddVariable:malloc/realloc failed for variable name list");
+    var_names[num_vars] = (char *) malloc (strlen(varname) + 1);
+    if (var_names[num_vars] == NULL)
+        cgnsImportFatal ("AddVariable:malloc failed for variable name");
+    strcpy(var_names[num_vars++], varname);
+
+    for (n = 0; n < num_entries; n++) {
+        node = node_list[n];
+        if (num_vars == 1)
+            node->vars = (DOUBLE *) malloc (sizeof(DOUBLE));
+        else
+            node->vars = (DOUBLE *) realloc (node->vars, num_vars * sizeof(DOUBLE));
+        if (node->vars == NULL)
+            cgnsImportFatal ("AddVariable:malloc failed for node variables");
+        node->vars[num_vars-1] = 0.0;
+    }
+    return num_vars-1;
+}
+
+/*---------- cgnsImportGetVariable -------------------------------------
+ * get the variable number for a node variable
+ *----------------------------------------------------------------------*/
+
+int cgnsImportGetVariable (
+#ifdef PROTOTYPE
+    char *varname)
+#else
+    varname)
+char *varname;
+#endif
+{
+    int n;
+
+    if (varname != NULL && *varname) {
+        for (n = 0; n < num_vars; n++) {
+            if (0 == strcmp(varname, var_names[n])) return n;
+        }
+    }
+    return -1;
+}
+
+/*---------- cgnsImportVariable ----------------------------------------
+ * set the value of a variable at a node
+ *----------------------------------------------------------------------*/
+
+int cgnsImportVariable (
+#ifdef PROTOTYPE
+    int nodeid, int varnum, double val)
+#else
+    nodeid, varnum, val)
+int nodeid, varnum;
+double val;
+#endif
+{
+    int n;
+    cgnsNODE *node = GetNode (nodeid, &n);
+
+    if (NULL == node || varnum < 0 || varnum >= num_vars) return 0;
+    node->vars[varnum] = (DOUBLE)val;
+    return node->id;
 }
 
 /*---------- cgnsImportElement ------------------------------------------
@@ -1871,6 +1991,26 @@ int cgnsImportWrite (
     if (cg_coord_write (cgnsFile, cgnsBase, cgnsZone, datatype,
         "CoordinateZ", (void *)xyz, &icoord))
         cgnsImportFatal ((char *)cg_get_error());
+
+    /* write variables */
+
+    if (num_vars) {
+        int isol, ifld, nv;
+        if (cg_sol_write(cgnsFile, cgnsBase, cgnsZone,
+            "NodeVariables", Vertex, &isol))
+            cgnsImportFatal ((char *)cg_get_error());
+        for (nv = 0; nv < num_vars; nv++) {
+            for (nn = 0, n = 0; n < num_nodes; n++) {
+                if (nodemap[n].nodeid == nodemap[n].node->id &&
+                    USED_BIT == (nodemap[n].node->flags & USED_BIT))
+                    xyz[nn++] = nodemap[n].node->vars[nv];
+            }
+            if (strlen(var_names[nv]) > 32) var_names[nv][32] = 0;
+            if (cg_field_write(cgnsFile, cgnsBase, cgnsZone, isol,
+                datatype, var_names[nv], xyz, &ifld))
+                cgnsImportFatal ((char *)cg_get_error());
+        }
+    }
 
     free (xyz);
 

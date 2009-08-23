@@ -100,6 +100,15 @@ int cgnsImportNode (     /* import a node */
 #endif
 );
 
+int cgnsImportSetNode (  /* set node coordinates */
+#ifdef PROTOTYPE
+    int nodeid,          /* node ID */
+    double x,            /* coordinates */
+    double y,
+    double z
+#endif
+);
+
 int cgnsImportGetNode (  /* get node coordinates */
 #ifdef PROTOTYPE
     int nodeid,          /* node ID */
@@ -112,6 +121,26 @@ int cgnsImportGetNode (  /* get node coordinates */
 int *cgnsImportNodeList (/* return list of all node ID's */
 #ifdef PROTOTYPE
     void
+#endif
+);
+
+int cgnsImportAddVariable (/*add a variable to the nodes */
+#ifdef PROTOTYPE
+    char *varname        /* name of the variable */
+#endif
+);
+
+int cgnsImportGetVariable (/* return variable number */
+#ifdef PROTOTYPE
+    char *varname        /* name of the variable */
+#endif
+);
+
+int cgnsImportVariable ( /* set variable value at node */
+#ifdef PROTOTYPE
+    int nodeid,          /* node number */
+    int varnum,          /* variable number */
+    double val           /* variable value */
 #endif
 );
 

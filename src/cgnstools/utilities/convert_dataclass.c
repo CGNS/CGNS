@@ -8,14 +8,9 @@
 #include <ctype.h>
 #include <math.h>
 
-#ifdef _WIN32
-# include <io.h>
-#else
-# include <unistd.h>
-#endif
-
 #include "getargs.h"
 #include "cgnslib.h"
+#include "cgnsutil.h"
 #include "calc.h"
 
 /* command line options */
@@ -44,45 +39,6 @@ static char cgnstemp[17] = "";
 static int unconverted = 0;
 static int expressions = 0;
 static int conversions = 0;
-
-/*-------------------------------------------------------------------*/
-
-static char *temporary_file (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-
-    strcpy (cgnstemp, "cgnsXXXXXX");
-    if (mktemp (cgnstemp) == NULL)
-        cgnsCalcFatal ("failed to create temporary filename");
-    return cgnstemp;
-}
-
-/*-------------------------------------------------------------------*/
-
-static void copy_file (
-#ifdef PROTOTYPE
-    char *oldfile, char *newfile)
-#else
-    oldfile, newfile)
-char *oldfile, *newfile;
-#endif
-{
-    int c;
-    FILE *oldfp, *newfp;
-
-    if (NULL == (oldfp = fopen (oldfile, "rb")))
-        cgnsCalcFatal ("error opening input file for reading");
-    if (NULL == (newfp = fopen (newfile, "w+b"))) {
-        fclose (oldfp);
-        cgnsCalcFatal ("error opening output file for writing");
-    }
-    while (EOF != (c = getc (oldfp)))
-        putc (c, newfp);
-    fclose (oldfp);
-    fclose (newfp);
-}
 
 /*-------------------------------------------------------------------*/
 
@@ -452,7 +408,7 @@ char *argv[];
     /* create a working copy */
 
     printf ("creating a working copy of %s\n", argv[argind]);
-    tmpfile = temporary_file ();
+    tmpfile = temporary_file (argv[argind]);
     copy_file (argv[argind], tmpfile);
 
     /* read CGNS file */
@@ -498,10 +454,10 @@ char *argv[];
         cgnsCalcFatal (msg);
         exit (1);
     }
+    free (tmpfile);
     printf ("%d variables converted using expressions\n", expressions);
     printf ("%d variables converted using conversion factors\n", conversions);
     printf ("%d variables were unchanged\n", unconverted);
 
-    exit (0);
-    return 0; /* quite compiler */
+    return 0;
 }

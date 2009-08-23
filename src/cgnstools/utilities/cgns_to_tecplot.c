@@ -1,8 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include <stdlib.h>
 
 #include "getargs.h"
 #include "cgnslib.h"
@@ -485,6 +485,5 @@ char *argv[];
 
     fclose (fp);
     cg_close (cgnsfn);
-    exit (0);
-    return 0; /* quite compiler */
+    return 0;
 }

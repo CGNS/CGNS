@@ -19,7 +19,8 @@ void OPENF (int *read, char *fname, int length)
     MACH_LOCAL == MACH_DOS32 || \
     MACH_LOCAL == MACH_UNKNOWN
     fprintf (stderr,
-        "Fortran unformatted output not supported on this machine\n");
+        "Fortran unformatted output not supported for %s machine\n",
+        bf_machname (MACH_LOCAL);
     exit (1);
 #else
     buff = (char *) malloc (length + 1);

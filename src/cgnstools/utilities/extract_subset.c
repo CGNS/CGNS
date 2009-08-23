@@ -674,7 +674,7 @@ char *argv[];
     /* create a working copy */
 
     printf ("creating a working copy of %s\n", argv[argind]);
-    tmpfile = temporary_file ();
+    tmpfile = temporary_file (argv[argind]);
     copy_file (argv[argind], tmpfile);
 
     /* read CGNS file */
@@ -745,6 +745,6 @@ char *argv[];
         FATAL (NULL, msg);
         exit (1);
     }
-    exit (0);
-    return 0; /* quite compiler */
+    free (tmpfile);
+    return 0;
 }

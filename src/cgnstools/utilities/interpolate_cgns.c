@@ -1231,7 +1231,7 @@ char *argv[];
     /* create a working copy */
 
     printf ("\ncreating a working copy of %s\n", argv[++argind]);
-    tmpfile = temporary_file ();
+    tmpfile = temporary_file (argv[argind]);
     copy_file (argv[argind], tmpfile);
 
     printf ("reading CGNS file from %s\n", tmpfile);
@@ -1284,5 +1284,6 @@ char *argv[];
         FATAL (NULL, msg);
         exit (1);
     }
+    free (tmpfile);
     return 0;
 }

@@ -637,16 +637,28 @@ char *file1, *file2;
 
 char *temporary_file (
 #ifdef PROTOTYPE
-    void
+    char *basename)
+#else
+    basename)
+char *basename;    
 #endif
-){
-    char temp[16];
+{
+    char *p, *temp;
+    int n;
 
-    strcpy (temp, "cgnsXXXXXX");
-    if (mktemp (temp) == NULL)
-        FATAL ("temporary_file", "failed to create temporary filename");
-    strcpy (cgnstemp, temp);
-    return cgnstemp;
+    if (basename == NULL || !*basename)
+        basename = "cgnstmpfile";
+    n = strlen (basename);
+    temp = (char *) malloc (n + 10);
+    if (temp == NULL) 
+        FATAL ("temporary_file", "malloc failed for temp filename");
+    sprintf (temp, "%s.tmp", basename);
+    p = temp + strlen(temp);
+    for (n = 0; n < 1000; n++) {
+        sprintf (p, "%3.3d~", n);
+        if (access (temp, 0)) return temp;
+    }
+    FATAL ("temporary_file", "failed to create temporary filename");
 }
 
 /*---------- copy_file ------------------------------------------------

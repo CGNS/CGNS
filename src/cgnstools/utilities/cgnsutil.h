@@ -251,7 +251,7 @@ int same_file (
 
 char *temporary_file (
 #ifdef PROTOTYPE
-    void
+    char *basename
 #endif
 );
 

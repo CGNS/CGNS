@@ -40,13 +40,7 @@ static char buffer[257], name[33];
  * check first 256 bytes for non-ascii characters
  *-------------------------------------------------------------------*/
 
-static void check_ascii (
-#ifdef PROTOTYPE
-    char *fname)
-#else
-    fname)
-char *fname;
-#endif
+static void check_ascii (char *fname)
 {
     int n, np;
     FILE *fp = fopen (fname, "rb");
@@ -70,13 +64,7 @@ char *fname;
  * get next non-blank line
  *-------------------------------------------------------------------*/
 
-static char *getline (
-#ifdef PROTOTYPE
-    FILE *fp)
-#else
-    fp)
-FILE *fp;
-#endif
+static char *getline (FILE *fp)
 {
     char *p;
 
@@ -96,13 +84,7 @@ FILE *fp;
  * get the next variable name
  *-------------------------------------------------------------------*/
 
-static char *getvar (
-#ifdef PROTOTYPE
-    char **pp)
-#else
-    pp)
-char **pp;
-#endif
+static char *getvar (char **pp)
 {
     int n = 0;
     char *p;
@@ -124,14 +106,7 @@ char **pp;
  * get zone description data
  *-------------------------------------------------------------------*/
 
-static char *getzone (
-#ifdef PROTOTYPE
-    char **pp, int *tag)
-#else
-    pp, tag)
-char **pp;
-int *tag;
-#endif
+static char *getzone (char **pp, int *tag)
 {
     int n, match;
     char *p, what[5];
@@ -186,24 +161,21 @@ int *tag;
  * read nodes in block format
  *-------------------------------------------------------------------*/
 
-static void block_nodes (
-#ifdef PROTOTYPE
-    FILE *fp, int nnodes)
-#else
-    fp, nnodes)
-FILE *fp;
-#endif
+static void block_nodes (FILE *fp, int nnodes)
 {
-    int nv, nn;
+    int nv, nn, vnum;
     double *x, *y, *z, v;
 
-    x = (double *) malloc (3 * nnodes * sizeof(double));
+    for (nn = 0; nn < nnodes; nn++)
+        cgnsImportNode (nn+1, 0.0, 0.0, 0.0);
+
+    x = (double *) calloc (3 * nnodes, sizeof(double));
     if (x == NULL)
         cgnsImportFatal ("malloc failed for variables");
     y = x + nnodes;
     z = y + nnodes;
 
-    for (nv = 0; nv < nvar; nv++) {
+    for (vnum = 0, nv = 0; nv < nvar; nv++) {
         if (nv == xloc) {
             for (nn = 0; nn < nnodes; nn++) {
                 if (1 != fscanf (fp, "%lf", &x[nn]))
@@ -226,11 +198,12 @@ FILE *fp;
             for (nn = 0; nn < nnodes; nn++) {
                 if (1 != fscanf (fp, "%lf", &v))
                     cgnsImportFatal ("error reading variables");
+                cgnsImportVariable(nn+1, vnum++, v);
             }
         }
     }
     for (nn = 0; nn < nnodes; nn++)
-        cgnsImportNode (nn+1, x[nn], y[nn], z[nn]);
+        cgnsImportSetNode (nn+1, x[nn], y[nn], z[nn]);
     free (x);
 }
 
@@ -238,15 +211,10 @@ FILE *fp;
  * read nodes in point format
  *-------------------------------------------------------------------*/
 
-static void point_nodes (
-#ifdef PROTOTYPE
-    FILE *fp, int nnodes)
-#else
-    fp, nnodes)
-FILE *fp;
-#endif
+static void point_nodes (FILE *fp, int nnodes)
 {
-    int nv, nn;
+    int nv, nn, vnum;
+    double x = 0.0, y = 0.0, z = 0.0;
     double *v;
 
     v = (double *) malloc (nvar * sizeof(double));
@@ -258,20 +226,26 @@ FILE *fp;
             if (1 != fscanf (fp, "%lf", &v[nv]))
                 cgnsImportFatal ("error reading variables");
         }
-        cgnsImportNode (nn+1, v[xloc], v[yloc], v[zloc]);
+        if (xloc >= 0 && xloc < nvar) x = v[xloc];
+        if (yloc >= 0 && yloc < nvar) y = v[yloc];
+        if (zloc >= 0 && zloc < nvar) z = v[zloc];
+        cgnsImportNode (nn+1, x, y, z);
+        for (vnum = 0, nv = 0; nv < nvar; nv++) {
+            if (nv != xloc && nv != yloc && nv != zloc)
+                cgnsImportVariable(nn+1, vnum++, v[nv]);
+        }
     }
     free (v);
 }
 
 /*========== main ===================================================*/
 
-int main (argc, argv)
-int argc;
-char *argv[];
+int main (int argc, char *argv[])
 {
     int n, i, j, k, ni, nj, nk;
     int nn, ne, et, nz, block, nodes[8];
     int do_chk = 0, fix_bricks = 0;
+    char elemname[33];
     char zonename[33], *p, *s, *basename = NULL;
     FILE *fp;
 
@@ -337,11 +311,13 @@ char *argv[];
                     yloc = nvar++;
                 else if (0 == strcasecmp ("z", s))
                     zloc = nvar++;
-                else
+                else {
+                    cgnsImportAddVariable(s);
                     nvar++;
+                }
             }
-            if (xloc == -1 || yloc == -1 || zloc == -1)
-                cgnsImportFatal ("X, Y or Z variable missing");
+            if (xloc == -1 && yloc == -1 && zloc == -1)
+                cgnsImportFatal("X, Y and Z variables missing");
             continue;
         }
 
@@ -366,7 +342,8 @@ char *argv[];
                 }
                 switch (n) {
                     case 0:     /* T */
-                        strcpy (zonename, s);
+                        strncpy (zonename, s, 32);
+                        zonename[32] = 0;
                         break;
                     case 1:     /* F */
                         if (0 == strncasecmp (s, "block", 5) ||
@@ -389,40 +366,51 @@ char *argv[];
                         ne = atoi (s);
                         break;
                     case 7:     /* ET */
-                        if (0 == strncasecmp (s, "tri", 3))
+                        strncpy (elemname, s, 32);
+                        elemname[32] = 0;
+                        if (0 == strncasecmp (elemname, "tri", 3))
                             et = 0;
-                        else if (0 == strncasecmp (s, "qua", 3))
+                        else if (0 == strncasecmp (elemname, "qua", 3))
                             et = 1;
-                        else if (0 == strncasecmp (s, "tet", 3))
+                        else if (0 == strncasecmp (elemname, "tet", 3))
                             et = 2;
-                        else if (0 == strncasecmp (s, "bri", 3))
+                        else if (0 == strncasecmp (elemname, "bri", 3))
                             et = 3;
                         else
-                            cgnsImportFatal ("invalid element type");
+                            printf("unhandled element type %s", elemname);
                         break;
                     default:
                         break;
                 }
             }
+
+            printf("zone %s:", zonename);
+
             if (nn == -1) {
-                if (ni < 2 || nj < 2 || nk < 2)
-                    cgnsImportFatal ("volume mesh not given with I, J and K");
+                if (ni < 2 || nj < 2 || nk < 2) {
+                    printf("missing I, J and K - skipping zone\n");
+                    p = getline(fp);
+                    continue;
+                }
                 nn = ni * nj * nk;
                 ne = (ni - 1) * (nj - 1) * (nk - 1);
                 et = 5;
             }
             else {
-                if (nn < 3 || ne < 1 || et < 0)
-                    cgnsImportFatal ("valid values of N, E and ET not given");
+                if (nn < 3 || ne < 1 || et < 0) {
+                    printf("%d nodes, %d %s elements - skipping zone\n",
+                        nn, ne, elemname);
+                    p = getline(fp);
+                    continue;
+                }
                 if (et < 2) {
-                    printf ("skipping %s for zone %s\n",
-                        et ? "quadrilaterals" : "triangles", zonename);
+                    printf ("%s elements - skipping zone\n", elemname);
                     p = getline (fp);
                     continue;
                 }
             }
 
-            printf ("  zone %s...%d nodes...", zonename, nn);
+            printf ("%d nodes...", nn);
             fflush (stdout);
 
             cgnsImportZone (zonename);
@@ -431,7 +419,7 @@ char *argv[];
             else
                 point_nodes (fp, nn);
 
-            printf ("%d elements...", ne);
+            printf (" %d %s elements...", ne, elemname);
             fflush (stdout);
 
             if (et == 5) {
@@ -480,7 +468,7 @@ char *argv[];
                     cgnsImportElement (n, k, nodes);
                 }
             }
-            puts ("done");
+            puts (" done");
 
             if (do_chk) {
                 printf ("checking for duplicate nodes...\n");
@@ -495,6 +483,5 @@ char *argv[];
 
     fclose (fp);
     cgnsImportClose ();
-    exit (0);
-    return 0; /* quite compiler */
+    return 0;
 }

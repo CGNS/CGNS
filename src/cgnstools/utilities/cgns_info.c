@@ -170,5 +170,5 @@ char *argv[];
         FATAL (NULL, NULL);
 
     exit (0);
-	 return 0;
+    return 0;
 }
