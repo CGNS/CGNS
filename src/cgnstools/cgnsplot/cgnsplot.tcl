@@ -274,7 +274,7 @@ proc do_about {} {
 "CGNSplot Version 2.5
 
 Bruce Wedan
-brucewedan@hotmail.com" img_about 0 Close
+brucewedan@gmail.com" img_about 0 Close
 }
 
 #---------- toolbar
