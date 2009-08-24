@@ -20,7 +20,7 @@ proc tecplot_import {w name exe} {
   wm transient $w .
   wm protocol $w WM_DELETE_WINDOW {set Import(done) 0}
 
-  import_input $w tecfile Tecplot {.dat .plt}
+  import_input $w tecfile Tecplot {.dat .plt .tec}
   import_output $w 1
 
   FrameCreate $w.opts -text "Options" -font $Font(bold)
@@ -83,7 +83,7 @@ proc tecplot_export {w name exe} {
   wm protocol $w WM_DELETE_WINDOW {set Export(done) 0}
 
   export_input $w 1
-  export_output $w tecfile Tecplot {.dat .plt}
+  export_output $w tecfile Tecplot {.dat .plt .tec}
 
   FrameCreate $w.opts -text "Options" -font $Font(bold)
   pack $w.opts -side top -pady 2 -fill x
