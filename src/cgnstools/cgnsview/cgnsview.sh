@@ -59,10 +59,10 @@ fi
 
 # check that display is set
 
-if test -z "$DISPLAY" ; then
-  echo "Error: DISPLAY environment variable not set"
-  exit 1
-fi
+#if test -z "$DISPLAY" ; then
+#  echo "Error: DISPLAY environment variable not set"
+#  exit 1
+#fi
 
 # execute
 
