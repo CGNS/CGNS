@@ -21,7 +21,7 @@ $(CALCLIB) : calc.$(O) vec.$(O) vecsym.$(O)
 
 calctest$(EXE) : calctest.$(O) $(CALCLIB)
 	$(CC) $(LDFLAGS) -o $@ calctest.$(O) $(CALCLIB) \
-	$(LDLIBS) $(CGNSLIB) $(BUILDLIBS) -lm
+	$(CGNSLIB) $(BUILDLIBS) -lm
 	$(STRIP) $@
 
 calctest.$(O) : calctest.c
@@ -42,5 +42,5 @@ vecsym.h : vec.h
 	$(CC) $(COPTS) -c $<
 
 clean:
-	-$(RM) $(CALCLIB) *.$(O) calctest$(EXE)
+	-$(RM) $(CALCLIB) *.$(O) *~ *.bak calctest$(EXE)
 

@@ -47,5 +47,6 @@ clean:
 	-$(RM) *.lib
 	-$(RM) *.pdb
 	-$(RM) *.ilk
+	-$(RM) *.bak
 	-$(RM) *.exe
 
