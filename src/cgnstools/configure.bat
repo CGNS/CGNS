@@ -199,6 +199,18 @@ if not "%tkdir%" == "" (
   )
 )
 echo checking for Tcl
+if exist c:\Tcl\include\tcl.h (
+  set tcldir=c:\Tcl
+  goto tclincludes
+)
+if exist c:\progra~1\Tcl\include\tcl.h (
+  set tcldir=c:c:\progra~1\Tcl
+  goto tclincludes
+)
+if exist %drive%\Tcl\include\tcl.h (
+  set tcldir=%drive%\Tcl
+  goto tclincludes
+)
 for /D %%d in ( %drive%\*.* ) do (
   if exist %%d\generic\tcl.h (
     set tcldir=%%d
@@ -324,6 +336,9 @@ if not %tkdir% == %tcldir% (
     set tclinc=%tclinc% -I%tkdir%\include
   )
 )
+if exist %tkdir%\include\tkWinInt.h (
+  goto gotwinint
+)
 if exist %tkdir%\win\tkWinInt.h (
   set tclinc=%tclinc% -I%tkdir%\win
   goto gotwinint
@@ -332,7 +347,7 @@ if exist %tkdir%\include\win\tkWinInt.h (
   set tclinc=%tclinc% -I%tkdir%\include\win
   goto gotwinint
 )
-echo couldn't find tkWinInt.h in %tkdir%\win or %tkdir%\include\win
+echo couldn't find tkWinInt.h in %tkdir%\include or %tkdir%\win or %tkdir%\include\win
 goto done
 
 :gotwinint
@@ -386,36 +401,45 @@ echo # makefile for the CGNS tools under Windows> Makefile
 echo.>> Makefile
 echo MAKE = nmake -nologo -f Makefile.win>> Makefile
 echo.>> Makefile
-echo all : adfviewer cgnscalc cgnsplot tools utilities>> Makefile
-echo install : install-adfviewer install-cgnscalc install-cgnsplot \>> Makefile
+echo defaults : cgnsview cgnsplot tools utilities>> Makefile
+echo install : install-cgnsview install-cgnsplot \>> Makefile
 echo 	install-tools install-utilities>> Makefile
 echo.>> Makefile
+echo all : cgnsview cgnscalc cgnsplot cgnssh tools utilities>> Makefile
+echo install-all : install-cgnsview install-cgnscalc install-cgnsplot \>> Makefile
+echo 	install-cgnssh install-tools install-utilities>> Makefile
+echo.>> Makefile
 echo clean :>> Makefile
-echo 	cd adfviewer ^&^& $(MAKE) clean>> Makefile
+echo 	cd cgnsview ^&^& $(MAKE) clean>> Makefile
 echo 	cd cgnscalc ^&^& $(MAKE) clean>> Makefile
 echo 	cd cgnsplot ^&^& $(MAKE) clean>> Makefile
+echo 	cd cgnssh ^&^& $(MAKE) clean>> Makefile
 echo 	cd tools ^&^& $(MAKE) clean>> Makefile
 echo 	cd utilities ^&^& $(MAKE) clean>> Makefile
 echo 	cd calclib ^&^& $(MAKE) clean>> Makefile
 echo 	cd tkogl ^&^& $(MAKE) clean>> Makefile
 echo.>> Makefile
 echo distclean : clean>> Makefile
-echo 	-del make.win Makefile>> Makefile
+echo 	-del make.win Makefile cgconfig.bat>> Makefile
 echo.>> Makefile
-echo adfviewer : prog-adfviewer>> Makefile
+echo cgnsview  : prog-cgnsview>> Makefile
 echo cgnscalc  : prog-cgnscalc>> Makefile
 echo cgnsplot  : prog-cgnsplot>> Makefile
-echo tools	  : prog-tools>> Makefile
+echo cgnssh    : prog-cgnssh>> Makefile
+echo tools	   : prog-tools>> Makefile
 echo utilities : prog-utilities>> Makefile
 echo.>> Makefile
-echo prog-adfviewer :>> Makefile
-echo 	cd adfviewer ^&^& $(MAKE)>> Makefile
+echo prog-cgnsview :>> Makefile
+echo 	cd cgnsview ^&^& $(MAKE)>> Makefile
 echo.>> Makefile
 echo prog-cgnscalc : lib-calclib>> Makefile
 echo 	cd cgnscalc ^&^& $(MAKE)>> Makefile
 echo.>> Makefile
 echo prog-cgnsplot : lib-tkogl>> Makefile
 echo 	cd cgnsplot ^&^& $(MAKE)>> Makefile
+echo.>> Makefile
+echo prog-cgnssh :>> Makefile
+echo 	cd cgnssh ^&^& $(MAKE)>> Makefile
 echo.>> Makefile
 echo prog-tools :>> Makefile
 echo 	cd tools ^&^& $(MAKE)>> Makefile
@@ -429,14 +453,17 @@ echo.>> Makefile
 echo lib-tkogl :>> Makefile
 echo 	cd tkogl ^&^& $(MAKE)>> Makefile
 echo.>> Makefile
-echo install-adfviewer :>> Makefile
-echo 	cd adfviewer ^&^& $(MAKE) install>> Makefile
+echo install-cgnsview :>> Makefile
+echo 	cd cgnsview ^&^& $(MAKE) install>> Makefile
 echo.>> Makefile
 echo install-cgnscalc : lib-calclib>> Makefile
 echo 	cd cgnscalc ^&^& $(MAKE) install>> Makefile
 echo.>> Makefile
 echo install-cgnsplot : lib-tkogl>> Makefile
 echo 	cd cgnsplot ^&^& $(MAKE) install>> Makefile
+echo.>> Makefile
+echo install-cgnssh :>> Makefile
+echo 	cd cgnssh ^&^& $(MAKE) install>> Makefile
 echo.>> Makefile
 echo install-tools :>> Makefile
 echo 	cd tools ^&^& $(MAKE) install>> Makefile
@@ -515,6 +542,22 @@ echo guilibs	= %clibs% oldnames.lib kernel32.lib advapi32.lib \>> make.win
 echo 	user32.lib gdi32.lib comdlg32.lib winspool.lib>> make.win
 echo.>> make.win
 echo ogllibs = opengl32.lib glu32.lib>> make.win
+
+rem ----- create cgconfig.bat
+
+echo creating cgconfig.bat
+echo rem configuration file for windows> cgconfig.bat
+echo.>> cgconfig.bat
+if exist %tcldir%\bin\nul (
+echo set PATH=%tcldir%\bin;%PATH%>> cgconfig.bat
+) else (
+echo rem may need to add location of tcl/tk dlls to PATH>> cgconfig.bat
+echo rem PATH=%tcldir%\bin;%PATH%>> cgconfig.bat
+)
+echo.>> cgconfig.bat
+echo rem may need to set these if system can't find Tcl and TK scripts>> cgconfig.bat
+echo rem set TCL_LIBRARY=c:/lib/tcl8.4.13/library>> cgconfig.bat
+echo rem set TK_LIBRARY=c:/lib/tk8.4.13/library>> cgconfig.bat
 
 :done
 endlocal

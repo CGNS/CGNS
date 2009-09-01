@@ -8,12 +8,12 @@ include make.defs
 default : @PROGLIST@
 install : @INSTLIST@
 
-all : cgnsview cgnscalc cgnsplot tools utilities
+all : cgnsview cgnscalc cgnsplot cgnssh tools utilities
 install-all : install-cgnsview install-cgnscalc install-cgnsplot \
-	      install-tools install-utilities
+	      install-cgnssh install-tools install-utilities
 
 clean :
-	@for d in cgnsview cgnscalc cgnsplot tools utilities calclib tkogl ; do \
+	@for d in cgnsview cgnscalc cgnsplot cgnssh tools utilities calclib tkogl ; do \
 	  echo "----- $$d -----"; \
 	  cd $$d; $(MAKE) clean; cd ..; \
 	done;
@@ -29,11 +29,12 @@ distclean : clean
 cgnsview  : prog-cgnsview
 cgnscalc  : prog-cgnscalc
 cgnsplot  : prog-cgnsplot
+cgnssh    : prog-cgnssh
 tools	  : prog-tools
 utilities : prog-utilities
 
 uninstall :
-	@for d in cgnsview cgnscalc cgnsplot tools utilities ; do \
+	@for d in cgnsview cgnscalc cgnsplot cgnssh tools utilities ; do \
 	  echo "----- $$d -----"; \
 	  cd $$d; $(MAKE) uninstall; cd ..; \
 	done;
@@ -63,6 +64,10 @@ prog-cgnsplot : lib-tkogl
 	@echo "----- cgnsplot -----"
 	@cd cgnsplot && $(MAKE)
 
+prog-cgnssh :
+	@echo "----- cgnssh -----"
+	@cd cgnssh && $(MAKE)
+
 prog-tools :
 	@echo "----- tools -----"
 	@cd tools && $(MAKE)
@@ -90,6 +95,10 @@ install-cgnscalc : lib-calclib
 install-cgnsplot : lib-tkogl
 	@echo "----- cgnsplot -----"
 	@cd cgnsplot && $(MAKE) install
+
+install-cgnssh :
+	@echo "----- cgnssh -----"
+	@cd cgnssh && $(MAKE) install
 
 install-tools :
 	@echo "----- tools -----"

@@ -1909,7 +1909,7 @@ LIBRARY_PATH=""
 if test -z "$tcldir" && test -z "$tkdir"; then
   echo $ac_n "checking for installed version of Tk""... $ac_c" 1>&6
 echo "configure:1912: checking for installed version of Tk" >&5
-  for d in /lib /usr/lib /usr/lib64 /usr/local/lib ; do
+  for d in /lib /usr/lib /usr/local/lib /usr/lib64 ; do
     if test -f $d/tkConfig.sh ; then
       echo "$ac_t""$d" 1>&6
       TKCONFIG=$d/tkConfig.sh
@@ -2073,8 +2073,8 @@ fi
 # should probably check for Mesa
 #---------------------------------------------------------------------------
 
-PROGLIST="cgnsview cgnscalc tools utilities"
-INSTLIST="install-cgnsview install-cgnscalc install-tools install-utilities"
+PROGLIST="cgnsview tools utilities"
+INSTLIST="install-cgnsview install-tools install-utilities"
 
 ac_safe=`echo "GL/gl.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for GL/gl.h""... $ac_c" 1>&6

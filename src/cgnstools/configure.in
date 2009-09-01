@@ -325,7 +325,7 @@ LIBRARY_PATH=""
 
 if test -z "$tcldir" && test -z "$tkdir"; then
   AC_MSG_CHECKING([for installed version of Tk])
-  for d in /lib /usr/lib /usr/lib64 /usr/local/lib ; do
+  for d in /lib /usr/lib /usr/local/lib /usr/lib64 ; do
     if test -f $d/tkConfig.sh ; then
       AC_MSG_RESULT($d)
       TKCONFIG=$d/tkConfig.sh
@@ -488,8 +488,8 @@ fi
 # should probably check for Mesa
 #---------------------------------------------------------------------------
 
-PROGLIST="cgnsview cgnscalc tools utilities"
-INSTLIST="install-cgnsview install-cgnscalc install-tools install-utilities"
+PROGLIST="cgnsview tools utilities"
+INSTLIST="install-cgnsview install-tools install-utilities"
 
 AC_CHECK_HEADER(GL/gl.h)
 if test "$ac_cv_header_GL_gl_h" = "no"; then
