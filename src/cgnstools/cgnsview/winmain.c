@@ -19,7 +19,7 @@
 #include <malloc.h>
 #include <locale.h>
 
-extern int Cgiotcl_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int CGIOtcl_Init _ANSI_ARGS_((Tcl_Interp *interp));
 
 /*
  * Forward declarations for procedures defined later in this file:
@@ -128,7 +128,7 @@ Tcl_AppInit(Tcl_Interp *interp)
     }
     Tcl_StaticPackage(interp, "Tk", Tk_Init, Tk_SafeInit);
 
-    if (Cgiotcl_Init(interp) == TCL_ERROR)
+    if (CGIOtcl_Init(interp) == TCL_ERROR)
         goto error;
     Tcl_CreateCommand (interp, "LoadIcon", (Tcl_CmdProc *)Proc_LoadIcon,
         (ClientData)0, (Tcl_CmdDeleteProc *)0);
