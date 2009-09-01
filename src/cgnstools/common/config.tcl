@@ -110,9 +110,9 @@ proc setup_fonts {} {
     set Font(large)  "Helvetica -16"
   }
   option add *font $Font(normal)
-  option add *Entry.font $Font(fixed)
-  option add *Listbox.font $Font(fixed)
-  option add *Text.font $Font(fixed)
+#  option add *Entry.font $Font(fixed)
+#  option add *Listbox.font $Font(fixed)
+#  option add *Text.font $Font(fixed)
 }
 
 #--- setup colors for windows
@@ -233,6 +233,12 @@ proc config_init {} {
     } else {
       set UseNativeDialogs 0
     }
+  }
+  # needed for tcl 8.5 to prevent tristate behavior
+  # when using "" as on/off value for chaeck/radio buttons
+  catch {
+    option add *Checkbutton.tristateValue "-----"
+    option add *Radiobutton.tristateValue "-----"
   }
 }
 
