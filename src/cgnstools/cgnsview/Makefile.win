@@ -1,41 +1,41 @@
 include ..\make.win
 
-CFLAGS = $(COPTS) -I..\common -I$(CGNSDIR)
+CFLAGS = $(COPTS) -I$(CGNSDIR)
 
 #--------------------------------------------------
 
-all : adfwish.exe
-dll : adftcl.dll
+all : cgiowish.exe
+dll : cgiotcl.dll
 
 #--------------------------------------------------
 
-adfwish.exe : winmain.obj adftcl.obj
+cgiowish.exe : winmain.obj cgiotcl.obj
 	$(LINK) $(LFLAGS) /nodefaultlib /subsystem:windows \
-	-out:$@ winmain.obj adftcl.obj \
+	-out:$@ winmain.obj cgiotcl.obj \
 	$(CGNSLIB) $(CLIBS) $(BUILDLIBS) $(TCLLIB) $(TKLIB) $(guilibs)
 
 winmain.obj : winmain.c
 	$(CC) $(CFLAGS) $(TCLINC) -c winmain.c
 
-adftcl.obj : adftcl.c
-	$(CC) $(CFLAGS) $(TCLINC) -c adftcl.c
+cgiotcl.obj : cgiotcl.c
+	$(CC) $(CFLAGS) $(TCLINC) -c cgiotcl.c
 
 #--------------------------------------------------
 
-adftcl.dll : adftcl-dll.obj $(CGNSLIB)
-	$(LINK) -dll -out:adftcl.dll adftcl-dll.obj \
+cgiotcl.dll : cgiotcl-dll.obj $(CGNSLIB)
+	$(LINK) -dll -out:cgiotcl.dll cgiotcl-dll.obj \
 	$(CGNSLIB) $(CLIBS) $(TCLLIB) $(TKLIB) $(dlllibs)
 
-adftcl-dll.obj : adftcl.c
-	$(CC) $(CFLAGS) $(TCLINC) -DBUILD_DLL -Fo$@ -c adftcl.c
+cgiotcl-dll.obj : cgiotcl.c
+	$(CC) $(CFLAGS) $(TCLINC) -DBUILD_DLL -Fo$@ -c cgiotcl.c
 
 #---------------------------------------------------------------
 
 install : install-prog install-help
 
-install-prog : adfwish.exe $(INSTALLDIR)
-	-$(INSTALL) adfwish.exe $(INSTALLDIR)
-	-$(INSTALL) adfviewer.bat $(INSTALLDIR)
+install-prog : cgiowish.exe $(INSTALLDIR)
+	-$(INSTALL) cgiowish.exe $(INSTALLDIR)
+	-$(INSTALL) cgnsview.bat $(INSTALLDIR)
 	-$(INSTALL) cgnsnodes.bat $(INSTALLDIR)
 	-$(INSTALL) *.tcl $(INSTALLDIR)
 	-$(INSTALL) *.ico $(INSTALLDIR)
@@ -43,18 +43,18 @@ install-prog : adfwish.exe $(INSTALLDIR)
 	-$(INSTALL) ..\common\*.tcl $(INSTALLDIR)
 	-$(INSTALL) ..\common\*.ico $(INSTALLDIR)
 
-install-help : $(INSTALLDIR)\help\adfviewer\images
-	-$(INSTALL) help\*.html $(INSTALLDIR)\help\adfviewer
-	-$(INSTALL) help\images\*.* $(INSTALLDIR)\help\adfviewer\images
+install-help : $(INSTALLDIR)\help\cgnsview\images
+	-$(INSTALL) help\*.html $(INSTALLDIR)\help\cgnsview
+	-$(INSTALL) help\images\*.* $(INSTALLDIR)\help\cgnsview\images
 
 $(INSTALLDIR) :
 	-mkdir $(INSTALLDIR)
 
-$(INSTALLDIR)\help\adfviewer\images : $(INSTALLDIR)\help\adfviewer
-	-mkdir $(INSTALLDIR)\help\adfviewer\images
+$(INSTALLDIR)\help\cgnsview\images : $(INSTALLDIR)\help\cgnsview
+	-mkdir $(INSTALLDIR)\help\cgnsview\images
 
-$(INSTALLDIR)\help\adfviewer : $(INSTALLDIR)\help
-	-mkdir $(INSTALLDIR)\help\adfviewer
+$(INSTALLDIR)\help\cgnsview : $(INSTALLDIR)\help
+	-mkdir $(INSTALLDIR)\help\cgnsview
 
 $(INSTALLDIR)\help :
 	-mkdir $(INSTALLDIR)\help
@@ -75,4 +75,5 @@ clean:
 	-$(RM) *.ilk
 	-$(RM) *.exe
 	-$(RM) *.dll
+	-$(RM) *.bak
 

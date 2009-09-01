@@ -2,8 +2,8 @@
 
 include ../make.defs
 
-COPTS  = $(CFLAGS) -I../common -I$(CGNSDIR) $(TKINCS)
-LDLIST = $(CGNSLIB) $(BUILDLIBS) $(LDLIBS) $(TKLIBS) $(X11LIBS) $(CLIBS)
+COPTS  = $(CFLAGS) -I$(CGNSDIR) $(TKINCS)
+LDLIST = $(CGNSLIB) $(BUILDLIBS) $(TKLIBS) $(X11LIBS) $(CLIBS)
 
 #--------------------------------------------------
 
@@ -126,5 +126,5 @@ uninstall :
 	$(CC) $(COPTS) -c $<
 
 clean:
-	$(RM) *.$(O) cgiowish$(EXE)
+	$(RM) *.$(O) *~ *.bak cgiowish$(EXE)
 
