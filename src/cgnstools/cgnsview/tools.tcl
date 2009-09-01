@@ -8,7 +8,7 @@ proc update_cgns {} {
   if {$Tools(cgnsoutput) == ""} {
     set Tools(cgnsoutput) $ProgData(file,name)
   }
-  set Tools(version) $ProgData(filevers)
+  set Tools(version) ""
 
   set w .cgnsvers
   toplevel $w
@@ -48,13 +48,14 @@ $ProgData(filevers) to"
     -command "tools_browse $f.but cgnsoutput"
   pack $f.but -side right -fill y
 
-  if {[tools_interact $w] && $Tools(version) != $ProgData(filevers)} {
+  if {[tools_interact $w] && $Tools(version) != ""} {
     set cmd [tools_unix_path $ProgData(cgnsversion)]
     lappend cmd $Tools(version) $Tools(cgnsinput)
     if {$Tools(cgnsoutput) != ""} {
       lappend cmd $Tools(cgnsoutput)
     }
     tools_run "Change CGNS Version" $cmd $Tools(cgnsoutput)
+    file_stats
   }
 }
 
