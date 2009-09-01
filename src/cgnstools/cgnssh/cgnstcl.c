@@ -7,977 +7,20 @@
 #include "tcl.h"
 #include "cgnslib.h"
 #include "cgns_header.h"
-#include "cgnames.h"
-#include "ADF.h"
 
-#ifndef CGNS_VERSION
-# ifdef NofValidSimulationTypes
-#  if NofValidModelTypes > 20
-#   define CGNS_VERSION 2100
-#  else
-#   define CGNS_VERSION 2000
-#  endif
-# else
-#  error must use CGNS Version 2.0 or greater
-# endif
+#ifndef CONST
+# define CONST
 #endif
 
-#ifndef CG_OK
-# define CG_OK             ALL_OK
-# define CG_ERROR          ERROR
-# define CG_NODE_NOT_FOUND NODE_NOT_FOUND
-# define CG_INCORRECT_PATH INCORRECT_PATH
+#if !defined(CGNS_VERSION) || CGNS_VERSION < 2500
+# error must use CGNS Version 2.5 or greater
 #endif
 
 static char buff[1024];
 
-#define MAX_GOTO_DEPTH 20
-
-static char goLabel[MAX_GOTO_DEPTH][33];
-static int goIndex[MAX_GOTO_DEPTH];
-static int goDepth = 0;
-
-static int goFile = 0;
-static int goBase = 0;
-
 /*-----------------------------------------------------------------------*/
 
-static int go_depth (
-#ifdef PROTOTYPE
-    int depth)
-#else
-    depth)
-int depth;
-#endif
-{
-    int n, ier;
-    char *labels[MAX_GOTO_DEPTH];
-
-    posit_base = goBase;
-    posit_zone = 0;
-    for (n = 0; n < depth; n++) {
-        labels[n] = goLabel[n];
-        if (strcmp (goLabel[n], "Zone_t") == 0)
-            posit_zone = goIndex[n];
-    }
-
-    if (depth == 0)
-        strcpy (posit_label, "CGNSBase_t");
-    else
-        strcpy (posit_label, goLabel[depth-1]);
-
-    posit = cgi_get_posit (goFile, goBase, depth, goIndex, labels, &ier);
-
-    return ier;
-}
-
-/*-----------------------------------------------------------------------*/
-
-static int node_index (
-#ifdef PROTOTYPE
-    char *name, char *label)
-#else
-    name, label)
-char *name, *label;
-#endif
-{
-    int n;
-
-    /* CGNSBase_t */
-
-    if (0 == strcmp (posit_label, "CGNSBase_t")) {
-        cgns_base *b = (cgns_base *)posit;
-        if (0 == strcmp (label, "Zone_t")) {
-            for (n = 0; n < b->nzones; n++) {
-                if (0 == strcmp (b->zone[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "ReferenceState_t")) {
-            if (b->state && 0 == strcmp (b->state->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "Family_t")) {
-            for (n = 0; n < b->nfamilies; n++) {
-                if (0 == strcmp (b->family[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "BaseIterativeData_t")) {
-            if (b->biter && 0 == strcmp (b->biter->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "ConvergenceHistory_t")) {
-            if (b->converg && 0 == strcmp (b->converg->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "FlowEquationSet_t")) {
-            if (b->equations && 0 == strcmp (b->equations->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "IntegralData_t")) {
-            for (n = 0; n < b->nintegrals; n++) {
-                if (0 == strcmp (b->integral[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < b->nuser_data; n++) {
-                if (0 == strcmp (b->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "Gravity_t")) {
-            if (b->gravity && 0 == strcmp (b->gravity->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "Axisymmetry_t")) {
-            if (b->axisym && 0 == strcmp (b->axisym->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "RotatingCoordinates_t")) {
-            if (b->rotating && 0 == strcmp (b->rotating->name, name))
-                return 1;
-        }
-        else
-            return -1;
-    }
-
-    /* Zone_t */
-
-    else if (0 == strcmp (posit_label, "Zone_t")) {
-        cgns_zone *z = (cgns_zone *)posit;
-        if (0 == strcmp (label, "GridCoordinates_t")) {
-            for (n = 0; n < z->nzcoor; n++) {
-                if (0 == strcmp (z->zcoor[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "ZoneIterativeData_t")) {
-            if (z->ziter && 0 == strcmp (z->ziter->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "Elements_t")) {
-            for (n = 0; n < z->nsections; n++) {
-                if (0 == strcmp (z->section[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "FlowSolution_t")) {
-            for (n = 0; n < z->nsols; n++) {
-                if (0 == strcmp (z->sol[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "RigidGridMotion_t")) {
-            for (n = 0; n < z->nrmotions; n++) {
-                if (0 == strcmp (z->rmotion[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "ArbitraryGridMotion_t")) {
-            for (n = 0; n < z->namotions; n++) {
-                if (0 == strcmp (z->amotion[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "ZoneGridConnectivity_t")) {
-            if (z->zconn && 0 == strcmp (z->zconn->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "ZoneBC_t")) {
-            if (z->zboco && 0 == strcmp (z->zboco->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "DiscreteData_t")) {
-            for (n = 0; n < z->ndiscrete; n++) {
-                if (0 == strcmp (z->discrete[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "FlowEquationSet_t")) {
-            if (z->equations && 0 == strcmp (z->equations->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "ConvergenceHistory_t")) {
-            if (z->converg && 0 == strcmp (z->converg->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "IntegralData_t")) {
-            for (n = 0; n < z->nintegrals; n++) {
-                if (0 == strcmp (z->integral[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "ReferenceState_t")) {
-            if (z->state && 0 == strcmp (z->state->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < z->nuser_data; n++) {
-                if (0 == strcmp (z->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "RotatingCoordinates_t")) {
-            if (z->rotating && 0 == strcmp (z->rotating->name, name))
-                return 1;
-        }
-        else
-            return -1;
-    }
-
-    /* GridCoordinates_t */
-
-    else if (0 == strcmp (posit_label, "GridCoordinates_t")) {
-        cgns_zcoor *z = (cgns_zcoor *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < z->ncoords; n++) {
-                if (0 == strcmp (z->coord[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < z->nuser_data; n++) {
-                if (0 == strcmp (z->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* FlowSolution_t */
-
-    else if (0 == strcmp (posit_label, "FlowSolution_t")) {
-        cgns_sol *s = (cgns_sol *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < s->nfields; n++) {
-                if (0 == strcmp (s->field[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < s->nuser_data; n++) {
-                if (0 == strcmp (s->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* ZoneGridConnectivity_t */
-
-    else if (0 == strcmp (posit_label, "ZoneGridConnectivity_t")) {
-        cgns_zconn *z = (cgns_zconn *)posit;
-        if (0 == strcmp (label, "OversetHoles_t")) {
-            for (n = 0; n < z->nholes; n++) {
-                if (0 == strcmp (z->hole[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "GridConnectivity_t")) {
-            for (n = 0; n < z->nconns; n++) {
-                if (0 == strcmp (z->conn[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "GridConnectivity1to1_t")) {
-            for (n = 0; n < z->n1to1; n++) {
-                if (0 == strcmp (z->one21[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < z->nuser_data; n++) {
-                if (0 == strcmp (z->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* OversetHoles_t */
-
-    else if (0 == strcmp (posit_label, "OversetHoles_t")) {
-        cgns_hole *h = (cgns_hole *)posit;
-        if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < h->nuser_data; n++) {
-                if (0 == strcmp (h->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* GridConnectivity_t */
-
-    else if (0 == strcmp (posit_label, "GridConnectivity_t")) {
-        cgns_conn *c = (cgns_conn *)posit;
-        if (0 == strcmp (label, "GridConnectivityProperty_t")) {
-            if (c->cprop && 0 == strcmp (c->cprop->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < c->nuser_data; n++) {
-                if (0 == strcmp (c->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* GridConnectivity1to1_t */
-
-    else if (0 == strcmp (posit_label, "GridConnectivity1to1_t")) {
-        cgns_1to1 *c = (cgns_1to1 *)posit;
-        if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < c->nuser_data; n++) {
-                if (0 == strcmp (c->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* ZoneBC_t */
-
-    else if (0 == strcmp (posit_label, "ZoneBC_t")) {
-        cgns_zboco *z = (cgns_zboco *)posit;
-        if (0 == strcmp (label, "BC_t")) {
-            for (n = 0; n < z->nbocos; n++) {
-                if (0 == strcmp (z->boco[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "ReferenceState_t")) {
-            if (z->state && 0 == strcmp (z->state->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < z->nuser_data; n++) {
-                if (0 == strcmp (z->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* BC_t */
-
-    else if (0 == strcmp (posit_label, "BC_t")) {
-        cgns_boco *b = (cgns_boco *)posit;
-        if (0 == strcmp (label, "BCDataSet_t")) {
-            for (n = 0; n < b->ndataset; n++) {
-                if (0 == strcmp (b->dataset[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "BCProperty_t")) {
-            if (b->bprop && 0 == strcmp (b->bprop->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "ReferenceState_t")) {
-            if (b->state && 0 == strcmp (b->state->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < b->nuser_data; n++) {
-                if (0 == strcmp (b->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* BCDataSet_t */
-
-    else if (0 == strcmp (posit_label, "BCDataSet_t")) {
-        cgns_dataset *d = (cgns_dataset *)posit;
-        if (0 == strcmp (label, "BCData_t")) {
-            if ((d->dirichlet && 0 == strcmp (d->dirichlet->name, name)) ||
-                (d->neumann && 0 == strcmp (d->neumann->name, name)))
-                return 1;
-        }
-        else if (0 == strcmp (label, "ReferenceState_t")) {
-            if (d->state && 0 == strcmp (d->state->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < d->nuser_data; n++) {
-                if (0 == strcmp (d->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* BCData_t */
-
-    else if (0 == strcmp (posit_label, "BCData_t")) {
-        cgns_bcdata *b = (cgns_bcdata *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < b->narrays; n++) {
-                if (0 == strcmp (b->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < b->nuser_data; n++) {
-                if (0 == strcmp (b->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* DiscreteData_t */
-
-    else if (0 == strcmp (posit_label, "DiscreteData_t")) {
-        cgns_discrete *d = (cgns_discrete *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < d->narrays; n++) {
-                if (0 == strcmp (d->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < d->nuser_data; n++) {
-                if (0 == strcmp (d->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* FlowEquationSet_t */
-
-    else if (0 == strcmp (posit_label, "FlowEquationSet_t")) {
-        cgns_equations *e = (cgns_equations *)posit;
-        if (0 == strcmp (label, "GoverningEquations_t")) {
-            if (e->governing && 0 == strcmp (e->governing->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "GasModel_t")) {
-            if (e->gas && 0 == strcmp (e->gas->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "ViscosityModel_t")) {
-            if (e->visc && 0 == strcmp (e->visc->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "ThermalConductivityModel_t")) {
-            if (e->conduct && 0 == strcmp (e->conduct->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "TurbulenceModel_t")) {
-            if (e->turbulence && 0 == strcmp (e->turbulence->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "TurbulenceClosure_t")) {
-            if (e->closure && 0 == strcmp (e->closure->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "ThermalRelaxationModel_t")) {
-            if (e->relaxation && 0 == strcmp (e->relaxation->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "ChemicalKineticsModel_t")) {
-            if (e->chemkin && 0 == strcmp (e->chemkin->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < e->nuser_data; n++) {
-                if (0 == strcmp (e->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* GoverningEquations_t */
-
-    else if (0 == strcmp (posit_label, "GoverningEquations_t")) {
-        cgns_governing *g = (cgns_governing *)posit;
-        if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < g->nuser_data; n++) {
-                if (0 == strcmp (g->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* GasModel_t */
-    /* ViscosityModel_t */
-    /* ThermalConductivityModel_t */
-    /* TurbulenceModel_t */
-    /* TurbulenceClosure_t */
-    /* ThermalRelaxationModel_t */
-    /* ChemicalKineticsModel_t */
-
-    else if (0 == strcmp (posit_label, "GasModel_t") ||
-             0 == strcmp (posit_label, "ViscosityModel_t") ||
-             0 == strcmp (posit_label, "ThermalConductivityModel_t") ||
-             0 == strcmp (posit_label, "TurbulenceModel_t") ||
-             0 == strcmp (posit_label, "TurbulenceClosure_t") ||
-             0 == strcmp (posit_label, "ThermalRelaxationModel_t") ||
-             0 == strcmp (posit_label, "ChemicalKineticsModel_t")) {
-        cgns_model *m = (cgns_model *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < m->narrays; n++) {
-                if (0 == strcmp (m->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < m->nuser_data; n++) {
-                if (0 == strcmp (m->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* ConvergenceHistory_t */
-
-    else if (0 == strcmp (posit_label, "ConvergenceHistory_t")) {
-        cgns_converg *c = (cgns_converg *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < c->narrays; n++) {
-                if (0 == strcmp (c->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < c->nuser_data; n++) {
-                if (0 == strcmp (c->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* IntegralData_t */
-
-    else if (0 == strcmp (posit_label, "IntegralData_t")) {
-        cgns_integral *i = (cgns_integral *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < i->narrays; n++) {
-                if (0 == strcmp (i->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < i->nuser_data; n++) {
-                if (0 == strcmp (i->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* ReferenceState_t */
-
-    else if (0 == strcmp (posit_label, "ReferenceState_t")) {
-        cgns_state *s = (cgns_state *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < s->narrays; n++) {
-                if (0 == strcmp (s->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < s->nuser_data; n++) {
-                if (0 == strcmp (s->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* Elements_t */
-
-    else if (0 == strcmp (posit_label, "Elements_t")) {
-        cgns_section *s = (cgns_section *)posit;
-        if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < s->nuser_data; n++) {
-                if (0 == strcmp (s->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* Family_t */
-
-    else if (0 == strcmp (posit_label, "Family_t")) {
-        cgns_family *f = (cgns_family *)posit;
-        if (0 == strcmp (label, "GeometryReference_t")) {
-            for (n = 0; n < f->ngeos; n++) {
-                if (0 == strcmp (f->geo[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < f->nuser_data; n++) {
-                if (0 == strcmp (f->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* GeometryReference_t */
-
-    else if (0 == strcmp (posit_label, "GeometryReference_t")) {
-        cgns_geo *g = (cgns_geo *)posit;
-        if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < g->nuser_data; n++) {
-                if (0 == strcmp (g->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* RigidGridMotion_t */
-
-    else if (0 == strcmp (posit_label, "RigidGridMotion_t")) {
-        cgns_rmotion *m = (cgns_rmotion *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < m->narrays; n++) {
-                if (0 == strcmp (m->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < m->nuser_data; n++) {
-                if (0 == strcmp (m->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* ArbitraryGridMotion_t */
-
-    else if (0 == strcmp (posit_label, "ArbitraryGridMotion_t")) {
-        cgns_amotion *m = (cgns_amotion *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < m->narrays; n++) {
-                if (0 == strcmp (m->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < m->nuser_data; n++) {
-                if (0 == strcmp (m->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* BaseIterativeData_t */
-
-    else if (0 == strcmp (posit_label, "BaseIterativeData_t")) {
-        cgns_biter *b = (cgns_biter *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < b->narrays; n++) {
-                if (0 == strcmp (b->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < b->nuser_data; n++) {
-                if (0 == strcmp (b->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* ZoneIterativeData_t */
-
-    else if (0 == strcmp (posit_label, "ZoneIterativeData_t")) {
-        cgns_ziter *z = (cgns_ziter *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < z->narrays; n++) {
-                if (0 == strcmp (z->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < z->nuser_data; n++) {
-                if (0 == strcmp (z->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* UserDefinedData_t */
-
-    /* add recursive UserDefinedData_t */
-
-    /* Gravity_t */
-
-    else if (0 == strcmp (posit_label, "Gravity_t")) {
-        cgns_gravity *g = (cgns_gravity *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < g->narrays; n++) {
-                if (0 == strcmp (g->vector[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < g->nuser_data; n++) {
-                if (0 == strcmp (g->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* Axisymmetry_t */
-
-    else if (0 == strcmp (posit_label, "Axisymmetry_t")) {
-        cgns_axisym *a = (cgns_axisym *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < a->narrays; n++) {
-                if (0 == strcmp (a->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < a->nuser_data; n++) {
-                if (0 == strcmp (a->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* RotatingCoordinates_t */
-
-    else if (0 == strcmp (posit_label, "RotatingCoordinates_t")) {
-        cgns_rotating *r = (cgns_rotating *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < r->narrays; n++) {
-                if (0 == strcmp (r->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < r->nuser_data; n++) {
-                if (0 == strcmp (r->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* BCProperty_t */
-
-    else if (0 == strcmp (posit_label, "BCProperty_t")) {
-        cgns_bprop *b = (cgns_bprop *)posit;
-        if (0 == strcmp (label, "WallFunction_t")) {
-            if (b->bcwall && 0 == strcmp (b->bcwall->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "Area_t")) {
-            if (b->bcarea && 0 == strcmp (b->bcarea->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < b->nuser_data; n++) {
-                if (0 == strcmp (b->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* WallFunction_t */
-
-    else if (0 == strcmp (posit_label, "WallFunction_t")) {
-        cgns_bcwall *w = (cgns_bcwall *)posit;
-        if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < w->nuser_data; n++) {
-                if (0 == strcmp (w->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* Area_t */
-
-    else if (0 == strcmp (posit_label, "Area_t")) {
-        cgns_bcarea *a = (cgns_bcarea *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < a->narrays; n++) {
-                if (0 == strcmp (a->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < a->nuser_data; n++) {
-                if (0 == strcmp (a->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* GridConnectivityProperty_t */
-
-    else if (0 == strcmp (posit_label, "GridConnectivityProperty_t")) {
-        cgns_cprop *c = (cgns_cprop *)posit;
-        if (0 == strcmp (label, "Periodic_t")) {
-            if (c->cperio && 0 == strcmp (c->cperio->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "AverageInterface_t")) {
-            if (c->caverage && 0 == strcmp (c->caverage->name, name))
-                return 1;
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < c->nuser_data; n++) {
-                if (0 == strcmp (c->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* Periodic_t */
-
-    else if (0 == strcmp (posit_label, "Periodic_t")) {
-        cgns_cperio *p = (cgns_cperio *)posit;
-        if (0 == strcmp (label, "DataArray_t")) {
-            for (n = 0; n < p->narrays; n++) {
-                if (0 == strcmp (p->array[n].name, name))
-                    return n + 1;
-            }
-        }
-        else if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < p->nuser_data; n++) {
-                if (0 == strcmp (p->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* AverageInterface_t */
-
-    else if (0 == strcmp (posit_label, "AverageInterface_t")) {
-        cgns_caverage *a = (cgns_caverage *)posit;
-        if (0 == strcmp (label, "UserDefinedData_t")) {
-            for (n = 0; n < a->nuser_data; n++) {
-                if (0 == strcmp (a->user_data[n].name, name))
-                    return n + 1;
-            }
-        }
-        else
-            return -1;
-    }
-
-    /* invalid */
-
-    else
-        return -1;
-
-    return 0;
-}
-
-/*-----------------------------------------------------------------------*/
-
-static int goto_node ()
-{
-    char *p, name[33], label[33];
-    int n, ierr, index;
-    double pid, id;
-
-    for (n = 0; n < goDepth; n++) {
-        strcpy (name, goLabel[n]);
-        p = name + strlen(name) - 2;
-        if (goIndex[n] < 1 || strcmp (p, "_t")) {
-            if (go_depth (n) || cgi_posit_id (&pid))
-                return CG_ERROR;
-            ADF_Get_Node_ID (pid, name, &id, &ierr);
-            if (ierr > 0) {
-                if (ierr == CHILD_NOT_OF_GIVEN_PARENT) {
-                    cgi_error ("goto path not found");
-                    return CG_NODE_NOT_FOUND;
-                }
-                adf_error("ADF_Get_Node_ID", ierr);
-                return CG_ERROR;
-            }
-            ADF_Get_Label (id, label, &ierr);
-            if (ierr > 0) {
-                adf_error("ADF_Get_Label", ierr);
-                return CG_ERROR;
-            }
-            index = node_index (name, label);
-            if (index < 0) {
-                cgi_error ("invalid goto path");
-                return CG_INCORRECT_PATH;
-            }
-            if (index == 0) {
-                cgi_error ("goto path not found");
-                return CG_NODE_NOT_FOUND;
-            }
-            strcpy (goLabel[n], label);
-            goIndex[n] = index;
-        }
-    }
-    return go_depth (goDepth);
-}
-
-/*-----------------------------------------------------------------------*/
-
-static int get_cg_error (
-#ifdef PROTOTYPE
-    Tcl_Interp *interp, char *funcname)
-#else
-    interp, funcname)
-Tcl_Interp *interp;
-char *funcname;
-#endif
+static int get_cg_error (Tcl_Interp *interp, char *funcname)
 {
     Tcl_AppendResult (interp, cg_get_error(), NULL);
     return TCL_ERROR;
@@ -985,13 +28,7 @@ char *funcname;
 
 /*-----------------------------------------------------------------------*/
 
-static int sizeof_datatype (
-#ifdef PROTOTYPE
-    DataType_t dtype)
-#else
-    dtype)
-DataType_t dtype;
-#endif
+static int sizeof_datatype (DataType_t dtype)
 {
     if (dtype == Character)  return sizeof(char);
     if (dtype == Integer)    return sizeof(int);
@@ -1002,16 +39,8 @@ DataType_t dtype;
 
 /*-----------------------------------------------------------------------*/
 
-static int get_data_size (
-#ifdef PROTOTYPE
-    Tcl_Interp *interp, DataType_t type, int ndim, int *dims,
-    int *count, int *bytes)
-#else
-    interp, type, ndim, dims, count, bytes)
-Tcl_Interp *interp;
-DataType_t type;
-int ndim, *dims, *count, *bytes;
-#endif
+static int get_data_size (Tcl_Interp *interp, DataType_t type,
+    int ndim, int *dims, int *count, int *bytes)
 {
     int n;
 
@@ -1035,20 +64,11 @@ int ndim, *dims, *count, *bytes;
 
 /*-----------------------------------------------------------------------*/
 
-static int extract_data (
-#ifdef PROTOTYPE
-    Tcl_Interp *interp, char *list, DataType_t type, int *count, void **data)
-#else
-    interp, list, type, count, data)
-Tcl_Interp *interp;
-char *list;
-DataType_t type;
-int *count;
-void **data;
-#endif
+static int extract_data (Tcl_Interp *interp, char *list, DataType_t type,
+    int *count, void **data)
 {
     int n, cnt, bytes;
-    char **args;
+    CONST char **args;
 
     bytes = sizeof_datatype (type);
     if (bytes == 0) {
@@ -1092,16 +112,8 @@ void **data;
 
 /*-----------------------------------------------------------------------*/
 
-static int construct_data (
-#ifdef PROTOTYPE
-    Tcl_Interp *interp, DataType_t type, int count, void *data)
-#else
-    interp, type, count, data)
-Tcl_Interp *interp;
-DataType_t type;
-int count;
-void *data;
-#endif
+static int construct_data (Tcl_Interp *interp, DataType_t type,
+    int count, void *data)
 {
     int n;
 
@@ -1142,14 +154,7 @@ void *data;
 
 /*-----------------------------------------------------------------------*/
 
-static int check_name (
-#ifdef PROTOTYPE
-    Tcl_Interp *interp, char *desc, char *name)
-#else
-    interp, desc, name)
-Tcl_Interp *interp;
-char *desc, *name;
-#endif
+static int check_name (Tcl_Interp *interp, char *desc, char *name)
 {
     int len = strlen (name);
 
@@ -1162,16 +167,8 @@ char *desc, *name;
 
 /*-----------------------------------------------------------------------*/
 
-static int get_type (
-#ifdef PROTOTYPE
-    Tcl_Interp *interp, char *desc, char *name, int cnt,
+static int get_type (Tcl_Interp *interp, char *desc, char *name, int cnt,
     const char **list, int *type)
-#else
-    interp, name, cnt, list, desc, type)
-Tcl_Interp *interp;
-char *desc, *name, **list;
-int cnt, *type;
-#endif
 {
     int n;
 
@@ -1187,15 +184,7 @@ int cnt, *type;
 
 /*-----------------------------------------------------------------------*/
 
-static int get_data_type (
-#ifdef PROTOTYPE
-    Tcl_Interp *interp, char *name, DataType_t *datatype)
-#else
-    interp, name, datatype)
-Tcl_Interp *interp;
-char *name;
-DataType_t *datatype;
-#endif
+static int get_data_type (Tcl_Interp *interp, char *name, DataType_t *datatype)
 {
     int type;
 
@@ -1207,22 +196,14 @@ DataType_t *datatype;
 
 /*-----------------------------------------------------------------------*/
 
-static int count_elements (
-#ifdef PROTOTYPE
-    Tcl_Interp *interp, ElementType_t type, int cnt, int *elements,
-    int nelems)
-#else
-    interp, type, cnt, elements, nelems)
-Tcl_Interp *interp;
-ElementType_t type;
-int cnt, *elements, nelems;
-#endif
+static int count_elements (Tcl_Interp *interp, ElementType_t type,
+    int cnt, int *elements, int nelems)
 {
     int npe, ne, n;
 
     if (type <= ElementTypeUserDefined || type > MIXED) {
         Tcl_AppendResult (interp, "can't handle element type ",
-            cg_element_type_name(type), NULL);
+            cg_ElementTypeName(type), NULL);
         return 1;
     }
     if (type < MIXED) {
@@ -1239,7 +220,7 @@ int cnt, *elements, nelems;
         type = (ElementType_t)elements[n++];
         if (type <= ElementTypeUserDefined || type >= MIXED) {
             Tcl_AppendResult (interp, "can't handle element type ",
-                cg_element_type_name(type), " as MIXED element", NULL);
+                cg_ElementTypeName(type), " as MIXED element", NULL);
             return 1;
         }
         cg_npe (type, &npe);
@@ -1255,13 +236,7 @@ int cnt, *elements, nelems;
 
 /*-----------------------------------------------------------------------*/
 
-static int cg_physical_dim (
-#ifdef PROTOTYPE
-    int cgfile, int cgbase, int *phys_dim)
-#else
-    cgfile, cgbase, phys_dim)
-int cgfile, cgbase, *phys_dim;
-#endif
+static int cg_physical_dim (int cgfile, int cgbase, int *phys_dim)
 {
     cgns_file *file;
     cgns_base *base;
@@ -1276,13 +251,7 @@ int cgfile, cgbase, *phys_dim;
 
 /*-----------------------------------------------------------------------*/
 
-static int cg_cell_dim (
-#ifdef PROTOTYPE
-    int cgfile, int cgbase, int *cell_dim)
-#else
-    cgfile, cgbase, cell_dim)
-int cgfile, cgbase, *cell_dim;
-#endif
+static int cg_cell_dim (int cgfile, int cgbase, int *cell_dim)
 {
     cgns_file *file;
     cgns_base *base;
@@ -1297,13 +266,7 @@ int cgfile, cgbase, *cell_dim;
 
 /*-----------------------------------------------------------------------*/
 
-static int cg_index_dim (
-#ifdef PROTOTYPE
-    int cgfile, int cgbase, int cgzone, int *index_dim)
-#else
-    cgfile, cgbase, cgzone, index_dim)
-int cgfile, cgbase, cgzone, *index_dim;
-#endif
+static int cg_index_dim (int cgfile, int cgbase, int cgzone, int *index_dim)
 {
     cgns_file *file;
     cgns_zone *zone;
@@ -1318,13 +281,8 @@ int cgfile, cgbase, cgzone, *index_dim;
 
 /*-----------------------------------------------------------------------*/
 
-static int cg_coord_dim (
-#ifdef PROTOTYPE
-    int cgfile, int cgbase, int cgzone, int *index_dim, int *dims)
-#else
-    cgfile, cgbase, cgzone, index_dim, dims)
-int cgfile, cgbase, cgzone, *index_dim, *dims;
-#endif
+static int cg_coord_dim (int cgfile, int cgbase, int cgzone,
+    int *index_dim, int *dims)
 {
     int n;
     cgns_file *file;
@@ -1345,13 +303,8 @@ int cgfile, cgbase, cgzone, *index_dim, *dims;
 
 /*-----------------------------------------------------------------------*/
 
-static int cg_solution_dim (
-#ifdef PROTOTYPE
-    int cgfile, int cgbase, int cgzone, int cgsoln, int *index_dim, int *dims)
-#else
-    cgfile, cgbase, cgzone, cgsoln, index_dim, dims)
-int cgfile, cgbase, cgzone, cgsoln, *index_dim, *dims;
-#endif
+static int cg_solution_dim (int cgfile, int cgbase, int cgzone, int cgsoln,
+    int *index_dim, int *dims)
 {
     int n;
     cgns_file *file;
@@ -1372,14 +325,8 @@ int cgfile, cgbase, cgzone, cgsoln, *index_dim, *dims;
 
 /*-----------------------------------------------------------------------*/
 
-static int cg_hole_size (
-#ifdef PROTOTYPE
-    int cgfile, int cgbase, int cgzone, int cghole, int *size)
-#else
-    cgfile, cgbase, cgzone, cghole, size)
-int cgfile, cgbase, cgzone, cghole, *size;
-DataType_t *dtype;
-#endif
+static int cg_hole_size (int cgfile, int cgbase, int cgzone,
+    int cghole, int *size)
 {
     int n;
     cgns_file *file;
@@ -1399,15 +346,8 @@ DataType_t *dtype;
 
 /*-----------------------------------------------------------------------*/
 
-static int cg_conn_dim (
-#ifdef PROTOTYPE
-    int cgfile, int cgbase, int cgzone, int cgconn,
+static int cg_conn_dim (int cgfile, int cgbase, int cgzone, int cgconn,
     int *cnt, int *size, int *dsize, DataType_t *dtype)
-#else
-    cgfile, cgbase, cgzone, cgconn, cnt, size, dsize, dtype)
-int cgfile, cgbase, cgzone, cgconn, *pcnt, *size, *dsize;
-DataType_t *dtype;
-#endif
 {
     cgns_file *file;
     cgns_conn *conn;
@@ -1444,15 +384,8 @@ DataType_t *dtype;
 
 /*-----------------------------------------------------------------------*/
 
-static int cg_boco_dim (
-#ifdef PROTOTYPE
-    int cgfile, int cgbase, int cgzone, int cgboco,
+static int cg_boco_dim (int cgfile, int cgbase, int cgzone, int cgboco,
     int *pcnt, int *psize, int *ncnt, DataType_t *ntype)
-#else
-    cgfile, cgbase, cgzone, cgboco, pcnt, psize, ncnt, ntype)
-int cgfile, cgbase, cgzone, cgboco, *pcnt, *psize, *ncnt;
-DataType_t *ntype;
-#endif
 {
     cgns_file *file;
     cgns_boco *boco;
@@ -1479,16 +412,8 @@ DataType_t *ntype;
  *      LIBRARY FUNCTIONS						 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_library_version (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_library_version (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 1) {
@@ -1503,16 +428,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_get_names (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_get_names (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int n, cnt;
     const char **names;
@@ -1542,7 +459,6 @@ char **argv;
         cnt = NofValidAngleUnits;
         names = AngleUnitsName;
     }
-#if CGNS_VERSION >= 2400
     else if (0 == strcmp (argv[1], "ElectricCurrentUnits_t")) {
         cnt = NofValidElectricCurrentUnits;
         names = ElectricCurrentUnitsName;
@@ -1555,7 +471,6 @@ char **argv;
         cnt = NofValidLuminousIntensityUnits;
         names = LuminousIntensityUnitsName;
     }
-#endif
     else if (0 == strcmp (argv[1], "DataClass_t")) {
         cnt = NofValidDataClass;
         names = DataClassName;
@@ -1636,16 +551,41 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_open (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
+static int tcl_cg_is_cgns (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
+{
+    int is_cgns;
+#if CGNS_VERSION >= 3000
+    int file_type;
 #endif
+
+    Tcl_ResetResult (interp);
+    if (argc != 2) {
+        Tcl_AppendResult (interp, "usage: ", argv[0], " filename", NULL);
+        return TCL_ERROR;
+    }
+#if CGNS_VERSION >= 3000
+    is_cgns = cg_is_cgns(argv[1], &file_type);
+    if (file_type == CG_FILE_ADF)
+        sprintf (buff, "%d ADF", is_cgns);
+    else if (file_type == CG_FILE_HDF5)
+        sprintf (buff, "%d HDF5", is_cgns);
+    else if (file_type == CG_FILE_XML)
+        sprintf (buff, "%d XML", is_cgns);
+    else
+        sprintf (buff, "%d unknown", is_cgns);
+#else
+    is_cgns = cg_is_cgns(argv[1]);
+    sprintf (buff, "%d", is_cgns);
+#endif
+    Tcl_AppendResult (interp, buff, NULL);
+    return TCL_OK;
+}
+
+/*-----------------------------------------------------------------------*/
+
+static int tcl_cg_open (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int mode, cgfile;
 
@@ -1655,11 +595,11 @@ char **argv;
         return TCL_ERROR;
     }
     if (argv[2][0] == 'r' || argv[2][0] == 'R')
-        mode = MODE_READ;
+        mode = CG_MODE_READ;
     else if (argv[2][0] == 'w' || argv[2][0] == 'W')
-        mode = MODE_WRITE;
+        mode = CG_MODE_WRITE;
     else if (argv[2][0] == 'm' || argv[2][0] == 'M')
-        mode = MODE_MODIFY;
+        mode = CG_MODE_MODIFY;
     else {
         Tcl_AppendResult (interp,
             "invalid mode: should be r[ead], w[rite] or m[odify]", NULL);
@@ -1676,16 +616,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_version (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_version (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     float version;
 
@@ -1705,16 +637,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_close (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_close (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 2) {
@@ -1732,16 +656,8 @@ char **argv;
  *      Read and write CGNSBase_t Nodes					 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_nbases (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nbases (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nbases;
 
@@ -1761,16 +677,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_base_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_base_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     int cell, phy;
@@ -1795,16 +703,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_base_id (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_base_id (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     double id;
 
@@ -1825,16 +725,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_base_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_base_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgbase;
 
@@ -1859,16 +751,8 @@ char **argv;
  *      Read and write Zone_t Nodes    					 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_nzones (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nzones (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nzones;
 
@@ -1889,16 +773,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_zone_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_zone_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char *p, name[33];
     int n, idim, sizes[9];
@@ -1930,16 +806,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_zone_type (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_zone_type (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     ZoneType_t type;
 
@@ -1953,22 +821,14 @@ char **argv;
     if (cg_zone_type (atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), &type))
         return get_cg_error (interp, "cg_zone_type");
 
-    Tcl_AppendResult (interp, cg_zone_type_name(type), NULL);
+    Tcl_AppendResult (interp, cg_ZoneTypeName(type), NULL);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_zone_id (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_zone_id (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     double id;
 
@@ -1989,16 +849,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_zone_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_zone_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, cgfile, cgbase, cgzone;
     int cdim, len, *sizes;
@@ -2048,16 +900,8 @@ char **argv;
  *      Read and write Family_t Nodes                                    *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_nfamilies (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nfamilies (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nfam;
 
@@ -2078,16 +922,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_family_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_family_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     int nboco, ngeo;
@@ -2113,16 +949,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_family_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_family_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgfam;
 
@@ -2146,16 +974,8 @@ char **argv;
  *      Read and write FamilyName_t Nodes                                *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_famname_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_famname_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     char name[33];
@@ -2178,16 +998,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_famname_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_famname_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 2) {
@@ -2206,16 +1018,8 @@ char **argv;
  *      Read and write FamilyBC_t Nodes                                  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_fambc_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_fambc_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     BCType_t bctype;
@@ -2232,22 +1036,14 @@ char **argv;
         return get_cg_error (interp, "cg_fambc_read");
 
     Tcl_AppendElement (interp, name);
-    Tcl_AppendElement (interp, cg_bc_type_name(bctype));
+    Tcl_AppendElement (interp, cg_BCTypeName(bctype));
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_fambc_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_fambc_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int type, cgbc;
 
@@ -2274,16 +1070,8 @@ char **argv;
  *      Read and write GeometryReference_t Nodes                         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_geo_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_geo_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int npart;
     char name[33], *filename, cadname[33];
@@ -2310,16 +1098,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_geo_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_geo_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cggeo;
 
@@ -2349,16 +1129,8 @@ char **argv;
  *      Read and write GeometryEntity_t Nodes                            *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_part_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_part_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
 
@@ -2379,16 +1151,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_part_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_part_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgpart;
 
@@ -2413,16 +1177,8 @@ char **argv;
  *      Read and write GridCoordinates_t Nodes                           *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_ngrids (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_ngrids (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ngrids;
 
@@ -2443,16 +1199,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_grid_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_grid_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
 
@@ -2473,16 +1221,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_grid_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_grid_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cggrid;
     char gridname[33];
@@ -2513,16 +1253,8 @@ char **argv;
  *      Read and write GridCoordinates_t/DataArray_t Nodes               *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_ncoords (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_ncoords (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ncoor;
 
@@ -2543,16 +1275,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_coord_info (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_coord_info (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     DataType_t type;
@@ -2568,23 +1292,15 @@ char **argv;
             atoi(argv[4]), &type, name))
         return get_cg_error (interp, "cg_coord_info");
 
-    Tcl_AppendElement (interp, cg_data_type_name(type));
+    Tcl_AppendElement (interp, cg_DataTypeName(type));
     Tcl_AppendElement (interp, name);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_coord_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_coord_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgfile, cgbase, cgzone;
     int n, index_dim, dims[3];
@@ -2657,16 +1373,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_coord_id (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_coord_id (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     double id;
 
@@ -2688,40 +1396,22 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_coord_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_coord_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int n, cgfile, cgbase, cgzone, cgcoord;
     int ierr, cnt, index_dim, dims[3];
-#if CGNS_VERSION >= 2400
     int rmin[3], rmax[3];
-#endif
     DataType_t datatype;
     void *coords;
 
     Tcl_ResetResult (interp);
-#if CGNS_VERSION >= 2400
     if (argc != 7 && argc != 9) {
         Tcl_AppendResult (interp, "usage: ", argv[0],
             " filenum basenum zonenum datatype coordname [rmin rmax] coords",
             NULL);
         return TCL_ERROR;
     }
-#else
-    if (argc != 7) {
-        Tcl_AppendResult (interp, "usage: ", argv[0],
-            " filenum basenum zonenum datatype coordname coords", NULL);
-        return TCL_ERROR;
-    }
-#endif
     if (check_name (interp, "coord", argv[5]) ||
         get_data_type (interp, argv[4], &datatype)) return TCL_ERROR;
     if (datatype != RealSingle && datatype != RealDouble) {
@@ -2736,7 +1426,6 @@ char **argv;
     if (cg_coord_dim (cgfile, cgbase, cgzone, &index_dim, dims))
         return get_cg_error (interp, "cg_coord_read");
 
-#if CGNS_VERSION >= 2400
     if (argc == 9) {
         if (index_dim != sscanf (argv[7], "%d%d%d",
                 &rmin[0], &rmin[1], &rmin[2]) ||
@@ -2755,7 +1444,6 @@ char **argv;
             dims[n] = (rmax[n] - rmin[n] + 1);
         }
     }
-#endif
     for (cnt = 1, n = 0; n < index_dim; n++)
         cnt *= dims[n];
 
@@ -2769,12 +1457,10 @@ char **argv;
         return TCL_ERROR;
     }
 
-#if CGNS_VERSION >= 2400
     if (argc == 9)
         ierr = cg_coord_partial_write (cgfile, cgbase, cgzone, datatype,
                    argv[5], rmin, rmax, coords, &cgcoord);
     else
-#endif
         ierr = cg_coord_write (cgfile, cgbase, cgzone, datatype,
                    argv[5], coords, &cgcoord);
     free (coords);
@@ -2789,16 +1475,8 @@ char **argv;
  *      Read and write Elements_t Nodes                                  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_nsections (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nsections (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nsect;
 
@@ -2819,16 +1497,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_section_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_section_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     ElementType_t type;
@@ -2846,7 +1516,7 @@ char **argv;
         return get_cg_error (interp, "cg_section_read");
 
     Tcl_AppendElement (interp, name);
-    Tcl_AppendElement (interp, cg_element_type_name(type));
+    Tcl_AppendElement (interp, cg_ElementTypeName(type));
     sprintf (buff, "%d", start);
     Tcl_AppendElement (interp, buff);
     sprintf (buff, "%d", end);
@@ -2860,20 +1530,12 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_elements_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_elements_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     ElementType_t type;
-    int ierr, nelem, getpar = (int)data;
+    int ierr, nelem, getpar = (int)((size_t)data);
     int cgfile, cgbase, cgzone, cgsect;
     int start, end, nbndry, haspar, size;
     int *elements, *parent;
@@ -2929,16 +1591,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_section_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_section_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, type, cnt, start, end, nbndry, cgsect;
     void *elements;
@@ -2974,16 +1628,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_parent_data_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_parent_data_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     ElementType_t type;
@@ -3024,16 +1670,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_npe (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_npe (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int type, npe;
 
@@ -3056,16 +1694,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_ElementDataSize (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_ElementDataSize (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int size;
 
@@ -3089,16 +1719,8 @@ char **argv;
  *      Read and write FlowSolution_t Nodes                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_nsols (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nsols (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nsol;
 
@@ -3119,16 +1741,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_sol_info (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_sol_info (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     GridLocation_t location;
@@ -3145,22 +1759,14 @@ char **argv;
         return get_cg_error (interp, "cg_sol_info");
 
     Tcl_AppendElement (interp, name);
-    Tcl_AppendElement (interp, cg_grid_location_name(location));
+    Tcl_AppendElement (interp, cg_GridLocationName(location));
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_sol_id (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_sol_id (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     double id;
 
@@ -3182,16 +1788,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_sol_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_sol_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgsoln, location;
 
@@ -3218,16 +1816,8 @@ char **argv;
  *      Read and write solution DataArray_t Nodes                        *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_nfields (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nfields (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nfield;
 
@@ -3249,16 +1839,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_field_info (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_field_info (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     DataType_t type;
@@ -3274,23 +1856,15 @@ char **argv;
             atoi(argv[4]), atoi(argv[5]), &type, name))
         return get_cg_error (interp, "cg_field_info");
 
-    Tcl_AppendElement (interp, cg_data_type_name(type));
+    Tcl_AppendElement (interp, cg_DataTypeName(type));
     Tcl_AppendElement (interp, name);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_field_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_field_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgfile, cgbase, cgzone, cgsoln;
     int n, index_dim, dims[3];
@@ -3365,16 +1939,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_field_id (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_field_id (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     double id;
 
@@ -3396,27 +1962,16 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_field_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_field_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int n, cgfile, cgbase, cgzone, cgsoln, cgfield;
     int ierr, cnt, index_dim, dims[3];
-#if CGNS_VERSION >= 2400
     int rmin[3], rmax[3];
-#endif
     DataType_t datatype;
     void *field;
 
     Tcl_ResetResult (interp);
-#if CGNS_VERSION >= 2400
     if (argc != 8 && argc != 10) {
         Tcl_AppendResult (interp, "usage: ", argv[0],
             " filenum basenum zonenum solnum datatype",
@@ -3424,14 +1979,6 @@ char **argv;
             NULL);
         return TCL_ERROR;
     }
-#else
-    if (argc != 8) {
-        Tcl_AppendResult (interp, "usage: ", argv[0],
-            " filenum basenum zonenum solnum datatype fieldname field_data",
-            NULL);
-        return TCL_ERROR;
-    }
-#endif
     if (check_name (interp, "field", argv[6]) ||
         get_data_type (interp, argv[5], &datatype)) return TCL_ERROR;
     if (datatype != Integer && datatype != RealSingle &&
@@ -3448,7 +1995,6 @@ char **argv;
     if (cg_solution_dim (cgfile, cgbase, cgzone, cgsoln, &index_dim, dims))
         return get_cg_error (interp, "cg_field_read");
 
-#if CGNS_VERSION >= 2400
     if (argc == 10) {
         if (index_dim != sscanf (argv[8], "%d%d%d",
                 &rmin[0], &rmin[1], &rmin[2]) ||
@@ -3467,7 +2013,6 @@ char **argv;
             dims[n] = (rmax[n] - rmin[n] + 1);
         }
     }
-#endif
     for (cnt = 1, n = 0; n < index_dim; n++)
         cnt *= dims[n];
 
@@ -3481,12 +2026,10 @@ char **argv;
         return TCL_ERROR;
     }
 
-#if CGNS_VERSION >= 2400
     if (argc == 10)
         ierr = cg_field_partial_write (cgfile, cgbase, cgzone, cgsoln,
                    datatype, argv[6], rmin, rmax, field, &cgfield);
     else
-#endif
         ierr = cg_field_write (cgfile, cgbase, cgzone, cgsoln,
                    datatype, argv[6], field, &cgfield);
     free (field);
@@ -3501,16 +2044,8 @@ char **argv;
  *      Read and write OversetHoles_t Nodes  				 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_nholes (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nholes (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nhole;
 
@@ -3532,16 +2067,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_hole_info (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_hole_info (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     GridLocation_t location;
@@ -3560,8 +2087,8 @@ char **argv;
         return get_cg_error (interp, "cg_hole_info");
 
     Tcl_AppendElement (interp, name);
-    Tcl_AppendElement (interp, cg_grid_location_name(location));
-    Tcl_AppendElement (interp, cg_point_set_type_name(ptsettype));
+    Tcl_AppendElement (interp, cg_GridLocationName(location));
+    Tcl_AppendElement (interp, cg_PointSetTypeName(ptsettype));
     sprintf (buff, "%d", nptsets);
     Tcl_AppendElement (interp, buff);
     sprintf (buff, "%d", npnts);
@@ -3571,16 +2098,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_hole_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_hole_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgfile, cgbase, cgzone, cghole;
     int ierr, size, *pts;
@@ -3615,16 +2134,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_hole_id (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_hole_id (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     double id;
 
@@ -3645,16 +2156,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_hole_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_hole_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgfile, cgbase, cgzone, cghole;
     int ierr, location, ptype, nsets, npnts, cnt, idim;
@@ -3706,16 +2209,8 @@ char **argv;
  *      Read and write GridConnectivity_t Nodes                          *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_nconns (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nconns (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nconn;
 
@@ -3736,16 +2231,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_conn_info (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_conn_info (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33], dname[33];
     GridLocation_t location;
@@ -3768,15 +2255,15 @@ char **argv;
         return get_cg_error (interp, "cg_conn_info");
 
     Tcl_AppendElement (interp, name);
-    Tcl_AppendElement (interp, cg_grid_location_name(location));
-    Tcl_AppendElement (interp, cg_grid_connectivity_type_name(conntype));
-    Tcl_AppendElement (interp, cg_point_set_type_name(ptsettype));
+    Tcl_AppendElement (interp, cg_GridLocationName(location));
+    Tcl_AppendElement (interp, cg_GridConnectivityTypeName(conntype));
+    Tcl_AppendElement (interp, cg_PointSetTypeName(ptsettype));
     sprintf (buff, "%d", npts);
     Tcl_AppendElement (interp, buff);
     Tcl_AppendElement (interp, dname);
-    Tcl_AppendElement (interp, cg_zone_type_name(dztype));
-    Tcl_AppendElement (interp, cg_point_set_type_name(dptsettype));
-    Tcl_AppendElement (interp, cg_data_type_name(datatype));
+    Tcl_AppendElement (interp, cg_ZoneTypeName(dztype));
+    Tcl_AppendElement (interp, cg_PointSetTypeName(dptsettype));
+    Tcl_AppendElement (interp, cg_DataTypeName(datatype));
     sprintf (buff, "%d", dnpts);
     Tcl_AppendElement (interp, buff);
     return TCL_OK;
@@ -3784,19 +2271,11 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_conn_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_conn_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgfile, cgbase, cgzone, cgconn;
-    int get_donor = (int)data;
+    int get_donor = (int)((size_t)data);
     int ierr, cnt, size, dsize;
     DataType_t dtype;
     void *pnts, *donor = NULL;
@@ -3850,16 +2329,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_conn_id (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_conn_id (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     double id;
 
@@ -3880,16 +2351,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_conn_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_conn_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgfile, cgbase, cgzone, cgconn;
     int ierr, idim, cdim, cnt;
@@ -3898,11 +2361,11 @@ char **argv;
     void *pnts, *donor;
 
     Tcl_ResetResult (interp);
-    if (argc != 16) {
+    if (argc != 11 && argc != 16) {
         Tcl_AppendResult (interp, "usage: ", argv[0],
             " filenum basenum zonenum connname location conntype",
-            " ptsettype npnts ptdata donorname donorzonetype",
-            " donorptsettype donordatatype ndonor donordata",
+            " ptsettype npnts ptdata donorname [donorzonetype",
+            " donorptsettype donordatatype ndonor donordata]",
             NULL);
         return TCL_ERROR;
     }
@@ -3913,18 +2376,20 @@ char **argv;
             GridConnectivityTypeName, &ctype) ||
         get_type (interp, "ptset", argv[7], NofValidPointSetTypes,
             PointSetTypeName, &ptype) ||
-        check_name (interp, "donor", argv[10]) ||
-        get_type (interp, "donorzone", argv[11], NofValidZoneTypes,
-            ZoneTypeName, &dztype) ||
-        get_type (interp, "donorptset", argv[12], NofValidPointSetTypes,
-            PointSetTypeName, &dptype) ||
-        get_type (interp, "donordata", argv[13], NofValidDataTypes,
-            DataTypeName, &ddtype)) return TCL_ERROR;
+        check_name (interp, "donor", argv[10])) return TCL_ERROR;
+    
+    if (argc == 16) {
+        if (get_type (interp, "donorzone", argv[11], NofValidZoneTypes,
+                ZoneTypeName, &dztype) ||
+            get_type (interp, "donorptset", argv[12], NofValidPointSetTypes,
+                PointSetTypeName, &dptype) ||
+            get_type (interp, "donordata", argv[13], NofValidDataTypes,
+                DataTypeName, &ddtype)) return TCL_ERROR;
+    }
     cgfile = atoi(argv[1]);
     cgbase = atoi(argv[2]);
     cgzone = atoi(argv[3]);
     npnts  = atoi(argv[8]);
-    ndonor = atoi(argv[14]);
 
     if (cg_index_dim (cgfile, cgbase, cgzone, &idim))
         return get_cg_error (interp, "cg_conn_write");
@@ -3945,24 +2410,36 @@ char **argv;
         return TCL_ERROR;
     }
 
-    if (extract_data (interp, argv[15], (DataType_t)ddtype, &cnt, &donor))
-        return TCL_ERROR;
-    if (cnt < ndonor * cdim) {
+    if (argc == 11) {
+        ierr = cg_conn_write_short (cgfile, cgbase, cgzone, argv[4],
+                   (GridLocation_t)location, (GridConnectivityType_t)ctype,
+                  (PointSetType_t)ptype, npnts, pnts, argv[10], &cgconn);
         free (pnts);
-        sprintf (buff, "needs %d values", ndonor * cdim);
-        Tcl_AppendResult (interp,
-            "insufficient point data - ", buff, NULL);
-        return TCL_ERROR;
+        if (ierr) return get_cg_error(interp, "cg_conn_write_short");
     }
-
-    ierr = cg_conn_write (cgfile, cgbase, cgzone, argv[4],
-              (GridLocation_t)location, (GridConnectivityType_t)ctype,
-              (PointSetType_t)ptype, npnts, pnts, argv[10],
-              (ZoneType_t)dztype, (PointSetType_t)dptype,
-              (DataType_t)ddtype, ndonor, donor, &cgconn);
-    free (pnts);
-    free (donor);
-    if (ierr) return get_cg_error (interp, "cg_conn_write");
+    else {
+        ndonor = atoi(argv[14]);
+        if (extract_data (interp, argv[15], (DataType_t)ddtype, &cnt, &donor)) {
+            free(pnts);
+            return TCL_ERROR;
+        }
+        if (cnt < ndonor * cdim) {
+            free (pnts);
+            free (donor);
+            sprintf (buff, "needs %d values", ndonor * cdim);
+            Tcl_AppendResult (interp,
+                "insufficient point data - ", buff, NULL);
+            return TCL_ERROR;
+        }
+        ierr = cg_conn_write (cgfile, cgbase, cgzone, argv[4],
+                  (GridLocation_t)location, (GridConnectivityType_t)ctype,
+                  (PointSetType_t)ptype, npnts, pnts, argv[10],
+                  (ZoneType_t)dztype, (PointSetType_t)dptype,
+                  (DataType_t)ddtype, ndonor, donor, &cgconn);
+        free (pnts);
+        free (donor);
+        if (ierr) return get_cg_error (interp, "cg_conn_write");
+    }
 
     sprintf (buff, "%d", cgconn);
     Tcl_AppendResult (interp, buff, NULL);
@@ -3973,16 +2450,8 @@ char **argv;
  *      Read and write GridConnectivity1to1_t Nodes in a zone            *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_n1to1 (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_n1to1 (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int n1to1;
 
@@ -4003,16 +2472,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_1to1_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_1to1_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int n, idim, cgfile, cgbase, cgzone;
     char *p, name[33], dname[33];
@@ -4058,16 +2519,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_1to1_id (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_1to1_id (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     double id;
 
@@ -4088,16 +2541,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_1to1_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_1to1_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgfile, cgbase, cgzone, cgconn;
     int n, *r, nr, idim;
@@ -4172,16 +2617,8 @@ char **argv;
  *      Read all GridConnectivity1to1_t Nodes of a base                  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_n1to1_global (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_n1to1_global (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int n1to1;
 
@@ -4218,16 +2655,8 @@ char **argv;
 int cg_1to1_read_global(int fn, int B, char **connectname, char **zonename,
 			char **donorname, int **range, int **donor_range, int **transform);
 */
-static int tcl_cg_1to1_read_global (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_1to1_read_global (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 3) {
@@ -4252,16 +2681,8 @@ char **argv;
  *      Read and write BC_t Nodes                                        *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_nbocos (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nbocos (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nboco;
 
@@ -4282,16 +2703,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_boco_info (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_boco_info (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char *p, name[33];
     int n, idim, cgfile, cgbase, cgzone, cgboco;
@@ -4317,8 +2730,8 @@ char **argv;
         return get_cg_error (interp, "cg_boco_info");
 
     Tcl_AppendElement (interp, name);
-    Tcl_AppendElement (interp, cg_bc_type_name(bctype));
-    Tcl_AppendElement (interp, cg_point_set_type_name(ptype));
+    Tcl_AppendElement (interp, cg_BCTypeName(bctype));
+    Tcl_AppendElement (interp, cg_PointSetTypeName(ptype));
     sprintf (buff, "%d", npnts);
     Tcl_AppendElement (interp, buff);
     sprintf (buff, "%d", nindex[0]);
@@ -4329,7 +2742,7 @@ char **argv;
     Tcl_AppendElement (interp, buff);
     sprintf (buff, "%d", nflag);
     Tcl_AppendElement (interp, buff);
-    Tcl_AppendElement (interp, cg_data_type_name(dtype));
+    Tcl_AppendElement (interp, cg_DataTypeName(dtype));
     sprintf (buff, "%d", ndataset);
     Tcl_AppendElement (interp, buff);
     return TCL_OK;
@@ -4337,20 +2750,12 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_boco_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_boco_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgfile, cgbase, cgzone, cgboco;
     int ierr, pcnt, psize, ncnt;
-    int get_nrmls = (int)data;
+    int get_nrmls = (int)((size_t)data);
     DataType_t ntype;
     void *pnts, *nrml = NULL;
 
@@ -4403,16 +2808,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_boco_id (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_boco_id (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     double id;
 
@@ -4434,16 +2831,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_boco_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_boco_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgfile, cgbase, cgzone, cgboco;
     int ierr, bctype, ptype, npnts, cnt, idim;
@@ -4497,16 +2886,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_boco_normal_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_boco_normal_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, cgfile, cgbase, cgzone, cgboco;
     int nflag, type, dim, psize, cnt, index[3];
@@ -4575,16 +2956,8 @@ char **argv;
  *      Read and write BCDataSet_t Nodes                                 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_dataset_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_dataset_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     BCType_t bctype;
@@ -4602,7 +2975,7 @@ char **argv;
         return get_cg_error (interp, "cg_dataset_read");
 
     Tcl_AppendElement (interp, name);
-    Tcl_AppendElement (interp, cg_bc_type_name(bctype));
+    Tcl_AppendElement (interp, cg_BCTypeName(bctype));
     sprintf (buff, "%d", dflag);
     Tcl_AppendElement (interp, buff);
     sprintf (buff, "%d", nflag);
@@ -4612,16 +2985,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_dataset_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_dataset_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int bctype, cgds;
 
@@ -4644,20 +3009,10 @@ char **argv;
     return TCL_OK;
 }
 
-#if CGNS_VERSION >= 2400
-
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_bcdataset_info (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_bcdataset_info (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ndset;
 
@@ -4677,16 +3032,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_bcdataset_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_bcdataset_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int bctype, bcdatatype;
 
@@ -4711,16 +3058,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_bcdataset_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_bcdataset_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     BCType_t bctype;
@@ -4736,7 +3075,7 @@ char **argv;
         return get_cg_error (interp, "cg_bcdataset_read");
 
     Tcl_AppendElement (interp, name);
-    Tcl_AppendElement (interp, cg_bc_type_name(bctype));
+    Tcl_AppendElement (interp, cg_BCTypeName(bctype));
     sprintf (buff, "%d", dflag);
     Tcl_AppendElement (interp, buff);
     sprintf (buff, "%d", nflag);
@@ -4744,22 +3083,12 @@ char **argv;
     return TCL_OK;
 }
 
-#endif
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write BCData_t Nodes                                    *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_bcdata_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_bcdata_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int type;
 
@@ -4783,16 +3112,8 @@ char **argv;
  *      Read and write DiscreteData_t Nodes                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_ndiscrete (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_ndiscrete (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ndisc;
 
@@ -4813,16 +3134,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_discrete_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_discrete_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
 
@@ -4843,16 +3156,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_discrete_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_discrete_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgdisc;
 
@@ -4877,16 +3182,8 @@ char **argv;
  *      Read and write RigidGridMotion_t Nodes				 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_n_rigid_motions (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_n_rigid_motions (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nrm;
 
@@ -4908,16 +3205,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_rigid_motion_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_rigid_motion_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     RigidGridMotionType_t type;
@@ -4934,22 +3223,14 @@ char **argv;
         return get_cg_error (interp, "cg_rigid_motion_read");
 
     Tcl_AppendElement (interp, name);
-    Tcl_AppendElement (interp, cg_rigid_grid_motion_type_name(type));
+    Tcl_AppendElement (interp, cg_RigidGridMotionTypeName(type));
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_rigid_motion_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_rigid_motion_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgrm, type;
 
@@ -4976,16 +3257,8 @@ char **argv;
  *      Read and write ArbitraryGridMotion_t Nodes                       *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_n_arbitrary_motions (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_n_arbitrary_motions (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nam;
 
@@ -5007,16 +3280,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_arbitrary_motion_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_arbitrary_motion_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     ArbitraryGridMotionType_t type;
@@ -5033,22 +3298,14 @@ char **argv;
         return get_cg_error (interp, "cg_arbitrary_motion_read");
     
     Tcl_AppendElement (interp, name);
-    Tcl_AppendElement (interp, cg_arbitrary_grid_motion_type_name(type));
+    Tcl_AppendElement (interp, cg_ArbitraryGridMotionTypeName(type));
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_arbitrary_motion_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_arbitrary_motion_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int cgam, type;
 
@@ -5077,16 +3334,8 @@ char **argv;
  *      Read and write SimulationType_t Node                             *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_simulation_type_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_simulation_type_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     SimulationType_t type;
@@ -5104,22 +3353,14 @@ char **argv;
         return get_cg_error (interp, "cg_simulation_type_read");
     }
     
-    Tcl_AppendResult (interp, cg_simulation_type_name(type), NULL);
+    Tcl_AppendResult (interp, cg_SimulationTypeName(type), NULL);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_simulation_type_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_simulation_type_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int type;
 
@@ -5143,16 +3384,8 @@ char **argv;
  *      Read and write BaseIterativeData_t Node                          *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_biter_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_biter_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, nsteps;
     char name[33];
@@ -5178,16 +3411,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_biter_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_biter_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 5) {
@@ -5207,16 +3432,8 @@ char **argv;
  *      Read and write ZoneIterativeData_t Node                          *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_ziter_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_ziter_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     char name[33];
@@ -5240,16 +3457,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_ziter_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_ziter_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 5) {
@@ -5269,16 +3478,8 @@ char **argv;
  *      Read and write Gravity_t Nodes                                   *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_gravity_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_gravity_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int n, cgfile, cgbase, ierr, phys_dim;
     float vector[3];
@@ -5309,16 +3510,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_gravity_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_gravity_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int len, cgfile, cgbase, phys_dim;
     float vector[3];
@@ -5353,16 +3546,8 @@ char **argv;
  *      Read and write Axisymmetry_t Nodes                               *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_axisym_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_axisym_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char *p;
     int ierr, n, cgfile, cgbase, phys_dim;
@@ -5402,16 +3587,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_axisym_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_axisym_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int len, cgfile, cgbase, phys_dim;
     float ref[3], axis[3];
@@ -5453,18 +3630,11 @@ char **argv;
  *      Read and write RotatingCoordinates_t Nodes                       *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_rotating_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_rotating_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char *p;
+    int file, base, depth;
     int ierr, n, phys_dim;
     float rate[3], center[3];
 
@@ -5473,6 +3643,8 @@ char **argv;
         Tcl_AppendResult (interp, "usage: ", argv[0], NULL);
         return TCL_ERROR;
     }
+    if (cg_where(&file, &base, &depth, 0, 0))
+        return get_cg_error (interp, "cg_where");
 
     ierr = cg_rotating_read (rate, center);
     if (ierr) {
@@ -5480,7 +3652,7 @@ char **argv;
         return get_cg_error (interp, "cg_rotating_read");
     }
 
-    if (cg_physical_dim (goFile, goBase, &phys_dim))
+    if (cg_physical_dim (file, base, &phys_dim))
         return get_cg_error (interp, "cg_rotating_read");
 
     sprintf (buff, "%g", rate[0]);
@@ -5500,18 +3672,11 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_rotating_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_rotating_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int len, phys_dim;
+    int file, base, depth;
     float rate[3], center[3];
 
     Tcl_ResetResult (interp);
@@ -5520,11 +3685,9 @@ char **argv;
             " rate center", NULL);
         return TCL_ERROR;
     }
-    if (!(goFile && goBase)) {
-        Tcl_AppendResult (interp, "position not set with cg_goto", NULL);
-        return TCL_ERROR;
-    }
-    if (cg_physical_dim (goFile, goBase, &phys_dim))
+    if (cg_where(&file, &base, &depth, 0, 0))
+        return get_cg_error (interp, "cg_where");
+    if (cg_physical_dim (file, base, &phys_dim))
         return get_cg_error (interp, "cg_rotating_write");
 
     len = sscanf (argv[1], "%f%f%f", &rate[0], &rate[1], &rate[2]);
@@ -5552,16 +3715,8 @@ char **argv;
  *      Read and write BCProperty_t/WallFunction_t Nodes   	         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_bc_wallfunction_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_bc_wallfunction_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     WallFunctionType_t type;
@@ -5580,22 +3735,14 @@ char **argv;
         return get_cg_error (interp, "cg_bc_wallfunction_read");
     }
 
-    Tcl_AppendResult (interp, cg_wall_function_type_name(type), NULL);
+    Tcl_AppendResult (interp, cg_WallFunctionTypeName(type), NULL);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_bc_wallfunction_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_bc_wallfunction_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int type;
 
@@ -5620,16 +3767,8 @@ char **argv;
  *      Read and write BCProperty_t/Area_t Nodes                         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_bc_area_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_bc_area_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     char *p, name[33];
@@ -5650,7 +3789,7 @@ char **argv;
         return get_cg_error (interp, "cg_bc_area_read");
     }
 
-    Tcl_AppendElement (interp, cg_area_type_name(type));
+    Tcl_AppendElement (interp, cg_AreaTypeName(type));
     sprintf (buff, "%g", area);
     Tcl_AppendElement (interp, buff);
     for (p = name+strlen(name)-1; p >= name && isspace(*p); p--)
@@ -5662,16 +3801,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_bc_area_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_bc_area_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int type;
     float area;
@@ -5711,16 +3842,8 @@ char **argv;
  *      Read and write GridConnectivityProperty_t/Periodic_t Nodes       *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_conn_periodic_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_conn_periodic_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     float angle[3], center[3], trans[3];
@@ -5749,16 +3872,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_conn_periodic_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_conn_periodic_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     float angle[3], center[3], trans[3];
 
@@ -5788,20 +3903,10 @@ char **argv;
     return TCL_OK;
 }
 
-#if CGNS_VERSION >= 2400
-
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_1to1_periodic_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_1to1_periodic_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     float angle[3], center[3], trans[3];
@@ -5830,16 +3935,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_1to1_periodic_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_1to1_periodic_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     float angle[3], center[3], trans[3];
 
@@ -5869,8 +3966,6 @@ char **argv;
     return TCL_OK;
 }
 
-#endif
-
 
 
 
@@ -5883,16 +3978,8 @@ char **argv;
  *   Read and write GridConnectivityProperty_t/AverageInterface_t Nodes  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_conn_average_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_conn_average_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     AverageInterfaceType_t type;
@@ -5911,22 +3998,14 @@ char **argv;
         return get_cg_error (interp, "cg_conn_average_read");
     }
 
-    Tcl_AppendResult (interp, cg_average_interface_type_name(type), NULL);
+    Tcl_AppendResult (interp, cg_AverageInterfaceTypeName(type), NULL);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_conn_average_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_conn_average_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int n;
     AverageInterfaceType_t type;
@@ -5955,20 +4034,10 @@ char **argv;
     return TCL_OK;
 }
 
-#if CGNS_VERSION >= 2400
-
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_1to1_average_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_1to1_average_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     AverageInterfaceType_t type;
@@ -5987,22 +4056,14 @@ char **argv;
         return get_cg_error (interp, "cg_1to1_average_read");
     }
 
-    Tcl_AppendResult (interp, cg_average_interface_type_name(type), NULL);
+    Tcl_AppendResult (interp, cg_AverageInterfaceTypeName(type), NULL);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_1to1_average_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_1to1_average_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int n;
     AverageInterfaceType_t type;
@@ -6031,24 +4092,16 @@ char **argv;
     return TCL_OK;
 }
 
-#endif
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Variable Argument List Functions                                 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_goto (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_goto (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
-    int n;
+    int n, ierr, file, base, depth;
+    int index[CG_MAX_GOTO_DEPTH];
+    char label[CG_MAX_GOTO_DEPTH][33];
 
     Tcl_ResetResult (interp);
     if (argc < 3) {
@@ -6056,45 +4109,38 @@ char **argv;
             " filenum basenum [label1 index1 [label2 index2 [...]]]", NULL);
         return TCL_ERROR;
     }
-    if (argc > 2 * (MAX_GOTO_DEPTH + 1)) {
+    if (argc > 2 * (CG_MAX_GOTO_DEPTH + 1)) {
         Tcl_AppendResult (interp, "max goto depth exceeded", NULL);
         return TCL_ERROR;
     }
-    goFile = atoi(argv[1]);
-    goBase = atoi(argv[2]);
-    goDepth = 0;
+    file = atoi(argv[1]);
+    base = atoi(argv[2]);
+    depth = 0;
     for (n = 3; n < argc; n++) {
         if (0 == strcmp (argv[n], "end")) break;
-        strncpy (goLabel[goDepth], argv[n], 32);
-        goLabel[goDepth][32] = 0;
+        strncpy (label[depth], argv[n], 32);
+        label[depth][32] = 0;
         if (++n >= argc) {
             Tcl_AppendResult (interp, "missing final index value", NULL);
             return TCL_ERROR;
         }
-        goIndex[goDepth] = atoi(argv[n]);
-        goDepth++;
+        index[depth] = atoi(argv[n]);
+        depth++;
     }
 
-    if (goto_node())
-        return get_cg_error (interp, "cg_goto");
+    if (cg_golist(file, base, depth, (char **)label, index))
+        return get_cg_error(interp, "cg_golist");
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_gorel (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_gorel (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
-    int n, cnt;
-    char *lab;
+    int fn, n, index;
+    int file, base, depth;
+    char *label;
 
     Tcl_ResetResult (interp);
     if (argc < 3) {
@@ -6102,70 +4148,71 @@ char **argv;
             " label1 index1 [label2 index2 [...]]", NULL);
         return TCL_ERROR;
     }
-    if (!goFile && !goBase) {
-        Tcl_AppendResult (interp, "position not set with cg_goto", NULL);
-        return TCL_ERROR;
-    }
+    if (cg_where(&file, &base, &depth, 0, 0))
+        return get_cg_error(interp, "cg_where");
 
     for (n = 1; n < argc; n++) {
-        lab = argv[n];
-        if (0 == strcmp (lab, "end")) break;
+        label = argv[n];
+        if (0 == strcmp (label, "end")) break;
         if (++n >= argc) {
             Tcl_AppendResult (interp, "missing final index value", NULL);
             return TCL_ERROR;
         }
-        cnt = atoi(argv[n]);
-        if (0 == strcmp (lab, "..")) {
-            if (cnt < 1) cnt = 1;
-            goDepth -= cnt;
-            if (goDepth < 0) goDepth = 0;
-        }
-        else if (strcmp (lab, ".")) {
-            if (goDepth == MAX_GOTO_DEPTH) {
-                Tcl_AppendResult (interp,
-                    "maximum depth of goto exceeded", NULL);
-                return TCL_ERROR;
-            }
-            strncpy (goLabel[goDepth], lab, 32);
-            goLabel[goDepth][32] = 0;
-            goIndex[goDepth++] = cnt;
-        }
+        index = atoi(argv[n]);
+        if (cg_gorel(file, label, index, 0))
+            return get_cg_error(interp, "cg_gorel");
     }
 
-    if (goto_node())
-        return get_cg_error (interp, "cg_gorel");
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_where (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_gopath (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
-    int n;
+    int file;
+
+    Tcl_ResetResult (interp);
+    if (argc != 3) {
+        Tcl_AppendResult (interp, "usage: ", argv[0], " filenum path", NULL);
+        return TCL_ERROR;
+    }
+    file = atoi(argv[1]);
+    if (cg_gopath(file, argv[2]))    
+        return get_cg_error (interp, "cg_gopath");
+    return TCL_OK;
+}
+
+/*-----------------------------------------------------------------------*/
+
+static int tcl_cg_golist (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
+{
+    return TCL_OK;
+}
+
+/*-----------------------------------------------------------------------*/
+
+static int tcl_cg_where (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
+{
+    int n, ierr, depth, file, base;
+    int index[CG_MAX_GOTO_DEPTH];
+    char label[CG_MAX_GOTO_DEPTH][33];
 
     Tcl_ResetResult (interp);
     if (argc != 1) {
         Tcl_AppendResult (interp, "usage: ", argv[0], NULL);
         return TCL_ERROR;
     }
-    if (!goFile && !goBase) {
-        Tcl_AppendResult (interp, "position not set with cg_goto", NULL);
-        return TCL_ERROR;
-    }
-    sprintf (buff, "%d %d", goFile, goBase);
+    if (cg_where(&file, &base, &depth, (char **)label, index))
+        return get_cg_error(interp, "cg_where");
+    sprintf (buff, "%d %d", file, base);
     Tcl_AppendResult (interp, buff, NULL);
-    for (n = 0; n < goDepth; n++) {
-        Tcl_AppendElement (interp, goLabel[n]);
-        sprintf (buff, "%d", goIndex[n]);
+    for (n = 0; n < depth; n++) {
+        Tcl_AppendElement (interp, label[n]);
+        sprintf (buff, "%d", index[n]);
         Tcl_AppendElement (interp, buff);
     }
     return TCL_OK;
@@ -6175,16 +4222,8 @@ char **argv;
  *      Read and write ConvergenceHistory_t Nodes                        *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_convergence_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_convergence_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, niter;
     char *normdefs;
@@ -6212,16 +4251,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_convergence_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_convergence_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc < 2 || argc > 3) {
@@ -6241,16 +4272,8 @@ char **argv;
  *      Read and write ReferenceState_t Nodes                            *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_state_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_state_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, niter;
     char *desc;
@@ -6276,16 +4299,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_state_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_state_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc > 2) {
@@ -6304,16 +4319,8 @@ char **argv;
  *      Read and write FlowEquationSet_t Nodes                           *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_equationset_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_equationset_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, ed, gef, gmf, vmf, tcmf, tcf, tmf;
 
@@ -6334,20 +4341,10 @@ char **argv;
     return TCL_OK;
 }
 
-#if CGNS_VERSION >= 2100
-
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_equationset_chemistry_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_equationset_chemistry_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, trf, ckf;
 
@@ -6368,20 +4365,10 @@ char **argv;
     return TCL_OK;
 }
 
-#if CGNS_VERSION >= 2400
-
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_equationset_elecmagn_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_equationset_elecmagn_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, emf, mmf, cmf;
 
@@ -6402,21 +4389,10 @@ char **argv;
     return TCL_OK;
 }
 
-#endif
-#endif
-
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_equationset_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_equationset_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 2) {
@@ -6435,16 +4411,8 @@ char **argv;
  *      Read and write GoverningEquations_t Nodes                        *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_governing_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_governing_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     GoverningEquationsType_t type;
@@ -6461,22 +4429,14 @@ char **argv;
         return get_cg_error (interp, "cg_governing_read");
     }
 
-    Tcl_AppendResult (interp, cg_governing_equations_type_name(type), NULL);
+    Tcl_AppendResult (interp, cg_GoverningEquationsTypeName(type), NULL);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_governing_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_governing_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int type;
 
@@ -6500,18 +4460,13 @@ char **argv;
  *      Read and write Diffusion Model Nodes                             *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_diffusion_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_diffusion_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, idim, diff[6];
+    int file, base, depth;
+    int index[CG_MAX_GOTO_DEPTH];
+    char label[CG_MAX_GOTO_DEPTH][33];
 
     Tcl_ResetResult (interp);
     if (argc != 1) {
@@ -6525,10 +4480,12 @@ char **argv;
         return get_cg_error (interp, "cg_diffusion_read");
     }
 
-    if (posit_zone)
-        ierr = cg_index_dim (goFile, posit_base, posit_zone, &idim);
+    if (cg_where(&file, &base, &depth, (char **)label, index))
+        return get_cg_error (interp, "cg_where");
+    if (depth < 1 || strcmp(label[0], "Zone_t"))
+        ierr = cg_cell_dim (file, base, &idim);
     else
-        ierr = cg_cell_dim (goFile, posit_base, &idim);
+        ierr = cg_index_dim (file, base, index[0], &idim);
     if (ierr) return get_cg_error (interp, "cg_diffusion_read");
 
     if (idim == 1)
@@ -6544,18 +4501,13 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_diffusion_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_diffusion_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int idim, cnt, ierr, diff[6];
+    int file, base, depth;
+    int index[CG_MAX_GOTO_DEPTH];
+    char label[CG_MAX_GOTO_DEPTH][33];
 
     Tcl_ResetResult (interp);
     if (argc != 2) {
@@ -6563,15 +4515,14 @@ char **argv;
             " diffusionmodel", NULL);
         return TCL_ERROR;
     }
-    if (!(goFile && posit_base)) {
-        Tcl_AppendResult (interp, "position not set with cg_goto", NULL);
-        return TCL_ERROR;
-    }
-    if (posit_zone)
-        ierr = cg_index_dim (goFile, posit_base, posit_zone, &idim);
+
+    if (cg_where(&file, &base, &depth, (char **)label, index))
+        return get_cg_error (interp, "cg_where");
+    if (depth < 1 || strcmp(label[0], "Zone_t"))
+        ierr = cg_cell_dim (file, base, &idim);
     else
-        ierr = cg_cell_dim (goFile, posit_base, &idim);
-    if (ierr) return get_cg_error (interp, "cg_diffusion_write");
+        ierr = cg_index_dim (file, base, index[0], &idim);
+    if (ierr) return get_cg_error (interp, "cg_diffusion_read");
 
     if (idim == 1)
         cnt = 1;
@@ -6605,16 +4556,8 @@ char **argv;
  *      EMMagneticFieldModel_t Nodes                                     *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_model_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_model_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     ModelType_t type;
@@ -6632,22 +4575,14 @@ char **argv;
         return get_cg_error (interp, "cg_model_read");
     }
 
-    Tcl_AppendResult (interp, cg_model_type_name(type), NULL);
+    Tcl_AppendResult (interp, cg_ModelTypeName(type), NULL);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_model_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_model_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int type;
 
@@ -6670,16 +4605,8 @@ char **argv;
  *      Read and write DataArray_t Nodes                                 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_narrays (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_narrays (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int narray;
 
@@ -6699,16 +4626,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_array_info (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_array_info (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     int ndim, dims[12];
@@ -6724,7 +4643,7 @@ char **argv;
         return get_cg_error (interp, "cg_array_info");
 
     Tcl_AppendElement (interp, name);
-    Tcl_AppendElement (interp, cg_data_type_name(type));
+    Tcl_AppendElement (interp, cg_DataTypeName(type));
     sprintf (buff, "%d", ndim);
     Tcl_AppendElement (interp, buff);
     if (ndim == 0)
@@ -6744,16 +4663,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_array_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_array_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     int na, ndim, dims[12];
@@ -6790,16 +4701,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_array_read_as (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_array_read_as (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
     int na, ndim, dims[12];
@@ -6838,16 +4741,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_array_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_array_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, len, ndim, *dims, count;
     DataType_t type;
@@ -6898,18 +4793,8 @@ char **argv;
  *      Read and write UserDefinedData_t Nodes - new in version 2.1      *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#if CGNS_VERSION >= 2100
-
-static int tcl_cg_nuser_data (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nuser_data (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, nuser;
 
@@ -6932,16 +4817,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_user_data_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_user_data_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
 
@@ -6960,16 +4837,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_user_data_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_user_data_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 2) {
@@ -6984,22 +4853,12 @@ char **argv;
     return TCL_OK;
 }
 
-#endif
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write IntegralData_t Nodes                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_nintegrals (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nintegrals (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nint;
 
@@ -7019,16 +4878,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_integral_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_integral_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33];
 
@@ -7047,16 +4898,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_integral_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_integral_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 2) {
@@ -7075,18 +4918,13 @@ char **argv;
  *      Read and write Rind_t Nodes                                      *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_rind_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_rind_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, n, idim, rind[6];
+    int file, base, depth;
+    int index[CG_MAX_GOTO_DEPTH];
+    char label[CG_MAX_GOTO_DEPTH][33];
 
     Tcl_ResetResult (interp);
     if (argc != 1) {
@@ -7100,8 +4938,14 @@ char **argv;
         return get_cg_error (interp, "cg_rind_read");
     }
 
-    if (cg_index_dim (goFile, posit_base, posit_zone, &idim))
-        return get_cg_error (interp, "cg_rind_read");
+    if (cg_where(&file, &base, &depth, (char **)label, index))
+        return get_cg_error (interp, "cg_where");
+    if (depth < 1 || strcmp(label[0], "Zone_t"))
+        ierr = cg_cell_dim (file, base, &idim);
+    else
+        ierr = cg_index_dim (file, base, index[0], &idim);
+    if (ierr) return get_cg_error (interp, "cg_rind_read");
+
     for (n = 0; n < 2*idim; n++) {
         sprintf (buff, "%d", rind[n]);
         Tcl_AppendElement (interp, buff);
@@ -7111,18 +4955,13 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_rind_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_rind_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, idim, nr, *rind;
+    int file, base, depth;
+    int index[CG_MAX_GOTO_DEPTH];
+    char label[CG_MAX_GOTO_DEPTH][33];
 
     Tcl_ResetResult (interp);
     if (argc != 2) {
@@ -7130,12 +4969,15 @@ char **argv;
             " rind", NULL);
         return TCL_ERROR;
     }
-    if (!(goFile && posit_base && posit_zone)) {
-        Tcl_AppendResult (interp, "position not set with cg_goto", NULL);
-        return TCL_ERROR;
-    }
-    if (cg_index_dim (goFile, posit_base, posit_zone, &idim))
-        return get_cg_error (interp, "cg_rind_write");
+
+    if (cg_where(&file, &base, &depth, (char **)label, index))
+        return get_cg_error (interp, "cg_where");
+    if (depth < 1 || strcmp(label[0], "Zone_t"))
+        ierr = cg_cell_dim (file, base, &idim);
+    else
+        ierr = cg_index_dim (file, base, index[0], &idim);
+    if (ierr) return get_cg_error (interp, "cg_rind_write");
+
     if (extract_data (interp, argv[1], Integer, &nr, (void **)&rind))
         return TCL_ERROR;
     if (nr < 2*idim) {
@@ -7156,16 +4998,8 @@ char **argv;
  *      Read and write Descriptor_t Nodes                                *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_ndescriptors (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_ndescriptors (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ndesc;
 
@@ -7185,16 +5019,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_descriptor_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_descriptor_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char name[33], *text;
 
@@ -7215,16 +5041,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_descriptor_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_descriptor_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 3) {
@@ -7244,16 +5062,8 @@ char **argv;
  *      Read and write DimensionalUnits_t Nodes                          *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_units_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_units_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     MassUnits_t mass;
@@ -7261,12 +5071,10 @@ char **argv;
     TimeUnits_t time;
     TemperatureUnits_t temp;
     AngleUnits_t angle;
-#if CGNS_VERSION >= 2400
-    int nunits, full = (int)data;
+    int nunits, full = (int)((size_t)data);
     ElectricCurrentUnits_t current;
     SubstanceAmountUnits_t amount;
     LuminousIntensityUnits_t intensity;
-#endif
 
     Tcl_ResetResult (interp);
     if (argc != 1) {
@@ -7274,7 +5082,6 @@ char **argv;
         return TCL_ERROR;
     }
 
-#if CGNS_VERSION >= 2400
     ierr = cg_unitsfull_read (&mass, &length, &time, &temp, &angle,
         &current, &amount, &intensity);
     if (ierr) {
@@ -7284,44 +5091,23 @@ char **argv;
     if (cg_nunits (&nunits))
         return get_cg_error (interp, "cg_nunits");
 
-    Tcl_AppendElement (interp, cg_mass_units_name(mass));
-    Tcl_AppendElement (interp, cg_length_units_name(length));
-    Tcl_AppendElement (interp, cg_time_units_name(time));
-    Tcl_AppendElement (interp, cg_temperature_units_name(temp));
-    Tcl_AppendElement (interp, cg_angle_units_name(angle));
+    Tcl_AppendElement (interp, cg_MassUnitsName(mass));
+    Tcl_AppendElement (interp, cg_LengthUnitsName(length));
+    Tcl_AppendElement (interp, cg_TimeUnitsName(time));
+    Tcl_AppendElement (interp, cg_TemperatureUnitsName(temp));
+    Tcl_AppendElement (interp, cg_AngleUnitsName(angle));
     if (full || nunits > 5) {
-        Tcl_AppendElement (interp, cg_electric_current_units_name(current));
-        Tcl_AppendElement (interp, cg_substance_amount_units_name(amount));
-        Tcl_AppendElement (interp, cg_luminous_intensity_units_name(intensity));
+        Tcl_AppendElement (interp, cg_ElectricCurrentUnitsName(current));
+        Tcl_AppendElement (interp, cg_SubstanceAmountUnitsName(amount));
+        Tcl_AppendElement (interp, cg_LuminousIntensityUnitsName(intensity));
     }
-#else
-    ierr = cg_units_read (&mass, &length, &time, &temp, &angle);
-    if (ierr) {
-        if (ierr == CG_NODE_NOT_FOUND) return TCL_OK;
-        return get_cg_error (interp, "cg_units_read");
-    }
-
-    Tcl_AppendElement (interp, cg_mass_units_name(mass));
-    Tcl_AppendElement (interp, cg_length_units_name(length));
-    Tcl_AppendElement (interp, cg_time_units_name(time));
-    Tcl_AppendElement (interp, cg_temperature_units_name(temp));
-    Tcl_AppendElement (interp, cg_angle_units_name(angle));
-#endif
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_units_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_units_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int type;
     MassUnits_t mass;
@@ -7329,28 +5115,22 @@ char **argv;
     TimeUnits_t time;
     TemperatureUnits_t temp;
     AngleUnits_t angle;
-#if CGNS_VERSION >= 2400
-    int full = (int)data;
+    int full = (int)((size_t)data);
     ElectricCurrentUnits_t current;
     SubstanceAmountUnits_t amount;
     LuminousIntensityUnits_t intensity;
-#endif
 
     Tcl_ResetResult (interp);
-#if CGNS_VERSION >= 2400
     if (full && argc != 9) {
         Tcl_AppendResult (interp, "usage: ", argv[0],
             " massunits lengthunits timeunits temperatureunits angleunits",
             " currentunits amountunits intensityunits", NULL);
         return TCL_ERROR;
     }
-#endif
     if (argc != 6 && argc != 9) {
         Tcl_AppendResult (interp, "usage: ", argv[0],
             " massunits lengthunits timeunits temperatureunits angleunits",
-#if CGNS_VERSION >= 2400
             " [currentunits amountunits intensityunits]",
-#endif
             NULL);
         return TCL_ERROR;
     }
@@ -7376,7 +5156,6 @@ char **argv;
         NofValidAngleUnits, AngleUnitsName, &type)) return TCL_ERROR;
     angle = (AngleUnits_t)type;
 
-#if CGNS_VERSION >= 2400
     if (full || argc == 9) {
         if (get_type (interp, "electric current unit", argv[6],
             NofValidElectricCurrentUnits, ElectricCurrentUnitsName, &type))
@@ -7399,7 +5178,6 @@ char **argv;
 
         return TCL_OK;
     }
-#endif
 
     if (cg_units_write (mass, length, time, temp, angle))
         return get_cg_error (interp, "cg_units_write");
@@ -7407,20 +5185,10 @@ char **argv;
     return TCL_OK;
 }
 
-#if CGNS_VERSION >= 2400
-
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_nunits (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nunits (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nunits;
 
@@ -7438,22 +5206,12 @@ char **argv;
     return TCL_OK;
 }
 
-#endif
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write DimensionalExponents_t Nodes                      *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_exponents_info (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_exponents_info (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     DataType_t type;
@@ -7470,29 +5228,19 @@ char **argv;
         return get_cg_error (interp, "cg_exponents_info");
     }
 
-    Tcl_AppendResult (interp, cg_data_type_name(type), NULL);
+    Tcl_AppendResult (interp, cg_DataTypeName(type), NULL);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_exponents_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_exponents_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr, nexp;
     DataType_t type;
     double exps[8];
-#if CGNS_VERSION >= 2400
-    int full = (int)data;
-#endif
+    int full = (int)((size_t)data);
 
     Tcl_ResetResult (interp);
     if (argc != 1) {
@@ -7509,7 +5257,6 @@ char **argv;
         Tcl_AppendResult (interp, "invalid exponents data type", NULL);
         return TCL_ERROR;
     }
-#if CGNS_VERSION >= 2400
     if (full)
         nexp = 8;
     else {
@@ -7518,11 +5265,6 @@ char **argv;
     }
     if (cg_expfull_read ((void *)exps))
         return get_cg_error (interp, "cg_expfull_read");
-#else
-    if (cg_exponents_read ((void *)exps))
-        return get_cg_error (interp, "cg_exponents_read");
-    nexp = 5;
-#endif
 
     if (construct_data (interp, type, nexp, (void *)exps))
         return TCL_ERROR;
@@ -7531,23 +5273,13 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_exponents_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_exponents_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nexp;
     DataType_t type;
     void *exps;
-#if CGNS_VERSION >= 2400
-    int full = (int)data;
-#endif
+    int full = (int)((size_t)data);
 
     Tcl_ResetResult (interp);
     if (argc != 3) {
@@ -7564,36 +5296,28 @@ char **argv;
     if (extract_data (interp, argv[2], type, &nexp, &exps))
         return TCL_ERROR;
     if (nexp == 5) {
-#if CGNS_VERSION >= 2400
         if (full) {
             free (exps);
             Tcl_AppendResult (interp, "expecting 8 exponents", NULL);
             return TCL_ERROR;
         }
-#endif
         if (cg_exponents_write (type, exps)) {
             free (exps);
             return get_cg_error (interp, "cg_exponents_write");
         }
     }
-#if CGNS_VERSION >= 2400
     else if (nexp == 8) {
         if (cg_expfull_write (type, exps)) {
             free (exps);
             return get_cg_error (interp, "cg_expfull_write");
         }
     }
-#endif
     else {
         free (exps);
-#if CGNS_VERSION >= 2400
         if (full)
             sprintf (buff, "expecting 8 exponents");
         else
             sprintf (buff, "expecting 5 or 8 exponents");
-#else
-        sprintf (buff, "expecting 5 exponents");
-#endif
         Tcl_AppendResult (interp, buff, NULL);
         return TCL_ERROR;
     }
@@ -7602,20 +5326,10 @@ char **argv;
     return TCL_OK;
 }
 
-#if CGNS_VERSION >= 2400
-
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_nexponents (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_nexponents (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int nexps;
 
@@ -7633,22 +5347,12 @@ char **argv;
     return TCL_OK;
 }
 
-#endif
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write DataConversion_t Nodes                            *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_conversion_info (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_conversion_info (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     DataType_t type;
@@ -7665,22 +5369,14 @@ char **argv;
         return get_cg_error (interp, "cg_conversion_info");
     }
 
-    Tcl_AppendResult (interp, cg_data_type_name(type), NULL);
+    Tcl_AppendResult (interp, cg_DataTypeName(type), NULL);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_conversion_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_conversion_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int n, ierr;
     DataType_t type;
@@ -7719,16 +5415,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_conversion_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_conversion_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     DataType_t type;
@@ -7770,16 +5458,8 @@ char **argv;
  *      Read and write DataClass_t Nodes                                 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_dataclass_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_dataclass_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     DataClass_t dataclass;
@@ -7796,22 +5476,14 @@ char **argv;
         return get_cg_error (interp, "cg_dataclass_read");
     }
 
-    Tcl_AppendResult (interp, cg_data_class_name(dataclass), NULL);
+    Tcl_AppendResult (interp, cg_DataClassName(dataclass), NULL);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_dataclass_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_dataclass_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int dataclass;
 
@@ -7834,16 +5506,8 @@ char **argv;
  *      Read and write GridLocation_t Nodes                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_gridlocation_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_gridlocation_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ierr;
     GridLocation_t location;
@@ -7860,22 +5524,14 @@ char **argv;
         return get_cg_error (interp, "cg_gridlocation_read");
     }
 
-    Tcl_AppendResult (interp, cg_grid_location_name(location), NULL);
+    Tcl_AppendResult (interp, cg_GridLocationName(location), NULL);
     return TCL_OK;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_gridlocation_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_gridlocation_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int location;
 
@@ -7898,16 +5554,8 @@ char **argv;
  *      Read and write Ordinal_t Nodes                                   *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_ordinal_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_ordinal_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int ordinal, ierr;
 
@@ -7930,16 +5578,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_ordinal_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_ordinal_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 2) {
@@ -7977,20 +5617,10 @@ char **argv;
 
 
 
-#if CGNS_VERSION >= 2400
-
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_ptset_info (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_ptset_info (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_SetResult (interp, "not implemented", TCL_STATIC);
     return TCL_ERROR;
@@ -7998,16 +5628,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_ptset_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_ptset_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_SetResult (interp, "not implemented", TCL_STATIC);
     return TCL_ERROR;
@@ -8015,22 +5637,12 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_ptset_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_ptset_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_SetResult (interp, "not implemented", TCL_STATIC);
     return TCL_ERROR;
 }
-
-#endif
 
 
 
@@ -8050,18 +5662,8 @@ char **argv;
  *      Link Handling Functions - new in version 2.1                     *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#if CGNS_VERSION >= 2100
-
-static int tcl_cg_is_link (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_is_link (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     int len;
 
@@ -8080,16 +5682,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_link_read (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_link_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     char *filename, *pathname;
 
@@ -8111,16 +5705,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_link_write (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_link_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 4) {
@@ -8140,24 +5726,12 @@ char **argv;
     return TCL_OK;
 }
 
-#endif
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      General Delete Function						 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#if CGNS_VERSION >= 2200
-
-static int tcl_cg_delete_node (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_delete_node (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 2) {
@@ -8172,22 +5746,12 @@ char **argv;
     return TCL_OK;
 }
 
-#endif
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Error Handling Functions                                         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static int tcl_cg_get_error (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_get_error (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 1) {
@@ -8200,16 +5764,8 @@ char **argv;
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_error_exit (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int tcl_cg_error_exit (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     if (argc != 1) {
@@ -8229,260 +5785,419 @@ __declspec(dllexport)
 #endif
 int Cgnstcl_Init(Tcl_Interp *interp)
 {
-    Tcl_CreateCommand (interp, "cg_library_version", tcl_cg_library_version, 0, 0);
-    Tcl_CreateCommand (interp, "cg_get_names", tcl_cg_get_names, 0, 0);
+    Tcl_CreateCommand (interp, "cg_library_version",
+        (Tcl_CmdProc *)tcl_cg_library_version, 0, 0);
+    Tcl_CreateCommand (interp, "cg_get_names",
+        (Tcl_CmdProc *)tcl_cg_get_names, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_open", tcl_cg_open, 0, 0);
-    Tcl_CreateCommand (interp, "cg_version", tcl_cg_version, 0, 0);
-    Tcl_CreateCommand (interp, "cg_close", tcl_cg_close, 0, 0);
+    Tcl_CreateCommand (interp, "cg_is_cgns",
+        (Tcl_CmdProc *)tcl_cg_is_cgns, 0, 0);
+    Tcl_CreateCommand (interp, "cg_open",
+        (Tcl_CmdProc *)tcl_cg_open, 0, 0);
+    Tcl_CreateCommand (interp, "cg_version",
+        (Tcl_CmdProc *)tcl_cg_version, 0, 0);
+    Tcl_CreateCommand (interp, "cg_close",
+        (Tcl_CmdProc *)tcl_cg_close, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_nbases", tcl_cg_nbases, 0, 0);
-    Tcl_CreateCommand (interp, "cg_base_read", tcl_cg_base_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_base_id", tcl_cg_base_id, 0, 0);
-    Tcl_CreateCommand (interp, "cg_base_write", tcl_cg_base_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_nbases",
+        (Tcl_CmdProc *)tcl_cg_nbases, 0, 0);
+    Tcl_CreateCommand (interp, "cg_base_read",
+        (Tcl_CmdProc *)tcl_cg_base_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_base_id",
+        (Tcl_CmdProc *)tcl_cg_base_id, 0, 0);
+    Tcl_CreateCommand (interp, "cg_base_write",
+        (Tcl_CmdProc *)tcl_cg_base_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_nzones", tcl_cg_nzones, 0, 0);
-    Tcl_CreateCommand (interp, "cg_zone_read", tcl_cg_zone_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_zone_type", tcl_cg_zone_type, 0, 0);
-    Tcl_CreateCommand (interp, "cg_zone_id", tcl_cg_zone_id, 0, 0);
-    Tcl_CreateCommand (interp, "cg_zone_write", tcl_cg_zone_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_nzones",
+        (Tcl_CmdProc *)tcl_cg_nzones, 0, 0);
+    Tcl_CreateCommand (interp, "cg_zone_read",
+        (Tcl_CmdProc *)tcl_cg_zone_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_zone_type",
+        (Tcl_CmdProc *)tcl_cg_zone_type, 0, 0);
+    Tcl_CreateCommand (interp, "cg_zone_id",
+        (Tcl_CmdProc *)tcl_cg_zone_id, 0, 0);
+    Tcl_CreateCommand (interp, "cg_zone_write",
+        (Tcl_CmdProc *)tcl_cg_zone_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_nfamilies", tcl_cg_nfamilies, 0, 0);
-    Tcl_CreateCommand (interp, "cg_family_read", tcl_cg_family_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_family_write", tcl_cg_family_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_nfamilies",
+        (Tcl_CmdProc *)tcl_cg_nfamilies, 0, 0);
+    Tcl_CreateCommand (interp, "cg_family_read",
+        (Tcl_CmdProc *)tcl_cg_family_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_family_write",
+        (Tcl_CmdProc *)tcl_cg_family_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_famname_read", tcl_cg_famname_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_famname_write", tcl_cg_famname_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_famname_read",
+        (Tcl_CmdProc *)tcl_cg_famname_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_famname_write",
+        (Tcl_CmdProc *)tcl_cg_famname_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_fambc_read", tcl_cg_fambc_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_fambc_write", tcl_cg_fambc_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_fambc_read",
+        (Tcl_CmdProc *)tcl_cg_fambc_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_fambc_write",
+        (Tcl_CmdProc *)tcl_cg_fambc_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_geo_read", tcl_cg_geo_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_geo_write", tcl_cg_geo_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_geo_read",
+        (Tcl_CmdProc *)tcl_cg_geo_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_geo_write",
+        (Tcl_CmdProc *)tcl_cg_geo_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_part_read", tcl_cg_part_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_part_write", tcl_cg_part_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_part_read",
+        (Tcl_CmdProc *)tcl_cg_part_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_part_write",
+        (Tcl_CmdProc *)tcl_cg_part_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_ngrids", tcl_cg_ngrids, 0, 0);
-    Tcl_CreateCommand (interp, "cg_grid_read", tcl_cg_grid_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_grid_write", tcl_cg_grid_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_ngrids",
+        (Tcl_CmdProc *)tcl_cg_ngrids, 0, 0);
+    Tcl_CreateCommand (interp, "cg_grid_read",
+        (Tcl_CmdProc *)tcl_cg_grid_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_grid_write",
+        (Tcl_CmdProc *)tcl_cg_grid_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_ncoords", tcl_cg_ncoords, 0, 0);
-    Tcl_CreateCommand (interp, "cg_coord_info", tcl_cg_coord_info, 0, 0);
-    Tcl_CreateCommand (interp, "cg_coord_read", tcl_cg_coord_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_coord_id", tcl_cg_coord_id, 0, 0);
-    Tcl_CreateCommand (interp, "cg_coord_write", tcl_cg_coord_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_ncoords",
+        (Tcl_CmdProc *)tcl_cg_ncoords, 0, 0);
+    Tcl_CreateCommand (interp, "cg_coord_info",
+        (Tcl_CmdProc *)tcl_cg_coord_info, 0, 0);
+    Tcl_CreateCommand (interp, "cg_coord_read",
+        (Tcl_CmdProc *)tcl_cg_coord_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_coord_id",
+        (Tcl_CmdProc *)tcl_cg_coord_id, 0, 0);
+    Tcl_CreateCommand (interp, "cg_coord_write",
+        (Tcl_CmdProc *)tcl_cg_coord_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_nsections", tcl_cg_nsections, 0, 0);
-    Tcl_CreateCommand (interp, "cg_section_read", tcl_cg_section_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_elements_read", tcl_cg_elements_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_parent_data_read", tcl_cg_elements_read, (ClientData)1, 0);
-    Tcl_CreateCommand (interp, "cg_section_write", tcl_cg_section_write, 0, 0);
-    Tcl_CreateCommand (interp, "cg_parent_data_write", tcl_cg_parent_data_write, 0, 0);
-    Tcl_CreateCommand (interp, "cg_npe", tcl_cg_npe, 0, 0);
-    Tcl_CreateCommand (interp, "cg_ElementDataSize", tcl_cg_ElementDataSize, 0, 0);
+    Tcl_CreateCommand (interp, "cg_nsections",
+        (Tcl_CmdProc *)tcl_cg_nsections, 0, 0);
+    Tcl_CreateCommand (interp, "cg_section_read",
+        (Tcl_CmdProc *)tcl_cg_section_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_elements_read",
+        (Tcl_CmdProc *)tcl_cg_elements_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_parent_data_read",
+        (Tcl_CmdProc *)tcl_cg_elements_read, (ClientData)1, 0);
+    Tcl_CreateCommand (interp, "cg_section_write",
+        (Tcl_CmdProc *)tcl_cg_section_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_parent_data_write",
+        (Tcl_CmdProc *)tcl_cg_parent_data_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_npe",
+        (Tcl_CmdProc *)tcl_cg_npe, 0, 0);
+    Tcl_CreateCommand (interp, "cg_ElementDataSize",
+        (Tcl_CmdProc *)tcl_cg_ElementDataSize, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_nsols", tcl_cg_nsols, 0, 0);
-    Tcl_CreateCommand (interp, "cg_sol_info", tcl_cg_sol_info, 0, 0);
-    Tcl_CreateCommand (interp, "cg_sol_id", tcl_cg_sol_id, 0, 0);
-    Tcl_CreateCommand (interp, "cg_sol_write", tcl_cg_sol_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_nsols",
+        (Tcl_CmdProc *)tcl_cg_nsols, 0, 0);
+    Tcl_CreateCommand (interp, "cg_sol_info",
+        (Tcl_CmdProc *)tcl_cg_sol_info, 0, 0);
+    Tcl_CreateCommand (interp, "cg_sol_id",
+        (Tcl_CmdProc *)tcl_cg_sol_id, 0, 0);
+    Tcl_CreateCommand (interp, "cg_sol_write",
+        (Tcl_CmdProc *)tcl_cg_sol_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_nfields", tcl_cg_nfields, 0, 0);
-    Tcl_CreateCommand (interp, "cg_field_info", tcl_cg_field_info, 0, 0);
-    Tcl_CreateCommand (interp, "cg_field_read", tcl_cg_field_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_field_id", tcl_cg_field_id, 0, 0);
-    Tcl_CreateCommand (interp, "cg_field_write", tcl_cg_field_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_nfields",
+        (Tcl_CmdProc *)tcl_cg_nfields, 0, 0);
+    Tcl_CreateCommand (interp, "cg_field_info",
+        (Tcl_CmdProc *)tcl_cg_field_info, 0, 0);
+    Tcl_CreateCommand (interp, "cg_field_read",
+        (Tcl_CmdProc *)tcl_cg_field_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_field_id",
+        (Tcl_CmdProc *)tcl_cg_field_id, 0, 0);
+    Tcl_CreateCommand (interp, "cg_field_write",
+        (Tcl_CmdProc *)tcl_cg_field_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_nholes", tcl_cg_nholes, 0, 0);
-    Tcl_CreateCommand (interp, "cg_hole_info", tcl_cg_hole_info, 0, 0);
-    Tcl_CreateCommand (interp, "cg_hole_read", tcl_cg_hole_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_hole_id", tcl_cg_hole_id, 0, 0);
-    Tcl_CreateCommand (interp, "cg_hole_write", tcl_cg_hole_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_nholes",
+        (Tcl_CmdProc *)tcl_cg_nholes, 0, 0);
+    Tcl_CreateCommand (interp, "cg_hole_info",
+        (Tcl_CmdProc *)tcl_cg_hole_info, 0, 0);
+    Tcl_CreateCommand (interp, "cg_hole_read",
+        (Tcl_CmdProc *)tcl_cg_hole_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_hole_id",
+        (Tcl_CmdProc *)tcl_cg_hole_id, 0, 0);
+    Tcl_CreateCommand (interp, "cg_hole_write",
+        (Tcl_CmdProc *)tcl_cg_hole_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_nconns", tcl_cg_nconns, 0, 0);
-    Tcl_CreateCommand (interp, "cg_conn_info", tcl_cg_conn_info, 0, 0);
-    Tcl_CreateCommand (interp, "cg_conn_read", tcl_cg_conn_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_conn_donor_read", tcl_cg_conn_read, (ClientData)1, 0);
-    Tcl_CreateCommand (interp, "cg_conn_id", tcl_cg_conn_id, 0, 0);
-    Tcl_CreateCommand (interp, "cg_conn_write", tcl_cg_conn_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_nconns",
+        (Tcl_CmdProc *)tcl_cg_nconns, 0, 0);
+    Tcl_CreateCommand (interp, "cg_conn_info",
+        (Tcl_CmdProc *)tcl_cg_conn_info, 0, 0);
+    Tcl_CreateCommand (interp, "cg_conn_read",
+        (Tcl_CmdProc *)tcl_cg_conn_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_conn_donor_read",
+        (Tcl_CmdProc *)tcl_cg_conn_read, (ClientData)1, 0);
+    Tcl_CreateCommand (interp, "cg_conn_id",
+        (Tcl_CmdProc *)tcl_cg_conn_id, 0, 0);
+    Tcl_CreateCommand (interp, "cg_conn_write",
+        (Tcl_CmdProc *)tcl_cg_conn_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_n1to1", tcl_cg_n1to1, 0, 0);
-    Tcl_CreateCommand (interp, "cg_1to1_read", tcl_cg_1to1_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_1to1_id", tcl_cg_1to1_id, 0, 0);
-    Tcl_CreateCommand (interp, "cg_1to1_write", tcl_cg_1to1_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_n1to1",
+        (Tcl_CmdProc *)tcl_cg_n1to1, 0, 0);
+    Tcl_CreateCommand (interp, "cg_1to1_read",
+        (Tcl_CmdProc *)tcl_cg_1to1_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_1to1_id",
+        (Tcl_CmdProc *)tcl_cg_1to1_id, 0, 0);
+    Tcl_CreateCommand (interp, "cg_1to1_write",
+        (Tcl_CmdProc *)tcl_cg_1to1_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_n1to1_global", tcl_cg_n1to1_global, 0, 0);
-    Tcl_CreateCommand (interp, "cg_1to1_read_global", tcl_cg_1to1_read_global, 0, 0);
+    Tcl_CreateCommand (interp, "cg_n1to1_global",
+        (Tcl_CmdProc *)tcl_cg_n1to1_global, 0, 0);
+    Tcl_CreateCommand (interp, "cg_1to1_read_global",
+        (Tcl_CmdProc *)tcl_cg_1to1_read_global, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_nbocos", tcl_cg_nbocos, 0, 0);
-    Tcl_CreateCommand (interp, "cg_boco_info", tcl_cg_boco_info, 0, 0);
-    Tcl_CreateCommand (interp, "cg_boco_read", tcl_cg_boco_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_boco_normal_read", tcl_cg_boco_read, (ClientData)1, 0);
-    Tcl_CreateCommand (interp, "cg_boco_id", tcl_cg_boco_id, 0, 0);
-    Tcl_CreateCommand (interp, "cg_boco_write", tcl_cg_boco_write, 0, 0);
-    Tcl_CreateCommand (interp, "cg_boco_normal_write", tcl_cg_boco_normal_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_nbocos",
+        (Tcl_CmdProc *)tcl_cg_nbocos, 0, 0);
+    Tcl_CreateCommand (interp, "cg_boco_info",
+        (Tcl_CmdProc *)tcl_cg_boco_info, 0, 0);
+    Tcl_CreateCommand (interp, "cg_boco_read",
+        (Tcl_CmdProc *)tcl_cg_boco_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_boco_normal_read",
+        (Tcl_CmdProc *)tcl_cg_boco_read, (ClientData)1, 0);
+    Tcl_CreateCommand (interp, "cg_boco_id",
+        (Tcl_CmdProc *)tcl_cg_boco_id, 0, 0);
+    Tcl_CreateCommand (interp, "cg_boco_write",
+        (Tcl_CmdProc *)tcl_cg_boco_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_boco_normal_write",
+        (Tcl_CmdProc *)tcl_cg_boco_normal_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_dataset_read", tcl_cg_dataset_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_dataset_write", tcl_cg_dataset_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_dataset_read",
+        (Tcl_CmdProc *)tcl_cg_dataset_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_dataset_write",
+        (Tcl_CmdProc *)tcl_cg_dataset_write, 0, 0);
 
-#if CGNS_VERSION >= 2400
-    Tcl_CreateCommand (interp, "cg_bcdataset_info", tcl_cg_bcdataset_info, 0, 0);
-    Tcl_CreateCommand (interp, "cg_bcdataset_write", tcl_cg_bcdataset_write, 0, 0);
-    Tcl_CreateCommand (interp, "cg_bcdataset_read", tcl_cg_bcdataset_read, 0, 0);
-#endif
+    Tcl_CreateCommand (interp, "cg_bcdataset_info",
+        (Tcl_CmdProc *)tcl_cg_bcdataset_info, 0, 0);
+    Tcl_CreateCommand (interp, "cg_bcdataset_write",
+        (Tcl_CmdProc *)tcl_cg_bcdataset_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_bcdataset_read",
+        (Tcl_CmdProc *)tcl_cg_bcdataset_read, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_bcdata_write", tcl_cg_bcdata_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_bcdata_write",
+        (Tcl_CmdProc *)tcl_cg_bcdata_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_ndiscrete", tcl_cg_ndiscrete, 0, 0);
-    Tcl_CreateCommand (interp, "cg_discrete_read", tcl_cg_discrete_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_discrete_write", tcl_cg_discrete_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_ndiscrete",
+        (Tcl_CmdProc *)tcl_cg_ndiscrete, 0, 0);
+    Tcl_CreateCommand (interp, "cg_discrete_read",
+        (Tcl_CmdProc *)tcl_cg_discrete_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_discrete_write",
+        (Tcl_CmdProc *)tcl_cg_discrete_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_n_rigid_motions", tcl_cg_n_rigid_motions, 0, 0);
-    Tcl_CreateCommand (interp, "cg_rigid_motion_read", tcl_cg_rigid_motion_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_rigid_motion_write", tcl_cg_rigid_motion_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_n_rigid_motions",
+        (Tcl_CmdProc *)tcl_cg_n_rigid_motions, 0, 0);
+    Tcl_CreateCommand (interp, "cg_rigid_motion_read",
+        (Tcl_CmdProc *)tcl_cg_rigid_motion_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_rigid_motion_write",
+        (Tcl_CmdProc *)tcl_cg_rigid_motion_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_n_arbitrary_motions", tcl_cg_n_arbitrary_motions, 0, 0);
-    Tcl_CreateCommand (interp, "cg_arbitrary_motion_read", tcl_cg_arbitrary_motion_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_arbitrary_motion_write", tcl_cg_arbitrary_motion_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_n_arbitrary_motions",
+        (Tcl_CmdProc *)tcl_cg_n_arbitrary_motions, 0, 0);
+    Tcl_CreateCommand (interp, "cg_arbitrary_motion_read",
+        (Tcl_CmdProc *)tcl_cg_arbitrary_motion_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_arbitrary_motion_write",
+        (Tcl_CmdProc *)tcl_cg_arbitrary_motion_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_simulation_type_read", tcl_cg_simulation_type_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_simulation_type_write", tcl_cg_simulation_type_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_simulation_type_read",
+        (Tcl_CmdProc *)tcl_cg_simulation_type_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_simulation_type_write",
+        (Tcl_CmdProc *)tcl_cg_simulation_type_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_biter_read", tcl_cg_biter_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_biter_write", tcl_cg_biter_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_biter_read",
+        (Tcl_CmdProc *)tcl_cg_biter_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_biter_write",
+        (Tcl_CmdProc *)tcl_cg_biter_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_ziter_read", tcl_cg_ziter_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_ziter_write", tcl_cg_ziter_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_ziter_read",
+        (Tcl_CmdProc *)tcl_cg_ziter_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_ziter_write",
+        (Tcl_CmdProc *)tcl_cg_ziter_write, 0, 0);
 
-#if CGNS_VERSION >= 2200
-    Tcl_CreateCommand (interp, "cg_gravity_read", tcl_cg_gravity_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_gravity_write", tcl_cg_gravity_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_gravity_read",
+        (Tcl_CmdProc *)tcl_cg_gravity_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_gravity_write",
+        (Tcl_CmdProc *)tcl_cg_gravity_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_axisym_read", tcl_cg_axisym_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_axisym_write", tcl_cg_axisym_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_axisym_read",
+        (Tcl_CmdProc *)tcl_cg_axisym_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_axisym_write",
+        (Tcl_CmdProc *)tcl_cg_axisym_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_rotating_read", tcl_cg_rotating_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_rotating_write", tcl_cg_rotating_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_rotating_read",
+        (Tcl_CmdProc *)tcl_cg_rotating_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_rotating_write",
+        (Tcl_CmdProc *)tcl_cg_rotating_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_bc_wallfunction_read", tcl_cg_bc_wallfunction_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_bc_wallfunction_write", tcl_cg_bc_wallfunction_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_bc_wallfunction_read",
+        (Tcl_CmdProc *)tcl_cg_bc_wallfunction_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_bc_wallfunction_write",
+        (Tcl_CmdProc *)tcl_cg_bc_wallfunction_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_bc_area_read", tcl_cg_bc_area_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_bc_area_write", tcl_cg_bc_area_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_bc_area_read",
+        (Tcl_CmdProc *)tcl_cg_bc_area_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_bc_area_write",
+        (Tcl_CmdProc *)tcl_cg_bc_area_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_conn_periodic_read", tcl_cg_conn_periodic_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_conn_periodic_write", tcl_cg_conn_periodic_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_conn_periodic_read",
+        (Tcl_CmdProc *)tcl_cg_conn_periodic_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_conn_periodic_write",
+        (Tcl_CmdProc *)tcl_cg_conn_periodic_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_conn_average_read", tcl_cg_conn_average_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_conn_average_write", tcl_cg_conn_average_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_conn_average_read",
+        (Tcl_CmdProc *)tcl_cg_conn_average_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_conn_average_write",
+        (Tcl_CmdProc *)tcl_cg_conn_average_write, 0, 0);
 
-#if CGNS_VERSION >= 2400
-    Tcl_CreateCommand (interp, "cg_1to1_periodic_read", tcl_cg_1to1_periodic_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_1to1_periodic_write", tcl_cg_1to1_periodic_write, 0, 0);
-    Tcl_CreateCommand (interp, "cg_1to1_average_read", tcl_cg_1to1_average_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_1to1_average_write", tcl_cg_1to1_average_write, 0, 0);
-#endif
-#endif
+    Tcl_CreateCommand (interp, "cg_1to1_periodic_read",
+        (Tcl_CmdProc *)tcl_cg_1to1_periodic_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_1to1_periodic_write",
+        (Tcl_CmdProc *)tcl_cg_1to1_periodic_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_1to1_average_read",
+        (Tcl_CmdProc *)tcl_cg_1to1_average_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_1to1_average_write",
+        (Tcl_CmdProc *)tcl_cg_1to1_average_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_goto", tcl_cg_goto, 0, 0);
-    Tcl_CreateCommand (interp, "cg_gorel", tcl_cg_gorel, 0, 0);
-    Tcl_CreateCommand (interp, "cg_where", tcl_cg_where, 0, 0);
+    Tcl_CreateCommand (interp, "cg_goto",
+        (Tcl_CmdProc *)tcl_cg_goto, 0, 0);
+    Tcl_CreateCommand (interp, "cg_gorel",
+        (Tcl_CmdProc *)tcl_cg_gorel, 0, 0);
+    Tcl_CreateCommand (interp, "cg_gopath",
+        (Tcl_CmdProc *)tcl_cg_gopath, 0, 0);
+    Tcl_CreateCommand (interp, "cg_golist",
+        (Tcl_CmdProc *)tcl_cg_golist, 0, 0);
+    Tcl_CreateCommand (interp, "cg_where",
+        (Tcl_CmdProc *)tcl_cg_where, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_convergence_read", tcl_cg_convergence_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_convergence_write", tcl_cg_convergence_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_convergence_read",
+        (Tcl_CmdProc *)tcl_cg_convergence_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_convergence_write",
+        (Tcl_CmdProc *)tcl_cg_convergence_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_state_read", tcl_cg_state_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_state_write", tcl_cg_state_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_state_read",
+        (Tcl_CmdProc *)tcl_cg_state_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_state_write",
+        (Tcl_CmdProc *)tcl_cg_state_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_equationset_read", tcl_cg_equationset_read, 0, 0);
-#if CGNS_VERSION >= 2100
-    Tcl_CreateCommand (interp, "cg_equationset_chemistry_read", tcl_cg_equationset_chemistry_read, 0, 0);
-#if CGNS_VERSION >= 2400
-    Tcl_CreateCommand (interp, "cg_equationset_elecmagn_read", tcl_cg_equationset_elecmagn_read, 0, 0);
-#endif
-#endif
-    Tcl_CreateCommand (interp, "cg_equationset_write", tcl_cg_equationset_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_equationset_read",
+        (Tcl_CmdProc *)tcl_cg_equationset_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_equationset_chemistry_read",
+        (Tcl_CmdProc *)tcl_cg_equationset_chemistry_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_equationset_elecmagn_read",
+        (Tcl_CmdProc *)tcl_cg_equationset_elecmagn_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_equationset_write",
+        (Tcl_CmdProc *)tcl_cg_equationset_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_governing_read", tcl_cg_governing_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_governing_write", tcl_cg_governing_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_governing_read",
+        (Tcl_CmdProc *)tcl_cg_governing_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_governing_write",
+        (Tcl_CmdProc *)tcl_cg_governing_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_diffusion_read", tcl_cg_diffusion_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_diffusion_write", tcl_cg_diffusion_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_diffusion_read",
+        (Tcl_CmdProc *)tcl_cg_diffusion_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_diffusion_write",
+        (Tcl_CmdProc *)tcl_cg_diffusion_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_model_read", tcl_cg_model_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_model_write", tcl_cg_model_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_model_read",
+        (Tcl_CmdProc *)tcl_cg_model_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_model_write",
+        (Tcl_CmdProc *)tcl_cg_model_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_narrays", tcl_cg_narrays, 0, 0);
-    Tcl_CreateCommand (interp, "cg_array_info", tcl_cg_array_info, 0, 0);
-    Tcl_CreateCommand (interp, "cg_array_read", tcl_cg_array_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_array_read_as", tcl_cg_array_read_as, 0, 0);
-    Tcl_CreateCommand (interp, "cg_array_write", tcl_cg_array_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_narrays",
+        (Tcl_CmdProc *)tcl_cg_narrays, 0, 0);
+    Tcl_CreateCommand (interp, "cg_array_info",
+        (Tcl_CmdProc *)tcl_cg_array_info, 0, 0);
+    Tcl_CreateCommand (interp, "cg_array_read",
+        (Tcl_CmdProc *)tcl_cg_array_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_array_read_as",
+        (Tcl_CmdProc *)tcl_cg_array_read_as, 0, 0);
+    Tcl_CreateCommand (interp, "cg_array_write",
+        (Tcl_CmdProc *)tcl_cg_array_write, 0, 0);
 
-#if CGNS_VERSION >= 2100
-    Tcl_CreateCommand (interp, "cg_nuser_data", tcl_cg_nuser_data, 0, 0);
-    Tcl_CreateCommand (interp, "cg_user_data_read", tcl_cg_user_data_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_user_data_write", tcl_cg_user_data_write, 0, 0);
-#endif
+    Tcl_CreateCommand (interp, "cg_nuser_data",
+        (Tcl_CmdProc *)tcl_cg_nuser_data, 0, 0);
+    Tcl_CreateCommand (interp, "cg_user_data_read",
+        (Tcl_CmdProc *)tcl_cg_user_data_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_user_data_write",
+        (Tcl_CmdProc *)tcl_cg_user_data_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_nintegrals", tcl_cg_nintegrals, 0, 0);
-    Tcl_CreateCommand (interp, "cg_integral_read", tcl_cg_integral_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_integral_write", tcl_cg_integral_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_nintegrals",
+        (Tcl_CmdProc *)tcl_cg_nintegrals, 0, 0);
+    Tcl_CreateCommand (interp, "cg_integral_read",
+        (Tcl_CmdProc *)tcl_cg_integral_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_integral_write",
+        (Tcl_CmdProc *)tcl_cg_integral_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_rind_read", tcl_cg_rind_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_rind_write", tcl_cg_rind_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_rind_read",
+        (Tcl_CmdProc *)tcl_cg_rind_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_rind_write",
+        (Tcl_CmdProc *)tcl_cg_rind_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_ndescriptors", tcl_cg_ndescriptors, 0, 0);
-    Tcl_CreateCommand (interp, "cg_descriptor_read", tcl_cg_descriptor_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_descriptor_write", tcl_cg_descriptor_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_ndescriptors",
+        (Tcl_CmdProc *)tcl_cg_ndescriptors, 0, 0);
+    Tcl_CreateCommand (interp, "cg_descriptor_read",
+        (Tcl_CmdProc *)tcl_cg_descriptor_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_descriptor_write",
+        (Tcl_CmdProc *)tcl_cg_descriptor_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_units_read", tcl_cg_units_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_units_write", tcl_cg_units_write, 0, 0);
-#if CGNS_VERSION >= 2400
-    Tcl_CreateCommand (interp, "cg_nunits", tcl_cg_nunits, 0, 0);
-    Tcl_CreateCommand (interp, "cg_unitsfull_read", tcl_cg_units_read, (ClientData)1, 0);
-    Tcl_CreateCommand (interp, "cg_unitsfull_write", tcl_cg_units_write, (ClientData)1, 0);
-#endif
+    Tcl_CreateCommand (interp, "cg_units_read",
+        (Tcl_CmdProc *)tcl_cg_units_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_units_write",
+        (Tcl_CmdProc *)tcl_cg_units_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_nunits",
+        (Tcl_CmdProc *)tcl_cg_nunits, 0, 0);
+    Tcl_CreateCommand (interp, "cg_unitsfull_read",
+        (Tcl_CmdProc *)tcl_cg_units_read, (ClientData)1, 0);
+    Tcl_CreateCommand (interp, "cg_unitsfull_write",
+        (Tcl_CmdProc *)tcl_cg_units_write, (ClientData)1, 0);
 
-    Tcl_CreateCommand (interp, "cg_exponents_info", tcl_cg_exponents_info, 0, 0);
-    Tcl_CreateCommand (interp, "cg_exponents_read", tcl_cg_exponents_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_exponents_write", tcl_cg_exponents_write, 0, 0);
-#if CGNS_VERSION >= 2400
-    Tcl_CreateCommand (interp, "cg_nexponents", tcl_cg_nexponents, 0, 0);
-    Tcl_CreateCommand (interp, "cg_expfull_read", tcl_cg_exponents_read, (ClientData)1, 0);
-    Tcl_CreateCommand (interp, "cg_expfull_write", tcl_cg_exponents_write, (ClientData)1, 0);
-#endif
+    Tcl_CreateCommand (interp, "cg_exponents_info",
+        (Tcl_CmdProc *)tcl_cg_exponents_info, 0, 0);
+    Tcl_CreateCommand (interp, "cg_exponents_read",
+        (Tcl_CmdProc *)tcl_cg_exponents_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_exponents_write",
+        (Tcl_CmdProc *)tcl_cg_exponents_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_nexponents",
+        (Tcl_CmdProc *)tcl_cg_nexponents, 0, 0);
+    Tcl_CreateCommand (interp, "cg_expfull_read",
+        (Tcl_CmdProc *)tcl_cg_exponents_read, (ClientData)1, 0);
+    Tcl_CreateCommand (interp, "cg_expfull_write",
+        (Tcl_CmdProc *)tcl_cg_exponents_write, (ClientData)1, 0);
 
-    Tcl_CreateCommand (interp, "cg_conversion_info", tcl_cg_conversion_info, 0, 0);
-    Tcl_CreateCommand (interp, "cg_conversion_read", tcl_cg_conversion_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_conversion_write", tcl_cg_conversion_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_conversion_info",
+        (Tcl_CmdProc *)tcl_cg_conversion_info, 0, 0);
+    Tcl_CreateCommand (interp, "cg_conversion_read",
+        (Tcl_CmdProc *)tcl_cg_conversion_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_conversion_write",
+        (Tcl_CmdProc *)tcl_cg_conversion_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_dataclass_read", tcl_cg_dataclass_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_dataclass_write", tcl_cg_dataclass_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_dataclass_read",
+        (Tcl_CmdProc *)tcl_cg_dataclass_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_dataclass_write",
+        (Tcl_CmdProc *)tcl_cg_dataclass_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_gridlocation_read", tcl_cg_gridlocation_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_gridlocation_write", tcl_cg_gridlocation_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_gridlocation_read",
+        (Tcl_CmdProc *)tcl_cg_gridlocation_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_gridlocation_write",
+        (Tcl_CmdProc *)tcl_cg_gridlocation_write, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_ordinal_read", tcl_cg_ordinal_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_ordinal_write", tcl_cg_ordinal_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_ordinal_read",
+        (Tcl_CmdProc *)tcl_cg_ordinal_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_ordinal_write",
+        (Tcl_CmdProc *)tcl_cg_ordinal_write, 0, 0);
 
-#if CGNS_VERSION >= 2400
-    Tcl_CreateCommand (interp, "cg_ptset_info", tcl_cg_ptset_info, 0, 0);
-    Tcl_CreateCommand (interp, "cg_ptset_read", tcl_cg_ptset_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_ptset_write", tcl_cg_ptset_write, 0, 0);
-#endif
+    Tcl_CreateCommand (interp, "cg_ptset_info",
+        (Tcl_CmdProc *)tcl_cg_ptset_info, 0, 0);
+    Tcl_CreateCommand (interp, "cg_ptset_read",
+        (Tcl_CmdProc *)tcl_cg_ptset_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_ptset_write",
+        (Tcl_CmdProc *)tcl_cg_ptset_write, 0, 0);
 
-#if CGNS_VERSION >= 2100
-    Tcl_CreateCommand (interp, "cg_is_link", tcl_cg_is_link, 0, 0);
-    Tcl_CreateCommand (interp, "cg_link_read", tcl_cg_link_read, 0, 0);
-    Tcl_CreateCommand (interp, "cg_link_write", tcl_cg_link_write, 0, 0);
-#endif
+    Tcl_CreateCommand (interp, "cg_is_link",
+        (Tcl_CmdProc *)tcl_cg_is_link, 0, 0);
+    Tcl_CreateCommand (interp, "cg_link_read",
+        (Tcl_CmdProc *)tcl_cg_link_read, 0, 0);
+    Tcl_CreateCommand (interp, "cg_link_write",
+        (Tcl_CmdProc *)tcl_cg_link_write, 0, 0);
 
-#if CGNS_VERSION >= 2200
-    Tcl_CreateCommand (interp, "cg_delete_node", tcl_cg_delete_node, 0, 0);
-#endif
+    Tcl_CreateCommand (interp, "cg_delete_node",
+        (Tcl_CmdProc *)tcl_cg_delete_node, 0, 0);
 
-    Tcl_CreateCommand (interp, "cg_get_error", tcl_cg_get_error, 0, 0);
-    Tcl_CreateCommand (interp, "cg_error_exit", tcl_cg_error_exit, 0, 0);
+    Tcl_CreateCommand (interp, "cg_get_error",
+        (Tcl_CmdProc *)tcl_cg_get_error, 0, 0);
+    Tcl_CreateCommand (interp, "cg_error_exit",
+        (Tcl_CmdProc *)tcl_cg_error_exit, 0, 0);
 
     return TCL_OK;
 }
