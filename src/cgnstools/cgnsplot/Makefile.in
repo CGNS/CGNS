@@ -3,14 +3,13 @@
 include ../make.defs
 
 COPTS  = $(CFLAGS) -I../common -I$(CGNSDIR) $(TKINCS) $(OGLINCS)
-LDLIST = $(LDLIBS) $(CGNSLIB) $(BUILDLIBS) $(TKOGLLIB) $(TKLIBS) \
+LDLIST = $(CGNSLIB) $(BUILDLIBS) $(TKOGLLIB) $(TKLIBS) \
 	 $(OGLLIBS) $(X11LIBS) $(TKOGLXLIB) $(CLIBS)
 
 #--------------------------------------------------
 
-plotwish$(EXE) : plotwish.$(O) cgnstcl.$(O) hash.$(O) cgnames.$(O) $(TKOGLLIB)
-	$(CC) $(LDFLAGS) -o $@ plotwish.$(O) cgnstcl.$(O) hash.$(O) \
-	cgnames.$(O) $(LDLIST)
+plotwish$(EXE) : plotwish.$(O) cgnstcl.$(O) hash.$(O) $(TKOGLLIB)
+	$(CC) $(LDFLAGS) -o $@ plotwish.$(O) cgnstcl.$(O) hash.$(O) $(LDLIST)
 	$(STRIP) $@
 
 plotwish.$(O) : plotwish.c
@@ -19,9 +18,6 @@ cgnstcl.$(O)  : cgnstcl.c
 
 hash.$(O)     : ../common/hash.c ../common/hash.h
 	$(CC) $(COPTS) -o hash.$(O) -c ../common/hash.c
-
-cgnames.$(O)     : ../common/cgnames.c ../common/cgnames.h
-	$(CC) $(COPTS) -o cgnames.$(O) -c ../common/cgnames.c
 
 #---------------------------------------------------------------
 
@@ -102,5 +98,5 @@ uninstall :
 	$(CC) $(COPTS) -c $<
 
 clean:
-	-$(RM) *.$(O) plotwish$(EXE)
+	-$(RM) *.$(O) *~ *.bak plotwish$(EXE)
 

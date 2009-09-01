@@ -33,9 +33,9 @@ $(INSTALLDIR)\help :
 
 #--------------------------------------------------
 
-plotwish.exe : winmain.obj cgnstcl.obj hash.obj cgnames.obj
+plotwish.exe : winmain.obj cgnstcl.obj hash.obj
 	$(LINK) $(LFLAGS) /nodefaultlib /subsystem:windows \
-	-out:$@ winmain.obj cgnstcl.obj hash.obj cgnames.obj \
+	-out:$@ winmain.obj cgnstcl.obj hash.obj \
 	$(CGNSLIB) $(BUILDLIBS) $(CLIBS) $(TKOGLLIB) $(TCLLIB) $(TKLIB) \
 	$(guilibs) $(ogllibs)
 
@@ -58,9 +58,6 @@ cgnstcl-dll.obj : cgnstcl.c
 hash.obj : ..\common\hash.c ..\common\hash.h
 	$(CC) $(CFLAGS) -Fohash.obj -c ..\common\hash.c
 
-cgnames.obj : ..\common\cgnames.c ..\common\cgnames.h
-	$(CC) $(CFLAGS) -Focgnames.obj -c ..\common\cgnames.c
-
 #--------------------------------------------------
 
 .c.obj :
@@ -77,4 +74,5 @@ clean:
 	-$(RM) *.pdb
 	-$(RM) *.ilk
 	-$(RM) *.dll
+	-$(RM) *.bak
 
