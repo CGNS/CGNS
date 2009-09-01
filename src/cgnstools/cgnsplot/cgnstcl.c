@@ -13,7 +13,6 @@
 #include "tk.h"
 #include "cgnslib.h"
 #include "hash.h"
-#include "cgnames.h"
 
 #ifndef CONST
 # define CONST
