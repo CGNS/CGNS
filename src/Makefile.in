@@ -111,6 +111,9 @@ $(OBJDIR)/cg_ftoc.$(O) : cg_ftoc.c fortran_macros.h cgnslib.h \
 $(OBJDIR)/cgio_ftoc.$(O) : cgio_ftoc.c fortran_macros.h cgns_io.h
 	$(CC) $(COPTS) $(F2CFLAGS) $(COOUT)$@ -c cgio_ftoc.c
 
+$(OBJDIR)/cg_malloc.$(O) : cg_malloc.c cg_malloc.h
+	$(CC) $(COPTS) $(COOUT)$@ -c cg_malloc.c
+
 #---------- ADF
 
 $(OBJDIR)/ADF_interface.$(O) : adf/ADF_interface.c \
@@ -119,15 +122,15 @@ $(OBJDIR)/ADF_interface.$(O) : adf/ADF_interface.c \
 
 $(OBJDIR)/ADF_internals.$(O) : adf/ADF_internals.c \
 	adf/ADF.h adf/ADF_internals.h
-	$(CC) $(COPTS) -DUSE_CGIO -Iadf $(COOUT)$@ -c adf/ADF_internals.c
+	$(CC) $(COPTS) -Iadf $(COOUT)$@ -c adf/ADF_internals.c
 
 #---------- HDF5
 
 $(OBJDIR)/ADFH.$(O) : adfh/ADFH.c adfh/ADFH.h
-	$(CC) $(COPTS) -DUSE_CGIO -Iadfh $(HDF5INC) $(COOUT)$@ -c adfh/ADFH.c
+	$(CC) $(COPTS) -Iadfh $(HDF5INC) $(COOUT)$@ -c adfh/ADFH.c
 
 #---------- XML
 
 $(OBJDIR)/ADFX.$(O) : adfx/ADFX.c adfx/ADFX.h
-	$(CC) $(COPTS) -DUSE_CGIO $(XMLZLIB) -Iadfx $(EXPATINC) $(COOUT)$@ -c adfx/ADFX.c
+	$(CC) $(COPTS) $(XMLZLIB) -Iadfx $(EXPATINC) $(COOUT)$@ -c adfx/ADFX.c
 

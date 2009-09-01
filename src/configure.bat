@@ -7,7 +7,7 @@ set copts=
 set debug=
 set cfgflags=
 set dllopts=
-set build=-DUSE_CGIO
+set build=
 set do64bit=0
 set target=lib
 set make=nmake
@@ -891,12 +891,12 @@ echo #------------------------------------------------------------------------>>
 echo.>> make.defs
 if %make% == nmake (
 echo RM     = del /q>> make.defs
-echo RMDIR  = rmdir /s/q>> make.defs
+echo RMDIR  = rd /s/q>> make.defs
 ) else (
 echo RM     = cmd /c del /q>> make.defs
-echo RMDIR  = cmd /c rmdir /s/q>> make.defs
+echo RMDIR  = cmd /c rd /s/q>> make.defs
 )
-echo MKDIR  = mkdir>> make.defs
+echo MKDIR  = md>> make.defs
 echo.>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo # installation library name and directories>> make.defs
