@@ -184,9 +184,7 @@ bytes   start   end   description      range / format
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
 #endif
-#ifdef USE_CGIO
 #include "cgns_io.h" /* for cgio_find_file */
-#endif
 
 #if 0
 #define CHECK_ABORT(E) if(E!=NO_ERROR){int a=0;int b=1/a;}
@@ -1282,7 +1280,6 @@ output: int *error_return       Error return.
 ***********************************************************************/
 void ADFI_find_file(char *filename, int *error_return)
 {
-#ifdef CGNS_IO_H
   char pathname[ADF_FILENAME_LENGTH+1];
 
   if (cgio_find_file(filename, CGIO_FILE_ADF, sizeof(pathname), pathname)) {
@@ -1292,9 +1289,6 @@ void ADFI_find_file(char *filename, int *error_return)
     strcpy(filename, pathname);
     *error_return = NO_ERROR;
   }
-#else
-    *error_return = NO_ERROR;
-#endif
 }
 /***********************************************************************
 ADFI link open
