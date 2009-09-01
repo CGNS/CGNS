@@ -53,4 +53,5 @@ clean:
 	-$(RM) *.pdb
 	-$(RM) *.ilk
 	-$(RM) *.dll
+	-$(RM) *.bak
 
