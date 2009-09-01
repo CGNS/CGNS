@@ -19,7 +19,7 @@ OBJS = \
 lib	: libtkogl.$(A)
 install : libtkogl.$(A)
 clean:
-	$(RM) *.$(O) *.$(A) glwish$(EXE)
+	$(RM) *.$(O) *~ *.bak *.$(A) glwish$(EXE)
 
 #----------------------------------------------------------
 
