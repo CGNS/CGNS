@@ -6,7 +6,7 @@ CALCDIR = ../calclib
 CALCLIB = $(CALCDIR)/libcgnscalc.$(A)
 
 COPTS  = $(CFLAGS) -I../common -I$(CGNSDIR)
-LDLIST = $(LDLIBS) $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
+LDLIST = $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
 #--------------------------------------------------
 
@@ -281,5 +281,5 @@ uninstall :
 	$(CC) $(COPTS) -c $<
 
 clean:
-	$(RM) *.$(O) $(ALL)
+	$(RM) *.$(O) *~ *.bak $(ALL)
 

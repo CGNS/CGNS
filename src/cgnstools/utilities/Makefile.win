@@ -262,4 +262,5 @@ clean:
 	-$(RM) *.pdb
 	-$(RM) *.ilk
 	-$(RM) *.exe
+	-$(RM) *.bak
 
