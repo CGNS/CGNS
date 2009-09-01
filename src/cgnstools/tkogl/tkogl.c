@@ -350,7 +350,7 @@ static int WinMakeWindowExist (OGLwin* oglWinPtr)
       }
       parent = winPtr->parentPtr->window;
    }
-   
+
    /* Create a window class for TkOGL windows if not done this yet */
    parentWin = Tk_GetHWND(parent);
    hInstance = Tk_GetHINSTANCE();
@@ -1402,33 +1402,33 @@ static void SetDCPixelFormat (OGLwin* glxwinPtr)
         Tcl_InitHashTable(&cmap->refCounts, TCL_ONE_WORD_KEYS);
     }
     else {
-        cmap = (TkWinColormap *) DefaultColormap(glxwinPtr->display, 
+        cmap = (TkWinColormap *) DefaultColormap(glxwinPtr->display,
                                DefaultScreen(glxwinPtr->display));
     }
-    
+
     /* Now, allocate the OpenGL context */
-    glxwinPtr->hrc = wglCreateContext (glxwinPtr->hdc);    
+    glxwinPtr->hrc = wglCreateContext (glxwinPtr->hdc);
 
     /* See if this window will share display lists with another */
     if (glxwinPtr->context != NULL) {
         Tcl_CmdInfo info;
-        if (!Tcl_GetCommandInfo (glxwinPtr->interp, glxwinPtr->context, 
-            &info) || info.proc != OGLwinWidgetCmd) {
+        if (!Tcl_GetCommandInfo (glxwinPtr->interp, glxwinPtr->context,
+            &info) || info.proc != (Tcl_CmdProc *)OGLwinWidgetCmd) {
             Tcl_ResetResult (glxwinPtr->interp);
-            Tcl_AppendResult (glxwinPtr->interp, 
-                "Not a gl window: ", glxwinPtr->context, (char*) NULL);	  
+            Tcl_AppendResult (glxwinPtr->interp,
+                "Not a gl window: ", glxwinPtr->context, (char*) NULL);
 	        Tcl_BackgroundError (glxwinPtr->interp);
         }
-        else if (!wglShareLists(((OGLwin *)(info.clientData))->hrc, 
+        else if (!wglShareLists(((OGLwin *)(info.clientData))->hrc,
                   glxwinPtr->hrc)) {
             Tcl_ResetResult (glxwinPtr->interp);
-            Tcl_AppendResult (glxwinPtr->interp, 
-                "Cannot share lists with: ", glxwinPtr->context, (char*) NULL);	  
-	        Tcl_BackgroundError (glxwinPtr->interp);            
+            Tcl_AppendResult (glxwinPtr->interp,
+                "Cannot share lists with: ", glxwinPtr->context, (char*) NULL);
+	        Tcl_BackgroundError (glxwinPtr->interp);
         }
     }
     /* Make sure Tk knows how to switch palettes */
-    Tk_SetWindowVisual (glxwinPtr->tkwin, visinfo->visual, 
+    Tk_SetWindowVisual (glxwinPtr->tkwin, visinfo->visual,
                         visinfo->depth, (Colormap) cmap);
 }
 #else
