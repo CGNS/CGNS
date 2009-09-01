@@ -15,9 +15,8 @@ if {[catch {package require Tk 8.0} msg]} {
 #---------- get platform
 
 set platform $tcl_platform(platform)
-if {$platform == "windows" &&
-    [info exists env(TERM)] &&
-    $env(TERM) == "cygwin"} {
+if {$platform == "windows" && [info exists env(TERM)] &&
+    ($env(TERM) == "cygwin" || $env(TERM) == "xterm")} {
   set platform cygwin
 }
 
