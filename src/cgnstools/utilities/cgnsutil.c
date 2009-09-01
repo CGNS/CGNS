@@ -640,7 +640,7 @@ char *temporary_file (
     char *basename)
 #else
     basename)
-char *basename;    
+char *basename;
 #endif
 {
     char *p, *temp;
@@ -650,7 +650,7 @@ char *basename;
         basename = "cgnstmpfile";
     n = strlen (basename);
     temp = (char *) malloc (n + 10);
-    if (temp == NULL) 
+    if (temp == NULL)
         FATAL ("temporary_file", "malloc failed for temp filename");
     sprintf (temp, "%s.tmp", basename);
     p = temp + strlen(temp);
@@ -659,6 +659,7 @@ char *basename;
         if (access (temp, 0)) return temp;
     }
     FATAL ("temporary_file", "failed to create temporary filename");
+    return 0;
 }
 
 /*---------- copy_file ------------------------------------------------
