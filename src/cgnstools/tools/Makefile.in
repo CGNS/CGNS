@@ -1,7 +1,7 @@
 include ../make.defs
 
 COPTS  = $(CFLAGS) -I../common -I$(CGNSDIR)
-LDLIST = $(LDLIBS) $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
+LDLIST = $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
 #--------------------------------------------------
 
@@ -16,11 +16,21 @@ cgnscheck$(EXE) : cgnscheck.$(O) getargs.$(O) hash.$(O) cgnames.$(O) $(CGNSLIB)
 	cgnames.$(O) $(LDLIST)
 	$(STRIP) $@
 
-cgnscheck.$(O) : cgnscheck.c
+cgnscheck.$(O) : cgnscheck.c cgnames.h
 
 cgnscheck.c : $(CGNSDIR)/tools/cgnscheck.c
 	-$(RM) cgnscheck.c
 	cp $(CGNSDIR)/tools/cgnscheck.c cgnscheck.c
+
+cgnames.$(O) : cgnames.c cgnames.h
+
+cgnames.c : $(CGNSDIR)/tools/cgnames.c
+	-$(RM) cgnames.c
+	cp $(CGNSDIR)/tools/cgnames.c cgnames.c
+
+cgnames.h : $(CGNSDIR)/tools/cgnames.h
+	-$(RM) cgnames.h
+	cp $(CGNSDIR)/tools/cgnames.h cgnames.h
 
 #--------------------------------------------------
 
@@ -41,9 +51,6 @@ getargs.$(O) : ../common/getargs.c ../common/getargs.h
 
 hash.$(O) : ../common/hash.c ../common/hash.h
 	$(CC) $(COPTS) -o hash.$(O) -c ../common/hash.c
-
-cgnames.$(O) : ../common/cgnames.c ../common/cgnames.h
-	$(CC) $(COPTS) -o cgnames.$(O) -c ../common/cgnames.c
 
 install : install-dirs install-prog
 
@@ -76,5 +83,5 @@ uninstall :
 	$(CC) $(COPTS) -c $<
 
 clean:
-	-$(RM) *.$(O) $(ALL) cgnscheck.c cgnsversion.c
+	-$(RM) *.$(O) *~ *.bak $(ALL) *.c *.h
 

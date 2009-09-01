@@ -15,10 +15,18 @@ cgnscheck.exe : cgnscheck.obj getargs.obj hash.obj cgnames.obj $(CGNSLIB)
 	$(LINK) $(LFLAGS) /out:$@ cgnscheck.obj getargs.obj hash.obj \
 	cgnames.obj $(LDLIST)
 
-cgnscheck.obj : cgnscheck.c
+cgnscheck.obj : cgnscheck.c cgnames.h
 
 cgnscheck.c : $(CGNSDIR)\tools\cgnscheck.c
 	copy $(CGNSDIR)\tools\cgnscheck.c cgnscheck.c
+
+cgnames.obj : cgnames.c cgnames.h
+
+cgnames.c : $(CGNSDIR)\tools\cgnames.c
+	copy $(CGNSDIR)\tools\cgnames.c cgnames.c
+
+cgnames.h : $(CGNSDIR)\tools\cgnames.h
+	copy $(CGNSDIR)\tools\cgnames.h cgnames.h
 
 #--------------------------------------------------
 
@@ -37,9 +45,6 @@ getargs.obj : ..\common\getargs.c ..\common\getargs.h
 
 hash.obj : ..\common\hash.c ..\common\hash.h
 	$(CC) $(CFLAGS) -Fohash.obj -c ..\common\hash.c
-
-cgnames.obj : ..\common\cgnames.c ..\common\cgnames.h
-	$(CC) $(CFLAGS) -Focgnames.obj -c ..\common\cgnames.c
 
 #---------------------------------------------------------------
 
@@ -66,5 +71,7 @@ clean:
 	-$(RM) *.pdb
 	-$(RM) *.ilk
 	-$(RM) *.exe
-	-$(RM) cgnscheck.c cgnsversion.c
+	-$(RM) *.c
+	-$(RM) *.h
+	-$(RM) *.bak
 
