@@ -15,9 +15,8 @@ if {[catch {package require Tk 8.0} msg]} {
 #---------- get platform
 
 set platform $tcl_platform(platform)
-if {$platform == "windows" &&
-    [info exists env(TERM)] &&
-    $env(TERM) == "cygwin"} {
+if {$platform == "windows" && [info exists env(TERM)] &&
+    ($env(TERM) == "cygwin" || $env(TERM) == "xterm")} {
   set platform cygwin
 }
 
@@ -362,26 +361,16 @@ proc get_file {name {showerr 0}} {
 set ProgData(cgnscheck) [get_executable cgnscheck]
 set ProgData(cgnsversion) [get_executable cgnsversion]
 
-set cgnsplot [get_executable cgnsplot]
-if {$cgnsplot != ""} {
-  set ProgData(cgnsplot) $cgnsplot
-} else {
-  set plotwish [get_executable plotwish]
-  set cgnsplot [get_file cgnsplot.tcl]
-  if {$plotwish != "" && $cgnsplot != ""} {
-    set ProgData(cgnsplot) [list $plotwish $cgnsplot]
-  }
+set plotwish [get_executable plotwish]
+set cgnsplot [get_file cgnsplot.tcl]
+if {$plotwish != "" && $cgnsplot != ""} {
+  set ProgData(cgnsplot) [list $plotwish $cgnsplot]
 }
 
-set cgnscalc [get_executable cgnscalc]
-if {$cgnscalc != ""} {
-  set ProgData(cgnscalc) $cgnscalc
-} else {
-  set calcwish [get_executable calcwish]
-  set cgnscalc [get_file cgnscalc.tcl]
-  if {$calcwish != "" && $cgnscalc != ""} {
-    set ProgData(cgnscalc) [list $calcwish $cgnscalc]
-  }
+set calcwish [get_executable calcwish]
+set cgnscalc [get_file cgnscalc.tcl]
+if {$calcwish != "" && $cgnscalc != ""} {
+  set ProgData(cgnscalc) [list $calcwish $cgnscalc]
 }
 
 #---------- main window
