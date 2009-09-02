@@ -609,10 +609,13 @@ CGNSDLL int cg_ElementDataSize(int file_number, int B, int Z, int S,
 
 CGNSDLL int cg_section_partial_write(int file_number, int B, int Z,
 	char const * SectionName, ElementType_t type, int start, int end,
-	int nbndry, int const * elements, int *S);
+	int nbndry, int *S);
+
+CGNSDLL int cg_elements_partial_write(int fn, int B, int Z, int S,
+	int start, int end, int const *elements);
 
 CGNSDLL int cg_parent_data_partial_write(int fn, int B, int Z, int S,
-	int rmin, int rmax, int const *ParentData);
+	int start, int end, int const *ParentData);
 
 CGNSDLL int cg_elements_partial_read(int file_number, int B, int Z, int S,
 	int start, int end, int *elements, int *parent_data);

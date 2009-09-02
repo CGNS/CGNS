@@ -651,8 +651,7 @@ CGNSDLL void FMNAME(cg_parent_data_write_f, CG_PARENT_DATA_WRITE_F) (int *fn, in
 
 CGNSDLL void FMNAME(cg_section_partial_write_f, CG_SECTION_PARTIAL_WRITE_F) (int *fn,
     int *B, int *Z, STR_PSTR(section_name), ElementType_t *type, int *start,
-    int *end, int *nbndry, int *elements, int *S,
-    int *ier STR_PLEN(section_name))
+    int *end, int *nbndry, int *S, int *ier STR_PLEN(section_name))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
 
@@ -661,7 +660,17 @@ CGNSDLL void FMNAME(cg_section_partial_write_f, CG_SECTION_PARTIAL_WRITE_F) (int
         c_name, CGIO_MAX_NAME_LENGTH, ier);
     if (!*ier)
         *ier = cg_section_partial_write(*fn, *B, *Z, c_name, *type, *start,
-					*end, *nbndry, elements, S);
+					*end, *nbndry, S);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cg_elements_partial_write_f, CG_ELEMENTS_PARTIAL_WRITE_F)
+    (int *fn, int *B, int *Z, int *S, int *rmin, int *rmax, int *elements,
+    int *ier)
+{
+    *ier = cg_elements_partial_write(*fn, *B, *Z, *S, *rmin, *rmax,
+					elements);
 }
 
 /*-----------------------------------------------------------------------*/
