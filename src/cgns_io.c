@@ -476,11 +476,12 @@ int cgio_configure (int what, void *value)
         ierr = ADFX_Configure(what-300, value);
 #endif
     }
-/* nothing here yet
     else if (what > 200) {
 #ifdef BUILD_HDF5
+        ADFH_Configure(what-200, value, &ierr);
 #endif
     }
+/* nothing here yet
     else if (what > 100) {
     }
 */

@@ -79,6 +79,8 @@ freely, subject to the following restrictions:
 #define CG_CONFIG_ADD_PATH  4
 #define CG_CONFIG_FILE_TYPE 5
 
+#define CG_CONFIG_HDF5_COMPRESS   201
+
 #define CG_CONFIG_XML_DELETED     301
 #define CG_CONFIG_XML_NAMESPACE   302
 #define CG_CONFIG_XML_THRESHOLD   303
