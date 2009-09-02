@@ -61,7 +61,8 @@ int main (int argc, char **argv)
 {
     int n, i, j, k, nn, nf, np;
     int nnodes, nelems, nfaces;
-    int cgfile, cgbase, cgzone, cgcoord, cgsect, cgsol, cgfld;
+    int cgfile, cgbase, cgzone, cgcoord, cgsol, cgfld;
+    int cgsect, cgelems, cgfaces;
     int size[3], rmin, rmax;
     char name[33];
     ElementType_t type;
@@ -218,16 +219,23 @@ int main (int argc, char **argv)
         cg_base_write (cgfile, "Base", 3, 3, &cgbase))
         cg_error_exit ();
 
-    /* write zone with partial write */
-
-    puts("\nwriting zone with partial write");
+    /* create zone and sections */
 
     size[0] = nnodes;
     size[1] = nelems;
     size[2] = 0;
 
-    if (cg_zone_write (cgfile, cgbase, "Zone", size, Unstructured, &cgzone))
+    if (cg_zone_write (cgfile, cgbase, "Zone", size,
+            Unstructured, &cgzone) ||
+        cg_section_partial_write(cgfile, cgbase, cgzone, "Elements",
+            HEXA_8, 1, nelems, 0, &cgelems) ||
+        cg_section_partial_write(cgfile, cgbase, cgzone, "Faces",
+            QUAD_4, nelems + 1, nelems + nfaces, 0, &cgfaces))
         cg_error_exit();
+
+    /* write zone with partial write */
+
+    puts("\nwriting zone with partial write");
 
     /* write every other coordinate plane */
 
@@ -255,8 +263,8 @@ int main (int argc, char **argv)
         rmin = nn + 1;
         rmax = nn + np;
         printf("elements %d -> %d\n", rmin, rmax);
-        if (cg_section_partial_write(cgfile, cgbase, cgzone, "Elements",
-                HEXA_8, rmin, rmax, 0, &elements[n], &cgsect))
+        if (cg_elements_partial_write(cgfile, cgbase, cgzone,
+                cgelems, rmin, rmax, &elements[n]))
             cg_error_exit();
     }
 
@@ -269,10 +277,10 @@ int main (int argc, char **argv)
         rmax = nn + np + nelems;
         get_parent(rmin, rmax, nelems, nfaces);
         printf("faces %d -> %d\n", rmin, rmax);
-        if (cg_section_partial_write(cgfile, cgbase, cgzone, "Faces",
-                QUAD_4, rmin, rmax, 0, &faces[n], &cgsect) ||
-            cg_parent_data_partial_write(cgfile, cgbase, cgzone, cgsect,
-                rmin, rmax, ptmp))
+        if (cg_elements_partial_write(cgfile, cgbase, cgzone,
+                cgfaces, rmin, rmax, &faces[n]) ||
+            cg_parent_data_partial_write(cgfile, cgbase, cgzone,
+                cgfaces, rmin, rmax, ptmp))
             cg_error_exit();
     }
 
@@ -322,8 +330,8 @@ int main (int argc, char **argv)
         rmin = nn + 1;
         rmax = nn + np;
         printf("elements %d -> %d\n", rmin, rmax);
-        if (cg_section_partial_write(cgfile, cgbase, cgzone, "Elements",
-                HEXA_8, rmin, rmax, 0, &elements[n], &cgsect))
+        if (cg_elements_partial_write(cgfile, cgbase, cgzone,
+                cgelems, rmin, rmax, &elements[n]))
             cg_error_exit();
     }
 
@@ -336,10 +344,10 @@ int main (int argc, char **argv)
         rmax = nn + np + nelems;
         get_parent(rmin, rmax, nelems, nfaces);
         printf("faces %d -> %d\n", rmin, rmax);
-        if (cg_section_partial_write(cgfile, cgbase, cgzone, "Faces",
-                QUAD_4, rmin, rmax, 0, &faces[n], &cgsect) ||
-            cg_parent_data_partial_write(cgfile, cgbase, cgzone, cgsect,
-                rmin, rmax, ptmp))
+        if (cg_elements_partial_write(cgfile, cgbase, cgzone,
+                cgfaces, rmin, rmax, &faces[n]) ||
+            cg_parent_data_partial_write(cgfile, cgbase, cgzone,
+                cgfaces, rmin, rmax, ptmp))
             cg_error_exit();
     }
 
@@ -389,8 +397,8 @@ int main (int argc, char **argv)
         }
         n = (rmin - 1) << 3;
         printf("elements %d -> %d\n", rmin, rmax);
-        if (cg_section_partial_write(cgfile, cgbase, cgzone, "Elements",
-                HEXA_8, rmin, rmax, 0, &elements[n], &cgsect))
+        if (cg_elements_partial_write(cgfile, cgbase, cgzone,
+                cgelems, rmin, rmax, &elements[n]))
             cg_error_exit();
     }
 
@@ -408,10 +416,10 @@ int main (int argc, char **argv)
         rmax += nelems;
         get_parent(rmin, rmax, nelems, nfaces);
         printf("faces %d -> %d\n", rmin, rmax);
-        if (cg_section_partial_write(cgfile, cgbase, cgzone, "Faces",
-                QUAD_4, rmin, rmax, 0, &faces[n], &cgsect) ||
-            cg_parent_data_partial_write(cgfile, cgbase, cgzone, cgsect,
-                rmin, rmax, ptmp))
+        if (cg_elements_partial_write(cgfile, cgbase, cgzone,
+                cgfaces, rmin, rmax, &faces[n]) ||
+            cg_parent_data_partial_write(cgfile, cgbase, cgzone,
+                cgfaces, rmin, rmax, ptmp))
             cg_error_exit();
     }
 
@@ -646,6 +654,10 @@ int main (int argc, char **argv)
         cg_delete_node("Elements") || cg_delete_node("Faces"))
         cg_error_exit();
 
+    if (cg_section_partial_write(cgfile, cgbase, cgzone, "Mixed",
+            MIXED, 1, nelems + nfaces, 0, &cgsect))
+        cg_error_exit();
+
     /* create mixed element connectivity */
 
     nn = (nelems << 3) + nelems + (nfaces << 2) + nfaces;
@@ -702,10 +714,10 @@ int main (int argc, char **argv)
     get_parent(rmin, rmax, 0, np);
 
     printf("mixed %d -> %d\n", rmin, rmax);
-    if (cg_section_partial_write(cgfile, cgbase, cgzone, "Mixed",
-            MIXED, rmin, rmax, 0, &elements[n], &cgsect) ||
-        cg_parent_data_partial_write(cgfile, cgbase, cgzone, cgsect,
-            rmin, rmax, ptmp))
+    if (cg_elements_partial_write(cgfile, cgbase, cgzone,
+            cgsect, rmin, rmax, &elements[n]) ||
+        cg_parent_data_partial_write(cgfile, cgbase, cgzone,
+            cgsect, rmin, rmax, ptmp))
         cg_error_exit();
 
     printf("mixed %d -> %d (2 at a time)\n", 1, nelems << 1);
@@ -714,10 +726,10 @@ int main (int argc, char **argv)
         rmax = rmin + 1;
         n = mixed_offset(rmin, nelems);
         get_parent(rmin, rmax, 0, np);
-        if (cg_section_partial_write(cgfile, cgbase, cgzone, "Mixed",
-                MIXED, rmin, rmax, 0, &elements[n], &cgsect) ||
-            cg_parent_data_partial_write(cgfile, cgbase, cgzone, cgsect,
-                rmin, rmax, ptmp))
+        if (cg_elements_partial_write(cgfile, cgbase, cgzone,
+                cgsect, rmin, rmax, &elements[n]) ||
+            cg_parent_data_partial_write(cgfile, cgbase, cgzone,
+                cgsect, rmin, rmax, ptmp))
             cg_error_exit();
     }
 
@@ -738,10 +750,10 @@ int main (int argc, char **argv)
         n = mixed_offset(rmin, nelems);
         get_parent(rmin, rmax, 0, np);
         printf("mixed %d -> %d\n", rmin, rmax);
-        if (cg_section_partial_write(cgfile, cgbase, cgzone, "Mixed",
-                MIXED, rmin, rmax, 0, &elements[n], &cgsect) ||
-            cg_parent_data_partial_write(cgfile, cgbase, cgzone, cgsect,
-                rmin, rmax, ptmp))
+        if (cg_elements_partial_write(cgfile, cgbase, cgzone,
+                cgsect, rmin, rmax, &elements[n]) ||
+            cg_parent_data_partial_write(cgfile, cgbase, cgzone,
+                cgsect, rmin, rmax, ptmp))
             cg_error_exit();
     }
 
