@@ -46,6 +46,8 @@ freely, subject to the following restrictions:
 #define ADFH_USE_STRINGS
 #define ADFH_FORTRAN_INDEXING
 
+static int CompressData = -1;
+
 #define TO_UPPER( c ) ((islower(c))?(toupper(c)):(c))
 
 /*
@@ -132,7 +134,11 @@ typedef struct _ADFH_MTA {
 #ifdef ADFH_NO_ORDER
   int i_count;
 #endif
-  hid_t g_proplist;        /* HDF5 property list for links */
+  /* HDF5 property lists */
+  hid_t g_propfile;
+  hid_t g_proplink;
+  hid_t g_propdataset;
+
   hid_t g_files[ADFH_MAXIMUM_FILES];
 
 } ADFH_MTA;
@@ -217,6 +223,7 @@ static struct _ErrorList {
   {ADFH_ERR_XLINK_UNPACK,   "HDF5: Cannot unpack external link"},
   {ADFH_ERR_ROOTNULL,       "HDF5: Root descriptor is NULL"},
   {ADFH_ERR_NEED_TRANSPOSE, "dimensions need transposed - open in modify mode"},
+  {ADFH_ERR_INVALID_OPTION, "invalid configuration option"},
 
   {ADFH_ERR_SENTINEL,       "<None>"}
 };
@@ -1228,7 +1235,7 @@ static void transpose_dimensions (hid_t hid, const char *name)
 
   /* rewrite data with new dimensions */
   sid = H5Screate_simple(ndims, dims, NULL);
-  did = H5Dcreate2(hid, D_DATA, tid, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  did = H5Dcreate2(hid, D_DATA, tid, sid, H5P_DEFAULT, mta_root->g_propdataset, H5P_DEFAULT);
   if (data != NULL) {
     H5Dwrite(did, mid, H5S_ALL, sid, H5P_DEFAULT, data);
     free(data);
@@ -1266,6 +1273,23 @@ static herr_t fix_dimensions(hid_t id, const char *name, void *data)
 /* ================================================================= */
 /* 1 to 1 mapping of ADF functions to HDF mimic functions            */
 /* ================================================================= */
+
+void ADFH_Configure(const int option, const void *value, int *err)
+{
+    if (option == ADFH_CONFIG_COMPRESS) {
+        int compress = (int)((size_t)value);
+        if (compress < 0)
+            CompressData = 6;
+        else if (compress > 9)
+            CompressData = 9;
+        else
+            CompressData = compress;
+        set_error(NO_ERROR, err);
+    }
+    else {
+        set_error(ADFH_ERR_INVALID_OPTION, err);
+    }
+}
 
 /* ----------------------------------------------------------------- */
 /* move a node                                                       */
@@ -1779,7 +1803,9 @@ void ADFH_Database_Open(const char   *name,
   H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
 #endif
   if (!mta_root->g_init) {
+#ifndef ADF_DEBUG_ON
     H5Eset_auto2(H5E_DEFAULT, walk_H5_error, NULL);
+#endif
     for (i = 0; i < ADFH_MAXIMUM_FILES; i++) mta_root->g_files[i] = 0;
     mta_root->g_init = 1;
   }
@@ -1860,22 +1886,23 @@ void ADFH_Database_Open(const char   *name,
   }
 
   /* set access property to close all open accesses when file closed */
-  fapl = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fclose_degree(fapl, H5F_CLOSE_STRONG);
+  mta_root->g_propfile = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_fclose_degree(mta_root->g_propfile, H5F_CLOSE_STRONG);
   /*  H5Pset_latest_format(fapl, 1); */
 
   /* H5Pclose performed at file close time */
-  mta_root->g_proplist=H5Pcreate(H5P_LINK_ACCESS);
-  H5Pset_nlinks(mta_root->g_proplist, ADF_MAXIMUM_LINK_DEPTH);
+  mta_root->g_proplink=H5Pcreate(H5P_LINK_ACCESS);
+  H5Pset_nlinks(mta_root->g_proplink, ADF_MAXIMUM_LINK_DEPTH);
+  mta_root->g_propdataset=H5Pcreate(H5P_DATASET_CREATE);
 
   /* open the file */
 
   set_error(NO_ERROR, err);
 
   if (mode == ADFH_MODE_NEW) {
-    fid = H5Fcreate(name, H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
+    fid = H5Fcreate(name, H5F_ACC_TRUNC, H5P_DEFAULT, mta_root->g_propfile);
     if (fid < 0) {
-      H5Pclose(fapl);
+      H5Pclose(mta_root->g_propfile);
       set_error(FILE_OPEN_ERROR, err);
       return;
     }
@@ -1894,19 +1921,19 @@ void ADFH_Database_Open(const char   *name,
   }
   else {
     if (H5Fis_hdf5(name) <= 0) {
-      H5Pclose(fapl);
+      H5Pclose(mta_root->g_propfile);
       set_error(ADFH_ERR_NOT_HDF5_FILE, err);
       return;
     }
     if (mode == ADFH_MODE_RDO)
       {
-      fid = H5Fopen(name, H5F_ACC_RDONLY, fapl);
+      fid = H5Fopen(name, H5F_ACC_RDONLY, mta_root->g_propfile);
       }
     else
       {
-      fid = H5Fopen(name, H5F_ACC_RDWR, fapl);
+      fid = H5Fopen(name, H5F_ACC_RDWR, mta_root->g_propfile);
       }
-    H5Pclose(fapl);
+    H5Pclose(mta_root->g_propfile);
     if (fid < 0) {
       set_error(FILE_OPEN_ERROR, err);
       return;
@@ -2090,7 +2117,8 @@ void ADFH_Database_Close(const double  root,
 #endif
 
   ADFH_DEBUG(("ADFH_Database_Close 2"));
-  H5Pclose(mta_root->g_proplist);
+  H5Pclose(mta_root->g_proplink);
+  H5Pclose(mta_root->g_propdataset);
 
   /* close file */
   if (H5Fclose(fid) < 0)
@@ -2435,8 +2463,17 @@ void ADFH_Put_Dimension_Information(const double  id,
   tid = to_HDF_data_type(new_type);
   ADFH_CHECK_HID(tid);
   sid = H5Screate_simple(dims, new_dims, NULL);
+  /* better idea? how to guess the right size? */
+  if (CompressData >= 0)
+  {
+    H5Pset_deflate(mta_root->g_propdataset, CompressData);
+  }
+  H5Pset_chunk(mta_root->g_propdataset, dims, new_dims);
+
   ADFH_CHECK_HID(sid);
-  did = H5Dcreate2(hid, D_DATA, tid, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  did = H5Dcreate2(hid, D_DATA, tid, sid,
+		   H5P_DEFAULT, mta_root->g_propdataset, H5P_DEFAULT);
+/*  H5Eprint1(stdout);*/
   ADFH_CHECK_HID(did);
 
   if (did < 0 && data != NULL) {
@@ -2541,7 +2578,7 @@ void ADFH_Link(const double  pid,
 		     lid,
 		     D_LINK,
 		     H5P_DEFAULT,
-		     mta_root->g_proplist);
+		     mta_root->g_proplink);
   }
   else
   {

@@ -129,8 +129,13 @@
 #define ADFH_ERR_GCLOSE_LABEL          105
 #define ADFH_ERR_ROOTNULL              106
 #define ADFH_ERR_NEED_TRANSPOSE        107
+#define ADFH_ERR_INVALID_OPTION        108
 
 #define ADFH_ERR_SENTINEL              999
+
+/* configuration options */
+
+#define ADFH_CONFIG_COMPRESS  1
 
 /***********************************************************************
 	Prototypes for Interface Routines
@@ -145,6 +150,11 @@
 #if defined (__cplusplus)
     extern "C" {
 #endif
+
+EXTERN	void	ADFH_Configure(
+			const int option,
+			const void *value,
+			int *error_return ) ;
 
 EXTERN	void	ADFH_Children_Names(
 			const double PID,
