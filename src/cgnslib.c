@@ -2851,11 +2851,11 @@ int cg_where(int *file_number, int *B, int *depth, char **label, int *num)
     *depth = posit_depth > 1 ? posit_depth - 1 : 0;
     if (NULL != label) {
         for (n = 1; n < posit_depth; n++)
-            strcpy(label[n], posit_stack[n].label);
+            strcpy(label[n-1], posit_stack[n].label);
     }
     if (NULL != num) {
         for (n = 1; n < posit_depth; n++)
-            num[n] = posit_stack[n].index;
+            num[n-1] = posit_stack[n].index;
     }
     return CG_OK;
 }
