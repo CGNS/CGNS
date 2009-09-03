@@ -4,6 +4,12 @@
 #include <ctype.h>
 #include <math.h>
 
+#ifdef _WIN32
+#define NOCASECMP _stricmp
+#else
+#define NOCASECMP strcasecmp
+#endif
+
 #include "tcl.h"
 #include "cgnslib.h"
 #include "cgns_header.h"
@@ -173,7 +179,7 @@ static int get_type (Tcl_Interp *interp, char *desc, char *name, int cnt,
     int n;
 
     for (n = 0; n < cnt; n++) {
-        if (0 == strcmp (name, list[n])) {
+        if (0 == NOCASECMP (name, list[n])) {
             *type = n;
             return 0;
         }
@@ -201,7 +207,7 @@ static int count_elements (Tcl_Interp *interp, ElementType_t type,
 {
     int npe, ne, n;
 
-    if (type <= ElementTypeUserDefined || type > MIXED) {
+    if (type <= ElementTypeUserDefined || type >= NofValidElementTypes) {
         Tcl_AppendResult (interp, "can't handle element type ",
             cg_ElementTypeName(type), NULL);
         return 1;
@@ -216,21 +222,41 @@ static int count_elements (Tcl_Interp *interp, ElementType_t type,
         }
         return 0;
     }
-    for (n = 0, ne = 0; ne < nelems; ne++) {
-        type = (ElementType_t)elements[n++];
-        if (type <= ElementTypeUserDefined || type >= MIXED) {
-            Tcl_AppendResult (interp, "can't handle element type ",
-                cg_ElementTypeName(type), " as MIXED element", NULL);
-            return 1;
+    if (type == MIXED) {
+        for (n = 0, ne = 0; ne < nelems; ne++) {
+            type = (ElementType_t)elements[n++];
+            if (type > NGON_n) {
+                npe = type - NGON_n;
+            }
+            else if (cg_npe(type, &npe) || npe <= 0) {
+                Tcl_AppendResult (interp, "can't handle element type ",
+                    cg_ElementTypeName(type), " as MIXED element", NULL);
+                return 1;
+            }
         }
-        cg_npe (type, &npe);
         n += npe;
         if (n > cnt) {
             Tcl_AppendResult (interp,
                 "insufficient mixed element data", NULL);
             return 1;
         }
+        return 0;
     }
+#if CGNS_VERSION < 3000
+    Tcl_AppendResult (interp, "can't handle element type ",
+        cg_ElementTypeName(type), NULL);
+    return 1;
+#else
+    for (n = 0, ne = 0; ne < nelems; ne++) {
+        npe = elements[n++];
+        n += npe;
+        if (n > cnt) {
+            Tcl_AppendResult (interp, "insufficient ",
+                cg_ElementTypeName(type), " element data", NULL);
+            return 1;
+        }
+    }
+#endif
     return 0;
 }
 
@@ -299,6 +325,29 @@ static int cg_coord_dim (int cgfile, int cgbase, int cgzone,
     *index_dim = zone->index_dim;
     return cgi_datasize(zone->index_dim, zone->nijk, Vertex,
                zcoor->rind_planes, dims);
+}
+
+/*-----------------------------------------------------------------------*/
+
+static int cg_section_dim (int cgfile, int cgbase, int cgzone,
+    int cgsect, ElementType_t *type, int *start, int *end)
+{
+    int n;
+    cgns_file *file;
+    cgns_zone *zone;
+    cgns_section *section;
+
+    file = cgi_get_file (cgfile);
+    if (file == NULL) return 1;
+    zone = cgi_get_zone (file, cgbase, cgzone);
+    if (zone == NULL) return 1;
+    section = cgi_get_section(file, cgbase, cgzone, cgsect);
+    if (section == NULL) return 1;
+
+    *type  = section->el_type;
+    *start = section->range[0];
+    *end   = section->range[1];
+    return 0;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -439,103 +488,103 @@ static int tcl_cg_get_names (ClientData data, Tcl_Interp *interp,
         Tcl_AppendResult (interp, "usage: ", argv[0], " type_t", NULL);
         return TCL_ERROR;
     }
-    if (0 == strcmp (argv[1], "MassUnits_t")) {
+    if (0 == NOCASECMP (argv[1], "MassUnits_t")) {
         cnt = NofValidMassUnits;
         names = MassUnitsName;
     }
-    else if (0 == strcmp (argv[1], "LengthUnits_t")) {
+    else if (0 == NOCASECMP (argv[1], "LengthUnits_t")) {
         cnt = NofValidLengthUnits;
         names = LengthUnitsName;
     }
-    else if (0 == strcmp (argv[1], "TimeUnits_t")) {
+    else if (0 == NOCASECMP (argv[1], "TimeUnits_t")) {
         cnt = NofValidTimeUnits;
         names = TimeUnitsName;
     }
-    else if (0 == strcmp (argv[1], "TemperatureUnits_t")) {
+    else if (0 == NOCASECMP (argv[1], "TemperatureUnits_t")) {
         cnt = NofValidTemperatureUnits;
         names = TemperatureUnitsName;
     }
-    else if (0 == strcmp (argv[1], "AngleUnits_t")) {
+    else if (0 == NOCASECMP (argv[1], "AngleUnits_t")) {
         cnt = NofValidAngleUnits;
         names = AngleUnitsName;
     }
-    else if (0 == strcmp (argv[1], "ElectricCurrentUnits_t")) {
+    else if (0 == NOCASECMP (argv[1], "ElectricCurrentUnits_t")) {
         cnt = NofValidElectricCurrentUnits;
         names = ElectricCurrentUnitsName;
     }
-    else if (0 == strcmp (argv[1], "SubstanceAmountUnits_t")) {
+    else if (0 == NOCASECMP (argv[1], "SubstanceAmountUnits_t")) {
         cnt = NofValidSubstanceAmountUnits;
         names = SubstanceAmountUnitsName;
     }
-    else if (0 == strcmp (argv[1], "LuminousIntensityUnits_t")) {
+    else if (0 == NOCASECMP (argv[1], "LuminousIntensityUnits_t")) {
         cnt = NofValidLuminousIntensityUnits;
         names = LuminousIntensityUnitsName;
     }
-    else if (0 == strcmp (argv[1], "DataClass_t")) {
+    else if (0 == NOCASECMP (argv[1], "DataClass_t")) {
         cnt = NofValidDataClass;
         names = DataClassName;
     }
-    else if (0 == strcmp (argv[1], "GridLocation_t")) {
+    else if (0 == NOCASECMP (argv[1], "GridLocation_t")) {
         cnt = NofValidGridLocation;
         names = GridLocationName;
     }
-    else if (0 == strcmp (argv[1], "BCDataType_t")) {
+    else if (0 == NOCASECMP (argv[1], "BCDataType_t")) {
         cnt = NofValidBCDataTypes;
         names = BCDataTypeName;
     }
-    else if (0 == strcmp (argv[1], "GridConnectivityType_t")) {
+    else if (0 == NOCASECMP (argv[1], "GridConnectivityType_t")) {
         cnt = NofValidGridConnectivityTypes;
         names = GridConnectivityTypeName;
     }
-    else if (0 == strcmp (argv[1], "PointSetType_t")) {
+    else if (0 == NOCASECMP (argv[1], "PointSetType_t")) {
         cnt = NofValidPointSetTypes;
         names = PointSetTypeName;
     }
-    else if (0 == strcmp (argv[1], "GoverningEquationsType_t")) {
+    else if (0 == NOCASECMP (argv[1], "GoverningEquationsType_t")) {
         cnt = NofValidGoverningEquationsTypes;
         names = GoverningEquationsTypeName;
     }
-    else if (0 == strcmp (argv[1], "ModelType_t")) {
+    else if (0 == NOCASECMP (argv[1], "ModelType_t")) {
         cnt = NofValidModelTypes;
         names = ModelTypeName;
     }
-    else if (0 == strcmp (argv[1], "BCType_t")) {
+    else if (0 == NOCASECMP (argv[1], "BCType_t")) {
         cnt = NofValidBCTypes;
         names = BCTypeName;
     }
-    else if (0 == strcmp (argv[1], "DataType_t")) {
+    else if (0 == NOCASECMP (argv[1], "DataType_t")) {
         cnt = NofValidDataTypes;
         names = DataTypeName;
     }
-    else if (0 == strcmp (argv[1], "ElementType_t")) {
+    else if (0 == NOCASECMP (argv[1], "ElementType_t")) {
         cnt = NofValidElementTypes;
         names = ElementTypeName;
     }
-    else if (0 == strcmp (argv[1], "ZoneType_t")) {
+    else if (0 == NOCASECMP (argv[1], "ZoneType_t")) {
         cnt = NofValidZoneTypes;
         names = ZoneTypeName;
     }
-    else if (0 == strcmp (argv[1], "RigidGridMotionType_t")) {
+    else if (0 == NOCASECMP (argv[1], "RigidGridMotionType_t")) {
         cnt = NofValidRigidGridMotionTypes;
         names = RigidGridMotionTypeName;
     }
-    else if (0 == strcmp (argv[1], "ArbitraryGridMotionType_t")) {
+    else if (0 == NOCASECMP (argv[1], "ArbitraryGridMotionType_t")) {
         cnt = NofValidArbitraryGridMotionTypes;
         names = ArbitraryGridMotionTypeName;
     }
-    else if (0 == strcmp (argv[1], "SimulationType_t")) {
+    else if (0 == NOCASECMP (argv[1], "SimulationType_t")) {
         cnt = NofValidSimulationTypes;
         names = SimulationTypeName;
     }
-    else if (0 == strcmp (argv[1], "WallFunctionType_t")) {
+    else if (0 == NOCASECMP (argv[1], "WallFunctionType_t")) {
         cnt = NofValidWallFunctionTypes;
         names = WallFunctionTypeName;
     }
-    else if (0 == strcmp (argv[1], "AreaType_t")) {
+    else if (0 == NOCASECMP (argv[1], "AreaType_t")) {
         cnt = NofValidAreaTypes;
         names = AreaTypeName;
     }
-    else if (0 == strcmp (argv[1], "AverageInterfaceType_t")) {
+    else if (0 == NOCASECMP (argv[1], "AverageInterfaceType_t")) {
         cnt = NofValidAverageInterfaceTypes;
         names = AverageInterfaceTypeName;
     }
@@ -554,7 +603,7 @@ static int tcl_cg_get_names (ClientData data, Tcl_Interp *interp,
 static int tcl_cg_is_cgns (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
-    int is_cgns;
+    int ierr;
 #if CGNS_VERSION >= 3000
     int file_type;
 #endif
@@ -565,18 +614,18 @@ static int tcl_cg_is_cgns (ClientData data, Tcl_Interp *interp,
         return TCL_ERROR;
     }
 #if CGNS_VERSION >= 3000
-    is_cgns = cg_is_cgns(argv[1], &file_type);
+    ierr = cg_is_cgns(argv[1], &file_type);
     if (file_type == CG_FILE_ADF)
-        sprintf (buff, "%d ADF", is_cgns);
+        sprintf (buff, "%d ADF", ierr ? 0 : 1);
     else if (file_type == CG_FILE_HDF5)
-        sprintf (buff, "%d HDF5", is_cgns);
+        sprintf (buff, "%d HDF5", ierr ? 0 : 1);
     else if (file_type == CG_FILE_XML)
-        sprintf (buff, "%d XML", is_cgns);
+        sprintf (buff, "%d XML", ierr ? 0 : 1);
     else
-        sprintf (buff, "%d unknown", is_cgns);
+        sprintf (buff, "%d unknown", ierr ? 0 : 1);
 #else
-    is_cgns = cg_is_cgns(argv[1]);
-    sprintf (buff, "%d", is_cgns);
+    ierr = cg_is_cgns(argv[1]);
+    sprintf (buff, "%d", ierr ? 0 : 1);
 #endif
     Tcl_AppendResult (interp, buff, NULL);
     return TCL_OK;
@@ -865,9 +914,9 @@ static int tcl_cg_zone_write (ClientData data, Tcl_Interp *interp,
     cgfile = atoi (argv[1]);
     cgbase = atoi (argv[2]);
     if (check_name (interp, "zone", argv[3])) return TCL_ERROR;
-    if (0 == strcmp (argv[5], "Structured"))
+    if (0 == NOCASECMP (argv[5], "Structured"))
         type = Structured;
-    else if (0 == strcmp (argv[5], "Unstructured"))
+    else if (0 == NOCASECMP (argv[5], "Unstructured"))
         type = Unstructured;
     else {
         Tcl_AppendResult (interp, "invalid zone type", NULL);
@@ -1535,15 +1584,15 @@ static int tcl_cg_elements_read (ClientData data, Tcl_Interp *interp,
 {
     char name[33];
     ElementType_t type;
-    int ierr, nelem, getpar = (int)((size_t)data);
+    int ierr, ns, ne;
     int cgfile, cgbase, cgzone, cgsect;
     int start, end, nbndry, haspar, size;
-    int *elements, *parent;
+    int *elements;
 
     Tcl_ResetResult (interp);
-    if (argc != 5) {
+    if (argc != 5 && argc != 7) {
         Tcl_AppendResult (interp, "usage: ", argv[0],
-            " filenum basenum zonenum sectnum", NULL);
+            " filenum basenum zonenum sectnum [start end]", NULL);
         return TCL_ERROR;
     }
     cgfile = atoi(argv[1]);
@@ -1555,37 +1604,120 @@ static int tcl_cg_elements_read (ClientData data, Tcl_Interp *interp,
             name, &type, &start, &end, &nbndry, &haspar))
         return get_cg_error (interp, "cg_elements_read");
 
-    if (getpar && !haspar) return TCL_OK;
-    nelem = end - start + 1;
-    if (cg_ElementDataSize (cgfile, cgbase, cgzone, cgsect, &size))
-        return get_cg_error (interp, "cg_elements_read");
+    ns = start;
+    ne = end;
+    if (argc == 7) {
+        ns = atoi(argv[5]);
+        ne = atoi(argv[6]);
+        if (ns > ne || ns < start || ne > end) {
+            Tcl_AppendResult (interp, "invalid element range", NULL);
+            return TCL_ERROR;
+        }
+        if (cg_ElementPartialSize (cgfile, cgbase, cgzone, cgsect,
+                ns, ne, &size))
+            return get_cg_error (interp, "cg_elements_read");
+    }
+    else {
+        if (cg_ElementDataSize (cgfile, cgbase, cgzone, cgsect, &size))
+            return get_cg_error (interp, "cg_elements_read");
+    }
 
     elements = (int *) malloc (size * sizeof(int));
     if (elements == NULL) {
         Tcl_AppendResult (interp, "malloc failed for elements", NULL);
         return TCL_ERROR;
     }
-    if (haspar) {
-        parent = (int *) malloc (4 * nelem * sizeof(int));
-        if (parent == NULL) {
-            free (elements);
-            Tcl_AppendResult (interp, "malloc failed for parent data", NULL);
-            return TCL_ERROR;
-        }
-    }
 
-    if (cg_elements_read (cgfile, cgbase, cgzone, cgsect, elements, parent)) {
+    if (ns == start && ne == end) {
+        ierr = cg_elements_read (cgfile, cgbase, cgzone, cgsect, elements, 0);
+    }
+    else {
+        ierr = cg_elements_partial_read (cgfile, cgbase, cgzone, cgsect,
+                                         ns, ne, elements, 0);
+    }
+    if (ierr) {
         free (elements);
-        if (haspar) free (parent);
         return get_cg_error (interp, "cg_elements_read");
     }
-
-    if (getpar)
-        ierr = construct_data (interp, Integer, 4 * nelem, parent);
-    else
-        ierr = construct_data (interp, Integer, size, elements);
+    ierr = construct_data (interp, Integer, size, elements);
     free (elements);
-    if (haspar) free (parent);
+    return ierr ? TCL_ERROR : TCL_OK;
+}
+
+/*-----------------------------------------------------------------------*/
+
+static int tcl_cg_parent_data_read (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
+{
+    char name[33];
+    ElementType_t type;
+    int ierr, nelem, ns, ne;
+    int cgfile, cgbase, cgzone, cgsect;
+    int start, end, nbndry, haspar, size;
+    int *elements, *parent;
+
+    Tcl_ResetResult (interp);
+    if (argc != 5 && argc != 7) {
+        Tcl_AppendResult (interp, "usage: ", argv[0],
+            " filenum basenum zonenum sectnum [start end]", NULL);
+        return TCL_ERROR;
+    }
+    cgfile = atoi(argv[1]);
+    cgbase = atoi(argv[2]);
+    cgzone = atoi(argv[3]);
+    cgsect = atoi(argv[4]);
+
+    if (cg_section_read (cgfile, cgbase, cgzone, cgsect,
+            name, &type, &start, &end, &nbndry, &haspar))
+        return get_cg_error (interp, "cg_parent_data_read");
+
+    if (!haspar) return TCL_OK;
+
+    ns = start;
+    ne = end;
+    if (argc == 7) {
+        ns = atoi(argv[5]);
+        ne = atoi(argv[6]);
+        if (ns > ne || ns < start || ne > end) {
+            Tcl_AppendResult (interp, "invalid element range", NULL);
+            return TCL_ERROR;
+        }
+        if (cg_ElementPartialSize (cgfile, cgbase, cgzone, cgsect,
+                ns, ne, &size))
+            return get_cg_error (interp, "cg_parent_data_read");
+    }
+    else {
+        if (cg_ElementDataSize (cgfile, cgbase, cgzone, cgsect, &size))
+            return get_cg_error (interp, "cg_parent_data_read");
+    }
+
+    nelem = ne - ns + 1;
+    elements = (int *) malloc (size * sizeof(int));
+    if (elements == NULL) {
+        Tcl_AppendResult (interp, "malloc failed for elements", NULL);
+        return TCL_ERROR;
+    }
+    parent = (int *) malloc (4 * nelem * sizeof(int));
+    if (parent == NULL) {
+        free (elements);
+        Tcl_AppendResult (interp, "malloc failed for parent data", NULL);
+        return TCL_ERROR;
+    }
+
+    if (ns == start && ne == end) {
+        ierr = cg_elements_read (cgfile, cgbase, cgzone, cgsect, elements, parent);
+    }
+    else {
+        ierr = cg_elements_partial_read (cgfile, cgbase, cgzone, cgsect,
+                                         ns, ne, elements, parent);
+    }
+    free (elements);
+    if (ierr) {
+        free (parent);
+        return get_cg_error (interp, "cg_parent_data_read");
+    }
+    ierr = construct_data (interp, Integer, 4 * nelem, parent);
+    free (parent);
     return ierr ? TCL_ERROR : TCL_OK;
 }
 
@@ -1598,18 +1730,38 @@ static int tcl_cg_section_write (ClientData data, Tcl_Interp *interp,
     void *elements;
 
     Tcl_ResetResult (interp);
+#if CGNS_VERSION < 3000
     if (argc != 10) {
         Tcl_AppendResult (interp, "usage: ", argv[0],
             " filenum basenum zonenum sectname elementtype",
             " start end nbndry elements", NULL);
         return TCL_ERROR;
     }
+#else
+    if (argc < 9 || argc > 10) {
+        Tcl_AppendResult (interp, "usage: ", argv[0],
+            " filenum basenum zonenum sectname elementtype",
+            " start end nbndry [elements]", NULL);
+        return TCL_ERROR;
+    }
+#endif
     if (check_name (interp, "section", argv[4]) ||
         get_type (interp, "element", argv[5], NofValidElementTypes,
             ElementTypeName, &type)) return TCL_ERROR;
     start = atoi(argv[6]);
     end = atoi(argv[7]);
     nbndry = atoi(argv[8]);
+
+#if CGNS_VERSION >= 3000
+    if (argc == 9) {
+        if (cg_section_partial_write (atoi(argv[1]), atoi(argv[2]), atoi(argv[3]),
+                argv[4], (ElementType_t)type, start, end, nbndry, &cgsect))
+            return get_cg_error (interp, "cg_section_write");
+        sprintf (buff, "%d", cgsect);
+        Tcl_AppendResult (interp, buff, NULL);
+        return TCL_OK;
+    }
+#endif
     if (extract_data (interp, argv[9], Integer, &cnt, &elements) ||
         count_elements (interp, (ElementType_t)type, cnt,
             (int *)elements, end - start + 1))
@@ -1628,19 +1780,19 @@ static int tcl_cg_section_write (ClientData data, Tcl_Interp *interp,
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_parent_data_write (ClientData data, Tcl_Interp *interp,
+static int tcl_cg_elements_write (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
     char name[33];
     ElementType_t type;
     int ierr, cgfile, cgbase, cgzone, cgsect;
-    int start, end, nbndry, haspar, size;
-    void *parent;
+    int start, end, size, ns, ne;
+    void *elements;
 
     Tcl_ResetResult (interp);
-    if (argc != 6) {
+    if (argc != 8) {
         Tcl_AppendResult (interp, "usage: ", argv[0],
-            " filenum basenum zonenum sectnum parentdata", NULL);
+            " filenum basenum zonenum sectnum start end elements", NULL);
         return TCL_ERROR;
     }
     cgfile = atoi(argv[1]);
@@ -1648,21 +1800,79 @@ static int tcl_cg_parent_data_write (ClientData data, Tcl_Interp *interp,
     cgzone = atoi(argv[3]);
     cgsect = atoi(argv[4]);
 
-    if (cg_section_read (cgfile, cgbase, cgzone, cgsect,
-            name, &type, &start, &end, &nbndry, &haspar))
-        return get_cg_error (interp, "tcl_cg_parent_data_write");
+    if (cg_section_dim (cgfile, cgbase, cgzone, cgsect, &type, &start, &end))
+        return get_cg_error (interp, "cg_elements_write");
 
-    if (extract_data (interp, argv[5], Integer, &size, &parent))
+    ns = atoi(argv[5]);
+    ne = atoi(argv[6]);
+    if (ns > ne || ns < start || ne > end) {
+        Tcl_AppendResult (interp, "invalid element range", NULL);
         return TCL_ERROR;
-    if (size < 4 * (end - start + 1)) {
+    }
+
+    if (extract_data (interp, argv[7], Integer, &size, &elements) ||
+        count_elements (interp, type, size, (int *)elements, ne - ns + 1))
+        return TCL_ERROR;
+
+#if CGNS_VERSION < 3000
+    ierr = cg_section_partial_write (cgfile, cgbase, cgzone, name, type,
+               ns, ne, nbndry, elements, &cgsect);
+#else
+    ierr = cg_elements_partial_write (cgfile, cgbase, cgzone, cgsect,
+               ns, ne, elements);
+#endif
+    free (elements);
+    if (ierr) return get_cg_error (interp, "cg_elements_write");
+    return TCL_OK;
+}
+
+/*-----------------------------------------------------------------------*/
+
+static int tcl_cg_parent_data_write (ClientData data, Tcl_Interp *interp,
+    int argc, char **argv)
+{
+    char name[33];
+    ElementType_t type;
+    int ierr, cgfile, cgbase, cgzone, cgsect;
+    int start, end, size, ns, ne;
+    void *parent;
+
+    Tcl_ResetResult (interp);
+    if (argc != 8) {
+        Tcl_AppendResult (interp, "usage: ", argv[0],
+            " filenum basenum zonenum sectnum start end parentdata", NULL);
+        return TCL_ERROR;
+    }
+    cgfile = atoi(argv[1]);
+    cgbase = atoi(argv[2]);
+    cgzone = atoi(argv[3]);
+    cgsect = atoi(argv[4]);
+
+    if (cg_section_dim (cgfile, cgbase, cgzone, cgsect, &type, &start, &end))
+        return get_cg_error (interp, "cg_parent_data_write");
+
+    ns = atoi(argv[5]);
+    ne = atoi(argv[6]);
+    if (ns > ne || ns < start || ne > end) {
+        Tcl_AppendResult (interp, "invalid element range", NULL);
+        return TCL_ERROR;
+    }
+
+    if (extract_data (interp, argv[7], Integer, &size, &parent))
+        return TCL_ERROR;
+    if (size < 4 * (ne - ns + 1)) {
         free (parent);
-        sprintf (buff, "needs %d values", 4 * (end - start + 1));
+        sprintf (buff, "needs %d values - got %d", 4 * (ne - ns + 1), size);
         Tcl_AppendResult (interp,
             "insufficient parent data - ", buff, NULL);
         return TCL_ERROR;
     }
 
-    ierr = cg_parent_data_write (cgfile, cgbase, cgzone, cgsect, parent);
+    if (ns == start && ne == end)
+        ierr = cg_parent_data_write (cgfile, cgbase, cgzone, cgsect, parent);
+    else
+        ierr = cg_parent_data_partial_write (cgfile, cgbase, cgzone,
+                   cgsect, ns, ne, parent);
     free (parent);
     if (ierr) return get_cg_error (interp, "cg_parent_data_write");
     return TCL_OK;
@@ -1697,17 +1907,25 @@ static int tcl_cg_npe (ClientData data, Tcl_Interp *interp,
 static int tcl_cg_ElementDataSize (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
-    int size;
+    int size, ierr;
 
     Tcl_ResetResult (interp);
-    if (argc != 5) {
+    if (argc != 5 && argc != 7) {
         Tcl_AppendResult (interp, "usage: ", argv[0],
-            " filenum basenum zonenum sectnum", NULL);
+            " filenum basenum zonenum sectnum [start end]", NULL);
         return TCL_ERROR;
     }
 
-    if (cg_ElementDataSize (atoi(argv[1]), atoi(argv[2]), atoi(argv[3]),
-            atoi(argv[4]), &size))
+    if (argc == 7) {
+        ierr = cg_ElementPartialSize(atoi(argv[1]), atoi(argv[2]),
+                   atoi(argv[3]), atoi(argv[4]),
+                   atoi(argv[5]), atoi(argv[5]), &size);
+    }
+    else {
+        ierr = cg_ElementDataSize(atoi(argv[1]), atoi(argv[2]),
+                   atoi(argv[3]), atoi(argv[4]), &size);
+    }
+    if (ierr)
         return get_cg_error (interp, "cg_ElementDataSize");
 
     sprintf (buff, "%d", size);
@@ -2637,45 +2855,90 @@ static int tcl_cg_n1to1_global (ClientData data, Tcl_Interp *interp,
     return TCL_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 /*-----------------------------------------------------------------------*/
 
-/*
-int cg_1to1_read_global(int fn, int B, char **connectname, char **zonename,
-			char **donorname, int **range, int **donor_range, int **transform);
-*/
 static int tcl_cg_1to1_read_global (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
+    int ierr, n, n1to1;
+    int file, base;
+    char *cdata;
+    char **cname, **zname, **dname;
+    int *idata;
+    int **range, **drang, **trans;
+
     Tcl_ResetResult (interp);
     if (argc != 3) {
         Tcl_AppendResult (interp, "usage: ", argv[0],
             " filenum basenum", NULL);
         return TCL_ERROR;
     }
-    Tcl_SetResult (interp, "not implemented", TCL_STATIC);
-    return TCL_ERROR;
+    file = atoi(argv[1]);
+    base = atoi(argv[2]);
+
+    if (cg_n1to1_global (file, base, &n1to1))
+        return get_cg_error (interp, "cg_n1to1_global");
+    if (n1to1 < 1) return TCL_OK;
+
+    cdata = (char *) malloc (n1to1 * 3 * 33);
+    cname = (char **) malloc (n1to1 * sizeof(char *));
+    zname = (char **) malloc (n1to1 * sizeof(char *));
+    dname = (char **) malloc (n1to1 * sizeof(char *));
+    idata = (int *) malloc (n1to1 * 15 * sizeof(int));
+    range = (int **) malloc (n1to1 * sizeof(int *));
+    drang = (int **) malloc (n1to1 * sizeof(int *));
+    trans = (int **) malloc (n1to1 * sizeof(int *));
+    if (cdata == NULL || cname == NULL || zname == NULL || dname == NULL ||
+        idata == NULL || range == NULL || drang == NULL || trans == NULL) {
+        if (cdata != NULL) free (cdata);
+        if (cname != NULL) free (cname);
+        if (zname != NULL) free (zname);
+        if (dname != NULL) free (dname);
+        if (idata != NULL) free (idata);
+        if (range != NULL) free (range);
+        if (drang != NULL) free (drang);
+        if (trans != NULL) free (trans);
+        Tcl_AppendResult(interp, "malloc failed for 1to1 connectivity data", NULL);
+        return TCL_ERROR;
+    }
+
+    for (n = 0; n < n1to1; n++) {
+        cname[n] = &cdata[n * 33];
+        zname[n] = &cdata[(n + n1to1) * 33];
+        dname[n] = &cdata[(n + 2 * n1to1) * 33];
+        range[n] = &idata[n * 6];
+        drang[n] = &idata[(n + n1to1) * 6];
+        trans[n] = &idata[(2 * n1to1) * 6 + n * 3];
+    }
+
+    ierr = cg_1to1_read_global(file, base, cname, zname, dname,
+               range, drang, trans);
+    if (ierr) {
+        get_cg_error(interp, "cg_1to1_read_global");
+    }
+    else {
+        for (n = 0; n < n1to1; n++) {
+            sprintf(buff, "{%s} {%s} {%s} {%d %d %d %d %d %d} "
+                "{%d %d %d %d %d %d} {%d %d %d}", cname[n], zname[n], dname[n],
+                range[n][0], range[n][1], range[n][2],
+                range[n][3], range[n][4], range[n][5],
+                drang[n][0], drang[n][1], drang[n][2],
+                drang[n][3], drang[n][4], drang[n][5],
+                trans[n][0], trans[n][1], trans[n][2]);
+            Tcl_AppendElement(interp, buff);
+        }
+    }
+    free (cdata);
+    free (cname);
+    free (zname);
+    free (dname);
+    free (idata);
+    free (range);
+    free (drang);
+    free (trans);
+
+    return ierr ? TCL_ERROR : TCL_OK;
 }
-
-
-
-
-
-
-
-
-
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write BC_t Nodes                                        *
@@ -3825,19 +4088,6 @@ static int tcl_cg_bc_area_write (ClientData data, Tcl_Interp *interp,
     return TCL_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GridConnectivityProperty_t/Periodic_t Nodes       *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -3845,7 +4095,9 @@ static int tcl_cg_bc_area_write (ClientData data, Tcl_Interp *interp,
 static int tcl_cg_conn_periodic_read (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
-    int ierr;
+    char *p;
+    int ierr, i, idim;
+    int file, base;
     float angle[3], center[3], trans[3];
 
     Tcl_ResetResult (interp);
@@ -3854,19 +4106,39 @@ static int tcl_cg_conn_periodic_read (ClientData data, Tcl_Interp *interp,
             "filenum basenum zonenum interfacenum", NULL);
         return TCL_ERROR;
     }
+    file = atoi(argv[1]);
+    base = atoi(argv[2]);
+    if (cg_physical_dim(file, base, &idim))
+        return get_cg_error (interp, "cg_conn_periodic_read");
 
-    ierr = cg_conn_periodic_read (atoi(argv[1]), atoi(argv[2]),
-        atoi(argv[3]), atoi(argv[4]), center, angle, trans);
+    ierr = cg_conn_periodic_read (file, base, atoi(argv[3]),
+               atoi(argv[4]), center, angle, trans);
     if (ierr) {
         if (ierr == CG_NODE_NOT_FOUND) return TCL_OK;
         return get_cg_error (interp, "cg_conn_periodic_read");
     }
-    sprintf (buff, "%g %g %g", center[0], center[1], center[2]);
+
+    sprintf (buff, "%g", center[0]);
+    for (i = 1; i < idim; i++) {
+        p = buff + strlen(buff);
+        sprintf(p, " %g", center[i]);
+    }
     Tcl_AppendElement (interp, buff);
-    sprintf (buff, "%g %g %g", angle[0], angle[1], angle[2]);
+
+    sprintf (buff, "%g", angle[0]);
+    for (i = 1; i < idim; i++) {
+        p = buff + strlen(buff);
+        sprintf(p, " %g", angle[i]);
+    }
     Tcl_AppendElement (interp, buff);
-    sprintf (buff, "%g %g %g", trans[0], trans[1], trans[2]);
+
+    sprintf (buff, "%g", trans[0]);
+    for (i = 1; i < idim; i++) {
+        p = buff + strlen(buff);
+        sprintf(p, " %g", trans[i]);
+    }
     Tcl_AppendElement (interp, buff);
+
     return TCL_OK;
 }
 
@@ -3875,6 +4147,8 @@ static int tcl_cg_conn_periodic_read (ClientData data, Tcl_Interp *interp,
 static int tcl_cg_conn_periodic_write (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
+    int idim;
+    int file, base;
     float angle[3], center[3], trans[3];
 
     Tcl_ResetResult (interp);
@@ -3884,21 +4158,29 @@ static int tcl_cg_conn_periodic_write (ClientData data, Tcl_Interp *interp,
             " center angle translation", NULL);
         return TCL_ERROR;
     }
-    if (3 != sscanf (argv[5], "%f%f%f", &center[0], &center[1], &center[2])) {
-        Tcl_AppendResult (interp, "center needs 3 values", NULL);
+    file = atoi(argv[1]);
+    base = atoi(argv[2]);
+    if (cg_physical_dim(file, base, &idim))
+        return get_cg_error (interp, "cg_conn_periodic_write");
+
+    if (idim != sscanf (argv[5], "%f%f%f", &center[0], &center[1], &center[2])) {
+        sprintf(buff, "center needs %d values", idim);
+        Tcl_AppendResult (interp, buff, NULL);
         return TCL_ERROR;
     }
-    if (3 != sscanf (argv[6], "%f%f%f", &angle[0], &angle[1], &angle[2])) {
-        Tcl_AppendResult (interp, "angle needs 3 values", NULL);
+    if (idim != sscanf (argv[6], "%f%f%f", &angle[0], &angle[1], &angle[2])) {
+        sprintf(buff, "angle needs %d values", idim);
+        Tcl_AppendResult (interp, buff, NULL);
         return TCL_ERROR;
     }
-    if (3 != sscanf (argv[7], "%f%f%f", &trans[0], &trans[1], &trans[2])) {
-        Tcl_AppendResult (interp, "translation needs 3 values", NULL);
+    if (idim != sscanf (argv[7], "%f%f%f", &trans[0], &trans[1], &trans[2])) {
+        sprintf(buff, "translation needs %d values", idim);
+        Tcl_AppendResult (interp, buff, NULL);
         return TCL_ERROR;
     }
 
-    if (cg_conn_periodic_write (atoi(argv[1]), atoi(argv[2]),
-            atoi(argv[3]), atoi(argv[4]), center, angle, trans))
+    if (cg_conn_periodic_write (file, base, atoi(argv[3]), atoi(argv[4]),
+            center, angle, trans))
         return get_cg_error (interp, "cg_conn_periodic_write");
     return TCL_OK;
 }
@@ -3908,7 +4190,9 @@ static int tcl_cg_conn_periodic_write (ClientData data, Tcl_Interp *interp,
 static int tcl_cg_1to1_periodic_read (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
-    int ierr;
+    char *p;
+    int ierr, i, idim;
+    int file, base;
     float angle[3], center[3], trans[3];
 
     Tcl_ResetResult (interp);
@@ -3917,19 +4201,39 @@ static int tcl_cg_1to1_periodic_read (ClientData data, Tcl_Interp *interp,
             "filenum basenum zonenum interfacenum", NULL);
         return TCL_ERROR;
     }
+    file = atoi(argv[1]);
+    base = atoi(argv[2]);
+    if (cg_physical_dim(file, base, &idim))
+        return get_cg_error (interp, "cg_1to1_periodic_read");
 
-    ierr = cg_1to1_periodic_read (atoi(argv[1]), atoi(argv[2]),
-        atoi(argv[3]), atoi(argv[4]), center, angle, trans);
+    ierr = cg_1to1_periodic_read (file, base, atoi(argv[3]),
+               atoi(argv[4]), center, angle, trans);
     if (ierr) {
         if (ierr == CG_NODE_NOT_FOUND) return TCL_OK;
         return get_cg_error (interp, "cg_1to1_periodic_read");
     }
-    sprintf (buff, "%g %g %g", center[0], center[1], center[2]);
+
+    sprintf (buff, "%g", center[0]);
+    for (i = 1; i < idim; i++) {
+        p = buff + strlen(buff);
+        sprintf(p, " %g", center[i]);
+    }
     Tcl_AppendElement (interp, buff);
-    sprintf (buff, "%g %g %g", angle[0], angle[1], angle[2]);
+
+    sprintf (buff, "%g", angle[0]);
+    for (i = 1; i < idim; i++) {
+        p = buff + strlen(buff);
+        sprintf(p, " %g", angle[i]);
+    }
     Tcl_AppendElement (interp, buff);
-    sprintf (buff, "%g %g %g", trans[0], trans[1], trans[2]);
+
+    sprintf (buff, "%g", trans[0]);
+    for (i = 1; i < idim; i++) {
+        p = buff + strlen(buff);
+        sprintf(p, " %g", trans[i]);
+    }
     Tcl_AppendElement (interp, buff);
+
     return TCL_OK;
 }
 
@@ -3938,6 +4242,8 @@ static int tcl_cg_1to1_periodic_read (ClientData data, Tcl_Interp *interp,
 static int tcl_cg_1to1_periodic_write (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
+    int idim;
+    int file, base;
     float angle[3], center[3], trans[3];
 
     Tcl_ResetResult (interp);
@@ -3947,32 +4253,32 @@ static int tcl_cg_1to1_periodic_write (ClientData data, Tcl_Interp *interp,
             " center angle translation", NULL);
         return TCL_ERROR;
     }
-    if (3 != sscanf (argv[5], "%f%f%f", &center[0], &center[1], &center[2])) {
-        Tcl_AppendResult (interp, "center needs 3 values", NULL);
+    file = atoi(argv[1]);
+    base = atoi(argv[2]);
+    if (cg_physical_dim(file, base, &idim))
+        return get_cg_error (interp, "cg_1to1_periodic_write");
+
+    if (idim != sscanf (argv[5], "%f%f%f", &center[0], &center[1], &center[2])) {
+        sprintf(buff, "center needs %d values", idim);
+        Tcl_AppendResult (interp, buff, NULL);
         return TCL_ERROR;
     }
-    if (3 != sscanf (argv[6], "%f%f%f", &angle[0], &angle[1], &angle[2])) {
-        Tcl_AppendResult (interp, "angle needs 3 values", NULL);
+    if (idim != sscanf (argv[6], "%f%f%f", &angle[0], &angle[1], &angle[2])) {
+        sprintf(buff, "angle needs %d values", idim);
+        Tcl_AppendResult (interp, buff, NULL);
         return TCL_ERROR;
     }
-    if (3 != sscanf (argv[7], "%f%f%f", &trans[0], &trans[1], &trans[2])) {
-        Tcl_AppendResult (interp, "translation needs 3 values", NULL);
+    if (idim != sscanf (argv[7], "%f%f%f", &trans[0], &trans[1], &trans[2])) {
+        sprintf(buff, "translation needs %d values", idim);
+        Tcl_AppendResult (interp, buff, NULL);
         return TCL_ERROR;
     }
 
-    if (cg_1to1_periodic_write (atoi(argv[1]), atoi(argv[2]),
-            atoi(argv[3]), atoi(argv[4]), center, angle, trans))
+    if (cg_1to1_periodic_write (file, base, atoi(argv[3]), atoi(argv[4]),
+            center, angle, trans))
         return get_cg_error (interp, "cg_1to1_periodic_write");
     return TCL_OK;
 }
-
-
-
-
-
-
-
-
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *   Read and write GridConnectivityProperty_t/AverageInterface_t Nodes  *
@@ -4101,7 +4407,8 @@ static int tcl_cg_goto (ClientData data, Tcl_Interp *interp,
 {
     int n, ierr, file, base, depth;
     int index[CG_MAX_GOTO_DEPTH];
-    char label[CG_MAX_GOTO_DEPTH][33];
+    char lab[CG_MAX_GOTO_DEPTH*33];
+    char *label[CG_MAX_GOTO_DEPTH];
 
     Tcl_ResetResult (interp);
     if (argc < 3) {
@@ -4118,6 +4425,7 @@ static int tcl_cg_goto (ClientData data, Tcl_Interp *interp,
     depth = 0;
     for (n = 3; n < argc; n++) {
         if (0 == strcmp (argv[n], "end")) break;
+        label[depth] = &lab[depth*33];
         strncpy (label[depth], argv[n], 32);
         label[depth][32] = 0;
         if (++n >= argc) {
@@ -4128,7 +4436,7 @@ static int tcl_cg_goto (ClientData data, Tcl_Interp *interp,
         depth++;
     }
 
-    if (cg_golist(file, base, depth, (char **)label, index))
+    if (cg_golist(file, base, depth, label, index))
         return get_cg_error(interp, "cg_golist");
     return TCL_OK;
 }
@@ -4139,19 +4447,17 @@ static int tcl_cg_gorel (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
     int fn, n, index;
-    int file, base, depth;
     char *label;
 
     Tcl_ResetResult (interp);
-    if (argc < 3) {
+    if (argc < 4) {
         Tcl_AppendResult (interp, "usage: ", argv[0],
-            " label1 index1 [label2 index2 [...]]", NULL);
+            " filenum label1 index1 [label2 index2 [...]]", NULL);
         return TCL_ERROR;
     }
-    if (cg_where(&file, &base, &depth, 0, 0))
-        return get_cg_error(interp, "cg_where");
+    fn = atoi(argv[1]);
 
-    for (n = 1; n < argc; n++) {
+    for (n = 2; n < argc; n++) {
         label = argv[n];
         if (0 == strcmp (label, "end")) break;
         if (++n >= argc) {
@@ -4159,7 +4465,7 @@ static int tcl_cg_gorel (ClientData data, Tcl_Interp *interp,
             return TCL_ERROR;
         }
         index = atoi(argv[n]);
-        if (cg_gorel(file, label, index, 0))
+        if (cg_gorel(fn, label, index, 0))
             return get_cg_error(interp, "cg_gorel");
     }
 
@@ -4186,27 +4492,23 @@ static int tcl_cg_gopath (ClientData data, Tcl_Interp *interp,
 
 /*-----------------------------------------------------------------------*/
 
-static int tcl_cg_golist (ClientData data, Tcl_Interp *interp,
-    int argc, char **argv)
-{
-    return TCL_OK;
-}
-
-/*-----------------------------------------------------------------------*/
-
 static int tcl_cg_where (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
     int n, ierr, depth, file, base;
     int index[CG_MAX_GOTO_DEPTH];
-    char label[CG_MAX_GOTO_DEPTH][33];
+    char lab[CG_MAX_GOTO_DEPTH*33];
+    char *label[CG_MAX_GOTO_DEPTH];
 
     Tcl_ResetResult (interp);
     if (argc != 1) {
         Tcl_AppendResult (interp, "usage: ", argv[0], NULL);
         return TCL_ERROR;
     }
-    if (cg_where(&file, &base, &depth, (char **)label, index))
+    for (n = 0; n < CG_MAX_GOTO_DEPTH; n++) {
+        label[n] = &lab[n*33];
+    }
+    if (cg_where(&file, &base, &depth, label, index))
         return get_cg_error(interp, "cg_where");
     sprintf (buff, "%d %d", file, base);
     Tcl_AppendResult (interp, buff, NULL);
@@ -4464,9 +4766,6 @@ static int tcl_cg_diffusion_read (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
     int ierr, idim, diff[6];
-    int file, base, depth;
-    int index[CG_MAX_GOTO_DEPTH];
-    char label[CG_MAX_GOTO_DEPTH][33];
 
     Tcl_ResetResult (interp);
     if (argc != 1) {
@@ -4474,19 +4773,21 @@ static int tcl_cg_diffusion_read (ClientData data, Tcl_Interp *interp,
         return TCL_ERROR;
     }
 
+    if (posit == 0) {
+        Tcl_AppendResult (interp, "position not set with cg_goto", NULL);
+        return TCL_ERROR;
+    }
+    if (posit_zone)
+        ierr = cg_index_dim (posit_file, posit_base, posit_zone, &idim);
+    else
+        ierr = cg_cell_dim (posit_file, posit_base, &idim);
+    if (ierr) return get_cg_error (interp, "cg_diffusion_read");
+
     ierr = cg_diffusion_read (diff);
     if (ierr) {
         if (ierr == CG_NODE_NOT_FOUND) return TCL_OK;
         return get_cg_error (interp, "cg_diffusion_read");
     }
-
-    if (cg_where(&file, &base, &depth, (char **)label, index))
-        return get_cg_error (interp, "cg_where");
-    if (depth < 1 || strcmp(label[0], "Zone_t"))
-        ierr = cg_cell_dim (file, base, &idim);
-    else
-        ierr = cg_index_dim (file, base, index[0], &idim);
-    if (ierr) return get_cg_error (interp, "cg_diffusion_read");
 
     if (idim == 1)
         sprintf (buff, "%d", diff[0]);
@@ -4505,9 +4806,6 @@ static int tcl_cg_diffusion_write (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
     int idim, cnt, ierr, diff[6];
-    int file, base, depth;
-    int index[CG_MAX_GOTO_DEPTH];
-    char label[CG_MAX_GOTO_DEPTH][33];
 
     Tcl_ResetResult (interp);
     if (argc != 2) {
@@ -4516,12 +4814,14 @@ static int tcl_cg_diffusion_write (ClientData data, Tcl_Interp *interp,
         return TCL_ERROR;
     }
 
-    if (cg_where(&file, &base, &depth, (char **)label, index))
-        return get_cg_error (interp, "cg_where");
-    if (depth < 1 || strcmp(label[0], "Zone_t"))
-        ierr = cg_cell_dim (file, base, &idim);
+    if (posit == 0) {
+        Tcl_AppendResult (interp, "position not set with cg_goto", NULL);
+        return TCL_ERROR;
+    }
+    if (posit_zone)
+        ierr = cg_index_dim (posit_file, posit_base, posit_zone, &idim);
     else
-        ierr = cg_index_dim (file, base, index[0], &idim);
+        ierr = cg_cell_dim (posit_file, posit_base, &idim);
     if (ierr) return get_cg_error (interp, "cg_diffusion_read");
 
     if (idim == 1)
@@ -4922,9 +5222,6 @@ static int tcl_cg_rind_read (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
     int ierr, n, idim, rind[6];
-    int file, base, depth;
-    int index[CG_MAX_GOTO_DEPTH];
-    char label[CG_MAX_GOTO_DEPTH][33];
 
     Tcl_ResetResult (interp);
     if (argc != 1) {
@@ -4932,19 +5229,21 @@ static int tcl_cg_rind_read (ClientData data, Tcl_Interp *interp,
         return TCL_ERROR;
     }
 
+    if (posit == 0) {
+        Tcl_AppendResult (interp, "position not set with cg_goto", NULL);
+        return TCL_ERROR;
+    }
+    if (posit_zone)
+        ierr = cg_index_dim (posit_file, posit_base, posit_zone, &idim);
+    else
+        ierr = cg_cell_dim (posit_file, posit_base, &idim);
+    if (ierr) return get_cg_error (interp, "cg_rind_read");
+
     ierr = cg_rind_read (rind);
     if (ierr) {
         if (ierr == CG_NODE_NOT_FOUND) return TCL_OK;
         return get_cg_error (interp, "cg_rind_read");
     }
-
-    if (cg_where(&file, &base, &depth, (char **)label, index))
-        return get_cg_error (interp, "cg_where");
-    if (depth < 1 || strcmp(label[0], "Zone_t"))
-        ierr = cg_cell_dim (file, base, &idim);
-    else
-        ierr = cg_index_dim (file, base, index[0], &idim);
-    if (ierr) return get_cg_error (interp, "cg_rind_read");
 
     for (n = 0; n < 2*idim; n++) {
         sprintf (buff, "%d", rind[n]);
@@ -4959,9 +5258,6 @@ static int tcl_cg_rind_write (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
     int ierr, idim, nr, *rind;
-    int file, base, depth;
-    int index[CG_MAX_GOTO_DEPTH];
-    char label[CG_MAX_GOTO_DEPTH][33];
 
     Tcl_ResetResult (interp);
     if (argc != 2) {
@@ -4970,12 +5266,14 @@ static int tcl_cg_rind_write (ClientData data, Tcl_Interp *interp,
         return TCL_ERROR;
     }
 
-    if (cg_where(&file, &base, &depth, (char **)label, index))
-        return get_cg_error (interp, "cg_where");
-    if (depth < 1 || strcmp(label[0], "Zone_t"))
-        ierr = cg_cell_dim (file, base, &idim);
+    if (posit == 0) {
+        Tcl_AppendResult (interp, "position not set with cg_goto", NULL);
+        return TCL_ERROR;
+    }
+    if (posit_zone)
+        ierr = cg_index_dim (posit_file, posit_base, posit_zone, &idim);
     else
-        ierr = cg_index_dim (file, base, index[0], &idim);
+        ierr = cg_cell_dim (posit_file, posit_base, &idim);
     if (ierr) return get_cg_error (interp, "cg_rind_write");
 
     if (extract_data (interp, argv[1], Integer, &nr, (void **)&rind))
@@ -5871,9 +6169,11 @@ int Cgnstcl_Init(Tcl_Interp *interp)
     Tcl_CreateCommand (interp, "cg_elements_read",
         (Tcl_CmdProc *)tcl_cg_elements_read, 0, 0);
     Tcl_CreateCommand (interp, "cg_parent_data_read",
-        (Tcl_CmdProc *)tcl_cg_elements_read, (ClientData)1, 0);
+        (Tcl_CmdProc *)tcl_cg_parent_data_read, 0, 0);
     Tcl_CreateCommand (interp, "cg_section_write",
         (Tcl_CmdProc *)tcl_cg_section_write, 0, 0);
+    Tcl_CreateCommand (interp, "cg_elements_write",
+        (Tcl_CmdProc *)tcl_cg_elements_write, 0, 0);
     Tcl_CreateCommand (interp, "cg_parent_data_write",
         (Tcl_CmdProc *)tcl_cg_parent_data_write, 0, 0);
     Tcl_CreateCommand (interp, "cg_npe",
@@ -6055,8 +6355,6 @@ int Cgnstcl_Init(Tcl_Interp *interp)
         (Tcl_CmdProc *)tcl_cg_gorel, 0, 0);
     Tcl_CreateCommand (interp, "cg_gopath",
         (Tcl_CmdProc *)tcl_cg_gopath, 0, 0);
-    Tcl_CreateCommand (interp, "cg_golist",
-        (Tcl_CmdProc *)tcl_cg_golist, 0, 0);
     Tcl_CreateCommand (interp, "cg_where",
         (Tcl_CmdProc *)tcl_cg_where, 0, 0);
 
