@@ -1542,7 +1542,7 @@ static int CGIOdimensions (ClientData data, Tcl_Interp *interp,
     int ndim, dims[CGIO_MAX_DIMENSIONS];
     double node_id;
     CONST char **args;
-    char type[CGIO_MAX_DATATYPE_LENGTH+1];
+    char str[65];
 
     Tcl_ResetResult (interp);
     if (argc < 2 || argc > 3) {
@@ -1558,7 +1558,7 @@ static int CGIOdimensions (ClientData data, Tcl_Interp *interp,
     if (get_node (interp, argv[1], &node_id))
         return TCL_ERROR;
     if (argc > 2) {
-        if (cgio_get_data_type (cgioNum, node_id, type))
+        if (cgio_get_data_type (cgioNum, node_id, str))
             return (get_error (interp, "cgio_get_data_type"));
         if (TCL_OK != Tcl_SplitList (interp, argv[2], &ndim, &args))
             return TCL_ERROR;
@@ -1572,15 +1572,15 @@ static int CGIOdimensions (ClientData data, Tcl_Interp *interp,
                 dims[n] = atoi (args[n]);
             Tcl_Free ((char *)args);
         }
-        if (cgio_set_dimensions (cgioNum, node_id, type, ndim, dims))
+        if (cgio_set_dimensions (cgioNum, node_id, str, ndim, dims))
             return (get_error (interp, "cgio_set_dimensions"));
     }
     if (cgio_get_dimensions (cgioNum, node_id, &ndim, dims))
         return (get_error (interp, "cgio_get_dimensions"));
     if (ndim > 0) {
         for (n = 0; n < ndim; n++) {
-            sprintf (type, "%d", dims[n]);
-            Tcl_AppendElement (interp, type);
+            sprintf (str, "%d", dims[n]);
+            Tcl_AppendElement (interp, str);
         }
     }
     return TCL_OK;
