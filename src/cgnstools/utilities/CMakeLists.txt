@@ -108,6 +108,7 @@ add_dependencies(convert_variables cgns_static calclib)
 # convert_dataclass
 set(convert_dataclass_FILES 
 	convert_dataclass.c
+	cgnsutil.c
 	../common/getargs.c)
 
 add_executable(convert_dataclass ${convert_dataclass_FILES})
