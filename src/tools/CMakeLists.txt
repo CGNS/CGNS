@@ -22,9 +22,6 @@ endif(HDF5_NEED_MPI)
 set(cgnames_FILES
 	cgnames_standalone.c
 	cgnames.c)
-set(cgns2xml_FILES
-	cgns2xml.c
-	getargs.c)
 set(cgnscheck_FILES
 	cgnscheck.c
 	getargs.c
@@ -49,7 +46,6 @@ set(hdf2adf_FILES
 
 # Build each tool
 add_executable( cgnames     ${cgnames_FILES}     )
-add_executable( cgns2xml    ${cgns2xml_FILES}    )
 add_executable( cgnscheck   ${cgnscheck_FILES}   )
 add_executable( cgnsconvert ${cgnsconvert_FILES} )
 add_executable( cgnsdiff    ${cgnsdiff_FILES}    )
@@ -61,7 +57,6 @@ add_executable( hdf2adf     ${hdf2adf_FILES}     )
 # Set the install path for the tools
 install(TARGETS
 	cgnames
-	cgns2xml
 	cgnscheck
 	cgnsconvert
 	cgnsdiff
