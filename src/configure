@@ -2059,122 +2059,6 @@ if test $shared = yes; then
 fi
 
 #---------------------------------------------------------------------------
-# locate expat includes and library if using XML
-#---------------------------------------------------------------------------
-
-EXPATINC=""
-EXPATLIB=""
-
-withxml=no
-test ! -z $BUILD_XML && withxml=$BUILD_XML
-
-#AC_MSG_CHECKING([if using XML])
-#AC_ARG_WITH(xml,
-#  [  --with-xml[=DIR]        use XML [default=no]],
-#  withxml=$withval,withxml=no)
-#if test "$withxml" = "no"; then
-#  AC_MSG_RESULT(no)
-#else
-if test ! "$withxml" == "no"; then
-  if test -z "$withxml" || test "$withxml" = "yes"; then
-    expatdir=""
-#    AC_MSG_RESULT(yes)
-    ac_safe=`echo "expat.h" | sed 'y%./+-%__p_%'`
-echo $ac_n "checking for expat.h""... $ac_c" 1>&6
-echo "configure:2085: checking for expat.h" >&5
-if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
-  echo $ac_n "(cached) $ac_c" 1>&6
-else
-  cat > conftest.$ac_ext <<EOF
-#line 2090 "configure"
-#include "confdefs.h"
-#include <expat.h>
-EOF
-ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:2095: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
-ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
-if test -z "$ac_err"; then
-  rm -rf conftest*
-  eval "ac_cv_header_$ac_safe=yes"
-else
-  echo "$ac_err" >&5
-  echo "configure: failed program was:" >&5
-  cat conftest.$ac_ext >&5
-  rm -rf conftest*
-  eval "ac_cv_header_$ac_safe=no"
-fi
-rm -f conftest*
-fi
-if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
-  echo "$ac_t""yes" 1>&6
-  installed=yes
-else
-  echo "$ac_t""no" 1>&6
-installed=no
-fi
-
-    if test "$installed" = "yes"; then
-      EXPATLIB=-lexpat
-    else
-      echo $ac_n "checking for local expat distribution""... $ac_c" 1>&6
-echo "configure:2121: checking for local expat distribution" >&5
-      for d in \
-        `ls -dr * 2>/dev/null` \
-        `ls -dr ../* 2>/dev/null` \
-        `ls -dr ../../* 2>/dev/null` \
-        `ls -dr ../../../* 2>/dev/null` ; do
-        if test -f "$d/lib/expat.h"; then
-          expatdir=`(cd $d; pwd)`
-          echo "$ac_t""$expatdir" 1>&6
-          break
-        fi
-      done
-      test -z "$expatdir" && echo "$ac_t""not found" 1>&6
-    fi
-  else
-    expatdir=$withxml
-    withxml=yes
-#    AC_MSG_RESULT($expatdir)
-  fi
-
-  if test -z "$EXPATLIB"; then
-    test -z "$expatdir" && \
-      { echo "configure: error: need specify the expat directory with --with-xml=DIR" 1>&2; exit 1; }
-    if test -f "$expatdir/lib/expat.h"; then
-      EXPATINC=-I$expatdir/lib
-      for a in $exts ; do
-        if test -f $expatdir/libs/libexpat.$a; then
-          EXPATLIB=$expatdir/libs/libexpat.$a
-          break
-        fi
-        if test -f $expatdir/.libs/libexpat.$a; then
-          EXPATLIB=$expatdir/.libs/libexpat.$a
-          break
-        fi
-      done
-      test -z "$EXPATLIB" && EXPATLIB=$expatdir/libexpat.a
-    else
-      if test -f "$expatdir/expat.h"; then
-        EXPATINC=-I$expatdir
-        for a in $exts ; do
-          if test -f $expatdir/libexpat.$a; then
-            EXPATLIB=$expatdir/libexpat.$a
-            break
-          fi
-          if test -f $expatdir/.lib/libexpat.$a; then
-            EXPATLIB=$expatdir/.lib/libexpat.$a
-            break
-          fi
-        done
-        test -z "$EXPATLIB" && EXPATLIB=$expatdir/libexpat.a
-      else
-        { echo "configure: error: $expatdir directory does not contain expat.h or lib/expat.h" 1>&2; exit 1; }
-      fi
-    fi
-  fi
-fi
-
-#---------------------------------------------------------------------------
 # locate HDF5 includes and library if using HDF5
 #---------------------------------------------------------------------------
 
@@ -2182,7 +2066,7 @@ HDF5INC=""
 HDF5LIB=""
 
 echo $ac_n "checking if using HDF5""... $ac_c" 1>&6
-echo "configure:2186: checking if using HDF5" >&5
+echo "configure:2070: checking if using HDF5" >&5
 # Check whether --with-hdf5 or --without-hdf5 was given.
 if test "${with_hdf5+set}" = set; then
   withval="$with_hdf5"
@@ -2199,17 +2083,17 @@ else
     echo "$ac_t""yes" 1>&6
     ac_safe=`echo "hdf5.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for hdf5.h""... $ac_c" 1>&6
-echo "configure:2203: checking for hdf5.h" >&5
+echo "configure:2087: checking for hdf5.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2208 "configure"
+#line 2092 "configure"
 #include "confdefs.h"
 #include <hdf5.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:2213: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:2097: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -2235,7 +2119,7 @@ fi
       HDF5LIB=-lhdf5
     else
       echo $ac_n "checking for local HDF5 distribution""... $ac_c" 1>&6
-echo "configure:2239: checking for local HDF5 distribution" >&5
+echo "configure:2123: checking for local HDF5 distribution" >&5
       for d in \
         `ls -dr * 2>/dev/null` \
         `ls -dr ../* 2>/dev/null` \
@@ -2288,13 +2172,12 @@ fi
 # locate zlib and szip libraries
 #---------------------------------------------------------------------------
 
-XMLZLIB=""
 ZLIBLIB=""
 
-if test "$withhdf5" = "yes" || test "$withxml" = "yes"; then
+if test "$withhdf5" = "yes"; then
 
   echo $ac_n "checking if using zlib""... $ac_c" 1>&6
-echo "configure:2298: checking if using zlib" >&5
+echo "configure:2181: checking if using zlib" >&5
   # Check whether --with-zlib or --without-zlib was given.
 if test "${with_zlib+set}" = set; then
   withval="$with_zlib"
@@ -2311,17 +2194,17 @@ fi
       echo "$ac_t""yes" 1>&6
       ac_safe=`echo "zlib.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for zlib.h""... $ac_c" 1>&6
-echo "configure:2315: checking for zlib.h" >&5
+echo "configure:2198: checking for zlib.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2320 "configure"
+#line 2203 "configure"
 #include "confdefs.h"
 #include <zlib.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:2325: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:2208: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -2344,11 +2227,10 @@ installed=no
 fi
 
       if test "$installed" = "yes"; then
-        test "$withxml" = "yes" && XMLZLIB=-DUSE_ZLIB
         ZLIBLIB=-lz
       else
         echo $ac_n "checking for local zlib distribution""... $ac_c" 1>&6
-echo "configure:2352: checking for local zlib distribution" >&5
+echo "configure:2234: checking for local zlib distribution" >&5
         for d in \
           `ls -dr * 2>/dev/null` \
           `ls -dr ../* 2>/dev/null` \
@@ -2383,7 +2265,6 @@ echo "configure:2352: checking for local zlib distribution" >&5
           fi
         done
         test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/libz.a
-        test "$withxml" = "yes" && XMLZLIB="-DUSE_ZLIB -I$zlibdir"
       else
         { echo "configure: error: $zlibdir directory does not contain zlib.h" 1>&2; exit 1; }
       fi
@@ -2396,7 +2277,7 @@ SZIPLIB=""
 
 if test "$withhdf5" = "yes"; then
   echo $ac_n "checking if using szip""... $ac_c" 1>&6
-echo "configure:2400: checking if using szip" >&5
+echo "configure:2281: checking if using szip" >&5
   # Check whether --with-szip or --without-szip was given.
 if test "${with_szip+set}" = set; then
   withval="$with_szip"
@@ -2411,7 +2292,7 @@ fi
     if test -z "$sziplib" || test "$sziplib" = "yes"; then
       echo "$ac_t""yes" 1>&6
       echo $ac_n "checking for SZ_BufftoBuffCompress in -lsz""... $ac_c" 1>&6
-echo "configure:2415: checking for SZ_BufftoBuffCompress in -lsz" >&5
+echo "configure:2296: checking for SZ_BufftoBuffCompress in -lsz" >&5
 ac_lib_var=`echo sz'_'SZ_BufftoBuffCompress | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -2419,7 +2300,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lsz  $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 2423 "configure"
+#line 2304 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -2430,7 +2311,7 @@ int main() {
 SZ_BufftoBuffCompress()
 ; return 0; }
 EOF
-if { (eval echo configure:2434: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2315: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -2452,7 +2333,7 @@ fi
 
       if test -z "$SZIPLIB"; then
         echo $ac_n "checking for local szip library""... $ac_c" 1>&6
-echo "configure:2456: checking for local szip library" >&5
+echo "configure:2337: checking for local szip library" >&5
         for d in \
           `ls -dr * 2>/dev/null` \
           `ls -dr ../* 2>/dev/null` \
@@ -2481,7 +2362,7 @@ fi
 
 if test "$withhdf5" = "yes"; then
   echo $ac_n "checking for ceil in -lm""... $ac_c" 1>&6
-echo "configure:2485: checking for ceil in -lm" >&5
+echo "configure:2366: checking for ceil in -lm" >&5
 ac_lib_var=`echo m'_'ceil | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -2489,7 +2370,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lm  $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 2493 "configure"
+#line 2374 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -2500,7 +2381,7 @@ int main() {
 ceil()
 ; return 0; }
 EOF
-if { (eval echo configure:2504: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2385: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -2530,7 +2411,7 @@ fi
 
   if test "`uname`" = "SunOS" -o "`uname -sr`" = "HP-UX B.11.00"; then
         echo $ac_n "checking for xdr_int in -lnsl""... $ac_c" 1>&6
-echo "configure:2534: checking for xdr_int in -lnsl" >&5
+echo "configure:2415: checking for xdr_int in -lnsl" >&5
 ac_lib_var=`echo nsl'_'xdr_int | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -2538,7 +2419,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lnsl  $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 2542 "configure"
+#line 2423 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -2549,7 +2430,7 @@ int main() {
 xdr_int()
 ; return 0; }
 EOF
-if { (eval echo configure:2553: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2434: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -2584,7 +2465,7 @@ fi
 #--------------------------------------------------------------------------
 
 echo $ac_n "checking if large file support is requested""... $ac_c" 1>&6
-echo "configure:2588: checking if large file support is requested" >&5
+echo "configure:2469: checking if large file support is requested" >&5
 # Check whether --enable-lfs or --disable-lfs was given.
 if test "${enable_lfs+set}" = set; then
   enableval="$enable_lfs"
@@ -2598,7 +2479,7 @@ echo "$ac_t""$enableval" 1>&6
 if test $enableval = yes; then
   CFLAGS_SAVE=$CFLAGS
   echo $ac_n "checking for large file support options""... $ac_c" 1>&6
-echo "configure:2602: checking for large file support options" >&5
+echo "configure:2483: checking for large file support options" >&5
   LFS=`getconf LFS_CFLAGS 2>/dev/null`
   if test "$LFS" = ""; then
     echo "$ac_t""none" 1>&6
@@ -2611,7 +2492,7 @@ echo "configure:2602: checking for large file support options" >&5
 #include <sys/types.h>
 EOF
   echo $ac_n "checking size of off_t""... $ac_c" 1>&6
-echo "configure:2615: checking size of off_t" >&5
+echo "configure:2496: checking size of off_t" >&5
 if eval "test \"`echo '$''{'ac_cv_sizeof_off_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -2619,7 +2500,7 @@ else
   ac_cv_sizeof_off_t=4
 else
   cat > conftest.$ac_ext <<EOF
-#line 2623 "configure"
+#line 2504 "configure"
 #include "confdefs.h"
 #include <stdio.h>
 int main()
@@ -2630,7 +2511,7 @@ int main()
   return(0);
 }
 EOF
-if { (eval echo configure:2634: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2515: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   ac_cv_sizeof_off_t=`cat conftestval`
 else
@@ -2653,16 +2534,16 @@ EOF
     has_lfs=yes
   else
     echo $ac_n "checking for off64_t""... $ac_c" 1>&6
-echo "configure:2657: checking for off64_t" >&5
+echo "configure:2538: checking for off64_t" >&5
     cat > conftest.$ac_ext <<EOF
-#line 2659 "configure"
+#line 2540 "configure"
 #include "confdefs.h"
 #include <sys/types.h>
 int main() {
 off64_t n = 0;
 ; return 0; }
 EOF
-if { (eval echo configure:2666: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2547: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   has_lfs=yes
 else
@@ -2675,12 +2556,12 @@ rm -f conftest*
     echo "$ac_t""$has_lfs" 1>&6
     if test $has_lfs = yes; then
       echo $ac_n "checking for open64""... $ac_c" 1>&6
-echo "configure:2679: checking for open64" >&5
+echo "configure:2560: checking for open64" >&5
 if eval "test \"`echo '$''{'ac_cv_func_open64'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2684 "configure"
+#line 2565 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char open64(); below.  */
@@ -2703,7 +2584,7 @@ open64();
 
 ; return 0; }
 EOF
-if { (eval echo configure:2707: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2588: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_open64=yes"
 else
@@ -2723,12 +2604,12 @@ else
 fi
 
       echo $ac_n "checking for lseek64""... $ac_c" 1>&6
-echo "configure:2727: checking for lseek64" >&5
+echo "configure:2608: checking for lseek64" >&5
 if eval "test \"`echo '$''{'ac_cv_func_lseek64'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 2732 "configure"
+#line 2613 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char lseek64(); below.  */
@@ -2751,7 +2632,7 @@ lseek64();
 
 ; return 0; }
 EOF
-if { (eval echo configure:2755: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2636: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_lseek64=yes"
 else
@@ -2813,7 +2694,7 @@ ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
 # SVR4 /usr/ucb/install, which tries to use the nonexistent group "staff"
 # ./install, which can be erroneously created by make from ./install.sh.
 echo $ac_n "checking for a BSD compatible install""... $ac_c" 1>&6
-echo "configure:2817: checking for a BSD compatible install" >&5
+echo "configure:2698: checking for a BSD compatible install" >&5
 if test -z "$INSTALL"; then
 if eval "test \"`echo '$''{'ac_cv_path_install'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -2874,12 +2755,12 @@ if test -z $exec_prefix || test $exec_prefix = NONE; then
 fi
 
 echo $ac_n "checking where to install library""... $ac_c" 1>&6
-echo "configure:2878: checking where to install library" >&5
+echo "configure:2759: checking where to install library" >&5
 eval "LIBDIR=$libdir"
 echo "$ac_t""$LIBDIR" 1>&6
 
 echo $ac_n "checking where to install headers""... $ac_c" 1>&6
-echo "configure:2883: checking where to install headers" >&5
+echo "configure:2764: checking where to install headers" >&5
 eval "INCLUDEDIR=$includedir"
 echo "$ac_t""$INCLUDEDIR" 1>&6
 
@@ -2897,21 +2778,11 @@ if test "$withhdf5" = "yes"; then
   ADFINCS="adfh/ADFH.h"
 fi
 
-if test "$withxml" = "yes"; then
-  BUILDOPTS="$BUILDOPTS -DBUILD_XML"
-  ADFOBJS="$ADFOBJS \$(OBJDIR)/ADFX.\$(O)"
-  ADFINCS="$ADFINCS adfx/ADFX.h"
-fi
-
 if test $fortran = no; then
   F2COBJS=#F2COBJS
 else
   F2COBJS=F2COBJS
 fi
-
-
-
-
 
 
 
@@ -3090,9 +2961,6 @@ s%@HDF5INC@%$HDF5INC%g
 s%@HDF5LIB@%$HDF5LIB%g
 s%@ZLIBLIB@%$ZLIBLIB%g
 s%@SZIPLIB@%$SZIPLIB%g
-s%@EXPATINC@%$EXPATINC%g
-s%@EXPATLIB@%$EXPATLIB%g
-s%@XMLZLIB@%$XMLZLIB%g
 s%@SYSCFLAGS@%$SYSCFLAGS%g
 s%@COOUT@%$COOUT%g
 s%@CEOUT@%$CEOUT%g

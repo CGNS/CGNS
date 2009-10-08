@@ -11,13 +11,12 @@
 #include "cgns_io.h"
 #include "getargs.h"
 
-static char options[] = "ahxl";
+static char options[] = "ahl";
 static char *usgmsg[] = {
     "usage  : cgnsconvert [options] InputFile [OutputFile]",
     "options:",
     "   -a : write ADF file",
     "   -h : write HDF5 file",
-    "   -x : write XML file",
     "   -l : expand links in ouput file",
     NULL
 };
@@ -30,7 +29,7 @@ int main (int argc, char **argv)
     int inpcg, outcg, links = 0;
     struct stat inpst, outst;
     time_t ts, te;
-    static char *FileType[] = {"NONE", "ADF", "HDF5", "XML"};
+    static char *FileType[] = {"NONE", "ADF", "HDF5"};
 
     if (argc < 2)
         print_usage (usgmsg, NULL);
@@ -41,9 +40,6 @@ int main (int argc, char **argv)
                 break;
             case 'h':
                 outtype = CGIO_FILE_HDF5;
-                break;
-            case 'x':
-                outtype = CGIO_FILE_XML;
                 break;
             case 'l':
                 links = 1;

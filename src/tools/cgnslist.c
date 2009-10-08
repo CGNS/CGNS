@@ -146,7 +146,7 @@ int main (int argc, char *argv[])
     char version[CGIO_MAX_NAME_LENGTH+1];
     char created[CGIO_MAX_NAME_LENGTH+1];
     char modified[CGIO_MAX_NAME_LENGTH+1];
-    static char *FileType[] = {"NONE", "ADF", "HDF5", "XML"};
+    static char *FileType[] = {"NONE", "ADF", "HDF5"};
 
     if (argc < 2)
         print_usage (usgmsg, NULL);

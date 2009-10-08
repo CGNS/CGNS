@@ -129,8 +129,3 @@ $(OBJDIR)/ADF_internals.$(O) : adf/ADF_internals.c \
 $(OBJDIR)/ADFH.$(O) : adfh/ADFH.c adfh/ADFH.h
 	$(CC) $(COPTS) -Iadfh $(HDF5INC) $(COOUT)$@ -c adfh/ADFH.c
 
-#---------- XML
-
-$(OBJDIR)/ADFX.$(O) : adfx/ADFX.c adfx/ADFX.h
-	$(CC) $(COPTS) $(XMLZLIB) -Iadfx $(EXPATINC) $(COOUT)$@ -c adfx/ADFX.c
-

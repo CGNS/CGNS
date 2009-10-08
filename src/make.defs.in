@@ -16,23 +16,11 @@ SZIPLIB = @SZIPLIB@
 ZLIBLIB = @ZLIBLIB@
 
 #------------------------------------------------------------------------
-# these should only be set if building XML interface
-# EXPATINC - path to expat header files
-# EXPATLIB - expat library
-# this should be set to use zlib with XML (also ZLIBLIB above)
-# XMLZLIB = -DUSE_ZLIB -Izlib-include-path
-#------------------------------------------------------------------------
-
-EXPATINC = @EXPATINC@
-EXPATLIB = @EXPATLIB@
-XMLZLIB  = @XMLZLIB@
-
-#------------------------------------------------------------------------
 # BUILDLIBS contains the list of additional libraries
 #           with which a CGNS application needs to link
 #------------------------------------------------------------------------
 
-BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB) $(EXPATLIB)
+BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB)
 
 #------------------------------------------------------------------------
 # SPACE  - used to force a space in the compiler executable output flag

@@ -77,10 +77,6 @@ int main (int argc, char *argv[])
             type = CG_FILE_HDF5;
             strcpy (outfile, "test.cgh");
         }
-        else if (argv[1][n] == 'x' || argv[1][n] == 'X') {
-            type = CG_FILE_XML;
-            strcpy (outfile, "test.cgx");
-        }
         else {
             fprintf(stderr, "unknown option\n");
             exit (1);

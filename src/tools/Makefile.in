@@ -15,7 +15,6 @@ ALL = \
 	cgnscheck$(EXE) \
 	cgnsversion$(EXE) \
 	cgnsconvert$(EXE) \
-	cgns2xml$(EXE) \
 	cgnsdiff$(EXE)
 
 all : $(ALL)
@@ -47,13 +46,6 @@ cgnsconvert$(EXE) : cgnsconvert.$(O) getargs.$(O) $(CGNSLIB)
 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsconvert.$(O) getargs.$(O) $(LDLIBS) $(CLIBS)
 cgnsconvert.$(O) : cgnsconvert.c getargs.h
 	$(CC) $(COPTS) -c cgnsconvert.c
-
-#----------
-
-cgns2xml$(EXE) : cgns2xml.$(O) getargs.$(O) $(CGNSLIB)
-	$(CC) $(CFLAGS) $(CEOUT)$@ cgns2xml.$(O) getargs.$(O) $(LDLIBS) $(CLIBS)
-cgns2xml.$(O) : cgns2xml.c getargs.h
-	$(CC) $(COPTS) -c cgns2xml.c
 
 #----------
 

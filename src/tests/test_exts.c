@@ -57,8 +57,6 @@ int main (int argc, char **argv)
             i = CG_FILE_ADF;
         else if (argv[1][n] == 'h' || argv[1][n] == 'H')
             i = CG_FILE_HDF5;
-        else if (argv[1][n] == 'x' || argv[1][n] == 'X')
-            i = CG_FILE_XML;
         else {
             fprintf(stderr, "unknown option\n");
             exit (1);

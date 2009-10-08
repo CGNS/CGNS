@@ -209,9 +209,6 @@ if {[CGIOsupported adf] != ""} {
 if {[CGIOsupported hdf5] != ""} {
   lappend ProgData(extensions) [list "HDF5 Files" [list .hdf .hdf5 .cgh]]
 }
-if {[CGIOsupported xml] != ""} {
-  lappend ProgData(extensions) [list "XML Files" [list .xml .cgx]]
-}
 lappend ProgData(extensions) [list "All Files" *]
 
 array set Import {
@@ -2130,7 +2127,7 @@ proc file_select {what name format} {
   pack $w.format -side top -fill x
   set fmt [FrameGet $w.format]
 
-  foreach i {adf hdf5 xml} {
+  foreach i {adf hdf5} {
     radiobutton $fmt.$i -text [string toupper $i] \
       -variable ProgData(format) -value $i -command file_extension
     if {[CGIOsupported $i] == ""} {

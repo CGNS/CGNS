@@ -29,8 +29,6 @@ int main (int argc, char **argv)
             type = CG_FILE_ADF;
         else if (argv[n][i] == 'h' || argv[n][i] == 'H')
             type = CG_FILE_HDF5;
-        else if (argv[n][i] == 'x' || argv[n][i] == 'X')
-            type = CG_FILE_XML;
         else
             nzones = atoi (&argv[n][i]);
     }

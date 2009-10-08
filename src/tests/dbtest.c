@@ -30,15 +30,13 @@ int main (int argc, char **argv)
     double start_time, end_time;
 
     i = 1;
-    if (argc > 1 && strchr ("-ahx", argv[1][0]) != NULL) {
+    if (argc > 1 && strchr ("-ah", argv[1][0]) != NULL) {
         int type = argv[1][0];
         if (type == '-') type = argv[1][1];
         if (type == 'a')
             type = cg_set_file_type(CG_FILE_ADF);
         else if (type == 'h')
             type = cg_set_file_type(CG_FILE_HDF5);
-        else if (type == 'x')
-            type = cg_set_file_type(CG_FILE_XML);
         else {
             fputs ("unknown file type\n", stderr);
             exit (1);
@@ -50,7 +48,7 @@ int main (int argc, char **argv)
         i++;
     }
     if (i > argc - 2) {
-        fputs ("usage: dbtest [a|h|x] numzones numvalues [CGNSfile]\n", stderr);
+        fputs ("usage: dbtest [a|h] numzones numvalues [CGNSfile]\n", stderr);
         exit (1);
     }
     numzones = atoi(argv[i++]);

@@ -2,7 +2,7 @@
 setlocal
 
 set args=-ML -MD -MT -debug -lfs -64 -dll -gmake -install -f2c
-set args=%args% -ifort -absoft -hdf5 -zlib -szip -xml
+set args=%args% -ifort -absoft -hdf5 -zlib -szip
 set copts=
 set debug=
 set cfgflags=
@@ -19,8 +19,6 @@ set hdf5lib=
 set zliblib=
 set sziplib=
 set hdf5dll=#HDF5DLL
-set expatinc=
-set expatlib=
 
 :next
 if "%1" == "" goto doit
@@ -372,7 +370,7 @@ goto done
 rem ----- szip setup
 
 :szip
-if not %1 == -szip goto xml
+if not %1 == -szip goto badarg
 echo checking for szip ...
 shift
 if "%1" == "" goto findszip
@@ -452,99 +450,6 @@ for /D %%d in ( %~d0\*.* ) do (
 echo ERROR:couldn't find szip, szlib or szlibdll library
 goto done
 
-rem ----- expat XML setup
-
-:xml
-if not %1 == -xml goto badarg
-echo checking for expat ...
-shift
-if "%1" == "" goto findexpat
-for %%a in ( %args% ) do if %1 == %%a goto findexpat
-
-if not exist %1\nul (
-  echo ERROR:expat directory "%1" does not exist or is not a directory
-  goto done
-)
-set expatdir=%1
-shift
-goto getexpat
-
-:findexpat
-echo checking for expat ...
-for /D %%d in ( %~d0\*.* ) do (
-  if exist %%d\expat.h (
-    echo %%d
-    set expatdir=%%d
-    goto getexpat
-  )
-  for /D %%e in ( %%d\*.* ) do (
-    if exist %%e\expat.h (
-      echo %%e
-      set expatdir=%%e
-      goto getexpat
-    )
-    for /D %%f in ( %%e\*.* ) do (
-      if exist %%f\expat.h (
-        echo %%f
-        set expatdir=%%f
-        goto getexpat
-      )
-      for /D %%g in ( %%f\*.* ) do (
-        if exist %%g\expat.h (
-          echo %%g
-          set expatdir=%%g
-          goto getexpat
-        )
-      )
-    )
-  )
-)
-echo ERROR:couldn't find expat directory
-goto done
-
-:getexpat
-echo checking for expat headers in %expatdir% ...
-if exist %expatdir%\expat.h (
-  echo %expatdir%
-  set expatinc=%expatdir%
-  echo checking for expat library in %expatdir% ...
-  if exist %expatdir%\libexpat.lib (
-    echo %expatdir%\libexpat.lib
-    set expatlib=%expatdir%\libexpat.lib
-    goto next
-  )
-  for %%d in ( Release Release_static Debug Debug_static ) do (
-    if exist %expatdir%\%%d\libexpat.lib (
-      echo %expatdir%\%%d\libexpat.lib
-      set expatlib=%expatdir%\%%d\libexpat.lib
-      goto next
-    )
-  )
-  echo ERROR:expat library not found in %expatdir%
-  goto done
-)
-if exist %expatdir%\lib\expat.h (
-  echo %expatdir%\lib
-  set expatinc=%expatdir%\lib
-  echo checking for expat library in %expatdir%\lib ...
-  if exist %expatdir%\lib\libexpat.lib (
-    echo %expatdir%\lib\libexpat.lib
-    set expatlib=%expatdir%\lib\libexpat.lib
-    goto next
-  )
-  for %%d in ( Release Release_static Debug Debug_static ) do (
-    if exist %expatdir%\lib\%%d\libexpat.lib (
-      echo %expatdir%\lib\%%d\libexpat.lib
-      set expatlib=%expatdir%\lib\%%d\libexpat.lib
-      goto next
-    )
-  )
-  echo ERROR:expat library not found in %expatdir%\lib
-  goto done
-)
-echo ERROR:expat.h not found in "%expatdir%" or "%expatdir%\lib"
-goto done
-
 rem ----- print usage
 
 :badarg
@@ -576,9 +481,6 @@ echo   -zlib [zliblib] : use zlib. "zliblib" is the pathname to the library.
 echo        If "zliblib" is not given, the current drive is searched.
 echo   -szip [sziplib] : use szip. "sziplib" is the pathname to the library.
 echo        If "sziplib" is not given, the current drive is searched.
-echo   -xml [expatdir] : build XML interface. "expatdir" is the pathname to
-echo        the expat library source. If "expatdir" is not given, the
-echo        current drive is searched.
 goto done
 
 :doit
@@ -603,14 +505,6 @@ if "%hdf5inc%" == "" (
   set libs=%libs HDF5
   set hdf5inc=-I%hdf5inc%
   set build=%build% -DBUILD_HDF5
-)
-
-if "%expatinc%" == "" (
-  set expatlib=
-) else (
-  set libs=%libs XML
-  set expatinc=-I%expatinc%
-  set build=%build% -DBUILD_XML
 )
 
 if not "%debug%" == "" set copts=%copts%d %debug%
@@ -665,7 +559,6 @@ echo # ADF/ADFH routines>> Makefile
 echo.>> Makefile
 echo ADFOBJS=\>>Makefile
 if not "%hdf5inc%" == "" echo 	$(OBJDIR)\ADFH.$(O) \>>Makefile
-if not "%expatinc%" == "" echo 	$(OBJDIR)\ADFX.$(O) \>>Makefile
 echo 	$(OBJDIR)\ADF_interface.$(O) \>>Makefile
 echo 	$(OBJDIR)\ADF_internals.$(O)>> Makefile
 echo.>> Makefile
@@ -756,7 +649,6 @@ echo.>> Makefile
 echo $(OBJDIR)\cgns_io.$(O) : cgns_io.c cgnslib.h cgns_io.h \>> Makefile
 set includes=adf\ADF.h
 if not "%hdf5inc%" == "" set includes=%includes% adfh\ADFH.h
-if not "%expatinc%" == "" set includes=%includes% adfx\ADFX.h
 echo 	%includes%>> Makefile
 echo 	$(CC) $(COPTS) $(COOUT)$@ -c cgns_io.c>> Makefile
 echo.>> Makefile
@@ -782,11 +674,6 @@ echo #---------- HDF5>> Makefile
 echo.>> Makefile
 echo $(OBJDIR)\ADFH.$(O) : adfh\ADFH.c adfh\ADFH.h>> Makefile
 echo 	$(CC) $(COPTS) -Iadfh $(HDF5INC) $(HDF5DLL) $(COOUT)$@ -c adfh\ADFH.c>> Makefile
-echo.>> Makefile
-echo #---------- XML>> Makefile
-echo.>> Makefile
-echo $(OBJDIR)\ADFX.$(O) : adfx\ADFX.c adfx\ADFX.h>> Makefile
-echo 	$(CC) $(COPTS) -Iadfx $(EXPATINC) $(COOUT)$@ -c adfx\ADFX.c>> Makefile
 
 rem ----- create make.system
 
@@ -812,20 +699,11 @@ echo SZIPLIB = %sziplib%>> make.defs
 echo ZLIBLIB = %zliblib%>> make.defs
 echo.>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
-echo # these should only be set if building XML interface>> make.defs
-echo # EXPATINC - path to expat header files>> make.defs
-echo # EXPATLIB - expat library>> make.defs
-echo #------------------------------------------------------------------------>> make.defs
-echo.>> make.defs
-echo EXPATINC = %expatinc%>> make.defs
-echo EXPATLIB = %expatlib%>> make.defs
-echo.>> make.defs
-echo #------------------------------------------------------------------------>> make.defs
 echo # BUILDLIBS contains the list of additional libraries>> make.defs
 echo #           with which a CGNS application needs to link>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo.>> make.defs
-echo BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB) $(EXPATLIB)>> make.defs
+echo BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB)>> make.defs
 echo.>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo # SPACE  - used to force a space in the compiler executable output flag>> make.defs
@@ -979,7 +857,6 @@ echo ALL =	cgnslist$(EXE) \>> tools\Makefile
 echo 	cgnscheck$(EXE) \>> tools\Makefile
 echo 	cgnsversion$(EXE) \>> tools\Makefile
 echo 	cgnsconvert$(EXE) \>> tools\Makefile
-echo 	cgns2xml$(EXE) \>> tools\Makefile
 echo 	cgnsdiff$(EXE)>> tools\Makefile
 echo.>> tools\Makefile
 echo all : $(ALL)>> tools\Makefile
@@ -1011,13 +888,6 @@ echo cgnsconvert$(EXE) : cgnsconvert.$(O) getargs.$(O) $(CGNSLIB)>> tools\Makefi
 echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsconvert.$(O) getargs.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
 echo cgnsconvert.$(O) : cgnsconvert.c getargs.h>> tools\Makefile
 echo 	$(CC) $(COPTS) -c cgnsconvert.c>> tools\Makefile
-echo.>> tools\Makefile
-echo #---------->> tools\Makefile
-echo.>> tools\Makefile
-echo cgns2xml$(EXE) : cgns2xml.$(O) getargs.$(O) $(CGNSLIB)>> tools\Makefile
-echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgns2xml.$(O) getargs.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
-echo cgns2xml.$(O) : cgns2xml.c getargs.h>> tools\Makefile
-echo 	$(CC) $(COPTS) -c cgns2xml.c>> tools\Makefile
 echo.>> tools\Makefile
 echo #---------->> tools\Makefile
 echo.>> tools\Makefile

@@ -75,7 +75,6 @@ int main (int argc, char *argv[])
     }        
  
     unlink (outfile); 
-/*    if (cg_set_file_type (CG_FILE_XML)) cg_error_exit ();*/
 
     if (cg_open (outfile, CG_MODE_WRITE, &fnum) ||
         cg_base_write (fnum, "Base", 3, 3, &bnum) ||

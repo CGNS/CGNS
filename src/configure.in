@@ -434,88 +434,6 @@ if test $shared = yes; then
 fi
 
 #---------------------------------------------------------------------------
-# locate expat includes and library if using XML
-#---------------------------------------------------------------------------
-
-EXPATINC=""
-EXPATLIB=""
-
-withxml=no
-test ! -z $BUILD_XML && withxml=$BUILD_XML
-
-#AC_MSG_CHECKING([if using XML])
-#AC_ARG_WITH(xml,
-#  [  --with-xml[=DIR]        use XML [default=no]],
-#  withxml=$withval,withxml=no)
-#if test "$withxml" = "no"; then
-#  AC_MSG_RESULT(no)
-#else
-if test ! "$withxml" == "no"; then
-  if test -z "$withxml" || test "$withxml" = "yes"; then
-    expatdir=""
-#    AC_MSG_RESULT(yes)
-    AC_CHECK_HEADER(expat.h,installed=yes,installed=no)
-    if test "$installed" = "yes"; then
-      EXPATLIB=-lexpat
-    else
-      AC_MSG_CHECKING([for local expat distribution])
-      for d in \
-        `ls -dr * 2>/dev/null` \
-        `ls -dr ../* 2>/dev/null` \
-        `ls -dr ../../* 2>/dev/null` \
-        `ls -dr ../../../* 2>/dev/null` ; do
-        if test -f "$d/lib/expat.h"; then
-          expatdir=`(cd $d; pwd)`
-          AC_MSG_RESULT($expatdir)
-          break
-        fi
-      done
-      test -z "$expatdir" && AC_MSG_RESULT(not found)
-    fi
-  else
-    expatdir=$withxml
-    withxml=yes
-#    AC_MSG_RESULT($expatdir)
-  fi
-
-  if test -z "$EXPATLIB"; then
-    test -z "$expatdir" && \
-      AC_MSG_ERROR(need specify the expat directory with --with-xml=DIR)
-    if test -f "$expatdir/lib/expat.h"; then
-      EXPATINC=-I$expatdir/lib
-      for a in $exts ; do
-        if test -f $expatdir/libs/libexpat.$a; then
-          EXPATLIB=$expatdir/libs/libexpat.$a
-          break
-        fi
-        if test -f $expatdir/.libs/libexpat.$a; then
-          EXPATLIB=$expatdir/.libs/libexpat.$a
-          break
-        fi
-      done
-      test -z "$EXPATLIB" && EXPATLIB=$expatdir/libexpat.a
-    else
-      if test -f "$expatdir/expat.h"; then
-        EXPATINC=-I$expatdir
-        for a in $exts ; do
-          if test -f $expatdir/libexpat.$a; then
-            EXPATLIB=$expatdir/libexpat.$a
-            break
-          fi
-          if test -f $expatdir/.lib/libexpat.$a; then
-            EXPATLIB=$expatdir/.lib/libexpat.$a
-            break
-          fi
-        done
-        test -z "$EXPATLIB" && EXPATLIB=$expatdir/libexpat.a
-      else
-        AC_MSG_ERROR($expatdir directory does not contain expat.h or lib/expat.h)
-      fi
-    fi
-  fi
-fi
-
-#---------------------------------------------------------------------------
 # locate HDF5 includes and library if using HDF5
 #---------------------------------------------------------------------------
 
@@ -589,10 +507,9 @@ fi
 # locate zlib and szip libraries
 #---------------------------------------------------------------------------
 
-XMLZLIB=""
 ZLIBLIB=""
 
-if test "$withhdf5" = "yes" || test "$withxml" = "yes"; then
+if test "$withhdf5" = "yes"; then
 
   AC_MSG_CHECKING([if using zlib])
   AC_ARG_WITH(zlib,
@@ -606,7 +523,6 @@ if test "$withhdf5" = "yes" || test "$withxml" = "yes"; then
       AC_MSG_RESULT(yes)
       AC_CHECK_HEADER(zlib.h,installed=yes,installed=no)
       if test "$installed" = "yes"; then
-        test "$withxml" = "yes" && XMLZLIB=-DUSE_ZLIB
         ZLIBLIB=-lz
       else
         AC_MSG_CHECKING([for local zlib distribution])
@@ -644,7 +560,6 @@ if test "$withhdf5" = "yes" || test "$withxml" = "yes"; then
           fi
         done
         test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/libz.a
-        test "$withxml" = "yes" && XMLZLIB="-DUSE_ZLIB -I$zlibdir"
       else
         AC_MSG_ERROR($zlibdir directory does not contain zlib.h)
       fi
@@ -781,12 +696,6 @@ if test "$withhdf5" = "yes"; then
   ADFINCS="adfh/ADFH.h"
 fi
 
-if test "$withxml" = "yes"; then
-  BUILDOPTS="$BUILDOPTS -DBUILD_XML"
-  ADFOBJS="$ADFOBJS \$(OBJDIR)/ADFX.\$(O)"
-  ADFINCS="$ADFINCS adfx/ADFX.h"
-fi
-
 if test $fortran = no; then
   F2COBJS=#F2COBJS
 else
@@ -806,10 +715,6 @@ AC_SUBST(HDF5INC)
 AC_SUBST(HDF5LIB)
 AC_SUBST(ZLIBLIB)
 AC_SUBST(SZIPLIB)
-
-AC_SUBST(EXPATINC)
-AC_SUBST(EXPATLIB)
-AC_SUBST(XMLZLIB)
 
 AC_SUBST(SYSCFLAGS)
 AC_SUBST(COOUT)
