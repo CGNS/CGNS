@@ -17,20 +17,21 @@ set(GLU_LIBRARY_DIR "" CACHE PATH "Directory containing GLU library")
 set(XMU_INCLUDE_DIR "" CACHE PATH "Directory containing XMU headers")
 set(XMU_LIBRARY_DIR "" CACHE PATH "Directory containing XMU library")
 
-add_subdirectory(adfviewer)
+#add_subdirectory(adfviewer)
+	# adfviewer has been replaced with cgnsview
+	# which is based on cgio instead of adf
+
+add_subdirectory(cgnsview)
 
 add_subdirectory(calclib)
 
-#add_subdirectory(cgnscalc)
-	#gui starts, but no functions work
+add_subdirectory(cgnscalc)
+	# fixed
 
 add_subdirectory(cgnsplot)
 
-
-#add_subdirectory(cgnssh) 
-	# posit label is no longer defined
-	# not compatible with CGNS>=2.5
-	# this code needs to be updated
+add_subdirectory(cgnssh) 
+	# fixed
 
 add_subdirectory(common)
 
