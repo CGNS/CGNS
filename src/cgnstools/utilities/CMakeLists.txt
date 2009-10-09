@@ -158,3 +158,9 @@ install(FILES
 	utilities.mnu
 	vtk.tcl
 	DESTINATION share/cgnstools)
+
+install(DIRECTORY help/
+	DESTINATION share/cgnstools/help/utilities
+	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
+	PATTERN ".svn" EXCLUDE)
+

@@ -39,4 +39,14 @@ install(PROGRAMS
 
 install(FILES
 	cgnsplot.tcl
+	cgnsplot.ico
+	cgnsplot.png
+	cgnsplot-icon.xbm
+	cgnsplot-mask.xbm
 	DESTINATION share/cgnstools)
+
+install(DIRECTORY help/
+	DESTINATION share/cgnstools/help/cgnsplot
+	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
+	PATTERN ".svn" EXCLUDE)
+

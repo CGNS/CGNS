@@ -17,10 +17,9 @@ set(GLU_LIBRARY_DIR "" CACHE PATH "Directory containing GLU library")
 set(XMU_INCLUDE_DIR "" CACHE PATH "Directory containing XMU headers")
 set(XMU_LIBRARY_DIR "" CACHE PATH "Directory containing XMU library")
 
-#add_subdirectory(adfviewer)
+add_subdirectory(adfviewer)
 	# adfviewer has been replaced with cgnsview
 	# which is based on cgio instead of adf
-
 add_subdirectory(cgnsview)
 
 add_subdirectory(calclib)

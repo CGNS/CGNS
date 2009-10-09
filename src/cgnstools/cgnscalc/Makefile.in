@@ -23,6 +23,8 @@ $(CALCLIB) :
 #---------------------------------------------------------------
 
 SCRIPTS = cgnscalc.tcl unitconv.tcl
+ICONS = cgnscalc.ico cgnscalc.png cgnscalc-icon.xbm cgnscalc-mask.xbm \
+	unitconv.ico unitconv.png unitconv.xbm
 
 install : install-dirs install-prog install-wish install-script
 
@@ -64,22 +66,29 @@ install-script :
 	@for i in $(SCRIPTS) ; do \
 	  $(INSTALL_DATA) $$i $(LIB_INSTALL_DIR); \
 	done;
+	@echo "installing icons to $(LIB_INSTALL_DIR)"
+	@for i in $(ICONS) ; do \
+	  $(INSTALL_DATA) $$i $(LIB_INSTALL_DIR); \
+	done;
 
 uninstall :
 	@echo "uninstalling cgnscalc executables"
-	@for i in cgnscalc unitconv cgsystem ; do \
+	@for i in cgnscalc unitconv ; do \
 	  if [ -f $(BIN_INSTALL_DIR)/$$i ] ; then \
 	    /bin/rm -f $(BIN_INSTALL_DIR)/$$i; \
 	  fi; \
 	done;
-	@if [ -f $(EXE_INSTALL_DIR)/cgconfig ] ; then \
-	  /bin/rm -f $(EXE_INSTALL_DIR)/cgconfig; \
-	fi;
 	@if [ -f $(WSH_INSTALL_DIR)/calcwish$(EXE) ] ; then \
 	  /bin/rm -f $(WSH_INSTALL_DIR)/calcwish$(EXE); \
 	fi;
 	@echo "uninstalling cgnscalc tcl scripts"
 	@for i in $(SCRIPTS) ; do \
+	  if [ -f $(LIB_INSTALL_DIR)/$$i ] ; then \
+	    /bin/rm -f $(LIB_INSTALL_DIR)/$$i; \
+	  fi; \
+	done;
+	@echo "uninstalling cgnscalc icons"
+	@for i in $(ICONS) ; do \
 	  if [ -f $(LIB_INSTALL_DIR)/$$i ] ; then \
 	    /bin/rm -f $(LIB_INSTALL_DIR)/$$i; \
 	  fi; \

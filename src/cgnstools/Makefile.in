@@ -38,6 +38,12 @@ uninstall :
 	  echo "----- $$d -----"; \
 	  cd $$d; $(MAKE) uninstall; cd ..; \
 	done;
+	@if [ -f $(EXE_INSTALL_DIR)/cgconfig ] ; then \
+	  /bin/rm -f $(EXE_INSTALL_DIR)/cgconfig; \
+	fi;
+	@if [ -f $(EXE_INSTALL_DIR)/cgsystem ] ; then \
+	  /bin/rm -f $(EXE_INSTALL_DIR)/cgsystem; \
+	fi;
 	-@if [ -d $(WSH_INSTALL_DIR) ] ; then \
 	  rmdir $(WSH_INSTALL_DIR); \
 	fi;

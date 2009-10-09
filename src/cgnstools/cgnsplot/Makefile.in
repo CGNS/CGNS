@@ -21,6 +21,8 @@ hash.$(O)     : ../common/hash.c ../common/hash.h
 
 #---------------------------------------------------------------
 
+ICONS = cgnsplot.ico cgnsplot.png cgnsplot-icon.xbm cgnsplot-mask.xbm
+
 install : install-dirs install-prog install-wish install-script install-help
 
 install-dirs :
@@ -60,6 +62,10 @@ install-wish : plotwish$(EXE)
 install-script :
 	@echo "installing cgnsplot tcl scripts to $(LIB_INSTALL_DIR)"
 	@$(INSTALL_DATA) cgnsplot.tcl $(LIB_INSTALL_DIR)
+	@echo "installing icons to $(LIB_INSTALL_DIR)"
+	@for i in $(ICONS) ; do \
+	  $(INSTALL_DATA) $$i $(LIB_INSTALL_DIR); \
+	done;
 
 install-help :
 	@echo "installing cgnsplot help files to $(LIB_INSTALL_DIR)/help/cgnsplot"
@@ -72,13 +78,8 @@ install-help :
 
 uninstall :
 	@echo "uninstalling cgnsplot executables"
-	@for i in cgnsplot cgsystem ; do \
-	  if [ -f $(BIN_INSTALL_DIR)/$$i ] ; then \
-	    /bin/rm -f $(BIN_INSTALL_DIR)/$$i; \
-	  fi; \
-	done;
-	@if [ -f $(EXE_INSTALL_DIR)/cgconfig ] ; then \
-	  /bin/rm -f $(EXE_INSTALL_DIR)/cgconfig; \
+	@if [ -f $(BIN_INSTALL_DIR)/cgnsplot ] ; then \
+	  /bin/rm -f $(BIN_INSTALL_DIR)/cgnsplot; \
 	fi;
 	@if [ -f $(WSH_INSTALL_DIR)/plotwish$(EXE) ] ; then \
 	  /bin/rm -f $(WSH_INSTALL_DIR)/plotwish$(EXE); \
@@ -87,6 +88,12 @@ uninstall :
 	@if [ -f $(LIB_INSTALL_DIR)/cgnsplot.tcl ] ; then \
 	  /bin/rm -f $(LIB_INSTALL_DIR)/cgnsplot.tcl; \
 	fi;
+	@echo "uninstalling cgnsplot icons"
+	@for i in $(ICONS) ; do \
+	  if [ -f $(LIB_INSTALL_DIR)/$$i ] ; then \
+	    /bin/rm -f $(LIB_INSTALL_DIR)/$$i; \
+	  fi; \
+	done;
 	@echo "uninstalling cgnsplot help files"
 	@if [ -d $(LIB_INSTALL_DIR)/help/cgnsplot ] ; then \
 	  /bin/rm -rf $(LIB_INSTALL_DIR)/help/cgnsplot; \

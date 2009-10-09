@@ -17,6 +17,51 @@ cgnssh$(EXE) : cgnssh.$(O) cgnstcl.$(O)
 cgnssh.$(O)  : cgnssh.c
 cgnstcl.$(O) : cgnstcl.c
 
+#---------------------------------------------------------------
+
+install : install-dirs install-prog install-wish
+
+install-dirs :
+	@for d in \
+	  $(BIN_INSTALL_DIR) \
+	  $(EXE_INSTALL_DIR) \
+	  $(WSH_INSTALL_DIR) ; do \
+	  if [ ! -d $$d ] ; then \
+	    echo "Making directory $$d"; \
+	    mkdir -p $$d; \
+	    chmod 755 $$d; \
+	  fi; \
+	done;
+
+install-prog :
+	@echo "installing cgnssh shell script to $(BIN_INSTALL_DIR)"
+	@$(INSTALL_PROG) cgnssh.sh $(BIN_INSTALL_DIR)/cgnssh
+	@chmod +x $(BIN_INSTALL_DIR)/cgnssh
+	@if [ ! -f $(BIN_INSTALL_DIR)/cgsystem ] ; then \
+	  echo "installing cgsystem to $(BIN_INSTALL_DIR)"; \
+	  $(INSTALL_PROG) ../cgsystem $(BIN_INSTALL_DIR); \
+	  chmod +x $(BIN_INSTALL_DIR)/cgsystem; \
+	fi;
+	@if [ ! -f $(EXE_INSTALL_DIR)/cgconfig ] ; then \
+	  echo "installing configuration file to $(EXE_INSTALL_DIR)"; \
+	  $(INSTALL_DATA) ../cgconfig $(EXE_INSTALL_DIR)/cgconfig; \
+	fi;
+
+install-wish : cgnssh$(EXE)
+	@echo "installing cgnssh executable to $(WSH_INSTALL_DIR)"
+	@$(INSTALL_PROG) cgnssh$(EXE) $(WSH_INSTALL_DIR)/cgnsshell$(EXE)
+
+uninstall :
+	@echo "uninstalling cgnssh executables"
+	@if [ -f $(BIN_INSTALL_DIR)/cgnssh ] ; then \
+	  /bin/rm -f $(BIN_INSTALL_DIR)/cgnssh; \
+	fi;
+	@if [ -f $(WSH_INSTALL_DIR)/cgnsshell$(EXE) ] ; then \
+	  /bin/rm -f $(WSH_INSTALL_DIR)/cgnsshell$(EXE); \
+	fi;
+
+#---------------------------------------------------------------
+
 .c.$(O) :
 	$(CC) $(COPTS) -c $<
 

@@ -18,4 +18,8 @@ install(FILES
 	tkdir.tcl
 	tree.tcl
 	units.tcl
+	cgns.ico
+	cgns.png
+	cgns-icon.xbm
+	cgns-mask.xbm
 	DESTINATION share/cgnstools)

@@ -51,3 +51,9 @@ install(FILES
 	tools.tcl
 	tclIndex
 	DESTINATION share/cgnstools)
+
+install(DIRECTORY help/
+	DESTINATION share/cgnstools/help/cgnsview
+	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
+	PATTERN ".svn" EXCLUDE)
+

@@ -43,4 +43,11 @@ install(PROGRAMS
 install(FILES
 	cgnscalc.tcl
 	unitconv.tcl
+	cgnscalc.ico
+	cgnscalc.png
+	cgnscalc-icon.xbm
+	cgnscalc-mask.xbm
+	unitconv.ico
+	unitconv.png
+	unitconv.xbm
 	DESTINATION share/cgnstools)
