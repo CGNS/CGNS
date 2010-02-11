@@ -79,6 +79,7 @@ static int CompressData = -1;
 #define A_MOUNT   "mount"
 #define A_FILE    "file"
 #define A_REFCNT  "refcnt"
+#define A_FLAGS   "flags"
 
 /* debugging */
 #define ADFH_CHECK_HID( hid ) \
@@ -135,10 +136,11 @@ typedef struct _ADFH_MTA {
   int i_count;
 #endif
   /* HDF5 property lists */
-  hid_t g_propfile;
-  hid_t g_proplink;
-  hid_t g_propdataset;
+  hid_t g_propfile;        
+  hid_t g_proplink;     
+  hid_t g_propdataset;  
 
+  int   g_flags;     
   hid_t g_files[ADFH_MAXIMUM_FILES];
 
 } ADFH_MTA;
@@ -1532,14 +1534,16 @@ void ADFH_Create(const double  pid,
 #ifdef ADFH_NO_ORDER
     if (new_str_att(gid, A_NAME, pname, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_LABEL, "", ADF_NAME_LENGTH, err) ||
-        new_str_att(gid, A_TYPE, ADFH_MT, 2, err)) return;
+        new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
+        new_int_att(gid, A_FLAGS, mta_root->g_flags, err)) return;
 #else
     order = 0;
     H5Giterate(hpid, ".", NULL, count_children, (void *)&order);
     if (new_str_att(gid, A_NAME, pname, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_LABEL, "", ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
-        new_int_att(gid, A_ORDER, order, err)) return;
+        new_int_att(gid, A_ORDER, order, err) ||
+        new_int_att(gid, A_FLAGS, mta_root->g_flags, err)) return;
 #endif
     *id = to_ADF_ID(gid);
     ADFH_DEBUG(("<ADFH_Create [%s]",name));
@@ -1798,6 +1802,10 @@ void ADFH_Database_Open(const char   *name,
     mta_root->g_init = 0;
   }
   mta_root->g_error_state = 0;
+  /* flags is int seen as bitfield, fortran flag is first 0x0001 
+     it is found set to 1 in *all* MLL-based HDF5 files 
+  */
+  mta_root->g_flags = 1;
 
 #ifndef ADF_DEBUG_ON
   H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
@@ -1889,6 +1897,8 @@ void ADFH_Database_Open(const char   *name,
   mta_root->g_propfile = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_fclose_degree(mta_root->g_propfile, H5F_CLOSE_STRONG);
   /*  H5Pset_latest_format(fapl, 1); */
+  //Performance patch applied by KSH on 2009.05.18
+  H5Pset_libver_bounds(mta_root->g_propfile, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
 
   /* H5Pclose performed at file close time */
   mta_root->g_proplink=H5Pcreate(H5P_LINK_ACCESS);
@@ -2301,7 +2311,7 @@ void ADFH_Get_Dimension_Values(const double  id,
   dim_vals[0]=0;
   if ((hid = open_node(id, err)) < 0) return;
   if ((did = H5Dopen2(hid, D_DATA, H5P_DEFAULT)) < 0)
-    set_error(ZERO_DIMENSIONS, err);
+    set_error(NO_DATA, err);
   else {
     if ((sid = H5Dget_space(did)) < 0)
       set_error(ADFH_ERR_DGET_SPACE, err);
@@ -2389,55 +2399,6 @@ void ADFH_Put_Dimension_Information(const double  id,
 
   old_size = 0;
   if(has_data(hid)) {
-#if 0  /* with CGNSlib, we never do this */
-    if (get_str_att(hid, A_TYPE, old_type, err)) return;
-    if ((did = H5Dopen2(hid, D_DATA, H5P_DEFAULT)) < 0) {
-      set_error(ADFH_ERR_DOPEN, err);
-      return;
-    }
-
-    /* check if the data type changed */
-
-    if (0 == strcmp(new_type, old_type)) {
-      if ((sid = H5Dget_space(did)) < 0) {
-        set_error(ADFH_ERR_DGET_SPACE, err);
-        H5Dclose(did);
-        return;
-      }
-
-      /* check if the number of dimensions changed */
-
-      if (dims == H5Sget_simple_extent_ndims(sid)) {
-        H5Sget_simple_extent_dims(sid, old_dims, NULL);
-        old_size = H5Dget_storage_size(did);
-      }
-
-      H5Sclose(sid);
-    }
-
-    /*
-     * data type and number of dimensions are the same,
-     * so read the data before deleting the dataset
-     */
-
-    if (old_size) {
-        data = malloc ((unsigned)old_size);
-        if (NULL == data) {
-          H5Dclose(did);
-          set_error(MEMORY_ALLOCATION_FAILED, err);
-          return;
-        }
-        tid = H5Dget_type(did);
-        mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
-        H5Dread(did, mid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-        H5Tclose(mid);
-        H5Tclose(tid);
-    }
-
-    /* close and delete data */
-
-    H5Dclose(did);
-#endif
     H5Gunlink(hid, D_DATA);
   }
 
@@ -2471,7 +2432,7 @@ void ADFH_Put_Dimension_Information(const double  id,
   H5Pset_chunk(mta_root->g_propdataset, dims, new_dims);
 
   ADFH_CHECK_HID(sid);
-  did = H5Dcreate2(hid, D_DATA, tid, sid,
+  did = H5Dcreate2(hid, D_DATA, tid, sid, 
 		   H5P_DEFAULT, mta_root->g_propdataset, H5P_DEFAULT);
 /*  H5Eprint1(stdout);*/
   ADFH_CHECK_HID(did);
