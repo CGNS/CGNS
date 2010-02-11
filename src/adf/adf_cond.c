@@ -58,7 +58,7 @@ extern "C" {
 static void ErrorExit(char *name, int error_return) ;
 static void WalkTheNodes( double InputID, double OutputID ) ;
 static void CopyTheNode( double InputID, double OutputID ) ;
-static int CalculateDataSize( char *type, int ndims, int *dimlist ) ;
+static long CalculateDataSize( char *type, int ndims, int *dimlist ) ;
 
 /* global variables */
 
@@ -193,7 +193,7 @@ static void WalkTheNodes( double InputID, double OutputID )
 *************************************************************************/
 static void CopyTheNode( double InputID, double OutputID )
 {
-  int   DataSize ;
+  long   DataSize ;
   char  *DataBuffer ;
 
   /* Copy the node label type and size information */
@@ -244,13 +244,13 @@ static void CopyTheNode( double InputID, double OutputID )
  the function ADFI_evaluate_datatype and this function should be modified
  to conform to any changes made to it.
 *************************************************************************/
-static int CalculateDataSize( char *data_type_string, int ndims, int *dimlist )
+static long CalculateDataSize( char *data_type_string, int ndims, int *dimlist )
 {
   int   i ;
   int   str_position ;
   int   str_len ;
   int   size_machine ;
-  int   machine_bytes ;
+  long  machine_bytes ;
 
   if ( ndims == 0 ) return 0 ;
 
