@@ -1,4 +1,5 @@
-  Installation Instructions
+  Installation Instructions using cmake
+(can also still use configure instead... see src/README.config)
 
 1. Install HDF5 on your system
 
