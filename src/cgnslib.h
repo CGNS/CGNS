@@ -104,6 +104,12 @@ extern "C" {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *  Enumerations:  if any of this enumerations need to be modified,      *
  *	           the corresponding namelist must also be updated.      *
+ *                                                                       *
+ *  Any addition to an enum should be done as an addition at end of list *
+ *  with an explicit declaration of the corresponding integer.           *
+ *  This is required for enums stored as integers in the CGNS file or    *
+ *  used in applications.                                                *
+ *                                                                       *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -111,41 +117,73 @@ extern "C" {
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	MassUnitsNull, MassUnitsUserDefined,
-	Kilogram, Gram, Slug, PoundMass
+	MassUnitsNull=0, 
+	MassUnitsUserDefined=1,
+	Kilogram=2, 
+	Gram=3, 
+	Slug=4, 
+	PoundMass=5
 } MassUnits_t;
 
 typedef enum {
-	LengthUnitsNull, LengthUnitsUserDefined,
-	Meter, Centimeter, Millimeter, Foot, Inch
+	LengthUnitsNull=0,
+	LengthUnitsUserDefined=1,
+	Meter=2, 
+	Centimeter=3, 
+	Millimeter=4, 
+	Foot=5, 
+	Inch=6
 } LengthUnits_t;
 
 typedef enum {
-	TimeUnitsNull, TimeUnitsUserDefined, Second
+	TimeUnitsNull=0, 
+	TimeUnitsUserDefined=1, 
+	Second=2
 } TimeUnits_t;
 
 typedef enum {
-	TemperatureUnitsNull, TemperatureUnitsUserDefined,
-	Kelvin, Celsius, Rankine, Fahrenheit
+	TemperatureUnitsNull=0, 
+	TemperatureUnitsUserDefined=1,
+	Kelvin=2, 
+	Celsius=3, 
+	Rankine=4, 
+	Fahrenheit=5
 } TemperatureUnits_t;
 
 typedef enum {
-	AngleUnitsNull, AngleUnitsUserDefined, Degree, Radian
+	AngleUnitsNull=0, 
+	AngleUnitsUserDefined=1, 
+	Degree=2, 
+	Radian=3
 } AngleUnits_t;
 
 typedef enum {
-	ElectricCurrentUnitsNull, ElectricCurrentUnitsUserDefined,
-	Ampere, Abampere, Statampere, Edison, auCurrent
+	ElectricCurrentUnitsNull=0, 
+	ElectricCurrentUnitsUserDefined=1,
+	Ampere=2, 
+	Abampere=3, 
+	Statampere=4, 
+	Edison=5, 
+	auCurrent=6
 } ElectricCurrentUnits_t;
 
 typedef enum {
-	SubstanceAmountUnitsNull, SubstanceAmountUnitsUserDefined,
-	Mole, Entities, StandardCubicFoot, StandardCubicMeter
+	SubstanceAmountUnitsNull=0, 
+	SubstanceAmountUnitsUserDefined=1,
+	Mole=2, 
+	Entities=3, 
+	StandardCubicFoot=4, 
+	StandardCubicMeter=5
 } SubstanceAmountUnits_t;
 
 typedef enum {
-	LuminousIntensityUnitsNull, LuminousIntensityUnitsUserDefined,
-	Candela, Candle, Carcel, Hefner, Violle
+	LuminousIntensityUnitsNull=0, 
+	LuminousIntensityUnitsUserDefined=1,
+	Candela=2, 
+	Candle=3, 
+	Carcel=4, 
+	Hefner=5, 
+	Violle=6
 } LuminousIntensityUnits_t;
 
 #define NofValidMassUnits              6
@@ -171,10 +209,13 @@ extern char const * LuminousIntensityUnitsName[NofValidLuminousIntensityUnits];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	DataClassNull, DataClassUserDefined,
-	Dimensional, NormalizedByDimensional,
-	NormalizedByUnknownDimensional,
-	NondimensionalParameter, DimensionlessConstant
+	DataClassNull=0, 
+	DataClassUserDefined=1,
+	Dimensional=2, 
+	NormalizedByDimensional=3,
+	NormalizedByUnknownDimensional=4,
+	NondimensionalParameter=5, 
+	DimensionlessConstant=6
 } DataClass_t;
 
 #define NofValidDataClass 7
@@ -186,9 +227,15 @@ extern char const * DataClassName[NofValidDataClass];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	GridLocationNull, GridLocationUserDefined,
-        Vertex, CellCenter, FaceCenter,
-        IFaceCenter, JFaceCenter, KFaceCenter, EdgeCenter
+	GridLocationNull=0, 
+	GridLocationUserDefined=1,
+        Vertex=2, 
+	CellCenter=3, 
+	FaceCenter=4,
+        IFaceCenter=5, 
+	JFaceCenter=6, 
+	KFaceCenter=7, 
+	EdgeCenter=8
 } GridLocation_t;
 
 #define NofValidGridLocation 9
@@ -200,8 +247,10 @@ extern char const * GridLocationName[NofValidGridLocation];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	BCDataTypeNull, BCDataTypeUserDefined,
-	Dirichlet, Neumann
+	BCDataTypeNull=0, 
+	BCDataTypeUserDefined=1,
+	Dirichlet=2, 
+	Neumann=3
 } BCDataType_t;
 
 #define NofValidBCDataTypes 4
@@ -213,8 +262,11 @@ extern char const * BCDataTypeName[NofValidBCDataTypes];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	GridConnectivityTypeNull, GridConnectivityTypeUserDefined,
-	Overset, Abutting, Abutting1to1
+	GridConnectivityTypeNull=0, 
+	GridConnectivityTypeUserDefined=1,
+	Overset=2, 
+	Abutting=3, 
+	Abutting1to1=4
 } GridConnectivityType_t;
 
 #define NofValidGridConnectivityTypes 5
@@ -226,10 +278,15 @@ extern char const * GridConnectivityTypeName[NofValidGridConnectivityTypes];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	PointSetTypeNull, PointSetTypeUserDefined,
-        PointList,  PointListDonor,
-        PointRange, PointRangeDonor,
-	ElementRange, ElementList, CellListDonor
+	PointSetTypeNull=0, 
+	PointSetTypeUserDefined=1,
+        PointList=2,  
+	PointListDonor=3,
+        PointRange=4, 
+	PointRangeDonor=5,
+	ElementRange=6, 
+	ElementList=7, 
+	CellListDonor=8
 } PointSetType_t;
 
 #define NofValidPointSetTypes 9
@@ -241,9 +298,14 @@ extern char const * PointSetTypeName[NofValidPointSetTypes];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	GoverningEquationsNull, GoverningEquationsUserDefined,
-	FullPotential, Euler, NSLaminar, NSTurbulent,
-	NSLaminarIncompressible, NSTurbulentIncompressible
+	GoverningEquationsNull=0, 
+	GoverningEquationsUserDefined=1,
+	FullPotential=2, 
+	Euler=3, 
+	NSLaminar=4, 
+	NSTurbulent=5,
+	NSLaminarIncompressible=6, 
+	NSTurbulentIncompressible=7
 } GoverningEquationsType_t;
 
 /* Any model type will accept both ModelTypeNull and ModelTypeUserDefined.
@@ -277,23 +339,42 @@ typedef enum {
 */
 
 typedef enum {
-	ModelTypeNull, ModelTypeUserDefined,
-	Ideal, VanderWaals,
-	Constant,
-	PowerLaw, SutherlandLaw,
-	ConstantPrandtl,
-	EddyViscosity, ReynoldsStress, ReynoldsStressAlgebraic,
-	Algebraic_BaldwinLomax, Algebraic_CebeciSmith,
-	HalfEquation_JohnsonKing, OneEquation_BaldwinBarth,
-	OneEquation_SpalartAllmaras, TwoEquation_JonesLaunder,
-	TwoEquation_MenterSST, TwoEquation_Wilcox,
-	CaloricallyPerfect, ThermallyPerfect,
-	ConstantDensity, RedlichKwong,
-	Frozen, ThermalEquilib, ThermalNonequilib,
-	ChemicalEquilibCurveFit, ChemicalEquilibMinimization,
-	ChemicalNonequilib,
-	EMElectricField, EMMagneticField, EMConductivity,
-	Voltage, Interpolated, Equilibrium_LinRessler, Chemistry_LinRessler
+	ModelTypeNull=0, 
+	ModelTypeUserDefined=1,
+	Ideal=2, 
+	VanderWaals=3,
+	Constant=4,
+	PowerLaw=5, 
+	SutherlandLaw=6,
+	ConstantPrandtl=7,
+	EddyViscosity=8, 
+	ReynoldsStress=9, 
+	ReynoldsStressAlgebraic=10,
+	Algebraic_BaldwinLomax=11, 
+	Algebraic_CebeciSmith=12,
+	HalfEquation_JohnsonKing=13, 
+	OneEquation_BaldwinBarth=14,
+	OneEquation_SpalartAllmaras=15, 
+	TwoEquation_JonesLaunder=16,
+	TwoEquation_MenterSST=17, 
+	TwoEquation_Wilcox=18,
+	CaloricallyPerfect=19, 
+	ThermallyPerfect=20,
+	ConstantDensity=21, 
+	RedlichKwong=22,
+	Frozen=23, 
+	ThermalEquilib=24, 
+	ThermalNonequilib=25,
+	ChemicalEquilibCurveFit=26, 
+	ChemicalEquilibMinimization=27,
+	ChemicalNonequilib=28,
+	EMElectricField=29, 
+	EMMagneticField=30, 
+	EMConductivity=31,
+	Voltage=32, 
+	Interpolated=33, 
+	Equilibrium_LinRessler=34, 
+	Chemistry_LinRessler=35
 } ModelType_t;
 
 #define NofValidGoverningEquationsTypes 8
@@ -307,14 +388,32 @@ extern char const * ModelTypeName[NofValidModelTypes];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	BCTypeNull, BCTypeUserDefined,
-	BCAxisymmetricWedge, BCDegenerateLine, BCDegeneratePoint,
-	BCDirichlet, BCExtrapolate, BCFarfield, BCGeneral, BCInflow,
-	BCInflowSubsonic,  BCInflowSupersonic, BCNeumann, BCOutflow,
-	BCOutflowSubsonic, BCOutflowSupersonic, BCSymmetryPlane,
-	BCSymmetryPolar, BCTunnelInflow, BCTunnelOutflow, BCWall,
-	BCWallInviscid, BCWallViscous, BCWallViscousHeatFlux,
-	BCWallViscousIsothermal, FamilySpecified
+	BCTypeNull=0, 
+	BCTypeUserDefined=1,
+	BCAxisymmetricWedge=2, 
+	BCDegenerateLine=3, 
+	BCDegeneratePoint=4,
+	BCDirichlet=5, 
+	BCExtrapolate=6, 
+	BCFarfield=7, 
+	BCGeneral=8, 
+	BCInflow=9,
+	BCInflowSubsonic=10,  
+	BCInflowSupersonic=11, 
+	BCNeumann=12, 
+	BCOutflow=13,
+	BCOutflowSubsonic=14, 
+	BCOutflowSupersonic=15, 
+	BCSymmetryPlane=16,
+	BCSymmetryPolar=17, 
+	BCTunnelInflow=18, 
+	BCTunnelOutflow=19, 
+	BCWall=20,
+	BCWallInviscid=21, 
+	BCWallViscous=22, 
+	BCWallViscousHeatFlux=23,
+	BCWallViscousIsothermal=24, 
+	FamilySpecified=25
 } BCType_t;
 
 #define NofValidBCTypes 26
@@ -326,8 +425,12 @@ extern char const * BCTypeName[NofValidBCTypes];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	DataTypeNull, DataTypeUserDefined, Integer, RealSingle,
-	RealDouble, Character
+	DataTypeNull=0, 
+	DataTypeUserDefined=1, 
+	Integer=2, 
+	RealSingle=3,
+	RealDouble=4, 
+	Character=6
 } DataType_t;
 
 #define NofValidDataTypes 6
@@ -338,29 +441,73 @@ extern char const * DataTypeName[NofValidDataTypes];
  *      Element types                                                    *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+/* PLEASE ALSO UPDATE the cgnslib.h/el_size static table */
+
 typedef enum {
-	ElementTypeNull, ElementTypeUserDefined,	/* 0, 1,	*/
-	NODE, BAR_2, BAR_3, 				/* 2, 3, 4, 	*/
-	TRI_3, TRI_6,					/* 5, 6,	*/
-	QUAD_4, QUAD_8, QUAD_9,				/* 7, 8, 9,	*/
-	TETRA_4, TETRA_10, 				/* 10, 11,	*/
-	PYRA_5, PYRA_13, PYRA_14, 			/* 12, 13, 14,	*/
-	PENTA_6, PENTA_15, PENTA_18,			/* 15, 16, 17,	*/
-	HEXA_8, HEXA_20, HEXA_27, 			/* 18, 19, 20,	*/
-	MIXED, NGON_n, NFACE_n				/* 21, 22, 23	*/
+	ElementTypeNull=0, 
+	ElementTypeUserDefined=1,
+	NODE=2, 
+	BAR_2=3, 
+	BAR_3=4,
+	TRI_3=5, 
+	TRI_6=6,
+	QUAD_4=7, 
+	QUAD_8=8, 
+	QUAD_9=9,
+	TETRA_4=10, 
+	TETRA_10=11,
+	PYRA_5=12, 
+	PYRA_14=13,
+	PENTA_6=14, 
+	PENTA_15=15, 
+	PENTA_18=16,
+	HEXA_8=17, 
+	HEXA_20=18, 
+	HEXA_27=19,
+	MIXED=20, 
+	FAKE_NGON_n=21,
+	FAKE_NFACE_n=22,
+	PYRA_13=23,
+	NGON_n=100,
+	NFACE_n=101,
 } ElementType_t;
 
 #define NofValidElementTypes 24
 
 extern char const * ElementTypeName[NofValidElementTypes];
 
+#define  NPE_NODE      1
+#define  NPE_BAR_2     2
+#define  NPE_BAR_3     3
+#define  NPE_TRI_3     3
+#define  NPE_TRI_6     6
+#define  NPE_QUAD_4    4
+#define  NPE_QUAD_8    8
+#define  NPE_QUAD_9    9
+#define  NPE_TETRA_4   4
+#define  NPE_TETRA_10 10
+#define  NPE_PYRA_5    5
+#define  NPE_PYRA_13  13
+#define  NPE_PYRA_14  14
+#define  NPE_PENTA_6   6
+#define  NPE_PENTA_15 15
+#define  NPE_PENTA_18 18
+#define  NPE_HEXA_8    8
+#define  NPE_HEXA_20  20
+#define  NPE_HEXA_27  27
+#define  NPE_MIXED     0
+#define  NPE_NGON_n    0
+#define  NPE_NFACE_n   0
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Zone types                                                       *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	ZoneTypeNull, ZoneTypeUserDefined,
-	Structured, Unstructured
+	ZoneTypeNull=0, 
+	ZoneTypeUserDefined=1,
+	Structured=2, 
+	Unstructured=3
 } ZoneType_t;
 
 #define NofValidZoneTypes 4
@@ -372,8 +519,10 @@ extern char const * ZoneTypeName[NofValidZoneTypes];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	RigidGridMotionTypeNull, RigidGridMotionTypeUserDefined,
-	ConstantRate, VariableRate
+	RigidGridMotionTypeNull=0, 
+	RigidGridMotionTypeUserDefined=1,
+	ConstantRate=2, 
+	VariableRate=3
 } RigidGridMotionType_t;
 
 #define NofValidRigidGridMotionTypes 4
@@ -385,8 +534,10 @@ extern char const * RigidGridMotionTypeName[NofValidRigidGridMotionTypes];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-        ArbitraryGridMotionTypeNull, ArbitraryGridMotionTypeUserDefined,
-        NonDeformingGrid, DeformingGrid
+        ArbitraryGridMotionTypeNull=0, 
+	ArbitraryGridMotionTypeUserDefined=1,
+        NonDeformingGrid=2, 
+	DeformingGrid=3
 } ArbitraryGridMotionType_t;
 
 #define NofValidArbitraryGridMotionTypes 4
@@ -398,8 +549,10 @@ extern char const * ArbitraryGridMotionTypeName[NofValidArbitraryGridMotionTypes
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	SimulationTypeNull, SimulationTypeUserDefined,
-	TimeAccurate, NonTimeAccurate
+	SimulationTypeNull=0, 
+	SimulationTypeUserDefined=1,
+	TimeAccurate=2, 
+	NonTimeAccurate=3
 } SimulationType_t;
 
 #define NofValidSimulationTypes 4
@@ -411,13 +564,16 @@ extern char const * SimulationTypeName[NofValidSimulationTypes];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	WallFunctionTypeNull, WallFunctionTypeUserDefined,
-	Generic
+	WallFunctionTypeNull=0, 
+	WallFunctionTypeUserDefined=1,
+	Generic=2
 } WallFunctionType_t;
 
 typedef enum {
-	AreaTypeNull, AreaTypeUserDefined,
-	BleedArea, CaptureArea
+	AreaTypeNull=0, 
+	AreaTypeUserDefined=1,
+	BleedArea=2, 
+	CaptureArea=3
 } AreaType_t;
 
 #define NofValidWallFunctionTypes 3
@@ -431,9 +587,14 @@ extern char const * AreaTypeName[NofValidAreaTypes];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-	AverageInterfaceTypeNull, AverageInterfaceTypeUserDefined,
-	AverageAll, AverageCircumferential, AverageRadial, AverageI,
-	AverageJ, AverageK
+	AverageInterfaceTypeNull=0, 
+	AverageInterfaceTypeUserDefined=1,
+	AverageAll=2, 
+	AverageCircumferential=3, 
+	AverageRadial=4, 
+	AverageI=5,
+	AverageJ=6, 
+	AverageK=7
 } AverageInterfaceType_t;
 
 #define NofValidAverageInterfaceTypes 8

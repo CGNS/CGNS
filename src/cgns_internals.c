@@ -718,7 +718,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
         section[0][n].el_bound = data[1];
         free(vdata);
 
-        if (el_type < 0 || el_type >= NofValidElementTypes) {
+        if ((el_type < 0 || el_type >= NofValidElementTypes) && (el_type != NGON_n) && (el_type != NFACE_n)) {
             cgi_error("Invalid Element Type for Elements_t :'%s'",
                 section[0][n].name);
             return 1;

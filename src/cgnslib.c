@@ -179,10 +179,10 @@ char const * ElementTypeName[NofValidElementTypes] =
      "TRI_3", "TRI_6",
      "QUAD_4", "QUAD_8", "QUAD_9",
      "TETRA_4", "TETRA_10",
-     "PYRA_5", "PYRA_13", "PYRA_14",
+     "PYRA_5", "PYRA_14",
      "PENTA_6", "PENTA_15", "PENTA_18",
      "HEXA_8", "HEXA_20", "HEXA_27",
-     "MIXED", "NGON_n", "NFACE_n"
+     "MIXED", "NGON_n", "NFACE_n","PYRA_13"
     };
 char const * ZoneTypeName[NofValidZoneTypes] =
     {"Null", "UserDefined",
@@ -4686,7 +4686,7 @@ int cg_section_write(int file_number, int B, int Z, char const * SectionName, El
      /* verify input */
     if (cgi_check_strlen(SectionName)) return CG_ERROR;
 
-    if (type < 0 || type >= NofValidElementTypes) {
+    if ((type < 0 || type >= NofValidElementTypes) && (type != NGON_n) && (type != NFACE_n)) {
         cgi_error("Invalid element type defined for section '%s'",SectionName);
         return CG_ERROR;
     }
@@ -8566,7 +8566,7 @@ int cg_section_partial_write(int file_number, int B, int Z,
      /* verify input */
     if (cgi_check_strlen(SectionName)) return CG_ERROR;
 
-    if (type < 0 || type >= NofValidElementTypes) {
+    if ((type < 0 || type >= NofValidElementTypes) && (type != NGON_n) && (type != NFACE_n)) {
         cgi_error("Invalid element type defined for section '%s'",SectionName);
         return CG_ERROR;
     }
@@ -9375,33 +9375,44 @@ int cg_bcdataset_read(int index, char *name, BCType_t *BCType,
 }
 
 /****************************************************************************/
+/* the index in this list IS the cgnslib.h/ElementType_t index */
 int cg_npe(ElementType_t type, int *npe) {
     static int el_size[NofValidElementTypes] = {
         0,  /* ElementTypeNull */
         0,  /* ElementTypeUserDefined */
-        1,  /* NODE */
-        2,  /* BAR_2 */
-        3,  /* BAR_3 */
-        3,  /* TRI_3 */
-        6,  /* TRI_6 */
-        4,  /* QUAD_4 */
-        8,  /* QUAD_8 */
-        9,  /* QUAD_9 */
-        4,  /* TETRA_4 */
-        10, /* TETRA_10 */
-        5,  /* PYRA_5 */
-        13, /* PYRA_13 */
-        14, /* PYRA_14 */
-        6,  /* PENTA_6 */
-        15, /* PENTA_15 */
-        18, /* PENTA_18 */
-        8,  /* HEXA_8 */
-        20, /* HEXA_20 */
-        27, /* HEXA_27 */
-        0,  /* MIXED */
-        0,  /* NGON_n */
-        0,  /* NFACE_n */ };
-    if(type < 0 || type >= NofValidElementTypes) {
+        NPE_NODE,  /* NODE */
+        NPE_BAR_2,  /* BAR_2 */
+        NPE_BAR_3,  /* BAR_3 */
+        NPE_TRI_3,  /* TRI_3 */
+        NPE_TRI_6,  /* TRI_6 */
+        NPE_QUAD_4,  /* QUAD_4 */
+        NPE_QUAD_8,  /* QUAD_8 */
+        NPE_QUAD_9,  /* QUAD_9 */
+        NPE_TETRA_4,  /* TETRA_4 */
+        NPE_TETRA_10, /* TETRA_10 */
+        NPE_PYRA_5,  /* PYRA_5 */
+        NPE_PYRA_14, /* PYRA_14 */
+        NPE_PENTA_6,  /* PENTA_6 */
+        NPE_PENTA_15, /* PENTA_15 */
+        NPE_PENTA_18, /* PENTA_18 */
+        NPE_HEXA_8,  /* HEXA_8 */
+        NPE_HEXA_20, /* HEXA_20 */
+        NPE_HEXA_27, /* HEXA_27 */
+        NPE_MIXED,  /* MIXED */
+        NPE_NGON_n,  /* NGON_n */
+        NPE_NFACE_n,  /* NFACE_n */ 
+        NPE_PYRA_13, /* PYRA_13 */
+};
+    if (type == NGON_n)
+    {
+      *npe = NPE_NGON_n;
+    }
+    else if (type == NFACE_n)
+    {
+      *npe = NPE_NFACE_n;
+    }
+    else if (type < 0 || type >= NofValidElementTypes) 
+    {
         *npe = -1;
         cgi_error("Invalid element type");
         return CG_ERROR;
