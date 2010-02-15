@@ -4686,7 +4686,7 @@ int cg_section_write(int file_number, int B, int Z, char const * SectionName, El
      /* verify input */
     if (cgi_check_strlen(SectionName)) return CG_ERROR;
 
-    if ((type < 0 || type >= NofValidElementTypes) && (type != NGON_n) && (type != NFACE_n)) {
+    if (type < 0 || type >= NofValidElementTypes) {
         cgi_error("Invalid element type defined for section '%s'",SectionName);
         return CG_ERROR;
     }
@@ -8566,7 +8566,7 @@ int cg_section_partial_write(int file_number, int B, int Z,
      /* verify input */
     if (cgi_check_strlen(SectionName)) return CG_ERROR;
 
-    if ((type < 0 || type >= NofValidElementTypes) && (type != NGON_n) && (type != NFACE_n)) {
+    if (type < 0 || type >= NofValidElementTypes) {
         cgi_error("Invalid element type defined for section '%s'",SectionName);
         return CG_ERROR;
     }
@@ -9391,6 +9391,7 @@ int cg_npe(ElementType_t type, int *npe) {
         NPE_TETRA_4,  /* TETRA_4 */
         NPE_TETRA_10, /* TETRA_10 */
         NPE_PYRA_5,  /* PYRA_5 */
+        NPE_PYRA_13, /* PYRA_13 */
         NPE_PYRA_14, /* PYRA_14 */
         NPE_PENTA_6,  /* PENTA_6 */
         NPE_PENTA_15, /* PENTA_15 */
@@ -9401,7 +9402,6 @@ int cg_npe(ElementType_t type, int *npe) {
         NPE_MIXED,  /* MIXED */
         NPE_NGON_n,  /* NGON_n */
         NPE_NFACE_n,  /* NFACE_n */ 
-        NPE_PYRA_13, /* PYRA_13 */
 };
     if (type == NGON_n)
     {
