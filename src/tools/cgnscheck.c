@@ -63,7 +63,7 @@ typedef struct {
 
 typedef struct {
     char name[33];
-    ElementType_t type;
+  CGNS_ENUMT( ElementType_t )  type;
     int is, ie, ib;
     int nv, ns, ne, nn;
     int *elements;
@@ -74,7 +74,7 @@ typedef struct {
 
 typedef struct {
     char name[33];
-    ZoneType_t type;
+  CGNS_ENUMT( ZoneType_t )  type;
     int idim;
     int dims[3][3];
     int nnodes;
@@ -311,7 +311,7 @@ static int check_node (char *label) {
 
 /*-----------------------------------------------------------------------*/
 
-static int read_gridlocation (GridLocation_t *location)
+static int read_gridlocation (CGNS_ENUMT( GridLocation_t )  *location)
 {
     int ierr = check_node ("GridLocation_t");
     if (ierr == CG_OK)
@@ -344,7 +344,7 @@ static int read_rind (int *rind)
 static int check_interpolants (void)
 {
     int n, na, ndim, dims[12];
-    DataType_t dtype;
+    CGNS_ENUMT( DataType_t )  dtype;
     char name[33];
 
     if (cg_narrays (&na)) error_exit ("cg_narrays");
@@ -539,7 +539,7 @@ static int get_extnodes (void *vface, void *vnodes)
 static int valid_face (ZONE *z, int elem)
 {
     int n, ns, nn, ne, *pe;
-    ElementType_t type;
+    CGNS_ENUMT( ElementType_t )  type;
 
     for (ns = 0; ns < z->nsets; ns++) {
         if (z->sets[ns].invalid || z->sets[ns].ns == 0) continue;
@@ -548,7 +548,7 @@ static int valid_face (ZONE *z, int elem)
             pe = z->sets[ns].elements;
             ne = elem - z->sets[ns].is;
 #if CGNS_VERSION >= 3000
-            if (type == NGON_n) {
+            if (type == CGNS_ENUMV( NGON_n )) {
                 for (n = 0; n < ne; n++) {
                     nn = *pe++;
                     pe += nn;
@@ -556,21 +556,21 @@ static int valid_face (ZONE *z, int elem)
                 return (*pe < 3 ? 0 : 1);
             }
 #endif
-            if (type == MIXED) {
+            if (type == CGNS_ENUMV( MIXED )) {
                 for (n = 0; n < ne; n++) {
-                    type = (ElementType_t)*pe++;
-                    if (type >= NGON_n) {
-                        nn = (int)(type - NGON_n);
+		  type = (CGNS_ENUMT( ElementType_t ) )*pe++;
+		  if (type >= CGNS_ENUMV( NGON_n )) {
+		      nn = (int)(type - CGNS_ENUMV( NGON_n ));
                     }
                     else {
                         if (cg_npe (type, &nn) || nn <= 0) return 0;
                     }
                     pe += nn;
                 }
-                type = (ElementType_t)*pe;
-                if (type >= NGON_n+3) return 1;
+                type = (CGNS_ENUMT( ElementType_t ) )*pe;
+                if (type >= CGNS_ENUMV( NGON_n )+3) return 1;
             }
-            if (type >= TRI_3 && type <= QUAD_9) return 1;
+            if (type >= CGNS_ENUMV( TRI_3 ) && type <= CGNS_ENUMV( QUAD_9 )) return 1;
             return 0;
         }
     }
@@ -582,7 +582,7 @@ static int valid_face (ZONE *z, int elem)
 static int *find_element (ZONE *z, int elem, int *dim, int *nnodes)
 {
     int ns, nn, ne, *nodes;
-    ElementType_t type;
+    CGNS_ENUMT( ElementType_t )  type;
 
     for (ns = 0; ns < z->nsets; ns++) {
         if (z->sets[ns].invalid) continue;
@@ -591,7 +591,7 @@ static int *find_element (ZONE *z, int elem, int *dim, int *nnodes)
             nodes = z->sets[ns].elements;
             type = z->sets[ns].type;
 #if CGNS_VERSION >= 3000
-            if (type == NGON_n) {
+            if (type == CGNS_ENUMV( NGON_n )) {
                 while (ne-- > 0) {
                     nn = *nodes++;
                     nodes += nn;
@@ -600,7 +600,7 @@ static int *find_element (ZONE *z, int elem, int *dim, int *nnodes)
                 *nnodes = *nodes++;
                 return nodes;
             }
-            if (type == NFACE_n) {
+            if (type == CGNS_ENUMV( NFACE_n )) {
                 while (ne-- > 0) {
                     nn = *nodes++;
                     nodes += nn;
@@ -614,11 +614,11 @@ static int *find_element (ZONE *z, int elem, int *dim, int *nnodes)
             if (nn) {
                 nodes += (nn * ne);
             }
-            else if (type == MIXED) {
+            else if (type == CGNS_ENUMV( MIXED )) {
                 type = *nodes++;
                 while (ne-- > 0) {
-                    if (type >= NGON_n)
-                        nn = (int)(type - NGON_n);
+		  if (type >= CGNS_ENUMV( NGON_n ))
+		    nn = (int)(type - CGNS_ENUMV( NGON_n ));
                     else {
                         if (cg_npe (type, &nn) || nn <= 0)
                             return NULL;
@@ -630,26 +630,26 @@ static int *find_element (ZONE *z, int elem, int *dim, int *nnodes)
             else {
                 return NULL;
             }
-            if (type == NODE)
+            if (type == CGNS_ENUMV( NODE ))
                 *dim = 0;
-            else if (type < TRI_3)
+            else if (type < CGNS_ENUMV( TRI_3 ))
                 *dim = 1;
-            else if (type < TETRA_4 || type >= NGON_n)
+            else if (type < CGNS_ENUMV( TETRA_4 ) || type >= CGNS_ENUMV( NGON_n ))
                 *dim = 2;
             else {
                 *dim = 3;
-                if (type == HEXA_27) nn--;
+                if (type == CGNS_ENUMV( HEXA_27 )) nn--;
             }
 #ifndef USE_MID_NODES
             switch (type) {
-                case QUAD_9:
-                case PYRA_14:
+	    case CGNS_ENUMV( QUAD_9 ):
+	    case CGNS_ENUMV( PYRA_14 ):
                     nn--;
                     break;
-                case PENTA_18:
+	    case CGNS_ENUMV( PENTA_18 ):
                     nn -= 3;
                     break;
-                case HEXA_27:
+	    case CGNS_ENUMV( HEXA_27 ):
                     nn -= 6;
                     break;
             }
@@ -763,13 +763,13 @@ static int hexa_27[6][10] = {
     {9, 4, 16, 5, 17, 6, 18, 7, 19, 25}
 };
 
-static FACE *element_face (ZONE *z, int fnum, ElementType_t type, int *nodes)
+static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT( ElementType_t )  type, int *nodes)
 {
     int n, *nodemap;
     FACE *face;
 
 #if CGNS_VERSION >= 3000
-    if (type == NFACE_n) {
+    if (type == CGNS_ENUMV( NFACE_n )) {
         int dim;
         nodemap = find_element (z, nodes[fnum], &dim, &n);
         if (nodemap == NULL || dim != 2) {
@@ -780,47 +780,47 @@ static FACE *element_face (ZONE *z, int fnum, ElementType_t type, int *nodes)
     }
 #endif        
     switch (type) {
-        case TETRA_4:
+    case CGNS_ENUMV( TETRA_4 ):
             nodemap = tetra_4[fnum];
             break;
-        case TETRA_10:
+    case CGNS_ENUMV( TETRA_10 ):
             nodemap = tetra_10[fnum];
             break;
-        case PYRA_5:
+    case CGNS_ENUMV( PYRA_5 ):
             nodemap = pyra_5[fnum];
             break;
 #if CGNS_VERSION >= 3000
-        case PYRA_13:
+    case CGNS_ENUMV( PYRA_13 ):
             nodemap = pyra_13[fnum];
             break;
 #endif                                
-        case PYRA_14:
+    case CGNS_ENUMV( PYRA_14 ):
 #ifdef USE_MID_NODES
             nodemap = pyra_14[fnum];
 #else
             nodemap = pyra_13[fnum];
 #endif            
             break;
-        case PENTA_6:
+    case CGNS_ENUMV( PENTA_6 ):
             nodemap = penta_6[fnum];
             break;
-        case PENTA_15:
+    case CGNS_ENUMV( PENTA_15 ):
             nodemap = penta_15[fnum];
             break;
-        case PENTA_18:
+    case CGNS_ENUMV( PENTA_18 ):
 #ifdef USE_MID_NODES
             nodemap = penta_18[fnum];
 #else
             nodemap = penta_15[fnum];
 #endif            
             break;
-        case HEXA_8:
+    case CGNS_ENUMV( HEXA_8 ):
             nodemap = hexa_8[fnum];
             break;
-        case HEXA_20:
+    case CGNS_ENUMV( HEXA_20 ):
             nodemap = hexa_20[fnum];
             break;
-        case HEXA_27:
+    case CGNS_ENUMV( HEXA_27 ):
 #ifdef USE_MID_NODES        
             nodemap = hexa_27[fnum];
 #else
@@ -859,7 +859,7 @@ static void read_zone (int nz)
     int nn, nf, ip, type, ierr;
     int *nodes, maxnode;
     ELEMSET *es;
-    ZoneType_t zonetype;
+    CGNS_ENUMT( ZoneType_t )  zonetype;
     ZONE *z = &Zones[nz++];
     FACE *face, *pf;
 
@@ -882,7 +882,7 @@ static void read_zone (int nz)
         for (i = 0; i < 3; i++)
             z->dims[j][i] = 0;
 
-    if (zonetype == Structured) {
+    if (zonetype == CGNS_ENUMV( Structured )) {
         z->idim = CellDim;
         for (n = 0, j = 0; j < 3; j++) {
             for (i = 0; i < CellDim; i++) {
@@ -890,7 +890,7 @@ static void read_zone (int nz)
             }
         }
     }
-    else if (zonetype == Unstructured) {
+    else if (zonetype == CGNS_ENUMV( Unstructured )) {
         z->idim = 1;
         for (n = 0; n < 3; n++)
             z->dims[n][0] = size[n];
@@ -907,7 +907,7 @@ static void read_zone (int nz)
 
     if (cg_nsections (cgnsfn, cgnsbase, nz, &nsets))
         error_exit ("cg_nsections");
-    if (z->type == Structured) {
+    if (z->type == CGNS_ENUMV( Structured )) {
         if (nsets)
             warning (1, "element sets are not used with Structured grid");
         return;
@@ -965,27 +965,27 @@ static void read_zone (int nz)
 
         es->nv = es->ns = es->ne = es->nn = 0;
 #if CGNS_VERSION >= 3000        
-        if (es->type < NODE) {
+        if (es->type < CGNS_ENUMV( NODE )) {
 #else        
-        if (es->type < NODE || es->type > MIXED) {
+	  if (es->type < CGNS_ENUMV( NODE ) || es->type > CGNS_ENUMV( MIXED )) {
 #endif        
             es->invalid = -1;
             continue;
         }
-        if (es->type == MIXED) {
+	  if (es->type == CGNS_ENUMV( MIXED )) {
             ip = ierr = 0;
             for (pe = es->elements, ne = 0; ne < nelem; ne++) {
                 type = *pe++;
-                if (type < NODE || type == MIXED) {
-                    if (type == MIXED)
+                if (type < CGNS_ENUMV( NODE ) || type == CGNS_ENUMV( MIXED )) {
+		  if (type == CGNS_ENUMV( MIXED ))
                         es->invalid = -2;
                     else
                         es->invalid = -1;
                     break;
                 }
-                if (type >= NGON_n) {
+                if (type >= CGNS_ENUMV( NGON_n )) {
                     ip++;
-                    nn = type - NGON_n;
+                    nn = type - CGNS_ENUMV( NGON_n );
                     if (nn < 3) {
                         ierr++;
                     }
@@ -997,17 +997,17 @@ static void read_zone (int nz)
                     pe += nn;
                     continue;
                 }
-                if (type == NODE) {
+                if (type == CGNS_ENUMV( NODE )) {
                     (es->nn)++;
                     if (ne >= es->rind[0] && ne < nelem - es->rind[1])
                         (z->nn)++;
                 }
-                else if (type <= BAR_3) {
+                else if (type <= CGNS_ENUMV( BAR_3 )) {
                     (es->ne)++;
                     if (ne >= es->rind[0] && ne < nelem - es->rind[1])
                         (z->ne)++;
                 }
-                else if (type <= QUAD_9) {
+                else if (type <= CGNS_ENUMV( QUAD_9 )) {
                     (es->ns)++;
                     if (ne >= es->rind[0] && ne < nelem - es->rind[1])
                         (z->ns)++;
@@ -1032,24 +1032,24 @@ static void read_zone (int nz)
             }
         }
 #if CGNS_VERSION >= 3000        
-        else if (es->type == NGON_n) {
+	  else if (es->type == CGNS_ENUMV( NGON_n )) {
             es->ns = nelem;
             z->ns += (nelem - es->rind[0] - es->rind[1]);
         }
-        else if (es->type == NFACE_n) {
+	  else if (es->type == CGNS_ENUMV( NFACE_n )) {
             es->nv = nelem;
             z->nv += (nelem - es->rind[0] - es->rind[1]);
         }
 #endif        
-        else if (es->type == NODE) {
+	  else if (es->type == CGNS_ENUMV( NODE )) {
             es->nn = nelem;
             z->nn += (nelem - es->rind[0] - es->rind[1]);
         }
-        else if (es->type <= BAR_3) {
+	  else if (es->type <= CGNS_ENUMV( BAR_3 )) {
             es->ne = nelem;
             z->ne += (nelem - es->rind[0] - es->rind[1]);
         }
-        else if (es->type <= QUAD_9) {
+	  else if (es->type <= CGNS_ENUMV( QUAD_9 )) {
             es->ns = nelem;
             z->ns += (nelem - es->rind[0] - es->rind[1]);
         }
@@ -1073,11 +1073,11 @@ static void read_zone (int nz)
         if (es->invalid || es->nv == 0) continue;
         nelem = es->ie - es->is + 1 - es->rind[1];
         pe = es->elements;
-        if (es->type == MIXED) {
+        if (es->type == CGNS_ENUMV( MIXED )) {
             for (ne = 0; ne < nelem; ne++) {
                 type = *pe++;
-                if (type >= NGON_n)
-                    nn = (int)(type - NGON_n);
+                if (type >= CGNS_ENUMV( NGON_n ))
+		  nn = (int)(type - CGNS_ENUMV( NGON_n ));
                 else
                     cg_npe (type, &nn);
                 if (nn <= 0) {
@@ -1096,7 +1096,7 @@ static void read_zone (int nz)
             }
         }
 #if CGNS_VERSION >= 3000
-        else if (es->type == NGON_n) {
+        else if (es->type == CGNS_ENUMV( NGON_n )) {
             for (ne = 0; ne < nelem; ne++) {
                 nn = *pe++;
                 if (ne >= es->rind[0]) {
@@ -1110,7 +1110,7 @@ static void read_zone (int nz)
                 pe += nn;
             }
         }
-        else if (es->type == NFACE_n) {
+        else if (es->type == CGNS_ENUMV( NFACE_n )) {
             for (ne = 0; ne < nelem; ne++) {
                 nn = *pe++;
                 if (ne >= es->rind[0]) {
@@ -1162,10 +1162,10 @@ static void read_zone (int nz)
 
     ierr = 0;
     for (es = z->sets, ns = 0; ns < nsets; ns++, es++) {
-        if (es->invalid || es->nv == 0 || es->type < TETRA_4) continue;
-        if (es->type > MIXED) {
+      if (es->invalid || es->nv == 0 || es->type < CGNS_ENUMV( TETRA_4 )) continue;
+        if (es->type > CGNS_ENUMV( MIXED )) {
 #if CGNS_VERSION >= 3000
-            if (es->type != NFACE_n)
+	  if (es->type != CGNS_ENUMV( NFACE_n ))
 #endif
             continue;
         }
@@ -1175,34 +1175,34 @@ static void read_zone (int nz)
         cg_npe (es->type, &nn);
 
         for (ne = 0; ne < nelem; ne++) {
-            if (es->type == MIXED) {
+	  if (es->type == CGNS_ENUMV( MIXED )) {
                 type = *pe++;
-                if (type >= NGON_n)
-                    nn = (int)(type - NGON_n);
+                if (type >= CGNS_ENUMV( NGON_n ))
+		  nn = (int)(type - CGNS_ENUMV( NGON_n ));
                 else
                     cg_npe (type, &nn);
             }
             switch (type) {
-                case TETRA_4:
-                case TETRA_10:
+	    case CGNS_ENUMV( TETRA_4 ):
+	    case CGNS_ENUMV( TETRA_10 ):
                     nf = 4;
                     break;
-                case PYRA_5:
+	    case CGNS_ENUMV( PYRA_5 ):
 #if CGNS_VERSION >= 3000
-                case PYRA_13:
+	    case CGNS_ENUMV( PYRA_13 ):
 #endif                                
-                case PYRA_14:
-                case PENTA_6:
-                case PENTA_15:
-                case PENTA_18:
+	    case CGNS_ENUMV( PYRA_14 ):
+	    case CGNS_ENUMV( PENTA_6 ):
+	    case CGNS_ENUMV( PENTA_15 ):
+	    case CGNS_ENUMV( PENTA_18 ):
                     nf = 5;
                     break;
-                case HEXA_8:
-                case HEXA_20:
-                case HEXA_27:
+	    case CGNS_ENUMV( HEXA_8 ):
+	    case CGNS_ENUMV( HEXA_20 ):
+	    case CGNS_ENUMV( HEXA_27 ):
                     nf = 6;
                     break;
-                case NFACE_n:
+	    case CGNS_ENUMV( NFACE_n ):
                     nf = *pe++;
                     nn = nf;
                     break;
@@ -1264,11 +1264,11 @@ static void read_zone (int nz)
 
 /*=======================================================================*/
 
-static int get_data_size (ZONE *z, GridLocation_t location, int *rind)
+    static int get_data_size (ZONE *z, CGNS_ENUMT( GridLocation_t )  location, int *rind)
 {
     int n, i, datasize = 1;
 
-    if (location == Vertex) {
+    if (location == CGNS_ENUMV( Vertex )) {
         for (n = 0, i = 0; i < z->idim; i++) {
             datasize *= (z->dims[0][i] + rind[n] + rind[n+1]);
             n += 2;
@@ -1276,7 +1276,7 @@ static int get_data_size (ZONE *z, GridLocation_t location, int *rind)
         return datasize;
     }
 
-    if (location == CellCenter) {
+    if (location == CGNS_ENUMV( CellCenter )) {
         for (n = 0, i = 0; i < z->idim; i++) {
             datasize *= (z->dims[1][i] + rind[n] + rind[n+1]);
             n += 2;
@@ -1284,13 +1284,13 @@ static int get_data_size (ZONE *z, GridLocation_t location, int *rind)
         return datasize;
     }
 
-    if (z->type == Unstructured) {
+    if (z->type == CGNS_ENUMV( Unstructured )) {
         error ("grid location %s not valid for unstructured zone",
             cg_GridLocationName (location));
         return 0;
     }
 
-    if (location == FaceCenter) {
+    if (location == CGNS_ENUMV( FaceCenter )) {
         if (z->idim > 2) {
             error ("location is FaceCenter but index dimension > 2");
             return 0;
@@ -1302,7 +1302,7 @@ static int get_data_size (ZONE *z, GridLocation_t location, int *rind)
         return datasize;
     }
 
-    if (location == EdgeCenter) {
+    if (location == CGNS_ENUMV( EdgeCenter )) {
         if (z->idim > 1) {
             error ("location is EdgeCenter but index dimension > 1");
             return 0;
@@ -1311,7 +1311,7 @@ static int get_data_size (ZONE *z, GridLocation_t location, int *rind)
         return datasize;
     }
 
-    if (location == IFaceCenter) {
+    if (location == CGNS_ENUMV( IFaceCenter )) {
         for (n = 0, i = 1; i < z->idim; i++) {
             if (i == 0)
                 datasize *= (z->dims[0][i] + rind[n] + rind[n+1]);
@@ -1322,7 +1322,7 @@ static int get_data_size (ZONE *z, GridLocation_t location, int *rind)
         return datasize;
     }
 
-    if (location == JFaceCenter) {
+    if (location == CGNS_ENUMV( JFaceCenter )) {
         if (z->idim < 2) {
             error ("location is JFaceCenter but index dimension < 2");
             return 0;
@@ -1337,7 +1337,7 @@ static int get_data_size (ZONE *z, GridLocation_t location, int *rind)
         return datasize;
     }
 
-    if (location == KFaceCenter) {
+    if (location == CGNS_ENUMV( KFaceCenter )) {
         if (z->idim < 3) {
             error ("location is KFaceCenter but index dimension < 3");
             return 0;
@@ -1361,7 +1361,7 @@ static int get_data_size (ZONE *z, GridLocation_t location, int *rind)
 static int read_dataclass (void)
 {
     int ierr;
-    DataClass_t dataclass;
+    CGNS_ENUMT( DataClass_t )  dataclass;
 
     ierr = cg_dataclass_read (&dataclass);
     if (ierr) {
@@ -1376,15 +1376,15 @@ static int read_dataclass (void)
 static int *read_units (int units[9])
 {
     int n, ierr;
-    MassUnits_t mass;
-    LengthUnits_t length;
-    TimeUnits_t time;
-    TemperatureUnits_t temp;
-    AngleUnits_t angle;
+    CGNS_ENUMT( MassUnits_t )  mass;
+    CGNS_ENUMT( LengthUnits_t )  length;
+    CGNS_ENUMT( TimeUnits_t )  time;
+    CGNS_ENUMT( TemperatureUnits_t )  temp;
+    CGNS_ENUMT( AngleUnits_t )  angle;
 #if CGNS_VERSION >= 2400
-    ElectricCurrentUnits_t current;
-    SubstanceAmountUnits_t amount;
-    LuminousIntensityUnits_t intensity;
+    CGNS_ENUMT( ElectricCurrentUnits_t )  current;
+    CGNS_ENUMT( SubstanceAmountUnits_t )  amount;
+    CGNS_ENUMT( LuminousIntensityUnits_t )  intensity;
 #endif
 
     for (n = 0; n < 9; n++)
@@ -1422,7 +1422,7 @@ static int *read_units (int units[9])
 static int read_exponents (float exps[9])
 {
     int n, ierr;
-    DataType_t type;
+    CGNS_ENUMT( DataType_t )  type;
 
     for (n = 0; n < 9; n++)
         exps[n] = 0;
@@ -1431,13 +1431,13 @@ static int read_exponents (float exps[9])
         if (ierr != CG_NODE_NOT_FOUND) error_exit("cg_exponents_info");
         return 0;
     }
-    if (type == RealSingle)
+    if (type == CGNS_ENUMV( RealSingle ))
 #if CGNS_VERSION >= 2400
         ierr = cg_expfull_read (exps);
 #else
         ierr = cg_exponents_read (exps);
 #endif
-    else if (type == RealDouble) {
+	else if (type == CGNS_ENUMV( RealDouble )) {
 #if CGNS_VERSION >= 2400
         double data[8];
         ierr = cg_expfull_read (data);
@@ -1566,7 +1566,7 @@ static void check_quantity (int dnum, char *name,
             warning (3, "not a CGNS data-name identifier");
         if (dclass < 0)
             warning (3, "dataclass is not given");
-        else if ((DataClass_t)dclass == Dimensional) {
+        else if ((CGNS_ENUMT( DataClass_t ) )dclass == CGNS_ENUMV( Dimensional )) {
             if (punits == NULL && parunits == NULL)
                 warning (2, "units not given");
             if (!hasexps)
@@ -1584,12 +1584,12 @@ static void check_quantity (int dnum, char *name,
 
     if (dclass < 0)
         warning (2, "dataclass not given");
-    else if ((DataClass_t)dclass == Dimensional ||
-             (DataClass_t)dclass == NormalizedByDimensional ||
-             (DataClass_t)dclass == NormalizedByUnknownDimensional) {
+    else if ((CGNS_ENUMT( DataClass_t ) )dclass == CGNS_ENUMV( Dimensional ) ||
+             (CGNS_ENUMT( DataClass_t ) )dclass == CGNS_ENUMV( NormalizedByDimensional ) ||
+             (CGNS_ENUMT( DataClass_t ) )dclass == CGNS_ENUMV( NormalizedByUnknownDimensional )) {
         if (!ne)
             warning (2, "dataclass does not match CGNS specification");
-        if ((DataClass_t)dclass == Dimensional &&
+        if ((CGNS_ENUMT( DataClass_t ) )dclass == CGNS_ENUMV( Dimensional ) &&
             punits == NULL && parunits == NULL)
             warning (2, "units not given for dimensional quantity");
         if (hasexps && ne > 0) {
@@ -1600,8 +1600,8 @@ static void check_quantity (int dnum, char *name,
                 warning (2, "exponents do not match CGNS specification");
         }
     }
-    else if ((DataClass_t)dclass == NondimensionalParameter ||
-             (DataClass_t)dclass == DimensionlessConstant) {
+    else if ((CGNS_ENUMT( DataClass_t ) )dclass == CGNS_ENUMV( NondimensionalParameter ) ||
+             (CGNS_ENUMT( DataClass_t ) )dclass == CGNS_ENUMV( DimensionlessConstant )) {
         if (ne)
             warning (2, "dataclass does not match CGNS specification");
         if (punits != NULL)
@@ -1620,7 +1620,7 @@ static void check_arrays (int parclass, int *parunits, int isref,
 {
     int n, narrays, na, ndim, dims[12];
     int dataclass, *punits, units[9], size;
-    DataType_t datatype;
+    CGNS_ENUMT( DataType_t )  datatype;
     char name[33];
 
     dataclass = read_dataclass ();
@@ -1659,10 +1659,10 @@ static void check_user_data (int parclass, int *parunits, int indent)
     int n, nd, nu, nuser, na, ndim, dims[12];
     int dataclass, *punits, units[9];
     char name[33], *desc;
-    DataType_t datatype;
+    CGNS_ENUMT( DataType_t )  datatype;
 #if CGNS_VERSION >= 2400
-    GridLocation_t location;
-    PointSetType_t ptype;
+    CGNS_ENUMT( GridLocation_t )  location;
+    CGNS_ENUMT( PointSetType_t )  ptype;
     int hasf, haso, hasl, hasp, npnts, ordinal;
 #endif
 
@@ -1767,7 +1767,7 @@ static void check_integral (int parclass, int *parunits, int indent)
     char *desc, name[33];
     int n, ni, nint, na, nd, ndim, dims[12];
     int dataclass, *punits, units[9];
-    DataType_t datatype;
+    CGNS_ENUMT( DataType_t )  datatype;
 
     if (cg_nintegrals (&nint)) error_exit ("cg_nintegrals");
     if (nint <= 0) return;
@@ -1829,7 +1829,7 @@ static void check_rotating (float *point, float *vector,
     char *desc, name[33];
     int n, na, nd, ndim, dims[12];
     int dataclass, *punits, units[9];
-    DataType_t datatype;
+    CGNS_ENUMT( DataType_t )  datatype;
 
     go_relative ("RotatingCoordinates_t", 1, NULL);
 
@@ -1895,7 +1895,7 @@ static void check_convergence (int niter, char *NormDefs,
     char name[33];
     int n, na, ndim, dims[12];
     int dataclass, *punits, units[9];
-    DataType_t datatype;
+    CGNS_ENUMT( DataType_t )  datatype;
 
     if (verbose) {
         print_indent (indent);
@@ -1958,8 +1958,8 @@ static void check_equation_set (int *flags, int parclass, int *parunits,
 {
     char *desc, name[33];
     int n, nd, dataclass, ierr, *punits, units[9], ndiff, diff[6];
-    GoverningEquationsType_t governing;
-    ModelType_t model;
+    CGNS_ENUMT( GoverningEquationsType_t )  governing;
+    CGNS_ENUMT( ModelType_t )  model;
     int thermrelax, chemkin;
 #if CGNS_VERSION >= 2400
     int emelec, emmagn, emcond;
@@ -2225,7 +2225,7 @@ static void check_coordinates (int ng)
     int nc, ncoords, mask, coordset[4];
     int *punits, units[9], dataclass;
     float *coord, cmin, cmax;
-    DataType_t datatype;
+    CGNS_ENUMT( DataType_t )  datatype;
     ZONE *z = &Zones[cgnszone-1];
 
     if (cg_grid_read (cgnsfn, cgnsbase, cgnszone, ng, name))
@@ -2272,7 +2272,7 @@ static void check_coordinates (int ng)
                 printf (",%d", rind[n]);
             puts ("]");
         }
-        if (z->type == Unstructured && FileVersion < 2400)
+        if (z->type == CGNS_ENUMV( Unstructured ) && FileVersion < 2400)
             error ("rind not valid for unstructured zones");
     }
 
@@ -2297,7 +2297,7 @@ static void check_coordinates (int ng)
     for (nc = 1; nc <= ncoords; nc++) {
         if (cg_coord_info (cgnsfn, cgnsbase, cgnszone, nc, &datatype, name))
             error_exit("cg_coord_info");
-        if (cg_coord_read (cgnsfn, cgnsbase, cgnszone, name, RealSingle,
+        if (cg_coord_read (cgnsfn, cgnsbase, cgnszone, name, CGNS_ENUMV( RealSingle ),
                 rmin, rmax, coord))
             error_exit("cg_coord_read");
         printf ("    checking coordinate \"%s\"\n", name);
@@ -2429,7 +2429,7 @@ static void check_elements (void)
         }
         if (es->invalid > 0) {
 #if CGNS_VERSION >= 3000        
-            if (es->type == NFACE_n) {
+	  if (es->type == CGNS_ENUMV( NFACE_n )) {
                 error ("%d polyhedra faces are not valid face elements",
                     es->invalid);
                 continue;
@@ -2438,11 +2438,11 @@ static void check_elements (void)
             error ("%d element nodes are out of range", es->invalid);
             continue;
         }
-        if (z->faces == NULL || es->ns == 0 || es->type < TRI_3)
+        if (z->faces == NULL || es->ns == 0 || es->type < CGNS_ENUMV( TRI_3 ))
             continue;
-        if (es->type > QUAD_9 && es->type != MIXED) {
+        if (es->type > CGNS_ENUMV( QUAD_9 ) && es->type != CGNS_ENUMV( MIXED )) {
 #if CGNS_VERSION >= 3000
-            if (es->type != NGON_n)
+	  if (es->type != CGNS_ENUMV( NGON_n ))
 #endif
             continue;
         }            
@@ -2452,28 +2452,28 @@ static void check_elements (void)
         pe = es->elements;
         nf = np = nint = next = 0;
         for (ne = 0; ne < nelem; ne++) {
-            if (es->type == MIXED) {
-                type = (ElementType_t)*pe++;
-                if (type >= NGON_n) {
-                    nn = (int)(type - NGON_n);
-                    type = NGON_n;
+	  if (es->type == CGNS_ENUMV( MIXED )) {
+	    type = (CGNS_ENUMT( ElementType_t ) )*pe++;
+                if (type >= CGNS_ENUMV( NGON_n )) {
+		  nn = (int)(type - CGNS_ENUMV( NGON_n ));
+		  type = CGNS_ENUMV( NGON_n );
                 }
                 else {
                     cg_npe (type, &nn);
                 }
             }
 #if CGNS_VERSION >= 3000        
-            else if (es->type == NGON_n) {
+	  else if (es->type == CGNS_ENUMV( NGON_n )) {
                 nn = *pe++;
             }
 #endif            
             else {
                 cg_npe (type, &nn);
             }
-            if (ne >= es->rind[0] && nn >= 3 && (type == NGON_n ||
-               (type >= TRI_3 && type <= QUAD_9))) {
+	  if (ne >= es->rind[0] && nn >= 3 && (type == CGNS_ENUMV( NGON_n ) ||
+					       (type >= CGNS_ENUMV( TRI_3 ) && type <= CGNS_ENUMV( QUAD_9 )))) {
 #ifndef USE_MID_NODES
-                if (type == QUAD_9)
+	    if (type == CGNS_ENUMV( QUAD_9 ))
                     face = new_face (8, pe);
                 else
 #endif                               
@@ -2524,7 +2524,7 @@ static void check_elements (void)
 
 /*-----------------------------------------------------------------------*/
 
-static void check_struct_interface (ZONE *z, PointSetType_t ptype,
+ static void check_struct_interface (ZONE *z, CGNS_ENUMT( PointSetType_t )  ptype,
     int npts, int *pts, int bndry)
 {
     int n, id, np, n1, n2, n3, nerr1, nerr2;
@@ -2533,7 +2533,7 @@ static void check_struct_interface (ZONE *z, PointSetType_t ptype,
 
     /* vertices */
 
-    if (ptype == PointList) {
+    if (ptype == CGNS_ENUMV( PointList )) {
         for (n = 0, np = 0; np < npts; np++) {
             n1 = n2 = 0;
             for (id = 0; id < z->idim; id++) {
@@ -2594,7 +2594,7 @@ static void check_struct_interface (ZONE *z, PointSetType_t ptype,
 
 /*-----------------------------------------------------------------------*/
 
-static void check_unstruct_interface (ZONE *z, PointSetType_t ptype,
+ static void check_unstruct_interface (ZONE *z, CGNS_ENUMT( PointSetType_t )  ptype,
     int npts, int *pts, int bndry)
 {
     int dim, n, nn, id, nerr1, nerr2, nerr3, *nodes;
@@ -2604,7 +2604,7 @@ static void check_unstruct_interface (ZONE *z, PointSetType_t ptype,
 
     /* vertices */
 
-    if (ptype == PointList) {
+    if (ptype == CGNS_ENUMV( PointList )) {
         for (n = 0; n < npts; n++) {
             if (pts[n] < 1 || pts[n] > z->nnodes) nerr1++;
         }
@@ -2648,19 +2648,19 @@ static void check_unstruct_interface (ZONE *z, PointSetType_t ptype,
 
 /*-----------------------------------------------------------------------*/
 
-static int check_interface (ZONE *z, PointSetType_t ptype,
-    GridLocation_t location, int npts, int *pts, int bndry)
+ static int check_interface (ZONE *z, CGNS_ENUMT( PointSetType_t )  ptype,
+			     CGNS_ENUMT( GridLocation_t )  location, int npts, int *pts, int bndry)
 {
     int np, *p;
 
-    if (ptype == PointListDonor) ptype = PointList;
-    if (ptype == CellListDonor) ptype = ElementList;
-    if (ptype != PointRange   && ptype != PointList &&
-        ptype != ElementRange && ptype != ElementList) {
+    if (ptype == CGNS_ENUMV( PointListDonor )) ptype = CGNS_ENUMV( PointList );
+    if (ptype == CGNS_ENUMV( CellListDonor )) ptype = CGNS_ENUMV( ElementList );
+    if (ptype != CGNS_ENUMV( PointRange )   && ptype != CGNS_ENUMV( PointList ) &&
+        ptype != CGNS_ENUMV( ElementRange ) && ptype != CGNS_ENUMV( ElementList )) {
         error ("invalid point type");
         return 0;
     }
-    if (location < Vertex || location >= EdgeCenter) {
+    if (location < CGNS_ENUMV( Vertex ) || location >= CGNS_ENUMV( EdgeCenter )) {
         error ("invalid grid location");
         return 0;
     }
@@ -2669,10 +2669,10 @@ static int check_interface (ZONE *z, PointSetType_t ptype,
         return 0;
     }
 
-    if (ptype == PointRange && location != Vertex) ptype = ElementRange;
-    if (ptype == PointList  && location != Vertex) ptype = ElementList;
+    if (ptype == CGNS_ENUMV( PointRange ) && location != CGNS_ENUMV( Vertex )) ptype = CGNS_ENUMV( ElementRange );
+    if (ptype == CGNS_ENUMV( PointList )  && location != CGNS_ENUMV( Vertex )) ptype = CGNS_ENUMV( ElementList );
 
-    if (ptype == PointRange || ptype == ElementRange) {
+    if (ptype == CGNS_ENUMV( PointRange ) || ptype == CGNS_ENUMV( ElementRange )) {
         int n, i, j, k;
         int pmin[3], pmax[3];
         for (np = 1, n = 0; n < z->idim; n++) {
@@ -2715,17 +2715,17 @@ static int check_interface (ZONE *z, PointSetType_t ptype,
                 }
             }
         }
-        if (ptype == PointRange)
-            ptype = PointList;
+        if (ptype == CGNS_ENUMV( PointRange ))
+	  ptype = CGNS_ENUMV( PointList );
         else
-            ptype = ElementList;
+	  ptype = CGNS_ENUMV( ElementList );
     }
     else {
         np = npts;
         p = pts;
     }
 
-    if (z->type == Structured)
+    if (z->type == CGNS_ENUMV( Structured ))
         check_struct_interface (z, ptype, np, p, bndry);
     else
         check_unstruct_interface (z, ptype, np, p, bndry);
@@ -2736,70 +2736,70 @@ static int check_interface (ZONE *z, PointSetType_t ptype,
 
 /*-----------------------------------------------------------------------*/
 
-static GridLocation_t check_location (ZONE *z, PointSetType_t ptype,
-    GridLocation_t location)
+ static CGNS_ENUMT( GridLocation_t )  check_location (ZONE *z, CGNS_ENUMT( PointSetType_t )  ptype,
+						      CGNS_ENUMT( GridLocation_t )  location)
 {
     switch (location) {
-        case Vertex:
-            if (ptype == ElementRange || ptype == ElementList)
+    case CGNS_ENUMV( Vertex ):
+	  if (ptype == CGNS_ENUMV( ElementRange ) || ptype == CGNS_ENUMV( ElementList ))
                 warning (1, "should not use Vertex with ElementList"
                     " or ElementRange");
             break;
-        case FaceCenter:
-            if (z->type == Structured)
+    case CGNS_ENUMV( FaceCenter ):
+	  if (z->type == CGNS_ENUMV( Structured ))
                 warning (2,
                     "use [IJK]FaceCenter with Structured grids");
             break;
-        case IFaceCenter:
-            if (z->type != Structured) {
+    case CGNS_ENUMV( IFaceCenter ):
+	  if (z->type != CGNS_ENUMV( Structured )) {
                 error ("IFaceCenter only valid for Structured grids");
-                return FaceCenter;
+                return CGNS_ENUMV( FaceCenter );
             }
             break;
-        case JFaceCenter:
-            if (z->type != Structured || z->idim < 2) {
+    case CGNS_ENUMV( JFaceCenter ):
+	  if (z->type != CGNS_ENUMV( Structured ) || z->idim < 2) {
                 error ("JFaceCenter only valid for Structured grids"
                     " with CellDim > 1");
-                return FaceCenter;
+                return CGNS_ENUMV( FaceCenter );
             }
             break;
-        case KFaceCenter:
-            if (z->type != Structured || z->idim < 3) {
+    case CGNS_ENUMV( KFaceCenter ):
+	  if (z->type != CGNS_ENUMV( Structured ) || z->idim < 3) {
                 error ("KFaceCenter only valid for Structured grids"
                     " with CellDim > 2");
-                return FaceCenter;
+                return CGNS_ENUMV( FaceCenter );
             }
             break;
-        case CellCenter:
-            if (z->type == Structured && FileVersion >= 2300)
+    case CGNS_ENUMV( CellCenter ):
+	  if (z->type == CGNS_ENUMV( Structured ) && FileVersion >= 2300)
                 warning (2, "use [IJK]FaceCenter location rather"
                     " than CellCenter");
             else
                 warning (2, "use FaceCenter location rather than"
                     " CellCenter");
-            return FaceCenter;
+	  return CGNS_ENUMV( FaceCenter );
             break;
         default:
             error ("grid location not Vertex,CellCenter,FaceCenter"
                 " or [IJK]FaceCenter");
             break;
     }
-    if (ptype == ElementRange || ptype == ElementList)
-        return FaceCenter;
+    if (ptype == CGNS_ENUMV( ElementRange ) || ptype == CGNS_ENUMV( ElementList ))
+      return CGNS_ENUMV( FaceCenter );
     return location;
 }
 
 /*-----------------------------------------------------------------------*/
 
-static void check_BCdata (BCType_t bctype, int dirichlet, int neumann,
+ static void check_BCdata (CGNS_ENUMT( BCType_t )  bctype, int dirichlet, int neumann,
     int size, int parclass, int *parunits, int indent)
 {
     char name[33], *desc;
     int ierr, n, nd;
     int *punits, units[9], dataclass;
 #if CGNS_VERSION >= 2400
-    GridLocation_t location;
-    PointSetType_t ptype;
+    CGNS_ENUMT( GridLocation_t )  location;
+    CGNS_ENUMT( PointSetType_t )  ptype;
     int hasl, hasp, npnts;
 
     hasl = read_gridlocation (&location);
@@ -2813,7 +2813,7 @@ static void check_BCdata (BCType_t bctype, int dirichlet, int neumann,
         if (hasp && hasp != CG_NODE_NOT_FOUND)
             error_exit("cg_ptset_info");
         if (hasp == CG_OK && hasl != CG_OK) {
-            location = Vertex;
+	  location = CGNS_ENUMV( Vertex );
             hasl = CG_OK;
         }
     }
@@ -2895,7 +2895,7 @@ static void check_BCdata (BCType_t bctype, int dirichlet, int neumann,
             size = 0;
         }
         else if (npnts != 2 &&
-            (ptype == PointRange || ptype == ElementRange)) {
+		 (ptype == CGNS_ENUMV( PointRange ) || ptype == CGNS_ENUMV( ElementRange ))) {
             error ("number of points not 2 for Point/Element Range");
             size = 0;
         }
@@ -2906,7 +2906,7 @@ static void check_BCdata (BCType_t bctype, int dirichlet, int neumann,
                 exit (1);
             }
             if (cg_ptset_read (pts)) error_exit("cg_ptset_read");
-            if (ptype == PointRange || ptype == ElementRange) {
+            if (ptype == CGNS_ENUMV( PointRange ) || ptype == CGNS_ENUMV( ElementRange )) {
                 for (n = 0; n < z->idim; n++) {
                     if (pts[n] > pts[n+z->idim]) {
                         warning (1, "start value > end value for range");
@@ -2929,7 +2929,7 @@ static void check_BCdata (BCType_t bctype, int dirichlet, int neumann,
     if (dirichlet) {
         print_indent (indent);
         puts ("checking Dirichlet data");
-        go_relative ("BCData_t", Dirichlet, NULL);
+        go_relative ("BCData_t", CGNS_ENUMV( Dirichlet ), NULL);
         check_arrays (dataclass, punits, 0, size, indent+2);
         go_relative ("..", 1, NULL);
     }
@@ -2937,7 +2937,7 @@ static void check_BCdata (BCType_t bctype, int dirichlet, int neumann,
     if (neumann) {
         print_indent (indent);
         puts ("checking Neumann data");
-        go_relative ("BCData_t", Neumann, NULL);
+        go_relative ("BCData_t", CGNS_ENUMV( Neumann ), NULL);
         check_arrays (dataclass, punits, 0, size, indent+2);
         go_relative ("..", 1, NULL);
     }
@@ -2950,7 +2950,7 @@ static void check_BCdataset (int nb, int nd, int size,
 {
     char name[33];
     int dirichlet, neumann;
-    BCType_t bctype;
+    CGNS_ENUMT( BCType_t )  bctype;
 
     if (cg_dataset_read (cgnsfn, cgnsbase, cgnszone, nb, nd,
         name, &bctype, &dirichlet, &neumann))
@@ -2971,12 +2971,12 @@ static void check_BC (int nb, int parclass, int *parunits)
     int nrmlindex[3], nrmlflag, *pts;
     int *punits, units[9], dataclass;
     void *nrmllist;
-    BCType_t bctype;
-    PointSetType_t ptype;
-    DataType_t datatype;
-    GridLocation_t location;
-    WallFunctionType_t wtype;
-    AreaType_t atype;
+    CGNS_ENUMT( BCType_t )  bctype;
+    CGNS_ENUMT( PointSetType_t )  ptype;
+    CGNS_ENUMT( DataType_t )  datatype;
+    CGNS_ENUMT( GridLocation_t )  location;
+    CGNS_ENUMT( WallFunctionType_t )  wtype;
+    CGNS_ENUMT( AreaType_t )  atype;
     float area;
     ZONE *z = &Zones[cgnszone-1];
 
@@ -2993,14 +2993,14 @@ static void check_BC (int nb, int parclass, int *parunits)
     go_absolute ("Zone_t", cgnszone, "ZoneBC_t", 1, "BC_t", nb, NULL);
 
     if (FileVersion >= 1270 && FileVersion <= 2200) {
-        if (ptype != PointRange && ptype != PointList) {
+      if (ptype != CGNS_ENUMV( PointRange ) && ptype != CGNS_ENUMV( PointList )) {
             error ("point set type not PointRange or PointList");
             return;
         }
     }
     else {
-        if (ptype != PointRange   && ptype != PointList &&
-            ptype != ElementRange && ptype != ElementList) {
+      if (ptype != CGNS_ENUMV( PointRange )   && ptype != CGNS_ENUMV( PointList ) &&
+	  ptype != CGNS_ENUMV( ElementRange ) && ptype != CGNS_ENUMV( ElementList )) {
             error ("point set type not PointRange, PointList, ElementRange"
                 " or ElementList");
             return;
@@ -3008,20 +3008,20 @@ static void check_BC (int nb, int parclass, int *parunits)
     }
 
     if (FileVersion < 1270) {
-        if (ptype == ElementRange || ptype == ElementList)
-            location = FaceCenter;
+      if (ptype == CGNS_ENUMV( ElementRange ) || ptype == CGNS_ENUMV( ElementList ))
+	location = CGNS_ENUMV( FaceCenter );
         else
-            location = Vertex;
+	  location = CGNS_ENUMV( Vertex );
     }
     else {
         ierr = read_gridlocation (&location);
         if (ierr) {
             if (ierr != CG_NODE_NOT_FOUND)
                 error_exit("cg_gridlocation_read");
-            if (ptype == ElementRange || ptype == ElementList)
-                location = FaceCenter;
+            if (ptype == CGNS_ENUMV( ElementRange ) || ptype == CGNS_ENUMV( ElementList ))
+	      location = CGNS_ENUMV( FaceCenter );
             else
-                location = Vertex;
+	      location = CGNS_ENUMV( Vertex );
         }
         else {
             if (verbose)
@@ -3036,13 +3036,13 @@ static void check_BC (int nb, int parclass, int *parunits)
         return;
     }
     if (FileVersion >= 1270 && FileVersion <= 2200) {
-        if (ptype == PointRange && npts != 2) {
+      if (ptype == CGNS_ENUMV( PointRange ) && npts != 2) {
             error ("number of points is not 2 for PointRange");
             return;
         }
     }
     else {
-        if ((ptype == PointRange || ptype == ElementRange) && npts != 2) {
+      if ((ptype == CGNS_ENUMV( PointRange ) || ptype == CGNS_ENUMV( ElementRange )) && npts != 2) {
             error ("number of points is not 2 for PointRange/ElementRange");
             return;
         }
@@ -3067,10 +3067,10 @@ static void check_BC (int nb, int parclass, int *parunits)
     }
     fflush (stdout);
 
-    if (ierr == CG_OK && z->type != Structured)
+    if (ierr == CG_OK && z->type != CGNS_ENUMV( Structured ))
         error ("normal index is only valid for Structured grids");
     if (nrmlflag) {
-        if (datatype != RealSingle && datatype != RealDouble) {
+      if (datatype != CGNS_ENUMV( RealSingle ) && datatype != CGNS_ENUMV( RealDouble )) {
             error ("normal data type is not RealSingle or RealDouble");
             if (LibraryVersion < 2200) return;
         }
@@ -3083,7 +3083,7 @@ static void check_BC (int nb, int parclass, int *parunits)
     }
     nrmllist = NULL;
     if (nrmlflag && LibraryVersion < 2200) {
-        int n = datatype == RealSingle ? sizeof(float) : sizeof(double);
+      int n = datatype == CGNS_ENUMV( RealSingle ) ? sizeof(float) : sizeof(double);
         nrmllist = (void *) malloc (nrmlflag * n);
         if (nrmllist == NULL) {
             fprintf (stderr, "malloc failed for BC normals\n");
@@ -3097,7 +3097,7 @@ static void check_BC (int nb, int parclass, int *parunits)
     ierr = cg_famname_read (name);
     if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_famname_read");
     if (ierr == CG_NODE_NOT_FOUND) {
-        if (bctype == FamilySpecified)
+      if (bctype == CGNS_ENUMV( FamilySpecified ))
             warning (1,
                 "BC Type is FamilySpecified but no family name is given");
     }
@@ -3156,7 +3156,7 @@ static void check_BC (int nb, int parclass, int *parunits)
 
     puts ("    checking BC interface");
     fflush (stdout);
-    if (ptype == PointRange || ptype == ElementRange) {
+    if (ptype == CGNS_ENUMV( PointRange ) || ptype == CGNS_ENUMV( ElementRange )) {
         for (n = 0; n < z->idim; n++) {
             if (pts[n] > pts[n+z->idim]) {
                 warning (1, "start value > end value for range");
@@ -3316,8 +3316,8 @@ static void check_1to1 (int nc)
 #if CGNS_VERSION >= 2400
     int ndim, dims[12];
     float center[3], angle[3], translate[3];
-    AverageInterfaceType_t average;
-    DataType_t datatype;
+    CGNS_ENUMT( AverageInterfaceType_t )  average;
+    CGNS_ENUMT( DataType_t )  datatype;
 #endif
 
     if (cg_1to1_read (cgnsfn, cgnsbase, cgnszone, nc, name,
@@ -3338,7 +3338,7 @@ static void check_1to1 (int nc)
     }
     puts ("    checking 1to1 interface");
     fflush (stdout);
-    check_interface (z, PointRange, Vertex, 2, range, 1);
+    check_interface (z, CGNS_ENUMV( PointRange ), CGNS_ENUMV( Vertex ), 2, range, 1);
 
     for (dz = NULL, n = 0; n < NumZones; n++) {
         if (0 == strcmp (dname, Zones[n].name)) {
@@ -3362,7 +3362,7 @@ static void check_1to1 (int nc)
         }
         puts ("    checking donor interface");
         fflush (stdout);
-        check_interface (dz, PointRange, Vertex, 2, drange, 1);
+        check_interface (dz, CGNS_ENUMV( PointRange ), CGNS_ENUMV( Vertex ), 2, drange, 1);
     }
 
     if (verbose) {
@@ -3523,13 +3523,13 @@ static void check_conn (int nc)
     char name[33], dname[33], *desc;
     int ierr, n, nd, npts, dnpts, ndim, dims[12];
     int interp, *pts, *dpts;
-    GridLocation_t location;
-    GridConnectivityType_t ctype;
-    PointSetType_t ptype, dptype;
-    ZoneType_t dztype;
-    DataType_t datatype;
+    CGNS_ENUMT( GridLocation_t )  location;
+    CGNS_ENUMT( GridConnectivityType_t )  ctype;
+    CGNS_ENUMT( PointSetType_t )  ptype, dptype;
+    CGNS_ENUMT( ZoneType_t )  dztype;
+    CGNS_ENUMT( DataType_t )  datatype;
     float center[3], angle[3], trans[3];
-    AverageInterfaceType_t average;
+    CGNS_ENUMT( AverageInterfaceType_t )  average;
     ZONE *z = &Zones[cgnszone-1], *dz;
 
     if (cg_conn_info (cgnsfn, cgnsbase, cgnszone, nc, name,
@@ -3558,41 +3558,41 @@ static void check_conn (int nc)
     interp = check_interpolants ();
 
     ierr = 0;
-    if (ctype == Overset) {
-        if (location != Vertex && location != CellCenter)
+    if (ctype == CGNS_ENUMV( Overset )) {
+      if (location != CGNS_ENUMV( Vertex ) && location != CGNS_ENUMV( CellCenter ))
             warning (1, "grid location should be Vertex or CellCenter");
     }
-    else if (ctype == Abutting || ctype == Abutting1to1) {
+    else if (ctype == CGNS_ENUMV( Abutting ) || ctype == CGNS_ENUMV( Abutting1to1 )) {
         if (FileVersion < 2200) {
-            if (location != Vertex && location != CellCenter)
+	  if (location != CGNS_ENUMV( Vertex ) && location != CGNS_ENUMV( CellCenter ))
                 warning (1,
                     "grid location should be Vertex or CellCenter");
         }
         else if (FileVersion >= 2300) {
             switch (location) {
-                case Vertex:
+	    case CGNS_ENUMV( Vertex ):
                     break;
-                case FaceCenter:
-                    if (z->type == Structured)
+	    case CGNS_ENUMV( FaceCenter ):
+	      if (z->type == CGNS_ENUMV( Structured ))
                         warning (2,
                             "use [IJK]FaceCenter with Structured grids");
                     break;
-                case IFaceCenter:
-                    if (z->type != Structured)
+	    case CGNS_ENUMV( IFaceCenter ):
+	      if (z->type != CGNS_ENUMV( Structured ))
                         error ("IFaceCenter only valid for Structured grids");
                     break;
-                case JFaceCenter:
-                    if (z->type != Structured || z->idim < 2)
+	    case CGNS_ENUMV( JFaceCenter ):
+	      if (z->type != CGNS_ENUMV( Structured ) || z->idim < 2)
                         error ("JFaceCenter only valid for Structured grids"
                             " with CellDim > 1");
                     break;
-                case KFaceCenter:
-                    if (z->type != Structured || z->idim < 3)
+	    case CGNS_ENUMV( KFaceCenter ):
+	      if (z->type != CGNS_ENUMV( Structured ) || z->idim < 3)
                         error ("KFaceCenter only valid for Structured grids"
                             " with CellDim > 2");
                     break;
-                case CellCenter:
-                    if (z->type == Structured)
+	    case CGNS_ENUMV( CellCenter ):
+	      if (z->type == CGNS_ENUMV( Structured ))
                         warning (2, "use [IJK]FaceCenter location rather"
                             " than CellCenter");
                     else
@@ -3605,8 +3605,8 @@ static void check_conn (int nc)
             }
         }
         else {
-            if (location != Vertex && location != CellCenter &&
-                location != FaceCenter)
+	  if (location != CGNS_ENUMV( Vertex ) && location != CGNS_ENUMV( CellCenter ) &&
+	      location != CGNS_ENUMV( FaceCenter ))
                 warning (1, "grid location should be Vertex, FaceCenter"
                     " or CellCenter");
         }
@@ -3615,15 +3615,15 @@ static void check_conn (int nc)
         error ("connectivity type not Overset,Abutting or Abutting1to1");
         ierr++;
     }
-    if (location < Vertex || location >= EdgeCenter) ierr++;
+    if (location < CGNS_ENUMV( Vertex ) || location >= CGNS_ENUMV( EdgeCenter )) ierr++;
 
-    if (ptype == PointRange) {
+    if (ptype == CGNS_ENUMV( PointRange )) {
         if (npts != 2) {
             error ("number of points is not 2 for PointRange");
             ierr++;
         }
     }
-    else if (ptype == PointList) {
+    else if (ptype == CGNS_ENUMV( PointList )) {
         if (npts < 1) {
             error ("number of points is less than 1");
             ierr++;
@@ -3651,13 +3651,13 @@ static void check_conn (int nc)
         }
     }
 
-    if (dptype == PointListDonor) {
-        if (ctype != Abutting1to1 && FileVersion >= 2000)
+    if (dptype == CGNS_ENUMV( PointListDonor )) {
+      if (ctype != CGNS_ENUMV( Abutting1to1 ) && FileVersion >= 2000)
             warning (1, "PointListDonor should only be used for Abutting1to1");
         if (interp)
             warning (1, "InterpolantsDonor given for PointListDonor");
     }
-    else if (dptype == CellListDonor) {
+    else if (dptype == CGNS_ENUMV( CellListDonor )) {
         if (interp) {
             if (LibraryVersion < 2000)
                 warning (1,
@@ -3710,17 +3710,17 @@ static void check_conn (int nc)
             fprintf (stderr, "malloc failed for connectivity points\n");
             exit (1);
         }
-        if (cg_conn_read (cgnsfn, cgnsbase, cgnszone, nc, pts, Integer, dpts))
+        if (cg_conn_read (cgnsfn, cgnsbase, cgnszone, nc, pts, CGNS_ENUMV( Integer ), dpts))
             error_exit("cg_conn_read");
 
         puts ("    checking connectivity interface");
         fflush (stdout);
-        check_interface (z, ptype, location, npts, pts, ctype != Overset);
+        check_interface (z, ptype, location, npts, pts, ctype != CGNS_ENUMV( Overset ));
         free (pts);
 
         puts ("    checking donor zone interface");
         fflush (stdout);
-        check_interface (dz, dptype, location, dnpts, dpts, ctype != Overset);
+        check_interface (dz, dptype, location, dnpts, dpts, ctype != CGNS_ENUMV( Overset ));
         free (dpts);
     }
 
@@ -3825,8 +3825,8 @@ static void check_hole (int nh)
 {
     char name[33];
     int ierr, n, nptsets, npts, np;
-    GridLocation_t location;
-    PointSetType_t ptype;
+    CGNS_ENUMT( GridLocation_t )  location;
+    CGNS_ENUMT( PointSetType_t )  ptype;
     ZONE *z = &Zones[cgnszone-1];
 
     if (cg_hole_info (cgnsfn, cgnsbase, cgnszone, nh, name,
@@ -3842,18 +3842,18 @@ static void check_hole (int nh)
     fflush (stdout);
 
     ierr = np = 0;
-    if (location != Vertex && location != CellCenter) {
+    if (location != CGNS_ENUMV( Vertex ) && location != CGNS_ENUMV( CellCenter )) {
         error ("location not Vertex or CellCenter");
         ierr++;
     }
-    if (ptype == PointRange) {
+    if (ptype == CGNS_ENUMV( PointRange )) {
         if (nptsets < 1)
             error ("nptsets must be greater then 0 for PointRange");
         if (npts != 2 * nptsets)
             error ("npts not equal to 2 * nptsets for PointRange");
         np = 2 * nptsets;
     }
-    else if (ptype == PointList) {
+    else if (ptype == CGNS_ENUMV( PointList )) {
         if (nptsets != 1)
             error ("nptsets must be 1 for PointList");
         if (npts < 1)
@@ -3874,7 +3874,7 @@ static void check_hole (int nh)
         }
         if (cg_hole_read (cgnsfn, cgnsbase, cgnszone, nh, pnts))
             error_exit("cg_hole_read");
-        if (ptype == PointRange) npts = 2;
+        if (ptype == CGNS_ENUMV( PointRange )) npts = 2;
         for (np = 0, n = 1; n <= nptsets; n++) {
             printf ("    checking point set %d interface\n", n);
             fflush (stdout);
@@ -3957,9 +3957,9 @@ static void check_arbitrary_motion (int na)
     int ierr, n, nd, id, rind[6];
     int datasize, size, ndim, dims[12];
     int *punits, units[9], dataclass;
-    DataType_t datatype;
-    ArbitraryGridMotionType_t type;
-    GridLocation_t location;
+    CGNS_ENUMT( DataType_t )  datatype;
+    CGNS_ENUMT( ArbitraryGridMotionType_t )  type;
+    CGNS_ENUMT( GridLocation_t ) location;
     ZONE *z = &Zones[cgnszone-1];
 
     if (cg_arbitrary_motion_read (cgnsfn, cgnsbase, cgnszone,
@@ -3978,7 +3978,7 @@ static void check_arbitrary_motion (int na)
     ierr = read_gridlocation (&location);
     if (ierr) {
         if (ierr != CG_NODE_NOT_FOUND) error_exit("cg_gridlocation_read");
-        location = Vertex;
+        location = CGNS_ENUMV( Vertex );
     }
     else {
         if (verbose)
@@ -4000,7 +4000,7 @@ static void check_arbitrary_motion (int na)
                 printf (",%d", rind[n]);
             puts ("]");
         }
-        if (z->type == Unstructured && FileVersion < 2400)
+        if (z->type == CGNS_ENUMV( Unstructured ) && FileVersion < 2400)
             error ("rind not valid for unstructured zones");
     }
 
@@ -4035,7 +4035,7 @@ static void check_arbitrary_motion (int na)
     datasize = get_data_size (z, location, rind);
 
     if (cg_narrays (&nd)) error_exit("cg_narrays");
-    if (nd == 0 && type != DeformingGrid)
+    if (nd == 0 && type != CGNS_ENUMV( DeformingGrid ))
         warning (1, "grid velocity data is missing");
 
     for (n = 1; n <= nd; n++) {
@@ -4061,8 +4061,8 @@ static void check_rigid_motion (int nr)
     char name[33];
     int n, nd, i, ndim, dims[12], size;
     int dataclass, *punits, units[9];
-    RigidGridMotionType_t type;
-    DataType_t datatype;
+    CGNS_ENUMT( RigidGridMotionType_t )  type;
+    CGNS_ENUMT( DataType_t )  datatype;
     ZONE *z = &Zones[cgnszone-1];
 
     if (cg_rigid_motion_read (cgnsfn, cgnsbase, cgnszone,
@@ -4139,7 +4139,7 @@ static void check_zone_iter (void)
     char *p, *desc, name[33], buff[33];
     int ierr, n, na, nd, nn, ndim, dims[12], size;
     int dataclass, *punits, units[9];
-    DataType_t datatype;
+    CGNS_ENUMT( DataType_t )  datatype;
     ZONE *z = &Zones[cgnszone-1];
 
     go_absolute ("Zone_t", cgnszone, "ZoneIterativeData_t", 1, NULL);
@@ -4267,8 +4267,8 @@ static void check_discrete (int ndis)
     int n, nd, id, ierr, rind[6];
     int datasize, size, ndim, dims[12];
     int *punits, units[9], dataclass;
-    DataType_t datatype;
-    GridLocation_t location;
+    CGNS_ENUMT( DataType_t )  datatype;
+    CGNS_ENUMT( GridLocation_t )  location;
     ZONE *z = &Zones[cgnszone-1];
 
     if (cg_discrete_read (cgnsfn, cgnsbase, cgnszone, ndis, name))
@@ -4283,7 +4283,7 @@ static void check_discrete (int ndis)
     ierr = read_gridlocation (&location);
     if (ierr) {
         if (ierr != CG_NODE_NOT_FOUND) error_exit("cg_gridlocation_read");
-        location = Vertex;
+        location = CGNS_ENUMV( Vertex );
     }
     else {
         if (verbose)
@@ -4305,7 +4305,7 @@ static void check_discrete (int ndis)
                 printf (",%d", rind[n]);
             puts ("]");
         }
-        if (z->type == Unstructured && FileVersion < 2400)
+        if (z->type == CGNS_ENUMV( Unstructured ) && FileVersion < 2400)
             error ("rind not valid for unstructured zones");
     }
 
@@ -4367,8 +4367,8 @@ static void check_solution (int ns)
     int n, nf, id, ierr, rind[6];
     int datasize, size, ndim, dims[12];
     int *punits, units[9], dataclass;
-    DataType_t datatype;
-    GridLocation_t location;
+    CGNS_ENUMT( DataType_t )  datatype;
+    CGNS_ENUMT( GridLocation_t )  location;
     ZONE *z = &Zones[cgnszone-1];
 
     if (cg_sol_info (cgnsfn, cgnsbase, cgnszone, ns, name, &location))
@@ -4379,12 +4379,12 @@ static void check_solution (int ns)
         printf ("    Grid Location=%s\n", cg_GridLocationName (location));
     fflush (stdout);
 
-    if (location != Vertex && location != CellCenter) {
-        if (z->type == Unstructured)
+    if (location != CGNS_ENUMV( Vertex ) && location != CGNS_ENUMV( CellCenter )) {
+      if (z->type == CGNS_ENUMV( Unstructured ))
             error ("grid location nust be Vertex or CellCenter for"
                 " unstructured zones");
-        else if (location != IFaceCenter &&
-            location != JFaceCenter && location != KFaceCenter)
+      else if (location != CGNS_ENUMV( IFaceCenter ) &&
+	       location != CGNS_ENUMV( JFaceCenter ) && location != CGNS_ENUMV( KFaceCenter ))
             error ("grid location not Vertex,CellCenter or [IJK]FaceCenter");
     }
 
@@ -4405,7 +4405,7 @@ static void check_solution (int ns)
                 printf (",%d", rind[n]);
             puts ("]");
         }
-        if (z->type == Unstructured && FileVersion < 2400)
+        if (z->type == CGNS_ENUMV( Unstructured ) && FileVersion < 2400)
             error ("rind not valid for unstructured zones");
     }
 
@@ -4478,7 +4478,7 @@ static void check_zone (void)
     printf ("checking zone \"%s\"\n", z->name);
     fflush (stdout);
 
-    if (z->type == Structured) {
+    if (z->type == CGNS_ENUMV( Structured )) {
         for (n = 0; n < CellDim; n++) {
             if (z->dims[0][n] < 2) {
                 error ("number of points in %c-direction < 2", indexname[n]);
@@ -4494,7 +4494,7 @@ static void check_zone (void)
                     " for structured grid", indexname[n]);
         }
     }
-    else if (z->type == Unstructured) {
+    else if (z->type == CGNS_ENUMV( Unstructured )) {
         if (z->dims[0][0] < CellDim + 1) {
             error ("number of vertices < CellDim + 1");
             z->idim = 0;
@@ -4702,7 +4702,7 @@ static void check_axisymmetry (float *point, float *vector)
     char name[33];
     int n, na, ndim, dims[12];
     int dataclass, *punits, units[9];
-    DataType_t datatype;
+    CGNS_ENUMT( DataType_t )  datatype;
 
     if (verbose) {
         printf ("  Reference Point=[%g,%g]\n", point[0], point[1]);
@@ -4744,21 +4744,21 @@ static void check_axisymmetry (float *point, float *vector)
             0 == strcmp (name, "AxisymmetryReferencePoint")) {
             if (ndim != 1 || dims[0] != 2)
                 error ("bad dimension values");
-            if (datatype != RealSingle)
+            if (datatype != CGNS_ENUMV( RealSingle ))
                 error ("data type not real");
             check_quantity (n, name, dataclass, punits, 1, 4);
         }
         else if (0 == strcmp (name, "AxisymmetryAngle")) {
             if (ndim != 1 || dims[0] != 1)
                 error ("bad dimension values");
-            if (datatype != RealSingle)
+            if (datatype != CGNS_ENUMV( RealSingle ))
                 error ("data type not real");
             check_quantity (n, name, dataclass, punits, 1, 4);
         }
         else if (0 == strcmp (name, "CoordinateNames")) {
             if (ndim != 2 || dims[0] != 32 || dims[1] != 2)
                 error ("bad dimension values");
-            if (datatype != Character)
+            if (datatype != CGNS_ENUMV( Character ))
                 error ("data type not character");
         }
         else
@@ -4775,7 +4775,7 @@ static void check_gravity (float *vector)
     char *desc, name[33];
     int n, na, nd, ndim, dims[12];
     int dataclass, *punits, units[9];
-    DataType_t datatype;
+    CGNS_ENUMT( DataType_t )  datatype;
 
     if (verbose) {
         printf ("  Vector=[%g]", vector[0]);
@@ -4816,7 +4816,7 @@ static void check_gravity (float *vector)
         if (0 == strcmp (name, "GravityVector")) {
             if (ndim != 1 || dims[0] != PhyDim)
                 error ("invalid dimension values");
-            if (datatype != RealSingle)
+            if (datatype != CGNS_ENUMV( RealSingle ))
                 error ("data type is not RealSingle");
             check_quantity (n, name, dataclass, punits, 1, 4);
         }
@@ -4833,7 +4833,7 @@ static void check_family (int fam)
 {
     char famname[33], name[33], cad[33], *filename;
     int ierr, i, n, nbc, ngeo, nparts;
-    BCType_t bctype;
+    CGNS_ENUMT( BCType_t )  bctype;
 #if CGNS_VERSION >= 2400
     int nds, dirichlet, neumann;
     float point[3], vector[3];
@@ -4934,7 +4934,7 @@ static void check_base_iter (void)
     int ierr, n, na, ns, nd, nmax, ndim, dims[12];
     int dataclass, *punits, units[9];
     int *icnt, nnf = 0, nfp = 0, nnz = 0, nzp = 0;
-    DataType_t datatype;
+    CGNS_ENUMT( DataType_t )  datatype;
 
     if (verbose) printf ("  Number Steps=%d\n", NumSteps);
     if (NumSteps < 1)
@@ -4988,14 +4988,14 @@ static void check_base_iter (void)
         if (0 == strcmp (name, "IterationValues")) {
             if (ndim != 1 || dims[0] != NumSteps)
                 error ("invalid dimension values");
-            if (datatype != Integer)
+            if (datatype != CGNS_ENUMV( Integer ))
                 error ("data type not integer");
             ns++;
         }
         else if (0 == strcmp (name, "TimeValues")) {
             if (ndim != 1 || dims[0] != NumSteps)
                 error ("invalid dimension values");
-            if (datatype != RealSingle && datatype != RealDouble)
+            if (datatype != CGNS_ENUMV( RealSingle ) && datatype != CGNS_ENUMV( RealDouble ))
                 error ("data type not real or double");
             ns++;
         }
@@ -5023,7 +5023,7 @@ static void check_base_iter (void)
             error ("invalid dimension values");
             ierr = 1;
         }
-        if (datatype != Integer) {
+        if (datatype != CGNS_ENUMV( Integer )) {
             error ("data type not integer");
             ierr = 1;
         }
@@ -5053,7 +5053,7 @@ static void check_base_iter (void)
             error ("invalid dimension values");
             ierr = 1;
         }
-        if (datatype != Character) {
+        if (datatype != CGNS_ENUMV( Character )) {
             error ("data type not character");
             ierr = 1;
         }
@@ -5103,7 +5103,7 @@ static void check_base_iter (void)
             error ("invalid dimension values");
             ierr = 1;
         }
-        if (datatype != Integer) {
+        if (datatype != CGNS_ENUMV( Integer )) {
             error ("data type not integer");
             ierr = 1;
         }
@@ -5133,7 +5133,7 @@ static void check_base_iter (void)
             error ("invalid dimension values");
             ierr = 1;
         }
-        if (datatype != Character) {
+        if (datatype != CGNS_ENUMV( Character )) {
             error ("data type not character");
             ierr = 1;
         }
@@ -5176,7 +5176,7 @@ static void check_base (void)
     char basename[33], name[33], *desc;
     int n, nz, ierr, nd, nf, eqset[7];
     float point[3], vector[3];
-    SimulationType_t simulation;
+    CGNS_ENUMT( SimulationType_t )  simulation;
 
     /*----- base dimensions -----*/
 

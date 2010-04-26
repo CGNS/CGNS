@@ -41,13 +41,13 @@ int main (int argc, char **argv)
         sprintf (fname, "zone%d.cgns", nz);
         if (cg_open (fname, CG_MODE_WRITE, &cgfile) ||
             cg_base_write (cgfile, "Base", 3, 3, &cgbase) ||
-            cg_zone_write (cgfile, cgbase, "Zone", size, Structured,
+            cg_zone_write (cgfile, cgbase, "Zone", size, CGNS_ENUMV( Structured ),
                 &cgzone) ||
-            cg_coord_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateX", coord, &cgcoord) ||
-            cg_coord_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateY", coord, &cgcoord) ||
-            cg_coord_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateZ", coord, &cgcoord))
             cg_error_exit();
         if (cg_close(cgfile)) cg_error_exit();

@@ -154,14 +154,14 @@ typedef struct {		/* DimensionalUnits_t Node 		*/
 	cgns_link *link;	/* link information			*/	/* V2.1 */
         int in_link;            /* set if child of a linked node        */
         int nunits;             /* number of units (5 or 8)             */
-	MassUnits_t mass;
-	LengthUnits_t length;
-	TimeUnits_t time;
-	TemperatureUnits_t temperature;
-	AngleUnits_t angle;
-        ElectricCurrentUnits_t current;
-        SubstanceAmountUnits_t amount;
-        LuminousIntensityUnits_t intensity;
+  CGNS_ENUMT( MassUnits_t ) mass;
+  CGNS_ENUMT( LengthUnits_t ) length;
+  CGNS_ENUMT( TimeUnits_t ) time;
+  CGNS_ENUMT( TemperatureUnits_t ) temperature;
+  CGNS_ENUMT( AngleUnits_t ) angle;
+  CGNS_ENUMT( ElectricCurrentUnits_t ) current;
+  CGNS_ENUMT( SubstanceAmountUnits_t ) amount;
+  CGNS_ENUMT( LuminousIntensityUnits_t ) intensity;
 } cgns_units;
 
 typedef struct {		/* DimensionalExponents_t Node		*/
@@ -198,7 +198,7 @@ typedef struct {		/* DataArray_t Node			*/
 	void *data;		/* data */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-        DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* ptrs to in-memory copy of units      */
         cgns_exponent *exponents;/* ptrs to in-memory copy of exponents */
         cgns_conversion *convert;/* ptrs to in-memory copy of convert   */
@@ -211,7 +211,7 @@ typedef struct {		/* IndexArray/Range_t Node		*/
         double id;              /* ADF ID number (address) of node      */
 	cgns_link *link;	/* link information			*/	/* V2.1 */
         int in_link;            /* set if child of a linked node        */
-	PointSetType_t type;	/* PointList, PointRange, ...		*/
+CGNS_ENUMT( PointSetType_t ) type;	/* PointList, PointRange, ...		*/
 	char_33 data_type;   	/* type of data                         */
         int npts;		/* number of points to define the patch	*/
 	int size_of_patch;	/* nr of nodes or elements in patch     */
@@ -228,10 +228,10 @@ typedef struct cgns_user_data_s /* UserDefinedData_t Node		*/
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
         int narrays;            /* No of DataArray_t nodes              */
         cgns_array *array;      /* ptrs to in-mem. copy of Data Arrays  */
-        DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* ptrs to in-memory copy of units      */
  /* V2.4 */
-        GridLocation_t location;/* Grid location where data is recorded */
+  CGNS_ENUMT( GridLocation_t ) location;/* Grid location where data is recorded */
         char_33 family_name;	/* Family name				*/
         int ordinal;		/* option to specify a rank		*/
         cgns_ptset *ptset;	/* PointList, PointRange                */
@@ -248,7 +248,7 @@ typedef struct {		/* IntegralData_t Node			*/
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
 	int narrays;            /* number of data arrays                */
         cgns_array *array;      /* ptrs to in-memory copies of data_arrays */
-	DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* ptrs to in-memory copy of units      */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -261,11 +261,11 @@ typedef struct {                /* DiscreteData_t Node                  */
         int in_link;            /* set if child of a linked node        */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-        GridLocation_t location;/* Grid location where data is recorded*/
+  CGNS_ENUMT( GridLocation_t ) location;/* Grid location where data is recorded*/
         int *rind_planes;       /* No. of rind-planes on each zone face */
         int narrays;            /* number of data arrays                */
         cgns_array *array; 	/* ptrs to in-memory copies of data_arrays */
-        DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* ptrs to in-memory copy of units      */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -282,7 +282,7 @@ typedef struct {		/*  ConvergenceHistory_t node		*/
         cgns_descr *NormDefinitions; /* Document the norms         	*/
         int narrays;            /* number of data arrays                */
         cgns_array *array; 	/* ptrs to in-memory copies of data_arrays */
-        DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* ptrs to in-memory copy of units      */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -298,7 +298,7 @@ typedef struct {                /* ReferenceState_t node                */
 	cgns_descr *StateDescription;/* ReferenceStateDescription	*/
         int narrays;            /* number of data arrays                */
         cgns_array *array; 	/* ptrs to in-memory copies of data_arrays */
-        DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* ptrs to in-memory copy of units      */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -313,7 +313,7 @@ typedef struct {                /* Gravity_t node		        */	/* V2.2 */
 	cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
 	int narrays;            /* should be 0 or 1                     */
 	cgns_array *vector;	/* ptrs to in-memory copy of GravityVector */
-	DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t )data_class; /* Class of data                        */
 	cgns_units *units;      /* ptrs to in-memory copy of units      */
 	int nuser_data;         /* number of user defined data nodes    */
 	cgns_user_data *user_data; /* User defined data.                */
@@ -328,7 +328,7 @@ typedef struct {                /* Axisymmetry_t node                   */      
 	cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
 	int narrays;            /* should be 2, 3 or 4                  */
 	cgns_array *array;      /* ptrs to in-memory copy of data arrays*/
-	DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* ptrs to in-memory copy of units      */
         int nuser_data;         /* number of user defined data nodes    */
         cgns_user_data *user_data; /* User defined data.                */
@@ -343,7 +343,7 @@ typedef struct {                /* RotatingCoordinates_t node           */      
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
         int narrays;            /* should be 2, 3 or 4                  */
         cgns_array *array;      /* ptrs to in-memory copy of data arrays*/
-        DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* ptrs to in-memory copy of units      */
         int nuser_data;         /* number of user defined data nodes    */
         cgns_user_data *user_data; /* User defined data.                */
@@ -356,7 +356,7 @@ typedef struct {		/* WallFunction_t node			*/      /* V2.2 */
         int in_link;            /* set if child of a linked node        */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-	WallFunctionType_t type;/* Type of wall function		*/
+CGNS_ENUMT( WallFunctionType_t ) type;/* Type of wall function		*/
         int nuser_data;         /* number of user defined data nodes    */
         cgns_user_data *user_data; /* User defined data.                */
 } cgns_bcwall;
@@ -368,7 +368,7 @@ typedef struct {		/* Area_t node				*/      /* V2.2 */
         int in_link;            /* set if child of a linked node        */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-	AreaType_t type;	/* type of area				*/
+CGNS_ENUMT( AreaType_t ) type;	/* type of area				*/
         int narrays;            /* should be 2				*/
 	cgns_array *array;      /* ptrs to in-memory copy of data arrays*/
         int nuser_data;         /* number of user defined data nodes    */
@@ -397,7 +397,7 @@ typedef struct {		/* Periodic_t node			*/      /* V2.2 */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
         int narrays;            /* should be 3                          */
         cgns_array *array;      /* ptrs to in-memory copy of data arrays*/
-        DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* ptrs to in-memory copy of units      */
         int nuser_data;         /* number of user defined data nodes    */
         cgns_user_data *user_data; /* User defined data.                */
@@ -410,7 +410,7 @@ typedef struct {                /* AverageInterface_t node		*/      /* V2.2 */
         int in_link;            /* set if child of a linked node        */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-	AverageInterfaceType_t type; /* type of interface		*/
+CGNS_ENUMT( AverageInterfaceType_t ) type; /* type of interface		*/
         int nuser_data;         /* number of user defined data nodes    */
         cgns_user_data *user_data; /* User defined data.                */
 } cgns_caverage;
@@ -433,12 +433,12 @@ typedef struct {                /* xxx Model_t node                     */
         double id;              /* ADF ID number (address) of node      */
 	cgns_link *link;	/* link information			*/	/* V2.1 */
         int in_link;            /* set if child of a linked node        */
-        ModelType_t type;
+CGNS_ENUMT( ModelType_t ) type;
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
         int narrays;            /* No of DataArray_t nodes              */
         cgns_array *array;      /* ptrs to in-mem. copy of Data Arrays  */
-        DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* ptrs to in-memory copy of units      */
 	int *diffusion_model;   /* only for turbulence model.		*/
         int dim_vals;           /* dim. value for diffusion_model       */
@@ -451,7 +451,7 @@ typedef struct {                /* GoverningEquations_t node            */
         double id;              /* ADF ID number (address) of node      */
 	cgns_link *link;	/* link information			*/	/* V2.1 */
         int in_link;            /* set if child of a linked node        */
-        GoverningEquationsType_t type;
+CGNS_ENUMT( GoverningEquationsType_t ) type;
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
         int *diffusion_model;
@@ -476,7 +476,7 @@ typedef struct {                /* FlowEquationSet_t Node               */
         cgns_model *turbulence;	/* ptrs to in-mem. copy of TurbulenceM. */
 	cgns_model *relaxation; /* ptrs to in-mem. copy of ThermalRelaxation . */
 	cgns_model *chemkin;    /* ptrs to in-mem. copy of ChemicalKinetics. */
-        DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* ptrs to in-memory copy of units      */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -495,7 +495,7 @@ typedef struct {		/* BCData_t node			*/
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
 	int narrays;		/* no. of global data arrays		*/
 	cgns_array *array;	/* ptrs to in-mem. copy of local data	*/
-	DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* Dimensional Units                    */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -508,16 +508,16 @@ typedef struct {		/* BCDataSet_t node			*/
         int in_link;            /* set if child of a linked node        */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-	BCType_t type;		/* type of boco                         */
+CGNS_ENUMT( BCType_t ) type;		/* type of boco                         */
 	cgns_bcdata *dirichlet;	/* ptrs to in-mem. copy of DirichletData*/
 	cgns_bcdata *neumann;	/* ptrs to in-mem. copy of NeumannData	*/
 	cgns_state *state;      /* ptrs to in-memory copies of Ref.state*/
-        DataClass_t data_class; /* Class of data                        */
+CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* Dimensional Units                    */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
  /* V2.4 */
-        GridLocation_t location;/* Grid location where data is recorded */
+CGNS_ENUMT( GridLocation_t ) location;/* Grid location where data is recorded */
         cgns_ptset *ptset;	/* PointList, PointRange                */
 } cgns_dataset;
 
@@ -528,7 +528,7 @@ typedef struct {                /* Elements_t node                      */
         int in_link;            /* set if child of a linked node        */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-        ElementType_t el_type;  /* element type                         */
+CGNS_ENUMT( ElementType_t ) el_type;  /* element type                         */
         int el_bound;           /* nr of bound. el. if sorted, else 0   */
 	int range[2];		/* index of first and last element 	*/
         int *rind_planes;       /* No. of rind-elements                 */
@@ -545,8 +545,8 @@ typedef struct {		/* BC_t node				*/
         int in_link;            /* set if child of a linked node        */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-	GridLocation_t location;/* Grid location                        */
-        BCType_t type;          /* type of boco                         */
+  CGNS_ENUMT( GridLocation_t ) location;/* Grid location                        */
+  CGNS_ENUMT( BCType_t ) type;          /* type of boco                         */
         cgns_ptset *ptset;      /* PointList, PointRange                */
 	char_33 family_name;	/* Family name for the bound. patch	*/
 	int *Nindex;		/* Inward Normal Index			*/
@@ -556,7 +556,7 @@ typedef struct {		/* BC_t node				*/
 	cgns_dataset *dataset;  /* ptrs to in-mem. copy of BCDataSet	*/
 	cgns_bprop *bprop;	/* ptrs to in-mem. copy of BCProperty_t */	/* V2.2 */
 	cgns_state *state;      /* ptrs to in-memory copies of Ref.state*/
-	DataClass_t data_class; /* Class of data                        */
+  CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* Dimensional Units                    */
 	int ordinal;		/* option to define a rank		*/
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
@@ -573,7 +573,7 @@ typedef struct {		/* ZoneBC_t node			*/
 	int nbocos;             /* number of BC_t nodes                 */
         cgns_boco *boco;        /* ptrs to in-memory copies of bocos    */
 	cgns_state *state;      /* ptrs to in-memory copies of Ref.state*/
-	DataClass_t data_class; /* Class of data                        */
+  CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* Dimensional Units                    */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -586,7 +586,7 @@ typedef struct {		/* OversetHoles_t node			*/
         int in_link;            /* set if child of a linked node        */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-        GridLocation_t location;/* Grid location                   	*/
+  CGNS_ENUMT( GridLocation_t ) location;/* Grid location                   	*/
         int nptsets;            /* Number of point-sets                 */
         cgns_ptset *ptset;      /* any no of PointList and/or PointRange*/
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
@@ -600,8 +600,8 @@ typedef struct {		/* GridConnectivity_t node		*/
         int in_link;            /* set if child of a linked node        */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-	GridConnectivityType_t type; /*Overset, Abutting or Abutting1to1*/
-	GridLocation_t location;/* Grid location                   	*/
+  CGNS_ENUMT( GridConnectivityType_t ) type; /*Overset, Abutting or Abutting1to1*/
+  CGNS_ENUMT( GridLocation_t ) location;/* Grid location                   	*/
 	cgns_ptset ptset;       /* PointList or PointRange              */
 	cgns_ptset dptset;	/* PointListDonor or CellListDonor      */
 	int narrays;		/* should be 0 or 1			*/
@@ -656,11 +656,11 @@ typedef struct {		/* FlowSolution_t node			*/
         int in_link;            /* set if child of a linked node        */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-        GridLocation_t location;/* Grid location type          		*/
+  CGNS_ENUMT( GridLocation_t ) location;/* Grid location type          		*/
         int *rind_planes;       /* No. of rind-planes on each zone face */
         int nfields;            /* number of flow solution arrays       */
         cgns_array *field;      /* ptrs to in-memory copies of sol.field*/
-        DataClass_t data_class; /* Class of data                        */
+  CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* Dimensional Units                    */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -676,7 +676,7 @@ typedef struct {		/* GridCoordinates_t node		*/
         int *rind_planes;       /* No. of rind-planes on each zone face */
         int ncoords;            /* number of coordinates arrays         */
         cgns_array *coord;      /* ptrs to in-mem. copy of coord-arrays */
-        DataClass_t data_class; /* Class of data                        */
+  CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* Dimensional Units                    */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -689,10 +689,10 @@ typedef struct {                /* RigidGridMotion_t node               */	/* V2
         int in_link;            /* set if child of a linked node        */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-        RigidGridMotionType_t type;  /* type of rigid motion    	*/
+  CGNS_ENUMT( RigidGridMotionType_t ) type;  /* type of rigid motion    	*/
         int narrays;            /* no. of data arrays            	*/
         cgns_array *array;      /* ptrs to in-mem. copy of local data   */
-        DataClass_t data_class; /* Class of data                        */
+  CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* Dimensional Units                    */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -705,12 +705,12 @@ typedef struct {                /* ArbitraryGridMotion_t node           */	/* V2
         int in_link;            /* set if child of a linked node        */
         int ndescr;             /* no of Descriptor_t nodes             */
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-	ArbitraryGridMotionType_t type;/* type of arbitrary motion	*/
-        GridLocation_t location;/* Grid location type          		*/
+  CGNS_ENUMT( ArbitraryGridMotionType_t ) type;/* type of arbitrary motion	*/
+  CGNS_ENUMT( GridLocation_t ) location;/* Grid location type          		*/
         int *rind_planes;       /* No. of rind-planes on each zone face	*/
 	int narrays;            /* no. of data arrays            	*/
         cgns_array *array;      /* ptrs to in-mem. copy of misc. arrays */
-        DataClass_t data_class; /* Class of data                        */
+  CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* Dimensional Units                    */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -725,7 +725,7 @@ typedef struct {                /* ZoneIterativeData_t node             */      
         cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
 	int narrays;            /* no. of data arrays                   */
         cgns_array *array;      /* ptrs to in-mem. copy of misc. arrays */
-        DataClass_t data_class; /* Class of data                        */
+  CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* Dimensional Units                    */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -741,7 +741,7 @@ typedef struct {		/* BaseIterativeData_t node		*/	/* V2.0 */
 	int nsteps;		/* NumberOfSteps			*/
 	int narrays;            /* no. of data arrays                   */
 	cgns_array *array;	/* ptrs to in-mem. copy of misc. arrays */
-	DataClass_t data_class; /* Class of data                        */
+  CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
         cgns_units *units;      /* Dimensional Units                    */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -752,7 +752,7 @@ typedef struct {		/* Zone_t Node				*/
         double id;              /* ADF ID number (address) of node      */
 	cgns_link *link;	/* link information			*/	/* V2.1 */
         int in_link;            /* set if child of a linked node        */
-	ZoneType_t type;	/* Structured or Unstructured		*/
+  CGNS_ENUMT( ZoneType_t ) type;	/* Structured or Unstructured		*/
         int index_dim;          /* nr of indices to specify a node      */
         int *nijk;              /* size of zone in vertex and cells     */
         int ndescr;             /* no of Descriptor_t nodes             */
@@ -771,7 +771,7 @@ typedef struct {		/* Zone_t Node				*/
 	cgns_zconn *zconn;	/* ptrs to in-mem. copy of ZoneGridConn.*/
 	cgns_zboco *zboco;	/* ptrs to in-memory copies of ZoneBC   */
 	cgns_state *state;	/* ptrs to in-memory copies of Ref.state*/
-	DataClass_t data_class; /* Class of data                        */
+  CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
 	cgns_units *units;      /* Dimensional Units                   	*/
 	cgns_equations *equations;/* ptrs to in-mem. copy of FlowEqu.  	*/
 	cgns_converg *converg;  /* ptrs to in-mem. copy of Conv.Hist.	*/
@@ -814,7 +814,7 @@ typedef struct {                /* FamilyBC_t node			*/
         double id;              /* ADF ID number (address) of node      */
 	cgns_link *link;	/* link information			*/	/* V2.1 */
         int in_link;            /* set if child of a linked node        */
-	BCType_t type;          /* type of boco				*/
+  CGNS_ENUMT( BCType_t ) type;          /* type of boco				*/
  /* V2.4 */
         int ndataset;		/* no of BCDataSet nodes		*/
         cgns_dataset *dataset;	/* ptrs to in-mem. copy of BCDataSet	*/
@@ -852,14 +852,14 @@ typedef struct {		/* CGNSBase_t Node			*/
 	int nfamilies;		/* number of families			*/
 	cgns_family *family;	/* ptrs to in-memory copies of families */
 	cgns_state *state;	/* ptrs to in-memory copies of Ref.state*/
-	DataClass_t data_class; /* Class of data                        */
+  CGNS_ENUMT( DataClass_t ) data_class; /* Class of data                        */
 	cgns_units *units;	/* Dimensional Units			*/
 	cgns_equations *equations; /* ptrs to in-mem. copy of FlowEqu.	*/
 	cgns_converg *converg;  /* ptrs to in-mem. copy of Conv.Hist.	*/
 	int nintegrals;		/* no of IntegralData_t nodes		*/
 	cgns_integral *integral;/* ptrs to in-mem. copy of integral data*/
 	cgns_biter *biter;	/* ptrs to in-mem. copy of BaseIter.	*/	/* V2.0 */
-	SimulationType_t type;	/* Simulation type			*/	/* V2.0 */
+  CGNS_ENUMT( SimulationType_t ) type;	/* Simulation type			*/	/* V2.0 */
 	double type_id;		/* ADF ID number of SimulationType_t    */	/* V2.0 */
 	int nuser_data;		/* number of user defined data nodes	*/	/* V2.1 */
 	cgns_user_data *user_data; /* User defined data.		*/	/* V2.1 */
@@ -951,7 +951,7 @@ cgns_zboco   *cgi_get_zboco  (cgns_file *cg, int B, int Z);
 cgns_boco    *cgi_get_boco   (cgns_file *cg, int B, int Z, int BC);
 cgns_dataset *cgi_get_dataset(cgns_file *cg, int B, int Z, int BC, int DSet);
 cgns_bcdata  *cgi_get_bcdata (cgns_file *cg, int B, int Z, int BC, int Dset,
-                              BCDataType_t type);
+                              CGNS_ENUMT( BCDataType_t ) type);
 cgns_model   *cgi_get_model  (cgns_file *cg, int B, int Z, char *model);
 cgns_state   *cgi_get_state  (cgns_file *cg, int B, int Z, int ZBC, int BC, int Dset);
 cgns_converg *cgi_get_converg(cgns_file *cg, int B, int Z);
@@ -975,11 +975,11 @@ CGNSDLL cgns_posit *cgi_get_posit();
    (posit_label) and their parent memory address (posit) */
 cgns_descr *cgi_descr_address(int local_mode, int descr_no,
 			      char const *descr_name, int *ier);
-DataClass_t *cgi_dataclass_address(int local_mode, int *ier);
+  CGNS_ENUMT( DataClass_t ) *cgi_dataclass_address(int local_mode, int *ier);
 cgns_units *cgi_units_address(int local_mode, int *ier);
 int *cgi_ordinal_address(int local_mode, int *ier);
 int *cgi_rind_address(int local_mode, int *ier);
-GridLocation_t *cgi_location_address(int local_mode, int *ier);
+  CGNS_ENUMT( GridLocation_t ) *cgi_location_address(int local_mode, int *ier);
 cgns_conversion *cgi_conversion_address(int local_mode, int *ier);
 cgns_exponent *cgi_exponent_address(int local_mode, int *ier);
 cgns_integral *cgi_integral_address(int local_mode, int integral_no,
@@ -1002,7 +1002,7 @@ cgns_dataset * cgi_bcdataset_address(int local_mode, int given_no,
 int cgi_read();
 int cgi_read_base(cgns_base *base);
 int cgi_read_zone(cgns_zone *zone);
-int cgi_read_zonetype(double parent_id, char_33 parent_name, ZoneType_t *type);
+  int cgi_read_zonetype(double parent_id, char_33 parent_name, CGNS_ENUMT( ZoneType_t ) *type);
 int cgi_read_family(cgns_family *family);
 int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
                          char_33 family_name);
@@ -1015,7 +1015,7 @@ int cgi_read_1to1(cgns_1to1 *one21);
 int cgi_read_ptset(double parent_id, cgns_ptset *ptset);
 int cgi_read_string(double id, char_33 name, char **string_data);
 int cgi_read_boco(cgns_boco *boco);
-int cgi_read_location(double parent_id, char_33 parent_name, GridLocation_t *location);
+  int cgi_read_location(double parent_id, char_33 parent_name, CGNS_ENUMT( GridLocation_t ) *location);
 int cgi_read_state(int in_link, double parent_id, cgns_state **state);
 int cgi_read_converg(int in_link, double parent_id, cgns_converg **converg);
 int cgi_read_units(int in_link, double parent_id, cgns_units **units);
@@ -1042,12 +1042,12 @@ int cgi_read_bcdata(cgns_bcdata *bcdata);
 int cgi_read_rind(double parent_id, int **rind_planes);
 int cgi_read_ordinal(double parent_id, int *ordinal);
 int cgi_read_DDD(int in_link, double parent_id, int *ndescr, cgns_descr **descr,
-                 DataClass_t *data_class, cgns_units **units);
+                 CGNS_ENUMT( DataClass_t ) *data_class, cgns_units **units);
 int cgi_read_rmotion(int in_link, double parent_id, int *nrmotions,
                      cgns_rmotion **rmotion);
 int cgi_read_amotion(int in_link, double parent_id, int *namotions,
                      cgns_amotion **amotion);
-int cgi_read_simulation(double parent_id, SimulationType_t *type, double *type_id);
+  int cgi_read_simulation(double parent_id, CGNS_ENUMT( SimulationType_t ) *type, double *type_id);
 int cgi_read_biter(int in_link, double parent_id, cgns_biter **biter);
 int cgi_read_ziter(int in_link, double parent_id, cgns_ziter **ziter);
 int cgi_read_gravity(int in_link, double parent_id, cgns_gravity **gravity);
@@ -1059,7 +1059,7 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
                        cgns_user_data **user_data);
 cgns_link *cgi_read_link(double node_id);
 
-int cgi_datasize(int Idim, int *CurrentDim, GridLocation_t location,
+  int cgi_datasize(int Idim, int *CurrentDim, CGNS_ENUMT( GridLocation_t ) location,
 		 int *rind_planes, int *DataSize);
 
 int cgi_read_node(double node_id, char_33 name, char_33 data_type,
@@ -1093,7 +1093,7 @@ CGNSDLL int cgi_write_array(double parent_id, cgns_array *array);
 int cgi_write_rind(double parent_id, int *rind_planes, int idim);
 int cgi_write_units(double parent_id, cgns_units *units);
 int cgi_write_exponents(double parent_id, cgns_exponent *exponents);
-CGNSDLL int cgi_write_dataclass(double parent_id, DataClass_t data_class);
+CGNSDLL int cgi_write_dataclass(double parent_id, CGNS_ENUMT( DataClass_t ) data_class);
 int cgi_write_descr(double parent_id, cgns_descr *descr);
 CGNSDLL int cgi_write_ordinal(double parent_id, int ordinal);
 int cgi_write_rmotion(double parent_id, cgns_rmotion *rmotion);
@@ -1125,29 +1125,29 @@ CGNSDLL void cgi_warning(char *format, ...);
 CGNSDLL void cg_io_error(const char *routine_name);
 
 /* retrieve list number from list name */
-int cgi_GridLocation(char *GridLocationName, GridLocation_t *type);
+int cgi_GridLocation(char *GridLocationName, CGNS_ENUMT( GridLocation_t ) *type);
 int cgi_GridConnectivityType(char *GridConnectivityName,
-			     GridConnectivityType_t *type);
-int cgi_PointSetType(char *PointSetName, PointSetType_t *type);
-int cgi_BCType(char *BCName, BCType_t *type);
-int cgi_DataClass(char *Name, DataClass_t *data_class);
-int cgi_MassUnits(char *Name, MassUnits_t *mass_unit);
-int cgi_LengthUnits(char *Name, LengthUnits_t *length_unit);
-int cgi_TimeUnits(char *Name, TimeUnits_t *time_unit);
-int cgi_TemperatureUnits(char *Name, TemperatureUnits_t *temperature_unit);
-int cgi_AngleUnits(char *Name, AngleUnits_t *angle_unit);
-int cgi_ElectricCurrentUnits(char *Name, ElectricCurrentUnits_t *unit);
-int cgi_SubstanceAmountUnits(char *Name, SubstanceAmountUnits_t *unit);
-int cgi_LuminousIntensityUnits(char *Name, LuminousIntensityUnits_t *unit);
-int cgi_GoverningEquationsType(char *Name, GoverningEquationsType_t *type);
-int cgi_ModelType(char *Name, ModelType_t *type);
-int cgi_ZoneType(char *Name, ZoneType_t *type);
-int cgi_RigidGridMotionType(char *Name, RigidGridMotionType_t *type);
-int cgi_ArbitraryGridMotionType(char *Name, ArbitraryGridMotionType_t *type);
-int cgi_SimulationType(char *Name, SimulationType_t *type);
-int cgi_WallFunctionType(char *Name, WallFunctionType_t *type);
-int cgi_AreaType(char *Name, AreaType_t *type);
-int cgi_AverageInterfaceType(char *Name, AverageInterfaceType_t *type);
+			     CGNS_ENUMT( GridConnectivityType_t ) *type);
+int cgi_PointSetType(char *PointSetName, CGNS_ENUMT( PointSetType_t ) *type);
+int cgi_BCType(char *BCName, CGNS_ENUMT( BCType_t ) *type);
+int cgi_DataClass(char *Name, CGNS_ENUMT( DataClass_t ) *data_class);
+int cgi_MassUnits(char *Name, CGNS_ENUMT( MassUnits_t ) *mass_unit);
+int cgi_LengthUnits(char *Name, CGNS_ENUMT( LengthUnits_t ) *length_unit);
+int cgi_TimeUnits(char *Name, CGNS_ENUMT( TimeUnits_t ) *time_unit);
+int cgi_TemperatureUnits(char *Name, CGNS_ENUMT( TemperatureUnits_t ) *temperature_unit);
+int cgi_AngleUnits(char *Name, CGNS_ENUMT( AngleUnits_t ) *angle_unit);
+int cgi_ElectricCurrentUnits(char *Name, CGNS_ENUMT( ElectricCurrentUnits_t ) *unit);
+int cgi_SubstanceAmountUnits(char *Name, CGNS_ENUMT( SubstanceAmountUnits_t ) *unit);
+int cgi_LuminousIntensityUnits(char *Name, CGNS_ENUMT( LuminousIntensityUnits_t ) *unit);
+int cgi_GoverningEquationsType(char *Name, CGNS_ENUMT( GoverningEquationsType_t ) *type);
+int cgi_ModelType(char *Name, CGNS_ENUMT( ModelType_t ) *type);
+int cgi_ZoneType(char *Name, CGNS_ENUMT( ZoneType_t ) *type);
+int cgi_RigidGridMotionType(char *Name, CGNS_ENUMT( RigidGridMotionType_t ) *type);
+int cgi_ArbitraryGridMotionType(char *Name, CGNS_ENUMT( ArbitraryGridMotionType_t ) *type);
+int cgi_SimulationType(char *Name, CGNS_ENUMT( SimulationType_t ) *type);
+int cgi_WallFunctionType(char *Name, CGNS_ENUMT( WallFunctionType_t ) *type);
+int cgi_AreaType(char *Name, CGNS_ENUMT( AreaType_t ) *type);
+int cgi_AverageInterfaceType(char *Name, CGNS_ENUMT( AverageInterfaceType_t ) *type);
 
 int cgi_zone_no(cgns_base *base, char *zonename, int *zone_no);
 
@@ -1157,15 +1157,15 @@ int size_of(char_33 adf_type);
 char *type_of(char_33 data_type);
 int cgi_check_strlen(char const * string);
 int cgi_check_mode(char const * filename, int file_mode, int mode_wanted);
-char *cgi_adf_datatype(DataType_t type);
-DataType_t cgi_datatype(cchar_33 adf_type);
+char *cgi_adf_datatype(CGNS_ENUMT( DataType_t ) type);
+CGNS_ENUMT( DataType_t ) cgi_datatype(cchar_33 adf_type);
 
 int cgi_add_czone(char_33 zonename, int_6 range, int_6 donor_range, int idim, int *ndouble,
                   char_33 **Dzonename, int_6 **Drange, int_6 **Ddonor_range);
 
 void cgi_array_print(char *routine, cgns_array *array);
 
-int cgi_element_data_size(ElementType_t type, int nelems, const int *connect);
+  int cgi_element_data_size(CGNS_ENUMT( ElementType_t ) type, int nelems, const int *connect);
 
 /* free memory */
 void cgi_free_file(cgns_file *cg);

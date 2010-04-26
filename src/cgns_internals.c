@@ -42,7 +42,7 @@ int Idim;           /* current IndexDimension          */
 int Cdim;           /* current CellDimension           */
 int Pdim;           /* current PhysicalDimension           */
 int CurrentDim[9];      /* current vertex, cell & bnd zone size*/
-ZoneType_t CurrentZoneType;     /* current zone type               */
+CGNS_ENUMT( ZoneType_t ) CurrentZoneType;     /* current zone type               */
 int NumberOfSteps;      /* Number of steps             */
 
 /*----- the goto stack -----*/
@@ -259,7 +259,7 @@ int cgi_read_zone(cgns_zone *zone) {
     if (cgi_read_zonetype(zone->id, zone->name, &zone->type)) return 1;
 
      /* Set IndexDimension of zone */
-    if (zone->type==Structured) zone->index_dim=Cdim;
+    if (zone->type==CGNS_ENUMV( Structured )) zone->index_dim=Cdim;
     else zone->index_dim=1;
 
      /* save Global Variable Idim */
@@ -287,7 +287,7 @@ int cgi_read_zone(cgns_zone *zone) {
     CurrentZoneType = zone->type;
 
      /* verify data */
-    if (zone->type==Structured) {
+    if (zone->type==CGNS_ENUMV( Structured )) {
         for (n=0; n<zone->index_dim; n++) {
             if (zone->nijk[n] <=0 || zone->nijk[n]!=zone->nijk[n+Idim]+1) {
                 cgi_error("Invalid structured zone dimensions");
@@ -323,7 +323,7 @@ int cgi_read_zone(cgns_zone *zone) {
      /* Elements_t: Only for Unstructured zones */
     if (cgi_read_section(in_link, zone->id, &zone->nsections, &zone->section))
         return 1;
-    if (zone->type==Structured && zone->nsections!=0) {
+    if (zone->type==CGNS_ENUMV( Structured ) && zone->nsections!=0) {
         cgi_error("Elements_t nodes is valid only for unstructured zones");
         return 1;
     }
@@ -615,7 +615,7 @@ int cgi_read_zcoor(int in_link, double parent_id, int *nzcoor, cgns_zcoor **zcoo
         if (cgi_read_rind(zcoor[0][g].id, &zcoor[0][g].rind_planes)) return 1;
 
          /* Assume that the coordinates are always at the node */
-        if (cgi_datasize(Idim, CurrentDim, Vertex, zcoor[0][g].rind_planes,
+        if (cgi_datasize(Idim, CurrentDim, CGNS_ENUMV( Vertex ), zcoor[0][g].rind_planes,
             DataSize)) return 1;
 
          /* DataArray_t */
@@ -670,7 +670,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
     double *id, *idi;
     int n, i, linked;
     int ndim, dim_vals[12], *data, nchild, npe, nelements;
-    ElementType_t el_type;
+    CGNS_ENUMT( ElementType_t ) el_type;
     char_33 data_type, temp_name;
     void *vdata;
 
@@ -711,9 +711,9 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
             return 1;
         }
         data = (int *)vdata;
-        el_type = (ElementType_t)data[0];
+        el_type = ( CGNS_ENUMT( ElementType_t ))data[0];
         /* additional element types added in 3 */
-        if (cg->version < 3000 && el_type > PYRA_5) el_type++;
+        if (cg->version < 3000 && el_type > CGNS_ENUMV(  PYRA_5 )) el_type++;
         section[0][n].el_type = el_type;
         section[0][n].el_bound = data[1];
         free(vdata);
@@ -850,7 +850,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 
                 } else {    /* starting with version 1200 */
                     int size, modified = 0;
-                    if (cg->version < 3000 && section[0][n].el_type >= MIXED) {
+                    if (cg->version < 3000 && section[0][n].el_type >= CGNS_ENUMV( MIXED )) {
                         int ne, *elem_data;
                         if (section[0][n].connect->data == 0) {
                             if (cgi_read_node(section[0][n].connect->id,
@@ -860,16 +860,16 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                             section[0][n].connect->data = vdata;
                         }
                         elem_data = (int *)section[0][n].connect->data;
-                        if (section[0][n].el_type == MIXED) {
+                        if (section[0][n].el_type == CGNS_ENUMV( MIXED )) {
                             for (size = 0, ne = 0; ne < nelements; ne++) {
-                                el_type = (ElementType_t)elem_data[size];
-                                if (el_type > PYRA_5) {
+			      el_type = ( CGNS_ENUMT( ElementType_t ))elem_data[size];
+			      if (el_type > CGNS_ENUMV( PYRA_5 )) {
                                     modified++;
                                     el_type++;
                                     elem_data[size] = el_type;
                                 }
-                                if (el_type > NGON_n)
-                                    npe = el_type - NGON_n;
+			      if (el_type > CGNS_ENUMV( NGON_n ))
+				npe = el_type - CGNS_ENUMV( NGON_n );
                                 else
                                     cg_npe (el_type, &npe);
                                 if (npe <= 0) {
@@ -881,9 +881,9 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                         }
                         else {
                             for (size = 0, ne = 0; ne < nelements; ne++) {
-                                el_type = (ElementType_t)elem_data[size];
+			      el_type = ( CGNS_ENUMT( ElementType_t ))elem_data[size];
                                 modified++;
-                                npe = el_type + 1 - NGON_n;
+                                npe = el_type + 1 - CGNS_ENUMV( NGON_n );
                                 if (npe < 0) {
                                     cgi_error("Error exit: invalid element type in NGON_n elements");
                                     return 1;
@@ -903,7 +903,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                         return 1;
                     }
                     /* rewrite if needed */
-                    if (cg->version < 3000 && section[0][n].el_type > PYRA_13 &&
+                    if (cg->version < 3000 && section[0][n].el_type > CGNS_ENUMV( PYRA_13 ) &&
                         cg->mode == CG_MODE_MODIFY && !linked) {
                         dim_vals[0] = (int)section[0][n].el_type;
                         dim_vals[1] = section[0][n].el_bound;
@@ -1176,7 +1176,7 @@ int cgi_read_1to1(cgns_1to1 *one21) {
                 one21->ptset.id=IR_id[i];
                 one21->ptset.link=cgi_read_link(IR_id[i]);
                 one21->ptset.in_link=linked;
-                one21->ptset.type=PointRange;
+                one21->ptset.type=CGNS_ENUMV( PointRange );
             } else {
                 cgi_error("Multiple PointRange definition for %s",one21->name);
                 return 1;
@@ -1186,7 +1186,7 @@ int cgi_read_1to1(cgns_1to1 *one21) {
                 one21->dptset.id=IR_id[i];
                 one21->dptset.link=cgi_read_link(IR_id[i]);
                 one21->dptset.in_link=linked;
-                one21->dptset.type=PointRangeDonor;
+                one21->dptset.type=CGNS_ENUMV( PointRangeDonor );
             } else {
                 cgi_error("Multiple PointRangeDonor definition for %s",one21->name);
                 return 1;
@@ -1289,9 +1289,9 @@ int cgi_read_conn(cgns_conn *conn) {
 
      /* GridLocation */
     if (cgi_read_location(conn->id, conn->name, &conn->location)) return 1;
-    if (conn->location != Vertex && conn->location != CellCenter &&
-        conn->location != FaceCenter && conn->location != IFaceCenter &&
-        conn->location != JFaceCenter && conn->location != KFaceCenter) {
+    if (conn->location != CGNS_ENUMV( Vertex ) && conn->location != CGNS_ENUMV( CellCenter ) &&
+        conn->location != CGNS_ENUMV( FaceCenter ) && conn->location != CGNS_ENUMV( IFaceCenter ) &&
+        conn->location != CGNS_ENUMV( JFaceCenter ) && conn->location != CGNS_ENUMV( KFaceCenter )) {
         cgi_error("Unsupported GridLocation %s for Connectivity %s",
             cg_GridLocationName(conn->location), conn->name);
         return 1;
@@ -1311,7 +1311,7 @@ int cgi_read_conn(cgns_conn *conn) {
                 conn->ptset.id=id[i];
                 conn->ptset.link=cgi_read_link(id[i]);
                 conn->ptset.in_link=linked;
-                conn->ptset.type=PointList;
+                conn->ptset.type=CGNS_ENUMV( PointList );
                 if (cgi_read_ptset(conn->id, &conn->ptset)) return 1;
             } else {
                 cgi_error("Multiple PointList definition for %s",conn->name);
@@ -1333,7 +1333,7 @@ int cgi_read_conn(cgns_conn *conn) {
                 conn->ptset.id=id[i];
                 conn->ptset.link=cgi_read_link(id[i]);
                 conn->ptset.in_link=linked;
-                conn->ptset.type=PointRange;
+                conn->ptset.type=CGNS_ENUMV( PointRange );
                 if (cgi_read_ptset(conn->id, &conn->ptset)) return 1;
             } else {
                 cgi_error("Multiple PointSet definition for %s",conn->name);
@@ -1409,13 +1409,13 @@ int cgi_read_conn(cgns_conn *conn) {
             conn->dptset.link=cgi_read_link(id[i]);
             conn->dptset.in_link=linked;
             if (strcmp(name, "PointListDonor")==0)
-                conn->dptset.type=PointListDonor;
+	      conn->dptset.type=CGNS_ENUMV( PointListDonor );
             else {
                 if (strcmp(parent_label,"StructuredDonor_t")==0) {
                     cgi_error("StructuredDonor_t doesn't support CellListDonor");
                     return 1;
                 }
-                conn->dptset.type=CellListDonor;
+                conn->dptset.type=CGNS_ENUMV( CellListDonor );
             }
             if (cgi_read_ptset(parent_id, &conn->dptset)) return 1;
         } else {
@@ -1464,7 +1464,7 @@ int cgi_read_conn(cgns_conn *conn) {
         return 1;
 
     if (nchild==0) {
-        conn->type = Overset;
+      conn->type = CGNS_ENUMV( Overset );
     } else if (nchild<0 || nchild>1) {
         cgi_error("Invalid definition of GridConnectivityType_t for %s",conn->name);
         return 1;
@@ -1708,7 +1708,7 @@ int cgi_read_hole(cgns_hole *hole) {
 
      /* GridLocation */
     if (cgi_read_location(hole->id, hole->name, &hole->location)) return 1;
-    if (hole->location != Vertex && hole->location != CellCenter) {
+    if (hole->location != CGNS_ENUMV( Vertex ) && hole->location != CGNS_ENUMV( CellCenter )) {
         cgi_error("Unsupported GridLocation %s for Overset Hole %s",
             hole->location < 0 || hole->location >= NofValidGridLocation ?
             "<invalid>" : GridLocationName[hole->location], hole->name);
@@ -1727,7 +1727,7 @@ int cgi_read_hole(cgns_hole *hole) {
             hole->ptset[set].id = IR_id[set];
             hole->ptset[set].link = cgi_read_link(IR_id[set]);
             hole->ptset[set].in_link = linked;
-            hole->ptset[set].type = PointRange;
+            hole->ptset[set].type = CGNS_ENUMV( PointRange );
             if (cgi_read_ptset(hole->id, &hole->ptset[set])) return 1;
         }
         free(IR_id);
@@ -1739,7 +1739,7 @@ int cgi_read_hole(cgns_hole *hole) {
         hole->ptset[0].id = IA_id[0];
         hole->ptset[0].link = cgi_read_link(IA_id[0]);
         hole->ptset[0].in_link = linked;
-        hole->ptset[0].type = PointList;
+        hole->ptset[0].type = CGNS_ENUMV( PointList );
         if (cgi_read_ptset(hole->id, &hole->ptset[0])) return 1;
         free(IA_id);
 
@@ -1748,7 +1748,7 @@ int cgi_read_hole(cgns_hole *hole) {
         hole->nptsets = 1;
         hole->ptset = CGNS_NEW(cgns_ptset, 1);
         hole->ptset[0].npts = 0;
-        hole->ptset[0].type = PointList; /* initialize */
+        hole->ptset[0].type = CGNS_ENUMV( PointList ); /* initialize */
         strcpy(hole->ptset[0].data_type, "I4");
         hole->ptset[0].id = 0;
         hole->ptset[0].link = 0;
@@ -1866,10 +1866,10 @@ int cgi_read_boco(cgns_boco *boco) {
         }
         boco->ptset = CGNS_NEW(cgns_ptset, 1);
         if (strcmp(name,"ElementRange")==0)
-            boco->ptset->type = ElementRange;
+	  boco->ptset->type = CGNS_ENUMV( ElementRange );
         else
-            boco->ptset->type = PointRange;
-        boco->location = GridLocationNull;
+	  boco->ptset->type = CGNS_ENUMV( PointRange );
+        boco->location = CGNS_ENUMV( GridLocationNull );
         boco->ptset->id=IR_id[n];
         boco->ptset->link=cgi_read_link(IR_id[n]);
         boco->ptset->in_link=linked;
@@ -1890,10 +1890,10 @@ int cgi_read_boco(cgns_boco *boco) {
         }
         boco->ptset = CGNS_NEW(cgns_ptset, 1);
         if (strcmp(name,"ElementList")==0)
-            boco->ptset->type = ElementList;
+	  boco->ptset->type = CGNS_ENUMV( ElementList );
         else
-            boco->ptset->type = PointList;
-        boco->location = GridLocationNull;
+	  boco->ptset->type = CGNS_ENUMV( PointList );
+        boco->location = CGNS_ENUMV( GridLocationNull );
         boco->ptset->id = IA_id[n];
         boco->ptset->link = cgi_read_link(IA_id[n]);
         boco->ptset->in_link = linked;
@@ -1990,7 +1990,7 @@ int cgi_read_boco(cgns_boco *boco) {
             if (cgi_read_location(boco->dataset[0].id, boco->dataset[0].name,
                 &boco->location)) return 1;
         } else {
-            if (!boco->location) boco->location=Vertex;
+	  if (!boco->location) boco->location= CGNS_ENUMV( Vertex );
         }
     }
 
@@ -2031,7 +2031,7 @@ int cgi_read_boco(cgns_boco *boco) {
             ierr = cgio_get_node_id(cg->cgio, boco->id, "GridLocation",
                                     &dummy_id);
             if (!ierr) cgi_delete_node(boco->id, dummy_id);
-            if (boco->location != Vertex) {
+            if (boco->location != CGNS_ENUMV( Vertex )) {
                 name = GridLocationName[boco->location];
                 len = strlen (name);
                 if (cgi_new_node(boco->id, "GridLocation", "GridLocation_t",
@@ -2368,9 +2368,9 @@ int cgi_read_dataset(int in_link, double parent_id, int *ndataset,
 	    }
 	    dataset[0][n].ptset = CGNS_NEW(cgns_ptset, 1);
 	    if (strcmp(name,"ElementRange")==0)
-		dataset[0][n].ptset->type = ElementRange;
+	      dataset[0][n].ptset->type = CGNS_ENUMV( ElementRange );
 	    else
-		dataset[0][n].ptset->type = PointRange;
+	      dataset[0][n].ptset->type = CGNS_ENUMV( PointRange );
 	    dataset[0][n].ptset->id=IR_id[nn];
 	    dataset[0][n].ptset->link=cgi_read_link(IR_id[nn]);
 	    dataset[0][n].ptset->in_link=linked;
@@ -2394,9 +2394,9 @@ int cgi_read_dataset(int in_link, double parent_id, int *ndataset,
 	    }
 	    dataset[0][n].ptset = CGNS_NEW(cgns_ptset, 1);
 	    if (strcmp(name,"ElementList")==0)
-		dataset[0][n].ptset->type = ElementList;
+	      dataset[0][n].ptset->type = CGNS_ENUMV( ElementList );
 	    else
-		dataset[0][n].ptset->type = PointList;
+	      dataset[0][n].ptset->type = CGNS_ENUMV( PointList );
 	    dataset[0][n].ptset->id = IA_id[nn];
 	    dataset[0][n].ptset->link = cgi_read_link(IA_id[nn]);
 	    dataset[0][n].ptset->in_link = linked;
@@ -2455,7 +2455,7 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset) {
 
      /* change read data for ElementList/Range stuff */
     if (cg->version <= 1200 && ndim == 1 &&
-       (ptset->type == ElementRange || ptset->type == ElementList)) {
+	(ptset->type == CGNS_ENUMV( ElementRange ) || ptset->type == CGNS_ENUMV( ElementList ))) {
         ndim = 2;
         dim_vals[1]=dim_vals[0];
         dim_vals[0]=Idim;
@@ -2475,7 +2475,7 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset) {
     }
 
      /* Before version 1.27, PointListDonor could be I4, R4 or R8, otherwise data_type must be I4 */
-    if (strcmp(ptset->data_type,"I4") && (ptset->type!=PointListDonor ||
+    if (strcmp(ptset->data_type,"I4") && (ptset->type!=CGNS_ENUMV( PointListDonor )||
         cg->version>1200)) {
         cgi_error("Data type %s not supported for point set type %d",
             ptset->data_type, ptset->type);
@@ -2493,8 +2493,8 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset) {
     ptset->npts = dim_vals[1];
 
      /* size_of_patch */
-    if (ptset->type == PointList || ptset->type == ElementList ||
-        ptset->type == PointListDonor)
+    if (ptset->type == CGNS_ENUMV( PointList ) || ptset->type == CGNS_ENUMV( ElementList ) ||
+        ptset->type == CGNS_ENUMV( PointListDonor ))
         ptset->size_of_patch = ptset->npts;
 
     else {
@@ -2780,7 +2780,7 @@ int cgi_read_state(int in_link, double parent_id, cgns_state **state) {
     }
 
      /* initialize dependents */
-    state[0]->data_class = DataClassNull;
+    state[0]->data_class = CGNS_ENUMV( DataClassNull );
     state[0]->StateDescription = 0;
     state[0]->ndescr=0;
 
@@ -3197,7 +3197,7 @@ int cgi_read_converg(int in_link, double parent_id, cgns_converg **converg) {
     } else converg[0]->iterations=0;
 
      /* initialize dependents */
-    converg[0]->data_class = DataClassNull;
+    converg[0]->data_class = CGNS_ENUMV( DataClassNull );
     converg[0]->NormDefinitions = 0;
     converg[0]->ndescr=0;
 
@@ -3339,11 +3339,11 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
              /* Check that the data size is consistent with the zone dimension, the grid
                 location and rind data (not done for EdgeCenter and FaceCenter ... yet)
               */
-                if (discrete[0][n].location == Vertex ||
-                    discrete[0][n].location == CellCenter ||
-                    discrete[0][n].location == IFaceCenter ||
-                    discrete[0][n].location == JFaceCenter ||
-                    discrete[0][n].location == KFaceCenter) {
+                if (discrete[0][n].location == CGNS_ENUMV( Vertex ) ||
+                    discrete[0][n].location == CGNS_ENUMV( CellCenter ) ||
+                    discrete[0][n].location == CGNS_ENUMV( IFaceCenter ) ||
+                    discrete[0][n].location == CGNS_ENUMV( JFaceCenter ) ||
+                    discrete[0][n].location == CGNS_ENUMV( KFaceCenter )) {
                     for (j=0; j<Idim; j++) {
                         if (discrete[0][n].array[i].dim_vals[j]!= DataSize[j]) {
                             cgi_error("Invalid array dimension for Discrete Data '%s'",
@@ -3581,11 +3581,11 @@ int cgi_read_amotion(int in_link, double parent_id, int *namotions,
 
              /* Check that the data size is consistent with the zone dimension, the grid
                 location and rind data (not done for EdgeCenter and FaceCenter ... yet) */
-                if (amotion[0][n].location == Vertex ||
-                    amotion[0][n].location == CellCenter ||
-                    amotion[0][n].location == IFaceCenter ||
-                    amotion[0][n].location == JFaceCenter ||
-                    amotion[0][n].location == KFaceCenter) {
+                if (amotion[0][n].location == CGNS_ENUMV( Vertex ) ||
+                    amotion[0][n].location == CGNS_ENUMV( CellCenter ) ||
+                    amotion[0][n].location == CGNS_ENUMV( IFaceCenter ) ||
+                    amotion[0][n].location == CGNS_ENUMV( JFaceCenter ) ||
+                    amotion[0][n].location == CGNS_ENUMV( KFaceCenter )) {
                     for (j=0; j<Idim; j++) {
                         if (amotion[0][n].array[i].dim_vals[j]!= DataSize[j]) {
                             cgi_error("Invalid array dimension for ArbitraryGridMotion array '%s'",
@@ -3853,9 +3853,9 @@ int cgi_read_units(int in_link, double parent_id, cgns_units **units) {
 
     free(string_data);
 
-    units[0]->current = ElectricCurrentUnitsNull;
-    units[0]->amount = SubstanceAmountUnitsNull;
-    units[0]->intensity = LuminousIntensityUnitsNull;
+    units[0]->current = CGNS_ENUMV( ElectricCurrentUnitsNull );
+    units[0]->amount = CGNS_ENUMV( SubstanceAmountUnitsNull );
+    units[0]->intensity = CGNS_ENUMV( LuminousIntensityUnitsNull );
 
     if (cgi_get_nodes(units[0]->id, "AdditionalUnits_t", &nnod, &id))
         return 1;
@@ -3910,7 +3910,7 @@ int cgi_read_string(double id, char_33 name, char **string_data) {
 }
 
 int cgi_read_DDD(int in_link, double parent_id, int *ndescr,
-                 cgns_descr **descr, DataClass_t *data_class,
+                 cgns_descr **descr, CGNS_ENUMV( DataClass_t ) *data_class,
                  cgns_units **units) {
     double *id;
     int n, nnod;
@@ -3934,7 +3934,7 @@ int cgi_read_DDD(int in_link, double parent_id, int *ndescr,
     }
 
      /* DataClass_t */
-    *data_class = DataClassNull;
+    *data_class = CGNS_ENUMV( DataClassNull );
     if (cgi_get_nodes(parent_id, "DataClass_t", &nnod, &id)) return 1;
     if (nnod>0) {
         if (cgi_read_string(id[0], name, &string_data)) return 1;
@@ -4005,7 +4005,7 @@ int cgi_read_rind(double parent_id, int **rind_planes) {
     return 0;
 }
 
-int cgi_read_location(double parent_id, char_33 parent_name, GridLocation_t *location) {
+int cgi_read_location(double parent_id, char_33 parent_name, CGNS_ENUMT( GridLocation_t ) *location) {
     int nGL_t;
     double *id;
     char *location_name;    /* allocated in cgi_read_node */
@@ -4015,7 +4015,7 @@ int cgi_read_location(double parent_id, char_33 parent_name, GridLocation_t *loc
     if (cgi_get_nodes(parent_id, "GridLocation_t", &nGL_t, &id)) return 1;
 
     if (nGL_t==0) {
-        *location = Vertex;
+      *location = CGNS_ENUMV( Vertex );
     } else if (nGL_t<0 || nGL_t >1) {
         cgi_error("Invalid definition of GridLocation for %s",parent_name);
         return 1;
@@ -4032,7 +4032,7 @@ int cgi_read_location(double parent_id, char_33 parent_name, GridLocation_t *loc
     return 0;
 }
 
-int cgi_read_zonetype(double parent_id, char_33 parent_name, ZoneType_t *type) {
+int cgi_read_zonetype(double parent_id, char_33 parent_name, CGNS_ENUMT( ZoneType_t ) *type) {
     int nchild;
     double *id;
     char *zonetype_name;    /* allocated in cgi_read_node */
@@ -4042,7 +4042,7 @@ int cgi_read_zonetype(double parent_id, char_33 parent_name, ZoneType_t *type) {
     if (cgi_get_nodes(parent_id, "ZoneType_t", &nchild, &id)) return 1;
     if (nchild==0) {
       /* set default */
-        *type = Structured;
+      *type = CGNS_ENUMV( Structured );
         return 0;
     }
 
@@ -4059,7 +4059,7 @@ int cgi_read_zonetype(double parent_id, char_33 parent_name, ZoneType_t *type) {
     return 0;
 }
 
-int cgi_read_simulation(double parent_id, SimulationType_t *type,
+int cgi_read_simulation(double parent_id, CGNS_ENUMT( SimulationType_t ) *type,
                         double *type_id) {
     int nchild;
     double *id;
@@ -4067,7 +4067,7 @@ int cgi_read_simulation(double parent_id, SimulationType_t *type,
     char_33 name;
 
      /* initialize */
-    *type = SimulationTypeNull;
+    *type = CGNS_ENUMV( SimulationTypeNull );
     *type_id = 0;
 
      /* get number of SimulationType_t nodes and their ID */
@@ -4401,9 +4401,9 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
 	    }
 	    user_data[0][n].ptset = CGNS_NEW(cgns_ptset, 1);
 	    if (strcmp(name,"ElementRange")==0)
-		user_data[0][n].ptset->type = ElementRange;
+	      user_data[0][n].ptset->type = CGNS_ENUMV( ElementRange );
 	    else
-		user_data[0][n].ptset->type = PointRange;
+	      user_data[0][n].ptset->type = CGNS_ENUMV( PointRange );
 	    user_data[0][n].ptset->id=IR_id[nn];
 	    user_data[0][n].ptset->link=cgi_read_link(IR_id[nn]);
 	    user_data[0][n].ptset->in_link=linked;
@@ -4427,9 +4427,9 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
 	    }
 	    user_data[0][n].ptset = CGNS_NEW(cgns_ptset, 1);
 	    if (strcmp(name,"ElementList")==0)
-		user_data[0][n].ptset->type = ElementList;
+	      user_data[0][n].ptset->type = CGNS_ENUMV( ElementList );
 	    else
-		user_data[0][n].ptset->type = PointList;
+	      user_data[0][n].ptset->type = CGNS_ENUMV( PointList );
 	    user_data[0][n].ptset->id = IA_id[nn];
 	    user_data[0][n].ptset->link = cgi_read_link(IA_id[nn]);
 	    user_data[0][n].ptset->in_link = linked;
@@ -4528,25 +4528,25 @@ cgns_link *cgi_read_link (double node_id) {
     return 0;
 }
 
-int cgi_datasize(int Idim, int *CurrentDim, GridLocation_t location,
+int cgi_datasize(int Idim, int *CurrentDim, CGNS_ENUMV( GridLocation_t ) location,
                  int *rind_planes, int *DataSize) {
     int j;
 
-    if (location==Vertex) {
+    if (location==CGNS_ENUMV( Vertex )) {
         for (j=0; j<Idim; j++)
             DataSize[j] = CurrentDim[j] + rind_planes[2*j] + rind_planes[2*j+1];
 
-    } else if (location==CellCenter) {
+    } else if (location==CGNS_ENUMV( CellCenter )) {
         for (j=0; j<Idim; j++)
             DataSize[j] = CurrentDim[j+Idim] + rind_planes[2*j] + rind_planes[2*j+1];
 
-    } else if (location == IFaceCenter || location == JFaceCenter ||
-           location == KFaceCenter) {
+    } else if (location == CGNS_ENUMV( IFaceCenter ) || location == CGNS_ENUMV( JFaceCenter ) ||
+	       location == CGNS_ENUMV( KFaceCenter )) {
         for (j=0; j<Idim; j++) {
             DataSize[j] = CurrentDim[j] + rind_planes[2*j] + rind_planes[2*j+1];
-            if ((location == IFaceCenter && j!=0) ||
-                (location == JFaceCenter && j!=1) ||
-                (location == KFaceCenter && j!=2)) DataSize[j]--;
+            if ((location == CGNS_ENUMV( IFaceCenter ) && j!=0) ||
+                (location == CGNS_ENUMV( JFaceCenter ) && j!=1) ||
+                (location == CGNS_ENUMV( KFaceCenter ) && j!=2)) DataSize[j]--;
         }
     } else {
         cgi_error("Location not yet supported");
@@ -4955,7 +4955,7 @@ int cgi_write_sol(double parent_id, cgns_sol *sol) {
         &sol->id, "MT", 0, 0, 0)) return 1;
 
      /* GridLocation_t */
-    if (sol->location!=Vertex) {
+    if (sol->location!=CGNS_ENUMV( Vertex )) {
         dim_vals = strlen(GridLocationName[sol->location]);
         if (cgi_new_node(sol->id, "GridLocation", "GridLocation_t",
             &dummy_id, "C1", 1, &dim_vals,
@@ -5089,7 +5089,7 @@ int cgi_write_conns(double parent_id, cgns_conn *conn) {
         (void *)GridConnectivityTypeName[conn->type])) return 1;
 
      /* write GridLocation */
-    if (conn->location!=Vertex) {
+    if (conn->location!=CGNS_ENUMV( Vertex )) {
         dim_vals = strlen(GridLocationName[conn->location]);
         if (cgi_new_node(conn->id, "GridLocation", "GridLocation_t",
             &dummy_id, "C1", 1, &dim_vals,
@@ -5233,7 +5233,7 @@ int cgi_write_holes(double parent_id, cgns_hole *hole) {
         &hole->id, "MT", 0, 0, 0)) return 1;
 
      /* GridLocation_t */
-    if (hole->location!=Vertex) {
+    if (hole->location!=CGNS_ENUMV( Vertex )) {
         dim_vals = strlen(GridLocationName[hole->location]);
         if (cgi_new_node(hole->id, "GridLocation", "GridLocation_t",
             &dummy_id, "C1", 1, &dim_vals,
@@ -5244,7 +5244,7 @@ int cgi_write_holes(double parent_id, cgns_hole *hole) {
     for (n=0; n<hole->nptsets; n++) {
         ptset = &(hole->ptset[n]);
 
-        if (ptset->type == PointRange) sprintf(PointSetName,"PointRange%d",n+1);
+        if (ptset->type == CGNS_ENUMV( PointRange )) sprintf(PointSetName,"PointRange%d",n+1);
         else sprintf(PointSetName,"PointSetTypeName[ptset->type]");
 
      /* Move node to its final position */
@@ -5323,7 +5323,7 @@ int cgi_write_boco(double parent_id, cgns_boco *boco) {
     }
 
      /* GridLocation_t */
-    if (boco->location != Vertex) {
+    if (boco->location != CGNS_ENUMV( Vertex )) {
         dim_vals = strlen(GridLocationName[boco->location]);
         if (cgi_new_node(boco->id, "GridLocation", "GridLocation_t", &dummy_id,
             "C1", 1, &dim_vals, (void *)GridLocationName[boco->location])) return 1;
@@ -5535,7 +5535,7 @@ int cgi_write_dataset(double parent_id, cgns_dataset *dataset) {
         if (cgi_write_user_data(dataset->id, &dataset->user_data[n])) return 1;
 
     /* GridLocation_t */
-    if (dataset->location != Vertex) {
+    if (dataset->location != CGNS_ENUMV( Vertex )) {
         dim_vals = strlen(GridLocationName[dataset->location]);
         if (cgi_new_node(dataset->id, "GridLocation", "GridLocation_t",
 			 &dummy_id, "C1", 1, &dim_vals,
@@ -5589,8 +5589,8 @@ int cgi_write_ptset(double parent_id, char_33 name, cgns_ptset *ptset,
     }
 
      /* Set label */
-    if (ptset->type == PointRange || ptset->type == ElementRange ||
-        ptset->type == PointRangeDonor)
+    if (ptset->type == CGNS_ENUMV( PointRange ) || ptset->type == CGNS_ENUMV( ElementRange ) ||
+        ptset->type == CGNS_ENUMV( PointRangeDonor ))
          strcpy(label,"IndexRange_t");
     else strcpy(label,"IndexArray_t");
 
@@ -5964,7 +5964,7 @@ int cgi_write_discrete(double parent_id, cgns_discrete *discrete) {
         &discrete->id, "MT", 0, 0, 0)) return 1;
 
      /* GridLocation_t */
-    if (discrete->location != Vertex) {
+    if (discrete->location != CGNS_ENUMV( Vertex )) {
         dim_vals = strlen(GridLocationName[discrete->location]);
         if (cgi_new_node(discrete->id, "GridLocation", "GridLocation_t", &dummy_id,
             "C1", 1, &dim_vals, (void *)GridLocationName[discrete->location])) return 1;
@@ -6087,7 +6087,7 @@ int cgi_write_amotion(double parent_id, cgns_amotion *amotion) {
         if (cgi_write_descr(amotion->id, &amotion->descr[n])) return 1;
 
      /* GridLocation_t */
-    if (amotion->location != Vertex) {
+    if (amotion->location != CGNS_ENUMV( Vertex )) {
         dim_vals = strlen(GridLocationName[amotion->location]);
         if (cgi_new_node(amotion->id, "GridLocation", "GridLocation_t", &dummy_id,
             "C1", 1, &dim_vals, (void *)GridLocationName[amotion->location])) return 1;
@@ -6311,7 +6311,7 @@ int cgi_write_exponents(double parent_id, cgns_exponent *exponent) {
     return 0;
 }
 
-int cgi_write_dataclass(double parent_id, DataClass_t data_class) {
+int cgi_write_dataclass(double parent_id, CGNS_ENUMV( DataClass_t ) data_class) {
     int dim_vals;
     double dummy_id;
 
@@ -6379,7 +6379,7 @@ int cgi_write_user_data(double parent_id, cgns_user_data *user_data) {
         if (cgi_write_array(user_data->id, &user_data->array[n])) return 1;
 
     /* GridLocation_t */
-    if (user_data->location != Vertex) {
+    if (user_data->location != CGNS_ENUMV( Vertex )) {
         dim_vals = strlen(GridLocationName[user_data->location]);
         if (cgi_new_node(user_data->id, "GridLocation", "GridLocation_t",
 			 &dummy_id, "C1", 1, &dim_vals,
@@ -6717,22 +6717,22 @@ int size_of(char_33 data_type) {
     }
 }
 
-char *cgi_adf_datatype(DataType_t type) {
+char *cgi_adf_datatype(CGNS_ENUMV( DataType_t ) type) {
 
-    if (type==Integer) return "I4";
-    else if (type == RealSingle) return "R4";
-    else if (type == RealDouble) return "R8";
-    else if (type == Character)  return "C1";
+  if (type==CGNS_ENUMV( Integer )) return "I4";
+    else if (type == CGNS_ENUMV( RealSingle )) return "R4";
+    else if (type == CGNS_ENUMV( RealDouble )) return "R8";
+    else if (type == CGNS_ENUMV( Character ))  return "C1";
     return "NULL";
 }
 
-DataType_t cgi_datatype(cchar_33 adf_type) {
+CGNS_ENUMV( DataType_t ) cgi_datatype(cchar_33 adf_type) {
 
-    if (strcmp(adf_type, "I4")==0) return Integer;
-    else if (strcmp(adf_type, "R4")==0) return RealSingle;
-    else if (strcmp(adf_type, "R8")==0) return RealDouble;
-    else if (strcmp(adf_type, "C1")==0) return Character;
-    return DataTypeNull;
+  if (strcmp(adf_type, "I4")==0) return CGNS_ENUMV( Integer );
+    else if (strcmp(adf_type, "R4")==0) return CGNS_ENUMV( RealSingle );
+    else if (strcmp(adf_type, "R8")==0) return CGNS_ENUMV( RealDouble );
+    else if (strcmp(adf_type, "C1")==0) return CGNS_ENUMV( Character );
+    return CGNS_ENUMV( DataTypeNull );
 }
 
 /***********************************************************************\
@@ -6838,15 +6838,15 @@ int cgi_add_czone(char_33 zonename, int_6 range, int_6 donor_range, int index_di
 /* this function takes the element type, count and connectivity list
    and returns the total size required for the connectivity */
 
-int cgi_element_data_size(ElementType_t type, int nelems, const int *connect) {
+int cgi_element_data_size(CGNS_ENUMV( ElementType_t ) type, int nelems, const int *connect) {
     int ne, npe, size = 0;
 
-    if (type == MIXED) {
+    if (type == CGNS_ENUMV( MIXED )) {
         if (connect == 0) return 0;
         for (ne = 0; ne < nelems; ne++) {
-            type = (ElementType_t)connect[size++];
-            if (type > NGON_n)
-	        npe = type - NGON_n;
+	  type = (CGNS_ENUMV( ElementType_t ))connect[size++];
+            if (type > CGNS_ENUMV( NGON_n ))
+	      npe = type - CGNS_ENUMV( NGON_n );
 	    else
                 cg_npe(type, &npe);
             if (npe <= 0) {
@@ -6856,7 +6856,7 @@ int cgi_element_data_size(ElementType_t type, int nelems, const int *connect) {
             size += npe;
         }
     }
-    else if (type == NGON_n || type == NFACE_n) {
+    else if (type == CGNS_ENUMV( NGON_n ) || type == CGNS_ENUMV( NFACE_n )) {
         if (connect == 0) return 0;
         for (ne = 0; ne < nelems; ne++) {
             npe = connect[size++];
@@ -7018,7 +7018,7 @@ cgns_zcoor *cgi_get_zcoorGC(cgns_file *cg, int B, int Z) {
         zone->zcoor->rind_planes = CGNS_NEW(int, 2*index_dim);
         for (i=0; i<2*index_dim; i++) zone->zcoor->rind_planes[i]=0;
         zone->zcoor->ncoords = 0;
-        zone->zcoor->data_class = DataClassNull;
+        zone->zcoor->data_class = CGNS_ENUMV( DataClassNull );
         zone->zcoor->units = 0;
         zone->zcoor->nuser_data= 0;
 
@@ -7188,7 +7188,7 @@ cgns_zboco *cgi_get_zboco(cgns_file *cg, int B, int Z) {
             zone->zboco->ndescr=0;
             zone->zboco->nbocos=0;
             zone->zboco->state=0;
-            zone->zboco->data_class=DataClassNull;
+            zone->zboco->data_class=CGNS_ENUMV( DataClassNull );
             zone->zboco->units=0;
             zone->zboco->nuser_data=0;
 
@@ -7237,18 +7237,18 @@ cgns_dataset *cgi_get_dataset(cgns_file *cg, int B, int Z, int BC, int DSet) {
 }
 
 cgns_bcdata *cgi_get_bcdata(cgns_file *cg, int B, int Z, int BC, int Dset,
-    BCDataType_t type) {
+			    CGNS_ENUMV( BCDataType_t ) type) {
 
     cgns_dataset *dataset = cgi_get_dataset(cg, B, Z, BC, Dset);
     if (dataset==0) return 0;
 
-    if (type==Dirichlet) {
+    if (type==CGNS_ENUMV( Dirichlet )) {
         if (dataset->dirichlet==0) {
             cgi_error("BCData_t type Dirichlet doesn't exist for Zone %d, BC=%d, BCDataSet=%d",
                 Z, BC, Dset);
             return 0;
         } else return dataset->dirichlet;
-    } else if (type==Neumann) {
+    } else if (type==CGNS_ENUMV( Neumann )) {
         if (dataset->neumann==0) {
             cgi_error("BCData_t type Neumann doesn't exist for Zone %d, BC=%d, BCDataSet=%d",
                 Z, BC, Dset);
@@ -8073,12 +8073,12 @@ static int cgi_next_posit(char *label, int index, char *name)
         cgns_dataset *d = (cgns_dataset *)posit->posit;
         if (0 == strcmp (label, "BCData_t")) {
             if (d->dirichlet &&
-                (index == Dirichlet || 0 == strcmp (d->dirichlet->name, name))) {
+                (index == CGNS_ENUMV( Dirichlet ) || 0 == strcmp (d->dirichlet->name, name))) {
                 return cgi_add_posit((void *)d->dirichlet,
                            label, 1, d->dirichlet->id);
             }
             if (d->neumann &&
-                (index == Neumann || 0 == strcmp (d->neumann->name, name))) {
+                (index == CGNS_ENUMV( Neumann ) || 0 == strcmp (d->neumann->name, name))) {
                 return cgi_add_posit((void *)d->neumann,
                            label, 1, d->neumann->id);
             }
@@ -9366,9 +9366,9 @@ char *cgi_famname_address(int local_mode, int *ier) {
 }
 
 
-DataClass_t *cgi_dataclass_address(int local_mode, int *ier) {
+CGNS_ENUMV( DataClass_t ) *cgi_dataclass_address(int local_mode, int *ier) {
     double *id, parent_id;
-    DataClass_t *data_class=0;
+    CGNS_ENUMV( DataClass_t ) *data_class=0;
     int nnod;
 
     /* check for valid posit */
@@ -9687,9 +9687,9 @@ int *cgi_rind_address(int local_mode, int *ier) {
     return rind_planes;
 }
 
-GridLocation_t *cgi_location_address(int local_mode, int *ier) {
+CGNS_ENUMV( GridLocation_t ) *cgi_location_address(int local_mode, int *ier) {
     double *id, parent_id;
-    GridLocation_t *location=0;
+    CGNS_ENUMV( GridLocation_t ) *location=0;
     int nnod;
 
     /* check for valid posit */
@@ -11816,16 +11816,16 @@ void cgi_free_user_data(cgns_user_data *user_data) {
  *            Return the string from enumeration           *
 \***********************************************************************/
 
-int cgi_GridLocation(char *LocationName, GridLocation_t *type) {
+int cgi_GridLocation(char *LocationName, CGNS_ENUMV( GridLocation_t ) *type) {
     int i;
     for (i=0; i<NofValidGridLocation; i++) {
     if (strcmp(LocationName, GridLocationName[i])==0) {
-            (*type) = (GridLocation_t)i;
+      (*type) = (CGNS_ENUMV( GridLocation_t ))i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = GridLocationUserDefined;
+      (*type) = CGNS_ENUMV( GridLocationUserDefined );
         cgi_warning("Unrecognized Grid Location Type '%s' replaced with 'UserDefined'",LocationName);
         return 0;
     }
@@ -11833,16 +11833,16 @@ int cgi_GridLocation(char *LocationName, GridLocation_t *type) {
     return 1;
 }
 
-int cgi_GridConnectivityType(char *GridConnectivityName, GridConnectivityType_t *type) {
+int cgi_GridConnectivityType(char *GridConnectivityName, CGNS_ENUMV( GridConnectivityType_t ) *type) {
     int i;
     for (i=0; i<NofValidGridConnectivityTypes; i++) {
         if (strcmp(GridConnectivityName, GridConnectivityTypeName[i])==0) {
-            (*type) = (GridConnectivityType_t)i;
+	  (*type) = (CGNS_ENUMV( GridConnectivityType_t ))i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = GridConnectivityTypeUserDefined;
+      (*type) = CGNS_ENUMV( GridConnectivityTypeUserDefined );
         cgi_warning("Unrecognized Grid Connectivity Type '%s' replaced with 'UserDefined'",GridConnectivityName);
         return 0;
     }
@@ -11850,16 +11850,16 @@ int cgi_GridConnectivityType(char *GridConnectivityName, GridConnectivityType_t 
     return 1;
 }
 
-int cgi_PointSetType(char *PointSetName, PointSetType_t *type) {
+int cgi_PointSetType(char *PointSetName, CGNS_ENUMV( PointSetType_t ) *type) {
     int i;
     for (i=0; i<NofValidPointSetTypes; i++) {
         if (strcmp(PointSetName, PointSetTypeName[i])==0) {
-            (*type) = (PointSetType_t)i;
+	  (*type) = (CGNS_ENUMV( PointSetType_t ))i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = PointSetTypeUserDefined;
+      (*type) = CGNS_ENUMV( PointSetTypeUserDefined );
         cgi_warning("Unrecognized Point Set Type '%s' replaced with 'UserDefined'",PointSetName);
         return 0;
     }
@@ -11867,16 +11867,16 @@ int cgi_PointSetType(char *PointSetName, PointSetType_t *type) {
     return 1;
 }
 
-int cgi_BCType(char *BCName, BCType_t *type) {
+int cgi_BCType(char *BCName, CGNS_ENUMV( BCType_t ) *type) {
     int i;
     for (i=0; i<NofValidBCTypes; i++) {
         if (strcmp(BCName, BCTypeName[i])==0) {
-            (*type) = (BCType_t)i;
+	  (*type) = (CGNS_ENUMV( BCType_t ))i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = BCTypeUserDefined;
+      (*type) = CGNS_ENUMV( BCTypeUserDefined );
         cgi_warning("Unrecognized BCType '%s' replaced with 'UserDefined'",BCName);
         return 0;
     }
@@ -11884,16 +11884,16 @@ int cgi_BCType(char *BCName, BCType_t *type) {
     return 1;
 }
 
-int cgi_DataClass(char *Name, DataClass_t *data_class) {
+int cgi_DataClass(char *Name, CGNS_ENUMV( DataClass_t ) *data_class) {
     int i;
     for (i=0; i<NofValidDataClass; i++) {
         if (strcmp(Name, DataClassName[i])==0) {
-            (*data_class) = (DataClass_t) i;
+	  (*data_class) = (CGNS_ENUMV( DataClass_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*data_class) = DataClassUserDefined;
+      (*data_class) = CGNS_ENUMV( DataClassUserDefined );
         cgi_warning("Unrecognized Data Class '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
@@ -11901,7 +11901,7 @@ int cgi_DataClass(char *Name, DataClass_t *data_class) {
     return 1;
 }
 
-int cgi_MassUnits(char *Name, MassUnits_t *mass_unit) {
+int cgi_MassUnits(char *Name, CGNS_ENUMV( MassUnits_t ) *mass_unit) {
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -11909,21 +11909,21 @@ int cgi_MassUnits(char *Name, MassUnits_t *mass_unit) {
 
     for (i=0; i<NofValidMassUnits; i++) {
         if (strcmp(Name, MassUnitsName[i])==0) {
-            (*mass_unit) = (MassUnits_t) i;
+	  (*mass_unit) = (CGNS_ENUMV( MassUnits_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*mass_unit) = MassUnitsUserDefined;
+      (*mass_unit) = CGNS_ENUMV( MassUnitsUserDefined );
         cgi_warning("Unrecognized Mass Unit '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
-    (*mass_unit) = MassUnitsNull;
+    (*mass_unit) = CGNS_ENUMV( MassUnitsNull );
     cgi_error("Unrecognized Mass Units Name: %s", Name);
     return 1;
 }
 
-int cgi_LengthUnits(char *Name, LengthUnits_t *length_unit) {
+int cgi_LengthUnits(char *Name, CGNS_ENUMV( LengthUnits_t ) *length_unit) {
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -11931,21 +11931,21 @@ int cgi_LengthUnits(char *Name, LengthUnits_t *length_unit) {
 
     for (i=0; i<NofValidLengthUnits; i++) {
         if (strcmp(Name, LengthUnitsName[i])==0) {
-            (*length_unit) = (LengthUnits_t) i;
+	  (*length_unit) = (CGNS_ENUMV( LengthUnits_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*length_unit) = LengthUnitsUserDefined;
+      (*length_unit) = CGNS_ENUMV( LengthUnitsUserDefined );
         cgi_warning("Unrecognized Length Unit '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
-    (*length_unit) = LengthUnitsNull;
+    (*length_unit) = CGNS_ENUMV( LengthUnitsNull );
     cgi_error("Unrecognized Length Units Name: %s", Name);
     return 1;
 }
 
-int cgi_TimeUnits(char *Name, TimeUnits_t *time_unit) {
+int cgi_TimeUnits(char *Name, CGNS_ENUMV( TimeUnits_t )*time_unit) {
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -11953,47 +11953,47 @@ int cgi_TimeUnits(char *Name, TimeUnits_t *time_unit) {
 
     for (i=0; i<NofValidTimeUnits; i++) {
         if (strcmp(Name, TimeUnitsName[i])==0) {
-            (*time_unit) = (TimeUnits_t) i;
+	  (*time_unit) = (CGNS_ENUMV( TimeUnits_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*time_unit) = TimeUnitsUserDefined;
+      (*time_unit) = CGNS_ENUMV( TimeUnitsUserDefined );
         cgi_warning("Unrecognized Time Unit '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
-    (*time_unit) = TimeUnitsNull;
+    (*time_unit) = CGNS_ENUMV( TimeUnitsNull );
     cgi_error("Unrecognized Time Units Name: %s", Name);
     return 1;
 }
 
-int cgi_TemperatureUnits(char *Name, TemperatureUnits_t *temperature_unit) {
+int cgi_TemperatureUnits(char *Name, CGNS_ENUMV( TemperatureUnits_t ) *temperature_unit) {
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
     Name[i+1]='\0';
     if (0 == strcmp(Name, "Celcius")) {
-        *temperature_unit = Celsius;
+      *temperature_unit = CGNS_ENUMV( Celsius );
         return 0;
     }
 
     for (i=0; i<NofValidTemperatureUnits; i++) {
         if (strcmp(Name, TemperatureUnitsName[i])==0) {
-            (*temperature_unit) = (TemperatureUnits_t) i;
+	  (*temperature_unit) = (CGNS_ENUMV( TemperatureUnits_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*temperature_unit) = TemperatureUnitsUserDefined;
+      (*temperature_unit) = CGNS_ENUMV( TemperatureUnitsUserDefined );
         cgi_warning("Unrecognized Temperature Unit '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
-    (*temperature_unit) = TemperatureUnitsNull;
+    (*temperature_unit) = CGNS_ENUMV( TemperatureUnitsNull );
     cgi_error("Unrecognized Temperature Units Name: %s", Name);
     return 1;
 }
 
-int cgi_AngleUnits(char *Name, AngleUnits_t *angle_unit) {
+int cgi_AngleUnits(char *Name, CGNS_ENUMV( AngleUnits_t ) *angle_unit) {
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -12001,21 +12001,21 @@ int cgi_AngleUnits(char *Name, AngleUnits_t *angle_unit) {
 
     for (i=0; i<NofValidAngleUnits; i++) {
         if (strcmp(Name, AngleUnitsName[i])==0) {
-            (*angle_unit) = (AngleUnits_t) i;
+	  (*angle_unit) = (CGNS_ENUMV( AngleUnits_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*angle_unit) = AngleUnitsUserDefined;
+      (*angle_unit) = CGNS_ENUMV( AngleUnitsUserDefined );
         cgi_warning("Unrecognized Angle Unit '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
-    (*angle_unit) = AngleUnitsNull;
+    (*angle_unit) = CGNS_ENUMV( AngleUnitsNull );
     cgi_error("Unrecognized Angle Units Name: %s", Name);
     return 1;
 }
 
-int cgi_ElectricCurrentUnits(char *Name, ElectricCurrentUnits_t *unit) {
+int cgi_ElectricCurrentUnits(char *Name, CGNS_ENUMV( ElectricCurrentUnits_t ) *unit) {
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -12023,21 +12023,21 @@ int cgi_ElectricCurrentUnits(char *Name, ElectricCurrentUnits_t *unit) {
 
     for (i=0; i<NofValidElectricCurrentUnits; i++) {
         if (strcmp(Name, ElectricCurrentUnitsName[i])==0) {
-            (*unit) = (ElectricCurrentUnits_t) i;
+	  (*unit) = (CGNS_ENUMV( ElectricCurrentUnits_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*unit) = ElectricCurrentUnitsUserDefined;
+      (*unit) = CGNS_ENUMV( ElectricCurrentUnitsUserDefined );
         cgi_warning("Unrecognized ElectricCurrent Unit '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
-    (*unit) = ElectricCurrentUnitsNull;
+    (*unit) = CGNS_ENUMV( ElectricCurrentUnitsNull );
     cgi_error("Unrecognized ElectricCurrent Units Name: %s", Name);
     return 1;
 }
 
-int cgi_SubstanceAmountUnits(char *Name, SubstanceAmountUnits_t *unit) {
+int cgi_SubstanceAmountUnits(char *Name, CGNS_ENUMV( SubstanceAmountUnits_t )*unit) {
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -12045,21 +12045,21 @@ int cgi_SubstanceAmountUnits(char *Name, SubstanceAmountUnits_t *unit) {
 
     for (i=0; i<NofValidSubstanceAmountUnits; i++) {
         if (strcmp(Name, SubstanceAmountUnitsName[i])==0) {
-            (*unit) = (SubstanceAmountUnits_t) i;
+	  (*unit) = (CGNS_ENUMV( SubstanceAmountUnits_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*unit) = SubstanceAmountUnitsUserDefined;
+      (*unit) = CGNS_ENUMV( SubstanceAmountUnitsUserDefined );
         cgi_warning("Unrecognized SubstanceAmount Unit '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
-    (*unit) = SubstanceAmountUnitsNull;
+    (*unit) = CGNS_ENUMV( SubstanceAmountUnitsNull );
     cgi_error("Unrecognized SubstanceAmount Units Name: %s", Name);
     return 1;
 }
 
-int cgi_LuminousIntensityUnits(char *Name, LuminousIntensityUnits_t *unit) {
+int cgi_LuminousIntensityUnits(char *Name, CGNS_ENUMT( LuminousIntensityUnits_t ) *unit) {
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -12067,30 +12067,30 @@ int cgi_LuminousIntensityUnits(char *Name, LuminousIntensityUnits_t *unit) {
 
     for (i=0; i<NofValidLuminousIntensityUnits; i++) {
         if (strcmp(Name, LuminousIntensityUnitsName[i])==0) {
-            (*unit) = (LuminousIntensityUnits_t) i;
+	  (*unit) = (CGNS_ENUMT( LuminousIntensityUnits_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*unit) = LuminousIntensityUnitsUserDefined;
+      (*unit) = CGNS_ENUMV( LuminousIntensityUnitsUserDefined );
         cgi_warning("Unrecognized LuminousIntensity Unit '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
-    (*unit) = LuminousIntensityUnitsNull;
+    (*unit) = CGNS_ENUMV( LuminousIntensityUnitsNull );
     cgi_error("Unrecognized LuminousIntensity Units Name: %s", Name);
     return 1;
 }
 
-int cgi_GoverningEquationsType(char *Name, GoverningEquationsType_t *type) {
+int cgi_GoverningEquationsType(char *Name, CGNS_ENUMT( GoverningEquationsType_t ) *type) {
     int i;
     for (i=0; i<NofValidGoverningEquationsTypes; i++) {
         if (strcmp(Name, GoverningEquationsTypeName[i])==0) {
-            (*type) = (GoverningEquationsType_t) i;
+	  (*type) = (CGNS_ENUMV( GoverningEquationsType_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = GoverningEquationsUserDefined;
+      (*type) = CGNS_ENUMV( GoverningEquationsUserDefined );
         cgi_warning("Unrecognized Governing Equations Type '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
@@ -12098,16 +12098,16 @@ int cgi_GoverningEquationsType(char *Name, GoverningEquationsType_t *type) {
     return 1;
 }
 
-int cgi_ModelType(char *Name, ModelType_t *type) {
+int cgi_ModelType(char *Name, CGNS_ENUMV( ModelType_t ) *type) {
     int i;
     for (i=0; i<NofValidModelTypes; i++) {
         if (strcmp(Name, ModelTypeName[i])==0) {
-            (*type) = (ModelType_t) i;
+	  (*type) = (CGNS_ENUMV( ModelType_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = ModelTypeUserDefined;
+      (*type) = CGNS_ENUMV( ModelTypeUserDefined );
         cgi_warning("Unrecognized Model Type '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
@@ -12115,16 +12115,16 @@ int cgi_ModelType(char *Name, ModelType_t *type) {
     return 1;
 }
 
-int cgi_ZoneType(char *Name, ZoneType_t *type) {
+int cgi_ZoneType(char *Name, CGNS_ENUMV( ZoneType_t ) *type) {
     int i;
     for (i=0; i<NofValidZoneTypes; i++) {
         if (strcmp(Name, ZoneTypeName[i])==0) {
-                (*type) = (ZoneType_t) i;
+	  (*type) = (CGNS_ENUMV( ZoneType_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = ZoneTypeUserDefined;
+      (*type) = CGNS_ENUMV( ZoneTypeUserDefined );
         cgi_warning("Unrecognized Zone Type '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
@@ -12132,16 +12132,16 @@ int cgi_ZoneType(char *Name, ZoneType_t *type) {
     return 1;
 }
 
-int cgi_RigidGridMotionType(char *Name, RigidGridMotionType_t *type) {
+int cgi_RigidGridMotionType(char *Name, CGNS_ENUMV( RigidGridMotionType_t ) *type) {
     int i;
     for (i=0; i<NofValidRigidGridMotionTypes; i++) {
         if (strcmp(Name, RigidGridMotionTypeName[i])==0) {
-            (*type) = (RigidGridMotionType_t) i;
+	  (*type) = (CGNS_ENUMV( RigidGridMotionType_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = RigidGridMotionTypeUserDefined;
+      (*type) = CGNS_ENUMV( RigidGridMotionTypeUserDefined );
         cgi_warning("Unrecognized Rigid Grid Motion Type '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
@@ -12149,16 +12149,16 @@ int cgi_RigidGridMotionType(char *Name, RigidGridMotionType_t *type) {
     return 1;
 }
 
-int cgi_ArbitraryGridMotionType(char *Name, ArbitraryGridMotionType_t *type) {
+int cgi_ArbitraryGridMotionType(char *Name, CGNS_ENUMV( ArbitraryGridMotionType_t )*type) {
     int i;
     for (i=0; i<NofValidArbitraryGridMotionTypes; i++) {
         if (strcmp(Name, ArbitraryGridMotionTypeName[i])==0) {
-            (*type) = (ArbitraryGridMotionType_t) i;
+	  (*type) = (CGNS_ENUMV( ArbitraryGridMotionType_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = ArbitraryGridMotionTypeUserDefined;
+      (*type) = CGNS_ENUMV( ArbitraryGridMotionTypeUserDefined );
         cgi_warning("Unrecognized Arbitrary Grid Motion Type '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
@@ -12166,16 +12166,16 @@ int cgi_ArbitraryGridMotionType(char *Name, ArbitraryGridMotionType_t *type) {
     return 1;
 }
 
-int cgi_SimulationType(char *Name, SimulationType_t *type) {
+int cgi_SimulationType(char *Name, CGNS_ENUMV( SimulationType_t )*type) {
     int i;
     for (i=0; i<NofValidSimulationTypes; i++) {
         if (strcmp(Name, SimulationTypeName[i])==0) {
-            (*type) = (SimulationType_t) i;
+	  (*type) = (CGNS_ENUMV( SimulationType_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = SimulationTypeUserDefined;
+      (*type) = CGNS_ENUMV( SimulationTypeUserDefined );
         cgi_warning("Unrecognized Simulation Type '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
@@ -12183,16 +12183,16 @@ int cgi_SimulationType(char *Name, SimulationType_t *type) {
     return 1;
 }
 
-int cgi_WallFunctionType(char *Name, WallFunctionType_t *type) {
+int cgi_WallFunctionType(char *Name, CGNS_ENUMV( WallFunctionType_t )*type) {
     int i;
     for (i=0; i<NofValidWallFunctionTypes; i++) {
         if (strcmp(Name, WallFunctionTypeName[i])==0) {
-            (*type) = (WallFunctionType_t) i;
+	  (*type) = (CGNS_ENUMV( WallFunctionType_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = WallFunctionTypeUserDefined;
+      (*type) = CGNS_ENUMV( WallFunctionTypeUserDefined );
         cgi_warning("Unrecognized Wall Function Type '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
@@ -12200,16 +12200,16 @@ int cgi_WallFunctionType(char *Name, WallFunctionType_t *type) {
     return 1;
 }
 
-int cgi_AreaType(char *Name, AreaType_t *type) {
+int cgi_AreaType(char *Name, CGNS_ENUMV( AreaType_t ) *type) {
     int i;
     for (i=0; i<NofValidAreaTypes; i++) {
         if (strcmp(Name, AreaTypeName[i])==0) {
-            (*type) = (AreaType_t) i;
+	  (*type) = (CGNS_ENUMV( AreaType_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = AreaTypeUserDefined;
+      (*type) = CGNS_ENUMV( AreaTypeUserDefined );
         cgi_warning("Unrecognized Area Type '%s' replaced with 'UserDefined'",Name);
         return 0;
     }
@@ -12217,16 +12217,16 @@ int cgi_AreaType(char *Name, AreaType_t *type) {
     return 1;
 }
 
-int cgi_AverageInterfaceType(char *Name, AverageInterfaceType_t *type) {
+int cgi_AverageInterfaceType(char *Name, CGNS_ENUMV( AverageInterfaceType_t ) *type) {
     int i;
     for (i=0; i<NofValidAverageInterfaceTypes; i++) {
         if (strcmp(Name, AverageInterfaceTypeName[i])==0) {
-            (*type) = (AverageInterfaceType_t) i;
+	  (*type) = (CGNS_ENUMV( AverageInterfaceType_t )) i;
             return 0;
         }
     }
     if (cg->version > CGNSLibVersion) {
-        (*type) = AverageInterfaceTypeUserDefined;
+      (*type) = CGNS_ENUMV( AverageInterfaceTypeUserDefined );
         cgi_warning("Unrecognized Average Interface Type '%s' replaced with 'UserDefined'",Name);
         return 0;
     }

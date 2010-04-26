@@ -292,13 +292,13 @@ void write_reference ()
     if (cg_goto(cgfile, cgbase, "end") ||
         cg_state_write("reference state quantities") ||
         cg_goto(cgfile, cgbase, "ReferenceState_t", 1, "end") ||
-        cg_dataclass_write(Dimensional) ||
-        cg_units_write(Kilogram, Meter, Second, Kelvin, Radian))
+        cg_dataclass_write(CGNS_ENUMV( Dimensional )) ||
+        cg_units_write(CGNS_ENUMV( Kilogram ), CGNS_ENUMV( Meter ), CGNS_ENUMV( Second ), CGNS_ENUMV( Kelvin ), CGNS_ENUMV( Radian )))
         error_exit("reference state");
 
     for (n = 0; n < 10; n++) {
         if (cg_goto(cgfile, cgbase, "ReferenceState_t", 1, "end") ||
-            cg_array_write(state[n].name, RealSingle, 1, &dim, &state[n].val) ||
+            cg_array_write(state[n].name, CGNS_ENUMV( RealSingle ), 1, &dim, &state[n].val) ||
             cg_goto(cgfile, cgbase, "ReferenceState_t", 1,
                 "DataArray_t", n+1, "end")) {
             sprintf (errmsg, "reference state data %d", n+1);
@@ -307,10 +307,10 @@ void write_reference ()
         if (state[n].dim) {
             for (i = 0; i < 5; i++)
                 exps[i] = (float)state[n].exps[i];
-            ierr = cg_exponents_write(RealSingle, exps);
+            ierr = cg_exponents_write(CGNS_ENUMV( RealSingle ), exps);
         }
         else
-            ierr = cg_dataclass_write(NondimensionalParameter);
+	  ierr = cg_dataclass_write(CGNS_ENUMV( NondimensionalParameter ));
         if (ierr) {
             sprintf (errmsg, "reference state data %d dataclass", n+1);
             error_exit(errmsg);
@@ -337,16 +337,16 @@ void write_equationset ()
     if (cg_goto(cgfile, cgbase, "end") ||
         cg_equationset_write (3) ||
         cg_goto(cgfile, cgbase, "FlowEquationSet_t", 1, "end") ||
-        cg_governing_write(NSTurbulent) ||
-        cg_model_write("GasModel_t", Ideal) ||
-        cg_model_write("ViscosityModel_t", SutherlandLaw) ||
-        cg_model_write("ThermalConductivityModel_t", PowerLaw) ||
-        cg_model_write("TurbulenceClosure_t", EddyViscosity) ||
-        cg_model_write("TurbulenceModel_t", Algebraic_BaldwinLomax))
+        cg_governing_write(CGNS_ENUMV( NSTurbulent )) ||
+        cg_model_write("GasModel_t", CGNS_ENUMV( Ideal )) ||
+        cg_model_write("ViscosityModel_t", CGNS_ENUMV( SutherlandLaw )) ||
+        cg_model_write("ThermalConductivityModel_t", CGNS_ENUMV( PowerLaw )) ||
+        cg_model_write("TurbulenceClosure_t", CGNS_ENUMV( EddyViscosity )) ||
+        cg_model_write("TurbulenceModel_t", CGNS_ENUMV( Algebraic_BaldwinLomax )))
         error_exit("flow equation set");
 
-    if (cg_dataclass_write(Dimensional) ||
-        cg_units_write(Kilogram, Meter, Second, Kelvin, Radian))
+    if (cg_dataclass_write(CGNS_ENUMV( Dimensional )) ||
+        cg_units_write(CGNS_ENUMV( Kilogram ), CGNS_ENUMV( Meter ), CGNS_ENUMV( Second ), CGNS_ENUMV( Kelvin ), CGNS_ENUMV( Radian )))
         error_exit("flow equation set dataclass");
 
     /* diffusion model */
@@ -363,41 +363,41 @@ void write_equationset ()
 
     if (cg_goto(cgfile, cgbase, "FlowEquationSet_t", 1,
             "GasModel_t", 1, "end") ||
-        cg_dataclass_write(DimensionlessConstant) ||
-        cg_array_write("SpecificHeatRatio", RealSingle, 1, &dim, &g) ||
-        cg_array_write("IdealGasConstant", RealSingle, 1, &dim, &R) ||
+        cg_dataclass_write(CGNS_ENUMV( DimensionlessConstant )) ||
+        cg_array_write("SpecificHeatRatio", CGNS_ENUMV( RealSingle ), 1, &dim, &g) ||
+        cg_array_write("IdealGasConstant", CGNS_ENUMV( RealSingle ), 1, &dim, &R) ||
         cg_goto(cgfile, cgbase, "FlowEquationSet_t", 1,
             "GasModel_t", 1, "DataArray_t", 2, "end") ||
-        cg_dataclass_write(Dimensional) ||
-        cg_units_write(Slug, Foot, Second, Rankine, Radian))
+        cg_dataclass_write(CGNS_ENUMV( Dimensional )) ||
+        cg_units_write(CGNS_ENUMV( Slug ), CGNS_ENUMV( Foot ), CGNS_ENUMV( Second ), CGNS_ENUMV( Rankine ), CGNS_ENUMV( Radian )))
         error_exit("gas model");
 
     /* viscosity model */
 
     if (cg_goto(cgfile, cgbase, "FlowEquationSet_t", 1,
             "ViscosityModel_t", 1, "end") ||
-        cg_array_write("SutherlandLawConstant", RealSingle, 1, &dim, &ts) ||
-        cg_array_write("ViscosityMolecularReference", RealSingle, 1, &dim, &mu))
+        cg_array_write("SutherlandLawConstant", CGNS_ENUMV( RealSingle ), 1, &dim, &ts) ||
+        cg_array_write("ViscosityMolecularReference", CGNS_ENUMV( RealSingle ), 1, &dim, &mu))
         error_exit("viscosity model");
 
     /* thermal conductivity model */
 
     if (cg_goto(cgfile, cgbase, "FlowEquationSet_t", 1,
             "ThermalConductivityModel_t", 1, "end") ||
-        cg_array_write("PowerLawExponent", RealSingle, 1, &dim, &exp) ||
+        cg_array_write("PowerLawExponent", CGNS_ENUMV( RealSingle ), 1, &dim, &exp) ||
         cg_goto(cgfile, cgbase, "FlowEquationSet_t", 1,
             "ThermalConductivityModel_t", 1, "DataArray_t", 1, "end") ||
-        cg_dataclass_write(DimensionlessConstant))
+        cg_dataclass_write(CGNS_ENUMV( DimensionlessConstant )))
         error_exit("thermal conductivity model");
 
     /* turbulence closure model */
 
     if (cg_goto(cgfile, cgbase, "FlowEquationSet_t", 1,
             "TurbulenceClosure_t", 1, "end") ||
-        cg_array_write("PrandtlTurbulent", RealSingle, 1, &dim, &pt) ||
+        cg_array_write("PrandtlTurbulent", CGNS_ENUMV( RealSingle ), 1, &dim, &pt) ||
         cg_goto(cgfile, cgbase, "FlowEquationSet_t", 1,
             "TurbulenceClosure_t", 1, "DataArray_t", 1, "end") ||
-        cg_dataclass_write(DimensionlessConstant))
+        cg_dataclass_write(CGNS_ENUMV( DimensionlessConstant )))
         error_exit("turbulence closure model");
 }
 
@@ -412,11 +412,11 @@ void write_coords(int nz)
             zcoord[n++] = (float)(k + koff);
     }
 
-    if (cg_coord_write(cgfile, cgbase, nz, RealSingle,
+    if (cg_coord_write(cgfile, cgbase, nz, CGNS_ENUMV( RealSingle ),
                        "CoordinateX", xcoord, &cgcoord) ||
-        cg_coord_write(cgfile, cgbase, nz, RealSingle,
+        cg_coord_write(cgfile, cgbase, nz, CGNS_ENUMV( RealSingle ),
                        "CoordinateY", ycoord, &cgcoord) ||
-        cg_coord_write(cgfile, cgbase, nz, RealSingle,
+        cg_coord_write(cgfile, cgbase, nz, CGNS_ENUMV( RealSingle ),
                        "CoordinateZ", zcoord, &cgcoord)) {
         sprintf (errmsg, "zone %d coordinates", nz);
         error_exit(errmsg);
@@ -427,9 +427,9 @@ void write_elements(int nz)
 {
     int cgsect;
 
-    if (cg_section_write(cgfile, cgbase, nz, "Elements", HEXA_8,
+    if (cg_section_write(cgfile, cgbase, nz, "Elements", CGNS_ENUMV( HEXA_8 ),
             1, num_element, 0, elements, &cgsect) ||
-        cg_section_write(cgfile, cgbase, nz, "Faces", QUAD_4,
+        cg_section_write(cgfile, cgbase, nz, "Faces", CGNS_ENUMV( QUAD_4 ),
             num_element+1, num_element+num_face, 0, faces, &cgsect) ||
         cg_parent_data_write(cgfile, cgbase, nz, cgsect, parent)) {
         sprintf (errmsg, "zone %d elements", nz);
@@ -466,10 +466,10 @@ void write_structured()
     if (cg_base_write(cgfile, "Structured", CellDim, PhyDim, &cgbase) ||
         cg_goto(cgfile, cgbase, "end") ||
         cg_descriptor_write("Descriptor", "Multi-block Structured Grid") ||
-        cg_dataclass_write(Dimensional) ||
-        cg_units_write(Kilogram, Meter, Second, Kelvin, Radian))
+        cg_dataclass_write(CGNS_ENUMV( Dimensional )) ||
+        cg_units_write(CGNS_ENUMV( Kilogram ), CGNS_ENUMV( Meter ), CGNS_ENUMV( Second ), CGNS_ENUMV( Kelvin ), CGNS_ENUMV( Radian )))
         error_exit("structured base");
-    if (cg_simulation_type_write(cgfile, cgbase, NonTimeAccurate))
+    if (cg_simulation_type_write(cgfile, cgbase, CGNS_ENUMV( NonTimeAccurate )))
         error_exit("simulation type");
 
     write_reference();
@@ -484,7 +484,7 @@ void write_structured()
     }
     for (n = 1; n <= 2; n++) {
         sprintf(name, "Zone%d", n);
-        if (cg_zone_write(cgfile, cgbase, name, size, Structured, &cgzone)) {
+        if (cg_zone_write(cgfile, cgbase, name, size, CGNS_ENUMV( Structured ), &cgzone)) {
             sprintf (errmsg, "structured zone %d", n);
             error_exit(errmsg);
         }
@@ -519,8 +519,8 @@ void write_structured()
         }
     }
     if (cg_conn_write(cgfile, cgbase, 2, "Abutting1to1 -> Zone1",
-            Vertex, Abutting1to1, PointRange, 2, range, "Zone1",
-            Structured, PointListDonor, Integer, npts, d_pts, &cgconn))
+		      CGNS_ENUMV( Vertex ), CGNS_ENUMV( Abutting1to1 ), CGNS_ENUMV( PointRange ), 2, range, "Zone1",
+		      CGNS_ENUMV( Structured ), CGNS_ENUMV( PointListDonor ), CGNS_ENUMV( Integer ), npts, d_pts, &cgconn))
         error_exit("abutting1to1->zone1");
 
     /* write inlet BC (zone 1) as point range */
@@ -530,8 +530,8 @@ void write_structured()
         range[n+3] = NUM_SIDE;
     }
     range[5] = 1;
-    if (cg_boco_write(cgfile, cgbase, 1, "Inlet", BCInflow,
-            PointRange, 2, range, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 1, "Inlet", CGNS_ENUMV( BCInflow ),
+		      CGNS_ENUMV( PointRange ), 2, range, &cgbc))
         error_exit("inlet boco");
 
     /* write outlet BC (zone 2) as point list */
@@ -543,14 +543,14 @@ void write_structured()
             pts[n++] = NUM_SIDE;
         }
     }
-    if (cg_boco_write(cgfile, cgbase, 2, "Outlet", BCOutflow,
-            PointList, npts, pts, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 2, "Outlet", CGNS_ENUMV( BCOutflow ),
+		      CGNS_ENUMV( PointList ), npts, pts, &cgbc))
         error_exit("outlet boco");
 
     /* write zone 1 wall BC as point ranges using a family to group them */
 
     if (cg_family_write(cgfile, cgbase, "WallFamily", &cgfam) ||
-        cg_fambc_write(cgfile, cgbase, cgfam, "WallBC", BCWall, &cgbc))
+        cg_fambc_write(cgfile, cgbase, cgfam, "WallBC", CGNS_ENUMV( BCWall ), &cgbc))
         error_exit("wall family bc");
 
     /* write out some bogus geometry info for the family */
@@ -569,32 +569,32 @@ void write_structured()
     }
 
     range[3] = 1;
-    if (cg_boco_write(cgfile, cgbase, 1, "imin", FamilySpecified,
-            PointRange, 2, range, &cgbc) ||
+    if (cg_boco_write(cgfile, cgbase, 1, "imin", CGNS_ENUMV( FamilySpecified ),
+		      CGNS_ENUMV( PointRange ), 2, range, &cgbc) ||
         cg_goto(cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1,
             "BC_t", cgbc, "end") ||
         cg_famname_write("WallFamily"))
         error_exit("imin boco");
 
     range[0] = range[3] = NUM_SIDE;
-    if (cg_boco_write(cgfile, cgbase, 1, "imax", FamilySpecified,
-            PointRange, 2, range, &cgbc) ||
+    if (cg_boco_write(cgfile, cgbase, 1, "imax", CGNS_ENUMV( FamilySpecified ),
+		      CGNS_ENUMV( PointRange ), 2, range, &cgbc) ||
         cg_goto(cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1,
             "BC_t", cgbc, "end") ||
         cg_famname_write("WallFamily"))
         error_exit("imax boco");
 
     range[0] = range[4] = 1;
-    if (cg_boco_write(cgfile, cgbase, 1, "jmin", FamilySpecified,
-            PointRange, 2, range, &cgbc) ||
+    if (cg_boco_write(cgfile, cgbase, 1, "jmin", CGNS_ENUMV( FamilySpecified ),
+		      CGNS_ENUMV( PointRange ), 2, range, &cgbc) ||
         cg_goto(cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1,
             "BC_t", cgbc, "end") ||
         cg_famname_write("WallFamily"))
         error_exit("jmin boco");
 
     range[1] = range[4] = NUM_SIDE;
-    if (cg_boco_write(cgfile, cgbase, 1, "jmax", FamilySpecified,
-            PointRange, 2, range, &cgbc) ||
+    if (cg_boco_write(cgfile, cgbase, 1, "jmax", CGNS_ENUMV( FamilySpecified ),
+		      CGNS_ENUMV( PointRange ), 2, range, &cgbc) ||
         cg_goto(cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1,
             "BC_t", cgbc, "end") ||
         cg_famname_write("WallFamily"))
@@ -620,18 +620,18 @@ void write_structured()
             pts[n++] = k;
         }
     }
-    if (cg_boco_write(cgfile, cgbase, 2, "Walls", BCWall,
-            PointList, n / 3, pts, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 2, "Walls", CGNS_ENUMV( BCWall ),
+		      CGNS_ENUMV( PointList ), n / 3, pts, &cgbc))
         error_exit("zone 2 walls boco");
 
     /* write solution for zone 1 as vertex with rind points */
 
     for (n = 0; n < 6; n++)
         rind[n] = 1;
-    if (cg_sol_write(cgfile, cgbase, 1, "VertexSolution", Vertex, &cgsol) ||
+    if (cg_sol_write(cgfile, cgbase, 1, "VertexSolution", CGNS_ENUMV( Vertex ), &cgsol) ||
         cg_goto(cgfile, cgbase, "Zone_t", 1, "FlowSolution_t", cgsol, "end") ||
         cg_rind_write(rind) ||
-        cg_field_write(cgfile, cgbase, 1, cgsol, RealSingle,
+        cg_field_write(cgfile, cgbase, 1, cgsol, CGNS_ENUMV( RealSingle ),
             "Density", solution, &cgfld))
         error_exit("zone 1 solution");
 
@@ -639,10 +639,10 @@ void write_structured()
 
     rind[0] = rind[1] = 0;
     if (cg_sol_write(cgfile, cgbase, 2, "CellCenterSolution",
-            CellCenter, &cgsol) ||
+		     CGNS_ENUMV( CellCenter ), &cgsol) ||
         cg_goto(cgfile, cgbase, "Zone_t", 2, "FlowSolution_t", cgsol, "end") ||
         cg_rind_write(rind) ||
-        cg_field_write(cgfile, cgbase, 2, cgsol, RealSingle,
+        cg_field_write(cgfile, cgbase, 2, cgsol, CGNS_ENUMV( RealSingle ),
             "Density", solution, &cgfld))
         error_exit("zone 2 solution");
 }
@@ -673,8 +673,8 @@ void write_unstructured()
     if (cg_base_write(cgfile, "Unstructured", CellDim, PhyDim, &cgbase) ||
         cg_goto(cgfile, cgbase, "end") ||
         cg_descriptor_write("Descriptor", "Multi-block Unstructured Grid") ||
-        cg_dataclass_write(NormalizedByDimensional) ||
-        cg_units_write(Kilogram, Meter, Second, Kelvin, Radian))
+        cg_dataclass_write(CGNS_ENUMV( NormalizedByDimensional )) ||
+        cg_units_write(CGNS_ENUMV( Kilogram ), CGNS_ENUMV( Meter ), CGNS_ENUMV( Second ), CGNS_ENUMV( Kelvin ), CGNS_ENUMV( Radian )))
         error_exit("unstructured base");
 
     /* write zones */
@@ -685,7 +685,7 @@ void write_unstructured()
     size[1] = num_element;
     for (n = 1; n <= 2; n++) {
         sprintf(name, "Zone%d", n);
-        if (cg_zone_write(cgfile, cgbase, name, size, Unstructured, &cgzone)) {
+        if (cg_zone_write(cgfile, cgbase, name, size, CGNS_ENUMV( Unstructured ), &cgzone)) {
             sprintf (errmsg, "unstructured zone %d", n);
             error_exit(errmsg);
         }
@@ -725,8 +725,8 @@ void write_unstructured()
 
     /* this fail for version prior to 2.2 - see below */
     if (cg_conn_write(cgfile, cgbase, 1, "Abutting1to1 -> Zone2",
-            location, Abutting1to1, PointRange, 2, range, "Zone2",
-            Unstructured, PointListDonor, Integer, nelem, d_pts, &cgconn))
+		      location, CGNS_ENUMV( Abutting1to1 ), CGNS_ENUMV( PointRange ), 2, range, "Zone2",
+		      CGNS_ENUMV( Unstructured ), CGNS_ENUMV( PointListDonor ), CGNS_ENUMV( Integer ), nelem, d_pts, &cgconn))
         error_exit("face center abutting1to1->zone2");
 
     /* zone 2 to zone 1 connectivity as Abutting1to1 with element list */
@@ -736,8 +736,8 @@ void write_unstructured()
         d_pts[n] = pts[n] + nelem;
     }
     if (cg_conn_write(cgfile, cgbase, 2, "Abutting1to1 -> Zone1",
-            location, Abutting1to1, PointList, nelem, pts, "Zone1",
-            Unstructured, PointListDonor, Integer, nelem, d_pts, &cgconn))
+		      location, CGNS_ENUMV( Abutting1to1 ), CGNS_ENUMV( PointList ), nelem, pts, "Zone1",
+		      CGNS_ENUMV( Unstructured ), CGNS_ENUMV( PointListDonor ), CGNS_ENUMV( Integer ), nelem, d_pts, &cgconn))
         error_exit("face center abutting1to1->zone1");
 
 # else
@@ -751,8 +751,8 @@ void write_unstructured()
             d_pts[n++] = NODE_INDEX(i, j, 1);
     }
     if (cg_conn_write(cgfile, cgbase, 1, "Abutting1to1 -> Zone2",
-            Vertex, Abutting1to1, PointRange, 2, range, "Zone2",
-            Unstructured, PointListDonor, Integer, npts, d_pts, &cgconn))
+		      CGNS_ENUMV( Vertex ), CGNS_ENUMV( Abutting1to1 ), CGNS_ENUMV( PointRange ), 2, range, "Zone2",
+		      CGNS_ENUMV( Unstructured ), CGNS_ENUMV( PointListDonor ), CGNS_ENUMV( Integer ), npts, d_pts, &cgconn))
         error_exit("point range abutting1to1->zone2");
 
     /* zone 2 to zone 1 connectivity as Abutting1to1 with point list */
@@ -764,8 +764,8 @@ void write_unstructured()
         }
     }
     if (cg_conn_write(cgfile, cgbase, 2, "Abutting1to1 -> Zone1",
-            Vertex, Abutting1to1, PointList, npts, pts, "Zone1",
-            Unstructured, PointListDonor, Integer, npts, d_pts, &cgconn))
+		      CGNS_ENUMV( Vertex ), CGNS_ENUMV( Abutting1to1 ), CGNS_ENUMV( PointList ), npts, pts, "Zone1",
+		      CGNS_ENUMV( Unstructured ), CGNS_ENUMV( PointListDonor ), CGNS_ENUMV( Integer ), npts, d_pts, &cgconn))
         error_exit("point list abutting1to1->zone1");
 
 # endif
@@ -781,28 +781,28 @@ void write_unstructured()
         d_pts[n] = pts[n] + nelem;
     }
 
-    if (cg_boco_write(cgfile, cgbase, 1, "Inlet", BCInflow,
-            ElementList, nelem, pts, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 1, "Inlet", CGNS_ENUMV( BCInflow ),
+		      CGNS_ENUMV( ElementList ), nelem, pts, &cgbc))
         error_exit ("elementlist inlet boco");
-    if (cg_boco_write(cgfile, cgbase, 2, "Outlet", BCOutflow,
-            ElementList, nelem, d_pts, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 2, "Outlet", CGNS_ENUMV( BCOutflow ),
+		      CGNS_ENUMV( ElementList ), nelem, d_pts, &cgbc))
         error_exit ("elementlist outlet boco");
-    if (cg_boco_write(cgfile, cgbase, 1, "Walls", BCWall,
-            ElementRange, 2, range, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 1, "Walls", CGNS_ENUMV( BCWall ),
+		      CGNS_ENUMV( ElementRange ), 2, range, &cgbc))
         error_exit ("elementrange zone 1 walls boco");
-    if (cg_boco_write(cgfile, cgbase, 2, "Walls", BCWall,
-            ElementRange, 2, range, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 2, "Walls", CGNS_ENUMV( BCWall ),
+		      CGNS_ENUMV( ElementRange ), 2, range, &cgbc))
         error_exit ("elementrange zone 2 walls boco");
 
     /* write solution for zone 1 as vertex and zone 2 as cell center */
 
-    if (cg_sol_write(cgfile, cgbase, 1, "VertexSolution", Vertex, &cgsol) ||
-        cg_field_write(cgfile, cgbase, 1, cgsol, RealSingle,
+    if (cg_sol_write(cgfile, cgbase, 1, "VertexSolution", CGNS_ENUMV( Vertex ), &cgsol) ||
+        cg_field_write(cgfile, cgbase, 1, cgsol, CGNS_ENUMV( RealSingle ),
             "Density", solution, &cgfld))
         error_exit("zone 1 solution");
     if (cg_sol_write(cgfile, cgbase, 2, "CellCenterSolution",
-            CellCenter, &cgsol) ||
-        cg_field_write(cgfile, cgbase, 2, cgsol, RealSingle,
+		     CGNS_ENUMV( CellCenter ), &cgsol) ||
+        cg_field_write(cgfile, cgbase, 2, cgsol, CGNS_ENUMV( RealSingle ),
             "Density", solution, &cgfld))
         error_exit("zone 2 solution");
 }
@@ -826,8 +826,8 @@ void write_mixed()
         cg_goto(cgfile, cgbase, "end") ||
         cg_descriptor_write("Descriptor",
             "Mixed Structured and Unstructured Grid") ||
-        cg_dataclass_write(Dimensional) ||
-        cg_units_write(Kilogram, Meter, Second, Kelvin, Radian))
+        cg_dataclass_write(CGNS_ENUMV( Dimensional )) ||
+        cg_units_write(CGNS_ENUMV( Kilogram ), CGNS_ENUMV( Meter ), CGNS_ENUMV( Second ), CGNS_ENUMV( Kelvin ), CGNS_ENUMV( Radian )))
         error_exit("mixed base");
 
     /* zone 1 is structured */
@@ -838,7 +838,7 @@ void write_mixed()
         size[n+6] = 0;
     }
     if (cg_zone_write(cgfile, cgbase, "StructuredZone", size,
-        Structured, &cgzone))
+		      CGNS_ENUMV( Structured ), &cgzone))
         error_exit("structured zone");
     write_zone_link(1, "Structured", "GridCoordinates");
 
@@ -849,7 +849,7 @@ void write_mixed()
     size[0] = num_coord;
     size[1] = num_element;
     if (cg_zone_write(cgfile, cgbase, "UnstructuredZone", size,
-        Unstructured, &cgzone))
+		      CGNS_ENUMV( Unstructured ), &cgzone))
         error_exit("unstructured zone");
     write_zone_link(2, "Unstructured", "GridCoordinates");
     write_zone_link(2, "Unstructured", "Elements");
@@ -870,8 +870,8 @@ void write_mixed()
 
     location = KFaceCenter;
     if (cg_conn_write(cgfile, cgbase, 1, "Structured -> Unstructured",
-        location, Abutting1to1, PointRange, 2, range, "UnstructuredZone",
-        Unstructured, PointListDonor, Integer, nelem, d_pts, &cgconn))
+		      location, CGNS_ENUMV( Abutting1to1 ), CGNS_ENUMV( PointRange ), 2, range, "UnstructuredZone",
+		      CGNS_ENUMV( Unstructured ), CGNS_ENUMV( PointListDonor ), CGNS_ENUMV( Integer ), nelem, d_pts, &cgconn))
         error_exit("abutting1to1->unstructured face range");
 
 #else
@@ -886,8 +886,8 @@ void write_mixed()
     for (n = 0; n < npts; n++)
         d_pts[n] = n + 1;
     if (cg_conn_write(cgfile, cgbase, 1, "Structured -> Unstructured",
-            Vertex, Abutting1to1, PointRange, 2, range, "UnstructuredZone",
-            Unstructured, PointListDonor, Integer, npts, d_pts, &cgconn))
+		      CGNS_ENUMV( Vertex ), CGNS_ENUMV( Abutting1to1 ), CGNS_ENUMV( PointRange ), 2, range, "UnstructuredZone",
+		      CGNS_ENUMV( Unstructured ), CGNS_ENUMV( PointListDonor ), CGNS_ENUMV( Integer ), npts, d_pts, &cgconn))
         error_exit("abutting1to1->unstructured point range");
 
 #endif
@@ -904,8 +904,8 @@ void write_mixed()
         }
     }
     if (cg_conn_write(cgfile, cgbase, 2, "Unstructured -> Structured",
-            Vertex, Abutting1to1, PointRange, 2, range, "StructuredZone",
-            Structured, PointListDonor, Integer, npts, d_pts, &cgconn))
+		      CGNS_ENUMV( Vertex ), CGNS_ENUMV( Abutting1to1 ), CGNS_ENUMV( PointRange ), 2, range, "StructuredZone",
+		      CGNS_ENUMV( Structured ), CGNS_ENUMV( PointListDonor ), CGNS_ENUMV( Integer ), npts, d_pts, &cgconn))
         error_exit("abutting1to1->structured point range");
 
 #ifdef STRUCTURED_FACES
@@ -917,11 +917,11 @@ void write_mixed()
         range[n+3] = NUM_SIDE - 1;
     }
     range[5] = 1;
-    if (cg_boco_write(cgfile, cgbase, 1, "Inlet", BCInflow,
-            PointRange, 2, range, &cgbc) ||
+    if (cg_boco_write(cgfile, cgbase, 1, "Inlet", CGNS_ENUMV( BCInflow ),
+		      CGNS_ENUMV( PointRange ), 2, range, &cgbc) ||
         cg_goto(cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1,
             "BC_t", cgbc, "end") ||
-        cg_gridlocation_write(KFaceCenter))
+        cg_gridlocation_write(CGNS_ENUMV( KFaceCenter ))
         error_exit("kfacecenter inlet boco");
 
 #else
@@ -933,8 +933,8 @@ void write_mixed()
         range[n+3] = NUM_SIDE;
     }
     range[5] = 1;
-    if (cg_boco_write(cgfile, cgbase, 1, "Inlet", BCInflow,
-            PointRange, 2, range, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 1, "Inlet", CGNS_ENUMV( BCInflow ),
+		      CGNS_ENUMV( PointRange ), 2, range, &cgbc))
         error_exit("point range inlet boco");
 
 #endif
@@ -943,8 +943,8 @@ void write_mixed()
 
     range[0] = num_coord - npts + 1;
     range[1] = num_coord;
-    if (cg_boco_write(cgfile, cgbase, 2, "Outlet", BCOutflow,
-            PointRange, 2, range, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 2, "Outlet", CGNS_ENUMV( BCOutflow ),
+		      CGNS_ENUMV( PointRange ), 2, range, &cgbc))
         error_exit("point range outlet boco");
 
 #ifdef STRUCTURED_FACES
@@ -969,11 +969,11 @@ void write_mixed()
             pts[n++] = k;
         }
     }
-    if (cg_boco_write(cgfile, cgbase, 1, "Walls", BCWall,
-            PointList, 4 * nelem, pts, &cgbc) ||
+    if (cg_boco_write(cgfile, cgbase, 1, "Walls", CGNS_ENUMV( BCWall ),
+		      CGNS_ENUMV( PointList ), 4 * nelem, pts, &cgbc) ||
         cg_goto(cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1,
             "BC_t", cgbc, "end") ||
-        cg_gridlocation_write(FaceCenter))
+        cg_gridlocation_write(CGNS_ENUMV( FaceCenter )))
         error_exit("face list zone 1 walls boco");
 
 #else
@@ -998,8 +998,8 @@ void write_mixed()
             pts[n++] = k;
         }
     }
-    if (cg_boco_write(cgfile, cgbase, 1, "Walls", BCWall,
-            PointList, n / 3, pts, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 1, "Walls", CGNS_ENUMV( BCWall ),
+		      CGNS_ENUMV( PointList ), n / 3, pts, &cgbc))
         error_exit("point list zone 1 walls boco");
 
 #endif
@@ -1016,8 +1016,8 @@ void write_mixed()
             pts[n++] = NODE_INDEX(NUM_SIDE, j + 1, k);
         }
     }
-    if (cg_boco_write(cgfile, cgbase, 2, "Walls", BCWall,
-            PointList, n, pts, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 2, "Walls", CGNS_ENUMV( BCWall ),
+		      CGNS_ENUMV( PointList ), n, pts, &cgbc))
         error_exit("point list zone 2 walls boco");
 }
 
@@ -1031,7 +1031,7 @@ void write_mismatched()
     int ic, jc, dims[2];
     float dx, dy, dtheta, r, t, x, y;
     int range[6], d_range[6], transform[3];
-    PointSetType_t d_type;
+    CGNS_ENUMT( PointSetType_t )  d_type;
 
     printf ("writing mismatched base\n");
     fflush (stdout);
@@ -1039,8 +1039,8 @@ void write_mismatched()
     if (cg_base_write(cgfile, "Mismatched", CellDim, PhyDim, &cgbase) ||
         cg_goto(cgfile, cgbase, "end") ||
         cg_descriptor_write("Descriptor", "Mismatched Grid") ||
-        cg_dataclass_write(Dimensional) ||
-        cg_units_write(Kilogram, Meter, Second, Kelvin, Radian))
+        cg_dataclass_write(CGNS_ENUMV( Dimensional )) ||
+        cg_units_write(CGNS_ENUMV( Kilogram ), CGNS_ENUMV( Meter ), CGNS_ENUMV( Second ), CGNS_ENUMV( Kelvin ), CGNS_ENUMV( Radian )))
         error_exit("mismatched base");
 
     /* zone 1 is cartesian */
@@ -1062,7 +1062,7 @@ void write_mismatched()
         }
     }
     if (cg_zone_write(cgfile, cgbase, "CartesianZone", size,
-        Structured, &cgzone))
+		      CGNS_ENUMV( Structured ), &cgzone))
         error_exit("cartesion zone");
     write_coords(1);
 
@@ -1082,12 +1082,12 @@ void write_mismatched()
     size[1] = nj;
     size[4] = nj - 1;
     if (cg_zone_write(cgfile, cgbase, "CylindricalZone", size,
-        Structured, &cgzone) ||
-        cg_coord_write(cgfile, cgbase, cgzone, RealSingle,
+		      CGNS_ENUMV( Structured ), &cgzone) ||
+        cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
             "CoordinateR", xcoord, &cgcoord) ||
-        cg_coord_write(cgfile, cgbase, cgzone, RealSingle,
+        cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
             "CoordinateTheta", ycoord, &cgcoord) ||
-        cg_coord_write(cgfile, cgbase, cgzone, RealSingle,
+        cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
             "CoordinateZ", zcoord, &cgcoord))
         error_exit("cylindrical zone");
 
@@ -1119,13 +1119,13 @@ void write_mismatched()
 
     dims[0] = 3;
     dims[1] = n / 3;
-    d_type = CellListDonor;
+    d_type = CGNS_ENUMV( CellListDonor );
     if (cg_conn_write(cgfile, cgbase, 1, "Cartesian -> Cylindrical",
-            Vertex, Abutting, PointList, n/3, pts, "CylindricalZone",
-            Structured, d_type, Integer, n/3, d_pts, &cgconn) ||
+		      CGNS_ENUMV( Vertex ), CGNS_ENUMV( Abutting ), CGNS_ENUMV( PointList ), n/3, pts, "CylindricalZone",
+		      CGNS_ENUMV( Structured ), d_type, CGNS_ENUMV( Integer ), n/3, d_pts, &cgconn) ||
         cg_goto(cgfile, cgbase, "Zone_t", 1, "ZoneGridConnectivity_t", 1,
             "GridConnectivity_t", cgconn, "end") ||
-        cg_array_write("InterpolantsDonor", RealSingle, 2, dims, interp))
+        cg_array_write("InterpolantsDonor", CGNS_ENUMV( RealSingle ), 2, dims, interp))
         error_exit("cartesian->cylindrical connectivity");
 
     /* zone 2 -> zone 1 connectivity */
@@ -1156,13 +1156,13 @@ void write_mismatched()
 
     dims[0] = 3;
     dims[1] = n / 3;
-    d_type = CellListDonor;
+    d_type = CGNS_ENUMV( CellListDonor );
     if (cg_conn_write(cgfile, cgbase, 2, "Cylindrical -> Cartesian",
-            Vertex, Abutting, PointList, n/3, pts, "CartesianZone",
-            Structured, d_type, Integer, n/3, d_pts, &cgconn) ||
+		      CGNS_ENUMV( Vertex ), CGNS_ENUMV( Abutting ), CGNS_ENUMV( PointList ), n/3, pts, "CartesianZone",
+		      CGNS_ENUMV( Structured ) , d_type, CGNS_ENUMV( Integer ), n/3, d_pts, &cgconn) ||
         cg_goto(cgfile, cgbase, "Zone_t", 2, "ZoneGridConnectivity_t", 1,
             "GridConnectivity_t", cgconn, "end") ||
-        cg_array_write("InterpolantsDonor", RealSingle, 2, dims, interp))
+        cg_array_write("InterpolantsDonor", CGNS_ENUMV( RealSingle ), 2, dims, interp))
         error_exit("cylindrical->cartesian connectivity");
 
     /* periodic boundary for zone 2 */
@@ -1182,16 +1182,16 @@ void write_mismatched()
 
     range[4] = NUM_SIDE;
     range[5] = 1;
-    if (cg_boco_write(cgfile, cgbase, 1, "Inlet", BCInflow,
-            PointRange, 2, range, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 1, "Inlet", CGNS_ENUMV( BCInflow ),
+		      CGNS_ENUMV( PointRange ), 2, range, &cgbc))
         error_exit("inlet boco");
 
     /* write outlet BC (zone 2) as point range */
 
     range[4] = nj;
     range[2] = range[5] = NUM_SIDE;
-    if (cg_boco_write(cgfile, cgbase, 2, "Outlet", BCOutflow,
-            PointRange, 2, range, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 2, "Outlet", CGNS_ENUMV( BCOutflow ),
+		      CGNS_ENUMV( PointRange ), 2, range, &cgbc))
         error_exit("outlet boco");
 
     /* write zone 1 wall BC as point list */
@@ -1214,8 +1214,8 @@ void write_mismatched()
             pts[n++] = k;
         }
     }
-    if (cg_boco_write(cgfile, cgbase, 1, "Walls", BCWall,
-            PointList, n/3, pts, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 1, "Walls", CGNS_ENUMV( BCWall ),
+		      CGNS_ENUMV( PointList ), n/3, pts, &cgbc))
         error_exit("zone 1 walls boco");
 
     /* write zone 2 wall BC as point list */
@@ -1227,8 +1227,8 @@ void write_mismatched()
             pts[n++] = k;
         }
     }
-    if (cg_boco_write(cgfile, cgbase, 2, "Walls", BCWall,
-            PointList, n/3, pts, &cgbc))
+    if (cg_boco_write(cgfile, cgbase, 2, "Walls", CGNS_ENUMV( BCWall ),
+		      CGNS_ENUMV( PointList ), n/3, pts, &cgbc))
         error_exit("zone 2 walls boco");
 }
 

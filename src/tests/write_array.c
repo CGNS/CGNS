@@ -40,7 +40,7 @@ int main (int argc, char **argv)
 
     for (na = 1; na <= narrays; na++) {
         sprintf (name, "Array%d", na);
-        if (cg_array_write (name, RealSingle, 1, &arraysize, array))
+        if (cg_array_write (name, CGNS_ENUMV( RealSingle ), 1, &arraysize, array))
             cg_error_exit ();
     }
     if (cg_close(cgfile)) cg_error_exit();
@@ -58,7 +58,7 @@ int main (int argc, char **argv)
         cg_error_exit();
     for (na = 1; na <= narrays; na++) {
         sprintf (name, "Array%d", na);
-        if (cg_array_write (name, RealSingle, 1, &arraysize, array))
+        if (cg_array_write (name, CGNS_ENUMV( RealSingle ), 1, &arraysize, array))
             cg_error_exit ();
     }
     if (cg_close(cgfile)) cg_error_exit();

@@ -76,9 +76,9 @@ int main (int argc, char **argv)
     for (i = 0; i < numzones; i++) {
         int_to_a (i, buf, sizeof(buf));
         if (cg_zone_write (index_file, index_base, buf, *isize,
-                Structured, &index_zone) ||
+			   CGNS_ENUMV( Structured ), &index_zone) ||
             cg_coord_write (index_file, index_base, index_zone,
-                RealSingle, "CoordinateX", values, &index_coord))
+			    CGNS_ENUMV( RealSingle ), "CoordinateX", values, &index_coord))
             cg_error_exit();
     }
 

@@ -328,7 +328,7 @@ void fix_name (int cgio, double pid, double id, char *newname)
 /*--------------------------------------------------------------------*/
 
 void CGI_write_dataset(double parent_id, cgns_dataset *dataset,
-    GridLocation_t location) {
+		       CGNS_ENUMT( GridLocation_t )  location) {
     int dim_vals, n;
     const char *type_name;
 
@@ -346,7 +346,7 @@ void CGI_write_dataset(double parent_id, cgns_dataset *dataset,
 
     /* GridLocation */
     if (FileVersion >= 2400) location = dataset->location;
-    if (location != Vertex && (FileVersion == 1200 || FileVersion >= 2400)) {
+    if (location != CGNS_ENUMV( Vertex ) && (FileVersion == 1200 || FileVersion >= 2400)) {
         double dummy_id;
         type_name = cg_GridLocationName(location);
         dim_vals = strlen(type_name);
@@ -394,8 +394,8 @@ void CGI_write_boco (double parent_id, cgns_boco *boco) {
     int dim_vals, n;
     double dummy_id;
     const char *type_name;
-    BCType_t type;
-    GridLocation_t location = boco->location;
+    CGNS_ENUMT( BCType_t )  type;
+    CGNS_ENUMT( GridLocation_t )  location = boco->location;
 
     if (boco->link && keep_links) {
         create_node (boco->id, parent_id, 0);
@@ -404,10 +404,10 @@ void CGI_write_boco (double parent_id, cgns_boco *boco) {
 
     /* BC_t */
     type = boco->type;
-    if (type == FamilySpecified && FileVersion < 2000) {
+    if (type == CGNS_ENUMV( FamilySpecified ) && FileVersion < 2000) {
         printf ("WARNING:BC type FamilySpecified changed to UserDefined\n");
         printf ("        for boundary condition \"%s\"\n", boco->name);
-        type = BCTypeUserDefined;
+        type = CGNS_ENUMV( BCTypeUserDefined );
     }
     type_name = cg_BCTypeName(type);
     dim_vals = strlen(type_name);
@@ -416,31 +416,31 @@ void CGI_write_boco (double parent_id, cgns_boco *boco) {
         error_exit ("cgio_new_node", 1);
 
     if (boco->ptset) {
-        PointSetType_t ptype = boco->ptset->type;
+      CGNS_ENUMT( PointSetType_t )  ptype = boco->ptset->type;
 
         /* handle the various combinations of PointSetType and GridLocation */
 
-        if (ptype == PointList || ptype == PointRange) {
-            if (location != Vertex) {
+      if (ptype == CGNS_ENUMV( PointList ) || ptype == CGNS_ENUMV( PointRange )) {
+	if (location != CGNS_ENUMV( Vertex )) {
                 if (FileVersion == 1200 || FileVersion >= 2300) {
-                    if (ptype == PointList)
-                        ptype = ElementList;
+		  if (ptype == CGNS_ENUMV( PointList ))
+		    ptype = CGNS_ENUMV( ElementList );
                     else
-                        ptype = ElementRange;
-                    location = Vertex;
+		      ptype = CGNS_ENUMV( ElementRange );
+		  location = CGNS_ENUMV( Vertex );
                 }
             }
         }
-        else if (ptype == ElementList || ptype == ElementRange) {
+      else if (ptype == CGNS_ENUMV( ElementList ) || ptype == CGNS_ENUMV( ElementRange )) {
             if (FileVersion > 1200 && FileVersion < 2300) {
-                if (ptype == ElementList)
-                    ptype = PointList;
+	      if (ptype == CGNS_ENUMV( ElementList ))
+		ptype = CGNS_ENUMV( PointList );
                 else
-                    ptype = PointRange;
-                location = FaceCenter;
+		  ptype = CGNS_ENUMV( PointRange );
+	      location = CGNS_ENUMV( FaceCenter );
             }
             else
-                location = Vertex;
+	      location = CGNS_ENUMV( Vertex );
         }
         else
             ptype = 0;
@@ -449,13 +449,13 @@ void CGI_write_boco (double parent_id, cgns_boco *boco) {
             type_name = cg_PointSetTypeName(ptype);
             if (cgio_create_node (outcgio, boco->id, type_name, &dummy_id))
                 error_exit ("cgio_create_node", 1);
-            if (CurrentZone->type == Unstructured &&
+            if (CurrentZone->type == CGNS_ENUMV( Unstructured ) &&
                 ((FileVersion == 1200 &&
-                  (ptype == ElementList ||
-                   ptype == ElementRange)) ||
+                  (ptype == CGNS_ENUMV( ElementList ) ||
+                   ptype == CGNS_ENUMV( ElementRange ))) ||
                  (FromVersion == 1200 &&
-                  (boco->ptset->type == ElementList ||
-                   boco->ptset->type == ElementRange))))
+                  (boco->ptset->type == CGNS_ENUMV( ElementList ) ||
+                   boco->ptset->type == CGNS_ENUMV( ElementRange )))))
                 copy_1200 (boco->ptset->id, dummy_id);
             else {
                 if (cgio_copy_node (inpcgio, boco->ptset->id,
@@ -466,7 +466,7 @@ void CGI_write_boco (double parent_id, cgns_boco *boco) {
     }
 
     /* GridLocation */
-    if (location != Vertex && FileVersion > 1200) {
+    if (location != CGNS_ENUMV( Vertex ) && FileVersion > 1200) {
         type_name = cg_GridLocationName(location);
         dim_vals = strlen(type_name);
         if (cgio_new_node (outcgio, boco->id, "GridLocation",
@@ -582,7 +582,7 @@ void CGI_write_conns (double parent_id, cgns_conn *conn) {
     double dummy_id;
     const char *type_name;
     cgns_ptset *ptset;
-    GridLocation_t location = conn->location;
+    CGNS_ENUMT( GridLocation_t )  location = conn->location;
 
     if (conn->link && keep_links) {
         create_node (conn->id, parent_id, 0);
@@ -603,12 +603,12 @@ void CGI_write_conns (double parent_id, cgns_conn *conn) {
         error_exit ("cgio_new_node", 1);
 
      /* write GridLocation */
-    if (location != Vertex) {
-        if (location != CellCenter && FileVersion < 2300) {
+    if (location != CGNS_ENUMV( Vertex )) {
+      if (location != CGNS_ENUMV( CellCenter ) && FileVersion < 2300) {
             if (FileVersion == 2200)
-                location = FaceCenter;
+	      location = CGNS_ENUMV( FaceCenter );
             else
-                location = CellCenter;
+	      location = CGNS_ENUMV( CellCenter );
         }
         type_name = cg_GridLocationName(location);
         dim_vals = strlen(type_name);
@@ -637,32 +637,32 @@ void CGI_write_conns (double parent_id, cgns_conn *conn) {
     }
     else {
         double donorid;
-        ZoneType_t dtype = ZoneTypeNull;
-        PointSetType_t ptype = ptset->type;
+        CGNS_ENUMT( ZoneType_t )  dtype = CGNS_ENUMV( ZoneTypeNull );
+        CGNS_ENUMT( PointSetType_t )  ptype = ptset->type;
         for (n = 0; n < CurrentBase->nzones; n++) {
             if (0 == strcmp (conn->donor, CurrentBase->zone[n].name)) {
                 dtype = CurrentBase->zone[n].type;
                 break;
             }
         }
-        if (dtype == Structured) {
+        if (dtype == CGNS_ENUMV( Structured )) {
             if (cgio_new_node (outcgio, conn->id, "StructuredDonor",
                     "StructuredDonor_t", "MT", 0,
                     &dim_vals, NULL, &dummy_id))
                 error_exit ("cgio_new_node", 1);
             donorid = create_node (ptset->id, dummy_id, 0);
-            ptype = PointListDonor;
+            ptype = CGNS_ENUMV( PointListDonor );
         }
-        else if (dtype == Unstructured) {
+        else if (dtype == CGNS_ENUMV( Unstructured )) {
             if (cgio_new_node (outcgio, conn->id, "UnstructuredDonor",
                     "UnstructuredDonor_t", "MT", 0,
                     &dim_vals, NULL, &dummy_id))
                 error_exit ("cgio_new_node", 1);
             donorid = create_node (ptset->id, dummy_id, 0);
-            if (ptype != PointListDonor && ptype != CellListDonor)
-                ptype = (location == Vertex || conn->interpolants == NULL) ?
-                    PointListDonor : CellListDonor;
-            if (ptype == CellListDonor && conn->interpolants)
+            if (ptype != CGNS_ENUMV( PointListDonor ) && ptype != CGNS_ENUMV( CellListDonor ))
+	      ptype = (location == CGNS_ENUMV( Vertex ) || conn->interpolants == NULL) ?
+		CGNS_ENUMV( PointListDonor ) : CGNS_ENUMV( CellListDonor );
+            if (ptype == CGNS_ENUMV( CellListDonor ) && conn->interpolants)
                 create_node (conn->interpolants->id, dummy_id, 0);
         }
         else {
@@ -742,7 +742,7 @@ void CGI_write_section(double parent_id, cgns_section *section) {
     int n, dim_vals, data[2];
     double dummy_id;
 
-    if ((section->link && keep_links) || section->el_type <= PYRA_5 ||
+    if ((section->link && keep_links) || section->el_type <= CGNS_ENUMV( PYRA_5 ) ||
         (FromVersion >= 3000 && FileVersion >= 3000)) {
         create_node (section->id, parent_id, 1);
         return;
@@ -751,14 +751,14 @@ void CGI_write_section(double parent_id, cgns_section *section) {
     if (FileVersion < 3000) {
         int i, j, ne, nelems, *elems;
         
-        if (section->el_type == NFACE_n) {
+        if (section->el_type == CGNS_ENUMV( NFACE_n )) {
             printf ("can't convert NFACE_n element set - skipping\n");
             return;
         }
         nelems = section->range[1] - section->range[0] + 1;
         elems = (int *)section->connect->data;
         
-        if (section->el_type == PYRA_13) {
+        if (section->el_type == CGNS_ENUMV( PYRA_13 )) {
             i = 5;
             j = 13;
             for (ne = 1; ne < nelems; ne++) {
@@ -770,22 +770,22 @@ void CGI_write_section(double parent_id, cgns_section *section) {
             printf("converted %d PYRA_13 elements to PYRA_5\n", nelems);
         }
         
-        if (section->el_type == MIXED) {
-            ElementType_t type;
+        if (section->el_type == CGNS_ENUMV( MIXED )) {
+	  CGNS_ENUMT( ElementType_t )  type;
             int npe, cnt = 0;
             
             i = j = 0;
             for (ne = 0; ne < nelems; ne++) {
                 type = elems[j++];
-                if (type > NGON_n)
-                    npe = type - NGON_n;
+                if (type > CGNS_ENUMV( NGON_n ))
+		  npe = type - CGNS_ENUMV( NGON_n );
                 else
                     cg_npe (type, &npe);
                 if (npe <= 0)
                     error_exit("invalid element found in MIXED elements", 0);
-                if (type > PYRA_5) {
+                if (type > CGNS_ENUMV( PYRA_5 )) {
                     elems[i++] = (int)(type - 1);
-                    if (type == PYRA_13) npe = 5;
+                    if (type == CGNS_ENUMV( PYRA_13 )) npe = 5;
                 }
                 else
                     elems[i++] = type;
@@ -795,7 +795,7 @@ void CGI_write_section(double parent_id, cgns_section *section) {
                 }
                 i += npe;
                 j += npe;
-                if (type == PYRA_13) {
+                if (type == CGNS_ENUMV( PYRA_13 )) {
                     cnt++;
                     j += 8;
                 }

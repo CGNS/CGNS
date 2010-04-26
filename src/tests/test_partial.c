@@ -65,7 +65,7 @@ int main (int argc, char **argv)
     int cgsect, cgelems, cgfaces;
     int size[3], rmin, rmax;
     char name[33];
-    ElementType_t type;
+    CGNS_ENUMT( ElementType_t )  type;
     static char *fname = "partial.cgns";
 
     if (argc > 1) {
@@ -224,11 +224,11 @@ int main (int argc, char **argv)
     size[2] = 0;
 
     if (cg_zone_write (cgfile, cgbase, "Zone", size,
-            Unstructured, &cgzone) ||
+		       CGNS_ENUMV( Unstructured ), &cgzone) ||
         cg_section_partial_write(cgfile, cgbase, cgzone, "Elements",
-            HEXA_8, 1, nelems, 0, &cgelems) ||
+				 CGNS_ENUMV( HEXA_8 ), 1, nelems, 0, &cgelems) ||
         cg_section_partial_write(cgfile, cgbase, cgzone, "Faces",
-            QUAD_4, nelems + 1, nelems + nfaces, 0, &cgfaces))
+				 CGNS_ENUMV( QUAD_4 ), nelems + 1, nelems + nfaces, 0, &cgfaces))
         cg_error_exit();
 
     /* write zone with partial write */
@@ -243,11 +243,11 @@ int main (int argc, char **argv)
         rmin = n + 1;
         rmax = n + np;
         printf("coordinates %d -> %d\n", rmin, rmax);
-        if (cg_coord_partial_write(cgfile, cgbase, cgzone, RealSingle,
+        if (cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateX", &rmin, &rmax, &xcoord[n], &cgcoord) ||
-            cg_coord_partial_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateY", &rmin, &rmax, &ycoord[n], &cgcoord) ||
-            cg_coord_partial_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateZ", &rmin, &rmax, &zcoord[n], &cgcoord))
             cg_error_exit();
     }
@@ -284,7 +284,7 @@ int main (int argc, char **argv)
 
     /* write every other solution value */
 
-    if (cg_sol_write(cgfile, cgbase, cgzone, "Solution", Vertex, &cgsol))
+    if (cg_sol_write(cgfile, cgbase, cgzone, "Solution", CGNS_ENUMV( Vertex ), &cgsol))
         cg_error_exit();
 
     puts("field -> 1,3,5,7 ...");
@@ -292,7 +292,7 @@ int main (int argc, char **argv)
         rmin = n + 1;
         rmax = n + 1;
         if (cg_field_partial_write(cgfile, cgbase, cgzone, cgsol,
-                RealSingle, "Field", &rmin, &rmax, &xcoord[n], &cgfld))
+				   CGNS_ENUMV( RealSingle ), "Field", &rmin, &rmax, &xcoord[n], &cgfld))
             cg_error_exit();
     }
 
@@ -310,11 +310,11 @@ int main (int argc, char **argv)
         rmin = n + 1;
         rmax = n + np;
         printf("coordinates %d -> %d\n", rmin, rmax);
-        if (cg_coord_partial_write(cgfile, cgbase, cgzone, RealSingle,
+        if (cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateX", &rmin, &rmax, &xcoord[n], &cgcoord) ||
-            cg_coord_partial_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateY", &rmin, &rmax, &ycoord[n], &cgcoord) ||
-            cg_coord_partial_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateZ", &rmin, &rmax, &zcoord[n], &cgcoord))
             cg_error_exit();
     }
@@ -356,7 +356,7 @@ int main (int argc, char **argv)
         rmin = n + 1;
         rmax = n + 1;
         if (cg_field_partial_write(cgfile, cgbase, cgzone, cgsol,
-                RealSingle, "Field", &rmin, &rmax, &xcoord[n], &cgfld))
+				   CGNS_ENUMV( RealSingle ), "Field", &rmin, &rmax, &xcoord[n], &cgfld))
             cg_error_exit();
     }
 
@@ -376,11 +376,11 @@ int main (int argc, char **argv)
         }
         n = rmin - 1;
         printf("coordinates %d -> %d\n", rmin, rmax);
-        if (cg_coord_partial_write(cgfile, cgbase, cgzone, RealSingle,
+        if (cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateX", &rmin, &rmax, &xcoord[n], &cgcoord) ||
-            cg_coord_partial_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateY", &rmin, &rmax, &ycoord[n], &cgcoord) ||
-            cg_coord_partial_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateZ", &rmin, &rmax, &zcoord[n], &cgcoord))
             cg_error_exit();
     }
@@ -432,7 +432,7 @@ int main (int argc, char **argv)
         n = rmin - 1;
         printf("field %d -> %d\n", rmin, rmax);
         if (cg_field_partial_write(cgfile, cgbase, cgzone, cgsol,
-                RealSingle, "Field", &rmin, &rmax, &xcoord[n], &cgfld))
+				   CGNS_ENUMV( RealSingle ), "Field", &rmin, &rmax, &xcoord[n], &cgfld))
             cg_error_exit();
     }
 
@@ -449,7 +449,7 @@ int main (int argc, char **argv)
     rmin = 1;
     rmax = nnodes;
     if (cg_coord_read(cgfile, cgbase, cgzone, "CoordinateX",
-            RealSingle, &rmin, &rmax, fbuf))
+		      CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
         cg_error_exit();
     for (np = 0, n = 0; n < nnodes; n++) {
         if (fbuf[n] != xcoord[n]) np++;
@@ -458,7 +458,7 @@ int main (int argc, char **argv)
     if (np) printf("%d differences in CoordinateX\n", np);
 
     if (cg_coord_read(cgfile, cgbase, cgzone, "CoordinateY",
-            RealSingle, &rmin, &rmax, fbuf))
+		      CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
         cg_error_exit();
     for (np = 0, n = 0; n < nnodes; n++) {
         if (fbuf[n] != ycoord[n]) np++;
@@ -467,7 +467,7 @@ int main (int argc, char **argv)
     if (np) printf("%d differences in CoordinateY\n", np);
 
     if (cg_coord_read(cgfile, cgbase, cgzone, "CoordinateZ",
-            RealSingle, &rmin, &rmax, fbuf))
+		      CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
         cg_error_exit();
     for (np = 0, n = 0; n < nnodes; n++) {
         if (fbuf[n] != zcoord[n]) np++;
@@ -481,7 +481,7 @@ int main (int argc, char **argv)
             &type, &i, &j, &k, &n) ||
         cg_elements_read(cgfile, cgbase, cgzone, 1, ibuf, NULL))
         cg_error_exit();
-    if (strcmp(name, "Elements") || type != HEXA_8 || i != 1 ||
+    if (strcmp(name, "Elements") || type != CGNS_ENUMV( HEXA_8 ) || i != 1 ||
         j != nelems || k != 0 || n != 0) {
         nn++;
         puts("differences in Elements");
@@ -498,7 +498,7 @@ int main (int argc, char **argv)
             &type, &i, &j, &k, &n) ||
         cg_elements_read(cgfile, cgbase, cgzone, 2, ibuf, pbuf))
         cg_error_exit();
-    if (strcmp(name, "Faces") || type != QUAD_4 || i != (nelems+1) ||
+    if (strcmp(name, "Faces") || type != CGNS_ENUMV( QUAD_4 ) || i != (nelems+1) ||
         j != (nelems+nfaces) || k != 0 || n != 1) {
         nn++;
         puts("differences in Faces");
@@ -518,7 +518,7 @@ int main (int argc, char **argv)
     /* check field */
 
     if (cg_field_read(cgfile, cgbase, cgzone, 1, "Field",
-            RealSingle, &rmin, &rmax, fbuf))
+		      CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
         cg_error_exit();
     for (np = 0, n = 0; n < nnodes; n++) {
         if (fbuf[n] != xcoord[n]) np++;
@@ -547,21 +547,21 @@ int main (int argc, char **argv)
         np = 0;
         nn = rmax - rmin + 1;
         if (cg_coord_read(cgfile, cgbase, cgzone, "CoordinateX",
-                RealSingle, &rmin, &rmax, fbuf))
+			  CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
             cg_error_exit();
         for (i = 0; i < nn; i++) {
             if (fbuf[i] != xcoord[n+i]) np++;
         }
 
         if (cg_coord_read(cgfile, cgbase, cgzone, "CoordinateY",
-                RealSingle, &rmin, &rmax, fbuf))
+			  CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
             cg_error_exit();
         for (i = 0; i < nn; i++) {
             if (fbuf[i] != ycoord[n+i]) np++;
         }
 
         if (cg_coord_read(cgfile, cgbase, cgzone, "CoordinateZ",
-                RealSingle, &rmin, &rmax, fbuf))
+			  CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
             cg_error_exit();
         for (i = 0; i < nn; i++) {
             if (fbuf[i] != zcoord[n+i]) np++;
@@ -634,7 +634,7 @@ int main (int argc, char **argv)
         nn = rmax - rmin + 1;
         printf("field %d -> %d\n", rmin, rmax);
         if (cg_field_read(cgfile, cgbase, cgzone, 1, "Field",
-                RealSingle, &rmin, &rmax, fbuf))
+			  CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
             cg_error_exit();
         for (np = 0, i = 0; i < nn; i++) {
             if (fbuf[i] != xcoord[n+i]) np++;
@@ -653,7 +653,7 @@ int main (int argc, char **argv)
         cg_error_exit();
 
     if (cg_section_partial_write(cgfile, cgbase, cgzone, "Mixed",
-            MIXED, 1, nelems + nfaces, 0, &cgsect))
+				 CGNS_ENUMV( MIXED ), 1, nelems + nfaces, 0, &cgsect))
         cg_error_exit();
 
     /* create mixed element connectivity */
@@ -663,15 +663,15 @@ int main (int argc, char **argv)
 
     i = j = n = 0;
     for (nf = 0; nf < nelems; nf++) {
-        ptmp[n++] = QUAD_4;
+      ptmp[n++] = CGNS_ENUMV( QUAD_4 );
         for (k = 0; k < 4; k++)
             ptmp[n++] = faces[j++];
-        ptmp[n++] = HEXA_8;
+        ptmp[n++] = CGNS_ENUMV( HEXA_8 );
         for (k = 0; k < 8; k++)
             ptmp[n++] = elements[i++];
     }
     while (nf++ < nfaces) {
-        ptmp[n++] = QUAD_4;
+      ptmp[n++] = CGNS_ENUMV( QUAD_4 );
         for (k = 0; k < 4; k++)
             ptmp[n++] = faces[j++];
     }
@@ -763,7 +763,7 @@ int main (int argc, char **argv)
             &type, &i, &j, &k, &n) ||
         cg_elements_read(cgfile, cgbase, cgzone, cgsect, ibuf, pbuf))
         cg_error_exit();
-    if (strcmp(name, "Mixed") || type != MIXED || i != 1 ||
+    if (strcmp(name, "Mixed") || type != CGNS_ENUMV( MIXED ) || i != 1 ||
         j != np || k != 0 || n != 1) {
         puts("differences in Mixed");
     }

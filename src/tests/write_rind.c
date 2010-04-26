@@ -103,8 +103,8 @@ int main (int argc, char *argv[])
 
     if (cg_base_write(cgfile, "Structured", CellDim, PhyDim, &cgbase) ||
         cg_goto(cgfile, cgbase, "end") ||
-        cg_dataclass_write(NormalizedByUnknownDimensional) ||
-        cg_zone_write(cgfile, cgbase, "Zone", size, Structured, &cgzone))
+        cg_dataclass_write(CGNS_ENUMV( NormalizedByUnknownDimensional )) ||
+        cg_zone_write(cgfile, cgbase, "Zone", size, CGNS_ENUMV( Structured ), &cgzone))
         cg_error_exit();
 
     /* can't use cg_coord_write to write rind coordinates
@@ -119,9 +119,9 @@ int main (int argc, char *argv[])
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "GridCoordinates_t", cggrid, "end") ||
         cg_rind_write(rind) ||
-        cg_array_write("CoordinateX", RealSingle, 3, dims, xcoord) ||
-        cg_array_write("CoordinateY", RealSingle, 3, dims, ycoord) ||
-        cg_array_write("CoordinateZ", RealSingle, 3, dims, zcoord))
+        cg_array_write("CoordinateX", CGNS_ENUMV( RealSingle ), 3, dims, xcoord) ||
+        cg_array_write("CoordinateY", CGNS_ENUMV( RealSingle ), 3, dims, ycoord) ||
+        cg_array_write("CoordinateZ", CGNS_ENUMV( RealSingle ), 3, dims, zcoord))
         cg_error_exit();
 
     /* a similiar technique is used for the solution with rind,
@@ -129,11 +129,11 @@ int main (int argc, char *argv[])
        and the solution dimensions come from the zone sizes */
 
     if (cg_sol_write(cgfile, cgbase, cgzone, "VertexSolution",
-            Vertex, &cgsol) ||
+		     CGNS_ENUMV( Vertex ), &cgsol) ||
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "FlowSolution_t", cgsol, "end") ||
         cg_rind_write(rind) ||
-        cg_field_write(cgfile, cgbase, cgzone, cgsol, RealSingle,
+        cg_field_write(cgfile, cgbase, cgzone, cgsol, CGNS_ENUMV( RealSingle ),
             "Density", solution, &cgfld))
         cg_error_exit();
 
@@ -288,21 +288,21 @@ int main (int argc, char *argv[])
 
     if (cg_base_write(cgfile, "Unstructured", CellDim, PhyDim, &cgbase) ||
         cg_goto(cgfile, cgbase, "end") ||
-        cg_dataclass_write(NormalizedByUnknownDimensional) ||
-        cg_zone_write(cgfile, cgbase, "Zone", dims, Unstructured, &cgzone) ||
+        cg_dataclass_write(CGNS_ENUMV( NormalizedByUnknownDimensional )) ||
+        cg_zone_write(cgfile, cgbase, "Zone", dims, CGNS_ENUMV( Unstructured ), &cgzone) ||
         cg_grid_write(cgfile, cgbase, cgzone, "GridCoordinates", &cggrid) ||
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "GridCoordinates_t", cggrid, "end") ||
         cg_rind_write(grind) ||
-        cg_array_write("CoordinateX", RealSingle, 1, &num_coord, xcoord) ||
-        cg_array_write("CoordinateY", RealSingle, 1, &num_coord, ycoord) ||
-        cg_array_write("CoordinateZ", RealSingle, 1, &num_coord, zcoord))
+        cg_array_write("CoordinateX", CGNS_ENUMV( RealSingle ), 1, &num_coord, xcoord) ||
+        cg_array_write("CoordinateY", CGNS_ENUMV( RealSingle ), 1, &num_coord, ycoord) ||
+        cg_array_write("CoordinateZ", CGNS_ENUMV( RealSingle ), 1, &num_coord, zcoord))
         cg_error_exit();
 
     /* to write the elements with rind elements,
        write all the elements, then use goto to add rind */
 
-    if (cg_section_write(cgfile, cgbase, cgzone, "Elements", HEXA_8,
+    if (cg_section_write(cgfile, cgbase, cgzone, "Elements", CGNS_ENUMV( HEXA_8 ),
             1, num_element, 0, elements, &cgsect) ||
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "Elements_t", cgsect, "end") ||
@@ -312,11 +312,11 @@ int main (int argc, char *argv[])
     /* write solution a vertices with rind */
 
     if (cg_sol_write(cgfile, cgbase, cgzone, "VertexSolution",
-            Vertex, &cgsol) ||
+		     CGNS_ENUMV( Vertex ), &cgsol) ||
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "FlowSolution_t", cgsol, "end") ||
         cg_rind_write(grind) ||
-        cg_field_write(cgfile, cgbase, cgzone, cgsol, RealSingle,
+        cg_field_write(cgfile, cgbase, cgzone, cgsol, CGNS_ENUMV( RealSingle ),
             "Density", solution, &cgfld))
         cg_error_exit();
 

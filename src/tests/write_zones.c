@@ -51,13 +51,13 @@ int main (int argc, char **argv)
         cg_error_exit();
     for (nz = 1; nz <= nzones; nz++) {
         sprintf (name, "Zone%d", nz);
-        if (cg_zone_write (cgfile, cgbase, name, size, Structured, &cgzone))
+        if (cg_zone_write (cgfile, cgbase, name, size, CGNS_ENUMV( Structured ), &cgzone))
             cg_error_exit();
-        if (cg_coord_write(cgfile, cgbase, cgzone, RealSingle,
+        if (cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateX", coord, &cgcoord) ||
-            cg_coord_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateY", coord, &cgcoord) ||
-            cg_coord_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateZ", coord, &cgcoord))
            cg_error_exit();
     }
@@ -85,13 +85,13 @@ int main (int argc, char **argv)
     start = elapsed_time ();
     for (nz = 1; nz <= nzones; nz++) {
         sprintf (name, "Zone%d", nz);
-        if (cg_zone_write (cgfile, cgbase, name, size, Structured, &cgzone))
+        if (cg_zone_write (cgfile, cgbase, name, size, CGNS_ENUMV( Structured ), &cgzone))
             cg_error_exit();
-        if (cg_coord_write(cgfile, cgbase, cgzone, RealSingle,
+        if (cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateX", coord, &cgcoord) ||
-            cg_coord_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateY", coord, &cgcoord) ||
-            cg_coord_write(cgfile, cgbase, cgzone, RealSingle,
+            cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
                 "CoordinateZ", coord, &cgcoord))
            cg_error_exit();
     }
