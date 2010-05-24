@@ -7,8 +7,8 @@ set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build Type, should be Release")
 project("cgns")
 
 # Allow for building a package
-set(CPACK_PACKAGE_VERSION "3.0.4")
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "cgns")
+set(CPACK_PACKAGE_VERSION "3.0-develop")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "cgns-3.0")
 set(CPACK_GENERATOR "STGZ;TGZ;ZIP")
 set(CPACK_SOURCE_GENERATOR "STGZ;TGZ;ZIP")
 include(CPack)
