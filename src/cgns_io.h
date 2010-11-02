@@ -38,6 +38,7 @@ freely, subject to the following restrictions:
 #define CGIO_FILE_ADF    1
 #define CGIO_FILE_HDF5   2
 #define CGIO_FILE_XML    3
+#define CGIO_FILE_ADF2   4
 
 /* currently these are the same as for ADF */
 

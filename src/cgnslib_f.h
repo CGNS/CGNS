@@ -17,11 +17,12 @@
 !*      file types                                                   *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
         integer CG_FILE_NONE, CG_FILE_ADF, CG_FILE_HDF5
-        integer CG_FILE_XML
+        integer CG_FILE_XML, CG_FILE_ADF2
         parameter (CG_FILE_NONE = 0)
         parameter (CG_FILE_ADF  = 1)
         parameter (CG_FILE_HDF5 = 2)
         parameter (CG_FILE_XML  = 3)
+        parameter (CG_FILE_ADF2 = 4)
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
 !*      some error code                                               *

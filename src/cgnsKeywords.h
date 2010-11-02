@@ -50,6 +50,8 @@ freely, subject to the following restrictions:
 
 #define CGNS_VERSION 3000
 #define CGNS_DOTVERS 3.0
+#define CGNS_COMPATVERSION 2540
+#define CGNS_COMPATDOTVERS 2.54
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      modes for cgns file                                              *

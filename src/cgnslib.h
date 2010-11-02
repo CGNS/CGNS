@@ -24,6 +24,9 @@ freely, subject to the following restrictions:
 #define CGNS_VERSION 3090
 #define CGNS_DOTVERS 3.09
 
+#define CGNS_COMPATVERSION 2540
+#define CGNS_COMPATDOTVERS 2.54
+
 #define CGNS_SCOPE_ENUMS 1
 
 #ifndef CGNSDLL
@@ -83,6 +86,7 @@ freely, subject to the following restrictions:
 #define CG_FILE_ADF  1
 #define CG_FILE_HDF5 2
 #define CG_FILE_XML  3
+#define CG_FILE_ADF2 4
 
 /* function return codes */
 
@@ -460,7 +464,7 @@ typedef enum {
   CGNS_ENUMV( Integer ) =2, 
   CGNS_ENUMV( RealSingle ) =3,
   CGNS_ENUMV( RealDouble ) =4, 
-  CGNS_ENUMV( Character ) =6
+  CGNS_ENUMV( Character ) =5
 } CGNS_ENUMT( DataType_t );
 
 #define NofValidDataTypes 6
@@ -860,7 +864,7 @@ CGNSDLL int cg_sol_write(int fn, int B, int Z, char const * solname,
 CGNSDLL int cg_nfields(int fn, int B, int Z, int S, int *nfields);
 CGNSDLL int cg_field_info(int fn,int B,int Z,int S,int F,  CGNS_ENUMT( DataType_t ) *type,
 			  char *fieldname);
-CGNSDLL int cg_field_read(int fn, int B, int Z, int S, char *fieldname,
+CGNSDLL int cg_field_read(int fn, int B, int Z, int S, char const *fieldname,
 			  CGNS_ENUMT( DataType_t ) type, int *rmin, int *rmax, void *field_ptr);
 CGNSDLL int cg_field_id(int fn, int B, int Z,int S,int F, double *field_id);
 CGNSDLL int cg_field_write(int fn,int B,int Z,int S,  CGNS_ENUMT( DataType_t ) type,
@@ -959,7 +963,7 @@ CGNSDLL int cg_dataset_read(int fn, int B, int Z, int BC, int DS, char *name,
 			    CGNS_ENUMT( BCType_t ) *BCType, int *DirichletFlag, int *NeumannFlag);
 CGNSDLL int cg_dataset_write(int file_number, int B, int Z, int BC,
 			     char const * name, CGNS_ENUMT( BCType_t ) BCType, int *Dset);
-CGNSDLL int cg_bcdataset_write(char *name, CGNS_ENUMT( BCType_t ) BCType,
+CGNSDLL int cg_bcdataset_write(char const *name, CGNS_ENUMT( BCType_t ) BCType,
 			       CGNS_ENUMT( BCDataType_t ) BCDataType);
 CGNSDLL int cg_bcdataset_info(int *n_dataset);
 CGNSDLL int cg_bcdataset_read(int index, char *name, CGNS_ENUMT( BCType_t ) *BCType,
@@ -1307,7 +1311,7 @@ CGNSDLL int cg_link_write(char const * nodename, char const * filename,
  *      General Delete Function						 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_delete_node(char *node_name);
+CGNSDLL int cg_delete_node(char const *node_name);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Free library malloced memory					 *

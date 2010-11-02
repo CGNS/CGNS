@@ -329,7 +329,14 @@ int cg_open(char const * filename, int mode, int *file_number) {
      /* CGNS-Library Version */
     if (mode == CG_MODE_WRITE) {
         dim_vals = 1;
-        FileVersion = (float) CGNS_DOTVERS;
+        /* FileVersion = (float) CGNS_DOTVERS; */
+        /* Jiao: Changed to use older compatible version */
+        FileVersion;
+        if ( cgns_filetype==CG_FILE_ADF2)
+            FileVersion = (float) CGNS_COMPATDOTVERS;
+        else
+            FileVersion = (float) CGNS_DOTVERS;
+
         if (cgi_new_node(cg->rootid, "CGNSLibraryVersion",
             "CGNSLibraryVersion_t", &dummy_id, "R4", 1, &dim_vals,
             (void *)&FileVersion)) return CG_ERROR;
@@ -375,10 +382,17 @@ int cg_open(char const * filename, int mode, int *file_number) {
         if (cgi_read()) return CG_ERROR;
 
         /* update version number in modify mode */
-        if (cg->version < CGNSLibVersion && mode == CG_MODE_MODIFY) {
+        if (cg->version < CGNSLibVersion && mode == CG_MODE_MODIFY && 
+            (cgns_filetype!=CG_FILE_ADF2 || cg->version < CGNS_COMPATVERSION)) {
             int nnod;
             double *id;
-            FileVersion = (float)CGNS_DOTVERS;
+            /* FileVersion = (float) CGNS_DOTVERS; */
+            /* Jiao: Changed to use older compatible version */
+            if ( cgns_filetype==CG_FILE_ADF2)
+                FileVersion = (float) CGNS_COMPATDOTVERS;
+            else
+                FileVersion = (float) CGNS_DOTVERS;
+
             if (cgi_get_nodes(cg->rootid, "CGNSLibraryVersion_t",
                     &nnod, &id))
                 return CG_ERROR;
@@ -573,6 +587,8 @@ int cg_set_file_type(int file_type) {
         else if (*type == '3' || *type == 'x' || *type == 'X')
             cgns_filetype = CG_FILE_XML;
 #endif
+        else if (*type == '4' || strcmp(type,"adf2")==0 || strcmp(type,"ADF2")==0)
+            cgns_filetype = CG_FILE_ADF2;
         else
             cgns_filetype = CG_FILE_ADF;
     }
@@ -1452,7 +1468,7 @@ int cg_field_info(int file_number, int B, int Z, int S, int F, CGNS_ENUMT( DataT
     return CG_OK;
 }
 
-int cg_field_read(int file_number, int B, int Z, int S, char *fieldname, CGNS_ENUMT( DataType_t )  type,
+int cg_field_read(int file_number, int B, int Z, int S, char const *fieldname, CGNS_ENUMT( DataType_t )  type,
           int *rmin, int *rmax, void *field_ptr) {
     cgns_sol *sol;
     cgns_array *field;
@@ -4676,7 +4692,26 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT( DataType_t )  type
     return CG_OK;
 }
 
-int cg_section_write(int file_number, int B, int Z, char const * SectionName, CGNS_ENUMT( ElementType_t )  type,
+static int adf2_update_elems( int *elems, int datasize, int dir) {
+    int i=0, npe;
+                    
+    while (i < datasize) {
+        int etype = (CGNS_ENUMV( ElementType_t))elems[i];
+        if (dir==-1 && etype == CGNS_ENUMV( PYRA_13) || etype == CGNS_ENUMV( NFACE_n)) {
+            cgi_error("PYRA_13 and NFACE_n are not supported in ADF2.");
+            return CG_ERROR;
+        }
+        else if (etype >= CGNS_ENUMV( PYRA_13))
+            elems[i] = elems[i] + dir;
+        
+        cg_npe( etype, &npe);
+        ++i;
+
+        i += npe;
+    }
+}
+
+int cg_section_write(int file_number, int B, int Z, char const * SectionName, CGNS_ENUMT( ElementType_t) type,
     int start, int end, int nbndry, int const * elements, int *S) {
     cgns_zone *zone;
     cgns_section *section = NULL;
@@ -4778,8 +4813,37 @@ int cg_section_write(int file_number, int B, int Z, char const * SectionName, CG
     section->connect->exponents=0;
     section->connect->convert=0;
 
-    if (cgi_write_section(zone->id, section)) return CG_ERROR;
-    if (cgio_write_all_data(cg->cgio, section->connect->id, elements)) {
+    if ( cgns_filetype==CG_FILE_ADF2 && type >= CGNS_ENUMV( PYRA_13)) {
+        /* Jiao: Changed to use older compatible version */
+        if (type == CGNS_ENUMV( PYRA_13) || type == CGNS_ENUMV( NFACE_n)) {
+            cgi_error("PYRA_13 and NFACE_n are not supported in ADF2.");
+            return CG_ERROR;
+        }
+
+        section->el_type = type-1;
+        if (cgi_write_section(zone->id, section)) 
+            return CG_ERROR;
+        section->el_type = type;
+    }
+    else if (cgi_write_section(zone->id, section)) 
+        return CG_ERROR;
+
+    /* Jiao: Copy mixed element connectivity table. */
+    if ( cgns_filetype==CG_FILE_ADF2 && type == CGNS_ENUMV( MIXED)) {
+        /* create new element connectivity array */
+        int *newelems = (int *) malloc(ElementDataSize * sizeof(int));
+
+        memcpy( newelems, elements, ElementDataSize * sizeof(int));
+        adf2_update_elems(newelems, ElementDataSize, -1);
+
+        if (cgio_write_all_data(cg->cgio, section->connect->id, newelems)) {
+            free( newelems);
+            cg_io_error("cgio_write_all_data");
+            return CG_ERROR;
+        }
+        free( newelems);
+    }
+    else if (cgio_write_all_data(cg->cgio, section->connect->id, elements)) {
         cg_io_error("cgio_write_all_data");
         return CG_ERROR;
     }
@@ -5243,7 +5307,7 @@ int cg_hole_write(int file_number, int B, int Z, char const * holename, CGNS_ENU
 	  if (ptset->type==CGNS_ENUMV( PointRange ))
                 sprintf(PointSetName, "PointRange%d",set+1);
             else
-                sprintf(PointSetName, PointSetTypeName[ptset->type]);
+                sprintf(PointSetName, "%s", PointSetTypeName[ptset->type]);
             if (cgi_write_ptset(hole->id, PointSetName, ptset, index_dim,
                 (void *)((int *)pnts+2*index_dim*set))) return CG_ERROR;
         }
@@ -8677,7 +8741,20 @@ int cg_section_partial_write(int file_number, int B, int Z,
         section->connect->data = (void *)data;
     }
 
-    if (cgi_write_section(zone->id, section)) return CG_ERROR;
+    if ( cgns_filetype==CG_FILE_ADF2 && type >= CGNS_ENUMV( PYRA_13)) {
+        /* Jiao: Changed to use older compatible version */
+        if (type == CGNS_ENUMV( PYRA_13) || type == CGNS_ENUMV( NFACE_n)) {
+            cgi_error("PYRA_13 and NFACE_n are not supported in ADF2.");
+            return CG_ERROR;
+        }
+
+        section->el_type = type-1;
+        if (cgi_write_section(zone->id, section)) 
+            return CG_ERROR;
+        section->el_type = type;
+    }
+    else if (cgi_write_section(zone->id, section)) 
+        return CG_ERROR;
 
     return CG_OK;
 }
@@ -8886,10 +8963,20 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             cg_io_error("cgio_set_dimensions");
             return CG_ERROR;
         }
+
+        if  ( cgns_filetype==CG_FILE_ADF2 && type == CGNS_ENUMV( MIXED))
+            adf2_update_elems(newelems, newsize, -1);
+
         if (cgio_write_all_data(cg->cgio, section->connect->id, newelems)) {
+            if  ( cgns_filetype==CG_FILE_ADF2 && type == CGNS_ENUMV( MIXED))
+                adf2_update_elems(newelems, newsize, 1);
+
             cg_io_error("cgio_write_all_data");
             return CG_ERROR;
         }
+        
+        if  ( cgns_filetype==CG_FILE_ADF2 && type == CGNS_ENUMV( MIXED))
+            adf2_update_elems(newelems, newsize, 1);
     }
 
     /* update the parent data array if it exists */
@@ -8939,10 +9026,19 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             cg_io_error("cgio_set_dimensions");
             return CG_ERROR;
         }
+
+        if  ( cgns_filetype==CG_FILE_ADF2 && type == CGNS_ENUMV( MIXED))
+            adf2_update_elems(newelems, newsize, -1);
+
         if (cgio_write_all_data(cg->cgio, section->parent->id, newelems)) {
+            if  ( cgns_filetype==CG_FILE_ADF2 && type == CGNS_ENUMV( MIXED))
+                adf2_update_elems(newelems, newsize, 1);
+
             cg_io_error("cgio_write_all_data");
             return CG_ERROR;
         }
+        if  ( cgns_filetype==CG_FILE_ADF2 && type == CGNS_ENUMV( MIXED))
+            adf2_update_elems(newelems, newsize, 1);
     }
 
     return CG_OK;
@@ -9198,7 +9294,7 @@ int cg_ElementPartialSize(int file_number, int B, int Z, int S,
     return CG_OK;
 }
 
-int cg_bcdataset_write(char *name, CGNS_ENUMT( BCType_t )  BCType, CGNS_ENUMT( BCDataType_t )  BCDataType)
+int cg_bcdataset_write(char const *name, CGNS_ENUMT( BCType_t )  BCType, CGNS_ENUMT( BCDataType_t )  BCDataType)
 {
     cgns_dataset *dataset = 0;
     cgns_bcdata *bcdata = 0;
@@ -9460,7 +9556,7 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe) {
  *            General Delete Function
 \*****************************************************************************/
 
-int cg_delete_node(char *node_name) {
+int cg_delete_node(char const *node_name) {
     int n, m, index_dim;
     double posit_id, node_id;
     char_33 node_label;
