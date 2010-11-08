@@ -179,10 +179,10 @@ char const * ElementTypeName[NofValidElementTypes] =
      "TRI_3", "TRI_6",
      "QUAD_4", "QUAD_8", "QUAD_9",
      "TETRA_4", "TETRA_10",
-     "PYRA_5", "PYRA_14",
+     "PYRA_5", "PYRA_13","PYRA_14",
      "PENTA_6", "PENTA_15", "PENTA_18",
      "HEXA_8", "HEXA_20", "HEXA_27",
-     "MIXED", "NGON_n", "NFACE_n","PYRA_13"
+     "MIXED", "NGON_n", "NFACE_n"
     };
 char const * ZoneTypeName[NofValidZoneTypes] =
     {"Null", "UserDefined",
