@@ -38,6 +38,8 @@ static int    ErrStat;
 static char   ErrMsg[ADF_MAX_ERROR_STR_LENGTH+1];
 static int    IncludeLink = 0;
 static int    PrintFlag = 0;
+static int    FixNameFlag = 1;
+static int    FixLinkPathFlag = 1;
 static int    NumDims;
 static int    PathLength;
 static int    DimVals[ADF_MAX_DIMENSIONS*2];
@@ -239,7 +241,9 @@ static void WalkTheNodes (double InputID, double OutputID, int indent)
                 putchar(' ');
             printf ("%s\n", name);
         }
-        FixName("node", name);
+        if (FixNameFlag) {
+	  FixName("node", name);
+	}
 
         /* Check for link, if it is a local link then we always link it!! */
 
@@ -249,7 +253,9 @@ static void WalkTheNodes (double InputID, double OutputID, int indent)
             ADF_Get_Link_Path(InputChildID, LinkFileName, LinkPathName,
 			       &ErrStat);
             if (ErrStat != NO_ERROR) InputError("Get_Link_Path");
-            FixName("link", LinkPathName);
+            if (FixLinkPathFlag) {
+              FixName("link", LinkPathName);
+	    }
         }
 
         /* Create the node or the link */
@@ -268,7 +274,14 @@ static void WalkTheNodes (double InputID, double OutputID, int indent)
 }
 
 /*-------------------------------------------------------------------*/
-
+int usage()
+{ 
+  fprintf (stderr, "usage: adf2hdf [-n] [-N] [-links] [-print] InputFile [OutputFile]\n");
+  fprintf (stderr, " -n     Do not change '.' and '/' in node names\n");
+  fprintf (stderr, " -N     Do not change '.' and '/' in link paths\n");
+  fprintf (stderr, " -links Follow links and merge into result\n");
+  fprintf (stderr, " -print Print node name being translated\n");
+}
 int main (int argc, char **argv)
 {
     int n;
@@ -286,14 +299,19 @@ int main (int argc, char **argv)
             PrintFlag = 1;
         else if (argv[n][1] == 'l')
             IncludeLink = 1;
+        else if (argv[n][1] == 'n')
+            FixNameFlag = 0;
+        else if (argv[n][1] == 'N')
+            FixLinkPathFlag = 0;
         else {
             fprintf(stderr, "unknown option %s\n", argv[n]);
+	    usage();
             exit (1);
         }
     }
 
     if (n >= argc) {
-        fprintf (stderr, "usage: adf2hdf [-links] [-print] InputFile [OutputFile]\n");
+        usage();
         exit (1);
     }
     inpfile = argv[n++];
