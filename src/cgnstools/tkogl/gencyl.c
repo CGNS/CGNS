@@ -84,9 +84,9 @@ static void
 NormalizeVector (Vector v)
 {
    /* Makes v a unit vector */
-   GLfloat hypot = sqrt (v [0] * v [0] +
-                         v [1] * v [1] +
-                         v [2] * v [2]);
+   GLfloat hypot = (GLfloat) sqrt (v [0] * v [0] +
+                                   v [1] * v [1] +
+                                   v [2] * v [2]);
    if (hypot == 0.0) {
       return;
    }
@@ -108,6 +108,7 @@ AddVector (const Vector v1, const Vector v2, Vector result)
 #define CopyVector(dst,src) {dst[0]=src[0];dst[1]=src[1];dst[2]=src[2];}
 #define DotProduct(a,b) (a[0]*b[0]+a[1]*b[1]+a[2]*b[2])
 
+#if 0
 static void
 ComputeTriangleNormal2 (const Vector v1, const Vector v2, const Vector v3,
                        Vector normal)
@@ -147,7 +148,7 @@ ComputeQuadNormal (const Vector v1, const Vector v2, const Vector v3,
       NormalizeVector (normal);
    }
 }
-
+#endif
 
 static void                                                                               
 ComputeQuadNormal2 (const Vector v1, const Vector v2, const Vector v3,                    
@@ -244,11 +245,11 @@ PolygonCrossSection (GLfloat radius, int nsides)
    GLfloat x, y, ang, incAng;
    int i;
    CrossSection *cross = NewCrossSection ();
-   incAng = PI * 2 / nsides;
+   incAng = (GLfloat)(PI * 2 / nsides);
    ang = 0.0;
    for (i = 0; i < nsides; i++) {
-      x = radius * sin (ang);
-      y = radius * cos (ang);
+      x = (GLfloat)(radius * sin (ang));
+      y = (GLfloat)(radius * cos (ang));
       AddCrossSectionVtx (cross, x, y, 0.0);
       ang += incAng;
    }
@@ -593,22 +594,22 @@ RenderModel (Model* model)
    int gentex = (flags & TEXTURE_GEN) != 0;
    GLfloat texcoord [2];
    GLfloat texincr [2];
-   texcoord [0] = model->tmin;
+   texcoord [0] = (GLfloat)model->tmin;
    if (flags&STITCH_ENDS) {
       icross = 0;
       previcross = ncross-1;
-      texincr [0] = (model->tmax-model->tmin) / ncross;
+      texincr [0] = (GLfloat)((model->tmax-model->tmin) / ncross);
    }
    else {
       icross = 1;
       previcross = 0;
-      texincr [0] = (model->tmax-model->tmin) / (ncross-1);
+      texincr [0] = (GLfloat)((model->tmax-model->tmin) / (ncross-1));
    }
    if (flags&STITCH_LOOPS) {
-      texincr [1] = (model->smax-model->smin) / nvtx;
+      texincr [1] = (GLfloat)((model->smax-model->smin) / nvtx);
    } 
    else {
-      texincr [1] = (model->smax-model->smin) / (nvtx-1);
+      texincr [1] = (GLfloat)((model->smax-model->smin) / (nvtx-1));
    }
    while (icross < ncross) {
       CrossSection *a = model->cross [previcross];
@@ -622,7 +623,7 @@ RenderModel (Model* model)
          ivtx = 1;
          previvtx = 0;
       }
-      texcoord [1] = model->smin;
+      texcoord [1] = (GLfloat)model->smin;
 
       if (flags & (SHADE_SMOOTH_COLS|SHADE_SMOOTH_ROWS)) {
          /* One normal per vertex */
@@ -764,7 +765,7 @@ GenericCylinder (Tcl_Interp *interp, int argc, char* argv [])
    AddCrossSectionVtx (currentCross, 1.0, -1.0, 0.0);
 
    for (iarg = 2; iarg < argc; iarg++) {        
-      int len = strlen (argv [iarg]);
+      int len = (int)strlen (argv [iarg]);
       if (strncmp (argv [iarg], "-plot", len) == 0) {
          CrossSection* cross = NewCrossSection ();
          DupCrossSection (currentCross, cross);
@@ -791,7 +792,7 @@ GenericCylinder (Tcl_Interp *interp, int argc, char* argv [])
                 Tcl_GetDouble (interp, argv [iarg+3], &z) != TCL_OK) {
                ERRMSG ("\n error in -cross");
             }
-            AddCrossSectionVtx (currentCross, x, y, z);
+            AddCrossSectionVtx (currentCross, (GLfloat)x, (GLfloat)y, (GLfloat)z);
             iarg += 3;
          }
       }
@@ -805,12 +806,12 @@ GenericCylinder (Tcl_Interp *interp, int argc, char* argv [])
          }
          iarg += 2;
          FreeCrossSection (currentCross);
-         currentCross = PolygonCrossSection (radius, nsides);
+         currentCross = PolygonCrossSection ((GLfloat)radius, nsides);
       }
       else if (strncmp (argv [iarg], "-stitch", len) == 0) {
          if (iarg+1 >= argc) ERRMSG ("No value for -stitch");
          iarg++;
-         len = strlen (argv [iarg]);
+         len = (int)strlen (argv [iarg]);
          if (strncmp (argv [iarg], "both", len) == 0) {
             model->flags |= STITCH_LOOPS | STITCH_ENDS;
          } else if (strncmp (argv [iarg], "none", len) == 0) {
@@ -829,7 +830,7 @@ GenericCylinder (Tcl_Interp *interp, int argc, char* argv [])
       else if (strncmp (argv [iarg], "-close", len) == 0) {
          if (iarg+1 >= argc) ERRMSG ("No value for -close");
          iarg++;
-         len = strlen (argv [iarg]);
+         len = (int)strlen (argv [iarg]);
          if (strncmp (argv [iarg], "both", len) == 0) {
             model->flags |= CLOSE_FIRST | CLOSE_LAST;
          } else if (strncmp (argv [iarg], "none", len) == 0) {
@@ -848,7 +849,7 @@ GenericCylinder (Tcl_Interp *interp, int argc, char* argv [])
       else if (strncmp (argv [iarg], "-shade", len) == 0) {
          if (iarg+1 >= argc) ERRMSG ("No value for -shade");
          iarg++;
-         len = strlen (argv [iarg]);
+         len = (int)strlen (argv [iarg]);
          if (strncmp (argv [iarg], "smooth", len) == 0) {
             model->flags |= SHADE_SMOOTH_COLS | SHADE_SMOOTH_ROWS;
          } else if (strncmp (argv [iarg], "flat", len) == 0) {
@@ -908,15 +909,15 @@ GenericCylinder (Tcl_Interp *interp, int argc, char* argv [])
          angle *= PI/180;
          sint = sin(angle);
          cost = cos(angle);
-         m [0][0] = x*x + cost * (1 - x*x) + sint * 0; 
-         m [0][1] = x*y + cost * (0 - x*y) + sint * (-z); 
-         m [0][2] = x*z + cost * (0 - x*z) + sint * (y);
-         m [1][0] = y*x + cost * (0 - y*x) + sint * (z);
-         m [1][1] = y*y + cost * (1 - y*y) + sint * 0;
-         m [1][2] = y*z + cost * (0 - y*z) + sint * (-x);
-         m [2][0] = z*x + cost * (0 - z*x) + sint * (-y);
-         m [2][1] = z*y + cost * (0 - z*y) + sint * (x);
-         m [2][2] = z*z + cost * (1 - z*z) + sint * 0; 
+         m [0][0] = (GLfloat)(x*x + cost * (1 - x*x) + sint * 0); 
+         m [0][1] = (GLfloat)(x*y + cost * (0 - x*y) + sint * (-z)); 
+         m [0][2] = (GLfloat)(x*z + cost * (0 - x*z) + sint * (y));
+         m [1][0] = (GLfloat)(y*x + cost * (0 - y*x) + sint * (z));
+         m [1][1] = (GLfloat)(y*y + cost * (1 - y*y) + sint * 0);
+         m [1][2] = (GLfloat)(y*z + cost * (0 - y*z) + sint * (-x));
+         m [2][0] = (GLfloat)(z*x + cost * (0 - z*x) + sint * (-y));
+         m [2][1] = (GLfloat)(z*y + cost * (0 - z*y) + sint * (x));
+         m [2][2] = (GLfloat)(z*z + cost * (1 - z*z) + sint * 0); 
          MatrixMult (m, transf, transf);
       }
       else if (strncmp (argv [iarg], "-translate", len) == 0) {
@@ -928,7 +929,7 @@ GenericCylinder (Tcl_Interp *interp, int argc, char* argv [])
              Tcl_GetDouble (interp, argv [iarg+3], &z) != TCL_OK)
             ERRMSG ("\nError in -translate");
          iarg += 3;
-         m [0][3] = x;  m [1][3] = y; m [2][3] = z;
+         m [0][3] = (GLfloat)x;  m [1][3] = (GLfloat)y; m [2][3] = (GLfloat)z;
          MatrixMult (m, transf, transf);
       }
       else if (strncmp (argv [iarg], "-scale", len) == 0) {
@@ -940,7 +941,7 @@ GenericCylinder (Tcl_Interp *interp, int argc, char* argv [])
              Tcl_GetDouble (interp, argv [iarg+3], &z) != TCL_OK)
             ERRMSG ("\nError in -scale");
          iarg += 3;
-         m [0][0] = x;  m [1][1] = y; m [2][2] = z;
+         m [0][0] = (GLfloat)x;  m [1][1] = (GLfloat)y; m [2][2] = (GLfloat)z;
          MatrixMult (m, transf, transf);
       }
       else {

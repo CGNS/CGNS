@@ -43,7 +43,7 @@ Tesselate (Tcl_Interp *interp, int argc, char* argv [])
    globalresult = TCL_OK;
 
    for (iarg = 2; iarg < argc; iarg++) {	
-      int len = strlen (argv [iarg]);
+      int len = (int)strlen (argv [iarg]);
       if (strncmp (argv [iarg], "-displaylist", len) == 0) {
 	 iarg++;
 	 if (iarg == argc) {
@@ -87,7 +87,7 @@ Tesselate (Tcl_Interp *interp, int argc, char* argv [])
    gluBeginPolygon (obj);
 
    for (; iarg < argc; iarg++) {	
-      int len = strlen (argv [iarg]);
+      int len = (int)strlen (argv [iarg]);
       if (strncmp (argv [iarg], "-contour", len) == 0) {
 	 gluNextContour (obj, GLU_UNKNOWN);
       }
@@ -101,9 +101,9 @@ Tesselate (Tcl_Interp *interp, int argc, char* argv [])
 	 else {
 	    icoord = (icoord+1)%3;
 	    if (icoord == 0) {
-	       *(vtxptr) = coord [0];
-	       *(vtxptr+1) = coord [1];
-	       *(vtxptr+2) = coord [2];
+	       *(vtxptr) = (GLfloat)coord [0];
+	       *(vtxptr+1) = (GLfloat)coord [1];
+	       *(vtxptr+2) = (GLfloat)coord [2];
 	       gluTessVertex (obj, coord, vtxptr);
 	       vtxptr += 3;
 	    }

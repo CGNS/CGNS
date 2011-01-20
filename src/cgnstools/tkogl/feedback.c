@@ -192,7 +192,7 @@ Feedback (Tcl_Interp *interp, int argc, char* argv [])
    }
 
    /* Parse 'type' */
-   len = strlen (argv [3]);
+   len = (int)strlen (argv [3]);
    if (strncasecmp (argv [3], "2d", len) == 0) {
       type = GL_2D;
       proc = PrintVtx2D;

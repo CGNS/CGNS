@@ -359,7 +359,7 @@ SmoothVertices ()
    assert (vtx != NULL);
    for (i = 0; i < nvtx; i++) {
       for (ptr = vtx [i].smoothList; ptr != NULL; ptr = ptr->next) {
-	 float hyp = sqrt (ptr->normal [0]*ptr->normal [0]+
+	 float hyp = (float)sqrt (ptr->normal [0]*ptr->normal [0]+
 			   ptr->normal [1]*ptr->normal [1]+
 			   ptr->normal [2]*ptr->normal [2]);
 	 if (hyp == 0.0) continue;
@@ -497,11 +497,12 @@ RenderAllFaces (Tcl_DString* desc)
 static int 
 ReadWord (FILE *f, word *wptr) 
 {
+#if defined(__WIN32__) || defined(_WIN32) || defined(LINUX)
+   unsigned char b [2];
+   if (fread (b, 2, 1, f) != 1) return 0;
+#else
    unsigned char b [2], tmp;
    if (fread (b, 2, 1, f) != 1) return 0;
-
-#if defined(__WIN32__) || defined(_WIN32) || defined(LINUX)
-#else
    tmp = b [0];
    b [0] = b [1];
    b [1] = tmp;
@@ -524,11 +525,12 @@ ReadWords (FILE *f, word *wptr, int nwords)
 static int 
 ReadDWord (FILE *f, dword *wptr) 
 {
+#if defined(__WIN32__) || defined(_WIN32) || defined(LINUX)
+   word b [2];
+   if (ReadWords (f, b, 2) != 1) return 0;
+#else
    word b [2], tmp;
    if (ReadWords (f, b, 2) != 1) return 0;
-
-#if defined(__WIN32__) || defined(_WIN32) || defined(LINUX)
-#else
    tmp = b [0];
    b [0] = b [1];
    b [1] = tmp; 
@@ -541,11 +543,12 @@ ReadDWord (FILE *f, dword *wptr)
 static int 
 ReadFloat (FILE *f, float* fptr) 
 {
+#if defined(__WIN32__) || defined(_WIN32) || defined(LINUX)
+   word b [2];
+   if (ReadWords (f, b, 2) != 1) return 0;
+#else
    word b [2], tmp;
    if (ReadWords (f, b, 2) != 1) return 0;
-
-#if defined(__WIN32__) || defined(_WIN32) || defined(LINUX)
-#else
    tmp = b [0];
    b [0] = b [1];
    b [1] = tmp; 
@@ -822,7 +825,7 @@ FaceListReader (Tcl_DString* desc, FILE *f, long p)
       face [iface].normal [0] = e1[1]*e2[2]-e1[2]*e2[1];
       face [iface].normal [1] = e2[0]*e1[2]-e2[2]*e1[0];
       face [iface].normal [2] = e1[0]*e2[1]-e1[1]*e2[0];
-      hypot = sqrt (face [iface].normal [0] * face [iface].normal [0] +
+      hypot = (float)sqrt (face [iface].normal [0] * face [iface].normal [0] +
 		    face [iface].normal [1] * face [iface].normal [1] +
 		    face [iface].normal [2] * face [iface].normal [2]);
       if (hypot != 0.0) {

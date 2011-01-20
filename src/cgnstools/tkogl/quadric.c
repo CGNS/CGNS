@@ -29,7 +29,7 @@ Quadric (Tcl_Interp *interp, int argc, char* argv [])
    GLdouble val [6];
 
    for (iarg = 2; iarg < argc; iarg++) {
-      int len = strlen (argv [iarg]);
+      int len = (int)strlen (argv [iarg]);
       if (strncmp (argv [iarg], "-normals", len) == 0) {
 	 iarg++;
 	 if (iarg == argc) ERRMSG ("No value for -normals");

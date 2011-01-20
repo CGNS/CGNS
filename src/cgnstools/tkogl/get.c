@@ -49,7 +49,7 @@ GetGlVal (Tcl_Interp *interp, int argc, char* argv [])
         return TCL_ERROR;
     }
    
-    len = strlen (argv [2]);
+    len = (int)strlen (argv [2]);
     for (i = 0; i < sizeof(getTable)/sizeof(getStruct); i++) {
        if (strncmp (argv [2], getTable[i].name, len) == 0) goto found;
     }

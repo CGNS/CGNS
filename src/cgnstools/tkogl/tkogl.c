@@ -921,7 +921,7 @@ OGLwinWidgetCmd(clientData, interp, argc, argv)
    }
    Tcl_Preserve((ClientData) glxwinPtr);
    c = argv[1][0];
-   length = strlen(argv[1]);
+   length = (int)strlen(argv[1]);
 
    if ((c == 'c') && (strncmp(argv[1], "configure", length) == 0)
        && (length >= 2)) {

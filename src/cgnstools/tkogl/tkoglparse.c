@@ -336,6 +336,7 @@ static GLenum bufferTable [] = {
 };
 
 /* Names for glPixelStore */
+#if 0
 static GLenum pixelStoreTable [] = {
    GL_PACK_ALIGNMENT, GL_PACK_LSB_FIRST, GL_PACK_ROW_LENGTH,
    GL_PACK_SKIP_PIXELS, GL_PACK_SKIP_ROWS, GL_PACK_SWAP_BYTES,
@@ -343,6 +344,7 @@ static GLenum pixelStoreTable [] = {
    GL_UNPACK_ROW_LENGTH, GL_UNPACK_SKIP_PIXELS,
    GL_UNPACK_SKIP_ROWS, GL_UNPACK_SWAP_BYTES
 };
+#endif
 
 /* Param names for glPixelTransfer */
 static GLenum pixelTransferTable [] = {
@@ -655,9 +657,9 @@ ArgVarFloat (minArgs, maxArgs, def0, def1, def2, next)
    arg->type = ARG_VAR_FLOAT;
    arg->detail.varFloatDetail.minArgs = minArgs;
    arg->detail.varFloatDetail.maxArgs = maxArgs;
-   arg->detail.varFloatDetail.def[0] = def0;
-   arg->detail.varFloatDetail.def[1] = def1;
-   arg->detail.varFloatDetail.def[2] = def2;
+   arg->detail.varFloatDetail.def[0] = (GLfloat)def0;
+   arg->detail.varFloatDetail.def[1] = (GLfloat)def1;
+   arg->detail.varFloatDetail.def[2] = (GLfloat)def2;
    arg->next = next;
    return arg;
 }
@@ -1117,7 +1119,7 @@ ParseGLFunc (interp, argc, argv, nArg)
 		  result = TCL_ERROR;
 		  goto done;
 	       }
-	       floatArgs [ival] = d;
+	       floatArgs [ival] = (GLfloat)d;
 	       argVal [ival] = &floatArgs [ival];
 	       ival++;
 	    }
@@ -1207,7 +1209,7 @@ ParseGLFunc (interp, argc, argv, nArg)
 		  result = TCL_ERROR;
 		  goto done;
 	       }
-	       floatArgs [ival] = d;
+	       floatArgs [ival] = (GLfloat)d;
 	       argVal [ival] = &floatArgs [ival];
 	       ival++;
 	    }
@@ -1901,7 +1903,7 @@ TkTexParameter (interp, args, nargs)
 	 if (Tcl_GetDouble (interp, (char*) args [i+2], &d) != TCL_OK) {
 	    ERRMSG ("Invalid color coordinate");
 	 }
-	 val [i] = d;
+	 val [i] = (GLfloat)d;
       }
       glTexParameterfv (target, pname, val);
    }
@@ -1935,7 +1937,7 @@ TkTexEnv (interp, args, nargs)
 	 if (Tcl_GetDouble (interp, (char*) args [i+2], &d) != TCL_OK) {
 	    ERRMSG ("Invalid color coordinate");
 	 }
-	 val [i] = d;
+	 val [i] = (GLfloat)d;
       }
       glTexEnvfv (target, pname, val);
    }
@@ -1969,7 +1971,7 @@ TkTexGen (interp, args, nargs)
 	 if (Tcl_GetDouble (interp, (char*) args [i+2], &d) != TCL_OK) {
 	    ERRMSG ("Invalid texgen coordinate");
 	 }
-	 val [i] = d;
+	 val [i] = (GLfloat)d;
       }
       glTexGenfv (coord, pname, val);
    }
@@ -2071,7 +2073,7 @@ TkMap1 (interp, args, nargs)
 	 free (pt);
 	 ERRMSG ("Invalid map1 coordinate");
       }
-      pt [i] = d;
+      pt [i] = (GLfloat)d;
    }
    glMap1f (target, u [0], u [1], stride, order, pt);
    free (pt);
@@ -2119,7 +2121,7 @@ TkMap2 (interp, args, nargs)
 	 free (pt);
 	 ERRMSG ("Invalid map1 coordinate");
       }
-      pt [i] = d;
+      pt [i] = (GLfloat)d;
    }
    glMap2f (target, u [0], u [1], ustride, uorder, 
 	    v [0], v [1], vstride, vorder, pt);
@@ -2260,7 +2262,7 @@ TkFog (interp, args, nargs)
 	 if (Tcl_GetDouble (interp, (char*)args[i+1], &d) !=TCL_OK) {
 	    ERRMSG ("\nInvalid fog color coordinate");
 	 }
-	 fogcolor [i] = d;
+	 fogcolor [i] = (GLfloat)d;
       }
       glFogfv (mode, fogcolor);
    }
@@ -2269,7 +2271,7 @@ TkFog (interp, args, nargs)
       if (Tcl_GetDouble (interp, (char*) args [1], &d) != TCL_OK) {
 	 ERRMSG ("\nInvalid fog argument");
       }
-      glFogf (mode, d);
+      glFogf (mode, (GLfloat)d);
    }
 done:
    return result;

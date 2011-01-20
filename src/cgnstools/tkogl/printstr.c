@@ -137,7 +137,7 @@ int LoadBitmapFont(Tcl_Interp *interp, int argc, char* argv [])
 
 int PrintString(Tcl_Interp *interp, int argc, char* argv [])
 {
-    GLuint fontOffset;
+    int fontOffset;
 
     if (argc != 4) {
 	Tcl_AppendResult (interp, "wrong # args", (char*) NULL);
@@ -147,8 +147,8 @@ int PrintString(Tcl_Interp *interp, int argc, char* argv [])
     if (Tcl_GetInt (interp, argv [2], &fontOffset) != TCL_OK) return TCL_ERROR;
        
     glPushAttrib (GL_LIST_BIT);
-    glListBase(fontOffset);
-    glCallLists(strlen(argv [3]), GL_UNSIGNED_BYTE, (GLubyte *) argv[3]);
+    glListBase((GLuint)fontOffset);
+    glCallLists((GLsizei)strlen(argv [3]), GL_UNSIGNED_BYTE, (GLubyte *) argv[3]);
     glPopAttrib ();
 
     return TCL_OK;

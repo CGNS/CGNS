@@ -63,6 +63,7 @@ AddFloat (FloatArray ptr, GLfloat val)
    ptr->value[ptr->count++] = val;
 }
 
+#if 0
 static void 
 SetFloat (FloatArray ptr, int index, GLfloat val) 
 {
@@ -79,6 +80,7 @@ SetFloat (FloatArray ptr, int index, GLfloat val)
    }
    ptr->value [index] = val;
 }
+#endif
 
 /*--------------------------------------------------------------------------
  *
@@ -110,7 +112,7 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
    int dlist = 0;
 
    for (iarg = 2; iarg < argc; iarg++) {	
-      int len = strlen (argv [iarg]);
+      int len = (int)strlen (argv [iarg]);
       if (strncmp (argv [iarg], "-uorder", len) == 0) {
 	 int val;
 	 iarg++;
@@ -140,7 +142,7 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
 	    if (uKnot->count > 0 &&
 		uKnot->value [uKnot->count-1] > val) 
 	       ERRMSG ("uknot values not in non-descending order");
-	    AddFloat (uKnot, val);
+	    AddFloat (uKnot, (GLfloat)val);
 	    iarg++;
 	 }
 	 iarg--;
@@ -156,7 +158,7 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
 	    if (vKnot->count > 0 &&
 		vKnot->value [vKnot->count-1] > val) 
 	       ERRMSG ("vknot values not in non-descending order");
-	    AddFloat (vKnot, val);
+	    AddFloat (vKnot, (GLfloat)val);
 	    iarg++;
 	 }
 	 iarg--;
@@ -169,7 +171,7 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
 	    double val;
 	    if (Tcl_GetDouble (interp, argv [iarg], &val) != TCL_OK) 
 	       ERRMSG ("\nError parsing uknot value");
-	    AddFloat (cPoint, val);
+	    AddFloat (cPoint, (GLfloat)val);
 	    iarg++;
 	 }
 	 iarg--;
@@ -202,7 +204,7 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
 	 if (iarg >= argc) ERRMSG ("No -samplingtolerance value given"); 
 	 if (Tcl_GetDouble (interp, argv [iarg], &val) != TCL_OK) 
 	    ERRMSG ("\nError parsing sampling tolerance");
-	 samplingTolerance = val;
+	 samplingTolerance = (GLfloat)val;
       }
       else if (strncmp (argv [iarg], "-displaymode", len) == 0) {
 	 iarg++;
@@ -223,7 +225,7 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
 	 if (iarg >= argc) ERRMSG ("No -culling value given");	 
 	 if (Tcl_GetBoolean (interp, argv [iarg], &val) != TCL_OK) 
 	    ERRMSG ("\nError parsing culling value");
-	 culling = val;
+	 culling = (GLfloat)val;
       }
       else {
 	 ERRMSG2 ("invalid option:", argv [iarg]);
