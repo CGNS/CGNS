@@ -6,24 +6,18 @@ dir=`dirname $0`
 
 # source the setup script
 
-if test -f $dir/cgconfig ; then
-  . $dir/cgconfig
-elif test -f $dir/../cgconfig ; then
-  . $dir/../cgconfig
-else
-  if test -z "$CG_SYSTEM" && test -x $dir/cgsystem ; then
-    CG_SYSTEM=`$dir/cgsystem`; export CG_SYSTEM
+for d in $dir $dir/cgnstools $dir/.. ; do
+  if test -f $d/cgconfig ; then
+    . $d/cgconfig
+    break
   fi
-  if test -f $dir/$CG_SYSTEM/cgconfig ; then
-    . $dir/$CG_SYSTEM/cgconfig
-  fi
-fi
+done
 
 # get the cgiowish executable
 
 cgiowish=""
-for d in $dir $dir/$CG_SYSTEM $dir/cgnsview \
-  $CG_BIN_DIR $CG_BIN_DIR/$CG_SYSTEM ; do
+for d in $CG_BIN_DIR $dir $dir/cgnstools $dir/cgnsview \
+         /usr/local/bin /usr/local/bin/cgnstools ; do
   if test -x $d/cgiowish ; then
     cgiowish=$d/cgiowish
     break
@@ -41,14 +35,10 @@ fi
 # find the cgnsview tcl script
 
 cgnsview=""
-for d in $dir $dir/$CG_SYSTEM $dir/cgnsview \
-  $CG_LIB_DIR $CG_LIB_DIR/$CG_SYSTEM ; do
+for d in $CG_LIB_DIR $dir $dir/cgnstools $dir/cgnsview \
+         /usr/local/share /usr/local/share/cgnstools ; do
   if test -f $d/cgnsview.tcl ; then
     cgnsview=$d/cgnsview.tcl
-    break
-  fi
-  if test -f $d/cgnstools3/cgnsview.tcl ; then
-    cgnsview=$d/cgnstools3/cgnsview.tcl
     break
   fi
 done

@@ -2,21 +2,50 @@
 setlocal
 
 rem the standard wish command will work for this
-rem set WISH=c:\progra~1\tcl\bin\wish83.exe
+rem set wish=c:\progra~1\tcl\bin\wish83.exe
 
-set VIEWERDIR=%~dps0
+set dir=%~dps0
+if exist %dir%cgconfig.bat (
+  call %dir%cgconfig.bat
+  goto getwish
+)
+if exist %dir%..\cgconfig.bat call %dir%..\cgconfig.bat
 
-if "%WISH%" == "" set WISH=%VIEWERDIR%cgiowish.exe
-if not exist %WISH% goto notfound
-if not exist %VIEWERDIR%cgnsnodes.tcl goto notfound
-
-call %VIEWERDIR%..\cgconfig.bat
-
-start /b %WISH% %VIEWERDIR%cgnsnodes.tcl %1
+:getwish
+if not "%wish%" == "" goto getscript
+if exist %dir%cgiowish.exe (
+  set wish=%dir%cgiowish.exe
+  goto getscript
+)
+if exist %dir%cgnstools\cgiowish.exe (
+  set wish=%dir%cgnstools\cgiowish.exe
+  goto getscript
+)
+echo cgiowish.exe not found
+pause
 goto done
 
-:notfound
-echo %WISH% and/or %VIEWERDIR%cgnsnodes.tcl not found
+:getscript
+if exist %dir%cgnsnodes.tcl (
+  set script=%dir%cgnsnodes.tcl
+  goto run
+)
+if not "%CG_LIB_DIR%" == "" (
+  if exist %CG_LIB_DIR%\cgnsnodes.tcl (
+    set script=%CG_LIB_DIR%\cgnsnodes.tcl
+    goto run
+  )
+)
+if exist %dir%..\share\cgnsnodes.tcl (
+  set script=%dir%..\share\cgnsnodes.tcl
+  goto run
+)
+echo cgnsnodes.tcl not found
 pause
+goto done
+
+:run
+start /b %wish% %script% %1
+
 :done
 endlocal

@@ -64,9 +64,6 @@ if {$platform == "windows"} {
     }
   }
   catch {load tclreg$vers registry}
-  if ![info exists env(CG_SYSTEM)] {
-    set env(CG_SYSTEM) Win32
-  }
 } else {
   if {[info commands CGIOopen] == {}} {
     error_exit "need to run script with cgiowish"
@@ -286,35 +283,24 @@ if {[tclreg_init -base $ProgData(reg,base) -fname $ProgData(reg,file)]} {
 
 #----- setup search paths for executable files and script files
 
-if [info exists env(CG_SYSTEM)] {
-  set system $env(CG_SYSTEM)
-} else {
-  set system ""
-}
-
-set ProgData(exepath) [list $cmd_dir $cmd_dir/cgnswish]
-if {$system != ""} {
-  lappend ProgData(exepath) $cmd_dir/$system $cmd_dir/$system/cgnswish
-}
+set ProgData(exepath) [list $cmd_dir $cmd_dir/cgnstools]
 if {[info exists env(CG_BIN_DIR)] && $env(CG_BIN_DIR) != ""} {
-  lappend ProgData(exepath) $env(CG_BIN_DIR) $env(CG_BIN_DIR)/cgnswish
-  if {$system != ""} {
-    lappend ProgData(exepath) $env(CG_BIN_DIR)/$system \
-      $env(CG_BIN_DIR)/$system/cgnswish
+  if {$platform == "windows"} {
+    set bin_dir [file attributes $env(CG_BIN_DIR) -shortname]
+  } else {
+    set bin_dir $env(CG_BIN_DIR)
   }
+  lappend ProgData(exepath) $bin_dir $bin_dir/cgnstools
 }
 
 set ProgData(libpath) [list $cmd_dir $cmd_dir/cgnstools]
-if {$system != ""} {
-  lappend ProgData(exepath) $cmd_dir/$system $cmd_dir/$system/cgnstools
-}
-if {[info exists env(CG_LIB_DIR)] && $env(CG_LIB_DIR) != "" &&
-    $env(CG_LIB_DIR) != $cmd_dir} {
-  lappend ProgData(libpath) $env(CG_LIB_DIR) $env(CG_LIB_DIR)/cgnstools
-  if {$system != ""} {
-    lappend ProgData(libpath) $env(CG_LIB_DIR)/$system \
-      $env(CG_LIB_DIR)/$system/cgnstools
+if {[info exists env(CG_LIB_DIR)] && $env(CG_LIB_DIR) != ""} {
+  if {$platform == "windows"} {
+    set lib_dir [file attributes $env(CG_LIB_DIR) -shortname]
+  } else {
+    set lib_dir $env(CG_LIB_DIR)
   }
+  lappend ProgData(libpath) $lib_dir $lib_dir/cgnstools
 }
 
 set root_dir [file dirname $cmd_dir]

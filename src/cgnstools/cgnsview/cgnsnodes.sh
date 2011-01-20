@@ -6,25 +6,19 @@ dir=`dirname $0`
 
 # source the setup script
 
-if test -f $dir/cgconfig ; then
-  . $dir/cgconfig
-elif test -f $dir/../cgconfig ; then
-  . $dir/../cgconfig
-else
-  if test -z "$CG_SYSTEM" && test -x $dir/cgsystem ; then
-    CG_SYSTEM=`$dir/cgsystem`; export CG_SYSTEM
+for d in $dir $dir/cgnstools $dir/.. ; do
+  if test -f $d/cgconfig ; then
+    . $d/cgconfig
+    break
   fi
-  if test -f $dir/$CG_SYSTEM/cgconfig ; then
-    . $dir/$CG_SYSTEM/cgconfig
-  fi
-fi
+done
 
 # The normal wish will work here, but cgiowish should
 # be available, and may also be used
 
 cgiowish=""
-for d in $dir $dir/$CG_SYSTEM $dir/cgnsview \
-  $CG_BIN_DIR $CG_BIN_DIR/$CG_SYSTEM ; do
+for d in $CG_BIN_DIR $dir $dir/cgnstools $dir/cgnsview \
+         /usr/local/bin /usr/local/bin/cgnstools ; do
   if test -x $d/cgiowish ; then
     cgiowish=$d/cgiowish
     break
@@ -42,14 +36,10 @@ fi
 # find the cgnsnodes tcl script
 
 cgnsnodes=""
-for d in $dir $dir/$CG_SYSTEM $dir/cgnsview \
-  $CG_LIB_DIR $CG_LIB_DIR/$CG_SYSTEM ; do
+for d in $CG_LIB_DIR $dir $dir/cgnstools $dir/cgnsview \
+         /usr/local/share /usr/local/share/cgnstools ; do
   if test -f $d/cgnsnodes.tcl ; then
     cgnsnodes=$d/cgnsnodes.tcl
-    break
-  fi
-  if test -f $d/cgnstools/cgnsnodes.tcl ; then
-    cgnsnodes=$d/cgnstools/cgnsnodes.tcl
     break
   fi
 done

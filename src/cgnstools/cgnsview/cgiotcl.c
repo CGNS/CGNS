@@ -7,6 +7,12 @@
 #include "cgns_io.h"
 #include "cgnslib.h" /* only needed for CGNS_VERSION */
 
+#ifndef CGNSTYPES_H
+# define cgsize_t  int
+# define cglong_t  long
+# define cgulong_t unsigned long
+#endif
+
 #ifndef CONST
 # define CONST
 #endif
@@ -15,8 +21,8 @@
 
 #define I4 int
 #define U4 unsigned int
-#define I8 long
-#define U8 unsigned long
+#define I8 cglong_t
+#define U8 cgulong_t
 #define R4 float
 #define R8 double
 #define X4 float
@@ -126,10 +132,10 @@ static char *get_parent (Tcl_Interp *interp, char *nodename, double *nodeid)
  * return number of data values for a node
  *------------------------------------------------------------------*/
 
-static int data_size (Tcl_Interp *interp, double nodeid)
+static cgsize_t data_size (Tcl_Interp *interp, double nodeid)
 {
-    int n, np;
-    int ndim, dims[CGIO_MAX_DIMENSIONS];
+    int n, ndim;
+    cgsize_t np, dims[CGIO_MAX_DIMENSIONS];
 
     if (cgio_get_dimensions (cgioNum, nodeid, &ndim, dims)) {
         get_error (interp, "cgio_get_dimensions");
@@ -171,9 +177,9 @@ static struct DataType * data_type (Tcl_Interp *interp, double nodeid)
  * convert data from C1
  *------------------------------------------------------------------*/
 
-static char *convert_C1 (int np, char *olddata, struct DataType *dtnew)
+static char *convert_C1 (size_t np, char *olddata, struct DataType *dtnew)
 {
-    int n;
+    size_t n;
     C1 *d = (C1 *)olddata;
     char *newdata;
 
@@ -253,9 +259,9 @@ static char *convert_C1 (int np, char *olddata, struct DataType *dtnew)
  * convert data from B1
  *------------------------------------------------------------------*/
 
-static char *convert_B1 (int np, char *olddata, struct DataType *dtnew)
+static char *convert_B1 (size_t np, char *olddata, struct DataType *dtnew)
 {
-    int n;
+    size_t n;
     B1 *d = (B1 *)olddata;
     char *newdata;
 
@@ -335,9 +341,9 @@ static char *convert_B1 (int np, char *olddata, struct DataType *dtnew)
  * convert data from I4
  *------------------------------------------------------------------*/
 
-static char *convert_I4 (int np, char *olddata, struct DataType *dtnew)
+static char *convert_I4 (size_t np, char *olddata, struct DataType *dtnew)
 {
-    int n;
+    size_t n;
     I4 *d = (I4 *)olddata;
     char *newdata;
 
@@ -417,9 +423,9 @@ static char *convert_I4 (int np, char *olddata, struct DataType *dtnew)
  * convert data from U4
  *------------------------------------------------------------------*/
 
-static char *convert_U4 (int np, char *olddata, struct DataType *dtnew)
+static char *convert_U4 (size_t np, char *olddata, struct DataType *dtnew)
 {
-    int n;
+    size_t n;
     U4 *d = (U4 *)olddata;
     char *newdata;
 
@@ -499,9 +505,9 @@ static char *convert_U4 (int np, char *olddata, struct DataType *dtnew)
  * convert data from I8
  *------------------------------------------------------------------*/
 
-static char *convert_I8 (int np, char *olddata, struct DataType *dtnew)
+static char *convert_I8 (size_t np, char *olddata, struct DataType *dtnew)
 {
-    int n;
+    size_t n;
     I8 *d = (I8 *)olddata;
     char *newdata;
 
@@ -581,9 +587,9 @@ static char *convert_I8 (int np, char *olddata, struct DataType *dtnew)
  * convert data from U8
  *------------------------------------------------------------------*/
 
-static char *convert_U8 (int np, char *olddata, struct DataType *dtnew)
+static char *convert_U8 (size_t np, char *olddata, struct DataType *dtnew)
 {
-    int n;
+    size_t n;
     U8 *d = (U8 *)olddata;
     char *newdata;
 
@@ -663,9 +669,9 @@ static char *convert_U8 (int np, char *olddata, struct DataType *dtnew)
  * convert data from R4
  *------------------------------------------------------------------*/
 
-static char *convert_R4 (int np, char *olddata, struct DataType *dtnew)
+static char *convert_R4 (size_t np, char *olddata, struct DataType *dtnew)
 {
-    int n;
+    size_t n;
     R4 *d = (R4 *)olddata;
     char *newdata;
 
@@ -745,9 +751,9 @@ static char *convert_R4 (int np, char *olddata, struct DataType *dtnew)
  * convert data from R8
  *------------------------------------------------------------------*/
 
-static char *convert_R8 (int np, char *olddata, struct DataType *dtnew)
+static char *convert_R8 (size_t np, char *olddata, struct DataType *dtnew)
 {
-    int n;
+    size_t n;
     R8 *d = (R8 *)olddata;
     char *newdata;
 
@@ -827,9 +833,9 @@ static char *convert_R8 (int np, char *olddata, struct DataType *dtnew)
  * convert data from X4
  *------------------------------------------------------------------*/
 
-static char *convert_X4 (int np, char *olddata, struct DataType *dtnew)
+static char *convert_X4 (size_t np, char *olddata, struct DataType *dtnew)
 {
-    int n;
+    size_t n;
     X4 *d = (X4 *)olddata;
     char *newdata;
 
@@ -907,9 +913,9 @@ static char *convert_X4 (int np, char *olddata, struct DataType *dtnew)
  * convert data from C1
  *------------------------------------------------------------------*/
 
-static char *convert_X8 (int np, char *olddata, struct DataType *dtnew)
+static char *convert_X8 (size_t np, char *olddata, struct DataType *dtnew)
 {
-    int n;
+    size_t n;
     X8 *d = (X8 *)olddata;
     char *newdata;
 
@@ -1028,8 +1034,6 @@ static int CGNSfile (ClientData data, Tcl_Interp *interp,
         Tcl_SetResult (interp, "adf", TCL_STATIC);
     else if (file_type == CGIO_FILE_HDF5)
         Tcl_SetResult (interp, "hdf5", TCL_STATIC);
-    else if (file_type == CGIO_FILE_XML)
-        Tcl_SetResult (interp, "xml", TCL_STATIC);
     else {
         Tcl_SetResult (interp, "unknown file type", TCL_STATIC);
         return TCL_ERROR;
@@ -1063,10 +1067,6 @@ static int CGIOsupported (ClientData data, Tcl_Interp *interp,
             case 'H':
                 type = CGIO_FILE_HDF5;
                 break;
-            case 'x':
-            case 'X':
-                type = CGIO_FILE_XML;
-                break;
             default:
                 Tcl_SetResult (interp, "unknown file type", TCL_STATIC);
                 return TCL_ERROR;
@@ -1078,9 +1078,6 @@ static int CGIOsupported (ClientData data, Tcl_Interp *interp,
     if ((type == CGIO_FILE_NONE || type == CGIO_FILE_HDF5) &&
             cgio_is_supported (CGIO_FILE_HDF5) == 0)
         Tcl_AppendElement (interp, "hdf5");
-    if ((type == CGIO_FILE_NONE || type == CGIO_FILE_XML) &&
-            cgio_is_supported (CGIO_FILE_XML) == 0)
-        Tcl_AppendElement (interp, "xml");
     return TCL_OK;
 }
 
@@ -1091,7 +1088,6 @@ static int CGIOsupported (ClientData data, Tcl_Interp *interp,
 static int CGIOversion (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
-    int err;
     char version[CGIO_MAX_VERSION_LENGTH+1];
 
     Tcl_ResetResult (interp);
@@ -1168,10 +1164,6 @@ static int CGIOopen (ClientData data, Tcl_Interp *interp,
                 case 'H':
                     type = CGIO_FILE_HDF5;
                     break;
-                case 'x':
-                case 'X':
-                    type = CGIO_FILE_XML;
-                    break;
                 default:
                     Tcl_SetResult (interp, "unknown file type", TCL_STATIC);
                     return TCL_ERROR;
@@ -1220,10 +1212,6 @@ static int CGIOsave (ClientData data, Tcl_Interp *interp,
         case 'h':
         case 'H':
             type = CGIO_FILE_HDF5;
-            break;
-        case 'x':
-        case 'X':
-            type = CGIO_FILE_XML;
             break;
         default:
             Tcl_SetResult (interp, "unknown file type", TCL_STATIC);
@@ -1396,8 +1384,8 @@ static int CGIOlabel (ClientData data, Tcl_Interp *interp,
 static int CGIOtype (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
-    int n, np, err;
-    int ndim, dims[CGIO_MAX_DIMENSIONS];
+    int n, ndim, err;
+    cgsize_t np, dims[CGIO_MAX_DIMENSIONS];
     char type[CGIO_MAX_DATATYPE_LENGTH+1];
     double node_id;
     struct DataType *dtnew, *dtold;
@@ -1466,7 +1454,7 @@ static int CGIOtype (ClientData data, Tcl_Interp *interp,
             newdata = NULL;
 
             if (np > 0 && dtold->size > 0) {
-                olddata = (char *) malloc (np * dtold->size);
+                olddata = (char *) malloc ((size_t)(np * dtold->size));
                 if (NULL == olddata) {
                     Tcl_AppendResult (interp, "malloc failed for data", NULL);
                     return TCL_ERROR;
@@ -1477,34 +1465,34 @@ static int CGIOtype (ClientData data, Tcl_Interp *interp,
                 }
                 switch (dtold->type) {
                     case C1data:
-                        newdata = convert_C1 (np, olddata, dtnew);
+                        newdata = convert_C1 ((size_t)np, olddata, dtnew);
                         break;
                     case B1data:
-                        newdata = convert_B1 (np, olddata, dtnew);
+                        newdata = convert_B1 ((size_t)np, olddata, dtnew);
                         break;
                     case I4data:
-                        newdata = convert_I4 (np, olddata, dtnew);
+                        newdata = convert_I4 ((size_t)np, olddata, dtnew);
                         break;
                     case U4data:
-                        newdata = convert_U4 (np, olddata, dtnew);
+                        newdata = convert_U4 ((size_t)np, olddata, dtnew);
                         break;
                     case I8data:
-                        newdata = convert_I8 (np, olddata, dtnew);
+                        newdata = convert_I8 ((size_t)np, olddata, dtnew);
                         break;
                     case U8data:
-                        newdata = convert_U8 (np, olddata, dtnew);
+                        newdata = convert_U8 ((size_t)np, olddata, dtnew);
                         break;
                     case R4data:
-                        newdata = convert_R4 (np, olddata, dtnew);
+                        newdata = convert_R4 ((size_t)np, olddata, dtnew);
                         break;
                     case R8data:
-                        newdata = convert_R8 (np, olddata, dtnew);
+                        newdata = convert_R8 ((size_t)np, olddata, dtnew);
                         break;
                     case X4data:
-                        newdata = convert_X4 (np, olddata, dtnew);
+                        newdata = convert_X4 ((size_t)np, olddata, dtnew);
                         break;
                     case X8data:
-                        newdata = convert_X8 (np, olddata, dtnew);
+                        newdata = convert_X8 ((size_t)np, olddata, dtnew);
                         break;
                 }
                 if (newdata != olddata)
@@ -1539,7 +1527,8 @@ static int CGIOdimensions (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
     int n;
-    int ndim, dims[CGIO_MAX_DIMENSIONS];
+    int ndim;
+    cgsize_t dims[CGIO_MAX_DIMENSIONS];
     double node_id;
     CONST char **args;
     char str[65];
@@ -1579,7 +1568,7 @@ static int CGIOdimensions (ClientData data, Tcl_Interp *interp,
         return (get_error (interp, "cgio_get_dimensions"));
     if (ndim > 0) {
         for (n = 0; n < ndim; n++) {
-            sprintf (str, "%d", dims[n]);
+            sprintf (str, "%ld", (long)dims[n]);
             Tcl_AppendElement (interp, str);
         }
     }
@@ -1593,7 +1582,7 @@ static int CGIOdimensions (ClientData data, Tcl_Interp *interp,
 static int CGIOsize (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
-    int np;
+    cgsize_t np;
     char str[65];
     double node_id;
     struct DataType *type;
@@ -1630,7 +1619,8 @@ static int CGIOsize (ClientData data, Tcl_Interp *interp,
 static int CGIOread (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
-    int err, n, np;
+    int n;
+    cgsize_t np;
     char *values, str[65];
     double node_id;
     struct DataType *dt;
@@ -1754,8 +1744,9 @@ static int CGIOread (ClientData data, Tcl_Interp *interp,
 static int CGIOwrite (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
-    int n, np, nv, ns;
-    int ndim, dims[CGIO_MAX_DIMENSIONS];
+    int n, nv, ns;
+    int ndim;
+    cgsize_t np, dims[CGIO_MAX_DIMENSIONS];
     double node_id;
     CONST char **args;
     char *values, type[CGIO_MAX_DATATYPE_LENGTH+1];
@@ -1815,7 +1806,7 @@ static int CGIOwrite (ClientData data, Tcl_Interp *interp,
         return TCL_ERROR;
     }
     for (n = 0; n < ndim; n++)
-        dims[n] = atoi (args[n]);
+        dims[n] = (cgsize_t) atol (args[n]);
     Tcl_Free ((char *)args);
     for (np = 1, n = 0; n < ndim; n++) {
         if (dims[n] < 1) {
@@ -1827,7 +1818,7 @@ static int CGIOwrite (ClientData data, Tcl_Interp *interp,
 
     /* create data array */
 
-    if (NULL == (values = (char *) calloc (np, dt->size))) {
+    if (NULL == (values = (char *) calloc ((size_t)np, dt->size))) {
         Tcl_AppendResult (interp, "malloc failed for data", NULL);
         return TCL_ERROR;
     }
@@ -1836,8 +1827,8 @@ static int CGIOwrite (ClientData data, Tcl_Interp *interp,
 
     if (argc > 4) {
         if (dt->type == C1data && ndim == 1) {
-            strncpy (values, argv[4], np);
-            for (ns = strlen(argv[4]); ns < np; ns++)
+            strncpy (values, argv[4], (size_t)np);
+            for (ns = (int)strlen(argv[4]); ns < np; ns++)
                 values[ns] = ' ';
         }
         else {
@@ -1852,8 +1843,8 @@ static int CGIOwrite (ClientData data, Tcl_Interp *interp,
                 if (dt->type == C1data) {
                     char *p = values;
                     for (n = 0; n < np; n++) {
-                        strncpy (p, args[n], dims[0]);
-                        for (ns = strlen(args[n]); ns < dims[0]; ns++)
+                        strncpy (p, args[n], (size_t)dims[0]);
+                        for (ns = (int)strlen(args[n]); ns < dims[0]; ns++)
                             p[ns] = ' ';
                         p += dims[0];
                     }
@@ -2089,7 +2080,7 @@ static int CGIOnumchild (ClientData data, Tcl_Interp *interp,
 static int CGIOchildname (ClientData data, Tcl_Interp *interp,
     int argc, char **argv)
 {
-    int n, len;
+    int len;
     char name[CGIO_MAX_NAME_LENGTH+1];
     double node_id;
 

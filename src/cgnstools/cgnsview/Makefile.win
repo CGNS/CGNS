@@ -1,6 +1,6 @@
 include ..\make.win
 
-CFLAGS = $(COPTS) -I$(CGNSDIR)
+COPTS = $(CFLAGS) -I$(CGNSDIR)
 
 #--------------------------------------------------
 
@@ -15,10 +15,10 @@ cgiowish.exe : winmain.obj cgiotcl.obj
 	$(CGNSLIB) $(CLIBS) $(BUILDLIBS) $(TCLLIB) $(TKLIB) $(guilibs)
 
 winmain.obj : winmain.c
-	$(CC) $(CFLAGS) $(TCLINC) -c winmain.c
+	$(CC) $(COPTS) $(TCLINC) -c winmain.c
 
 cgiotcl.obj : cgiotcl.c
-	$(CC) $(CFLAGS) $(TCLINC) -c cgiotcl.c
+	$(CC) $(COPTS) $(TCLINC) -c cgiotcl.c
 
 #--------------------------------------------------
 
@@ -27,42 +27,45 @@ cgiotcl.dll : cgiotcl-dll.obj $(CGNSLIB)
 	$(CGNSLIB) $(CLIBS) $(TCLLIB) $(TKLIB) $(dlllibs)
 
 cgiotcl-dll.obj : cgiotcl.c
-	$(CC) $(CFLAGS) $(TCLINC) -DBUILD_DLL -Fo$@ -c cgiotcl.c
+	$(CC) $(COPTS) $(TCLINC) -DBUILD_DLL -Fo$@ -c cgiotcl.c
 
 #---------------------------------------------------------------
 
 install : install-prog install-help
 
-install-prog : cgiowish.exe $(INSTALLDIR)
-	-$(INSTALL) cgiowish.exe $(INSTALLDIR)
-	-$(INSTALL) cgnsview.bat $(INSTALLDIR)
-	-$(INSTALL) cgnsnodes.bat $(INSTALLDIR)
-	-$(INSTALL) *.tcl $(INSTALLDIR)
-	-$(INSTALL) *.ico $(INSTALLDIR)
-	-$(INSTALL) ..\common\tclIndex $(INSTALLDIR)
-	-$(INSTALL) ..\common\*.tcl $(INSTALLDIR)
-	-$(INSTALL) ..\common\*.ico $(INSTALLDIR)
+install-prog : cgiowish.exe $(BINDIR)
+	-$(INSTALL) cgiowish.exe $(BINDIR)
+	-$(INSTALL) cgnsview.bat $(BINDIR)
+	-$(INSTALL) cgnsnodes.bat $(BINDIR)
+	-$(INSTALL) *.tcl $(BINDIR)
+	-$(INSTALL) *.ico $(BINDIR)
+	-$(INSTALL) ..\common\tclIndex $(BINDIR)
+	-$(INSTALL) ..\common\*.tcl $(BINDIR)
+	-$(INSTALL) ..\common\*.ico $(BINDIR)
 
-install-help : $(INSTALLDIR)\help\cgnsview\images
-	-$(INSTALL) help\*.html $(INSTALLDIR)\help\cgnsview
-	-$(INSTALL) help\images\*.* $(INSTALLDIR)\help\cgnsview\images
+install-help : $(BINDIR)\help\cgnsview\images
+	-$(INSTALL) help\*.html $(BINDIR)\help\cgnsview
+	-$(INSTALL) help\images\*.* $(BINDIR)\help\cgnsview\images
+
+$(BINDIR) : $(INSTALLDIR)
+	-mkdir $(BINDIR)
 
 $(INSTALLDIR) :
 	-mkdir $(INSTALLDIR)
 
-$(INSTALLDIR)\help\cgnsview\images : $(INSTALLDIR)\help\cgnsview
-	-mkdir $(INSTALLDIR)\help\cgnsview\images
+$(BINDIR)\help\cgnsview\images : $(BINDIR)\help\cgnsview
+	-mkdir $(BINDIR)\help\cgnsview\images
 
-$(INSTALLDIR)\help\cgnsview : $(INSTALLDIR)\help
-	-mkdir $(INSTALLDIR)\help\cgnsview
+$(BINDIR)\help\cgnsview : $(BINDIR)\help
+	-mkdir $(BINDIR)\help\cgnsview
 
-$(INSTALLDIR)\help :
-	-mkdir $(INSTALLDIR)\help
+$(BINDIR)\help :
+	-mkdir $(BINDIR)\help
 
 #--------------------------------------------------
 
 .c.obj :
-	$(CC) $(CFLAGS) -Fo$@ -c $<
+	$(CC) $(COPTS) -Fo$@ -c $<
 
 .obj.exe :
 	$(LINK) $(LFLAGS) /out:$@ $< $(CGNSLIB) $(BUILDLIBS)
