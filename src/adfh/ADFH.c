@@ -27,16 +27,20 @@ freely, subject to the following restrictions:
 #include <math.h>
 #include <ctype.h>
 #include <stdlib.h>
+
 #if defined(_WIN32) && !defined(__NUTC__)
-#include <io.h>
+# include <io.h>
+# define ACCESS _access
+# define UNLINK _unlink
 #else
-#include <unistd.h>
+# include <unistd.h>
+# define ACCESS access
+# define UNLINK unlink
 #endif
 
 #include "ADFH.h"
 #include "hdf5.h"
 #include "cgns_io.h" /* for cgio_find_file */
-
 
 #if H5_VERS_MAJOR < 2 && H5_VERS_MINOR < 8
 #define HDF5_PRE_1_8 1
@@ -268,6 +272,8 @@ static struct _ErrorList {
 #define NUM_ERRORS (sizeof(ErrorList)/sizeof(struct _ErrorList))
 #define ROOT_OR_DIE(err) \
 if (mta_root == NULL){set_error(ADFH_ERR_ROOTNULL, err);return;} 
+#define ROOT_OR_DIE_ERR(err) \
+if (mta_root == NULL){set_error(ADFH_ERR_ROOTNULL, err);return 1;} 
 
 /* usefull macros */
 
@@ -391,7 +397,7 @@ static double to_ADF_ID (hid_t hdf_id) {
 
 /* -----------------------------------------------------------------
  * set/get attribute values
-/* ----------------------------------------------------------------- */
+ * ----------------------------------------------------------------- */
 
 static hid_t get_att_id(hid_t id, const char *name, int *err)
 {
@@ -625,6 +631,7 @@ static int new_int_att(hid_t id, const char *name, int value, int *err)
   return 0;
 }
 
+#ifndef ADFH_NO_ORDER
 /* ----------------------------------------------------------------- */
 
 static int get_int_att(hid_t id, char *name, int *value, int *err)
@@ -659,6 +666,7 @@ static int set_int_att(hid_t id, char *name, int value, int *err)
   }
   return 0;
 }
+#endif
 
 /* ----------------------------------------------------------------- */
 
@@ -797,11 +805,13 @@ static herr_t count_children(hid_t id, const char *name, void *number)
 
 static herr_t children_names(hid_t id, const char *name, void *namelist)
 {
+#ifndef ADFH_NO_ORDER
   hid_t gid;
+#endif
   int order, err;
   char *p;
 
-  ROOT_OR_DIE(&err);
+  ROOT_OR_DIE_ERR(&err);
   if (*name == D_PREFIX) return 0;
 #ifdef ADFH_NO_ORDER
   order = ++mta_root->i_count - mta_root->i_start;
@@ -837,7 +847,7 @@ static herr_t children_ids(hid_t id, const char *name, void *idlist)
   int order, err;
 
   ADFH_DEBUG((">ADFH children_ids [%s]",name));
-  ROOT_OR_DIE(&err);
+  ROOT_OR_DIE_ERR(&err);
   if (*name == D_PREFIX) return 0;
   if ((gid = H5Gopen2(id, name, H5P_DEFAULT)) < 0) return 1;
 #ifdef ADFH_NO_ORDER
@@ -864,6 +874,7 @@ static herr_t children_ids(hid_t id, const char *name, void *idlist)
   return 0;
 }
 
+#ifndef ADFH_NO_ORDER
 /* -----------------------------------------------------------------
   called via H5Giterate in Move_Child & Delete functions.
   removes gaps in _order index attributes */
@@ -895,6 +906,7 @@ static herr_t fix_order(hid_t id, const char *name, void *data)
   H5Gclose(gid);
   return ret;
 }
+#endif
 
 /* ----------------------------------------------------------------- */
 
@@ -910,6 +922,7 @@ static herr_t compare_children(hid_t id, const char *name, void *data)
   return 0;
 }
 
+#if 0
 /* ----------------------------------------------------------------- */
 
 static herr_t print_children(hid_t id, const char *name, void *data)
@@ -918,6 +931,7 @@ static herr_t print_children(hid_t id, const char *name, void *data)
     printf(" %s", name);
   return 0;
 }
+#endif
 
 /* -----------------------------------------------------------------
  * get file ID from node ID
@@ -980,7 +994,9 @@ static hid_t open_link(hid_t id, int *err)
   const char  *path;
   H5G_stat_t	sb; /* Object information */
 
-  char  *objectbuff,querybuff[512];
+#if !defined(HDF5_PRE_1_8)
+  char  querybuff[512];
+#endif
 
 #ifdef ADFH_DEBUG_ON
   char buffname[ADF_NAME_LENGTH+1];
@@ -1070,7 +1086,6 @@ static int is_link(hid_t id)
 static hid_t open_node(double id, int *err) 
 {
   hid_t hid, gid, lid;
-  H5G_stat_t sb;
 
   ADFH_DEBUG((">ADFH open_node"));
   hid = to_HDF_ID(id);
@@ -1089,11 +1104,13 @@ static hid_t open_node(double id, int *err)
     }
     else
     {
+      /* H5G_stat_t sb; */
       ADFH_DEBUG(("<ADFH open_node group"));
       /* H5Gget_objinfo(gid,".",0,&sb); */
       return gid;
     }
   }
+  return -1;
 }
 
 /* ----------------------------------------------------------------- */
@@ -1232,8 +1249,8 @@ static void transpose_dimensions (hid_t hid, const char *name)
   void *data = NULL;
 #else
   hid_t did, sid;
-  int i, j, temp, ndims, diffs;
-  hsize_t dims[ADF_MAX_DIMENSIONS];
+  int i, j, ndims, diffs;
+  hsize_t temp, dims[ADF_MAX_DIMENSIONS];
 #endif
 
   if ((did = H5Dopen2(hid, D_DATA, H5P_DEFAULT)) < 0) return;
@@ -1349,7 +1366,9 @@ void ADFH_Move_Child(const double  pid,
   hid_t hid = to_HDF_ID(id);
   hid_t hnpid = to_HDF_ID(npid);
   int len, namelen;
+#ifndef ADFH_NO_ORDER
   int old_order, new_order;
+#endif
   char buff[2];
   char nodename[ADF_NAME_LENGTH+1];
   char *newpath;
@@ -1374,7 +1393,7 @@ void ADFH_Move_Child(const double  pid,
   /* get node name */
 
   if (get_str_att(hid, A_NAME, nodename, err)) return;
-  namelen = strlen(nodename);
+  namelen = (int)strlen(nodename);
 
   /* get new node path */
 
@@ -1513,7 +1532,6 @@ void ADFH_Get_Label(const double  id,
                     int          *err)
 {
   hid_t hid;
-  H5G_stat_t sb;  /* Object information */
   char bufflabel[ADF_LABEL_LENGTH+1];
 
   ADFH_DEBUG((">ADFH_Get_Label"));
@@ -1547,8 +1565,7 @@ void ADFH_Create(const double  pid,
                  int          *err)
 {
   hid_t hpid = to_HDF_ID(pid);
-  hid_t gid,fid;
-  int order;
+  hid_t gid;
   char *pname;
 
   ADFH_DEBUG((">ADFH_Create [%s]",name));
@@ -1581,7 +1598,7 @@ void ADFH_Create(const double  pid,
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
         new_int_att(gid, A_FLAGS, mta_root->g_flags, err)) return;
 #else
-    order = 0;
+    int order = 0;
     H5Giterate(hpid, ".", NULL, count_children, (void *)&order);
     if (new_str_att(gid, A_NAME, pname, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_LABEL, "", ADF_NAME_LENGTH, err) ||
@@ -1604,7 +1621,9 @@ void ADFH_Delete(const double  pid,
   hid_t hpid = to_HDF_ID(pid);
   hid_t hid = to_HDF_ID(id);
   char old_name[ADF_NAME_LENGTH+1];
+#ifndef ADFH_NO_ORDER
   int old_order;
+#endif
   H5G_stat_t stat;
 
   ADFH_DEBUG(("ADFH_Delete"));
@@ -1685,7 +1704,6 @@ void ADFH_Get_Node_ID(const double  pid,
                       int          *err)
 {
   hid_t sid, hpid = to_HDF_ID(pid);
-  herr_t herr;
 
   ADFH_DEBUG((">ADFH_Get_Node_ID [%s]",name));
 
@@ -1745,7 +1763,6 @@ void ADFH_Children_Names(const double pid,
                          char  *names,
                          int   *err)
 {
-  int i, ret;
   hid_t hpid;
 
   ADFH_DEBUG(("ADFH_Children_Names"));
@@ -1787,7 +1804,6 @@ void ADFH_Children_IDs(const double pid,
                          double  *IDs,
                          int   *err)
 {
-  int ret;
   hid_t hpid;
 
   ADFH_DEBUG(("ADFH_Children_IDs"));
@@ -1833,7 +1849,7 @@ void ADFH_Database_Open(const char   *name,
                         double       *root,
                         int          *err)
 {
-  hid_t fid, gid, fapl;
+  hid_t fid, gid;
   char *format, buff[ADF_VERSION_LENGTH+1];
   int i, pos, mode;
 
@@ -1875,29 +1891,29 @@ void ADFH_Database_Open(const char   *name,
     buff[i] = TO_UPPER(buff[i]);
 
   if (0 == strcmp(buff, "UNKNOWN")) {
-    if (access(name, 0))
+    if (ACCESS(name, 0))
       mode = ADFH_MODE_NEW;
-    else if (access(name, 2))
+    else if (ACCESS(name, 2))
       mode = ADFH_MODE_RDO;
     else
       mode = ADFH_MODE_OLD;
   }
   else if (0 == strcmp(buff, "NEW")) {
-    if (!access(name, 0)) {
+    if (!ACCESS(name, 0)) {
       set_error(REQUESTED_NEW_FILE_EXISTS, err);
       return;
     }
     mode = ADFH_MODE_NEW;
   }
   else if (0 == strcmp(buff, "READ_ONLY")) {
-    if (access(name, 0)) {
+    if (ACCESS(name, 0)) {
       set_error(REQUESTED_OLD_FILE_NOT_FOUND, err);
       return;
     }
     mode = ADFH_MODE_RDO;
   }
   else if (0 == strcmp(buff, "OLD")) {
-    if (access(name, 0)) {
+    if (ACCESS(name, 0)) {
       set_error(REQUESTED_OLD_FILE_NOT_FOUND, err);
       return;
     }
@@ -1968,7 +1984,7 @@ void ADFH_Database_Open(const char   *name,
     if (new_str_att(gid, A_NAME, "HDF5 MotherNode", ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_LABEL, "Root Node of HDF5 File", ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
-        new_str_data(gid, D_FORMAT, format, strlen(format), err) ||
+        new_str_data(gid, D_FORMAT, format, (int)strlen(format), err) ||
         new_str_data(gid, D_VERSION, buff, ADF_VERSION_LENGTH, err)) {
       H5Gclose(gid);
       return;
@@ -2069,7 +2085,7 @@ void ADFH_Database_Delete(const char *name,
 
   if (H5Fis_hdf5(name) <= 0)
     set_error(ADFH_ERR_NOT_HDF5_FILE, err);
-  else if (unlink(name))
+  else if (UNLINK(name))
     set_error(ADFH_ERR_FILE_DELETE, err);
   else
     set_error(NO_ERROR, err);
@@ -2081,7 +2097,7 @@ void ADFH_Database_Close(const double  root,
                          int          *status)
 {
   int n,idx;
-  hid_t fid, mid;
+  hid_t fid;
 #ifdef ADFH_FORCE_ID_CLOSE
   int nobj;
   hid_t *objs;
@@ -2346,13 +2362,12 @@ void ADFH_Get_Number_of_Dimensions(const double  id,
 /* ----------------------------------------------------------------- */
 
 void ADFH_Get_Dimension_Values(const double  id,
-                               int           dim_vals[],
+                               cglong_t     dim_vals[],
                                int           *err)
 {
   int i, ndims, swap = 0;
   hid_t hid, did, sid;
   hsize_t temp_vals[ADF_MAX_DIMENSIONS];
-  herr_t status;
 
   ADFH_DEBUG(("ADFH_Get_Dimension_Values"));
 
@@ -2373,11 +2388,11 @@ void ADFH_Get_Dimension_Values(const double  id,
 #endif
         if (swap) {
           for (i = 0; i < ndims; i++)
-            dim_vals[i] = (int)temp_vals[ndims-1-i];
+            dim_vals[i] = (cglong_t)temp_vals[ndims-1-i];
         }
         else {
           for (i = 0; i < ndims; i++)
-            dim_vals[i] = (int)temp_vals[i];
+            dim_vals[i] = (cglong_t)temp_vals[i];
         }
       }
       H5Sclose(sid);
@@ -2389,11 +2404,11 @@ void ADFH_Get_Dimension_Values(const double  id,
 
 /* ----------------------------------------------------------------- */
 
-void ADFH_Put_Dimension_Information(const double  id,
-                                    const char   *data_type,
-                                    const int     dims,
-                                    const int     dim_vals[],
-                                    int          *err)
+void ADFH_Put_Dimension_Information(const double   id,
+                                    const char    *data_type,
+                                    const int      dims,
+                                    const cgsize_t dim_vals[],
+                                    int           *err)
 {
   hid_t hid = to_HDF_ID(id);
   hid_t did, tid, sid, mid;
@@ -2402,7 +2417,6 @@ void ADFH_Put_Dimension_Information(const double  id,
   hsize_t old_dims[ADF_MAX_DIMENSIONS];
   hsize_t new_dims[ADF_MAX_DIMENSIONS];
   void *data = NULL;
-  char old_type[3];
   char new_type[3];
 
   ADFH_DEBUG(("ADFH_Put_Dimension_Information"));
@@ -2478,7 +2492,15 @@ void ADFH_Put_Dimension_Information(const double  id,
   {
     H5Pset_deflate(mta_root->g_propdataset, CompressData);
   }
+#if 0
+  this causes a problem with memory allocation. For example,
+  writing an unstructured coordinate array of 5 billion values
+  will result in the HDF5 library trying to allocation 20Gb
+  of memory for the chunk, since the first dimension is 5 billion.
+  We really need to try to do something more intelligent here
+  
   H5Pset_chunk(mta_root->g_propdataset, dims, new_dims);
+#endif
 
   ADFH_CHECK_HID(sid);
   did = H5Dcreate2(hid, D_DATA, tid, sid,
@@ -2522,7 +2544,6 @@ void ADFH_Get_Link_Path(const double  id,
                         int    *err)
 {
   hid_t hid, did;
-  char *mntpath;
 
   ADFH_DEBUG(("ADFH_Get_Link_Path"));
 
@@ -2561,10 +2582,9 @@ void ADFH_Link(const double  pid,
                double       *id,
                int          *err)
 {
-  int refcnt, mntnum;
-  char mntname[32], *target;
+  char *target;
   herr_t status;
-  hid_t rid, gid, mid, lid;
+  hid_t lid;
 
   ADFH_DEBUG(("ADFH_Link [%s][%s][%s]",name,file,name_in_file));
 
@@ -2617,8 +2637,8 @@ void ADFH_Link(const double  pid,
   }
 
   /* save link path and file */
-  if (new_str_data(lid,D_PATH,name_in_file,strlen(name_in_file),err)) return;
-  if (*file && new_str_data(lid,D_FILE,file,strlen(file),err))        return;
+  if (new_str_data(lid,D_PATH,name_in_file,(int)strlen(name_in_file),err)) return;
+  if (*file && new_str_data(lid,D_FILE,file,(int)strlen(file),err))        return;
 
   set_error(NO_ERROR, err);
 }
@@ -2759,8 +2779,8 @@ void ADFH_Get_Error_State(int *error_state,
 /* ----------------------------------------------------------------- */
 
 void ADFH_Read_Block_Data(const double ID,
-                      const long b_start,
-                      const long b_end,
+                      const cgsize_t b_start,
+                      const cgsize_t b_end,
                       char *data,
                       int *err )
 {
@@ -2829,8 +2849,8 @@ void ADFH_Read_Block_Data(const double ID,
   if (H5Dread(did, mid, H5S_ALL, H5S_ALL, H5P_DEFAULT, buff) < 0)
     set_error(ADFH_ERR_DREAD, err);
   else {
-    offset = size * (b_start - 1);
-    count = size * (b_end - b_start + 1);
+    offset = size * (size_t)(b_start - 1);
+    count = size * (size_t)(b_end - b_start + 1);
     memcpy(data, &buff[offset], count);
     set_error(NO_ERROR, err);
   }
@@ -2845,14 +2865,14 @@ void ADFH_Read_Block_Data(const double ID,
 /* ----------------------------------------------------------------- */
 
 void ADFH_Read_Data(const double ID,
-                     const int s_start[],
-                     const int s_end[],
-                     const int s_stride[],
+                     const cgsize_t s_start[],
+                     const cgsize_t s_end[],
+                     const cgsize_t s_stride[],
                      const int m_num_dims,
-                     const int m_dims[],
-                     const int m_start[],
-                     const int m_end[],
-                     const int m_stride[],
+                     const cgsize_t m_dims[],
+                     const cgsize_t m_start[],
+                     const cgsize_t m_end[],
+                     const cgsize_t m_stride[],
                      char *data,
                      int *err )
 {
@@ -3007,7 +3027,6 @@ void ADFH_Read_All_Data(const double  id,
                         int          *err)
 {
   hid_t hid, did, tid, mid;
-  herr_t status;
 
   ADFH_DEBUG(("ADFH_Read_All_Data"));
 
@@ -3038,8 +3057,8 @@ void ADFH_Read_All_Data(const double  id,
 /* ----------------------------------------------------------------- */
 
 void ADFH_Write_Block_Data(const double ID,
-                            const long b_start,
-                            const long b_end,
+                            const cgsize_t b_start,
+                            const cgsize_t b_end,
                             char *data,
                             int *err )
 {
@@ -3108,8 +3127,8 @@ void ADFH_Write_Block_Data(const double ID,
   if (H5Dread(did, mid, H5S_ALL, H5S_ALL, H5P_DEFAULT, buff) < 0)
     set_error(ADFH_ERR_DREAD, err);
   else {
-    offset = size * (b_start - 1);
-    count = size * (b_end - b_start + 1);
+    offset = size * (size_t)(b_start - 1);
+    count = size * (size_t)(b_end - b_start + 1);
     memcpy(&buff[offset], data, count);
     if (H5Dwrite(did, mid, H5S_ALL, H5S_ALL, H5P_DEFAULT, buff) < 0)
       set_error(ADFH_ERR_DWRITE, err);
@@ -3126,14 +3145,14 @@ void ADFH_Write_Block_Data(const double ID,
 /* ----------------------------------------------------------------- */
 
 void ADFH_Write_Data(const double ID,
-                      const int s_start[],
-                      const int s_end[],
-                      const int s_stride[],
+                      const cgsize_t s_start[],
+                      const cgsize_t s_end[],
+                      const cgsize_t s_stride[],
                       const int m_num_dims,
-                      const int m_dims[],
-                      const int m_start[],
-                      const int m_end[],
-                      const int m_stride[],
+                      const cgsize_t m_dims[],
+                      const cgsize_t m_start[],
+                      const cgsize_t m_end[],
+                      const cgsize_t m_stride[],
                       const char *data,
                       int *err )
 {

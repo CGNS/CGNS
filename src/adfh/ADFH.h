@@ -5,6 +5,8 @@
 #ifndef _ADFH_H_
 #define _ADFH_H_
 
+#include "cgnstypes.h"
+
 /* some stuff needed from standard ADF.h */
 
 #ifndef ADF_INCLUDE
@@ -239,7 +241,7 @@ EXTERN	void	ADFH_Get_Data_Type(
 
 EXTERN	void	ADFH_Get_Dimension_Values(
 			const double ID,
-			int dim_vals[],
+			cglong_t dim_vals[],
 			int *error_return ) ;
 
 EXTERN	void	ADFH_Get_Error_State(
@@ -316,7 +318,7 @@ EXTERN	void	ADFH_Put_Dimension_Information(
 			const double ID,
 			const char *data_type,
 			const int dims,
-			const int dim_vals[],
+			const cgsize_t dim_vals[],
 			int *error_return ) ;
 
 EXTERN	void	ADFH_Put_Name(
@@ -332,21 +334,21 @@ EXTERN	void	ADFH_Read_All_Data(
 
 EXTERN	void	ADFH_Read_Block_Data(
 			const double ID,
-			const long b_start,
-			const long b_end,
+			const cgsize_t b_start,
+			const cgsize_t b_end,
 			char *data,
 			int *error_return ) ;
 
 EXTERN	void	ADFH_Read_Data(
 			const double ID,
-			const int s_start[],
-			const int s_end[],
-			const int s_stride[],
+			const cgsize_t s_start[],
+			const cgsize_t s_end[],
+			const cgsize_t s_stride[],
 			const int m_num_dims,
-			const int m_dims[],
-			const int m_start[],
-			const int m_end[],
-			const int m_stride[],
+			const cgsize_t m_dims[],
+			const cgsize_t m_start[],
+			const cgsize_t m_end[],
+			const cgsize_t m_stride[],
 			char *data,
 			int *error_return ) ;
 
@@ -366,21 +368,21 @@ EXTERN	void	ADFH_Write_All_Data(
 
 EXTERN	void	ADFH_Write_Block_Data(
 			const double ID,
-			const long b_start,
-			const long b_end,
+			const cgsize_t b_start,
+			const cgsize_t b_end,
 			char *data,
 			int *error_return ) ;
 
 EXTERN	void	ADFH_Write_Data(
 			const double ID,
-			const int s_start[],
-			const int s_end[],
-			const int s_stride[],
+			const cgsize_t s_start[],
+			const cgsize_t s_end[],
+			const cgsize_t s_stride[],
 			const int m_num_dims,
-			const int m_dims[],
-			const int m_start[],
-			const int m_end[],
-			const int m_stride[],
+			const cgsize_t m_dims[],
+			const cgsize_t m_start[],
+			const cgsize_t m_end[],
+			const cgsize_t m_stride[],
 			const char *data,
 			int *error_return ) ;
 
