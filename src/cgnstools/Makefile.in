@@ -2,47 +2,41 @@
 
 include make.defs
 
+DOMAKE=$(MAKE) -f Makefile.unix
+
 # if OGL was not found, cgnsplot will not be included in the
 # default build, otherwise this target is the same as for all
 
 default : @PROGLIST@
 install : @INSTLIST@
 
-all : cgnsview cgnscalc cgnsplot cgnssh tools utilities
+all : cgnsview cgnscalc cgnsplot tools utilities
 install-all : install-cgnsview install-cgnscalc install-cgnsplot \
-	      install-cgnssh install-tools install-utilities
+	      install-tools install-utilities
 
 clean :
-	@for d in cgnsview cgnscalc cgnsplot cgnssh tools utilities calclib tkogl ; do \
+	@for d in cgnsview cgnscalc cgnsplot tools utilities calclib tkogl ; do \
 	  echo "----- $$d -----"; \
-	  cd $$d; $(MAKE) clean; cd ..; \
+	  cd $$d; $(DOMAKE) clean; cd ..; \
 	done;
 
 distclean : clean
 	-@$(RM) config.*
 	-@$(RM) make.defs Makefile cgconfig
-	-@$(RM) make.defs.bak Makefile.bak cgconfig.bak
-	-@$(RM) calclib/Makefile cgnscalc/Makefile cgnsplot/Makefile
-	-@$(RM) cgnssh/Makefile cgnsview/Makefile tkogl/Makefile
-	-@$(RM) tools/Makefile utilities/Makefile
 
 cgnsview  : prog-cgnsview
 cgnscalc  : prog-cgnscalc
 cgnsplot  : prog-cgnsplot
-cgnssh    : prog-cgnssh
 tools	  : prog-tools
 utilities : prog-utilities
 
 uninstall :
-	@for d in cgnsview cgnscalc cgnsplot cgnssh tools utilities ; do \
+	@for d in cgnsview cgnscalc cgnsplot tools utilities ; do \
 	  echo "----- $$d -----"; \
-	  cd $$d; $(MAKE) uninstall; cd ..; \
+	  cd $$d; $(DOMAKE) uninstall; cd ..; \
 	done;
 	@if [ -f $(EXE_INSTALL_DIR)/cgconfig ] ; then \
 	  /bin/rm -f $(EXE_INSTALL_DIR)/cgconfig; \
-	fi;
-	@if [ -f $(EXE_INSTALL_DIR)/cgsystem ] ; then \
-	  /bin/rm -f $(EXE_INSTALL_DIR)/cgsystem; \
 	fi;
 	-@if [ -d $(WSH_INSTALL_DIR) ] ; then \
 	  rmdir $(WSH_INSTALL_DIR); \
@@ -60,57 +54,49 @@ uninstall :
 
 prog-cgnsview :
 	@echo "----- cgnsview -----"
-	@cd cgnsview && $(MAKE)
+	@cd cgnsview && $(DOMAKE)
 
 prog-cgnscalc : lib-calclib
 	@echo "----- cgnscalc -----"
-	@cd cgnscalc && $(MAKE)
+	@cd cgnscalc && $(DOMAKE)
 
 prog-cgnsplot : lib-tkogl
 	@echo "----- cgnsplot -----"
-	@cd cgnsplot && $(MAKE)
-
-prog-cgnssh :
-	@echo "----- cgnssh -----"
-	@cd cgnssh && $(MAKE)
+	@cd cgnsplot && $(DOMAKE)
 
 prog-tools :
 	@echo "----- tools -----"
-	@cd tools && $(MAKE)
+	@cd tools && $(DOMAKE)
 
 prog-utilities : lib-calclib
 	@echo "----- utilities -----"
-	@cd utilities && $(MAKE)
+	@cd utilities && $(DOMAKE)
 
 lib-calclib :
 	@echo "----- calclib -----"
-	@cd calclib && $(MAKE)
+	@cd calclib && $(DOMAKE)
 
 lib-tkogl :
 	@echo "----- tkogl -----"
-	@cd tkogl && $(MAKE)
+	@cd tkogl && $(DOMAKE)
 
 install-cgnsview :
 	@echo "----- cgnsview -----"
-	@cd cgnsview && $(MAKE) install
+	@cd cgnsview && $(DOMAKE) install
 
 install-cgnscalc : lib-calclib
 	@echo "----- cgnscalc -----"
-	@cd cgnscalc && $(MAKE) install
+	@cd cgnscalc && $(DOMAKE) install
 
 install-cgnsplot : lib-tkogl
 	@echo "----- cgnsplot -----"
-	@cd cgnsplot && $(MAKE) install
-
-install-cgnssh :
-	@echo "----- cgnssh -----"
-	@cd cgnssh && $(MAKE) install
+	@cd cgnsplot && $(DOMAKE) install
 
 install-tools :
 	@echo "----- tools -----"
-	@cd tools && $(MAKE) install
+	@cd tools && $(DOMAKE) install
 
 install-utilities : lib-calclib
 	@echo "----- utilities -----"
-	@cd utilities && $(MAKE) install
+	@cd utilities && $(DOMAKE) install
 

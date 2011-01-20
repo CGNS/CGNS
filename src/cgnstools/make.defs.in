@@ -1,77 +1,23 @@
 @SET_MAKE@
 
-SYSTEM = @SYSTEM@
 CGNSDIR = @CGNSDIR@
 
+include $(CGNSDIR)/make.system
 include $(CGNSDIR)/make.$(SYSTEM)
 
 CGNSLIB  = $(CGNSDIR)/$(LIBCGNS)
 
-#------------------------------------------------------------------------
-# O   - object file extension (typicaly o)
-# A   - library file extension (typically a)
-# EXE - executable extension (typically blank)
-#------------------------------------------------------------------------
-
-O   = @OBJEXT@
-A   = @LIBEXT@
-EXE = @EXEEXT@
-
-#------------------------------------------------------------------------
-# CC      - C compiler
-# CFLAGS  - compiler flags
-# LDFLAGS - any additional linking flags
-# CLIBS   - any additional libraries needed to link a CGNS application
-#------------------------------------------------------------------------
-
-CC      = @CC@
-CFLAGS  = @CFLAGS@ @SYSCFLAGS@
-LDFLAGS = @LDFLAGS@
-CLIBS   = @LIBS@
-
-#------------------------------------------------------------------------
-# strip command for executables - set to true if not used
-#------------------------------------------------------------------------
-
-STRIP = @STRIP@
-
-#------------------------------------------------------------------------
-# library archiver and ranlib
-# AROUT may be used to set a library output flag as:
-#    $(AR) $(AROUT)library_name objects
-# Set RANLIB to true if not used
-#------------------------------------------------------------------------
-
-AR     = @AR@
-AROUT  = @AROUT@
-RANLIB = @RANLIB@
-
-#------------------------------------------------------------------------
-# commands for removing files and creating/deleting directory
-#------------------------------------------------------------------------
-
-RM     = /bin/rm -f
-RMDIR  = /bin/rm -rf
-MKDIR  = mkdir
-
 #-----------------------------------------------------------------------
-# installation command and directories
-# INSTALL         - install command
-# INSTALL_PROG    - install executable
-# INSTALL_DATA    - install data
+# installation directories
 # BIN_INSTALL_DIR - installation directory for shell script
 # EXE_INSTALL_DIR - installation directory for executables
 # WSH_INSTALL_DIR - installation directory for cgns wish executables
 # LIB_INSTALL_DIR - installation directory for tcl scripts
 #-----------------------------------------------------------------------
 
-INSTALL      = @INSTALL@
-INSTALL_PROG = @INSTALL_PROGRAM@
-INSTALL_DATA = @INSTALL_DATA@
-
 BIN_INSTALL_DIR = @BIN_INSTALL_DIR@
 EXE_INSTALL_DIR = @EXE_INSTALL_DIR@
-WSH_INSTALL_DIR = $(EXE_INSTALL_DIR)/cgnswish
+WSH_INSTALL_DIR = $(EXE_INSTALL_DIR)
 LIB_INSTALL_DIR = @LIB_INSTALL_DIR@
 
 #-----------------------------------------------------------------------

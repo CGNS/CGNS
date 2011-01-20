@@ -1,7 +1,3 @@
-# configuration file for cgnstools
-
-CG_SYSTEM=@SYSTEM@; export CG_SYSTEM
-
 #---------------------------------------------------------------------
 # this is where the executables and tcl scripts
 # may be found after installation
