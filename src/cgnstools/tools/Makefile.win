@@ -1,6 +1,6 @@
 include ..\make.win
 
-CFLAGS = $(COPTS) -I..\common -I$(CGNSDIR)
+COPTS = $(CFLAGS) -I..\common -I$(CGNSDIR)
 LDLIST = $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
 #--------------------------------------------------
@@ -41,16 +41,19 @@ cgnsversion.c : $(CGNSDIR)\tools\cgnsversion.c
 #---------------------------------------------------------------
 
 getargs.obj : ..\common\getargs.c ..\common\getargs.h
-	$(CC) $(CFLAGS) -Fogetargs.obj -c ..\common\getargs.c
+	$(CC) $(COPTS) -Fogetargs.obj -c ..\common\getargs.c
 
 hash.obj : ..\common\hash.c ..\common\hash.h
-	$(CC) $(CFLAGS) -Fohash.obj -c ..\common\hash.c
+	$(CC) $(COPTS) -Fohash.obj -c ..\common\hash.c
 
 #---------------------------------------------------------------
 
-install : cgnscheck.exe cgnsversion.exe $(INSTALLDIR)
-	-$(INSTALL) cgnscheck.exe $(INSTALLDIR)
-	-$(INSTALL) cgnsversion.exe $(INSTALLDIR)
+install : cgnscheck.exe cgnsversion.exe $(BINDIR)
+	-$(INSTALL) cgnscheck.exe $(BINDIR)
+	-$(INSTALL) cgnsversion.exe $(BINDIR)
+
+$(BINDIR) : $(INSTALLDIR)
+	-mkdir $(BINDIR)
 
 $(INSTALLDIR) :
 	-mkdir $(INSTALLDIR)
@@ -59,7 +62,7 @@ $(INSTALLDIR) :
 #--------------------------------------------------
 
 .c.obj :
-	$(CC) $(CFLAGS) -Fo$@ -c $<
+	$(CC) $(COPTS) -Fo$@ -c $<
 
 .obj.exe :
 	$(LINK) $(LFLAGS) /out:$@ $< $(LDLIST)

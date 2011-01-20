@@ -55,26 +55,26 @@ hash.$(O) : ../common/hash.c ../common/hash.h
 install : install-dirs install-prog
 
 install-dirs :
-	@if [ ! -d $(EXE_INSTALL_DIR) ] ; then \
-	  echo "Making directory $(EXE_INSTALL_DIR)"; \
-	  mkdir -p $(EXE_INSTALL_DIR); \
-	  chmod 755 $(EXE_INSTALL_DIR); \
+	@if [ ! -d $(BIN_INSTALL_DIR) ] ; then \
+	  echo "Making directory $(BIN_INSTALL_DIR)"; \
+	  mkdir -p $(BIN_INSTALL_DIR); \
+	  chmod 755 $(BIN_INSTALL_DIR); \
 	fi;
 
 install-prog : cgnscheck$(EXE) cgnsversion$(EXE)
-	@echo "installing cgnscheck$(EXE) to $(EXE_INSTALL_DIR)"
-	@$(INSTALL_PROG) cgnscheck$(EXE) $(EXE_INSTALL_DIR)
-	@echo "installing cgnsversion$(EXE) to $(EXE_INSTALL_DIR)"
-	@$(INSTALL_PROG) cgnsversion$(EXE) $(EXE_INSTALL_DIR)
+	@echo "installing cgnscheck$(EXE) to $(BIN_INSTALL_DIR)"
+	@$(INSTALL_PROG) cgnscheck$(EXE) $(BIN_INSTALL_DIR)
+	@echo "installing cgnsversion$(EXE) to $(BIN_INSTALL_DIR)"
+	@$(INSTALL_PROG) cgnsversion$(EXE) $(BIN_INSTALL_DIR)
 
 uninstall :
 	@echo "uninstalling cgnscheck$(EXE)"
-	@if [ -f $(EXE_INSTALL_DIR)/cgnscheck$(EXE) ] ; then \
-	  /bin/rm -f $(EXE_INSTALL_DIR)/cgnscheck$(EXE); \
+	@if [ -f $(BIN_INSTALL_DIR)/cgnscheck$(EXE) ] ; then \
+	  /bin/rm -f $(BIN_INSTALL_DIR)/cgnscheck$(EXE); \
 	fi;
 	@echo "uninstalling cgnsversion$(EXE)"
-	@if [ -f $(EXE_INSTALL_DIR)/cgnsversion$(EXE) ] ; then \
-	  /bin/rm -f $(EXE_INSTALL_DIR)/cgnsversion$(EXE); \
+	@if [ -f $(BIN_INSTALL_DIR)/cgnsversion$(EXE) ] ; then \
+	  /bin/rm -f $(BIN_INSTALL_DIR)/cgnsversion$(EXE); \
 	fi;
 
 #---------------------------------------------------------------
