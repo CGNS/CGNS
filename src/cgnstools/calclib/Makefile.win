@@ -2,7 +2,7 @@ include ..\make.win
 
 CALCLIB = cgnscalc.lib
 
-CFLAGS = $(COPTS) -I$(CGNSDIR)
+COPTS = $(CFLAGS) -I$(CGNSDIR)
 
 READ_NODE = -DREAD_NODE
 
@@ -27,12 +27,12 @@ calctest.obj : calctest.c
 #--------------------------------------------------
 
 vec.obj	   : vec.c vec.h vecsym.h vecerr.h
-	$(CC) $(CFLAGS) $(MATHERR) -c vec.c
+	$(CC) $(COPTS) $(MATHERR) -c vec.c
 
 vecsym.obj : vecsym.c vec.h vecsym.h
 
 calc.obj   : calc.c calc.h vecerr.h
-	$(CC) $(CFLAGS) $(READ_NODE) -c calc.c
+	$(CC) $(COPTS) $(READ_NODE) -c calc.c
 
 calc.h	   : vecsym.h
 vecsym.h   : vec.h
@@ -40,7 +40,7 @@ vecsym.h   : vec.h
 #--------------------------------------------------
 
 .c.obj :
-	$(CC) $(CFLAGS) -Fo$@ -c $<
+	$(CC) $(COPTS) -Fo$@ -c $<
 
 clean:
 	-$(RM) *.obj

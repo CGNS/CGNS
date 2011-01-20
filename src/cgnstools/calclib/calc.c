@@ -22,6 +22,19 @@
 #include "cgns_io.h"
 #endif
 
+#ifndef CGNSTYPES_H
+# define cgsize_t  int
+# define cglong_t  long
+# define cgulong_t unsigned long
+#endif
+#ifndef CGNS_ENUMT
+# define CGNS_ENUMT(e) e
+# define CGNS_ENUMV(e) e
+#endif
+#ifndef CG_MAX_INT32
+# define CG_MAX_INT32 0x7FFFFFFF
+#endif
+
 int cgnsFile = 0;
 
 /*--- base data ---*/
@@ -77,33 +90,33 @@ typedef struct {
 } UnitSpec;
 
 static UnitSpec unitspec[] = {
-    {"cel", 3, Celsius},
-    {"cen", 1, Centimeter},
-    {"cm",  1, Centimeter},
-    {"c",   3, Celsius},
-    {"d",   4, Degree},
-    {"fa",  3, Fahrenheit},
-    {"fo",  1, Foot},
-    {"ft",  1, Foot},
-    {"f",   3, Fahrenheit},
-    {"g",   0, Gram},
-    {"in",  1, Inch},
-    {"ke",  3, Kelvin},
-    {"ki",  0, Kilogram},
-    {"kg",  0, Kilogram},
-    {"k",   3, Kelvin},
-    {"lb",  0, PoundMass},
-    {"me",  1, Meter},
-    {"mi",  1, Millimeter},
-    {"mm",  1, Millimeter},
-    {"m",   1, Meter},
-    {"p",   0, PoundMass},
-    {"rad", 4, Radian},
-    {"ran", 3, Rankine},
-    {"r",   3, Rankine},
-    {"se",  2, Second},
-    {"sl",  0, Slug},
-    {"s",   2, Second}
+    {"cel", 3, CGNS_ENUMV(Celsius}),
+    {"cen", 1, CGNS_ENUMV(Centimeter}),
+    {"cm",  1, CGNS_ENUMV(Centimeter}),
+    {"c",   3, CGNS_ENUMV(Celsius}),
+    {"d",   4, CGNS_ENUMV(Degree}),
+    {"fa",  3, CGNS_ENUMV(Fahrenheit}),
+    {"fo",  1, CGNS_ENUMV(Foot}),
+    {"ft",  1, CGNS_ENUMV(Foot}),
+    {"f",   3, CGNS_ENUMV(Fahrenheit}),
+    {"g",   0, CGNS_ENUMV(Gram}),
+    {"in",  1, CGNS_ENUMV(Inch}),
+    {"ke",  3, CGNS_ENUMV(Kelvin}),
+    {"ki",  0, CGNS_ENUMV(Kilogram}),
+    {"kg",  0, CGNS_ENUMV(Kilogram}),
+    {"k",   3, CGNS_ENUMV(Kelvin}),
+    {"lb",  0, CGNS_ENUMV(PoundMass}),
+    {"me",  1, CGNS_ENUMV(Meter}),
+    {"mi",  1, CGNS_ENUMV(Millimeter}),
+    {"mm",  1, CGNS_ENUMV(Millimeter}),
+    {"m",   1, CGNS_ENUMV(Meter}),
+    {"p",   0, CGNS_ENUMV(PoundMass}),
+    {"rad", 4, CGNS_ENUMV(Radian}),
+    {"ran", 3, CGNS_ENUMV(Rankine}),
+    {"r",   3, CGNS_ENUMV(Rankine}),
+    {"se",  2, CGNS_ENUMV(Second}),
+    {"sl",  0, CGNS_ENUMV(Slug}),
+    {"s",   2, CGNS_ENUMV(Second})
 };
 
 #define NUM_UNITSPEC (sizeof(unitspec)/sizeof(UnitSpec))
@@ -114,17 +127,12 @@ static UnitSpec unitspec[] = {
 
 #ifdef READ_NODE
 
-static VECDATA *read_node (
-#ifdef PROTOTYPE
-    char *nodename)
-#else
-    nodename)
-char *nodename;
-#endif
+static VECDATA *read_node (char *nodename)
 {
     cgns_file *cgfile;
-    int n, np, bytes, dt, cgio;
-    int ndim, dims[CGIO_MAX_DIMENSIONS];
+    int n, bytes, dt, cgio;
+    int ndim;
+    cgsize_t np, dims[CGIO_MAX_DIMENSIONS];
     char *values;
     char type[CGIO_MAX_DATATYPE_LENGTH+1];
     char errmsg[CGIO_MAX_ERROR_LENGTH+1];
@@ -188,10 +196,12 @@ char *nodename;
     }
     if (np == 0)
         cgnsCalcFatal ("no data for node");
+    if (np > CG_MAX_INT32)
+        cgnsCalcFatal ("exceeded 32-bit integer");
 
     /* read the data */
 
-    values = (char *) malloc ((unsigned)np * (unsigned)bytes);
+    values = (char *) malloc ((size_t)(np * bytes));
     if (NULL == values)
         cgnsCalcFatal ("malloc failed for node data");
 
@@ -204,60 +214,60 @@ char *nodename;
         vd = vec_create (VEC_VALUE, 0, 1);
         if (dt == 0) {
             int *data = (int *)values;
-            vd->f.val = *data;
+            vd->f.val = (VECFLOAT)*data;
         }
         else if (dt == 1) {
-            long *data = (long *)values;
-            vd->f.val = *data;
+            cglong_t *data = (cglong_t *)values;
+            vd->f.val = (VECFLOAT)*data;
         }
         else if (dt == 2) {
             unsigned int *data = (unsigned int *)values;
-            vd->f.val = *data;
+            vd->f.val = (VECFLOAT)*data;
         }
         else if (dt == 3) {
-            unsigned long *data = (unsigned long *)values;
-            vd->f.val = *data;
+            cgulong_t *data = (cgulong_t *)values;
+            vd->f.val = (VECFLOAT)*data;
         }
         else if (dt == 4) {
             float *data = (float *)values;
-            vd->f.val = *data;
+            vd->f.val = (VECFLOAT)*data;
         }
         else {
             double *data = (double *)values;
-            vd->f.val = *data;
+            vd->f.val = (VECFLOAT)*data;
         }
     }
     else {
-        vd = vec_create (VEC_VECTOR, np, 1);
+        vd = vec_create (VEC_VECTOR, (int)np, 1);
         if (dt == 0) {
             int *data = (int *)values;
             for (n = 0; n < np; n++)
-                vd->f.vec[n] = data[n];
+                vd->f.vec[n] = (VECFLOAT)data[n];
         }
         else if (dt == 1) {
-            long *data = (long *)values;
+            cglong_t *data = (cglong_t *)values;
             for (n = 0; n < np; n++)
-                vd->f.vec[n] = data[n];
+                vd->f.vec[n] = (VECFLOAT)data[n];
         }
         else if (dt == 2) {
             unsigned int *data = (unsigned int *)values;
             for (n = 0; n < np; n++)
-                vd->f.vec[n] = data[n];
+                vd->f.vec[n] = (VECFLOAT)data[n];
         }
         else if (dt == 3) {
-            unsigned long *data = (unsigned long *)values;
+            cgulong_t *data = (cgulong_t *)values;
             for (n = 0; n < np; n++)
-                vd->f.vec[n] = data[n];
+                vd->f.vec[n] = (VECFLOAT)data[n];
         }
         else if (dt == 4) {
             float *data = (float *)values;
             for (n = 0; n < np; n++)
-                vd->f.vec[n] = data[n];
+                vd->f.vec[n] = (VECFLOAT)data[n];
         }
         else {
             double *data = (double *)values;
             for (n = 0; n < np; n++)
-                vd->f.vec[n] = data[n];
+                vd->f.vec[n] = (VECFLOAT)data[n];
         }
     }
 
@@ -271,20 +281,14 @@ char *nodename;
  * read unit specifications
  *---------------------------------------------------------------------*/
 
-static int read_units (
-#ifdef PROTOTYPE
-    int units[5])
-#else
-    units)
-int units[5];
-#endif
+static int read_units (int units[5])
 {
     int n;
-    MassUnits_t mass;
-    LengthUnits_t length;
-    TimeUnits_t time;
-    TemperatureUnits_t temp;
-    AngleUnits_t angle;
+    CGNS_ENUMT(MassUnits_t) mass;
+    CGNS_ENUMT(LengthUnits_t) length;
+    CGNS_ENUMT(TimeUnits_t) time;
+    CGNS_ENUMT(TemperatureUnits_t) temp;
+    CGNS_ENUMT(AngleUnits_t) angle;
 
     if (cg_units_read (&mass, &length, &time, &temp, &angle)) {
         for (n = 0; n < 5; n++)
@@ -303,19 +307,12 @@ int units[5];
  * get data class, units and conversion factors
  *---------------------------------------------------------------------*/
 
-static void read_class (
-#ifdef PROTOTYPE
-    Variable *var, int dataclass, int units[5])
-#else
-    var, dataclass, units)
-Variable *var;
-int dataclass, units[5];
-#endif
+static void read_class (Variable *var, int dataclass, int units[5])
 {
     int i;
-    DataType_t datatype;
+    CGNS_ENUMT(DataType_t) datatype;
 
-    if (cg_dataclass_read ((DataClass_t *)&var->dataclass))
+    if (cg_dataclass_read ((CGNS_ENUMT(DataClass_t) *)&var->dataclass))
         var->dataclass = dataclass;
     var->hasunits = read_units (var->units);
     if (!var->hasunits) {
@@ -323,14 +320,14 @@ int dataclass, units[5];
             var->units[i] = units[i];
     }
     if (cg_conversion_info (&datatype) ||
-       (datatype != RealSingle && datatype != RealDouble)) {
+       (datatype != CGNS_ENUMV(RealSingle) && datatype != CGNS_ENUMV(RealDouble))) {
         var->hasconv = 0;
         var->dataconv[0] = 1.0;
         var->dataconv[1] = 0.0;
     }
     else {
         var->hasconv = datatype;
-        if (datatype == RealSingle) {
+        if (datatype == CGNS_ENUMV(RealSingle)) {
             float conv[2];
             if (cg_conversion_read (conv))
                 cgnsCalcFatal ((char *)cg_get_error());
@@ -343,14 +340,14 @@ int dataclass, units[5];
         }
     }
     if (cg_exponents_info (&datatype) ||
-       (datatype != RealSingle && datatype != RealDouble)) {
+       (datatype != CGNS_ENUMV(RealSingle) && datatype != CGNS_ENUMV(RealDouble))) {
         var->hasexp = 0;
         for (i = 0; i < 5; i++)
             var->exponent[i] = 0.0;
     }
     else {
         var->hasexp = datatype;
-        if (datatype == RealSingle) {
+        if (datatype == CGNS_ENUMV(RealSingle)) {
             float exp[5];
             if (cg_exponents_read (exp))
                 cgnsCalcFatal ((char *)cg_get_error());
@@ -368,13 +365,11 @@ int dataclass, units[5];
  * read reference conditions
  *----------------------------------------------------------------------*/
 
-static void read_reference (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-    int n, narrays, na, dim, vec;
-    DataType_t datatype;
+static void read_reference (void)
+{
+    int n, narrays, na, dim;
+    cgsize_t vec[12];
+    CGNS_ENUMT(DataType_t) datatype;
     char name[33];
 
     NumReference = 0;
@@ -382,9 +377,9 @@ static void read_reference (
         cg_narrays (&narrays) || narrays < 1)
         return;
     for (na = 1; na <= narrays; na++) {
-        if (cg_array_info (na, name, &datatype, &dim, &vec))
+        if (cg_array_info (na, name, &datatype, &dim, vec))
             cgnsCalcFatal ((char *)cg_get_error());
-        if (datatype != Character && dim >= 1 && vec >= 1)
+        if (datatype != CGNS_ENUMV(Character) && dim >= 1 && vec[0] >= 1)
             NumReference++;
     }
     if (!NumReference) return;
@@ -393,10 +388,10 @@ static void read_reference (
         cgnsCalcFatal ("malloc failed for reference variables");
 
     for (n = 0, na = 1; na <= narrays; na++) {
-        if (cg_array_info (na, name, &datatype, &dim, &vec))
+        if (cg_array_info (na, name, &datatype, &dim, vec))
             cgnsCalcFatal ((char *)cg_get_error());
-        if (datatype != Character && dim >= 1 && vec >= 1) {
-            dim *= vec;
+        if (datatype != CGNS_ENUMV(Character) && dim >= 1 && vec[0] >= 1) {
+            dim *= vec[0];
             strcpy (reference[n].name, name);
             reference[n].type = 0;
             reference[n].id = na;
@@ -405,12 +400,12 @@ static void read_reference (
             reference[n].datatype = datatype;
             if (dim == 1) {
                 reference[n].vd = vec_create (VEC_VALUE, 0, 0);
-                if (cg_array_read_as (na, RealDouble, &reference[n].vd->f.val))
+                if (cg_array_read_as (na, CGNS_ENUMV(RealDouble), &reference[n].vd->f.val))
                     cgnsCalcFatal ((char *)cg_get_error());
             }
             else {
                 reference[n].vd = vec_create (VEC_VECTOR, dim, 0);
-                if (cg_array_read_as (na, RealDouble, reference[n].vd->f.vec))
+                if (cg_array_read_as (na, CGNS_ENUMV(RealDouble), reference[n].vd->f.vec))
                     cgnsCalcFatal ((char *)cg_get_error());
             }
             if (cg_goto (cgnsFile, cgnsBase, "ReferenceState_t", 1,
@@ -427,23 +422,18 @@ static void read_reference (
  * return variable data - read if neccessary
  *----------------------------------------------------------------------*/
 
-static VECDATA *get_variable (
-#ifdef PROTOTYPE
-    Variable *var)
-#else
-    var)
-Variable *var;
-#endif
+static VECDATA *get_variable (Variable *var)
 {
     if (var->vd == NULL) {
-        int n, min[3], max[3];
+        int n;
+        cgsize_t min[3], max[3];
         for (n = 0; n < 3; n++) {
             min[n] = 1;
             max[n] = SolnDims[n];
         }
         var->vd = vec_create (VEC_VECTOR, var->len, 0);
         if (cg_field_read (cgnsFile, cgnsBase, cgnsZone, cgnsSoln,
-            var->name, RealDouble, min, max, var->vd->f.vec))
+            var->name, CGNS_ENUMV(RealDouble), min, max, var->vd->f.vec))
             cgnsCalcFatal ((char *)cg_get_error());
     }
     return var->vd;
@@ -453,23 +443,18 @@ Variable *var;
  * return coordinate data - read if neccessary
  *----------------------------------------------------------------------*/
 
-static VECDATA *get_coordinate (
-#ifdef PROTOTYPE
-    Variable *var)
-#else
-    var)
-Variable *var;
-#endif
+static VECDATA *get_coordinate (Variable *var)
 {
     if (var->vd == NULL) {
-        int n, min[3], max[3];
+        int n;
+        cgsize_t min[3], max[3];
         for (n = 0; n < 3; n++) {
             min[n] = 1;
             max[n] = ZoneDims[n];
         }
         var->vd = vec_create (VEC_VECTOR, var->len, 0);
         if (cg_coord_read (cgnsFile, cgnsBase, cgnsZone,
-            var->name, RealDouble, min, max, var->vd->f.vec))
+            var->name, CGNS_ENUMV(RealDouble), min, max, var->vd->f.vec))
             cgnsCalcFatal ((char *)cg_get_error());
     }
     return var->vd;
@@ -479,14 +464,7 @@ Variable *var;
  * print error message on parsing error
  *--------------------------------------------------------------------*/
 
-static void print_error (
-#ifdef PROTOTYPE
-    int errnum, char *errmsg, int pos, char *str)
-#else
-    errnum, errmsg, pos, str)
-int errnum, pos;
-char *errmsg, *str;
-#endif
+static void print_error (int errnum, char *errmsg, int pos, char *str)
 {
     printf (errnum < 0 ? "FATAL:" : "ERROR:");
     if (NULL != str) {
@@ -502,13 +480,7 @@ char *errmsg, *str;
  * get symbol name from string
  *-------------------------------------------------------------------*/
 
-static char *get_name (
-#ifdef PROTOTYPE
-    char **str)
-#else
-    str)
-char **str;
-#endif
+static char *get_name (char **str)
 {
     int n;
     char *p = *str;
@@ -538,17 +510,10 @@ char **str;
  * print symbol names
  *-------------------------------------------------------------------*/
 
-static int print_symbols (
-#ifdef PROTOTYPE
-    VECSYM *sym, void *data)
+static int print_symbols (VECSYM *sym, void *data)
 {
-FILE *fp = (FILE *)data;
-#else
-    sym, fp)
-VECSYM *sym;
-FILE *fp;
-{
-#endif
+    FILE *fp = (FILE *)data;
+
     if (VECSYM_EQUSTR == vecsym_type(sym))
         fprintf (fp, "%s{%d}\n", vecsym_name(sym), vecsym_nargs(sym));
     else if (VECSYM_MACRO  == vecsym_type(sym))
@@ -560,7 +525,7 @@ FILE *fp;
             fprintf (fp, "%s(%d)\n", vecsym_name(sym), vecsym_nargs(sym));
     }
     else if (VECSYM_VECTOR == vecsym_type(sym))
-        fprintf (fp, "%s[%d]\n", vecsym_name(sym), vecsym_veclen(sym));
+        fprintf (fp, "%s[%ld]\n", vecsym_name(sym), (long)vecsym_veclen(sym));
     else
         fprintf (fp, "%s\n", vecsym_name(sym));
     return 0;
@@ -570,13 +535,7 @@ FILE *fp;
  * called when symbol deleted
  *-------------------------------------------------------------------*/
 
-static void delete_units (
-#ifdef PROTOTYPE
-    VECSYM *sym)
-#else
-    sym)
-VECSYM *sym;
-#endif
+static void delete_units (VECSYM *sym)
 {
     if (vecsym_user(sym) != NULL)
         free (vecsym_user(sym));
@@ -586,14 +545,7 @@ VECSYM *sym;
  * callback function for vector parser
  *-------------------------------------------------------------------*/
 
-static VECDATA *callback (
-#ifdef PROTOTYPE
-    int check, char **pp, char **err)
-#else
-    check, pp, err)
-int check;
-char **pp, **err;
-#endif
+static VECDATA *callback (int check, char **pp, char **err)
 {
     int n, type = 0;
     char *p = *pp, *name;
@@ -670,13 +622,7 @@ char **pp, **err;
  * get unit specification
  *------------------------------------------------------------------*/
 
-static Units *parse_units (
-#ifdef PROTOTYPE
-    char **pp)
-#else
-    pp)
-char **pp;
-#endif
+static Units *parse_units (char **pp)
 {
     int n, par, div;
     char *p = *pp, name[33];
@@ -764,11 +710,8 @@ char **pp;
  * free all data
  *------------------------------------------------------------------*/
 
-static void free_all (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+static void free_all (void)
+{
     int n;
 
     if (NumReference) {
@@ -795,13 +738,7 @@ static void free_all (
  * terminate with error message
  *------------------------------------------------------------------*/
 
-void cgnsCalcFatal (
-#ifdef PROTOTYPE
-    char *errmsg)
-#else
-    errmsg)
-char *errmsg;
-#endif
+void cgnsCalcFatal (char *errmsg)
 {
     cgnsCalcDone ();
     if (NULL != errmsg && *errmsg) {
@@ -817,13 +754,7 @@ char *errmsg;
  * print error message
  *------------------------------------------------------------------*/
 
-void cgnsCalcError (
-#ifdef PROTOTYPE
-    char *errmsg)
-#else
-    errmsg)
-char *errmsg;
-#endif
+void cgnsCalcError (char *errmsg)
 {
     if (NULL != errmsg && *errmsg) {
         if (NULL == vec_errhandler)
@@ -837,11 +768,8 @@ char *errmsg;
  * reset calculator (symbol table)
  *------------------------------------------------------------------*/
 
-void cgnsCalcReset (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+void cgnsCalcReset (void)
+{
     sym_free ();
 #ifdef EXTERN_FUNCS
     add_funcs ();
@@ -853,15 +781,8 @@ void cgnsCalcReset (
  * load CGNS file and initialize
  *------------------------------------------------------------------*/
 
-int cgnsCalcInit (
-#ifdef PROTOTYPE
-    char *cgnsfile, int modify, void (*errhandler)(int,char *,int,char *))
-#else
-    cgnsfile, modify, errhandler)
-char *cgnsfile;
-int modify;
-void (*errhandler);
-#endif
+int cgnsCalcInit (char *cgnsfile, int modify,
+                  void (*errhandler)(int,char *,int,char *))
 {
     cgnsCalcDone ();
 
@@ -902,11 +823,8 @@ void (*errhandler);
  * close CGNS file
  *------------------------------------------------------------------*/
 
-void cgnsCalcDone (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+void cgnsCalcDone (void)
+{
     if (cgnsFile) {
         cg_close (cgnsFile);
         cgnsFile = 0;
@@ -921,13 +839,7 @@ void cgnsCalcDone (
  * set base for calculations
  *------------------------------------------------------------------*/
 
-int cgnsCalcBase (
-#ifdef PROTOTYPE
-    int base)
-#else
-    base)
-int base;
-#endif
+int cgnsCalcBase (int base)
 {
     if (base < 1 || base > NumBases)
         cgnsCalcFatal ("invalid base specified");
@@ -942,7 +854,7 @@ int base;
 
     if (cg_goto (cgnsFile, cgnsBase, "end"))
         cgnsCalcFatal ((char *)cg_get_error());
-    if (cg_dataclass_read ((DataClass_t *)&BaseClass))
+    if (cg_dataclass_read ((CGNS_ENUMT(DataClass_t) *)&BaseClass))
         BaseClass = 0;
     read_units (BaseUnits);
 
@@ -963,37 +875,31 @@ int base;
  * set zone for calculations
  *------------------------------------------------------------------*/
 
-int cgnsCalcZone (
-#ifdef PROTOTYPE
-    int zone)
-#else
-    zone)
-int zone;
-#endif
+int cgnsCalcZone (int zone)
 {
-    int n, nc, size, dims[9];
-    DataType_t datatype;
+    int n, nc, size = 1;
+    cgsize_t dims[9];
+    CGNS_ENUMT(DataType_t) datatype;
     char name[33];
 
     if (zone < 1 || zone > NumZones)
         cgnsCalcFatal ("invalid zone specified");
     if (cg_zone_read (cgnsFile, cgnsBase, zone, ZoneName, dims) ||
-        cg_zone_type (cgnsFile, cgnsBase, zone, (ZoneType_t *)&ZoneType))
+        cg_zone_type (cgnsFile, cgnsBase, zone, (CGNS_ENUMT(ZoneType_t) *)&ZoneType))
         cgnsCalcFatal ((char *)cg_get_error());
     cgnsZone = zone;
     cgnsSoln = NumSolns = 0;
 
     for (n = 0; n < 6; n++)
         ZoneDims[n] = 1;
-    if (ZoneType == Structured) {
-        size = 1;
+    if (ZoneType == CGNS_ENUMV(Structured)) {
         for (n = 0; n < CellDim; n++) {
             ZoneDims[n] = dims[n];
             ZoneDims[n+3] = dims[n+CellDim];
             size *= dims[n];
         }
     }
-    else if (ZoneType == Unstructured) {
+    else if (ZoneType == CGNS_ENUMV(Unstructured)) {
         ZoneDims[0] = dims[0];
         ZoneDims[3] = dims[1];
         size = dims[0];
@@ -1021,7 +927,7 @@ int zone;
 
     if (cg_goto (cgnsFile, cgnsBase, "Zone_t", cgnsZone, "end"))
         cgnsCalcFatal ((char *)cg_get_error());
-    if (cg_dataclass_read ((DataClass_t *)&ZoneClass))
+    if (cg_dataclass_read ((CGNS_ENUMT(DataClass_t) *)&ZoneClass))
         ZoneClass = BaseClass;
     if (!read_units (ZoneUnits)) {
         for (n = 0; n < 5; n++)
@@ -1042,7 +948,7 @@ int zone;
         if (cg_goto (cgnsFile, cgnsBase, "Zone_t", cgnsZone,
             "GridCoordinates_t", 1, "end"))
             cgnsCalcFatal ((char *)cg_get_error());
-        if (cg_dataclass_read ((DataClass_t *)&GridClass))
+        if (cg_dataclass_read ((CGNS_ENUMT(DataClass_t) *)&GridClass))
             GridClass = ZoneClass;
         if (!read_units (GridUnits)) {
             for (n = 0; n < 5; n++)
@@ -1087,30 +993,24 @@ int zone;
  * set solution for calculations
  *------------------------------------------------------------------*/
 
-int cgnsCalcSoln (
-#ifdef PROTOTYPE
-    int soln)
-#else
-    soln)
-int soln;
-#endif
+int cgnsCalcSoln (int soln)
 {
     int i, n, size, nflds;
-    DataType_t datatype;
+    CGNS_ENUMT(DataType_t) datatype;
     char name[33];
 
     if (soln < 1 || soln > NumSolns)
         cgnsCalcFatal ("invalid solution specified");
     if (cg_sol_info (cgnsFile, cgnsBase, cgnsZone, soln, SolnName,
-        (GridLocation_t *)&SolnLocation))
+        (CGNS_ENUMT(GridLocation_t) *)&SolnLocation))
         cgnsCalcFatal ((char *)cg_get_error());
     cgnsSoln = soln;
 
     for (n = 0; n < 3; n++)
         SolnDims[n] = 1;
-    if (ZoneType == Structured) {
+    if (ZoneType == CGNS_ENUMV(Structured)) {
         size = 1;
-        if (SolnLocation == CellCenter) {
+        if (SolnLocation == CGNS_ENUMV(CellCenter)) {
             if (cg_goto (cgnsFile, cgnsBase, "Zone_t", cgnsZone,
                 "FlowSolution_t", cgnsSoln, "end"))
                 cgnsCalcFatal ((char *)cg_get_error());
@@ -1135,7 +1035,7 @@ int soln;
     else {
         for (n = 0; n < 6; n++)
             SolnRind[n] = 0;
-        size = SolnLocation == CellCenter ? ZoneDims[3] : ZoneDims[0];
+        size = SolnLocation == CGNS_ENUMV(CellCenter) ? ZoneDims[3] : ZoneDims[0];
         SolnDims[0] = size;
     }
     VectorLen = size;
@@ -1154,7 +1054,7 @@ int soln;
     if (cg_goto (cgnsFile, cgnsBase, "Zone_t", cgnsZone,
         "FlowSolution_t", cgnsSoln, "end"))
         cgnsCalcFatal ((char *)cg_get_error());
-    if (cg_dataclass_read ((DataClass_t *)&SolnClass))
+    if (cg_dataclass_read ((CGNS_ENUMT(DataClass_t) *)&SolnClass))
         SolnClass = ZoneClass;
     if (!read_units (SolnUnits)) {
         for (n = 0; n < 5; n++)
@@ -1195,15 +1095,9 @@ int soln;
  * check expression
  *------------------------------------------------------------------*/
 
-int cgnsCalcCheck (
-#ifdef PROTOTYPE
-    char *expression)
-#else
-    expression)
-char *expression;
-#endif
+int cgnsCalcCheck (char *expression)
 {
-    int length = strlen (expression);
+    int length = (int)strlen (expression);
     char *p, *cmd, *name;
     Units *units;
 
@@ -1285,15 +1179,9 @@ char *expression;
  * parse expression and return results
  *------------------------------------------------------------------*/
 
-VECSYM *cgnsCalcCommand (
-#ifdef PROTOTYPE
-    char *expression)
-#else
-    expression)
-char *expression;
-#endif
+VECSYM *cgnsCalcCommand (char *expression)
 {
-    int n, length = strlen (expression);
+    int n, length = (int)strlen (expression);
     char *p, *cmd, *name, sym[SYMNAME_MAXLEN+1];
     VECDATA *vd;
     Units *units = NULL;
@@ -1418,13 +1306,7 @@ char *expression;
  * return a variable
  *------------------------------------------------------------------*/
 
-Variable *cgnsCalcVarGet (
-#ifdef PROTOTYPE
-    char *varname)
-#else
-    varname)
-char *varname;
-#endif
+Variable *cgnsCalcVarGet (char *varname)
 {
     int n, type = 0;
     char *name = varname;
@@ -1466,13 +1348,7 @@ char *varname;
  * print variables
  *------------------------------------------------------------------*/
 
-void cgnsCalcVarList (
-#ifdef PROTOTYPE
-    FILE *fp)
-#else
-    fp)
-FILE *fp;
-#endif
+void cgnsCalcVarList (FILE *fp)
 {
     int n;
 
@@ -1506,13 +1382,7 @@ FILE *fp;
  * print list of symbols
  *------------------------------------------------------------------*/
 
-void cgnsCalcSymList (
-#ifdef PROTOTYPE
-    FILE *fp)
-#else
-    fp)
-FILE *fp;
-#endif
+void cgnsCalcSymList (FILE *fp)
 {
     if (NULL == fp)
         fp = stdout;

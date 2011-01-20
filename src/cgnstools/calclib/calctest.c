@@ -39,13 +39,7 @@ static char *commands[] = {
  * return next input line, handling blanks, comments and continuations
  *-------------------------------------------------------------------*/
 
-static char *next_line (
-#ifdef PROTOTYPE
-    FILE *fp)
-#else
-    fp)
-FILE *fp;
-#endif
+static char *next_line (FILE *fp)
 {
     int n = 0, len;
     char *p, line[257];
@@ -96,13 +90,7 @@ FILE *fp;
  * extract prefix/suffix and process command
  *------------------------------------------------------------------*/
 
-static void process_command (
-#ifdef PROTOTYPE
-    char *expression)
-#else
-    expression)
-char *expression;
-#endif
+static void process_command (char *expression)
 {
     int echo = verbose;
     char *p, *cmd = expression;
@@ -171,14 +159,7 @@ char *expression;
  * process command lines
  *-----------------------------------------------------------------------*/
 
-static void parse_commands (
-#ifdef PROTOTYPE
-    FILE *fp, char *pmt)
-#else
-    fp, pmt)
-FILE *fp;
-char *pmt;
-#endif
+static void parse_commands (FILE *fp, char *pmt)
 {
     int n, len;
     char *p;
@@ -352,9 +333,7 @@ char *pmt;
 
 /*================================================================*/
 
-void main (argc, argv)
-int argc;
-char *argv[];
+int main (int argc, char *argv[])
 {
     int n = 1;
 
@@ -379,6 +358,6 @@ char *argv[];
         parse_commands (stdin, NULL);
 
     cgnsCalcDone ();
-    exit (0);
+    return 0;
 }
 

@@ -1,24 +1,16 @@
 #ifndef _VECERR_H_
 #define _VECERR_H_
 
-#if defined(__STDC__) || defined(__cplusplus)
-#ifndef PROTOTYPE
-#define PROTOTYPE
-#endif
-#endif
-
 extern int vec_maxerr;      /* max error code */
 extern int vec_errnum;      /* error number */
 
 /*----- user error handler -----*/
 
 extern void (*vec_errhandler) ( /* user error handler */
-#ifdef PROTOTYPE
     int errnum,             /* error number */
     char *errmsg,           /* error message */
     int offset,             /* offset in parse string */
     char *exp               /* expression being parsed */
-#endif
 );
 
 /*----- error codes -----*/

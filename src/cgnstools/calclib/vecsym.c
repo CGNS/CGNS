@@ -33,29 +33,13 @@ static char *errmsg[] = {
 
 /*----- callback for deleting symbol -----*/
 
-void (*sym_delfunc) (
-#ifdef PROTOTYPE
-    struct symbol_ *
-#endif
-) = NULL;
+void (*sym_delfunc) (struct symbol_ *) = NULL;
 
 /*----- local functions -----*/
 
-static void init_hash(
-#ifdef PROTOTYPE
-    void
-#endif
-);
-static int  hash_name(
-#ifdef PROTOTYPE
-    char *name
-#endif
-);
-static VECSYM *add_symbol(
-#ifdef PROTOTYPE
-    char *name
-#endif
-);
+static void init_hash(void);
+static int  hash_name(char *name);
+static VECSYM *add_symbol(char *name);
 
 /*==================================================================
  * these routines are needed by vec.c
@@ -65,14 +49,7 @@ static VECSYM *add_symbol(
  * find a symbol in the hash table
  *------------------------------------------------------------------*/
 
-VECSYM *find_symbol (
-#ifdef PROTOTYPE
-    char *name, int is_func)
-#else
-    name, is_func)
-char *name;
-int is_func;
-#endif
+VECSYM *find_symbol (char *name, int is_func)
 {
     VECSYM *sym;
 
@@ -104,11 +81,8 @@ int is_func;
  * initialize hash table
  *------------------------------------------------------------------*/
 
-static void init_hash (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+static void init_hash (void)
+{
     int n;
 
     for (n = 0; n < HASH_SIZE; n++)
@@ -119,13 +93,7 @@ static void init_hash (
  * hashing routine
  *------------------------------------------------------------------*/
 
-static int hash_name (
-#ifdef PROTOTYPE
-    char *name)
-#else
-    name)
-char *name;
-#endif
+static int hash_name (char *name)
 {
     unsigned long hash = 0;
 
@@ -138,13 +106,7 @@ char *name;
  * add a symbol to the hash table
  *------------------------------------------------------------------*/
 
-static VECSYM *add_symbol (
-#ifdef PROTOTYPE
-    char *name)
-#else
-    name)
-char *name;
-#endif
+static VECSYM *add_symbol (char *name)
 {
     int hash = hash_name (name);
     VECSYM *sym = hash_table[hash];
@@ -164,7 +126,7 @@ char *name;
 
     sym = (VECSYM *) malloc (sizeof(VECSYM));
     if (sym != NULL) {
-        int len = strlen (name);
+        int len = (int)strlen (name);
         strcpy (vecsym_name(sym), name);
         sym->next = hash_table[hash];
         hash_table[hash] = sym;
@@ -179,11 +141,8 @@ char *name;
  * free symbol table resources
  *------------------------------------------------------------------*/
 
-void sym_free (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+void sym_free (void)
+{
     int n;
     VECSYM *sym, *next;
 
@@ -213,13 +172,7 @@ void sym_free (
  * returns error message
  *-------------------------------------------------------------------*/
 
-char *sym_errmsg (
-#ifdef PROTOTYPE
-    int errnum)
-#else
-    errnum)
-int errnum;
-#endif
+char *sym_errmsg (int errnum)
 {
     if (errnum >= 0 && errnum < SYMERR_INVALID)
         return (errmsg[errnum]);
@@ -230,15 +183,7 @@ int errnum;
  * adds a value to user symbol table
  *------------------------------------------------------------------*/
 
-int sym_addval (
-#ifdef PROTOTYPE
-    char *name, VECFLOAT val, void *user)
-#else
-    name, val, user)
-char *name;
-VECFLOAT val;
-void *user;
-#endif
+int sym_addval (char *name, VECFLOAT val, void *user)
 {
     VECSYM *sym;
 
@@ -251,10 +196,11 @@ void *user;
         init_hash ();
     if ((sym = add_symbol (name)) == NULL)
         return (SYMERR_SYMTABLE);
-    vecsym_type(sym)  = VECSYM_VALUE;
-    vecsym_nargs(sym) = 0;
-    vecsym_value(sym) = val;
-    vecsym_user(sym)  = user;
+    vecsym_type(sym)   = VECSYM_VALUE;
+    vecsym_nargs(sym)  = 0;
+    vecsym_veclen(sym) = 0;
+    vecsym_value(sym)  = val;
+    vecsym_user(sym)   = user;
     return (0);
 }
 
@@ -262,16 +208,7 @@ void *user;
  * adds a vector to user symbol table
  *------------------------------------------------------------------*/
 
-int sym_addvec (
-#ifdef PROTOTYPE
-    char *name, int len, VECFLOAT *vec, void *user)
-#else
-    name, len, vec, user)
-char *name;
-int len;
-VECFLOAT *vec;
-void *user;
-#endif
+int sym_addvec (char *name, size_t len, VECFLOAT *vec, void *user)
 {
     VECSYM *sym;
 
@@ -293,6 +230,7 @@ void *user;
         return (SYMERR_MALLOC);
     }
     vecsym_type(sym)   = VECSYM_VECTOR;
+    vecsym_nargs(sym)  = 0;
     vecsym_veclen(sym) = len;
     vecsym_user(sym)   = user;
     memcpy (vecsym_vector(sym), vec, len * sizeof(VECFLOAT));
@@ -303,15 +241,7 @@ void *user;
  * adds an equation to user symbol table
  *------------------------------------------------------------------*/
 
-int sym_addequ (
-#ifdef PROTOTYPE
-    char *name, int nargs, char *equ, void *user)
-#else
-    name, nargs, equ, user)
-char *name, *equ;
-int nargs;
-void *user;
-#endif
+int sym_addequ (char *name, int nargs, char *equ, void *user)
 {
     VECSYM *sym;
 
@@ -347,16 +277,7 @@ void *user;
  * adds a function to user symbol table
  *------------------------------------------------------------------*/
 
-int sym_addfunc (
-#ifdef PROTOTYPE
-    char *name, int nargs, VECFUNC func, void *user)
-#else
-    name, nargs, func, user)
-char *name;
-int nargs;
-VECFUNC func;
-void *user;
-#endif
+int sym_addfunc (char *name, int nargs, VECFUNC func, void *user)
 {
     VECSYM *sym;
 
@@ -384,15 +305,7 @@ void *user;
  * adds a macro to user symbol table
  *------------------------------------------------------------------*/
 
-int sym_addmacro (
-#ifdef PROTOTYPE
-    char *name, int nargs, char *macro, void *user)
-#else
-    name, nargs, macro, user)
-char *name, *macro;
-int nargs;
-void *user;
-#endif
+int sym_addmacro (char *name, int nargs, char *macro, void *user)
 {
     VECSYM *sym;
 
@@ -428,15 +341,7 @@ void *user;
  * adds user data to user symbol table
  *------------------------------------------------------------------*/
 
-int sym_adddata (
-#ifdef PROTOTYPE
-    char *name, void *data, void *user)
-#else
-    name, data, user)
-char *name;
-void *data;
-void *user;
-#endif
+int sym_adddata (char *name, void *data, void *user)
 {
     VECSYM *sym;
 
@@ -460,13 +365,7 @@ void *user;
  * delete a symbol from the symbol table
  *--------------------------------------------------------------------*/
 
-void sym_delsym (
-#ifdef PROTOTYPE
-    char *name)
-#else
-    name)
-char *name;
-#endif
+void sym_delsym (char *name)
 {
     VECSYM *sym, *prev;
     int hash;
@@ -511,13 +410,7 @@ char *name;
  * return number of symbols of given type
  *------------------------------------------------------------------*/
 
-int sym_count (
-#ifdef PROTOTYPE
-    int type)
-#else
-    type)
-int type;
-#endif
+int sym_count (int type)
 {
     int n, cnt = 0;
     VECSYM *sym;
@@ -539,13 +432,7 @@ int type;
  * return list of symbol names
  *------------------------------------------------------------------*/
 
-char **sym_names (
-#ifdef PROTOTYPE
-    int type)
-#else
-    type)
-int type;
-#endif
+char **sym_names (int type)
 {
     int n, cnt = sym_count (type);
     VECSYM *sym;
@@ -572,15 +459,7 @@ int type;
  * lists symbols
  *------------------------------------------------------------------*/
 
-int sym_list (
-#ifdef PROTOTYPE
-    int type, int (*func)(struct symbol_ *, void *), void *userdata)
-#else
-    type, func, userdata)
-int type;
-int (*func)();
-void *userdata;
-#endif
+int sym_list (int type, int (*func)(struct symbol_ *, void *), void *userdata)
 {
     int n, cnt = 0;
     VECSYM *sym;
@@ -602,13 +481,7 @@ void *userdata;
  * print symbol list
  *------------------------------------------------------------------*/
 
-void sym_print (
-#ifdef PROTOTYPE
-    FILE *fp)
-#else
-    fp)
-FILE *fp;
-#endif
+void sym_print (FILE *fp)
 {
     int i, fld;
     VECSYM *sym;
@@ -632,7 +505,7 @@ FILE *fp;
             if (vecsym_type(sym) == VECSYM_VALUE)
                 fprintf (fp, "value       %g\n", vecsym_value(sym));
             else if (vecsym_type(sym) == VECSYM_VECTOR)
-                fprintf (fp, "vector      %d\n", vecsym_veclen(sym));
+                fprintf (fp, "vector      %ld\n", (long)vecsym_veclen(sym));
             else if (vecsym_type(sym) == VECSYM_EQUSTR)
                 fprintf (fp, "equation    %s\n", vecsym_equstr(sym));
             else if (vecsym_type(sym) == VECSYM_MACRO)

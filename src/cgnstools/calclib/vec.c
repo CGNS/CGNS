@@ -126,7 +126,7 @@ enum Tokens {
 
 struct op_stack_ {
     int op;
-    int len;
+    size_t len;
     union {
         int ival;
         double num;
@@ -281,13 +281,8 @@ static char *in_list[] = {
 int vec_maxerr = VECERR_INVALID;
 int vec_errnum = 0;
 
-#ifdef PROTOTYPE
 void (*vec_errhandler)(int,char *,int,char *) = NULL;
 typedef SIGNAL (*SIGHANDLER)(int);
-#else
-void (*vec_errhandler)() = NULL;
-typedef SIGNAL (*SIGHANDLER)();
-#endif
 
 /*----- temporary vectors -----*/
 
@@ -308,8 +303,8 @@ static VECLIST *veclist = NULL;
 
 static int num_calls = 0;       /* recursion counter */
 static int max_calls = VEC_MAXCALLS;/* maximum recursive calls */
-static int max_len = 0;         /* maximum vector length */
-static int counter_len = 0;     /* min length of counter */
+static size_t max_len = 0;      /* maximum vector length */
+static size_t counter_len = 0;  /* min length of counter */
 static VECCALL usr_func;        /* pointer to user supplied function */
 static char *exp_start = NULL;  /* start of string being parsed */
 static char *exp_ptr;           /* location in string being parsed */
@@ -348,11 +343,7 @@ static void push_var();
 static void pop_var();
 static double process_op();
 
-static SIGNAL fpe_err (
-#ifdef PROTOTYPE
-    int signum
-#endif
-);
+static SIGNAL fpe_err (int signum);
 
 /*==================================================================
  * user callable routines
@@ -362,13 +353,7 @@ static SIGNAL fpe_err (
  * creates a vector data structure
  *------------------------------------------------------------------*/
 
-VECDATA *vec_create (
-#ifdef PROTOTYPE
-    int type, int len, int temp)
-#else
-    type, len, temp)
-int type, len, temp;
-#endif
+VECDATA *vec_create (int type, size_t len, int temp)
 {
     VECDATA *vdata;
 
@@ -420,13 +405,7 @@ int type, len, temp;
  * destroys a vector data structure
  *------------------------------------------------------------------*/
 
-void vec_destroy (
-#ifdef PROTOTYPE
-    VECDATA *vdata)
-#else
-    vdata)
-VECDATA *vdata;
-#endif
+void vec_destroy (VECDATA *vdata)
 {
     if (vdata != NULL) {
         vec_remove (vdata);
@@ -440,13 +419,7 @@ VECDATA *vdata;
  * add vector to temporary vector list
  *------------------------------------------------------------------*/
 
-int vec_add (
-#ifdef PROTOTYPE
-    VECDATA *vd)
-#else
-    vd)
-VECDATA *vd;
-#endif
+int vec_add (VECDATA *vd)
 {
     VECLIST *vl = veclist;
 
@@ -475,13 +448,7 @@ VECDATA *vd;
  * remove temporary vector from list
  *------------------------------------------------------------------*/
 
-void vec_remove (
-#ifdef PROTOTYPE
-    VECDATA *vd)
-#else
-    vd)
-VECDATA *vd;
-#endif
+void vec_remove (VECDATA *vd)
 {
     VECLIST *prev, *vlist = veclist;
 
@@ -508,11 +475,7 @@ VECDATA *vd;
  * releases internal resources
  *------------------------------------------------------------------*/
 
-void vec_free (
-#ifdef PROTOTYPE
-    void
-#endif
-)
+void vec_free (void)
 {
     /* free operation stack */
 
@@ -533,13 +496,7 @@ void vec_free (
  * sets maximum recursive calls
  *------------------------------------------------------------------*/
 
-void vec_maxcalls (
-#ifdef PROTOTYPE
-    int val)
-#else
-    val)
-int val;
-#endif
+void vec_maxcalls (int val)
 {
     max_calls = val > 0 ? val : VEC_MAXCALLS;
 }
@@ -548,11 +505,7 @@ int val;
  * returns error message
  *------------------------------------------------------------------*/
 
-char *vec_errmsg (
-#ifdef PROTOTYPE
-    void
-#endif
-)
+char *vec_errmsg (void)
 {
     if (vec_errnum < 0 || vec_errnum >= VECERR_INVALID)
         vec_errnum = VECERR_INVALID;
@@ -563,11 +516,7 @@ char *vec_errmsg (
  * return list of intrinsics
  *------------------------------------------------------------------*/
 
-char **vec_list (
-#ifdef PROTOTYPE
-    void
-#endif
-)
+char **vec_list (void)
 {
     return (in_list);
 }
@@ -576,18 +525,10 @@ char **vec_list (
  * parse and process equation string
  *------------------------------------------------------------------*/
 
-VECDATA *vec_parse (
-#ifdef PROTOTYPE
-    char *str, int min_len, VECCALL func)
-#else
-    str, min_len, func)
-char *str;
-int min_len;
-VECCALL func;
-#endif
+VECDATA *vec_parse (char *str, int min_len, VECCALL func)
 {
     VECDATA *vd;
-    int old_len = counter_len;
+    size_t old_len = counter_len;
     VECCALL old_func = usr_func;
     char *old_ptr = exp_ptr;
     char *old_start = exp_start;
@@ -622,7 +563,8 @@ VECCALL func;
     /* install the SIGFPE handler */
 
     if (num_calls == 0) {
-        checking = max_len = op_pos = var_pos = op_index = 0;
+        checking = op_pos = var_pos = op_index = 0;
+        max_len = 0;
         old_fpe_sig = signal (SIGFPE, fpe_err);
         vec_randinit ((int) time (NULL));
 
@@ -660,18 +602,11 @@ VECCALL func;
  * parse equation string and check for errors
  *------------------------------------------------------------------*/
 
-int vec_check (
-#ifdef PROTOTYPE
-    char *str, int min_len, VECCALL func)
-#else
-    str, min_len, func)
-char *str;
-int min_len;
-VECCALL func;
-#endif
+size_t vec_check (char *str, int min_len, VECCALL func)
 {
     VECDATA *vd;
-    int len, old_len = counter_len;
+    size_t len;
+    size_t old_len = counter_len;
     VECCALL old_func = usr_func;
     char *old_ptr = exp_ptr;
     char *old_start = exp_start;
@@ -759,14 +694,7 @@ VECCALL func;
  * [whitespace][{+|-}][digits][.digits][{d|D|e|E}[sign]digits]
  *------------------------------------------------------------------*/
 
-int vec_number (
-#ifdef PROTOTYPE
-    double *dval, char **sp)
-#else
-    dval, sp)
-double *dval;
-char **sp;
-#endif
+int vec_number (double *dval, char **sp)
 {
     register char *p, c;
     char *start;
@@ -853,13 +781,7 @@ static long Rand_ma[56] = {
  * initialize the random number generator
  *-------------------------------------------------------------------*/
 
-void vec_randinit (
-#ifdef PROTOTYPE
-    int seed)
-#else
-    seed)
-int seed;
-#endif
+void vec_randinit (int seed)
 {
     int i, k;
     long mj, mk;
@@ -891,11 +813,7 @@ int seed;
  * return random number between 0 and 1
  *-------------------------------------------------------------------*/
 
-double vec_rand (
-#ifdef PROTOTYPE
-    void
-#endif
-)
+double vec_rand (void)
 {
     long mj;
 
@@ -920,8 +838,8 @@ double vec_rand (
 
 static VECDATA *parse ()
 {
-    int n;
-    int cur_len   = max_len;
+    size_t n;
+    size_t cur_len = max_len;
     int cur_op    = op_pos;
     int cur_index = op_index;
     int cur_var   = var_pos;
@@ -1012,14 +930,7 @@ int err;
  * reset recursion flags for equation symbols - called from sym_list
  *------------------------------------------------------------------*/
 
-static int reset_recurs (
-#ifdef PROTOTYPE
-    VECSYM *sym, void *userdata)
-#else
-    sym, userdata)
-VECSYM *sym;
-void *userdata;
-#endif
+static int reset_recurs (VECSYM *sym, void *userdata)
 {
     if (vecsym_nargs(sym) < 0)
         vecsym_nargs(sym) = 0;
@@ -1099,11 +1010,11 @@ static int do_intrinsic ()
     else if (ins->type == VEC_VARIABLE)
         add_op (ins->op, NULL);
     else if (ins->type == VEC_ALONG) {
-        m = max_len;
+        size_t msave = max_len;
         add_op (OP_BEGIN_FUNC, NULL);
         (void) get_args (ins->nargs);
         add_op (ins->op, NULL);
-        max_len = m ? m : 1;
+        max_len = msave ? msave : 1;
     }
     else {
         (void) get_args (ins->nargs);
@@ -1688,6 +1599,7 @@ static void expression ()
 {
     char *p;
     int i;
+    size_t ii;
     double dval;
     VECDATA *vd;
 
@@ -1717,9 +1629,9 @@ static void expression ()
             longjmp (env_ptr, VECERR_BADVEC);
         advance (1);
         vd = vec_create (VEC_VECTOR, i, 1);
-        for (i = 0; i < vd->len; i++) {
+        for (ii = 0; ii < vd->len; ii++) {
             vec_number (&dval, &p);
-            vd->f.vec[i] = (VECFLOAT)dval;
+            vd->f.vec[ii] = (VECFLOAT)dval;
             skip_space (p);
             if (*p == ',')
                 p++;
@@ -2198,13 +2110,7 @@ int n;
  * signal handler for arithmetic exceptions
  *------------------------------------------------------------------*/
 
-static SIGNAL fpe_err (
-#ifdef PROTOTYPE
-    int signum)
-#else
-    signum)
-int signum;
-#endif
+static SIGNAL fpe_err (int signum)
 {
     strcpy (err_msg[VECERR_MATH], "arithmetic exception (SIGFPE)");
 #if defined(__MSDOS__) || defined(MSDOS) || defined(_WIN32)

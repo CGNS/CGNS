@@ -72,34 +72,25 @@ extern int NumCoordinates;
 
 #ifdef EXTERN_FUNCS
 extern void add_funcs (
-#ifdef PROTOTYPE
     void
-#endif
 );
 #endif
 
 /*----- functions -----*/
 
 void cgnsCalcFatal (     /* terminate with error message */
-#ifdef PROTOTYPE
     char *errmsg         /* error message */
-#endif
 );
 
 void cgnsCalcError (     /* print error message */
-#ifdef PROTOTYPE
     char *errmsg         /* error message */
-#endif
 );
 
 void cgnsCalcReset (     /* reset calculator (symbol table) */
-#ifdef PROTOTYPE
     void
-#endif
 );
 
 int cgnsCalcInit (       /* load CGNS file and initialize */
-#ifdef PROTOTYPE
     char *cgnsfile,      /* CGNS file */
     int modify,          /* set for modify mode */
     void (*errhandler)(  /* calculator error callback */
@@ -108,61 +99,42 @@ int cgnsCalcInit (       /* load CGNS file and initialize */
         int pos,         /* location in string */
         char *str        /* string being parsed */
     )
-#endif
 );
 
 void cgnsCalcDone (      /* close CGNS file */
-#ifdef PROTOTYPE
     void
-#endif
 );
 
 int cgnsCalcBase (       /* set base for calculations */
-#ifdef PROTOTYPE
     int base             /* base number */
-#endif
 );
 
 int cgnsCalcZone (       /* set zone for calculations */
-#ifdef PROTOTYPE
     int zone             /* zone number */
-#endif
 );
 
 int cgnsCalcSoln (       /* set solution for calculations */
-#ifdef PROTOTYPE
     int soln             /* solution number */
-#endif
 );
 
 int cgnsCalcCheck (      /* parse command and check for errors */
-#ifdef PROTOTYPE
     char *expression     /* expression to be parsed */
-#endif
 );
 
 VECSYM *cgnsCalcCommand (/* parse command string and return results */
-#ifdef PROTOTYPE
     char *expression     /* expression to be parsed */
-#endif
 );
 
 Variable *cgnsCalcVarGet (/* return a variable */
-#ifdef PROTOTYPE
     char *varname
-#endif
 );
 
 void cgnsCalcVarList (   /* print variables */
-#ifdef PROTOTYPE
     FILE *fp             /* output file (NULL gives stdout) */
-#endif
 );
 
 void cgnsCalcSymList (   /* print list of symbols */
-#ifdef PROTOTYPE
     FILE *fp             /* output file (NULL gives stdout) */
-#endif
 );
 
 #endif  /* _CALC_H_ */
