@@ -5,6 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+# define unlink _unlink
+#else
+# include <unistd.h>
+#endif
 
 #include "getargs.h"
 #include "cgnslib.h"
@@ -36,19 +41,11 @@ static int weighting = 0;
 
 /*-------------------------------------------------------------------*/
 
-static void field_subset (
-#ifdef PROTOTYPE
-    ZONE *z, SOLUTION *s, int inc[3], double *f, double *w)
-#else
-    z, s, inc, f, w)
-ZONE *z;
-SOLUTION *s;
-int inc[3];
-double *f, *w;
-#endif
+static void field_subset (ZONE *z, SOLUTION *s, int inc[3],
+                          double *f, double *w)
 {
-    int i, j, k, ip, jp, kp;
-    int nn, nf, nw, np;
+    cgsize_t i, j, k, ip, jp, kp;
+    cgsize_t nn, nf, nw, np;
     ZONE zn;
     double *fn, *wn;
 
@@ -56,7 +53,7 @@ double *f, *w;
         zn.dim[nn] = (z->dim[nn] - 1) / inc[nn] + 1;
         np *= (zn.dim[nn] - 1 + s->rind[nn][0] + s->rind[nn][1]);
     }
-    fn = (double *) malloc (2 * np * sizeof(double));
+    fn = (double *) malloc ((size_t)(2 * np) * sizeof(double));
     if (NULL == fn) FATAL (NULL, "malloc failed for solution field");
     wn = fn + np;
     for (nn = 0; nn < np; nn++) {
@@ -519,15 +516,10 @@ double *f, *w;
 
 /*-------------------------------------------------------------------*/
 
-static void extract_subset (
-#ifdef PROTOTYPE
-    int nz, int subset[3])
-#else
-    nz, subset)
-int nz, subset[3];
-#endif
+static void extract_subset (int nz, int subset[3])
 {
-    int n, nn, np, i, j, k, inc[3], ns[3], ne[3];
+    int inc[3];
+    cgsize_t n, nn, np, i, j, k;
     ZONE *z = &Zones[nz-1];
     INTERFACE *zi;
     BOCO *zb;
@@ -574,7 +566,7 @@ int nz, subset[3];
     /* boundary conditions */
 
     for (zb = z->bocos, nn = 0; nn < z->nbocos; nn++, zb++) {
-        if (zb->ptype == PointRange) {
+        if (zb->ptype == CGNS_ENUMV(PointRange)) {
             for (n = 0, j = 0; j < 2; j++) {
                 for (i = 0; i < 3; i++, n++)
                     zb->pnts[n] = (zb->pnts[n] - 1) / inc[i] + 1;
@@ -596,7 +588,7 @@ int nz, subset[3];
         return;
     }
 
-    w = (double *) malloc (np * sizeof(double));
+    w = (double *) malloc ((size_t)np * sizeof(double));
     if (NULL == w)
         FATAL (NULL, "malloc failed for weighting array");
     if (weighting) {
@@ -620,9 +612,7 @@ int nz, subset[3];
 
 /*-------------------------------------------------------------------*/
 
-int main (argc, argv)
-int argc;
-char *argv[];
+int main (int argc, char *argv[])
 {
     int n, nz, celldim, phydim;
     int subset[3], izone = 0;
@@ -695,12 +685,12 @@ char *argv[];
         if (izone && nz != izone)
             z->id = 0;
         else {
-            if (z->type != Structured) {
+            if (z->type != CGNS_ENUMV(Structured)) {
                 sprintf (basename, "zone %d is not Structured", nz);
                 FATAL (NULL, basename);
             }
-            printf ("extracting subset for zone %d - %dx%dx%d ... ", nz,
-                z->dim[0], z->dim[1], z->dim[2]);
+            printf ("extracting subset for zone %d - %ldx%ldx%ld ... ", nz,
+                (long)z->dim[0], (long)z->dim[1], (long)z->dim[2]);
             fflush (stdout);
             read_zone_data (nz);
             extract_subset (nz, subset);
@@ -726,8 +716,8 @@ char *argv[];
                     z->dim[n] = (z->dim[n] - 1) / subset[n] + 1;
                 z->nverts *= z->dim[n];
             }
-            printf ("writing zone %d - %dx%dx%d ... ", nz,
-                z->dim[0], z->dim[1], z->dim[2]);
+            printf ("writing zone %d - %ldx%ldx%ld ... ", nz,
+                (long)z->dim[0], (long)z->dim[1], (long)z->dim[2]);
             fflush (stdout);
             write_zone_data (nz);
             puts ("done");

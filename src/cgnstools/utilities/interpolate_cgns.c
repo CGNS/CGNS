@@ -7,6 +7,11 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#ifdef _WIN32
+# define unlink _unlink
+#else
+# include <unistd.h>
+#endif
 
 #include "getargs.h"
 #include "cgnslib.h"
@@ -52,11 +57,11 @@ typedef struct _Element {
     int flag;
     int zone;
     int nnodes;
-    int nodes[8];
+    cgsize_t nodes[8];
     double bbox[3][2];
 } Element;
 
-static int num_elements;
+static cgsize_t num_elements;
 static Element *elements;
 
 typedef struct _OctTree {
@@ -65,13 +70,13 @@ typedef struct _OctTree {
     struct _OctTree *parent;
     struct _OctTree *tree[8];
     double bbox[3][2];
-    int nelem;
+    cgsize_t nelem;
     Element **elem;
 } OctTree;
 
 static OctTree root;
 static int depths[3];
-static int counts[4];
+static cgsize_t counts[4];
 
 static int nbasezones;
 static ZONE *basezones;
@@ -85,7 +90,7 @@ static int numconv = 0;
 
 static int max_elements = MAX_ELEMENTS;
 static int max_depth = MAX_DEPTH;
-static float bbox_padding = BBOX_PADDING;
+static float bbox_padding = (float)BBOX_PADDING;
 static int max_iter = MAX_ITER;
 static double tolerance = TOLERANCE;
 
@@ -93,24 +98,15 @@ static char buff[1024];
 
 /*-------------------------------------------------------------------*/
 
-static int sort_name (
-#ifdef PROTOTYPE
-    const void *v1, const void *v2)
-#else
-    v1, v2)
-void *v1, *v2;
-#endif
+static int sort_name (const void *v1, const void *v2)
 {
     return strcmp (((FIELD *)v1)->name, ((FIELD *)v2)->name);
 }
 
 /*-------------------------------------------------------------------*/
 
-static void check_solution (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+static void check_solution (void)
+{
     int nz, nf;
     ZONE *z;
 
@@ -120,7 +116,7 @@ static void check_solution (
             sprintf (buff, "missing solution for zone %d", nz);
             FATAL ("check_solution", buff);
         }
-        if (z->sols->location == CellCenter)
+        if (z->sols->location == CGNS_ENUMV(CellCenter))
             cell_vertex_solution (nz, 1, weighting);
         if (z->sols->nflds > 1)
             qsort (z->sols->flds, z->sols->nflds, sizeof(FIELD), sort_name);
@@ -139,31 +135,26 @@ static void check_solution (
 
 /*-------------------------------------------------------------------*/
 
-static int count_elements (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+static cgsize_t count_elements (int nz)
 {
-    int n, nn, ne, ns, et, nelem = 0;
+    int ns, et;
+    cgsize_t n, nn, ne, nelem = 0;
     ZONE *z = &Zones[nz];
 
     for (ns = 0; ns < z->nesets; ns++) {
         ne = z->esets[ns].end - z->esets[ns].start + 1;
         et = z->esets[ns].type;
-        if (et == MIXED) {
+        if (et == CGNS_ENUMV(MIXED)) {
             for (n = 0, nn = 0; nn < ne; nn++) {
-                et = z->esets[ns].conn[n++];
-                if (et < NODE || et > HEXA_27)
+                et = (int)z->esets[ns].conn[n++];
+                if (et < CGNS_ENUMV(NODE) || et > CGNS_ENUMV(HEXA_27))
                     FATAL ("count_elements", "unrecognized element type");
-                if (et >= TETRA_4 && et <= HEXA_27) nelem++;
+                if (et >= CGNS_ENUMV(TETRA_4) && et <= CGNS_ENUMV(HEXA_27)) nelem++;
                 n += element_node_counts[et];
             }
         }
         else {
-            if (et >= TETRA_4 && et <= HEXA_27) nelem += ne;
+            if (et >= CGNS_ENUMV(TETRA_4) && et <= CGNS_ENUMV(HEXA_27)) nelem += ne;
         }
     }
     return nelem;
@@ -171,15 +162,10 @@ int nz;
 
 /*-------------------------------------------------------------------*/
 
-static void add_elements (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+static void add_elements (int nz)
 {
-    int i, j, n, nn, ns, ne, et, iv, nelem = 0;
+    int i, nn, ns, et;
+    cgsize_t n, j, ne, iv, nelem = 0;
     ZONE *z = &Zones[nz];
     VERTEX *v;
     Element *e = &elements[num_elements];
@@ -187,27 +173,27 @@ int nz;
     for (ns = 0; ns < z->nesets; ns++) {
         ne = z->esets[ns].end - z->esets[ns].start + 1;
         et = z->esets[ns].type;
-        if (et < TETRA_4 || et > MIXED) continue;
+        if (et < CGNS_ENUMV(TETRA_4) || et > CGNS_ENUMV(MIXED)) continue;
         for (n = 0, j = 0; j < ne; j++) {
-            if (z->esets[ns].type == MIXED)
-                et = z->esets[ns].conn[n++];
+            if (z->esets[ns].type == CGNS_ENUMV(MIXED))
+                et = (int)z->esets[ns].conn[n++];
             switch (et) {
-                case TETRA_4:
-                case TETRA_10:
+                case CGNS_ENUMV(TETRA_4):
+                case CGNS_ENUMV(TETRA_10):
                     nn = 4;
                     break;
-                case PYRA_5:
-                case PYRA_14:
+                case CGNS_ENUMV(PYRA_5):
+                case CGNS_ENUMV(PYRA_14):
                     nn = 5;
                     break;
-                case PENTA_6:
-                case PENTA_15:
-                case PENTA_18:
+                case CGNS_ENUMV(PENTA_6):
+                case CGNS_ENUMV(PENTA_15):
+                case CGNS_ENUMV(PENTA_18):
                     nn = 6;
                     break;
-                case HEXA_8:
-                case HEXA_20:
-                case HEXA_27:
+                case CGNS_ENUMV(HEXA_8):
+                case CGNS_ENUMV(HEXA_20):
+                case CGNS_ENUMV(HEXA_27):
                     nn = 8;
                     break;
                 default:
@@ -251,14 +237,7 @@ int nz;
 
 /*-------------------------------------------------------------------*/
 
-static int contains_point (
-#ifdef PROTOTYPE
-    OctTree *tree, VERTEX *vert)
-#else
-    tree, vert)
-OctTree *tree;
-VERTEX *vert;
-#endif
+static int contains_point (OctTree *tree, VERTEX *vert)
 {
     if (vert->x < tree->bbox[0][0] || vert->x > tree->bbox[0][1] ||
         vert->y < tree->bbox[1][0] || vert->y > tree->bbox[1][1] ||
@@ -267,16 +246,10 @@ VERTEX *vert;
     return 1;
 }
 
+#if 0
 /*-------------------------------------------------------------------*/
 
-static int contains_edge (
-#ifdef PROTOTYPE
-    OctTree *tree, VERTEX *v1, VERTEX *v2)
-#else
-    tree, v1, v2)
-OctTree *tree;
-VERTEX *v1, *v2;
-#endif
+static int contains_edge (OctTree *tree, VERTEX *v1, VERTEX *v2)
 {
     int n;
     double s, x, y, z;
@@ -330,17 +303,11 @@ VERTEX *v1, *v2;
 
     return 0;
 }
+#endif
 
 /*-------------------------------------------------------------------*/
 
-static int contains_element (
-#ifdef PROTOTYPE
-    OctTree *tree, Element *elem)
-#else
-    tree, elem)
-OctTree *tree;
-Element *elem;
-#endif
+static int contains_element (OctTree *tree, Element *elem)
 {
     int n;
 #if 0
@@ -414,13 +381,7 @@ Element *elem;
 
 /*-------------------------------------------------------------------*/
 
-static void subdivide (
-#ifdef PROTOTYPE
-    OctTree *parent)
-#else
-    parent)
-OctTree *parent;
-#endif
+static void subdivide (OctTree *parent)
 {
     int i, j, k, n, ne;
     double bbox[3][3];
@@ -490,12 +451,10 @@ OctTree *parent;
 
 /*-------------------------------------------------------------------*/
 
-static void build_octree (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-    int n, ne, nz;
+static void build_octree (void)
+{
+    int i, nz;
+    cgsize_t n, ne;
     double diff;
     ZONE *z = Zones;
 
@@ -527,7 +486,7 @@ static void build_octree (
 
     /* add buffer around bounding box */
 
-    for (n = 0; n < 3; n++) {
+    for (i = 0; i < 3; i++) {
         diff = bbox_padding * (root.bbox[n][1] - root.bbox[n][0]);
         root.bbox[n][0] -= diff;
         root.bbox[n][1] += diff;
@@ -535,7 +494,7 @@ static void build_octree (
 
     /* build element list */
 
-    elements = (Element *) malloc (ne * sizeof(Element));
+    elements = (Element *) malloc ((size_t)ne * sizeof(Element));
     if (NULL == elements) FATAL ("build_octree", "malloc failed for elements");
     num_elements = 0;
     for (nz = 0; nz < nZones; nz++)
@@ -543,7 +502,7 @@ static void build_octree (
     if (num_elements != ne) FATAL ("build_octree", "mismatch in element count");
 
     root.nelem = num_elements;
-    root.elem = (Element **) malloc (num_elements * sizeof(Element *));
+    root.elem = (Element **) malloc ((size_t)num_elements * sizeof(Element *));
     if (NULL == root.elem)
         FATAL ("build_octree", "malloc failed for element pointers");
     for (ne = 0; ne < num_elements; ne++)
@@ -551,9 +510,9 @@ static void build_octree (
 
     depths[0] = max_depth;
     counts[0] = num_elements;
-    for (n = 1; n < 3; n++) {
-        depths[n] = 0;
-        counts[n] = 0;
+    for (i = 1; i < 3; i++) {
+        depths[i] = 0;
+        counts[i] = 0;
     }
     counts[3] = 0;
 
@@ -564,15 +523,9 @@ static void build_octree (
 
 #define SWAP(A,B) {temp=(A);(A)=(B);(B)=temp;}
 
-static int invert3x3 (
-#ifdef PROTOTYPE
-    double a[3][3], double b[3])
-#else
-    a, b)
-double a[3][3], b[3];
-#endif
+static int invert3x3 (double a[3][3], double b[3])
 {
-    int i, j, k, irow, icol;
+    int i, j, k, irow = 0, icol = 0;
     int indxc[3], indxr[3], ipiv[3];
     double big, temp, pivinv;
 
@@ -629,14 +582,8 @@ double a[3][3], b[3];
 
 /*-------------------------------------------------------------------*/
 
-static void compute_shapef (
-#ifdef PROTOTYPE
-    int nnodes, double uvw[3], double shapef[8], double deriv[8][3])
-#else
-    nnodes, uvw, shapef, deriv)
-int nnodes;
-double uvw[3], shapef[8], deriv[8][3];
-#endif
+static void compute_shapef (int nnodes, double uvw[3], double shapef[8],
+                            double deriv[8][3])
 {
     if (nnodes == 4) {
         shapef[0] = 1.0 - uvw[0] - uvw[1] - uvw[2];
@@ -755,18 +702,10 @@ double uvw[3], shapef[8], deriv[8][3];
 
 /*-------------------------------------------------------------------*/
 
-static int compute_uvw (
-#ifdef PROTOTYPE
-    Element *elem, VERTEX *pt, double uvw[3])
-#else
-    elem, pt, uvw)
-Element *elem;
-VERTEX *pt;
-double uvw[3];
-#endif
+static int compute_uvw (Element *elem, VERTEX *pt, double uvw[3])
 {
     int i, j, n;
-    double delta, dist;
+    double dist;
     double a[3][3], b[3], shapef[8], dw[8][3];
     VERTEX *v[8];
     ZONE *z = &basezones[elem->zone];
@@ -867,18 +806,10 @@ double uvw[3];
 
 /*-------------------------------------------------------------------*/
 
-static Element *closest_point (
-#ifdef PROTOTYPE
-    OctTree *tree, VERTEX *pt, double shapef[8])
-#else
-    tree, pt, shapef)
-OctTree *tree;
-VERTEX *pt;
-double *shapef;
-#endif
+static Element *closest_point (OctTree *tree, VERTEX *pt, double shapef[8])
 {
-    int ne, nn, index, nt, ntree;
-    double dist, min_dist;
+    int ne, nn, index = 0, nt, ntree;
+    double dist, min_dist = 1.0e32;
     OctTree **tp;
     Element *e, *elem = NULL;
     VERTEX *v;
@@ -931,14 +862,7 @@ double *shapef;
 
 /*-------------------------------------------------------------------*/
 
-static Element *find_element (
-#ifdef PROTOTYPE
-    VERTEX *pt, double shapef[8])
-#else
-    pt, shapef)
-VERTEX *pt;
-double *shapef;
-#endif
+static Element *find_element (VERTEX *pt, double shapef[8])
 {
     int n, ne, nt, ntree;
     double xm, ym, zm, dist, min_dist;
@@ -1002,19 +926,13 @@ double *shapef;
 
 /*-------------------------------------------------------------------*/
 
-static void build_solution (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+static void build_solution (int nz)
 {
     int n, ns, nv, nf;
     SOLUTION *sol = NULL;
     ZONE *bz, *z = &Zones[nz];
     Element *elem;
-    double f, wsum, fsum, shapef[8];
+    double wsum, fsum, shapef[8];
 
     if (z->nsols) {
         if (solname == NULL)
@@ -1045,7 +963,7 @@ int nz;
         strncpy (sol->name, solname, 32);
         sol->name[32] = 0;
     }
-    sol->location = Vertex;
+    sol->location = CGNS_ENUMV(Vertex);
     sol->size = z->nverts;
     for (n = 0; n < 5; n++)
         sol->units[n] = basezones->sols->units[n];
@@ -1124,16 +1042,11 @@ static void compare_solution ()
 
 /*-------------------------------------------------------------------*/
 
-int main (argc, argv)
-int argc;
-char *argv[];
+int main (int argc, char *argv[])
 {
-    int n, iz, is, nz, ns, dim;
-    int izone = 0, isol = 0;
+    int n, nz, dim;
     int base1 = 1, base2 = 1;
-    char *p, *tmpfile, *newbase = NULL, basename[33];
-    ZONE *z;
-    SOLUTION *s;
+    char *tmpfile, *newbase = NULL, basename[33];
 
     if (argc < 2)
         print_usage (usgmsg, NULL);
@@ -1168,7 +1081,7 @@ char *argv[];
                 max_elements = atoi (argarg);
                 break;
             case 'p':
-                bbox_padding = atof (argarg);
+                bbox_padding = (float)atof (argarg);
                 break;
             case 'i':
                 max_iter = atoi (argarg);
@@ -1197,7 +1110,7 @@ char *argv[];
     read_zones ();
     for (nz = 1; nz <= nZones; nz++) {
         read_zone_grid (nz);
-        if (Zones[nz-1].type == Structured)
+        if (Zones[nz-1].type == CGNS_ENUMV(Structured))
             structured_elements (nz);
         else
             read_zone_element (nz);
@@ -1219,9 +1132,9 @@ char *argv[];
     build_octree ();
     printf ("               min     max     avg\n");
     printf (" depth:   %8d%8d%8d\n",
-        depths[0], depths[1], depths[2] / counts[3]);
-    printf (" elements:%8d%8d%8d\n",
-        counts[0], counts[1], counts[2] / counts[3]);
+        depths[0], depths[1], depths[2] / (int)counts[3]);
+    printf (" elements:%8ld%8ld%8ld\n",
+        (long)counts[0], (long)counts[1], (long)(counts[2] / counts[3]));
 
     /* save zone information */
     nbasezones = nZones;
@@ -1251,7 +1164,7 @@ char *argv[];
     printf ("interpolating solution using %s averaging...\n",
         weighting ? "volume" : "simple");
     for (nz = 0; nz < nZones; nz++) {
-        printf ("  zone %d, %d vertices...\n", nz+1, Zones[nz].nverts);
+        printf ("  zone %d, %ld vertices...\n", nz+1, (long)Zones[nz].nverts);
         fflush (stdout);
         build_solution (nz);
     }

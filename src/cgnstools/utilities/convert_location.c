@@ -5,6 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+# define unlink _unlink
+#else
+# include <unistd.h>
+#endif
 
 #include "getargs.h"
 #include "cgnslib.h"
@@ -84,18 +89,11 @@ static int isol = 0;
 
 /*-------------------------------------------------------------------*/
 
-static void check_zones (
-#ifdef PROTOTYPE
-    int location)
-#else
-    location)
-int location;
-#endif
+static void check_zones (int location)
 {
     int iz, nz, ns, icnt = 0;
     ZONE *z;
     SOLUTION *s;
-    char buff[128];
 
     for (z = Zones, nz = 1; nz <= nZones; nz++, z++) {
         iz = 0;
@@ -121,9 +119,7 @@ int location;
 
 /*-------------------------------------------------------------------*/
 
-int main (argc, argv)
-int argc;
-char *argv[];
+int main (int argc, char *argv[])
 {
     int i, j, n, nz, ns, celldim, phydim;
     int rind[3][2], location = 0;
@@ -141,10 +137,10 @@ char *argv[];
     while ((n = getargs (argc, argv, options)) > 0) {
         switch (n) {
             case 'c':
-                location += CellCenter;
+                location += CGNS_ENUMV(CellCenter);
                 break;
             case 'v':
-                location += Vertex;
+                location += CGNS_ENUMV(Vertex);
                 break;
             case 'w':
                 weighting = 1;
@@ -180,13 +176,13 @@ char *argv[];
         FATAL (NULL, "CGNSfile does not exist or is not a file");
 
 #if defined(CELL_TO_VERTEX)
-    location = Vertex;
+    location = CGNS_ENUMV(Vertex);
 #elif defined(VERTEX_TO_CELL)
-    location = CellCenter;
+    location = CGNS_ENUMV(CellCenter);
 #else
     if (!location)
         print_usage (usgmsg, "please select either the -c or -v option");
-    if (location != CellCenter && location != Vertex)
+    if (location != CGNS_ENUMV(CellCenter) && location != CGNS_ENUMV(Vertex))
         print_usage (usgmsg, "please select only one of -c or -v options");
 #endif
 
@@ -207,10 +203,10 @@ char *argv[];
     printf ("reading zone information for base %d - %s\n",
         cgnsbase, basename);
     printf ("converting solution location to %s\n",
-        location == CellCenter ? "CellCenter" : "Vertex");
+        location == CGNS_ENUMV(CellCenter) ? "CellCenter" : "Vertex");
 
     read_zones ();
-    check_zones (location == CellCenter ? Vertex : CellCenter);
+    check_zones (location == CGNS_ENUMV(CellCenter) ? CGNS_ENUMV(Vertex) : CGNS_ENUMV(CellCenter));
 
     /* convert solution location */
 
@@ -221,7 +217,7 @@ char *argv[];
                     printf ("converting zone %d, solution %d ... ", nz, ns);
                     fflush (stdout);
                     read_solution_field (nz, ns, 0);
-                    if (location == CellCenter) {
+                    if (location == CGNS_ENUMV(CellCenter)) {
                         for (i = 0; i < 3; i++)
                             for (j = 0; j < 2; j++)
                                 s->rind[i][j] = rind[i][j];

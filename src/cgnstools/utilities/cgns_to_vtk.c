@@ -9,6 +9,13 @@
 #include <math.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+# include <io.h>
+# include <direct.h>
+# define chdir _chdir
+#else
+# include <unistd.h>
+#endif
 
 #include "getargs.h"
 #include "cgnslib.h"
@@ -56,13 +63,12 @@ static int CellDim, PhyDim;
 static int nnodes;
 static Node *nodes;
 
-static GridLocation_t varloc;
+static CGNS_ENUMT(GridLocation_t) varloc;
 static int nvars, ndata;
 static Variable *vars;
-static int varrng[2][3];
+static cgsize_t varrng[2][3];
 
 static int verbose = 0;
-static int bndrys = 0;
 static int ascii = 0;
 
 /*---------- FATAL ----------------------------------------------------
@@ -195,11 +201,12 @@ static void write_floats (FILE *fp, int cnt, float *data)
  * read zone nodes
  *---------------------------------------------------------------------*/
 
-static int get_nodes (int nz, ZoneType_t zonetype, int *sizes)
+static int get_nodes (int nz, CGNS_ENUMT(ZoneType_t) zonetype, cgsize_t *sizes)
 {
     int i, j, n, ncoords;
-    int rind[6], rng[2][3];
-    DataType_t datatype;
+    int rind[6];
+    cgsize_t nn, rng[2][3];
+    CGNS_ENUMT(DataType_t) datatype;
     float *xyz;
     double rad, theta, phi;
     char name[33], coordtype[4];
@@ -225,23 +232,24 @@ static int get_nodes (int nz, ZoneType_t zonetype, int *sizes)
 
     /* get grid coordinate range */
 
-    if (zonetype == Structured) {
+    if (zonetype == CGNS_ENUMV(Structured)) {
         for (n = 0; n < 3; n++) {
             rng[0][n] = 1;
             rng[1][n] = 1;
         }
-        nnodes = 1;
+        nn = 1;
         for (n = 0; n < CellDim; n++) {
             rng[0][n] = rind[2*n] + 1;
             rng[1][n] = rind[2*n] + sizes[n];
-            nnodes *= sizes[n];
+            nn *= sizes[n];
         }
     }
     else {
-        nnodes = sizes[0] + rind[0] + rind[1];
+        nn = sizes[0] + rind[0] + rind[1];
         rng[0][0] = 1;
-        rng[1][0] = nnodes;
+        rng[1][0] = nn;
     }
+    nnodes = (int)nn;
 
     /* read the nodes */
 
@@ -254,7 +262,7 @@ static int get_nodes (int nz, ZoneType_t zonetype, int *sizes)
     for (i = 1; i <= ncoords; i++) {
         if (cg_coord_info (cgnsfn, cgnsbase, nz, i, &datatype, name) ||
             cg_coord_read (cgnsfn, cgnsbase, nz, name,
-                RealSingle, rng[0], rng[1], xyz))
+                CGNS_ENUMV(RealSingle), rng[0], rng[1], xyz))
             FATAL (NULL);
         if (0 == strcmp (name, "CoordinateX") ||
             0 == strcmp (name, "CoordinateR"))
@@ -316,12 +324,12 @@ static int sort_variables (const void *v1, const void *v2)
  * get the solution vaiables
  *---------------------------------------------------------------------*/
 
-static int get_variables (int nz, ZoneType_t zonetype, int *sizes)
+static int get_variables (int nz, CGNS_ENUMT(ZoneType_t) zonetype, cgsize_t *sizes)
 {
     char name[33];
     int n, len, nv, nsols;
     int rind[6];
-    DataType_t datatype;
+    CGNS_ENUMT(DataType_t) datatype;
 
     nvars = 0;
     if (cg_nsols (cgnsfn, cgnsbase, nz, &nsols))
@@ -331,7 +339,7 @@ static int get_variables (int nz, ZoneType_t zonetype, int *sizes)
         cg_nfields (cgnsfn, cgnsbase, nz, cgnssol, &nv))
         FATAL (NULL);
     if (nv < 1) return 0;
-    if (varloc != Vertex && varloc != CellCenter) return 0;
+    if (varloc != CGNS_ENUMV(Vertex) && varloc != CGNS_ENUMV(CellCenter)) return 0;
     nvars = nv;
 
     /* check for rind */
@@ -348,8 +356,8 @@ static int get_variables (int nz, ZoneType_t zonetype, int *sizes)
 
     /* get solution data range */
 
-    if (zonetype == Structured) {
-        nv = varloc == Vertex ? 0 : CellDim;
+    if (zonetype == CGNS_ENUMV(Structured)) {
+        nv = varloc == CGNS_ENUMV(Vertex) ? 0 : CellDim;
         for (n = 0; n < 3; n++) {
             varrng[0][n] = 1;
             varrng[1][n] = 1;
@@ -358,12 +366,12 @@ static int get_variables (int nz, ZoneType_t zonetype, int *sizes)
         for (n = 0; n < CellDim; n++) {
             varrng[0][n] = rind[2*n] + 1;
             varrng[1][n] = rind[2*n] + sizes[n+nv];
-            ndata *= sizes[n+nv];
+            ndata *= (int)sizes[n+nv];
         }
     }
     else {
-        nv = varloc == Vertex ? 0 : 1;
-        ndata = sizes[nv];
+        nv = varloc == CGNS_ENUMV(Vertex) ? 0 : 1;
+        ndata = (int)sizes[nv];
         varrng[0][0] = rind[0] + 1;
         varrng[1][0] = rind[0] + ndata;
     }
@@ -386,7 +394,7 @@ static int get_variables (int nz, ZoneType_t zonetype, int *sizes)
     /* get number of scalars and vectors */
 
     for (nv = 2; nv < nvars; nv++) {
-        len = strlen(vars[nv].name) - 1;
+        len = (int)strlen(vars[nv].name) - 1;
         if (vars[nv].name[len] == 'Z') {
             strcpy (name, vars[nv].name);
             name[len] = 'Y';
@@ -440,16 +448,16 @@ static void write_solution (FILE *fp, int nz, int *mask)
 
     if (verbose) {
         printf ("  writing %d scalars and %d vectors as %s data\n",
-            nscal, nvect, varloc == Vertex ? "point" : "cell");
+            nscal, nvect, varloc == CGNS_ENUMV(Vertex) ? "point" : "cell");
         fflush (stdout);
     }
-    fprintf (fp, "%s_DATA %d\n", varloc == Vertex ? "POINT" : "CELL", nd);
+    fprintf (fp, "%s_DATA %d\n", varloc == CGNS_ENUMV(Vertex) ? "POINT" : "CELL", nd);
 
     if (nscal) {
         for (nv = 0; nv < nvars; nv++) {
             if (vars[nv].cnt != 1) continue;
             if (cg_field_read (cgnsfn, cgnsbase, nz, cgnssol,
-                    vars[nv].name, RealSingle,
+                    vars[nv].name, CGNS_ENUMV(RealSingle),
                     varrng[0], varrng[1], data))
                 FATAL (NULL);
             fix_name (vars[nv].name, name);
@@ -466,13 +474,13 @@ static void write_solution (FILE *fp, int nz, int *mask)
         for (nv = 0; nv < nvars; nv++) {
             if (vars[nv].cnt != 3) continue;
             if (cg_field_read (cgnsfn, cgnsbase, nz, cgnssol,
-                    vars[nv].name, RealSingle,
+                    vars[nv].name, CGNS_ENUMV(RealSingle),
                     varrng[0], varrng[1], data) ||
                 cg_field_read (cgnsfn, cgnsbase, nz, cgnssol,
-                    vars[nv+1].name, RealSingle,
+                    vars[nv+1].name, CGNS_ENUMV(RealSingle),
                     varrng[0], varrng[1], &data[ndata]) ||
                 cg_field_read (cgnsfn, cgnsbase, nz, cgnssol,
-                    vars[nv+2].name, RealSingle,
+                    vars[nv+2].name, CGNS_ENUMV(RealSingle),
                     varrng[0], varrng[1], &data[2*ndata]))
                 FATAL (NULL);
             fix_name (vars[nv].name, name);
@@ -498,10 +506,12 @@ static void write_solution (FILE *fp, int nz, int *mask)
 
 static void write_volume_cells (FILE *fp, int nz)
 {
-    int i, n, ns, nsect, is, ie, nn, ip, size;
-    int maxsize, maxelems, nelems, elemcnt, elemsize;
-    int *conn, *par, *types, cell[9];
-    ElementType_t elemtype, et;
+    int i, n, ns, nsect, nn, ip;
+    int elemcnt, elemsize;
+    int *types, cell[9];
+    cgsize_t is, ie, nelems, maxsize, maxelems;
+    cgsize_t size, *conn;
+    CGNS_ENUMT(ElementType_t) elemtype, et;
     char name[33];
 
     if (cg_nsections (cgnsfn, cgnsbase, nz, &nsect))
@@ -518,17 +528,11 @@ static void write_volume_cells (FILE *fp, int nz)
         if (maxelems < nelems) maxelems = nelems;
         if (maxsize < size) maxsize = size;
     }
+    if (maxsize > CG_MAX_INT32) FATAL("too many elements for 32-bit integer");
 
-    conn = (int *) malloc (maxsize * sizeof(int));
+    conn = (cgsize_t *) malloc ((size_t)maxsize * sizeof(cgsize_t));
     if (conn == NULL)
         FATAL ("malloc failed for element connectivity");
-#if CGNS_VERSION > 2000
-    par = NULL;
-#else
-    par = (int *) malloc (4 * maxelems * sizeof(int));
-    if (par == NULL)
-        FATAL ("malloc failed for element parent data");
-#endif
 
     /* count volume cells */
 
@@ -537,76 +541,77 @@ static void write_volume_cells (FILE *fp, int nz)
         if (cg_section_read (cgnsfn, cgnsbase, nz, ns,
                 name, &elemtype, &is, &ie, &nn, &ip))
             FATAL (NULL);
-        if (elemtype < TETRA_4 || elemtype > MIXED) continue;
+        if (elemtype < CGNS_ENUMV(TETRA_4) || elemtype > CGNS_ENUMV(MIXED)) continue;
         nelems = ie - is + 1;
-        if (elemtype == MIXED) {
-            if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, par))
+        if (elemtype == CGNS_ENUMV(MIXED)) {
+            if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL))
                 FATAL (NULL);
             for (i = 0, n = 0; n < nelems; n++) {
-                elemtype = conn[i++];
-                switch (elemtype) {
-                    case TETRA_4:
-                    case TETRA_10:
+                et = (int)conn[i++];
+                switch (et) {
+                    case CGNS_ENUMV(TETRA_4):
+                    case CGNS_ENUMV(TETRA_10):
                         elemcnt++;
                         elemsize += 5;
                         break;
-                    case PYRA_5:
-                    case PYRA_14:
+                    case CGNS_ENUMV(PYRA_5):
+                    case CGNS_ENUMV(PYRA_14):
                         elemcnt++;
                         elemsize += 6;
                         break;
-                    case PENTA_6:
-                    case PENTA_15:
-                    case PENTA_18:
+                    case CGNS_ENUMV(PENTA_6):
+                    case CGNS_ENUMV(PENTA_15):
+                    case CGNS_ENUMV(PENTA_18):
                         elemcnt++;
                         elemsize += 7;
                         break;
-                    case HEXA_8:
-                    case HEXA_20:
-                    case HEXA_27:
+                    case CGNS_ENUMV(HEXA_8):
+                    case CGNS_ENUMV(HEXA_20):
+                    case CGNS_ENUMV(HEXA_27):
                         elemcnt++;
                         elemsize += 9;
                         break;
+                    default:
+                        break;
                 }
-                if (cg_npe (elemtype, &size) || size == 0)
+                if (cg_npe (et, &nn) || nn == 0)
                     FATAL ("invalid element type in MIXED");
-                i += size;
+                i += nn;
             }
         }
         else {
             switch (elemtype) {
-                case TETRA_4:
-                case TETRA_10:
-                    size = 5;
+                case CGNS_ENUMV(TETRA_4):
+                case CGNS_ENUMV(TETRA_10):
+                    nn = 5;
                     break;
-                case PYRA_5:
-                case PYRA_14:
-                    size = 6;
+                case CGNS_ENUMV(PYRA_5):
+                case CGNS_ENUMV(PYRA_14):
+                    nn = 6;
                     break;
-                case PENTA_6:
-                case PENTA_15:
-                case PENTA_18:
-                    size = 7;
+                case CGNS_ENUMV(PENTA_6):
+                case CGNS_ENUMV(PENTA_15):
+                case CGNS_ENUMV(PENTA_18):
+                    nn = 7;
                     break;
-                case HEXA_8:
-                case HEXA_20:
-                case HEXA_27:
-                    size = 9;
+                case CGNS_ENUMV(HEXA_8):
+                case CGNS_ENUMV(HEXA_20):
+                case CGNS_ENUMV(HEXA_27):
+                    nn = 9;
                     break;
                 default:
-                    size = 0;
+                    nn = 0;
                     break;
             }
-            if (size) {
-                elemcnt += nelems;
-                elemsize += (size * nelems);
+            if (nn) {
+                elemcnt += (int)nelems;
+                elemsize += (nn * (int)nelems);
             }
         }
     }
 
     if (elemcnt == 0) {
         free (conn);
-        if (par != NULL) free (par);
         return;
     }
 
@@ -627,33 +632,33 @@ static void write_volume_cells (FILE *fp, int nz)
         if (cg_section_read (cgnsfn, cgnsbase, nz, ns,
                 name, &elemtype, &is, &ie, &nn, &ip))
             FATAL (NULL);
-        if (elemtype < TETRA_4 || elemtype > MIXED) continue;
+        if (elemtype < CGNS_ENUMV(TETRA_4) || elemtype > CGNS_ENUMV(MIXED)) continue;
         nelems = ie - is + 1;
-        if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, par))
+        if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL))
             FATAL (NULL);
         et = elemtype;
         for (i = 0, n = 0; n < nelems; n++) {
-            if (elemtype == MIXED) et = conn[i++];
+            if (elemtype == CGNS_ENUMV(MIXED)) et = (int)conn[i++];
             switch (et) {
-                case TETRA_4:
-                case TETRA_10:
+                case CGNS_ENUMV(TETRA_4):
+                case CGNS_ENUMV(TETRA_10):
                     nn = 4;
                     types[elemcnt++] = 10;
                     break;
-                case PYRA_5:
-                case PYRA_14:
+                case CGNS_ENUMV(PYRA_5):
+                case CGNS_ENUMV(PYRA_14):
                     nn = 5;
                     types[elemcnt++] = 14;
                     break;
-                case PENTA_6:
-                case PENTA_15:
-                case PENTA_18:
+                case CGNS_ENUMV(PENTA_6):
+                case CGNS_ENUMV(PENTA_15):
+                case CGNS_ENUMV(PENTA_18):
                     nn = 6;
                     types[elemcnt++] = 13;
                     break;
-                case HEXA_8:
-                case HEXA_20:
-                case HEXA_27:
+                case CGNS_ENUMV(HEXA_8):
+                case CGNS_ENUMV(HEXA_20):
+                case CGNS_ENUMV(HEXA_27):
                     nn = 8;
                     types[elemcnt++] = 12;
                     break;
@@ -664,16 +669,15 @@ static void write_volume_cells (FILE *fp, int nz)
             if (nn) {
                 cell[0] = nn;
                 for (ip = 0; ip < nn; ip++)
-                    cell[ip+1] = conn[i+ip] - 1;
+                    cell[ip+1] = (int)conn[i+ip] - 1;
                 write_ints (fp, nn+1, cell);
             }
-            if (cg_npe (et, &size) || size == 0)
+            if (cg_npe (et, &nn) || nn == 0)
                 FATAL ("invalid element type");
-            i += size;
+            i += nn;
         }
     }
     free (conn);
-    if (par != NULL) free (par);
 
     /* write the element types */
 
@@ -687,12 +691,14 @@ static void write_volume_cells (FILE *fp, int nz)
  * write element sets as vtk files
  *---------------------------------------------------------------------*/
 
-static void write_element_sets (int nz, int *sizes)
+static void write_element_sets (int nz, cgsize_t *sizes)
 {
-    int i, n, ns, nsect, is, ie, nn, ip, size;
-    int nelems, elemcnt, elemsize, cell[9];
-    int *nodemap, *types, *conn, *par;
-    ElementType_t elemtype, et;
+    int i, n, ns, nsect, nn, ip;
+    int elemcnt, elemsize, cell[9];
+    int *nodemap, *types;
+    cgsize_t is, ie, nelems;
+    cgsize_t size, *conn;
+    CGNS_ENUMT(ElementType_t) elemtype, et;
     char name[33], outfile[65], buff[33];
     FILE *fp;
 
@@ -709,58 +715,52 @@ static void write_element_sets (int nz, int *sizes)
                 name, &elemtype, &is, &ie, &nn, &ip) ||
             cg_ElementDataSize (cgnsfn, cgnsbase, nz, ns, &size))
             FATAL (NULL);
+        if (size > CG_MAX_INT32)
+            FATAL("element data too large for 32-bit integer");
         nelems = ie - is + 1;
-        conn = (int *) malloc (size * sizeof(int));
+        conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
         if (conn == NULL)
             FATAL ("malloc failed for element connectivity");
-        par = NULL;
-#if CGNS_VERSION <= 2000
-        if (ip) {
-            par = (int *) malloc (4 * nelems * sizeof(int));
-            if (par == NULL)
-                FATAL ("malloc failed for element parent data");
-        }
-#endif
-        if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, par))
+        if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL))
             FATAL (NULL);
 
         for (n = 0; n < nnodes; n++)
             nodemap[n] = 0;
         et = elemtype;
         elemcnt = elemsize = 0;
-        for (i = 0, n = 0; n < nelems; n++) {
-            if (elemtype == MIXED) et = conn[i++];
+        for (is = 0, ie = 0; ie < nelems; ie++) {
+            if (elemtype == CGNS_ENUMV(MIXED)) et = (int)conn[is++];
             switch (et) {
-                case NODE:
+                case CGNS_ENUMV(NODE):
                     nn = 1;
                     break;
-                case BAR_2:
-                case BAR_3:
+                case CGNS_ENUMV(BAR_2):
+                case CGNS_ENUMV(BAR_3):
                     nn = 2;
                     break;
-                case TRI_3:
-                case TRI_6:
+                case CGNS_ENUMV(TRI_3):
+                case CGNS_ENUMV(TRI_6):
                     nn = 3;
                     break;
-                case QUAD_4:
-                case QUAD_8:
-                case QUAD_9:
-                case TETRA_4:
-                case TETRA_10:
+                case CGNS_ENUMV(QUAD_4):
+                case CGNS_ENUMV(QUAD_8):
+                case CGNS_ENUMV(QUAD_9):
+                case CGNS_ENUMV(TETRA_4):
+                case CGNS_ENUMV(TETRA_10):
                     nn = 4;
                     break;
-                case PYRA_5:
-                case PYRA_14:
+                case CGNS_ENUMV(PYRA_5):
+                case CGNS_ENUMV(PYRA_14):
                     nn = 5;
                     break;
-                case PENTA_6:
-                case PENTA_15:
-                case PENTA_18:
+                case CGNS_ENUMV(PENTA_6):
+                case CGNS_ENUMV(PENTA_15):
+                case CGNS_ENUMV(PENTA_18):
                     nn = 6;
                     break;
-                case HEXA_8:
-                case HEXA_20:
-                case HEXA_27:
+                case CGNS_ENUMV(HEXA_8):
+                case CGNS_ENUMV(HEXA_20):
+                case CGNS_ENUMV(HEXA_27):
                     nn = 8;
                     break;
                 default:
@@ -770,18 +770,17 @@ static void write_element_sets (int nz, int *sizes)
             if (nn) {
                 elemcnt++;
                 elemsize += (nn + 1);
-                for (is = 0; is < nn; is++) {
-                    ie = conn[i+is] - 1;
-                    (nodemap[ie])++;
+                for (i = 0; i < nn; i++) {
+                    n = (int)conn[is+i] - 1;
+                    (nodemap[n])++;
                 }
             }
-            if (cg_npe (et, &size) || size == 0)
+            if (cg_npe (et, &nn) || nn == 0)
                 FATAL ("invalid element type");
-            i += size;
+            is += nn;
         }
         if (elemcnt == 0) {
             free (conn);
-            if (par != NULL) free (par);
             continue;
         }
 
@@ -836,48 +835,48 @@ static void write_element_sets (int nz, int *sizes)
 
         et = elemtype;
         elemcnt = 0;
-        for (i = 0, n = 0; n < nelems; n++) {
-            if (elemtype == MIXED) et = conn[i++];
+        for (is = 0, ie = 0; ie < nelems; ie++) {
+            if (elemtype == CGNS_ENUMV(MIXED)) et = (int)conn[is++];
             switch (et) {
-                case NODE:
+                case CGNS_ENUMV(NODE):
                     nn = 1;
                     types[elemcnt++] = 1;
                     break;
-                case BAR_2:
-                case BAR_3:
+                case CGNS_ENUMV(BAR_2):
+                case CGNS_ENUMV(BAR_3):
                     nn = 2;
                     types[elemcnt++] = 3;
                     break;
-                case TRI_3:
-                case TRI_6:
+                case CGNS_ENUMV(TRI_3):
+                case CGNS_ENUMV(TRI_6):
                     nn = 3;
                     types[elemcnt++] = 5;
                     break;
-                case QUAD_4:
-                case QUAD_8:
-                case QUAD_9:
+                case CGNS_ENUMV(QUAD_4):
+                case CGNS_ENUMV(QUAD_8):
+                case CGNS_ENUMV(QUAD_9):
                     nn = 4;
                     types[elemcnt++] = 9;
                     break;
-                case TETRA_4:
-                case TETRA_10:
+                case CGNS_ENUMV(TETRA_4):
+                case CGNS_ENUMV(TETRA_10):
                     nn = 4;
                     types[elemcnt++] = 10;
                     break;
-                case PYRA_5:
-                case PYRA_14:
+                case CGNS_ENUMV(PYRA_5):
+                case CGNS_ENUMV(PYRA_14):
                     nn = 5;
                     types[elemcnt++] = 14;
                     break;
-                case PENTA_6:
-                case PENTA_15:
-                case PENTA_18:
+                case CGNS_ENUMV(PENTA_6):
+                case CGNS_ENUMV(PENTA_15):
+                case CGNS_ENUMV(PENTA_18):
                     nn = 6;
                     types[elemcnt++] = 13;
                     break;
-                case HEXA_8:
-                case HEXA_20:
-                case HEXA_27:
+                case CGNS_ENUMV(HEXA_8):
+                case CGNS_ENUMV(HEXA_20):
+                case CGNS_ENUMV(HEXA_27):
                     nn = 8;
                     types[elemcnt++] = 12;
                     break;
@@ -887,16 +886,15 @@ static void write_element_sets (int nz, int *sizes)
             }
             if (nn) {
                 cell[0] = nn;
-                for (ip = 0; ip < nn; ip++)
-                    cell[ip+1] = nodemap[conn[i+ip]-1] - 1;
+                for (i = 0; i < nn; i++)
+                    cell[i+1] = nodemap[(int)conn[is+i]-1] - 1;
                 write_ints (fp, nn+1, cell);
             }
-            cg_npe (et, &size);
-            i += size;
+            cg_npe (et, &nn);
+            is += nn;
         }
 
         free (conn);
-        if (par != NULL) free (par);
 
         /* write the cell types */
 
@@ -908,7 +906,7 @@ static void write_element_sets (int nz, int *sizes)
         /* write solution if Vertex */
 
         if (nvars) {
-            if (varloc == Vertex && ndata == nnodes)
+            if (varloc == CGNS_ENUMV(Vertex) && ndata == nnodes)
                 write_solution (fp, nz, nodemap);
             else if (verbose) {
                 printf ("  skipping solution - not Vertex\n");
@@ -926,10 +924,11 @@ static void write_element_sets (int nz, int *sizes)
 
 int main (int argc, char *argv[])
 {
-    int n, nz, sizes[9];
+    int n, nz;
     char name[33], outfile[37];
     int elemsets = 0;
-    ZoneType_t zonetype;
+    cgsize_t sizes[9];
+    CGNS_ENUMT(ZoneType_t) zonetype;
     struct stat st;
     FILE *fp;
 
@@ -995,7 +994,7 @@ int main (int argc, char *argv[])
     if (++argind < argc) {
         if (stat (argv[argind], &st) &&
 #ifdef _WIN32
-            mkdir (argv[argind])) {
+            _mkdir (argv[argind])) {
 #else
             mkdir (argv[argind], S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH)) {
 #endif
@@ -1021,8 +1020,17 @@ int main (int argc, char *argv[])
         if (cg_zone_type (cgnsfn, cgnsbase, nz, &zonetype) ||
             cg_zone_read (cgnsfn, cgnsbase, nz, name, sizes))
             FATAL (NULL);
-        if (zonetype != Structured && zonetype != Unstructured)
+        if (zonetype == CGNS_ENUMV(Structured)) {
+            if (sizes[0]*sizes[1]*sizes[2] > CG_MAX_INT32)
+                FATAL("too many coordinates for 32-bit integer");
+        }
+        else if (zonetype == CGNS_ENUMV(Unstructured)) {
+            if (sizes[0] > CG_MAX_INT32)
+                FATAL("too many coordinates for 32-bit integer");
+        }
+        else
             FATAL ("invalid zone type");
+        
 
         create_filename (name, outfile);
         strcat (outfile, ".vtk");
@@ -1041,10 +1049,10 @@ int main (int argc, char *argv[])
         fprintf (fp, "# vtk DataFile Version 2.0\n");
         fprintf (fp, "zone %d - %s\n", nz, name);
         fprintf (fp, "%s\n", ascii ? "ASCII" : "BINARY");
-        if (zonetype == Structured) {
+        if (zonetype == CGNS_ENUMV(Structured)) {
             fprintf (fp, "DATASET STRUCTURED_GRID\n");
             fprintf (fp, "DIMENSIONS %d %d %d\n",
-                sizes[0], sizes[1], sizes[2]);
+                (int)sizes[0], (int)sizes[1], (int)sizes[2]);
         }
         else
             fprintf (fp, "DATASET UNSTRUCTURED_GRID\n");
@@ -1058,14 +1066,14 @@ int main (int argc, char *argv[])
         for (n = 0; n < nnodes; n++)
             write_floats (fp, 3, nodes[n]);
 
-        if (zonetype == Unstructured)
+        if (zonetype == CGNS_ENUMV(Unstructured))
             write_volume_cells (fp, nz);
         if (get_variables (nz, zonetype, sizes))
             write_solution (fp, nz, NULL);
 
         fclose (fp);
 
-        if (elemsets && zonetype == Unstructured)
+        if (elemsets && zonetype == CGNS_ENUMV(Unstructured))
             write_element_sets (nz, sizes);
 
         free (nodes);

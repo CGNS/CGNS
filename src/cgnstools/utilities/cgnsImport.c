@@ -8,7 +8,6 @@
 #include <ctype.h>
 #include <math.h>
 
-#include "cgnslib.h"
 #include "cgnsImport.h"
 #include "hash.h"
 
@@ -44,7 +43,7 @@ static char **var_names = 0;
 /*--- node structure ---*/
 
 typedef struct {
-    int id;         /* node ID */
+    cgsize_t id;    /* node ID */
     int flags;      /* references to node */
     DOUBLE x, y, z; /* coordinates */
     DOUBLE dist;    /* distance from origin */
@@ -56,14 +55,14 @@ typedef struct {
 #define NODEMAP_INC 50  /* realloc this many at a time */
 
 typedef struct {
-    int nodeid;     /* node id */
-    int mapped;     /* set when mapped */
+    cgsize_t nodeid;    /* node id */
+    cgsize_t mapped;    /* set when mapped */
     cgnsNODE *node;     /* pointer to node data */
 } NODEMAP;
 
-static int num_nodes = 0;   /* number of nodes */
-static int max_nodes = 0;   /* number of nodes malloced */
-static NODEMAP *nodemap;    /* list of nodes */
+static cgsize_t num_nodes = 0; /* number of nodes */
+static cgsize_t max_nodes = 0; /* number of nodes malloced */
+static NODEMAP *nodemap;       /* list of nodes */
 
 /*--- duplicate node checking ---*/
 
@@ -74,8 +73,8 @@ static double def_tol = TOLERANCE;
 static double tolerance = TOLERANCE;
 DOUBLE xmin, xmax, ymin, ymax, zmin, zmax;
 
-static int num_entries = 0;
-static int max_entries = 0;
+static cgsize_t num_entries = 0;
+static cgsize_t max_entries = 0;
 static cgnsNODE **node_list;
 
 /*--- element data ---*/
@@ -83,32 +82,32 @@ static cgnsNODE **node_list;
 #define ELEMENT_INC 50  /* realloc this many at a time */
 
 typedef struct {
-    int elemid;     /* element ID */
-    int elemtype;   /* element type (number of nodes) */
-    int *nodeid;    /* node ID's for element */
-    char facemap[6];/* remapping of faces */
+    cgsize_t elemid;  /* element ID */
+    int elemtype;     /* element type (number of nodes) */
+    cgsize_t *nodeid; /* node ID's for element */
+    char facemap[6];  /* remapping of faces */
 } cgnsELEM;
 
-static int num_elements = 0;/* number of elements */
-static int max_elements = 0;/* number of elements malloced */
-static cgnsELEM *elemlist;   /* list of elements */
+static cgsize_t num_elements = 0;/* number of elements */
+static cgsize_t max_elements = 0;/* number of elements malloced */
+static cgnsELEM *elemlist;       /* list of elements */
 
 /*--- region data ---*/
 
 #define REGION_INC  50          /* step increment for realloc */
 
-static char region_name[33];    /* region name */
-static int region_type;         /* type of region */
-static int region_id = 0;       /* region ID */
-static int region_max = 0;      /* malloced size of region_list */
-static int region_nobjs = 0;    /* number objects in region */
-static int *region_list;        /* list of nodes in region */
+static char region_name[33];      /* region name */
+static int region_type;           /* type of region */
+static cgsize_t region_id = 0;    /* region ID */
+static cgsize_t region_max = 0;   /* malloced size of region_list */
+static cgsize_t region_nobjs = 0; /* number objects in region */
+static cgsize_t *region_list;     /* list of nodes in region */
 
 typedef struct {
-    char name[33];  /* region name */
-    int type;       /* region type */
-    int nobjs;      /* number of objects */
-    int *objid;     /* object ID's */
+    char name[33];   /* region name */
+    int type;        /* region type */
+    cgsize_t nobjs;  /* number of objects */
+    cgsize_t *objid; /* object ID's */
 } cgnsREGN;
 
 static int num_regions = 0; /* number of regions */
@@ -117,13 +116,13 @@ static cgnsREGN *reglist;     /* list of regions */
 /*--- external faces */
 
 typedef struct  {
-    int faceid;
+    cgsize_t faceid;
     int nnodes;
-    int nodeid[4];
+    cgsize_t nodeid[4];
     int flags;
 } cgnsFACE;
 
-static int num_faces = 0;
+static cgsize_t num_faces = 0;
 static cgnsFACE **facelist;
 
 /*--- CGNS data ---*/
@@ -136,9 +135,7 @@ char cgnsZoneName[33] = "";
 /*--- error handling callback ---*/
 
 static void (*errcallback)( /* callback pointer to user routine */
-#ifdef PROTOTYPE
     char *errmsg            /* error message */
-#endif
 ) = NULL;
 
 /*======================================================================
@@ -149,9 +146,7 @@ static void (*errcallback)( /* callback pointer to user routine */
  * create a new node
  *----------------------------------------------------------------------*/
 
-static cgnsNODE *NewNode (id, x, y, z)
-int id;
-double x, y, z;
+static cgnsNODE *NewNode (cgsize_t id, double x, double y, double z)
 {
     cgnsNODE *node = (cgnsNODE *) malloc (sizeof(cgnsNODE));
 
@@ -173,10 +168,9 @@ double x, y, z;
  * return the node for a given node id
  *----------------------------------------------------------------------*/
 
-static cgnsNODE *GetNode (nodeid, pos)
-int nodeid, *pos;
+static cgnsNODE *GetNode (cgsize_t nodeid, cgsize_t *pos)
 {
-    int lo = 0, hi = num_nodes - 1;
+    cgsize_t lo = 0, hi = num_nodes - 1;
 
     *pos = 0;
     if (!num_nodes || nodeid < nodemap[0].nodeid)
@@ -212,8 +206,7 @@ int nodeid, *pos;
  * the specifed tolerance, else 1
  *----------------------------------------------------------------------*/
 
-static int CompareNodes (node1, node2)
-cgnsNODE *node1, *node2;
+static int CompareNodes (cgnsNODE *node1, cgnsNODE *node2)
 {
     double dist = (node2->x - node1->x) * (node2->x - node1->x) +
                   (node2->y - node1->y) * (node2->y - node1->y) +
@@ -233,10 +226,9 @@ forwards in the list is done for a matching node.
  * bisection search to locate position for node
  *----------------------------------------------------------------------*/
 
-static int FindPosition (node)
-cgnsNODE *node;
+static cgsize_t FindPosition (cgnsNODE *node)
 {
-    int mid, lo = 0, hi = num_entries - 1;
+    cgsize_t mid, lo = 0, hi = num_entries - 1;
 
     if (!num_entries || node->dist <= node_list[0]->dist)
         return (0);
@@ -262,11 +254,9 @@ cgnsNODE *node;
  * search for matching node in Node List
  *----------------------------------------------------------------------*/
 
-static cgnsNODE *FindNode (node, pos)
-cgnsNODE *node;
-int *pos;
+static cgnsNODE *FindNode (cgnsNODE *node, cgsize_t *pos)
 {
-    int n;
+    cgsize_t n;
 
     *pos = FindPosition (node);
 
@@ -289,18 +279,16 @@ int *pos;
  * add a new node to the duplicate node checking list
  *----------------------------------------------------------------------*/
 
-static void AddNode (node, pos)
-cgnsNODE *node;
-int pos;
+static void AddNode (cgnsNODE *node, cgsize_t pos)
 {
-    int n;
+    cgsize_t n;
 
     if (num_entries == max_entries) {
         if (!max_entries)
             node_list = (cgnsNODE **) malloc (ENTRY_INC * sizeof(cgnsNODE *));
         else
             node_list = (cgnsNODE **) realloc (node_list,
-                (max_entries + ENTRY_INC) * sizeof(cgnsNODE *));
+                (size_t)(max_entries + ENTRY_INC) * sizeof(cgnsNODE *));
         if (NULL == node_list)
             cgnsImportFatal (
             "AddNode:malloc failed for new node entry in duplicate node list");
@@ -320,10 +308,9 @@ int pos;
  * return the element for a given element id
  *----------------------------------------------------------------------*/
 
-static cgnsELEM *GetElement (elemid, pos)
-int elemid, *pos;
+static cgnsELEM *GetElement (cgsize_t elemid, cgsize_t *pos)
 {
-    int lo = 0, hi = num_elements - 1;
+    cgsize_t lo = 0, hi = num_elements - 1;
 
     *pos = 0;
     if (!num_elements || elemid < elemlist[0].elemid)
@@ -358,10 +345,10 @@ int elemid, *pos;
  * add new element to list of elements
  *----------------------------------------------------------------------*/
 
-static cgnsELEM *NewElement (pos)
-int pos;
+static cgnsELEM *NewElement (cgsize_t pos)
 {
-    int n, i;
+    int i;
+    cgsize_t n;
 
     /* malloc/realloc if needed */
 
@@ -370,7 +357,7 @@ int pos;
             elemlist = (cgnsELEM *) malloc (ELEMENT_INC * sizeof(cgnsELEM));
         else
             elemlist = (cgnsELEM *) realloc (elemlist,
-                (max_elements + ELEMENT_INC) * sizeof(cgnsELEM));
+                (size_t)(max_elements + ELEMENT_INC) * sizeof(cgnsELEM));
         if (NULL == elemlist)
             cgnsImportFatal ("AddElement:malloc failed for element list");
         max_elements += ELEMENT_INC;
@@ -397,9 +384,7 @@ int pos;
  * return a region for a given region name
  *----------------------------------------------------------------------*/
 
-static cgnsREGN *GetRegion (name, pos)
-char *name;
-int *pos;
+static cgnsREGN *GetRegion (char *name, int *pos)
 {
     int cmp, lo = 0, hi = num_regions - 1;
 
@@ -436,9 +421,7 @@ int *pos;
  * add a new region to region list
  *----------------------------------------------------------------------*/
 
-static cgnsREGN *NewRegion (name, pos)
-char *name;
-int pos;
+static cgnsREGN *NewRegion (char *name, int pos)
 {
     int n;
     static char *errmsg = "NewRegion:malloc failed for region list";
@@ -473,18 +456,12 @@ int pos;
  * get nodes for an element face
  *-------------------------------------------------------------------*/
 
-static int get_face_nodes (
-#ifdef PROTOTYPE
-    int faceid, int nodeid[4])
-#else
-    faceid, nodeid)
-int faceid, nodeid[4];
-#endif
+static int get_face_nodes (cgsize_t faceid, cgsize_t nodeid[4])
 {
     cgnsELEM *elem;
-    int elemid = faceid >> 3;
-    int facenum = faceid & 7;
-    int n, nfaces, noff, nnodes;
+    cgsize_t elemid = faceid >> 3;
+    int facenum = (int)(faceid & 7);
+    int n, nfaces = 0, noff = 0, nnodes;
     static int facenodes[20][5] = {
         /* tet */
         {3, 0, 2, 1, 0},
@@ -548,13 +525,7 @@ int faceid, nodeid[4];
  * face comparison routine
  *--------------------------------------------------------------------*/
 
-static int compare_faces (
-#ifdef PROTOTYPE
-    void *v1, void *v2)
-#else
-    v1, v2)
-void *v1, *v2;
-#endif
+static int compare_faces (void *v1, void *v2)
 {
     cgnsFACE *f1 = (cgnsFACE *)v1;
     cgnsFACE *f2 = (cgnsFACE *)v2;
@@ -567,7 +538,7 @@ void *v1, *v2;
 
     for (n = 0; n < f1->nnodes; n++) {
         if (f1->nodeid[n] != f2->nodeid[n])
-            return (f1->nodeid[n] - f2->nodeid[n]);
+            return (int)(f1->nodeid[n] - f2->nodeid[n]);
     }
     return (0);
 }
@@ -576,13 +547,7 @@ void *v1, *v2;
  * get the exterior faces
  *-------------------------------------------------------------------*/
 
-static void get_faces (
-#ifdef PROTOTYPE
-    void *v)
-#else
-    v)
-void *v;
-#endif
+static void get_faces (void *v)
 {
     facelist[num_faces++] = (cgnsFACE *)v;
 }
@@ -591,20 +556,14 @@ void *v;
  * face hash function
  *--------------------------------------------------------------------*/
 
-static unsigned hash_face (
-#ifdef PROTOTYPE
-    void *v)
-#else
-    v)
-void *v;
-#endif
+static size_t hash_face (void *v)
 {
     cgnsFACE *face = (cgnsFACE *)v;
     int n;
-    unsigned hash = 0;
+    size_t hash = 0;
 
     for (n = 0; n < face->nnodes; n++)
-        hash += (unsigned)face->nodeid[n];
+        hash += (size_t)face->nodeid[n];
     return (hash);
 }
 
@@ -612,28 +571,20 @@ void *v;
  * called by qsort to sort the list of faces
  *----------------------------------------------------------------------*/
 
-static int sortfaces (
-#ifdef PROTOTYPE
-    const void *f1, const void *f2)
-#else
-    f1, f2)
-void *f1, *f2;
-#endif
+static int sortfaces (const void *f1, const void *f2)
 {
-    return ((*((cgnsFACE **)f1))->faceid - (*((cgnsFACE **)f2))->faceid);
+    return (int)((*((cgnsFACE **)f1))->faceid - (*((cgnsFACE **)f2))->faceid);
 }
 
 /*---------- exterior_faces -----------------------------------------
  * find exterior faces
  *-------------------------------------------------------------------*/
 
-static void exterior_faces (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-    int i, j, k, nfaces, nodeid[4];
-    int n, nn, id, faceid;
+static void exterior_faces (void)
+{
+    int i, j, k, nfaces;
+    cgsize_t nodeid[4];
+    cgsize_t n, nn, id, faceid;
     HASH FaceList;
     cgnsFACE *pf, face;
 
@@ -710,7 +661,7 @@ static void exterior_faces (
             break;
     }
     if (n < num_faces)
-        qsort (facelist, num_faces, sizeof(cgnsFACE *), sortfaces);
+        qsort (facelist, (size_t)num_faces, sizeof(cgnsFACE *), sortfaces);
 
     /* get face nodes in the correct order */
 
@@ -729,33 +680,21 @@ static void exterior_faces (
  * called by qsort to sort list of node ID mappings
  *----------------------------------------------------------------------*/
 
-static int sortnodes (
-#ifdef PROTOTYPE
-    const void *n1, const void *n2)
-#else
-    n1, n2)
-void *n1, *n2;
-#endif
+static int sortnodes (const void *n1, const void *n2)
 {
-    return (*((int *)n1) - *((int *)n2));
+    return (int)(*((cgsize_t *)n1) - *((cgsize_t *)n2));
 }
 
 /*---------- write_node_region --------------------------------------
  * write region from node list
  *-------------------------------------------------------------------*/
 
-static int write_node_region (
-#ifdef PROTOTYPE
-    cgnsREGN *reg, int offset)
-#else
-    reg, offset)
-cgnsREGN *reg;
-int offset;
-#endif
+static cgsize_t write_node_region (cgnsREGN *reg, cgsize_t offset)
 {
-    int i, j, mid, lo, hi, pos;
-    int nfaces, nc, *conns, isect;
-    ElementType_t elemtype = ElementTypeNull;
+    int nn, isect;
+    cgsize_t i, j, mid, lo, hi, pos;
+    cgsize_t nfaces, nc, *conns;
+    CGNS_ENUMT(ElementType_t) elemtype = CGNS_ENUMV(ElementTypeNull);
     cgnsNODE *node;
 
     /* get exterior faces */
@@ -771,21 +710,21 @@ int offset;
             break;
     }
     if (i < reg->nobjs)
-        qsort (reg->objid, reg->nobjs, sizeof(int), sortnodes);
+        qsort (reg->objid, (size_t)reg->nobjs, sizeof(cgsize_t), sortnodes);
 
     /* scan list of exterior faces */
 
     nfaces = nc = 0;
     for (j = 0; j < num_faces; j++) {
         if (facelist[j]->flags) continue;
-        for (i = 0; i < facelist[j]->nnodes; i++) {
+        for (nn = 0; nn < facelist[j]->nnodes; nn++) {
             lo = 0;
             hi = reg->nobjs - 1;
             while (lo <= hi) {
                 mid = (lo + hi) >> 1;
-                if (facelist[j]->nodeid[i] == reg->objid[mid])
+                if (facelist[j]->nodeid[nn] == reg->objid[mid])
                     break;
-                if (facelist[j]->nodeid[i] < reg->objid[mid])
+                if (facelist[j]->nodeid[nn] < reg->objid[mid])
                     hi = mid - 1;
                 else
                     lo = mid + 1;
@@ -793,18 +732,19 @@ int offset;
             if (lo > hi)
                 break;
         }
-        if (i == facelist[j]->nnodes) {
+        if (nn == facelist[j]->nnodes) {
             nfaces++;
             facelist[j]->flags = 1;
-            if (nc != i) {
-                elemtype = nc ? MIXED : (i == 3 ? TRI_3 : QUAD_4);
-                nc = i;
+            if (nc != nn) {
+                elemtype = nc ? CGNS_ENUMV(MIXED) :
+                           (nn == 3 ? CGNS_ENUMV(TRI_3) : CGNS_ENUMV(QUAD_4));
+                nc = nn;
             }
         }
     }
     if (!nfaces) return 0;
 
-    conns = (int *) malloc (5 * nfaces * sizeof(int));
+    conns = (cgsize_t *) malloc ((size_t)(5 * nfaces) * sizeof(cgsize_t));
     if (NULL == conns)
         cgnsImportFatal ("write_node_region:malloc failed for connectivity");
 
@@ -812,10 +752,11 @@ int offset;
 
     for (nc = 0, j = 0; j < num_faces; j++) {
         if (facelist[j]->flags) {
-            if (elemtype == MIXED)
-                conns[nc++] = facelist[j]->nnodes == 3 ? TRI_3 : QUAD_4;
-            for (i = 0; i < facelist[j]->nnodes; i++) {
-                if (NULL == (node = GetNode (facelist[j]->nodeid[i], &pos)))
+            if (elemtype == CGNS_ENUMV(MIXED))
+                conns[nc++] = facelist[j]->nnodes == 3 ?
+                              CGNS_ENUMV(TRI_3) : CGNS_ENUMV(QUAD_4);
+            for (nn = 0; nn < facelist[j]->nnodes; nn++) {
+                if (NULL == (node = GetNode (facelist[j]->nodeid[nn], &pos)))
                     cgnsImportFatal ("write_node_region:missing element node");
                 conns[nc++] = pos + 1;
             }
@@ -823,7 +764,7 @@ int offset;
     }
 
     if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, reg->name,
-        elemtype, offset, offset + nfaces - 1, 0, conns, &isect))
+            elemtype, offset, offset + nfaces - 1, 0, conns, &isect))
         cgnsImportFatal ((char *)cg_get_error());
 
     /* create parent cell mapping */
@@ -851,58 +792,52 @@ int offset;
  * write region from face list
  *-------------------------------------------------------------------*/
 
-static int write_face_region (
-#ifdef PROTOTYPE
-    cgnsREGN *reg, int offset)
-#else
-    reg, offset)
-cgnsREGN *reg;
-int offset;
-#endif
+static cgsize_t write_face_region (cgnsREGN *reg, cgsize_t offset)
 {
-    int nn, n, elemid, facenum, nodeid[4];
-    int i, nc, *conns, isect, pos;
-    ElementType_t elemtype = ElementTypeNull;
+    int nn, facenum, i, isect;
+    cgsize_t elemid, nodeid[4];
+    cgsize_t n, nc, pos, *conns;
+    CGNS_ENUMT(ElementType_t) elemtype = CGNS_ENUMV(ElementTypeNull);
     cgnsELEM *elem;
     cgnsNODE *node;
 
     if (!reg->nobjs) return 0;
-    conns = (int *) malloc (5 * reg->nobjs * sizeof(int));
+    conns = (cgsize_t *) malloc ((size_t)(5 * reg->nobjs) * sizeof(cgsize_t));
     if (NULL == conns)
         cgnsImportFatal ("write_face_region:malloc failed for connectivity");
 
-    for (nc = 0, n = 0; n < reg->nobjs; n++) {
+    for (i = 0, n = 0; n < reg->nobjs; n++) {
         elemid = reg->objid[n] >> 3;
-        facenum = (reg->objid[n] & 7) - 1;
+        facenum = (int)(reg->objid[n] & 7) - 1;
         if (NULL == (elem = GetElement (elemid, &pos)))
             cgnsImportFatal ("write_face_region:region element not found");
         nn = get_face_nodes ((pos << 3) | facenum, nodeid);
-        if (nc != nn) {
-            if (nc) {
-                elemtype = MIXED;
+        if (i != nn) {
+            if (i) {
+                elemtype = CGNS_ENUMV(MIXED);
                 break;
             }
-            nc = nn;
-            elemtype = nn == 3 ? TRI_3 : QUAD_4;
+            i = nn;
+            elemtype = nn == 3 ? CGNS_ENUMV(TRI_3) : CGNS_ENUMV(QUAD_4);
         }
     }
 
     for (nc = 0, n = 0; n < reg->nobjs; n++) {
         elemid = reg->objid[n] >> 3;
-        facenum = (reg->objid[n] & 7) - 1;
+        facenum = (int)(reg->objid[n] & 7) - 1;
         elem = GetElement (elemid, &pos);
         nn = get_face_nodes ((pos << 3) | facenum, nodeid);
-        if (elemtype == MIXED)
-            conns[nc++] = nn == 3 ? TRI_3 : QUAD_4;
+        if (elemtype == CGNS_ENUMV(MIXED))
+            conns[nc++] = nn == 3 ? CGNS_ENUMV(TRI_3) : CGNS_ENUMV(QUAD_4);
         for (i = 0; i < nn; i++) {
             if (NULL == (node = GetNode (nodeid[i], &pos)))
                 cgnsImportFatal ("write_face_region:missing element node");
-            conns[nc++] = pos + 1;
+            conns[nc++] = pos + i;
         }
     }
 
     if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, reg->name,
-        elemtype, offset, offset + reg->nobjs - 1, 0, conns, &isect))
+            elemtype, offset, offset + reg->nobjs - 1, 0, conns, &isect))
         cgnsImportFatal ((char *)cg_get_error());
 
     free (conns);
@@ -913,13 +848,7 @@ int offset;
  * write elements as region
  *-------------------------------------------------------------------*/
 
-static int write_elem_region (
-#ifdef PROTOTYPE
-    cgnsREGN *reg, int offset)
-#else
-    reg)
-cgnsREGN *reg;
-#endif
+static cgsize_t write_elem_region (cgnsREGN *reg, cgsize_t offset)
 {
     return 0;
 }
@@ -932,13 +861,7 @@ cgnsREGN *reg;
  * setup error handler call back
  *----------------------------------------------------------------------*/
 
-void cgnsImportError (
-#ifdef PROTOTYPE
-    void (*callback)(char *msg))
-#else
-    callback)
-void (*callback)();
-#endif
+void cgnsImportError (void (*callback)(char *msg))
 {
     errcallback = callback;
 }
@@ -947,13 +870,7 @@ void (*callback)();
  * write error message and exit
  *----------------------------------------------------------------------*/
 
-void cgnsImportFatal (
-#ifdef PROTOTYPE
-    char *errmsg)
-#else
-    errmsg)
-char *errmsg;
-#endif
+void cgnsImportFatal (char *errmsg)
 {
     if (NULL != errcallback)
         (*errcallback) (errmsg);
@@ -966,13 +883,7 @@ char *errmsg;
  * setup tolerance for duplicate node checking
  *----------------------------------------------------------------------*/
 
-double cgnsImportSetTol (
-#ifdef PROTOTYPE
-    double tol)
-#else
-    tol)
-double tol;
-#endif
+double cgnsImportSetTol (double tol)
 {
     tolerance = tol >= 0.0 ? tol : TOLERANCE;
     tol = def_tol;
@@ -984,13 +895,7 @@ double tol;
  * return tolerance for duplicate node checking
  *----------------------------------------------------------------------*/
 
-double cgnsImportGetTol (
-#ifdef PROTOTYPE
-    int rel)
-#else
-    rel)
-int rel;
-#endif
+double cgnsImportGetTol (int rel)
 {
     double tol = def_tol;
 
@@ -1006,13 +911,7 @@ int rel;
  * set duplicate node checking on/off
  *----------------------------------------------------------------------*/
 
-void cgnsImportSetCheck (
-#ifdef PROTOTYPE
-    int set)
-#else
-    set)
-int set;
-#endif
+void cgnsImportSetCheck (int set)
 {
     no_check = set;
 }
@@ -1021,34 +920,21 @@ int set;
  * gets bounding box of node coordinates
  *-----------------------------------------------------------------------*/
 
-int cgnsImportRange (
-#ifdef PROTOTYPE
-    double *x1, double *y1, double *z1,
-    double *x2, double *y2, double *z2)
-#else
-    x1, y1, z1, x2, y2, z2)
-double *x1, *y1, *z1;
-double *x2, *y2, *z2;
-#endif
+cgsize_t cgnsImportRange (double *x1, double *y1, double *z1,
+                     double *x2, double *y2, double *z2)
 {
     *x1 = xmin; *y1 = ymin; *z1 = zmin;
     *x2 = xmax; *y2 = ymax; *z2 = zmax;
-    return (num_nodes);
+    return num_nodes;
 }
 
 /*---------- cgnsImportCheck --------------------------------------------
  * check for and remove duplicate nodes
  *-----------------------------------------------------------------------*/
 
-int cgnsImportCheck (
-#ifdef PROTOTYPE
-    int rel)
-#else
-    rel)
-int rel;
-#endif
+cgsize_t cgnsImportCheck (int rel)
 {
-    int n, pos, dup_cnt = 0;
+    cgsize_t n, pos, dup_cnt = 0;
     cgnsNODE *node;
 
     if (num_nodes < 2)
@@ -1098,15 +984,9 @@ int rel;
  * map a node explictly to another
  *-----------------------------------------------------------------------*/
 
-int cgnsImportMap (
-#ifdef PROTOTYPE
-    int nodeid, int mapid)
-#else
-    nodeid, mapid)
-int nodeid, mapid;
-#endif
+cgsize_t cgnsImportMap (cgsize_t nodeid, cgsize_t mapid)
 {
-    int p1, p2, ret;
+    cgsize_t p1, p2, ret;
     cgnsNODE *n1 = GetNode (nodeid, &p1);
     cgnsNODE *n2 = GetNode (mapid, &p2);
 
@@ -1116,7 +996,7 @@ int nodeid, mapid;
         return (n1->id);
     ret = CompareNodes (n1, n2) ? -1 : n1->id;
     if (REFS_BIT == (n2->flags & REFS_BIT)) {
-        int n;
+        cgsize_t n;
         for (n = 0; n < num_nodes; n++) {
             if (nodemap[n].node == n2) {
                 nodemap[n].node = n1;
@@ -1137,16 +1017,9 @@ int nodeid, mapid;
  * import a node
  *-----------------------------------------------------------------------*/
 
-int cgnsImportNode (
-#ifdef PROTOTYPE
-    int nodeid, double x, double y, double z)
-#else
-    nodeid, x, y, z)
-int nodeid;
-double x, y, z;
-#endif
+cgsize_t cgnsImportNode (cgsize_t nodeid, double x, double y, double z)
 {
-    int n, pos;
+    cgsize_t n, pos;
 
     if (nodeid <= 0)
         return (0);
@@ -1183,7 +1056,7 @@ double x, y, z;
             nodemap = (NODEMAP *) malloc (NODEMAP_INC * sizeof(NODEMAP));
         else
             nodemap = (NODEMAP *) realloc (nodemap,
-                (max_nodes + NODEMAP_INC) * sizeof(NODEMAP));
+                (size_t)(max_nodes + NODEMAP_INC) * sizeof(NODEMAP));
         if (NULL == nodemap)
             cgnsImportFatal (
                 "cgnsImportNode:malloc failed for node mapping data");
@@ -1210,16 +1083,9 @@ double x, y, z;
  * set node coordinates for node ID
  *-----------------------------------------------------------------------*/
 
-int cgnsImportSetNode (
-#ifdef PROTOTYPE
-    int nodeid, double x, double y, double z)
-#else
-    nodeid, x, y, z)
-int nodeid;
-double x, y, z;
-#endif
+cgsize_t cgnsImportSetNode (cgsize_t nodeid, double x, double y, double z)
 {
-    int n;
+    cgsize_t n;
     cgnsNODE *node = GetNode (nodeid, &n);
 
     if (NULL != node) {
@@ -1235,16 +1101,9 @@ double x, y, z;
  * return node coordinates for node ID
  *-----------------------------------------------------------------------*/
 
-int cgnsImportGetNode (
-#ifdef PROTOTYPE
-    int nodeid, double *x, double *y, double *z)
-#else
-    nodeid, x, y, z)
-int nodeid;
-double *x, *y, *z;
-#endif
+cgsize_t cgnsImportGetNode (cgsize_t nodeid, double *x, double *y, double *z)
 {
-    int n;
+    cgsize_t n;
     cgnsNODE *node = GetNode (nodeid, &n);
 
     if (NULL != node) {
@@ -1260,13 +1119,11 @@ double *x, *y, *z;
  * return list of all node ID's
  *-----------------------------------------------------------------------*/
 
-int *cgnsImportNodeList (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-    int n, *nodeids = (int *) malloc ((num_nodes + 1) * sizeof(int));
-
+cgsize_t *cgnsImportNodeList (void)
+{
+    cgsize_t n, *nodeids;
+    
+    nodeids = (cgsize_t *) malloc ((size_t)(num_nodes + 1) * sizeof(cgsize_t));
     if (NULL == nodeids)
         cgnsImportFatal ("cgnsImportNodeList:malloc failed for node ID list");
     nodeids[0] = num_nodes;
@@ -1279,13 +1136,7 @@ int *cgnsImportNodeList (
  * create a node variable
  *----------------------------------------------------------------------*/
 
-int cgnsImportAddVariable (
-#ifdef PROTOTYPE
-    char *varname)
-#else
-    varname)
-char *varname;
-#endif
+int cgnsImportAddVariable (char *varname)
 {
     int n;
     cgnsNODE *node;
@@ -1322,13 +1173,7 @@ char *varname;
  * get the variable number for a node variable
  *----------------------------------------------------------------------*/
 
-int cgnsImportGetVariable (
-#ifdef PROTOTYPE
-    char *varname)
-#else
-    varname)
-char *varname;
-#endif
+int cgnsImportGetVariable (char *varname)
 {
     int n;
 
@@ -1344,16 +1189,9 @@ char *varname;
  * set the value of a variable at a node
  *----------------------------------------------------------------------*/
 
-int cgnsImportVariable (
-#ifdef PROTOTYPE
-    int nodeid, int varnum, double val)
-#else
-    nodeid, varnum, val)
-int nodeid, varnum;
-double val;
-#endif
+cgsize_t cgnsImportVariable (cgsize_t nodeid, int varnum, double val)
 {
-    int n;
+    cgsize_t n;
     cgnsNODE *node = GetNode (nodeid, &n);
 
     if (NULL == node || varnum < 0 || varnum >= num_vars) return 0;
@@ -1365,15 +1203,10 @@ double val;
  * import an element
  *-----------------------------------------------------------------------*/
 
-int cgnsImportElement (
-#ifdef PROTOTYPE
-    int elemid, int elemtype, int *nodelist)
-#else
-    elemid, elemtype, nodelist)
-int elemid, elemtype, *nodelist;
-#endif
+int cgnsImportElement (cgsize_t elemid, int elemtype, cgsize_t *nodelist)
 {
-    int n, pos, ret;
+    int n, ret;
+    cgsize_t pos;
     cgnsNODE *node;
     cgnsELEM *elem;
 
@@ -1400,7 +1233,7 @@ int elemid, elemtype, *nodelist;
 
     elem->elemid   = elemid;
     elem->elemtype = elemtype;
-    elem->nodeid   = (int *) malloc (elemtype * sizeof(int));
+    elem->nodeid   = (cgsize_t *) malloc (elemtype * sizeof(cgsize_t));
     if (NULL == elem->nodeid)
         cgnsImportFatal (
             "cgnsImportElement:malloc failed for a new element");
@@ -1408,8 +1241,8 @@ int elemid, elemtype, *nodelist;
     for (n = 0; n < elemtype; n++) {
         if (NULL == (node = GetNode (nodelist[n], &pos))) {
             char errmsg[50];
-            sprintf (errmsg,
-                "cgnsImportElement:element node %d not found", nodelist[n]);
+            sprintf (errmsg, "cgnsImportElement:element node %ld not found",
+                (long)nodelist[n]);
             cgnsImportFatal (errmsg);
         }
         elem->nodeid[n] = node->id;
@@ -1425,16 +1258,11 @@ int elemid, elemtype, *nodelist;
  * return element for element ID
  *-----------------------------------------------------------------------*/
 
-int cgnsImportGetElement (
-#ifdef PROTOTYPE
-    int elemid, int nodeid[])
-#else
-    elemid, nodeid)
-int elemid, nodeid[];
-#endif
+int cgnsImportGetElement (cgsize_t elemid, cgsize_t nodeid[])
 {
     int n;
-    cgnsELEM *elem = GetElement (elemid, &n);
+    cgsize_t pos;
+    cgnsELEM *elem = GetElement (elemid, &pos);
 
     if (NULL != elem) {
         for (n = 0; n < elem->elemtype; n++)
@@ -1448,13 +1276,11 @@ int elemid, nodeid[];
  * return list of all element ID's
  *-----------------------------------------------------------------------*/
 
-int *cgnsImportElementList (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-    int n, *elemids = (int *) malloc ((num_elements + 1) * sizeof(int));
-
+cgsize_t *cgnsImportElementList (void)
+{
+    cgsize_t n, *elemids;
+    
+    elemids = (cgsize_t *) malloc ((size_t)(num_elements + 1) * sizeof(int));
     if (NULL == elemids)
         cgnsImportFatal (
             "cgnsImportElementList:malloc failed for element ID list");
@@ -1468,16 +1294,11 @@ int *cgnsImportElementList (
  * return element face node ID's
  *-----------------------------------------------------------------------*/
 
-int cgnsImportGetFace (
-#ifdef PROTOTYPE
-    int elemid, int facenum, int nodeid[])
-#else
-    elemid, facenum, nodeid)
-int elemid, facenum, nodeid[];
-#endif
+int cgnsImportGetFace (cgsize_t elemid, int facenum, cgsize_t nodeid[])
 {
-    int n, nfaces;
-    cgnsELEM *elem = GetElement (elemid, &n);
+    int nfaces;
+    cgsize_t pos;
+    cgnsELEM *elem = GetElement (elemid, &pos);
 
     if (NULL == elem)
         return (-1);
@@ -1494,23 +1315,18 @@ int elemid, facenum, nodeid[];
     }
     if (--facenum < 0 || facenum >= nfaces)
         return (0);
-    return get_face_nodes ((n << 3) | facenum, nodeid);
+    return get_face_nodes ((pos << 3) | facenum, nodeid);
 }
 
 /*---------- cgnsImportFindFace -----------------------------------------
  * return element face number given face node ID's
  *-----------------------------------------------------------------------*/
 
-int cgnsImportFindFace (
-#ifdef PROTOTYPE
-    int elemid, int nnodes, int nodeid[])
-#else
-    elemid, nnodes, nodeid)
-int elemid, nnodes, nodeid[];
-#endif
+int cgnsImportFindFace (cgsize_t elemid, int nnodes, cgsize_t nodeid[])
 {
-    int i, j, nfaces, noff, mask = 0;
-    cgnsELEM *elem = GetElement (elemid, &i);
+    int i, j, nfaces = 0, noff = 0, mask = 0;
+    cgsize_t pos;
+    cgnsELEM *elem = GetElement (elemid, &pos);
     static int facemask[4][6] = {
         /* tet */
         { 7,  11,  14,  13,   0,   0},
@@ -1578,14 +1394,7 @@ int elemid, nnodes, nodeid[];
  * begin a region specification
  *-----------------------------------------------------------------------*/
 
-int cgnsImportBegReg (
-#ifdef PROTOTYPE
-    char *regname, int regtype)
-#else
-    regname, regtype)
-char *regname;
-int regtype;
-#endif
+cgsize_t cgnsImportBegReg (char *regname, int regtype)
 {
     int n;
     cgnsREGN *reg;
@@ -1596,7 +1405,7 @@ int regtype;
     /* initialize region node list */
 
     if (0 == region_max) {
-        region_list = (int *) malloc (REGION_INC * sizeof(int));
+        region_list = (cgsize_t *) malloc (REGION_INC * sizeof(cgsize_t));
         if (NULL == region_list)
             cgnsImportFatal (
                 "cgnsImportBegReg:malloc failed for region node list");
@@ -1608,7 +1417,7 @@ int regtype;
     region_id = num_regions + 1;
     region_type = regtype;
     if (NULL == regname || !*regname)
-        sprintf (region_name, "%s%d", REGION_BASE, region_id);
+        sprintf (region_name, "%s%ld", REGION_BASE, (long)region_id);
     else {
         strncpy (region_name, regname, sizeof(region_name));
         region_name[sizeof(region_name)-1] = 0;
@@ -1626,15 +1435,9 @@ int regtype;
  * add nodes to the region
  *-----------------------------------------------------------------------*/
 
-int cgnsImportAddReg (
-#ifdef PROTOTYPE
-    int numobjs, int *objlist)
-#else
-    numobjs, objlist)
-int numobjs, *objlist;
-#endif
+cgsize_t cgnsImportAddReg (cgsize_t numobjs, cgsize_t *objlist)
 {
-    int n, pos;
+    cgsize_t n, pos;
     char errmsg[50];
 
     if (!region_id)
@@ -1645,8 +1448,8 @@ int numobjs, *objlist;
     if (region_nobjs + numobjs > region_max) {
         n = region_nobjs + numobjs - region_max;
         if (n < REGION_INC) n = REGION_INC;
-        region_list = (int *) realloc (region_list,
-            (region_max + n) * sizeof(int));
+        region_list = (cgsize_t *) realloc (region_list,
+            (size_t)(region_max + n) * sizeof(cgsize_t));
         if (NULL == region_list)
             cgnsImportFatal (
                 "cgnsImportAddReg:malloc failed for region node list");
@@ -1659,8 +1462,8 @@ int numobjs, *objlist;
         cgnsNODE *node;
         for (n = 0; n < numobjs; n++) {
             if (NULL == (node = GetNode (objlist[n], &pos))) {
-                sprintf (errmsg,
-                    "cgnsImportAddReg:region node %d not found", objlist[n]);
+                sprintf (errmsg, "cgnsImportAddReg:region node %ld not found",
+                    (long)objlist[n]);
                 cgnsImportFatal (errmsg);
             }
             region_list[region_nobjs++] = node->id;
@@ -1671,14 +1474,15 @@ int numobjs, *objlist;
     /* face region */
 
     else if (region_type == cgnsREG_FACES) {
-        int elemid, facenum, nfaces;
+        int facenum, nfaces;
+        cgsize_t elemid;
         cgnsELEM *elem;
         for (n = 0; n < numobjs; n++) {
             elemid = objlist[n] >> 3;
-            facenum = objlist[n] & 7;
+            facenum = (int)(objlist[n] & 7);
             if (NULL == (elem = GetElement (elemid, &pos))) {
-                sprintf (errmsg,
-                    "cgnsImportAddReg:region element %d not found", elemid);
+                sprintf (errmsg, "cgnsImportAddReg:region element %ld not found",
+                    (long)elemid);
                 cgnsImportFatal (errmsg);
             }
             if (elem->elemtype == cgnsELEM_WDG)
@@ -1688,8 +1492,7 @@ int numobjs, *objlist;
             else
                 nfaces = elem->elemtype;
             if (facenum < 1 || facenum > nfaces)
-                cgnsImportFatal (
-                    "cgnsImportAddReg:region face number out of range");
+                cgnsImportFatal ("cgnsImportAddReg:region face number out of range");
             region_list[region_nobjs++] = objlist[n];
         }
     }
@@ -1699,9 +1502,8 @@ int numobjs, *objlist;
     else if (region_type == cgnsREG_ELEMS) {
         for (n = 0; n < numobjs; n++) {
             if (NULL == GetElement (objlist[n], &pos)) {
-                sprintf (errmsg,
-                    "cgnsImportAddReg:region element %d not found",
-                    objlist[n]);
+                sprintf (errmsg, "cgnsImportAddReg:region element %ld not found",
+                    (long)objlist[n]);
                 cgnsImportFatal (errmsg);
             }
             region_list[region_nobjs++] = objlist[n];
@@ -1718,12 +1520,10 @@ int numobjs, *objlist;
  * end region definition and import region
  *-----------------------------------------------------------------------*/
 
-int cgnsImportEndReg (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-    int n, pos;
+cgsize_t cgnsImportEndReg (void)
+{
+    int pos;
+    cgsize_t n;
     cgnsREGN *reg;
 
     if (!region_id || !region_nobjs)
@@ -1737,10 +1537,10 @@ int cgnsImportEndReg (
         reg->type = region_type;
     }
     if (0 == reg->nobjs)
-        reg->objid = (int *) malloc (region_nobjs * sizeof(int));
+        reg->objid = (cgsize_t *) malloc ((size_t)region_nobjs * sizeof(cgsize_t));
     else
-        reg->objid = (int *) realloc (reg->objid,
-            (reg->nobjs + region_nobjs) * sizeof(int));
+        reg->objid = (cgsize_t *) realloc (reg->objid,
+            (size_t)(reg->nobjs + region_nobjs) * sizeof(cgsize_t));
     if (NULL == reg->objid)
         cgnsImportFatal (
             "cgnsImportRegion:malloc failed for the region object list");
@@ -1755,14 +1555,8 @@ int cgnsImportEndReg (
  * import a named region
  *-----------------------------------------------------------------------*/
 
-int cgnsImportRegion (
-#ifdef PROTOTYPE
-    char *regname, int regtype, int numobjs, int *objlist)
-#else
-    regname, regtype, numobjs, objlist)
-char *regname;
-int regtype, numobjs, *objlist;
-#endif
+cgsize_t cgnsImportRegion (char *regname, int regtype,
+                           cgsize_t numobjs, cgsize_t *objlist)
 {
     cgnsImportBegReg (regname, regtype);
     cgnsImportAddReg (numobjs, objlist);
@@ -1773,16 +1567,13 @@ int regtype, numobjs, *objlist;
  * return a list of all region names
  *-----------------------------------------------------------------------*/
 
-char **cgnsImportRegionList (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+char **cgnsImportRegionList (void)
+{
     int n, len = 0;
     char **namelist, *names;
 
     for (n = 0; n < num_regions; n++)
-        len += (strlen (reglist[n].name) + 1);
+        len += ((int)strlen (reglist[n].name) + 1);
     n = num_regions + 1;
     namelist = (char **) malloc (len + n * sizeof(char *));
     if (NULL == namelist)
@@ -1802,21 +1593,16 @@ char **cgnsImportRegionList (
  * get node ID's for a region
  *-----------------------------------------------------------------------*/
 
-int *cgnsImportGetRegion (
-#ifdef PROTOTYPE
-    char *regname)
-#else
-    regname)
-char *regname;
-#endif
+cgsize_t *cgnsImportGetRegion (char *regname)
 {
-    int n, *objlist;
+    int pos;
+    cgsize_t n, *objlist;
     cgnsREGN *reg;
 
     if (NULL == regname || !*regname ||
-        NULL == (reg = GetRegion (regname, &n)))
+        NULL == (reg = GetRegion (regname, &pos)))
         return (NULL);
-    objlist = (int *) malloc ((reg->nobjs + 2) * sizeof(int));
+    objlist = (cgsize_t *) malloc ((size_t)(reg->nobjs + 2) * sizeof(cgsize_t));
     if (NULL == objlist)
         cgnsImportFatal (
             "cgnsImportGetRegion:malloc failed for region object ID list");
@@ -1831,16 +1617,8 @@ char *regname;
  * open CGNS file
  *-----------------------------------------------------------------------*/
 
-int cgnsImportOpen (
-#ifdef PROTOTYPE
-    char *filename)
-#else
-    filename)
-char *filename;
-#endif
+int cgnsImportOpen (char *filename)
 {
-    int fn;
-
     cgnsImportClose ();
     if (cg_open (filename, CG_MODE_MODIFY, &cgnsFile) &&
         cg_open (filename, CG_MODE_WRITE, &cgnsFile))
@@ -1852,13 +1630,7 @@ char *filename;
  * set CGNS base
  *-----------------------------------------------------------------------*/
 
-int cgnsImportBase (
-#ifdef PROTOTYPE
-    char *basename)
-#else
-    basename)
-char *basename;
-#endif
+int cgnsImportBase (char *basename)
 {
     if (cg_base_write (cgnsFile, basename, 3, 3, &cgnsBase))
         cgnsImportFatal ((char *)cg_get_error());
@@ -1869,13 +1641,7 @@ char *basename;
  * set CGNS zone
  *-----------------------------------------------------------------------*/
 
-void cgnsImportZone (
-#ifdef PROTOTYPE
-    char *zonename)
-#else
-    zonename)
-char *zonename;
-#endif
+void cgnsImportZone (char *zonename)
 {
     int n;
 
@@ -1900,7 +1666,8 @@ char *zonename;
         }
         free (facelist);
     }
-    num_nodes = num_elements = num_regions = num_faces = 0;
+    num_nodes = num_elements = num_faces = 0;
+    num_regions = 0;
 
     strncpy (cgnsZoneName, zonename, 32);
     cgnsZoneName[32] = 0;
@@ -1910,19 +1677,17 @@ char *zonename;
  * write data to the CGNS file
  *-----------------------------------------------------------------------*/
 
-int cgnsImportWrite (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-    int n, nn, nnodes, icoord, sizes[3];
-    int nc, nconn, *conns, pos, isect;
-    ElementType_t elemtype;
+int cgnsImportWrite (void)
+{
+    int icoord, isect;
+    cgsize_t n, nn, nnodes, sizes[3];
+    cgsize_t nc, nconn, *conns, pos;
+    CGNS_ENUMT(ElementType_t) elemtype = CGNS_ENUMV(ElementTypeNull);
 #ifdef DOUBLE_PRECISION
-    DataType_t datatype = RealDouble;
+    CGNS_ENUMT(DataType_t) datatype = CGNS_ENUMV(RealDouble);
     double *xyz;
 #else
-    DataType_t datatype = RealSingle;
+    CGNS_ENUMT(DataType_t) datatype = CGNS_ENUMV(RealSingle);
     float *xyz;
 #endif
     cgnsNODE *node;
@@ -1952,15 +1717,15 @@ int cgnsImportWrite (
     sizes[2] = 0;
 
     if (cg_zone_write (cgnsFile, cgnsBase, cgnsZoneName,
-        sizes, Unstructured, &cgnsZone))
+            sizes, CGNS_ENUMV(Unstructured), &cgnsZone))
         cgnsImportFatal ((char *)cg_get_error());
 
     /* write the node list */
 
 #ifdef DOUBLE_PRECISION
-    xyz = (double *) malloc (nnodes * sizeof(double));
+    xyz = (double *) malloc ((size_t)nnodes * sizeof(double));
 #else
-    xyz = (float *) malloc (nnodes * sizeof(float));
+    xyz = (float *) malloc ((size_t)nnodes * sizeof(float));
 #endif
     if (NULL == xyz)
         cgnsImportFatal ("cgnsImportWrite:malloc failed for nodes");
@@ -1968,28 +1733,40 @@ int cgnsImportWrite (
     for (nn = 0, n = 0; n < num_nodes; n++) {
         if (nodemap[n].nodeid == nodemap[n].node->id &&
             USED_BIT == (nodemap[n].node->flags & USED_BIT))
-            xyz[nn++] = nodemap[n].node->x;
+#ifdef DOUBLE_PRECISION
+            xyz[nn++] = (double)nodemap[n].node->x;
+#else
+            xyz[nn++] = (float)nodemap[n].node->x;
+#endif
     }
     if (cg_coord_write (cgnsFile, cgnsBase, cgnsZone, datatype,
-        "CoordinateX", (void *)xyz, &icoord))
+            "CoordinateX", (void *)xyz, &icoord))
         cgnsImportFatal ((char *)cg_get_error());
 
     for (nn = 0, n = 0; n < num_nodes; n++) {
         if (nodemap[n].nodeid == nodemap[n].node->id &&
             USED_BIT == (nodemap[n].node->flags & USED_BIT))
-            xyz[nn++] = nodemap[n].node->y;
+#ifdef DOUBLE_PRECISION
+            xyz[nn++] = (double)nodemap[n].node->y;
+#else
+            xyz[nn++] = (float)nodemap[n].node->y;
+#endif
     }
     if (cg_coord_write (cgnsFile, cgnsBase, cgnsZone, datatype,
-        "CoordinateY", (void *)xyz, &icoord))
+            "CoordinateY", (void *)xyz, &icoord))
         cgnsImportFatal ((char *)cg_get_error());
 
     for (nn = 0, n = 0; n < num_nodes; n++) {
         if (nodemap[n].nodeid == nodemap[n].node->id &&
             USED_BIT == (nodemap[n].node->flags & USED_BIT))
-            xyz[nn++] = nodemap[n].node->z;
+#ifdef DOUBLE_PRECISION
+            xyz[nn++] = (double)nodemap[n].node->z;
+#else
+            xyz[nn++] = (float)nodemap[n].node->z;
+#endif
     }
     if (cg_coord_write (cgnsFile, cgnsBase, cgnsZone, datatype,
-        "CoordinateZ", (void *)xyz, &icoord))
+            "CoordinateZ", (void *)xyz, &icoord))
         cgnsImportFatal ((char *)cg_get_error());
 
     /* write variables */
@@ -1997,17 +1774,21 @@ int cgnsImportWrite (
     if (num_vars) {
         int isol, ifld, nv;
         if (cg_sol_write(cgnsFile, cgnsBase, cgnsZone,
-            "NodeVariables", Vertex, &isol))
+                "NodeVariables", CGNS_ENUMV(Vertex), &isol))
             cgnsImportFatal ((char *)cg_get_error());
         for (nv = 0; nv < num_vars; nv++) {
             for (nn = 0, n = 0; n < num_nodes; n++) {
                 if (nodemap[n].nodeid == nodemap[n].node->id &&
                     USED_BIT == (nodemap[n].node->flags & USED_BIT))
-                    xyz[nn++] = nodemap[n].node->vars[nv];
+#ifdef DOUBLE_PRECISION
+                    xyz[nn++] = (double)nodemap[n].node->vars[nv];
+#else
+                    xyz[nn++] = (float)nodemap[n].node->vars[nv];
+#endif
             }
             if (strlen(var_names[nv]) > 32) var_names[nv][32] = 0;
             if (cg_field_write(cgnsFile, cgnsBase, cgnsZone, isol,
-                datatype, var_names[nv], xyz, &ifld))
+                    datatype, var_names[nv], xyz, &ifld))
                 cgnsImportFatal ((char *)cg_get_error());
         }
     }
@@ -2018,51 +1799,51 @@ int cgnsImportWrite (
 
     switch (elemlist->elemtype) {
         case cgnsELEM_TET:
-            elemtype = TETRA_4;
+            elemtype = CGNS_ENUMV(TETRA_4);
             break;
         case cgnsELEM_PYR:
-            elemtype = PYRA_5;
+            elemtype = CGNS_ENUMV(PYRA_5);
             break;
         case cgnsELEM_WDG:
-            elemtype = PENTA_6;
+            elemtype = CGNS_ENUMV(PENTA_6);
             break;
         case cgnsELEM_HEX:
-            elemtype = HEXA_8;
+            elemtype = CGNS_ENUMV(HEXA_8);
             break;
     }
     for (n = 0, elem = elemlist; n < num_elements; n++, elem++) {
         if (elem->elemtype != elemlist->elemtype) {
-            elemtype = MIXED;
+            elemtype = CGNS_ENUMV(MIXED);
             break;
         }
     }
 
-    if (elemtype == MIXED) {
+    if (elemtype == CGNS_ENUMV(MIXED)) {
         nconn = 0;
         for (n = 0, elem = elemlist; n < num_elements; n++, elem++)
             nconn += (1 + elem->elemtype);
     }
     else
         nconn = num_elements * elemlist->elemtype;
-    conns = (int *) malloc (nconn * sizeof(int));
+    conns = (cgsize_t *) malloc ((size_t)nconn * sizeof(cgsize_t));
     if (NULL == conns)
         cgnsImportFatal ("cgnsImportWrite:malloc failed for element data");
 
     nc = 0;
     for (n = 0, elem = elemlist; n < num_elements; n++, elem++) {
-        if (elemtype == MIXED) {
+        if (elemtype == CGNS_ENUMV(MIXED)) {
             switch (elem->elemtype) {
                 case cgnsELEM_TET :
-                    conns[nc] = TETRA_4;
+                    conns[nc] = CGNS_ENUMV(TETRA_4);
                     break;
                 case cgnsELEM_PYR:
-                    conns[nc] = PYRA_5;
+                    conns[nc] = CGNS_ENUMV(PYRA_5);
                     break;
                 case cgnsELEM_WDG:
-                    conns[nc] = PENTA_6;
+                    conns[nc] = CGNS_ENUMV(PENTA_6);
                     break;
                 case cgnsELEM_HEX:
-                    conns[nc] = HEXA_8;
+                    conns[nc] = CGNS_ENUMV(HEXA_8);
                     break;
             }
             nc++;
@@ -2075,7 +1856,7 @@ int cgnsImportWrite (
     }
 
     if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, "GridElements",
-        elemtype, 1, num_elements, 0, conns, &isect))
+            elemtype, 1, num_elements, 0, conns, &isect))
         cgnsImportFatal ((char *)cg_get_error());
 
     free (conns);
@@ -2099,11 +1880,8 @@ int cgnsImportWrite (
  * close the CGNS file
  *-----------------------------------------------------------------------*/
 
-void cgnsImportClose (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+void cgnsImportClose (void)
+{
     if (cgnsFile) {
         cg_close (cgnsFile);
         cgnsFile = 0;

@@ -49,7 +49,7 @@ static void check_ascii (char *fname)
         fprintf (stderr, "can't open <%s> for reading\n", fname);
         exit (1);
     }
-    np = fread (buffer, 1, sizeof(buffer), fp);
+    np = (int)fread (buffer, 1, sizeof(buffer), fp);
     fclose (fp);
     for (n = 0; n < np; n++) {
         if (!buffer[n] || !isascii (buffer[n]) ||
@@ -243,7 +243,8 @@ static void point_nodes (FILE *fp, int nnodes)
 int main (int argc, char *argv[])
 {
     int n, i, j, k, ni, nj, nk;
-    int nn, ne, et, nz, block, nodes[8];
+    int nn, ne, et, nz, block;
+    cgsize_t nodes[8];
     int do_chk = 0, fix_bricks = 0;
     char elemname[33];
     char zonename[33], *p, *s, *basename = NULL;
@@ -445,8 +446,9 @@ int main (int argc, char *argv[])
                 j = 1 << et;
                 for (n = 1; n <= ne; n++) {
                     for (i = 0; i < j; i++) {
-                        if (1 != fscanf (fp, "%d", &nodes[i]))
+                        if (1 != fscanf (fp, "%d", &k))
                             cgnsImportFatal ("error reading elements");
+                        nodes[i] = k;
                     }
                     k = j;
                     if (fix_bricks && k == 8 && nodes[6] == nodes[7]) {

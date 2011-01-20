@@ -52,13 +52,7 @@ static int convert = 0;
  * get machine type from command line option
  *-------------------------------------------------------------------*/
 
-static int get_machine (
-#ifdef PROTOTYPE
-    char *name)
-#else
-    name)
-char *name;
-#endif
+static int get_machine (char *name)
 {
     switch (*name++) {
         case 'i':
@@ -104,13 +98,7 @@ char *name;
  * read PLOT3D XYZ file
  *-------------------------------------------------------------------*/
 
-static void read_xyz (
-#ifdef PROTOTYPE
-    BINARYIO *bf)
-#else
-    bf)
-BINARYIO *bf;
-#endif
+static void read_xyz (BINARYIO *bf)
 {
     int i, k, n, nk, nz, np, nmax;
     int *indices, *iblank;
@@ -143,17 +131,17 @@ BINARYIO *bf;
 
     Zones = new_zone (nZones);
     for (nmax = 0, nz = 0; nz < nZones; nz++) {
-        Zones[nz].type = Structured;
+        Zones[nz].type = CGNS_ENUMV(Structured);
         for (np = 1, n = 0; n < 3; n++) {
             nk = indices[3 * nz + n];
             Zones[nz].dim[n] = nk;
             np *= nk;
         }
         Zones[nz].vertflags = 7;
-        Zones[nz].datatype = is_double ? RealDouble : RealSingle;
+        Zones[nz].datatype = is_double ? CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
         Zones[nz].nverts = np;
         Zones[nz].verts = new_vertex (np);
-        nk = whole ? Zones[nz].nverts : Zones[nz].dim[0] * Zones[nz].dim[1];
+        nk = whole ? (int)Zones[nz].nverts : (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
         if (nmax < nk) nmax = nk;
     }
 
@@ -177,15 +165,16 @@ BINARYIO *bf;
 
     for (nz = 0; nz < nZones; nz++) {
         printf ("reading block %d grid %dx%dx%d ...", nz+1,
-            Zones[nz].dim[0], Zones[nz].dim[1], Zones[nz].dim[2]);
+            (int)Zones[nz].dim[0], (int)Zones[nz].dim[1],
+            (int)Zones[nz].dim[2]);
         fflush (stdout);
         if (whole) {
-            np = Zones[nz].nverts;
+            np = (int)Zones[nz].nverts;
             nk = 1;
         }
         else {
-            np = Zones[nz].dim[0] * Zones[nz].dim[1];
-            nk = Zones[nz].dim[2];
+            np = (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
+            nk = (int)Zones[nz].dim[2];
         }
         verts = Zones[nz].verts;
         for (k = 0; k < nk; k++) {
@@ -225,13 +214,7 @@ BINARYIO *bf;
  * read PLOT3D solution file
  *-------------------------------------------------------------------*/
 
-static void read_q (
-#ifdef PROTOTYPE
-    BINARYIO *bf)
-#else
-    bf)
-BINARYIO *bf;
-#endif
+static void read_q (BINARYIO *bf)
 {
     int i, k, n, nk, nz, np, nv, nmax;
     int *indices;
@@ -276,17 +259,17 @@ BINARYIO *bf;
     /* create solution data arrays */
 
     for (nmax = 0, nz = 0; nz < nZones; nz++) {
-        np = whole ? Zones[nz].nverts : Zones[nz].dim[0] * Zones[nz].dim[1];
+        np = whole ? (int)Zones[nz].nverts : (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
         if (nmax < np) nmax = np;
         sol = new_solution (1);
         strcpy (sol->name, "FlowSolution");
-        sol->location = Vertex;
+        sol->location = CGNS_ENUMV(Vertex);
         sol->size = Zones[nz].nverts;
         sol->nflds = 5;
         sol->flds = new_field (5, sol->size);
         for (nv = 0; nv < 5; nv++) {
             strcpy (sol->flds[nv].name, fldnames[nv]);
-            sol->flds[nv].datatype = is_double ? RealDouble : RealSingle;
+            sol->flds[nv].datatype = is_double ? CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
         }
         Zones[nz].nsols = 1;
         Zones[nz].sols = sol;
@@ -321,12 +304,12 @@ BINARYIO *bf;
         }
 
         if (whole) {
-            np = Zones[nz].nverts;
+            np = (int)Zones[nz].nverts;
             nk = 1;
         }
         else {
-            np = Zones[nz].dim[0] * Zones[nz].dim[1];
-            nk = Zones[nz].dim[2];
+            np = (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
+            nk = (int)Zones[nz].dim[2];
         }
         flds = Zones[nz].sols->flds;
         for (k = 0; k < nk; k++) {
@@ -368,24 +351,19 @@ BINARYIO *bf;
  * create interfaces from iblank data
  *---------------------------------------------------------------------*/
 
-static void build_interfaces (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+static void build_interfaces (void)
+{
 }
 
 /*---------- write_reference ------------------------------------------
  * write reference conditions to CGNS file
  *---------------------------------------------------------------------*/
 
-static void write_reference (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+static void write_reference (void)
+{
     int n;
-    DataType_t datasize;
+    cgsize_t cnt = 1;
+    CGNS_ENUMT(DataType_t) datasize;
     float ref[4];
     void *mach, *alpha, *rey, *time;
 
@@ -396,7 +374,7 @@ static void write_reference (
         FATAL ("write_reference", NULL);
 
     if (is_double) {
-        datasize = RealDouble;
+        datasize = CGNS_ENUMV(RealDouble);
         mach  = (void *)&reference[0];
         alpha = (void *)&reference[1];
         rey   = (void *)&reference[2];
@@ -405,44 +383,43 @@ static void write_reference (
     else {
         for (n = 0; n < 4; n++)
             ref[n] = (float)reference[n];
-        datasize = RealSingle;
+        datasize = CGNS_ENUMV(RealSingle);
         mach  = (void *)&ref[0];
         alpha = (void *)&ref[1];
         rey   = (void *)&ref[2];
         time  = (void *)&ref[3];
     }
 
-    n = 1;
     if (cg_goto (cgnsfn, cgnsbase, "ReferenceState_t", 1, "end") ||
-        cg_array_write ("Mach", datasize, 1, &n, mach) ||
+        cg_array_write ("Mach", datasize, 1, &cnt, mach) ||
         cg_goto (cgnsfn, cgnsbase, "ReferenceState_t", 1,
             "DataArray_t", 1, "end") ||
-        cg_dataclass_write (NondimensionalParameter))
+        cg_dataclass_write (CGNS_ENUMV(NondimensionalParameter)))
         FATAL ("write_reference", NULL);
 
     if (cg_goto (cgnsfn, cgnsbase, "ReferenceState_t", 1, "end") ||
-        cg_array_write ("AngleofAttack", datasize, 1, &n, alpha) ||
+        cg_array_write ("AngleofAttack", datasize, 1, &cnt, alpha) ||
         cg_goto (cgnsfn, cgnsbase, "ReferenceState_t", 1,
             "DataArray_t", 2, "end") ||
-        cg_dataclass_write (Dimensional) ||
-        cg_units_write (MassUnitsNull, LengthUnitsNull, TimeUnitsNull,
-            TemperatureUnitsNull, Degree))
+        cg_dataclass_write (CGNS_ENUMV(Dimensional)) ||
+        cg_units_write (CGNS_ENUMV(MassUnitsNull), CGNS_ENUMV(LengthUnitsNull), CGNS_ENUMV(TimeUnitsNull),
+            CGNS_ENUMV(TemperatureUnitsNull), CGNS_ENUMV(Degree)))
         FATAL ("write_reference", NULL);
 
     if (cg_goto (cgnsfn, cgnsbase, "ReferenceState_t", 1, "end") ||
-        cg_array_write ("Reynolds", datasize, 1, &n, rey) ||
+        cg_array_write ("Reynolds", datasize, 1, &cnt, rey) ||
         cg_goto (cgnsfn, cgnsbase, "ReferenceState_t", 1,
             "DataArray_t", 3, "end") ||
-        cg_dataclass_write (NondimensionalParameter))
+        cg_dataclass_write (CGNS_ENUMV(NondimensionalParameter)))
         FATAL ("write_reference", NULL);
 
     if (cg_goto (cgnsfn, cgnsbase, "ReferenceState_t", 1, "end") ||
-        cg_array_write ("TimeLatest", datasize, 1, &n, time) ||
+        cg_array_write ("TimeLatest", datasize, 1, &cnt, time) ||
         cg_goto (cgnsfn, cgnsbase, "ReferenceState_t", 1,
             "DataArray_t", 4, "end") ||
-        cg_dataclass_write (Dimensional) ||
-        cg_units_write (MassUnitsNull, LengthUnitsNull,
-            Second, TemperatureUnitsNull, AngleUnitsNull))
+        cg_dataclass_write (CGNS_ENUMV(Dimensional)) ||
+        cg_units_write (CGNS_ENUMV(MassUnitsNull), CGNS_ENUMV(LengthUnitsNull),
+            CGNS_ENUMV(Second), CGNS_ENUMV(TemperatureUnitsNull), CGNS_ENUMV(AngleUnitsNull)))
         FATAL ("write_reference", NULL);
 
     puts (" done");
@@ -450,9 +427,7 @@ static void write_reference (
 
 /*========== main ===================================================*/
 
-int main (argc, argv)
-int argc;
-char *argv[];
+int main (int argc, char *argv[])
 {
     int n, ib = 0, nb, flags = 0, has_q = 0;
     BINARYIO *bf;
@@ -561,7 +536,7 @@ char *argv[];
     }
     if (cg_base_write (cgnsfn, basename, 3, 3, &cgnsbase) ||
         cg_goto (cgnsfn, cgnsbase, "end") ||
-        cg_dataclass_write (NormalizedByUnknownDimensional))
+        cg_dataclass_write (CGNS_ENUMV(NormalizedByUnknownDimensional)))
         FATAL (NULL, NULL);
     printf ("  output to base %d - %s\n", cgnsbase, basename);
 
@@ -583,6 +558,5 @@ char *argv[];
 
     cg_close (cgnsfn);
 
-    exit (0);
-    return 0; /* quite compiler */
+    return 0;
 }

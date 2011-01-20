@@ -37,13 +37,7 @@ static char *usgmsg[] = {
 
 static int lineno = 0;
 
-static void print_error (
-#ifdef PROTOTYPE
-    char *errmsg)
-#else
-    errmsg)
-char *errmsg;
-#endif
+static void print_error (char *errmsg)
 {
     fprintf (stderr, "%s on line %d\n", errmsg, lineno);
 }
@@ -52,17 +46,11 @@ char *errmsg;
  * add an element face to the region list
  *-------------------------------------------------------------------*/
 
-static void add_face (
-#ifdef PROTOTYPE
-    int elemid, char *data)
-#else
-    elemid, data)
-int elemid;
-char *data;
-#endif
+static void add_face (int elemid, char *data)
 {
-    int n, nodeid[8], nodes[8], nnodes;
-    int elemtype, faceid, elemnodes[8];
+    int n, nodes[8], nnodes;
+    int elemtype, faceid;
+    cgsize_t elemnodes[8], nodeid[8];
     char errmsg[81];
     static int facemap[5][7] = {
         {0, 1, 2, 3, 4, 0, 0},
@@ -125,12 +113,11 @@ char *data;
 
 /*========== main ===================================================*/
 
-int main (argc, argv)
-int argc;
-char *argv[];
+int main (int argc, char *argv[])
 {
     int n, packet, nlines, nodeid;
-    int nnodes, elemid, nodes[8];
+    int nnodes, elemid;
+    cgsize_t nodes[8];
     int lastid = -1, loadid;
     int do_loads = 0, do_chk = 0;
     double xyz[3];
@@ -217,8 +204,9 @@ char *argv[];
                 nnodes = n == 8 ? n : n-1;
                 lineno++;
                 for (n = 0; n < nnodes; n++) {
-                    if (1 != fscanf (fp, "%d", &nodes[n]) || nodes[n] < 1)
+                    if (1 != fscanf (fp, "%d", &nodeid) || nodeid < 1)
                         cgnsImportFatal ("missing or invalid node ID");
+                    nodes[n] = nodeid;
                 }
                 while (getc (fp) != '\n')
                     ;
@@ -323,6 +311,5 @@ char *argv[];
         cgnsImportBase (basename);
     cgnsImportWrite ();
     cgnsImportClose ();
-    exit (0);
-    return 0; /* quite compiler */
+    return 0;
 }

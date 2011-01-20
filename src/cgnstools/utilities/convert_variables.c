@@ -6,12 +6,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#ifdef _WIN32
+# define unlink _unlink
+#else
+# include <unistd.h>
+#endif
 
 #include "getargs.h"
 #include "cgnslib.h"
 #include "cgnsutil.h"
 #include "vec.h"
 #include "vecerr.h"
+#include "vecsym.h"
 
 #ifndef CG_MODE_MODIFY
 # define CG_MODE_MODIFY MODE_MODIFY
@@ -55,14 +61,7 @@ static char buff[1024];
 
 /*-------------------------------------------------------------------*/
 
-static void get_error (
-#ifdef PROTOTYPE
-    int errnum, char *errmsg, int pos, char *str)
-#else
-    errnum, errmsg, pos, str)
-int errnum, pos;
-char *errmsg, *str;
-#endif
+static void get_error (int errnum, char *errmsg, int pos, char *str)
 {
     if (pos >= 0 && NULL != str) {
         fprintf (stderr, "\n%s\n", str);
@@ -75,13 +74,11 @@ char *errmsg, *str;
 
 /*-------------------------------------------------------------------*/
 
-static void get_reference (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-    int n, narrays, na, dim, vec;
-    DataType_t datatype;
+static void get_reference (void)
+{
+    int n, narrays, na, dim;
+    cgsize_t len, vec[12];
+    CGNS_ENUMT(DataType_t) datatype;
     char name[33];
 
     numrefs = 0;
@@ -89,9 +86,9 @@ static void get_reference (
         cg_narrays (&narrays) || narrays < 1)
         return;
     for (na = 1; na <= narrays; na++) {
-        if (cg_array_info (na, name, &datatype, &dim, &vec))
+        if (cg_array_info (na, name, &datatype, &dim, vec))
             FATAL ("get_reference", NULL);
-        if (dim >= 1 && vec >= 1) numrefs++;
+        if (dim >= 1 && vec[0] >= 1) numrefs++;
     }
     if (!numrefs) return;
     refs = (VAR *) malloc (numrefs * sizeof(VAR));
@@ -99,25 +96,25 @@ static void get_reference (
         FATAL ("get_reference", "malloc failed for reference variables");
 
     for (n = 0, na = 1; na <= narrays; na++) {
-        if (cg_array_info (na, name, &datatype, &dim, &vec))
+        if (cg_array_info (na, name, &datatype, &dim, vec))
             FATAL ("get_reference", NULL);
-        if (dim < 1 || vec < 1) continue;
+        if (dim < 1 || vec[0] < 1) continue;
         strcpy (refs[n].name, name);
         refs[n].valid = 1;
-        dim *= vec;
-        if (dim == 1) {
+        len = dim * vec[0];
+        if (len == 1) {
             refs[n].vd.type = VEC_VALUE;
             refs[n].vd.len = 0;
-            if (cg_array_read_as (na, RealDouble, &refs[n].vd.f.val))
+            if (cg_array_read_as (na, CGNS_ENUMV(RealDouble), &refs[n].vd.f.val))
                 FATAL ("get_reference", NULL);
         }
         else {
             refs[n].vd.type = VEC_VECTOR;
-            refs[n].vd.len = dim;
-            refs[n].vd.f.vec = (VECFLOAT *) malloc (dim * sizeof(VECFLOAT));
+            refs[n].vd.len = len;
+            refs[n].vd.f.vec = (VECFLOAT *) malloc (len * sizeof(VECFLOAT));
             if (NULL == refs[n].vd.f.vec)
                 FATAL ("get_reference", "malloc failed for reference data");
-            if (cg_array_read_as (na, RealDouble, refs[n].vd.f.vec))
+            if (cg_array_read_as (na, CGNS_ENUMV(RealDouble), refs[n].vd.f.vec))
                 FATAL ("get_reference", NULL);
         }
         n++;
@@ -126,19 +123,12 @@ static void get_reference (
 
 /*-------------------------------------------------------------------*/
 
-static void init_conversions (
-#ifdef PROTOTYPE
-    ZONE *z, SOLUTION *s)
-#else
-    z, s)
-ZONE *z;
-SOLUTION *s;
-#endif
+static void init_conversions (ZONE *z, SOLUTION *s)
 {
     int n;
 
     sym_free ();
-    sym_addval ("gamma", gamma);
+    sym_addval ("gamma", gamma, NULL);
     read_solution_field (z->id, s->id, 0);
     if (s->nflds > maxvars) {
         n = s->nflds + 10;
@@ -163,14 +153,7 @@ SOLUTION *s;
 
 /*-------------------------------------------------------------------*/
 
-static void update_solution (
-#ifdef PROTOTYPE
-    ZONE *z, SOLUTION *s)
-#else
-    z, s)
-ZONE *z;
-SOLUTION *s;
-#endif
+static void update_solution (ZONE *z, SOLUTION *s)
 {
     int n, i, nflds = 0;
 
@@ -195,13 +178,7 @@ SOLUTION *s;
 
 /*-------------------------------------------------------------------*/
 
-static char *next_token (
-#ifdef PROTOTYPE
-    char *str, char token[33])
-#else
-    str, token)
-char *str, token[33];
-#endif
+static char *next_token (char *str, char token[33])
 {
     int n;
     char *p = str;
@@ -230,14 +207,7 @@ char *str, token[33];
 
 /*-------------------------------------------------------------------*/
 
-static VECDATA *callback (
-#ifdef PROTOTYPE
-    int check, char **pp, char **err)
-#else
-    check, pp, err)
-int check;
-char **pp, **err;
-#endif
+static VECDATA *callback (int check, char **pp, char **err)
 {
     int n, nr = 0;
     char name[33], *p = *pp;
@@ -269,13 +239,7 @@ char **pp, **err;
 
 /*-------------------------------------------------------------------*/
 
-static int delete_var (
-#ifdef PROTOTYPE
-    char *name)
-#else
-    name)
-char *name;
-#endif
+static int delete_var (char *name)
 {
     int n;
 
@@ -290,13 +254,7 @@ char *name;
 
 /*-------------------------------------------------------------------*/
 
-static int add_var (
-#ifdef PROTOTYPE
-    char *name)
-#else
-    name)
-char *name;
-#endif
+static int add_var (char *name)
 {
     int n;
     VECDATA *vd;
@@ -325,13 +283,7 @@ char *name;
 
 /*-------------------------------------------------------------------*/
 
-static int parse_command (
-#ifdef PROTOTYPE
-    char *cmd)
-#else
-    cmd)
-char *cmd;
-#endif
+static int parse_command (char *cmd)
 {
     int n, nargs = 0;
     char *p, name[33];
@@ -368,7 +320,7 @@ char *cmd;
     if (*p == '=') {
         while (*++p && isspace(*p));
         if (*p)
-            sym_addequ (name, nargs, p);
+            sym_addequ (name, nargs, p, NULL);
         return 0;
     }
 
@@ -394,13 +346,7 @@ char *cmd;
 
 /*-------------------------------------------------------------------*/
 
-char *next_line (
-#ifdef PROTOTYPE
-    FILE *fp)
-#else
-    fp)
-FILE *fp;
-#endif
+char *next_line (FILE *fp)
 {
     int n = 0, len;
     char *p, line[257];
@@ -415,7 +361,7 @@ FILE *fp;
             ;
         if (!*p) continue;
         strcpy (buff, p);
-        n = strlen (buff);
+        n = (int)strlen (buff);
         while (buff[n-1] == '\\') {
             for (n -= 2; n >= 0 && isspace(buff[n]); n--)
                 ;
@@ -429,7 +375,7 @@ FILE *fp;
             for (p = line; *p && isspace(*p); p++)
                 ;
             if (!*p) break;
-            len = strlen (p);
+            len = (int)strlen (p);
             if (n + len >= sizeof(buff))
                 FATAL ("next_line", "internal command buffer length exceeded");
             strcpy (&buff[n], p);
@@ -449,13 +395,7 @@ FILE *fp;
 
 /*-------------------------------------------------------------------*/
 
-static int parse_file (
-#ifdef PROTOTYPE
-    char *cmdfile)
-#else
-    cmdfile)
-char *cmdfile;
-#endif
+static int parse_file (char *cmdfile)
 {
     int changes = 0;
     char *cmd;
@@ -473,9 +413,7 @@ char *cmdfile;
 
 /*-------------------------------------------------------------------*/
 
-int main (argc, argv)
-int argc;
-char *argv[];
+int main (int argc, char *argv[])
 {
     int n, iz, is, nz, ns, dim;
     int izone = 0, isol = 0;

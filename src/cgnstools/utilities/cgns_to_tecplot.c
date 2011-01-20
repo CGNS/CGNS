@@ -27,11 +27,8 @@ static int ascii = 0;
 
 /*--------------------------------------------------------------------*/
 
-static int check_solution (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+static int check_solution (void)
+{
     int nz, nf, nvar = -1;
 
     if (!usesol) return 0;
@@ -68,14 +65,7 @@ static int check_solution (
 
 /*--------------------------------------------------------------------*/
 
-static void write_string (
-#ifdef PROTOTYPE
-    FILE *fp, char *data)
-#else
-    fp, cnt, data)
-FILE *fp;
-char *data;
-#endif
+static void write_string (FILE *fp, char *data)
 {
     int c;
 
@@ -92,15 +82,7 @@ char *data;
 
 /*--------------------------------------------------------------------*/
 
-static void write_ints (
-#ifdef PROTOTYPE
-    FILE *fp, int cnt, int *data)
-#else
-    fp, cnt, data)
-FILE *fp;
-int cnt;
-int *data;
-#endif
+static void write_ints (FILE *fp, int cnt, int *data)
 {
     if (ascii) {
         int nout = 0;
@@ -123,15 +105,7 @@ int *data;
 
 /*--------------------------------------------------------------------*/
 
-static void write_floats (
-#ifdef PROTOTYPE
-    FILE *fp, int cnt, float *data)
-#else
-    fp, cnt, data)
-FILE *fp;
-int cnt;
-float *data;
-#endif
+static void write_floats (FILE *fp, int cnt, float *data)
 {
     if (ascii) {
         int nout = 0;
@@ -153,15 +127,10 @@ float *data;
 
 /*--------------------------------------------------------------------*/
 
-static void count_elements (
-#ifdef PROTOTYPE
-    int nz, int *nelems, int *elemtype)
-#else
-    nz, nelems, elemtype)
-int nz, *nelems, *elemtype;
-#endif
+static void count_elements (int nz, cgsize_t *nelems, int *elemtype)
 {
-    int n, ns, ne, et, nn, nb = 0, nt = 0;
+    int ns, et;
+    cgsize_t n, nn, ne, nb = 0, nt = 0;
     ZONE *z = &Zones[nz];
 
     if (z->esets == NULL)
@@ -169,13 +138,13 @@ int nz, *nelems, *elemtype;
     for (ns = 0; ns < z->nesets; ns++) {
         ne = z->esets[ns].end - z->esets[ns].start + 1;
         et = z->esets[ns].type;
-        if (et == MIXED) {
+        if (et == CGNS_ENUMV(MIXED)) {
             for (n = 0, nn = 0; nn < ne; nn++) {
-                et = z->esets[ns].conn[n++];
-                if (et < NODE || et > HEXA_27)
+                et = (int)z->esets[ns].conn[n++];
+                if (et < CGNS_ENUMV(NODE) || et > CGNS_ENUMV(HEXA_27))
                     FATAL (NULL, "unrecognized element type");
-                if (et >= TETRA_4) {
-                    if (et > TETRA_10)
+                if (et >= CGNS_ENUMV(TETRA_4)) {
+                    if (et > CGNS_ENUMV(TETRA_10))
                         nb++;
                     else
                         nt++;
@@ -184,8 +153,8 @@ int nz, *nelems, *elemtype;
             }
             continue;
         }
-        if (et >= TETRA_4 && et <= HEXA_27) {
-            if (et > TETRA_10)
+        if (et >= CGNS_ENUMV(TETRA_4) && et <= CGNS_ENUMV(HEXA_27)) {
+            if (et > CGNS_ENUMV(TETRA_10))
                 nb += ne;
             else
                 nt += ne;
@@ -200,70 +169,65 @@ int nz, *nelems, *elemtype;
 
 /*--------------------------------------------------------------------*/
 
-static int *volume_elements (
-#ifdef PROTOTYPE
-    int nz, int *nelems, int *elemtype)
-#else
-    nz, nelems, elemtype)
-int nz, *nelems, *elemtype;
-#endif
+static int *volume_elements (int nz, cgsize_t *nelems, int *elemtype)
 {
-    int i, n, np, ns, nt;
-    int et, nn, ne, *elems;
+    int i, np, ns, nt, et;
+    int *elems;
+    cgsize_t n, nn, ne;
     ZONE *z = &Zones[nz];
 
     count_elements (nz, &ne, &nt);
     *nelems = ne;
     *elemtype = nt;
 
-    elems = (int *) malloc (ne * (1 << nt) * sizeof(int));
+    elems = (int *) malloc ((size_t)ne * (1 << nt) * sizeof(int));
     if (NULL == elems)
         FATAL (NULL, "malloc failed for elements");
 
     for (np = 0, ns = 0; ns < z->nesets; ns++) {
         ne = z->esets[ns].end - z->esets[ns].start + 1;
         et = z->esets[ns].type;
-        if (et < TETRA_4 || et > MIXED) continue;
+        if (et < CGNS_ENUMV(TETRA_4) || et > CGNS_ENUMV(MIXED)) continue;
         for (n = 0, nn = 0; nn < ne; nn++) {
-            if (z->esets[ns].type == MIXED)
-                et = z->esets[ns].conn[n++];
+            if (z->esets[ns].type == CGNS_ENUMV(MIXED))
+                et = (int)z->esets[ns].conn[n++];
             switch (et) {
-                case TETRA_4:
-                case TETRA_10:
+                case CGNS_ENUMV(TETRA_4):
+                case CGNS_ENUMV(TETRA_10):
                     if (nt == 2) {
                         for (i = 0; i < 4; i++)
-                            elems[np++] = z->esets[ns].conn[n+i];
+                            elems[np++] = (int)z->esets[ns].conn[n+i];
                     }
                     else {
                         for (i = 0; i < 3; i++)
-                            elems[np++] = z->esets[ns].conn[n+i];
-                        elems[np++] = z->esets[ns].conn[n+2];
+                            elems[np++] = (int)z->esets[ns].conn[n+i];
+                        elems[np++] = (int)z->esets[ns].conn[n+2];
                         for (i = 0; i < 4; i++)
-                            elems[np++] = z->esets[ns].conn[n+3];
+                            elems[np++] = (int)z->esets[ns].conn[n+3];
                     }
                     break;
-                case PYRA_5:
-                case PYRA_14:
+                case CGNS_ENUMV(PYRA_5):
+                case CGNS_ENUMV(PYRA_14):
                     for (i = 0; i < 4; i++)
-                        elems[np++] = z->esets[ns].conn[n+i];
+                        elems[np++] = (int)z->esets[ns].conn[n+i];
                     for (i = 0; i < 4; i++)
-                        elems[np++] = z->esets[ns].conn[n+4];
+                        elems[np++] = (int)z->esets[ns].conn[n+4];
                     break;
-                case PENTA_6:
-                case PENTA_15:
-                case PENTA_18:
+                case CGNS_ENUMV(PENTA_6):
+                case CGNS_ENUMV(PENTA_15):
+                case CGNS_ENUMV(PENTA_18):
                     for (i = 0; i < 3; i++)
-                        elems[np++] = z->esets[ns].conn[n+i];
-                    elems[np++] = z->esets[ns].conn[n+2];
+                        elems[np++] = (int)z->esets[ns].conn[n+i];
+                    elems[np++] = (int)z->esets[ns].conn[n+2];
                     for (i = 3; i < 6; i++)
-                        elems[np++] = z->esets[ns].conn[n+i];
-                    elems[np++] = z->esets[ns].conn[n+5];
+                        elems[np++] = (int)z->esets[ns].conn[n+i];
+                    elems[np++] = (int)z->esets[ns].conn[n+5];
                     break;
-                case HEXA_8:
-                case HEXA_20:
-                case HEXA_27:
+                case CGNS_ENUMV(HEXA_8):
+                case CGNS_ENUMV(HEXA_20):
+                case CGNS_ENUMV(HEXA_27):
                     for (i = 0; i < 8; i++)
-                        elems[np++] = z->esets[ns].conn[n+i];
+                        elems[np++] = (int)z->esets[ns].conn[n+i];
                     break;
             }
             n += element_node_counts[et];
@@ -275,12 +239,11 @@ int nz, *nelems, *elemtype;
 
 /*--------------------------------------------------------------------*/
 
-int main (argc, argv)
-int argc;
-char *argv[];
+int main (int argc, char *argv[])
 {
-    int i, n, ib, nb, nz, ns, nv, celldim, phydim;
-    int nn, ne, type, *elems, idata[5];
+    int i, n, ib, nb, nz, nv, celldim, phydim;
+    int nn, type, *elems = 0, idata[5];
+    cgsize_t ne;
     char *p, basename[33], title[65];
     float value, *var;
     SOLUTION *sol;
@@ -345,6 +308,18 @@ char *argv[];
     read_zones ();
     if (!nZones)
         FATAL (NULL, "no zones in the CGNS file");
+    
+    /* verify dimensions fit in an integer */
+
+    for (nz = 0; nz < nZones; nz++) {
+        if (Zones[nz].nverts > CG_MAX_INT32)
+	    FATAL(NULL, "zone size too large to write with integers");
+	if (Zones[nz].type == CGNS_ENUMV(Unstructured)) {
+            count_elements (nz, &ne, &type);
+            if (ne > CG_MAX_INT32)
+	        FATAL(NULL, "too many elements to write with integers");
+        }
+     }
 
     nv = 3 + check_solution ();
 
@@ -392,19 +367,19 @@ char *argv[];
 
     if (!ascii) {
         for (nz = 0; nz < nZones; nz++) {
-            if (Zones[nz].type == Structured) {
+            if (Zones[nz].type == CGNS_ENUMV(Structured)) {
                 idata[0] = 0;          /* BLOCK */
                 idata[1] = -1;         /* color not specified */
-                idata[2] = Zones[nz].dim[0];
-                idata[3] = Zones[nz].dim[1];
-                idata[4] = Zones[nz].dim[2];
+                idata[2] = (int)Zones[nz].dim[0];
+                idata[3] = (int)Zones[nz].dim[1];
+                idata[4] = (int)Zones[nz].dim[2];
             }
             else {
                 count_elements (nz, &ne, &type);
                 idata[0] = 2;          /* FEBLOCK */
                 idata[1] = -1;         /* color not specified */
-                idata[2] = Zones[nz].dim[0];
-                idata[3] = ne;
+                idata[2] = (int)Zones[nz].dim[0];
+                idata[3] = (int)ne;
                 idata[4] = type;
             }
             value = 299.0;
@@ -420,21 +395,21 @@ char *argv[];
         printf ("  zone %d...", nz+1);
         fflush (stdout);
         read_zone_grid (nz+1);
-        nn = Zones[nz].nverts;
+        nn = (int)Zones[nz].nverts;
         var = (float *) malloc (nn * sizeof(float));
         if (NULL == var)
             FATAL (NULL, "malloc failed for temp float array");
-        if (Zones[nz].type == Unstructured)
+        if (Zones[nz].type == CGNS_ENUMV(Unstructured))
             elems = volume_elements (nz, &ne, &type);
 
         if (ascii) {
-            if (Zones[nz].type == Structured)
+            if (Zones[nz].type == CGNS_ENUMV(Structured))
                 fprintf (fp, "\nZONE T=\"%s\", I=%d, J=%d, K=%d, F=BLOCK\n",
-                    Zones[nz].name, Zones[nz].dim[0],
-                    Zones[nz].dim[1], Zones[nz].dim[2]);
+                    Zones[nz].name, (int)Zones[nz].dim[0],
+                    (int)Zones[nz].dim[1], (int)Zones[nz].dim[2]);
             else
                 fprintf (fp, "\nZONE T=\"%s\", N=%d, E=%d, F=FEBLOCK, ET=%s\n",
-                    Zones[nz].name, nn, ne, type == 2 ? "TETRAHEDRON" : "BRICK");
+                    Zones[nz].name, nn, (int)ne, type == 2 ? "TETRAHEDRON" : "BRICK");
         }
         else {
             value = 299.0;
@@ -459,7 +434,7 @@ char *argv[];
         if (usesol) {
             read_solution_field (nz+1, usesol, 0);
             sol = &Zones[nz].sols[usesol-1];
-            if (sol->location != Vertex)
+            if (sol->location != CGNS_ENUMV(Vertex))
                 cell_vertex_solution (nz+1, usesol, weighting);
             for (nv = 0; nv < sol->nflds; nv++) {
                 for (n = 0; n < nn; n++)
@@ -470,7 +445,7 @@ char *argv[];
 
         free (var);
 
-        if (Zones[nz].type == Unstructured) {
+        if (Zones[nz].type == CGNS_ENUMV(Unstructured)) {
             if (!ascii) {
                 i = 0;
                 write_ints (fp, 1, &i);

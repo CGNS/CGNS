@@ -3,7 +3,7 @@ include ..\make.win
 CALCDIR = ..\calclib
 CALCLIB = $(CALCDIR)\cgnscalc.lib
 
-CFLAGS = $(COPTS) -I..\common -I$(CGNSDIR)
+COPTS = $(CFLAGS) -I..\common -I$(CGNSDIR)
 
 #--------------------------------------------------
 
@@ -154,7 +154,7 @@ convert_variables.exe : convert_variables.obj cgnsutil.obj getargs.obj $(CALCLIB
 	$(CALCLIB) $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
 convert_variables.obj : convert_variables.c cgnsutil.h
-	$(CC) $(CFLAGS) -I$(CALCDIR) -Fo$@ -c convert_variables.c
+	$(CC) $(COPTS) -I$(CALCDIR) -Fo$@ -c convert_variables.c
 
 #--------------------------------------------------
 
@@ -165,7 +165,7 @@ convert_dataclass.exe : convert_dataclass.obj cgnsutil.obj getargs.obj $(CALCLIB
 	$(CALCLIB) $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
 convert_dataclass.obj : convert_dataclass.c
-	$(CC) $(CFLAGS) -I$(CALCDIR) -Fo$@ -c convert_dataclass.c
+	$(CC) $(COPTS) -I$(CALCDIR) -Fo$@ -c convert_dataclass.c
 
 #--------------------------------------------------
 
@@ -186,7 +186,7 @@ vertex_to_cell.exe : vertex_to_cell.obj cgnsutil.obj getargs.obj
 	$(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
 vertex_to_cell.obj : convert_location.c cgnsutil.h
-	$(CC) $(CFLAGS) -DVERTEX_TO_CELL -Fovertex_to_cell.obj \
+	$(CC) $(COPTS) -DVERTEX_TO_CELL -Fovertex_to_cell.obj \
 	-c convert_location.c
 
 #--------------------------------------------------
@@ -198,7 +198,7 @@ cell_to_vertex.exe : cell_to_vertex.obj cgnsutil.obj getargs.obj
 	$(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
 cell_to_vertex.obj : convert_location.c cgnsutil.h
-	$(CC) $(CFLAGS) -DCELL_TO_VERTEX -Focell_to_vertex.obj \
+	$(CC) $(COPTS) -DCELL_TO_VERTEX -Focell_to_vertex.obj \
 	-c convert_location.c
 
 #--------------------------------------------------
@@ -218,10 +218,10 @@ cgnsutil.obj   : cgnsutil.c cgnsutil.h
 binaryio.obj   : binaryio.c binaryio.h
 
 getargs.obj : ..\common\getargs.c ..\common\getargs.h
-	$(CC) $(CFLAGS) -Fogetargs.obj -c ..\common\getargs.c
+	$(CC) $(COPTS) -Fogetargs.obj -c ..\common\getargs.c
 
 hash.obj : ..\common\hash.c ..\common\hash.h
-	$(CC) $(CFLAGS) -Fohash.obj -c ..\common\hash.c
+	$(CC) $(COPTS) -Fohash.obj -c ..\common\hash.c
 
 p3dfint.obj : p3dfint.f
 
@@ -229,30 +229,33 @@ p3dfint.obj : p3dfint.f
 
 install : install-prog install-help
 
-install-prog : $(ALL) $(INSTALLDIR)
-	-$(INSTALL) utilities.mnu $(INSTALLDIR)
-	-$(INSTALL) *.tcl $(INSTALLDIR)
-	-$(INSTALL) *.exe $(INSTALLDIR)
-	-$(INSTALL) *.cnv $(INSTALLDIR)
+install-prog : $(ALL) $(BINDIR)
+	-$(INSTALL) utilities.mnu $(BINDIR)
+	-$(INSTALL) *.tcl $(BINDIR)
+	-$(INSTALL) *.exe $(BINDIR)
+	-$(INSTALL) *.cnv $(BINDIR)
 
-install-help : $(INSTALLDIR)\help\utilities\images
-	-$(INSTALL) help\*.html $(INSTALLDIR)\help\utilities
-	-$(INSTALL) help\images\*.* $(INSTALLDIR)\help\utilities\images
+install-help : $(BINDIR)\help\utilities\images
+	-$(INSTALL) help\*.html $(BINDIR)\help\utilities
+	-$(INSTALL) help\images\*.* $(BINDIR)\help\utilities\images
+
+$(BINDIR) : $(INSTALLDIR)
+	-mkdir $(BINDIR)
 
 $(INSTALLDIR) :
 	-mkdir $(INSTALLDIR)
 
-$(INSTALLDIR)\help\utilities\images : $(INSTALLDIR)\help\utilities
-	-mkdir $(INSTALLDIR)\help\utilities\images
+$(BINDIR)\help\utilities\images : $(BINDIR)\help\utilities
+	-mkdir $(BINDIR)\help\utilities\images
 
-$(INSTALLDIR)\help\utilities : $(INSTALLDIR)\help
-	-mkdir $(INSTALLDIR)\help\utilities
+$(BINDIR)\help\utilities : $(BINDIR)\help
+	-mkdir $(BINDIR)\help\utilities
 
-$(INSTALLDIR)\help :
-	-mkdir $(INSTALLDIR)\help
+$(BINDIR)\help :
+	-mkdir $(BINDIR)\help
 
 .c.obj :
-	$(CC) $(CFLAGS) -Fo$@ -c $<
+	$(CC) $(COPTS) -Fo$@ -c $<
 
 .f.obj :
 	$(F77) $(FFLAGS) -Fo$@ -c $<

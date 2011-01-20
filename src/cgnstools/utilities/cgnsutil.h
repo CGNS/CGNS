@@ -5,10 +5,15 @@
 #ifndef _CGNSUTIL_H_
 #define _CGNSUTIL_H_
 
-#if defined(__STDC__) || defined(__cplusplus)
-# ifndef PROTOTYPE
-#  define PROTOTYPE
-# endif
+#include "cgnslib.h"
+
+#ifndef CGNSTYPES_H
+# define cgsize_t int
+# define CG_MAX_INT32 0x7FFFFFFF
+#endif
+#ifndef CGNS_ENUMT
+# define CGNS_ENUMT(e) e
+# define CGNS_ENUMV(e) e
 #endif
 
 typedef struct _DESC {
@@ -18,7 +23,7 @@ typedef struct _DESC {
 } DESC;
 
 typedef struct _VERTEX {
-    int id;
+    cgsize_t id;
     double x, y, z, w;
 } VERTEX;
 
@@ -26,19 +31,19 @@ typedef struct _ELEMSET {
     int id;
     char name[33];
     int type;
-    int start;
-    int end;
+    cgsize_t start;
+    cgsize_t end;
     int nbndry;
-    int *conn;
-    int *parent;
+    cgsize_t *conn;
+    cgsize_t *parent;
 } ELEMSET;
 
 typedef struct _INTERFACE {
     int id;
     char name[33];
-    int range[3][2];
+    cgsize_t range[3][2];
     char d_name[33];
-    int d_range[3][2];
+    cgsize_t d_range[3][2];
     int transform[3];
     int d_zone;
 } INTERFACE;
@@ -49,13 +54,13 @@ typedef struct _CONNECT {
     int type;
     int location;
     int ptype;
-    int npnts;
-    int *pnts;
+    cgsize_t npnts;
+    cgsize_t *pnts;
     char d_name[33];
     int d_ztype;
     int d_ptype;
-    int d_npnts;
-    int *d_pnts;
+    cgsize_t d_npnts;
+    cgsize_t *d_pnts;
     int d_zone;
 } CONNECT;
 
@@ -64,10 +69,10 @@ typedef struct _BOCO {
     char name[33];
     int type;
     int ptype;
-    int npnts;
-    int *pnts;
+    cgsize_t npnts;
+    cgsize_t *pnts;
     int n_index[3];
-    int n_cnt;
+    cgsize_t n_cnt;
     int n_type;
     double *n_list;
 } BOCO;
@@ -90,7 +95,7 @@ typedef struct _SOLUTION {
     char name[33];
     int location;
     int rind[3][2];
-    int size;
+    cgsize_t size;
     int units[5];
     int dataclass;
     int nflds;
@@ -104,12 +109,12 @@ typedef struct _ZONE {
     char name[33];
     int type;
     int idim;
-    int dim[3];
+    cgsize_t dim[3];
     int units[5];
     int dataclass;
     int datatype;
     int vertflags;
-    int nverts;
+    cgsize_t nverts;
     VERTEX *verts;
     int nesets;
     ELEMSET *esets;
@@ -141,326 +146,70 @@ extern int element_node_counts[];
 extern "C" {
 #endif
 
-void FATAL (
-#ifdef PROTOTYPE
-    char *procname, char *errmsg
-#endif
-);
+void FATAL (char *procname, char *errmsg);
 
-ZONE *new_zone (
-#ifdef PROTOTYPE
-    int count
-#endif
-);
+ZONE *new_zone (int count);
+VERTEX *new_vertex (cgsize_t nverts);
+ELEMSET *new_elemset (int nsets);
+INTERFACE *new_interface (int nints);
+CONNECT *new_connect (int nconns);
+BOCO *new_boco (int nbocos);
+DESC *new_desc (int ndesc);
+SOLUTION *new_solution (int nsols);
+FIELD *new_field (int nfields, cgsize_t size);
 
-VERTEX *new_vertex (
-#ifdef PROTOTYPE
-    int nverts
-#endif
-);
+cgsize_t vertex_index (ZONE *z, cgsize_t i, cgsize_t j, cgsize_t k);
+cgsize_t cell_index (ZONE *z, cgsize_t i, cgsize_t j, cgsize_t k);
+cgsize_t solution_index (ZONE *z, SOLUTION *s, cgsize_t i, cgsize_t j, cgsize_t k);
 
-ELEMSET *new_elemset (
-#ifdef PROTOTYPE
-    int nsets
-#endif
-);
+int file_exists (char *file);
+int is_executable (char *file);
+char *find_executable (char *exename);
+char *find_file (char *filename, char *exename);
+int same_file (char *file1, char *file2);
+char *temporary_file (char *basename);
+void copy_file (char *oldfile, char *newfile);
 
-INTERFACE *new_interface (
-#ifdef PROTOTYPE
-    int nints
-#endif
-);
+int open_cgns (char *cgnsfile, int read_only);
+int find_base (char *basename);
 
-CONNECT *new_connect (
-#ifdef PROTOTYPE
-    int nconns
-#endif
-);
+void read_cgns (void);
+int read_zones (void);
+void read_zone_data (int izone);
+cgsize_t read_zone_grid (int izone);
+int read_zone_element (int izone);
+int structured_elements (int izone);
+int read_zone_interface (int izone);
+int read_zone_connect (int izone);
+int read_zone_boco (int izone);
+int read_zone_solution (int izone);
+cgsize_t read_solution_field (int izone, int isol, int ifld);
+int read_units (int units[5]);
 
-BOCO *new_boco (
-#ifdef PROTOTYPE
-    int nbocos
-#endif
-);
+void write_cgns (void);
+void write_zones (void);
+void write_zone_data (int izone);
+void write_zone_grid (int izone);
+void write_zone_element (int izone);
+void write_zone_interface (int izone);
+void write_zone_connect (int izone);
+void write_zone_boco (int izone);
+void write_zone_solution (int izone, int isol);
+void write_solution_field (int izone, int isol, int ifld);
 
-DESC *new_desc (
-#ifdef PROTOTYPE
-    int ndesc
-#endif
-);
+double volume_tet (VERTEX *v1, VERTEX *v2, VERTEX *v3, VERTEX *v4);
+double volume_pyr (VERTEX *v1, VERTEX *v2, VERTEX *v3,
+                   VERTEX *v4, VERTEX *v5);
+double volume_wdg (VERTEX *v1, VERTEX *v2, VERTEX *v3,
+                   VERTEX *v4, VERTEX *v5, VERTEX *v6);
+double volume_hex (VERTEX *v1, VERTEX *v2, VERTEX *v3, VERTEX *v4,
+                   VERTEX *v5, VERTEX *v6, VERTEX *v7, VERTEX *v8);
+double volume_element (int nnodes, VERTEX *v[]);
+double cell_volume (ZONE *z, cgsize_t i, cgsize_t j, cgsize_t k);
+void vertex_volumes (int izone);
 
-SOLUTION *new_solution (
-#ifdef PROTOTYPE
-    int nsols
-#endif
-);
-
-FIELD *new_field (
-#ifdef PROTOTYPE
-    int nfields, int size
-#endif
-);
-
-int vertex_index (
-#ifdef PROTOTYPE
-    ZONE *z, int i, int j, int k
-#endif
-);
-
-int cell_index (
-#ifdef PROTOTYPE
-    ZONE *z, int i, int j, int k
-#endif
-);
-
-int solution_index (
-#ifdef PROTOTYPE
-    ZONE *z, SOLUTION *s, int i, int j, int k
-#endif
-);
-
-int file_exists (
-#ifdef PROTOTYPE
-    char *file
-#endif
-);
-
-int is_executable (
-#ifdef PROTOTYPE
-    char *file
-#endif
-);
-
-char *find_executable (
-#ifdef PROTOTYPE
-    char *exename
-#endif
-);
-
-char *find_file (
-#ifdef PROTOTYPE
-    char *filename, char *exename
-#endif
-);
-
-int same_file (
-#ifdef PROTOTYPE
-    char *file1, char *file2
-#endif
-);
-
-char *temporary_file (
-#ifdef PROTOTYPE
-    char *basename
-#endif
-);
-
-void copy_file (
-#ifdef PROTOTYPE
-    char *oldfile, char *newfile
-#endif
-);
-
-int open_cgns (
-#ifdef PROTOTYPE
-    char *cgnsfile, int read_only
-#endif
-);
-
-int find_base (
-#ifdef PROTOTYPE
-    char *basename
-#endif
-);
-
-void read_cgns (
-#ifdef PROTOTYPE
-    void
-#endif
-);
-
-int read_zones (
-#ifdef PROTOTYPE
-    void
-#endif
-);
-
-void read_zone_data (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-int read_zone_grid (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-int read_zone_element (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-int structured_elements (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-int read_zone_interface (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-int read_zone_connect (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-int read_zone_boco (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-int read_zone_solution (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-int read_solution_field (
-#ifdef PROTOTYPE
-    int izone, int isol, int ifld
-#endif
-);
-
-int read_units (
-#ifdef PROTOTYPE
-    int units[5]
-#endif
-);
-
-void write_cgns (
-#ifdef PROTOTYPE
-    void
-#endif
-);
-
-void write_zones (
-#ifdef PROTOTYPE
-    void
-#endif
-);
-
-void write_zone_data (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-void write_zone_grid (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-void write_zone_element (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-void write_zone_interface (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-void write_zone_connect (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-void write_zone_boco (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-void write_zone_solution (
-#ifdef PROTOTYPE
-    int izone, int isol
-#endif
-);
-
-void write_solution_field (
-#ifdef PROTOTYPE
-    int izone, int isol, int ifld
-#endif
-);
-
-double volume_tet (
-#ifdef PROTOTYPE
-    VERTEX *v1, VERTEX *v2, VERTEX *v3, VERTEX *v4
-#endif
-);
-
-double volume_pyr (
-#ifdef PROTOTYPE
-    VERTEX *v1, VERTEX *v2, VERTEX *v3,
-    VERTEX *v4, VERTEX *v5
-#endif
-);
-
-double volume_wdg (
-#ifdef PROTOTYPE
-    VERTEX *v1, VERTEX *v2, VERTEX *v3,
-    VERTEX *v4, VERTEX *v5, VERTEX *v6
-#endif
-);
-
-double volume_hex (
-#ifdef PROTOTYPE
-    VERTEX *v1, VERTEX *v2, VERTEX *v3, VERTEX *v4,
-    VERTEX *v5, VERTEX *v6, VERTEX *v7, VERTEX *v8
-#endif
-);
-
-double volume_element (
-#ifdef PROTOTYPE
-    int nnodes, VERTEX *v[]
-#endif
-);
-
-double cell_volume (
-#ifdef PROTOTYPE
-    ZONE *z, int i, int j, int k
-#endif
-);
-
-void vertex_volumes (
-#ifdef PROTOTYPE
-    int izone
-#endif
-);
-
-void cell_vertex_solution (
-#ifdef PROTOTYPE
-    int izone, int isol, int weight
-#endif
-);
-
-void cell_center_solution (
-#ifdef PROTOTYPE
-    int izone, int isol, int weight
-#endif
-);
+void cell_vertex_solution (int izone, int isol, int weight);
+void cell_center_solution (int izone, int isol, int weight);
 
 #ifdef __cplusplus
 }

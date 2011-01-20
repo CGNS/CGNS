@@ -117,14 +117,6 @@
 #define OPEN_FORTRAN    0x2000  /* FORTRAN reads */
 #define OPEN_ASCII      0x4000  /* ASCII read/write */
 
-/*----- prototyping -----*/
-
-#if defined(__STDC__) || defined(__cplusplus)
-#ifndef PROTOTYPE
-#define PROTOTYPE
-#endif
-#endif
-
 /*----- file pointer structure -----*/
 
 typedef struct binaryio {
@@ -146,7 +138,6 @@ typedef struct binaryio {
 
     /* conversion routines */
 
-#ifdef PROTOTYPE
     unsigned char *(*fromshort)(unsigned char *data);
     unsigned char *(*fromint)(unsigned char *data);
     unsigned char *(*fromlong)(unsigned char *data);
@@ -157,24 +148,10 @@ typedef struct binaryio {
     unsigned char *(*tolong)(unsigned char *data);
     unsigned char *(*tofloat)(unsigned char *data);
     unsigned char *(*todouble)(unsigned char *data);
-#else
-    unsigned char *(*fromshort)();
-    unsigned char *(*fromint)();
-    unsigned char *(*fromlong)();
-    unsigned char *(*fromfloat)();
-    unsigned char *(*fromdouble)();
-    unsigned char *(*toshort)();
-    unsigned char *(*toint)();
-    unsigned char *(*tolong)();
-    unsigned char *(*tofloat)();
-    unsigned char *(*todouble)();
-#endif
 } BINARYIO;
 
 extern void (*binaryio_error)(  /* error handler */
-#ifdef PROTOTYPE
     char *errmsg
-#endif
 );
 
 /*----- function prototypes -----*/
@@ -185,191 +162,40 @@ extern "C" {
 
 /* file manipulation */
 
-BINARYIO *bf_open (
-#ifdef PROTOTYPE
-    char *filename,
-    int flags
-#endif
-);
-
-BINARYIO *bf_new (
-#ifdef PROTOTYPE
-    FILE *fp,
-    int flags
-#endif
-);
-
-void bf_close (
-#ifdef PROTOTYPE
-    BINARYIO *bf
-#endif
-);
-
-void bf_rewind (
-#ifdef PROTOTYPE
-    BINARYIO *bf
-#endif
-);
-
-long bf_tell (
-#ifdef PROTOTYPE
-    BINARYIO *bf
-#endif
-);
-
-int bf_seek (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    long offset
-#endif
-);
-
-int bf_unget (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int c
-#endif
-);
-
-int bf_nextrec (
-#ifdef PROTOTYPE
-    BINARYIO *bf
-#endif
-);
-
-int bf_reclen  (
-#ifdef PROTOTYPE
-    BINARYIO *bf
-#endif
-);
-
-int bf_skipspace (
-#ifdef PROTOTYPE
-    BINARYIO *bf
-#endif
-);
+BINARYIO *bf_open (char *filename, int flags);
+BINARYIO *bf_new (FILE *fp, int flags);
+void bf_close (BINARYIO *bf);
+void bf_rewind (BINARYIO *bf);
+long bf_tell (BINARYIO *bf);
+int  bf_seek (BINARYIO *bf, long offset);
+int  bf_unget (BINARYIO *bf, int c);
+int  bf_nextrec (BINARYIO *bf);
+int  bf_reclen  (BINARYIO *bf);
+int  bf_skipspace (BINARYIO *bf);
 
 /* information */
 
-char *bf_machname (
-#ifdef PROTOTYPE
-    int mach
-#endif
-);
-
-char *bf_archname (
-#ifdef PROTOTYPE
-    int mach
-#endif
-);
+char *bf_machname (int mach);
+char *bf_archname (int mach);
 
 /* reads */
 
-int bf_getbytes (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    unsigned char *data
-#endif
-);
-
-int bf_getstring (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    char *data
-#endif
-);
-
-int bf_getshorts (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    short *data
-#endif
-);
-
-int bf_getints (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    int *data
-#endif
-);
-
-int bf_getlongs (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    long *data
-#endif
-);
-
-int bf_getfloats (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    float *data
-#endif
-);
-
-int bf_getdoubles (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    double *data
-#endif
-);
+int bf_getbytes (BINARYIO *bf, int count, unsigned char *data);
+int bf_getstring (BINARYIO *bf, int count, char *data);
+int bf_getshorts (BINARYIO *bf, int count, short *data);
+int bf_getints (BINARYIO *bf, int count, int *data);
+int bf_getlongs (BINARYIO *bf, int count, long *data);
+int bf_getfloats (BINARYIO *bf, int count, float *data);
+int bf_getdoubles (BINARYIO *bf, int count, double *data);
 
 /* writes */
 
-int bf_putbytes (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    unsigned char *data
-#endif
-);
-
-int bf_putshorts (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    short *data
-#endif
-);
-
-int bf_putints (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    int *data
-#endif
-);
-
-int bf_putlongs (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    long *data
-#endif
-);
-
-int bf_putfloats (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    float *data
-#endif
-);
-
-int bf_putdoubles (
-#ifdef PROTOTYPE
-    BINARYIO *bf,
-    int count,
-    double *data
-#endif
-);
+int bf_putbytes (BINARYIO *bf, int count, unsigned char *data);
+int bf_putshorts (BINARYIO *bf, int count, short *data);
+int bf_putints (BINARYIO *bf, int count, int *data);
+int bf_putlongs (BINARYIO *bf, int count, long *data);
+int bf_putfloats (BINARYIO *bf, int count, float *data);
+int bf_putdoubles (BINARYIO *bf, int count, double *data);
 
 #ifdef __cplusplus
 }

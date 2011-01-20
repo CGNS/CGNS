@@ -5,6 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+# define unlink _unlink
+#else
+# include <unistd.h>
+#endif
 
 #include "getargs.h"
 #include "cgnslib.h"
@@ -48,7 +53,6 @@ static int format = 'b';
 static int mblock = 1;
 static int whole = 1;
 static int use_iblank = 1;
-static int is_double = 0;
 static int weighting = 0;
 static int usesol = 1;
 static int use_double = 0;
@@ -64,16 +68,10 @@ static double *q[5];
  * fill in iblank values for a zone
  *---------------------------------------------------------------------*/
 
-static void compute_iblank (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+static void compute_iblank (int nz)
 {
-    int n, ni, i, j, k, nk, nj, nn;
-    int ns[3], ne[3];
+    cgsize_t n, ni, i, j, k, nk, nj, nn;
+    cgsize_t ns[3], ne[3];
     ZONE *zone = &Zones[nz];
     INTERFACE *ints = zone->ints;
 
@@ -108,15 +106,10 @@ int nz;
  * write binary Plot3d file
  *---------------------------------------------------------------------*/
 
-static void write_xyz_binary (
-#ifdef PROTOTYPE
-    char *xyzfile)
-#else
-    xyzfile)
-char *xyzfile;
-#endif
+static void write_xyz_binary (char *xyzfile)
 {
-    int n, k, nk, nz, np;
+    int nz, i, dims[3];
+    int n, k, nk, np;
     VERTEX *verts;
     void *xyz;
     float *xyzf;
@@ -129,9 +122,9 @@ char *xyzfile;
     putchar ('\n');
 
     for (np = 0, nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) {
-            nk = whole ? Zones[nz].nverts :
-                Zones[nz].dim[0] * Zones[nz].dim[1];
+        if (Zones[nz].type == CGNS_ENUMV(Structured)) {
+            nk = whole ? (int)Zones[nz].nverts :
+                (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
             if (np < nk) np = nk;
         }
     }
@@ -153,22 +146,26 @@ char *xyzfile;
     if (mblock || nblocks > 1)
         fwrite (&nblocks, sizeof(int), 1, fp);
     for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured)
-            fwrite (Zones[nz].dim, sizeof(int), 3, fp);
+	if (Zones[nz].type == CGNS_ENUMV(Structured)) {
+	    for (i = 0; i < 3; i++)
+		dims[i] = (int)Zones[nz].dim[i];
+            fwrite (dims, sizeof(int), 3, fp);
+	}
     }
     for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) {
+        if (Zones[nz].type == CGNS_ENUMV(Structured)) {
             printf ("  zone %d - %d x %d x %d ... ", nz+1,
-                Zones[nz].dim[0], Zones[nz].dim[1], Zones[nz].dim[2]);
+                (int)Zones[nz].dim[0], (int)Zones[nz].dim[1],
+		(int)Zones[nz].dim[2]);
             fflush (stdout);
             if (use_iblank) compute_iblank (nz);
             if (whole) {
-                np = Zones[nz].nverts;
+                np = (int)Zones[nz].nverts;
                 nk = 1;
             }
             else {
-                np = Zones[nz].dim[0] * Zones[nz].dim[1];
-                nk = Zones[nz].dim[2];
+                np = (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
+                nk = (int)Zones[nz].dim[2];
             }
             for (k = 0; k < nk; k++) {
                 verts = &Zones[nz].verts[k*np];
@@ -208,15 +205,10 @@ char *xyzfile;
  * write unformatted Plot3d file
  *---------------------------------------------------------------------*/
 
-static void write_xyz_unformatted (
-#ifdef PROTOTYPE
-    char *xyzfile)
-#else
-    xyzfile)
-char *xyzfile;
-#endif
+static void write_xyz_unformatted (char *xyzfile)
 {
-    int i, n, k, nk, nz, np, ierr, *indices;
+    int n, i, ierr, *indices;
+    int nz, k, nk, np;
     char buff[129];
     VERTEX *verts;
     void *xyz;
@@ -229,9 +221,9 @@ char *xyzfile;
     putchar ('\n');
 
     for (np = 0, nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) {
-            nk = whole ? Zones[nz].nverts :
-                Zones[nz].dim[0] * Zones[nz].dim[1];
+        if (Zones[nz].type == CGNS_ENUMV(Structured)) {
+            nk = whole ? (int)Zones[nz].nverts :
+                (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
             if (np < nk) np = nk;
         }
     }
@@ -249,7 +241,7 @@ char *xyzfile;
 
     unlink (xyzfile);
     strcpy (buff, xyzfile);
-    for (n = strlen(buff); n < 128; n++)
+    for (n = (int)strlen(buff); n < 128; n++)
         buff[n] = ' ';
     buff[128] = 0;
     n = 0;
@@ -259,27 +251,28 @@ char *xyzfile;
         n = 1;
         WRITEIF (&n, &nblocks, &ierr);
     }
-    for (np = 0, nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) {
-            for (n = 0; n < 3; n++)
-                indices[np++] = Zones[nz].dim[n];
+    for (n = 0, nz = 0; nz < nZones; nz++) {
+        if (Zones[nz].type == CGNS_ENUMV(Structured)) {
+            for (i = 0; i < 3; i++)
+                indices[n++] = (int)Zones[nz].dim[i];
         }
     }
-    WRITEIF (&np, indices, &ierr);
+    WRITEIF (&n, indices, &ierr);
 
     for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) {
+        if (Zones[nz].type == CGNS_ENUMV(Structured)) {
             printf ("  zone %d - %d x %d x %d ... ", nz+1,
-                Zones[nz].dim[0], Zones[nz].dim[1], Zones[nz].dim[2]);
+                (int)Zones[nz].dim[0], (int)Zones[nz].dim[1],
+		(int)Zones[nz].dim[2]);
             fflush (stdout);
             if (use_iblank) compute_iblank (nz);
             if (whole) {
-                np = Zones[nz].nverts;
+                np = (int)Zones[nz].nverts;
                 nk = 1;
             }
             else {
-                np = Zones[nz].dim[0] * Zones[nz].dim[1];
-                nk = Zones[nz].dim[2];
+                np = (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
+                nk = (int)Zones[nz].dim[2];
             }
             for (k = 0; k < nk; k++) {
                 verts = &Zones[nz].verts[k*np];
@@ -320,13 +313,7 @@ char *xyzfile;
  * write formatted Plot3d file
  *---------------------------------------------------------------------*/
 
-static void write_xyz_formatted (
-#ifdef PROTOTYPE
-    char *xyzfile)
-#else
-    xyzfile)
-char *xyzfile;
-#endif
+static void write_xyz_formatted (char *xyzfile)
 {
     int n, k, nk, nz, np, *ib;
     VERTEX *verts;
@@ -342,23 +329,24 @@ char *xyzfile;
     if (mblock || nblocks > 1)
         fprintf (fp, "%d\n", nblocks);
     for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured)
-            fprintf (fp, "%d %d %d\n", Zones[nz].dim[0],
-                Zones[nz].dim[1], Zones[nz].dim[2]);
+        if (Zones[nz].type == CGNS_ENUMV(Structured))
+            fprintf (fp, "%d %d %d\n", (int)Zones[nz].dim[0],
+                (int)Zones[nz].dim[1], (int)Zones[nz].dim[2]);
     }
     for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) {
+        if (Zones[nz].type == CGNS_ENUMV(Structured)) {
             printf ("  zone %d - %d x %d x %d ... ", nz+1,
-                Zones[nz].dim[0], Zones[nz].dim[1], Zones[nz].dim[2]);
+                (int)Zones[nz].dim[0], (int)Zones[nz].dim[1],
+		(int)Zones[nz].dim[2]);
             fflush (stdout);
             if (use_iblank) compute_iblank (nz);
             if (whole) {
-                np = Zones[nz].nverts;
+                np = (int)Zones[nz].nverts;
                 nk = 1;
             }
             else {
-                np = Zones[nz].dim[0] * Zones[nz].dim[1];
-                nk = Zones[nz].dim[2];
+                np = (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
+                nk = (int)Zones[nz].dim[2];
             }
             for (k = 0; k < nk; k++) {
                 verts = &Zones[nz].verts[k*np];
@@ -397,13 +385,7 @@ char *xyzfile;
  * check zone for a complete solution
  *---------------------------------------------------------------------*/
 
-static int check_solution (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+static int check_solution (int nz)
 {
     int nf, flags = 0;
     SOLUTION *sol;
@@ -411,8 +393,8 @@ int nz;
     if (!read_zone_solution (nz+1) ||
         usesol > Zones[nz].nsols) return 0;
     sol = &Zones[nz].sols[usesol-1];
-    if (sol->nflds < 5 || (sol->location != Vertex &&
-        sol->location != CellCenter)) return 0;
+    if (sol->nflds < 5 || (sol->location != CGNS_ENUMV(Vertex) &&
+        sol->location != CGNS_ENUMV(CellCenter))) return 0;
     for (nf = 0; nf < sol->nflds; nf++) {
         if (!strcmp (sol->flds[nf].name, "Density")) {
             flags |= 0x01;
@@ -446,14 +428,12 @@ int nz;
  * get the reference conditions
  *---------------------------------------------------------------------*/
 
-static void get_reference (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-    int n, narrays, na, dim, vec;
-    DataType_t datatype;
-    AngleUnits_t angle;
+static void get_reference (void)
+{
+    int n, narrays, na, dim;
+    cgsize_t vec[12];
+    CGNS_ENUMT(DataType_t) datatype;
+    CGNS_ENUMT(AngleUnits_t) angle;
     int aloc = 0, units[5];
     char name[33];
     static char *refnames[4] = {
@@ -472,12 +452,12 @@ static void get_reference (
         cg_narrays (&narrays) || narrays < 1)
         return;
     for (na = 1; na <= narrays; na++) {
-        if (cg_array_info (na, name, &datatype, &dim, &vec))
+        if (cg_array_info (na, name, &datatype, &dim, vec))
             FATAL ("get_reference", NULL);
-        if (dim != 1 || vec != 1) continue;
+        if (dim != 1 || vec[0] != 1) continue;
         for (n = 0; n < 4; n++) {
             if (!strcmp (refnames[n], name)) {
-                if (cg_array_read_as (na, RealDouble, &reference[n]))
+                if (cg_array_read_as (na, CGNS_ENUMV(RealDouble), &reference[n]))
                     FATAL ("get_reference", NULL);
                 if (n == 1) aloc = na;
                 break;
@@ -492,10 +472,10 @@ static void get_reference (
             "DataArray_t", aloc, "end"))
             FATAL ("get_reference", NULL);
         if (read_units (units))
-            angle = (AngleUnits_t)units[4];
+            angle = (CGNS_ENUMT(AngleUnits_t))units[4];
         else
-            angle = (AngleUnits_t)baseunits[4];
-        if (angle == Radian)
+            angle = (CGNS_ENUMT(AngleUnits_t))baseunits[4];
+        if (angle == CGNS_ENUMV(Radian))
             reference[1] *= 57.29578;
     }
 }
@@ -504,13 +484,7 @@ static void get_reference (
  * compute solution for a zone
  *---------------------------------------------------------------------*/
 
-static void compute_solution (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+static void compute_solution (int nz)
 {
     int n, nf, loc[5], con[5];
     double vel2;
@@ -563,7 +537,7 @@ int nz;
             continue;
         read_solution_field (nz+1, usesol, nf+1);
     }
-    if (sol->location != Vertex)
+    if (sol->location != CGNS_ENUMV(Vertex))
         cell_vertex_solution (nz+1, usesol, weighting);
 
     for (nf = 0; nf < 5; nf++) {
@@ -590,15 +564,9 @@ int nz;
  * write binary Plot3d file
  *---------------------------------------------------------------------*/
 
-static void write_q_binary (
-#ifdef PROTOTYPE
-    char *qfile)
-#else
-    qfile)
-char *qfile;
-#endif
+static void write_q_binary (char *qfile)
 {
-    int i, j, n, k, nk, nz, np;
+    int i, j, n, k, nk, nz, np, dim[3];
     float qf[4];
     FILE *fp;
 
@@ -612,21 +580,24 @@ char *qfile;
     if (mblock || nblocks > 1)
         fwrite (&nblocks, sizeof(int), 1, fp);
     for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured)
-            fwrite (Zones[nz].dim, sizeof(int), 3, fp);
+	if (Zones[nz].type == CGNS_ENUMV(Structured)) {
+	    for (i = 0; i < 3; i++)
+		dim[i] = (int)Zones[nz].dim[i];
+            fwrite (dim, sizeof(int), 3, fp);
+	}
     }
     for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) {
+        if (Zones[nz].type == CGNS_ENUMV(Structured)) {
             printf ("  zone %d ... ", nz+1);
             fflush (stdout);
             compute_solution (nz);
             if (whole) {
-                np = Zones[nz].nverts;
+                np = (int)Zones[nz].nverts;
                 nk = 1;
             }
             else {
-                np = Zones[nz].dim[0] * Zones[nz].dim[1];
-                nk = Zones[nz].dim[2];
+                np = (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
+                nk = (int)Zones[nz].dim[2];
             }
             if (use_double) {
                 fwrite (reference, sizeof(double), 4, fp);
@@ -659,27 +630,22 @@ char *qfile;
  * write unformatted Plot3d file
  *---------------------------------------------------------------------*/
 
-static void write_q_unformatted (
-#ifdef PROTOTYPE
-    char *qfile)
-#else
-    qfile)
-char *qfile;
-#endif
+static void write_q_unformatted (char *qfile)
 {
-    int i, j, n, k, nk, nz, np, nq, ierr, *indices;
+    int np, nk, nz, nq, ierr;
+    int i, j, k, n, *indices;
     char buff[129];
     void *qdata;
-    float *qf;
-    double *qd;
+    float *qf = 0;
+    double *qd = 0;
 
     printf ("\nwriting unformatted Q file to %s\n", qfile);
     printf ("  in %s-precision\n", use_double ? "double" : "single");
 
     for (np = 0, nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) {
-            nk = whole ? Zones[nz].nverts :
-                Zones[nz].dim[0] * Zones[nz].dim[1];
+        if (Zones[nz].type == CGNS_ENUMV(Structured)) {
+            nk = whole ? (int)Zones[nz].nverts :
+                (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
             if (np < nk) np = nk;
         }
     }
@@ -697,7 +663,7 @@ char *qfile;
 
     unlink (qfile);
     strcpy (buff, qfile);
-    for (n = strlen(buff); n < 128; n++)
+    for (n = (int)strlen(buff); n < 128; n++)
         buff[n] = ' ';
     buff[128] = 0;
     n = 0;
@@ -708,25 +674,25 @@ char *qfile;
         WRITEIF (&n, &nblocks, &ierr);
     }
     for (np = 0, nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) {
+        if (Zones[nz].type == CGNS_ENUMV(Structured)) {
             for (n = 0; n < 3; n++)
-                indices[np++] = Zones[nz].dim[n];
+                indices[np++] = (int)Zones[nz].dim[n];
         }
     }
     WRITEIF (&np, indices, &ierr);
 
     for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) {
+        if (Zones[nz].type == CGNS_ENUMV(Structured)) {
             printf ("  zone %d ... ", nz+1);
             fflush (stdout);
             compute_solution (nz);
             if (whole) {
-                np = Zones[nz].nverts;
+                np = (int)Zones[nz].nverts;
                 nk = 1;
             }
             else {
-                np = Zones[nz].dim[0] * Zones[nz].dim[1];
-                nk = Zones[nz].dim[2];
+                np = (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
+                nk = (int)Zones[nz].dim[2];
             }
             if (use_double) {
                 n = 4;
@@ -765,15 +731,9 @@ char *qfile;
  * write formatted Plot3d file
  *---------------------------------------------------------------------*/
 
-static void write_q_formatted (
-#ifdef PROTOTYPE
-    char *qfile)
-#else
-    qfile)
-char *qfile;
-#endif
+static void write_q_formatted (char *qfile)
 {
-    int i, j, n, k, nk, nz, np;
+    int nz, i, j, n, k, nk, np;
     FILE *fp;
 
     printf ("\nwriting formatted Q file to %s\n", qfile);
@@ -785,24 +745,24 @@ char *qfile;
     if (mblock || nblocks > 1)
         fprintf (fp, "%d\n", nblocks);
     for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured)
-            fprintf (fp, "%d %d %d\n", Zones[nz].dim[0],
-                Zones[nz].dim[1], Zones[nz].dim[2]);
+        if (Zones[nz].type == CGNS_ENUMV(Structured))
+            fprintf (fp, "%d %d %d\n", (int)Zones[nz].dim[0],
+                (int)Zones[nz].dim[1], (int)Zones[nz].dim[2]);
     }
     for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) {
+        if (Zones[nz].type == CGNS_ENUMV(Structured)) {
             printf ("  zone %d ... ", nz+1);
             fflush (stdout);
             fprintf (fp, "%#g %#g %#g %#g\n", reference[0], reference[1],
                 reference[2], reference[3]);
             compute_solution (nz);
             if (whole) {
-                np = Zones[nz].nverts;
+                np = (int)Zones[nz].nverts;
                 nk = 1;
             }
             else {
-                np = Zones[nz].dim[0] * Zones[nz].dim[1];
-                nk = Zones[nz].dim[2];
+                np = (int)(Zones[nz].dim[0] * Zones[nz].dim[1]);
+                nk = (int)Zones[nz].dim[2];
             }
             for (k = 0; k < nk; k++) {
                 i = k * np;
@@ -822,11 +782,10 @@ char *qfile;
 
 /*========== main =====================================================*/
 
-int main (argc, argv)
-int argc;
-char *argv[];
+int main (int argc, char *argv[])
 {
-    int n, ib, nb, is, nz, imax, celldim, phydim;
+    int n, ib, nb, is, nz, celldim, phydim;
+    cgsize_t imax;
     char basename[33];
 
     if (argc < 2)
@@ -896,16 +855,32 @@ char *argv[];
 
     read_zones ();
     for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) nblocks++;
+	if (Zones[nz].type == CGNS_ENUMV(Structured)) {
+	    /* verify we can write out using ints */
+	    for (n = 0; n < 3; n++) {
+		if (Zones[nz].dim[n] > CG_MAX_INT32)
+		    FATAL(NULL, "zone dimensions too large for integer");
+	    }
+	    if (whole) {
+		if (Zones[nz].nverts > CG_MAX_INT32)
+		    FATAL(NULL, "zone too large to write as whole using an integer");
+	    }
+	    else {
+	        if (Zones[nz].dim[0]*Zones[nz].dim[1] > CG_MAX_INT32)
+		    FATAL(NULL, "zone too large to write using an integer");
+	    }
+	    nblocks++;
+	}
     }
     if (!nblocks) FATAL (NULL, "no structured zones found");
 
     /* read the nodes */
 
     printf ("reading %d zones\n", nblocks);
-    ib = is = imax = 0;
+    ib = is = 0;
+    imax = 0;
     for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].type == Structured) {
+        if (Zones[nz].type == CGNS_ENUMV(Structured)) {
             printf ("  zone %d - %s ... ", nz+1, Zones[nz].name);
             fflush (stdout);
             read_zone_grid (nz+1);
@@ -918,7 +893,7 @@ char *argv[];
 
     if (!ib) use_iblank = 0;
     if (use_iblank) {
-        iblank = (int *) malloc (imax * sizeof(int));
+        iblank = (int *) malloc ((size_t)imax * sizeof(int));
         if (NULL == iblank)
             FATAL (NULL, "malloc failed for iblank array");
     }
@@ -944,7 +919,7 @@ char *argv[];
             exit (1);
         }
         for (n = 0; n < 5; n++) {
-            q[n] = (double *) malloc (imax * sizeof(double));
+            q[n] = (double *) malloc ((size_t)imax * sizeof(double));
             if (NULL == q[n])
                 FATAL (NULL, "malloc failed for solution working array");
         }
@@ -958,6 +933,5 @@ char *argv[];
     }
 
     cg_close (cgnsfn);
-    exit (0);
-    return 0; /* quite compiler */
+    return 0;
 }

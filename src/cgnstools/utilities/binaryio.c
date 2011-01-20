@@ -8,16 +8,16 @@
 #include <ctype.h>
 #include <math.h>       /* for atof() */
 #include "binaryio.h"
-#if defined(MSDOS) || defined(__MSDOS__) || defined(_WIN32)
+#ifdef _WIN32
 #include <fcntl.h>      /* for O_BINARY */
 #include <io.h>         /* for setmode() */
+# define setmode _setmode
+# define fileno  _fileno
 #endif
 
 /*define STRING_SKIP_SPACE*/
 
 /*----- forward references -----*/
-
-#ifdef PROTOTYPE
 
 static void swapbytes(unsigned char *, int);
 
@@ -51,42 +51,6 @@ static unsigned char *double_convex(unsigned char *);
 
 static int rdlongs(BINARYIO *,int,long *);
 
-#else
-
-static void swapbytes();
-
-static unsigned char *copy2();
-static unsigned char *copy4();
-static unsigned char *copy8();
-
-static unsigned char *swap2();
-static unsigned char *swap4();
-static unsigned char *swap8();
-
-static unsigned char *swap2to4();
-static unsigned char *swap4to2();
-
-static unsigned char *swap4to8();
-static unsigned char *swap8to4();
-
-static unsigned char *cray_short();
-static unsigned char *cray_long();
-static unsigned char *cray_float();
-static unsigned char *cray_double();
-static unsigned char *short_cray();
-static unsigned char *long_cray();
-static unsigned char *float_cray();
-static unsigned char *double_cray();
-
-static unsigned char *convex_float();
-static unsigned char *convex_double();
-static unsigned char *float_convex();
-static unsigned char *double_convex();
-
-static int rdlongs();
-
-#endif
-
 /*----- error codes and messages -----*/
 
 enum ERRCODES {
@@ -103,11 +67,7 @@ static char *errmsg[] = {
     "misplaced Fortran EOR mark"
 };
 
-#ifdef PROTOTYPE
 void (*binaryio_error)(char *msg) = NULL;
-#else
-void (*binaryio_error)() = NULL;
-#endif
 
 /*----- macros for local data conversions -----*/
 
@@ -241,14 +201,7 @@ register int cnt;
  * set up I/O flags and conversion routines
  *-------------------------------------------------------------------*/
 
-static int set_flags (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int flags)
-#else
-    bf, flags)
-BINARYIO *bf;
-int flags;
-#endif
+static int set_flags (BINARYIO *bf, int flags)
 {
     /* can't write fortran */
 
@@ -405,14 +358,7 @@ int flags;
  * default fatal error handler
  *-------------------------------------------------------------------*/
 
-static int fatal_error (
-#ifdef PROTOTYPE
-    char *funcname, int errcode)
-#else
-    funcname, errcode)
-char *funcname;
-int errcode;
-#endif
+static int fatal_error (char *funcname, int errcode)
 {
     char msg[81];
 
@@ -429,13 +375,7 @@ int errcode;
  * reads record size in bytes for FORTRAN data
  *--------------------------------------------------------------------*/
 
-static int beg_record (
-#ifdef PROTOTYPE
-    BINARYIO *bf)
-#else
-    bf)
-BINARYIO *bf;
-#endif
+static int beg_record (BINARYIO *bf)
 {
     long rec_size;
 
@@ -506,13 +446,7 @@ BINARYIO *bf;
  * read end of record mark
  *-------------------------------------------------------------------*/
 
-static int end_record (
-#ifdef PROTOTYPE
-    BINARYIO *bf)
-#else
-    bf)
-BINARYIO *bf;
-#endif
+static int end_record (BINARYIO *bf)
 {
     long rec_size;
 
@@ -558,13 +492,7 @@ BINARYIO *bf;
  * skip over white space and commas
  *-------------------------------------------------------------------*/
 
-static int skip_space (
-#ifdef PROTOTYPE
-    BINARYIO *bf)
-#else
-    bf)
-BINARYIO *bf;
-#endif
+static int skip_space (BINARYIO *bf)
 {
     int c;
 
@@ -585,14 +513,7 @@ BINARYIO *bf;
  * reads a floating point number from ASCII stream
  *-------------------------------------------------------------------*/
 
-static int read_double (
-#ifdef PROTOTYPE
-    BINARYIO *bf, double *dval)
-#else
-    bf, dval)
-BINARYIO *bf;
-double *dval;
-#endif
+static int read_double (BINARYIO *bf, double *dval)
 {
     int c, n = 0, point = 0;
     char str[128];
@@ -676,20 +597,12 @@ double *dval;
  * read 16-bit integers from a file with data conversions
  *-------------------------------------------------------------------*/
 
-static int rdshorts (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, short *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-short *data;
-#endif
+static int rdshorts (BINARYIO *bf, int count, short *data)
 {
     int n;
 
     if (ARCH_LOCAL == bf->arch && sizeof(short) == bf->short_size)
-        n = fread (data, sizeof(short), count, bf->fp);
+        n = (int)fread (data, sizeof(short), count, bf->fp);
     else {
         unsigned char buf[8];
         for (n = 0; n < count; n++, data++) {
@@ -705,20 +618,12 @@ short *data;
  * read integers from a file with data conversions
  *-------------------------------------------------------------------*/
 
-static int rdints (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, int *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-int *data;
-#endif
+static int rdints (BINARYIO *bf, int count, int *data)
 {
     int n;
 
     if (ARCH_LOCAL == bf->arch && sizeof(int) == bf->int_size)
-        n = fread (data, sizeof(int), count, bf->fp);
+        n = (int)fread (data, sizeof(int), count, bf->fp);
     else {
         unsigned char buf[8];
         for (n = 0; n < count; n++, data++) {
@@ -734,15 +639,7 @@ int *data;
  * read Fortran INTEGER*4 integers from a file with data conversions
  *-------------------------------------------------------------------*/
 
-static int rdINTS (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, int *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-int *data;
-#endif
+static int rdINTS (BINARYIO *bf, int count, int *data)
 {
     int n;
 #if ARCH_LOCAL == ARCH_DOS
@@ -763,20 +660,12 @@ int *data;
  * read 32-bit integers from a file with data conversions
  *-------------------------------------------------------------------*/
 
-static int rdlongs (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, long *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-long *data;
-#endif
+static int rdlongs (BINARYIO *bf, int count, long *data)
 {
     int n;
 
     if (ARCH_LOCAL == bf->arch && sizeof(long) == bf->long_size)
-        n = fread (data, sizeof(long), count, bf->fp);
+        n = (int)fread (data, sizeof(long), count, bf->fp);
     else {
         unsigned char buf[8];
         for (n = 0; n < count; n++, data++) {
@@ -792,15 +681,7 @@ long *data;
  * read Fortran INTEGER*8 integers from a file with data conversions
  *-------------------------------------------------------------------*/
 
-static int rdLONGS (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, long *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-long *data;
-#endif
+static int rdLONGS (BINARYIO *bf, int count, long *data)
 {
     int n;
     unsigned char buf[8];
@@ -820,20 +701,12 @@ long *data;
  * read 32-bit floats from a file with data conversions
  *-------------------------------------------------------------------*/
 
-static int rdfloats (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, float *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-float *data;
-#endif
+static int rdfloats (BINARYIO *bf, int count, float *data)
 {
     int n;
 
     if (ARCH_LOCAL == bf->arch && sizeof(float) == bf->float_size)
-        n = fread (data, sizeof(float), count, bf->fp);
+        n = (int)fread (data, sizeof(float), count, bf->fp);
     else {
         unsigned char buf[8];
         for (n = 0; n < count; n++, data++) {
@@ -849,20 +722,12 @@ float *data;
  * read 64-bit floats from a file with data conversions
  *-------------------------------------------------------------------*/
 
-static int rddoubles (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, double *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-double *data;
-#endif
+static int rddoubles (BINARYIO *bf, int count, double *data)
 {
     int n;
 
     if (ARCH_LOCAL == bf->arch && sizeof(double) == bf->double_size)
-        n = fread (data, sizeof(double), count, bf->fp);
+        n = (int)fread (data, sizeof(double), count, bf->fp);
     else {
         unsigned char buf[8];
         for (n = 0; n < count; n++, data++) {
@@ -882,20 +747,12 @@ double *data;
  * write 16-bit integers to a file with data conversions
  *-------------------------------------------------------------------*/
 
-static int wrtshorts (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, short *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-short *data;
-#endif
+static int wrtshorts (BINARYIO *bf, int count, short *data)
 {
     int n;
 
     if (ARCH_LOCAL == bf->arch && sizeof(short) == bf->short_size)
-        n = fwrite (data, sizeof(short), count, bf->fp);
+        n = (int)fwrite (data, sizeof(short), count, bf->fp);
     else {
         unsigned char *buf;
         for (n = 0; n < count; n++, data++) {
@@ -911,20 +768,12 @@ short *data;
  * write integers to a file with data conversions
  *-------------------------------------------------------------------*/
 
-static int wrtints (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, int *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-int *data;
-#endif
+static int wrtints (BINARYIO *bf, int count, int *data)
 {
     int n;
 
     if (ARCH_LOCAL == bf->arch && sizeof(int) == bf->int_size)
-        n = fwrite (data, sizeof(int), count, bf->fp);
+        n = (int)fwrite (data, sizeof(int), count, bf->fp);
     else {
         unsigned char *buf;
         for (n = 0; n < count; n++, data++) {
@@ -940,20 +789,12 @@ int *data;
  * write 32-bit integers to a file with data conversions
  *-------------------------------------------------------------------*/
 
-static int wrtlongs (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, long *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-long *data;
-#endif
+static int wrtlongs (BINARYIO *bf, int count, long *data)
 {
     int n;
 
     if (ARCH_LOCAL == bf->arch && sizeof(long) == bf->long_size)
-        n = fwrite (data, sizeof(long), count, bf->fp);
+        n = (int)fwrite (data, sizeof(long), count, bf->fp);
     else {
         unsigned char *buf;
         for (n = 0; n < count; n++, data++) {
@@ -969,20 +810,12 @@ long *data;
  * write 32-bit floats to a file with data conversions
  *-------------------------------------------------------------------*/
 
-static int wrtfloats (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, float *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-float *data;
-#endif
+static int wrtfloats (BINARYIO *bf, int count, float *data)
 {
     int n;
 
     if (ARCH_LOCAL == bf->arch && sizeof(float) == bf->float_size)
-        n = fwrite (data, sizeof(float), count, bf->fp);
+        n = (int)fwrite (data, sizeof(float), count, bf->fp);
     else {
         unsigned char *buf;
         for (n = 0; n < count; n++, data++) {
@@ -998,20 +831,12 @@ float *data;
  * write 64-bit floats to a file with data conversions
  *-------------------------------------------------------------------*/
 
-static int wrtdoubles (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, double *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-double *data;
-#endif
+static int wrtdoubles (BINARYIO *bf, int count, double *data)
 {
     int n;
 
     if (ARCH_LOCAL == bf->arch && sizeof(double) == bf->double_size)
-        n = fwrite (data, sizeof(double), count, bf->fp);
+        n = (int)fwrite (data, sizeof(double), count, bf->fp);
     else {
         unsigned char *buf;
         for (n = 0; n < count; n++, data++) {
@@ -1031,14 +856,7 @@ double *data;
  * create the BINARYIO structure and set flags
  *-------------------------------------------------------------------*/
 
-BINARYIO *bf_new (
-#ifdef PROTOTYPE
-    FILE *fp, int flags)
-#else
-    fp, flags)
-FILE *fp;
-int flags;
-#endif
+BINARYIO *bf_new (FILE *fp, int flags)
 {
     BINARYIO *bf;
 
@@ -1061,14 +879,7 @@ int flags;
  * open binary file
  *-------------------------------------------------------------------*/
 
-BINARYIO *bf_open (
-#ifdef PROTOTYPE
-    char *fname, int flags)
-#else
-    fname, flags)
-char *fname;
-int flags;
-#endif
+BINARYIO *bf_open (char *fname, int flags)
 {
     BINARYIO *bf;
 
@@ -1099,13 +910,7 @@ int flags;
  * close the file
  *-------------------------------------------------------------------*/
 
-void bf_close (
-#ifdef PROTOTYPE
-    BINARYIO *bf)
-#else
-    bf)
-BINARYIO *bf;
-#endif
+void bf_close (BINARYIO *bf)
 {
     if (bf->did_open)
         fclose (bf->fp);
@@ -1116,13 +921,7 @@ BINARYIO *bf;
  * rewind the file
  *-------------------------------------------------------------------*/
 
-void bf_rewind (
-#ifdef PROTOTYPE
-    BINARYIO *bf)
-#else
-    bf)
-BINARYIO *bf;
-#endif
+void bf_rewind (BINARYIO *bf)
 {
     rewind (bf->fp);
     bf->rec_num  = 0L;
@@ -1134,13 +933,7 @@ BINARYIO *bf;
  * get current file offset
  *-------------------------------------------------------------------*/
 
-long bf_tell (
-#ifdef PROTOTYPE
-    BINARYIO *bf)
-#else
-    bf)
-BINARYIO *bf;
-#endif
+long bf_tell (BINARYIO *bf)
 {
     long offset = ftell (bf->fp);
 
@@ -1176,14 +969,7 @@ BINARYIO *bf;
  * set position in file
  *-------------------------------------------------------------------*/
 
-int bf_seek (
-#ifdef PROTOTYPE
-    BINARYIO *bf, long offset)
-#else
-    bf, offset)
-BINARYIO *bf;
-long offset;
-#endif
+int bf_seek (BINARYIO *bf, long offset)
 {
     long cur_off = 0L;
 
@@ -1235,14 +1021,7 @@ long offset;
  * unget last byte
  *--------------------------------------------------------------------*/
 
-int bf_unget (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int c)
-#else
-    bf, c)
-BINARYIO *bf;
-int c;
-#endif
+int bf_unget (BINARYIO *bf, int c)
 {
     if (EOF == ungetc (c, bf->fp))
         return (0);
@@ -1255,13 +1034,7 @@ int c;
  * seek to start of next record
  *--------------------------------------------------------------------*/
 
-int bf_nextrec (
-#ifdef PROTOTYPE
-    BINARYIO *bf)
-#else
-    bf)
-BINARYIO *bf;
-#endif
+int bf_nextrec (BINARYIO *bf)
 {
     int cnt = 0;
 
@@ -1293,13 +1066,7 @@ BINARYIO *bf;
  * return the current record len
  *--------------------------------------------------------------------*/
 
-int bf_reclen (
-#ifdef PROTOTYPE
-    BINARYIO *bf)
-#else
-    bf)
-BINARYIO *bf;
-#endif
+int bf_reclen (BINARYIO *bf)
 {
     if (OPEN_ASCII == (bf->flags & OPEN_ASCII)) {
         int c;
@@ -1324,13 +1091,7 @@ BINARYIO *bf;
  * skips white space and commas for ASCII file
  *--------------------------------------------------------------------*/
 
-int bf_skipspace (
-#ifdef PROTOTYPE
-    BINARYIO *bf)
-#else
-    bf)
-BINARYIO *bf;
-#endif
+int bf_skipspace (BINARYIO *bf)
 {
     if (OPEN_ASCII == (bf->flags & OPEN_ASCII))
         return (skip_space (bf));
@@ -1365,13 +1126,7 @@ static char *machnames[] = {
 
 #define NUM_MACH    (sizeof(machnames)/sizeof(char *))
 
-char *bf_machname (
-#ifdef PROTOTYPE
-    int mach)
-#else
-    mach)
-int mach;
-#endif
+char *bf_machname (int mach)
 {
     if (MACH_DEFAULT == mach)
         mach = MACH_LOCAL;
@@ -1393,13 +1148,7 @@ static char *arch_name[] = {
     "16-bit DOS",
 };
 
-char *bf_archname (
-#ifdef PROTOTYPE
-    int mach)
-#else
-    mach)
-int mach;
-#endif
+char *bf_archname (int mach)
 {
     int arch;
 
@@ -1446,15 +1195,7 @@ int mach;
  * read bytes from a file
  *-------------------------------------------------------------------*/
 
-int bf_getbytes (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, unsigned char *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-unsigned char *data;
-#endif
+int bf_getbytes (BINARYIO *bf, int count, unsigned char *data)
 {
     int n = 0;
     static char *fname = "bf_getbytes";
@@ -1465,7 +1206,7 @@ unsigned char *data;
     /* ASCII read */
 
     if (OPEN_ASCII == (bf->flags & OPEN_ASCII)) {
-        n = fread (data, 1, count, bf->fp);
+        n = (int)fread (data, 1, count, bf->fp);
         for (count = 0; count < n; count++, data++) {
             if ('\n' == *data) {
                 bf->rec_num++;
@@ -1507,7 +1248,7 @@ unsigned char *data;
     /* C binary read */
 
     else
-        n = fread (data, 1, count, bf->fp);
+        n = (int)fread (data, 1, count, bf->fp);
 
     return (n);
 }
@@ -1516,15 +1257,7 @@ unsigned char *data;
  * read bytes from a file up to len or end of record
  *-------------------------------------------------------------------*/
 
-int bf_getstring (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, char *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-char *data;
-#endif
+int bf_getstring (BINARYIO *bf, int count, char *data)
 {
     int n = 0;
     static char *fname = "bf_getstring";
@@ -1568,7 +1301,7 @@ char *data;
         }
         n = (int)(bf->rec_size - bf->rec_read);
         if (n > count) n = count;
-        n = fread (data, 1, n, bf->fp);
+        n = (int)fread (data, 1, n, bf->fp);
         bf->rec_read += (long)n;
     }
 
@@ -1592,15 +1325,7 @@ char *data;
  * read 16-bit integers from a file
  *-------------------------------------------------------------------*/
 
-int bf_getshorts (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, short *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-short *data;
-#endif
+int bf_getshorts (BINARYIO *bf, int count, short *data)
 {
     int n = 0, cnt;
     static char *fname = "bf_getshorts";
@@ -1664,15 +1389,7 @@ short *data;
  * read integers from a file
  *-------------------------------------------------------------------*/
 
-int bf_getints (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, int *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-int *data;
-#endif
+int bf_getints (BINARYIO *bf, int count, int *data)
 {
     int n = 0, cnt;
     static char *fname = "bf_getints";
@@ -1736,15 +1453,7 @@ int *data;
  * read 32/64-bit integers from a file
  *-------------------------------------------------------------------*/
 
-int bf_getlongs (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, long *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-long *data;
-#endif
+int bf_getlongs (BINARYIO *bf, int count, long *data)
 {
     int n = 0, cnt;
     static char *fname = "bf_getlongs";
@@ -1808,15 +1517,7 @@ long *data;
  * read 32-bit floats from a file
  *-------------------------------------------------------------------*/
 
-int bf_getfloats (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, float *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-float *data;
-#endif
+int bf_getfloats (BINARYIO *bf, int count, float *data)
 {
     int n = 0;
     double dval;
@@ -1831,7 +1532,7 @@ float *data;
         for (n = 0; n < count; n++) {
             if (read_double (bf, &dval))
                 break;
-            *data++ = dval;
+            *data++ = (float)dval;
         }
     }
 
@@ -1881,15 +1582,7 @@ float *data;
  * read 64-bit floats from a file
  *-------------------------------------------------------------------*/
 
-int bf_getdoubles (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, double *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-double *data;
-#endif
+int bf_getdoubles (BINARYIO *bf, int count, double *data)
 {
     int n = 0;
     static char *fname = "bf_getdoubles";
@@ -1956,34 +1649,18 @@ double *data;
  * write bytes to a file
  *-------------------------------------------------------------------*/
 
-int bf_putbytes (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, unsigned char *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-unsigned char *data;
-#endif
+int bf_putbytes (BINARYIO *bf, int count, unsigned char *data)
 {
     if (OPEN_WRITE != (bf->flags & OPEN_WRITE))
         return (fatal_error ("bf_putbytes", BIOERR_READ));
-    return (fwrite (data, 1, count, bf->fp));
+    return ((int)fwrite (data, 1, count, bf->fp));
 }
 
 /*---------- bf_putshorts -------------------------------------------
  * write 16-bit integers to a file
  *-------------------------------------------------------------------*/
 
-int bf_putshorts (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, short *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-short *data;
-#endif
+int bf_putshorts (BINARYIO *bf, int count, short *data)
 {
     if (OPEN_WRITE != (bf->flags & OPEN_WRITE))
         return (fatal_error ("bf_putshorts", BIOERR_READ));
@@ -2003,15 +1680,7 @@ short *data;
  * write integers to a file
  *-------------------------------------------------------------------*/
 
-int bf_putints (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, int *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-int *data;
-#endif
+int bf_putints (BINARYIO *bf, int count, int *data)
 {
     if (OPEN_WRITE != (bf->flags & OPEN_WRITE))
         return (fatal_error ("bf_putints", BIOERR_READ));
@@ -2031,15 +1700,7 @@ int *data;
  * write 32-bit integers to a file
  *-------------------------------------------------------------------*/
 
-int bf_putlongs (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, long *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-long *data;
-#endif
+int bf_putlongs (BINARYIO *bf, int count, long *data)
 {
     if (OPEN_WRITE != (bf->flags & OPEN_WRITE))
         return (fatal_error ("bf_putlongs", BIOERR_READ));
@@ -2059,15 +1720,7 @@ long *data;
  * write 32-bit floats to a file
  *-------------------------------------------------------------------*/
 
-int bf_putfloats (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, float *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-float *data;
-#endif
+int bf_putfloats (BINARYIO *bf, int count, float *data)
 {
     if (OPEN_WRITE != (bf->flags & OPEN_WRITE))
         return (fatal_error ("bf_putfloats", BIOERR_READ));
@@ -2087,15 +1740,7 @@ float *data;
  * write 64-bit floats to a file
  *-------------------------------------------------------------------*/
 
-int bf_putdoubles (
-#ifdef PROTOTYPE
-    BINARYIO *bf, int count, double *data)
-#else
-    bf, count, data)
-BINARYIO *bf;
-int count;
-double *data;
-#endif
+int bf_putdoubles (BINARYIO *bf, int count, double *data)
 {
     if (OPEN_WRITE != (bf->flags & OPEN_WRITE))
         return (fatal_error ("bf_putdoubles", BIOERR_READ));
@@ -2134,13 +1779,7 @@ double *data;
  * IEEE to IEEE, just do copy
  *-------------------------------------------------------------------*/
 
-static unsigned char *copy2 (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *copy2 (unsigned char *bytes)
 {
     static unsigned char val[2];
 
@@ -2149,13 +1788,7 @@ unsigned char *bytes;
     return (val);
 }
 
-static unsigned char *copy4 (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *copy4 (unsigned char *bytes)
 {
     static unsigned char val[4];
 
@@ -2164,13 +1797,7 @@ unsigned char *bytes;
     return (val);
 }
 
-static unsigned char *copy8 (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *copy8 (unsigned char *bytes)
 {
     static unsigned char val[8];
 
@@ -2183,14 +1810,7 @@ unsigned char *bytes;
  * byte-swapped IEEE
  *-------------------------------------------------------------------*/
 
-static void swapbytes (
-#ifdef PROTOTYPE
-    unsigned char *bytes, int nbytes)
-#else
-    bytes, nbytes)
-unsigned char *bytes;
-int nbytes;
-#endif
+static void swapbytes (unsigned char *bytes, int nbytes)
 {
     int i = 0, j = nbytes - 1;
     unsigned char tmp;
@@ -2202,13 +1822,7 @@ int nbytes;
     }
 }
 
-static unsigned char *swap2 (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *swap2 (unsigned char *bytes)
 {
     static unsigned char val[2];
 
@@ -2221,13 +1835,7 @@ unsigned char *bytes;
     return (val);
 }
 
-static unsigned char *swap4 (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *swap4 (unsigned char *bytes)
 {
     static unsigned char val[4];
 
@@ -2241,13 +1849,7 @@ unsigned char *bytes;
     return (val);
 }
 
-static unsigned char *swap8 (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *swap8 (unsigned char *bytes)
 {
     static unsigned char val[8];
 
@@ -2265,20 +1867,13 @@ unsigned char *bytes;
  * conversions for 16-bit DOS - ints are 2 bytes
  *-----------------------------------------------------------------------*/
 
-static unsigned char *swap2to4 (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *swap2to4 (unsigned char *bytes)
 {
     static unsigned char val[4];
 
     if (bytes == val)
         swapbytes (val, 4);
     else {
-        int n;
         val[3] = *bytes++;
         val[2] = *bytes;
         if (0 == (*bytes & 0x80))
@@ -2289,13 +1884,7 @@ unsigned char *bytes;
     return (val);
 }
 
-static unsigned char *swap4to2 (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *swap4to2 (unsigned char *bytes)
 {
     static unsigned char val[2];
 
@@ -2313,13 +1902,7 @@ unsigned char *bytes;
  * conversions for DEC Alpha - longs are 8 bytes
  *-----------------------------------------------------------------------*/
 
-static unsigned char *swap4to8 (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *swap4to8 (unsigned char *bytes)
 {
     static unsigned char val[8];
 
@@ -2341,13 +1924,7 @@ unsigned char *bytes;
     return (val);
 }
 
-static unsigned char *swap8to4 (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *swap8to4 (unsigned char *bytes)
 {
     static unsigned char val[4];
 
@@ -2374,13 +1951,7 @@ unsigned char *bytes;
 
 /*----- IEEE short -> Cray short -----*/
 
-static unsigned char *short_cray (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *short_cray (unsigned char *bytes)
 {
     static unsigned char val[8];
 
@@ -2391,13 +1962,7 @@ unsigned char *bytes;
 
 /*----- IEEE long -> Cray long -----*/
 
-static unsigned char *long_cray (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *long_cray (unsigned char *bytes)
 {
     static unsigned char val[8];
 
@@ -2408,13 +1973,7 @@ unsigned char *bytes;
 
 /*----- IEEE float -> Cray float -----*/
 
-static unsigned char *float_cray (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *float_cray (unsigned char *bytes)
 {
     unsigned exp;
     static unsigned char val[8];
@@ -2434,13 +1993,7 @@ unsigned char *bytes;
 
 /*----- IEEE double -> Cray double -----*/
 
-static unsigned char *double_cray (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *double_cray (unsigned char *bytes)
 {
     unsigned exp;
     static unsigned char val[8];
@@ -2462,13 +2015,7 @@ unsigned char *bytes;
 
 /*----- Cray short -> IEEE short -----*/
 
-static unsigned char *cray_short (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *cray_short (unsigned char *bytes)
 {
     static unsigned char val[2];
 
@@ -2478,13 +2025,7 @@ unsigned char *bytes;
 
 /*----- Cray long -> IEEE long -----*/
 
-static unsigned char *cray_long (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *cray_long (unsigned char *bytes)
 {
     static unsigned char val[4];
 
@@ -2494,13 +2035,7 @@ unsigned char *bytes;
 
 /*----- Cray float -> IEEE float -----*/
 
-static unsigned char *cray_float (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *cray_float (unsigned char *bytes)
 {
     unsigned exp;
     static unsigned char val[4];
@@ -2519,13 +2054,7 @@ unsigned char *bytes;
 
 /*----- Cray double -> IEEE double -----*/
 
-static unsigned char *cray_double (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *cray_double (unsigned char *bytes)
 {
     unsigned exp;
     static unsigned char val[8];
@@ -2554,13 +2083,7 @@ unsigned char *bytes;
 
 /*----- IEEE float -> Convex float -----*/
 
-static unsigned char *float_convex (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *float_convex (unsigned char *bytes)
 {
     unsigned exp;
     static unsigned char val[4];
@@ -2584,13 +2107,7 @@ unsigned char *bytes;
 
 /*----- IEEE double -> Convex double -----*/
 
-static unsigned char *double_convex (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *double_convex (unsigned char *bytes)
 {
     unsigned exp;
     static unsigned char val[8];
@@ -2614,13 +2131,7 @@ unsigned char *bytes;
 
 /*----- Convex float -> IEEE float -----*/
 
-static unsigned char *convex_float (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *convex_float (unsigned char *bytes)
 {
     unsigned exp;
     static unsigned char val[4];
@@ -2644,13 +2155,7 @@ unsigned char *bytes;
 
 /*----- Convex double -> IEEE double -----*/
 
-static unsigned char *convex_double (
-#ifdef PROTOTYPE
-    unsigned char *bytes)
-#else
-    bytes)
-unsigned char *bytes;
-#endif
+static unsigned char *convex_double (unsigned char *bytes)
 {
     unsigned exp;
     static unsigned char val[8];

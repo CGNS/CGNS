@@ -22,13 +22,7 @@ static char *usgmsg[] = {
     NULL
 };
 
-static void print_interface (
-#ifdef PROTOTYPE
-    ZONE *zone)
-#else
-    zone)
-ZONE *zone;
-#endif
+static void print_interface (ZONE *zone)
 {
     int ni;
     INTERFACE *ints;
@@ -53,13 +47,7 @@ ZONE *zone;
     }
 }
 
-static void print_connect (
-#ifdef PROTOTYPE
-    ZONE *zone)
-#else
-    zone)
-ZONE *zone;
-#endif
+static void print_connect (ZONE *zone)
 {
     int nc;
     CONNECT *conns;
@@ -80,13 +68,7 @@ ZONE *zone;
     }
 }
 
-static void print_solution (
-#ifdef PROTOTYPE
-    ZONE *zone)
-#else
-    zone)
-ZONE *zone;
-#endif
+static void print_solution (ZONE *zone)
 {
     int ns, nf;
     SOLUTION *sols;
@@ -108,9 +90,7 @@ ZONE *zone;
     }
 }
 
-int main (argc, argv)
-int argc;
-char *argv[];
+int main (int argc, char *argv[])
 {
     int n, nz, nbases, celldim, phydim;
     int verbose = 0;
@@ -169,6 +149,5 @@ char *argv[];
     if (cg_close (cgnsfn))
         FATAL (NULL, NULL);
 
-    exit (0);
     return 0;
 }

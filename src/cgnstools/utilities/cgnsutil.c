@@ -8,6 +8,15 @@
 #include <math.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+# include <io.h>
+# include <direct.h>
+# define access _access
+# define unlink _unlink
+# define getcwd _getcwd
+#else
+# include <unistd.h>
+#endif
 
 #include "cgnslib.h"
 #include "cgnsutil.h"
@@ -55,13 +64,7 @@ static char cgnstemp[16] = "";
  * exit with error message
  *---------------------------------------------------------------------*/
 
-void FATAL (
-#ifdef PROTOTYPE
-    char *procname, char *errmsg)
-#else
-    procname, errmsg)
-char *procname, *errmsg;
-#endif
+void FATAL (char *procname, char *errmsg)
 {
     char *msg = errmsg;
 
@@ -84,13 +87,7 @@ char *procname, *errmsg;
  * create new zone(s)
  *---------------------------------------------------------------------*/
 
-ZONE *new_zone (
-#ifdef PROTOTYPE
-    int count)
-#else
-    count)
-int count;
-#endif
+ZONE *new_zone (int count)
 {
     int n;
     ZONE *z;
@@ -101,9 +98,9 @@ int count;
     for (n = 0; n < count; n++) {
         z[n].id = n + 1;
         sprintf (z[n].name, "Zone%d", n + 1);
-        z[n].type = Structured;
+        z[n].type = CGNS_ENUMV(Structured);
         z[n].vertflags = 0;
-        z[n].datatype = RealDouble;
+        z[n].datatype = CGNS_ENUMV(RealDouble);
     }
     return z;
 }
@@ -112,18 +109,12 @@ int count;
  * create coordinate array for a zone
  *---------------------------------------------------------------------*/
 
-VERTEX *new_vertex (
-#ifdef PROTOTYPE
-    int nverts)
-#else
-    nverts)
-int nverts;
-#endif
+VERTEX *new_vertex (cgsize_t nverts)
 {
-    int n;
+    cgsize_t n;
     VERTEX *verts;
 
-    verts = (VERTEX *) calloc (nverts, sizeof(VERTEX));
+    verts = (VERTEX *) calloc ((size_t)nverts, sizeof(VERTEX));
     if (NULL == verts)
         FATAL ("new_vertex", "calloc failed for new vertex array");
     for (n = 0; n < nverts; n++) {
@@ -137,13 +128,7 @@ int nverts;
  * create element set array
  *---------------------------------------------------------------------*/
 
-ELEMSET *new_elemset (
-#ifdef PROTOTYPE
-    int nesets)
-#else
-    nesets)
-int nesets;
-#endif
+ELEMSET *new_elemset (int nesets)
 {
     int n;
     ELEMSET *esets;
@@ -162,13 +147,7 @@ int nesets;
  * create grid 1to1 interface array for a zone
  *---------------------------------------------------------------------*/
 
-INTERFACE *new_interface (
-#ifdef PROTOTYPE
-    int nints)
-#else
-    nints)
-int nints;
-#endif
+INTERFACE *new_interface (int nints)
 {
     int n;
     INTERFACE *ints;
@@ -187,13 +166,7 @@ int nints;
  * create grid connectivity array for a zone
  *---------------------------------------------------------------------*/
 
-CONNECT *new_connect (
-#ifdef PROTOTYPE
-    int nconns)
-#else
-    nconns)
-int nconns;
-#endif
+CONNECT *new_connect (int nconns)
 {
     int n;
     CONNECT *conns;
@@ -212,13 +185,7 @@ int nconns;
  * create boundary condition array
  *---------------------------------------------------------------------*/
 
-BOCO *new_boco (
-#ifdef PROTOTYPE
-    int nbocos)
-#else
-    nbocos)
-int nbocos;
-#endif
+BOCO *new_boco (int nbocos)
 {
     int n;
     BOCO *bocos;
@@ -237,13 +204,7 @@ int nbocos;
  * create solution array for a zone
  *---------------------------------------------------------------------*/
 
-SOLUTION *new_solution (
-#ifdef PROTOTYPE
-    int nsols)
-#else
-    nsols)
-int nsols;
-#endif
+SOLUTION *new_solution (int nsols)
 {
     int n;
     SOLUTION *sols;
@@ -262,13 +223,7 @@ int nsols;
  * create solution variable array for a zone
  *---------------------------------------------------------------------*/
 
-FIELD *new_field (
-#ifdef PROTOTYPE
-    int nflds, int size)
-#else
-    nflds, size)
-int nflds, size;
-#endif
+FIELD *new_field (int nflds, cgsize_t size)
 {
     int n;
     FIELD *flds;
@@ -279,9 +234,9 @@ int nflds, size;
     for (n = 0; n < nflds; n++) {
         flds[n].id = n + 1;
         sprintf (flds[n].name, "Field%d", n+1);
-        flds[n].datatype = RealDouble;
+        flds[n].datatype = CGNS_ENUMV(RealDouble);
         if (size > 0) {
-            flds[n].data = (double *) calloc (size, sizeof(double));
+            flds[n].data = (double *) calloc ((size_t)size, sizeof(double));
             if (NULL == flds[n].data)
                 FATAL ("new_field", "calloc failed for field data array");
         }
@@ -293,13 +248,7 @@ int nflds, size;
  * create descriptor array
  *---------------------------------------------------------------------*/
 
-DESC *new_desc (
-#ifdef PROTOTYPE
-    int ndesc)
-#else
-    ndesc)
-int ndesc;
-#endif
+DESC *new_desc (int ndesc)
 {
     int n;
     DESC *desc;
@@ -318,14 +267,7 @@ int ndesc;
  * get index in vertex array for structured grid
  *---------------------------------------------------------------------*/
 
-int vertex_index (
-#ifdef PROTOTYPE
-    ZONE *z, int i, int j, int k)
-#else
-    z, i, j, k)
-ZONE *z;
-int i, j, k;
-#endif
+cgsize_t vertex_index (ZONE *z, cgsize_t i, cgsize_t j, cgsize_t k)
 {
     return i - 1 + z->dim[0] * ((j - 1) + z->dim[1] * (k - 1));
 }
@@ -334,14 +276,7 @@ int i, j, k;
  * get index in cell array for structured grid
  *---------------------------------------------------------------------*/
 
-int cell_index (
-#ifdef PROTOTYPE
-    ZONE *z, int i, int j, int k)
-#else
-    z, i, j, k)
-ZONE *z;
-int i, j, k;
-#endif
+cgsize_t cell_index (ZONE *z, cgsize_t i, cgsize_t j, cgsize_t k)
 {
     return i - 1 + (z->dim[0] - 1) * ((j - 1) + (z->dim[1] - 1) * (k - 1));
 }
@@ -350,17 +285,9 @@ int i, j, k;
  * get index in solution array for structured grid
  *---------------------------------------------------------------------*/
 
-int solution_index (
-#ifdef PROTOTYPE
-    ZONE *z, SOLUTION *s, int i, int j, int k)
-#else
-    z, s, i, j, k)
-ZONE *z;
-SOLUTION *s;
-int i, j, k;
-#endif
+cgsize_t solution_index (ZONE *z, SOLUTION *s, cgsize_t i, cgsize_t j, cgsize_t k)
 {
-    int ni, nj;
+    cgsize_t ni, nj;
 
     ni = z->dim[0] - 1 + s->rind[0][0] + s->rind[0][1];
     nj = z->dim[1] - 1 + s->rind[1][0] + s->rind[1][1];
@@ -374,13 +301,7 @@ int i, j, k;
  * check if a file exists
  *---------------------------------------------------------------------*/
 
-int file_exists (
-#ifdef PROTOTYPE
-    char *file)
-#else
-    file)
-char *file;
-#endif
+int file_exists (char *file)
 {
     struct stat st;
 
@@ -393,13 +314,7 @@ char *file;
  * checks if pathname exists and is executable
  *------------------------------------------------------------------------*/
 
-int is_executable (
-#ifdef PROTOTYPE
-    char *file)
-#else
-    file)
-char *file;
-#endif
+int is_executable (char *file)
 {
     struct stat st;
 
@@ -446,16 +361,10 @@ static int check_extensions (char *pathname)
  * locate and build pathname to executable
  *-----------------------------------------------------------------------*/
 
-char *find_executable (
-#ifdef PROTOTYPE
-    char *exename)
-#else
-    exename)
-char *exename;
-#endif
+char *find_executable (char *exename)
 {
-    int n, i, j;
-    char *p, *s, match;
+    int n;
+    char *p, *s;
     static char exepath[MAXDIRLEN+1];
 
     if (exename == NULL || !*exename)
@@ -539,7 +448,7 @@ char *exename;
     while (*p) {
         if (NULL == (s = strchr (p, PATH_DELIM))) {
             strcpy (exepath, p);
-            n = strlen (exepath);
+            n = (int)strlen (exepath);
         }
         else {
             n = (int)(s++ - p);
@@ -571,13 +480,7 @@ char *exename;
  * get pathname to a file
  *---------------------------------------------------------------------*/
 
-char *find_file (
-#ifdef PROTOTYPE
-    char *filename, char *exename)
-#else
-    filename, exename)
-char *filename, *exename;
-#endif
+char *find_file (char *filename, char *exename)
 {
     char *p;
     static char pathname[MAXDIRLEN+1];
@@ -601,13 +504,7 @@ char *filename, *exename;
  * check if 2 files are the same
  *---------------------------------------------------------------------*/
 
-int same_file (
-#ifdef PROTOTYPE
-    char *file1, char *file2)
-#else
-    file1, file2)
-char *file1, *file2;
-#endif
+int same_file (char *file1, char *file2)
 {
     int n = file_exists (file1) | (file_exists (file2) << 1);
 #ifdef _WIN32
@@ -635,20 +532,14 @@ char *file1, *file2;
  * create a temporary file
  *---------------------------------------------------------------------*/
 
-char *temporary_file (
-#ifdef PROTOTYPE
-    char *basename)
-#else
-    basename)
-char *basename;
-#endif
+char *temporary_file (char *basename)
 {
     char *p, *temp;
     int n;
 
     if (basename == NULL || !*basename)
         basename = "cgnstmpfile";
-    n = strlen (basename);
+    n = (int)strlen (basename);
     temp = (char *) malloc (n + 10);
     if (temp == NULL)
         FATAL ("temporary_file", "malloc failed for temp filename");
@@ -666,13 +557,7 @@ char *basename;
  * make a copy of a file
  *---------------------------------------------------------------------*/
 
-void copy_file (
-#ifdef PROTOTYPE
-    char *oldfile, char *newfile)
-#else
-    oldfile, newfile)
-char *oldfile, *newfile;
-#endif
+void copy_file (char *oldfile, char *newfile)
 {
     int c;
     FILE *oldfp, *newfp;
@@ -693,14 +578,7 @@ char *oldfile, *newfile;
  * open a CGNS file
  *---------------------------------------------------------------------*/
 
-int open_cgns (
-#ifdef PROTOTYPE
-    char *cgnsfile, int read_only)
-#else
-    cgnsfile, read_only)
-char *cgnsfile;
-int read_only;
-#endif
+int open_cgns (char *cgnsfile, int read_only)
 {
     int nbases;
 
@@ -724,13 +602,7 @@ int read_only;
  * find base id from base name
  *---------------------------------------------------------------------*/
 
-int find_base (
-#ifdef PROTOTYPE
-    char *basename)
-#else
-    basename)
-char *basename;
-#endif
+int find_base (char *basename)
 {
     int nbases, nb, idum;
     char buff[33];
@@ -749,12 +621,9 @@ char *basename;
  * read the CGNS file
  *---------------------------------------------------------------------*/
 
-void read_cgns (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-    int nz, ns, ne;
+void read_cgns (void)
+{
+    int nz, ns;
 
     read_zones ();
     for (nz = 1; nz <= nZones; nz++) {
@@ -773,19 +642,17 @@ void read_cgns (
  * read zone information from CGNS file
  *---------------------------------------------------------------------*/
 
-int read_zones (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-    int n, nz, ni, nc, ns, nd, celldim, sizes[9];
-    ZoneType_t zonetype;
+int read_zones (void)
+{
+    int n, nz, nd, celldim;
+    cgsize_t sizes[9];
+    CGNS_ENUMT(ZoneType_t) zonetype;
     char buff[33];
 
     if (cg_goto (cgnsfn, cgnsbase, "end"))
         FATAL ("read_zones", NULL);
     read_units (baseunits);
-    if (cg_dataclass_read ((DataClass_t *)&baseclass))
+    if (cg_dataclass_read ((CGNS_ENUMT(DataClass_t) *)&baseclass))
         baseclass = 0;
 
     if (cg_base_read (cgnsfn, cgnsbase, buff, &celldim, &nd) ||
@@ -799,12 +666,12 @@ int read_zones (
         if (cg_zone_read (cgnsfn, cgnsbase, nz+1, buff, sizes) ||
             cg_zone_type (cgnsfn, cgnsbase, nz+1, &zonetype))
             FATAL ("read_zones", NULL);
-        if (zonetype != Structured && zonetype != Unstructured)
+        if (zonetype != CGNS_ENUMV(Structured) && zonetype != CGNS_ENUMV(Unstructured))
             FATAL ("read_zones", "invalid zone type");
         Zones[nz].id = nz + 1;
         strcpy (Zones[nz].name, buff);
         Zones[nz].type = zonetype;
-        Zones[nz].idim = zonetype == Structured ? celldim : 1;
+        Zones[nz].idim = zonetype == CGNS_ENUMV(Structured) ? celldim : 1;
         for (n = 0; n < 3; n++)
             Zones[nz].dim[n] = sizes[n];
 
@@ -816,7 +683,7 @@ int read_zones (
             for (n = 0; n < 5; n++)
                 Zones[nz].units[n] = baseunits[n];
         }
-        if (cg_dataclass_read ((DataClass_t *)&Zones[nz].dataclass))
+        if (cg_dataclass_read ((CGNS_ENUMT(DataClass_t) *)&Zones[nz].dataclass))
             Zones[nz].dataclass = baseclass;
 
         /* get descriptors */
@@ -849,13 +716,7 @@ int read_zones (
  * read all zone data
  *---------------------------------------------------------------------*/
 
-void read_zone_data (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+void read_zone_data (int nz)
 {
     int ns, nsols;
 
@@ -873,17 +734,12 @@ int nz;
  * read zone grid coordinates
  *---------------------------------------------------------------------*/
 
-int read_zone_grid (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+cgsize_t read_zone_grid (int nz)
 {
-    int n, nverts, nc, ncoords, rng[2][3];
+    int n, nc, ncoords;
     int rind[6];
-    DataType_t datatype;
+    cgsize_t nn, nverts, rng[2][3];
+    CGNS_ENUMT(DataType_t) datatype;
     char buff[33];
     double *xyz;
     ZONE *z = &Zones[nz-1];
@@ -899,7 +755,7 @@ int nz;
         }
     }
 
-    if (z->type == Structured) {
+    if (z->type == CGNS_ENUMV(Structured)) {
         nverts = z->dim[0] * z->dim[1] * z->dim[2];
         for (n = 0; n < 3; n++) {
             rng[0][n] = 1;
@@ -914,7 +770,7 @@ int nz;
         }
     }
 
-    xyz = (double *) malloc (nverts * sizeof(double));
+    xyz = (double *) malloc ((size_t)nverts * sizeof(double));
     if (NULL == xyz)
         FATAL ("read_zone_grid", "malloc failed for coordinate working array");
     z->vertflags = 0;
@@ -929,39 +785,39 @@ int nz;
         FATAL ("read_zone_grid", NULL);
     for (nc = 1; nc <= ncoords; nc++) {
         if (cg_coord_info (cgnsfn, cgnsbase, nz, nc, &datatype, buff) ||
-            cg_coord_read (cgnsfn, cgnsbase, nz, buff, RealDouble,
+            cg_coord_read (cgnsfn, cgnsbase, nz, buff, CGNS_ENUMV(RealDouble),
                 rng[0], rng[1], xyz))
             FATAL ("read_zone_grid", NULL);
         if (z->datatype < datatype) z->datatype = datatype;
         if (0 == strcmp (buff, "CoordinateX")) {
             z->vertflags |= 1;
-            for (n = 0; n < nverts; n++)
-                z->verts[n].x = xyz[n];
+            for (nn = 0; nn < nverts; nn++)
+                z->verts[nn].x = xyz[nn];
         }
         else if (0 == strcmp (buff, "CoordinateY")) {
             z->vertflags |= 2;
-            for (n = 0; n < nverts; n++)
-                z->verts[n].y = xyz[n];
+            for (nn = 0; nn < nverts; nn++)
+                z->verts[nn].y = xyz[nn];
         }
         else if (0 == strcmp (buff, "CoordinateZ")) {
             z->vertflags |= 4;
-            for (n = 0; n < nverts; n++)
-                z->verts[n].z = xyz[n];
+            for (nn = 0; nn < nverts; nn++)
+                z->verts[nn].z = xyz[nn];
         }
         else if (0 == strcmp (buff, "CoordinateR")) {
             z->vertflags |= 8;
-            for (n = 0; n < nverts; n++)
-                z->verts[n].z = xyz[n];
+            for (nn = 0; nn < nverts; nn++)
+                z->verts[nn].z = xyz[nn];
         }
         else if (0 == strcmp (buff, "CoordinateTheta")) {
             z->vertflags |= 16;
-            for (n = 0; n < nverts; n++)
-                z->verts[n].z = xyz[n];
+            for (nn = 0; nn < nverts; nn++)
+                z->verts[nn].z = xyz[nn];
         }
         else if (0 == strcmp (buff, "CoordinatePhi")) {
             z->vertflags |= 32;
-            for (n = 0; n < nverts; n++)
-                z->verts[n].z = xyz[n];
+            for (nn = 0; nn < nverts; nn++)
+                z->verts[nn].z = xyz[nn];
         }
         else {
             FATAL ("read_zone_grid", "unknown coordinate type");
@@ -973,23 +829,23 @@ int nz;
 
     if (z->vertflags == 24 || z->vertflags == 28) {
         double r, t;
-        for (n = 0; n < nverts; n++) {
-            r = z->verts[n].x;
-            t = z->verts[n].y;
-            z->verts[n].x = r * cos (t);
-            z->verts[n].y = r * sin (t);
+        for (nn = 0; nn < nverts; nn++) {
+            r = z->verts[nn].x;
+            t = z->verts[nn].y;
+            z->verts[nn].x = r * cos (t);
+            z->verts[nn].y = r * sin (t);
         }
         z->vertflags |= 3;
     }
     else if (z->vertflags == 56) {      /* spherical coordinates */
         double r, t, p;
-        for (n = 0; n < nverts; n++) {
-            r = z->verts[n].x;
-            t = z->verts[n].y;
-            p = z->verts[n].z;
-            z->verts[n].x = r * sin (t) * cos (p);
-            z->verts[n].y = r * sin (t) * sin (p);
-            z->verts[n].z = r * cos (t);
+        for (nn = 0; nn < nverts; nn++) {
+            r = z->verts[nn].x;
+            t = z->verts[nn].y;
+            p = z->verts[nn].z;
+            z->verts[nn].x = r * sin (t) * cos (p);
+            z->verts[nn].y = r * sin (t) * sin (p);
+            z->verts[nn].z = r * cos (t);
         }
         z->vertflags |= 7;
     }
@@ -1004,15 +860,10 @@ int nz;
  * read zone element sets and elements
  *---------------------------------------------------------------------*/
 
-int read_zone_element (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+int read_zone_element (int nz)
 {
-    int ns, size, iparent, nelems;
+    int ns, iparent;
+    cgsize_t size;
     int rind[6];
     ZONE *z = &Zones[nz-1];
     ELEMSET *eset;
@@ -1029,22 +880,22 @@ int nz;
                 FATAL ("read_zone_element",
                     "currently can't handle element set rind");
             if (cg_section_read (cgnsfn, cgnsbase, nz, ns,
-                eset->name, (ElementType_t *)&eset->type,
-                &eset->start, &eset->end, &eset->nbndry, &iparent) ||
+                    eset->name, (CGNS_ENUMT(ElementType_t) *)&eset->type,
+                    &eset->start, &eset->end, &eset->nbndry, &iparent) ||
                 cg_ElementDataSize (cgnsfn, cgnsbase, nz, ns, &size))
                 FATAL ("read_zone_element", NULL);
-            eset->conn = (int *) malloc (size * sizeof(int));
+            eset->conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
             if (NULL == eset->conn)
                 FATAL ("read_zone_element",
                     "malloc failed for element connectivity");
             if (iparent) {
                 size = 4 * (eset->end - eset->start + 1);
-                eset->parent = (int *) malloc (size * sizeof(int));
+                eset->parent = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
                 if (NULL == eset->conn)
                     FATAL ("read_zone_element","malloc failed for parent data");
             }
             if (cg_elements_read (cgnsfn, cgnsbase, nz, ns,
-                eset->conn, eset->parent))
+                    eset->conn, eset->parent))
                 FATAL ("read_zone_element", NULL);
         }
     }
@@ -1055,29 +906,23 @@ int nz;
  * build elements from structured zone
  *---------------------------------------------------------------------*/
 
-int structured_elements (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+int structured_elements (int nz)
 {
-    int i, j, k, n, nelems;
+    cgsize_t i, j, k, n, nelems;
     ZONE *z = &Zones[nz-1];
     ELEMSET *eset;
 
-    if (z->type != Structured) return 0;
+    if (z->type != CGNS_ENUMV(Structured)) return 0;
     nelems = (z->dim[0] - 1) * (z->dim[1] - 1) * (z->dim[2] - 1);
     if (nelems == 0) return 0;
     z->nesets = 1;
     z->esets = eset = new_elemset (1);
     strcpy (eset->name, "StructuredGridElements");
-    eset->type = HEXA_8;
+    eset->type = CGNS_ENUMV(HEXA_8);
     eset->start = 1;
     eset->end = nelems;
     eset->nbndry = 0;
-    eset->conn = (int *) malloc (8 * nelems * sizeof(int));
+    eset->conn = (cgsize_t *) malloc ((size_t)(8 * nelems) * sizeof(cgsize_t));
     if (NULL == eset->conn)
         FATAL ("structured_elements", "malloc failed for element connectivity");
     eset->parent = NULL;
@@ -1102,15 +947,10 @@ int nz;
  * read zone 1 to 1 interfaces
  *---------------------------------------------------------------------*/
 
-int read_zone_interface (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+int read_zone_interface (int nz)
 {
-    int i, j, n, ni, range[2][3], d_range[2][3];
+    int i, j, n, ni;
+    cgsize_t range[2][3], d_range[2][3];
     ZONE *z = &Zones[nz-1];
     INTERFACE *ints;
 
@@ -1120,8 +960,8 @@ int nz;
         z->ints = ints = new_interface (z->nints);
         for (ni = 1; ni <= z->nints; ni++, ints++) {
             if (cg_1to1_read (cgnsfn, cgnsbase, nz, ni,
-                ints->name, ints->d_name, (int *)range,
-                (int *)d_range, (int *)ints->transform))
+                    ints->name, ints->d_name, (cgsize_t *)range,
+                    (cgsize_t *)d_range, (int *)ints->transform))
                 FATAL ("read_zone_interface", NULL);
             for (j = 0; j < 2; j++) {
                 for (i = 0; i < 3; i++) {
@@ -1144,20 +984,15 @@ int nz;
  * read zone connectivities
  *---------------------------------------------------------------------*/
 
-int read_zone_connect (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+int read_zone_connect (int nz)
 {
-    int n, nc, npnts;
-    GridLocation_t location;
-    GridConnectivityType_t type;
-    PointSetType_t ptype, d_ptype;
-    ZoneType_t d_ztype;
-    DataType_t d_datatype;
+    int n, nc;
+    cgsize_t npnts;
+    CGNS_ENUMT(GridLocation_t) location;
+    CGNS_ENUMT(GridConnectivityType_t) type;
+    CGNS_ENUMT(PointSetType_t) ptype, d_ptype;
+    CGNS_ENUMT(ZoneType_t) d_ztype;
+    CGNS_ENUMT(DataType_t) d_datatype;
     ZONE *z = &Zones[nz-1];
     CONNECT *conns;
 
@@ -1167,9 +1002,9 @@ int nz;
         z->conns = conns = new_connect (z->nconns);
         for (nc = 1; nc <= z->nconns; nc++, conns++) {
             if (cg_conn_info (cgnsfn, cgnsbase, nz, nc,
-                conns->name, &location, &type, &ptype,
-                &conns->npnts, conns->d_name, &d_ztype,
-                &d_ptype, &d_datatype, &conns->d_npnts))
+                    conns->name, &location, &type, &ptype,
+                    &conns->npnts, conns->d_name, &d_ztype,
+                    &d_ptype, &d_datatype, &conns->d_npnts))
                 FATAL ("read_zone_connect", NULL);
             conns->location = location;
             conns->type = type;
@@ -1177,14 +1012,14 @@ int nz;
             conns->d_ztype = d_ztype;
             conns->d_ptype = d_ptype;
             npnts = conns->npnts * z->idim;
-            conns->pnts = (int *) calloc (npnts, sizeof(int));
+            conns->pnts = (cgsize_t *) calloc ((size_t)npnts, sizeof(cgsize_t));
             npnts = conns->d_npnts * z->idim;
-            conns->d_pnts = (int *) calloc (npnts, sizeof(int));
+            conns->d_pnts = (cgsize_t *) calloc ((size_t)npnts, sizeof(cgsize_t));
             if (NULL == conns->pnts || NULL == conns->d_pnts)
                 FATAL ("read_zone_connect",
                     "malloc failed for connectivity point arrays");
             if (cg_conn_read (cgnsfn, cgnsbase, nz, nc,
-                conns->pnts, Integer, conns->d_pnts))
+                    conns->pnts, CGNS_ENUMV(Integer), conns->d_pnts))
                 FATAL ("read_zone_connect", NULL);
             for (n = 0; n < nZones; n++) {
                 if (!strcmp (Zones[n].name, conns->d_name)) {
@@ -1201,18 +1036,13 @@ int nz;
  * read zone boundary conditions
  *---------------------------------------------------------------------*/
 
-int read_zone_boco (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+int read_zone_boco (int nz)
 {
-    int nb, npnts, ndatasets;
-    BCType_t bctype;
-    PointSetType_t ptype;
-    DataType_t datatype;
+    int nb, ndatasets;
+    cgsize_t npnts;
+    CGNS_ENUMT(BCType_t) bctype;
+    CGNS_ENUMT(PointSetType_t) ptype;
+    CGNS_ENUMT(DataType_t) datatype;
     ZONE *z = &Zones[nz-1];
     BOCO *bocos;
 
@@ -1222,25 +1052,25 @@ int nz;
         z->bocos = bocos = new_boco (z->nbocos);
         for (nb = 1; nb <= z->nbocos; nb++, bocos++) {
             if (cg_boco_info (cgnsfn, cgnsbase, nz, nb, bocos->name,
-                &bctype, &ptype, &bocos->npnts, bocos->n_index,
-                &bocos->n_cnt, &datatype, &ndatasets))
+                    &bctype, &ptype, &bocos->npnts, bocos->n_index,
+                    &bocos->n_cnt, &datatype, &ndatasets))
                 FATAL ("read_zone_boco", NULL);
             bocos->type = bctype;
             bocos->ptype = ptype;
             bocos->n_type = datatype;
             npnts = bocos->npnts * z->idim;
-            bocos->pnts = (int *) calloc (npnts, sizeof(int));
+            bocos->pnts = (cgsize_t *) calloc ((size_t)npnts, sizeof(cgsize_t));
             if (NULL == bocos->pnts)
                 FATAL ("read_zone_boco",
                     "calloc failed for boco point arrays");
             if (bocos->n_cnt) {
-                bocos->n_list = (double *) calloc (bocos->n_cnt, sizeof(double));
+                bocos->n_list = (double *) calloc ((size_t)bocos->n_cnt, sizeof(double));
                 if (NULL == bocos->n_list)
                     FATAL ("read_zone_boco",
                         "calloc failed for boco normal list");
             }
             if (cg_boco_read (cgnsfn, cgnsbase, nz, nb,
-                bocos->pnts, bocos->n_list))
+                    bocos->pnts, bocos->n_list))
                 FATAL ("read_zone_boco", NULL);
         }
     }
@@ -1251,17 +1081,11 @@ int nz;
  * read zone solution
  *---------------------------------------------------------------------*/
 
-int read_zone_solution (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+int read_zone_solution (int nz)
 {
     int i, j, ns, nd;
-    DataType_t datatype;
-    GridLocation_t location;
+    CGNS_ENUMT(DataType_t) datatype;
+    CGNS_ENUMT(GridLocation_t) location;
     ZONE *z = &Zones[nz-1];
     SOLUTION *sols;
 
@@ -1271,19 +1095,19 @@ int nz;
         z->sols = sols = new_solution (z->nsols);
         for (ns = 1; ns <= z->nsols; ns++, sols++) {
             if (cg_sol_info (cgnsfn, cgnsbase, nz, ns,
-                sols->name, &location))
+                    sols->name, &location))
                 FATAL ("read_zone_solution", NULL);
             sols->location = location;
-            if (z->type == Structured) {
-                if (sols->location == Vertex) {
+            if (z->type == CGNS_ENUMV(Structured)) {
+                if (sols->location == CGNS_ENUMV(Vertex)) {
                     for (i = 0; i < 3; i++)
                         for (j = 0; j < 2; j++)
                             sols->rind[i][j] = 0;
                     sols->size = z->dim[0] * z->dim[1] * z->dim[2];
                 }
-                else if (sols->location == CellCenter) {
+                else if (sols->location == CGNS_ENUMV(CellCenter)) {
                     if (cg_goto (cgnsfn, cgnsbase, "Zone_t", nz,
-                        "FlowSolution_t", ns, "end"))
+                          "FlowSolution_t", ns, "end"))
                         FATAL ("read_zone_solution", NULL);
                     if (cg_rind_read ((int *)sols->rind)) {
                         for (i = 0; i < 3; i++)
@@ -1301,7 +1125,7 @@ int nz;
                         "solution location not Vertex or CellCenter");
             }
             else {
-                sols->size = sols->location == Vertex ? z->dim[0] : z->dim[1];
+                sols->size = sols->location == CGNS_ENUMV(Vertex) ? z->dim[0] : z->dim[1];
                 for (i = 0; i < 3; i++)
                     for (j = 0; j < 2; j++)
                         sols->rind[i][j] = 0;
@@ -1312,7 +1136,7 @@ int nz;
                 sols->flds = new_field (sols->nflds, 0);
                 for (i = 0; i < sols->nflds; i++) {
                     if (cg_field_info (cgnsfn, cgnsbase, nz, ns, i+1,
-                        &datatype, sols->flds[i].name))
+                            &datatype, sols->flds[i].name))
                         FATAL ("read_zone_solution", NULL);
                 }
             }
@@ -1320,13 +1144,13 @@ int nz;
             /* get units */
 
             if (cg_goto (cgnsfn, cgnsbase, "Zone_t", nz,
-                "FlowSolution_t", ns, "end"))
+                    "FlowSolution_t", ns, "end"))
                 FATAL ("read_zone_solution", NULL);
             if (!read_units (sols->units)) {
                 for (i = 0; i < 5; i++)
                     sols->units[i] = z->units[i];
             }
-            if (cg_dataclass_read ((DataClass_t *)&sols->dataclass))
+            if (cg_dataclass_read ((CGNS_ENUMT(DataClass_t) *)&sols->dataclass))
                 sols->dataclass = z->dataclass;
 
             /* get descriptors */
@@ -1338,7 +1162,7 @@ int nz;
                 sols->desc = new_desc (nd);
                 for (i = 0; i < nd; i++) {
                     if (cg_descriptor_read (i+1, sols->desc[i].name,
-                        &sols->desc[i].desc))
+                            &sols->desc[i].desc))
                         FATAL ("cg_descriptor_read", NULL);
                 }
             }
@@ -1351,26 +1175,21 @@ int nz;
  * read solution field data for a zone
  *---------------------------------------------------------------------*/
 
-int read_solution_field (
-#ifdef PROTOTYPE
-    int nz, int ns, int nf)
-#else
-    nz, ns, nf)
-int nz, ns, nf;
-#endif
+cgsize_t read_solution_field (int nz, int ns, int nf)
 {
-    int n, is, ie, min[3], max[3];
-    DataType_t datatype;
+    int n, is, ie;
+    cgsize_t min[3], max[3];
+    CGNS_ENUMT(DataType_t) datatype;
     ZONE *z = &Zones[nz-1];
     SOLUTION *s = &z->sols[ns-1];
     FIELD *f;
 
-    if (z->type == Structured) {
+    if (z->type == CGNS_ENUMV(Structured)) {
         for (n = 0; n < 3; n++) {
             min[n] = 1;
             max[n] = z->dim[n];
         }
-        if (s->location == CellCenter) {
+        if (s->location == CGNS_ENUMV(CellCenter)) {
             for (n = 0; n < 3; n++)
                 max[n] += s->rind[n][0] + s->rind[n][1] - 1;
         }
@@ -1391,20 +1210,20 @@ int nz, ns, nf;
     f = &s->flds[is-1];
     for (nf = is; nf <= ie; nf++, f++) {
         if (cg_field_info (cgnsfn, cgnsbase, nz, ns, nf,
-            &datatype, f->name))
+                &datatype, f->name))
             FATAL ("read_solution_field", NULL);
         f->id = nf;
         f->datatype = datatype;
-        f->data = (double *) malloc (s->size * sizeof(double));
+        f->data = (double *) malloc ((size_t)s->size * sizeof(double));
         if (NULL == f->data)
             FATAL ("read_solution_field",
                 "malloc failed for solution field data");
         if (cg_field_read (cgnsfn, cgnsbase, nz, ns, f->name,
-            RealDouble, min, max, f->data))
+                CGNS_ENUMV(RealDouble), min, max, f->data))
             FATAL ("read_solution_field", NULL);
 
         if (cg_goto (cgnsfn, cgnsbase, "Zone_t", nz,
-            "FlowSolution_t", ns, "DataArray_t", nf, "end"))
+                "FlowSolution_t", ns, "DataArray_t", nf, "end"))
             FATAL ("read_solution_field", NULL);
         if (!read_units (f->units)) {
             for (n = 0; n < 5; n++)
@@ -1413,21 +1232,21 @@ int nz, ns, nf;
 
         /* read data class, conversion and exponents */
 
-        if (cg_dataclass_read ((DataClass_t *)&f->dataclass))
+        if (cg_dataclass_read ((CGNS_ENUMT(DataClass_t) *)&f->dataclass))
             f->dataclass = s->dataclass;
 
         if (cg_conversion_info (&datatype))
             f->dataconv[0] = 1.0;
         else {
             f->convtype = datatype;
-            if (datatype == RealSingle) {
+            if (datatype == CGNS_ENUMV(RealSingle)) {
                 float conv[2];
                 if (cg_conversion_read (conv))
                     FATAL ("read_solution_field", NULL);
                 for (n = 0; n < 2; n++)
                     f->dataconv[n] = conv[n];
             }
-            else if (datatype == RealDouble) {
+            else if (datatype == CGNS_ENUMV(RealDouble)) {
                 if (cg_conversion_read (f->dataconv))
                     FATAL ("read_solution_field", NULL);
             }
@@ -1437,14 +1256,14 @@ int nz, ns, nf;
 
         if (!cg_exponents_info (&datatype)) {
             f->exptype = datatype;
-            if (datatype == RealSingle) {
+            if (datatype == CGNS_ENUMV(RealSingle)) {
                 float exp[5];
                 if (cg_exponents_read (exp))
                     FATAL ("read_solution_field", NULL);
                 for (n = 0; n < 5; n++)
                     f->exponent[n] = exp[n];
             }
-            else if (datatype == RealDouble) {
+            else if (datatype == CGNS_ENUMV(RealDouble)) {
                 if (cg_exponents_read (f->exponent))
                     FATAL ("read_solution_field", NULL);
             }
@@ -1459,20 +1278,14 @@ int nz, ns, nf;
  * read unit specifications
  *---------------------------------------------------------------------*/
 
-int read_units (
-#ifdef PROTOTYPE
-    int units[5])
-#else
-    units)
-int units[5];
-#endif
+int read_units (int units[5])
 {
     int n;
-    MassUnits_t mass;
-    LengthUnits_t length;
-    TimeUnits_t time;
-    TemperatureUnits_t temp;
-    AngleUnits_t angle;
+    CGNS_ENUMT(MassUnits_t) mass;
+    CGNS_ENUMT(LengthUnits_t) length;
+    CGNS_ENUMT(TimeUnits_t) time;
+    CGNS_ENUMT(TemperatureUnits_t) temp;
+    CGNS_ENUMT(AngleUnits_t) angle;
 
     if (cg_units_read (&mass, &length, &time, &temp, &angle)) {
         for (n = 0; n < 5; n++)
@@ -1491,11 +1304,8 @@ int units[5];
  * write the CGNS file
  *---------------------------------------------------------------------*/
 
-void write_cgns (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+void write_cgns (void)
+{
     int nz, ns;
 
     write_zones ();
@@ -1516,29 +1326,27 @@ void write_cgns (
  * write zone information to CGNS file
  *---------------------------------------------------------------------*/
 
-void write_zones (
-#ifdef PROTOTYPE
-    void
-#endif
-){
-    int n, nz, sizes[3][3];
+void write_zones (void)
+{
+    int n, nz;
+    cgsize_t sizes[3][3];
     ZONE *z = Zones;
 
     for (n = 0; n < 5; n++) {
         if (baseunits[n]) {
             if (cg_goto (cgnsfn, cgnsbase, "end") ||
-                cg_units_write ((MassUnits_t)baseunits[0],
-                                (LengthUnits_t)baseunits[1],
-                                (TimeUnits_t)baseunits[2],
-                                (TemperatureUnits_t)baseunits[3], 
-                                (AngleUnits_t)baseunits[4]))
+                cg_units_write ((CGNS_ENUMT(MassUnits_t))baseunits[0],
+                                (CGNS_ENUMT(LengthUnits_t))baseunits[1],
+                                (CGNS_ENUMT(TimeUnits_t))baseunits[2],
+                                (CGNS_ENUMT(TemperatureUnits_t))baseunits[3], 
+                                (CGNS_ENUMT(AngleUnits_t))baseunits[4]))
                 FATAL ("write_zones", NULL);
             break;
         }
     }
     if (baseclass) {
         if (cg_goto (cgnsfn, cgnsbase, "end") ||
-            cg_dataclass_write ((DataClass_t)baseclass))
+            cg_dataclass_write ((CGNS_ENUMT(DataClass_t))baseclass))
             FATAL ("write_zones", NULL);
     }
 
@@ -1552,17 +1360,17 @@ void write_zones (
             sizes[2][n] = 0;
         }
         if (cg_zone_write (cgnsfn, cgnsbase, z->name,
-            (int *)sizes, (ZoneType_t)z->type, &z->id))
+                (cgsize_t *)sizes, (CGNS_ENUMT(ZoneType_t))z->type, &z->id))
             FATAL ("write_zones", NULL);
 
         for (n = 0; n < 5; n++) {
             if (z->units[n] && z->units[n] != baseunits[n]) {
                 if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id, "end") ||
-                    cg_units_write ((MassUnits_t)z->units[0],
-                                    (LengthUnits_t)z->units[1],
-                                    (TimeUnits_t)z->units[2],
-                                    (TemperatureUnits_t)z->units[3],
-                                    (AngleUnits_t)z->units[4]))
+                    cg_units_write ((CGNS_ENUMT(MassUnits_t))z->units[0],
+                                    (CGNS_ENUMT(LengthUnits_t))z->units[1],
+                                    (CGNS_ENUMT(TimeUnits_t))z->units[2],
+                                    (CGNS_ENUMT(TemperatureUnits_t))z->units[3],
+                                    (CGNS_ENUMT(AngleUnits_t))z->units[4]))
                     FATAL ("write_zones", NULL);
                 break;
             }
@@ -1570,7 +1378,7 @@ void write_zones (
 
         if (z->dataclass && z->dataclass != baseclass) {
             if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id, "end") ||
-                cg_dataclass_write ((DataClass_t)z->dataclass))
+                cg_dataclass_write ((CGNS_ENUMT(DataClass_t))z->dataclass))
             FATAL ("write_zones", NULL);
         }
 
@@ -1589,15 +1397,10 @@ void write_zones (
  * write all zone data
  *---------------------------------------------------------------------*/
 
-void write_zone_data (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+void write_zone_data (int nz)
 {
-    int n, ns, sizes[3][3];
+    int n, ns;
+    cgsize_t sizes[3][3];
     ZONE *z = &Zones[nz-1];
 
     /* write the zone information */
@@ -1608,17 +1411,17 @@ int nz;
         sizes[2][n] = 0;
     }
     if (cg_zone_write (cgnsfn, cgnsbase, z->name,
-        (int *)sizes, (ZoneType_t)z->type, &z->id))
+            (cgsize_t *)sizes, (CGNS_ENUMT(ZoneType_t))z->type, &z->id))
         FATAL ("write_zone_data", NULL);
 
     for (n = 0; n < 5; n++) {
         if (z->units[n] && z->units[n] != baseunits[n]) {
             if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id, "end") ||
-                cg_units_write ((MassUnits_t)z->units[0],
-                                (LengthUnits_t)z->units[1],
-                                (TimeUnits_t)z->units[2],
-                                (TemperatureUnits_t)z->units[3],
-                                (AngleUnits_t)z->units[4]))
+                cg_units_write ((CGNS_ENUMT(MassUnits_t))z->units[0],
+                                (CGNS_ENUMT(LengthUnits_t))z->units[1],
+                                (CGNS_ENUMT(TimeUnits_t))z->units[2],
+                                (CGNS_ENUMT(TemperatureUnits_t))z->units[3],
+                                (CGNS_ENUMT(AngleUnits_t))z->units[4]))
                 FATAL ("write_zone_data", NULL);
             break;
         }
@@ -1639,65 +1442,60 @@ int nz;
  * write zone grid coordinates
  *---------------------------------------------------------------------*/
 
-void write_zone_grid (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+void write_zone_grid (int nz)
 {
-    int n, nc;
+    int nc;
+    cgsize_t n;
     ZONE *z = &Zones[nz-1];
 
     if (z->verts == NULL || (z->vertflags & 7) == 0) return;
 
-    if (z->datatype == RealSingle) {
-        float *xyz = (float *) malloc (z->nverts * sizeof(float));
+    if (z->datatype == CGNS_ENUMV(RealSingle)) {
+        float *xyz = (float *) malloc ((size_t)z->nverts * sizeof(float));
         if (NULL == xyz)
             FATAL ("write_zone_grid",
                 "malloc failed for coordinate working array");
         if ((z->vertflags & 1) == 1) {
             for (n = 0; n < z->nverts; n++)
                 xyz[n] = (float)z->verts[n].x;
-            if (cg_coord_write (cgnsfn, cgnsbase, z->id, RealSingle,
+            if (cg_coord_write (cgnsfn, cgnsbase, z->id, CGNS_ENUMV(RealSingle),
                 "CoordinateX", xyz, &nc)) FATAL ("write_zone_grid", NULL);
         }
         if ((z->vertflags & 2) == 2) {
             for (n = 0; n < z->nverts; n++)
                 xyz[n] = (float)z->verts[n].y;
-            if (cg_coord_write (cgnsfn, cgnsbase, z->id, RealSingle,
+            if (cg_coord_write (cgnsfn, cgnsbase, z->id, CGNS_ENUMV(RealSingle),
                 "CoordinateY", xyz, &nc)) FATAL ("write_zone_grid", NULL);
         }
         if ((z->vertflags & 4) == 4) {
             for (n = 0; n < z->nverts; n++)
                 xyz[n] = (float)z->verts[n].z;
-            if (cg_coord_write (cgnsfn, cgnsbase, z->id, RealSingle,
+            if (cg_coord_write (cgnsfn, cgnsbase, z->id, CGNS_ENUMV(RealSingle),
                 "CoordinateZ", xyz, &nc)) FATAL ("write_zone_grid", NULL);
         }
         free (xyz);
     }
     else {
-        double *xyz = (double *) malloc (z->nverts * sizeof(double));
+        double *xyz = (double *) malloc ((size_t)z->nverts * sizeof(double));
         if (NULL == xyz)
             FATAL ("write_zone_grid",
                 "malloc failed for coordinate working array");
         if ((z->vertflags & 1) == 1) {
             for (n = 0; n < z->nverts; n++)
                 xyz[n] = z->verts[n].x;
-            if (cg_coord_write (cgnsfn, cgnsbase, z->id, RealDouble,
+            if (cg_coord_write (cgnsfn, cgnsbase, z->id, CGNS_ENUMV(RealDouble),
                 "CoordinateX", xyz, &nc)) FATAL ("write_zone_grid", NULL);
         }
         if ((z->vertflags & 2) == 2) {
             for (n = 0; n < z->nverts; n++)
                 xyz[n] = z->verts[n].y;
-            if (cg_coord_write (cgnsfn, cgnsbase, z->id, RealDouble,
+            if (cg_coord_write (cgnsfn, cgnsbase, z->id, CGNS_ENUMV(RealDouble),
                 "CoordinateY", xyz, &nc)) FATAL ("write_zone_grid", NULL);
         }
         if ((z->vertflags & 4) == 4) {
             for (n = 0; n < z->nverts; n++)
                 xyz[n] = z->verts[n].z;
-            if (cg_coord_write (cgnsfn, cgnsbase, z->id, RealDouble,
+            if (cg_coord_write (cgnsfn, cgnsbase, z->id, CGNS_ENUMV(RealDouble),
                 "CoordinateZ", xyz, &nc)) FATAL ("write_zone_grid", NULL);
         }
         free (xyz);
@@ -1708,24 +1506,18 @@ int nz;
  * write zone element sets and elements
  *---------------------------------------------------------------------*/
 
-void write_zone_element (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+void write_zone_element (int nz)
 {
     int ns;
     ZONE *z = &Zones[nz-1];
     ELEMSET *eset = z->esets;
 
-    if (eset == NULL || z->type == Structured) return;
+    if (eset == NULL || z->type == CGNS_ENUMV(Structured)) return;
 
     for (ns = 1; ns <= z->nesets; ns++, eset++) {
         if (eset->id) {
             if (cg_section_write (cgnsfn, cgnsbase, z->id,
-                    eset->name, (ElementType_t)eset->type,
+                    eset->name, (CGNS_ENUMT(ElementType_t))eset->type,
                     eset->start, eset->end, eset->nbndry,
                     eset->conn, &eset->id))
                 FATAL ("write_zone_element", NULL);
@@ -1741,15 +1533,10 @@ int nz;
  * write zone 1 to 1 interfaces
  *---------------------------------------------------------------------*/
 
-void write_zone_interface (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+void write_zone_interface (int nz)
 {
-    int i, j, ni, range[2][3], d_range[2][3];
+    int i, j, ni;
+    cgsize_t range[2][3], d_range[2][3];
     ZONE *z = &Zones[nz-1];
     INTERFACE *ints = z->ints;
 
@@ -1764,8 +1551,8 @@ int nz;
                 }
             }
             if (cg_1to1_write (cgnsfn, cgnsbase, z->id,
-                ints->name, ints->d_name, (int *)range,
-                (int *)d_range, ints->transform, &ints->id))
+                    ints->name, ints->d_name, (cgsize_t *)range,
+                    (cgsize_t *)d_range, ints->transform, &ints->id))
                 FATAL ("write_zone_interface", NULL);
         }
     }
@@ -1775,13 +1562,7 @@ int nz;
  * write zone connectivities
  *---------------------------------------------------------------------*/
 
-void write_zone_connect (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+void write_zone_connect (int nz)
 {
     int nc;
     ZONE *z = &Zones[nz-1];
@@ -1792,12 +1573,14 @@ int nz;
     for (nc = 1; nc <= z->nconns; nc++, conns++) {
         if (conns->id &&
             cg_conn_write (cgnsfn, cgnsbase, z->id,
-                conns->name, (GridLocation_t)conns->location,
-                (GridConnectivityType_t)conns->type,
-                (PointSetType_t)conns->ptype, conns->npnts, conns->pnts,
-                conns->d_name, (ZoneType_t)conns->d_ztype,
-                (PointSetType_t)conns->d_ptype, Integer, conns->d_npnts,
-                conns->d_pnts, &conns->id))
+                conns->name, (CGNS_ENUMT(GridLocation_t))conns->location,
+                (CGNS_ENUMT(GridConnectivityType_t))conns->type,
+                (CGNS_ENUMT(PointSetType_t))conns->ptype, conns->npnts,
+                conns->pnts, conns->d_name,
+                (CGNS_ENUMT(ZoneType_t))conns->d_ztype,
+                (CGNS_ENUMT(PointSetType_t))conns->d_ptype,
+                CGNS_ENUMV(Integer), conns->d_npnts, conns->d_pnts,
+                &conns->id))
             FATAL ("write_zone_connect", NULL);
     }
 }
@@ -1806,13 +1589,7 @@ int nz;
  * write zone boundary conditions
  *---------------------------------------------------------------------*/
 
-void write_zone_boco (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+void write_zone_boco (int nz)
 {
     int nb;
     ZONE *z = &Zones[nz-1];
@@ -1822,13 +1599,13 @@ int nz;
 
     for (nb = 1; nb <= z->nbocos; nb++, bocos++) {
         if (bocos->id &&
-            cg_boco_write (cgnsfn, cgnsbase, z->id,
-                bocos->name, (BCType_t)bocos->type,
-                (PointSetType_t)bocos->ptype, bocos->npnts,
+           (cg_boco_write (cgnsfn, cgnsbase, z->id,
+                bocos->name, (CGNS_ENUMT(BCType_t))bocos->type,
+                (CGNS_ENUMT(PointSetType_t))bocos->ptype, bocos->npnts,
                 bocos->pnts, &bocos->id) ||
             cg_boco_normal_write (cgnsfn, cgnsbase, z->id, bocos->id,
-                bocos->n_index, bocos->n_cnt, (DataType_t)bocos->n_type,
-                bocos->n_list))
+                bocos->n_index, (int)bocos->n_cnt,
+                (CGNS_ENUMT(DataType_t))bocos->n_type, bocos->n_list)))
             FATAL ("write_zone_boco", NULL);
     }
 }
@@ -1837,13 +1614,7 @@ int nz;
  * write zone solution
  *---------------------------------------------------------------------*/
 
-void write_zone_solution (
-#ifdef PROTOTYPE
-    int nz, int ns)
-#else
-    nz, ns)
-int nz, ns;
-#endif
+void write_zone_solution (int nz, int ns)
 {
     int n;
     ZONE *z = &Zones[nz-1];
@@ -1853,9 +1624,9 @@ int nz, ns;
     s = &z->sols[ns-1];
 
     if (cg_sol_write (cgnsfn, cgnsbase, z->id, s->name,
-        (GridLocation_t)s->location, &s->id))
+        (CGNS_ENUMT(GridLocation_t))s->location, &s->id))
         FATAL ("write_zone_solution", NULL);
-    if (z->type == Structured && s->location == CellCenter) {
+    if (z->type == CGNS_ENUMV(Structured) && s->location == CGNS_ENUMV(CellCenter)) {
         if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id,
             "FlowSolution_t", s->id, "end") ||
             cg_rind_write ((int *)s->rind))
@@ -1866,11 +1637,11 @@ int nz, ns;
         if (s->units[n] && s->units[n] != z->units[n]) {
             if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id,
                 "FlowSolution_t", s->id, "end") ||
-                cg_units_write ((MassUnits_t)s->units[0],
-                                (LengthUnits_t)s->units[1],
-                                (TimeUnits_t)s->units[2],
-                                (TemperatureUnits_t)s->units[3],
-                                (AngleUnits_t)s->units[4]))
+                cg_units_write ((CGNS_ENUMT(MassUnits_t))s->units[0],
+                                (CGNS_ENUMT(LengthUnits_t))s->units[1],
+                                (CGNS_ENUMT(TimeUnits_t))s->units[2],
+                                (CGNS_ENUMT(TemperatureUnits_t))s->units[3],
+                                (CGNS_ENUMT(AngleUnits_t))s->units[4]))
                 FATAL ("write_zone_solution", NULL);
             break;
         }
@@ -1879,7 +1650,7 @@ int nz, ns;
     if (s->dataclass && s->dataclass != z->dataclass) {
         if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id,
             "FlowSolution_t", s->id, "end") ||
-            cg_dataclass_write ((DataClass_t)s->dataclass))
+            cg_dataclass_write ((CGNS_ENUMT(DataClass_t))s->dataclass))
         FATAL ("write_zone_solution", NULL);
     }
 
@@ -1898,13 +1669,7 @@ int nz, ns;
  * write solution field data for a zone
  *---------------------------------------------------------------------*/
 
-void write_solution_field (
-#ifdef PROTOTYPE
-    int nz, int ns, int nf)
-#else
-    nz, ns, nf)
-int nz, ns, nf;
-#endif
+void write_solution_field (int nz, int ns, int nf)
 {
     int n, is, ie;
     float *data = NULL;
@@ -1923,9 +1688,9 @@ int nz, ns, nf;
 
     for (nf = is; nf <= ie; nf++, f++) {
         if (f->data == NULL) continue;
-        if (f->datatype == RealSingle) {
+        if (f->datatype == CGNS_ENUMV(RealSingle)) {
             if (data == NULL) {
-                data = (float *) malloc (s->size * sizeof(float));
+                data = (float *) malloc ((size_t)s->size * sizeof(float));
                 if (NULL == data)
                     FATAL ("write_solution_field",
                         "malloc failed for working array");
@@ -1933,23 +1698,23 @@ int nz, ns, nf;
             for (n = 0; n < s->size; n++)
                 data[n] = (float)f->data[n];
             if (cg_field_write (cgnsfn, cgnsbase, z->id, s->id,
-                RealSingle, f->name, data, &f->id))
+                CGNS_ENUMV(RealSingle), f->name, data, &f->id))
                 FATAL ("write_solution_field", NULL);
         }
         else {
             if (cg_field_write (cgnsfn, cgnsbase, z->id, s->id,
-                RealDouble, f->name, f->data, &f->id))
+                CGNS_ENUMV(RealDouble), f->name, f->data, &f->id))
                 FATAL ("write_solution_field", NULL);
         }
         for (n = 0; n < 5; n++) {
             if (f->units[n] && f->units[n] != s->units[n]) {
                 if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id,
                     "FlowSolution_t", s->id, "DataArray_t", f->id, "end") ||
-                    cg_units_write ((MassUnits_t)f->units[0],
-                                    (LengthUnits_t)f->units[1],
-                                    (TimeUnits_t)f->units[2],
-                                    (TemperatureUnits_t)f->units[3],
-                                    (AngleUnits_t)f->units[4]))
+                    cg_units_write ((CGNS_ENUMT(MassUnits_t))f->units[0],
+                                    (CGNS_ENUMT(LengthUnits_t))f->units[1],
+                                    (CGNS_ENUMT(TimeUnits_t))f->units[2],
+                                    (CGNS_ENUMT(TemperatureUnits_t))f->units[3],
+                                    (CGNS_ENUMT(AngleUnits_t))f->units[4]))
                     FATAL ("write_solution_field", NULL);
                 break;
             }
@@ -1957,38 +1722,38 @@ int nz, ns, nf;
         if (f->dataclass && f->dataclass != s->dataclass) {
             if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id,
                 "FlowSolution_t", s->id, "DataArray_t", f->id, "end") ||
-                cg_dataclass_write ((DataClass_t)f->dataclass))
+                cg_dataclass_write ((CGNS_ENUMT(DataClass_t))f->dataclass))
             FATAL ("write_solution_field", NULL);
         }
-        if (f->convtype == RealSingle) {
+        if (f->convtype == CGNS_ENUMV(RealSingle)) {
             float conv[2];
             for (n = 0; n < 2; n++)
                 conv[n] = (float)f->dataconv[n];
             if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id,
                 "FlowSolution_t", s->id, "DataArray_t", f->id, "end") ||
-                cg_conversion_write (RealSingle, conv))
+                cg_conversion_write (CGNS_ENUMV(RealSingle), conv))
                 FATAL ("write_solution_field", NULL);
         }
-        else if (f->convtype == RealDouble) {
+        else if (f->convtype == CGNS_ENUMV(RealDouble)) {
             if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id,
                 "FlowSolution_t", s->id, "DataArray_t", f->id, "end") ||
-                cg_conversion_write (RealDouble, f->dataconv))
+                cg_conversion_write (CGNS_ENUMV(RealDouble), f->dataconv))
                 FATAL ("write_solution_field", NULL);
         }
         else {}
-        if (f->exptype == RealSingle) {
+        if (f->exptype == CGNS_ENUMV(RealSingle)) {
             float exp[5];
             for (n = 0; n < 5; n++)
-                exp[n] = f->dataconv[n];
+                exp[n] = (float)f->dataconv[n];
             if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id,
                 "FlowSolution_t", s->id, "DataArray_t", f->id, "end") ||
-                cg_exponents_write (RealSingle, exp))
+                cg_exponents_write (CGNS_ENUMV(RealSingle), exp))
                 FATAL ("write_solution_field", NULL);
         }
-        else if (f->exptype == RealDouble) {
+        else if (f->exptype == CGNS_ENUMV(RealDouble)) {
             if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id,
                 "FlowSolution_t", s->id, "DataArray_t", f->id, "end") ||
-                cg_exponents_write (RealDouble, f->exponent))
+                cg_exponents_write (CGNS_ENUMV(RealDouble), f->exponent))
                 FATAL ("write_solution_field", NULL);
         }
         else {}
@@ -2000,13 +1765,7 @@ int nz, ns, nf;
  * compute volume of a tetrahedron
  *---------------------------------------------------------------------*/
 
-double volume_tet (
-#ifdef PROTOTYPE
-    VERTEX *v1, VERTEX *v2, VERTEX *v3, VERTEX *v4)
-#else
-    v1, v2, v3, v4)
-VERTEX *v1, *v2, *v3, *v4;
-#endif
+double volume_tet (VERTEX *v1, VERTEX *v2, VERTEX *v3, VERTEX *v4)
 {
     double vol =
         ((v4->x - v1->x) * ((v2->y - v1->y) * (v3->z - v1->z) -
@@ -2022,13 +1781,7 @@ VERTEX *v1, *v2, *v3, *v4;
  * compute volume of a pyramid
  *---------------------------------------------------------------------*/
 
-double volume_pyr (
-#ifdef PROTOTYPE
-    VERTEX *v1, VERTEX *v2, VERTEX *v3, VERTEX *v4, VERTEX *v5)
-#else
-    v1, v2, v3, v4, v5)
-VERTEX *v1, *v2, *v3, *v4, *v5;
-#endif
+double volume_pyr (VERTEX *v1, VERTEX *v2, VERTEX *v3, VERTEX *v4, VERTEX *v5)
 {
     VERTEX p;
     double vol;
@@ -2050,14 +1803,8 @@ VERTEX *v1, *v2, *v3, *v4, *v5;
  * compute volume of a wedge (prism)
  *---------------------------------------------------------------------*/
 
-double volume_wdg (
-#ifdef PROTOTYPE
-    VERTEX *v1, VERTEX *v2, VERTEX *v3,
-    VERTEX *v4, VERTEX *v5, VERTEX *v6)
-#else
-    v1, v2, v3, v4, v5, v6)
-VERTEX *v1, *v2, *v3, *v4, *v5, *v6;
-#endif
+double volume_wdg (VERTEX *v1, VERTEX *v2, VERTEX *v3,
+                   VERTEX *v4, VERTEX *v5, VERTEX *v6)
 {
     VERTEX p;
     double vol;
@@ -2078,14 +1825,8 @@ VERTEX *v1, *v2, *v3, *v4, *v5, *v6;
  * compute volume of a hexahedron
  *---------------------------------------------------------------------*/
 
-double volume_hex (
-#ifdef PROTOTYPE
-    VERTEX *v1, VERTEX *v2, VERTEX *v3, VERTEX *v4,
-    VERTEX *v5, VERTEX *v6, VERTEX *v7, VERTEX *v8)
-#else
-    v1, v2, v3, v4, v5, v6, v7, v8)
-VERTEX *v1, *v2, *v3, *v4, *v5, *v6, *v7, *v8;
-#endif
+double volume_hex (VERTEX *v1, VERTEX *v2, VERTEX *v3, VERTEX *v4,
+                   VERTEX *v5, VERTEX *v6, VERTEX *v7, VERTEX *v8)
 {
     VERTEX p;
     double vol;
@@ -2110,14 +1851,7 @@ VERTEX *v1, *v2, *v3, *v4, *v5, *v6, *v7, *v8;
  * compute volume of an element
  *---------------------------------------------------------------------*/
 
-double volume_element (
-#ifdef PROTOTYPE
-    int nn, VERTEX *v[])
-#else
-    nn, v)
-int nn;
-VERTEX *v[];
-#endif
+double volume_element (int nn, VERTEX *v[])
 {
     switch (nn) {
         case 4: return volume_tet (v[0], v[1], v[2], v[3]);
@@ -2133,16 +1867,9 @@ VERTEX *v[];
  * compute cell volume in a zone
  *---------------------------------------------------------------------*/
 
-double cell_volume (
-#ifdef PROTOTYPE
-    ZONE *z, int i, int j, int k)
-#else
-    z, i, j, k)
-ZONE *z;
-int i, j, k;
-#endif
+double cell_volume (ZONE *z, cgsize_t i, cgsize_t j, cgsize_t k)
 {
-    int ni, nj;
+    cgsize_t ni, nj;
     VERTEX *v;
     double vol;
 
@@ -2159,22 +1886,17 @@ int i, j, k;
  * compute cell volumes at vertices
  *---------------------------------------------------------------------*/
 
-void vertex_volumes (
-#ifdef PROTOTYPE
-    int nz)
-#else
-    nz)
-int nz;
-#endif
+void vertex_volumes (int nz)
 {
-    int i, j, n, ns, nn, ne, et, nv;
+    int ns, nn, et, nv, ii;
+    cgsize_t i, j, n, ne, ni;
     ZONE *z = &Zones[nz-1];
     VERTEX *v[8];
     double vol;
 
     if (z->verts == NULL) read_zone_grid (nz);
     if (z->esets == NULL) {
-        if (z->type == Structured)
+        if (z->type == CGNS_ENUMV(Structured))
             structured_elements (nz);
         else
             read_zone_element (nz);
@@ -2185,27 +1907,27 @@ int nz;
     for (ns = 0; ns < z->nesets; ns++) {
         ne = z->esets[ns].end - z->esets[ns].start + 1;
         et = z->esets[ns].type;
-        if (et < TETRA_4 || et > MIXED) continue;
+        if (et < CGNS_ENUMV(TETRA_4) || et > CGNS_ENUMV(MIXED)) continue;
         for (n = 0, j = 0; j < ne; j++) {
-            if (z->esets[ns].type == MIXED)
-                et = z->esets[ns].conn[n++];
+            if (z->esets[ns].type == CGNS_ENUMV(MIXED))
+                et = (int)z->esets[ns].conn[n++];
             switch (et) {
-                case TETRA_4:
-                case TETRA_10:
+                case CGNS_ENUMV(TETRA_4):
+                case CGNS_ENUMV(TETRA_10):
                     nv = 4;
                     break;
-                case PYRA_5:
-                case PYRA_14:
+                case CGNS_ENUMV(PYRA_5):
+                case CGNS_ENUMV(PYRA_14):
                     nv = 5;
                     break;
-                case PENTA_6:
-                case PENTA_15:
-                case PENTA_18:
+                case CGNS_ENUMV(PENTA_6):
+                case CGNS_ENUMV(PENTA_15):
+                case CGNS_ENUMV(PENTA_18):
                     nv = 6;
                     break;
-                case HEXA_8:
-                case HEXA_20:
-                case HEXA_27:
+                case CGNS_ENUMV(HEXA_8):
+                case CGNS_ENUMV(HEXA_20):
+                case CGNS_ENUMV(HEXA_27):
                     nv = 8;
                     break;
                 default:
@@ -2214,12 +1936,12 @@ int nz;
             }
             nn = element_node_counts[et];
             if (nv) {
-                for (i = 0; i < nv; i++)
-                    v[i] = &z->verts[z->esets[ns].conn[n+i]-1];
+                for (ii = 0; ii < nv; ii++)
+                    v[ii] = &z->verts[z->esets[ns].conn[n+ii]-1];
                 vol = fabs (volume_element (nv, v)) / (double)nn;
-                for (i = 0; i < nn; i++) {
-                    nv = z->esets[ns].conn[n+i] - 1;
-                    z->verts[nv].w += vol;
+                for (ii = 0; ii < nn; ii++) {
+                    ni = z->esets[ns].conn[n+ii] - 1;
+                    z->verts[ni].w += vol;
                 }
             }
             n += nn;
@@ -2231,28 +1953,20 @@ int nz;
  * convert cell-centered field to cell-vertex
  *---------------------------------------------------------------------*/
 
-static void to_cell_vertex (
-#ifdef PROTOTYPE
-    ZONE *z, SOLUTION *s, FIELD *f, double *w)
-#else
-    z, s, f, w)
-ZONE *z;
-SOLUTION *s;
-FIELD *f;
-float *w;
-#endif
+static void to_cell_vertex (ZONE *z, SOLUTION *s, FIELD *f, double *w)
 {
-    int n, i, j, k, ni, nj, nk;
-    int np, nn, ns, nw;
+    int nes, et, nv, ii;
+    cgsize_t n, i, j, k, ni, nj, nk;
+    cgsize_t np, nn, ns, nw;
     double *data;
     double *wsum;
 
-    if (z->type == Structured)
+    if (z->type == CGNS_ENUMV(Structured))
         np = z->dim[0] * z->dim[1] * z->dim[2];
     else
         np = z->dim[0];
-    data = (double *) malloc (np * sizeof(double));
-    wsum = (double *) malloc (np * sizeof(double));
+    data = (double *) malloc ((size_t)np * sizeof(double));
+    wsum = (double *) malloc ((size_t)np * sizeof(double));
     if (NULL == data || NULL == wsum)
         FATAL ("to_cell_center", "malloc failed for field data");
     for (n = 0; n < np; n++) {
@@ -2260,7 +1974,7 @@ float *w;
         wsum[n] = 0.0;
     }
 
-    if (z->type == Structured) {
+    if (z->type == CGNS_ENUMV(Structured)) {
         ni = z->dim[0];
         nj = z->dim[1];
         nk = z->dim[2];
@@ -2457,21 +2171,21 @@ float *w;
     }
 
     else {
-        for (k = 0; k < z->nesets; k++) {
-            nk = z->esets[k].type;
-            if (nk < TETRA_4 || nk > MIXED) continue;
-            for (n = 0, j = z->esets[k].start-1; j < z->esets[k].end; j++) {
-                if (z->esets[k].type == MIXED)
-                    nk = z->esets[k].conn[n++];
-                ni = element_node_counts[nk];
-                if (j < s->size && nk >= TETRA_4 && nk <= HEXA_27) {
-                    for (i = 0; i < ni; i++) {
-                        nn = z->esets[k].conn[n+i] - 1;
+        for (nes = 0; nes < z->nesets; nes++) {
+            et = z->esets[nes].type;
+            if (et < CGNS_ENUMV(TETRA_4) || et > CGNS_ENUMV(MIXED)) continue;
+            for (n = 0, j = z->esets[nes].start-1; j < z->esets[nes].end; j++) {
+                if (z->esets[nes].type == CGNS_ENUMV(MIXED))
+                    et = (int)z->esets[nes].conn[n++];
+                nv = element_node_counts[et];
+                if (j < s->size && et >= CGNS_ENUMV(TETRA_4) && et <= CGNS_ENUMV(HEXA_27)) {
+                    for (ii = 0; ii < nv; ii++) {
+                        nn = z->esets[nes].conn[n+ii] - 1;
                         data[nn] += (w[j] * f->data[j]);
                         wsum[nn] += w[j];
                     }
                 }
-                n += ni;
+                n += nv;
             }
         }
     }
@@ -2490,23 +2204,18 @@ float *w;
  * convert cell-center solution to cell-vertex
  *---------------------------------------------------------------------*/
 
-void cell_vertex_solution (
-#ifdef PROTOTYPE
-    int nz, int ns, int weighting)
-#else
-    nz, ns, weighting)
-int nz, ns, weighting;
-#endif
+void cell_vertex_solution (int nz, int ns, int weighting)
 {
-    int n, i, j, k, ni, nj, nk, nf, nc;
+    int nf, nes, et, nv, ii, jj;
+    cgsize_t n, i, j, k, ni, nj, nk, nc;
     double *w;
     ZONE *z = &Zones[nz-1];
     SOLUTION *s = &z->sols[ns-1];
 
-    if (s->location == Vertex || !s->size || !s->nflds) return;
-    if (s->location != CellCenter)
+    if (s->location == CGNS_ENUMV(Vertex) || !s->size || !s->nflds) return;
+    if (s->location != CGNS_ENUMV(CellCenter))
         FATAL ("cell_vertex_solution", "solution not cell-centered");
-    if (z->type == Structured) {
+    if (z->type == CGNS_ENUMV(Structured)) {
         if (z->dim[0] < 2 || z->dim[1] < 2 || z->dim[2] < 2)
             FATAL ("cell_vertex_solution",
                 "can only handle 3-dimensional structured zones");
@@ -2516,7 +2225,8 @@ int nz, ns, weighting;
         nc = ni * nj * nk;
     }
     else {
-        nc = s->size;
+        ni = nc = s->size;
+        nj = nk = 1;
         if (z->esets == NULL && !read_zone_element (nz))
             FATAL ("cell_vertex_solution", "no element sets defined");
     }
@@ -2525,14 +2235,14 @@ int nz, ns, weighting;
     }
     if (nf == s->nflds) return;
 
-    w = (double *) malloc (nc * sizeof(double));
+    w = (double *) malloc ((size_t)nc * sizeof(double));
     if (NULL == w)
         FATAL ("cell_vertex_solution",
             "malloc failed for weighting function");
 
     if (weighting) {
         if (z->verts == NULL) read_zone_grid (nz);
-        if (z->type == Structured) {
+        if (z->type == CGNS_ENUMV(Structured)) {
             n = 0;
             for (k = 1; k <= nk; k++) {
                 for (j = 1; j <= nj; j++) {
@@ -2546,41 +2256,41 @@ int nz, ns, weighting;
             VERTEX *v[8];
             for (n = 0; n < nc; n++)
                 w[n] = 0.0;
-            for (k = 0; k < z->nesets; k++) {
-                nk = z->esets[k].type;
-                if (nk < TETRA_4 || nk > MIXED) continue;
-                for (n = 0, j = z->esets[k].start-1; j < z->esets[k].end; j++) {
-                    if (z->esets[k].type == MIXED)
-                        nk = z->esets[k].conn[n++];
-                    switch (nk) {
-                        case TETRA_4:
-                        case TETRA_10:
-                            ni = 4;
+            for (nes = 0; nes < z->nesets; nes++) {
+                et = z->esets[nes].type;
+                if (et < CGNS_ENUMV(TETRA_4) || et > CGNS_ENUMV(MIXED)) continue;
+                for (n = 0, j = z->esets[nes].start-1; j < z->esets[nes].end; j++) {
+                    if (z->esets[nes].type == CGNS_ENUMV(MIXED))
+                        et = (int)z->esets[nes].conn[n++];
+                    switch (et) {
+                        case CGNS_ENUMV(TETRA_4):
+                        case CGNS_ENUMV(TETRA_10):
+                            nv = 4;
                             break;
-                        case PYRA_5:
-                        case PYRA_14:
-                            ni = 5;
+                        case CGNS_ENUMV(PYRA_5):
+                        case CGNS_ENUMV(PYRA_14):
+                            nv = 5;
                             break;
-                        case PENTA_6:
-                        case PENTA_15:
-                        case PENTA_18:
-                            ni = 6;
+                        case CGNS_ENUMV(PENTA_6):
+                        case CGNS_ENUMV(PENTA_15):
+                        case CGNS_ENUMV(PENTA_18):
+                            nv = 6;
                             break;
-                        case HEXA_8:
-                        case HEXA_20:
-                        case HEXA_27:
-                            ni = 8;
+                        case CGNS_ENUMV(HEXA_8):
+                        case CGNS_ENUMV(HEXA_20):
+                        case CGNS_ENUMV(HEXA_27):
+                            nv = 8;
                             break;
                         default:
-                            ni = 0;
+                            nv = 0;
                             break;
                     }
-                    if (ni && j < nc) {
-                        for (i = 0; i < ni; i++)
-                            v[i] = &z->verts[z->esets[k].conn[n+i]-1];
-                        w[j] = fabs (volume_element (ni, v));
+                    if (nv && j < nc) {
+                        for (ii = 0; ii < nv; ii++)
+                            v[ii] = &z->verts[z->esets[nes].conn[n+ii]-1];
+                        w[j] = fabs (volume_element (nv, v));
                     }
-                    n += element_node_counts[nk];
+                    n += element_node_counts[et];
                 }
             }
         }
@@ -2596,10 +2306,10 @@ int nz, ns, weighting;
     }
     free (w);
 
-    s->location = Vertex;
-    for (j = 0; j < 3; j++)
-        for (i = 0; i < 2; i++)
-            s->rind[j][i] = 0;
+    s->location = CGNS_ENUMV(Vertex);
+    for (jj = 0; jj < 3; jj++)
+        for (ii = 0; ii < 2; ii++)
+            s->rind[jj][ii] = 0;
     s->size = z->nverts;
 }
 
@@ -2607,22 +2317,14 @@ int nz, ns, weighting;
  * convert cell-vertex field to cell-centered
  *---------------------------------------------------------------------*/
 
-static void to_cell_center (
-#ifdef PROTOTYPE
-    ZONE *z, SOLUTION *s, FIELD *f, double *w)
-#else
-    z, s, f, w)
-ZONE *z;
-SOLUTION *s;
-FIELD *f;
-float *w;
-#endif
+static void to_cell_center (ZONE *z, SOLUTION *s, FIELD *f, double *w)
 {
-    int n, i, j, k, ni, nj, nk, np, nn, ns;
+    int nes, et, nv, ii;
+    cgsize_t n, i, j, k, ni, nj, nk, np, nn, ns;
     double *data;
     double *wsum;
 
-    if (z->type == Structured) {
+    if (z->type == CGNS_ENUMV(Structured)) {
         ni = z->dim[0];
         nj = z->dim[1];
         nk = z->dim[2];
@@ -2633,8 +2335,8 @@ float *w;
     else
         np = z->dim[1];
 
-    data = (double *) malloc (np * sizeof(double));
-    wsum = (double *) malloc (np * sizeof(double));
+    data = (double *) malloc ((size_t)np * sizeof(double));
+    wsum = (double *) malloc ((size_t)np * sizeof(double));
     if (NULL == data || NULL == wsum)
         FATAL ("to_cell_center", "malloc failed for field data");
     for (n = 0; n < np; n++) {
@@ -2642,7 +2344,7 @@ float *w;
         wsum[n] = 0.0;
     }
 
-    if (z->type == Structured) {
+    if (z->type == CGNS_ENUMV(Structured)) {
         for (k = 1; k < nk; k++) {
             for (j = 1; j < nj; j++) {
                 for (i = 1; i < ni; i++) {
@@ -3125,21 +2827,21 @@ float *w;
     }
 
     else {
-        for (k = 0; k < z->nesets; k++) {
-            nk = z->esets[k].type;
-            if (nk < TETRA_4 || nk > MIXED) continue;
-            for (n = 0, j = z->esets[k].start-1; j < z->esets[k].end; j++) {
-                if (z->esets[k].type == MIXED)
-                    nk = z->esets[k].conn[n++];
-                ni = element_node_counts[nk];
-                if (j < np && nk >= TETRA_4 && nk <= HEXA_27) {
-                    for (i = 0; i < ni; i++) {
-                        nn = z->esets[k].conn[n+i] - 1;
+        for (nes = 0; nes < z->nesets; nes++) {
+            et = z->esets[nes].type;
+            if (et < CGNS_ENUMV(TETRA_4) || et > CGNS_ENUMV(MIXED)) continue;
+            for (n = 0, j = z->esets[nes].start-1; j < z->esets[nes].end; j++) {
+                if (z->esets[nes].type == CGNS_ENUMV(MIXED))
+                    et = (int)z->esets[nes].conn[n++];
+                nv = element_node_counts[et];
+                if (j < np && et >= CGNS_ENUMV(TETRA_4) && et <= CGNS_ENUMV(HEXA_27)) {
+                    for (ii = 0; ii < nv; ii++) {
+                        nn = z->esets[nes].conn[n+ii] - 1;
                         data[j] += (w[nn] * f->data[nn]);
                         wsum[j] += w[nn];
                     }
                 }
-                n += ni;
+                n += nv;
             }
         }
     }
@@ -3158,23 +2860,18 @@ float *w;
  * convert cell-vertex solution to cell-center
  *---------------------------------------------------------------------*/
 
-void cell_center_solution (
-#ifdef PROTOTYPE
-    int nz, int ns, int weighting)
-#else
-    nz, ns, weighting)
-int nz, ns, weighting;
-#endif
+void cell_center_solution (int nz, int ns, int weighting)
 {
-    int n, i, j, k, ni, nj, nk, nf, np, size;
+    int ii, jj, nf;
+    cgsize_t n, i, j, k, ni, nj, nk, np, size;
     double *w, vol;
     ZONE *z = &Zones[nz-1];
     SOLUTION *s = &z->sols[ns-1];
 
-    if (s->location == CellCenter || !s->size || !s->nflds) return;
-    if (s->location != Vertex)
+    if (s->location == CGNS_ENUMV(CellCenter) || !s->size || !s->nflds) return;
+    if (s->location != CGNS_ENUMV(Vertex))
         FATAL ("cell_center_solution", "solution not at cell-vertex");
-    if (z->type == Structured) {
+    if (z->type == CGNS_ENUMV(Structured)) {
         if (z->dim[0] < 2 || z->dim[1] < 2 || z->dim[2] < 2)
             FATAL ("cell_vertex_solution",
                 "can only handle 3-dimensional structured zones");
@@ -3182,9 +2879,9 @@ int nz, ns, weighting;
         nj = z->dim[1];
         nk = z->dim[2];
         np = ni * nj * nk;
-        for (i = 0; i < 3; i++) {
-            for (j = 0; j < 2; j++) {
-                if (s->rind[i][j] < 0 || s->rind[i][j] > 1)
+        for (ii = 0; ii < 3; ii++) {
+            for (jj = 0; jj < 2; jj++) {
+                if (s->rind[ii][jj] < 0 || s->rind[ii][jj] > 1)
                     FATAL ("cell_center_solution", "rind must be 0 or 1");
             }
         }
@@ -3193,7 +2890,8 @@ int nz, ns, weighting;
                (nk - 1 + s->rind[2][0] + s->rind[2][1]);
     }
     else {
-        np = z->dim[0];
+        ni = np = z->dim[0];
+        nj = nk = 1;
         if (z->esets == NULL && !read_zone_element (nz))
             FATAL ("cell_vertex_solution", "no element sets defined");
         size = z->dim[1];
@@ -3203,14 +2901,14 @@ int nz, ns, weighting;
     }
     if (nf == s->nflds) return;
 
-    w = (double *) malloc (np * sizeof(double));
+    w = (double *) malloc ((size_t)np * sizeof(double));
     if (NULL == w)
         FATAL ("cell_center_solution", "malloc failed for weighting function");
 
     if (weighting) {
         if (z->verts == NULL) read_zone_grid (nz);
-        if (z->type == Structured) {
-            int *cnt = (int *) malloc (np * sizeof(int));
+        if (z->type == CGNS_ENUMV(Structured)) {
+            int *cnt = (int *) malloc ((size_t)np * sizeof(int));
             if (NULL == cnt)
                 FATAL ("cell_center_solution", "malloc failed for cnt array");
             for (n = 0; n < np; n++) {
@@ -3275,7 +2973,6 @@ int nz, ns, weighting;
     }
     free (w);
 
-    s->location = CellCenter;
+    s->location = CGNS_ENUMV(CellCenter);
     s->size = size;
 }
-

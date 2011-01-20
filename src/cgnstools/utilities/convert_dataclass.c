@@ -7,6 +7,13 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#ifdef _WIN32
+# include <io.h>
+# define access _access
+# define unlink _unlink
+#else
+# include <unistd.h>
+#endif
 
 #include "getargs.h"
 #include "cgnslib.h"
@@ -32,7 +39,7 @@ static char *usgmsg[] = {
 };
 
 static int verbose = 0;
-static DataClass_t dataclass = DataClassNull;
+static CGNS_ENUMT(DataClass_t) dataclass = CGNS_ENUMV(DataClassNull);
 static char buff[1024];
 static char cgnstemp[17] = "";
 
@@ -42,14 +49,7 @@ static int conversions = 0;
 
 /*-------------------------------------------------------------------*/
 
-static void get_error (
-#ifdef PROTOTYPE
-    int errnum, char *errmsg, int pos, char *str)
-#else
-    errnum, errmsg, pos, str)
-int errnum, pos;
-char *errmsg, *str;
-#endif
+static void get_error (int errnum, char *errmsg, int pos, char *str)
 {
     /* fatal error */
 
@@ -78,24 +78,18 @@ char *errmsg, *str;
 
 /*-------------------------------------------------------------------*/
 
-static void write_units (
-#ifdef PROTOTYPE
-    Units *units)
-#else
-    units)
-Units *units;
-#endif
+static void write_units (Units *units)
 {
     int n;
 
     for (n = 0; n < 5; n++) {
         if (units->units[n]) {
             if (cg_units_write (
-                    (MassUnits_t)units->units[0],
-                    (LengthUnits_t)units->units[1],
-                    (TimeUnits_t)units->units[2],
-                    (TemperatureUnits_t)units->units[3],
-                    (AngleUnits_t)units->units[4]))
+                    (CGNS_ENUMT(MassUnits_t))units->units[0],
+                    (CGNS_ENUMT(LengthUnits_t))units->units[1],
+                    (CGNS_ENUMT(TimeUnits_t))units->units[2],
+                    (CGNS_ENUMT(TemperatureUnits_t))units->units[3],
+                    (CGNS_ENUMT(AngleUnits_t))units->units[4]))
                 cgnsCalcFatal ((char *)cg_get_error());
             break;
         }
@@ -106,7 +100,7 @@ Units *units;
 #endif
     for (n = 0; n < 5; n++) {
         if (units->exps[n]) {
-            if (cg_exponents_write (RealSingle, units->exps))
+            if (cg_exponents_write (CGNS_ENUMV(RealSingle), units->exps))
                 cgnsCalcFatal ((char *)cg_get_error());
             break;
         }
@@ -118,11 +112,8 @@ Units *units;
 
 /*-------------------------------------------------------------------*/
 
-static void update_zone (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+static void update_zone (void)
+{
     int n, i, len;
     Variable *var = coordinates;
     VECSYM *sym;
@@ -154,7 +145,7 @@ static void update_zone (
             fflush (stdout);
             sym = cgnsCalcCommand (var->name);
             vf = vecsym_vector(sym);
-            if (dataclass == Dimensional) {
+            if (dataclass == CGNS_ENUMV(Dimensional)) {
                 for (i = 0; i < len; i++)
                     vf[i] = vf[i] * var->dataconv[0] + var->dataconv[1];
             }
@@ -169,7 +160,7 @@ static void update_zone (
             puts ("???");
             continue;
         }
-        if (var->datatype == RealSingle) {
+        if (var->datatype == CGNS_ENUMV(RealSingle)) {
             if (f == NULL) {
                 f = (float *) malloc (len * sizeof(float));
                 if (f == NULL)
@@ -178,12 +169,12 @@ static void update_zone (
             for (i = 0; i < len; i++)
                 f[i] = (float)vf[i];
             if (cg_coord_write (cgnsFile, cgnsBase, cgnsZone,
-                RealSingle, var->name, f, &i))
+                CGNS_ENUMV(RealSingle), var->name, f, &i))
                 cgnsCalcFatal ((char *)cg_get_error());
         }
         else {
             if (cg_coord_write (cgnsFile, cgnsBase, cgnsZone,
-                RealDouble, var->name, vf, &i))
+                CGNS_ENUMV(RealDouble), var->name, vf, &i))
                 cgnsCalcFatal ((char *)cg_get_error());
         }
         if (cg_goto (cgnsFile, cgnsBase, "Zone_t", cgnsZone,
@@ -198,11 +189,8 @@ static void update_zone (
 
 /*-------------------------------------------------------------------*/
 
-static void update_solution (
-#ifdef PROTOTYPE
-    void
-#endif
-){
+static void update_solution (void)
+{
     int n, i, len;
     Variable *var = variables;
     VECSYM *sym;
@@ -234,7 +222,7 @@ static void update_solution (
             fflush (stdout);
             sym = cgnsCalcCommand (var->name);
             vf = vecsym_vector(sym);
-            if (dataclass == Dimensional) {
+            if (dataclass == CGNS_ENUMV(Dimensional)) {
                 for (i = 0; i < len; i++)
                     vf[i] = vf[i] * var->dataconv[0] + var->dataconv[1];
             }
@@ -249,7 +237,7 @@ static void update_solution (
             puts ("???");
             continue;
         }
-        if (var->datatype == RealSingle) {
+        if (var->datatype == CGNS_ENUMV(RealSingle)) {
             if (f == NULL) {
                 f = (float *) malloc (len * sizeof(float));
                 if (f == NULL)
@@ -258,12 +246,12 @@ static void update_solution (
             for (i = 0; i < len; i++)
                 f[i] = (float)vf[i];
             if (cg_field_write (cgnsFile, cgnsBase, cgnsZone, cgnsSoln,
-                RealSingle, var->name, f, &i))
+                CGNS_ENUMV(RealSingle), var->name, f, &i))
                 cgnsCalcFatal ((char *)cg_get_error());
         }
         else {
             if (cg_field_write (cgnsFile, cgnsBase, cgnsZone, cgnsSoln,
-                RealDouble, var->name, vf, &i))
+                CGNS_ENUMV(RealDouble), var->name, vf, &i))
                 cgnsCalcFatal ((char *)cg_get_error());
         }
         if (cg_goto (cgnsFile, cgnsBase, "Zone_t", cgnsZone,
@@ -278,13 +266,7 @@ static void update_solution (
 
 /*-------------------------------------------------------------------*/
 
-char *next_line (
-#ifdef PROTOTYPE
-    FILE *fp)
-#else
-    fp)
-FILE *fp;
-#endif
+char *next_line (FILE *fp)
 {
     int n = 0, len;
     char *p, line[257];
@@ -299,7 +281,7 @@ FILE *fp;
             ;
         if (!*p) continue;
         strcpy (buff, p);
-        n = strlen (buff);
+        n = (int)strlen (buff);
         while (buff[n-1] == '\\') {
             for (n -= 2; n >= 0 && isspace(buff[n]); n--)
                 ;
@@ -313,7 +295,7 @@ FILE *fp;
             for (p = line; *p && isspace(*p); p++)
                 ;
             if (!*p) break;
-            len = strlen (p);
+            len = (int)strlen (p);
             if (n + len >= sizeof(buff))
                 cgnsCalcFatal ("internal command buffer length exceeded");
             strcpy (&buff[n], p);
@@ -333,13 +315,7 @@ FILE *fp;
 
 /*-------------------------------------------------------------------*/
 
-static void parse_convfile (
-#ifdef PROTOTYPE
-    char *cnvfile)
-#else
-    cnvfile)
-char *cnvfile;
-#endif
+static void parse_convfile (char *cnvfile)
 {
     char *cmd;
     FILE *fp = fopen (cnvfile, "r");
@@ -357,9 +333,7 @@ char *cnvfile;
 
 /*-------------------------------------------------------------------*/
 
-int main (argc, argv)
-int argc;
-char *argv[];
+int main (int argc, char *argv[])
 {
     int n, nz, ns, scnt;
     int ibase = 1, izone = 0, isol = 0;
@@ -383,13 +357,13 @@ char *argv[];
                 convfile = argarg;
                 break;
             case 'd':
-                dataclass = Dimensional;
+                dataclass = CGNS_ENUMV(Dimensional);
                 break;
             case 'n':
-                dataclass = NormalizedByDimensional;
+                dataclass = CGNS_ENUMV(NormalizedByDimensional);
                 break;
             case 'u':
-                dataclass = NormalizedByUnknownDimensional;
+                dataclass = CGNS_ENUMV(NormalizedByUnknownDimensional);
                 break;
             case 'v':
                 verbose = 1;
@@ -397,7 +371,7 @@ char *argv[];
         }
     }
 
-    if (dataclass == DataClassNull)
+    if (dataclass == CGNS_ENUMV(DataClassNull))
         print_usage (usgmsg, "need to select one of -d, -n or -u");
 
     if (argind == argc)

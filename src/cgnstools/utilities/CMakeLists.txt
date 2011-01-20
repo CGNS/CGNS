@@ -2,28 +2,36 @@
 # utilities #
 #############
 
-include_directories(${TCL_INCLUDE_DIR})
 include_directories(../..)
 include_directories(../calclib)
 include_directories(../common)
 
 # cgns_info
-link_directories(. ${HDF5_LIBRARY_DIR})
-link_libraries(cgns_static calclib hdf5 m)
-if(HDF5_NEED_ZLIB)
-	link_directories(${ZLIB_LIBRARY_DIR})
-	link_libraries(z)
-endif(HDF5_NEED_ZLIB)
-if(HDF5_NEED_SZIP)
-	link_directories(${SZIP_LIBRARY_DIR})
-	link_libraries(szlib)
-endif(HDF5_NEED_SZIP)
-if(HDF5_NEED_MPI)
-	link_directories(${MPI_LIBRARY_DIR})
-	link_libraries(mpi)
-endif(HDF5_NEED_MPI)
+link_directories(.)
+if (CGNS_USE_SHARED)
+  link_libraries(cgns_shared)
+else (CGNS_USE_SHARED)
+  link_libraries(cgns_static)
+endif (CGNS_USE_SHARED)
+link_libraries(calclib)
+if (NOT WIN32)
+  link_libraries(m)
+endif (NOT WIN32)
 
-set(cgns_info_FILES 
+if (ENABLE_HDF5 AND HDF5_LIBRARY)
+  link_libraries(${HDF5_LIBRARY})
+  if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+    link_libraries(${ZLIB_LIBRARY})
+  endif(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+  if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+    link_libraries(${SZIP_LIBRARY})
+  endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+  if(HDF5_NEED_MPI AND MPI_LIBRARY)
+    link_libraries(${MPI_LIBRARY})
+  endif(HDF5_NEED_MPI AND MPI_LIBRARY)
+endif (ENABLE_HDF5 AND HDF5_LIBRARY)
+
+set(cgns_info_FILES
 	cgns_info.c
 	cgnsutil.c
 	../common/getargs.c)
@@ -115,7 +123,7 @@ add_executable(convert_dataclass ${convert_dataclass_FILES})
 add_dependencies(convert_dataclass cgns_static calclib)
 
 # extract_subset
-set(extract_subset_FILES 
+set(extract_subset_FILES
 	extract_subset.c
 	cgnsutil.c
 	../common/getargs.c)
@@ -124,7 +132,7 @@ add_executable(extract_subset ${extract_subset_FILES})
 add_dependencies(extract_subset cgns_static calclib)
 
 # interpolate_cgns
-set(interpolate_cgns_FILES 
+set(interpolate_cgns_FILES
 	interpolate_cgns.c
 	cgnsutil.c
 	../common/getargs.c)
@@ -132,7 +140,8 @@ set(interpolate_cgns_FILES
 add_executable(interpolate_cgns ${interpolate_cgns_FILES})
 add_dependencies(interpolate_cgns cgns_static calclib)
 
-install(TARGETS
+if (WIN32)
+  install(TARGETS
 	plot3d_to_cgns
 	cgns_to_plot3d
 	patran_to_cgns
@@ -145,8 +154,37 @@ install(TARGETS
 	extract_subset
 	interpolate_cgns
 	RUNTIME DESTINATION bin)
-
-install(FILES
+  install(FILES
+	conserved.cnv
+	convert.tcl
+	dimensional.cnv
+	patran.tcl
+	plot3d.tcl
+	primitive.cnv
+	tecplot.tcl
+	util.tcl
+	utilities.mnu
+	vtk.tcl
+	DESTINATION share)
+  install(DIRECTORY help/
+	DESTINATION share/help/utilities
+	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
+	PATTERN ".svn" EXCLUDE)
+else (WIN32)
+  install(TARGETS
+	plot3d_to_cgns
+	cgns_to_plot3d
+	patran_to_cgns
+	tecplot_to_cgns
+	cgns_to_tecplot
+	cgns_to_vtk
+	convert_location
+	convert_variables
+	convert_dataclass
+	extract_subset
+	interpolate_cgns
+	RUNTIME DESTINATION bin/cgnstools)
+  install(FILES
 	conserved.cnv
 	convert.tcl
 	dimensional.cnv
@@ -158,9 +196,9 @@ install(FILES
 	utilities.mnu
 	vtk.tcl
 	DESTINATION share/cgnstools)
-
-install(DIRECTORY help/
+  install(DIRECTORY help/
 	DESTINATION share/cgnstools/help/utilities
 	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
 	PATTERN ".svn" EXCLUDE)
+endif (WIN32)
 
