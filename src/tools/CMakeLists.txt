@@ -3,20 +3,25 @@
 #########
 
 # Link all the executables to cgns and hdf5
-link_directories(. ${HDF5_LIBRARY_DIR})
-link_libraries(cgns_static hdf5)
-if(HDF5_NEED_ZLIB)
-	link_directories(${ZLIB_LIBRARY_DIR})
-	link_libraries(z)
-endif(HDF5_NEED_ZLIB)
-if(HDF5_NEED_SZIP)
-	link_directories(${SZIP_LIBRARY_DIR})
-	link_libraries(szlib)
-endif(HDF5_NEED_SZIP)
-if(HDF5_NEED_MPI)
-	link_directories(${MPI_LIBRARY_DIR})
-	link_libraries(mpi)
-endif(HDF5_NEED_MPI)
+link_directories(.)
+if (CGNS_USE_SHARED)
+  link_libraries(cgns_shared)
+else (CGNS_USE_SHARED)
+  link_libraries(cgns_static)
+endif (CGNS_USE_SHARED)
+
+if (ENABLE_HDF5 AND HDF5_LIBRARY)
+  link_libraries(${HDF5_LIBRARY})
+  if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+    link_libraries(${ZLIB_LIBRARY})
+  endif(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+  if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+    link_libraries(${SZIP_LIBRARY})
+  endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+  if(HDF5_NEED_MPI AND MPI_LIBRARY)
+    link_libraries(${MPI_LIBRARY})
+  endif(HDF5_NEED_MPI AND MPI_LIBRARY)
+endif (ENABLE_HDF5 AND HDF5_LIBRARY)
 
 # Set the files needed by each tool
 set(cgnames_FILES
@@ -39,10 +44,6 @@ set(cgnslist_FILES
 set(cgnsversion_FILES
 	cgnsversion.c
 	getargs.c)
-set(adf2hdf_FILES
-	../adfh/adf2hdf.c)
-set(hdf2adf_FILES
-	../adfh/hdf2adf.c)
 
 # Build each tool
 add_executable( cgnames     ${cgnames_FILES}     )
@@ -51,10 +52,7 @@ add_executable( cgnsconvert ${cgnsconvert_FILES} )
 add_executable( cgnsdiff    ${cgnsdiff_FILES}    )
 add_executable( cgnslist    ${cgnslist_FILES}    )
 add_executable( cgnsversion ${cgnsversion_FILES} )
-add_executable( adf2hdf     ${adf2hdf_FILES}     )
-add_executable( hdf2adf     ${hdf2adf_FILES}     )
 
-# Set the install path for the tools
 install(TARGETS
 	cgnames
 	cgnscheck
@@ -62,6 +60,33 @@ install(TARGETS
 	cgnsdiff
 	cgnslist
 	cgnsversion
-	adf2hdf
-	hdf2adf
 	RUNTIME DESTINATION bin)
+
+if (WIN32)
+  install(PROGRAMS
+        cgnsupdate.bat
+	DESTINATION bin)
+  # lets also put the dll in here so they run
+  if (CGNS_USE_SHARED)
+    install(PROGRAMS
+        ${CMAKE_BINARY_DIR}/src/cgnsdll.dll
+	DESTINATION bin)
+  endif (CGNS_USE_SHARED)
+  if (ENABLE_HDF5)
+    install(PROGRAMS
+        adf2hdf.bat
+        hdf2adf.bat
+	DESTINATION bin)
+  endif (ENABLE_HDF5)
+else (WIN32)
+  install(PROGRAMS
+        cgnsupdate
+	DESTINATION bin)
+  if (ENABLE_HDF5)
+    install(PROGRAMS
+        adf2hdf
+        hdf2adf
+	DESTINATION bin)
+  endif (ENABLE_HDF5)
+endif (WIN32)
+

@@ -7,6 +7,10 @@
 #include "cgns_io.h"
 #include "getargs.h"
 
+#ifndef CGNSTYPES_H
+# define cgsize_t int
+#endif
+
 static int nocase = 0;
 static int nospace = 0;
 static int quiet = 0;
@@ -56,7 +60,7 @@ static void err_exit (char *msg, char *name)
     exit (1);
 }
 
-static size_t data_size (char *type, int ndim, int *dims, int *size)
+static size_t data_size (char *type, int ndim, cgsize_t *dims, int *size)
 {
     int n;
     size_t bytes;
@@ -71,7 +75,7 @@ static size_t data_size (char *type, int ndim, int *dims, int *size)
         bytes = sizeof(int);
     else if (0 == strcmp (type, "I8") ||
              0 == strcmp (type, "U8"))
-        bytes = sizeof(long);
+        bytes = sizeof(cglong_t);
     else if (0 == strcmp (type, "R4")) {
         *size = 4;
         bytes = sizeof(float);
@@ -132,10 +136,11 @@ static void compare_data (char *name1, double id1, char *name2, double id2)
     size_t bytes;
     char label1[CGIO_MAX_NAME_LENGTH+1];
     char type1[CGIO_MAX_NAME_LENGTH+1];
-    int ndim1, dims1[CGIO_MAX_DIMENSIONS];
+    int ndim1, ndim2;
+    cgsize_t dims1[CGIO_MAX_DIMENSIONS];
+    cgsize_t dims2[CGIO_MAX_DIMENSIONS];
     char label2[CGIO_MAX_NAME_LENGTH+1];
     char type2[CGIO_MAX_NAME_LENGTH+1];
-    int ndim2, dims2[CGIO_MAX_DIMENSIONS];
     void *data1, *data2;
 
     /* compare labels */

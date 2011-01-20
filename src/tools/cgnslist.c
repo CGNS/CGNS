@@ -8,6 +8,10 @@
 #include "cgns_io.h"
 #include "getargs.h"
 
+#ifndef CGNSTYPES_H
+# define cgsize_t int
+#endif
+
 #define MAX_LEADER 1024
 #define INDENT     2
 
@@ -34,10 +38,10 @@ static char *usgmsg[] = {
 
 static void print_node (int cgio, double node_id)
 {
-    int n, bytes;
+    int n, ndim;
     char label[CGIO_MAX_NAME_LENGTH+1];
     char type[CGIO_MAX_NAME_LENGTH+1];
-    int ndim, dims[CGIO_MAX_DIMENSIONS];
+    cgsize_t bytes, dims[CGIO_MAX_DIMENSIONS];
 
     if ((out_flags & 1) != 0) {
         if (cgio_get_label (cgio, node_id, label))
@@ -56,9 +60,9 @@ static void print_node (int cgio, double node_id)
         if ((out_flags & 4) != 0) {
             printf (" (");
             if (ndim > 0) {
-                printf ("%d", dims[0]);
+                printf ("%ld", (long)dims[0]);
                 for (n = 1; n < ndim; n++)
-                    printf (",%d", dims[n]);
+                    printf (",%ld", (long)dims[n]);
             }
             putchar (')');
         }
@@ -73,7 +77,7 @@ static void print_node (int cgio, double node_id)
                 bytes = type[1] == '8' ? 8 : 4;
             for (n = 0; n < ndim; n++)
                 bytes *= dims[n];
-            printf (" %d", bytes);
+            printf (" %ld", (long)bytes);
         }
     }
 }

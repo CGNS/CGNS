@@ -4,19 +4,23 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifndef _WIN32
+#ifdef _WIN32
+# include <io.h>
+# define unlink _unlink
+#else
 # include <unistd.h>
 #endif
 
 #include "cgns_io.h"
 #include "getargs.h"
 
-static char options[] = "ahl";
+static char options[] = "ahfl";
 static char *usgmsg[] = {
     "usage  : cgnsconvert [options] InputFile [OutputFile]",
     "options:",
     "   -a : write ADF file",
     "   -h : write HDF5 file",
+    "   -f : force output if input format is same as output",
     "   -l : expand links in ouput file",
     NULL
 };
@@ -27,6 +31,7 @@ int main (int argc, char **argv)
     char tempfile[1024];
     int n, inptype, outtype = CGIO_FILE_NONE;
     int inpcg, outcg, links = 0;
+    int force = 0;
     struct stat inpst, outst;
     time_t ts, te;
     static char *FileType[] = {"NONE", "ADF", "HDF5"};
@@ -40,6 +45,9 @@ int main (int argc, char **argv)
                 break;
             case 'h':
                 outtype = CGIO_FILE_HDF5;
+                break;
+            case 'f':
+                force = 1;
                 break;
             case 'l':
                 links = 1;
@@ -74,6 +82,12 @@ int main (int argc, char **argv)
         cgio_error_exit("cgio_get_file_type");
 
     if (outtype == CGIO_FILE_NONE) outtype = inptype;
+    if (!force && outtype == inptype) {
+        cgio_close_file(inpcg);
+        fputs("input and output formats the same: use -f to force write\n",
+            stderr);
+        return 1;
+    }
 
     printf("converting %s file %s to %s file %s\n",
         FileType[inptype], inpfile, FileType[outtype], outfile);

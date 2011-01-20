@@ -17,7 +17,7 @@ ALL = \
 	cgnsconvert$(EXE) \
 	cgnsdiff$(EXE)
 
-all : $(ALL)
+all : $(ALL) sizes$(EXE)
 
 #----------
 
@@ -56,6 +56,13 @@ cgnsdiff.$(O) : cgnsdiff.c getargs.h
 
 #----------
 
+sizes$(EXE) : sizes.$(O)
+	$(CC) $(CFLAGS) $(CEOUT)$@ sizes.$(O) $(CLIBS)
+sizes.$(O) : sizes.c
+	$(CC) $(COPTS) -c sizes.c
+
+#----------
+
 getargs.$(O) : getargs.c getargs.h
 	$(CC) $(COPTS) -c getargs.c
 
@@ -65,10 +72,32 @@ hash.$(O) : hash.c hash.h
 cgnames.$(O) : cgnames.c cgnames.h
 	$(CC) $(COPTS) -c cgnames.c
 
+#----------
+
+install : all $(BINDIR)
+	cp $(ALL) $(BINDIR)
+	cp cgnsupdate $(BINDIR)
+	chmod +x $(BINDIR)/cgnsupdate
+
+$(BINDIR) :
+	@if [ ! -d $(BINDIR) ] ; then \
+	    echo "Making directory $(BINDIR)"; \
+	    mkdir -p $(BINDIR); \
+	    chmod 755 $(BINDIR); \
+	 fi;
+
+uninstall :
+	@for i in $(ALL) ; do \
+	  if [ -f $(BINDIR)/$$i ] ; then \
+	    /bin/rm -f $(BINDIR)/$$i; \
+	  fi; \
+	done;
+	/bin/rm -f $(BINDIR)/cgnsupdate
+
 clean :
 	-$(RM) *.$(O)
 
 allclean : clean
-	-$(RM) $(ALL) $(FALL)
+	-$(RM) $(ALL) sizes$(EXE)
 	-$(RM) *.cgns
 

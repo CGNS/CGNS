@@ -15,25 +15,21 @@ typedef struct hash_element_ {
     struct hash_element_ *next;
     struct hash_element_ **prev;
 #ifdef STATISTICS
-    int hits;
-    int seeks;
+    size_t hits;
+    size_t seeks;
 #endif
 } BUCKET;
 
 typedef struct hash_tab_ {
     BUCKET **table;     /* pointer to hash table */
-    int size;           /* Max number of elements in table */
-    int numsyms;        /* number of elements currently in table */
+    size_t size;        /* Max number of elements in table */
+    size_t numsyms;     /* number of elements currently in table */
     BUCKET *lastpos;    /* last bucket accessed by find */
     int (*compare)(     /* entry compare function */
-#ifdef PROTOTYPE
         void *, void *
-#endif
     );
-    unsigned (*hash)(   /* pointer to hashing routine */
-#ifdef PROTOTYPE
+    size_t (*hash)(     /* pointer to hashing routine */
         void *
-#endif
     );
 } HASH_TAB;
 
@@ -44,16 +40,8 @@ typedef struct hash_tab_ {
  *   47 61 89 113 127 157 193 211 257 293 359 401
  *--------------------------------------------------------------------*/
 
-HASH HashCreate (
-#ifdef PROTOTYPE
-    int size, int (*compare)(void *entry1, void *entry2),
-    unsigned (*hashfunc)(void *entry))
-#else
-    size, compare, hashfunc)
-int size;
-int (*compare)();
-unsigned (*hashfunc)();
-#endif
+HASH HashCreate (size_t size, int (*compare)(void *entry1, void *entry2),
+                 size_t (*hashfunc)(void *entry))
 {
     HASH_TAB *tabp;
 
@@ -78,18 +66,11 @@ unsigned (*hashfunc)();
  * destroy a hash table
  *--------------------------------------------------------------------*/
 
-void HashDestroy (
-#ifdef PROTOTYPE
-    HASH hash, void (*freeentry)(void *entry))
-#else
-    hash, freeentry)
-HASH hash;
-void (*freeentry)();
-#endif
+void HashDestroy (HASH hash, void (*freeentry)(void *entry))
 {
     HASH_TAB *tabp = (HASH_TAB *)hash;
     BUCKET *p, *next;
-    int i;
+    size_t i;
 
     for (i = 0; i < tabp->size; i++) {
         for (p = tabp->table[i]; p != NULL; p = next) {
@@ -108,14 +89,7 @@ void (*freeentry)();
  * recently added one is found (which will be first in the list).
  *---------------------------------------------------------------------*/
 
-void *HashFind (
-#ifdef PROTOTYPE
-    HASH hash, void *entry)
-#else
-    hash, entry)
-HASH hash;
-void *entry;
-#endif
+void *HashFind (HASH hash, void *entry)
 {
     BUCKET *p, **pf;
     HASH_TAB *tabp = (HASH_TAB *)hash;
@@ -164,14 +138,7 @@ void *entry;
  * The new symbol is placed first in the bucket.
  *--------------------------------------------------------------------*/
 
-void *HashAdd (
-#ifdef PROTOTYPE
-    HASH hash, void *entry)
-#else
-    hash, entry)
-HASH hash;
-void *entry;
-#endif
+void *HashAdd (HASH hash, void *entry)
 {
     BUCKET **p, *tmp;
     BUCKET *sym;
@@ -200,14 +167,7 @@ void *entry;
  * removes a symbol from the hash table
  *--------------------------------------------------------------------*/
 
-void *HashDelete (
-#ifdef PROTOTYPE
-    HASH hash, void *entry)
-#else
-    hash, entry)
-HASH hash;
-void *entry;
-#endif
+void *HashDelete (HASH hash, void *entry)
 {
     BUCKET *p;
     HASH_TAB *tabp = (HASH_TAB *)hash;
@@ -228,20 +188,12 @@ void *entry;
  * output the hash table
  *--------------------------------------------------------------------*/
 
-int HashList (
-#ifdef PROTOTYPE
-    HASH hash, int (*listentry)(void *entry, void *userdata),
-    void *userdata)
-#else
-    hash, listentry, userdata)
-HASH hash;
-int (*listentry)();
-void *userdata;
-#endif
+size_t HashList (HASH hash, size_t (*listentry)(void *entry, void *userdata),
+                 void *userdata)
 {
     HASH_TAB *tabp = (HASH_TAB *)hash;
     BUCKET *p;
-    int i, cnt = 0;
+    size_t i, cnt = 0;
 
     if (NULL == listentry)
         return (tabp->numsyms);
@@ -249,38 +201,32 @@ void *userdata;
         for (p = tabp->table[i]; p != NULL; p = p->next)
             cnt += (*listentry) (p->entry, userdata);
     }
-    return (cnt);
+    return cnt;
 }
 
 /*---------- HashStats ------------------------------------------------
  * print a variety of statistics about the hash table
  *---------------------------------------------------------------------*/
 
-#define MAXINT  (((unsigned) ~ 0) >> 1)
+#define MAXINT  ((size_t) ~ 0)
 #define MAXLEN  128
 
-void HastStats (
-#ifdef PROTOTYPE
-    HASH hash)
-#else
-    hash)
-HASH hash;
-#endif
+void HastStats (HASH hash)
 {
     HASH_TAB *tabp = (HASH_TAB *)hash;
     BUCKET *p;
-    int i;
-    int chain_len;
-    int chain_avg;
-    int deviation = 0;
-    int maxlen = 0;
-    int minlen = MAXINT;
-    int lengths[MAXLEN];
-    int longer = 0;
+    size_t i;
+    size_t chain_len;
+    size_t chain_avg;
+    size_t maxlen = 0;
+    size_t minlen = MAXINT;
+    size_t lengths[MAXLEN];
+    size_t longer = 0;
 #ifdef STATISTICS
-    long hits = 0;
-    long seeks = 0;
+    size_t hits = 0;
+    size_t seeks = 0;
 #endif
+    int deviation = 0;
 
     chain_avg = tabp->numsyms / tabp->size;
     memset (lengths, 0, sizeof(lengths));
@@ -303,25 +249,27 @@ HASH hash;
         if (minlen > chain_len) minlen = chain_len;
         if (maxlen < chain_len) maxlen = chain_len;
 
-        deviation += abs (chain_len - chain_avg);
+        deviation += abs ((int)(chain_len - chain_avg));
     }
 
-    printf ("%d entries in %d element hash table, ",
-        tabp->numsyms, tabp->size);
-    printf ("%d (%1.0f%%) empty.\n",
-        lengths[0], ((double)lengths[0] / tabp->size) * 100.0);
-    printf ("Mean chain length = %d, min = %d, max = %d, dev = %d\n",
-        chain_avg, minlen, maxlen, deviation / tabp->size);
+    printf ("%ld entries in %ld element hash table, ",
+        (long)tabp->numsyms, (long)tabp->size);
+    printf ("%ld (%1.0f%%) empty.\n",
+        (long)lengths[0], ((double)lengths[0] / tabp->size) * 100.0);
+    printf ("Mean chain length = %ld, min = %ld, max = %ld, dev = %ld\n",
+        (long)chain_avg, (long)minlen, (long)maxlen,
+        (long)(deviation / tabp->size));
 #ifdef STATISTICS
-    printf ("Table searchs = %ld, found = %ld, percent = %.2f\n", seeks, hits,
+    printf ("Table searchs = %ld, found = %ld, percent = %.2f\n",
+        (long)seeks, (long)hits,
         (seeks ? (double)hits / seeks * 100.0 : (double)0));
 #endif
 
     for (i = 0; i < MAXLEN; i++)
         if (lengths[i])
-            printf ("%3d chains of length %d\n", lengths[i], i);
+            printf ("%ld chains of length %d\n", (long)lengths[i], (int)i);
 
     if (longer)
-        printf ("%3d chains of length %d or longer\n", longer, MAXLEN);
+        printf ("%ld chains of length %d or longer\n", (long)longer, MAXLEN);
 }
 

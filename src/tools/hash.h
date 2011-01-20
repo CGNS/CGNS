@@ -13,60 +13,17 @@ typedef void *HASH;
 extern "C" {
 #endif
 
-HASH HashCreate (
-#ifdef PROTOTYPE
-    int size,
-    int (*compare) (void *entry1, void *entry2),
-    unsigned (*hashfunc) (void *entry)
-#endif
-);
+HASH   HashCreate  (size_t size, int (*compare) (void *entry1, void *entry2),
+                    size_t (*hashfunc) (void *entry));
+void   HashDestroy (HASH hash, void (*freeentry) (void *entry));
+void  *HashFind    (HASH hash, void *entry);
+void  *HashAdd     (HASH hash, void *entry);
+void  *HashDelete  (HASH hash, void *entry);
+size_t HashList    (HASH hash, size_t (*listentry)(void *entry, void *userdata),
+                    void *userdata);
+void  HashStats    (HASH hash);
 
-void HashDestroy (
-#ifdef PROTOTYPE
-    HASH hash,
-    void (*freeentry) (void *entry)
-#endif
-);
-
-void *HashFind (
-#ifdef PROTOTYPE
-    HASH hash,
-    void *entry
-#endif
-);
-
-void *HashAdd (
-#ifdef PROTOTYPE
-    HASH hash,
-    void *entry
-#endif
-);
-
-void *HashDelete (
-#ifdef PROTOTYPE
-    HASH hash,
-    void *entry
-#endif
-);
-
-#define HashSize(H)    HashList(H,NULL,NULL)
-
-int HashList (
-#ifdef PROTOTYPE
-    HASH hash,
-    int (*listentry)(
-        void *entry,
-        void *userdata
-    ),
-    void *userdata
-#endif
-);
-
-void HashStats (
-#ifdef PROTOTYPE
-    HASH hash
-#endif
-);
+#define HashSize(H) HashList(H,NULL,NULL)
 
 #ifdef __cplusplus
 }
