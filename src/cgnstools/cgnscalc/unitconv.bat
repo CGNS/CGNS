@@ -1,24 +1,59 @@
 @echo off
 setlocal
 
-rem may need to set these if system can't find Tcl and TK scripts
-rem set TCL_LIBRARY_PATH=c:/progra~1/tcl/lib/tcl8.3
-rem set TK_LIBRARY_PATH=c:/progra~1/tcl/lib/tk8.3
-
 rem the standard wish command will work for this
-rem set WISH=c:\progra~1\tcl\bin\wish83.exe
+rem set wish=c:\progra~1\tcl\bin\wish83.exe
 
-set VIEWERDIR=%~dps0
+set dir=%~dps0
+if exist %dir%cgconfig.bat (
+  call %dir%cgconfig.bat
+  goto getwish
+)
+if exist %dir%..\cgconfig.bat call %dir%..\cgconfig.bat
 
-if "%WISH%" == "" set WISH=%VIEWERDIR%calcwish.exe
-if not exist %WISH% goto notfound
-if not exist %VIEWERDIR%unitconv.tcl goto notfound
-
-start /b %WISH% %VIEWERDIR%unitconv.tcl
+:getwish
+if not "%wish%" == "" goto getscript
+if exist %dir%calcwish.exe (
+  set wish=%dir%calcwish.exe
+  goto getscript
+)
+if exist %dir%cgnstools\calcwish.exe (
+  set wish=%dir%cgnstools\calcwish.exe
+  goto getscript
+)
+if exist %dir%cgiowish.exe (
+  set wish=%dir%cgiowish.exe
+  goto getscript
+)
+if exist %dir%cgnstools\cgiowish.exe (
+  set wish=%dir%cgnstools\cgiowish.exe
+  goto getscript
+)
+echo calcwish.exe or cgiowish.exe not found
+pause
 goto done
 
-:notfound
-echo %WISH% and/or %VIEWERDIR%unitconv.tcl not found
+:getscript
+if exist %dir%unitconv.tcl (
+  set script=%dir%unitconv.tcl
+  goto run
+)
+if not "%CG_LIB_DIR%" == "" (
+  if exist %CG_LIB_DIR%\unitconv.tcl (
+    set script=%CG_LIB_DIR%\unitconv.tcl
+    goto run
+  )
+)
+if exist %dir%..\share\unitconv.tcl (
+  set script=%dir%..\share\unitconv.tcl
+  goto run
+)
+echo unitconv.tcl not found
 pause
+goto done
+
+:run
+start /b %wish% %script% %1
+
 :done
 endlocal

@@ -19,14 +19,7 @@ static char message[1024] = "";
  * gets error message on parsing error
  *--------------------------------------------------------------------*/
 
-static void get_error (
-#ifdef PROTOTYPE
-    int errnum, char *errmsg, int pos, char *str)
-#else
-    errnum, errmsg, pos, str)
-int errnum, pos;
-char *errmsg, *str;
-#endif
+static void get_error (int errnum, char *errmsg, int pos, char *str)
 {
     char *p = message;
 
@@ -48,17 +41,10 @@ char *errmsg, *str;
  * collect symbol names into Tcl interp result
  *-------------------------------------------------------------------*/
 
-static int get_names (
-#ifdef PROTOTYPE
-    VECSYM *sym, void *data)
+static int get_names (VECSYM *sym, void *data)
 {
-Tcl_Interp *interp = (Tcl_Interp *)data;
-#else
-    sym, interp)
-VECSYM *sym;
-Tcl_Interp *interp;
-{
-#endif
+    Tcl_Interp *interp = (Tcl_Interp *)data;
+
     if (VECSYM_EQUSTR == vecsym_type(sym)) {
         if (vecsym_nargs(sym) > 0)
             sprintf (message, "%s(%d)", vecsym_name(sym),
@@ -73,7 +59,8 @@ Tcl_Interp *interp;
             sprintf (message, "%s(%d)", vecsym_name(sym), vecsym_nargs(sym));
     }
     else if (VECSYM_VECTOR == vecsym_type(sym))
-        sprintf (message, "%s[%d]", vecsym_name(sym), vecsym_veclen(sym));
+        sprintf (message, "%s[%ld]", vecsym_name(sym),
+            (long)vecsym_veclen(sym));
     else
         strcpy (message, vecsym_name(sym));
     Tcl_AppendElement (interp, message);
@@ -84,16 +71,8 @@ Tcl_Interp *interp;
  * reset calculator (symbol table)
  *------------------------------------------------------------------*/
 
-static int CalcReset (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcReset (ClientData data, Tcl_Interp *interp,
+                      int argc, char **argv)
 {
     cgnsCalcReset ();
     return TCL_OK;
@@ -103,16 +82,8 @@ char **argv;
  * load CGNS file and initialize
  *------------------------------------------------------------------*/
 
-static int CalcInit (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcInit (ClientData data, Tcl_Interp *interp,
+                     int argc, char **argv)
 {
     int nb, idum, modify = 0;
     char name[33];
@@ -137,16 +108,8 @@ char **argv;
  * close CGNS file
  *------------------------------------------------------------------*/
 
-static int CalcDone (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcDone (ClientData data, Tcl_Interp *interp,
+                     int argc, char **argv)
 {
     cgnsCalcDone ();
     return TCL_OK;
@@ -156,18 +119,11 @@ char **argv;
  * set base for calculations
  *------------------------------------------------------------------*/
 
-static int CalcBase (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcBase (ClientData data, Tcl_Interp *interp,
+                     int argc, char **argv)
 {
-    int nb, nz, sizes[9];
+    int nb, nz;
+    cgsize_t sizes[9];
     char name[33];
 
     Tcl_ResetResult (interp);
@@ -195,16 +151,8 @@ char **argv;
  * get current base information
  *------------------------------------------------------------------*/
 
-static int CalcBaseInfo (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcBaseInfo (ClientData data, Tcl_Interp *interp,
+                         int argc, char **argv)
 {
     char *p = message;
 
@@ -243,20 +191,12 @@ char **argv;
  * set zone for calculations
  *------------------------------------------------------------------*/
 
-static int CalcZone (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcZone (ClientData data, Tcl_Interp *interp,
+                     int argc, char **argv)
 {
     int nz, ns;
     char name[33];
-    GridLocation_t location;
+    CGNS_ENUMT(GridLocation_t) location;
 
     Tcl_ResetResult (interp);
     if (2 != argc) {
@@ -283,16 +223,8 @@ char **argv;
  * get current zone information
  *------------------------------------------------------------------*/
 
-static int CalcZoneInfo (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcZoneInfo (ClientData data, Tcl_Interp *interp,
+                         int argc, char **argv)
 {
     char *p = message;
     int n, dim;
@@ -306,7 +238,7 @@ char **argv;
         ZoneTypeName[ZoneType]);
 #endif
     p += strlen (p);
-    dim = ZoneType == Structured ? CellDim : 1;
+    dim = ZoneType == CGNS_ENUMV(Structured) ? CellDim : 1;
     sprintf (p, "Dimensions: %d", ZoneDims[0]);
     p += strlen(p);
     for (n = 1; n < dim; n++) {
@@ -343,16 +275,8 @@ char **argv;
  * set solution for calculations
  *------------------------------------------------------------------*/
 
-static int CalcSoln (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcSoln (ClientData data, Tcl_Interp *interp,
+                     int argc, char **argv)
 {
     int ns, nv;
 
@@ -378,16 +302,8 @@ char **argv;
  * get current solution information
  *------------------------------------------------------------------*/
 
-static int CalcSolnInfo (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcSolnInfo (ClientData data, Tcl_Interp *interp,
+                         int argc, char **argv)
 {
     char *p = message;
     int n;
@@ -401,7 +317,7 @@ char **argv;
         GridLocationName[SolnLocation]);
 #endif
     p += strlen (p);
-    if (ZoneType == Structured) {
+    if (ZoneType == CGNS_ENUMV(Structured)) {
         sprintf (p, "Dimensions: %d", SolnDims[0]);
         p += strlen(p);
         for (n = 1; n < CellDim; n++) {
@@ -444,23 +360,15 @@ char **argv;
  * return list of regions
  *------------------------------------------------------------------*/
 
-static int CalcRegList (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcRegList (ClientData data, Tcl_Interp *interp,
+                        int argc, char **argv)
 {
     int n, dim;
     char *p = message;
 
     Tcl_ResetResult (interp);
     if (!NumZones || !cgnsZone) return TCL_OK;
-    dim = ZoneType == Structured ? CellDim : 1;
+    dim = ZoneType == CGNS_ENUMV(Structured) ? CellDim : 1;
     sprintf (p, "<Zone>[%d", ZoneDims[0]);
     p += strlen(p);
     for (n = 1; n < dim; n++) {
@@ -476,16 +384,8 @@ char **argv;
  * return region information
  *------------------------------------------------------------------*/
 
-static int CalcRegInfo (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcRegInfo (ClientData data, Tcl_Interp *interp,
+                        int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     return TCL_OK;
@@ -495,16 +395,8 @@ char **argv;
  * return list of variables
  *------------------------------------------------------------------*/
 
-static int CalcVarList (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcVarList (ClientData data, Tcl_Interp *interp,
+                        int argc, char **argv)
 {
     int n, i;
 
@@ -563,16 +455,8 @@ char **argv;
  * return variable information
  *------------------------------------------------------------------*/
 
-static int CalcVarInfo (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcVarInfo (ClientData data, Tcl_Interp *interp,
+                        int argc, char **argv)
 {
     char *p = message;
     Variable *var;
@@ -599,11 +483,11 @@ char **argv;
           else
               sprintf (p, "Value     : %g\n", var->vd->f.val);
     }
-    else if (var->type == 1 || SolnLocation == Vertex) {
+    else if (var->type == 1 || SolnLocation == CGNS_ENUMV(Vertex)) {
           sprintf (p, "Type      : %s\nLocation  : Vertex\n",
               var->type == 1 ? "Coordinate" : "Solution");
           p += strlen (p);
-          if (ZoneType == Structured)
+          if (ZoneType == CGNS_ENUMV(Structured))
               sprintf (p, "Size      : %d (%d x %d x %d)\n", var->len,
                   ZoneDims[0], ZoneDims[1], ZoneDims[2]);
           else
@@ -617,7 +501,7 @@ char **argv;
               GridLocationName[SolnLocation]);
 #endif
           p += strlen (p);
-          if (ZoneType == Structured) {
+          if (ZoneType == CGNS_ENUMV(Structured)) {
               sprintf (p, "Size      : %d (%d x %d x %d)\n", var->len,
                   SolnDims[0], SolnDims[1], SolnDims[2]);
               p += strlen (p);
@@ -674,16 +558,8 @@ char **argv;
  * return list of symbols
  *------------------------------------------------------------------*/
 
-static int CalcSymList (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcSymList (ClientData data, Tcl_Interp *interp,
+                        int argc, char **argv)
 {
     Tcl_ResetResult (interp);
     sym_list (0, get_names, interp);
@@ -694,16 +570,8 @@ char **argv;
  * return symbol information
  *------------------------------------------------------------------*/
 
-static int CalcSymInfo (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcSymInfo (ClientData data, Tcl_Interp *interp,
+                        int argc, char **argv)
 {
     char *p = message;
     VECSYM *sym;
@@ -743,8 +611,8 @@ char **argv;
             sprintf (p, "Arguments : %d", vecsym_nargs(sym));
     }
     else if (vecsym_type(sym) == VECSYM_VECTOR)
-        sprintf (p, "Type      : vector\nSize      : %d",
-            vecsym_veclen(sym));
+        sprintf (p, "Type      : vector\nSize      : %ld",
+            (long)vecsym_veclen(sym));
     else
         sprintf (p, "Type      : value\nValue     : %g",
             vecsym_value(sym));
@@ -778,18 +646,10 @@ char **argv;
  * parse expression and return results
  *------------------------------------------------------------------*/
 
-static int CalcCommand (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcCommand (ClientData data, Tcl_Interp *interp,
+                        int argc, char **argv)
 {
-    int n;
+    size_t n;
     VECFLOAT *f, fmin, fmax;
     VECSYM *sym;
 
@@ -827,8 +687,8 @@ char **argv;
             if (fmin > f[n]) fmin = f[n];
             if (fmax < f[n]) fmax = f[n];
         }
-        sprintf (message, "%s -> len = %d, min = %g, max = %g",
-            vecsym_name(sym), vecsym_veclen(sym), fmin, fmax);
+        sprintf (message, "%s -> len = %ld, min = %g, max = %g",
+            vecsym_name(sym), (long)vecsym_veclen(sym), fmin, fmax);
     }
     else
         strcpy (message, vecsym_name(sym));
@@ -841,16 +701,8 @@ char **argv;
  * delete symbols
  *------------------------------------------------------------------*/
 
-static int CalcDelete (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcDelete (ClientData data, Tcl_Interp *interp,
+                       int argc, char **argv)
 {
     int i, n, nargs;
     CONST char **args;
@@ -871,16 +723,8 @@ char **argv;
  * save computed variables to results file
  *------------------------------------------------------------------*/
 
-static int CalcSave (
-#ifdef PROTOTYPE
-    ClientData data, Tcl_Interp *interp, int argc, char **argv)
-#else
-    data, interp, argc, argv)
-ClientData data;
-Tcl_Interp *interp;
-int argc;
-char **argv;
-#endif
+static int CalcSave (ClientData data, Tcl_Interp *interp,
+                     int argc, char **argv)
 {
     Tcl_SetResult (interp, "not implemented yet", TCL_STATIC);
     return TCL_ERROR;

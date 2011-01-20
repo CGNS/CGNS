@@ -2,45 +2,80 @@
 # cgnscalc #
 ############
 
-include_directories(${TK_INCLUDE_DIR})
+include_directories(${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH})
 include_directories(../calclib)
-link_directories(. ${HDF5_LIBRARY_DIR} ${TK_LIBRARY_DIR} ${TCL_LIBRARY_DIR})
-link_libraries(cgns_static calclib hdf5 m tcl tk)
-if(HDF5_NEED_ZLIB)
-	link_directories(${ZLIB_LIBRARY_DIR})
-	link_libraries(z)
-endif(HDF5_NEED_ZLIB)
-if(HDF5_NEED_SZIP)
-	link_directories(${SZIP_LIBRARY_DIR})
-	link_libraries(szlib)
-endif(HDF5_NEED_SZIP)
-if(HDF5_NEED_MPI)
-	link_directories(${MPI_LIBRARY_DIR})
-	link_libraries(mpi)
-endif(HDF5_NEED_MPI)
+link_directories(.)
+if (CGNS_USE_SHARED)
+  link_libraries(cgns_shared)
+else (CGNS_USE_SHARED)
+  link_libraries(cgns_static)
+endif (CGNS_USE_SHARED)
+link_libraries(calclib ${TCL_LIBRARY} ${TK_LIBRARY})
 
-set(cgnscalc_FILES 
+if (ENABLE_HDF5 AND HDF5_LIBRARY)
+  link_libraries(${HDF5_LIBRARY})
+  if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+    link_libraries(${ZLIB_LIBRARY})
+  endif(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+  if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+    link_libraries(${SZIP_LIBRARY})
+  endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+  if(HDF5_NEED_MPI AND MPI_LIBRARY)
+    link_libraries(${MPI_LIBRARY})
+  endif(HDF5_NEED_MPI AND MPI_LIBRARY)
+endif (ENABLE_HDF5 AND HDF5_LIBRARY)
+
+if (WIN32)
+  set(cgnscalc_FILES
+	calctcl.c
+	winmain.c)
+else (WIN32)
+  link_libraries(X11 m)
+  set(cgnscalc_FILES
 	calctcl.c
 	calcwish.c)
+endif (WIN32)
 
 add_executable(calcwish ${cgnscalc_FILES})
 add_dependencies(calcwish calclib cgns_static)
 
-install(TARGETS
+if (WIN32)
+  set_target_properties(calcwish PROPERTIES
+  	LINK_FLAGS /subsystem:windows)
+endif (WIN32)
+
+if (WIN32)
+  install(TARGETS
 	calcwish
 	RUNTIME DESTINATION bin)
-
-install(PROGRAMS
+  install(PROGRAMS
+	cgnscalc.bat
+	unitconv.bat
+	DESTINATION bin)
+  install(FILES
+	cgnscalc.tcl
+	unitconv.tcl
+	cgnscalc.ico
+	cgnscalc.png
+	cgnscalc-icon.xbm
+	cgnscalc-mask.xbm
+	unitconv.ico
+	unitconv.png
+	unitconv.xbm
+	DESTINATION share)
+else (WIN32)
+  install(TARGETS
+	calcwish
+	RUNTIME DESTINATION bin/cgnstools)
+  install(PROGRAMS
 	cgnscalc.sh
 	DESTINATION bin
 	RENAME cgnscalc)
-
-install(PROGRAMS
+  install(PROGRAMS
 	unitconv.sh
 	DESTINATION bin
 	RENAME unitconv)
-
-install(FILES
+  install(FILES
 	cgnscalc.tcl
 	unitconv.tcl
 	cgnscalc.ico
@@ -51,3 +86,5 @@ install(FILES
 	unitconv.png
 	unitconv.xbm
 	DESTINATION share/cgnstools)
+endif (WIN32)
+

@@ -3,20 +3,23 @@ include ..\make.win
 CALCDIR = ..\calclib
 CALCLIB = $(CALCDIR)\cgnscalc.lib
 
-CFLAGS = $(COPTS) -I$(CGNSDIR) -I$(CALCDIR) $(TCLINC)
+COPTS = $(CFLAGS) -I$(CGNSDIR) -I$(CALCDIR) $(TCLINC)
 
 #--------------------------------------------------
 
 all : calcwish.exe
 dll : calctcl.dll
 
-install : $(INSTALLDIR) calcwish.exe
-	-$(INSTALL) calcwish.exe $(INSTALLDIR)
-	-$(INSTALL) cgnscalc.tcl $(INSTALLDIR)
-	-$(INSTALL) cgnscalc.bat $(INSTALLDIR)
-	-$(INSTALL) unitconv.tcl $(INSTALLDIR)
-	-$(INSTALL) unitconv.bat $(INSTALLDIR)
-	-$(INSTALL) *.ico $(INSTALLDIR)
+install : calcwish.exe $(BINDIR)
+	-$(INSTALL) cgnscalc.bat $(BINDIR)
+	-$(INSTALL) calcwish.exe $(BINDIR)
+	-$(INSTALL) cgnscalc.tcl $(BINDIR)
+	-$(INSTALL) unitconv.bat $(BINDIR)
+	-$(INSTALL) unitconv.tcl $(BINDIR)
+	-$(INSTALL) *.ico $(BINDIR)
+
+$(BINDIR) : $(INSTALLDIR)
+	-mkdir $(BINDIR)
 
 $(INSTALLDIR) :
 	-mkdir $(INSTALLDIR)
@@ -38,12 +41,12 @@ calctcl.dll : calctcl-dll.obj $(CALCLIB) $(CGNSLIB)
 	$(CALCLIB) $(CGNSLIB) $(BUILDLIBS) $(CLIBS) $(TCLLIB) $(TKLIB) $(dlllibs)
 
 calctcl-dll.obj : calctcl.c
-	$(CC) $(CFLAGS) -DBUILD_DLL -Fo$@ -c calctcl.c
+	$(CC) $(COPTS) -DBUILD_DLL -Fo$@ -c calctcl.c
 
 #--------------------------------------------------
 
 .c.obj :
-	$(CC) $(CFLAGS) -Fo$@ -c $<
+	$(CC) $(COPTS) -Fo$@ -c $<
 
 clean:
 	-$(RM) *.obj

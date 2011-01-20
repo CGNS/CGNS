@@ -47,11 +47,6 @@ install-prog :
 	@chmod +x $(BIN_INSTALL_DIR)/cgnscalc
 	@$(INSTALL_PROG) unitconv.sh $(BIN_INSTALL_DIR)/unitconv
 	@chmod +x $(BIN_INSTALL_DIR)/unitconv
-	@if [ ! -f $(BIN_INSTALL_DIR)/cgsystem ] ; then \
-	  echo "installing cgsystem to $(BIN_INSTALL_DIR)"; \
-	  $(INSTALL_PROG) ../cgsystem $(BIN_INSTALL_DIR); \
-	  chmod +x $(BIN_INSTALL_DIR)/cgsystem; \
-	fi;
 	@if [ ! -f $(EXE_INSTALL_DIR)/cgconfig ] ; then \
 	  echo "installing configuration file to $(EXE_INSTALL_DIR)"; \
 	  $(INSTALL_DATA) ../cgconfig $(EXE_INSTALL_DIR)/cgconfig; \

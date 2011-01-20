@@ -1,17 +1,47 @@
 @echo off
 setlocal
 
-set VIEWERDIR=%~dps0
-if not exist %VIEWERDIR%calcwish.exe goto notfound
-if not exist %VIEWERDIR%cgnscalc.tcl goto notfound
+set dir=%~dps0
+if exist %dir%cgconfig.bat (
+  call %dir%cgconfig.bat
+  goto getwish
+)
+if exist %dir%..\cgconfig.bat call %dir%..\cgconfig.bat
 
-call %VIEWERDIR%..\cgconfig.bat
-
-start /b %VIEWERDIR%calcwish.exe %VIEWERDIR%cgnscalc.tcl %1
+:getwish
+if exist %dir%calcwish.exe (
+  set wish=%dir%calcwish.exe
+  goto getscript
+)
+if exist %dir%cgnstools\calcwish.exe (
+  set wish=%dir%cgnstools\calcwish.exe
+  goto getscript
+)
+echo calcwish.exe not found
+pause
 goto done
 
-:notfound
-echo calcwish.exe and/or cgnscalc.tcl not found in %VIEWERDIR%
+:getscript
+if exist %dir%cgnscalc.tcl (
+  set script=%dir%cgnscalc.tcl
+  goto run
+)
+if not "%CG_LIB_DIR%" == "" (
+  if exist %CG_LIB_DIR%\cgnscalc.tcl (
+    set script=%CG_LIB_DIR%\cgnscalc.tcl
+    goto run
+  )
+)
+if exist %dir%..\share\cgnscalc.tcl (
+  set script=%dir%..\share\cgnscalc.tcl
+  goto run
+)
+echo cgnscalc.tcl not found
 pause
+goto done
+
+:run
+start /b %wish% %script% %1
+
 :done
 endlocal
