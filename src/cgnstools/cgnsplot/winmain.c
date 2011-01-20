@@ -337,7 +337,7 @@ static int Proc_LoadIcon(ClientData data, Tcl_Interp *interp,
         Tcl_SetResult (interp, "icon not found", TCL_STATIC);
         return TCL_ERROR;
     }
-    SetClassLong (hwnd, GCL_HICON, (long)hIcon);
+    SetClassLongPtr (hwnd, GCLP_HICON, (LONG_PTR)hIcon);
     Tcl_ResetResult (interp);
     return TCL_OK;
 }

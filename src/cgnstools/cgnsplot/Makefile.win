@@ -1,6 +1,6 @@
 include ..\make.win
 
-CFLAGS = $(COPTS) -I..\common -I$(CGNSDIR) $(TCLINC)
+COPTS = $(CFLAGS) -I..\common -I$(CGNSDIR) $(TCLINC)
 
 #--------------------------------------------------
 
@@ -9,27 +9,30 @@ dll : cgnstcl.dll
 
 install : install-prog install-help
 
-install-prog : plotwish.exe $(INSTALLDIR)
-	-$(INSTALL) plotwish.exe $(INSTALLDIR)
-	-$(INSTALL) cgnsplot.tcl $(INSTALLDIR)
-	-$(INSTALL) cgnsplot.bat $(INSTALLDIR)
-	-$(INSTALL) *.ico $(INSTALLDIR)
+install-prog : plotwish.exe $(BINDIR)
+	-$(INSTALL) plotwish.exe $(BINDIR)
+	-$(INSTALL) cgnsplot.tcl $(BINDIR)
+	-$(INSTALL) cgnsplot.bat $(BINDIR)
+	-$(INSTALL) *.ico $(BINDIR)
 
-install-help : $(INSTALLDIR)\help\cgnsplot\images
-	-$(INSTALL) help\*.html $(INSTALLDIR)\help\cgnsplot
-	-$(INSTALL) help\images\*.* $(INSTALLDIR)\help\cgnsplot\images
+install-help : $(BINDIR)\help\cgnsplot\images
+	-$(INSTALL) help\*.html $(BINDIR)\help\cgnsplot
+	-$(INSTALL) help\images\*.* $(BINDIR)\help\cgnsplot\images
+
+$(BINDIR) : $(INSTALLDIR)
+	-mkdir $(BINDIR)
 
 $(INSTALLDIR) :
 	-mkdir $(INSTALLDIR)
 
-$(INSTALLDIR)\help\cgnsplot\images : $(INSTALLDIR)\help\cgnsplot
-	-mkdir $(INSTALLDIR)\help\cgnsplot\images
+$(BINDIR)\help\cgnsplot\images : $(BINDIR)\help\cgnsplot
+	-mkdir $(BINDIR)\help\cgnsplot\images
 
-$(INSTALLDIR)\help\cgnsplot : $(INSTALLDIR)\help
-	-mkdir $(INSTALLDIR)\help\cgnsplot
+$(BINDIR)\help\cgnsplot : $(BINDIR)\help
+	-mkdir $(BINDIR)\help\cgnsplot
 
-$(INSTALLDIR)\help :
-	-mkdir $(INSTALLDIR)\help
+$(BINDIR)\help :
+	-mkdir $(BINDIR)\help
 
 #--------------------------------------------------
 
@@ -41,7 +44,7 @@ plotwish.exe : winmain.obj cgnstcl.obj hash.obj
 
 winmain.obj : winmain.c
 cgnstcl.obj : cgnstcl.c
-	$(CC) $(CFLAGS) $(PLOTOPTS) -c cgnstcl.c
+	$(CC) $(COPTS) $(PLOTOPTS) -c cgnstcl.c
 
 #--------------------------------------------------
 
@@ -51,17 +54,17 @@ cgnstcl.dll : cgnstcl-dll.obj hash.obj cgnames.obj $(CGNSLIB)
 	$(dlllibs) $(ogllibs)
 
 cgnstcl-dll.obj : cgnstcl.c
-	$(CC) $(CFLAGS) $(PLOTOPTS) -DBUILD_DLL -Fo$@ -c cgnstcl.c
+	$(CC) $(COPTS) $(PLOTOPTS) -DBUILD_DLL -Fo$@ -c cgnstcl.c
 
 #--------------------------------------------------
 
 hash.obj : ..\common\hash.c ..\common\hash.h
-	$(CC) $(CFLAGS) -Fohash.obj -c ..\common\hash.c
+	$(CC) $(COPTS) -Fohash.obj -c ..\common\hash.c
 
 #--------------------------------------------------
 
 .c.obj :
-	$(CC) $(CFLAGS) -Fo$@ -c $<
+	$(CC) $(COPTS) -Fo$@ -c $<
 
 .obj.exe :
 	$(LINK) $(LFLAGS) /out:$@ $< $(CGNSLIB)
