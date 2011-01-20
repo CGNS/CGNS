@@ -8,13 +8,7 @@
  * display usage message and exit
  *-------------------------------------------------------------------*/
 
-void print_usage (
-#ifdef PROTOTYPE
-    char **usgmsg, char *errmsg)
-#else
-    usgmsg, errmsg)
-char **usgmsg, *errmsg;
-#endif
+void print_usage (char **usgmsg, char *errmsg)
 {
     int n;
 
@@ -34,14 +28,7 @@ int argind = 0;  /* index into argv array */
 int argerr = 1;  /* error output flag */
 char *argarg;    /* pointer to argument string */
 
-int getargs (
-#ifdef PROTOTYPE
-    int argc, char **argv, char *ostr)
-#else
-    argc, argv, ostr)
-int argc;
-char **argv, *ostr;
-#endif
+int getargs (int argc, char **argv, char *ostr)
 {
     int argopt;
     char *oli;
