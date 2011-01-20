@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdarg.h>
 #include "../fortran_macros.h"
 
 static int check_args(int *arg1, char *arg2, int *arg3, int len)
@@ -67,3 +68,44 @@ void FMNAME(adfsub,ADFSUB)(int *i, STR_PSTR(str), int *j STR_PLEN(str))
     else
         puts ("OK");
 }
+
+#ifdef WIN32_FORTRAN
+void __stdcall varsub(int *i, ...)
+#else
+void FMNAME(varsub, VARSUB)(int *i, ...)
+#endif
+{
+
+#ifdef _CRAY
+    _fcd cray_string;
+#endif
+    int len, *j;
+    char *str;
+    va_list ap;
+
+    va_start(ap, i);
+
+#ifdef _CRAY
+    cray_string = va_arg(ap, _fcd);
+    str = _fcdtocp(cray_string);
+    len = _fcdlen(cray_string);
+#else
+    str = va_arg(ap, char *);
+# ifdef WIN32_FORTRAN
+    len = va_arg(ap, int);
+# endif
+#endif
+    j = va_arg(ap, int *);
+
+#if !defined(_CRAY) && !defined(WIN32_FORTRAN)
+    len = va_arg(ap, int);
+#endif
+    va_end(ap);
+
+    puts ("checking varsub");
+    if (check_args (i, str, j, len))
+        puts ("incorrect interface");
+    else
+        puts ("OK");
+}
+

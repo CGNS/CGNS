@@ -6,5 +6,6 @@
       string = 'string'
       call cg_sub(i,string,j)
       call adfsub(i,string,j)
+      call varsub(i,string,j)
       stop
       end
