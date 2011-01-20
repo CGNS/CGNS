@@ -17,6 +17,9 @@ File:   ADF_internals.h
 #include "ADF.h"
 #include <ctype.h> /* needed for toupper */
 
+#define NEW_ID_MAPPING
+#define NEW_DISK_POINTER
+
 /***********************************************************************
     Defines
 ***********************************************************************/
@@ -29,7 +32,11 @@ File:   ADF_internals.h
 #ifndef DISK_BLOCK_SIZE
 #define DISK_BLOCK_SIZE           4096
 #endif
-#define MAXIMUM_FILES             0x3fff
+#ifdef NEW_ID_MAPPING
+# define MAXIMUM_FILES             0x1fff
+#else
+# define MAXIMUM_FILES             0x3fff
+#endif
 #define MAXIMUM_32_BITS     (4294967295U)
 
 #define BLANK_FILE_BLOCK             0
@@ -84,6 +91,7 @@ File:   ADF_internals.h
 #define IEEE_LITTLE_64_FORMAT_STRING "IEEE_LITTLE_64"
 #define CRAY_FORMAT_STRING           "CRAY"
 #define NATIVE_FORMAT_STRING         "NATIVE"
+#define LEGACY_FORMAT_STRING         "LEGACY"
 
 #ifndef FALSE
 #define FALSE (0)
@@ -111,8 +119,8 @@ File:   ADF_internals.h
     **/
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 struct  DISK_POINTER {
-    unsigned long   block ;   /* 0 to 4,294,967,295 (8 ASCII-Hex bytes) */
-    unsigned long   offset ;  /* 0 to 4096 (4 ASCII-Hex bytes) */
+    cgulong_t block ;   /* 0 to 4,294,967,295 (8 ASCII-Hex bytes) */
+    cgulong_t offset ;  /* 0 to 4096 (4 ASCII-Hex bytes) */
     } ;
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -176,7 +184,7 @@ struct  NODE_HEADER {
    struct        DISK_POINTER  sub_node_table ;
    char          data_type [ADF_DATA_TYPE_LENGTH] ;
    unsigned int  number_of_dimensions ;
-   unsigned int  dimension_values [ADF_MAX_DIMENSIONS] ;
+   cgulong_t     dimension_values [ADF_MAX_DIMENSIONS] ;
    unsigned int  number_of_data_chunks ;
    struct        DISK_POINTER  data_chunks ;
    char          node_end_tag [TAG_SIZE] ;
@@ -201,7 +209,7 @@ struct TOKENIZED_DATA_TYPE {
    char           type[2] ;
    int            file_type_size ;
    int            machine_type_size ;
-   unsigned long  length ;
+   unsigned int   length ;
    } ;
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -234,11 +242,8 @@ typedef struct {
     char format;
     char os_size;
     char link_separator;
-#ifdef USE_STREAM_IO
-    FILE *file;
-#else
+    char old_version;
     int file;
-#endif
 } ADF_FILE;
 
 extern ADF_FILE *ADF_file;
@@ -282,8 +287,8 @@ extern  void    ADFI_big_endian_to_cray(
 	    const char to_format,
 	    const char to_os_size,
 	    const char data_type[2],
-	    const unsigned long delta_from_bytes,
-	    const unsigned long delta_to_bytes,
+	    const cgulong_t delta_from_bytes,
+	    const cgulong_t delta_to_bytes,
 	    const unsigned char *from_data,
 	    unsigned char *to_data,
             int *error_return );
@@ -294,8 +299,8 @@ extern  void    ADFI_big_little_endian_swap(
 	    const char to_format,
 	    const char to_os_size,
 	    const char data_type[2],
-	    const unsigned long delta_from_bytes,
-	    const unsigned long delta_to_bytes,
+	    const cgulong_t delta_from_bytes,
+	    const cgulong_t delta_to_bytes,
 	    const unsigned char *from_data,
 	    unsigned char *to_data,
             int *error_return );
@@ -306,8 +311,8 @@ extern  void    ADFI_big_endian_32_swap_64(
 	    const char to_format,
 	    const char to_os_size,
 	    const char data_type[2],
-	    const unsigned long delta_from_bytes,
-	    const unsigned long delta_to_bytes,
+	    const cgulong_t delta_from_bytes,
+	    const cgulong_t delta_to_bytes,
 	    const unsigned char *from_data,
 	    unsigned char *to_data,
             int *error_return );
@@ -362,12 +367,12 @@ extern  void    ADFI_convert_number_format(
 
 extern  void    ADFI_count_total_array_points(
             const unsigned int ndim,
-            const unsigned int dims[],
-            const int dim_start[],
-            const int dim_end[],
-            const int dim_stride[],
-            unsigned long *total_points,
-            unsigned long *starting_offset,
+            const cgulong_t dims[],
+            const cgsize_t dim_start[],
+            const cgsize_t dim_end[],
+            const cgsize_t dim_stride[],
+            cgulong_t *total_points,
+            cgulong_t *starting_offset,
             int *error_return ) ;
 
 extern  void    ADFI_cray_to_big_endian(
@@ -376,8 +381,8 @@ extern  void    ADFI_cray_to_big_endian(
 	    const char to_format,
 	    const char to_os_size,
 	    const char data_type[2],
-	    const unsigned long delta_from_bytes,
-	    const unsigned long delta_to_bytes,
+	    const cgulong_t delta_from_bytes,
+	    const cgulong_t delta_to_bytes,
 	    const unsigned char *from_data,
 	    unsigned char *to_data,
             int *error_return );
@@ -388,8 +393,8 @@ extern  void    ADFI_cray_to_little_endian(
 	    const char to_format,
 	    const char to_os_size,
 	    const char data_type[2],
-	    const unsigned long delta_from_bytes,
-	    const unsigned long delta_to_bytes,
+	    const cgulong_t delta_from_bytes,
+	    const cgulong_t delta_to_bytes,
 	    const unsigned char *from_data,
 	    unsigned char *to_data,
             int *error_return );
@@ -448,20 +453,20 @@ extern  void    ADFI_file_and_machine_compare(
 
 extern  void    ADFI_file_block_offset_2_ID(
             const int file_index,
-            const unsigned long file_block,
-            const unsigned long block_offset,
+            const cgulong_t file_block,
+            const cgulong_t block_offset,
             double *ID,
             int *error_return ) ;
 
 extern  void    ADFI_file_free(
             const int file_index,
             const struct DISK_POINTER *block_offset,
-            const long number_of_bytes,
+            const cglong_t number_of_bytes,
             int *error_return ) ;
 
 extern  void    ADFI_file_malloc(
             const int file_index,
-            const long size_bytes,
+            const cglong_t size_bytes,
             struct DISK_POINTER *block_offset,
             int *error_return ) ;
 
@@ -482,8 +487,8 @@ extern  void    ADFI_fill_initial_node_header(
 
 extern  void    ADFI_fseek_file(
             const unsigned int file_index,
-            const unsigned long file_block,
-            const unsigned long block_offset,
+            const cgulong_t file_block,
+            const cgulong_t block_offset,
             int *error_return ) ;
 
 extern  void    ADFI_get_current_date(
@@ -506,18 +511,18 @@ extern  void   ADFI_get_file_index_from_name(
 extern  void    ADFI_ID_2_file_block_offset(
             const double ID,
             unsigned int *file_index,
-            unsigned long *file_block,
-            unsigned long *block_offset,
+            cgulong_t *file_block,
+            cgulong_t *block_offset,
             int *error_return ) ;
 
 extern  void    ADFI_increment_array(
             const unsigned int ndim,
-            const unsigned int dims[],
-            const int dim_start[],
-            const int dim_end[],
-            const int dim_stride[],
-            int current_position[],
-            unsigned long *element_offset,
+            const cgulong_t dims[],
+            const cgsize_t dim_start[],
+            const cgsize_t dim_end[],
+            const cgsize_t dim_stride[],
+            cglong_t current_position[],
+            cgulong_t *element_offset,
             int *error_return ) ;
 
 extern  void    ADFI_is_block_in_core() ;
@@ -528,8 +533,8 @@ extern  void    ADFI_little_endian_to_cray(
 	    const char to_format,
 	    const char to_os_size,
 	    const char data_type[2],
-	    const unsigned long delta_from_bytes,
-	    const unsigned long delta_to_bytes,
+	    const cgulong_t delta_from_bytes,
+	    const cgulong_t delta_to_bytes,
 	    const unsigned char *from_data,
 	    unsigned char *to_data,
             int *error_return );
@@ -540,8 +545,8 @@ extern  void    ADFI_little_endian_32_swap_64(
 	    const char to_format,
 	    const char to_os_size,
 	    const char data_type[2],
-	    const unsigned long delta_from_bytes,
-	    const unsigned long delta_to_bytes,
+	    const cgulong_t delta_from_bytes,
+	    const cgulong_t delta_to_bytes,
 	    const unsigned char *from_data,
 	    unsigned char *to_data,
             int *error_return );
@@ -564,9 +569,9 @@ extern  void    ADFI_read_data_chunk(
             const struct DISK_POINTER *block_offset,
             struct TOKENIZED_DATA_TYPE *tokenized_data_type,
             const int data_size,
-            const long chunk_bytes,
-	    const long start_offset,
-            const long total_bytes,
+            const cglong_t chunk_bytes,
+	    const cglong_t start_offset,
+            const cglong_t total_bytes,
             char *data,
             int *error_return ) ;
 
@@ -578,11 +583,11 @@ extern  void    ADFI_read_data_chunk_table(
 
 extern  void    ADFI_read_data_translated(
             const unsigned int file_index,
-            const unsigned long file_block,
-            const unsigned long block_offset,
+            const cgulong_t file_block,
+            const cgulong_t block_offset,
             const struct TOKENIZED_DATA_TYPE *tokenized_data_type,
             const int data_size,
-            const long total_bytes,
+            const cglong_t total_bytes,
             char *data,
             int *error_return ) ;
 
@@ -590,16 +595,16 @@ extern  void    ADFI_read_disk_block() ;
 
 extern  void    ADFI_read_disk_pointer_from_disk(
             const unsigned int file_index,
-            const unsigned long file_block,
-            const unsigned long block_offset,
+            const cgulong_t file_block,
+            const cgulong_t block_offset,
             struct DISK_POINTER *block_and_offset,
             int *error_return ) ;
 
 extern  void    ADFI_read_file(
             const unsigned int file_index,
-            const unsigned long file_block,
-            const unsigned long block_offset,
-            const unsigned int data_length,
+            const cgulong_t file_block,
+            const cgulong_t block_offset,
+            const cglong_t data_length,
             char *data,
             int *error_return ) ;
 
@@ -679,9 +684,9 @@ extern  void    ADFI_write_data_chunk(
             const struct DISK_POINTER *block_offset,
             const struct TOKENIZED_DATA_TYPE *tokenized_data_type,
             const int data_size,
-            const long chunk_bytes,
-	    const long start_offset,
-            const long total_bytes,
+            const cglong_t chunk_bytes,
+	    const cglong_t start_offset,
+            const cglong_t total_bytes,
             const char *data,
             int *error_return ) ;
 
@@ -694,11 +699,11 @@ extern  void    ADFI_write_data_chunk_table(
 
 extern  void    ADFI_write_data_translated(
             const unsigned int file_index,
-            const unsigned long file_block,
-            const unsigned long block_offset,
+            const cgulong_t file_block,
+            const cgulong_t block_offset,
             const struct TOKENIZED_DATA_TYPE *tokenized_data_type,
             const int data_size,
-            const long total_bytes,
+            const cglong_t total_bytes,
             const char *data,
             int *error_return ) ;
 
@@ -706,16 +711,16 @@ extern  void    ADFI_write_disk_block() ;
 
 extern  void    ADFI_write_disk_pointer_2_disk(
             const unsigned int file_index,
-            const unsigned long file_block,
-            const unsigned long block_offset,
+            const cgulong_t file_block,
+            const cgulong_t block_offset,
             const struct DISK_POINTER *block_and_offset,
             int *error_return ) ;
 
 extern  void    ADFI_write_file(
             const unsigned int file_index,
-            const unsigned long file_block,
-            const unsigned long block_offset,
-            const unsigned int data_length,
+            const cgulong_t file_block,
+            const cgulong_t block_offset,
+            const cglong_t data_length,
             const char *data,
             int *error_return ) ;
 
@@ -769,10 +774,10 @@ extern  void    ADFI_fflush_file(
      
 extern  int     ADFI_stack_control(
 	    const unsigned int file_index,
-	    const unsigned long file_block,
-	    const unsigned long block_offset,
+	    const cgulong_t file_block,
+	    const unsigned int block_offset,
 	    const int stack_mode, const int stack_type,
-	    const unsigned long data_length,
+	    const unsigned int data_length,
 	    char *stack_data ) ;
 
 

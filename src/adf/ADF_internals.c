@@ -173,12 +173,29 @@ bytes   start   end   description      range / format
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <assert.h>
+
 #if defined(_WIN32) && !defined(__NUTC__)
-#include <io.h>
+# include <io.h>
+# define ACCESS _access
+# define OPEN   _open
+# define CLOSE  _close
+# define FILENO _fileno
+# define READ   _read
+# define WRITE  _write
+# define LSEEK  _lseek
 #else
-#include <unistd.h>
-#include <sys/param.h>
+# include <unistd.h>
+# include <sys/param.h>
+# define ACCESS access
+# define OPEN   open
+# define CLOSE  close
+# define FILENO fileno
+# define READ   read
+# define WRITE  write
+# define LSEEK  lseek
 #endif
+
 #include "ADF.h"
 #include "ADF_internals.h"
 #ifdef MEM_DEBUG
@@ -195,29 +212,22 @@ bytes   start   end   description      range / format
 /***********************************************************************
    Large File Support - files > 2Gb on 32-bit machines
  ***********************************************************************/
-
-#ifdef USE_STREAM_IO
-  typedef long file_offset_t;
-# define ADFI_read(I,S,B)  fread(B,1,S,ADF_file[I].file)
-# define ADFI_write(I,S,B) fwrite(B,1,S,ADF_file[I].file)
+#ifdef HAVE_OPEN64
+# define file_open open64
 #else
-# ifdef HAVE_OPEN64
-#  define file_open open64
+# define file_open OPEN
+#endif
+#ifdef HAVE_LSEEK64
+# ifdef _WIN32
+   typedef __int64 file_offset_t;
+#  define file_seek _lseeki64
 # else
-#  define file_open open
+   typedef off64_t file_offset_t;
+#  define file_seek lseek64
 # endif
-# ifdef HAVE_LSEEK64
-#  ifdef _WIN32
-    typedef __int64 file_offset_t;
-#   define file_seek _lseeki64
-#  else
-    typedef off64_t file_offset_t;
-#   define file_seek lseek64
-#  endif
-# else
-   typedef off_t file_offset_t;
-#  define file_seek lseek
-# endif
+#else
+  typedef off_t file_offset_t;
+# define file_seek LSEEK
 #endif
 
 extern int ADF_sys_err;
@@ -252,16 +262,16 @@ static  int    block_of_00_initialized = FALSE ;
 static unsigned char from_to_data[ CONVERSION_BUFF_SIZE ] ;
 
     /** read/write buffering variables **/
-static char    rd_block_buffer[DISK_BLOCK_SIZE] ;
-static long    last_rd_block = -1 ;
-static long    last_rd_file = -1 ;
-static long    num_in_rd_block = -1 ;
-static char    wr_block_buffer[DISK_BLOCK_SIZE] ;
-static long    last_wr_block = -2 ;
-static long    last_wr_file = -2 ;
-static int     flush_wr_block = -2 ;
-static double  last_link_ID = 0.0;
-static double  last_link_LID = 0.0;
+static char     rd_block_buffer[DISK_BLOCK_SIZE] ;
+static cglong_t last_rd_block = -1 ;
+static int      last_rd_file = -1 ;
+static int      num_in_rd_block = -1 ;
+static char     wr_block_buffer[DISK_BLOCK_SIZE] ;
+static cglong_t last_wr_block = -2 ;
+static int      last_wr_file = -2 ;
+static int      flush_wr_block = -2 ;
+static double   last_link_ID = 0.0;
+static double   last_link_LID = 0.0;
 enum { FLUSH, FLUSH_CLOSE };
 
     /** Assumed machine variable sizes for the currently supported
@@ -317,7 +327,7 @@ static char     data_chunk_end_tag[]   = "dEnD" ;
 #define MAX_STACK 50
 static struct {
   int file_index;
-  unsigned int file_block;
+  cgulong_t file_block;
   unsigned int block_offset;
   int stack_type;
   char *stack_data;
@@ -427,6 +437,54 @@ if( num > maximum ) {
 *number = num ;
 } /* end of ADFI_ASCII_Hex_2_unsigned_int */
 /* end of file ADFI_ASCII_Hex_2_unsigned_int.c */
+/*------------------------------------------------------------------------------------*/
+static void ADFI_convert_integers(
+		const int size,
+		const int count,
+		const char from_format,
+		const char to_format,
+		const char *from_data,
+		char *to_data,
+		int *error_return)
+{
+    int do_swap = 0;
+
+    if (from_format == 'N' || to_format == 'N') {
+        *error_return = CANNOT_CONVERT_NATIVE_FORMAT;
+        return;
+    }
+    if (from_format != to_format) {
+	switch (EVAL_2_BYTES(from_format, to_format)) {
+	    case EVAL_2_BYTES('L', 'B'):
+	    case EVAL_2_BYTES('B', 'L'):
+	    case EVAL_2_BYTES('L', 'C'):
+	    case EVAL_2_BYTES('C', 'L'):
+	        do_swap = 1;
+		break;
+	    case EVAL_2_BYTES('B', 'C'):
+	    case EVAL_2_BYTES('C', 'B'):
+	        break;
+	    default:
+	        *error_return = ADF_FILE_FORMAT_NOT_RECOGNIZED;
+		return;
+	}
+    }
+    *error_return = NO_ERROR;
+    if (do_swap) {
+        int n, i;
+	for (n = 0; n < count; n++) {
+	    for (i = 0; i < size; i++) {
+	        to_data[i] = from_data[size-i-1];
+	    }
+	    to_data += size;
+	    from_data += size;
+	}
+    }
+    else {
+        memcpy(to_data, from_data, size * count);
+    }
+}
+/*------------------------------------------------------------------------------------*/
 /* file ADFI_Abort.c */
 /***********************************************************************
 ADFI Abort:
@@ -468,8 +526,8 @@ BLOCK_OFFSET_OUT_OF_RANGE
 void	ADFI_ID_2_file_block_offset(
 		const double ID,
 		unsigned int *file_index,
-		unsigned long *file_block,
-		unsigned long *block_offset,
+		cgulong_t *file_block,
+		cgulong_t *block_offset,
 		int *error_return )
 {
 unsigned char * cc;
@@ -493,14 +551,29 @@ printf("cc[0-7] = %02X %02X %02X %02X %02X %02X %02X %02X \n",
         cc[4], cc[5], cc[6], cc[7] ) ;
 #endif
 	/** Unmap the bytes from the character **/
+#ifdef NEW_ID_MAPPING
+*file_index = ((unsigned int)cc[0] << 5) +
+              ((unsigned int)(cc[1] & 0xF8) >> 3);
+*file_block = ((cgulong_t)(cc[1] & 0x07) << 35)+
+              ((cgulong_t)cc[2] << 27) +
+	      ((cgulong_t)cc[3] << 19) +
+	      ((cgulong_t)cc[4] << 11) +
+	      ((cgulong_t)cc[5] << 3) +
+	      ((cgulong_t)(cc[6] & 0xE0) >> 5);
+*block_offset = ((unsigned int)(cc[6] & 0x1F) << 8) +
+                ((unsigned int)cc[7]);
+assert(*file_index <= 0x1fff);
+assert(*file_block <= 0x3fffffffff);
+assert(*block_offset <= 0x1fff);
+#else
 if ( ADF_this_machine_format == IEEE_BIG_FORMAT_CHAR ) {
-   *file_index = cc[1] + ((cc[0] & 0x003f) << 8) ;
+   *file_index = cc[1] + ((cc[0] & 0x3f) << 8) ;
    *file_block = cc[2] + (cc[3]<<8) +
                  (cc[4]<<16) + (cc[5]<<24) ;
    *block_offset = cc[6] + (cc[7]<<8) ;
    } /* end if */
 else if ( ADF_this_machine_format == IEEE_LITTLE_FORMAT_CHAR ) {
-   *file_index = cc[6] + ((cc[7] & 0x003f) << 8) ;
+   *file_index = cc[6] + ((cc[7] & 0x3f) << 8) ;
    *file_block = cc[2] + (cc[3]<<8) +
                  (cc[4]<<16) + (cc[5]<<24) ;
    *block_offset = cc[0] + (cc[1]<<8) ;
@@ -511,13 +584,17 @@ else {
                  (cc[4]<<16) + (cc[5]<<24) ;
    *block_offset = cc[6] + (cc[7]<<8) ;
    } /* end else */
+assert(*file_index <= 0x3fff);
+assert(*file_block <= 0xffffffff);
+assert(*block_offset <= 0x1fff);
+#endif
 
 #ifdef PRINT_STUFF
    printf("*file_index=%d, *file_block=%d, *block_offset=%d\n",
 	   *file_index, *file_block, *block_offset);
 #endif
 
-if( *file_index >= maximum_files ) {
+if( (int)(*file_index) >= maximum_files ) {
    *error_return = FILE_INDEX_OUT_OF_RANGE ;
    return ;
    } /* end if */
@@ -701,8 +778,8 @@ void    ADFI_adjust_disk_pointer(
 		struct DISK_POINTER *block_offset,
 		int *error_return )
 {
-unsigned long oblock ;
-unsigned long nblock ;
+cgulong_t oblock ;
+cgulong_t nblock ;
 
 if( block_offset == NULL ) {
    *error_return = NULL_POINTER ;
@@ -714,7 +791,7 @@ if( block_offset == NULL ) {
 if ( block_offset->offset < DISK_BLOCK_SIZE ) return ;
 
         /** Calculate the number of blocks in the current offset **/
-nblock = (unsigned long) (block_offset->offset / DISK_BLOCK_SIZE) ;
+nblock = (cgulong_t) (block_offset->offset / DISK_BLOCK_SIZE) ;
 
 	/** Adjust block/offset checking for block roll-over **/
 oblock = block_offset->block ;
@@ -801,8 +878,8 @@ void    ADFI_big_endian_32_swap_64(
 		const char to_format,
 		const char to_os_size,
 		const char data_type[2],
-		const unsigned long delta_from_bytes,
-		const unsigned long delta_to_bytes,
+		const cgulong_t delta_from_bytes,
+		const cgulong_t delta_to_bytes,
 		const unsigned char *from_data,
 		unsigned char *to_data,
 		int *error_return )
@@ -826,7 +903,7 @@ if( (from_format == 'N') || (to_format == 'N') ) {
 *error_return = NO_ERROR ;
 
 if ( delta_to_bytes == delta_from_bytes ) {
-  memcpy( to_data, from_data, delta_from_bytes ) ;
+  memcpy( to_data, from_data, (size_t)delta_from_bytes ) ;
   } /* end if */
 else if ( delta_from_bytes < delta_to_bytes ) {
   switch( EVAL_2_BYTES( data_type[0], data_type[1] ) ) {
@@ -940,8 +1017,8 @@ void    ADFI_big_endian_to_cray(
 		const char to_format,
 		const char to_os_size,
 		const char data_type[2],
-		const unsigned long delta_from_bytes,
-		const unsigned long delta_to_bytes,
+		const cgulong_t delta_from_bytes,
+		const cgulong_t delta_to_bytes,
 		const unsigned char *from_data,
 		unsigned char *to_data,
 		int *error_return )
@@ -1221,8 +1298,8 @@ void    ADFI_big_little_endian_swap(
 		const char to_format,
 		const char to_os_size,
 		const char data_type[2],
-		const unsigned long delta_from_bytes,
-		const unsigned long delta_to_bytes,
+		const cgulong_t delta_from_bytes,
+		const cgulong_t delta_to_bytes,
 		const unsigned char *from_data,
 		unsigned char *to_data,
 		int *error_return )
@@ -1268,7 +1345,7 @@ void ADFI_blank_fill_string(
 		const int length )
 {
 int     i ;
-for( i=strlen( str ); i<length; i++ )
+for( i=(int)strlen( str ); i<length; i++ )
    str[ i ] = ' ' ;
 }
 /* end of file ADFI_blank_fill_string.c */
@@ -1306,7 +1383,7 @@ static void ADFI_link_open(
         unsigned int *link_index,
         int *error_return)
 {
-   unsigned long file_block, block_offset;
+   cgulong_t file_block, block_offset;
 
    ADF_Database_Open( linkfile, status, "", link_ID, error_return ) ;
    if (*error_return == NO_ERROR) {
@@ -1433,7 +1510,7 @@ while( done == FALSE ) {
          ADFI_get_file_index_from_name( link_file, &found, &link_file_index,
                                         &Link_ID, error_return ) ;
          if( ! found ) { /** Not found; try to open it **/
-            if (access(link_file,2)) /* check for read-only mode */
+            if (ACCESS(link_file,2)) /* check for read-only mode */
                strcpy (status, "READ_ONLY");
             else /* open in same mode as current file */
                strcpy (status, ADF_file[*file_index].open_mode) ;
@@ -1618,7 +1695,7 @@ if( str == NULL ) {
    return ;
    } /* end if */
 
-str_length = strlen( str ) ;
+str_length = (int)strlen( str ) ;
 if( str_length == 0 ) {
    *error_return = STRING_LENGTH_ZERO ;
    return ;
@@ -1673,24 +1750,15 @@ for (index = 0; index < ADF_file[file_index].nlinks; index++) {
 /* don't close until in_use is 0 */
 index = ADF_file[file_index].in_use - 1;
 if ( index == 0) {
-#ifdef USE_STREAM_IO
-   if( ADF_file[file_index].file != 0 ) {
-      ADFI_flush_buffers( file_index, FLUSH_CLOSE, error_return );
-      if( fclose( ADF_file[file_index].file ) != 0 )
-         *error_return = FILE_CLOSE_ERROR ;
-   } /* end if */
-   ADF_file[file_index].file = NULL ;
-#else
    ADF_sys_err = 0;
    if( ADF_file[file_index].file >= 0 ) {
       ADFI_flush_buffers( file_index, FLUSH_CLOSE, error_return );
-      if( close( ADF_file[file_index].file ) < 0 ) {
+      if( CLOSE( ADF_file[file_index].file ) < 0 ) {
          ADF_sys_err = errno;
          *error_return = FILE_CLOSE_ERROR ;
       }
    } /* end if */
    ADF_file[file_index].file = -1 ;
-#endif
 	/** Clear this file's entry **/
    ADFI_stack_control(file_index,0,0,CLEAR_STK,0,0,NULL);
 
@@ -1750,7 +1818,7 @@ if( names_match == NULL ) {
 *error_return = NO_ERROR ;
 *names_match = 0 ;	/* Default to NO match */
 
-new_length = strlen( new_name ) ;
+new_length = (int)strlen( new_name ) ;
 for( i=0; i<MIN( new_length, ADF_NAME_LENGTH ); i++ ) {
    if( name[i] != new_name[i] ) {
       *names_match = 0 ;
@@ -1866,7 +1934,7 @@ char            data_type[2] ;
 int		current_token ;
 int             array_size ;
 int             l, s ;
-unsigned long	delta_from_bytes, delta_to_bytes ;
+cgulong_t	delta_from_bytes, delta_to_bytes ;
 
 if( (from_data == NULL) || (to_data == NULL) ) {
    *error_return = NULL_STRING_POINTER ;
@@ -2040,17 +2108,17 @@ MINIMUM_GT_MAXIMUM
 ***********************************************************************/
 void	ADFI_count_total_array_points(
 		const unsigned int ndim,
-		const unsigned int dims[],
-		const int dim_start[],
-		const int dim_end[],
-		const int dim_stride[],
-		unsigned long *total_points,
-		unsigned long *starting_offset,
+		const cgulong_t dims[],
+		const cgsize_t dim_start[],
+		const cgsize_t dim_end[],
+		const cgsize_t dim_stride[],
+		cgulong_t *total_points,
+		cgulong_t *starting_offset,
 		int *error_return )
 {
 unsigned int		i ;
-unsigned long		total, offset ;
-unsigned long		accumlated_size ;
+cgulong_t total, offset ;
+cgulong_t accumlated_size ;
 
 if( (dims == NULL) || (dim_start == NULL) || (dim_end == NULL) ||
     (dim_stride == NULL) || (total_points == NULL) ||
@@ -2076,13 +2144,13 @@ for( i=0; i<ndim; i++ ) {
       } /* end if */
 
 	/** Check starting values >=1 and <= dims **/
-   if( (dim_start[i] < 1) || (dim_start[i] > (int) dims[i]) ) {
+   if( (dim_start[i] < 1) || ((cgulong_t)dim_start[i] > dims[i]) ) {
       *error_return = START_OUT_OF_DEFINED_RANGE ;
       return ;
       } /* end if */
 
 	/** Check ending values >=1 and <= dims and >= dim_start **/
-   if( (dim_end[i] < 1) || (dim_end[i] > (int) dims[i]) ) {
+   if( (dim_end[i] < 1) || ((cgulong_t)dim_end[i] > dims[i]) ) {
       *error_return = END_OUT_OF_DEFINED_RANGE ;
       return ;
       } /* end if */
@@ -2180,8 +2248,8 @@ void    ADFI_cray_to_big_endian(
 		const char to_format,
 		const char to_os_size,
 		const char data_type[2],
-		const unsigned long delta_from_bytes,
-		const unsigned long delta_to_bytes,
+		const cgulong_t delta_from_bytes,
+		const cgulong_t delta_to_bytes,
 		const unsigned char *from_data,
 		unsigned char *to_data,
                 int *error_return )
@@ -2434,8 +2502,8 @@ void    ADFI_cray_to_little_endian(
 		const char to_format,
 		const char to_os_size,
 		const char data_type[2],
-		const unsigned long delta_from_bytes,
-		const unsigned long delta_to_bytes,
+		const cgulong_t delta_from_bytes,
+		const cgulong_t delta_to_bytes,
 		const unsigned char *from_data,
 		unsigned char *to_data,
                 int *error_return )
@@ -2899,12 +2967,12 @@ if( (block == NULL) || (offset == NULL) ) {
 *error_return = NO_ERROR ;
 
 	/** Convert into ASCII-Hex form **/
-ADFI_unsigned_int_2_ASCII_Hex( block_offset->block, 0, MAXIMUM_32_BITS,
+ADFI_unsigned_int_2_ASCII_Hex( (unsigned int)block_offset->block, 0, MAXIMUM_32_BITS,
 		8, block, error_return ) ;
 if( *error_return != NO_ERROR )
    return ;
 
-ADFI_unsigned_int_2_ASCII_Hex( block_offset->offset, 0, DISK_BLOCK_SIZE,
+ADFI_unsigned_int_2_ASCII_Hex( (unsigned int)block_offset->offset, 0, DISK_BLOCK_SIZE,
 		4, offset, error_return ) ;
 if( *error_return != NO_ERROR )
    return ;
@@ -2961,6 +3029,48 @@ if( *error_return != NO_ERROR )
 block_offset->offset = tmp ;
 } /* end of ADFI_disk_pointer_from_ASCII_Hex */
 /* end of file ADFI_disk_pointer_from_ASCII_Hex.c */
+/*----------------------------------------------------------------------------------*/
+void ADFI_write_disk_pointer(
+		const unsigned int file_index,
+		const struct DISK_POINTER *block_offset,
+		char block[8],
+		char offset[4],
+		int *error_return)
+{
+    if (ADF_file[file_index].old_version) {
+        ADFI_disk_pointer_2_ASCII_Hex(block_offset, block, offset, error_return);
+    }
+    else {
+	unsigned int boff = (unsigned int)block_offset->offset;
+        ADFI_convert_integers(8, 1, ADF_this_machine_format, ADF_file[file_index].format,
+	   (char *)&block_offset->block, block, error_return);
+	if (*error_return != NO_ERROR) return;
+        ADFI_convert_integers(4, 1, ADF_this_machine_format, ADF_file[file_index].format,
+	   (char *)&boff, offset, error_return);
+    }
+}
+/*----------------------------------------------------------------------------------*/
+void ADFI_read_disk_pointer(
+		const unsigned int file_index,
+		const char block[8],
+		const char offset[4],
+		struct DISK_POINTER *block_offset,
+		int *error_return )
+{
+    if (ADF_file[file_index].old_version) {
+        ADFI_disk_pointer_from_ASCII_Hex(block, offset, block_offset, error_return);
+    }
+    else {
+	unsigned int boff;
+        ADFI_convert_integers(8, 1, ADF_file[file_index].format, ADF_this_machine_format,
+	   block, (char *)&block_offset->block, error_return);
+	if (*error_return != NO_ERROR) return;
+        ADFI_convert_integers(4, 1, ADF_file[file_index].format, ADF_this_machine_format,
+	   offset, (char *)&boff, error_return);
+	block_offset->offset = boff;
+    }
+}
+/*----------------------------------------------------------------------------------*/
 /* file ADFI_evaluate_datatype.c */
 /***********************************************************************
 ADFI evaluate datatype:
@@ -3043,7 +3153,7 @@ if( *error_return != NO_ERROR )
    return ;
 
 	/** Upper_CASE the data-type string **/
-str_len = strlen( data_type_string ) ;
+str_len = (int)strlen( data_type_string ) ;
 if ( str_len == 0 ) {
   *error_return = STRING_LENGTH_ZERO ;
   return ;
@@ -3083,7 +3193,11 @@ while( data_type_string[ str_position ] != '\0' ) {
 
       case EVAL_2_BYTES( 'I', '8' ) :
 	 size_file = file_header.sizeof_long ;
+#if 0
 	 size_machine = sizeof( long ) ;
+#else
+	 size_machine = sizeof( cglong_t ) ;
+#endif
          tokenized_data_type[ current_token ].type[0] = 'I' ;
          tokenized_data_type[ current_token ].type[1] = '8' ;
 	 break ;
@@ -3097,7 +3211,11 @@ while( data_type_string[ str_position ] != '\0' ) {
 
       case EVAL_2_BYTES( 'U', '8' ) :
 	 size_file = file_header.sizeof_long ;
+#if 0
 	 size_machine = sizeof( long ) ;
+#else
+	 size_machine = sizeof( cglong_t ) ;
+#endif
          tokenized_data_type[ current_token ].type[0] = 'U' ;
          tokenized_data_type[ current_token ].type[1] = '8' ;
 	 break ;
@@ -3225,19 +3343,13 @@ void    ADFI_fflush_file(
 
 int  iret ;
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
 
 *error_return = NO_ERROR ;
 
-#ifdef USE_STREAM_IO
-iret = fflush( ADF_file[file_index].file ) ;
-if( iret != 0 ) {
-   *error_return = FFLUSH_ERROR ;
-   } /* end if */
-#else
 ADF_sys_err = 0;
 # ifdef _WIN32
 iret = _commit( ADF_file[file_index].file ) ;
@@ -3248,7 +3360,6 @@ if (iret < 0) {
    ADF_sys_err = errno;
    *error_return = FFLUSH_ERROR ;
    } /* end if */
-#endif
 } /* end of ADFI_fflush_file */
 /* end of file ADFI_fflush_file.c */
 /* file ADFI_figure_machine_format.c */
@@ -3371,7 +3482,8 @@ else if( ADFI_stridx_c( CRAY_FORMAT_STRING, format ) == 0 ) {
    requested_format = CRAY_FORMAT_CHAR ;
    requested_os     = OS_64_BIT ;
    } /* end else if */
-else if( ADFI_stridx_c( NATIVE_FORMAT_STRING, format ) == 0 ) {
+else if( ADFI_stridx_c( NATIVE_FORMAT_STRING, format ) == 0 ||
+	 ADFI_stridx_c( LEGACY_FORMAT_STRING, format ) == 0 ) {
    requested_format = NATIVE_FORMAT_CHAR ;
    requested_os     = OS_32_BIT ;
    } /* end else if */
@@ -3543,17 +3655,19 @@ void  ADFI_file_and_machine_compare(
 
    if( ADF_this_machine_format == NATIVE_FORMAT_CHAR ||
        ADF_file[file_index].format ==  NATIVE_FORMAT_CHAR ) {
+      unsigned int size_long;
       struct	FILE_HEADER	file_header ;
 	/** Get file_header for the file variable sizes **/
       ADFI_read_file_header( file_index, &file_header, error_return ) ;
       if( *error_return != NO_ERROR )
          return ;
+      size_long = ADF_file[file_index].old_version ? sizeof(long) : sizeof(cglong_t);
         /** Make sure the sizes are the same or we are cooked!! **/
       if ( ADF_file[file_index].format !=  NATIVE_FORMAT_CHAR  ||
            file_header.sizeof_char !=	  sizeof( char )    ||
            file_header.sizeof_short !=	  sizeof( short )   ||
            file_header.sizeof_int !=	  sizeof( int )     ||
-           file_header.sizeof_long !=	  sizeof( long )    ||
+           file_header.sizeof_long !=	  size_long         ||
            file_header.sizeof_float !=	  sizeof( float )   ||
 #if 0
            file_header.sizeof_double !=   sizeof( double )  ||
@@ -3613,8 +3727,8 @@ BLOCK_OFFSET_OUT_OF_RANGE
 ***********************************************************************/
 void    ADFI_file_block_offset_2_ID(
 		const int file_index,
-		const unsigned long file_block,
-		const unsigned long block_offset,
+		const cgulong_t file_block,
+		const cgulong_t block_offset,
 		double *ID,
 		int *error_return )
 {
@@ -3649,6 +3763,24 @@ if( block_offset >= DISK_BLOCK_SIZE ) {
       new encoding changes the max number of open files to 16K from 64K */
 
 cc = (unsigned char *) &dd;
+#ifdef NEW_ID_MAPPING
+assert(file_index < 0x1fff);
+assert(file_block < 0x3fffffffff);
+assert(block_offset < 0x1fff);
+cc[0] = (unsigned char)((file_index & 0x1FE0) >> 5);
+cc[1] = (unsigned char)((file_index & 0x001F) << 3) +
+        (unsigned char)((file_block & 0x3800000000) >> 35);
+cc[2] = (unsigned char)((file_block & 0x07F8000000) >> 27);
+cc[3] = (unsigned char)((file_block & 0x0007F80000) >> 19);
+cc[4] = (unsigned char)((file_block & 0x000007F800) >> 11);
+cc[5] = (unsigned char)((file_block & 0x00000007F8) >> 3);
+cc[6] = (unsigned char)((file_block & 0x0000000007) << 5) +
+        (unsigned char)((block_offset & 0x1F00) >> 8);
+cc[7] = (unsigned char) (block_offset & 0x00FF);
+#else
+assert(file_index < 0x3fff);
+assert(file_block < 0xffffffff);
+assert(block_offset < 0x1fff);
 if ( ADF_this_machine_format == IEEE_BIG_FORMAT_CHAR ) {
    cc[1] = (unsigned char) (file_index & 0x00ff) ;
    cc[0] = (unsigned char) (64 + (( file_index >> 8) & 0x003f)) ;
@@ -3685,6 +3817,7 @@ else {
    cc[6] = (unsigned char) (block_offset & 0x00ff) ;
    cc[7] = (unsigned char) ((block_offset >> 8) & 0x00ff) ;
    } /* end else */
+#endif
 
 *ID = dd;
 #ifdef PRINT_STUFF
@@ -3718,7 +3851,7 @@ FREE_OF_FREE_CHUNK_TABLE
 void	ADFI_file_free(
         const int file_index,
         const struct DISK_POINTER *block_offset,
-        const long in_number_of_bytes,
+        const cglong_t in_number_of_bytes,
         int *error_return )
 {
 char                        tag[TAG_SIZE + 1] ;
@@ -3727,7 +3860,7 @@ struct  DISK_POINTER        tmp_blk_ofst ;
 struct	FREE_CHUNK_TABLE    free_chunk_table ;
 struct	FREE_CHUNK          free_chunk ;
 int     i ;
-long    number_of_bytes = in_number_of_bytes ;
+cglong_t    number_of_bytes = in_number_of_bytes ;
 
 if( block_offset == NULL ) {
    *error_return = NULL_POINTER ;
@@ -3912,7 +4045,8 @@ if( number_of_bytes <= SMALLEST_CHUNK_SIZE ) { /** Too small, z-gas **/
          block_of_ZZ[ i ] = 'z' ;
       block_of_ZZ_initialized = TRUE ;
       } /* end if */
-   
+
+assert(block_offset->offset <= 0x1fff);
       ADFI_write_file( file_index, block_offset->block, block_offset->offset,
 	number_of_bytes, block_of_ZZ, error_return ) ;
       if( *error_return != NO_ERROR )
@@ -3992,8 +4126,8 @@ else {	/** Add this chunk to the free table **/
    } /* end else */
 
         /** Delete the block/offset off the stack **/
-   ADFI_stack_control(file_index, block_offset->block, block_offset->offset,
-	  	      DEL_STK_ENTRY, 0, 0, NULL ) ;
+   ADFI_stack_control(file_index, block_offset->block,
+	   (unsigned int)block_offset->offset, DEL_STK_ENTRY, 0, 0, NULL ) ;
 
 } /* end of ADFI_file_free */
 /* end of file ADFI_file_free.c */
@@ -4014,7 +4148,7 @@ ADF_FILE_NOT_OPENED
 ***********************************************************************/
 void	ADFI_file_malloc(
 		const int file_index,
-		const long size_bytes,
+		const cglong_t size_bytes,
 		struct DISK_POINTER *block_offset,
 		int *error_return )
 {
@@ -4283,13 +4417,21 @@ if( (format==ADF_this_machine_format && os_size==ADF_this_machine_os_size) ||
   file_header->sizeof_char =	 sizeof( char ) ;
   file_header->sizeof_short =	 sizeof( short ) ;
   file_header->sizeof_int =	 sizeof( int ) ;
+#if 0
   file_header->sizeof_long =	 sizeof( long ) ;
+#else
+  file_header->sizeof_long =	 sizeof( cglong_t ) ;
+#endif
   file_header->sizeof_float =	 sizeof( float ) ;
   file_header->sizeof_double =	 sizeof( double ) ;
   file_header->sizeof_char_p =	 sizeof( char * ) ;
   file_header->sizeof_short_p =	 sizeof( short * ) ;
   file_header->sizeof_int_p =	 sizeof( int * ) ;
+#if 0
   file_header->sizeof_long_p =	 sizeof( long * ) ;
+#else
+  file_header->sizeof_long_p =	 sizeof( cglong_t * ) ;
+#endif
   file_header->sizeof_float_p =	 sizeof( float * ) ;
   file_header->sizeof_double_p = sizeof( double * ) ;
 } /** end if **/
@@ -4316,18 +4458,26 @@ else
       return ;
   } /* end switch */
   
-  file_header->sizeof_char =	 machine_sizes[i][ 0] ;
-  file_header->sizeof_short =	 machine_sizes[i][ 3] ;
-  file_header->sizeof_int =	 machine_sizes[i][ 5] ;
-  file_header->sizeof_long =	 machine_sizes[i][ 7] ;
-  file_header->sizeof_float =	 machine_sizes[i][ 9] ;
-  file_header->sizeof_double =	 machine_sizes[i][10] ;
-  file_header->sizeof_char_p =	 machine_sizes[i][11] ;
-  file_header->sizeof_short_p =	 machine_sizes[i][12] ;
-  file_header->sizeof_int_p =	 machine_sizes[i][12] ;
-  file_header->sizeof_long_p =	 machine_sizes[i][13] ;
-  file_header->sizeof_float_p =	 machine_sizes[i][14] ;
-  file_header->sizeof_double_p = machine_sizes[i][15] ;
+  file_header->sizeof_char =	 (unsigned int)machine_sizes[i][ 0] ;
+  file_header->sizeof_short =	 (unsigned int)machine_sizes[i][ 3] ;
+  file_header->sizeof_int =	 (unsigned int)machine_sizes[i][ 5] ;
+#if 0
+  file_header->sizeof_long =	 (unsigned int)machine_sizes[i][ 7] ;
+#else
+  file_header->sizeof_long =	 (unsigned int)sizeof(cglong_t) ;
+#endif
+  file_header->sizeof_float =	 (unsigned int)machine_sizes[i][ 9] ;
+  file_header->sizeof_double =	 (unsigned int)machine_sizes[i][10] ;
+  file_header->sizeof_char_p =	 (unsigned int)machine_sizes[i][11] ;
+  file_header->sizeof_short_p =	 (unsigned int)machine_sizes[i][12] ;
+  file_header->sizeof_int_p =	 (unsigned int)machine_sizes[i][12] ;
+#if 0
+  file_header->sizeof_long_p =	 (unsigned int)machine_sizes[i][13] ;
+#else
+  file_header->sizeof_long_p =	 (unsigned int)sizeof(cglong_t *) ;
+#endif
+  file_header->sizeof_float_p =	 (unsigned int)machine_sizes[i][14] ;
+  file_header->sizeof_double_p = (unsigned int)machine_sizes[i][15] ;
 } /** end else **/
 
 	/** Set root node table pointers **/
@@ -4454,25 +4604,30 @@ void    ADFI_flush_buffers(
 {
 char data;
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
 } /* end if */
 
 *error_return = NO_ERROR ;
 
-if ( (long int) file_index == last_wr_file ) {
+if ( (int)file_index == last_wr_file ) {
       /** Flush any active write buffer, file block is set to a nonsense
           value so that the buffer flags are not reset **/
   ADFI_write_file ( file_index, MAXIMUM_32_BITS, 0, 0, &data, error_return ) ;
       /** Reset control flags **/
-  if ( flush_mode == FLUSH_CLOSE )
-    last_wr_block = last_wr_file = flush_wr_block = -2 ;
+  if ( flush_mode == FLUSH_CLOSE ) {
+    last_wr_block  = -2;
+    last_wr_file   = -2;
+    flush_wr_block = -2 ;
+  }
 }
 
-if ( (long int) file_index == last_rd_file && flush_mode == FLUSH_CLOSE ) {
+if ( (int) file_index == last_rd_file && flush_mode == FLUSH_CLOSE ) {
       /** Reset control flags **/
-  last_rd_block = last_rd_file = num_in_rd_block = -1 ;
+  last_rd_block   = -1;
+  last_rd_file    = -1;
+  num_in_rd_block = -1;
 }
 
 } /* end of ADFI_flush_buffers */
@@ -4496,23 +4651,19 @@ FSEEK_ERROR
 ***********************************************************************/
 void	ADFI_fseek_file(
 		const unsigned int file_index,
-		const unsigned long file_block,
-		const unsigned long block_offset,
+		const cgulong_t file_block,
+		const cgulong_t block_offset,
 		int *error_return )
 {
 file_offset_t offset;
-#ifdef USE_STREAM_IO
-int	iret ;
-#else
 file_offset_t iret;
-#endif
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
 
-offset = (file_offset_t)file_block * DISK_BLOCK_SIZE + block_offset ;
+offset = (file_offset_t)(file_block * DISK_BLOCK_SIZE + block_offset) ;
 if (offset < 0) {
    *error_return = MAX_FILE_SIZE_EXCEEDED;
    return;
@@ -4520,19 +4671,12 @@ if (offset < 0) {
 
 *error_return = NO_ERROR ;
 
-#ifdef USE_STREAM_IO
-iret = fseek( ADF_file[file_index].file, offset, SEEK_SET ) ;
-if( iret != 0 ) {
-   *error_return = FSEEK_ERROR ;
-   } /* end if */
-#else
 ADF_sys_err = 0;
 iret = file_seek( ADF_file[file_index].file, offset, SEEK_SET ) ;
 if( iret < 0 ) {
    ADF_sys_err = errno;
    *error_return = FSEEK_ERROR ;
    } /* end if */
-#endif
 } /* end of ADFI_fseek_file */
 /* end of file ADFI_fseek_file.c */
 /* file ADFI_get_current_date.c */
@@ -4558,7 +4702,7 @@ ct = time( (time_t *)NULL ) ;
 current_time_p = ctime( &ct ) ;
 
      /** remove '\n' from ctime format **/
-i_len = strcspn ( current_time_p, "\n" ) ;
+i_len = (int)strcspn ( current_time_p, "\n" ) ;
 strcpy( date, current_time_p ) ;
 date[i_len] = '\0' ;
 
@@ -4739,16 +4883,16 @@ BAD_NUMBER_OF_DIMENSIONS
 ***********************************************************************/
 void	ADFI_increment_array(
 		const unsigned int ndim,
-		const unsigned int dims[],
-		const int dim_start[],
-		const int dim_end[],
-		const int dim_stride[],
-		int current_position[],
-		unsigned long *element_offset,
+		const cgulong_t dims[],
+		const cgsize_t dim_start[],
+		const cgsize_t dim_end[],
+		const cgsize_t dim_stride[],
+		cglong_t current_position[],
+		cgulong_t *element_offset,
 		int *error_return )
 {
-int		i ;
-unsigned long   offset, accumlated_size ;
+unsigned int	i ;
+cgulong_t   offset, accumlated_size ;
 
 if( (dims == NULL) || (dim_start == NULL) || (dim_end == NULL) ||
     (dim_stride == NULL) || (current_position == NULL) ||
@@ -4871,8 +5015,8 @@ void    ADFI_little_endian_32_swap_64(
 		const char to_format,
 		const char to_os_size,
 		const char data_type[2],
-		const unsigned long delta_from_bytes,
-		const unsigned long delta_to_bytes,
+		const cgulong_t delta_from_bytes,
+		const cgulong_t delta_to_bytes,
 		const unsigned char *from_data,
 		unsigned char *to_data,
 		int *error_return )
@@ -4896,7 +5040,7 @@ if( (from_format == 'N') || (to_format == 'N') ) {
 *error_return = NO_ERROR ;
 
 if ( delta_to_bytes == delta_from_bytes ) {
-  memcpy( to_data, from_data, delta_from_bytes ) ;
+  memcpy( to_data, from_data, (size_t)delta_from_bytes ) ;
   } /* end if */
 else if ( delta_from_bytes < delta_to_bytes ) {
   switch( EVAL_2_BYTES( data_type[0], data_type[1] ) ) {
@@ -5010,8 +5154,8 @@ void    ADFI_little_endian_to_cray(
 		const char to_format,
 		const char to_os_size,
 		const char data_type[2],
-		const unsigned long delta_from_bytes,
-		const unsigned long delta_to_bytes,
+		const cgulong_t delta_from_bytes,
+		const cgulong_t delta_to_bytes,
 		const unsigned char *from_data,
 		unsigned char *to_data,
 		int *error_return )
@@ -5251,12 +5395,9 @@ void    ADFI_open_file(
         unsigned int *file_index,
         int *error_return )
 {
-int index ;
-#ifdef USE_STREAM_IO
-FILE *f_ret ;
-#else
+int index;
 int f_ret, f_mode;
-#endif
+char header_data[102];
 
 if( (status == NULL) ||
     ((file == NULL) && (ADFI_stridx_c( status, "SCRATCH" ) != 0) ) ) {
@@ -5309,6 +5450,7 @@ ADF_file[index].version_update[0] = '\0' ;
 ADF_file[index].format  = UNDEFINED_FORMAT ;
 ADF_file[index].os_size = UNDEFINED_FORMAT ;
 ADF_file[index].link_separator = '>' ;
+ADF_file[index].old_version = 0 ;
 
 /***
                 READ_ONLY - File must exist.  Writing NOT allowed.
@@ -5317,55 +5459,6 @@ ADF_file[index].link_separator = '>' ;
                 SCRATCH - New file.  Filename is ignored.
                 UNKNOWN - OLD if file exists, else NEW is used.
 ***/
-#ifdef USE_STREAM_IO
-
-ADF_file[index].file = NULL;
-
-if( ADFI_stridx_c( status, "READ_ONLY" ) == 0 ) {
-#ifdef _WIN32
-   f_ret = fopen( file, "rb" ) ;   /** Open for reading **/
-#else
-   f_ret = fopen( file, "r" ) ;   /** Open for reading **/
-#endif
-} /* end if */
-else if( ADFI_stridx_c( status, "OLD" ) == 0 ) {
-#ifdef _WIN32
-   f_ret = fopen( file, "rb+" ) ;   /** Open for both reading & writing **/
-#else
-   f_ret = fopen( file, "r+" ) ;   /** Open for both reading & writing **/
-#endif
-} /* end else if */
-else if( ADFI_stridx_c( status, "NEW" ) == 0 ) {
-#ifdef _WIN32
-   f_ret = fopen( file, "wb+" ) ;   /** open new file, or truncate old file */
-#else
-   f_ret = fopen( file, "w+" ) ;   /** open new file, or truncate old file */
-#endif
-} /* end else if */
-else if( ADFI_stridx_c( status, "SCRATCH" ) == 0 ) {
-   f_ret = tmpfile();
-} /* end else if */
-else if( ADFI_stridx_c( status, "UNKNOWN" ) == 0 ) {
-#ifdef _WIN32
-   f_ret = fopen( file, "ab+" ) ;   /** open new, or use existing file **/
-#else
-   f_ret = fopen( file, "a+" ) ;   /** open new, or use existing file **/
-#endif
-} /* end else if */
-else {
-   *error_return = ADF_FILE_STATUS_NOT_RECOGNIZED ;
-   goto Error_Exit ;
-} /* end else */
-
-if( f_ret == NULL ) {
-   if (errno == EMFILE)
-      *error_return = TOO_MANY_ADF_FILES_OPENED;
-   else
-      *error_return = FILE_OPEN_ERROR ;
-   goto Error_Exit ;
-} /* end if */
-
-#else
 
 ADF_file[index].file = -1;
 ADF_sys_err = 0;
@@ -5382,7 +5475,7 @@ else if( ADFI_stridx_c( status, "NEW" ) == 0 )
    f_ret = file_open( file, f_mode | O_RDWR | O_CREAT, 0666);
 else if( ADFI_stridx_c( status, "SCRATCH" ) == 0 ) {
    FILE *ftmp = tmpfile();
-   f_ret = ftmp == NULL ? -1 : fileno(ftmp);
+   f_ret = ftmp == NULL ? -1 : FILENO(ftmp);
 }
 else if( ADFI_stridx_c( status, "UNKNOWN" ) == 0 )
    f_ret = file_open( file, f_mode | O_RDWR | O_CREAT, 0666);
@@ -5400,8 +5493,6 @@ if( f_ret < 0 ) {
    goto Error_Exit ;
 } /* end if */
 
-#endif
-
 ADF_file[index].file = f_ret ;
 *file_index = index ;
 strcpy( ADF_file[index].open_mode, status);
@@ -5413,25 +5504,24 @@ if( ADFI_stridx_c( status, "SCRATCH" ) ) {
    }
    strcpy( ADF_file[index].file_name, file ) ;
 } /* end else */
+
+/* try to read first part of header to determine version and format */
+if (102 == READ(f_ret, header_data, 102)) {
+    if (header_data[25] != 'B') ADF_file[index].old_version = 1;
+    ADF_file[index].format  = header_data[100];
+    ADF_file[index].os_size = header_data[101];
+}
 return ;
 
 Error_Exit:
     /** Clear this file's entry **/
-#ifdef USE_STREAM_IO
-if( ADF_file[index].file != 0 ) {
-   if( fclose( ADF_file[index].file ) != 0 )
-      *error_return = FILE_CLOSE_ERROR ;
-} /* end if */
-ADF_file[index].file = NULL ;
-#else
 if( ADF_file[index].file >= 0 ) {
-   if( close( ADF_file[index].file ) < 0 ) {
+   if( CLOSE( ADF_file[index].file ) < 0 ) {
       ADF_sys_err = errno;
       *error_return = FILE_CLOSE_ERROR ;
    }
 } /* end if */
 ADF_file[index].file = -1 ;
-#endif
 ADF_file[index].in_use = 0 ;
 if (ADF_file[index].file_name != NULL) {
    free (ADF_file[index].file_name);
@@ -5474,7 +5564,7 @@ void    ADFI_read_chunk_length(
 {
 char	info[ TAG_SIZE + DISK_POINTER_SIZE ] ;
 struct DISK_POINTER	current_block_offset ;
-unsigned long	count ;
+cgulong_t	count ;
 
 if( (block_offset == NULL) || (end_of_chunk_tag == NULL) ) {
    *error_return = NULL_POINTER ;
@@ -5486,7 +5576,7 @@ if( tag == NULL ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -5581,8 +5671,13 @@ else {
       else {
 
 	/** Convert pointers into numeric form **/
+#ifdef NEW_DISK_POINTER
+         ADFI_read_disk_pointer( file_index, &info[TAG_SIZE],
+		&info[DISK_POINTER_SIZE], end_of_chunk_tag, error_return ) ;
+#else
          ADFI_disk_pointer_from_ASCII_Hex( &info[TAG_SIZE],
 		&info[DISK_POINTER_SIZE], end_of_chunk_tag, error_return ) ;
+#endif
          if( *error_return != NO_ERROR )
             return ;
          } /* end else */
@@ -5617,16 +5712,16 @@ void    ADFI_read_data_chunk(
 		const struct DISK_POINTER *block_offset,
 		struct TOKENIZED_DATA_TYPE *tokenized_data_type,
 		const int data_size,
-                const long chunk_bytes,
-		const long start_offset,
-		const long total_bytes,
+                const cglong_t chunk_bytes,
+		const cglong_t start_offset,
+		const cglong_t total_bytes,
 		char *data,
 		int *error_return )
 {
 int format_compare ;
 char	tag[TAG_SIZE + 1] ;
 struct DISK_POINTER	data_start, end_of_chunk_tag ;
-long			chunk_total_bytes ;
+cglong_t			chunk_total_bytes ;
 
 if( block_offset == NULL ) {
    *error_return = NULL_POINTER ;
@@ -5638,7 +5733,7 @@ if( (tokenized_data_type == NULL) || (data == NULL) ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -5701,8 +5796,9 @@ else {
        return ;
     if( format_compare == 1 ) {
 	/** Read the data off of disk **/
+assert(data_start.offset <= 0x1fff);
       ADFI_read_file( file_index, data_start.block, data_start.offset,
-		   total_bytes, data, error_return ) ;
+		      total_bytes, data, error_return ) ;
       if( *error_return != NO_ERROR )
          return ;
       } /* end if */
@@ -5739,14 +5835,14 @@ void    ADFI_read_data_chunk_table(
 {
 char	tag[ TAG_SIZE + 1 ] ;
 struct	DISK_POINTER	end_of_chunk_tag, tmp_block_offset ;
-unsigned int		i, number_of_bytes_to_read ;
+cgulong_t		i, number_of_bytes_to_read ;
 
 if( (block_offset == NULL) || (data_chunk_table == NULL) ) {
    *error_return = NULL_POINTER ;
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -5827,11 +5923,11 @@ NO_ERROR
 ***********************************************************************/
 void    ADFI_read_data_translated(
 		const unsigned int file_index,
-		const unsigned long file_block,
-		const unsigned long block_offset,
+		const cgulong_t file_block,
+		const cgulong_t block_offset,
 		const struct TOKENIZED_DATA_TYPE *tokenized_data_type,
 		const int data_size,
-		const long total_bytes,
+		const cglong_t total_bytes,
 		char *data,
 		int *error_return )
 {
@@ -5840,9 +5936,9 @@ int	                current_token = -1 ;
 int                     machine_size ;
 unsigned char		*to_data = (unsigned char *)data ;
 unsigned char		*from_data = from_to_data ;
-unsigned long           chunk_size ;
-unsigned long		number_of_data_elements, number_of_elements_read ;
-unsigned long		delta_from_bytes, delta_to_bytes ;
+unsigned int		chunk_size ;
+unsigned int		delta_from_bytes, delta_to_bytes ;
+cgulong_t		number_of_data_elements, number_of_elements_read ;
 
 if( data_size <= 0 ) {
    *error_return = ZERO_LENGTH_VALUE ;
@@ -5870,7 +5966,7 @@ while( number_of_elements_read < number_of_data_elements ) {
       /** Limit the number to the end of the data. **/
    number_of_elements_read += chunk_size ;
    if ( number_of_elements_read > number_of_data_elements ) {
-     chunk_size -= ( number_of_elements_read - number_of_data_elements ) ;
+     chunk_size -= (unsigned int)( number_of_elements_read - number_of_data_elements ) ;
      delta_from_bytes = chunk_size * data_size ;
      delta_to_bytes   = chunk_size * machine_size ;
    }
@@ -5930,8 +6026,8 @@ ADF_FILE_NOT_OPENED
 ***********************************************************************/
 void    ADFI_read_disk_pointer_from_disk(
 		const unsigned int file_index,
-		const unsigned long file_block,
-		const unsigned long block_offset,
+		const cgulong_t file_block,
+		const cgulong_t block_offset,
 		struct DISK_POINTER *block_and_offset,
 		int *error_return )
 {
@@ -5948,7 +6044,7 @@ if( block_offset > DISK_BLOCK_SIZE ) {
    } /* end if */
 
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -5957,7 +6053,7 @@ if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
 
         /** Check the stack for block/offset **/
 #if 0
-if ( ADFI_stack_control(file_index, file_block, block_offset,
+if ( ADFI_stack_control(file_index, file_block, (unsigned int)block_offset,
 		        GET_STK, DISK_PTR_STK,
 		        DISK_POINTER_SIZE, disk_block_offset ) != NO_ERROR ) {
 #endif
@@ -5970,15 +6066,20 @@ if ( ADFI_stack_control(file_index, file_block, block_offset,
 
          /** Set the block/offset onto the stack **/
 #if 0
-  ADFI_stack_control(file_index, file_block, block_offset,
+  ADFI_stack_control(file_index, file_block, (unsigned int)block_offset,
 		     SET_STK, DISK_PTR_STK,
 		     DISK_POINTER_SIZE, disk_block_offset );
 } /* end if */
 #endif
 
 	/** Convert into numeric form **/
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_block_offset[0], &disk_block_offset[8],
+		block_and_offset, error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_block_offset[0], &disk_block_offset[8],
 		block_and_offset, error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
@@ -5987,20 +6088,20 @@ if( *error_return != NO_ERROR )
 
 /***********************************************************************/
 
-#ifndef USE_STREAM_IO
-
-int ADFI_read (
+cglong_t ADFI_read (
         const unsigned int file_index,
-        const unsigned int data_length,
+        const cglong_t data_length,
         char *data)
 {
    char *data_ptr = data;
-   unsigned bytes_left = data_length;
-   int nbytes, bytes_read = 0;
+   cglong_t bytes_left = data_length;
+   cglong_t bytes_read = 0;
+   int nbytes, to_read;
 
    ADF_sys_err = 0;
    while (bytes_left > 0) {
-      nbytes = read (ADF_file[file_index].file, data_ptr, bytes_left);
+      to_read = bytes_left > CG_MAX_INT32 ? CG_MAX_INT32 : (int)bytes_left;
+      nbytes = (int) READ (ADF_file[file_index].file, data_ptr, to_read);
       if (0 == nbytes) break;
       if (-1 == nbytes) {
           if (EINTR != errno) {
@@ -6016,8 +6117,6 @@ int ADFI_read (
    }
    return bytes_read;
 }
-
-#endif
 
 /* file ADFI_read_file.c */
 /***********************************************************************
@@ -6043,13 +6142,13 @@ FREAD_ERROR
 ***********************************************************************/
 void    ADFI_read_file(
         const unsigned int file_index,
-        const unsigned long file_block,
-        const unsigned long block_offset,
-        const unsigned int data_length,
+        const cgulong_t file_block,
+        const cgulong_t block_offset,
+        const cglong_t data_length,
         char *data,
         int *error_return )
 {
-int	iret ;
+cglong_t iret ;
 
 
 if( data == NULL ) {
@@ -6057,7 +6156,7 @@ if( data == NULL ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -6077,7 +6176,7 @@ if( data_length + block_offset > DISK_BLOCK_SIZE ) {
 
 	/** Read the data from disk **/
    iret = ADFI_read ( file_index, data_length, data ) ;
-   if( iret != (int)data_length ) {
+   if( iret != data_length ) {
       *error_return = FREAD_ERROR ;
       return ;
       } /* end if */
@@ -6096,12 +6195,12 @@ if( data_length + block_offset > DISK_BLOCK_SIZE ) {
     **/
 
 if( num_in_rd_block < DISK_BLOCK_SIZE ||  /*- buffer is not full -*/
-    (long int) file_block != last_rd_block       ||  /*- a different block -*/
-    (long int) file_index != last_rd_file ) {        /*- entirely different file -*/
+    (cglong_t) file_block != last_rd_block       ||  /*- a different block -*/
+    (int) file_index != last_rd_file ) {        /*- entirely different file -*/
 
     /** buffer is not current, re-read **/
 
-  if ( (long int) file_block == last_wr_block && (long int) file_index == last_wr_file ) {
+  if ( (cglong_t) file_block == last_wr_block && (int) file_index == last_wr_file ) {
 
     /* Copy data from write buffer */
     memcpy( rd_block_buffer, wr_block_buffer, DISK_BLOCK_SIZE );
@@ -6126,13 +6225,13 @@ if( num_in_rd_block < DISK_BLOCK_SIZE ||  /*- buffer is not full -*/
 
   /** Remember buffer information **/
   last_rd_block   = file_block ;
-  last_rd_file    = file_index ;
-  num_in_rd_block = iret ;
+  last_rd_file    = (int)file_index ;
+  num_in_rd_block = (int)iret ;
 
 } /* end if */
 
    /*read from buffer*/
-memcpy( data, &rd_block_buffer[block_offset], data_length );
+memcpy( data, &rd_block_buffer[block_offset], (size_t)data_length );
 
 } /* end of ADFI_read_file */
 /* end of file ADFI_read_file.c */
@@ -6162,7 +6261,7 @@ if( file_header == NULL ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -6228,6 +6327,18 @@ file_header->numeric_format = disk_header[100] ;
 file_header->os_size        = disk_header[101] ;
 strncpy( (char *)file_header->tag3, &disk_header[102], TAG_SIZE ) ;
 
+#if 0
+#ifdef NEW_DISK_POINTER
+if (ADF_file[file_index].format == UNDEFINED_FORMAT)
+    ADF_file[file_index].format = file_header->numeric_format;
+if (ADF_file[file_index].os_size == UNDEFINED_FORMAT)
+    ADF_file[file_index].os_size = file_header->os_size;
+#endif
+#else
+assert(ADF_file[file_index].format != UNDEFINED_FORMAT);
+assert(ADF_file[file_index].os_size != UNDEFINED_FORMAT);
+#endif
+
 ADFI_ASCII_Hex_2_unsigned_int( 0, 255, 2, &disk_header[106],
 		&file_header->sizeof_char, error_return ) ;
 if( *error_return != NO_ERROR )
@@ -6290,23 +6401,43 @@ if( *error_return != NO_ERROR )
 
 strncpy( file_header->tag4, &disk_header[130], TAG_SIZE ) ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_header[134], &disk_header[142],
+		&file_header->root_node, error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_header[134], &disk_header[142],
 		&file_header->root_node, error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_header[146], &disk_header[154],
+		&file_header->end_of_file, error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_header[146], &disk_header[154],
 		&file_header->end_of_file, error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_header[158], &disk_header[166],
+		&file_header->free_chunks, error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_header[158], &disk_header[166],
 		&file_header->free_chunks, error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_header[170], &disk_header[178],
+		&file_header->extra, error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_header[170], &disk_header[178],
 		&file_header->extra, error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
@@ -6376,7 +6507,7 @@ if( (block_offset == NULL) || (free_chunk == NULL) ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -6453,7 +6584,7 @@ if( free_chunk_table == NULL ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -6496,39 +6627,75 @@ strncpy( (char *)free_chunk_table->start_tag, &disk_free_chunk_data[ 0],
 strncpy( (char *)free_chunk_table->end_tag,
 	&disk_free_chunk_data[ FREE_CHUNK_TABLE_SIZE - TAG_SIZE ], TAG_SIZE ) ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_free_chunk_data[ TAG_SIZE],
+	&disk_free_chunk_data[DISK_POINTER_SIZE],
+	&free_chunk_table->small_first_block, error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_free_chunk_data[ TAG_SIZE],
 	&disk_free_chunk_data[DISK_POINTER_SIZE],
 	&free_chunk_table->small_first_block, error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_free_chunk_data[16],
+	&disk_free_chunk_data[24], &free_chunk_table->small_last_block,
+	error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_free_chunk_data[16],
 	&disk_free_chunk_data[24], &free_chunk_table->small_last_block,
 	error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_free_chunk_data[28],
+	&disk_free_chunk_data[36], &free_chunk_table->medium_first_block,
+	error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_free_chunk_data[28],
 	&disk_free_chunk_data[36], &free_chunk_table->medium_first_block,
 	error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_free_chunk_data[40],
+	&disk_free_chunk_data[48], &free_chunk_table->medium_last_block,
+	error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_free_chunk_data[40],
 	&disk_free_chunk_data[48], &free_chunk_table->medium_last_block,
 	error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_free_chunk_data[52],
+	&disk_free_chunk_data[60], &free_chunk_table->large_first_block,
+	error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_free_chunk_data[52],
 	&disk_free_chunk_data[60], &free_chunk_table->large_first_block,
 	error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_free_chunk_data[64],
+	&disk_free_chunk_data[72], &free_chunk_table->large_last_block,
+	error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_free_chunk_data[64],
 	&disk_free_chunk_data[72], &free_chunk_table->large_last_block,
 	error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
@@ -6577,7 +6744,7 @@ if( (block_offset == NULL) || (node_header == NULL) ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -6585,7 +6752,8 @@ if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
 *error_return = NO_ERROR ;
 
         /** Check the stack for header **/
-if ( ADFI_stack_control(file_index, block_offset->block, block_offset->offset,
+if ( ADFI_stack_control(file_index, block_offset->block,
+			(unsigned int)block_offset->offset,
 			GET_STK, NODE_STK, NODE_HEADER_SIZE,
 			disk_node_data ) != NO_ERROR ) {
 
@@ -6608,8 +6776,9 @@ if ( ADFI_stack_control(file_index, block_offset->block, block_offset->offset,
    } /* end if */
 
          /** Set the header onto the stack **/
-  ADFI_stack_control(file_index, block_offset->block, block_offset->offset,
-		     SET_STK, NODE_STK,  NODE_HEADER_SIZE, disk_node_data );
+  ADFI_stack_control(file_index, block_offset->block,
+		(unsigned int)block_offset->offset,
+		SET_STK, NODE_STK,  NODE_HEADER_SIZE, disk_node_data );
 } /* end if */
 
 	/** Convert into memory **/
@@ -6631,8 +6800,13 @@ ADFI_ASCII_Hex_2_unsigned_int( 0, MAXIMUM_32_BITS, 8, &disk_node_data[ 76],
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_node_data[84], &disk_node_data[92],
+	&node_header->sub_node_table, error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_node_data[84], &disk_node_data[92],
 	&node_header->sub_node_table, error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
@@ -6644,21 +6818,33 @@ ADFI_ASCII_Hex_2_unsigned_int( 0, 12, 2, &disk_node_data[128],
 if( *error_return != NO_ERROR )
    return ;
 
-for( i=0; i<ADF_MAX_DIMENSIONS; i++ ) {
-   ADFI_ASCII_Hex_2_unsigned_int( 0, MAXIMUM_32_BITS, 8,
-	&disk_node_data[130+(i*8)], &node_header->dimension_values[i],
-	error_return ) ;
-   if( *error_return != NO_ERROR )
-      return ;
+if (ADF_file[file_index].old_version) {
+   unsigned int dim;
+   for( i=0; i<ADF_MAX_DIMENSIONS; i++ ) {
+      ADFI_ASCII_Hex_2_unsigned_int( 0, MAXIMUM_32_BITS, 8,
+	&disk_node_data[130+(i*8)], &dim, error_return ) ;
+      if( *error_return != NO_ERROR )
+         return ;
+      node_header->dimension_values[i] = dim;
    } /* end for */
+} else {
+   ADFI_convert_integers(8, 12, ADF_file[file_index].format, ADF_this_machine_format,
+	   &disk_node_data[130], (char *)node_header->dimension_values, error_return);
+   if( *error_return != NO_ERROR ) return ;
+}
 
 ADFI_ASCII_Hex_2_unsigned_int( 0, 65535, 4, &disk_node_data[226],
 	&node_header->number_of_data_chunks, error_return ) ;
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &disk_node_data[230], &disk_node_data[238],
+	&node_header->data_chunks, error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &disk_node_data[230], &disk_node_data[238],
 	&node_header->data_chunks, error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
@@ -6706,7 +6892,7 @@ if( (block_offset == NULL) || (sub_node_table == NULL) ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -6721,7 +6907,7 @@ if( *error_return != NO_ERROR )
 tag[TAG_SIZE] = '\0' ;
 
 	/** calculate the number of chuldren in the sub-node table **/
-number_of_children = (
+number_of_children = (unsigned int)(
       (end_of_chunk_tag.block - block_offset->block) * DISK_BLOCK_SIZE +
       (end_of_chunk_tag.offset - block_offset->offset) ) /
 		(DISK_POINTER_SIZE + ADF_NAME_LENGTH) ;
@@ -6789,7 +6975,7 @@ if( (block_offset == NULL) || (sub_node_table_entry == NULL) ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -6797,7 +6983,8 @@ if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
 *error_return = NO_ERROR ;
 
         /** Check the stack for subnode **/
-if ( ADFI_stack_control(file_index, block_offset->block, block_offset->offset,
+if ( ADFI_stack_control(file_index, block_offset->block,
+		    (unsigned int)block_offset->offset,
 	            GET_STK, SUBNODE_STK, ADF_NAME_LENGTH + DISK_POINTER_SIZE,
 		    sub_node_entry_disk_data ) != NO_ERROR ) {
 
@@ -6809,7 +6996,8 @@ if ( ADFI_stack_control(file_index, block_offset->block, block_offset->offset,
      return ;
 
          /** Set the subnode onto the stack **/
-  ADFI_stack_control(file_index, block_offset->block, block_offset->offset,
+  ADFI_stack_control(file_index, block_offset->block,
+		     (unsigned int)block_offset->offset,
 		     SET_STK, SUBNODE_STK, ADF_NAME_LENGTH + DISK_POINTER_SIZE,
 		     sub_node_entry_disk_data );
 } /* end if */
@@ -6819,9 +7007,15 @@ strncpy( sub_node_table_entry->child_name, &sub_node_entry_disk_data[0],
 		ADF_NAME_LENGTH ) ;
 
 	/** Convert the disk-pointer **/
+#ifdef NEW_DISK_POINTER
+ADFI_read_disk_pointer( file_index, &sub_node_entry_disk_data[ ADF_NAME_LENGTH ],
+	&sub_node_entry_disk_data[ ADF_NAME_LENGTH + 8 ],
+	&sub_node_table_entry->child_location, error_return ) ;
+#else
 ADFI_disk_pointer_from_ASCII_Hex( &sub_node_entry_disk_data[ ADF_NAME_LENGTH ],
 	&sub_node_entry_disk_data[ ADF_NAME_LENGTH + 8 ],
 	&sub_node_table_entry->child_location, error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 } /* end of ADFI_read_sub_node_table_entry */
@@ -6944,11 +7138,11 @@ PRISTK_NOT_FOUND
    up, not stop the process !!!
 ***********************************************************************/
 int     ADFI_stack_control( const unsigned int file_index,
-		            const unsigned long file_block,
-		            const unsigned long block_offset,
+		            const cgulong_t file_block,
+		            const unsigned int block_offset,
 			    const int stack_mode,
 			    const int stack_type,
-		            const unsigned long data_length,
+		            const unsigned int data_length,
 			    char *stack_data )
 {
 int i;
@@ -6960,7 +7154,7 @@ if( stack_data == NULL && (stack_mode == GET_STK || stack_mode == SET_STK) ) {
    return NULL_STRING_POINTER ;
    } /* end if */
 
-if( (file_index >= maximum_files || ADF_file[file_index].in_use == 0) &&
+if( ((int)file_index >= maximum_files || ADF_file[file_index].in_use == 0) &&
     stack_mode != INIT_STK ) {
    return ADF_FILE_NOT_OPENED ;
    } /* end if */
@@ -6998,10 +7192,10 @@ if( (file_index >= maximum_files || ADF_file[file_index].in_use == 0) &&
 	 /* Very time consuming task */
 	   if ( PRISTK[i].file_index   != (int) file_index ||
 		PRISTK[i].file_block   != file_block ||
-		PRISTK[i].block_offset != block_offset ) continue;
+		PRISTK[i].block_offset != (unsigned int)block_offset ) continue;
 	   if ( PRISTK[i].stack_type == stack_type ) {
   	     /* Found the entry so copy it into return string */
-	     strncpy ( stack_data, PRISTK[i].stack_data, data_length );
+	     memcpy( stack_data, PRISTK[i].stack_data, (size_t)data_length );
 	     /* Up its priority to number one */
 	     PRISTK[i].priority_level = 1;
 	     return NO_ERROR;
@@ -7023,7 +7217,7 @@ if( (file_index >= maximum_files || ADF_file[file_index].in_use == 0) &&
 	 for (i=0; i<MAX_STACK; i++) {
 	   if ( PRISTK[i].file_index   == (int) file_index &&
 		PRISTK[i].file_block   == file_block &&
-		PRISTK[i].block_offset == block_offset ) {
+		PRISTK[i].block_offset == (unsigned int)block_offset ) {
 	     free(PRISTK[i].stack_data);
 	     PRISTK[i].file_index     = -1;
 	     PRISTK[i].file_block     = 0;
@@ -7043,12 +7237,12 @@ if( (file_index >= maximum_files || ADF_file[file_index].in_use == 0) &&
          /* Very time consuming task */
 	   if ( PRISTK[i].file_index   == (int) file_index &&
 		PRISTK[i].file_block   == file_block &&
-		PRISTK[i].block_offset == block_offset ) {
+		PRISTK[i].block_offset == (unsigned int)block_offset ) {
 	     found = 't';
 	     /* It exists up its priority to number one */
 	     PRISTK[i].priority_level = 1;
 	     /* Copy possible new stack data */
-	     strncpy( PRISTK[i].stack_data, stack_data, data_length );
+	     memcpy( PRISTK[i].stack_data, stack_data, (size_t)data_length );
 	   } /* end if */
 	   else if ( PRISTK[i].stack_type >= 0 ) {
 	     /* Existing entry so lower its priority, if it is the lowest
@@ -7071,7 +7265,7 @@ if( (file_index >= maximum_files || ADF_file[file_index].in_use == 0) &&
 	 /* Insert the data onto the stack at the index_insert location. */
 	 i = insert_index;
 	 if ( PRISTK[i].priority_level > 0 ) free(PRISTK[i].stack_data);
-   	 PRISTK[i].stack_data = ( char * ) malloc(data_length*sizeof(char));
+   	 PRISTK[i].stack_data = ( char * ) malloc((size_t)data_length*sizeof(char));
 	 if ( PRISTK[i].stack_data == NULL ) {
 	   /* Error allocating memory buffer so clear stack and punt */
 	   PRISTK[i].file_index     = -1;
@@ -7081,10 +7275,10 @@ if( (file_index >= maximum_files || ADF_file[file_index].in_use == 0) &&
 	   PRISTK[i].priority_level = -1;
            return NO_ERROR;
 	 } /* end if */
-	 strncpy( PRISTK[i].stack_data, stack_data, data_length );
+	 memcpy( PRISTK[i].stack_data, stack_data, (size_t)data_length );
 	 PRISTK[i].file_index     = file_index;
 	 PRISTK[i].file_block     = file_block;
-	 PRISTK[i].block_offset   = block_offset;
+	 PRISTK[i].block_offset   = (unsigned int)block_offset;
 	 PRISTK[i].stack_type     = stack_type;
 	 PRISTK[i].priority_level = 1;
 	 break ;
@@ -7272,9 +7466,9 @@ void    ADFI_write_data_chunk(
               const struct DISK_POINTER *block_offset,
               const struct TOKENIZED_DATA_TYPE *tokenized_data_type,
               const int data_size,
-              const long chunk_bytes,
-              const long start_offset,
-              const long total_bytes,
+              const cglong_t chunk_bytes,
+              const cglong_t start_offset,
+              const cglong_t total_bytes,
               const char *data,
               int *error_return )
 {
@@ -7291,7 +7485,7 @@ if( tokenized_data_type == NULL ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -7346,13 +7540,14 @@ if( data == NULL ) { /** Zero out the file data **/
       } /* end if */
 
    if( total_bytes > DISK_BLOCK_SIZE ) {
-      long t_bytes = total_bytes ;
+      cglong_t t_bytes = total_bytes ;
 
 	/** If the number of bytes to write is larger than the block of
 	    zeros we have, write out a series of zero blocks...
 	**/
 
 	/** write out the remainder of this block **/
+assert(current_location.offset <= 0x1fff);
       ADFI_write_file( file_index, current_location.block,
 	current_location.offset, DISK_BLOCK_SIZE - current_location.offset + 1,
 	block_of_00, error_return ) ;
@@ -7365,6 +7560,7 @@ if( data == NULL ) { /** Zero out the file data **/
 
 	/** Write blocks of zeros, then a partial block **/
       while( t_bytes > 0 ) {
+assert(current_location.offset <= 0x1fff);
          ADFI_write_file( file_index, current_location.block,
 		current_location.offset, MIN( DISK_BLOCK_SIZE, t_bytes),
 		block_of_00, error_return ) ;
@@ -7377,6 +7573,7 @@ if( data == NULL ) { /** Zero out the file data **/
    else {
 
 	/** Write a partial block of zeros to disk **/
+assert(current_location.offset <= 0x1fff);
       ADFI_write_file( file_index, current_location.block,
 	current_location.offset, total_bytes, block_of_00, error_return ) ;
       if( *error_return != NO_ERROR )
@@ -7392,6 +7589,7 @@ else {
       return ;
    if( format_compare == 1 ) {
 	/** Write the data to disk **/
+assert(current_location.offset <= 0x1fff);
       ADFI_write_file( file_index, current_location.block,
 		current_location.offset, total_bytes, data, error_return ) ;
       if( *error_return != NO_ERROR )
@@ -7444,7 +7642,7 @@ if( (block_offset == NULL) || (data_chunk_table == NULL) ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -7521,11 +7719,11 @@ NO_ERROR
 ***********************************************************************/
 void    ADFI_write_data_translated(
 		const unsigned int file_index,
-		const unsigned long file_block,
-		const unsigned long block_offset,
+		const cgulong_t file_block,
+		const cgulong_t block_offset,
 		const struct TOKENIZED_DATA_TYPE *tokenized_data_type,
 		const int data_size,
-		const long total_bytes,
+		const cglong_t total_bytes,
 		const char *data,
 		int *error_return )
 {
@@ -7534,9 +7732,9 @@ int	                current_token = -1 ;
 int                     machine_size ;
 unsigned char		*from_data = (unsigned char *)data ;
 unsigned char		*to_data = from_to_data ;
-unsigned long           chunk_size ;
-unsigned long		number_of_data_elements, number_of_elements_written ;
-unsigned long		delta_from_bytes, delta_to_bytes ;
+unsigned int		chunk_size ;
+unsigned int		delta_from_bytes, delta_to_bytes ;
+cgulong_t		number_of_data_elements, number_of_elements_written ;
 
 if( data_size <= 0 ) {
    *error_return = ZERO_LENGTH_VALUE ;
@@ -7564,7 +7762,7 @@ while( number_of_elements_written < number_of_data_elements ) {
       /** Limit the number to the end of the data. **/
    number_of_elements_written += chunk_size ;
    if ( number_of_elements_written > number_of_data_elements ) {
-     chunk_size -= ( number_of_elements_written - number_of_data_elements ) ;
+     chunk_size -= (unsigned int)( number_of_elements_written - number_of_data_elements ) ;
      delta_to_bytes   = chunk_size * data_size ;
      delta_from_bytes = chunk_size * machine_size ;
    }
@@ -7621,8 +7819,8 @@ ADF_FILE_NOT_OPENED
 ***********************************************************************/
 void    ADFI_write_disk_pointer_2_disk(
 		const unsigned int file_index,
-		const unsigned long file_block,
-		const unsigned long block_offset,
+		const cgulong_t file_block,
+		const cgulong_t block_offset,
 		const struct DISK_POINTER *block_and_offset,
 		int *error_return )
 {
@@ -7633,7 +7831,7 @@ if( block_and_offset == NULL ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -7641,8 +7839,13 @@ if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
 *error_return = NO_ERROR ;
 
 	/** Convert into ASCII_Hex form **/
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer( file_index, block_and_offset, &disk_block_offset[0],
+		&disk_block_offset[8], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( block_and_offset, &disk_block_offset[0],
 		&disk_block_offset[8], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
@@ -7654,7 +7857,7 @@ if( *error_return != NO_ERROR )
 
        /** Set the block/offset onto the stack **/
 #if 0
-ADFI_stack_control(file_index, file_block, block_offset,
+ADFI_stack_control(file_index, file_block, (unsigned int)block_offset,
 		   SET_STK, DISK_PTR_STK, DISK_POINTER_SIZE,
 		   disk_block_offset );
 #endif
@@ -7664,20 +7867,20 @@ ADFI_stack_control(file_index, file_block, block_offset,
 
 /***********************************************************************/
 
-#ifndef USE_STREAM_IO
-
-int ADFI_write (
+cglong_t ADFI_write (
         const unsigned int file_index,
-        const unsigned int data_length,
+        const cglong_t data_length,
         const char *data)
 {
    char *data_ptr = (char *)data;
-   unsigned bytes_left = data_length;
-   int nbytes, bytes_out = 0;
+   cglong_t bytes_left = data_length;
+   cglong_t bytes_out = 0;
+   int nbytes, to_write;
 
    ADF_sys_err = 0;
    while (bytes_left > 0) {
-      nbytes = write (ADF_file[file_index].file, data_ptr, bytes_left);
+      to_write = bytes_left > CG_MAX_INT32 ? CG_MAX_INT32 : (int)bytes_left;
+      nbytes = (int) WRITE (ADF_file[file_index].file, data_ptr, to_write);
       if (-1 == nbytes) {
           if (EINTR != errno) {
              ADF_sys_err = errno;
@@ -7692,8 +7895,6 @@ int ADFI_write (
    }
    return bytes_out;
 }
-
-#endif
 
 /* file ADFI_write_file.c */
 /***********************************************************************
@@ -7716,20 +7917,21 @@ FWRITE_ERROR
 ***********************************************************************/
 void	ADFI_write_file(
 		const unsigned int file_index,
-		const unsigned long file_block,
-		const unsigned long block_offset,
-		const unsigned int data_length,
+		const cgulong_t file_block,
+		const cgulong_t block_offset,
+		const cglong_t data_length,
 		const char *data,
 		int *error_return )
 {
-int	iret, end_block ;
+cglong_t iret;
+cglong_t end_block;
 
 if( data == NULL ) {
    *error_return = NULL_STRING_POINTER ;
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -7740,9 +7942,12 @@ if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
          sure its currrent **/
 
 end_block = file_block+(block_offset+data_length)/DISK_BLOCK_SIZE+1;
-if ( last_rd_file == (long int) file_index && last_rd_block >= (long int) file_block &&
-     last_rd_block <= (long int) end_block )
-  last_rd_block = last_rd_file = num_in_rd_block = -1 ;
+if ( last_rd_file == (int) file_index && last_rd_block >= (cglong_t) file_block &&
+     last_rd_block <= end_block ) {
+   last_rd_block   = -1;
+   last_rd_file    = -1;
+   num_in_rd_block = -1 ;
+}
 
     /** Check to see if we need to flush the write buffer. this happens if we
         are writing a large chunk or the write moves out of the current block.
@@ -7750,8 +7955,8 @@ if ( last_rd_file == (long int) file_index && last_rd_block >= (long int) file_b
 	Note that the ADF_modification_date routine will flush the buffer
 	after any write operations !! **/
 
-if( ( (unsigned long int) data_length + block_offset > DISK_BLOCK_SIZE ||
-      last_wr_block != (long int) file_block || last_wr_file != (long int) file_index ||
+if( ( (cgulong_t) data_length + block_offset > DISK_BLOCK_SIZE ||
+      last_wr_block != (cglong_t) file_block || last_wr_file != (int) file_index ||
       data_length == 0 ) && flush_wr_block > 0 ) {
 
         /** Position the file **/
@@ -7770,9 +7975,11 @@ if( ( (unsigned long int) data_length + block_offset > DISK_BLOCK_SIZE ||
 
      /** If the write buffer overlaps the buffer then reset it to make
          sure its currrent, set flush buffer flag to false. **/
-   if ( last_wr_file == (long int) file_index && last_wr_block >= (long int) file_block &&
-	last_wr_block <= (long int) end_block )
-     last_wr_block = last_wr_file = -2 ;
+   if ( last_wr_file == (int) file_index && last_wr_block >= (cglong_t) file_block &&
+       last_wr_block <= (cglong_t) end_block ) {
+      last_wr_block = -2;
+      last_wr_file  = -2;
+   }
 
 }  /* end if */
 if ( data_length == 0 ) return; /** Just a buffer flush **/
@@ -7790,7 +7997,7 @@ if( data_length + block_offset > DISK_BLOCK_SIZE ) {
 
 	/** write the data **/
    iret = ADFI_write( file_index, data_length, data ) ;
-   if( iret != (int) data_length ) {
+   if( iret != data_length ) {
      *error_return = FWRITE_ERROR ;
      return ;
    } /* end if */
@@ -7809,12 +8016,12 @@ if( data_length + block_offset > DISK_BLOCK_SIZE ) {
 	loves 4K block writes!!
     **/
 
-if( (long int) file_block != last_wr_block       ||  /*- a different block -*/
-    (long int) file_index != last_wr_file ) {        /*- entirely different file -*/
+if( (cglong_t) file_block != last_wr_block       ||  /*- a different block -*/
+    (int) file_index != last_wr_file ) {        /*- entirely different file -*/
 
     /** buffer is not current, re-read **/
 
-  if ( (long int) file_block == last_rd_block && (long int) file_index == last_rd_file ) {
+  if ( (cglong_t) file_block == last_rd_block && (int) file_index == last_rd_file ) {
 
     /* Copy data from read buffer */
     memcpy( wr_block_buffer, rd_block_buffer, DISK_BLOCK_SIZE );
@@ -7832,19 +8039,19 @@ if( (long int) file_block != last_wr_block       ||  /*- a different block -*/
      iret = ADFI_read( file_index, DISK_BLOCK_SIZE, wr_block_buffer ) ;
      if( iret < DISK_BLOCK_SIZE ) {
        if ( iret < 0 ) iret = 0;
-       memset( &wr_block_buffer[iret], (size_t) ' ', DISK_BLOCK_SIZE-iret );
+       memset( &wr_block_buffer[iret], (size_t) ' ', (size_t)(DISK_BLOCK_SIZE-iret) );
       } /* end if */
 
   } /* end if */
 
    /** Remember buffer information **/
   last_wr_block  = file_block ;
-  last_wr_file   = file_index ;
+  last_wr_file   = (int)file_index ;
 
 } /* end if */
 
    /** Write into the buffer and set flush buffer flag **/
-memcpy( &wr_block_buffer[block_offset], data, data_length );
+memcpy( &wr_block_buffer[block_offset], data, (size_t)data_length );
 flush_wr_block = 1 ;
 
 } /* end of ADFI_write_file */
@@ -7980,23 +8187,43 @@ if( *error_return != NO_ERROR )
 
 strncpy( &disk_header[130], file_header->tag4, TAG_SIZE ) ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer( file_index, &file_header->root_node, &disk_header[134],
+		&disk_header[142], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &file_header->root_node, &disk_header[134],
 		&disk_header[142], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer( file_index, &file_header->end_of_file, &disk_header[146],
+		&disk_header[154], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &file_header->end_of_file, &disk_header[146],
 		&disk_header[154], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer( file_index, &file_header->free_chunks, &disk_header[158],
+		&disk_header[166], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &file_header->free_chunks, &disk_header[158],
 		&disk_header[166], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer( file_index, &file_header->extra, &disk_header[170],
+		&disk_header[178], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &file_header->extra, &disk_header[170],
 		&disk_header[178], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
@@ -8105,6 +8332,7 @@ if( *error_return != NO_ERROR )
 	/** Fill in partial end of a block **/
 if( (current_location.block != free_chunk->end_of_chunk_tag.block) &&
 	(current_location.offset != 0 ) ) {
+assert(current_location.offset < DISK_BLOCK_SIZE);
    ADFI_write_file( file_index, current_location.block,
 	current_location.offset, DISK_BLOCK_SIZE - current_location.offset,
 	block_of_XX, error_return ) ;
@@ -8195,34 +8423,65 @@ if( strncmp( free_chunk_table->end_tag, free_chunk_table_end_tag,
 strncpy( &disk_free_chunk_data[  0], (char *)free_chunk_table->start_tag,
 	TAG_SIZE ) ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer( file_index, &free_chunk_table->small_first_block,
+	&disk_free_chunk_data[TAG_SIZE],
+	&disk_free_chunk_data[DISK_POINTER_SIZE], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &free_chunk_table->small_first_block,
 	&disk_free_chunk_data[TAG_SIZE],
 	&disk_free_chunk_data[DISK_POINTER_SIZE], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer( file_index, &free_chunk_table->small_last_block,
+	&disk_free_chunk_data[16], &disk_free_chunk_data[24], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &free_chunk_table->small_last_block,
 	&disk_free_chunk_data[16], &disk_free_chunk_data[24], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer( file_index, &free_chunk_table->medium_first_block,
+	&disk_free_chunk_data[28], &disk_free_chunk_data[36], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &free_chunk_table->medium_first_block,
 	&disk_free_chunk_data[28], &disk_free_chunk_data[36], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer( file_index, &free_chunk_table->medium_last_block,
+	&disk_free_chunk_data[40], &disk_free_chunk_data[48], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &free_chunk_table->medium_last_block,
 	&disk_free_chunk_data[40], &disk_free_chunk_data[48], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer( file_index, &free_chunk_table->large_first_block,
+	&disk_free_chunk_data[52], &disk_free_chunk_data[60], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &free_chunk_table->large_first_block,
 	&disk_free_chunk_data[52], &disk_free_chunk_data[60], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer( file_index, &free_chunk_table->large_last_block,
+	&disk_free_chunk_data[64], &disk_free_chunk_data[72], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &free_chunk_table->large_last_block,
 	&disk_free_chunk_data[64], &disk_free_chunk_data[72], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
@@ -8364,8 +8623,13 @@ ADFI_unsigned_int_2_ASCII_Hex( node_header->entries_for_sub_nodes, 0,
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer(file_index, &node_header->sub_node_table,
+	&disk_node_data[84], &disk_node_data[92], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &node_header->sub_node_table,
 	&disk_node_data[84], &disk_node_data[92], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
@@ -8377,20 +8641,35 @@ ADFI_unsigned_int_2_ASCII_Hex( node_header->number_of_dimensions, 0,
 if( *error_return != NO_ERROR )
    return ;
 
-for( i=0; i<ADF_MAX_DIMENSIONS; i++ ) {
-   ADFI_unsigned_int_2_ASCII_Hex( node_header->dimension_values[i], 0,
+if (ADF_file[file_index].old_version) {
+   for( i=0; i<ADF_MAX_DIMENSIONS; i++ ) {
+      if (node_header->dimension_values[i] > MAXIMUM_32_BITS) {
+         *error_return = NUMBER_GREATER_THAN_MAXIMUM ;
+      } else {
+         ADFI_unsigned_int_2_ASCII_Hex( (unsigned int)node_header->dimension_values[i], 0,
 		MAXIMUM_32_BITS, 8, &disk_node_data[130+(i*8)], error_return ) ;
-   if( *error_return != NO_ERROR )
-      return ;
+      }
+      if( *error_return != NO_ERROR )
+         return ;
    } /* end for */
+} else {
+   ADFI_convert_integers(8, 12, ADF_this_machine_format, ADF_file[file_index].format,
+	   (char *)node_header->dimension_values, &disk_node_data[130], error_return);
+   if( *error_return != NO_ERROR ) return ;
+}
 
 ADFI_unsigned_int_2_ASCII_Hex( node_header->number_of_data_chunks, 0,
 		65535, 4, &disk_node_data[226], error_return ) ;
 if( *error_return != NO_ERROR )
    return ;
 
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer(file_index, &node_header->data_chunks,
+	&disk_node_data[230], &disk_node_data[238], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &node_header->data_chunks,
 	&disk_node_data[230], &disk_node_data[238], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
@@ -8400,7 +8679,8 @@ strncpy( &disk_node_data[242], (char *)node_header->node_end_tag, TAG_SIZE ) ;
 ADFI_write_file( file_index, block_offset->block, block_offset->offset,
 		NODE_HEADER_SIZE, disk_node_data, error_return ) ;
    /** Set the header onto the stack **/
-ADFI_stack_control(file_index, block_offset->block, block_offset->offset,
+ADFI_stack_control(file_index, block_offset->block,
+		   (unsigned int)block_offset->offset,
 		   SET_STK, NODE_STK, NODE_HEADER_SIZE, disk_node_data );
 } /* end of ADFI_write_node_header */
 /* end of file ADFI_write_node_header.c */
@@ -8434,7 +8714,7 @@ if( (block_offset == NULL) || (sub_node_table == NULL) ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -8529,7 +8809,7 @@ if( (block_offset == NULL) || (sub_node_table_entry == NULL) ) {
    return ;
    } /* end if */
 
-if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
+if( (int)file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
    *error_return = ADF_FILE_NOT_OPENED ;
    return ;
    } /* end if */
@@ -8539,9 +8819,15 @@ if( file_index >= maximum_files || ADF_file[file_index].in_use == 0 ) {
 	/** Format the tag and disk pointer in memory **/
 strncpy( &sub_node_entry_disk_data[0], sub_node_table_entry->child_name,
 		ADF_NAME_LENGTH ) ;
+#ifdef NEW_DISK_POINTER
+ADFI_write_disk_pointer( file_index, &sub_node_table_entry->child_location,
+	&sub_node_entry_disk_data[ ADF_NAME_LENGTH ],
+	&sub_node_entry_disk_data[ ADF_NAME_LENGTH + 8 ], error_return ) ;
+#else
 ADFI_disk_pointer_2_ASCII_Hex( &sub_node_table_entry->child_location,
 	&sub_node_entry_disk_data[ ADF_NAME_LENGTH ],
 	&sub_node_entry_disk_data[ ADF_NAME_LENGTH + 8 ], error_return ) ;
+#endif
 if( *error_return != NO_ERROR )
    return ;
 
@@ -8553,7 +8839,8 @@ if( *error_return != NO_ERROR )
    return ;
 
         /** Set the subnode onto the stack **/
-ADFI_stack_control(file_index, block_offset->block, block_offset->offset,
+ADFI_stack_control(file_index, block_offset->block,
+		   (unsigned int)block_offset->offset,
 		   SET_STK, SUBNODE_STK, ADF_NAME_LENGTH + DISK_POINTER_SIZE,
 		   sub_node_entry_disk_data );
 
@@ -8590,7 +8877,7 @@ char   *ADFI_strtok(
 
   /* Get the length left in the string */
 
-  string_len = strlen ( *string_pos ) ;
+  string_len = (int)strlen ( *string_pos ) ;
   if ( string_len == 0 ) return NULL ;
 
   /* Find the first character in the string which does not match the token */

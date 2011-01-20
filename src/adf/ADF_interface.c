@@ -26,23 +26,8 @@ File:  ADF_interface.c
     internal revision number for internal changes and bug fixes;
     reset to zero for major revision letter changes. **/
 
-/** change suggested by Kevin Mack of Adapco
-    With the original ADF library, there is no binary data for at least
-    the first 560 bytes, which causes a lot of programs
-    (mailers, WinZip) to think that the file is text and try to do
-    a \n -> \n\r conversion.  Since this string is only used for the
-    'what' command, I am deciding that we don't need this functionality
-    and am putting binary characters here. Specifically, I am putting
-    control characters, because while some programs (Evolution/gnome-vfs)
-    look for unprintable characters, some look for a ratio (Mozilla). **/
-
-/** modification by Bruce Wedan
-    I'm modifying the 1st 4 bytes of the header, @(#),  by turning on the
-    high bit. This makes these bytes non-ASCII and should not effect the
-    check/reporting of version number **/
-
-static char ADF_L_identification[] = "\300\250\243\251ADF Library  Version E01>" ;
-                                 /*   0   1   2   3   4567890123456789012345678901 = 32 */
+static char ADF_L_identification[] = "@(#)ADF Library  Version F01>" ;
+                                 /*   01234567890123456789012345678901 = 32 */
 
 /** Change version database version number every time the library
     version changes according to the following philosophy.
@@ -88,9 +73,25 @@ Definitions:
                           to files created by older versions of libraries.
 **/
 
+/** change suggested by Kevin Mack of Adapco
+    With the original ADF library, there is no binary data for at least
+    the first 560 bytes, which causes a lot of programs
+    (mailers, WinZip) to think that the file is text and try to do
+    a \n -> \n\r conversion.  Since this string is only used for the
+    'what' command, I am deciding that we don't need this functionality
+    and am putting binary characters here. Specifically, I am putting
+    control characters, because while some programs (Evolution/gnome-vfs)
+    look for unprintable characters, some look for a ratio (Mozilla). **/
+
+/** modification by Bruce Wedan
+    I'm modifying the 1st 4 bytes of the header, @(#),  by turning on the
+    high bit. This makes these bytes non-ASCII and should not effect the
+    check/reporting of version number **/
+
                                  /*                            AXXxxx       */
-static char ADF_D_identification[] = "\300\250\243\251ADF Database Version A02011>" ;
+static char ADF_D_identification[] = "\300\250\243\251ADF Database Version B02012>" ;
                                  /*   0   1   2   3   4567890123456789012345678901 = 32 */
+static char ADF_A_identification[] = "\300\250\243\251ADF Database Version A02011>" ;
 
 /***********************************************************************
     Includes
@@ -98,28 +99,30 @@ static char ADF_D_identification[] = "\300\250\243\251ADF Database Version A0201
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#if defined(_WIN32) && !defined(__NUTC__)
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
 #include <stdlib.h>
 #include <ctype.h>
+
+#if defined(_WIN32) && !defined(__NUTC__)
+# include <io.h>
+# ifndef F_OK
+#  define R_OK    004     /* Test for Read permission */
+#  define W_OK    002     /* Test for Write permission */
+#  define X_OK    001     /* Test for eXecute permission */
+#  define F_OK    000     /* Test for existence of File */
+# endif
+# define ACCESS _access
+#else
+# include <unistd.h>
+# define ACCESS access
+#endif
+
 #include "ADF.h"
 #include "ADF_internals.h"
-#if defined(_WIN32) && !defined(__NUTC__)
-#include <ctype.h>
-#ifndef F_OK
-#define R_OK    004     /* Test for Read permission */
-#define W_OK    002     /* Test for Write permission */
-#define X_OK    001     /* Test for eXecute permission */
-#define F_OK    000     /* Test for existence of File */
-#endif
-#endif
+#include "cgnstypes.h"
+
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
 #endif
-
 
 /***********************************************************************
     Error strings
@@ -499,7 +502,7 @@ name_start = 0 ;
 while( name[ name_start ] == ' ' ) {
    name_start++ ;
    } /* end while */
-name_length = strlen( &name[ name_start ] ) ;
+name_length = (int)strlen( &name[ name_start ] ) ;
 if( name_length > ADF_NAME_LENGTH ) {
    *error_return = STRING_LENGTH_TOO_BIG ;
    CHECK_ADF_ABORT( *error_return ) ;
@@ -755,7 +758,7 @@ void	ADF_Database_Open(
 		double *Root_ID,
 		int *error_return )
 {
-int                 iret ;
+int                 iret, legacy = 0 ;
 int                 error_dummy ;
 char                machine_format, format_to_use, os_to_use ;
 char                *status ;
@@ -797,7 +800,7 @@ CHECK_ADF_ABORT( *error_return ) ;
 	/** Determine the requested STATUS **/
 if( ADFI_stridx_c( status, "UNKNOWN" ) == 0 ) {
 	/** Determine the assessability of the filename **/
-   iret = access( filename, F_OK ) ;
+   iret = ACCESS( filename, F_OK ) ;
    if( iret != 0 ) /* File does not exist, set status to NEW */
       status = "NEW" ;
    else
@@ -807,7 +810,7 @@ if( ADFI_stridx_c( status, "UNKNOWN" ) == 0 ) {
 if( (ADFI_stridx_c( status, "READ_ONLY" ) == 0) ||
     (ADFI_stridx_c( status, "OLD" ) == 0) ) {
 	/** Determine the assessability of the filename **/
-   iret = access( filename, F_OK ) ;
+   iret = ACCESS( filename, F_OK ) ;
    if( iret != 0 ) { /* File does not exist, this is BAD for OLD */
       *error_return = REQUESTED_OLD_FILE_NOT_FOUND ;
       CHECK_ADF_ABORT( *error_return ) ;
@@ -822,7 +825,7 @@ else if( (ADFI_stridx_c( status, "NEW" ) == 0) ||
          (ADFI_stridx_c( status, "SCRATCH" ) == 0) ) {
 	/** Determine the assessability of the filename **/
    if( ADFI_stridx_c( status, "NEW" ) == 0 ) {
-      iret = access( filename, F_OK ) ;
+      iret = ACCESS( filename, F_OK ) ;
       if( iret == 0 ) { /* File exists, this is BAD for NEW */
          *error_return = REQUESTED_NEW_FILE_EXISTS ;
          CHECK_ADF_ABORT( *error_return ) ;
@@ -833,8 +836,11 @@ else if( (ADFI_stridx_c( status, "NEW" ) == 0) ||
       } /* end if */
    } /* end if */
 
+   if (ADFI_stridx_c(format, "LEGACY") == 0) legacy = 1;
+
 		/** Compose the file header **/
-   ADFI_fill_initial_file_header( format_to_use, os_to_use,
+   ADFI_fill_initial_file_header( format_to_use, os_to_use, legacy ?
+				  ADF_A_identification :
 				  ADF_D_identification,
 				  &file_header, error_return ) ;
    CHECK_ADF_ABORT( *error_return ) ;
@@ -842,6 +848,11 @@ else if( (ADFI_stridx_c( status, "NEW" ) == 0) ||
 		/** Open the new file **/
    ADFI_open_file( filename, status, &file_index, error_return ) ;
    CHECK_ADF_ABORT( *error_return ) ;
+
+   /* need this to write header */
+   ADF_file[file_index].old_version = (char)legacy;
+   ADF_file[file_index].format  = format_to_use;
+   ADF_file[file_index].os_size = os_to_use;
 
 		/** write out the file header **/
    ADFI_write_file_header( file_index, &file_header, error_return ) ;
@@ -883,9 +894,12 @@ if( file_header.tag0[0] == '\0' ) {
 /* Look at major revision letter: version in file must equal what
    this library would write unless there is a policy decision to
    support both versions. */
-
-      *error_return = INVALID_VERSION ;
-      if ( *error_return != NO_ERROR ) goto Open_Error ;
+      if (file_header.what[25] == 'A')
+         ADF_file[file_index].old_version = 1 ;
+      else {
+         *error_return = INVALID_VERSION ;
+         goto Open_Error ;
+      }
    } /* end if */
 
    if( file_header.what[28] == '>' )
@@ -993,7 +1007,7 @@ void	ADF_Database_Valid(
         return;
     }
 
-    if (access(filename, F_OK)) {
+    if (ACCESS(filename, F_OK)) {
         *error_return = REQUESTED_OLD_FILE_NOT_FOUND;
         return;
     }
@@ -1117,7 +1131,7 @@ CHECK_ADF_ABORT( *error_return ) ;
 
 *error_return = NO_ERROR ;
 	/** Convert the "what" string into a C string **/
-ADFI_string_2_C_string( &file_header.what[4], strcspn ( file_header.what, ">" ) - 4,
+ADFI_string_2_C_string( &file_header.what[4], (int)strcspn ( file_header.what, ">" ) - 4,
                         version, error_return ) ;
 CHECK_ADF_ABORT( *error_return ) ;
 
@@ -1200,7 +1214,7 @@ else {  /** this node is NOT a link **/
 
     /** Delete all data for this node **/
 
-   ADF_Put_Dimension_Information( ID, "MT", 0, (int *)0, error_return ) ;
+   ADF_Put_Dimension_Information( ID, "MT", 0, (cgsize_t *)0, error_return ) ;
    CHECK_ADF_ABORT( *error_return ) ;
    } /* end if-else */
 
@@ -1374,7 +1388,7 @@ output: int *error_return	Error return.
 ***********************************************************************/
 void	ADF_Get_Dimension_Values(
 		const double ID,
-		int dim_vals[],
+		cglong_t dim_vals[],
 		int *error_return )
 {
 unsigned int 			file_index ;
@@ -1537,7 +1551,7 @@ ADFI_evaluate_datatype( file_index, node_header.data_type,
         &file_format, &machine_format, error_return ) ;
 CHECK_ADF_ABORT( *error_return ) ;
 
-total_bytes = file_bytes * node_header.dimension_values[0] ;
+total_bytes = file_bytes * (int)node_header.dimension_values[0] ;
 ADFI_read_data_chunk( file_index, &node_header.data_chunks,
                       tokenized_data_type, file_bytes, total_bytes,
 	              0, total_bytes, link_data, error_return ) ;
@@ -1632,7 +1646,7 @@ ADFI_evaluate_datatype( file_index, node_header.data_type,
         &file_format, &machine_format, error_return ) ;
 CHECK_ADF_ABORT( *error_return ) ;
 
-total_bytes = file_bytes * node_header.dimension_values[0] ;
+total_bytes = file_bytes * (int)node_header.dimension_values[0] ;
 ADFI_read_data_chunk( file_index, &node_header.data_chunks,
                       tokenized_data_type, file_bytes, total_bytes,
 	              0, total_bytes, link_data, error_return ) ;
@@ -1651,16 +1665,16 @@ if (separator == NULL) {
 
 if ( lenfilename == 0 )  /** no filename **/
 {
-   *len_name = strlen(link_data) - 1;
+   *len_name = (int)strlen(link_data) - 1;
 }
 else if ( lenfilename > 0 && lenfilename == strlen( link_data ) )
 {
-   *len_file = lenfilename;
+   *len_file = (int)lenfilename;
 }
 else
 {
-   *len_file = lenfilename;
-   *len_name = strlen(link_data) - lenfilename - 1;
+   *len_file = (int)lenfilename;
+   *len_name = (int)(strlen(link_data) - lenfilename - 1);
 } /* end if */
 
 } /* end of ADF_Get_Link_Path */
@@ -1764,7 +1778,7 @@ if( name == NULL ) {
    return ;
    } /* end if */
 
-name_length = strlen( name ) ;
+name_length = (int)strlen( name ) ;
 if( name_length == 0 ) {
    *error_return = STRING_LENGTH_ZERO ;
    return ;
@@ -1980,7 +1994,7 @@ ADFI_read_node_header( file_index, &block_offset, &node_header, error_return ) ;
 CHECK_ADF_ABORT( *error_return ) ;
 
 if( (node_header.data_type[0] == 'L') && (node_header.data_type[1] == 'K'))
-   *link_path_length = node_header.dimension_values[0] ;
+   *link_path_length = (int)node_header.dimension_values[0] ;
 else
    *link_path_length =  0 ;
 
@@ -2015,7 +2029,7 @@ if( version == NULL ) {
 
 	/** Copy the proper portion of the "what" string **/
 strcpy ( version, &ADF_L_identification[4] ) ;
-lversion = strlen ( version ) ;
+lversion = (int)strlen ( version ) ;
 version[lversion-1] = '\0' ; /** remove trailing "what" delimiter ('>') **/
 } /* end of ADF_Library_Version */
 /* end of file ADF_Library_Version.c */
@@ -2053,7 +2067,7 @@ char	                link_data[ADF_FILENAME_LENGTH +
 				  ADF_MAX_LINK_DATA_SIZE + 2] ;
 int			null_filename = FALSE ;
 int			filename_length, linked_to_length, data_length ;
-int			dim_vals[1] ;
+cgsize_t		dim_vals[1] ;
 unsigned int            file_index ;
 struct DISK_POINTER     block_offset ;
 struct NODE_HEADER      node_header ;
@@ -2089,9 +2103,9 @@ if( *error_return != NO_ERROR ) {
    filename_length = 0 ;
    } /* end if */
 else {
-   filename_length = strlen( file_name) ;
+   filename_length = (int)strlen( file_name) ;
    } /* end else */
-linked_to_length = strlen( name_in_file ) ;
+linked_to_length = (int)strlen( name_in_file ) ;
 
 data_length = filename_length + linked_to_length + 1 ;
 if( data_length > ADF_FILENAME_LENGTH + ADF_MAX_LINK_DATA_SIZE + 1 ) {
@@ -2306,7 +2320,7 @@ void    ADF_Put_Dimension_Information(
         const double ID,
         const char *data_type,
         const int dims,
-        const int dim_vals[],
+        const cgsize_t dim_vals[],
         int *error_return )
 {
 unsigned int        file_index ;
@@ -2316,7 +2330,7 @@ struct TOKENIZED_DATA_TYPE
        tokenized_data_type[ 1 + (ADF_DATA_TYPE_LENGTH + 1)/3 ] ;
 char        file_format, machine_format ;
 int         file_bytes[2], machine_bytes[2] ;
-int         data_bytes, old_data_bytes ;
+cgulong_t   data_bytes, old_data_bytes ;
 int         i, datatype_length ;
 int         preserve_data = FALSE ;
 double      LID ;
@@ -2386,7 +2400,7 @@ if( ADFI_stridx_c( node.data_type, data_type ) == 0 ) { /* datatypes the same */
    } /* end if */
      /** If a different datatype, throw-away the data, record new datatype **/
 else {
-   datatype_length = strlen( data_type ) ;
+   datatype_length = (int)strlen( data_type ) ;
 	/** Copy the datatype **/
    for( i=0; i<MIN(datatype_length, ADF_DATA_TYPE_LENGTH); i++ ) {
       node.data_type[i] = data_type[i] ;
@@ -2477,7 +2491,7 @@ CHECK_ADF_ABORT( *error_return ) ;
 name_start = 0 ;
 while( name[ name_start ] == ' ' )
    name_start++ ;
-name_length = strlen( &name[ name_start ] ) ;
+name_length = (int)strlen( &name[ name_start ] ) ;
 if( name_length > ADF_NAME_LENGTH ) {
    *error_return = STRING_LENGTH_TOO_BIG ;
    CHECK_ADF_ABORT( *error_return ) ;
@@ -2525,7 +2539,7 @@ if( (child_block_offset.block != sub_node_entry.child_location.block) ||
    } /* end if */
 
 	/** Copy the name **/
-name_length = strlen( name ) ;
+name_length = (int)strlen( name ) ;
 for( i=0; i<MIN(name_length, ADF_NAME_LENGTH); i++ ) {
    child_node.name[i] = name[i] ;
    sub_node_entry.child_name[i] = name[i] ;
@@ -2578,8 +2592,9 @@ struct	DATA_CHUNK_TABLE_ENTRY	*data_chunk_table ;
 char	*data_pointer ;
 
 char			file_format, machine_format ;
-int			file_bytes, memory_bytes, bytes_to_read ;
-long			total_bytes, bytes_read ;
+int			file_bytes, memory_bytes;
+cglong_t		bytes_to_read ;
+cglong_t		total_bytes, bytes_read ;
 int			i, j ;
 double			LID ;
 
@@ -2610,7 +2625,7 @@ for( j=0; j<(int)node.number_of_dimensions; j++ )
 
 	/** If there is NO DATA, fill data space with zeros, return error **/
 if( node.number_of_data_chunks == 0  ) {
-   memset( data, 0, total_bytes*memory_bytes/file_bytes ) ;
+   memset( data, 0, (size_t)(total_bytes*memory_bytes/file_bytes) ) ;
    *error_return = NO_DATA ;
    return ;	/** NO_DATA is really a warning, so don't check & abort... **/
    } /* end if */
@@ -2668,7 +2683,7 @@ else {
    free( data_chunk_table ) ;
    if( bytes_read < total_bytes ) {
       *error_return = INCOMPLETE_DATA ;
-      memset( data_pointer, 0, total_bytes - bytes_read ) ;
+      memset( data_pointer, 0, (size_t)(total_bytes - bytes_read) ) ;
       } /* end if */
    } /* end else */
 
@@ -2690,8 +2705,8 @@ output: int *error_return	Error return.
 ***********************************************************************/
 void	ADF_Read_Block_Data(
 		const double ID,
-		const long b_start,
-		const long b_end,
+		const cgsize_t b_start,
+		const cgsize_t b_end,
 		char *data,
 		int *error_return )
 {
@@ -2704,10 +2719,11 @@ struct	DATA_CHUNK_TABLE_ENTRY	*data_chunk_table ;
 char	*data_pointer ;
 
 char			file_format, machine_format ;
-int			file_bytes, memory_bytes, bytes_to_read ;
-long			total_bytes, bytes_read, start_offset ;
-long                    chunk_size, chunk_end_byte ;
-long                    start_byte, end_byte, block_bytes ;
+int			file_bytes, memory_bytes ;
+cglong_t		bytes_to_read ;
+cglong_t		total_bytes, bytes_read, start_offset ;
+cglong_t		chunk_size, chunk_end_byte ;
+cglong_t		start_byte, end_byte, block_bytes ;
 int			i, j ;
 double			LID ;
 
@@ -2751,7 +2767,7 @@ block_bytes = end_byte - start_byte ;
 
 	/** If there is NO DATA, fill data space with zeros, return error **/
 if( node.number_of_data_chunks == 0  ) {
-   memset( data, 0, block_bytes*memory_bytes/file_bytes ) ;
+   memset( data, 0, (size_t)(block_bytes*memory_bytes/file_bytes) ) ;
    *error_return = NO_DATA ;
    return ;	/** NO_DATA is really a warning, so don't check & abort... **/
    } /* end if */
@@ -2833,7 +2849,7 @@ else {
    free( data_chunk_table ) ;
    if( bytes_read < block_bytes ) {
       *error_return = INCOMPLETE_DATA ;
-      memset( data_pointer, 0, total_bytes - bytes_read ) ;
+      memset( data_pointer, 0, (size_t)(total_bytes - bytes_read) ) ;
       } /* end if */
    } /* end else */
 
@@ -2848,17 +2864,17 @@ capabilities are both in the node's data and also in memory.
 Vectors of integers are used to indicate the data to be accessed
 from the node, and another set of integer vectors is used to 
 describe the memory location for the data.  
-	Note:  If the data-type of the node is a compound data-type ("I4[3],R8") 
+	Note:  If the data-type of the node is a compound data-type ("I4[3],R8")
 for example, the partial capabilities will access one or more of
-these 20-byte data entities.  You cannot access a subset of an 
+these 20-byte data entities.  You cannot access a subset of an
 occurrence of the data-type.
 
-ADF_Read_Data( ID, s_start[], s_end[], s_stride[], m_num_dims, 
+ADF_Read_Data( ID, s_start[], s_end[], s_stride[], m_num_dims,
 	m_dims[], m_start[], m_end[], m_stride[], data, error_return )
 input:  const double ID		The ID of the node to use.
-input:  const int s_start[]	The starting dimension values to use in 
+input:  const int s_start[]	The starting dimension values to use in
 				the database (node).
-input:  const int s_end[]	The ending dimension values to use in 
+input:  const int s_end[]	The ending dimension values to use in
 				the database (node).
 input:  const int s_stride[]	The stride values to use in the database (node).
 input:  const int m_num_dims	The number of dimensions to use in memory.
@@ -2871,14 +2887,14 @@ output: int *error_return	Error return.
 ***********************************************************************/
 void	ADF_Read_Data(
 		const double ID,
-		const int s_start[],
-		const int s_end[],
-		const int s_stride[],
+		const cgsize_t s_start[],
+		const cgsize_t s_end[],
+		const cgsize_t s_stride[],
 		const int m_num_dims,
-		const int m_dims[],
-		const int m_start[],
-		const int m_end[],
-		const int m_stride[],
+		const cgsize_t m_dims[],
+		const cgsize_t m_start[],
+		const cgsize_t m_end[],
+		const cgsize_t m_stride[],
 		char *data,
 		int *error_return )
 {
@@ -2887,10 +2903,11 @@ struct DISK_POINTER	block_offset, relative_block ;
 struct NODE_HEADER  node ;
 struct TOKENIZED_DATA_TYPE
               tokenized_data_type[ 1 + (ADF_DATA_TYPE_LENGTH + 1)/3 ] ;
-int           current_disk[ADF_MAX_DIMENSIONS] ;
-int           current_memory[ADF_MAX_DIMENSIONS] ;
-unsigned long total_disk_elements, total_memory_elements ;
-unsigned long disk_offset, memory_offset ;
+cglong_t      current_disk[ADF_MAX_DIMENSIONS] ;
+cglong_t      current_memory[ADF_MAX_DIMENSIONS] ;
+cgulong_t     total_disk_elements, total_memory_elements ;
+cgulong_t     disk_offset, memory_offset ;
+cgulong_t     memory_dims[ADF_MAX_DIMENSIONS] ;
 char          disk_format, machine_format ;
 int           formats_compare ;
 int           i ;
@@ -2898,8 +2915,8 @@ int	      file_bytes = 0 ;
 int	      memory_bytes = 0 ;
 int	      no_data = FALSE ;
 double        LID ;
-unsigned long relative_offset = 0, current_chunk_size = 0,
-              past_chunk_sizes, current_chunk ;
+cgulong_t relative_offset = 0, current_chunk_size = 0,
+              past_chunk_sizes = 0, current_chunk = 0, disk_elem ;
 struct DATA_CHUNK_TABLE_ENTRY   *data_chunk_table = NULL;
 
 if( (s_start == NULL) || (s_end == NULL) || (s_stride == NULL) ||
@@ -2931,8 +2948,11 @@ ADFI_count_total_array_points( node.number_of_dimensions,
 			       error_return ) ;
 CHECK_ADF_ABORT( *error_return ) ;
 
+for (i = 0; i < m_num_dims; i++)
+   memory_dims[i] = m_dims[i];
+
 ADFI_count_total_array_points( (unsigned int)m_num_dims,
-			       (unsigned int *)m_dims,
+			       memory_dims,
 			       m_start, m_end, m_stride,
 			       &total_memory_elements, &memory_offset,
 			       error_return ) ;
@@ -2990,11 +3010,11 @@ for( i=0; i<(int)node.number_of_dimensions; i++ )
    current_disk[i] = s_start[i] ;
 for( i=0; i<m_num_dims; i++ )
    current_memory[i] = m_start[i] ;
-   
+
 	/** Adjust data pointer **/
 if( memory_offset != 0 )
    data += memory_offset * memory_bytes ;
-for( i=0; i<total_disk_elements; i++ ) {
+for( disk_elem=0; disk_elem<total_disk_elements; disk_elem++ ) {
 	/** If there is no data on disk, return zeros **/
    if( no_data == TRUE ) {
       memset( data, 0, memory_bytes ) ;
@@ -3023,7 +3043,7 @@ for( i=0; i<total_disk_elements; i++ ) {
        data we will a simple increment to maximize the throught. Thus for
        block reads you can temporarily change to 1D for the read to
        improve efficiency. Note total size shouldn't change!! **/
-      if( i < total_disk_elements - 1 ) {
+      if( disk_elem < total_disk_elements - 1 ) {
         if ( node.number_of_dimensions == 1 ) {
 	  disk_offset = s_stride[0];
 	  current_disk[0] += disk_offset;
@@ -3084,7 +3104,7 @@ for( i=0; i<total_disk_elements; i++ ) {
       } /* end else */
 
 	/** Increment disk pointers **/
-      if( i < total_disk_elements - 1 ) {
+      if( disk_elem < total_disk_elements - 1 ) {
         if ( node.number_of_dimensions == 1 ) {
 	  disk_offset = s_stride[0];
 	  current_disk[0] += disk_offset;
@@ -3102,7 +3122,7 @@ for( i=0; i<total_disk_elements; i++ ) {
          } /* end if */
       } /* end else if */
 
-   if( i < total_disk_elements - 1 ) {
+   if( disk_elem < total_disk_elements - 1 ) {
 	/** Increment memory pointers **/
      if ( m_num_dims == 1 ) {
        memory_offset = m_stride[0];
@@ -3111,7 +3131,7 @@ for( i=0; i<total_disk_elements; i++ ) {
      } /* end if */ 
      else {
        ADFI_increment_array(
-		(unsigned int)m_num_dims, (unsigned int* )m_dims,
+		(unsigned int)m_num_dims, memory_dims,
 		m_start, m_end, m_stride,
                 current_memory, &memory_offset, error_return ) ;
        CHECK_ADF_ABORT( *error_return ) ;
@@ -3188,7 +3208,7 @@ CHECK_ADF_ABORT( *error_return ) ;
 if( label == NULL )
    label_length = 0 ; /* copy none, then blank fill */
 else
-   label_length = strlen( label ) ;
+   label_length = (int)strlen( label ) ;
 if( label_length > ADF_LABEL_LENGTH ) {
    *error_return = STRING_LENGTH_TOO_BIG ;
    CHECK_ADF_ABORT( *error_return ) ;
@@ -3234,11 +3254,11 @@ struct TOKENIZED_DATA_TYPE
 		tokenized_data_type[ 1 + (ADF_DATA_TYPE_LENGTH + 1)/3 ] ;
 struct DATA_CHUNK_TABLE_ENTRY	data_chunk_entry_table[2], *data_chunk_table ;
 int			file_bytes, memory_bytes ;
-long			total_bytes, current_bytes ;
+cglong_t			total_bytes, current_bytes ;
 int			i, j ;
 char    		tag[TAG_SIZE+1] ;
 struct DISK_POINTER     data_start, chunk_start, end_of_chunk_tag ;
-long                    chunk_total_bytes ;
+cglong_t                    chunk_total_bytes ;
 char			file_format, machine_format ;
 double			LID ;
 
@@ -3501,8 +3521,8 @@ output: int *error_return   Error return.
 ***********************************************************************/
 void    ADF_Write_Block_Data(
         const double ID,
-        const long b_start,
-        const long b_end,
+        const cgsize_t b_start,
+        const cgsize_t b_end,
         char *data,
         int *error_return )
 {
@@ -3515,13 +3535,13 @@ struct DATA_CHUNK_TABLE_ENTRY  data_chunk_entry_table[2], *data_chunk_table ;
 
 char        file_format, machine_format ;
 int         file_bytes, memory_bytes ;
-long        total_bytes, bytes_written, bytes_to_write = 0;
+cglong_t        total_bytes, bytes_written, bytes_to_write = 0;
 int         i, j ;
 char        tag[TAG_SIZE+1] ;
 struct DISK_POINTER     data_start, chunk_start, end_of_chunk_tag ;
-long        start_offset ;
-long        chunk_size, chunk_end_byte ;
-long        start_byte, end_byte, block_bytes ;
+cglong_t        start_offset ;
+cglong_t        chunk_size, chunk_end_byte ;
+cglong_t        start_byte, end_byte, block_bytes ;
 double      LID ;
 
 if( data == NULL ) {
@@ -3848,14 +3868,14 @@ output: int *error_return	Error return.
 ***********************************************************************/
 void	ADF_Write_Data(
 		const double ID,
-		const int s_start[],
-		const int s_end[],
-		const int s_stride[],
+		const cgsize_t s_start[],
+		const cgsize_t s_end[],
+		const cgsize_t s_stride[],
 		const int m_num_dims,
-		const int m_dims[],
-		const int m_start[],
-		const int m_end[],
-		const int m_stride[],
+		const cgsize_t m_dims[],
+		const cgsize_t m_start[],
+		const cgsize_t m_end[],
+		const cgsize_t m_stride[],
 		const char *data,
 		int *error_return )
 {
@@ -3867,20 +3887,21 @@ struct NODE_HEADER  node ;
 struct DATA_CHUNK_TABLE_ENTRY   *data_chunk_table ;
 struct TOKENIZED_DATA_TYPE
               tokenized_data_type[ 1 + (ADF_DATA_TYPE_LENGTH + 1)/3 ] ;
-int           current_disk[ADF_MAX_DIMENSIONS] ;
-int           current_memory[ADF_MAX_DIMENSIONS] ;
-unsigned long total_disk_elements, total_memory_elements ;
-unsigned long disk_offset, memory_offset ;
+cglong_t      current_disk[ADF_MAX_DIMENSIONS] ;
+cglong_t      current_memory[ADF_MAX_DIMENSIONS] ;
+cgulong_t     total_disk_elements, total_memory_elements ;
+cgulong_t     disk_offset, memory_offset ;
+cgulong_t     memory_dims[ADF_MAX_DIMENSIONS];
 int           formats_compare ;
 char          disk_format, machine_format ;
 int           i ;
 int           file_bytes = 0 ;
 int           memory_bytes = 0 ;
 char          tag[TAG_SIZE+1] ;
-unsigned long total_bytes ;
-long          current_bytes, chunk_total_bytes ;
+cgulong_t     total_bytes, disk_elem ;
+cglong_t      current_bytes, chunk_total_bytes ;
 double        LID ;
-unsigned long relative_offset, current_chunk, current_chunk_size,
+cgulong_t     relative_offset, current_chunk, current_chunk_size,
               past_chunk_sizes ;
 
 if( (s_start == NULL) || (s_end == NULL) || (s_stride == NULL) ||
@@ -3913,8 +3934,11 @@ ADFI_count_total_array_points( node.number_of_dimensions,
 			       error_return ) ;
 CHECK_ADF_ABORT( *error_return ) ;
 
+for (i = 0; i < m_num_dims; i++)
+   memory_dims[i] = m_dims[i];
+
 ADFI_count_total_array_points( (unsigned int)m_num_dims,
-			       (unsigned int *)m_dims,
+			       memory_dims,
 			       m_start, m_end, m_stride,
 			       &total_memory_elements, &memory_offset,
 			       error_return ) ;
@@ -3983,7 +4007,7 @@ else if( node.number_of_data_chunks == 1 ) {
 	(end_of_chunk_tag.block - data_start.block) * DISK_BLOCK_SIZE ;
 
 	/** If Data grew: Allocate more data-space and initialize to zero**/
-   if( (long int) total_bytes > chunk_total_bytes ) {
+   if( (cglong_t) total_bytes > chunk_total_bytes ) {
 	/** Allocate memory for the data-chunk-table, with an additional
 	    entry in case we need to grow it **/
       data_chunk_table = (struct  DATA_CHUNK_TABLE_ENTRY *)
@@ -4145,7 +4169,7 @@ if( node.number_of_data_chunks == 1 ) {
    if( memory_offset != 0 )
       data += memory_offset * memory_bytes ;
 
-   for( i=0; i<total_disk_elements; i++ ) {
+   for( disk_elem=0; disk_elem<total_disk_elements; disk_elem++ ) {
 	/** Put the data to disk **/
       if ( block_offset.offset > DISK_BLOCK_SIZE ) {
         ADFI_adjust_disk_pointer( &block_offset, error_return ) ;
@@ -4171,7 +4195,7 @@ if( node.number_of_data_chunks == 1 ) {
        data we will a simple increment to maximize the throught. Thus for
        block writes you can temporarily change to 1D for the read to
        improve efficiency. Note total size shouldn't change!! **/
-      if( i < total_disk_elements - 1 ) {
+      if( disk_elem < total_disk_elements - 1 ) {
         if ( node.number_of_dimensions == 1 ) {
 	  disk_offset = s_stride[0];
 	  current_disk[0] += disk_offset;
@@ -4192,7 +4216,7 @@ if( node.number_of_data_chunks == 1 ) {
 	} /* end if */ 
 	else {
            ADFI_increment_array(
-	        (unsigned int)m_num_dims, (unsigned int* )m_dims,
+	        (unsigned int)m_num_dims, memory_dims,
 		m_start, m_end, m_stride,
                 current_memory, &memory_offset, error_return ) ;
            CHECK_ADF_ABORT( *error_return ) ;
@@ -4230,7 +4254,7 @@ else {
    if( memory_offset != 0 )
       data += memory_offset * memory_bytes ;
 
-   for( i=0; i<total_disk_elements; i++ ) {
+   for( disk_elem=0; disk_elem<total_disk_elements; disk_elem++ ) {
       while( relative_offset >= past_chunk_sizes + current_chunk_size ) {
 	 if( ++current_chunk >= node.number_of_data_chunks ) {
 	    *error_return = INCOMPLETE_DATA ;
@@ -4271,7 +4295,7 @@ else {
       } /* end if */
 
 	/** Increment disk and memory pointers **/
-      if( i < total_disk_elements - 1 ) {
+      if( disk_elem < total_disk_elements - 1 ) {
         if ( node.number_of_dimensions == 1 ) {
 	  disk_offset = s_stride[0];
 	  current_disk[0] += disk_offset;
@@ -4294,7 +4318,7 @@ else {
         } /* end if */ 
         else {
           ADFI_increment_array(
-		(unsigned int)m_num_dims, (unsigned int* )m_dims,
+		(unsigned int)m_num_dims, memory_dims,
 		m_start, m_end, m_stride,
                 current_memory, &memory_offset, error_return ) ;
           CHECK_ADF_ABORT( *error_return ) ;
