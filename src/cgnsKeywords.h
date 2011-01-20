@@ -91,11 +91,6 @@ freely, subject to the following restrictions:
 #define CG_CONFIG_ADD_PATH  4
 #define CG_CONFIG_FILE_TYPE 5
 
-#define CG_CONFIG_XML_DELETED     301
-#define CG_CONFIG_XML_NAMESPACE   302
-#define CG_CONFIG_XML_THRESHOLD   303
-#define CG_CONFIG_XML_COMPRESSION 304
-
 /* The Null and the UserDefined string constants are always the same,
    whatever enumerate you consider. */
 #define CG_Null_s                      "Null"
@@ -494,30 +489,30 @@ typedef enum {
 	MIXED, NGON_n, NFACE_n					/* 21, 22, 23	*/
 } ElementType_t;
 #endif
-#define NofValidElementTypes 22
+#define NofValidElementTypes 24
 
 #define NODE_s                         "NODE"
-#define BAR_2_s                        "BAR_2" 	 
+#define BAR_2_s                        "BAR_2"
 #define BAR_3_s                        "BAR_3"
-#define TRI_3_s                        "TRI_3" 	 
-#define TRI_6_s                        "TRI_6"           
-#define QUAD_4_s                       "QUAD_4" 	 
-#define QUAD_8_s                       "QUAD_8"          
-#define QUAD_9_s                       "QUAD_9"           
-#define TETRA_4_s                      "TETRA_4" 	 
-#define TETRA_10_s                     "TETRA_10"           
-#define PYRA_5_s                       "PYRA_5" 	 
-#define PYRA_13_s                      "PYRA_13"           
-#define PYRA_14_s                      "PYRA_14"           
-#define PENTA_6_s                      "PENTA_6" 	 
-#define PENTA_15_s                     "PENTA_15"          
-#define PENTA_18_s                     "PENTA_18"           
-#define HEXA_8_s                       "HEXA_8" 	 
-#define HEXA_20_s                      "HEXA_20"          
-#define HEXA_27_s                      "HEXA_27"           
-#define MIXED_s                        "MIXED" 	 
-#define NGON_n_s                       "NGON_n"          
-#define NFACE_n_s                      "NFACE_n"          
+#define TRI_3_s                        "TRI_3"
+#define TRI_6_s                        "TRI_6"
+#define QUAD_4_s                       "QUAD_4"
+#define QUAD_8_s                       "QUAD_8"
+#define QUAD_9_s                       "QUAD_9"
+#define TETRA_4_s                      "TETRA_4"
+#define TETRA_10_s                     "TETRA_10"
+#define PYRA_5_s                       "PYRA_5"
+#define PYRA_13_s                      "PYRA_13"
+#define PYRA_14_s                      "PYRA_14"
+#define PENTA_6_s                      "PENTA_6"
+#define PENTA_15_s                     "PENTA_15"
+#define PENTA_18_s                     "PENTA_18"
+#define HEXA_8_s                       "HEXA_8"
+#define HEXA_20_s                      "HEXA_20"
+#define HEXA_27_s                      "HEXA_27"
+#define MIXED_s                        "MIXED"
+#define NGON_n_s                       "NGON_n"
+#define NFACE_n_s                      "NFACE_n"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Zone types                                                       *

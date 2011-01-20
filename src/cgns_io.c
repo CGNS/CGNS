@@ -25,9 +25,13 @@ freely, subject to the following restrictions:
 #include <sys/types.h>
 #include <sys/stat.h>
 #if defined(_WIN32) && !defined(__NUTC__)
-#include <io.h>
+# include <io.h>
+# define ACCESS _access
+# define UNLINK _unlink
 #else
-#include <unistd.h>
+# include <unistd.h>
+# define ACCESS access
+# define UNLINK unlink
 #endif
 #include <errno.h>
 
@@ -35,9 +39,6 @@ freely, subject to the following restrictions:
 #include "adf/ADF.h"
 #ifdef BUILD_HDF5
 #include "adfh/ADFH.h"
-#endif
-#ifdef BUILD_XML
-#include "adfx/ADFX.h"
 #endif
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
@@ -69,7 +70,8 @@ static char *cgio_ErrorMessage[] = {
     "NULL or empty string",
     "invalid configure option",
     "rename of tempfile file failed",
-    "too many open files"
+    "too many open files",
+    "dimensions exceed that for a 32-bit integer"
 };
 #define CGIO_MAX_ERRORS (sizeof(cgio_ErrorMessage)/sizeof(char *))
 
@@ -102,14 +104,14 @@ static cgns_io *get_cgnsio (int cgio_num, int write) {
 
 /*---------------------------------------------------------*/
 
-static size_t compute_data_size (const char *data_type,
-    int ndims, const int *dims)
+static cglong_t compute_data_size (const char *data_type,
+    int ndims, const cgsize_t *dims)
 {
     int size;
-    unsigned long count;
+    cglong_t count;
 
     size = cgio_compute_data_size (data_type, ndims, dims, &count);
-    return (size_t)size * (size_t)count;
+    return (cglong_t)size * count;
 }
 
 /*---------------------------------------------------------*/
@@ -215,10 +217,10 @@ static int rewrite_file (int cginp, const char *filename)
         }
         sprintf(tmpfile, "%s.temp", linkfile);
     }
-    unlink(tmpfile);
+    UNLINK(tmpfile);
 
     if (cgio_open_file(tmpfile, CGIO_MODE_WRITE, input->type, &cgout)) {
-        unlink(tmpfile);
+        UNLINK(tmpfile);
         free(tmpfile);
         if (linkfile != NULL) free(linkfile);
         return get_error();
@@ -229,7 +231,7 @@ static int rewrite_file (int cginp, const char *filename)
     cgio_close_file (cgout);
 
     if (ierr) {
-        unlink(tmpfile);
+        UNLINK(tmpfile);
         free(tmpfile);
         if (linkfile != NULL) free(linkfile);
         return set_error(ierr);
@@ -238,12 +240,12 @@ static int rewrite_file (int cginp, const char *filename)
     ierr = CGIO_ERR_NONE;
     cgio_close_file (cginp);
     if (linkfile == NULL) {
-        unlink(filename);
+        UNLINK(filename);
         if (rename(tmpfile, filename))
             ierr = CGIO_ERR_FILE_RENAME;
     }
     else {
-        unlink(linkfile);
+        UNLINK(linkfile);
         if (rename(tmpfile, linkfile))
             ierr = CGIO_ERR_FILE_RENAME;
         free(linkfile);
@@ -318,7 +320,7 @@ int cgio_find_file (const char *filename, int file_type,
 
     if (filename == NULL || !*filename)
         return set_error(CGIO_ERR_NULL_FILE);
-    size = max_path_len - 1 - strlen(filename);
+    size = max_path_len - 1 - (int)strlen(filename);
     if (size < 0) return set_error(CGIO_ERR_TOO_SMALL);
     if (cgio_check_file(filename, &type) == CGIO_ERR_NONE &&
        (file_type == CGIO_FILE_NONE || file_type == type)) {
@@ -346,10 +348,6 @@ int cgio_find_file (const char *filename, int file_type,
     else if (file_type == CGIO_FILE_HDF5)
         p = getenv ("HDF5_LINK_PATH");
 #endif
-#ifdef BUILD_XML
-    else if (file_type == CGIO_FILE_XML)
-        p = getenv ("XML_LINK_PATH");
-#endif
     else
         p = NULL;
     while (p != NULL && *p) {
@@ -358,7 +356,7 @@ int cgio_find_file (const char *filename, int file_type,
 #else
         if (NULL == (s = strchr (p, ':')))
 #endif
-            len = strlen(p);
+            len = (int)strlen(p);
         else
             len = (int)(s++ - p);
         if (len) {
@@ -389,7 +387,7 @@ int cgio_find_file (const char *filename, int file_type,
 #else
         if (NULL == (s = strchr (p, ':')))
 #endif
-            len = strlen(p);
+            len = (int)strlen(p);
         else
             len = (int)(s++ - p);
         if (len) {
@@ -420,7 +418,7 @@ int cgio_find_file (const char *filename, int file_type,
 #else
             if (NULL == (s = strchr (p, ':')))
 #endif
-                len = strlen(p);
+                len = (int)strlen(p);
             else
                 len = (int)(s++ - p);
             if (len) {
@@ -452,14 +450,14 @@ int cgio_find_file (const char *filename, int file_type,
 
 int cgio_is_supported (int file_type)
 {
-    if (file_type == CGIO_FILE_ADF || file_type == CGIO_FILE_ADF2)
+    if (file_type == CGIO_FILE_ADF)
         return set_error(CGIO_ERR_NONE);
-#ifdef BUILD_HDF5
-    if (file_type == CGIO_FILE_HDF5)
+#if CG_SIZEOF_SIZE == 32
+    if (file_type == CGIO_FILE_ADF2)
         return set_error(CGIO_ERR_NONE);
 #endif
-#ifdef BUILD_XML
-    if (file_type == CGIO_FILE_XML)
+#ifdef BUILD_HDF5
+    if (file_type == CGIO_FILE_HDF5)
         return set_error(CGIO_ERR_NONE);
 #endif
     return set_error(CGIO_ERR_FILE_TYPE);
@@ -471,12 +469,7 @@ int cgio_configure (int what, void *value)
 {
     int ierr = CGIO_ERR_BAD_OPTION;
 
-    if (what > 300) {
-#ifdef BUILD_XML
-        ierr = ADFX_Configure(what-300, value);
-#endif
-    }
-    else if (what > 200) {
+    if (what > 200) {
 #ifdef BUILD_HDF5
         ADFH_Configure(what-200, value, &ierr);
 #endif
@@ -511,12 +504,12 @@ void cgio_cleanup ()
 int cgio_check_file (const char *filename, int *file_type)
 {
     int n;
-    char *p, buf[256];
+    char buf[256];
     FILE *fp;
     static char *HDF5sig = "\211HDF\r\n\032\n";
     struct stat st;
 
-    if (access (filename, 0) || stat (filename, &st) ||
+    if (ACCESS (filename, 0) || stat (filename, &st) ||
         S_IFREG != (st.st_mode & S_IFREG))
         return set_error(CGIO_ERR_NOT_FOUND);
 
@@ -547,37 +540,19 @@ int cgio_check_file (const char *filename, int *file_type)
         return set_error(CGIO_ERR_NONE);
     }
 
-    /* check for XML */
-
-    for (n = 0; n < sizeof(buf)-1; n++) {
-        if (!isascii (buf[n]))
-            return set_error(CGIO_ERR_FILE_TYPE);
-    }
-    for (p = buf; *p && isspace(*p); p++)
-        ;
-    if (0 == strncmp (p, "<?xml", 5)) {
-        while ((p = strchr (p, 'A')) != NULL) {
-            if (0 == strncmp (p, "ADFXfile", 8)) {
-                *file_type = CGIO_FILE_XML;
-                return set_error(CGIO_ERR_NONE);
-            }
-            p++;
-        }
-    }
-
     return set_error(CGIO_ERR_FILE_TYPE);
 }
 
 /*---------------------------------------------------------*/
 
 int cgio_compute_data_size (const char *data_type,
-    int ndims, const int *dims, unsigned long *count)
+    int ndims, const cgsize_t *dims, cglong_t *count)
 {
     if (ndims > 0) {
         int i;
-        *count = (unsigned long)dims[0];
+        *count = (cglong_t)dims[0];
         for (i = 1; i < ndims; i++)
-            *count *= (unsigned long)dims[i];
+            *count *= (cglong_t)dims[i];
     }
     else {
         *count = 0;
@@ -589,7 +564,7 @@ int cgio_compute_data_size (const char *data_type,
         case 'I':
         case 'U':
             if (data_type[1] == '4') return sizeof(int);
-            if (data_type[1] == '8') return sizeof(long);
+            if (data_type[1] == '8') return sizeof(cglong_t);
             break;
         case 'R':
             if (data_type[1] == '4') return sizeof(float);
@@ -601,6 +576,33 @@ int cgio_compute_data_size (const char *data_type,
             break;
     }
     return 0;
+}
+
+/*---------------------------------------------------------*/
+
+int cgio_check_dimensions (int ndims, const cglong_t *dims)
+{
+    int n;
+
+    for (n = 0; n < ndims; n++) {
+        if (dims[n] > CG_MAX_INT32)
+            return set_error(CGIO_ERR_DIMENSIONS);
+    }
+    return CGIO_ERR_NONE;
+}
+
+/*---------------------------------------------------------*/
+
+int cgio_copy_dimensions (int ndims, const cglong_t *dims64, cgsize_t *dims)
+{
+    int n;
+
+#if CG_SIZEOF_SIZE == 32
+    if (cgio_check_dimensions(ndims, dims64)) return get_error();
+#endif
+    for (n = 0; n < ndims; n++)
+        dims[n] = (cgsize_t)dims64[n];
+    return CGIO_ERR_NONE;
 }
 
 /*=========================================================
@@ -644,20 +646,21 @@ int cgio_open_file (const char *filename, int file_mode,
             return set_error(CGIO_ERR_FILE_MODE);
     }
     last_type = file_type;
+#if CG_SIZEOF_SIZE == 32
     if (file_type == CGIO_FILE_ADF || file_type == CGIO_FILE_ADF2) {
+        ADF_Database_Open(filename, fmode, "LEGACY", &rootid, &ierr);
+        if (ierr > 0) return set_error(ierr);
+    }
+#else
+    if (file_type == CGIO_FILE_ADF) {
         ADF_Database_Open(filename, fmode, "NATIVE", &rootid, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
+#endif
 #ifdef BUILD_HDF5
     else if (file_type == CGIO_FILE_HDF5) {
         ADFH_Database_Open(filename, fmode, "NATIVE", &rootid, &ierr);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (file_type == CGIO_FILE_XML) {
-        ierr = ADFX_Open_File(filename, fmode, &rootid);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {
@@ -715,12 +718,6 @@ int cgio_close_file (int cgio_num)
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Close_File(cgio->rootid, 0);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -756,17 +753,6 @@ int cgio_compress_file (int cgio_num, const char *filename)
             ierr = get_error();
             cgio_close_file(cgio_num);
             return set_error(ierr);
-        }
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Close_File(cgio->rootid, 1);
-        if (ierr) return set_error(ierr);
-        cgio->type = CGIO_FILE_NONE;
-        if (--num_open == 0) {
-            free(iolist);
-            num_iolist = 0;
         }
     }
 #endif
@@ -817,12 +803,6 @@ int cgio_flush_to_disk (int cgio_num)
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Flush_to_Disk(cgio->rootid);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -850,12 +830,6 @@ int cgio_library_version (int cgio_num, char *version)
     else if (cgio->type == CGIO_FILE_HDF5) {
         ADFH_Library_Version(version, &ierr);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Library_Version(version);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {
@@ -886,13 +860,6 @@ int cgio_file_version (int cgio_num, char *file_version,
         ADFH_Database_Version(cgio->rootid, file_version,
             creation_date, modified_date, &ierr);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_File_Version(cgio->rootid, file_version,
-            creation_date, modified_date);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {
@@ -959,11 +926,6 @@ int cgio_error_message (int max_len, char *error_msg)
         ADFH_Error_Message(last_err, msg);
     }
 #endif
-#ifdef BUILD_XML
-    else if (last_type == CGIO_FILE_XML) {
-        ADFX_Error_Message(last_err, msg);
-    }
-#endif
     else {
         strcpy(msg, "unknown error message");
     }
@@ -1012,12 +974,6 @@ int cgio_create_node (int cgio_num, double pid,
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Create_Node(pid, name, id);
-        if (ierr > 0) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -1029,7 +985,7 @@ int cgio_create_node (int cgio_num, double pid,
 
 int cgio_new_node (int cgio_num, double pid, const char *name,
     const char *label, const char *data_type, int ndims,
-    const int *dims, const void *data, double *id)
+    const cgsize_t *dims, const void *data, double *id)
 {
     int ierr;
     cgns_io *cgio;
@@ -1067,13 +1023,6 @@ int cgio_new_node (int cgio_num, double pid, const char *name,
         }
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_New_Node(pid, name, label, data_type,
-                  ndims, dims, data, id);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -1099,12 +1048,6 @@ int cgio_delete_node (int cgio_num, double pid, double id)
     else if (cgio->type == CGIO_FILE_HDF5) {
         ADFH_Delete(pid, id, &ierr);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Delete_Node(pid, id);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {
@@ -1135,12 +1078,6 @@ int cgio_move_node (int cgio_num, double pid, double id,
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Move_Node(pid, id, new_pid);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -1156,8 +1093,9 @@ int cgio_copy_node (int cgio_num_inp, double id_inp,
     cgns_io *input, *output;
     char label[CGIO_MAX_NAME_LENGTH+1];
     char data_type[CGIO_MAX_NAME_LENGTH+1];
-    int ierr = 0, ndims, dims[CGIO_MAX_DIMENSIONS];
-    size_t data_size = 0;
+    int ierr = 0, ndims;
+    cgsize_t dims[CGIO_MAX_DIMENSIONS];
+    cglong_t dims64[12], data_size = 0;
     void *data = NULL;
 
     if ((input  = get_cgnsio(cgio_num_inp, 0)) == NULL ||
@@ -1174,11 +1112,13 @@ int cgio_copy_node (int cgio_num_inp, double id_inp,
         ADF_Get_Number_of_Dimensions(id_inp, &ndims, &ierr);
         if (ierr > 0) return set_error(ierr);
         if (ndims > 0) {
-            ADF_Get_Dimension_Values(id_inp, dims, &ierr);
+            ADF_Get_Dimension_Values(id_inp, dims64, &ierr);
             if (ierr > 0) return set_error(ierr);
+            if (cgio_copy_dimensions(ndims, dims64, dims))
+                return get_error();
             data_size = compute_data_size(data_type, ndims, dims);
             if (data_size) {
-                data = malloc(data_size);
+                data = malloc((size_t)data_size);
                 if (data == NULL) return set_error(CGIO_ERR_MALLOC);
                 ADF_Read_All_Data(id_inp, (char *)data, &ierr);
                 if (ierr > 0) {
@@ -1197,33 +1137,15 @@ int cgio_copy_node (int cgio_num_inp, double id_inp,
         ADFH_Get_Number_of_Dimensions(id_inp, &ndims, &ierr);
         if (ierr > 0) return set_error(ierr);
         if (ndims > 0) {
-            ADFH_Get_Dimension_Values(id_inp, dims, &ierr);
+            ADFH_Get_Dimension_Values(id_inp, dims64, &ierr);
             if (ierr > 0) return set_error(ierr);
+            if (cgio_copy_dimensions(ndims, dims64, dims))
+                return get_error();
             data_size = compute_data_size(data_type, ndims, dims);
             if (data_size) {
-                data = malloc(data_size);
+                data = malloc((size_t)data_size);
                 if (data == NULL) return set_error(CGIO_ERR_MALLOC);
                 ADFH_Read_All_Data(id_inp, (char *)data, &ierr);
-                if (ierr > 0) {
-                    free(data);
-                    return set_error(ierr);
-                }
-            }
-        }
-    }
-#endif
-#ifdef BUILD_XML
-    else if (input->type == CGIO_FILE_XML) {
-        if ((ierr = ADFX_Get_Label(id_inp, label)) != 0 ||
-            (ierr = ADFX_Get_Data_Type(id_inp, data_type)) != 0 ||
-            (ierr = ADFX_Get_Dimensions (id_inp, &ndims, dims)) != 0)
-            return set_error(ierr);
-        if (ndims > 0) {
-            data_size = compute_data_size(data_type, ndims, dims);
-            if (data_size) {
-                data = malloc(data_size);
-                if (data == NULL) return set_error(CGIO_ERR_MALLOC);
-                ierr = ADFX_Read_All_Data(id_inp, data);
                 if (ierr > 0) {
                     free(data);
                     return set_error(ierr);
@@ -1260,18 +1182,6 @@ int cgio_copy_node (int cgio_num_inp, double id_inp,
         }
         if (data_size) free(data);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (output->type == CGIO_FILE_XML) {
-        ierr = ADFX_Set_Label(id_out, label);
-        if (ierr == 0) {
-            ierr = ADFX_Set_Dimensions(id_out, data_type, ndims, dims);
-            if (ierr == 0 && data_size)
-                ierr = ADFX_Write_All_Data(id_out, data);
-        }
-        if (data_size) free(data);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {
@@ -1321,12 +1231,6 @@ int cgio_is_link (int cgio_num, double id, int *link_len)
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Is_Link(id, link_len);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -1353,12 +1257,6 @@ int cgio_link_size (int cgio_num, double id, int *file_len,
     else if (cgio->type == CGIO_FILE_HDF5) {
         ADFH_Link_Size(id, file_len, name_len, &ierr);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Link_Size(id, file_len, name_len);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {
@@ -1389,12 +1287,6 @@ int cgio_create_link (int cgio_num, double pid, const char *name,
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Create_Link(pid, name, filename, name_in_file, id);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -1421,12 +1313,6 @@ int cgio_get_link (int cgio_num, double id,
     else if (cgio->type == CGIO_FILE_HDF5) {
         ADFH_Get_Link_Path(id, filename, name_in_file, &ierr);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Get_Link(id, filename, name_in_file);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {
@@ -1459,12 +1345,6 @@ int cgio_number_children (int cgio_num, double id,
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Number_Children(id, num_children);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -1491,12 +1371,6 @@ int cgio_children_ids (int cgio_num, double pid,
     else if (cgio->type == CGIO_FILE_HDF5) {
         ADFH_Children_IDs(pid, start, max_ret, num_ret, ids, &ierr);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Children_IDs(pid, start, max_ret, num_ret, ids);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {
@@ -1529,13 +1403,6 @@ int cgio_children_names (int cgio_num, double pid, int start, int max_ret,
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Children_Names(pid, start, max_ret, name_len,
-                   num_ret, names);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -1566,12 +1433,6 @@ int cgio_get_node_id (int cgio_num, double pid,
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Get_Node_ID(pid, name, id);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -1597,12 +1458,6 @@ int cgio_get_name (int cgio_num, double id, char *name)
     else if (cgio->type == CGIO_FILE_HDF5) {
         ADFH_Get_Name(id, name, &ierr);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Get_Name(id, name);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {
@@ -1632,12 +1487,6 @@ int cgio_get_label (int cgio_num, double id, char *label)
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Get_Label(id, label);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -1665,12 +1514,6 @@ int cgio_get_data_type (int cgio_num, double id, char *data_type)
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Get_Data_Type(id, data_type);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -1680,62 +1523,30 @@ int cgio_get_data_type (int cgio_num, double id, char *data_type)
 
 /*---------------------------------------------------------*/
 
-int cgio_get_data_size (int cgio_num, double id, unsigned long *data_size)
+int cgio_get_data_size (int cgio_num, double id, cglong_t *data_size)
 {
-    int ierr, byte, ndims, dims[CGIO_MAX_DIMENSIONS];
+    int byte, ndims;
+    cgsize_t dims[CGIO_MAX_DIMENSIONS];
     char data_type[CGIO_MAX_NAME_LENGTH];
-    cgns_io *cgio;
 
     *data_size = 0;
-    if ((cgio = get_cgnsio(cgio_num, 0)) == NULL)
+    if (cgio_get_dimensions(cgio_num, id, &ndims, dims) ||
+        cgio_get_data_type(cgio_num, id, data_type))
         return get_error();
 
-    if (cgio->type == CGIO_FILE_ADF || cgio->type == CGIO_FILE_ADF2) {
-        ADF_Get_Data_Type(id, data_type, &ierr);
-        if (ierr > 0) return set_error(ierr);
-        ADF_Get_Number_of_Dimensions(id, &ndims, &ierr);
-        if (ierr > 0) return set_error(ierr);
-        if (ndims > 0) {
-            ADF_Get_Dimension_Values(id, dims, &ierr);
-            if (ierr > 0) return set_error(ierr);
-        }
-    }
-#ifdef BUILD_HDF5
-    else if (cgio->type == CGIO_FILE_HDF5) {
-        ADFH_Get_Data_Type(id, data_type, &ierr);
-        if (ierr > 0) return set_error(ierr);
-        ADFH_Get_Number_of_Dimensions(id, &ndims, &ierr);
-        if (ierr > 0) return set_error(ierr);
-        if (ndims > 0) {
-            ADFH_Get_Dimension_Values(id, dims, &ierr);
-            if (ierr > 0) return set_error(ierr);
-        }
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Get_Data_Type(id, data_type);
-        if (ierr) return set_error(ierr);
-        ierr = ADFX_Get_Dimensions(id, &ndims, dims);
-        if (ierr) return set_error(ierr);
-    }
-#endif
-    else {
-        return set_error(CGIO_ERR_FILE_TYPE);
-    }
-
     byte = cgio_compute_data_size(data_type, ndims, dims, data_size);
-    *data_size *= (unsigned long)byte;
+    *data_size *= byte;
     return CGIO_ERR_NONE;
 }
 
 /*---------------------------------------------------------*/
 
 int cgio_get_dimensions (int cgio_num, double id,
-    int *num_dims, int *dims)
+    int *num_dims, cgsize_t *dims)
 {
     int ierr;
     cgns_io *cgio;
+    cglong_t dims64[12];
 
     if ((cgio = get_cgnsio(cgio_num, 0)) == NULL)
         return get_error();
@@ -1743,26 +1554,24 @@ int cgio_get_dimensions (int cgio_num, double id,
     if (cgio->type == CGIO_FILE_ADF || cgio->type == CGIO_FILE_ADF2) {
         ADF_Get_Number_of_Dimensions(id, num_dims, &ierr);
         if (NULL != dims && ierr <= 0 && *num_dims > 0)
-            ADF_Get_Dimension_Values(id, dims, &ierr);
+            ADF_Get_Dimension_Values(id, dims64, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
         ADFH_Get_Number_of_Dimensions(id, num_dims, &ierr);
         if (NULL != dims && ierr <= 0 && *num_dims > 0)
-            ADFH_Get_Dimension_Values(id, dims, &ierr);
+            ADFH_Get_Dimension_Values(id, dims64, &ierr);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Get_Dimensions(id, num_dims, dims);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
+
+    if (NULL != dims && *num_dims > 0 &&
+        cgio_copy_dimensions(*num_dims, dims64, dims))
+        return get_error();
 
     return CGIO_ERR_NONE;
 }
@@ -1787,10 +1596,32 @@ int cgio_read_all_data (int cgio_num, double id, void *data)
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Read_All_Data(id, data);
-        if (ierr) return set_error(ierr);
+    else {
+        return set_error(CGIO_ERR_FILE_TYPE);
+    }
+
+    return CGIO_ERR_NONE;
+}
+
+/*---------------------------------------------------------*/
+
+int cgio_read_block_data (int cgio_num, double id,
+    cgsize_t b_start, cgsize_t b_end, void *data)
+{
+    int ierr;
+    cgns_io *cgio;
+
+    if ((cgio = get_cgnsio(cgio_num, 0)) == NULL)
+        return get_error();
+
+    if (cgio->type == CGIO_FILE_ADF || cgio->type == CGIO_FILE_ADF2) {
+        ADF_Read_Block_Data(id, b_start, b_end, (char *)data, &ierr);
+        if (ierr > 0) return set_error(ierr);
+    }
+#ifdef BUILD_HDF5
+    else if (cgio->type == CGIO_FILE_HDF5) {
+        ADFH_Read_Block_Data(id, b_start, b_end, (char *)data, &ierr);
+        if (ierr > 0) return set_error(ierr);
     }
 #endif
     else {
@@ -1803,9 +1634,10 @@ int cgio_read_all_data (int cgio_num, double id, void *data)
 /*---------------------------------------------------------*/
 
 int cgio_read_data (int cgio_num, double id,
-    const int *s_start, const int *s_end, const int *s_stride,
-    int m_num_dims, const int *m_dims, const int *m_start,
-    const int *m_end, const int *m_stride, void *data)
+    const cgsize_t *s_start, const cgsize_t *s_end,
+    const cgsize_t *s_stride,int m_num_dims,
+    const cgsize_t *m_dims, const cgsize_t *m_start,
+    const cgsize_t *m_end, const cgsize_t *m_stride, void *data)
 {
     int ierr;
     cgns_io *cgio;
@@ -1823,13 +1655,6 @@ int cgio_read_data (int cgio_num, double id,
         ADFH_Read_Data(id, s_start, s_end, s_stride, m_num_dims,
             m_dims, m_start, m_end, m_stride, (char *)data, &ierr);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Read_Data(id, s_start, s_end, s_stride, m_num_dims,
-                    m_dims, m_start, m_end, m_stride, data);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {
@@ -1862,12 +1687,6 @@ int cgio_set_name (int cgio_num, double pid, double id,
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Set_Name(pid, id, name);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -1895,12 +1714,6 @@ int cgio_set_label (int cgio_num, double id, const char *label)
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Set_Label(id, label);
-        if (ierr) return set_error(ierr);
-    }
-#endif
     else {
         return set_error(CGIO_ERR_FILE_TYPE);
     }
@@ -1911,7 +1724,7 @@ int cgio_set_label (int cgio_num, double id, const char *label)
 /*---------------------------------------------------------*/
 
 int cgio_set_dimensions (int cgio_num, double id,
-    const char *data_type, int num_dims, const int *dims)
+    const char *data_type, int num_dims, const cgsize_t *dims)
 {
     int ierr;
     cgns_io *cgio;
@@ -1927,12 +1740,6 @@ int cgio_set_dimensions (int cgio_num, double id,
     else if (cgio->type == CGIO_FILE_HDF5) {
         ADFH_Put_Dimension_Information(id, data_type, num_dims, dims, &ierr);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Set_Dimensions(id, data_type, num_dims, dims);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {
@@ -1963,10 +1770,32 @@ int cgio_write_all_data (int cgio_num, double id,
         if (ierr > 0) return set_error(ierr);
     }
 #endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Write_All_Data(id, data);
-        if (ierr) return set_error(ierr);
+    else {
+        return set_error(CGIO_ERR_FILE_TYPE);
+    }
+
+    return CGIO_ERR_NONE;
+}
+
+/*---------------------------------------------------------*/
+
+int cgio_write_block_data (int cgio_num, double id,
+    cgsize_t b_start, cgsize_t b_end, void *data)
+{
+    int ierr;
+    cgns_io *cgio;
+
+    if ((cgio = get_cgnsio(cgio_num, 0)) == NULL)
+        return get_error();
+
+    if (cgio->type == CGIO_FILE_ADF || cgio->type == CGIO_FILE_ADF2) {
+        ADF_Write_Block_Data(id, b_start, b_end, (char *)data, &ierr);
+        if (ierr > 0) return set_error(ierr);
+    }
+#ifdef BUILD_HDF5
+    else if (cgio->type == CGIO_FILE_HDF5) {
+        ADFH_Write_Block_Data(id, b_start, b_end, (char *)data, &ierr);
+        if (ierr > 0) return set_error(ierr);
     }
 #endif
     else {
@@ -1979,9 +1808,10 @@ int cgio_write_all_data (int cgio_num, double id,
 /*---------------------------------------------------------*/
 
 int cgio_write_data (int cgio_num, double id,
-    const int *s_start, const int *s_end, const int *s_stride,
-    int m_num_dims, const int *m_dims, const int *m_start,
-    const int *m_end, const int *m_stride, const void *data)
+    const cgsize_t *s_start, const cgsize_t *s_end,
+    const cgsize_t *s_stride, int m_num_dims,
+    const cgsize_t *m_dims, const cgsize_t *m_start,
+    const cgsize_t *m_end, const cgsize_t *m_stride, const void *data)
 {
     int ierr;
     cgns_io *cgio;
@@ -1999,13 +1829,6 @@ int cgio_write_data (int cgio_num, double id,
         ADFH_Write_Data(id, s_start, s_end, s_stride, m_num_dims,
             m_dims, m_start, m_end, m_stride, (const char *)data, &ierr);
         if (ierr > 0) return set_error(ierr);
-    }
-#endif
-#ifdef BUILD_XML
-    else if (cgio->type == CGIO_FILE_XML) {
-        ierr = ADFX_Write_Data(id, s_start, s_end, s_stride, m_num_dims,
-                  m_dims, m_start, m_end, m_stride, data);
-        if (ierr) return set_error(ierr);
     }
 #endif
     else {

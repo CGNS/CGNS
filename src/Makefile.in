@@ -43,8 +43,8 @@ ADFOBJS=@ADFOBJS@ \
 
 #----------
 
-lib	: $(CGNSLIB)
-current : update lib
+lib : $(CGNSLIB)
+all : lib tools tests cgnstools
 
 $(CGNSLIB) : $(OBJDIR) $(CGNSOBJS) $(ADFOBJS) $(F2COBJS)
 	-@$(RM) $@
@@ -54,34 +54,70 @@ $(CGNSLIB) : $(OBJDIR) $(CGNSOBJS) $(ADFOBJS) $(F2COBJS)
 $(OBJDIR) :
 	-$(MKDIR) $(OBJDIR)
 
-update :
-	cvs update
+#----------
+
+tools : $(CGNSLIB)
+	-cd tools && $(MAKE)
+
+tests : $(CGNSLIB)
+	-cd tests && $(MAKE)
+
+cgnstools : $(CGNSLIB)
+	-cd cgnstools && $(MAKE)
 
 #----------
 
 clean :
 	-$(RM) $(OBJDIR)/*.$(O)
+	-cd tests && $(MAKE) clean
+	-cd tools && $(MAKE) clean
+	@if [ -f cgnstools/Makefile ] ; then \
+	   cd cgnstools && $(MAKE) clean; \
+	 fi;
 
 allclean : distclean
 
-distclean : clean
+distclean :
 	-cd tests && $(MAKE) allclean
 	-$(RM) tests/Makefile
 	-cd tools && $(MAKE) allclean
 	-$(RM) tools/Makefile
+	@if [ -f cgnstools/Makefile ] ; then \
+	   cd cgnstools && $(MAKE) distclean; \
+	 fi;
 	-$(RM) $(CGNSLIB)
+	-$(RM) $(OBJDIR)/*.$(O)
 	-$(RMDIR) $(OBJDIR)
-	-$(RM) make.system make.defs make.$(SYSTEM) make.$(SYSTEM).orig
+	-$(RM) cgnstypes.h cgnstypes_f.h cgnslib_f.h
+	-$(RM) make.system make.defs make.$(SYSTEM)
 	-$(RM) config.log config.status Makefile
 
-install : $(CGNSLIB)
+install : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR)
+	$(INSTALL_DATA) cgnstypes.h $(INCLUDEDIR)/cgnstypes.h
+	$(INSTALL_DATA) cgnstypes_f.h $(INCLUDEDIR)/cgnstypes_f.h
 	$(INSTALL_DATA) cgnslib.h $(INCLUDEDIR)/cgnslib.h
 	$(INSTALL_DATA) cgnslib_f.h $(INCLUDEDIR)/cgnslib_f.h
 	$(INSTALL_DATA) cgnswin_f.h $(INCLUDEDIR)/cgnswin_f.h
 	$(INSTALL_DATA) cgns_io.h $(INCLUDEDIR)/cgns_io.h
 	$(INSTALL_DATA) $(CGNSLIB) $(LIBDIR)/$(INSTLIB)
 
+$(INCLUDEDIR) :
+	@if [ ! -d $(INCLUDEDIR) ] ; then \
+	    echo "Making directory $(INCLUDEDIR)"; \
+	    mkdir -p $(INCLUDEDIR); \
+	    chmod 755 $(INCLUDEDIR); \
+	  fi;
+
+$(LIBDIR) :
+	@if [ ! -d $(LIBDIR) ] ; then \
+	    echo "Making directory $(LIBDIR)"; \
+	    mkdir -p $(LIBDIR); \
+	    chmod 755 $(LIBDIR); \
+	  fi;
+
 uninstall :
+	-$(RM) $(INCLUDEDIR)/cgnstypes.h
+	-$(RM) $(INCLUDEDIR)/cgnstypes_f.h
 	-$(RM) $(INCLUDEDIR)/cgnslib.h
 	-$(RM) $(INCLUDEDIR)/cgnslib_f.h
 	-$(RM) $(INCLUDEDIR)/cgnswin_f.h
@@ -114,6 +150,10 @@ $(OBJDIR)/cgio_ftoc.$(O) : cgio_ftoc.c fortran_macros.h cgns_io.h
 $(OBJDIR)/cg_malloc.$(O) : cg_malloc.c cg_malloc.h
 	$(CC) $(COPTS) $(COOUT)$@ -c cg_malloc.c
 
+cgnslib.h : cgnstypes.h
+cgns_header.h : cgnstypes.h
+cgns_io.h : cgnstypes.h
+
 #---------- ADF
 
 $(OBJDIR)/ADF_interface.$(O) : adf/ADF_interface.c \
@@ -124,8 +164,13 @@ $(OBJDIR)/ADF_internals.$(O) : adf/ADF_internals.c \
 	adf/ADF.h adf/ADF_internals.h
 	$(CC) $(COPTS) -Iadf $(COOUT)$@ -c adf/ADF_internals.c
 
+adf/ADF.h : cgnstypes.h
+adf/ADF_internals.h : cgnstypes.h
+
 #---------- HDF5
 
 $(OBJDIR)/ADFH.$(O) : adfh/ADFH.c adfh/ADFH.h
 	$(CC) $(COPTS) -Iadfh $(HDF5INC) $(COOUT)$@ -c adfh/ADFH.c
+
+adfh/ADFH.h : cgnstypes.h
 

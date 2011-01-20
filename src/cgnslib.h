@@ -21,13 +21,23 @@ freely, subject to the following restrictions:
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
 
-#define CGNS_VERSION 3090
-#define CGNS_DOTVERS 3.09
+#define CGNS_VERSION 3100
+#define CGNS_DOTVERS 3.10
 
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
 
-#define CGNS_SCOPE_ENUMS 1
+#include "cgnstypes.h"
+
+#if CG_BUILD_SCOPE
+# ifndef CGNS_SCOPE_ENUMS
+#  define CGNS_SCOPE_ENUMS
+# endif
+#else
+# ifdef CGNS_SCOPE_ENUMS
+#  undef CGNS_SCOPE_ENUMS
+# endif
+#endif
 
 #ifndef CGNSDLL
 # ifdef _WIN32
@@ -43,31 +53,19 @@ freely, subject to the following restrictions:
 # endif
 #endif
 
+#ifdef CGNS_SCOPE_ENUMS
 /* set scope prefix for values only */
-#ifdef CGNS_SCOPE_ENUMS
 #define CGNS_ENUMV( e ) CG_ ## e
-#else
-#define CGNS_ENUMV( e ) e
-#endif
-
 /* set scope prefix for types */
-#ifdef CGNS_SCOPE_ENUMS
 #define CGNS_ENUMT( e ) CG_ ## e
-#else
-#define CGNS_ENUMT( e ) e
-#endif
-
 /* set scope prefix for defines */
-#ifdef CGNS_SCOPE_ENUMS
 #define CGNS_ENUMD( e ) CG_ ## e
-#else
-#define CGNS_ENUMD( e ) e
-#endif
-
 /* set scope prefix for variables (lowercase same as functions) */
-#ifdef CGNS_SCOPE_ENUMS
 #define CGNS_ENUMF( e ) cg_ ## e
 #else
+#define CGNS_ENUMV( e ) e
+#define CGNS_ENUMT( e ) e
+#define CGNS_ENUMD( e ) e
 #define CGNS_ENUMF( e ) e
 #endif
 
@@ -85,8 +83,7 @@ freely, subject to the following restrictions:
 #define CG_FILE_NONE 0
 #define CG_FILE_ADF  1
 #define CG_FILE_HDF5 2
-#define CG_FILE_XML  3
-#define CG_FILE_ADF2 4
+#define CG_FILE_ADF2 3
 
 /* function return codes */
 
@@ -114,22 +111,6 @@ freely, subject to the following restrictions:
 #define CG_CONFIG_FILE_TYPE 5
 
 #define CG_CONFIG_HDF5_COMPRESS   201
-
-#define CG_CONFIG_XML_DELETED     301
-#define CG_CONFIG_XML_NAMESPACE   302
-#define CG_CONFIG_XML_THRESHOLD   303
-#define CG_CONFIG_XML_COMPRESSION 304
-
-/* legacy code support */
-
-#ifdef LEGACY_SUPPORT
-#define MODE_READ	CG_MODE_READ
-#define MODE_WRITE	CG_MODE_WRITE
-#define MODE_MODIFY	CG_MODE_MODIFY
-#define Null            CG_Null
-#define UserDefined	CG_UserDefined
-#define Celcius		Celsius
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -187,7 +168,7 @@ typedef enum {
 typedef enum {
   CGNS_ENUMV( AngleUnitsNull )       =0, 
   CGNS_ENUMV( AngleUnitsUserDefined )=1, 
-  CGNS_ENUMV( Degree )               =2, 
+  CGNS_ENUMV( Degree )               =2,
   CGNS_ENUMV( Radian )               =3
 } CGNS_ENUMT( AngleUnits_t );
 
@@ -229,14 +210,14 @@ typedef enum {
 #define NofValidSubstanceAmountUnits   6
 #define NofValidLuminousIntensityUnits 7
 
-extern char const * MassUnitsName[NofValidMassUnits];
-extern char const * LengthUnitsName[NofValidLengthUnits];
-extern char const * TimeUnitsName[NofValidTimeUnits];
-extern char const * TemperatureUnitsName[NofValidTemperatureUnits];
-extern char const * AngleUnitsName[NofValidAngleUnits];
-extern char const * ElectricCurrentUnitsName[NofValidElectricCurrentUnits];
-extern char const * SubstanceAmountUnitsName[NofValidSubstanceAmountUnits];
-extern char const * LuminousIntensityUnitsName[NofValidLuminousIntensityUnits];
+CGNSDLL const char * MassUnitsName[NofValidMassUnits];
+CGNSDLL const char * LengthUnitsName[NofValidLengthUnits];
+CGNSDLL const char * TimeUnitsName[NofValidTimeUnits];
+CGNSDLL const char * TemperatureUnitsName[NofValidTemperatureUnits];
+CGNSDLL const char * AngleUnitsName[NofValidAngleUnits];
+CGNSDLL const char * ElectricCurrentUnitsName[NofValidElectricCurrentUnits];
+CGNSDLL const char * SubstanceAmountUnitsName[NofValidSubstanceAmountUnits];
+CGNSDLL const char * LuminousIntensityUnitsName[NofValidLuminousIntensityUnits];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Data Class                                                       *
@@ -254,7 +235,7 @@ typedef enum {
 
 #define NofValidDataClass 7
 
-extern char const * DataClassName[NofValidDataClass];
+CGNSDLL const char * DataClassName[NofValidDataClass];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *	Grid Location
@@ -274,7 +255,7 @@ typedef enum {
 
 #define NofValidGridLocation 9
 
-extern char const * GridLocationName[NofValidGridLocation];
+CGNSDLL const char * GridLocationName[NofValidGridLocation];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      BCData Types: Can not add types and stay forward compatible      *
@@ -289,7 +270,7 @@ typedef enum {
 
 #define NofValidBCDataTypes 4
 
-extern char const * BCDataTypeName[NofValidBCDataTypes];
+CGNSDLL const char * BCDataTypeName[NofValidBCDataTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *	Grid Connectivity Types 					 *
@@ -305,7 +286,7 @@ typedef enum {
 
 #define NofValidGridConnectivityTypes 5
 
-extern char const * GridConnectivityTypeName[NofValidGridConnectivityTypes];
+CGNSDLL const char * GridConnectivityTypeName[NofValidGridConnectivityTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *	Point Set Types: Can't add types and stay forward compatible
@@ -325,7 +306,7 @@ typedef enum {
 
 #define NofValidPointSetTypes 9
 
-extern char const * PointSetTypeName[NofValidPointSetTypes];
+CGNSDLL const char * PointSetTypeName[NofValidPointSetTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Governing Equations and Physical Models Types                    *
@@ -414,8 +395,8 @@ typedef enum {
 #define NofValidGoverningEquationsTypes 8
 #define NofValidModelTypes 36
 
-extern char const * GoverningEquationsTypeName[NofValidGoverningEquationsTypes];
-extern char const * ModelTypeName[NofValidModelTypes];
+CGNSDLL const char * GoverningEquationsTypeName[NofValidGoverningEquationsTypes];
+CGNSDLL const char * ModelTypeName[NofValidModelTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  * 	Boundary Condition Types					 *
@@ -452,7 +433,7 @@ typedef enum {
 
 #define NofValidBCTypes 26
 
-extern char const * BCTypeName[NofValidBCTypes];
+CGNSDLL const char * BCTypeName[NofValidBCTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Data types:  Can not add data types and stay forward compatible  *
@@ -461,15 +442,16 @@ extern char const * BCTypeName[NofValidBCTypes];
 typedef enum {
   CGNS_ENUMV( DataTypeNull ) =0, 
   CGNS_ENUMV( DataTypeUserDefined ) =1, 
-  CGNS_ENUMV( Integer ) =2, 
+  CGNS_ENUMV( Integer ) =2,
   CGNS_ENUMV( RealSingle ) =3,
-  CGNS_ENUMV( RealDouble ) =4, 
-  CGNS_ENUMV( Character ) =5
+  CGNS_ENUMV( RealDouble ) =4,
+  CGNS_ENUMV( Character ) =5,
+  CGNS_ENUMV( LongInteger ) =6
 } CGNS_ENUMT( DataType_t );
 
-#define NofValidDataTypes 6
+#define NofValidDataTypes 7
 
-extern char const * DataTypeName[NofValidDataTypes];
+CGNSDLL const char * DataTypeName[NofValidDataTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Element types                                                    *
@@ -506,7 +488,7 @@ typedef enum {
 
 #define NofValidElementTypes 24
 
-extern char const * ElementTypeName[NofValidElementTypes];
+CGNSDLL const char * ElementTypeName[NofValidElementTypes];
 
 #ifdef CGNS_SCOPE_ENUMS
 #define  CG_NPE_NODE      1
@@ -569,7 +551,7 @@ typedef enum {
 
 #define NofValidZoneTypes 4
 
-extern char const * ZoneTypeName[NofValidZoneTypes];
+CGNSDLL const char * ZoneTypeName[NofValidZoneTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Rigid Grid Motion types						 *
@@ -584,7 +566,7 @@ typedef enum {
 
 #define NofValidRigidGridMotionTypes 4
 
-extern char const * RigidGridMotionTypeName[NofValidRigidGridMotionTypes];
+CGNSDLL const char * RigidGridMotionTypeName[NofValidRigidGridMotionTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Arbitrary Grid Motion types                                      *
@@ -599,7 +581,7 @@ typedef enum {
 
 #define NofValidArbitraryGridMotionTypes 4
 
-extern char const * ArbitraryGridMotionTypeName[NofValidArbitraryGridMotionTypes];
+CGNSDLL const char * ArbitraryGridMotionTypeName[NofValidArbitraryGridMotionTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Simulation types					         *
@@ -614,7 +596,7 @@ typedef enum {
 
 #define NofValidSimulationTypes 4
 
-extern char const * SimulationTypeName[NofValidSimulationTypes];
+CGNSDLL const char * SimulationTypeName[NofValidSimulationTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *	BC Property types						 *
@@ -636,8 +618,8 @@ typedef enum {
 #define NofValidWallFunctionTypes 3
 #define NofValidAreaTypes 4
 
-extern char const * WallFunctionTypeName[NofValidWallFunctionTypes];
-extern char const * AreaTypeName[NofValidAreaTypes];
+CGNSDLL const char * WallFunctionTypeName[NofValidWallFunctionTypes];
+CGNSDLL const char * AreaTypeName[NofValidAreaTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Grid Connectivity Property types				 *
@@ -647,16 +629,16 @@ typedef enum {
   CGNS_ENUMV( AverageInterfaceTypeNull ) =0, 
   CGNS_ENUMV( AverageInterfaceTypeUserDefined ) =1,
   CGNS_ENUMV( AverageAll ) =2, 
-  CGNS_ENUMV( AverageCircumferential ) =3, 
-  CGNS_ENUMV( AverageRadial ) =4, 
+  CGNS_ENUMV( AverageCircumferential ) =3,
+  CGNS_ENUMV( AverageRadial ) =4,
   CGNS_ENUMV( AverageI ) =5,
-  CGNS_ENUMV( AverageJ ) =6, 
+  CGNS_ENUMV( AverageJ ) =6,
   CGNS_ENUMV( AverageK ) =7
 } CGNS_ENUMT( AverageInterfaceType_t );
 
 #define NofValidAverageInterfaceTypes 8
 
-extern char const * AverageInterfaceTypeName[NofValidAverageInterfaceTypes];
+CGNSDLL const char * AverageInterfaceTypeName[NofValidAverageInterfaceTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      LIBRARY FUNCTIONS						 *
@@ -664,7 +646,7 @@ extern char const * AverageInterfaceTypeName[NofValidAverageInterfaceTypes];
 
 CGNSDLL int cg_is_cgns(const char *filename, int *file_type);
 
-CGNSDLL int cg_open(char const * filename, int mode, int *fn);
+CGNSDLL int cg_open(const char * filename, int mode, int *fn);
 CGNSDLL int cg_version(int fn, float *FileVersion);
 CGNSDLL int cg_close(int fn);
 CGNSDLL int cg_save_as(int fn, const char *filename, int file_type,
@@ -724,7 +706,7 @@ CGNSDLL int cg_nbases(int fn, int *nbases);
 CGNSDLL int cg_base_read(int file_number, int B, char *basename,
 	int *cell_dim, int *phys_dim);
 CGNSDLL int cg_base_id(int fn, int B, double *base_id);
-CGNSDLL int cg_base_write(int file_number, char const * basename,
+CGNSDLL int cg_base_write(int file_number, const char * basename,
 	int cell_dim, int phys_dim, int *B);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -732,55 +714,58 @@ CGNSDLL int cg_base_write(int file_number, char const * basename,
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_nzones(int fn, int B, int *nzones);
-CGNSDLL int cg_zone_read(int fn, int B, int Z, char *zonename, int *size);
-CGNSDLL int cg_zone_type(int file_number, int B, int Z, CGNS_ENUMT( ZoneType_t ) *type);
+CGNSDLL int cg_zone_read(int fn, int B, int Z, char *zonename, cgsize_t *size);
+CGNSDLL int cg_zone_type(int file_number, int B, int Z,
+	CGNS_ENUMT(ZoneType_t) *type);
 CGNSDLL int cg_zone_id(int fn, int B, int Z, double *zone_id);
-CGNSDLL int cg_zone_write(int fn, int B, char const * zonename,
-			  int const * size, CGNS_ENUMT( ZoneType_t ) type, int *Z);
+CGNSDLL int cg_zone_write(int fn, int B, const char * zonename,
+	const cgsize_t * size, CGNS_ENUMT(ZoneType_t) type, int *Z);
+
+CGNSDLL int cg_index_dim(int fn, int B, int Z, int *index_dim);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write Family_t Nodes                                    *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_nfamilies(int file_number, int B, int *nfamilies);
-CGNSDLL int cg_family_read(int file_number, int B, int F, char *family_name,
-			   int *nboco, int *ngeos);
-CGNSDLL int cg_family_write(int file_number, int B, char const * family_name,
-			    int *F);
+CGNSDLL int cg_family_read(int file_number, int B, int F,
+	char *family_name, int *nboco, int *ngeos);
+CGNSDLL int cg_family_write(int file_number, int B,
+	const char * family_name, int *F);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FamilyName_t Nodes                                *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_famname_read(char *family_name);
-CGNSDLL int cg_famname_write(char const * family_name);
+CGNSDLL int cg_famname_write(const char * family_name);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FamilyBC_t Nodes                                  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_fambc_read(int file_number, int B, int F, int BC,
-			  char *fambc_name,  CGNS_ENUMT( BCType_t ) *bocotype);
+	char *fambc_name, CGNS_ENUMT(BCType_t) *bocotype);
 CGNSDLL int cg_fambc_write(int file_number, int B, int F,
-			   char const * fambc_name,  CGNS_ENUMT( BCType_t ) bocotype, int *BC);
+	const char * fambc_name, CGNS_ENUMT(BCType_t) bocotype, int *BC);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GeometryReference_t Nodes                         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_geo_read(int file_number, int B, int F, int G, char *geo_name,
-			char **geo_file, char *CAD_name, int *npart);
-CGNSDLL int cg_geo_write(int file_number, int B, int F, char const * geo_name,
-			 char const * filename, char const * CADname, int *G);
+	char **geo_file, char *CAD_name, int *npart);
+CGNSDLL int cg_geo_write(int file_number, int B, int F, const char * geo_name,
+	const char * filename, const char * CADname, int *G);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GeometryEntity_t Nodes                            *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_part_read(int file_number, int B, int F, int G, int P,
-			 char *part_name);
+	char *part_name);
 CGNSDLL int cg_part_write(int file_number, int B, int F, int G,
-			  char const * part_name, int *P);
+	const char * part_name, int *P);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GridCoordinates_t Nodes                           *
@@ -789,24 +774,27 @@ CGNSDLL int cg_part_write(int file_number, int B, int F, int G,
 CGNSDLL int cg_ngrids(int file_number, int B, int Z, int *ngrids);
 CGNSDLL int cg_grid_read(int file_number, int B, int Z, int G, char *gridname);
 CGNSDLL int cg_grid_write(int file_number, int B, int Z,
-			  char const * zcoorname, int *G);
+	const char * zcoorname, int *G);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GridCoordinates_t/DataArray_t Nodes               *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_ncoords(int fn, int B, int Z, int *ncoords);
-CGNSDLL int cg_coord_info(int fn, int B, int Z, int C,  CGNS_ENUMT( DataType_t ) *type,
-			  char *coordname);
-CGNSDLL int cg_coord_read(int fn, int B, int Z, char const * coordname,
-			  CGNS_ENUMT( DataType_t ) type, int const * rmin, int const * rmax, void *coord);
+CGNSDLL int cg_coord_info(int fn, int B, int Z, int C,
+	CGNS_ENUMT(DataType_t) *type, char *coordname);
+CGNSDLL int cg_coord_read(int fn, int B, int Z, const char * coordname,
+	CGNS_ENUMT(DataType_t) type, const cgsize_t * rmin,
+	const cgsize_t * rmax, void *coord);
 CGNSDLL int cg_coord_id(int fn, int B, int Z, int C, double *coord_id);
-CGNSDLL int cg_coord_write(int fn, int B, int Z,  CGNS_ENUMT( DataType_t ) type,
-			   char const * coordname, void const * coord_ptr, int *C);
+CGNSDLL int cg_coord_write(int fn, int B, int Z,
+	CGNS_ENUMT(DataType_t) type, const char * coordname,
+ 	const void * coord_ptr, int *C);
 
-CGNSDLL int cg_coord_partial_write(int fn, int B, int Z,  CGNS_ENUMT( DataType_t ) type,
-				   char const * coordname, int *rmin, int *rmax,
-				   void const * coord_ptr, int *C);
+CGNSDLL int cg_coord_partial_write(int fn, int B, int Z,
+	CGNS_ENUMT(DataType_t) type, const char * coordname,
+        const cgsize_t *rmin, const cgsize_t *rmax,
+        const void * coord_ptr, int *C);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write Elements_t Nodes                                  *
@@ -814,36 +802,35 @@ CGNSDLL int cg_coord_partial_write(int fn, int B, int Z,  CGNS_ENUMT( DataType_t
 
 CGNSDLL int cg_nsections(int file_number, int B, int Z, int *nsections);
 CGNSDLL int cg_section_read(int file_number, int B, int Z, int S,
-			    char *SectionName,  CGNS_ENUMT( ElementType_t ) *type, int *start, int *end,
-			    int *nbndry, int *parent_flag);
+	char *SectionName,  CGNS_ENUMT(ElementType_t) *type,
+	cgsize_t *start, cgsize_t *end, int *nbndry, int *parent_flag);
 CGNSDLL int cg_elements_read(int file_number, int B, int Z, int S,
-			     int *elements, int *parent_data);
+	cgsize_t *elements, cgsize_t *parent_data);
 CGNSDLL int cg_section_write(int file_number, int B, int Z,
-			     char const * SectionName,  
-			     CGNS_ENUMT( ElementType_t ) type, int start, int end,
-			     int nbndry, int const * elements, int *S);
+	const char * SectionName, CGNS_ENUMT(ElementType_t) type,
+	cgsize_t start, cgsize_t end, int nbndry, const cgsize_t * elements,
+	int *S);
 CGNSDLL int cg_parent_data_write(int file_number, int B, int Z, int S,
-	int const * parent_data);
-CGNSDLL int cg_npe( CGNS_ENUMT( ElementType_t ) type, int *npe);
+	const cgsize_t * parent_data);
+CGNSDLL int cg_npe( CGNS_ENUMT(ElementType_t) type, int *npe);
 CGNSDLL int cg_ElementDataSize(int file_number, int B, int Z, int S,
-			       int *ElementDataSize);
+	cgsize_t *ElementDataSize);
 
 CGNSDLL int cg_section_partial_write(int file_number, int B, int Z,
-				     char const * SectionName,  
-				     CGNS_ENUMT( ElementType_t ) type, int start, int end,
-				     int nbndry, int *S);
+	const char * SectionName, CGNS_ENUMT(ElementType_t) type,
+	cgsize_t start, cgsize_t end, int nbndry, int *S);
 
 CGNSDLL int cg_elements_partial_write(int fn, int B, int Z, int S,
-	int start, int end, int const *elements);
+	cgsize_t start, cgsize_t end, const cgsize_t *elements);
 
 CGNSDLL int cg_parent_data_partial_write(int fn, int B, int Z, int S,
-	int start, int end, int const *ParentData);
+	cgsize_t start, cgsize_t end, const cgsize_t *ParentData);
 
 CGNSDLL int cg_elements_partial_read(int file_number, int B, int Z, int S,
-	int start, int end, int *elements, int *parent_data);
+	cgsize_t start, cgsize_t end, cgsize_t *elements, cgsize_t *parent_data);
 
 CGNSDLL int cg_ElementPartialSize(int file_number, int B, int Z, int S,
-	int start, int end, int *ElementDataSize);
+	cgsize_t start, cgsize_t end, cgsize_t *ElementDataSize);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FlowSolution_t Nodes                              *
@@ -852,27 +839,30 @@ CGNSDLL int cg_ElementPartialSize(int file_number, int B, int Z, int S,
 
 CGNSDLL int cg_nsols(int fn, int B, int Z, int *nsols);
 CGNSDLL int cg_sol_info(int fn, int B, int Z, int S, char *solname,
-			CGNS_ENUMT( GridLocation_t ) *location);
+	CGNS_ENUMT(GridLocation_t) *location);
 CGNSDLL int cg_sol_id(int fn, int B, int Z,int S, double *sol_id);
-CGNSDLL int cg_sol_write(int fn, int B, int Z, char const * solname,
-			 CGNS_ENUMT( GridLocation_t ) location, int *S);
+CGNSDLL int cg_sol_write(int fn, int B, int Z, const char * solname,
+	CGNS_ENUMT(GridLocation_t) location, int *S);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write solution DataArray_t Nodes                        *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_nfields(int fn, int B, int Z, int S, int *nfields);
-CGNSDLL int cg_field_info(int fn,int B,int Z,int S,int F,  CGNS_ENUMT( DataType_t ) *type,
-			  char *fieldname);
-CGNSDLL int cg_field_read(int fn, int B, int Z, int S, char const *fieldname,
-			  CGNS_ENUMT( DataType_t ) type, int *rmin, int *rmax, void *field_ptr);
-CGNSDLL int cg_field_id(int fn, int B, int Z,int S,int F, double *field_id);
-CGNSDLL int cg_field_write(int fn,int B,int Z,int S,  CGNS_ENUMT( DataType_t ) type,
-			   char const * fieldname, void const * field_ptr, int *F);
+CGNSDLL int cg_field_info(int fn,int B,int Z,int S, int F,
+	CGNS_ENUMT(DataType_t) *type, char *fieldname);
+CGNSDLL int cg_field_read(int fn, int B, int Z, int S, const char *fieldname,
+	CGNS_ENUMT(DataType_t) type, const cgsize_t *rmin,
+        const cgsize_t *rmax, void *field_ptr);
+CGNSDLL int cg_field_id(int fn, int B, int Z,int S, int F, double *field_id);
+CGNSDLL int cg_field_write(int fn,int B,int Z,int S,
+	CGNS_ENUMT(DataType_t) type, const char * fieldname,
+	const void * field_ptr, int *F);
 
 CGNSDLL int cg_field_partial_write(int fn, int B, int Z, int S,
-				   CGNS_ENUMT( DataType_t ) type, char const * fieldname, int *rmin, int *rmax,
-				   void const * field_ptr, int *F);
+	CGNS_ENUMT(DataType_t) type, const char * fieldname,
+	const cgsize_t *rmin, const cgsize_t *rmax,
+        const void * field_ptr, int *F);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write OversetHoles_t Nodes  				 *
@@ -880,13 +870,13 @@ CGNSDLL int cg_field_partial_write(int fn, int B, int Z, int S,
 
 CGNSDLL int cg_nholes(int fn, int B, int Z, int *nholes);
 CGNSDLL int cg_hole_info(int fn, int B, int Z, int I, char *holename,
-			 CGNS_ENUMT( GridLocation_t ) *location,  CGNS_ENUMT( PointSetType_t ) *ptset_type, int *nptsets,
-			 int *npnts);
-CGNSDLL int cg_hole_read(int fn, int B, int Z, int I, int *pnts);
+	CGNS_ENUMT(GridLocation_t) *location,  CGNS_ENUMT(PointSetType_t) *ptset_type,
+	int *nptsets, cgsize_t *npnts);
+CGNSDLL int cg_hole_read(int fn, int B, int Z, int I, cgsize_t *pnts);
 CGNSDLL int cg_hole_id(int fn, int B, int Z, int I, double *hole_id);
-CGNSDLL int cg_hole_write(int fn, int B, int Z, char const * holename,
-			  CGNS_ENUMT( GridLocation_t ) location,  CGNS_ENUMT( PointSetType_t ) ptset_type, int nptsets,
-			  int npnts, int const * pnts, int *I);
+CGNSDLL int cg_hole_write(int fn, int B, int Z, const char * holename,
+	CGNS_ENUMT(GridLocation_t) location, CGNS_ENUMT(PointSetType_t) ptset_type,
+	int nptsets, cgsize_t npnts, const cgsize_t * pnts, int *I);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GridConnectivity_t Nodes                          *
@@ -894,150 +884,161 @@ CGNSDLL int cg_hole_write(int fn, int B, int Z, char const * holename,
 
 CGNSDLL int cg_nconns(int fn, int B, int Z, int *nconns);
 CGNSDLL int cg_conn_info(int file_number, int B, int Z, int I,
-			 char *connectname, CGNS_ENUMT( GridLocation_t ) *location,
-			 CGNS_ENUMT( GridConnectivityType_t ) *type, CGNS_ENUMT( PointSetType_t ) *ptset_type, int *npnts,
-			 char *donorname, CGNS_ENUMT( ZoneType_t ) *donor_zonetype,
-			 CGNS_ENUMT( PointSetType_t ) *donor_ptset_type, CGNS_ENUMT( DataType_t ) *donor_datatype,
-        int *ndata_donor);
-CGNSDLL int cg_conn_read(int file_number, int B, int Z, int I, int *pnts,
-			 CGNS_ENUMT( DataType_t ) donor_datatype, void *donor_data);
+	char *connectname, CGNS_ENUMT(GridLocation_t) *location,
+	CGNS_ENUMT(GridConnectivityType_t) *type,
+	CGNS_ENUMT(PointSetType_t) *ptset_type,
+	cgsize_t *npnts, char *donorname,
+	CGNS_ENUMT(ZoneType_t) *donor_zonetype,
+	CGNS_ENUMT(PointSetType_t) *donor_ptset_type,
+        CGNS_ENUMT(DataType_t) *donor_datatype,
+        cgsize_t *ndata_donor);
+CGNSDLL int cg_conn_read(int file_number, int B, int Z, int I, cgsize_t *pnts,
+        CGNS_ENUMT(DataType_t) donor_datatype,
+        cgsize_t *donor_data);
 CGNSDLL int cg_conn_id(int fn, int B, int Z, int I, double *conn_id);
 CGNSDLL int cg_conn_write(int file_number, int B, int Z,
-			  char const * connectname, CGNS_ENUMT( GridLocation_t ) location,
-			  CGNS_ENUMT( GridConnectivityType_t ) type, CGNS_ENUMT( PointSetType_t ) ptset_type, int npnts,
-			  int const * pnts, char const * donorname, CGNS_ENUMT( ZoneType_t ) donor_zonetype,
-			  CGNS_ENUMT( PointSetType_t ) donor_ptset_type, CGNS_ENUMT( DataType_t ) donor_datatype,
-        int ndata_donor, void const *donor_data, int *I);
+	const char * connectname, CGNS_ENUMT(GridLocation_t) location,
+	CGNS_ENUMT(GridConnectivityType_t) type,
+	CGNS_ENUMT(PointSetType_t) ptset_type,
+	cgsize_t npnts, const cgsize_t * pnts, const char * donorname,
+	CGNS_ENUMT(ZoneType_t) donor_zonetype,
+	CGNS_ENUMT(PointSetType_t) donor_ptset_type,
+        CGNS_ENUMT(DataType_t) donor_datatype,
+        cgsize_t ndata_donor, const cgsize_t *donor_data, int *I);
 CGNSDLL int cg_conn_write_short(int file_number, int B, int Z,
-				char const * connectname, CGNS_ENUMT( GridLocation_t ) location,
-				CGNS_ENUMT( GridConnectivityType_t ) type, CGNS_ENUMT( PointSetType_t ) ptset_type,
-        int npnts, int const * pnts, char const * donorname, int *I);
+	const char * connectname, CGNS_ENUMT(GridLocation_t) location,
+	CGNS_ENUMT(GridConnectivityType_t) type,
+	CGNS_ENUMT(PointSetType_t) ptset_type,
+	cgsize_t npnts, const cgsize_t * pnts, const char * donorname, int *I);
 CGNSDLL int cg_conn_read_short(int file_number, int B, int Z, int I,
-	int *pnts);
+	cgsize_t *pnts);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( GridConnectivity1to1_t ) Nodes in a zone            *
+ *      Read and write GridConnectivity1to1_t Nodes in a zone            *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_n1to1(int fn, int B, int Z, int *n1to1);
 CGNSDLL int cg_1to1_read(int fn, int B, int Z, int I, char *connectname,
-	char *donorname, int *range, int *donor_range, int *transform);
+	char *donorname, cgsize_t *range, cgsize_t *donor_range, int *transform);
 CGNSDLL int cg_1to1_id(int fn, int B, int Z, int I, double *one21_id);
-CGNSDLL int cg_1to1_write(int fn, int B, int Z, char const * connectname,
-	char const * donorname, int const * range, int const * donor_range,
-        int const * transform, int *I);
+CGNSDLL int cg_1to1_write(int fn, int B, int Z, const char * connectname,
+	const char * donorname, const cgsize_t * range,
+	const cgsize_t * donor_range, const int * transform, int *I);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read all CGNS_ENUMT( GridConnectivity1to1_t ) Nodes of a base                  *
+ *      Read all GridConnectivity1to1_t Nodes of a base                  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_n1to1_global(int fn, int B, int *n1to1_global);
 CGNSDLL int cg_1to1_read_global(int fn, int B, char **connectname,
-	char **zonename, char **donorname, int **range, int **donor_range,
-        int **transform);
+	char **zonename, char **donorname, cgsize_t **range,
+	cgsize_t **donor_range, int **transform);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( BC_t ) Nodes                                        *
+ *      Read and write BC_t Nodes                                        *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_nbocos(int fn, int B, int Z, int *nbocos);
 CGNSDLL int cg_boco_info(int fn, int B, int Z, int BC, char *boconame,
-			 CGNS_ENUMT( BCType_t ) *bocotype, CGNS_ENUMT( PointSetType_t ) *ptset_type, int *npnts,
-			 int *NormalIndex, int *NormalListFlag, CGNS_ENUMT( DataType_t ) *NormalDataType,
-			 int *ndataset);
-CGNSDLL int cg_boco_read(int fn, int B, int Z, int BC, int *pnts,
-			 void *NormalList);
+	CGNS_ENUMT(BCType_t) *bocotype, CGNS_ENUMT(PointSetType_t) *ptset_type,
+ 	cgsize_t *npnts, int *NormalIndex, cgsize_t *NormalListFlag,
+ 	CGNS_ENUMT(DataType_t) *NormalDataType, int *ndataset);
+CGNSDLL int cg_boco_read(int fn, int B, int Z, int BC, cgsize_t *pnts,
+	void *NormalList);
 CGNSDLL int cg_boco_id(int fn, int B, int Z, int BC, double *boco_id);
-CGNSDLL int cg_boco_write(int file_number, int B, int Z,
-			  char const * boconame, CGNS_ENUMT( BCType_t ) bocotype, CGNS_ENUMT( PointSetType_t ) ptset_type,
-			  int npnts, int const * pnts, int *BC);
+CGNSDLL int cg_boco_write(int file_number, int B, int Z, const char * boconame,
+	CGNS_ENUMT(BCType_t) bocotype, CGNS_ENUMT(PointSetType_t) ptset_type,
+	cgsize_t npnts, const cgsize_t * pnts, int *BC);
 CGNSDLL int cg_boco_normal_write(int file_number, int B, int Z, int BC,
-				 int const * NormalIndex, int NormalListFlag,
-				 CGNS_ENUMT( DataType_t ) NormalDataType, void const * NormalList);
+	const int * NormalIndex, int NormalListFlag,
+	CGNS_ENUMT(DataType_t) NormalDataType, const void * NormalList);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( BCDataSet_t ) Nodes                                 *
+ *      Read and write BCDataSet_t Nodes                                 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_dataset_read(int fn, int B, int Z, int BC, int DS, char *name,
-			    CGNS_ENUMT( BCType_t ) *BCType, int *DirichletFlag, int *NeumannFlag);
+	CGNS_ENUMT(BCType_t) *BCType, int *DirichletFlag, int *NeumannFlag);
 CGNSDLL int cg_dataset_write(int file_number, int B, int Z, int BC,
-			     char const * name, CGNS_ENUMT( BCType_t ) BCType, int *Dset);
-CGNSDLL int cg_bcdataset_write(char const *name, CGNS_ENUMT( BCType_t ) BCType,
-			       CGNS_ENUMT( BCDataType_t ) BCDataType);
+	const char * name, CGNS_ENUMT(BCType_t) BCType, int *Dset);
+CGNSDLL int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
+	CGNS_ENUMT(BCDataType_t) BCDataType);
 CGNSDLL int cg_bcdataset_info(int *n_dataset);
-CGNSDLL int cg_bcdataset_read(int index, char *name, CGNS_ENUMT( BCType_t ) *BCType,
-			      int *DirichletFlag, int *NeumannFlag);
+CGNSDLL int cg_bcdataset_read(int index, char *name,
+	CGNS_ENUMT(BCType_t) *BCType, int *DirichletFlag, int *NeumannFlag);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( BCData_t ) Nodes                                    *
+ *      Read and write BCData_t Nodes                                    *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_bcdata_write(int file_number, int B, int Z, int BC, int Dset,
-			    CGNS_ENUMT( BCDataType_t ) BCDataType);
+	CGNS_ENUMT(BCDataType_t) BCDataType);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( DiscreteData_t ) Nodes                              *
+ *      Read and write DiscreteData_t Nodes                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_ndiscrete(int file_number, int B, int Z, int *ndiscrete);
 CGNSDLL int cg_discrete_read(int file_number, int B, int Z, int D,
 	char *discrete_name);
 CGNSDLL int cg_discrete_write(int file_number, int B, int Z,
-	char const * discrete_name, int *D);
+	const char * discrete_name, int *D);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( RigidGridMotion_t ) Nodes				 *
+ *      Read and write RigidGridMotion_t Nodes				 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_n_rigid_motions(int file_number, int B, int Z,
 	int *n_rigid_motions);
 CGNSDLL int cg_rigid_motion_read(int file_number, int B, int Z, int R,
-				 char *name, CGNS_ENUMT( RigidGridMotionType_t ) *type);
+	char *name, CGNS_ENUMT(RigidGridMotionType_t) *type);
 CGNSDLL int cg_rigid_motion_write(int file_number, int B, int Z,
-				  char const * name, CGNS_ENUMT( RigidGridMotionType_t ) type, int *R);
+	const char * name, CGNS_ENUMT(RigidGridMotionType_t) type, int *R);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( ArbitraryGridMotion_t ) Nodes                       *
+ *      Read and write ArbitraryGridMotion_t Nodes                       *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_n_arbitrary_motions(int file_number, int B, int Z,
 	int *n_arbitrary_motions);
 CGNSDLL int cg_arbitrary_motion_read(int file_number, int B, int Z, int A,
-				     char *name, CGNS_ENUMT( ArbitraryGridMotionType_t ) *type);
+	char *name, CGNS_ENUMT(ArbitraryGridMotionType_t) *type);
 CGNSDLL int cg_arbitrary_motion_write(int file_number, int B, int Z,
-				      char const * amotionname, CGNS_ENUMT( ArbitraryGridMotionType_t ) type, int *A);
+	const char * amotionname, CGNS_ENUMT(ArbitraryGridMotionType_t) type,
+        int *A);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( SimulationType_t ) Node                             *
+ *      Read and write SimulationType_t Node                             *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_simulation_type_read(int file_number, int B, CGNS_ENUMT( SimulationType_t ) *type);
-CGNSDLL int cg_simulation_type_write(int file_number, int B, CGNS_ENUMT( SimulationType_t ) type);
+CGNSDLL int cg_simulation_type_read(int file_number, int B,
+	CGNS_ENUMT(SimulationType_t) *type);
+CGNSDLL int cg_simulation_type_write(int file_number, int B,
+	CGNS_ENUMT(SimulationType_t) type);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( BaseIterativeData_t ) Node                          *
+ *      Read and write BaseIterativeData_t Node                          *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_biter_read(int file_number, int B, char *bitername, int *nsteps);
-CGNSDLL int cg_biter_write(int file_number, int B, char const * bitername, int nsteps);
+CGNSDLL int cg_biter_write(int file_number, int B, const char * bitername, int nsteps);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( ZoneIterativeData_t ) Node                          *
+ *      Read and write ZoneIterativeData_t Node                          *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_ziter_read(int file_number, int B, int Z, char *zitername);
-CGNSDLL int cg_ziter_write(int file_number, int B, int Z, char const * zitername);
+CGNSDLL int cg_ziter_write(int file_number, int B, int Z, const char * zitername);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( Gravity_t ) Nodes                                   *
+ *      Read and write Gravity_t Nodes                                   *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_gravity_read(int file_number, int B, float *gravity_vector);
 CGNSDLL int cg_gravity_write(int file_number, int B, float const *gravity_vector);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( Axisymmetry_t ) Nodes                               *
+ *      Read and write Axisymmetry_t Nodes                               *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_axisym_read(int file_number, int B, float *ref_point,
@@ -1046,32 +1047,32 @@ CGNSDLL int cg_axisym_write(int file_number, int B, float const *ref_point,
   	float const *axis);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( RotatingCoordinates_t ) Nodes                       *
+ *      Read and write RotatingCoordinates_t Nodes                       *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_rotating_read(float *rot_rate, float *rot_center);
 CGNSDLL int cg_rotating_write(float const *rot_rate, float const *rot_center);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( BCProperty_t/WallFunction_t ) Nodes   	         *
+ *      Read and write BCProperty_t/WallFunction_t Nodes   	         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_bc_wallfunction_read(int file_number, int B, int Z, int BC,
-				    CGNS_ENUMT( WallFunctionType_t ) *WallFunctionType);
+	CGNS_ENUMT(WallFunctionType_t) *WallFunctionType);
 CGNSDLL int cg_bc_wallfunction_write(int file_number, int B, int Z, int BC,
-				     CGNS_ENUMT( WallFunctionType_t ) WallFunctionType);
+	CGNS_ENUMT(WallFunctionType_t) WallFunctionType);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( BCProperty_t/Area_t ) Nodes                         *
+ *      Read and write BCProperty_t/Area_t Nodes                         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_bc_area_read(int file_number, int B, int Z, int BC,
-			    CGNS_ENUMT( AreaType_t ) *AreaType, float *SurfaceArea, char *RegionName);
+	CGNS_ENUMT(AreaType_t) *AreaType, float *SurfaceArea, char *RegionName);
 CGNSDLL int cg_bc_area_write(int file_number, int B, int Z, int BC,
-			     CGNS_ENUMT( AreaType_t ) AreaType, float SurfaceArea, char const *RegionName);
+	CGNS_ENUMT(AreaType_t) AreaType, float SurfaceArea, const char *RegionName);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( GridConnectivityProperty_t/Periodic_t ) Nodes       *
+ *      Read and write GridConnectivityProperty_t/Periodic_t Nodes       *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_conn_periodic_read(int file_number, int B, int Z, int I,
@@ -1086,17 +1087,17 @@ CGNSDLL int cg_1to1_periodic_read(int file_number, int B, int Z, int I,
 	float *RotationCenter, float *RotationAngle, float *Translation);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *   Read and write CGNS_ENUMT( GridConnectivityProperty_t/AverageInterface_t ) Nodes  *
+ *   Read and write GridConnectivityProperty_t/AverageInterface_t Nodes  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_conn_average_read(int file_number, int B, int Z, int I,
-				 CGNS_ENUMT( AverageInterfaceType_t ) *AverageInterfaceType);
+	CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType);
 CGNSDLL int cg_conn_average_write(int file_number, int B, int Z, int I,
-				  CGNS_ENUMT( AverageInterfaceType_t ) AverageInterfaceType);
+	CGNS_ENUMT(AverageInterfaceType_t) AverageInterfaceType);
 CGNSDLL int cg_1to1_average_write(int file_number, int B, int Z, int I,
-				  CGNS_ENUMT( AverageInterfaceType_t ) AverageInterfaceType);
+	CGNS_ENUMT(AverageInterfaceType_t) AverageInterfaceType);
 CGNSDLL int cg_1to1_average_read(int file_number, int B, int Z, int I,
-				 CGNS_ENUMT( AverageInterfaceType_t ) *AverageInterfaceType);
+	CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Variable Argument List Functions                                 *
@@ -1111,21 +1112,21 @@ CGNSDLL int cg_where(int *file_number, int *B, int *depth, char **label,
 	int *num);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( ConvergenceHistory_t ) Nodes                        *
+ *      Read and write ConvergenceHistory_t Nodes                        *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_convergence_read(int *iterations, char **NormDefinitions);
-CGNSDLL int cg_convergence_write(int iterations, char const * NormDefinitions);
+CGNSDLL int cg_convergence_write(int iterations, const char * NormDefinitions);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( ReferenceState_t ) Nodes                            *
+ *      Read and write ReferenceState_t Nodes                            *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_state_read(char **StateDescription);
-CGNSDLL int cg_state_write(char const * StateDescription);
+CGNSDLL int cg_state_write(const char * StateDescription);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( FlowEquationSet_t ) Nodes                           *
+ *      Read and write FlowEquationSet_t Nodes                           *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_equationset_read(int *EquationDimension,
@@ -1139,149 +1140,144 @@ CGNSDLL int cg_equationset_elecmagn_read(int *ElecFldModelFlag,
 CGNSDLL int cg_equationset_write(int EquationDimension);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( GoverningEquations_t ) Nodes                        *
+ *      Read and write GoverningEquations_t Nodes                        *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_governing_read(CGNS_ENUMT( GoverningEquationsType_t ) *EquationsType);
-CGNSDLL int cg_governing_write(CGNS_ENUMT( GoverningEquationsType_t ) Equationstype);
+CGNSDLL int cg_governing_read(CGNS_ENUMT(GoverningEquationsType_t) *EquationsType);
+CGNSDLL int cg_governing_write(CGNS_ENUMT(GoverningEquationsType_t) Equationstype);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write Diffusion Model Nodes                             *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_diffusion_read(int *diffusion_model);
-CGNSDLL int cg_diffusion_write(int const * diffusion_model);
+CGNSDLL int cg_diffusion_write(const int * diffusion_model);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GasModel_t, ViscosityModel_t,                     *
  *      ThermalConductivityModel_t, TurbulenceClosure_t,                 *
  *      TurbulenceModel_t, ThermalRelaxationModel_t,                     *
  *      ChemicalKineticsModel_t, EMElectricFieldModel_t,                 *
- *      CGNS_ENUMT( EMMagneticFieldModel_t ) Nodes                                     *
+ *      EMMagneticFieldModel_t Nodes                                     *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_model_read(char const *ModelLabel, CGNS_ENUMT( ModelType_t ) *ModelType);
-CGNSDLL int cg_model_write(char const * ModelLabel, CGNS_ENUMT( ModelType_t ) ModelType);
+CGNSDLL int cg_model_read(const char *ModelLabel, CGNS_ENUMT(ModelType_t) *ModelType);
+CGNSDLL int cg_model_write(const char * ModelLabel, CGNS_ENUMT(ModelType_t) ModelType);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( DataArray_t ) Nodes                                 *
+ *      Read and write DataArray_t Nodes                                 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_narrays(int *narrays);
-CGNSDLL int cg_array_info(int A, char *ArrayName, 
-			  CGNS_ENUMT( DataType_t ) *DataType,
-			  int *DataDimension, 
-			  int *DimensionVector);
+CGNSDLL int cg_array_info(int A, char *ArrayName,
+	CGNS_ENUMT(DataType_t) *DataType,
+	int *DataDimension, cgsize_t *DimensionVector);
 CGNSDLL int cg_array_read(int A, void *Data);
-CGNSDLL int cg_array_read_as(int A, 
-			     CGNS_ENUMT( DataType_t ) type, 
-			     void *Data);
-CGNSDLL int cg_array_write(char const * ArrayName, 
-			   CGNS_ENUMT( DataType_t ) DataType,
-			   int DataDimension, 
-			   int const * DimensionVector, 
-			   void const * Data);
+CGNSDLL int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data);
+CGNSDLL int cg_array_write(const char * ArrayName,
+	CGNS_ENUMT(DataType_t) DataType, int DataDimension,
+	const cgsize_t * DimensionVector, const void * Data);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( UserDefinedData_t ) Nodes - new in version 2.1      *
+ *      Read and write UserDefinedData_t Nodes - new in version 2.1      *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_nuser_data(int *nuser_data);
 CGNSDLL int cg_user_data_read(int Index, char *user_data_name);
-CGNSDLL int cg_user_data_write(char const * user_data_name);
+CGNSDLL int cg_user_data_write(const char * user_data_name);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( IntegralData_t ) Nodes                              *
+ *      Read and write IntegralData_t Nodes                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_nintegrals(int *nintegrals);
 CGNSDLL int cg_integral_read(int IntegralDataIndex, char *IntegralDataName);
-CGNSDLL int cg_integral_write(char const * IntegralDataName);
+CGNSDLL int cg_integral_write(const char * IntegralDataName);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( Rind_t ) Nodes                                      *
+ *      Read and write Rind_t Nodes                                      *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_rind_read(int *RindData);
-CGNSDLL int cg_rind_write(int const * RindData);
+CGNSDLL int cg_rind_write(const int * RindData);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( Descriptor_t ) Nodes                                *
+ *      Read and write Descriptor_t Nodes                                *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_ndescriptors(int *ndescriptors);
 CGNSDLL int cg_descriptor_read(int descr_no, char *descr_name, char **descr_text);
-CGNSDLL int cg_descriptor_write(char const * descr_name, char const * descr_text);
+CGNSDLL int cg_descriptor_write(const char * descr_name, const char * descr_text);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Read and write CGNS_ENUMT( DimensionalUnits_t ) Nodes                          *
+ *      Read and write DimensionalUnits_t Nodes                          *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int 
+CGNSDLL int
 cg_nunits(int *nunits);
-CGNSDLL int 
-cg_units_read     (CGNS_ENUMT( MassUnits_t ) *mass, 
-		   CGNS_ENUMT( LengthUnits_t ) *length, 
-		   CGNS_ENUMT( TimeUnits_t ) *time,
-		   CGNS_ENUMT( TemperatureUnits_t ) *temperature, 
-		   CGNS_ENUMT( AngleUnits_t ) *angle);
-CGNSDLL int 
-cg_units_write    (CGNS_ENUMT( MassUnits_t ) mass, 
-		   CGNS_ENUMT( LengthUnits_t ) length, 
-		   CGNS_ENUMT( TimeUnits_t ) time,
-		   CGNS_ENUMT( TemperatureUnits_t ) temperature, 
-		   CGNS_ENUMT( AngleUnits_t ) angle);
-CGNSDLL int 
-cg_unitsfull_read (CGNS_ENUMT( MassUnits_t ) *mass, 
-		   CGNS_ENUMT( LengthUnits_t ) *length,
-		   CGNS_ENUMT( TimeUnits_t ) *time, 
-		   CGNS_ENUMT( TemperatureUnits_t ) *temperature, 
-		   CGNS_ENUMT( AngleUnits_t ) *angle,
-		   CGNS_ENUMT( ElectricCurrentUnits_t ) *current, 
-		   CGNS_ENUMT( SubstanceAmountUnits_t ) *amount,
-		   CGNS_ENUMT( LuminousIntensityUnits_t ) *intensity);
-CGNSDLL int 
-cg_unitsfull_write(CGNS_ENUMT( MassUnits_t ) mass, 
-		   CGNS_ENUMT( LengthUnits_t ) length,
-		   CGNS_ENUMT( TimeUnits_t ) time, 
-		   CGNS_ENUMT( TemperatureUnits_t ) temperature, 
-		   CGNS_ENUMT( AngleUnits_t ) angle,
-		   CGNS_ENUMT( ElectricCurrentUnits_t ) current, 
-		   CGNS_ENUMT( SubstanceAmountUnits_t ) amount,
-		   CGNS_ENUMT( LuminousIntensityUnits_t ) intensity);
+CGNSDLL int
+cg_units_read     (CGNS_ENUMT(MassUnits_t) *mass,
+		   CGNS_ENUMT(LengthUnits_t) *length,
+		   CGNS_ENUMT(TimeUnits_t) *time,
+		   CGNS_ENUMT(TemperatureUnits_t) *temperature,
+		   CGNS_ENUMT(AngleUnits_t) *angle);
+CGNSDLL int
+cg_units_write    (CGNS_ENUMT(MassUnits_t) mass,
+		   CGNS_ENUMT(LengthUnits_t) length,
+		   CGNS_ENUMT(TimeUnits_t) time,
+		   CGNS_ENUMT(TemperatureUnits_t) temperature,
+		   CGNS_ENUMT(AngleUnits_t) angle);
+CGNSDLL int
+cg_unitsfull_read (CGNS_ENUMT(MassUnits_t) *mass,
+		   CGNS_ENUMT(LengthUnits_t) *length,
+		   CGNS_ENUMT(TimeUnits_t) *time,
+		   CGNS_ENUMT(TemperatureUnits_t) *temperature,
+		   CGNS_ENUMT(AngleUnits_t) *angle,
+		   CGNS_ENUMT(ElectricCurrentUnits_t) *current,
+		   CGNS_ENUMT(SubstanceAmountUnits_t) *amount,
+		   CGNS_ENUMT(LuminousIntensityUnits_t) *intensity);
+CGNSDLL int
+cg_unitsfull_write(CGNS_ENUMT(MassUnits_t) mass,
+		   CGNS_ENUMT(LengthUnits_t) length,
+		   CGNS_ENUMT(TimeUnits_t) time,
+		   CGNS_ENUMT(TemperatureUnits_t) temperature,
+		   CGNS_ENUMT(AngleUnits_t) angle,
+		   CGNS_ENUMT(ElectricCurrentUnits_t) current,
+		   CGNS_ENUMT(SubstanceAmountUnits_t) amount,
+		   CGNS_ENUMT(LuminousIntensityUnits_t) intensity);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write DimensionalExponents_t Nodes                      *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_exponents_info(CGNS_ENUMT( DataType_t ) *DataType);
+CGNSDLL int cg_exponents_info(CGNS_ENUMT(DataType_t) *DataType);
 CGNSDLL int cg_nexponents(int *numexp);
 CGNSDLL int cg_exponents_read(void *exponents);
-CGNSDLL int cg_exponents_write(CGNS_ENUMT( DataType_t ) DataType, void const * exponents);
+CGNSDLL int cg_exponents_write(CGNS_ENUMT(DataType_t) DataType, const void * exponents);
 CGNSDLL int cg_expfull_read(void *exponents);
-CGNSDLL int cg_expfull_write(CGNS_ENUMT( DataType_t ) DataType, void const * exponents);
+CGNSDLL int cg_expfull_write(CGNS_ENUMT(DataType_t) DataType, const void * exponents);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write DataConversion_t Nodes                            *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_conversion_info(CGNS_ENUMT( DataType_t ) *DataType);
+CGNSDLL int cg_conversion_info(CGNS_ENUMT(DataType_t) *DataType);
 CGNSDLL int cg_conversion_read(void *ConversionFactors);
-CGNSDLL int cg_conversion_write(CGNS_ENUMT( DataType_t ) DataType, void const * ConversionFactors);
+CGNSDLL int cg_conversion_write(CGNS_ENUMT(DataType_t) DataType, const void * ConversionFactors);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write DataClass_t Nodes                                 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_dataclass_read(CGNS_ENUMT( DataClass_t ) *dataclass);
-CGNSDLL int cg_dataclass_write(CGNS_ENUMT( DataClass_t ) dataclass);
+CGNSDLL int cg_dataclass_read(CGNS_ENUMT(DataClass_t) *dataclass);
+CGNSDLL int cg_dataclass_write(CGNS_ENUMT(DataClass_t) dataclass);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GridLocation_t Nodes                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_gridlocation_read(CGNS_ENUMT( GridLocation_t ) *GridLocation);
-CGNSDLL int cg_gridlocation_write(CGNS_ENUMT( GridLocation_t ) GridLocation);
+CGNSDLL int cg_gridlocation_read(CGNS_ENUMT(GridLocation_t) *GridLocation);
+CGNSDLL int cg_gridlocation_write(CGNS_ENUMT(GridLocation_t) GridLocation);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write Ordinal_t Nodes                                   *
@@ -1294,9 +1290,11 @@ CGNSDLL int cg_ordinal_write(int Ordinal);
  *      Read and write IndexArray/Range_t Nodes  - new in version 2.4    *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_ptset_info(CGNS_ENUMT( PointSetType_t ) *ptset_type, int *npnts);
-CGNSDLL int cg_ptset_write(CGNS_ENUMT( PointSetType_t ) ptset_type, int npnts, int const *pnts);
-CGNSDLL int cg_ptset_read(int *pnts);
+CGNSDLL int cg_ptset_info(CGNS_ENUMT(PointSetType_t) *ptset_type,
+	cgsize_t *npnts);
+CGNSDLL int cg_ptset_write(CGNS_ENUMT(PointSetType_t) ptset_type,
+	cgsize_t npnts, const cgsize_t *pnts);
+CGNSDLL int cg_ptset_read(cgsize_t *pnts);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Link Handling Functions - new in version 2.1                     *
@@ -1304,14 +1302,14 @@ CGNSDLL int cg_ptset_read(int *pnts);
 
 CGNSDLL int cg_is_link(int *path_length);
 CGNSDLL int cg_link_read(char **filename, char **link_path);
-CGNSDLL int cg_link_write(char const * nodename, char const * filename,
-	char const * name_in_file);
+CGNSDLL int cg_link_write(const char * nodename, const char * filename,
+	const char * name_in_file);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      General Delete Function						 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_delete_node(char const *node_name);
+CGNSDLL int cg_delete_node(const char *node_name);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Free library malloced memory					 *

@@ -3,24 +3,20 @@
 SHELL = @SHELL@
 
 #------------------------------------------------------------------------
-# these should only be set if building with HDF5
-# HDF5INC - path to HDF5 header files
-# HDF5LIB - HDF5 library
-# SZIPLIB - szip library (if needed)
-# ZLIBLIB - zlib library (if needed)
+# CC      - C compiler
+# CFLAGS  - compiler flags
+# COOUT   - flag to name the object output (typically -o).
+# CEOUT   - flag to name the output executable (typically -o).
+# LDFLAGS - any additional linking flags
+# CLIBS   - any additional libraries needed to link a CGNS application
 #------------------------------------------------------------------------
 
-HDF5INC = @HDF5INC@
-HDF5LIB = @HDF5LIB@
-SZIPLIB = @SZIPLIB@
-ZLIBLIB = @ZLIBLIB@
-
-#------------------------------------------------------------------------
-# BUILDLIBS contains the list of additional libraries
-#           with which a CGNS application needs to link
-#------------------------------------------------------------------------
-
-BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB)
+CC      = @CC@
+CFLAGS  = @CFLAGS@ @SYSCFLAGS@
+COOUT   = @COOUT@
+CEOUT   = @CEOUT@
+LDFLAGS = @LDFLAGS@
+CLIBS   = @LIBS@
 
 #------------------------------------------------------------------------
 # SPACE  - used to force a space in the compiler executable output flag
@@ -35,20 +31,6 @@ O       = @OBJEXT@
 A       = @LIBEXT@
 EXE     = @EXEEXT@
 LIBCGNS = @SYSTEM@/libcgns.@LIBEXT@
-
-#------------------------------------------------------------------------
-# CC     - C compiler
-# CFLAGS - compiler flags
-# COOUT  - flag to name the object output (typically -o).
-# CEOUT  - flag to name the output executable (typically -o).
-# CLIBS  - any additional libraries needed to link a CGNS application
-#------------------------------------------------------------------------
-
-CC     = @CC@
-CFLAGS = @CFLAGS@ @SYSCFLAGS@
-COOUT  = @COOUT@
-CEOUT  = @CEOUT@
-CLIBS  = @LIBS@
 
 #------------------------------------------------------------------------
 # F2CFLAGS defines the type of Fortran to C interface.
@@ -72,6 +54,18 @@ F2CFLAGS = @F2CFLAGS@
 CFGFLAGS = @CFGFLAGS@
 
 #------------------------------------------------------------------------
+# These are not used to build the CGNS library.
+# Fortran compiler (F77) and options (FFLAGS).
+# FEOUT is the flag to name the output executable (typically -o).
+# FLIBS lists any additional libraries needed to link a CGNS application
+#------------------------------------------------------------------------
+
+F77    = @F77@
+FFLAGS = @FFLAGS@ @SYSFFLAGS@
+FEOUT  = @FEOUT@
+FLIBS  = @FLIBS@
+
+#------------------------------------------------------------------------
 # strip command for executables - set to true if not used
 #------------------------------------------------------------------------
 
@@ -89,6 +83,26 @@ AROUT  = @AROUT@
 RANLIB = @RANLIB@
 
 #------------------------------------------------------------------------
+# these should only be set if building with HDF5
+# HDF5INC - path to HDF5 header files
+# HDF5LIB - HDF5 library
+# SZIPLIB - szip library (if needed)
+# ZLIBLIB - zlib library (if needed)
+#------------------------------------------------------------------------
+
+HDF5INC = @HDF5INC@
+HDF5LIB = @HDF5LIB@
+SZIPLIB = @SZIPLIB@
+ZLIBLIB = @ZLIBLIB@
+
+#------------------------------------------------------------------------
+# BUILDLIBS contains the list of additional libraries
+#           with which a CGNS application needs to link
+#------------------------------------------------------------------------
+
+BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB)
+
+#------------------------------------------------------------------------
 # commands for removing files and creating/deleting directory
 #------------------------------------------------------------------------
 
@@ -104,6 +118,7 @@ MKDIR  = mkdir
 # INSTALL_DATA - install data
 # LIBDIR       - installation directory for CGNS library
 # INCLUDEDIR   - installation directory for CGNS headers
+# BINDIR       - installation directory for CGNS executables
 #------------------------------------------------------------------------
 
 INSTALL      = @INSTALL@
@@ -111,16 +126,5 @@ INSTALL_PROG = @INSTALL_PROGRAM@
 INSTALL_DATA = @INSTALL_DATA@
 LIBDIR       = @LIBDIR@
 INCLUDEDIR   = @INCLUDEDIR@
-
-#------------------------------------------------------------------------
-# These are not used to build the CGNS library.
-# Fortran compiler (F77) and options (FFLAGS).
-# FEOUT is the flag to name the output executable (typically -o).
-# FLIBS lists any additional libraries needed to link a CGNS application
-#------------------------------------------------------------------------
-
-F77    = @F77@
-FFLAGS = @FFLAGS@ @SYSFFLAGS@
-FEOUT  = @FEOUT@
-FLIBS  = @FLIBS@
+BINDIR       = @BINDIR@
 

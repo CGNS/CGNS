@@ -21,6 +21,8 @@ freely, subject to the following restrictions:
 #ifndef CGNS_IO_H
 #define CGNS_IO_H
 
+#include "cgnstypes.h"
+
 #if defined(_WIN32) && defined(BUILD_DLL)
 # define CGEXTERN extern _declspec(dllexport)
 #else
@@ -37,8 +39,7 @@ freely, subject to the following restrictions:
 #define CGIO_FILE_NONE   0
 #define CGIO_FILE_ADF    1
 #define CGIO_FILE_HDF5   2
-#define CGIO_FILE_XML    3
-#define CGIO_FILE_ADF2   4
+#define CGIO_FILE_ADF2   3
 
 /* currently these are the same as for ADF */
 
@@ -51,13 +52,6 @@ freely, subject to the following restrictions:
 #define CGIO_MAX_LINK_DEPTH     100
 #define CGIO_MAX_FILE_LENGTH   1024
 #define CGIO_MAX_LINK_LENGTH   4096
-
-/* configure options */
-
-#define CGIO_CONFIG_XML_DELETED     301
-#define CGIO_CONFIG_XML_NAMESPACE   302
-#define CGIO_CONFIG_XML_THRESHOLD   303
-#define CGIO_CONFIG_XML_COMPRESSION 304
 
 /* these are the cgio error codes */
 
@@ -77,6 +71,7 @@ freely, subject to the following restrictions:
 #define CGIO_ERR_BAD_OPTION  -13
 #define CGIO_ERR_FILE_RENAME -14
 #define CGIO_ERR_TOO_MANY    -15
+#define CGIO_ERR_DIMENSIONS  -16
 
 #ifdef __cplusplus
 extern "C" {
@@ -120,8 +115,19 @@ CGEXTERN int cgio_check_file (
 CGEXTERN int cgio_compute_data_size (
     const char *data_type,
     int num_dims,
-    const int *dim_vals,
-    unsigned long *count
+    const cgsize_t *dim_vals,
+    cglong_t *count
+);
+
+CGEXTERN int cgio_check_dimensions (
+    int ndims,
+    const cglong_t *dims
+);
+
+CGEXTERN int cgio_copy_dimensions (
+    int ndims,
+    const cglong_t *dims64,
+    cgsize_t *dims
 );
 
 /*---------------------------------------------------------*/
@@ -208,7 +214,7 @@ CGEXTERN int cgio_new_node (
     const char *label,
     const char *data_type,
     int ndims,
-    const int *dims,
+    const cgsize_t *dims,
     const void *data,
     double *id
 );
@@ -326,14 +332,14 @@ CGEXTERN int cgio_get_data_type (
 CGEXTERN int cgio_get_data_size (
     int cgio_num,
     double id,
-    unsigned long *data_size
+    cglong_t *data_size
 );
 
 CGEXTERN int cgio_get_dimensions (
     int cgio_num,
     double id,
     int *num_dims,
-    int *dims
+    cgsize_t *dims
 );
 
 CGEXTERN int cgio_read_all_data (
@@ -342,17 +348,25 @@ CGEXTERN int cgio_read_all_data (
     void *data
 );
 
+CGEXTERN int cgio_read_block_data (
+    int cgio_num,
+    double id,
+    cgsize_t b_start,
+    cgsize_t b_end,
+    void *data
+);
+
 CGEXTERN int cgio_read_data (
     int cgio_num,
     double id,
-    const int *s_start,
-    const int *s_end,
-    const int *s_stride,
+    const cgsize_t *s_start,
+    const cgsize_t *s_end,
+    const cgsize_t *s_stride,
     int m_num_dims,
-    const int *m_dims,
-    const int *m_start,
-    const int *m_end,
-    const int *m_stride,
+    const cgsize_t *m_dims,
+    const cgsize_t *m_start,
+    const cgsize_t *m_end,
+    const cgsize_t *m_stride,
     void *data
 );
 
@@ -376,7 +390,7 @@ CGEXTERN int cgio_set_dimensions (
     double id,
     const char *data_type,
     int num_dims,
-    const int *dims
+    const cgsize_t *dims
 );
 
 CGEXTERN int cgio_write_all_data (
@@ -385,17 +399,25 @@ CGEXTERN int cgio_write_all_data (
     const void *data
 );
 
+CGEXTERN int cgio_write_block_data (
+    int cgio_num,
+    double id,
+    cgsize_t b_start,
+    cgsize_t b_end,
+    void *data
+);
+
 CGEXTERN int cgio_write_data (
     int cgio_num,
     double id,
-    const int *s_start,
-    const int *s_end,
-    const int *s_stride,
+    const cgsize_t *s_start,
+    const cgsize_t *s_end,
+    const cgsize_t *s_stride,
     int m_num_dims,
-    const int *m_dims,
-    const int *m_start,
-    const int *m_end,
-    const int *m_stride,
+    const cgsize_t *m_dims,
+    const cgsize_t *m_start,
+    const cgsize_t *m_end,
+    const cgsize_t *m_stride,
     const void *data
 );
 
