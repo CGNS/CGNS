@@ -1,13 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _WIN32
+#ifdef _WIN32
+# include <io.h>
+# define unlink _unlink
+#else
 # include <unistd.h>
 #endif
 #include "utils.h"
 
 int cgfile, cgbase, cgzone, cgcoord;
-int size[9];
+cgsize_t size[9];
 
 #define NUM_SIDE 5
 

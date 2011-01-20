@@ -1,10 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _WIN32
+#ifdef _WIN32
+# include <io.h>
+# define unlink _unlink
+#else
 # include <unistd.h>
 #endif
 #include "cgnslib.h"
+
+#ifndef CGNSTYPES_H
+# define cgsize_t int
+#endif
+#ifndef CGNS_ENUMT
+# define CGNS_ENUMT(e) e
+# define CGNS_ENUMV(e) e
+#endif
 
 #define NUM_SIDE 5
 #define NUM_RANDOM 10
@@ -14,11 +25,11 @@ float *ycoord;
 float *zcoord;
 float *fbuf;
 
-int *elements;
-int *faces;
-int *parent;
-int *ptmp;
-int *ibuf, *pbuf;
+cgsize_t *elements;
+cgsize_t *faces;
+cgsize_t *parent;
+cgsize_t *ptmp;
+cgsize_t *ibuf, *pbuf;
 
 #define NODE_INDEX(I,J,K) ((I)+NUM_SIDE*(((J)-1)+NUM_SIDE*((K)-1)))
 #define CELL_INDEX(I,J,K) ((I)+(NUM_SIDE-1)*(((J)-1)+(NUM_SIDE-1)*((K)-1)))
@@ -31,7 +42,8 @@ int irandom(int imin, int imax) {
     return i;
 }
 
-void get_parent(int rmin, int rmax, int nelems, int nfaces) {
+void get_parent(int rmin, int rmax, int nelems, int nfaces)
+{
     int i, j, k, n, nn, np;
 
     np = rmax - rmin + 1;
@@ -63,7 +75,8 @@ int main (int argc, char **argv)
     int nnodes, nelems, nfaces;
     int cgfile, cgbase, cgzone, cgcoord, cgsol, cgfld;
     int cgsect, cgelems, cgfaces;
-    int size[3], rmin, rmax;
+    cgsize_t size[3], rmin, rmax, nr;
+    cgsize_t is, ie;
     char name[33];
     CGNS_ENUMT( ElementType_t )  type;
     static char *fname = "partial.cgns";
@@ -101,7 +114,7 @@ int main (int argc, char **argv)
     }
 
     nelems = (NUM_SIDE - 1) * (NUM_SIDE - 1) * (NUM_SIDE - 1);
-    elements = (int *) malloc (16 * nelems * sizeof(int));
+    elements = (cgsize_t *) malloc (16 * nelems * sizeof(cgsize_t));
     ibuf = elements + 8 * nelems;
 
     for (n = 0, k = 1; k < NUM_SIDE; k++) {
@@ -122,7 +135,7 @@ int main (int argc, char **argv)
     }
 
     nfaces = 6 * (NUM_SIDE - 1) * (NUM_SIDE - 1);
-    faces = (int *) malloc (18 * nfaces * sizeof(int));
+    faces = (cgsize_t *) malloc (18 * nfaces * sizeof(cgsize_t));
     parent = faces + 4 * nfaces;
     ptmp = parent + 4 * nfaces;
     pbuf = ptmp + 4 * nfaces;
@@ -224,11 +237,12 @@ int main (int argc, char **argv)
     size[2] = 0;
 
     if (cg_zone_write (cgfile, cgbase, "Zone", size,
-		       CGNS_ENUMV( Unstructured ), &cgzone) ||
+            CGNS_ENUMV(Unstructured), &cgzone) ||
         cg_section_partial_write(cgfile, cgbase, cgzone, "Elements",
-				 CGNS_ENUMV( HEXA_8 ), 1, nelems, 0, &cgelems) ||
+	    CGNS_ENUMV(HEXA_8), (cgsize_t)1, (cgsize_t)nelems, 0, &cgelems) ||
         cg_section_partial_write(cgfile, cgbase, cgzone, "Faces",
-				 CGNS_ENUMV( QUAD_4 ), nelems + 1, nelems + nfaces, 0, &cgfaces))
+	    CGNS_ENUMV(QUAD_4), (cgsize_t)(nelems + 1),
+	    (cgsize_t)(nelems + nfaces), 0, &cgfaces))
         cg_error_exit();
 
     /* write zone with partial write */
@@ -242,12 +256,12 @@ int main (int argc, char **argv)
         n    = k * np;
         rmin = n + 1;
         rmax = n + np;
-        printf("coordinates %d -> %d\n", rmin, rmax);
-        if (cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
+        printf("coordinates %d -> %d\n", (int)rmin, (int)rmax);
+        if (cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
                 "CoordinateX", &rmin, &rmax, &xcoord[n], &cgcoord) ||
-            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
+            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
                 "CoordinateY", &rmin, &rmax, &ycoord[n], &cgcoord) ||
-            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
+            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
                 "CoordinateZ", &rmin, &rmax, &zcoord[n], &cgcoord))
             cg_error_exit();
     }
@@ -260,7 +274,7 @@ int main (int argc, char **argv)
         n    = nn << 3;
         rmin = nn + 1;
         rmax = nn + np;
-        printf("elements %d -> %d\n", rmin, rmax);
+        printf("elements %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_elements_partial_write(cgfile, cgbase, cgzone,
                 cgelems, rmin, rmax, &elements[n]))
             cg_error_exit();
@@ -273,8 +287,8 @@ int main (int argc, char **argv)
         n    = nn << 2;
         rmin = nn + 1 + nelems;
         rmax = nn + np + nelems;
-        get_parent(rmin, rmax, nelems, nfaces);
-        printf("faces %d -> %d\n", rmin, rmax);
+        get_parent((int)rmin, (int)rmax, nelems, nfaces);
+        printf("faces %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_elements_partial_write(cgfile, cgbase, cgzone,
                 cgfaces, rmin, rmax, &faces[n]) ||
             cg_parent_data_partial_write(cgfile, cgbase, cgzone,
@@ -284,7 +298,7 @@ int main (int argc, char **argv)
 
     /* write every other solution value */
 
-    if (cg_sol_write(cgfile, cgbase, cgzone, "Solution", CGNS_ENUMV( Vertex ), &cgsol))
+    if (cg_sol_write(cgfile, cgbase, cgzone, "Solution", CGNS_ENUMV(Vertex), &cgsol))
         cg_error_exit();
 
     puts("field -> 1,3,5,7 ...");
@@ -292,7 +306,7 @@ int main (int argc, char **argv)
         rmin = n + 1;
         rmax = n + 1;
         if (cg_field_partial_write(cgfile, cgbase, cgzone, cgsol,
-				   CGNS_ENUMV( RealSingle ), "Field", &rmin, &rmax, &xcoord[n], &cgfld))
+	        CGNS_ENUMV(RealSingle), "Field", &rmin, &rmax, &xcoord[n], &cgfld))
             cg_error_exit();
     }
 
@@ -309,12 +323,12 @@ int main (int argc, char **argv)
         n    = k * np;
         rmin = n + 1;
         rmax = n + np;
-        printf("coordinates %d -> %d\n", rmin, rmax);
-        if (cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
+        printf("coordinates %d -> %d\n", (int)rmin, (int)rmax);
+        if (cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
                 "CoordinateX", &rmin, &rmax, &xcoord[n], &cgcoord) ||
-            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
+            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
                 "CoordinateY", &rmin, &rmax, &ycoord[n], &cgcoord) ||
-            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
+            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
                 "CoordinateZ", &rmin, &rmax, &zcoord[n], &cgcoord))
             cg_error_exit();
     }
@@ -327,7 +341,7 @@ int main (int argc, char **argv)
         n    = nn << 3;
         rmin = nn + 1;
         rmax = nn + np;
-        printf("elements %d -> %d\n", rmin, rmax);
+        printf("elements %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_elements_partial_write(cgfile, cgbase, cgzone,
                 cgelems, rmin, rmax, &elements[n]))
             cg_error_exit();
@@ -340,8 +354,8 @@ int main (int argc, char **argv)
         n    = nn << 2;
         rmin = nn + 1 + nelems;
         rmax = nn + np + nelems;
-        get_parent(rmin, rmax, nelems, nfaces);
-        printf("faces %d -> %d\n", rmin, rmax);
+        get_parent((int)rmin, (int)rmax, nelems, nfaces);
+        printf("faces %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_elements_partial_write(cgfile, cgbase, cgzone,
                 cgfaces, rmin, rmax, &faces[n]) ||
             cg_parent_data_partial_write(cgfile, cgbase, cgzone,
@@ -356,7 +370,7 @@ int main (int argc, char **argv)
         rmin = n + 1;
         rmax = n + 1;
         if (cg_field_partial_write(cgfile, cgbase, cgzone, cgsol,
-				   CGNS_ENUMV( RealSingle ), "Field", &rmin, &rmax, &xcoord[n], &cgfld))
+		CGNS_ENUMV(RealSingle), "Field", &rmin, &rmax, &xcoord[n], &cgfld))
             cg_error_exit();
     }
 
@@ -370,17 +384,17 @@ int main (int argc, char **argv)
         rmin = irandom(1, nnodes);
         rmax = irandom(1, nnodes);
         if (rmin > rmax) {
-            n = rmin;
+            nr = rmin;
             rmin = rmax;
-            rmax = n;
+            rmax = nr;
         }
-        n = rmin - 1;
-        printf("coordinates %d -> %d\n", rmin, rmax);
-        if (cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
+        n = (int)(rmin - 1);
+        printf("coordinates %d -> %d\n", (int)rmin, (int)rmax);
+        if (cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
                 "CoordinateX", &rmin, &rmax, &xcoord[n], &cgcoord) ||
-            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
+            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
                 "CoordinateY", &rmin, &rmax, &ycoord[n], &cgcoord) ||
-            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
+            cg_coord_partial_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
                 "CoordinateZ", &rmin, &rmax, &zcoord[n], &cgcoord))
             cg_error_exit();
     }
@@ -389,12 +403,12 @@ int main (int argc, char **argv)
         rmin = irandom(1, nelems);
         rmax = irandom(1, nelems);
         if (rmin > rmax) {
-            n = rmin;
+            nr = rmin;
             rmin = rmax;
-            rmax = n;
+            rmax = nr;
         }
-        n = (rmin - 1) << 3;
-        printf("elements %d -> %d\n", rmin, rmax);
+        n = (int)(rmin - 1) << 3;
+        printf("elements %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_elements_partial_write(cgfile, cgbase, cgzone,
                 cgelems, rmin, rmax, &elements[n]))
             cg_error_exit();
@@ -404,16 +418,15 @@ int main (int argc, char **argv)
         rmin = irandom(1, nfaces);
         rmax = irandom(1, nfaces);
         if (rmin > rmax) {
-            n = rmin;
+            nr = rmin;
             rmin = rmax;
-            rmax = n;
+            rmax = nr;
         }
-        nn = rmin - 1;
-        n = nn << 2;
+        n = (int)(rmin - 1) << 2;
         rmin += nelems;
         rmax += nelems;
-        get_parent(rmin, rmax, nelems, nfaces);
-        printf("faces %d -> %d\n", rmin, rmax);
+        get_parent((int)rmin, (int)rmax, nelems, nfaces);
+        printf("faces %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_elements_partial_write(cgfile, cgbase, cgzone,
                 cgfaces, rmin, rmax, &faces[n]) ||
             cg_parent_data_partial_write(cgfile, cgbase, cgzone,
@@ -425,14 +438,14 @@ int main (int argc, char **argv)
         rmin = irandom(1, nnodes);
         rmax = irandom(1, nnodes);
         if (rmin > rmax) {
-            n = rmin;
+            nr = rmin;
             rmin = rmax;
-            rmax = n;
+            rmax = nr;
         }
-        n = rmin - 1;
-        printf("field %d -> %d\n", rmin, rmax);
+        n = (int)rmin - 1;
+        printf("field %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_field_partial_write(cgfile, cgbase, cgzone, cgsol,
-				   CGNS_ENUMV( RealSingle ), "Field", &rmin, &rmax, &xcoord[n], &cgfld))
+	        CGNS_ENUMV(RealSingle), "Field", &rmin, &rmax, &xcoord[n], &cgfld))
             cg_error_exit();
     }
 
@@ -449,7 +462,7 @@ int main (int argc, char **argv)
     rmin = 1;
     rmax = nnodes;
     if (cg_coord_read(cgfile, cgbase, cgzone, "CoordinateX",
-		      CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
+            CGNS_ENUMV(RealSingle), &rmin, &rmax, fbuf))
         cg_error_exit();
     for (np = 0, n = 0; n < nnodes; n++) {
         if (fbuf[n] != xcoord[n]) np++;
@@ -458,7 +471,7 @@ int main (int argc, char **argv)
     if (np) printf("%d differences in CoordinateX\n", np);
 
     if (cg_coord_read(cgfile, cgbase, cgzone, "CoordinateY",
-		      CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
+	    CGNS_ENUMV(RealSingle), &rmin, &rmax, fbuf))
         cg_error_exit();
     for (np = 0, n = 0; n < nnodes; n++) {
         if (fbuf[n] != ycoord[n]) np++;
@@ -467,7 +480,7 @@ int main (int argc, char **argv)
     if (np) printf("%d differences in CoordinateY\n", np);
 
     if (cg_coord_read(cgfile, cgbase, cgzone, "CoordinateZ",
-		      CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
+	    CGNS_ENUMV(RealSingle), &rmin, &rmax, fbuf))
         cg_error_exit();
     for (np = 0, n = 0; n < nnodes; n++) {
         if (fbuf[n] != zcoord[n]) np++;
@@ -478,11 +491,11 @@ int main (int argc, char **argv)
     /* check elements */
 
     if (cg_section_read(cgfile, cgbase, cgzone, 1, name,
-            &type, &i, &j, &k, &n) ||
+            &type, &is, &ie, &k, &n) ||
         cg_elements_read(cgfile, cgbase, cgzone, 1, ibuf, NULL))
         cg_error_exit();
-    if (strcmp(name, "Elements") || type != CGNS_ENUMV( HEXA_8 ) || i != 1 ||
-        j != nelems || k != 0 || n != 0) {
+    if (strcmp(name, "Elements") || type != CGNS_ENUMV(HEXA_8) || is != 1 ||
+        ie != nelems || k != 0 || n != 0) {
         nn++;
         puts("differences in Elements");
     }
@@ -495,11 +508,11 @@ int main (int argc, char **argv)
     /* check faces */
 
     if (cg_section_read(cgfile, cgbase, cgzone, 2, name,
-            &type, &i, &j, &k, &n) ||
+            &type, &is, &ie, &k, &n) ||
         cg_elements_read(cgfile, cgbase, cgzone, 2, ibuf, pbuf))
         cg_error_exit();
-    if (strcmp(name, "Faces") || type != CGNS_ENUMV( QUAD_4 ) || i != (nelems+1) ||
-        j != (nelems+nfaces) || k != 0 || n != 1) {
+    if (strcmp(name, "Faces") || type != CGNS_ENUMV(QUAD_4) || is != (nelems+1) ||
+        ie != (nelems+nfaces) || k != 0 || n != 1) {
         nn++;
         puts("differences in Faces");
     }
@@ -518,7 +531,7 @@ int main (int argc, char **argv)
     /* check field */
 
     if (cg_field_read(cgfile, cgbase, cgzone, 1, "Field",
-		      CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
+	    CGNS_ENUMV(RealSingle), &rmin, &rmax, fbuf))
         cg_error_exit();
     for (np = 0, n = 0; n < nnodes; n++) {
         if (fbuf[n] != xcoord[n]) np++;
@@ -538,30 +551,30 @@ int main (int argc, char **argv)
         rmin = irandom(1, nnodes);
         rmax = irandom(1, nnodes);
         if (rmin > rmax) {
-            n = rmin;
+            nr = rmin;
             rmin = rmax;
-            rmax = n;
+            rmax = nr;
         }
-        printf("coordinates %d -> %d\n", rmin, rmax);
-        n = rmin - 1;
+        printf("coordinates %d -> %d\n", (int)rmin, (int)rmax);
+        n = (int)rmin - 1;
         np = 0;
-        nn = rmax - rmin + 1;
+        nn = (int)(rmax - rmin) + 1;
         if (cg_coord_read(cgfile, cgbase, cgzone, "CoordinateX",
-			  CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
+	        CGNS_ENUMV(RealSingle), &rmin, &rmax, fbuf))
             cg_error_exit();
         for (i = 0; i < nn; i++) {
             if (fbuf[i] != xcoord[n+i]) np++;
         }
 
         if (cg_coord_read(cgfile, cgbase, cgzone, "CoordinateY",
-			  CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
+	        CGNS_ENUMV(RealSingle), &rmin, &rmax, fbuf))
             cg_error_exit();
         for (i = 0; i < nn; i++) {
             if (fbuf[i] != ycoord[n+i]) np++;
         }
 
         if (cg_coord_read(cgfile, cgbase, cgzone, "CoordinateZ",
-			  CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
+	        CGNS_ENUMV(RealSingle), &rmin, &rmax, fbuf))
             cg_error_exit();
         for (i = 0; i < nn; i++) {
             if (fbuf[i] != zcoord[n+i]) np++;
@@ -573,19 +586,19 @@ int main (int argc, char **argv)
         rmin = irandom(1, nelems);
         rmax = irandom(1, nelems);
         if (rmin > rmax) {
-            n = rmin;
+            nr = rmin;
             rmin = rmax;
-            rmax = n;
+            rmax = nr;
         }
-        n = (rmin - 1) << 3;
-        nn = (rmax - rmin + 1) << 3;
-        printf("elements %d -> %d\n", rmin, rmax);
+        n = (int)(rmin - 1) << 3;
+        nn = (int)(rmax - rmin + 1) << 3;
+        printf("elements %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_ElementPartialSize(cgfile, cgbase, cgzone, 1,
-                rmin, rmax, &np) ||
+                rmin, rmax, &nr) ||
             cg_elements_partial_read(cgfile, cgbase, cgzone, 1,
                 rmin, rmax, ibuf, NULL))
             cg_error_exit();
-        if (np != nn) puts("diference in element data size");
+        if (nr != nn) puts("diference in element data size");
         for (np = 0, i = 0; i < nn; i++) {
             if (ibuf[i] != elements[n+i]) np++;
         }
@@ -596,22 +609,22 @@ int main (int argc, char **argv)
         rmin = irandom(1, nfaces);
         rmax = irandom(1, nfaces);
         if (rmin > rmax) {
-            n = rmin;
+            nr = rmin;
             rmin = rmax;
-            rmax = n;
+            rmax = nr;
         }
-        n = (rmin - 1) << 2;
-        nn = (rmax - rmin + 1) << 2;
+        n = (int)(rmin - 1) << 2;
+        nn = (int)(rmax - rmin + 1) << 2;
         rmin += nelems;
         rmax += nelems;
-        get_parent(rmin, rmax, nelems, nfaces);
-        printf("faces %d -> %d\n", rmin, rmax);
+        get_parent((int)rmin, (int)rmax, nelems, nfaces);
+        printf("faces %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_ElementPartialSize(cgfile, cgbase, cgzone, 2,
-                rmin, rmax, &np) ||
+                rmin, rmax, &nr) ||
             cg_elements_partial_read(cgfile, cgbase, cgzone, 2,
                 rmin, rmax, ibuf, pbuf))
             cg_error_exit();
-        if (np != nn) puts("diference in face data size");
+        if (nr != nn) puts("diference in face data size");
         for (np = 0, i = 0; i < nn; i++) {
             if (ibuf[i] != faces[n+i]) np++;
         }
@@ -626,15 +639,15 @@ int main (int argc, char **argv)
         rmin = irandom(1, nnodes);
         rmax = irandom(1, nnodes);
         if (rmin > rmax) {
-            n = rmin;
+            nr = rmin;
             rmin = rmax;
-            rmax = n;
+            rmax = nr;
         }
-        n = rmin - 1;
-        nn = rmax - rmin + 1;
-        printf("field %d -> %d\n", rmin, rmax);
+        n = (int)rmin - 1;
+        nn = (int)(rmax - rmin) + 1;
+        printf("field %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_field_read(cgfile, cgbase, cgzone, 1, "Field",
-			  CGNS_ENUMV( RealSingle ), &rmin, &rmax, fbuf))
+	        CGNS_ENUMV(RealSingle), &rmin, &rmax, fbuf))
             cg_error_exit();
         for (np = 0, i = 0; i < nn; i++) {
             if (fbuf[i] != xcoord[n+i]) np++;
@@ -653,25 +666,26 @@ int main (int argc, char **argv)
         cg_error_exit();
 
     if (cg_section_partial_write(cgfile, cgbase, cgzone, "Mixed",
-				 CGNS_ENUMV( MIXED ), 1, nelems + nfaces, 0, &cgsect))
+	    CGNS_ENUMV(MIXED), (cgsize_t)1, (cgsize_t)(nelems + nfaces),
+	    0, &cgsect))
         cg_error_exit();
 
     /* create mixed element connectivity */
 
     nn = (nelems << 3) + nelems + (nfaces << 2) + nfaces;
-    ptmp = (int *) malloc (2 * nn * sizeof(int));
+    ptmp = (cgsize_t *) malloc (2 * nn * sizeof(cgsize_t));
 
     i = j = n = 0;
     for (nf = 0; nf < nelems; nf++) {
-      ptmp[n++] = CGNS_ENUMV( QUAD_4 );
+        ptmp[n++] = CGNS_ENUMV(QUAD_4);
         for (k = 0; k < 4; k++)
             ptmp[n++] = faces[j++];
-        ptmp[n++] = CGNS_ENUMV( HEXA_8 );
+        ptmp[n++] = CGNS_ENUMV(HEXA_8);
         for (k = 0; k < 8; k++)
             ptmp[n++] = elements[i++];
     }
     while (nf++ < nfaces) {
-      ptmp[n++] = CGNS_ENUMV( QUAD_4 );
+        ptmp[n++] = CGNS_ENUMV(QUAD_4);
         for (k = 0; k < 4; k++)
             ptmp[n++] = faces[j++];
     }
@@ -684,7 +698,7 @@ int main (int argc, char **argv)
 
     np = nelems + nfaces;
     nn = np << 2;
-    ptmp = (int *) malloc (3 * nn * sizeof(int));
+    ptmp = (cgsize_t *) malloc (3 * nn * sizeof(cgsize_t));
 
     for (n = 0; n < nfaces; n++)
         parent[n] <<= 1;
@@ -708,10 +722,10 @@ int main (int argc, char **argv)
 
     rmin = 2 * nelems + 1;
     rmax = np;
-    n = mixed_offset(rmin, nelems);
-    get_parent(rmin, rmax, 0, np);
+    n = mixed_offset((int)rmin, nelems);
+    get_parent((int)rmin, (int)rmax, 0, np);
 
-    printf("mixed %d -> %d\n", rmin, rmax);
+    printf("mixed %d -> %d\n", (int)rmin, (int)rmax);
     if (cg_elements_partial_write(cgfile, cgbase, cgzone,
             cgsect, rmin, rmax, &elements[n]) ||
         cg_parent_data_partial_write(cgfile, cgbase, cgzone,
@@ -722,8 +736,8 @@ int main (int argc, char **argv)
     for (i = 0; i < nelems; i++) {
         rmin = (i << 1) + 1;
         rmax = rmin + 1;
-        n = mixed_offset(rmin, nelems);
-        get_parent(rmin, rmax, 0, np);
+        n = mixed_offset((int)rmin, nelems);
+        get_parent((int)rmin, (int)rmax, 0, np);
         if (cg_elements_partial_write(cgfile, cgbase, cgzone,
                 cgsect, rmin, rmax, &elements[n]) ||
             cg_parent_data_partial_write(cgfile, cgbase, cgzone,
@@ -741,13 +755,13 @@ int main (int argc, char **argv)
         rmin = irandom(1, np);
         rmax = irandom(1, np);
         if (rmin > rmax) {
-            n = rmin;
+            nr = rmin;
             rmin = rmax;
-            rmax = n;
+            rmax = nr;
         }
-        n = mixed_offset(rmin, nelems);
-        get_parent(rmin, rmax, 0, np);
-        printf("mixed %d -> %d\n", rmin, rmax);
+        n = mixed_offset((int)rmin, nelems);
+        get_parent((int)rmin, (int)rmax, 0, np);
+        printf("mixed %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_elements_partial_write(cgfile, cgbase, cgzone,
                 cgsect, rmin, rmax, &elements[n]) ||
             cg_parent_data_partial_write(cgfile, cgbase, cgzone,
@@ -760,11 +774,11 @@ int main (int argc, char **argv)
     puts("checking the data");
 
     if (cg_section_read(cgfile, cgbase, cgzone, cgsect, name,
-            &type, &i, &j, &k, &n) ||
+            &type, &is, &ie, &k, &n) ||
         cg_elements_read(cgfile, cgbase, cgzone, cgsect, ibuf, pbuf))
         cg_error_exit();
-    if (strcmp(name, "Mixed") || type != CGNS_ENUMV( MIXED ) || i != 1 ||
-        j != np || k != 0 || n != 1) {
+    if (strcmp(name, "Mixed") || type != CGNS_ENUMV(MIXED) || is != 1 ||
+        ie != np || k != 0 || n != 1) {
         puts("differences in Mixed");
     }
     nn = mixed_offset(np, nelems);
@@ -789,25 +803,25 @@ int main (int argc, char **argv)
         rmin = irandom(1, np);
         rmax = irandom(1, np);
         if (rmin > rmax) {
-            n = rmin;
+            nr = rmin;
             rmin = rmax;
-            rmax = n;
+            rmax = nr;
         }
-        n = mixed_offset(rmin, nelems);
-        nn = mixed_offset(rmax + 1, nelems) - n;
-        get_parent(rmin, rmax, 0, np);
-        printf("mixed %d -> %d\n", rmin, rmax);
+        n = mixed_offset((int)rmin, nelems);
+        nn = mixed_offset((int)(rmax + 1), nelems) - n;
+        get_parent((int)rmin, (int)rmax, 0, np);
+        printf("mixed %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_ElementPartialSize(cgfile, cgbase, cgzone, cgsect,
-                rmin, rmax, &nf) ||
+                rmin, rmax, &nr) ||
             cg_elements_partial_read(cgfile, cgbase, cgzone, cgsect,
                 rmin, rmax, ibuf, pbuf))
             cg_error_exit();
-        if (nf != nn) puts("diference in mixed data size");
+        if (nr != nn) puts("diference in mixed data size");
         for (nf = 0, i = 0; i < nn; i++) {
             if (ibuf[i] != elements[n+i]) nf++;
         }
         if (nf) printf("%d differences in mixed connectivity\n", nf);
-        nn = (rmax - rmin + 1) << 2;
+        nn = (int)(rmax - rmin + 1) << 2;
         for (nf = 0, i = 0; i < nn; i++) {
             if (pbuf[i] != ptmp[i]) nf++;
         }

@@ -2,28 +2,39 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#ifndef _WIN32
+#ifdef _WIN32
+# include <io.h>
+# define unlink _unlink
+#else
 # include <unistd.h>
 #endif
 #include "cgnslib.h"
 
+#ifndef CGNSTYPES_H
+# define cgsize_t int
+#endif
+#ifndef CGNS_ENUMT
+# define CGNS_ENUMT(e) e
+# define CGNS_ENUMV(e) e
+#endif
+
 int CellDim = 3, PhyDim = 3;
 int cgfile, cgbase, cgzone, cggrid, cgsect, cgsol, cgfld;
 
-int size[9] = {5, 5, 5,  4, 4, 4,  0, 0, 0};
+cgsize_t size[9] = {5, 5, 5,  4, 4, 4,  0, 0, 0};
 int rind[6] = {0, 0,  0, 0,  1, 1};
 
 #define NUM_I (size[0] + rind[0] + rind[1])
 #define NUM_J (size[1] + rind[2] + rind[3])
 #define NUM_K (size[2] + rind[4] + rind[5])
 
-#define INDEX(I,J,K) ((I) + NUM_I * ((J) + NUM_J * (K)))
+#define INDEX(I,J,K) (int)((I) + NUM_I * ((J) + NUM_J * (K)))
 
-int num_coord;
+cgsize_t num_coord;
 float *xcoord, *ycoord, *zcoord;
-int *nmap;
+cgsize_t *nmap;
 
-int num_element, *elements;
+cgsize_t num_element, *elements;
 
 float *solution;
 
@@ -51,7 +62,8 @@ static void compute_element (ne, i, j, k)
 int main (int argc, char *argv[])
 {
     int n, nn, i, j, k, ni, nj, nk;
-    int dims[3], grind[2], erind[2];
+    cgsize_t dims[3];
+    int grind[2], erind[2];
 
     if (argc > 1) {
         n = 0;
@@ -70,8 +82,8 @@ int main (int argc, char *argv[])
 
     num_coord = NUM_I * NUM_J * NUM_K;
     num_element = (NUM_I - 1) * (NUM_J - 1) * (NUM_K - 1);
-    xcoord = (float *) malloc(4 * num_coord * sizeof(float));
-    nmap = (int *) malloc((num_coord + 8 * num_element) * sizeof(int));
+    xcoord = (float *) malloc((size_t)(4 * num_coord * sizeof(float)));
+    nmap = (cgsize_t *) malloc((size_t)((num_coord + 8 * num_element) * sizeof(cgsize_t)));
     if (NULL == xcoord || NULL == nmap) {
         fprintf(stderr, "malloc failed for data\n");
         exit(1);
@@ -148,9 +160,9 @@ int main (int argc, char *argv[])
        it's probably best to put the rind coordinates at the end.
        I'll use the nmap array for building elements */
 
-    ni = size[0] + rind[0];
-    nj = size[1] + rind[2];
-    nk = size[2] + rind[4];
+    ni = (int)(size[0] + rind[0]);
+    nj = (int)(size[1] + rind[2]);
+    nk = (int)(size[2] + rind[4]);
 
     for (n = 0, i = 0; i < rind[0]; i++) {
         for (k = 0; k < NUM_K; k++) {
@@ -190,7 +202,7 @@ int main (int argc, char *argv[])
             }
         }
     }
-    grind[1] = num_coord - n;
+    grind[1] = (int)(num_coord - n);
 
     for (i = ni; i < NUM_I; i++) {
         for (k = 0; k < NUM_K; k++) {
@@ -254,7 +266,7 @@ int main (int argc, char *argv[])
             }
         }
     }
-    erind[1] = num_element - n;
+    erind[1] = (int)(num_element - n);
 
     for (i = ni - 1; i < NUM_I - 1; i++) {
         for (k = 0; k < NUM_K - 1; k++) {

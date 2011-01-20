@@ -1,14 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _WIN32
+#ifdef _WIN32
+# include <io.h>
+# define unlink _unlink
+#else
 # include <unistd.h>
 #endif
 #include "utils.h"
 
 int main (int argc, char **argv)
 {
-    int na, narrays = 100, arraysize = 1024;
+    int na, narrays = 100;
+    cgsize_t arraysize = 1024;
     int cgfile, cgbase;
     char name[33];
     float *array;
@@ -20,8 +24,8 @@ int main (int argc, char **argv)
         if (argc > 2)
             arraysize = atoi (argv[2]);
     }
-    printf ("writing %d arrays of size %d\n", narrays, arraysize);
-    array = (float *) malloc (arraysize * sizeof(float));
+    printf ("writing %d arrays of size %d\n", narrays, (int)arraysize);
+    array = (float *) malloc ((size_t)(arraysize * sizeof(float)));
     if (NULL == array) {
         fprintf (stderr, "malloc failed\n");
         exit (1);

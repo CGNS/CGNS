@@ -6,7 +6,7 @@
 
 !       This example test the complete SIDS for multi-block data.
 !	It creates a dummy mesh composed of 2 structured blocks in 3D.
-
+#include "cgnstypes_f.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -14,13 +14,18 @@
 
 	integer Ndim
 	parameter (Ndim = 3)
-	integer index_dim, cell_dim, phys_dim
-	integer base_no, zone_no, coord_no, sol_no, discr_no, conn_no
-	integer hole_no, boco_no, field_no, dset_no
-	integer num, size(Ndim*3), npnts, NormalIndex(Ndim)
-	integer cg, ier, zone, coord, i, j, k, n, pos, sol, field
-	integer pnts(Ndim,120), donor_pnts(Ndim,120)
-	integer transform(Ndim)
+	cgsize_t one
+	parameter (one = 1)
+	
+	cgsize_t index_dim, cell_dim, phys_dim
+	cgsize_t base_no, zone_no, coord_no, sol_no, discr_no, conn_no
+	cgsize_t hole_no, boco_no, field_no, dset_no
+	cgsize_t num, NormalIndex(Ndim)
+	cgsize_t ndims, npnts,size(Ndim*3)
+	cgsize_t cg, ier, zone, coord, i, j, k, n, pos, sol, field
+	cgsize_t pnts(Ndim,120), donor_pnts(Ndim,120)
+	cgsize_t transform(Ndim)
+	cgsize_t nptsets, nrmlistflag
 	real*4 data(120), normals(360)
 	double precision Dxyz(120), values(120)
 	character*32 zonename, solname, fieldname
@@ -142,8 +147,11 @@
 		pnts(i,4)=size(i)
 	    enddo
 	  ! Hole defined with 2 point set type PointRange, so 4 points:
+	    nptsets = 2
+	    npnts = 4
 	    call cg_hole_write_f(cg, base_no, zone_no, 'hole#1', Vertex,
-     &                           PointRange, 2, 4, pnts, hole_no, ier)
+     &                           PointRange, nptsets, npnts, pnts,
+     &                           hole_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** general connectivity
@@ -153,9 +161,10 @@
 		donor_pnts(i,n)=i*2
  100        continue
 	  ! create a point matching connectivity 
+	    npnts = 5
 	    call cg_conn_write_f(cg, base_no, zone_no, 'Connect#1', 
-     &          Vertex, Abutting1to1, PointList, 5, pnts, 'zone#2', 
-     &          Structured, PointListDonor, Integer, 5, donor_pnts,
+     &          Vertex, Abutting1to1, PointList, npnts, pnts, 'zone#2',
+     &          Structured, PointListDonor, Integer, npnts, donor_pnts,
      &          conn_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -181,7 +190,7 @@
 
 ! *** ZoneGridConnectivity attributes:  GOTO ZoneGridConnectivity_t node
 	    call cg_goto_f(cg, base_no, ier, 'Zone_t', zone,
-     &                     'ZoneGridConnectivity_t', 1, 'end')
+     &                     'ZoneGridConnectivity_t', one, 'end')
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** ZoneGridConnectivity attributes: Descriptor_t
@@ -190,8 +199,9 @@
      &                                 'Zone Connectivity', ier)
 
 ! *** bocos
+            npnts = 2
 	    call cg_boco_write_f(cg, base_no, zone_no, 'boco#1',
-     &           BCInflow, PointRange, 2, pnts, boco_no, ier)
+     &           BCInflow, PointRange, npnts, pnts, boco_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** boco normal
@@ -206,13 +216,14 @@
 		normals(i)=i 
 	    enddo
 
+            nrmlistflag = 1
 	    call cg_boco_normal_write_f(cg, base_no, zone_no, boco_no,
-     &         NormalIndex, 1, RealSingle, normals, ier)
+     &         NormalIndex, nrmlistflag, RealSingle, normals, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ** boundary condition attributes: GOTO BC_t node
 	    call cg_goto_f(cg, base_no, ier, 'Zone_t', zone, 'ZoneBC_t',
-     &          1, 'BC_t', boco_no, 'end')
+     &          one, 'BC_t', boco_no, 'end')
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ** boundary condition attributes:  GridLocation_t
@@ -231,15 +242,16 @@
 	     
 ! ** boundary condition data arrays: GOTO BCData_t node
 	    call cg_goto_f(cg, base_no, ier, 'Zone_t', zone_no, 
-     &          'ZoneBC_t', 1, 'BC_t', boco_no, 'BCDataSet_t', dset_no,
-     &          'BCData_t', Neumann, 'end') 
+     &          'ZoneBC_t', one, 'BC_t', boco_no, 'BCDataSet_t',
+     &          dset_no, 'BCData_t', Neumann, 'end') 
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 	    do i=1, npnts
 		data(i) = i
 	    enddo
+	    ndims = 1
 	    call cg_array_write_f('dataset_arrayname', RealSingle, 
-     &           1, npnts, data, ier)
+     &           ndims, npnts, data, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ** boundary condition data attributes: 

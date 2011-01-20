@@ -28,9 +28,14 @@ ALL = \
 all : $(ALL)
 
 FALL =  cgwrite$(EXE) \
-	cgread$(EXE)
+	cgread$(EXE) \
+	test64f$(EXE)
 
 fortran : $(FALL)
+
+ALL64 = test64c$(EXE)
+
+test64 : $(ALL64)
 
 #----------
 
@@ -130,16 +135,27 @@ cgread$(EXE) : cgread.F $(CGNSLIB)
 
 #----------
 
+test64c$(EXE) : test64c.$(O) utils.$(O) $(CGNSLIB)
+	$(CC) $(CFLAGS) $(CEOUT)$@ test64c.$(O) utils.$(O) $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+test64c.$(O) : test64c.c utils.h
+	$(CC) $(COPTS) -c test64c.c
+
+#----------
+
+test64f$(EXE) : test64f.F $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test64f.F $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
 utils.$(O) : utils.c utils.h
 	$(CC) $(COPTS) -c utils.c
-
-getargs.$(O) : getargs.c getargs.h
-	$(CC) $(COPTS) -c getargs.c
 
 clean :
 	-$(RM) *.$(O)
 
 allclean : clean
-	-$(RM) $(ALL) $(FALL)
+	-$(RM) $(ALL) $(FALL) $(ALL64)
 	-$(RM) *.cgns *.cg?
 

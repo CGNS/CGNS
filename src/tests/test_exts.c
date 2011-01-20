@@ -1,10 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _WIN32
+#ifdef _WIN32
+# include <io.h>
+# define unlink _unlink
+#else
 # include <unistd.h>
 #endif
 #include "cgnslib.h"
+
+#ifndef CGNSTYPES_H
+# define cgsize_t int
+#endif
+#ifndef CGNS_ENUMT
+# define CGNS_ENUMT(e) e
+# define CGNS_ENUMV(e) e
+#endif
 
 #define NUM_SIDE 5
 
@@ -20,35 +31,36 @@ void error_exit (char *where)
 
 int main (int argc, char **argv)
 {
-    int n, i, j, k, nuser, dim = 1;
+    int n, i, j, k, nuser, nrmlindex[3];
+    cgsize_t dim = 1, nrmlist, npts;
     int cgfile, cgbase, cgzone, cgcoord, cgdset;
-    int size[9];
-    int ptlist[3] = {1, 2, 3};
-    int ptrange[6] = {1, 1, 1, 2, 2, 2};
-    int bcpoints[6], bcfaces[6];
+    cgsize_t size[9];
+    cgsize_t ptlist[3] = {1, 2, 3};
+    cgsize_t ptrange[6] = {1, 1, 1, 2, 2, 2};
+    cgsize_t bcpoints[6], bcfaces[6];
     static char *fname = "extensions.cgns";
     char name[33];
     float data1 = 1;
     float data2 = 2;
     float exponents[8], rate[3], center[3];
-    CGNS_ENUMT( GridLocation_t )  gridloc;
+    CGNS_ENUMT(GridLocation_t) gridloc;
     int ordinal, ndata, cgfam, cgbc, nunits, nexps;
     int elecflag, magnflag, condflag, dirichlet, neumann;
-    CGNS_ENUMT( PointSetType_t )  pttype;
-    CGNS_ENUMT( DataClass_t )  dclass;
-    CGNS_ENUMT( DataType_t )  dtype;
-    CGNS_ENUMT( BCType_t )  bctype;
-    CGNS_ENUMT( MassUnits_t )  mass;
-    CGNS_ENUMT( LengthUnits_t )  length;
-    CGNS_ENUMT( TimeUnits_t )  time;
-    CGNS_ENUMT( TemperatureUnits_t )  temp;
-    CGNS_ENUMT( AngleUnits_t ) angle;
-    CGNS_ENUMT( ElectricCurrentUnits_t )  current;
-    CGNS_ENUMT( SubstanceAmountUnits_t )  amount;
-    CGNS_ENUMT( LuminousIntensityUnits_t )  intensity;
-    CGNS_ENUMT( ModelType_t )  elecmodel;
-    CGNS_ENUMT( ModelType_t )  magnmodel;
-    CGNS_ENUMT( ModelType_t )  emconduct;
+    CGNS_ENUMT(PointSetType_t) pttype;
+    CGNS_ENUMT(DataClass_t) dclass;
+    CGNS_ENUMT(DataType_t) dtype;
+    CGNS_ENUMT(BCType_t) bctype;
+    CGNS_ENUMT(MassUnits_t) mass;
+    CGNS_ENUMT(LengthUnits_t) length;
+    CGNS_ENUMT(TimeUnits_t) time;
+    CGNS_ENUMT(TemperatureUnits_t) temp;
+    CGNS_ENUMT(AngleUnits_t) angle;
+    CGNS_ENUMT(ElectricCurrentUnits_t) current;
+    CGNS_ENUMT(SubstanceAmountUnits_t) amount;
+    CGNS_ENUMT(LuminousIntensityUnits_t)intensity;
+    CGNS_ENUMT(ModelType_t) elecmodel;
+    CGNS_ENUMT(ModelType_t) magnmodel;
+    CGNS_ENUMT(ModelType_t) emconduct;
 
     if (argc > 1) {
         n = 0;
@@ -86,9 +98,9 @@ int main (int argc, char **argv)
     if (cg_goto(cgfile, cgbase, NULL) ||
         cg_equationset_write (3) ||
         cg_goto(cgfile, cgbase, "FlowEquationSet_t", 1, NULL) ||
-        cg_model_write("EMElectricFieldModel_t", CGNS_ENUMV( Voltage )) ||
-        cg_model_write("EMMagneticFieldModel_t", CGNS_ENUMV( Interpolated )) ||
-        cg_model_write("EMConductivityModel_t", CGNS_ENUMV( Equilibrium_LinRessler )))
+        cg_model_write("EMElectricFieldModel_t", CGNS_ENUMV(Voltage)) ||
+        cg_model_write("EMMagneticFieldModel_t", CGNS_ENUMV(Interpolated)) ||
+        cg_model_write("EMConductivityModel_t", CGNS_ENUMV(Equilibrium_LinRessler)))
         error_exit("write electromagnetics");
 
     /* write rotating coordinates under family_t */
@@ -102,9 +114,10 @@ int main (int argc, char **argv)
     /* write BCDataSet under FamilyBC_t */
 
     puts("writing FamilyBCDataSet");
-    if (cg_fambc_write(cgfile, cgbase, cgfam, "FamilyBC", CGNS_ENUMV( BCWall ), &cgbc) ||
+    if (cg_fambc_write(cgfile, cgbase, cgfam, "FamilyBC", CGNS_ENUMV(BCWall), &cgbc) ||
         cg_goto(cgfile, cgbase, "Family_t", cgfam, "FamilyBC_t", cgbc, NULL) ||
-        cg_bcdataset_write ("FamilyBCDataSet", CGNS_ENUMV( BCWallInviscid ), CGNS_ENUMV( Dirichlet )))
+        cg_bcdataset_write ("FamilyBCDataSet", CGNS_ENUMV(BCWallInviscid),
+            CGNS_ENUMV(Dirichlet)))
         error_exit("write FamilyBCDataSet");
 
     /* write user data under base */
@@ -117,23 +130,24 @@ int main (int argc, char **argv)
         cg_gridlocation_write (CGNS_ENUMV( CellCenter )) ||
         cg_famname_write ("Family") ||
         cg_ordinal_write (0) ||
-        cg_array_write ("Data1", CGNS_ENUMV( RealSingle ), 1, &dim, &data1) ||
-        cg_array_write ("Data2", CGNS_ENUMV( RealSingle ), 1, &dim, &data2))
+        cg_array_write ("Data1", CGNS_ENUMV(RealSingle), 1, &dim, &data1) ||
+        cg_array_write ("Data2", CGNS_ENUMV(RealSingle), 1, &dim, &data2))
         error_exit ("write User/data");
 
     for (n = 1; n <= 2; n++) {
         if (cg_goto (cgfile, cgbase, "UserDefinedData_t", 1,
                 "DataArray_t", n, "end") ||
-            cg_dataclass_write (CGNS_ENUMV( Dimensional )) ||
-            cg_units_write (CGNS_ENUMV( Kilogram ), CGNS_ENUMV( Meter ), CGNS_ENUMV( Second ), CGNS_ENUMV( Kelvin ), CGNS_ENUMV( Radian )) ||
-            cg_exponents_write (CGNS_ENUMV( RealSingle ), exponents))
+            cg_dataclass_write (CGNS_ENUMV(Dimensional)) ||
+            cg_units_write (CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
+                CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian)) ||
+            cg_exponents_write (CGNS_ENUMV(RealSingle), exponents))
             error_exit (name);
     }
 
     /* this should fail since ptset not allowed as child of
        user data, except below a zone_t node */
 
-    if (cg_ptset_write (CGNS_ENUMV( PointList ), 1, ptlist) == CG_OK)
+    if (cg_ptset_write (CGNS_ENUMV(PointList), 1, ptlist) == CG_OK)
         printf ("WHAT!! - ptset should not work under base/userdata\n");
 
     /* write zone */
@@ -144,12 +158,12 @@ int main (int argc, char **argv)
         size[n+3] = NUM_SIDE - 1;
         size[n+6] = 0;
     }
-    if (cg_zone_write (cgfile, cgbase, "Zone", size, CGNS_ENUMV( Structured ), &cgzone) ||
-        cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
+    if (cg_zone_write (cgfile, cgbase, "Zone", size, CGNS_ENUMV(Structured), &cgzone) ||
+        cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateX", coord, &cgcoord) ||
-        cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
+        cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateY", coord, &cgcoord) ||
-        cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
+        cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateZ", coord, &cgcoord))
         cg_error_exit();
 
@@ -163,11 +177,11 @@ int main (int argc, char **argv)
         bcfaces[n+3]  = NUM_SIDE - 1;
     }
     bcpoints[5] = bcfaces[5] = 1;
-    if (cg_boco_write (cgfile, cgbase, cgzone, "BC", CGNS_ENUMV( BCWall ),
-		       CGNS_ENUMV( PointList ), 1, bcpoints, &cgbc) ||
+    if (cg_boco_write (cgfile, cgbase, cgzone, "BC", CGNS_ENUMV(BCWall),
+		       CGNS_ENUMV(PointList), 1, bcpoints, &cgbc) ||
         cg_dataset_write (cgfile, cgbase, cgzone, cgbc,
-			  "DataSet", CGNS_ENUMV( BCWallViscous ), &cgdset) ||
-        cg_bcdata_write (cgbase, cgfile, cgzone, cgbc, cgdset, CGNS_ENUMV( Dirichlet )))
+			  "DataSet", CGNS_ENUMV(BCWallViscous), &cgdset) ||
+        cg_bcdata_write (cgbase, cgfile, cgzone, cgbc, cgdset, CGNS_ENUMV(Dirichlet)))
         cg_error_exit();
 
     /* create Dirichlet data at faces */
@@ -175,8 +189,8 @@ int main (int argc, char **argv)
     puts("writing Dirichlet data at faces");
     if (cg_goto (cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1, "BC_t", 1,
             "BCDataSet_t", 1, NULL) ||
-        cg_gridlocation_write (CGNS_ENUMV( KFaceCenter )) ||
-        cg_ptset_write (CGNS_ENUMV( PointRange ), 2, bcfaces))
+        cg_gridlocation_write (CGNS_ENUMV(KFaceCenter)) ||
+        cg_ptset_write (CGNS_ENUMV(PointRange), 2, bcfaces))
         cg_error_exit();
 
 #if 1
@@ -189,8 +203,8 @@ int main (int argc, char **argv)
     size[0] = 1;
 #endif
     if (cg_goto (cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1, "BC_t", 1,
-		 "BCDataSet_t", 1, "BCData_t", CGNS_ENUMV( Dirichlet ), NULL) ||
-        cg_array_write ("Data", CGNS_ENUMV( RealSingle ), 1, size, coord))
+		 "BCDataSet_t", 1, "BCData_t", CGNS_ENUMV(Dirichlet), NULL) ||
+        cg_array_write ("Data", CGNS_ENUMV(RealSingle), 1, size, coord))
         cg_error_exit();
 
     /* write recursive user data */
@@ -203,21 +217,22 @@ int main (int argc, char **argv)
             error_exit (name);
         if (cg_goto (cgfile, cgbase, "Zone_t", cgzone,
                 "UserDefinedData_t", i, "end") ||
-            cg_gridlocation_write (CGNS_ENUMV( CellCenter )) ||
+            cg_gridlocation_write (CGNS_ENUMV(CellCenter)) ||
             cg_famname_write ("Family") ||
             cg_ordinal_write (i) ||
-            cg_ptset_write (CGNS_ENUMV( PointList ), 1, ptlist) ||
-            cg_array_write ("Data1", CGNS_ENUMV( RealSingle ), 1, &dim, &data1) ||
-            cg_array_write ("Data2", CGNS_ENUMV( RealSingle ), 1, &dim, &data2))
+            cg_ptset_write (CGNS_ENUMV(PointList), 1, ptlist) ||
+            cg_array_write ("Data1", CGNS_ENUMV(RealSingle), 1, &dim, &data1) ||
+            cg_array_write ("Data2", CGNS_ENUMV(RealSingle), 1, &dim, &data2))
             error_exit (name);
         for (n = 1; n <= 2; n++) {
             if (cg_goto (cgfile, cgbase, "Zone_t", cgzone,
                     "UserDefinedData_t", i,
                     "DataArray_t", n, "end") ||
-                cg_dataclass_write (CGNS_ENUMV( Dimensional )) ||
-                cg_unitsfull_write (CGNS_ENUMV( Kilogram ), CGNS_ENUMV( Meter ), CGNS_ENUMV( Second ), CGNS_ENUMV( Kelvin ), CGNS_ENUMV( Radian ),
-				    CGNS_ENUMV( Ampere ), CGNS_ENUMV( Mole ), CGNS_ENUMV( Candela )) ||
-                cg_expfull_write (CGNS_ENUMV( RealSingle ), exponents))
+                cg_dataclass_write (CGNS_ENUMV(Dimensional)) ||
+                cg_unitsfull_write (CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
+                    CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian),
+		    CGNS_ENUMV(Ampere), CGNS_ENUMV(Mole), CGNS_ENUMV(Candela)) ||
+                cg_expfull_write (CGNS_ENUMV(RealSingle), exponents))
                 error_exit (name);
         }
 
@@ -230,22 +245,23 @@ int main (int argc, char **argv)
             if (cg_goto (cgfile, cgbase, "Zone_t", cgzone,
                     "UserDefinedData_t", i,
                     "UserDefinedData_t", j, "end") ||
-                cg_gridlocation_write (CGNS_ENUMV( Vertex )) ||
+                cg_gridlocation_write (CGNS_ENUMV(Vertex)) ||
                 cg_famname_write ("Family") ||
                 cg_ordinal_write (i + j) ||
-                cg_ptset_write (CGNS_ENUMV( PointRange ), 2, ptrange) ||
-                cg_array_write ("Data1", CGNS_ENUMV( RealSingle ), 1, &dim, &data1) ||
-                cg_array_write ("Data2", CGNS_ENUMV( RealSingle ), 1, &dim, &data2))
+                cg_ptset_write (CGNS_ENUMV(PointRange), 2, ptrange) ||
+                cg_array_write ("Data1", CGNS_ENUMV(RealSingle), 1, &dim, &data1) ||
+                cg_array_write ("Data2", CGNS_ENUMV(RealSingle), 1, &dim, &data2))
                 error_exit (name);
             for (n = 1; n <= 2; n++) {
                 if (cg_goto (cgfile, cgbase, "Zone_t", cgzone,
                         "UserDefinedData_t", i,
                         "UserDefinedData_t", j,
                         "DataArray_t", n, "end") ||
-                    cg_dataclass_write (CGNS_ENUMV( Dimensional )) ||
-                    cg_unitsfull_write (CGNS_ENUMV( Kilogram ), CGNS_ENUMV( Meter ), CGNS_ENUMV( Second ), CGNS_ENUMV( Kelvin ),
-					CGNS_ENUMV( Radian ), CGNS_ENUMV( Ampere ), CGNS_ENUMV( Mole ), CGNS_ENUMV( Candela )) ||
-                    cg_expfull_write (CGNS_ENUMV( RealSingle ), exponents))
+                    cg_dataclass_write (CGNS_ENUMV(Dimensional)) ||
+                    cg_unitsfull_write (CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
+                        CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian),
+                        CGNS_ENUMV(Ampere), CGNS_ENUMV(Mole), CGNS_ENUMV(Candela)) ||
+                    cg_expfull_write (CGNS_ENUMV(RealSingle), exponents))
                     error_exit (name);
             }
 
@@ -260,8 +276,8 @@ int main (int argc, char **argv)
                         "UserDefinedData_t", i,
                         "UserDefinedData_t", j,
                         "UserDefinedData_t", k, "end") ||
-                    cg_array_write ("Data1", CGNS_ENUMV( RealSingle ), 1, &dim, &data1) ||
-                    cg_array_write ("Data2", CGNS_ENUMV( RealSingle ), 1, &dim, &data2))
+                    cg_array_write ("Data1", CGNS_ENUMV(RealSingle), 1, &dim, &data1) ||
+                    cg_array_write ("Data2", CGNS_ENUMV(RealSingle), 1, &dim, &data2))
                     error_exit (name);
                 for (n = 1; n <= 2; n++) {
                     if (cg_goto (cgfile, cgbase, "Zone_t", cgzone,
@@ -269,10 +285,11 @@ int main (int argc, char **argv)
                             "UserDefinedData_t", j,
                             "UserDefinedData_t", k,
                             "DataArray_t", n, "end") ||
-                        cg_dataclass_write (CGNS_ENUMV( Dimensional )) ||
-                        cg_unitsfull_write (CGNS_ENUMV( Kilogram ), CGNS_ENUMV( Meter ), CGNS_ENUMV( Second ), CGNS_ENUMV( Kelvin ),
-					    CGNS_ENUMV( Radian ), CGNS_ENUMV( Ampere ), CGNS_ENUMV( Mole ), CGNS_ENUMV( Candela )) ||
-                        cg_expfull_write (CGNS_ENUMV( RealSingle ), exponents))
+                        cg_dataclass_write (CGNS_ENUMV(Dimensional)) ||
+                        cg_unitsfull_write (CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
+                            CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian),
+                            CGNS_ENUMV(Ampere), CGNS_ENUMV(Mole), CGNS_ENUMV(Candela)) ||
+                        cg_expfull_write (CGNS_ENUMV(RealSingle), exponents))
                         error_exit (name);
                 }
 
@@ -289,8 +306,8 @@ int main (int argc, char **argv)
                             "UserDefinedData_t", j,
                             "UserDefinedData_t", k,
                             "UserDefinedData_t", n, "end") ||
-                        cg_array_write ("Data1", CGNS_ENUMV( RealSingle ), 1, &dim, &data1) ||
-                        cg_array_write ("Data2", CGNS_ENUMV( RealSingle ), 1, &dim, &data2))
+                        cg_array_write ("Data1", CGNS_ENUMV(RealSingle), 1, &dim, &data1) ||
+                        cg_array_write ("Data2", CGNS_ENUMV(RealSingle), 1, &dim, &data2))
                         error_exit (name);
                 }
             }
@@ -317,11 +334,11 @@ int main (int argc, char **argv)
         cg_model_read ("EMConductivityModel_t", &emconduct))
         error_exit("electromagnetics read");
     CHECK ("ElectricFieldFlag", elecflag == 1);
-    CHECK ("ElectricFieldModel", elecmodel == CGNS_ENUMV( Voltage ));
+    CHECK ("ElectricFieldModel", elecmodel == CGNS_ENUMV(Voltage));
     CHECK ("MagneticFieldFlag", magnflag == 1);
-    CHECK ("MagneticFieldModel", magnmodel == CGNS_ENUMV( Interpolated ));
+    CHECK ("MagneticFieldModel", magnmodel == CGNS_ENUMV(Interpolated));
     CHECK ("EMConductivityFlag", condflag == 1);
-    CHECK ("EMConductivityModel", emconduct == CGNS_ENUMV( Equilibrium_LinRessler ));
+    CHECK ("EMConductivityModel", emconduct == CGNS_ENUMV(Equilibrium_LinRessler));
 
     /* check rotating coordinates under family_t */
 
@@ -344,7 +361,7 @@ int main (int argc, char **argv)
         error_exit("read FamilyBCDataSet");
     CHECK("bcdataset_info", ndata == 1);
     CHECK("bcdatset name", strcmp(name, "FamilyBCDataSet") == 0);
-    CHECK("bcdatset type", bctype == CGNS_ENUMV( BCWallInviscid ));
+    CHECK("bcdatset type", bctype == CGNS_ENUMV(BCWallInviscid));
     CHECK("bcdatset dirichlet", dirichlet == 1);
     CHECK("bcdatset neumann", neumann == 0);
 
@@ -352,25 +369,25 @@ int main (int argc, char **argv)
 
     puts("checking BC data");
     if (cg_boco_info (cgfile, cgbase, cgzone, 1, name, &bctype, &pttype,
-            &n, size, &i, &dtype, &ndata))
+            &npts, nrmlindex, &nrmlist, &dtype, &ndata))
         cg_error_exit();
     CHECK("BC_t name", strcmp(name, "BC") == 0);
-    CHECK("BC_t type", bctype == CGNS_ENUMV( BCWall ));
-    CHECK("BC_t pntset type", pttype == CGNS_ENUMV( PointList ));
-    CHECK("BC_t npnts", n == 1);
+    CHECK("BC_t type", bctype == CGNS_ENUMV(BCWall));
+    CHECK("BC_t pntset type", pttype == CGNS_ENUMV(PointList));
+    CHECK("BC_t npnts", npts == 1);
 
     if (cg_dataset_read (cgfile, cgbase, cgzone, 1, 1, name,
             &bctype, &dirichlet, &neumann) ||
         cg_goto (cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1, "BC_t", 1,
             "BCDataSet_t", 1, NULL) ||
         cg_gridlocation_read (&gridloc) ||
-        cg_ptset_info (&pttype, &n))
+        cg_ptset_info (&pttype, &npts))
         cg_error_exit();
     CHECK("BCDataSet_t name", strcmp(name, "DataSet") == 0);
-    CHECK("BCDataSet_t type", bctype == CGNS_ENUMV( BCWallViscous ));
-    CHECK("BCDataSet_t location", gridloc == CGNS_ENUMV( KFaceCenter ));
-    CHECK("BCDataSet_t pntset type", pttype == CGNS_ENUMV( PointRange ));
-    CHECK("BC_t npnts", n == 2);
+    CHECK("BCDataSet_t type", bctype == CGNS_ENUMV(BCWallViscous));
+    CHECK("BCDataSet_t location", gridloc == CGNS_ENUMV(KFaceCenter));
+    CHECK("BCDataSet_t pntset type", pttype == CGNS_ENUMV(PointRange));
+    CHECK("BC_t npnts", npts == 2);
     CHECK("BCDataSet_t dirichlet", dirichlet == 1);
     CHECK("BCDataSet_t neumann", neumann == 0);
 
@@ -384,7 +401,7 @@ int main (int argc, char **argv)
         cg_ordinal_read (&ordinal) ||
         cg_narrays (&ndata))
         cg_error_exit ();
-    CHECK ("gridlocation", gridloc == CGNS_ENUMV( CellCenter ));
+    CHECK ("gridlocation", gridloc == CGNS_ENUMV(CellCenter));
     CHECK ("famname", strcmp (name, "Family") == 0);
     CHECK ("ordinal", ordinal == 0);
     CHECK ("narrays", ndata == 2);
@@ -401,16 +418,16 @@ int main (int argc, char **argv)
             cg_gridlocation_read (&gridloc) ||
             cg_famname_read (name) ||
             cg_ordinal_read (&ordinal) ||
-            cg_ptset_info (&pttype, &n) ||
+            cg_ptset_info (&pttype, &npts) ||
             cg_ptset_read (ptlist) ||
             cg_narrays (&ndata) ||
             cg_nuser_data (&nuser))
             cg_error_exit ();
-        CHECK ("gridlocation", gridloc == CGNS_ENUMV( CellCenter ));
+        CHECK ("gridlocation", gridloc == CGNS_ENUMV(CellCenter));
         CHECK ("famname", strcmp (name, "Family") == 0);
         CHECK ("ordinal", ordinal == i);
-        CHECK ("pointtype", pttype == CGNS_ENUMV( PointList ));
-        CHECK ("npoints", n == 1);
+        CHECK ("pointtype", pttype == CGNS_ENUMV(PointList));
+        CHECK ("npoints", npts == 1);
         CHECK ("narrays", ndata == 2);
         CHECK ("nuserdata", nuser == 3);
 
@@ -422,16 +439,16 @@ int main (int argc, char **argv)
                 cg_gridlocation_read (&gridloc) ||
                 cg_famname_read (name) ||
                 cg_ordinal_read (&ordinal) ||
-                cg_ptset_info (&pttype, &n) ||
-                cg_ptset_read (ptlist) ||
+                cg_ptset_info (&pttype, &npts) ||
+                cg_ptset_read (ptrange) ||
                 cg_narrays (&ndata) ||
                 cg_nuser_data (&nuser))
                 cg_error_exit ();
-            CHECK ("gridlocation", gridloc == CGNS_ENUMV( Vertex ));
+            CHECK ("gridlocation", gridloc == CGNS_ENUMV(Vertex));
             CHECK ("famname", strcmp (name, "Family") == 0);
             CHECK ("ordinal", ordinal == (i + j));
-            CHECK ("pointtype", pttype == CGNS_ENUMV( PointRange ));
-            CHECK ("npoints", n == 2);
+            CHECK ("pointtype", pttype == CGNS_ENUMV(PointRange));
+            CHECK ("npoints", npts == 2);
             CHECK ("narrays", ndata == 2);
             CHECK ("nuserdata", nuser == 2);
 
@@ -447,16 +464,16 @@ int main (int argc, char **argv)
                     cg_nexponents (&nexps) ||
                     cg_expfull_read (exponents))
                     cg_error_exit ();
-                CHECK ("dataclass", dclass == CGNS_ENUMV( Dimensional ));
+                CHECK ("dataclass", dclass == CGNS_ENUMV(Dimensional));
                 CHECK ("nunits", nunits == 8);
-                CHECK ("massunits", mass == CGNS_ENUMV( Kilogram ));
-                CHECK ("lengthunits", length == CGNS_ENUMV( Meter ));
-                CHECK ("timeunits", time == CGNS_ENUMV( Second ));
-                CHECK ("tempunits", temp == CGNS_ENUMV( Kelvin ));
-                CHECK ("angleunits", angle == CGNS_ENUMV( Radian ));
-                CHECK ("currentunits", current == CGNS_ENUMV( Ampere ));
-                CHECK ("amountunits", amount == CGNS_ENUMV( Mole ));
-                CHECK ("intensityunits", intensity == CGNS_ENUMV( Candela ));
+                CHECK ("massunits", mass == CGNS_ENUMV(Kilogram));
+                CHECK ("lengthunits", length == CGNS_ENUMV(Meter));
+                CHECK ("timeunits", time == CGNS_ENUMV(Second));
+                CHECK ("tempunits", temp == CGNS_ENUMV(Kelvin));
+                CHECK ("angleunits", angle == CGNS_ENUMV(Radian));
+                CHECK ("currentunits", current == CGNS_ENUMV(Ampere));
+                CHECK ("amountunits", amount == CGNS_ENUMV(Mole));
+                CHECK ("intensityunits", intensity == CGNS_ENUMV(Candela));
                 CHECK ("nexponents", nexps == 8);
                 for (n = 0; n < 8; n++)
                     CHECK ("exponents", exponents[n] == (float)n);
@@ -476,7 +493,7 @@ int main (int argc, char **argv)
     CHECK ("narrays", ndata == 2);
     CHECK ("nuserdata", nuser == 0);
     CHECK ("arrayname", strcmp (name, "Data2") == 0);
-    CHECK ("datatype", dtype == CGNS_ENUMV( RealSingle ));
+    CHECK ("datatype", dtype == CGNS_ENUMV(RealSingle));
     CHECK ("ndims", n == 1);
     CHECK ("dims", dim == 1);
     CHECK ("data1", data1 == 1.0);
@@ -494,11 +511,11 @@ int main (int argc, char **argv)
         cg_expfull_read (exponents))
         cg_error_exit ();
     CHECK ("nunits", nunits == 5);
-    CHECK ("massunits", mass == CGNS_ENUMV( Kilogram ));
-    CHECK ("lengthunits", length == CGNS_ENUMV( Meter ));
-    CHECK ("timeunits", time == CGNS_ENUMV( Second ));
-    CHECK ("tempunits", temp == CGNS_ENUMV( Kelvin ));
-    CHECK ("angleunits", angle == CGNS_ENUMV( Radian ));
+    CHECK ("massunits", mass == CGNS_ENUMV(Kilogram));
+    CHECK ("lengthunits", length == CGNS_ENUMV(Meter));
+    CHECK ("timeunits", time == CGNS_ENUMV(Second));
+    CHECK ("tempunits", temp == CGNS_ENUMV(Kelvin));
+    CHECK ("angleunits", angle == CGNS_ENUMV(Radian));
     CHECK ("currentunits", current == 0);
     CHECK ("amountunits", amount == 0);
     CHECK ("intensityunits", intensity == 0);
@@ -518,11 +535,11 @@ int main (int argc, char **argv)
         cg_exponents_read (exponents))
         cg_error_exit ();
     CHECK ("nunits", nunits == 8);
-    CHECK ("massunits", mass == CGNS_ENUMV( Kilogram ));
-    CHECK ("lengthunits", length == CGNS_ENUMV( Meter ));
-    CHECK ("timeunits", time == CGNS_ENUMV( Second ));
-    CHECK ("tempunits", temp == CGNS_ENUMV( Kelvin ));
-    CHECK ("angleunits", angle == CGNS_ENUMV( Radian ));
+    CHECK ("massunits", mass == CGNS_ENUMV(Kilogram));
+    CHECK ("lengthunits", length == CGNS_ENUMV(Meter));
+    CHECK ("timeunits", time == CGNS_ENUMV(Second));
+    CHECK ("tempunits", temp == CGNS_ENUMV(Kelvin));
+    CHECK ("angleunits", angle == CGNS_ENUMV(Radian));
     CHECK ("nexponents", nexps == 8);
     for (n = 0; n < 5; n++)
         CHECK ("exponents", exponents[n] == (float)n);

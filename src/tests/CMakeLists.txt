@@ -3,20 +3,25 @@
 #########
 
 # Link all the executables to cgns and hdf5
-link_directories(. ${HDF5_LIBRARY_DIR})
-link_libraries(cgns_static hdf5)
-if(HDF5_NEED_ZLIB)
-	link_directories(${ZLIB_LIBRARY_DIR})
-	link_libraries(z)
-endif(HDF5_NEED_ZLIB)
-if(HDF5_NEED_SZIP)
-	link_directories(${SZIP_LIBRARY_DIR})
-	link_libraries(szlib)
-endif(HDF5_NEED_SZIP)
-if(HDF5_NEED_MPI)
-	link_directories(${MPI_LIBRARY_DIR})
-	link_libraries(mpi)
-endif(HDF5_NEED_MPI)
+link_directories(.)
+link_libraries(cgns_static)
+
+if (ENABLE_HDF5 AND HDF5_LIBRARY)
+  link_libraries(${HDF5_LIBRARY})
+  if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+    link_libraries(${ZLIB_LIBRARY})
+  endif(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+  if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+    link_libraries(${SZIP_LIBRARY})
+  endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+  if(HDF5_NEED_MPI AND MPI_LIBRARY)
+    link_libraries(${MPI_LIBRARY})
+  endif(HDF5_NEED_MPI AND MPI_LIBRARY)
+endif (ENABLE_HDF5 AND HDF5_LIBRARY)
+
+if (NOT WIN32)
+  link_libraries(m)
+endif (NOT WIN32)
 
 # Set the files needed by each test
 set(dbtest_FILES
@@ -72,29 +77,31 @@ add_executable( write_test   ${write_test_FILES}   )
 add_executable( write_zones  ${write_zones_FILES}  )
 
 # Conditionally build the fortran tests
-if (ENABLE_FORTRAN)
+if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
 	add_executable( f2c_test     ${f2c_test_FILES} )
 	add_executable( cgread       ${cgread_FILES}   )
 	add_executable( cgwrite      ${cgwrite_FILES}  )
-endif (ENABLE_FORTRAN)
+endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
 
 # Add the tests so that ctest can find them
-add_test( dbtest       dbtest 1 1 elemtest.cgns )
-add_test( elemtest     elemtest                 )
-add_test( open_cgns    open_cgns elemtest.cgns  )
-add_test( test_exts    test_exts                )
-add_test( test_goto    test_goto                )
-add_test( test_partial test_partial             )
-add_test( write_array  write_array              )
-add_test( write_bcdata write_bcdata             )
-add_test( write_links  write_links              )
-add_test( write_rind   write_rind               )
-add_test( write_test   write_test               )
-add_test( write_zones  write_zones              )
+if (ENABLE_TESTS)
+  add_test( dbtest       dbtest 1 1 elemtest.cgns )
+  add_test( elemtest     elemtest                 )
+  add_test( open_cgns    open_cgns elemtest.cgns  )
+  add_test( test_exts    test_exts                )
+  add_test( test_goto    test_goto                )
+  add_test( test_partial test_partial             )
+  add_test( write_array  write_array              )
+  add_test( write_bcdata write_bcdata             )
+  add_test( write_links  write_links              )
+  add_test( write_rind   write_rind               )
+  add_test( write_test   write_test               )
+  add_test( write_zones  write_zones              )
 
-# Conditionally add the fortran tests
-if (ENABLE_FORTRAN)
+  # Conditionally add the fortran tests
+  if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
 	add_test( f2c_test f2c_test ) # This still needs a regex test
 	add_test( cgwrite  cgwrite  )
 	add_test( cgread   cgread   )
-endif (ENABLE_FORTRAN)
+  endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
+endif (ENABLE_TESTS)

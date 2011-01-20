@@ -4,50 +4,62 @@
 
 ! This program reads a 3D mesh, structured or unstructured.
 
+#include "cgnstypes_f.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
 	include 'cgnslib_f.h'
 
 	integer Ndim, Nglobal
-	integer i, narrays, iarray, nintegrals, integral
-	integer ndescriptors, idescr, nptsets, nzonetype
-	integer ndonor_ptset_type, idataset, dirichletflag, neumannflag
-!234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	parameter (Ndim = 3)
 	parameter (Nglobal = 500)
-	integer IndexDim, CellDim, PhysDim
-	integer ier, n, zonetype
-	integer nbases, nzones, size(Ndim*3), DataSize(Ndim)
-	integer ncoords, type, nsols, nfields, location
-	integer nholes, nconns, n1to1, n1to1_global, nbocos
-	integer ptset_type, npnts, pnts(100000), donor_pnts(100000)
-        integer npnts_donor, donor_datatype, bocotype, datatype
+
+	cgsize_t i, narrays, iarray, nintegrals, integral
+	cgsize_t ndescriptors, idescr, nptsets, nzonetype
+	cgsize_t ndonor_ptset_type, ndonor_data_type
+	cgsize_t idataset, dirichletflag, neumannflag
+!234567890!234567890!234567890!234567890!234567890!234567890!23456789012
+	cgsize_t IndexDim, CellDim, PhysDim
+	cgsize_t ier, n, zonetype
+	cgsize_t nbases, nzones
+	cgsize_t rmin(3), DataSize(Ndim)
+	cgsize_t size(Ndim*3)
+	cgsize_t ncoords, type, nsols, nfields, location
+	cgsize_t nholes, nconns, n1to1, n1to1_global, nbocos
+	cgsize_t ptset_type
+	cgsize_t npnts, pnts(100000), donor_pnts(100000)
+        cgsize_t npnts_donor
+        cgsize_t bocotype, datatype
 	character*32 basename, zonename, solname, fieldname 
 	character*32 coordname, holename, connectname
 	character*32 boconame, donorname
-	integer cg, base, zone, coord, sol, field, discr
-	integer hole, conn, one21, boco, rmin(3)
-	integer range(Ndim, 2), donor_range(Ndim, 2)
- 	integer transform(Ndim)
-  	integer G_range(Ndim*2, Nglobal) 
-	integer G_donor_range(Ndim*2, Nglobal)
-	integer G_transform(Ndim, Nglobal)
+	cgsize_t cg, base, zone, coord, sol, field, discr
+	cgsize_t hole, conn, one21, boco
+	cgsize_t range(Ndim, 2), donor_range(Ndim, 2)
+ 	cgsize_t transform(Ndim)
+  	cgsize_t G_range(Ndim*2, Nglobal) 
+	cgsize_t G_donor_range(Ndim*2, Nglobal)
+	cgsize_t G_transform(Ndim, Nglobal)
 	character*32 G_connectname(Nglobal), G_zonename(Nglobal)
 	character*32 G_donorname(Nglobal)
 	character*32 name, filename
 	character*40 text, NormDefinitions, StateDescription
-	integer equation_dimension, GoverningEquationsFlag
-	integer GasModelFlag, ViscosityModelFlag
-	integer ThermalConductivityModelFlag 
-	integer TurbulenceClosureFlag, TurbulenceModelFlag
-	integer diffusion_model(6), niterations
-	integer nndim, dim_vals(12), rind(6), ndiscrete, num
-	integer mass, length, time, temp, deg
-	integer NormalIndex(3), NormalListFlag, ndataset
+	cgsize_t equation_dimension, GoverningEquationsFlag
+	cgsize_t GasModelFlag, ViscosityModelFlag
+	cgsize_t ThermalConductivityModelFlag 
+	cgsize_t TurbulenceClosureFlag, TurbulenceModelFlag
+	cgsize_t diffusion_model(6), niterations
+	cgsize_t nndim, rind(6), ndiscrete, num
+	cgsize_t dim_vals(12)
+	cgsize_t mass, length, time, temp, deg
+	cgsize_t NormalIndex(3), ndataset
+	cgsize_t NormalListFlag
 	real*4 data_single(100000)
 	double precision data_double(100000)
 	real*4 version
+
+        cgsize_t one
+        parameter (one = 1)
 
 ! *** open file
 !	write(6,*) 'Input filename'
@@ -81,7 +93,7 @@
           if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ***     base attribute:  Descriptor
-          call cg_descriptor_read_f(1, name, text, ier)
+          call cg_descriptor_read_f(one, name, text, ier)
           if (ier .eq. ERROR) call cg_error_exit_f
           if (ier.eq.ALL_OK) then
             write(6,400)'Base Descriptor_t Information:'
@@ -106,11 +118,11 @@
 	    write(6,100)' equation_dimension=',equation_dimension
 
 ! ***       flow equation set attributes:  GOTO FlowEquationSet_t node
-            call cg_goto_f(cg, base, ier, 'FlowEquationSet_t', 1, 'end')
+            call cg_goto_f(cg,base,ier,'FlowEquationSet_t',one,'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ***       flow equation set attribute: Descriptor
-            call cg_descriptor_read_f(1, name,text,ier)
+            call cg_descriptor_read_f(one, name,text,ier)
             if (ier .eq. ERROR) call cg_error_exit_f
             if (ier .eq. ALL_OK) write(6,500)
      &        ' DescriptorName="',name,'"',' DescriptorText="',text,'"'
@@ -166,8 +178,8 @@
      &                          GoverningEquationsTypeName(type),'"'
 
     	! *** Governing Equations attribute:  GOTO GoverningEquations_t node
-	      call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1,
-     &            'GoverningEquations_t',1,'end')
+	      call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', one,
+     &            'GoverningEquations_t', one ,'end')
 	      if (ier .eq. ERROR) call cg_error_exit_f
 	      
 
@@ -229,7 +241,7 @@
 	
          ! ** ConvergenceHistory_t attributes:
 	      call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                      'ConvergenceHistory_t', 1, 'end')
+     &                      'ConvergenceHistory_t', one, 'end')
 	      if (ier .eq. ERROR) call cg_error_exit_f
 
          ! ** ConvergenceHistory_t attributes: DataArray_t
@@ -375,7 +387,7 @@
 
       ! *** zone coordinate attribute:  GOTO GridCoordinates_t node
             call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &            'GridCoordinates_t', 1, 'end')
+     &            'GridCoordinates_t', one, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 	    if (ier .eq. ALL_OK) then
 
@@ -399,7 +411,7 @@
 	      do iarray=1,narrays
 
 		call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &            'GridCoordinates_t', 1, 'end')
+     &            'GridCoordinates_t', one, 'end')
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 	  ! *** GridCoordinates_t attribute: DataArray_t
@@ -433,7 +445,7 @@
 
           ! *** coordinate attribute:  GOTO coordinate array node
                 call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &          'GridCoordinates_t', 1, 'DataArray_t', iarray, 'end')
+     &          'GridCoordinates_t', one, 'DataArray_t', iarray, 'end')
                 if (ier .eq. ERROR) call cg_error_exit_f
 
                 call cg_ndescriptors_f(ndescriptors, ier)
@@ -658,7 +670,7 @@
                   if (ier .eq. ERROR) call cg_error_exit_f
                   !write(6,*) (data_single(n),n=1,num)
                 elseif (datatype .eq. RealDouble) then
-                  call cg_array_read_f(1, data_double, ier)
+                  call cg_array_read_f(iarray, data_double, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
                   !write(6,*) (data_double(n),n=1,num)
                 endif
@@ -687,7 +699,7 @@
 
 ! *** ZoneGridConnectivity attributes:  GOTO ZoneGridConnectivity_t node
             call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &         'ZoneGridConnectivity_t', 1, 'end')
+     &         'ZoneGridConnectivity_t', one, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 
 	    if (ier.eq. ALL_OK) then
@@ -726,7 +738,7 @@
 
           ! *** overset holes attributes:  GOTO OversetHoles_t node
 	        call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &             'ZoneGridConnectivity_t', 1,
+     &             'ZoneGridConnectivity_t', one,
      &             'OversetHoles_t', hole, 'end')
                 if (ier .ne. 0) call cg_error_exit_f
 
@@ -752,7 +764,7 @@
 	      do conn=1, nconns
                 call cg_conn_info_f(cg, base, zone, conn, connectname, 
      &             location, type, ptset_type, npnts, donorname,
-     &             nzonetype, ndonor_ptset_type, donor_datatype, 
+     &             nzonetype, ndonor_ptset_type, ndonor_data_type,
      &             npnts_donor, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 	        write(6, 101)
@@ -766,12 +778,10 @@
      &            '   donor zonetype=',ZoneTypeName(nzonetype),
      &            '   donor ptset type=',
      &                PointSetTypeName(ndonor_ptset_type),
-     &            '   donor datatype=',DataTypeName(donor_datatype),
      &            '   npnts_donor=',npnts_donor
 
-
-                call cg_conn_read_f(cg, base, zone, conn, pnts, Integer,
-     &                            donor_pnts, ier)
+                call cg_conn_read_f(cg, base, zone, conn, pnts,
+     &                            Integer, donor_pnts, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 	        write(6,119) '   Current zone:',
@@ -787,7 +797,7 @@
 
 ! *** general connectivity attributes:  GOTO GridConnectivity_t node
 	        call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &              'ZoneGridConnectivity_t', 1,
+     &              'ZoneGridConnectivity_t', one,
      &              'GridConnectivity_t', conn, 'end')
 	        if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -827,7 +837,7 @@
 	
 ! *** connectivity 1to1 attributes:  GOTO GridConnectivity1to1_t node
 	        call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &              'ZoneGridConnectivity_t', 1,
+     &              'ZoneGridConnectivity_t', one,
      &           'GridConnectivity1to1_t', one21, 'end')
 		  if (ier .eq. ERROR) call cg_error_exit_f
 		  if (ier .eq. ALL_OK) then
@@ -856,7 +866,7 @@
 
 ! *** Zone bound. condition attributes: GOTO ZoneBC_t node
             call cg_goto_f(cg, base,ier, 'Zone_t', zone,
-     &                     'ZoneBC_t', 1, 'end')
+     &                     'ZoneBC_t', one, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 	    if (ier .eq. ALL_OK) then
 
@@ -869,7 +879,7 @@
 
          ! ** ReferenceState_t attributes:  GOTO ReferenceState_t
                 call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &            'ZoneBC_t', 1, 'ReferenceState_t', 1, 'end')
+     &            'ZoneBC_t', one, 'ReferenceState_t', one, 'end')
                 if (ier .eq. ERROR) call cg_error_exit_f
 
                 call cg_narrays_f(narrays, ier)
@@ -969,7 +979,7 @@
 		endif
          ! ***  bound. condition attributes: GOTO BC_t node
 		call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &              'ZoneBC_t', 1, 'BC_t', boco, 'end')
+     &              'ZoneBC_t', one, 'BC_t', boco, 'end')
 		if (ier .eq. ERROR) call cg_error_exit_f
 
          ! ***  bound. condition attributes: DataClass_t
@@ -1000,7 +1010,7 @@
              ! ** boundary condition data:  GOTO BCData_t node
 		  if (DirichletFlag.eq.1) then
 		    call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                'ZoneBC_t', 1, 'BC_t', boco, 'BCDataSet_t',
+     &                'ZoneBC_t', one, 'BC_t', boco, 'BCDataSet_t',
      &                idataset,'BCData_t',Dirichlet,'end')
 		      if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -1044,7 +1054,7 @@
 
 		  if (NeumannFlag.eq.1) then
 		    call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
-     &                  'ZoneBC_t', 1, 'BC_t', boco, 'BCDataSet_t',
+     &                  'ZoneBC_t', one, 'BC_t', boco, 'BCDataSet_t',
      &                  idataset, 'BCData_t', Neumann,'end')
                       if (ier .eq. ERROR) call cg_error_exit_f
 

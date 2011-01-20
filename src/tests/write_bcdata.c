@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _WIN32
+#ifdef _WIN32
+# include <io.h>
+# define unlink _unlink
+#else
 # include <unistd.h>
 #endif
 #include "utils.h"
@@ -18,13 +21,13 @@ char *fname = "bcdata.cgns";
 int cgfile, cgbase, cgzone, cgcoord, cgsect, cgbc, cgdset;
 char name[33];
 
-int size[] = {NNODES, NCELLS, 0};
+cgsize_t size[] = {NNODES, NCELLS, 0};
 float coord[NNODES];
 int elements[4*NCELLS];
 
-int npnts = NBCPNTS;
-int pnts[NBCPNTS];
-int dims[] = {NBCPNTS};
+cgsize_t npnts = NBCPNTS;
+cgsize_t pnts[NBCPNTS];
+cgsize_t dims[] = {NBCPNTS};
 float data[NBCPNTS];
 
 float start, finish;
@@ -51,7 +54,7 @@ int main (int argc, char **argv)
     unlink (fname);
     printf ("creating file ...");
     fflush (stdout);
-    start = elapsed_time();
+    start = (float)elapsed_time();
 
     if (cg_open (fname, CG_MODE_WRITE, &cgfile) ||
         cg_base_write (cgfile, "Base", 3, 3, &cgbase) ||
@@ -99,21 +102,21 @@ int main (int argc, char **argv)
         }
     }
 
-    finish = elapsed_time();
+    finish = (float)elapsed_time();
     printf (" %.2f secs\n", finish - start);
 
     printf ("closing file  ...");
     fflush (stdout);
-    start = elapsed_time();
+    start = (float)elapsed_time();
     if (cg_close(cgfile)) cg_error_exit();
-    finish = elapsed_time();
+    finish = (float)elapsed_time();
     printf (" %.2f secs\n", finish - start);
 
     printf ("opening file  ...");
     fflush (stdout);
-    start = elapsed_time();
+    start = (float)elapsed_time();
     if (cg_open (fname, CG_MODE_MODIFY, &cgfile)) cg_error_exit();
-    finish = elapsed_time();
+    finish = (float)elapsed_time();
     printf (" %.2f secs\n", finish - start);
     cg_close (cgfile);
 
