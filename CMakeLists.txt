@@ -3,9 +3,10 @@ if(COMMAND cmake_policy)
 	cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
-set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build Type, should be Release")
-project("cgns")
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+  "one of: Release, Debug, RelWithDebInfo or MinSizeRel")
 
+project("cgns")
 set(CGNS_VERSION "3.1")
 
 # Allow for building a package
@@ -121,20 +122,12 @@ set(FORTRAN_NAMING_HELP
 # If we are using fortran, enable it and configure the C-Fortran interface
 # It would be nice to automatically detect this setting
 
-# It appears that this must be done by cmake, otherwise not all
-# the CMAKE_Fortran_??? variables get defined so there is a problem
-# trying to build the fortran examples in the tests subdirectory.
-# HOWEVER, if I do put it here, then on windows I keep getting a
-# cmake error if no Fortran is installed and can't create a makefile
-# So, until I figure out to to fix this - I will move it below
-#enable_language("Fortran" OPTIONAL)
-
 if(ENABLE_FORTRAN)
   mark_as_advanced(CLEAR FORTRAN_NAMING)
   #only do this once
   if (FORTRAN_NAMING STREQUAL "UNKNOWN")
     set(LIST  "LOWERCASE" "LOWERCASE_" "LOWERCASE__" "UPPERCASE" "UPPERCASE_" "UPPERCASE__")
-enable_language("Fortran" OPTIONAL)
+    enable_language("Fortran" OPTIONAL)
     # if no Fortran compiler, skip this
     if (CMAKE_Fortran_COMPILER_WORKS)
       foreach(nc ${LIST})
@@ -176,6 +169,10 @@ if (ENABLE_FORTRAN AND FORTRAN_NAMING)
   endif (FORTRAN_NAMING STREQUAL "UNKNOWN")
 endif (ENABLE_FORTRAN AND FORTRAN_NAMING)
 
+# this forces cmake to set up the required Fortran variables
+if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
+  enable_language("Fortran")
+endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
 
 ########
 # HDF5 #
