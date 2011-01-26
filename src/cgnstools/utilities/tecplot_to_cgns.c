@@ -60,11 +60,11 @@ static void check_ascii (char *fname)
     }
 }
 
-/*---------- getline ------------------------------------------------
+/*---------- get_line -----------------------------------------------
  * get next non-blank line
  *-------------------------------------------------------------------*/
 
-static char *getline (FILE *fp)
+static char *get_line (FILE *fp)
 {
     char *p;
 
@@ -286,7 +286,7 @@ int main (int argc, char *argv[])
         cgnsImportBase (basename);
 
     nz = 0;
-    p = getline (fp);
+    p = get_line (fp);
 
     while (p != NULL) {
 
@@ -296,14 +296,14 @@ int main (int argc, char *argv[])
             for (p += 9; *p && isspace(*p); p++)
                 ;
             if (*p++ != '=') {
-                p = getline (fp);
+                p = get_line (fp);
                 continue;
             }
             nvar = 0;
             xloc = yloc = zloc = -1;
             while (1) {
                 if ((s = getvar (&p)) == NULL) {
-                    p = getline (fp);
+                    p = get_line (fp);
                     if (p == NULL || (s = getvar (&p)) == NULL) break;
                 }
                 if (0 == strcasecmp ("x", s))
@@ -338,7 +338,7 @@ int main (int argc, char *argv[])
                         cgnsImportFatal ("end of file while reading zone");
                     ungetc (n, fp);
                     if (!isalpha (n)) break;
-                    p = getline (fp);
+                    p = get_line (fp);
                     continue;
                 }
                 switch (n) {
@@ -390,7 +390,7 @@ int main (int argc, char *argv[])
             if (nn == -1) {
                 if (ni < 2 || nj < 2 || nk < 2) {
                     printf("missing I, J and K - skipping zone\n");
-                    p = getline(fp);
+                    p = get_line(fp);
                     continue;
                 }
                 nn = ni * nj * nk;
@@ -401,12 +401,12 @@ int main (int argc, char *argv[])
                 if (nn < 3 || ne < 1 || et < 0) {
                     printf("%d nodes, %d %s elements - skipping zone\n",
                         nn, ne, elemname);
-                    p = getline(fp);
+                    p = get_line(fp);
                     continue;
                 }
                 if (et < 2) {
                     printf ("%s elements - skipping zone\n", elemname);
-                    p = getline (fp);
+                    p = get_line (fp);
                     continue;
                 }
             }
@@ -480,7 +480,7 @@ int main (int argc, char *argv[])
             cgnsImportWrite ();
         }
 
-        p = getline (fp);
+        p = get_line (fp);
     }
 
     fclose (fp);
