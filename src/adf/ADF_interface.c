@@ -1011,7 +1011,7 @@ void	ADF_Database_Valid(
         *error_return = REQUESTED_OLD_FILE_NOT_FOUND;
         return;
     }
-    if ((fp = fopen(filename, "r+b")) == NULL) {
+    if ((fp = fopen(filename, "rb")) == NULL) {
         if (errno == EMFILE)
             *error_return = TOO_MANY_ADF_FILES_OPENED;
         else

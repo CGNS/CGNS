@@ -33,7 +33,7 @@ File:   ADF_internals.h
 #define DISK_BLOCK_SIZE           4096
 #endif
 #ifdef NEW_ID_MAPPING
-# define MAXIMUM_FILES             0x1fff
+# define MAXIMUM_FILES             0xfff
 #else
 # define MAXIMUM_FILES             0x3fff
 #endif

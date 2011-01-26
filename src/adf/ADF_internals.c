@@ -552,19 +552,33 @@ printf("cc[0-7] = %02X %02X %02X %02X %02X %02X %02X %02X \n",
 #endif
 	/** Unmap the bytes from the character **/
 #ifdef NEW_ID_MAPPING
-*file_index = ((unsigned int)cc[0] << 5) +
-              ((unsigned int)(cc[1] & 0xF8) >> 3);
-*file_block = ((cgulong_t)(cc[1] & 0x07) << 35)+
-              ((cgulong_t)cc[2] << 27) +
-	      ((cgulong_t)cc[3] << 19) +
-	      ((cgulong_t)cc[4] << 11) +
-	      ((cgulong_t)cc[5] << 3) +
-	      ((cgulong_t)(cc[6] & 0xE0) >> 5);
-*block_offset = ((unsigned int)(cc[6] & 0x1F) << 8) +
-                ((unsigned int)cc[7]);
-assert(*file_index <= 0x1fff);
+if (ADF_this_machine_format == IEEE_LITTLE_FORMAT_CHAR) {
+  *file_index =   ((unsigned int)(cc[7] & 0x3F) << 6) +
+                  ((unsigned int)(cc[6] & 0xFC) >> 2);
+  *file_block =   ((cgulong_t)(cc[6] & 0x03) << 36)+
+                  ((cgulong_t)cc[5] << 28) +
+	          ((cgulong_t)cc[4] << 20) +
+	          ((cgulong_t)cc[3] << 12) +
+	          ((cgulong_t)cc[2] << 4) +
+	          ((cgulong_t)(cc[1] & 0xF0) >> 4);
+  *block_offset = ((unsigned int)(cc[1] & 0x0F) << 8) +
+                  ((unsigned int)cc[0]);
+}
+else {
+  *file_index =   ((unsigned int)(cc[0] & 0x3F) << 6) +
+                  ((unsigned int)(cc[1] & 0xFC) >> 2);
+  *file_block =   ((cgulong_t)(cc[1] & 0x03) << 36)+
+                  ((cgulong_t)cc[2] << 28) +
+	          ((cgulong_t)cc[3] << 20) +
+	          ((cgulong_t)cc[4] << 12) +
+	          ((cgulong_t)cc[5] << 4) +
+	          ((cgulong_t)(cc[6] & 0xF0) >> 4);
+  *block_offset = ((unsigned int)(cc[6] & 0x0F) << 8) +
+                  ((unsigned int)cc[7]);
+}
+assert(*file_index <= 0xfff);
 assert(*file_block <= 0x3fffffffff);
-assert(*block_offset <= 0x1fff);
+assert(*block_offset <= 0xfff);
 #else
 if ( ADF_this_machine_format == IEEE_BIG_FORMAT_CHAR ) {
    *file_index = cc[1] + ((cc[0] & 0x3f) << 8) ;
@@ -584,9 +598,6 @@ else {
                  (cc[4]<<16) + (cc[5]<<24) ;
    *block_offset = cc[6] + (cc[7]<<8) ;
    } /* end else */
-assert(*file_index <= 0x3fff);
-assert(*file_block <= 0xffffffff);
-assert(*block_offset <= 0x1fff);
 #endif
 
 #ifdef PRINT_STUFF
@@ -3764,23 +3775,34 @@ if( block_offset >= DISK_BLOCK_SIZE ) {
 
 cc = (unsigned char *) &dd;
 #ifdef NEW_ID_MAPPING
-assert(file_index < 0x1fff);
-assert(file_block < 0x3fffffffff);
-assert(block_offset < 0x1fff);
-cc[0] = (unsigned char)((file_index & 0x1FE0) >> 5);
-cc[1] = (unsigned char)((file_index & 0x001F) << 3) +
-        (unsigned char)((file_block & 0x3800000000) >> 35);
-cc[2] = (unsigned char)((file_block & 0x07F8000000) >> 27);
-cc[3] = (unsigned char)((file_block & 0x0007F80000) >> 19);
-cc[4] = (unsigned char)((file_block & 0x000007F800) >> 11);
-cc[5] = (unsigned char)((file_block & 0x00000007F8) >> 3);
-cc[6] = (unsigned char)((file_block & 0x0000000007) << 5) +
-        (unsigned char)((block_offset & 0x1F00) >> 8);
-cc[7] = (unsigned char) (block_offset & 0x00FF);
+assert(file_index <= 0xfff);
+assert(file_block <= 0x3fffffffff);
+assert(block_offset <= 0xfff);
+if (ADF_this_machine_format == IEEE_LITTLE_FORMAT_CHAR) {
+  cc[7] = (unsigned char)((file_index & 0x0FC0) >> 6) + 0x40;
+  cc[6] = (unsigned char)((file_index & 0x003F) << 2) +
+          (unsigned char)((file_block & 0x3000000000) >> 36);
+  cc[5] = (unsigned char)((file_block & 0x0FF0000000) >> 28);
+  cc[4] = (unsigned char)((file_block & 0x000FF00000) >> 20);
+  cc[3] = (unsigned char)((file_block & 0x00000FF000) >> 12);
+  cc[2] = (unsigned char)((file_block & 0x0000000FF0) >> 4);
+  cc[1] = (unsigned char)((file_block & 0x000000000F) << 4) +
+          (unsigned char)((block_offset & 0x0F00) >> 8);
+  cc[0] = (unsigned char) (block_offset & 0x00FF);
+}
+else {
+  cc[0] = (unsigned char)((file_index & 0x0FC0) >> 6) + 0x40;
+  cc[1] = (unsigned char)((file_index & 0x003F) << 2) +
+          (unsigned char)((file_block & 0x3000000000) >> 36);
+  cc[2] = (unsigned char)((file_block & 0x0FF0000000) >> 28);
+  cc[3] = (unsigned char)((file_block & 0x000FF00000) >> 20);
+  cc[4] = (unsigned char)((file_block & 0x00000FF000) >> 12);
+  cc[5] = (unsigned char)((file_block & 0x0000000FF0) >> 4);
+  cc[6] = (unsigned char)((file_block & 0x000000000F) << 4) +
+          (unsigned char)((block_offset & 0x0F00) >> 8);
+  cc[7] = (unsigned char) (block_offset & 0x00FF);
+}
 #else
-assert(file_index < 0x3fff);
-assert(file_block < 0xffffffff);
-assert(block_offset < 0x1fff);
 if ( ADF_this_machine_format == IEEE_BIG_FORMAT_CHAR ) {
    cc[1] = (unsigned char) (file_index & 0x00ff) ;
    cc[0] = (unsigned char) (64 + (( file_index >> 8) & 0x003f)) ;
