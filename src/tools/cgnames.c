@@ -707,7 +707,7 @@ int cg_enum_identifier (int (*callback)(char *name,
 
 #ifdef STANDALONE
 
-// Removed by KSH 2009.05.15
+/* Removed by KSH 2009.05.15 */
 
 #endif
 
