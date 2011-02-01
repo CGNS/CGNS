@@ -1802,7 +1802,7 @@ echo 	cgnsversion$(EXE) \>> tools\Makefile
 echo 	cgnsconvert$(EXE) \>> tools\Makefile
 echo 	cgnsdiff$(EXE)>> tools\Makefile
 echo.>> tools\Makefile
-echo all : $(ALL) sizes$(EXE)>> tools\Makefile
+echo all : $(ALL)>> tools\Makefile
 echo.>> tools\Makefile
 echo #---------->> tools\Makefile
 echo.>> tools\Makefile
@@ -1838,13 +1838,6 @@ echo cgnsdiff$(EXE) : cgnsdiff.$(O) getargs.$(O) $(CGNSLIB)>> tools\Makefile
 echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsdiff.$(O) getargs.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
 echo cgnsdiff.$(O) : cgnsdiff.c getargs.h>> tools\Makefile
 echo 	$(CC) $(COPTS) /c cgnsdiff.c>> tools\Makefile
-echo.>> tools\Makefile
-echo #---------->> tools\Makefile
-echo.>> tools\Makefile
-echo sizes$(EXE) : sizes.$(O)>> tools\Makefile
-echo 	$(CC) $(CFLAGS) $(CEOUT)$@ sizes.$(O) $(CLIBS)>> tools\Makefile
-echo sizes.$(O) : sizes.c>> tools\Makefile
-echo 	$(CC) $(COPTS) /c sizes.c>> tools\Makefile
 echo.>> tools\Makefile
 echo #---------->> tools\Makefile
 echo.>> tools\Makefile
