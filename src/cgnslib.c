@@ -1703,7 +1703,8 @@ int cg_field_id(int file_number, int B, int Z, int S, int F, double *field_id)
  *         Inquiry Functions for OversetHoles_t Nodes
 \*****************************************************************************/
 
-int cg_nholes(int file_number, int B, int Z, int *nholes) {
+int cg_nholes(int file_number, int B, int Z, int *nholes)
+{
     cgns_zconn *zconn;
 
     cg = cgi_get_file(file_number);
@@ -1718,9 +1719,10 @@ int cg_nholes(int file_number, int B, int Z, int *nholes) {
 }
 
 int cg_hole_info(int file_number, int B, int Z, int I, char *holename,
-		 CGNS_ENUMT( GridLocation_t )  *location, CGNS_ENUMT( PointSetType_t )  *ptset_type, int *nptsets,
-    cgsize_t *npnts) {
-
+		 CGNS_ENUMT(GridLocation_t) *location,
+                 CGNS_ENUMT(PointSetType_t) *ptset_type, int *nptsets,
+                 cgsize_t *npnts)
+{
     cgns_hole *hole;
 
     cg = cgi_get_file(file_number);
@@ -1733,7 +1735,7 @@ int cg_hole_info(int file_number, int B, int Z, int I, char *holename,
 
     strcpy(holename, hole->name);
     *location = hole->location;
-    *ptset_type = hole->nptsets ? hole->ptset[0].type : CGNS_ENUMV( PointSetTypeNull );
+    *ptset_type = hole->nptsets ? hole->ptset[0].type : CGNS_ENUMV(PointSetTypeNull);
     *nptsets = hole->nptsets;
      /* if multiple pointsets are defined, only PointRange is allowed */
     if (hole->nptsets==1) *npnts = hole->ptset[0].npts;
@@ -1741,7 +1743,8 @@ int cg_hole_info(int file_number, int B, int Z, int I, char *holename,
     return CG_OK;
 }
 
-int cg_hole_read(int file_number, int B, int Z, int I, cgsize_t *pnts) {
+int cg_hole_read(int file_number, int B, int Z, int I, cgsize_t *pnts)
+{
     cgns_hole *hole;
     int set, index_dim;
 
@@ -1756,17 +1759,31 @@ int cg_hole_read(int file_number, int B, int Z, int I, cgsize_t *pnts) {
     index_dim = cg->base[B-1].zone[Z-1].index_dim;
 
      /* read point-set directly from ADF file */
-    for (set=0; set<hole->nptsets; set++) {
-        if (hole->ptset[set].npts>0) {
-            if (cgio_read_all_data(cg->cgio, hole->ptset[set].id,
-                (void *)((int *)pnts+2*index_dim*set))) {
-                cg_io_error("cgio_read_all_data");
-                return CG_ERROR;
+    if (hole->nptsets > 1) {
+        for (set = 0; set < hole->nptsets; set++) {
+            if (hole->ptset[set].npts > 0) {
+                if (cgi_read_int_data(hole->ptset[set].id,
+                        hole->ptset[set].data_type, 2*index_dim,
+                        &pnts[2*index_dim*set])) return CG_ERROR;
+            } else {
+                cgi_warning("Overset hole #%d set %d, of zone #%d, base #%d, contains no points",
+                    I, set, Z, B);
             }
-        } else {
-            cgi_warning("Overset hole #%d set %d, of zone #%d, base #%d, contains no points",
-                I, set, Z, B);
         }
+    }
+    else if (hole->nptsets == 1) {
+        if (hole->ptset[0].npts > 0) {
+            if (cgi_read_int_data(hole->ptset[0].id,
+                    hole->ptset[0].data_type, hole->ptset[0].npts*index_dim,
+                    pnts)) return CG_ERROR;
+        } else {
+            cgi_warning("Overset hole #%d, of zone #%d, base #%d, contains no points",
+                I, Z, B);
+        }
+    }
+    else {
+        cgi_warning("Overset hole #%d, of zone #%d, base #%d, contains no data",
+            I, Z, B);
     }
 
     return CG_OK;
@@ -2018,7 +2035,9 @@ int cg_n1to1_global(int file_number, int B, int *n1to1_global)
 
 
 int cg_1to1_read(int file_number, int B, int Z, int I, char *connectname,
-    char *donorname, cgsize_t *range, cgsize_t *donor_range, int *transform) {
+                 char *donorname, cgsize_t *range, cgsize_t *donor_range,
+                 int *transform)
+{
     cgns_1to1 *one21;
     int i, index_dim;
 
@@ -2034,13 +2053,12 @@ int cg_1to1_read(int file_number, int B, int Z, int I, char *connectname,
 
     one21 = cgi_get_1to1(cg, B, Z, I);
     if (one21==0) return CG_ERROR;
+    index_dim = cg->base[B-1].zone[Z-1].index_dim;
 
      /* read pointset from ADF file */
     if (one21->ptset.npts > 0) {
-        if (cgio_read_all_data(cg->cgio, one21->ptset.id, (void *)range)) {
-            cg_io_error("cgio_read_all_data");
-            return CG_ERROR;
-        }
+        if (cgi_read_int_data(one21->ptset.id, one21->ptset.data_type,
+            one21->ptset.npts * index_dim, range)) return CG_ERROR;
     } else {
         cgi_warning("1to1 interface %d (receiver side) for zone %d base % is undefined",
             I,Z,B);
@@ -2048,18 +2066,14 @@ int cg_1to1_read(int file_number, int B, int Z, int I, char *connectname,
 
      /* read donor pointset from ADF file */
     if (one21->dptset.npts > 0) {
-        if (cgio_read_all_data(cg->cgio, one21->dptset.id,
-            (void *)donor_range)) {
-            cg_io_error("cgio_read_all_data");
-            return CG_ERROR;
-        }
+        if (cgi_read_int_data(one21->dptset.id, one21->dptset.data_type,
+            one21->dptset.npts * index_dim, donor_range)) return CG_ERROR;
     } else {
         cgi_warning("1to1 interface %d (donor side) for zone %d base % is undefined",
             I,Z,B);
     }
 
      /* read transform from internal database */
-    index_dim = cg->base[B-1].zone[Z-1].index_dim;
     for (i=0; i<index_dim; i++) transform[i] = one21->transform[i];
 
     strcpy(connectname, one21->name);
@@ -2146,7 +2160,8 @@ int cg_1to1_id(int file_number, int B, int Z, int I, double *one21_id) {
  *          Inquiry Functions for BC_t Nodes
 \*****************************************************************************/
 
-int cg_nbocos(int file_number, int B, int Z, int *nbocos) {
+int cg_nbocos(int file_number, int B, int Z, int *nbocos)
+{
     cgns_zboco *zboco;
 
     cg = cgi_get_file(file_number);
@@ -2212,7 +2227,7 @@ int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
 int cg_boco_read(int file_number, int B, int Z, int BC, cgsize_t *pnts, void *NormalList)
 {
     cgns_boco *boco;
-    int phys_dim;
+    int dim;
 
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
@@ -2223,21 +2238,20 @@ int cg_boco_read(int file_number, int B, int Z, int BC, cgsize_t *pnts, void *No
     if (boco==0) return CG_ERROR;
 
      /* Read point-set directly from ADF-file */
-    if (boco->ptset && boco->ptset->npts>0) {
-        if (cgio_read_all_data(cg->cgio, boco->ptset->id, (void *)pnts)) {
-            cg_io_error("cgio_read_all_data");
-            return CG_ERROR;
-        }
+    if (boco->ptset && boco->ptset->npts > 0) {
+        cg_index_dim(file_number, B, Z, &dim);
+        if (cgi_read_int_data(boco->ptset->id, boco->ptset->data_type,
+                boco->ptset->npts * dim, pnts)) return CG_ERROR;
     } else {
         cgi_warning("B.C. patch %d of zone %d base %d is undefined",
             BC, Z, B);
     }
 
      /* if it exists, read NormalList */
-    phys_dim=cg->base[B-1].phys_dim;
+    dim=cg->base[B-1].phys_dim;
     if (NormalList && boco->normal && boco->ptset && boco->ptset->npts>0) {
         memcpy(NormalList, boco->normal->data,
-        (size_t)(boco->ptset->size_of_patch*phys_dim*size_of(boco->normal->data_type)));
+        (size_t)(boco->ptset->size_of_patch*dim*size_of(boco->normal->data_type)));
     }
 
     return CG_OK;
@@ -5169,16 +5183,20 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
 
      /* verify input */
     if (cgi_check_strlen(holename)) return CG_ERROR;
-    if (location != CGNS_ENUMV( Vertex ) && location != CGNS_ENUMV( CellCenter )) {
+    if (location != CGNS_ENUMV(Vertex) &&
+        location != CGNS_ENUMV(CellCenter)) {
         cgi_error("cg_hole_write: GridLocation not Vertex or CellCenter");
         return CG_ERROR;
     }
-    if (ptset_type!=CGNS_ENUMV( PointList ) && ptset_type!=CGNS_ENUMV( PointRange )) {
+    if (ptset_type != CGNS_ENUMV(PointList) &&
+        ptset_type != CGNS_ENUMV(PointRange)) {
         cgi_error("Invalid input:  ptset_type=%d ?",ptset_type);
         return CG_ERROR;
     }
-    if (!(ptset_type==CGNS_ENUMV( PointRange ) && npnts==2*nptsets && nptsets>0) &&
-        !(ptset_type==CGNS_ENUMV( PointList ) && npnts>=0 && nptsets==1)) {
+    if (!(ptset_type == CGNS_ENUMV(PointRange) &&
+          npnts == 2*nptsets && nptsets > 0) &&
+        !(ptset_type == CGNS_ENUMV(PointList) &&
+          npnts >= 0 && nptsets == 1)) {
         cgi_error("Invalid input:  nptsets=%d, npoint=%d, point set type=%s",
                nptsets, npnts, PointSetTypeName[ptset_type]);
         return CG_ERROR;
@@ -5252,9 +5270,11 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
     for (set=0; set<nptsets; set++) {
         ptset = &hole->ptset[set];
         ptset->type = ptset_type;
-        strcpy(ptset->data_type,"I4");
-        if (ptset_type==CGNS_ENUMV( PointRange )) ptset->npts = 2;
-        else            ptset->npts = npnts;
+        strcpy(ptset->data_type,CG_SIZE_DATATYPE);
+        if (ptset_type == CGNS_ENUMV(PointRange))
+            ptset->npts = 2;
+        else
+            ptset->npts = npnts;
         ptset->id = 0;
         ptset->link = 0;
 
@@ -5282,7 +5302,7 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
     if (cgi_new_node(zconn->id, hole->name, "OversetHoles_t",
         &hole->id, "MT", 0, 0, 0)) return CG_ERROR;
 
-    if (hole->location !=CGNS_ENUMV( Vertex )) {
+    if (hole->location != CGNS_ENUMV(Vertex)) {
         double GL_id;
         cgsize_t length = (cgsize_t)strlen(GridLocationName[hole->location]);
         if (cgi_new_node(hole->id, "GridLocation", "GridLocation_t", &GL_id,
@@ -5292,14 +5312,14 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
     for (set=0; set<nptsets; set++) {
         ptset = &hole->ptset[set];
 
-        if (ptset->npts>0) {
+        if (ptset->npts > 0) {
              /* Create Point Set node on disk */
-	  if (ptset->type==CGNS_ENUMV( PointRange ))
+	  if (ptset->type == CGNS_ENUMV(PointRange))
                 sprintf(PointSetName, "PointRange%d",set+1);
             else
                 sprintf(PointSetName, "%s", PointSetTypeName[ptset->type]);
             if (cgi_write_ptset(hole->id, PointSetName, ptset, index_dim,
-                (void *)((int *)pnts+2*index_dim*set))) return CG_ERROR;
+                (void *)&pnts[2*index_dim*set])) return CG_ERROR;
         }
     }
 
@@ -5881,13 +5901,13 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
 
      /* write 1to1 info to internal memory */
     strcpy(one21->name,connectname);
-    one21->ptset.type = CGNS_ENUMV( PointRange );
+    one21->ptset.type = CGNS_ENUMV(PointRange);
     strcpy(one21->ptset.data_type,CG_SIZE_DATATYPE);
     one21->ptset.npts = 2;
 
      /* ... donor: */
     strcpy(one21->donor,donorname);
-    one21->dptset.type = CGNS_ENUMV( PointRangeDonor );
+    one21->dptset.type = CGNS_ENUMV(PointRangeDonor);
     strcpy(one21->dptset.data_type,CG_SIZE_DATATYPE);
     one21->dptset.npts = 2;
 
