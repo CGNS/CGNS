@@ -3032,6 +3032,7 @@ static void check_BC (int nb, int parclass, int *parunits)
     if (verbose) {
         printf ("    BC Type=%s\n", cg_BCTypeName(bctype));
         printf ("    Point Set Type=%s\n", cg_PointSetTypeName(ptype));
+        printf ("    Number Points=%ld\n", (long)npts);
     }
     fflush (stdout);
 
@@ -3063,7 +3064,8 @@ static void check_BC (int nb, int parclass, int *parunits)
         if (ierr) {
             if (ierr != CG_NODE_NOT_FOUND)
                 error_exit("cg_gridlocation_read");
-            if (ptype == CGNS_ENUMV(ElementRange) || ptype == CGNS_ENUMV(ElementList))
+            if (ptype == CGNS_ENUMV(ElementRange) ||
+                ptype == CGNS_ENUMV(ElementList))
                 location = CGNS_ENUMV(FaceCenter);
             else
                 location = CGNS_ENUMV(Vertex);
@@ -3087,7 +3089,8 @@ static void check_BC (int nb, int parclass, int *parunits)
         }
     }
     else {
-        if ((ptype == CGNS_ENUMV(PointRange) || ptype == CGNS_ENUMV(ElementRange)) && npts != 2) {
+        if ((ptype == CGNS_ENUMV(PointRange) ||
+             ptype == CGNS_ENUMV(ElementRange)) && npts != 2) {
             error ("number of points is not 2 for PointRange/ElementRange");
             return;
         }
@@ -3115,7 +3118,8 @@ static void check_BC (int nb, int parclass, int *parunits)
     if (ierr == CG_OK && z->type != CGNS_ENUMV(Structured))
         error ("normal index is only valid for Structured grids");
     if (nrmlflag) {
-        if (datatype != CGNS_ENUMV(RealSingle) && datatype != CGNS_ENUMV(RealDouble)) {
+        if (datatype != CGNS_ENUMV(RealSingle) &&
+            datatype != CGNS_ENUMV(RealDouble)) {
             error ("normal data type is not RealSingle or RealDouble");
             if (LibraryVersion < 2200) return;
         }
@@ -3138,6 +3142,14 @@ static void check_BC (int nb, int parclass, int *parunits)
     if (cg_boco_read (cgnsfn, cgnsbase, cgnszone, nb, pts, nrmllist))
         error_exit("cg_boco_read");
     if (nrmllist) free (nrmllist);
+
+    if (verbose && (ptype == CGNS_ENUMV(PointRange) ||
+                    ptype == CGNS_ENUMV(ElementRange))) {
+        printf ("    Range=[%ld:%ld", (long)pts[0], (long)pts[z->idim]);
+        for (n = 1; n < z->idim; n++)
+            printf (",%ld:%ld", (long)pts[n], (long)pts[n+z->idim]);
+        puts ("]");
+    }
 
     ierr = cg_famname_read (name);
     if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_famname_read");
