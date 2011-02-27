@@ -28,6 +28,7 @@ static cgsize_t penta[18] = {1, 3, 7, 19, 21, 25, 2, 5, 4, 10, 12, 16, 20, 23, 2
 static cgsize_t hexa[27] = {1, 3, 9, 7, 19, 21, 27, 25, 2, 6, 8, 4, 10, 12, 18, 16,
                             20, 24, 26, 22, 5, 11, 15, 17, 13, 23, 14};
 
+#if CGNS_VERSION >= 3000
 static int npoly = 16;
 static cgsize_t poly[80] = {6, 1, 2, 12, 21, 20, 10,
                             3, 2, 3, 12,
@@ -49,6 +50,7 @@ static int nface = 3;
 static cgsize_t face[21] = {8, 1, 4, 7, 8, 9, 10, 11, 12,
                             5, 2, 5, 8, 13, 14,
                             5, 3, 6, 11, 15, 16};
+#endif
 
 static cgsize_t elems[256];
 
@@ -63,8 +65,11 @@ int main (int argc, char *argv[])
 
     for (i = 0, n = 0; n < NofValidElementTypes; n++) {
         type = (CGNS_ENUMT(ElementType_t))n;
-        if (type >= CGNS_ENUMV(TETRA_4) && type <= CGNS_ENUMV(HEXA_27))
+        if ((type >= CGNS_ENUMV(TETRA_4) &&
+             type <= CGNS_ENUMV(HEXA_27)) ||
+             type == CGNS_ENUMV(PYRA_13)) {
             i++;
+        }
     }
     size[0] = 27;
     size[1] = i << 1;
