@@ -1061,7 +1061,6 @@ else
 fi
 
 if test $BUILDLEGACY -ne 0 ; then
-  BUILDSCOPE=0
   BUILD64BIT=0
   CGFSIZET=
 fi

@@ -3624,13 +3624,12 @@ else
 fi
 
 if test $BUILDLEGACY -ne 0 ; then
-  BUILDSCOPE=0
   BUILD64BIT=0
   CGFSIZET=
 fi
 
 echo $ac_n "checking whether ${MAKE-make} sets \${MAKE}""... $ac_c" 1>&6
-echo "configure:3634: checking whether ${MAKE-make} sets \${MAKE}" >&5
+echo "configure:3633: checking whether ${MAKE-make} sets \${MAKE}" >&5
 set dummy ${MAKE-make}; ac_make=`echo "$2" | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_prog_make_${ac_make}_set'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
