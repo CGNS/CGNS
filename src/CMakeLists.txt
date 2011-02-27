@@ -53,10 +53,11 @@ else (ENABLE_LEGACY)
   else (ENABLE_64BIT)
     set(CGFSIZET *4)
   endif (ENABLE_64BIT)
-  if (ENABLE_SCOPING)
-    set(BUILDSCOPE 1)
-  endif (ENABLE_SCOPING)
 endif (ENABLE_LEGACY)
+  
+if (ENABLE_SCOPING)
+  set(BUILDSCOPE 1)
+endif (ENABLE_SCOPING)
 
 #create these in build directory so is doesn't mess up the
 #source directory, then add the path to them
