@@ -1388,7 +1388,11 @@ output: int *error_return	Error return.
 ***********************************************************************/
 void	ADF_Get_Dimension_Values(
 		const double ID,
+#if CG_BUILD_LEGACY
+		int dim_vals[],
+#else
 		cglong_t dim_vals[],
+#endif
 		int *error_return )
 {
 unsigned int 			file_index ;
@@ -1420,8 +1424,13 @@ if( node.number_of_dimensions > ADF_MAX_DIMENSIONS ) {
    } /* end if */
 
 	/** Copy the dimension information **/
-for( i=0; i<(int)node.number_of_dimensions; i++ )
-   dim_vals[i] = node.dimension_values[i] ;
+for( i=0; i<(int)node.number_of_dimensions; i++ ) {
+#if CG_BUILD_LEGACY
+   dim_vals[i] = (int)node.dimension_values[i] ;
+#else
+   dim_vals[i] = (cglong_t)node.dimension_values[i] ;
+#endif
+}
 
 } /* end of ADF_Get_Dimension_Values */
 /* end of file ADF_Get_Dimension_Values.c */

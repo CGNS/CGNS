@@ -553,32 +553,34 @@ printf("cc[0-7] = %02X %02X %02X %02X %02X %02X %02X %02X \n",
 	/** Unmap the bytes from the character **/
 #ifdef NEW_ID_MAPPING
 if (ADF_this_machine_format == IEEE_LITTLE_FORMAT_CHAR) {
-  *file_index =   ((unsigned int)(cc[7] & 0x3F) << 6) +
-                  ((unsigned int)(cc[6] & 0xFC) >> 2);
-  *file_block =   ((cgulong_t)(cc[6] & 0x03) << 36)+
-                  ((cgulong_t)cc[5] << 28) +
-	          ((cgulong_t)cc[4] << 20) +
-	          ((cgulong_t)cc[3] << 12) +
-	          ((cgulong_t)cc[2] << 4) +
-	          ((cgulong_t)(cc[1] & 0xF0) >> 4);
-  *block_offset = ((unsigned int)(cc[1] & 0x0F) << 8) +
-                  ((unsigned int)cc[0]);
+  *file_index =   (((unsigned int)(cc[7] & 0x3F)) << 6) +
+                  (((unsigned int)(cc[6] & 0xFC)) >> 2);
+  *file_block =   (((cgulong_t)(cc[6] & 0x03)) << 36) +
+                  (((cgulong_t)(cc[5] & 0xFF)) << 28) +
+	          (((cgulong_t)(cc[4] & 0xFF)) << 20) +
+	          (((cgulong_t)(cc[3] & 0xFF)) << 12) +
+	          (((cgulong_t)(cc[2] & 0xFF)) <<  4) +
+	          (((cgulong_t)(cc[1] & 0xF0)) >>  4);
+  *block_offset = (((unsigned int)(cc[1] & 0x0F)) << 8) +
+                  (((unsigned int)(cc[0] & 0xFF)));
 }
 else {
-  *file_index =   ((unsigned int)(cc[0] & 0x3F) << 6) +
-                  ((unsigned int)(cc[1] & 0xFC) >> 2);
-  *file_block =   ((cgulong_t)(cc[1] & 0x03) << 36)+
-                  ((cgulong_t)cc[2] << 28) +
-	          ((cgulong_t)cc[3] << 20) +
-	          ((cgulong_t)cc[4] << 12) +
-	          ((cgulong_t)cc[5] << 4) +
-	          ((cgulong_t)(cc[6] & 0xF0) >> 4);
-  *block_offset = ((unsigned int)(cc[6] & 0x0F) << 8) +
-                  ((unsigned int)cc[7]);
+  *file_index =   (((unsigned int)(cc[0] & 0x3F)) << 6) +
+                  (((unsigned int)(cc[1] & 0xFC)) >> 2);
+  *file_block =   (((cgulong_t)(cc[1] & 0x03)) << 36) +
+                  (((cgulong_t)(cc[2] & 0xFF)) << 28) +
+	          (((cgulong_t)(cc[3] & 0xFF)) << 20) +
+	          (((cgulong_t)(cc[4] & 0xFF)) << 12) +
+	          (((cgulong_t)(cc[5] & 0xFF)) <<  4) +
+	          (((cgulong_t)(cc[6] & 0xF0)) >>  4);
+  *block_offset = (((unsigned int)(cc[6] & 0x0F)) << 8) +
+                  (((unsigned int)(cc[7] & 0xFF)));
 }
+#if 0
 assert(*file_index <= 0xfff);
 assert(*file_block <= 0x3fffffffff);
 assert(*block_offset <= 0xfff);
+#endif
 #else
 if ( ADF_this_machine_format == IEEE_BIG_FORMAT_CHAR ) {
    *file_index = cc[1] + ((cc[0] & 0x3f) << 8) ;
@@ -3775,6 +3777,7 @@ if( block_offset >= DISK_BLOCK_SIZE ) {
 
 cc = (unsigned char *) &dd;
 #ifdef NEW_ID_MAPPING
+#if 0
 assert(file_index <= 0xfff);
 assert(file_block <= 0x3fffffffff);
 assert(block_offset <= 0xfff);
@@ -3802,6 +3805,32 @@ else {
           (unsigned char)((block_offset & 0x0F00) >> 8);
   cc[7] = (unsigned char) (block_offset & 0x00FF);
 }
+#else
+if (ADF_this_machine_format == IEEE_LITTLE_FORMAT_CHAR) {
+  cc[7] = (unsigned char)((file_index   >>  6) & 0x3F) + 0x40;
+  cc[6] = (unsigned char)((file_index   <<  2) & 0xFC) +
+          (unsigned char)((file_block   >> 36) & 0x03);
+  cc[5] = (unsigned char)((file_block   >> 28) & 0xFF);
+  cc[4] = (unsigned char)((file_block   >> 20) & 0xFF);
+  cc[3] = (unsigned char)((file_block   >> 12) & 0xFF);
+  cc[2] = (unsigned char)((file_block   >>  4) & 0xFF);
+  cc[1] = (unsigned char)((file_block   <<  4) & 0xF0) +
+          (unsigned char)((block_offset >>  8) & 0x0F);
+  cc[0] = (unsigned char) (block_offset        & 0xFF);
+}
+else {
+  cc[0] = (unsigned char)((file_index   >>  6) & 0x3F) + 0x40;
+  cc[1] = (unsigned char)((file_index   <<  2) & 0xFC) +
+          (unsigned char)((file_block   >> 36) & 0x03);
+  cc[2] = (unsigned char)((file_block   >> 28) & 0xFF);
+  cc[3] = (unsigned char)((file_block   >> 20) & 0xFF);
+  cc[4] = (unsigned char)((file_block   >> 12) & 0xFF);
+  cc[5] = (unsigned char)((file_block   >>  4) & 0xFF);
+  cc[6] = (unsigned char)((file_block   <<  4) & 0xF0) +
+          (unsigned char)((block_offset >>  8) & 0x0F);
+  cc[7] = (unsigned char) (block_offset        & 0xFF);
+}
+#endif
 #else
 if ( ADF_this_machine_format == IEEE_BIG_FORMAT_CHAR ) {
    cc[1] = (unsigned char) (file_index & 0x00ff) ;
@@ -4850,7 +4879,7 @@ void    ADFI_get_file_index_from_name(
         double *ID,
         int *error_return )
 {
-double     root_ID ;
+double     root_ID = 0;
 int        i ;
 
 
