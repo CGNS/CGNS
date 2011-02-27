@@ -241,7 +241,11 @@ EXTERN	void	ADFH_Get_Data_Type(
 
 EXTERN	void	ADFH_Get_Dimension_Values(
 			const double ID,
+#if CG_BUILD_LEGACY
+			int dim_vals[],
+#else
 			cglong_t dim_vals[],
+#endif
 			int *error_return ) ;
 
 EXTERN	void	ADFH_Get_Error_State(
