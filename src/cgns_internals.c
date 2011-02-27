@@ -687,7 +687,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 {
     double *id, *idi;
     int n, i, linked;
-    int ndim, nchild, npe;
+    int ndim, nchild, npe, changed;
     int *edata;
     CGNS_ENUMT(ElementType_t) el_type;
     char_33 data_type, temp_name;
@@ -733,7 +733,25 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
         edata = (int *)vdata;
         el_type = (CGNS_ENUMT(ElementType_t))edata[0];
         /* additional element types added in 3 */
-        if (cg->version < 3000 && el_type > CGNS_ENUMV(PYRA_5)) el_type++;
+        changed = 0;
+        if (cg->version < 3100) {
+            if (cg->version < 3000) {
+                if (el_type > CGNS_ENUMV(MIXED)) {
+                    cgi_error("Element Type %s not supported in:'%s'",
+                        cg_ElementTypeName(el_type), section[0][n].name);
+                    return 1;
+                }
+            }
+            /* reordered in 3.1 */
+            else if (el_type > CGNS_ENUMV(PYRA_5) &&
+                     el_type < CGNS_ENUMV(NGON_n)) {
+                if (el_type == CGNS_ENUMV(PYRA_14))
+                    el_type = CGNS_ENUMV(PYRA_13);
+                else
+                    el_type--;
+                changed++;
+            }
+        }
         section[0][n].el_type = el_type;
         section[0][n].el_bound = edata[1];
         free(vdata);
@@ -847,6 +865,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                     return 1;
                 }
                 if (cg_npe(section[0][n].el_type, &npe)) return 1;
+
                 if (cg->version <= 1100) {
                     if (section[0][n].connect->dim_vals[0] != npe ||
                         section[0][n].connect->dim_vals[1] != nelements ||
@@ -881,10 +900,10 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                         }
                     }
 
-                } else {    /* starting with version 1200 */
+                } else if (cg->version < 3100) {
                     cgsize_t size;
                     int modified = 0;
-                    if (cg->version < 3000 && section[0][n].el_type >= CGNS_ENUMV(MIXED)) {
+                    if (section[0][n].el_type == CGNS_ENUMV(MIXED)) {
                         int ne, *elem_data;
                         if (section[0][n].connect->data == 0) {
                             if (cgi_read_node(section[0][n].connect->id,
@@ -894,37 +913,35 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                             section[0][n].connect->data = vdata;
                         }
                         elem_data = (int *)section[0][n].connect->data;
-                        if (section[0][n].el_type == CGNS_ENUMV(MIXED)) {
-                            for (size = 0, ne = 0; ne < nelements; ne++) {
-                                el_type = (CGNS_ENUMT(ElementType_t))elem_data[size];
-                                if (el_type > CGNS_ENUMV(PYRA_5)) {
+                        for (size = 0, ne = 0; ne < nelements; ne++) {
+                            el_type = (CGNS_ENUMT(ElementType_t))elem_data[size];
+                            if (cg->version < 3000) {
+                                if (el_type > CGNS_ENUMV(MIXED)) {
                                     modified++;
                                     el_type++;
                                     elem_data[size] = el_type;
                                 }
-                                if (el_type > CGNS_ENUMV(NGON_n))
-                                    npe = el_type - CGNS_ENUMV(NGON_n);
-                                else
-                                    cg_npe (el_type, &npe);
-                                if (npe <= 0) {
-                                    cgi_error("Error exit: invalid element type in MIXED elements");
-                                    return 1;
-                                }
-                                size += (npe + 1);
                             }
-                        }
-                        else {
-                            for (size = 0, ne = 0; ne < nelements; ne++) {
-                                el_type = (CGNS_ENUMT(ElementType_t))elem_data[size];
-                                modified++;
-                                npe = el_type + 1 - CGNS_ENUMV(NGON_n);
-                                if (npe < 0) {
-                                    cgi_error("Error exit: invalid element type in NGON_n elements");
-                                    return 1;
+                            else {
+                                if (el_type > CGNS_ENUMV(PYRA_5) &&
+                                    el_type < CGNS_ENUMV(NGON_n)) {
+                                    if (el_type == CGNS_ENUMV(PYRA_14))
+                                        el_type = CGNS_ENUMV(PYRA_13);
+                                    else
+                                        el_type--;
+                                    modified++;
+                                    elem_data[size] = el_type;
                                 }
-                                elem_data[size] = npe;
-                                size += (npe + 1);
                             }
+                            if (el_type > CGNS_ENUMV(NGON_n))
+                                npe = el_type - CGNS_ENUMV(NGON_n);
+                            else
+                                cg_npe (el_type, &npe);
+                            if (npe <= 0) {
+                                cgi_error("Error exit: invalid element type in MIXED elements");
+                                return 1;
+                            }
+                            size += (npe + 1);
                         }
                     }
                     size = cgi_element_data_size(section[0][n].el_type, nelements,
@@ -937,18 +954,26 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                         return 1;
                     }
                     /* rewrite if needed */
-                    if (cg->version < 3000 && section[0][n].el_type > CGNS_ENUMV(PYRA_13) &&
+                    if ((changed || modified) &&
                         cg->mode == CG_MODE_MODIFY && !linked) {
-                        dim_vals[0] = (cgsize_t)section[0][n].el_type;
-                        dim_vals[1] = (cgsize_t)section[0][n].el_bound;
-                        if (cgio_write_all_data(cg->cgio, section[0][n].id, dim_vals)) {
-                            cg_io_error("cgio_write_all_data");
-                            return 1;
+                        if (changed) {
+                            dim_vals[0] = (cgsize_t)section[0][n].el_type;
+                            dim_vals[1] = (cgsize_t)section[0][n].el_bound;
+                            if (cgio_write_all_data(cg->cgio,
+                                    section[0][n].id, dim_vals)) {
+                                cg_io_error("cgio_write_all_data");
+                                return 1;
+                            }
                         }
-                        if (modified && cgio_write_all_data(cg->cgio,
-                                section[0][n].connect->id, section[0][n].connect->data)) {
-                            cg_io_error("cgio_write_all_data");
-                            return 1;
+                        if (modified) {
+                            if (cgio_write_all_data(cg->cgio,
+                                    section[0][n].connect->id,
+                                    section[0][n].connect->data)) {
+                                cg_io_error("cgio_write_all_data");
+                                return 1;
+                            }
+                            CGNS_FREE(section[0][n].connect->data);
+                            section[0][n].connect->data = NULL;
                         }
                     }
                 }

@@ -52,6 +52,14 @@ freely, subject to the following restrictions:
 #include "cgns_header.h"
 #include "cgns_io.h"
 
+/* to determine default file type */
+#ifdef BUILD_HDF5
+# include "hdf5.h"
+# if H5_VERS_MAJOR < 2 && H5_VERS_MINOR < 8
+#  define HDF5_PRE_1_8
+# endif
+#endif
+
 /* fix for unresolved reference to __ftol2 when using VC7 with VC6 libs */
 /* see http://www.manusoft.com/Resources/ARXTips/Main.stm */
 #ifdef NEED_FTOL2
@@ -68,6 +76,10 @@ long _ftol2(double dValue) {return _ftol(dValue);}
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
 #endif
+
+#define IS_FIXED_SIZE(type) ((type >= CGNS_ENUMV(NODE) && \
+                              type  < CGNS_ENUMV(MIXED)) || \
+                              type == CGNS_ENUMV(PYRA_13))
 
 /***********************************************************************
  * external variable declarations
@@ -185,10 +197,10 @@ const char * ElementTypeName[NofValidElementTypes] =
      "TRI_3", "TRI_6",
      "QUAD_4", "QUAD_8", "QUAD_9",
      "TETRA_4", "TETRA_10",
-     "PYRA_5", "PYRA_13","PYRA_14",
+     "PYRA_5", "PYRA_14",
      "PENTA_6", "PENTA_15", "PENTA_18",
      "HEXA_8", "HEXA_20", "HEXA_27",
-     "MIXED", "NGON_n", "NFACE_n"
+     "MIXED", "PYRA_13", "NGON_n", "NFACE_n"
     };
 const char * ZoneTypeName[NofValidZoneTypes] =
     {"Null", "UserDefined",
@@ -225,8 +237,8 @@ const char * AverageInterfaceTypeName[NofValidAverageInterfaceTypes] =
 int n_open = 0;
 int cgns_file_size = 0;
 int file_number_offset = 0;
-int VersionList[] = {3100, 3000,
-                     2540, 2530, 2520, 2510, 2500,
+int VersionList[] = {3100, 3080, 3000,
+                     2550, 2540, 2530, 2520, 2510, 2500,
                      2460, 2420, 2400,
                      2300, 2200, 2100, 2000, 1270, 1200, 1100, 1050};
 #define nVersions (sizeof(VersionList)/sizeof(int))
@@ -396,7 +408,7 @@ int cg_open(const char * filename, int mode, int *file_number)
             double *id;
             /* FileVersion = (float) CGNS_DOTVERS; */
             /* Jiao: Changed to use older compatible version */
-            if ( cgns_filetype==CG_FILE_ADF2)
+            if (cgns_filetype == CG_FILE_ADF2)
                 FileVersion = (float) CGNS_COMPATDOTVERS;
             else
                 FileVersion = (float) CGNS_DOTVERS;
@@ -589,24 +601,20 @@ int cg_set_file_type(int file_type)
 {
     if (file_type == CG_FILE_NONE) {
         char *type = getenv("CGNS_FILETYPE");
-#if 0
-	if (type == NULL || !*type)
-            cgns_filetype = CG_FILE_ADF;
-# ifdef BUILD_HDF5
-	else if (*type == '2' || *type == 'h' || *type == 'H')
+	if (type == NULL || !*type) {
+#if defined(BUILD_HDF5) && !defined(HDF5_PRE_1_8)
             cgns_filetype = CG_FILE_HDF5;
-# endif
 #else
-# ifdef BUILD_HDF5
-	if (type == NULL || !*type ||
-	    *type == '2' || *type == 'h' || *type == 'H')
-            cgns_filetype = CG_FILE_HDF5;
-# else
-	if (type == NULL || !*type)
             cgns_filetype = CG_FILE_ADF;
-# endif
 #endif
-	else if (*type == '3' || strcmp(type,"adf2")==0 || strcmp(type,"ADF2")==0) {
+        }
+#ifdef BUILD_HDF5
+	else if (*type == '2' || *type == 'h' || *type == 'H') {
+            cgns_filetype = CG_FILE_HDF5;
+        }
+#endif
+	else if (*type == '3' || ((*type == 'a' || *type == 'A') &&
+                 strchr(type, '2') != NULL)) {
 #if CG_SIZEOF_SIZE == 64
             cgi_error("ADF2 not supported in 64-bit mode");
             return CG_ERROR;
@@ -2227,7 +2235,7 @@ int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
 int cg_boco_read(int file_number, int B, int Z, int BC, cgsize_t *pnts, void *NormalList)
 {
     cgns_boco *boco;
-    int dim;
+    int dim = 0;
 
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
@@ -2248,7 +2256,7 @@ int cg_boco_read(int file_number, int B, int Z, int BC, cgsize_t *pnts, void *No
     }
 
      /* if it exists, read NormalList */
-    dim=cg->base[B-1].phys_dim;
+    dim = cg->base[B-1].phys_dim;
     if (NormalList && boco->normal && boco->ptset && boco->ptset->npts>0) {
         memcpy(NormalList, boco->normal->data,
         (size_t)(boco->ptset->size_of_patch*dim*size_of(boco->normal->data_type)));
@@ -4683,27 +4691,29 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT( DataType_t )  type
     return CG_OK;
 }
 
-static int adf2_update_elems( cgsize_t *elems, cgsize_t datasize, int dir)
+static int adf2_check_elems(CGNS_ENUMT(ElementType_t) type,
+                            cgsize_t nelems, const cgsize_t *elems)
 {
-    cgsize_t i=0;
-    int npe;
-    CGNS_ENUMT(ElementType_t) etype;
-
-    while (i < datasize) {
-        etype = (CGNS_ENUMT(ElementType_t))elems[i];
-        if (dir==-1 && (etype == CGNS_ENUMV(PYRA_13) || etype == CGNS_ENUMV(NFACE_n))) {
-            cgi_error("PYRA_13 and NFACE_n are not supported in ADF2.");
-            return CG_ERROR;
-        }
-        else if (etype >= CGNS_ENUMV(PYRA_13))
-            elems[i] = elems[i] + dir;
-
-        cg_npe( etype, &npe);
-        ++i;
-
-        i += npe;
+    if (type < CGNS_ENUMV(NODE) || type > CGNS_ENUMV(MIXED)) {
+        cgi_error("Element type %s not supported in ADF2.",
+            cg_ElementTypeName(type));
+        return 1;
     }
-    return CG_OK;
+    if (type == CGNS_ENUMV(MIXED)) {
+        int npe;
+        cgsize_t n;
+        for (n = 0; n < nelems; n++) {
+            type = (CGNS_ENUMT(ElementType_t))*elems++;
+            if (type < CGNS_ENUMV(NODE) || type >= CGNS_ENUMV(MIXED)) {
+                cgi_error("Element type %s not supported in ADF2.",
+                    cg_ElementTypeName(type));
+                return 1;
+            }
+            if (cg_npe(type, &npe) || npe <= 0) return 1;
+            elems += npe;
+        }
+    }
+    return 0;
 }
 
 int cg_section_write(int file_number, int B, int Z, const char * SectionName,
@@ -4722,14 +4732,17 @@ int cg_section_write(int file_number, int B, int Z, const char * SectionName,
         cgi_error("Invalid element type defined for section '%s'",SectionName);
         return CG_ERROR;
     }
-    if ((end-start)<0) {
+    num = end - start + 1;
+    if (num <= 0) {
         cgi_error("Invalid element range defined for section '%s'",SectionName);
         return CG_ERROR;
     }
-    if (nbndry>(end-start+1)) {
+    if (nbndry > num) {
         cgi_error("Invalid boundary element number for section '%s'",SectionName);
         return CG_ERROR;
     }
+    if (cgns_filetype == CG_FILE_ADF2 &&
+        adf2_check_elems(type, num, elements)) return CG_ERROR;
 
      /* get file and check mode */
     cg = cgi_get_file(file_number);
@@ -4781,7 +4794,6 @@ int cg_section_write(int file_number, int B, int Z, const char * SectionName,
     section->el_bound = nbndry;
 
      /* Compute ElementDataSize */
-    num = end - start +1;
     ElementDataSize = cgi_element_data_size(type, num, elements);
     if (ElementDataSize < 0) return CG_ERROR;
 
@@ -4805,42 +4817,14 @@ int cg_section_write(int file_number, int B, int Z, const char * SectionName,
     section->connect->id=0;
     section->connect->link=0;
     section->connect->ndescr=0;
-    section->connect->data_class=CGNS_ENUMV( DataClassNull );
+    section->connect->data_class=CGNS_ENUMV(DataClassNull);
     section->connect->units=0;
     section->connect->exponents=0;
     section->connect->convert=0;
 
-    if ( cgns_filetype==CG_FILE_ADF2 && type >= CGNS_ENUMV( PYRA_13)) {
-        /* Jiao: Changed to use older compatible version */
-        if (type == CGNS_ENUMV( PYRA_13) || type == CGNS_ENUMV( NFACE_n)) {
-            cgi_error("PYRA_13 and NFACE_n are not supported in ADF2.");
-            return CG_ERROR;
-        }
-
-        section->el_type = type-1;
-        if (cgi_write_section(zone->id, section))
-            return CG_ERROR;
-        section->el_type = type;
-    }
-    else if (cgi_write_section(zone->id, section))
+    if (cgi_write_section(zone->id, section))
         return CG_ERROR;
-
-    /* Jiao: Copy mixed element connectivity table. */
-    if ( cgns_filetype==CG_FILE_ADF2 && type == CGNS_ENUMV( MIXED)) {
-        /* create new element connectivity array */
-        cgsize_t *newelems = CGNS_NEW(cgsize_t, ElementDataSize);
-
-        memcpy( newelems, elements, (size_t)(ElementDataSize * sizeof(cgsize_t)));
-        adf2_update_elems(newelems, ElementDataSize, -1);
-
-        if (cgio_write_all_data(cg->cgio, section->connect->id, newelems)) {
-            free( newelems);
-            cg_io_error("cgio_write_all_data");
-            return CG_ERROR;
-        }
-        free( newelems);
-    }
-    else if (cgio_write_all_data(cg->cgio, section->connect->id, elements)) {
+    if (cgio_write_all_data(cg->cgio, section->connect->id, elements)) {
         cg_io_error("cgio_write_all_data");
         return CG_ERROR;
     }
@@ -4858,7 +4842,8 @@ int cg_parent_data_write(int file_number, int B, int Z, int S,
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
 
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+        return CG_ERROR;
 
     section = cgi_get_section(cg, B, Z, S);
     if (section == 0) return CG_ERROR;
@@ -8145,7 +8130,7 @@ int cg_gridlocation_write(CGNS_ENUMT( GridLocation_t )  GridLocation)
 
      /* save data in file */
     if (cgi_posit_id(&posit_id)) return CG_ERROR;
-    dim_vals = (int)strlen(GridLocationName[GridLocation]);
+    dim_vals = (cgsize_t)strlen(GridLocationName[GridLocation]);
     if (cgi_new_node(posit_id, "GridLocation", "GridLocation_t", &dummy_id,
         "C1", 1, &dim_vals, (void *)GridLocationName[GridLocation])) return CG_ERROR;
     return CG_OK;
@@ -8716,26 +8701,25 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
         cgi_error("Invalid element type defined for section '%s'",SectionName);
         return CG_ERROR;
     }
-    if ((end-start)<0) {
+    num = end - start + 1;
+    if (num <= 0) {
         cgi_error("Invalid element range defined for section '%s'",SectionName);
         return CG_ERROR;
     }
-    if (nbndry>(end-start+1)) {
+    if (nbndry > num) {
         cgi_error("Invalid boundary element number for section '%s'",SectionName);
+        return CG_ERROR;
+    }
+    if (cgns_filetype == CG_FILE_ADF2 && type > CGNS_ENUMV(MIXED)) {
+        /* Jiao: Changed to use older compatible version */
+        cgi_error("Element type %s not supported in ADF2.",
+            cg_ElementTypeName(type));
         return CG_ERROR;
     }
 
      /* Compute ElementDataSize */
-    num = end - start + 1;
-    if (type < CGNS_ENUMV(MIXED)) {
-        if (cg_npe(type, &elemsize)) return CG_ERROR;
-        if (elemsize <= 0) {
-            cgi_error("Invalid element type");
-            return CG_ERROR;
-        }
-    }
-    else
-        elemsize = 2;
+    if (cg_npe(type, &elemsize)) return CG_ERROR;
+    if (elemsize <= 0) elemsize = 2;
     ElementDataSize = num * elemsize;
 
      /* get file and check mode */
@@ -8780,7 +8764,7 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
         zone->nsections++;
     }
     (*S) = index+1;
-        
+
     /* initialize ... */
     strcpy(section->name, SectionName);
     section->el_type = type;
@@ -8812,29 +8796,18 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
     section->connect->convert=0;
 
     /* if not fixed element size, need to create valid data for sizing */
-    
-    if (type >= CGNS_ENUMV(MIXED)) {
+
+    if (!IS_FIXED_SIZE(type)) {
         cgsize_t n, nn, *data = CGNS_NEW(cgsize_t, ElementDataSize);
+	cgsize_t val = (type == CGNS_ENUMV(MIXED) ? (cgsize_t)CGNS_ENUMV(NODE) : 1);
         for (nn = 0, n = 0; n < num; n++) {
-	    data[nn++] = (type == CGNS_ENUMV(MIXED) ? (cgsize_t)CGNS_ENUMV(NODE) : 1);
+	    data[nn++] = val;
             data[nn++] = 0;
         }
         section->connect->data = (void *)data;
     }
 
-    if ( cgns_filetype==CG_FILE_ADF2 && type >= CGNS_ENUMV( PYRA_13)) {
-        /* Jiao: Changed to use older compatible version */
-        if (type == CGNS_ENUMV( PYRA_13) || type == CGNS_ENUMV( NFACE_n)) {
-            cgi_error("PYRA_13 and NFACE_n are not supported in ADF2.");
-            return CG_ERROR;
-        }
-
-        section->el_type = type-1;
-        if (cgi_write_section(zone->id, section)) 
-            return CG_ERROR;
-        section->el_type = type;
-    }
-    else if (cgi_write_section(zone->id, section)) 
+    if (cgi_write_section(zone->id, section))
         return CG_ERROR;
 
     return CG_OK;
@@ -8862,10 +8835,13 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
 
     section = cgi_get_section(cg, B, Z, S);
     if (section == 0 || section->connect == 0) return CG_ERROR;
+    
+    num = end - start + 1;
+    type = section->el_type;
 
     /* check input range */
 
-    if (start > end) {
+    if (num <= 0) {
         cgi_error("Invalid element range for section '%s' elements",
             section->name);
         return CG_ERROR;
@@ -8875,20 +8851,13 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             CG_SIZE_DATATYPE, section->connect->data_type);
         return CG_ERROR;
     }
+    if (cgns_filetype == CG_FILE_ADF2 &&
+        adf2_check_elems(type, num, elements)) return CG_ERROR;
 
-    type = section->el_type;
 
     /* get fill-in element type */
-    if (type < CGNS_ENUMV(MIXED)) {
-        if (cg_npe(type, &elemsize)) return CG_ERROR;
-        if (elemsize <= 0) {
-            cgi_error("Invalid element type");
-            return CG_ERROR;
-        }
-    }
-    else {
-        elemsize = 2;
-    }
+    if (cg_npe(type, &elemsize)) return CG_ERROR;
+    if (elemsize <= 0) elemsize = 2;
 
     offset  = start < section->range[0] ? section->range[0] - start : 0;
     oldsize = section->range[1] - section->range[0] + 1;
@@ -8898,7 +8867,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
     /* can we just use the user's data ? */
 
     if (start >= section->range[0] && end <= section->range[1] &&
-        type < CGNS_ENUMV(MIXED) && section->connect->data == 0) {
+        IS_FIXED_SIZE(type) && section->connect->data == 0) {
         cgsize_t s_start, s_end, s_stride;
         cgsize_t m_start, m_end, m_stride, m_dim;
 
@@ -8965,14 +8934,17 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             n += ElementDataSize;
             if (end < section->range[0]) {
                 num = section->range[0] - end - 1;
-                while (num-- > 0) {
-		    if (type >= CGNS_ENUMV(MIXED)) {
-		        newelems[n++] = (type == CGNS_ENUMV(MIXED) ?
-                                        (cgsize_t)CGNS_ENUMV(NODE) : 1);
-                        newelems[n++] = 0;
-                    } else {
+                if (IS_FIXED_SIZE(type)) {
+                    while (num-- > 0) {
                         for (i = 0; i < elemsize; i++)
                             newelems[n++] = 0;
+                    }
+                } else {
+		    cgsize_t val = (type == CGNS_ENUMV(MIXED) ?
+		                   (cgsize_t)CGNS_ENUMV(NODE) : 1);
+                    while (num-- > 0) {
+		        newelems[n++] = val;
+                        newelems[n++] = 0;
                     }
                 }
                 memcpy(&newelems[n], oldelems, (size_t)(oldsize*sizeof(cgsize_t)));
@@ -8989,14 +8961,17 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             memcpy(newelems, oldelems, (size_t)(oldsize*sizeof(cgsize_t)));
             n += oldsize;
             num = start - section->range[1] - 1;
-            while (num-- > 0) {
-	      if (type >= CGNS_ENUMV(MIXED)) {
-		    newelems[n++] = (type == CGNS_ENUMV(MIXED) ?
-                                    (cgsize_t)CGNS_ENUMV(NODE) : 1);
-                    newelems[n++] = 0;
-                } else {
+            if (IS_FIXED_SIZE(type)) {
+                while (num-- > 0) {
                     for (i = 0; i < elemsize; i++)
                         newelems[n++] = 0;
+                }
+            } else {
+                cgsize_t val = (type == CGNS_ENUMV(MIXED) ?
+		               (cgsize_t)CGNS_ENUMV(NODE) : 1);
+                while (num-- > 0) {
+		    newelems[n++] = val;
+                    newelems[n++] = 0;
                 }
             }
             memcpy(&newelems[n], elements, (size_t)(ElementDataSize*sizeof(cgsize_t)));
@@ -9060,19 +9035,10 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             return CG_ERROR;
         }
 
-        if  (cgns_filetype == CG_FILE_ADF2 && type == CGNS_ENUMV(MIXED))
-            adf2_update_elems(newelems, newsize, -1);
-
         if (cgio_write_all_data(cg->cgio, section->connect->id, newelems)) {
-            if (cgns_filetype == CG_FILE_ADF2 && type == CGNS_ENUMV(MIXED))
-                adf2_update_elems(newelems, newsize, 1);
-
             cg_io_error("cgio_write_all_data");
             return CG_ERROR;
         }
-        
-        if (cgns_filetype == CG_FILE_ADF2 && type == CGNS_ENUMV(MIXED))
-            adf2_update_elems(newelems, newsize, 1);
     }
 
     /* update the parent data array if it exists */
@@ -9123,18 +9089,10 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             return CG_ERROR;
         }
 
-        if  (cgns_filetype == CG_FILE_ADF2 && type == CGNS_ENUMV(MIXED))
-            adf2_update_elems(newelems, newsize, -1);
-
         if (cgio_write_all_data(cg->cgio, section->parent->id, newelems)) {
-            if  (cgns_filetype == CG_FILE_ADF2 && type == CGNS_ENUMV(MIXED))
-                adf2_update_elems(newelems, newsize, 1);
-
             cg_io_error("cgio_write_all_data");
             return CG_ERROR;
         }
-        if  (cgns_filetype == CG_FILE_ADF2 && type == CGNS_ENUMV(MIXED))
-            adf2_update_elems(newelems, newsize, 1);
     }
 
     return CG_OK;
@@ -9353,8 +9311,7 @@ int cg_elements_partial_read(int file_number, int B, int Z, int S,
     }
 
     /* if the elements are fixed size, read directly into user memory */
-    if (section->connect->data == 0 &&
-        section->el_type < CGNS_ENUMV(MIXED) &&
+    if (section->connect->data == 0 && IS_FIXED_SIZE(section->el_type) &&
         0 == strcmp(CG_SIZE_DATATYPE, section->connect->data_type)) {
         cgsize_t s_start, s_end, s_stride;
         cgsize_t m_start, m_end, m_stride, m_dim;
@@ -9496,7 +9453,7 @@ int cg_ElementPartialSize(int file_number, int B, int Z, int S,
         return CG_OK;
     }
 
-    if (section->el_type < CGNS_ENUMV( MIXED )) {
+    if (IS_FIXED_SIZE(section->el_type)) {
         size = cgi_element_data_size(section->el_type, end - start + 1, NULL);
         if (size < 0) return CG_ERROR;
         *ElementDataSize = size;
@@ -9694,7 +9651,8 @@ int cg_bcdataset_read(int index, char *name, CGNS_ENUMT( BCType_t )  *BCType,
 
 /****************************************************************************/
 /* the index in this list IS the cgnslib.h/ElementType_t index */
-int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe) {
+int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
+{
     static int el_size[NofValidElementTypes] = {
         0,  /* ElementTypeNull */
         0,  /* ElementTypeUserDefined */
@@ -9710,7 +9668,6 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe) {
         CG_NPE_TETRA_4,  /* TETRA_4 */
         CG_NPE_TETRA_10, /* TETRA_10 */
         CG_NPE_PYRA_5,  /* PYRA_5 */
-        CG_NPE_PYRA_13, /* PYRA_13 */
         CG_NPE_PYRA_14, /* PYRA_14 */
         CG_NPE_PENTA_6,  /* PENTA_6 */
         CG_NPE_PENTA_15, /* PENTA_15 */
@@ -9719,8 +9676,9 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe) {
         CG_NPE_HEXA_20, /* HEXA_20 */
         CG_NPE_HEXA_27, /* HEXA_27 */
         CG_NPE_MIXED,  /* MIXED */
+        CG_NPE_PYRA_13, /* PYRA_13 */
         CG_NPE_NGON_n,  /* NGON_n */
-        CG_NPE_NFACE_n,  /* NFACE_n */ 
+        CG_NPE_NFACE_n,  /* NFACE_n */
 #else
         NPE_NODE,  /* NODE */
         NPE_BAR_2,  /* BAR_2 */
@@ -9733,7 +9691,6 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe) {
         NPE_TETRA_4,  /* TETRA_4 */
         NPE_TETRA_10, /* TETRA_10 */
         NPE_PYRA_5,  /* PYRA_5 */
-        NPE_PYRA_13, /* PYRA_13 */
         NPE_PYRA_14, /* PYRA_14 */
         NPE_PENTA_6,  /* PENTA_6 */
         NPE_PENTA_15, /* PENTA_15 */
@@ -9742,28 +9699,12 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe) {
         NPE_HEXA_20, /* HEXA_20 */
         NPE_HEXA_27, /* HEXA_27 */
         NPE_MIXED,  /* MIXED */
+        NPE_PYRA_13, /* PYRA_13 */
         NPE_NGON_n,  /* NGON_n */
-        NPE_NFACE_n,  /* NFACE_n */ 
+        NPE_NFACE_n,  /* NFACE_n */
 #endif
-};
-    if (type  == CGNS_ENUMV( NGON_n ))
-    {
-#ifdef CGNS_SCOPE_ENUMS
-      *npe = CG_NPE_NGON_n;
-#else
-      *npe = NPE_NGON_n;
-#endif
-    }
-    else if (type == CGNS_ENUMV( NFACE_n ))
-    {
-#ifdef CGNS_SCOPE_ENUMS
-      *npe = CG_NPE_NFACE_n;
-#else
-      *npe = NPE_NFACE_n;
-#endif
-    }
-    else if (type < 0 || type >= NofValidElementTypes) 
-    {
+    };
+    if (type < 0 || type >= NofValidElementTypes) {
         *npe = -1;
         cgi_error("Invalid element type");
         return CG_ERROR;

@@ -796,7 +796,6 @@ echo install headers in %instdir%\include
 echo install executables in %instdir%\bin
 
 if %dolegacy% == 1 (
-  set scope=0
   set do64bit=0
   set fbytes=
 ) else (
@@ -1222,15 +1221,15 @@ echo         parameter (QUAD_9   =  9)>> cgnslib_f.h
 echo         parameter (TETRA_4  = 10)>> cgnslib_f.h
 echo         parameter (TETRA_10 = 11)>> cgnslib_f.h
 echo         parameter (PYRA_5   = 12)>> cgnslib_f.h
-echo         parameter (PYRA_13  = 13)>> cgnslib_f.h
-echo         parameter (PYRA_14  = 14)>> cgnslib_f.h
-echo         parameter (PENTA_6  = 15)>> cgnslib_f.h
-echo         parameter (PENTA_15 = 16)>> cgnslib_f.h
-echo         parameter (PENTA_18 = 17)>> cgnslib_f.h
-echo         parameter (HEXA_8   = 18)>> cgnslib_f.h
-echo         parameter (HEXA_20  = 19)>> cgnslib_f.h
-echo         parameter (HEXA_27  = 20)>> cgnslib_f.h
-echo         parameter (MIXED    = 21)>> cgnslib_f.h
+echo         parameter (PYRA_14  = 13)>> cgnslib_f.h
+echo         parameter (PENTA_6  = 14)>> cgnslib_f.h
+echo         parameter (PENTA_15 = 15)>> cgnslib_f.h
+echo         parameter (PENTA_18 = 16)>> cgnslib_f.h
+echo         parameter (HEXA_8   = 17)>> cgnslib_f.h
+echo         parameter (HEXA_20  = 18)>> cgnslib_f.h
+echo         parameter (HEXA_27  = 19)>> cgnslib_f.h
+echo         parameter (MIXED    = 20)>> cgnslib_f.h
+echo         parameter (PYRA_13  = 21)>> cgnslib_f.h
 echo         parameter (NGON_n   = 22)>> cgnslib_f.h
 echo         parameter (NFACE_n  = 23)>> cgnslib_f.h
 echo.>> cgnslib_f.h
@@ -1747,7 +1746,7 @@ echo 	%includes%>> Makefile
 echo 	$(CC) $(COPTS) $(COOUT)$@ /c cgns_io.c>> Makefile
 echo.>> Makefile
 echo $(OBJDIR)\cgnslib.$(O) : cgnslib.c cgnslib.h cgns_header.h cgns_io.h>> Makefile
-echo 	$(CC) $(COPTS) $(COOUT)$@ /c cgnslib.c>> Makefile
+echo 	$(CC) $(COPTS) $(HDF5INC) $(COOUT)$@ /c cgnslib.c>> Makefile
 echo.>> Makefile
 echo $(OBJDIR)\cg_ftoc.$(O) : cg_ftoc.c fortran_macros.h cgnslib.h cgns_header.h cgns_io.h>> Makefile
 echo 	$(CC) $(COPTS) $(F2CFLAGS) $(COOUT)$@ /c cg_ftoc.c>> Makefile
@@ -1900,6 +1899,7 @@ echo #---------->> tests\Makefile
 echo.>> tests\Makefile
 echo ALL = \>> tests\Makefile
 echo 	dbtest$(EXE) \>> tests\Makefile
+echo	elemtest$(EXE) \>> tests\Makefile
 echo 	open_cgns$(EXE) \>> tests\Makefile
 echo 	test_exts$(EXE) \>> tests\Makefile
 echo 	test_partial$(EXE) \>> tests\Makefile
@@ -1931,6 +1931,11 @@ echo dbtest$(EXE) : dbtest.$(O) utils.$(O) $(CGNSLIB)>> tests\Makefile
 echo 	$(CC) $(COPTS) $(CEOUT)$@ dbtest.$(O) utils.$(O) $(LDLIBS) $(CLIBS)>> tests\Makefile
 echo dbtest.$(O) : dbtest.c utils.h>> tests\Makefile
 echo 	$(CC) $(COPTS) /c dbtest.c>> tests\Makefile
+echo.>> tests\Makefile
+echo #---------->> tests\Makefile
+echo.>> tests\Makefile
+echo elemtest$(EXE) : elemtest.c $(CGNSLIB)>> tests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ elemtest.c $(LDLIBS) $(CLIBS)>> tests\Makefile
 echo.>> tests\Makefile
 echo #---------->> tests\Makefile
 echo.>> tests\Makefile

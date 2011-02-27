@@ -1095,7 +1095,10 @@ int cgio_copy_node (int cgio_num_inp, double id_inp,
     char data_type[CGIO_MAX_NAME_LENGTH+1];
     int ierr = 0, ndims;
     cgsize_t dims[CGIO_MAX_DIMENSIONS];
-    cglong_t dims64[12], data_size = 0;
+#if !CG_BUILD_LEGACY
+    cglong_t dims64[12];
+#endif
+    cglong_t data_size = 0;
     void *data = NULL;
 
     if ((input  = get_cgnsio(cgio_num_inp, 0)) == NULL ||
@@ -1112,10 +1115,15 @@ int cgio_copy_node (int cgio_num_inp, double id_inp,
         ADF_Get_Number_of_Dimensions(id_inp, &ndims, &ierr);
         if (ierr > 0) return set_error(ierr);
         if (ndims > 0) {
+#if CG_BUILD_LEGACY
+            ADF_Get_Dimension_Values(id_inp, dims, &ierr);
+            if (ierr > 0) return set_error(ierr);
+#else
             ADF_Get_Dimension_Values(id_inp, dims64, &ierr);
             if (ierr > 0) return set_error(ierr);
             if (cgio_copy_dimensions(ndims, dims64, dims))
                 return get_error();
+#endif
             data_size = compute_data_size(data_type, ndims, dims);
             if (data_size) {
                 data = malloc((size_t)data_size);
@@ -1137,10 +1145,15 @@ int cgio_copy_node (int cgio_num_inp, double id_inp,
         ADFH_Get_Number_of_Dimensions(id_inp, &ndims, &ierr);
         if (ierr > 0) return set_error(ierr);
         if (ndims > 0) {
+#if CG_BUILD_LEGACY
+            ADFH_Get_Dimension_Values(id_inp, dims, &ierr);
+            if (ierr > 0) return set_error(ierr);
+#else
             ADFH_Get_Dimension_Values(id_inp, dims64, &ierr);
             if (ierr > 0) return set_error(ierr);
             if (cgio_copy_dimensions(ndims, dims64, dims))
                 return get_error();
+#endif
             data_size = compute_data_size(data_type, ndims, dims);
             if (data_size) {
                 data = malloc((size_t)data_size);
@@ -1546,22 +1559,34 @@ int cgio_get_dimensions (int cgio_num, double id,
 {
     int ierr;
     cgns_io *cgio;
+#if !CG_BUILD_LEGACY
     cglong_t dims64[12];
+#endif
 
     if ((cgio = get_cgnsio(cgio_num, 0)) == NULL)
         return get_error();
 
     if (cgio->type == CGIO_FILE_ADF || cgio->type == CGIO_FILE_ADF2) {
         ADF_Get_Number_of_Dimensions(id, num_dims, &ierr);
-        if (NULL != dims && ierr <= 0 && *num_dims > 0)
+	if (NULL != dims && ierr <= 0 && *num_dims > 0) {
+#if CG_BUILD_LEGACY
+            ADF_Get_Dimension_Values(id, dims, &ierr);
+#else
             ADF_Get_Dimension_Values(id, dims64, &ierr);
+#endif
+	}
         if (ierr > 0) return set_error(ierr);
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
         ADFH_Get_Number_of_Dimensions(id, num_dims, &ierr);
-        if (NULL != dims && ierr <= 0 && *num_dims > 0)
+	if (NULL != dims && ierr <= 0 && *num_dims > 0) {
+#if CG_BUILD_LEGACY
+            ADFH_Get_Dimension_Values(id, dims, &ierr);
+#else
             ADFH_Get_Dimension_Values(id, dims64, &ierr);
+#endif
+        }
         if (ierr > 0) return set_error(ierr);
     }
 #endif
@@ -1569,9 +1594,11 @@ int cgio_get_dimensions (int cgio_num, double id,
         return set_error(CGIO_ERR_FILE_TYPE);
     }
 
+#if !CG_BUILD_LEGACY
     if (NULL != dims && *num_dims > 0 &&
         cgio_copy_dimensions(*num_dims, dims64, dims))
         return get_error();
+#endif
 
     return CGIO_ERR_NONE;
 }
