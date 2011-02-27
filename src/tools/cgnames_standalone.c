@@ -4,8 +4,7 @@
 #include "cgnslib.h"
 #include "cgnames.h"
 
-static int print_identifier (char *name, int nexps, float *exps,
-    void *user)
+static int print_identifier (char *name, int nexps, float *exps, void *user)
 {
     int n, i;
     char term[16], num[33], den[33];
@@ -40,4 +39,5 @@ static int print_identifier (char *name, int nexps, float *exps,
 int main ()
 {
     cg_enum_identifier (print_identifier, NULL);
+    return 0;
 }

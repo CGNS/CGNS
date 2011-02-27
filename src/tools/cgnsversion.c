@@ -49,7 +49,7 @@ static int FromVersion;
 
 static int VersionList[] = {
     1200, 1270, 2000, 2100, 2200, 2300, 2400, 2420, 2460,
-    2500, 2510, 2520, 2530, 3000, 3100
+    2500, 2510, 2520, 2530, 2540, 2550, 3000, 3100
 };
 #define nVersions (sizeof(VersionList)/sizeof(int))
 
@@ -1209,7 +1209,7 @@ int main (int argc, char **argv)
     outfile = temporary_file (inpfile);
     printf ("writing output to temporary file \"%s\"\n", outfile);
 
-    /* use ADF routines to write the file */
+    /* use cgio routines to write the file */
 
     if (cgio_open_file(outfile, 'w', filetype, &outcgio))
         cgio_error_exit("cgio_file_open");
@@ -1221,7 +1221,7 @@ int main (int argc, char **argv)
     cgfile->rootid = outroot;
     CGI_write ();
 
-    /* close using ADF routines */
+    /* close using cgio routines */
 
     cgio_close_file(inpcgio);
     cgio_close_file(outcgio);
