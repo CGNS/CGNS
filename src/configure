@@ -3610,6 +3610,7 @@ echo "$ac_t""$LIB_INSTALL_DIR" 1>&6
 BUILDOPTS=""
 ADFINCS=""
 ADFOBJS=""
+INSTALLADF=""
 
 if test "$withhdf5" = "yes"; then
   BUILDOPTS="$BUILDOPTS -DBUILD_HDF5"
@@ -3626,10 +3627,15 @@ fi
 if test $BUILDLEGACY -ne 0 ; then
   BUILD64BIT=0
   CGFSIZET=
+  if test "$withhdf5" = "yes"; then
+    INSTALLADF="install-adf install-adfh"
+  else
+    INSTALLADF="install-adf"
+  fi
 fi
 
 echo $ac_n "checking whether ${MAKE-make} sets \${MAKE}""... $ac_c" 1>&6
-echo "configure:3633: checking whether ${MAKE-make} sets \${MAKE}" >&5
+echo "configure:3639: checking whether ${MAKE-make} sets \${MAKE}" >&5
 set dummy ${MAKE-make}; ac_make=`echo "$2" | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_prog_make_${ac_make}_set'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -3654,6 +3660,7 @@ else
   echo "$ac_t""no" 1>&6
   SET_MAKE="MAKE=${MAKE-make}"
 fi
+
 
 
 
@@ -3904,6 +3911,7 @@ s%@AROUT@%$AROUT%g
 s%@LIBDIR@%$LIBDIR%g
 s%@INCLUDEDIR@%$INCLUDEDIR%g
 s%@BINDIR@%$BINDIR%g
+s%@INSTALLADF@%$INSTALLADF%g
 s%@PROGLIST@%$PROGLIST%g
 s%@INSTLIST@%$INSTLIST%g
 s%@CGNSDIR@%$CGNSDIR%g

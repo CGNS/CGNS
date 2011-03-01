@@ -1047,6 +1047,7 @@ AC_MSG_RESULT($LIB_INSTALL_DIR)
 BUILDOPTS=""
 ADFINCS=""
 ADFOBJS=""
+INSTALLADF=""
 
 if test "$withhdf5" = "yes"; then
   BUILDOPTS="$BUILDOPTS -DBUILD_HDF5"
@@ -1063,6 +1064,11 @@ fi
 if test $BUILDLEGACY -ne 0 ; then
   BUILD64BIT=0
   CGFSIZET=
+  if test "$withhdf5" = "yes"; then
+    INSTALLADF="install-adf install-adfh"
+  else
+    INSTALLADF="install-adf"
+  fi
 fi
 
 AC_PROG_MAKE_SET
@@ -1109,6 +1115,7 @@ AC_SUBST(RANLIB)
 AC_SUBST(LIBDIR)
 AC_SUBST(INCLUDEDIR)
 AC_SUBST(BINDIR)
+AC_SUBST(INSTALLADF)
 
 BIN_INSTALL_DIR=$BINDIR
 EXE_INSTALL_DIR=$BINDIR/cgnstools

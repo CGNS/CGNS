@@ -33,34 +33,37 @@ cgiotcl-dll.obj : cgiotcl.c
 
 install : install-prog install-help
 
-install-prog : cgiowish.exe $(BINDIR)
+install-prog : cgiowish.exe $(BINDIR) $(SHAREDIR)
 	-$(INSTALL) cgiowish.exe $(BINDIR)
 	-$(INSTALL) cgnsview.bat $(BINDIR)
 	-$(INSTALL) cgnsnodes.bat $(BINDIR)
-	-$(INSTALL) *.tcl $(BINDIR)
-	-$(INSTALL) *.ico $(BINDIR)
-	-$(INSTALL) ..\common\tclIndex $(BINDIR)
-	-$(INSTALL) ..\common\*.tcl $(BINDIR)
-	-$(INSTALL) ..\common\*.ico $(BINDIR)
+	-$(INSTALL) *.tcl $(SHAREDIR)
+	-$(INSTALL) *.ico $(SHAREDIR)
+	-$(INSTALL) ..\common\tclIndex $(SHAREDIR)
+	-$(INSTALL) ..\common\*.tcl $(SHAREDIR)
+	-$(INSTALL) ..\common\*.ico $(SHAREDIR)
 
-install-help : $(BINDIR)\help\cgnsview\images
-	-$(INSTALL) help\*.html $(BINDIR)\help\cgnsview
-	-$(INSTALL) help\images\*.* $(BINDIR)\help\cgnsview\images
+install-help : $(SHAREDIR)\help\cgnsview\images
+	-$(INSTALL) help\*.html $(SHAREDIR)\help\cgnsview
+	-$(INSTALL) help\images\*.* $(SHAREDIR)\help\cgnsview\images
 
 $(BINDIR) : $(INSTALLDIR)
 	-mkdir $(BINDIR)
 
+$(SHAREDIR) : $(INSTALLDIR)
+	-mkdir $(SHAREDIR)
+
 $(INSTALLDIR) :
 	-mkdir $(INSTALLDIR)
 
-$(BINDIR)\help\cgnsview\images : $(BINDIR)\help\cgnsview
-	-mkdir $(BINDIR)\help\cgnsview\images
+$(SHAREDIR)\help\cgnsview\images : $(SHAREDIR)\help\cgnsview
+	-mkdir $(SHAREDIR)\help\cgnsview\images
 
-$(BINDIR)\help\cgnsview : $(BINDIR)\help
-	-mkdir $(BINDIR)\help\cgnsview
+$(SHAREDIR)\help\cgnsview : $(SHAREDIR)\help
+	-mkdir $(SHAREDIR)\help\cgnsview
 
-$(BINDIR)\help :
-	-mkdir $(BINDIR)\help
+$(SHAREDIR)\help :
+	-mkdir $(SHAREDIR)\help
 
 #--------------------------------------------------
 

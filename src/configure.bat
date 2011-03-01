@@ -798,9 +798,15 @@ echo install executables in %instdir%\bin
 if %dolegacy% == 1 (
   set do64bit=0
   set fbytes=
+  if not "%hdf5inc%" == "" (
+    set adfinc=install-adf install-adfh
+  ) else (
+    set adfinc=install-adf
+  )
 ) else (
   set fbytes=*4
   if %do64bit% == 1 set fbytes=*8
+  set adfinc=
 )
 
 rem ----- create cgnstypes.h
@@ -1691,12 +1697,12 @@ echo 	-cd cgnstools ^&^& %make% distclean>> Makefile
 echo 	-$(RM) $(CGNSLIB)>> Makefile
 if %target% == dll echo 	-$(RM) $(CGNSDLL)>> Makefile
 echo 	-$(RMDIR) $(OBJDIR)>> Makefile
-echo 	-$(RM) cgnstypes.h>> Makefile
+echo 	-$(RM) cgnstypes.h cgnstypes_f.h cgnslib_f.h>> Makefile
 echo 	-$(RM) make.system make.$(SYSTEM)>> Makefile
 echo 	-$(RM) *.pdb>> Makefile
 echo 	-$(RM) Makefile>> Makefile
 echo.>> Makefile
-echo install : %target% $(INCLUDEDIR) $(LIBDIR)>> Makefile
+echo install : %target% $(INCLUDEDIR) $(LIBDIR) %adfinc%>> Makefile
 echo 	$(INSTALL_DATA) cgnstypes.h $(INCLUDEDIR)\cgnstypes.h>> Makefile
 echo 	$(INSTALL_DATA) cgnstypes_f.h $(INCLUDEDIR)\cgnstypes_f.h>> Makefile
 echo 	$(INSTALL_DATA) cgnslib.h $(INCLUDEDIR)\cgnslib.h>> Makefile
@@ -1715,21 +1721,21 @@ echo.>> Makefile
 echo $(INSTALLDIR) :>> Makefile
 echo 	-$(MKDIR) $(INSTALLDIR)>> Makefile
 echo.>> Makefile
-echo uninstall :>> Makefile
-echo 	-$(RM) $(INCLUDEDIR)\cgnstypes.h>> Makefile
-echo 	-$(RM) $(INCLUDEDIR)\cgnstypes_f.h>> Makefile
-echo 	-$(RM) $(INCLUDEDIR)\cgnslib.h>> Makefile
-echo 	-$(RM) $(INCLUDEDIR)\cgnslib_f.h>> Makefile
-echo 	-$(RM) $(INCLUDEDIR)\cgnswin_f.h>> Makefile
-echo 	-$(RM) $(INCLUDEDIR)\cgns_io.h>> Makefile
-echo 	-$(RM) $(LIBDIR)\$(INSTLIB)>> Makefile
-if %target% == dll echo 	-$(RM) $(LIBDIR)\$(INSTDLL)>> Makefile
+echo install-adf : $(INCLUDEDIR)\adf>> Makefile
+echo 	$(INSTALL_DATA) adf\ADF.h $(INCLUDEDIR)\adf\ADF.h>> Makefile
+echo.>> Makefile
+echo $(INCLUDEDIR)\adf : $(INCLUDEDIR)>> Makefile
+echo 	-$(MKDIR) $(INCLUDEDIR)\adf>> Makefile
+echo.>> Makefile
+echo install-adfh : $(INCLUDEDIR)\adfh>> Makefile
+echo 	$(INSTALL_DATA) adfh\ADFH.h $(INCLUDEDIR)\adfh\ADFH.h>> Makefile
+echo.>> Makefile
+echo $(INCLUDEDIR)\adfh : $(INCLUDEDIR)>> Makefile
+echo 	-$(MKDIR) $(INCLUDEDIR)\adfh>> Makefile
 echo.>> Makefile
 echo install-all : install>> Makefile
 echo 	-cd tools ^&^& %make% install>> Makefile
-echo.>> Makefile
-echo uninstall-all : uninstall>> Makefile
-echo 	-cd tools ^&^& %make% uninstall>> Makefile
+echo 	-cd cgnstools ^&^& %make% install>> Makefile
 echo.>> Makefile
 echo #---------- mid-level library>> Makefile
 echo.>> Makefile
@@ -1855,19 +1861,15 @@ echo 	$(INSTALL_PROG) cgnscheck$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsversion$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsconvert$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsdiff$(EXE) $(BINDIR)>> tools\Makefile
+echo 	$(INSTALL_PROG) adf2hdf.bat $(BINDIR)>> tools\Makefile
+echo 	$(INSTALL_PROG) hdf2adf.bat $(BINDIR)>> tools\Makefile
+echo 	$(INSTALL_PROG) cgnsupdate.bat $(BINDIR)>> tools\Makefile
 echo.>> tools\Makefile
 echo $(BINDIR) : $(INSTALLDIR)>> tools\Makefile
 echo 	-$(MKDIR) $(BINDIR)>> tools\Makefile
 echo.>> tools\Makefile
 echo $(INSTALLDIR) :>> tools\Makefile
 echo 	-$(MKDIR) $(INSTALLDIR)>> tools\Makefile
-echo.>> tools\Makefile
-echo uninstall :>> tools\Makefile
-echo 	-$(RM) $(BINDIR)\cgnslist$(EXE)>> tools\Makefile
-echo 	-$(RM) $(BINDIR)\cgnscheck$(EXE)>> tools\Makefile
-echo 	-$(RM) $(BINDIR)\cgnsversion$(EXE)>> tools\Makefile
-echo 	-$(RM) $(BINDIR)\cgnsconvert$(EXE)>> tools\Makefile
-echo 	-$(RM) $(BINDIR)\cgnsdiff$(EXE)>> tools\Makefile
 echo.>> tools\Makefile
 echo clean :>> tools\Makefile
 echo 	-$(RM) *.$(O)>> tools\Makefile
@@ -2129,6 +2131,8 @@ echo CGNSDIR  = ..\..>> cgnstools\make.win
 echo !include $(CGNSDIR)\make.%windir%>> cgnstools\make.win
 echo CGNSLIB  = $(CGNSDIR)\$(LIBCGNS)>> cgnstools\make.win
 echo.>> cgnstools\make.win
+echo SHAREDIR = $(INSTALLDIR)\share>> cgnstools\make.win
+echo.>> cgnstools\make.win
 echo #------------------------------------------------------->> cgnstools\make.win
 echo # linker options>> cgnstools\make.win
 echo #------------------------------------------------------->> cgnstools\make.win
@@ -2184,11 +2188,14 @@ rem ----- create cgconfig.bat
 echo creating cgnstools\cgconfig.bat
 echo rem configuration file for windows> cgnstools\cgconfig.bat
 echo.>> cgnstools\cgconfig.bat
+echo set CG_BIN_DIR=%instdir%\bin>> cgnstools\cgconfig.bat
+echo set CG_LIB_DIR=%instdir%\share>> cgnstools\cgconfig.bat
+if %target% == dll echo set PATH=%instdir%\lib;%%PATH%%>> cgnstools\cgconfig.bat
 if exist %tcldir%\bin\nul (
-echo set PATH=%tcldir%\bin;%PATH%>> cgnstools\cgconfig.bat
+echo set PATH=%tcldir%\bin;%%PATH%%>> cgnstools\cgconfig.bat
 ) else (
 echo rem may need to add location of tcl/tk dlls to PATH>> cgnstools\cgconfig.bat
-echo rem PATH=%tcldir%\bin;%PATH%>> cgnstools\cgconfig.bat
+echo rem PATH=%tcldir%\bin;%%PATH%%>> cgnstools\cgconfig.bat
 )
 echo.>> cgnstools\cgconfig.bat
 echo rem may need to set these if system can't find Tcl and TK scripts>> cgnstools\cgconfig.bat

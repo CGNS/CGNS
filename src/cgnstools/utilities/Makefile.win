@@ -229,30 +229,33 @@ p3dfint.obj : p3dfint.f
 
 install : install-prog install-help
 
-install-prog : $(ALL) $(BINDIR)
-	-$(INSTALL) utilities.mnu $(BINDIR)
-	-$(INSTALL) *.tcl $(BINDIR)
+install-prog : $(ALL) $(BINDIR) $(SHAREDIR)
 	-$(INSTALL) *.exe $(BINDIR)
-	-$(INSTALL) *.cnv $(BINDIR)
+	-$(INSTALL) utilities.mnu $(SHAREDIR)
+	-$(INSTALL) *.tcl $(SHAREDIR)
+	-$(INSTALL) *.cnv $(SHAREDIR)
 
-install-help : $(BINDIR)\help\utilities\images
-	-$(INSTALL) help\*.html $(BINDIR)\help\utilities
-	-$(INSTALL) help\images\*.* $(BINDIR)\help\utilities\images
+install-help : $(SHAREDIR)\help\utilities\images
+	-$(INSTALL) help\*.html $(SHAREDIR)\help\utilities
+	-$(INSTALL) help\images\*.* $(SHAREDIR)\help\utilities\images
 
 $(BINDIR) : $(INSTALLDIR)
 	-mkdir $(BINDIR)
 
+$(SHAREDIR) : $(INSTALLDIR)
+	-mkdir $(SHAREDIR)
+
 $(INSTALLDIR) :
 	-mkdir $(INSTALLDIR)
 
-$(BINDIR)\help\utilities\images : $(BINDIR)\help\utilities
-	-mkdir $(BINDIR)\help\utilities\images
+$(SHAREDIR)\help\utilities\images : $(SHAREDIR)\help\utilities
+	-mkdir $(SHAREDIR)\help\utilities\images
 
-$(BINDIR)\help\utilities : $(BINDIR)\help
-	-mkdir $(BINDIR)\help\utilities
+$(SHAREDIR)\help\utilities : $(SHAREDIR)\help
+	-mkdir $(SHAREDIR)\help\utilities
 
-$(BINDIR)\help :
-	-mkdir $(BINDIR)\help
+$(SHAREDIR)\help :
+	-mkdir $(SHAREDIR)\help
 
 .c.obj :
 	$(CC) $(COPTS) -Fo$@ -c $<

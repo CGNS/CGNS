@@ -92,7 +92,7 @@ distclean :
 	-$(RM) make.system make.defs make.$(SYSTEM)
 	-$(RM) config.log config.status Makefile
 
-install : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR)
+install : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR) @INSTALLADF@
 	$(INSTALL_DATA) cgnstypes.h $(INCLUDEDIR)/cgnstypes.h
 	$(INSTALL_DATA) cgnstypes_f.h $(INCLUDEDIR)/cgnstypes_f.h
 	$(INSTALL_DATA) cgnslib.h $(INCLUDEDIR)/cgnslib.h
@@ -100,6 +100,16 @@ install : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR)
 	$(INSTALL_DATA) cgnswin_f.h $(INCLUDEDIR)/cgnswin_f.h
 	$(INSTALL_DATA) cgns_io.h $(INCLUDEDIR)/cgns_io.h
 	$(INSTALL_DATA) $(CGNSLIB) $(LIBDIR)/$(INSTLIB)
+
+install-all : install
+	-cd tools && $(MAKE) install
+	-cd cgnstools && $(MAKE) install
+
+install-adf : $(INCLUDEDIR)/adf
+	$(INSTALL_DATA) adf/ADF.h $(INCLUDEDIR)/adf/ADF.h
+
+install-adfh : $(INCLUDEDIR)/adfh
+	$(INSTALL_DATA) adfh/ADFH.h $(INCLUDEDIR)/adfh/ADFH.h
 
 $(INCLUDEDIR) :
 	@if [ ! -d $(INCLUDEDIR) ] ; then \
@@ -115,6 +125,20 @@ $(LIBDIR) :
 	    chmod 755 $(LIBDIR); \
 	  fi;
 
+$(INCLUDEDIR)/adf : $(INCLUDEDIR)
+	@if [ ! -d $(INCLUDEDIR)/adf ] ; then \
+	    echo "Making directory $(INCLUDEDIR)/adf"; \
+	    mkdir -p $(INCLUDEDIR)/adf; \
+	    chmod 755 $(INCLUDEDIR)/adf; \
+	  fi;
+
+$(INCLUDEDIR)/adfh : $(INCLUDEDIR)
+	@if [ ! -d $(INCLUDEDIR)/adfh ] ; then \
+	    echo "Making directory $(INCLUDEDIR)/adfh"; \
+	    mkdir -p $(INCLUDEDIR)/adfh; \
+	    chmod 755 $(INCLUDEDIR)/adfh; \
+	  fi;
+
 uninstall :
 	-$(RM) $(INCLUDEDIR)/cgnstypes.h
 	-$(RM) $(INCLUDEDIR)/cgnstypes_f.h
@@ -123,6 +147,18 @@ uninstall :
 	-$(RM) $(INCLUDEDIR)/cgnswin_f.h
 	-$(RM) $(INCLUDEDIR)/cgns_io.h
 	-$(RM) $(LIBDIR)/$(INSTLIB)
+	@if [ -f $(INCLUDEDIR)/adf/ADF.h ] ; then \
+	  -$(RM) $(INCLUDEDIR)/adf/ADF.h; \
+	  -$(RMDIR) $(INCLUDEDIR)/adf; \
+	 fi;
+	@if [ -f $(INCLUDEDIR)/adfh/ADFH.h ] ; then \
+	  -$(RM) $(INCLUDEDIR)/adfh/ADFH.h; \
+	  -$(RMDIR) $(INCLUDEDIR)/adfh; \
+	 fi;
+
+uninstall-all : uninstall
+	-cd tools && $(MAKE) uninstall
+	-cd cgnstools && $(MAKE) uninstall
 
 #---------- mid-level library
 

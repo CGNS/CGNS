@@ -763,73 +763,78 @@ void CGI_write_section(double parent_id, cgns_section *section)
     int n, data[2];
     cgsize_t dim_vals;
     double dummy_id;
+    cgsize_t *elems;
 
     if ((section->link && keep_links) ||
-         section->el_type <= CGNS_ENUMV(PYRA_5) ||
-        (FromVersion >= 3000 && FileVersion >= 3000)) {
+        ((FromVersion < 3000 || FromVersion >= 3100) &&
+         (FileVersion < 3000 || FileVersion >= 3100) &&
+         section->el_type < CGNS_ENUMV(MIXED)) ||
+        (FromVersion >= 3100 && FileVersion >= 3100)) {
         create_node (section->id, parent_id, 1);
         return;
     }
 
-    if (FileVersion < 3000) {
-        int i, j, ne;
-        cgsize_t nelems, *elems;
+    if (FileVersion < 3000 && section->el_type > CGNS_ENUMV(MIXED)) {
+        printf ("can't convert %s element set - skipping\n",
+            cg_ElementTypeName(section->el_type));
+        return;
+    }
 
-        if (section->el_type == CGNS_ENUMV(NFACE_n)) {
-            printf ("can't convert NFACE_n element set - skipping\n");
-            return;
-        }
+    if (section->connect->data) free(section->connect->data);
+    elems = CGNS_NEW(cgsize_t, section->connect->dim_vals[0]);
+    if (cgi_read_int_data(section->connect->id, section->connect->data_type,
+            section->connect->dim_vals[0], elems))
+        error_exit ("cgi_read_int_data", 1);
+
+    if (section->el_type == CGNS_ENUMV(MIXED)) {
+        cgsize_t ne, nelems, cnt = 0;
+        CGNS_ENUMT(ElementType_t) type;
+        int npe;
+
         nelems = section->range[1] - section->range[0] + 1;
-        elems = (cgsize_t *)section->connect->data;
-
-        if (section->el_type == CGNS_ENUMV(PYRA_13)) {
-            i = 5;
-            j = 13;
-            for (ne = 1; ne < nelems; ne++) {
-                for (n = 0; n < 5; n++)
-                    elems[i++] = elems[j++];
-                j += 8;
+        for (ne = 0; ne < nelems; ne++) {
+            type = (CGNS_ENUMT(ElementType_t))elems[cnt];
+            if (FromVersion < 3000) {
+                if (type > CGNS_ENUMV(MIXED)) type++;
             }
-            section->connect->dim_vals[0] = nelems * 5;
-            printf("converted %ld PYRA_13 elements to PYRA_5\n", (long)nelems);
+            else if (FromVersion < 3100) {
+                if (type > CGNS_ENUMV(PYRA_5) && type < CGNS_ENUMV(NGON_n)) {
+                    if (type == CGNS_ENUMV(PYRA_14))
+                        type = CGNS_ENUMV(PYRA_13);
+                    else
+                        type--;
+                }
+            }
+            if (type > CGNS_ENUMV(NGON_n))
+                npe = type - CGNS_ENUMV(NGON_n);
+            else
+                cg_npe (type, &npe);
+            if (npe <= 0)
+                error_exit("invalid element found in MIXED elements", 0);
+            if (FileVersion < 3000) {
+                if (type > CGNS_ENUMV(MIXED)) type--;
+            }
+            else if (FileVersion < 3100) {
+                if (type > CGNS_ENUMV(PYRA_5) && type < CGNS_ENUMV(NGON_n)) {
+                    if (type == CGNS_ENUMV(PYRA_13))
+                        type = CGNS_ENUMV(PYRA_14);
+                    else
+                        type++;
+                }
+            }
+            elems[cnt++] = (cgsize_t)type;
+            cnt += npe;
         }
+    }
+    section->connect->data = (void *)elems;
 
-        if (section->el_type == CGNS_ENUMV(MIXED)) {
-            CGNS_ENUMT(ElementType_t) type;
-            int npe, cnt = 0;
-
-            i = j = 0;
-            for (ne = 0; ne < nelems; ne++) {
-                type = elems[j++];
-                if (type > CGNS_ENUMV(NGON_n))
-                    npe = type - CGNS_ENUMV(NGON_n);
-                else
-                    cg_npe (type, &npe);
-                if (npe <= 0)
-                    error_exit("invalid element found in MIXED elements", 0);
-                if (type > CGNS_ENUMV(PYRA_5)) {
-                    elems[i++] = (int)(type - 1);
-                    if (type == CGNS_ENUMV(PYRA_13)) npe = 5;
-                }
-                else
-                    elems[i++] = type;
-                if (j > i) {
-                    for (n = 0; n < npe; n++)
-                        elems[i+n] = elems[j+n];
-                }
-                i += npe;
-                j += npe;
-                if (type == CGNS_ENUMV(PYRA_13)) {
-                    cnt++;
-                    j += 8;
-                }
-            }
-            if (cnt) {
-                printf("converted %d PYRA_13 elements to PYRA_5 in MIXED\n", cnt);
-                section->connect->dim_vals[0] -= 8 * cnt;
-            }
-        }
-        (section->el_type)--;
+    if (FileVersion >= 3000 && FileVersion < 3100 &&
+        section->el_type > CGNS_ENUMV(PYRA_5) &&
+        section->el_type < CGNS_ENUMV(NGON_n)) {
+        if (section->el_type == CGNS_ENUMV(PYRA_13))
+            section->el_type = CGNS_ENUMV(PYRA_14);
+        else
+            section->el_type++;
     }
 
     dim_vals = 2;
@@ -861,6 +866,7 @@ void CGI_write_section(double parent_id, cgns_section *section)
         for (n=0; n<section->nuser_data; n++)
             create_node (section->user_data[n].id, section->id, 1);
     }
+    CGNS_FREE(elems);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1117,6 +1123,13 @@ int main (int argc, char **argv)
 {
     int n, inpfn, filetype;
     float file_version;
+
+#ifdef CGNSTYPES_H
+# if CG_BUILD_64BIT
+    fprintf(stderr, "doesn't work in 64-bit mode yet\n");
+    return 1;
+# endif
+#endif
 
     if (argc < 3)
         print_usage (usgmsg, NULL);

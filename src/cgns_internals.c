@@ -879,13 +879,10 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                     section[0][n].connect->dim_vals[1] = 0;
                     if (cg->mode == CG_MODE_MODIFY && !linked) {
                         /* read the data into memory */
-                        if (section[0][n].connect->data == 0) {
-                            if (cgi_read_node(section[0][n].connect->id,
+                        if (cgi_read_node(section[0][n].connect->id,
                                 section[0][n].connect->name,
                                 section[0][n].connect->data_type,
                                 &ndim, dim_vals, &vdata, READ_DATA)) return 1;
-                            section[0][n].connect->data = vdata;
-                        }
                         if (cgio_set_dimensions(cg->cgio,
                                 section[0][n].connect->id, "I4",
                                 1, section[0][n].connect->dim_vals)) {
@@ -893,26 +890,23 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                             return 1;
                         }
                         if (cgio_write_all_data(cg->cgio,
-                                section[0][n].connect->id,
-                                section[0][n].connect->data)) {
+                                section[0][n].connect->id, vdata)) {
                             cg_io_error("cgio_write_all_data");
                             return 1;
                         }
+                        CGNS_FREE(vdata);
                     }
 
                 } else if (cg->version < 3100) {
-                    cgsize_t size;
+                    cgsize_t size, *elem_data = 0;
                     int modified = 0;
                     if (section[0][n].el_type == CGNS_ENUMV(MIXED)) {
-                        int ne, *elem_data;
-                        if (section[0][n].connect->data == 0) {
-                            if (cgi_read_node(section[0][n].connect->id,
-                                section[0][n].connect->name,
+                        int ne;
+                        size = section[0][n].connect->dim_vals[0];
+                        elem_data = CGNS_NEW(cgsize_t, size);
+                        if (cgi_read_int_data(section[0][n].connect->id,
                                 section[0][n].connect->data_type,
-                                &ndim, dim_vals, &vdata, READ_DATA)) return 1;
-                            section[0][n].connect->data = vdata;
-                        }
-                        elem_data = (int *)section[0][n].connect->data;
+                                size, elem_data)) return 1;
                         for (size = 0, ne = 0; ne < nelements; ne++) {
                             el_type = (CGNS_ENUMT(ElementType_t))elem_data[size];
                             if (cg->version < 3000) {
@@ -943,9 +937,13 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                             }
                             size += (npe + 1);
                         }
+                        if (!modified) {
+                            CGNS_FREE(elem_data);
+                            elem_data = 0;
+                        }
                     }
-                    size = cgi_element_data_size(section[0][n].el_type, nelements,
-                                                 section[0][n].connect->data);
+                    size = cgi_element_data_size(section[0][n].el_type,
+                                                 nelements, elem_data);
                     if (size < 0) return 1;
                     /* size may be zero, since elements not read */
                     if ((size && section[0][n].connect->dim_vals[0] != size) ||
@@ -964,17 +962,30 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                                 cg_io_error("cgio_write_all_data");
                                 return 1;
                             }
+                            changed = 0;
                         }
                         if (modified) {
+                            if (strcmp(section[0][n].connect->data_type, CG_SIZE_DATATYPE)) {
+                                if (cgio_set_dimensions(cg->cgio,
+                                        section[0][n].connect->id, CG_SIZE_DATATYPE,
+                                        1, section[0][n].connect->dim_vals)) {
+                                    cg_io_error("cgio_set_dimensions");
+                                    return 1;
+                                }
+                                strcpy(section[0][n].connect->data_type, CG_SIZE_DATATYPE);
+                            }
                             if (cgio_write_all_data(cg->cgio,
-                                    section[0][n].connect->id,
-                                    section[0][n].connect->data)) {
+                                    section[0][n].connect->id, elem_data)) {
                                 cg_io_error("cgio_write_all_data");
                                 return 1;
                             }
-                            CGNS_FREE(section[0][n].connect->data);
-                            section[0][n].connect->data = NULL;
+                            CGNS_FREE(elem_data);
+                            elem_data = 0;
                         }
+                    }
+                    if (elem_data) {
+                        strcpy(section[0][n].connect->data_type, CG_SIZE_DATATYPE);
+                        section[0][n].connect->data = (void *)elem_data;
                     }
                 }
 

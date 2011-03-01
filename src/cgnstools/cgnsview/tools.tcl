@@ -27,7 +27,7 @@ $ProgData(filevers) to"
   set f [frame $top.newvers]
   pack $f -side top -fill x -expand 1
   set n 1
-  foreach v {1.2 2.0 2.1 2.2 2.3 2.4 2.5 3.0} {
+  foreach v {1.2 2.0 2.1 2.2 2.3 2.4 2.5 3.0 3.1} {
     if {[expr $v - $ProgData(libvers) < 0.01]} {
       radiobutton $f.f$n -text $v -variable Tools(version) -value $v
       pack $f.f$n -side left -fill x -expand 1

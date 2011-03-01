@@ -55,7 +55,7 @@ set CG_LIB_DIR=${WIN_INSTALL_DIR}\\share
 ")
   if (CGNS_USE_SHARED)
     file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/cgconfig.bat
-      "PATH=${WIN_INSTALL_DIR}\\lib;%PATH%"
+      "set PATH=${WIN_INSTALL_DIR}\\lib;%PATH%"
     )
   endif (CGNS_USE_SHARED)
 

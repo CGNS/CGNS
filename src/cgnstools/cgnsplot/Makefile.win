@@ -9,30 +9,33 @@ dll : cgnstcl.dll
 
 install : install-prog install-help
 
-install-prog : plotwish.exe $(BINDIR)
+install-prog : plotwish.exe $(BINDIR) $(SHAREDIR)
 	-$(INSTALL) plotwish.exe $(BINDIR)
-	-$(INSTALL) cgnsplot.tcl $(BINDIR)
 	-$(INSTALL) cgnsplot.bat $(BINDIR)
-	-$(INSTALL) *.ico $(BINDIR)
+	-$(INSTALL) cgnsplot.tcl $(SHAREDIR)
+	-$(INSTALL) *.ico $(SHAREDIR)
 
-install-help : $(BINDIR)\help\cgnsplot\images
-	-$(INSTALL) help\*.html $(BINDIR)\help\cgnsplot
-	-$(INSTALL) help\images\*.* $(BINDIR)\help\cgnsplot\images
+install-help : $(SHAREDIR)\help\cgnsplot\images
+	-$(INSTALL) help\*.html $(SHAREDIR)\help\cgnsplot
+	-$(INSTALL) help\images\*.* $(SHAREDIR)\help\cgnsplot\images
 
 $(BINDIR) : $(INSTALLDIR)
 	-mkdir $(BINDIR)
 
+$(SHAREDIR) : $(INSTALLDIR)
+	-mkdir $(SHAREDIR)
+
 $(INSTALLDIR) :
 	-mkdir $(INSTALLDIR)
 
-$(BINDIR)\help\cgnsplot\images : $(BINDIR)\help\cgnsplot
-	-mkdir $(BINDIR)\help\cgnsplot\images
+$(SHAREDIR)\help\cgnsplot\images : $(SHAREDIR)\help\cgnsplot
+	-mkdir $(SHAREDIR)\help\cgnsplot\images
 
-$(BINDIR)\help\cgnsplot : $(BINDIR)\help
-	-mkdir $(BINDIR)\help\cgnsplot
+$(SHAREDIR)\help\cgnsplot : $(SHAREDIR)\help
+	-mkdir $(SHAREDIR)\help\cgnsplot
 
-$(BINDIR)\help :
-	-mkdir $(BINDIR)\help
+$(SHAREDIR)\help :
+	-mkdir $(SHAREDIR)\help
 
 #--------------------------------------------------
 

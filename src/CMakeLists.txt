@@ -54,7 +54,7 @@ else (ENABLE_LEGACY)
     set(CGFSIZET *4)
   endif (ENABLE_64BIT)
 endif (ENABLE_LEGACY)
-  
+
 if (ENABLE_SCOPING)
   set(BUILDSCOPE 1)
 endif (ENABLE_SCOPING)
@@ -186,6 +186,13 @@ install(FILES
 	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h
 	DESTINATION include)
+
+if (ENABLE_LEGACY)
+  install(FILES adf/ADF.h DESTINATION include/adf)
+  if (ENABLE_HDF5)
+    install(FILES adfh/ADFH.h DESTINATION include/adfh)
+  endif (ENABLE_HDF5)
+endif (ENABLE_LEGACY)
 
 #########
 # Tools #
