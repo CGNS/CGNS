@@ -1368,11 +1368,11 @@ ADFI find file
 input/output: char *filename	The filename to locate
 output: int *error_return       Error return.
 ***********************************************************************/
-void ADFI_find_file(char *filename, int *error_return)
+void ADFI_find_file(char *parentfile, char *filename, int *error_return)
 {
   char pathname[ADF_FILENAME_LENGTH+1];
 
-  if (cgio_find_file(filename, CGIO_FILE_ADF, sizeof(pathname), pathname)) {
+  if (cgio_find_file(parentfile, filename, CGIO_FILE_ADF, sizeof(pathname), pathname)) {
     *error_return = LINKED_TO_FILE_NOT_THERE;
   }
   else {
@@ -1513,7 +1513,7 @@ while( done == FALSE ) {
 
       if( link_file[0] != '\0' ) { /* A filename is specified, open it. **/
          /* locate the file */
-         ADFI_find_file(link_file, error_return);
+         ADFI_find_file(ADF_file[*file_index].file_name, link_file, error_return);
          CHECK_ABORT(*error_return);
 
          /** Link_ID = root-node of the new file.

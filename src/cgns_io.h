@@ -88,6 +88,7 @@ CGEXTERN int cgio_path_delete (
 );
 
 CGEXTERN int cgio_find_file (
+    const char *parentfile,
     const char *filename,
     int file_type,
     int max_path_len,

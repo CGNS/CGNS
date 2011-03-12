@@ -313,8 +313,9 @@ int cgio_path_delete (const char *path)
 
 /*---------------------------------------------------------*/
 
-int cgio_find_file (const char *filename, int file_type,
-    int max_path_len, char *pathname) {
+int cgio_find_file (const char *parentfile, const char *filename,
+    int file_type, int max_path_len, char *pathname)
+{
     int n, size, len, type;
     char *p, *s;
 
@@ -337,6 +338,25 @@ int cgio_find_file (const char *filename, int file_type,
         || *filename == '\\' || *(filename+1) == ':'
 #endif
     ) return set_error(CGIO_ERR_NOT_FOUND);
+
+    /* check relative to parent's directory */
+
+    if (parentfile != NULL && *parentfile && (int)strlen(parentfile) < max_path_len-1) {
+        strcpy(pathname, parentfile);
+        p = strrchr(pathname, '/');
+#ifdef _WIN32
+        if (p == NULL) p = strrchr(pathname, '\\');
+#endif
+        if (p != NULL) {
+            *++p = 0;
+            if ((int)strlen(pathname) <= size) {
+                strcpy(p, filename);
+                if (cgio_check_file(pathname, &type) == CGIO_ERR_NONE &&
+                    (file_type == CGIO_FILE_NONE || file_type == type))
+                    return set_error(CGIO_ERR_NONE);
+            }
+        }
+    }
 
     size -= 1;
 
@@ -1568,19 +1588,19 @@ int cgio_get_dimensions (int cgio_num, double id,
 
     if (cgio->type == CGIO_FILE_ADF || cgio->type == CGIO_FILE_ADF2) {
         ADF_Get_Number_of_Dimensions(id, num_dims, &ierr);
-	if (NULL != dims && ierr <= 0 && *num_dims > 0) {
+        if (NULL != dims && ierr <= 0 && *num_dims > 0) {
 #if CG_BUILD_LEGACY
             ADF_Get_Dimension_Values(id, dims, &ierr);
 #else
             ADF_Get_Dimension_Values(id, dims64, &ierr);
 #endif
-	}
+        }
         if (ierr > 0) return set_error(ierr);
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
         ADFH_Get_Number_of_Dimensions(id, num_dims, &ierr);
-	if (NULL != dims && ierr <= 0 && *num_dims > 0) {
+        if (NULL != dims && ierr <= 0 && *num_dims > 0) {
 #if CG_BUILD_LEGACY
             ADFH_Get_Dimension_Values(id, dims, &ierr);
 #else

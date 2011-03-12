@@ -121,28 +121,6 @@ CGIODLL void FMNAME(cgio_path_delete_f, CGIO_PATH_DELETE_F) (
     if (c_path) free(c_path);
 }
 
-/*---------------------------------------------------------*/
-
-CGIODLL void FMNAME(cgio_find_file_f, CGIO_FIND_FILE_F) (
-    STR_PSTR(filename), cgsize_t *file_type, STR_PSTR(pathname),
-    cgsize_t *ier STR_PLEN(filename) STR_PLEN(pathname))
-{
-    char *c_name, *c_path;
-
-    c_name = new_c_string(STR_PTR(filename), STR_LEN(filename), ier);
-    if (*ier) return;
-    c_path = new_c_string(STR_PTR(pathname), STR_LEN(pathname), ier);
-    if (*ier) {
-        free(c_name);
-        return;
-    }
-    *ier = cgio_find_file(c_name, (int)*file_type, STR_LEN(pathname), c_path);
-    if (*ier == 0)
-        to_f_string(c_path, STR_PTR(pathname), STR_LEN(pathname));
-    free(c_name);
-    free(c_path);
-}
-
 /*=========================================================
  * utility routines independent of open files
  *=========================================================*/
