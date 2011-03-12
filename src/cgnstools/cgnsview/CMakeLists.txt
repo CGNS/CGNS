@@ -31,7 +31,8 @@ if (WIN32)
 	winmain.c
 	cgiotcl.c)
 else (WIN32)
-  link_libraries(X11 m)
+  include_directories(${X11_X11_INCLUDE_PATH})
+  link_libraries(${X11_X11_LIB} m)
   set(cgnsview_FILES
 	cgiowish.c
 	cgiotcl.c)

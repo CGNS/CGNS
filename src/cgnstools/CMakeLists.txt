@@ -2,6 +2,16 @@
 # cgnstools #
 #############
 
+# get X11 in case it is not in a standard location
+if (NOT WIN32)
+  include(FindX11)
+  # Xmu doesn't appear to be included in FindX11
+  find_library(X11_Xmu_LIB Xmu)
+  if (X11_Xmu_LIB)
+    mark_as_advanced(FORCE X11_Xmu_LIB)
+  endif (X11_Xmu_LIB)
+endif (NOT WIN32)
+
 include(FindTCL)
 include(FindOpenGL)
 

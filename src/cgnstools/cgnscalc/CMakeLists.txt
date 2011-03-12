@@ -30,7 +30,8 @@ if (WIN32)
 	calctcl.c
 	winmain.c)
 else (WIN32)
-  link_libraries(X11 m)
+  include_directories(${X11_X11_INCLUDE_PATH})
+  link_libraries(${X11_X11_LIB} m)
   set(cgnscalc_FILES
 	calctcl.c
 	calcwish.c)

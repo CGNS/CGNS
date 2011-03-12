@@ -32,7 +32,8 @@ if (WIN32)
 	winmain.c
 	../common/hash.c)
 else (WIN32)
-  link_libraries(X11 Xmu m)
+  include_directories(${X11_X11_INCLUDE_PATH})
+  link_libraries(${X11_X11_LIB} ${X11_Xmu_LIB} m)
   set(cgnsplot_FILES
 	cgnstcl.c
 	plotwish.c
