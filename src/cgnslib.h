@@ -21,8 +21,8 @@ freely, subject to the following restrictions:
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
 
-#define CGNS_VERSION 3100
-#define CGNS_DOTVERS 3.10
+#define CGNS_VERSION 3110
+#define CGNS_DOTVERS 3.11
 
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
@@ -132,73 +132,73 @@ extern "C" {
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( MassUnitsNull )       =0, 
-  CGNS_ENUMV( MassUnitsUserDefined )=1,
-  CGNS_ENUMV( Kilogram )            =2, 
-  CGNS_ENUMV( Gram )                =3, 
-  CGNS_ENUMV( Slug )                =4, 
+  CGNS_ENUMV( MassUnitsNull )       =CG_Null,
+  CGNS_ENUMV( MassUnitsUserDefined )=CG_UserDefined,
+  CGNS_ENUMV( Kilogram )            =2,
+  CGNS_ENUMV( Gram )                =3,
+  CGNS_ENUMV( Slug )                =4,
   CGNS_ENUMV( PoundMass )           =5
 } CGNS_ENUMT( MassUnits_t );
 
 typedef enum {
-  CGNS_ENUMV( LengthUnitsNull )       =0,
-  CGNS_ENUMV( LengthUnitsUserDefined )=1,
-  CGNS_ENUMV( Meter )                 =2, 
-  CGNS_ENUMV( Centimeter )            =3, 
-  CGNS_ENUMV( Millimeter )            =4, 
-  CGNS_ENUMV( Foot )                  =5, 
+  CGNS_ENUMV( LengthUnitsNull )       =CG_Null,
+  CGNS_ENUMV( LengthUnitsUserDefined )=CG_UserDefined,
+  CGNS_ENUMV( Meter )                 =2,
+  CGNS_ENUMV( Centimeter )            =3,
+  CGNS_ENUMV( Millimeter )            =4,
+  CGNS_ENUMV( Foot )                  =5,
   CGNS_ENUMV( Inch )                  =6
 } CGNS_ENUMT( LengthUnits_t );
 
 typedef enum {
-  CGNS_ENUMV( TimeUnitsNull )       =0, 
-  CGNS_ENUMV( TimeUnitsUserDefined )=1, 
+  CGNS_ENUMV( TimeUnitsNull )       =CG_Null,
+  CGNS_ENUMV( TimeUnitsUserDefined )=CG_UserDefined,
   CGNS_ENUMV( Second )              =2
 } CGNS_ENUMT( TimeUnits_t );
 
 typedef enum {
-  CGNS_ENUMV( TemperatureUnitsNull )       =0, 
-  CGNS_ENUMV( TemperatureUnitsUserDefined )=1,
-  CGNS_ENUMV( Kelvin )                     =2, 
-  CGNS_ENUMV( Celsius )                    =3, 
-  CGNS_ENUMV( Rankine )                    =4, 
+  CGNS_ENUMV( TemperatureUnitsNull )       =CG_Null,
+  CGNS_ENUMV( TemperatureUnitsUserDefined )=CG_UserDefined,
+  CGNS_ENUMV( Kelvin )                     =2,
+  CGNS_ENUMV( Celsius )                    =3,
+  CGNS_ENUMV( Rankine )                    =4,
   CGNS_ENUMV( Fahrenheit )                 =5
 } CGNS_ENUMT( TemperatureUnits_t );
 
 typedef enum {
-  CGNS_ENUMV( AngleUnitsNull )       =0, 
-  CGNS_ENUMV( AngleUnitsUserDefined )=1, 
+  CGNS_ENUMV( AngleUnitsNull )       =CG_Null,
+  CGNS_ENUMV( AngleUnitsUserDefined )=CG_UserDefined,
   CGNS_ENUMV( Degree )               =2,
   CGNS_ENUMV( Radian )               =3
 } CGNS_ENUMT( AngleUnits_t );
 
 typedef enum {
-  CGNS_ENUMV( ElectricCurrentUnitsNull )       =0, 
-  CGNS_ENUMV( ElectricCurrentUnitsUserDefined )=1,
-  CGNS_ENUMV( Ampere )                         =2, 
-  CGNS_ENUMV( Abampere )                       =3, 
-  CGNS_ENUMV( Statampere )                     =4, 
-  CGNS_ENUMV( Edison )                         =5, 
+  CGNS_ENUMV( ElectricCurrentUnitsNull )       =CG_Null,
+  CGNS_ENUMV( ElectricCurrentUnitsUserDefined )=CG_UserDefined,
+  CGNS_ENUMV( Ampere )                         =2,
+  CGNS_ENUMV( Abampere )                       =3,
+  CGNS_ENUMV( Statampere )                     =4,
+  CGNS_ENUMV( Edison )                         =5,
   CGNS_ENUMV( auCurrent )                      =6
 } CGNS_ENUMT( ElectricCurrentUnits_t );
 
 typedef enum {
-  CGNS_ENUMV( SubstanceAmountUnitsNull )       =0, 
-  CGNS_ENUMV( SubstanceAmountUnitsUserDefined )=1,
+  CGNS_ENUMV( SubstanceAmountUnitsNull )       =CG_Null,
+  CGNS_ENUMV( SubstanceAmountUnitsUserDefined )=CG_UserDefined,
   CGNS_ENUMV( Mole )                           =2,
-  CGNS_ENUMV( Entities )                       =3, 
-  CGNS_ENUMV( StandardCubicFoot )              =4, 
+  CGNS_ENUMV( Entities )                       =3,
+  CGNS_ENUMV( StandardCubicFoot )              =4,
   CGNS_ENUMV( StandardCubicMeter )             =5
 } CGNS_ENUMT( SubstanceAmountUnits_t );
 
 typedef enum {
-  CGNS_ENUMV( LuminousIntensityUnitsNull )       =0, 
-  CGNS_ENUMV( LuminousIntensityUnitsUserDefined )=1,
-  CGNS_ENUMV( Candela )                          =2, 
-  CGNS_ENUMV( Candle )				 =3, 
-  CGNS_ENUMV( Carcel )				 =4, 
-  CGNS_ENUMV( Hefner )				 =5, 
-  CGNS_ENUMV( Violle )				 =6                         
+  CGNS_ENUMV( LuminousIntensityUnitsNull )       =CG_Null,
+  CGNS_ENUMV( LuminousIntensityUnitsUserDefined )=CG_UserDefined,
+  CGNS_ENUMV( Candela )                          =2,
+  CGNS_ENUMV( Candle )				 =3,
+  CGNS_ENUMV( Carcel )				 =4,
+  CGNS_ENUMV( Hefner )				 =5,
+  CGNS_ENUMV( Violle )				 =6
 } CGNS_ENUMT( LuminousIntensityUnits_t );
 
 #define NofValidMassUnits              6
@@ -210,116 +210,116 @@ typedef enum {
 #define NofValidSubstanceAmountUnits   6
 #define NofValidLuminousIntensityUnits 7
 
-CGNSDLL const char * MassUnitsName[NofValidMassUnits];
-CGNSDLL const char * LengthUnitsName[NofValidLengthUnits];
-CGNSDLL const char * TimeUnitsName[NofValidTimeUnits];
-CGNSDLL const char * TemperatureUnitsName[NofValidTemperatureUnits];
-CGNSDLL const char * AngleUnitsName[NofValidAngleUnits];
-CGNSDLL const char * ElectricCurrentUnitsName[NofValidElectricCurrentUnits];
-CGNSDLL const char * SubstanceAmountUnitsName[NofValidSubstanceAmountUnits];
-CGNSDLL const char * LuminousIntensityUnitsName[NofValidLuminousIntensityUnits];
+extern CGNSDLL const char * MassUnitsName[NofValidMassUnits];
+extern CGNSDLL const char * LengthUnitsName[NofValidLengthUnits];
+extern CGNSDLL const char * TimeUnitsName[NofValidTimeUnits];
+extern CGNSDLL const char * TemperatureUnitsName[NofValidTemperatureUnits];
+extern CGNSDLL const char * AngleUnitsName[NofValidAngleUnits];
+extern CGNSDLL const char * ElectricCurrentUnitsName[NofValidElectricCurrentUnits];
+extern CGNSDLL const char * SubstanceAmountUnitsName[NofValidSubstanceAmountUnits];
+extern CGNSDLL const char * LuminousIntensityUnitsName[NofValidLuminousIntensityUnits];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Data Class                                                       *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( DataClassNull ) =0, 
-  CGNS_ENUMV( DataClassUserDefined ) =1,
-  CGNS_ENUMV( Dimensional ) =2, 
+  CGNS_ENUMV( DataClassNull ) =CG_Null,
+  CGNS_ENUMV( DataClassUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( Dimensional ) =2,
   CGNS_ENUMV( NormalizedByDimensional ) =3,
   CGNS_ENUMV( NormalizedByUnknownDimensional ) =4,
-  CGNS_ENUMV( NondimensionalParameter ) =5, 
+  CGNS_ENUMV( NondimensionalParameter ) =5,
   CGNS_ENUMV( DimensionlessConstant ) =6
 } CGNS_ENUMT( DataClass_t );
 
 #define NofValidDataClass 7
 
-CGNSDLL const char * DataClassName[NofValidDataClass];
+extern CGNSDLL const char * DataClassName[NofValidDataClass];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *	Grid Location
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( GridLocationNull ) =0, 
-  CGNS_ENUMV( GridLocationUserDefined ) =1,
-  CGNS_ENUMV( Vertex ) =2, 
-  CGNS_ENUMV( CellCenter ) =3, 
+  CGNS_ENUMV( GridLocationNull ) =CG_Null,
+  CGNS_ENUMV( GridLocationUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( Vertex ) =2,
+  CGNS_ENUMV( CellCenter ) =3,
   CGNS_ENUMV( FaceCenter ) =4,
-  CGNS_ENUMV( IFaceCenter ) =5, 
-  CGNS_ENUMV( JFaceCenter ) =6, 
-  CGNS_ENUMV( KFaceCenter ) =7, 
+  CGNS_ENUMV( IFaceCenter ) =5,
+  CGNS_ENUMV( JFaceCenter ) =6,
+  CGNS_ENUMV( KFaceCenter ) =7,
   CGNS_ENUMV( EdgeCenter ) =8
 } CGNS_ENUMT( GridLocation_t );
 
 #define NofValidGridLocation 9
 
-CGNSDLL const char * GridLocationName[NofValidGridLocation];
+extern CGNSDLL const char * GridLocationName[NofValidGridLocation];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      BCData Types: Can not add types and stay forward compatible      *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( BCDataTypeNull ) =0, 
-  CGNS_ENUMV( BCDataTypeUserDefined ) =1,
-  CGNS_ENUMV( Dirichlet ) =2, 
+  CGNS_ENUMV( BCDataTypeNull ) =CG_Null,
+  CGNS_ENUMV( BCDataTypeUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( Dirichlet ) =2,
   CGNS_ENUMV( Neumann ) =3
 } CGNS_ENUMT( BCDataType_t );
 
 #define NofValidBCDataTypes 4
 
-CGNSDLL const char * BCDataTypeName[NofValidBCDataTypes];
+extern CGNSDLL const char * BCDataTypeName[NofValidBCDataTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *	Grid Connectivity Types 					 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( GridConnectivityTypeNull ) =0, 
-  CGNS_ENUMV( GridConnectivityTypeUserDefined ) =1,
-  CGNS_ENUMV( Overset ) =2, 
-  CGNS_ENUMV( Abutting ) =3, 
+  CGNS_ENUMV( GridConnectivityTypeNull ) =CG_Null,
+  CGNS_ENUMV( GridConnectivityTypeUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( Overset ) =2,
+  CGNS_ENUMV( Abutting ) =3,
   CGNS_ENUMV( Abutting1to1 ) =4
 } CGNS_ENUMT( GridConnectivityType_t );
 
 #define NofValidGridConnectivityTypes 5
 
-CGNSDLL const char * GridConnectivityTypeName[NofValidGridConnectivityTypes];
+extern CGNSDLL const char * GridConnectivityTypeName[NofValidGridConnectivityTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *	Point Set Types: Can't add types and stay forward compatible
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( PointSetTypeNull ) =0, 
-  CGNS_ENUMV( PointSetTypeUserDefined ) =1,
-  CGNS_ENUMV( PointList ) =2,  
+  CGNS_ENUMV( PointSetTypeNull ) =CG_Null,
+  CGNS_ENUMV( PointSetTypeUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( PointList ) =2,
   CGNS_ENUMV( PointListDonor ) =3,
-  CGNS_ENUMV( PointRange ) =4, 
+  CGNS_ENUMV( PointRange ) =4,
   CGNS_ENUMV( PointRangeDonor ) =5,
-  CGNS_ENUMV( ElementRange ) =6, 
-  CGNS_ENUMV( ElementList ) =7, 
+  CGNS_ENUMV( ElementRange ) =6,
+  CGNS_ENUMV( ElementList ) =7,
   CGNS_ENUMV( CellListDonor ) =8
 } CGNS_ENUMT( PointSetType_t );
 
 #define NofValidPointSetTypes 9
 
-CGNSDLL const char * PointSetTypeName[NofValidPointSetTypes];
+extern CGNSDLL const char * PointSetTypeName[NofValidPointSetTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Governing Equations and Physical Models Types                    *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( GoverningEquationsNull ) =0, 
-  CGNS_ENUMV( GoverningEquationsUserDefined ) =1,
-  CGNS_ENUMV( FullPotential ) =2, 
-  CGNS_ENUMV( Euler ) =3, 
-  CGNS_ENUMV( NSLaminar ) =4, 
+  CGNS_ENUMV( GoverningEquationsNull ) =CG_Null,
+  CGNS_ENUMV( GoverningEquationsUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( FullPotential ) =2,
+  CGNS_ENUMV( Euler ) =3,
+  CGNS_ENUMV( NSLaminar ) =4,
   CGNS_ENUMV( NSTurbulent ) =5,
-  CGNS_ENUMV( NSLaminarIncompressible ) =6, 
+  CGNS_ENUMV( NSLaminarIncompressible ) =6,
   CGNS_ENUMV( NSTurbulentIncompressible ) =7
 } CGNS_ENUMT( GoverningEquationsType_t );
 
@@ -354,94 +354,94 @@ typedef enum {
 */
 
 typedef enum {
-  CGNS_ENUMV( ModelTypeNull ) =0, 
-  CGNS_ENUMV( ModelTypeUserDefined ) =1,
-  CGNS_ENUMV( Ideal ) =2, 
+  CGNS_ENUMV( ModelTypeNull ) =CG_Null,
+  CGNS_ENUMV( ModelTypeUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( Ideal ) =2,
   CGNS_ENUMV( VanderWaals ) =3,
   CGNS_ENUMV( Constant ) =4,
-  CGNS_ENUMV( PowerLaw ) =5, 
+  CGNS_ENUMV( PowerLaw ) =5,
   CGNS_ENUMV( SutherlandLaw ) =6,
   CGNS_ENUMV( ConstantPrandtl ) =7,
   CGNS_ENUMV( EddyViscosity ) =8,
   CGNS_ENUMV( ReynoldsStress ) =9,
   CGNS_ENUMV( ReynoldsStressAlgebraic ) =10,
-  CGNS_ENUMV( Algebraic_BaldwinLomax ) =11, 
+  CGNS_ENUMV( Algebraic_BaldwinLomax ) =11,
   CGNS_ENUMV( Algebraic_CebeciSmith ) =12,
-  CGNS_ENUMV( HalfEquation_JohnsonKing ) =13, 
+  CGNS_ENUMV( HalfEquation_JohnsonKing ) =13,
   CGNS_ENUMV( OneEquation_BaldwinBarth ) =14,
-  CGNS_ENUMV( OneEquation_SpalartAllmaras ) =15, 
+  CGNS_ENUMV( OneEquation_SpalartAllmaras ) =15,
   CGNS_ENUMV( TwoEquation_JonesLaunder ) =16,
-  CGNS_ENUMV( TwoEquation_MenterSST ) =17, 
+  CGNS_ENUMV( TwoEquation_MenterSST ) =17,
   CGNS_ENUMV( TwoEquation_Wilcox ) =18,
-  CGNS_ENUMV( CaloricallyPerfect ) =19, 
+  CGNS_ENUMV( CaloricallyPerfect ) =19,
   CGNS_ENUMV( ThermallyPerfect ) =20,
-  CGNS_ENUMV( ConstantDensity ) =21, 
+  CGNS_ENUMV( ConstantDensity ) =21,
   CGNS_ENUMV( RedlichKwong ) =22,
-  CGNS_ENUMV( Frozen ) =23, 
-  CGNS_ENUMV( ThermalEquilib ) =24, 
+  CGNS_ENUMV( Frozen ) =23,
+  CGNS_ENUMV( ThermalEquilib ) =24,
   CGNS_ENUMV( ThermalNonequilib ) =25,
-  CGNS_ENUMV( ChemicalEquilibCurveFit ) =26, 
+  CGNS_ENUMV( ChemicalEquilibCurveFit ) =26,
   CGNS_ENUMV( ChemicalEquilibMinimization ) =27,
   CGNS_ENUMV( ChemicalNonequilib ) =28,
   CGNS_ENUMV( EMElectricField ) =29,
-  CGNS_ENUMV( EMMagneticField ) =30, 
+  CGNS_ENUMV( EMMagneticField ) =30,
   CGNS_ENUMV( EMConductivity ) =31,
-  CGNS_ENUMV( Voltage ) =32, 
-  CGNS_ENUMV( Interpolated ) =33, 
-  CGNS_ENUMV( Equilibrium_LinRessler ) =34, 
+  CGNS_ENUMV( Voltage ) =32,
+  CGNS_ENUMV( Interpolated ) =33,
+  CGNS_ENUMV( Equilibrium_LinRessler ) =34,
   CGNS_ENUMV( Chemistry_LinRessler ) =35
 } CGNS_ENUMT( ModelType_t );
 
 #define NofValidGoverningEquationsTypes 8
 #define NofValidModelTypes 36
 
-CGNSDLL const char * GoverningEquationsTypeName[NofValidGoverningEquationsTypes];
-CGNSDLL const char * ModelTypeName[NofValidModelTypes];
+extern CGNSDLL const char * GoverningEquationsTypeName[NofValidGoverningEquationsTypes];
+extern CGNSDLL const char * ModelTypeName[NofValidModelTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  * 	Boundary Condition Types					 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( BCTypeNull ) =0, 
-  CGNS_ENUMV( BCTypeUserDefined ) =1,
-  CGNS_ENUMV( BCAxisymmetricWedge ) =2, 
-  CGNS_ENUMV( BCDegenerateLine ) =3, 
+  CGNS_ENUMV( BCTypeNull ) =CG_Null,
+  CGNS_ENUMV( BCTypeUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( BCAxisymmetricWedge ) =2,
+  CGNS_ENUMV( BCDegenerateLine ) =3,
   CGNS_ENUMV( BCDegeneratePoint ) =4,
-  CGNS_ENUMV( BCDirichlet ) =5, 
-  CGNS_ENUMV( BCExtrapolate ) =6, 
-  CGNS_ENUMV( BCFarfield ) =7, 
-  CGNS_ENUMV( BCGeneral ) =8, 
+  CGNS_ENUMV( BCDirichlet ) =5,
+  CGNS_ENUMV( BCExtrapolate ) =6,
+  CGNS_ENUMV( BCFarfield ) =7,
+  CGNS_ENUMV( BCGeneral ) =8,
   CGNS_ENUMV( BCInflow ) =9,
-  CGNS_ENUMV( BCInflowSubsonic ) =10,  
-  CGNS_ENUMV( BCInflowSupersonic ) =11, 
-  CGNS_ENUMV( BCNeumann ) =12, 
+  CGNS_ENUMV( BCInflowSubsonic ) =10,
+  CGNS_ENUMV( BCInflowSupersonic ) =11,
+  CGNS_ENUMV( BCNeumann ) =12,
   CGNS_ENUMV( BCOutflow ) =13,
-  CGNS_ENUMV( BCOutflowSubsonic ) =14, 
-  CGNS_ENUMV( BCOutflowSupersonic ) =15, 
+  CGNS_ENUMV( BCOutflowSubsonic ) =14,
+  CGNS_ENUMV( BCOutflowSupersonic ) =15,
   CGNS_ENUMV( BCSymmetryPlane ) =16,
-  CGNS_ENUMV( BCSymmetryPolar ) =17, 
-  CGNS_ENUMV( BCTunnelInflow ) =18, 
-  CGNS_ENUMV( BCTunnelOutflow ) =19, 
+  CGNS_ENUMV( BCSymmetryPolar ) =17,
+  CGNS_ENUMV( BCTunnelInflow ) =18,
+  CGNS_ENUMV( BCTunnelOutflow ) =19,
   CGNS_ENUMV( BCWall ) =20,
-  CGNS_ENUMV( BCWallInviscid ) =21, 
-  CGNS_ENUMV( BCWallViscous ) =22, 
+  CGNS_ENUMV( BCWallInviscid ) =21,
+  CGNS_ENUMV( BCWallViscous ) =22,
   CGNS_ENUMV( BCWallViscousHeatFlux ) =23,
-  CGNS_ENUMV( BCWallViscousIsothermal ) =24, 
+  CGNS_ENUMV( BCWallViscousIsothermal ) =24,
   CGNS_ENUMV( FamilySpecified ) =25
 } CGNS_ENUMT( BCType_t );
 
 #define NofValidBCTypes 26
 
-CGNSDLL const char * BCTypeName[NofValidBCTypes];
+extern CGNSDLL const char * BCTypeName[NofValidBCTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Data types:  Can not add data types and stay forward compatible  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( DataTypeNull ) =0, 
-  CGNS_ENUMV( DataTypeUserDefined ) =1, 
+  CGNS_ENUMV( DataTypeNull ) =CG_Null,
+  CGNS_ENUMV( DataTypeUserDefined ) =CG_UserDefined,
   CGNS_ENUMV( Integer ) =2,
   CGNS_ENUMV( RealSingle ) =3,
   CGNS_ENUMV( RealDouble ) =4,
@@ -451,7 +451,7 @@ typedef enum {
 
 #define NofValidDataTypes 7
 
-CGNSDLL const char * DataTypeName[NofValidDataTypes];
+extern CGNSDLL const char * DataTypeName[NofValidDataTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Element types                                                    *
@@ -460,19 +460,19 @@ CGNSDLL const char * DataTypeName[NofValidDataTypes];
 /* PLEASE ALSO UPDATE the cgnslib.h/el_size static table */
 
 typedef enum {
-  CGNS_ENUMV( ElementTypeNull  ) =0, 
-  CGNS_ENUMV( ElementTypeUserDefined ) =1,
-  CGNS_ENUMV( NODE ) =2, 
-  CGNS_ENUMV( BAR_2 ) =3, 
+  CGNS_ENUMV( ElementTypeNull  ) =CG_Null,
+  CGNS_ENUMV( ElementTypeUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( NODE ) =2,
+  CGNS_ENUMV( BAR_2 ) =3,
   CGNS_ENUMV( BAR_3 ) =4,
-  CGNS_ENUMV( TRI_3 ) =5, 
+  CGNS_ENUMV( TRI_3 ) =5,
   CGNS_ENUMV( TRI_6 ) =6,
-  CGNS_ENUMV( QUAD_4 ) =7, 
-  CGNS_ENUMV( QUAD_8 ) =8, 
+  CGNS_ENUMV( QUAD_4 ) =7,
+  CGNS_ENUMV( QUAD_8 ) =8,
   CGNS_ENUMV( QUAD_9 ) =9,
-  CGNS_ENUMV( TETRA_4 ) =10, 
+  CGNS_ENUMV( TETRA_4 ) =10,
   CGNS_ENUMV( TETRA_10 ) =11,
-  CGNS_ENUMV( PYRA_5 ) =12, 
+  CGNS_ENUMV( PYRA_5 ) =12,
   CGNS_ENUMV( PYRA_14 ) =13,
   CGNS_ENUMV( PENTA_6 ) =14,
   CGNS_ENUMV( PENTA_15 ) =15,
@@ -488,7 +488,7 @@ typedef enum {
 
 #define NofValidElementTypes 24
 
-CGNSDLL const char * ElementTypeName[NofValidElementTypes];
+extern CGNSDLL const char * ElementTypeName[NofValidElementTypes];
 
 #ifdef CGNS_SCOPE_ENUMS
 #define  CG_NPE_NODE      1
@@ -543,74 +543,74 @@ CGNSDLL const char * ElementTypeName[NofValidElementTypes];
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( ZoneTypeNull ) =0, 
-  CGNS_ENUMV( ZoneTypeUserDefined ) =1,
-  CGNS_ENUMV( Structured ) =2, 
+  CGNS_ENUMV( ZoneTypeNull ) =CG_Null,
+  CGNS_ENUMV( ZoneTypeUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( Structured ) =2,
   CGNS_ENUMV( Unstructured ) =3
 } CGNS_ENUMT( ZoneType_t );
 
 #define NofValidZoneTypes 4
 
-CGNSDLL const char * ZoneTypeName[NofValidZoneTypes];
+extern CGNSDLL const char * ZoneTypeName[NofValidZoneTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Rigid Grid Motion types						 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( RigidGridMotionTypeNull ) =0, 
-  CGNS_ENUMV( RigidGridMotionTypeUserDefined ) =1,
+  CGNS_ENUMV( RigidGridMotionTypeNull ) =CG_Null,
+  CGNS_ENUMV( RigidGridMotionTypeUserDefined ) =CG_UserDefined,
   CGNS_ENUMV( ConstantRate ) =2, 
   CGNS_ENUMV( VariableRate ) =3
 } CGNS_ENUMT( RigidGridMotionType_t );
 
 #define NofValidRigidGridMotionTypes 4
 
-CGNSDLL const char * RigidGridMotionTypeName[NofValidRigidGridMotionTypes];
+extern CGNSDLL const char * RigidGridMotionTypeName[NofValidRigidGridMotionTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Arbitrary Grid Motion types                                      *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( ArbitraryGridMotionTypeNull ) =0, 
-  CGNS_ENUMV( ArbitraryGridMotionTypeUserDefined ) =1,
+  CGNS_ENUMV( ArbitraryGridMotionTypeNull ) =CG_Null,
+  CGNS_ENUMV( ArbitraryGridMotionTypeUserDefined ) =CG_UserDefined,
   CGNS_ENUMV( NonDeformingGrid ) =2, 
   CGNS_ENUMV( DeformingGrid ) =3
 } CGNS_ENUMT( ArbitraryGridMotionType_t );
 
 #define NofValidArbitraryGridMotionTypes 4
 
-CGNSDLL const char * ArbitraryGridMotionTypeName[NofValidArbitraryGridMotionTypes];
+extern CGNSDLL const char * ArbitraryGridMotionTypeName[NofValidArbitraryGridMotionTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Simulation types					         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( SimulationTypeNull ) =0, 
-  CGNS_ENUMV( SimulationTypeUserDefined ) =1,
+  CGNS_ENUMV( SimulationTypeNull ) =CG_Null,
+  CGNS_ENUMV( SimulationTypeUserDefined ) =CG_UserDefined,
   CGNS_ENUMV( TimeAccurate ) =2, 
   CGNS_ENUMV( NonTimeAccurate ) =3
 } CGNS_ENUMT( SimulationType_t );
 
 #define NofValidSimulationTypes 4
 
-CGNSDLL const char * SimulationTypeName[NofValidSimulationTypes];
+extern CGNSDLL const char * SimulationTypeName[NofValidSimulationTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *	BC Property types						 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( WallFunctionTypeNull ) =0, 
-  CGNS_ENUMV( WallFunctionTypeUserDefined ) =1,
+  CGNS_ENUMV( WallFunctionTypeNull ) =CG_Null,
+  CGNS_ENUMV( WallFunctionTypeUserDefined ) =CG_UserDefined,
   CGNS_ENUMV( Generic ) =2
 } CGNS_ENUMT( WallFunctionType_t );
 
 typedef enum {
-  CGNS_ENUMV( AreaTypeNull ) =0, 
-  CGNS_ENUMV( AreaTypeUserDefined ) =1,
+  CGNS_ENUMV( AreaTypeNull ) =CG_Null,
+  CGNS_ENUMV( AreaTypeUserDefined ) =CG_UserDefined,
   CGNS_ENUMV( BleedArea ) =2, 
   CGNS_ENUMV( CaptureArea ) =3
 } CGNS_ENUMT( AreaType_t );
@@ -618,16 +618,16 @@ typedef enum {
 #define NofValidWallFunctionTypes 3
 #define NofValidAreaTypes 4
 
-CGNSDLL const char * WallFunctionTypeName[NofValidWallFunctionTypes];
-CGNSDLL const char * AreaTypeName[NofValidAreaTypes];
+extern CGNSDLL const char * WallFunctionTypeName[NofValidWallFunctionTypes];
+extern CGNSDLL const char * AreaTypeName[NofValidAreaTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Grid Connectivity Property types				 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 typedef enum {
-  CGNS_ENUMV( AverageInterfaceTypeNull ) =0, 
-  CGNS_ENUMV( AverageInterfaceTypeUserDefined ) =1,
+  CGNS_ENUMV( AverageInterfaceTypeNull ) =CG_Null,
+  CGNS_ENUMV( AverageInterfaceTypeUserDefined ) =CG_UserDefined,
   CGNS_ENUMV( AverageAll ) =2, 
   CGNS_ENUMV( AverageCircumferential ) =3,
   CGNS_ENUMV( AverageRadial ) =4,
@@ -638,7 +638,7 @@ typedef enum {
 
 #define NofValidAverageInterfaceTypes 8
 
-CGNSDLL const char * AverageInterfaceTypeName[NofValidAverageInterfaceTypes];
+extern CGNSDLL const char * AverageInterfaceTypeName[NofValidAverageInterfaceTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      LIBRARY FUNCTIONS						 *

@@ -923,8 +923,8 @@ CGNSDLL cgns_posit posit_stack[CG_MAX_GOTO_DEPTH+1];
  * Internal Functions
  */
 
-void *cgi_malloc(size_t cnt,size_t size);
-void *cgi_realloc(void *old,size_t bytes);
+CGNSDLL void *cgi_malloc(size_t cnt,size_t size);
+CGNSDLL void *cgi_realloc(void *old,size_t bytes);
 
 /* retrieve addresses of nodes who may have children */
 CGNSDLL cgns_file      *cgi_get_file (int file_number);
@@ -1160,7 +1160,7 @@ int cgi_check_mode(char const * filename, int file_mode, int mode_wanted);
 const char *cgi_adf_datatype(CGNS_ENUMT(DataType_t) type);
 CGNSDLL CGNS_ENUMT(DataType_t) cgi_datatype(cchar_33 adf_type);
 int cgi_check_dimensions(int ndims, cglong_t *dims);
-int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data);
+CGNSDLL int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data);
 int cgi_convert_data(cgsize_t cnt,
 	CGNS_ENUMT(DataType_t) from_type, const void *from_data,
         CGNS_ENUMT(DataType_t) to_type, void *to_data);
