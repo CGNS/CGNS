@@ -1,7 +1,6 @@
 
 CGNSDIR = ..
-include $(CGNSDIR)/make.system
-include $(CGNSDIR)/make.$(SYSTEM)
+include $(CGNSDIR)/make.defs
 
 CGNSLIB = $(CGNSDIR)/$(LIBCGNS)
 

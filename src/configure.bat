@@ -27,6 +27,7 @@ set tcllib=
 set tklib=
 set plotopts=
 set instdir=c:\cgnslib
+set builddir=build
 
 set drive=%~d0
 set cgnsdir=%~dps0
@@ -1473,153 +1474,148 @@ echo         data AverageInterfaceTypeName / 'Null','UserDefined',           ^&>
 echo      ^&       'AverageAll', 'AverageCircumferential', 'AverageRadial',   ^&>> cgnslib_f.h
 echo      ^&       'AverageI', 'AverageJ', 'AverageK' />> cgnslib_f.h
 
-rem ----- create make.system
-
-echo creating make.system
-echo SYSTEM = %windir%> make.system
-
 rem ----- create make.defs
 
-echo creating make.%windir%
-echo # makefile include for %windir%> make.%windir%
-echo.>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo # CC      - C compiler>> make.%windir%
-echo # CFLAGS  - compiler flags>> make.%windir%
-echo # COOUT   - flag to name object output file (typically /Fo)>> make.%windir%
-echo # CEOUT   - flag to name the output executable (typically /Fe)>> make.%windir%
-echo # LDFLAGS - any additional linker options>> make.%windir%
-echo # CLIBS   - any additional libraries needed to link a CGNS application>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo.>> make.%windir%
-echo CC      = cl>> make.%windir%
-echo CFLAGS  = /nologo %copts% /D_CRT_SECURE_NO_WARNINGS>> make.%windir%
-echo COOUT   = /Fo>> make.%windir%
-echo CEOUT   = /Fe>> make.%windir%
-echo LDFLAGS = /nologo %lopts%>> make.%windir%
-echo CLIBS   =>> make.%windir%
-echo.>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo # SPACE  - used to force a space in the compiler executable output flag>> make.%windir%
-echo # O       - object file extension>> make.%windir%
-echo # A       - library file extension>> make.%windir%
-echo # EXE     - executable extension>> make.%windir%
-echo # LIBCGNS - CGNS library name>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo.>> make.%windir%
-echo SPACE   =>> make.%windir%
-echo O       = obj>> make.%windir%
-echo A       = lib>> make.%windir%
-echo EXE     = .exe>> make.%windir%
-echo LIBCGNS = %windir%\libcgns.lib>> make.%windir%
-echo.>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo # F2CFLAGS defines the type of Fortran to C interface.>> make.%windir%
-echo #>> make.%windir%
-echo # CFGFLAGS defines any additional compiler options needed to build>> make.%windir%
-echo # the CGNS library. This is typically set by the configure script.>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo.>> make.%windir%
-echo F2CFLAGS = %f2cflags%>> make.%windir%
-echo CFGFLAGS = %cfgflags%>> make.%windir%
-echo.>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo # These are not used to build the CGNS library>> make.%windir%
-echo # Fortran compiler (F77) and options (FFLAGS).>> make.%windir%
-echo # FEOUT is the flag to name the output executable (typically /exe:).>> make.%windir%
-echo # FLIBS lists any additional libraries needed to link a CGNS application>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo.>> make.%windir%
-echo F77    = %f77%>> make.%windir%
+echo creating make.defs
+echo # makefile include for %windir%> make.defs
+echo.>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo # CC      - C compiler>> make.defs
+echo # CFLAGS  - compiler flags>> make.defs
+echo # COOUT   - flag to name object output file (typically /Fo)>> make.defs
+echo # CEOUT   - flag to name the output executable (typically /Fe)>> make.defs
+echo # LDFLAGS - any additional linker options>> make.defs
+echo # CLIBS   - any additional libraries needed to link a CGNS application>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo.>> make.defs
+echo CC      = cl>> make.defs
+echo CFLAGS  = /nologo %copts% /D_CRT_SECURE_NO_WARNINGS>> make.defs
+echo COOUT   = /Fo>> make.defs
+echo CEOUT   = /Fe>> make.defs
+echo LDFLAGS = /nologo %lopts%>> make.defs
+echo CLIBS   =>> make.defs
+echo.>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo # SPACE  - used to force a space in the compiler executable output flag>> make.defs
+echo # O       - object file extension>> make.defs
+echo # A       - library file extension>> make.defs
+echo # EXE     - executable extension>> make.defs
+echo # LIBCGNS - CGNS library name>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo.>> make.defs
+echo SPACE   =>> make.defs
+echo O       = obj>> make.defs
+echo A       = lib>> make.defs
+echo EXE     = .exe>> make.defs
+echo.>> make.defs
+echo LIBCGNS = %builddir%\cgns.lib>> make.defs
+echo.>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo # F2CFLAGS defines the type of Fortran to C interface.>> make.defs
+echo #>> make.defs
+echo # CFGFLAGS defines any additional compiler options needed to build>> make.defs
+echo # the CGNS library. This is typically set by the configure script.>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo.>> make.defs
+echo F2CFLAGS = %f2cflags%>> make.defs
+echo CFGFLAGS = %cfgflags%>> make.defs
+echo.>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo # These are not used to build the CGNS library>> make.defs
+echo # Fortran compiler (F77) and options (FFLAGS).>> make.defs
+echo # FEOUT is the flag to name the output executable (typically /exe:).>> make.defs
+echo # FLIBS lists any additional libraries needed to link a CGNS application>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo.>> make.defs
+echo F77    = %f77%>> make.defs
 if %f77% == ifort (
-echo FFLAGS = /nologo /extfpp:F /fpp %copts%>> make.%windir%
+echo FFLAGS = /nologo /extfpp:F /fpp %copts%>> make.defs
 ) else (
-echo FFLAGS = /nologo /extfpp:F /fpp:"/DWINNT" %copts%>> make.%windir%
+echo FFLAGS = /nologo /extfpp:F /fpp:"/DWINNT" %copts%>> make.defs
 )
-echo FEOUT  = /exe:>> make.%windir%
-echo FLIBS  =>> make.%windir%
-echo.>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo # strip command for executables - set to true if not used>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo.>> make.%windir%
-echo STRIP  = :>> make.%windir%
-echo.>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo # library archiver and ranlib>> make.%windir%
-echo # AROUT may be used to set a library output flag as:>> make.%windir%
-echo #    $(AR) $(AROUT)library_name objects>> make.%windir%
-echo # Set RANLIB to true if not used>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo.>> make.%windir%
-echo AR     = link>> make.%windir%
-echo AROUT  = /out:>> make.%windir%
-echo RANLIB = :>> make.%windir%
-echo.>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo # these should only be set if building HDF5 interface>> make.%windir%
-echo # HDF5INC - path to HDF5 header files>> make.%windir%
-echo # HDF5LIB - HDF5 library>> make.%windir%
-echo # SZIPLIB - szip library (if needed)>> make.%windir%
-echo # ZLIBLIB - zlib library (if needed)>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo.>> make.%windir%
-echo HDF5INC = %hdf5inc%>> make.%windir%
-echo HDF5LIB = %hdf5lib%>> make.%windir%
-echo SZIPLIB = %sziplib%>> make.%windir%
-echo ZLIBLIB = %zliblib%>> make.%windir%
-echo.>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo # BUILDLIBS contains the list of additional libraries>> make.%windir%
-echo #           with which a CGNS application needs to link>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo.>> make.%windir%
-echo BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB)>> make.%windir%
-echo.>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo # commands for removing files and creating/deleting directory>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo.>> make.%windir%
-echo RM     = del /q>> make.%windir%
-echo RMDIR  = rd /s/q>> make.%windir%
-echo MKDIR  = md>> make.%windir%
-echo.>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo # installation library name and directories>> make.%windir%
-echo #>> make.%windir%
-echo # INSTALL      - install command>> make.%windir%
-echo # INSTALL_PROG - install executable>> make.%windir%
-echo # INSTALL_DATA - install data>> make.%windir%
-echo # LIBDIR       - installation directory for CGNS library>> make.%windir%
-echo # INCLUDEDIR   - installation directory for CGNS headers>> make.%windir%
-echo # BINDIR       - installation directory for CGNS executables>> make.%windir%
-echo #------------------------------------------------------------------------>> make.%windir%
-echo.>> make.%windir%
-echo INSTALL      = copy /b>> make.%windir%
-echo INSTALL_PROG = $(INSTALL)>> make.%windir%
-echo INSTALL_DATA = $(INSTALL)>> make.%windir%
-echo INSTALLDIR   = %instdir%>> make.%windir%
-echo LIBDIR       = $(INSTALLDIR)\lib>> make.%windir%
-echo INCLUDEDIR   = $(INSTALLDIR)\include>> make.%windir%
-echo BINDIR       = $(INSTALLDIR)\bin>> make.%windir%
+echo FEOUT  = /exe:>> make.defs
+echo FLIBS  =>> make.defs
+echo.>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo # strip command for executables - set to true if not used>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo.>> make.defs
+echo STRIP  = :>> make.defs
+echo.>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo # library archiver and ranlib>> make.defs
+echo # AROUT may be used to set a library output flag as:>> make.defs
+echo #    $(AR) $(AROUT)library_name objects>> make.defs
+echo # Set RANLIB to true if not used>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo.>> make.defs
+echo AR     = link>> make.defs
+echo AROUT  = /out:>> make.defs
+echo RANLIB = :>> make.defs
+echo.>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo # these should only be set if building HDF5 interface>> make.defs
+echo # HDF5INC - path to HDF5 header files>> make.defs
+echo # HDF5LIB - HDF5 library>> make.defs
+echo # SZIPLIB - szip library (if needed)>> make.defs
+echo # ZLIBLIB - zlib library (if needed)>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo.>> make.defs
+echo HDF5INC = %hdf5inc%>> make.defs
+echo HDF5LIB = %hdf5lib%>> make.defs
+echo SZIPLIB = %sziplib%>> make.defs
+echo ZLIBLIB = %zliblib%>> make.defs
+echo.>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo # BUILDLIBS contains the list of additional libraries>> make.defs
+echo #           with which a CGNS application needs to link>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo.>> make.defs
+echo BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB)>> make.defs
+echo.>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo # commands for removing files and creating/deleting directory>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo.>> make.defs
+echo RM     = del /q>> make.defs
+echo RMDIR  = rd /s/q>> make.defs
+echo MKDIR  = md>> make.defs
+echo.>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo # installation library name and directories>> make.defs
+echo #>> make.defs
+echo # INSTALL      - install command>> make.defs
+echo # INSTALL_PROG - install executable>> make.defs
+echo # INSTALL_DATA - install data>> make.defs
+echo # LIBDIR       - installation directory for CGNS library>> make.defs
+echo # INCLUDEDIR   - installation directory for CGNS headers>> make.defs
+echo # BINDIR       - installation directory for CGNS executables>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo.>> make.defs
+echo INSTALL      = copy /b>> make.defs
+echo INSTALL_PROG = $(INSTALL)>> make.defs
+echo INSTALL_DATA = $(INSTALL)>> make.defs
+echo INSTALLDIR   = %instdir%>> make.defs
+echo LIBDIR       = $(INSTALLDIR)\lib>> make.defs
+echo INCLUDEDIR   = $(INSTALLDIR)\include>> make.defs
+echo BINDIR       = $(INSTALLDIR)\bin>> make.defs
 
 rem ----- create Makefile
 
 echo creating Makefile
 echo # nmake makefile for the CGNS Library under Windows> Makefile
 echo.>> Makefile
-echo !include make.system>> Makefile
-echo !include make.$(SYSTEM)>> Makefile
+echo !include make.defs>> Makefile
 echo.>> Makefile
 echo .SUFFIXES :>> Makefile
 echo .SUFFIXES : .c .$(O) $(EXE)>> Makefile
 echo.>> Makefile
-echo OBJDIR  = $(SYSTEM)>> Makefile
+echo OBJDIR  = %builddir%>> Makefile
 echo CGNSLIB = $(LIBCGNS)>> Makefile
-echo INSTLIB = libcgns.$(A)>> Makefile
+echo INSTLIB = cgns.$(A)>> Makefile
 if %target% == dll (
-  echo CGNSDLL = $^(OBJDIR^)\libcgns.dll>> Makefile
-  echo INSTDLL = libcgns.dll>> Makefile
+  echo CGNSDLL = $^(OBJDIR^)\cgns.dll>> Makefile
+  echo INSTDLL = cgns.dll>> Makefile
 )
 echo.>> Makefile
 echo COPTS   = $(CFLAGS) $(CFGFLAGS) /I. %build% %dllopts%>> Makefile
@@ -1698,9 +1694,8 @@ echo 	-$(RM) $(CGNSLIB)>> Makefile
 if %target% == dll echo 	-$(RM) $(CGNSDLL)>> Makefile
 echo 	-$(RMDIR) $(OBJDIR)>> Makefile
 echo 	-$(RM) cgnstypes.h cgnstypes_f.h cgnslib_f.h>> Makefile
-echo 	-$(RM) make.system make.$(SYSTEM)>> Makefile
 echo 	-$(RM) *.pdb>> Makefile
-echo 	-$(RM) Makefile>> Makefile
+echo 	-$(RM) make.defs Makefile>> Makefile
 echo.>> Makefile
 echo install : %target% $(INCLUDEDIR) $(LIBDIR) %adfinc%>> Makefile
 echo 	$(INSTALL_DATA) cgnstypes.h $(INCLUDEDIR)\cgnstypes.h>> Makefile
@@ -1791,8 +1786,7 @@ echo creating tools\Makefile
 echo # nmake makefile for Windows> tools\Makefile
 echo.>> tools\Makefile
 echo CGNSDIR = ..>> tools\Makefile
-echo !include $(CGNSDIR)\make.system>> tools\Makefile
-echo !include $(CGNSDIR)\make.$(SYSTEM)>> tools\Makefile
+echo !include $(CGNSDIR)\make.defs>> tools\Makefile
 echo.>> tools\Makefile
 echo CGNSLIB = $(CGNSDIR)\$(LIBCGNS)>> tools\Makefile
 echo.>> tools\Makefile
@@ -1887,8 +1881,7 @@ echo creating tests\Makefile
 echo # nmake makefile for Windows> tests\Makefile
 echo.>> tests\Makefile
 echo CGNSDIR = ..>> tests\Makefile
-echo !include $(CGNSDIR)\make.system>> tests\Makefile
-echo !include $(CGNSDIR)\make.$(SYSTEM)>> tests\Makefile
+echo !include $(CGNSDIR)\make.defs>> tests\Makefile
 echo.>> tests\Makefile
 echo CGNSLIB = $(CGNSDIR)\$(LIBCGNS)>> tests\Makefile
 echo.>> tests\Makefile
@@ -2045,7 +2038,7 @@ echo creating cgsntools\Makefile
 echo # nmake makefile for the CGNS tools under Windows> cgnstools\Makefile
 echo.>> cgnstools\Makefile
 echo DOMAKE = nmake /nologo /f Makefile.win>> cgnstools\Makefile
-echo !include ..\make.%windir%>> cgnstools\Makefile
+echo !include ..\make.defs>> cgnstools\Makefile
 echo.>> cgnstools\Makefile
 echo defaults : cgnsview cgnsplot tools utilities>> cgnstools\Makefile
 echo install : install-config install-cgnsview install-cgnsplot \>> cgnstools\Makefile
@@ -2128,7 +2121,7 @@ echo # CGNS setup>> cgnstools\make.win
 echo #------------------------------------------------------->> cgnstools\make.win
 echo.>> cgnstools\make.win
 echo CGNSDIR  = ..\..>> cgnstools\make.win
-echo !include $(CGNSDIR)\make.%windir%>> cgnstools\make.win
+echo !include $(CGNSDIR)\make.defs>> cgnstools\make.win
 echo CGNSLIB  = $(CGNSDIR)\$(LIBCGNS)>> cgnstools\make.win
 echo.>> cgnstools\make.win
 echo SHAREDIR = $(INSTALLDIR)\share>> cgnstools\make.win

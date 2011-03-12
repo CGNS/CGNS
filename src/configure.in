@@ -12,6 +12,15 @@ define([AC_CACHE_SAVE], )dnl
 AC_INIT(cgnslib.c)
 
 #--------------------------------------------------------------------------
+# cleanup any previous build
+#--------------------------------------------------------------------------
+
+if test -f Makefile -a -f make.defs; then
+  AC_MSG_RESULT("removing previous build")
+  make distclean >/dev/null 2>&1
+fi
+
+#--------------------------------------------------------------------------
 # get the CGNS version
 #--------------------------------------------------------------------------
 
@@ -170,9 +179,44 @@ test "$ac_cv_type_size_t" = "no" && \
   CFGFLAGS="$CFGFLAGS -Dsize_t=unsigned"
 
 #--------------------------------------------------------------------------
+# installation program and directory
+#--------------------------------------------------------------------------
+
+test ! -x install-sh && \
+  chmod +x install-sh
+AC_PROG_INSTALL
+
+if test -z $prefix || test $prefix = NONE; then
+  prefix=/usr/local
+fi
+if test -z $exec_prefix || test $exec_prefix = NONE; then
+  exec_prefix=$prefix
+fi
+if test "$datadir" = "\${prefix}/share"; then
+  datadir=$datadir/cgnstools
+fi
+
+AC_MSG_CHECKING([where to install library])
+eval "LIBDIR=$libdir"
+AC_MSG_RESULT($LIBDIR)
+
+AC_MSG_CHECKING([where to install headers])
+eval "INCLUDEDIR=$includedir"
+AC_MSG_RESULT($INCLUDEDIR)
+
+AC_MSG_CHECKING([where to install executables])
+eval "BINDIR=$bindir"
+AC_MSG_RESULT($BINDIR)
+
+AC_MSG_CHECKING([where to install Tcl scripts])
+eval "LIB_INSTALL_DIR=$datadir"
+AC_MSG_RESULT($LIB_INSTALL_DIR)
+
+#--------------------------------------------------------------------------
 # get the system name and set system dependent compile flags
 #--------------------------------------------------------------------------
 
+BUILDDIR=build
 BUILD64BIT=0
 CGFSIZET=\*4
 
@@ -441,6 +485,10 @@ fi
 # check if building shared library - currently very limited support
 #--------------------------------------------------------------------------
 
+AR_LIB=$AR
+RAN_LIB=$RANLIB
+EXT_LIB=$LIBEXT
+
 AC_MSG_CHECKING([if building a shared library])
 AC_ARG_ENABLE(shared,
     [  --enable-shared[=all]   build a shared library [default=no]],,
@@ -462,15 +510,15 @@ if test $shared = yes; then
   if test "$ac_cv_prog_gcc" = "no"; then
     case $SYSTEM in
       HP*)   CFGFLAGS="+z $CFGFLAGS"
-             AR="ld -b -E +s +b $cgnsdir/\$(SYSTEM):."
-             LIBEXT=sl ;;
-      SGI*)  AR="\$(CC) -shared $SYSCFLAGS -Wl,-rpath,$cgnsdir/\$(SYSTEM)"
-             LIBEXT=so ;;
-      ALPHA) AR="\$(CC) -shared $SYSCFLAGS"
-             LIBEXT=so ;;
+             AR_LIB="ld -b -E +s +b $LIBDIR:$cgnsdir/$BUILDDIR:. -o"
+             EXT_LIB=sl ;;
+      SGI*)  AR_LIB="\$(CC) -shared $SYSCFLAGS -Wl,-rpath,$cgnsdir/$BUILDDIR -o"
+             EXT_LIB=so ;;
+      ALPHA) AR_LIB="\$(CC) -shared $SYSCFLAGS -o"
+             EXT_LIB=so ;;
       SUN*)  CFGFLAGS="-KPIC $CFGFLAGS"
-             AR="\$(CC) -G $SYSCFLAGS -Wl,-R,$cgnsdir/\$(SYSTEM)"
-             LIBEXT=so ;;
+             AR_LIB="\$(CC) -G $SYSCFLAGS -Wl,-R,$LIBDIR -Wl,-R,$cgnsdir/$BUILDDIR -o"
+             EXT_LIB=so ;;
       *) AC_WARN([don't know how to build shared lib for $SYSTEM])
          shared=no ;;
     esac
@@ -480,13 +528,12 @@ if test $shared = yes; then
       shared=no
     else
       CFGFLAGS="-fPIC $CFGFLAGS"
-      AR="\$(CC) -shared $SYSCFLAGS -Wl,-rpath,$cgnsdir/\$(SYSTEM)"
-      LIBEXT=so
+      AR_LIB="\$(CC) -shared $SYSCFLAGS -Wl,-rpath,$LIBDIR:$cgnsdir/$BUILDDIR -o"
+      EXT_LIB=so
     fi
   fi
   if test $shared = yes; then
-    AROUT="-o \$(SPACE)"
-    RANLIB="\$(STRIP)"
+    RAN_LIB="\$(STRIP)"
   fi
 fi
 
@@ -1007,40 +1054,6 @@ else
 fi
 
 #--------------------------------------------------------------------------
-# installation program and directory
-#--------------------------------------------------------------------------
-
-test ! -x install-sh && \
-  chmod +x install-sh
-AC_PROG_INSTALL
-
-if test -z $prefix || test $prefix = NONE; then
-  prefix=/usr/local
-fi
-if test -z $exec_prefix || test $exec_prefix = NONE; then
-  exec_prefix=$prefix
-fi
-if test "$datadir" = "\${prefix}/share"; then
-  datadir=$datadir/cgnstools
-fi
-
-AC_MSG_CHECKING([where to install library])
-eval "LIBDIR=$libdir"
-AC_MSG_RESULT($LIBDIR)
-
-AC_MSG_CHECKING([where to install headers])
-eval "INCLUDEDIR=$includedir"
-AC_MSG_RESULT($INCLUDEDIR)
-
-AC_MSG_CHECKING([where to install executables])
-eval "BINDIR=$bindir"
-AC_MSG_RESULT($BINDIR)
-
-AC_MSG_CHECKING([where to install Tcl scripts])
-eval "LIB_INSTALL_DIR=$datadir"
-AC_MSG_RESULT($LIB_INSTALL_DIR)
-
-#--------------------------------------------------------------------------
 # substitutions and write Makefile and make.defs
 #--------------------------------------------------------------------------
 
@@ -1083,6 +1096,7 @@ AC_SUBST(SYSTEM)
 AC_SUBST(CGNSVERS)
 AC_SUBST(LIBEXT)
 AC_SUBST(BUILDOPTS)
+AC_SUBST(BUILDDIR)
 
 AC_SUBST(ADFOBJS)
 AC_SUBST(ADFINCS)
@@ -1111,6 +1125,10 @@ AC_SUBST(FLIBS)
 AC_SUBST(AR)
 AC_SUBST(AROUT)
 AC_SUBST(RANLIB)
+
+AC_SUBST(AR_LIB)
+AC_SUBST(RAN_LIB)
+AC_SUBST(EXT_LIB)
 
 AC_SUBST(LIBDIR)
 AC_SUBST(INCLUDEDIR)
@@ -1159,24 +1177,7 @@ AC_SUBST(TCL_LIBRARY_SPEC)
 AC_SUBST(TK_LIBRARY_SPEC)
 AC_SUBST(LIBRARY_PATH_SPEC)
 
-echo "creating make.system"
-echo "SYSTEM=$SYSTEM" > make.system
-
 AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnslib_f.h Makefile make.defs \
   tests/Makefile tools/Makefile cgnstools/Makefile cgnstools/make.defs \
   cgnstools/cgconfig)
-
-test -f make.$SYSTEM && /bin/rm -f make.$SYSTEM
-if test -f make.defs && test ! -f make.$SYSTEM; then
-  echo "renaming make.defs to make.$SYSTEM"
-  mv make.defs make.$SYSTEM
-fi
-
-#--------------------------------------------------------------------------
-# remove the old object files (if any)
-#--------------------------------------------------------------------------
-
-test -d $SYSTEM && /bin/rm -f $SYSTEM/*.$OBJEXT
-test -d tests && /bin/rm -f tests/*.$OBJEXT
-test -d tools && /bin/rm -f tests/*.$OBJEXT
 

@@ -1,26 +1,16 @@
 # makefile for the CGNS Library
-#
-# executing as:
-#    make
-# will build the CGNS library for the system
-# defined in make.system
-#
-# executing as:
-#     make SYSTEM=system_name
-# will build for system "system_name"
 
-include make.system
-include make.$(SYSTEM)
+include make.defs
 
 CGNSVER = @CGNSVERS@
 
 .SUFFIXES :
 .SUFFIXES : .c .$(O) $(EXE)
 
-OBJDIR  = $(SYSTEM)
+OBJDIR  = @BUILDDIR@
 COPTS	= $(CFLAGS) $(CFGFLAGS) -I. @BUILDOPTS@
 CGNSLIB = $(LIBCGNS)
-INSTLIB = libcgns.$(A)
+INSTLIB = libcgns.@EXT_LIB@
 
 #----------
 
@@ -46,10 +36,12 @@ ADFOBJS=@ADFOBJS@ \
 lib : $(CGNSLIB)
 all : lib tools tests cgnstools
 
+#----------
+
 $(CGNSLIB) : $(OBJDIR) $(CGNSOBJS) $(ADFOBJS) $(F2COBJS)
 	-@$(RM) $@
-	$(AR) $(AROUT)$@ $(CGNSOBJS) $(ADFOBJS) $(F2COBJS)
-	$(RANLIB) $@
+	@AR_LIB@ $@ $(CGNSOBJS) $(ADFOBJS) $(F2COBJS)
+	@RAN_LIB@ $@
 
 $(OBJDIR) :
 	-$(MKDIR) $(OBJDIR)
@@ -89,8 +81,7 @@ distclean :
 	-$(RM) $(OBJDIR)/*.$(O)
 	-$(RMDIR) $(OBJDIR)
 	-$(RM) cgnstypes.h cgnstypes_f.h cgnslib_f.h
-	-$(RM) make.system make.defs make.$(SYSTEM)
-	-$(RM) config.log config.status Makefile
+	-$(RM) config.log config.status make.defs Makefile
 
 install : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR) @INSTALLADF@
 	$(INSTALL_DATA) cgnstypes.h $(INCLUDEDIR)/cgnstypes.h

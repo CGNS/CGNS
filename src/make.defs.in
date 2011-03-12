@@ -30,7 +30,8 @@ SPACE   =
 O       = @OBJEXT@
 A       = @LIBEXT@
 EXE     = @EXEEXT@
-LIBCGNS = @SYSTEM@/libcgns.@LIBEXT@
+
+LIBCGNS = @BUILDDIR@/libcgns.@EXT_LIB@
 
 #------------------------------------------------------------------------
 # F2CFLAGS defines the type of Fortran to C interface.
