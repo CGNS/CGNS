@@ -5,8 +5,7 @@ array set HelpData {
   filelist ""
   winhtml 0
   chmfile ""
-  cgns,http "http://www.grc.nasa.gov/www/cgns/index.html"
-  adf,http "http://www.grc.nasa.gov/www/cgns/adf/index.html"
+  cgns,http "http://www.grc.nasa.gov/www/cgns/CGNS_docs_current/index.html"
 }
 
 proc get_browser {} {

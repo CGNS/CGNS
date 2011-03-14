@@ -16,7 +16,7 @@ if {[catch {package require Tk 8.0} msg]} {
 
 if {$argc} {
   set version [lindex $argv [expr $argc - 1]]
-  if {[lsearch {1.1 1.2 1.27 2.0 2.1 2.2 2.3 2.4 2.52 2.53 3.0} $version] < 0} {
+  if {[lsearch {1.1 1.2 1.27 2.0 2.1 2.2 2.3 2.4 2.52 2.53 3.0 3.1} $version] < 0} {
     error_exit "invalid CGNS version number : $version"
   }
 } else {
