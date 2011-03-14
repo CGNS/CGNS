@@ -216,7 +216,7 @@ AC_MSG_RESULT($LIB_INSTALL_DIR)
 # get the system name and set system dependent compile flags
 #--------------------------------------------------------------------------
 
-BUILDDIR=build
+BUILDDIR=lib
 BUILD64BIT=0
 CGFSIZET=\*4
 

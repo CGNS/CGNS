@@ -11,7 +11,7 @@ set build=
 set dolegacy=0
 set do64bit=0
 set scope=0
-set target=lib
+set target=cgns
 set make=nmake /nologo
 set f2c=
 set f77=f77
@@ -27,7 +27,7 @@ set tcllib=
 set tklib=
 set plotopts=
 set instdir=c:\cgnslib
-set builddir=build
+set builddir=lib
 
 set drive=%~d0
 set cgnsdir=%~dps0
@@ -1644,7 +1644,7 @@ echo.>> Makefile
 echo #---------->> Makefile
 echo.>> Makefile
 if %target% == dll echo dll : $^(CGNSDLL^)>> Makefile
-echo lib : $(CGNSLIB)>> Makefile
+echo cgns : $(CGNSLIB)>> Makefile
 echo all : %target% tools tests cgnstools>> Makefile
 echo.>> Makefile
 echo #---------->> Makefile

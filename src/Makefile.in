@@ -33,8 +33,8 @@ ADFOBJS=@ADFOBJS@ \
 
 #----------
 
-lib : $(CGNSLIB)
-all : lib tools tests cgnstools
+cgns : $(CGNSLIB)
+all : $(CGNSLIB) tools tests cgnstools
 
 #----------
 
