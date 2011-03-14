@@ -1814,7 +1814,7 @@ echo "$ac_t""$LIB_INSTALL_DIR" 1>&6
 # get the system name and set system dependent compile flags
 #--------------------------------------------------------------------------
 
-BUILDDIR=build
+BUILDDIR=lib
 BUILD64BIT=0
 CGFSIZET=\*4
 

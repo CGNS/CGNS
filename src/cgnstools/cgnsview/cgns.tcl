@@ -757,7 +757,7 @@ array set CGNSnodeRef {
   ZoneType_t {}
 }
 
-set CGNSlibraryVersion 2.5
+set CGNSlibraryVersion 3.1
 
 #----- initialize CGNS nodes
 
@@ -766,7 +766,7 @@ proc cgns_init {{version ""}} {
   global CGNSnodeDesc CGNSdataValues
 
   if {$version == "" && [catch CGNSversion version]} {
-    set CGNSlibraryVersion 2.5
+    set CGNSlibraryVersion 3.1
   } else {
     set CGNSlibraryVersion $version
   }
@@ -1001,7 +1001,7 @@ proc cgns_init {{version ""}} {
       TemperatureUnits_t {Null UserDefined Kelvin Celsius Rankine Fahrenheit}
     }
   }
-  if {$version >= 3000} {
+  if {$version >= 3100} {
     set CGNSnodeDesc(Elements_t) {{user defined} Elements_t {0,N} I4 1 2 \
       {ElementType, ElementSizeBoundary
 
