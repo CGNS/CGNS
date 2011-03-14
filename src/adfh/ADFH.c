@@ -283,16 +283,20 @@ if (mta_root == NULL){set_error(ADFH_ERR_ROOTNULL, err);return 1;}
                         (r)->fileno[1]==(n)->fileno[1])
 
 static herr_t gfind_by_name(hid_t, const char *, void *);
-static herr_t gprint_name(hid_t, const char *, void *);
 static herr_t find_by_name(hid_t, const char *, const H5A_info_t*, void *);
-static herr_t print_name(hid_t, const char *, const H5A_info_t*, void *);
 
 #define has_child(ID,NAME) H5Giterate(ID,".",NULL,gfind_by_name,(void *)NAME)
 #define has_data(ID)       H5Giterate(ID,".",NULL,gfind_by_name,(void *)D_DATA)
-#define show_grp(ID)       H5Giterate(ID,".",NULL,gprint_name,(void *)"GRP")
 
 #define has_att(ID,NAME)   H5Aiterate2(ID,H5_INDEX_NAME,H5_ITER_NATIVE,NULL,find_by_name,(void *)NAME)
+
+#if 0
+static herr_t gprint_name(hid_t, const char *, void *);
+static herr_t print_name(hid_t, const char *, const H5A_info_t*, void *);
+
+#define show_grp(ID)       H5Giterate(ID,".",NULL,gprint_name,(void *)"GRP")
 #define show_att(ID,NAME)  H5Aiterate2(ID,H5_INDEX_NAME,H5_ITER_NATIVE,NULL,print_name,(void *)NAME)
+#endif
 
 /* ----------------------------------------------------------------
  * set error and terminate if error state set
@@ -767,18 +771,19 @@ static herr_t gfind_by_name(hid_t id, const char *name, void *dsname)
 
 /* ----------------------------------------------------------------- */
 
-static herr_t gprint_name(hid_t id, const char *name, void *dsname)
-{
-  return 0;
-}
-
-/* ----------------------------------------------------------------- */
-
 static herr_t find_by_name(hid_t id, const char *name, const H5A_info_t* ainfo, void *dsname)
 {
     ADFH_CHECK_HID(id);
     if (0 == strcmp (name, (char *)dsname)) return 1;
     return 0;
+}
+
+#if 0
+/* ----------------------------------------------------------------- */
+
+static herr_t gprint_name(hid_t id, const char *name, void *dsname)
+{
+  return 0;
 }
 
 /* ----------------------------------------------------------------- */
@@ -788,6 +793,7 @@ static herr_t print_name(hid_t id, const char *name, const H5A_info_t* ainfo, vo
   printf("[%s]:[%s]\n",(char*)dsname,name);
   return 0;
 }
+#endif
 
 /* ----------------------------------------------------------------- */
 

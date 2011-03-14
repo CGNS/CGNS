@@ -33,14 +33,14 @@ static void print_interface (ZONE *zone)
     for (ni = 0; ni < zone->nints; ni++) {
         printf ("  interface %d - %s\n", ints[ni].id, ints[ni].name);
         printf ("    range       = %d %d %d %d %d %d\n",
-            ints[ni].range[0][0], ints[ni].range[0][1],
-            ints[ni].range[1][0], ints[ni].range[1][1],
-            ints[ni].range[2][0], ints[ni].range[2][1]);
+            (int)ints[ni].range[0][0], (int)ints[ni].range[0][1],
+            (int)ints[ni].range[1][0], (int)ints[ni].range[1][1],
+            (int)ints[ni].range[2][0], (int)ints[ni].range[2][1]);
         printf ("    donor name  = %s\n", ints[ni].d_name);
         printf ("    donor range = %d %d %d %d %d %d\n",
-            ints[ni].d_range[0][0], ints[ni].d_range[0][1],
-            ints[ni].d_range[1][0], ints[ni].d_range[1][1],
-            ints[ni].d_range[2][0], ints[ni].d_range[2][1]);
+            (int)ints[ni].d_range[0][0], (int)ints[ni].d_range[0][1],
+            (int)ints[ni].d_range[1][0], (int)ints[ni].d_range[1][1],
+            (int)ints[ni].d_range[2][0], (int)ints[ni].d_range[2][1]);
         printf ("    transform   = %d %d %d\n", ints[ni].transform[0],
             ints[ni].transform[1], ints[ni].transform[2]);
         printf ("    donor zone  = %d\n", ints[ni].d_zone);
@@ -60,10 +60,10 @@ static void print_connect (ZONE *zone)
         printf ("    type          = %d\n", conns[nc].type);
         printf ("    location      = %d\n", conns[nc].location);
         printf ("    pt type       = %d\n", conns[nc].ptype);
-        printf ("    points        = %d\n", conns[nc].npnts);
+        printf ("    points        = %d\n", (int)conns[nc].npnts);
         printf ("    donor name    = %s\n", conns[nc].d_name);
         printf ("    donor pt type = %d\n", conns[nc].d_ptype);
-        printf ("    donor points  = %d\n", conns[nc].d_npnts);
+        printf ("    donor points  = %d\n", (int)conns[nc].d_npnts);
         printf ("    donor zone    = %d\n", conns[nc].d_zone);
     }
 }
@@ -83,7 +83,7 @@ static void print_solution (ZONE *zone)
             sols[ns].rind[0][0], sols[ns].rind[0][1],
             sols[ns].rind[1][0], sols[ns].rind[1][1],
             sols[ns].rind[2][0], sols[ns].rind[2][1]);
-        printf ("    size     = %d\n", sols[ns].size);
+        printf ("    size     = %d\n", (int)sols[ns].size);
         printf ("    fields   = %d\n", sols[ns].nflds);
         for (nf = 0; nf < sols[ns].nflds; nf++)
             printf ("      %s\n", sols[ns].flds[nf].name);
@@ -136,8 +136,8 @@ int main (int argc, char *argv[])
     for (z = Zones, nz = 1; nz <= nZones; nz++, z++) {
         printf ("\nzone %d - %s\n", z->id, z->name);
         printf ("type      = %d\n", z->type);
-        printf ("dimension = %d x %d x %d\n", z->dim[0],
-            z->dim[1], z->dim[2]);
+        printf ("dimension = %d x %d x %d\n", (int)z->dim[0],
+            (int)z->dim[1], (int)z->dim[2]);
         printf ("1to1      = %d\n", z->nints);
         if (verbose) print_interface (z);
         printf ("connects  = %d\n", z->nconns);
