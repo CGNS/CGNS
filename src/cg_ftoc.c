@@ -1460,6 +1460,29 @@ CGNSDLL void FMNAME(cg_boco_normal_write_f, CG_BOCO_NORMAL_WRITE_F) (
                (CGNS_ENUMT(DataType_t))*NormalDataType, NormalList);
 }
 
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cg_boco_gridlocation_read_f, CG_BOCO_GRIDLOCATION_READ_F) (
+	cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *BC,
+	cgsize_t *location, cgsize_t *ier)
+{
+    CGNS_ENUMT(GridLocation_t) i_location;
+
+    *ier = cg_boco_gridlocation_read((int)*fn, (int)*B, (int)*Z,
+               (int)*BC, &i_location);
+    *location = i_location;
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cg_boco_gridlocation_write_f, CG_BOCO_GRIDLOCATION_WRITE_F) (
+	cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *BC,
+	cgsize_t *location, cgsize_t *ier)
+{
+    *ier = cg_boco_gridlocation_write((int)*fn, (int)*B, (int)*Z,
+               (int)*BC, (CGNS_ENUMT(GridLocation_t))*location);
+}
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write BCProperty_t/WallFunction_t Nodes                 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

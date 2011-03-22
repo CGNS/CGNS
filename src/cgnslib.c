@@ -2280,6 +2280,23 @@ int cg_boco_id(int file_number, int B, int Z, int BC, double *boco_id) {
     return CG_OK;
 }
 
+int cg_boco_gridlocation_read(int file_number, int B, int Z,
+	int BC, CGNS_ENUMT(GridLocation_t) *location)
+{
+    cgns_boco *boco;
+
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    boco = cgi_get_boco(cg, B, Z, BC);
+    if (boco==0) return CG_ERROR;
+
+    *location = boco->location;
+    return CG_OK;
+}
+
 /*****************************************************************************\
  *          Inquiry Functions for BCDataSet_t Nodes
 \*****************************************************************************/
@@ -6312,6 +6329,45 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
             (void *)pnts)) return CG_ERROR;
     }
 
+    return CG_OK;
+}
+
+int cg_boco_gridlocation_write(int file_number, int B, int Z,
+	int BC, CGNS_ENUMT(GridLocation_t) location)
+{
+    cgns_boco *boco;
+    cgsize_t dim_vals;
+    double dummy_id;
+
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    boco = cgi_get_boco(cg, B, Z, BC);
+    if (boco==0) return CG_ERROR;
+
+    if (location != CGNS_ENUMV(Vertex) &&
+        location != CGNS_ENUMV(FaceCenter) &&
+        location != CGNS_ENUMV(IFaceCenter) &&
+        location != CGNS_ENUMV(JFaceCenter) &&
+        location != CGNS_ENUMV(KFaceCenter)) {
+        cgi_error("GridLocation %d invalid for BC_t", location);
+        return CG_ERROR;
+    }
+    if ((location == CGNS_ENUMV(IFaceCenter) ||
+         location == CGNS_ENUMV(JFaceCenter) ||
+         location == CGNS_ENUMV(KFaceCenter)) &&
+        cg->base[B-1].zone[Z-1].type != CGNS_ENUMV(Structured)) {
+        cgi_error("GridLocation [IJK]FaceCenter only valid for Structured Grid");
+        return CG_ERROR;
+    }
+    boco->location = location;
+
+    dim_vals = (cgsize_t)strlen(GridLocationName[location]);
+    if (cgi_new_node(boco->id, "GridLocation", "GridLocation_t",
+            &dummy_id, "C1", 1, &dim_vals,
+            (void *)GridLocationName[location])) return CG_ERROR;
     return CG_OK;
 }
 

@@ -953,6 +953,11 @@ CGNSDLL int cg_boco_normal_write(int file_number, int B, int Z, int BC,
 	const int * NormalIndex, int NormalListFlag,
 	CGNS_ENUMT(DataType_t) NormalDataType, const void * NormalList);
 
+CGNSDLL int cg_boco_gridlocation_read(int file_number, int B, int Z,
+	int BC, CGNS_ENUMT(GridLocation_t) *location);
+CGNSDLL int cg_boco_gridlocation_write(int file_number, int B, int Z,
+	int BC, CGNS_ENUMT(GridLocation_t) location);
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write BCDataSet_t Nodes                                 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
