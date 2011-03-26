@@ -910,14 +910,14 @@ extern cgns_file *cgns_files;
 extern cgns_file *cg;       /* current file             */
 extern int n_cgns_files;
 extern int file_number_offset;
-CGNSDLL int CGNSLibVersion; /* CGNSLib Version number       */
+extern int CGNSLibVersion; /* CGNSLib Version number       */
 
 /* goto stuff */
 
-CGNSDLL cgns_posit *posit;
-CGNSDLL int posit_file, posit_base, posit_zone;
-CGNSDLL int posit_depth;
-CGNSDLL cgns_posit posit_stack[CG_MAX_GOTO_DEPTH+1];
+extern cgns_posit *posit;
+extern int posit_file, posit_base, posit_zone;
+extern int posit_depth;
+extern cgns_posit posit_stack[CG_MAX_GOTO_DEPTH+1];
 
 /*
  * Internal Functions
