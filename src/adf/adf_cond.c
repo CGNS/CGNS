@@ -67,7 +67,7 @@ static int    IncludeLink = FALSE ;
 static int    PrintFlag = FALSE ;
 static int    NumDims ;
 static int    PathLength ;
-static int    DimVals[ADF_MAX_DIMENSIONS*2] ;
+static cgsize_t DimVals[ADF_MAX_DIMENSIONS*2] ;
 static char   input[ADF_FILENAME_LENGTH+1] ;
 static char   label[ADF_LABEL_LENGTH+1] ;
 static char   format[ADF_FORMAT_LENGTH+1] ;

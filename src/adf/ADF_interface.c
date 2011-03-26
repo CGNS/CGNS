@@ -119,6 +119,7 @@ static char ADF_A_identification[] = "\300\250\243\251ADF Database Version A0201
 #include "ADF.h"
 #include "ADF_internals.h"
 #include "cgnstypes.h"
+#include "cgns_io.h"
 
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
@@ -1388,11 +1389,7 @@ output: int *error_return	Error return.
 ***********************************************************************/
 void	ADF_Get_Dimension_Values(
 		const double ID,
-#if CG_BUILD_LEGACY
-		int dim_vals[],
-#else
-		cglong_t dim_vals[],
-#endif
+		cgsize_t dim_vals[],
 		int *error_return )
 {
 unsigned int 			file_index ;
@@ -1425,11 +1422,13 @@ if( node.number_of_dimensions > ADF_MAX_DIMENSIONS ) {
 
 	/** Copy the dimension information **/
 for( i=0; i<(int)node.number_of_dimensions; i++ ) {
-#if CG_BUILD_LEGACY
-   dim_vals[i] = (int)node.dimension_values[i] ;
-#else
-   dim_vals[i] = (cglong_t)node.dimension_values[i] ;
+#if CG_SIZEOF_SIZE == 32
+  if (node.dimension_values[i] > CG_MAX_INT32) {
+    *error_return = CGIO_ERR_DIMENSIONS;
+    CHECK_ADF_ABORT( *error_return ) ;
+  }
 #endif
+   dim_vals[i] = (cgsize_t)node.dimension_values[i] ;
 }
 
 } /* end of ADF_Get_Dimension_Values */

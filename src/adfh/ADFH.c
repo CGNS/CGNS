@@ -2368,11 +2368,7 @@ void ADFH_Get_Number_of_Dimensions(const double  id,
 /* ----------------------------------------------------------------- */
 
 void ADFH_Get_Dimension_Values(const double  id,
-#if CG_BUILD_LEGACY
-                               int     dim_vals[],
-#else
-                               cglong_t     dim_vals[],
-#endif
+                               cgsize_t      dim_vals[],
                                int           *err)
 {
   int i, ndims, swap = 0;
@@ -2393,25 +2389,25 @@ void ADFH_Get_Dimension_Values(const double  id,
       ndims = H5Sget_simple_extent_ndims(sid);
       if (ndims > 0) {
         H5Sget_simple_extent_dims(sid, temp_vals, NULL);
+#if CG_SIZEOF_SIZE == 32
+        for (i = 0; i < ndims; i++) {
+          if (temp_vals[i] > CG_MAX_INT32) {
+            set_error(CGIO_ERR_DIMENSIONS, err);
+            return;
+          }
+        }
+#endif
 #ifdef ADFH_FORTRAN_INDEXING
         if (ndims > 1) swap = swap_dimensions(hid);
 #endif
         if (swap) {
 	  for (i = 0; i < ndims; i++) {
-#if CG_BUILD_LEGACY
-            dim_vals[i] = (int)temp_vals[ndims-1-i];
-#else
-            dim_vals[i] = (cglong_t)temp_vals[ndims-1-i];
-#endif
+            dim_vals[i] = (cgsize_t)temp_vals[ndims-1-i];
 	  }
         }
         else {
 	  for (i = 0; i < ndims; i++) {
-#if CG_BUILD_LEGACY
-            dim_vals[i] = (int)temp_vals[i];
-#else
-            dim_vals[i] = (cglong_t)temp_vals[i];
-#endif
+            dim_vals[i] = (cgsize_t)temp_vals[i];
 	  }
         }
       }
