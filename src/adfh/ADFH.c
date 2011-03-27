@@ -2392,8 +2392,8 @@ void ADFH_Get_Dimension_Values(const double  id,
 #if CG_SIZEOF_SIZE == 32
         for (i = 0; i < ndims; i++) {
           if (temp_vals[i] > CG_MAX_INT32) {
-            set_error(CGIO_ERR_DIMENSIONS, err);
-            return;
+            set_error(BAD_DIMENSION_VALUE, err);
+            break;
           }
         }
 #endif
