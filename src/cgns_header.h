@@ -25,6 +25,15 @@ freely, subject to the following restrictions:
 #include "cgnstypes.h"
 #include "cgns_io.h"
 
+/* define this to enable CellCenter GridLocation for BC_t
+   not allowed in CPEX 0031
+#define CG_ALLOW_BC_CELL_CENTER
+*/
+
+/* this splits ParentData into ParentElements and ParentElementsPosition
+   Required by CPEX 0031 */
+#define CG_SPLIT_PARENT_DATA
+
 typedef char char_33[33];
 typedef char const cchar_33[33];
 typedef cgsize_t cgsize6_t[6];
@@ -260,6 +269,7 @@ typedef struct {            /* DiscreteData_t Node                  */
     int in_link;            /* set if child of a linked node        */
     int ndescr;             /* no of Descriptor_t nodes             */
     cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
+    cgns_ptset *ptset;      /* PointList, PointRange                */
     CGNS_ENUMT(GridLocation_t) location;/* Grid location where data is recorded*/
     int *rind_planes;       /* No. of rind-planes on each zone face */
     int narrays;            /* number of data arrays                */
@@ -527,12 +537,17 @@ typedef struct {            /* Elements_t node                      */
     int in_link;            /* set if child of a linked node        */
     int ndescr;             /* no of Descriptor_t nodes             */
     cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-    CGNS_ENUMT(ElementType_t) el_type;  /* element type                         */
+    CGNS_ENUMT(ElementType_t) el_type;  /* element type             */
     int el_bound;           /* nr of bound. el. if sorted, else 0   */
     cgsize_t range[2];      /* index of first and last element  */
     int *rind_planes;       /* No. of rind-elements                 */
     cgns_array *connect;    /* ElementConnectivity                  */
+#ifdef CG_SPLIT_PARENT_DATA
+    cgns_array *parelem;    /* ParentElements                       */
+    cgns_array *parface;    /* ParentElementsPosition               */
+#else
     cgns_array *parent;     /* Parent Data                          */
+#endif
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
 } cgns_section;
@@ -655,6 +670,7 @@ typedef struct {            /* FlowSolution_t node          */
     int in_link;            /* set if child of a linked node        */
     int ndescr;             /* no of Descriptor_t nodes             */
     cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
+    cgns_ptset *ptset;      /* PointList, PointRange                */
     CGNS_ENUMT(GridLocation_t) location;/* Grid location type                 */
     int *rind_planes;       /* No. of rind-planes on each zone face */
     int nfields;            /* number of flow solution arrays       */
@@ -746,6 +762,28 @@ typedef struct {            /* BaseIterativeData_t node     */  /* V2.0 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
 } cgns_biter;
 
+typedef struct {            /* ZoneSubRegion_t Node                 */
+    char_33 name;           /* name of ADF node                     */
+    double id;              /* ADF ID number (address) of node      */
+    cgns_link *link;        /* link information         */  /* V2.1 */
+    int in_link;            /* set if child of a linked node        */
+    int reg_dim;            /* nr of indices to specify a node      */
+    int ndescr;             /* no of Descriptor_t nodes             */
+    cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
+    int narrays;            /* no. of data arrays                   */
+    cgns_array *array;      /* ptrs to in-mem. copy of misc. arrays */
+    cgns_ptset *ptset;      /* PointList, PointRange                */
+    cgns_descr *bcname;     /* BC_t node name                       */
+    cgns_descr *gcname;     /* GridConnectivity node name           */
+    CGNS_ENUMT(DataClass_t) data_class; /* Class of data            */
+    cgns_units *units;      /* Dimensional Units                    */
+    CGNS_ENUMT(GridLocation_t) location;/* Grid location where data is recorded */
+    char_33 family_name;    /* Family name                          */
+    int *rind_planes;       /* No. of rind-planes on each zone face */
+    int nuser_data;         /* number of user defined data nodes    */
+    cgns_user_data *user_data; /* User defined data.                */
+} cgns_subreg;
+
 typedef struct {            /* Zone_t Node              */
     char_33 name;           /* name of ADF node                     */
     double id;              /* ADF ID number (address) of node      */
@@ -767,6 +805,9 @@ typedef struct {            /* Zone_t Node              */
     cgns_discrete *discrete;/* ptrs to in-memory copy of discrete   */
     int nintegrals;         /* number of IntegralData_t nodes   */
     cgns_integral *integral;/* ptrs to in-memory copy of integral   */
+    /* version 3.2 - multiple ZoneGridConnectivity_t */
+    int active_zconn;       /* currently active zconn */
+    int nzconn;             /* no of ZoneGridConnectivity_t nodes */
     cgns_zconn *zconn;      /* ptrs to in-mem. copy of ZoneGridConn.*/
     cgns_zboco *zboco;      /* ptrs to in-memory copies of ZoneBC   */
     cgns_state *state;      /* ptrs to in-memory copies of Ref.state*/
@@ -783,6 +824,9 @@ typedef struct {            /* Zone_t Node              */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
     cgns_rotating *rotating;/* ptrs to in-memory copy of Rot. Coord.*/      /* V2.2 */
+    /* version 3.2 */
+    int nsubreg;            /* num subregions */
+    cgns_subreg *subreg;    /* subregion ptrs */
 } cgns_zone;
 
 typedef struct {            /*                                      */
@@ -941,6 +985,7 @@ CGNSDLL cgns_array     *cgi_get_coord  (cgns_file *cg, int B, int Z, int C);
 CGNSDLL cgns_section   *cgi_get_section(cgns_file *cg, int B, int Z, int S);
 CGNSDLL cgns_sol       *cgi_get_sol    (cgns_file *cg, int B, int Z, int S);
 CGNSDLL cgns_array     *cgi_get_field  (cgns_file *cg, int B, int Z, int S, int F);
+CGNSDLL cgns_zconn     *cgi_get_zconnZC(cgns_file *cg, int B, int Z, int C);
 CGNSDLL cgns_zconn     *cgi_get_zconn  (cgns_file *cg, int B, int Z);
 CGNSDLL cgns_hole      *cgi_get_hole   (cgns_file *cg, int B, int Z, int I);
 CGNSDLL cgns_conn      *cgi_get_conn   (cgns_file *cg, int B, int Z, int I);
@@ -962,6 +1007,7 @@ CGNSDLL cgns_amotion   *cgi_get_amotion  (cgns_file *cg, int B, int Z, int R);
 CGNSDLL cgns_rotating  *cgi_get_rotating (cgns_file *cg, int B, int Z);
 CGNSDLL cgns_bprop     *cgi_get_bprop    (cgns_file *cg, int B, int Z, int BC);
 CGNSDLL cgns_cprop     *cgi_get_cprop    (cgns_file *cg, int B, int Z, int I);
+CGNSDLL cgns_subreg    *cgi_get_subreg   (cgns_file *cg, int B, int Z, int S);
 
 /* find position lead by the goto function */
 CGNSDLL int cgi_update_posit(int cnt, int *index, char **label);
@@ -1003,6 +1049,8 @@ int cgi_read_base(cgns_base *base);
 int cgi_read_zone(cgns_zone *zone);
   int cgi_read_zonetype(double parent_id, char_33 parent_name, CGNS_ENUMT(ZoneType_t) *type);
 int cgi_read_family(cgns_family *family);
+int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
+                            cgns_dataset **dataset);
 int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
                          char_33 family_name);
 int cgi_read_array(cgns_array *array, char *parent_label, double parent_id);
@@ -1011,6 +1059,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 int cgi_read_hole(cgns_hole *hole);
 int cgi_read_conn(cgns_conn *conn);
 int cgi_read_1to1(cgns_1to1 *one21);
+int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **ptset);
 int cgi_read_ptset(double parent_id, cgns_ptset *ptset);
 int cgi_read_string(double id, char_33 name, char **string_data);
 int cgi_read_boco(cgns_boco *boco);
@@ -1033,7 +1082,7 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
 int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol);
 int cgi_read_zcoor(int in_link, double parent_id, int *nzcoor,
                    cgns_zcoor **zcoor);
-int cgi_read_zconn(int in_link, double parent_id, cgns_zconn **zconn);
+int cgi_read_zconn(int in_link, double parent_id, int *nzconn, cgns_zconn **zconn);
 int cgi_read_zboco(int in_link, double parent_id, cgns_zboco **zboco);
 int cgi_read_dataset(int in_link, double parent_id, int *ndataset,
                      cgns_dataset **dataset);
@@ -1056,6 +1105,8 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop);
 int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop);
 int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
                        cgns_user_data **user_data);
+int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
+                       cgns_subreg **subreg);
 cgns_link *cgi_read_link(double node_id);
 
 CGNSDLL int cgi_datasize(int Idim, cgsize_t *CurrentDim,
@@ -1160,6 +1211,8 @@ int cgi_check_mode(char const * filename, int file_mode, int mode_wanted);
 const char *cgi_adf_datatype(CGNS_ENUMT(DataType_t) type);
 CGNSDLL CGNS_ENUMT(DataType_t) cgi_datatype(cchar_33 adf_type);
 int cgi_check_dimensions(int ndims, cglong_t *dims);
+int cgi_check_location(int dim, CGNS_ENUMT(ZoneType_t) type,
+	CGNS_ENUMT(GridLocation_t) loc);
 CGNSDLL int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data);
 int cgi_convert_data(cgsize_t cnt,
 	CGNS_ENUMT(DataType_t) from_type, const void *from_data,
@@ -1221,7 +1274,7 @@ void cgi_free_cperio(cgns_cperio *cperio);
 void cgi_free_caverage(cgns_caverage *caverage);
 void cgi_free_link(cgns_link *link);
 void cgi_free_user_data(cgns_user_data *user_data);
-
+void cgi_free_subreg(cgns_subreg *subreg);
 
 #ifdef __cplusplus
 }

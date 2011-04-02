@@ -15,7 +15,7 @@ if (ENABLE_HDF5 AND HDF5_LIBRARY)
     link_libraries(${SZIP_LIBRARY})
   endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
   if(HDF5_NEED_MPI AND MPI_LIBRARY)
-    link_libraries(${MPI_LIBRARY})
+    link_libraries(${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
   endif(HDF5_NEED_MPI AND MPI_LIBRARY)
 endif (ENABLE_HDF5 AND HDF5_LIBRARY)
 
@@ -38,6 +38,8 @@ set(test_goto_FILES
 	test_goto.c)
 set(test_partial_FILES
 	test_partial.c)
+set(test_ver31_FILES
+	test_ver31.c)
 set(write_array_FILES
 	write_array.c
 	utils.c)
@@ -58,6 +60,10 @@ set(cgread_FILES
 	cgread.F)
 set(cgwrite_FILES
 	cgwrite.F)
+set(cgzconn_FILES
+	cgzconn.F)
+set(cgsubreg_FILES
+	cgsubreg.F)
 set(f2c_test_FILES
 	../f2c/fmain.f
 	../f2c/csub.c)
@@ -69,6 +75,7 @@ add_executable( open_cgns    ${open_cgns_FILES}    )
 add_executable( test_exts    ${test_exts_FILES}    )
 add_executable( test_goto    ${test_goto_FILES}    )
 add_executable( test_partial ${test_partial_FILES} )
+add_executable( test_ver31   ${test_ver31_FILES} )
 add_executable( write_array  ${write_array_FILES}  )
 add_executable( write_bcdata ${write_bcdata_FILES} )
 add_executable( write_links  ${write_links_FILES}  )
@@ -81,6 +88,8 @@ if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
 	add_executable( f2c_test     ${f2c_test_FILES} )
 	add_executable( cgread       ${cgread_FILES}   )
 	add_executable( cgwrite      ${cgwrite_FILES}  )
+	add_executable( cgzconn      ${cgzconn_FILES}  )
+	add_executable( cgsubreg     ${cgsubreg_FILES}  )
 endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
 
 # Add the tests so that ctest can find them
@@ -91,6 +100,7 @@ if (ENABLE_TESTS)
   add_test( test_exts    test_exts                )
   add_test( test_goto    test_goto                )
   add_test( test_partial test_partial             )
+  add_test( test_ver31   test_ver31               )
   add_test( write_array  write_array              )
   add_test( write_bcdata write_bcdata             )
   add_test( write_links  write_links              )
@@ -103,5 +113,7 @@ if (ENABLE_TESTS)
 	add_test( f2c_test f2c_test ) # This still needs a regex test
 	add_test( cgwrite  cgwrite  )
 	add_test( cgread   cgread   )
+	add_test( cgzconn  cgzconn  )
+	add_test( cgsubreg cgsubreg )
   endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
 endif (ENABLE_TESTS)

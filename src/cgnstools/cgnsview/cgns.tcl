@@ -1,127 +1,133 @@
 
 array set CGNSnodes {
-  AdditionalExponents         {1 AdditionalExponents_t R4 3 0}
-  AdditionalUnits             {1 AdditionalUnits_t C1 {32 3} 0}
-  ArbitraryGridMotion         {0 ArbitraryGridMotion_t C1 {} 1}
-  ArbitraryGridMotionPointers {1 DataArray_t C1 32 0}
-  Area                        {1 Area_t MT {} 0}
-  AreaType                    {1 AreaType_t C1 {} 0}
-  AverageInterface            {1 AverageInterface_t MT {} 0}
-  AverageInterfaceType        {1 AverageInterfaceType_t C1 {} 0}
-  Axisymmetry                 {1 Axisymmetry_t MT {} 0}
-  AxisymmetryAngle            {1 DataArray_t R4 1 0}
-  AxisymmetryAxisVector       {1 DataArray_t R4 2 0}
-  AxisymmetryReferencePoint   {1 DataArray_t R4 2 0}
-  BaseIterativeData           {0 BaseIterativeData_t I4 1 0}
-  BC                          {0 BC_t C1 {} 1}
-  BCData                      {0 BCData_t MT {} 0}
-  BCDataSet                   {0 BCDataSet_t C1 {} 1}
-  BCProperty                  {1 BCProperty_t MT {} 0}
-  CellListDonor               {1 IndexArray_t I4 {} 0}
-  CGNSBase                    {0 CGNSBase_t I4 2 1}
-  CGNSLibraryVersion          {1 CGNSLibraryVersion_t R4 1 0}
-  ChemicalKineticsModel       {1 ChemicalKineticsModel_t C1 {} 0}
-  ConvergenceDataArray        {1 DataArray_t R4 {} 1}
-  CoordinateNames             {1 DataArray_t C1 {32 2} 0}
-  CoordinateData              {0 DataArray_t R4 {} 1}
-  DataArray                   {0 DataArray_t {} {} 1}
-  DataClass                   {1 DataClass_t C1 {} 0}
-  DataConversion              {1 DataConversion_t R4 2 0}
-  Descriptor                  {0 Descriptor_t C1 {} 1}
-  DiffusionModel              {1 \"int[1+...+IndexDimension]\" I4 {} 0}
-  DimensionalExponents        {1 DimensionalExponents_t R4 5 0}
-  DimensionalUnits            {1 DimensionalUnits_t C1 {32 5} 0}
-  DirichletData               {1 BCData_t MT {} 0}
-  DiscreteData                {0 DiscreteData_t MT {} 1}
-  DiscreteDataArray           {0 DataArray_t R4 {} 1}
-  ElementConnectivity         {1 DataArray_t I4 {} 0}
-  ElementList                 {1 IndexArray_t I4 {} 0}
-  ElementRange                {1 IndexRange_t I4 {} 0}
-  Elements                    {0 Elements_t I4 2 1}
-  EMConductivityModel         {1 EMConductivityModel_t C1 {} 0}
-  EMElectricFieldModel        {1 EMElectricFieldModel_t C1 {} 0}
-  EMMagneticFieldModel        {1 EMMagneticFieldModel_t C1 {} 0}
-  EquationDimension           {1 \"int\" I4 1 0}
-  Family                      {0 Family_t MT {} 1}
-  FamilyBC                    {1 FamilyBC_t C1 {} 0}
-  FamilyName                  {1 FamilyName_t C1 {} 0}
-  FamilyPointers              {1 DataArray_t C1 32 0}
-  FlowEquationSet             {1 FlowEquationSet_t MT {} 0}
-  FlowSolution                {0 FlowSolution_t MT {} 1}
-  FlowSolutionsPointers       {1 DataArray_t C1 32 0}
-  GasModel                    {1 GasModel_t C1 {} 0}
-  GeometryEntity              {0 GeometryEntity_t MT {} 1}
-  GeometryFile                {1 GeometryFile_t C1 {} 0}
-  GeometryFormat              {1 GeometryFormat_t C1 {} 0}
-  GeometryReference           {0 GeometryReference_t MT {} 1}
-  GlobalConvergenceHistory    {1 ConvergenceHistory_t I4 1 0}
-  GoverningEquations          {1 GoverningEquations_t C1 {} 0}
-  Gravity                     {1 Gravity_t MT {} 0}
-  GravityVector               {1 DataArray_t R4 3 0}
-  GridConnectivity            {0 GridConnectivity_t C1 {} 1}
-  GridConnectivity1to1        {0 GridConnectivity1to1_t C1 {} 1}
-  GridConnectivityProperty    {1 GridConnectivityProperty_t MT {} 0}
-  GridConnectivityType        {1 GridConnectivityType_t C1 {} 0}
-  GridCoordinates             {0 GridCoordinates_t MT {} 1}
-  GridCoordinatesPointers     {1 DataArray_t C1 32 0}
-  GridLocation                {1 GridLocation_t C1 {} 0}
-  GridVelocity                {0 DataArray_t R4 {} 1}
-  IndexArray                  {0 IndexArray_t I4 {} 0}
-  IndexRange                  {0 IndexRange_t I4 {} 0}
-  IntegralData                {0 IntegralData_t MT {} 1}
-  IntegralDataValue           {0 DataArray_t R4 1 1}
-  InterpolantsDonor           {1 DataArray_t R4 {} 0}
-  InwardNormalIndex           {1 \"int[IndexDimension]\" I4 {} 0}
-  InwardNormalList            {1 IndexArray_t R4 {} 0}
-  IterationValues             {1 DataArray_t I4 {} 0}
-  NeumannData                 {1 BCData_t MT {} 0}
-  NormDefinitions             {1 Descriptor_t C1 {} 0}
-  NumberOfFamilies            {1 DataArray_t I4 {} 0}
-  NumberOfZones               {1 DataArray_t I4 {} 0}
-  Ordinal                     {1 Ordinal_t I4 1 0}
-  OriginLocation              {1 DataArray_t R4 {3 2} 0}
-  OversetHoles                {0 OversetHoles_t MT {} 1}
-  ParentData                  {1 DataArray_t I4 {} 0}
-  Periodic                    {1 Periodic_t MT {} 0}
-  PointList                   {1 IndexArray_t I4 {} 0}
-  PointListDonor              {1 IndexArray_t I4 {} 0}
-  PointRange                  {1 IndexRange_t I4 {} 0}
-  PointRangeDonor             {1 IndexRange_t I4 {} 0}
-  ReferenceState              {1 ReferenceState_t MT {} 0}
-  ReferenceStateDescription   {1 Descriptor_t C1 {} 0}
-  ReferenceStateValue         {0 DataArray_t R4 1 1}
-  RegionName                  {1 DataArray_t C1 32 0}
-  RigidGridMotion             {0 RigidGridMotion_t C1 {} 1}
-  RigidGridMotionPointers     {1 DataArray_t C1 32 0}
-  RigidRotationAngle          {1 DataArray_t R4 3 0}
-  RigidRotationRate           {1 DataArray_t R4 3 0}
-  RigidVelocity               {1 DataArray_t R4 3 0}
-  Rind                        {1 Rind_t I4 {} 0}
-  RotatingCoordinates         {1 RotatingCoordinates_t MT {} 0}
-  RotationAngle               {1 DataArray_t R4 3 0}
-  RotationCenter              {1 DataArray_t R4 3 0}
-  RotationRateVector          {1 DataArray_t R4 3 0}
-  SimulationType              {1 SimulationType_t C1 {} 0}
-  SolutionData                {0 DataArray_t R4 {} 1}
-  SurfaceArea                 {1 DataArray_t R4 1 0}
-  ThermalConductivityModel    {1 ThermalConductivityModel_t C1 {} 0}
-  ThermalRelaxationModel      {1 ThermalRelaxationModel_t C1 {} 0}
-  TimeValues                  {1 DataArray_t R4 {} 0}
-  Transform                   {1 \"int[IndexDimension]\" I4 {} 0}
-  Translation                 {1 DataArray_t R4 3 0}
-  TurbulenceClosure           {1 TurbulenceClosure_t C1 {} 0}
-  TurbulenceModel             {1 TurbulenceModel_t C1 {} 0}
-  UserDefinedData             {0 UserDefinedData_t MT {} 1}
-  ViscosityModel              {1 ViscosityModel_t C1 {} 0}
-  WallFunction                {1 WallFunction_t MT {} 0}
-  WallFunctionType            {1 WallFunctionType_t C1 {} 0}
-  Zone                        {0 Zone_t I4 {} 1}
-  ZoneBC                      {1 ZoneBC_t MT {} 0}
-  ZoneConvergenceHistory      {1 ConvergenceHistory_t I4 1 0}
-  ZoneGridConnectivity        {1 ZoneGridConnectivity_t MT {} 0}
-  ZoneIterativeData           {0 ZoneIterativeData_t MT {} 0}
-  ZonePointers                {1 DataArray_t C1 32 0}
-  ZoneType                    {1 ZoneType_t C1 {} 0}
+  AdditionalExponents          {1 AdditionalExponents_t R4 3 0}
+  AdditionalUnits              {1 AdditionalUnits_t C1 {32 3} 0}
+  ArbitraryGridMotion          {0 ArbitraryGridMotion_t C1 {} 1}
+  ArbitraryGridMotionPointers  {1 DataArray_t C1 32 0}
+  Area                         {1 Area_t MT {} 0}
+  AreaType                     {1 AreaType_t C1 {} 0}
+  AverageInterface             {1 AverageInterface_t MT {} 0}
+  AverageInterfaceType         {1 AverageInterfaceType_t C1 {} 0}
+  Axisymmetry                  {1 Axisymmetry_t MT {} 0}
+  AxisymmetryAngle             {1 DataArray_t R4 1 0}
+  AxisymmetryAxisVector        {1 DataArray_t R4 2 0}
+  AxisymmetryReferencePoint    {1 DataArray_t R4 2 0}
+  BaseIterativeData            {0 BaseIterativeData_t I4 1 0}
+  BC                           {0 BC_t C1 {} 1}
+  BCData                       {0 BCData_t MT {} 0}
+  BCDataSet                    {0 BCDataSet_t C1 {} 1}
+  BCProperty                   {1 BCProperty_t MT {} 0}
+  BCRegionName                 {1 Descriptor_t C1 {} 1}
+  CellListDonor                {1 IndexArray_t I4 {} 0}
+  CGNSBase                     {0 CGNSBase_t I4 2 1}
+  CGNSLibraryVersion           {1 CGNSLibraryVersion_t R4 1 0}
+  ChemicalKineticsModel        {1 ChemicalKineticsModel_t C1 {} 0}
+  ConvergenceDataArray         {1 DataArray_t R4 {} 1}
+  CoordinateNames              {1 DataArray_t C1 {32 2} 0}
+  CoordinateData               {0 DataArray_t R4 {} 1}
+  DataArray                    {0 DataArray_t {} {} 1}
+  DataClass                    {1 DataClass_t C1 {} 0}
+  DataConversion               {1 DataConversion_t R4 2 0}
+  Descriptor                   {0 Descriptor_t C1 {} 1}
+  DiffusionModel               {1 \"int[1+...+IndexDimension]\" I4 {} 0}
+  DimensionalExponents         {1 DimensionalExponents_t R4 5 0}
+  DimensionalUnits             {1 DimensionalUnits_t C1 {32 5} 0}
+  DirichletData                {1 BCData_t MT {} 0}
+  DiscreteData                 {0 DiscreteData_t MT {} 1}
+  DiscreteDataArray            {0 DataArray_t R4 {} 1}
+  ElementConnectivity          {1 DataArray_t I4 {} 0}
+  ElementList                  {1 IndexArray_t I4 {} 0}
+  ElementRange                 {1 IndexRange_t I4 {} 0}
+  Elements                     {0 Elements_t I4 2 1}
+  EMConductivityModel          {1 EMConductivityModel_t C1 {} 0}
+  EMElectricFieldModel         {1 EMElectricFieldModel_t C1 {} 0}
+  EMMagneticFieldModel         {1 EMMagneticFieldModel_t C1 {} 0}
+  EquationDimension            {1 \"int\" I4 1 0}
+  Family                       {0 Family_t MT {} 1}
+  FamilyBC                     {1 FamilyBC_t C1 {} 0}
+  FamilyBCDataSet              {0 FamilyBCDataSet_t C1 {} 1}
+  FamilyName                   {1 FamilyName_t C1 {} 0}
+  FamilyPointers               {1 DataArray_t C1 32 0}
+  FlowEquationSet              {1 FlowEquationSet_t MT {} 0}
+  FlowSolution                 {0 FlowSolution_t MT {} 1}
+  FlowSolutionsPointers        {1 DataArray_t C1 32 0}
+  GasModel                     {1 GasModel_t C1 {} 0}
+  GeometryEntity               {0 GeometryEntity_t MT {} 1}
+  GeometryFile                 {1 GeometryFile_t C1 {} 0}
+  GeometryFormat               {1 GeometryFormat_t C1 {} 0}
+  GeometryReference            {0 GeometryReference_t MT {} 1}
+  GlobalConvergenceHistory     {1 ConvergenceHistory_t I4 1 0}
+  GoverningEquations           {1 GoverningEquations_t C1 {} 0}
+  Gravity                      {1 Gravity_t MT {} 0}
+  GravityVector                {1 DataArray_t R4 3 0}
+  GridConnectivity             {0 GridConnectivity_t C1 {} 1}
+  GridConnectivity1to1         {0 GridConnectivity1to1_t C1 {} 1}
+  GridConnectivityProperty     {1 GridConnectivityProperty_t MT {} 0}
+  GridConnectivityRegionName   {1 Descriptor_t C1 {} 1}
+  GridConnectivityType         {1 GridConnectivityType_t C1 {} 0}
+  GridCoordinates              {0 GridCoordinates_t MT {} 1}
+  GridCoordinatesPointers      {1 DataArray_t C1 32 0}
+  GridLocation                 {1 GridLocation_t C1 {} 0}
+  GridVelocity                 {0 DataArray_t R4 {} 1}
+  IndexArray                   {0 IndexArray_t I4 {} 0}
+  IndexRange                   {0 IndexRange_t I4 {} 0}
+  IntegralData                 {0 IntegralData_t MT {} 1}
+  IntegralDataValue            {0 DataArray_t R4 1 1}
+  InterpolantsDonor            {1 DataArray_t R4 {} 0}
+  InwardNormalIndex            {1 \"int[IndexDimension]\" I4 {} 0}
+  InwardNormalList             {1 IndexArray_t R4 {} 0}
+  IterationValues              {1 DataArray_t I4 {} 0}
+  NeumannData                  {1 BCData_t MT {} 0}
+  NormDefinitions              {1 Descriptor_t C1 {} 0}
+  NumberOfFamilies             {1 DataArray_t I4 {} 0}
+  NumberOfZones                {1 DataArray_t I4 {} 0}
+  Ordinal                      {1 Ordinal_t I4 1 0}
+  OriginLocation               {1 DataArray_t R4 {3 2} 0}
+  OversetHoles                 {0 OversetHoles_t MT {} 1}
+  ParentData                   {1 DataArray_t I4 {} 0}
+  Periodic                     {1 Periodic_t MT {} 0}
+  PointList                    {1 IndexArray_t I4 {} 0}
+  PointListDonor               {1 IndexArray_t I4 {} 0}
+  PointRange                   {1 IndexRange_t I4 {} 0}
+  PointRangeDonor              {1 IndexRange_t I4 {} 0}
+  ReferenceState               {1 ReferenceState_t MT {} 0}
+  ReferenceStateDescription    {1 Descriptor_t C1 {} 0}
+  ReferenceStateValue          {0 DataArray_t R4 1 1}
+  RegionName                   {1 DataArray_t C1 32 0}
+  RigidGridMotion              {0 RigidGridMotion_t C1 {} 1}
+  RigidGridMotionPointers      {1 DataArray_t C1 32 0}
+  RigidRotationAngle           {1 DataArray_t R4 3 0}
+  RigidRotationRate            {1 DataArray_t R4 3 0}
+  RigidVelocity                {1 DataArray_t R4 3 0}
+  Rind                         {1 Rind_t I4 {} 0}
+  RotatingCoordinates          {1 RotatingCoordinates_t MT {} 0}
+  RotationAngle                {1 DataArray_t R4 3 0}
+  RotationCenter               {1 DataArray_t R4 3 0}
+  RotationRateVector           {1 DataArray_t R4 3 0}
+  SimulationType               {1 SimulationType_t C1 {} 0}
+  SolutionData                 {0 DataArray_t R4 {} 1}
+  SurfaceArea                  {1 DataArray_t R4 1 0}
+  ThermalConductivityModel     {1 ThermalConductivityModel_t C1 {} 0}
+  ThermalRelaxationModel       {1 ThermalRelaxationModel_t C1 {} 0}
+  TimeValues                   {1 DataArray_t R4 {} 0}
+  Transform                    {1 \"int[IndexDimension]\" I4 {} 0}
+  Translation                  {1 DataArray_t R4 3 0}
+  TurbulenceClosure            {1 TurbulenceClosure_t C1 {} 0}
+  TurbulenceModel              {1 TurbulenceModel_t C1 {} 0}
+  UserDefinedData              {0 UserDefinedData_t MT {} 1}
+  ViscosityModel               {1 ViscosityModel_t C1 {} 0}
+  WallFunction                 {1 WallFunction_t MT {} 0}
+  WallFunctionType             {1 WallFunctionType_t C1 {} 0}
+  Zone                         {0 Zone_t I4 {} 1}
+  ZoneBC                       {1 ZoneBC_t MT {} 0}
+  ZoneConvergenceHistory       {1 ConvergenceHistory_t I4 1 0}
+  ZoneGridConnectivity         {1 ZoneGridConnectivity_t MT {} 0}
+  ZoneGridConnectivityPointers {1 DataArray_t C1 32 0}
+  ZoneIterativeData            {0 ZoneIterativeData_t MT {} 0}
+  ZonePointers                 {1 DataArray_t C1 32 0}
+  ZoneSubRegion                {0 ZoneSubRegion_t I4 {} 1}
+  ZoneSubRegionPointers        {1 DataArray_t C1 32 0}
+  ZoneType                     {1 ZoneType_t C1 {} 0}
 }
 
 array set CGNSnodeChildren {
@@ -159,6 +165,8 @@ array set CGNSnodeChildren {
   Elements_t {Descriptor ElementConnectivity ElementRange \
       ParentData Rind UserDefinedData}
   Family_t {Descriptor FamilyBC GeometryReference Ordinal UserDefinedData}
+  FamilyBCDataSet_t {DataClass Descriptor DimensionalUnits DirichletData \
+      NeumannData ReferenceState UserDefinedData}
   FlowEquationSet_t {ChemicalKineticsModel DataClass Descriptor \
       DimensionalUnits EquationDimension GasModel GoverningEquations \
       ThermalConductivityModel ThermalRelaxationModel TurbulenceClosure \
@@ -218,6 +226,9 @@ array set CGNSnodeChildren {
   ZoneIterativeData_t {ArbitraryGridMotionPointers DataArray DataClass \
       Descriptor DimensionalUnits FlowSolutionsPointers \
       GridCoordinatesPointers RigidGridMotionPointers UserDefinedData}
+  ZoneSubRegion_t {BCRegionName DataArray DataClass DimensionalUnits \
+      Descriptor FamilyName GridConnectivityRegionName GridLocation \
+      PointList PointRange Rind UserDefinedData}
 }
 
 array set CGNSdataValues {
@@ -266,6 +277,12 @@ array set CGNSdataValues {
       BCOutflowSubsonic BCOutflowSupersonic BCSymmetryPlane BCSymmetryPolar \
       BCTunnelInflow BCTunnelOutflow BCWall BCWallInviscid BCWallViscous \
       BCWallViscousHeatFlux BCWallViscousIsothermal FamilySpecified}
+  FamilyBCDataSet_t {Null UserDefined BCAxisymmetricWedge BCDegenerateLine \
+      BCDegeneratePoint BCDirichlet BCExtrapolate BCGeneral \
+      BCInflowSubsonic BCInflowSupersonic BCNeumann \
+      BCOutflowSubsonic BCOutflowSupersonic BCSymmetryPlane BCSymmetryPolar \
+      BCTunnelInflow BCTunnelOutflow BCWall BCWallInviscid BCWallViscous \
+      BCWallViscousHeatFlux BCWallViscousIsothermal}
   GasModel_t {Null UserDefined Ideal VanderWaals CaloricallyPerfect \
       ThermallyPerfect ConstantDensity RedlichKwong}
   GoverningEquations_t {Null UserDefined FullPotential Euler NSLaminar \
@@ -293,8 +310,6 @@ array set CGNSdataValues {
   ViscosityModel_t {Null UserDefined Constant PowerLaw SutherlandLaw}
   WallFunctionType_t {Null UserDefined Generic}
   ZoneType_t {Null UserDefined Structured Unstructured}
-
-
   DataType_t {Null UserDefined Integer RealSingle RealDouble Character}
   ElementType_t {Null UserDefined NODE BAR_2 BAR_3 TRI_3 TRI_6 QUAD_4 \
       QUAD_8 QUAD_9 TETRA_4 TETRA_10 PYRA_5 PYRA_14 PENTA_6 PENTA_15 \
@@ -355,6 +370,8 @@ Carcel, Hefner, Violle}}
       BCWallInviscid, BCWallViscous, BCWallViscousHeatFlux,\
       BCWallViscousIsothermal or FamilySpecified}}
   BCProperty_t {BCProperty BCProperty_t {0,1} MT {} {} {}}
+  BCRegionName {BCRegionName Descriptor_t {0,1} C1 1 \
+      {length of string} {name of a ZoneBC node}}
   CellListDonor {CellListDonor IndexArray_t {0,1} I4 2 \
       {IndexDimension of donor,ListLength} \
       {list of indices for cells on adjoining patch}}
@@ -438,6 +455,14 @@ Constant or Frozen}}
       BCSymmetryPlane, BCSymmetryPolar, BCTunnelInflow,\
       BCTunnelOutflow, BCWall, BCWallInviscid, BCWallViscous,\
       BCWallViscousHeatFlux, BCWallViscousIsothermal or FamilySpecified}}
+  FamilyBCDataSet_t {{user defined} FamilyBCDataSet_t {0,N} C1 1 {length of string} \
+      {BCTypeSimple value, one of: Null, UserDefined, BCAxisymmetricWedge,\
+      BCDegenerateLine, BCDegeneratePoint, BCDirichlet, BCExtrapolate,\
+      BCGeneral, BCInflowSubsonic, BCInflowSupersonic, BCNeumann,\
+      BCOutflowSubsonic, BCOutflowSupersonic, BCSymmetryPlane,\
+      BCSymmetryPolar, BCTunnelInflow, BCTunnelOutflow, BCWall,\
+      BCWallInviscid, BCWallViscous, BCWallViscousHeatFlux,\
+      BCWallViscousIsothermal}}
   FamilyName_t {FamilyName FamilyName_t {0,1} C1 1 {length of string} \
       {name of CFD family}}
   FamilyPointers {FamilyPointers DataArray_t {0,1} C1 3 \
@@ -470,6 +495,8 @@ Constant or Frozen}}
       {length of string} {ZoneDonorName}}
   GridConnectivityProperty_t {GridConnectivityProperty \
       GridConnectivityProperty_t {0,1} MT {} {} {}}
+  GridConnectivityRegionName {GridConnectivityRegionName Descriptor_t {0,1} \
+      C1 1 {length of string} {name of a ZoneGridConnectivity node}}
   GridConnectivityType_t {GridConnectivityType GridConnectivityType_t {0,1} \
       C1 1 {length of string} {one of: Null, UserDefined, Overset,\
       Abutting, or Abutting1to1}}
@@ -608,12 +635,19 @@ Constant or Frozen}}
       {0,1} I4 1 1 {number of iterations}}
   ZoneGridConnectivity_t {ZoneGridConnectivity ZoneGridConnectivity_t \
       {0,1} MT {} {} {}}
+  ZoneGridConnectivityPointers {ZoneGridConnectivityPointers DataArray_t \
+      {0,1} C1 2 {32,NumberOfSteps} \
+      {pointers to ZoneGridConnectivity_t nodes}}
   ZoneIterativeData_t {{user defined} ZoneIterativeData_t {0,1} MT {} {} {}}
   ZonePointers {ZonePointers DataArray_t {0,1} C1 3 \
       {32,MaxNumberOfZones,NumberOfSteps} {pointers to Zone_t nodes}}
+  ZoneSubRegion_t {{user defined} ZoneSubRegion_t {0,N} I4 1 \
+      RegionCellDimension {region dimension}}
+  ZoneSubRegionPointers {ZoneSubRegionPointers DataArray_t \
+      {0,1} C1 2 {32,NumberOfSteps} \
+      {pointers to ZoneSubRegion_t nodes}}
   ZoneType_t {ZoneType ZoneType_t 1 C1 1 {length of string} \
       {one of: Null, UserDefined, Structured or Unstructured}}
-
   DataType_t {{} DataType_t {} C1 1 {length of string} \
       {one of: Null, UserDefined, Integer, RealSingle, RealDouble\
       or Character}}
@@ -676,6 +710,7 @@ array set CGNSnodeRef {
   EquationDimension {}
   Family_t {{misc Family} {families family}}
   FamilyBC_t {{misc FamilyBC} {families familybc}}
+  FamilyBCDataSet_t {{bc BCDataSet} {bc bcdataset}}
   FamilyName_t {{} {families familyname}}
   FamilyPointers {{} {physical dataarray}}
   FlowEquationSet_t {{floweqn FlowEquationSet} {equation flowequationset}}
@@ -986,10 +1021,12 @@ proc cgns_init {{version ""}} {
         FamilyName GridLocation Ordinal PointList PointRange UserDefinedData}
     }
   }
+
   if {$version >= 2500} {
     set CGNSnodeChildren(Elements_t) {Descriptor ElementConnectivity \
       ElementRange ParentData Rind UserDefinedData}
   }
+
   if {$version >= 2530} {
     array set CGNSdataValues {
       DimensionalUnits_t {\
@@ -1001,14 +1038,53 @@ proc cgns_init {{version ""}} {
       TemperatureUnits_t {Null UserDefined Kelvin Celsius Rankine Fahrenheit}
     }
   }
+
   if {$version >= 3100} {
-    set CGNSnodeDesc(Elements_t) {{user defined} Elements_t {0,N} I4 1 2 \
-      {ElementType, ElementSizeBoundary
+    array set CGNSnodeDesc {
+      Elements_t {{user defined} Elements_t {0,N} I4 1 2 \
+        {ElementType, ElementSizeBoundary
 
 element types are: 0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
 5:TRI_3, 6:TRI_6, 7:QUAD_4, 8:QUAD_8, 9:QUAD_9, 10:TETRA_4, 11:TETRA_10,\
 12:PYRA_5, 13:PYRA_14, 14:PENTA_6, 15:PENTA_15, 16:PENTA_18, 17:HEXA_8,\
 18:HEXA_20, 19:HEXA_27, 20:MIXED, 21:PYRA_13, 22:NGON_n, 23:NFACE_n}}
+      ZoneGridConnectivity_t {\
+       {ZoneGridConnectivity or user defined} \
+       ZoneGridConnectivity_t {0,N} MT {} {} {}}
+    }
+    array set CGNSnodeChildren {
+      BC_t {BCDataSet BCProperty DataClass Descriptor DimensionalUnits \
+        FamilyName GridLocation InwardNormalIndex \
+        InwardNormalList Ordinal PointList PointRange \
+        ReferenceState UserDefinedData}
+      DiscreteData_t {DataClass Descriptor DimensionalUnits \
+        DiscreteDataArray GridLocation PointList PointRange Rind \
+        UserDefinedData}
+      FamilyBC_t {FamilyBCDataSet}
+      FlowSolution_t {DataClass Descriptor DimensionalUnits \
+        GridLocation PointList PointRange Rind SolutionData \
+        UserDefinedData}
+      ZoneIterativeData_t {ArbitraryGridMotionPointers DataArray DataClass \
+        Descriptor DimensionalUnits FlowSolutionsPointers \
+        GridCoordinatesPointers RigidGridMotionPointers \
+        ZoneGridConnectivityPointers ZoneSubRegionPointers UserDefinedData}
+      Zone_t {ArbitraryGridMotion DataClass Descriptor DiscreteData \
+        DimensionalUnits Elements FamilyName FlowEquationSet FlowSolution \
+        GridCoordinates IntegralData Ordinal ReferenceState RigidGridMotion \
+        RotatingCoordinates UserDefinedData ZoneBC ZoneConvergenceHistory \
+        ZoneGridConnectivity ZoneIterativeData ZoneSubRegion ZoneType}
+    }
+  } else {
+    array set CGNSnodeDesc {
+      Elements_t {{user defined} Elements_t {0,N} I4 1 2 \
+        {ElementType, ElementSizeBoundary
+
+element types are: 0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
+5:TRI_3, 6:TRI_6, 7:QUAD_4, 8:QUAD_8, 9:QUAD_9, 10:TETRA_4, 11:TETRA_10,\
+12:PYRA_5, 13:PYRA_14, 14:PENTA_6, 15:PENTA_15, 16:PENTA_18, 17:HEXA_8,\
+18:HEXA_20, 19:HEXA_27, 20:MIXED, 21+:NGON_n}}
+      ZoneGridConnectivity_t {ZoneGridConnectivity \
+       ZoneGridConnectivity_t {0,1} MT {} {} {}}
   }
 }
 

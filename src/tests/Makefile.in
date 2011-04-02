@@ -17,6 +17,7 @@ ALL = \
 	test_exts$(EXE) \
 	test_partial$(EXE) \
 	test_goto$(EXE) \
+	test_ver31$(EXE) \
 	write_array$(EXE) \
 	write_links$(EXE) \
 	write_bcdata$(EXE) \
@@ -28,6 +29,8 @@ all : $(ALL)
 
 FALL =  cgwrite$(EXE) \
 	cgread$(EXE) \
+	cgzconn$(EXE) \
+	cgsubreg$(EXE) \
 	test64f$(EXE)
 
 fortran : $(FALL)
@@ -74,6 +77,12 @@ test_partial$(EXE) : test_partial.c $(CGNSLIB)
 
 test_goto$(EXE) : test_goto.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_goto.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_ver31$(EXE) : test_ver31.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_ver31.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
@@ -130,6 +139,18 @@ cgwrite$(EXE) : cgwrite.F $(CGNSLIB)
 
 cgread$(EXE) : cgread.F $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ cgread.F $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+cgzconn$(EXE) : cgzconn.F $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgzconn.F $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+cgsubreg$(EXE) : cgsubreg.F $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgsubreg.F $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

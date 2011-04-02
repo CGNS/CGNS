@@ -54,7 +54,8 @@ cgns_posit posit_stack[CG_MAX_GOTO_DEPTH+1];
  *          Internal functions                 *
 \***********************************************************************/
 
-void *cgi_malloc(size_t cnt, size_t size) {
+void *cgi_malloc(size_t cnt, size_t size)
+{
     void *buf = calloc(cnt, size);
     if (buf == NULL) {
         cgi_error("calloc failed for %d values of size %d", cnt, size);
@@ -63,7 +64,8 @@ void *cgi_malloc(size_t cnt, size_t size) {
     return buf;
 }
 
-void *cgi_realloc(void *oldbuf, size_t bytes) {
+void *cgi_realloc(void *oldbuf, size_t bytes)
+{
     void *buf = realloc(oldbuf, bytes);
     if (buf == NULL) {
         cgi_error("realloc failed for %d bytes", bytes);
@@ -76,7 +78,8 @@ void *cgi_realloc(void *oldbuf, size_t bytes) {
  *    Read CGNS file and store in internal data structures         *
 \***********************************************************************/
 
-int cgi_read() {
+int cgi_read()
+{
     int b;
     double *id;
 
@@ -353,7 +356,7 @@ int cgi_read_zone(cgns_zone *zone)
         return 1;
 
      /* ZoneGridConnectivity_t */
-    if (cgi_read_zconn(in_link, zone->id, &zone->zconn)) return 1;
+    if (cgi_read_zconn(in_link, zone->id, &zone->nzconn, &zone->zconn)) return 1;
 
      /* ZoneBC_t */
     if (cgi_read_zboco(in_link, zone->id, &zone->zboco)) return 1;
@@ -403,10 +406,15 @@ int cgi_read_zone(cgns_zone *zone)
      /* RotatingCoordinates_t */
     if (cgi_read_rotating(in_link, zone->id, &zone->rotating)) return 1;
 
+     /* ZoneSubRegion_t */
+    if (cgi_read_subregion(in_link, zone->id, &zone->nsubreg,
+        &zone->subreg)) return 1;
+
     return 0;
 }
 
-int cgi_read_family(cgns_family *family) {
+int cgi_read_family(cgns_family *family)
+{
     int n, linked, in_link = family->link ? 1 : family->in_link;
     double *id;
     char *boconame;
@@ -433,9 +441,9 @@ int cgi_read_family(cgns_family *family) {
             free(boconame);
             /* BCDataSet_t */
             linked = family->fambc[n].link ? 1 : in_link;
-            if (cgi_read_dataset(linked, family->fambc[n].id,
-                                 &family->fambc[n].ndataset,
-                                 &family->fambc[n].dataset))
+            if (cgi_read_family_dataset(linked, family->fambc[n].id,
+                                        &family->fambc[n].ndataset,
+                                        &family->fambc[n].dataset))
                 return 1;
         }
         free(id);
@@ -561,8 +569,109 @@ int cgi_read_family(cgns_family *family) {
     return 0;
 }
 
+int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
+                            cgns_dataset **pdataset)
+{
+    int n, i, nnod, linked;
+    double *id, *ids;
+    char_33 name;
+    char *string_data;
+    int modified = 0;
+    cgns_dataset *dataset;
+
+     /* FamilyBCDataSet_t */
+    if (cgi_get_nodes(parent_id, "FamilyBCDataSet_t", ndataset, &id))
+        return 1;
+
+     /* if not found, check for BCDataSet_t (pre 3.2) */
+    if (*ndataset <= 0) {
+        if (cgi_get_nodes(parent_id, "BCDataSet_t", ndataset, &id))
+            return 1;
+        modified = 1;
+    }
+    if (*ndataset <= 0) {
+        *pdataset = NULL;
+        return 0;
+    }
+    dataset = CGNS_NEW(cgns_dataset, (*ndataset));
+    *pdataset = dataset;
+
+    for (n = 0; n < *ndataset; n++) {
+        dataset[n].id = id[n];
+        dataset[n].link = cgi_read_link(id[n]);
+        dataset[n].in_link = in_link;
+        linked = dataset[n].link ? 1 : in_link;
+        
+        if (cgi_read_string(dataset[n].id, dataset[n].name, &string_data) ||
+            cgi_BCType(string_data, &dataset[n].type)) return 1;
+        free(string_data);
+
+     /* Descriptor_t, DataClass_t, DimensionalUnits_t */
+        if (cgi_read_DDD(linked, dataset[n].id, &dataset[n].ndescr,
+            &dataset[n].descr, &dataset[n].data_class,
+            &dataset[n].units)) return 1;
+
+     /* ReferenceState_t */
+        if (cgi_read_state(linked, dataset[n].id, &dataset[n].state))
+            return 1;
+
+     /* BCData_t */
+        dataset[n].dirichlet = dataset[n].neumann = NULL;
+        if (cgi_get_nodes(dataset[n].id, "BCData_t", &nnod, &ids)) return 1;
+        if (nnod > 0) {
+            for (i = 0; i < nnod; i++) {
+                /* Name */
+                if (cgio_get_name(cg->cgio, ids[i], name)) {
+                    cg_io_error("cgio_get_name");
+                    return 1;
+                }
+                if (strcmp(name, "DirichletData")==0) {
+                    if (dataset[n].dirichlet!=0) {
+                        cgi_error("Dirichet Data defined more than once...");
+                        return 1;
+                    }
+                    dataset[n].dirichlet=CGNS_NEW(cgns_bcdata, 1);
+                    dataset[n].dirichlet->id = ids[i];
+                    dataset[n].dirichlet->link = cgi_read_link(ids[i]);
+                    dataset[n].dirichlet->in_link = linked;
+                    strcpy(dataset[n].dirichlet->name,"DirichletData");
+                    if (cgi_read_bcdata(dataset[n].dirichlet)) return 1;
+                } else if (strcmp(name, "NeumannData")==0) {
+                    if (dataset[n].neumann!=0) {
+                        cgi_error("Neumann Data defined more than once...");
+                        return 1;
+                    }
+                    dataset[n].neumann=CGNS_NEW(cgns_bcdata, 1);
+                    dataset[n].neumann->id = ids[i];
+                    dataset[n].neumann->link = cgi_read_link(ids[i]);
+                    dataset[n].neumann->in_link = linked;
+                    strcpy(dataset[n].neumann->name,"NeumannData");
+                    if (cgi_read_bcdata(dataset[n].neumann)) return 1;
+                }
+            }
+            free(ids);
+        }
+
+        /* UserDefinedData_t */
+        if (cgi_read_user_data(linked, dataset[n].id,
+            &dataset[n].nuser_data, &dataset[n].user_data)) return 1;
+
+        /* fix label if needed */
+        if (modified && !linked && cg->mode == CG_MODE_MODIFY) {
+            if (cgio_set_label(cg->cgio, id[n], "FamilyBCDataSet_t")) {
+                cg_io_error("cgio_set_label");
+                return 1;
+            }
+        }
+    }
+    free(id);
+
+    return 0;
+}
+
 int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
-                         char_33 family_name) {
+                         char_33 family_name)
+{
     int fam_flag;
     double *id;
     char_33 NodeName;
@@ -692,7 +801,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
     CGNS_ENUMT(ElementType_t) el_type;
     char_33 data_type, temp_name;
     void *vdata;
-    cgsize_t nelements, dim_vals[12];
+    cgsize_t pdata_cnt, nelements, dim_vals[12];
 
     if (cgi_get_nodes(parent_id, "Elements_t", nsections, &id)) return 1;
     if (*nsections<=0) {
@@ -833,7 +942,12 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 
      /* initialize */
         section[0][n].connect = 0;
+#ifdef CG_SPLIT_PARENT_DATA
+        section[0][n].parelem = 0;
+        section[0][n].parface = 0;
+#else
         section[0][n].parent = 0;
+#endif
 
      /* DataArray_t:  ElementConnectivity & ParentData DataArray_t */
         if (cgi_get_nodes(section[0][n].id, "DataArray_t", &nchild, &idi))
@@ -989,9 +1103,107 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                     }
                 }
 
+#ifdef CG_SPLIT_PARENT_DATA
             } else if (strcmp(temp_name,"ParentData")==0) {
-                cgsize_t pdata_cnt;
+                if (section[0][n].parelem) {
+                    cgi_error("Error:  Element ParentData defined more than once");
+                    return 1;
+                }
+                section[0][n].parelem = CGNS_NEW(cgns_array, 1);
+                section[0][n].parelem->id = idi[i];
+                section[0][n].parelem->link = cgi_read_link(idi[i]);
+                section[0][n].parelem->in_link = linked;
+                if (cgi_read_array(section[0][n].parelem, "Elements_t",
+                    section[0][n].id)) return 1;
 
+                /* check data */
+                if (strcmp(section[0][n].parelem->data_type,"I4") &&
+                    strcmp(section[0][n].parelem->data_type,"I8")) {
+                    cgi_error("Datatype %s not supported for element 'ParentData'",
+                        section[0][n].parelem->data_type);
+                    return 1;
+                }
+                if(section[0][n].parelem->range[0] > 0 &&
+                    section[0][n].parelem->range[1] > 0)
+                    pdata_cnt = section[0][n].parelem->range[1] -
+                            section[0][n].parelem->range[0] + 1;
+                else
+                    pdata_cnt = nelements;
+
+                if (section[0][n].parelem->dim_vals[0] != pdata_cnt ||
+                    section[0][n].parelem->dim_vals[1] != 4 ||
+                    section[0][n].parelem->data_dim != 2 ) {
+                    cgi_error("Error exit:  Element 'ParentData' incorrectly defined");
+                    return 1;
+                }
+
+            } else if (strcmp(temp_name,"ParentElements")==0) {
+                if (section[0][n].parelem) {
+                    cgi_error("Error:  Element ParentElements defined more than once");
+                    return 1;
+                }
+                section[0][n].parelem = CGNS_NEW(cgns_array, 1);
+                section[0][n].parelem->id = idi[i];
+                section[0][n].parelem->link = cgi_read_link(idi[i]);
+                section[0][n].parelem->in_link = linked;
+                if (cgi_read_array(section[0][n].parelem, "Elements_t",
+                    section[0][n].id)) return 1;
+
+                /* check data */
+                if (strcmp(section[0][n].parelem->data_type,"I4") &&
+                    strcmp(section[0][n].parelem->data_type,"I8")) {
+                    cgi_error("Datatype %s not supported for element 'ParentElements'",
+                        section[0][n].parelem->data_type);
+                    return 1;
+                }
+                if(section[0][n].parelem->range[0] > 0 &&
+                    section[0][n].parelem->range[1] > 0)
+                    pdata_cnt = section[0][n].parelem->range[1] -
+                            section[0][n].parelem->range[0] + 1;
+                else
+                    pdata_cnt = nelements;
+
+                if (section[0][n].parelem->dim_vals[0] != pdata_cnt ||
+                    section[0][n].parelem->dim_vals[1] != 2 ||
+                    section[0][n].parelem->data_dim != 2 ) {
+                    cgi_error("Error exit:  Element 'ParentElements' incorrectly defined");
+                    return 1;
+                }
+            } else if (strcmp(temp_name,"ParentElementsPosition")==0) {
+                if (section[0][n].parface) {
+                    cgi_error("Error:  Element ParentElementsPosition defined more than once");
+                    return 1;
+                }
+                section[0][n].parface = CGNS_NEW(cgns_array, 1);
+                section[0][n].parface->id = idi[i];
+                section[0][n].parface->link = cgi_read_link(idi[i]);
+                section[0][n].parface->in_link = linked;
+                if (cgi_read_array(section[0][n].parface, "Elements_t",
+                    section[0][n].id)) return 1;
+
+                /* check data */
+                if (strcmp(section[0][n].parface->data_type,"I4") &&
+                    strcmp(section[0][n].parface->data_type,"I8")) {
+                    cgi_error("Datatype %s not supported for element 'ParentElementsPosition'",
+                        section[0][n].parelem->data_type);
+                    return 1;
+                }
+                if(section[0][n].parface->range[0] > 0 &&
+                    section[0][n].parface->range[1] > 0)
+                    pdata_cnt = section[0][n].parface->range[1] -
+                            section[0][n].parface->range[0] + 1;
+                else
+                    pdata_cnt = nelements;
+
+                if (section[0][n].parface->dim_vals[0] != pdata_cnt ||
+                    section[0][n].parface->dim_vals[1] != 2 ||
+                    section[0][n].parface->data_dim != 2 ) {
+                    cgi_error("Error exit:  Element 'ParentElementsPosition' incorrectly defined");
+                    return 1;
+                }
+            }
+#else
+            } else if (strcmp(temp_name,"ParentData")==0) {
                 if (section[0][n].parent) {
                     cgi_error("Error:  Element ParentData defined more than once");
                     return 1;
@@ -1006,7 +1218,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                 /* check data */
                 if (strcmp(section[0][n].parent->data_type,"I4") &&
                     strcmp(section[0][n].parent->data_type,"I8")) {
-                    cgi_error("Datatype %s not supported for element 'parent_data'",
+                    cgi_error("Datatype %s not supported for element 'ParentData'",
                         section[0][n].parent->data_type);
                     return 1;
                 }
@@ -1020,10 +1232,11 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                 if (section[0][n].parent->dim_vals[0] != pdata_cnt ||
                     section[0][n].parent->dim_vals[1] != 4 ||
                     section[0][n].parent->data_dim != 2 ) {
-                    cgi_error("Error exit:  Element 'parent_data' incorrectly defined");
+                    cgi_error("Error exit:  Element 'ParentData' incorrectly defined");
                     return 1;
                 }
             }
+#endif
         }   /* loop through DataArray_t */
 /* check
         cgi_array_print("connect",section[0][n].connect);
@@ -1040,16 +1253,68 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
         if (cgi_read_user_data(linked, section[0][n].id,
             &section[0][n].nuser_data, &section[0][n].user_data)) return 1;
 
+#ifdef CG_SPLIT_PARENT_DATA
+	if (section[0][n].parelem != NULL &&
+	    0 == strcmp(section[0][n].parelem->name, "ParentData") &&
+            cg->mode == CG_MODE_MODIFY && !linked) {
+	    void *pardata;
+	    pdata_cnt = section[0][n].parelem->dim_vals[0];
+	    strcpy(data_type, section[0][n].parelem->data_type);
+	    if (0 == strcmp(data_type, "I8")) {
+	        pardata = malloc((size_t)(pdata_cnt * 4 * sizeof(cglong_t)));
+		vdata = (void *)(((cglong_t *)pardata) + (pdata_cnt * 2));
+	    } else {
+	        pardata = malloc((size_t)(pdata_cnt * 4 * sizeof(int)));
+		vdata = (void *)(((int *)pardata) + (pdata_cnt * 2));
+	    }
+	    if (pardata == NULL) {
+		cgi_error("malloc failed for ParentData conversion array");
+		return 1;
+	    }
+	    if (cgio_read_all_data(cg->cgio, section[0][n].parelem->id, pardata)) {
+                cg_io_error("cgio_read_all_data");
+		return 1;
+	    }
+	    if (cgi_delete_node(section[0][n].id, section[0][n].parelem->id))
+		return 1;
+	    
+	    memset(section[0][n].parelem, 0, sizeof(cgns_array));
+            strcpy(section[0][n].parelem->data_type, data_type);
+            strcpy(section[0][n].parelem->name, "ParentElements");
+            section[0][n].parelem->data_dim =2;
+            section[0][n].parelem->dim_vals[0]=pdata_cnt;
+            section[0][n].parelem->dim_vals[1]=2;
+            if (cgi_write_array(section[0][n].id, section[0][n].parelem)) return 1;
+            if (cgio_write_all_data(cg->cgio, section[0][n].parelem->id, pardata)) {
+                cg_io_error("cgio_write_all_data");
+		return 1;
+	    }
+
+            section[0][n].parface = CGNS_NEW(cgns_array, 1);
+            strcpy(section[0][n].parface->data_type, data_type);
+            strcpy(section[0][n].parface->name, "ParentElementsPosition");
+            section[0][n].parface->data_dim =2;
+            section[0][n].parface->dim_vals[0]=pdata_cnt;
+            section[0][n].parface->dim_vals[1]=2;
+            if (cgi_write_array(section[0][n].id, section[0][n].parface)) return 1;
+            if (cgio_write_all_data(cg->cgio, section[0][n].parface->id, vdata)) {
+                cg_io_error("cgio_write_all_data");
+		return 1;
+	    }
+	}
+#endif
+
     }   /* loop through element sections */
     free(id);
 
     return 0;
 }
 
-int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol) {
+int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
+{
     double *id, *idf;
     int s, z, n, linked;
-    cgsize_t DataSize[3];
+    cgsize_t DataSize[3], DataCount = 0;
 
     if (cgi_get_nodes(parent_id, "FlowSolution_t", nsols, &id))
         return 1;
@@ -1077,11 +1342,23 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol) {
 
      /* Rind Planes */
         if (cgi_read_rind(sol[0][s].id, &sol[0][s].rind_planes)) return 1;
-
+ 
      /* Determine data size */
         if (cgi_datasize(Idim, CurrentDim, sol[0][s].location,
-            sol[0][s].rind_planes, DataSize)) return 1;
-
+                sol[0][s].rind_planes, DataSize)) return 1;
+    
+     /* check for PointList/PointRange */
+        if (cgi_read_one_ptset(linked, sol[0][s].id,
+                &sol[0][s].ptset)) return 1;
+        if (sol[0][s].ptset != NULL) {
+            if (sol[0][s].ptset->type == CGNS_ENUMV(ElementList) ||
+                sol[0][s].ptset->type == CGNS_ENUMV(ElementRange)) {
+                cgi_error("ElementList/Range not supported under FlowSolution");
+                return 1;
+            }
+            DataCount = sol[0][s].ptset->size_of_patch;
+        }
+ 
      /* DataArray_t */
         if (cgi_get_nodes(sol[0][s].id, "DataArray_t", &sol[0][s].nfields,
             &idf)) return 1;
@@ -1096,13 +1373,22 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol) {
                     sol[0][s].id)) return 1;
 
              /* check data */
-                if (sol[0][s].field[z].data_dim != Idim) {
-                    cgi_error("Wrong number of dimension in DataArray %s",sol[0][s].field[z].name);
-                    return 1;
-                }
-                for (n=0; n<Idim; n++) {
-                    if (sol[0][s].field[z].dim_vals[n]!=DataSize[n]) {
-                        cgi_error("Invalid field array dimension");
+                if (sol[0][s].ptset == NULL) {
+                    if (sol[0][s].field[z].data_dim != Idim) {
+                        cgi_error("Wrong number of dimension in DataArray %s",
+                            sol[0][s].field[z].name);
+                        return 1;
+                    }
+                    for (n=0; n<Idim; n++) {
+                        if (sol[0][s].field[z].dim_vals[n]!=DataSize[n]) {
+                            cgi_error("Invalid field array dimension");
+                            return 1;
+                        }
+                    }
+                } else {
+                    if (sol[0][s].field[z].data_dim != 1 ||
+                        sol[0][s].field[z].dim_vals[0] != DataCount) {
+                        cgi_error("Invalid field array dimension for ptset solution");
                         return 1;
                     }
                 }
@@ -1132,90 +1418,96 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol) {
     return 0;
 }
 
-int cgi_read_zconn(int in_link, double parent_id, cgns_zconn **zconn) {
-    int nnod, n, linked;
-    double *id;
+int cgi_read_zconn(int in_link, double parent_id, int *nzconn, cgns_zconn **zconn)
+{
+    int i, n, linked;
+    double *ids, *id;
+    cgns_zconn *zc;
 
-    if (cgi_get_nodes(parent_id, "ZoneGridConnectivity_t", &nnod, &id))
+    if (cgi_get_nodes(parent_id, "ZoneGridConnectivity_t", nzconn, &ids))
         return 1;
-    if (nnod<=0) {
-        zconn[0] = 0;
+    if (*nzconn<=0) {
+        *zconn = 0;
         return 0;
     }
-    zconn[0] = CGNS_NEW(cgns_zconn, 1);
-    zconn[0]->id = id[0];
-    zconn[0]->link = cgi_read_link(id[0]);
-    zconn[0]->in_link = in_link;
-    linked = zconn[0]->link ? 1 : in_link;
-    free(id);
+    zc = CGNS_NEW(cgns_zconn, *nzconn);
+    *zconn = zc;
+    
+    for (i = 0; i < *nzconn; i++) {
+        zc[i].id = ids[i];
+        zc[i].link = cgi_read_link(ids[i]);
+        zc[i].in_link = in_link;
+        linked = zc[i].link ? 1 : in_link;
 
-     /* Name */
-    if (cgio_get_name(cg->cgio, zconn[0]->id, zconn[0]->name)) {
-        cg_io_error("cgio_get_name");
-        return 1;
-    }
-
-     /* OversetHoles_t */
-    if (cgi_get_nodes(zconn[0]->id, "OversetHoles_t", &zconn[0]->nholes, &id))
-        return 1;
-    if (zconn[0]->nholes > 0) {
-        zconn[0]->hole = CGNS_NEW(cgns_hole,zconn[0]->nholes);
-        for (n=0; n<zconn[0]->nholes; n++) {
-            zconn[0]->hole[n].id = id[n];
-            zconn[0]->hole[n].link = cgi_read_link(id[n]);
-            zconn[0]->hole[n].in_link = linked;
-            if (cgi_read_hole(&zconn[0]->hole[n])) return 1;
+        /* Name */
+        if (cgio_get_name(cg->cgio, zc[i].id, zc[i].name)) {
+            cg_io_error("cgio_get_name");
+            return 1;
         }
-        free(id);
-    }
 
-     /* GridConnectivity_t */
-    if (cgi_get_nodes(zconn[0]->id, "GridConnectivity_t",
-        &zconn[0]->nconns, &id)) return 1;
-    if (zconn[0]->nconns > 0) {
-        zconn[0]->conn = CGNS_NEW(cgns_conn,zconn[0]->nconns);
-        for (n=0; n<zconn[0]->nconns; n++) {
-            zconn[0]->conn[n].id = id[n];
-            zconn[0]->conn[n].link = cgi_read_link(id[n]);
-            zconn[0]->conn[n].in_link = linked;
-            if (cgi_read_conn(&zconn[0]->conn[n])) return 1;
+        /* OversetHoles_t */
+        if (cgi_get_nodes(zc[i].id, "OversetHoles_t", &zc[i].nholes, &id))
+            return 1;
+        if (zc[i].nholes > 0) {
+            zc[i].hole = CGNS_NEW(cgns_hole,zc[i].nholes);
+            for (n=0; n<zc[i].nholes; n++) {
+                zc[i].hole[n].id = id[n];
+                zc[i].hole[n].link = cgi_read_link(id[n]);
+                zc[i].hole[n].in_link = linked;
+                if (cgi_read_hole(&zc[i].hole[n])) return 1;
+            }
+            free(id);
         }
-        free(id);
-    }
 
-     /* GridConnectivity1to1_t */
-    if (cgi_get_nodes(zconn[0]->id, "GridConnectivity1to1_t",
-        &zconn[0]->n1to1, &id)) return 1;
-    if (zconn[0]->n1to1 >0) {
-        zconn[0]->one21 = CGNS_NEW(cgns_1to1, zconn[0]->n1to1);
-        for (n=0; n<zconn[0]->n1to1; n++) {
-            zconn[0]->one21[n].id = id[n];
-            zconn[0]->one21[n].link = cgi_read_link(id[n]);
-            zconn[0]->one21[n].in_link = linked;
-            if (cgi_read_1to1(&zconn[0]->one21[n])) return 1;
+        /* GridConnectivity_t */
+        if (cgi_get_nodes(zc[i].id, "GridConnectivity_t",
+            &zc[i].nconns, &id)) return 1;
+        if (zc[i].nconns > 0) {
+            zc[i].conn = CGNS_NEW(cgns_conn,zc[i].nconns);
+            for (n=0; n<zc[i].nconns; n++) {
+                zc[i].conn[n].id = id[n];
+                zc[i].conn[n].link = cgi_read_link(id[n]);
+                zc[i].conn[n].in_link = linked;
+                if (cgi_read_conn(&zc[i].conn[n])) return 1;
+            }
+            free(id);
         }
-        free(id);
-    }
 
-     /* Descriptor_t */
-    if (cgi_get_nodes(zconn[0]->id, "Descriptor_t",
-        &zconn[0]->ndescr, &id)) return 1;
-    if (zconn[0]->ndescr>0) {
-        zconn[0]->descr = CGNS_NEW(cgns_descr, zconn[0]->ndescr);
-        for (n=0; n<zconn[0]->ndescr; n++) {
-            zconn[0]->descr[n].id = id[n];
-            zconn[0]->descr[n].link = cgi_read_link(id[n]);
-            zconn[0]->descr[n].in_link = linked;
-            if (cgi_read_string(id[n], zconn[0]->descr[n].name,
-                &zconn[0]->descr[n].text)) return 1;
+        /* GridConnectivity1to1_t */
+        if (cgi_get_nodes(zc[i].id, "GridConnectivity1to1_t",
+            &zc[i].n1to1, &id)) return 1;
+        if (zc[i].n1to1 >0) {
+            zc[i].one21 = CGNS_NEW(cgns_1to1, zc[i].n1to1);
+            for (n=0; n<zc[i].n1to1; n++) {
+                zc[i].one21[n].id = id[n];
+                zc[i].one21[n].link = cgi_read_link(id[n]);
+                zc[i].one21[n].in_link = linked;
+                if (cgi_read_1to1(&zc[i].one21[n])) return 1;
+            }
+            free(id);
         }
-        free(id);
+
+        /* Descriptor_t */
+        if (cgi_get_nodes(zc[i].id, "Descriptor_t",
+            &zc[i].ndescr, &id)) return 1;
+        if (zc[i].ndescr>0) {
+            zc[i].descr = CGNS_NEW(cgns_descr, zc[i].ndescr);
+            for (n=0; n<zc[i].ndescr; n++) {
+                zc[i].descr[n].id = id[n];
+                zc[i].descr[n].link = cgi_read_link(id[n]);
+                zc[i].descr[n].in_link = linked;
+                if (cgi_read_string(id[n], zc[i].descr[n].name,
+                    &zc[i].descr[n].text)) return 1;
+            }
+            free(id);
+        }
+
+        /* UserDefinedData_t */
+        if (cgi_read_user_data(linked, zc[i].id, &zc[i].nuser_data,
+            &zc[i].user_data)) return 1;
     }
 
-     /* UserDefinedData_t */
-    if (cgi_read_user_data(linked, zconn[0]->id, &zconn[0]->nuser_data,
-        &zconn[0]->user_data)) return 1;
-
+    free(ids);
     return 0;
 }
 
@@ -1349,7 +1641,8 @@ int cgi_read_1to1(cgns_1to1 *one21)
     return 0;
 }
 
-int cgi_read_conn(cgns_conn *conn) {
+int cgi_read_conn(cgns_conn *conn)
+{
     int i, nchild;
     int linked = conn->link ? 1 : conn->in_link;
     char_33 name, parent_label;
@@ -1364,9 +1657,12 @@ int cgi_read_conn(cgns_conn *conn) {
 
      /* GridLocation */
     if (cgi_read_location(conn->id, conn->name, &conn->location)) return 1;
-    if (conn->location != CGNS_ENUMV( Vertex ) && conn->location != CGNS_ENUMV( CellCenter ) &&
-        conn->location != CGNS_ENUMV( FaceCenter ) && conn->location != CGNS_ENUMV( IFaceCenter ) &&
-        conn->location != CGNS_ENUMV( JFaceCenter ) && conn->location != CGNS_ENUMV( KFaceCenter )) {
+    if (conn->location != CGNS_ENUMV(Vertex) &&
+        conn->location != CGNS_ENUMV(CellCenter) &&
+        conn->location != CGNS_ENUMV(FaceCenter) &&
+        conn->location != CGNS_ENUMV(IFaceCenter) &&
+        conn->location != CGNS_ENUMV(JFaceCenter) &&
+        conn->location != CGNS_ENUMV(KFaceCenter)) {
         cgi_error("Unsupported GridLocation %s for Connectivity %s",
             cg_GridLocationName(conn->location), conn->name);
         return 1;
@@ -1597,7 +1893,8 @@ int cgi_read_conn(cgns_conn *conn) {
     return 0;
 }
 
-int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop) {
+int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop)
+{
     int nchild, n, linked;
     double *id;
     char *type_name;    /* allocated in cgi_read_node */
@@ -1769,7 +2066,8 @@ int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop) {
     return 0;
 }
 
-int cgi_read_hole(cgns_hole *hole) {
+int cgi_read_hole(cgns_hole *hole)
+{
     int linked = hole->link ? 1 : hole->in_link;
     int nIA_t, nIR_t;
     double *IA_id, *IR_id, *id;
@@ -1856,7 +2154,8 @@ int cgi_read_hole(cgns_hole *hole) {
     return 0;
 }
 
-int cgi_read_zboco(int in_link, double parent_id, cgns_zboco **zboco) {
+int cgi_read_zboco(int in_link, double parent_id, cgns_zboco **zboco)
+{
     int nnod, n, linked;
     double *id;
 
@@ -1907,10 +2206,10 @@ int cgi_read_zboco(int in_link, double parent_id, cgns_zboco **zboco) {
 
 int cgi_read_boco(cgns_boco *boco)
 {
-    int ierr=0;
+    int ierr=0, modified = 0;
     int linked = boco->link ? 1 : boco->in_link;
-    int nIA_t, nIR_t, n, i;
-    double *IA_id, *IR_id;
+    int nIA_t, n, i;
+    double *IA_id;
     char *boconame;
     char_33 name, data_type;
     cgns_ptset *ptset;
@@ -1923,66 +2222,58 @@ int cgi_read_boco(cgns_boco *boco)
         cgi_BCType(boconame, &boco->type)) return 1;
     free(boconame);
 
-     /* get number of IndexArray_t and IndexRange_t nodes and their ID */
-    if (cgi_get_nodes(boco->id, "IndexArray_t", &nIA_t, &IA_id)) return 1;
-    if (cgi_get_nodes(boco->id, "IndexRange_t", &nIR_t, &IR_id)) return 1;
-
-     /* initialized */
-    boco->ptset = 0;
-
-    for (n=0; n<nIR_t; n++) {
-        if (cgio_get_name(cg->cgio, IR_id[n], name)) {
-            cg_io_error("cgio_get_name");
-            return 1;
+    /* GridLocation_t */
+    if (cg->version > 1200) {
+        if (cgi_read_location(boco->id, boco->name, &boco->location)) return 1;
+    } else {
+     /* Until version 1.2, GridLocation was under BCDataSet_t */
+        if (boco->ndataset) {   /* Wild assumption that all BCDataSet have same
+                       GridLocation_t value */
+            if (cgi_read_location(boco->dataset[0].id, boco->dataset[0].name,
+                &boco->location)) return 1;
+        } else {
+            boco->location= CGNS_ENUMV(Vertex);
         }
-        if (strcmp(name,"PointRange") && strcmp(name,"ElementRange")) {
-            cgi_error("Invalid name for IndexRange_t");
-            return 1;
-        }
-        if (boco->ptset!=0) {
-            cgi_error("Multiple definition of boundary patch found");
-            return 1;
-        }
-        boco->ptset = CGNS_NEW(cgns_ptset, 1);
-        if (strcmp(name,"ElementRange")==0)
-          boco->ptset->type = CGNS_ENUMV( ElementRange );
-        else
-          boco->ptset->type = CGNS_ENUMV( PointRange );
-        boco->location = CGNS_ENUMV( GridLocationNull );
-        boco->ptset->id=IR_id[n];
-        boco->ptset->link=cgi_read_link(IR_id[n]);
-        boco->ptset->in_link=linked;
-        if (cgi_read_ptset(boco->id, boco->ptset)) return 1;
-    }
-    if (nIR_t) free(IR_id);
-
-    for (n=0; n<nIA_t; n++) {
-        if (cgio_get_name(cg->cgio, IA_id[n], name)) {
-            cg_io_error("cgio_get_name");
-            return 1;
-        }
-        if (strcmp(name, "PointList") && strcmp(name,"ElementList")) continue;
-
-        if (boco->ptset!=0) {
-            cgi_error("Multiple definition of boundary patch found");
-            return 1;
-        }
-        boco->ptset = CGNS_NEW(cgns_ptset, 1);
-        if (strcmp(name,"ElementList")==0)
-          boco->ptset->type = CGNS_ENUMV( ElementList );
-        else
-          boco->ptset->type = CGNS_ENUMV( PointList );
-        boco->location = CGNS_ENUMV( GridLocationNull );
-        boco->ptset->id = IA_id[n];
-        boco->ptset->link = cgi_read_link(IA_id[n]);
-        boco->ptset->in_link = linked;
-        if (cgi_read_ptset(boco->id, boco->ptset)) return 1;
     }
 
-    if (boco->ptset==0) {
-        cgi_error("Boundary condition patch '%s' defined incorrectly",boco->name);
+     /* read point set */
+    if (cgi_read_one_ptset(linked, boco->id, &boco->ptset)) return 1;
+    if (boco->ptset == 0) {
+        cgi_error("Boundary condition patch '%s' not defined",boco->name);
         return 1;
     }
+
+    /* fix ElementList/Range */
+    if (boco->ptset->type == CGNS_ENUMV(ElementList) ||
+        boco->ptset->type == CGNS_ENUMV(ElementRange)) {
+        modified++;
+        if (boco->ptset->type == CGNS_ENUMV(ElementList)) {
+            boco->ptset->type = CGNS_ENUMV(PointList);
+            strcpy(boco->ptset->name, "PointList");
+        } else {
+            boco->ptset->type = CGNS_ENUMV(PointRange);
+            strcpy(boco->ptset->name, "PointRange");
+        }
+#ifdef CG_ALLOW_BC_CELL_CENTER
+        boco->location = CGNS_ENUMV(CellCenter);
+#else
+        if (Cdim == 1) boco->location = CGNS_ENUMV(Vertex);
+        else if (Cdim == 2) boco->location = CGNS_ENUMV(EdgeCenter);
+        else boco->location = CGNS_ENUMV(FaceCenter);
+#endif
+    }
+    
+    /* fix GridLocation */
+#ifndef CG_ALLOW_BC_CELL_CENTER
+    if (boco->location == CGNS_ENUMV(CellCenter)) {
+        if (Cdim == 1) boco->location = CGNS_ENUMV(Vertex);
+        else if (Cdim == 2) boco->location = CGNS_ENUMV(EdgeCenter);
+        else boco->location = CGNS_ENUMV(FaceCenter);
+        cgi_warning("GridLocation CellCenter for BC_t is deprecated - "
+            "changed to %s", GridLocationName[boco->location]);
+        modified++;
+    }
+#endif
 
      /* FamilyName_t */
     if (cgi_read_family_name(linked, boco->id, boco->name, boco->family_name))
@@ -1990,6 +2281,8 @@ int cgi_read_boco(cgns_boco *boco)
 
      /* InwardNormalList */
     boco->normal = 0;
+    if (cgi_get_nodes(boco->id, "IndexArray_t", &nIA_t, &IA_id))
+        return 1;
     for (n=0; n<nIA_t; n++) {
         if (cgio_get_name(cg->cgio, IA_id[n], name)) {
             cg_io_error("cgio_get_name");
@@ -2053,23 +2346,6 @@ int cgi_read_boco(cgns_boco *boco)
     }
     if (nIA_t) free(IA_id);
 
-    /* V2.4 : Moved the following block to here from below in order to
-     *          have an up to date grid location value. */
-    /* GridLocation_t */
-    if (cg->version>1200) {
-        if (cgi_read_location(boco->id, boco->name, &boco->location)) return 1;
-
-    } else if (!boco->location) {
-     /* Until version 1.2, GridLocation was under BCDataSet_t */
-        if (boco->ndataset) {   /* Wild assumption that all BCDataSet have same
-                       GridLocation_t value */
-            if (cgi_read_location(boco->dataset[0].id, boco->dataset[0].name,
-                &boco->location)) return 1;
-        } else {
-          if (!boco->location) boco->location= CGNS_ENUMV( Vertex );
-        }
-    }
-
      /* BCDataSet_t */
     if (cgi_read_dataset(linked, boco->id, &boco->ndataset, &boco->dataset))
         return 1;
@@ -2099,21 +2375,24 @@ int cgi_read_boco(cgns_boco *boco)
         }
     }
 
-    if (cg->version <= 1270) {
+    if ((cg->version <= 1270 || modified) &&
+        cg->mode == CG_MODE_MODIFY && !linked) {
         const char *name;
         cgsize_t len;
         double dummy_id;
-        if (cg->mode == CG_MODE_MODIFY && !linked) {
-            ierr = cgio_get_node_id(cg->cgio, boco->id, "GridLocation",
-                                    &dummy_id);
-            if (!ierr) cgi_delete_node(boco->id, dummy_id);
-            if (boco->location != CGNS_ENUMV( Vertex )) {
-                name = GridLocationName[boco->location];
-                len = (cgsize_t)strlen (name);
-                if (cgi_new_node(boco->id, "GridLocation", "GridLocation_t",
+        /* fix point set name */
+        if (cgio_set_name(cg->cgio, boco->id, boco->ptset->id,
+                boco->ptset->name)) return 1;
+        /* fix grid location */
+        ierr = cgio_get_node_id(cg->cgio, boco->id, "GridLocation",
+                                &dummy_id);
+        if (!ierr) cgi_delete_node(boco->id, dummy_id);
+        if (boco->location != CGNS_ENUMV(Vertex)) {
+            name = GridLocationName[boco->location];
+            len = (cgsize_t)strlen (name);
+            if (cgi_new_node(boco->id, "GridLocation", "GridLocation_t",
                     &dummy_id, "C1", 1, &len, name))
-                    return 1;
-            }
+                return 1;
         }
     }
 
@@ -2137,7 +2416,8 @@ int cgi_read_boco(cgns_boco *boco)
     return 0;
 }
 
-int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop) {
+int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
+{
     int nchild, n, linked;
     double *id;
     char *type_name;    /* allocated in cgi_read_node */
@@ -2335,7 +2615,8 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop) {
 }
 
 int cgi_read_dataset(int in_link, double parent_id, int *ndataset,
-                     cgns_dataset **dataset) {
+                     cgns_dataset **dataset)
+{
     int n, i, nnod, linked;
     double *id, *ids;
     char_33 name;
@@ -2444,9 +2725,9 @@ int cgi_read_dataset(int in_link, double parent_id, int *ndataset,
             }
             dataset[0][n].ptset = CGNS_NEW(cgns_ptset, 1);
             if (strcmp(name,"ElementRange")==0)
-              dataset[0][n].ptset->type = CGNS_ENUMV( ElementRange );
+              dataset[0][n].ptset->type = CGNS_ENUMV(ElementRange);
             else
-              dataset[0][n].ptset->type = CGNS_ENUMV( PointRange );
+              dataset[0][n].ptset->type = CGNS_ENUMV(PointRange);
             dataset[0][n].ptset->id=IR_id[nn];
             dataset[0][n].ptset->link=cgi_read_link(IR_id[nn]);
             dataset[0][n].ptset->in_link=linked;
@@ -2488,7 +2769,8 @@ int cgi_read_dataset(int in_link, double parent_id, int *ndataset,
     return 0;
 }
 
-int cgi_read_bcdata(cgns_bcdata *bcdata) {
+int cgi_read_bcdata(cgns_bcdata *bcdata)
+{
     int n, linked = bcdata->link ? 1 : bcdata->in_link;
     double *id;
 
@@ -2515,6 +2797,67 @@ int cgi_read_bcdata(cgns_bcdata *bcdata) {
     if (cgi_read_user_data(linked, bcdata->id, &bcdata->nuser_data,
         &bcdata->user_data)) return 1;
 
+    return 0;
+}
+
+int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
+{
+    int i, nI_t;
+    double *I_id;
+    char_33 name;
+    cgns_ptset *ptset = NULL;
+
+    if (cgi_get_nodes(parent_id, "IndexArray_t", &nI_t, &I_id))
+        return 1;
+    for (i = 0; i < nI_t; i++) {
+        if (cgio_get_name(cg->cgio, I_id[i], name)) {
+            cg_io_error("cgio_get_name for PointList");
+            return 1;
+        }
+        if (strcmp(name, "PointList") && strcmp(name, "ElementList"))
+            continue;
+        if (ptset != NULL) {
+            cgi_error("Multiple definitions of PointList/PointRange");
+            return 1;
+        }
+        ptset = CGNS_NEW(cgns_ptset, 1);
+        if (0 == strcmp(name, "ElementList"))
+            ptset->type = CGNS_ENUMV(ElementList);
+        else
+            ptset->type = CGNS_ENUMV(PointList);
+        ptset->id=I_id[i];
+        ptset->link=cgi_read_link(I_id[i]);
+        ptset->in_link=linked;
+        if (cgi_read_ptset(I_id[i], ptset)) return 1;
+    }
+    if (nI_t) free(I_id);
+
+    if (cgi_get_nodes(parent_id, "IndexRange_t", &nI_t, &I_id))
+        return 1;
+    for (i = 0; i < nI_t; i++) {
+        if (cgio_get_name(cg->cgio, I_id[i], name)) {
+            cg_io_error("cgio_get_name for PointRange");
+            return 1;
+        }
+        if (strcmp(name, "PointRange") && strcmp(name, "ElementRange"))
+            continue;
+        if (ptset != NULL) {
+            cgi_error("Multiple definitions of PointList/PointRange");
+            return 1;
+        }
+        ptset = CGNS_NEW(cgns_ptset, 1);
+        if (0 == strcmp(name, "ElementRange"))
+            ptset->type = CGNS_ENUMV(ElementRange);
+        else
+            ptset->type = CGNS_ENUMV(PointRange);
+        ptset->id=I_id[i];
+        ptset->link=cgi_read_link(I_id[i]);
+        ptset->in_link=linked;
+        if (cgi_read_ptset(I_id[i], ptset)) return 1;
+    }
+    if (nI_t) free(I_id);
+
+    *pptset = ptset;
     return 0;
 }
 
@@ -2805,7 +3148,8 @@ int cgi_read_equations(int in_link, double parent_id,
 }
 
 int cgi_read_model(int in_link, double parent_id, char *label,
-                   cgns_model **model) {
+                   cgns_model **model)
+{
     int n, nnod, linked;
     double *id;
     char *string_data;
@@ -2862,7 +3206,8 @@ int cgi_read_model(int in_link, double parent_id, char *label,
     return 0;
 }
 
-int cgi_read_state(int in_link, double parent_id, cgns_state **state) {
+int cgi_read_state(int in_link, double parent_id, cgns_state **state)
+{
     char_33 name;
     int n, nnod, defined=0, linked;
     double *id;
@@ -2970,7 +3315,8 @@ int cgi_read_state(int in_link, double parent_id, cgns_state **state) {
     return 0;
 }
 
-int cgi_read_gravity(int in_link, double parent_id, cgns_gravity **gravity) {
+int cgi_read_gravity(int in_link, double parent_id, cgns_gravity **gravity)
+{
     int i, nnod, linked;
     double *id;
     char_33 temp_name;
@@ -3046,7 +3392,8 @@ int cgi_read_gravity(int in_link, double parent_id, cgns_gravity **gravity) {
     return 0;
 }
 
-int cgi_read_axisym(int in_link, double parent_id, cgns_axisym **axisym) {
+int cgi_read_axisym(int in_link, double parent_id, cgns_axisym **axisym)
+{
     int i, nnod, linked, ref_point_flag=0, axis_flag=0;
     double *id;
     char_33 temp_name;
@@ -3178,7 +3525,8 @@ int cgi_read_axisym(int in_link, double parent_id, cgns_axisym **axisym) {
     return 0;
 }
 
-int cgi_read_rotating(int in_link, double parent_id, cgns_rotating **rotating) {
+int cgi_read_rotating(int in_link, double parent_id, cgns_rotating **rotating)
+{
     int i, nnod, linked, rot_rate_flag=0, rot_center_flag=0;
     double *id;
     char_33 temp_name;
@@ -3387,10 +3735,11 @@ int cgi_read_converg(int in_link, double parent_id, cgns_converg **converg)
 }
 
 int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
-                      cgns_discrete **discrete) {
+                      cgns_discrete **discrete)
+{
     double *id, *idi;
     int n, i, j, linked;
-    cgsize_t DataSize[3];
+    cgsize_t DataSize[3], DataCount = 0;
 
     if (cgi_get_nodes(parent_id, "DiscreteData_t", ndiscrete, &id)) return 1;
     if (*ndiscrete<=0) {
@@ -3427,6 +3776,18 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
      /* Determine data size */
         if (cgi_datasize(Idim, CurrentDim, discrete[0][n].location,
             discrete[0][n].rind_planes, DataSize)) return 1;
+    
+     /* check for PointList/PointRange */
+        if (cgi_read_one_ptset(linked, discrete[0][n].id,
+                &discrete[0][n].ptset)) return 1;
+        if (discrete[0][n].ptset != NULL) {
+            if (discrete[0][n].ptset->type == CGNS_ENUMV(ElementList) ||
+                discrete[0][n].ptset->type == CGNS_ENUMV(ElementRange)) {
+                cgi_error("ElementList/Range not supported under DiscreteData");
+                return 1;
+            }
+            DataCount = discrete[0][n].ptset->size_of_patch;
+        }
 
      /* DataArray_t */
         if (cgi_get_nodes(discrete[0][n].id, "DataArray_t",
@@ -3441,19 +3802,11 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                     "DiscreteData_t", discrete[0][n].id)) return 1;
 
              /* verify data */
-                if (discrete[0][n].array[i].data_dim!=Idim) {
-                    cgi_error("Wrong data dimension in Discrete Data definition");
-                    return 1;
-                }
-
-             /* Check that the data size is consistent with the zone dimension, the grid
-                location and rind data (not done for EdgeCenter and FaceCenter ... yet)
-              */
-                if (discrete[0][n].location == CGNS_ENUMV( Vertex ) ||
-                    discrete[0][n].location == CGNS_ENUMV( CellCenter ) ||
-                    discrete[0][n].location == CGNS_ENUMV( IFaceCenter ) ||
-                    discrete[0][n].location == CGNS_ENUMV( JFaceCenter ) ||
-                    discrete[0][n].location == CGNS_ENUMV( KFaceCenter )) {
+                if (discrete[0][n].ptset == NULL) {
+                    if (discrete[0][n].array[i].data_dim!=Idim) {
+                        cgi_error("Wrong data dimension in Discrete Data definition");
+                        return 1;
+                    }
                     for (j=0; j<Idim; j++) {
                         if (discrete[0][n].array[i].dim_vals[j]!= DataSize[j]) {
                             cgi_error("Invalid array dimension for Discrete Data '%s'",
@@ -3461,8 +3814,15 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                             return 1;
                         }
                     }
+                } else {
+                    if (discrete[0][n].array[i].data_dim != 1 ||
+                        discrete[0][n].array[i].dim_vals[0] != DataCount) {
+                        cgi_error("Invalid array dimension for ptset solution");
+                        return 1;
+                    }
                 }
                 if (strcmp(discrete[0][n].array[i].data_type,"I4") &&
+                    strcmp(discrete[0][n].array[i].data_type,"I8") &&
                     strcmp(discrete[0][n].array[i].data_type,"R4") &&
                     strcmp(discrete[0][n].array[i].data_type,"R8")) {
                     cgi_error("Datatype %d not supported for Discrete Data");
@@ -3482,7 +3842,8 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
 }
 
 int cgi_read_integral(int in_link, double parent_id, int *nintegrals,
-                      cgns_integral **integral) {
+                      cgns_integral **integral)
+{
     double *id, *idi;
     int n, i, linked;
 
@@ -3544,7 +3905,8 @@ int cgi_read_integral(int in_link, double parent_id, int *nintegrals,
 }
 
 int cgi_read_rmotion(int in_link, double parent_id, int *nrmotions,
-                     cgns_rmotion **rmotion) {
+                     cgns_rmotion **rmotion)
+{
     cgns_array *array;
     char *string_data;
     double *id, *idi;
@@ -3738,6 +4100,7 @@ int cgi_read_array(cgns_array *array, char *parent_label, double parent_id)
     if (strcmp(parent_label,"GridCoordinates_t")==0 ||
         strcmp(parent_label,"FlowSolution_t")==0 ||
         strcmp(parent_label,"Elements_t")==0 ||
+        strcmp(parent_label,"ZoneSubRegion_t")==0 ||
         strcmp(parent_label,"DiscreteData_t")==0) {
         data_flag=SKIP_DATA;
         array->data=0;
@@ -3925,8 +4288,8 @@ int cgi_read_exponents(int in_link, double parent_id, cgns_exponent **exponents)
     return 0;
 }
 
-int cgi_read_units(int in_link, double parent_id, cgns_units **units) {
-
+int cgi_read_units(int in_link, double parent_id, cgns_units **units)
+{
     char_33 unit_name;
     char *string_data;
     double *id;
@@ -4044,7 +4407,8 @@ int cgi_read_string(double id, char_33 name, char **string_data)
 
 int cgi_read_DDD(int in_link, double parent_id, int *ndescr,
                  cgns_descr **descr, CGNS_ENUMV( DataClass_t ) *data_class,
-                 cgns_units **units) {
+                 cgns_units **units)
+{
     double *id;
     int n, nnod;
     char_33 name;
@@ -4142,7 +4506,9 @@ int cgi_read_rind(double parent_id, int **rind_planes)
     return 0;
 }
 
-int cgi_read_location(double parent_id, char_33 parent_name, CGNS_ENUMT( GridLocation_t ) *location) {
+int cgi_read_location(double parent_id, char_33 parent_name,
+                      CGNS_ENUMT(GridLocation_t) *location)
+{
     int nGL_t;
     double *id;
     char *location_name;    /* allocated in cgi_read_node */
@@ -4169,7 +4535,9 @@ int cgi_read_location(double parent_id, char_33 parent_name, CGNS_ENUMT( GridLoc
     return 0;
 }
 
-int cgi_read_zonetype(double parent_id, char_33 parent_name, CGNS_ENUMT( ZoneType_t ) *type) {
+int cgi_read_zonetype(double parent_id, char_33 parent_name,
+                      CGNS_ENUMT(ZoneType_t) *type)
+{
     int nchild;
     double *id;
     char *zonetype_name;    /* allocated in cgi_read_node */
@@ -4196,8 +4564,9 @@ int cgi_read_zonetype(double parent_id, char_33 parent_name, CGNS_ENUMT( ZoneTyp
     return 0;
 }
 
-int cgi_read_simulation(double parent_id, CGNS_ENUMT( SimulationType_t ) *type,
-                        double *type_id) {
+int cgi_read_simulation(double parent_id, CGNS_ENUMT(SimulationType_t) *type,
+                        double *type_id)
+{
     int nchild;
     double *id;
     char *type_name;    /* allocated in cgi_read_node */
@@ -4453,7 +4822,8 @@ int cgi_read_ziter(int in_link, double parent_id, cgns_ziter **ziter)
 }
 
 int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
-                       cgns_user_data **user_data) {
+                       cgns_user_data **user_data)
+{
     double *id, *idi;
     int n, i, linked;
     double *IA_id, *IR_id;
@@ -4589,6 +4959,202 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
     return 0;
 }
 
+int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
+                       cgns_subreg **subreg)
+{
+    double *id, *idi;
+    int n, i, linked;
+    double *IA_id, *IR_id;
+    int nIA_t, nIR_t, nn;
+    char_33 data_type, name;
+    cgns_subreg *reg;
+    int ndim, ndescr;
+    char *text;
+    void *data;
+    cgsize_t dim_vals[12];
+
+    if (cgi_get_nodes(parent_id, "ZoneSubRegion_t", nsubreg, &id))
+        return 1;
+    if (*nsubreg <= 0) {
+        *subreg = 0;
+        return 0;
+    }
+
+    reg = CGNS_NEW(cgns_subreg, (*nsubreg));
+    *subreg = reg;
+
+    for (n = 0; n < (*nsubreg); n++) {
+        reg[n].id = id[n];
+        reg[n].link = cgi_read_link(id[n]);
+        reg[n].in_link = in_link;
+        linked = reg[n].link ? 1 : in_link;
+
+        if (cgi_read_node(reg[n].id, reg[n].name, data_type, &ndim,
+                dim_vals, &data, READ_DATA)) {
+            cgi_error("Error reading ZoneSubRegion node");
+            return 1;
+        }
+        if (ndim != 1 || dim_vals[0] != 1 || strcmp(data_type, "I4")) {
+            cgi_error("Bad dimension value for ZoneSubRegion node");
+            return 1;
+        }
+        reg[n].reg_dim = *((int *)data);
+        free(data); 
+
+        /* Descriptor_t */
+        if (cgi_get_nodes(id[n], "Descriptor_t", &nn, &idi)) return 1;
+        ndescr = 0;
+        if (nn > 0) {
+            for (i = 0; i < nn; i++) {
+                if (cgi_read_string(idi[i], name, &text)) return 1;
+                if (0 == strcmp(name, "BCRegionName")) {
+                    reg[n].bcname = CGNS_NEW(cgns_descr, 1);
+                    reg[n].bcname->id = idi[i];
+                    reg[n].bcname->link = cgi_read_link(idi[i]);
+                    reg[n].bcname->in_link = in_link;
+                    strcpy(reg[n].bcname->name, name);
+                    reg[n].bcname->text = text;
+                }
+                else if (0 == strcmp(name, "GridConnectivityRegionName")) {
+                    reg[n].gcname = CGNS_NEW(cgns_descr, 1);
+                    reg[n].gcname->id = idi[i];
+                    reg[n].gcname->link = cgi_read_link(idi[i]);
+                    reg[n].gcname->in_link = in_link;
+                    strcpy(reg[n].gcname->name, name);
+                    reg[n].gcname->text = text;
+                }
+                else {
+                    free(text);
+                    ndescr++;
+                }
+            }
+        }
+        if (ndescr > 0) {
+            int j = 0;
+            reg[n].ndescr = ndescr;
+            reg[n].descr = CGNS_NEW(cgns_descr, ndescr);
+            for (i = 0; i < nn; i++) {
+                if (cgi_read_string(idi[i], name, &text)) return 1;
+                if (strcmp(name, "BCRegionName") &&
+                    strcmp(name, "GridConnectivityRegionName")) {
+                    reg[n].descr[j].id = idi[i];
+                    reg[n].descr[j].link = cgi_read_link(idi[i]);
+                    reg[n].descr[j].in_link = in_link;
+                    strcpy(reg[n].descr[j].name, name);
+                    reg[n].descr[j].text = text;
+                    j++;
+                }
+                else {
+                    free(text);
+                }
+            }
+        }
+        if (nn) free(idi);
+
+        /* DataClass_t */
+        if (cgi_get_nodes(id[n], "DataClass_t", &nn, &idi)) return 1;
+        if (nn > 0) {
+            if (cgi_read_string(idi[0], name, &text)) return 1;
+            cgi_DataClass(text, &reg[n].data_class);
+            free(text);
+            free(idi);
+        }
+
+        /* DimensionalUnits_t */
+        if (cgi_read_units(in_link, id[n], &reg[n].units)) return 1;
+
+        /* DataArray_t */
+        if (cgi_get_nodes(id[n], "DataArray_t", &reg[n].narrays,
+              &idi)) return 1;
+        if (reg[n].narrays > 0) {
+            reg[n].array = CGNS_NEW(cgns_array, reg[n].narrays);
+            for (i = 0; i < reg[n].narrays; i++) {
+                reg[n].array[i].id = idi[i];
+                reg[n].array[i].link = cgi_read_link(idi[i]);
+                reg[n].array[i].in_link = linked;
+                if (cgi_read_array(&reg[n].array[i],
+                        "ZoneSubRegion_t", reg[n].id)) return 1;
+            }
+            free(idi);
+        }
+
+        /* GridLocation_t */
+        if (cgi_read_location(reg[n].id, reg[n].name,
+            &reg[n].location)) return 1;
+
+        /* FamilyName_t */
+        if (cgi_read_family_name(linked, reg[n].id, 
+                reg[n].name, reg[n].family_name))
+            return 1;
+
+        /* PointSet */
+        /* get number of IndexArray_t and IndexRange_t nodes and their ID */
+        if (cgi_get_nodes(reg[n].id, "IndexArray_t", &nIA_t, 
+                          &IA_id)) return 1;
+        if (cgi_get_nodes(reg[n].id, "IndexRange_t", &nIR_t, 
+                          &IR_id)) return 1;
+
+        /* initialized */
+        reg[n].ptset = 0;
+
+        for (nn = 0; nn < nIR_t; nn++) {
+            if (cgio_get_name(cg->cgio, IR_id[nn], name)) {
+                cg_io_error("cgio_get_name");
+                return 1;
+            }
+            if (strcmp(name,"PointRange")) {
+                cgi_error("Invalid name for IndexRange_t");
+                return 1;
+            }
+            if (reg[n].ptset != NULL) {
+                cgi_error("Multiple definition of boundary patch found");
+                return 1;
+            }
+            reg[n].ptset = CGNS_NEW(cgns_ptset, 1);
+            reg[n].ptset->type = CGNS_ENUMV(PointRange);
+            reg[n].ptset->id=IR_id[nn];
+            reg[n].ptset->link=cgi_read_link(IR_id[nn]);
+            reg[n].ptset->in_link=linked;
+            if (cgi_read_ptset(reg[n].id, reg[n].ptset)) 
+                return 1;
+        }
+        if (nIR_t) free(IR_id);
+
+        for (nn = 0; nn < nIA_t; nn++) {
+            if (cgio_get_name(cg->cgio, IA_id[nn], name)) {
+                cg_io_error("cgio_get_name");
+                return 1;
+            }
+            if (strcmp(name, "PointList"))
+                continue;
+
+            if (reg[n].ptset != NULL) {
+                cgi_error("Multiple definition of boundary patch found");
+                return 1;
+            }
+            reg[n].ptset = CGNS_NEW(cgns_ptset, 1);
+            reg[n].ptset->type = CGNS_ENUMV(PointList);
+            reg[n].ptset->id = IA_id[nn];
+            reg[n].ptset->link = cgi_read_link(IA_id[nn]);
+            reg[n].ptset->in_link = linked;
+            if (cgi_read_ptset(reg[n].id, reg[n].ptset))
+                return 1;
+        }
+
+        if (nIA_t) free(IA_id);
+
+         /* Rind Planes */
+        if (cgi_read_rind(reg[n].id, &reg[n].rind_planes)) return 1;
+
+        /* UserDefinedData_t */
+        if (cgi_read_user_data(linked, reg[n].id,
+            &reg[n].nuser_data, &reg[n].user_data)) return 1;
+    }
+    free(id);
+
+    return 0;
+}
+
 int cgi_read_node(double node_id, char_33 name, char_33 data_type,
                   int *ndim, cgsize_t *dim_vals, void **data, int data_flag)
 {
@@ -4673,7 +5239,7 @@ cgns_link *cgi_read_link (double node_id)
 }
 
 int cgi_datasize(int Idim, cgsize_t *CurrentDim,
-                 CGNS_ENUMV( GridLocation_t ) location,
+                 CGNS_ENUMV(GridLocation_t) location,
                  int *rind_planes, cgsize_t *DataSize)
 {
     int j;
@@ -4719,6 +5285,29 @@ int cgi_check_dimensions(int ndim, cglong_t *dims)
         return 1;
     }
     return 0;
+}
+
+int cgi_check_location(int dim, CGNS_ENUMT(ZoneType_t) type,
+	CGNS_ENUMT(GridLocation_t) loc)
+{
+    if (loc == CGNS_ENUMV(Vertex) || loc == CGNS_ENUMV(CellCenter))
+        return 0;
+    if (loc == CGNS_ENUMV(EdgeCenter)) {
+        if (dim >= 2) return 0;
+    } else if (loc == CGNS_ENUMV(FaceCenter)) {
+        if (dim >= 3) return 0;
+    } else if (loc == CGNS_ENUMV(IFaceCenter) ||
+               loc == CGNS_ENUMV(JFaceCenter) ||
+               loc == CGNS_ENUMV(KFaceCenter)) {
+        if (type != CGNS_ENUMV(Structured)) {
+            cgi_error("GridLocation [IJK]FaceCenter only valid for Structured Grid");
+            return 1;
+        }
+        if (dim >= 3) return 0;
+    }
+    cgi_error("GridLocation %s not valid for CellDimension %d",
+        cg_GridLocationName(loc), dim);
+    return 1;
 }
 
 int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data)
@@ -5133,7 +5722,8 @@ int cgi_write_zone(double parent_id, cgns_zone *zone)
         if (cgi_write_sol(zone->id, &zone->sol[n])) return 1;
 
      /* ZoneGridConnectivity_t */
-    if (zone->zconn && cgi_write_zconn(zone->id, zone->zconn)) return 1;
+    for (n=0; n<zone->nzconn; n++)
+        if (cgi_write_zconn(zone->id, &zone->zconn[n])) return 1;
 
      /* ZoneBC_t */
     if (zone->zboco && cgi_write_zboco(zone->id, zone->zboco)) return 1;
@@ -5312,8 +5902,15 @@ int cgi_write_section(double parent_id, cgns_section *section)
         cgi_write_array(section->id, section->connect)) return 1;
 
      /* ParentData */
+#ifdef CG_SPLIT_PARENT_DATA
+    if (section->parelem &&
+        cgi_write_array(section->id, section->parelem)) return 1;
+    if (section->parface &&
+        cgi_write_array(section->id, section->parface)) return 1;
+#else
     if (section->parent &&
         cgi_write_array(section->id, section->parent)) return 1;
+#endif
 
      /* Descriptor_t */
     for (n=0; n<section->ndescr; n++)
@@ -5326,7 +5923,8 @@ int cgi_write_section(double parent_id, cgns_section *section)
     return 0;
 }
 
-int cgi_write_zcoor(double parent_id, cgns_zcoor *zcoor) {
+int cgi_write_zcoor(double parent_id, cgns_zcoor *zcoor)
+{
     int n;
 
     if (zcoor->link) {
@@ -5410,16 +6008,17 @@ int cgi_write_sol(double parent_id, cgns_sol *sol)
     return 0;
 }
 
-int cgi_write_zconn(double parent_id, cgns_zconn *zconn) {
+int cgi_write_zconn(double parent_id, cgns_zconn *zconn)
+{
     int n;
 
     if (zconn->link) {
-        return cgi_write_link(parent_id, "ZoneGridConnectivity",
+        return cgi_write_link(parent_id, zconn->name,
             zconn->link, &zconn->id);
     }
 
      /* ZoneGridConnectivity_t */
-    if (cgi_new_node(parent_id, "ZoneGridConnectivity", "ZoneGridConnectivity_t",
+    if (cgi_new_node(parent_id, zconn->name, "ZoneGridConnectivity_t",
         &zconn->id, "MT", 0, 0, 0)) return 1;
 
      /* GridConnectivity1to1_t */
@@ -5694,7 +6293,8 @@ int cgi_write_holes(double parent_id, cgns_hole *hole)
     return 0;
 }
 
-int cgi_write_zboco(double parent_id, cgns_zboco *zboco) {
+int cgi_write_zboco(double parent_id, cgns_zboco *zboco)
+{
     int n;
 
     if (zboco->link) {
@@ -5992,7 +6592,8 @@ int cgi_write_dataset(double parent_id, cgns_dataset *dataset)
     return 0;
 }
 
-int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata) {
+int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata)
+{
     int n;
 
      /* DataArray_t */
@@ -6212,7 +6813,8 @@ int cgi_write_model(double parent_id, cgns_model *model)
     return 0;
 }
 
-int cgi_write_state(double parent_id, cgns_state *state) {
+int cgi_write_state(double parent_id, cgns_state *state)
+{
     int n;
 
     if (state->link) {
@@ -6251,7 +6853,8 @@ int cgi_write_state(double parent_id, cgns_state *state) {
     return 0;
 }
 
-int cgi_write_gravity(double parent_id, cgns_gravity *gravity) {
+int cgi_write_gravity(double parent_id, cgns_gravity *gravity)
+{
     int n;
 
     if (gravity->link) {
@@ -6285,7 +6888,8 @@ int cgi_write_gravity(double parent_id, cgns_gravity *gravity) {
     return 0;
 }
 
-int cgi_write_axisym(double parent_id, cgns_axisym *axisym) {
+int cgi_write_axisym(double parent_id, cgns_axisym *axisym)
+{
     int n;
 
     if (axisym->link) {
@@ -6320,7 +6924,8 @@ int cgi_write_axisym(double parent_id, cgns_axisym *axisym) {
     return 0;
 }
 
-int cgi_write_rotating(double parent_id, cgns_rotating *rotating) {
+int cgi_write_rotating(double parent_id, cgns_rotating *rotating)
+{
     int n;
 
     if (rotating->link) {
@@ -6445,7 +7050,8 @@ int cgi_write_discrete(double parent_id, cgns_discrete *discrete)
     return 0;
 }
 
-int cgi_write_integral(double parent_id, cgns_integral *integral) {
+int cgi_write_integral(double parent_id, cgns_integral *integral)
+{
     int n;
 
     if (integral->link) {
@@ -6606,7 +7212,8 @@ int cgi_write_biter(double parent_id, cgns_biter *biter)
     return 0;
 }
 
-int cgi_write_ziter(double parent_id, cgns_ziter *ziter) {
+int cgi_write_ziter(double parent_id, cgns_ziter *ziter)
+{
     int n;
 
     if (ziter->link) {
@@ -6772,7 +7379,7 @@ int cgi_write_exponents(double parent_id, cgns_exponent *exponent)
     return 0;
 }
 
-int cgi_write_dataclass(double parent_id, CGNS_ENUMV( DataClass_t ) data_class)
+int cgi_write_dataclass(double parent_id, CGNS_ENUMV(DataClass_t) data_class)
 {
     cgsize_t dim_vals;
     double dummy_id;
@@ -6880,7 +7487,8 @@ int cgi_write_user_data(double parent_id, cgns_user_data *user_data)
     return 0;
 }
 
-int cgi_write_link(double parent_id, char *name, cgns_link *link, double *id) {
+int cgi_write_link(double parent_id, char *name, cgns_link *link, double *id)
+{
     if (cgio_create_link(cg->cgio, parent_id, name,
             link->filename, link->name_in_file, id)) {
         cg_io_error("cgio_create_link");
@@ -7030,7 +7638,8 @@ int cgi_new_node_partial(double parent_id, char const *name, char const *label,
 }
 
 int cgi_move_node(double current_parent_id, double node_id,
-          double new_parent_id, cchar_33 node_name) {
+          double new_parent_id, cchar_33 node_name)
+{
 
     if (cgio_move_node(cg->cgio, current_parent_id, node_id,
             new_parent_id)) {
@@ -7044,7 +7653,8 @@ int cgi_move_node(double current_parent_id, double node_id,
     return 0;
 }
 
-int cgi_delete_node (double parent_id, double node_id) {
+int cgi_delete_node (double parent_id, double node_id)
+{
     (cg->deleted)++;
     if (cgio_delete_node(cg->cgio, parent_id, node_id)) {
         cg_io_error ("cgio_delete_node");
@@ -7057,7 +7667,8 @@ int cgi_delete_node (double parent_id, double node_id) {
  *            Alphanumerical sorting routine               *
 \***********************************************************************/
 
-int cgi_sort_names(int nnam, double *ids) {
+int cgi_sort_names(int nnam, double *ids)
+{
     int i,j,k;
     int leni, lenj;
     char_33 temp;
@@ -7115,7 +7726,8 @@ int cgi_sort_names(int nnam, double *ids) {
  * ADF parser:  returns the children id with "label" under "parent_id" *
 \***********************************************************************/
 
-int cgi_get_nodes(double parent_id, char *label, int *nnodes, double **id) {
+int cgi_get_nodes(double parent_id, char *label, int *nnodes, double **id)
+{
     int nid, n, nchildren, len;
     char nodelabel[CGIO_MAX_NAME_LENGTH+1];
     double *idlist;
@@ -7163,8 +7775,8 @@ int cgi_get_nodes(double parent_id, char *label, int *nnodes, double **id) {
  *        Data Types functions                     *
 \***********************************************************************/
 
-char *type_of(char_33 data_type) {
-
+char *type_of(char_33 data_type)
+{
     if (strcmp(data_type, "I4")==0) return "int";
     else if (strcmp(data_type, "R4")==0) return "float";
     else if (strcmp(data_type, "R8")==0) return "double";
@@ -7213,7 +7825,8 @@ CGNS_ENUMT(DataType_t) cgi_datatype(cchar_33 adf_type)
  *        Check input functions                    *
 \***********************************************************************/
 
-int cgi_zone_no(cgns_base *base, char *zonename, int *zone_no) {
+int cgi_zone_no(cgns_base *base, char *zonename, int *zone_no)
+{
     int i;
 
     for (i=0; i<base->nzones; i++) {
@@ -7226,8 +7839,8 @@ int cgi_zone_no(cgns_base *base, char *zonename, int *zone_no) {
     return 1;
 }
 
-int cgi_check_strlen(char const *string) {
-
+int cgi_check_strlen(char const *string)
+{
     if (strlen(string) > 32) {
         cgi_error("Name exceeds 32 characters limit: %s",string);
         return 1;
@@ -7235,8 +7848,8 @@ int cgi_check_strlen(char const *string) {
     return 0;
 }
 
-int cgi_check_mode(char const *filename, int file_mode, int mode_wanted) {
-
+int cgi_check_mode(char const *filename, int file_mode, int mode_wanted)
+{
     if (mode_wanted==CG_MODE_READ && file_mode==CG_MODE_WRITE) {
         cgi_error("File %s not open for reading", filename);
         return 1;
@@ -7254,8 +7867,8 @@ int cgi_check_mode(char const *filename, int file_mode, int mode_wanted) {
 
 int cgi_add_czone(char_33 zonename, cgsize6_t range, cgsize6_t donor_range,
                   int index_dim, int *ndouble, char_33 **Dzonename,
-                  cgsize6_t **Drange, cgsize6_t **Ddonor_range) {
-
+                  cgsize6_t **Drange, cgsize6_t **Ddonor_range)
+{
     int differ=1, k, j;
 
      /* check if this interface was already found */
@@ -7355,7 +7968,8 @@ cgsize_t cgi_element_data_size(CGNS_ENUMT(ElementType_t) type,
  *       Get the memory address of a data structure        *
 \***********************************************************************/
 
-cgns_file *cgi_get_file(int file_number) {
+cgns_file *cgi_get_file(int file_number)
+{
     int filenum = file_number - file_number_offset;
     if (filenum <= 0 || filenum > n_cgns_files) {
         cgi_error("CGNS file %d is not open",file_number);
@@ -7369,8 +7983,8 @@ cgns_file *cgi_get_file(int file_number) {
     return cg;
 }
 
-cgns_base *cgi_get_base(cgns_file *cg, int B) {
-
+cgns_base *cgi_get_base(cgns_file *cg, int B)
+{
     if (B>cg->nbases || B<=0) {
         cgi_error("Base number %d invalid",B);
         return 0;
@@ -7378,7 +7992,8 @@ cgns_base *cgi_get_base(cgns_file *cg, int B) {
     return &(cg->base[B-1]);
 }
 
-cgns_zone *cgi_get_zone(cgns_file *cg, int B, int Z) {
+cgns_zone *cgi_get_zone(cgns_file *cg, int B, int Z)
+{
     cgns_base *base;
 
     base = cgi_get_base(cg, B);
@@ -7391,7 +8006,8 @@ cgns_zone *cgi_get_zone(cgns_file *cg, int B, int Z) {
     return &(base->zone[Z-1]);
 }
 
-cgns_family *cgi_get_family(cgns_file *cg, int B, int F) {
+cgns_family *cgi_get_family(cgns_file *cg, int B, int F)
+{
     cgns_base *base;
 
     base = cgi_get_base(cg, B);
@@ -7404,7 +8020,8 @@ cgns_family *cgi_get_family(cgns_file *cg, int B, int F) {
     return &base->family[F-1];
 }
 
-cgns_biter *cgi_get_biter(cgns_file *cg, int B) {
+cgns_biter *cgi_get_biter(cgns_file *cg, int B)
+{
     cgns_base *base;
 
     base = cgi_get_base(cg, B);
@@ -7416,7 +8033,8 @@ cgns_biter *cgi_get_biter(cgns_file *cg, int B) {
     } else return base->biter;
 }
 
-cgns_gravity *cgi_get_gravity(cgns_file *cg, int B) {
+cgns_gravity *cgi_get_gravity(cgns_file *cg, int B)
+{
     cgns_base *base;
 
     base = cgi_get_base(cg, B);
@@ -7428,7 +8046,8 @@ cgns_gravity *cgi_get_gravity(cgns_file *cg, int B) {
     } else return base->gravity;
 }
 
-cgns_axisym *cgi_get_axisym(cgns_file *cg, int B) {
+cgns_axisym *cgi_get_axisym(cgns_file *cg, int B)
+{
     cgns_base *base;
 
     base = cgi_get_base(cg, B);
@@ -7440,7 +8059,8 @@ cgns_axisym *cgi_get_axisym(cgns_file *cg, int B) {
     } else return base->axisym;
 }
 
-cgns_rotating *cgi_get_rotating(cgns_file *cg, int B, int Z) {
+cgns_rotating *cgi_get_rotating(cgns_file *cg, int B, int Z)
+{
     cgns_base *base;
     cgns_zone *zone;
 
@@ -7464,8 +8084,8 @@ cgns_rotating *cgi_get_rotating(cgns_file *cg, int B, int Z) {
     }
 }
 
-
-cgns_ziter *cgi_get_ziter(cgns_file *cg, int B, int Z) {
+cgns_ziter *cgi_get_ziter(cgns_file *cg, int B, int Z)
+{
     cgns_zone *zone;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -7477,7 +8097,8 @@ cgns_ziter *cgi_get_ziter(cgns_file *cg, int B, int Z) {
     } else return zone->ziter;
 }
 
-cgns_zcoor *cgi_get_zcoorGC(cgns_file *cg, int B, int Z) {
+cgns_zcoor *cgi_get_zcoorGC(cgns_file *cg, int B, int Z)
+{
     cgns_zone *zone;
     int i, index_dim;
 
@@ -7517,7 +8138,8 @@ cgns_zcoor *cgi_get_zcoorGC(cgns_file *cg, int B, int Z) {
     return 0;
 }
 
-cgns_zcoor *cgi_get_zcoor(cgns_file *cg, int B, int Z, int C) {
+cgns_zcoor *cgi_get_zcoor(cgns_file *cg, int B, int Z, int C)
+{
     cgns_zone *zone;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -7530,7 +8152,8 @@ cgns_zcoor *cgi_get_zcoor(cgns_file *cg, int B, int Z, int C) {
     return &(zone->zcoor[C-1]);
 }
 
-cgns_sol *cgi_get_sol(cgns_file *cg, int B, int Z, int S) {
+cgns_sol *cgi_get_sol(cgns_file *cg, int B, int Z, int S)
+{
     cgns_zone *zone;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -7543,7 +8166,8 @@ cgns_sol *cgi_get_sol(cgns_file *cg, int B, int Z, int S) {
     return &(zone->sol[S-1]);
 }
 
-cgns_section *cgi_get_section(cgns_file *cg, int B, int Z, int S) {
+cgns_section *cgi_get_section(cgns_file *cg, int B, int Z, int S)
+{
     cgns_zone *zone;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -7556,7 +8180,8 @@ cgns_section *cgi_get_section(cgns_file *cg, int B, int Z, int S) {
     return &zone->section[S-1];
 }
 
-cgns_array *cgi_get_field(cgns_file *cg, int B, int Z, int S, int F) {
+cgns_array *cgi_get_field(cgns_file *cg, int B, int Z, int S, int F)
+{
     cgns_sol *sol;
 
     sol = cgi_get_sol(cg, B, Z, S);
@@ -7569,11 +8194,33 @@ cgns_array *cgi_get_field(cgns_file *cg, int B, int Z, int S, int F) {
     return &(sol->field[F-1]);
 }
 
-cgns_zconn *cgi_get_zconn(cgns_file *cg, int B, int Z) {
+cgns_zconn *cgi_get_zconnZC(cgns_file *cg, int B, int Z, int C)
+{
     cgns_zone *zone;
 
     zone = cgi_get_zone(cg, B, Z);
     if (zone==0) return 0;
+
+    if (C > 0 && C <= zone->nzconn) {
+        zone->active_zconn = C;
+        return &zone->zconn[C-1];
+    }
+    cgi_error("ZoneGridConnectivity_t node number %d invalid",C);
+    return 0;
+}
+
+cgns_zconn *cgi_get_zconn(cgns_file *cg, int B, int Z)
+{
+    cgns_zone *zone;
+
+    zone = cgi_get_zone(cg, B, Z);
+    if (zone==0) return 0;
+
+    /* return active zconn if set */
+    if (zone->nzconn > 0 && zone->active_zconn > 0 &&
+        zone->active_zconn <= zone->nzconn) {
+        return &zone->zconn[zone->active_zconn-1];
+    }
 
 /* Allocate automatically only in MODE_WRITE.  In MODE_MODIFY, can't do it
    because a cg_goto would create the node even if not wanted */
@@ -7594,10 +8241,12 @@ cgns_zconn *cgi_get_zconn(cgns_file *cg, int B, int Z) {
             return 0;
         }
     }
+    zone->active_zconn = 1;
     return zone->zconn;
 }
 
-cgns_cprop *cgi_get_cprop(cgns_file *cg, int B, int Z, int I) {
+cgns_cprop *cgi_get_cprop(cgns_file *cg, int B, int Z, int I)
+{
     cgns_conn *conn;
 
     conn = cgi_get_conn(cg, B, Z, I);
@@ -7609,7 +8258,8 @@ cgns_cprop *cgi_get_cprop(cgns_file *cg, int B, int Z, int I) {
     return conn->cprop;
 }
 
-cgns_hole *cgi_get_hole(cgns_file *cg, int B, int Z, int I) {
+cgns_hole *cgi_get_hole(cgns_file *cg, int B, int Z, int I)
+{
     cgns_zconn *zconn;
 
     zconn = cgi_get_zconn(cg, B, Z);
@@ -7622,7 +8272,8 @@ cgns_hole *cgi_get_hole(cgns_file *cg, int B, int Z, int I) {
     return &(zconn->hole[I-1]);
 }
 
-cgns_conn *cgi_get_conn(cgns_file *cg, int B, int Z, int I) {
+cgns_conn *cgi_get_conn(cgns_file *cg, int B, int Z, int I)
+{
     cgns_zconn *zconn;
 
     zconn = cgi_get_zconn(cg, B, Z);
@@ -7635,7 +8286,8 @@ cgns_conn *cgi_get_conn(cgns_file *cg, int B, int Z, int I) {
     return &(zconn->conn[I-1]);
 }
 
-cgns_1to1 *cgi_get_1to1(cgns_file *cg, int B, int Z, int I) {
+cgns_1to1 *cgi_get_1to1(cgns_file *cg, int B, int Z, int I)
+{
     cgns_zconn *zconn;
 
     zconn = cgi_get_zconn(cg, B, Z);
@@ -7648,7 +8300,8 @@ cgns_1to1 *cgi_get_1to1(cgns_file *cg, int B, int Z, int I) {
     return &(zconn->one21[I-1]);
 }
 
-cgns_zboco *cgi_get_zboco(cgns_file *cg, int B, int Z) {
+cgns_zboco *cgi_get_zboco(cgns_file *cg, int B, int Z)
+{
     cgns_zone *zone;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -7677,7 +8330,8 @@ cgns_zboco *cgi_get_zboco(cgns_file *cg, int B, int Z) {
     return zone->zboco;
 }
 
-cgns_bprop *cgi_get_bprop(cgns_file *cg, int B, int Z, int BC) {
+cgns_bprop *cgi_get_bprop(cgns_file *cg, int B, int Z, int BC)
+{
     cgns_boco *boco;
 
     boco = cgi_get_boco(cg, B, Z, BC);
@@ -7688,7 +8342,8 @@ cgns_bprop *cgi_get_bprop(cgns_file *cg, int B, int Z, int BC) {
     return boco->bprop;
 }
 
-cgns_boco *cgi_get_boco(cgns_file *cg, int B, int Z, int BC) {
+cgns_boco *cgi_get_boco(cgns_file *cg, int B, int Z, int BC)
+{
     cgns_zboco *zboco;
 
     zboco = cgi_get_zboco(cg, B, Z);
@@ -7701,8 +8356,8 @@ cgns_boco *cgi_get_boco(cgns_file *cg, int B, int Z, int BC) {
     return &(zboco->boco[BC-1]);
 }
 
-cgns_dataset *cgi_get_dataset(cgns_file *cg, int B, int Z, int BC, int DSet) {
-
+cgns_dataset *cgi_get_dataset(cgns_file *cg, int B, int Z, int BC, int DSet)
+{
     cgns_boco *boco = cgi_get_boco(cg, B, Z, BC);
     if (boco==0) return 0;
 
@@ -7714,8 +8369,8 @@ cgns_dataset *cgi_get_dataset(cgns_file *cg, int B, int Z, int BC, int DSet) {
 }
 
 cgns_bcdata *cgi_get_bcdata(cgns_file *cg, int B, int Z, int BC, int Dset,
-                            CGNS_ENUMV( BCDataType_t ) type) {
-
+                            CGNS_ENUMV( BCDataType_t ) type)
+{
     cgns_dataset *dataset = cgi_get_dataset(cg, B, Z, BC, Dset);
     if (dataset==0) return 0;
 
@@ -7737,8 +8392,8 @@ cgns_bcdata *cgi_get_bcdata(cgns_file *cg, int B, int Z, int BC, int Dset,
     }
 }
 
-cgns_converg *cgi_get_converg(cgns_file *cg, int B, int Z) {
-
+cgns_converg *cgi_get_converg(cgns_file *cg, int B, int Z)
+{
     if (Z==0) {
         cgns_base *base=cgi_get_base(cg, B);
         if (base==0) return 0;
@@ -7758,8 +8413,8 @@ cgns_converg *cgi_get_converg(cgns_file *cg, int B, int Z) {
     }
 }
 
-cgns_equations *cgi_get_equations(cgns_file *cg, int B, int Z) {
-
+cgns_equations *cgi_get_equations(cgns_file *cg, int B, int Z)
+{
     if (Z==0) {
         cgns_base *base=cgi_get_base(cg, B);
         if (base==0) return 0;
@@ -7781,8 +8436,8 @@ cgns_equations *cgi_get_equations(cgns_file *cg, int B, int Z) {
     }
 }
 
-cgns_governing *cgi_get_governing(cgns_file *cg, int B, int Z) {
-
+cgns_governing *cgi_get_governing(cgns_file *cg, int B, int Z)
+{
     cgns_equations *eq=cgi_get_equations(cg, B, Z);
     if (eq==0) return 0;
 
@@ -7793,8 +8448,8 @@ cgns_governing *cgi_get_governing(cgns_file *cg, int B, int Z) {
     } else return eq->governing;
 }
 
-cgns_model *cgi_get_model(cgns_file *cg, int B, int Z, char *model) {
-
+cgns_model *cgi_get_model(cgns_file *cg, int B, int Z, char *model)
+{
     cgns_equations *eq=cgi_get_equations(cg, B, Z);
     if (eq==0) return 0;
 
@@ -7825,8 +8480,8 @@ cgns_model *cgi_get_model(cgns_file *cg, int B, int Z, char *model) {
     }
 }
 
-cgns_integral *cgi_get_integral(cgns_file *cg, int B, int Z, int N) {
-
+cgns_integral *cgi_get_integral(cgns_file *cg, int B, int Z, int N)
+{
     if (Z==0) {
         cgns_base *base=cgi_get_base(cg, B);
         if (base==0) return 0;
@@ -7846,7 +8501,8 @@ cgns_integral *cgi_get_integral(cgns_file *cg, int B, int Z, int N) {
     }
 }
 
-cgns_discrete *cgi_get_discrete(cgns_file *cg, int B, int Z, int D) {
+cgns_discrete *cgi_get_discrete(cgns_file *cg, int B, int Z, int D)
+{
     cgns_zone *zone;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -7859,7 +8515,8 @@ cgns_discrete *cgi_get_discrete(cgns_file *cg, int B, int Z, int D) {
     return &zone->discrete[D-1];
 }
 
-cgns_rmotion *cgi_get_rmotion(cgns_file *cg, int B, int Z, int R) {
+cgns_rmotion *cgi_get_rmotion(cgns_file *cg, int B, int Z, int R)
+{
     cgns_zone *zone;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -7872,7 +8529,8 @@ cgns_rmotion *cgi_get_rmotion(cgns_file *cg, int B, int Z, int R) {
     return &zone->rmotion[R-1];
 }
 
-cgns_amotion *cgi_get_amotion(cgns_file *cg, int B, int Z, int R) {
+cgns_amotion *cgi_get_amotion(cgns_file *cg, int B, int Z, int R)
+{
     cgns_zone *zone;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -7885,9 +8543,8 @@ cgns_amotion *cgi_get_amotion(cgns_file *cg, int B, int Z, int R) {
     return &zone->amotion[R-1];
 }
 
-cgns_state *cgi_get_state(cgns_file *cg, int B, int Z, int ZBC, int BC,
-    int Dset) {
-
+cgns_state *cgi_get_state(cgns_file *cg, int B, int Z, int ZBC, int BC, int Dset)
+{
      /* defined under CGNSBase_t */
     if (Z==0 && ZBC==0 && BC==0 && Dset==0) {
         cgns_base *base = cgi_get_base(cg, B);
@@ -7931,6 +8588,18 @@ cgns_state *cgi_get_state(cgns_file *cg, int B, int Z, int ZBC, int BC,
     }
 }
 
+cgns_subreg *cgi_get_subreg(cgns_file *cg, int B, int Z, int S)
+{
+    cgns_zone *zone;
+
+    zone = cgi_get_zone(cg, B, Z);
+    if (zone==0) return 0;
+
+    if (S > 0 && S <= zone->nsubreg) return &(zone->subreg[S-1]);
+
+    cgi_error("ZoneSubRegion node number %d invalid", S);
+    return NULL;
+}
 
 /******************* Functions related to cg_goto **********************************/
 
@@ -8148,10 +8817,17 @@ static int cgi_next_posit(char *label, int index, char *name)
             }
         }
         else if (0 == strcmp (label, "ZoneGridConnectivity_t")) {
-            if (z->zconn &&
-                (index == 1 || 0 == strcmp (z->zconn->name, name))) {
-                return cgi_add_posit((void *)z->zconn,
-                           label, 1, z->zconn->id);
+            if (--index < 0) {
+                for (n = 0; n < z->nzconn; n++) {
+                    if (0 == strcmp (z->zconn[n].name, name)) {
+                        index = n;
+                        break;
+                    }
+                }
+            }
+            if (index >= 0 && index < z->nzconn) {
+                return cgi_add_posit((void *)&z->zconn[index],
+                           label, index + 1, z->zconn[index].id);
             }
         }
         else if (0 == strcmp (label, "ZoneBC_t")) {
@@ -8229,6 +8905,20 @@ static int cgi_next_posit(char *label, int index, char *name)
                 (index == 1 || 0 == strcmp (z->rotating->name, name))) {
                 return cgi_add_posit((void *)z->rotating,
                            label, 1, z->rotating->id);
+            }
+        }
+        else if (0 == strcmp (label, "ZoneSubRegion_t")) {
+            if (--index < 0) {
+                for (n = 0; n < z->nsubreg; n++) {
+                    if (0 == strcmp (z->subreg[n].name, name)) {
+                        index = n;
+                        break;
+                    }
+                }
+            }
+            if (index >= 0 && index < z->nsubreg) {
+                return cgi_add_posit((void *)&z->subreg[index],
+                           label, index + 1, z->subreg[index].id);
             }
         }
         else
@@ -8544,18 +9234,19 @@ static int cgi_next_posit(char *label, int index, char *name)
             return CG_INCORRECT_PATH;
     }
 
-    /* BCDataSet_t */
+    /* BCDataSet_t and FamilyBCDataSet_t */
 
-    else if (0 == strcmp (posit->label, "BCDataSet_t")) {
+    else if (0 == strcmp (posit->label, "BCDataSet_t") ||
+             0 == strcmp (posit->label, "FamilyBCDataSet_t")) {
         cgns_dataset *d = (cgns_dataset *)posit->posit;
         if (0 == strcmp (label, "BCData_t")) {
-            if (d->dirichlet &&
-                (index == CGNS_ENUMV( Dirichlet ) || 0 == strcmp (d->dirichlet->name, name))) {
+            if (d->dirichlet && (index == CGNS_ENUMV(Dirichlet) ||
+                0 == strcmp (d->dirichlet->name, name))) {
                 return cgi_add_posit((void *)d->dirichlet,
                            label, 1, d->dirichlet->id);
             }
-            if (d->neumann &&
-                (index == CGNS_ENUMV( Neumann ) || 0 == strcmp (d->neumann->name, name))) {
+            if (d->neumann && (index == CGNS_ENUMV(Neumann) ||
+                0 == strcmp (d->neumann->name, name))) {
                 return cgi_add_posit((void *)d->neumann,
                            label, 1, d->neumann->id);
             }
@@ -9045,7 +9736,9 @@ static int cgi_next_posit(char *label, int index, char *name)
 
     else if (0 == strcmp (posit->label, "FamilyBC_t")) {
         cgns_fambc *f = (cgns_fambc *)posit->posit;
-        if (0 == strcmp (label, "BCDataSet_t")) {
+        if (0 == strcmp (label, "FamilyBCDataSet_t") ||
+            /* backwards compatibily */
+            0 == strcmp (label, "BCDataSet_t")) {
             if (--index < 0) {
                 for (n = 0; n < f->ndataset; n++) {
                     if (0 == strcmp (f->dataset[n].name, name)) {
@@ -9056,7 +9749,8 @@ static int cgi_next_posit(char *label, int index, char *name)
             }
             if (index >= 0 && index < f->ndataset) {
                 return cgi_add_posit((void *)&f->dataset[index],
-                           label, index + 1, f->dataset[index].id);
+                           "FamilyBCDataSet_t", index + 1,
+                           f->dataset[index].id);
             }
         }
         else
@@ -9539,6 +10233,42 @@ static int cgi_next_posit(char *label, int index, char *name)
             return CG_INCORRECT_PATH;
     }
 
+    /* ZoneSubRegion_t */
+
+    else if (0 == strcmp (posit->label, "ZoneSubRegion_t")) {
+        cgns_subreg *r = (cgns_subreg *)posit->posit;
+        if (0 == strcmp (label, "DataArray_t")) {
+            if (--index < 0) {
+                for (n = 0; n < r->narrays; n++) {
+                    if (0 == strcmp (r->array[n].name, name)) {
+                        index = n;
+                        break;
+                    }
+                }
+            }
+            if (index >= 0 && index < r->narrays) {
+                return cgi_add_posit((void *)&r->array[index],
+                           label, index + 1, r->array[index].id);
+            }
+        }
+        else if (0 == strcmp (label, "UserDefinedData_t")) {
+            if (--index < 0) {
+                for (n = 0; n < r->nuser_data; n++) {
+                    if (0 == strcmp (r->user_data[n].name, name)) {
+                        index = n;
+                        break;
+                    }
+                }
+            }
+            if (index >= 0 && index < r->nuser_data) {
+                return cgi_add_posit((void *)&r->user_data[index],
+                           label, index + 1, r->user_data[index].id);
+            }
+        }
+        else
+            return CG_INCORRECT_PATH;
+    }
+
     /* invalid */
 
     else
@@ -9638,7 +10368,8 @@ int cgi_set_posit(int fn, int B, int n, int *index, char **label)
     return cgi_update_posit(n, index, label);
 }
 
-int cgi_posit_id(double *posit_id) {
+int cgi_posit_id(double *posit_id)
+{
     /* check for valid posit */
     if (posit == 0) {
         cgi_error("No current position set by cg_goto\n");
@@ -9648,7 +10379,8 @@ int cgi_posit_id(double *posit_id) {
     return 0;
 }
 
-cgns_posit *cgi_get_posit() {
+cgns_posit *cgi_get_posit()
+{
     /* check for valid posit */
     if (posit == 0) {
         cgi_error("No current position set by cg_goto\n");
@@ -9671,7 +10403,9 @@ int cgi_posit_index_dim()
  * xxxxx data structure, depending on the parent pointed to by cg_goto.   *
 \* All possible parents of a given data structure must be represented.    */
 
-cgns_descr *cgi_descr_address(int local_mode, int given_no, char const *given_name, int *ier) {
+cgns_descr *cgi_descr_address(int local_mode, int given_no,
+                              char const *given_name, int *ier)
+{
     cgns_descr *descr=0;
     int n, error1=0, error2=0;
     double parent_id=0;
@@ -9782,6 +10516,8 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no, char const *given_na
         ADDRESS4MULTIPLE(cgns_cperio, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"AverageInterface_t")==0)
         ADDRESS4MULTIPLE(cgns_caverage, ndescr, descr, cgns_descr)
+    else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
+        ADDRESS4MULTIPLE(cgns_subreg, ndescr, descr, cgns_descr)
     else {
         cgi_error("Descriptor_t node not supported under '%s' type node (cgi_descr_address)",
             posit->label);
@@ -9811,7 +10547,8 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no, char const *given_na
     return descr;
 }
 
-char *cgi_famname_address(int local_mode, int *ier) {
+char *cgi_famname_address(int local_mode, int *ier)
+{
     double *id, parent_id;
     char *family_name=0;
     int nnod;
@@ -9838,6 +10575,10 @@ char *cgi_famname_address(int local_mode, int *ier) {
         cgns_user_data *user_data = (cgns_user_data *)posit->posit;
         family_name = user_data->family_name;
         parent_id = user_data->id;
+    } else if (strcmp(posit->label,"ZoneSubRegion_t")==0) {
+        cgns_subreg *subreg = (cgns_subreg *)posit->posit;
+        family_name = subreg->family_name;
+        parent_id = subreg->id;
     } else {
         cgi_error("FamilyName_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
@@ -9860,7 +10601,8 @@ char *cgi_famname_address(int local_mode, int *ier) {
 }
 
 
-CGNS_ENUMV( DataClass_t ) *cgi_dataclass_address(int local_mode, int *ier) {
+CGNS_ENUMV(DataClass_t) *cgi_dataclass_address(int local_mode, int *ier)
+{
     double *id, parent_id;
     CGNS_ENUMV( DataClass_t ) *data_class=0;
     int nnod;
@@ -9881,7 +10623,7 @@ CGNS_ENUMV( DataClass_t ) *cgi_dataclass_address(int local_mode, int *ier) {
  *  ConvergenceHistory_t, IntegralData_t, ReferenceState_t,
  *  DataArray_t, RigidGridMotion_t, ArbitraryGridMotion_t, BaseIterativeData_t,
  *  ZoneIterativeData_t, UserDefinedData_t, Gravity_t, Axisymmetry_t
- *  RotatingCoordinates_t, Periodic_t
+ *  RotatingCoordinates_t, Periodic_t, FamilyBCDataSet_t
  */
     if (strcmp(posit->label,"CGNSBase_t")==0)
         ADDRESS4SINGLE_ALLOC(cgns_base, data_class)
@@ -9897,7 +10639,8 @@ CGNS_ENUMV( DataClass_t ) *cgi_dataclass_address(int local_mode, int *ier) {
         ADDRESS4SINGLE_ALLOC(cgns_zboco, data_class)
     else if (strcmp(posit->label,"BC_t")==0)
         ADDRESS4SINGLE_ALLOC(cgns_boco, data_class)
-    else if (strcmp(posit->label,"BCDataSet_t")==0)
+    else if (strcmp(posit->label,"BCDataSet_t")==0 ||
+             strcmp(posit->label,"FamilyBCDataSet_t")==0)
         ADDRESS4SINGLE_ALLOC(cgns_dataset, data_class)
     else if (strcmp(posit->label,"BCData_t")==0)
         ADDRESS4SINGLE_ALLOC(cgns_bcdata, data_class)
@@ -9940,6 +10683,8 @@ CGNS_ENUMV( DataClass_t ) *cgi_dataclass_address(int local_mode, int *ier) {
         ADDRESS4SINGLE_ALLOC(cgns_rotating, data_class)
     else if (strcmp(posit->label,"Periodic_t")==0)
         ADDRESS4SINGLE_ALLOC(cgns_cperio, data_class)
+    else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
+        ADDRESS4SINGLE_ALLOC(cgns_subreg, data_class)
     else {
         cgi_error("DataClass_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
@@ -9958,7 +10703,8 @@ CGNS_ENUMV( DataClass_t ) *cgi_dataclass_address(int local_mode, int *ier) {
     return data_class;
 }
 
-cgns_units *cgi_units_address(int local_mode, int *ier) {
+cgns_units *cgi_units_address(int local_mode, int *ier)
+{
     cgns_units *units=0;
     double parent_id=0;
     int error1=0;
@@ -9979,7 +10725,7 @@ cgns_units *cgi_units_address(int local_mode, int *ier) {
  *  ConvergenceHistory_t, IntegralData_t, ReferenceState_t,
  *  DataArray_t, RigidGridMotion_t, ArbitraryGridMotion_t, BaseIterativeData_t,
  *  ZoneIterativeData_t, UserDefinedData_t, Gravity_t, Axisymmetry_t
- *  RotatingCoordinates_t, Periodic_t
+ *  RotatingCoordinates_t, Periodic_t, FamilyBCDataSet_t
  */
     if (strcmp(posit->label,"CGNSBase_t")==0)
         ADDRESS4SINGLE(cgns_base, units, cgns_units, 1)
@@ -9995,7 +10741,8 @@ cgns_units *cgi_units_address(int local_mode, int *ier) {
         ADDRESS4SINGLE(cgns_zboco, units, cgns_units, 1)
     else if (strcmp(posit->label,"BC_t")==0)
         ADDRESS4SINGLE(cgns_boco, units, cgns_units, 1)
-    else if (strcmp(posit->label,"BCDataSet_t")==0)
+    else if (strcmp(posit->label,"BCDataSet_t")==0 ||
+             strcmp(posit->label,"FamilyBCDataSet_t")==0)
         ADDRESS4SINGLE(cgns_dataset, units, cgns_units, 1)
     else if (strcmp(posit->label,"BCData_t")==0)
         ADDRESS4SINGLE(cgns_bcdata, units, cgns_units, 1)
@@ -10038,6 +10785,8 @@ cgns_units *cgi_units_address(int local_mode, int *ier) {
         ADDRESS4SINGLE(cgns_rotating, units, cgns_units, 1)
     else if (strcmp(posit->label,"Periodic_t")==0)
         ADDRESS4SINGLE(cgns_cperio, units, cgns_units, 1)
+    else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
+        ADDRESS4SINGLE(cgns_subreg, units, cgns_units, 1)
 
     else {
         cgi_error("DimensionalUnits_t node not supported under '%s' type node",posit->label);
@@ -10064,7 +10813,8 @@ cgns_units *cgi_units_address(int local_mode, int *ier) {
     return units;
 }
 
-int *cgi_ordinal_address(int local_mode, int *ier) {
+int *cgi_ordinal_address(int local_mode, int *ier)
+{
     double *id;
     int nnod;
     int *ordinal;
@@ -10116,7 +10866,8 @@ int *cgi_ordinal_address(int local_mode, int *ier) {
     return ordinal;
 }
 
-int *cgi_rind_address(int local_mode, int *ier) {
+int *cgi_rind_address(int local_mode, int *ier)
+{
     int *rind_planes=0, nnod;
     double parent_id=0, *id;
     int error1=0, index_dim;
@@ -10149,6 +10900,8 @@ int *cgi_rind_address(int local_mode, int *ier) {
         ADDRESS4SINGLE(cgns_amotion, rind_planes, int, 2*index_dim)
     else if (strcmp(posit->label,"Elements_t")==0)
         ADDRESS4SINGLE(cgns_section, rind_planes, int, 2*index_dim)
+    else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
+        ADDRESS4SINGLE(cgns_subreg, rind_planes, int, 2*index_dim)
 
     else {
         cgi_error("Rind_t node not supported under '%s' type node",posit->label);
@@ -10181,7 +10934,8 @@ int *cgi_rind_address(int local_mode, int *ier) {
     return rind_planes;
 }
 
-CGNS_ENUMV( GridLocation_t ) *cgi_location_address(int local_mode, int *ier) {
+CGNS_ENUMT(GridLocation_t) *cgi_location_address(int local_mode, int *ier)
+{
     double *id, parent_id;
     CGNS_ENUMV( GridLocation_t ) *location=0;
     int nnod;
@@ -10213,6 +10967,8 @@ CGNS_ENUMV( GridLocation_t ) *cgi_location_address(int local_mode, int *ier) {
         ADDRESS4SINGLE_ALLOC(cgns_user_data, location)
     else if (strcmp(posit->label,"BCDataSet_t")==0)
         ADDRESS4SINGLE_ALLOC(cgns_dataset, location)
+    else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
+        ADDRESS4SINGLE_ALLOC(cgns_subreg, location)
     else {
         cgi_error("GridLocation_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
@@ -10231,7 +10987,8 @@ CGNS_ENUMV( GridLocation_t ) *cgi_location_address(int local_mode, int *ier) {
     return location;
 }
 
-cgns_conversion *cgi_conversion_address(int local_mode, int *ier) {
+cgns_conversion *cgi_conversion_address(int local_mode, int *ier)
+{
     cgns_conversion *convert=0;
     double parent_id=0;
     int error1=0;
@@ -10273,7 +11030,8 @@ cgns_conversion *cgi_conversion_address(int local_mode, int *ier) {
     return convert;
 }
 
-cgns_exponent *cgi_exponent_address(int local_mode, int *ier) {
+cgns_exponent *cgi_exponent_address(int local_mode, int *ier)
+{
     cgns_exponent *exponents=0;
     double parent_id=0;
     int error1=0;
@@ -10316,7 +11074,8 @@ cgns_exponent *cgi_exponent_address(int local_mode, int *ier) {
 }
 
 cgns_integral *cgi_integral_address(int local_mode, int given_no,
-    char const *given_name, int *ier) {
+                                    char const *given_name, int *ier)
+{
     cgns_integral *integral=0;
     int n, error1=0, error2=0;
     double parent_id=0;
@@ -10362,7 +11121,8 @@ cgns_integral *cgi_integral_address(int local_mode, int given_no,
     return integral;
 }
 
-cgns_equations *cgi_equations_address(int local_mode, int *ier) {
+cgns_equations *cgi_equations_address(int local_mode, int *ier)
+{
     cgns_equations *equations=0;
     double parent_id=0;
     int error1=0;
@@ -10407,7 +11167,8 @@ cgns_equations *cgi_equations_address(int local_mode, int *ier) {
     return equations;
 }
 
-cgns_state *cgi_state_address(int local_mode, int *ier) {
+cgns_state *cgi_state_address(int local_mode, int *ier)
+{
     cgns_state *state=0;
     double parent_id=0;
     int error1=0;
@@ -10420,7 +11181,7 @@ cgns_state *cgi_state_address(int local_mode, int *ier) {
     }
 
 /* Possible parents: CGNSBase_t, Zone_t, ZoneBC_t, BC_t
- *           BCDataSet_t
+ *           BCDataSet_t, FamilyBCDataSet_t
  */
     if (strcmp(posit->label,"CGNSBase_t")==0)
         ADDRESS4SINGLE(cgns_base, state, cgns_state, 1)
@@ -10434,7 +11195,8 @@ cgns_state *cgi_state_address(int local_mode, int *ier) {
     else if (strcmp(posit->label,"BC_t")==0)
         ADDRESS4SINGLE(cgns_boco, state, cgns_state, 1)
 
-    else if (strcmp(posit->label,"BCDataSet_t")==0)
+    else if (strcmp(posit->label,"BCDataSet_t")==0 ||
+             strcmp(posit->label,"FamilyBCDataSet_t")==0)
         ADDRESS4SINGLE(cgns_dataset, state, cgns_state, 1)
 
     else {
@@ -10462,7 +11224,8 @@ cgns_state *cgi_state_address(int local_mode, int *ier) {
     return state;
 }
 
-cgns_converg *cgi_converg_address(int local_mode, int *ier) {
+cgns_converg *cgi_converg_address(int local_mode, int *ier)
+{
     cgns_converg *converg=0;
     double parent_id=0;
     int error1=0;
@@ -10512,7 +11275,8 @@ cgns_converg *cgi_converg_address(int local_mode, int *ier) {
     return converg;
 }
 
-cgns_governing *cgi_governing_address(int local_mode, int *ier) {
+cgns_governing *cgi_governing_address(int local_mode, int *ier)
+{
     cgns_governing *governing;
     int error1=0;
     double parent_id=0;
@@ -10554,7 +11318,8 @@ cgns_governing *cgi_governing_address(int local_mode, int *ier) {
     return governing;
 }
 
-int *cgi_diffusion_address(int local_mode, int *ier) {
+int *cgi_diffusion_address(int local_mode, int *ier)
+{
     int *diffusion_model=0, error1=0, nnod;
     double parent_id=0, *id;
 
@@ -10603,7 +11368,9 @@ int *cgi_diffusion_address(int local_mode, int *ier) {
     return diffusion_model;
 }
 
-cgns_array *cgi_array_address(int local_mode, int given_no, char const *given_name, int *ier) {
+cgns_array *cgi_array_address(int local_mode, int given_no,
+                              char const *given_name, int *ier)
+{
     cgns_array *array=0, *coord=0;
     int n, error1=0, error2=0;
     double parent_id=0;
@@ -10623,7 +11390,7 @@ cgns_array *cgi_array_address(int local_mode, int given_no, char const *given_na
  *  ConvergenceHistory_t, IntegralData_t, ReferenceState_t,
  *  RigidGridMotion_t, ArbitraryGridMotion_t, BaseIterativeData_t, ZoneIterativeData_t,
  *  UserDefinedData_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t
- *  Area_t, Periodic_t
+ *  Area_t, Periodic_t, ZoneSubRegion_t
  */
 
      /* 0,N DataArray_t under GridCoordinates_t */
@@ -10635,7 +11402,13 @@ cgns_array *cgi_array_address(int local_mode, int given_no, char const *given_na
     } else if (strcmp(posit->label,"Elements_t")==0) {
         cgns_section *section= (cgns_section *)posit->posit;
         if (local_mode==CG_MODE_WRITE) {
-            if (strcmp(given_name,"ElementConnectivity") && strcmp(given_name,"ParentData")) {
+            if (strcmp(given_name,"ElementConnectivity") &&
+#ifdef CG_SPLIT_PARENT_DATA
+		strcmp(given_name,"ParentElements") &&
+		strcmp(given_name,"ParentElementsPosition")) {
+#else
+		strcmp(given_name,"ParentData")) {
+#endif
                 cgi_error("User defined DataArray_t node not supported under '%s' type node",posit->label);
                 (*ier) = CG_ERROR;
                 return 0;
@@ -10643,24 +11416,47 @@ cgns_array *cgi_array_address(int local_mode, int given_no, char const *given_na
             if (section->connect==0 && strcmp(given_name,"ElementConnectivity")==0) {
                 section->connect = CGNS_NEW(cgns_array, 1);
                 array = section->connect;
+#ifdef CG_SPLIT_PARENT_DATA
+            } else if (section->parelem==0 && strcmp(given_name,"ParentElements")==0) {
+                section->parelem = CGNS_NEW(cgns_array, 1);
+                array = section->parelem;
+            } else if (section->parface==0 && strcmp(given_name,"ParentElementsPosition")==0) {
+                section->parface = CGNS_NEW(cgns_array, 1);
+                array = section->parface;
+#else
             } else if (section->parent==0 && strcmp(given_name,"ParentData")==0) {
                 section->parent = CGNS_NEW(cgns_array, 1);
                 array = section->parent;
+#endif
             } else {
                 if (cg->mode == CG_MODE_WRITE) error1=1;
                 else {
                     parent_id = section->id;
                     if (section->connect && strcmp(given_name,"ElementConnectivity")==0)
                         array = section->connect;
+#ifdef CG_SPLIT_PARENT_DATA
+                    else if (section->parelem && strcmp(given_name,"ParentElements")==0)
+                        array = section->parelem;
+                    else if (section->parface && strcmp(given_name,"ParentElementsPosition")==0)
+                        array = section->parface;
+#else
                     else if (section->parent && strcmp(given_name,"ParentData")==0)
                         array = section->parent;
+#endif
                 }
             }
         } else if (local_mode == CG_MODE_READ) {
             if (section->connect && strcmp(given_name,"ElementConnectivity")==0)
                 array = section->connect;
+#ifdef CG_SPLIT_PARENT_DATA
+            else if (section->parelem && strcmp(given_name,"ParentElements")==0)
+                array = section->parelem;
+            else if (section->parface && strcmp(given_name,"ParentElementsPosition")==0)
+                array = section->parface;
+#else
             else if (section->parent && strcmp(given_name,"ParentData")==0)
                 array = section->parent;
+#endif
         }
 
      /* 0,N DataArray_t under FlowSolution_t */
@@ -10792,6 +11588,10 @@ cgns_array *cgi_array_address(int local_mode, int given_no, char const *given_na
         }
         ADDRESS4MULTIPLE(cgns_cperio, narrays, array, cgns_array)
 
+     /* 0,N DataArray_t under ZoneSubRegion_t */
+    } else if (strcmp(posit->label, "ZoneSubRegion_t")==0) {
+        ADDRESS4MULTIPLE(cgns_subreg, narrays, array, cgns_array)
+
     } else {
         cgi_error("DataArray_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
@@ -10819,7 +11619,8 @@ cgns_array *cgi_array_address(int local_mode, int given_no, char const *given_na
     return array;
 }
 
-cgns_model *cgi_model_address(int local_mode, char const *ModelLabel, int *ier) {
+cgns_model *cgi_model_address(int local_mode, char const *ModelLabel, int *ier)
+{
     cgns_model *model=0;
     double parent_id=0;
     int error1=0;
@@ -10915,7 +11716,8 @@ cgns_model *cgi_model_address(int local_mode, char const *ModelLabel, int *ier) 
 
 
 cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
-    char const *given_name, int *ier) {
+                                      char const *given_name, int *ier)
+{
     cgns_user_data *user_data=0;
     int n, error1=0, error2=0;
     double parent_id=0;
@@ -10937,7 +11739,7 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
  *  Family_t, CGNSBase_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t
  *  BCProperty_t, WallFunction_t, Area_t,
  *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t, 
- *  UserDefinedData_t
+ *  UserDefinedData_t, ZoneSubRegion_t, FamilyBCDataSet_t
  */
     if (strcmp(posit->label,"IntegralData_t")==0)
         ADDRESS4MULTIPLE(cgns_integral, nuser_data, user_data, cgns_user_data)
@@ -10964,7 +11766,8 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_equations, nuser_data, user_data, cgns_user_data)
     else if (strcmp(posit->label,"BCData_t")==0)
         ADDRESS4MULTIPLE(cgns_bcdata, nuser_data, user_data, cgns_user_data)
-    else if (strcmp(posit->label,"BCDataSet_t")==0)
+    else if (strcmp(posit->label,"BCDataSet_t")==0 ||
+             strcmp(posit->label,"FamilyBCDataSet_t")==0)
         ADDRESS4MULTIPLE(cgns_dataset, nuser_data, user_data, cgns_user_data)
     else if (strcmp(posit->label,"Elements_t")==0)
         ADDRESS4MULTIPLE(cgns_section, nuser_data, user_data, cgns_user_data)
@@ -11020,6 +11823,8 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_caverage, nuser_data, user_data, cgns_user_data)
     else if (strcmp(posit->label,"UserDefinedData_t")==0)
         ADDRESS4MULTIPLE(cgns_user_data, nuser_data, user_data, cgns_user_data)    
+    else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
+        ADDRESS4MULTIPLE(cgns_subreg, nuser_data, user_data, cgns_user_data)    
     else {
         cgi_error("UserDefinedData_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
@@ -11047,7 +11852,8 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
     return user_data;
 }
 
-cgns_rotating *cgi_rotating_address(int local_mode, int *ier) {
+cgns_rotating *cgi_rotating_address(int local_mode, int *ier)
+{
     cgns_rotating *rotating=0;
     double parent_id=0;
     int error1=0;
@@ -11094,7 +11900,7 @@ cgns_rotating *cgi_rotating_address(int local_mode, int *ier) {
 }
 
 cgns_dataset *cgi_bcdataset_address(int local_mode, int given_no,
-    char const *given_name, int *ier)
+                                    char const *given_name, int *ier)
 {
     cgns_dataset *dataset=0;
     int n, error1=0, error2=0;
@@ -11107,11 +11913,8 @@ cgns_dataset *cgi_bcdataset_address(int local_mode, int given_no,
         return 0;
     }
 
-    /* Possible parents of BCDataSet_t node:
-     *  Implemented:
+    /* Possible parents of FamilyBCDataSet_t node:
      *          FamilyBC_t
-     *  Not-Implemented:
-     *          BC_t
      */
     if (strcmp(posit->label,"FamilyBC_t")==0)
         ADDRESS4MULTIPLE(cgns_fambc, ndataset, dataset, cgns_dataset)
@@ -11143,7 +11946,8 @@ cgns_dataset *cgi_bcdataset_address(int local_mode, int given_no,
     return dataset;
 }
 
-cgns_ptset *cgi_ptset_address(int local_mode, int *ier) {
+cgns_ptset *cgi_ptset_address(int local_mode, int *ier)
+{
     cgns_ptset *ptset = 0;
     double parent_id=0;
     int error1=0;
@@ -11165,7 +11969,7 @@ cgns_ptset *cgi_ptset_address(int local_mode, int *ier) {
 
     else if (strcmp(posit->label,"BCDataSet_t")==0)
         ADDRESS4SINGLE(cgns_dataset, ptset, cgns_ptset, 1)
-#if 0 /* Note: May want to allow the following */
+
     else if (strcmp(posit->label,"BC_t")==0)
         ADDRESS4SINGLE(cgns_boco, ptset, cgns_ptset, 1)
 
@@ -11177,7 +11981,16 @@ cgns_ptset *cgi_ptset_address(int local_mode, int *ier) {
 
     else if (strcmp(posit->label,"GridConnectivity1to1_t")==0)
         ADDRESS4SINGLE_ALLOC(cgns_1to1, ptset)
-#endif
+
+    else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
+        ADDRESS4SINGLE(cgns_subreg, ptset, cgns_ptset, 1)
+
+    else if (strcmp(posit->label,"FlowSolution_t")==0)
+        ADDRESS4SINGLE(cgns_sol, ptset, cgns_ptset, 1)
+
+    else if (strcmp(posit->label,"DiscreteData_t")==0)
+        ADDRESS4SINGLE(cgns_discrete, ptset, cgns_ptset, 1)
+
     else {
         cgi_error("PointSet node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
@@ -11209,7 +12022,8 @@ cgns_ptset *cgi_ptset_address(int local_mode, int *ier) {
  *            Free memory                      *
 \***********************************************************************/
 
-void cgi_free_file(cgns_file *cg) {
+void cgi_free_file(cgns_file *cg)
+{
     int b;
 
     free(cg->filename);
@@ -11220,7 +12034,8 @@ void cgi_free_file(cgns_file *cg) {
     }
 }
 
-void cgi_free_base(cgns_base *base) {
+void cgi_free_base(cgns_base *base)
+{
     int n;
 
     if (base->nzones) {
@@ -11282,7 +12097,8 @@ void cgi_free_base(cgns_base *base) {
     }
 }
 
-void cgi_free_zone(cgns_zone *zone) {
+void cgi_free_zone(cgns_zone *zone)
+{
     int n;
 
     if (zone->link) free(zone->link);
@@ -11317,8 +12133,9 @@ void cgi_free_zone(cgns_zone *zone) {
             cgi_free_integral(&zone->integral[n]);
         free(zone->integral);
     }
-    if (zone->zconn) {
-        cgi_free_zconn(zone->zconn);
+    if (zone->nzconn) {
+        for (n=0; n<zone->nzconn; n++)
+            cgi_free_zconn(&zone->zconn[n]);
         free(zone->zconn);
     }
     if (zone->zboco) {
@@ -11364,9 +12181,15 @@ void cgi_free_zone(cgns_zone *zone) {
         cgi_free_rotating(zone->rotating);
         free(zone->rotating);
     }
+    if (zone->nsubreg) {
+        for (n=0; n<zone->nsubreg; n++)
+            cgi_free_subreg(&zone->subreg[n]);
+        free(zone->subreg);
+    }
 }
 
-void cgi_free_section(cgns_section *section) {
+void cgi_free_section(cgns_section *section)
+{
     int n;
     if (section->link) free(section->link);
     if (section->ndescr) {
@@ -11379,10 +12202,21 @@ void cgi_free_section(cgns_section *section) {
         cgi_free_array(section->connect);
         free(section->connect);
     }
+#ifdef CG_SPLIT_PARENT_DATA
+    if (section->parelem) {
+        cgi_free_array(section->parelem);
+        free(section->parelem);
+    }
+    if (section->parface) {
+        cgi_free_array(section->parface);
+        free(section->parface);
+    }
+#else
     if (section->parent) {
         cgi_free_array(section->parent);
         free(section->parent);
     }
+#endif
     if (section->nuser_data) {
         for (n=0; n<section->nuser_data; n++)
             cgi_free_user_data(&section->user_data[n]);
@@ -11390,7 +12224,8 @@ void cgi_free_section(cgns_section *section) {
     }
 }
 
-void cgi_free_family(cgns_family *family) {
+void cgi_free_family(cgns_family *family)
+{
     int n;
     if (family->link) free(family->link);
     if (family->ndescr) {
@@ -11419,7 +12254,8 @@ void cgi_free_family(cgns_family *family) {
     }
 }
 
-void cgi_free_fambc(cgns_fambc *fambc) {
+void cgi_free_fambc(cgns_fambc *fambc)
+{
     if (fambc->link) free(fambc->link);
     if (fambc->ndataset) {
         int n;
@@ -11429,7 +12265,8 @@ void cgi_free_fambc(cgns_fambc *fambc) {
     }
 }
 
-void cgi_free_geo(cgns_geo *geo) {
+void cgi_free_geo(cgns_geo *geo)
+{
     int n;
     if (geo->link) free(geo->link);
     if (geo->ndescr) {
@@ -11450,11 +12287,13 @@ void cgi_free_geo(cgns_geo *geo) {
     }
 }
 
-void cgi_free_part(cgns_part *part) {
+void cgi_free_part(cgns_part *part)
+{
     if (part->link) free(part->link);
 }
 
-void cgi_free_zcoor(cgns_zcoor *zcoor) {
+void cgi_free_zcoor(cgns_zcoor *zcoor)
+{
     int n;
     if (zcoor->link) free(zcoor->link);
     if (zcoor->ndescr) {
@@ -11479,7 +12318,8 @@ void cgi_free_zcoor(cgns_zcoor *zcoor) {
     }
 }
 
-void cgi_free_zboco(cgns_zboco *zboco) {
+void cgi_free_zboco(cgns_zboco *zboco)
+{
     int n;
     if (zboco->link) free(zboco->link);
     if (zboco->ndescr) {
@@ -11507,7 +12347,8 @@ void cgi_free_zboco(cgns_zboco *zboco) {
     }
 }
 
-void cgi_free_zconn(cgns_zconn *zconn) {
+void cgi_free_zconn(cgns_zconn *zconn)
+{
     int n;
     if (zconn->link) free(zconn->link);
     if (zconn->ndescr) {
@@ -11537,7 +12378,8 @@ void cgi_free_zconn(cgns_zconn *zconn) {
     }
 }
 
-void cgi_free_sol(cgns_sol *sol) {
+void cgi_free_sol(cgns_sol *sol)
+{
     int n;
     if (sol->link) free(sol->link);
     if (sol->ndescr) {
@@ -11560,9 +12402,14 @@ void cgi_free_sol(cgns_sol *sol) {
             cgi_free_user_data(&sol->user_data[n]);
         free(sol->user_data);
     }
+    if (sol->ptset) {
+        cgi_free_ptset(sol->ptset);
+        free(sol->ptset);
+    }
 }
 
-void cgi_free_1to1(cgns_1to1 *one21) {
+void cgi_free_1to1(cgns_1to1 *one21)
+{
     int n;
     if (one21->link) free(one21->link);
     free(one21->transform);
@@ -11582,7 +12429,8 @@ void cgi_free_1to1(cgns_1to1 *one21) {
     }
 }
 
-void cgi_free_hole(cgns_hole *hole) {
+void cgi_free_hole(cgns_hole *hole)
+{
     int n;
     if (hole->link) free(hole->link);
     if (hole->ndescr) {
@@ -11602,7 +12450,8 @@ void cgi_free_hole(cgns_hole *hole) {
     }
 }
 
-void cgi_free_conn(cgns_conn *conn) {
+void cgi_free_conn(cgns_conn *conn)
+{
     int n;
     if (conn->link) free(conn->link);
     if (conn->ndescr) {
@@ -11625,7 +12474,8 @@ void cgi_free_conn(cgns_conn *conn) {
     }
 }
 
-void cgi_free_boco(cgns_boco *boco) {
+void cgi_free_boco(cgns_boco *boco)
+{
     int n;
     if (boco->link) free(boco->link);
     if (boco->ndescr) {
@@ -11674,7 +12524,8 @@ void cgi_free_boco(cgns_boco *boco) {
     }
 }
 
-void cgi_free_dataset(cgns_dataset *dataset) {
+void cgi_free_dataset(cgns_dataset *dataset)
+{
     int n;
     if (dataset->link) free(dataset->link);
     if (dataset->ndescr) {
@@ -11709,7 +12560,8 @@ void cgi_free_dataset(cgns_dataset *dataset) {
     }
 }
 
-void cgi_free_bcdata(cgns_bcdata *bcdata) {
+void cgi_free_bcdata(cgns_bcdata *bcdata)
+{
     int n;
     if (bcdata->link) free(bcdata->link);
     if (bcdata->ndescr) {
@@ -11733,12 +12585,14 @@ void cgi_free_bcdata(cgns_bcdata *bcdata) {
     }
 }
 
-void cgi_free_ptset(cgns_ptset *ptset) {
+void cgi_free_ptset(cgns_ptset *ptset)
+{
     if (ptset->link) free(ptset->link);
     if (ptset->data) free(ptset->data);
 }
 
-void cgi_free_equations(cgns_equations *equations) {
+void cgi_free_equations(cgns_equations *equations)
+{
     int n;
     if (equations->link) free(equations->link);
     if (equations->ndescr) {
@@ -11803,7 +12657,8 @@ void cgi_free_equations(cgns_equations *equations) {
     }
 }
 
-void cgi_free_governing(cgns_governing *governing) {
+void cgi_free_governing(cgns_governing *governing)
+{
     int n;
     if (governing->link) free(governing->link);
     if (governing->ndescr) {
@@ -11819,7 +12674,8 @@ void cgi_free_governing(cgns_governing *governing) {
     }
 }
 
-void cgi_free_model(cgns_model *model) {
+void cgi_free_model(cgns_model *model)
+{
     int n;
     if (model->link) free(model->link);
     if (model->ndescr) {
@@ -11843,7 +12699,8 @@ void cgi_free_model(cgns_model *model) {
     }
 }
 
-void cgi_free_state(cgns_state *state) {
+void cgi_free_state(cgns_state *state)
+{
     int n;
     if (state->link) free(state->link);
     if (state->ndescr) {
@@ -11871,7 +12728,8 @@ void cgi_free_state(cgns_state *state) {
     }
 }
 
-void cgi_free_converg(cgns_converg *converg) {
+void cgi_free_converg(cgns_converg *converg)
+{
     int n;
     if (converg->link) free(converg->link);
     if (converg->ndescr) {
@@ -11899,7 +12757,8 @@ void cgi_free_converg(cgns_converg *converg) {
     }
 }
 
-void cgi_free_discrete(cgns_discrete *discrete) {
+void cgi_free_discrete(cgns_discrete *discrete)
+{
     int n;
     if (discrete->link) free(discrete->link);
     if (discrete->ndescr) {
@@ -11922,9 +12781,14 @@ void cgi_free_discrete(cgns_discrete *discrete) {
             cgi_free_user_data(&discrete->user_data[n]);
         free(discrete->user_data);
     }
+    if (discrete->ptset) {
+        cgi_free_ptset(discrete->ptset);
+        free(discrete->ptset);
+    }
 }
 
-void cgi_free_integral(cgns_integral *integral) {
+void cgi_free_integral(cgns_integral *integral)
+{
     int n;
     if (integral->link) free(integral->link);
     if (integral->ndescr) {
@@ -11948,7 +12812,8 @@ void cgi_free_integral(cgns_integral *integral) {
     }
 }
 
-void cgi_free_array(cgns_array *array) {
+void cgi_free_array(cgns_array *array)
+{
     int n;
     if (array->link) free(array->link);
     if (array->data) free(array->data);
@@ -11971,26 +12836,31 @@ void cgi_free_array(cgns_array *array) {
     }
 }
 
-void cgi_free_convert(cgns_conversion *convert) {
+void cgi_free_convert(cgns_conversion *convert)
+{
     if (convert->link) free(convert->link);
     free(convert->data);
 }
 
-void cgi_free_exponents(cgns_exponent *exponents) {
+void cgi_free_exponents(cgns_exponent *exponents)
+{
     if (exponents->link) free(exponents->link);
     free(exponents->data);
 }
 
-void cgi_free_units(cgns_units *units) {
+void cgi_free_units(cgns_units *units)
+{
     if (units->link) free(units->link);
 }
 
-void cgi_free_descr(cgns_descr *descr) {
+void cgi_free_descr(cgns_descr *descr)
+{
     if (descr->link) free(descr->link);
     if (descr->text) free(descr->text);
 }
 
-void cgi_free_rmotion(cgns_rmotion *rmotion) {
+void cgi_free_rmotion(cgns_rmotion *rmotion)
+{
     int n;
     if (rmotion->link) free(rmotion->link);
     if (rmotion->ndescr) {
@@ -12014,7 +12884,8 @@ void cgi_free_rmotion(cgns_rmotion *rmotion) {
     }
 }
 
-void cgi_free_amotion(cgns_amotion *amotion) {
+void cgi_free_amotion(cgns_amotion *amotion)
+{
     int n;
     if (amotion->link) free(amotion->link);
     if (amotion->ndescr) {
@@ -12039,7 +12910,8 @@ void cgi_free_amotion(cgns_amotion *amotion) {
     }
 }
 
-void cgi_free_biter(cgns_biter *biter) {
+void cgi_free_biter(cgns_biter *biter)
+{
     int n;
     if (biter->link) free(biter->link);
     if (biter->ndescr) {
@@ -12063,7 +12935,8 @@ void cgi_free_biter(cgns_biter *biter) {
     }
 }
 
-void cgi_free_ziter(cgns_ziter *ziter) {
+void cgi_free_ziter(cgns_ziter *ziter)
+{
     int n;
     if (ziter->link) free(ziter->link);
     if (ziter->ndescr) {
@@ -12087,7 +12960,8 @@ void cgi_free_ziter(cgns_ziter *ziter) {
     }
 }
 
-void cgi_free_gravity(cgns_gravity *gravity) {
+void cgi_free_gravity(cgns_gravity *gravity)
+{
     int n;
     if (gravity->link) free(gravity->link);
     if (gravity->ndescr) {
@@ -12110,7 +12984,8 @@ void cgi_free_gravity(cgns_gravity *gravity) {
     }
 }
 
-void cgi_free_axisym(cgns_axisym *axisym) {
+void cgi_free_axisym(cgns_axisym *axisym)
+{
     int n;
     if (axisym->link) free(axisym->link);
     if (axisym->ndescr) {
@@ -12134,7 +13009,8 @@ void cgi_free_axisym(cgns_axisym *axisym) {
     }
 }
 
-void cgi_free_rotating(cgns_rotating *rotating) {
+void cgi_free_rotating(cgns_rotating *rotating)
+{
     int n;
     if (rotating->link) free(rotating->link);
     if (rotating->ndescr) {
@@ -12158,7 +13034,8 @@ void cgi_free_rotating(cgns_rotating *rotating) {
     }
 }
 
-void cgi_free_bprop(cgns_bprop *bprop) {
+void cgi_free_bprop(cgns_bprop *bprop)
+{
     int n;
     if (bprop->link) free(bprop->link);
     if (bprop->ndescr) {
@@ -12181,7 +13058,8 @@ void cgi_free_bprop(cgns_bprop *bprop) {
     }
 }
 
-void cgi_free_cprop(cgns_cprop *cprop) {
+void cgi_free_cprop(cgns_cprop *cprop)
+{
     int n;
     if (cprop->link) free(cprop->link);
     if (cprop->ndescr) {
@@ -12204,7 +13082,8 @@ void cgi_free_cprop(cgns_cprop *cprop) {
     }
 }
 
-void cgi_free_bcwall(cgns_bcwall *bcwall) {
+void cgi_free_bcwall(cgns_bcwall *bcwall)
+{
     int n;
     if (bcwall->link) free(bcwall->link);
     if (bcwall->ndescr) {
@@ -12219,7 +13098,8 @@ void cgi_free_bcwall(cgns_bcwall *bcwall) {
     }
 }
 
-void cgi_free_bcarea(cgns_bcarea *bcarea) {
+void cgi_free_bcarea(cgns_bcarea *bcarea)
+{
     int n;
     if (bcarea->link) free(bcarea->link);
     if (bcarea->ndescr) {
@@ -12239,7 +13119,8 @@ void cgi_free_bcarea(cgns_bcarea *bcarea) {
     }
 }
 
-void cgi_free_cperio(cgns_cperio *cperio) {
+void cgi_free_cperio(cgns_cperio *cperio)
+{
     int n;
     if (cperio->link) free(cperio->link);
     if (cperio->ndescr) {
@@ -12263,7 +13144,8 @@ void cgi_free_cperio(cgns_cperio *cperio) {
     }
 }
 
-void cgi_free_caverage(cgns_caverage *caverage) {
+void cgi_free_caverage(cgns_caverage *caverage)
+{
     int n;
     if (caverage->link) free(caverage->link);
     if (caverage->ndescr) {
@@ -12278,7 +13160,8 @@ void cgi_free_caverage(cgns_caverage *caverage) {
     }
 }
 
-void cgi_free_user_data(cgns_user_data *user_data) {
+void cgi_free_user_data(cgns_user_data *user_data)
+{
     int n;
     if (user_data->link) free(user_data->link);
     if (user_data->ndescr) {
@@ -12306,11 +13189,44 @@ void cgi_free_user_data(cgns_user_data *user_data) {
     }
 }
 
+void cgi_free_subreg(cgns_subreg *subreg)
+{
+    int n;
+    if (subreg->link) free(subreg->link);
+    if (subreg->ndescr) {
+        for (n=0; n<subreg->ndescr; n++)
+            cgi_free_descr(&subreg->descr[n]);
+        free(subreg->descr);
+    }
+    if (subreg->narrays) {
+        for (n=0; n<subreg->narrays; n++)
+            cgi_free_array(&subreg->array[n]);
+        free(subreg->array);
+    }
+    if (subreg->ptset) {
+        cgi_free_ptset(subreg->ptset);
+        free(subreg->ptset);
+    }
+    if (subreg->bcname) cgi_free_descr(subreg->bcname);
+    if (subreg->gcname) cgi_free_descr(subreg->gcname);
+    if (subreg->units) {
+        cgi_free_units(subreg->units);
+        free(subreg->units);
+    }
+    if (subreg->rind_planes) free(subreg->rind_planes);
+    if (subreg->nuser_data) {
+        for (n=0; n < subreg->nuser_data; n++)
+            cgi_free_user_data(&subreg->user_data[n]);
+        free(subreg->user_data);
+    }
+}
+
 /***********************************************************************\
  *            Return the string from enumeration           *
 \***********************************************************************/
 
-int cgi_GridLocation(char *LocationName, CGNS_ENUMV( GridLocation_t ) *type) {
+int cgi_GridLocation(char *LocationName, CGNS_ENUMT(GridLocation_t) *type)
+{
     int i;
     for (i=0; i<NofValidGridLocation; i++) {
     if (strcmp(LocationName, GridLocationName[i])==0) {
@@ -12327,7 +13243,8 @@ int cgi_GridLocation(char *LocationName, CGNS_ENUMV( GridLocation_t ) *type) {
     return 1;
 }
 
-int cgi_GridConnectivityType(char *GridConnectivityName, CGNS_ENUMV( GridConnectivityType_t ) *type) {
+int cgi_GridConnectivityType(char *GridConnectivityName, CGNS_ENUMT(GridConnectivityType_t) *type)
+{
     int i;
     for (i=0; i<NofValidGridConnectivityTypes; i++) {
         if (strcmp(GridConnectivityName, GridConnectivityTypeName[i])==0) {
@@ -12344,7 +13261,8 @@ int cgi_GridConnectivityType(char *GridConnectivityName, CGNS_ENUMV( GridConnect
     return 1;
 }
 
-int cgi_PointSetType(char *PointSetName, CGNS_ENUMV( PointSetType_t ) *type) {
+int cgi_PointSetType(char *PointSetName, CGNS_ENUMT(PointSetType_t) *type)
+{
     int i;
     for (i=0; i<NofValidPointSetTypes; i++) {
         if (strcmp(PointSetName, PointSetTypeName[i])==0) {
@@ -12361,7 +13279,8 @@ int cgi_PointSetType(char *PointSetName, CGNS_ENUMV( PointSetType_t ) *type) {
     return 1;
 }
 
-int cgi_BCType(char *BCName, CGNS_ENUMV( BCType_t ) *type) {
+int cgi_BCType(char *BCName, CGNS_ENUMT(BCType_t) *type)
+{
     int i;
     for (i=0; i<NofValidBCTypes; i++) {
         if (strcmp(BCName, BCTypeName[i])==0) {
@@ -12378,7 +13297,8 @@ int cgi_BCType(char *BCName, CGNS_ENUMV( BCType_t ) *type) {
     return 1;
 }
 
-int cgi_DataClass(char *Name, CGNS_ENUMV( DataClass_t ) *data_class) {
+int cgi_DataClass(char *Name, CGNS_ENUMT(DataClass_t) *data_class)
+{
     int i;
     for (i=0; i<NofValidDataClass; i++) {
         if (strcmp(Name, DataClassName[i])==0) {
@@ -12395,7 +13315,8 @@ int cgi_DataClass(char *Name, CGNS_ENUMV( DataClass_t ) *data_class) {
     return 1;
 }
 
-int cgi_MassUnits(char *Name, CGNS_ENUMV( MassUnits_t ) *mass_unit) {
+int cgi_MassUnits(char *Name, CGNS_ENUMT(MassUnits_t) *mass_unit)
+{
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -12417,7 +13338,8 @@ int cgi_MassUnits(char *Name, CGNS_ENUMV( MassUnits_t ) *mass_unit) {
     return 1;
 }
 
-int cgi_LengthUnits(char *Name, CGNS_ENUMV( LengthUnits_t ) *length_unit) {
+int cgi_LengthUnits(char *Name, CGNS_ENUMT(LengthUnits_t) *length_unit)
+{
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -12439,7 +13361,8 @@ int cgi_LengthUnits(char *Name, CGNS_ENUMV( LengthUnits_t ) *length_unit) {
     return 1;
 }
 
-int cgi_TimeUnits(char *Name, CGNS_ENUMV( TimeUnits_t )*time_unit) {
+int cgi_TimeUnits(char *Name, CGNS_ENUMT(TimeUnits_t) *time_unit)
+{
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -12461,7 +13384,8 @@ int cgi_TimeUnits(char *Name, CGNS_ENUMV( TimeUnits_t )*time_unit) {
     return 1;
 }
 
-int cgi_TemperatureUnits(char *Name, CGNS_ENUMV( TemperatureUnits_t ) *temperature_unit) {
+int cgi_TemperatureUnits(char *Name, CGNS_ENUMT(TemperatureUnits_t) *temperature_unit)
+{
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -12487,7 +13411,8 @@ int cgi_TemperatureUnits(char *Name, CGNS_ENUMV( TemperatureUnits_t ) *temperatu
     return 1;
 }
 
-int cgi_AngleUnits(char *Name, CGNS_ENUMV( AngleUnits_t ) *angle_unit) {
+int cgi_AngleUnits(char *Name, CGNS_ENUMT(AngleUnits_t) *angle_unit)
+{
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -12509,7 +13434,8 @@ int cgi_AngleUnits(char *Name, CGNS_ENUMV( AngleUnits_t ) *angle_unit) {
     return 1;
 }
 
-int cgi_ElectricCurrentUnits(char *Name, CGNS_ENUMV( ElectricCurrentUnits_t ) *unit) {
+int cgi_ElectricCurrentUnits(char *Name, CGNS_ENUMT(ElectricCurrentUnits_t) *unit)
+{
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -12531,7 +13457,8 @@ int cgi_ElectricCurrentUnits(char *Name, CGNS_ENUMV( ElectricCurrentUnits_t ) *u
     return 1;
 }
 
-int cgi_SubstanceAmountUnits(char *Name, CGNS_ENUMV( SubstanceAmountUnits_t )*unit) {
+int cgi_SubstanceAmountUnits(char *Name, CGNS_ENUMT(SubstanceAmountUnits_t) *unit)
+{
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -12553,7 +13480,8 @@ int cgi_SubstanceAmountUnits(char *Name, CGNS_ENUMV( SubstanceAmountUnits_t )*un
     return 1;
 }
 
-int cgi_LuminousIntensityUnits(char *Name, CGNS_ENUMT( LuminousIntensityUnits_t ) *unit) {
+int cgi_LuminousIntensityUnits(char *Name, CGNS_ENUMT(LuminousIntensityUnits_t) *unit)
+{
     int i;
 
     for (i=31; i>=0 && Name[i]==' '; i--);
@@ -12575,7 +13503,8 @@ int cgi_LuminousIntensityUnits(char *Name, CGNS_ENUMT( LuminousIntensityUnits_t 
     return 1;
 }
 
-int cgi_GoverningEquationsType(char *Name, CGNS_ENUMT( GoverningEquationsType_t ) *type) {
+int cgi_GoverningEquationsType(char *Name, CGNS_ENUMT(GoverningEquationsType_t) *type)
+{
     int i;
     for (i=0; i<NofValidGoverningEquationsTypes; i++) {
         if (strcmp(Name, GoverningEquationsTypeName[i])==0) {
@@ -12592,7 +13521,8 @@ int cgi_GoverningEquationsType(char *Name, CGNS_ENUMT( GoverningEquationsType_t 
     return 1;
 }
 
-int cgi_ModelType(char *Name, CGNS_ENUMV( ModelType_t ) *type) {
+int cgi_ModelType(char *Name, CGNS_ENUMT(ModelType_t) *type)
+{
     int i;
     for (i=0; i<NofValidModelTypes; i++) {
         if (strcmp(Name, ModelTypeName[i])==0) {
@@ -12609,7 +13539,8 @@ int cgi_ModelType(char *Name, CGNS_ENUMV( ModelType_t ) *type) {
     return 1;
 }
 
-int cgi_ZoneType(char *Name, CGNS_ENUMV( ZoneType_t ) *type) {
+int cgi_ZoneType(char *Name, CGNS_ENUMT(ZoneType_t) *type)
+{
     int i;
     for (i=0; i<NofValidZoneTypes; i++) {
         if (strcmp(Name, ZoneTypeName[i])==0) {
@@ -12626,7 +13557,8 @@ int cgi_ZoneType(char *Name, CGNS_ENUMV( ZoneType_t ) *type) {
     return 1;
 }
 
-int cgi_RigidGridMotionType(char *Name, CGNS_ENUMV( RigidGridMotionType_t ) *type) {
+int cgi_RigidGridMotionType(char *Name, CGNS_ENUMT(RigidGridMotionType_t) *type)
+{
     int i;
     for (i=0; i<NofValidRigidGridMotionTypes; i++) {
         if (strcmp(Name, RigidGridMotionTypeName[i])==0) {
@@ -12643,7 +13575,8 @@ int cgi_RigidGridMotionType(char *Name, CGNS_ENUMV( RigidGridMotionType_t ) *typ
     return 1;
 }
 
-int cgi_ArbitraryGridMotionType(char *Name, CGNS_ENUMV( ArbitraryGridMotionType_t )*type) {
+int cgi_ArbitraryGridMotionType(char *Name, CGNS_ENUMT(ArbitraryGridMotionType_t) *type)
+{
     int i;
     for (i=0; i<NofValidArbitraryGridMotionTypes; i++) {
         if (strcmp(Name, ArbitraryGridMotionTypeName[i])==0) {
@@ -12660,7 +13593,8 @@ int cgi_ArbitraryGridMotionType(char *Name, CGNS_ENUMV( ArbitraryGridMotionType_
     return 1;
 }
 
-int cgi_SimulationType(char *Name, CGNS_ENUMV( SimulationType_t )*type) {
+int cgi_SimulationType(char *Name, CGNS_ENUMT(SimulationType_t) *type)
+{
     int i;
     for (i=0; i<NofValidSimulationTypes; i++) {
         if (strcmp(Name, SimulationTypeName[i])==0) {
@@ -12677,7 +13611,8 @@ int cgi_SimulationType(char *Name, CGNS_ENUMV( SimulationType_t )*type) {
     return 1;
 }
 
-int cgi_WallFunctionType(char *Name, CGNS_ENUMV( WallFunctionType_t )*type) {
+int cgi_WallFunctionType(char *Name, CGNS_ENUMT(WallFunctionType_t) *type)
+{
     int i;
     for (i=0; i<NofValidWallFunctionTypes; i++) {
         if (strcmp(Name, WallFunctionTypeName[i])==0) {
@@ -12694,7 +13629,8 @@ int cgi_WallFunctionType(char *Name, CGNS_ENUMV( WallFunctionType_t )*type) {
     return 1;
 }
 
-int cgi_AreaType(char *Name, CGNS_ENUMV( AreaType_t ) *type) {
+int cgi_AreaType(char *Name, CGNS_ENUMT(AreaType_t) *type)
+{
     int i;
     for (i=0; i<NofValidAreaTypes; i++) {
         if (strcmp(Name, AreaTypeName[i])==0) {
@@ -12711,7 +13647,8 @@ int cgi_AreaType(char *Name, CGNS_ENUMV( AreaType_t ) *type) {
     return 1;
 }
 
-int cgi_AverageInterfaceType(char *Name, CGNS_ENUMV( AverageInterfaceType_t ) *type) {
+int cgi_AverageInterfaceType(char *Name, CGNS_ENUMT(AverageInterfaceType_t) *type)
+{
     int i;
     for (i=0; i<NofValidAverageInterfaceTypes; i++) {
         if (strcmp(Name, AverageInterfaceTypeName[i])==0) {
@@ -12728,7 +13665,8 @@ int cgi_AverageInterfaceType(char *Name, CGNS_ENUMV( AverageInterfaceType_t ) *t
     return 1;
 }
 
-void cgi_array_print(char *routine, cgns_array *array) {
+void cgi_array_print(char *routine, cgns_array *array)
+{
     int n;
 
     printf("In %s:\n", routine);

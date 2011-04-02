@@ -34,7 +34,7 @@ float start, finish;
 
 int main (int argc, char **argv)
 {
-    int i, j, nb = 50, nv = 100;
+    int i, j, nb = 5, nv = 10;
 
     if (argc > 1) {
         nb = atoi (argv[1]);

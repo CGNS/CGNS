@@ -1899,6 +1899,7 @@ echo 	open_cgns$(EXE) \>> tests\Makefile
 echo 	test_exts$(EXE) \>> tests\Makefile
 echo 	test_partial$(EXE) \>> tests\Makefile
 echo 	test_goto$(EXE) \>> tests\Makefile
+echo 	test_zconn$(EXE) \>> tests\Makefile
 echo 	write_array$(EXE) \>> tests\Makefile
 echo 	write_links$(EXE) \>> tests\Makefile
 echo 	write_bcdata$(EXE) \>> tests\Makefile
@@ -1953,6 +1954,11 @@ echo #---------->> tests\Makefile
 echo.>> tests\Makefile
 echo test_goto$(EXE) : test_goto.c $(CGNSLIB)>> tests\Makefile
 echo 	$(CC) $(COPTS) $(CEOUT)$@ test_goto.c $(LDLIBS) $(CLIBS)>> tests\Makefile
+echo.>> tests\Makefile
+echo #---------->> tests\Makefile
+echo.>> tests\Makefile
+echo test_zconn$(EXE) : test_zconn.c $(CGNSLIB)>> tests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ test_zconn.c $(LDLIBS) $(CLIBS)>> tests\Makefile
 echo.>> tests\Makefile
 echo #---------->> tests\Makefile
 echo.>> tests\Makefile

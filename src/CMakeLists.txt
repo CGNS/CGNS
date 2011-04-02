@@ -155,11 +155,9 @@ endif(CGNS_BUILD_SHARED)
 
 # Set the version numbers
 set_target_properties(cgns_static PROPERTIES VERSION ${CGNS_VERSION})
-set_target_properties(cgns_static PROPERTIES VERSION ${CGNS_VERSION})
 set_target_properties(cgns_static PROPERTIES SOVERSION ${CGNS_VERSION})
 
 if(CGNS_BUILD_SHARED)
-  set_target_properties(cgns_shared PROPERTIES VERSION ${CGNS_VERSION})
   set_target_properties(cgns_shared PROPERTIES VERSION ${CGNS_VERSION})
   set_target_properties(cgns_shared PROPERTIES SOVERSION ${CGNS_VERSION})
 endif(CGNS_BUILD_SHARED)
