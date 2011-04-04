@@ -1,9 +1,58 @@
 <html><head><title>Changes in CGNS 3.1</title></head><body>
-<h2>Do I Need to read This ?</h2>
-You only need to read this if you have a 64-bit computer and need to
+
+<h2>Changes in CGNS 3.1</h2>
+
+<ul>
+ <li> <a href="#cpex0027">Time-dependent Connectivity</a>
+ <li> <a href="#cpex0030">Zone Subregions</a>
+ <li> <a href="#cpex0031">General SIDS Improvements</a>
+ <li> <a href="#64-bit">64-bit Implementation</a>
+  <ul>
+   <li> <a href="#c_interface">C Interface</a>
+   <li> <a href="#c_portability">C Portability</a>
+   <li> <a href="#fortran_interface">FORTRAN Interface</a>
+   <li> <a href="#fortran_issues">FORTRAN Issues and Portability</a>
+   <li> <a href="#examples">Examples</a>
+  </ul>
+</ul>
+
+<a name="cpex0027"></a>
+<h2>Time-dependent Connectivity</h2>
+
+<a href="http://cgns.sourceforge.net/ProposedExtensions/Timedepconn.pdf">CPEX0027</a>
+has been implemented. The added functions to support this extension are described
+in <a href="http://www.grc.nasa.gov/WWW/cgns/CGNS_docs_current/midlevel/timedep.html#zconn">Zone Grid Connectivity</a>
+in the Mid-Level Library.
+
+<a name="cpex0030"></a>
+<h2>Zone Subregions</h2>
+
+<a href="http://cgns.sourceforge.net/ProposedExtensions/RegionsIX.pdf">CPEX0030</a>
+has been implemented. The added functions to support this extension are described
+in <a href="http://www.grc.nasa.gov/WWW/cgns/CGNS_docs_current/midlevel/solution.html#subregion">Zone Subregions</a>
+in the Mid-Level Library.
+
+<a name="cpex0031"></a>
+<h2>General SIDS Improvements</h2>
+
+<a href="http://cgns.sourceforge.net/ProposedExtensions/intro_parts_of_sids2.pdf">CPEX0031</a>
+has been implemented. The added functions to support this extension are described
+in <a href="http://www.grc.nasa.gov/WWW/cgns/CGNS_docs_current/midlevel/solution.html#flowsolution">Flow Solution</a>
+and <a href="http://www.grc.nasa.gov/WWW/cgns/CGNS_docs_current/midlevel/solution.html#discretedata">Discrete Data</a> in
+the Mid-Level Library. There are also changes to
+<a href="http://www.grc.nasa.gov/WWW/cgns/CGNS_docs_current/midlevel/bc.html#bc">Boundary Conditions</a>
+and numerous places in the SIDS.
+
+<a name="64-bit"></a>
+<h2>64-bit Implementation</h2>
+
+You only need to read the following if you have a 64-bit computer and need to
 work with problems that exceed 2 billion coordinates and/or elements.
 Or, if you are bored.
-<h2>C Interface</h2>
+
+<a name="c_interface"></a>
+<h3>C Interface</h3>
+
 The major change in 3.1 is the introduction of the data type <tt><b>cgsize_t</b></tt>,
 which will be a 64-bit integer when building 64-bit code, and a 32-bit integer
 otherwise. This is defined in a new header file, <tt><i>cgnstypes.h</i></tt>, which is
@@ -208,7 +257,10 @@ cg_index_dim(int file_number, int B, int Z, int *index_dim)
 </pre>
 which gets the index dimension for the specified base and zone. The return value
 will be the Cell Dimension for a structured grid, and 1 for an unstructured grid.
+
+<a name="c_portability"></a>
 <h3>C Portability</h3>
+
 If you use the <tt><b>cgsize_t</b></tt> data type in new code, it will work in
 both 32 and 64-bit compilation modes. In order to support CGNS versions prior
 to 3.1, you may also want to add something like this to your code:
@@ -227,7 +279,9 @@ to add something like this to your code:
 </pre>
 or modify your code to use <tt><b>cgsize_t</b></tt>.
 
-<h2>FORTRAN Interface</h2>
+<a name="fortran_interface"></a>
+<h3>FORTRAN Interface</h3>
+
 All integer arguments in the FORTRAN interface are taken to be
 <tt><b>integer*4</b></tt> in 32-bit mode and <tt><b>integer*8</b></tt>
 in 64-bit mode. If you have used default or implicit integers in your FORTRAN
@@ -257,7 +311,10 @@ endif
 If you are using a CGNS library prior to version 3.1, this parameter will
 not be defined and you will need to rely on your compiler initializing all
 undefined values to 0 (not always the case) for this test to work.
+
+<a name="fortran_issues"></a>
 <h3>FORTRAN Issues and Portability</h3>
+
 If your compiler supports automatic promotion of integers, and you use
 implicit integers, your code should port to 64-bit with the following exception.
 <p>
@@ -353,11 +410,16 @@ or 64-bit modes, such as:
 # error can only be built in 32-bit mode
 #endif
 </pre>
-<h2>Examples</h2>
+
+<a name="examples"></a>
+<h3>Examples</h3>
+
 All the distributed C examples have been modified to use
 <tt><b>cgsize_t</b></tt>. and will work in both 32 and 64-bit modes. They
 are also fully compatible with previous CGNS versions.
-<h3>C Test Program</h3>
+
+<h4>C Test Program</h4>
+
 There is a new C example in the <tt><i>tests</i></tt> subdirectory,
 <tt><i>test64c.c</i></tt>, that you may use for simple 64-bit mode testing.
 To compile it, do <tt>make test64</tt> from within the <tt><i>tests</i></tt>
@@ -403,7 +465,9 @@ To control the output file format, use <tt><i>-adf</i></tt> to force ADF
 and <tt><i>-hdf5</i></tt> for HDF5 output. The last option is
 <tt><i>-test</i></tt>, which will cause the file to be reopened in read-only
 mode and the data read and checked for accuracy.
-<h3>FORTRAN</h3>
+
+<h4>FORTRAN</h4>
+
 The examples <tt><i>cgread.F</i></tt> and <tt><i>cgwrite.F</i></tt>
 in the <tt><i>tests</i></tt> subdirectory have been modified to support
 64-bit compilation. The <tt><i>cgnstype_f.h</i></tt> header was included
@@ -418,7 +482,7 @@ on the <tt><b>CG_BUILD_64BIT</b></tt> variable in order to prevent
 the program from running (and failing) unless built in 64-bit mode.
 <p>
 These FORTRAN examples do not really require 64 bits to run, they are
-provided to help with porting of your code. To build these, 
+provided to help with porting of your code. To build these,
 do <tt>make fortran</tt> from within the <tt><i>tests</i></tt>
 subdirectory.
 </body>
