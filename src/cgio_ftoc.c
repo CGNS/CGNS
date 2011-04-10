@@ -133,14 +133,6 @@ CGIODLL void FMNAME(cgio_is_supported_f, CGIO_IS_SUPPORTED_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_cleanup_f, CGIO_CLEANUP_F) (cgsize_t *ier)
-{
-    cgio_cleanup();
-    *ier = 0;
-}
-
-/*---------------------------------------------------------*/
-
 CGIODLL void FMNAME(cgio_check_file_f, CGIO_CHECK_FILE_F) (
     STR_PSTR(filename), cgsize_t *file_type, cgsize_t *ier STR_PLEN(filename))
 {
@@ -152,20 +144,6 @@ CGIODLL void FMNAME(cgio_check_file_f, CGIO_CHECK_FILE_F) (
         *file_type = i_file_type;
         free(c_name);
     }
-}
-
-/*---------------------------------------------------------*/
-
-CGIODLL void FMNAME(cgio_compute_data_size_f, CGIO_COMPUTE_DATA_SIZE_F) (
-    STR_PSTR(data_type), cgsize_t *ndims, cgsize_t *dims, cglong_t *count,
-    cgsize_t *size, cgsize_t *ier STR_PLEN(data_type))
-{
-    char c_type[CGIO_MAX_DATATYPE_LENGTH+1];
-
-    to_c_string (STR_PTR(data_type), STR_LEN(data_type),
-        c_type, CGIO_MAX_DATATYPE_LENGTH);
-    *size = cgio_compute_data_size(c_type, (int)*ndims, dims, count);
-    *ier = 0;
 }
 
 /*=========================================================
@@ -275,7 +253,7 @@ CGIODLL void FMNAME(cgio_error_message_f, CGIO_ERROR_MESSAGE_F) (
 {
     char c_error[CGIO_MAX_ERROR_LENGTH+1];
 
-    *ier = cgio_error_message(CGIO_MAX_ERROR_LENGTH, c_error);
+    *ier = cgio_error_message(c_error);
     if (*ier == 0)
         to_f_string(c_error, STR_PTR(errmsg), STR_LEN(errmsg));
 }
@@ -291,6 +269,14 @@ CGIODLL void FMNAME(cgio_error_exit_f, CGIO_ERROR_EXIT_F) (
     cgio_error_exit(c_error);
 }
 
+/*---------------------------------------------------------*/
+
+CGIODLL void FMNAME(cgio_error_abort_f, CGIO_ERROR_ABORT_F) (
+    cgsize_t *abort_flag)
+{
+    cgio_error_abort((int)*abort_flag);
+}
+
 /*=========================================================
  * basic node operations
  *=========================================================*/
@@ -303,6 +289,25 @@ CGIODLL void FMNAME(cgio_create_node_f, CGIO_CREATE_NODE_F) (
 
     to_c_string(STR_PTR(name), STR_LEN(name), c_name, CGIO_MAX_NAME_LENGTH);
     *ier = cgio_create_node((int)*cgio_num, *pid, c_name, id);
+}
+
+/*---------------------------------------------------------*/
+
+CGIODLL void FMNAME(cgio_new_node_f, CGIO_NEW_NODE_F) (
+    cgsize_t *cgio_num, double *pid, STR_PSTR(name), STR_PSTR(label),
+    STR_PSTR(data_type), cgsize_t *ndims, cgsize_t *dims, void *data,
+    double *id, cgsize_t *ier STR_PLEN(name) STR_PLEN(label) STR_PLEN(data_type))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    char c_label[CGIO_MAX_LABEL_LENGTH+1];
+    char c_dtype[CGIO_MAX_DATATYPE_LENGTH+1];
+
+    to_c_string(STR_PTR(name), STR_LEN(name), c_name, CGIO_MAX_NAME_LENGTH);
+    to_c_string(STR_PTR(label), STR_LEN(label), c_label, CGIO_MAX_LABEL_LENGTH);
+    to_c_string(STR_PTR(data_type), STR_LEN(data_type),
+                c_dtype, CGIO_MAX_DATATYPE_LENGTH);
+    *ier = cgio_new_node((int)*cgio_num, *pid, c_name, c_label, c_dtype,
+               (int)*ndims, dims, data, id);
 }
 
 /*---------------------------------------------------------*/

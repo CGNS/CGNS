@@ -655,6 +655,7 @@ CGNSDLL int cg_save_as(int fn, const char *filename, int file_type,
 CGNSDLL int cg_set_file_type(int file_type);
 CGNSDLL int cg_get_file_type(int fn, int *file_type);
 CGNSDLL int cg_root_id(int fn, double *rootid);
+CGNSDLL int cg_get_cgio(int fn, int *cgio_num);
 
 CGNSDLL int cg_configure(int what, void *value);
 

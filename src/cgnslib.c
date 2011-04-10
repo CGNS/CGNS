@@ -657,6 +657,14 @@ int cg_root_id(int file_number, double *root_id)
     return CG_OK;
 }
 
+int cg_get_cgio(int file_number, int *cgio_num)
+{
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
+    *cgio_num = cg->cgio;
+    return CG_OK;
+}
+
 /* configure stuff */
 
 int cg_configure(int what, void *value)

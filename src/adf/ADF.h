@@ -354,4 +354,5 @@ EXTERN	void	ADF_Write_Data(
 #define FFLUSH_ERROR                   61
 #define NULL_NODEID_POINTER            62
 #define MAX_FILE_SIZE_EXCEEDED         63
+#define MAX_INT32_SIZE_EXCEEDED        64
 #endif

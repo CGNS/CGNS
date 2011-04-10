@@ -75,11 +75,11 @@ static char *cgio_ErrorMessage[] = {
 };
 #define CGIO_MAX_ERRORS (sizeof(cgio_ErrorMessage)/sizeof(char *))
 
-#define set_error(E) (last_err = E)
 #define get_error()  last_err
 
 static int last_err = CGIO_ERR_NONE;
 static int last_type = CGIO_FILE_NONE;
+static int abort_on_error = 0;
 
 static int cgio_n_paths = 0;
 static char **cgio_paths = 0;
@@ -88,7 +88,15 @@ static char **cgio_paths = 0;
  * support routines
  *=========================================================*/
 
-static cgns_io *get_cgnsio (int cgio_num, int write) {
+static int set_error (int errcode)
+{
+    last_err = errcode;
+    if (last_err && abort_on_error) cgio_error_exit(NULL);
+    return last_err;
+}
+
+static cgns_io *get_cgnsio (int cgio_num, int write)
+{
     if (--cgio_num < 0 || cgio_num >= num_iolist) {
         last_err = CGIO_ERR_BAD_CGIO;
         return NULL;
@@ -480,7 +488,8 @@ int cgio_is_supported (int file_type)
     if (file_type == CGIO_FILE_HDF5)
         return set_error(CGIO_ERR_NONE);
 #endif
-    return set_error(CGIO_ERR_FILE_TYPE);
+    last_err = CGIO_ERR_FILE_TYPE;
+    return last_err;
 }
 
 /*---------------------------------------------------------*/
@@ -530,8 +539,10 @@ int cgio_check_file (const char *filename, int *file_type)
     struct stat st;
 
     if (ACCESS (filename, 0) || stat (filename, &st) ||
-        S_IFREG != (st.st_mode & S_IFREG))
-        return set_error(CGIO_ERR_NOT_FOUND);
+        S_IFREG != (st.st_mode & S_IFREG)) {
+        last_err = CGIO_ERR_NOT_FOUND;
+        return last_err;
+    }
 
     *file_type = CGIO_FILE_NONE;
     if (NULL == (fp = fopen (filename, "rb"))) {
@@ -560,7 +571,8 @@ int cgio_check_file (const char *filename, int *file_type)
         return set_error(CGIO_ERR_NONE);
     }
 
-    return set_error(CGIO_ERR_FILE_TYPE);
+    last_err = CGIO_ERR_FILE_TYPE;
+    return last_err;
 }
 
 /*---------------------------------------------------------*/
@@ -666,13 +678,18 @@ int cgio_open_file (const char *filename, int file_mode,
             return set_error(CGIO_ERR_FILE_MODE);
     }
     last_type = file_type;
+    if (file_type == CGIO_FILE_NONE) {
+        last_type = file_type = CGIO_FILE_ADF;
+        ADF_Database_Open(filename, fmode, "NATIVE", &rootid, &ierr);
+        if (ierr > 0) return set_error(ierr);
+    }
 #if CG_SIZEOF_SIZE == 32
-    if (file_type == CGIO_FILE_ADF || file_type == CGIO_FILE_ADF2) {
+    else if (file_type == CGIO_FILE_ADF || file_type == CGIO_FILE_ADF2) {
         ADF_Database_Open(filename, fmode, "LEGACY", &rootid, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
 #else
-    if (file_type == CGIO_FILE_ADF) {
+    else if (file_type == CGIO_FILE_ADF) {
         ADF_Database_Open(filename, fmode, "NATIVE", &rootid, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -922,12 +939,15 @@ int cgio_get_file_type (int cgio_num, int *file_type)
 void cgio_error_code (int *errcode, int *file_type)
 {
     *errcode = last_err;
-    *file_type = last_type;
+    if (last_err <= 0)
+        *file_type = CGIO_FILE_NONE;
+    else
+        *file_type = last_type;
 }
 
 /*---------------------------------------------------------*/
 
-int cgio_error_message (int max_len, char *error_msg)
+int cgio_error_message (char *error_msg)
 {
     char msg[ADF_MAX_ERROR_STR_LENGTH+1];
 
@@ -949,8 +969,7 @@ int cgio_error_message (int max_len, char *error_msg)
     else {
         strcpy(msg, "unknown error message");
     }
-    strncpy(error_msg, msg, max_len-1);
-    error_msg[max_len-1] = 0;
+    strncpy(error_msg, msg);
     return last_err;
 }
 
@@ -968,7 +987,14 @@ void cgio_error_exit (const char *msg)
     }
     putc('\n', stderr);
     cgio_cleanup();
-    exit(1);
+    exit(abort_on_error ? abort_on_error : -1);
+}
+
+/*---------------------------------------------------------*/
+
+void cgio_error_abort (int abort_flag)
+{
+    abort_on_error = abort_flag;
 }
 
 /*=========================================================

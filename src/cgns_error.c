@@ -73,8 +73,8 @@ CGNSDLL void cg_error_print() {
 
 CGNSDLL void cg_io_error (const char *funcname)
 {
-    char errmsg[81];
-    cgio_error_message(sizeof(errmsg), errmsg);
+    char errmsg[CGIO_MAX_ERROR_LENGTH+1];
+    cgio_error_message(errmsg);
     cgi_error("%s:%s", funcname, errmsg);
 }
 

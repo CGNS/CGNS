@@ -226,6 +226,7 @@ static struct _ErrorList {
   {FFLUSH_ERROR,            "H5Fflush:flush error"},
   {NULL_NODEID_POINTER,     "The node ID pointer is NULL"},
   {MAX_FILE_SIZE_EXCEEDED,  "The maximum size for a file exceeded"},
+  {MAX_INT32_SIZE_EXCEEDED, "dimensions exceed that for a 32-bit integer"},
 
   {ADFH_ERR_GLINK,          "H5Glink:soft link creation failed"},
   {ADFH_ERR_NO_ATT,         "Node attribute doesn't exist"},
@@ -2392,7 +2393,7 @@ void ADFH_Get_Dimension_Values(const double  id,
 #if CG_SIZEOF_SIZE == 32
         for (i = 0; i < ndims; i++) {
           if (temp_vals[i] > CG_MAX_INT32) {
-            set_error(BAD_DIMENSION_VALUE, err);
+            set_error(MAX_INT32_SIZE_EXCEEDED, err);
             break;
           }
         }

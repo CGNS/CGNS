@@ -193,6 +193,7 @@ const char  *ADF_error_string[] = {
    "ADF 61: FFLUSH error",
    "ADF 62: The node ID pointer is NULL.",
    "ADF 63: The maximum size for a file exceeded.",
+   "ADF 64: Dimensions exceed that for a 32-bit integer.",
    "ADF  x: Last error mesage"
    } ;
 
@@ -1432,7 +1433,7 @@ if( node.number_of_dimensions > ADF_MAX_DIMENSIONS ) {
 for( i=0; i<(int)node.number_of_dimensions; i++ ) {
 #if CG_SIZEOF_SIZE == 32
   if (node.dimension_values[i] > CG_MAX_INT32) {
-    *error_return = BAD_DIMENSION_VALUE;
+    *error_return = MAX_INT32_SIZE_EXCEEDED;
     CHECK_ADF_ABORT( *error_return ) ;
   }
 #endif

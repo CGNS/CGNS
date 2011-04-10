@@ -48,6 +48,7 @@ freely, subject to the following restrictions:
 #define CGIO_MAX_NAME_LENGTH     32
 #define CGIO_MAX_LABEL_LENGTH    32
 #define CGIO_MAX_VERSION_LENGTH  32
+#define CGIO_MAX_DATE_LENGTH     32
 #define CGIO_MAX_ERROR_LENGTH    80
 #define CGIO_MAX_LINK_DEPTH     100
 #define CGIO_MAX_FILE_LENGTH   1024
@@ -191,12 +192,15 @@ CGEXTERN void cgio_error_code (
 );
 
 CGEXTERN int cgio_error_message (
-    int max_len,
     char *error_msg
 );
 
 CGEXTERN void cgio_error_exit (
     const char *msg
+);
+
+CGEXTERN void cgio_error_abort (
+    int abort_flag
 );
 
 /*---------------------------------------------------------*/

@@ -11,6 +11,7 @@ LDLIBS = $(CGNSLIB) $(BUILDLIBS)
 #----------
 
 ALL = \
+	cgioc$(EXE) \
 	dbtest$(EXE) \
 	elemtest$(EXE) \
 	open_cgns$(EXE) \
@@ -27,7 +28,9 @@ ALL = \
 
 all : $(ALL)
 
-FALL =  cgwrite$(EXE) \
+FALL = \
+	cgiof$(EXE) \
+	cgwrite$(EXE) \
 	cgread$(EXE) \
 	cgzconn$(EXE) \
 	cgsubreg$(EXE) \
@@ -38,6 +41,12 @@ fortran : $(FALL)
 ALL64 = test64c$(EXE)
 
 test64 : $(ALL64)
+
+#----------
+
+cgioc$(EXE) : cgioc.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ cgioc.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
 
 #----------
 
@@ -127,6 +136,12 @@ write_zones.$(O) : write_zones.c utils.h
 
 write_rind$(EXE) : write_rind.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ write_rind.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+cgiof$(EXE) : cgiof.F $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgiof.F $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
