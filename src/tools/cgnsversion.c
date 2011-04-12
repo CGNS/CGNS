@@ -85,7 +85,7 @@ static void error_exit (char *msg, int errcode)
 {
     if (errcode > 0) {
         char errmsg[128];
-        cgio_error_message (sizeof(errmsg), errmsg);
+        cgio_error_message (errmsg);
         fprintf (stderr, "%s:%s\n", msg, errmsg);
     }
     else if (errcode < 0)

@@ -40,7 +40,7 @@ static void err_exit (char *msg, char *name)
     char errmsg[128];
 
     fflush (stdout);
-    if (cgio_error_message (sizeof(errmsg), errmsg)) {
+    if (cgio_error_message (errmsg)) {
         if (msg != NULL)
             fprintf (stderr, "%s:", msg);
         if (name != NULL)

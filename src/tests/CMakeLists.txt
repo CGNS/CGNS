@@ -24,58 +24,36 @@ if (NOT WIN32)
 endif (NOT WIN32)
 
 # Set the files needed by each test
-set(dbtest_FILES
-	dbtest.c
-	utils.c)
-set(elemtest_FILES
-	elemtest.c)
-set(open_cgns_FILES
-	open_cgns.c
-	utils.c)
-set(test_exts_FILES
-	test_exts.c)
-set(test_goto_FILES
-	test_goto.c)
-set(test_partial_FILES
-	test_partial.c)
-set(test_ver31_FILES
-	test_ver31.c)
-set(write_array_FILES
-	write_array.c
-	utils.c)
-set(write_bcdata_FILES
-	write_bcdata.c
-	utils.c)
-set(write_links_FILES
-	write_links.c
-	utils.c)
-set(write_rind_FILES
-	write_rind.c)
-set(write_test_FILES
-	write_test.c)
-set(write_zones_FILES
-	write_zones.c
-	utils.c)
-set(cgread_FILES
-	cgread.F)
-set(cgwrite_FILES
-	cgwrite.F)
-set(cgzconn_FILES
-	cgzconn.F)
-set(cgsubreg_FILES
-	cgsubreg.F)
-set(f2c_test_FILES
-	../f2c/fmain.f
-	../f2c/csub.c)
+set(cgioc_FILES cgioc.c)
+set(dbtest_FILES dbtest.c utils.c)
+set(elemtest_FILES elemtest.c)
+set(open_cgns_FILES open_cgns.c utils.c)
+set(test_exts_FILES test_exts.c)
+set(test_goto_FILES test_goto.c)
+set(test_partial_FILES test_partial.c)
+set(test_ver31_FILES test_ver31.c)
+set(write_array_FILES write_array.c utils.c)
+set(write_bcdata_FILES write_bcdata.c utils.c)
+set(write_links_FILES write_links.c utils.c)
+set(write_rind_FILES write_rind.c)
+set(write_test_FILES write_test.c)
+set(write_zones_FILES write_zones.c utils.c)
+set(cgiof_FILES cgiof.F)
+set(cgread_FILES cgread.F)
+set(cgwrite_FILES cgwrite.F)
+set(cgzconn_FILES cgzconn.F)
+set(cgsubreg_FILES cgsubreg.F)
+set(f2c_test_FILES ../f2c/fmain.f ../f2c/csub.c)
 
 # Build each test
+add_executable( cgioc        ${cgioc_FILES}        )
 add_executable( dbtest       ${dbtest_FILES}       )
 add_executable( elemtest     ${elemtest_FILES}     )
 add_executable( open_cgns    ${open_cgns_FILES}    )
 add_executable( test_exts    ${test_exts_FILES}    )
 add_executable( test_goto    ${test_goto_FILES}    )
 add_executable( test_partial ${test_partial_FILES} )
-add_executable( test_ver31   ${test_ver31_FILES} )
+add_executable( test_ver31   ${test_ver31_FILES}   )
 add_executable( write_array  ${write_array_FILES}  )
 add_executable( write_bcdata ${write_bcdata_FILES} )
 add_executable( write_links  ${write_links_FILES}  )
@@ -89,11 +67,15 @@ if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
 	add_executable( cgread       ${cgread_FILES}   )
 	add_executable( cgwrite      ${cgwrite_FILES}  )
 	add_executable( cgzconn      ${cgzconn_FILES}  )
-	add_executable( cgsubreg     ${cgsubreg_FILES}  )
+	add_executable( cgsubreg     ${cgsubreg_FILES} )
+	if (NOT ENABLE_64BIT)
+	  add_executable(cgiof ${cgiof_FILES})
+	endif (NOT ENABLE_64BIT)
 endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
 
 # Add the tests so that ctest can find them
 if (ENABLE_TESTS)
+  add_test( cgioc        cgioc                    )
   add_test( dbtest       dbtest 1 1 elemtest.cgns )
   add_test( elemtest     elemtest                 )
   add_test( open_cgns    open_cgns elemtest.cgns  )
@@ -115,5 +97,8 @@ if (ENABLE_TESTS)
 	add_test( cgread   cgread   )
 	add_test( cgzconn  cgzconn  )
 	add_test( cgsubreg cgsubreg )
+	if (NOT ENABLE_64BIT)
+	  add_test(cgiof cgiof)
+	endif (NOT ENABLE_64BIT)
   endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
 endif (ENABLE_TESTS)

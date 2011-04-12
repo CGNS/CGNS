@@ -6,6 +6,12 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#ifdef _WIN32
+#include <io.h>
+#define unlink _unlink
+#else
+#include <unistd.h>
+#endif
 
 #include "cgns_io.h"
 
@@ -53,6 +59,7 @@ int main ()
          5.) create two nodes below f3
          6.) close database */
 
+   unlink("file_two.cgio");
    cgio_open_file("file_two.cgio",CGIO_MODE_WRITE,CGIO_FILE_NONE,&cgio_num);
    cgio_get_root_id(cgio_num,&root_id);
    root_id_file2 = root_id;
@@ -70,6 +77,7 @@ int main ()
 
   /* -------- build file: file_one.cgio ---------- */
   /* open database and create three nodes at first level */
+   unlink("file_one.cgio");
    cgio_open_file("file_one.cgio",CGIO_MODE_WRITE,CGIO_FILE_NONE,&cgio_num);
    cgio_get_root_id(cgio_num,&root_id);
    cgio_create_node(cgio_num,root_id,"n1",&tmp_id);
@@ -131,7 +139,7 @@ int main ()
    printf ("   label       = %s\n",label);
    printf ("   data_type   = %s\n",data_type);
    printf ("   num of dims = %5d\n",num_dims);
-   printf ("   dim vals    = %5d %5d\n",dims_b[0],dims_b[1]);
+   printf ("   dim vals    = %5d %5d\n",(int)dims_b[0],(int)dims_b[1]);
    printf ("   data:\n");
    for (i=0; i<=3; i++)
      {
@@ -152,7 +160,7 @@ int main ()
    printf ("   label       = %s\n",label);
    printf ("   data_type   = %s\n",data_type);
    printf ("   num of dims = %5d\n",num_dims);
-   printf ("   dim val     = %5d\n",dim_d);
+   printf ("   dim val     = %5d\n",(int)dim_d);
    printf ("   data:\n");
    for (i=0; i<=5; i++)
      {

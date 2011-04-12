@@ -1085,6 +1085,7 @@ element types are: 0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
 18:HEXA_20, 19:HEXA_27, 20:MIXED, 21+:NGON_n}}
       ZoneGridConnectivity_t {ZoneGridConnectivity \
        ZoneGridConnectivity_t {0,1} MT {} {} {}}
+    }
   }
 }
 

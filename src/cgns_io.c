@@ -969,7 +969,7 @@ int cgio_error_message (char *error_msg)
     else {
         strcpy(msg, "unknown error message");
     }
-    strncpy(error_msg, msg);
+    strcpy(error_msg, msg);
     return last_err;
 }
 
@@ -982,7 +982,7 @@ void cgio_error_exit (const char *msg)
         fprintf(stderr, "%s:", msg);
     if (last_err) {
         char errmsg[81];
-        cgio_error_message(sizeof(errmsg), errmsg);
+        cgio_error_message(errmsg);
         fprintf(stderr, "%s", errmsg);
     }
     putc('\n', stderr);

@@ -82,7 +82,7 @@ static int get_error (Tcl_Interp *interp, char *funcname)
 {
     char errmsg[CGIO_MAX_ERROR_LENGTH+1];
 
-    cgio_error_message (CGIO_MAX_ERROR_LENGTH, errmsg);
+    cgio_error_message (errmsg);
     Tcl_AppendResult (interp, /*funcname, ":",*/ errmsg, NULL);
     return TCL_ERROR;
 }

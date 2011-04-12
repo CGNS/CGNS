@@ -29,7 +29,6 @@ ALL = \
 all : $(ALL)
 
 FALL = \
-	cgiof$(EXE) \
 	cgwrite$(EXE) \
 	cgread$(EXE) \
 	cgzconn$(EXE) \
