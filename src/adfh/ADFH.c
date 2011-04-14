@@ -78,7 +78,7 @@ freely, subject to the following restrictions:
 
 #endif /* HDF5_PRE_1_8 */
 
-/*#define ADFH_DEBUG_ON*/
+#undef  ADFH_DEBUG_ON
 #define ADFH_NO_ORDER
 #define ADFH_USE_STRINGS
 #define ADFH_FORTRAN_INDEXING
@@ -173,9 +173,11 @@ typedef struct _ADFH_MTA {
   int i_count;
 #endif
   /* HDF5 property lists */
-  hid_t g_propfile;
+  hid_t g_propfileopen;
 #if !defined(HDF5_PRE_1_8)
   hid_t g_proplink;
+  hid_t g_propfilecreate;
+  hid_t g_propgroupcreate;
 #endif
   hid_t g_propdataset;
 
@@ -809,8 +811,12 @@ static herr_t count_children(hid_t id, const char *name, void *number)
 }
 
 /* ----------------------------------------------------------------- */
-
+#if defined(HDF5_PRE_1_8)
 static herr_t children_names(hid_t id, const char *name, void *namelist)
+#else
+static herr_t children_names(hid_t id, const char *name, 
+			     const H5L_info_t *linfo, void *namelist)
+#endif
 {
 #ifndef ADFH_NO_ORDER
   hid_t gid;
@@ -847,8 +853,13 @@ static herr_t children_names(hid_t id, const char *name, void *namelist)
 }
 
 /* ----------------------------------------------------------------- */
-
+#if defined(HDF5_PRE_1_8)
 static herr_t children_ids(hid_t id, const char *name, void *idlist)
+#else
+static herr_t children_ids(hid_t id, const char *name, 
+			   const H5L_info_t *linfo, void *idlist)
+#endif
+
 {
   hid_t gid;
   int order, err;
@@ -859,6 +870,7 @@ static herr_t children_ids(hid_t id, const char *name, void *idlist)
   if ((gid = H5Gopen2(id, name, H5P_DEFAULT)) < 0) return 1;
 #ifdef ADFH_NO_ORDER
   order = ++mta_root->i_count - mta_root->i_start;
+  ADFH_DEBUG((">ADFH children_ids [%s] order is [%d]",name,order));
   if (order >= 0 && order < mta_root->i_len) {
       ((double *)idlist)[order] = to_ADF_ID(gid);
       mta_root->n_names++;
@@ -1162,7 +1174,7 @@ static herr_t delete_children(hid_t id, const char *name, void *data)
     ADFH_DEBUG(("delete_children single"));
     if (! is_link(id))
     {
-      ADFH_DEBUG(("delete_children is not link [%s]\n",name));
+      ADFH_DEBUG(("delete_children is not link [%s]",name));
       H5Gunlink(id, name);
     }
     else
@@ -1574,6 +1586,9 @@ void ADFH_Create(const double  pid,
   hid_t hpid = to_HDF_ID(pid);
   hid_t gid;
   char *pname;
+#ifdef ADFH_DEBUG_ON
+  H5L_info_t lkbuff;
+#endif
 
   ADFH_DEBUG((">ADFH_Create [%s]",name));
 
@@ -1594,7 +1609,12 @@ void ADFH_Create(const double  pid,
   }
 
   *id = 0; 
-  gid = H5Gcreate2(hpid, pname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  gid = H5Gcreate2(hpid, pname, 
+		   H5P_DEFAULT, mta_root->g_propgroupcreate, H5P_DEFAULT);
+#ifdef ADFH_DEBUG_ON
+  H5Lget_info(hpid,pname,&lkbuff,H5P_DEFAULT);
+  ADFH_DEBUG((">ADFH_Create [%s] index [%d]",pname,lkbuff.corder));
+#endif
 
   if (gid < 0)
     set_error(ADFH_ERR_GCREATE, err);
@@ -1796,7 +1816,12 @@ void ADFH_Children_Names(const double pid,
   memset(names, 0, ilen*name_length);
 
   if ((hpid = open_node(pid, err)) >= 0) {
+#if defined(HDF5_PRE_1_8)
     H5Giterate(hpid, ".", NULL, children_names, (void *)names);
+#else
+    H5Literate(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
+	       NULL,children_names,(void *)names);
+#endif
     H5Gclose(hpid);
   }
   *ilen_ret = mta_root->n_names;
@@ -1833,7 +1858,12 @@ void ADFH_Children_IDs(const double pid,
 #endif
 
   if ((hpid = open_node(pid, err)) >= 0) {
+#if defined(HDF5_PRE_1_8)
     H5Giterate(hpid, ".", NULL, children_ids, (void *)IDs);
+#else
+    H5Literate(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
+	       NULL,children_ids,(void *)IDs);
+#endif
     H5Gclose(hpid);
   }
   *icount_ret = mta_root->n_names;
@@ -1874,11 +1904,11 @@ void ADFH_Database_Open(const char   *name,
   */
   mta_root->g_flags = 1;
 
-#ifndef ADF_DEBUG_ON
+#ifndef ADFH_DEBUG_ON
   H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
 #endif
   if (!mta_root->g_init) {
-#ifndef ADF_DEBUG_ON
+#ifndef ADFH_DEBUG_ON
     H5Eset_auto2(H5E_DEFAULT, walk_H5_error, NULL);
 #endif
     for (i = 0; i < ADFH_MAXIMUM_FILES; i++) mta_root->g_files[i] = 0;
@@ -1961,15 +1991,25 @@ void ADFH_Database_Open(const char   *name,
   }
 
   /* set access property to close all open accesses when file closed */
-  mta_root->g_propfile = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fclose_degree(mta_root->g_propfile, H5F_CLOSE_STRONG);
+  mta_root->g_propfileopen = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_fclose_degree(mta_root->g_propfileopen, H5F_CLOSE_STRONG);
   /*  H5Pset_latest_format(fapl, 1); */
 #if !defined(HDF5_PRE_1_8)
   /* Performance patch applied by KSH on 2009.05.18 */
-  H5Pset_libver_bounds(mta_root->g_propfile, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+  H5Pset_libver_bounds(mta_root->g_propfileopen, 
+		       H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+  /* add creation time for groups (used by iterators)
+    (prop set to file creation )*/
+  mta_root->g_propfilecreate = H5Pcreate(H5P_FILE_CREATE);
+  H5Pset_link_creation_order(mta_root->g_propfilecreate, 
+			     H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
+
   /* H5Pclose performed at file close time */
   mta_root->g_proplink=H5Pcreate(H5P_LINK_ACCESS);
   H5Pset_nlinks(mta_root->g_proplink, ADF_MAXIMUM_LINK_DEPTH);
+  mta_root->g_propgroupcreate=H5Pcreate(H5P_GROUP_CREATE);
+  H5Pset_link_creation_order(mta_root->g_propgroupcreate, 
+			     H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
 #endif
   mta_root->g_propdataset=H5Pcreate(H5P_DATASET_CREATE);
 
@@ -1978,9 +2018,16 @@ void ADFH_Database_Open(const char   *name,
   set_error(NO_ERROR, err);
 
   if (mode == ADFH_MODE_NEW) {
-    fid = H5Fcreate(name, H5F_ACC_TRUNC, H5P_DEFAULT, mta_root->g_propfile);
+    fid = H5Fcreate(name, H5F_ACC_TRUNC, 
+		    mta_root->g_propfilecreate, 
+		    mta_root->g_propfileopen);
     if (fid < 0) {
-      H5Pclose(mta_root->g_propfile);
+#if !defined(HDF5_PRE_1_8)
+      H5Pclose(mta_root->g_proplink);
+      H5Pclose(mta_root->g_propfilecreate);
+      H5Pclose(mta_root->g_propgroupcreate);
+#endif
+      H5Pclose(mta_root->g_propfileopen);
       set_error(FILE_OPEN_ERROR, err);
       return;
     }
@@ -1999,21 +2046,31 @@ void ADFH_Database_Open(const char   *name,
   }
   else {
     if (H5Fis_hdf5(name) <= 0) {
-      H5Pclose(mta_root->g_propfile);
+#if !defined(HDF5_PRE_1_8)
+      H5Pclose(mta_root->g_proplink);
+      H5Pclose(mta_root->g_propfilecreate);
+      H5Pclose(mta_root->g_propgroupcreate);
+#endif
+      H5Pclose(mta_root->g_propfileopen);
       set_error(ADFH_ERR_NOT_HDF5_FILE, err);
       return;
     }
     if (mode == ADFH_MODE_RDO)
       {
-      fid = H5Fopen(name, H5F_ACC_RDONLY, mta_root->g_propfile);
+      fid = H5Fopen(name, H5F_ACC_RDONLY, mta_root->g_propfileopen);
       }
     else
       {
-      fid = H5Fopen(name, H5F_ACC_RDWR, mta_root->g_propfile);
+      fid = H5Fopen(name, H5F_ACC_RDWR, mta_root->g_propfileopen);
       }
-    H5Pclose(mta_root->g_propfile);
+    H5Pclose(mta_root->g_propfileopen);
     if (fid < 0) {
       set_error(FILE_OPEN_ERROR, err);
+#if !defined(HDF5_PRE_1_8)
+      H5Pclose(mta_root->g_proplink);
+      H5Pclose(mta_root->g_propfilecreate);
+      H5Pclose(mta_root->g_propgroupcreate);
+#endif
       return;
     }
     gid = H5Gopen2(fid, "/", H5P_DEFAULT);
@@ -2197,6 +2254,8 @@ void ADFH_Database_Close(const double  root,
   ADFH_DEBUG(("ADFH_Database_Close 2"));
 #if !defined(HDF5_PRE_1_8)
   H5Pclose(mta_root->g_proplink);
+  H5Pclose(mta_root->g_propfilecreate);
+  H5Pclose(mta_root->g_propgroupcreate);
 #endif /* HDF5_PRE_1_8 */
   H5Pclose(mta_root->g_propdataset);
 
