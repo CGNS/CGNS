@@ -158,14 +158,14 @@ static VECDATA *read_node (char *nodename)
     rootid = cgfile->rootid;
 
     if (cgio_get_node_id (cgio, rootid, nodename, &nodeid)) {
-        cgio_error_message (CGIO_MAX_ERROR_LENGTH, errmsg);
+        cgio_error_message (errmsg);
         cgnsCalcFatal (errmsg);
     }
 
     /* get the type of data */
 
     if (cgio_get_data_type (cgio, nodeid, type)) {
-        cgio_error_message (CGIO_MAX_ERROR_LENGTH, errmsg);
+        cgio_error_message (errmsg);
         cgnsCalcFatal (errmsg);
     }
     for (n = 0; n < CGIO_MAX_DATATYPE_LENGTH && type[n]; n++) {
@@ -186,7 +186,7 @@ static VECDATA *read_node (char *nodename)
     /* get data dimensions */
 
     if (cgio_get_dimensions (cgio, nodeid, &ndim, dims)) {
-        cgio_error_message (CGIO_MAX_ERROR_LENGTH, errmsg);
+        cgio_error_message (errmsg);
         cgnsCalcFatal (errmsg);
     }
     np = 0;
@@ -206,7 +206,7 @@ static VECDATA *read_node (char *nodename)
         cgnsCalcFatal ("malloc failed for node data");
 
     if (cgio_read_all_data (cgio, nodeid, values)) {
-        cgio_error_message (CGIO_MAX_ERROR_LENGTH, errmsg);
+        cgio_error_message (errmsg);
         cgnsCalcFatal (errmsg);
     }
 
