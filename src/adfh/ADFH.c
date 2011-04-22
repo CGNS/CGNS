@@ -78,7 +78,9 @@ freely, subject to the following restrictions:
 
 #endif /* HDF5_PRE_1_8 */
 
-#undef  ADFH_DEBUG_ON
+#ifdef ADFH_DEBUG_ON
+# undef ADFH_DEBUG_ON
+#endif
 #define ADFH_NO_ORDER
 #define ADFH_USE_STRINGS
 #define ADFH_FORTRAN_INDEXING
