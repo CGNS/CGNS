@@ -1212,10 +1212,10 @@ echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> 
 echo.>> cgnslib_f.h
 echo         integer%fbytes% NODE, BAR_2, BAR_3, TRI_3, TRI_6>> cgnslib_f.h
 echo         integer%fbytes% QUAD_4, QUAD_8, QUAD_9>> cgnslib_f.h
-echo         integer%fbytes% TETRA_4, TETRA_10, PYRA_5, PYRA_13, PYRA_14>> cgnslib_f.h
+echo         integer%fbytes% TETRA_4, TETRA_10, PYRA_5, PYRA_14>> cgnslib_f.h
 echo         integer%fbytes% PENTA_6, PENTA_15, PENTA_18>> cgnslib_f.h
 echo         integer%fbytes% HEXA_8, HEXA_20, HEXA_27>> cgnslib_f.h
-echo         integer%fbytes% MIXED, NGON_n, NFACE_n>> cgnslib_f.h
+echo         integer%fbytes% MIXED, PYRA_13, NGON_n, NFACE_n>> cgnslib_f.h
 echo         character*32 ElementTypeName(0:23)>> cgnslib_f.h
 echo         parameter (NODE     =  2)>> cgnslib_f.h
 echo         parameter (BAR_2    =  3)>> cgnslib_f.h
@@ -1424,9 +1424,9 @@ echo.>> cgnslib_f.h
 echo         data ElementTypeName / 'Null','UserDefined',                    ^&>> cgnslib_f.h
 echo      ^&      'NODE', 'BAR_2', 'BAR_3', 'TRI_3', 'TRI_6',                 ^&>> cgnslib_f.h
 echo      ^&      'QUAD_4', 'QUAD_8', 'QUAD_9', 'TETRA_4', 'TETRA_10',        ^&>> cgnslib_f.h
-echo      ^&      'PYRA_5', 'PYRA_13', 'PYRA_14', 'PENTA_6', 'PENTA_15',      ^&>> cgnslib_f.h
+echo      ^&      'PYRA_5', 'PYRA_14', 'PENTA_6', 'PENTA_15',                 ^&>> cgnslib_f.h
 echo      ^&      'PENTA_18', 'HEXA_8', 'HEXA_20', 'HEXA_27', 'MIXED',        ^&>> cgnslib_f.h
-echo      ^&      'NGON_n', 'NFACE_n' />> cgnslib_f.h
+echo      ^&      'PYRA_13','NGON_n', 'NFACE_n' />> cgnslib_f.h
 echo.>> cgnslib_f.h
 echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
 echo !*      Zone types                                                     *>> cgnslib_f.h

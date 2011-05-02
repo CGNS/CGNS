@@ -48,8 +48,8 @@ freely, subject to the following restrictions:
  *      VERSION NUMBER                                                   *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define CGNS_VERSION 3000
-#define CGNS_DOTVERS 3.0
+#define CGNS_VERSION 3130
+#define CGNS_DOTVERS 3.13
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
 
@@ -462,15 +462,16 @@ typedef enum {
 #ifdef __CGNS_ENUMS__
 typedef enum {
 	DataTypeNull, DataTypeUserDefined, Integer, RealSingle,
-	RealDouble, Character
+	RealDouble, Character, LongInteger
 } DataType_t;
 #endif
-#define NofValidDataTypes 6
+#define NofValidDataTypes 7
 
 #define Integer_s                      "Integer"
 #define RealSingle_s                   "RealSingle"
 #define RealDouble_s                   "RealDouble"
 #define Character_s                    "Character"
+#define LongInteger_s                  "LongInteger"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Element types                                                    *
@@ -483,10 +484,10 @@ typedef enum {
 	TRI_3, TRI_6,					/* 5, 6,	*/
 	QUAD_4, QUAD_8, QUAD_9,				/* 7, 8, 9,	*/
 	TETRA_4, TETRA_10, 				/* 10, 11,	*/
-	PYRA_5, PYRA_13, PYRA_14, 			/* 12, 13, 14,	*/
-	PENTA_6, PENTA_15, PENTA_18,			/* 15, 16, 17,	*/
-	HEXA_8, HEXA_20, HEXA_27, 			/* 18, 19, 20,	*/
-	MIXED, NGON_n, NFACE_n					/* 21, 22, 23	*/
+	PYRA_5, PYRA_14, 				/* 12, 13,	*/
+	PENTA_6, PENTA_15, PENTA_18,			/* 14, 15, 16,	*/
+	HEXA_8, HEXA_20, HEXA_27, 			/* 17, 18, 19,	*/
+	MIXED, PYRA_13, NGON_n, NFACE_n			/* 20, 21, 22, 23*/
 } ElementType_t;
 #endif
 #define NofValidElementTypes 24
@@ -502,7 +503,6 @@ typedef enum {
 #define TETRA_4_s                      "TETRA_4"
 #define TETRA_10_s                     "TETRA_10"
 #define PYRA_5_s                       "PYRA_5"
-#define PYRA_13_s                      "PYRA_13"
 #define PYRA_14_s                      "PYRA_14"
 #define PENTA_6_s                      "PENTA_6"
 #define PENTA_15_s                     "PENTA_15"
@@ -511,6 +511,7 @@ typedef enum {
 #define HEXA_20_s                      "HEXA_20"
 #define HEXA_27_s                      "HEXA_27"
 #define MIXED_s                        "MIXED"
+#define PYRA_13_s                      "PYRA_13"
 #define NGON_n_s                       "NGON_n"
 #define NFACE_n_s                      "NFACE_n"
 
@@ -650,7 +651,7 @@ typedef enum {
 /* Patterns --- */
 #define VectorX_ps                     "%sX"
 #define VectorY_ps                     "%sY"
-#define VectorZ_ps                     "%sZ"    
+#define VectorZ_ps                     "%sZ"
 #define VectorTheta_ps                 "%sTheta"
 #define VectorPhi_ps                   "%sPhi"
 #define VectorMagnitude_ps             "%sMagnitude"
