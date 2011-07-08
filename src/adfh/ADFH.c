@@ -1823,6 +1823,11 @@ void ADFH_Children_Names(const double pid,
 #else
     H5Literate(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
 	       NULL,children_names,(void *)names);
+    if (names[0]==0)
+    {
+      H5Literate(hpid,H5_INDEX_NAME,H5_ITER_INC,
+		 NULL,children_names,(void *)names);
+    }
 #endif
     H5Gclose(hpid);
   }
@@ -1851,6 +1856,7 @@ void ADFH_Children_IDs(const double pid,
     set_error(NULL_NODEID_POINTER, err);
     return;
   }
+  IDs[0]=-1;
 
   mta_root->i_start = istart;
   mta_root->i_len = icount;
@@ -1865,6 +1871,11 @@ void ADFH_Children_IDs(const double pid,
 #else
     H5Literate(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
 	       NULL,children_ids,(void *)IDs);
+    if (IDs[0]==-1)
+    {
+      H5Literate(hpid,H5_INDEX_NAME,H5_ITER_INC,
+		 NULL,children_ids,(void *)IDs);
+    }
 #endif
     H5Gclose(hpid);
   }
