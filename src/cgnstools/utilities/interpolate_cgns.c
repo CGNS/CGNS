@@ -487,9 +487,9 @@ static void build_octree (void)
     /* add buffer around bounding box */
 
     for (i = 0; i < 3; i++) {
-        diff = bbox_padding * (root.bbox[n][1] - root.bbox[n][0]);
-        root.bbox[n][0] -= diff;
-        root.bbox[n][1] += diff;
+        diff = bbox_padding * (root.bbox[i][1] - root.bbox[i][0]);
+        root.bbox[i][0] -= diff;
+        root.bbox[i][1] += diff;
     }
 
     /* build element list */
