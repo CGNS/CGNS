@@ -59,18 +59,18 @@ int main (int argc, char *argv[])
     char outfile[32];
     int nbases, nzones;
 
-    strcpy (outfile, "ver32.cgns");
+    strcpy (outfile, "ver31.cgns");
     if (argc > 1) {
         int type = 0;
         int n = 0;
         if (argv[1][n] == '-') n++;
         if (argv[1][n] == 'a' || argv[1][n] == 'A') {
             type = CG_FILE_ADF;
-            strcpy (outfile, "ver32.cga");
+            strcpy (outfile, "ver31.cga");
         }
         else if (argv[1][n] == 'h' || argv[1][n] == 'H') {
             type = CG_FILE_HDF5;
-            strcpy (outfile, "ver32.cgh");
+            strcpy (outfile, "ver31.cgh");
         }
         else {
             fprintf(stderr, "unknown option\n");
