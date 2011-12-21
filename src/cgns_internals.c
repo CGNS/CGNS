@@ -10431,6 +10431,7 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
  *  UserDefinedData_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t,
  *  BCProperty_t, WallFunction_t, Area_t,
  *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t
+ *  FamilyBCDataSet_t
  */
 
     if (strcmp(posit->label,"CGNSBase_t")==0)
@@ -10486,6 +10487,8 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_array, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"Family_t")==0)
         ADDRESS4MULTIPLE(cgns_family, ndescr, descr, cgns_descr)
+    else if (strcmp(posit->label,"FamilyBCDataSet_t")==0)
+        ADDRESS4MULTIPLE(cgns_dataset, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"GeometryReference_t")==0)
         ADDRESS4MULTIPLE(cgns_geo, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"RigidGridMotion_t")==0)
