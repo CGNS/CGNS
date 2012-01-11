@@ -9009,6 +9009,7 @@ int cg_ndescriptors(int *ndescriptors)
  *  UserDefinedData_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t,
  *  BCProperty_t, WallFunction_t, Area_t, ZoneSubRegion_t,
  *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t
+ *  FamilyBCDataSet_t
  */
 
      /* verify input */
@@ -9074,6 +9075,8 @@ int cg_ndescriptors(int *ndescriptors)
         NDESCRIPTOR(cgns_array)
     else if (strcmp(posit->label,"Family_t")==0)
         NDESCRIPTOR(cgns_family)
+    else if (strcmp(posit->label,"FamilyBCDataSet_t")==0)
+        NDESCRIPTOR(cgns_dataset)
     else if (strcmp(posit->label,"GeometryReference_t")==0)
         NDESCRIPTOR(cgns_geo)
     else if (strcmp(posit->label,"RigidGridMotion_t")==0)
