@@ -5867,7 +5867,7 @@ int cg_nbocos(int file_number, int B, int Z, int *nbocos)
 
 int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
                  CGNS_ENUMT(BCType_t) *bocotype, CGNS_ENUMT(PointSetType_t) *ptset_type,
-                 cgsize_t *npnts, int *NormalIndex, cgsize_t *NormalListFlag,
+                 cgsize_t *npnts, int *NormalIndex, cgsize_t *NormalListSize,
                  CGNS_ENUMT(DataType_t) *NormalDataType, int *ndataset)
 {
     cgns_boco *boco;
@@ -5903,10 +5903,10 @@ int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
         }
     }
     if (boco->normal && boco->ptset) {
-        *NormalListFlag = boco->ptset->size_of_patch*cg->base[B-1].phys_dim;
+        *NormalListSize = boco->ptset->size_of_patch*cg->base[B-1].phys_dim;
         *NormalDataType = cgi_datatype(boco->normal->data_type);
     } else {
-        *NormalListFlag = 0;
+        *NormalListSize = 0;
         *NormalDataType = CGNS_ENUMV(DataTypeNull);
     }
     *ndataset = boco->ndataset;
