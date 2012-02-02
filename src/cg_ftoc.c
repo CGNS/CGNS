@@ -230,6 +230,25 @@ CGNSDLL void FMNAME(cg_add_path_f, CG_ADD_PATH_F) (STR_PSTR(pathname),
     free(c_name);
 }
 
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cg_get_cgio_f, CG_GET_CGIO_F) (cgsize_t *fn,
+	cgsize_t *cgio_num, cgsize_t *ier)
+{
+    int i_cgio_num;
+
+    *ier = cg_get_cgio((int)*fn, &i_cgio_num);
+    *cgio_num = i_cgio_num;
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cg_root_id_f, CG_ROOT_ID_F) (cgsize_t *fn,
+	double *rootid, cgsize_t *ier)
+{
+    *ier = cg_root_id((int)*fn, rootid);
+}
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write CGNSBase_t Nodes                                  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

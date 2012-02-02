@@ -1752,7 +1752,7 @@ int cg_discrete_ptset_read(int fn, int B, int Z, int D, cgsize_t *pnts)
 int cg_discrete_ptset_write(int fn, int B, int Z,
 	const char *discrete_name, CGNS_ENUMT(GridLocation_t) location,
 	CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
-	cgsize_t *pnts, int *D)
+	const cgsize_t *pnts, int *D)
 {
     int i, index_dim = 0;
     cgsize_t cnt, dim_vals = 1;
@@ -3946,7 +3946,7 @@ int cg_sol_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
 int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
 	CGNS_ENUMT(GridLocation_t) location,
 	CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
-	cgsize_t *pnts, int *S)
+	const cgsize_t *pnts, int *S)
 {
     int i, index_dim = 0;
     cgsize_t cnt, dim_vals = 1;
@@ -3969,7 +3969,7 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
         return CG_ERROR;
     sol = cgi_get_sol(cg, B, Z, *S);
     if (sol == 0) return CG_ERROR;
-    
+
     sol->location = location;
     sol->ptset = CGNS_NEW(cgns_ptset, 1);
     sol->ptset->type = ptset_type;
@@ -4247,7 +4247,7 @@ int cg_field_write(int file_number, int B, int Z, int S, CGNS_ENUMT(DataType_t) 
     memset(field, 0, sizeof(cgns_array));
     strcpy(field->data_type, cgi_adf_datatype(type));
     strcpy(field->name,fieldname);
-    
+
     if (sol->ptset == NULL) {
         field->data_dim = zone->index_dim;
         if (cgi_datasize(zone->index_dim, zone->nijk, sol->location,
@@ -4549,14 +4549,14 @@ static cgns_subreg *cg_subreg_write(int fn, int B, int Z, const char *name,
     memset(subreg, 0, sizeof(cgns_subreg));
     strcpy(subreg->name, name);
     subreg->reg_dim = dimension;
-    
+
     return subreg;
 }
 
 int cg_subreg_ptset_write(int fn, int B, int Z, const char *name,
                           int dimension, CGNS_ENUMT(GridLocation_t) location,
                           CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
-                          cgsize_t *pnts, int *S)
+                          const cgsize_t *pnts, int *S)
 {
     int i, index_dim = 0;
     cgsize_t cnt, dim_vals = 1;
@@ -4578,7 +4578,7 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *name,
 
     subreg = cg_subreg_write(fn, B, Z, name, dimension, S);
     if (subreg == NULL) return CG_ERROR;
-    
+
     subreg->location = location;
     subreg->ptset = CGNS_NEW(cgns_ptset, 1);
     subreg->ptset->type = ptset_type;
