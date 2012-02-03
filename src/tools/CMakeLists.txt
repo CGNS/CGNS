@@ -69,7 +69,6 @@ if (WIN32)
   install(PROGRAMS
         cgnsupdate.bat
 	DESTINATION bin)
-  # lets also put the dll in here so they run
   if (ENABLE_HDF5)
     install(PROGRAMS
         adf2hdf.bat
