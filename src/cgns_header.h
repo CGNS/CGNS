@@ -1130,7 +1130,7 @@ int cgi_write_conns(double parent_id, cgns_conn *conn);
 int cgi_write_holes(double parent_id, cgns_hole *hole);
 int cgi_write_zboco(double parent_id, cgns_zboco *zboco);
 int cgi_write_boco(double parent_id, cgns_boco *boco);
-int cgi_write_dataset(double parent_id, cgns_dataset *dataset);
+int cgi_write_dataset(double parent_id, const char *label,  cgns_dataset *dataset);
 int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata);
 int cgi_write_ptset(double id, char_33 name, cgns_ptset *ptset,
             int Ndim, void *ptset_ptr);

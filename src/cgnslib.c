@@ -9046,7 +9046,8 @@ int cg_ndescriptors(int *ndescriptors)
         NDESCRIPTOR(cgns_zboco)
     else if (strcmp(posit->label,"BC_t")==0)
         NDESCRIPTOR(cgns_boco)
-    else if (strcmp(posit->label,"BCDataSet_t")==0)
+    else if (strcmp(posit->label,"BCDataSet_t")==0 ||
+             strcmp(posit->label,"FamilyBCDataSet_t")==0)
         NDESCRIPTOR(cgns_dataset)
     else if (strcmp(posit->label,"BCData_t")==0)
         NDESCRIPTOR(cgns_bcdata)
@@ -9075,8 +9076,6 @@ int cg_ndescriptors(int *ndescriptors)
         NDESCRIPTOR(cgns_array)
     else if (strcmp(posit->label,"Family_t")==0)
         NDESCRIPTOR(cgns_family)
-    else if (strcmp(posit->label,"FamilyBCDataSet_t")==0)
-        NDESCRIPTOR(cgns_dataset)
     else if (strcmp(posit->label,"GeometryReference_t")==0)
         NDESCRIPTOR(cgns_geo)
     else if (strcmp(posit->label,"RigidGridMotion_t")==0)
@@ -9920,12 +9919,13 @@ int cg_link_write(const char * nodename, const char * filename, const char * nam
         strcmp(posit->label,"TurbulenceClosure_t") &&
         strcmp(posit->label,"ThermalRelaxationModel_t") &&
         strcmp(posit->label,"ChemicalKineticsModel_t") &&
-	strcmp(posit->label,"EMElectricFieldModel_t") &&
-	strcmp(posit->label,"EMMagneticFieldModel_t") &&
-	strcmp(posit->label,"EMConductivityModel_t") &&
+        strcmp(posit->label,"EMElectricFieldModel_t") &&
+        strcmp(posit->label,"EMMagneticFieldModel_t") &&
+        strcmp(posit->label,"EMConductivityModel_t") &&
         strcmp(posit->label,"GoverningEquations_t") &&
         strcmp(posit->label,"BCData_t") &&
         strcmp(posit->label,"BCDataSet_t") &&
+        strcmp(posit->label,"FamilyBCDataSet_t") &&
         strcmp(posit->label,"Elements_t") &&
         strcmp(posit->label,"BC_t") &&
         strcmp(posit->label,"ZoneBC_t") &&
@@ -9992,6 +9992,7 @@ int cg_nuser_data(int *nuser_data)
  *  Family_t, CGNSBase_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t,
  *  BCProperty_t, WallFunction_t, Area_t, UserDefinedData_t,
  *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t
+ *  FamilyBCDataSet_t
  */
 
      /* This is valid and used during write as well as read mode. */
@@ -10028,7 +10029,8 @@ int cg_nuser_data(int *nuser_data)
         (*nuser_data) = ((cgns_equations *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"BCData_t")==0)
         (*nuser_data) = ((cgns_bcdata *)posit->posit)->nuser_data;
-    else if (strcmp(posit->label,"BCDataSet_t")==0)
+    else if (strcmp(posit->label,"BCDataSet_t")==0 ||
+             strcmp(posit->label,"FamilyBCDataSet_t")==0)
         (*nuser_data) = ((cgns_dataset *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"Elements_t")==0)
         (*nuser_data) = ((cgns_section *)posit->posit)->nuser_data;
@@ -10464,7 +10466,7 @@ int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
 	/* Overwrite a BCDataSet_t node : */
         if (dataset->dirichlet && BCDataType == CGNS_ENUMV(Dirichlet)) {
 	    if (cg->mode == CG_MODE_WRITE) {
-                cgi_error("Dirichlet data already defined under BCDataSet_t '%s'",
+                cgi_error("Dirichlet data already defined under FamilyBCDataSet_t '%s'",
                     dataset->name);
                 return CG_ERROR;
             }
@@ -10475,7 +10477,7 @@ int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
 	}
         else if (dataset->neumann && BCDataType == CGNS_ENUMV(Neumann))	{
 	    if (cg->mode == CG_MODE_WRITE) {
-		cgi_error("Neumann data already defined under BCDataSet_t '%s'",
+		cgi_error("Neumann data already defined under FamilyBCDataSet_t '%s'",
 			  dataset->name);
 		return CG_ERROR;
 	    }
@@ -10485,7 +10487,7 @@ int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
 	    dataset->neumann = NULL;
 	}
     } else {
-	/* get memory address for BCDataSet_t node */
+	/* get memory address for FamilyBCDataSet_t node */
 	dataset = cgi_bcdataset_address(CG_MODE_WRITE, 0, name, &ierr);
 	if (dataset == 0) return ierr;
 
@@ -10968,8 +10970,9 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_CHILD(bprop, cgi_free_bprop)
      /* IndexRange_t PointRange & IndexArray_t PointList can't be deleted */
 
-/* Children of BCDataSet_t */
-    } else if (strcmp(posit->label,"BCDataSet_t")==0) {
+/* Children of BCDataSet_t or FamilyBCDataSet_t */
+    } else if (strcmp(posit->label,"BCDataSet_t")==0 ||
+               strcmp(posit->label,"FamilyBCDataSet_t")==0) {
         cgns_dataset *parent = (cgns_dataset *)posit->posit;
         if (strcmp(node_label,"Descriptor_t")==0)
             CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
@@ -11176,8 +11179,8 @@ int cg_delete_node(const char *node_name)
 /* Children of FamilyBC_t */
     } else if (strcmp(posit->label,"FamilyBC_t")==0) {
         cgns_fambc *parent = (cgns_fambc *)posit->posit;
-	if (strcmp(node_label,"BCDataSet_t")==0)
-	    CGNS_DELETE_SHIFT(ndataset, dataset, cgi_free_dataset)
+        if (strcmp(node_label,"FamilyBCDataSet_t")==0)
+            CGNS_DELETE_SHIFT(ndataset, dataset, cgi_free_dataset)
 
 /* Children of GeometryReference_t */
     } else if (strcmp(posit->label,"GeometryReference_t")==0) {
