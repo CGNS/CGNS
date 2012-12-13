@@ -126,6 +126,7 @@ add_dependencies(vgrid_to_cgns cgns_static calclib)
 set(aflr3_to_cgns_FILES 
 	aflr3_to_cgns.c
 	binaryio.c
+	cgnsutil.c
 	../common/getargs.c)
 
 add_executable(aflr3_to_cgns ${aflr3_to_cgns_FILES})
@@ -134,6 +135,7 @@ add_dependencies(aflr3_to_cgns cgns_static calclib)
 # cgns_to_aflr3
 set(cgns_to_aflr3_FILES 
 	cgns_to_aflr3.c
+	cgnsutil.c
 	../common/getargs.c)
 
 add_executable(cgns_to_aflr3 ${cgns_to_aflr3_FILES})
