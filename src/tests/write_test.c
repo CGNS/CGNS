@@ -602,6 +602,7 @@ void write_structured()
             CGNS_ENUMV(PointRange), 2, range, &cgbc) ||
         cg_goto(cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1,
             "BC_t", cgbc, "end") ||
+        cg_multifam_write ("MultiFam Arg 1","MultiFam Arg 2") ||
         cg_famname_write("WallFamily"))
         error_exit("imin boco");
 

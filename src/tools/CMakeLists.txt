@@ -19,7 +19,10 @@ if (ENABLE_HDF5 AND HDF5_LIBRARY)
     link_libraries(${SZIP_LIBRARY})
   endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
   if(HDF5_NEED_MPI AND MPI_LIBRARY)
-    link_libraries(${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
+    link_libraries(${MPI_LIBRARY})
+    if (MPI_EXTRA_LIBRARY)
+      link_libraries(${MPI_EXTRA_LIBRARY})
+    endif (MPI_EXTRA_LIBRARY)
     if (NOT WIN32)
       link_libraries(m)
     endif (NOT WIN32)
@@ -27,8 +30,8 @@ if (ENABLE_HDF5 AND HDF5_LIBRARY)
 endif (ENABLE_HDF5 AND HDF5_LIBRARY)
 
 # Set the files needed by each tool
-set(cgnames_FILES
-	cgnames_standalone.c
+set(prtnames_FILES
+	prtnames.c
 	cgnames.c)
 set(cgnscheck_FILES
 	cgnscheck.c
@@ -49,7 +52,7 @@ set(cgnsversion_FILES
 	getargs.c)
 
 # Build each tool
-add_executable( cgnames     ${cgnames_FILES}     )
+#add_executable( prtnames    ${prtnames_FILES}     )
 add_executable( cgnscheck   ${cgnscheck_FILES}   )
 add_executable( cgnsconvert ${cgnsconvert_FILES} )
 add_executable( cgnsdiff    ${cgnsdiff_FILES}    )
@@ -57,7 +60,6 @@ add_executable( cgnslist    ${cgnslist_FILES}    )
 add_executable( cgnsversion ${cgnsversion_FILES} )
 
 install(TARGETS
-	cgnames
 	cgnscheck
 	cgnsconvert
 	cgnsdiff

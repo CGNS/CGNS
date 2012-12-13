@@ -42,6 +42,13 @@ freely, subject to the following restrictions:
 #include "hdf5.h"
 #include "cgns_io.h" /* for cgio_find_file */
 
+#ifdef BUILD_PARALLEL
+#include "mpi.h"
+#endif
+
+#undef ADFH_FORCE_ID_CLOSE 
+#undef ADFH_DEBUG_ON 
+
 #if H5_VERS_MAJOR < 2 && H5_VERS_MINOR < 8
 #define HDF5_PRE_1_8 1
 #endif
@@ -53,6 +60,7 @@ freely, subject to the following restrictions:
 #define H5E_error2_t H5E_error_t
 #define H5E_walk2_t  H5E_walk_t
 #define H5E_DEFAULT  0
+
 
 /* Currently, acpl_id and aapl_id are not used by HDF5 */
 #define H5Acreate2(loc_id, attr_name, type_id, space_id, acpl_id,aapl_id) \
@@ -78,9 +86,6 @@ freely, subject to the following restrictions:
 
 #endif /* HDF5_PRE_1_8 */
 
-#ifdef ADFH_DEBUG_ON
-# undef ADFH_DEBUG_ON
-#endif
 #define ADFH_NO_ORDER
 #define ADFH_USE_STRINGS
 #define ADFH_FORTRAN_INDEXING
@@ -185,6 +190,11 @@ typedef struct _ADFH_MTA {
 
   int   g_flags;     
   hid_t g_files[ADFH_MAXIMUM_FILES];
+
+  /* object ids returned to API user that should be closed */
+  hid_t *g_extids[ADFH_MAXIMUM_FILES]; 
+  int    n_extids[ADFH_MAXIMUM_FILES]; /* number of extids */
+  int    x_extids[ADFH_MAXIMUM_FILES]; /* max allocated in g_extids */
 
 } ADFH_MTA;
 
@@ -333,6 +343,88 @@ static herr_t print_H5_error(int n, H5E_error2_t *desc, void *data)
   fprintf(stderr, "%s line %u in %s(): %s\n", p,
     desc->line, desc->func_name, desc->desc);
   return 0;
+}
+/* -----------------------------------------------------------------
+ * get file ID from node ID
+ * ----------------------------------------------------------------- */
+static hid_t get_file_id (hid_t id)
+{
+  int n, nobj;
+  hid_t *objs, fid = -1;
+  H5G_stat_t gstat, rstat;
+
+  /* find the file ID from the root ID */
+
+  if (H5Gget_objinfo(id, "/", 0, &gstat) >= 0) {
+    nobj = H5Fget_obj_count(H5F_OBJ_ALL, H5F_OBJ_FILE);
+    if (nobj > 0) {
+      objs = (hid_t *) malloc (nobj * sizeof(hid_t));
+      if (objs == NULL) return fid;
+      H5Fget_obj_ids(H5F_OBJ_ALL, H5F_OBJ_FILE, -1, objs);
+      for (n = 0; n < nobj; n++) {
+        H5Gget_objinfo(objs[n], "/", 0, &rstat);
+        if (CMP_OSTAT(&gstat, &rstat)) {
+          fid = objs[n];
+          break;
+        }
+      }
+      free (objs);
+    }
+  }
+  return fid;
+}
+
+/* ----------------------------------------------------------------- */
+static int get_file_number (hid_t id, int *err)
+{
+  int n;
+  hid_t fid = get_file_id(id);
+
+  if (mta_root == NULL) return -1;
+  for (n = 0; n < ADFH_MAXIMUM_FILES; n++) {
+    if (fid == mta_root->g_files[n]) {
+      set_error(NO_ERROR, err);
+      return n;
+    }
+  }
+  set_error(ADFH_ERR_FILE_INDEX, err);
+  return -1;
+}
+
+/* ----------------------------------------------------------------- */
+static track_id(hid_t refid, hid_t trackid)
+{
+  int fn,er;
+  int sname;
+  char oname[256];
+  H5O_info_t objinfo;
+  size_t maxhid;
+
+  H5Oget_info(trackid,&objinfo);
+  memset(oname,'\0',256);
+  sname=H5Iget_name(trackid,oname,0);
+  sname=H5Iget_name(trackid,oname,sname+1);
+  fn=get_file_number(refid,&er);
+  if (fn==-1) 
+  {
+    ADFH_DEBUG((">ADFH track_ids cannot stat [%d][%s]",trackid,oname));
+  }
+  else
+  {
+    if (mta_root->n_extids[fn]>mta_root->x_extids[fn])
+    {
+      mta_root->x_extids[fn]+=256;
+      maxhid=mta_root->x_extids[fn]*sizeof(hid_t*);
+      mta_root->g_extids[fn]=(hid_t*)realloc(mta_root->g_extids[fn],maxhid);
+      ADFH_DEBUG((">ADFH track_ids realloc up to [%d]",\
+		  mta_root->x_extids[fn]));
+      
+    }
+    mta_root->g_extids[fn][mta_root->n_extids[fn]]=trackid;
+    ADFH_DEBUG((">ADFH track_ids [%d][%d][%s]",\
+		mta_root->n_extids[fn],trackid,oname));
+    mta_root->n_extids[fn]++;
+  }
 }
 
 /* ----------------------------------------------------------------- */
@@ -838,6 +930,7 @@ static herr_t children_names(hid_t id, const char *name,
   }
 #else
   if ((gid = H5Gopen2(id, name, H5P_DEFAULT)) < 0) return 1;
+  ADFH_DEBUG(("ADFH children_names [%d]",gid));
   if (get_int_att(gid, A_ORDER, &order, &err)) {
     H5Gclose(gid);
     return 1;
@@ -876,6 +969,7 @@ static herr_t children_ids(hid_t id, const char *name,
   if (order >= 0 && order < mta_root->i_len) {
       ((double *)idlist)[order] = to_ADF_ID(gid);
       mta_root->n_names++;
+      track_id(id,gid);
   }
   else
       H5Gclose(gid);
@@ -888,6 +982,7 @@ static herr_t children_ids(hid_t id, const char *name,
   if (order >= 0 && order < mta_root->i_len) {
       ((double *)idlist)[order] = to_ADF_ID(gid);
       mta_root->n_names++;
+      track_id(id,gid);
   }
   else
       H5Gclose(gid);
@@ -923,6 +1018,7 @@ static herr_t fix_order(hid_t id, const char *name, void *data)
         ret = ADFH_ERR_AWRITE;
     }
   }
+  ADFH_DEBUG(("ADFH fix_order [%d]",gid));
   H5Aclose(aid);
   H5Gclose(gid);
   return ret;
@@ -954,55 +1050,6 @@ static herr_t print_children(hid_t id, const char *name, void *data)
 }
 #endif
 
-/* -----------------------------------------------------------------
- * get file ID from node ID
- * ----------------------------------------------------------------- */
-
-static hid_t get_file_id (hid_t id)
-{
-  int n, nobj;
-  hid_t *objs, fid = -1;
-  H5G_stat_t gstat, rstat;
-
-  /* find the file ID from the root ID */
-
-  if (H5Gget_objinfo(id, "/", 0, &gstat) >= 0) {
-    nobj = H5Fget_obj_count(H5F_OBJ_ALL, H5F_OBJ_FILE);
-    if (nobj > 0) {
-      objs = (hid_t *) malloc (nobj * sizeof(hid_t));
-      if (objs == NULL) return fid;
-      H5Fget_obj_ids(H5F_OBJ_ALL, H5F_OBJ_FILE, -1, objs);
-      for (n = 0; n < nobj; n++) {
-        H5Gget_objinfo(objs[n], "/", 0, &rstat);
-        if (CMP_OSTAT(&gstat, &rstat)) {
-          fid = objs[n];
-          break;
-        }
-      }
-      free (objs);
-    }
-  }
-  return fid;
-}
-
-/* ----------------------------------------------------------------- */
-
-static int get_file_number (hid_t id, int *err)
-{
-  int n;
-  hid_t fid = get_file_id(id);
-
-  if (mta_root == NULL) return -1;
-  for (n = 0; n < ADFH_MAXIMUM_FILES; n++) {
-    if (fid == mta_root->g_files[n]) {
-      set_error(NO_ERROR, err);
-      return n;
-    }
-  }
-  set_error(ADFH_ERR_FILE_INDEX, err);
-  return -1;
-}
-
 /* ================================================================
  * routines for dealing with links
  * ================================================================ */
@@ -1010,6 +1057,7 @@ static hid_t open_link(hid_t id, int *err)
 {
   hid_t lid;
   herr_t herr;
+  H5O_info_t oinfo;/* debug purpose only */
 
   const char  *file;
   const char  *path;
@@ -1083,8 +1131,10 @@ static hid_t open_link(hid_t id, int *err)
 	return lid;
       }
   }
-
-  ADFH_DEBUG(("<ADFH open_link "));
+#ifdef ADFH_DEBUG_ON
+  H5Oget_info(lid, &oinfo);
+  ADFH_DEBUG(("<ADFH open_link [%d]->[%d]:%d",id,lid,oinfo.rc));
+#endif
   return lid;
 }
 
@@ -1126,7 +1176,7 @@ static hid_t open_node(double id, int *err)
     else
     {
       /* H5G_stat_t sb; */
-      ADFH_DEBUG(("<ADFH open_node group"));
+      ADFH_DEBUG(("<ADFH open_node group [%d]",gid));
       /* H5Gget_objinfo(gid,".",0,&sb); */
       return gid;
     }
@@ -1155,6 +1205,7 @@ static hid_t parse_path(hid_t pid, char *path, int *err)
   }
   nid = parse_path(id, p, err);
   if (H5Gclose(id)<0) ADFH_DEBUG((">ADFH H5Gclose failed"));
+  ADFH_DEBUG(("ADFH parse_path [%d]",nid));
   return nid;
 }
 
@@ -1252,13 +1303,11 @@ static char *check_name(const char *new_name, int *err)
 
 static int swap_dimensions (hid_t gid)
 {
-  hid_t did;
   char verstr[ADF_NAME_LENGTH+1];
 
   sprintf(verstr, "/%s", D_OLDVERS);
-  if ((did = H5Dopen2(gid, verstr, H5P_DEFAULT)) < 0) return 1;
-  H5Dclose(did);
-  return 0;
+  if (H5Lexists(gid, verstr, H5P_DEFAULT)) return 0;
+  return 1;
 }
 
 static void transpose_dimensions (hid_t hid, const char *name)
@@ -1555,7 +1604,7 @@ void ADFH_Get_Label(const double  id,
   hid_t hid;
   char bufflabel[ADF_LABEL_LENGTH+1];
 
-  ADFH_DEBUG((">ADFH_Get_Label"));
+  ADFH_DEBUG((">ADFH_Get_Label [%d]",id));
 
   if (label == NULL) {
     set_error(NULL_STRING_POINTER, err);
@@ -1592,7 +1641,7 @@ void ADFH_Create(const double  pid,
   H5L_info_t lkbuff;
 #endif
 
-  ADFH_DEBUG((">ADFH_Create [%s]",name));
+  ADFH_DEBUG((">ADFH_Create [%s][%d]",name,hpid));
 
   if ((pname = check_name(name, err)) == NULL) return;
   if (id == NULL) {
@@ -1636,7 +1685,9 @@ void ADFH_Create(const double  pid,
         new_int_att(gid, A_FLAGS, mta_root->g_flags, err)) return;
 #endif
     *id = to_ADF_ID(gid);
-    ADFH_DEBUG(("<ADFH_Create [%s]",name));
+    track_id(hpid,gid);
+
+    ADFH_DEBUG(("<ADFH_Create [%s][%d][%d]",name,hpid,gid));
   }
 }
 
@@ -1655,7 +1706,7 @@ void ADFH_Delete(const double  pid,
 #endif
   H5G_stat_t stat;
 
-  ADFH_DEBUG(("ADFH_Delete"));
+  ADFH_DEBUG(("ADFH_Delete [%d][%d]",hpid,hid));
 
   if (is_link(hpid)) {
     set_error(ADFH_ERR_LINK_DELETE, err);
@@ -1734,7 +1785,7 @@ void ADFH_Get_Node_ID(const double  pid,
 {
   hid_t sid, hpid = to_HDF_ID(pid);
 
-  ADFH_DEBUG((">ADFH_Get_Node_ID [%s]",name));
+  ADFH_DEBUG((">ADFH_Get_Node_ID [%s][%d]",name,hpid));
 
   if (name == NULL) {
     set_error(NULL_STRING_POINTER, err);
@@ -1762,6 +1813,7 @@ void ADFH_Get_Node_ID(const double  pid,
   }
   else if (is_link(hpid)) {
     hid_t lid = open_link(hpid, err);
+    ADFH_DEBUG(("<ADFH_Get_Node_ID open_link [%d]",lid));
     if (lid < 0) return;
     sid = H5Gopen2(lid, name, H5P_DEFAULT);
     ADFH_CHECK_HID(sid);
@@ -1778,8 +1830,10 @@ void ADFH_Get_Node_ID(const double  pid,
       set_error(ADFH_ERR_GOPEN, err);
     }
   }
+  track_id(hpid,sid);
+
   *id = to_ADF_ID(sid);
-  ADFH_DEBUG(("<ADFH_Get_Node_ID [%s]",name));
+  ADFH_DEBUG(("<ADFH_Get_Node_ID [%s][%d] return [%d]",name,hpid,sid));
 }
 
 /* ----------------------------------------------------------------- */
@@ -1837,11 +1891,11 @@ void ADFH_Children_Names(const double pid,
 /* ----------------------------------------------------------------- */
 
 void ADFH_Children_IDs(const double pid,
-                         const int    istart,
-                         const int    icount,
-                         int   *icount_ret,
-                         double  *IDs,
-                         int   *err)
+		       const int    istart,
+		       const int    icount,
+		       int   *icount_ret,
+		       double  *IDs,
+		       int   *err)
 {
   hid_t hpid;
 
@@ -2005,7 +2059,19 @@ void ADFH_Database_Open(const char   *name,
 
   /* set access property to close all open accesses when file closed */
   mta_root->g_propfileopen = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fclose_degree(mta_root->g_propfileopen, H5F_CLOSE_STRONG);
+  H5Pset_fclose_degree(mta_root->g_propfileopen, H5F_CLOSE_WEAK);
+
+#ifdef BUILD_PARALLEL
+  /* Set the access property list to use MPI */ 
+  if (0 == strcmp(fmt, "PARALLEL")) {
+      MPI_Comm comm = MPI_COMM_WORLD;
+      MPI_Info info = MPI_INFO_NULL;
+
+/*      MPI_Info_create(&info);*/
+      H5Pset_fapl_mpio(mta_root->g_propfileopen, comm, info);
+  }
+#endif
+
   /*  H5Pset_latest_format(fapl, 1); */
 #if !defined(HDF5_PRE_1_8)
   /* Performance patch applied by KSH on 2009.05.18 */
@@ -2034,13 +2100,13 @@ void ADFH_Database_Open(const char   *name,
     fid = H5Fcreate(name, H5F_ACC_TRUNC, 
 		    mta_root->g_propfilecreate, 
 		    mta_root->g_propfileopen);
+    H5Pclose(mta_root->g_propfileopen);
     if (fid < 0) {
 #if !defined(HDF5_PRE_1_8)
       H5Pclose(mta_root->g_proplink);
       H5Pclose(mta_root->g_propfilecreate);
       H5Pclose(mta_root->g_propgroupcreate);
 #endif
-      H5Pclose(mta_root->g_propfileopen);
       set_error(FILE_OPEN_ERROR, err);
       return;
     }
@@ -2096,8 +2162,12 @@ void ADFH_Database_Open(const char   *name,
   }
 
   mta_root->g_files[pos] = fid;
-  /*  mta_root->g_files[pos].mode = mode; */
-  /*  mta_root->g_files[pos].mounted = NULL; */
+  mta_root->g_extids[pos]=NULL;
+  mta_root->n_extids[pos]=0;
+  mta_root->x_extids[pos]=-1;
+
+  track_id(fid,gid);
+
   *root = to_ADF_ID(gid);
 }
 
@@ -2173,12 +2243,10 @@ void ADFH_Database_Delete(const char *name,
 void ADFH_Database_Close(const double  root,
                          int          *status)
 {
-  int n,idx;
+  int fn,idx;
   hid_t fid;
-#ifdef ADFH_FORCE_ID_CLOSE
-  int nobj;
+  int nobj,n;
   hid_t *objs;
-#endif
 
   ADFH_DEBUG(("ADFH_Database_Close"));
   if (mta_root == NULL)
@@ -2187,81 +2255,88 @@ void ADFH_Database_Close(const double  root,
     return;
   }
   ADFH_DEBUG(("ADFH_Database_Close 4"));
-  if ((n = get_file_number(to_HDF_ID(root), status)) < 0) return;
-  fid = mta_root->g_files[n];
-  mta_root->g_files[n] = 0;
+  if ((fn = get_file_number(to_HDF_ID(root), status)) < 0) return;
+  fid = mta_root->g_files[fn];
+  mta_root->g_files[fn] = 0;
 
-  ADFH_DEBUG(("ADFH_Database_Close 3"));
   /* free up all open accesses */
-
-#ifdef ADFH_FORCE_ID_CLOSE
-  nobj = H5Fget_obj_count(fid, H5F_OBJ_ALL);
-  objs = (hid_t *) malloc (nobj * sizeof(hid_t));
-
-  /* close datatypes */
-
-  nobj = H5Fget_obj_count(fid, H5F_OBJ_DATATYPE);
-#ifdef ADFH_DEBUG_ON
-  printf("%s close DataType [%d] HIDs\n",ADFH_PREFIX,nobj);
-#endif
-  if (nobj) {
-    H5Fget_obj_ids(fid, H5F_OBJ_DATATYPE, -1, objs);
-    for (n = 0; n < nobj; n++)
-      H5Tclose(objs[n]);
-  }
-
-  /* close datasets */
-
-  nobj = H5Fget_obj_count(fid, H5F_OBJ_DATASET);
-#ifdef ADFH_DEBUG_ON
-  printf("%s close DataSet [%d] HIDs\n",ADFH_PREFIX,nobj);
-#endif
-  if (nobj) {
-    H5Fget_obj_ids(fid, H5F_OBJ_DATASET, -1, objs);
-    for (n = 0; n < nobj; n++)
-      H5Dclose(objs[n]);
-  }
-
-  /* close attributes */
-
-  nobj = H5Fget_obj_count(fid, H5F_OBJ_ATTR);
-#ifdef ADFH_DEBUG_ON
-  printf("%s close Attr [%d] HIDs\n",ADFH_PREFIX,nobj);
-#endif
-  if (nobj) {
-    H5Fget_obj_ids(fid, H5F_OBJ_ATTR, -1, objs);
-    for (n = 0; n < nobj; n++)
-      H5Aclose(objs[n]);
-  }
-
-  /* close groups */
-
-  nobj = H5Fget_obj_count(fid, H5F_OBJ_GROUP);
-#ifdef ADFH_DEBUG_ON
-  printf("%s close Group [%d] HIDs\n",ADFH_PREFIX,nobj);
-#endif
-  if (nobj) {
-    H5Fget_obj_ids(fid, H5F_OBJ_GROUP, -1, objs);
-    for (n = 0; n < nobj; n++)
+  for (nobj=0;nobj<mta_root->n_extids[fn];nobj++)
+  {
+    ADFH_DEBUG(("ADFH_Database_Close 3 [%.6d/%.6d]:[%d]",\
+		nobj,mta_root->n_extids[fn],mta_root->g_extids[fn][nobj]));
+    if (H5Iis_valid(mta_root->g_extids[fn][nobj]))
     {
-      H5Gclose(objs[n]);
+      H5Oclose(mta_root->g_extids[fn][nobj]);
     }
   }
+#ifdef ADFH_FORCE_ID_CLOSE
+  nobj = H5Fget_obj_count(fid, H5F_OBJ_ALL | H5F_OBJ_LOCAL);
+  if (nobj) {
+    objs = (hid_t *) malloc (nobj * sizeof(hid_t));
+
+    /* close datatypes */
+
+    nobj = H5Fget_obj_count(fid, H5F_OBJ_DATATYPE | H5F_OBJ_LOCAL);
+#ifdef ADFH_DEBUG_ON
+    printf("%s close DataType [%d] HIDs\n",ADFH_PREFIX,nobj);
+#endif
+    if (nobj) {
+      H5Fget_obj_ids(fid, H5F_OBJ_DATATYPE, -1, objs);
+      for (n = 0; n < nobj; n++)
+        H5Tclose(objs[n]);
+    }
+
+    /* close datasets */
+
+    nobj = H5Fget_obj_count(fid, H5F_OBJ_DATASET | H5F_OBJ_LOCAL);
+#ifdef ADFH_DEBUG_ON
+    printf("%s close DataSet [%d] HIDs\n",ADFH_PREFIX,nobj);
+#endif
+    if (nobj) {
+      H5Fget_obj_ids(fid, H5F_OBJ_DATASET, -1, objs);
+      for (n = 0; n < nobj; n++)
+        H5Dclose(objs[n]);
+    }
+
+    /* close attributes */
+
+    nobj = H5Fget_obj_count(fid, H5F_OBJ_ATTR | H5F_OBJ_LOCAL);
+#ifdef ADFH_DEBUG_ON
+    printf("%s close Attr [%d] HIDs\n",ADFH_PREFIX,nobj);
+#endif
+    if (nobj) {
+      H5Fget_obj_ids(fid, H5F_OBJ_ATTR, -1, objs);
+      for (n = 0; n < nobj; n++)
+        H5Aclose(objs[n]);
+    }
+
+    /* close groups */
+
+    nobj = H5Fget_obj_count(fid, H5F_OBJ_GROUP | H5F_OBJ_LOCAL);
+#ifdef ADFH_DEBUG_ON
+    printf("%s close Group [%d] HIDs\n",ADFH_PREFIX,nobj);
+#endif
+    if (nobj) {
+      H5Fget_obj_ids(fid, H5F_OBJ_GROUP, -1, objs);
+      for (n = 0; n < nobj; n++)
+        H5Gclose(objs[n]);
+    }
 
 #if 0
-  /* close file accesses except for current */
+    /* close file accesses except for current */
 
-  nobj = H5Fget_obj_count(fid, H5F_OBJ_FILE);
-  if (nobj) {
-    H5Fget_obj_ids(fid, H5F_OBJ_FILE, -1, objs);
-    for (n = 0; n < nobj; n++) {
+    nobj = H5Fget_obj_count(fid, H5F_OBJ_FILE);
+    if (nobj) {
+      H5Fget_obj_ids(fid, H5F_OBJ_FILE, -1, objs);
+      for (n = 0; n < nobj; n++) {
         if (objs[n] != fid)
-            H5Fclose(objs[n]);
+          H5Fclose(objs[n]);
+      }
     }
-  }
 #endif
 
-  free (objs);
+    free (objs);
+  }
 #endif
 
   ADFH_DEBUG(("ADFH_Database_Close 2"));
@@ -2278,6 +2353,8 @@ void ADFH_Database_Close(const double  root,
   else
     set_error(NO_ERROR, status);
 
+  free(mta_root->g_extids[fn]);
+
   ADFH_DEBUG(("ADFH_Database_Close 1"));
   if (mta_root != NULL)
   {
@@ -2285,6 +2362,7 @@ void ADFH_Database_Close(const double  root,
     for (n = 0; n < ADFH_MAXIMUM_FILES; n++)  idx+=mta_root->g_files[n];
     if (! idx) 
     {
+      /*free(mta_root->g_extids);*/
       free(mta_root);
       mta_root=NULL;
     }
@@ -2375,6 +2453,7 @@ void ADFH_Get_Root_ID(const double  id,
                       int          *err)
 {
   hid_t rid;
+  int   fn,er;
 
   ADFH_DEBUG(("ADFH_Get_Root_ID"));
 
@@ -2385,6 +2464,9 @@ void ADFH_Get_Root_ID(const double  id,
     *root_id = to_ADF_ID(rid);
     set_error(NO_ERROR, err);
   }
+  track_id(to_HDF_ID(id),rid);
+
+  ADFH_DEBUG(("ADFH_Get_Root_ID root id [%d]",rid));
 }
 
 /* ----------------------------------------------------------------- */
@@ -2508,7 +2590,7 @@ void ADFH_Put_Dimension_Information(const double   id,
   void *data = NULL;
   char new_type[3];
 
-  ADFH_DEBUG(("ADFH_Put_Dimension_Information"));
+  ADFH_DEBUG(("ADFH_Put_Dimension_Information [%d]",hid));
 
   if (is_link(hid)) {
     set_error(ADFH_ERR_LINK_DATA, err);
@@ -2551,6 +2633,7 @@ void ADFH_Put_Dimension_Information(const double   id,
 
   old_size = 0;
   if(has_data(hid)) {
+    ADFH_DEBUG(("ADFH_Put_Dimension_Information unlink [%d]",hid));
     H5Gunlink(hid, D_DATA);
   }
 
@@ -2572,15 +2655,16 @@ void ADFH_Put_Dimension_Information(const double   id,
     for (i = 0; i < dims; i++)
       new_dims[i] = (hsize_t)dim_vals[i];
   }
-
   tid = to_HDF_data_type(new_type);
   ADFH_CHECK_HID(tid);
   sid = H5Screate_simple(dims, new_dims, NULL);
   /* better idea? how to guess the right size? */
+
   if (CompressData >= 0)
   {
     H5Pset_deflate(mta_root->g_propdataset, CompressData);
   }
+
 #if 0
   this causes a problem with memory allocation. For example,
   writing an unstructured coordinate array of 5 billion values
@@ -2674,6 +2758,7 @@ void ADFH_Link(const double  pid,
   char *target;
   herr_t status;
   hid_t lid;
+  int fn,er;
 
   ADFH_DEBUG(("ADFH_Link [%s][%s][%s]",name,file,name_in_file));
 
@@ -2728,6 +2813,8 @@ void ADFH_Link(const double  pid,
   /* save link path and file */
   if (new_str_data(lid,D_PATH,name_in_file,(int)strlen(name_in_file),err)) return;
   if (*file && new_str_data(lid,D_FILE,file,(int)strlen(file),err))        return;
+
+  track_id(to_HDF_ID(pid),lid);
 
   set_error(NO_ERROR, err);
 }

@@ -108,15 +108,17 @@ proc export_input {w {use_loc 0} {labw ""}} {
     pack $f.lab $f.ent $f.but -side left
     export_state basenum $f.ent
 
-    set f [frame $input.sol]
-    pack $f -side top -anchor w
-    label $f.lab -text "Solution Index" -width $labw -anchor w
-    entry $f.ent -textvariable Export(solnum) -width 10
-    checkbutton $f.but -text default \
-      -variable Export(solnum,flag) -onvalue 1 -offvalue 0 \
-      -command "export_state solnum $f.ent"
-    pack $f.lab $f.ent $f.but -side left
-    export_state solnum $f.ent
+    if {$use_loc > 0} {
+      set f [frame $input.sol]
+      pack $f -side top -anchor w
+      label $f.lab -text "Solution Index" -width $labw -anchor w
+      entry $f.ent -textvariable Export(solnum) -width 10
+      checkbutton $f.but -text default \
+        -variable Export(solnum,flag) -onvalue 1 -offvalue 0 \
+        -command "export_state solnum $f.ent"
+      pack $f.lab $f.ent $f.but -side left
+      export_state solnum $f.ent
+    }
   }
 }
 

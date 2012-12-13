@@ -1,27 +1,33 @@
+/*
+! @file thesis_benchmark.c
+! @author Kyle Horne <horne.kyle@gmail.com>
+! @version 0.2
+!
+! @section LICENSE
+! BSD style license
+!
+! @section DESCRIPTION
+! Test program for pcgns library
+*/
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+
 #include "pcgnslib.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "math.h"
 #include "mpi.h"
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-#ifndef FALSE
-#define FALSE 0
-#endif
 
 int comm_size;
 int comm_rank;
 MPI_Info info;
 
-double data_size;
+double data_size = 1.0;
 int N;
 int Nl;
 int pc;
-int zpp;
-int ppz;
+int zpp = 2;
+int ppz = 2;
 int zc;
 
 int* zones;
@@ -42,7 +48,6 @@ double* h;
 int read_inputs(int* argc, char*** argv) {
 	int k;
 	if(comm_rank==0) {
-		if(*argc<7) exit(1);
 		for(k=1;k<*argc;k++) {
 			if(strcmp((*argv)[k],"-ds")==0) {
 				k++;
@@ -69,6 +74,8 @@ int read_inputs(int* argc, char*** argv) {
 
 int initialize(int* argc, char*** argv) {
 	int j,k;
+	double theta;
+	double r;
 
 	MPI_Init(argc,argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
@@ -89,7 +96,7 @@ int initialize(int* argc, char*** argv) {
 		subzones[k] = comm_rank%ppz;
 		}
 
-	// Initialize Arrays
+	/* Initialize Arrays */
 	x = malloc(Nl*sizeof(double));
 	y = malloc(Nl*sizeof(double));
 	z = malloc(Nl*sizeof(double));
@@ -102,8 +109,6 @@ int initialize(int* argc, char*** argv) {
 
 	h = malloc(Nl*sizeof(double));
 
-	double theta;
-	double r;
 	for(k=0;k<Nl;k++) {
 		j = Nl*subzones[0]+k;
 		theta = ((double) j)/((double) Nl*zpp);
@@ -118,8 +123,10 @@ int initialize(int* argc, char*** argv) {
 		h[k] = r;
 		}
 
-	//~ printf("%d: Nl %d\n",comm_rank,Nl);
-	//~ for(k=0;k<zpp;k++) printf("%d: Z%d.%d\n",comm_rank,zones[k],subzones[k]);
+#if 0
+	printf("%d: Nl %d\n",comm_rank,Nl);
+	for(k=0;k<zpp;k++) printf("%d: Z%d.%d\n",comm_rank,zones[k],subzones[k]);
+#endif
 
 	return 0;
 	}
@@ -145,80 +152,93 @@ int main(int argc, char* argv[]) {
 	int F;
 	int B;
 
-	int nijk[3][1];
+	int *Z, *E, *S, *A;
+	int *Cx, *Cy, *Cz;
+	int *Fu, *Fv, *Fw;
 
-	initialize(&argc,&argv);
-
-	cgp_open("thesis_benchmark.cgns",0,MPI_COMM_WORLD, &info, &F);
-	cgp_base_write(F,"Base",3,3,&B);
-
-	nijk[0][0] = Nl*ppz;
-	nijk[1][0] = Nl*ppz;
-	nijk[2][0] = 0;
-
-	default_pio_mode = CGP_INDEPENDENT;
-
-	int Z[zc];
-	int Cx[zc];
-	int Cy[zc];
-	int Cz[zc];
-	int E[zc];
-	int Su[zc];
-	int Sv[zc];
-	int Sw[zc];
-
-	for(k=0;k<zc;k++) {
-		char zonename[100+1];
-		sprintf(zonename,"%s %d","Zone",k);
-		cgp_zone_write(F,B,zonename,&(nijk[0][0]),Unstructured,&(Z[k]));
-		cgp_coord_write(F,B,Z[k],0,"CoordinateX",&(Cx[k]));
-		cgp_coord_write(F,B,Z[k],0,"CoordinateY",&(Cy[k]));
-		cgp_coord_write(F,B,Z[k],0,"CoordinateZ",&(Cz[k]));
-		cgp_section_write(F,B,Z[k],"Elements",NODE,1,Nl*ppz,0,&(E[k]));
-		cgp_sol_write(F,B,Z[k],"MomentumX",Vertex,&(Su[k]));
-		cgp_sol_write(F,B,Z[k],"MomentumY",Vertex,&(Sv[k]));
-		cgp_sol_write(F,B,Z[k],"MomentumZ",Vertex,&(Sw[k]));
-		cgp_array_write(F,B,Z[k],"phi",Vertex);
-		}
+	cgsize_t nijk[3];
+	cgsize_t min, max;
 
 	double T0,T1;
 	double Tw0,Tw1;
 	double Tr0,Tr1;
 	double t0,t1;
 
+	initialize(&argc,&argv);
+
+	Z = (int *)malloc(10*zc*sizeof(int));
+	E = Z + zc;
+	S = E + zc;
+	A = S + zc;
+	Cx = A + zc;
+	Cy = Cx + zc;
+	Cz = Cy + zc;
+	Fu = Cz + zc;
+	Fv = Fu + zc;
+	Fw = Fv + zc;
+
+	if (cgp_open("thesis_benchmark.cgns", CG_MODE_WRITE, &F) ||
+	    cg_base_write(F,"Base",3,3,&B))
+	    cgp_error_exit();
+
+	nijk[0] = Nl*ppz;
+	nijk[1] = Nl*ppz;
+	nijk[2] = 0;
+
+	for(k=0;k<zc;k++) {
+		char zonename[100+1];
+		sprintf(zonename,"%s %d","Zone",k);
+		if (cg_zone_write(F,B,zonename,nijk,Unstructured,&(Z[k])) ||
+		    cgp_coord_write(F,B,Z[k],RealDouble,"CoordinateX",&(Cx[k])) ||
+		    cgp_coord_write(F,B,Z[k],RealDouble,"CoordinateY",&(Cy[k])) ||
+		    cgp_coord_write(F,B,Z[k],RealDouble,"CoordinateZ",&(Cz[k])) ||
+		    cgp_section_write(F,B,Z[k],"Elements",NODE,1,Nl*ppz,0,&(E[k])) ||
+		    cg_sol_write(F,B,Z[k],"Solution",Vertex,&S[k]) ||
+		    cgp_field_write(F,B,Z[k],S[k],RealDouble,"MomentumX",&(Fu[k])) ||
+		    cgp_field_write(F,B,Z[k],S[k],RealDouble,"MomentumY",&(Fv[k])) ||
+		    cgp_field_write(F,B,Z[k],S[k],RealDouble,"MomentumZ",&(Fw[k])))
+		    cgp_error_exit();
+		if (cg_goto(F,B,zonename,0,NULL) ||
+		    cg_user_data_write("User Data") ||
+		    cg_gorel(F, "User Data", 0, NULL) ||
+		    cgp_array_write("phi",RealDouble,1,nijk,&A[k]))
+		    cgp_error_exit();
+		}
+
 	MPI_Barrier(MPI_COMM_WORLD);
 	T0 = MPI_Wtime();
 	Tw0 = MPI_Wtime();
 
-	// Writes
-
+	/* Writes */
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
 	for(k=0;k<zpp;k++) {
-		int min = subzones[k]*Nl;
-		int max = (subzones[k]+1)*Nl-1;
+		min = subzones[k]*Nl+1;
+		max = (subzones[k]+1)*Nl;
 
-		cgp_coord_write_data(F,B,Z[zones[k]],Cx[zones[k]],&min,&max,x);
-		cgp_coord_write_data(F,B,Z[zones[k]],Cy[zones[k]],&min,&max,y);
-		cgp_coord_write_data(F,B,Z[zones[k]],Cz[zones[k]],&min,&max,z);
+		if (cgp_coord_write_data(F,B,Z[zones[k]],Cx[zones[k]],&min,&max,x) ||
+		    cgp_coord_write_data(F,B,Z[zones[k]],Cy[zones[k]],&min,&max,y) ||
+		    cgp_coord_write_data(F,B,Z[zones[k]],Cz[zones[k]],&min,&max,z))
+		    cgp_error_exit();
 		}
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
 	if(comm_rank==0) {
 		printf("Coords Write\n");
-		printf("\tTime=%lf\n",comm_rank,t1-t0);
-		printf("\tBandwidth=%lf\n",comm_rank,3.0*data_size/(t1-t0));
+		printf("\tTime=%lf\n",t1-t0);
+		printf("\tBandwidth=%lf\n",3.0*data_size/(t1-t0));
 		}
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
 	for(k=0;k<zpp;k++) {
-		int min = subzones[k]*Nl;
-		int max = (subzones[k]+1)*Nl-1;
+		min = subzones[k]*Nl+1;
+		max = (subzones[k]+1)*Nl;
 
-		cgp_sol_write_data(F,B,Z[zones[k]],Su[zones[k]],&min,&max,u);
-		cgp_sol_write_data(F,B,Z[zones[k]],Sv[zones[k]],&min,&max,v);
-		cgp_sol_write_data(F,B,Z[zones[k]],Sw[zones[k]],&min,&max,w);
+		if (cgp_field_write_data(F,B,Z[zones[k]],S[zones[k]],Fu[zones[k]],&min,&max,u) ||
+		    cgp_field_write_data(F,B,Z[zones[k]],S[zones[k]],Fv[zones[k]],&min,&max,v) ||
+		    cgp_field_write_data(F,B,Z[zones[k]],S[zones[k]],Fw[zones[k]],&min,&max,w))
+		    cgp_error_exit();
 		}
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
@@ -231,10 +251,13 @@ int main(int argc, char* argv[]) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
 	for(k=0;k<zpp;k++) {
-		int min = subzones[k]*Nl;
-		int max = (subzones[k]+1)*Nl-1;
+		min = subzones[k]*Nl+1;
+		max = (subzones[k]+1)*Nl;
 
-		cgp_array_write_data(F,B,Z[zones[k]],"phi",&min,&max,h);
+		if (cg_goto(F,B,"Zone_t",Z[zones[k]],
+		        "UserDefinedData_t",1,NULL) ||
+		    cgp_array_write_data(A[zones[k]],&min,&max,h))
+		    cgp_error_exit();
 		}
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
@@ -247,12 +270,11 @@ int main(int argc, char* argv[]) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
 	for(k=0;k<zpp;k++) {
-		int min = subzones[k]*Nl;
-		int max = (subzones[k]+1)*Nl-1;
+		min = subzones[k]*Nl+1;
+		max = (subzones[k]+1)*Nl;
 
-		min++;
-		max++;
-		cgp_section_write_data(F,B,Z[zones[k]],E[zones[k]],min,max,e);
+		if (cgp_elements_write_data(F,B,Z[zones[k]],E[zones[k]],min,max,e))
+		    cgp_error_exit();
 		}
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
@@ -269,9 +291,19 @@ int main(int argc, char* argv[]) {
 		printf("Total Write Bandwidth=%lf\n",(6.0+((double) sizeof(int))/((double) sizeof(double)))*data_size/(Tw1-Tw0));
 		}
 
-	//=======//
-	//=Reads=//
-	//=======//
+	MPI_Barrier(MPI_COMM_WORLD);
+	t0 = MPI_Wtime();
+	cgp_close(F);
+	MPI_Barrier(MPI_COMM_WORLD);
+	t1 = MPI_Wtime();
+	if(comm_rank==0) printf("Close_Time=%lf\n",t1-t0);
+
+	/*=======
+	 *=Reads=
+	 *=======*/
+
+	if (cgp_open("thesis_benchmark.cgns", CG_MODE_READ, &F))
+	    cgp_error_exit();
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	Tr0 = MPI_Wtime();
@@ -279,30 +311,32 @@ int main(int argc, char* argv[]) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
 	for(k=0;k<zpp;k++) {
-		int min = subzones[k]*Nl;
-		int max = (subzones[k]+1)*Nl-1;
+		min = subzones[k]*Nl+1;
+		max = (subzones[k]+1)*Nl;
 
-		cgp_coord_read_data(F,B,Z[zones[k]],Cx[zones[k]],&min,&max,x);
-		cgp_coord_read_data(F,B,Z[zones[k]],Cy[zones[k]],&min,&max,y);
-		cgp_coord_read_data(F,B,Z[zones[k]],Cz[zones[k]],&min,&max,z);
+		if (cgp_coord_read_data(F,B,Z[zones[k]],Cx[zones[k]],&min,&max,x) ||
+		    cgp_coord_read_data(F,B,Z[zones[k]],Cy[zones[k]],&min,&max,y) ||
+		    cgp_coord_read_data(F,B,Z[zones[k]],Cz[zones[k]],&min,&max,z))
+		    cgp_error_exit();
 		}
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
 	if(comm_rank==0) {
 		printf("Coords Read\n");
-		printf("\tTime=%lf\n",comm_rank,t1-t0);
-		printf("\tBandwidth=%lf\n",comm_rank,3.0*data_size/(t1-t0));
+		printf("\tTime=%lf\n",t1-t0);
+		printf("\tBandwidth=%lf\n",3.0*data_size/(t1-t0));
 		}
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
 	for(k=0;k<zpp;k++) {
-		int min = subzones[k]*Nl;
-		int max = (subzones[k]+1)*Nl-1;
+		min = subzones[k]*Nl+1;
+		max = (subzones[k]+1)*Nl;
 
-		cgp_sol_read_data(F,B,Z[zones[k]],Su[zones[k]],&min,&max,u);
-		cgp_sol_read_data(F,B,Z[zones[k]],Sv[zones[k]],&min,&max,v);
-		cgp_sol_read_data(F,B,Z[zones[k]],Sw[zones[k]],&min,&max,w);
+		if (cgp_field_read_data(F,B,Z[zones[k]],S[zones[k]],Fu[zones[k]],&min,&max,u) ||
+		    cgp_field_read_data(F,B,Z[zones[k]],S[zones[k]],Fv[zones[k]],&min,&max,v) ||
+		    cgp_field_read_data(F,B,Z[zones[k]],S[zones[k]],Fw[zones[k]],&min,&max,w))
+		    cgp_error_exit();
 		}
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
@@ -315,10 +349,13 @@ int main(int argc, char* argv[]) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
 	for(k=0;k<zpp;k++) {
-		int min = subzones[k]*Nl;
-		int max = (subzones[k]+1)*Nl-1;
+		min = subzones[k]*Nl+1;
+		max = (subzones[k]+1)*Nl;
 
-		cgp_array_read_data(F,B,Z[zones[k]],"phi",&min,&max,h);
+		if (cg_goto(F,B,"Zone_t",Z[zones[k]],
+		        "UserDefinedData_t",1,NULL) ||
+		    cgp_array_read_data(A[zones[k]],&min,&max,h))
+		    cgp_error_exit();
 		}
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
@@ -331,12 +368,11 @@ int main(int argc, char* argv[]) {
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
 	for(k=0;k<zpp;k++) {
-		int min = subzones[k]*Nl;
-		int max = (subzones[k]+1)*Nl-1;
+		min = subzones[k]*Nl+1;
+		max = (subzones[k]+1)*Nl;
 
-		min++;
-		max++;
-		cgp_section_read_data(F,B,Z[zones[k]],E[zones[k]],min,max,e);
+		if (cgp_elements_read_data(F,B,Z[zones[k]],E[zones[k]],min,max,e))
+		    cgp_error_exit();
 		}
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();

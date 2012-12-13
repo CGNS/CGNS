@@ -158,6 +158,13 @@ typedef struct {            /* Descriptor_t node            */
     char *text;             /* Copy of Descriptor data              */
 } cgns_descr;
 
+/* CPEX 0033 */
+typedef struct {
+    double id;
+    char_33 name;
+    char_33 family;
+} cgns_famname;
+
 typedef struct {            /* DimensionalUnits_t Node      */
     char_33 name;           /* name of ADF node                     */
     double id;              /* ADF ID number (address) of node      */
@@ -210,7 +217,6 @@ typedef struct {            /* DataArray_t Node         */
     cgns_units *units;      /* ptrs to in-memory copy of units      */
     cgns_exponent *exponents;/* ptrs to in-memory copy of exponents */
     cgns_conversion *convert;/* ptrs to in-memory copy of convert   */
-/* V2.4 */
     cgsize_t range[2];       /* index range for currently stored data*/
 } cgns_array;
 
@@ -238,7 +244,6 @@ typedef struct cgns_user_data_s /* UserDefinedData_t Node       */
     cgns_array *array;      /* ptrs to in-mem. copy of Data Arrays  */
     CGNS_ENUMT(DataClass_t) data_class; /* Class of data                        */
     cgns_units *units;      /* ptrs to in-memory copy of units      */
- /* V2.4 */
     CGNS_ENUMT(GridLocation_t) location;/* Grid location where data is recorded */
     char_33 family_name;    /* Family name              */
     int ordinal;            /* option to specify a rank     */
@@ -489,7 +494,6 @@ typedef struct {            /* FlowEquationSet_t Node               */
     cgns_units *units;      /* ptrs to in-memory copy of units      */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
-/* V2.4 */
     cgns_model *elecfield;  /* ptrs to in-mem. copy of EMElecFieldM. */
     cgns_model *magnfield;  /* ptrs to in-mem. copy of EMMagneticFieldM. */
     cgns_model *emconduct;  /* ptrs to in-mem. copy of EMConductivityM. */
@@ -525,7 +529,6 @@ typedef struct {            /* BCDataSet_t node         */
     cgns_units *units;      /* Dimensional Units                    */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
- /* V2.4 */
     CGNS_ENUMT(GridLocation_t) location;/* Grid location where data is recorded */
     cgns_ptset *ptset;      /* PointList, PointRange                */
 } cgns_dataset;
@@ -575,6 +578,9 @@ typedef struct {            /* BC_t node                */
     int ordinal;            /* option to define a rank      */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
+    /* CPEX 0034 */
+    int nfamname;
+    cgns_famname *famname;
 } cgns_boco;
 
 typedef struct {            /* ZoneBC_t node            */
@@ -641,9 +647,7 @@ typedef struct {            /* GridConnectivity1to1_t node      */
     int ordinal;            /* option to specify a rank     */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
-/* V2.4 */
-        cgns_cprop *cprop;  /* ptrs to in-memory copies of cprop    */
-/* V2.4 */
+    cgns_cprop *cprop;      /* ptrs to in-memory copies of cprop    */
 } cgns_1to1;
 
 typedef struct {            /* ZoneGridConnectivity_t node      */
@@ -782,6 +786,9 @@ typedef struct {            /* ZoneSubRegion_t Node                 */
     int *rind_planes;       /* No. of rind-planes on each zone face */
     int nuser_data;         /* number of user defined data nodes    */
     cgns_user_data *user_data; /* User defined data.                */
+    /* CPEX 0034 */
+    int nfamname;
+    cgns_famname *famname;
 } cgns_subreg;
 
 typedef struct {            /* Zone_t Node              */
@@ -827,6 +834,9 @@ typedef struct {            /* Zone_t Node              */
     /* version 3.2 */
     int nsubreg;            /* num subregions */
     cgns_subreg *subreg;    /* subregion ptrs */
+    /* CPEX 0034 */
+    int nfamname;
+    cgns_famname *famname;
 } cgns_zone;
 
 typedef struct {            /*                                      */
@@ -857,10 +867,8 @@ typedef struct {            /* FamilyBC_t node          */
     cgns_link *link;        /* link information         */  /* V2.1 */
     int in_link;            /* set if child of a linked node        */
     CGNS_ENUMT(BCType_t) type;/* type of boco             */
- /* V2.4 */
     int ndataset;           /* no of BCDataSet nodes        */
     cgns_dataset *dataset;  /* ptrs to in-mem. copy of BCDataSet    */
- /* V2.4 */
 } cgns_fambc;
 
 typedef struct {            /* Family_t node            */
@@ -877,9 +885,10 @@ typedef struct {            /* Family_t node            */
     int ordinal;            /* option to assign a rank              */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
-/* V2.4 */
     cgns_rotating *rotating;/* ptrs to in-memory copy of Rot. Coord.*/
-/* V2.4 */
+/* CPEX 0033 */
+    int nfamname;
+    cgns_famname *famname;
 } cgns_family;
 
 typedef struct {            /* CGNSBase_t Node          */
@@ -1037,6 +1046,7 @@ int *cgi_diffusion_address(int local_mode, int *ier);
 cgns_array *cgi_array_address(int local_mode, int array_no, char const *array_name, int *ier);
 cgns_model *cgi_model_address(int local_mode, char const *ModelLabel, int *ier);
 char *cgi_famname_address(int local_mode, int *ier);
+cgns_famname *cgi_multfam_address(int mode, int num, char const *name, int *ier);
 cgns_user_data *cgi_user_data_address(int local_mode, int given_no, char const *given_name, int *ier);
 cgns_rotating *cgi_rotating_address(int local_mode, int *ier);
 cgns_ptset *cgi_ptset_address(int local_mode, int *ier);
@@ -1047,7 +1057,7 @@ cgns_dataset * cgi_bcdataset_address(int local_mode, int given_no,
 int cgi_read();
 int cgi_read_base(cgns_base *base);
 int cgi_read_zone(cgns_zone *zone);
-  int cgi_read_zonetype(double parent_id, char_33 parent_name, CGNS_ENUMT(ZoneType_t) *type);
+int cgi_read_zonetype(double parent_id, char_33 parent_name, CGNS_ENUMT(ZoneType_t) *type);
 int cgi_read_family(cgns_family *family);
 int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
                             cgns_dataset **dataset);

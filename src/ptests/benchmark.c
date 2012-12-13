@@ -1,38 +1,40 @@
-//! @file benchmark.c
-//! @author Kyle Horne <horne.kyle@gmail.com>
-//! @version 0.2
-//!
-//! @section LICENSE
-//! BSD style license
-//!
-//! @section DESCRIPTION
-//! Test program for pcgns library
+/*
+! @file benchmark.c
+! @author Kyle Horne <horne.kyle@gmail.com>
+! @version 0.2
+!
+! @section LICENSE
+! BSD style license
+!
+! @section DESCRIPTION
+! Test program for pcgns library
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
 
 #include "pcgnslib.h"
-
-#include "stdio.h"
-#include "stdlib.h"
 #include "mpi.h"
-#include "string.h"
-#include "math.h"
 
 #define MEGA_BYTES 256
 #define BUF_LENGTH (MEGA_BYTES*1024*1024/sizeof(double))
-//#define BUF_LENGTH (9)
+/*#define BUF_LENGTH (9)*/
 
 #define N ((int) sqrt((double) BUF_LENGTH))
 
 int comm_size;
 int comm_rank;
 MPI_Info info;
-int nijk[3][3];
+cgsize_t nijk[9];
 
 double* x;
 double* y;
 double* z;
 
-int min[3];
-int max[3];
+cgsize_t min[3];
+cgsize_t max[3];
 
 int fn;
 int B;
@@ -44,26 +46,26 @@ double t1;
 double ta;
 
 int initialize(int* argc, char** argv[]) {
+	int i,j;
 	MPI_Init(argc,argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 	MPI_Info_create(&(info));
 
-	nijk[0][0] = N;
-	nijk[0][1] = N;
-	nijk[0][2] = comm_size;
-	nijk[1][0] = nijk[0][0]-1;
-	nijk[1][1] = nijk[0][1]-1;
-	nijk[1][2] = nijk[0][2]-1;
-	nijk[2][0] = 0;
-	nijk[2][1] = 0;
-	nijk[2][2] = 0;
+	nijk[0] = N;
+	nijk[1] = N;
+	nijk[2] = comm_size;
+	nijk[3] = nijk[0]-1;
+	nijk[4] = nijk[1]-1;
+	nijk[5] = nijk[2]-1;
+	nijk[6] = 0;
+	nijk[7] = 0;
+	nijk[8] = 0;
 
 	x = (double*) malloc(BUF_LENGTH*sizeof(double));
 	y = (double*) malloc(BUF_LENGTH*sizeof(double));
 	z = (double*) malloc(BUF_LENGTH*sizeof(double));
 
-	int i,j;
 	for(i=0;i<N;i++) {
 		for(j=0;j<N;j++) {
 			x[i*N+j] = (double) (i);
@@ -72,12 +74,12 @@ int initialize(int* argc, char** argv[]) {
 			}
 		}
 
-	min[0] = comm_rank;
-	min[1] = 0;
-	min[2] = 0;
-	max[0] = comm_rank;
-	max[1] = N-1;
-	max[2] = N-1;
+	min[2] = comm_rank + 1;
+	min[1] = 1;
+	min[0] = 1;
+	max[2] = comm_rank + 1;
+	max[1] = N;
+	max[0] = N;
 
 
 	return 0;
@@ -140,37 +142,42 @@ int doBandwidthAgg(const char* msg, double time) {
 	}
 
 int main(int argc, char* argv[]) {
-	// Initialize varaibles
+	/* Initialize varaibles */
 	initialize(&argc,&argv);
 
-	// Time the creation of a file
+	/* Time the creation of a file */
 	t0 = MPI_Wtime();
-	cgp_open("benchmark.cgns", 0, MPI_COMM_WORLD, &info, &fn);
+	if (cgp_open("benchmark.cgns", CG_MODE_WRITE, &fn))
+	    cg_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("File Open", t1-t0);
 
-	// Time the creation of a base
+	/* Time the creation of a base */
 	t0 = MPI_Wtime();
-	cgp_base_write(fn, "Base 1", 3, 3, &B);
+	if (cg_base_write(fn, "Base 1", 3, 3, &B))
+	    cg_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Base Write", t1-t0);
 
-	// Time the creation of a zone
+	/* Time the creation of a zone */
 	t0 = MPI_Wtime();
-	cgp_zone_write(fn, B, "Zone 1", &(nijk[0][0]), 0, &Z);
+	if (cg_zone_write(fn, B, "Zone 1", nijk, Structured, &Z))
+	    cg_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Zone Write", t1-t0);
 
-	// Time the creation of coordinates X
+	/* Time the creation of coordinates X */
 	t0 = MPI_Wtime();
-	cgp_coord_write(fn,B,Z,0,"CoordinateX",&C);
+	if (cgp_coord_write(fn,B,Z,RealDouble,"CoordinateX",&C))
+	    cg_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Coord X Write", t1-t0);
 
-	// Time the write speed of coordinates X
+	/* Time the write speed of coordinates X */
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
-	cgp_coord_write_data(fn,B,Z,C,min,max,x);
+	if (cgp_coord_write_data(fn,B,Z,C,min,max,x))
+	    cg_error_exit();
 	t1 = MPI_Wtime();
 	MPI_Barrier(MPI_COMM_WORLD);
 	ta = MPI_Wtime();
@@ -179,16 +186,18 @@ int main(int argc, char* argv[]) {
 	doBandwidth("Coord X Write Data", t1-t0);
 	doBandwidthAgg("Coord X Write Data", ta-t0);
 
-	// Time the creation of coordinates Y
+	/* Time the creation of coordinates Y */
 	t0 = MPI_Wtime();
-	cgp_coord_write(fn,B,Z,0,"CoordinateY",&C);
+	if (cgp_coord_write(fn,B,Z,RealDouble,"CoordinateY",&C))
+	    cg_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Coord Y Write", t1-t0);
 
-	// Time the write speed of coordinates Y
+	/* Time the write speed of coordinates Y */
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
-	cgp_coord_write_data(fn,B,Z,C,min,max,y);
+	if (cgp_coord_write_data(fn,B,Z,C,min,max,y))
+	    cg_error_exit();
 	t1 = MPI_Wtime();
 	MPI_Barrier(MPI_COMM_WORLD);
 	ta = MPI_Wtime();
@@ -197,16 +206,18 @@ int main(int argc, char* argv[]) {
 	doBandwidth("Coord Y Write Data", t1-t0);
 	doBandwidthAgg("Coord Y Write Data", ta-t0);
 
-	// Time the creation of coordinates Z
+	/* Time the creation of coordinates Z */
 	t0 = MPI_Wtime();
-	cgp_coord_write(fn,B,Z,0,"CoordinateZ",&C);
+	if (cgp_coord_write(fn,B,Z,RealDouble,"CoordinateZ",&C))
+	    cg_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Coord Z Write", t1-t0);
 
-	// Time the write speed of coordinates Z
+	/* Time the write speed of coordinates Z */
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
-	cgp_coord_write_data(fn,B,Z,C,min,max,z);
+	if (cgp_coord_write_data(fn,B,Z,C,min,max,z))
+	    cg_error_exit();
 	t1 = MPI_Wtime();
 	MPI_Barrier(MPI_COMM_WORLD);
 	ta = MPI_Wtime();
@@ -215,9 +226,10 @@ int main(int argc, char* argv[]) {
 	doBandwidth("Coord Z Write Data", t1-t0);
 	doBandwidthAgg("Coord Z Write Data", ta-t0);
 
-	// Time closing of the file
+	/* Time closing of the file */
 	t0 = MPI_Wtime();
-	cgp_close(fn);
+	if (cgp_close(fn))
+	    cg_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("File Close", t1-t0);
 

@@ -237,11 +237,55 @@ const char * AverageInterfaceTypeName[NofValidAverageInterfaceTypes] =
 int n_open = 0;
 int cgns_file_size = 0;
 int file_number_offset = 0;
-int VersionList[] = {3130, 3110, 3100, 3080, 3000,
+int VersionList[] = {3200,
+                     3130, 3110, 3100,
+                     3080, 3000,
                      2550, 2540, 2530, 2520, 2510, 2500,
                      2460, 2420, 2400,
                      2300, 2200, 2100, 2000, 1270, 1200, 1100, 1050};
 #define nVersions (sizeof(VersionList)/sizeof(int))
+
+void objlist_status(char *tag)
+{
+  int n,sname;
+  char oname[256];
+  hid_t o,idlist[1024];
+  H5O_info_t objinfo;
+
+  n=H5Fget_obj_count(H5F_OBJ_ALL,H5F_OBJ_ALL);
+  printf("{%s} HDF5 OBJ COUNT [%d]  \n",tag,n);fflush(stdout);
+  n=H5Fget_obj_count(H5F_OBJ_ALL,H5F_OBJ_GROUP);
+  printf("{%s} HDF5 GROUP     [%d]  \n",tag,n);fflush(stdout);
+  n=H5Fget_obj_count(H5F_OBJ_ALL,H5F_OBJ_DATASET);
+  printf("{%s} HDF5 DATASET   [%d]  \n",tag,n);fflush(stdout);
+  n=H5Fget_obj_count(H5F_OBJ_ALL,H5F_OBJ_DATATYPE);
+  printf("{%s} HDF5 DATATYPE  [%d]  \n",tag,n);fflush(stdout);
+  n=H5Fget_obj_count(H5F_OBJ_ALL,H5F_OBJ_ATTR);
+  printf("{%s} HDF5 ATTR      [%d]  \n",tag,n);fflush(stdout);
+  for (n=0;n<1024;n++)
+  {
+    idlist[n]=-1;
+  }
+  H5Fget_obj_ids(H5F_OBJ_ALL,H5F_OBJ_ALL,1024,idlist);
+  for (n=0;n<1024;n++)
+  {
+    if (idlist[n]!=-1) 
+    {
+      if (H5Iis_valid(idlist[n]))
+      {
+      	printf("{%s} track %d INVALID\n",tag,idlist[n]);
+      }
+      else
+      {
+      	H5Oget_info(idlist[n],&objinfo);
+      	memset(oname,'\0',256);
+      	sname=H5Iget_name(idlist[n],oname,0);
+      	sname=H5Iget_name(idlist[n],oname,sname+1);
+      	printf("{%s} track %d ALIVE (%s:%d)\n",tag,idlist[n],oname,objinfo.rc);
+      }
+    }
+  }
+}
 
 /***********************************************************************
  * library functions
@@ -565,6 +609,9 @@ int cg_close(int file_number)
         n_open, cgns_file_size, cgmemnow(), cgmemmax());
 #endif
 
+#ifdef DEBUG_HDF5_OBJECTS_CLOSE
+    objlist_status("close");
+#endif
     return CG_OK;
 }
 
@@ -609,6 +656,11 @@ int cg_set_file_type(int file_type)
 #endif
         }
 #ifdef BUILD_HDF5
+#ifdef BUILD_PARALLEL
+	else if (*type == '4' || *type == 'p' || *type == 'P') {
+            cgns_filetype = CG_FILE_PHDF5;
+        }
+#endif
 	else if (*type == '2' || *type == 'h' || *type == 'H') {
             cgns_filetype = CG_FILE_HDF5;
         }
@@ -1274,6 +1326,97 @@ int cg_family_write(int file_number, int B, const char * family_name, int *F)
      /* save data in file */
     if (cgi_new_node(base->id, family->name, "Family_t", &family->id,
         "MT", 0, 0, 0)) return CG_ERROR;
+
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+
+int cg_nfamily_names(int file_number, int B, int F, int *nnames)
+{
+    cgns_family *fam;
+
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    fam = cgi_get_family(cg, B, F);
+    if (fam == 0) return CG_ERROR;
+
+    *nnames = fam->nfamname;
+    return CG_OK;
+}
+
+int cg_family_name_read(int file_number, int B, int F, int N, char *name, char *family)
+{
+    cgns_family *fam;
+
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    fam = cgi_get_family(cg, B, F);
+    if (fam == 0) return CG_ERROR;
+
+    if (N < 1 || N > fam->nfamname) {
+        cgi_error("family name index out of range\n");
+        return CG_ERROR;
+    }
+    strcpy(name, fam->famname[N-1].name);
+    strcpy(family, fam->famname[N-1].family);
+    return CG_OK;
+}
+
+int cg_family_name_write(int file_number, int B, int F,
+                         const char *name, const char *family)
+{
+    int index;
+    cgsize_t dim;
+    cgns_family *fam;
+    cgns_famname *famname = 0;
+
+     /* verify input */
+    if (cgi_check_strlen(name) ||
+        cgi_check_strlen(family)) return CG_ERROR;
+
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    fam = cgi_get_family(cg, B, F);
+    if (fam == 0) return CG_ERROR;
+
+    for (index = 0; index < fam->nfamname; index++) {
+        if (0 == strcmp(name, fam->famname[index].name)) {
+            if (cg->mode == CG_MODE_WRITE) {
+                cgi_error("Duplicate child name found: %s", name);
+                return CG_ERROR;
+            }
+            if (cgi_delete_node(fam->id, fam->famname[index].id))
+                return CG_ERROR;
+            famname = &(fam->famname[index]);
+            break;
+        }
+    }
+ 
+    if (index == fam->nfamname) {
+        if (0 == fam->nfamname)
+            fam->famname = CGNS_NEW(cgns_famname, 1);
+        else
+            fam->famname = CGNS_RENEW(cgns_famname, fam->nfamname+1, fam->famname);
+        famname = &fam->famname[fam->nfamname];
+        fam->nfamname++;
+    }
+
+    strcpy(famname->name, name);
+    strcpy(famname->family, family);
+    dim = (cgsize_t)strlen(famname->family);
+
+    if (cgi_new_node(fam->id, famname->name, "FamilyName_t", &famname->id,
+        "C1", 1, &dim, famname->family)) return CG_ERROR;
 
     return CG_OK;
 }
@@ -7976,6 +8119,73 @@ int cg_famname_write(const char * family_name)
 
 /*----------------------------------------------------------------------*/
 
+int cg_nmultifam(int *nfams)
+{
+     /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        (*nfams) = 0;
+        return CG_ERROR;
+    }
+    if (0 == strcmp(posit->label,"Zone_t")) {
+        cgns_zone *zone= (cgns_zone *)posit->posit;
+        (*nfams) = zone->nfamname;
+    } else if (0 == strcmp(posit->label,"BC_t")) {
+        cgns_boco *boco = (cgns_boco *)posit->posit;
+        (*nfams) = boco->nfamname;
+    } else if (strcmp(posit->label,"ZoneSubRegion_t")==0) {
+        cgns_subreg *subreg = (cgns_subreg *)posit->posit;
+        (*nfams) = subreg->nfamname;
+    } else {
+        cgi_error("AdditionalFamilyName_t node not supported under '%s' type node",posit->label);
+        (*nfams) = 0;
+        return CG_INCORRECT_PATH;
+    }
+    return CG_OK;
+}
+
+int cg_multifam_read(int N, char *name, char *family)
+{
+    cgns_famname *famname;
+    int ier=0;
+
+     /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    famname = cgi_multfam_address(CG_MODE_READ, N, "", &ier);
+    if (famname==0) return ier;
+
+    strcpy(name, famname->name);
+    strcpy(family, famname->family);
+    return CG_OK;
+}
+
+int cg_multifam_write(const char *name, const char *family)
+{
+    cgns_famname *famname;
+    int ier=0;
+    cgsize_t dim_vals;
+    double posit_id, dummy_id;
+
+    if (cgi_check_strlen(name) || cgi_check_strlen(family) ||
+        cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    famname = cgi_multfam_address(CG_MODE_WRITE, 0, name, &ier);
+    if (famname == 0) return ier;
+
+    strcpy(famname->name, name);
+    strcpy(famname->family, family);
+
+    if (cgi_posit_id(&posit_id)) return CG_ERROR;
+    dim_vals = (cgsize_t)strlen(family);
+    if (cgi_new_node(posit_id, name, "AdditionalFamilyName_t", &dummy_id,
+        "C1", 1, &dim_vals, (void *)family)) return CG_ERROR;
+
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+
 int cg_convergence_read(int *iterations, char **NormDefinitions)
 {
     cgns_converg *converg;
@@ -8592,7 +8802,7 @@ int cg_narrays(int *narrays)
  */
 
      /* verify input */
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+/*    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;*/
 
      /* check for valid posit */
     if (posit == 0) {

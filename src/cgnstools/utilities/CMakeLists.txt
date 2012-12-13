@@ -27,7 +27,10 @@ if (ENABLE_HDF5 AND HDF5_LIBRARY)
     link_libraries(${SZIP_LIBRARY})
   endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
   if(HDF5_NEED_MPI AND MPI_LIBRARY)
-    link_libraries(${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
+    link_libraries(${MPI_LIBRARY})
+    if (MPI_EXTRA_LIBRARY)
+      link_libraries(${MPI_EXTRA_LIBRARY})
+    endif (MPI_EXTRA_LIBRARY)
     if (NOT WIN32)
       link_libraries(m)
     endif (NOT WIN32)
@@ -41,6 +44,8 @@ set(cgns_info_FILES
 
 add_executable(cgns_info ${cgns_info_FILES})
 add_dependencies(cgns_info cgns_static calclib)
+
+#----------
 
 # plot3d_to_cgns
 set(plot3d_to_cgns_FILES 
@@ -62,6 +67,8 @@ set(cgns_to_plot3d_FILES
 add_executable(cgns_to_plot3d ${cgns_to_plot3d_FILES})
 add_dependencies(cgns_to_plot3d cgns_static calclib)
 
+#----------
+
 # patran_to_cgns
 set(patran_to_cgns_FILES 
 	patran_to_cgns.c
@@ -71,6 +78,8 @@ set(patran_to_cgns_FILES
 
 add_executable(patran_to_cgns ${patran_to_cgns_FILES})
 add_dependencies(patran_to_cgns cgns_static calclib)
+
+#----------
 
 # tecplot_to_cgns
 set(tecplot_to_cgns_FILES 
@@ -91,6 +100,47 @@ set(cgns_to_tecplot_FILES
 add_executable(cgns_to_tecplot ${cgns_to_tecplot_FILES})
 add_dependencies(cgns_to_tecplot cgns_static calclib)
 
+#----------
+
+# tetgen_to_cgns
+set(tetgen_to_cgns_FILES 
+	tetgen_to_cgns.c)
+
+add_executable(tetgen_to_cgns ${tetgen_to_cgns_FILES})
+add_dependencies(tetgen_to_cgns cgns_static calclib)
+
+#----------
+
+# vgrid_to_cgns
+set(vgrid_to_cgns_FILES 
+	vgrid_to_cgns.c
+	binaryio.c
+	../common/getargs.c)
+
+add_executable(vgrid_to_cgns ${vgrid_to_cgns_FILES})
+add_dependencies(vgrid_to_cgns cgns_static calclib)
+
+#----------
+
+# aflr3_to_cgns
+set(aflr3_to_cgns_FILES 
+	aflr3_to_cgns.c
+	binaryio.c
+	../common/getargs.c)
+
+add_executable(aflr3_to_cgns ${aflr3_to_cgns_FILES})
+add_dependencies(aflr3_to_cgns cgns_static calclib)
+
+# cgns_to_aflr3
+set(cgns_to_aflr3_FILES 
+	cgns_to_aflr3.c
+	../common/getargs.c)
+
+add_executable(cgns_to_aflr3 ${cgns_to_aflr3_FILES})
+add_dependencies(cgns_to_aflr3 cgns_static calclib)
+
+#----------
+
 # cgns_to_vtk
 set(cgns_to_vtk_FILES 
 	cgns_to_vtk.c
@@ -98,6 +148,8 @@ set(cgns_to_vtk_FILES
 
 add_executable(cgns_to_vtk ${cgns_to_vtk_FILES})
 add_dependencies(cgns_to_vtk cgns_static calclib)
+
+#----------
 
 # convert_location
 set(convert_location_FILES 
@@ -150,6 +202,10 @@ if (WIN32)
 	patran_to_cgns
 	tecplot_to_cgns
 	cgns_to_tecplot
+	tetgen_to_cgns
+	vgrid_to_cgns
+	aflr3_to_cgns
+	cgns_to_aflr3
 	cgns_to_vtk
 	convert_location
 	convert_variables
@@ -165,6 +221,9 @@ if (WIN32)
 	plot3d.tcl
 	primitive.cnv
 	tecplot.tcl
+	tetgen.tcl
+	vgrid.tcl
+	aflr3.tcl
 	util.tcl
 	utilities.mnu
 	vtk.tcl
@@ -180,6 +239,10 @@ else (WIN32)
 	patran_to_cgns
 	tecplot_to_cgns
 	cgns_to_tecplot
+	tetgen_to_cgns
+	vgrid_to_cgns
+	aflr3_to_cgns
+	cgns_to_aflr3
 	cgns_to_vtk
 	convert_location
 	convert_variables
@@ -195,6 +258,9 @@ else (WIN32)
 	plot3d.tcl
 	primitive.cnv
 	tecplot.tcl
+	tetgen.tcl
+	vgrid.tcl
+	aflr3.tcl
 	util.tcl
 	utilities.mnu
 	vtk.tcl

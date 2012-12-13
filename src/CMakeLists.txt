@@ -27,6 +27,9 @@ if (ENABLE_HDF5)
   if(HDF5_NEED_MPI AND MPI_INCLUDE_PATH)
     include_directories(${MPI_INCLUDE_PATH})
   endif(HDF5_NEED_MPI AND MPI_INCLUDE_PATH)
+  if (ENABLE_PARALLEL)
+    add_definitions(-DBUILD_PARALLEL)
+  endif (ENABLE_PARALLEL)
 endif (ENABLE_HDF5)
 
 ################################
@@ -83,6 +86,13 @@ set(cgns_C_FILES
 	adf/ADF_interface.c
 	adf/ADF_internals.c)
 
+if (ENABLE_HDF5)
+  set(cgns_C_FILES ${cgns_C_FILES} adfh/ADFH.c)
+  if (ENABLE_PARALLEL)
+    set(cgns_C_FILES ${cgns_C_FILES} pcgnslib.c)
+  endif (ENABLE_PARALLEL)
+endif (ENABLE_HDF5)
+
 # All the Fortran files need by the cgns library (if enabled)
 set(cgns_F_FILES
 	cg_ftoc.c
@@ -94,17 +104,9 @@ if (ENABLE_FORTRAN)
     set_property(SOURCE ${cgns_F_FILES}
       PROPERTY COMPILE_DEFINITIONS ${FORTRAN_NAMING})
   endif (FORTRAN_NAMING)
-  if (ENABLE_HDF5)
-    set(cgns_FILES ${cgns_C_FILES} adfh/ADFH.c ${cgns_F_FILES})
-  else (ENABLE_HDF5)
-    set(cgns_FILES ${cgns_C_FILES} ${cgns_F_FILES})
-  endif (ENABLE_HDF5)
+  set(cgns_FILES ${cgns_C_FILES} ${cgns_F_FILES})
 else (ENABLE_FORTRAN)
-  if (ENABLE_HDF5)
-    set(cgns_FILES ${cgns_C_FILES} adfh/ADFH.c)
-  else (ENABLE_HDF5)
-    set(cgns_FILES ${cgns_C_FILES})
-  endif (ENABLE_HDF5)
+  set(cgns_FILES ${cgns_C_FILES})
 endif (ENABLE_FORTRAN)
 
 set(CGNS_BUILD_SHARED "ON" CACHE BOOL "Build a shared version of the library")
@@ -186,6 +188,10 @@ install(FILES
 	${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h
 	DESTINATION include)
 
+if (ENABLE_PARALLEL)
+  install(FILES	pcgnslib.h DESTINATION include)
+endif (ENABLE_PARALLEL)
+
 if (ENABLE_LEGACY)
   install(FILES adf/ADF.h DESTINATION include/adf)
   if (ENABLE_HDF5)
@@ -205,6 +211,9 @@ add_subdirectory(tools)
 
 if (ENABLE_TESTS)
   add_subdirectory(tests)
+  if (ENABLE_PARALLEL)
+    add_subdirectory(ptests)
+  endif (ENABLE_PARALLEL)
 endif (ENABLE_TESTS)
 
 ##############

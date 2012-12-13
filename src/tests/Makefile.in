@@ -10,11 +10,9 @@ LDLIBS = $(CGNSLIB) $(BUILDLIBS)
 
 #----------
 
-ALL = \
+CALL = \
 	cgioc$(EXE) \
-	dbtest$(EXE) \
 	elemtest$(EXE) \
-	open_cgns$(EXE) \
 	test_exts$(EXE) \
 	test_partial$(EXE) \
 	test_goto$(EXE) \
@@ -26,20 +24,38 @@ ALL = \
 	write_zones$(EXE) \
 	write_rind$(EXE)
 
-all : $(ALL)
-
 FALL = \
 	cgwrite$(EXE) \
 	cgread$(EXE) \
 	cgzconn$(EXE) \
-	cgsubreg$(EXE) \
-	test64f$(EXE)
+	cgsubreg$(EXE)
 
+CALL64 = test64c$(EXE)
+FALL64 = test64f$(EXE)
+
+ALL = dbtest$(EXE) open_cgns$(EXE) $(CALL) @FALL@
+ALL64 = $(CALL64) @FALL64@
+
+TESTS = $(CALL) @FALL@
+
+#----------
+
+all : $(ALL)
 fortran : $(FALL)
-
-ALL64 = test64c$(EXE)
-
 test64 : $(ALL64)
+
+#----------
+
+test : $(TESTS)
+	@echo "=== running tests ==="; \
+	 for x in $(TESTS) ; do \
+	   if `./$$x >/dev/null 2>&1` ; then \
+	     echo "$$x passed"; \
+	   else \
+	     echo "$$x failed"; \
+	   fi; \
+	 done; \
+	 echo "=== finished ===";
 
 #----------
 
@@ -191,5 +207,6 @@ clean :
 
 allclean : clean
 	-$(RM) $(ALL) $(FALL) $(ALL64)
+	-$(RM) *~ *.bak
 	-$(RM) *.cgns *.cg?
 

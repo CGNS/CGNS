@@ -14,6 +14,11 @@ ALL = \
 	tecplot_to_cgns.exe \
 	cgns_to_tecplot.exe \
 	cgns_to_vtk.exe \
+	cgns_to_vtk.exe \
+	tetgen_to_cgns.exe \
+	vgrid_to_cgns.exe \
+	aflr3_to_cgns.exe \
+	cgns_to_aflr3.exe \
 	convert_location.exe \
 	convert_variables.exe \
 	convert_dataclass.exe \
@@ -32,6 +37,9 @@ SCRIPTS = \
 	plot3d.tcl	\
 	patran.tcl	\
 	tecplot.tcl	\
+	tetgen.tcl	\
+	vgrid.tcl	\
+	aflr3.tcl	\
 	vtk.tcl		\
 	convert.tcl	\
 	util.tcl
@@ -104,6 +112,45 @@ cgns_to_tecplot.exe : cgns_to_tecplot.obj cgnsutil.obj getargs.obj
 	getargs.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
 cgns_to_tecplot.obj : cgns_to_tecplot.c cgnsutil.h
+
+#--------------------------------------------------
+
+tetgen_to_cgns : tetgen_to_cgns.exe
+
+tetgen_to_cgns.exe : tetgen_to_cgns.obj
+	$(LINK) $(LFLAGS) tetgen_to_cgns.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
+
+tetgen_to_cgns.obj : tetgen_to_cgns.c
+
+#--------------------------------------------------
+
+vgrid_to_cgns : vgrid_to_cgns.exe
+
+vgrid_to_cgns.exe : vgrid_to_cgns.obj binaryio.obj getargs.obj
+	$(LINK) $(LFLAGS) vgrid_to_cgns.obj binaryio.obj \
+	getargs.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
+
+vgrid_to_cgns.obj : vgrid_to_cgns.c
+
+#--------------------------------------------------
+
+aflr3_to_cgns : aflr3_to_cgns.exe
+
+aflr3_to_cgns.exe : aflr3_to_cgns.obj binaryio.obj getargs.obj
+	$(LINK) $(LFLAGS) aflr3_to_cgns.obj binaryio.obj \
+	getargs.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
+
+aflr3_to_cgns.obj : aflr3_to_cgns.c
+
+#--------------------------------------------------
+
+cgns_to_aflr3 : cgns_to_aflr3.exe
+
+cgns_to_aflr3.exe : cgns_to_aflr3.obj getargs.obj
+	$(LINK) $(LFLAGS) cgns_to_aflr3.obj \
+	getargs.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
+
+cgns_to_aflr3.obj : cgns_to_aflr3.c
 
 #--------------------------------------------------
 

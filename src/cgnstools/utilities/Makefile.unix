@@ -17,6 +17,10 @@ ALL = \
 	tecplot_to_cgns$(EXE) \
 	cgns_to_tecplot$(EXE) \
 	cgns_to_vtk$(EXE) \
+	tetgen_to_cgns$(EXE) \
+	vgrid_to_cgns$(EXE) \
+	aflr3_to_cgns$(EXE) \
+	cgns_to_aflr3$(EXE) \
 	convert_location$(EXE) \
 	convert_variables$(EXE) \
 	convert_dataclass$(EXE) \
@@ -33,6 +37,9 @@ SCRIPTS = \
 	plot3d.tcl \
 	patran.tcl \
 	tecplot.tcl \
+	tetgen.tcl \
+	vgrid.tcl \
+	aflr3.tcl \
 	vtk.tcl \
 	convert.tcl \
 	util.tcl
@@ -112,6 +119,41 @@ cgns_to_vtk$(EXE) : cgns_to_vtk.$(O) getargs.$(O)
 	$(STRIP) $@
 
 cgns_to_vtk.$(O) : cgns_to_vtk.c
+
+#--------------------------------------------------
+
+tetgen_to_cgns$(EXE) : tetgen_to_cgns.$(O)
+	$(CC) $(LDFLAGS) -o $@ tetgen_to_cgns.$(O) $(LDLIST)
+	$(STRIP) $@
+
+tetgen_to_cgns.$(O) : tetgen_to_cgns.c
+
+#--------------------------------------------------
+
+vgrid_to_cgns$(EXE) : vgrid_to_cgns.$(O) binaryio.$(O) getargs.$(O)
+	$(CC) $(LDFLAGS) -o $@ vgrid_to_cgns.$(O) binaryio.$(O) \
+	getargs.$(O) $(LDLIST)
+	$(STRIP) $@
+
+vgrid_to_cgns.$(O) : vgrid_to_cgns.c
+
+#--------------------------------------------------
+
+aflr3_to_cgns$(EXE) : aflr3_to_cgns.$(O) binaryio.$(O) getargs.$(O)
+	$(CC) $(LDFLAGS) -o $@ aflr3_to_cgns.$(O) binaryio.$(O) \
+	getargs.$(O) $(LDLIST)
+	$(STRIP) $@
+
+aflr3_to_cgns.$(O) : aflr3_to_cgns.c
+
+#--------------------------------------------------
+
+cgns_to_aflr3$(EXE) : cgns_to_aflr3.$(O) getargs.$(O)
+	$(CC) $(LDFLAGS) -o $@ cgns_to_aflr3.$(O) \
+	getargs.$(O) $(LDLIST)
+	$(STRIP) $@
+
+cgns_to_aflr3.$(O) : cgns_to_aflr3.c
 
 #--------------------------------------------------
 

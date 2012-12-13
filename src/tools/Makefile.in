@@ -55,6 +55,13 @@ cgnsdiff.$(O) : cgnsdiff.c getargs.h
 
 #----------
 
+prtnames$(EXE) : prtnames.$(O) cgnames.$(O)
+	$(CC) $(COPTS) $(CEOUT)$@ prtnames.$(O) cgnames.$(O) $(CLIBS)
+prtnames.$(O) : prtnames.c cgnames.h
+	$(CC) $(COPTS) -c prtnames.c
+
+#----------
+
 getargs.$(O) : getargs.c getargs.h
 	$(CC) $(COPTS) -c getargs.c
 
@@ -91,5 +98,6 @@ clean :
 
 allclean : clean
 	-$(RM) $(ALL) sizes$(EXE)
+	-$(RM) *~ *.bak
 	-$(RM) *.cgns
 

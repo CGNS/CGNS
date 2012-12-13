@@ -29,6 +29,9 @@ freely, subject to the following restrictions:
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
 #endif
+#ifdef BUILD_PARALLEL
+#include "pcgnslib.h"
+#endif
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Convert between Fortran and C strings                            *
@@ -436,6 +439,51 @@ CGNSDLL void FMNAME(cg_family_write_f, CG_FAMILY_WRITE_F) (cgsize_t *fn, cgsize_
     if (*ier) return;
     *ier = cg_family_write((int)*fn, (int)*B, c_name, &i_F);
     *F = i_F;
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cg_nfamily_names_f, CG_NFAMILY_NAMES_F) (cgsize_t *fn,
+	cgsize_t *B, cgsize_t *F, cgsize_t *nnames, cgsize_t *ier)
+{
+    int i_nnames;
+
+    *ier = cg_nfamily_names((int)*fn, (int)*B, (int)*F, &i_nnames);
+    *nnames = i_nnames;
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cg_family_name_read_f, CG_FAMILY_NAME_READ_F) (cgsize_t *fn,
+	cgsize_t *B, cgsize_t *F, cgsize_t *N, STR_PSTR(name), STR_PSTR(family),
+	cgsize_t *ier STR_PLEN(name) STR_PLEN(family))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    char c_family[CGIO_MAX_NAME_LENGTH+1];
+
+    *ier = cg_family_name_read((int)*fn, (int)*B, (int)*F, (int)*N, c_name, c_family);
+    if (*ier) return;
+    string_2_F_string(c_name, STR_PTR(name), STR_LEN(name), ier);
+    if (*ier) return;
+    string_2_F_string(c_family, STR_PTR(family), STR_LEN(family), ier);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cg_family_name_write_f, CG_FAMILY_NAME_WRITE_F) (cgsize_t *fn,
+	cgsize_t *B, cgsize_t *F, STR_PSTR(name), STR_PSTR(family),
+	cgsize_t *ier STR_PLEN(name) STR_PLEN(family))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    char c_family[CGIO_MAX_NAME_LENGTH+1];
+
+    string_2_C_string(STR_PTR(name), STR_LEN(name),
+        c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    string_2_C_string(STR_PTR(family), STR_LEN(family),
+        c_family, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    *ier = cg_family_name_write((int)*fn, (int)*B, (int)*F, c_name, c_family);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -2597,6 +2645,32 @@ CGNSDLL void FMNAME(cg_famname_read_f, CG_FAMNAME_READ_F) (
 
 /*-----------------------------------------------------------------------*/
 
+CGNSDLL void FMNAME(cg_nmultifam_f, CG_NMULTIFAM_F) (cgsize_t *nfam, cgsize_t *ier)
+{
+    int i_nfam;
+
+    *ier = cg_nmultifam(&i_nfam);
+    *nfam = i_nfam;
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cg_multifam_read_f, CG_MULTIFAM_READ_F) (cgsize_t *N,
+	STR_PSTR(name), STR_PSTR(family),
+	cgsize_t *ier STR_PLEN(name) STR_PLEN(family))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    char c_family[CGIO_MAX_NAME_LENGTH+1];
+
+    *ier = cg_multifam_read((int)*N, c_name, c_family);
+    if (*ier) return;
+    string_2_F_string(c_name, STR_PTR(name), STR_LEN(name), ier);
+    if (*ier) return;
+    string_2_F_string(c_family, STR_PTR(family), STR_LEN(family), ier);
+}
+
+/*-----------------------------------------------------------------------*/
+
 CGNSDLL void FMNAME(cg_convergence_read_f, CG_CONVERGENCE_READ_F) (
 	cgsize_t *iterations, STR_PSTR(NormDefinitions),
 	cgsize_t *ier STR_PLEN(NormDefinitions))
@@ -3136,6 +3210,24 @@ CGNSDLL void FMNAME(cg_famname_write_f, CG_FAMNAME_WRITE_F) (
 
 /*-----------------------------------------------------------------------*/
 
+CGNSDLL void FMNAME(cg_multifam_write_f, CG_MULTIFAM_WRITE_F) (
+	STR_PSTR(name), STR_PSTR(family),
+	cgsize_t *ier STR_PLEN(name) STR_PLEN(family))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    char c_family[CGIO_MAX_NAME_LENGTH+1];
+
+    string_2_C_string(STR_PTR(name), STR_LEN(name),
+        c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    string_2_C_string(STR_PTR(family), STR_LEN(family),
+        c_family, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    *ier = cg_multifam_write(c_name, c_family);
+}
+
+/*-----------------------------------------------------------------------*/
+
 CGNSDLL void FMNAME(cg_convergence_write_f, CG_CONVERGENCE_WRITE_F) (
 	cgsize_t *iterations, STR_PSTR(NormDefinitions),
 	cgsize_t *ier STR_PLEN(NormDefinitions))
@@ -3505,4 +3597,256 @@ CGNSDLL void FMNAME(cg_exit_on_error_f, CG_EXIT_ON_ERROR_F) (cgsize_t *flag)
 {
     cg_error_handler(*flag ? exit_on_error : NULL);
 }
+
+#ifdef BUILD_PARALLEL
+
+/*======================================================================
+ * parallel IO interface
+ *======================================================================*/
+
+CGNSDLL void FMNAME(cgp_pio_mode_f, CGP_PIO_MODE_F) (
+	cgsize_t *mode, cgsize_t *ier)
+{
+    *ier = cgp_pio_mode((CGNS_ENUMT(PIOmode_t))*mode);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_queue_set_f, CGP_QUEUE_SET_F) (
+	cgsize_t *use_queue, cgsize_t *ier)
+{
+    *ier = cgp_queue_set((int)*use_queue);
+}
+
+/*-----------------------------------------------------------------------*/
+CGNSDLL void FMNAME(cgp_queue_flush_f, CGP_QUEUE_FLUSH_F) (cgsize_t *ier)
+{
+    *ier = cgp_queue_flush();
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_open_f, CGP_OPEN_F) (STR_PSTR(filename), cgsize_t *mode,
+	cgsize_t *fn, cgsize_t *ier STR_PLEN(filename))
+{
+    int length, i_fn;
+    char *c_name;
+
+    length = (int) STR_LEN(filename);
+    c_name = CGNS_NEW(char, length+1);
+
+    string_2_C_string(STR_PTR(filename), STR_LEN(filename), c_name, length, ier);
+    if (*ier == 0) {
+#if DEBUG_FTOC
+        printf("filename='%s'\n",c_name);
+#endif
+        *ier = cgp_open(c_name, (int)*mode, &i_fn);
+        *fn  = i_fn;
+    }
+    free(c_name);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_close_f, CGP_CLOSE_F) (cgsize_t *fn, cgsize_t *ier)
+{
+    *ier = cgp_close((int)*fn);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_coord_write_f, CGP_COORD_WRITE_F) (cgsize_t *fn,
+	cgsize_t *B, cgsize_t *Z, cgsize_t *type, STR_PSTR(coordname),
+	cgsize_t *C, cgsize_t *ier STR_PLEN(coordname))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    int i_C;
+
+    string_2_C_string(STR_PTR(coordname), STR_LEN(coordname),
+        c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    *ier = cgp_coord_write((int)*fn, (int)*B, (int)*Z,
+               (CGNS_ENUMT(DataType_t))*type, c_name, &i_C);
+    *C = i_C;
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_coord_write_data_f, CGP_COORD_WRITE_DATA_F) (
+	cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *C,
+	cgsize_t *rmin, cgsize_t *rmax, void *data, cgsize_t *ier)
+{
+    *ier = cgp_coord_write_data((int)*fn, (int)*B, (int)*Z, (int)*C,
+               rmin, rmax, data);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_coord_read_data_f, CGP_COORD_READ_DATA_F) (
+	cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *C,
+	cgsize_t *rmin, cgsize_t *rmax, void *data, cgsize_t *ier)
+{
+    *ier = cgp_coord_read_data((int)*fn, (int)*B, (int)*Z, (int)*C,
+               rmin, rmax, data);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_section_write_f, CGP_SECTION_WRITE_F) (
+	cgsize_t *fn, cgsize_t *B, cgsize_t *Z, STR_PSTR(section_name),
+	cgsize_t *type, cgsize_t *start, cgsize_t *end, cgsize_t *nbndry,
+	cgsize_t *S, cgsize_t *ier STR_PLEN(section_name))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    int i_S;
+
+     /* convert Fortran-text-string to a C-string */
+    string_2_C_string(STR_PTR(section_name), STR_LEN(section_name),
+        c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    *ier = cgp_section_write((int)*fn, (int)*B, (int)*Z, c_name,
+               (CGNS_ENUMT(ElementType_t))*type, *start, *end,
+               (int)*nbndry, &i_S);
+    *S = i_S;
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_elements_write_data_f, CGP_ELEMENTS_WRITE_DATA_F) (
+	cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *S, cgsize_t *start,
+	cgsize_t *end, cgsize_t *elements, cgsize_t *ier)
+{
+    *ier = cgp_elements_write_data((int)*fn, (int)*B, (int)*Z, (int)*S,
+               *start, *end, elements);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_elements_read_data_f, CGP_ELEMENTS_READ_DATA_F) (
+	cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *S, cgsize_t *start,
+	cgsize_t *end, cgsize_t *elements, cgsize_t *ier)
+{
+    *ier = cgp_elements_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
+               *start, *end, elements);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_field_write_f, CGP_FIELD_WRITE_F) (cgsize_t *fn,
+	cgsize_t *B, cgsize_t *Z, cgsize_t *S, cgsize_t *type,
+	STR_PSTR(fieldname), cgsize_t *F, cgsize_t *ier STR_PLEN(fieldname))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    int i_F;
+
+    string_2_C_string(STR_PTR(fieldname), STR_LEN(fieldname),
+        c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    *ier = cgp_field_write((int)*fn, (int)*B, (int)*Z, (int)*S,
+               (CGNS_ENUMT(DataType_t))*type, c_name, &i_F);
+    *F = i_F;
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_field_write_data_f, CGP_FIELD_WRITE_DATA_F) (
+	cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *S,
+	cgsize_t *F, cgsize_t *rmin, cgsize_t *rmax, void *field_ptr,
+	cgsize_t *ier)
+{
+    *ier = cgp_field_write_data((int)*fn, (int)*B, (int)*Z, (int)*S,
+               (int)*F, rmin, rmax, field_ptr);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_field_read_data_f, CGP_FIELD_READ_DATA_F) (
+	cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *S,
+	cgsize_t *F, cgsize_t *rmin, cgsize_t *rmax, void *field_ptr,
+	cgsize_t *ier)
+{
+    *ier = cgp_field_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
+               (int)*F, rmin, rmax, field_ptr);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_array_write_f, CGP_ARRAY_WRITE_F) (STR_PSTR(ArrayName),
+	cgsize_t *DataType, cgsize_t *DataDimension, cgsize_t *DimensionVector,
+	cgsize_t *A, cgsize_t *ier STR_PLEN(ArrayName))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    int i_A;
+
+     /* convert Fortran-text-string to a C-string */
+    string_2_C_string(STR_PTR(ArrayName), STR_LEN(ArrayName),
+        c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    *ier = cgp_array_write(c_name, (CGNS_ENUMT(DataType_t))*DataType,
+               (int)*DataDimension, DimensionVector, &i_A);
+    *A = i_A;
+}
+
+/*-----------------------------------------------------------------------*/
+
+#ifdef WIN32_FORTRAN
+CGNSDLL void __stdcall cgp_array_write_data_f(cgsize_t *A,
+	cgsize_t *rmin, cgsize_t *rmax, void *data, ...)
+{
+    va_list ap;
+    int ierr;
+    cgsize_t *ier;
+    cgns_array *array;
+
+    array = cgi_array_address(CG_MODE_READ, (int)*A, "dummy", &ierr);
+    if (array == NULL) return;
+    va_start(ap, data);
+    if (0 == strcmp(array->data_type, "C1"))
+        (void) va_arg(ap, int);
+    ier = va_arg(ap, cgsize_t *);
+    va_end(ap);
+#else
+CGNSDLL void FMNAME(cgp_array_write_data_f, CGP_ARRAY_WRITE_DATA_F) (
+	cgsize_t *A, cgsize_t *rmin, cgsize_t *rmax, void *data, 
+	cgsize_t *ier)
+{
+#endif
+    *ier = cgp_array_write_data((int)*A, rmin, rmax, data);
+}
+
+/*-----------------------------------------------------------------------*/
+
+#ifdef WIN32_FORTRAN
+CGNSDLL void __stdcall cgp_array_read_data_f(cgsize_t *A,
+	cgsize_t *rmin, cgsize_t *rmax, void *data, ...)
+{
+    va_list ap;
+    int ierr;
+    cgsize_t *ier;
+    cgns_array *array;
+
+    array = cgi_array_address(CG_MODE_READ, (int)*A, "dummy", &ierr);
+    if (array == NULL) return;
+    va_start(ap, data);
+    if (0 == strcmp(array->data_type, "C1"))
+        (void) va_arg(ap, int);
+    ier = va_arg(ap, cgsize_t *);
+    va_end(ap);
+#else
+CGNSDLL void FMNAME(cgp_array_read_data_f, CGP_ARRAY_READ_DATA_F) (
+	cgsize_t *A, cgsize_t *rmin, cgsize_t *rmax, void *data, 
+	cgsize_t *ier)
+{
+#endif
+    *ier = cgp_array_read_data((int)*A, rmin, rmax, data);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_error_exit_f, CGP_ERROR_EXIT_F) ()
+{
+    cgp_error_exit();
+}
+
+#endif /*BUILD_PARALLEL*/
 

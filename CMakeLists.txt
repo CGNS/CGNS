@@ -9,8 +9,8 @@ endif(COMMAND cmake_policy)
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING
   "one of: Release, Debug, RelWithDebInfo or MinSizeRel")
 
-project("cgns")
-set(CGNS_VERSION "3.1")
+project("cgns" C)
+set(CGNS_VERSION "3.2")
 
 # Allow for building a package
 set(CPACK_PACKAGE_VERSION "${CGNS_VERSION}-develop")
@@ -218,19 +218,20 @@ endif (ENABLE_HDF5)
 #################
 
 if (ENABLE_HDF5 AND HDF5_NEED_MPI)
-  set(BUILD_PCGNS "OFF" CACHE BOOL "Build parallel CGNS ?")
+  set(ENABLE_PARALLEL "OFF" CACHE BOOL "Enable or disable parallel interface ?")
+  mark_as_advanced(CLEAR ENABLE_PARALLEL)
 else (ENABLE_HDF5 AND HDF5_NEED_MPI)
-  set(BUILD_PCGNS "OFF")
-  mark_as_advanced(FORCE BUILD_PCGNS)
+  set(ENABLE_PARALLEL "OFF")
+  mark_as_advanced(FORCE ENABLE_PARALLEL)
 endif (ENABLE_HDF5 AND HDF5_NEED_MPI)
 
-if (ENABLE_TESTS AND BUILD_PCGNS)
+if (ENABLE_TESTS AND ENABLE_PARALLEL)
   if (NOT MPIEXEC)
     mark_as_advanced(CLEAR MPIEXEC)
   endif (NOT MPIEXEC)
-else (ENABLE_TESTS AND BUILD_PCGNS)
+else (ENABLE_TESTS AND ENABLE_PARALLEL)
   mark_as_advanced(FORCE MPIEXEC)
-endif (ENABLE_TESTS AND BUILD_PCGNS)
+endif (ENABLE_TESTS AND ENABLE_PARALLEL)
 
 ####################
 # RPATH Management #
@@ -256,12 +257,4 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Include the src directory
 add_subdirectory(src)
-
-#########
-# PCGNS #
-#########
-
-if (BUILD_PCGNS)
-  add_subdirectory(pcgns/src)
-endif (BUILD_PCGNS)
 

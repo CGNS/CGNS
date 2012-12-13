@@ -35,6 +35,9 @@ float start, finish;
 int main (int argc, char **argv)
 {
     int i, j, nb = 5, nv = 10;
+    char buff1[64];
+    char buff2[64];
+
 
     if (argc > 1) {
         nb = atoi (argv[1]);
@@ -73,12 +76,17 @@ int main (int argc, char **argv)
 #endif
         cg_error_exit();
 
+    cg_goto (cgfile, cgbase, "Zone_t", 1, "end");
+    cg_multifam_write("FamilyName:Motion","motion#1");
     for (j = 1; j <= nb; j++) {
         sprintf (name, "BC%d", j);
         if (cg_boco_write (cgfile, cgbase, cgzone, name, CGNS_ENUMV( BCWall ), CGNS_ENUMV( ElementList ),
                 npnts, pnts, &cgbc))
             cg_error_exit();
 
+	cg_goto (cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1, 
+		 "BC_t", cgbc, "end");
+        cg_multifam_write("FamilyName:Pressure","PressureOutput");
         for (i = 1; i <= nv; i++) {
             sprintf (name, "BCData%d", i);
             if (cg_dataset_write (cgfile, cgbase, cgzone, cgbc, name,
@@ -120,6 +128,18 @@ int main (int argc, char **argv)
     printf (" %.2f secs\n", finish - start);
     cg_close (cgfile);
 
+    printf ("opening file  ...");
+    fflush (stdout);
+    start = (float)elapsed_time();
+    if (cg_open (fname, CG_MODE_MODIFY, &cgfile)) cg_error_exit();
+    cg_goto (cgfile, 1, "Zone_t", 1, "end");
+    cg_nmultifam(&nb);
+    printf ("read additional families  [%d]...",nb);
+    cg_multifam_read(1,buff1,buff2);
+    printf ("[%s] [%s]",buff1,buff2);
+    cg_close (cgfile);
+    finish = (float)elapsed_time();
+    printf (" %.2f secs\n", finish - start);
     return 0;
 }
 

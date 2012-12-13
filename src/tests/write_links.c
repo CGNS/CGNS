@@ -22,6 +22,7 @@ int main (int argc, char **argv)
     double start, finish;
     char name[33], linkpath[33];
     char fname[33], linkfile[33];
+    int cgftop,cgfchild;
 
     for (n = 0; n < 3; n++) {
         size[n]   = NUM_SIDE;
@@ -79,23 +80,32 @@ int main (int argc, char **argv)
     printf (" %g secs\n", finish - start);
     printf ("file size        = %g Mb\n", file_size(fname));
 
-    printf ("opening link file  ...");
+    printf ("opening top link file  ...");
     fflush (stdout);
-    start = elapsed_time ();
-    if (cg_open (fname, CG_MODE_READ, &cgfile)) cg_error_exit();
-    finish = elapsed_time ();
-    printf (" %g secs\n", finish - start);
-    cg_close (cgfile);
+    if (cg_open (fname, CG_MODE_READ, &cgftop)) cg_error_exit();
+    cg_nzones(cgftop,1,&n);
+    cg_close (cgftop);
+    printf ("close top link file\n");
 
-#if 0
-    printf ("opening link file  ...");
+    printf ("opening child link file ...");
     fflush (stdout);
-    start = elapsed_time ();
-    if (cg_open (fname, CG_MODE_READ, &cgfile)) cg_error_exit();
-    finish = elapsed_time ();
-    printf (" %g secs\n", finish - start);
-    cg_close (cgfile);
-#endif
+    if (cg_open ("zone1.cgns", CG_MODE_READ, &cgfchild)) cg_error_exit();
+    cg_nzones(cgfchild,1,&n);
+    printf (" [%d] zones\n",n);
+
+    printf ("opening top link file (child still open) ...");
+    fflush (stdout);
+    if (cg_open (fname, CG_MODE_READ, &cgftop)) cg_error_exit();
+    cg_nzones(cgftop,1,&n);
+    printf (" [%d] zones...",n);
+    cg_close (cgftop);
+    printf ("close top link file\n");
+
+    printf ("read child link file ...");
+    cg_nzones(cgfchild,1,&n);
+    printf (" [%d] zones...",n);
+    cg_close (cgfchild);
+    printf ("close child link file\n");
 
     return 0;
 }

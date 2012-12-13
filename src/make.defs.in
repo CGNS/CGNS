@@ -97,11 +97,26 @@ SZIPLIB = @SZIPLIB@
 ZLIBLIB = @ZLIBLIB@
 
 #------------------------------------------------------------------------
+# these should only be set if building with HDF5 and MPI
+# MPIINC  - path to MPI header files
+# MPIOPTS - compile options from mpicc
+# MPILIBS - MPI libraries
+# MPICC   - MPI compiler
+# MPIEXEC - MPI executor
+#------------------------------------------------------------------------
+
+MPIINC  = @MPIINC@
+MPIOPTS = @MPIOPTS@
+MPILIBS = @MPILIBS@
+MPICC   = @MPICC@
+MPIEXEC = @MPIEXEC@
+
+#------------------------------------------------------------------------
 # BUILDLIBS contains the list of additional libraries
 #           with which a CGNS application needs to link
 #------------------------------------------------------------------------
 
-BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB)
+BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB) $(MPILIBS)
 
 #------------------------------------------------------------------------
 # commands for removing files and creating/deleting directory

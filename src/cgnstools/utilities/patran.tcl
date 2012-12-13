@@ -20,7 +20,7 @@ proc patran_import {w name exe} {
   import_output $w 1
 
   FrameCreate $w.opts -text "Options" -font $Font(bold)
-  pack $w.opts -side top -pady 2 -fill x
+  pack $w.opts -side top -padx 5 -pady 2 -fill x
   set opts [FrameGet $w.opts]
 
   checkbutton $opts.dl -text "Include Distributed Loads" \

@@ -1,0 +1,111 @@
+CGNSDIR = ..
+include $(CGNSDIR)/make.defs
+
+CGNSLIB = $(CGNSDIR)/$(LIBCGNS)
+
+COPTS  = $(CFLAGS) -I$(CGNSDIR) $(MPIINC)
+FOPTS  = $(FFLAGS) -I$(CGNSDIR) $(MPIINC)
+LDLIBS = $(CGNSLIB) $(BUILDLIBS)
+
+#----------
+
+CALL =	ctest$(EXE) \
+	cexample$(EXE) \
+	benchmark$(EXE) \
+	open_close$(EXE) \
+	test_base$(EXE) \
+	test_unstructured$(EXE) \
+	test_zone$(EXE) \
+	thesis_benchmark$(EXE)
+
+FALL =	ftest$(EXE) fexample$(EXE)
+
+ALL   = $(CALL) @FALL@
+TESTS = $(ALL)
+
+all : $(ALL)
+
+#----------
+
+test : $(TESTS)
+	@echo "=== running tests ==="; \
+	 for x in $(TESTS) ; do \
+	   echo "$(MPIEXEC) -np 2 $$x"; \
+	   if `$(MPIEXEC) -np 2 $$x >/dev/null 2>&1` ; then \
+	     echo "  $$x passed"; \
+	   else \
+	     echo "  $$x failed"; \
+	   fi; \
+	 done; \
+	 echo "=== finished ===";
+
+#----------
+
+ctest$(EXE) : ctest.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ ctest.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+cexample$(EXE) : cexample.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ cexample.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+benchmark$(EXE) : benchmark.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ benchmark.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+open_close$(EXE) : open_close.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ open_close.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_base$(EXE) : test_base.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_base.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_unstructured$(EXE) : test_unstructured.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_unstructured.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_zone$(EXE) : test_zone.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_zone.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+thesis_benchmark$(EXE) : thesis_benchmark.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ thesis_benchmark.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+ftest$(EXE) : ftest.F $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ ftest.F $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+fexample$(EXE) : fexample.F $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ fexample.F $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+clean :
+	-$(RM) *.$(O)
+
+allclean : clean
+	-$(RM) $(ALL)
+	-$(RM) *~ *.bak
+	-$(RM) *.cgns *.cg?
+

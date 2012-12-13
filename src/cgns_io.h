@@ -40,6 +40,7 @@ freely, subject to the following restrictions:
 #define CGIO_FILE_ADF    1
 #define CGIO_FILE_HDF5   2
 #define CGIO_FILE_ADF2   3
+#define CGIO_FILE_PHDF5  4
 
 /* currently these are the same as for ADF */
 
@@ -73,6 +74,8 @@ freely, subject to the following restrictions:
 #define CGIO_ERR_FILE_RENAME -14
 #define CGIO_ERR_TOO_MANY    -15
 #define CGIO_ERR_DIMENSIONS  -16
+#define CGIO_ERR_BAD_TYPE    -17
+#define CGIO_ERR_NOT_HDF5    -18
 
 #ifdef __cplusplus
 extern "C" {

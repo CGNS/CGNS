@@ -21,8 +21,8 @@ freely, subject to the following restrictions:
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
 
-#define CGNS_VERSION 3130
-#define CGNS_DOTVERS 3.13
+#define CGNS_VERSION 3200
+#define CGNS_DOTVERS 3.20
 
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
@@ -80,10 +80,11 @@ freely, subject to the following restrictions:
 
 /* file types */
 
-#define CG_FILE_NONE 0
-#define CG_FILE_ADF  1
-#define CG_FILE_HDF5 2
-#define CG_FILE_ADF2 3
+#define CG_FILE_NONE  0
+#define CG_FILE_ADF   1
+#define CG_FILE_HDF5  2
+#define CG_FILE_ADF2  3
+#define CG_FILE_PHDF5 4
 
 /* function return codes */
 
@@ -736,12 +737,22 @@ CGNSDLL int cg_family_read(int file_number, int B, int F,
 CGNSDLL int cg_family_write(int file_number, int B,
 	const char * family_name, int *F);
 
+CGNSDLL int cg_nfamily_names(int file_number, int B, int F, int *nnames);
+CGNSDLL int cg_family_name_read(int file_number, int B, int F,
+	int N, char *name, char *family);
+CGNSDLL int cg_family_name_write(int file_number, int B, int F,
+	const char *name, const char *family);
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FamilyName_t Nodes                                *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_famname_read(char *family_name);
 CGNSDLL int cg_famname_write(const char * family_name);
+
+CGNSDLL int cg_nmultifam(int *nfams);
+CGNSDLL int cg_multifam_read(int N, char *name, char *family);
+CGNSDLL int cg_multifam_write(const char *name, const char *family);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FamilyBC_t Nodes                                  *

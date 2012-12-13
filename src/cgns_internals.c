@@ -240,6 +240,7 @@ int cgi_read_zone(cgns_zone *zone)
     int in_link = zone->link ? 1 : zone->in_link;
     char_33 data_type;
     void *vdata;
+    double *id;
     cgsize_t dim_vals[12];
 
      /* Zone_t */
@@ -351,6 +352,21 @@ int cgi_read_zone(cgns_zone *zone)
     if (cgi_read_family_name(in_link, zone->id, zone->name, zone->family_name))
         return 1;
 
+    /* CPEX 0034 */
+    if (cgi_get_nodes(zone->id, "AdditionalFamilyName_t", &zone->nfamname, &id))
+        return 1;
+    if (zone->nfamname > 0) {
+        char *fam;
+        zone->famname = CGNS_NEW(cgns_famname, zone->nfamname);
+        for (n = 0; n < zone->nfamname; n++) {
+            zone->famname[n].id = id[n];
+            if (cgi_read_string(id[n], zone->famname[n].name, &fam)) return 1;
+            strncpy(zone->famname[n].family, fam, 32);
+            free(fam);
+        }
+        free(id);
+    }
+
      /* FlowSolution_t */
     if (cgi_read_sol(in_link, zone->id, &zone->nsols, &zone->sol))
         return 1;
@@ -423,6 +439,21 @@ int cgi_read_family(cgns_family *family)
     if (cgio_get_name(cg->cgio, family->id, family->name)) {
         cg_io_error("cgio_get_name");
         return 1;
+    }
+
+    /* CPEX 0033 */
+    if (cgi_get_nodes(family->id, "FamilyName_t", &family->nfamname, &id))
+        return 1;
+    if (family->nfamname > 0) {
+        char *fam;
+        family->famname = CGNS_NEW(cgns_famname, family->nfamname);
+        for (n = 0; n < family->nfamname; n++) {
+            family->famname[n].id = id[n];
+            if (cgi_read_string(id[n], family->famname[n].name, &fam)) return 1;
+            strncpy(family->famname[n].family, fam, 32);
+            free(fam);
+        }
+        free(id);
     }
 
      /* FamilyBC_t */
@@ -2209,7 +2240,7 @@ int cgi_read_boco(cgns_boco *boco)
     int ierr=0, modified = 0;
     int linked = boco->link ? 1 : boco->in_link;
     int nIA_t, n, i;
-    double *IA_id;
+    double *IA_id, *id;
     char *boconame;
     char_33 name, data_type;
     cgns_ptset *ptset;
@@ -2278,6 +2309,21 @@ int cgi_read_boco(cgns_boco *boco)
      /* FamilyName_t */
     if (cgi_read_family_name(linked, boco->id, boco->name, boco->family_name))
         return 1;
+
+    /* CPEX 0034 */
+    if (cgi_get_nodes(boco->id, "AdditionalFamilyName_t", &boco->nfamname, &id))
+        return 1;
+    if (boco->nfamname > 0) {
+        char *fam;
+        boco->famname = CGNS_NEW(cgns_famname, boco->nfamname);
+        for (n = 0; n < boco->nfamname; n++) {
+            boco->famname[n].id = id[n];
+            if (cgi_read_string(id[n], boco->famname[n].name, &fam)) return 1;
+            strncpy(boco->famname[n].family, fam, 32);
+            free(fam);
+        }
+        free(id);
+    }
 
      /* InwardNormalList */
     boco->normal = 0;
@@ -5091,6 +5137,21 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
                 reg[n].name, reg[n].family_name))
             return 1;
 
+        /* CPEX 0034 */
+        if (cgi_get_nodes(reg[n].id, "AdditionalFamilyName_t", &reg[n].nfamname, &idi))
+            return 1;
+        if (reg[n].nfamname > 0) {
+            char *fam;
+            reg[n].famname = CGNS_NEW(cgns_famname, reg[n].nfamname);
+            for (i = 0; i < reg[n].nfamname; i++) {
+                reg[n].famname[i].id = idi[i];
+                if (cgi_read_string(idi[i], reg[n].famname[i].name, &fam)) return 1;
+                strncpy(reg[n].famname[i].family, fam, 32);
+                free(fam);
+            }
+            free(idi);
+        }
+
         /* PointSet */
         /* get number of IndexArray_t and IndexRange_t nodes and their ID */
         if (cgi_get_nodes(reg[n].id, "IndexArray_t", &nIA_t, 
@@ -5712,9 +5773,16 @@ int cgi_write_zone(double parent_id, cgns_zone *zone)
 
      /* FamilyName_t */
     if (zone->family_name[0]!='\0') {
-        cgsize_t dim_vals = (cgsize_t)strlen(zone->family_name);
+        dim_vals[0] = (cgsize_t)strlen(zone->family_name);
         if (cgi_new_node(zone->id, "FamilyName", "FamilyName_t", &dummy_id, "C1",
-            1, &dim_vals, (void *)zone->family_name)) return 1;
+            1, dim_vals, (void *)zone->family_name)) return 1;
+    }
+
+    /* CPEX 0034 */
+    for (n = 0; n < zone->nfamname; n++) {
+        dim_vals[0] = (cgsize_t)strlen(zone->famname[n].family);
+        if (cgi_new_node(zone->id, zone->famname[n].name, "AdditionalFamilyName_t",
+            &dummy_id, "C1", 1, dim_vals, (void *)zone->famname[n].family)) return 1;
     }
 
      /* Elements_t */
@@ -5801,6 +5869,14 @@ int cgi_write_family(double parent_id, cgns_family *family)
     if (cgi_new_node(parent_id, family->name, "Family_t",
         &family->id, "MT", 0, 0, 0)) return 1;
 
+    /* CPEX 0033 */
+    for (n = 0; n < family->nfamname; n++) {
+        dim_vals = (cgsize_t)strlen(family->famname[n].family);
+        if (cgi_new_node(family->id, family->famname[n].name, "FamilyName_t",
+            &family->famname[n].id, "C1", 1, &dim_vals,
+            (void *)family->famname[n].family)) return 1;
+    }
+
      /* Descriptor_t */
     for (n=0; n<family->ndescr; n++)
         if (cgi_write_descr(family->id, &family->descr[n])) return 1;
@@ -5827,7 +5903,6 @@ int cgi_write_family(double parent_id, cgns_family *family)
      /* GeometryReference_t */
     for (n=0; n<family->ngeos; n++) {
         int i;
-        cgsize_t dim_vals;
         double dummy_id;
         cgns_geo *geo = &family->geo[n];
 
@@ -6373,6 +6448,13 @@ int cgi_write_boco(double parent_id, cgns_boco *boco)
         dim_vals = (cgsize_t)strlen(boco->family_name);
         if (cgi_new_node(boco->id, "FamilyName", "FamilyName_t", &dummy_id, "C1",
             1, &dim_vals, (void *)boco->family_name)) return 1;
+    }
+
+    /* CPEX 0034 */
+    for (n = 0; n < boco->nfamname; n++) {
+        dim_vals = (cgsize_t)strlen(boco->famname[n].family);
+        if (cgi_new_node(boco->id, boco->famname[n].name, "AdditionalFamilyName_t",
+            &dummy_id, "C1", 1, &dim_vals, (void *)boco->famname[n].family)) return 1;
     }
 
      /* BCDataSet_t */
@@ -10607,6 +10689,49 @@ char *cgi_famname_address(int local_mode, int *ier)
     return family_name;
 }
 
+cgns_famname *cgi_multfam_address(int local_mode, int given_no,
+                                  char const *given_name, int *ier)
+{
+    cgns_famname *famname=0;
+    int n, error1=0, error2=0;
+    double parent_id=0;
+
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        (*ier) = CG_ERROR;
+        return 0;
+    }
+    if (0 == strcmp(posit->label, "Zone_t"))
+        ADDRESS4MULTIPLE(cgns_zone, nfamname, famname, cgns_famname)
+    else if (0 == strcmp(posit->label, "BC_t"))
+        ADDRESS4MULTIPLE(cgns_boco, nfamname, famname, cgns_famname)
+    else if (0 == strcmp(posit->label, "ZoneSubRegion_t"))
+        ADDRESS4MULTIPLE(cgns_subreg, nfamname, famname, cgns_famname)
+    else {
+        cgi_error("AdditionalFamilyName_t node not supported under '%s' type node",posit->label);
+        (*ier) = CG_INCORRECT_PATH;
+        return 0;
+    }
+    if (error1) {
+        cgi_error("Duplicate child name found (%s) found under %s",
+            given_name, posit->label);
+        (*ier) = CG_ERROR;
+        return 0;
+    }
+    if (error2) {
+        cgi_error("AdditionalFamilyName index number %d doesn't exist under %s",
+            given_no, posit->label);
+        (*ier) = CG_NODE_NOT_FOUND;
+        return 0;
+    }
+    if (parent_id) {     /* parent_id!=0 only when overwriting */
+        if (cgi_delete_node (parent_id, famname->id)) {
+            (*ier) = CG_ERROR;
+            return 0;
+        }
+    }
+    return famname;
+}
 
 CGNS_ENUMV(DataClass_t) *cgi_dataclass_address(int local_mode, int *ier)
 {
@@ -12193,6 +12318,9 @@ void cgi_free_zone(cgns_zone *zone)
             cgi_free_subreg(&zone->subreg[n]);
         free(zone->subreg);
     }
+    if (zone->nfamname) {
+        free(zone->famname);
+    }
 }
 
 void cgi_free_section(cgns_section *section)
@@ -12258,6 +12386,9 @@ void cgi_free_family(cgns_family *family)
     if (family->rotating) {
         cgi_free_rotating(family->rotating);
         free(family->rotating);
+    }
+    if (family->nfamname) {
+        free(family->famname);
     }
 }
 
@@ -12528,6 +12659,9 @@ void cgi_free_boco(cgns_boco *boco)
     if (boco->bprop) {
         cgi_free_bprop(boco->bprop);
         free(boco->bprop);
+    }
+    if (boco->nfamname) {
+        free(boco->famname);
     }
 }
 
@@ -13225,6 +13359,9 @@ void cgi_free_subreg(cgns_subreg *subreg)
         for (n=0; n < subreg->nuser_data; n++)
             cgi_free_user_data(&subreg->user_data[n]);
         free(subreg->user_data);
+    }
+    if (subreg->nfamname) {
+        free(subreg->famname);
     }
 }
 

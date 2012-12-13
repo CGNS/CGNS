@@ -2,7 +2,8 @@
 setlocal
 
 set args=-MD -MT -debug -lfs -legacy -64 -scope -dll -install -f2c -ifort
-set args=%args% -absoft -hdf5 -zlib -szip -tcl -tk -nocut -nomesh
+set args=%args% -absoft -hdf5 -zlib -szip -mpi -parallel
+set args=%args% -cgnstools -tcl -tk -nocut -nomesh
 set copts=
 set debug=
 set cfgflags=
@@ -19,7 +20,14 @@ set hdf5inc=
 set hdf5lib=
 set zliblib=
 set sziplib=
+set mpiinc=
+set mpiopts=
+set mpilibs=
+set mpicc=
+set mpiexec=
 set hdf5dll=#HDF5DLL
+set parallel=
+set cgnstools=
 set tcldir=
 set tkdir=
 set tclinc=
@@ -127,7 +135,23 @@ if %1 == -absoft (
   goto next
 )
 
-rem ----- cgnsplot options
+rem ----- parallel IO code
+
+if %1 == -parallel (
+  echo building parallel IO interface
+  set parallel=runptests
+  shift
+  goto next
+)
+
+rem ----- cgnstools options
+
+if %1 == -cgnstools (
+  echo building cgsntools
+  set cgnstools=cgnstools
+  shift
+  goto next
+)
 
 if %1 == -nocut (
   echo building cgnsplot without cutting plane
@@ -381,7 +405,7 @@ goto done
 rem ----- szip setup
 
 :szip
-if not %1 == -szip goto tcl
+if not %1 == -szip goto mpi
 echo checking for szip ...
 shift
 if "%1" == "" goto findszip
@@ -459,6 +483,115 @@ for /D %%d in ( %drive%\*.* ) do (
   )
 )
 echo ERROR:couldn't find szip, szlib or szlibdll library
+goto done
+
+rem ----- MPI setup
+
+:mpi
+if not %1 == -mpi goto tcl
+shift
+
+if "%1" == "" goto findmpi
+for %%a in ( %args% ) do if %1 == %%a goto findmpi
+
+if not exist %1\nul (
+  echo ERROR:MPI directory "%1" does not exist or is not a directory
+  goto done
+)
+set mpidir=%1
+shift
+goto getmpi
+
+:findmpi
+echo checking for MPI ...
+if exist c:\PROGRA~1\MPICH2\include\mpi.h (
+  echo c:\PROGRA~1\MPICH2
+  set mpidir=c:\PROGRA~1\MPICH2
+  goto getmpi
+)
+for /D %%d in ( %drive%\*.* ) do (
+  if exist %%d\include\mpi.h (
+    echo %%d
+    set mpidir=%%d
+    goto getmpi
+  )
+  if exist %%d\src\include\mpi.h (
+    echo %%d
+    set mpidir=%%d
+    goto getmpi
+  )
+  for /D %%e in ( %%d\*.* ) do (
+    if exist %%e\include\mpi.h (
+      echo %%e
+      set mpidir=%%e
+      goto getmpi
+    )
+    if exist %%e\src\include\mpi.h (
+      echo %%e
+      set mpidir=%%e
+      goto getmpi
+    )
+    for /D %%f in ( %%e\*.* ) do (
+      if exist %%f\include\mpi.h (
+        echo %%f
+        set mpidir=%%f
+        goto getmpi
+      )
+      if exist %%f\src\include\mpi.h (
+        echo %%f
+        set mpidir=%%f
+        goto getmpi
+      )
+      for /D %%g in ( %%f\*.* ) do (
+        if exist %%g\include\mpi.h (
+          echo %%g
+          set mpidir=%%g
+          goto getmpi
+        )
+        if exist %%g\src\include\mpi.h (
+          echo %%g
+          set mpidir=%%g
+          goto getmpi
+        )
+      )
+    )
+  )
+)
+echo ERROR:couldn't find MPI directory
+goto done
+
+:getmpi
+echo checking for mpi headers ...
+if exist %mpidir%\include\mpi.h (
+  echo %mpidir%\include
+  set mpiinc=%mpidir%\include
+)
+if exist %mpidir%\src\include\mpi.h (
+  echo %mpidir%\src\include
+  set mpiinc=%mpidir%\src\include
+)
+if "%mpiinc%" == "" (
+  echo ERROR:mpi.h not found in "%mpidir%\include" or "%mpidir%\src\include"
+  goto done
+)
+echo checking for mpicc and mpiexec ...
+if exist %mpidir%\bin\mpicc.exe (
+  echo %mpidir%\bin\mpicc.exe
+  set mpicc=%mpidir%\bin\mpicc.exe
+)
+if exist %mpidir%\bin\mpiexec.exe (
+  echo %mpidir%\bin\mpiexec.exe
+  set mpiexec=%mpidir%\bin\mpiexec.exe
+)
+echo checking for MPI library ...
+for %%l in ( mpi mpich mpid mpichd ) do (
+  if exist %mpidir%\lib\%%l.lib (
+    echo %mpidir%\lib\%%l.lib
+    set mpilibs=%mpidir%\lib\%%l.lib
+    goto next
+  )
+)
+echo ERROR:MPI library not found in %mpidir%\lib
 goto done
 
 rem ----- tcl directory
@@ -542,6 +675,8 @@ echo   -lfs : enable large file support (more than 2Gb)
 echo   -legacy : build as legacy code
 echo   -64 : build 64-bit version
 echo   -scope : enable enumeration scoping by prefixing CG_
+echo   -parallel : enable parallel IO
+echo   -cgnstools : build CGNStools
 echo   -dll : build DLL istead of static library
 echo   -ifort : use ifort Fortran compiler (implies -f2c UPPERCASE)
 echo   -absoft : use the absoft Fortran compiler (implies -f2c LOWERCASE)
@@ -556,6 +691,8 @@ echo   -zlib [zliblib] : use zlib. "zliblib" is the pathname to the library.
 echo        If "zliblib" is not given, the current drive is searched.
 echo   -szip [sziplib] : use szip. "sziplib" is the pathname to the library.
 echo        If "sziplib" is not given, the current drive is searched.
+echo   -mpi [mpidir] : build MPI interface. "mpidir" is the MPI toplevel
+echo        directory. If "mpidir" is not given, the current drive is searched.
 echo   -tcl tcldir : specify the Tcl source directory
 echo   -tk tkdir : specify the Tk source directory
 echo   -nocut : build cgnsplot without cutting plane
@@ -598,6 +735,9 @@ if "%hdf5inc%" == "" (
   set hdf5inc=/I%hdf5inc%
   set build=%build% /DBUILD_HDF5
 )
+
+if not "%mpiinc%" == "" set mpiinc=/I%mpiinc%
+if not "%parallel%" == "" set build=%build% /DBUILD_PARALLEL
 
 if "%f2c%" == "none" (
   set f2cobjs=
@@ -1567,11 +1707,26 @@ echo SZIPLIB = %sziplib%>> make.defs
 echo ZLIBLIB = %zliblib%>> make.defs
 echo.>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
+echo # these should only be set if building with HDF5 and MPI>> make.defs
+echo # MPIINC  - path to MPI header files>> make.defs
+echo # MPIOPTS - compile options from mpicc>> make.defs
+echo # MPILIBS - MPI libraries>> make.defs
+echo # MPICC   - MPI compiler>> make.defs
+echo # MPIEXEC - MPI executor>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
+echo.>> make.defs
+echo MPIINC  = %mpiinc%>> make.defs
+echo MPIOPTS = %mpiopts%>> make.defs
+echo MPILIBS = %mpilibs%>> make.defs
+echo MPICC   = %mpicc%>> make.defs
+echo MPIEXEC = %mpiexec%>> make.defs
+echo.>> make.defs
+echo #------------------------------------------------------------------------>> make.defs
 echo # BUILDLIBS contains the list of additional libraries>> make.defs
 echo #           with which a CGNS application needs to link>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo.>> make.defs
-echo BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB)>> make.defs
+echo BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB) $(MPILIBS)>> make.defs
 echo.>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo # commands for removing files and creating/deleting directory>> make.defs
@@ -1636,6 +1791,7 @@ echo # ADF/ADFH routines>> Makefile
 echo.>> Makefile
 echo ADFOBJS=\>>Makefile
 if not "%hdf5inc%" == "" echo 	$(OBJDIR)\ADFH.$(O) \>>Makefile
+if not "%parallel%" == "" echo 	$(OBJDIR)\pcgnslib.$(O) \>>Makefile
 echo 	$(OBJDIR)\ADF_interface.$(O) \>>Makefile
 echo 	$(OBJDIR)\ADF_internals.$(O)>> Makefile
 echo.>> Makefile
@@ -1643,9 +1799,10 @@ echo F2COBJS= $(OBJDIR)\cg_ftoc.$(O) $(OBJDIR)\cgio_ftoc.$(O)>> Makefile
 echo.>> Makefile
 echo #---------->> Makefile
 echo.>> Makefile
-if %target% == dll echo dll : $^(CGNSDLL^)>> Makefile
+if %target% == dll echo dll  : $^(CGNSDLL^)>> Makefile
 echo cgns : $(CGNSLIB)>> Makefile
-echo all : %target% tools tests cgnstools>> Makefile
+echo all  : %target% tools %cgnstools%>> Makefile
+echo test : runtests %parallel%>> Makefile
 echo.>> Makefile
 echo #---------->> Makefile
 echo.>> Makefile
@@ -1671,30 +1828,45 @@ echo.>> Makefile
 echo tools : %target%>> Makefile
 echo 	-cd tools ^&^& %make%>> Makefile
 echo.>> Makefile
+echo cgnstools : %target%>> Makefile
+echo 	-cd cgnstools ^&^& %make%>> Makefile
+echo.>> Makefile
 echo tests : %target%>> Makefile
 echo 	-cd tests ^&^& %make%>> Makefile
 echo.>> Makefile
-echo cgnstools : %target%>> Makefile
-echo 	-cd cgnstools ^&^& %make%>> Makefile
+echo ptests : %target%>> Makefile
+echo 	-cd ptests ^&^& %make%>> Makefile
+echo.>> Makefile
+echo runtests : %target%>> Makefile
+echo 	-cd tests ^&^& %make% test>> Makefile
+echo.>> Makefile
+echo runptests : %target%>> Makefile
+echo 	-cd ptests ^&^& %make% test>> Makefile
 echo.>> Makefile
 echo #---------->> Makefile
 echo.>> Makefile
 echo clean :>> Makefile
 echo 	-cd $(OBJDIR) ^&^& $(RM) *.$(O)>> Makefile
+echo 	-cd tools ^&^& %make% clean>> Makefile
+echo 	-cd tests ^&^& %make% clean>> Makefile
+echo 	-cd ptests ^&^& %make% clean>> Makefile
+echo 	-cd cgnstools ^&^& %make% clean>> Makefile
 echo.>> Makefile
 echo allclean : distclean>> Makefile
 echo.>> Makefile
 echo distclean : clean>> Makefile
 echo 	-cd tools ^&^& %make% allclean>> Makefile
-echo 	-cd tests ^&^& %make% allclean>> Makefile
 echo 	-cd tools ^&^& $(RM) Makefile>> Makefile
+echo 	-cd tests ^&^& %make% allclean>> Makefile
 echo 	-cd tests ^&^& $(RM) Makefile>> Makefile
+echo 	-cd ptests ^&^& %make% allclean>> Makefile
+echo 	-cd ptests ^&^& $(RM) Makefile>> Makefile
 echo 	-cd cgnstools ^&^& %make% distclean>> Makefile
 echo 	-$(RM) $(CGNSLIB)>> Makefile
 if %target% == dll echo 	-$(RM) $(CGNSDLL)>> Makefile
 echo 	-$(RMDIR) $(OBJDIR)>> Makefile
 echo 	-$(RM) cgnstypes.h cgnstypes_f.h cgnslib_f.h>> Makefile
-echo 	-$(RM) *.pdb>> Makefile
+echo 	-$(RM) *.pdb *.bak>> Makefile
 echo 	-$(RM) make.defs Makefile>> Makefile
 echo.>> Makefile
 echo install : %target% $(INCLUDEDIR) $(LIBDIR) %adfinc%>> Makefile
@@ -1704,6 +1876,7 @@ echo 	$(INSTALL_DATA) cgnslib.h $(INCLUDEDIR)\cgnslib.h>> Makefile
 echo 	$(INSTALL_DATA) cgnslib_f.h $(INCLUDEDIR)\cgnslib_f.h>> Makefile
 echo 	$(INSTALL_DATA) cgnswin_f.h $(INCLUDEDIR)\cgnswin_f.h>> Makefile
 echo 	$(INSTALL_DATA) cgns_io.h $(INCLUDEDIR)\cgns_io.h>> Makefile
+if not "%parallel%" == "" echo 	$(INSTALL_DATA) pcgnslib.h $(INCLUDEDIR)\pcgnslib,h>> Makefile
 echo 	$(INSTALL_DATA) $(CGNSLIB) $(LIBDIR)\$(INSTLIB)>> Makefile
 if %target% == dll echo 	$(INSTALL_DATA) $(CGNSDLL) $(LIBDIR)\$(INSTDLL)>> Makefile
 echo.>> Makefile
@@ -1747,7 +1920,7 @@ echo 	%includes%>> Makefile
 echo 	$(CC) $(COPTS) $(COOUT)$@ /c cgns_io.c>> Makefile
 echo.>> Makefile
 echo $(OBJDIR)\cgnslib.$(O) : cgnslib.c cgnslib.h cgns_header.h cgns_io.h>> Makefile
-echo 	$(CC) $(COPTS) $(HDF5INC) $(COOUT)$@ /c cgnslib.c>> Makefile
+echo 	$(CC) $(COPTS) $(HDF5INC) $(MPIINC) $(COOUT)$@ /c cgnslib.c>> Makefile
 echo.>> Makefile
 echo $(OBJDIR)\cg_ftoc.$(O) : cg_ftoc.c fortran_macros.h cgnslib.h cgns_header.h cgns_io.h>> Makefile
 echo 	$(CC) $(COPTS) $(F2CFLAGS) $(COOUT)$@ /c cg_ftoc.c>> Makefile
@@ -1774,9 +1947,16 @@ echo.>> Makefile
 echo #---------- HDF5>> Makefile
 echo.>> Makefile
 echo $(OBJDIR)\ADFH.$(O) : adfh\ADFH.c adfh\ADFH.h>> Makefile
-echo 	$(CC) $(COPTS) /Iadfh $(HDF5INC) $(HDF5DLL) $(COOUT)$@ /c adfh\ADFH.c>> Makefile
+echo 	$(CC) $(COPTS) /Iadfh $(HDF5INC) $(HDF5DLL) $(MPIINC) $(COOUT)$@ /c adfh\ADFH.c>> Makefile
 echo.>> Makefile
 echo adfh\ADFH.h : cgnstypes.h>> Makefile
+echo.>> Makefile
+echo #---------- PCGNS>> Makefile
+echo.>> Makefile
+echo $(OBJDIR)\pcgnslib.$(O) : pcgnslib.c pcgnslib.h>> Makefile
+echo 	$(CC) $(COPTS) $(HDF5INC) $(MPIINC) $(COOUT)$@ /c pcgnslib.c>> Makefile
+echo.>> Makefile
+echo pcgnslib.h : cgnslib.h>> Makefile
 
 rem ----- create tools/Makefile
 
@@ -1875,7 +2055,7 @@ echo 	-$(RM) *.pdb *.ilk>> tools\Makefile
 rem ----- create tests/Makefile
 
 :tests
-if not exist tests\nul goto cgnstools
+if not exist tests\nul goto ptests
 
 echo creating tests\Makefile
 echo # nmake makefile for Windows> tests\Makefile
@@ -1886,16 +2066,13 @@ echo.>> tests\Makefile
 echo CGNSLIB = $(CGNSDIR)\$(LIBCGNS)>> tests\Makefile
 echo.>> tests\Makefile
 echo COPTS  = $(CFLAGS) /I$(CGNSDIR)>> tests\Makefile
-echo LDLIBS = $(CGNSLIB) $(BUILDLIBS)>> tests\Makefile
-echo.>> tests\Makefile
 echo FOPTS  = $(FFLAGS) /I$(CGNSDIR)>> tests\Makefile
+echo LDLIBS = $(CGNSLIB) $(BUILDLIBS)>> tests\Makefile
 echo.>> tests\Makefile
 echo #---------->> tests\Makefile
 echo.>> tests\Makefile
-echo ALL = \>> tests\Makefile
-echo 	dbtest$(EXE) \>> tests\Makefile
+echo CALL = \>> tests\Makefile
 echo	elemtest$(EXE) \>> tests\Makefile
-echo 	open_cgns$(EXE) \>> tests\Makefile
 echo 	test_exts$(EXE) \>> tests\Makefile
 echo 	test_partial$(EXE) \>> tests\Makefile
 echo 	test_goto$(EXE) \>> tests\Makefile
@@ -1906,20 +2083,48 @@ echo 	write_bcdata$(EXE) \>> tests\Makefile
 echo 	write_test$(EXE) \>> tests\Makefile
 echo 	write_zones$(EXE) \>> tests\Makefile
 echo 	write_rind$(EXE)>> tests\Makefile
-echo.>> tests\Makefile
-echo all : $(ALL)>> tests\Makefile
+echo FALL =	cgwrite$^(EXE^) \>> tests\Makefile
+echo 	cgread$^(EXE^) \>> tests\Makefile
+echo 	cgzconn$(EXE) \>> tests\Makefile
+echo 	cgsubreg$(EXE)>> tests\Makefile
+echo CALL64 = test64c$^(EXE^)>> tests\Makefile
+echo FALL64 = test64f$^(EXE^)>> tests\Makefile
 echo.>> tests\Makefile
 if not "%f2c%" == "none" (
-  echo FALL =	cgwrite$^(EXE^) \>> tests\Makefile
-  echo 	cgread$^(EXE^) \>> tests\Makefile
-  echo 	test64f$^(EXE^)>> tests\Makefile
-  echo.>> tests\Makefile
-  echo fortran : $^(FALL^)>> tests\Makefile
-  echo.>> tests\Makefile
+  echo TESTS = $^(CALL^) $^(FALL^)>> tests\Makefile
+  echo ALL64 = $^(CALL64^) $^(FALL64^)>> tests\Makefile
+) else (
+  echo TESTS = $^(CALL^)>> tests\Makefile
+  echo ALL64 = $^(CALL64^)>> tests\Makefile
 )
-echo ALL64 = test64c$^(EXE^)>> tests\Makefile
+echo ALL   = dbtest$(EXE) open_cgns$(EXE) $(TESTS)>> tests\Makefile
 echo.>> tests\Makefile
+echo #---------->> tests\Makefile
+echo.>> tests\Makefile
+echo all : $(ALL)>> tests\Makefile
+echo fortran : $(FALL)>> tests\Makefile
 echo test64 : $(ALL64)>> tests\Makefile
+echo.>> tests\Makefile
+echo #---------->> tests\Makefile
+echo.>> tests\Makefile
+echo test : $(TESTS)>> tests\Makefile
+echo 	elemtest$(EXE)>> tests\Makefile
+echo 	test_exts$(EXE)>> tests\Makefile
+echo 	test_partial$(EXE)>> tests\Makefile
+echo 	test_goto$(EXE)>> tests\Makefile
+echo 	test_ver31$(EXE)>> tests\Makefile
+echo 	write_array$(EXE)>> tests\Makefile
+echo 	write_links$(EXE)>> tests\Makefile
+echo 	write_bcdata$(EXE)>> tests\Makefile
+echo 	write_test$(EXE)>> tests\Makefile
+echo 	write_zones$(EXE)>> tests\Makefile
+echo 	write_rind$(EXE)>> tests\Makefile
+if not "%f2c%" == "none" (
+  echo 	cgwrite$^(EXE^)>> tests\Makefile
+  echo 	cgread$^(EXE^)>> tests\Makefile
+  echo 	cgzconn$^(EXE^)>> tests\Makefile
+  echo 	cgsubreg$^(EXE^)>> tests\Makefile
+)
 echo.>> tests\Makefile
 echo #---------->> tests\Makefile
 echo.>> tests\Makefile
@@ -2010,6 +2215,16 @@ echo 	$(F77) $(FOPTS) $(FEOUT)$@ cgread.F $(LDLIBS) $(FLIBS)>> tests\Makefile
 echo.>> tests\Makefile
 echo #---------->> tests\Makefile
 echo.>> tests\Makefile
+echo cgzconn$(EXE) : cgzconn.F $(CGNSLIB)>> tests\Makefile
+echo 	$(F77) $(FOPTS) $(FEOUT)$@ cgzconn.F $(LDLIBS) $(FLIBS)>> tests\Makefile
+echo.>> tests\Makefile
+echo #---------->> tests\Makefile
+echo.>> tests\Makefile
+echo cgsubreg$(EXE) : cgsubreg.F $(CGNSLIB)>> tests\Makefile
+echo 	$(F77) $(FOPTS) $(FEOUT)$@ cgsubreg.F $(LDLIBS) $(FLIBS)>> tests\Makefile
+echo.>> tests\Makefile
+echo #---------->> tests\Makefile
+echo.>> tests\Makefile
 echo test64c$(EXE) : test64c.$(O) utils.$(O) $(CGNSLIB)>> tests\Makefile
 echo 	$(CC) $(CFLAGS) $(CEOUT)$@ test64c.$(O) utils.$(O) $(LDLIBS) $(CLIBS)>> tests\Makefile
 echo 	$(STRIP) $@>> tests\Makefile
@@ -2034,6 +2249,108 @@ echo allclean : clean>> tests\Makefile
 echo 	-$(RM) *.exe>> tests\Makefile
 echo 	-$(RM) *.pdb *.ilk>> tests\Makefile
 echo 	-$(RM) *.cgns>> tests\Makefile
+
+rem ----- create ptests/Makefile
+
+:ptests
+if not exist ptests\nul goto cgnstools
+
+echo creating ptests\Makefile
+echo # nmake makefile for Windows> ptests\Makefile
+echo.>> ptests\Makefile
+echo CGNSDIR = ..>> ptests\Makefile
+echo !include $(CGNSDIR)\make.defs>> ptests\Makefile
+echo.>> ptests\Makefile
+echo CGNSLIB = $(CGNSDIR)\$(LIBCGNS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo COPTS  = $(CFLAGS) /I$(CGNSDIR) $(MPIINC)>> ptests\Makefile
+echo FOPTS  = $(FFLAGS) /I$(CGNSDIR) $(MPIINC)>> ptests\Makefile
+echo LDLIBS = $(CGNSLIB) $(BUILDLIBS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo #---------->> ptests\Makefile
+echo.>> ptests\Makefile
+echo CALL = \>> ptests\Makefile
+echo 	ctest$(EXE) \>> ptests\Makefile
+echo 	benchmark$(EXE) \>> ptests\Makefile
+echo 	open_close$(EXE) \>> ptests\Makefile
+echo 	test_base$(EXE) \>> ptests\Makefile
+echo 	test_unstructured$(EXE) \>> ptests\Makefile
+echo 	test_zone$(EXE) \>> ptests\Makefile
+echo 	thesis_benchmark$(EXE)>> ptests\Makefile
+echo FALL =	ftest$^(EXE^)>> ptests\Makefile
+echo.>> ptests\Makefile
+if not "%f2c%" == "none" (
+  echo ALL   = $^(CALL^) $^(FALL^)>> ptests\Makefile
+) else (
+  echo ALL   = $^(CALL^)>> ptests\Makefile
+)
+echo TESTS = $(ALL)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo all : $(ALL)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo #---------->> ptests\Makefile
+echo.>> ptests\Makefile
+echo test : $(TESTS)>> ptests\Makefile
+echo 	$(MPIEXEC) -np 2 ctest$(EXE)>> ptests\Makefile
+echo 	$(MPIEXEC) -np 2 benchmark$(EXE)>> ptests\Makefile
+echo 	$(MPIEXEC) -np 2 open_close$(EXE)>> ptests\Makefile
+echo 	$(MPIEXEC) -np 2 test_base$(EXE)>> ptests\Makefile
+echo 	$(MPIEXEC) -np 2 test_unstructured$(EXE)>> ptests\Makefile
+echo 	$(MPIEXEC) -np 2 test_zone$(EXE)>> ptests\Makefile
+echo 	$(MPIEXEC) -np 2 thesis_benchmark$(EXE)>> ptests\Makefile
+if not "%f2c%" == "none" (
+  echo 	$^(MPIEXEC^) -np 2 ftest$^(EXE^)>> ptests\Makefile
+)
+echo.>> ptests\Makefile
+echo #---------->> ptests\Makefile
+echo.>> ptests\Makefile
+echo ctest$(EXE) : ctest.c $(CGNSLIB)>> ptests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ ctest.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo #---------->> ptests\Makefile
+echo.>> ptests\Makefile
+echo benchmark$(EXE) : benchmark.c $(CGNSLIB)>> ptests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ benchmark.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo #---------->> ptests\Makefile
+echo.>> ptests\Makefile
+echo open_close$(EXE) : open_close.c $(CGNSLIB)>> ptests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ open_close.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo #---------->> ptests\Makefile
+echo.>> ptests\Makefile
+echo test_base$(EXE) : test_base.c $(CGNSLIB)>> ptests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ test_base.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo #---------->> ptests\Makefile
+echo.>> ptests\Makefile
+echo test_unstructured$(EXE) : test_unstructured.c $(CGNSLIB)>> ptests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ test_unstructured.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo #---------->> ptests\Makefile
+echo.>> ptests\Makefile
+echo test_zone$(EXE) : test_zone.c $(CGNSLIB)>> ptests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ test_zone.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo #---------->> ptests\Makefile
+echo.>> ptests\Makefile
+echo thesis_benchmark$(EXE) : thesis_benchmark.c $(CGNSLIB)>> ptests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ thesis_benchmark.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo #---------->> ptests\Makefile
+echo.>> ptests\Makefile
+echo ftest$(EXE) : ftest.F $(CGNSLIB)>> ptests\Makefile
+echo 	$(F77) $(FOPTS) $(FEOUT)$@ ftest.F $(LDLIBS) $(FLIBS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo #---------->> ptests\Makefile
+echo.>> ptests\Makefile
+echo clean :>> ptests\Makefile
+echo 	-$(RM) *.$(O)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo allclean : clean>> ptests\Makefile
+echo 	-$(RM) *.exe>> ptests\Makefile
+echo 	-$(RM) *.pdb *.ilk>> ptests\Makefile
+echo 	-$(RM) *.cgns>> ptests\Makefile
 
 rem ----- create cgsntools\Makefile
 

@@ -1,18 +1,22 @@
-//! @file open_close.c
-//! @author Kyle Horne <horne.kyle@gmail.com>
-//! @version 0.2
-//!
-//! @section LICENSE
-//! BSD style license
-//!
-//! @section DESCRIPTION
-//! Test program for pcgns library
+/*
+! @file open_close.c
+! @author Kyle Horne <horne.kyle@gmail.com>
+! @version 0.2
+!
+! @section LICENSE
+! BSD style license
+!
+! @section DESCRIPTION
+! Test program for pcgns library
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "pcgnslib.h"
-
-#include "stdio.h"
-#include "stdlib.h"
 #include "mpi.h"
+
+#define cgp_doError {printf("Error at %s:%u\n",__FILE__, __LINE__); return 1;}
 
 int main(int argc, char* argv[]) {
 	int err;
@@ -30,11 +34,10 @@ int main(int argc, char* argv[]) {
 	err = MPI_Info_create(&(info));
 	if(err!=MPI_SUCCESS) cgp_doError;
 
-	err = cgp_open("open_close.cgns", 0, MPI_COMM_WORLD, &info, &fn);
-	if(err!=0) cgp_doError;
-	err = cgp_close(fn);
-	if(err!=0) cgp_doError;
-
+	if (cgp_open("open_close.cgns", CG_MODE_WRITE, &fn))
+	    cgp_error_exit();
+	if (cgp_close(fn))
+	    cgp_error_exit();
 	err = MPI_Finalize();
 	if(err!=MPI_SUCCESS) cgp_doError;
 	return err;
