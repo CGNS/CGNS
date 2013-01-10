@@ -147,7 +147,9 @@ done:
    if (dlist != 0) glEndList(); else return result;
 
    if (result == TCL_OK) {
-      sprintf (interp->result, "%d", dlist);
+     char tmp[128];
+     sprintf (tmp, "%d", dlist);
+     Tcl_SetResult(interp, tmp, TCL_VOLATILE);
    }
    else {
       glDeleteLists (dlist, 1);

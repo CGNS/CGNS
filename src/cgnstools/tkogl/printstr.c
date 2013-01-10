@@ -131,7 +131,9 @@ int LoadBitmapFont(Tcl_Interp *interp, int argc, char* argv [])
 	return TCL_ERROR;
     }
 
-    sprintf (interp->result, "%d", fontOffset);
+    char tmp[128];
+    sprintf (tmp, "%d", fontOffset);
+    Tcl_SetResult(interp, tmp, TCL_VOLATILE);
     return TCL_OK;
 }
 

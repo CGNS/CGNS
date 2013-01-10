@@ -122,7 +122,9 @@ Tesselate (Tcl_Interp *interp, int argc, char* argv [])
    }
    
    if (dlist != 0) {
-      sprintf (interp->result, "%d", dlist);
+     char tmp[128];
+     sprintf (tmp, "%d", dlist);
+     Tcl_SetResult(interp, tmp, TCL_VOLATILE);
    }
    return TCL_OK;
 }

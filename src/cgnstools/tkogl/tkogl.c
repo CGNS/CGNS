@@ -641,7 +641,7 @@ OGLwinCmd(clientData, interp, argc, argv)
     ARRANGE_REDRAW(glxwinPtr);
     GetAbsXY (glxwinPtr);
     
-    interp->result = Tk_PathName(glxwinPtr->tkwin);
+    Tcl_SetResult(interp, Tk_PathName(glxwinPtr->tkwin), TCL_VOLATILE);
     return TCL_OK;
 }
 
@@ -998,7 +998,11 @@ OGLwinWidgetCmd(clientData, interp, argc, argv)
 	        argv += narg;
         }
         glEndList();
-        if (result == TCL_OK) sprintf (interp->result, "%d", newlist);
+        if (result == TCL_OK) {
+	  char tmp[128];
+	  sprintf (tmp, "%d", newlist);
+	  Tcl_SetResult(interp, tmp, TCL_VOLATILE);
+	}
    }
    else if ((c == 'e') && (strncmp(argv[1], "eval", length) == 0)) {
       /* sends the gl commands directly */
@@ -1090,7 +1094,9 @@ OGLwinWidgetCmd(clientData, interp, argc, argv)
 				viewport, &x, &y, &z);	 
       }
       if (retval) {
-    	 sprintf (interp->result, "%f %f %f", x, y, z);
+	char tmp[128];
+	sprintf (tmp, "%f %f %f", x, y, z);
+	Tcl_SetResult(interp, tmp, TCL_VOLATILE);
       }
    } 
    else if ((c == 'r') && (strncmp(argv[1], "redraw", length) == 0)) {
