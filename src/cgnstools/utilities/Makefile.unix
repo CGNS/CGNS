@@ -148,12 +148,12 @@ aflr3_to_cgns.$(O) : aflr3_to_cgns.c
 
 #--------------------------------------------------
 
-cgns_to_aflr3$(EXE) : cgns_to_aflr3.$(O) getargs.$(O)
-	$(CC) $(LDFLAGS) -o $@ cgns_to_aflr3.$(O) \
+cgns_to_aflr3$(EXE) : cgns_to_aflr3.$(O) cgnsutil.$(O) getargs.$(O)
+	$(CC) $(LDFLAGS) -o $@ cgns_to_aflr3.$(O) cgnsutil.$(O) \
 	getargs.$(O) $(LDLIST)
 	$(STRIP) $@
 
-cgns_to_aflr3.$(O) : cgns_to_aflr3.c
+cgns_to_aflr3.$(O) : cgns_to_aflr3.c cgnsutil.h
 
 #--------------------------------------------------
 

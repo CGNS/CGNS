@@ -146,11 +146,11 @@ aflr3_to_cgns.obj : aflr3_to_cgns.c
 
 cgns_to_aflr3 : cgns_to_aflr3.exe
 
-cgns_to_aflr3.exe : cgns_to_aflr3.obj getargs.obj
-	$(LINK) $(LFLAGS) cgns_to_aflr3.obj \
+cgns_to_aflr3.exe : cgns_to_aflr3.obj cgnsutil.obj getargs.obj
+	$(LINK) $(LFLAGS) cgns_to_aflr3.obj cgnsutil.obj \
 	getargs.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
-cgns_to_aflr3.obj : cgns_to_aflr3.c
+cgns_to_aflr3.obj : cgns_to_aflr3.c cgnsutil.h
 
 #--------------------------------------------------
 
