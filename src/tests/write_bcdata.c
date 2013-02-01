@@ -9,47 +9,40 @@
 #endif
 #include "utils.h"
 
-#define WRITE_NODES  0
-#define WRITE_BCDATA 1
-
-#define NNODES  1000
-#define NCELLS  1000
-#define NBCPNTS 100
-
 char *fname = "bcdata.cgns";
 
-int cgfile, cgbase, cgzone, cgcoord, cgsect, cgbc, cgdset;
+int cgfile, cgbase, cgzone, cgcoord, cgsect, cgbc, cgfam, cgdset;
 char name[33];
 
-cgsize_t size[] = {NNODES, NCELLS, 0};
-float coord[NNODES];
-int elements[4*NCELLS];
+cgsize_t size[] = {4, 1, 0};
+float coord[3][4] = {
+    {0, 1, 0, 0},
+    {0, 0, 1, 0},
+    {0, 0, 0, 1}
+};
+cgsize_t tris[12] = {
+    1, 3, 2,
+    1, 2, 4,
+    1, 4, 3,
+    2, 3, 4
+};
+cgsize_t tets[4] = {1, 2, 3, 4};
 
-cgsize_t npnts = NBCPNTS;
-cgsize_t pnts[NBCPNTS];
-cgsize_t dims[] = {NBCPNTS};
-float data[NBCPNTS];
+cgsize_t dim, npnts = 4;
+cgsize_t pnts[4] = {1, 2, 3, 4};
+float data[4] = {1, 2, 3, 4};
 
 float start, finish;
 
 int main (int argc, char **argv)
 {
-    int i, j, nb = 5, nv = 10;
+    int i, j, nb = 5, nv = 5;
 
     if (argc > 1) {
         nb = atoi (argv[1]);
         if (argc > 2)
             nv = atoi (argv[2]);
     }
-#if WRITE_NODES
-    printf ("number of nodes       = %d\n", NNODES);
-    printf ("number of elements    = %d\n", NCELLS);
-#endif
-#if WRITE_BCDATA
-    printf ("number of BC data pts = %d\n", NBCPNTS);
-#endif
-    printf ("number of BC_t        = %d\n", nb);
-    printf ("number of BCDataSet_t = %d\n", nv);
 
     unlink (fname);
     printf ("creating file ...");
@@ -58,46 +51,63 @@ int main (int argc, char **argv)
 
     if (cg_open (fname, CG_MODE_WRITE, &cgfile) ||
         cg_base_write (cgfile, "Base", 3, 3, &cgbase) ||
-#if WRITE_NODES
-        cg_zone_write (cgfile, cgbase, "Zone", size, CGNS_ENUMV( Unstructured ), &cgzone) ||
-        cg_coord_write (cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
-            "CoordinateX", coord, &cgcoord) ||
-        cg_coord_write (cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
-            "CoordinateY", coord, &cgcoord) ||
-        cg_coord_write (cgfile, cgbase, cgzone, CGNS_ENUMV( RealSingle ),
-            "CoordinateZ", coord, &cgcoord) ||
-        cg_section_write (cgfile, cgbase, cgzone, "Elements", CGNS_ENUMV( TETRA_4 ),
-            1, NCELLS, 0, elements, &cgsect))
-#else
-      cg_zone_write (cgfile, cgbase, "Zone", size, CGNS_ENUMV( Unstructured ), &cgzone))
-#endif
+        cg_zone_write (cgfile, cgbase, "Zone", size,
+            CGNS_ENUMV(Unstructured), &cgzone) ||
+        cg_coord_write (cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
+            "CoordinateX", coord[0], &cgcoord) ||
+        cg_coord_write (cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
+            "CoordinateY", coord[1], &cgcoord) ||
+        cg_coord_write (cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
+            "CoordinateZ", coord[2], &cgcoord) ||
+        cg_section_write (cgfile, cgbase, cgzone, "Tris",
+            CGNS_ENUMV(TRI_3), 1, 4, 0, tris, &cgsect) ||
+        cg_section_write (cgfile, cgbase, cgzone, "Tets",
+            CGNS_ENUMV(TETRA_4), 5, 5, 0, tets, &cgsect))
         cg_error_exit();
 
+    dim = npnts;
     for (j = 1; j <= nb; j++) {
         sprintf (name, "BC%d", j);
-        if (cg_boco_write (cgfile, cgbase, cgzone, name, CGNS_ENUMV( BCWall ), CGNS_ENUMV( ElementList ),
-                npnts, pnts, &cgbc))
+        if (cg_boco_write (cgfile, cgbase, cgzone, name, CGNS_ENUMV(BCWall),
+                CGNS_ENUMV(ElementList), npnts, pnts, &cgbc))
             cg_error_exit();
 
         for (i = 1; i <= nv; i++) {
             sprintf (name, "BCData%d", i);
             if (cg_dataset_write (cgfile, cgbase, cgzone, cgbc, name,
-				  CGNS_ENUMV( BCWall ), &cgdset) ||
-#if WRITE_BCDATA
+				  CGNS_ENUMV(BCWall), &cgdset) ||
                 cg_bcdata_write (cgfile, cgbase, cgzone, cgbc, cgdset,
-				 CGNS_ENUMV( Dirichlet )) ||
+				 CGNS_ENUMV(Dirichlet)) ||
                 cg_goto (cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1,
                     "BC_t", cgbc, "BCDataSet_t", cgdset, "end") ||
                 cg_descriptor_write ("label", name) ||
                 cg_descriptor_write ("basis", "intensive") ||
                 cg_goto (cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1,
                     "BC_t", cgbc, "BCDataSet_t", cgdset,
-			 "BCData_t", CGNS_ENUMV( Dirichlet ), "end") ||
-                cg_array_write ("Data", CGNS_ENUMV( RealSingle ), 1, dims, data))
-#else
-                cg_bcdata_write (cgfile, cgbase, cgzone, cgbc, cgdset,
-				 CGNS_ENUMV( Dirichlet )))
-#endif
+		    "BCData_t", CGNS_ENUMV(Dirichlet), "end") ||
+                cg_array_write ("Data", CGNS_ENUMV(RealSingle), 1, &dim, data))
+                cg_error_exit();
+        }
+    }
+
+    dim = 1;
+    for (j = 1; j <= nb; j++) {
+        sprintf (name, "Family%d", j);
+        if (cg_family_write (cgfile, cgbase, name, &cgfam) ||
+            cg_fambc_write (cgfile, cgbase, cgfam, "FamilyBC",
+                CGNS_ENUMV(BCWall), &cgbc))
+            cg_error_exit();
+
+        for (i = 1; i <= nv; i++) {
+            sprintf (name, "FamilyBCData%d", i);
+            if (cg_goto (cgfile, cgbase, "Family_t", j, "FamilyBC_t", 1, NULL) ||
+                cg_bcdataset_write (name, CGNS_ENUMV(BCWall),
+                    CGNS_ENUMV(Dirichlet)) ||
+                cg_gorel (cgfile, "FamilyBCDataSet_t", i, NULL) ||
+                cg_descriptor_write ("label", name) ||
+                cg_descriptor_write ("basis", "intensive") ||
+                cg_gorel (cgfile, "DirichletData", 0, NULL) ||
+                cg_array_write ("Data", CGNS_ENUMV(RealSingle), 1, &dim, data))
                 cg_error_exit();
         }
     }

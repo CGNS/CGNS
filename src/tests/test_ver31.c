@@ -44,6 +44,8 @@ cgsize_t *pts, *d_pts;
 
 char errmsg[256];
 
+static float exponents[5] = {0, 1, 0, 0, 0};
+
 void init_data();
 void write_structured(), write_unstructured();
 void test_zconn(), test_subreg();
@@ -272,6 +274,12 @@ void write_coords(int nz)
         sprintf (errmsg, "zone %d coordinates", nz);
         error_exit(errmsg);
     }
+    for (n = 1; n <= 3; n++) {
+        if (cg_goto(cgfile, cgbase, "Zone_t", nz, "GridCoordinates_t", 1,
+                "DataArray_t", n, NULL) ||
+            cg_exponents_write(CGNS_ENUMV(RealSingle), exponents))
+            error_exit("coordinate exponents");
+    }
 }
 
 void write_elements(int nz)
@@ -294,9 +302,9 @@ void write_elements(int nz)
 
 void write_structured()
 {
-    int i, j, n, nc, cgz, cgbc, cgconn, cghole, cgsr;
+    int i, j, n, nc, cgfam, cgz, cgbc, cgconn, cghole, cgsr;
     cgsize_t range[6], d_range[6], dims[2];
-    int transform[3], rind[6];
+    int transform[3], rind[6], iter[NUM_ZCONN];
     char name[33], cname[33], hname[33], sname[33], zcname[33];
     char cpointers[32*NUM_ZCONN+1], spointers[32*NUM_ZCONN+1];
 
@@ -309,6 +317,27 @@ void write_structured()
         error_exit("structured base");
     if (cg_simulation_type_write(cgfile, cgbase, CGNS_ENUMV(TimeAccurate)))
         error_exit("simulation type");
+
+    /* write a FamilyBCDataset node and children */
+
+    if (cg_family_write(cgfile, cgbase, "Family", &cgfam) ||
+        cg_fambc_write(cgfile, cgbase, cgfam, "Wall",
+            CGNS_ENUMV(BCWall), &cgbc) ||
+        cg_goto(cgfile, cgbase, "Family_t", 1, "FamilyBC_t", 1, NULL) ||
+        cg_bcdataset_write("Dataset", CGNS_ENUMV(BCWall),
+            CGNS_ENUMV(Dirichlet)) ||
+        cg_gorel(cgfile, "Dataset", 0, NULL) ||
+/*        cg_goto(cgfile, cgbase, "Family_t", 1, "FamilyBC_t", 1,
+            "FamilyBCDataSet_t", 1, NULL) ||*/
+        cg_descriptor_write("descriptor", "this is a descriptor") ||
+        cg_dataclass_write(CGNS_ENUMV(NormalizedByDimensional)) ||
+        cg_units_write(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
+            CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian)) ||
+        cg_state_write("reference state") ||
+        cg_user_data_write("Userdata") ||
+        cg_gorel(cgfile, "UserDefinedData_t", 1, NULL) ||
+        cg_famname_write("Family"))
+        error_exit("family bc");
 
     /* write zones */
 
@@ -359,12 +388,6 @@ void write_structured()
         if (cg_zconn_write(cgfile, cgbase, 1, zcname, &cgz) ||
             cg_zconn_write(cgfile, cgbase, 2, zcname, &cgz))
             error_exit(name);
-#if 0
-        if (cg_zconn_find(cgfile, cgbase, 1, zcname, &cgz))
-            error_exit("cg_zconn_find");
-        if (cg_zconn_set(cgfile, cgbase, 1, cgz))
-            error_exit("cg_zconn_set");
-#endif
         sprintf(cname, "conn%d", nc);
         sprintf(hname, "hole%d", nc);
 
@@ -478,7 +501,7 @@ void write_structured()
     }
     for (n = 0; n < 6; n++)
         rind[n] = 1;
-    dims[0] = num_coord;
+    dims[0] = NUM_SIDE * NUM_SIDE;
 
     for (nc = 3; nc <= NUM_ZCONN; nc++) {
         sprintf(sname, "SubRegion%d", nc);
@@ -501,18 +524,45 @@ void write_structured()
             sprintf(errmsg, "cg_array_write %s", sname);
             error_exit(errmsg);
         }
+        if (cg_gorel(cgfile, "DataArray", 0, NULL) ||
+            cg_exponents_write(CGNS_ENUMV(RealSingle), exponents)) {
+            sprintf(errmsg, "cg_exponents_write %s", sname);
+            error_exit(errmsg);
+        }
         if (cg_subreg_ptset_write(cgfile, cgbase, 2, sname, 2,
                 CGNS_ENUMV(EdgeCenter), CGNS_ENUMV(PointList),
                 npts, pts, &cgsr)) {
             sprintf(errmsg, "cg_subreg_ptset_write(%s PointList)", sname);
             error_exit(errmsg);
         }
+        if (cg_goto(cgfile, cgbase, "Zone_t", 2, sname, 0, NULL)) {
+            sprintf(errmsg, "cg_goto %s", sname);
+            error_exit(errmsg);
+        }
+        if (cg_array_write("DataArray", CGNS_ENUMV(RealSingle), 1,
+                dims, xcoord)) {
+            sprintf(errmsg, "cg_array_write %s", sname);
+            error_exit(errmsg);
+        }
+        if (cg_gorel(cgfile, "DataArray", 0, NULL) ||
+            cg_exponents_write(CGNS_ENUMV(RealSingle), exponents)) {
+            sprintf(errmsg, "cg_exponents_write %s", sname);
+            error_exit(errmsg);
+        }
     }
 
     /* create BaseIterativeData_t node */
 
+    for (n = 0; n < NUM_ZCONN; n++)
+        iter[n] = n + 1;
+    dims[0] = NUM_ZCONN;
+
     if (cg_biter_write(cgfile, cgbase, "BaseIterativeData", NUM_ZCONN))
         error_exit("cg_biter_write");
+    if (cg_goto(cgfile, cgbase, "BaseIterativeData", 0, NULL))
+        error_exit("cg_goto BaseIterativeData");
+    if (cg_array_write("IterationValues", CGNS_ENUMV(Integer),
+        1, dims, iter)) error_exit("cg_array_write IterationValues");
 
     /* create the ZoneIterativeData_t node */
 
@@ -568,7 +618,8 @@ void write_structured()
 
 void write_unstructured()
 {
-    int n, nelem, nc, cgconn, cgz, cghole, cgfam, cgbc;
+    int n, nelem, nc, cgconn, cgz, cghole;
+    int iter[NUM_ZCONN];
     cgsize_t range[2], dims[2];
     char name[33], zcname[33], pointers[32*NUM_ZCONN+1];
 #ifdef UNSTRUCTURED_1TO1
@@ -588,27 +639,6 @@ void write_unstructured()
         cg_units_write(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
             CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian)))
         error_exit("unstructured base");
-
-    /* write a FamilyBCDataset node and children */
-
-    if (cg_family_write(cgfile, cgbase, "Family", &cgfam) ||
-        cg_fambc_write(cgfile, cgbase, cgfam, "Wall",
-            CGNS_ENUMV(BCWall), &cgbc) ||
-        cg_goto(cgfile, cgbase, "Family_t", 1, "FamilyBC_t", 1, NULL) ||
-        cg_bcdataset_write("Dataset", CGNS_ENUMV(BCWall),
-            CGNS_ENUMV(Dirichlet)) ||
-        cg_gorel(cgfile, "Dataset", 0, NULL) ||
-/*        cg_goto(cgfile, cgbase, "Family_t", 1, "FamilyBC_t", 1,
-            "FamilyBCDataSet_t", 1, NULL) ||*/
-        cg_descriptor_write("descriptor", "this is a descriptor") ||
-        cg_dataclass_write(CGNS_ENUMV(NormalizedByDimensional)) ||
-        cg_units_write(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
-            CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian)) ||
-        cg_state_write("reference state") ||
-        cg_user_data_write("Userdata") ||
-        cg_gorel(cgfile, "UserDefinedData_t", 1, NULL) ||
-        cg_famname_write("Family"))
-        error_exit("family bc");
 
     /* write zones */
 
@@ -736,7 +766,7 @@ void write_unstructured()
         /* write hole in zone 1 as PointRange */
 
         if (cg_hole_write(cgfile, cgbase, 1, name, CGNS_ENUMV(Vertex),
-                CGNS_ENUMV(PointList), 1, 2, range, &cghole)) {
+                CGNS_ENUMV(PointRange), 1, 2, range, &cghole)) {
             sprintf(errmsg, "Zone1/%s/%s", zcname, name);
             error_exit(errmsg);
         }
@@ -755,8 +785,17 @@ void write_unstructured()
 
     /* create BaseIterativeData_t node */
     
+
+    for (n = 0; n < NUM_ZCONN; n++)
+        iter[n] = n + 1;
+    dims[0] = NUM_ZCONN;
+
     if (cg_biter_write(cgfile, cgbase, "BaseIterativeData", NUM_ZCONN))
         error_exit("cg_biter_write");
+    if (cg_goto(cgfile, cgbase, "BaseIterativeData", 0, NULL))
+        error_exit("cg_goto BaseIterativeData");
+    if (cg_array_write("IterationValues", CGNS_ENUMV(Integer),
+        1, dims, iter)) error_exit("cg_array_write IterationValues");
     
     /* create the ZoneIterativeData_t node */
     
