@@ -21,8 +21,8 @@ freely, subject to the following restrictions:
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
 
-#define CGNS_VERSION 3130
-#define CGNS_DOTVERS 3.13
+#define CGNS_VERSION 3140
+#define CGNS_DOTVERS 3.14
 
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
@@ -854,7 +854,7 @@ CGNSDLL int cg_sol_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts);
 CGNSDLL int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
 	CGNS_ENUMT(GridLocation_t) location,
 	CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
-	cgsize_t *pnts, int *S);
+	const cgsize_t *pnts, int *S);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write solution DataArray_t Nodes                        *
@@ -891,7 +891,7 @@ CGNSDLL int cg_subreg_gcname_read(int fn, int B, int Z, int S, char *gcname);
 CGNSDLL int cg_subreg_ptset_write(int fn, int B, int Z, const char *regname,
 	int dimension, CGNS_ENUMT(GridLocation_t) location,
 	CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
-	cgsize_t *pnts, int *S);
+	const cgsize_t *pnts, int *S);
 CGNSDLL int cg_subreg_bcname_write(int fn, int B, int Z, const char *regname,
 	int dimension, const char *bcname, int *S);
 CGNSDLL int cg_subreg_gcname_write(int fn, int B, int Z, const char *regname,
@@ -1046,7 +1046,7 @@ CGNSDLL int cg_discrete_ptset_read(int fn, int B, int Z, int D,
 CGNSDLL int cg_discrete_ptset_write(int fn, int B, int Z,
 	const char *discrete_name, CGNS_ENUMT(GridLocation_t) location,
 	CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
-	cgsize_t *pnts, int *D);
+	const cgsize_t *pnts, int *D);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write RigidGridMotion_t Nodes				 *

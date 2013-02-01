@@ -675,6 +675,7 @@ int cgio_open_file (const char *filename, int file_mode,
         case CGIO_MODE_WRITE:
         case 'w':
         case 'W':
+            UNLINK(filename);
             file_mode = CGIO_MODE_WRITE;
             fmode = "NEW";
             break;

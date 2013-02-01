@@ -24,9 +24,9 @@ if (ENABLE_HDF5)
   if (HDF5_INCLUDE_PATH)
     include_directories(${HDF5_INCLUDE_PATH})
   endif (HDF5_INCLUDE_PATH)
-  if(HDF5_NEED_MPI AND MPI_INCLUDE_PATH)
-    include_directories(${MPI_INCLUDE_PATH})
-  endif(HDF5_NEED_MPI AND MPI_INCLUDE_PATH)
+  if(HDF5_NEED_MPI AND MPI_INC)
+    include_directories(${MPI_INC})
+  endif(HDF5_NEED_MPI AND MPI_INC)
 endif (ENABLE_HDF5)
 
 ################################
@@ -69,6 +69,75 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnslib_f.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+######################################################
+# configure for cgnsBuild.defs file for installation #
+######################################################
+
+set(SYSCFLAGS)
+set(CFGFLAGS)
+set(LIBS)
+if (ENABLE_FORTRAN)
+  set(BUILDFORTRAN 1)
+else (ENABLE_FORTRAN)
+  set(BUILDFORTRAN 0)
+endif (ENABLE_FORTRAN)
+
+file(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/lib LIBDIR)
+file(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/include INCLUDEDIR)
+file(TO_NATIVE_PATH ${CMAKE_C_COMPILER} CC)
+if (WIN32)
+  set(CGNSLIB cgns.lib)
+else (WIN32)
+  set(CGNSLIB libcgns.a)
+  set(LIBS -lm)
+endif (WIN32)
+
+string(COMPARE EQUAL ${CMAKE_BUILD_TYPE} Debug IS_DEBUG)
+if (IS_DEBUG)
+  set(BUILDDEBUG 1)
+  set(CFLAGS ${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG})
+  set(LDFLAGS ${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_DEBUG})
+else (IS_DEBUG)
+  set(BUILDDEBUG 0)
+  set(CFLAGS ${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_RELEASE})
+  set(LDFLAGS ${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_RELEASE})
+endif (IS_DEBUG)
+
+set(HDF5INC)
+set(HDF5LIB)
+set(SZIPLIB)
+set(ZLIBLIB)
+set(MPIINC)
+set(MPILIBS)
+if (ENABLE_HDF5)
+  if (HDF5_INCLUDE_PATH)
+    file(TO_NATIVE_PATH ${HDF5_INCLUDE_PATH} HDF5INC)
+  endif (HDF5_INCLUDE_PATH)
+  if (HDF5_LIBRARY)
+    file(TO_NATIVE_PATH ${HDF5_LIBRARY} HDF5LIB)
+  endif (HDF5_LIBRARY)
+  if (HDF5_NEED_SZIP AND SZIP_LIBRARY)
+    file(TO_NATIVE_PATH ${SZIP_LIBRARY} SZIPLIB)
+  endif (HDF5_NEED_SZIP AND SZIP_LIBRARY)
+  if (HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+    file(TO_NATIVE_PATH ${ZLIB_LIBRARY} ZLIBLIB)
+  endif (HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+  if (HDF5_NEED_MPI)
+    if (MPI_INC)
+      file(TO_NATIVE_PATH ${MPI_INC} MPIINC)
+    endif (MPI_INC)
+    if (MPI_LIBS)
+      foreach(lib ${MPI_LIBS})
+         file(TO_NATIVE_PATH ${lib} lib)
+         list(APPEND MPILIBS ${lib})
+      endforeach(lib ${MPI_LIBS})
+    endif (MPI_LIBS)
+  endif (HDF5_NEED_MPI)
+endif (ENABLE_HDF5)
+
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
 
 ###########
 # Library #
@@ -129,9 +198,9 @@ if(CGNS_BUILD_SHARED)
       if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
         target_link_libraries(cgns_shared ${SZIP_LIBRARY})
       endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
-      if(HDF5_NEED_MPI AND MPI_LIBRARY)
-        target_link_libraries(cgns_shared ${MPI_LIBRARY})
-      endif(HDF5_NEED_MPI AND MPI_LIBRARY)
+      if(HDF5_NEED_MPI AND MPI_LIBS)
+        target_link_libraries(cgns_shared ${MPI_LIBS})
+      endif(HDF5_NEED_MPI AND MPI_LIBS)
     endif (ENABLE_HDF5 AND HDF5_LIBRARY)
   endif (WIN32 OR CYGWIN)
 else(CGNS_BUILD_SHARED)
@@ -183,6 +252,7 @@ install(FILES
 	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h
+	${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs
 	DESTINATION include)
 
 if (ENABLE_LEGACY)

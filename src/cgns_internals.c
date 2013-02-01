@@ -439,7 +439,7 @@ int cgi_read_family(cgns_family *family)
              /* get BCType */
             if (cgi_BCType(boconame, &family->fambc[n].type)) return 1;
             free(boconame);
-            /* BCDataSet_t */
+            /* FamilyBCDataSet_t */
             linked = family->fambc[n].link ? 1 : in_link;
             if (cgi_read_family_dataset(linked, family->fambc[n].id,
                                         &family->fambc[n].ndataset,
@@ -583,7 +583,7 @@ int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
     if (cgi_get_nodes(parent_id, "FamilyBCDataSet_t", ndataset, &id))
         return 1;
 
-     /* if not found, check for BCDataSet_t (pre 3.2) */
+     /* if not found, check for BCDataSet_t (pre 3.1.3) */
     if (*ndataset <= 0) {
         if (cgi_get_nodes(parent_id, "BCDataSet_t", ndataset, &id))
             return 1;
@@ -2243,7 +2243,8 @@ int cgi_read_boco(cgns_boco *boco)
         return 1;
     }
 
-    /* fix ElementList/Range */
+#ifndef CG_ALLOW_ELEMENTLIST_RANGE
+    /* fix ElementList/Range - no longer allowed (CPEX 0031) */
     if (boco->ptset->type == CGNS_ENUMV(ElementList) ||
         boco->ptset->type == CGNS_ENUMV(ElementRange)) {
         modified++;
@@ -2262,7 +2263,7 @@ int cgi_read_boco(cgns_boco *boco)
         else boco->location = CGNS_ENUMV(FaceCenter);
 #endif
     }
-    
+
     /* fix GridLocation */
 #ifndef CG_ALLOW_BC_CELL_CENTER
     if (boco->location == CGNS_ENUMV(CellCenter)) {
@@ -2273,6 +2274,7 @@ int cgi_read_boco(cgns_boco *boco)
             "changed to %s", GridLocationName[boco->location]);
         modified++;
     }
+#endif
 #endif
 
      /* FamilyName_t */
@@ -5252,7 +5254,9 @@ int cgi_datasize(int Idim, cgsize_t *CurrentDim,
         for (j=0; j<Idim; j++)
             DataSize[j] = CurrentDim[j] + rind_planes[2*j] + rind_planes[2*j+1];
 
-    } else if (location==CGNS_ENUMV( CellCenter )) {
+    } else if (location==CGNS_ENUMV(CellCenter) ||
+              (location==CGNS_ENUMV(FaceCenter) && Cdim==2) ||
+              (location==CGNS_ENUMV(EdgeCenter) && Cdim==1)) {
         for (j=0; j<Idim; j++)
             DataSize[j] = CurrentDim[j+Idim] + rind_planes[2*j] + rind_planes[2*j+1];
 
@@ -5817,9 +5821,10 @@ int cgi_write_family(double parent_id, cgns_family *family)
             if (cgi_new_node(family->id, fambc->name, "FamilyBC_t",
                 &fambc->id, "C1", 1, &dim_vals, BCTypeName[fambc->type]))
                 return 1;
-             /* BCDataSet_t */
+             /* FamilyBCDataSet_t */
             for (n=0; n < fambc->ndataset; n++)
-                if (cgi_write_dataset(fambc->id, &fambc->dataset[n])) return 1;
+                if (cgi_write_dataset(fambc->id, "FamilyBCDataSet_t",
+                    &fambc->dataset[n])) return 1;
         }
     }
 
@@ -6376,7 +6381,7 @@ int cgi_write_boco(double parent_id, cgns_boco *boco)
 
      /* BCDataSet_t */
     for (n=0; n<boco->ndataset; n++)
-        if (cgi_write_dataset(boco->id, &boco->dataset[n])) return 1;
+        if (cgi_write_dataset(boco->id, "BCDataSet_t", &boco->dataset[n])) return 1;
 
      /* InwardNormalIndex */
     if (boco->Nindex) {
@@ -6511,7 +6516,7 @@ int cgi_write_bprop(double parent_id, cgns_bprop *bprop)
     return 0;
 }
 
-int cgi_write_dataset(double parent_id, cgns_dataset *dataset)
+int cgi_write_dataset(double parent_id, const char *label, cgns_dataset *dataset)
 {
     cgsize_t dim_vals;
     int n;
@@ -6524,7 +6529,7 @@ int cgi_write_dataset(double parent_id, cgns_dataset *dataset)
 
      /* BCDataSet_t */
     dim_vals= (cgsize_t)strlen(BCTypeName[dataset->type]);
-    if (cgi_new_node(parent_id, dataset->name, "BCDataSet_t", &dataset->id,
+    if (cgi_new_node(parent_id, dataset->name, label, &dataset->id,
         "C1", 1, &dim_vals, (void *)BCTypeName[dataset->type])) return 1;
 
      /* DirichletData */
@@ -10462,7 +10467,8 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_zboco, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"BC_t")==0)
         ADDRESS4MULTIPLE(cgns_boco, ndescr, descr, cgns_descr)
-    else if (strcmp(posit->label,"BCDataSet_t")==0)
+    else if (strcmp(posit->label,"BCDataSet_t")==0 ||
+             strcmp(posit->label,"FamilyBCDataSet_t")==0)
         ADDRESS4MULTIPLE(cgns_dataset, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"BCData_t")==0)
         ADDRESS4MULTIPLE(cgns_bcdata, ndescr, descr, cgns_descr)
@@ -10491,8 +10497,6 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_array, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"Family_t")==0)
         ADDRESS4MULTIPLE(cgns_family, ndescr, descr, cgns_descr)
-    else if (strcmp(posit->label,"FamilyBCDataSet_t")==0)
-        ADDRESS4MULTIPLE(cgns_dataset, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"GeometryReference_t")==0)
         ADDRESS4MULTIPLE(cgns_geo, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"RigidGridMotion_t")==0)
@@ -11926,7 +11930,7 @@ cgns_dataset *cgi_bcdataset_address(int local_mode, int given_no,
     if (strcmp(posit->label,"FamilyBC_t")==0)
         ADDRESS4MULTIPLE(cgns_fambc, ndataset, dataset, cgns_dataset)
     else {
-        cgi_error("BCDataSet_t node not supported under '%s' type node",posit->label);
+        cgi_error("FamilyBCDataSet_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
         return 0;
     }

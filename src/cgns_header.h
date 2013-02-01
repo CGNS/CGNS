@@ -25,11 +25,14 @@ freely, subject to the following restrictions:
 #include "cgnstypes.h"
 #include "cgns_io.h"
 
+/* define this to prevent conversion from ElementList/Range
+   to PointList/PointRange as per CPEX 0031
+#define CG_ALLOW_ELEMENTLIST_RANGE
+*/
 /* define this to enable CellCenter GridLocation for BC_t
    not allowed in CPEX 0031
 #define CG_ALLOW_BC_CELL_CENTER
 */
-
 /* this splits ParentData into ParentElements and ParentElementsPosition
    Required by CPEX 0031 */
 #define CG_SPLIT_PARENT_DATA
@@ -210,7 +213,6 @@ typedef struct {            /* DataArray_t Node         */
     cgns_units *units;      /* ptrs to in-memory copy of units      */
     cgns_exponent *exponents;/* ptrs to in-memory copy of exponents */
     cgns_conversion *convert;/* ptrs to in-memory copy of convert   */
-/* V2.4 */
     cgsize_t range[2];       /* index range for currently stored data*/
 } cgns_array;
 
@@ -238,7 +240,6 @@ typedef struct cgns_user_data_s /* UserDefinedData_t Node       */
     cgns_array *array;      /* ptrs to in-mem. copy of Data Arrays  */
     CGNS_ENUMT(DataClass_t) data_class; /* Class of data                        */
     cgns_units *units;      /* ptrs to in-memory copy of units      */
- /* V2.4 */
     CGNS_ENUMT(GridLocation_t) location;/* Grid location where data is recorded */
     char_33 family_name;    /* Family name              */
     int ordinal;            /* option to specify a rank     */
@@ -489,7 +490,6 @@ typedef struct {            /* FlowEquationSet_t Node               */
     cgns_units *units;      /* ptrs to in-memory copy of units      */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
-/* V2.4 */
     cgns_model *elecfield;  /* ptrs to in-mem. copy of EMElecFieldM. */
     cgns_model *magnfield;  /* ptrs to in-mem. copy of EMMagneticFieldM. */
     cgns_model *emconduct;  /* ptrs to in-mem. copy of EMConductivityM. */
@@ -525,7 +525,6 @@ typedef struct {            /* BCDataSet_t node         */
     cgns_units *units;      /* Dimensional Units                    */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
- /* V2.4 */
     CGNS_ENUMT(GridLocation_t) location;/* Grid location where data is recorded */
     cgns_ptset *ptset;      /* PointList, PointRange                */
 } cgns_dataset;
@@ -641,9 +640,7 @@ typedef struct {            /* GridConnectivity1to1_t node      */
     int ordinal;            /* option to specify a rank     */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
-/* V2.4 */
-        cgns_cprop *cprop;  /* ptrs to in-memory copies of cprop    */
-/* V2.4 */
+    cgns_cprop *cprop;      /* ptrs to in-memory copies of cprop    */
 } cgns_1to1;
 
 typedef struct {            /* ZoneGridConnectivity_t node      */
@@ -857,10 +854,8 @@ typedef struct {            /* FamilyBC_t node          */
     cgns_link *link;        /* link information         */  /* V2.1 */
     int in_link;            /* set if child of a linked node        */
     CGNS_ENUMT(BCType_t) type;/* type of boco             */
- /* V2.4 */
     int ndataset;           /* no of BCDataSet nodes        */
     cgns_dataset *dataset;  /* ptrs to in-mem. copy of BCDataSet    */
- /* V2.4 */
 } cgns_fambc;
 
 typedef struct {            /* Family_t node            */
@@ -877,9 +872,7 @@ typedef struct {            /* Family_t node            */
     int ordinal;            /* option to assign a rank              */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
-/* V2.4 */
     cgns_rotating *rotating;/* ptrs to in-memory copy of Rot. Coord.*/
-/* V2.4 */
 } cgns_family;
 
 typedef struct {            /* CGNSBase_t Node          */
@@ -1047,7 +1040,7 @@ cgns_dataset * cgi_bcdataset_address(int local_mode, int given_no,
 int cgi_read();
 int cgi_read_base(cgns_base *base);
 int cgi_read_zone(cgns_zone *zone);
-  int cgi_read_zonetype(double parent_id, char_33 parent_name, CGNS_ENUMT(ZoneType_t) *type);
+int cgi_read_zonetype(double parent_id, char_33 parent_name, CGNS_ENUMT(ZoneType_t) *type);
 int cgi_read_family(cgns_family *family);
 int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
                             cgns_dataset **dataset);
@@ -1130,7 +1123,7 @@ int cgi_write_conns(double parent_id, cgns_conn *conn);
 int cgi_write_holes(double parent_id, cgns_hole *hole);
 int cgi_write_zboco(double parent_id, cgns_zboco *zboco);
 int cgi_write_boco(double parent_id, cgns_boco *boco);
-int cgi_write_dataset(double parent_id, cgns_dataset *dataset);
+int cgi_write_dataset(double parent_id, const char *label,  cgns_dataset *dataset);
 int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata);
 int cgi_write_ptset(double id, char_33 name, cgns_ptset *ptset,
             int Ndim, void *ptset_ptr);

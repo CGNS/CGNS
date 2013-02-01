@@ -31,7 +31,7 @@ O       = @OBJEXT@
 A       = @LIBEXT@
 EXE     = @EXEEXT@
 
-LIBCGNS = @BUILDDIR@/libcgns.@EXT_LIB@
+LIBCGNS = @BUILDDIR@/@CGNSLIB@
 
 #------------------------------------------------------------------------
 # F2CFLAGS defines the type of Fortran to C interface.
@@ -97,11 +97,22 @@ SZIPLIB = @SZIPLIB@
 ZLIBLIB = @ZLIBLIB@
 
 #------------------------------------------------------------------------
+# these should only be set if building with HDF5 and MPI
+# MPIINC  - path to MPI header files
+# MPILIBS - MPI libraries
+# MPIEXEC - MPI executor
+#------------------------------------------------------------------------
+
+MPIINC  = @MPIINC@
+MPILIBS = @MPILIBS@
+MPIEXEC = @MPIEXEC@
+
+#------------------------------------------------------------------------
 # BUILDLIBS contains the list of additional libraries
 #           with which a CGNS application needs to link
 #------------------------------------------------------------------------
 
-BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB)
+BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB) $(MPILIBS)
 
 #------------------------------------------------------------------------
 # commands for removing files and creating/deleting directory

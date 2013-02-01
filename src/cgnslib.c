@@ -237,7 +237,7 @@ const char * AverageInterfaceTypeName[NofValidAverageInterfaceTypes] =
 int n_open = 0;
 int cgns_file_size = 0;
 int file_number_offset = 0;
-int VersionList[] = {3130, 3110, 3100, 3080, 3000,
+int VersionList[] = {3140, 3130, 3110, 3100, 3080, 3000,
                      2550, 2540, 2530, 2520, 2510, 2500,
                      2460, 2420, 2400,
                      2300, 2200, 2100, 2000, 1270, 1200, 1100, 1050};
@@ -271,7 +271,7 @@ int cg_is_cgns(const char *filename, int *file_type)
 
 int cg_open(const char * filename, int mode, int *file_number)
 {
-    int not_found, cgio;
+    int cgio;
     cgsize_t dim_vals;
     double dummy_id;
     float FileVersion;
@@ -281,32 +281,17 @@ int cg_open(const char * filename, int mode, int *file_number)
         cgns_file_size, cgmemnow(), cgmemmax());
 #endif
 
-    /* determine accessibility of a file :
-       If the requested access is permitted, a value of 0 is returned. */
-
-    not_found = ACCESS(filename, F_OK) ;
-
     /* check file mode */
     switch(mode) {
         case CG_MODE_READ:
-            if (not_found) {
+        case CG_MODE_MODIFY:
+            if (ACCESS(filename, F_OK)) {
                 cgi_error("Error opening file: '%s' not found!", filename);
                 return CG_ERROR;
             }
             break;
         case CG_MODE_WRITE:
-            if (!not_found) {
-                UNLINK(filename);
-                /*cgi_error("Error opening file: '%s' already exists!", filename);
-                        return CG_ERROR;
-                */
-            }
-            break;
-        case CG_MODE_MODIFY:
-            if (not_found) {
-                cgi_error("Error opening file: '%s' not found!", filename);
-                return CG_ERROR;
-            }
+            /* unlink is now done in cgio_open_file */
             break;
         default:
             cgi_error("Unknown opening file mode: %d ??",mode);
@@ -1752,7 +1737,7 @@ int cg_discrete_ptset_read(int fn, int B, int Z, int D, cgsize_t *pnts)
 int cg_discrete_ptset_write(int fn, int B, int Z,
 	const char *discrete_name, CGNS_ENUMT(GridLocation_t) location,
 	CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
-	cgsize_t *pnts, int *D)
+	const cgsize_t *pnts, int *D)
 {
     int i, index_dim = 0;
     cgsize_t cnt, dim_vals = 1;
@@ -3946,7 +3931,7 @@ int cg_sol_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
 int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
 	CGNS_ENUMT(GridLocation_t) location,
 	CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
-	cgsize_t *pnts, int *S)
+	const cgsize_t *pnts, int *S)
 {
     int i, index_dim = 0;
     cgsize_t cnt, dim_vals = 1;
@@ -3969,7 +3954,7 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
         return CG_ERROR;
     sol = cgi_get_sol(cg, B, Z, *S);
     if (sol == 0) return CG_ERROR;
-    
+
     sol->location = location;
     sol->ptset = CGNS_NEW(cgns_ptset, 1);
     sol->ptset->type = ptset_type;
@@ -4247,7 +4232,7 @@ int cg_field_write(int file_number, int B, int Z, int S, CGNS_ENUMT(DataType_t) 
     memset(field, 0, sizeof(cgns_array));
     strcpy(field->data_type, cgi_adf_datatype(type));
     strcpy(field->name,fieldname);
-    
+
     if (sol->ptset == NULL) {
         field->data_dim = zone->index_dim;
         if (cgi_datasize(zone->index_dim, zone->nijk, sol->location,
@@ -4549,14 +4534,14 @@ static cgns_subreg *cg_subreg_write(int fn, int B, int Z, const char *name,
     memset(subreg, 0, sizeof(cgns_subreg));
     strcpy(subreg->name, name);
     subreg->reg_dim = dimension;
-    
+
     return subreg;
 }
 
 int cg_subreg_ptset_write(int fn, int B, int Z, const char *name,
                           int dimension, CGNS_ENUMT(GridLocation_t) location,
                           CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
-                          cgsize_t *pnts, int *S)
+                          const cgsize_t *pnts, int *S)
 {
     int i, index_dim = 0;
     cgsize_t cnt, dim_vals = 1;
@@ -4578,7 +4563,7 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *name,
 
     subreg = cg_subreg_write(fn, B, Z, name, dimension, S);
     if (subreg == NULL) return CG_ERROR;
-    
+
     subreg->location = location;
     subreg->ptset = CGNS_NEW(cgns_ptset, 1);
     subreg->ptset->type = ptset_type;
@@ -9046,7 +9031,8 @@ int cg_ndescriptors(int *ndescriptors)
         NDESCRIPTOR(cgns_zboco)
     else if (strcmp(posit->label,"BC_t")==0)
         NDESCRIPTOR(cgns_boco)
-    else if (strcmp(posit->label,"BCDataSet_t")==0)
+    else if (strcmp(posit->label,"BCDataSet_t")==0 ||
+             strcmp(posit->label,"FamilyBCDataSet_t")==0)
         NDESCRIPTOR(cgns_dataset)
     else if (strcmp(posit->label,"BCData_t")==0)
         NDESCRIPTOR(cgns_bcdata)
@@ -9075,8 +9061,6 @@ int cg_ndescriptors(int *ndescriptors)
         NDESCRIPTOR(cgns_array)
     else if (strcmp(posit->label,"Family_t")==0)
         NDESCRIPTOR(cgns_family)
-    else if (strcmp(posit->label,"FamilyBCDataSet_t")==0)
-        NDESCRIPTOR(cgns_dataset)
     else if (strcmp(posit->label,"GeometryReference_t")==0)
         NDESCRIPTOR(cgns_geo)
     else if (strcmp(posit->label,"RigidGridMotion_t")==0)
@@ -9920,12 +9904,13 @@ int cg_link_write(const char * nodename, const char * filename, const char * nam
         strcmp(posit->label,"TurbulenceClosure_t") &&
         strcmp(posit->label,"ThermalRelaxationModel_t") &&
         strcmp(posit->label,"ChemicalKineticsModel_t") &&
-	strcmp(posit->label,"EMElectricFieldModel_t") &&
-	strcmp(posit->label,"EMMagneticFieldModel_t") &&
-	strcmp(posit->label,"EMConductivityModel_t") &&
+        strcmp(posit->label,"EMElectricFieldModel_t") &&
+        strcmp(posit->label,"EMMagneticFieldModel_t") &&
+        strcmp(posit->label,"EMConductivityModel_t") &&
         strcmp(posit->label,"GoverningEquations_t") &&
         strcmp(posit->label,"BCData_t") &&
         strcmp(posit->label,"BCDataSet_t") &&
+        strcmp(posit->label,"FamilyBCDataSet_t") &&
         strcmp(posit->label,"Elements_t") &&
         strcmp(posit->label,"BC_t") &&
         strcmp(posit->label,"ZoneBC_t") &&
@@ -9992,6 +9977,7 @@ int cg_nuser_data(int *nuser_data)
  *  Family_t, CGNSBase_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t,
  *  BCProperty_t, WallFunction_t, Area_t, UserDefinedData_t,
  *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t
+ *  FamilyBCDataSet_t
  */
 
      /* This is valid and used during write as well as read mode. */
@@ -10028,7 +10014,8 @@ int cg_nuser_data(int *nuser_data)
         (*nuser_data) = ((cgns_equations *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"BCData_t")==0)
         (*nuser_data) = ((cgns_bcdata *)posit->posit)->nuser_data;
-    else if (strcmp(posit->label,"BCDataSet_t")==0)
+    else if (strcmp(posit->label,"BCDataSet_t")==0 ||
+             strcmp(posit->label,"FamilyBCDataSet_t")==0)
         (*nuser_data) = ((cgns_dataset *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"Elements_t")==0)
         (*nuser_data) = ((cgns_section *)posit->posit)->nuser_data;
@@ -10464,7 +10451,7 @@ int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
 	/* Overwrite a BCDataSet_t node : */
         if (dataset->dirichlet && BCDataType == CGNS_ENUMV(Dirichlet)) {
 	    if (cg->mode == CG_MODE_WRITE) {
-                cgi_error("Dirichlet data already defined under BCDataSet_t '%s'",
+                cgi_error("Dirichlet data already defined under FamilyBCDataSet_t '%s'",
                     dataset->name);
                 return CG_ERROR;
             }
@@ -10475,7 +10462,7 @@ int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
 	}
         else if (dataset->neumann && BCDataType == CGNS_ENUMV(Neumann))	{
 	    if (cg->mode == CG_MODE_WRITE) {
-		cgi_error("Neumann data already defined under BCDataSet_t '%s'",
+		cgi_error("Neumann data already defined under FamilyBCDataSet_t '%s'",
 			  dataset->name);
 		return CG_ERROR;
 	    }
@@ -10485,7 +10472,7 @@ int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
 	    dataset->neumann = NULL;
 	}
     } else {
-	/* get memory address for BCDataSet_t node */
+	/* get memory address for FamilyBCDataSet_t node */
 	dataset = cgi_bcdataset_address(CG_MODE_WRITE, 0, name, &ierr);
 	if (dataset == 0) return ierr;
 
@@ -10968,8 +10955,9 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_CHILD(bprop, cgi_free_bprop)
      /* IndexRange_t PointRange & IndexArray_t PointList can't be deleted */
 
-/* Children of BCDataSet_t */
-    } else if (strcmp(posit->label,"BCDataSet_t")==0) {
+/* Children of BCDataSet_t or FamilyBCDataSet_t */
+    } else if (strcmp(posit->label,"BCDataSet_t")==0 ||
+               strcmp(posit->label,"FamilyBCDataSet_t")==0) {
         cgns_dataset *parent = (cgns_dataset *)posit->posit;
         if (strcmp(node_label,"Descriptor_t")==0)
             CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
@@ -11176,8 +11164,8 @@ int cg_delete_node(const char *node_name)
 /* Children of FamilyBC_t */
     } else if (strcmp(posit->label,"FamilyBC_t")==0) {
         cgns_fambc *parent = (cgns_fambc *)posit->posit;
-	if (strcmp(node_label,"BCDataSet_t")==0)
-	    CGNS_DELETE_SHIFT(ndataset, dataset, cgi_free_dataset)
+        if (strcmp(node_label,"FamilyBCDataSet_t")==0)
+            CGNS_DELETE_SHIFT(ndataset, dataset, cgi_free_dataset)
 
 /* Children of GeometryReference_t */
     } else if (strcmp(posit->label,"GeometryReference_t")==0) {
