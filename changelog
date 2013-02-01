@@ -1,3 +1,17 @@
+== 3.1.4 ==
+- added some const definitions to library
+- moved unlink of filename when using CG_MODE_WRITE on open to cgio
+- fixed goto for FamilyBCDataset for UserData, .etc
+- added cg_get_cgio_f and cg_root_id_f Fortran routines
+- fixed cmake and configure scripts to allow MPI with HDF5 and
+  fixed bugs in those scripts
+- updated CGNSplot to handle all element types and 1-d and 2-d cases
+- fixes to cgnscheck
+- cleaned up some compiler warnings
+- added cgnsBuild.defs Makefile include to installation
+- removed unneeded tools directory from cgnstools
+- cgnstools no longer built automatically - need to set configure flag
+
 == 3.0.8 ==
 - Fix flag
 - Test for v3.0 release

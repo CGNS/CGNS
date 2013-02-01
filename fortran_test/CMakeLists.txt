@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.4)
-enable_language("Fortran")
+project("fortran_test" C Fortran)
 #set(CMAKE_VERBOSE_MAKEFILE "ON")
 
 add_executable(LOWERCASE csub.c fmain.f)
