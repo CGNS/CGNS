@@ -12,6 +12,15 @@ set auto_index(cgns_init) "source $dir/cgns.tcl"
 set auto_index(cgns_data) "source $dir/cgns.tcl"
 set auto_index(cgns_tree) "source $dir/cgns.tcl"
 
+# color.tcl
+
+set auto_index(color_generate) "source $dir/color.tcl"
+set auto_index(color_value) "source $dir/color.tcl"
+set auto_index(color_lighten) "source $dir/color.tcl"
+set auto_index(color_darken) "source $dir/color.tcl"
+set auto_index(color_gray) "source $dir/color.tcl"
+set auto_index(color_select) "source $dir/color.tcl"
+
 # combobox.tcl
 
 set auto_index(ComboboxCreate) "source $dir/combobox.tcl"

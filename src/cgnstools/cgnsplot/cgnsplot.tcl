@@ -89,15 +89,7 @@ array set ProgData {
   planelist ""
   cutlist ""
   background {0.0 0.0 0.0}
-  colors { \
-    {0.8 0.8 0.8} \
-    {1.0 0.0 0.0} \
-    {1.0 1.0 0.0} \
-    {0.0 1.0 0.0} \
-    {0.0 1.0 1.0} \
-    {0.0 0.0 1.0} \
-    {1.0 0.0 1.0} \
-  }
+  autocolor 1
   showcolors 1
   showlines 1
   twosided 0
@@ -130,7 +122,7 @@ array set ProgData {
   reg,file ".cgnstools"
   reg,base "HKEY_CURRENT_USER/Software/CGNS"
   reg,key  "CGNSplot"
-  reg,vals {cgnsfile background colors twosided culling \
+  reg,vals {cgnsfile background autocolor twosided culling \
             axis edgeangle meshvis meshmode regvis regmode fov \
             winwidth winheight seppos cutcolor usecutclr ignorevis \
             showcolors showlines}
@@ -167,7 +159,7 @@ proc do_quit {} {
 
 #----- menu
 
-menubar_create {File Options Display Help}
+menubar_create {File Options View Display Help}
 
 #----- file menu
 
@@ -179,10 +171,17 @@ $m add command -label "Quit" -command do_quit
 #----- options menu
 
 set m [menubar_get Options]
-$m add command -label "Reset View" -command {reset_view; $OGLwin redraw}
-$m add command -label "Center View" -command Center
 $m add command -label "Set Defaults..." -command set_defaults
 $m add command -label "Set Perspective..." -command set_perspective
+
+#----- view menu
+
+set m [menubar_get View]
+$m add command -label "Open Level" -command tree_open
+$m add command -label "Close Level" -command tree_close
+$m add separator
+$m add command -label "Reset View" -command {reset_view; $OGLwin redraw}
+$m add command -label "Center View" -command Center
 
 #----- display menu
 
@@ -253,7 +252,8 @@ proc set_axis {} {
 #----- help menu
 
 set m [menubar_get Help]
-$m add command -label "CGNSplot Help..." -command {help_show cgnsplot}
+$m add command -label "CGNSplot Help..." \
+  -command {help_show cgnsplot "" cgnstools/cgnsplot/index.html}
 $m add command -label "CGNS Help..." -command {help_show cgns}
 $m add separator
 $m add command -label "Configure Help..." -command help_setup
@@ -270,10 +270,10 @@ p5eSXEC2l6mqorO3r7e+tQK1tb3ExMmOsM7Ow8rSydHU09HD1tfYx9nYvc/hQhEAADs=}
 proc do_about {} {
   global ProgData
   dialog .about -1 -1 "About CGNSplot" \
-"CGNSplot Version 2.5
+"CGNSplot Version 3.2
 
 Bruce Wedan
-brucewedan@gmail.com" img_about 0 Close
+leavingdust@gmail.com" img_about 0 Close
 }
 
 #---------- toolbar
@@ -298,16 +298,6 @@ set_balloon $f.open "Open a CGNS File..."
 
 #---
 
-image create photo img_reset -data {\
-R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
-/wD//////yH5BAEAAAgALAAAAAAQABAAAAQiEMlJKwXYWqA17xXGjQgZguA3qWhbni58vaQY\
-vzHb2XdvRQA7}
-
-image create photo img_center -data {\
-R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
-/wD//////yH5BAEAAAgALAAAAAAQABAAQwQmEMmJAL22Ypmp/dolduJYcqiXqiB5umcFwG9s\
-YzOd07fZy7yfJAIAOw==}
-
 image create photo img_colors -data {\
 R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 /wD//////yH5BAEAAAgALAAAAAAQABAAQwRFEMlJ63TYsc2ab1QiJku5KKhCPewDvMAhH+Fo\
@@ -318,16 +308,8 @@ R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 /wD//////yH5BAEAAAgALAAAAAAQABAAQwQqEMlJqwT2uo0z6JkFht44fdSnVuipmiXpyUhL\
 wiwMbA5onzzcj3bB0ToRADs=}
 
-set b [frame $f.b2]
+set b [frame $f.b1]
 pack $b -side left -padx 5
-
-button $b.reset -image img_reset -takefocus 0 \
-  -command {reset_view; $OGLwin redraw}
-set_balloon $b.reset "Reset View"
-
-button $b.center -image img_center -takefocus 0 \
-  -command Center
-set_balloon $b.center "Center View"
 
 button $b.colors -image img_colors -takefocus 0 \
   -command set_defaults
@@ -337,7 +319,48 @@ button $b.viewing -image img_viewing -takefocus 0 \
   -command set_perspective
 set_balloon $b.viewing "Set Perspective..."
 
-pack $b.reset $b.center $b.colors $b.viewing -side left -padx 1
+pack $b.colors $b.viewing -side left -padx 1
+
+#---
+
+image create photo img_expand -data {\
+R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
+/wD//////yH5BAEAAAgALAAAAAAQABAAAAQvEMlJq712DJzX5pP2VQBIWuWVUitBTCsMlMTz\
+IrHl3jnYUy7J7Cep8UA7k3IpiQAAOw==}
+
+image create photo img_collapse -data {\
+R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
+/wD//////yH5BAEAAAgALAAAAAAQABAAAAQkEMlJq7046wrwGBQgXsMCTh35hRvbSqm1urJJ\
+V98Jvzvv/5UIADs=}
+
+image create photo img_reset -data {\
+R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
+/wD//////yH5BAEAAAgALAAAAAAQABAAAAQiEMlJKwXYWqA17xXGjQgZguA3qWhbni58vaQY\
+vzHb2XdvRQA7}
+
+image create photo img_center -data {\
+R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
+/wD//////yH5BAEAAAgALAAAAAAQABAAQwQmEMmJAL22Ypmp/dolduJYcqiXqiB5umcFwG9s\
+YzOd07fZy7yfJAIAOw==}
+
+set b [frame $f.b2]
+pack $b -side left -padx 5
+
+button $b.expand -image img_expand -takefocus 0 -command tree_open
+set_balloon $b.expand "Open One Level"
+
+button $b.collapse -image img_collapse -takefocus 0 -command tree_close
+set_balloon $b.collapse "Close One Level"
+
+button $b.reset -image img_reset -takefocus 0 \
+  -command {reset_view; $OGLwin redraw}
+set_balloon $b.reset "Reset View"
+
+button $b.center -image img_center -takefocus 0 \
+  -command Center
+set_balloon $b.center "Center View"
+
+pack $b.expand $b.collapse $b.reset $b.center -side left
 
 #---
 
@@ -463,7 +486,7 @@ R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 t+j75joVAQA7}
 
 button $f.help -image img_help -takefocus 0 \
-  -command {help_show cgnsplot}
+  -command {help_show cgnsplot "" cgnstools/cgnsplot/index.html}
 set_balloon $f.help "CGNSplot Help..."
 
 pack $f.help -side left -padx 5
@@ -634,6 +657,8 @@ $ProgData(menu) add radiobutton -label "Shaded" \
 $ProgData(menu) add separator
 $ProgData(menu) add command -label "Color..." \
   -command "update_color $ProgData(tree)"
+$ProgData(menu) add command -label "AutoColor" \
+  -command "auto_color $ProgData(tree)"
 $ProgData(menu) add command -label "Info..."
 
 proc tree_show {w x y} {
@@ -672,14 +697,14 @@ proc tree_menu {w x y} {
   } else {
     set state normal
   }
-  foreach n {0 1 2 4} {
+  foreach n {0 1 2 4 5} {
     $ProgData(menu) entryconfigure $n -state $state
   }
   set cnt [llength [TreeGet $w $node -tag]]
   if {$cnt < 1 || $cnt > 2} {
-    $ProgData(menu) entryconfigure 5 -state disabled
+    $ProgData(menu) entryconfigure 6 -state disabled
   } else {
-    $ProgData(menu) entryconfigure 5 -state normal \
+    $ProgData(menu) entryconfigure 6 -state normal \
       -command "show_info $w $x $y {$node}"
   }
   $ProgData(menu) post [expr [winfo rootx $ProgData(tree)] + $x] \
@@ -709,6 +734,16 @@ proc tree_at {w x y mode} {
     }
     Tree$mode $w $node
   }
+}
+
+proc tree_open {} {
+  global ProgData
+  catch {TreeOpenLevel $ProgData(tree) /}
+}
+
+proc tree_close {} {
+  global ProgData
+  catch {TreeCloseLevel $ProgData(tree) /}
 }
 
 # options
@@ -771,16 +806,10 @@ help_init {cgnsplot CGNSplot} {cgns CGNS}
 
 proc set_defaults {{loc .}} {
   global ProgData Defaults OGLwin fgColor Font
-  foreach i {showcolors showlines meshvis meshmode regvis regmode} {
+  foreach i {showcolors showlines meshvis meshmode regvis regmode \
+             background autocolor} {
     set Defaults($i) $ProgData($i)
   }
-  set Defaults(0) $ProgData(background)
-  set nc 0
-  foreach c $ProgData(colors) {
-    incr nc
-    set Defaults($nc) $c
-  }
-  set Defaults(nc) $nc
 
   set w .defaults
   toplevel $w
@@ -833,35 +862,43 @@ proc set_defaults {{loc .}} {
   pack $f.o $f.m $f.s -side left -expand 1
 
   FrameCreate $w.colors -text Colors -font $Font(bold)
-  pack $w.colors -side left -padx 5 -pady 2 -anchor n
+  pack $w.colors -side top -padx 5 -pady 2 -fill x -expand 1
   set colors [FrameGet $w.colors]
 
-  set f [frame $colors.c0]
-  pack $f -side top
-  label $f.lab -text Background -width 10 -anchor w
+  set f [frame $colors.bg]
+  pack $f -side top -fill x -expand 1
+  label $f.lab -text "Background Color"
+  pack $f.lab -side left
   button $f.but -text Select -relief solid -bd 1 \
-    -command "set_color $f.but 0"
-  color_button $f.but $Defaults(0)
-  pack $f.lab $f.but -side left -padx 5
+    -command "background_color $f.but"
+  color_button $f.but $Defaults(background)
+  pack $f.but -side right
 
-  for {set n 1} {$n <= $nc} {incr n} {
-    set f [frame $colors.c$n]
-    pack $f -side top -pady 2
-    label $f.lab -text "Color $n" -width 10 -anchor w
-    button $f.but -text Select -relief solid -bd 1 \
-      -command "set_color $f.but $n"
-    color_button $f.but $Defaults($n)
-    pack $f.lab $f.but -side left -padx 5
-  }
+  set auto [frame $colors.auto]
+  pack $auto -side top -fill x -expand 1
+  label $auto.lab -text "Assign Color Based On"
+  pack $auto.lab -side top -anchor w
+  set f [frame $auto.mode]
+  pack $f -side top -fill x -expand 1
+  radiobutton $f.z -text "Zone" -variable Defaults(autocolor) -value 0 \
+     -highlightthickness 0
+  radiobutton $f.r -text "Region" -variable Defaults(autocolor) -value 1 \
+     -highlightthickness 0
+  pack $f.z $f.r -side left -expand 1
 
   set f [frame $w.but]
-  pack $f -side right -padx 5 -pady 2 -anchor n
-  button $f.default -text Defaults -width 8 -command "default_values $w"
-  button $f.add -text Add -width 8 -command "add_color $w"
-  button $f.remove -text Remove -width 8 -command "remove_color $w"
-  button $f.accept -text Accept -width 8 -command {set ProgData(done) 1}
-  button $f.cancel -text Cancel -width 8 -command {set ProgData(done) 0}
-  pack $f.default $f.add $f.remove $f.accept $f.cancel -side top -pady 5
+  pack $f -side top -padx 5 -pady 2 -fill x -expand 1
+  button $f.default -text Defaults -width 8 -underline 0 \
+    -command "default_values $w"
+  button $f.accept -text Accept -width 8 -underline 0 \
+    -command {set ProgData(done) 1}
+  button $f.cancel -text Cancel -width 8 -underline 0 \
+    -command {set ProgData(done) 0}
+  pack $f.default $f.accept $f.cancel -side left -pady 5
+
+  bind $w <Alt-d> "$f.default flash; default_values $w"
+  bind $w <Alt-a> "$f.accept flash; set ProgData(done) 1"
+  bind $w <Alt-c> "$f.cancel flash; set ProgData(done) 0"
 
   center_window $w $loc
   set oldFocus [focus]
@@ -884,13 +921,8 @@ proc set_defaults {{loc .}} {
   }
 
   if {$ProgData(done)} {
-    foreach i {meshvis meshmode regvis regmode} {
+    foreach i {meshvis meshmode regvis regmode background autocolor} {
       set ProgData($i) $Defaults($i)
-    }
-    set ProgData(background) $Defaults(0)
-    set ProgData(colors) ""
-    for {set n 1} {$n <= $Defaults(nc)} {incr n} {
-      lappend ProgData(colors) $Defaults($n)
     }
     eval $OGLwin eval -clearcolor $ProgData(background)
     init_display
@@ -908,14 +940,6 @@ proc set_defaults {{loc .}} {
 
 proc default_values {w} {
   global Defaults
-  if {$Defaults(nc) != 7} {
-    set cnt [expr 7 - $Defaults(nc)]
-    if {$cnt < 0} {
-      remove_color $w [expr abs($cnt)]
-    } else {
-      add_color $w $cnt
-    }
-  }
   array set Defaults {
     showcolors 1
     showlines 1
@@ -923,88 +947,21 @@ proc default_values {w} {
     meshmode 1
     regvis 0
     regmode 2
-    nc 7
-    0 {0.0 0.0 0.0}
-    1 {0.8 0.8 0.8}
-    2 {1.0 0.0 0.0}
-    3 {1.0 1.0 0.0}
-    4 {0.0 1.0 0.0}
-    5 {0.0 1.0 1.0}
-    6 {0.0 0.0 1.0}
-    7 {1.0 0.0 1.0}
+    autocolor 0
+    background {0.0 0.0 0.0}
   }
 
   set cf [FrameGet $w.colors]
-  for {set n 0} {$n <= 7} {incr n} {
-    color_button $cf.c$n.but $Defaults($n)
-  }
+  color_button $cf.bg.but $Defaults(background)
 }
 
-proc add_color {w {cnt 1}} {
+proc background_color {but} {
   global Defaults
-  set n $Defaults(nc)
-  incr Defaults(nc) $cnt
-  set cf [FrameGet $w.colors]
-  while {$n < $Defaults(nc)} {
-    incr n
-    set Defaults($n) {0.5 0.5 0.5}
-    set f [frame $cf.c$n]
-    pack $f -side top -pady 2
-    label $f.lab -text "Color $n" -width 10 -anchor w
-    button $f.but -text Select -relief solid -bd 1 \
-      -command "set_color $f.but $n"
-    color_button $f.but $Defaults($n)
-    pack $f.lab $f.but -side left -padx 5
-  }
-}
-
-proc remove_color {w {cnt 1}} {
-  global Defaults
-  set n $Defaults(nc)
-  if {$n == 1} {
-    errormsg "need at least one color" $w
-    return
-  }
-  incr Defaults(nc) -$cnt
-  set cf [FrameGet $w.colors]
-  while {$n > $Defaults(nc)} {
-    pack forget $cf.c$n
-    destroy $cf.c$n
-    incr n -1
-  }
-}
-
-proc set_color {but n} {
-  global Defaults
-  set clr [select_color $Defaults($n) "Select Color" $but]
+  set clr [select_color $Defaults(background) "Background Color" $but]
   if {$clr != ""} {
-    set Defaults($n) $clr
+    set Defaults(background) $clr
     color_button $but $clr
   }
-}
-
-proc color_value {clr} {
-  return [format "#%2.2x%2.2x%2.2x" \
-    [expr int(255.0 * [lindex $clr 0])] \
-    [expr int(255.0 * [lindex $clr 1])] \
-    [expr int(255.0 * [lindex $clr 2])]]
-}
-
-proc color_lighten {clr} {
-  set newclr ""
-  foreach c $clr {
-    set nc [expr $c + 0.25]
-    if {$nc < 0.0} {set nc 0.0}
-    if {$nc > 1.0} {set nc 1.0}
-    lappend newclr $nc
-  }
-  return [color_value $newclr]
-}
-
-proc gray_value {clr} {
-  return [expr 0.30 * [lindex $clr 0] + \
-               0.59 * [lindex $clr 1] + \
-               0.11 * [lindex $clr 2]]
 }
 
 proc color_button {but clr} {
@@ -1014,29 +971,20 @@ proc color_button {but clr} {
       -bg $bgColor(normal) -activebackground $bgColor(active) \
       -state disabled
   } else {
-    if {[gray_value $clr] > 0.5} {
+    if {[color_gray $clr] > 0.5} {
       set fg black
     } else {
       set fg white
     }
     $but configure -fg $fg -activeforeground $fg \
-      -bg [color_value $clr] -activebackground [color_lighten $clr] \
+      -bg [color_value $clr] \
+      -activebackground [color_value [color_lighten $clr]] \
       -state normal
   }
 }
 
 proc select_color {oldclr title {loc .}} {
-  set clr [color_value $oldclr]
-  set newclr [tk_chooseColor -initialcolor $clr -parent $loc -title $title]
-  if {$newclr != ""} {
-    set white [winfo rgb . "#ffffffffffff"]
-    set rgb [winfo rgb . $newclr]
-    set r [expr double([lindex $rgb 0]) / double([lindex $white 0])]
-    set g [expr double([lindex $rgb 1]) / double([lindex $white 1])]
-    set b [expr double([lindex $rgb 2]) / double([lindex $white 2])]
-    set newclr [list $r $g $b]
-  }
-  return $newclr
+  return [color_select .color $title $oldclr $loc]
 }
 
 #----- set perspective -----
@@ -1109,18 +1057,22 @@ proc set_perspective {{loc .}} {
 
   set f [frame $w.but]
   pack $f -side top -fill x -expand 1
-  button $f.default -text Defaults -width 8 -command {
-    array set ProgData {
-      fov 30
-      np 0.025
-      fp 2
-    }
-    apply_perspective all 0
-  }
+  button $f.default -text Defaults -width 8 -command perspective_defaults
   button $f.close -text Close -width 8 -command "destroy $w"
   pack $f.default $f.close -side left -pady 2 -expand 1
 
   center_window $w $loc
+}
+
+proc perspective_defaults {} {
+  global ProgData
+
+  array set ProgData {
+    fov 30
+    np 0.025
+    fp 2
+  }
+  apply_perspective all 0
 }
 
 #----- OGL window controls
@@ -1348,11 +1300,9 @@ proc init_data {} {
   set ProgData(/,vis) 1
   set ProgData(/,clr) ""
   set ProgData(/,msg) [CGNSsummary]
-  set ncolors [llength $ProgData(colors)]
   set nz 0
   foreach z $ProgData(zones) {
-    set nc [expr $nz % $ncolors]
-    set clr [lindex $ProgData(colors) $nc]
+    set clr [OGLcolor $nz]
     set zone /$z
     set ProgData($zone,dim) 0
     set ProgData($zone,vis) 1
@@ -1388,6 +1338,9 @@ proc init_data {} {
           set ProgData($reg,vis) $ProgData(regvis)
           set ProgData($reg,mode) $ProgData(regmode)
         }
+if {$ProgData(autocolor)} {
+set clr [OGLcolor [expr $nz + $nr]]
+}
         set ProgData($reg,clr) $clr
         set ProgData($reg,msg) [CGNSsummary $nz $nr]
       }
@@ -1704,9 +1657,13 @@ proc update_children {node mode clr} {
     set ProgData($node,mode) $mode
   }
   if {$clr != ""} {
-    set ProgData($node,clr) $clr
+    if {[llength $clr] == 1} {
+      set ProgData($node,clr) [OGLcolor $clr]
+    } else {
+      set ProgData($node,clr) $clr
+    }
     if {$ProgData(showcolors)} {
-      TreeSet $ProgData(tree) $node -iconbg [color_value $clr]
+      TreeSet $ProgData(tree) $node -iconbg [color_value $ProgData($node,clr)]
     }
   }
   set children [TreeGet $ProgData(tree) $node -children]
@@ -1714,6 +1671,7 @@ proc update_children {node mode clr} {
     if {$node == "/"} {set node ""}
     foreach c $children {
       update_children $node/$c $mode $clr
+      if {[llength $clr] == 1} {incr clr}
     }
   } else {
     set tag [TreeGet $ProgData(tree) $node -tag]
@@ -1779,6 +1737,17 @@ proc update_color {w} {
     color_button $ProgData(clrbut) $newclr
     update_node $node "" $newclr
   }
+}
+
+proc auto_color {w} {
+  global ProgData
+  set node $ProgData(curnode)
+  if {$node == "" || $ProgData($node,dim) == 0} return
+  set clr [expr [llength [split $node /]] - 2]
+  set newclr [OGLcolor $clr]
+  set ProgData(curclr) $newclr
+  color_button $ProgData(clrbut) $newclr
+  update_node $node "" $clr
 }
 
 #---------- cutting plane
@@ -1981,7 +1950,7 @@ proc translate_cutplane {amt} {
 proc cutplane_color {but {trans ""}} {
   global ProgData
   if {$trans == ""} {
-    set clr [select_color $ProgData(cutcolor) "Select Color" $but]
+    set clr [select_color [lrange $ProgData(cutcolor) 0 2] "Select Color" $but]
     if {$clr == ""} return
     set trans [lindex $ProgData(cutcolor) 3]
     set ProgData(cutcolor) $clr
@@ -2017,6 +1986,8 @@ proc cutplane_control {} {
   set w .cutplane
   if [winfo exists $w] {
     wm deiconify $w
+    raise $w
+    focus $w
     return
   }
   if {$ProgData(cutplane) == ""} {
@@ -2200,6 +2171,7 @@ proc load_cgns {{filename ""}} {
   wm title . "CGNSplot : [file tail $filename]"
   set ProgData(cgnsfile) $filename
 }
+
 catch {
   config_icon . [list cgnsplot cgns] \
     [list $cmd_dir $cmd_dir/images $cmd_dir/../common]

@@ -5,6 +5,7 @@
 if (WIN32)
   install(FILES
 	balloon.tcl
+	color.tcl
 	combobox.tcl
 	config.tcl
 	dialog.tcl
@@ -27,6 +28,7 @@ if (WIN32)
 else (WIN32)
   install(FILES
 	balloon.tcl
+	color.tcl
 	combobox.tcl
 	config.tcl
 	dialog.tcl

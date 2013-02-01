@@ -297,7 +297,7 @@ proc help_valid {what} {
   return 0
 }
 
-proc help_show {topic {subtopic ""}} {
+proc help_show {topic {tag ""} {chmhtml ""}} {
   global HelpData tcl_platform
   set htmlfile $HelpData($topic)
   if {$htmlfile == ""} return
@@ -310,8 +310,14 @@ proc help_show {topic {subtopic ""}} {
       }
       set HelpData(chmfile) $htmlfile
     }
-    if {[catch {WinHtml index} msg]} {
-      errormsg $msg
+    if {$chmhtml == ""} {
+      if {[catch {WinHtml index} msg]} {
+        errormsg $msg
+      }
+    } else {
+      if {[catch {eval WinHtml topic $chmhtml $tag} msg]} {
+        errormsg $msg
+      }
     }
     return
   }
@@ -324,8 +330,8 @@ proc help_show {topic {subtopic ""}} {
     } else {
       append cmd $htmlfile
     }
-    if {$subtopic != ""} {
-      append cmd "\#$subtopic"
+    if {$tag != ""} {
+      append cmd "\#$tag"
     }
     if {[catch {eval exec $cmd &} msg]} {
       errormsg $msg

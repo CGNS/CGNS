@@ -45,6 +45,7 @@ if not "%CG_LIB_DIR%" == "" (
   )
 )
 if exist %dir%..\share\unitconv.tcl (
+  set CG_LIB_DIR=%dir%..\share
   set script=%dir%..\share\unitconv.tcl
   goto run
 )

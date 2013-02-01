@@ -26,13 +26,14 @@ if (ENABLE_HDF5 AND HDF5_LIBRARY)
   if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
     link_libraries(${SZIP_LIBRARY})
   endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
-  if(HDF5_NEED_MPI AND MPI_LIBRARY)
-    link_libraries(${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
-    if (NOT WIN32)
-      link_libraries(m)
-    endif (NOT WIN32)
-  endif(HDF5_NEED_MPI AND MPI_LIBRARY)
+  if(HDF5_NEED_MPI AND MPI_LIBS)
+    link_libraries(${MPI_LIBS})
+  endif(HDF5_NEED_MPI AND MPI_LIBS)
 endif (ENABLE_HDF5 AND HDF5_LIBRARY)
+
+if (NOT WIN32)
+  link_libraries(m)
+endif (NOT WIN32)
 
 set(cgns_info_FILES
 	cgns_info.c

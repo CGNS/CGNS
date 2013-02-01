@@ -431,8 +431,10 @@ $m add command -label "Unit Conversions..." -command units_convert
 #--- help menu
 
 set m [menubar_get Help]
-$m add command -label "CGNSview..." -command {help_show cgnsview}
-$m add command -label "Utilities..." -command {help_show utilities}
+$m add command -label "CGNSview..." \
+  -command {help_show cgnsview "" cgnstools/cgnsview/index.html}
+$m add command -label "Utilities..." \
+  -command {help_show utilities "" cgnstools/utilities/index.html}
 $m add command -label "CGNS..." -command {help_show cgns}
 $m add separator
 $m add command -label "Configure..." -command help_setup
@@ -771,7 +773,8 @@ R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 /wD//////yH5BAEAAAgALAAAAAAQABAAQwQiEMlJq50kX5kJ1hvShd+4mSJ4qmTrXl28ehw7\
 t+j75joVAQA7}
 
-button $f.help -image img_help -takefocus 0 -command {help_show cgnsview}
+button $f.help -image img_help -takefocus 0 \
+  -command {help_show cgnsview "" cgnstools/cgnsview/index.html}
 pack $f.help -side left -padx 5
 set_balloon $f.help Help
 
@@ -1169,11 +1172,11 @@ vJ5dnaamVsXGt3fJyr64ucZYPrSmli6ku7vYa9rX3OAJADs=}
 proc do_about {} {
   global ProgData
   dialog .about -1 -1 "About CGNSview" \
-"CGNSview Version 3.0
+"CGNSview Version 3.1
 CGNS Library Version $ProgData(libvers)
 
 Bruce Wedan
-brucewedan@gmail.com" img_about 0 Close
+leavingdust@gmail.com" img_about 0 Close
 }
 
 proc do_backup {} {

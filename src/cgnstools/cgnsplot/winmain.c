@@ -21,6 +21,9 @@
 
 extern int Cgnstcl_Init _ANSI_ARGS_((Tcl_Interp *interp));
 extern int Tkogl_Init _ANSI_ARGS_((Tcl_Interp *interp));
+#ifdef USE_HTMLHELP
+extern int WinHtml_Init _ANSI_ARGS_((Tcl_Interp *interp));
+#endif
 
 /*
  * Forward declarations for procedures defined later in this file:
@@ -133,6 +136,10 @@ Tcl_AppInit(Tcl_Interp *interp)
         goto error;
     if (Tkogl_Init(interp) == TCL_ERROR)
         goto error;
+#ifdef USE_HTMLHELP
+    if (WinHtml_Init(interp) == TCL_ERROR)
+        goto error;
+#endif
     Tcl_CreateCommand (interp, "LoadIcon", (Tcl_CmdProc *)Proc_LoadIcon,
         (ClientData)0, (Tcl_CmdDeleteProc *)0);
 

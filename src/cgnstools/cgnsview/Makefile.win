@@ -1,6 +1,6 @@
 include ..\make.win
 
-COPTS = $(CFLAGS) -I$(CGNSDIR)
+COPTS = $(CFLAGS) -I$(CGNSDIR) $(TCLINC)
 
 #--------------------------------------------------
 
@@ -9,16 +9,17 @@ dll : cgiotcl.dll
 
 #--------------------------------------------------
 
-cgiowish.exe : winmain.obj cgiotcl.obj
+cgiowish.exe : winmain.obj cgiotcl.obj $(WINHTML_OBJ)
 	$(LINK) $(LFLAGS) /nodefaultlib /subsystem:windows \
-	-out:$@ winmain.obj cgiotcl.obj \
-	$(CGNSLIB) $(CLIBS) $(BUILDLIBS) $(TCLLIB) $(TKLIB) $(guilibs)
+	-out:$@ winmain.obj cgiotcl.obj $(WINHTML_OBJ) \
+	$(CGNSLIB) $(CLIBS) $(BUILDLIBS) $(TCLLIB) $(TKLIB) \
+	$(guilibs) $(WINHTML_LIB)
 
 winmain.obj : winmain.c
-	$(CC) $(COPTS) $(TCLINC) -c winmain.c
+	$(CC) $(COPTS) $(WINHTML_OPT) -c winmain.c
 
 cgiotcl.obj : cgiotcl.c
-	$(CC) $(COPTS) $(TCLINC) -c cgiotcl.c
+	$(CC) $(COPTS) -c cgiotcl.c
 
 #--------------------------------------------------
 
@@ -27,7 +28,12 @@ cgiotcl.dll : cgiotcl-dll.obj $(CGNSLIB)
 	$(CGNSLIB) $(CLIBS) $(TCLLIB) $(TKLIB) $(dlllibs)
 
 cgiotcl-dll.obj : cgiotcl.c
-	$(CC) $(COPTS) $(TCLINC) -DBUILD_DLL -Fo$@ -c cgiotcl.c
+	$(CC) $(COPTS) -DBUILD_DLL -Fo$@ -c cgiotcl.c
+
+#--------------------------------------------------
+
+winhtml.obj : ..\common\winhtml.c
+	$(CC) $(COPTS) $(WINHTML_INC) -Fowinhtml.obj -c ..\common\winhtml.c
 
 #---------------------------------------------------------------
 

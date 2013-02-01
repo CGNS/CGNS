@@ -6,29 +6,12 @@
 #ifdef _WIN32
 # define WIN32_LEAN_AND_MEAN
 # include <windows.h>
-# undef ERROR
 #endif
 #include <GL/gl.h>
 
 #include "tk.h"
 #include "cgnslib.h"
 #include "hash.h"
-
-#ifndef CONST
-# define CONST
-#endif
-
-#ifndef CG_MODE_READ
-# define CG_MODE_READ MODE_READ
-#endif
-
-#ifndef CGNSTYPES_H
-# define cgsize_t int
-#endif
-#ifndef CGNS_ENUMT
-# define CGNS_ENUMT(e) e
-# define CGNS_ENUMV(e) e
-#endif
 
 /* define this to exclude structured mesh boundaries */
 /* imin, imax, jmin, jmax, kmin, kmax */
@@ -55,10 +38,17 @@ typedef struct {
 
 typedef struct {
     cgsize_t id;
+    int flags;
     int nnodes;
-    cgsize_t nodes[4];
+    cgsize_t *nodes;
     float normal[3];
 } Face;
+
+typedef struct {
+    Face *face;
+    cgsize_t num;
+    int flags;
+} PolyFace;
 
 #ifndef NO_CUTTING_PLANE
 
@@ -101,11 +91,13 @@ typedef struct {
     cgsize_t nedges;
     Edge *edges;
     cgsize_t nfaces;
-    Face *faces;
+    Face **faces;
 #ifndef NO_CUTTING_PLANE
     CGNS_ENUMT(ElementType_t) elemtype;
     cgsize_t nelems;
     cgsize_t *elems;
+    int npoly;
+    Face **poly;
     CutData cut;
 #endif
     float bbox[3][2];
@@ -141,6 +133,7 @@ enum {
     REG_ELEM,
     REG_1TO1,
     REG_CONN,
+    REG_HOLE,
     REG_BOCO,
     REG_BNDS
 };
@@ -235,6 +228,42 @@ static void *REALLOC (char *funcname, size_t bytes, void *old_data)
 
 /*-------------------------------------------------------------------*/
 
+static Face *new_face(char *funcname, int nnodes)
+{
+    Face *f = (Face *) calloc (nnodes * sizeof(cgsize_t) + sizeof(Face), 1);
+    if (f == NULL) {
+        char msg[128];
+        if (funcname != NULL)
+            sprintf (msg, "%s:malloc failed for face with %d nodes",
+                funcname, nnodes);
+        else
+            sprintf (msg, "malloc failed for face with %d nodes",
+                nnodes);
+        FATAL (msg);
+    }
+    f->nnodes = nnodes;
+    f->nodes  = (cgsize_t *)(f + 1);
+    return f;
+}
+
+/*-------------------------------------------------------------------*/
+
+static Face *copy_face(char *funcname, Face *face)
+{
+    int n;
+    Face *f = new_face(funcname, face->nnodes);
+
+    f->id = face->id;
+    f->flags = face->flags;
+    for (n = 0; n < face->nnodes; n++)
+        f->nodes[n] = face->nodes[n];
+    for (n = 0; n < 3; n++)
+        f->normal[n] = face->normal[n];
+    return f;
+}
+
+/*-------------------------------------------------------------------*/
+
 static void zone_message (char *msg, char *name)
 {
     char cmd[129];
@@ -251,7 +280,7 @@ static void zone_message (char *msg, char *name)
 
 static void free_all (void)
 {
-    int nz, nr;
+    int nz, nr, nf;
 
     if (!nzones) return;
     for (nz = 0; nz < nzones; nz++) {
@@ -260,11 +289,18 @@ static void free_all (void)
                 glDeleteLists (zones[nz].regs[nr].dlist, 1);
             if (zones[nz].regs[nr].nedges)
                 free (zones[nz].regs[nr].edges);
-            if (zones[nz].regs[nr].nfaces)
+            if (zones[nz].regs[nr].nfaces) {
+                for (nf = 0; nf < zones[nz].regs[nr].nfaces; nf++) {
+                    if (zones[nz].regs[nr].faces[nf])
+                        free (zones[nz].regs[nr].faces[nf]);
+                }
                 free (zones[nz].regs[nr].faces);
+            }
 #ifndef NO_CUTTING_PLANE
             if (zones[nz].regs[nr].nelems)
                 free (zones[nz].regs[nr].elems);
+            if (zones[nz].regs[nr].npoly)
+                free (zones[nz].regs[nr].poly);
             if (zones[nz].regs[nr].cut.nelems)
                 free (zones[nz].regs[nr].cut.elems);
             if (zones[nz].regs[nr].cut.nedges)
@@ -322,19 +358,21 @@ static int find_int (cgsize_t value, cgsize_t nlist, cgsize_t *list)
 
 /*-------------------------------------------------------------------*/
 
-static cgsize_t structured_range (Regn *reg, cgsize_t *dim, cgsize_t *ptrng,
-                                  CGNS_ENUMT(GridLocation_t) location)
+static int structured_range (Regn *reg, cgsize_t *dim, cgsize_t *ptrng,
+                             CGNS_ENUMT(GridLocation_t) location)
 {
-    int n, i, j;
+    int n, i, j, nf;
     cgsize_t ii, jj, kk, nfaces, rng[3][2];
     Face *f;
     static char *funcname = "structured_range";
 
-    if (location != CGNS_ENUMV(Vertex) && location != CGNS_ENUMV(IFaceCenter) &&
-        location != CGNS_ENUMV(JFaceCenter) && location != CGNS_ENUMV(KFaceCenter)) {
+    if (location != CGNS_ENUMV(Vertex) &&
+        location != CGNS_ENUMV(IFaceCenter) &&
+        location != CGNS_ENUMV(JFaceCenter) &&
+        location != CGNS_ENUMV(KFaceCenter)) {
         i = j = 0;
-        for (n = 0; n < 3; n++) {
-            if (ptrng[n] == ptrng[n+3] &&
+        for (n = 0; n < CellDim; n++) {
+            if (ptrng[n] == ptrng[n+CellDim] &&
                (ptrng[n] == 1 || ptrng[n] == dim[n])) {
                 if (ptrng[n] == 1)
                     i++;
@@ -347,8 +385,8 @@ static cgsize_t structured_range (Regn *reg, cgsize_t *dim, cgsize_t *ptrng,
             }
         }
         if (!j && i == 1) {
-            for (n = 0; n < 3; n++) {
-                if (ptrng[n] == ptrng[n+3] && ptrng[n] == 1) {
+            for (n = 0; n < CellDim; n++) {
+                if (ptrng[n] == ptrng[n+CellDim] && ptrng[n] == 1) {
                     j = n + 1;
                     break;
                 }
@@ -369,20 +407,20 @@ static cgsize_t structured_range (Regn *reg, cgsize_t *dim, cgsize_t *ptrng,
 
     nfaces = 1;
     if (location == CGNS_ENUMV(Vertex)) {
-        for (n = 0, i = 0; i < 3; i++) {
+        for (n = 0, i = 0; i < CellDim; i++) {
             if (ptrng[i] < 1 || ptrng[i] > dim[i]) return 0;
-            if (ptrng[i] == ptrng[i+3]) {
+            if (ptrng[i] == ptrng[i+CellDim]) {
                 if (n || (ptrng[i] != 1 && ptrng[i] != dim[i]))
                     return 0;
                 n = i + 1;
                 rng[i][0] = rng[i][1] = ptrng[i] - 1;
             } else {
-                if (ptrng[i] < ptrng[i+3]) {
+                if (ptrng[i] < ptrng[i+CellDim]) {
                     rng[i][0] = ptrng[i] - 1;
-                    rng[i][1] = ptrng[i+3] - 1;
+                    rng[i][1] = ptrng[i+CellDim] - 1;
                 }
                 else {
-                    rng[i][0] = ptrng[i+3] - 1;
+                    rng[i][0] = ptrng[i+CellDim] - 1;
                     rng[i][1] = ptrng[i] - 1;
                 }
                 nfaces *= (rng[i][1] - rng[i][0]);
@@ -396,19 +434,19 @@ static cgsize_t structured_range (Regn *reg, cgsize_t *dim, cgsize_t *ptrng,
             n = 1;
         else
             n = 2;
-        for (i = 0; i < 3; i++) {
+        for (i = 0; i < CellDim; i++) {
             if (i == n) {
-                if (ptrng[i] != ptrng[i+3] ||
+                if (ptrng[i] != ptrng[i+CellDim] ||
                    (ptrng[i] != 1 && ptrng[i] != dim[i])) return 0;
                 rng[i][0] = rng[i][1] = ptrng[i] - 1;
             }
             else {
-                if (ptrng[i] < ptrng[i+3]) {
+                if (ptrng[i] < ptrng[i+CellDim]) {
                     rng[i][0] = ptrng[i] - 1;
-                    rng[i][1] = ptrng[i+3];
+                    rng[i][1] = ptrng[i+CellDim];
                 }
                 else {
-                    rng[i][0] = ptrng[i+3] - 1;
+                    rng[i][0] = ptrng[i+CellDim] - 1;
                     rng[i][1] = ptrng[i];
                 }
                 if (rng[i][0] < 0 || rng[i][1] >= dim[i]) return 0;
@@ -417,36 +455,62 @@ static cgsize_t structured_range (Regn *reg, cgsize_t *dim, cgsize_t *ptrng,
         }
         n++;
     }
-    if (!nfaces || !n) {
+    if (!nfaces || n < 1 || n > CellDim) {
         strcpy (reg->errmsg, "couldn't find any exterior faces");
         return 0;
     }
 
+    if (CellDim == 2) {
+        reg->nedges = nfaces;
+        reg->edges  = (Edge *) MALLOC (funcname,  (size_t)nfaces * sizeof(Edge));
+        nf = 0;
+        kk = 0;        
+
+        if (n == 1) {
+            ii = rng[0][0];
+            for (jj = rng[1][0]; jj < rng[1][1]; jj++) {
+                reg->edges[nf].nodes[0] = NODE_INDEX(ii, jj,   kk);
+                reg->edges[nf].nodes[1] = NODE_INDEX(ii, jj+1, kk);
+                nf++;
+            }
+        }
+        else {
+            jj = rng[1][0];
+            for (ii = rng[0][0]; ii < rng[0][1]; ii++) {
+                reg->edges[nf].nodes[0] = NODE_INDEX(ii,   jj, kk);
+                reg->edges[nf].nodes[1] = NODE_INDEX(ii+1, jj, kk);
+                nf++;
+            }
+        }
+        return 1;
+    }
+
     reg->nfaces = nfaces;
-    reg->faces = f = (Face *) MALLOC (funcname, (size_t)nfaces * sizeof(Face));
+    reg->faces  = (Face **) MALLOC (funcname,  (size_t)nfaces * sizeof(Face *));
+    for (nf = 0; nf < nfaces; nf++)
+        reg->faces[nf] = new_face (funcname, 4);
+    nf = 0;
 
     if (n == 1) {
         if ((ii = rng[0][0]) == 0) {
             for (kk = rng[2][0]; kk < rng[2][1]; kk++) {
                 for (jj = rng[1][0]; jj < rng[1][1]; jj++) {
-                    f->nnodes = 4;
+                    f = reg->faces[nf++];
                     f->nodes[0] = NODE_INDEX (ii, jj,   kk);
                     f->nodes[1] = NODE_INDEX (ii, jj,   kk+1);
                     f->nodes[2] = NODE_INDEX (ii, jj+1, kk+1);
                     f->nodes[3] = NODE_INDEX (ii, jj+1, kk);
-                    f++;
                 }
             }
         }
         else {
             for (kk = rng[2][0]; kk < rng[2][1]; kk++) {
                 for (jj = rng[1][0]; jj < rng[1][1]; jj++) {
-                    f->nnodes = 4;
+                    f = reg->faces[nf++];
                     f->nodes[0] = NODE_INDEX (ii, jj,   kk);
                     f->nodes[1] = NODE_INDEX (ii, jj+1, kk);
                     f->nodes[2] = NODE_INDEX (ii, jj+1, kk+1);
                     f->nodes[3] = NODE_INDEX (ii, jj,   kk+1);
-                    f++;
                 }
             }
         }
@@ -455,24 +519,22 @@ static cgsize_t structured_range (Regn *reg, cgsize_t *dim, cgsize_t *ptrng,
         if ((jj = rng[1][0]) == 0) {
             for (kk = rng[2][0]; kk < rng[2][1]; kk++) {
                 for (ii = rng[0][0]; ii < rng[0][1]; ii++) {
-                    f->nnodes = 4;
+                    f = reg->faces[nf++];
                     f->nodes[0] = NODE_INDEX (ii,   jj, kk);
                     f->nodes[1] = NODE_INDEX (ii+1, jj, kk);
                     f->nodes[2] = NODE_INDEX (ii+1, jj, kk+1);
                     f->nodes[3] = NODE_INDEX (ii,   jj, kk+1);
-                    f++;
                 }
             }
         }
         else {
             for (kk = rng[2][0]; kk < rng[2][1]; kk++) {
                 for (ii = rng[0][0]; ii < rng[0][1]; ii++) {
-                    f->nnodes = 4;
+                    f = reg->faces[nf++];
                     f->nodes[0] = NODE_INDEX (ii,   jj, kk);
                     f->nodes[1] = NODE_INDEX (ii,   jj, kk+1);
                     f->nodes[2] = NODE_INDEX (ii+1, jj, kk+1);
                     f->nodes[3] = NODE_INDEX (ii+1, jj, kk);
-                    f++;
                 }
             }
         }
@@ -481,55 +543,55 @@ static cgsize_t structured_range (Regn *reg, cgsize_t *dim, cgsize_t *ptrng,
         if ((kk = rng[2][0]) == 0) {
             for (jj = rng[1][0]; jj < rng[1][1]; jj++) {
                 for (ii = rng[0][0]; ii < rng[0][1]; ii++) {
-                    f->nnodes = 4;
+                    f = reg->faces[nf++];
                     f->nodes[0] = NODE_INDEX (ii,   jj,   kk);
                     f->nodes[1] = NODE_INDEX (ii,   jj+1, kk);
                     f->nodes[2] = NODE_INDEX (ii+1, jj+1, kk);
                     f->nodes[3] = NODE_INDEX (ii+1, jj,   kk);
-                    f++;
                 }
             }
         }
         else {
             for (jj = rng[1][0]; jj < rng[1][1]; jj++) {
                 for (ii = rng[0][0]; ii < rng[0][1]; ii++) {
-                    f->nnodes = 4;
+                    f = reg->faces[nf++];
                     f->nodes[0] = NODE_INDEX (ii,   jj,   kk);
                     f->nodes[1] = NODE_INDEX (ii+1, jj,   kk);
                     f->nodes[2] = NODE_INDEX (ii+1, jj+1, kk);
                     f->nodes[3] = NODE_INDEX (ii,   jj+1, kk);
-                    f++;
                 }
             }
         }
     }
-    return nfaces;
+    return 2;
 }
 
 /*-------------------------------------------------------------------*/
 
-static cgsize_t structured_list (Regn *mesh, Regn *reg, cgsize_t *dim, cgsize_t npts,
-                                 cgsize_t *pts, CGNS_ENUMT(GridLocation_t) location)
+static int structured_list (Regn *mesh, Regn *reg, cgsize_t *dim, cgsize_t npts,
+                            cgsize_t *pts, CGNS_ENUMT(GridLocation_t) location)
 {
-    cgsize_t n, nn, nf, nfaces = 0, noff;
+    cgsize_t n, nn, nf, nfaces = 0, noff, nmax;
     Face **faces, *f;
     static char *funcname = "structured_list";
 
-    if (location != CGNS_ENUMV(Vertex) && location != CGNS_ENUMV(IFaceCenter) &&
-        location != CGNS_ENUMV(JFaceCenter) && location != CGNS_ENUMV(KFaceCenter)) {
+    if (location != CGNS_ENUMV(Vertex) &&
+        location != CGNS_ENUMV(IFaceCenter) &&
+        location != CGNS_ENUMV(JFaceCenter) &&
+        location != CGNS_ENUMV(KFaceCenter)) {
         int i, j, k;
         cgsize_t rng[3][2];
-        for (i = 0; i < 3; i++)
+        for (i = 0; i < CellDim; i++)
             rng[i][0] = rng[i][1] = pts[i];
         for (nf = 1; nf < npts; nf++) {
-            nn = nf * 3;
-            for (i = 0; i < 3; i++) {
+            nn = nf * CellDim;
+            for (i = 0; i < CellDim; i++) {
                 if (rng[i][0] > pts[nn+i]) rng[i][0] = pts[nn+i];
                 if (rng[i][1] < pts[nn+i]) rng[i][1] = pts[nn+i];
             }
         }
         j = k = 0;
-        for (i = 0; i < 3; i++) {
+        for (i = 0; i < CellDim; i++) {
             if (rng[i][0] == rng[i][1] &&
                 (rng[i][0] == 1 || rng[i][0] == dim[i])) {
                 if (rng[i][0] == 1)
@@ -543,7 +605,7 @@ static cgsize_t structured_list (Regn *mesh, Regn *reg, cgsize_t *dim, cgsize_t 
             }
         }
         if (!k && j == 1) {
-            for (i = 0; i < 3; i++) {
+            for (i = 0; i < CellDim; i++) {
                 if (rng[i][0] == rng[i][1] && rng[i][0] == 1) {
                     k = i + 1;
                     break;
@@ -562,13 +624,144 @@ static cgsize_t structured_list (Regn *mesh, Regn *reg, cgsize_t *dim, cgsize_t 
             return 0;
         }
     }
+    nmax  = npts;
 
-    faces = (Face **) MALLOC (funcname, (size_t)npts * sizeof(Face *));
+    if (CellDim == 2) {
+        cgsize_t ii, jj, n0, n1, ne;
+        Edge *edges = (Edge *) MALLOC (funcname, (size_t)nmax * sizeof(Edge));
+
+        ne = 0;
+        if (location == CGNS_ENUMV(Vertex)) {
+            for (nn = 0, n = 0; n < npts; n++) {
+                pts[n] = NODE_INDEX (pts[nn]-1, pts[nn+1]-1, 0);
+                nn += 2;
+            }
+            for (n = 1; n < npts; n++) {
+                if (pts[n] < pts[n-1]) {
+                    qsort (pts, (size_t)npts, sizeof(cgsize_t), compare_ints);
+                    break;
+                }
+            }
+
+            ne = 0;
+            jj = 0;
+            for (ii = 1; ii < dim[0]; ii++) {
+                n0 = NODE_INDEX(ii-1, jj, 0);
+                n1 = NODE_INDEX(ii,   jj, 0);
+                if (find_int(n0, npts, pts) &&
+                    find_int(n1, npts, pts)) {
+                    if (ne == nmax) {
+                        nmax += 100;
+                        edges = (Edge *) REALLOC (funcname,
+                            (size_t)nmax * sizeof(Edge), edges);
+                    }
+                    edges[ne].nodes[0] = n0;
+                    edges[ne].nodes[1] = n1;
+                    ne++;
+                }
+            }
+
+            jj = dim[1] - 1;
+            for (ii = 1; ii < dim[0]; ii++) {
+                n0 = NODE_INDEX(ii-1, jj, 0);
+                n1 = NODE_INDEX(ii,   jj, 0);
+                if (find_int(n0, npts, pts) &&
+                    find_int(n1, npts, pts)) {
+                    if (ne == nmax) {
+                        nmax += 100;
+                        edges = (Edge *) REALLOC (funcname,
+                            (size_t)nmax * sizeof(Edge), edges);
+                    }
+                    edges[ne].nodes[0] = n0;
+                    edges[ne].nodes[1] = n1;
+                    ne++;
+                }
+            }
+
+            ii = 0;
+            for (jj = 1; jj < dim[1]; jj++) {
+                n0 = NODE_INDEX(ii, jj-1, 0);
+                n1 = NODE_INDEX(ii, jj,   0);
+                if (find_int(n0, npts, pts) &&
+                    find_int(n1, npts, pts)) {
+                    if (ne == nmax) {
+                        nmax += 100;
+                        edges = (Edge *) REALLOC (funcname,
+                            (size_t)nmax * sizeof(Edge), edges);
+                    }
+                    edges[ne].nodes[0] = n0;
+                    edges[ne].nodes[1] = n1;
+                    ne++;
+                }
+            }
+
+            ii = dim[0] - 1;
+            for (jj = 1; jj < dim[1]; jj++) {
+                n0 = NODE_INDEX(ii, jj-1, 0);
+                n1 = NODE_INDEX(ii, jj,   0);
+                if (find_int(n0, npts, pts) &&
+                    find_int(n1, npts, pts)) {
+                    if (ne == nmax) {
+                        nmax += 100;
+                        edges = (Edge *) REALLOC (funcname,
+                            (size_t)nmax * sizeof(Edge), edges);
+                    }
+                    edges[ne].nodes[0] = n0;
+                    edges[ne].nodes[1] = n1;
+                    ne++;
+                }
+            }
+        }
+
+        else if (location == CGNS_ENUMV(IFaceCenter)) {
+            for (nn = 0, n = 0; n < npts; n++) {
+                if ((pts[nn] == 1 || pts[nn] == dim[0]) &&
+                    pts[nn+1] > 0 && pts[nn+1] < dim[1]) {
+                    ii = pts[nn] - 1;
+                    jj = pts[nn+1] - 1;
+                    n0 = NODE_INDEX(ii, jj,   0);
+                    n1 = NODE_INDEX(ii, jj+1, 0);
+                    edges[ne].nodes[0] = n0;
+                    edges[ne].nodes[1] = n1;
+                    ne++;
+                }
+                nn += 2;
+            }
+        }
+
+        else if (location == CGNS_ENUMV(JFaceCenter)) {
+            for (nn = 0, n = 0; n < npts; n++) {
+                if ((pts[nn+1] == 1 || pts[nn+1] == dim[1]) &&
+                    pts[nn] > 0 && pts[nn] < dim[0]) {
+                    ii = pts[nn] - 1;
+                    jj = pts[nn+1] - 1;
+                    n0 = NODE_INDEX(ii,   jj, 0);
+                    n1 = NODE_INDEX(ii+1, jj, 0);
+                    edges[ne].nodes[0] = n0;
+                    edges[ne].nodes[1] = n1;
+                    ne++;
+                }
+                nn += 2;
+            }
+        }
+        
+        if (ne == 0) {
+            free(edges);
+            strcpy (reg->errmsg, "couldn't find any exterior edges");
+            return 0;
+        }
+
+        reg->nedges = ne;
+        reg->edges  = edges;
+        return 1;
+    }
+
+    faces = (Face **) MALLOC (funcname, (size_t)nmax * sizeof(Face *));
 
     if (location == CGNS_ENUMV(Vertex)) {
-        for (n = 0; n < npts; n++) {
-            nn = 3 * n;
+        for (nn = 0, n = 0; n < npts; n++) {
             pts[n] = NODE_INDEX (pts[nn]-1, pts[nn+1]-1, pts[nn+2]-1);
+            nn += 3;
         }
         for (n = 1; n < npts; n++) {
             if (pts[n] < pts[n-1]) {
@@ -577,18 +770,19 @@ static cgsize_t structured_list (Regn *mesh, Regn *reg, cgsize_t *dim, cgsize_t 
             }
         }
 
-        for (f = mesh->faces, nf = 0; nf < mesh->nfaces; nf++, f++) {
+        for (nf = 0; nf < mesh->nfaces; nf++) {
+            f = mesh->faces[nf];
             for (nn = 0; nn < f->nnodes; nn++) {
                 if (!find_int (f->nodes[nn], npts, pts))
                     break;
             }
             if (nn == f->nnodes) {
-                if (nfaces == npts) {
-                    npts += 100;
+                if (nfaces == nmax) {
+                    nmax += 100;
                     faces = (Face **) REALLOC (funcname,
-                        (size_t)npts * sizeof(Face *), faces);
+                        (size_t)nmax * sizeof(Face *), faces);
                 }
-                faces[nfaces++] = f;
+                faces[nfaces++] = copy_face (funcname, f);
             }
         }
     }
@@ -602,7 +796,7 @@ static cgsize_t structured_list (Regn *mesh, Regn *reg, cgsize_t *dim, cgsize_t 
                 nf = pts[nn+1]-1 + (pts[nn+2]-1) * (dim[1]-1);
                 if (pts[nn] == dim[0])
                     nf += (dim[1]-1) * (dim[2]-1);
-                faces[nfaces++] = &(mesh->faces[nf]);
+                faces[nfaces++] = copy_face (funcname, mesh->faces[nf]);
             }
         }
     }
@@ -617,7 +811,7 @@ static cgsize_t structured_list (Regn *mesh, Regn *reg, cgsize_t *dim, cgsize_t 
                 nf = noff + pts[nn]-1 + (pts[nn+2]-1) * (dim[0]-1);
                 if (pts[nn+1] == dim[1])
                     nf += (dim[0]-1) * (dim[2]-1);
-                faces[nfaces++] = &(mesh->faces[nf]);
+                faces[nfaces++] = copy_face (funcname, mesh->faces[nf]);
             }
         }
     }
@@ -632,24 +826,20 @@ static cgsize_t structured_list (Regn *mesh, Regn *reg, cgsize_t *dim, cgsize_t 
                 nf = noff + pts[nn]-1 + (pts[nn+1]-1) * (dim[0]-1);
                 if (pts[nn+2] == dim[2])
                     nf += (dim[0]-1) * (dim[1]-1);
-                faces[nfaces++] = &(mesh->faces[nf]);
+                faces[nfaces++] = copy_face (funcname, mesh->faces[nf]);
             }
         }
     }
 
-    if (nfaces) {
-        reg->nfaces = nfaces;
-        reg->faces = (Face *) MALLOC (funcname, (size_t)nfaces * sizeof(Face));
-        for (nf = 0; nf < nfaces; nf++) {
-            reg->faces[nf].nnodes = faces[nf]->nnodes;
-            for (nn = 0; nn < faces[nf]->nnodes; nn++)
-                reg->faces[nf].nodes[nn] = faces[nf]->nodes[nn];
-        }
-    }
-    else
+    if (nfaces == 0) {
+        free (faces);
         strcpy (reg->errmsg, "couldn't find any exterior faces");
-    free (faces);
-    return nfaces;
+        return 0;
+    }
+
+    reg->nfaces = nfaces;
+    reg->faces = faces;
+    return 2;
 }
 
 /*-------------------------------------------------------------------*/
@@ -657,8 +847,8 @@ static cgsize_t structured_list (Regn *mesh, Regn *reg, cgsize_t *dim, cgsize_t 
 static int structured_zone (Tcl_Interp *interp, cgsize_t *dim)
 {
     char name[33], d_name[33];
-    int nints, nconns, nbocos, ii, nn, nr;
-    cgsize_t i, j, k, n, ni, nj, nk, nf;
+    int nints, nconns, nbocos, nholes, ii, nn, nr, nsets;
+    cgsize_t i, j, k, n, ni, nj, nk, nf, ne, fn;
     cgsize_t npts, *pts, ndpts;
     cgsize_t range[6], d_range[6];
     int transform[3];
@@ -673,255 +863,295 @@ static int structured_zone (Tcl_Interp *interp, cgsize_t *dim)
     static char *funcname = "structured_zone";
 
     zone_message ("finding exterior faces", NULL);
-    if (CellDim == 3) {
-        if (cg_n1to1 (cgnsfn, cgnsbase, cgnszone, &nints) ||
-            cg_nconns (cgnsfn, cgnsbase, cgnszone, &nconns) ||
-            cg_nbocos (cgnsfn, cgnsbase, cgnszone, &nbocos)) {
-            Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
-            return 1;
-        }
+    if (cg_n1to1 (cgnsfn, cgnsbase, cgnszone, &nints) ||
+        cg_nconns (cgnsfn, cgnsbase, cgnszone, &nconns) ||
+        cg_nholes (cgnsfn, cgnsbase, cgnszone, &nholes) ||
+        cg_nbocos (cgnsfn, cgnsbase, cgnszone, &nbocos)) {
+        Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
+        return 1;
+    }
+    z->nregs = nints + nconns + nholes + nbocos + 1;
 #ifndef NO_MESH_BOUNDARIES
-        z->nregs = nints + nconns + nbocos + 7;
-#else
-        z->nregs = nints + nconns + nbocos + 1;
+    z->nregs += (2 * CellDim);
 #endif
-    }
-    else {
-        nints = nconns = nbocos = 0;
-        z->nregs = 1;
-    }
     z->regs = (Regn *) MALLOC (funcname, z->nregs * sizeof(Regn));
     ni = dim[0] - 1;
     nj = dim[1] - 1;
     nk = dim[2] - 1;
     nr = 1;
 
-    /* volume mesh boundaries */
+    /* mesh boundaries */
 
     strcpy (z->regs[0].name, "<mesh>");
     z->regs[0].type = REG_MESH;
-    for (n = 0; n < 3; n++)
+    for (n = 0; n < CellDim; n++) {
         z->regs[0].data[n] = dim[n];
+        range[n] = 1;
+        range[n+CellDim] = dim[n];
+    }
 
     if (CellDim == 2) {
         z->regs[0].dim = 2;
         z->regs[0].nfaces = ni * nj;
-        z->regs[0].faces = f =
-            (Face *) MALLOC (funcname, (size_t)z->regs[0].nfaces * sizeof(Face));
-        for (k = 0, j = 0; j < nj; j++) {
+        z->regs[0].faces = (Face **) MALLOC (funcname,
+                           (size_t)z->regs[0].nfaces * sizeof(Face *));
+        fn = 0;
+        k  = 0;
+        for (j = 0; j < nj; j++) {
             for (i = 0; i < ni; i++) {
-                f->nnodes = 4;
+                f = z->regs[0].faces[fn++] = new_face (funcname, 4);
                 f->nodes[0] = NODE_INDEX (i, j, k);
                 f->nodes[1] = NODE_INDEX (i, j+1, k);
                 f->nodes[2] = NODE_INDEX (i+1, j+1, k);
                 f->nodes[3] = NODE_INDEX (i+1, j, k);
-                f++;
             }
         }
+
 #ifndef NO_CUTTING_PLANE
         nf = z->regs[0].nfaces;
-        f = z->regs[0].faces;
         z->regs[0].elemtype = CGNS_ENUMV(QUAD_4);
         z->regs[0].nelems = nf;
         z->regs[0].elems = (cgsize_t *) MALLOC (funcname,
-	    (size_t)(4 * nf) * sizeof(cgsize_t));
-        for (n = 0, j = 0; j < nf; j++, f++) {
+	                       (size_t)(4 * nf) * sizeof(cgsize_t));
+        for (n = 0, j = 0; j < nf; j++) {
+            f = z->regs[0].faces[j];
             for (i = 0; i < 4; i++)
                 z->regs[0].elems[n++] = f->nodes[i];
         }
 #endif
-        return 0;
-    }
-
-    z->regs[0].dim = 3;
-
-#ifndef NO_CUTTING_PLANE
-    z->regs[0].elemtype = CGNS_ENUMV(HEXA_8);
-    z->regs[0].nelems = ni * nj * nk;
-    z->regs[0].elems = pts = (cgsize_t *) MALLOC (funcname,
-	    (size_t)(8 * z->regs[0].nelems) * sizeof(cgsize_t));
-
-    for (n = 0, k = 0; k < nk; k++) {
-        for (j = 0; j < nj; j++) {
-            for (i = 0; i < ni; i++) {
-                pts[n++] = NODE_INDEX (i,   j,   k);
-                pts[n++] = NODE_INDEX (i+1, j,   k);
-                pts[n++] = NODE_INDEX (i+1, j+1, k);
-                pts[n++] = NODE_INDEX (i,   j+1, k);
-                pts[n++] = NODE_INDEX (i,   j,   k+1);
-                pts[n++] = NODE_INDEX (i+1, j,   k+1);
-                pts[n++] = NODE_INDEX (i+1, j+1, k+1);
-                pts[n++] = NODE_INDEX (i,   j+1, k+1);
-            }
-        }
-    }
-#endif
-
-    z->regs[0].nfaces = 2 * (nj * nk + ni * nk + ni * nj);
-    z->regs[0].faces = f =
-        (Face *) MALLOC (funcname, (size_t)z->regs[0].nfaces * sizeof(Face));
-
-    for (i = 0, k = 0; k < nk; k++) {
-        for (j = 0; j < nj; j++) {
-            f->nnodes = 4;
-            f->nodes[0] = NODE_INDEX (i, j, k);
-            f->nodes[1] = NODE_INDEX (i, j, k+1);
-            f->nodes[2] = NODE_INDEX (i, j+1, k+1);
-            f->nodes[3] = NODE_INDEX (i, j+1, k);
-            f++;
-        }
-    }
-    for (i = ni, k = 0; k < nk; k++) {
-        for (j = 0; j < nj; j++) {
-            f->nnodes = 4;
-            f->nodes[0] = NODE_INDEX (i, j, k);
-            f->nodes[1] = NODE_INDEX (i, j+1, k);
-            f->nodes[2] = NODE_INDEX (i, j+1, k+1);
-            f->nodes[3] = NODE_INDEX (i, j, k+1);
-            f++;
-        }
-    }
-    for (j = 0, k = 0; k < nk; k++) {
-        for (i = 0; i < ni; i++) {
-            f->nnodes = 4;
-            f->nodes[0] = NODE_INDEX (i, j, k);
-            f->nodes[1] = NODE_INDEX (i+1, j, k);
-            f->nodes[2] = NODE_INDEX (i+1, j, k+1);
-            f->nodes[3] = NODE_INDEX (i, j, k+1);
-            f++;
-        }
-    }
-    for (j = nj, k = 0; k < nk; k++) {
-        for (i = 0; i < ni; i++) {
-            f->nnodes = 4;
-            f->nodes[0] = NODE_INDEX (i, j, k);
-            f->nodes[1] = NODE_INDEX (i, j, k+1);
-            f->nodes[2] = NODE_INDEX (i+1, j, k+1);
-            f->nodes[3] = NODE_INDEX (i+1, j, k);
-            f++;
-        }
-    }
-    for (k = 0, j = 0; j < nj; j++) {
-        for (i = 0; i < ni; i++) {
-            f->nnodes = 4;
-            f->nodes[0] = NODE_INDEX (i, j, k);
-            f->nodes[1] = NODE_INDEX (i, j+1, k);
-            f->nodes[2] = NODE_INDEX (i+1, j+1, k);
-            f->nodes[3] = NODE_INDEX (i+1, j, k);
-            f++;
-        }
-    }
-    for (k = nk, j = 0; j < nj; j++) {
-        for (i = 0; i < ni; i++) {
-            f->nnodes = 4;
-            f->nodes[0] = NODE_INDEX (i, j, k);
-            f->nodes[1] = NODE_INDEX (i+1, j, k);
-            f->nodes[2] = NODE_INDEX (i+1, j+1, k);
-            f->nodes[3] = NODE_INDEX (i, j+1, k);
-            f++;
-        }
-    }
 
 #ifndef NO_MESH_BOUNDARIES
-    for (nn = 0; nn < 3; nn++) {
-        range[nn] = 1;
-        range[nn+3] = dim[nn];
-    }
+        strcpy (z->regs[nr].name, "<imin>");
+        z->regs[nr].dim = 1;
+        z->regs[nr].type = REG_BNDS;
+        for (nn = 0; nn < 4; nn++)
+            z->regs[nr].data[nn] = range[nn];
+        z->regs[nr].data[2] = 1;
+        z->regs[nr].nedges = nj;
+        z->regs[nr].edges = (Edge *) MALLOC (funcname,
+                            (size_t)nj * sizeof(Edge));
+        for (i = 0, j = 0; j < nj; j++) {
+            z->regs[nr].edges[j].nodes[0] = NODE_INDEX(i, j,   k);
+            z->regs[nr].edges[j].nodes[1] = NODE_INDEX(i, j+1, k);
+        }
+        nr++;
 
-    f = z->regs->faces;
-    nf = nj * nk;
-    strcpy (z->regs[nr].name, "<imin>");
-    z->regs[nr].dim = 2;
-    z->regs[nr].type = REG_BNDS;
-    for (nn = 0; nn < 6; nn++)
-        z->regs[nr].data[nn] = range[nn];
-    z->regs[nr].data[3] = 1;
-    z->regs[nr].nfaces = nf;
-    z->regs[nr].faces = (Face *) MALLOC (funcname, (size_t)nf * sizeof(Face));
-    for (n = 0; n < nf; n++, f++) {
-        z->regs[nr].faces[n].nnodes = 4;
-        for (ii = 0; ii < 4; ii++)
-            z->regs[nr].faces[n].nodes[ii] = f->nodes[ii];
-    }
-    nr++;
+        strcpy (z->regs[nr].name, "<imax>");
+        z->regs[nr].dim = 1;
+        z->regs[nr].type = REG_BNDS;
+        for (nn = 0; nn < 4; nn++)
+            z->regs[nr].data[nn] = range[nn];
+        z->regs[nr].data[0] = dim[0];
+        z->regs[nr].nedges = nj;
+        z->regs[nr].edges = (Edge *) MALLOC (funcname,
+                            (size_t)nj * sizeof(Edge));
+        for (i = ni, j = 0; j < nj; j++) {
+            z->regs[nr].edges[j].nodes[0] = NODE_INDEX(i, j,   k);
+            z->regs[nr].edges[j].nodes[1] = NODE_INDEX(i, j+1, k);
+        }
+        nr++;
 
-    strcpy (z->regs[nr].name, "<imax>");
-    z->regs[nr].dim = 2;
-    z->regs[nr].type = REG_BNDS;
-    for (nn = 0; nn < 6; nn++)
-        z->regs[nr].data[nn] = range[nn];
-    z->regs[nr].data[0] = dim[0];
-    z->regs[nr].nfaces = nf;
-    z->regs[nr].faces = (Face *) MALLOC (funcname, (size_t)nf * sizeof(Face));
-    for (n = 0; n < nf; n++, f++) {
-        z->regs[nr].faces[n].nnodes = 4;
-        for (ii = 0; ii < 4; ii++)
-            z->regs[nr].faces[n].nodes[ii] = f->nodes[ii];
-    }
-    nr++;
+        strcpy (z->regs[nr].name, "<jmin>");
+        z->regs[nr].dim = 1;
+        z->regs[nr].type = REG_BNDS;
+        for (nn = 0; nn < 4; nn++)
+            z->regs[nr].data[nn] = range[nn];
+        z->regs[nr].data[3] = 1;
+        z->regs[nr].nedges = ni;
+        z->regs[nr].edges = (Edge *) MALLOC (funcname,
+                            (size_t)ni * sizeof(Edge));
+        for (j = 0, i = 0; i < ni; i++) {
+            z->regs[nr].edges[i].nodes[0] = NODE_INDEX(i,   j, k);
+            z->regs[nr].edges[i].nodes[1] = NODE_INDEX(i+1, j, k);
+        }
+        nr++;
 
-    nf = ni * nk;
-    strcpy (z->regs[nr].name, "<jmin>");
-    z->regs[nr].dim = 2;
-    z->regs[nr].type = REG_BNDS;
-    for (nn = 0; nn < 6; nn++)
-        z->regs[nr].data[nn] = range[nn];
-    z->regs[nr].data[4] = 1;
-    z->regs[nr].nfaces = nf;
-    z->regs[nr].faces = (Face *) MALLOC (funcname, (size_t)nf * sizeof(Face));
-    for (n = 0; n < nf; n++, f++) {
-        z->regs[nr].faces[n].nnodes = 4;
-        for (ii = 0; ii < 4; ii++)
-            z->regs[nr].faces[n].nodes[ii] = f->nodes[ii];
-    }
-    nr++;
-
-    strcpy (z->regs[nr].name, "<jmax>");
-    z->regs[nr].dim = 2;
-    z->regs[nr].type = REG_BNDS;
-    for (nn = 0; nn < 6; nn++)
-        z->regs[nr].data[nn] = range[nn];
-    z->regs[nr].data[1] = dim[1];
-    z->regs[nr].nfaces = nf;
-    z->regs[nr].faces = (Face *) MALLOC (funcname, (size_t)nf * sizeof(Face));
-    for (n = 0; n < nf; n++, f++) {
-        z->regs[nr].faces[n].nnodes = 4;
-        for (ii = 0; ii < 4; ii++)
-            z->regs[nr].faces[n].nodes[ii] = f->nodes[ii];
-    }
-    nr++;
-
-    nf = ni * nj;
-    strcpy (z->regs[nr].name, "<kmin>");
-    z->regs[nr].dim = 2;
-    z->regs[nr].type = REG_BNDS;
-    for (nn = 0; nn < 6; nn++)
-        z->regs[nr].data[nn] = range[nn];
-    z->regs[nr].data[5] = 1;
-    z->regs[nr].nfaces = nf;
-    z->regs[nr].faces = (Face *) MALLOC (funcname, (size_t)nf * sizeof(Face));
-    for (n = 0; n < nf; n++, f++) {
-        z->regs[nr].faces[n].nnodes = 4;
-        for (ii = 0; ii < 4; ii++)
-            z->regs[nr].faces[n].nodes[ii] = f->nodes[ii];
-    }
-    nr++;
-
-    strcpy (z->regs[nr].name, "<kmax>");
-    z->regs[nr].dim = 2;
-    z->regs[nr].type = REG_BNDS;
-    for (nn = 0; nn < 6; nn++)
-        z->regs[nr].data[nn] = range[nn];
-    z->regs[nr].data[2] = dim[2];
-    z->regs[nr].nfaces = nf;
-    z->regs[nr].faces = (Face *) MALLOC (funcname, (size_t)nf * sizeof(Face));
-    for (n = 0; n < nf; n++, f++) {
-        z->regs[nr].faces[n].nnodes = 4;
-        for (ii = 0; ii < 4; ii++)
-            z->regs[nr].faces[n].nodes[ii] = f->nodes[ii];
-    }
-    nr++;
+        strcpy (z->regs[nr].name, "<jmax>");
+        z->regs[nr].dim = 1;
+        z->regs[nr].type = REG_BNDS;
+        for (nn = 0; nn < 4; nn++)
+            z->regs[nr].data[nn] = range[nn];
+        z->regs[nr].data[1] = dim[1];
+        z->regs[nr].nedges = ni;
+        z->regs[nr].edges = (Edge *) MALLOC (funcname,
+                            (size_t)ni * sizeof(Edge));
+        for (j = nj, i = 0; i < ni; i++) {
+            z->regs[nr].edges[i].nodes[0] = NODE_INDEX(i,   j, k);
+            z->regs[nr].edges[i].nodes[1] = NODE_INDEX(i+1, j, k);
+        }
+        nr++;
 #endif
+    }
+
+    else {
+        z->regs[0].dim = 3;
+
+#ifndef NO_CUTTING_PLANE
+        z->regs[0].elemtype = CGNS_ENUMV(HEXA_8);
+        z->regs[0].nelems = ni * nj * nk;
+        z->regs[0].elems = pts = (cgsize_t *) MALLOC (funcname,
+	        (size_t)(8 * z->regs[0].nelems) * sizeof(cgsize_t));
+
+        for (n = 0, k = 0; k < nk; k++) {
+            for (j = 0; j < nj; j++) {
+                for (i = 0; i < ni; i++) {
+                    pts[n++] = NODE_INDEX (i,   j,   k);
+                    pts[n++] = NODE_INDEX (i+1, j,   k);
+                    pts[n++] = NODE_INDEX (i+1, j+1, k);
+                    pts[n++] = NODE_INDEX (i,   j+1, k);
+                    pts[n++] = NODE_INDEX (i,   j,   k+1);
+                    pts[n++] = NODE_INDEX (i+1, j,   k+1);
+                    pts[n++] = NODE_INDEX (i+1, j+1, k+1);
+                    pts[n++] = NODE_INDEX (i,   j+1, k+1);
+                }
+            }
+        }
+#endif
+
+        z->regs[0].nfaces = 2 * (nj * nk + ni * nk + ni * nj);
+        z->regs[0].faces = (Face **) MALLOC (funcname,
+                           (size_t)z->regs[0].nfaces * sizeof(Face *));
+        fn = 0;
+
+        for (i = 0, k = 0; k < nk; k++) {
+            for (j = 0; j < nj; j++) {
+                f = z->regs[0].faces[fn++] = new_face (funcname, 4);
+                f->nodes[0] = NODE_INDEX (i, j, k);
+                f->nodes[1] = NODE_INDEX (i, j, k+1);
+                f->nodes[2] = NODE_INDEX (i, j+1, k+1);
+                f->nodes[3] = NODE_INDEX (i, j+1, k);
+            }
+        }
+        for (i = ni, k = 0; k < nk; k++) {
+            for (j = 0; j < nj; j++) {
+                f = z->regs[0].faces[fn++] = new_face (funcname, 4);
+                f->nodes[0] = NODE_INDEX (i, j, k);
+                f->nodes[1] = NODE_INDEX (i, j+1, k);
+                f->nodes[2] = NODE_INDEX (i, j+1, k+1);
+                f->nodes[3] = NODE_INDEX (i, j, k+1);
+            }
+        }
+        for (j = 0, k = 0; k < nk; k++) {
+            for (i = 0; i < ni; i++) {
+                f = z->regs[0].faces[fn++] = new_face (funcname, 4);
+                f->nodes[0] = NODE_INDEX (i, j, k);
+                f->nodes[1] = NODE_INDEX (i+1, j, k);
+                f->nodes[2] = NODE_INDEX (i+1, j, k+1);
+                f->nodes[3] = NODE_INDEX (i, j, k+1);
+            }
+        }
+        for (j = nj, k = 0; k < nk; k++) {
+            for (i = 0; i < ni; i++) {
+                f = z->regs[0].faces[fn++] = new_face (funcname, 4);
+                f->nodes[0] = NODE_INDEX (i, j, k);
+                f->nodes[1] = NODE_INDEX (i, j, k+1);
+                f->nodes[2] = NODE_INDEX (i+1, j, k+1);
+                f->nodes[3] = NODE_INDEX (i+1, j, k);
+            }
+        }
+        for (k = 0, j = 0; j < nj; j++) {
+            for (i = 0; i < ni; i++) {
+                f = z->regs[0].faces[fn++] = new_face (funcname, 4);
+                f->nodes[0] = NODE_INDEX (i, j, k);
+                f->nodes[1] = NODE_INDEX (i, j+1, k);
+                f->nodes[2] = NODE_INDEX (i+1, j+1, k);
+                f->nodes[3] = NODE_INDEX (i+1, j, k);
+            }
+        }
+        for (k = nk, j = 0; j < nj; j++) {
+            for (i = 0; i < ni; i++) {
+                f = z->regs[0].faces[fn++] = new_face (funcname, 4);
+                f->nodes[0] = NODE_INDEX (i, j, k);
+                f->nodes[1] = NODE_INDEX (i+1, j, k);
+                f->nodes[2] = NODE_INDEX (i+1, j+1, k);
+                f->nodes[3] = NODE_INDEX (i, j+1, k);
+            }
+        }
+
+#ifndef NO_MESH_BOUNDARIES
+        fn = 0;
+        nf = nj * nk;
+        strcpy (z->regs[nr].name, "<imin>");
+        z->regs[nr].dim = 2;
+        z->regs[nr].type = REG_BNDS;
+        for (nn = 0; nn < 6; nn++)
+            z->regs[nr].data[nn] = range[nn];
+        z->regs[nr].data[3] = 1;
+        z->regs[nr].nfaces = nf;
+        z->regs[nr].faces = (Face **) MALLOC (funcname,
+                            (size_t)nf * sizeof(Face *));
+        for (n = 0; n < nf; n++)
+            z->regs[nr].faces[n] = copy_face (funcname, z->regs->faces[fn++]);
+        nr++;
+
+        strcpy (z->regs[nr].name, "<imax>");
+        z->regs[nr].dim = 2;
+        z->regs[nr].type = REG_BNDS;
+        for (nn = 0; nn < 6; nn++)
+            z->regs[nr].data[nn] = range[nn];
+        z->regs[nr].data[0] = dim[0];
+        z->regs[nr].nfaces = nf;
+        z->regs[nr].faces = (Face **) MALLOC (funcname,
+                            (size_t)nf * sizeof(Face *));
+        for (n = 0; n < nf; n++)
+            z->regs[nr].faces[n] = copy_face (funcname, z->regs->faces[fn++]);
+        nr++;
+
+        nf = ni * nk;
+        strcpy (z->regs[nr].name, "<jmin>");
+        z->regs[nr].dim = 2;
+        z->regs[nr].type = REG_BNDS;
+        for (nn = 0; nn < 6; nn++)
+            z->regs[nr].data[nn] = range[nn];
+        z->regs[nr].data[4] = 1;
+        z->regs[nr].nfaces = nf;
+        z->regs[nr].faces = (Face **) MALLOC (funcname,
+                            (size_t)nf * sizeof(Face *));
+        for (n = 0; n < nf; n++)
+            z->regs[nr].faces[n] = copy_face (funcname, z->regs->faces[fn++]);
+        nr++;
+
+        strcpy (z->regs[nr].name, "<jmax>");
+        z->regs[nr].dim = 2;
+        z->regs[nr].type = REG_BNDS;
+        for (nn = 0; nn < 6; nn++)
+            z->regs[nr].data[nn] = range[nn];
+        z->regs[nr].data[1] = dim[1];
+        z->regs[nr].nfaces = nf;
+        z->regs[nr].faces = (Face **) MALLOC (funcname,
+                            (size_t)nf * sizeof(Face *));
+        for (n = 0; n < nf; n++)
+            z->regs[nr].faces[n] = copy_face (funcname, z->regs->faces[fn++]);
+        nr++;
+
+        nf = ni * nj;
+        strcpy (z->regs[nr].name, "<kmin>");
+        z->regs[nr].dim = 2;
+        z->regs[nr].type = REG_BNDS;
+        for (nn = 0; nn < 6; nn++)
+            z->regs[nr].data[nn] = range[nn];
+        z->regs[nr].data[5] = 1;
+        z->regs[nr].nfaces = nf;
+        z->regs[nr].faces = (Face **) MALLOC (funcname,
+                            (size_t)nf * sizeof(Face *));
+        for (n = 0; n < nf; n++)
+            z->regs[nr].faces[n] = copy_face (funcname, z->regs->faces[fn++]);
+        nr++;
+
+        strcpy (z->regs[nr].name, "<kmax>");
+        z->regs[nr].dim = 2;
+        z->regs[nr].type = REG_BNDS;
+        for (nn = 0; nn < 6; nn++)
+            z->regs[nr].data[nn] = range[nn];
+        z->regs[nr].data[2] = dim[2];
+        z->regs[nr].nfaces = nf;
+        z->regs[nr].faces = (Face **) MALLOC (funcname,
+                            (size_t)nf * sizeof(Face *));
+        for (n = 0; n < nf; n++)
+            z->regs[nr].faces[n] = copy_face (funcname, z->regs->faces[fn++]);
+        nr++;
+#endif
+    }
 
     /* 1 to 1 interfaces */
 
@@ -933,12 +1163,12 @@ static int structured_zone (Tcl_Interp *interp, cgsize_t *dim)
         }
         strcpy (z->regs[nr].name, name);
         z->regs[nr].type = REG_1TO1;
-        z->regs[nr].data[0] = 6;
-        for (ii = 0; ii < 6; ii++)
+        z->regs[nr].data[0] = 2 * CellDim;
+        for (ii = 0; ii < 2*CellDim; ii++)
             z->regs[nr].data[ii+1] = range[ii];
         strcpy (z->regs[nr].d_name, d_name);
-        if (structured_range (&z->regs[nr], dim, range, CGNS_ENUMV(Vertex)))
-            z->regs[nr].dim = 2;
+        k = structured_range (&z->regs[nr], dim, range, CGNS_ENUMV(Vertex));
+        z->regs[nr].dim = k;
         nr++;
     }
 
@@ -964,24 +1194,103 @@ static int structured_zone (Tcl_Interp *interp, cgsize_t *dim)
         z->regs[nr].data[2] = ptype;
         z->regs[nr].data[3] = npts;
         if (ptype == CGNS_ENUMV(PointRange)) {
-            z->regs[nr].data[3] = 6;
-            for (ii = 0; ii < 6; ii++)
+            z->regs[nr].data[3] = 2 * CellDim;
+            for (ii = 0; ii < 2*CellDim; ii++)
                 z->regs[nr].data[ii+4] = pts[ii];
         }
         strcpy (z->regs[nr].d_name, d_name);
 
-        if ((type == CGNS_ENUMV(Abutting1to1) || type == CGNS_ENUMV(Abutting)) &&
-            (ptype == CGNS_ENUMV(PointList) || ptype == CGNS_ENUMV(PointRange))) {
+        if (type == CGNS_ENUMV(Abutting1to1) || type == CGNS_ENUMV(Abutting)) {
             if (ptype == CGNS_ENUMV(PointRange))
                 k = structured_range (&z->regs[nr], dim, pts, location);
-            else
+            else if (ptype == CGNS_ENUMV(PointList))
                 k = structured_list (z->regs, &z->regs[nr], dim, npts, pts, location);
-            if (k) z->regs[nr].dim = 2;
+            else {
+                k = 0;
+                strcpy (z->regs[nr].errmsg, "invalid point set type");
+            }
         }
-        else
-            strcpy (z->regs[nr].errmsg,
-                "not Abutting or Abutting1to1 with PointList or PointRange");
+        else if (type == CGNS_ENUMV(Overset)) {
+            k = 0;
+            strcpy (z->regs[nr].errmsg, "Overset connectivity not implemented");
+        }
+        else {
+            k = 0;
+            strcpy (z->regs[nr].errmsg, "invalid connectivity type");
+        }
+        z->regs[nr].dim = k;
         free (pts);
+        nr++;
+    }
+
+    /* holes */
+
+    for (nn = 1; nn <= nholes; nn++) {
+        if (cg_hole_info (cgnsfn, cgnsbase, cgnszone, nn, name,
+                &location, &ptype, &nsets, &npts)) {
+            Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
+            return 1;
+        }
+        pts = (cgsize_t *) MALLOC (funcname, (size_t)(3 * npts * nsets) * sizeof(cgsize_t));
+        if (cg_hole_read (cgnsfn, cgnsbase, cgnszone, nn, pts)) {
+            free (pts);
+            Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
+            return 1;
+        }
+        strcpy (z->regs[nr].name, name);
+        z->regs[nr].type = REG_HOLE;
+        z->regs[nr].data[0] = nsets;
+        z->regs[nr].data[1] = location;
+        z->regs[nr].data[2] = ptype;
+        z->regs[nr].data[3] = npts;
+
+        if (ptype == CGNS_ENUMV(PointRange)) {
+            z->regs[nr].data[3] = 2 * CellDim;
+            for (ii = 0; ii < 2*CellDim; ii++)
+                z->regs[nr].data[ii+4] = pts[ii];
+            z->regs[nr].dim = structured_range (&z->regs[nr], dim, pts, location);
+
+            if (z->regs[nr].dim && nsets > 1) {
+                Edge *edges = z->regs[nr].edges;
+                Face **faces = z->regs[nr].faces;
+                ne = z->regs[nr].nedges;
+                nf = z->regs[nr].nfaces;
+                for (ii = 1; ii < nsets; ii++) {
+                    z->regs[nr].nedges = z->regs[nr].nfaces = 0;
+                    k = structured_range (&z->regs[nr], dim,
+                        &pts[ii*2*CellDim], location);
+                    if (k && z->regs[nr].nedges) {
+                        edges = (Edge *) REALLOC (funcname,
+                            (ne + z->regs[nr].nedges) * sizeof(Edge), edges);
+                        for (i = 0; i < z->regs[nr].nedges; i++) {
+                            edges[ne].nodes[0] = z->regs[nr].edges[i].nodes[0];
+                            edges[ne].nodes[1] = z->regs[nr].edges[i].nodes[1];
+                            ne++;
+                        }
+                        free(z->regs[nr].edges);
+                    }
+                    if (k && z->regs[nr].nfaces) {
+                        faces = (Face **) REALLOC (funcname,
+                            (nf + z->regs[nr].nfaces) * sizeof(Face *), faces);
+                        for (i = 0; i < z->regs[nr].nfaces; i++)
+                            faces[nf++] = z->regs[nr].faces[i];
+                        free(z->regs[nr].faces);
+                    }
+                }
+                z->regs[nr].nedges = ne;
+                z->regs[nr].edges = edges;
+                z->regs[nr].nfaces = nf;
+                z->regs[nr].faces = faces;
+            }
+        }
+        else if (ptype == CGNS_ENUMV(PointList)) {
+            z->regs[nr].dim = structured_list (z->regs, &z->regs[nr],
+                              dim, npts, pts, location);
+        }
+        else {
+            strcpy (z->regs[nr].errmsg, "invalid Point Set Type");
+        }
+        free(pts);
         nr++;
     }
 
@@ -989,17 +1298,12 @@ static int structured_zone (Tcl_Interp *interp, cgsize_t *dim)
 
     for (nn = 1; nn <= nbocos; nn++) {
         if (cg_boco_info (cgnsfn, cgnsbase, cgnszone, nn, name,
-                &bctype, &ptype, &npts, transform, &j, &datatype, &ii)) {
+                &bctype, &ptype, &npts, transform, &j, &datatype, &ii) ||
+            cg_boco_gridlocation_read(cgnsfn, cgnsbase, cgnszone, nn,
+                &location)) {
             Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
             return 1;
         }
-        if (cg_goto (cgnsfn, cgnsbase, "Zone_t", cgnszone,
-               "ZoneBC_t", 1, "BC_t", nn, "end")) {
-            Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
-            return 1;
-        }
-        if (cg_gridlocation_read (&location))
-            location = CGNS_ENUMV(Vertex);
         pts = (cgsize_t *) MALLOC (funcname, (size_t)(3 * npts) * sizeof(cgsize_t));
         if (cg_boco_read (cgnsfn, cgnsbase, cgnszone, nn, pts, 0)) {
             free (pts);
@@ -1013,8 +1317,8 @@ static int structured_zone (Tcl_Interp *interp, cgsize_t *dim)
         z->regs[nr].data[2] = ptype;
         z->regs[nr].data[3] = i;
         if (ptype == CGNS_ENUMV(PointRange) || ptype == CGNS_ENUMV(ElementRange)) {
-            z->regs[nr].data[3] = 6;
-            for (ii = 0; ii < 6; ii++)
+            z->regs[nr].data[3] = 2 * CellDim;
+            for (ii = 0; ii < 2*CellDim; ii++)
                 z->regs[nr].data[ii+4] = pts[ii];
         }
 
@@ -1026,7 +1330,7 @@ static int structured_zone (Tcl_Interp *interp, cgsize_t *dim)
             k = 0;
             strcpy (z->regs[nr].errmsg, "invalid point set type");
         }
-        if (k) z->regs[nr].dim = 2;
+        z->regs[nr].dim = k;
         free (pts);
         nr++;
     }
@@ -1037,12 +1341,12 @@ static int structured_zone (Tcl_Interp *interp, cgsize_t *dim)
     for (nr = 0; nr < z->nregs; nr++) {
         if (z->regs[nr].dim == 2 && z->regs[nr].nfaces) {
             nf = z->regs[nr].nfaces;
-            f = z->regs[nr].faces;
             z->regs[nr].elemtype = CGNS_ENUMV(QUAD_4);
             z->regs[nr].nelems = nf;
             z->regs[nr].elems = (cgsize_t *) MALLOC (funcname,
 	        (size_t)(4 * nf) * sizeof(cgsize_t));
             for (n = 0, j = 0; j < nf; j++, f++) {
+                f = z->regs[nr].faces[j];
                 for (ii = 0; ii < 4; ii++)
                     z->regs[nr].elems[n++] = f->nodes[ii];
             }
@@ -1057,7 +1361,8 @@ static int structured_zone (Tcl_Interp *interp, cgsize_t *dim)
  * unstructured grid regions
  *====================================================================*/
 
-static HASH *facehash;
+static int max_face_nodes = 0;
+static cgsize_t *sort_face_nodes = NULL;
 
 /*-------------------------------------------------------------------*/
 
@@ -1066,10 +1371,18 @@ static int compare_faces (void *v1, void *v2)
     Face *f1 = (Face *)v1;
     Face *f2 = (Face *)v2;
     int i, k;
-    cgsize_t id, nn, n1[4], n2[4];
+    cgsize_t id, nn, *n1, *n2;
 
     if (f1->nnodes != f2->nnodes)
         return (f1->nnodes - f2->nnodes);
+
+    if (f1->nnodes > max_face_nodes) {
+        max_face_nodes += 10;
+        sort_face_nodes = (cgsize_t *) REALLOC ("compare_faces",
+            2 * max_face_nodes * sizeof(cgsize_t), sort_face_nodes);
+    }
+    n1 = sort_face_nodes;
+    n2 = sort_face_nodes + max_face_nodes;
 
     for (i = 0; i < f1->nnodes; i++) {
         id = f1->nodes[i];
@@ -1120,94 +1433,152 @@ static size_t get_faces (void *vf, void *vr)
 {
     Face *f = (Face *)vf;
     Regn *r = (Regn *)vr;
-    int n;
 
-    r->faces[r->nfaces].id = f->id;
-    r->faces[r->nfaces].nnodes = f->nnodes;
-    for (n = 0; n < f->nnodes; n++)
-        r->faces[r->nfaces].nodes[n] = f->nodes[n];
-    free (f);
+    r->faces[r->nfaces] = f;
     (r->nfaces)++;
     return 1;
 }
 
 /*-------------------------------------------------------------------*/
 
-static void exterior_faces (cgsize_t nelems, CGNS_ENUMT(ElementType_t) elemtype,
-                            cgsize_t *conn, int rind[2])
+static int compare_poly (void *v1, void *v2)
 {
-    int i, j, nf, ip, type = (int)elemtype;
-    cgsize_t nn, ne;
-    Face face, *pf;
+    PolyFace *p1 = (PolyFace *)v1;
+    PolyFace *p2 = (PolyFace *)v2;
 
-    for (nn = 0, ne = 0; ne < nelems - rind[1]; ne++) {
-        if (elemtype == CGNS_ENUMV(MIXED)) type = (int)conn[nn++];
-        switch (type) {
-            case CGNS_ENUMV(TETRA_4):
-            case CGNS_ENUMV(TETRA_10):
-                ip = 2;
-                nf = 4;
-                break;
-            case CGNS_ENUMV(PYRA_5):
-            case CGNS_ENUMV(PYRA_14):
-                ip = 6;
-                nf = 5;
-                break;
-            case CGNS_ENUMV(PENTA_6):
-            case CGNS_ENUMV(PENTA_15):
-            case CGNS_ENUMV(PENTA_18):
-                ip = 11;
-                nf = 5;
-                break;
-            case CGNS_ENUMV(HEXA_8):
-            case CGNS_ENUMV(HEXA_20):
-            case CGNS_ENUMV(HEXA_27):
-                ip = 16;
-                nf = 6;
-                break;
-            default:
-                if (type < CGNS_ENUMV(NODE) || type > CGNS_ENUMV(HEXA_27))
-                    FATAL ("unknown element type int exterior_faces");
-                ip = 0;
-                nf = 0;
-                break;
+    return compare_faces(p1->face, p2->face);
+}
+
+/*-------------------------------------------------------------------*/
+
+static size_t hash_poly (void *v)
+{
+    PolyFace *p = (PolyFace *)v;
+
+    return hash_face(p->face);
+}
+
+/*-------------------------------------------------------------------*/
+
+static cgsize_t nPolyFaces;
+
+static size_t poly_faces (void *vp, void *vl)
+{
+    PolyFace *pf = (PolyFace *)vp;
+    PolyFace **pl = (PolyFace **)vl;
+
+    pl[nPolyFaces++] = pf;
+    return 1;
+}
+
+/*-------------------------------------------------------------------*/
+
+static int poly_sort (const void *v1, const void *v2)
+{
+    const PolyFace **p1 = (const PolyFace **)v1;
+    const PolyFace **p2 = (const PolyFace **)v2;
+
+    return (int)((*p1)->num - (*p2)->num);
+}
+
+/*-------------------------------------------------------------------*/
+
+static Face *find_face (Zone *z, cgsize_t fnum)
+{
+    int nr;
+    cgsize_t nf;
+
+    for (nr = 0; nr < z->nregs; nr++) {
+        if (z->regs[nr].type == REG_ELEM &&
+            z->regs[nr].dim == 2 &&
+            z->regs[nr].data[1] <= fnum &&
+            z->regs[nr].data[2] >= fnum) {
+            nf = fnum - z->regs[nr].data[1];
+            return z->regs[nr].faces[nf];
         }
-        if (ne >= rind[0]) {
-            for (j = 0; j < nf; j++) {
-                face.nnodes = facenodes[ip+j][0];
-                for (i = 0; i < face.nnodes; i++)
-                    face.nodes[i] = conn[nn + facenodes[ip+j][i+1]] - 1;
-                if (NULL == (pf = (Face *) HashFind (facehash, &face))) {
-                    pf = (Face *) MALLOC ("exterior_faces", sizeof(Face));
-                    pf->id = 0;
-                    pf->nnodes = face.nnodes;
-                    for (i = 0; i < face.nnodes; i++)
-                        pf->nodes[i] = face.nodes[i];
-                    (void) HashAdd (facehash, pf);
-                }
-                else {
-                    HashDelete (facehash, pf);
-                    free (pf);
-                }
-            }
-        }
-        cg_npe ((CGNS_ENUMT(ElementType_t))type, &j);
-        nn += j;
+    }
+    return NULL;
+}
+
+/*-------------------------------------------------------------------*/
+
+static int element_dimension (CGNS_ENUMT(ElementType_t) elemtype)
+{
+    switch (elemtype) {
+        case CGNS_ENUMV(NODE):
+            return 0;
+        case CGNS_ENUMV(BAR_2):
+        case CGNS_ENUMV(BAR_3):
+            return 1;
+        case CGNS_ENUMV(TRI_3):
+        case CGNS_ENUMV(TRI_6):
+        case CGNS_ENUMV(QUAD_4):
+        case CGNS_ENUMV(QUAD_8):
+        case CGNS_ENUMV(QUAD_9):
+        case CGNS_ENUMV(NGON_n):
+            return 2;
+        case CGNS_ENUMV(TETRA_4):
+        case CGNS_ENUMV(TETRA_10):
+        case CGNS_ENUMV(PYRA_5):
+        case CGNS_ENUMV(PYRA_13):
+        case CGNS_ENUMV(PYRA_14):
+        case CGNS_ENUMV(PENTA_6):
+        case CGNS_ENUMV(PENTA_15):
+        case CGNS_ENUMV(PENTA_18):
+        case CGNS_ENUMV(HEXA_8):
+        case CGNS_ENUMV(HEXA_20):
+        case CGNS_ENUMV(HEXA_27):
+        case CGNS_ENUMV(NFACE_n):
+            return 3;
+        default:
+            break;
+    }
+    return -1;
+}
+
+/*-------------------------------------------------------------------*/
+
+static void edge_elements (Regn *r, cgsize_t *conn)
+{
+    int ip;
+    cgsize_t istart, n, ne, nelems;
+
+    istart = r->data[1];
+    nelems = r->data[2] - istart + 1;
+    cg_npe ((CGNS_ENUMT(ElementType_t))r->data[0], &ip);
+
+    r->nedges = nelems;
+    r->edges = (Edge *) MALLOC ("edge_elements", nelems * sizeof(Edge));
+    for (n = 0, ne = 0; ne < nelems; ne++) {
+        r->edges[ne].id = istart + ne;
+        r->edges[ne].nodes[0] = conn[n] - 1;
+        r->edges[ne].nodes[1] = conn[n+1] - 1;
+        n += ip;
     }
 }
 
 /*-------------------------------------------------------------------*/
 
-static void element_faces (cgsize_t istart, cgsize_t nelems,
-                           CGNS_ENUMT(ElementType_t) elemtype,
-                           cgsize_t *conn, int rind[2])
+static void face_elements (Regn *r, cgsize_t *conn)
 {
-    int i, ip, type = (int)elemtype;
-    cgsize_t ne, nn;
-    Face face, *pf;
+    int i, ip;
+    cgsize_t ne, nn, istart, nelems;
+    cgsize_t rind0, rind1;
+    CGNS_ENUMT(ElementType_t) elemtype, type;
+    static char *funcname = "face_elements";
 
-    for (nn = 0, ne = 0; ne < nelems - rind[1]; ne++) {
-        if (elemtype == CGNS_ENUMV(MIXED)) type = (int)conn[nn++];
+    elemtype = type = (CGNS_ENUMT(ElementType_t))r->data[0];
+    istart = r->data[1];
+    nelems = r->data[2] - istart + 1;
+    rind0  = r->data[3];
+    rind1  = nelems - r->data[4];
+
+    r->nfaces = nelems;
+    r->faces  = (Face **) MALLOC (funcname, nelems * sizeof(Face *));
+
+    for (nn = 0, ne = 0; ne < nelems; ne++) {
+        if (elemtype == CGNS_ENUMV(MIXED))
+            type = (CGNS_ENUMT(ElementType_t))conn[nn++];
         switch (type) {
             case CGNS_ENUMV(TRI_3):
             case CGNS_ENUMV(TRI_6):
@@ -1218,29 +1589,250 @@ static void element_faces (cgsize_t istart, cgsize_t nelems,
             case CGNS_ENUMV(QUAD_9):
                 ip = 4;
                 break;
+            case CGNS_ENUMV(NGON_n):
+                ip = (int)conn[nn++];
+                break;
             default:
                 if (type < CGNS_ENUMV(NODE) || type > CGNS_ENUMV(HEXA_27))
-                    FATAL ("unknown element type int element_faces");
+                    FATAL ("face_elements:unknown element type");
                 ip = 0;
                 break;
         }
-        if (ip && ne >= rind[0]) {
-            face.nnodes = ip;
+        if (ip) {
+            r->faces[ne] = new_face (funcname, ip);
+            r->faces[ne]->id = istart + ne;
             for (i = 0; i < ip; i++)
-                face.nodes[i] = conn[nn+i] - 1;
+                r->faces[ne]->nodes[i] = conn[nn+i] - 1;
+            if (ne < rind0 || ne >= rind1)
+                r->faces[ne]->flags = 1;
+        }
+        else {
+            r->faces[ne] = NULL;
+        }
+        if (type == CGNS_ENUMV(NGON_n))
+            nn += ip;
+        else {
+            cg_npe (type, &i);
+            nn += i;
+        }
+    }
+}
 
-            if (NULL == (pf = (Face *) HashFind (facehash, &face))) {
-                pf = (Face *) MALLOC ("element_faces", sizeof(Face));
-                pf->id = istart + ne;
-                pf->nnodes = face.nnodes;
-                for (i = 0; i < face.nnodes; i++)
-                    pf->nodes[i] = face.nodes[i];
+/*-------------------------------------------------------------------*/
+
+static void exterior_faces (Zone *z, Regn *r, cgsize_t *conn)
+{
+    int i, j, nf, ip, flag;
+    cgsize_t ne, nn, istart, nelems;
+    cgsize_t rind0, rind1;
+    CGNS_ENUMT(ElementType_t) elemtype;
+    HASH *facehash;
+    Face *face, *pf;
+    static char *funcname = "exterior_faces";
+
+    elemtype = (CGNS_ENUMT(ElementType_t))r->data[0];
+    istart = r->data[1];
+    nelems = r->data[2] - istart + 1;
+    rind0  = r->data[3];
+    rind1  = nelems - r->data[4];
+
+    facehash = HashCreate (nelems > 1024 ? (size_t)nelems / 3 : 127,
+                           compare_faces, hash_face);
+    if (NULL == facehash)
+        FATAL ("exterior_faces:face hash table creation failed");
+
+    if (elemtype == CGNS_ENUMV(NFACE_n)) {
+        for (nn = 0, ne = 0; ne < nelems; ne++) {
+            flag = (ne < rind0 || ne >= rind1) ? 1 : 0;
+            nf = conn[nn++];
+            for (j = 0; j < nf; j++) {
+                face = find_face (z, abs(conn[nn + j]));
+                if (face != NULL) {
+                    pf = (Face *) HashFind (facehash, face);
+                    if (NULL == pf) {
+                        pf = copy_face (funcname, face);
+                        pf->id = 0;
+                        pf->flags = flag;
+                        (void) HashAdd (facehash, pf);
+                    }
+                    else if (flag == pf->flags) {
+                        HashDelete (facehash, pf);
+                        free (pf);
+                    }
+                    else {
+                        pf->flags = 0;
+                    }
+                }
+            }
+            nn += nf;
+        }
+    }
+    else {
+        CGNS_ENUMT(ElementType_t) type = elemtype;
+        face = new_face(funcname, 4);
+        for (nn = 0, ne = 0; ne < nelems; ne++) {
+            flag = (ne < rind0 || ne >= rind1) ? 1 : 0;
+            if (elemtype == CGNS_ENUMV(MIXED))
+                type = (CGNS_ENUMT(ElementType_t))conn[nn++];
+            switch (type) {
+                case CGNS_ENUMV(TETRA_4):
+                case CGNS_ENUMV(TETRA_10):
+                    ip = 2;
+                    nf = 4;
+                    break;
+                case CGNS_ENUMV(PYRA_5):
+                case CGNS_ENUMV(PYRA_13):
+                case CGNS_ENUMV(PYRA_14):
+                    ip = 6;
+                    nf = 5;
+                    break;
+                case CGNS_ENUMV(PENTA_6):
+                case CGNS_ENUMV(PENTA_15):
+                case CGNS_ENUMV(PENTA_18):
+                    ip = 11;
+                    nf = 5;
+                    break;
+                case CGNS_ENUMV(HEXA_8):
+                case CGNS_ENUMV(HEXA_20):
+                case CGNS_ENUMV(HEXA_27):
+                    ip = 16;
+                    nf = 6;
+                    break;
+                default:
+                    if (type < CGNS_ENUMV(NODE) ||
+                        type > CGNS_ENUMV(HEXA_27))
+                        FATAL ("exterior_faces:unknown element type");
+                    ip = 0;
+                    nf = 0;
+                    break;
+            }
+            for (j = 0; j < nf; j++) {
+                face->nnodes = facenodes[ip+j][0];
+                for (i = 0; i < face->nnodes; i++)
+                    face->nodes[i] = conn[nn + facenodes[ip+j][i+1]] - 1;
+                pf = (Face *) HashFind (facehash, face);
+                if (NULL == pf) {
+                    pf = copy_face (funcname, face);
+                    pf->id = 0;
+                    pf->flags = flag;
+                    (void) HashAdd (facehash, pf);
+                }
+                else if (flag == pf->flags) {
+                    HashDelete (facehash, pf);
+                    free (pf);
+                }
+                else {
+                    pf->flags = 0;
+                }
+            }
+            cg_npe (type, &j);
+            nn += j;
+        }
+        free(face);
+    }
+
+    r->nfaces = 0;
+    ne = (cgsize_t) HashSize (facehash);
+    if (ne) {
+        r->faces = (Face **) MALLOC (funcname, ne * sizeof(Face *));
+        HashList (facehash, get_faces, r);
+    }
+    else {
+        strcpy (r->errmsg, "couldn't find any exterior faces");
+    }
+    HashDestroy (facehash, NULL);
+}
+
+/*-------------------------------------------------------------------*/
+
+static void polyhedral_faces (Zone *z, Regn *r, cgsize_t *conn)
+{
+    int j, nf, flag;
+    cgsize_t ne, nn, istart, nelems, nfaces, id;
+    cgsize_t rind0, rind1;
+    HASH *facehash;
+    Face *face;
+    PolyFace poly, *pf, **polylist;
+    static char *funcname = "polyhedral_faces";
+
+    istart = r->data[1];
+    nelems = r->data[2] - istart + 1;
+    rind0  = r->data[3];
+    rind1  = nelems - r->data[4];
+
+    facehash = HashCreate (nelems > 1024 ? (size_t)nelems / 3 : 127,
+                           compare_poly, hash_poly);
+    if (NULL == facehash)
+        FATAL ("polyhedral_faces:face hash table creation failed");
+
+    nfaces = 0;
+    for (nn = 0, ne = 0; ne < nelems; ne++) {
+        flag = (ne < rind0 || ne >= rind1) ? 1 : 0;
+        nf = conn[nn++];
+        for (j = 0; j < nf; j++) {
+            id = conn[nn + j];
+            face = find_face (z, abs(id));
+            poly.face = face;
+            pf = (PolyFace *) HashFind (facehash, &poly);
+            if (NULL == pf) {
+                pf = (PolyFace *)MALLOC(funcname, sizeof(PolyFace));
+                pf->face = face;
+                pf->num = ++nfaces;
+                pf->flags = flag;
                 (void) HashAdd (facehash, pf);
             }
+            else {
+                if ((pf->flags & 1) != flag)
+                    pf->flags &= ~1;
+                pf->flags |= 2;
+            }
+            conn[nn + j] = id < 0 ? -(pf->num) : pf->num;
         }
-        cg_npe ((CGNS_ENUMT(ElementType_t))type, &i);
-        nn += i;
+        nn += nf;
     }
+
+    nfaces = (cgsize_t) HashSize (facehash);
+    polylist = (PolyFace **) MALLOC (funcname, nfaces * sizeof(PolyFace *));
+    nPolyFaces = 0;
+    HashList (facehash, poly_faces, polylist);
+    HashDestroy (facehash, NULL);
+
+    qsort(polylist, nfaces, sizeof(PolyFace *), poly_sort);
+
+    for (nn = 0, ne = 0; ne < nfaces; ne++) {
+        if ((polylist[ne]->flags & 2) == 0) nn++;
+    }
+    r->nfaces = nn;
+    r->faces = (Face **) MALLOC (funcname, nn * sizeof(Face *));
+    for (nn = 0, ne = 0; ne < nfaces; ne++) {
+        if ((polylist[ne]->flags & 2) == 0) {
+            r->faces[nn] = copy_face(funcname, polylist[ne]->face);
+            r->faces[nn]->id = 0;
+            r->faces[nn]->flags = (polylist[ne]->flags & 1);
+            nn++;
+        }
+    }
+
+    r->npoly = nfaces;
+    r->poly = (Face **) MALLOC (funcname, nfaces * sizeof(Face *));
+    for (nn = 0; nn < nfaces; nn++) {
+        face = polylist[nn]->face;
+        face->flags |= (polylist[nn]->flags & 2);
+        r->poly[nn] = face;
+        free(polylist[nn]);
+    }
+    free(polylist);
+
+    r->elemtype = CGNS_ENUMV(NFACE_n);
+    r->nelems = nelems;
+    r->elems = conn;
+}
+
+/*-------------------------------------------------------------------*/
+
+static int sort_elemsets(const void *v1, const void *v2)
+{
+    return (((Regn *)v2)->dim - ((Regn *)v1)->dim);
 }
 
 /*-------------------------------------------------------------------*/
@@ -1254,7 +1846,8 @@ static cgsize_t unstructured_region (int nregs, Regn *regs, Regn *r,
     Face **faces, *f;
     static char *funcname = "unstructured_region";
 
-    if (ptype == CGNS_ENUMV(PointList) || ptype == CGNS_ENUMV(ElementList)) {
+    if (ptype == CGNS_ENUMV(PointList) ||
+        ptype == CGNS_ENUMV(ElementList)) {
         for (nf = 1; nf < nlist; nf++) {
             if (list[nf] < list[nf-1]) {
                 qsort (list, (size_t)nlist, sizeof(cgsize_t), compare_ints);
@@ -1263,7 +1856,8 @@ static cgsize_t unstructured_region (int nregs, Regn *regs, Regn *r,
         }
         maxfaces = nlist;
     }
-    else if (ptype == CGNS_ENUMV(PointRange) || ptype == CGNS_ENUMV(ElementRange)) {
+    else if (ptype == CGNS_ENUMV(PointRange) ||
+             ptype == CGNS_ENUMV(ElementRange)) {
         if (list[0] > list[1]) {
             nf = list[0];
             list[0] = list[1];
@@ -1277,13 +1871,13 @@ static cgsize_t unstructured_region (int nregs, Regn *regs, Regn *r,
     }
 
     if (maxfaces < 1) return 0;
-    faces = (Face **) MALLOC (funcname, (size_t)maxfaces * sizeof(Face *));
+    faces = (Face **)MALLOC(funcname, (size_t)maxfaces * sizeof(Face *));
 
     nfaces = 0;
     for (nr = 0; nr < nregs; nr++) {
         if (!regs[nr].nfaces) continue;
-        f = regs[nr].faces;
-        for (nf = 0; nf < regs[nr].nfaces; nf++, f++) {
+        for (nf = 0; nf < regs[nr].nfaces; nf++) {
+            f = regs[nr].faces[nf];
             switch (ptype) {
                 case CGNS_ENUMV(PointList):
                     if (f->id) continue;
@@ -1303,7 +1897,7 @@ static cgsize_t unstructured_region (int nregs, Regn *regs, Regn *r,
                     if (nn == f->nnodes) break;
                     continue;
                 case CGNS_ENUMV(ElementList):
-                    if (find_int (f->id, nlist, list)) break;
+                    if (f->id && find_int (f->id, nlist, list)) break;
                     continue;
                 case CGNS_ENUMV(ElementRange):
                     if (f->id >= list[0] && f->id <= list[1]) break;
@@ -1321,13 +1915,9 @@ static cgsize_t unstructured_region (int nregs, Regn *regs, Regn *r,
     }
     if (nfaces) {
         r->nfaces = nfaces;
-        r->faces = (Face *) MALLOC (funcname, (size_t)nfaces * sizeof(Face));
-        for (nf = 0; nf < nfaces; nf++) {
-            r->faces[nf].id = faces[nf]->id;
-            r->faces[nf].nnodes = faces[nf]->nnodes;
-            for (nn = 0; nn < faces[nf]->nnodes; nn++)
-                r->faces[nf].nodes[nn] = faces[nf]->nodes[nn];
-        }
+        r->faces = (Face **)MALLOC(funcname, (size_t)nfaces * sizeof(Face *));
+        for (nf = 0; nf < nfaces; nf++)
+            r->faces[nf] = copy_face(funcname, faces[nf]);
     }
     else
         strcpy (r->errmsg, "couldn't find any exterior faces");
@@ -1339,10 +1929,10 @@ static cgsize_t unstructured_region (int nregs, Regn *regs, Regn *r,
 
 static int unstructured_zone (Tcl_Interp *interp)
 {
-    int ns, nb, ip, nr, hasvol;
-    int nsect, nints, nconns, nbocos, nrmlindex[3];
+    int i, ns, nb, ip, nr, haspoly, nsets;
+    int nsect, nints, nconns, nholes, nbocos, nrmlindex[3];
     int transform[3], rind[2];
-    cgsize_t is, ie, np;
+    cgsize_t is, ie, np, n, ne, nf;
     cgsize_t nelem, elemsize, *conn;
     cgsize_t range[6], d_range[6];
     CGNS_ENUMT(GridLocation_t) location;
@@ -1360,17 +1950,18 @@ static int unstructured_zone (Tcl_Interp *interp)
     if (cg_nsections (cgnsfn, cgnsbase, cgnszone, &nsect) ||
         cg_n1to1 (cgnsfn, cgnsbase, cgnszone, &nints) ||
         cg_nconns (cgnsfn, cgnsbase, cgnszone, &nconns) ||
+        cg_nholes (cgnsfn, cgnsbase, cgnszone, &nholes) ||
         cg_nbocos (cgnsfn, cgnsbase, cgnszone, &nbocos)) {
         Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
         return 1;
     }
-    z->nregs = nsect + nints + nconns + nbocos;
+    z->nregs = nsect + nints + nconns + nholes + nbocos;
     z->regs = (Regn *) MALLOC (funcname, z->nregs * sizeof(Regn));
-    nr = 0;
 
     /* element sets */
 
-    for (ns = 1; ns <= nsect; ns++) {
+    haspoly = 0;
+    for (nr = 0, ns = 1; ns <= nsect; ns++, nr++) {
         if (cg_section_read (cgnsfn, cgnsbase, cgnszone, ns,
                 name, &elemtype, &is, &ie, &nb, &ip) ||
             cg_ElementDataSize (cgnsfn, cgnsbase, cgnszone, ns, &elemsize)) {
@@ -1383,40 +1974,48 @@ static int unstructured_zone (Tcl_Interp *interp)
         z->regs[nr].data[0] = elemtype;
         z->regs[nr].data[1] = is;
         z->regs[nr].data[2] = ie;
-        z->regs[nr].data[3] = 0;
-        z->regs[nr].data[4] = 0;
-        if (elemtype < CGNS_ENUMV(TRI_3) || elemtype > CGNS_ENUMV(MIXED))
+
+        if (cg_goto (cgnsfn, cgnsbase, "Zone_t", cgnszone,
+                "Elements_t", ns, "end") ||
+            cg_rind_read (rind)) {
+            rind[0] = rind[1] = 0;
+        }
+        z->regs[nr].data[3] = rind[0];
+        z->regs[nr].data[4] = rind[1];
+
+        if (elemtype < CGNS_ENUMV(BAR_2) || elemtype > CGNS_ENUMV(NFACE_n)) {
             strcpy (z->regs[nr].errmsg, "invalid element type");
-        else {
-            int i;
-            cgsize_t ne, n;
-            nelem = ie - is + 1;
-            conn = (cgsize_t *) MALLOC (funcname, (size_t)elemsize * sizeof(cgsize_t));
-            if (cg_elements_read (cgnsfn, cgnsbase, cgnszone, ns, conn, 0)) {
-                free (conn);
-                Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
-                return 1;
-            }
+            continue;
+        }
 
-            if (cg_goto (cgnsfn, cgnsbase, "Zone_t", cgnszone,
-                    "Elements_t", ns, "end") ||
-                cg_rind_read (rind)) {
-                rind[0] = rind[1] = 0;
-            }
-            z->regs[nr].data[3] = rind[0];
-            z->regs[nr].data[4] = rind[1];
+        /* do this after reading all the sections */
 
-            /* check element indices */
+        if (elemtype == CGNS_ENUMV(NFACE_n)) {
+            z->regs[nr].dim = 3;
+            haspoly++;
+            continue;
+        }
 
-            cg_npe (elemtype, &ip);
+        nelem = ie - is + 1;
+        conn = (cgsize_t *) MALLOC (funcname, (size_t)elemsize * sizeof(cgsize_t));
+        if (cg_elements_read (cgnsfn, cgnsbase, cgnszone, ns, conn, 0)) {
+            free (conn);
+            Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
+            return 1;
+        }
+
+        /* check element indices */
+
+        if (elemtype == CGNS_ENUMV(MIXED)) {
+            int dim;
+            CGNS_ENUMT(ElementType_t) type;
+            z->regs[nr].dim = -1;
             for (n = 0, ne = 0; ne < nelem; ne++) {
-                if (elemtype == CGNS_ENUMV(MIXED)) {
-                    nb = (int)conn[n++];
-                    if (cg_npe ((CGNS_ENUMT(ElementType_t))nb, &ip) || ip <= 0) {
-                        strcpy(z->regs[nr].errmsg,
-                            "unhandled element type found in MIXED");
-                        break;
-                    }
+                type = (CGNS_ENUMT(ElementType_t))conn[n++];
+                if (cg_npe (type, &ip) || ip <= 0) {
+                    strcpy(z->regs[nr].errmsg,
+                        "unhandled element type found in MIXED");
+                    break;
                 }
                 for (i = 0; i < ip; i++) {
                     if (conn[n] < 1 || conn[n] > z->nnodes) {
@@ -1426,32 +2025,47 @@ static int unstructured_zone (Tcl_Interp *interp)
                     n++;
                 }
                 if (i < ip) break;
+                dim = element_dimension(type);
+                if (z->regs[nr].dim < dim) z->regs[nr].dim = dim;
             }
-            hasvol = 0;
-            if (ne == nelem) {
-                size_t nh = (size_t)nelem;
-                facehash = HashCreate (nh > 1024 ? nh / 3 : 127,
-                    compare_faces, hash_face);
-                if (NULL == facehash)
-                    FATAL ("face hash table creation failed");
-
-                exterior_faces (nelem, elemtype, conn, rind);
-                hasvol = (int)HashSize (facehash);
-                element_faces (is, nelem, elemtype, conn, rind);
-
-                nh = HashSize (facehash);
-                if (nh) {
-                    z->regs[nr].dim = hasvol ? 3 : 2;
-                    z->regs[nr].faces = (Face *) MALLOC (funcname,
-                        nh * sizeof(Face));
-                    HashList (facehash, get_faces, &z->regs[nr]);
+        }
+        else if (elemtype == CGNS_ENUMV(NGON_n)) {
+            z->regs[nr].dim = 2;
+            for (n = 0, ne = 0; ne < nelem; ne++) {
+                ip = (int)conn[n++];
+                for (i = 0; i < ip; i++) {
+                    if (conn[n] < 1 || conn[n] > z->nnodes) {
+                        strcpy(z->regs[nr].errmsg, "invalid element index");
+                        break;
+                    }
+                    n++;
                 }
-                else {
-                    strcpy (z->regs[nr].errmsg,
-                        "couldn't find any exterior faces");
-                }
-                HashDestroy (facehash, NULL);
+                if (i < ip) break;
             }
+        }
+        else {
+            z->regs[nr].dim = element_dimension(elemtype);
+            cg_npe (elemtype, &ip);
+            for (n = 0, ne = 0; ne < nelem; ne++) {
+                for (i = 0; i < ip; i++) {
+                    if (conn[n] < 1 || conn[n] > z->nnodes) {
+                        strcpy(z->regs[nr].errmsg, "invalid element index");
+                        break;
+                    }
+                    n++;
+                }
+                if (i < ip) break;
+            }
+        }
+        if (ne == nelem && z->regs[nr].dim > 0) {
+
+            if (z->regs[nr].dim == 1)
+                edge_elements(&z->regs[nr], conn);
+            else if (z->regs[nr].dim == 2)
+                face_elements (&z->regs[nr], conn);
+            else
+                exterior_faces (z, &z->regs[nr], conn);
+
 #ifndef NO_CUTTING_PLANE
             if (z->regs[nr].dim > 1) {
                 z->regs[nr].elemtype = elemtype;
@@ -1464,6 +2078,9 @@ static int unstructured_zone (Tcl_Interp *interp)
                         nb = (int)conn[n++];
                         cg_npe ((CGNS_ENUMT(ElementType_t))nb, &ip);
                     }
+                    else if (elemtype == CGNS_ENUMT(NGON_n)) {
+                        ip = (int)conn[n++];
+                    }
                     for (i = 0; i < ip; i++) {
                         (conn[n])--;
                         n++;
@@ -1474,8 +2091,48 @@ static int unstructured_zone (Tcl_Interp *interp)
 #endif
                 free (conn);
         }
-        nr++;
     }
+
+    /* process NFACE_n sections */
+
+    if (haspoly) {
+        for (ns = 0; ns < nsect; ns++) {
+            if (z->regs[ns].data[0] != CGNS_ENUMV(NFACE_n)) continue;
+            zone_message (dspmsg, z->regs[ns].name);
+            nelem = z->regs[ns].data[2] - z->regs[ns].data[1] + 1;
+            cg_ElementDataSize (cgnsfn, cgnsbase, cgnszone, ns+1, &elemsize);
+            conn = (cgsize_t *) MALLOC (funcname, (size_t)elemsize * sizeof(cgsize_t));
+            if (cg_elements_read (cgnsfn, cgnsbase, cgnszone, ns+1, conn, 0)) {
+                free (conn);
+                Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
+                return 1;
+            }
+
+            /* check element indices */
+
+            for (n = 0, ne = 0; ne < nelem; ne++) {
+                ip = (int)conn[n++];
+                for (i = 0; i < ip; i++) {
+                    if (NULL == find_face(z, abs(conn[n++]))) {
+                        strcpy(z->regs[ns].errmsg, "invalid face index");
+                        break;
+                    }
+                }
+                if (i < ip) break;
+            }
+
+            if (ne == nelem) {
+#ifndef NO_CUTTING_PLANE
+                polyhedral_faces (z, &z->regs[ns], conn);
+#else
+                exterior_faces (z, &z->regs[ns], conn);
+                free (conn);
+#endif
+            }
+        }
+    }
+
+    qsort(z->regs, nr, sizeof(Regn), sort_elemsets);
 
     /* 1to1 connectivities */
 
@@ -1525,25 +2182,106 @@ static int unstructured_zone (Tcl_Interp *interp)
         }
         strcpy (z->regs[nr].d_name, d_name);
 
-        if (type != CGNS_ENUMV(Abutting) && type != CGNS_ENUMV(Abutting1to1)) {
+        if (type != CGNS_ENUMV(Abutting) &&
+            type != CGNS_ENUMV(Abutting1to1)) {
             strcpy(z->regs[nr].errmsg,
                "can only handle Abutting or Abutting1to1 currently");
         }
-        else if (ptype != CGNS_ENUMV(PointList) && ptype != CGNS_ENUMV(PointRange)) {
+        else if (ptype != CGNS_ENUMV(PointList) &&
+                 ptype != CGNS_ENUMV(PointRange)) {
             strcpy(z->regs[nr].errmsg,
                "point set type not PointList or PointRange");
         }
-        else if (location != CGNS_ENUMV(Vertex) && location != CGNS_ENUMV(CellCenter) &&
+        else if (location != CGNS_ENUMV(Vertex) &&
+                 location != CGNS_ENUMV(CellCenter) &&
                  location != CGNS_ENUMV(FaceCenter)) {
             strcpy(z->regs[nr].errmsg,
                "location not Vertex, CellCenter or FaceCenter");
         }
         else {
-            if (location != CGNS_ENUMV(Vertex))
+            if (location != CGNS_ENUMV(Vertex)) {
                 ptype = (ptype == CGNS_ENUMV(PointRange) ?
                          CGNS_ENUMV(ElementRange) : CGNS_ENUMV(ElementList));
+            }
             if (unstructured_region (nsect, z->regs, &z->regs[nr],
                     ptype, np, conn)) z->regs[nr].dim = 2;
+        }
+        free (conn);
+        nr++;
+    }
+
+    /* holes */
+
+    for (ns = 1; ns <= nholes; ns++) {
+        if (cg_hole_info (cgnsfn, cgnsbase, cgnszone, ns, name,
+                &location, &ptype, &nsets, &np)) {
+            Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
+            return 1;
+        }
+        conn = (cgsize_t *) MALLOC (funcname, (size_t)(3 * np * nsets) * sizeof(cgsize_t));
+        if (cg_hole_read (cgnsfn, cgnsbase, cgnszone, ns, conn)) {
+            free (conn);
+            Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
+            return 1;
+        }
+        strcpy (z->regs[nr].name, name);
+        z->regs[nr].type = REG_HOLE;
+        z->regs[nr].data[0] = nsets;
+        z->regs[nr].data[1] = location;
+        z->regs[nr].data[2] = ptype;
+        z->regs[nr].data[3] = np;
+
+        if (ptype == CGNS_ENUMV(PointRange)) {
+            z->regs[nr].data[4] = conn[0];
+            z->regs[nr].data[5] = conn[1];
+        }
+        else if (ptype != CGNS_ENUMV(PointList)) {
+            strcpy(z->regs[nr].errmsg,
+               "point set type not PointList or PointRange");
+        }
+        else {
+            if (location == CGNS_ENUMV(Vertex)) {
+                d_ptype = ptype;
+            }
+            else {
+                d_ptype = (ptype == CGNS_ENUMV(PointRange) ?
+                         CGNS_ENUMV(ElementRange) : CGNS_ENUMV(ElementList));
+            }
+            if (unstructured_region (nsect, z->regs, &z->regs[nr],
+                    d_ptype, np, conn)) z->regs[nr].dim = 2;
+            if (z->regs[nr].dim && nsets > 1 &&
+                ptype == CGNS_ENUMV(PointRange)) {
+                Edge *edges = z->regs[nr].edges;
+                Face **faces = z->regs[nr].faces;
+                ne = z->regs[nr].nedges;
+                nf = z->regs[nr].nfaces;
+                for (ip = 1; ip < nsets; ip++) {
+                    z->regs[nr].nedges = z->regs[nr].nfaces = 0;
+                    is = unstructured_region (nsect, z->regs, &z->regs[nr],
+                             d_ptype, np, &conn[ip*2]);
+                    if (is && z->regs[nr].nedges) {
+                        edges = (Edge *) REALLOC (funcname,
+                            (ne + z->regs[nr].nedges) * sizeof(Edge), edges);
+                        for (i = 0; i < z->regs[nr].nedges; i++) {
+                            edges[ne].nodes[0] = z->regs[nr].edges[i].nodes[0];
+                            edges[ne].nodes[1] = z->regs[nr].edges[i].nodes[1];
+                            ne++;
+                        }
+                        free(z->regs[nr].edges);
+                    }
+                    if (is && z->regs[nr].nfaces) {
+                        faces = (Face **) REALLOC (funcname,
+                            (nf + z->regs[nr].nfaces) * sizeof(Face *), faces);
+                        for (i = 0; i < z->regs[nr].nfaces; i++)
+                            faces[nf++] = z->regs[nr].faces[i];
+                        free(z->regs[nr].faces);
+                    }
+                }
+                z->regs[nr].nedges = ne;
+                z->regs[nr].edges = edges;
+                z->regs[nr].nfaces = nf;
+                z->regs[nr].faces = faces;
+            }
         }
         free (conn);
         nr++;
@@ -1553,18 +2291,13 @@ static int unstructured_zone (Tcl_Interp *interp)
 
     for (ns = 1; ns <= nbocos; ns++) {
         if (cg_boco_info (cgnsfn, cgnsbase, cgnszone, ns, name,
-                &bctype, &ptype, &np, nrmlindex, &is, &datatype, &nb)) {
+                &bctype, &ptype, &np, nrmlindex, &is, &datatype, &nb) ||
+            cg_boco_gridlocation_read (cgnsfn, cgnsbase, cgnszone, ns,
+                &location)) {
             Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
             return 1;
         }
         zone_message (dspmsg, name);
-        if (cg_goto (cgnsfn, cgnsbase, "Zone_t", cgnszone,
-               "ZoneBC_t", 1, "BC_t", ns, "end")) {
-            Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
-            return 1;
-        }
-        if (cg_gridlocation_read (&location))
-            location = CGNS_ENUMV(Vertex);
         conn = (cgsize_t *) MALLOC (funcname, (size_t)np * sizeof(cgsize_t));
         if (cg_boco_read (cgnsfn, cgnsbase, cgnszone, ns, conn, 0)) {
             free (conn);
@@ -1577,15 +2310,19 @@ static int unstructured_zone (Tcl_Interp *interp)
         z->regs[nr].data[1] = location;
         z->regs[nr].data[2] = ptype;
         z->regs[nr].data[3] = np;
-        if (ptype == CGNS_ENUMV(PointRange) || ptype == CGNS_ENUMV(ElementRange)) {
+        if (ptype == CGNS_ENUMV(PointRange) ||
+            ptype == CGNS_ENUMV(ElementRange)) {
             z->regs[nr].data[4] = conn[0];
             z->regs[nr].data[5] = conn[1];
         }
 
-        if ((ptype == CGNS_ENUMV(PointRange) || ptype == CGNS_ENUMV(PointList)) &&
-            (location == CGNS_ENUMV(FaceCenter) || location == CGNS_ENUMV(CellCenter)))
+        if ((ptype == CGNS_ENUMV(PointRange) ||
+             ptype == CGNS_ENUMV(PointList)) &&
+            (location == CGNS_ENUMV(FaceCenter) ||
+             location == CGNS_ENUMV(CellCenter))) {
             ptype = (ptype == CGNS_ENUMV(PointRange) ?
                      CGNS_ENUMV(ElementRange) : CGNS_ENUMV(ElementList));
+        }
         if (unstructured_region (nsect, z->regs, &z->regs[nr],
             ptype, np, conn)) z->regs[nr].dim = 2;
         free (conn);
@@ -1656,7 +2393,9 @@ static void extract_edges (Regn *r)
     edgehash = HashCreate ((size_t)r->nfaces, compare_edges, hash_edge);
     if (NULL == edgehash)
         FATAL ("edge hash table creation failed");
-    for (f = r->faces, j = 0; j < r->nfaces; j++, f++) {
+    for (j = 0; j < r->nfaces; j++) {
+        f = r->faces[j];
+        if (f->flags) continue;
         for (i = 0, k = f->nnodes-1; i < f->nnodes; k = i++) {
             if (f->nodes[i] == f->nodes[k]) continue;
             if (f->nodes[i] < f->nodes[k]) {
@@ -1677,9 +2416,9 @@ static void extract_edges (Regn *r)
             }
             else {
                 n = ep->id;
-                dot = r->faces[n].normal[0] * f->normal[0] +
-                      r->faces[n].normal[1] * f->normal[1] +
-                      r->faces[n].normal[2] * f->normal[2];
+                dot = r->faces[n]->normal[0] * f->normal[0] +
+                      r->faces[n]->normal[1] * f->normal[1] +
+                      r->faces[n]->normal[2] * f->normal[2];
                 if (dot > EDGE_ANGLE) {
                     HashDelete (edgehash, ep);
                     free (ep);
@@ -1742,16 +2481,55 @@ static float *compute_normal (Node n0, Node n1, Node n2, Node n3)
 
 /*-------------------------------------------------------------------*/
 
-static void face_normals (Zone *z, Regn *r)
+static float *face_normal (Zone *z, int nnodes, cgsize_t *nodes)
 {
-    int i, j;
+    int i, n;
+    float *n0, *n1, *n2, *n3;
+    float *norm, sn;
+    static float sum[3];
+
+    if (nnodes < 3) {
+        for (i = 0; i < 3; i++)
+            sum[i] = 0.0;
+        return sum;
+    }
+    if (nnodes <= 4) {
+        n0 = z->nodes[nodes[0]];
+        n1 = z->nodes[nodes[1]];
+        n2 = z->nodes[nodes[2]];
+        n3 = nnodes == 4 ? z->nodes[nodes[3]] : NULL;
+        return compute_normal(n0, n1, n2, n3);
+    }
+
+    for (i = 0; i < 3; i++)
+        sum[i] = 0.0;
+    n0 = z->nodes[nodes[0]];
+    n1 = z->nodes[nodes[1]];
+    for (n = 2; n < nnodes; n++) {
+        n2 = z->nodes[nodes[n]];
+        norm = compute_normal(n0, n1, n2, NULL);
+        for (i = 0; i < 3; i++)
+            sum[i] += norm[i];
+        n1 = n2;
+    }
+    sn = (float)sqrt(sum[0]*sum[0] + sum[1]*sum[1] + sum[2]*sum[2]);
+    if (sn == 0.0) sn = 1.0;
+    for (i = 0; i < 3; i++)
+        sum[i] /= sn;
+    return sum;
+}
+
+/*-------------------------------------------------------------------*/
+
+static void region_normals (Zone *z, Regn *r)
+{
+    int i, n;
     Face *f;
     float *norm;
 
-    for (f = r->faces, j = 0; j < r->nfaces; j++, f++) {
-        norm = compute_normal(z->nodes[f->nodes[0]],
-            z->nodes[f->nodes[1]], z->nodes[f->nodes[2]],
-            f->nnodes == 4 ? z->nodes[f->nodes[3]] : NULL);
+    for (n = 0; n < r->nfaces; n++) {
+        f = r->faces[n];
+        norm = face_normal(z, f->nnodes, f->nodes);
         for (i = 0; i < 3; i++)
             f->normal[i] = norm[i];
     }
@@ -1764,10 +2542,11 @@ static void bounding_box (Zone *z, Regn *r)
     int i, j, n;
 
     if (r->nfaces) {
-        Face *f = r->faces;
+        Face *f = r->faces[0];
         for (j = 0; j < 3; j++)
             r->bbox[j][0] = r->bbox[j][1] = z->nodes[f->nodes[0]][j];
-        for (n = 0; n < r->nfaces; n++, f++) {
+        for (n = 0; n < r->nfaces; n++) {
+            f = r->faces[n];
             for (i = 0; i < f->nnodes; i++) {
                 for (j = 0; j < 3; j++) {
                     if (r->bbox[j][0] > z->nodes[f->nodes[i]][j])
@@ -1888,8 +2667,17 @@ static void draw_mesh (Zone *z, Regn *r)
     glEnable (GL_LIGHTING);
     glShadeModel (GL_FLAT);
     glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-    for (f = r->faces, nf = 0; nf < r->nfaces; nf++, f++) {
-        glBegin (f->nnodes == 3 ? GL_TRIANGLES : GL_QUADS);
+    for (nf = 0; nf < r->nfaces; nf++) {
+        f = r->faces[nf];
+        if (f->flags || f->nnodes < 2) continue;
+        if (f->nnodes == 2)
+            glBegin (GL_LINES);
+        else if (f->nnodes == 3)
+            glBegin (GL_TRIANGLES);
+        else if (f->nnodes == 4)
+            glBegin (GL_QUADS);
+        else
+            glBegin (GL_POLYGON);
         glNormal3fv (f->normal);
         for (nn = 0; nn < f->nnodes; nn++)
             glVertex3fv (z->nodes[f->nodes[nn]]);
@@ -1907,8 +2695,15 @@ static void draw_shaded (Zone *z, Regn *r)
     glEnable (GL_LIGHTING);
     glShadeModel (GL_FLAT);
     glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-    for (f = r->faces, nf = 0; nf < r->nfaces; nf++, f++) {
-        glBegin (f->nnodes == 3 ? GL_TRIANGLES : GL_QUADS);
+    for (nf = 0; nf < r->nfaces; nf++) {
+        f = r->faces[nf];
+        if (f->flags || f->nnodes < 3) continue;
+        if (f->nnodes == 3)
+            glBegin (GL_TRIANGLES);
+        else if (f->nnodes == 4)
+            glBegin (GL_QUADS);
+        else
+            glBegin (GL_POLYGON);
         glNormal3fv (f->normal);
         for (nn = 0; nn < f->nnodes; nn++)
             glVertex3fv (z->nodes[f->nodes[nn]]);
@@ -2212,8 +3007,8 @@ static int CGNSzone (ClientData data, Tcl_Interp *interp, int argc, char **argv)
 
     for (nn = 0, nr = 0; nr < z->nregs; nr++) {
         for (nf = 0; nf < z->regs[nr].nfaces; nf++) {
-            for (n = 0; n < z->regs[nr].faces[nf].nnodes; n++) {
-                i = z->regs[nr].faces[nf].nodes[n];
+            for (n = 0; n < z->regs[nr].faces[nf]->nnodes; n++) {
+                i = z->regs[nr].faces[nf]->nodes[n];
                 if (tag[i] < 0)
                     tag[i] = nn++;
             }
@@ -2237,9 +3032,9 @@ static int CGNSzone (ClientData data, Tcl_Interp *interp, int argc, char **argv)
 
     for (nr = 0; nr < z->nregs; nr++) {
         for (nf = 0; nf < z->regs[nr].nfaces; nf++) {
-            for (n = 0; n < z->regs[nr].faces[nf].nnodes; n++) {
-                i = z->regs[nr].faces[nf].nodes[n];
-                z->regs[nr].faces[nf].nodes[n] = tag[i];
+            for (n = 0; n < z->regs[nr].faces[nf]->nnodes; n++) {
+                i = z->regs[nr].faces[nf]->nodes[n];
+                z->regs[nr].faces[nf]->nodes[n] = tag[i];
             }
         }
     }
@@ -2254,7 +3049,7 @@ static int CGNSzone (ClientData data, Tcl_Interp *interp, int argc, char **argv)
     for (nr = 0; nr < z->nregs; nr++) {
         if (z->regs[nr].nfaces) {
             bounding_box (z, &z->regs[nr]);
-            face_normals (z, &z->regs[nr]);
+            region_normals (z, &z->regs[nr]);
             extract_edges (&z->regs[nr]);
         }
     }
@@ -2273,6 +3068,9 @@ static int CGNSzone (ClientData data, Tcl_Interp *interp, int argc, char **argv)
                 break;
             case REG_CONN:
                 sprintf(buff, "<General Connections>/%s", z->regs[nr].name);
+                break;
+            case REG_HOLE:
+                sprintf(buff, "<Overset Holes>/%s", z->regs[nr].name);
                 break;
             case REG_BOCO:
                 sprintf(buff, "<Boundary Conditions>/%s", z->regs[nr].name);
@@ -2304,9 +3102,10 @@ static int CGNSsummary (ClientData data, Tcl_Interp *interp, int argc, char **ar
         Tcl_SetResult (interp, "usage: CGNSsummary [zone [reg]]", TCL_STATIC);
         return TCL_ERROR;
     }
+    Tcl_ResetResult (interp);
     if (argc == 1) {
         sprintf (buff, "Physical Dim = %d, Cell Dim = %d", PhyDim, CellDim);
-        Tcl_SetResult (interp, buff, TCL_STATIC);
+        Tcl_AppendResult (interp, buff, NULL);
         return TCL_OK;
     }
 
@@ -2315,7 +3114,6 @@ static int CGNSsummary (ClientData data, Tcl_Interp *interp, int argc, char **ar
         Tcl_SetResult (interp, "zone number out of range", TCL_STATIC);
         return TCL_ERROR;
     }
-    Tcl_ResetResult (interp);
 
     if (argc == 2) {
         cgsize_t sizes[9];
@@ -2352,12 +3150,14 @@ static int CGNSsummary (ClientData data, Tcl_Interp *interp, int argc, char **ar
 
     switch (r->type) {
         case REG_MESH:
-            if (CellDim == 2)
+            if (CellDim == 2) {
                 sprintf (buff, "%ld x %ld",
                     (long)r->data[0], (long)r->data[1]);
-            else
+            }
+            else {
                 sprintf (buff, "%ld x %ld x %ld",
                     (long)r->data[0], (long)r->data[1], (long)r->data[2]);
+            }
             Tcl_AppendResult (interp, "Structured Mesh : ",
                 buff, " vertices", NULL);
             break;
@@ -2369,11 +3169,17 @@ static int CGNSsummary (ClientData data, Tcl_Interp *interp, int argc, char **ar
         case REG_1TO1:
             if (r->data[0] == 2)
                 sprintf (buff, "%ld", (long)(r->data[2] - r->data[1] + 1));
-            else
+            else if (CellDim == 2) {
+                sprintf (buff, "%ld x %ld",
+                    (long)(r->data[3] - r->data[1] + 1),
+                    (long)(r->data[4] - r->data[2] + 1));
+            }
+            else {
                 sprintf (buff, "%ld x %ld x %ld",
                     (long)(r->data[4] - r->data[1] + 1),
                     (long)(r->data[5] - r->data[2] + 1),
                     (long)(r->data[6] - r->data[3] + 1));
+            }
             Tcl_AppendResult (interp, "1to1 Connection : PointRange ",
                 buff, " -> ", r->d_name, NULL);
             break;
@@ -2383,15 +3189,41 @@ static int CGNSsummary (ClientData data, Tcl_Interp *interp, int argc, char **ar
                 sprintf (buff, " %ld", (long)r->data[3]);
             else if (r->data[3] == 2)
                 sprintf (buff, " %ld", (long)(r->data[5] - r->data[4] + 1));
-            else
+            else if (CellDim == 2) {
+                sprintf (buff, " %ld x %ld",
+                    (long)(r->data[6] - r->data[4] + 1),
+                    (long)(r->data[7] - r->data[5] + 1));
+            }
+            else {
                 sprintf (buff, " %ld x %ld x %ld",
                     (long)(r->data[7] - r->data[4] + 1),
                     (long)(r->data[8] - r->data[5] + 1),
                     (long)(r->data[9] - r->data[6] + 1));
+            }
             Tcl_AppendResult (interp,
                 cg_GridConnectivityTypeName(r->data[0]),
                 " Connection : ", cg_PointSetTypeName(r->data[2]),
                 buff, " -> ", r->d_name, NULL);
+            break;
+        case REG_HOLE:
+            if (r->data[2] == CGNS_ENUMV(PointList) ||
+                r->data[2] == CGNS_ENUMV(ElementList))
+                sprintf (buff, " %ld", (long)r->data[3]);
+            else if (r->data[3] == 2)
+                sprintf (buff, " %ld", (long)(r->data[5] - r->data[4] + 1));
+            else if (CellDim == 2) {
+                sprintf (buff, " %ld x %ld",
+                    (long)(r->data[6] - r->data[4] + 1),
+                    (long)(r->data[7] - r->data[5] + 1));
+            }
+            else {
+                sprintf (buff, " %ld x %ld x %ld",
+                    (long)(r->data[7] - r->data[4] + 1),
+                    (long)(r->data[8] - r->data[5] + 1),
+                    (long)(r->data[9] - r->data[6] + 1));
+            }
+            Tcl_AppendResult (interp, "Overset Hole : ",
+                cg_PointSetTypeName(r->data[2]), buff, NULL);
             break;
         case REG_BOCO:
             if (r->data[2] == CGNS_ENUMV(PointList) ||
@@ -2399,20 +3231,33 @@ static int CGNSsummary (ClientData data, Tcl_Interp *interp, int argc, char **ar
                 sprintf (buff, " %ld", (long)r->data[3]);
             else if (r->data[3] == 2)
                 sprintf (buff, " %ld", (long)(r->data[5] - r->data[4] + 1));
-            else
+            else if (CellDim == 2) {
+                sprintf (buff, " %ld x %ld",
+                    (long)(r->data[6] - r->data[4] + 1),
+                    (long)(r->data[7] - r->data[5] + 1));
+            }
+            else {
                 sprintf (buff, " %ld x %ld x %ld",
                     (long)(r->data[7] - r->data[4] + 1),
                     (long)(r->data[8] - r->data[5] + 1),
                     (long)(r->data[9] - r->data[6] + 1));
+            }
             Tcl_AppendResult (interp, cg_BCTypeName(r->data[0]),
                 " Boundary Condition : ", cg_PointSetTypeName(r->data[2]),
                 buff, NULL);
             break;
         case REG_BNDS:
-            sprintf (buff, "%ld x %ld x %ld",
-                (long)(r->data[3] - r->data[0] + 1),
-                (long)(r->data[4] - r->data[1] + 1),
-                (long)(r->data[5] - r->data[2] + 1));
+            if (CellDim == 2) {
+                sprintf (buff, "%ld x %ld",
+                    (long)(r->data[2] - r->data[0] + 1),
+                    (long)(r->data[3] - r->data[1] + 1));
+            }
+            else {
+                sprintf (buff, "%ld x %ld x %ld",
+                    (long)(r->data[3] - r->data[0] + 1),
+                    (long)(r->data[4] - r->data[1] + 1),
+                    (long)(r->data[5] - r->data[2] + 1));
+            }
             Tcl_AppendResult (interp, "Mesh Boundary : ", buff,
                 " vertices", NULL);
             break;
@@ -2552,12 +3397,14 @@ static int CGNSgetregion (ClientData data, Tcl_Interp *interp, int argc, char **
     Tcl_ResetResult (interp);
     switch (r->type) {
         case REG_MESH:
-            if (CellDim == 2)
+            if (CellDim == 2) {
                 sprintf (buff, "%ld x %ld",
                     (long)r->data[0], (long)r->data[1]);
-            else
+            }
+            else {
                 sprintf (buff, "%ld x %ld x %ld",
                     (long)r->data[0], (long)r->data[1], (long)r->data[2]);
+            }
             Tcl_AppendResult (interp,
                   "Region Name    : ", r->name,
                 "\nType of Region : Structured Mesh",
@@ -2591,17 +3438,19 @@ static int CGNSgetregion (ClientData data, Tcl_Interp *interp, int argc, char **
             }
             else {
                 sprintf (buff, "%ld -> %ld",
-                    (long)r->data[1], (long)r->data[4]);
+                    (long)r->data[1], (long)r->data[1+CellDim]);
                 Tcl_AppendResult (interp,
                     "\nI Index Range : ", buff, NULL);
                 sprintf (buff, "%ld -> %ld",
-                    (long)r->data[2], (long)r->data[5]);
+                    (long)r->data[2], (long)r->data[2+CellDim]);
                 Tcl_AppendResult (interp,
                     "\nJ Index Range : ", buff, NULL);
-                sprintf (buff, "%ld -> %ld",
-                    (long)r->data[3], (long)r->data[6]);
-                Tcl_AppendResult (interp,
-                    "\nK Index Range : ", buff, NULL);
+                if (CellDim == 3) {
+                    sprintf (buff, "%ld -> %ld",
+                        (long)r->data[3], (long)r->data[6]);
+                    Tcl_AppendResult (interp,
+                        "\nK Index Range : ", buff, NULL);
+                }
             }
             Tcl_AppendResult (interp, "\nDonor Zone    : ", r->d_name, NULL);
             break;
@@ -2625,19 +3474,56 @@ static int CGNSgetregion (ClientData data, Tcl_Interp *interp, int argc, char **
             }
             else {
                 sprintf (buff, "%ld -> %ld",
-                    (long)r->data[4], (long)r->data[7]);
+                    (long)r->data[4], (long)r->data[4+CellDim]);
                 Tcl_AppendResult (interp,
                     "\nI Index Range    : ", buff, NULL);
                 sprintf (buff, "%ld -> %ld",
-                    (long)r->data[5], (long)r->data[8]);
+                    (long)r->data[5], (long)r->data[5+CellDim]);
                 Tcl_AppendResult (interp,
                     "\nJ Index Range    : ", buff, NULL);
-                sprintf (buff, "%ld -> %ld",
-                    (long)r->data[6], (long)r->data[9]);
-                Tcl_AppendResult (interp,
-                    "\nK Index Range    : ", buff, NULL);
+                if (CellDim == 3) {
+                    sprintf (buff, "%ld -> %ld",
+                        (long)r->data[6], (long)r->data[9]);
+                    Tcl_AppendResult (interp,
+                        "\nK Index Range    : ", buff, NULL);
+                }
             }
             Tcl_AppendResult (interp, "\nDonor Zone       : ", r->d_name, NULL);
+            break;
+        case REG_HOLE:
+            sprintf(buff, "%ld", (long)r->data[0]);
+            Tcl_AppendResult (interp,
+                  "Region Name      : ", r->name,
+                "\nType of Region   : Overset Hole",
+                "\nNumber Sets      : ", buff,
+                "\nGrid Location    : ", cg_GridLocationName(r->data[1]),
+                "\nPoint Set Type   : ", cg_PointSetTypeName(r->data[2]),
+                NULL);
+            if (r->data[2] == CGNS_ENUMV(PointList) || r->data[2] == CGNS_ENUMV(ElementList)) {
+                sprintf (buff, "%ld", (long)r->data[3]);
+                Tcl_AppendResult (interp, "\nNumber of Points : ", buff, NULL);
+            }
+            else if (r->data[3] == 2) {
+                sprintf (buff, "%ld -> %ld",
+                    (long)r->data[4], (long)r->data[5]);
+                Tcl_AppendResult (interp, "\nIndex Range      : ", buff, NULL);
+            }
+            else {
+                sprintf (buff, "%ld -> %ld",
+                    (long)r->data[4], (long)r->data[4+CellDim]);
+                Tcl_AppendResult (interp,
+                    "\nI Index Range    : ", buff, NULL);
+                sprintf (buff, "%ld -> %ld",
+                    (long)r->data[5], (long)r->data[5+CellDim]);
+                Tcl_AppendResult (interp,
+                    "\nJ Index Range    : ", buff, NULL);
+                if (CellDim == 3) {
+                    sprintf (buff, "%ld -> %ld",
+                        (long)r->data[6], (long)r->data[9]);
+                    Tcl_AppendResult (interp,
+                        "\nK Index Range    : ", buff, NULL);
+                }
+            }
             break;
         case REG_BOCO:
             Tcl_AppendResult (interp,
@@ -2647,7 +3533,8 @@ static int CGNSgetregion (ClientData data, Tcl_Interp *interp, int argc, char **
                 "\nGrid Location   : ", cg_GridLocationName(r->data[1]),
                 "\nPoint Set Type  : ", cg_PointSetTypeName(r->data[2]),
                 NULL);
-            if (r->data[2] == CGNS_ENUMV(PointList) || r->data[2] == CGNS_ENUMV(ElementList)) {
+            if (r->data[2] == CGNS_ENUMV(PointList) ||
+                r->data[2] == CGNS_ENUMV(ElementList)) {
                 sprintf (buff, "%ld", (long)r->data[3]);
                 Tcl_AppendResult (interp, "\nNumber of Points: ", buff, NULL);
             }
@@ -2658,17 +3545,19 @@ static int CGNSgetregion (ClientData data, Tcl_Interp *interp, int argc, char **
             }
             else {
                 sprintf (buff, "%ld -> %ld",
-                    (long)r->data[4], (long)r->data[7]);
+                    (long)r->data[4], (long)r->data[4+CellDim]);
                 Tcl_AppendResult (interp,
                     "\nI Index Range   : ", buff, NULL);
                 sprintf (buff, "%ld -> %ld",
-                    (long)r->data[5], (long)r->data[8]);
+                    (long)r->data[5], (long)r->data[5+CellDim]);
                 Tcl_AppendResult (interp,
                     "\nJ Index Range   : ", buff, NULL);
-                sprintf (buff, "%ld -> %ld",
-                    (long)r->data[6], (long)r->data[9]);
-                Tcl_AppendResult (interp,
-                    "\nK Index Range   : ", buff, NULL);
+                if (CellDim == 3) {
+                    sprintf (buff, "%ld -> %ld",
+                        (long)r->data[6], (long)r->data[9]);
+                    Tcl_AppendResult (interp,
+                        "\nK Index Range   : ", buff, NULL);
+                }
             }
             break;
         case REG_BNDS:
@@ -2677,17 +3566,19 @@ static int CGNSgetregion (ClientData data, Tcl_Interp *interp, int argc, char **
                   "Region Name   : ", r->name,
                 "\nType of Region: Mesh Boundary", NULL);
             sprintf (buff, "%ld -> %ld",
-                (long)r->data[0], (long)r->data[3]);
+                (long)r->data[0], (long)r->data[CellDim]);
             Tcl_AppendResult (interp,
                 "\nI Index Range : ", buff, NULL);
             sprintf (buff, "%ld -> %ld",
-                (long)r->data[1], (long)r->data[4]);
+                (long)r->data[1], (long)r->data[1+CellDim]);
             Tcl_AppendResult (interp,
                 "\nJ Index Range : ", buff, NULL);
-            sprintf (buff, "%ld -> %ld",
-                (long)r->data[2], (long)r->data[5]);
-            Tcl_AppendResult (interp,
-                "\nK Index Range : ", buff, NULL);
+            if (CellDim == 3) {
+                sprintf (buff, "%ld -> %ld",
+                    (long)r->data[2], (long)r->data[5]);
+                Tcl_AppendResult (interp,
+                    "\nK Index Range : ", buff, NULL);
+            }
             break;
     }
     return TCL_OK;
@@ -2824,6 +3715,8 @@ static void transform_bounds (float m[16], float bb[3][2])
             bb[i][j] = bbox[i][j];
 }
 
+/*-------------------------------------------------------------------*/
+
 static int CGNSbounds (ClientData data, Tcl_Interp *interp, int argc, char **argv)
 {
     float bbox[3][2], matrix[16];
@@ -2879,7 +3772,7 @@ static int OGLregion (ClientData data, Tcl_Interp *interp, int argc, char **argv
     }
     r = &z->regs[regn];
 
-    if (r->nfaces) {
+    if (r->nfaces || r->nedges) {
         r->mode = atoi (argv[3]);
         if (TCL_OK != Tcl_SplitList (interp, argv[4], &nc, &args))
             return TCL_ERROR;
@@ -2897,19 +3790,27 @@ static int OGLregion (ClientData data, Tcl_Interp *interp, int argc, char **argv
         glNewList (r->dlist, GL_COMPILE);
         glColor3fv (r->color);
         glMaterialfv (GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, r->color);
-        switch (r->mode) {
-            case 1:
-                draw_outlines (z, r);
-                break;
-            case 2:
-                draw_mesh (z, r);
-                break;
-            case 3:
-                draw_shaded (z, r);
-                break;
-            default:
-                r->mode = 0;
-                break;
+        if (r->nfaces) {
+            switch (r->mode) {
+                case 1:
+                    draw_outlines (z, r);
+                    break;
+                case 2:
+                    draw_mesh (z, r);
+                    break;
+                case 3:
+                    draw_shaded (z, r);
+                    break;
+                default:
+                    r->mode = 0;
+                    break;
+            }
+        }
+        else if (r->mode < 1 || r->mode > 3) {
+            r->mode = 0;
+        }
+        else {
+            draw_outlines (z, r);
         }
         glEndList ();
     }
@@ -2938,6 +3839,8 @@ static GLubyte z_raster[] = {
     0x00, 0x00, 0xff, 0xc0, 0xc0, 0x60, 0x30, 0x7e,
     0x0c, 0x06, 0x03, 0x03, 0xff
 };
+
+/*-------------------------------------------------------------------*/
 
 static int OGLaxis (ClientData data, Tcl_Interp *interp, int argc, char **argv)
 {
@@ -3011,6 +3914,82 @@ static int OGLaxis (ClientData data, Tcl_Interp *interp, int argc, char **argv)
     return TCL_OK;
 }
 
+/*-------------------------------------------------------------------*/
+
+static int OGLcolor (ClientData data, Tcl_Interp *interp, int argc, char **argv)
+{
+    int index, i, j;
+    double r, g, b;
+    double h, v, s;
+    static char color[256];
+    static double huemap[12] = {0,1,2,3,4,5,0.5,1.25,2.65,3.4,4.5,5.5};
+
+    if (argc != 2) {
+        Tcl_SetResult (interp, "usage: OGLcolor index",
+            TCL_STATIC);
+        return TCL_ERROR;
+    }
+    index = abs(atoi(argv[1])) % 132;
+    h = huemap[index % 12];
+    i = (int)h;
+    h -= (double)i;
+    j = index / 12;
+    if ((j % 2) == 0) {
+        v = 1.0;
+        s = 1.0 - sqrt((double)j / 22.0);
+    }
+    else {
+        v = 1.0 - sqrt((double)j / 44.0);
+        s = 1.0;
+    }
+    r = g = b = 0.0;
+    switch (i) {
+        case 6:
+            h = 0.0;
+        case 0:
+            r = v;
+            g = v * (1.0 - (s * (1.0 - h)));
+            b = v * (1.0 - s);
+            break;
+        case 1:
+            r = v * (1.0 - (s * h));
+            g = v;
+            b = v * (1.0 - s);
+            break;
+        case 2:
+            r = v * (1.0 - s);
+            g = v;
+            b = v * (1.0 - (s * (1.0 - h)));
+            break;
+        case 3:
+            r = v * (1.0 - s);
+            g = v * (1.0 - (s * h));
+            b = v;
+            break;
+        case 4:
+            r = v * (1.0 - (s * (1.0 - h)));
+            g = v * (1.0 - s);
+            b = v;
+            break;
+        case 5:
+            r = v;
+            g = v * (1.0 - s);
+            b = v * (1.0 - (s * h));
+            break;
+    }
+
+    if (r < 0.0) r = 0.0;
+    if (r > 1.0) r = 1.0;
+    if (g < 0.0) g = 0.0;
+    if (g > 1.0) g = 1.0;
+    if (b < 0.0) b = 0.0;
+    if (b > 1.0) b = 1.0;
+
+    sprintf(color, "%g %g %g", r, g, b);
+    Tcl_SetResult (interp, color, TCL_STATIC);
+    return TCL_OK;
+}
+
 /*==============================================================
  * cutting plane routines
  *==============================================================*/
@@ -3064,14 +4043,38 @@ static int classify_element (Zone *z, int nnodes, cgsize_t *nodeid)
 
 /*------------------------------------------------------------------*/
 
+static int classify_polygon (Zone *z, int nnodes, cgsize_t *nodeid)
+{
+    int n, start, diff;
+    float *node;
+    double s;
+
+    node = z->nodes[nodeid[0]];
+    s = node[0] * cutplane.plane[0] + node[1] * cutplane.plane[1] +
+        node[2] * cutplane.plane[2] - cutplane.plane[3];
+    start = s >= 0.0 ? 1 : -1;
+
+    for (n = 1; n < nnodes; n++) {
+        node = z->nodes[nodeid[n]];
+        s = node[0] * cutplane.plane[0] + node[1] * cutplane.plane[1] +
+            node[2] * cutplane.plane[2] - cutplane.plane[3];
+        diff = start * (s >= 0.0 ? 1 : -1);
+        if (diff < 0) return 1;
+    }
+    return 0;
+}
+
+/*------------------------------------------------------------------*/
+
 static cgsize_t find_elements ()
 {
 #define ELEM_INC 50
-    int nz, nnodes, nn, nr;
+    int nz, nnodes, nn, nr, nf;
     cgsize_t n, ne, maxelems, nelems, *elems;
     CGNS_ENUMT(ElementType_t) type;
     Zone *z;
     Regn *r;
+    Face *f;
 
     for (nz = 0; nz < nzones; nz++) {
         z = &zones[nz];
@@ -3083,54 +4086,91 @@ static cgsize_t find_elements ()
             maxelems = nelems = 0;
             elems = NULL;
 
-            for (n = 0, ne = 0; ne < r->nelems; ne++) {
-                if (r->elemtype == CGNS_ENUMV(MIXED)) {
-                    type = (CGNS_ENUMT(ElementType_t))r->elems[n++];
-                    cg_npe(type, &nnodes);
-                }
-                switch (type) {
-                    case CGNS_ENUMV(TRI_3):
-                    case CGNS_ENUMV(TRI_6):
-                        nn = 3;
-                        break;
-                    case CGNS_ENUMV(QUAD_4):
-                    case CGNS_ENUMV(QUAD_8):
-                    case CGNS_ENUMV(QUAD_9):
-                    case CGNS_ENUMV(TETRA_4):
-                    case CGNS_ENUMV(TETRA_10):
-                        nn = 4;
-                        break;
-                    case CGNS_ENUMV(PYRA_5):
-                    case CGNS_ENUMV(PYRA_14):
-                        nn = 5;
-                        break;
-                    case CGNS_ENUMV(PENTA_6):
-                    case CGNS_ENUMV(PENTA_15):
-                    case CGNS_ENUMV(PENTA_18):
-                        nn = 6;
-                        break;
-                    case CGNS_ENUMV(HEXA_8):
-                    case CGNS_ENUMV(HEXA_20):
-                    case CGNS_ENUMV(HEXA_27):
-                        nn = 8;
-                        break;
-                    default:
-                        nn = 0;
-                        break;
-                }
-                if (nn && classify_element(z, nn, &r->elems[n])) {
-                    if (nelems >= maxelems) {
-                        maxelems += ELEM_INC;
-                        elems = (cgsize_t *) REALLOC ("find_elements",
-                            (size_t)maxelems * sizeof(cgsize_t), elems);
+            if (type == CGNS_ENUMV(NGON_n)) {
+                for (n = 0, ne = 0; ne < r->nelems; ne++) {
+                    nn = r->elems[n++];
+                    if (nn > 2 &&
+                        classify_polygon(z, nn, &r->elems[n])) {
+                        if (nelems >= maxelems) {
+                            maxelems += ELEM_INC;
+                            elems = (cgsize_t *) REALLOC ("find_elements",
+                                (size_t)maxelems * sizeof(cgsize_t), elems);
+                        }
+                        elems[nelems++] = n - 1;
                     }
-                    if (r->elemtype == CGNS_ENUMV(MIXED))
-                        elems[nelems] = n - 1;
-                    else
-                        elems[nelems] = n;
-                    nelems++;
+                    n += nn;
                 }
-                n += nnodes;
+            }
+            else if (type == CGNS_ENUMV(NFACE_n)) {
+                for (n = 0, ne = 0; ne < r->nelems; ne++) {
+                    nf = r->elems[n++];
+                    for (nn = 0; nn < nf; nn++) {
+                        f = r->poly[abs(r->elems[n+nn])-1];
+                        if (f->nnodes > 2 &&
+                            classify_polygon(z, f->nnodes, f->nodes)) {
+                            if (nelems >= maxelems) {
+                                maxelems += ELEM_INC;
+                                elems = (cgsize_t *) REALLOC ("find_elements",
+                                    (size_t)maxelems * sizeof(cgsize_t), elems);
+                            }
+                            elems[nelems++] = n - 1;
+                            break;
+                        }
+                    }
+                    n += nf;
+                }
+            }
+            else {
+                for (n = 0, ne = 0; ne < r->nelems; ne++) {
+                    if (r->elemtype == CGNS_ENUMV(MIXED)) {
+                        type = (CGNS_ENUMT(ElementType_t))r->elems[n++];
+                        cg_npe(type, &nnodes);
+                    }
+                    switch (type) {
+                        case CGNS_ENUMV(TRI_3):
+                        case CGNS_ENUMV(TRI_6):
+                            nn = 3;
+                            break;
+                        case CGNS_ENUMV(QUAD_4):
+                        case CGNS_ENUMV(QUAD_8):
+                        case CGNS_ENUMV(QUAD_9):
+                        case CGNS_ENUMV(TETRA_4):
+                        case CGNS_ENUMV(TETRA_10):
+                            nn = 4;
+                            break;
+                        case CGNS_ENUMV(PYRA_5):
+                        case CGNS_ENUMV(PYRA_13):
+                        case CGNS_ENUMV(PYRA_14):
+                            nn = 5;
+                            break;
+                        case CGNS_ENUMV(PENTA_6):
+                        case CGNS_ENUMV(PENTA_15):
+                        case CGNS_ENUMV(PENTA_18):
+                            nn = 6;
+                            break;
+                        case CGNS_ENUMV(HEXA_8):
+                        case CGNS_ENUMV(HEXA_20):
+                        case CGNS_ENUMV(HEXA_27):
+                            nn = 8;
+                            break;
+                        default:
+                            nn = 0;
+                            break;
+                    }
+                    if (nn && classify_element(z, nn, &r->elems[n])) {
+                        if (nelems >= maxelems) {
+                            maxelems += ELEM_INC;
+                            elems = (cgsize_t *) REALLOC ("find_elements",
+                                (size_t)maxelems * sizeof(cgsize_t), elems);
+                        }
+                        if (r->elemtype == CGNS_ENUMV(MIXED))
+                            elems[nelems] = n - 1;
+                        else
+                            elems[nelems] = n;
+                        nelems++;
+                    }
+                    n += nnodes;
+                }
             }
             r->cut.nelems = nelems;
             r->cut.elems = elems;
@@ -3499,6 +4539,77 @@ static HASH *cut_hash;
 
 /*------------------------------------------------------------------*/
 
+static void intersect_polygon (int zonenum, int nnodes, cgsize_t *nodeid,
+                               HASH *edgehash)
+{
+    int i, n, nn, i1, i2;
+    cgsize_t id = -1;
+    float *node;
+    double s1, s2;
+    CutNode cnode, *cn;
+    Edge edge, *ep;
+    Zone *z = &zones[zonenum];
+    static char *funcname = "intersect_polygon";
+
+    if (nnodes < 3) return;
+    node = z->nodes[nodeid[0]];
+    for (s1 = 0.0, i = 0; i < 3; i++)
+        s1 += (node[i] * cutplane.plane[i]);
+    i1 = (s1 - cutplane.plane[3]) >= 0.0 ? 1 : -1;
+
+    for (n = 1; n <= nnodes; n++) {
+        nn = n % nnodes;
+        node = z->nodes[nodeid[nn]];
+        for (s2 = 0.0, i = 0; i < 3; i++)
+            s2 += (node[i] * cutplane.plane[i]);
+        i2 = (s2 - cutplane.plane[3]) >= 0.0 ? 1 : -1;
+        if (i1 * i2 < 0) {
+            cnode.nodes[0] = zonenum;
+            if (nodeid[n-1] < nodeid[nn]) {
+                cnode.nodes[1] = nodeid[n-1];
+                cnode.nodes[2] = nodeid[nn];
+                if (s1 == s2)
+                    cnode.ratio = 0.0;
+                else
+                    cnode.ratio = (float)((cutplane.plane[3] - s1) / (s2 - s1));
+            }
+            else {
+                cnode.nodes[1] = nodeid[nn];
+                cnode.nodes[2] = nodeid[n-1];
+                if (s1 == s2)
+                    cnode.ratio = 0.0;
+                else
+                    cnode.ratio = (float)((cutplane.plane[3] - s2) / (s1 - s2));
+            }
+            cn = (CutNode *) HashFind (cut_hash, &cnode);
+            if (cn == NULL) {
+                cn = (CutNode *) MALLOC (funcname, sizeof(CutNode));
+                for (i = 0; i < 3; i++)
+                    cn->nodes[i] = cnode.nodes[i];
+                cn->id = n_cut_nodes++;
+                cn->ratio = cnode.ratio;
+                (void) HashAdd (cut_hash, cn);
+            }
+            if (id >= 0) {
+                edge.nodes[0] = id;
+                edge.nodes[1] = cn->id;
+                ep = (Edge *) HashFind (edgehash, &edge);
+                if (NULL == ep) {
+                    ep = (Edge *) MALLOC (funcname, sizeof(Edge));
+                    ep->nodes[0] = edge.nodes[0];
+                    ep->nodes[1] = edge.nodes[1];
+                    (void) HashAdd (edgehash, ep);
+                }
+            }
+            id = cn->id;
+        }
+        s1 = s2;
+        i1 = i2;
+    }
+}
+
+/*------------------------------------------------------------------*/
+
 static void intersect_element (int zonenum, CGNS_ENUMT(ElementType_t) elemtype,
                                cgsize_t *nodeid, HASH *edgehash)
 {
@@ -3547,6 +4658,7 @@ static void intersect_element (int zonenum, CGNS_ENUMT(ElementType_t) elemtype,
             }
             break;
         case CGNS_ENUMV(PYRA_5):
+        case CGNS_ENUMV(PYRA_13):
         case CGNS_ENUMV(PYRA_14):
             index = classify_element(z, 5, nodeid);
             if (index < 1 || index > PYR_SIZE) return;
@@ -3647,10 +4759,11 @@ static void intersect_element (int zonenum, CGNS_ENUMT(ElementType_t) elemtype,
 
 static cgsize_t find_intersects ()
 {
-    int nz, nr, nnodes;
+    int nz, nr, nf, nfaces, nnodes;
     cgsize_t n, ne;
     size_t nn;
     CGNS_ENUMT(ElementType_t) type;
+    Face *f;
     Regn *r;
     HASH *edgehash;
     static char *funcname = "find_intersects";
@@ -3668,7 +4781,6 @@ static cgsize_t find_intersects ()
             r = &zones[nz].regs[nr];
             if (r->cut.nelems == 0) continue;
             type = r->elemtype;
-            cg_npe(type, &nnodes);
 
             nn = (size_t)r->cut.nelems;
             edgehash = HashCreate (nn > 1024 ? nn / 3: 127,
@@ -3676,11 +4788,25 @@ static cgsize_t find_intersects ()
 
             for (n = 0, ne = 0; ne < r->cut.nelems; ne++) {
                 n = r->cut.elems[ne];
-                if (r->elemtype == CGNS_ENUMV(MIXED)) {
-                    type = (CGNS_ENUMT(ElementType_t))r->elems[n++];
-                    cg_npe(type, &nnodes);
+                if (r->elemtype == CGNS_ENUMV(NGON_n)) {
+                    nnodes = r->elems[n++];
+                    intersect_polygon(nz, nnodes, &r->elems[n], edgehash);
                 }
-                intersect_element (nz, type, &r->elems[n], edgehash);
+                else if (r->elemtype == CGNS_ENUMV(NFACE_n)) {
+                    nfaces = r->elems[n++];
+                    for (nf = 0; nf < nfaces; nf++) {
+                        f = r->poly[abs(r->elems[n+nf])-1];
+                        intersect_polygon(nz, f->nnodes, f->nodes, edgehash);
+                    }
+                }
+                else {
+                    cg_npe(type, &nnodes);
+                    if (r->elemtype == CGNS_ENUMV(MIXED)) {
+                        type = (CGNS_ENUMT(ElementType_t))r->elems[n++];
+                        cg_npe(type, &nnodes);
+                    }
+                    intersect_element (nz, type, &r->elems[n], edgehash);
+                }
             }
 
             r->cut.nedges = 0;
@@ -3741,10 +4867,11 @@ static void draw_elements (int mode)
     int nz, nr, i, j;
     int ip, nf, nnodes;
     cgsize_t n, ne, nn;
-    float *nodes[4];
+    float *nodes[4], norm[3];
     CGNS_ENUMT(ElementType_t) type;
     Zone *z;
     Regn *r;
+    Face *f;
 
     glEnable(GL_LIGHTING);
     glShadeModel(GL_FLAT);
@@ -3765,68 +4892,115 @@ static void draw_elements (int mode)
                     GL_AMBIENT_AND_DIFFUSE, r->color);
             }
 
-            for (ne = 0; ne < r->cut.nelems; ne++) {
-                n = r->cut.elems[ne];
-                if (r->elemtype == CGNS_ENUMV(MIXED))
-                    type = (CGNS_ENUMT(ElementType_t))r->elems[n++];
-                switch (type) {
-                    case CGNS_ENUMV(TRI_3):
-                    case CGNS_ENUMV(TRI_6):
-                        ip = 0;
-                        nf = 1;
-                        break;
-                    case CGNS_ENUMV(QUAD_4):
-                    case CGNS_ENUMV(QUAD_8):
-                    case CGNS_ENUMV(QUAD_9):
-                        ip = 1;
-                        nf = 1;
-                        break;
-                    case CGNS_ENUMV(TETRA_4):
-                    case CGNS_ENUMV(TETRA_10):
-                        ip = 2;
-                        nf = 4;
-                        break;
-                    case CGNS_ENUMV(PYRA_5):
-                    case CGNS_ENUMV(PYRA_14):
-                        ip = 6;
-                        nf = 5;
-                        break;
-                    case CGNS_ENUMV(PENTA_6):
-                    case CGNS_ENUMV(PENTA_15):
-                    case CGNS_ENUMV(PENTA_18):
-                        ip = 11;
-                        nf = 5;
-                        break;
-                    case CGNS_ENUMV(HEXA_8):
-                    case CGNS_ENUMV(HEXA_20):
-                    case CGNS_ENUMV(HEXA_27):
-                        ip = 16;
-                        nf = 6;
-                        break;
-                    default:
-                        ip = 0;
-                        nf = 0;
-                        break;
-                }
-                for (j = 0; j < nf; j++) {
-                    nnodes = facenodes[ip+j][0];
-                    for (i = 0; i < nnodes; i++) {
-                        nn = r->elems[n+facenodes[ip+j][i+1]];
-                        nodes[i] = z->nodes[nn];
-                    }
-                    if (nnodes == 4) {
-                        glBegin(GL_QUADS);
-                        glNormal3fv(compute_normal(nodes[0], nodes[1],
-                            nodes[2], nodes[3]));
-                    }
-                    else {
+            if (type == CGNS_ENUMV(NGON_n)) {
+                for (ne = 0; ne < r->cut.nelems; ne++) {
+                    nn = r->cut.elems[ne];
+                    nnodes = r->elems[nn++];
+                    if (nnodes < 3) continue;
+                    if (nnodes == 3)
                         glBegin(GL_TRIANGLES);
-                        glNormal3fv(compute_normal(nodes[0], nodes[1],
-                            nodes[2], NULL));
-                    }
+                    else if (nnodes == 4)
+                        glBegin(GL_QUADS);
+                    else
+                        glBegin(GL_POLYGON);
+                    glNormal3fv(face_normal(z, nnodes, &r->elems[nn]));
                     for (i = 0; i < nnodes; i++)
-                        glVertex3fv(nodes[i]);
+                        glVertex3fv(z->nodes[r->elems[nn++]]);
                     glEnd();
+                }
+            }
+            else if (type == CGNS_ENUMV(NFACE_n)) {
+                for (ne = 0; ne < r->cut.nelems; ne++) {
+                    nn = r->cut.elems[ne];
+                    nf = r->elems[nn++];
+                    for (j = 0; j < nf; j++, nn++) {
+                        f = r->poly[abs(r->elems[nn])-1];
+                        if (f->nnodes < 3) continue;
+                        if (f->nnodes == 3)
+                            glBegin(GL_TRIANGLES);
+                        else if (f->nnodes == 4)
+                            glBegin(GL_QUADS);
+                        else
+                            glBegin(GL_POLYGON);
+                        if (r->elems[nn] < 0) {
+                            for (i = 0; i < 3; i++)
+                                norm[i] = -f->normal[i];
+                        }
+                        else {
+                            for (i = 0; i < 3; i++)
+                                norm[i] = f->normal[i];
+                        }
+                        glNormal3fv(norm);
+                        for (i = 0; i < f->nnodes; i++)
+                            glVertex3fv(z->nodes[f->nodes[i]]);
+                        glEnd();
+                    }
+                }
+            }
+            else {
+                for (ne = 0; ne < r->cut.nelems; ne++) {
+                    n = r->cut.elems[ne];
+                    if (r->elemtype == CGNS_ENUMV(MIXED))
+                        type = (CGNS_ENUMT(ElementType_t))r->elems[n++];
+                    switch (type) {
+                        case CGNS_ENUMV(TRI_3):
+                        case CGNS_ENUMV(TRI_6):
+                            ip = 0;
+                            nf = 1;
+                            break;
+                        case CGNS_ENUMV(QUAD_4):
+                        case CGNS_ENUMV(QUAD_8):
+                        case CGNS_ENUMV(QUAD_9):
+                            ip = 1;
+                            nf = 1;
+                            break;
+                        case CGNS_ENUMV(TETRA_4):
+                        case CGNS_ENUMV(TETRA_10):
+                            ip = 2;
+                            nf = 4;
+                            break;
+                        case CGNS_ENUMV(PYRA_5):
+                        case CGNS_ENUMV(PYRA_14):
+                            ip = 6;
+                            nf = 5;
+                            break;
+                        case CGNS_ENUMV(PENTA_6):
+                        case CGNS_ENUMV(PENTA_15):
+                        case CGNS_ENUMV(PENTA_18):
+                            ip = 11;
+                            nf = 5;
+                            break;
+                        case CGNS_ENUMV(HEXA_8):
+                        case CGNS_ENUMV(HEXA_20):
+                        case CGNS_ENUMV(HEXA_27):
+                            ip = 16;
+                            nf = 6;
+                            break;
+                        default:
+                            ip = 0;
+                            nf = 0;
+                            break;
+                    }
+                    for (j = 0; j < nf; j++) {
+                        nnodes = facenodes[ip+j][0];
+                        for (i = 0; i < nnodes; i++) {
+                            nn = r->elems[n+facenodes[ip+j][i+1]];
+                            nodes[i] = z->nodes[nn];
+                        }
+                        if (nnodes == 4) {
+                            glBegin(GL_QUADS);
+                            glNormal3fv(compute_normal(nodes[0], nodes[1],
+                                nodes[2], nodes[3]));
+                        }
+                        else {
+                            glBegin(GL_TRIANGLES);
+                            glNormal3fv(compute_normal(nodes[0], nodes[1],
+                                nodes[2], NULL));
+                        }
+                        for (i = 0; i < nnodes; i++)
+                            glVertex3fv(nodes[i]);
+                        glEnd();
+                    }
                 }
             }
         }
@@ -4064,6 +5238,8 @@ int Cgnstcl_Init(Tcl_Interp *interp)
     Tcl_CreateCommand (interp, "OGLregion", (Tcl_CmdProc *)OGLregion,
         (ClientData)0, (Tcl_CmdDeleteProc *)0);
     Tcl_CreateCommand (interp, "OGLaxis", (Tcl_CmdProc *)OGLaxis,
+        (ClientData)0, (Tcl_CmdDeleteProc *)0);
+    Tcl_CreateCommand (interp, "OGLcolor", (Tcl_CmdProc *)OGLcolor,
         (ClientData)0, (Tcl_CmdDeleteProc *)0);
 #ifndef NO_CUTTING_PLANE
     Tcl_CreateCommand (interp, "OGLcutplane", (Tcl_CmdProc *)OGLcutplane,

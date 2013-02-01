@@ -24,8 +24,8 @@
 # define CG_MODE_READ MODE_READ
 #endif
 
-#if defined(_WIN32) || defined(__BORLANDC__) || defined(__GO32__) || \
-    defined(__alpha) || defined(ultrix) || defined(linux)
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__linux) || \
+    defined(__alpha) || defined(__ultrix)
 # ifndef BYTE_SWAPPED
 #  define BYTE_SWAPPED
 # endif

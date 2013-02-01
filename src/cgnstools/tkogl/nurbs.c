@@ -280,7 +280,9 @@ done:
    DestroyFloatArray (cPoint);
 
    if (result == TCL_OK) {
-      sprintf (interp->result, "%d", dlist);
+     char tmp[128];
+     sprintf (tmp, "%d", dlist);
+     Tcl_SetResult(interp, tmp, TCL_VOLATILE);
    }
 
    return result;

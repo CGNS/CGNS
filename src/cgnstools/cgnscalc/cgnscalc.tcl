@@ -176,7 +176,7 @@ proc do_about {} {
 "CGNScalc Version 1.1
 
 Bruce Wedan
-brucewedan@gmail.com" img_about 0 Close
+leavingdust@gmail.com" img_about 0 Close
 }
 
 #---------- toolbar

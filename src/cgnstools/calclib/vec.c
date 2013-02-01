@@ -1727,7 +1727,7 @@ int n;
                 VECFLOAT *vec = op->op_val.vec;
                 if (!index)
                     index = n + 1;
-                if (--index < 0 || index >= op->len)
+                if (--index < 0 || index >= (int)op->len)
                     longjmp (env_ptr, VECERR_BADINDX);
                 push_var ((double)(vec[index]));
                 index = 0;

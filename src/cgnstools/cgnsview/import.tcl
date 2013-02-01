@@ -174,6 +174,7 @@ proc import_browse {w ftype {name ""} {exts {}}} {
       } else {
         set Import($ftype) $fname
       }
+      set Import(cgnsfile) [file rootname $Import($ftype)].cgns
     }
   }
 }

@@ -29,13 +29,15 @@ $(INSTALLDIR) :
 
 #--------------------------------------------------
 
-calcwish.exe : winmain.obj calctcl.obj $(CALCLIB)
+calcwish.exe : winmain.obj calctcl.obj $(CALCLIB) $(WINHTML_OBJ)
 	$(LINK) $(LFLAGS) /nodefaultlib /subsystem:windows \
-	-out:$@ winmain.obj calctcl.obj $(CALCLIB) \
-	$(CGNSLIB) $(BUILDLIBS) $(CLIBS) $(TCLLIB) $(TKLIB) $(guilibs)
+	-out:$@ winmain.obj calctcl.obj $(WINHTML_OBJ) $(CALCLIB) \
+	$(CGNSLIB) $(BUILDLIBS) $(CLIBS) $(TCLLIB) $(TKLIB) \
+	$(guilibs) $(WINHTML_LIB)
 
 calctcl.obj : calctcl.c
 winmain.obj : winmain.c
+	$(CC) $(COPTS) $(WINHTML_OPT) -c winmain.c
 
 #--------------------------------------------------
 
@@ -45,6 +47,11 @@ calctcl.dll : calctcl-dll.obj $(CALCLIB) $(CGNSLIB)
 
 calctcl-dll.obj : calctcl.c
 	$(CC) $(COPTS) -DBUILD_DLL -Fo$@ -c calctcl.c
+
+#--------------------------------------------------
+
+winhtml.obj : ..\common\winhtml.c
+	$(CC) $(COPTS) $(WINHTML_INC) -Fowinhtml.obj -c ..\common\winhtml.c
 
 #--------------------------------------------------
 

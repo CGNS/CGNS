@@ -39,13 +39,15 @@ $(SHAREDIR)\help :
 
 #--------------------------------------------------
 
-plotwish.exe : winmain.obj cgnstcl.obj hash.obj
+plotwish.exe : winmain.obj cgnstcl.obj hash.obj $(WINHTML_OBJ)
 	$(LINK) $(LFLAGS) /nodefaultlib /subsystem:windows \
-	-out:$@ winmain.obj cgnstcl.obj hash.obj \
+	-out:$@ winmain.obj cgnstcl.obj hash.obj $(WINHTML_OBJ) \
 	$(CGNSLIB) $(BUILDLIBS) $(CLIBS) $(TKOGLLIB) $(TCLLIB) $(TKLIB) \
-	$(guilibs) $(ogllibs)
+	$(guilibs) $(ogllibs) $(WINHTML_LIB)
 
 winmain.obj : winmain.c
+	$(CC) $(COPTS) $(WINHTML_OPT) -c winmain.c
+
 cgnstcl.obj : cgnstcl.c
 	$(CC) $(COPTS) $(PLOTOPTS) -c cgnstcl.c
 
@@ -63,6 +65,11 @@ cgnstcl-dll.obj : cgnstcl.c
 
 hash.obj : ..\common\hash.c ..\common\hash.h
 	$(CC) $(COPTS) -Fohash.obj -c ..\common\hash.c
+
+#--------------------------------------------------
+
+winhtml.obj : ..\common\winhtml.c
+	$(CC) $(COPTS) $(WINHTML_INC) -Fowinhtml.obj -c ..\common\winhtml.c
 
 #--------------------------------------------------
 

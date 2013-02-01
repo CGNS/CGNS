@@ -9,6 +9,8 @@ if exist %dir%cgconfig.bat (
 if exist %dir%..\cgconfig.bat call %dir%..\cgconfig.bat
 
 :getwish
+if "%CG_BIN_DIR%" == "" set CG_BIN_DIR=%dir%
+
 if exist %dir%plotwish.exe (
   set wish=%dir%plotwish.exe
   goto getscript
@@ -33,6 +35,7 @@ if not "%CG_LIB_DIR%" == "" (
   )
 )
 if exist %dir%..\share\cgnsplot.tcl (
+  set CG_LIB_DIR=%dir%..\share
   set script=%dir%..\share\cgnsplot.tcl
   goto run
 )
