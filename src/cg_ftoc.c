@@ -3472,3 +3472,18 @@ CGNSDLL void FMNAME(cg_error_print_f, CG_ERROR_PRINT_F) ()
     cg_error_print();
 }
 
+/*-----------------------------------------------------------------------*/
+
+static void exit_on_error(int is_fatal, char *errmsg)
+{
+    if (is_fatal) {
+        fprintf(stderr, "FATAL ERROR:%s\n", errmsg);
+        exit(1);
+    }
+}
+
+CGNSDLL void FMNAME(cg_exit_on_error_f, CG_EXIT_ON_ERROR_F) (cgsize_t *flag)
+{
+    cg_error_handler(*flag ? exit_on_error : NULL);
+}
+

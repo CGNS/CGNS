@@ -5867,7 +5867,7 @@ int cg_nbocos(int file_number, int B, int Z, int *nbocos)
 
 int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
                  CGNS_ENUMT(BCType_t) *bocotype, CGNS_ENUMT(PointSetType_t) *ptset_type,
-                 cgsize_t *npnts, int *NormalIndex, cgsize_t *NormalListFlag,
+                 cgsize_t *npnts, int *NormalIndex, cgsize_t *NormalListSize,
                  CGNS_ENUMT(DataType_t) *NormalDataType, int *ndataset)
 {
     cgns_boco *boco;
@@ -5903,10 +5903,10 @@ int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
         }
     }
     if (boco->normal && boco->ptset) {
-        *NormalListFlag = boco->ptset->size_of_patch*cg->base[B-1].phys_dim;
+        *NormalListSize = boco->ptset->size_of_patch*cg->base[B-1].phys_dim;
         *NormalDataType = cgi_datatype(boco->normal->data_type);
     } else {
-        *NormalListFlag = 0;
+        *NormalListSize = 0;
         *NormalDataType = CGNS_ENUMV(DataTypeNull);
     }
     *ndataset = boco->ndataset;
@@ -9009,6 +9009,7 @@ int cg_ndescriptors(int *ndescriptors)
  *  UserDefinedData_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t,
  *  BCProperty_t, WallFunction_t, Area_t, ZoneSubRegion_t,
  *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t
+ *  FamilyBCDataSet_t
  */
 
      /* verify input */
@@ -9074,6 +9075,8 @@ int cg_ndescriptors(int *ndescriptors)
         NDESCRIPTOR(cgns_array)
     else if (strcmp(posit->label,"Family_t")==0)
         NDESCRIPTOR(cgns_family)
+    else if (strcmp(posit->label,"FamilyBCDataSet_t")==0)
+        NDESCRIPTOR(cgns_dataset)
     else if (strcmp(posit->label,"GeometryReference_t")==0)
         NDESCRIPTOR(cgns_geo)
     else if (strcmp(posit->label,"RigidGridMotion_t")==0)

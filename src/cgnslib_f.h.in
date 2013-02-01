@@ -334,10 +334,10 @@
 
         integer@CGFSIZET@ NODE, BAR_2, BAR_3, TRI_3, TRI_6
         integer@CGFSIZET@ QUAD_4, QUAD_8, QUAD_9
-        integer@CGFSIZET@ TETRA_4, TETRA_10, PYRA_5, PYRA_13, PYRA_14
+        integer@CGFSIZET@ TETRA_4, TETRA_10, PYRA_5, PYRA_14
         integer@CGFSIZET@ PENTA_6, PENTA_15, PENTA_18
         integer@CGFSIZET@ HEXA_8, HEXA_20, HEXA_27
-        integer@CGFSIZET@ MIXED, NGON_n, NFACE_n
+        integer@CGFSIZET@ MIXED, PYRA_13, NGON_n, NFACE_n
         character*32 ElementTypeName(0:23)
         parameter (NODE     =  2)
         parameter (BAR_2    =  3)
@@ -546,9 +546,9 @@
         data ElementTypeName / 'Null','UserDefined',                    &
      &      'NODE', 'BAR_2', 'BAR_3', 'TRI_3', 'TRI_6',                 &
      &      'QUAD_4', 'QUAD_8', 'QUAD_9', 'TETRA_4', 'TETRA_10',        &
-     &      'PYRA_5', 'PYRA_13', 'PYRA_14', 'PENTA_6', 'PENTA_15',      &
+     &      'PYRA_5', 'PYRA_14', 'PENTA_6', 'PENTA_15',                 &
      &      'PENTA_18', 'HEXA_8', 'HEXA_20', 'HEXA_27', 'MIXED',        &
-     &      'NGON_n', 'NFACE_n' /
+     &      'PYRA_13', 'NGON_n', 'NFACE_n' /
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Zone types                                                     *

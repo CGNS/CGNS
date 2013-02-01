@@ -2377,21 +2377,25 @@ int cgi_read_boco(cgns_boco *boco)
 
     if ((cg->version <= 1270 || modified) &&
         cg->mode == CG_MODE_MODIFY && !linked) {
-        const char *name;
-        cgsize_t len;
         double dummy_id;
         /* fix point set name */
-        if (cgio_set_name(cg->cgio, boco->id, boco->ptset->id,
-                boco->ptset->name)) return 1;
+        if (cgio_get_name(cg->cgio, boco->ptset->id, name) ||
+            strcmp(name, boco->ptset->name)) {
+            if (cgio_set_name(cg->cgio, boco->id, boco->ptset->id,
+                    boco->ptset->name)) {
+                cg_io_error("cgio_set_name");
+                return 1;
+            }
+        }
         /* fix grid location */
         ierr = cgio_get_node_id(cg->cgio, boco->id, "GridLocation",
                                 &dummy_id);
         if (!ierr) cgi_delete_node(boco->id, dummy_id);
         if (boco->location != CGNS_ENUMV(Vertex)) {
-            name = GridLocationName[boco->location];
-            len = (cgsize_t)strlen (name);
+            const char *locname = GridLocationName[boco->location];
+            cgsize_t len = (cgsize_t)strlen(locname);
             if (cgi_new_node(boco->id, "GridLocation", "GridLocation_t",
-                    &dummy_id, "C1", 1, &len, name))
+                    &dummy_id, "C1", 1, &len, locname))
                 return 1;
         }
     }
@@ -10431,6 +10435,7 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
  *  UserDefinedData_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t,
  *  BCProperty_t, WallFunction_t, Area_t,
  *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t
+ *  FamilyBCDataSet_t
  */
 
     if (strcmp(posit->label,"CGNSBase_t")==0)
@@ -10486,6 +10491,8 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_array, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"Family_t")==0)
         ADDRESS4MULTIPLE(cgns_family, ndescr, descr, cgns_descr)
+    else if (strcmp(posit->label,"FamilyBCDataSet_t")==0)
+        ADDRESS4MULTIPLE(cgns_dataset, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"GeometryReference_t")==0)
         ADDRESS4MULTIPLE(cgns_geo, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"RigidGridMotion_t")==0)

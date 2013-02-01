@@ -59,18 +59,18 @@ int main (int argc, char *argv[])
     char outfile[32];
     int nbases, nzones;
 
-    strcpy (outfile, "ver32.cgns");
+    strcpy (outfile, "ver31.cgns");
     if (argc > 1) {
         int type = 0;
         int n = 0;
         if (argv[1][n] == '-') n++;
         if (argv[1][n] == 'a' || argv[1][n] == 'A') {
             type = CG_FILE_ADF;
-            strcpy (outfile, "ver32.cga");
+            strcpy (outfile, "ver31.cga");
         }
         else if (argv[1][n] == 'h' || argv[1][n] == 'H') {
             type = CG_FILE_HDF5;
-            strcpy (outfile, "ver32.cgh");
+            strcpy (outfile, "ver31.cgh");
         }
         else {
             fprintf(stderr, "unknown option\n");
@@ -461,7 +461,7 @@ void write_structured()
         sprintf(errmsg, "cg_subreg_gcname_write(%s)", sname);
         error_exit(errmsg);
     }
-    
+
     /* write subregion as PointRange in Zone1 and PointList in Zone2 */
 
     for (n = 0; n < 3; n++) {
@@ -479,7 +479,7 @@ void write_structured()
     for (n = 0; n < 6; n++)
         rind[n] = 1;
     dims[0] = num_coord;
-    
+
     for (nc = 3; nc <= NUM_ZCONN; nc++) {
         sprintf(sname, "SubRegion%d", nc);
         if (cg_subreg_ptset_write(cgfile, cgbase, 1, sname, 2,
@@ -510,12 +510,12 @@ void write_structured()
     }
 
     /* create BaseIterativeData_t node */
-    
+
     if (cg_biter_write(cgfile, cgbase, "BaseIterativeData", NUM_ZCONN))
         error_exit("cg_biter_write");
-    
+
     /* create the ZoneIterativeData_t node */
-    
+
     dims[0] = 32;
     dims[1] = NUM_ZCONN;
     n = 32 * NUM_ZCONN;
@@ -568,7 +568,7 @@ void write_structured()
 
 void write_unstructured()
 {
-    int n, nelem, nc, cgconn, cgz, cghole;
+    int n, nelem, nc, cgconn, cgz, cghole, cgfam, cgbc;
     cgsize_t range[2], dims[2];
     char name[33], zcname[33], pointers[32*NUM_ZCONN+1];
 #ifdef UNSTRUCTURED_1TO1
@@ -589,6 +589,27 @@ void write_unstructured()
             CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian)))
         error_exit("unstructured base");
 
+    /* write a FamilyBCDataset node and children */
+
+    if (cg_family_write(cgfile, cgbase, "Family", &cgfam) ||
+        cg_fambc_write(cgfile, cgbase, cgfam, "Wall",
+            CGNS_ENUMV(BCWall), &cgbc) ||
+        cg_goto(cgfile, cgbase, "Family_t", 1, "FamilyBC_t", 1, NULL) ||
+        cg_bcdataset_write("Dataset", CGNS_ENUMV(BCWall),
+            CGNS_ENUMV(Dirichlet)) ||
+        cg_gorel(cgfile, "Dataset", 0, NULL) ||
+/*        cg_goto(cgfile, cgbase, "Family_t", 1, "FamilyBC_t", 1,
+            "FamilyBCDataSet_t", 1, NULL) ||*/
+        cg_descriptor_write("descriptor", "this is a descriptor") ||
+        cg_dataclass_write(CGNS_ENUMV(NormalizedByDimensional)) ||
+        cg_units_write(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
+            CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian)) ||
+        cg_state_write("reference state") ||
+        cg_user_data_write("Userdata") ||
+        cg_gorel(cgfile, "UserDefinedData_t", 1, NULL) ||
+        cg_famname_write("Family"))
+        error_exit("family bc");
+
     /* write zones */
 
     for (n = 0; n < 9; n++)
@@ -608,7 +629,7 @@ void write_unstructured()
     nelem = (NUM_SIDE - 1) * (NUM_SIDE - 1);
 
     /* write connectivities in multiple ZoneGridConnectivity_t nodes */
-    
+
     for (nc = 1; nc <= NUM_ZCONN; nc++) {
         /* create ZoneGridConnectivity_t node */
         sprintf(zcname, "%s%d", ZCONN_NAME, nc);

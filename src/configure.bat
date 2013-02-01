@@ -1212,10 +1212,10 @@ echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> 
 echo.>> cgnslib_f.h
 echo         integer%fbytes% NODE, BAR_2, BAR_3, TRI_3, TRI_6>> cgnslib_f.h
 echo         integer%fbytes% QUAD_4, QUAD_8, QUAD_9>> cgnslib_f.h
-echo         integer%fbytes% TETRA_4, TETRA_10, PYRA_5, PYRA_13, PYRA_14>> cgnslib_f.h
+echo         integer%fbytes% TETRA_4, TETRA_10, PYRA_5, PYRA_14>> cgnslib_f.h
 echo         integer%fbytes% PENTA_6, PENTA_15, PENTA_18>> cgnslib_f.h
 echo         integer%fbytes% HEXA_8, HEXA_20, HEXA_27>> cgnslib_f.h
-echo         integer%fbytes% MIXED, NGON_n, NFACE_n>> cgnslib_f.h
+echo         integer%fbytes% MIXED, PYRA_13, NGON_n, NFACE_n>> cgnslib_f.h
 echo         character*32 ElementTypeName(0:23)>> cgnslib_f.h
 echo         parameter (NODE     =  2)>> cgnslib_f.h
 echo         parameter (BAR_2    =  3)>> cgnslib_f.h
@@ -1424,9 +1424,9 @@ echo.>> cgnslib_f.h
 echo         data ElementTypeName / 'Null','UserDefined',                    ^&>> cgnslib_f.h
 echo      ^&      'NODE', 'BAR_2', 'BAR_3', 'TRI_3', 'TRI_6',                 ^&>> cgnslib_f.h
 echo      ^&      'QUAD_4', 'QUAD_8', 'QUAD_9', 'TETRA_4', 'TETRA_10',        ^&>> cgnslib_f.h
-echo      ^&      'PYRA_5', 'PYRA_13', 'PYRA_14', 'PENTA_6', 'PENTA_15',      ^&>> cgnslib_f.h
+echo      ^&      'PYRA_5', 'PYRA_14', 'PENTA_6', 'PENTA_15',                 ^&>> cgnslib_f.h
 echo      ^&      'PENTA_18', 'HEXA_8', 'HEXA_20', 'HEXA_27', 'MIXED',        ^&>> cgnslib_f.h
-echo      ^&      'NGON_n', 'NFACE_n' />> cgnslib_f.h
+echo      ^&      'PYRA_13','NGON_n', 'NFACE_n' />> cgnslib_f.h
 echo.>> cgnslib_f.h
 echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
 echo !*      Zone types                                                     *>> cgnslib_f.h
@@ -1899,7 +1899,7 @@ echo 	open_cgns$(EXE) \>> tests\Makefile
 echo 	test_exts$(EXE) \>> tests\Makefile
 echo 	test_partial$(EXE) \>> tests\Makefile
 echo 	test_goto$(EXE) \>> tests\Makefile
-echo 	test_zconn$(EXE) \>> tests\Makefile
+echo 	test_ver31$(EXE) \>> tests\Makefile
 echo 	write_array$(EXE) \>> tests\Makefile
 echo 	write_links$(EXE) \>> tests\Makefile
 echo 	write_bcdata$(EXE) \>> tests\Makefile
@@ -1957,8 +1957,8 @@ echo 	$(CC) $(COPTS) $(CEOUT)$@ test_goto.c $(LDLIBS) $(CLIBS)>> tests\Makefile
 echo.>> tests\Makefile
 echo #---------->> tests\Makefile
 echo.>> tests\Makefile
-echo test_zconn$(EXE) : test_zconn.c $(CGNSLIB)>> tests\Makefile
-echo 	$(CC) $(COPTS) $(CEOUT)$@ test_zconn.c $(LDLIBS) $(CLIBS)>> tests\Makefile
+echo test_ver31$(EXE) : test_ver31.c $(CGNSLIB)>> tests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ test_ver31.c $(LDLIBS) $(CLIBS)>> tests\Makefile
 echo.>> tests\Makefile
 echo #---------->> tests\Makefile
 echo.>> tests\Makefile

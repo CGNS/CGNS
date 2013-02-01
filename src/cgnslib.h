@@ -984,7 +984,7 @@ CGNSDLL int cg_1to1_read_global(int fn, int B, char **connectname,
 CGNSDLL int cg_nbocos(int fn, int B, int Z, int *nbocos);
 CGNSDLL int cg_boco_info(int fn, int B, int Z, int BC, char *boconame,
 	CGNS_ENUMT(BCType_t) *bocotype, CGNS_ENUMT(PointSetType_t) *ptset_type,
- 	cgsize_t *npnts, int *NormalIndex, cgsize_t *NormalListFlag,
+ 	cgsize_t *npnts, int *NormalIndex, cgsize_t *NormalListSize,
  	CGNS_ENUMT(DataType_t) *NormalDataType, int *ndataset);
 CGNSDLL int cg_boco_read(int fn, int B, int Z, int BC, cgsize_t *pnts,
 	void *NormalList);

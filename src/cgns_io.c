@@ -331,13 +331,6 @@ int cgio_find_file (const char *parentfile, const char *filename,
         return set_error(CGIO_ERR_NULL_FILE);
     size = max_path_len - 1 - (int)strlen(filename);
     if (size < 0) return set_error(CGIO_ERR_TOO_SMALL);
-    if (cgio_check_file(filename, &type) == CGIO_ERR_NONE &&
-       (file_type == CGIO_FILE_NONE || file_type == type)) {
-        strcpy(pathname, filename);
-        return set_error(CGIO_ERR_NONE);
-    }
-    if (get_error() == CGIO_ERR_TOO_MANY)
-        return CGIO_ERR_TOO_MANY;
 
     /* full path */
 
@@ -345,11 +338,21 @@ int cgio_find_file (const char *parentfile, const char *filename,
 #ifdef _WIN32
         || *filename == '\\' || *(filename+1) == ':'
 #endif
-    ) return set_error(CGIO_ERR_NOT_FOUND);
+    ) {
+        if (cgio_check_file(filename, &type) == CGIO_ERR_NONE &&
+           (file_type == CGIO_FILE_NONE || file_type == type)) {
+            strcpy(pathname, filename);
+            return set_error(CGIO_ERR_NONE);
+        }
+        if (get_error() == CGIO_ERR_TOO_MANY)
+            return CGIO_ERR_TOO_MANY;
+        return set_error(CGIO_ERR_NOT_FOUND);
+    }
 
     /* check relative to parent's directory */
 
-    if (parentfile != NULL && *parentfile && (int)strlen(parentfile) < max_path_len-1) {
+    if (parentfile != NULL && *parentfile &&
+        (int)strlen(parentfile) < max_path_len-1) {
         strcpy(pathname, parentfile);
         p = strrchr(pathname, '/');
 #ifdef _WIN32
@@ -365,6 +368,16 @@ int cgio_find_file (const char *parentfile, const char *filename,
             }
         }
     }
+
+    /* check current directory */
+
+    if (cgio_check_file(filename, &type) == CGIO_ERR_NONE &&
+       (file_type == CGIO_FILE_NONE || file_type == type)) {
+        strcpy(pathname, filename);
+        return set_error(CGIO_ERR_NONE);
+    }
+    if (get_error() == CGIO_ERR_TOO_MANY)
+        return CGIO_ERR_TOO_MANY;
 
     size -= 1;
 
