@@ -70,6 +70,10 @@ install : all $(BINDIR)
 	cp $(ALL) $(BINDIR)
 	cp cgnsupdate $(BINDIR)
 	chmod +x $(BINDIR)/cgnsupdate
+	cp adf2hdf $(BINDIR)
+	chmod +x $(BINDIR)/adf2hdf
+	cp hdf2adf $(BINDIR)
+	chmod +x $(BINDIR)/hdf2adf
 
 $(BINDIR) :
 	@if [ ! -d $(BINDIR) ] ; then \
@@ -85,6 +89,8 @@ uninstall :
 	  fi; \
 	done;
 	/bin/rm -f $(BINDIR)/cgnsupdate
+	/bin/rm -f $(BINDIR)/adf2hdf
+	/bin/rm -f $(BINDIR)/hdf2adf
 
 clean :
 	-$(RM) *.$(O)

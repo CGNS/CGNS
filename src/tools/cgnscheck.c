@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <math.h>
 #ifdef _WIN32
 # include <io.h>
 # define access _access
@@ -20,30 +21,11 @@
 #include "cgns_header.h"
 #include "cgnames.h"
 
-#if !defined(CGNS_VERSION) || CGNS_VERSION < 2300
-# error You need at least CGNS Version 2.3
+#if !defined(CGNS_VERSION) || CGNS_VERSION < 3100
+# error You need at least CGNS Version 3.1
 #endif
 
-#ifndef CG_MODE_READ
-# define CG_MODE_READ   MODE_READ
-# define CG_MODE_MODIFY MODE_MODIFY
-#endif
-
-#if CGNS_VERSION < 2420
-# define cg_free free
-#endif
-
-#if CGNS_VERSION >= 3000
-# define USE_MID_NODES
-#endif
-
-#ifndef CGNSTYPES_H
-# define cgsize_t int
-#endif
-#ifndef CGNS_ENUMT
-# define CGNS_ENUMT(e) e
-# define CGNS_ENUMV(e) e
-#endif
+#define USE_MID_NODES
 
 static int FileVersion;
 static int LibraryVersion = CGNS_VERSION;
@@ -126,6 +108,14 @@ static int MaxRigidGrid = 0;
 static int NumRigidGrid = 0;
 static CGNSNAME *RigidGrid;
 
+static int MaxZoneConn = 0;
+static int NumZoneConn = 0;
+static CGNSNAME *ZoneConn;
+
+static int MaxZoneSubReg = 0;
+static int NumZoneSubReg = 0;
+static CGNSNAME *ZoneSubReg;
+
 /* command line options */
 
 static char options[] = "vVuUw:e";
@@ -180,6 +170,18 @@ static void error_exit(char *func)
     exit(1);
 }
 
+static void fatal_error (char *format, ...)
+{
+    va_list arg;
+
+    fflush(stdout);
+    va_start (arg, format);
+    fprintf (stderr, "INTERNAL ERROR:");
+    vfprintf (stderr, format, arg);
+    va_end(arg);
+    exit(1);
+}
+
 /*----------------------------------------------------------------------*/
 
 static void create_names (int cnt, int *maxcnt, CGNSNAME **namelist)
@@ -191,10 +193,8 @@ static void create_names (int cnt, int *maxcnt, CGNSNAME **namelist)
             names = (CGNSNAME *) realloc (names, cnt * sizeof(CGNSNAME));
         else
             names = (CGNSNAME *) malloc (cnt * sizeof(CGNSNAME));
-        if (names == NULL) {
-            fprintf (stderr, "malloc failed for cgns name list\n");
-            exit (1);
-        }
+        if (names == NULL)
+            fatal_error ("malloc failed for cgns name list\n");
         *maxcnt = cnt;
         *namelist = names;
     }
@@ -202,11 +202,7 @@ static void create_names (int cnt, int *maxcnt, CGNSNAME **namelist)
 
 /*=======================================================================*/
 
-#ifdef CG_MAX_GOTO_DEPTH
-# define MAX_GOTO_DEPTH CG_MAX_GOTO_DEPTH
-#else
-# define MAX_GOTO_DEPTH 20
-#endif
+#define MAX_GOTO_DEPTH CG_MAX_GOTO_DEPTH
 
 static char goLabel[MAX_GOTO_DEPTH][33];
 static int goIndex[MAX_GOTO_DEPTH];
@@ -219,33 +215,10 @@ static void goto_node ()
     int n, ier;
     char *labels[MAX_GOTO_DEPTH];
 
-#if CGNS_VERSION >= 2500
     for (n = 0; n < goDepth; n++)
         labels[n] = goLabel[n];
-# if CGNS_VERSION > 2500
     ier = cg_golist (cgnsfn, cgnsbase, goDepth, labels, goIndex);
     if (ier) error_exit ("cg_golist");
-# else
-    ier = cgi_get_posit(cgnsfn, cgnsbase, goDepth, goIndex, labels);
-    if (ier) error_exit("cgi_get_posit");
-# endif
-#else
-    posit_base = cgnsbase;
-    posit_zone = 0;
-    for (n = 0; n < goDepth; n++) {
-        labels[n] = goLabel[n];
-        if (strcmp (goLabel[n], "Zone_t") == 0)
-            posit_zone = goIndex[n];
-    }
-
-    if (goDepth == 0)
-        strcpy (posit_label, "CGNSBase_t");
-    else
-        strcpy (posit_label, goLabel[goDepth-1]);
-
-    posit = cgi_get_posit (cgnsfn, cgnsbase, goDepth, goIndex, labels, &ier);
-    if (ier) error_exit("cgi_get_posit");
-#endif
 }
 
 /*-----------------------------------------------------------------------*/
@@ -260,10 +233,8 @@ static void go_absolute (char *dsname, ...)
     goDepth = 0;
     while (name != NULL) {
         num = va_arg (arg, int);
-        if (goDepth == MAX_GOTO_DEPTH) {
-            fprintf (stderr, "maximum depth of goto exceeded\n");
-            exit (1);
-        }
+        if (goDepth == MAX_GOTO_DEPTH)
+            fatal_error("maximum depth of goto exceeded\n");
         strncpy (goLabel[goDepth], name, 32);
         goLabel[goDepth][32] = 0;
         goIndex[goDepth] = num;
@@ -291,10 +262,8 @@ static void go_relative (char *dsname, ...)
             if (goDepth < 0) goDepth = 0;
         }
         else if (strcmp (name, ".")) {
-            if (goDepth == MAX_GOTO_DEPTH) {
-                fprintf (stderr, "maximum depth of goto exceeded\n");
-                exit (1);
-            }
+            if (goDepth == MAX_GOTO_DEPTH)
+                fatal_error("maximum depth of goto exceeded\n");
             strncpy (goLabel[goDepth], name, 32);
             goLabel[goDepth][32] = 0;
             goIndex[goDepth++] = num;
@@ -328,6 +297,7 @@ static int read_gridlocation (CGNS_ENUMT(GridLocation_t) *location)
     int ierr = check_node ("GridLocation_t");
     if (ierr == CG_OK)
         return cg_gridlocation_read (location);
+    *location = CGNS_ENUMV(GridLocationNull);
     return ierr;
 }
 
@@ -380,18 +350,16 @@ static char *temporary_file (char *basename)
         basename = "cgnstmpfile";
     n = (int)strlen (basename);
     temp = (char *) malloc (n + 10);
-    if (temp == NULL) {
-        fprintf (stderr, "malloc failed for temp filename\n");
-        exit (1);
-    }
+    if (temp == NULL)
+        fatal_error("malloc failed for temp filename\n");
     sprintf (temp, "%s.tmp", basename);
     p = temp + strlen(temp);
     for (n = 0; n < 1000; n++) {
         sprintf (p, "%3.3d~", n);
         if (access (temp, 0)) return temp;
     }
-    fprintf (stderr, "failed to create temporary filename\n");
-    exit (1);
+    fatal_error("failed to create temporary filename\n");
+    return NULL;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -401,14 +369,11 @@ static void copy_file (char *oldfile, char *newfile)
     int c;
     FILE *oldfp, *newfp;
 
-    if (NULL == (oldfp = fopen (oldfile, "rb"))) {
-        fprintf (stderr, "error opening input file for reading\n");
-        exit (1);
-    }
+    if (NULL == (oldfp = fopen (oldfile, "rb")))
+        fatal_error("error opening input file for reading\n");
     if (NULL == (newfp = fopen (newfile, "w+b"))) {
         fclose (oldfp);
-        fprintf (stderr, "error opening output file for writing\n");
-        exit (1);
+        fatal_error("error opening output file for writing\n");
     }
     while (EOF != (c = getc (oldfp)))
         putc (c, newfp);
@@ -455,10 +420,8 @@ static char *update_version (char *cgnsfile, char *outfile)
         fflush (stdout);
     }
     unlink (outfile);
-    if (rename (tempfile, outfile)) {
-        fprintf (stderr, "rename %s -> %s failed\n", tempfile, outfile);
-        exit (1);
-    }
+    if (rename (tempfile, outfile))
+        fatal_error("rename %s -> %s failed\n", tempfile, outfile);
     free (tempfile);
     return outfile;
 }
@@ -566,7 +529,6 @@ static int valid_face (ZONE *z, cgsize_t elem)
             type = z->sets[ns].type;
             pe = z->sets[ns].elements;
             ne = elem - z->sets[ns].is;
-#if CGNS_VERSION >= 3000
             if (type == CGNS_ENUMV(NGON_n)) {
                 for (n = 0; n < ne; n++) {
                     nn = (int)*pe++;
@@ -574,7 +536,6 @@ static int valid_face (ZONE *z, cgsize_t elem)
                 }
                 return (*pe < 3 ? 0 : 1);
             }
-#endif
             if (type == CGNS_ENUMV(MIXED)) {
                 for (n = 0; n < ne; n++) {
                     type = (CGNS_ENUMT(ElementType_t))*pe++;
@@ -589,7 +550,8 @@ static int valid_face (ZONE *z, cgsize_t elem)
                 type = (CGNS_ENUMT(ElementType_t))*pe;
                 if (type >= CGNS_ENUMV(NGON_n)+3) return 1;
             }
-            if (type >= CGNS_ENUMV(TRI_3) && type <= CGNS_ENUMV(QUAD_9)) return 1;
+            if (type >= CGNS_ENUMV(TRI_3) &&
+                type <= CGNS_ENUMV(QUAD_9)) return 1;
             return 0;
         }
     }
@@ -610,7 +572,6 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
             ne = elem - z->sets[ns].is;
             nodes = z->sets[ns].elements;
             type = z->sets[ns].type;
-#if CGNS_VERSION >= 3000
             if (type == CGNS_ENUMV(NGON_n)) {
                 while (ne-- > 0) {
                     nn = (int)*nodes++;
@@ -629,7 +590,6 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
                 *nnodes = (int)*nodes++;
                 return nodes;
             }
-#endif
             cg_npe (type, &nn);
             if (nn) {
                 nodes += (nn * ne);
@@ -686,10 +646,8 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
 static FACE *new_face (int nnodes, cgsize_t *nodes)
 {
     FACE *f = (FACE *) malloc (sizeof(FACE) + nnodes * sizeof(cgsize_t));
-    if (f == NULL) {
-        fprintf (stderr, "malloc failed for a new face\n");
-        exit (1);
-    }
+    if (f == NULL)
+        fatal_error("malloc failed for a new face\n");
     f->e1 = f->e2 = 0;
     f->f1 = f->f2 = 0;
     f->nnodes = nnodes;
@@ -791,17 +749,13 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
     int *nodemap;
     FACE *face;
 
-#if CGNS_VERSION >= 3000
     if (type == CGNS_ENUMV(NFACE_n)) {
         int dim;
-        cgsize_t *face = find_element (z, nodes[fnum], &dim, &n);
-        if (face == NULL || dim != 2) {
-            fprintf (stderr, "INTERNAL:find_element returned invalid face\n");
-            exit (1);
-        }
+        cgsize_t *face = find_element (z, abs(nodes[fnum]), &dim, &n);
+        if (face == NULL || dim != 2)
+            fatal_error("find_element returned invalid face\n");
         return new_face (n, face);
     }
-#endif
     switch (type) {
         case CGNS_ENUMV(TETRA_4):
             nodemap = tetra_4[fnum];
@@ -812,11 +766,9 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
         case CGNS_ENUMV(PYRA_5):
             nodemap = pyra_5[fnum];
             break;
-#if CGNS_VERSION >= 3000
         case CGNS_ENUMV(PYRA_13):
             nodemap = pyra_13[fnum];
             break;
-#endif
         case CGNS_ENUMV(PYRA_14):
 #ifdef USE_MID_NODES
             nodemap = pyra_14[fnum];
@@ -851,8 +803,7 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
 #endif            
             break;
         default:
-            fprintf (stderr, "INTERNAL:invalid element type in element_face\n");
-            exit (1);
+            fatal_error("invalid element type in element_face\n");
     }
     face = new_face (*nodemap++, NULL);
     for (n = 0; n < face->nnodes; n++)
@@ -948,10 +899,8 @@ static void read_zone (int nz)
     }
     z->nsets = nsets;
     z->sets = (ELEMSET *) malloc (nsets * sizeof(ELEMSET));
-    if (NULL == z->sets) {
-        fprintf (stderr, "malloc failed for element sets\n");
-        exit (1);
-    }
+    if (NULL == z->sets)
+        fatal_error("malloc failed for element sets\n");
 
     /* read element sets */
 
@@ -967,17 +916,13 @@ static void read_zone (int nz)
             error_exit ("cg_ElementDataSize");
         if (se == 0) continue;
         es->elements = (cgsize_t *) malloc ((size_t)(se * sizeof(cgsize_t)));
-        if (NULL == es->elements) {
-            fprintf (stderr, "malloc failed for elements\n");
-            exit (1);
-        }
+        if (NULL == es->elements)
+            fatal_error("malloc failed for elements\n");
         es->parent = NULL;
         if (hasparent) {
             es->parent = (cgsize_t *) malloc ((size_t)(4 * nelem * sizeof(cgsize_t)));
-            if (NULL == es->parent) {
-                fprintf (stderr, "malloc failed for elemset parent data\n");
-                exit (1);
-            }
+            if (NULL == es->parent)
+                fatal_error("malloc failed for elemset parent data\n");
         }
         if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, es->elements,
                 es->parent)) error_exit ("cg_elements_read");
@@ -994,11 +939,7 @@ static void read_zone (int nz)
         }
 
         es->nv = es->ns = es->ne = es->nn = 0;
-#if CGNS_VERSION >= 3000
         if (es->type < CGNS_ENUMV(NODE)) {
-#else
-        if (es->type < CGNS_ENUMV(NODE) || es->type > CGNS_ENUMV(MIXED)) {
-#endif
             es->invalid = -1;
             continue;
         }
@@ -1061,7 +1002,6 @@ static void read_zone (int nz)
                         "NGON_n in MIXED deprecated - use NGON_n element set");
             }
         }
-#if CGNS_VERSION >= 3000
         else if (es->type == CGNS_ENUMV(NGON_n)) {
             es->ns = nelem;
             z->ns += (nelem - es->rind[0] - es->rind[1]);
@@ -1070,7 +1010,6 @@ static void read_zone (int nz)
             es->nv = nelem;
             z->nv += (nelem - es->rind[0] - es->rind[1]);
         }
-#endif
         else if (es->type == CGNS_ENUMV(NODE)) {
             es->nn = nelem;
             z->nn += (nelem - es->rind[0] - es->rind[1]);
@@ -1125,7 +1064,6 @@ static void read_zone (int nz)
                 pe += nn;
             }
         }
-#if CGNS_VERSION >= 3000
         else if (es->type == CGNS_ENUMV(NGON_n)) {
             for (ne = 0; ne < nelem; ne++) {
                 nn = (int)*pe++;
@@ -1145,7 +1083,7 @@ static void read_zone (int nz)
                 nn = (int)*pe++;
                 if (ne >= es->rind[0]) {
                     for (i = 0; i < nn; i++) {
-                        if (!valid_face (z, pe[i])) {
+                        if (!valid_face (z, abs(pe[i]))) {
                             ierr++;
                             (es->invalid)++;
                         }
@@ -1154,7 +1092,6 @@ static void read_zone (int nz)
                 pe += nn;
             }
         }
-#endif
         else {
             if (cg_npe (es->type, &nn) || nn <= 0) {
                 es->invalid = -3;
@@ -1183,19 +1120,15 @@ static void read_zone (int nz)
     puts ("  building volume faces hash table...");
     fflush (stdout);
     z->faces = HashCreate ((size_t)(z->nv >> 2) + 1, compare_faces, hash_face);
-    if (z->faces == NULL) {
-        fprintf (stderr, "malloc failed for face hash table\n");
-        exit (1);
-    }
+    if (z->faces == NULL)
+        fatal_error("malloc failed for face hash table\n");
 
     ierr = 0;
     for (es = z->sets, ns = 0; ns < nsets; ns++, es++) {
         if (es->invalid || es->nv == 0 || es->type < CGNS_ENUMV(TETRA_4))
             continue;
         if (es->type > CGNS_ENUMV(MIXED)) {
-#if CGNS_VERSION >= 3000
             if (es->type != CGNS_ENUMV(NFACE_n))
-#endif
             continue;
         }
         nelem = es->ie - es->is + 1 - es->rind[1];
@@ -1217,9 +1150,7 @@ static void read_zone (int nz)
                     nf = 4;
                     break;
                 case CGNS_ENUMV(PYRA_5):
-#if CGNS_VERSION >= 3000
                 case CGNS_ENUMV(PYRA_13):
-#endif
                 case CGNS_ENUMV(PYRA_14):
                 case CGNS_ENUMV(PENTA_6):
                 case CGNS_ENUMV(PENTA_15):
@@ -1271,20 +1202,16 @@ static void read_zone (int nz)
     maxnode = 0;
     HashList (z->faces, get_maxnode, &maxnode);
     nodes = (cgsize_t *) calloc ((size_t)maxnode, sizeof(cgsize_t));
-    if (nodes == NULL) {
-        fprintf (stderr, "malloc failed for zone nodes\n");
-        exit (1);
-    }
+    if (nodes == NULL)
+        fatal_error("malloc failed for zone nodes\n");
     HashList (z->faces, get_extnodes, nodes);
     for (ne = 0, k = 0; k < z->nnodes; k++) {
         if (nodes[k]) ne++;
     }
     z->nextnodes = ne;
     z->extnodes = (cgsize_t *) malloc ((size_t)(ne * sizeof(cgsize_t)));
-    if (z->extnodes == NULL) {
-        fprintf (stderr, "malloc failed for zone exterior nodes\n");
-        exit (1);
-    }
+    if (z->extnodes == NULL)
+        fatal_error("malloc failed for zone exterior nodes\n");
     for (ne = 0, k = 0; k < z->nnodes; k++) {
         if (nodes[k]) z->extnodes[ne++] = k + 1;
     }
@@ -1412,15 +1339,12 @@ static int *read_units (int units[9])
     CGNS_ENUMT(TimeUnits_t) time;
     CGNS_ENUMT(TemperatureUnits_t) temp;
     CGNS_ENUMT(AngleUnits_t) angle;
-#if CGNS_VERSION >= 2400
     CGNS_ENUMT(ElectricCurrentUnits_t) current;
     CGNS_ENUMT(SubstanceAmountUnits_t) amount;
     CGNS_ENUMT(LuminousIntensityUnits_t) intensity;
-#endif
 
     for (n = 0; n < 9; n++)
         units[n] = 0;
-#if CGNS_VERSION >= 2400
     ierr = cg_unitsfull_read (&mass, &length, &time, &temp, &angle,
                               &current, &amount, &intensity);
     if (ierr) {
@@ -1428,23 +1352,15 @@ static int *read_units (int units[9])
         return NULL;
     }
     cg_nunits (&n);
-    units[8] = n;
-    units[5] = current;
-    units[6] = amount;
-    units[7] = intensity;
-#else
-    ierr = cg_units_read (&mass, &length, &time, &temp, &angle);
-    if (ierr) {
-        if (ierr != CG_NODE_NOT_FOUND) error_exit("cg_units_read");
-        return NULL;
-    }
-    units[8] = 5;
-#endif
     units[0] = mass;
     units[1] = length;
     units[2] = time;
     units[3] = temp;
     units[4] = angle;
+    units[5] = current;
+    units[6] = amount;
+    units[7] = intensity;
+    units[8] = n;
     return units;
 }
 
@@ -1463,47 +1379,26 @@ static int read_exponents (float exps[9])
         return 0;
     }
     if (type == CGNS_ENUMV(RealSingle))
-#if CGNS_VERSION >= 2400
         ierr = cg_expfull_read (exps);
-#else
-        ierr = cg_exponents_read (exps);
-#endif
-        else if (type == CGNS_ENUMV(RealDouble)) {
-#if CGNS_VERSION >= 2400
+    else if (type == CGNS_ENUMV(RealDouble)) {
         double data[8];
         ierr = cg_expfull_read (data);
         if (ierr == CG_OK) {
             for (n = 0; n < 8; n++)
                 exps[n] = (float)data[n];
         }
-#else
-        double data[5];
-        ierr = cg_exponents_read (data);
-        if (ierr == CG_OK) {
-            for (n = 0; n < 5; n++)
-                exps[n] = (float)data[n];
-        }
-#endif
     }
     else {
-        fprintf (stderr, "invalid data type for exponents\n");
-        exit (1);
+        error("invalid data type for exponents");
+        return 0;
     }
     if (ierr) {
         if (ierr != CG_NODE_NOT_FOUND)
-#if CGNS_VERSION >= 2400
             error_exit("cg_expfull_read");
-#else
-            error_exit("cg_exponents_read");
-#endif
         return 0;
     }
-#if CGNS_VERSION >= 2400
     cg_nexponents (&n);
     exps[8] = (float)n;
-#else
-    exps[8] = 5;
-#endif
     return 1;
 }
 
@@ -1531,7 +1426,6 @@ static void print_dataclass (int dataclass, int indent)
 static void print_units (int *units, int indent)
 {
     print_indent (indent);
-#if CGNS_VERSION >= 2400
     printf ("Units=[%s,%s,%s,%s,%s",
         cg_MassUnitsName(units[0]),
         cg_LengthUnitsName(units[1]),
@@ -1544,14 +1438,6 @@ static void print_units (int *units, int indent)
             cg_SubstanceAmountUnitsName(units[6]),
             cg_LuminousIntensityUnitsName(units[7]));
     puts ("]");
-#else
-    printf ("Units=[%s,%s,%s,%s,%s]\n",
-        cg_MassUnitsName(units[0]),
-        cg_LengthUnitsName(units[1]),
-        cg_TimeUnitsName(units[2]),
-        cg_TemperatureUnitsName(units[4]),
-        cg_AngleUnitsName(units[4]));
-#endif
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1559,16 +1445,11 @@ static void print_units (int *units, int indent)
 static void print_exponents (float *exps, int indent)
 {
     print_indent (indent);
-#if CGNS_VERSION >= 2400
     printf ("Exponents=[%g,%g,%g,%g,%g", exps[0], exps[1],
         exps[2], exps[3], exps[4]);
     if (exps[8] > 5.0)
         printf (",%g,%g,%g", exps[5], exps[6], exps[7]);
     puts ("]");
-#else
-    printf ("Exponents=[%g,%g,%g,%g,%g]\n", exps[0], exps[1],
-        exps[2], exps[3], exps[4]);
-#endif
 }
 
 /*=======================================================================*/
@@ -1623,12 +1504,16 @@ static void check_quantity (int dnum, char *name,
         if ((CGNS_ENUMT(DataClass_t))dclass == CGNS_ENUMV(Dimensional) &&
             punits == NULL && parunits == NULL)
             warning (2, "units not given for dimensional quantity");
-        if (hasexps && ne > 0) {
-            for (n = 0; n < ne; n++) {
-                if (exps[n] != defexps[n]) break;
+        if (ne > 0) {
+            if (hasexps) {
+                for (n = 0; n < ne; n++) {
+                    if (exps[n] != defexps[n]) break;
+                }
+                if (n < ne)
+                    warning (2, "exponents do not match CGNS specification");
             }
-            if (n < ne)
-                warning (2, "exponents do not match CGNS specification");
+            else
+                warning (2, "exponents not given");
         }
     }
     else if ((CGNS_ENUMT(DataClass_t))dclass == CGNS_ENUMV(NondimensionalParameter) ||
@@ -1693,12 +1578,10 @@ static void check_user_data (int parclass, int *parunits, int indent)
     int dataclass, *punits, units[9];
     char name[33], *desc;
     CGNS_ENUMT(DataType_t) datatype;
-#if CGNS_VERSION >= 2400
     CGNS_ENUMT(GridLocation_t) location;
     CGNS_ENUMT(PointSetType_t) ptype;
     int hasf, haso, hasl, hasp, ordinal;
     cgsize_t npnts;
-#endif
 
     if (cg_nuser_data (&nuser)) error_exit ("cg_nuser_data");
     if (nuser <= 0) return;
@@ -1709,7 +1592,6 @@ static void check_user_data (int parclass, int *parunits, int indent)
         printf ("checking user data \"%s\"\n", name);
         fflush (stdout);
         go_relative ("UserDefinedData_t", nu, NULL);
-#if CGNS_VERSION >= 2400
         hasf = cg_famname_read (name);
         if (hasf && hasf != CG_NODE_NOT_FOUND)
             error_exit("cg_famname_read");
@@ -1754,7 +1636,6 @@ static void check_user_data (int parclass, int *parunits, int indent)
             if (n == NumFamily)
                 warning (1, "family name \"%s\" not found", name);
         }
-#endif
         if (verbose > 1) {
             if (cg_ndescriptors (&nd)) error_exit ("cg_ndescriptors");
             for (n = 1; n <= nd; n++) {
@@ -1787,9 +1668,7 @@ static void check_user_data (int parclass, int *parunits, int indent)
             check_quantity (n, name, dataclass, punits, 0, indent+4);
         }
 
-#if CGNS_VERSION >= 2400
         check_user_data (dataclass, punits, indent + 2);
-#endif
         go_relative ("..", 1, NULL);
     }
 }
@@ -1998,9 +1877,7 @@ static void check_equation_set (int *flags, int parclass, int *parunits,
     CGNS_ENUMT(GoverningEquationsType_t) governing;
     CGNS_ENUMT(ModelType_t) model;
     int thermrelax, chemkin;
-#if CGNS_VERSION >= 2400
     int emelec, emmagn, emcond;
-#endif
 
     ierr = cg_equationset_chemistry_read (&thermrelax, &chemkin);
     if (ierr) {
@@ -2008,14 +1885,12 @@ static void check_equation_set (int *flags, int parclass, int *parunits,
             error_exit("cg_equationset_chemistry_read");
         thermrelax = chemkin = 0;
     }
-#if CGNS_VERSION >= 2400
     ierr = cg_equationset_elecmagn_read (&emelec, &emmagn, &emcond);
     if (ierr) {
         if (ierr != CG_NODE_NOT_FOUND);
             error_exit("cg_equationset_elecmagn_read");
         emelec = emmagn = emcond = 0;
     }
-#endif
 
     go_relative ("FlowEquationSet_t", 1, NULL);
 
@@ -2207,8 +2082,6 @@ static void check_equation_set (int *flags, int parclass, int *parunits,
         go_relative ("..", 1, NULL);
     }
 
-#if CGNS_VERSION >= 2400
-
     /* EM electric field model */
 
     if (emelec) {
@@ -2247,8 +2120,6 @@ static void check_equation_set (int *flags, int parclass, int *parunits,
         check_user_data (dataclass, punits, indent + 2);
         go_relative ("..", 1, NULL);
     }
-
-#endif
 
     go_relative ("..", 1, NULL);
 }
@@ -2319,10 +2190,8 @@ static void check_coordinates (int ng)
         rmax[n] = z->dims[0][n] + rind[2*n] + rind[2*n+1];
         np *= rmax[n];
     }
-    if (NULL == (coord = (float *) malloc ((size_t)(np * sizeof(float))))) {
-        fprintf (stderr, "malloc failed for %ld coordinate values\n", (long)np);
-        exit (1);
-    }
+    if (NULL == (coord = (float *) malloc ((size_t)(np * sizeof(float)))))
+        fatal_error("malloc failed for %ld coordinate values\n", (long)np);
     if (z->maxnode < np) z->maxnode = np;
 
     if (cg_ncoords (cgnsfn, cgnsbase, cgnszone, &ncoords))
@@ -2467,24 +2336,19 @@ static void check_elements (void)
             continue;
         }
         if (es->invalid > 0) {
-#if CGNS_VERSION >= 3000
             if (es->type == CGNS_ENUMV(NFACE_n)) {
                 error ("%d polyhedra faces are not valid face elements",
                     es->invalid);
                 continue;
             }
-#endif
             error ("%d element nodes are out of range", es->invalid);
             continue;
         }
         if (z->faces == NULL || es->ns == 0 || es->type < CGNS_ENUMV(TRI_3))
             continue;
-        if (es->type > CGNS_ENUMV(QUAD_9) && es->type != CGNS_ENUMV(MIXED)) {
-#if CGNS_VERSION >= 3000
-            if (es->type != CGNS_ENUMV(NGON_n))
-#endif
-            continue;
-        }
+        if (es->type > CGNS_ENUMV(QUAD_9) &&
+            es->type != CGNS_ENUMV(MIXED) &&
+            es->type != CGNS_ENUMV(NGON_n)) continue;
 
         nelem = es->ie - es->is + 1 - es->rind[1];
         type = es->type;
@@ -2501,11 +2365,9 @@ static void check_elements (void)
                     cg_npe (type, &nn);
                 }
             }
-#if CGNS_VERSION >= 3000
             else if (es->type == CGNS_ENUMV(NGON_n)) {
                 nn = (int)*pe++;
             }
-#endif
             else {
                 cg_npe (type, &nn);
             }
@@ -2615,7 +2477,7 @@ static void check_struct_interface (ZONE *z, CGNS_ENUMT(PointSetType_t) ptype,
         for (n = 0, np = 0; np < npts; np++) {
             n1 = 0;
             for (id = 0; id < z->idim; id++) {
-                if (pts[n+id] < 1 || pts[n+id] >= z->dims[0][id])
+                if (pts[n] < 1 || pts[n] >= z->dims[0][id])
                     n1++;
                 n++;
             }
@@ -2698,7 +2560,7 @@ static cgsize_t check_interface (ZONE *z, CGNS_ENUMT(PointSetType_t) ptype,
         error ("invalid point type");
         return 0;
     }
-    if (location < CGNS_ENUMV(Vertex) || location >= CGNS_ENUMV(EdgeCenter)) {
+    if (location < CGNS_ENUMV(Vertex) || location > CGNS_ENUMV(EdgeCenter)) {
         error ("invalid grid location");
         return 0;
     }
@@ -2728,10 +2590,8 @@ static cgsize_t check_interface (ZONE *z, CGNS_ENUMT(PointSetType_t) ptype,
             np *= (pmax[n] - pmin[n] + 1);
         }
         p = (cgsize_t *) malloc ((size_t)(np * z->idim * sizeof(cgsize_t)));
-        if (p == NULL) {
-            fprintf (stderr, "malloc failed for point/element list\n");
-            exit (1);
-        }
+        if (p == NULL)
+            fatal_error("malloc failed for point/element list\n");
         n = 0;
         if (z->idim == 1) {
             for (i = pmin[0]; i <= pmax[0]; i++)
@@ -2781,11 +2641,11 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z,
     CGNS_ENUMT(PointSetType_t) ptype, CGNS_ENUMT(GridLocation_t) location)
 {
     switch (location) {
+        case CGNS_ENUMV(GridLocationNull):
+            if (ptype == CGNS_ENUMV(ElementRange) ||
+                ptype == CGNS_ENUMV(ElementList)) break;
         case CGNS_ENUMV(Vertex):
-            if (ptype == CGNS_ENUMV(ElementRange) || ptype == CGNS_ENUMV(ElementList))
-                warning (1, "should not use Vertex with ElementList"
-                    " or ElementRange");
-            break;
+            return CGNS_ENUMV(Vertex);
         case CGNS_ENUMV(FaceCenter):
             if (z->type == CGNS_ENUMV(Structured))
                 warning (2,
@@ -2815,18 +2675,27 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z,
             if (z->type == CGNS_ENUMV(Structured) && FileVersion >= 2300)
                 warning (2, "use [IJK]FaceCenter location rather"
                     " than CellCenter");
+            else if (FileVersion >= 3100)
+                error("CellCenter not allowed - use Edge/FaceCenter");
             else
                 warning (2, "use FaceCenter location rather than"
                     " CellCenter");
-            return CGNS_ENUMV(FaceCenter);
-            break;
+            return CellDim == 2 ? CGNS_ENUMV(EdgeCenter) :
+                                  CGNS_ENUMV(FaceCenter);
         default:
-            error ("grid location not Vertex,CellCenter,FaceCenter"
-                " or [IJK]FaceCenter");
+            if (FileVersion >= 3100)
+                error ("grid location not Vertex,EdgeCenter,FaceCenter"
+                       " or [IJK]FaceCenter");
+            else
+                error ("grid location not Vertex,EdgeCenter,FaceCenter"
+                       " [IJK]FaceCenter or CellCenter");
             break;
     }
-    if (ptype == CGNS_ENUMV(ElementRange) || ptype == CGNS_ENUMV(ElementList))
-        return CGNS_ENUMV(FaceCenter);
+    if (ptype == CGNS_ENUMV(ElementRange) ||
+        ptype == CGNS_ENUMV(ElementList)) {
+        return CellDim == 2 ? CGNS_ENUMV(EdgeCenter) :
+                              CGNS_ENUMV(FaceCenter);
+    }
     return location;
 }
 
@@ -2838,7 +2707,6 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
     char name[33], *desc;
     int ierr, n, nd;
     int *punits, units[9], dataclass;
-#if CGNS_VERSION >= 2400
     CGNS_ENUMT(GridLocation_t) location;
     CGNS_ENUMT(PointSetType_t) ptype;
     int hasl, hasp;
@@ -2859,7 +2727,6 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
             hasl = CG_OK;
         }
     }
-#endif
 
     if (verbose) {
         print_indent (indent);
@@ -2868,7 +2735,6 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
         printf ("Dirichlet Data=%s\n", dirichlet ? "yes" : "no");
         print_indent (indent);
         printf ("Neumann Data=%s\n", neumann ? "yes" : "no");
-#if CGNS_VERSION >= 2400
         if (hasl == CG_OK) {
             print_indent (indent);
             printf ("Grid Location=%s\n", cg_GridLocationName(location));
@@ -2879,7 +2745,6 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
             print_indent (indent);
             printf ("Number Points=%ld\n", (long)npnts);
         }
-#endif
         if (verbose > 1) {
             if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
             for (n = 1; n <= nd; n++) {
@@ -2923,7 +2788,6 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
 
     check_user_data (dataclass, punits, indent);
 
-#if CGNS_VERSION >= 2400
     if (hasp == CG_OK) {
         cgsize_t *pts;
         ZONE *z = &Zones[cgnszone-1];
@@ -2937,17 +2801,15 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
             size = 0;
         }
         else if (npnts != 2 &&
-                 (ptype == CGNS_ENUMV(PointRange) || 
+                 (ptype == CGNS_ENUMV(PointRange) ||
                   ptype == CGNS_ENUMV(ElementRange))) {
             error ("number of points not 2 for Point/Element Range");
             size = 0;
         }
         else {
             pts = (cgsize_t *) malloc ((size_t)(z->idim * npnts * sizeof(cgsize_t)));
-            if (NULL == pts) {
-                fprintf (stderr, "malloc failed for BCDataSet points\n");
-                exit (1);
-            }
+            if (NULL == pts)
+                fatal_error("malloc failed for BCDataSet points\n");
             if (cg_ptset_read (pts)) error_exit("cg_ptset_read");
             if (ptype == CGNS_ENUMV(PointRange) ||
                 ptype == CGNS_ENUMV(ElementRange)) {
@@ -2966,7 +2828,6 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
         if (hasp == CG_OK)
             warning (1, "grid location should be used only with point set");
     }
-#endif
 
     if (size) size = -size;  /* allow array size of 1 */
 
@@ -3011,7 +2872,7 @@ static void check_BCdataset (int nb, int nd, cgsize_t size,
 static void check_BC (int nb, int parclass, int *parunits)
 {
     char name[33], *desc;
-    int n, nd, ierr, ndataset;
+    int n, nd, ierr, ndataset, hasl;
     cgsize_t npts, *pts, nrmlflag;
     int nrmlindex[3];
     int *punits, units[9], dataclass;
@@ -3038,7 +2899,7 @@ static void check_BC (int nb, int parclass, int *parunits)
 
     go_absolute ("Zone_t", cgnszone, "ZoneBC_t", 1, "BC_t", nb, NULL);
 
-    if (FileVersion >= 1270 && FileVersion <= 2200) {
+    if ((FileVersion >= 1270 && FileVersion <= 2200) || FileVersion >= 3100) {
         if (ptype != CGNS_ENUMV(PointRange) && ptype != CGNS_ENUMV(PointList)) {
             error ("point set type not PointRange or PointList");
             return;
@@ -3053,36 +2914,24 @@ static void check_BC (int nb, int parclass, int *parunits)
         }
     }
 
-    if (FileVersion < 1270) {
-        if (ptype == CGNS_ENUMV(ElementRange) || ptype == CGNS_ENUMV(ElementList))
-            location = CGNS_ENUMV(FaceCenter);
-        else
-            location = CGNS_ENUMV(Vertex);
-    }
-    else {
-        ierr = read_gridlocation (&location);
-        if (ierr) {
-            if (ierr != CG_NODE_NOT_FOUND)
-                error_exit("cg_gridlocation_read");
-            if (ptype == CGNS_ENUMV(ElementRange) ||
-                ptype == CGNS_ENUMV(ElementList))
-                location = CGNS_ENUMV(FaceCenter);
-            else
-                location = CGNS_ENUMV(Vertex);
-        }
-        else {
-            if (verbose)
-                printf ("    Grid Location=%s\n",
-                    cg_GridLocationName(location));
-            location = check_location (z, ptype, location);
-        }
-    }
+#if CGNS_VERSION > 3100 && !defined(CG_ALLOW_ELEMENTLIST_RANGE)
+    if (cg_boco_gridlocation_read(cgnsfn, cgnsbase, cgnszone, nb, &location))
+        error_exit("cg_boco_gridlocation_read");
+    hasl = CG_OK;
+#else
+    hasl = read_gridlocation (&location);
+    if (hasl && hasl != CG_NODE_NOT_FOUND)
+        error_exit("cg_gridlocation_read");
+#endif
+    if (verbose && hasl == CG_OK)
+        printf ("    Grid Location=%s\n", cg_GridLocationName(location));
+    location = check_location (z, ptype, location);
 
     if (npts < 1) {
         error ("number of points is less than 1");
         return;
     }
-    if (FileVersion >= 1270 && FileVersion <= 2200) {
+    if ((FileVersion >= 1270 && FileVersion <= 2200) || FileVersion >= 3100) {
         if (ptype == CGNS_ENUMV(PointRange) && npts != 2) {
             error ("number of points is not 2 for PointRange");
             return;
@@ -3126,18 +2975,14 @@ static void check_BC (int nb, int parclass, int *parunits)
     }
 
     pts = (cgsize_t *) malloc ((size_t)(z->idim * npts * sizeof(cgsize_t)));
-    if (NULL == pts) {
-        fprintf (stderr, "malloc failed for BC points\n");
-        exit (1);
-    }
+    if (NULL == pts)
+        fatal_error("malloc failed for BC points\n");
     nrmllist = NULL;
     if (nrmlflag && LibraryVersion < 2200) {
         int n = (datatype == CGNS_ENUMV(RealSingle) ? sizeof(float) : sizeof(double));
         nrmllist = (void *) malloc ((size_t)(nrmlflag * n));
-        if (nrmllist == NULL) {
-            fprintf (stderr, "malloc failed for BC normals\n");
-            exit (1);
-        }
+        if (nrmllist == NULL)
+            fatal_error("malloc failed for BC normals\n");
     }
     if (cg_boco_read (cgnsfn, cgnsbase, cgnszone, nb, pts, nrmllist))
         error_exit("cg_boco_read");
@@ -3365,19 +3210,17 @@ static void check_zoneBC (void)
 
 /*-----------------------------------------------------------------------*/
 
-static void check_1to1 (int nc)
+static void check_1to1 (int nzc, int nc)
 {
     char name[33], dname[33], *desc;
     int ierr, n, nd, trans[3];
     cgsize_t range[6], drange[6];
     ZONE *z = &Zones[cgnszone-1], *dz;
-#if CGNS_VERSION >= 2400
     int ndim;
     cgsize_t dims[12];
     float center[3], angle[3], translate[3];
     CGNS_ENUMT(AverageInterfaceType_t) average;
     CGNS_ENUMT(DataType_t) datatype;
-#endif
 
     if (cg_1to1_read (cgnsfn, cgnsbase, cgnszone, nc, name,
         dname, range, drange, trans)) error_exit("cg_1to1_read");
@@ -3463,7 +3306,7 @@ static void check_1to1 (int nc)
         }
     }
 
-    go_absolute ("Zone_t", cgnszone, "ZoneGridConnectivity_t", 1,
+    go_absolute ("Zone_t", cgnszone, "ZoneGridConnectivity_t", nzc,
         "GridConnectivity1to1_t", nc, NULL);
 
     if (verbose > 1) {
@@ -3485,7 +3328,6 @@ static void check_1to1 (int nc)
 
     check_user_data (z->dataclass, z->punits, 4);
 
-#if CGNS_VERSION >= 2400
     if (check_node ("GridConnectivityProperty_t")) return;
     puts ("    checking grid connectivity property");
     fflush (stdout);
@@ -3579,12 +3421,11 @@ static void check_1to1 (int nc)
         }
         check_user_data (z->dataclass, z->punits, 8);
     }
-#endif
 }
 
 /*-----------------------------------------------------------------------*/
 
-static void check_conn (int nc)
+static void check_conn (int nzc, int nc)
 {
     char name[33], dname[33], *desc;
     int ierr, n, nd, ndim;
@@ -3621,7 +3462,7 @@ static void check_conn (int nc)
     }
     fflush (stdout);
 
-    go_absolute ("Zone_t", cgnszone, "ZoneGridConnectivity_t", 1,
+    go_absolute ("Zone_t", cgnszone, "ZoneGridConnectivity_t", nzc,
         "GridConnectivity_t", nc, NULL);
     interp = check_interpolants ();
 
@@ -3774,10 +3615,8 @@ static void check_conn (int nc)
         }
         else
             dpts = (cgsize_t *) malloc ((size_t)(dnpts * dz->idim * sizeof(cgsize_t)));
-        if (NULL == pts || NULL == dpts) {
-            fprintf (stderr, "malloc failed for connectivity points\n");
-            exit (1);
-        }
+        if (NULL == pts || NULL == dpts)
+            fatal_error("malloc failed for connectivity points\n");
         if (cg_conn_read (cgnsfn, cgnsbase, cgnszone, nc, pts,
                 CGNS_ENUMV(Integer), dpts)) error_exit("cg_conn_read");
 
@@ -3889,7 +3728,7 @@ static void check_conn (int nc)
 
 /*-----------------------------------------------------------------------*/
 
-static void check_hole (int nh)
+static void check_hole (int nzc, int nh)
 {
     char name[33];
     int ierr, n, nptsets;
@@ -3938,10 +3777,8 @@ static void check_hole (int nh)
 
     if (!ierr && np > 0) {
         cgsize_t *pnts = (cgsize_t *) malloc ((size_t)(np * z->idim * sizeof(cgsize_t)));
-        if (pnts == NULL) {
-            fprintf (stderr, "malloc failed for hole data\n");
-            exit (1);
-        }
+        if (pnts == NULL)
+            fatal_error("malloc failed for hole data\n");
         if (cg_hole_read (cgnsfn, cgnsbase, cgnszone, nh, pnts))
             error_exit("cg_hole_read");
         if (ptype == CGNS_ENUMV(PointRange)) npts = 2;
@@ -3954,7 +3791,7 @@ static void check_hole (int nh)
         free (pnts);
     }
 
-    go_absolute ("Zone_t", cgnszone, "ZoneGridConnectivity_t", 1,
+    go_absolute ("Zone_t", cgnszone, "ZoneGridConnectivity_t", nzc,
         "OversetHoles_t", nh, NULL);
 
     if (verbose > 1) {
@@ -3976,19 +3813,26 @@ static void check_hole (int nh)
 
 /*-----------------------------------------------------------------------*/
 
-static void check_connectivity (void)
+static void check_connectivity (int nzc)
 {
     int ierr, n, nc;
+    char zcname[33];
+
+    if (cg_zconn_set(cgnsfn, cgnsbase, cgnszone, nzc))
+        error_exit("cg_zconn_set");
+    if (cg_zconn_read(cgnsfn, cgnsbase, cgnszone, nzc, zcname))
+        error_exit("cg_zconn_set");
+    strcpy (ZoneConn[nzc-1], zcname);
+    printf ("  checking zone grid connectivty \"%s\"\n", zcname);
+    fflush (stdout);
 
     ierr = cg_goto (cgnsfn, cgnsbase, "Zone_t", cgnszone,
-        "ZoneGridConnectivity_t", 1, "end");
+        "ZoneGridConnectivity_t", nzc, "end");
     if (ierr) {
         if (ierr != CG_NODE_NOT_FOUND) error_exit("cg_goto");
         return;
     }
-    puts ("  checking zone grid connectivty");
-    fflush (stdout);
-    go_absolute ("Zone_t", cgnszone, "ZoneGridConnectivity_t", 1, NULL);
+    go_absolute ("Zone_t", cgnszone, "ZoneGridConnectivity_t", nzc, NULL);
 
     if (verbose > 1) {
         int nd;
@@ -4008,15 +3852,15 @@ static void check_connectivity (void)
 
     if (cg_n1to1 (cgnsfn, cgnsbase, cgnszone, &nc)) error_exit("cg_n1to1");
     for (n = 1; n <= nc; n++)
-         check_1to1 (n);
+         check_1to1 (nzc, n);
 
     if (cg_nconns (cgnsfn, cgnsbase, cgnszone, &nc)) error_exit("cg_nconns");
     for (n = 1; n <= nc; n++)
-        check_conn (n);
+        check_conn (nzc, n);
 
     if (cg_nholes (cgnsfn, cgnsbase, cgnszone, &nc)) error_exit("cg_nholes");
     for (n = 1; n <= nc; n++)
-        check_hole (n);
+        check_hole (nzc, n);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -4202,134 +4046,6 @@ static void check_rigid_motion (int nr)
     }
 
     check_user_data (dataclass, punits, 2);
-}
-
-/*-----------------------------------------------------------------------*/
-
-static void check_zone_iter (void)
-{
-    char *p, *desc, name[33], buff[33];
-    int ierr, n, na, nd, nn, ndim;
-    cgsize_t dims[12], size;
-    int dataclass, *punits, units[9];
-    CGNS_ENUMT(DataType_t) datatype;
-    ZONE *z = &Zones[cgnszone-1];
-
-    go_absolute ("Zone_t", cgnszone, "ZoneIterativeData_t", 1, NULL);
-
-    if (verbose > 1) {
-        if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
-        for (n = 1; n <= nd; n++) {
-            if (cg_descriptor_read (n, name, &desc))
-                error_exit("cg_descriptor_read");
-            if (desc != NULL) {
-                printf ("    Descriptor %s:\n%s\n", name, desc);
-                cg_free (desc);
-            }
-        }
-    }
-
-    dataclass = read_dataclass ();
-    punits = read_units (units);
-    if (verbose) {
-        if (dataclass >= 0) print_dataclass (dataclass, 4);
-        if (punits) print_units (punits, 4);
-    }
-    if (dataclass < 0) dataclass = z->dataclass;
-    if (!punits) punits = z->punits;
-
-    if (cg_narrays (&na)) error_exit("cg_narrays");
-    for (n = 1; n <= na; n++) {
-        if (cg_array_info (n, name, &datatype, &ndim, dims))
-            error_exit("cg_array_info");
-        printf ("    checking zone iterative data \"%s\"\n", name);
-        fflush (stdout);
-        for (size = 1, nd = 0; nd < ndim; nd++)
-            size *= dims[nd];
-        if (0 == strcmp (name, "ArbitraryGridMotionPointers") ||
-            0 == strcmp (name, "FlowSolutionPointers") ||
-            0 == strcmp (name, "GridCoordinatesPointers") ||
-            0 == strcmp (name, "RigidGridMotionPointers")) {
-            if (ndim != 2 || dims[0] != 32 || size < 1 ||
-               (NumSteps && dims[1] != NumSteps))
-                error ("invalid dimension values");
-            else {
-                desc = (char *) malloc ((size_t)size);
-                if (desc == NULL) {
-                    fprintf (stderr, "malloc failed for zone iter data\n");
-                    exit (1);
-                }
-                if (cg_array_read (n, desc)) error_exit("cg_array_read");
-                ierr = 0;
-                if (0 == strcmp (name, "ArbitraryGridMotionPointers")) {
-                    for (nd = 0; nd < dims[1]; nd++) {
-                        strncpy (buff, &desc[nd<<5], 32);
-                        buff[32] = 0;
-                        p = buff + strlen(buff);
-                        while (--p >= buff && isspace(*p))
-                            ;
-                        *++p = 0;
-                        for (nn = 0; nn < NumArbitraryGrid; nn++) {
-                            if (0 == strcmp (buff, ArbitraryGrid[nn])) break;
-                        }
-                        if (nn == NumArbitraryGrid) ierr++;
-                    }
-                }
-                else if (0 == strcmp (name, "FlowSolutionPointers")) {
-                    for (nd = 0; nd < dims[1]; nd++) {
-                        strncpy (buff, &desc[nd<<5], 32);
-                        buff[32] = 0;
-                        p = buff + strlen(buff);
-                        while (--p >= buff && isspace(*p))
-                            ;
-                        *++p = 0;
-                        for (nn = 0; nn < NumFlowSolution; nn++) {
-                            if (0 == strcmp (buff, FlowSolution[nn])) break;
-                        }
-                        if (nn == NumFlowSolution) ierr++;
-                    }
-                }
-                else if (0 == strcmp (name, "GridCoordinatesPointers")) {
-                    for (nd = 0; nd < dims[1]; nd++) {
-                        strncpy (buff, &desc[nd<<5], 32);
-                        buff[32] = 0;
-                        p = buff + strlen(buff);
-                        while (--p >= buff && isspace(*p))
-                            ;
-                        *++p = 0;
-                        for (nn = 0; nn < NumGridCoordinate; nn++) {
-                            if (0 == strcmp (buff, GridCoordinate[nn])) break;
-                        }
-                        if (nn == NumGridCoordinate) ierr++;
-                    }
-                }
-                else {
-                    for (nd = 0; nd < dims[1]; nd++) {
-                        strncpy (buff, &desc[nd<<5], 32);
-                        buff[32] = 0;
-                        p = buff + strlen(buff);
-                        while (--p >= buff && isspace(*p))
-                            ;
-                        *++p = 0;
-                        for (nn = 0; nn < NumRigidGrid; nn++) {
-                            if (0 == strcmp (buff, RigidGrid[nn])) break;
-                        }
-                        if (nn == NumRigidGrid) ierr++;
-                    }
-                }
-                free (desc);
-                if (ierr)
-                    error ("%d %s are invalid", ierr, name);
-            }
-        }
-        else {
-            if (ndim < 1 || size < 1)
-                error ("invalid dimension values");
-            check_quantity (n, name, dataclass, punits, 0, 6);
-        }
-    }
-
-    check_user_data (dataclass, punits, 4);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -4543,6 +4259,521 @@ static void check_solution (int ns)
 
 /*-----------------------------------------------------------------------*/
 
+static cgsize_t subreg_size(int dim, int isBC, char *subname)
+{
+    char name[33], dname[33], *p;
+    int n, nbc, ni, nc, nzc, nn, ns, nsets, trans[3];
+    cgsize_t npnts, dnpnts, nsize, range[6], drange[6];
+    CGNS_ENUMT(BCType_t) bctype;
+    CGNS_ENUMT(PointSetType_t) ptype, dptype;
+    CGNS_ENUMT(DataType_t) dtype;
+    CGNS_ENUMT(GridLocation_t) location;
+    CGNS_ENUMT(GridConnectivityType_t) gctype;
+    CGNS_ENUMT(ZoneType_t) dztype;
+
+    if (isBC) {
+        if (cg_nbocos(cgnsfn, cgnsbase, cgnszone, &nbc))
+            error_exit("cg_nbocos");
+        for (n = 1; n <= nbc; n++) {
+            if (cg_boco_info(cgnsfn, cgnsbase, cgnszone, n, name,
+                &bctype, &ptype, &npnts, trans, &nsize, &dtype, &nc))
+                error_exit("cg_boco_info");
+            if (0 == strcmp(name, subname)) {
+                if (ptype == CGNS_ENUMV(PointRange) && npnts == 2) {
+                    if (cg_boco_read(cgnsfn, cgnsbase, cgnszone,
+                            n, range, NULL))
+                        error_exit("cg_boco_read");
+                    npnts = 1;
+                    for (ni = 0; ni < dim; ni++)
+                        npnts *= (range[ni+dim] - range[ni] + 1);
+                }
+                else if (ptype != CGNS_ENUMV(PointList)) {
+                    error("BC for subregion not PointList/Range");
+                    return 0;
+                }
+                if (npnts == 0) warning(1, "subregion size is 0");
+                return npnts;
+            }
+        }
+        error("BCRegionName not found");
+        return 0;
+    }
+
+    /* check for ZoneConnectivity */
+
+    if (cg_nzconns(cgnsfn, cgnsbase, cgnszone, &nzc))
+        error_exit("cg_nzconns");
+    if (nzc < 1) {
+        error("GridConnectivetyRegionName not found");
+        return 0;
+    }
+
+    if ((p = strchr(subname, '/')) == NULL) {
+        p = subname;
+        nzc = 1;
+    }
+    else {
+        *p = 0;
+        for (n = 1; n <= nzc; n++) {
+            if (cg_zconn_read(cgnsfn, cgnsbase, cgnszone, n, name))
+                error_exit("cg_zconn_read");
+            if (0 == strcmp(subname, name)) break;
+        }
+        if (n > nzc) {
+            error("ZoneConnectivity not found");
+            return 0;
+        }
+        nzc = n;
+        *p++ = '/';
+    }
+
+    if (cg_zconn_set(cgnsfn, cgnsbase, cgnszone, nzc))
+        error_exit("cg_zconn_set");
+
+    /* check 1to1 connections */
+
+    if (cg_n1to1(cgnsfn, cgnsbase, cgnszone, &nc))
+        error_exit("cg_n1to1");
+    for (n = 1; n <= nc; n++) {
+        if (cg_1to1_read(cgnsfn, cgnsbase, cgnszone, n, name,
+                dname, range, drange, trans))
+            error_exit("cg_1to1_read");
+        if (0 == strcmp(p, name)) {
+            npnts = 1;
+            for (ni = 0; ni < dim; ni++)
+                npnts *= (range[ni+dim] - range[ni] + 1);
+            return npnts;
+        }
+    }
+
+    /* check general connections */
+
+    if (cg_nconns(cgnsfn, cgnsbase, cgnszone, &nc))
+        error_exit("cg_nconns");
+    for (n = 1; n <= nc; n++) {
+        if (cg_conn_info(cgnsfn, cgnsbase, cgnszone, n, name,
+                &location, &gctype, &ptype, &npnts, dname,
+                &dztype, &dptype, &dtype, &dnpnts))
+            error_exit("cg_conn_info");
+        if (0 == strcmp(p, name)) {
+            if (ptype == CGNS_ENUMV(PointRange) && npnts == 2) {
+                if (cg_conn_read_short(cgnsfn, cgnsbase, cgnszone, n, range))
+                    error_exit("cg_conn_read_short");
+                npnts = 1;
+                for (ni = 0; ni < dim; ni++)
+                    npnts *= (range[ni+dim] - range[ni] + 1);
+            }
+            else if (ptype != CGNS_ENUMV(PointList)) {
+                error("connection for subregion not PointList/Range");
+                return 0;
+            }
+            if (npnts == 0) warning(1, "subregion size is 0");
+            return npnts;
+        }
+    }
+
+    /* check holes */
+
+    if (cg_nholes(cgnsfn, cgnsbase, cgnszone, &nc))
+        error_exit("cg_nholes");
+    for (n = 1; n <= nc; n++) {
+        if (cg_hole_info(cgnsfn, cgnsbase, cgnszone, n, name,
+                &location, &ptype, &nsets, &npnts))
+            error_exit("cg_hole_info");
+        if (0 == strcmp(p, name)) {
+            if (ptype == CGNS_ENUMV(PointRange) && npnts == 2) {
+                cgsize_t *pnts;
+                pnts = (cgsize_t *)malloc(2 * nsets * dim * sizeof(cgsize_t));
+                if (pnts == NULL)
+                    fatal_error("subreg_size:malloc failed for hole data\n");
+                if (cg_hole_read(cgnsfn, cgnsbase, cgnszone, n, pnts))
+                    error_exit("cg_hole_read");
+                npnts = 1;
+                nn = 0;
+                for (ns = 0; ns < nsets; ns++) {
+                    for (ni = 0; ni < dim; ni++) {
+                        npnts *= (range[nn+dim] - range[nn] + 1);
+                        nn++;
+                    }
+                    nn += dim;
+                }
+                free(pnts);
+            }
+            else if (ptype != CGNS_ENUMV(PointList)) {
+                error("hole for subregion not PointList/Range");
+                return 0;
+            }
+            if (npnts == 0) warning(1, "subregion size is 0");
+            return npnts;
+        }
+    }
+
+    error("GridConnectivetyRegionName not found");
+    return 0;
+}
+
+/*-----------------------------------------------------------------------*/
+
+static void check_subreg (int ns)
+{
+    char name[33], *sname;
+    int dimension, bclen, gclen, ierr;
+    int n, nd, rind[6];
+    int *punits, units[9], dataclass;
+    CGNS_ENUMT(GridLocation_t) location;
+    CGNS_ENUMT(PointSetType_t) ptype;
+    cgsize_t npnts, datasize;
+    ZONE *z = &Zones[cgnszone-1];
+
+    if (cg_subreg_info (cgnsfn, cgnsbase, cgnszone, ns, name,
+        &dimension, &location, &ptype, &npnts, &bclen, &gclen))
+        error_exit("cg_subreg_info");
+    strcpy (ZoneSubReg[ns-1], name);
+    printf ("  checking subregion \"%s\"\n", name);
+    
+    if (verbose)
+        printf ("    Dimension=%d\n", dimension);
+    if (dimension < 1 || dimension > CellDim)
+        error("subregion dimension invalid");
+ 
+    if (verbose)
+        printf ("    Grid Location=%s\n", cg_GridLocationName(location));
+    if (dimension == 1) {
+        if (CellDim == 1) {
+            if (location != CGNS_ENUMV(Vertex) &&
+                location != CGNS_ENUMV(CellCenter))
+                error ("grid location nust be Vertex or CellCenter");
+        }
+        else {
+            if (location != CGNS_ENUMV(Vertex) &&
+                location != CGNS_ENUMV(EdgeCenter))
+                error ("grid location nust be Vertex or EdgeCenter");
+        }
+    }
+    else if (dimension == 2) {
+        if (CellDim == 2) {
+            if (location != CGNS_ENUMV(Vertex) &&
+                location != CGNS_ENUMV(EdgeCenter) &&
+                location != CGNS_ENUMV(CellCenter))
+                error ("grid location nust be Vertex, EdgeCenter or CellCenter");
+        }
+        else {
+            if (location != CGNS_ENUMV(Vertex) &&
+                location != CGNS_ENUMV(EdgeCenter) &&
+                location != CGNS_ENUMV(CellCenter) &&
+                location != CGNS_ENUMV(FaceCenter) &&
+                location != CGNS_ENUMV(IFaceCenter) &&
+                location != CGNS_ENUMV(JFaceCenter) &&
+                location != CGNS_ENUMV(KFaceCenter))
+                error ("grid location nust be Vertex, EdgeCenter, CellCenter"
+                       " or [IJK]FaceCenter");
+        }
+    }
+
+    datasize = 0;
+    if (ptype == CGNS_ENUMV(PointSetTypeNull)) {
+        if (bclen) {
+            if (gclen)
+                error ("both BCRegionName and GridConnectivityName specified");
+            else {
+                sname = (char *)malloc(bclen + 1);
+                if (sname == NULL)
+                    fatal_error("malloc failed for BCRegionName\n");
+                if (cg_subreg_bcname_read(cgnsfn, cgnsbase, cgnszone, ns, sname))
+                    error_exit("cg_subreg_bcname_read");
+                if (verbose)
+                    printf ("    BC Region Name=%s\n", sname);
+                datasize = subreg_size(z->idim, 1, sname);
+                free(sname);
+            }
+        }
+        else if (gclen) {
+            sname = (char *)malloc(gclen + 1);
+            if (sname == NULL)
+                fatal_error("malloc failed for GridConnectivityName\n");
+            if (cg_subreg_gcname_read(cgnsfn, cgnsbase, cgnszone, ns, sname))
+                error_exit("cg_subreg_gcname_read");
+            if (verbose)
+                printf ("    Grid Connectivity Name=%s\n", sname);
+            datasize = subreg_size(z->idim, 0, sname);
+            free(sname);
+        }
+        else {
+            error ("one of PointList, PointRange, BCRegionName or "
+                   "GridConnectivityName not specified");
+        }
+    }
+    else if (ptype == CGNS_ENUMV(PointRange) ||
+             ptype == CGNS_ENUMV(PointList)) {
+        if (verbose) {
+            printf ("    Point Set Type=%s\n", cg_PointSetTypeName(ptype));
+            printf ("    Number Points=%ld\n", (long)npnts);
+        }
+        if (bclen || gclen)
+            error("both PointSetType and BCRegionName or GridConnectivityName specified");
+        ierr = 0;
+        if (ptype == CGNS_ENUMV(PointRange)) {
+            if (npnts != 2) {
+                ierr++;
+                error ("npts not equal to 2 for PointRange");
+            }
+        }
+        else {
+            if (npnts < 1) {
+                ierr++;
+                error ("npts is less than 1 for PointList");
+            }
+        }
+        if (!ierr) {
+            cgsize_t *pnts = (cgsize_t *)malloc(npnts * z->idim * sizeof(cgsize_t));
+            if (pnts == NULL)
+                fatal_error("check_subreg:malloc failed for points\n");
+            if (cg_subreg_ptset_read(cgnsfn, cgnsbase, cgnszone, ns, pnts))
+                error_exit("cg_subreg_ptset_read");
+            if (verbose && ptype == CGNS_ENUMV(PointRange)) {
+                printf ("    Range=[%ld:%ld", (long)pnts[0], (long)pnts[z->idim]);
+                for (n = 1; n < z->idim; n++)
+                    printf (",%ld:%ld", (long)pnts[n], (long)pnts[n+z->idim]);
+                puts ("]");
+            }
+            datasize = check_interface (z, ptype, location, npnts, pnts, 0);
+            free(pnts);
+        }
+    }
+    else {
+        error ("point set type not PointList or PointRange");
+    }
+
+    go_absolute ("Zone_t", cgnszone, "ZoneSubRegion_t", ns, NULL);
+
+    /* rind */
+
+    ierr = read_rind (rind);
+    if (ierr) {
+        if (ierr != CG_NODE_NOT_FOUND) error_exit("cg_rind_read");
+        for (n = 0; n < 6; n++)
+            rind[n] = 0;
+    }
+    else {
+        if (verbose) {
+            printf ("    Rind=[%d", rind[0]);
+            for (n = 1; n < 2 * z->idim; n++)
+                printf (",%d", rind[n]);
+            puts ("]");
+        }
+        if (z->type == CGNS_ENUMV(Unstructured) && FileVersion < 2400)
+            error ("rind not valid for unstructured zones");
+    }
+
+    /* family */
+ 
+    ierr = cg_famname_read (name);
+    if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_famname_read");
+    if (ierr == CG_OK) {
+        if (verbose) printf ("    Family=\"%s\"\n", name);
+        for (n = 0; n < NumFamily; n++) {
+            if (0 == strcmp (name, Family[n])) break;
+        }
+        if (n == NumFamily &&
+            (FileVersion >= 1200 || strcmp(name, "ORPHAN")))
+            warning (1, "family name \"%s\" not found", name);
+    }
+
+    /* descriptors */
+
+    if (verbose > 1) {
+        char *desc;
+        if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
+        for (n = 1; n <= nd; n++) {
+            if (cg_descriptor_read (n, name, &desc))
+                error_exit("cg_descriptor_read");
+            if (desc != NULL) {
+                printf ("    Descriptor %s:\n%s\n", name, desc);
+                cg_free (desc);
+            }
+        }
+    }
+
+    /* dataclass and dimensional units */
+
+    dataclass = read_dataclass ();
+    punits = read_units (units);
+    if (verbose) {
+        if (dataclass >= 0) print_dataclass (dataclass, 4);
+        if (punits) print_units (punits, 4);
+    }
+    if (dataclass < 0) dataclass = z->dataclass;
+    if (punits == NULL) punits = z->punits;
+
+    check_user_data (dataclass, punits, 4);
+
+    /* check data arrays */
+    
+    if (datasize) {
+        if (verbose) printf("    Data Size=%ld\n", (long)datasize);
+        if (cg_narrays (&nd)) error_exit("cg_narrays");
+        if (nd) check_arrays (dataclass, punits, 0, datasize, 4);
+    }
+}
+
+/*-----------------------------------------------------------------------*/
+
+static void check_zone_iter (void)
+{
+    char *p, *desc, name[33], buff[33];
+    int ierr, n, na, nd, nn, ndim;
+    cgsize_t dims[12], size;
+    int dataclass, *punits, units[9];
+    CGNS_ENUMT(DataType_t) datatype;
+    ZONE *z = &Zones[cgnszone-1];
+
+    go_absolute ("Zone_t", cgnszone, "ZoneIterativeData_t", 1, NULL);
+
+    if (verbose > 1) {
+        if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
+        for (n = 1; n <= nd; n++) {
+            if (cg_descriptor_read (n, name, &desc))
+                error_exit("cg_descriptor_read");
+            if (desc != NULL) {
+                printf ("    Descriptor %s:\n%s\n", name, desc);
+                cg_free (desc);
+            }
+        }
+    }
+
+    dataclass = read_dataclass ();
+    punits = read_units (units);
+    if (verbose) {
+        if (dataclass >= 0) print_dataclass (dataclass, 4);
+        if (punits) print_units (punits, 4);
+    }
+    if (dataclass < 0) dataclass = z->dataclass;
+    if (!punits) punits = z->punits;
+
+    if (cg_narrays (&na)) error_exit("cg_narrays");
+    for (n = 1; n <= na; n++) {
+        if (cg_array_info (n, name, &datatype, &ndim, dims))
+            error_exit("cg_array_info");
+        printf ("    checking zone iterative data \"%s\"\n", name);
+        fflush (stdout);
+        for (size = 1, nd = 0; nd < ndim; nd++)
+            size *= dims[nd];
+        if (0 == strcmp (name, "ArbitraryGridMotionPointers") ||
+            0 == strcmp (name, "FlowSolutionPointers") ||
+            0 == strcmp (name, "GridCoordinatesPointers") ||
+            0 == strcmp (name, "RigidGridMotionPointers") ||
+            0 == strcmp (name, "ZoneGridConnectivityPointers") ||
+            0 == strcmp (name, "ZoneSubRegionPointers")) {
+            if (ndim != 2 || dims[0] != 32 || size < 1 ||
+               (NumSteps && dims[1] != NumSteps))
+                error ("invalid dimension values");
+            else {
+                desc = (char *) malloc ((size_t)size);
+                if (desc == NULL)
+                    fatal_error("malloc failed for zone iter data\n");
+                if (cg_array_read (n, desc)) error_exit("cg_array_read");
+                ierr = 0;
+                if (0 == strcmp (name, "ArbitraryGridMotionPointers")) {
+                    for (nd = 0; nd < dims[1]; nd++) {
+                        strncpy (buff, &desc[nd<<5], 32);
+                        buff[32] = 0;
+                        p = buff + strlen(buff);
+                        while (--p >= buff && isspace(*p))
+                            ;
+                        *++p = 0;
+                        for (nn = 0; nn < NumArbitraryGrid; nn++) {
+                            if (0 == strcmp (buff, ArbitraryGrid[nn])) break;
+                        }
+                        if (nn == NumArbitraryGrid) ierr++;
+                    }
+                }
+                else if (0 == strcmp (name, "FlowSolutionPointers")) {
+                    for (nd = 0; nd < dims[1]; nd++) {
+                        strncpy (buff, &desc[nd<<5], 32);
+                        buff[32] = 0;
+                        p = buff + strlen(buff);
+                        while (--p >= buff && isspace(*p))
+                            ;
+                        *++p = 0;
+                        for (nn = 0; nn < NumFlowSolution; nn++) {
+                            if (0 == strcmp (buff, FlowSolution[nn])) break;
+                        }
+                        if (nn == NumFlowSolution) ierr++;
+                    }
+                }
+                else if (0 == strcmp (name, "GridCoordinatesPointers")) {
+                    for (nd = 0; nd < dims[1]; nd++) {
+                        strncpy (buff, &desc[nd<<5], 32);
+                        buff[32] = 0;
+                        p = buff + strlen(buff);
+                        while (--p >= buff && isspace(*p))
+                            ;
+                        *++p = 0;
+                        for (nn = 0; nn < NumGridCoordinate; nn++) {
+                            if (0 == strcmp (buff, GridCoordinate[nn])) break;
+                        }
+                        if (nn == NumGridCoordinate) ierr++;
+                    }
+                }
+                else if (0 == strcmp (name, "RigidGridMotionPointers")) {
+                    for (nd = 0; nd < dims[1]; nd++) {
+                        strncpy (buff, &desc[nd<<5], 32);
+                        buff[32] = 0;
+                        p = buff + strlen(buff);
+                        while (--p >= buff && isspace(*p))
+                            ;
+                        *++p = 0;
+                        for (nn = 0; nn < NumRigidGrid; nn++) {
+                            if (0 == strcmp (buff, RigidGrid[nn])) break;
+                        }
+                        if (nn == NumRigidGrid) ierr++;
+                    }
+                }
+                else if (0 == strcmp (name, "ZoneGridConnectivityPointers")) {
+                    for (nd = 0; nd < dims[1]; nd++) {
+                        strncpy (buff, &desc[nd<<5], 32);
+                        buff[32] = 0;
+                        p = buff + strlen(buff);
+                        while (--p >= buff && isspace(*p))
+                            ;
+                        *++p = 0;
+                        for (nn = 0; nn < NumZoneConn; nn++) {
+                            if (0 == strcmp (buff, ZoneConn[nn])) break;
+                        }
+                        if (nn == NumZoneConn) ierr++;
+                    }
+                }
+                else {
+                    for (nd = 0; nd < dims[1]; nd++) {
+                        strncpy (buff, &desc[nd<<5], 32);
+                        buff[32] = 0;
+                        p = buff + strlen(buff);
+                        while (--p >= buff && isspace(*p))
+                            ;
+                        *++p = 0;
+                        for (nn = 0; nn < NumZoneSubReg; nn++) {
+                            if (0 == strcmp (buff, ZoneSubReg[nn])) break;
+                        }
+                        if (nn == NumZoneSubReg) ierr++;
+                    }
+                }
+                free (desc);
+                if (ierr)
+                    error ("%d %s are invalid", ierr, name);
+            }
+        }
+        else {
+            if (ndim < 1 || size < 1)
+                error ("invalid dimension values");
+            check_quantity (n, name, dataclass, punits, 0, 6);
+        }
+    }
+
+    check_user_data (dataclass, punits, 4);
+}
+
+/*-----------------------------------------------------------------------*/
+
 static void check_zone (void)
 {
     char name[33], *desc;
@@ -4551,7 +4782,7 @@ static void check_zone (void)
     ZONE *z = &Zones[cgnszone-1];
     static char indexname[] = "IJK";
 
-    printf ("checking zone \"%s\"\n", z->name);
+    printf ("\nchecking zone \"%s\"\n", z->name);
     fflush (stdout);
 
     if (z->type == CGNS_ENUMV(Structured)) {
@@ -4686,7 +4917,11 @@ static void check_zone (void)
 
     /*----- ZoneGridConnectivity -----*/
 
-    check_connectivity ();
+    if (cg_nzconns(cgnsfn, cgnsbase, cgnszone, &NumZoneConn))
+        error_exit("cg_nzconns");
+    create_names (NumZoneConn, &MaxZoneConn, &ZoneConn);
+    for (n = 1; n <= NumZoneConn; n++)
+        check_connectivity (n);
 
     /*----- RotatingCoordinates -----*/
 
@@ -4709,19 +4944,27 @@ static void check_zone (void)
 
     /*----- RigidGridMotion -----*/
 
-    if (cg_n_rigid_motions (cgnsfn, cgnsbase, cgnszone,
-        &NumRigidGrid)) error_exit("cg_n_rigid_motions");
+    if (cg_n_rigid_motions (cgnsfn, cgnsbase, cgnszone, &NumRigidGrid))
+        error_exit("cg_n_rigid_motions");
     create_names (NumRigidGrid, &MaxRigidGrid, &RigidGrid);
     for (n = 1; n <= NumRigidGrid; n++)
         check_rigid_motion (n);
 
     /*----- FlowSolution -----*/
 
-    if (cg_nsols (cgnsfn, cgnsbase, cgnszone,
-        &NumFlowSolution)) error_exit("cg_nsols");
+    if (cg_nsols (cgnsfn, cgnsbase, cgnszone, &NumFlowSolution))
+        error_exit("cg_nsols");
     create_names (NumFlowSolution, &MaxFlowSolution, &FlowSolution);
     for (n = 1; n <= NumFlowSolution; n++)
         check_solution (n);
+
+    /*----- SubRegions -----*/
+
+    if (cg_nsubregs (cgnsfn, cgnsbase, cgnszone, &NumZoneSubReg))
+        error_exit("cg_nsubregs");
+    create_names (NumZoneSubReg, &MaxZoneSubReg, &ZoneSubReg);
+    for (n = 1; n <= NumZoneSubReg; n++)
+        check_subreg (n);
 
     /*----- ConvergenceHistory -----*/
 
@@ -4912,10 +5155,8 @@ static void check_family (int fam)
     char famname[33], name[33], cad[33], *filename;
     int ierr, i, n, nbc, ngeo, nparts;
     CGNS_ENUMT(BCType_t) bctype;
-#if CGNS_VERSION >= 2400
     int nds, dirichlet, neumann;
     float point[3], vector[3];
-#endif
 
     if (cg_family_read (cgnsfn, cgnsbase, fam, famname, &nbc, &ngeo))
         error_exit("cg_family_read");
@@ -4947,7 +5188,6 @@ static void check_family (int fam)
             printf ("    BC Name=\"%s\"\n", name);
             printf ("    BC Type=%s\n", cg_BCTypeName(bctype));
         }
-#if CGNS_VERSION >= 2400
         go_relative ("FamilyBC_t", n, NULL);
         ierr = cg_bcdataset_info (&nds);
         if (ierr && ierr != CG_NODE_NOT_FOUND)
@@ -4958,14 +5198,16 @@ static void check_family (int fam)
                     error_exit("cg_bcdataset_read");
                 printf ("  checking BC data set \"%s\"\n", name);
                 fflush (stdout);
-                go_relative ("BCDataSet_t", i, NULL);
+                if (FileVersion < 3100)
+                    go_relative ("BCDataSet_t", i, NULL);
+                else
+                    go_relative ("FamilyBCDataSet_t", i, NULL);
                 check_BCdata (bctype, dirichlet, neumann, 1,
                     BaseClass, pBaseUnits, 4);
-                go_relative ("..", i, NULL);
+                go_relative ("..", 1, NULL);
             }
         }
         go_relative ("..", 1, NULL);
-#endif
     }
 
     if (verbose) printf ("  Number Geo=%d\n", ngeo);
@@ -4991,7 +5233,6 @@ static void check_family (int fam)
     ierr = read_ordinal (&i);
     if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_ordinal_read");
 
-#if CGNS_VERSION >= 2400
     ierr = cg_rotating_read (vector, point);
     if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_rotating_read");
     if (ierr == CG_OK) {
@@ -4999,7 +5240,6 @@ static void check_family (int fam)
         fflush (stdout);
         check_rotating (point, vector, BaseClass, pBaseUnits, 4);
     }
-#endif
 
     check_user_data (BaseClass, pBaseUnits, 2);
 }
@@ -5109,10 +5349,8 @@ static void check_base_iter (void)
         }
         if (!ierr && NumSteps > 0) {
             icnt = (int *) malloc (NumSteps * sizeof(int));
-            if (icnt == NULL) {
-                fprintf (stderr, "malloc failed for number of families\n");
-                exit (1);
-            }
+            if (icnt == NULL)
+                fatal_error("malloc failed for number of families\n");
             if (cg_array_read (nnf, icnt)) error_exit("cg_array_read");
             for (ns = 0; ns < NumSteps; ns++) {
                 if (icnt[ns] < 0 || icnt[ns] > NumFamily) ierr++;
@@ -5139,10 +5377,8 @@ static void check_base_iter (void)
         }
         if (NumSteps > 0 && nmax > 0 && !ierr) {
             desc = (char *) malloc (32 * nmax * NumSteps * sizeof(char));
-            if (NULL == desc) {
-                fprintf (stderr, "malloc failed for family pointers\n");
-                exit (1);
-            }
+            if (NULL == desc)
+                fatal_error("malloc failed for family pointers\n");
             if (cg_array_read (nfp, desc)) error_exit("cg_array_read");
             for (ierr = 0, n = 0, ns = 0; ns < NumSteps; ns++) {
                 for (nd = 0; nd < icnt[ns]; nd++) {
@@ -5189,10 +5425,8 @@ static void check_base_iter (void)
         }
         if (!ierr && NumSteps > 0) {
             icnt = (int *) malloc (NumSteps * sizeof(int));
-            if (icnt == NULL) {
-                fprintf (stderr, "malloc failed for number of zones\n");
-                exit (1);
-            }
+            if (icnt == NULL)
+                fatal_error("malloc failed for number of zones\n");
             if (cg_array_read (nnz, icnt)) error_exit("cg_array_read");
             for (ns = 0; ns < NumSteps; ns++) {
                 if (icnt[ns] < 0 || icnt[ns] > NumZones) ierr++;
@@ -5219,10 +5453,8 @@ static void check_base_iter (void)
         }
         if (NumSteps > 0 && nmax > 0 && !ierr) {
             desc = (char *) malloc (32 * nmax * NumSteps * sizeof(char));
-            if (NULL == desc) {
-                fprintf (stderr, "malloc failed for zone pointers\n");
-                exit (1);
-            }
+            if (NULL == desc)
+                fatal_error("malloc failed for zone pointers\n");
             if (cg_array_read (nzp, desc)) error_exit("cg_array_read");
             for (ierr = 0, n = 0, ns = 0; ns < NumSteps; ns++) {
                 for (nd = 0; nd < icnt[ns]; nd++) {
@@ -5302,10 +5534,8 @@ static void check_base (void)
             Zones = (ZONE *) realloc (Zones, NumZones * sizeof(ZONE));
         else
             Zones = (ZONE *) malloc (NumZones * sizeof(ZONE));
-        if (NULL == Zones) {
-            fprintf (stderr, "malloc failed for zones\n");
-            exit (1);
-        }
+        if (NULL == Zones)
+            fatal_error("malloc failed for zones\n");
         MaxZones = NumZones;
     }
 
