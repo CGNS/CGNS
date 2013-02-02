@@ -256,6 +256,11 @@ array set Tools {
   solnum,flag  1
   solname,flag 1
   background 0
+  nocase ""
+  whitespace ""
+  followlinks ""
+  cmpdata ""
+  cmptol 0
 }
 
 set DataTypes {

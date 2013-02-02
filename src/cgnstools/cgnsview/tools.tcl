@@ -45,13 +45,61 @@ proc check_cgns {} {
 proc diff_cgns {} {
   global ProgData Tools
 
-  if {$ProgData(cgnsdiff) == ""} return
+  if {$ProgData(cgnscheck) == "" || $ProgData(file,name) == ""} return
 
   set w .cgnsdiff
   toplevel $w
   wm title $w "Diff CGNS File"
   wm transient $w .
   wm protocol $w WM_DELETE_WINDOW {set Tools(done) 0}
+
+  FrameCreate $w.top -text "Diff With ..."
+  pack $w.top -side top -padx 5 -pady 5 -fill x
+  set top [FrameGet $w.top]
+
+  set f [frame $top.input]
+  pack $f -side top -fill x
+  label $f.lab -text "CGNS File"
+  pack $f.lab -side left
+  entry $f.ent -textvariable Tools(cgnsinput) -width 30
+  pack $f.ent -side left -fill x -expand 1
+  button $f.but -text Browse -pady 0 -command "tools_browse $f.but cgnsinput"
+  pack $f.but -side right -fill y
+
+  FrameCreate $w.opts -text "Options"
+  pack $w.opts -side top -padx 5 -pady 5 -fill x
+  set opts [FrameGet $w.opts]
+
+  set f [frame $opts.f1]
+  pack $f -side top -fill x -expand 1
+  checkbutton $f.case -text "Case-insensitive" -variable Tools(nocase) \
+    -onvalue "-c" -offvalue ""
+  checkbutton $f.space -text "Ignore White Space" -variable Tools(whitespace) \
+    -onvalue "-i" -offvalue ""
+  checkbutton $f.links -text "Follow Links" -variable Tools(followlinks) \
+    -onvalue "-f" -offvalue ""
+  pack $f.case $f.space $f.links -side left -fill x -expand 1
+
+  set f [frame $opts.f2]
+  pack $f -side top -fill x -expand 1
+  checkbutton $f.data -text "Compare Node Data" -variable Tools(cmpdata) \
+    -onvalue "-d" -offvalue ""
+  pack $f.data -side left
+  frame $f.tol
+  label $f.tol.lab -text "Compare Tolerance"
+  entry $f.tol.ent -width 10 -textvariable Tools(cmptol)
+  pack $f.tol.lab $f.tol.ent -side left
+  pack $f.tol -side right
+
+
+  if {[tools_interact $w ""]} {
+    set cmd [tools_unix_path $ProgData(cgnsdiff)]
+    foreach i {nocase whitespace followlinks cmpdata} {
+      if {$Tools($i) != ""} {lappend cmd $Tools($i)}
+    }
+    lappend cmd $ProgData(file,name) $Tools(cgnsinput)
+    run_command "Diff CGNS" $cmd 25
+  }
 }
 
 proc plot_cgns {} {
