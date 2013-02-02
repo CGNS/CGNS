@@ -8,6 +8,7 @@ endif(COMMAND cmake_policy)
 
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING
   "one of: Release, Debug, RelWithDebInfo or MinSizeRel")
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Release;Debug;RelWithDebInfo;MinSizeRel")
 
 project("cgns" C)
 set(CGNS_VERSION "3.2")
@@ -100,20 +101,19 @@ option(ENABLE_FORTRAN "Enable or disable the use of Fortran" "OFF")
 if (NOT DEFINED FORTRAN_NAMING)
   set(FORTRAN_NAMING "UNKNOWN")
 endif (NOT DEFINED FORTRAN_NAMING)
+set(F2CLIST  "LOWERCASE" "LOWERCASE_" "LOWERCASE__" "UPPERCASE" "UPPERCASE_" "UPPERCASE__")
 set(FORTRAN_NAMING_HELP
-	"Configures how to link the Fortran components into the C library.
-
-	Options are:
-
+"Configures how to link the Fortran components into the C library.
+Options are:
 	LOWERCASE
 	LOWERCASE_
 	LOWERCASE__
 	UPPERCASE
 	UPPERRCASE_
 	UPPERRCASE__
-
-	LOWERCASE_ is known to work with gfortran.  If this setting does not work with your compiler, try the others until one does.
-	")
+LOWERCASE_ is known to work with gfortran.  If this setting
+does not work with your compiler, try the others until one does.
+")
 
 # If we are using fortran, enable it and configure the C-Fortran interface
 # It would be nice to automatically detect this setting
@@ -126,13 +126,14 @@ if(ENABLE_FORTRAN)
     enable_language("Fortran" OPTIONAL)
     # if no Fortran compiler, skip this
     if (CMAKE_Fortran_COMPILER_WORKS)
-      foreach(nc ${LIST})
+      foreach(nc ${F2CLIST})
         try_compile(NAMING_TEST_RESULT
 	    "${CMAKE_BINARY_DIR}/fortran_test"
 	    "${CMAKE_SOURCE_DIR}/fortran_test"
 	    projectName ${nc})
         if(${NAMING_TEST_RESULT} STREQUAL "TRUE")
           set(FORTRAN_NAMING "${nc}" CACHE STRING ${FORTRAN_NAMING_HELP})
+          set_property(CACHE FORTRAN_NAMING PROPERTY STRINGS ${F2CLIST})
           message(STATUS "Trying Fortran naming convention ${FORTRAN_NAMING}: success")
           message(STATUS "Setting fortran naming convention to ${FORTRAN_NAMING}")
           break()
@@ -150,9 +151,9 @@ endif(ENABLE_FORTRAN)
 if (ENABLE_FORTRAN AND FORTRAN_NAMING)
   if (FORTRAN_NAMING STREQUAL "UNKNOWN")
     set(FORTRAN_NAMING "" CACHE STRING ${FORTRAN_NAMING_HELP})
+    set_property(CACHE FORTRAN_NAMING PROPERTY STRINGS ${F2CLIST})
   else (FORTRAN_NAMING STREQUAL "UNKNOWN")
-    list(APPEND ValidNames LOWERCASE LOWERCASE_ LOWERCASE__ UPPERCASE UPPERCASE_ UPPERCASE__)
-    list(FIND ValidNames ${FORTRAN_NAMING} ListIndex)
+    list(FIND F2CLIST ${FORTRAN_NAMING} ListIndex)
     if (ListIndex LESS 0)
       message(SEND_ERROR "invalid FORTRAN_NAMING value. Must be empty or one of:
         LOWERCASE
@@ -196,21 +197,43 @@ if (ENABLE_HDF5)
   endif (HDF5_NEED_SZIP)
 
   set(HDF5_NEED_MPI "OFF" CACHE BOOL "Does the HDF5 library require linking to mpi? (Only true if using parallel HDF5)")
+  set(MPI_INC)
+  set(MPI_LIBS)
   if (HDF5_NEED_MPI)
-    include(FindMPI)
     if (NOT MPI_FOUND)
-      mark_as_advanced(CLEAR MPI_COMPILER)
+      include(FindMPI)
     endif (NOT MPI_FOUND)
+    # MPI variable names changed with cmake 2.8.5
+    if (DEFINED MPI_C_COMPILER)
+      mark_as_advanced(CLEAR MPI_C_COMPILER MPI_C_INCLUDE_PATH MPI_C_LIBRARIES)
+      mark_as_advanced(FORCE MPI_LIBRARY MPI_EXTRA_LIBRARY)
+      set(MPI_INC ${MPI_C_INCLUDE_PATH})
+      set(MPI_LIBS ${MPI_C_LIBRARIES})
+    else (DEFINED MPI_C_COMPILER)
+      mark_as_advanced(CLEAR MPI_COMPILER MPI_INCLUDE_PATH MPI_LIBRARY MPI_EXTRA_LIBRARY)
+      set(MPI_INC ${MPI_INCLUDE_PATH})
+      if (MPI_EXTRA_LIBRARY)
+        set(MPI_LIBS ${MPI_LIBRARY} ${MPI_EXTRA_LIBRARY})
+      else (MPI_EXTRA_LIBRARY)
+        set(MPI_LIBS ${MPI_LIBRARY})
+      endif (MPI_EXTRA_LIBRARY)
+    endif (DEFINED MPI_C_COMPILER)
+    if (ENABLE_TESTS AND ENABLE_PARALLEL)
+      mark_as_advanced(CLEAR MPIEXEC)
+    else (ENABLE_TESTS AND ENABLE_PARALLEL)
+      mark_as_advanced(FORCE MPIEXEC)
+    endif (ENABLE_TESTS AND ENABLE_PARALLEL)
   else (HDF5_NEED_MPI)
-    mark_as_advanced(FORCE MPI_COMPILER)
+    mark_as_advanced(FORCE MPI_C_COMPILER MPI_C_INCLUDE_PATH MPI_C_LIBRARIES)
+    mark_as_advanced(FORCE MPI_COMPILER MPI_INCLUDE_PATH MPI_LIBRARY MPI_EXTRA_LIBRARY MPIEXEC)
   endif (HDF5_NEED_MPI)
-
   mark_as_advanced(CLEAR HDF5_NEED_ZLIB HDF5_NEED_SZIP HDF5_NEED_MPI)
 else (ENABLE_HDF5)
   mark_as_advanced(FORCE HDF5_NEED_ZLIB HDF5_NEED_SZIP HDF5_NEED_MPI)
   mark_as_advanced(FORCE HDF5_INCLUDE_PATH HDF5_LIBRARY)
   mark_as_advanced(FORCE ZLIB_LIBRARY SZIP_LIBRARY)
-  mark_as_advanced(FORCE MPI_COMPILER)
+  mark_as_advanced(FORCE MPI_C_COMPILER MPI_C_INCLUDE_PATH MPI_C_LIBRARIES)
+  mark_as_advanced(FORCE MPI_COMPILER MPI_INCLUDE_PATH MPI_LIBRARY MPI_EXTRA_LIBRARY MPIEXEC)
 endif (ENABLE_HDF5)
 
 #################
@@ -226,9 +249,7 @@ else (ENABLE_HDF5 AND HDF5_NEED_MPI)
 endif (ENABLE_HDF5 AND HDF5_NEED_MPI)
 
 if (ENABLE_TESTS AND ENABLE_PARALLEL)
-  if (NOT MPIEXEC)
-    mark_as_advanced(CLEAR MPIEXEC)
-  endif (NOT MPIEXEC)
+  mark_as_advanced(CLEAR MPIEXEC)
 else (ENABLE_TESTS AND ENABLE_PARALLEL)
   mark_as_advanced(FORCE MPIEXEC)
 endif (ENABLE_TESTS AND ENABLE_PARALLEL)
