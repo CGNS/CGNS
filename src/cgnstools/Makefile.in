@@ -10,12 +10,12 @@ DOMAKE=$(MAKE) -f Makefile.unix
 default : @PROGLIST@
 install : @INSTLIST@
 
-all : cgnsview cgnscalc cgnsplot tools utilities
+all : cgnsview cgnscalc cgnsplot utilities
 install-all : install-cgnsview install-cgnscalc install-cgnsplot \
-	      install-tools install-utilities
+	      install-utilities
 
 clean :
-	@for d in cgnsview cgnscalc cgnsplot tools utilities calclib tkogl ; do \
+	@for d in cgnsview cgnscalc cgnsplot utilities calclib tkogl ; do \
 	  echo "----- $$d -----"; \
 	  cd $$d; $(DOMAKE) clean; cd ..; \
 	done;
@@ -27,11 +27,10 @@ distclean : clean
 cgnsview  : prog-cgnsview
 cgnscalc  : prog-cgnscalc
 cgnsplot  : prog-cgnsplot
-tools	  : prog-tools
 utilities : prog-utilities
 
 uninstall :
-	@for d in cgnsview cgnscalc cgnsplot tools utilities ; do \
+	@for d in cgnsview cgnscalc cgnsplot utilities ; do \
 	  echo "----- $$d -----"; \
 	  cd $$d; $(DOMAKE) uninstall; cd ..; \
 	done;
@@ -64,10 +63,6 @@ prog-cgnsplot : lib-tkogl
 	@echo "----- cgnsplot -----"
 	@cd cgnsplot && $(DOMAKE)
 
-prog-tools :
-	@echo "----- tools -----"
-	@cd tools && $(DOMAKE)
-
 prog-utilities : lib-calclib
 	@echo "----- utilities -----"
 	@cd utilities && $(DOMAKE)
@@ -91,10 +86,6 @@ install-cgnscalc : lib-calclib
 install-cgnsplot : lib-tkogl
 	@echo "----- cgnsplot -----"
 	@cd cgnsplot && $(DOMAKE) install
-
-install-tools :
-	@echo "----- tools -----"
-	@cd tools && $(DOMAKE) install
 
 install-utilities : lib-calclib
 	@echo "----- utilities -----"

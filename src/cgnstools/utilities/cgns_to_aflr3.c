@@ -3,123 +3,147 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#ifdef _WIN32
+#include <io.h>
+#define ACCESS _access
+#else
+#include <unistd.h>
+#define ACCESS access
+#endif
 
 #include "getargs.h"
 #include "cgnslib.h"
-#include "cgnsutil.h"
 
-static char options[] = "ab:B:S:w";
+#ifndef CGNS_ENUMV
+# define CGNS_ENUMV(V) V
+# define CGNS_ENUMT(T) T
+#endif
+
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__linux) || \
+    defined(__alpha) || defined(__ultrix)
+# ifndef LITTLE_ENDIAN
+#  define LITTLE_ENDIAN
+# endif
+#endif
+
+static char options[] = "48fslbB:Z:";
 
 static char *usgmsg[] = {
-    "usage: cgns_to_tecplot [options] CGNSfile Tecplotfile",
+    "usage: cgns_to_aflr3 [options] CGNSfile AFLR3file [MAPBCfile]",
     "  options are:",
-    "   -a       = write ascii instead of binary format",
-    "   -b<base> = use CGNS base number <base> (default 1)",
-    "   -B<name> = use CGNS base named <name>",
-    "   -S<sol>  = solution to use, 0 for no solution (default 1)",
-    "   -w       = use volume weighting",
+    "   -4       = write coordinates as real*4 (default Real*8)",
+    "   -8       = write coordinates as real*8 (double - default)",
+    "   -f       = formatted (ASCII) file format",
+    "   -s       = Fortran stream format (binary - default)",
+    "   -l       = little-endian format",
+    "   -b       = big-endian format (default)",
+    "   -B<base> = use CGNS base number <base> (default 1)",
+    "   -Z<zone> = zone number (default 1)",
+    "default is big-endian binary (Fortran stream) AFLR3 file",
     NULL
 };
 
-static int weighting = 0;
-static int usesol = -1;
-static int ascii = 0;
+static int is_ascii = 0;
+static int is_single = 0;
+static int is_little = 0;
+
+static int cgFile = 0, cgBase, cgZone;
+
+static cgsize_t nCoords = 1;
+static cgsize_t nTris = 0;
+static cgsize_t nQuads = 0;
+static cgsize_t nTets = 0;
+static cgsize_t nPyras = 0;
+static cgsize_t nPrisms = 0;
+static cgsize_t nHexas = 0;
+static cgsize_t maxBndry = 0;
+
+static int is_structured = 0;
+static cgsize_t sizes[9];
 
 /*--------------------------------------------------------------------*/
 
-static int check_solution (void)
+static void err_exit (char *procname, char *errmsg)
 {
-    int nz, nf, nvar = -1;
+    char *msg = errmsg;
 
-    if (!usesol) return 0;
-
-    for (nz = 0; nz < nZones; nz++) {
-        read_zone_solution (nz+1);
-        if (usesol < 0) {
-            if (Zones[nz].nsols == 0) {
-                usesol = 0;
-                return 0;
-            }
-            nf = Zones[nz].sols[0].nflds;
-        }
-        else {
-            if (usesol > Zones[nz].nsols)
-                FATAL (NULL, "solution index out of range");
-            nf = Zones[nz].sols[usesol-1].nflds;
-        }
-        if (nvar < 0)
-            nvar = nf;
-        else {
-            if (nvar != nf) {
-                if (usesol < 0) {
-                    usesol = 0;
-                    return 0;
-                }
-                FATAL (NULL, "number solution fields not the same for all zones");
-            }
-        }
+    if (NULL == msg) {
+        msg = (char *)cg_get_error ();
+        if (NULL == msg || !*msg)
+            msg = "unknown error";
     }
-    if (usesol < 0) usesol = 1;
-    return nvar;
+    fflush (stdout);
+    if (NULL == procname || !*procname)
+        fprintf (stderr, "%s\n", msg);
+    else
+        fprintf (stderr, "%s:%s\n", procname, msg);
+    if (cgFile) cg_close (cgFile);
+    exit (1);
 }
 
 /*--------------------------------------------------------------------*/
 
-static void write_string (FILE *fp, char *data)
+static void *swap_bytes (int bytes, void *data)
 {
-    int c;
+    static unsigned char buf[sizeof(double)];
+    unsigned char *p = (unsigned char *)data;
+    int n;
 
-    if (ascii)
-        fprintf (fp, "\"%s\"\n", data);
-    else {
-        do {
-            c = (int)*data;
-            fwrite (&c, 4, 1, fp);
-        }
-        while (*data++);
-    }
+    p += bytes;
+    for (n = 0; n < bytes; n++)
+        buf[n] = *--p;
+    return ((void *)buf);
 }
 
 /*--------------------------------------------------------------------*/
 
 static void write_ints (FILE *fp, int cnt, int *data)
 {
-    if (ascii) {
-        int nout = 0;
-        while (cnt-- > 0) {
-            if (nout == 10) {
-                putc ('\n', fp);
-                nout = 0;
-            }
-            if (nout++)
-                putc (' ', fp);
-            fprintf (fp, "%d", *data);
+    if (is_ascii) {
+        fprintf (fp, "%d", *data);
+        while (--cnt > 0) {
             data++;
+            fprintf (fp, " %d", *data);
         }
         putc ('\n', fp);
     }
-    else {
-        fwrite (data, sizeof(int), cnt, fp);
+#ifdef LITTLE_ENDIAN
+    else if (!is_little) {
+#else
+    else if (is_little) {
+#endif
+        while (cnt-- > 0) {
+            fwrite (swap_bytes (sizeof(int), (void *)data),
+                sizeof(int), 1, fp);
+            data++;
+        }
     }
+    else
+        fwrite (data, sizeof(int), cnt, fp);
 }
 
 /*--------------------------------------------------------------------*/
 
 static void write_floats (FILE *fp, int cnt, float *data)
 {
-    if (ascii) {
-        int nout = 0;
-        while (cnt-- > 0) {
-            if (nout == 5) {
-                putc ('\n', fp);
-                nout = 0;
-            }
-            if (nout++)
-                putc (' ', fp);
-            fprintf (fp, "%#g", *data);
+    if (is_ascii) {
+        fprintf (fp, "%g", *data);
+        while (--cnt > 0) {
             data++;
+            fprintf (fp, " %g", *data);
         }
         putc ('\n', fp);
+    }
+#ifdef LITTLE_ENDIAN
+    else if (!is_little) {
+#else
+    else if (is_little) {
+#endif
+        while (cnt-- > 0) {
+            fwrite (swap_bytes (sizeof(float), (void *)data),
+                sizeof(float), 1, fp);
+            data++;
+        }
     }
     else
         fwrite (data, sizeof(float), cnt, fp);
@@ -127,338 +151,420 @@ static void write_floats (FILE *fp, int cnt, float *data)
 
 /*--------------------------------------------------------------------*/
 
-static void count_elements (int nz, cgsize_t *nelems, int *elemtype)
+static void write_doubles (FILE *fp, int cnt, double *data)
 {
-    int ns, et;
-    cgsize_t n, nn, ne, nb = 0, nt = 0;
-    ZONE *z = &Zones[nz];
-
-    if (z->esets == NULL)
-        read_zone_element (nz+1);
-    for (ns = 0; ns < z->nesets; ns++) {
-        ne = z->esets[ns].end - z->esets[ns].start + 1;
-        et = z->esets[ns].type;
-        if (et == CGNS_ENUMV(MIXED)) {
-            for (n = 0, nn = 0; nn < ne; nn++) {
-                et = (int)z->esets[ns].conn[n++];
-                if (et < CGNS_ENUMV(NODE) || et > CGNS_ENUMV(HEXA_27))
-                    FATAL (NULL, "unrecognized element type");
-                if (et >= CGNS_ENUMV(TETRA_4)) {
-                    if (et > CGNS_ENUMV(TETRA_10))
-                        nb++;
-                    else
-                        nt++;
-                }
-                n += element_node_counts[et];
-            }
-            continue;
+    if (is_ascii) {
+        fprintf (fp, "%g", *data);
+        while (--cnt > 0) {
+            data++;
+            fprintf (fp, " %g", *data);
         }
-        if (et >= CGNS_ENUMV(TETRA_4) && et <= CGNS_ENUMV(HEXA_27)) {
-            if (et > CGNS_ENUMV(TETRA_10))
-                nb += ne;
-            else
-                nt += ne;
+        putc ('\n', fp);
+    }
+#ifdef LITTLE_ENDIAN
+    else if (!is_little) {
+#else
+    else if (is_little) {
+#endif
+        while (cnt-- > 0) {
+            fwrite (swap_bytes (sizeof(double), (void *)data),
+                sizeof(double), 1, fp);
+            data++;
         }
     }
-
-    if (nt + nb == 0)
-        FATAL (NULL, "no volume elements in the zone");
-    *nelems = nt + nb;
-    *elemtype = nb ? 3 : 2;
+    else
+        fwrite (data, sizeof(double), cnt, fp);
 }
 
 /*--------------------------------------------------------------------*/
 
-static int *volume_elements (int nz, cgsize_t *nelems, int *elemtype)
+static void count_elements ()
 {
-    int i, np, ns, nt, et;
-    int *elems;
-    cgsize_t n, nn, ne;
-    ZONE *z = &Zones[nz];
+    int ns, nsect, nn, ip;
+    cgsize_t i, n, is, ie, ne;
+    cgsize_t size, *conn;
+    CGNS_ENUMT(ElementType_t) elemtype, et;
+    char name[33], errmsg[128];
 
-    count_elements (nz, &ne, &nt);
-    *nelems = ne;
-    *elemtype = nt;
-
-    elems = (int *) malloc ((size_t)ne * (1 << nt) * sizeof(int));
-    if (NULL == elems)
-        FATAL (NULL, "malloc failed for elements");
-
-    for (np = 0, ns = 0; ns < z->nesets; ns++) {
-        ne = z->esets[ns].end - z->esets[ns].start + 1;
-        et = z->esets[ns].type;
-        if (et < CGNS_ENUMV(TETRA_4) || et > CGNS_ENUMV(MIXED)) continue;
-        for (n = 0, nn = 0; nn < ne; nn++) {
-            if (z->esets[ns].type == CGNS_ENUMV(MIXED))
-                et = (int)z->esets[ns].conn[n++];
-            switch (et) {
-                case CGNS_ENUMV(TETRA_4):
-                case CGNS_ENUMV(TETRA_10):
-                    if (nt == 2) {
-                        for (i = 0; i < 4; i++)
-                            elems[np++] = (int)z->esets[ns].conn[n+i];
-                    }
-                    else {
-                        for (i = 0; i < 3; i++)
-                            elems[np++] = (int)z->esets[ns].conn[n+i];
-                        elems[np++] = (int)z->esets[ns].conn[n+2];
-                        for (i = 0; i < 4; i++)
-                            elems[np++] = (int)z->esets[ns].conn[n+3];
-                    }
-                    break;
-                case CGNS_ENUMV(PYRA_5):
-                case CGNS_ENUMV(PYRA_14):
-                    for (i = 0; i < 4; i++)
-                        elems[np++] = (int)z->esets[ns].conn[n+i];
-                    for (i = 0; i < 4; i++)
-                        elems[np++] = (int)z->esets[ns].conn[n+4];
-                    break;
-                case CGNS_ENUMV(PENTA_6):
-                case CGNS_ENUMV(PENTA_15):
-                case CGNS_ENUMV(PENTA_18):
-                    for (i = 0; i < 3; i++)
-                        elems[np++] = (int)z->esets[ns].conn[n+i];
-                    elems[np++] = (int)z->esets[ns].conn[n+2];
-                    for (i = 3; i < 6; i++)
-                        elems[np++] = (int)z->esets[ns].conn[n+i];
-                    elems[np++] = (int)z->esets[ns].conn[n+5];
-                    break;
-                case CGNS_ENUMV(HEXA_8):
-                case CGNS_ENUMV(HEXA_20):
-                case CGNS_ENUMV(HEXA_27):
-                    for (i = 0; i < 8; i++)
-                        elems[np++] = (int)z->esets[ns].conn[n+i];
-                    break;
-            }
-            n += element_node_counts[et];
-        }
+    if (is_structured) {
+        nQuads = 2 * (sizes[0] - 1) * (sizes[1] - 1) +
+                 2 * (sizes[0] - 1) * (sizes[2] - 1) +
+                 2 * (sizes[1] - 1) * (sizes[2] - 1);
+        nHexas = (sizes[0] - 1) * (sizes[1] - 1) * (sizes[2] - 1);
+        return;
     }
 
-    return elems;
+    if (cg_nsections (cgFile, cgBase, cgZone, &nsect))
+        err_exit ("cg_nsections", NULL);
+    if (nsect < 1) err_exit (NULL, "no sections defined");
+
+    for (ns = 1; ns <= nsect; ns++) {
+        if (cg_section_read (cgFile, cgBase, cgZone, ns,
+                name, &elemtype, &is, &ie, &nn, &ip))
+            err_exit ("cg_section_read", NULL);
+        ne = ie - is + 1;
+        if (elemtype == CGNS_ENUMV(MIXED)) {
+            if (cg_ElementDataSize (cgFile, cgBase, cgZone, ns, &size))
+                err_exit ("cg_ElementDataSize", NULL);
+            conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
+            if (conn == NULL)
+                err_exit (NULL, "malloc failed for element connectivity");
+           if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
+                err_exit ("cg_elements_read", NULL);
+            for (i = 0, n = 0; n < ne; n++) {
+                et = (int)conn[i++];
+                switch (et) {
+                    case CGNS_ENUMV(TRI_3):
+                        nTris++;
+                        i += 3;
+                        if (maxBndry < is + n + 1)
+                            maxBndry = is + n + 1;
+                        break;
+                    case CGNS_ENUMV(QUAD_4):
+                        nQuads++;
+                        i += 4;
+                        if (maxBndry < is + n + 1)
+                            maxBndry = is + n + 1;
+                        break;
+                    case CGNS_ENUMV(TETRA_4):
+                        nTets++;
+                        i += 4;
+                        break;
+                    case CGNS_ENUMV(PYRA_5):
+                        nPyras++;
+                        i += 5;
+                        break;
+                    case CGNS_ENUMV(PENTA_6):
+                        nPrisms++;
+                        i += 6;
+                        break;
+                    case CGNS_ENUMV(HEXA_8):
+                        nHexas++;
+                        i += 8;
+                        break;
+                    default:
+                        sprintf(errmsg, "element type %s not allowed",
+                            cg_ElementTypeName(et));
+                        err_exit(NULL, errmsg);
+                        break;
+                }
+            }
+            free (conn);
+        }
+        else {
+            switch (elemtype) {
+                case CGNS_ENUMV(TRI_3):
+                    nTris += ne;
+                    if (maxBndry < ie) maxBndry = ie;
+                    break;
+                case CGNS_ENUMV(QUAD_4):
+                    nQuads += ne;
+                    if (maxBndry < ie) maxBndry = ie;
+                    break;
+                case CGNS_ENUMV(TETRA_4):
+                    nTets += ne;
+                    break;
+                case CGNS_ENUMV(PYRA_5):
+                    nPyras += ne;
+                    break;
+                case CGNS_ENUMV(PENTA_6):
+                    nPrisms += ne;
+                    break;
+                case CGNS_ENUMV(HEXA_8):
+                    nHexas += ne;
+                    break;
+                default:
+                    sprintf(errmsg, "element type %s not allowed",
+                        cg_ElementTypeName(elemtype));
+                    err_exit(NULL, errmsg);
+                    break;
+            }
+        }
+    }
+}
+
+/*--------------------------------------------------------------------*/
+
+static void write_coords (FILE *fp)
+{
+    int n, idim;
+    cgsize_t i, imin[3], imax[3];
+
+    idim = is_structured ? 3 : 1;
+    for (n = 0; n < idim; n++) {
+        imin[n] = 1;
+        imax[n] = sizes[n];
+    }
+
+    if (is_single) {
+        float *x, *y, *z, coord[3];
+        x = (float *)malloc((size_t)nCoords * sizeof(float));
+        y = (float *)malloc((size_t)nCoords * sizeof(float));
+        z = (float *)malloc((size_t)nCoords * sizeof(float));
+        if (x == NULL || y == NULL || z == NULL)
+            err_exit(NULL, "malloc failed for coordinates");
+        if (cg_coord_read(cgFile, cgBase, cgZone, "CoordinateX",
+                CGNS_ENUMV(RealSingle), imin, imax, x) ||
+            cg_coord_read(cgFile, cgBase, cgZone, "CoordinateY",
+                CGNS_ENUMV(RealSingle), imin, imax, y) ||
+            cg_coord_read(cgFile, cgBase, cgZone, "CoordinateZ",
+                CGNS_ENUMV(RealSingle), imin, imax, z))
+            err_exit("cg_coord_read", NULL);
+        for (i = 0; i < nCoords; i++) {
+            coord[0] = x[i];
+            coord[1] = y[i];
+            coord[2] = z[i];
+            write_floats(fp, 3, coord);
+        }
+        free(x);
+        free(y);
+        free(z);
+    }
+    else {
+        double *x, *y, *z, coord[3];
+        x = (double *)malloc((size_t)nCoords * sizeof(double));
+        y = (double *)malloc((size_t)nCoords * sizeof(double));
+        z = (double *)malloc((size_t)nCoords * sizeof(double));
+        if (x == NULL || y == NULL || z == NULL)
+            err_exit(NULL, "malloc failed for coordinates");
+        if (cg_coord_read(cgFile, cgBase, cgZone, "CoordinateX",
+                CGNS_ENUMV(RealDouble), imin, imax, x) ||
+            cg_coord_read(cgFile, cgBase, cgZone, "CoordinateY",
+                CGNS_ENUMV(RealDouble), imin, imax, y) ||
+            cg_coord_read(cgFile, cgBase, cgZone, "CoordinateZ",
+                CGNS_ENUMV(RealDouble), imin, imax, z))
+            err_exit("cg_coord_read", NULL);
+        for (i = 0; i < nCoords; i++) {
+            coord[0] = x[i];
+            coord[1] = y[i];
+            coord[2] = z[i];
+            write_doubles(fp, 3, coord);
+        }
+        free(x);
+        free(y);
+        free(z);
+    }
+}
+
+/*--------------------------------------------------------------------*/
+
+static void write_elements (FILE *fp, CGNS_ENUMT(ElementType_t) type,
+    int nnodes, cgsize_t nelems)
+{
+    int ns, nsect, nn, ip, *elems;
+    cgsize_t i, n, is, ie, ne;
+    cgsize_t size, *conn;
+    CGNS_ENUMT(ElementType_t) elemtype, et;
+    char name[33];
+
+    elems = (int *)malloc((size_t)nelems * (size_t)nnodes * sizeof(int));
+    if (elems == NULL)
+        err_exit(NULL, "malloc failed for element list");
+
+    if (cg_nsections (cgFile, cgBase, cgZone, &nsect))
+        err_exit ("cg_nsections", NULL);
+
+    nn = 0;
+    for (ns = 1; ns <= nsect; ns++) {
+        if (cg_section_read (cgFile, cgBase, cgZone, ns,
+                name, &elemtype, &is, &ie, &ip, &ip))
+            err_exit ("cg_section_read", NULL);
+        ne = ie - is + 1;
+        if (elemtype == type || elemtype == CGNS_ENUMV(MIXED)) {
+            if (cg_ElementDataSize (cgFile, cgBase, cgZone, ns, &size))
+                err_exit ("cg_ElementDataSize", NULL);
+            conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
+            if (conn == NULL)
+                err_exit (NULL, "malloc failed for element connectivity");
+           if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
+                err_exit ("cg_elements_read", NULL);
+            if (elemtype == CGNS_ENUMV(MIXED)) {
+                for (i = 0, n = 0; n < ne; n++) {
+                    et = (CGNS_ENUMT(ElementType_t))conn[i++];
+                    if (et == type) {
+                        if (type == CGNS_ENUMV(PYRA_5)) {
+                            elems[nn++] = conn[i];
+                            elems[nn++] = conn[i+3];
+                            elems[nn++] = conn[i+4];
+                            elems[nn++] = conn[i+1];
+                            elems[nn++] = conn[i+2];
+                            i += 5;
+                        }
+                        else {
+                            for (ip = 0; ip < nnodes; ip++)
+                                elems[nn++] = conn[i++];
+                        }
+                    }
+                    else {
+                        if (cg_npe(et, &ip) || ip <= 0)
+                            err_exit("cg_npe", NULL);
+                        i += ip;
+                    }
+                }
+            }
+            else if (type == CGNS_ENUMV(PYRA_5)) {
+                for (i = 0, n = 0; n < ne; n++) {
+                    elems[nn++] = conn[i];
+                    elems[nn++] = conn[i+3];
+                    elems[nn++] = conn[i+4];
+                    elems[nn++] = conn[i+1];
+                    elems[nn++] = conn[i+2];
+                    i += 5;
+                }
+            }
+            else {
+                for (n = 0; n < ne * nnodes; n++)
+                    elems[nn++] = conn[n];
+            }
+            free (conn);
+        }
+    }
+    
+    write_ints(fp, nn, elems);
+    free(elems);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void write_boundary (FILE *fp)
+{
+    int *tags, nb = (int)(nTris + nQuads);
+
+    if (nTris) write_elements (fp, CGNS_ENUMV(TRI_3), 3, nTris);
+    if (nQuads) write_elements (fp, CGNS_ENUMV(QUAD_4), 4, nQuads);
+
+    if (nb == 0) return;
+    tags = (int *)calloc((size_t)nb, sizeof(int));
+    write_ints(fp, nb, tags);
+    free(tags);
 }
 
 /*--------------------------------------------------------------------*/
 
 int main (int argc, char *argv[])
 {
-    int i, n, ib, nb, nz, nv, celldim, phydim;
-    int nn, type, *elems = 0, idata[5];
-    cgsize_t ne;
-    char *p, basename[33], title[65];
-    float value, *var;
-    SOLUTION *sol;
+    char name[33];
+    int n, nb, nz, idata[7];
+    int celldim, phydim, idim;
+    CGNS_ENUMT(ZoneType_t) zonetype;
     FILE *fp;
 
     if (argc < 2)
         print_usage (usgmsg, NULL);
 
-    ib = 0;
-    basename[0] = 0;
+    cgBase = cgZone = 1;
     while ((n = getargs (argc, argv, options)) > 0) {
         switch (n) {
-            case 'a':
-                ascii = 1;
+            case '4':
+                is_single = 1;
+                break;
+            case '8':
+                is_single = 0;
+                break;
+            case 'f':
+                is_ascii = 1;
+                break;
+            case 's':
+                is_ascii = 0;
+                break;
+            case 'l':
+                is_little = 1;
                 break;
             case 'b':
-                ib = atoi (argarg);
+                is_little = 0;
                 break;
             case 'B':
-                strncpy (basename, argarg, 32);
-                basename[32] = 0;
+                cgBase = atoi(argarg);
                 break;
-            case 'w':
-                weighting = 1;
-                break;
-            case 'S':
-                usesol = atoi (argarg);
+            case 'Z':
+                cgZone = atoi(argarg);
                 break;
         }
     }
 
     if (argind > argc - 2)
-        print_usage (usgmsg, "CGNSfile and/or Tecplotfile not given");
-    if (!file_exists (argv[argind]))
-        FATAL (NULL, "CGNSfile does not exist or is not a file");
+        print_usage (usgmsg, "CGNSfile and/or AFLR3file not given");
+    if (ACCESS (argv[argind], 0))
+        err_exit (NULL, "CGNSfile does not exist or is not a file");
 
     /* open CGNS file */
 
-    printf ("reading CGNS file from %s\n", argv[argind]);
-    nb = open_cgns (argv[argind], 1);
-    if (!nb)
-        FATAL (NULL, "no bases found in CGNS file");
-    if (*basename && 0 == (ib = find_base (basename)))
-        FATAL (NULL, "specified base not found");
-    if (ib > nb) FATAL (NULL, "base index out of range");
-    cgnsbase = ib ? ib : 1;
-    if (cg_base_read (cgnsfn, cgnsbase, basename, &celldim, &phydim))
-        FATAL (NULL, NULL);
-    if (celldim != 3 || phydim != 3)
-        FATAL (NULL, "cell and physical dimension must be 3");
-    printf ("  using base %d - %s\n", cgnsbase, basename);
+    printf ("reading CGNS file from \"%s\"\n", argv[argind]);
+    fflush (stdout);
+    if (cg_open (argv[argind], CG_MODE_READ, &cgFile))
+        err_exit ("cg_open", NULL);
 
-    if (NULL == (p = strrchr (argv[argind], '/')) &&
-        NULL == (p = strrchr (argv[argind], '\\')))
-        strncpy (title, argv[argind], sizeof(title));
-    else
-        strncpy (title, ++p, sizeof(title));
-    title[sizeof(title)-1] = 0;
-    if ((p = strrchr (title, '.')) != NULL)
-        *p = 0;
+    /* get base */
 
-    read_zones ();
-    if (!nZones)
-        FATAL (NULL, "no zones in the CGNS file");
+    if (cg_nbases (cgFile, &nb))
+        err_exit ("cg_nbases", NULL);
+    if (nb == 0) err_exit (NULL, "no bases in the file");
+    if (cgBase < 1 || cgBase > nb)
+        err_exit (NULL, "specified base number out of range");
+    if (cg_base_read (cgFile, cgBase, name, &celldim, &phydim))
+        err_exit ("cg_base_read", NULL);
+    printf ("using base %d - %s\n", cgBase, name);
+    fflush (stdout);
+    if (phydim != 3 || (celldim != 1 && celldim != 3))
+        err_exit (NULL, "cell and/or physical dimension invalid");
+
+    /* get zone */
+
+    if (cg_nzones (cgFile, cgBase, &nz))
+        err_exit ("cg_nzones", NULL);
+    if (nz == 0) err_exit (NULL, "no zones under the base");
+    if (cgZone < 1 || cgZone > nz)
+        err_exit (NULL, "specified zone number out of range");
+    if (cg_zone_read (cgFile, cgBase, cgZone, name, sizes))
+        err_exit ("cg_zone_read", NULL);
+    printf ("using zone %d - %s\n", cgZone, name);
+    fflush (stdout);
+    if (cg_zone_type (cgFile, cgBase, cgZone, &zonetype))
+        err_exit ("cg_zone_type", NULL);
+    is_structured = (zonetype == CGNS_ENUMV(Structured));
+
+    /* get coord and element counts */
+
+    idim = is_structured ? 3 : 1;
+    for (n = 0; n < idim; n++)
+        nCoords *= sizes[n];
+    count_elements();
     
     /* verify dimensions fit in an integer */
 
-    for (nz = 0; nz < nZones; nz++) {
-        if (Zones[nz].nverts > CG_MAX_INT32)
-	    FATAL(NULL, "zone size too large to write with integers");
-	if (Zones[nz].type == CGNS_ENUMV(Unstructured)) {
-            count_elements (nz, &ne, &type);
-            if (ne > CG_MAX_INT32)
-	        FATAL(NULL, "too many elements to write with integers");
-        }
-     }
+    if ((3 * nTris + 4 * nQuads) > CG_MAX_INT32 ||
+        (4 * nTets) > CG_MAX_INT32 ||
+        (5 * nPyras) > CG_MAX_INT32 ||
+        (6 * nPrisms) > CG_MAX_INT32 ||
+        (4 * nHexas) > CG_MAX_INT32)
+        err_exit (NULL, "too many elements to write with integers");
 
-    nv = 3 + check_solution ();
+    /* open output file */
 
-    /* open Tecplot file */
+    printf ("writing %s AFLR3 data to <%s>\n",
+        is_ascii ? "ASCII" : "binary", argv[++argind]);
+    if (NULL == (fp = fopen (argv[argind], is_ascii ? "w+" : "w+b")))
+        err_exit (NULL, "couldn't open output file for writing");
 
-    printf ("writing %s Tecplot data to <%s>\n",
-        ascii ? "ASCII" : "binary", argv[++argind]);
-    if (NULL == (fp = fopen (argv[argind], ascii ? "w+" : "w+b")))
-        FATAL (NULL, "couldn't open Tecplot output file");
+    /* write file */
 
-    /* write file header */
-
-    if (ascii)
-        fprintf (fp, "TITLE = \"%s\"\n", title);
-    else {
-        fwrite ("#!TDV75 ", 1, 8, fp);
-        i = 1;
-        write_ints (fp, 1, &i);
-        write_string (fp, title);
-    }
-
-    /* write variables */
-
-    if (ascii) {
-        fprintf (fp, "VARIABLES = \"X\", \"Y\", \"Z\"");
-        if (usesol) {
-            sol = Zones->sols;
-            for (n = 0; n < sol->nflds; n++)
-                fprintf (fp, ",\n\"%s\"", sol->flds[n].name);
-        }
-    }
-    else {
-        write_ints (fp, 1, &nv);
-        write_string (fp, "X");
-        write_string (fp, "Y");
-        write_string (fp, "Z");
-        if (usesol) {
-            sol = Zones->sols;
-            for (n = 0; n < sol->nflds; n++)
-                write_string (fp, sol->flds[n].name);
-        }
-    }
-
-    /* write zones */
-
-    if (!ascii) {
-        for (nz = 0; nz < nZones; nz++) {
-            if (Zones[nz].type == CGNS_ENUMV(Structured)) {
-                idata[0] = 0;          /* BLOCK */
-                idata[1] = -1;         /* color not specified */
-                idata[2] = (int)Zones[nz].dim[0];
-                idata[3] = (int)Zones[nz].dim[1];
-                idata[4] = (int)Zones[nz].dim[2];
-            }
-            else {
-                count_elements (nz, &ne, &type);
-                idata[0] = 2;          /* FEBLOCK */
-                idata[1] = -1;         /* color not specified */
-                idata[2] = (int)Zones[nz].dim[0];
-                idata[3] = (int)ne;
-                idata[4] = type;
-            }
-            value = 299.0;
-            write_floats (fp, 1, &value);
-            write_string (fp, Zones[nz].name);
-            write_ints (fp, 5, idata);
-        }
-        value = 357.0;
-        write_floats (fp, 1, &value);
-    }
-
-    for (nz = 0; nz < nZones; nz++) {
-        printf ("  zone %d...", nz+1);
-        fflush (stdout);
-        read_zone_grid (nz+1);
-        nn = (int)Zones[nz].nverts;
-        var = (float *) malloc (nn * sizeof(float));
-        if (NULL == var)
-            FATAL (NULL, "malloc failed for temp float array");
-        if (Zones[nz].type == CGNS_ENUMV(Unstructured))
-            elems = volume_elements (nz, &ne, &type);
-
-        if (ascii) {
-            if (Zones[nz].type == CGNS_ENUMV(Structured))
-                fprintf (fp, "\nZONE T=\"%s\", I=%d, J=%d, K=%d, F=BLOCK\n",
-                    Zones[nz].name, (int)Zones[nz].dim[0],
-                    (int)Zones[nz].dim[1], (int)Zones[nz].dim[2]);
-            else
-                fprintf (fp, "\nZONE T=\"%s\", N=%d, E=%d, F=FEBLOCK, ET=%s\n",
-                    Zones[nz].name, nn, (int)ne, type == 2 ? "TETRAHEDRON" : "BRICK");
-        }
-        else {
-            value = 299.0;
-            write_floats (fp, 1, &value);
-            i = 0;
-            write_ints (fp, 1, &i);
-            i = 1;
-            for (n = 0; n < nv; n++)
-                write_ints (fp, 1, &i);
-        }
-
-        for (n = 0; n < nn; n++)
-            var[n] = (float)Zones[nz].verts[n].x;
-        write_floats (fp, nn, var);
-        for (n = 0; n < nn; n++)
-            var[n] = (float)Zones[nz].verts[n].y;
-        write_floats (fp, nn, var);
-        for (n = 0; n < nn; n++)
-            var[n] = (float)Zones[nz].verts[n].z;
-        write_floats (fp, nn, var);
-
-        if (usesol) {
-            read_solution_field (nz+1, usesol, 0);
-            sol = &Zones[nz].sols[usesol-1];
-            if (sol->location != CGNS_ENUMV(Vertex))
-                cell_vertex_solution (nz+1, usesol, weighting);
-            for (nv = 0; nv < sol->nflds; nv++) {
-                for (n = 0; n < nn; n++)
-                    var[n] = (float)sol->flds[nv].data[n];
-                write_floats (fp, nn, var);
-            }
-        }
-
-        free (var);
-
-        if (Zones[nz].type == CGNS_ENUMV(Unstructured)) {
-            if (!ascii) {
-                i = 0;
-                write_ints (fp, 1, &i);
-            }
-            nn = 1 << type;
-            for (i = 0, n = 0; n < ne; n++, i += nn)
-                write_ints (fp, nn, &elems[i]);
-            free (elems);
-        }
-        puts ("done");
-    }
+    idata[0] = (int)nCoords;
+    idata[1] = (int)nTris;
+    idata[2] = (int)nQuads;
+    idata[3] = (int)nTets;
+    idata[4] = (int)nPyras;
+    idata[5] = (int)nPrisms;
+    idata[6] = (int)nHexas;
+    write_ints (fp, 7, idata);
+    
+    write_coords (fp);
+    write_boundary (fp);
+    if (nTets) write_elements (fp, CGNS_ENUMV(TETRA_4), 4, nTets);
+    if (nPyras) write_elements (fp, CGNS_ENUMV(PYRA_5), 5, nPyras);
+    if (nPrisms) write_elements (fp, CGNS_ENUMV(PENTA_6), 6, nPrisms);
+    if (nHexas) write_elements (fp, CGNS_ENUMV(HEXA_8), 8, nHexas);
 
     fclose (fp);
-    cg_close (cgnsfn);
+    cg_close (cgFile);
     return 0;
 }

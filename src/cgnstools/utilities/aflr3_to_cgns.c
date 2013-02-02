@@ -28,7 +28,6 @@ int nCoords = 0;
 void *xCoord, *yCoord, *zCoord;
 
 typedef struct {
-    char name[33];
     int id, bctype;
     int start, end;
 } FACESET;
@@ -60,10 +59,10 @@ cgsize_t *Prisms;
 int nHexas = 0;
 cgsize_t *Hexas;
 
-static char options[] = "48fuslbAF";
+static char options[] = "48fuslb";
 
 static char *usgmsg[] = {
-    "usage  : aflr3_to_cgns [options] AFLR3/FASTfile [CGNSfile]",
+    "usage  : aflr3_to_cgns [options] AFLR3file [CGNSfile]",
     "options:",
     "   -4       = coordinates are real*4 (float)",
     "   -8       = coordinates are real*8 (double - default)",
@@ -72,13 +71,10 @@ static char *usgmsg[] = {
     "   -s       = Fortran stream format (binary - default)",
     "   -l       = little-endian format",
     "   -b       = big-endian format (default)",
-    "   -A       = AFLR3 file (default)",
-    "   -F       = FAST file",
     "default is big-endian binary (Fortran stream) AFLR3 file",
     NULL
 };
 
-int is_fast = 0;
 int is_single = 0;
 
 /*----------------------------------------------------------------------*/
@@ -94,7 +90,7 @@ static int sort_faces(const void *v1, const void *v2)
 
 static void build_trisets()
 {
-    int n, id, ns, fmt, nf;
+    int n, id, ns, nf;
 
     for (n = 1; n < nTris; n++) {
         if (Tris[n].id < Tris[n-1].id) {
@@ -118,13 +114,11 @@ static void build_trisets()
         exit(1);
     }
 
-    fmt = (int)log10((double)nTriSets) + 1;
     id = Tris[0].id;
     ns = 0;
     nf = 0;
     for (n = 1; n < nTris; n++) {
         if (Tris[n].id != id) {
-            sprintf(TriSets[ns].name, "TriFaces%0*d", fmt, ns+1);
             TriSets[ns].id = id;
             TriSets[ns].bctype = -1;
             TriSets[ns].start = nf;
@@ -134,7 +128,6 @@ static void build_trisets()
             nf = n;
         }
     }
-    sprintf(TriSets[ns].name, "TriFaces%0*d", fmt, ns+1);
     TriSets[ns].id = id;
     TriSets[ns].bctype = -1;
     TriSets[ns].start = nf;
@@ -145,7 +138,7 @@ static void build_trisets()
 
 static void build_quadsets()
 {
-    int n, id, ns, fmt, nf;
+    int n, id, ns, nf;
 
     for (n = 1; n < nQuads; n++) {
         if (Quads[n].id < Quads[n-1].id) {
@@ -169,13 +162,11 @@ static void build_quadsets()
         exit(1);
     }
 
-    fmt = (int)log10((double)nQuadSets) + 1;
     id = Quads[0].id;
     ns = 0;
     nf = 0;
     for (n = 1; n < nQuads; n++) {
         if (Quads[n].id != id) {
-            sprintf(QuadSets[ns].name, "QuadFaces%0*d", fmt, ns+1);
             QuadSets[ns].id = id;
             QuadSets[ns].bctype = -1;
             QuadSets[ns].start = nf;
@@ -185,7 +176,6 @@ static void build_quadsets()
             nf = n;
         }
     }
-    sprintf(QuadSets[ns].name, "QuadFaces%0*d", fmt, ns+1);
     QuadSets[ns].id = id;
     QuadSets[ns].bctype = -1;
     QuadSets[ns].start = nf;
@@ -209,32 +199,22 @@ static void read_ugrid(char *filename, int flags)
 
     /* get counts */
 
-    if (is_fast) {
-        if (3 != bf_getints(bf, 3, counts)) {
-            fprintf(stderr, "error reading counts\n");
-            exit(1);
-        }
-        nCoords = counts[0];
-        nTris   = counts[1];
-        nTets   = counts[2];
+    if (7 != bf_getints(bf, 7, counts)) {
+        fprintf(stderr, "error reading counts\n");
+        exit(1);
     }
-    else {
-        if (7 != bf_getints(bf, 7, counts)) {
-            fprintf(stderr, "error reading counts\n");
-            exit(1);
-        }
-        nCoords = counts[0];
-        nTris   = counts[1];
-        nQuads  = counts[2];
-        nTets   = counts[3];
-        nPyras  = counts[4];
-        nPrisms = counts[5];
-        nHexas  = counts[6];
-    }
+    nCoords = counts[0];
+    nTris   = counts[1];
+    nQuads  = counts[2];
+    nTets   = counts[3];
+    nPyras  = counts[4];
+    nPrisms = counts[5];
+    nHexas  = counts[6];
 
     /* read coordinates */
 
     if (is_single) {
+        float coord[3];
         float *x, *y, *z;
         x = (float *)malloc(nCoords * sizeof(float));
         y = (float *)malloc(nCoords * sizeof(float));
@@ -243,31 +223,21 @@ static void read_ugrid(char *filename, int flags)
             fprintf(stderr, "malloc failed for coordinates\n");
             exit(1);
         }
-        if (is_fast) {
-            if (nCoords != bf_getfloats(bf, nCoords, x) ||
-                nCoords != bf_getfloats(bf, nCoords, y) ||
-                nCoords != bf_getfloats(bf, nCoords, z)) {
+        for (n = 0; n < nCoords; n++) {
+            if (3 != bf_getfloats(bf, 3, coord)) {
                 fprintf(stderr, "error reading coordinates\n");
                 exit(1);
             }
-        }
-        else {
-            float coord[3];
-            for (n = 0; n < nCoords; n++) {
-                if (3 != bf_getfloats(bf, 3, coord)) {
-                    fprintf(stderr, "error reading coordinates\n");
-                    exit(1);
-                }
-                x[n] = coord[0];
-                y[n] = coord[1];
-                z[n] = coord[2];
-            }
+            x[n] = coord[0];
+            y[n] = coord[1];
+            z[n] = coord[2];
         }
         xCoord = (void *)x;
         yCoord = (void *)y;
         zCoord = (void *)z;
     }
     else {
+        double coord[3];
         double *x, *y, *z;
         x = (double *)malloc(nCoords * sizeof(double));
         y = (double *)malloc(nCoords * sizeof(double));
@@ -276,25 +246,14 @@ static void read_ugrid(char *filename, int flags)
             fprintf(stderr, "malloc failed for coordinates\n");
             exit(1);
         }
-        if (is_fast) {
-            if (nCoords != bf_getdoubles(bf, nCoords, x) ||
-                nCoords != bf_getdoubles(bf, nCoords, y) ||
-                nCoords != bf_getdoubles(bf, nCoords, z)) {
+        for (n = 0; n < nCoords; n++) {
+            if (3 != bf_getdoubles(bf, 3, coord)) {
                 fprintf(stderr, "error reading coordinates\n");
                 exit(1);
             }
-        }
-        else {
-            double coord[3];
-            for (n = 0; n < nCoords; n++) {
-                if (3 != bf_getdoubles(bf, 3, coord)) {
-                    fprintf(stderr, "error reading coordinates\n");
-                    exit(1);
-                }
-                x[n] = coord[0];
-                y[n] = coord[1];
-                z[n] = coord[2];
-            }
+            x[n] = coord[0];
+            y[n] = coord[1];
+            z[n] = coord[2];
         }
         xCoord = (void *)x;
         yCoord = (void *)y;
@@ -471,8 +430,39 @@ static void read_mapbc(char *filename)
 
 /*----------------------------------------------------------------------*/
 
+static CGNS_ENUMV(BCType_t) get_bctype (int bctype)
+{
+    switch (bctype) {
+        case 1:
+        case 2:
+        case 5000:
+            return CGNS_ENUMV(BCFarfield);
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 4000:
+            return CGNS_ENUMV(BCWallViscous);
+        case 6661:
+        case 6662:
+        case 6663:
+            return CGNS_ENUMV(BCSymmetryPlane);
+        case 3000:
+            return CGNS_ENUMV(BCWallInviscid);
+        default:
+            if (bctype >= 7 && bctype <= 18)
+                return CGNS_ENUMV(BCWallInviscid);
+            break;
+    }
+    return CGNS_ENUMV(BCTypeUserDefined);
+}
+
+/*----------------------------------------------------------------------*/
+
 static void write_cgns(char *filename)
 {
+    char name[33];
+    const char *bcname;
     int cgfile, cgbase, cgzone;
     int cgcoord, cgsect, cgbc;
     int n, i, ns, ne, nemax;
@@ -506,7 +496,7 @@ static void write_cgns(char *filename)
     start = 1;
     if (nTets) {
         end = start + nTets - 1;
-        if (cg_section_write(cgfile, cgbase, cgzone, "Tetrahedra",
+        if (cg_section_write(cgfile, cgbase, cgzone, "TetElements",
                 CGNS_ENUMV(TETRA_4), start, end, 0, Tets, &cgsect))
             cg_error_exit();
         free(Tets);
@@ -514,7 +504,7 @@ static void write_cgns(char *filename)
     }
     if (nPyras) {
         end = start + nPyras - 1;
-        if (cg_section_write(cgfile, cgbase, cgzone, "Pyramids",
+        if (cg_section_write(cgfile, cgbase, cgzone, "PyraElements",
                 CGNS_ENUMV(PYRA_5), start, end, 0, Pyras, &cgsect))
             cg_error_exit();
         free(Pyras);
@@ -522,7 +512,7 @@ static void write_cgns(char *filename)
     }
     if (nPrisms) {
         end = start + nPrisms - 1;
-        if (cg_section_write(cgfile, cgbase, cgzone, "Prisms",
+        if (cg_section_write(cgfile, cgbase, cgzone, "PentaElements",
                 CGNS_ENUMV(PENTA_6), start, end, 0, Prisms, &cgsect))
             cg_error_exit();
         free(Prisms);
@@ -530,7 +520,7 @@ static void write_cgns(char *filename)
     }
     if (nHexas) {
         end = start + nHexas - 1;
-        if (cg_section_write(cgfile, cgbase, cgzone, "Hexahedra",
+        if (cg_section_write(cgfile, cgbase, cgzone, "HexaElements",
                 CGNS_ENUMV(HEXA_8), start, end, 0, Hexas, &cgsect))
             cg_error_exit();
         free(Hexas);
@@ -566,7 +556,8 @@ static void write_cgns(char *filename)
                 nodes[n++] = Tris[ne].nodes[i];
         }
         end = start + TriSets[ns].end - TriSets[ns].start;
-        if (cg_section_write(cgfile, cgbase, cgzone, TriSets[ns].name,
+        sprintf(name, "TriElements %d", ns+1);
+        if (cg_section_write(cgfile, cgbase, cgzone, name,
                 CGNS_ENUMV(TRI_3), start, end, 0, nodes, &cgsect))
             cg_error_exit();
         TriSets[ns].start = (int)start;
@@ -583,7 +574,8 @@ static void write_cgns(char *filename)
                 nodes[n++] = Quads[ne].nodes[i];
         }
         end = start + QuadSets[ns].end - QuadSets[ns].start;
-        if (cg_section_write(cgfile, cgbase, cgzone, QuadSets[ns].name,
+        sprintf(name, "QuadElements %d", ns+1+nTriSets);
+        if (cg_section_write(cgfile, cgbase, cgzone, name,
                 CGNS_ENUMV(QUAD_4), start, end, 0, nodes, &cgsect))
             cg_error_exit();
         QuadSets[ns].start = (int)start;
@@ -596,48 +588,17 @@ static void write_cgns(char *filename)
     /* write BCs */
 
     for (ns = 0; ns < nTriSets; ns++) {
-        switch (TriSets[ns].bctype) {
-            case 0:
-                bctype = CGNS_ENUMV(BCInflowSupersonic);
-                break;
-            case 1:
-            case 6010:
-            case 6661:
-            case 6662:
-            case 6663:
-                bctype = CGNS_ENUMV(BCSymmetryPlane);
-                break;
-            case 2:
-                bctype = CGNS_ENUMV(BCExtrapolate);
-                break;
-            case 3:
-            case 5000:
-                bctype = CGNS_ENUMV(BCFarfield);
-                break;
-            case 4:
-            case 4000:
-                bctype = CGNS_ENUMV(BCWallViscous);
-                break;
-            case 5:
-            case 3000:
-                bctype = CGNS_ENUMV(BCWallInviscid);
-                break;
-            case 1001:
-                bctype = CGNS_ENUMV(BCTunnelInflow);
-                break;
-            case 1002:
-                bctype = CGNS_ENUMV(BCTunnelOutflow);
-                break;
-            default:
-                continue;
-        }
+        bctype = get_bctype(TriSets[ns].bctype);
+        bcname = cg_BCTypeName(bctype);
+        if (0 == strncmp(bcname, "BC", 2)) bcname += 2;
+        sprintf(name, "%s %d", bcname, ns+1);
         range[0] = TriSets[ns].start;
         range[1] = TriSets[ns].end;
 #if CGNS_VERSION < 3100
-        if (cg_boco_write(cgfile, cgbase, cgzone, TriSets[ns].name,
+        if (cg_boco_write(cgfile, cgbase, cgzone, name,
                 bctype, CGNS_ENUMV(ElementRange), 2, range, &cgbc))
 #else
-        if (cg_boco_write(cgfile, cgbase, cgzone, TriSets[ns].name,
+        if (cg_boco_write(cgfile, cgbase, cgzone, name,
                 bctype, CGNS_ENUMV(PointRange), 2, range, &cgbc) ||
             cg_boco_gridlocation_write(cgfile, cgbase, cgzone,
                 cgbc, CGNS_ENUMV(FaceCenter)))
@@ -646,59 +607,17 @@ static void write_cgns(char *filename)
     }
 
     for (ns = 0; ns < nQuadSets; ns++) {
-        switch (QuadSets[ns].bctype) {
-            case 0:
-            case 5025:
-                bctype = CGNS_ENUMV(BCInflowSupersonic);
-                break;
-            case 5026:
-                bctype = CGNS_ENUMV(BCOutflowSupersonic);
-                break;
-            case 7011:
-                bctype = CGNS_ENUMV(BCInflowSubsonic);
-                break;
-            case 7012:
-                bctype = CGNS_ENUMV(BCOutflowSubsonic);
-                break;
-            case 1:
-            case 6010:
-            case 6661:
-            case 6662:
-            case 6663:
-                bctype = CGNS_ENUMV(BCSymmetryPlane);
-                break;
-            case 2:
-                bctype = CGNS_ENUMV(BCExtrapolate);
-                break;
-            case 3:
-            case 5000:
-            case 5050:
-                bctype = CGNS_ENUMV(BCFarfield);
-                break;
-            case 4:
-            case 4000:
-                bctype = CGNS_ENUMV(BCWallViscous);
-                break;
-            case 5:
-            case 3000:
-                bctype = CGNS_ENUMV(BCWallInviscid);
-                break;
-            case 1001:
-                bctype = CGNS_ENUMV(BCTunnelInflow);
-                break;
-            case 1002:
-                bctype = CGNS_ENUMV(BCTunnelOutflow);
-                break;
-            default:
-                continue;
-        }
+        bctype = get_bctype(QuadSets[ns].bctype);
+        bcname = cg_BCTypeName(bctype);
+        if (0 == strncmp(bcname, "BC", 2)) bcname += 2;
+        sprintf(name, "%s %d", bcname, ns+1+nTriSets);
         range[0] = QuadSets[ns].start;
         range[1] = QuadSets[ns].end;
 #if CGNS_VERSION < 3100
-        if (cg_boco_write(cgfile, cgbase, cgzone, QuadSets[ns].name,
+        if (cg_boco_write(cgfile, cgbase, cgzone, name,
                 bctype, CGNS_ENUMV(ElementRange), 2, range, &cgbc))
 #else
-        if (cg_boco_write(cgfile, cgbase, cgzone, QuadSets[ns].name,
+        if (cg_boco_write(cgfile, cgbase, cgzone, name,
                 bctype, CGNS_ENUMV(PointRange), 2, range, &cgbc) ||
             cg_boco_gridlocation_write(cgfile, cgbase, cgzone,
                 cgbc, CGNS_ENUMV(FaceCenter)))
@@ -748,17 +667,11 @@ int main (int argc, char *argv[])
                 flags &= ~MACH_UNKNOWN;
                 flags |= MACH_IEEE;
                 break;
-            case 'A':
-                is_fast = 0;
-                break;
-            case 'F':
-                is_fast = 1;
-                break;
         }
     }
 
     if (argind >= argc)
-        print_usage(usgmsg, "AFLR3/FAST filename not specified\n");
+        print_usage(usgmsg, "AFLR3 filename not specified\n");
 
     basename = (char *)malloc(strlen(argv[argind]) + 7);
     if (basename == NULL) {
@@ -792,23 +705,20 @@ int main (int argc, char *argv[])
         tail++;
     if ((p = strrchr(tail, '.')) == NULL)
         p = basename + strlen(basename);
-
+ 
     strcpy(p, ".mapbc");
-    if (0 == ACCESS(basename, 0)) {
-        printf("reading boundary conditions from \"%s\"\n", basename);
-        fflush(stdout);
-        read_mapbc(basename);
-    }
-    else {
+    n = ACCESS(basename, 0);
+    if (n) {
         *p = 0;
         if ((p = strrchr(tail, '.')) != NULL) {
             strcpy(p, ".mapbc");
-            if (0 == ACCESS(basename, 0)) {
-                printf("reading boundary conditions from \"%s\"\n", basename);
-                fflush(stdout);
-                read_mapbc(basename);
-            }
+            n = ACCESS(basename, 0);
         }
+    }
+    if (0 == n) {
+        printf("reading boundary conditions from \"%s\"\n", basename);
+        fflush(stdout);
+        read_mapbc(basename);
     }
 
     /* open CGNS file */

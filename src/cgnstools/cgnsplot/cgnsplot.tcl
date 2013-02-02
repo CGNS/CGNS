@@ -252,7 +252,8 @@ proc set_axis {} {
 #----- help menu
 
 set m [menubar_get Help]
-$m add command -label "CGNSplot Help..." -command {help_show cgnsplot}
+$m add command -label "CGNSplot Help..." \
+  -command {help_show cgnsplot "" cgnstools/cgnsplot/index.html}
 $m add command -label "CGNS Help..." -command {help_show cgns}
 $m add separator
 $m add command -label "Configure Help..." -command help_setup
@@ -272,7 +273,7 @@ proc do_about {} {
 "CGNSplot Version 3.2
 
 Bruce Wedan
-brucewedan@gmail.com" img_about 0 Close
+leavingdust@gmail.com" img_about 0 Close
 }
 
 #---------- toolbar
@@ -485,7 +486,7 @@ R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 t+j75joVAQA7}
 
 button $f.help -image img_help -takefocus 0 \
-  -command {help_show cgnsplot}
+  -command {help_show cgnsplot "" cgnstools/cgnsplot/index.html}
 set_balloon $f.help "CGNSplot Help..."
 
 pack $f.help -side left -padx 5

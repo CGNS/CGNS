@@ -23,7 +23,7 @@ proc vtk_export {w name exe} {
   wm transient $w .
   wm protocol $w WM_DELETE_WINDOW {set Export(done) 0}
 
-  export_input $w 1
+  export_input $w 1 0 1
 
   FrameCreate $w.output -text "VTK Output Directory" -font $Font(bold)
   pack $w.output -side top -padx 5 -pady 2 -fill x

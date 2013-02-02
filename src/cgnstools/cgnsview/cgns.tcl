@@ -1,6 +1,7 @@
 
 array set CGNSnodes {
   AdditionalExponents          {1 AdditionalExponents_t R4 3 0}
+  AdditionalFamilyName         {0 AdditionalFamilyName_t C1 {} 1}
   AdditionalUnits              {1 AdditionalUnits_t C1 {32 3} 0}
   ArbitraryGridMotion          {0 ArbitraryGridMotion_t C1 {} 1}
   ArbitraryGridMotionPointers  {1 DataArray_t C1 32 0}
@@ -47,6 +48,7 @@ array set CGNSnodes {
   FamilyBC                     {1 FamilyBC_t C1 {} 0}
   FamilyBCDataSet              {0 FamilyBCDataSet_t C1 {} 1}
   FamilyName                   {1 FamilyName_t C1 {} 0}
+  FamilyNameReference          {0 FamilyName_t C1 {} 0}
   FamilyPointers               {1 DataArray_t C1 32 0}
   FlowEquationSet              {1 FlowEquationSet_t MT {} 0}
   FlowSolution                 {0 FlowSolution_t MT {} 1}
@@ -322,6 +324,8 @@ array set CGNSnodeDesc {
   AdditionalExponents_t {AdditionalExponents AdditionalExponents_t {0,1} \
       {R4 or R8} 1 3 {ElectricCurrentExponent, SubstanceAmountExponent,\
       LuminousIntensityExponent}}
+  AdditionalFamilyName_t {{user defined} AdditionalFamilyName_t {0,N} \
+      C1 1 {length of string} {name of family}}
   AdditionalUnits_t {AdditionalUnits AdditionalUnits_t {0,1} C1 2 {32,3} \
       {For ElectricCurrent, one of: Null, UserDefined, Ampere, Abampere,\
 Statampere, Edison, auCurrent
@@ -465,6 +469,8 @@ Constant or Frozen}}
       BCWallViscousIsothermal}}
   FamilyName_t {FamilyName FamilyName_t {0,1} C1 1 {length of string} \
       {name of CFD family}}
+  FamilyNameReference {{FamilyParent or user defined} FamilyName_t {0,N} \
+      C1 1 {length of string} {name of family}}
   FamilyPointers {FamilyPointers DataArray_t {0,1} C1 3 \
       {32,MaxNumberOfZones,NumberOfSteps} {pointers to Family_t nodes}}
   FlowEquationSet_t {FlowEquationSet FlowEquationSet_t {0,1} MT {} {} {}}
@@ -663,6 +669,7 @@ Constant or Frozen}}
 array set CGNSnodeRef {
   AdditionalExponents_t {{build DimensionalExponents} \
       {physical dimensionalexponents}}
+  AdditionalFamilyName_t {{} {families familyname}}
   AdditionalUnits_t {{build DimensionalUnits} {physical dimensionalunits}}
   ArbitraryGridMotion_t {{timedep ArbitraryGridMotion} {timedep arbitrary}}
   ArbitraryGridMotionPointers {}
@@ -712,6 +719,7 @@ array set CGNSnodeRef {
   FamilyBC_t {{misc FamilyBC} {families familybc}}
   FamilyBCDataSet_t {{bc BCDataSet} {bc bcdataset}}
   FamilyName_t {{} {families familyname}}
+  FamilyNameReference {{} {families familyname}}
   FamilyPointers {{} {physical dataarray}}
   FlowEquationSet_t {{floweqn FlowEquationSet} {equation flowequationset}}
   FlowSolution_t {{gridflow FlowSolution} {solution flowsolution}}
@@ -792,7 +800,7 @@ array set CGNSnodeRef {
   ZoneType_t {}
 }
 
-set CGNSlibraryVersion 3.1
+set CGNSlibraryVersion 3.2
 
 #----- initialize CGNS nodes
 
@@ -801,7 +809,7 @@ proc cgns_init {{version ""}} {
   global CGNSnodeDesc CGNSdataValues
 
   if {$version == "" && [catch CGNSversion version]} {
-    set CGNSlibraryVersion 3.1
+    set CGNSlibraryVersion 3.2
   } else {
     set CGNSlibraryVersion $version
   }
@@ -1053,10 +1061,6 @@ element types are: 0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
        ZoneGridConnectivity_t {0,N} MT {} {} {}}
     }
     array set CGNSnodeChildren {
-      BC_t {BCDataSet BCProperty DataClass Descriptor DimensionalUnits \
-        FamilyName GridLocation InwardNormalIndex \
-        InwardNormalList Ordinal PointList PointRange \
-        ReferenceState UserDefinedData}
       DiscreteData_t {DataClass Descriptor DimensionalUnits \
         DiscreteDataArray GridLocation PointList PointRange Rind \
         UserDefinedData}
@@ -1068,11 +1072,38 @@ element types are: 0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
         Descriptor DimensionalUnits FlowSolutionsPointers \
         GridCoordinatesPointers RigidGridMotionPointers \
         ZoneGridConnectivityPointers ZoneSubRegionPointers UserDefinedData}
-      Zone_t {ArbitraryGridMotion DataClass Descriptor DiscreteData \
-        DimensionalUnits Elements FamilyName FlowEquationSet FlowSolution \
-        GridCoordinates IntegralData Ordinal ReferenceState RigidGridMotion \
-        RotatingCoordinates UserDefinedData ZoneBC ZoneConvergenceHistory \
-        ZoneGridConnectivity ZoneIterativeData ZoneSubRegion ZoneType}
+    }
+
+    if {$version >= 3200} {
+      array set CGNSnodeChildren {
+        BC_t {AdditionalFamilyName BCDataSet BCProperty DataClass Descriptor \
+          DimensionalUnits FamilyName GridLocation InwardNormalIndex \
+          InwardNormalList Ordinal PointList PointRange \
+          ReferenceState UserDefinedData}
+        Family_t {Descriptor FamilyBC FamilyNameReference GeometryReference \
+          Ordinal RotatingCoordinates UserDefinedData}
+        Zone_t {AdditionalFamilyName ArbitraryGridMotion DataClass Descriptor \
+          DiscreteData DimensionalUnits Elements FamilyName FlowEquationSet \
+          FlowSolution GridCoordinates IntegralData Ordinal ReferenceState \
+          RigidGridMotion RotatingCoordinates UserDefinedData ZoneBC \
+          ZoneConvergenceHistory ZoneGridConnectivity ZoneIterativeData \
+          ZoneSubRegion ZoneType}
+        ZoneSubRegion_t {AdditionalFamilyName BCRegionName DataArray DataClass \
+          DimensionalUnits Descriptor FamilyName GridConnectivityRegionName \
+          GridLocation PointList PointRange Rind UserDefinedData}
+      }
+    } else {
+      array set CGNSnodeChildren {
+        BC_t {BCDataSet BCProperty DataClass Descriptor DimensionalUnits \
+          FamilyName GridLocation InwardNormalIndex \
+          InwardNormalList Ordinal PointList PointRange \
+          ReferenceState UserDefinedData}
+        Zone_t {ArbitraryGridMotion DataClass Descriptor DiscreteData \
+          DimensionalUnits Elements FamilyName FlowEquationSet FlowSolution \
+          GridCoordinates IntegralData Ordinal ReferenceState RigidGridMotion \
+          RotatingCoordinates UserDefinedData ZoneBC ZoneConvergenceHistory \
+          ZoneGridConnectivity ZoneIterativeData ZoneSubRegion ZoneType}
+      }
     }
   } else {
     array set CGNSnodeDesc {

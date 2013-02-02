@@ -149,7 +149,7 @@ array set ProgData {
   reg,key "CGNSview"
   reg,vals {file follow verify backup autoload maxsize maxcnt \
             toolbar find case fromtop showlines}
-  cgnsversion ""
+  cgnsdiff ""
   cgnscheck ""
   cgnsplot ""
   cgnscalc ""
@@ -226,8 +226,10 @@ array set Export {
   exefile ""
   options ""
   basenum ""
+  zonenum ""
   solnum ""
   basenum,flag 1
+  zonenum,flag 1
   solnum,flag 1
   ascii 0
   solution 1
@@ -339,10 +341,10 @@ proc get_file {name {showerr 0}} {
   return $fname
 }
 
-#----- find cgnscheck, cgnsversion, cgnsplot, cgnscalc
+#----- find cgnscheck, cgnsdiff, cgnsplot, cgnscalc
 
 set ProgData(cgnscheck) [get_executable cgnscheck]
-set ProgData(cgnsversion) [get_executable cgnsversion]
+set ProgData(cgnsdiff) [get_executable cgnsdiff]
 
 set plotwish [get_executable plotwish]
 set cgnsplot [get_file cgnsplot.tcl]
@@ -421,18 +423,20 @@ $m add command -label " Find Again" -command find_again \
 #--- tools menu
 
 set m [menubar_get Tools]
-$m add command -label "CGNS Version..." -state disabled -command update_cgns
 $m add command -label "Check CGNS..." -state disabled -command check_cgns
 $m add command -label "Plot CGNS..."  -state disabled -command plot_cgns
 $m add command -label "Calculate CGNS..."  -state disabled -command calc_cgns
+$m add command -label "Diff CGNS Files..." -state disabled -command diff_cgns
 $m add separator
 $m add command -label "Unit Conversions..." -command units_convert
 
 #--- help menu
 
 set m [menubar_get Help]
-$m add command -label "CGNSview..." -command {help_show cgnsview}
-$m add command -label "Utilities..." -command {help_show utilities}
+$m add command -label "CGNSview..." \
+  -command {help_show cgnsview "" cgnstools/cgnsview/index.html}
+$m add command -label "Utilities..." \
+  -command {help_show utilities "" cgnstools/utilities/index.html}
 $m add command -label "CGNS..." -command {help_show cgns}
 $m add separator
 $m add command -label "Configure..." -command help_setup
@@ -712,11 +716,6 @@ pack $b.first $b.again -side left
 
 #--- tools
 
-image create photo img_version -data {\
-R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgMDAwICAgP8AAAD/AP//AAAA//8A\
-/wD//////yH5BAEAAAcALAAAAAAQABAAQwQ6EEh5qr1n6gqep930ANeEnZ33hSNVWqE0njSW\
-qmR9r3iuITDVxxYU5mBFHGdT44xaRxR0pptGbRpJBAA7}
-
 image create photo img_check -data {\
 R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 /wD//////yH5BAEAAAgALAAAAAAQABAAAAQ3EMlJq70V6A0wAk8YapkEig/YfeuHplzrvqPs\
@@ -732,12 +731,13 @@ R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 /wD//////yH5BAEAAAgALAAAAAAQABAAQwQ8EIFJ60RYvg14fx2AfSH4ceMGqmqYrmEJvuXE\
 zRqro/nOir2d67X6UYg+3unUwpGSTk/MFDVNYSOL9hIBADs=}
 
+image create photo img_diff -data {\
+R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgMDAwICAgP8AAAD/AP//AAAA//8A\
+/wD//////yH5BAEAAAcALAAAAAAQABAAQwQ6EEh5qr1n6gqep930ANeEnZ33hSNVWqE0njSW\
+qmR9r3iuITDVxxYU5mBFHGdT44xaRxR0pptGbRpJBAA7}
+
 set b [frame $f.tools]
 pack $b -side left -padx 5
-
-button $b.version -image img_version -takefocus 0 \
-  -command update_cgns -state disabled
-set_balloon $b.version "Change CGNS Version..."
 
 button $b.check -image img_check -takefocus 0 \
   -command check_cgns -state disabled
@@ -751,7 +751,11 @@ button $b.calc -image img_calc -takefocus 0 \
   -command calc_cgns -state disabled
 set_balloon $b.calc "Calculate CGNS..."
 
-pack $b.version $b.check $b.plot $b.calc -side left
+button $b.diff -image img_diff -takefocus 0 \
+  -command diff_cgns -state disabled
+set_balloon $b.diff "Diff CGNS Files..."
+
+pack $b.check $b.plot $b.calc $b.diff -side left
 
 image create photo img_convert -data {\
 R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
@@ -771,7 +775,8 @@ R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 /wD//////yH5BAEAAAgALAAAAAAQABAAQwQiEMlJq50kX5kJ1hvShd+4mSJ4qmTrXl28ehw7\
 t+j75joVAQA7}
 
-button $f.help -image img_help -takefocus 0 -command {help_show cgnsview}
+button $f.help -image img_help -takefocus 0 \
+  -command {help_show cgnsview "" cgnstools/cgnsview/index.html}
 pack $f.help -side left -padx 5
 set_balloon $f.help Help
 
@@ -1169,11 +1174,11 @@ vJ5dnaamVsXGt3fJyr64ucZYPrSmli6ku7vYa9rX3OAJADs=}
 proc do_about {} {
   global ProgData
   dialog .about -1 -1 "About CGNSview" \
-"CGNSview Version 3.0
+"CGNSview Version 3.2
 CGNS Library Version $ProgData(libvers)
 
 Bruce Wedan
-brucewedan@gmail.com" img_about 0 Close
+leavingdust@gmail.com" img_about 0 Close
 }
 
 proc do_backup {} {
@@ -2255,36 +2260,36 @@ proc file_load {{inpfile ""}} {
     set state normal
   }
 
-  if {$ProgData(cgnsversion) == ""} {
-    .toolbar.but.tools.version configure -state disabled
-    menubar_state Tools disabled 0
-  } else {
-    .toolbar.but.tools.version configure -state $state
-    menubar_state Tools $state 0
-  }
-
   if {$ProgData(cgnscheck) == ""} {
     .toolbar.but.tools.check configure -state disabled
-    menubar_state Tools disabled 1
+    menubar_state Tools disabled 0
   } else {
     .toolbar.but.tools.check configure -state $state
-    menubar_state Tools  $state 1
+    menubar_state Tools  $state 0
   }
 
   if {$ProgData(cgnsplot) == ""} {
     .toolbar.but.tools.plot configure -state disabled
-    menubar_state Tools disabled 2
+    menubar_state Tools disabled 1
   } else {
     .toolbar.but.tools.plot configure -state $state
-    menubar_state Tools $state 2
+    menubar_state Tools $state 1
   }
 
   if {$ProgData(cgnscalc) == ""} {
     .toolbar.but.tools.calc configure -state disabled
-    menubar_state Tools disabled 3
+    menubar_state Tools disabled 2
   } else {
     .toolbar.but.tools.calc configure -state $state
-    menubar_state Tools $state 3
+    menubar_state Tools $state 2
+  }
+
+  if {$ProgData(cgnsdiff) == ""} {
+    .toolbar.but.tools.diff configure -state disabled
+    menubar_state Tools disabled 3
+  } else {
+    .toolbar.but.tools.diff configure -state $state
+    menubar_state Tools  $state 3
   }
 
   foreach i $ProgData(menucfg) {

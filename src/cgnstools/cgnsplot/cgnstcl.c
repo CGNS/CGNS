@@ -3919,10 +3919,10 @@ static int OGLaxis (ClientData data, Tcl_Interp *interp, int argc, char **argv)
 static int OGLcolor (ClientData data, Tcl_Interp *interp, int argc, char **argv)
 {
     int index, i, j;
-    float r, g, b;
-    float h, v, s;
+    double r, g, b;
+    double h, v, s;
     static char color[256];
-    static float huemap[12] = {0,1,2,3,4,5,0.5,1.25,2.65,3.4,4.5,5.5};
+    static double huemap[12] = {0,1,2,3,4,5,0.5,1.25,2.65,3.4,4.5,5.5};
 
     if (argc != 2) {
         Tcl_SetResult (interp, "usage: OGLcolor index",
@@ -3932,14 +3932,14 @@ static int OGLcolor (ClientData data, Tcl_Interp *interp, int argc, char **argv)
     index = abs(atoi(argv[1])) % 132;
     h = huemap[index % 12];
     i = (int)h;
-    h -= (float)i;
+    h -= (double)i;
     j = index / 12;
     if ((j % 2) == 0) {
         v = 1.0;
-        s = 1.0 - (float)sqrt((double)j / 22.0);
+        s = 1.0 - sqrt((double)j / 22.0);
     }
     else {
-        v = 1.0 - (float)sqrt((double)j / 44.0);
+        v = 1.0 - sqrt((double)j / 44.0);
         s = 1.0;
     }
     r = g = b = 0.0;

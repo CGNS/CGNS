@@ -32,8 +32,8 @@ set auto_index(export_check) "source $dir/export.tcl"
 
 # tools.tcl
 
-set auto_index(update_cgns) "source $dir/tools.tcl"
 set auto_index(check_cgns) "source $dir/tools.tcl"
+set auto_index(diff_cgns) "source $dir/tools.tcl"
 set auto_index(plot_cgns) "source $dir/tools.tcl"
 set auto_index(calc_cgns) "source $dir/tools.tcl"
 set auto_index(tools_default) "source $dir/tools.tcl"

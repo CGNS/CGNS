@@ -4,6 +4,8 @@
 #include <ctype.h>
 #ifdef _WIN32
 # include <io.h>
+# define strcasecmp _stricmp
+# define access _access
 #else
 # include <unistd.h>
 #endif

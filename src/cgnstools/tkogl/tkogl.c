@@ -841,7 +841,8 @@ ProcessHits (interp, nhits, selectbuf)
      GLuint * selectbuf;
 {
    Tcl_DString hitlist;
-   unsigned int i, j;
+   int i;
+   unsigned int j;
    GLuint names, *ptr;
 
    Tcl_DStringInit (&hitlist);

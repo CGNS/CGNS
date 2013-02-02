@@ -12,6 +12,8 @@ if exist %dir%cgconfig.bat (
 if exist %dir%..\cgconfig.bat call %dir%..\cgconfig.bat
 
 :getwish
+if "%CG_BIN_DIR%" == "" set CG_BIN_DIR=%dir%
+
 if not "%wish%" == "" goto getscript
 if exist %dir%cgiowish.exe (
   set wish=%dir%cgiowish.exe
@@ -37,6 +39,7 @@ if not "%CG_LIB_DIR%" == "" (
   )
 )
 if exist %dir%..\share\cgnsnodes.tcl (
+  if "%CG_LIB_DIR%" == "" set CG_LIB_DIR=%dir%..\share
   set script=%dir%..\share\cgnsnodes.tcl
   goto run
 )

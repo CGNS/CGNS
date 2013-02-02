@@ -1,64 +1,5 @@
 # tools.tcl - CGNS tool routines
 
-proc update_cgns {} {
-  global ProgData Tools
-
-  if {$ProgData(cgnsversion) == "" || $ProgData(file,name) == ""} return
-  set Tools(cgnsinput) $ProgData(file,name)
-  if {$Tools(cgnsoutput) == ""} {
-    set Tools(cgnsoutput) $ProgData(file,name)
-  }
-  set Tools(version) ""
-
-  set w .cgnsvers
-  toplevel $w
-  wm title $w "Change CGNS Version"
-  wm transient $w .
-  wm protocol $w WM_DELETE_WINDOW {set Tools(done) 0}
-
-  FrameCreate $w.top
-  pack $w.top -side top -padx 5 -pady 5 -fill x
-  set top [FrameGet $w.top]
-
-  label $top.ver -text "Change $ProgData(file,name) from CGNS Version\
-$ProgData(filevers) to"
-  pack $top.ver -side top -anchor w
-
-  set f [frame $top.newvers]
-  pack $f -side top -fill x -expand 1
-  set n 1
-  foreach v {1.2 2.0 2.1 2.2 2.3 2.4 2.5 3.0 3.1} {
-    if {[expr $v - $ProgData(libvers) < 0.01]} {
-      radiobutton $f.f$n -text $v -variable Tools(version) -value $v
-      pack $f.f$n -side left -fill x -expand 1
-      if {[expr abs($ProgData(filevers) - $v) < 0.01]} {
-        $f.f$n configure -state disabled
-      }
-      incr n
-    }
-  }
-
-  set f [frame $top.output]
-  pack $f -side top -fill x -expand 1
-  label $f.lab -text "CGNS Output"
-  pack $f.lab -side left
-  entry $f.ent -textvariable Tools(cgnsoutput) -width 30
-  pack $f.ent -side left -fill x -expand 1
-  button $f.but -text Browse -pady 0 \
-    -command "tools_browse $f.but cgnsoutput"
-  pack $f.but -side right -fill y
-
-  if {[tools_interact $w] && $Tools(version) != ""} {
-    set cmd [tools_unix_path $ProgData(cgnsversion)]
-    lappend cmd $Tools(version) $Tools(cgnsinput)
-    if {$Tools(cgnsoutput) != ""} {
-      lappend cmd $Tools(cgnsoutput)
-    }
-    tools_run "Change CGNS Version" $cmd $Tools(cgnsoutput)
-    file_stats
-  }
-}
-
 proc check_cgns {} {
   global ProgData Tools
 
@@ -99,6 +40,18 @@ proc check_cgns {} {
     lappend cmd -w$Tools(warnings) $ProgData(file,name)
     run_command "Check CGNS" $cmd 25
   }
+}
+
+proc diff_cgns {} {
+  global ProgData Tools
+
+  if {$ProgData(cgnsdiff) == ""} return
+
+  set w .cgnsdiff
+  toplevel $w
+  wm title $w "Diff CGNS File"
+  wm transient $w .
+  wm protocol $w WM_DELETE_WINDOW {set Tools(done) 0}
 }
 
 proc plot_cgns {} {

@@ -14,11 +14,12 @@ ALL = \
 	tecplot_to_cgns.exe \
 	cgns_to_tecplot.exe \
 	cgns_to_vtk.exe \
-	cgns_to_vtk.exe \
 	tetgen_to_cgns.exe \
 	vgrid_to_cgns.exe \
 	aflr3_to_cgns.exe \
 	cgns_to_aflr3.exe \
+	fast_to_cgns.exe \
+	cgns_to_fast.exe \
 	convert_location.exe \
 	convert_variables.exe \
 	convert_dataclass.exe \
@@ -40,6 +41,7 @@ SCRIPTS = \
 	tetgen.tcl	\
 	vgrid.tcl	\
 	aflr3.tcl	\
+	fast.tcl	\
 	vtk.tcl		\
 	convert.tcl	\
 	util.tcl
@@ -146,11 +148,31 @@ aflr3_to_cgns.obj : aflr3_to_cgns.c
 
 cgns_to_aflr3 : cgns_to_aflr3.exe
 
-cgns_to_aflr3.exe : cgns_to_aflr3.obj cgnsutil.obj getargs.obj
-	$(LINK) $(LFLAGS) cgns_to_aflr3.obj cgnsutil.obj \
+cgns_to_aflr3.exe : cgns_to_aflr3.obj getargs.obj
+	$(LINK) $(LFLAGS) cgns_to_aflr3.obj \
 	getargs.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
-cgns_to_aflr3.obj : cgns_to_aflr3.c cgnsutil.h
+cgns_to_aflr3.obj : cgns_to_aflr3.c
+
+#--------------------------------------------------
+
+fast_to_cgns : fast_to_cgns.exe
+
+fast_to_cgns.exe : fast_to_cgns.obj binaryio.obj getargs.obj
+	$(LINK) $(LFLAGS) fast_to_cgns.obj binaryio.obj \
+	getargs.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
+
+fast_to_cgns.obj : fast_to_cgns.c
+
+#--------------------------------------------------
+
+cgns_to_fast : cgns_to_fast.exe
+
+cgns_to_fast.exe : cgns_to_fast.obj getargs.obj
+	$(LINK) $(LFLAGS) cgns_to_fast.obj \
+	getargs.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
+
+cgns_to_fast.obj : cgns_to_fast.c
 
 #--------------------------------------------------
 

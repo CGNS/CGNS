@@ -63,11 +63,20 @@ if (WIN32)
 "set CG_BIN_DIR=${WIN_INSTALL_DIR}\\bin
 set CG_LIB_DIR=${WIN_INSTALL_DIR}\\share
 ")
-  if (CGNS_USE_SHARED)
+# don't need this since dll is put in the bin directory
+#  if (CGNS_USE_SHARED)
+#    file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/cgconfig.bat
+#      "set PATH=${WIN_INSTALL_DIR}\\lib;%PATH%"
+#    )
+#  endif (CGNS_USE_SHARED)
+# add Tcl path for dll's
+  if (TK_WISH)
+    get_filename_component(TK_DLL ${TK_WISH} PATH)
+    file(TO_NATIVE_PATH ${TK_DLL} TK_DLL_DIR)
     file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/cgconfig.bat
-      "set PATH=${WIN_INSTALL_DIR}\\lib;%PATH%"
+      "set PATH=${TK_DLL_DIR};%PATH%"
     )
-  endif (CGNS_USE_SHARED)
+  endif (TK_WISH)
 
   install(PROGRAMS
 	${CMAKE_CURRENT_BINARY_DIR}/cgconfig.bat
