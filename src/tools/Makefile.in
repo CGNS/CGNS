@@ -12,9 +12,10 @@ LDLIBS = $(CGNSLIB) $(BUILDLIBS)
 ALL = \
 	cgnslist$(EXE) \
 	cgnscheck$(EXE) \
-	cgnsversion$(EXE) \
 	cgnsconvert$(EXE) \
-	cgnsdiff$(EXE)
+	cgnscompress$(EXE) \
+	cgnsdiff$(EXE) \
+	cgnsnames$(EXE)
 
 all : $(ALL)
 
@@ -34,17 +35,17 @@ cgnscheck.$(O) : cgnscheck.c getargs.h hash.h cgnames.h
 
 #----------
 
-cgnsversion$(EXE) : cgnsversion.$(O) getargs.$(O) $(CGNSLIB)
-	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsversion.$(O) getargs.$(O) $(LDLIBS) $(CLIBS)
-cgnsversion.$(O) : cgnsversion.c getargs.h
-	$(CC) $(COPTS) -c cgnsversion.c
-
-#----------
-
 cgnsconvert$(EXE) : cgnsconvert.$(O) getargs.$(O) $(CGNSLIB)
 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsconvert.$(O) getargs.$(O) $(LDLIBS) $(CLIBS)
 cgnsconvert.$(O) : cgnsconvert.c getargs.h
 	$(CC) $(COPTS) -c cgnsconvert.c
+
+#----------
+
+cgnscompress$(EXE) : cgnscompress.$(O) $(CGNSLIB)
+	$(CC) $(CFLAGS) $(CEOUT)$@ cgnscompress.$(O) $(LDLIBS) $(CLIBS)
+cgnscompress.$(O) : cgnscompress.c
+	$(CC) $(COPTS) -c cgnscompress.c
 
 #----------
 
@@ -55,10 +56,10 @@ cgnsdiff.$(O) : cgnsdiff.c getargs.h
 
 #----------
 
-prtnames$(EXE) : prtnames.$(O) cgnames.$(O)
-	$(CC) $(COPTS) $(CEOUT)$@ prtnames.$(O) cgnames.$(O) $(CLIBS)
-prtnames.$(O) : prtnames.c cgnames.h
-	$(CC) $(COPTS) -c prtnames.c
+cgnsnames$(EXE) : cgnsnames.$(O) cgnames.$(O)
+	$(CC) $(COPTS) $(CEOUT)$@ cgnsnames.$(O) cgnames.$(O) $(CLIBS)
+cgnsnames.$(O) : cgnsnames.c cgnames.h
+	$(CC) $(COPTS) -c cgnsnames.c
 
 #----------
 
@@ -77,6 +78,10 @@ install : all $(BINDIR)
 	cp $(ALL) $(BINDIR)
 	cp cgnsupdate $(BINDIR)
 	chmod +x $(BINDIR)/cgnsupdate
+	cp adf2hdf $(BINDIR)
+	chmod +x $(BINDIR)/adf2hdf
+	cp hdf2adf $(BINDIR)
+	chmod +x $(BINDIR)/hdf2adf
 
 $(BINDIR) :
 	@if [ ! -d $(BINDIR) ] ; then \
@@ -92,6 +97,8 @@ uninstall :
 	  fi; \
 	done;
 	/bin/rm -f $(BINDIR)/cgnsupdate
+	/bin/rm -f $(BINDIR)/adf2hdf
+	/bin/rm -f $(BINDIR)/hdf2adf
 
 clean :
 	-$(RM) *.$(O)

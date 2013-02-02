@@ -297,6 +297,7 @@ static int read_gridlocation (CGNS_ENUMT(GridLocation_t) *location)
     int ierr = check_node ("GridLocation_t");
     if (ierr == CG_OK)
         return cg_gridlocation_read (location);
+    *location = CGNS_ENUMV(GridLocationNull);
     return ierr;
 }
 
@@ -2640,11 +2641,11 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z,
     CGNS_ENUMT(PointSetType_t) ptype, CGNS_ENUMT(GridLocation_t) location)
 {
     switch (location) {
+        case CGNS_ENUMV(GridLocationNull):
+            if (ptype == CGNS_ENUMV(ElementRange) ||
+                ptype == CGNS_ENUMV(ElementList)) break;
         case CGNS_ENUMV(Vertex):
-            if (ptype == CGNS_ENUMV(ElementRange) || ptype == CGNS_ENUMV(ElementList))
-                warning (1, "should not use Vertex with ElementList"
-                    " or ElementRange");
-            break;
+            return CGNS_ENUMV(Vertex);
         case CGNS_ENUMV(FaceCenter):
             if (z->type == CGNS_ENUMV(Structured))
                 warning (2,
@@ -2674,18 +2675,27 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z,
             if (z->type == CGNS_ENUMV(Structured) && FileVersion >= 2300)
                 warning (2, "use [IJK]FaceCenter location rather"
                     " than CellCenter");
+            else if (FileVersion >= 3100)
+                error("CellCenter not allowed - use Edge/FaceCenter");
             else
                 warning (2, "use FaceCenter location rather than"
                     " CellCenter");
-            return CGNS_ENUMV(FaceCenter);
-            break;
+            return CellDim == 2 ? CGNS_ENUMV(EdgeCenter) :
+                                  CGNS_ENUMV(FaceCenter);
         default:
-            error ("grid location not Vertex,CellCenter,FaceCenter"
-                " or [IJK]FaceCenter");
+            if (FileVersion >= 3100)
+                error ("grid location not Vertex,EdgeCenter,FaceCenter"
+                       " or [IJK]FaceCenter");
+            else
+                error ("grid location not Vertex,EdgeCenter,FaceCenter"
+                       " [IJK]FaceCenter or CellCenter");
             break;
     }
-    if (ptype == CGNS_ENUMV(ElementRange) || ptype == CGNS_ENUMV(ElementList))
-        return CGNS_ENUMV(FaceCenter);
+    if (ptype == CGNS_ENUMV(ElementRange) ||
+        ptype == CGNS_ENUMV(ElementList)) {
+        return CellDim == 2 ? CGNS_ENUMV(EdgeCenter) :
+                              CGNS_ENUMV(FaceCenter);
+    }
     return location;
 }
 
@@ -2791,7 +2801,7 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
             size = 0;
         }
         else if (npnts != 2 &&
-                 (ptype == CGNS_ENUMV(PointRange) || 
+                 (ptype == CGNS_ENUMV(PointRange) ||
                   ptype == CGNS_ENUMV(ElementRange))) {
             error ("number of points not 2 for Point/Element Range");
             size = 0;
@@ -2862,7 +2872,7 @@ static void check_BCdataset (int nb, int nd, cgsize_t size,
 static void check_BC (int nb, int parclass, int *parunits)
 {
     char name[33], *desc;
-    int n, nd, ierr, ndataset;
+    int n, nd, ierr, ndataset, hasl;
     cgsize_t npts, *pts, nrmlflag;
     int nrmlindex[3];
     int *punits, units[9], dataclass;
@@ -2904,9 +2914,16 @@ static void check_BC (int nb, int parclass, int *parunits)
         }
     }
 
+#if CGNS_VERSION > 3100 && !defined(CG_ALLOW_ELEMENTLIST_RANGE)
     if (cg_boco_gridlocation_read(cgnsfn, cgnsbase, cgnszone, nb, &location))
         error_exit("cg_boco_gridlocation_read");
-    if (verbose)
+    hasl = CG_OK;
+#else
+    hasl = read_gridlocation (&location);
+    if (hasl && hasl != CG_NODE_NOT_FOUND)
+        error_exit("cg_gridlocation_read");
+#endif
+    if (verbose && hasl == CG_OK)
         printf ("    Grid Location=%s\n", cg_GridLocationName(location));
     location = check_location (z, ptype, location);
 
@@ -4247,19 +4264,19 @@ static cgsize_t subreg_size(int dim, int isBC, char *subname)
     char name[33], dname[33], *p;
     int n, nbc, ni, nc, nzc, nn, ns, nsets, trans[3];
     cgsize_t npnts, dnpnts, nsize, range[6], drange[6];
-    CGNS_ENUMV(BCType_t) bctype;
-    CGNS_ENUMV(PointSetType_t) ptype, dptype;
-    CGNS_ENUMV(DataType_t) dtype;
-    CGNS_ENUMV(GridLocation_t) location;
-    CGNS_ENUMV(GridConnectivityType_t) gctype;
-    CGNS_ENUMV(ZoneType_t) dztype;
+    CGNS_ENUMT(BCType_t) bctype;
+    CGNS_ENUMT(PointSetType_t) ptype, dptype;
+    CGNS_ENUMT(DataType_t) dtype;
+    CGNS_ENUMT(GridLocation_t) location;
+    CGNS_ENUMT(GridConnectivityType_t) gctype;
+    CGNS_ENUMT(ZoneType_t) dztype;
 
     if (isBC) {
         if (cg_nbocos(cgnsfn, cgnsbase, cgnszone, &nbc))
             error_exit("cg_nbocos");
         for (n = 1; n <= nbc; n++) {
             if (cg_boco_info(cgnsfn, cgnsbase, cgnszone, n, name,
-                &bctype, &ptype, &npnts, &ni, &nsize, &dtype, &nc))
+                &bctype, &ptype, &npnts, trans, &nsize, &dtype, &nc))
                 error_exit("cg_boco_info");
             if (0 == strcmp(name, subname)) {
                 if (ptype == CGNS_ENUMV(PointRange) && npnts == 2) {
@@ -4271,9 +4288,10 @@ static cgsize_t subreg_size(int dim, int isBC, char *subname)
                         npnts *= (range[ni+dim] - range[ni] + 1);
                 }
                 else if (ptype != CGNS_ENUMV(PointList)) {
-                    npnts = 0;
+                    error("BC for subregion not PointList/Range");
+                    return 0;
                 }
-                if (npnts == 0) error("bad BC specification");
+                if (npnts == 0) warning(1, "subregion size is 0");
                 return npnts;
             }
         }
@@ -4282,15 +4300,20 @@ static cgsize_t subreg_size(int dim, int isBC, char *subname)
     }
 
     /* check for ZoneConnectivity */
-    
+
+    if (cg_nzconns(cgnsfn, cgnsbase, cgnszone, &nzc))
+        error_exit("cg_nzconns");
+    if (nzc < 1) {
+        error("GridConnectivetyRegionName not found");
+        return 0;
+    }
+
     if ((p = strchr(subname, '/')) == NULL) {
         p = subname;
         nzc = 1;
     }
     else {
         *p = 0;
-        if (cg_nzconns(cgnsfn, cgnsbase, cgnszone, &nzc))
-            error_exit("cg_nzconns");
         for (n = 1; n <= nzc; n++) {
             if (cg_zconn_read(cgnsfn, cgnsbase, cgnszone, n, name))
                 error_exit("cg_zconn_read");
@@ -4341,9 +4364,10 @@ static cgsize_t subreg_size(int dim, int isBC, char *subname)
                     npnts *= (range[ni+dim] - range[ni] + 1);
             }
             else if (ptype != CGNS_ENUMV(PointList)) {
-                npnts = 0;
+                error("connection for subregion not PointList/Range");
+                return 0;
             }
-            if (npnts == 0) error("bad connectivity specification");
+            if (npnts == 0) warning(1, "subregion size is 0");
             return npnts;
         }
     }
@@ -4376,14 +4400,15 @@ static cgsize_t subreg_size(int dim, int isBC, char *subname)
                 free(pnts);
             }
             else if (ptype != CGNS_ENUMV(PointList)) {
-                npnts = 0;
+                error("hole for subregion not PointList/Range");
+                return 0;
             }
-            if (npnts == 0) error("bad hole specification");
+            if (npnts == 0) warning(1, "subregion size is 0");
             return npnts;
         }
     }
 
-    error("GridConnectivetyName not found");
+    error("GridConnectivetyRegionName not found");
     return 0;
 }
 
@@ -5173,10 +5198,13 @@ static void check_family (int fam)
                     error_exit("cg_bcdataset_read");
                 printf ("  checking BC data set \"%s\"\n", name);
                 fflush (stdout);
-                go_relative ("BCDataSet_t", i, NULL);
+                if (FileVersion < 3100)
+                    go_relative ("BCDataSet_t", i, NULL);
+                else
+                    go_relative ("FamilyBCDataSet_t", i, NULL);
                 check_BCdata (bctype, dirichlet, neumann, 1,
                     BaseClass, pBaseUnits, 4);
-                go_relative ("..", i, NULL);
+                go_relative ("..", 1, NULL);
             }
         }
         go_relative ("..", 1, NULL);
