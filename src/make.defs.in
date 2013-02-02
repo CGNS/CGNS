@@ -31,7 +31,7 @@ O       = @OBJEXT@
 A       = @LIBEXT@
 EXE     = @EXEEXT@
 
-LIBCGNS = @BUILDDIR@/libcgns.@EXT_LIB@
+LIBCGNS = @BUILDDIR@/@CGNSLIB@
 
 #------------------------------------------------------------------------
 # F2CFLAGS defines the type of Fortran to C interface.
@@ -99,16 +99,12 @@ ZLIBLIB = @ZLIBLIB@
 #------------------------------------------------------------------------
 # these should only be set if building with HDF5 and MPI
 # MPIINC  - path to MPI header files
-# MPIOPTS - compile options from mpicc
 # MPILIBS - MPI libraries
-# MPICC   - MPI compiler
 # MPIEXEC - MPI executor
 #------------------------------------------------------------------------
 
 MPIINC  = @MPIINC@
-MPIOPTS = @MPIOPTS@
 MPILIBS = @MPILIBS@
-MPICC   = @MPICC@
 MPIEXEC = @MPIEXEC@
 
 #------------------------------------------------------------------------

@@ -3,7 +3,7 @@ setlocal
 
 set args=-MD -MT -debug -lfs -legacy -64 -scope -dll -install -f2c -ifort
 set args=%args% -absoft -hdf5 -zlib -szip -mpi -parallel
-set args=%args% -cgnstools -tcl -tk -nocut -nomesh
+set args=%args% -cgnstools -tcl -tk -nocut -nomesh -winhtml
 set copts=
 set debug=
 set cfgflags=
@@ -11,7 +11,7 @@ set dllopts=
 set build=
 set dolegacy=0
 set do64bit=0
-set scope=0
+set doscope=0
 set target=cgns
 set make=nmake /nologo
 set f2c=
@@ -21,9 +21,7 @@ set hdf5lib=
 set zliblib=
 set sziplib=
 set mpiinc=
-set mpiopts=
 set mpilibs=
-set mpicc=
 set mpiexec=
 set hdf5dll=#HDF5DLL
 set parallel=
@@ -36,6 +34,7 @@ set tklib=
 set plotopts=
 set instdir=c:\cgnslib
 set builddir=lib
+set winhtml=
 
 set drive=%~d0
 set cgnsdir=%~dps0
@@ -101,7 +100,7 @@ rem ----- enable enum scoping
 
 if %1 == -scope (
   echo enabling enumeration scoping
-  set scope=1
+  set doscope=1
   shift
   goto next
 )
@@ -167,6 +166,12 @@ if %1 == -nomesh (
   goto next
 )
 
+if %1 == -winhtml (
+  set winhtml=c:\PROGRA~1\HTMLHE~1
+  shift
+  goto next
+)
+
 rem ----- Fortran to C interface
 
 if not %1 == -f2c goto hdf5
@@ -209,14 +214,14 @@ rem ----- HDF5 setup
 if not %1 == -hdf5 goto zlib
 shift
 
-if "%1" == "" goto findhdf5
+if '%1' == '' goto findhdf5
 for %%a in ( %args% ) do if %1 == %%a goto findhdf5
 
-if not exist %1\nul (
-  echo ERROR:HDF5 directory "%1" does not exist or is not a directory
+set hdf5dir=%~s1
+if not exist %hdf5dir%\nul (
+  echo ERROR:HDF5 directory %1 does not exist or is not a directory
   goto done
 )
-set hdf5dir=%1
 shift
 goto gethdf5
 
@@ -316,7 +321,7 @@ if exist %hdf5dir%\src\hdf5.h (
   echo ERROR:hdf5 library not found in %hdf5dir%\proj
   goto done
 )
-echo ERROR:hdf5.h not found in "%hdf5dir%\include" or "%hdf5dir%\src"
+echo ERROR:hdf5.h not found in %hdf5dir%\include or %hdf5dir%\src
 goto done
 
 rem ----- zlib setup
@@ -325,32 +330,14 @@ rem ----- zlib setup
 if not %1 == -zlib goto szip
 echo checking for zlib ...
 shift
-if "%1" == "" goto findzlib
+if '%1' == '' goto findzlib
 for %%a in ( %args% ) do if %1 == %%a goto findzlib
+
 if not exist %1 (
-  echo ERROR:zlib library "%1" doesn't exist
+  echo ERROR:zlib library %1 doesn't exist
   goto done
 )
-if not exist %1\nul (
-  set zliblib=%1
-  goto gotzlib
-)
-for %%i in ( zdll zlib ) do (
-  if exist %1\%%i.lib (
-    set zliblib=%1\%%i.lib
-    goto gotzlib
-  )
-  for /D %%d in ( %1\*.* ) do (
-    if exist %%d\%%i.lib (
-      set zliblib=%%d\%%i.lib
-      goto gotzlib
-    )
-  )
-)
-echo ERROR:couldn't find zlib or zdll library in %1
-goto done
-
-:gotzlib
+set zliblib=%~s1
 echo %zliblib%
 shift
 goto next
@@ -408,33 +395,14 @@ rem ----- szip setup
 if not %1 == -szip goto mpi
 echo checking for szip ...
 shift
-if "%1" == "" goto findszip
+if '%1' == '' goto findszip
 for %%a in ( %args% ) do if %1 == %%a goto findszip
 
 if not exist %1 (
-  echo ERROR:szip library "%1" doesn't exist
+  echo ERROR:szip library %1 doesn't exist
   goto done
 )
-if not exist %1\nul (
-  set sziplib=%1
-  goto gotszip
-)
-for %%i in ( szlibdll szlib ) do (
-  if exist %1\%%i.lib (
-    set sziplib=%1\%%i.lib
-    goto gotszip
-  )
-  for /D %%d in ( %1\*.* ) do (
-    if exist %%d\%%i.lib (
-      set sziplib=%%d\%%i.lib
-      goto gotszip
-    )
-  )
-)
-echo ERROR:couldn't find szlib or szlibdll library in %1
-goto done
-
-:gotszip
+set sziplib=%~s1
 echo %sziplib%
 shift
 goto next
@@ -491,23 +459,25 @@ rem ----- MPI setup
 if not %1 == -mpi goto tcl
 shift
 
-if "%1" == "" goto findmpi
+if '%1' == '' goto findmpi
 for %%a in ( %args% ) do if %1 == %%a goto findmpi
 
-if not exist %1\nul (
-  echo ERROR:MPI directory "%1" does not exist or is not a directory
+set mpidir=%~s1
+if not exist %mpidir%\nul (
+  echo ERROR:MPI directory %1 does not exist or is not a directory
   goto done
 )
-set mpidir=%1
 shift
 goto getmpi
 
 :findmpi
 echo checking for MPI ...
-if exist c:\PROGRA~1\MPICH2\include\mpi.h (
-  echo c:\PROGRA~1\MPICH2
-  set mpidir=c:\PROGRA~1\MPICH2
-  goto getmpi
+for /D %%d in ( c:\PROGRA~1\*.* ) do (
+  if exist %%d\include\mpi.h (
+    echo %%d
+    set mpidir=%%d
+    goto getmpi
+  )
 )
 for /D %%d in ( %drive%\*.* ) do (
   if exist %%d\include\mpi.h (
@@ -571,20 +541,18 @@ if exist %mpidir%\src\include\mpi.h (
   set mpiinc=%mpidir%\src\include
 )
 if "%mpiinc%" == "" (
-  echo ERROR:mpi.h not found in "%mpidir%\include" or "%mpidir%\src\include"
+  echo ERROR:mpi.h not found in %mpidir%\include or %mpidir%\src\include
   goto done
 )
-echo checking for mpicc and mpiexec ...
-if exist %mpidir%\bin\mpicc.exe (
-  echo %mpidir%\bin\mpicc.exe
-  set mpicc=%mpidir%\bin\mpicc.exe
-)
+rem ----- if using OpenMPI
+if exist %mpidir%\share\openmpi\nul set mpiinc=%mpiinc% /DOMPI_IMPORTS
+echo checking for mpiexec ...
 if exist %mpidir%\bin\mpiexec.exe (
   echo %mpidir%\bin\mpiexec.exe
   set mpiexec=%mpidir%\bin\mpiexec.exe
 )
 echo checking for MPI library ...
-for %%l in ( mpi mpich mpid mpichd ) do (
+for %%l in ( mpi mpich libmpi mpid mpichd libmpid ) do (
   if exist %mpidir%\lib\%%l.lib (
     echo %mpidir%\lib\%%l.lib
     set mpilibs=%mpidir%\lib\%%l.lib
@@ -599,7 +567,7 @@ rem ----- tcl directory
 :tcl
 if not %1 == -tcl goto tk
 shift
-if "%1" == "" (
+if '%1' == '' (
   echo ERROR:tcl directory arg to -tcl not given
   goto usage
 )
@@ -609,12 +577,12 @@ for %%a in ( %args% ) do (
     goto usage
   )
 )
-if exist %1\generic\tcl.h goto got_tcldir
-if exist %1\include\tcl.h goto got_tcldir
+set tcldir=%~s1
+if exist %tcldir%\generic\tcl.h goto got_tcldir
+if exist %tcldir%\include\tcl.h goto got_tcldir
 echo ERROR:can't find tcl.h in %1\include or %1\generic
 goto done
 :got_tcldir
-set tcldir=%~s1
 shift
 goto next
 
@@ -623,7 +591,7 @@ rem ----- tk directory
 :tk
 if not %1 == -tk goto install
 shift
-if "%1" == "" (
+if '%1' == '' (
   echo ERROR:tk directory arg to -tk not given
   goto usage
 )
@@ -633,12 +601,12 @@ for %%a in ( %args% ) do (
     goto usage
   )
 )
-if exist %1\generic\tk.h goto got_tkdir
-if exist %1\include\tk.h goto got_tkdir
+set tkdir=%~s1
+if exist %tkdir%\generic\tk.h goto got_tkdir
+if exist %tkdir%\include\tk.h goto got_tkdir
 echo ERROR:can't find tk.h in %1\include or %1\generic
 goto done
 :got_tkdir
-set tkdir=%~s1
 shift
 goto next
 
@@ -958,7 +926,7 @@ echo #define CGNSTYPES_H>> cgnstypes.h
 echo.>> cgnstypes.h
 echo #define CG_BUILD_LEGACY %dolegacy% >> cgnstypes.h
 echo #define CG_BUILD_64BIT  %do64bit% >> cgnstypes.h
-echo #define CG_BUILD_SCOPE  %scope% >> cgnstypes.h
+echo #define CG_BUILD_SCOPE  %doscope% >> cgnstypes.h
 echo.>> cgnstypes.h
 echo #define CG_MAX_INT32 0x7FFFFFFF>> cgnstypes.h
 echo #define CG_LONG_T    __int64>> cgnstypes.h
@@ -1709,16 +1677,12 @@ echo.>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo # these should only be set if building with HDF5 and MPI>> make.defs
 echo # MPIINC  - path to MPI header files>> make.defs
-echo # MPIOPTS - compile options from mpicc>> make.defs
 echo # MPILIBS - MPI libraries>> make.defs
-echo # MPICC   - MPI compiler>> make.defs
 echo # MPIEXEC - MPI executor>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo.>> make.defs
 echo MPIINC  = %mpiinc%>> make.defs
-echo MPIOPTS = %mpiopts%>> make.defs
 echo MPILIBS = %mpilibs%>> make.defs
-echo MPICC   = %mpicc%>> make.defs
 echo MPIEXEC = %mpiexec%>> make.defs
 echo.>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
@@ -1754,6 +1718,91 @@ echo INSTALLDIR   = %instdir%>> make.defs
 echo LIBDIR       = $(INSTALLDIR)\lib>> make.defs
 echo INCLUDEDIR   = $(INSTALLDIR)\include>> make.defs
 echo BINDIR       = $(INSTALLDIR)\bin>> make.defs
+
+rem ----- create cgnsBuild.defs
+
+set dodebug=0
+if not "%debug%" == "" set dodebug=1
+set dofortran=0
+if not "%f2c%" == "none" set dofortran=1
+set doparallel=0
+if not "%parallel%" == "" set doparallel=1
+
+echo creating cgnsBuild.defs
+echo # makefile include for building CGNS code under %windir%> cgnsBuild.defs
+echo # this file contains the options and libraries used for>> cgnsBuild.defs
+echo # building and linking CGNS code, and is intended to be>> cgnsBuild.defs
+echo # included in a user's Makefile from the installation>> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo #----------------------------------------------------------------------->> cgnsBuild.defs
+echo # CGNS library build options. A 1 indicates that the library>> cgnsBuild.defs
+echo # was built with that option, a 0 indicates without>> cgnsBuild.defs
+echo # CGNS_DEBUG    = debug>> cgnsBuild.defs
+echo # CGNS_LEGACY   = legacy code (prior to 3.0)>> cgnsBuild.defs
+echo # CGNS_SCOPING  = scoping of enums>> cgnsBuild.defs
+echo # CGNS_64BIT    = 64 bit support>> cgnsBuild.defs
+echo # CGNS_FORTRAN  = Fortran interface>> cgnsBuild.defs
+echo # CGNS_PARALLEL = parallel I/O>> cgnsBuild.defs
+echo #----------------------------------------------------------------------->> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo CGNS_DEBUG    = %dodebug% >> cgnsBuild.defs
+echo CGNS_LEGACY   = %dolegacy% >> cgnsBuild.defs
+echo CGNS_SCOPING  = %doscope% >> cgnsBuild.defs
+echo CGNS_64BIT    = %do64bit% >> cgnsBuild.defs
+echo CGNS_FORTRAN  = %dofortran% >> cgnsBuild.defs
+echo CGNS_PARALLEL = %doparallel% >> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo #------------------------------------------------------------------------>> cgnsBuild.defs
+echo # CGNS_LIBDIR     - installation directory for CGNS library>> cgnsBuild.defs
+echo # CGNS_INCLUDEDIR - installation directory for CGNS headers>> cgnsBuild.defs
+echo #------------------------------------------------------------------------>> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo CGNS_LIBDIR     = %instdir%\lib>> cgnsBuild.defs
+echo CGNS_INCLUDEDIR = %instdir%\include>> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo #------------------------------------------------------------------------>> cgnsBuild.defs
+echo # CGNS_CC      - C compiler used to build library>> cgnsBuild.defs
+echo # CGNS_CFLAGS  - compiler flags used to build library>> cgnsBuild.defs
+echo # CGNS_LDFLAGS - any additional linker options>> cgnsBuild.defs
+echo #------------------------------------------------------------------------>> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo CGNS_CC      = cl>> cgnsBuild.defs
+echo CGNS_CFLAGS  = /nologo %copts% /D_CRT_SECURE_NO_WARNINGS /I$(CGNS_INCLUDEDIR)>> cgnsBuild.defs
+echo CGNS_LDFLAGS = /nologo %lopts%>> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo #------------------------------------------------------------------------>> cgnsBuild.defs
+echo # CGNS_LIB - CGNS library name>> cgnsBuild.defs
+echo #------------------------------------------------------------------------>> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo CGNS_LIB = $(CGNS_LIBDIR)\cgns.lib>> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo #------------------------------------------------------------------------>> cgnsBuild.defs
+echo # CGNS_HDF5INC - path to HDF5 header files>> cgnsBuild.defs
+echo # CGNS_HDF5LIB - HDF5 library>> cgnsBuild.defs
+echo # CGNS_SZIPLIB - szip library (if needed)>> cgnsBuild.defs
+echo # CGNS_ZLIBLIB - zlib library (if needed)>> cgnsBuild.defs
+echo #------------------------------------------------------------------------>> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo CGNS_HDF5INC = %hdf5inc%>> cgnsBuild.defs
+echo CGNS_HDF5LIB = %hdf5lib%>> cgnsBuild.defs
+echo CGNS_SZIPLIB = %sziplib%>> cgnsBuild.defs
+echo CGNS_ZLIBLIB = %zliblib%>> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo #------------------------------------------------------------------------>> cgnsBuild.defs
+echo # CGNS_MPIINC  - path to MPI header files>> cgnsBuild.defs
+echo # CGNS_MPILIBS - MPI libraries>> cgnsBuild.defs
+echo #------------------------------------------------------------------------>> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo CGNS_MPIINC  = %mpiinc%>> cgnsBuild.defs
+echo CGNS_MPILIBS = %mpilibs%>> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo #------------------------------------------------------------------------>> cgnsBuild.defs
+echo # CGNS_LINKLIBS contains the list of libraries>> cgnsBuild.defs
+echo #               with which a CGNS application needs to link>> cgnsBuild.defs
+echo #------------------------------------------------------------------------>> cgnsBuild.defs
+echo.>> cgnsBuild.defs
+echo CGNS_LINKLIBS = $(CGNS_LIB) $(CGNS_HDF5LIB) $(CGNS_SZIPLIB) \>> cgnsBuild.defs
+echo 	$(CGNS_ZLIBLIB) $(CGNS_MPILIBS)>> cgnsBuild.defs
 
 rem ----- create Makefile
 
@@ -1867,7 +1916,7 @@ if %target% == dll echo 	-$(RM) $(CGNSDLL)>> Makefile
 echo 	-$(RMDIR) $(OBJDIR)>> Makefile
 echo 	-$(RM) cgnstypes.h cgnstypes_f.h cgnslib_f.h>> Makefile
 echo 	-$(RM) *.pdb *.bak>> Makefile
-echo 	-$(RM) make.defs Makefile>> Makefile
+echo 	-$(RM) make.defs cgnsBuild.defs Makefile>> Makefile
 echo.>> Makefile
 echo install : %target% $(INCLUDEDIR) $(LIBDIR) %adfinc%>> Makefile
 echo 	$(INSTALL_DATA) cgnstypes.h $(INCLUDEDIR)\cgnstypes.h>> Makefile
@@ -1876,7 +1925,8 @@ echo 	$(INSTALL_DATA) cgnslib.h $(INCLUDEDIR)\cgnslib.h>> Makefile
 echo 	$(INSTALL_DATA) cgnslib_f.h $(INCLUDEDIR)\cgnslib_f.h>> Makefile
 echo 	$(INSTALL_DATA) cgnswin_f.h $(INCLUDEDIR)\cgnswin_f.h>> Makefile
 echo 	$(INSTALL_DATA) cgns_io.h $(INCLUDEDIR)\cgns_io.h>> Makefile
-if not "%parallel%" == "" echo 	$(INSTALL_DATA) pcgnslib.h $(INCLUDEDIR)\pcgnslib,h>> Makefile
+if not "%parallel%" == "" echo 	$(INSTALL_DATA) pcgnslib.h $(INCLUDEDIR)\pcgnslib.h>> Makefile
+echo 	$(INSTALL_DATA) cgnsBuild.defs $(INCLUDEDIR)\cgnsBuild.defs>> Makefile
 echo 	$(INSTALL_DATA) $(CGNSLIB) $(LIBDIR)\$(INSTLIB)>> Makefile
 if %target% == dll echo 	$(INSTALL_DATA) $(CGNSDLL) $(LIBDIR)\$(INSTDLL)>> Makefile
 echo.>> Makefile
@@ -1901,9 +1951,10 @@ echo.>> Makefile
 echo $(INCLUDEDIR)\adfh : $(INCLUDEDIR)>> Makefile
 echo 	-$(MKDIR) $(INCLUDEDIR)\adfh>> Makefile
 echo.>> Makefile
+echo allinstall : install-all>> Makefile
 echo install-all : install>> Makefile
 echo 	-cd tools ^&^& %make% install>> Makefile
-echo 	-cd cgnstools ^&^& %make% install>> Makefile
+if "%cgnstools%" == "cgnstools" echo 	-cd cgnstools ^&^& %make% install>> Makefile
 echo.>> Makefile
 echo #---------- mid-level library>> Makefile
 echo.>> Makefile
@@ -1977,9 +2028,10 @@ echo #---------->> tools\Makefile
 echo.>> tools\Makefile
 echo ALL =	cgnslist$(EXE) \>> tools\Makefile
 echo 	cgnscheck$(EXE) \>> tools\Makefile
-echo 	cgnsversion$(EXE) \>> tools\Makefile
 echo 	cgnsconvert$(EXE) \>> tools\Makefile
-echo 	cgnsdiff$(EXE)>> tools\Makefile
+echo 	cgnscompress$(EXE) \>> tools\Makefile
+echo 	cgnsdiff$(EXE) \>> tools\Makefile
+echo 	cgnsnames$(EXE)>> tools\Makefile
 echo.>> tools\Makefile
 echo all : $(ALL)>> tools\Makefile
 echo.>> tools\Makefile
@@ -1999,13 +2051,6 @@ echo 	$(CC) $(COPTS) /c cgnscheck.c>> tools\Makefile
 echo.>> tools\Makefile
 echo #---------->> tools\Makefile
 echo.>> tools\Makefile
-echo cgnsversion$(EXE) : cgnsversion.$(O) getargs.$(O) $(CGNSLIB)>> tools\Makefile
-echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsversion.$(O) getargs.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
-echo cgnsversion.$(O) : cgnsversion.c getargs.h>> tools\Makefile
-echo 	$(CC) $(COPTS) /c cgnsversion.c>> tools\Makefile
-echo.>> tools\Makefile
-echo #---------->> tools\Makefile
-echo.>> tools\Makefile
 echo cgnsconvert$(EXE) : cgnsconvert.$(O) getargs.$(O) $(CGNSLIB)>> tools\Makefile
 echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsconvert.$(O) getargs.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
 echo cgnsconvert.$(O) : cgnsconvert.c getargs.h>> tools\Makefile
@@ -2013,10 +2058,24 @@ echo 	$(CC) $(COPTS) /c cgnsconvert.c>> tools\Makefile
 echo.>> tools\Makefile
 echo #---------->> tools\Makefile
 echo.>> tools\Makefile
+echo cgnscompress$(EXE) : cgnscompress.$(O) $(CGNSLIB)>> tools\Makefile
+echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnscompress.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
+echo cgnscompress.$(O) : cgnscompress.c>> tools\Makefile
+echo 	$(CC) $(COPTS) /c cgnscompress.c>> tools\Makefile
+echo.>> tools\Makefile
+echo #---------->> tools\Makefile
+echo.>> tools\Makefile
 echo cgnsdiff$(EXE) : cgnsdiff.$(O) getargs.$(O) $(CGNSLIB)>> tools\Makefile
 echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsdiff.$(O) getargs.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
 echo cgnsdiff.$(O) : cgnsdiff.c getargs.h>> tools\Makefile
 echo 	$(CC) $(COPTS) /c cgnsdiff.c>> tools\Makefile
+echo.>> tools\Makefile
+echo #---------->> tools\Makefile
+echo.>> tools\Makefile
+echo cgnsnames$(EXE) : cgnsnames.$(O) cgnames.$(O) $(CGNSLIB)>> tools\Makefile
+echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsnames.$(O) cgnames.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
+echo cgnsnames.$(O) : cgnsnames.c cgnames.h>> tools\Makefile
+echo 	$(CC) $(COPTS) /c cgnsnames.c>> tools\Makefile
 echo.>> tools\Makefile
 echo #---------->> tools\Makefile
 echo.>> tools\Makefile
@@ -2032,9 +2091,10 @@ echo.>> tools\Makefile
 echo install : all $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnslist$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnscheck$(EXE) $(BINDIR)>> tools\Makefile
-echo 	$(INSTALL_PROG) cgnsversion$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsconvert$(EXE) $(BINDIR)>> tools\Makefile
+echo 	$(INSTALL_PROG) cgnscompress$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsdiff$(EXE) $(BINDIR)>> tools\Makefile
+echo 	$(INSTALL_PROG) cgnsnames$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) adf2hdf.bat $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) hdf2adf.bat $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsupdate.bat $(BINDIR)>> tools\Makefile
@@ -2072,7 +2132,7 @@ echo.>> tests\Makefile
 echo #---------->> tests\Makefile
 echo.>> tests\Makefile
 echo CALL = \>> tests\Makefile
-echo	elemtest$(EXE) \>> tests\Makefile
+echo 	elemtest$(EXE) \>> tests\Makefile
 echo 	test_exts$(EXE) \>> tests\Makefile
 echo 	test_partial$(EXE) \>> tests\Makefile
 echo 	test_goto$(EXE) \>> tests\Makefile
@@ -2108,23 +2168,26 @@ echo.>> tests\Makefile
 echo #---------->> tests\Makefile
 echo.>> tests\Makefile
 echo test : $(TESTS)>> tests\Makefile
-echo 	elemtest$(EXE)>> tests\Makefile
-echo 	test_exts$(EXE)>> tests\Makefile
-echo 	test_partial$(EXE)>> tests\Makefile
-echo 	test_goto$(EXE)>> tests\Makefile
-echo 	test_ver31$(EXE)>> tests\Makefile
-echo 	write_array$(EXE)>> tests\Makefile
-echo 	write_links$(EXE)>> tests\Makefile
-echo 	write_bcdata$(EXE)>> tests\Makefile
-echo 	write_test$(EXE)>> tests\Makefile
-echo 	write_zones$(EXE)>> tests\Makefile
-echo 	write_rind$(EXE)>> tests\Makefile
+echo 	@echo>> tests\Makefile
+echo 	@echo === running tests ===>> tests\Makefile
+echo 	-@runtest.bat elemtest$(EXE)>> tests\Makefile
+echo 	-@runtest.bat test_exts$(EXE)>> tests\Makefile
+echo 	-@runtest.bat test_partial$(EXE)>> tests\Makefile
+echo 	-@runtest.bat test_goto$(EXE)>> tests\Makefile
+echo 	-@runtest.bat test_ver31$(EXE)>> tests\Makefile
+echo 	-@runtest.bat write_array$(EXE)>> tests\Makefile
+echo 	-@runtest.bat write_links$(EXE)>> tests\Makefile
+echo 	-@runtest.bat write_bcdata$(EXE)>> tests\Makefile
+echo 	-@runtest.bat write_test$(EXE)>> tests\Makefile
+echo 	-@runtest.bat write_zones$(EXE)>> tests\Makefile
+echo 	-@runtest.bat write_rind$(EXE)>> tests\Makefile
 if not "%f2c%" == "none" (
-  echo 	cgwrite$^(EXE^)>> tests\Makefile
-  echo 	cgread$^(EXE^)>> tests\Makefile
-  echo 	cgzconn$^(EXE^)>> tests\Makefile
-  echo 	cgsubreg$^(EXE^)>> tests\Makefile
+  echo 	-@runtest.bat cgwrite$^(EXE^)>> tests\Makefile
+  echo 	-@runtest.bat cgread$^(EXE^)>> tests\Makefile
+  echo 	-@runtest.bat cgzconn$^(EXE^)>> tests\Makefile
+  echo 	-@runtest.bat cgsubreg$^(EXE^)>> tests\Makefile
 )
+echo 	@echo === finished ===>> tests\Makefile
 echo.>> tests\Makefile
 echo #---------->> tests\Makefile
 echo.>> tests\Makefile
@@ -2291,16 +2354,19 @@ echo.>> ptests\Makefile
 echo #---------->> ptests\Makefile
 echo.>> ptests\Makefile
 echo test : $(TESTS)>> ptests\Makefile
-echo 	$(MPIEXEC) -np 2 ctest$(EXE)>> ptests\Makefile
-echo 	$(MPIEXEC) -np 2 benchmark$(EXE)>> ptests\Makefile
-echo 	$(MPIEXEC) -np 2 open_close$(EXE)>> ptests\Makefile
-echo 	$(MPIEXEC) -np 2 test_base$(EXE)>> ptests\Makefile
-echo 	$(MPIEXEC) -np 2 test_unstructured$(EXE)>> ptests\Makefile
-echo 	$(MPIEXEC) -np 2 test_zone$(EXE)>> ptests\Makefile
-echo 	$(MPIEXEC) -np 2 thesis_benchmark$(EXE)>> ptests\Makefile
+echo 	@echo>> ptests\Makefile
+echo 	@echo === running parallel tests ===>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) -np 2 ctest$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) -np 2 benchmark$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) -np 2 open_close$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) -np 2 test_base$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) -np 2 test_unstructured$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) -np 2 test_zone$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) -np 2 thesis_benchmark$(EXE)>> ptests\Makefile
 if not "%f2c%" == "none" (
-  echo 	$^(MPIEXEC^) -np 2 ftest$^(EXE^)>> ptests\Makefile
+  echo 	-@runptest.bat $^(MPIEXEC^) -np 2 ftest$^(EXE^)>> ptests\Makefile
 )
+echo 	@echo === finished ===>> ptests\Makefile
 echo.>> ptests\Makefile
 echo #---------->> ptests\Makefile
 echo.>> ptests\Makefile
@@ -2350,7 +2416,7 @@ echo.>> ptests\Makefile
 echo allclean : clean>> ptests\Makefile
 echo 	-$(RM) *.exe>> ptests\Makefile
 echo 	-$(RM) *.pdb *.ilk>> ptests\Makefile
-echo 	-$(RM) *.cgns>> ptests\Makefile
+echo 	-$(RM) *.cgns *.cgio>> ptests\Makefile
 
 rem ----- create cgsntools\Makefile
 
@@ -2363,19 +2429,18 @@ echo.>> cgnstools\Makefile
 echo DOMAKE = nmake /nologo /f Makefile.win>> cgnstools\Makefile
 echo !include ..\make.defs>> cgnstools\Makefile
 echo.>> cgnstools\Makefile
-echo defaults : cgnsview cgnsplot tools utilities>> cgnstools\Makefile
-echo install : install-config install-cgnsview install-cgnsplot \>> cgnstools\Makefile
-echo 	install-tools install-utilities>> cgnstools\Makefile
+echo defaults : cgnsview cgnscalc cgnsplot utilities>> cgnstools\Makefile
+echo install : install-config install-cgnsview install-cgnscalc \>> cgnstools\Makefile
+echo 	install-cgnsplot install-utilities>> cgnstools\Makefile
 echo.>> cgnstools\Makefile
-echo all : cgnsview cgnscalc cgnsplot tools utilities>> cgnstools\Makefile
+echo all : cgnsview cgnscalc cgnsplot utilities>> cgnstools\Makefile
 echo install-all : install-config install-cgnsview install-cgnscalc \>> cgnstools\Makefile
-echo 	install-cgnsplot install-tools install-utilities>> cgnstools\Makefile
+echo 	install-cgnsplot install-utilities>> cgnstools\Makefile
 echo.>> cgnstools\Makefile
 echo clean :>> cgnstools\Makefile
 echo 	cd cgnsview ^&^& $(DOMAKE) clean>> cgnstools\Makefile
 echo 	cd cgnscalc ^&^& $(DOMAKE) clean>> cgnstools\Makefile
 echo 	cd cgnsplot ^&^& $(DOMAKE) clean>> cgnstools\Makefile
-echo 	cd tools ^&^& $(DOMAKE) clean>> cgnstools\Makefile
 echo 	cd utilities ^&^& $(DOMAKE) clean>> cgnstools\Makefile
 echo 	cd calclib ^&^& $(DOMAKE) clean>> cgnstools\Makefile
 echo 	cd tkogl ^&^& $(DOMAKE) clean>> cgnstools\Makefile
@@ -2386,7 +2451,6 @@ echo.>> cgnstools\Makefile
 echo cgnsview  : prog-cgnsview>> cgnstools\Makefile
 echo cgnscalc  : prog-cgnscalc>> cgnstools\Makefile
 echo cgnsplot  : prog-cgnsplot>> cgnstools\Makefile
-echo tools     : prog-tools>> cgnstools\Makefile
 echo utilities : prog-utilities>> cgnstools\Makefile
 echo.>> cgnstools\Makefile
 echo prog-cgnsview :>> cgnstools\Makefile
@@ -2397,9 +2461,6 @@ echo 	cd cgnscalc ^&^& $(DOMAKE)>> cgnstools\Makefile
 echo.>> cgnstools\Makefile
 echo prog-cgnsplot : lib-tkogl>> cgnstools\Makefile
 echo 	cd cgnsplot ^&^& $(DOMAKE)>> cgnstools\Makefile
-echo.>> cgnstools\Makefile
-echo prog-tools :>> cgnstools\Makefile
-echo 	cd tools ^&^& $(DOMAKE)>> cgnstools\Makefile
 echo.>> cgnstools\Makefile
 echo prog-utilities : lib-calclib>> cgnstools\Makefile
 echo 	cd utilities ^&^& $(DOMAKE)>> cgnstools\Makefile
@@ -2427,9 +2488,6 @@ echo 	cd cgnscalc ^&^& $(DOMAKE) install>> cgnstools\Makefile
 echo.>> cgnstools\Makefile
 echo install-cgnsplot : lib-tkogl>> cgnstools\Makefile
 echo 	cd cgnsplot ^&^& $(DOMAKE) install>> cgnstools\Makefile
-echo.>> cgnstools\Makefile
-echo install-tools :>> cgnstools\Makefile
-echo 	cd tools ^&^& $(DOMAKE) install>> cgnstools\Makefile
 echo.>> cgnstools\Makefile
 echo install-utilities : lib-calclib>> cgnstools\Makefile
 echo 	cd utilities ^&^& $(DOMAKE) install>> cgnstools\Makefile
@@ -2498,6 +2556,17 @@ echo guilibs	= %mslib% oldnames.lib kernel32.lib advapi32.lib \>> cgnstools\make
 echo 	user32.lib gdi32.lib comdlg32.lib winspool.lib>> cgnstools\make.win
 echo.>> cgnstools\make.win
 echo ogllibs = opengl32.lib glu32.lib>> cgnstools\make.win
+if not "%winhtml%" == "" (
+echo.>> cgnstools\make.win
+echo #---------------------------------------------------------->> cgnstools\make.win
+echo # build tools with HTMLhelp>> cgnstools\make.win
+echo #---------------------------------------------------------->> cgnstools\make.win
+echo.>> cgnstools\make.win
+echo WINHTML_OPT = /DUSE_HTMLHELP>> cgnstools\make.win
+echo WINHTML_OBJ = winhtml.obj>> cgnstools\make.win
+echo WINHTML_INC = /I%winhtml%\include>> cgnstools\make.win
+echo WINHTML_LIB = %winhtml%\lib\htmlhelp.lib>> cgnstools\make.win
+)
 
 rem ----- create cgconfig.bat
 

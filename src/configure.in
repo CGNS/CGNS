@@ -125,6 +125,8 @@ FEOUT="-o \$(SPACE)"
 # check if debug requested
 #--------------------------------------------------------------------------
 
+BUILDDEBUG=0
+
 AC_MSG_CHECKING([if debugging is enabled])
 AC_ARG_ENABLE(debug,
   [  --enable-debug[=OPTS]   build for debugging [default=no]],,
@@ -140,6 +142,7 @@ else
   CFLAGS="$opt $CFLAGS"
   FFLAGS="$opt $FFLAGS"
   debug=yes
+  BUILDDEBUG=1
 fi
 AC_MSG_RESULT($debug)
 
@@ -374,9 +377,11 @@ test -z "$withfortran" && withfortran=yes
 AC_MSG_RESULT($withfortran)
 
 if test $withfortran = no; then
+  BUILDFORTRAN=0
   fortran=no
   F2CFLAGS=
 else
+  BUILDFORTRAN=1
   fortran=yes
   if test $withfortran = yes; then
     need_f2c=yes
@@ -617,8 +622,8 @@ if test "$withhdf5" = "yes"; then
 
   AC_MSG_CHECKING([if using zlib])
   AC_ARG_WITH(zlib,
-    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=yes]],
-    withzlib=$withval,withzlib="")
+    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=no]],
+    withzlib=$withval,withzlib="no")
   if test "$withzlib" = "no"; then
     AC_MSG_RESULT(no)
   else
@@ -791,6 +796,7 @@ fi
 # build parallel code ?
 #-----------------------------------------------------------------------
 
+BUILDPARALLEL=0
 parallel=no
 
 if test "$withmpi" = "yes"; then
@@ -799,6 +805,7 @@ if test "$withmpi" = "yes"; then
     [  --enable-parallel       enable parallel IO support [default=no]],,
     enableval="no")
   test ! "x$enableval" = "xno" && enableval=yes
+  BUILDPARALLEL=1
   parallel=$enableval
   AC_MSG_RESULT($parallel)
 fi
@@ -862,6 +869,7 @@ fi
 #---------------------------------------------------------------------------
 
 CGNSTOOLS=""
+INSTALLCGNSTOOLS=""
 X11INCS=""
 X11LIBS=""
 TKINCS=""
@@ -873,19 +881,21 @@ TKOGLOPTS=""
 TCL_LIBRARY_SPEC=""
 TK_LIBRARY_SPEC=""
 LIBRARY_PATH_SPEC=""
-PROGLIST="cgnsview tools utilities"
-INSTLIST="install-cgnsview install-tools install-utilities"
+PROGLIST="cgnsview cgnscalc utilities"
+INSTLIST="install-cgnsview install-cgnscalc install-utilities"
 PLOTOPTS=""
 CALCOPTS=""
 
 AC_MSG_CHECKING([if building CGNStools])
 AC_ARG_ENABLE(cgnstools,
-  [  --enable-cgnstools      build CGNStools [default=yes]],,
-  enableval=yes)
+  [  --enable-cgnstools      build CGNStools [default=no]],,
+  enableval=no)
+test ! "$enableval" = "no" && enableval=yes
 AC_MSG_RESULT($enableval)
 
 if test "$enableval" = "yes" ; then
   CGNSTOOLS=cgnstools
+  INSTALLCGNSTOOLS=install-cgnstools
 
 #---------------------------------------------------------------------------
 # get path to X11 headers and libraries
@@ -1216,11 +1226,18 @@ else
   test $BUILD64BIT -ne 0 && FALL64=\$\(FALL64\)
 fi
 
+CGNSLIB=libcgns.$EXT_LIB
+test "$LIBS" = "-lm -lm " && LIBS=-lm
+
 AC_PROG_MAKE_SET
 
+AC_SUBST(BUILDDEBUG)
 AC_SUBST(BUILDLEGACY)
-AC_SUBST(BUILD64BIT)
 AC_SUBST(BUILDSCOPE)
+AC_SUBST(BUILD64BIT)
+AC_SUBST(BUILDFORTRAN)
+AC_SUBST(BUILDPARALLEL)
+
 AC_SUBST(CGNSTOOLS)
 AC_SUBST(CGLONGT)
 AC_SUBST(CGFSIZET)
@@ -1241,9 +1258,7 @@ AC_SUBST(ZLIBLIB)
 AC_SUBST(SZIPLIB)
 
 AC_SUBST(MPIINC)
-AC_SUBST(MPIOPTS)
 AC_SUBST(MPILIBS)
-AC_SUBST(MPICC)
 AC_SUBST(MPIEXEC)
 
 AC_SUBST(SYSCFLAGS)
@@ -1267,13 +1282,13 @@ AC_SUBST(RANLIB)
 
 AC_SUBST(AR_LIB)
 AC_SUBST(RAN_LIB)
-AC_SUBST(EXT_LIB)
 
 AC_SUBST(LIBDIR)
 AC_SUBST(INCLUDEDIR)
 AC_SUBST(BINDIR)
 AC_SUBST(INSTALLADF)
 AC_SUBST(INSTALLPCGNS)
+AC_SUBST(INSTALLCGNSTOOLS)
 AC_SUBST(PTESTS)
 
 AC_SUBST(FALL)
@@ -1294,6 +1309,7 @@ AC_SUBST(PROGLIST)
 AC_SUBST(INSTLIST)
 
 AC_SUBST(CGNSDIR)
+AC_SUBST(CGNSLIB)
 
 AC_SUBST(BIN_INSTALL_DIR)
 AC_SUBST(EXE_INSTALL_DIR)
@@ -1322,6 +1338,6 @@ AC_SUBST(TK_LIBRARY_SPEC)
 AC_SUBST(LIBRARY_PATH_SPEC)
 
 AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnslib_f.h Makefile make.defs \
-  tests/Makefile tools/Makefile cgnstools/Makefile cgnstools/make.defs \
-  cgnstools/cgconfig ptests/Makefile)
+  cgnsBuild.defs tests/Makefile tools/Makefile cgnstools/Makefile \
+  cgnstools/make.defs cgnstools/cgconfig ptests/Makefile)
 

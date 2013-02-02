@@ -553,7 +553,7 @@ void cgio_cleanup ()
 int cgio_check_file (const char *filename, int *file_type)
 {
     int n;
-    char buf[256];
+    char buf[32];
     FILE *fp;
     static char *HDF5sig = "\211HDF\r\n\032\n";
     struct stat st;
@@ -690,6 +690,7 @@ int cgio_open_file (const char *filename, int file_mode,
         case CGIO_MODE_WRITE:
         case 'w':
         case 'W':
+            UNLINK(filename);
             type = file_type;
             file_mode = CGIO_MODE_WRITE;
             fmode = "NEW";

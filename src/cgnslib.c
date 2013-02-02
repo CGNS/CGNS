@@ -90,7 +90,7 @@ int n_cgns_files = 0;
 cgns_posit *posit = 0;
 int posit_file, posit_base, posit_zone;
 int CGNSLibVersion=CGNS_VERSION;/* Version of the CGNSLibrary*1000  */
-int cgns_compress = -1;
+int cgns_compress = -0;
 int cgns_filetype = CG_FILE_NONE;
 
 extern void (*cgns_error_handler)(int, char *);
@@ -238,13 +238,14 @@ int n_open = 0;
 int cgns_file_size = 0;
 int file_number_offset = 0;
 int VersionList[] = {3200,
-                     3130, 3110, 3100,
+                     3140, 3130, 3110, 3100,
                      3080, 3000,
                      2550, 2540, 2530, 2520, 2510, 2500,
                      2460, 2420, 2400,
                      2300, 2200, 2100, 2000, 1270, 1200, 1100, 1050};
 #define nVersions (sizeof(VersionList)/sizeof(int))
 
+#ifdef DEBUG_HDF5_OBJECTS_CLOSE
 void objlist_status(char *tag)
 {
   int n,sname;
@@ -269,7 +270,7 @@ void objlist_status(char *tag)
   H5Fget_obj_ids(H5F_OBJ_ALL,H5F_OBJ_ALL,1024,idlist);
   for (n=0;n<1024;n++)
   {
-    if (idlist[n]!=-1) 
+    if (idlist[n]!=-1)
     {
       if (H5Iis_valid(idlist[n]))
       {
@@ -286,6 +287,7 @@ void objlist_status(char *tag)
     }
   }
 }
+#endif
 
 /***********************************************************************
  * library functions
@@ -315,7 +317,7 @@ int cg_is_cgns(const char *filename, int *file_type)
 
 int cg_open(const char * filename, int mode, int *file_number)
 {
-    int not_found, cgio;
+    int cgio;
     cgsize_t dim_vals;
     double dummy_id;
     float FileVersion;
@@ -325,32 +327,17 @@ int cg_open(const char * filename, int mode, int *file_number)
         cgns_file_size, cgmemnow(), cgmemmax());
 #endif
 
-    /* determine accessibility of a file :
-       If the requested access is permitted, a value of 0 is returned. */
-
-    not_found = ACCESS(filename, F_OK) ;
-
     /* check file mode */
     switch(mode) {
+        case CG_MODE_MODIFY:
         case CG_MODE_READ:
-            if (not_found) {
+            if (ACCESS(filename, F_OK)) {
                 cgi_error("Error opening file: '%s' not found!", filename);
                 return CG_ERROR;
             }
             break;
         case CG_MODE_WRITE:
-            if (!not_found) {
-                UNLINK(filename);
-                /*cgi_error("Error opening file: '%s' already exists!", filename);
-                        return CG_ERROR;
-                */
-            }
-            break;
-        case CG_MODE_MODIFY:
-            if (not_found) {
-                cgi_error("Error opening file: '%s' not found!", filename);
-                return CG_ERROR;
-            }
+             /* unlink is now done in cgio_open_file */
             break;
         default:
             cgi_error("Unknown opening file mode: %d ??",mode);
@@ -576,7 +563,7 @@ int cg_close(int file_number)
 #endif
 
     if (cgns_compress && cg->mode == CG_MODE_MODIFY &&
-       (cg->deleted || cgns_compress == 1)) {
+       (cg->deleted >= cgns_compress || cgns_compress < 0)) {
         if (cgio_compress_file (cg->cgio, cg->filename)) {
             cg_io_error("cgio_compress_file");
             return CG_ERROR;
@@ -4390,7 +4377,7 @@ int cg_field_write(int file_number, int B, int Z, int S, CGNS_ENUMT(DataType_t) 
     memset(field, 0, sizeof(cgns_array));
     strcpy(field->data_type, cgi_adf_datatype(type));
     strcpy(field->name,fieldname);
-
+    
     if (sol->ptset == NULL) {
         field->data_dim = zone->index_dim;
         if (cgi_datasize(zone->index_dim, zone->nijk, sol->location,
@@ -4692,7 +4679,7 @@ static cgns_subreg *cg_subreg_write(int fn, int B, int Z, const char *name,
     memset(subreg, 0, sizeof(cgns_subreg));
     strcpy(subreg->name, name);
     subreg->reg_dim = dimension;
-
+    
     return subreg;
 }
 
@@ -4721,7 +4708,7 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *name,
 
     subreg = cg_subreg_write(fn, B, Z, name, dimension, S);
     if (subreg == NULL) return CG_ERROR;
-
+    
     subreg->location = location;
     subreg->ptset = CGNS_NEW(cgns_ptset, 1);
     subreg->ptset->type = ptset_type;

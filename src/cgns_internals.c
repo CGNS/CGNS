@@ -2274,7 +2274,8 @@ int cgi_read_boco(cgns_boco *boco)
         return 1;
     }
 
-    /* fix ElementList/Range */
+#ifndef CG_ALLOW_ELEMENTLIST_RANGE
+    /* fix ElementList/Range - no longer allowed (CPEX 0031) */
     if (boco->ptset->type == CGNS_ENUMV(ElementList) ||
         boco->ptset->type == CGNS_ENUMV(ElementRange)) {
         modified++;
@@ -2293,7 +2294,7 @@ int cgi_read_boco(cgns_boco *boco)
         else boco->location = CGNS_ENUMV(FaceCenter);
 #endif
     }
-    
+
     /* fix GridLocation */
 #ifndef CG_ALLOW_BC_CELL_CENTER
     if (boco->location == CGNS_ENUMV(CellCenter)) {
@@ -2304,6 +2305,7 @@ int cgi_read_boco(cgns_boco *boco)
             "changed to %s", GridLocationName[boco->location]);
         modified++;
     }
+#endif
 #endif
 
      /* FamilyName_t */
@@ -5313,7 +5315,9 @@ int cgi_datasize(int Idim, cgsize_t *CurrentDim,
         for (j=0; j<Idim; j++)
             DataSize[j] = CurrentDim[j] + rind_planes[2*j] + rind_planes[2*j+1];
 
-    } else if (location==CGNS_ENUMV( CellCenter )) {
+    } else if (location==CGNS_ENUMV(CellCenter) ||
+              (location==CGNS_ENUMV(FaceCenter) && Cdim==2) ||
+              (location==CGNS_ENUMV(EdgeCenter) && Cdim==1)) {
         for (j=0; j<Idim; j++)
             DataSize[j] = CurrentDim[j+Idim] + rind_planes[2*j] + rind_planes[2*j+1];
 
