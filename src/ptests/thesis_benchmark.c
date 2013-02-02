@@ -37,7 +37,7 @@ double* x;
 double* y;
 double* z;
 
-int* e;
+cgsize_t* e;
 
 double* u;
 double* v;
@@ -84,7 +84,7 @@ int initialize(int* argc, char*** argv) {
 
 	read_inputs(argc,argv);
 
-	N = (data_size*1024*1024)/((double) sizeof(double));
+	N = (int)((data_size*1024*1024)/((double) sizeof(double)));
 	pc = comm_size;
 	zc = (pc*zpp)/ppz;
 	Nl = N/comm_size/zpp;
@@ -101,7 +101,7 @@ int initialize(int* argc, char*** argv) {
 	y = malloc(Nl*sizeof(double));
 	z = malloc(Nl*sizeof(double));
 
-	e = malloc(Nl*sizeof(int));
+	e = malloc(Nl*sizeof(cgsize_t));
 
 	u = malloc(Nl*sizeof(double));
 	v = malloc(Nl*sizeof(double));

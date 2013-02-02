@@ -28,16 +28,17 @@ all : $(ALL)
 #----------
 
 test : $(TESTS)
-	@echo "=== running tests ==="; \
+	@echo " "; \
+	echo "=== running parallel tests ==="; \
 	 for x in $(TESTS) ; do \
-	   echo "$(MPIEXEC) -np 2 $$x"; \
 	   if `$(MPIEXEC) -np 2 $$x >/dev/null 2>&1` ; then \
-	     echo "  $$x passed"; \
+	     echo "  $$x ... passed"; \
 	   else \
-	     echo "  $$x failed"; \
+	     echo "  $$x ... *** FAILED ***"; \
 	   fi; \
 	 done; \
-	 echo "=== finished ===";
+	 echo "=== finished ==="; \
+	echo " ";
 
 #----------
 
