@@ -73,11 +73,11 @@ proc export_default {w name cmd} {
   }
 }
 
-proc export_input {w {use_loc 0} {labw ""}} {
+proc export_input {w {base 0} {zone 0} {sol 0} {labw ""}} {
   global Export Font
 
   if {$labw == ""} {
-    if {$use_loc} {
+    if {$sol} {
       set labw 12
     } else {
       set labw 10
@@ -97,8 +97,8 @@ proc export_input {w {use_loc 0} {labw ""}} {
   button $f.but -text Browse -pady 0 -command "export_browse $w cgnsfile"
   pack $f.but -side right -fill y
 
-  if {$use_loc} {
-    set f [frame $input.num]
+  if {$base} {
+    set f [frame $input.base]
     pack $f -side top -anchor w
     label $f.lab -text "Base Index" -width $labw -anchor w
     entry $f.ent -textvariable Export(basenum) -width 10
@@ -107,18 +107,30 @@ proc export_input {w {use_loc 0} {labw ""}} {
       -command "export_state basenum $f.ent"
     pack $f.lab $f.ent $f.but -side left
     export_state basenum $f.ent
+  }
 
-    if {$use_loc > 0} {
-      set f [frame $input.sol]
-      pack $f -side top -anchor w
-      label $f.lab -text "Solution Index" -width $labw -anchor w
-      entry $f.ent -textvariable Export(solnum) -width 10
-      checkbutton $f.but -text default \
-        -variable Export(solnum,flag) -onvalue 1 -offvalue 0 \
-        -command "export_state solnum $f.ent"
-      pack $f.lab $f.ent $f.but -side left
-      export_state solnum $f.ent
-    }
+  if {$zone} {
+    set f [frame $input.zone]
+    pack $f -side top -anchor w
+    label $f.lab -text "Zone Index" -width $labw -anchor w
+    entry $f.ent -textvariable Export(zonenum) -width 10
+    checkbutton $f.but -text default \
+      -variable Export(zonenum,flag) -onvalue 1 -offvalue 0 \
+      -command "export_state zonenum $f.ent"
+    pack $f.lab $f.ent $f.but -side left
+    export_state zonenum $f.ent
+  }
+
+  if {$sol} {
+    set f [frame $input.sol]
+    pack $f -side top -anchor w
+    label $f.lab -text "Solution Index" -width $labw -anchor w
+    entry $f.ent -textvariable Export(solnum) -width 10
+    checkbutton $f.but -text default \
+      -variable Export(solnum,flag) -onvalue 1 -offvalue 0 \
+      -command "export_state solnum $f.ent"
+    pack $f.lab $f.ent $f.but -side left
+    export_state solnum $f.ent
   }
 }
 

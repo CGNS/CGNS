@@ -82,7 +82,7 @@ proc tecplot_export {w name exe} {
   wm transient $w .
   wm protocol $w WM_DELETE_WINDOW {set Export(done) 0}
 
-  export_input $w 1
+  export_input $w 1 0 1
   export_output $w tecfile Tecplot {.dat .plt .tec}
 
   FrameCreate $w.opts -text "Options" -font $Font(bold)
