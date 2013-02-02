@@ -1996,7 +1996,9 @@ echo ALL =	cgnslist$(EXE) \>> tools\Makefile
 echo 	cgnscheck$(EXE) \>> tools\Makefile
 echo 	cgnsversion$(EXE) \>> tools\Makefile
 echo 	cgnsconvert$(EXE) \>> tools\Makefile
-echo 	cgnsdiff$(EXE)>> tools\Makefile
+echo 	cgnscompress$(EXE) \>> tools\Makefile
+echo 	cgnsdiff$(EXE) \>> tools\Makefile
+echo 	cgnsnames$(EXE)>> tools\Makefile
 echo.>> tools\Makefile
 echo all : $(ALL)>> tools\Makefile
 echo.>> tools\Makefile
@@ -2030,10 +2032,24 @@ echo 	$(CC) $(COPTS) /c cgnsconvert.c>> tools\Makefile
 echo.>> tools\Makefile
 echo #---------->> tools\Makefile
 echo.>> tools\Makefile
+echo cgnscompress$(EXE) : cgnscompress.$(O) $(CGNSLIB)>> tools\Makefile
+echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnscompress.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
+echo cgnscompress.$(O) : cgnscompress.c>> tools\Makefile
+echo 	$(CC) $(COPTS) /c cgnscompress.c>> tools\Makefile
+echo.>> tools\Makefile
+echo #---------->> tools\Makefile
+echo.>> tools\Makefile
 echo cgnsdiff$(EXE) : cgnsdiff.$(O) getargs.$(O) $(CGNSLIB)>> tools\Makefile
 echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsdiff.$(O) getargs.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
 echo cgnsdiff.$(O) : cgnsdiff.c getargs.h>> tools\Makefile
 echo 	$(CC) $(COPTS) /c cgnsdiff.c>> tools\Makefile
+echo.>> tools\Makefile
+echo #---------->> tools\Makefile
+echo.>> tools\Makefile
+echo cgnsnames$(EXE) : cgnsnames.$(O) cgnames.$(O) $(CGNSLIB)>> tools\Makefile
+echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsnames.$(O) cgnames.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
+echo cgnsnames.$(O) : cgnsnames.c cgnames.h>> tools\Makefile
+echo 	$(CC) $(COPTS) /c cgnsnames.c>> tools\Makefile
 echo.>> tools\Makefile
 echo #---------->> tools\Makefile
 echo.>> tools\Makefile
@@ -2051,7 +2067,9 @@ echo 	$(INSTALL_PROG) cgnslist$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnscheck$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsversion$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsconvert$(EXE) $(BINDIR)>> tools\Makefile
+echo 	$(INSTALL_PROG) cgnscompress$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsdiff$(EXE) $(BINDIR)>> tools\Makefile
+echo 	$(INSTALL_PROG) cgnsnames$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) adf2hdf.bat $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) hdf2adf.bat $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsupdate.bat $(BINDIR)>> tools\Makefile

@@ -14,7 +14,9 @@ ALL = \
 	cgnscheck$(EXE) \
 	cgnsversion$(EXE) \
 	cgnsconvert$(EXE) \
-	cgnsdiff$(EXE)
+	cgnscompress$(EXE) \
+	cgnsdiff$(EXE) \
+	cgnsnames$(EXE)
 
 all : $(ALL)
 
@@ -48,10 +50,24 @@ cgnsconvert.$(O) : cgnsconvert.c getargs.h
 
 #----------
 
+cgnscompress$(EXE) : cgnscompress.$(O) $(CGNSLIB)
+	$(CC) $(CFLAGS) $(CEOUT)$@ cgnscompress.$(O) $(LDLIBS) $(CLIBS)
+cgnscompress.$(O) : cgnscompress.c
+	$(CC) $(COPTS) -c cgnscompress.c
+
+#----------
+
 cgnsdiff$(EXE) : cgnsdiff.$(O) getargs.$(O) $(CGNSLIB)
 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsdiff.$(O) getargs.$(O) $(LDLIBS) $(CLIBS)
 cgnsdiff.$(O) : cgnsdiff.c getargs.h
 	$(CC) $(COPTS) -c cgnsdiff.c
+
+#----------
+
+cgnsnames$(EXE) : cgnsnames.$(O) cgnames.$(O)
+	$(CC) $(COPTS) $(CEOUT)$@ cgnsnames.$(O) cgnames.$(O) $(CLIBS)
+cgnsnames.$(O) : cgnsnames.c cgnames.h
+	$(CC) $(COPTS) -c cgnsnames.c
 
 #----------
 

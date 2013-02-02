@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "cgnslib.h"
 #include "cgnames.h"
 
 static int print_identifier (char *name, int nexps, float *exps, void *user)

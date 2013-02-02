@@ -28,8 +28,8 @@ if (NOT WIN32)
 endif (NOT WIN32)
 
 # Set the files needed by each tool
-set(cgnames_FILES
-	cgnames_standalone.c
+set(cgnsnames_FILES
+	cgnsnames.c
 	cgnames.c)
 set(cgnscheck_FILES
 	cgnscheck.c
@@ -45,24 +45,28 @@ set(cgnsdiff_FILES
 set(cgnslist_FILES
 	cgnslist.c
 	getargs.c)
+set(cgnscompress_FILES
+	cgnscompress.c)
 set(cgnsversion_FILES
 	cgnsversion.c
 	getargs.c)
 
 # Build each tool
-add_executable( cgnames     ${cgnames_FILES}     )
-add_executable( cgnscheck   ${cgnscheck_FILES}   )
-add_executable( cgnsconvert ${cgnsconvert_FILES} )
-add_executable( cgnsdiff    ${cgnsdiff_FILES}    )
-add_executable( cgnslist    ${cgnslist_FILES}    )
-add_executable( cgnsversion ${cgnsversion_FILES} )
+add_executable( cgnsnames    ${cgnsnames_FILES}     )
+add_executable( cgnscheck    ${cgnscheck_FILES}   )
+add_executable( cgnsconvert  ${cgnsconvert_FILES} )
+add_executable( cgnsdiff     ${cgnsdiff_FILES}    )
+add_executable( cgnslist     ${cgnslist_FILES}    )
+add_executable( cgnscompress ${cgnscompress_FILES} )
+add_executable( cgnsversion  ${cgnsversion_FILES} )
 
 install(TARGETS
-	cgnames
+	cgnsnames
 	cgnscheck
 	cgnsconvert
 	cgnsdiff
 	cgnslist
+        cgnscompress
 	cgnsversion
 	RUNTIME DESTINATION bin)
 
