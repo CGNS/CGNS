@@ -30,10 +30,7 @@ int main ()
    double root_id,parent_id,child_id,tmp_id,root_id_file2;
 
   /* --- Data to be stored in database */
-   float a[3][4] = {{1.1,2.1,3.1,4.1},
-                    {1.2,2.2,3.2,4.2},
-                    {1.3,2.3,3.3,4.3}
-                   };
+   float a[3][4];
    cgsize_t a_dimensions[2] = {4,3};
 
    int c[6] = {1,2,3,4,5,6};
@@ -45,6 +42,12 @@ int main ()
    int num_dims, d[6];
    cgsize_t dim_d, dims_b[2];
    float b[3][4];
+
+   for (i = 0; i < 3; i++) {
+       for (j = 0; j < 4; j++) {
+           a[i][j] = (float)((double)(j + 1) + 0.1 * (double)(i + 1));
+       }
+   }
 
   /* ------ begin source code ----- */
 

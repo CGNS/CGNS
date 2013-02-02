@@ -14,8 +14,9 @@ CALL = \
 	cgioc$(EXE) \
 	elemtest$(EXE) \
 	test_exts$(EXE) \
-	test_partial$(EXE) \
 	test_goto$(EXE) \
+	test_multifam$(EXE) \
+	test_partial$(EXE) \
 	test_ver31$(EXE) \
 	write_array$(EXE) \
 	write_links$(EXE) \
@@ -25,6 +26,7 @@ CALL = \
 	write_rind$(EXE)
 
 FALL = \
+	cgiof$(EXE) \
 	cgwrite$(EXE) \
 	cgread$(EXE) \
 	cgzconn$(EXE) \
@@ -47,15 +49,17 @@ test64 : $(ALL64)
 #----------
 
 test : $(TESTS)
-	@echo "=== running tests ==="; \
+	@echo " "; \
+	echo "=== running tests ==="; \
 	 for x in $(TESTS) ; do \
 	   if `./$$x >/dev/null 2>&1` ; then \
-	     echo "$$x passed"; \
+	     echo "$$x ... passed"; \
 	   else \
-	     echo "$$x failed"; \
+	     echo "$$x ... *** FAILED ***"; \
 	   fi; \
 	 done; \
-	 echo "=== finished ===";
+	 echo "=== finished ==="; \
+	echo " ";
 
 #----------
 
@@ -101,6 +105,12 @@ test_partial$(EXE) : test_partial.c $(CGNSLIB)
 
 test_goto$(EXE) : test_goto.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_goto.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_multifam$(EXE) : test_multifam.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_multifam.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
@@ -207,6 +217,5 @@ clean :
 
 allclean : clean
 	-$(RM) $(ALL) $(FALL) $(ALL64)
-	-$(RM) *~ *.bak
-	-$(RM) *.cgns *.cg?
+	-$(RM) *.cgns *.cgio
 

@@ -526,8 +526,10 @@ int main (int argc, char **argv)
     CHECK ("nuserdata", nuser == 1);
 
     /* don't compress file on close */
+    /* as of version 3.2 this is no longer done automatically */
+    /* since it could cause a problem in parallel I/O */
 
-    cg_configure(CG_CONFIG_COMPRESS, (void *)0);
+    cg_set_compress(0);
 
     puts ("closing file");
     cg_close (cgfile);
