@@ -226,8 +226,10 @@ array set Export {
   exefile ""
   options ""
   basenum ""
+  zonenum ""
   solnum ""
   basenum,flag 1
+  zonenum,flag 1
   solnum,flag 1
   ascii 0
   solution 1

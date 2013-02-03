@@ -62,7 +62,6 @@ if (WIN32)
 	export.tcl
 	import.tcl
 	tools.tcl
-	tclIndex
 	DESTINATION share)
   install(DIRECTORY help/
 	DESTINATION share/help/cgnsview
@@ -87,7 +86,6 @@ else (WIN32)
 	export.tcl
 	import.tcl
 	tools.tcl
-	tclIndex
 	DESTINATION share/cgnstools)
   install(DIRECTORY help/
 	DESTINATION share/cgnstools/help/cgnsview
