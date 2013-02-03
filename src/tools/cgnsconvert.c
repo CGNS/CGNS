@@ -81,7 +81,12 @@ int main (int argc, char **argv)
     if (cgio_get_file_type (inpcg, &inptype))
         cgio_error_exit("cgio_get_file_type");
 
-    if (outtype == CGIO_FILE_NONE) outtype = inptype;
+    if (outtype == CGIO_FILE_NONE) {
+        if (inptype == CGIO_FILE_ADF)
+            outtype = CGIO_FILE_HDF5;
+        else
+            outtype = CGIO_FILE_ADF;
+    }
     if (!force && outtype == inptype) {
         cgio_close_file(inpcg);
         fputs("input and output formats the same: use -f to force write\n",

@@ -14,7 +14,7 @@ if "%1" == "-links" (
   shift
 )
 
-%dir%cgnsconvert -h %links% %1 %2 %3
+%dir%cgnsconvert -h %links% %1 %2
 goto done
 
 :notfound
