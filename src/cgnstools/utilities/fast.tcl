@@ -198,7 +198,7 @@ proc fast_export {w name exe} {
     if {$Export(fast,fmt) != "s"} {
       lappend cmd -$Export(fast,fmt)
     }
-    lappend cmd -$Export(fast,endian) -$Export(aflr,prec)
+    lappend cmd -$Export(fast,endian) -$Export(fast,prec)
     lappend cmd $Export(cgnsfile) $Export(fastfile)
     update
     run_command "FAST Export" $cmd

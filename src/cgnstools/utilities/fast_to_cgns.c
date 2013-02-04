@@ -477,9 +477,9 @@ int main (int argc, char *argv[])
     printf("reading grid from \"%s\"\n", basename);
     fflush(stdout);
     read_fgrid(basename, flags);
-    printf("nCoords = %d\n", nCoords);
-    if (nTris)   printf("nTris   = %d\n", nTris);
-    if (nTets)   printf("nTets   = %d\n", nTets);
+    printf("number coordinates = %ld\n", (long)nCoords);
+    printf("number triangles   = %ld\n", (long)nTris);
+    printf("number tetrahedra  = %ld\n", (long)nTets);
 
     /* check for fastbc/mapbc file */
 
@@ -493,7 +493,7 @@ int main (int argc, char *argv[])
         tail++;
     if ((p = strrchr(tail, '.')) == NULL)
         p = basename + strlen(basename);
- 
+
     strcpy(p, ".fastbc");
     n = ACCESS(basename, 0);
     if (n) {

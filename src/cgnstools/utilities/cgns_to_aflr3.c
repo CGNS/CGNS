@@ -58,6 +58,8 @@ static cgsize_t nPrisms = 0;
 static cgsize_t nHexas = 0;
 static cgsize_t maxBndry = 0;
 
+int *BCtags;
+
 static int is_structured = 0;
 static cgsize_t sizes[9];
 
@@ -348,6 +350,131 @@ static void write_coords (FILE *fp)
 
 /*--------------------------------------------------------------------*/
 
+static void unstructured_bcs ()
+{
+}
+
+/*--------------------------------------------------------------------*/
+
+static void write_boundary (FILE *fp)
+{
+    int ns, nsect, nn, ip, nb, *elems;
+    cgsize_t i, n, is, ie, ne;
+    cgsize_t size, *conn;
+    CGNS_ENUMT(ElementType_t) elemtype, et;
+    char name[33];
+    size_t maxelems;
+
+    if (3 * nTris > 4 * nQuads)
+        maxelems = (size_t)(3 * nTris);
+    else
+        maxelems = (size_t)(4 * nQuads);
+    elems = (int *)malloc((size_t)maxelems * sizeof(int));
+    BCtags = (int *)malloc((size_t)(nTris + nQuads) * sizeof(int));
+    if (elems == NULL || BCtags == NULL)
+        err_exit(NULL, "malloc failed for boundary elements");
+
+    if (cg_nsections (cgFile, cgBase, cgZone, &nsect))
+        err_exit ("cg_nsections", NULL);
+    nb = 0;
+
+    if (nTris) {
+        nn = 0;
+        for (ns = 1; ns <= nsect; ns++) {
+            if (cg_section_read (cgFile, cgBase, cgZone, ns,
+                    name, &elemtype, &is, &ie, &ip, &ip))
+                err_exit ("cg_section_read", NULL);
+            ne = ie - is + 1;
+            if (elemtype == CGNS_ENUMV(TRI_3) ||
+                elemtype == CGNS_ENUMV(MIXED)) {
+                if (cg_ElementDataSize (cgFile, cgBase, cgZone, ns, &size))
+                    err_exit ("cg_ElementDataSize", NULL);
+                conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
+                if (conn == NULL)
+                    err_exit (NULL, "malloc failed for element connectivity");
+                if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
+                    err_exit ("cg_elements_read", NULL);
+                if (elemtype == CGNS_ENUMV(MIXED)) {
+                    for (i = 0, n = 0; n < ne; n++) {
+                        et = (CGNS_ENUMT(ElementType_t))conn[i++];
+                        if (et == CGNS_ENUMV(TRI_3)) {
+                            BCtags[nb++] = ns;
+                            for (ip = 0; ip < 3; ip++)
+                                elems[nn++] = conn[i++];
+                        }
+                        else {
+                            if (cg_npe(et, &ip) || ip <= 0)
+                                err_exit("cg_npe", NULL);
+                            i += ip;
+                        }
+                    }
+                }
+                else if (elemtype == CGNS_ENUMV(TRI_3)) {
+                    for (i = 0, n = 0; n < ne; n++) {
+                        BCtags[nb++] = ns;
+                        for (ip = 0; ip < 3; ip++)
+                            elems[nn++] = conn[i++];
+                    }
+                }
+                free (conn);
+            }
+        }
+        write_ints(fp, nn, elems);
+    }
+
+    if (nQuads) {
+        nn = 0;
+        for (ns = 1; ns <= nsect; ns++) {
+            if (cg_section_read (cgFile, cgBase, cgZone, ns,
+                    name, &elemtype, &is, &ie, &ip, &ip))
+                err_exit ("cg_section_read", NULL);
+            ne = ie - is + 1;
+            if (elemtype == CGNS_ENUMV(QUAD_4) ||
+                elemtype == CGNS_ENUMV(MIXED)) {
+                if (cg_ElementDataSize (cgFile, cgBase, cgZone, ns, &size))
+                    err_exit ("cg_ElementDataSize", NULL);
+                conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
+                if (conn == NULL)
+                    err_exit (NULL, "malloc failed for element connectivity");
+                if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
+                    err_exit ("cg_elements_read", NULL);
+                if (elemtype == CGNS_ENUMV(MIXED)) {
+                    for (i = 0, n = 0; n < ne; n++) {
+                        et = (CGNS_ENUMT(ElementType_t))conn[i++];
+                        if (et == CGNS_ENUMV(QUAD_4)) {
+                            BCtags[nb++] = ns;
+                            for (ip = 0; ip < 4; ip++)
+                                elems[nn++] = conn[i++];
+                        }
+                        else {
+                            if (cg_npe(et, &ip) || ip <= 0)
+                                err_exit("cg_npe", NULL);
+                            i += ip;
+                        }
+                    }
+                }
+                else if (elemtype == CGNS_ENUMV(QUAD_4)) {
+                    for (i = 0, n = 0; n < ne; n++) {
+                        BCtags[nb++] = ns;
+                        for (ip = 0; ip < 4; ip++)
+                            elems[nn++] = conn[i++];
+                    }
+                }
+                free (conn);
+            }
+        }
+        write_ints(fp, nn, elems);
+    }
+
+    free(elems);
+
+    unstructured_bcs();
+    write_ints(fp, (int)(nTris + nQuads), BCtags);
+    free(BCtags);
+}
+
+/*--------------------------------------------------------------------*/
+
 static void write_elements (FILE *fp, CGNS_ENUMT(ElementType_t) type,
     int nnodes, cgsize_t nelems)
 {
@@ -419,24 +546,122 @@ static void write_elements (FILE *fp, CGNS_ENUMT(ElementType_t) type,
             free (conn);
         }
     }
-    
+
     write_ints(fp, nn, elems);
     free(elems);
 }
 
 /*--------------------------------------------------------------------*/
 
-static void write_boundary (FILE *fp)
+static void structured_bcs ()
 {
-    int *tags, nb = (int)(nTris + nQuads);
+}
 
-    if (nTris) write_elements (fp, CGNS_ENUMV(TRI_3), 3, nTris);
-    if (nQuads) write_elements (fp, CGNS_ENUMV(QUAD_4), 4, nQuads);
+/*--------------------------------------------------------------------*/
 
-    if (nb == 0) return;
-    tags = (int *)calloc((size_t)nb, sizeof(int));
-    write_ints(fp, nb, tags);
-    free(tags);
+static void write_structured (FILE *fp)
+{
+    int i, j, k, n, nn, nq;
+    int ni = (int)sizes[0];
+    int nj = (int)sizes[1];
+    int nk = (int)sizes[2];
+    int *elems;
+    size_t maxelems = (size_t)(8 * nHexas);
+
+    if (maxelems < (size_t)(4 * nQuads))
+        maxelems = (size_t)(4 * nQuads);
+    elems = (int *)malloc(maxelems * sizeof(int));
+    BCtags = (int *)malloc((size_t)nQuads * sizeof(int));
+    if (elems == NULL || BCtags == NULL)
+        err_exit(NULL, "malloc failed for elements");
+
+    nq = nn = 0;
+    for (k = 1; k < nk; k++) {
+        for (j = 1; j < nj; j++) {
+            n = 1 + ni * ((j - 1) + nj * (k - 1));
+            BCtags[nq++] = 1;
+            elems[nn++] = n;
+            elems[nn++] = n + ni;
+            elems[nn++] = n + ni * nj + ni;
+            elems[nn++] = n + ni * nj;
+        }
+    }
+    for (k = 1; k < nk; k++) {
+        for (j = 1; j < nj; j++) {
+            n = ni + ni * ((j - 1) + nj * (k - 1));
+            BCtags[nq++] = 2;
+            elems[nn++] = n;
+            elems[nn++] = n + ni * nj;
+            elems[nn++] = n + ni * nj + ni;
+            elems[nn++] = n + ni;
+        }
+    }
+    for (k = 1; k < nk; k++) {
+        for (i = 1; i < ni; i++) {
+            n = i + ni * nj * (k - 1);
+            BCtags[nq++] = 3;
+            elems[nn++] = n;
+            elems[nn++] = n + ni * nj;
+            elems[nn++] = n + ni * nj + 1;
+            elems[nn++] = n + 1;
+        }
+    }
+    for (k = 1; k < nk; k++) {
+        for (i = 1; i < ni; i++) {
+            n = i + ni * ((nj - 1) + nj * (k - 1));
+            BCtags[nq++] = 4;
+            elems[nn++] = n;
+            elems[nn++] = n + 1;
+            elems[nn++] = n + ni * nj + 1;
+            elems[nn++] = n + ni * nj;
+        }
+    }
+    for (j = 1; j < nj; j++) {
+        for (i = 1; i < ni; i++) {
+            n = i + ni * (j - 1);
+            BCtags[nq++] = 5;
+            elems[nn++] = n;
+            elems[nn++] = n + 1;
+            elems[nn++] = n + ni + 1;
+            elems[nn++] = n + ni;
+        }
+    }
+    for (j = 1; j < nj; j++) {
+        for (i = 1; i < ni; i++) {
+            n = i + ni * ((j - 1) + nj * (nk - 1));
+            BCtags[nq++] = 6;
+            elems[nn++] = n;
+            elems[nn++] = n + ni;
+            elems[nn++] = n + ni + 1;
+            elems[nn++] = n + 1;
+        }
+    }
+    write_ints(fp, nn, elems);
+
+    structured_bcs();
+    write_ints(fp, nq, BCtags);
+    free(BCtags);
+
+    nn = 0;
+    for (n = 1, k = 1; k < nk; k++) {
+        for (j = 1; j < nj; j++) {
+            n = ni * ((j - 1) + nj * (k - 1)) + 1;
+            for (i = 1; i < ni; i++) {
+                elems[nn++] = n;
+                elems[nn++] = n + 1;
+                elems[nn++] = n + ni + 1;
+                elems[nn++] = n + ni;
+                elems[nn++] = n + ni * nj;
+                elems[nn++] = n + ni * nj + 1;
+                elems[nn++] = n + ni * nj + ni + 1;
+                elems[nn++] = n + ni * nj + ni;
+                n++;
+            }
+        }
+    }
+    write_ints(fp, nn, elems);
+
+    free(elems);
 }
 
 /*--------------------------------------------------------------------*/
@@ -558,11 +783,16 @@ int main (int argc, char *argv[])
     write_ints (fp, 7, idata);
     
     write_coords (fp);
-    write_boundary (fp);
-    if (nTets) write_elements (fp, CGNS_ENUMV(TETRA_4), 4, nTets);
-    if (nPyras) write_elements (fp, CGNS_ENUMV(PYRA_5), 5, nPyras);
-    if (nPrisms) write_elements (fp, CGNS_ENUMV(PENTA_6), 6, nPrisms);
-    if (nHexas) write_elements (fp, CGNS_ENUMV(HEXA_8), 8, nHexas);
+    if (is_structured) {
+        write_structured(fp);
+    }
+    else {
+        if (nTris || nQuads) write_boundary (fp);
+        if (nTets) write_elements (fp, CGNS_ENUMV(TETRA_4), 4, nTets);
+        if (nPyras) write_elements (fp, CGNS_ENUMV(PYRA_5), 5, nPyras);
+        if (nPrisms) write_elements (fp, CGNS_ENUMV(PENTA_6), 6, nPrisms);
+        if (nHexas) write_elements (fp, CGNS_ENUMV(HEXA_8), 8, nHexas);
+    }
 
     fclose (fp);
     cg_close (cgFile);
