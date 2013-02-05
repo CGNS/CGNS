@@ -45,6 +45,10 @@ endif (${SIZE_OF_LONG} GREATER 4)
 set(BUILDLEGACY 0)
 set(BUILD64BIT 0)
 set(BUILDSCOPE 0)
+set(BUILDHDF5 0)
+set(BUILDDEBUG 0)
+set(BUILDPARALLEL 0)
+set(BUILDFORTRAN 0)
 
 if (ENABLE_LEGACY)
   set(BUILDLEGACY 1)
@@ -58,6 +62,35 @@ else (ENABLE_LEGACY)
   endif (ENABLE_64BIT)
 endif (ENABLE_LEGACY)
 
+set(H5INCPATH "")
+set(H5LIBPATH "")
+set(MPIINCPATH "")
+set(MPILIBPATH "")
+set(SZIPLIBPATH "")
+set(ZLIBLIBPATH "")
+set(H5NEEDMPI 0)
+set(H5NEEDSZIP 0)
+set(H5NEEDZLIB 0)
+
+if (ENABLE_HDF5)
+  set(BUILDHDF5 1)
+  set(H5INCPATH ${HDF5_INCLUDE_PATH} )
+  set(H5LIBPATH ${HDF5_LIBRARY} )
+  if (HDF5_NEED_MPI)
+    set(H5NEEDMPI 1)
+    set(MPIINCPATH ${MPI_INC} )
+    set(MPILIBPATH ${MPI_LIBS} )
+  endif (HDF5_NEED_MPI)
+  if (HDF5_NEED_SZIP)
+    set(H5NEEDSZIP 1)
+    set(SZIPLIBPATH ${SZIP_LIBRARY} )
+  endif (HDF5_NEED_SZIP)
+  if (HDF5_NEED_ZLIB)
+    set(H5NEEDZLIB 1)
+    set(ZLIBLIBPATH ${ZLIB_LIBRARY} )
+  endif (HDF5_NEED_ZLIB)
+endif (ENABLE_HDF5)
+
 if (ENABLE_SCOPING)
   set(BUILDSCOPE 1)
 endif (ENABLE_SCOPING)
@@ -70,6 +103,8 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes_f.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnslib_f.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
@@ -255,6 +290,7 @@ install(FILES
 	cgnslib.h
 	cgns_io.h
 	cgnswin_f.h
+	${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h

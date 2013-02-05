@@ -1,7 +1,6 @@
 /* ------------------------------------------------------------------------- *
  * CGNS - CFD General Notation System (http://www.cgns.org)                  *
  * CGNS/MLL - Mid-Level Library header file                                  *
- * Please see cgnsconfig.h file for this local installation configuration    *
  * ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- *
@@ -26,43 +25,36 @@
 
  * ------------------------------------------------------------------------- */
 
-#ifndef CGNSTYPES_H
-#define CGNSTYPES_H
+/* ------------------------------------------------------------------------- *
+   This file has been generated during the CGNS/MLL installation.
+   This is a snapshot of the parameters used for CGNS/MLL production and
+   some PATHS parameters (headers or shared libs) may change or
+   disappear (for example in case of cross-compilation).
+ * ------------------------------------------------------------------------- */
 
-#define CG_BUILD_LEGACY @BUILDLEGACY@
-#define CG_BUILD_64BIT  @BUILD64BIT@
-#define CG_BUILD_SCOPE  @BUILDSCOPE@
+#ifndef CGNSCONFIG_H
+#define CGNSCONFIG_H
 
-#define CG_MAX_INT32 0x7FFFFFFF
-#ifdef _WIN32
-# define CG_LONG_T __int64
-#else
-# define CG_LONG_T @CGLONGT@
-#endif
+#include "cgnstypes.h"
 
-#if CG_BUILD_LEGACY
-# define CG_SIZEOF_SIZE    32
-# define CG_SIZE_DATATYPE "I4"
-# define cgerr_t  int
-# define cgint_t  int
-# define cgsize_t int
-# define cgid_t   double
-#else
-# if CG_BUILD_64BIT
-#  define CG_SIZEOF_SIZE    64
-#  define CG_SIZE_DATATYPE "I8"
-   typedef CG_LONG_T cgsize_t;
-# else
-#  define CG_SIZEOF_SIZE    32
-#  define CG_SIZE_DATATYPE "I4"
-   typedef int cgsize_t;
-# endif
-  typedef int cgerr_t;
-  typedef int cgint_t;
-  typedef double cgid_t;
-#endif
+#define CG_BUILD_HDF5      @BUILDHDF5@
+#define CG_BUILD_DEBUG     @BUILDDEBUG@
+#define CG_BUILD_FORTRAN   @BUILDFORTRAN@
+#define CG_BUILD_PARALLEL  @BUILDPARALLEL@
 
-typedef CG_LONG_T cglong_t;
-typedef unsigned CG_LONG_T cgulong_t;
+#define HDF5_INCLUDE_PATH "@H5INCPATH@"
+#define HDF5_LIBRARY      "@H5LIBPATH@"
+
+#define HDF5_NEED_MPI   @H5NEEDMPI@
+#define HDF5_NEED_SZIP  @H5NEEDSZIP@
+#define HDF5_NEED_ZLIB  @H5NEEDZLIB@
+
+#define MPI_INCLUDE_PATH "@MPIINCPATH@"
+#define MPI_LIBRARY      "@MPILIBPATH@"
+#define SZIP_LIBRARY     "@SZIPLIBPATH@"
+#define ZLIB_LIBRARY     "@ZLIBLIBPATH@"
+
+#define MPI_INC          "@MPIINCPATH@"
+#define MPI_LIBS         "@MPILIBPATH@"
 
 #endif
