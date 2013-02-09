@@ -26,13 +26,13 @@ freely, subject to the following restrictions:
 #include "cgns_io.h"
 
 /* define this to prevent conversion from ElementList/Range
-   to PointList/PointRange as per CPEX 0031
+   to PointList/PointRange as per CPEX 0031 */
 #define CG_ALLOW_ELEMENTLIST_RANGE
-*/
+
 /* define this to enable CellCenter GridLocation for BC_t
-   not allowed in CPEX 0031
+   not allowed in CPEX 0031 */
 #define CG_ALLOW_BC_CELL_CENTER
-*/
+
 /* this splits ParentData into ParentElements and ParentElementsPosition
    Required by CPEX 0031 */
 #define CG_SPLIT_PARENT_DATA

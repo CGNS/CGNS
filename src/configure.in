@@ -546,6 +546,7 @@ fi
 # locate HDF5 includes and library if using HDF5
 #---------------------------------------------------------------------------
 
+HDF5DEF=""
 HDF5INC=""
 HDF5LIB=""
 
@@ -587,7 +588,7 @@ else
     test -z "$hdf5dir" && \
       AC_MSG_ERROR(need specify the HDF5 directory with --with-hdf5=DIR)
     if test -f "$hdf5dir/include/hdf5.h"; then
-      HDF5INC=-I$hdf5dir/include
+      HDF5INC=$hdf5dir/include
       for a in $exts ; do
         if test -f $hdf5dir/lib/libhdf5.$a; then
           HDF5LIB=$hdf5dir/lib/libhdf5.$a
@@ -597,7 +598,7 @@ else
       test -z "$HDF5LIB" && HDF5LIB=$hdf5dir/lib/libhdf5.a
     else
       if test -f "$hdf5dir/src/hdf5.h"; then
-        HDF5INC=-I$hdf5dir/src
+        HDF5INC=$hdf5dir/src
         for a in $exts ; do
           if test -f $hdf5dir/src/.libs/libhdf5.$a; then
             HDF5LIB=$hdf5dir/src/.libs/libhdf5.$a
@@ -610,6 +611,7 @@ else
       fi
     fi
   fi
+  HDF5DEF=-I$HDF5INC
 fi
 
 #---------------------------------------------------------------------------
@@ -720,6 +722,7 @@ fi
 
 withmpi=no
 
+MPIDEF=""
 MPIINC=""
 MPIOPTS=""
 MPILIBS=""
@@ -773,9 +776,9 @@ if test "$withhdf5" = "yes"; then
       mpibin=`dirname $MPICC`
       mpidir=`dirname $mpibin`
       if test -d "$mpidir/src/include" ; then
-        MPIINC=-I$mpidir/src/include
+        MPIINC=$mpidir/src/include
       else
-        MPIINC=-I$mpidir/include
+        MPIINC=$mpidir/include
       fi
       MPIOPTS=`grep "^CFLAGS=" $MPICC | sed s/CFLAGS=// | sed s/\"//g`
       mpilib=`grep "^MPILIBNAME=" $MPICC | sed s/MPILIBNAME=// | sed s/\"//g`
@@ -788,6 +791,7 @@ if test "$withhdf5" = "yes"; then
       extralibs=`grep "^LIBS=" $MPICC | sed s/LIBS=// | sed s/\"//g`
       MPILIBS="$MPILIBS $extralibs"
     fi
+    MPIDEF=-I$MPIINC
     withmpi=yes
   fi
 fi
@@ -1224,11 +1228,13 @@ AC_SUBST(ADFOBJS)
 AC_SUBST(ADFINCS)
 AC_SUBST(F2COBJS)
 
+AC_SUBST(HDF5DEF)
 AC_SUBST(HDF5INC)
 AC_SUBST(HDF5LIB)
 AC_SUBST(ZLIBLIB)
 AC_SUBST(SZIPLIB)
 
+AC_SUBST(MPIDEF)
 AC_SUBST(MPIINC)
 AC_SUBST(MPILIBS)
 AC_SUBST(MPIEXEC)

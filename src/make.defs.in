@@ -91,7 +91,7 @@ RANLIB = @RANLIB@
 # ZLIBLIB - zlib library (if needed)
 #------------------------------------------------------------------------
 
-HDF5INC = @HDF5INC@
+HDF5INC = @HDF5DEF@
 HDF5LIB = @HDF5LIB@
 SZIPLIB = @SZIPLIB@
 ZLIBLIB = @ZLIBLIB@
@@ -103,7 +103,7 @@ ZLIBLIB = @ZLIBLIB@
 # MPIEXEC - MPI executor
 #------------------------------------------------------------------------
 
-MPIINC  = @MPIINC@
+MPIINC  = @MPIDEF@
 MPILIBS = @MPILIBS@
 MPIEXEC = @MPIEXEC@
 

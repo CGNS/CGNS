@@ -135,6 +135,17 @@ CGNSDLL void FMNAME(cg_version_f, CG_VERSION_F) (cgsize_t *fn,
 
 /*-----------------------------------------------------------------------*/
 
+CGNSDLL void FMNAME(cg_precision_f, CG_PRECISION_F) (cgsize_t *fn,
+	cgsize_t *precision, cgsize_t *ier)
+{
+    int i_precision;
+
+    *ier = cg_precision((int)*fn, &i_precision);
+    *precision = i_precision;
+}
+
+/*-----------------------------------------------------------------------*/
+
 CGNSDLL void FMNAME(cg_close_f, CG_CLOSE_F) (cgsize_t *fn, cgsize_t *ier)
 {
     *ier = cg_close((int)*fn);
