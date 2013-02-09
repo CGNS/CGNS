@@ -695,16 +695,18 @@ if %do64bit% == 1 (
 set libs="ADF"
 
 if "%hdf5inc%" == "" (
+  set hdf5def=
   set hdf5lib=
   set zliblib=
   set sziplib=
 ) else (
+  set hdf5def=/I%hdf5inc%
   set libs=%libs HDF5
-  set hdf5inc=/I%hdf5inc%
   set build=%build% /DBUILD_HDF5
 )
 
-if not "%mpiinc%" == "" set mpiinc=/I%mpiinc%
+set mpidef=
+if not "%mpiinc%" == "" set mpidef=/I%mpiinc%
 if not "%parallel%" == "" set build=%build% /DBUILD_PARALLEL
 
 if "%f2c%" == "none" (
@@ -921,7 +923,35 @@ if %dolegacy% == 1 (
 rem ----- create cgnstypes.h
 
 echo creating cgnstypes.h
-echo #ifndef CGNSTYPES_H> cgnstypes.h
+echo /* ------------------------------------------------------------------------- *> cgnstypes.h
+echo  * CGNS - CFD General Notation System (http://www.cgns.org)                  *>> cgnstypes.h
+echo  * CGNS/MLL - Mid-Level Library header file                                  *>> cgnstypes.h
+echo  * Please see cgnsconfig.h file for this local installation configuration    *>> cgnstypes.h
+echo  * ------------------------------------------------------------------------- */>> cgnstypes.h
+echo.>> cgnstypes.h
+echo /* ------------------------------------------------------------------------- *>> cgnstypes.h
+echo.>> cgnstypes.h
+echo   This software is provided 'as-is', without any express or implied warranty.>> cgnstypes.h
+echo   In no event will the authors be held liable for any damages arising from>> cgnstypes.h
+echo   the use of this software.>> cgnstypes.h
+echo.>> cgnstypes.h
+echo   Permission is granted to anyone to use this software for any purpose,>> cgnstypes.h
+echo   including commercial applications, and to alter it and redistribute it>> cgnstypes.h
+echo   freely, subject to the following restrictions:>> cgnstypes.h
+echo.>> cgnstypes.h
+echo   1. The origin of this software must not be misrepresented; you must not>> cgnstypes.h
+echo      claim that you wrote the original software. If you use this software>> cgnstypes.h
+echo      in a product, an acknowledgment in the product documentation would be>> cgnstypes.h
+echo      appreciated but is not required.>> cgnstypes.h
+echo.>> cgnstypes.h
+echo   2. Altered source versions must be plainly marked as such, and must not>> cgnstypes.h
+echo      be misrepresented as being the original software.>> cgnstypes.h
+echo.>> cgnstypes.h
+echo   3. This notice may not be removed or altered from any source distribution.>> cgnstypes.h
+echo.>> cgnstypes.h
+echo  * ------------------------------------------------------------------------- */>> cgnstypes.h
+echo.>> cgnstypes.h
+echo #ifndef CGNSTYPES_H>> cgnstypes.h
 echo #define CGNSTYPES_H>> cgnstypes.h
 echo.>> cgnstypes.h
 echo #define CG_BUILD_LEGACY %dolegacy% >> cgnstypes.h
@@ -961,7 +991,35 @@ echo #endif>> cgnstypes.h
 rem ----- create cgnstypes_f.h
 
 echo creating cgnstypes_f.h
-echo #ifndef CGNSTYPES_F_H> cgnstypes_f.h
+echo /* ------------------------------------------------------------------------- *> cgnstypes_f.h
+echo  * CGNS - CFD General Notation System (http://www.cgns.org)                  *>> cgnstypes_f.h
+echo  * CGNS/MLL - Mid-Level Library header file                                  *>> cgnstypes_f.h
+echo  * Please see cgnsconfig.h file for this local installation configuration    *>> cgnstypes_f.h
+echo  * ------------------------------------------------------------------------- */>> cgnstypes_f.h
+echo.>> cgnstypes_f.h
+echo /* ------------------------------------------------------------------------- *>> cgnstypes_f.h
+echo.>> cgnstypes_f.h
+echo   This software is provided 'as-is', without any express or implied warranty.>> cgnstypes_f.h
+echo   In no event will the authors be held liable for any damages arising from>> cgnstypes_f.h
+echo   the use of this software.>> cgnstypes_f.h
+echo.>> cgnstypes_f.h
+echo   Permission is granted to anyone to use this software for any purpose,>> cgnstypes_f.h
+echo   including commercial applications, and to alter it and redistribute it>> cgnstypes_f.h
+echo   freely, subject to the following restrictions:>> cgnstypes_f.h
+echo.>> cgnstypes_f.h
+echo   1. The origin of this software must not be misrepresented; you must not>> cgnstypes_f.h
+echo      claim that you wrote the original software. If you use this software>> cgnstypes_f.h
+echo      in a product, an acknowledgment in the product documentation would be>> cgnstypes_f.h
+echo      appreciated but is not required.>> cgnstypes_f.h
+echo.>> cgnstypes_f.h
+echo   2. Altered source versions must be plainly marked as such, and must not>> cgnstypes_f.h
+echo      be misrepresented as being the original software.>> cgnstypes_f.h
+echo.>> cgnstypes_f.h
+echo   3. This notice may not be removed or altered from any source distribution.>> cgnstypes_f.h
+echo.>> cgnstypes_f.h
+echo  * ------------------------------------------------------------------------- */>> cgnstypes_f.h
+echo.>> cgnstypes_f.h
+echo #ifndef CGNSTYPES_F_H>> cgnstypes_f.h
 echo #define CGNSTYPES_F_H>> cgnstypes_f.h
 echo.>> cgnstypes_f.h
 echo #define CG_BUILD_64BIT %do64bit% >> cgnstypes_f.h
@@ -984,7 +1042,35 @@ echo #endif>> cgnstypes_f.h
 rem ----- create cgnslib_f.h
 
 echo creating cgnslib_f.h
-echo ! Fortran version of cgnslib.h> cgnslib_f.h
+echo c * ------------------------------------------------------------------------- *> cgnslib_f.h
+echo c * CGNS - CFD General Notation System (http://www.cgns.org)                  *>> cgnslib_f.h
+echo c * CGNS/MLL - Mid-Level Library header file                                  *>> cgnslib_f.h
+echo c * Please see cgnsconfig.h file for this local installation configuration    *>> cgnslib_f.h
+echo c * ------------------------------------------------------------------------- *>> cgnslib_f.h
+echo c>> cgnslib_f.h
+echo c * ------------------------------------------------------------------------- *>> cgnslib_f.h
+echo c>> cgnslib_f.h
+echo c  This software is provided 'as-is', without any express or implied warranty.>> cgnslib_f.h
+echo c  In no event will the authors be held liable for any damages arising from>> cgnslib_f.h
+echo c  the use of this software.>> cgnslib_f.h
+echo c>> cgnslib_f.h
+echo c  Permission is granted to anyone to use this software for any purpose,>> cgnslib_f.h
+echo c  including commercial applications, and to alter it and redistribute it>> cgnslib_f.h
+echo c  freely, subject to the following restrictions:>> cgnslib_f.h
+echo c>> cgnslib_f.h
+echo c  1. The origin of this software must not be misrepresented; you must not>> cgnslib_f.h
+echo c     claim that you wrote the original software. If you use this software>> cgnslib_f.h
+echo c     in a product, an acknowledgment in the product documentation would be>> cgnslib_f.h
+echo c     appreciated but is not required.>> cgnslib_f.h
+echo c>> cgnslib_f.h
+echo c  2. Altered source versions must be plainly marked as such, and must not>> cgnslib_f.h
+echo c     be misrepresented as being the original software.>> cgnslib_f.h
+echo c>> cgnslib_f.h
+echo c  3. This notice may not be removed or altered from any source distribution.>> cgnslib_f.h
+echo c>> cgnslib_f.h
+echo c * ------------------------------------------------------------------------- *>> cgnslib_f.h
+echo c>> cgnslib_f.h
+echo ! Fortran version of cgnslib.h>> cgnslib_f.h
 echo         integer CG_BUILD_64BIT>> cgnslib_f.h
 echo         parameter (CG_BUILD_64BIT = %do64bit%)>> cgnslib_f.h
 echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
@@ -1324,7 +1410,13 @@ echo         integer%fbytes% TETRA_4, TETRA_10, PYRA_5, PYRA_14>> cgnslib_f.h
 echo         integer%fbytes% PENTA_6, PENTA_15, PENTA_18>> cgnslib_f.h
 echo         integer%fbytes% HEXA_8, HEXA_20, HEXA_27>> cgnslib_f.h
 echo         integer%fbytes% MIXED, PYRA_13, NGON_n, NFACE_n>> cgnslib_f.h
-echo         character*32 ElementTypeName(0:23)>> cgnslib_f.h
+echo         integer%fbytes% BAR_4, TRI_9, TRI_10>> cgnslib_f.h
+echo         integer%fbytes% QUAD_12, QUAD_16>> cgnslib_f.h
+echo         integer%fbytes% TETRA_16, TETRA_20>> cgnslib_f.h
+echo         integer%fbytes% PYRA_21, PYRA_29, PYRA_30>> cgnslib_f.h
+echo         integer%fbytes% PENTA_24, PENTA_38, PENTA_40>> cgnslib_f.h
+echo         integer%fbytes% HEXA_32, HEXA_56, HEXA_64>> cgnslib_f.h
+echo         character*32 ElementTypeName(0:39)>> cgnslib_f.h
 echo         parameter (NODE     =  2)>> cgnslib_f.h
 echo         parameter (BAR_2    =  3)>> cgnslib_f.h
 echo         parameter (BAR_3    =  4)>> cgnslib_f.h
@@ -1347,6 +1439,22 @@ echo         parameter (MIXED    = 20)>> cgnslib_f.h
 echo         parameter (PYRA_13  = 21)>> cgnslib_f.h
 echo         parameter (NGON_n   = 22)>> cgnslib_f.h
 echo         parameter (NFACE_n  = 23)>> cgnslib_f.h
+echo         parameter (BAR_4    = 24)>> cgnslib_f.h
+echo         parameter (TRI_9    = 25)>> cgnslib_f.h
+echo         parameter (TRI_10   = 26)>> cgnslib_f.h
+echo         parameter (QUAD_12  = 27)>> cgnslib_f.h
+echo         parameter (QUAD_16  = 28)>> cgnslib_f.h
+echo         parameter (TETRA_16 = 29)>> cgnslib_f.h
+echo         parameter (TETRA_20 = 30)>> cgnslib_f.h
+echo         parameter (PYRA_21  = 31)>> cgnslib_f.h
+echo         parameter (PYRA_29  = 32)>> cgnslib_f.h
+echo         parameter (PYRA_30  = 33)>> cgnslib_f.h
+echo         parameter (PENTA_24 = 34)>> cgnslib_f.h
+echo         parameter (PENTA_38 = 35)>> cgnslib_f.h
+echo         parameter (PENTA_40 = 36)>> cgnslib_f.h
+echo         parameter (HEXA_32  = 37)>> cgnslib_f.h
+echo         parameter (HEXA_56  = 38)>> cgnslib_f.h
+echo         parameter (HEXA_64  = 39)>> cgnslib_f.h
 echo.>> cgnslib_f.h
 echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
 echo !*      Zone types                                                     *>> cgnslib_f.h
@@ -1534,7 +1642,13 @@ echo      ^&      'NODE', 'BAR_2', 'BAR_3', 'TRI_3', 'TRI_6',                 ^&
 echo      ^&      'QUAD_4', 'QUAD_8', 'QUAD_9', 'TETRA_4', 'TETRA_10',        ^&>> cgnslib_f.h
 echo      ^&      'PYRA_5', 'PYRA_14', 'PENTA_6', 'PENTA_15',                 ^&>> cgnslib_f.h
 echo      ^&      'PENTA_18', 'HEXA_8', 'HEXA_20', 'HEXA_27', 'MIXED',        ^&>> cgnslib_f.h
-echo      ^&      'PYRA_13','NGON_n', 'NFACE_n' />> cgnslib_f.h
+echo      ^&      'PYRA_13', 'NGON_n', 'NFACE_n',                             ^&>> cgnslib_f.h
+echo      ^&      'BAR_4', 'TRI_9', 'TRI_10',                                 ^&>> cgnslib_f.h
+echo      ^&      'QUAD_12', 'QUAD_16',                                       ^&>> cgnslib_f.h
+echo      ^&      'TETRA_16', 'TETRA_20',                                     ^&>> cgnslib_f.h
+echo      ^&      'PYRA_21', 'PYRA_29', 'PYRA_30',                            ^&>> cgnslib_f.h
+echo      ^&      'PENTA_24', 'PENTA_38', 'PENTA_40',                         ^&>> cgnslib_f.h
+echo      ^&      'HEXA_32, 'HEXA_56', 'HEXA_64' />> cgnslib_f.h
 echo.>> cgnslib_f.h
 echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
 echo !*      Zone types                                                     *>> cgnslib_f.h
@@ -1581,6 +1695,82 @@ echo.>> cgnslib_f.h
 echo         data AverageInterfaceTypeName / 'Null','UserDefined',           ^&>> cgnslib_f.h
 echo      ^&       'AverageAll', 'AverageCircumferential', 'AverageRadial',   ^&>> cgnslib_f.h
 echo      ^&       'AverageI', 'AverageJ', 'AverageK' />> cgnslib_f.h
+
+rem ----- create cgnsconfig.h
+
+set dodebug=0
+if not "%debug%" == "" set dodebug=1
+set dofortran=0
+if not "%f2c%" == "none" set dofortran=1
+set doparallel=0
+if not "%parallel%" == "" set doparallel=1
+set buildhdf5=0
+if not "%hdf5lib%" == "" set buildhdf5=1
+set needmpi=0
+if not "%hdf5lib%" == "" set needmpi=1
+set needszip=0
+if not "%sziplib%" == "" set needszip=1
+set needzlib=0
+if not "%zliblib%" == "" set needzlib=1
+
+echo creating cgnsconfig.h
+echo /* ------------------------------------------------------------------------- *> cgnsconfig.h
+echo  * CGNS - CFD General Notation System (http://www.cgns.org)                  *>> cgnsconfig.h
+echo  * CGNS/MLL - Mid-Level Library header file                                  *>> cgnsconfig.h
+echo  * ------------------------------------------------------------------------- */>> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo /* ------------------------------------------------------------------------- *>> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo   This software is provided 'as-is', without any express or implied warranty.>> cgnsconfig.h
+echo   In no event will the authors be held liable for any damages arising from>> cgnsconfig.h
+echo   the use of this software.>> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo   Permission is granted to anyone to use this software for any purpose,>> cgnsconfig.h
+echo   including commercial applications, and to alter it and redistribute it>> cgnsconfig.h
+echo   freely, subject to the following restrictions:>> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo   1. The origin of this software must not be misrepresented; you must not>> cgnsconfig.h
+echo      claim that you wrote the original software. If you use this software>> cgnsconfig.h
+echo      in a product, an acknowledgment in the product documentation would be>> cgnsconfig.h
+echo      appreciated but is not required.>> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo   2. Altered source versions must be plainly marked as such, and must not>> cgnsconfig.h
+echo      be misrepresented as being the original software.>> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo   3. This notice may not be removed or altered from any source distribution.>> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo  * ------------------------------------------------------------------------- */>> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo /* ------------------------------------------------------------------------- *>> cgnsconfig.h
+echo    This file has been generated during the CGNS/MLL installation.>> cgnsconfig.h
+echo    This is a snapshot of the parameters used for CGNS/MLL production and>> cgnsconfig.h
+echo    some PATHS parameters (headers or shared libs) may change or>> cgnsconfig.h
+echo    disappear (for example in case of cross-compilation).>> cgnsconfig.h
+echo  * ------------------------------------------------------------------------- */>> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo #ifndef CGNSCONFIG_H>> cgnsconfig.h
+echo #define CGNSCONFIG_H>> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo #include "cgnstypes.h">> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo #define CG_BUILD_HDF5     %buildhdf5% >> cgnsconfig.h
+echo #define CG_BUILD_DEBUG    %dodebug% >> cgnsconfig.h
+echo #define CG_BUILD_FORTRAN  %dofortran% >> cgnsconfig.h
+echo #define CG_BUILD_PARALLEL %doparallel% >> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo #define HDF5_INCLUDE_PATH "%hdf5inc%">> cgnsconfig.h
+echo #define HDF5_LIBRARY      "%hdf5lib%">> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo #define HDF5_NEED_MPI     %needmpi% >> cgnsconfig.h
+echo #define HDF5_NEED_SZIP    %needszip% >> cgnsconfig.h
+echo #define HDF5_NEED_ZLIB    %needzlib% >> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo #define MPI_INCLUDE_PATH  "%mpiinc%">> cgnsconfig.h
+echo #define MPI_LIBRARY       "%mpilibs%">> cgnsconfig.h
+echo #define SZIP_LIBRARY      "%sziplib%">> cgnsconfig.h
+echo #define ZLIB_LIBRARY      "%zliblib%">> cgnsconfig.h
+echo.>> cgnsconfig.h
+echo #endif>> cgnsconfig.h
 
 rem ----- create make.defs
 
@@ -1663,25 +1853,25 @@ echo RANLIB = :>> make.defs
 echo.>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo # these should only be set if building HDF5 interface>> make.defs
-echo # HDF5INC - path to HDF5 header files>> make.defs
+echo # HDF5INC - include for HDF5 header files>> make.defs
 echo # HDF5LIB - HDF5 library>> make.defs
 echo # SZIPLIB - szip library (if needed)>> make.defs
 echo # ZLIBLIB - zlib library (if needed)>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo.>> make.defs
-echo HDF5INC = %hdf5inc%>> make.defs
+echo HDF5INC = %hdf5def%>> make.defs
 echo HDF5LIB = %hdf5lib%>> make.defs
 echo SZIPLIB = %sziplib%>> make.defs
 echo ZLIBLIB = %zliblib%>> make.defs
 echo.>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo # these should only be set if building with HDF5 and MPI>> make.defs
-echo # MPIINC  - path to MPI header files>> make.defs
+echo # MPIINC  - include for MPI header files>> make.defs
 echo # MPILIBS - MPI libraries>> make.defs
 echo # MPIEXEC - MPI executor>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo.>> make.defs
-echo MPIINC  = %mpiinc%>> make.defs
+echo MPIINC  = %mpidef%>> make.defs
 echo MPILIBS = %mpilibs%>> make.defs
 echo MPIEXEC = %mpiexec%>> make.defs
 echo.>> make.defs
@@ -1767,7 +1957,7 @@ echo # CGNS_LDFLAGS - any additional linker options>> cgnsBuild.defs
 echo #------------------------------------------------------------------------>> cgnsBuild.defs
 echo.>> cgnsBuild.defs
 echo CGNS_CC      = cl>> cgnsBuild.defs
-echo CGNS_CFLAGS  = /nologo %copts% /D_CRT_SECURE_NO_WARNINGS /I$(CGNS_INCLUDEDIR)>> cgnsBuild.defs
+echo CGNS_CFLAGS  = /nologo %copts% /D_CRT_SECURE_NO_WARNINGS>> cgnsBuild.defs
 echo CGNS_LDFLAGS = /nologo %lopts%>> cgnsBuild.defs
 echo.>> cgnsBuild.defs
 echo #------------------------------------------------------------------------>> cgnsBuild.defs
@@ -1914,7 +2104,7 @@ echo 	-cd cgnstools ^&^& %make% distclean>> Makefile
 echo 	-$(RM) $(CGNSLIB)>> Makefile
 if %target% == dll echo 	-$(RM) $(CGNSDLL)>> Makefile
 echo 	-$(RMDIR) $(OBJDIR)>> Makefile
-echo 	-$(RM) cgnstypes.h cgnstypes_f.h cgnslib_f.h>> Makefile
+echo 	-$(RM) cgnsconfig.h cgnstypes.h cgnstypes_f.h cgnslib_f.h>> Makefile
 echo 	-$(RM) *.pdb *.bak>> Makefile
 echo 	-$(RM) make.defs cgnsBuild.defs Makefile>> Makefile
 echo.>> Makefile
@@ -1926,6 +2116,7 @@ echo 	$(INSTALL_DATA) cgnslib_f.h $(INCLUDEDIR)\cgnslib_f.h>> Makefile
 echo 	$(INSTALL_DATA) cgnswin_f.h $(INCLUDEDIR)\cgnswin_f.h>> Makefile
 echo 	$(INSTALL_DATA) cgns_io.h $(INCLUDEDIR)\cgns_io.h>> Makefile
 if not "%parallel%" == "" echo 	$(INSTALL_DATA) pcgnslib.h $(INCLUDEDIR)\pcgnslib.h>> Makefile
+echo 	$(INSTALL_DATA) cgnsconfig.h $(INCLUDEDIR)\cgnsconfig.h>> Makefile
 echo 	$(INSTALL_DATA) cgnsBuild.defs $(INCLUDEDIR)\cgnsBuild.defs>> Makefile
 echo 	$(INSTALL_DATA) $(CGNSLIB) $(LIBDIR)\$(INSTLIB)>> Makefile
 if %target% == dll echo 	$(INSTALL_DATA) $(CGNSDLL) $(LIBDIR)\$(INSTDLL)>> Makefile

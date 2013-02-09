@@ -2286,14 +2286,11 @@ int cgi_read_boco(cgns_boco *boco)
             boco->ptset->type = CGNS_ENUMV(PointRange);
             strcpy(boco->ptset->name, "PointRange");
         }
-#ifdef CG_ALLOW_BC_CELL_CENTER
-        boco->location = CGNS_ENUMV(CellCenter);
-#else
         if (Cdim == 1) boco->location = CGNS_ENUMV(Vertex);
         else if (Cdim == 2) boco->location = CGNS_ENUMV(EdgeCenter);
         else boco->location = CGNS_ENUMV(FaceCenter);
-#endif
     }
+#endif
 
     /* fix GridLocation */
 #ifndef CG_ALLOW_BC_CELL_CENTER
@@ -2305,7 +2302,6 @@ int cgi_read_boco(cgns_boco *boco)
             "changed to %s", GridLocationName[boco->location]);
         modified++;
     }
-#endif
 #endif
 
      /* FamilyName_t */

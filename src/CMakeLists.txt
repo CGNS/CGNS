@@ -45,9 +45,6 @@ endif (${SIZE_OF_LONG} GREATER 4)
 set(BUILDLEGACY 0)
 set(BUILD64BIT 0)
 set(BUILDSCOPE 0)
-set(BUILDHDF5 0)
-set(BUILDDEBUG 0)
-set(BUILDPARALLEL 0)
 set(BUILDFORTRAN 0)
 
 if (ENABLE_LEGACY)
@@ -61,65 +58,16 @@ else (ENABLE_LEGACY)
     set(CGFSIZET *4)
   endif (ENABLE_64BIT)
 endif (ENABLE_LEGACY)
-
-set(H5INCPATH "")
-set(H5LIBPATH "")
-set(MPIINCPATH "")
-set(MPILIBPATH "")
-set(SZIPLIBPATH "")
-set(ZLIBLIBPATH "")
-set(H5NEEDMPI 0)
-set(H5NEEDSZIP 0)
-set(H5NEEDZLIB 0)
-
-if (ENABLE_HDF5)
-  set(BUILDHDF5 1)
-  set(H5INCPATH ${HDF5_INCLUDE_PATH} )
-  set(H5LIBPATH ${HDF5_LIBRARY} )
-  if (HDF5_NEED_MPI)
-    set(H5NEEDMPI 1)
-    set(MPIINCPATH ${MPI_INC} )
-    set(MPILIBPATH ${MPI_LIBS} )
-  endif (HDF5_NEED_MPI)
-  if (HDF5_NEED_SZIP)
-    set(H5NEEDSZIP 1)
-    set(SZIPLIBPATH ${SZIP_LIBRARY} )
-  endif (HDF5_NEED_SZIP)
-  if (HDF5_NEED_ZLIB)
-    set(H5NEEDZLIB 1)
-    set(ZLIBLIBPATH ${ZLIB_LIBRARY} )
-  endif (HDF5_NEED_ZLIB)
-endif (ENABLE_HDF5)
-
 if (ENABLE_SCOPING)
   set(BUILDSCOPE 1)
 endif (ENABLE_SCOPING)
-
-#create these in build directory so is doesn't mess up the
-#source directory, then add the path to them
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes.h.in
-		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes.h )
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes_f.h.in
-		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h )
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnslib_f.h.in
-		${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h )
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
-		${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h )
-
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
-######################################################
-# configure for cgnsBuild.defs file for installation #
-######################################################
-
-set(SYSCFLAGS)
-set(CFGFLAGS)
-set(LIBS)
 if (ENABLE_FORTRAN)
   set(BUILDFORTRAN 1)
-else (ENABLE_FORTRAN)
-  set(BUILDFORTRAN 0)
 endif (ENABLE_FORTRAN)
+
+set(SYSCFLAGS "")
+set(CFGFLAGS "")
+set(LIBS "")
 
 file(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/lib LIBDIR)
 file(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/include INCLUDEDIR)
@@ -142,27 +90,40 @@ else (IS_DEBUG)
   set(LDFLAGS ${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_RELEASE})
 endif (IS_DEBUG)
 
-set(HDF5INC)
-set(HDF5LIB)
-set(SZIPLIB)
-set(ZLIBLIB)
-set(MPIINC)
-set(MPILIBS)
+set(BUILDHDF5 0)
+set(H5NEEDMPI 0)
+set(H5NEEDSZIP 0)
+set(H5NEEDZLIB 0)
 set(BUILDPARALLEL 0)
+set(HDF5INC "")
+set(HDF5LIB "")
+set(SZIPLIB "")
+set(ZLIBLIB "")
+set(MPIINC "")
+set(MPILIBS "")
+
 if (ENABLE_HDF5)
+  set(BUILDHDF5 1)
   if (HDF5_INCLUDE_PATH)
     file(TO_NATIVE_PATH ${HDF5_INCLUDE_PATH} HDF5INC)
   endif (HDF5_INCLUDE_PATH)
   if (HDF5_LIBRARY)
     file(TO_NATIVE_PATH ${HDF5_LIBRARY} HDF5LIB)
   endif (HDF5_LIBRARY)
-  if (HDF5_NEED_SZIP AND SZIP_LIBRARY)
-    file(TO_NATIVE_PATH ${SZIP_LIBRARY} SZIPLIB)
-  endif (HDF5_NEED_SZIP AND SZIP_LIBRARY)
-  if (HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
-    file(TO_NATIVE_PATH ${ZLIB_LIBRARY} ZLIBLIB)
-  endif (HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+  if (HDF5_NEED_SZIP)
+    set(H5NEEDSZIP 1)
+    if (SZIP_LIBRARY)
+      file(TO_NATIVE_PATH ${SZIP_LIBRARY} SZIPLIB)
+    endif (SZIP_LIBRARY)
+  endif (HDF5_NEED_SZIP)
+  if (HDF5_NEED_ZLIB)
+    set(H5NEEDZLIB 1)
+    if (ZLIB_LIBRARY)
+      file(TO_NATIVE_PATH ${ZLIB_LIBRARY} ZLIBLIB)
+    endif (ZLIB_LIBRARY)
+  endif (HDF5_NEED_ZLIB)
   if (HDF5_NEED_MPI)
+    set(H5NEEDMPI 1)
     if (MPI_INC)
       file(TO_NATIVE_PATH ${MPI_INC} MPIINC)
     endif (MPI_INC)
@@ -178,8 +139,20 @@ if (ENABLE_HDF5)
   endif (HDF5_NEED_MPI)
 endif (ENABLE_HDF5)
 
+#create these in build directory so is doesn't mess up the
+#source directory, then add the path to them
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes_f.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnslib_f.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 ###########
 # Library #

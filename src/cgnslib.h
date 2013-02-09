@@ -492,10 +492,26 @@ typedef enum {
   CGNS_ENUMV( MIXED ) =20,
   CGNS_ENUMV( PYRA_13 ) =21,
   CGNS_ENUMV( NGON_n ) =22,
-  CGNS_ENUMV( NFACE_n ) =23
+  CGNS_ENUMV( NFACE_n ) =23,
+  CGNS_ENUMV( BAR_4 ) =24,
+  CGNS_ENUMV( TRI_9 ) =25,
+  CGNS_ENUMV( TRI_10 ) =26,
+  CGNS_ENUMV( QUAD_12 ) =27,
+  CGNS_ENUMV( QUAD_16 ) =28,
+  CGNS_ENUMV( TETRA_16 ) =29,
+  CGNS_ENUMV( TETRA_20 ) =30,
+  CGNS_ENUMV( PYRA_21 ) =31,
+  CGNS_ENUMV( PYRA_29 ) =32,
+  CGNS_ENUMV( PYRA_30 ) =33,
+  CGNS_ENUMV( PENTA_24 ) =34,
+  CGNS_ENUMV( PENTA_38 ) =35,
+  CGNS_ENUMV( PENTA_40 ) =36,
+  CGNS_ENUMV( HEXA_32 ) =37,
+  CGNS_ENUMV( HEXA_56 ) =38,
+  CGNS_ENUMV( HEXA_64 ) =39
 } CGNS_ENUMT( ElementType_t );
 
-#define NofValidElementTypes 24
+#define NofValidElementTypes 40
 
 extern CGNSDLL const char * ElementTypeName[NofValidElementTypes];
 
@@ -522,6 +538,22 @@ extern CGNSDLL const char * ElementTypeName[NofValidElementTypes];
 #define  CG_NPE_MIXED     0
 #define  CG_NPE_NGON_n    0
 #define  CG_NPE_NFACE_n   0
+#define  CG_NPE_BAR_4     4
+#define  CG_NPE_TRI_9     9
+#define  CG_NPE_TRI_10   10
+#define  CG_NPE_QUAD_12  12
+#define  CG_NPE_QUAD_16  16
+#define  CG_NPE_TETRA_16 16
+#define  CG_NPE_TETRA_20 20
+#define  CG_NPE_PYRA_21  21
+#define  CG_NPE_PYRA_29  29
+#define  CG_NPE_PYRA_30  30
+#define  CG_NPE_PENTA_24 24
+#define  CG_NPE_PENTA_38 38
+#define  CG_NPE_PENTA_40 40
+#define  CG_NPE_HEXA_32  32
+#define  CG_NPE_HEXA_56  56
+#define  CG_NPE_HEXA_64  64
 #else
 #define  NPE_NODE      1
 #define  NPE_BAR_2     2
@@ -545,6 +577,22 @@ extern CGNSDLL const char * ElementTypeName[NofValidElementTypes];
 #define  NPE_MIXED     0
 #define  NPE_NGON_n    0
 #define  NPE_NFACE_n   0
+#define  NPE_BAR_4     4
+#define  NPE_TRI_9     9
+#define  NPE_TRI_10   10
+#define  NPE_QUAD_12  12
+#define  NPE_QUAD_16  16
+#define  NPE_TETRA_16 16
+#define  NPE_TETRA_20 20
+#define  NPE_PYRA_21  21
+#define  NPE_PYRA_29  29
+#define  NPE_PYRA_30  30
+#define  NPE_PENTA_24 24
+#define  NPE_PENTA_38 38
+#define  NPE_PENTA_40 40
+#define  NPE_HEXA_32  32
+#define  NPE_HEXA_56  56
+#define  NPE_HEXA_64  64
 #endif
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -657,6 +705,7 @@ CGNSDLL int cg_is_cgns(const char *filename, int *file_type);
 
 CGNSDLL int cg_open(const char * filename, int mode, int *fn);
 CGNSDLL int cg_version(int fn, float *FileVersion);
+CGNSDLL int cg_precision(int fn, int *precision);
 CGNSDLL int cg_close(int fn);
 CGNSDLL int cg_save_as(int fn, const char *filename, int file_type,
 	int follow_links);

@@ -546,6 +546,8 @@ fi
 # locate HDF5 includes and library if using HDF5
 #---------------------------------------------------------------------------
 
+BUILDHDF5=0
+HDF5DEF=""
 HDF5INC=""
 HDF5LIB=""
 
@@ -556,6 +558,7 @@ AC_ARG_WITH(hdf5,
 if test "$withhdf5" = "no"; then
   AC_MSG_RESULT(no)
 else
+  BUILDHDF5=1
   if test -z "$withhdf5" || test "$withhdf5" = "yes"; then
     hdf5dir=""
     AC_MSG_RESULT(yes)
@@ -587,7 +590,7 @@ else
     test -z "$hdf5dir" && \
       AC_MSG_ERROR(need specify the HDF5 directory with --with-hdf5=DIR)
     if test -f "$hdf5dir/include/hdf5.h"; then
-      HDF5INC=-I$hdf5dir/include
+      HDF5INC=$hdf5dir/include
       for a in $exts ; do
         if test -f $hdf5dir/lib/libhdf5.$a; then
           HDF5LIB=$hdf5dir/lib/libhdf5.$a
@@ -597,7 +600,7 @@ else
       test -z "$HDF5LIB" && HDF5LIB=$hdf5dir/lib/libhdf5.a
     else
       if test -f "$hdf5dir/src/hdf5.h"; then
-        HDF5INC=-I$hdf5dir/src
+        HDF5INC=$hdf5dir/src
         for a in $exts ; do
           if test -f $hdf5dir/src/.libs/libhdf5.$a; then
             HDF5LIB=$hdf5dir/src/.libs/libhdf5.$a
@@ -610,12 +613,14 @@ else
       fi
     fi
   fi
+  HDF5DEF=-I$HDF5INC
 fi
 
 #---------------------------------------------------------------------------
 # locate zlib and szip libraries
 #---------------------------------------------------------------------------
 
+H5NEEDZLIB=0
 ZLIBLIB=""
 
 if test "$withhdf5" = "yes"; then
@@ -627,6 +632,7 @@ if test "$withhdf5" = "yes"; then
   if test "$withzlib" = "no"; then
     AC_MSG_RESULT(no)
   else
+    H5NEEDZLIB=1
     if test -z "$withzlib" || test "$withzlib" = "yes"; then
       zlibdir=""
       AC_MSG_RESULT(yes)
@@ -677,6 +683,7 @@ if test "$withhdf5" = "yes"; then
   fi
 fi
 
+H5NEEDSZIP=0
 SZIPLIB=""
 
 if test "$withhdf5" = "yes"; then
@@ -687,6 +694,7 @@ if test "$withhdf5" = "yes"; then
   if test "x$sziplib" = "xno"; then
     AC_MSG_RESULT(no)
   else
+    H5NEEDSZIP=1
     if test -z "$sziplib" || test "$sziplib" = "yes"; then
       AC_MSG_RESULT(yes)
       AC_CHECK_LIB(sz, SZ_BufftoBuffCompress, SZIPLIB=-lsz)
@@ -720,6 +728,8 @@ fi
 
 withmpi=no
 
+H5NEEDMPI=0
+MPIDEF=""
 MPIINC=""
 MPIOPTS=""
 MPILIBS=""
@@ -734,6 +744,7 @@ if test "$withhdf5" = "yes"; then
   if test "x$withmpi" = "xno"; then
     AC_MSG_RESULT(no)
   else
+    H5NEEDMPI=1
     if test -z "$withmpi" || test "$withmpi" = "yes"; then
       AC_MSG_RESULT(yes)
       AC_PATH_PROG(MPICC, mpicc,)
@@ -773,9 +784,9 @@ if test "$withhdf5" = "yes"; then
       mpibin=`dirname $MPICC`
       mpidir=`dirname $mpibin`
       if test -d "$mpidir/src/include" ; then
-        MPIINC=-I$mpidir/src/include
+        MPIINC=$mpidir/src/include
       else
-        MPIINC=-I$mpidir/include
+        MPIINC=$mpidir/include
       fi
       MPIOPTS=`grep "^CFLAGS=" $MPICC | sed s/CFLAGS=// | sed s/\"//g`
       mpilib=`grep "^MPILIBNAME=" $MPICC | sed s/MPILIBNAME=// | sed s/\"//g`
@@ -788,6 +799,7 @@ if test "$withhdf5" = "yes"; then
       extralibs=`grep "^LIBS=" $MPICC | sed s/LIBS=// | sed s/\"//g`
       MPILIBS="$MPILIBS $extralibs"
     fi
+    MPIDEF=-I$MPIINC
     withmpi=yes
   fi
 fi
@@ -1252,11 +1264,18 @@ AC_SUBST(ADFOBJS)
 AC_SUBST(ADFINCS)
 AC_SUBST(F2COBJS)
 
+AC_SUBST(BUILDHDF5)
+AC_SUBST(H5NEEDMPI)
+AC_SUBST(H5NEEDSZIP)
+AC_SUBST(H5NEEDZLIB)
+
+AC_SUBST(HDF5DEF)
 AC_SUBST(HDF5INC)
 AC_SUBST(HDF5LIB)
 AC_SUBST(ZLIBLIB)
 AC_SUBST(SZIPLIB)
 
+AC_SUBST(MPIDEF)
 AC_SUBST(MPIINC)
 AC_SUBST(MPILIBS)
 AC_SUBST(MPIEXEC)
@@ -1337,7 +1356,7 @@ AC_SUBST(TCL_LIBRARY_SPEC)
 AC_SUBST(TK_LIBRARY_SPEC)
 AC_SUBST(LIBRARY_PATH_SPEC)
 
-AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnslib_f.h Makefile make.defs \
-  cgnsBuild.defs tests/Makefile tools/Makefile cgnstools/Makefile \
-  cgnstools/make.defs cgnstools/cgconfig ptests/Makefile)
+AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnslib_f.h cgnsconfig.h Makefile \
+  make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile \
+  cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig)
 

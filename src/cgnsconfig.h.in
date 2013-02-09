@@ -42,19 +42,19 @@
 #define CG_BUILD_FORTRAN   @BUILDFORTRAN@
 #define CG_BUILD_PARALLEL  @BUILDPARALLEL@
 
-#define HDF5_INCLUDE_PATH "@H5INCPATH@"
-#define HDF5_LIBRARY      "@H5LIBPATH@"
+#define HDF5_INCLUDE_PATH "@HDF5INC@"
+#define HDF5_LIBRARY      "@HDF5LIB@"
 
-#define HDF5_NEED_MPI   @H5NEEDMPI@
-#define HDF5_NEED_SZIP  @H5NEEDSZIP@
-#define HDF5_NEED_ZLIB  @H5NEEDZLIB@
+#define HDF5_NEED_MPI     @H5NEEDMPI@
+#define HDF5_NEED_SZIP    @H5NEEDSZIP@
+#define HDF5_NEED_ZLIB    @H5NEEDZLIB@
 
-#define MPI_INCLUDE_PATH "@MPIINCPATH@"
-#define MPI_LIBRARY      "@MPILIBPATH@"
-#define SZIP_LIBRARY     "@SZIPLIBPATH@"
-#define ZLIB_LIBRARY     "@ZLIBLIBPATH@"
+#define MPI_INCLUDE_PATH "@MPIINC@"
+#define MPI_LIBRARY      "@MPILIBS@"
+#define SZIP_LIBRARY     "@SZIPLIB@"
+#define ZLIB_LIBRARY     "@ZLIBLIB@"
 
-#define MPI_INC          "@MPIINCPATH@"
-#define MPI_LIBS         "@MPILIBPATH@"
+#define MPI_INC          "@MPIINC@"
+#define MPI_LIBS         "@MPILIBS@"
 
 #endif

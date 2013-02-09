@@ -90,7 +90,7 @@ int n_cgns_files = 0;
 cgns_posit *posit = 0;
 int posit_file, posit_base, posit_zone;
 int CGNSLibVersion=CGNS_VERSION;/* Version of the CGNSLibrary*1000  */
-int cgns_compress = -0;
+int cgns_compress = 0;
 int cgns_filetype = CG_FILE_NONE;
 
 extern void (*cgns_error_handler)(int, char *);
@@ -200,7 +200,13 @@ const char * ElementTypeName[NofValidElementTypes] =
      "PYRA_5", "PYRA_14",
      "PENTA_6", "PENTA_15", "PENTA_18",
      "HEXA_8", "HEXA_20", "HEXA_27",
-     "MIXED", "PYRA_13", "NGON_n", "NFACE_n"
+     "MIXED", "PYRA_13", "NGON_n", "NFACE_n",
+     "BAR_4", "TRI_9", "TRI_10",
+     "QUAD_12", "QUAD_16",
+     "TETRA_16", "TETRA_20",
+     "PYRA_21", "PYRA_29", "PYRA_30",
+     "PENTA_24", "PENTA_38", "PENTA_40",
+     "HEXA_32", "HEXA_56", "HEXA_64"
     };
 const char * ZoneTypeName[NofValidZoneTypes] =
     {"Null", "UserDefined",
@@ -317,7 +323,7 @@ int cg_is_cgns(const char *filename, int *file_type)
 
 int cg_open(const char * filename, int mode, int *file_number)
 {
-    int cgio;
+    int cgio, precision;
     cgsize_t dim_vals;
     double dummy_id;
     float FileVersion;
@@ -329,15 +335,15 @@ int cg_open(const char * filename, int mode, int *file_number)
 
     /* check file mode */
     switch(mode) {
-        case CG_MODE_MODIFY:
         case CG_MODE_READ:
+        case CG_MODE_MODIFY:
             if (ACCESS(filename, F_OK)) {
                 cgi_error("Error opening file: '%s' not found!", filename);
                 return CG_ERROR;
             }
             break;
         case CG_MODE_WRITE:
-             /* unlink is now done in cgio_open_file */
+            /* unlink is now done in cgio_open_file */
             break;
         default:
             cgi_error("Unknown opening file mode: %d ??",mode);
@@ -392,6 +398,11 @@ int cg_open(const char * filename, int mode, int *file_number)
             "CGNSLibraryVersion_t", &dummy_id, "R4", 1, &dim_vals,
             (void *)&FileVersion)) return CG_ERROR;
         cg->version = CGNSLibVersion;
+
+        precision = CG_SIZEOF_SIZE;
+        if (cgi_new_node(cg->rootid, "CGNSLibraryPrecision",
+            "CGNSLibraryPrecision_t", &dummy_id, "I4", 1, &dim_vals,
+            (void *)&precision)) return CG_ERROR;
     }
     else {
 
@@ -430,13 +441,13 @@ int cg_open(const char * filename, int mode, int *file_number)
 
     /* read CGNS file */
     if (mode == CG_MODE_READ || mode == CG_MODE_MODIFY) {
+        int nnod;
+        double *id;
         if (cgi_read()) return CG_ERROR;
 
         /* update version number in modify mode */
         if (cg->version < CGNSLibVersion && mode == CG_MODE_MODIFY && 
             (cgns_filetype!=CG_FILE_ADF2 || cg->version < CGNS_COMPATVERSION)) {
-            int nnod;
-            double *id;
             /* FileVersion = (float) CGNS_DOTVERS; */
             /* Jiao: Changed to use older compatible version */
             if (cgns_filetype == CG_FILE_ADF2)
@@ -461,6 +472,42 @@ int cg_open(const char * filename, int mode, int *file_number)
                     (void *)&FileVersion)) return CG_ERROR;
             }
             cg->version = CGNSLibVersion;
+        }
+
+        if (mode == CG_MODE_MODIFY) {
+            if (cgi_get_nodes(cg->rootid, "CGNSLibraryPrecision_t",
+                    &nnod, &id)) return CG_ERROR;
+            if (nnod <= 0) {
+                dim_vals = 1;
+                precision = CG_SIZEOF_SIZE;
+                if (cgi_new_node(cg->rootid, "CGNSLibraryPrecision",
+                    "CGNSLibraryPrecision_t", &dummy_id, "I4", 1, &dim_vals,
+                    (void *)&precision)) return CG_ERROR;
+            }
+            else {
+                int ndim;
+                cgsize_t dims[12];
+                char_33 node_name;
+                char_33 data_type;
+                void *data;
+                if (cgi_read_node(id[0], node_name, data_type, &ndim,
+                        dims, &data, 1)) {
+                    cgi_error("Error reading CGNS-Library-Precision");
+                    return CG_ERROR;
+                }
+                if (0 == strcmp(data_type,"I4") && ndim == 1 && dims[0] == 1) {
+                    precision = *((int *)data);
+                    if (precision < CG_SIZEOF_SIZE) {
+                        precision = CG_SIZEOF_SIZE;
+                        if (cgio_write_all_data(cg->cgio, id[0], &precision)) {
+                            cg_io_error("cgio_write_all_data");
+                            return CG_ERROR;
+                        }
+                    }
+                }
+                free(data);
+                free(id);
+            }
         }
     } else {
         cg->nbases=0;
@@ -548,6 +595,56 @@ int cg_version(int file_number, float *FileVersion)
     printf("cg->version=%d\n",cg->version);
 #endif
 
+    return CG_OK;
+}
+
+int cg_precision(int file_number, int *precision)
+{
+    int nnod;
+    double *id;
+    int ndim;
+    cgsize_t dim_vals[12];
+    char_33 node_name;
+    char_33 data_type;
+    void *data;
+
+    *precision = 0;
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
+
+/* if open in CG_MODE_WRITE */
+    if (cg->mode == CG_MODE_WRITE) {
+        *precision = CG_SIZEOF_SIZE;
+        return CG_OK;
+    }
+
+    if (cgi_get_nodes(cg->rootid, "CGNSLibraryPrecision_t", &nnod, &id))
+        return CG_ERROR;
+    if (nnod <= 0) return CG_OK;
+    if (nnod > 1) {
+        free(id);
+        cgi_error("More then one CGNSLibraryPrecision_t node found under ROOT.");
+        return CG_ERROR;
+    }
+
+    if (cgi_read_node(id[0], node_name, data_type, &ndim, dim_vals,
+            &data, 1)) {
+        cgi_error("Error reading CGNS-Library-Precision");
+        return CG_ERROR;
+    }
+    /* check data type */
+    if (strcmp(data_type,"I4")) {
+        cgi_error("Unexpected data type for CGNS-Library-Precision='%s'",data_type);
+        return CG_ERROR;
+    }
+    /* check data dim */
+    if (ndim != 1 || (dim_vals[0]!=1)) {
+        cgi_error("Wrong data dimension for CGNS-Library-Precision");
+        return CG_ERROR;
+    }
+    *precision = *((int *)data);
+    free(data);
+    free(id);
     return CG_OK;
 }
 
@@ -6145,16 +6242,12 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
             ptype = CGNS_ENUMV(PointList);
         else
             ptype = CGNS_ENUMV(PointRange);
-#ifdef CG_ALLOW_BC_CELL_CENTER
-        location = CGNS_ENUMV(CellCenter);
-#else
         if (cg->base[B-1].cell_dim == 1)
             location = CGNS_ENUMV(Vertex);
         else if (cg->base[B-1].cell_dim == 2)
             location = CGNS_ENUMV(EdgeCenter);
         else
             location = CGNS_ENUMV(FaceCenter);
-#endif
     } else {
         if (ptset_type != CGNS_ENUMV(PointList) &&
             ptset_type != CGNS_ENUMV(PointRange)) {
@@ -6173,6 +6266,15 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
         cgi_error("Invalid BCType:  %d",bocotype);
         return CG_ERROR;
     }
+
+    if (cgi_check_location(cg->base[B-1].cell_dim,
+            cg->base[B-1].zone[Z-1].type, location)) return CG_ERROR;
+#ifndef CG_ALLOW_BC_CELL_CENTER
+    if (location == CGNS_ENUMV(CellCenter)) {
+        cgi_error("GridLocation CellCenter not valid - use Edge/FaceCenter");
+        return CG_ERROR;
+    }
+#endif
 
      /* Allocate ZoneBC data struct. if not already created */
     if (zone->zboco == 0) {
@@ -10756,6 +10858,22 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
         CG_NPE_PYRA_13, /* PYRA_13 */
         CG_NPE_NGON_n,  /* NGON_n */
         CG_NPE_NFACE_n,  /* NFACE_n */
+        CG_NPE_BAR_4,
+        CG_NPE_TRI_9,
+        CG_NPE_TRI_10,
+        CG_NPE_QUAD_12,
+        CG_NPE_QUAD_16,
+        CG_NPE_TETRA_16,
+        CG_NPE_TETRA_20,
+        CG_NPE_PYRA_21,
+        CG_NPE_PYRA_29,
+        CG_NPE_PYRA_30,
+        CG_NPE_PENTA_24,
+        CG_NPE_PENTA_38,
+        CG_NPE_PENTA_40,
+        CG_NPE_HEXA_32,
+        CG_NPE_HEXA_56,
+        CG_NPE_HEXA_64
 #else
         NPE_NODE,  /* NODE */
         NPE_BAR_2,  /* BAR_2 */
@@ -10779,6 +10897,22 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
         NPE_PYRA_13, /* PYRA_13 */
         NPE_NGON_n,  /* NGON_n */
         NPE_NFACE_n,  /* NFACE_n */
+        NPE_BAR_4,
+        NPE_TRI_9,
+        NPE_TRI_10,
+        NPE_QUAD_12,
+        NPE_QUAD_16,
+        NPE_TETRA_16,
+        NPE_TETRA_20,
+        NPE_PYRA_21,
+        NPE_PYRA_29,
+        NPE_PYRA_30,
+        NPE_PENTA_24,
+        NPE_PENTA_38,
+        NPE_PENTA_40,
+        NPE_HEXA_32,
+        NPE_HEXA_56,
+        NPE_HEXA_64
 #endif
     };
     if (type < 0 || type >= NofValidElementTypes) {

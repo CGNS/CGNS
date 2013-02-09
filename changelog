@@ -7,6 +7,7 @@
 - removed cgnsversion program from tools since support was getting
   out of hand (N squared problem with versions).
 - added routines to convert to and from AFLR3, FAST, and TetGen
+- implemented cubic elements (CPEX 0036)
 
 == 3.1.4 ==
 - added some const definitions to library
@@ -21,6 +22,9 @@
 - added cgnsBuild.defs Makefile include to installation
 - removed unneeded tools directory from cgnstools
 - cgnstools no longer built automatically - need to set configure flag
+- allow CellCenter for BCs
+- added CGNSLibraryPrecision_t node under root to store file precision.
+  added cg_precision and cg_precision_f functions to read it.
 
 == 3.0.8 ==
 - Fix flag

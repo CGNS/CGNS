@@ -36,7 +36,7 @@ CGNS_INCLUDEDIR = @INCLUDEDIR@
 #-----------------------------------------------------------------------
 
 CGNS_CC      = @CC@
-CGNS_CFLAGS  = @CFLAGS@ @SYSCFLAGS@ @CFGFLAGS@ -I$(CGNS_INCLUDEDIR)
+CGNS_CFLAGS  = @CFLAGS@ @SYSCFLAGS@ @CFGFLAGS@
 CGNS_LDFLAGS = @LDFLAGS@
 
 #-----------------------------------------------------------------------

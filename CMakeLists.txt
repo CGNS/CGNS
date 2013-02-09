@@ -11,7 +11,7 @@ set(CMAKE_BUILD_TYPE "Release" CACHE STRING
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Release;Debug;RelWithDebInfo;MinSizeRel")
 
 project("cgns" C)
-set(CGNS_VERSION "3.2.01")
+set(CGNS_VERSION "3.2")
 
 # Allow for building a package
 set(CPACK_PACKAGE_VERSION "${CGNS_VERSION}-develop")
