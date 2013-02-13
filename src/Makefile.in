@@ -33,9 +33,10 @@ ADFOBJS=@ADFOBJS@ \
 
 #----------
 
-cgns : $(CGNSLIB)
-all  : $(CGNSLIB) tools @CGNSTOOLS@
-test : runtests
+all     : $(CGNSLIB) tools @CGNSTOOLS@
+cgns    : $(CGNSLIB)
+test    : runtests
+install : install-cgns @INSTALLCGNSTOOLS@
 
 #----------
 
@@ -67,9 +68,7 @@ clean :
 	-$(RM) $(OBJDIR)/*.$(O)
 	-cd tools && $(MAKE) clean
 	-cd tests && $(MAKE) clean
-	@if [ -f cgnstools/Makefile ] ; then \
-	   cd cgnstools && $(MAKE) clean; \
-	 fi;
+	-cd cgnstools && $(MAKE) clean
 
 allclean : distclean
 
@@ -78,9 +77,7 @@ distclean :
 	-$(RM) tools/Makefile
 	-cd tests && $(MAKE) allclean
 	-$(RM) tests/Makefile
-	@if [ -f cgnstools/Makefile ] ; then \
-	   cd cgnstools && $(MAKE) distclean; \
-	 fi;
+	-cd cgnstools && $(MAKE) allclean
 	-$(RM) $(CGNSLIB)
 	-$(RM) $(OBJDIR)/*.$(O)
 	-$(RMDIR) $(OBJDIR)
@@ -89,7 +86,9 @@ distclean :
 	-$(RM) make.defs cgnsBuild.defs Makefile
 	-$(RM) *~ *.bak
 
-install : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR) @INSTALLADF@
+install-all : install
+
+install-cgns : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR) @INSTALLADF@
 	$(INSTALL_DATA) cgnstypes.h $(INCLUDEDIR)/cgnstypes.h
 	$(INSTALL_DATA) cgnstypes_f.h $(INCLUDEDIR)/cgnstypes_f.h
 	$(INSTALL_DATA) cgnslib.h $(INCLUDEDIR)/cgnslib.h
@@ -99,13 +98,10 @@ install : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR) @INSTALLADF@
 	$(INSTALL_DATA) cgnsBuild.defs $(INCLUDEDIR)/cgnsBuild.defs
 	$(INSTALL_DATA) $(CGNSLIB) $(LIBDIR)/$(INSTLIB)
 
-allinstall  : install-all
-install-all : install install-tools @INSTALLCGNSTOOLS@
-
 install-tools :
 	-cd tools && $(MAKE) install
 
-install-cgnstools :
+install-cgnstools : install-tools
 	-cd cgnstools && $(MAKE) install
 
 install-adf : $(INCLUDEDIR)/adf
@@ -143,6 +139,8 @@ $(INCLUDEDIR)/adfh : $(INCLUDEDIR)
 	  fi;
 
 uninstall :
+	-cd tools && $(MAKE) uninstall
+	-cd cgnstools && $(MAKE) uninstall
 	-$(RM) $(INCLUDEDIR)/cgnstypes.h
 	-$(RM) $(INCLUDEDIR)/cgnstypes_f.h
 	-$(RM) $(INCLUDEDIR)/cgnslib.h
@@ -158,11 +156,7 @@ uninstall :
 	 if [ -f $(INCLUDEDIR)/adfh/ADFH.h ] ; then \
 	   $(RM) $(INCLUDEDIR)/adfh/ADFH.h; \
 	   $(RMDIR) $(INCLUDEDIR)/adfh; \
-	 fi; \
-
-uninstall-all : uninstall
-	-cd tools && $(MAKE) uninstall
-	-cd cgnstools && $(MAKE) uninstall
+	 fi;
 
 #---------- mid-level library
 

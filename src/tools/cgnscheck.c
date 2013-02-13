@@ -297,7 +297,7 @@ static int read_gridlocation (CGNS_ENUMT(GridLocation_t) *location)
     int ierr = check_node ("GridLocation_t");
     if (ierr == CG_OK)
         return cg_gridlocation_read (location);
-    *location = CGNS_ENUMV(GridLocationNull);
+    *location = CGNS_ENUMV(Vertex);
     return ierr;
 }
 
@@ -1513,7 +1513,7 @@ static void check_quantity (int dnum, char *name,
                     warning (2, "exponents do not match CGNS specification");
             }
             else
-                warning (2, "exponents not given");
+                warning (3, "exponents not given");
         }
     }
     else if ((CGNS_ENUMT(DataClass_t))dclass == CGNS_ENUMV(NondimensionalParameter) ||
@@ -1634,7 +1634,7 @@ static void check_user_data (int parclass, int *parunits, int indent)
                 if (0 == strcmp (name, Family[n])) break;
             }
             if (n == NumFamily)
-                warning (1, "family name \"%s\" not found", name);
+                warning (2, "family name \"%s\" not found", name);
         }
         if (verbose > 1) {
             if (cg_ndescriptors (&nd)) error_exit ("cg_ndescriptors");
@@ -2641,16 +2641,30 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z,
     CGNS_ENUMT(PointSetType_t) ptype, CGNS_ENUMT(GridLocation_t) location)
 {
     switch (location) {
-        case CGNS_ENUMV(GridLocationNull):
-            if (ptype == CGNS_ENUMV(ElementRange) ||
-                ptype == CGNS_ENUMV(ElementList)) break;
         case CGNS_ENUMV(Vertex):
-            return CGNS_ENUMV(Vertex);
-        case CGNS_ENUMV(FaceCenter):
-            if (z->type == CGNS_ENUMV(Structured))
-                warning (2,
-                    "use [IJK]FaceCenter with Structured grids");
             break;
+        case CGNS_ENUMV(EdgeCenter):
+            if (CellDim == 1) {
+                if (FileVersion >= 3140) {
+                    warning (1, "use CellCenter for CellDim=1"
+                                " instead of EdgeCenter");
+                }
+                return CGNS_ENUMV(CellCenter);
+            }
+            return location;
+        case CGNS_ENUMV(FaceCenter):
+            if (z->type == CGNS_ENUMV(Structured)) {
+                warning (2, "use [IJK]FaceCenter with Structured grids");
+                return location;
+            }
+            if (CellDim == 2) {
+                if (FileVersion >= 3140) {
+                    warning (1, "use CellCenter for CellDim=2"
+                                " instead of FaceCenter");
+                }
+                return CGNS_ENUMV(CellCenter);
+            }
+            return location;
         case CGNS_ENUMV(IFaceCenter):
             if (z->type != CGNS_ENUMV(Structured)) {
                 error ("IFaceCenter only valid for Structured grids");
@@ -2672,29 +2686,20 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z,
             }
             break;
         case CGNS_ENUMV(CellCenter):
-            if (z->type == CGNS_ENUMV(Structured) && FileVersion >= 2300)
+            if (z->type == CGNS_ENUMV(Structured) && FileVersion >= 2300) {
                 warning (2, "use [IJK]FaceCenter location rather"
                     " than CellCenter");
-            else if (FileVersion >= 3100)
-                error("CellCenter not allowed - use Edge/FaceCenter");
-            else
-                warning (2, "use FaceCenter location rather than"
-                    " CellCenter");
-            return CellDim == 2 ? CGNS_ENUMV(EdgeCenter) :
-                                  CGNS_ENUMV(FaceCenter);
+            }
+            return location;
         default:
-            if (FileVersion >= 3100)
-                error ("grid location not Vertex,EdgeCenter,FaceCenter"
-                       " or [IJK]FaceCenter");
-            else
-                error ("grid location not Vertex,EdgeCenter,FaceCenter"
-                       " [IJK]FaceCenter or CellCenter");
+            error ("invalid grid location");
             break;
     }
     if (ptype == CGNS_ENUMV(ElementRange) ||
         ptype == CGNS_ENUMV(ElementList)) {
-        return CellDim == 2 ? CGNS_ENUMV(EdgeCenter) :
-                              CGNS_ENUMV(FaceCenter);
+        return (CellDim == 1 ? CGNS_ENUMV(Vertex) :
+               (CellDim == 2 ? CGNS_ENUMV(EdgeCenter) :
+                               CGNS_ENUMV(FaceCenter)));
     }
     return location;
 }
@@ -2820,7 +2825,7 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
                     }
                 }
             }
-            size = check_interface (z, ptype, location, npnts, pts, 1);
+            size = check_interface (z, ptype, location, npnts, pts, location != CellCenter);
             free (pts);
         }
     }
@@ -3010,7 +3015,8 @@ static void check_BC (int nb, int parclass, int *parunits)
         }
         if (n == NumFamily &&
             (FileVersion >= 1200 || strcmp(name, "ORPHAN")))
-            warning (1, "family name \"%s\" not found", name);
+            warning (bctype == CGNS_ENUMV(FamilySpecified) ? 1 : 2,
+                "family name \"%s\" not found", name);
     }
 
     ierr = read_ordinal (&n);
@@ -3066,7 +3072,7 @@ static void check_BC (int nb, int parclass, int *parunits)
             }
         }
     }
-    npts = check_interface (z, ptype, location, npts, pts, 1);
+    npts = check_interface (z, ptype, location, npts, pts, location != CellCenter);
     free (pts);
 
     /* BCDataSet */
@@ -4170,6 +4176,7 @@ static void check_solution (int ns)
         printf ("    Grid Location=%s\n", cg_GridLocationName (location));
     fflush (stdout);
 
+#if 0
     if (location != CGNS_ENUMV(Vertex) && location != CGNS_ENUMV(CellCenter)) {
         if (z->type == CGNS_ENUMV(Unstructured))
             error ("grid location nust be Vertex or CellCenter for"
@@ -4179,6 +4186,9 @@ static void check_solution (int ns)
                  location != CGNS_ENUMV(KFaceCenter))
             error ("grid location not Vertex,CellCenter or [IJK]FaceCenter");
     }
+#else
+    location = check_location (z, CGNS_ENUMV(PointSetTypeNull), location);
+#endif
 
     go_absolute ("Zone_t", cgnszone, "FlowSolution_t", ns, NULL);
 
@@ -4430,12 +4440,12 @@ static void check_subreg (int ns)
         error_exit("cg_subreg_info");
     strcpy (ZoneSubReg[ns-1], name);
     printf ("  checking subregion \"%s\"\n", name);
-    
+
     if (verbose)
         printf ("    Dimension=%d\n", dimension);
     if (dimension < 1 || dimension > CellDim)
         error("subregion dimension invalid");
- 
+
     if (verbose)
         printf ("    Grid Location=%s\n", cg_GridLocationName(location));
     if (dimension == 1) {
@@ -4566,7 +4576,7 @@ static void check_subreg (int ns)
     }
 
     /* family */
- 
+
     ierr = cg_famname_read (name);
     if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_famname_read");
     if (ierr == CG_OK) {
@@ -4576,7 +4586,7 @@ static void check_subreg (int ns)
         }
         if (n == NumFamily &&
             (FileVersion >= 1200 || strcmp(name, "ORPHAN")))
-            warning (1, "family name \"%s\" not found", name);
+            warning (2, "family name \"%s\" not found", name);
     }
 
     /* descriptors */
@@ -4863,7 +4873,7 @@ static void check_zone (void)
         }
         if (n >= NumFamily &&
             (FileVersion >= 1200 || strcmp(name, "ORPHAN")))
-            warning (1, "zone family name \"%s\" not found", name);
+            warning (2, "zone family name \"%s\" not found", name);
     }
 
     /*----- ReferenceState -----*/
@@ -5772,6 +5782,12 @@ int main (int argc, char *argv[])
     FileVersion = (int)(1000.0 * file_version + 0.5);
     if (LibraryVersion < FileVersion)
         warning (1, "CGNS file version is more recent than library version");
+    if (verbose) {
+        int precision;
+        printf ("File Version=%g\n", file_version);
+        cg_precision (cgnsfn, &precision);
+        if (precision) printf ("File Precision=%d\n", precision);
+    }
 
     /* get number of bases */
 

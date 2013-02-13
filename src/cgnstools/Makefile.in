@@ -20,6 +20,8 @@ clean :
 	  cd $$d; $(DOMAKE) clean; cd ..; \
 	done;
 
+allclean  : distclean
+
 distclean : clean
 	-@$(RM) config.*
 	-@$(RM) make.defs Makefile cgconfig

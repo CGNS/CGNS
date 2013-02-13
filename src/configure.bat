@@ -684,16 +684,18 @@ if %do64bit% == 1 (
 set libs="ADF"
 
 if "%hdf5inc%" == "" (
+  set hdf5def=
   set hdf5lib=
   set zliblib=
   set sziplib=
 ) else (
+  set hdf5def=/I%hdf5inc%
   set libs=%libs HDF5
-  set hdf5inc=/I%hdf5inc%
   set build=%build% /DBUILD_HDF5
 )
 
-if not "%mpiinc%" == "" set mpiinc=/I%mpiinc%
+set mpidef=
+if not "%mpiinc%" == "" set mpidef=/I%mpiinc%
 
 if "%f2c%" == "none" (
   set f2cobjs=
@@ -1522,7 +1524,7 @@ echo      ^&      'NODE', 'BAR_2', 'BAR_3', 'TRI_3', 'TRI_6',                 ^&
 echo      ^&      'QUAD_4', 'QUAD_8', 'QUAD_9', 'TETRA_4', 'TETRA_10',        ^&>> cgnslib_f.h
 echo      ^&      'PYRA_5', 'PYRA_14', 'PENTA_6', 'PENTA_15',                 ^&>> cgnslib_f.h
 echo      ^&      'PENTA_18', 'HEXA_8', 'HEXA_20', 'HEXA_27', 'MIXED',        ^&>> cgnslib_f.h
-echo      ^&      'PYRA_13','NGON_n', 'NFACE_n' />> cgnslib_f.h
+echo      ^&      'PYRA_13', 'NGON_n', 'NFACE_n' />> cgnslib_f.h
 echo.>> cgnslib_f.h
 echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
 echo !*      Zone types                                                     *>> cgnslib_f.h
@@ -1657,7 +1659,7 @@ echo # SZIPLIB - szip library (if needed)>> make.defs
 echo # ZLIBLIB - zlib library (if needed)>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo.>> make.defs
-echo HDF5INC = %hdf5inc%>> make.defs
+echo HDF5INC = %hdf5def%>> make.defs
 echo HDF5LIB = %hdf5lib%>> make.defs
 echo SZIPLIB = %sziplib%>> make.defs
 echo ZLIBLIB = %zliblib%>> make.defs
@@ -1669,7 +1671,7 @@ echo # MPILIBS - MPI libraries>> make.defs
 echo # MPIEXEC - MPI executor>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo.>> make.defs
-echo MPIINC  = %mpiinc%>> make.defs
+echo MPIINC  = %mpidef%>> make.defs
 echo MPILIBS = %mpilibs%>> make.defs
 echo MPIEXEC = %mpiexec%>> make.defs
 echo.>> make.defs
@@ -1751,7 +1753,7 @@ echo # CGNS_LDFLAGS - any additional linker options>> cgnsBuild.defs
 echo #------------------------------------------------------------------------>> cgnsBuild.defs
 echo.>> cgnsBuild.defs
 echo CGNS_CC      = cl>> cgnsBuild.defs
-echo CGNS_CFLAGS  = /nologo %copts% /D_CRT_SECURE_NO_WARNINGS /I$(CGNS_INCLUDEDIR)>> cgnsBuild.defs
+echo CGNS_CFLAGS  = /nologo %copts% /D_CRT_SECURE_NO_WARNINGS>> cgnsBuild.defs
 echo CGNS_LDFLAGS = /nologo %lopts%>> cgnsBuild.defs
 echo.>> cgnsBuild.defs
 echo #------------------------------------------------------------------------>> cgnsBuild.defs
@@ -1831,10 +1833,15 @@ echo F2COBJS= $(OBJDIR)\cg_ftoc.$(O) $(OBJDIR)\cgio_ftoc.$(O)>> Makefile
 echo.>> Makefile
 echo #---------->> Makefile
 echo.>> Makefile
-if %target% == dll echo dll : $^(CGNSDLL^)>> Makefile
-echo cgns : $(CGNSLIB)>> Makefile
-echo all  : %target% tools %cgnstools%>> Makefile
-echo test : runtests>> Makefile
+echo all     : %target% tools %cgnstools%>> Makefile
+if %target% == dll echo dll     : $^(CGNSDLL^)>> Makefile
+echo cgns    : $(CGNSLIB)>> Makefile
+echo test    : runtests>> Makefile
+if "%cgnstools%" == "cgnstools" (
+  echo install : install-cgns install-tools install-cgnstools>> Makefile
+) else (
+  echo install : install-cgns>> Makefile
+)
 echo.>> Makefile
 echo #---------->> Makefile
 echo.>> Makefile
@@ -1892,7 +1899,7 @@ echo 	-$(RM) cgnstypes.h cgnstypes_f.h cgnslib_f.h>> Makefile
 echo 	-$(RM) *.pdb>> Makefile
 echo 	-$(RM) make.defs cgnsBuild.defs Makefile>> Makefile
 echo.>> Makefile
-echo install : %target% $(INCLUDEDIR) $(LIBDIR) %adfinc%>> Makefile
+echo install-cgns : %target% $(INCLUDEDIR) $(LIBDIR) %adfinc%>> Makefile
 echo 	$(INSTALL_DATA) cgnstypes.h $(INCLUDEDIR)\cgnstypes.h>> Makefile
 echo 	$(INSTALL_DATA) cgnstypes_f.h $(INCLUDEDIR)\cgnstypes_f.h>> Makefile
 echo 	$(INSTALL_DATA) cgnslib.h $(INCLUDEDIR)\cgnslib.h>> Makefile
@@ -1902,6 +1909,14 @@ echo 	$(INSTALL_DATA) cgns_io.h $(INCLUDEDIR)\cgns_io.h>> Makefile
 echo 	$(INSTALL_DATA) cgnsBuild.defs $(INCLUDEDIR)\cgnsBuild.defs>> Makefile
 echo 	$(INSTALL_DATA) $(CGNSLIB) $(LIBDIR)\$(INSTLIB)>> Makefile
 if %target% == dll echo 	$(INSTALL_DATA) $(CGNSDLL) $(LIBDIR)\$(INSTDLL)>> Makefile
+echo.>> Makefile
+echo install-all : install>> Makefile
+echo.>> Makefile
+echo install-tools :>> Makefile
+echo 	-cd tools ^&^& %make% install>> Makefile
+echo.>> Makefile
+echo install-cgnstools :>> Makefile
+echo 	-cd cgnstools ^&^& %make% install>> Makefile
 echo.>> Makefile
 echo $(INCLUDEDIR) : $(INSTALLDIR)>> Makefile
 echo 	-$(MKDIR) $(INCLUDEDIR)>> Makefile
@@ -1923,11 +1938,6 @@ echo 	$(INSTALL_DATA) adfh\ADFH.h $(INCLUDEDIR)\adfh\ADFH.h>> Makefile
 echo.>> Makefile
 echo $(INCLUDEDIR)\adfh : $(INCLUDEDIR)>> Makefile
 echo 	-$(MKDIR) $(INCLUDEDIR)\adfh>> Makefile
-echo.>> Makefile
-echo allinstall : install-all>> Makefile
-echo install-all : install>> Makefile
-echo 	-cd tools ^&^& %make% install>> Makefile
-if "%cgnstools%" == "cgnstools" echo 	-cd cgnstools ^&^& %make% install>> Makefile
 echo.>> Makefile
 echo #---------- mid-level library>> Makefile
 echo.>> Makefile

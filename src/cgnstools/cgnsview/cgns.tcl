@@ -20,7 +20,6 @@ array set CGNSnodes {
   BCRegionName                 {1 Descriptor_t C1 {} 1}
   CellListDonor                {1 IndexArray_t I4 {} 0}
   CGNSBase                     {0 CGNSBase_t I4 2 1}
-  CGNSLibraryPrecision         {1 CGNSLibraryPrecision_t I4 1 0}
   CGNSLibraryVersion           {1 CGNSLibraryVersion_t R4 1 0}
   ChemicalKineticsModel        {1 ChemicalKineticsModel_t C1 {} 0}
   ConvergenceDataArray         {1 DataArray_t R4 {} 1}
@@ -132,7 +131,7 @@ array set CGNSnodes {
 }
 
 array set CGNSnodeChildren {
-  / {CGNSBase CGNSLibraryVersion CGNSLibraryPrecision}
+  / {CGNSBase CGNSLibraryVersion}
   ArbitraryGridMotion_t {DataClass Descriptor DimensionalUnits \
       GridLocation GridVelocity Rind UserDefinedData}
   Area_t {AreaType Descriptor RegionName SurfaceArea UserDefinedData}
@@ -378,8 +377,6 @@ Carcel, Hefner, Violle}}
       {list of indices for cells on adjoining patch}}
   CGNSBase_t {{user defined} CGNSBase_t {0,N} I4 1 2 \
       {CellDimension, PhysicalDimension}}
-  CGNSLibraryPrecision_t {CGNSLibraryPrecision CGNSLibraryPrecision_t \
-      1 I4 1 1 {CGNS Mid-Level Library precision (32 or 64)}}
   CGNSLibraryVersion_t {CGNSLibraryVersion CGNSLibraryVersion_t 1 R4 1 1 \
       {CGNS Mid-Level Library version number}}
   ChemicalKineticsModel_t {ChemicalKineticsModel ChemicalKineticsModel_t \

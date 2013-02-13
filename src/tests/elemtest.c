@@ -73,11 +73,10 @@ static cgsize_t elems[256];
 
 int main (int argc, char *argv[])
 {
-    int i, j, k, n;
+    int j, n;
     cgsize_t ne;
     int fnum, bnum, znum, snum, cnum;
     cgsize_t size[3];
-    CGNS_ENUMT(ElementType_t) type;
     char *outfile = "elemtest.cgns";
 
     unlink (outfile);

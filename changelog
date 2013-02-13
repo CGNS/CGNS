@@ -12,8 +12,8 @@
 - removed unneeded tools directory from cgnstools
 - cgnstools no longer built automatically - need to set configure flag
 - allow CellCenter for BCs
-- added CGNSLibraryPrecision_t node under root to store file precision.
-  added cg_precision and cg_precision_f functions to read it.
+- added cg_precision and cg_precision_f functions to get integer
+  size used to create the file (32 or 64)
 
 == 3.0.8 ==
 - Fix flag
