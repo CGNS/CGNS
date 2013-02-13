@@ -33,9 +33,10 @@ ADFOBJS=@ADFOBJS@ \
 
 #----------
 
-cgns : $(CGNSLIB)
-all  : $(CGNSLIB) tools @CGNSTOOLS@
-test : runtests @PTESTS@
+all     : $(CGNSLIB) tools @CGNSTOOLS@
+cgns    : $(CGNSLIB)
+test    : runtests @PTESTS@
+install : install-cgns @INSTALLCGNSTOOLS@
 
 #----------
 
@@ -74,9 +75,7 @@ clean :
 	-cd tools && $(MAKE) clean
 	-cd tests && $(MAKE) clean
 	-cd ptests && $(MAKE) clean
-	@if [ -f cgnstools/Makefile ] ; then \
-	   cd cgnstools && $(MAKE) clean; \
-	 fi;
+	-cd cgnstools && $(MAKE) clean
 
 allclean : distclean
 
@@ -87,9 +86,7 @@ distclean :
 	-$(RM) tests/Makefile
 	-cd ptests && $(MAKE) allclean
 	-$(RM) ptests/Makefile
-	@if [ -f cgnstools/Makefile ] ; then \
-	   cd cgnstools && $(MAKE) distclean; \
-	 fi;
+	-cd cgnstools && $(MAKE) allclean
 	-$(RM) $(CGNSLIB)
 	-$(RM) $(OBJDIR)/*.$(O)
 	-$(RMDIR) $(OBJDIR)
@@ -98,7 +95,9 @@ distclean :
 	-$(RM) make.defs cgnsBuild.defs Makefile
 	-$(RM) *~ *.bak
 
-install : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR) @INSTALLPCGNS@ @INSTALLADF@
+install-all : install
+
+install-cgns : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR) @INSTALLPCGNS@ @INSTALLADF@
 	$(INSTALL_DATA) cgnstypes.h $(INCLUDEDIR)/cgnstypes.h
 	$(INSTALL_DATA) cgnstypes_f.h $(INCLUDEDIR)/cgnstypes_f.h
 	$(INSTALL_DATA) cgnslib.h $(INCLUDEDIR)/cgnslib.h
@@ -109,13 +108,10 @@ install : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR) @INSTALLPCGNS@ @INSTALLADF@
 	$(INSTALL_DATA) cgnsBuild.defs $(INCLUDEDIR)/cgnsBuild.defs
 	$(INSTALL_DATA) $(CGNSLIB) $(LIBDIR)/$(INSTLIB)
 
-allinstall  : install-all
-install-all : install install-tools @INSTALLCGNSTOOLS@
-
-install-tools:
+install-tools :
 	-cd tools && $(MAKE) install
 
-install-cgnstools:
+install-cgnstools : install-tools
 	-cd cgnstools && $(MAKE) install
 
 install-adf : $(INCLUDEDIR)/adf
@@ -156,6 +152,8 @@ $(INCLUDEDIR)/adfh : $(INCLUDEDIR)
 	  fi;
 
 uninstall :
+	-cd tools && $(MAKE) uninstall
+	-cd cgnstools && $(MAKE) uninstall
 	-$(RM) $(INCLUDEDIR)/cgnstypes.h
 	-$(RM) $(INCLUDEDIR)/cgnstypes_f.h
 	-$(RM) $(INCLUDEDIR)/cgnslib.h
@@ -176,10 +174,6 @@ uninstall :
 	 if [ -f $(INCLUDEDIR)/pcgnslib.h ] ; then \
 	   $(RM) $(INCLUDEDIR)/pcgnslib.h; \
 	 fi;
-
-uninstall-all : uninstall
-	-cd tools && $(MAKE) uninstall
-	-cd cgnstools && $(MAKE) uninstall
 
 #---------- mid-level library
 

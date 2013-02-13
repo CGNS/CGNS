@@ -2926,6 +2926,9 @@ proc run_command {title cmd {height 10} {width 60}} {
   text $w.f.t -width $width -height $height -yscroll "$w.f.s set"
   pack $w.f.t -side top -fill both -expand 1
 
+  $w.f.t tag configure warning -foreground blue
+  $w.f.t tag configure error -foreground red
+
   frame $w.b
   pack $w.b -side bottom
   button $w.b.close -text Close -command "destroy $w" -state disabled
@@ -2954,7 +2957,13 @@ proc run_event {w f} {
   if {![eof $f]} {
     fconfigure $f -blocking 0
     while {[gets $f line] >= 0} {
-      $w.f.t insert end "$line\n"
+      if {[string match {WARNING:*} $line]} {
+        $w.f.t insert end "$line\n" warning
+      } elseif {[string match {ERROR:*} $line]} {
+        $w.f.t insert end "$line\n" error
+      } else {
+        $w.f.t insert end "$line\n"
+      }
     }
     fconfigure $f -blocking 1
     $w.f.t yview -pickplace end

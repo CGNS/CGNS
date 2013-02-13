@@ -43,10 +43,12 @@ add_executable(test_zone ${test_zone_FILES})
 set(thesis_benchmark_FILES thesis_benchmark.c)
 add_executable(thesis_benchmark ${thesis_benchmark_FILES})
 
-if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
+if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS AND NOT ENABLE_64BIT)
   set(ftest_FILES ftest.F)
   add_executable(ftest ${ftest_FILES})
-endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
+  set(fexample_FILES fexample.F)
+  add_executable(fexample ${fexample_FILES})
+endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS AND NOT ENABLE_64BIT)
 
 # Add the tests so that ctest can find them
 if (ENABLE_TESTS)
@@ -64,8 +66,10 @@ if (ENABLE_TESTS)
       ${MPIEXEC_PREFLAGS} test_zone ${MPIEXEC_POSTFLAGS})
   add_test(thesis_benchmark ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} thesis_benchmark ${MPIEXEC_POSTFLAGS})
-  if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
+  if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS AND NOT ENABLE_64BIT)
     add_test(ftest ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
         ${MPIEXEC_PREFLAGS} ftest ${MPIEXEC_POSTFLAGS})
-  endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
+    add_test(fexample ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+        ${MPIEXEC_PREFLAGS} fexample ${MPIEXEC_POSTFLAGS})
+  endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS AND NOT ENABLE_64BIT)
 endif (ENABLE_TESTS)

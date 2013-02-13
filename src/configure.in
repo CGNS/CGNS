@@ -1229,13 +1229,18 @@ fi
 
 FALL=""
 FALL64=""
+PFALL=""
 
 if test $fortran = no; then
   F2COBJS=#F2COBJS
 else
   F2COBJS=F2COBJS
   FALL=\$\(FALL\)
-  test $BUILD64BIT -ne 0 && FALL64=\$\(FALL64\)
+  if test $BUILD64BIT -eq 0; then
+    PFALL=$FALL
+  else
+    FALL64=\$\(FALL64\)
+  fi
 fi
 
 CGNSLIB=libcgns.$EXT_LIB
@@ -1312,6 +1317,7 @@ AC_SUBST(PTESTS)
 
 AC_SUBST(FALL)
 AC_SUBST(FALL64)
+AC_SUBST(PFALL)
 
 BIN_INSTALL_DIR=$BINDIR
 EXE_INSTALL_DIR=$BINDIR/cgnstools

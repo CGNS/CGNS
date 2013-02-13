@@ -5,6 +5,7 @@
 #endif
       include 'cgnslib_f.h'
       include 'mpif.h'
+#include "cgnstypes_f.h"
 
       integer nperside, totnodes, totelems
       parameter (nperside = 5)
@@ -18,7 +19,11 @@
       integer sizes(3), start, end
       real*4 fx(totnodes), fy(totnodes), fz(totnodes), fd(totelems)
       integer ie(8*totelems)
-
+C
+#if CG_BUILD_64BIT
+      PRINT *,'PROGRAM NOT SET UP FOR 64-BIT'
+      STOP
+#endif
 c---- initialize MPI
       call MPI_INIT(ierr)
       call MPI_COMM_SIZE(MPI_COMM_WORLD, commsize, ierr)

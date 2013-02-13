@@ -605,7 +605,7 @@ c
      &      'TETRA_16', 'TETRA_20',                                     &
      &      'PYRA_21', 'PYRA_29', 'PYRA_30',                            &
      &      'PENTA_24', 'PENTA_38', 'PENTA_40',                         &
-     &      'HEXA_32, 'HEXA_56', 'HEXA_64' /
+     &      'HEXA_32', 'HEXA_56', 'HEXA_64' /
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Zone types                                                     *

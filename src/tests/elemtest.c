@@ -71,13 +71,50 @@ static cgsize_t face[] = {6, 1, 2, 3, 4, 5, 6,
 
 static cgsize_t elems[256];
 
+/* cubic elements */
+
+static double x3[55] = {
+    0.0, 3.0, 3.0, 0.0, 0.0, 3.0, 3.0, 0.0, 1.0, 2.0, 3.0, 3.0,
+    2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0, 0.0,
+    1.0, 2.0, 3.0, 3.0, 2.0, 1.0, 0.0, 0.0,
+    1.5, 1.5, 2.5, 2.0, 1.0, 0.5, 1.5, 1.5, 2.5, 2.0, 1.0, 0.5,
+    1.5, 0.5, 1.0, 2.5, 2.0, 2.5, 2.0, 0.5, 1.0, 1.5, 1.5
+};
+static double y3[55] = {
+    0.0, 0.0, 3.0, 3.0, 0.0, 0.0, 3.0, 3.0, 0.0, 0.0, 1.0, 2.0,
+    3.0, 3.0, 2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0,
+    0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 2.0, 1.0,
+    6.0, 6.0, 4.0, 5.0, 5.0, 4.0, 6.0, 6.0, 4.0, 5.0, 5.0, 4.0,
+    3.0, 1.0, 2.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0, 5.0, 4.0
+};
+static double z3[55] = {
+    0.0, 0.0, 0.0, 0.0, 3.0, 3.0, 3.0, 3.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0,
+    3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0,
+    0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0,
+    6.0, 4.0, 5.0, 4.0, 5.0, 4.0, 5.0, 4.0, 5.0, 4.0, 5.0
+};
+
+static cgsize_t bar4[] = {1, 2, 9, 10};
+static cgsize_t tri9[] = {4, 3, 33, 14, 13, 35, 36, 37, 38};
+static cgsize_t quad12[] = {1, 2, 3, 4, 9, 10, 11, 12, 13, 14, 15, 16};
+static cgsize_t tetra16[] = {8, 7, 34, 45, 30, 29, 41, 42, 43, 44,
+                             52, 53, 50, 51, 54, 55};
+static cgsize_t pyra21[] = {5, 6, 7, 8, 45, 25, 26, 27, 28, 29, 30,
+                            31, 32, 46, 47, 48, 49, 50, 51, 52, 53};
+static cgsize_t penta24[] = {4, 3, 33, 8, 7, 34, 14, 13, 35, 36,
+                             37, 38, 23, 24, 21, 22, 39, 40, 30,
+                             29, 41, 42, 43, 44};
+static cgsize_t hexa32[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+                            14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+                            25, 26, 27, 28, 29, 30, 31, 32};
+
 int main (int argc, char *argv[])
 {
-    int i, j, k, n;
+    int j, n;
     cgsize_t ne;
     int fnum, bnum, znum, snum, cnum;
     cgsize_t size[3];
-    CGNS_ENUMT(ElementType_t) type;
     char *outfile = "elemtest.cgns";
 
     unlink (outfile);
@@ -91,7 +128,7 @@ int main (int argc, char *argv[])
     size[0] = 11;
     size[1] = 12;
     size[2] = 0;
-    if (cg_zone_write (fnum, bnum, "Linear", size,
+    if (cg_zone_write (fnum, bnum, "1:Linear", size,
             CGNS_ENUMV(Unstructured), &znum) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
             "CoordinateX", xc, &cnum) ||
@@ -214,7 +251,7 @@ int main (int argc, char *argv[])
     size[0] = 42;
     size[1] = 8;
     size[2] = 0;
-    if (cg_zone_write (fnum, bnum, "Quadratic", size,
+    if (cg_zone_write (fnum, bnum, "2:Quadratic", size,
             CGNS_ENUMV(Unstructured), &znum) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
             "CoordinateX", xc, &cnum) ||
@@ -314,7 +351,7 @@ int main (int argc, char *argv[])
     size[0] = 42;
     size[1] = 8;
     size[2] = 0;
-    if (cg_zone_write (fnum, bnum, "Quadratic with mid-nodes", size,
+    if (cg_zone_write (fnum, bnum, "3:Quadratic with mid-nodes", size,
             CGNS_ENUMV(Unstructured), &znum) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
             "CoordinateX", xc, &cnum) ||
@@ -387,6 +424,106 @@ int main (int argc, char *argv[])
         cg_error_exit ();
     ne += 5;
  
+    /* zone with cubic elements */
+
+    size[0] = 55;
+    size[1] = 8;
+    size[2] = 0;
+    if (cg_zone_write (fnum, bnum, "4:Cubic", size,
+            CGNS_ENUMV(Unstructured), &znum) ||
+        cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
+            "CoordinateX", x3, &cnum) ||
+        cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
+            "CoordinateY", y3, &cnum) ||
+        cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
+            "CoordinateZ", z3, &cnum))
+        cg_error_exit ();
+    ne = j = 0;
+
+    /* BAR_4 */
+
+    if (cg_section_write (fnum, bnum, znum, "BAR_4", CGNS_ENUMV(BAR_4),
+            ne+1, ne+1, 0, bar4, &snum))
+        cg_error_exit ();
+    ne++;
+
+    elems[j++] = (int)CGNS_ENUMV(BAR_4);
+    for (n = 0; n < 4; n++)
+        elems[j++] = bar4[n];
+    
+    /* TRI_9 */
+
+    if (cg_section_write (fnum, bnum, znum, "TRI_9", CGNS_ENUMV(TRI_9),
+            ne+1, ne+1, 0, tri9, &snum))
+        cg_error_exit ();
+    ne++;
+
+    elems[j++] = (int)CGNS_ENUMV(TRI_9);
+    for (n = 0; n < 9; n++)
+        elems[j++] = tri9[n];
+    
+    /* QUAD_12 */
+
+    if (cg_section_write (fnum, bnum, znum, "QUAD_12", CGNS_ENUMV(QUAD_12),
+            ne+1, ne+1, 0, quad12, &snum))
+        cg_error_exit ();
+    ne++;
+
+    elems[j++] = (int)CGNS_ENUMV(QUAD_12);
+    for (n = 0; n < 12; n++)
+        elems[j++] = quad12[n];
+    
+    /* TETRA_16 */
+    
+    if (cg_section_write (fnum, bnum, znum, "TETRA_16", CGNS_ENUMV(TETRA_16),
+            ne+1, ne+1, 0, tetra16, &snum))
+        cg_error_exit ();
+    ne++;
+
+    elems[j++] = (int)CGNS_ENUMV(TETRA_16);
+    for (n = 0; n < 16; n++)
+        elems[j++] = tetra16[n];
+    
+    /* PYRA_21 */
+
+    if (cg_section_write (fnum, bnum, znum, "PYRA_21", CGNS_ENUMV(PYRA_21),
+            ne+1, ne+1, 0, pyra21, &snum))
+        cg_error_exit ();
+    ne++;
+
+    elems[j++] = (int)CGNS_ENUMV(PYRA_21);
+    for (n = 0; n < 21; n++)
+        elems[j++] = pyra21[n];
+ 
+    /* PENTA_24 */
+
+    if (cg_section_write (fnum, bnum, znum, "PENTA_24", CGNS_ENUMV(PENTA_24),
+            ne+1, ne+1, 0, penta24, &snum))
+        cg_error_exit ();
+    ne++;
+
+    elems[j++] = (int)CGNS_ENUMV(PENTA_24);
+    for (n = 0; n < 24; n++)
+        elems[j++] = penta24[n];
+   
+    /* HEXA_32 */
+
+    if (cg_section_write (fnum, bnum, znum, "HEXA_32", CGNS_ENUMV(HEXA_32),
+            ne+1, ne+1, 0, hexa32, &snum))
+        cg_error_exit ();
+    ne++;
+
+    elems[j++] = (int)CGNS_ENUMV(HEXA_32);
+    for (n = 0; n < 32; n++)
+        elems[j++] = hexa32[n];
+
+    /* MIXED */
+ 
+    if (cg_section_write (fnum, bnum, znum, "MIXED", CGNS_ENUMV(MIXED),
+            ne+1, ne+7, 0, elems, &snum))
+        cg_error_exit ();
+    ne += 7;
+
     if (cg_close (fnum)) cg_error_exit ();
     return 0;
 }

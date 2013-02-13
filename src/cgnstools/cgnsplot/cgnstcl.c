@@ -1509,25 +1509,41 @@ static int element_dimension (CGNS_ENUMT(ElementType_t) elemtype)
             return 0;
         case CGNS_ENUMV(BAR_2):
         case CGNS_ENUMV(BAR_3):
+        case CGNS_ENUMV(BAR_4):
             return 1;
         case CGNS_ENUMV(TRI_3):
         case CGNS_ENUMV(TRI_6):
+        case CGNS_ENUMV(TRI_9):
+        case CGNS_ENUMV(TRI_10):
         case CGNS_ENUMV(QUAD_4):
         case CGNS_ENUMV(QUAD_8):
         case CGNS_ENUMV(QUAD_9):
+        case CGNS_ENUMV(QUAD_12):
+        case CGNS_ENUMV(QUAD_16):
         case CGNS_ENUMV(NGON_n):
             return 2;
         case CGNS_ENUMV(TETRA_4):
         case CGNS_ENUMV(TETRA_10):
+        case CGNS_ENUMV(TETRA_16):
+        case CGNS_ENUMV(TETRA_20):
         case CGNS_ENUMV(PYRA_5):
         case CGNS_ENUMV(PYRA_13):
         case CGNS_ENUMV(PYRA_14):
+        case CGNS_ENUMV(PYRA_21):
+        case CGNS_ENUMV(PYRA_29):
+        case CGNS_ENUMV(PYRA_30):
         case CGNS_ENUMV(PENTA_6):
         case CGNS_ENUMV(PENTA_15):
         case CGNS_ENUMV(PENTA_18):
+        case CGNS_ENUMV(PENTA_24):
+        case CGNS_ENUMV(PENTA_38):
+        case CGNS_ENUMV(PENTA_40):
         case CGNS_ENUMV(HEXA_8):
         case CGNS_ENUMV(HEXA_20):
         case CGNS_ENUMV(HEXA_27):
+        case CGNS_ENUMV(HEXA_32):
+        case CGNS_ENUMV(HEXA_56):
+        case CGNS_ENUMV(HEXA_64):
         case CGNS_ENUMV(NFACE_n):
             return 3;
         default:
@@ -1582,18 +1598,23 @@ static void face_elements (Regn *r, cgsize_t *conn)
         switch (type) {
             case CGNS_ENUMV(TRI_3):
             case CGNS_ENUMV(TRI_6):
+            case CGNS_ENUMV(TRI_9):
+            case CGNS_ENUMV(TRI_10):
                 ip = 3;
                 break;
             case CGNS_ENUMV(QUAD_4):
             case CGNS_ENUMV(QUAD_8):
             case CGNS_ENUMV(QUAD_9):
+            case CGNS_ENUMV(QUAD_12):
+            case CGNS_ENUMV(QUAD_16):
                 ip = 4;
                 break;
             case CGNS_ENUMV(NGON_n):
                 ip = (int)conn[nn++];
                 break;
             default:
-                if (type < CGNS_ENUMV(NODE) || type > CGNS_ENUMV(HEXA_27))
+                if (type < CGNS_ENUMV(NODE) ||
+                    type >= NofValidElementTypes)
                     FATAL ("face_elements:unknown element type");
                 ip = 0;
                 break;
@@ -1677,30 +1698,41 @@ static void exterior_faces (Zone *z, Regn *r, cgsize_t *conn)
             switch (type) {
                 case CGNS_ENUMV(TETRA_4):
                 case CGNS_ENUMV(TETRA_10):
+                case CGNS_ENUMV(TETRA_16):
+                case CGNS_ENUMV(TETRA_20):
                     ip = 2;
                     nf = 4;
                     break;
                 case CGNS_ENUMV(PYRA_5):
                 case CGNS_ENUMV(PYRA_13):
                 case CGNS_ENUMV(PYRA_14):
+                case CGNS_ENUMV(PYRA_21):
+                case CGNS_ENUMV(PYRA_29):
+                case CGNS_ENUMV(PYRA_30):
                     ip = 6;
                     nf = 5;
                     break;
                 case CGNS_ENUMV(PENTA_6):
                 case CGNS_ENUMV(PENTA_15):
                 case CGNS_ENUMV(PENTA_18):
+                case CGNS_ENUMV(PENTA_24):
+                case CGNS_ENUMV(PENTA_38):
+                case CGNS_ENUMV(PENTA_40):
                     ip = 11;
                     nf = 5;
                     break;
                 case CGNS_ENUMV(HEXA_8):
                 case CGNS_ENUMV(HEXA_20):
                 case CGNS_ENUMV(HEXA_27):
+                case CGNS_ENUMV(HEXA_32):
+                case CGNS_ENUMV(HEXA_56):
+                case CGNS_ENUMV(HEXA_64):
                     ip = 16;
                     nf = 6;
                     break;
                 default:
                     if (type < CGNS_ENUMV(NODE) ||
-                        type > CGNS_ENUMV(HEXA_27))
+                        type >= NofValidElementTypes)
                         FATAL ("exterior_faces:unknown element type");
                     ip = 0;
                     nf = 0;
@@ -1983,7 +2015,8 @@ static int unstructured_zone (Tcl_Interp *interp)
         z->regs[nr].data[3] = rind[0];
         z->regs[nr].data[4] = rind[1];
 
-        if (elemtype < CGNS_ENUMV(BAR_2) || elemtype > CGNS_ENUMV(NFACE_n)) {
+        if (elemtype < CGNS_ENUMV(BAR_2) ||
+            elemtype >= NofValidElementTypes) {
             strcpy (z->regs[nr].errmsg, "invalid element type");
             continue;
         }
@@ -4129,28 +4162,43 @@ static cgsize_t find_elements ()
                     switch (type) {
                         case CGNS_ENUMV(TRI_3):
                         case CGNS_ENUMV(TRI_6):
+                        case CGNS_ENUMV(TRI_9):
+                        case CGNS_ENUMV(TRI_10):
                             nn = 3;
                             break;
                         case CGNS_ENUMV(QUAD_4):
                         case CGNS_ENUMV(QUAD_8):
                         case CGNS_ENUMV(QUAD_9):
+                        case CGNS_ENUMV(QUAD_12):
+                        case CGNS_ENUMV(QUAD_16):
                         case CGNS_ENUMV(TETRA_4):
                         case CGNS_ENUMV(TETRA_10):
+                        case CGNS_ENUMV(TETRA_16):
+                        case CGNS_ENUMV(TETRA_20):
                             nn = 4;
                             break;
                         case CGNS_ENUMV(PYRA_5):
                         case CGNS_ENUMV(PYRA_13):
                         case CGNS_ENUMV(PYRA_14):
+                        case CGNS_ENUMV(PYRA_21):
+                        case CGNS_ENUMV(PYRA_29):
+                        case CGNS_ENUMV(PYRA_30):
                             nn = 5;
                             break;
                         case CGNS_ENUMV(PENTA_6):
                         case CGNS_ENUMV(PENTA_15):
                         case CGNS_ENUMV(PENTA_18):
+                        case CGNS_ENUMV(PENTA_24):
+                        case CGNS_ENUMV(PENTA_38):
+                        case CGNS_ENUMV(PENTA_40):
                             nn = 6;
                             break;
                         case CGNS_ENUMV(HEXA_8):
                         case CGNS_ENUMV(HEXA_20):
                         case CGNS_ENUMV(HEXA_27):
+                        case CGNS_ENUMV(HEXA_32):
+                        case CGNS_ENUMV(HEXA_56):
+                        case CGNS_ENUMV(HEXA_64):
                             nn = 8;
                             break;
                         default:
@@ -4628,6 +4676,8 @@ static void intersect_element (int zonenum, CGNS_ENUMT(ElementType_t) elemtype,
     switch (elemtype) {
         case CGNS_ENUMV(TRI_3):
         case CGNS_ENUMV(TRI_6):
+        case CGNS_ENUMV(TRI_9):
+        case CGNS_ENUMV(TRI_10):
             index = classify_element(z, 3, nodeid);
             if (index < 1 || index > TRI_SIZE) return;
             cuts = triCuts[index];
@@ -4639,6 +4689,8 @@ static void intersect_element (int zonenum, CGNS_ENUMT(ElementType_t) elemtype,
         case CGNS_ENUMV(QUAD_4):
         case CGNS_ENUMV(QUAD_8):
         case CGNS_ENUMV(QUAD_9):
+        case CGNS_ENUMV(QUAD_12):
+        case CGNS_ENUMV(QUAD_16):
             index = classify_element(z, 4, nodeid);
             if (index < 1 || index > QUAD_SIZE) return;
             cuts = quadCuts[index];
@@ -4649,6 +4701,8 @@ static void intersect_element (int zonenum, CGNS_ENUMT(ElementType_t) elemtype,
             break;
         case CGNS_ENUMV(TETRA_4):
         case CGNS_ENUMV(TETRA_10):
+        case CGNS_ENUMV(TETRA_16):
+        case CGNS_ENUMV(TETRA_20):
             index = classify_element(z, 4, nodeid);
             if (index < 1 || index > TET_SIZE) return;
             cuts = tetCuts[index];
@@ -4660,6 +4714,9 @@ static void intersect_element (int zonenum, CGNS_ENUMT(ElementType_t) elemtype,
         case CGNS_ENUMV(PYRA_5):
         case CGNS_ENUMV(PYRA_13):
         case CGNS_ENUMV(PYRA_14):
+        case CGNS_ENUMV(PYRA_21):
+        case CGNS_ENUMV(PYRA_29):
+        case CGNS_ENUMV(PYRA_30):
             index = classify_element(z, 5, nodeid);
             if (index < 1 || index > PYR_SIZE) return;
             cuts = pyrCuts[index];
@@ -4671,6 +4728,9 @@ static void intersect_element (int zonenum, CGNS_ENUMT(ElementType_t) elemtype,
         case CGNS_ENUMV(PENTA_6):
         case CGNS_ENUMV(PENTA_15):
         case CGNS_ENUMV(PENTA_18):
+        case CGNS_ENUMV(PENTA_24):
+        case CGNS_ENUMV(PENTA_38):
+        case CGNS_ENUMV(PENTA_40):
             index = classify_element(z, 6, nodeid);
             if (index < 1 || index > WDG_SIZE) return;
             cuts = wdgCuts[index];
@@ -4682,6 +4742,9 @@ static void intersect_element (int zonenum, CGNS_ENUMT(ElementType_t) elemtype,
         case CGNS_ENUMV(HEXA_8):
         case CGNS_ENUMV(HEXA_20):
         case CGNS_ENUMV(HEXA_27):
+        case CGNS_ENUMV(HEXA_32):
+        case CGNS_ENUMV(HEXA_56):
+        case CGNS_ENUMV(HEXA_64):
             index = classify_element(z, 8, nodeid);
             if (index < 1 || index > HEX_SIZE) return;
             cuts = hexCuts[index];
@@ -4945,34 +5008,50 @@ static void draw_elements (int mode)
                     switch (type) {
                         case CGNS_ENUMV(TRI_3):
                         case CGNS_ENUMV(TRI_6):
+                        case CGNS_ENUMV(TRI_9):
+                        case CGNS_ENUMV(TRI_10):
                             ip = 0;
                             nf = 1;
                             break;
                         case CGNS_ENUMV(QUAD_4):
                         case CGNS_ENUMV(QUAD_8):
                         case CGNS_ENUMV(QUAD_9):
+                        case CGNS_ENUMV(QUAD_12):
+                        case CGNS_ENUMV(QUAD_16):
                             ip = 1;
                             nf = 1;
                             break;
                         case CGNS_ENUMV(TETRA_4):
                         case CGNS_ENUMV(TETRA_10):
+                        case CGNS_ENUMV(TETRA_16):
+                        case CGNS_ENUMV(TETRA_20):
                             ip = 2;
                             nf = 4;
                             break;
                         case CGNS_ENUMV(PYRA_5):
+                        case CGNS_ENUMV(PYRA_13):
                         case CGNS_ENUMV(PYRA_14):
+                        case CGNS_ENUMV(PYRA_21):
+                        case CGNS_ENUMV(PYRA_29):
+                        case CGNS_ENUMV(PYRA_30):
                             ip = 6;
                             nf = 5;
                             break;
                         case CGNS_ENUMV(PENTA_6):
                         case CGNS_ENUMV(PENTA_15):
                         case CGNS_ENUMV(PENTA_18):
+                        case CGNS_ENUMV(PENTA_24):
+                        case CGNS_ENUMV(PENTA_38):
+                        case CGNS_ENUMV(PENTA_40):
                             ip = 11;
                             nf = 5;
                             break;
                         case CGNS_ENUMV(HEXA_8):
                         case CGNS_ENUMV(HEXA_20):
                         case CGNS_ENUMV(HEXA_27):
+                        case CGNS_ENUMV(HEXA_32):
+                        case CGNS_ENUMV(HEXA_56):
+                        case CGNS_ENUMV(HEXA_64):
                             ip = 16;
                             nf = 6;
                             break;

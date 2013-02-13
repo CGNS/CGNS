@@ -24,6 +24,12 @@
 
 #define N ((int) sqrt((double) BUF_LENGTH))
 
+#ifdef DEBUG_MPI
+# define DEBUG_PRINT(A) printf A;fflush(stdout);
+#else
+# define DEBUG_PRINT(A)
+#endif
+
 int comm_size;
 int comm_rank;
 MPI_Info info;
@@ -147,37 +153,42 @@ int main(int argc, char* argv[]) {
 
 	/* Time the creation of a file */
 	t0 = MPI_Wtime();
+	DEBUG_PRINT(("[%d]cgp_open\n",comm_rank))
 	if (cgp_open("benchmark.cgns", CG_MODE_WRITE, &fn))
-	    cg_error_exit();
+	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("File Open", t1-t0);
 
 	/* Time the creation of a base */
 	t0 = MPI_Wtime();
+	DEBUG_PRINT(("[%d]cg_base_write\n",comm_rank))
 	if (cg_base_write(fn, "Base 1", 3, 3, &B))
-	    cg_error_exit();
+	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Base Write", t1-t0);
 
 	/* Time the creation of a zone */
 	t0 = MPI_Wtime();
+	DEBUG_PRINT(("[%d]cg_zone_write\n",comm_rank))
 	if (cg_zone_write(fn, B, "Zone 1", nijk, Structured, &Z))
-	    cg_error_exit();
+	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Zone Write", t1-t0);
 
 	/* Time the creation of coordinates X */
 	t0 = MPI_Wtime();
+	DEBUG_PRINT(("[%d]cgp_coord_write X\n",comm_rank))
 	if (cgp_coord_write(fn,B,Z,RealDouble,"CoordinateX",&C))
-	    cg_error_exit();
+	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Coord X Write", t1-t0);
 
 	/* Time the write speed of coordinates X */
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
+	DEBUG_PRINT(("[%d]cgp_coord_write_data X\n",comm_rank))
 	if (cgp_coord_write_data(fn,B,Z,C,min,max,x))
-	    cg_error_exit();
+	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	MPI_Barrier(MPI_COMM_WORLD);
 	ta = MPI_Wtime();
@@ -188,16 +199,18 @@ int main(int argc, char* argv[]) {
 
 	/* Time the creation of coordinates Y */
 	t0 = MPI_Wtime();
+	DEBUG_PRINT(("[%d]cgp_coord_write Y\n",comm_rank))
 	if (cgp_coord_write(fn,B,Z,RealDouble,"CoordinateY",&C))
-	    cg_error_exit();
+	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Coord Y Write", t1-t0);
 
 	/* Time the write speed of coordinates Y */
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
+	DEBUG_PRINT(("[%d]cgp_coord_write_data Y\n",comm_rank))
 	if (cgp_coord_write_data(fn,B,Z,C,min,max,y))
-	    cg_error_exit();
+	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	MPI_Barrier(MPI_COMM_WORLD);
 	ta = MPI_Wtime();
@@ -208,16 +221,18 @@ int main(int argc, char* argv[]) {
 
 	/* Time the creation of coordinates Z */
 	t0 = MPI_Wtime();
+	DEBUG_PRINT(("[%d]cgp_coord_write Z\n",comm_rank))
 	if (cgp_coord_write(fn,B,Z,RealDouble,"CoordinateZ",&C))
-	    cg_error_exit();
+	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Coord Z Write", t1-t0);
 
 	/* Time the write speed of coordinates Z */
 	MPI_Barrier(MPI_COMM_WORLD);
 	t0 = MPI_Wtime();
+	DEBUG_PRINT(("[%d]cgp_coord_write_data Z\n",comm_rank))
 	if (cgp_coord_write_data(fn,B,Z,C,min,max,z))
-	    cg_error_exit();
+	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	MPI_Barrier(MPI_COMM_WORLD);
 	ta = MPI_Wtime();
@@ -228,8 +243,9 @@ int main(int argc, char* argv[]) {
 
 	/* Time closing of the file */
 	t0 = MPI_Wtime();
+	DEBUG_PRINT(("[%d]cgp_close\n",comm_rank))
 	if (cgp_close(fn))
-	    cg_error_exit();
+	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("File Close", t1-t0);
 

@@ -1648,7 +1648,7 @@ echo      ^&      'QUAD_12', 'QUAD_16',                                       ^&
 echo      ^&      'TETRA_16', 'TETRA_20',                                     ^&>> cgnslib_f.h
 echo      ^&      'PYRA_21', 'PYRA_29', 'PYRA_30',                            ^&>> cgnslib_f.h
 echo      ^&      'PENTA_24', 'PENTA_38', 'PENTA_40',                         ^&>> cgnslib_f.h
-echo      ^&      'HEXA_32, 'HEXA_56', 'HEXA_64' />> cgnslib_f.h
+echo      ^&      'HEXA_32', 'HEXA_56', 'HEXA_64' />> cgnslib_f.h
 echo.>> cgnslib_f.h
 echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
 echo !*      Zone types                                                     *>> cgnslib_f.h
@@ -1853,7 +1853,7 @@ echo RANLIB = :>> make.defs
 echo.>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo # these should only be set if building HDF5 interface>> make.defs
-echo # HDF5INC - include for HDF5 header files>> make.defs
+echo # HDF5INC - path to HDF5 header files>> make.defs
 echo # HDF5LIB - HDF5 library>> make.defs
 echo # SZIPLIB - szip library (if needed)>> make.defs
 echo # ZLIBLIB - zlib library (if needed)>> make.defs
@@ -1866,7 +1866,7 @@ echo ZLIBLIB = %zliblib%>> make.defs
 echo.>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
 echo # these should only be set if building with HDF5 and MPI>> make.defs
-echo # MPIINC  - include for MPI header files>> make.defs
+echo # MPIINC  - path to MPI header files>> make.defs
 echo # MPILIBS - MPI libraries>> make.defs
 echo # MPIEXEC - MPI executor>> make.defs
 echo #------------------------------------------------------------------------>> make.defs
@@ -2038,10 +2038,15 @@ echo F2COBJS= $(OBJDIR)\cg_ftoc.$(O) $(OBJDIR)\cgio_ftoc.$(O)>> Makefile
 echo.>> Makefile
 echo #---------->> Makefile
 echo.>> Makefile
-if %target% == dll echo dll  : $^(CGNSDLL^)>> Makefile
-echo cgns : $(CGNSLIB)>> Makefile
-echo all  : %target% tools %cgnstools%>> Makefile
-echo test : runtests %parallel%>> Makefile
+echo all     : %target% tools %cgnstools%>> Makefile
+if %target% == dll echo dll     : $^(CGNSDLL^)>> Makefile
+echo cgns    : $(CGNSLIB)>> Makefile
+echo test    : runtests %parallel%>> Makefile
+if "%cgnstools%" == "cgnstools" (
+  echo install : install-cgns install-tools install-cgnstools>> Makefile
+) else (
+  echo install : install-cgns>> Makefile
+)
 echo.>> Makefile
 echo #---------->> Makefile
 echo.>> Makefile
@@ -2108,7 +2113,7 @@ echo 	-$(RM) cgnsconfig.h cgnstypes.h cgnstypes_f.h cgnslib_f.h>> Makefile
 echo 	-$(RM) *.pdb *.bak>> Makefile
 echo 	-$(RM) make.defs cgnsBuild.defs Makefile>> Makefile
 echo.>> Makefile
-echo install : %target% $(INCLUDEDIR) $(LIBDIR) %adfinc%>> Makefile
+echo install-cgns : %target% $(INCLUDEDIR) $(LIBDIR) %adfinc%>> Makefile
 echo 	$(INSTALL_DATA) cgnstypes.h $(INCLUDEDIR)\cgnstypes.h>> Makefile
 echo 	$(INSTALL_DATA) cgnstypes_f.h $(INCLUDEDIR)\cgnstypes_f.h>> Makefile
 echo 	$(INSTALL_DATA) cgnslib.h $(INCLUDEDIR)\cgnslib.h>> Makefile
@@ -2120,6 +2125,14 @@ echo 	$(INSTALL_DATA) cgnsconfig.h $(INCLUDEDIR)\cgnsconfig.h>> Makefile
 echo 	$(INSTALL_DATA) cgnsBuild.defs $(INCLUDEDIR)\cgnsBuild.defs>> Makefile
 echo 	$(INSTALL_DATA) $(CGNSLIB) $(LIBDIR)\$(INSTLIB)>> Makefile
 if %target% == dll echo 	$(INSTALL_DATA) $(CGNSDLL) $(LIBDIR)\$(INSTDLL)>> Makefile
+echo.>> Makefile
+echo install-all : install>> Makefile
+echo.>> Makefile
+echo install-tools :>> Makefile
+echo 	-cd tools ^&^& %make% install>> Makefile
+echo.>> Makefile
+echo install-cgnstools :>> Makefile
+echo 	-cd cgnstools ^&^& %make% install>> Makefile
 echo.>> Makefile
 echo $(INCLUDEDIR) : $(INSTALLDIR)>> Makefile
 echo 	-$(MKDIR) $(INCLUDEDIR)>> Makefile
@@ -2141,11 +2154,6 @@ echo 	$(INSTALL_DATA) adfh\ADFH.h $(INCLUDEDIR)\adfh\ADFH.h>> Makefile
 echo.>> Makefile
 echo $(INCLUDEDIR)\adfh : $(INCLUDEDIR)>> Makefile
 echo 	-$(MKDIR) $(INCLUDEDIR)\adfh>> Makefile
-echo.>> Makefile
-echo allinstall : install-all>> Makefile
-echo install-all : install>> Makefile
-echo 	-cd tools ^&^& %make% install>> Makefile
-if "%cgnstools%" == "cgnstools" echo 	-cd cgnstools ^&^& %make% install>> Makefile
 echo.>> Makefile
 echo #---------- mid-level library>> Makefile
 echo.>> Makefile
@@ -2525,6 +2533,7 @@ echo #---------->> ptests\Makefile
 echo.>> ptests\Makefile
 echo CALL = \>> ptests\Makefile
 echo 	ctest$(EXE) \>> ptests\Makefile
+echo 	cexample$(EXE) \>> ptests\Makefile
 echo 	benchmark$(EXE) \>> ptests\Makefile
 echo 	open_close$(EXE) \>> ptests\Makefile
 echo 	test_base$(EXE) \>> ptests\Makefile
@@ -2547,15 +2556,16 @@ echo.>> ptests\Makefile
 echo test : $(TESTS)>> ptests\Makefile
 echo 	@echo>> ptests\Makefile
 echo 	@echo === running parallel tests ===>> ptests\Makefile
-echo 	-@runptest.bat $(MPIEXEC) -np 2 ctest$(EXE)>> ptests\Makefile
-echo 	-@runptest.bat $(MPIEXEC) -np 2 benchmark$(EXE)>> ptests\Makefile
-echo 	-@runptest.bat $(MPIEXEC) -np 2 open_close$(EXE)>> ptests\Makefile
-echo 	-@runptest.bat $(MPIEXEC) -np 2 test_base$(EXE)>> ptests\Makefile
-echo 	-@runptest.bat $(MPIEXEC) -np 2 test_unstructured$(EXE)>> ptests\Makefile
-echo 	-@runptest.bat $(MPIEXEC) -np 2 test_zone$(EXE)>> ptests\Makefile
-echo 	-@runptest.bat $(MPIEXEC) -np 2 thesis_benchmark$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) ctest$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) cexample$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) benchmark$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) open_close$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) test_base$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) test_unstructured$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) test_zone$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) thesis_benchmark$(EXE)>> ptests\Makefile
 if not "%f2c%" == "none" (
-  echo 	-@runptest.bat $^(MPIEXEC^) -np 2 ftest$^(EXE^)>> ptests\Makefile
+  echo 	-@runptest.bat $^(MPIEXEC^) ftest$^(EXE^)>> ptests\Makefile
 )
 echo 	@echo === finished ===>> ptests\Makefile
 echo.>> ptests\Makefile
@@ -2563,6 +2573,11 @@ echo #---------->> ptests\Makefile
 echo.>> ptests\Makefile
 echo ctest$(EXE) : ctest.c $(CGNSLIB)>> ptests\Makefile
 echo 	$(CC) $(COPTS) $(CEOUT)$@ ctest.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo #---------->> ptests\Makefile
+echo.>> ptests\Makefile
+echo cexample$(EXE) : cexample.c $(CGNSLIB)>> ptests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ cexample.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
 echo.>> ptests\Makefile
 echo #---------->> ptests\Makefile
 echo.>> ptests\Makefile

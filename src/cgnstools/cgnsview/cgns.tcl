@@ -21,7 +21,6 @@ array set CGNSnodes {
   BCRegionName                 {1 Descriptor_t C1 {} 1}
   CellListDonor                {1 IndexArray_t I4 {} 0}
   CGNSBase                     {0 CGNSBase_t I4 2 1}
-  CGNSLibraryPrecision         {1 CGNSLibraryPrecision_t I4 1 0}
   CGNSLibraryVersion           {1 CGNSLibraryVersion_t R4 1 0}
   ChemicalKineticsModel        {1 ChemicalKineticsModel_t C1 {} 0}
   ConvergenceDataArray         {1 DataArray_t R4 {} 1}
@@ -134,7 +133,7 @@ array set CGNSnodes {
 }
 
 array set CGNSnodeChildren {
-  / {CGNSBase CGNSLibraryVersion CGNSLibraryPrecision}
+  / {CGNSBase CGNSLibraryVersion}
   ArbitraryGridMotion_t {DataClass Descriptor DimensionalUnits \
       GridLocation GridVelocity Rind UserDefinedData}
   Area_t {AreaType Descriptor RegionName SurfaceArea UserDefinedData}
@@ -382,8 +381,6 @@ Carcel, Hefner, Violle}}
       {list of indices for cells on adjoining patch}}
   CGNSBase_t {{user defined} CGNSBase_t {0,N} I4 1 2 \
       {CellDimension, PhysicalDimension}}
-  CGNSLibraryPrecision_t {CGNSLibraryPrecision CGNSLibraryPrecision_t \
-      1 I4 1 1 {CGNS Mid-Level Library precision (32 or 64)}}
   CGNSLibraryVersion_t {CGNSLibraryVersion CGNSLibraryVersion_t 1 R4 1 1 \
       {CGNS Mid-Level Library version number}}
   ChemicalKineticsModel_t {ChemicalKineticsModel ChemicalKineticsModel_t \
@@ -1052,13 +1049,6 @@ proc cgns_init {{version ""}} {
 
   if {$version >= 3100} {
     array set CGNSnodeDesc {
-      Elements_t {{user defined} Elements_t {0,N} I4 1 2 \
-        {ElementType, ElementSizeBoundary
-
-element types are: 0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
-5:TRI_3, 6:TRI_6, 7:QUAD_4, 8:QUAD_8, 9:QUAD_9, 10:TETRA_4, 11:TETRA_10,\
-12:PYRA_5, 13:PYRA_14, 14:PENTA_6, 15:PENTA_15, 16:PENTA_18, 17:HEXA_8,\
-18:HEXA_20, 19:HEXA_27, 20:MIXED, 21:PYRA_13, 22:NGON_n, 23:NFACE_n}}
       ZoneGridConnectivity_t {\
        {ZoneGridConnectivity or user defined} \
        ZoneGridConnectivity_t {0,N} MT {} {} {}}
@@ -1078,6 +1068,19 @@ element types are: 0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
     }
 
     if {$version >= 3200} {
+      array set CGNSnodeDesc {
+        Elements_t {{user defined} Elements_t {0,N} I4 1 2 \
+          {ElementType, ElementSizeBoundary
+
+element types are:
+0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
+5:TRI_3, 6:TRI_6, 7:QUAD_4, 8:QUAD_8, 9:QUAD_9, 10:TETRA_4, 11:TETRA_10,\
+12:PYRA_5, 13:PYRA_14, 14:PENTA_6, 15:PENTA_15, 16:PENTA_18, 17:HEXA_8,\
+18:HEXA_20, 19:HEXA_27, 20:MIXED, 21:PYRA_13, 22:NGON_n, 23:NFACE_n,\
+24:BAR_4, 25:TRI_9, 26:TRI_10, 27:QUAD_12, 28:QUAD_16, 29:TETRA_16,\
+30:TETRA_20, 31:PYRA_21, 32:PYRA_29, 33:PYRA_30, 34:PENTA_24,\
+35:PENTA_38, 36:PENTA_40, 37:HEXA_32, 38:HEXA_56, 39:HEXA_64}}
+      }
       array set CGNSnodeChildren {
         BC_t {AdditionalFamilyName BCDataSet BCProperty DataClass Descriptor \
           DimensionalUnits FamilyName GridLocation InwardNormalIndex \
@@ -1096,6 +1099,16 @@ element types are: 0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
           GridLocation PointList PointRange Rind UserDefinedData}
       }
     } else {
+      array set CGNSnodeDesc {
+        Elements_t {{user defined} Elements_t {0,N} I4 1 2 \
+          {ElementType, ElementSizeBoundary
+
+element types are:
+0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
+5:TRI_3, 6:TRI_6, 7:QUAD_4, 8:QUAD_8, 9:QUAD_9, 10:TETRA_4, 11:TETRA_10,\
+12:PYRA_5, 13:PYRA_14, 14:PENTA_6, 15:PENTA_15, 16:PENTA_18, 17:HEXA_8,\
+18:HEXA_20, 19:HEXA_27, 20:MIXED, 21:PYRA_13, 22:NGON_n, 23:NFACE_n}}
+      }
       array set CGNSnodeChildren {
         BC_t {BCDataSet BCProperty DataClass Descriptor DimensionalUnits \
           FamilyName GridLocation InwardNormalIndex \
@@ -1113,7 +1126,8 @@ element types are: 0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
       Elements_t {{user defined} Elements_t {0,N} I4 1 2 \
         {ElementType, ElementSizeBoundary
 
-element types are: 0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
+element types are:
+0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
 5:TRI_3, 6:TRI_6, 7:QUAD_4, 8:QUAD_8, 9:QUAD_9, 10:TETRA_4, 11:TETRA_10,\
 12:PYRA_5, 13:PYRA_14, 14:PENTA_6, 15:PENTA_15, 16:PENTA_18, 17:HEXA_8,\
 18:HEXA_20, 19:HEXA_27, 20:MIXED, 21+:NGON_n}}

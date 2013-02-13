@@ -8023,8 +8023,8 @@ cgsize_t cgi_element_data_size(CGNS_ENUMT(ElementType_t) type,
         if (connect == 0) return 0;
         for (ne = 0; ne < nelems; ne++) {
             type = (CGNS_ENUMT(ElementType_t))connect[size++];
-            if (type > CGNS_ENUMV(NGON_n))
-                npe = type - CGNS_ENUMV(NGON_n);
+            if (cg->version < 3200 && type >= CGNS_ENUMV(NGON_n))
+                npe = (int)(type - CGNS_ENUMV(NGON_n));
             else
                 cg_npe(type, &npe);
             if (npe <= 0) {

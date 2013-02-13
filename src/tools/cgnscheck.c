@@ -297,7 +297,7 @@ static int read_gridlocation (CGNS_ENUMT(GridLocation_t) *location)
     int ierr = check_node ("GridLocation_t");
     if (ierr == CG_OK)
         return cg_gridlocation_read (location);
-    *location = CGNS_ENUMV(GridLocationNull);
+    *location = CGNS_ENUMV(Vertex);
     return ierr;
 }
 
@@ -515,6 +515,58 @@ static size_t get_extnodes (void *vface, void *vnodes)
     return 0;
 }
 
+/*-------------------------------------------------------------------*/
+
+static int element_dimension (CGNS_ENUMT(ElementType_t) elemtype)
+{
+    switch (elemtype) {
+        case CGNS_ENUMV(NODE):
+            return 0;
+        case CGNS_ENUMV(BAR_2):
+        case CGNS_ENUMV(BAR_3):
+        case CGNS_ENUMV(BAR_4):
+            return 1;
+        case CGNS_ENUMV(TRI_3):
+        case CGNS_ENUMV(TRI_6):
+        case CGNS_ENUMV(TRI_9):
+        case CGNS_ENUMV(TRI_10):
+        case CGNS_ENUMV(QUAD_4):
+        case CGNS_ENUMV(QUAD_8):
+        case CGNS_ENUMV(QUAD_9):
+        case CGNS_ENUMV(QUAD_12):
+        case CGNS_ENUMV(QUAD_16):
+        case CGNS_ENUMV(NGON_n):
+            return 2;
+        case CGNS_ENUMV(TETRA_4):
+        case CGNS_ENUMV(TETRA_10):
+        case CGNS_ENUMV(TETRA_16):
+        case CGNS_ENUMV(TETRA_20):
+        case CGNS_ENUMV(PYRA_5):
+        case CGNS_ENUMV(PYRA_13):
+        case CGNS_ENUMV(PYRA_14):
+        case CGNS_ENUMV(PYRA_21):
+        case CGNS_ENUMV(PYRA_29):
+        case CGNS_ENUMV(PYRA_30):
+        case CGNS_ENUMV(PENTA_6):
+        case CGNS_ENUMV(PENTA_15):
+        case CGNS_ENUMV(PENTA_18):
+        case CGNS_ENUMV(PENTA_24):
+        case CGNS_ENUMV(PENTA_38):
+        case CGNS_ENUMV(PENTA_40):
+        case CGNS_ENUMV(HEXA_8):
+        case CGNS_ENUMV(HEXA_20):
+        case CGNS_ENUMV(HEXA_27):
+        case CGNS_ENUMV(HEXA_32):
+        case CGNS_ENUMV(HEXA_56):
+        case CGNS_ENUMV(HEXA_64):
+        case CGNS_ENUMV(NFACE_n):
+            return 3;
+        default:
+            break;
+    }
+    return -1;
+}
+
 /*-----------------------------------------------------------------------*/
 
 static int valid_face (ZONE *z, cgsize_t elem)
@@ -539,7 +591,8 @@ static int valid_face (ZONE *z, cgsize_t elem)
             if (type == CGNS_ENUMV(MIXED)) {
                 for (n = 0; n < ne; n++) {
                     type = (CGNS_ENUMT(ElementType_t))*pe++;
-                    if (type >= CGNS_ENUMV(NGON_n)) {
+                    if (FileVersion < 3200 &&
+                        type >= CGNS_ENUMV(NGON_n)) {
                         nn = (int)(type - CGNS_ENUMV(NGON_n));
                     }
                     else {
@@ -548,10 +601,13 @@ static int valid_face (ZONE *z, cgsize_t elem)
                     pe += nn;
                 }
                 type = (CGNS_ENUMT(ElementType_t))*pe;
-                if (type >= CGNS_ENUMV(NGON_n)+3) return 1;
+                if (FileVersion < 3200 && type >= CGNS_ENUMV(NGON_n))
+                    return type < CGNS_ENUMV(NGON_n)+3 ? 0 : 1;
             }
             if (type >= CGNS_ENUMV(TRI_3) &&
                 type <= CGNS_ENUMV(QUAD_9)) return 1;
+            if (type >= CGNS_ENUMV(TRI_9) &&
+                type <= CGNS_ENUMV(QUAD_16)) return 1;
             return 0;
         }
     }
@@ -590,15 +646,13 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
                 *nnodes = (int)*nodes++;
                 return nodes;
             }
-            cg_npe (type, &nn);
-            if (nn) {
-                nodes += (nn * ne);
-            }
-            else if (type == CGNS_ENUMV(MIXED)) {
+            if (type == CGNS_ENUMV(MIXED)) {
                 type = (CGNS_ENUMT(ElementType_t))*nodes++;
                 while (ne-- > 0) {
-                    if (type >= CGNS_ENUMV(NGON_n))
+                    if (FileVersion < 3200 &&
+                        type >= CGNS_ENUMV(NGON_n)) {
                         nn = (int)(type - CGNS_ENUMV(NGON_n));
+                    }
                     else {
                         if (cg_npe (type, &nn) || nn <= 0)
                             return NULL;
@@ -608,20 +662,49 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
                 }
             }
             else {
-                return NULL;
+                cg_npe (type, &nn);
+                if (nn <= 0) return NULL;
+                nodes += (nn * ne);
             }
-            if (type == CGNS_ENUMV(NODE))
-                *dim = 0;
-            else if (type < CGNS_ENUMV(TRI_3))
-                *dim = 1;
-            else if (type < CGNS_ENUMV(TETRA_4) || type >= CGNS_ENUMV(NGON_n))
-                *dim = 2;
-            else {
-                *dim = 3;
-                if (type == CGNS_ENUMV(HEXA_27)) nn--;
+            switch (type) {
+                case CGNS_ENUMV(NODE):
+                    *dim = 0;
+                    break;
+                case CGNS_ENUMV(BAR_2):
+                case CGNS_ENUMV(BAR_3):
+                case CGNS_ENUMV(BAR_4):
+                    *dim = 1;
+                    break;
+                case CGNS_ENUMV(TRI_3):
+                case CGNS_ENUMV(TRI_6):
+                case CGNS_ENUMV(TRI_9):
+                case CGNS_ENUMV(TRI_10):
+                case CGNS_ENUMV(QUAD_4):
+                case CGNS_ENUMV(QUAD_8):
+                case CGNS_ENUMV(QUAD_9):
+                case CGNS_ENUMV(QUAD_12):
+                case CGNS_ENUMV(QUAD_16):
+                    *dim = 2;
+                    break;
+                case CGNS_ENUMV(PYRA_30):
+                    nn--;
+                    *dim = 3;
+                    break;
+                case CGNS_ENUMV(PENTA_40):
+                    nn -= 2;
+                    *dim = 3;
+                    break;
+                case CGNS_ENUMV(HEXA_64):
+                    nn -= 8;
+                    *dim = 3;
+                    break;
+                default:
+                    *dim = 3;
+                    break;
             }
 #ifndef USE_MID_NODES
             switch (type) {
+                case CGNS_ENUMV(TRI_10):
                 case CGNS_ENUMV(QUAD_9):
                 case CGNS_ENUMV(PYRA_14):
                     nn--;
@@ -629,8 +712,24 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
                 case CGNS_ENUMV(PENTA_18):
                     nn -= 3;
                     break;
+                case CGNS_ENUMV(QUAD_16):
+                case CGNS_ENUMV(TETRA_20):
+                    nn -= 4;
+                    break;
                 case CGNS_ENUMV(HEXA_27):
                     nn -= 6;
+                    break;
+                case CGNS_ENUMV(PYRA_29):
+                case CGNS_ENUMV(PYRA_30):
+                    nn -= 8;
+                    break;
+                case CGNS_ENUMV(PENTA_38):
+                case CGNS_ENUMV(PENTA_40):
+                    nn -= 14;
+                    break;
+                case CGNS_ENUMV(HEXA_56):
+                case CGNS_ENUMV(HEXA_64):
+                    nn -= 24;
                     break;
             }
 #endif            
@@ -675,6 +774,18 @@ static int tetra_10[4][7] = {
     {6, 1, 5, 2, 9, 3, 8},
     {6, 2, 6, 0, 7, 3, 9}
 };
+static int tetra_16[4][10] = {
+    {9, 0, 9, 8, 2, 7, 6, 1, 5, 4},
+    {9, 0, 4, 5, 1, 12, 13, 3, 11, 10},
+    {9, 1, 6, 7, 2, 14, 15, 3, 13, 12},
+    {9, 2, 8, 9, 0, 10, 11, 3, 15, 14}
+};
+static int tetra_20[4][11] = {
+    {10, 0, 9, 8, 2, 7, 6, 1, 5, 4, 16},
+    {10, 0, 4, 5, 1, 12, 13, 3, 11, 10, 17},
+    {10, 1, 6, 7, 2, 14, 15, 3, 13, 12, 18},
+    {10, 2, 8, 9, 0, 10, 11, 3, 15, 14, 19}
+};
 static int pyra_5[5][5] = {
     {4, 0, 3, 2, 1},
     {3, 0, 1, 4, 0},
@@ -696,6 +807,20 @@ static int pyra_14[5][10] = {
     {6, 2, 7, 3, 12, 4, 11, 0, 0, 0},
     {6, 3, 8, 0, 9, 4, 12, 0, 0, 0}
 };
+static int pyra_21[5][13] = {
+    {12, 0, 12, 11, 3, 10, 9, 2, 8, 7, 1, 6, 5},
+    {9, 0, 5, 6, 1, 15, 16, 4, 14, 13, 0, 0, 0},
+    {9, 1, 7, 8, 2, 17, 18, 4, 16, 15, 0, 0, 0},
+    {9, 2, 9, 10, 3, 19, 20, 4, 18, 17, 0, 0, 0},
+    {9, 3, 11, 12, 0, 13, 14, 4, 20, 19, 0, 0, 0}
+};
+static int pyra_29[5][17] = {
+    {16, 0, 12, 11, 3, 10, 9, 2, 8, 7, 1, 6, 5, 21, 24, 23, 22},
+    {10, 0, 5, 6, 1, 15, 16, 4, 14, 13, 25, 0, 0, 0, 0, 0, 0},
+    {10, 1, 7, 8, 2, 17, 18, 4, 16, 15, 26, 0, 0, 0, 0, 0, 0},
+    {10, 2, 9, 10, 3, 19, 20, 4, 18, 17, 27, 0, 0, 0, 0, 0, 0},
+    {10, 3, 11, 12, 0, 13, 14, 4, 20, 19, 28, 0, 0, 0, 0, 0, 0}
+};
 static int penta_6[5][5] = {
     {4, 0, 1, 4, 3},
     {4, 1, 2, 5, 4},
@@ -716,6 +841,20 @@ static int penta_18[5][10] = {
     {9, 2, 8, 0, 9, 3, 14, 5, 11, 17},
     {6, 0, 8, 2, 7, 1, 6, 0, 0, 0},
     {6, 3, 12, 4, 13, 5, 14, 0, 0, 0},
+};
+static int penta_24[5][13] = {
+    {12, 0, 6, 7, 1, 14, 15, 4, 19, 18, 3, 13, 12},
+    {12, 1, 8, 9, 2, 16, 17, 5, 21, 20, 4, 15, 14},
+    {12, 2, 10, 11, 0, 12, 13, 3, 23, 22, 5, 17, 16},
+    {9, 0, 11, 10, 2, 9, 8, 1, 7, 6, 0, 0, 0},
+    {9, 3, 18, 19, 4, 20, 21, 5, 22, 23, 0, 0, 0}
+};
+static int penta_38[5][17] = {
+    {16, 0, 6, 7, 1, 14, 15, 4, 19, 18, 3, 13, 12, 25, 26, 27, 28},
+    {16, 1, 8, 9, 2, 16, 17, 5, 21, 20, 4, 15, 14, 29, 30, 31, 32},
+    {16, 2, 10, 11, 0, 12, 13, 3, 23, 22, 5, 17, 16, 33, 34, 35, 36},
+    {10, 0, 11, 10, 2, 9, 8, 1, 7, 6, 24, 0, 0, 0, 0, 0, 0},
+    {10, 3, 18, 19, 4, 20, 21, 5, 22, 23, 37, 0, 0, 0, 0, 0, 0}
 };
 static int hexa_8[6][5] = {
     {4, 0, 3, 2, 1},
@@ -741,6 +880,22 @@ static int hexa_27[6][10] = {
     {9, 0, 12, 4, 19, 7, 15, 3, 11, 24},
     {9, 4, 16, 5, 17, 6, 18, 7, 19, 25}
 };
+static int hexa_32[6][13] = {
+    {12, 0, 15, 14, 3, 13, 12, 2, 11, 10, 1, 9, 8},
+    {12, 0, 8, 9, 1, 18, 19, 5, 25, 24, 4, 17, 16},
+    {12, 1, 10, 11, 2, 20, 21, 6, 27, 26, 5, 19, 18},
+    {12, 2, 12, 13, 3, 22, 23, 7, 29, 28, 6, 21, 20},
+    {12, 0, 16, 17, 4, 31, 30, 7, 23, 22, 3, 14, 15},
+    {12, 4, 24, 25, 5, 26, 27, 6, 28, 29, 7, 30, 31}
+};
+static int hexa_56[6][17] = {
+    {16, 0, 15, 14, 3, 13, 12, 2, 11, 10, 1, 9, 8, 32, 35, 34, 33},
+    {16, 0, 8, 9, 1, 18, 19, 5, 25, 24, 4, 17, 16, 36, 37, 38, 39},
+    {16, 1, 10, 11, 2, 20, 21, 6, 27, 26, 5, 19, 18, 40, 41, 42, 43},
+    {16, 2, 12, 13, 3, 22, 23, 7, 29, 28, 6, 21, 20, 44, 45, 46, 47},
+    {16, 0, 16, 17, 4, 31, 30, 7, 23, 22, 3, 14, 15, 48, 49, 50, 51},
+    {16, 4, 24, 25, 5, 26, 27, 6, 28, 29, 7, 30, 31, 52, 53, 54, 55}
+};
 
 static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
     cgsize_t *nodes)
@@ -763,44 +918,73 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
         case CGNS_ENUMV(TETRA_10):
             nodemap = tetra_10[fnum];
             break;
+        case CGNS_ENUMV(TETRA_20):
+#ifdef USE_MID_NODES
+            nodemap = tetra_20[fnum];
+            break;
+#endif            
+        case CGNS_ENUMV(TETRA_16):
+            nodemap = tetra_16[fnum];
+            break;
         case CGNS_ENUMV(PYRA_5):
             nodemap = pyra_5[fnum];
-            break;
-        case CGNS_ENUMV(PYRA_13):
-            nodemap = pyra_13[fnum];
             break;
         case CGNS_ENUMV(PYRA_14):
 #ifdef USE_MID_NODES
             nodemap = pyra_14[fnum];
-#else
-            nodemap = pyra_13[fnum];
+            break;
 #endif            
+        case CGNS_ENUMV(PYRA_13):
+            nodemap = pyra_13[fnum];
+            break;
+        case CGNS_ENUMV(PYRA_29):
+        case CGNS_ENUMV(PYRA_30):
+#ifdef USE_MID_NODES
+            nodemap = pyra_29[fnum];
+            break;
+#endif            
+        case CGNS_ENUMV(PYRA_21):
+            nodemap = pyra_21[fnum];
             break;
         case CGNS_ENUMV(PENTA_6):
             nodemap = penta_6[fnum];
             break;
-        case CGNS_ENUMV(PENTA_15):
-            nodemap = penta_15[fnum];
-            break;
         case CGNS_ENUMV(PENTA_18):
 #ifdef USE_MID_NODES
             nodemap = penta_18[fnum];
-#else
-            nodemap = penta_15[fnum];
+            break;
 #endif            
+        case CGNS_ENUMV(PENTA_15):
+            nodemap = penta_15[fnum];
+            break;
+        case CGNS_ENUMV(PENTA_38):
+        case CGNS_ENUMV(PENTA_40):
+#ifdef USE_MID_NODES
+            nodemap = penta_38[fnum];
+            break;
+#endif            
+        case CGNS_ENUMV(PENTA_24):
+            nodemap = penta_24[fnum];
             break;
         case CGNS_ENUMV(HEXA_8):
             nodemap = hexa_8[fnum];
             break;
-        case CGNS_ENUMV(HEXA_20):
-            nodemap = hexa_20[fnum];
-            break;
         case CGNS_ENUMV(HEXA_27):
 #ifdef USE_MID_NODES        
             nodemap = hexa_27[fnum];
-#else
-            nodemap = hexa_20[fnum];
+            break;
 #endif            
+        case CGNS_ENUMV(HEXA_20):
+            nodemap = hexa_20[fnum];
+            break;
+        case CGNS_ENUMV(HEXA_56):
+        case CGNS_ENUMV(HEXA_64):
+#ifdef USE_MID_NODES        
+            nodemap = hexa_56[fnum];
+            break;
+#endif            
+        case CGNS_ENUMV(HEXA_32):
+            nodemap = hexa_32[fnum];
             break;
         default:
             fatal_error("invalid element type in element_face\n");
@@ -835,8 +1019,9 @@ static void read_zone (int nz)
     int ns, nsets, hasparent;
     cgsize_t ne, *pe;
     cgsize_t se, nelem, k;
-    int nn, nf, ip, type, ierr;
+    int nn, nf, ip, ierr;
     cgsize_t *nodes, maxnode;
+    CGNS_ENUMT(ElementType_t) type;
     ELEMSET *es;
     CGNS_ENUMT(ZoneType_t) zonetype;
     ZONE *z = &Zones[nz++];
@@ -939,24 +1124,19 @@ static void read_zone (int nz)
         }
 
         es->nv = es->ns = es->ne = es->nn = 0;
-        if (es->type < CGNS_ENUMV(NODE)) {
+        if (es->type < CGNS_ENUMV(NODE) ||
+            es->type >= NofValidElementTypes) {
             es->invalid = -1;
             continue;
         }
         if (es->type == CGNS_ENUMV(MIXED)) {
             ip = ierr = 0;
             for (pe = es->elements, ne = 0; ne < nelem; ne++) {
-                type = (int)*pe++;
-                if (type < CGNS_ENUMV(NODE) || type == CGNS_ENUMV(MIXED)) {
-                  if (type == CGNS_ENUMV(MIXED))
-                        es->invalid = -2;
-                    else
-                        es->invalid = -1;
-                    break;
-                }
-                if (type >= CGNS_ENUMV(NGON_n)) {
+                type = (CGNS_ENUMT(ElementType_t))*pe++;
+                if (FileVersion < 3200 &&
+                    type >= CGNS_ENUMV(NGON_n)) {
                     ip++;
-                    nn = type - CGNS_ENUMV(NGON_n);
+                    nn = (int)(type - CGNS_ENUMV(NGON_n));
                     if (nn < 3) {
                         ierr++;
                     }
@@ -968,63 +1148,66 @@ static void read_zone (int nz)
                     pe += nn;
                     continue;
                 }
-                if (type == CGNS_ENUMV(NODE)) {
-                    (es->nn)++;
-                    if (ne >= es->rind[0] && ne < nelem - es->rind[1])
-                        (z->nn)++;
-                }
-                else if (type <= CGNS_ENUMV(BAR_3)) {
-                    (es->ne)++;
-                    if (ne >= es->rind[0] && ne < nelem - es->rind[1])
-                        (z->ne)++;
-                }
-                else if (type <= CGNS_ENUMV(QUAD_9)) {
-                    (es->ns)++;
-                    if (ne >= es->rind[0] && ne < nelem - es->rind[1])
-                        (z->ns)++;
-                }
-                else {
-                    (es->nv)++;
-                    if (ne >= es->rind[0] && ne < nelem - es->rind[1])
-                        (z->nv)++;
-                }
                 if (cg_npe (type, &nn) || nn <= 0) {
-                    es->invalid = -3;
+                    if (type == CGNS_ENUMV(MIXED) ||
+                        type == CGNS_ENUMV(NGON_n) ||
+                        type == CGNS_ENUMV(NFACE_n))
+                        es->invalid = -2;
+                    else
+                        es->invalid = -3;
                     break;
+                }
+                switch (element_dimension(type)) {
+                    case 0:
+                        (es->nn)++;
+                        if (ne >= es->rind[0] && ne < nelem - es->rind[1])
+                            (z->nn)++;
+                        break;
+                    case 1:
+                        (es->ne)++;
+                        if (ne >= es->rind[0] && ne < nelem - es->rind[1])
+                            (z->ne)++;
+                        break;
+                    case 2:
+                        (es->ns)++;
+                        if (ne >= es->rind[0] && ne < nelem - es->rind[1])
+                            (z->ns)++;
+                        break;
+                    case 3:
+                        (es->nv)++;
+                        if (ne >= es->rind[0] && ne < nelem - es->rind[1])
+                            (z->nv)++;
+                        break;
                 }
                 pe += nn;
             }
             if (ierr)
-                warning (2, "%d NGON_n element with < 3 nodes in MIXED", ierr);
-            if (ip) {
-                if (FileVersion >= 3000)
-                    warning (2,
-                        "NGON_n in MIXED deprecated - use NGON_n element set");
-            }
-        }
-        else if (es->type == CGNS_ENUMV(NGON_n)) {
-            es->ns = nelem;
-            z->ns += (nelem - es->rind[0] - es->rind[1]);
-        }
-        else if (es->type == CGNS_ENUMV(NFACE_n)) {
-            es->nv = nelem;
-            z->nv += (nelem - es->rind[0] - es->rind[1]);
-        }
-        else if (es->type == CGNS_ENUMV(NODE)) {
-            es->nn = nelem;
-            z->nn += (nelem - es->rind[0] - es->rind[1]);
-        }
-        else if (es->type <= CGNS_ENUMV(BAR_3)) {
-            es->ne = nelem;
-            z->ne += (nelem - es->rind[0] - es->rind[1]);
-        }
-        else if (es->type <= CGNS_ENUMV(QUAD_9)) {
-            es->ns = nelem;
-            z->ns += (nelem - es->rind[0] - es->rind[1]);
+                warning (2, "%d NGON_n elements with < 3 nodes in MIXED", ierr);
+            if (ip &&  FileVersion >= 3000)
+                warning (1, "NGON_n in MIXED deprecated - use NGON_n element set");
         }
         else {
-            es->nv = nelem;
-            z->nv += (nelem - es->rind[0] - es->rind[1]);
+            switch (element_dimension(es->type)) {
+                case 0:
+                    es->nn = nelem;
+                    z->nn += (nelem - es->rind[0] - es->rind[1]);
+                    break;
+                case 1:
+                    es->ne = nelem;
+                    z->ne += (nelem - es->rind[0] - es->rind[1]);
+                    break;
+                case 2:
+                    es->ns = nelem;
+                    z->ns += (nelem - es->rind[0] - es->rind[1]);
+                    break;
+                case 3:
+                    es->nv = nelem;
+                    z->nv += (nelem - es->rind[0] - es->rind[1]);
+                    break;
+                default:
+                    es->invalid = -1;
+                    continue;
+            }
         }
     }
 
@@ -1045,7 +1228,7 @@ static void read_zone (int nz)
         if (es->type == CGNS_ENUMV(MIXED)) {
             for (ne = 0; ne < nelem; ne++) {
                 type = (int)*pe++;
-                if (type >= CGNS_ENUMV(NGON_n))
+                if (FileVersion < 3200 && type >= CGNS_ENUMV(NGON_n))
                     nn = (int)(type - CGNS_ENUMV(NGON_n));
                 else
                     cg_npe (type, &nn);
@@ -1125,12 +1308,8 @@ static void read_zone (int nz)
 
     ierr = 0;
     for (es = z->sets, ns = 0; ns < nsets; ns++, es++) {
-        if (es->invalid || es->nv == 0 || es->type < CGNS_ENUMV(TETRA_4))
+        if (es->invalid || es->nv == 0)
             continue;
-        if (es->type > CGNS_ENUMV(MIXED)) {
-            if (es->type != CGNS_ENUMV(NFACE_n))
-            continue;
-        }
         nelem = es->ie - es->is + 1 - es->rind[1];
         type = es->type;
         pe = es->elements;
@@ -1139,7 +1318,7 @@ static void read_zone (int nz)
         for (ne = 0; ne < nelem; ne++) {
             if (es->type == CGNS_ENUMV(MIXED)) {
                 type = (int)*pe++;
-                if (type >= CGNS_ENUMV(NGON_n))
+                if (FileVersion < 3200 && type >= CGNS_ENUMV(NGON_n))
                     nn = (int)(type - CGNS_ENUMV(NGON_n));
                 else
                     cg_npe (type, &nn);
@@ -1147,19 +1326,30 @@ static void read_zone (int nz)
             switch (type) {
                 case CGNS_ENUMV(TETRA_4):
                 case CGNS_ENUMV(TETRA_10):
+                case CGNS_ENUMV(TETRA_16):
+                case CGNS_ENUMV(TETRA_20):
                     nf = 4;
                     break;
                 case CGNS_ENUMV(PYRA_5):
                 case CGNS_ENUMV(PYRA_13):
                 case CGNS_ENUMV(PYRA_14):
+                case CGNS_ENUMV(PYRA_21):
+                case CGNS_ENUMV(PYRA_29):
+                case CGNS_ENUMV(PYRA_30):
                 case CGNS_ENUMV(PENTA_6):
                 case CGNS_ENUMV(PENTA_15):
                 case CGNS_ENUMV(PENTA_18):
+                case CGNS_ENUMV(PENTA_24):
+                case CGNS_ENUMV(PENTA_38):
+                case CGNS_ENUMV(PENTA_40):
                     nf = 5;
                     break;
                 case CGNS_ENUMV(HEXA_8):
                 case CGNS_ENUMV(HEXA_20):
                 case CGNS_ENUMV(HEXA_27):
+                case CGNS_ENUMV(HEXA_32):
+                case CGNS_ENUMV(HEXA_56):
+                case CGNS_ENUMV(HEXA_64):
                     nf = 6;
                     break;
                 case CGNS_ENUMV(NFACE_n):
@@ -1513,7 +1703,7 @@ static void check_quantity (int dnum, char *name,
                     warning (2, "exponents do not match CGNS specification");
             }
             else
-                warning (2, "exponents not given");
+                warning (3, "exponents not given");
         }
     }
     else if ((CGNS_ENUMT(DataClass_t))dclass == CGNS_ENUMV(NondimensionalParameter) ||
@@ -1634,7 +1824,7 @@ static void check_user_data (int parclass, int *parunits, int indent)
                 if (0 == strcmp (name, Family[n])) break;
             }
             if (n == NumFamily)
-                warning (1, "family name \"%s\" not found", name);
+                warning (2, "family name \"%s\" not found", name);
         }
         if (verbose > 1) {
             if (cg_ndescriptors (&nd)) error_exit ("cg_ndescriptors");
@@ -2258,10 +2448,11 @@ static void check_coordinates (int ng)
 
 static void check_elements (void)
 {
-    int nn, ns;
-    int type, nf, np, nint, next;
+    int nn, ns, dim;
+    int nf, np, nint, next;
     cgsize_t is, ne, nelem, *pe;
     ELEMSET *es;
+    CGNS_ENUMT(ElementType_t) type;
     FACE *face, *pf;
     ZONE *z = &Zones[cgnszone-1];
 
@@ -2328,7 +2519,7 @@ static void check_elements (void)
                 printf ("INTERNAL:can't handle %s element set\n",
                     cg_ElementTypeName(es->type));
             else if (es->invalid == -2)
-                error ("MIXED elements not allowed in a MIXED element set");
+                error ("MIXED,NGON_n or NFACE_n elements not allowed in a MIXED element set");
             else if (es->invalid == -3)
                 printf("INTERNAL: error with element size in MIXED\n");
             else
@@ -2344,26 +2535,25 @@ static void check_elements (void)
             error ("%d element nodes are out of range", es->invalid);
             continue;
         }
-        if (z->faces == NULL || es->ns == 0 || es->type < CGNS_ENUMV(TRI_3))
+        if (z->faces == NULL || es->ns == 0 || es->invalid)
             continue;
-        if (es->type > CGNS_ENUMV(QUAD_9) &&
-            es->type != CGNS_ENUMV(MIXED) &&
-            es->type != CGNS_ENUMV(NGON_n)) continue;
 
         nelem = es->ie - es->is + 1 - es->rind[1];
         type = es->type;
         pe = es->elements;
         nf = np = nint = next = 0;
+        dim = element_dimension(es->type);
         for (ne = 0; ne < nelem; ne++) {
             if (es->type == CGNS_ENUMV(MIXED)) {
-                type = (int)*pe++;
-                if (type >= CGNS_ENUMV(NGON_n)) {
+                type = (CGNS_ENUMT(ElementType_t))*pe++;
+                if (FileVersion < 3200 && type >= CGNS_ENUMV(NGON_n)) {
                     nn = (int)(type - CGNS_ENUMV(NGON_n));
                     type = CGNS_ENUMV(NGON_n);
                 }
                 else {
                     cg_npe (type, &nn);
                 }
+                dim = element_dimension(type);
             }
             else if (es->type == CGNS_ENUMV(NGON_n)) {
                 nn = (int)*pe++;
@@ -2371,11 +2561,14 @@ static void check_elements (void)
             else {
                 cg_npe (type, &nn);
             }
-            if (ne >= es->rind[0] && nn >= 3 && (type == CGNS_ENUMV(NGON_n) ||
-                (type >= CGNS_ENUMV(TRI_3) && type <= CGNS_ENUMV(QUAD_9)))) {
+            if (ne >= es->rind[0] && nn >= 3 && dim == 2) {
 #ifndef USE_MID_NODES
-                if (type == CGNS_ENUMV(QUAD_9))
+                if (type == CGNS_ENUMV(TRI_10))
+                    face = new_face (9, pe);
+                else if (type == CGNS_ENUMV(QUAD_9))
                     face = new_face (8, pe);
+                else if (type == CGNS_ENUMV(QUAD_16))
+                    face = new_face (12, pe);
                 else
 #endif                               
                 face = new_face (nn, pe);
@@ -2641,16 +2834,30 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z,
     CGNS_ENUMT(PointSetType_t) ptype, CGNS_ENUMT(GridLocation_t) location)
 {
     switch (location) {
-        case CGNS_ENUMV(GridLocationNull):
-            if (ptype == CGNS_ENUMV(ElementRange) ||
-                ptype == CGNS_ENUMV(ElementList)) break;
         case CGNS_ENUMV(Vertex):
-            return CGNS_ENUMV(Vertex);
-        case CGNS_ENUMV(FaceCenter):
-            if (z->type == CGNS_ENUMV(Structured))
-                warning (2,
-                    "use [IJK]FaceCenter with Structured grids");
             break;
+        case CGNS_ENUMV(EdgeCenter):
+            if (CellDim == 1) {
+                if (FileVersion >= 3140) {
+                    warning (1, "use CellCenter for CellDim=1"
+                                " instead of EdgeCenter");
+                }
+                return CGNS_ENUMV(CellCenter);
+            }
+            return location;
+        case CGNS_ENUMV(FaceCenter):
+            if (z->type == CGNS_ENUMV(Structured)) {
+                warning (2, "use [IJK]FaceCenter with Structured grids");
+                return location;
+            }
+            if (CellDim == 2) {
+                if (FileVersion >= 3140) {
+                    warning (1, "use CellCenter for CellDim=2"
+                                " instead of FaceCenter");
+                }
+                return CGNS_ENUMV(CellCenter);
+            }
+            return location;
         case CGNS_ENUMV(IFaceCenter):
             if (z->type != CGNS_ENUMV(Structured)) {
                 error ("IFaceCenter only valid for Structured grids");
@@ -2672,29 +2879,20 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z,
             }
             break;
         case CGNS_ENUMV(CellCenter):
-            if (z->type == CGNS_ENUMV(Structured) && FileVersion >= 2300)
+            if (z->type == CGNS_ENUMV(Structured) && FileVersion >= 2300) {
                 warning (2, "use [IJK]FaceCenter location rather"
                     " than CellCenter");
-            else if (FileVersion >= 3100)
-                error("CellCenter not allowed - use Edge/FaceCenter");
-            else
-                warning (2, "use FaceCenter location rather than"
-                    " CellCenter");
-            return CellDim == 2 ? CGNS_ENUMV(EdgeCenter) :
-                                  CGNS_ENUMV(FaceCenter);
+            }
+            return location;
         default:
-            if (FileVersion >= 3100)
-                error ("grid location not Vertex,EdgeCenter,FaceCenter"
-                       " or [IJK]FaceCenter");
-            else
-                error ("grid location not Vertex,EdgeCenter,FaceCenter"
-                       " [IJK]FaceCenter or CellCenter");
+            error ("invalid grid location");
             break;
     }
     if (ptype == CGNS_ENUMV(ElementRange) ||
         ptype == CGNS_ENUMV(ElementList)) {
-        return CellDim == 2 ? CGNS_ENUMV(EdgeCenter) :
-                              CGNS_ENUMV(FaceCenter);
+        return (CellDim == 1 ? CGNS_ENUMV(Vertex) :
+               (CellDim == 2 ? CGNS_ENUMV(EdgeCenter) :
+                               CGNS_ENUMV(FaceCenter)));
     }
     return location;
 }
@@ -2820,7 +3018,7 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
                     }
                 }
             }
-            size = check_interface (z, ptype, location, npnts, pts, 1);
+            size = check_interface (z, ptype, location, npnts, pts, location != CellCenter);
             free (pts);
         }
     }
@@ -3010,7 +3208,8 @@ static void check_BC (int nb, int parclass, int *parunits)
         }
         if (n == NumFamily &&
             (FileVersion >= 1200 || strcmp(name, "ORPHAN")))
-            warning (1, "family name \"%s\" not found", name);
+            warning (bctype == CGNS_ENUMV(FamilySpecified) ? 1 : 2,
+                "family name \"%s\" not found", name);
     }
 
     ierr = read_ordinal (&n);
@@ -3066,7 +3265,7 @@ static void check_BC (int nb, int parclass, int *parunits)
             }
         }
     }
-    npts = check_interface (z, ptype, location, npts, pts, 1);
+    npts = check_interface (z, ptype, location, npts, pts, location != CellCenter);
     free (pts);
 
     /* BCDataSet */
@@ -4170,6 +4369,7 @@ static void check_solution (int ns)
         printf ("    Grid Location=%s\n", cg_GridLocationName (location));
     fflush (stdout);
 
+#if 0
     if (location != CGNS_ENUMV(Vertex) && location != CGNS_ENUMV(CellCenter)) {
         if (z->type == CGNS_ENUMV(Unstructured))
             error ("grid location nust be Vertex or CellCenter for"
@@ -4179,6 +4379,9 @@ static void check_solution (int ns)
                  location != CGNS_ENUMV(KFaceCenter))
             error ("grid location not Vertex,CellCenter or [IJK]FaceCenter");
     }
+#else
+    location = check_location (z, CGNS_ENUMV(PointSetTypeNull), location);
+#endif
 
     go_absolute ("Zone_t", cgnszone, "FlowSolution_t", ns, NULL);
 
@@ -4430,12 +4633,12 @@ static void check_subreg (int ns)
         error_exit("cg_subreg_info");
     strcpy (ZoneSubReg[ns-1], name);
     printf ("  checking subregion \"%s\"\n", name);
-    
+
     if (verbose)
         printf ("    Dimension=%d\n", dimension);
     if (dimension < 1 || dimension > CellDim)
         error("subregion dimension invalid");
- 
+
     if (verbose)
         printf ("    Grid Location=%s\n", cg_GridLocationName(location));
     if (dimension == 1) {
@@ -4566,7 +4769,7 @@ static void check_subreg (int ns)
     }
 
     /* family */
- 
+
     ierr = cg_famname_read (name);
     if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_famname_read");
     if (ierr == CG_OK) {
@@ -4576,7 +4779,7 @@ static void check_subreg (int ns)
         }
         if (n == NumFamily &&
             (FileVersion >= 1200 || strcmp(name, "ORPHAN")))
-            warning (1, "family name \"%s\" not found", name);
+            warning (2, "family name \"%s\" not found", name);
     }
 
     /* descriptors */
@@ -4863,7 +5066,7 @@ static void check_zone (void)
         }
         if (n >= NumFamily &&
             (FileVersion >= 1200 || strcmp(name, "ORPHAN")))
-            warning (1, "zone family name \"%s\" not found", name);
+            warning (2, "zone family name \"%s\" not found", name);
     }
 
     /*----- ReferenceState -----*/
@@ -5772,6 +5975,12 @@ int main (int argc, char *argv[])
     FileVersion = (int)(1000.0 * file_version + 0.5);
     if (LibraryVersion < FileVersion)
         warning (1, "CGNS file version is more recent than library version");
+    if (verbose) {
+        int precision;
+        printf ("File Version=%g\n", file_version);
+        cg_precision (cgnsfn, &precision);
+        if (precision) printf ("File Precision=%d\n", precision);
+    }
 
     /* get number of bases */
 

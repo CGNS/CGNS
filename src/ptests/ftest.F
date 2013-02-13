@@ -5,6 +5,7 @@
 #endif
       include 'cgnslib_f.h'
       include 'mpif.h'
+#include "cgnstypes_f.h"
 
       integer totcnt
       parameter (totcnt = 40320 * 10)
@@ -23,6 +24,11 @@
       
       data piomode /'independent','collective'/
       data outmode /'direct','queued'/
+
+#if CG_BUILD_64BIT
+      PRINT *,'PROGRAM NOT SET UP FOR 64-BIT'
+      STOP
+#endif
       
       call MPI_INIT(ierr)
       call MPI_COMM_SIZE(MPI_COMM_WORLD,commsize,ierr)

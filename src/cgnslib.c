@@ -323,7 +323,7 @@ int cg_is_cgns(const char *filename, int *file_type)
 
 int cg_open(const char * filename, int mode, int *file_number)
 {
-    int cgio, precision;
+    int cgio;
     cgsize_t dim_vals;
     double dummy_id;
     float FileVersion;
@@ -398,11 +398,6 @@ int cg_open(const char * filename, int mode, int *file_number)
             "CGNSLibraryVersion_t", &dummy_id, "R4", 1, &dim_vals,
             (void *)&FileVersion)) return CG_ERROR;
         cg->version = CGNSLibVersion;
-
-        precision = CG_SIZEOF_SIZE;
-        if (cgi_new_node(cg->rootid, "CGNSLibraryPrecision",
-            "CGNSLibraryPrecision_t", &dummy_id, "I4", 1, &dim_vals,
-            (void *)&precision)) return CG_ERROR;
     }
     else {
 
@@ -472,42 +467,6 @@ int cg_open(const char * filename, int mode, int *file_number)
                     (void *)&FileVersion)) return CG_ERROR;
             }
             cg->version = CGNSLibVersion;
-        }
-
-        if (mode == CG_MODE_MODIFY) {
-            if (cgi_get_nodes(cg->rootid, "CGNSLibraryPrecision_t",
-                    &nnod, &id)) return CG_ERROR;
-            if (nnod <= 0) {
-                dim_vals = 1;
-                precision = CG_SIZEOF_SIZE;
-                if (cgi_new_node(cg->rootid, "CGNSLibraryPrecision",
-                    "CGNSLibraryPrecision_t", &dummy_id, "I4", 1, &dim_vals,
-                    (void *)&precision)) return CG_ERROR;
-            }
-            else {
-                int ndim;
-                cgsize_t dims[12];
-                char_33 node_name;
-                char_33 data_type;
-                void *data;
-                if (cgi_read_node(id[0], node_name, data_type, &ndim,
-                        dims, &data, 1)) {
-                    cgi_error("Error reading CGNS-Library-Precision");
-                    return CG_ERROR;
-                }
-                if (0 == strcmp(data_type,"I4") && ndim == 1 && dims[0] == 1) {
-                    precision = *((int *)data);
-                    if (precision < CG_SIZEOF_SIZE) {
-                        precision = CG_SIZEOF_SIZE;
-                        if (cgio_write_all_data(cg->cgio, id[0], &precision)) {
-                            cg_io_error("cgio_write_all_data");
-                            return CG_ERROR;
-                        }
-                    }
-                }
-                free(data);
-                free(id);
-            }
         }
     } else {
         cg->nbases=0;
@@ -600,13 +559,8 @@ int cg_version(int file_number, float *FileVersion)
 
 int cg_precision(int file_number, int *precision)
 {
-    int nnod;
-    double *id;
-    int ndim;
-    cgsize_t dim_vals[12];
-    char_33 node_name;
+    int nb, nz;
     char_33 data_type;
-    void *data;
 
     *precision = 0;
     cg = cgi_get_file(file_number);
@@ -617,34 +571,17 @@ int cg_precision(int file_number, int *precision)
         *precision = CG_SIZEOF_SIZE;
         return CG_OK;
     }
-
-    if (cgi_get_nodes(cg->rootid, "CGNSLibraryPrecision_t", &nnod, &id))
-        return CG_ERROR;
-    if (nnod <= 0) return CG_OK;
-    if (nnod > 1) {
-        free(id);
-        cgi_error("More then one CGNSLibraryPrecision_t node found under ROOT.");
-        return CG_ERROR;
+    for (nb = 0; nb < cg->nbases; nb++) {
+        for (nz = 0; nz < cg->base[nb].nzones; nz++) {
+            if (0 == cgio_get_data_type (cg->cgio,
+                    cg->base[nb].zone[nz].id, data_type) &&
+                0 == strcmp (data_type, "I8")) {
+                *precision = 64;
+                return CG_OK;
+            }
+        }
     }
-
-    if (cgi_read_node(id[0], node_name, data_type, &ndim, dim_vals,
-            &data, 1)) {
-        cgi_error("Error reading CGNS-Library-Precision");
-        return CG_ERROR;
-    }
-    /* check data type */
-    if (strcmp(data_type,"I4")) {
-        cgi_error("Unexpected data type for CGNS-Library-Precision='%s'",data_type);
-        return CG_ERROR;
-    }
-    /* check data dim */
-    if (ndim != 1 || (dim_vals[0]!=1)) {
-        cgi_error("Wrong data dimension for CGNS-Library-Precision");
-        return CG_ERROR;
-    }
-    *precision = *((int *)data);
-    free(data);
-    free(id);
+    *precision = 32;
     return CG_OK;
 }
 
