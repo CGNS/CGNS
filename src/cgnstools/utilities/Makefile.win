@@ -148,9 +148,9 @@ aflr3_to_cgns.obj : aflr3_to_cgns.c
 
 cgns_to_aflr3 : cgns_to_aflr3.exe
 
-cgns_to_aflr3.exe : cgns_to_aflr3.obj getargs.obj
+cgns_to_aflr3.exe : cgns_to_aflr3.obj getargs.obj hash.obj
 	$(LINK) $(LFLAGS) cgns_to_aflr3.obj \
-	getargs.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
+	getargs.obj hash.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
 cgns_to_aflr3.obj : cgns_to_aflr3.c
 
@@ -168,9 +168,9 @@ fast_to_cgns.obj : fast_to_cgns.c
 
 cgns_to_fast : cgns_to_fast.exe
 
-cgns_to_fast.exe : cgns_to_fast.obj getargs.obj
+cgns_to_fast.exe : cgns_to_fast.obj getargs.obj hash.obj
 	$(LINK) $(LFLAGS) cgns_to_fast.obj \
-	getargs.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
+	getargs.obj hash.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
 cgns_to_fast.obj : cgns_to_fast.c
 

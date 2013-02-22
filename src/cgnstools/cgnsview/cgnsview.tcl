@@ -142,13 +142,15 @@ array set ProgData {
   case 0
   fromtop 0
   start /
+  winwidth 640
+  winheight 500
   seppos 0.4
   sepwd 7
   reg,file ".cgnstools"
   reg,base "HKEY_CURRENT_USER/Software/CGNS"
   reg,key "CGNSview"
-  reg,vals {file follow verify backup autoload maxsize maxcnt \
-            toolbar find case fromtop showlines}
+  reg,vals {file follow verify backup autoload maxsize maxcnt toolbar \
+            find case fromtop showlines winwidth winheight seppos}
   cgnsdiff ""
   cgnscheck ""
   cgnsplot ""
@@ -808,7 +810,7 @@ help_init {cgnsview CGNSview} {utilities Utilities} {cgns CGNS}
 
 #---------- main window
 
-frame .main -width 640 -height 500
+frame .main -width $ProgData(winwidth) -height $ProgData(winheight)
 pack .main -side top -fill both -expand 1 -padx 5 -pady 5
 
 #--- window seperator
@@ -1159,6 +1161,8 @@ proc do_quit {} {
   global ProgData
   if {![remove_backup]} return
   catch CGIOclose
+  set ProgData(winwidth) [winfo width .main]
+  set ProgData(winheight) [winfo height .main]
   foreach i $ProgData(reg,vals) {
     catch {tclreg_set $ProgData(reg,key) $i $ProgData($i)}
   }

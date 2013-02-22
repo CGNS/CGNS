@@ -151,9 +151,9 @@ aflr3_to_cgns.$(O) : aflr3_to_cgns.c
 
 #--------------------------------------------------
 
-cgns_to_aflr3$(EXE) : cgns_to_aflr3.$(O) getargs.$(O)
+cgns_to_aflr3$(EXE) : cgns_to_aflr3.$(O) getargs.$(O) hash.$(O)
 	$(CC) $(LDFLAGS) -o $@ cgns_to_aflr3.$(O) \
-	getargs.$(O) $(LDLIST)
+	getargs.$(O) hash.$(O) $(LDLIST)
 	$(STRIP) $@
 
 cgns_to_aflr3.$(O) : cgns_to_aflr3.c
@@ -169,9 +169,9 @@ fast_to_cgns.$(O) : fast_to_cgns.c
 
 #--------------------------------------------------
 
-cgns_to_fast$(EXE) : cgns_to_fast.$(O) getargs.$(O)
+cgns_to_fast$(EXE) : cgns_to_fast.$(O) getargs.$(O) hash.$(O)
 	$(CC) $(LDFLAGS) -o $@ cgns_to_fast.$(O) \
-	getargs.$(O) $(LDLIST)
+	getargs.$(O) hash.$(O) $(LDLIST)
 	$(STRIP) $@
 
 cgns_to_fast.$(O) : cgns_to_fast.c

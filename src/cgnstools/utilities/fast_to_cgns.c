@@ -263,15 +263,6 @@ static void read_mapbc(char *filename)
 static CGNS_ENUMV(BCType_t) get_bctype (int bctype)
 {
     switch (bctype) {
-        case 0:
-        case 5025:
-            return CGNS_ENUMV(BCInflowSupersonic);
-        case 5026:
-            return CGNS_ENUMV(BCOutflowSupersonic);
-        case 7011:
-            return CGNS_ENUMV(BCInflowSubsonic);
-        case 7012:
-            return CGNS_ENUMV(BCOutflowSubsonic);
         case 1:
         case 6000:
         case 6001:
@@ -287,12 +278,11 @@ static CGNS_ENUMV(BCType_t) get_bctype (int bctype)
         case 6663:
             return CGNS_ENUMV(BCSymmetryPlane);
         case 2:
-        case 5005:
-        case 5051:
+        case 5026:
             return CGNS_ENUMV(BCExtrapolate);
         case 3:
         case 5000:
-        case 5015:
+        case 5025:
         case 5050:
             return CGNS_ENUMV(BCFarfield);
         case 4:
@@ -300,16 +290,19 @@ static CGNS_ENUMV(BCType_t) get_bctype (int bctype)
             return CGNS_ENUMV(BCWallViscous);
         case 5:
         case 3000:
-        case 3010:
             return CGNS_ENUMV(BCWallInviscid);
-        case 1002:
-        case 5010:
-        case 5011:
+        case 5051:
+        case 5052:
             return CGNS_ENUMV(BCTunnelOutflow);
-        case 1001:
-            return CGNS_ENUMV(BCTunnelInflow);
-        default:
-            break;
+        case 7011:
+            return CGNS_ENUMV(BCInflowSubsonic);
+        case 7012:
+            return CGNS_ENUMV(BCOutflowSubsonic);
+        case 7031:
+            return CGNS_ENUMV(BCOutflow);
+        case 7036:
+        case 7100:
+            return CGNS_ENUMV(BCInflow);
     }
     return CGNS_ENUMV(BCTypeUserDefined);
 }

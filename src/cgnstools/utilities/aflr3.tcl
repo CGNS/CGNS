@@ -12,6 +12,7 @@ array set Export {
   aflr3,fmt s
   aflr3,endian b
   aflr3,prec 8
+  aflr3,sym ""
 }
 
 proc aflr3_import {w name exe} {
@@ -187,6 +188,16 @@ proc aflr3_export {w name exe} {
     -variable Export(aflr3,prec) -onvalue 8 -offvalue 4
   pack $f.b $f.l $f.d -side left -expand 1
 
+  FrameCreate $w.sym -text "Symmetry" -font $Font(bold)
+  pack $w.sym -side top -padx 5 -pady 2 -fill x
+  set sym [FrameGet $w.sym]
+
+  radiobutton $sym.none -text none -variable Export(aflr3,sym) -value ""
+  radiobutton $sym.x -text X -variable Export(aflr3,sym) -value x
+  radiobutton $sym.y -text Y -variable Export(aflr3,sym) -value y
+  radiobutton $sym.z -text Z -variable Export(aflr3,sym) -value z
+  pack $sym.none $sym.x $sym.y $sym.z -side left -expand 1
+
   set Export(cgnsfile) $ProgData(file,name)
   set Export(aflr3file) [file rootname $ProgData(file,name)].ugrid
   aflr3_extension
@@ -200,6 +211,9 @@ proc aflr3_export {w name exe} {
     }
     if {$Export(aflr3,fmt) != "s"} {
       lappend cmd -$Export(aflr3,fmt)
+    }
+    if {$Export(aflr3,sym) != ""} {
+      lappend cmd -$Export(aflr3,sym)
     }
     lappend cmd -$Export(aflr3,endian) -$Export(aflr3,prec)
     lappend cmd $Export(cgnsfile) $Export(aflr3file)

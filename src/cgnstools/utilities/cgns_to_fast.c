@@ -11,13 +11,9 @@
 #define ACCESS access
 #endif
 
-#include "getargs.h"
 #include "cgnslib.h"
-
-#ifndef CGNS_ENUMV
-# define CGNS_ENUMV(V) V
-# define CGNS_ENUMT(T) T
-#endif
+#include "getargs.h"
+#include "hash.h"
 
 #if defined(_WIN32) || defined(__BORLANDC__) || defined(__GO32__) || \
     defined(__alpha) || defined(ultrix) || defined(linux)
@@ -26,10 +22,10 @@
 # endif
 #endif
 
-static char options[] = "48fslbB:Z:";
+static char options[] = "48fslbxyzB:Z:";
 
 static char *usgmsg[] = {
-    "usage: cgns_to_fast [options] CGNSfile FASTfile [MAPBCfile]",
+    "usage: cgns_to_fast [options] CGNSfile [FASTfile] [MAPBCfile]",
     "  options are:",
     "   -4       = write coordinates as real*4 (default Real*8)",
     "   -8       = write coordinates as real*8 (double - default)",
@@ -37,33 +33,46 @@ static char *usgmsg[] = {
     "   -s       = Fortran stream format (binary - default)",
     "   -l       = little-endian format",
     "   -b       = big-endian format (default)",
+    "   -x       = symmetric in X",
+    "   -y       = symmetric in Y",
+    "   -z       = symmetric in Z",
     "   -B<base> = use CGNS base number <base> (default 1)",
     "   -Z<zone> = zone number (default 1)",
-    "default is big-endian binary (Fortran stream) AFLR3 file",
+    "default is big-endian binary (Fortran stream) FAST file",
     NULL
 };
-
-typedef struct {
-    cgsize_t start, end;
-    int ntris, ntets;
-} ELEMSET;
-
-int nSets;
-ELEMSET *Sets;
 
 static int is_ascii = 0;
 static int is_single = 0;
 static int is_little = 0;
+static int is_sym = 0;
 
 static int cgFile = 0, cgBase, cgZone;
+static cgsize_t sizes[9];
 
 static cgsize_t nCoords = 0;
 static cgsize_t nTris = 0;
 static cgsize_t nTets = 0;
 
-int *BCtags;
+typedef struct {
+    cgsize_t id;
+    int bcnum;
+    cgsize_t nodes[3];
+} TRI;
 
-static cgsize_t sizes[9];
+static TRI **Tris;
+
+static int tetfaces[4][3] = {
+    {0, 2, 1}, {0, 1, 3}, {1, 2, 3}, {2, 0, 3}
+};
+
+typedef struct {
+    CGNS_ENUMT(BCType_t) type;
+    char name[33];
+} BOCO;
+
+static int nBocos = 0;
+static BOCO *Bocos;
 
 /*--------------------------------------------------------------------*/
 
@@ -184,7 +193,7 @@ static void write_doubles (FILE *fp, int cnt, double *data)
 
 static void count_elements ()
 {
-    int ns, nsect, nn, ip, ntris, ntets;
+    int ns, nsect, nn, ip;
     cgsize_t i, n, is, ie, ne;
     cgsize_t size, *conn;
     CGNS_ENUMT(ElementType_t) elemtype, et;
@@ -194,20 +203,12 @@ static void count_elements ()
         err_exit ("cg_nsections", NULL);
     if (nsect < 1) err_exit (NULL, "no sections defined");
 
-    nSets = nsect;
-    Sets = (ELEMSET *)malloc(nSets * sizeof(ELEMSET));
-    if (Sets == NULL)
-        err_exit (NULL, "malloc failed for elements sets");
-
     for (ns = 1; ns <= nsect; ns++) {
         if (cg_section_read (cgFile, cgBase, cgZone, ns,
                 name, &elemtype, &is, &ie, &nn, &ip))
             err_exit ("cg_section_read", NULL);
         ne = ie - is + 1;
-        Sets[ns-1].start = is;
-        Sets[ns-1].end = ie;
 
-        ntris = ntets = 0;
         if (elemtype == CGNS_ENUMV(MIXED)) {
             if (cg_ElementDataSize (cgFile, cgBase, cgZone, ns, &size))
                 err_exit ("cg_ElementDataSize", NULL);
@@ -217,44 +218,410 @@ static void count_elements ()
            if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
                 err_exit ("cg_elements_read", NULL);
             for (i = 0, n = 0; n < ne; n++) {
-                et = (int)conn[i++];
+                et = (CGNS_ENUMT(ElementType_t))conn[i++];
                 switch (et) {
                     case CGNS_ENUMV(TRI_3):
-                        ntris++;
-                        i += 3;
+                    case CGNS_ENUMV(TRI_6):
+                        nTris++;
                         break;
                     case CGNS_ENUMV(TETRA_4):
-                        ntets++;
-                        i += 4;
+                    case CGNS_ENUMV(TETRA_10):
+                        nTets++;
                         break;
+                    /* ignore these */
+                    case CGNS_ENUMV(NODE):
+                    case CGNS_ENUMV(BAR_2):
+                    case CGNS_ENUMV(BAR_3):
+                        break;
+                    /* invalid */
                     default:
-                        sprintf(errmsg, "element type %s not allowed",
+                        sprintf(errmsg,
+                            "element type %s not allowed for FAST",
                             cg_ElementTypeName(et));
                         err_exit(NULL, errmsg);
                         break;
                 }
+                if (cg_npe(et, &nn) || nn <= 0)
+                    err_exit("cg_npe", NULL);
+                i += nn;
             }
             free (conn);
         }
         else {
             switch (elemtype) {
                 case CGNS_ENUMV(TRI_3):
-                    ntris += ne;
+                case CGNS_ENUMV(TRI_6):
+                    nTris += ne;
                     break;
                 case CGNS_ENUMV(TETRA_4):
-                    ntets += ne;
+                case CGNS_ENUMV(TETRA_10):
+                    nTets += ne;
                     break;
+                /* ignore these */
+                case CGNS_ENUMV(NODE):
+                case CGNS_ENUMV(BAR_2):
+                case CGNS_ENUMV(BAR_3):
+                    break;
+                /* invalid */
                 default:
-                    sprintf(errmsg, "element type %s not allowed",
+                    sprintf(errmsg,
+                        "element type %s not allowed for FAST",
                         cg_ElementTypeName(elemtype));
                     err_exit(NULL, errmsg);
                     break;
             }
         }
-        Sets[ns-1].ntris = ntris;
-        Sets[ns-1].ntets = ntets;
-        nTris += ntris;
-        nTets += ntets;
+    }
+}
+
+/*-------------------------------------------------------------------*/
+
+static int compare_tris (void *v1, void *v2)
+{
+    TRI *t1 = (TRI *)v1;
+    TRI *t2 = (TRI *)v2;
+    int i, k;
+    cgsize_t id, nn, n1[3], n2[3];
+
+    for (i = 0; i < 3; i++) {
+        id = t1->nodes[i];
+        for (k = 0; k < i; k++) {
+            if (n1[k] > id) {
+                nn = n1[k];
+                n1[k] = id;
+                id = nn;
+            }
+        }
+        n1[i] = id;
+    }
+    for (i = 0; i < 3; i++) {
+        id = t2->nodes[i];
+        for (k = 0; k < i; k++) {
+            if (n2[k] > id) {
+                nn = n2[k];
+                n2[k] = id;
+                id = nn;
+            }
+        }
+        n2[i] = id;
+    }
+
+    for (i = 0; i < 3; i++) {
+        if (n1[i] != n2[i])
+            return (int)(n1[i] - n2[i]);
+    }
+    return 0;
+}
+
+/*-------------------------------------------------------------------*/
+
+static size_t hash_tri (void *v)
+{
+    TRI *t = (TRI *)v;
+    int n;
+    size_t hash = 0;
+
+    for (n = 0; n < 3; n++)
+        hash += (size_t)t->nodes[n];
+    return hash;
+}
+
+/*-------------------------------------------------------------------*/
+
+static size_t get_tris (void *vt, void *vn)
+{
+    int *n = (int *)vn;
+
+    Tris[*n] = (TRI *)vt;
+    (*n)++;
+    return 1;
+}
+
+/*--------------------------------------------------------------------*/
+
+static int sort_tris (const void *v1, const void *v2)
+{
+    TRI **t1 = (TRI **)v1;
+    TRI **t2 = (TRI **)v2;
+
+    return (int)((*t1)->id - (*t2)->id);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void boundary_elements ()
+{
+    int ns, nsect, nn, ip, nf;
+    cgsize_t i, n, is, ie, ne;
+    cgsize_t size, *conn;
+    CGNS_ENUMT(ElementType_t) elemtype, et;
+    char name[33], errmsg[128];
+    TRI tri, *pt;
+    HASH trihash;
+
+    trihash = HashCreate(nTets > 1024 ? (size_t)nTets / 3 : 127,
+                         compare_tris, hash_tri);
+    if (NULL == trihash)
+        err_exit(NULL, "hash table creation failed");
+
+    if (cg_nsections (cgFile, cgBase, cgZone, &nsect))
+        err_exit ("cg_nsections", NULL);
+
+    for (ns = 1; ns <= nsect; ns++) {
+        if (cg_section_read (cgFile, cgBase, cgZone, ns,
+                name, &elemtype, &is, &ie, &nn, &ip))
+            err_exit ("cg_section_read", NULL);
+        if (elemtype != CGNS_ENUMV(MIXED) &&
+            elemtype != CGNS_ENUMV(TETRA_4) &&
+            elemtype != CGNS_ENUMV(TETRA_10)) continue;
+
+        if (cg_ElementDataSize (cgFile, cgBase, cgZone, ns, &size))
+            err_exit ("cg_ElementDataSize", NULL);
+        conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
+        if (conn == NULL)
+            err_exit (NULL, "malloc failed for element connectivity");
+        if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
+            err_exit ("cg_elements_read", NULL);
+ 
+        ne = ie - is + 1;
+        et = elemtype;
+        for (i = 0, n = 0; n < ne; n++) {
+            if (elemtype == CGNS_ENUMV(MIXED))
+                et = (CGNS_ENUMT(ElementType_t))conn[i++];
+            if (et == CGNS_ENUMV(TETRA_4) ||
+                et == CGNS_ENUMV(TETRA_10)) {
+                for (nf = 0; nf < 4; nf++) {
+                    for (nn = 0; nn < 3; nn++) {
+                        tri.nodes[nn] = conn[tetfaces[nf][nn]];
+                    }
+                    pt = (TRI *)HashFind(trihash, &tri);
+                    if (pt == NULL) {
+                        pt = (TRI *)malloc(sizeof(TRI));
+                        if (pt == NULL)
+                            err_exit(NULL, "malloc failed for a new tri");
+                        pt->id = 0;
+                        pt->bcnum = 0;
+                        for (nn = 0; nn < 3; nn++)
+                            pt->nodes[nn] = tri.nodes[nn];
+                        HashAdd(trihash, pt);
+                    }
+                    else {
+                        HashDelete(trihash, pt);
+                        free(pt);
+                    }
+                }
+            }
+            cg_npe(et, &nn);
+            i += nn;
+        }
+        free(conn);
+    }
+
+
+    for (ns = 1; ns <= nsect; ns++) {
+        if (cg_section_read (cgFile, cgBase, cgZone, ns,
+                name, &elemtype, &is, &ie, &nn, &ip))
+            err_exit ("cg_section_read", NULL);
+        if (elemtype != CGNS_ENUMV(MIXED) &&
+            elemtype != CGNS_ENUMV(TRI_3) &&
+            elemtype != CGNS_ENUMV(TRI_6)) continue;
+
+        if (cg_ElementDataSize (cgFile, cgBase, cgZone, ns, &size))
+            err_exit ("cg_ElementDataSize", NULL);
+        conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
+        if (conn == NULL)
+            err_exit (NULL, "malloc failed for element connectivity");
+        if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
+            err_exit ("cg_elements_read", NULL);
+ 
+        ne = ie - is + 1;
+        et = elemtype;
+        for (i = 0, n = 0; n < ne; n++) {
+            if (elemtype == CGNS_ENUMV(MIXED))
+                et = (CGNS_ENUMT(ElementType_t))conn[i++];
+            if (et == CGNS_ENUMV(TRI_3) ||
+                et == CGNS_ENUMV(TRI_6)) {
+                for (nn = 0; nn < 3; nn++) {
+                    tri.nodes[nn] = conn[i+nn];
+                }
+                pt = (TRI *)HashFind(trihash, &tri);
+                if (pt == NULL) {
+                    pt = (TRI *)malloc(sizeof(TRI));
+                    if (pt == NULL)
+                        err_exit(NULL, "malloc failed for a new tri");
+                    for (nn = 0; nn < 3; nn++)
+                        pt->nodes[nn] = tri.nodes[nn];
+                    HashAdd(trihash, pt);
+                }
+                pt->id = is + n;
+                pt->bcnum = -ns;
+            }
+            cg_npe(et, &nn);
+            i += nn;
+        }
+        free(conn);
+    }
+
+    nTris = HashSize(trihash);
+    Tris = (TRI **)malloc(nTris * sizeof(TRI *));
+    if (Tris == NULL)
+        err_exit(NULL, "malloc failed for tri list");
+    ne = 0;
+    HashList(trihash, get_tris, &ne);
+    HashDestroy(trihash, NULL);
+
+    qsort(Tris, nTris, sizeof(TRI *), sort_tris);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int sort_points (const void *v1, const void *v2)
+{
+    return (int)(*((cgsize_t *)v1) - *((cgsize_t *)v2));
+}
+
+/*--------------------------------------------------------------------*/
+
+static int find_point (cgsize_t id, cgsize_t np, cgsize_t *pts)
+{
+    cgsize_t lo = 0, hi = np - 1, mid;
+
+    if (!np || id < pts[0]) return 0;
+    if (id == pts[0]) return 1;
+    if (!hi || id > pts[hi]) return 0;
+    if (id == pts[hi]) return 1;
+
+    while (lo <= hi) {
+        mid = (lo + hi) >> 1;
+        if (id == pts[mid]) return 1;
+        if (id < pts[mid])
+            hi = mid - 1;
+        else
+            lo = mid + 1;
+    }
+    return 0;
+}
+
+/*--------------------------------------------------------------------*/
+
+static void boundary_tris (int nb, CGNS_ENUMT(PointSetType_t) ptype,
+    CGNS_ENUMT(GridLocation_t) location, cgsize_t np, cgsize_t *ptset)
+{
+    cgsize_t nt, is, ie;
+    int n;
+
+    if (ptype == CGNS_ENUMV(PointRange) ||
+        ptype == CGNS_ENUMV(PointList)) {
+        if (location == CGNS_ENUMV(FaceCenter) ||
+            location == CGNS_ENUMV(CellCenter)) {
+            ptype = (ptype == CGNS_ENUMV(PointRange) ?
+                 CGNS_ENUMV(ElementRange) : CGNS_ENUMV(ElementList));
+        }
+        else if (location != CGNS_ENUMV(Vertex)) {
+            return;
+        }
+    }
+
+    if (ptype == CGNS_ENUMV(PointRange)) {
+        if (ptset[0] < ptset[1]) {
+            is = ptset[0];
+            ie = ptset[1];
+        }
+        else {
+            is = ptset[1];
+            ie = ptset[0];
+        }
+        for (nt = 0; nt < nTris; nt++) {
+            for (n = 0; n < 3; n++) {
+                if (Tris[nt]->nodes[n] < is ||
+                    Tris[nt]->nodes[n] > ie) break;
+            }
+            if (n == 3) Tris[nt]->bcnum = nb;
+        }
+        return;
+    }
+
+    if (ptype == CGNS_ENUMV(PointList)) {
+        qsort(ptset, (size_t)np, sizeof(cgsize_t), sort_points);
+        for (nt = 0; nt < nTris; nt++) {
+            for (n = 0; n < 3; n++) {
+                if (!find_point(Tris[nt]->nodes[n], np, ptset))
+                    break;
+            }
+            if (n == 3) Tris[nt]->bcnum = nb;
+        }
+        return;
+    }
+
+    if (ptype == CGNS_ENUMV(ElementRange)) {
+        if (ptset[0] < ptset[1]) {
+            is = ptset[0];
+            ie = ptset[1];
+        }
+        else {
+            is = ptset[1];
+            ie = ptset[0];
+        }
+        for (nt = 0; nt < nTris; nt++) {
+            if (Tris[nt]->id >= is && Tris[nt]->id <= ie)
+                Tris[nt]->bcnum = nb;
+        }
+        return;
+    }
+
+    if (ptype == CGNS_ENUMV(ElementList)) {
+        qsort(ptset, (size_t)np, sizeof(cgsize_t), sort_points);
+        for (nt = 0; nt < nTris; nt++) {
+            if (find_point(Tris[nt]->id, np, ptset))
+                Tris[nt]->bcnum = nb;
+        }
+        return;
+    }
+}
+
+/*--------------------------------------------------------------------*/
+
+static void boundary_conditions ()
+{
+    int nb, ib, nrmlindex[3];
+    cgsize_t is, np, *ptset;
+    char name[33];
+    CGNS_ENUMT(BCType_t) bctype;
+    CGNS_ENUMT(PointSetType_t) ptype;
+    CGNS_ENUMT(GridLocation_t) location;
+    CGNS_ENUMT(DataType_t) datatype;
+
+    if (cg_nbocos (cgFile, cgBase, cgZone, &nBocos))
+        err_exit ("cg_nbocos", NULL);
+
+    if (nBocos) {
+        Bocos = (BOCO *)malloc(nBocos * sizeof(BOCO));
+        if (Bocos == NULL) err_exit(NULL, "malloc failed for bocos");
+ 
+        for (nb = 1; nb <= nBocos; nb++) {
+            if (cg_boco_info(cgFile, cgBase, cgZone, nb, name,
+                    &bctype, &ptype, &np, nrmlindex, &is,
+                    &datatype, &ib))
+                err_exit("cg_boco_info", NULL);
+            Bocos[nb-1].type = bctype;
+            strcpy(Bocos[nb-1].name, name);
+            if (cg_boco_gridlocation_read(cgFile, cgBase, cgZone,
+                    nb, &location))
+                err_exit("cg_boco_gridlocation_read", NULL);
+            ptset = (cgsize_t *)malloc((size_t)np * sizeof(cgsize_t));
+            if (ptset == NULL)
+                err_exit(NULL, "malloc failed for boco ptset");
+            if (cg_boco_read(cgFile, cgBase, cgZone, nb, ptset, 0))
+                err_exit("cg_boco_read", NULL);
+
+            boundary_tris(nb, ptype, location, np, ptset);
+            free(ptset);
+        }
+    }
+
+    for (np = 0; np < nTris; np++) {
+        if (Tris[np]->bcnum < 0)
+            Tris[np]->bcnum = nBocos - Tris[np]->bcnum;
     }
 }
 
@@ -301,94 +668,39 @@ static void write_coords (FILE *fp)
 
 /*--------------------------------------------------------------------*/
 
-static void get_bcs ()
-{
-}
-
-/*--------------------------------------------------------------------*/
-
 static void write_tris (FILE *fp)
 {
-    int ns, nsect, nn, ip, nt, *elems;
-    cgsize_t i, n, is, ie, ne;
-    cgsize_t size, *conn;
-    CGNS_ENUMT(ElementType_t) elemtype, et;
-    char name[33];
+    cgsize_t nt;
+    int n, tri[3], *bctags;
 
-    elems = (int *)malloc((size_t)nTris * 3 * sizeof(int));
-    BCtags = (int *)malloc((size_t)nTris * sizeof(int));
-    if (elems == NULL || BCtags == NULL)
+    bctags = (int *)malloc((size_t)nTris * sizeof(int));
+    if (bctags == NULL)
         err_exit(NULL, "malloc failed for element list");
 
-    if (cg_nsections (cgFile, cgBase, cgZone, &nsect))
-        err_exit ("cg_nsections", NULL);
-
-    nn = nt = 0;
-    for (ns = 1; ns <= nsect; ns++) {
-        if (cg_section_read (cgFile, cgBase, cgZone, ns,
-                name, &elemtype, &is, &ie, &ip, &ip))
-            err_exit ("cg_section_read", NULL);
-        ne = ie - is + 1;
-        if (elemtype == CGNS_ENUMV(TRI_3) ||
-            elemtype == CGNS_ENUMV(MIXED)) {
-            if (cg_ElementDataSize (cgFile, cgBase, cgZone, ns, &size))
-                err_exit ("cg_ElementDataSize", NULL);
-            conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
-            if (conn == NULL)
-                err_exit (NULL, "malloc failed for element connectivity");
-           if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
-                err_exit ("cg_elements_read", NULL);
-            if (elemtype == CGNS_ENUMV(MIXED)) {
-                for (i = 0, n = 0; n < ne; n++) {
-                    et = (CGNS_ENUMT(ElementType_t))conn[i++];
-                    if (et == CGNS_ENUMV(TRI_3)) {
-                        BCtags[nt++] = ns;
-                        for (ip = 0; ip < 3; ip++)
-                            elems[nn++] = conn[i++];
-                    }
-                    else {
-                        if (cg_npe(et, &ip) || ip <= 0)
-                            err_exit("cg_npe", NULL);
-                        i += ip;
-                    }
-                }
-            }
-            else if (elemtype == CGNS_ENUMV(TRI_3)) {
-                for (i = 0, n = 0; n < ne; n++) {
-                    BCtags[nt++] = ns;
-                    for (ip = 0; ip < 3; ip++)
-                        elems[nn++] = conn[i++];
-                }
-            }
-            free (conn);
-        }
+    for (nt = 0; nt < nTris; nt++) {
+        for (n = 0; n < 3; n++)
+            tri[n] = (int)Tris[nt]->nodes[n];
+        write_ints(fp, 3, tri);
+        bctags[nt] = Tris[nt]->bcnum;
     }
-    write_ints(fp, nn, elems);
-    free(elems);
 
-    get_bcs();
-    write_ints(fp, (int)nTris, BCtags);
-    free(BCtags);
+    write_ints(fp, (int)nTris, bctags);
+    free(bctags);
 }
 
 /*--------------------------------------------------------------------*/
 
 static void write_tets (FILE *fp)
 {
-    int ns, nsect, nn, ip, *elems;
+    int ns, nsect, ip, tet[4];
     cgsize_t i, n, is, ie, ne;
     cgsize_t size, *conn;
     CGNS_ENUMT(ElementType_t) elemtype, et;
     char name[33];
 
-    elems = (int *)malloc((size_t)nTets * 4 * sizeof(int));
-    if (elems == NULL)
-        err_exit(NULL, "malloc failed for element list");
-
     if (cg_nsections (cgFile, cgBase, cgZone, &nsect))
         err_exit ("cg_nsections", NULL);
 
-    nn = 0;
     for (ns = 1; ns <= nsect; ns++) {
         if (cg_section_read (cgFile, cgBase, cgZone, ns,
                 name, &elemtype, &is, &ie, &ip, &ip))
@@ -401,14 +713,15 @@ static void write_tets (FILE *fp)
             conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
             if (conn == NULL)
                 err_exit (NULL, "malloc failed for element connectivity");
-           if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
+            if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
                 err_exit ("cg_elements_read", NULL);
             if (elemtype == CGNS_ENUMV(MIXED)) {
                 for (i = 0, n = 0; n < ne; n++) {
                     et = (CGNS_ENUMT(ElementType_t))conn[i++];
                     if (et == CGNS_ENUMV(TETRA_4)) {
                         for (ip = 0; ip < 4; ip++)
-                            elems[nn++] = conn[i++];
+                            tet[ip] = conn[i++];
+                        write_ints(fp, 4, tet);
                     }
                     else {
                         if (cg_npe(et, &ip) || ip <= 0)
@@ -418,22 +731,67 @@ static void write_tets (FILE *fp)
                 }
             }
             else if (elemtype == CGNS_ENUMV(TETRA_4)) {
-                for (n = 0; n < ne * 4; n++)
-                    elems[nn++] = conn[n];
+                for (i = 0, n = 0; n < ne; n++) {
+                    for (ip = 0; ip < 4; ip++)
+                        tet[ip] = conn[i++];
+                    write_ints(fp, 4, tet);
+                }
             }
             free (conn);
         }
     }
+}
 
-    write_ints(fp, nn, elems);
-    free(elems);
+/*--------------------------------------------------------------------*/
+
+static int get_bcnum (CGNS_ENUMT(BCType_t) bctype)
+{
+    switch (bctype) {
+        case CGNS_ENUMV(BCInflowSupersonic):
+            return 5025;
+        case CGNS_ENUMV(BCOutflow):
+        case CGNS_ENUMV(BCOutflowSupersonic):
+        case CGNS_ENUMV(BCExtrapolate):
+            return 5026;
+        case CGNS_ENUMV(BCInflowSubsonic):
+        case CGNS_ENUMV(BCTunnelInflow):
+            return 7011;
+        case CGNS_ENUMV(BCOutflowSubsonic):
+            return 7012;
+        case CGNS_ENUMV(BCSymmetryPlane):
+            if (is_sym)
+                return 6660 + is_sym;
+            return 1;
+        case CGNS_ENUMV(BCFarfield):
+        case CGNS_ENUMV(BCInflow):
+            return 5000;
+        case CGNS_ENUMV(BCWall):
+        case CGNS_ENUMV(BCWallViscous):
+        case CGNS_ENUMV(BCWallViscousHeatFlux):
+        case CGNS_ENUMV(BCWallViscousIsothermal):
+            return 4000;
+        case CGNS_ENUMV(BCWallInviscid):
+            return 3000;
+        case CGNS_ENUMV(BCTunnelOutflow):
+            return 5051;
+/*
+        case CGNS_ENUMV(BCAxisymmetricWedge):
+        case CGNS_ENUMV(BCDegenerateLine):
+        case CGNS_ENUMV(BCDegeneratePoint):
+        case CGNS_ENUMV(BCDirichlet):
+        case CGNS_ENUMV(BCGeneral):
+        case CGNS_ENUMV(BCNeumann):
+        case CGNS_ENUMV(BCSymmetryPolar):
+*/
+    }
+    return 0;
 }
 
 /*--------------------------------------------------------------------*/
 
 int main (int argc, char *argv[])
 {
-    char name[33];
+    char name[33], *fastfile, *mapbc, *p;
     int n, nb, nz, idata[3];
     int celldim, phydim;
     CGNS_ENUMT(ZoneType_t) zonetype;
@@ -463,6 +821,11 @@ int main (int argc, char *argv[])
             case 'b':
                 is_little = 0;
                 break;
+            case 'x':
+            case 'y':
+            case 'z':
+                is_sym = n - 'x' + 1;
+                break;
             case 'B':
                 cgBase = atoi(argarg);
                 break;
@@ -472,8 +835,8 @@ int main (int argc, char *argv[])
         }
     }
 
-    if (argind > argc - 2)
-        print_usage (usgmsg, "CGNSfile and/or FASTfile not given");
+    if (argind > argc - 1)
+        print_usage (usgmsg, "CGNSfile not given");
     if (ACCESS (argv[argind], 0))
         err_exit (NULL, "CGNSfile does not exist or is not a file");
 
@@ -518,6 +881,7 @@ int main (int argc, char *argv[])
 
     nCoords = sizes[0];
     count_elements();
+
     printf("number coordinates = %ld\n", (long)nCoords);
     printf("number triangles   = %ld\n", (long)nTris);
     printf("number tetrahedra  = %ld\n", (long)nTets);
@@ -528,11 +892,39 @@ int main (int argc, char *argv[])
         (4 * nTets) > CG_MAX_INT32)
         err_exit (NULL, "too many elements to write with integers");
 
+    /* get boundary elements and BCs */
+
+    boundary_elements();
+    boundary_conditions();
+
     /* open output file */
 
-    printf ("writing %s FAST data to <%s>\n",
-        is_ascii ? "ASCII" : "binary", argv[++argind]);
-    if (NULL == (fp = fopen (argv[argind], is_ascii ? "w+" : "w+b")))
+    if (argind < argc - 1) {
+        fastfile = argv[++argind];
+    }
+    else {
+        fastfile = (char *)malloc(strlen(argv[argind]) + 12);
+        if (fastfile == NULL)
+            err_exit(NULL, "malloc failed for FAST filename");
+        strcpy(fastfile, argv[argind]);
+        p = strrchr(fastfile, '/');
+#ifdef _WIN32
+        if (p == NULL) p = strrchr(fastfile, '\\');
+#endif
+        if (p == NULL) p = fastfile;
+        if ((p = strrchr(p, '.')) == NULL)
+            p = fastfile + strlen(fastfile);
+        if (!is_ascii) {
+            *p++ = '.';
+            if (is_little) *p++ = 'l';
+            *p++ = 'b';
+            *p++ = is_single ? '4' : '8';
+        }
+        strcpy(p, ".fgrid");
+    }
+    printf ("writing %s FAST data to \"%s\"\n",
+        is_ascii ? "ASCII" : "binary", fastfile);
+    if (NULL == (fp = fopen (fastfile, is_ascii ? "w+" : "w+b")))
         err_exit (NULL, "couldn't open output file for writing");
 
     /* write file */
@@ -548,5 +940,36 @@ int main (int argc, char *argv[])
 
     fclose (fp);
     cg_close (cgFile);
+
+    if (nBocos) {
+        if (argind < argc - 1) {
+            mapbc = argv[++argind];
+        }
+        else {
+            mapbc = (char *)malloc(strlen(fastfile) + 8);
+            strcpy(mapbc, fastfile);
+            p = strrchr(mapbc, '/');
+#ifdef _WIN32
+            if (p == NULL) p = strrchr(mapbc, '\\');
+#endif
+            if (p == NULL) p = mapbc;
+            if ((p = strrchr(p, '.')) == NULL)
+                p = mapbc + strlen(mapbc);
+            strcpy(p, ".mapbc");
+        }
+        printf("writing boundary conditions to \"%s\"\n", mapbc);
+        if ((fp = fopen(mapbc, "w+")) == NULL) {
+            fprintf(stderr, "couldn't open \"%s\" for writing\n", mapbc);
+        }
+        else {
+            fprintf(fp, "%d\n", nBocos);
+            for (nb = 0; nb < nBocos; nb++) {
+                fprintf(fp, "%d %d %s\n", nb+1,
+                    get_bcnum(Bocos[nb].type), Bocos[nb].name);
+            }
+            fclose(fp);
+        }
+    }
+
     return 0;
 }
