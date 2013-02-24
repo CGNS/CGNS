@@ -63,10 +63,6 @@ if (WIN32)
 	import.tcl
 	tools.tcl
 	DESTINATION share)
-  install(DIRECTORY help/
-	DESTINATION share/help/cgnsview
-	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
-	PATTERN ".svn" EXCLUDE)
 else (WIN32)
   install(TARGETS
 	cgiowish
@@ -87,9 +83,5 @@ else (WIN32)
 	import.tcl
 	tools.tcl
 	DESTINATION share/cgnstools)
-  install(DIRECTORY help/
-	DESTINATION share/cgnstools/help/cgnsview
-	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
-	PATTERN ".svn" EXCLUDE)
 endif (WIN32)
 

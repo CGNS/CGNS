@@ -23,17 +23,14 @@ hash.$(O)     : ../common/hash.c ../common/hash.h
 
 ICONS = cgnsplot.ico cgnsplot.png cgnsplot-icon.xbm cgnsplot-mask.xbm
 
-install : install-dirs install-prog install-wish install-script install-help
+install : install-dirs install-prog install-wish install-script
 
 install-dirs :
 	@for d in \
 	  $(BIN_INSTALL_DIR) \
 	  $(EXE_INSTALL_DIR) \
 	  $(WSH_INSTALL_DIR) \
-	  $(LIB_INSTALL_DIR) \
-	  $(LIB_INSTALL_DIR)/help \
-	  $(LIB_INSTALL_DIR)/help/cgnsplot \
-	  $(LIB_INSTALL_DIR)/help/cgnsplot/images ; do \
+	  $(LIB_INSTALL_DIR) ; do \
 	  if [ ! -d $$d ] ; then \
 	    echo "Making directory $$d"; \
 	    mkdir -p $$d; \
@@ -62,15 +59,6 @@ install-script :
 	  $(INSTALL_DATA) $$i $(LIB_INSTALL_DIR); \
 	done;
 
-install-help :
-	@echo "installing cgnsplot help files to $(LIB_INSTALL_DIR)/help/cgnsplot"
-	@for i in help/*.html ; do \
-	  $(INSTALL_DATA) $$i $(LIB_INSTALL_DIR)/help/cgnsplot; \
-	done;
-	@for i in help/images/*.gif ; do \
-	  $(INSTALL_DATA) $$i $(LIB_INSTALL_DIR)/help/cgnsplot/images; \
-	done;
-
 uninstall :
 	@echo "uninstalling cgnsplot executables"
 	@if [ -f $(BIN_INSTALL_DIR)/cgnsplot ] ; then \
@@ -89,10 +77,6 @@ uninstall :
 	    /bin/rm -f $(LIB_INSTALL_DIR)/$$i; \
 	  fi; \
 	done;
-	@echo "uninstalling cgnsplot help files"
-	@if [ -d $(LIB_INSTALL_DIR)/help/cgnsplot ] ; then \
-	  /bin/rm -rf $(LIB_INSTALL_DIR)/help/cgnsplot; \
-	fi;
 
 #---------------------------------------------------------------
 

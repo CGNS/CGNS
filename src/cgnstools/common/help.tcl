@@ -2,10 +2,10 @@
 array set HelpData {
   browser ""
   htmlopts ""
-  filelist ""
+  cgns ""
   winhtml 0
   chmfile ""
-  cgns,http "http://www.grc.nasa.gov/www/cgns/CGNS_docs_current/index.html"
+  cgns,http "http://www.grc.nasa.gov/www/cgns/CGNS_docs_beta/index.html"
 }
 
 proc get_browser {} {
@@ -46,28 +46,6 @@ proc get_browser {} {
   return [join [split $cmd \\] /]
 }
 
-proc help_find {name} {
-  global cmd_dir tcl_platform
-  set hlpfile [find_file exists $name $cmd_dir $cmd_dir/help]
-  if {$hlpfile == "" && [file isdirectory $cmd_dir/help]} {
-    foreach i [glob $cmd_dir/help/*] {
-      if {[file isdirectory $i]} {
-        set hlpfile [find_file exists $name $i]
-        if {$hlpfile != ""} break
-      }
-    }
-  }
-  if {$hlpfile != ""} {
-    if {$tcl_platform(platform) == "windows"} {
-      set hlpfile [file attributes $hlpfile -shortname]
-    }
-    if {[string tolower [file extension $hlpfile]] != ".chm"} {
-      set hlpfile "file://$hlpfile"
-    }
-  }
-  return $hlpfile
-}
-
 proc help_defaults {} {
   global HelpData HelpNew cmd_dir tcl_platform
   array set HelpNew {
@@ -91,41 +69,17 @@ proc help_defaults {} {
     set browser $name
   }
   set HelpNew(browser) $browser
-
-  foreach i $HelpData(filelist) {
-    if {[info exists HelpData($i,http)]} {
-      set HelpNew($i) $HelpData($i,http)
-    } else {
-      set HelpNew($i) [help_find $HelpData($i,file).html]
-      if {$HelpData(winhtml)} {
-        set chmfile [help_find $HelpData($i,file).chm]
-        if {$chmfile != ""} {
-          set HelpNew($i) $chmfile
-        }
-      }
-    }
-  }
+  set HelpNew(cgns) $HelpData(cgns,http)
 }
 
 proc help_init {args} {
   global HelpData HelpNew
-  set HelpData(filelist) ""
-  foreach a $args {
-    set i [lindex $a 0]
-    set HelpData($i,label) [lindex $a 1]
-    if {$HelpData($i,label) == ""} {set HelpData($i,label) $i}
-    set HelpData($i,file) [lindex $a 2]
-    if {$HelpData($i,file) == ""} {set HelpData($i,file) $i}
-    lappend HelpData(filelist) $i
-  }
-  set data [list browser htmlopts]
-  eval lappend data $HelpData(filelist)
   help_defaults
-  foreach i $data {
+  foreach i {browser htmlopts cgns} {
     set HelpData($i) $HelpNew($i)
   }
   if {[info procs tclreg_get] != ""} {
-    foreach i $data {
+    foreach i {browser htmlopts cgns} {
       if {![catch {tclreg_get Help $i} val]} {
         set HelpData($i) $val
       }
@@ -150,13 +104,8 @@ proc help_setup {} {
   set lw 7
   set ew 50
 
-  foreach i {browser htmlopts} {
+  foreach i {browser htmlopts cgns} {
     set HelpNew($i) $HelpData($i)
-  }
-  foreach i $HelpData(filelist) {
-    set HelpNew($i) $HelpData($i)
-    set len [string length $HelpData($i,label)]
-    if {$len > $lw} {set lw $len}
   }
 
   FrameCreate $w.hb -text "HTML Browser" -font $Font(bold)
@@ -178,21 +127,18 @@ proc help_setup {} {
     }
   }
 
-  FrameCreate $w.hf -text "Documentation URL" -font $Font(bold)
+  FrameCreate $w.hf -text "CGNS Documentation" -font $Font(bold)
   pack $w.hf -side top -padx 5
-  set hf [FrameGet $w.hf]
-
-  foreach i $HelpData(filelist) {
-    set f [frame $hf.$i]
-    pack $f -side top -fill x -expand 1
-    label $f.lab -text $HelpData($i,label) -width $lw -anchor w
-    pack $f.lab -side left
-    entry $f.ent -width $ew -textvariable HelpNew($i) -highlightthickness 0
-    pack $f.ent -side left -fill x -expand 1 -padx 2
-    $f.ent xview end
-    button $f.but -text Browse -padx 0 -pady 0 -command "help_browse $i"
-    pack $f.but -side right
-  }
+  set f [FrameGet $w.hf]
+  set lab URL
+  if {$HelpData(winhtml)} {append lab /CHM}
+  label $f.lab -text $lab -width $lw -anchor w
+  pack $f.lab -side left
+  entry $f.ent -width $ew -textvariable HelpNew(cgns) -highlightthickness 0
+  pack $f.ent -side left -fill x -expand 1 -padx 2
+  $f.ent xview end
+  button $f.but -text Browse -padx 0 -pady 0 -command "help_browse cgns"
+  pack $f.but -side right
 
   set b [frame $w.but]
   pack $b -side top -pady 5
@@ -245,18 +191,19 @@ proc help_browse {what} {
     } else {
       set oldname $HelpNew($what)
     }
-    set fname [FileOpen "$HelpData($what,label) Documentation" \
-      $oldname . $filelist]
+    set fname [FileOpen "CGNS Documentation" $oldname . $filelist]
   }
   if {$fname != ""} {
     if {$tcl_platform(platform) == "windows" &&
       ![catch {file attributes $fname -shortname} name]} {
       set fname $name
     }
-    if {[string tolower [file extension $fname]] == ".chm"} {
-      set HelpNew($what) $fname
-    } else {
-      set HelpNew($what) file://$fname
+    if {$what != "browser"} {
+      if {[string tolower [file extension $fname]] == ".chm"} {
+        set HelpNew($what) $fname
+      } else {
+        set HelpNew($what) file://$fname
+      }
     }
   }
 }
@@ -268,22 +215,20 @@ proc help_check {w} {
     errormsg "can't find HTML browser or it's not executable" $w
     return
   }
-  set data [list browser htmlopts]
-  eval lappend data $HelpData(filelist)
-  foreach i $data {
+  foreach i {browser htmlopts cgns} {
     set HelpData($i) $HelpNew($i)
   }
   if {[info procs tclreg_set] != ""} {
-    foreach i $data {
+    foreach i {browser htmlopts cgns} {
       catch {tclreg_set Help $i $HelpData($i)}
     }
   }
   destroy $w
 }
 
-proc help_valid {what} {
+proc help_valid {} {
   global HelpData
-  if {![info exists HelpData($what)] || $HelpData($what) == ""} {
+  if {$HelpData(cgns) == ""} {
     return 0
   }
   if {$HelpData(winhtml) &&
@@ -297,45 +242,60 @@ proc help_valid {what} {
   return 0
 }
 
-proc help_show {topic {tag ""} {chmhtml ""}} {
+proc help_show {{html ""} {tag ""}} {
   global HelpData tcl_platform
-  set htmlfile $HelpData($topic)
-  if {$htmlfile == ""} return
-  if {$HelpData(winhtml) &&
-      [string tolower [file extension $htmlfile]] == ".chm"} {
-    if {$HelpData(chmfile) != $htmlfile} {
-      if {[catch {WinHtml file $htmlfile} msg]} {
+
+  set htmlroot $HelpData(cgns)
+  if {$htmlroot == ""} {
+    errormsg "CGNS documentation URL not setup"
+    return
+  }
+
+  set ext [string tolower [file extension $htmlroot]]
+  if {$HelpData(winhtml) && $ext == ".chm"} {
+    if {$HelpData(chmfile) != $htmlroot} {
+      if {[catch {WinHtml file $htmlroot} msg]} {
         errormsg $msg
         return
       }
-      set HelpData(chmfile) $htmlfile
+      set HelpData(chmfile) $htmlroot
     }
-    if {$chmhtml == ""} {
+    if {$html == ""} {
       if {[catch {WinHtml index} msg]} {
         errormsg $msg
       }
     } else {
-      if {[catch {eval WinHtml topic $chmhtml $tag} msg]} {
+      if {[catch {eval WinHtml topic $html $tag} msg]} {
         errormsg $msg
       }
     }
     return
   }
-  if {$HelpData(browser) == "" || $htmlfile == ""} {
-    errormsg "browser and/or HTML file not set up"
+
+  if {$HelpData(browser) == ""} {
+    errormsg "browser not set up"
+    return
+  }
+  set doc $htmlroot
+  if {$ext == ".html" || $ext == ".htm"} {
+    set n [string last / $htmlroot]
+    if {$n > 0} {set doc [string range $htmlroot 0 $n]}
+  }
+  if {[string index $doc end] != "/"} {append doc /}
+  if {$html == ""} {
+    append doc "index.html"
   } else {
-    set cmd "$HelpData(browser) $HelpData(htmlopts) "
-    if {$tcl_platform(platform) == "windows"} {
-      append cmd "\"$htmlfile\""
-    } else {
-      append cmd $htmlfile
-    }
-    if {$tag != ""} {
-      append cmd "\#$tag"
-    }
-    if {[catch {eval exec $cmd &} msg]} {
-      errormsg $msg
-    }
+    append doc "$html"
+  }
+  if {$tag != ""} {append doc "\#$tag"}
+  set cmd "$HelpData(browser) $HelpData(htmlopts) "
+  if {$tcl_platform(platform) == "windows"} {
+    append cmd "\"$doc\""
+  } else {
+    append cmd $doc
+  }
+  if {[catch {eval exec $cmd &} msg]} {
+    errormsg $msg
   }
 }
 

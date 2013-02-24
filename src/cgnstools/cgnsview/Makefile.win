@@ -37,9 +37,7 @@ winhtml.obj : ..\common\winhtml.c
 
 #---------------------------------------------------------------
 
-install : install-prog install-help
-
-install-prog : cgiowish.exe $(BINDIR) $(SHAREDIR)
+install : cgiowish.exe $(BINDIR) $(SHAREDIR)
 	-$(INSTALL) cgiowish.exe $(BINDIR)
 	-$(INSTALL) cgnsview.bat $(BINDIR)
 	-$(INSTALL) cgnsnodes.bat $(BINDIR)
@@ -49,10 +47,6 @@ install-prog : cgiowish.exe $(BINDIR) $(SHAREDIR)
 	-$(INSTALL) ..\common\*.tcl $(SHAREDIR)
 	-$(INSTALL) ..\common\*.ico $(SHAREDIR)
 
-install-help : $(SHAREDIR)\help\cgnsview\images
-	-$(INSTALL) help\*.html $(SHAREDIR)\help\cgnsview
-	-$(INSTALL) help\images\*.* $(SHAREDIR)\help\cgnsview\images
-
 $(BINDIR) : $(INSTALLDIR)
 	-mkdir $(BINDIR)
 
@@ -61,15 +55,6 @@ $(SHAREDIR) : $(INSTALLDIR)
 
 $(INSTALLDIR) :
 	-mkdir $(INSTALLDIR)
-
-$(SHAREDIR)\help\cgnsview\images : $(SHAREDIR)\help\cgnsview
-	-mkdir $(SHAREDIR)\help\cgnsview\images
-
-$(SHAREDIR)\help\cgnsview : $(SHAREDIR)\help
-	-mkdir $(SHAREDIR)\help\cgnsview
-
-$(SHAREDIR)\help :
-	-mkdir $(SHAREDIR)\help
 
 #--------------------------------------------------
 

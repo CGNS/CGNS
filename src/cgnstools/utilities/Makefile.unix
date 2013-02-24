@@ -283,15 +283,12 @@ $(CALCLIB) :
 
 #--------------------------------------------------
 
-install : install-dirs install-prog install-script install-help
+install : install-dirs install-prog install-script
 
 install-dirs :
 	@for d in \
 	  $(EXE_INSTALL_DIR) \
-	  $(LIB_INSTALL_DIR) \
-	  $(LIB_INSTALL_DIR)/help \
-	  $(LIB_INSTALL_DIR)/help/utilities \
-	  $(LIB_INSTALL_DIR)/help/utilities/images ; do \
+	  $(LIB_INSTALL_DIR) ; do \
 	  if [ ! -d $$d ] ; then \
 	    echo "Making directory $$d"; \
 	    mkdir -p $$d; \
@@ -313,15 +310,6 @@ install-script :
 	  $(INSTALL_DATA) $$i $(LIB_INSTALL_DIR); \
 	done;
 
-install-help :
-	@echo "installing utility help files to $(LIB_INSTALL_DIR)/help/utilities"
-	@for i in help/*.html ; do \
-	  $(INSTALL_DATA) $$i $(LIB_INSTALL_DIR)/help/utilities; \
-	done;
-	@for i in help/images/*.gif ; do \
-	  $(INSTALL_DATA) $$i $(LIB_INSTALL_DIR)/help/utilities/images; \
-	done;
-
 uninstall :
 	@echo "uninstalling utility executables"
 	@for i in $(ALL) ; do \
@@ -335,10 +323,6 @@ uninstall :
 	    /bin/rm -f $(LIB_INSTALL_DIR)/$$i; \
 	  fi; \
 	done;
-	@echo "uninstalling utility help files"
-	@if [ -d $(LIB_INSTALL_DIR)/help/utilities ] ; then \
-	  /bin/rm -rf $(LIB_INSTALL_DIR)/help/utilities; \
-	fi;
 
 .c.$(O) :
 	$(CC) $(COPTS) -c $<

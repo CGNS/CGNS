@@ -436,6 +436,8 @@ static CGNS_ENUMV(BCType_t) get_bctype (int bctype)
         case 1:
         case 2:
         case 5000:
+        case 5025:
+        case 5050:
             return CGNS_ENUMV(BCFarfield);
         case 3:
         case 4:
@@ -443,12 +445,26 @@ static CGNS_ENUMV(BCType_t) get_bctype (int bctype)
         case 6:
         case 4000:
             return CGNS_ENUMV(BCWallViscous);
+        case 5026:
+            return CGNS_ENUMV(BCExtrapolate);
         case 6661:
         case 6662:
         case 6663:
             return CGNS_ENUMV(BCSymmetryPlane);
         case 3000:
             return CGNS_ENUMV(BCWallInviscid);
+        case 5051:
+        case 5052:
+            return CGNS_ENUMV(BCTunnelOutflow);
+        case 7011:
+            return CGNS_ENUMV(BCInflowSubsonic);
+        case 7012:
+            return CGNS_ENUMV(BCOutflowSubsonic);
+        case 7031:
+            return CGNS_ENUMV(BCOutflow);
+        case 7036:
+        case 7100:
+            return CGNS_ENUMV(BCInflow);
         default:
             if (bctype >= 7 && bctype <= 18)
                 return CGNS_ENUMV(BCWallInviscid);

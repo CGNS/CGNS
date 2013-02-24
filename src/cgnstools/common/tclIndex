@@ -82,7 +82,6 @@ set auto_index(FrameLabel) "source $dir/frame.tcl"
 # help.tcl
 
 set auto_index(help_init) "source $dir/help.tcl"
-set auto_index(help_find) "source $dir/help.tcl"
 set auto_index(help_setup) "source $dir/help.tcl"
 set auto_index(help_valid) "source $dir/help.tcl"
 set auto_index(help_show) "source $dir/help.tcl"

@@ -155,8 +155,9 @@ $m add cascade -label "Save Command File..." -command do_save
 # help menu
 
 set m [menubar_get Help]
-$m add command -label "CGNScalc Help..." -command {help_show cgnscalc}
-$m add command -label "CGNS Help..." -command {help_show cgns}
+$m add command -label "CGNScalc Help..." \
+    -command {help_show cgnstools/cgnscalc/index.html}
+$m add command -label "CGNS Help..." -command {help_show}
 $m add separator
 $m add command -label "Configure Help..." -command help_setup
 $m add separator
@@ -303,7 +304,8 @@ R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 /wD//////yH5BAEAAAgALAAAAAAQABAAQwQiEMlJq50kX5kJ1hvShd+4mSJ4qmTrXl28ehw7\
 t+j75joVAQA7}
 
-button $f.help -image img_help -command {help_show cgnscalc}
+button $f.help -image img_help \
+    -command {help_show cgnstools/cgnscalc/index.html}
 set_balloon $f.help "CGNScalc Help..."
 
 pack $f.help -side left -padx 6
@@ -704,21 +706,18 @@ bind $msg.text <FocusIn> "focus $com.e"
 #----- help
 
 proc help_menu {} {
-  if {[help_valid cgnscalc]} {
+  if [help_valid] {
     menubar_state Help normal 0
+    menubar_state Help normal 1
     .toolbar.but.help configure -state normal
   } else {
     menubar_state Help disabled 0
-    .toolbar.but.help configure -state disabled
-  }
-  if {[help_valid cgns]} {
-    menubar_state Help normal 1
-  } else {
     menubar_state Help disabled 1
+    .toolbar.but.help configure -state disabled
   }
 }
 
-help_init {cgnscalc CGNScalc} {cgns CGNS}
+help_init
 
 #----- procedures
 

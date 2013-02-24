@@ -71,7 +71,7 @@ set file ".cgnstools"
 set base "HKEY_CURRENT_USER/Software/CGNS"
 catch {tclreg_init -base $base -fname $file}
 
-help_init {cgns CGNS}
+help_init
 cgns_init $version
 cgns_tree .
 

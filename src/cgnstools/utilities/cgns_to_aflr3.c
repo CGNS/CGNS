@@ -545,7 +545,7 @@ static void unstructured_elements ()
     cgsize_t i, n, is, ie, ne;
     cgsize_t size, *conn;
     CGNS_ENUMT(ElementType_t) elemtype, et;
-    char name[33], errmsg[128];
+    char name[33];
     FACE face, *pf;
     static HASH facehash;
 

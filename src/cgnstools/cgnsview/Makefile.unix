@@ -42,17 +42,14 @@ TCLSCRIPTS = \
 
 ICONS = cgns.ico cgns.png cgns-icon.xbm cgns-mask.xbm
 
-install : install-dirs install-prog install-wish install-script install-help
+install : install-dirs install-prog install-wish install-script
 
 install-dirs :
 	@for d in \
 	  $(BIN_INSTALL_DIR) \
 	  $(EXE_INSTALL_DIR) \
 	  $(WSH_INSTALL_DIR) \
-	  $(LIB_INSTALL_DIR) \
-	  $(LIB_INSTALL_DIR)/help \
-	  $(LIB_INSTALL_DIR)/help/cgnsview \
-	  $(LIB_INSTALL_DIR)/help/cgnsview/images ; do \
+	  $(LIB_INSTALL_DIR) ; do \
 	  if [ ! -d $$d ] ; then \
 	    echo "Making directory $$d"; \
 	    mkdir -p $$d; \
@@ -89,15 +86,6 @@ install-script :
 	  $(INSTALL_DATA) ../common/$$i $(LIB_INSTALL_DIR); \
 	done;
 
-install-help :
-	@echo "installing help files to $(LIB_INSTALL_DIR)/help/cgnsview"
-	@for i in help/*.html ; do \
-	  $(INSTALL_DATA) $$i $(LIB_INSTALL_DIR)/help/cgnsview; \
-	done;
-	@for i in help/images/*.gif ; do \
-	  $(INSTALL_DATA) $$i $(LIB_INSTALL_DIR)/help/cgnsview/images; \
-	done;
-
 uninstall :
 	@echo "uninstalling executables"
 	@for i in cgnsview cgnsnodes ; do \
@@ -120,10 +108,6 @@ uninstall :
 	    /bin/rm -f $(LIB_INSTALL_DIR)/$$i; \
 	  fi; \
 	done;
-	@echo "uninstalling help files"
-	@if [ -d $(LIB_INSTALL_DIR)/help/cgnsview ] ; then \
-	  /bin/rm -rf $(LIB_INSTALL_DIR)/help/cgnsview; \
-	fi;
 
 #---------------------------------------------------------------
 

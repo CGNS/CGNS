@@ -132,7 +132,8 @@ add_dependencies(aflr3_to_cgns cgns_static calclib)
 # cgns_to_aflr3
 set(cgns_to_aflr3_FILES
 	cgns_to_aflr3.c
-	../common/getargs.c)
+	../common/getargs.c
+	../common/hash.c)
 
 add_executable(cgns_to_aflr3 ${cgns_to_aflr3_FILES})
 add_dependencies(cgns_to_aflr3 cgns_static calclib)
@@ -151,7 +152,8 @@ add_dependencies(fast_to_cgns cgns_static calclib)
 # cgns_to_fast
 set(cgns_to_fast_FILES
 	cgns_to_fast.c
-	../common/getargs.c)
+	../common/getargs.c
+	../common/hash.c)
 
 add_executable(cgns_to_fast ${cgns_to_fast_FILES})
 add_dependencies(cgns_to_fast cgns_static calclib)
@@ -248,10 +250,6 @@ if (WIN32)
 	utilities.mnu
 	vtk.tcl
 	DESTINATION share)
-  install(DIRECTORY help/
-	DESTINATION share/help/utilities
-	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
-	PATTERN ".svn" EXCLUDE)
 else (WIN32)
   install(TARGETS
         plot3d_to_cgns
@@ -288,9 +286,5 @@ else (WIN32)
 	utilities.mnu
 	vtk.tcl
 	DESTINATION share/cgnstools)
-  install(DIRECTORY help/
-	DESTINATION share/cgnstools/help/utilities
-	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
-	PATTERN ".svn" EXCLUDE)
 endif (WIN32)
 

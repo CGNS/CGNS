@@ -296,17 +296,11 @@ p3dfint.obj : p3dfint.f
 
 #--------------------------------------------------
 
-install : install-prog install-help
-
-install-prog : $(ALL) $(BINDIR) $(SHAREDIR)
+install : $(ALL) $(BINDIR) $(SHAREDIR)
 	-$(INSTALL) *.exe $(BINDIR)
 	-$(INSTALL) utilities.mnu $(SHAREDIR)
 	-$(INSTALL) *.tcl $(SHAREDIR)
 	-$(INSTALL) *.cnv $(SHAREDIR)
-
-install-help : $(SHAREDIR)\help\utilities\images
-	-$(INSTALL) help\*.html $(SHAREDIR)\help\utilities
-	-$(INSTALL) help\images\*.* $(SHAREDIR)\help\utilities\images
 
 $(BINDIR) : $(INSTALLDIR)
 	-mkdir $(BINDIR)
@@ -316,15 +310,6 @@ $(SHAREDIR) : $(INSTALLDIR)
 
 $(INSTALLDIR) :
 	-mkdir $(INSTALLDIR)
-
-$(SHAREDIR)\help\utilities\images : $(SHAREDIR)\help\utilities
-	-mkdir $(SHAREDIR)\help\utilities\images
-
-$(SHAREDIR)\help\utilities : $(SHAREDIR)\help
-	-mkdir $(SHAREDIR)\help\utilities
-
-$(SHAREDIR)\help :
-	-mkdir $(SHAREDIR)\help
 
 .c.obj :
 	$(CC) $(COPTS) -Fo$@ -c $<

@@ -355,7 +355,7 @@ static void boundary_elements ()
     cgsize_t i, n, is, ie, ne;
     cgsize_t size, *conn;
     CGNS_ENUMT(ElementType_t) elemtype, et;
-    char name[33], errmsg[128];
+    char name[33];
     TRI tri, *pt;
     HASH trihash;
 

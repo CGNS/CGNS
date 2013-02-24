@@ -62,10 +62,6 @@ if (WIN32)
 	cgnsplot-icon.xbm
 	cgnsplot-mask.xbm
 	DESTINATION share)
-  install(DIRECTORY help/
-	DESTINATION share/help/cgnsplot
-	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
-	PATTERN ".svn" EXCLUDE)
 else (WIN32)
   install(TARGETS
 	plotwish
@@ -81,9 +77,5 @@ else (WIN32)
 	cgnsplot-icon.xbm
 	cgnsplot-mask.xbm
 	DESTINATION share/cgnstools)
-  install(DIRECTORY help/
-	DESTINATION share/cgnstools/help/cgnsplot
-	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
-	PATTERN ".svn" EXCLUDE)
 endif (WIN32)
 

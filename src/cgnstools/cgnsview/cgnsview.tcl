@@ -430,10 +430,10 @@ $m add command -label " Find Again" -command find_again \
 #--- tools menu
 
 set m [menubar_get Tools]
+$m add command -label "Diff CGNS Files..." -state disabled -command diff_cgns
 $m add command -label "Check CGNS..." -state disabled -command check_cgns
 $m add command -label "Plot CGNS..."  -state disabled -command plot_cgns
 $m add command -label "Calculate CGNS..."  -state disabled -command calc_cgns
-$m add command -label "Diff CGNS Files..." -state disabled -command diff_cgns
 $m add separator
 $m add command -label "Unit Conversions..." -command units_convert
 
@@ -441,10 +441,10 @@ $m add command -label "Unit Conversions..." -command units_convert
 
 set m [menubar_get Help]
 $m add command -label "CGNSview..." \
-  -command {help_show cgnsview "" cgnstools/cgnsview/index.html}
+  -command {help_show cgnstools/cgnsview/index.html}
 $m add command -label "Utilities..." \
-  -command {help_show utilities "" cgnstools/utilities/index.html}
-$m add command -label "CGNS..." -command {help_show cgns}
+  -command {help_show cgnstools/utilities/index.html}
+$m add command -label "CGNS..." -command {help_show}
 $m add separator
 $m add command -label "Configure..." -command help_setup
 $m add separator
@@ -723,6 +723,11 @@ pack $b.first $b.again -side left
 
 #--- tools
 
+image create photo img_diff -data {\
+R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgMDAwICAgP8AAAD/AP//AAAA//8A\
+/wD//////yH5BAEAAAcALAAAAAAQABAAQwQ6EEh5qr1n6gqep930ANeEnZ33hSNVWqE0njSW\
+qmR9r3iuITDVxxYU5mBFHGdT44xaRxR0pptGbRpJBAA7}
+
 image create photo img_check -data {\
 R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 /wD//////yH5BAEAAAgALAAAAAAQABAAAAQ3EMlJq70V6A0wAk8YapkEig/YfeuHplzrvqPs\
@@ -738,13 +743,12 @@ R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 /wD//////yH5BAEAAAgALAAAAAAQABAAQwQ8EIFJ60RYvg14fx2AfSH4ceMGqmqYrmEJvuXE\
 zRqro/nOir2d67X6UYg+3unUwpGSTk/MFDVNYSOL9hIBADs=}
 
-image create photo img_diff -data {\
-R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgMDAwICAgP8AAAD/AP//AAAA//8A\
-/wD//////yH5BAEAAAcALAAAAAAQABAAQwQ6EEh5qr1n6gqep930ANeEnZ33hSNVWqE0njSW\
-qmR9r3iuITDVxxYU5mBFHGdT44xaRxR0pptGbRpJBAA7}
-
 set b [frame $f.tools]
 pack $b -side left -padx 5
+
+button $b.diff -image img_diff -takefocus 0 \
+  -command diff_cgns -state disabled
+set_balloon $b.diff "Diff CGNS Files..."
 
 button $b.check -image img_check -takefocus 0 \
   -command check_cgns -state disabled
@@ -758,11 +762,7 @@ button $b.calc -image img_calc -takefocus 0 \
   -command calc_cgns -state disabled
 set_balloon $b.calc "Calculate CGNS..."
 
-button $b.diff -image img_diff -takefocus 0 \
-  -command diff_cgns -state disabled
-set_balloon $b.diff "Diff CGNS Files..."
-
-pack $b.check $b.plot $b.calc $b.diff -side left
+pack $b.diff $b.check $b.plot $b.calc -side left
 
 image create photo img_convert -data {\
 R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
@@ -783,30 +783,25 @@ R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 t+j75joVAQA7}
 
 button $f.help -image img_help -takefocus 0 \
-  -command {help_show cgnsview "" cgnstools/cgnsview/index.html}
+  -command {help_show cgnstools/cgnsview/index.html}
 pack $f.help -side left -padx 5
 set_balloon $f.help Help
 
 proc help_menu {} {
-  global HelpData
-  set n 0
-  foreach i {cgnsview utilities cgns} {
-    if {[help_valid $i]} {
-      menubar_state Help normal $n
-      if {$i == "cgnsview"} {
-        .toolbar.but.help configure -state normal
-      }
-    } else {
-      menubar_state Help disabled $n
-      if {$i == "cgnsview"} {
-        .toolbar.but.help configure -state disabled
-      }
-    }
-    incr n
+  if [help_valid] {
+    menubar_state Help normal 0
+    menubar_state Help normal 1
+    menubar_state Help normal 2
+    .toolbar.but.help configure -state normal
+  } else {
+    menubar_state Help disabled 0
+    menubar_state Help disabled 1
+    menubar_state Help disabled 2
+    .toolbar.but.help configure -state disabled
   }
 }
 
-help_init {cgnsview CGNSview} {utilities Utilities} {cgns CGNS}
+help_init
 
 #---------- main window
 
@@ -2269,36 +2264,36 @@ proc file_load {{inpfile ""}} {
     set state normal
   }
 
-  if {$ProgData(cgnscheck) == ""} {
-    .toolbar.but.tools.check configure -state disabled
+  if {$ProgData(cgnsdiff) == ""} {
+    .toolbar.but.tools.diff configure -state disabled
     menubar_state Tools disabled 0
   } else {
-    .toolbar.but.tools.check configure -state $state
+    .toolbar.but.tools.diff configure -state $state
     menubar_state Tools  $state 0
+  }
+
+  if {$ProgData(cgnscheck) == ""} {
+    .toolbar.but.tools.check configure -state disabled
+    menubar_state Tools disabled 1
+  } else {
+    .toolbar.but.tools.check configure -state $state
+    menubar_state Tools  $state 1
   }
 
   if {$ProgData(cgnsplot) == ""} {
     .toolbar.but.tools.plot configure -state disabled
-    menubar_state Tools disabled 1
+    menubar_state Tools disabled 2
   } else {
     .toolbar.but.tools.plot configure -state $state
-    menubar_state Tools $state 1
+    menubar_state Tools $state 2
   }
 
   if {$ProgData(cgnscalc) == ""} {
     .toolbar.but.tools.calc configure -state disabled
-    menubar_state Tools disabled 2
-  } else {
-    .toolbar.but.tools.calc configure -state $state
-    menubar_state Tools $state 2
-  }
-
-  if {$ProgData(cgnsdiff) == ""} {
-    .toolbar.but.tools.diff configure -state disabled
     menubar_state Tools disabled 3
   } else {
-    .toolbar.but.tools.diff configure -state $state
-    menubar_state Tools  $state 3
+    .toolbar.but.tools.calc configure -state $state
+    menubar_state Tools $state 3
   }
 
   foreach i $ProgData(menucfg) {
