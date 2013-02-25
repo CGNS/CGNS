@@ -121,11 +121,10 @@ does not work with your compiler, try the others until one does.
 # It would be nice to automatically detect this setting
 
 if(ENABLE_FORTRAN)
+  enable_language("Fortran" OPTIONAL)
   mark_as_advanced(CLEAR FORTRAN_NAMING)
   #only do this once
   if (FORTRAN_NAMING STREQUAL "UNKNOWN")
-    set(LIST  "LOWERCASE" "LOWERCASE_" "LOWERCASE__" "UPPERCASE" "UPPERCASE_" "UPPERCASE__")
-    enable_language("Fortran" OPTIONAL)
     # if no Fortran compiler, skip this
     if (CMAKE_Fortran_COMPILER_WORKS)
       foreach(nc ${F2CLIST})
@@ -144,7 +143,7 @@ if(ENABLE_FORTRAN)
         else(${NAMING_TEST_RESULT} STREQUAL "TRUE")
           message(STATUS "Trying Fortran naming convention ${nc}: failure")
         endif(${NAMING_TEST_RESULT} STREQUAL "TRUE")
-      endforeach(nc ${LIST})
+      endforeach(nc ${F2CLIST})
     endif (CMAKE_Fortran_COMPILER_WORKS)
   endif (FORTRAN_NAMING STREQUAL "UNKNOWN")
 else(ENABLE_FORTRAN)
@@ -224,11 +223,7 @@ if (ENABLE_HDF5)
         set(MPI_LIBS ${MPI_LIBRARY})
       endif (MPI_EXTRA_LIBRARY)
     endif (DEFINED MPI_C_COMPILER)
-    if (ENABLE_TESTS AND ENABLE_PARALLEL)
-      mark_as_advanced(CLEAR MPIEXEC)
-    else (ENABLE_TESTS AND ENABLE_PARALLEL)
-      mark_as_advanced(FORCE MPIEXEC)
-    endif (ENABLE_TESTS AND ENABLE_PARALLEL)
+    mark_as_advanced(CLEAR MPIEXEC)
   else (HDF5_NEED_MPI)
     mark_as_advanced(FORCE MPI_C_COMPILER MPI_C_INCLUDE_PATH MPI_C_LIBRARIES)
     mark_as_advanced(FORCE MPI_COMPILER MPI_INCLUDE_PATH MPI_LIBRARY MPI_EXTRA_LIBRARY MPIEXEC)
@@ -253,12 +248,6 @@ else (ENABLE_HDF5 AND HDF5_NEED_MPI)
   set(ENABLE_PARALLEL "OFF")
   mark_as_advanced(FORCE ENABLE_PARALLEL)
 endif (ENABLE_HDF5 AND HDF5_NEED_MPI)
-
-if (ENABLE_TESTS AND ENABLE_PARALLEL)
-  mark_as_advanced(CLEAR MPIEXEC)
-else (ENABLE_TESTS AND ENABLE_PARALLEL)
-  mark_as_advanced(FORCE MPIEXEC)
-endif (ENABLE_TESTS AND ENABLE_PARALLEL)
 
 ####################
 # RPATH Management #

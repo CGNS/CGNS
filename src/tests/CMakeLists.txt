@@ -94,8 +94,8 @@ if (ENABLE_TESTS)
   # Conditionally add the fortran tests
   if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
 	add_test( f2c_test f2c_test ) # This still needs a regex test
-	add_test( cgread   cgread   )
 	add_test( cgwrite  cgwrite  )
+	add_test( cgread   cgread   )
 	add_test( cgzconn  cgzconn  )
 	add_test( cgsubreg cgsubreg )
 	if (NOT ENABLE_64BIT)

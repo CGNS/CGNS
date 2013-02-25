@@ -8,6 +8,8 @@
   out of hand (N squared problem with versions).
 - added routines to convert to and from AFLR3, FAST, and TetGen
 - implemented cubic elements (CPEX 0036)
+- CGNStools documentation no longer included with source.
+  The NASA Glenn website (or local copy) is now used instead.
 
 == 3.1.4 ==
 - added some const definitions to library
