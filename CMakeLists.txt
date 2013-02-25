@@ -121,10 +121,11 @@ does not work with your compiler, try the others until one does.
 # It would be nice to automatically detect this setting
 
 if(ENABLE_FORTRAN)
-  enable_language("Fortran" OPTIONAL)
   mark_as_advanced(CLEAR FORTRAN_NAMING)
   #only do this once
   if (FORTRAN_NAMING STREQUAL "UNKNOWN")
+    enable_language("Fortran" OPTIONAL)
+    set(HAS_FORTRAN ${CMAKE_Fortran_COMPILER_WORKS} CACHE INTERNAL "")
     # if no Fortran compiler, skip this
     if (CMAKE_Fortran_COMPILER_WORKS)
       foreach(nc ${F2CLIST})
@@ -151,14 +152,18 @@ else(ENABLE_FORTRAN)
 endif(ENABLE_FORTRAN)
 
 # check that FORTRAN_NAMING is valid
-if (ENABLE_FORTRAN AND FORTRAN_NAMING)
+if (ENABLE_FORTRAN)
   if (FORTRAN_NAMING STREQUAL "UNKNOWN")
-    set(FORTRAN_NAMING "" CACHE STRING ${FORTRAN_NAMING_HELP})
+    if (WIN32)
+      set(FORTRAN_NAMING "UPPERCASE" CACHE STRING ${FORTRAN_NAMING_HELP})
+    else (WIN32)
+      set(FORTRAN_NAMING "LOWERCASE_" CACHE STRING ${FORTRAN_NAMING_HELP})
+    endif (WIN32)
     if (${CMAKE_MAJOR_VERSION} GREATER 2 OR ${CMAKE_MINOR_VERSION} GREATER 7)
       set_property(CACHE FORTRAN_NAMING PROPERTY STRINGS ${F2CLIST})
     endif (${CMAKE_MAJOR_VERSION} GREATER 2 OR ${CMAKE_MINOR_VERSION} GREATER 7)
   else (FORTRAN_NAMING STREQUAL "UNKNOWN")
-    list(FIND F2CLIST ${FORTRAN_NAMING} ListIndex)
+    list(FIND F2CLIST "${FORTRAN_NAMING}" ListIndex)
     if (ListIndex LESS 0)
       message(SEND_ERROR "invalid FORTRAN_NAMING value. Must be empty or one of:
         LOWERCASE
@@ -169,12 +174,12 @@ if (ENABLE_FORTRAN AND FORTRAN_NAMING)
         UPPERRCASE__")
     endif (ListIndex LESS 0)
   endif (FORTRAN_NAMING STREQUAL "UNKNOWN")
-endif (ENABLE_FORTRAN AND FORTRAN_NAMING)
+endif (ENABLE_FORTRAN)
 
 # this forces cmake to set up the required Fortran variables
-if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
+if (ENABLE_FORTRAN AND HAS_FORTRAN)
   enable_language("Fortran")
-endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
+endif (ENABLE_FORTRAN AND HAS_FORTRAN)
 
 ########
 # HDF5 #
