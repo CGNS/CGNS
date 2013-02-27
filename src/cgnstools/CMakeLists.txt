@@ -12,6 +12,10 @@ if (NOT WIN32)
   endif (X11_Xmu_LIB)
 endif (NOT WIN32)
 
+if (WIN32)
+  include(FindHTMLHelp)
+endif (WIN32)
+
 include(FindTCL)
 include(FindOpenGL)
 

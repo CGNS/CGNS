@@ -1,3 +1,9 @@
+== 3.2.1 ==
+- fixed problem with IS_FIXED_SIZE macro for cubic elements
+- added check for open file to routines that don't take
+  a file number (suggestion from Marc Poinet)
+- added HTMLHelp interface to cmake scripts
+
 == 3.2 ===
 - full integration of parallel I/O using HDF5 with MPI
 - implemented CPEX 0033 and 0034
@@ -10,6 +16,14 @@
 - implemented cubic elements (CPEX 0036)
 - CGNStools documentation no longer included with source.
   The NASA Glenn website (or local copy) is now used instead.
+
+== 3.1.4.1 ==
+- fixes to cmake scripts for Fortran
+- added check for open file to routines that don't take
+  a file number (suggestion from Marc Poinet)
+- CGNStools documentation no longer included with source.
+  The NASA Glenn website (or local copy) is now used instead.
+- save window size for cgnsview
 
 == 3.1.4 ==
 - added some const definitions to library

@@ -42,7 +42,7 @@ static int WinHtml (ClientData data, Tcl_Interp *interp,
             return TCL_ERROR;
         }
         p = strrchr (argv[2], '.');
-        if (NULL == p || stricmp (p, ".chm") || access (argv[2], 0)) {
+        if (NULL == p || _stricmp (p, ".chm") || _access (argv[2], 0)) {
             *hlpfile = 0;
             Tcl_AppendResult (interp, "CHM file \"", argv[2],
                 "\" does not exist", NULL);

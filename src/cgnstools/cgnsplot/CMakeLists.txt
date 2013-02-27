@@ -27,10 +27,14 @@ if (ENABLE_HDF5 AND HDF5_LIBRARY)
 endif (ENABLE_HDF5 AND HDF5_LIBRARY)
 
 if (WIN32)
-  set(cgnsplot_FILES
-	cgnstcl.c
-	winmain.c
-	../common/hash.c)
+  if (HTML_HELP_INCLUDE_PATH AND HTML_HELP_LIBRARY)
+    add_definitions(-DUSE_HTMLHELP)
+    include_directories(${HTML_HELP_INCLUDE_PATH})
+    link_libraries(${HTML_HELP_LIBRARY})
+    set(cgnsplot_FILES cgnstcl.c winmain.c ../common/hash.c ../common/winhtml.c)
+  else (HTML_HELP_INCLUDE_PATH AND HTML_HELP_LIBRARY)
+    set(cgnsplot_FILES cgnstcl.c winmain.c ../common/hash.c)
+  endif (HTML_HELP_INCLUDE_PATH AND HTML_HELP_LIBRARY)
 else (WIN32)
   include_directories(${X11_X11_INCLUDE_PATH})
   link_libraries(${X11_X11_LIB} ${X11_Xmu_LIB} m)
