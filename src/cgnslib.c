@@ -81,11 +81,16 @@ long _ftol2(double dValue) {return _ftol(dValue);}
                               type  < CGNS_ENUMV(MIXED)) || \
                               type == CGNS_ENUMV(PYRA_13))
 
+#define CHECK_FILE_OPEN if (cg == NULL) {\
+    cgi_error("no current CGNS file open");\
+    return CG_ERROR;\
+}
+
 /***********************************************************************
  * external variable declarations
  ***********************************************************************/
-cgns_file *cgns_files = 0;
-cgns_file *cg;
+cgns_file *cgns_files = NULL;
+cgns_file *cg = NULL;
 int n_cgns_files = 0;
 cgns_posit *posit = 0;
 int posit_file, posit_base, posit_zone;
@@ -568,7 +573,8 @@ int cg_close(int file_number)
     if (n_open == 0) {
       file_number_offset = n_cgns_files;
       free (cgns_files);
-      cgns_files = 0;
+      cg = NULL;
+      cgns_files = NULL;
       cgns_file_size = 0;
       n_cgns_files = 0;
     }
@@ -7955,6 +7961,8 @@ int cg_famname_read(char *family_name)
     char *famname;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -7972,6 +7980,8 @@ int cg_famname_write(const char * family_name)
     int ier=0;
     cgsize_t dim_vals;
     double posit_id, dummy_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -8000,6 +8010,8 @@ int cg_convergence_read(int *iterations, char **NormDefinitions)
     cgns_descr *descr;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input (cg set in cg_goto) */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -8024,6 +8036,8 @@ int cg_convergence_write(int iterations, const char * NormDefinitions)
     int ier=0;
     cgsize_t dim_vals;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -8073,6 +8087,8 @@ int cg_state_read(char **StateDescription)
     cgns_descr *descr;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -8095,6 +8111,8 @@ int cg_state_write(const char * StateDescription)
     cgns_state *state;
     int ier=0;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -8146,6 +8164,8 @@ int cg_equationset_read(int *EquationDimension,
     cgns_equations *eq;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -8183,6 +8203,8 @@ int cg_equationset_chemistry_read(int *ThermalRelaxationFlag,
     cgns_equations *eq;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -8203,6 +8225,8 @@ int cg_equationset_elecmagn_read(int *ElecFldModelFlag, int *MagnFldModelFlag,
 {
     cgns_equations *eq;
     int ier=0;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -8227,6 +8251,8 @@ int cg_equationset_write(int EquationDimension)
     cgns_equations *equations;
     int ier=0;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -8270,6 +8296,8 @@ int cg_governing_read(CGNS_ENUMT(GoverningEquationsType_t) *EquationsType)
     cgns_governing *governing;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -8286,6 +8314,8 @@ int cg_governing_write(CGNS_ENUMT(GoverningEquationsType_t) Equationstype)
     int ier=0, index_dim;
     cgsize_t dim_vals;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (Equationstype<0 || Equationstype>=NofValidGoverningEquationsTypes) {
@@ -8339,6 +8369,8 @@ int cg_diffusion_read(int *diffusion_model)
     int n, ndata, ier=0;
     int *diffusion, index_dim;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -8375,6 +8407,8 @@ int cg_diffusion_write(const int * diffusion_model)
     int n, ier=0, index_dim;
     cgsize_t ndata;
     double posit_id, dummy_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -8420,6 +8454,8 @@ int cg_model_read(const char *ModelLabel, CGNS_ENUMT(ModelType_t) *ModelType)
     cgns_model *model;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -8437,6 +8473,8 @@ int cg_model_write(const char * ModelLabel, CGNS_ENUMT(ModelType_t) ModelType)
     char ModelName[33];
     int ier=0, index_dim;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -8609,6 +8647,8 @@ int cg_narrays(int *narrays)
  *  Area_t, Periodic_t, ZoneSubRegion_t
  */
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -8725,6 +8765,8 @@ int cg_array_info(int A, char *ArrayName, CGNS_ENUMT(DataType_t) *DataType,
     cgns_array *array;
     int n, ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -8744,6 +8786,8 @@ int cg_array_read(int A, void *Data)
     cgns_array *array;
     int n, ier=0;
     cgsize_t num = 1;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -8771,6 +8815,8 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
     int n, ier=0;
     cgsize_t num = 1;
     void *array_data;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -8830,6 +8876,8 @@ int cg_array_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
     int n, ier=0;
     double posit_id;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_strlen(ArrayName)) return CG_ERROR;
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -8885,6 +8933,8 @@ int cg_array_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
 
 int cg_nintegrals(int *nintegrals)
 {
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -8915,6 +8965,8 @@ int cg_integral_read(int IntegralDataIndex, char *IntegralDataName)
     int ier=0;
     cgns_integral *integral;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -8931,6 +8983,8 @@ int cg_integral_write(const char * IntegralDataName)
     cgns_integral *integral;
     int ier=0;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_strlen(IntegralDataName)) return CG_ERROR;
@@ -8964,6 +9018,8 @@ int cg_rind_read(int *RindData)
     int n, ier=0;
     int *rind, index_dim;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -8986,6 +9042,8 @@ int cg_rind_write(const int * RindData)
     int n, ier=0;
     int *rind, index_dim;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -9029,6 +9087,8 @@ int cg_ndescriptors(int *ndescriptors)
  *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t
  *  FamilyBCDataSet_t
  */
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9139,6 +9199,8 @@ int cg_descriptor_read(int descr_no, char *descr_name, char **descr_text)
     cgns_descr *descr;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -9159,6 +9221,8 @@ int cg_descriptor_write(const char * descr_name, const char * descr_text)
     cgns_descr *descr;
     int ier=0;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_strlen(descr_name)) return CG_ERROR;
@@ -9192,6 +9256,8 @@ int cg_nunits(int *nunits)
     cgns_units *units;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
     *nunits = 0;
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9210,6 +9276,8 @@ int cg_units_read(CGNS_ENUMT(MassUnits_t) *mass,
 {
     cgns_units *units;
     int ier=0;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9234,6 +9302,8 @@ int cg_units_write(CGNS_ENUMT(MassUnits_t) mass,
     int ier=0;
     cgns_units *units;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -9293,6 +9363,8 @@ int cg_unitsfull_read(CGNS_ENUMT(MassUnits_t) *mass,
     cgns_units *units;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -9322,6 +9394,8 @@ int cg_unitsfull_write(CGNS_ENUMT(MassUnits_t) mass,
     int ier=0;
     cgns_units *units;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -9391,6 +9465,8 @@ int cg_exponents_info(CGNS_ENUMT(DataType_t) *DataType)
     cgns_exponent *exponent;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -9406,6 +9482,8 @@ int cg_nexponents(int *numexp)
     cgns_exponent *exponent;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
     *numexp = 0;
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9420,6 +9498,8 @@ int cg_exponents_read(void *exponents)
 {
     cgns_exponent *exponent;
     int ier=0;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9449,6 +9529,8 @@ int cg_exponents_write(CGNS_ENUMT(DataType_t) DataType, const void * exponents)
     cgns_exponent *exponent;
     int ier=0;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -9495,6 +9577,8 @@ int cg_expfull_read(void *exponents)
 {
     cgns_exponent *exponent;
     int ier=0;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9552,6 +9636,8 @@ int cg_expfull_write(CGNS_ENUMT(DataType_t) DataType, const void * exponents)
     int ier=0;
     double posit_id;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
 
@@ -9606,6 +9692,8 @@ int cg_conversion_info(CGNS_ENUMT(DataType_t) *DataType)
     cgns_conversion *conversion;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -9620,6 +9708,8 @@ int cg_conversion_read(void *ConversionFactors)
 {
     cgns_conversion *conversion;
     int ier=0;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9645,6 +9735,8 @@ int cg_conversion_write(CGNS_ENUMT(DataType_t) DataType,
     int ier=0;
     cgsize_t dim_vals=2;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -9689,6 +9781,8 @@ int cg_dataclass_read(CGNS_ENUMT(DataClass_t) *dataclass)
     CGNS_ENUMT(DataClass_t) *DataClass;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -9705,6 +9799,8 @@ int cg_dataclass_write(CGNS_ENUMT(DataClass_t) dataclass)
     CGNS_ENUMT(DataClass_t) *DataClass;
     int ier=0;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -9726,6 +9822,8 @@ int cg_gridlocation_read(CGNS_ENUMT(GridLocation_t) *GridLocation)
 {
     CGNS_ENUMT(GridLocation_t) *location;
     int ier=0;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9757,6 +9855,8 @@ int cg_gridlocation_write(CGNS_ENUMT(GridLocation_t) GridLocation)
     double posit_id, dummy_id;
     int cell_dim = 0;
     CGNS_ENUMT(ZoneType_t) type = CGNS_ENUMV(ZoneTypeNull);
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -9835,6 +9935,8 @@ int cg_ordinal_read(int *Ordinal)
     int *ordinal;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -9850,6 +9952,8 @@ int cg_ordinal_write(int Ordinal)
     int *ordinal;
     int ier=0;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -9873,6 +9977,8 @@ int cg_is_link(int *path_length)
 
     *path_length = 0;
 
+    CHECK_FILE_OPEN
+
     /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
         return CG_ERROR;
@@ -9891,6 +9997,8 @@ int cg_link_read(char **filename, char **link_path)
 {
     int name_len, file_len;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
     /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9917,6 +10025,8 @@ int cg_link_read(char **filename, char **link_path)
 int cg_link_write(const char * nodename, const char * filename, const char * name_in_file)
 {
     double posit_id, link_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -10014,6 +10124,8 @@ int cg_nuser_data(int *nuser_data)
  */
 
      /* This is valid and used during write as well as read mode. */
+
+    CHECK_FILE_OPEN
 
      /* check for valid posit */
     if (posit == 0) {
@@ -10120,6 +10232,8 @@ int cg_user_data_read(int Index, char *UserDataName)
     int ier=0;
     cgns_user_data *user_data;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -10136,6 +10250,8 @@ int cg_user_data_write(const char * UserDataName)
     cgns_user_data *user_data;
     int ier=0;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_strlen(UserDataName)) return CG_ERROR;
@@ -10176,6 +10292,8 @@ int cg_rotating_read(float *rot_rate, float *rot_center)
     cgns_base *base;
     int ier=0, n;
 
+    CHECK_FILE_OPEN
+
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -10204,6 +10322,8 @@ int cg_rotating_write(float const *rot_rate, float const *rot_center)
     cgns_base *base;
     int ier=0, n;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -10271,6 +10391,8 @@ int cg_ptset_info(CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts)
     cgns_ptset *ptset;
     int ier=0;
 
+    CHECK_FILE_OPEN
+
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
 	return CG_ERROR;
 
@@ -10289,6 +10411,8 @@ int cg_ptset_read(cgsize_t *pnts)
     cgns_ptset *ptset;
     cgsize_t size;
     int ier=0;
+
+    CHECK_FILE_OPEN
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
@@ -10315,6 +10439,8 @@ int cg_ptset_write(CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
     cgns_ptset *ptset = 0;
     int i, index_dim;
     int ier=0;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if(npnts == 0 || pnts == NULL) {
@@ -10397,6 +10523,8 @@ int cg_ptset_write(CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
 
 int cg_bcdataset_info(int *n_dataset)
 {
+    CHECK_FILE_OPEN
+
     /* check for valid posit */
     if (posit == 0) {
         cgi_error("No current position set by cg_goto\n");
@@ -10422,6 +10550,8 @@ int cg_bcdataset_read(int index, char *name, CGNS_ENUMT(BCType_t) *BCType,
     cgns_dataset *dataset;
     int ier = 0;
 
+    CHECK_FILE_OPEN
+
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
     dataset = cgi_bcdataset_address(CG_MODE_READ, index, NULL, &ier);
@@ -10446,6 +10576,8 @@ int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
     cgsize_t length;
     int index, ierr=0;
     double posit_id;
+
+    CHECK_FILE_OPEN
 
     if (posit == 0) {
         cgi_error("No current position set by cg_goto\n");
@@ -10621,6 +10753,8 @@ int cg_delete_node(const char *node_name)
     int n, m, index_dim;
     double posit_id, node_id;
     char_33 node_label;
+
+    CHECK_FILE_OPEN
 
      /* verify input */
     if (cg->mode != CG_MODE_MODIFY) {

@@ -7,17 +7,11 @@ COPTS = $(CFLAGS) -I..\common -I$(CGNSDIR) $(TCLINC)
 all : plotwish.exe
 dll : cgnstcl.dll
 
-install : install-prog install-help
-
-install-prog : plotwish.exe $(BINDIR) $(SHAREDIR)
+install : plotwish.exe $(BINDIR) $(SHAREDIR)
 	-$(INSTALL) plotwish.exe $(BINDIR)
 	-$(INSTALL) cgnsplot.bat $(BINDIR)
 	-$(INSTALL) cgnsplot.tcl $(SHAREDIR)
 	-$(INSTALL) *.ico $(SHAREDIR)
-
-install-help : $(SHAREDIR)\help\cgnsplot\images
-	-$(INSTALL) help\*.html $(SHAREDIR)\help\cgnsplot
-	-$(INSTALL) help\images\*.* $(SHAREDIR)\help\cgnsplot\images
 
 $(BINDIR) : $(INSTALLDIR)
 	-mkdir $(BINDIR)
@@ -27,15 +21,6 @@ $(SHAREDIR) : $(INSTALLDIR)
 
 $(INSTALLDIR) :
 	-mkdir $(INSTALLDIR)
-
-$(SHAREDIR)\help\cgnsplot\images : $(SHAREDIR)\help\cgnsplot
-	-mkdir $(SHAREDIR)\help\cgnsplot\images
-
-$(SHAREDIR)\help\cgnsplot : $(SHAREDIR)\help
-	-mkdir $(SHAREDIR)\help\cgnsplot
-
-$(SHAREDIR)\help :
-	-mkdir $(SHAREDIR)\help
 
 #--------------------------------------------------
 

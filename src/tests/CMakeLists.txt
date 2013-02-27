@@ -62,7 +62,7 @@ add_executable( write_test   ${write_test_FILES}   )
 add_executable( write_zones  ${write_zones_FILES}  )
 
 # Conditionally build the fortran tests
-if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
+if (ENABLE_FORTRAN AND HAS_FORTRAN)
 	add_executable( f2c_test     ${f2c_test_FILES} )
 	add_executable( cgread       ${cgread_FILES}   )
 	add_executable( cgwrite      ${cgwrite_FILES}  )
@@ -71,7 +71,7 @@ if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
 	if (NOT ENABLE_64BIT)
 	  add_executable(cgiof ${cgiof_FILES})
 	endif (NOT ENABLE_64BIT)
-endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
+endif (ENABLE_FORTRAN AND HAS_FORTRAN)
 
 # Add the tests so that ctest can find them
 if (ENABLE_TESTS)
@@ -91,14 +91,14 @@ if (ENABLE_TESTS)
   add_test( write_zones  write_zones              )
 
   # Conditionally add the fortran tests
-  if (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
+  if (ENABLE_FORTRAN AND HAS_FORTRAN)
 	add_test( f2c_test f2c_test ) # This still needs a regex test
-	add_test( cgread   cgread   )
 	add_test( cgwrite  cgwrite  )
+	add_test( cgread   cgread   )
 	add_test( cgzconn  cgzconn  )
 	add_test( cgsubreg cgsubreg )
 	if (NOT ENABLE_64BIT)
 	  add_test(cgiof cgiof)
 	endif (NOT ENABLE_64BIT)
-  endif (ENABLE_FORTRAN AND CMAKE_Fortran_COMPILER_WORKS)
+  endif (ENABLE_FORTRAN AND HAS_FORTRAN)
 endif (ENABLE_TESTS)

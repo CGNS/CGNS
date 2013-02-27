@@ -253,8 +253,8 @@ proc set_axis {} {
 
 set m [menubar_get Help]
 $m add command -label "CGNSplot Help..." \
-  -command {help_show cgnsplot "" cgnstools/cgnsplot/index.html}
-$m add command -label "CGNS Help..." -command {help_show cgns}
+  -command {help_show cgnstools/cgnsplot/index.html}
+$m add command -label "CGNS Help..." -command {help_show}
 $m add separator
 $m add command -label "Configure Help..." -command help_setup
 $m add separator
@@ -486,7 +486,7 @@ R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 t+j75joVAQA7}
 
 button $f.help -image img_help -takefocus 0 \
-  -command {help_show cgnsplot "" cgnstools/cgnsplot/index.html}
+  -command {help_show cgnstools/cgnsplot/index.html}
 set_balloon $f.help "CGNSplot Help..."
 
 pack $f.help -side left -padx 5
@@ -786,21 +786,18 @@ proc options_state {dim} {
 #----- help
 
 proc help_menu {} {
-  if {[help_valid cgnsplot]} {
+  if [help_valid] {
     menubar_state Help normal 0
+    menubar_state Help normal 1
     .toolbar.but.help configure -state normal
   } else {
     menubar_state Help disabled 0
-    .toolbar.but.help configure -state disabled
-  }
-  if {[help_valid cgns]} {
-    menubar_state Help normal 1
-  } else {
     menubar_state Help disabled 1
+    .toolbar.but.help configure -state disabled
   }
 }
 
-help_init {cgnsplot CGNSplot} {cgns CGNS}
+help_init
 
 #----- set default colors and zone/region viewing
 

@@ -170,10 +170,6 @@ if (WIN32)
 	utilities.mnu
 	vtk.tcl
 	DESTINATION share)
-  install(DIRECTORY help/
-	DESTINATION share/help/utilities
-	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
-	PATTERN ".svn" EXCLUDE)
 else (WIN32)
   install(TARGETS
 	plot3d_to_cgns
@@ -200,9 +196,5 @@ else (WIN32)
 	utilities.mnu
 	vtk.tcl
 	DESTINATION share/cgnstools)
-  install(DIRECTORY help/
-	DESTINATION share/cgnstools/help/utilities
-	FILES_MATCHING PATTERN "*.html" PATTERN "*.gif"
-	PATTERN ".svn" EXCLUDE)
 endif (WIN32)
 

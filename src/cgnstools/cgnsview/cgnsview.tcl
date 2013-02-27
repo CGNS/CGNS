@@ -142,13 +142,15 @@ array set ProgData {
   case 0
   fromtop 0
   start /
+  winwidth 640
+  winheight 500
   seppos 0.4
   sepwd 7
   reg,file ".cgnstools"
   reg,base "HKEY_CURRENT_USER/Software/CGNS"
   reg,key "CGNSview"
-  reg,vals {file follow verify backup autoload maxsize maxcnt \
-            toolbar find case fromtop showlines}
+  reg,vals {file follow verify backup autoload maxsize maxcnt toolbar \
+            find case fromtop showlines winwidth winheight seppos}
   cgnsversion ""
   cgnscheck ""
   cgnsplot ""
@@ -434,10 +436,10 @@ $m add command -label "Unit Conversions..." -command units_convert
 
 set m [menubar_get Help]
 $m add command -label "CGNSview..." \
-  -command {help_show cgnsview "" cgnstools/cgnsview/index.html}
+  -command {help_show cgnstools/cgnsview/index.html}
 $m add command -label "Utilities..." \
-  -command {help_show utilities "" cgnstools/utilities/index.html}
-$m add command -label "CGNS..." -command {help_show cgns}
+  -command {help_show cgnstools/utilities/index.html}
+$m add command -label "CGNS..." -command {help_show}
 $m add separator
 $m add command -label "Configure..." -command help_setup
 $m add separator
@@ -776,34 +778,29 @@ R0lGODlhEAAQALMAAAAAAIAAAACAAICAAAAAgIAAgACAgICAgMDAwP8AAAD/AP//AAAA//8A\
 t+j75joVAQA7}
 
 button $f.help -image img_help -takefocus 0 \
-  -command {help_show cgnsview "" cgnstools/cgnsview/index.html}
+  -command {help_show cgnstools/cgnsview/index.html}
 pack $f.help -side left -padx 5
 set_balloon $f.help Help
 
 proc help_menu {} {
-  global HelpData
-  set n 0
-  foreach i {cgnsview utilities cgns} {
-    if {[help_valid $i]} {
-      menubar_state Help normal $n
-      if {$i == "cgnsview"} {
-        .toolbar.but.help configure -state normal
-      }
-    } else {
-      menubar_state Help disabled $n
-      if {$i == "cgnsview"} {
-        .toolbar.but.help configure -state disabled
-      }
-    }
-    incr n
+  if [help_valid] {
+    menubar_state Help normal 0
+    menubar_state Help normal 1
+    menubar_state Help normal 2
+    .toolbar.but.help configure -state normal
+  } else {
+    menubar_state Help disabled 0
+    menubar_state Help disabled 1
+    menubar_state Help disabled 2
+    .toolbar.but.help configure -state disabled
   }
 }
 
-help_init {cgnsview CGNSview} {utilities Utilities} {cgns CGNS}
+help_init
 
 #---------- main window
 
-frame .main -width 640 -height 500
+frame .main -width $ProgData(winwidth) -height $ProgData(winheight)
 pack .main -side top -fill both -expand 1 -padx 5 -pady 5
 
 #--- window seperator
@@ -1154,6 +1151,8 @@ proc do_quit {} {
   global ProgData
   if {![remove_backup]} return
   catch CGIOclose
+  set ProgData(winwidth) [winfo width .main]
+  set ProgData(winheight) [winfo height .main]
   foreach i $ProgData(reg,vals) {
     catch {tclreg_set $ProgData(reg,key) $i $ProgData($i)}
   }

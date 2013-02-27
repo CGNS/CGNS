@@ -1584,48 +1584,9 @@ proc cgns:format {text width} {
 }
 
 proc cgns:help {type} {
-  global CGNSdata HelpData tcl_platform
-  set htmlfile $HelpData(cgns)
-  if {$htmlfile == ""} {
-    errormsg "CGNS documentation URL not setup"
-  }
+  global CGNSdata
   set html [lindex $CGNSdata($type) 0]
-  set tag [lindex $CGNSdata($type) 1]
   if {$html == ""} return
-  set ext [string tolower [file extension $htmlfile]]
-  if {$HelpData(winhtml) && $ext == ".chm"} {
-    if {$HelpData(chmfile) != $htmlfile} {
-      if {[catch {WinHtml file $htmlfile} msg]} {
-        errormsg $msg
-        return
-      }
-      set HelpData(chmfile) $htmlfile
-    }
-    if {[catch {eval WinHtml topic "$type/$html.html" $tag} msg]} {
-      errormsg $msg
-    }
-    return
-  }
-  if {$HelpData(browser) == ""} {
-    errormsg "browser not set up"
-  } else {
-    set doc $htmlfile
-    if {$ext == ".html" || $ext == ".htm"} {
-      set n [string last / $htmlfile]
-      if {$n > 0} {set doc [string range $htmlfile 0 $n]}
-    }
-    if {[string index $doc end] != "/"} {append doc /}
-    append doc "$type/$html.html"
-    if {$tag != ""} {append doc "\#$tag"}
-    set cmd "$HelpData(browser) $HelpData(htmlopts) "
-    if {$tcl_platform(platform) == "windows"} {
-      append cmd "\"$doc\""
-    } else {
-      append cmd $doc
-    }
-    if {[catch {eval exec $cmd &} msg]} {
-      errormsg $msg
-    }
-  }
+  help_show "$type/$html.html" [lindex $CGNSdata($type) 1]
 }
 
