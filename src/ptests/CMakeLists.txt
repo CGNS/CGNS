@@ -25,6 +25,9 @@ endif (NOT WIN32)
 set(ctest_FILES ctest.c)
 add_executable(ctest ${ctest_FILES})
 
+set(cexample_FILES cexample.c)
+add_executable(cexample ${cexample_FILES})
+
 set(benchmark_FILES benchmark.c)
 add_executable(benchmark ${benchmark_FILES})
 
@@ -50,10 +53,12 @@ if (ENABLE_FORTRAN AND HAS_FORTRAN AND NOT ENABLE_64BIT)
   add_executable(fexample ${fexample_FILES})
 endif (ENABLE_FORTRAN AND HAS_FORTRAN AND NOT ENABLE_64BIT)
 
-# Add the tests so that ctest can find them
+# Add the tests so that cmake can find them
 if (ENABLE_TESTS)
   add_test(ctest ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} ctest ${MPIEXEC_POSTFLAGS})
+  add_test(cexample ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+      ${MPIEXEC_PREFLAGS} cexample ${MPIEXEC_POSTFLAGS})
   add_test(benchmark ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} benchmark ${MPIEXEC_POSTFLAGS})
   add_test(open_close ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"

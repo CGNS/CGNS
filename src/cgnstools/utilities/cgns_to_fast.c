@@ -783,6 +783,8 @@ static int get_bcnum (CGNS_ENUMT(BCType_t) bctype)
         case CGNS_ENUMV(BCNeumann):
         case CGNS_ENUMV(BCSymmetryPolar):
 */
+        default:
+            break;
     }
     return 0;
 }

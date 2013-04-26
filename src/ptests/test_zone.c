@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 
 	if (cgp_open("test_zone.cgns", CG_MODE_WRITE, &fn) ||
 	    cg_base_write(fn, "Base 1", cell_dim, phys_dim, &B) ||
-	    cg_zone_write(fn, B, "Zone 1", nijk, Structured, &Z) ||
+	    cg_zone_write(fn, B, "Zone 1", nijk, CGNS_ENUMV(Structured), &Z) ||
 	    cgp_close(fn))
 	    cgp_error_exit();
 

@@ -11,7 +11,7 @@
 #endif
 #include "cgnslib.h"
 
-#define COORD_TYPE RealSingle
+#define COORD_TYPE CGNS_ENUMV(RealSingle)
 typedef float COORD;
 
 int totCoords;
@@ -743,7 +743,8 @@ int main (int argc, char *argv[])
   
     if (cg_open (outfile, CG_MODE_WRITE, &cgfile) ||
         cg_base_write (cgfile, "Base", celldim, phydim, &cgbase) ||
-        cg_zone_write (cgfile, cgbase, "Zone", sizes, Unstructured, &cgzone) ||
+        cg_zone_write (cgfile, cgbase, "Zone", sizes,
+            CGNS_ENUMV(Unstructured), &cgzone) ||
         cg_coord_write (cgfile, cgbase, cgzone, COORD_TYPE,
             "CoordinateX", xC, &cgcoord) ||
         cg_coord_write (cgfile, cgbase, cgzone, COORD_TYPE,

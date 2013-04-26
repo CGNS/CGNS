@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
 
 	if (cgp_open("test_unstructured.cgns", CG_MODE_WRITE, &fn) ||
 	    cg_base_write(fn, "Base 1", cell_dim, phys_dim, &B) ||
-	    cg_zone_write(fn, B, "Zone 1", nijk, Unstructured, &Z))
+	    cg_zone_write(fn, B, "Zone 1", nijk, CGNS_ENUMV(Unstructured), &Z))
 	    cgp_error_exit();
 
 	count = 10 / comm_size;
@@ -68,9 +68,9 @@ int main(int argc, char* argv[]) {
 		z[k] = 0.0;
 		}
 
-	if (cgp_coord_write(fn,B,Z,RealDouble,"CoordinateX",&Cx) ||
-	    cgp_coord_write(fn,B,Z,RealDouble,"CoordinateY",&Cy) ||
-	    cgp_coord_write(fn,B,Z,RealDouble,"CoordinateZ",&Cz))
+	if (cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateX",&Cx) ||
+	    cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateY",&Cy) ||
+	    cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateZ",&Cz))
 	    cgp_error_exit();
 
 	/* use queued IO */
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
 
 	start = 1;
 	end = 9;
-	if (cgp_section_write(fn,B,Z,"Elements",BAR_2,start,end,0,&S))
+	if (cgp_section_write(fn,B,Z,"Elements",CGNS_ENUMV(BAR_2),start,end,0,&S))
 	    cgp_error_exit();
 
 	nelems = (comm_rank!=comm_size-1)?9/comm_size:9-(9/comm_size)*(comm_size-1);
@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
 		elements[2*k] = k+emin;
 		elements[2*k+1] = k+emin+1;
 		}
-	printf("%d:%d %d %d\n",comm_rank,nelems,emin,emax);
+	printf("%d:%d %d %d\n",comm_rank,nelems,(int)emin,(int)emax);
 
 	if (cgp_elements_write_data(fn,B,Z,S,emin,emax,elements) ||
 	    cgp_queue_flush())

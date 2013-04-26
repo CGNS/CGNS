@@ -395,6 +395,8 @@ int main (int argc, char *argv[])
         printf ("  zone %d...", nz+1);
         fflush (stdout);
         read_zone_grid (nz+1);
+        ne = 0;
+        type = 2;
         nn = (int)Zones[nz].nverts;
         var = (float *) malloc (nn * sizeof(float));
         if (NULL == var)

@@ -87,6 +87,8 @@ array set CGNSnodes {
   OriginLocation               {1 DataArray_t R4 {3 2} 0}
   OversetHoles                 {0 OversetHoles_t MT {} 1}
   ParentData                   {1 DataArray_t I4 {} 0}
+  ParentElements               {1 DataArray_t I4 {} 0}
+  ParentElementsPosition       {1 DataArray_t I4 {} 0}
   Periodic                     {1 Periodic_t MT {} 0}
   PointList                    {1 IndexArray_t I4 {} 0}
   PointListDonor               {1 IndexArray_t I4 {} 0}
@@ -556,6 +558,10 @@ Constant or Frozen}}
   ParentData {ParentData DataArray_t {0,1} I4 2 {ElementSize,4} \
       {Parent1[ElementSize], Parent2[ElementSize], SideOfParent1[ElementSize],\
       SideOfParent2[ElementSize]}}
+  ParentElements {ParentElements DataArray_t {0,1} I4 2 {ElementSize,2} \
+      {Parent1[ElementSize], Parent2[ElementSize]}}
+  ParentElementsPosition {ParentElementsPosition DataArray_t {0,1} I4 2 \
+      {ElementSize,2} {SideOfParent1[ElementSize], SideOfParent2[ElementSize]}}
   Periodic_t {Periodic Periodic_t {0,1} MT {} {} {}}
   PointList {PointList IndexArray_t {0,1} I4 2 {IndexDimension,ListLength} \
       {list of indices for vertices or cells}}
@@ -757,6 +763,8 @@ array set CGNSnodeRef {
   OriginLocation {}
   OversetHoles_t {{cnct OversetHoles} {connectivity overset}}
   ParentData {{} {grid elements}}
+  ParentElements {{} {grid elements}}
+  ParentElementsPosition {{} {grid elements}}
   Periodic_t {{cnct Periodic} {connectivity connproperty}}
   PointList {}
   PointListDonor {}
@@ -1057,6 +1065,8 @@ proc cgns_init {{version ""}} {
       DiscreteData_t {DataClass Descriptor DimensionalUnits \
         DiscreteDataArray GridLocation PointList PointRange Rind \
         UserDefinedData}
+      Elements_t {Descriptor ElementConnectivity ElementRange \
+        ParentElements ParentElementsPosition Rind UserDefinedData}
       FamilyBC_t {FamilyBCDataSet}
       FlowSolution_t {DataClass Descriptor DimensionalUnits \
         GridLocation PointList PointRange Rind SolutionData \

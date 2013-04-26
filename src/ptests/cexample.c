@@ -50,14 +50,14 @@ int main(int argc, char *argv[])
     DEBUG_PRINT(("[%d]cg_base_write\n",comm_rank))
     if (cg_base_write(F, "Base", 3, 3, &B)) cgp_error_exit();
     DEBUG_PRINT(("[%d]cg_zone_write\n",comm_rank))
-    if (cg_zone_write(F, B, "Zone", sizes, Unstructured, &Z))
+    if (cg_zone_write(F, B, "Zone", sizes, CGNS_ENUMV(Unstructured), &Z))
         cgp_error_exit();
 
     /* create data nodes for coordinates */
     DEBUG_PRINT(("[%d]cgp_coord_write\n",comm_rank))
-    if (cgp_coord_write(F, B, Z, RealSingle, "CoordinateX", &Cx) ||
-        cgp_coord_write(F, B, Z, RealSingle, "CoordinateY", &Cy) ||
-        cgp_coord_write(F, B, Z, RealSingle, "CoordinateZ", &Cz))
+    if (cgp_coord_write(F, B, Z, CGNS_ENUMV(RealSingle), "CoordinateX", &Cx) ||
+        cgp_coord_write(F, B, Z, CGNS_ENUMV(RealSingle), "CoordinateY", &Cy) ||
+        cgp_coord_write(F, B, Z, CGNS_ENUMV(RealSingle), "CoordinateZ", &Cz))
         cgp_error_exit();
 
     /* number of nodes and range this process will write */
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
     /* create data node for elements */
     DEBUG_PRINT(("[%d]cgp_section_write\n",comm_rank))
-    if (cgp_section_write(F, B, Z, "Hex", HEXA_8, 1, tot_nelems, 0, &E))
+    if (cgp_section_write(F, B, Z, "Hex", CGNS_ENUMV(HEXA_8), 1, tot_nelems, 0, &E))
         cgp_error_exit();
 
     /* number of elements and range this process will write */
@@ -138,10 +138,10 @@ int main(int argc, char *argv[])
 
     /* create a centered solution */
     DEBUG_PRINT(("[%d]cg_sol_write\n",comm_rank))
-    if (cg_sol_write(F, B, Z, "Solution", CellCenter, &S))
+    if (cg_sol_write(F, B, Z, "Solution", CGNS_ENUMV(CellCenter), &S))
         cgp_error_exit();
     DEBUG_PRINT(("[%d]cgp_field_write\n",comm_rank))
-    if (cgp_field_write(F, B, Z, S, RealSingle, "CellIndex", &Fs))
+    if (cgp_field_write(F, B, Z, S, CGNS_ENUMV(RealSingle), "CellIndex", &Fs))
         cgp_error_exit();
 
     /* create the field data for this process */
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
     DEBUG_PRINT(("[%d]cg_gorel\n",comm_rank))
     if (cg_gorel(F, "User Data", 0, NULL)) cgp_error_exit();
     DEBUG_PRINT(("[%d]cgp_array_write\n",comm_rank))
-    if (cgp_array_write("CellIndex", RealSingle, 1, &ncells, &A))
+    if (cgp_array_write("CellIndex", CGNS_ENUMV(RealSingle), 1, &ncells, &A))
         cgp_error_exit();
 
     /* write the array data in parallel */

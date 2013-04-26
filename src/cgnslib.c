@@ -1485,7 +1485,7 @@ int cg_fambc_write(int file_number, int B, int F, const char * fambc_name,
 
      /* verify input */
     if (cgi_check_strlen(fambc_name)) return CG_ERROR;
-    if (bocotype<0 || bocotype>=NofValidBCTypes) {
+    if (INVALID_ENUM(bocotype,NofValidBCTypes)) {
         cgi_error("Invalid BCType:  %d",bocotype);
         return CG_ERROR;
     }
@@ -2674,7 +2674,7 @@ int cg_section_write(int file_number, int B, int Z, const char * SectionName,
      /* verify input */
     if (cgi_check_strlen(SectionName)) return CG_ERROR;
 
-    if (type < 0 || type >= NofValidElementTypes) {
+    if (INVALID_ENUM(type,NofValidElementTypes)) {
         cgi_error("Invalid element type defined for section '%s'",SectionName);
         return CG_ERROR;
     }
@@ -2772,7 +2772,7 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
      /* verify input */
     if (cgi_check_strlen(SectionName)) return CG_ERROR;
 
-    if (type < 0 || type >= NofValidElementTypes) {
+    if (INVALID_ENUM(type,NofValidElementTypes)) {
         cgi_error("Invalid element type defined for section '%s'",SectionName);
         return CG_ERROR;
     }
@@ -3251,7 +3251,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
 
     section = cgi_get_section(cg, B, Z, S);
     if (section == 0 || section->connect == 0) return CG_ERROR;
-    
+
     num = end - start + 1;
     type = section->el_type;
 
@@ -3960,7 +3960,7 @@ int cg_sol_write(int file_number, int B, int Z, const char * solname,
         cgi_error("Given grid location not supported for FlowSolution_t");
         return CG_ERROR;
     }
-     /* if (location<0 || location >= NofValidGridLocation) {
+     /* if (INVALID_ENUM(location,NofValidGridLocation)) {
         cgi_error("Invalid input:  GridLocation=%d ?",location);
         return CG_ERROR;
     } */
@@ -4226,7 +4226,7 @@ int cg_field_read(int file_number, int B, int Z, int S, const char *fieldname,
     cgsize_t m_start[3], m_end[3], m_stride[3], m_dim[3];
 
      /* verify input */
-    if (type<0 || type>=NofValidDataTypes) {
+    if (INVALID_ENUM(type,NofValidDataTypes)) {
         cgi_error("Invalid data type requested for flow solution: %d",type);
         return CG_ERROR;
     }
@@ -4419,7 +4419,7 @@ int cg_field_write(int file_number, int B, int Z, int S, CGNS_ENUMT(DataType_t) 
     memset(field, 0, sizeof(cgns_array));
     strcpy(field->data_type, cgi_adf_datatype(type));
     strcpy(field->name,fieldname);
-    
+
     if (sol->ptset == NULL) {
         field->data_dim = zone->index_dim;
         if (cgi_datasize(zone->index_dim, zone->nijk, sol->location,
@@ -4450,7 +4450,8 @@ int cg_field_partial_write(int file_number, int B, int Z, int S,
 
      /* verify input */
     if (cgi_check_strlen(fieldname)) return CG_ERROR;
-    if (type!=CGNS_ENUMV( RealSingle ) && type!=CGNS_ENUMV( RealDouble ) && type!=CGNS_ENUMV( Integer )) {
+    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble) &&
+        type != CGNS_ENUMV(Integer) && type != CGNS_ENUMV(LongInteger)) {
         cgi_error("Invalid datatype for solution array %s: %d",fieldname, type);
         return CG_ERROR;
     }
@@ -4721,7 +4722,7 @@ static cgns_subreg *cg_subreg_write(int fn, int B, int Z, const char *name,
     memset(subreg, 0, sizeof(cgns_subreg));
     strcpy(subreg->name, name);
     subreg->reg_dim = dimension;
-    
+
     return subreg;
 }
 
@@ -4750,7 +4751,7 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *name,
 
     subreg = cg_subreg_write(fn, B, Z, name, dimension, S);
     if (subreg == NULL) return CG_ERROR;
-    
+
     subreg->location = location;
     subreg->ptset = CGNS_NEW(cgns_ptset, 1);
     subreg->ptset->type = ptset_type;
@@ -5429,7 +5430,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
      /* verify input */
     if (cgi_check_strlen(connectname)) return CG_ERROR;
     if (cgi_check_strlen(donorname)) return CG_ERROR;
-    if (type <0 || type >= NofValidGridConnectivityTypes) {
+    if (INVALID_ENUM(type,NofValidGridConnectivityTypes)) {
         cgi_error("Invalid input:  GridConnectivityType=%d ?",type);
         return CG_ERROR;
     }
@@ -6207,7 +6208,7 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
         return CG_ERROR;
     }
 
-    if (bocotype < 0 || bocotype >= NofValidBCTypes) {
+    if (INVALID_ENUM(bocotype,NofValidBCTypes)) {
         cgi_error("Invalid BCType:  %d",bocotype);
         return CG_ERROR;
     }
@@ -6456,7 +6457,7 @@ int cg_dataset_write(int file_number, int B, int Z, int BC, const char * name,
     cgsize_t length;
 
      /* verify input */
-    if (BCType<0 || BCType>=NofValidBCTypes) {
+    if (INVALID_ENUM(BCType,NofValidBCTypes)) {
         cgi_error("Invalid BCType:  %d",BCType);
         return CG_ERROR;
     }
@@ -6527,7 +6528,7 @@ int cg_bcdata_write(int file_number, int B, int Z, int BC, int Dset,
     cgns_bcdata *bcdata;
 
      /* verify input */
-    if (BCDataType<0 || BCDataType>=NofValidBCDataTypes) {
+    if (INVALID_ENUM(BCDataType,NofValidBCDataTypes)) {
         cgi_error("BCDataType %d not valid",BCDataType);
         return CG_ERROR;
     }
@@ -6632,7 +6633,7 @@ int cg_rigid_motion_write(int file_number, int B, int Z, const char * rmotionnam
      /* verify input */
     if (cgi_check_strlen(rmotionname)) return CG_ERROR;
 
-    if (type<0 || type >= NofValidRigidGridMotionTypes) {
+    if (INVALID_ENUM(type,NofValidRigidGridMotionTypes)) {
         cgi_error("Invalid input:  RigidGridMotionType=%d ?",type);
         return CG_ERROR;
     }
@@ -6744,7 +6745,7 @@ int cg_arbitrary_motion_write(int file_number, int B, int Z, const char * amotio
      /* verify input */
     if (cgi_check_strlen(amotionname)) return CG_ERROR;
 
-    if (type<0 || type >= NofValidArbitraryGridMotionTypes) {
+    if (INVALID_ENUM(type,NofValidArbitraryGridMotionTypes)) {
         cgi_error("Invalid input:  ArbitraryGridMotionType=%d ?",type);
         return CG_ERROR;
     }
@@ -6831,7 +6832,7 @@ int cg_simulation_type_write(int file_number, int B, CGNS_ENUMT(SimulationType_t
     cgsize_t length;
 
      /* check input */
-    if (type<0 || type >= NofValidSimulationTypes) {
+    if (INVALID_ENUM(type,NofValidSimulationTypes)) {
         cgi_error("Invalid input:  SimulationType=%d ?",type);
         return CG_ERROR;
     }
@@ -7222,7 +7223,7 @@ int cg_bc_wallfunction_write(int file_number, int B, int Z, int BC,
     double dummy_id;
 
      /* verify input */
-    if (WallFunctionType<0 || WallFunctionType>=NofValidWallFunctionTypes) {
+    if (INVALID_ENUM(WallFunctionType,NofValidWallFunctionTypes)) {
         cgi_error("Invalid WallFunctionType:  %d",WallFunctionType);
         return CG_ERROR;
     }
@@ -7334,7 +7335,7 @@ int cg_bc_area_write(int file_number, int B, int Z, int BC,
     double dummy_id;
 
      /* verify input */
-    if (AreaType<0 || AreaType>=NofValidAreaTypes) {
+    if (INVALID_ENUM(AreaType,NofValidAreaTypes)) {
         cgi_error("Invalid AreaType:  %d",AreaType);
         return CG_ERROR;
     }
@@ -7604,7 +7605,7 @@ int cg_conn_average_write(int file_number, int B, int Z, int I,
     double dummy_id;
 
      /* verify input */
-    if (AverageInterfaceType<0 || AverageInterfaceType>=NofValidAverageInterfaceTypes) {
+    if (INVALID_ENUM(AverageInterfaceType,NofValidAverageInterfaceTypes)) {
         cgi_error("Invalid AverageInterfaceType:  %d",AverageInterfaceType);
         return CG_ERROR;
     }
@@ -7842,7 +7843,7 @@ int cg_1to1_average_write(int file_number, int B, int Z, int I,
     double dummy_id;
 
      /* verify input */
-    if (AverageInterfaceType<0 || AverageInterfaceType>=NofValidAverageInterfaceTypes) {
+    if (INVALID_ENUM(AverageInterfaceType,NofValidAverageInterfaceTypes)) {
         cgi_error("Invalid AverageInterfaceType:  %d",AverageInterfaceType);
         return CG_ERROR;
     }
@@ -8544,7 +8545,7 @@ int cg_governing_write(CGNS_ENUMT(GoverningEquationsType_t) Equationstype)
     CHECK_FILE_OPEN
 
      /* verify input */
-    if (Equationstype<0 || Equationstype>=NofValidGoverningEquationsTypes) {
+    if (INVALID_ENUM(Equationstype,NofValidGoverningEquationsTypes)) {
         cgi_error("Invalid Governing Equations Type: %d",Equationstype);
         return CG_ERROR;
     }
@@ -8704,7 +8705,7 @@ int cg_model_write(const char * ModelLabel, CGNS_ENUMT(ModelType_t) ModelType)
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
-    if (ModelType<0 || ModelType>=NofValidModelTypes) {
+    if (INVALID_ENUM(ModelType,NofValidModelTypes)) {
         cgi_error("Invalid %s Type: %d",ModelLabel,ModelType);
         return CG_ERROR;
     }
@@ -9533,23 +9534,23 @@ int cg_units_write(CGNS_ENUMT(MassUnits_t) mass,
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
-    if (mass < 0 || mass >= NofValidMassUnits) {
+    if (INVALID_ENUM(mass,NofValidMassUnits)) {
         cgi_error("Invalid input:  mass unit %d not supported",mass);
         return CG_ERROR;
     }
-    if (length < 0 || length >= NofValidLengthUnits) {
+    if (INVALID_ENUM(length,NofValidLengthUnits)) {
         cgi_error("Invalid input:  length unit %d not supported", length);
         return CG_ERROR;
     }
-    if (time < 0 || time >= NofValidTimeUnits) {
+    if (INVALID_ENUM(time,NofValidTimeUnits)) {
         cgi_error("Invalid input:  time unit %d not supported", time);
         return CG_ERROR;
     }
-    if (temperature < 0 || temperature >= NofValidTemperatureUnits) {
+    if (INVALID_ENUM(temperature,NofValidTemperatureUnits)) {
         cgi_error("Invalid input:  temperature unit %d not supported", temperature);
         return CG_ERROR;
     }
-    if (angle < 0 || angle >= NofValidAngleUnits) {
+    if (INVALID_ENUM(angle,NofValidAngleUnits)) {
         cgi_error("Invalid input:  angle unit %d not supported", angle);
         return CG_ERROR;
     }
@@ -9625,35 +9626,35 @@ int cg_unitsfull_write(CGNS_ENUMT(MassUnits_t) mass,
 
      /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
-    if (mass < 0 || mass >= NofValidMassUnits) {
+    if (INVALID_ENUM(mass,NofValidMassUnits)) {
         cgi_error("Invalid input:  mass unit %d not supported",mass);
         return CG_ERROR;
     }
-    if (length < 0 || length >= NofValidLengthUnits) {
+    if (INVALID_ENUM(length,NofValidLengthUnits)) {
         cgi_error("Invalid input:  length unit %d not supported", length);
         return CG_ERROR;
     }
-    if (time < 0 || time >= NofValidTimeUnits) {
+    if (INVALID_ENUM(time,NofValidTimeUnits)) {
         cgi_error("Invalid input:  time unit %d not supported", time);
         return CG_ERROR;
     }
-    if (temperature < 0 || temperature >= NofValidTemperatureUnits) {
+    if (INVALID_ENUM(temperature,NofValidTemperatureUnits)) {
         cgi_error("Invalid input:  temperature unit %d not supported", temperature);
         return CG_ERROR;
     }
-    if (angle < 0 || angle >= NofValidAngleUnits) {
+    if (INVALID_ENUM(angle,NofValidAngleUnits)) {
         cgi_error("Invalid input:  angle unit %d not supported", angle);
         return CG_ERROR;
     }
-    if (current < 0 || current >= NofValidElectricCurrentUnits) {
+    if (INVALID_ENUM(current,NofValidElectricCurrentUnits)) {
         cgi_error("Invalid input:  electric current unit %d not supported", current);
         return CG_ERROR;
     }
-    if (amount < 0 || amount >= NofValidSubstanceAmountUnits) {
+    if (INVALID_ENUM(amount,NofValidSubstanceAmountUnits)) {
         cgi_error("Invalid input:  substance amount unit %d not supported", amount);
         return CG_ERROR;
     }
-    if (intensity < 0 || intensity >= NofValidLuminousIntensityUnits) {
+    if (INVALID_ENUM(intensity,NofValidLuminousIntensityUnits)) {
         cgi_error("Invalid input:  luminous intensity unit %d not supported", intensity);
         return CG_ERROR;
     }
@@ -10136,7 +10137,7 @@ int cg_gridlocation_write(CGNS_ENUMT(GridLocation_t) GridLocation)
 #endif
     }
     else {
-        if (GridLocation < 0 || GridLocation >= NofValidGridLocation)
+        if (INVALID_ENUM(GridLocation,NofValidGridLocation))
             ier = 1;
     }
     if (ier) {
@@ -10816,12 +10817,12 @@ int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
     }
 
      /* verify input */
-    if (BCType<0 || BCType>=NofValidBCTypes) {
+    if (INVALID_ENUM(BCType,NofValidBCTypes)) {
         cgi_error("Invalid BCType:  %d",BCType);
         return CG_ERROR;
     }
 
-    if (BCDataType<0 || BCDataType>=NofValidBCDataTypes) {
+    if (INVALID_ENUM(BCDataType,NofValidBCDataTypes)) {
         cgi_error("BCDataType %d not valid",BCDataType);
         return CG_ERROR;
     }
@@ -10992,7 +10993,7 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
         NPE_HEXA_64
 #endif
     };
-    if (type < 0 || type >= NofValidElementTypes) {
+    if (INVALID_ENUM(type,NofValidElementTypes)) {
         *npe = -1;
         cgi_error("Invalid element type");
         return CG_ERROR;

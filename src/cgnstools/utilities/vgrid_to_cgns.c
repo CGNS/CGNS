@@ -544,7 +544,8 @@ int main (int argc, char *argv[])
     printf("reading volume grid from \"%s\"\n", basename);
     fflush(stdout);
     read_cogsg(basename);
-    printf("read %d coordinates and %d tetrahedra\n", nCoords, nTets);
+    printf("read %ld coordinates and %ld tetrahedra\n",
+        (long)nCoords, (long)nTets);
 
     /* read surface grid */
 

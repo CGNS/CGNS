@@ -188,20 +188,20 @@ int main(int argc, char* argv[]) {
 	for(k=0;k<zc;k++) {
 		char zonename[100+1];
 		sprintf(zonename,"%s %d","Zone",k);
-		if (cg_zone_write(F,B,zonename,nijk,Unstructured,&(Z[k])) ||
-		    cgp_coord_write(F,B,Z[k],RealDouble,"CoordinateX",&(Cx[k])) ||
-		    cgp_coord_write(F,B,Z[k],RealDouble,"CoordinateY",&(Cy[k])) ||
-		    cgp_coord_write(F,B,Z[k],RealDouble,"CoordinateZ",&(Cz[k])) ||
-		    cgp_section_write(F,B,Z[k],"Elements",NODE,1,Nl*ppz,0,&(E[k])) ||
-		    cg_sol_write(F,B,Z[k],"Solution",Vertex,&S[k]) ||
-		    cgp_field_write(F,B,Z[k],S[k],RealDouble,"MomentumX",&(Fu[k])) ||
-		    cgp_field_write(F,B,Z[k],S[k],RealDouble,"MomentumY",&(Fv[k])) ||
-		    cgp_field_write(F,B,Z[k],S[k],RealDouble,"MomentumZ",&(Fw[k])))
+		if (cg_zone_write(F,B,zonename,nijk,CGNS_ENUMV(Unstructured),&(Z[k])) ||
+		    cgp_coord_write(F,B,Z[k],CGNS_ENUMV(RealDouble),"CoordinateX",&(Cx[k])) ||
+		    cgp_coord_write(F,B,Z[k],CGNS_ENUMV(RealDouble),"CoordinateY",&(Cy[k])) ||
+		    cgp_coord_write(F,B,Z[k],CGNS_ENUMV(RealDouble),"CoordinateZ",&(Cz[k])) ||
+		    cgp_section_write(F,B,Z[k],"Elements",CGNS_ENUMV(NODE),1,Nl*ppz,0,&(E[k])) ||
+		    cg_sol_write(F,B,Z[k],"Solution",CGNS_ENUMV(Vertex),&S[k]) ||
+		    cgp_field_write(F,B,Z[k],S[k],CGNS_ENUMV(RealDouble),"MomentumX",&(Fu[k])) ||
+		    cgp_field_write(F,B,Z[k],S[k],CGNS_ENUMV(RealDouble),"MomentumY",&(Fv[k])) ||
+		    cgp_field_write(F,B,Z[k],S[k],CGNS_ENUMV(RealDouble),"MomentumZ",&(Fw[k])))
 		    cgp_error_exit();
 		if (cg_goto(F,B,zonename,0,NULL) ||
 		    cg_user_data_write("User Data") ||
 		    cg_gorel(F, "User Data", 0, NULL) ||
-		    cgp_array_write("phi",RealDouble,1,nijk,&A[k]))
+		    cgp_array_write("phi",CGNS_ENUMV(RealDouble),1,nijk,&A[k]))
 		    cgp_error_exit();
 		}
 

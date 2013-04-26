@@ -121,6 +121,8 @@ typedef int cgint3_t[3];
 #define CGNS_RENEW(type,size,old) (type *)cgi_realloc(old,(size_t)(size)*sizeof(type))
 #define CGNS_FREE(data) free(data);
 
+#define INVALID_ENUM(E,EMAX) ((int)(E)<0 || (int)(E)>=(EMAX))
+
 #define DEBUG_FILE  0
 #define DEBUG_BASE  0
 #define DEBUG_ZONE  0

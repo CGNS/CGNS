@@ -3018,7 +3018,8 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
                     }
                 }
             }
-            size = check_interface (z, ptype, location, npnts, pts, location != CellCenter);
+            size = check_interface (z, ptype, location, npnts, pts,
+                location != CGNS_ENUMV(CellCenter));
             free (pts);
         }
     }
@@ -3265,7 +3266,8 @@ static void check_BC (int nb, int parclass, int *parunits)
             }
         }
     }
-    npts = check_interface (z, ptype, location, npts, pts, location != CellCenter);
+    npts = check_interface (z, ptype, location, npts, pts,
+        location != CGNS_ENUMV(CellCenter));
     free (pts);
 
     /* BCDataSet */

@@ -896,7 +896,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
         section[0][n].el_bound = edata[1];
         free(vdata);
 
-        if (el_type < 0 || el_type >= NofValidElementTypes) {
+        if (INVALID_ENUM(el_type,NofValidElementTypes)) {
             cgi_error("Invalid Element Type for Elements_t :'%s'",
                 section[0][n].name);
             return 1;
@@ -1308,7 +1308,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 	    }
 	    if (cgi_delete_node(section[0][n].id, section[0][n].parelem->id))
 		return 1;
-	    
+
 	    memset(section[0][n].parelem, 0, sizeof(cgns_array));
             strcpy(section[0][n].parelem->data_type, data_type);
             strcpy(section[0][n].parelem->name, "ParentElements");
@@ -1373,11 +1373,11 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
 
      /* Rind Planes */
         if (cgi_read_rind(sol[0][s].id, &sol[0][s].rind_planes)) return 1;
- 
+
      /* Determine data size */
         if (cgi_datasize(Idim, CurrentDim, sol[0][s].location,
                 sol[0][s].rind_planes, DataSize)) return 1;
-    
+
      /* check for PointList/PointRange */
         if (cgi_read_one_ptset(linked, sol[0][s].id,
                 &sol[0][s].ptset)) return 1;
@@ -1389,7 +1389,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
             }
             DataCount = sol[0][s].ptset->size_of_patch;
         }
- 
+
      /* DataArray_t */
         if (cgi_get_nodes(sol[0][s].id, "DataArray_t", &sol[0][s].nfields,
             &idf)) return 1;
@@ -1463,7 +1463,7 @@ int cgi_read_zconn(int in_link, double parent_id, int *nzconn, cgns_zconn **zcon
     }
     zc = CGNS_NEW(cgns_zconn, *nzconn);
     *zconn = zc;
-    
+
     for (i = 0; i < *nzconn; i++) {
         zc[i].id = ids[i];
         zc[i].link = cgi_read_link(ids[i]);
@@ -2112,10 +2112,10 @@ int cgi_read_hole(cgns_hole *hole)
 
      /* GridLocation */
     if (cgi_read_location(hole->id, hole->name, &hole->location)) return 1;
-    if (hole->location != CGNS_ENUMV( Vertex ) && hole->location != CGNS_ENUMV( CellCenter )) {
+    if (hole->location != CGNS_ENUMV( Vertex ) &&
+        hole->location != CGNS_ENUMV( CellCenter )) {
         cgi_error("Unsupported GridLocation %s for Overset Hole %s",
-            hole->location < 0 || hole->location >= NofValidGridLocation ?
-            "<invalid>" : GridLocationName[hole->location], hole->name);
+            cg_GridLocationName(hole->location), hole->name);
         return 1;
     }
 
@@ -2940,7 +2940,7 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
     }
 
      /* verify that the name matches the type intended */
-    if (ptset->type<0 || ptset->type>=NofValidPointSetTypes) {
+    if (INVALID_ENUM(ptset->type,NofValidPointSetTypes)) {
         cgi_error("Invalid point set type: '%s'",ptset->name);
         return 1;
     }

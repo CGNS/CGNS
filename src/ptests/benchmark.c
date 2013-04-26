@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
 	/* Time the creation of a zone */
 	t0 = MPI_Wtime();
 	DEBUG_PRINT(("[%d]cg_zone_write\n",comm_rank))
-	if (cg_zone_write(fn, B, "Zone 1", nijk, Structured, &Z))
+	if (cg_zone_write(fn, B, "Zone 1", nijk, CGNS_ENUMV(Structured), &Z))
 	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Zone Write", t1-t0);
@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
 	/* Time the creation of coordinates X */
 	t0 = MPI_Wtime();
 	DEBUG_PRINT(("[%d]cgp_coord_write X\n",comm_rank))
-	if (cgp_coord_write(fn,B,Z,RealDouble,"CoordinateX",&C))
+	if (cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateX",&C))
 	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Coord X Write", t1-t0);
@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
 	/* Time the creation of coordinates Y */
 	t0 = MPI_Wtime();
 	DEBUG_PRINT(("[%d]cgp_coord_write Y\n",comm_rank))
-	if (cgp_coord_write(fn,B,Z,RealDouble,"CoordinateY",&C))
+	if (cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateY",&C))
 	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Coord Y Write", t1-t0);
@@ -222,7 +222,7 @@ int main(int argc, char* argv[]) {
 	/* Time the creation of coordinates Z */
 	t0 = MPI_Wtime();
 	DEBUG_PRINT(("[%d]cgp_coord_write Z\n",comm_rank))
-	if (cgp_coord_write(fn,B,Z,RealDouble,"CoordinateZ",&C))
+	if (cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateZ",&C))
 	    cgp_error_exit();
 	t1 = MPI_Wtime();
 	doTimer("Coord Z Write", t1-t0);
