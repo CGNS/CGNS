@@ -50,15 +50,18 @@ set(cgnscompress_FILES
 set(cgnsversion_FILES
 	cgnsversion.c
 	getargs.c)
+set(cgnsreplace_FILES
+	cgnsreplace.c)
 
 # Build each tool
-add_executable( cgnsnames    ${cgnsnames_FILES}     )
+add_executable( cgnsnames    ${cgnsnames_FILES}   )
 add_executable( cgnscheck    ${cgnscheck_FILES}   )
 add_executable( cgnsconvert  ${cgnsconvert_FILES} )
 add_executable( cgnsdiff     ${cgnsdiff_FILES}    )
 add_executable( cgnslist     ${cgnslist_FILES}    )
-add_executable( cgnscompress ${cgnscompress_FILES} )
+add_executable( cgnscompress ${cgnscompress_FILES})
 add_executable( cgnsversion  ${cgnsversion_FILES} )
+add_executable( cgnsreplace  ${cgnsreplace_FILES} )
 
 install(TARGETS
 	cgnsnames
@@ -68,6 +71,7 @@ install(TARGETS
 	cgnslist
         cgnscompress
 	cgnsversion
+	cgnsreplace
 	RUNTIME DESTINATION bin)
 
 if (WIN32)

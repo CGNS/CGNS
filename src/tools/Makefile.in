@@ -15,6 +15,7 @@ ALL = \
 	cgnsversion$(EXE) \
 	cgnsconvert$(EXE) \
 	cgnscompress$(EXE) \
+	cgnsreplace$(EXE) \
 	cgnsdiff$(EXE) \
 	cgnsnames$(EXE)
 
@@ -54,6 +55,13 @@ cgnscompress$(EXE) : cgnscompress.$(O) $(CGNSLIB)
 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnscompress.$(O) $(LDLIBS) $(CLIBS)
 cgnscompress.$(O) : cgnscompress.c
 	$(CC) $(COPTS) -c cgnscompress.c
+
+#----------
+
+cgnsreplace$(EXE) : cgnsreplace.$(O) $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ cgnsreplace.$(O) $(LDLIBS) $(CLIBS)
+cgnsreplace.$(O) : cgnsreplace.c
+	$(CC) $(COPTS) -c cgnsreplace.c
 
 #----------
 

@@ -865,7 +865,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
         section[0][n].el_bound = edata[1];
         free(vdata);
 
-        if (el_type < 0 || el_type >= NofValidElementTypes) {
+        if (INVALID_ENUM(el_type,NofValidElementTypes)) {
             cgi_error("Invalid Element Type for Elements_t :'%s'",
                 section[0][n].name);
             return 1;
@@ -2081,10 +2081,10 @@ int cgi_read_hole(cgns_hole *hole)
 
      /* GridLocation */
     if (cgi_read_location(hole->id, hole->name, &hole->location)) return 1;
-    if (hole->location != CGNS_ENUMV( Vertex ) && hole->location != CGNS_ENUMV( CellCenter )) {
+    if (hole->location != CGNS_ENUMV( Vertex ) &&
+        hole->location != CGNS_ENUMV( CellCenter )) {
         cgi_error("Unsupported GridLocation %s for Overset Hole %s",
-            hole->location < 0 || hole->location >= NofValidGridLocation ?
-            "<invalid>" : GridLocationName[hole->location], hole->name);
+            cg_GridLocationName(hole->location), hole->name);
         return 1;
     }
 
@@ -2894,7 +2894,7 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
     }
 
      /* verify that the name matches the type intended */
-    if (ptset->type<0 || ptset->type>=NofValidPointSetTypes) {
+    if (INVALID_ENUM(ptset->type,NofValidPointSetTypes)) {
         cgi_error("Invalid point set type: '%s'",ptset->name);
         return 1;
     }
