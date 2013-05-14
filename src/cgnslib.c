@@ -1430,7 +1430,7 @@ int cg_family_name_write(int file_number, int B, int F,
             break;
         }
     }
- 
+
     if (index == fam->nfamname) {
         if (0 == fam->nfamname)
             fam->famname = CGNS_NEW(cgns_famname, 1);
@@ -1694,7 +1694,7 @@ int cg_part_write(int file_number, int B, int F, int G, const char * part_name,
 
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
-    
+
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
 
      /* get memory address for geo */
@@ -8177,6 +8177,9 @@ int cg_nmultifam(int *nfams)
     } else if (strcmp(posit->label,"ZoneSubRegion_t")==0) {
         cgns_subreg *subreg = (cgns_subreg *)posit->posit;
         (*nfams) = subreg->nfamname;
+    } else if (strcmp(posit->label,"UserDefinedData_t")==0) {
+        cgns_user_data *user_data = (cgns_user_data *)posit->posit;
+        (*nfams) = user_data->nfamname;
     } else {
         cgi_error("AdditionalFamilyName_t node not supported under '%s' type node",posit->label);
         (*nfams) = 0;
@@ -10487,21 +10490,12 @@ int cg_user_data_write(const char * UserDataName)
     user_data = cgi_user_data_address(CG_MODE_WRITE, 0, UserDataName, &ier);
     if (user_data==0) return ier;
 
+    memset(user_data, 0, sizeof(cgns_user_data));
     strcpy(user_data->name, UserDataName);
 
      /* initialize other fields */
-    user_data->id=0;
-    user_data->link=0;
-    user_data->ndescr=0;
-    user_data->narrays=0;
     user_data->data_class=CGNS_ENUMV( DataClassNull );
-    user_data->units=0;
     user_data->location = CGNS_ENUMV( Vertex );
-    user_data->family_name[0] = '\0';
-    user_data->ordinal = 0;
-    user_data->ptset = 0;
-    user_data->nuser_data = 0;
-    user_data->user_data = 0;
 
      /* save data in file */
     if (cgi_posit_id(&posit_id)) return CG_ERROR;
@@ -11165,6 +11159,8 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
         else if (strcmp(node_label,"Descriptor_t")==0)
             CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"AdditionalFamilyName_t")==0)
+            CGNS_DELETE_SHIFT(nfamname, famname, cgi_free_famname)
         else if (strcmp(node_name,"ZoneBC")==0)
             CGNS_DELETE_CHILD(zboco, cgi_free_zboco)
         else if (strcmp(node_name,"Ordinal")==0)
@@ -11188,6 +11184,42 @@ int cg_delete_node(const char *node_name)
         else if (strcmp(node_name,"RotatingCoordinates")==0)
             CGNS_DELETE_CHILD(rotating, cgi_free_rotating)
      /* ZoneType can not be deleted */
+
+/* Children of ZoneSubRegion_t */
+    } else if (strcmp(posit->label,"ZoneSubRegion_t")==0) {
+        cgns_subreg *parent = (cgns_subreg *)posit->posit;
+        if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_label,"AdditionalFamilyName_t")==0)
+            CGNS_DELETE_SHIFT(nfamname, famname, cgi_free_famname)
+        else if (strcmp(node_name,"BCRegionName")==0)
+            CGNS_DELETE_CHILD(bcname, cgi_free_descr)
+        else if (strcmp(node_name,"GridConnectivityRegionName")==0)
+            CGNS_DELETE_CHILD(gcname, cgi_free_descr)
+        else if (strcmp(node_name,"PointList")==0 ||
+                 strcmp(node_name,"PointRange")==0)
+            CGNS_DELETE_CHILD(ptset, cgi_free_ptset)
+        else if (strcmp(node_name,"DataClass")==0)
+	  parent->data_class = CGNS_ENUMV( DataClassNull );
+        else if (strcmp(node_name,"FamilyName")==0)
+            parent->family_name[0]='\0';
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(node_name,"GridLocation")==0)
+	  parent->location=CGNS_ENUMV( GridLocationNull );
+        else if (strcmp(node_name,"Rind")==0) {
+            if (posit_base && posit_zone) {
+                index_dim = cg->base[posit_base-1].zone[posit_zone-1].index_dim;
+            } else {
+                cgi_error("Can't find IndexDimension in cg_delete");
+                return CG_NO_INDEX_DIM;
+            }
+            for (n=0; n<2*index_dim; n++) parent->rind_planes[n] = 0;
+        }
 
 /* Children of GridCoordinates_t */
     } else if (strcmp(posit->label,"GridCoordinates_t")==0) {
@@ -11338,6 +11370,8 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
         else if (strcmp(node_label,"UserDefinedData_t")==0)
             CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"AdditionalFamilyName_t")==0)
+            CGNS_DELETE_SHIFT(nfamname, famname, cgi_free_famname)
         else if (strcmp(node_label,"BCDataSet_t")==0) {
  #if 0
             CGNS_DELETE_SHIFT(ndataset, dataset, cgi_free_dataset)
@@ -11582,6 +11616,8 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(ngeos, geo, cgi_free_geo)
         else if (strcmp(node_label,"FamilyBC_t")==0)
             CGNS_DELETE_SHIFT(nfambc, fambc, cgi_free_fambc)
+        else if (strcmp(node_label,"FamilyName_t")==0)
+            CGNS_DELETE_SHIFT(nfamname, famname, cgi_free_famname)
         else if (strcmp(node_name,"Ordinal")==0)
             parent->ordinal=0;
 	else if (strcmp(node_name,"RotatingCoordinates")==0)
@@ -11696,6 +11732,8 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
         else if (strcmp(node_label,"DataArray_t")==0)
             CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_label,"AdditionalFamilyName_t")==0)
+            CGNS_DELETE_SHIFT(nfamname, famname, cgi_free_famname)
         else if (strcmp(node_name,"DataClass")==0)
 	  parent->data_class = CGNS_ENUMV( DataClassNull );
         else if (strcmp(node_name,"DimensionalUnits")==0)

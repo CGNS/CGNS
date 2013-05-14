@@ -125,8 +125,23 @@ int main (int argc, char *argv[])
             error_exit("subregion multifam write");
     }
 
+    if (cg_goto(cgfile, cgbase, "Zone", 0, NULL))
+        error_exit("go to zone");
+    if (cg_user_data_write("UserData"))
+        error_exit("user data write");
+    if (cg_goto(cgfile, cgbase, "Zone", 0, "UserData", 0, NULL))
+        error_exit("go to user data");
+    if (cg_famname_write("TopFamily4"))
+        error_exit("user data family write");
+    for (j = 1; j <= 3; j++) {
+        sprintf(name, "UserDataFamily%d", j);
+        sprintf(family, "Family%d", j);
+        if (cg_multifam_write(name, family))
+            error_exit("user data multifam write");
+    }
+
     if (cg_close(cgfile)) error_exit("cg_close");
-    if (cg_open(outfile, CG_MODE_READ, &cgfile)) error_exit("cg_open");
+    if (cg_open(outfile, CG_MODE_MODIFY, &cgfile)) error_exit("cg_open");
 
     cgbase = cgzone = 1;
     if (cg_nfamilies(cgfile, cgbase, &nfam))
@@ -150,6 +165,13 @@ int main (int argc, char *argv[])
             CHECK("node name", 0 == strcmp(name, tname));
             CHECK("family name", 0 == strcmp(family, tfamily));
         }
+        if (cg_goto(cgfile, cgbase, "Family_t", i, NULL))
+            error_exit("goto topfamily");
+        sprintf(tname, "SubFamily%d", i);
+        if (cg_delete_node(tname)) error_exit("delete SubFamily");
+        if (cg_nfamily_names(cgfile, cgbase, i, &nnames))
+            error_exit("number of family names after delete");
+        CHECK("number of family names after delete", nnames == 2);
     }
 
     if (cg_goto(cgfile, cgbase, "Zone", 0, NULL))
@@ -164,6 +186,10 @@ int main (int argc, char *argv[])
         CHECK("node name", 0 == strcmp(name, tname));
         CHECK("family name", 0 == strcmp(family, tfamily));
     }
+    if (cg_delete_node("ZoneFamily1"))
+        error_exit("delete ZoneFamily1");
+    if (cg_nmultifam(&nnames)) error_exit("zone nmultifam after delete");
+    CHECK("zone nmultifam after delete", nnames == 2);
 
     if (cg_goto(cgfile, cgbase, "Zone", 0, "ZoneBC", 0, "Inflow", 0, NULL))
         error_exit("go to BC");
@@ -177,6 +203,10 @@ int main (int argc, char *argv[])
         CHECK("node name", 0 == strcmp(name, tname));
         CHECK("family name", 0 == strcmp(family, tfamily));
     }
+    if (cg_delete_node("BCFamily1"))
+        error_exit("delete BCFamily1");
+    if (cg_nmultifam(&nnames)) error_exit("BC nmultifam after delete");
+    CHECK("BC nmultifam after delete", nnames == 2);
 
     if (cg_goto(cgfile, cgbase, "Zone", 0, "SubRegion", 0, NULL))
         error_exit("go to subregion");
@@ -190,6 +220,27 @@ int main (int argc, char *argv[])
         CHECK("node name", 0 == strcmp(name, tname));
         CHECK("family name", 0 == strcmp(family, tfamily));
     }
+    if (cg_delete_node("SubRegionFamily1"))
+        error_exit("delete SubRegionFamily1");
+    if (cg_nmultifam(&nnames)) error_exit("subreg nmultifam after delete");
+    CHECK("subreg nmultifam after delete", nnames == 2);
+
+    if (cg_goto(cgfile, cgbase, "Zone", 0, "UserData", 0, NULL))
+        error_exit("go to user data");
+    if (cg_nmultifam(&nnames)) error_exit("user data nmultifam");
+    CHECK("user data nmultifam", nnames == 3);
+    for (j = 1; j <= 3; j++) {
+        sprintf(tname, "UserDataFamily%d", j);
+        sprintf(tfamily, "Family%d", j);
+        if (cg_multifam_read(j, name, family))
+            error_exit("user data multifam read");
+        CHECK("node name", 0 == strcmp(name, tname));
+        CHECK("family name", 0 == strcmp(family, tfamily));
+    }
+    if (cg_delete_node("UserDataFamily1"))
+        error_exit("delete UserDataFamily1");
+    if (cg_nmultifam(&nnames)) error_exit("user data nmultifam after delete");
+    CHECK("user data nmultifam after delete", nnames == 2);
 
     if (cg_close(cgfile)) error_exit("cg_close");
     return 0;

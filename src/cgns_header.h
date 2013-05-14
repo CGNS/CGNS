@@ -255,6 +255,9 @@ typedef struct cgns_user_data_s /* UserDefinedData_t Node       */
     cgns_ptset *ptset;      /* PointList, PointRange                */
     int nuser_data;         /* number of user defined data nodes    */
     struct cgns_user_data_s *user_data; /* User defined data.   */
+    /* CPEX 0034 */
+    int nfamname;
+    cgns_famname *famname;
 } cgns_user_data;   /* V2.1 */
 
 typedef struct {            /* IntegralData_t Node          */
@@ -1248,6 +1251,7 @@ void cgi_free_base(cgns_base *base);
 void cgi_free_zone(cgns_zone *zone);
 void cgi_free_family(cgns_family *family);
 void cgi_free_fambc(cgns_fambc *fambc);
+void cgi_free_famname(cgns_famname *famname);
 void cgi_free_geo(cgns_geo *geo);
 void cgi_free_part(cgns_part *part);
 void cgi_free_zcoor(cgns_zcoor *zcoor);

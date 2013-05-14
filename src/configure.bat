@@ -2335,6 +2335,7 @@ echo 	elemtest$(EXE) \>> tests\Makefile
 echo 	test_exts$(EXE) \>> tests\Makefile
 echo 	test_partial$(EXE) \>> tests\Makefile
 echo 	test_goto$(EXE) \>> tests\Makefile
+echo 	test_multifam$(EXE) \>> tests\Makefile
 echo 	test_ver31$(EXE) \>> tests\Makefile
 echo 	write_array$(EXE) \>> tests\Makefile
 echo 	write_links$(EXE) \>> tests\Makefile
@@ -2373,6 +2374,7 @@ echo 	-@runtest.bat elemtest$(EXE)>> tests\Makefile
 echo 	-@runtest.bat test_exts$(EXE)>> tests\Makefile
 echo 	-@runtest.bat test_partial$(EXE)>> tests\Makefile
 echo 	-@runtest.bat test_goto$(EXE)>> tests\Makefile
+echo 	-@runtest.bat test_multifam$(EXE)>> tests\Makefile
 echo 	-@runtest.bat test_ver31$(EXE)>> tests\Makefile
 echo 	-@runtest.bat write_array$(EXE)>> tests\Makefile
 echo 	-@runtest.bat write_links$(EXE)>> tests\Makefile
@@ -2421,6 +2423,11 @@ echo #---------->> tests\Makefile
 echo.>> tests\Makefile
 echo test_goto$(EXE) : test_goto.c $(CGNSLIB)>> tests\Makefile
 echo 	$(CC) $(COPTS) $(CEOUT)$@ test_goto.c $(LDLIBS) $(CLIBS)>> tests\Makefile
+echo.>> tests\Makefile
+echo #---------->> tests\Makefile
+echo.>> tests\Makefile
+echo test_multifam$(EXE) : test_multifam.c $(CGNSLIB)>> tests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ test_multifam.c $(LDLIBS) $(CLIBS)>> tests\Makefile
 echo.>> tests\Makefile
 echo #---------->> tests\Makefile
 echo.>> tests\Makefile

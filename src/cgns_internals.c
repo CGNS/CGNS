@@ -4923,22 +4923,39 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
             &user_data[0][n].location)) return 1;
 
      /* FamilyName_t */
-        if (cgi_read_family_name(linked, user_data[0][n].id, 
-                                 user_data[0][n].name, 
+        if (cgi_read_family_name(linked, user_data[0][n].id,
+                                 user_data[0][n].name,
                                  user_data[0][n].family_name))
             return 1;
-        
+
+     /* CPEX 0034 - AdditionalFamilyNames */
+        if (cgi_get_nodes(user_data[0][n].id, "AdditionalFamilyName_t",
+            &user_data[0][n].nfamname, &idi)) return 1;
+        if (user_data[0][n].nfamname > 0) {
+            char *fam;
+            user_data[0][n].famname = CGNS_NEW(cgns_famname,
+                                               user_data[0][n].nfamname);
+            for (i = 0; i < user_data[0][n].nfamname; i++) {
+                user_data[0][n].famname[i].id = idi[i];
+                if (cgi_read_string(idi[i], user_data[0][n].famname[i].name,
+                        &fam)) return 1;
+                strncpy(user_data[0][n].famname[i].family, fam, 32);
+                free(fam);
+            }
+            free(idi);
+        }
+
      /* Ordinal_t */
         if (cgi_read_ordinal(user_data[0][n].id, &user_data[0][n].ordinal))
             return 1;
 
      /* PointSet */
-        /* get number of IndexArray_t and IndexRange_t nodes and their 
+        /* get number of IndexArray_t and IndexRange_t nodes and their
          * ID
          */
-        if (cgi_get_nodes(user_data[0][n].id, "IndexArray_t", &nIA_t, 
+        if (cgi_get_nodes(user_data[0][n].id, "IndexArray_t", &nIA_t,
                           &IA_id)) return 1;
-        if (cgi_get_nodes(user_data[0][n].id, "IndexRange_t", &nIR_t, 
+        if (cgi_get_nodes(user_data[0][n].id, "IndexRange_t", &nIR_t,
                           &IR_id)) return 1;
 
         /* initialized */
@@ -4966,7 +4983,7 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
             user_data[0][n].ptset->id=IR_id[nn];
             user_data[0][n].ptset->link=cgi_read_link(IR_id[nn]);
             user_data[0][n].ptset->in_link=linked;
-            if (cgi_read_ptset(user_data[0][n].id, user_data[0][n].ptset)) 
+            if (cgi_read_ptset(user_data[0][n].id, user_data[0][n].ptset))
                 return 1;
         }
         if (nIR_t) free(IR_id);
@@ -5152,9 +5169,9 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
 
         /* PointSet */
         /* get number of IndexArray_t and IndexRange_t nodes and their ID */
-        if (cgi_get_nodes(reg[n].id, "IndexArray_t", &nIA_t, 
+        if (cgi_get_nodes(reg[n].id, "IndexArray_t", &nIA_t,
                           &IA_id)) return 1;
-        if (cgi_get_nodes(reg[n].id, "IndexRange_t", &nIR_t, 
+        if (cgi_get_nodes(reg[n].id, "IndexRange_t", &nIR_t,
                           &IR_id)) return 1;
 
         /* initialized */
@@ -7553,6 +7570,14 @@ int cgi_write_user_data(double parent_id, cgns_user_data *user_data)
                          &dummy_id, "C1", 1, &dim_vals,
                          (void *)user_data->family_name))
             return 1;
+    }
+
+    /* CPEX 0034 */
+    for (n = 0; n < user_data->nfamname; n++) {
+        dim_vals = (cgsize_t)strlen(user_data->famname[n].family);
+        if (cgi_new_node(user_data->id, user_data->famname[n].name,
+            "AdditionalFamilyName_t", &dummy_id, "C1", 1, &dim_vals,
+            (void *)user_data->famname[n].family)) return 1;
     }
 
     /* Ordinal_t */
@@ -10650,7 +10675,7 @@ char *cgi_famname_address(int local_mode, int *ier)
     }
 
 /* Possible parents of FamilyName_t node:
- *  Zone_t, BC_t, UserDefinedData_t
+ *  Zone_t, BC_t, ZoneSubRegion_t, UserDefinedData_t
  */
     if (strcmp(posit->label,"Zone_t")==0) {
         cgns_zone *zone = (cgns_zone *)posit->posit;
@@ -10707,6 +10732,8 @@ cgns_famname *cgi_multfam_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_boco, nfamname, famname, cgns_famname)
     else if (0 == strcmp(posit->label, "ZoneSubRegion_t"))
         ADDRESS4MULTIPLE(cgns_subreg, nfamname, famname, cgns_famname)
+    else if (0 == strcmp(posit->label, "UserDefinedData_t"))
+        ADDRESS4MULTIPLE(cgns_user_data, nfamname, famname, cgns_famname)
     else {
         cgi_error("AdditionalFamilyName_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
@@ -12319,6 +12346,8 @@ void cgi_free_zone(cgns_zone *zone)
         free(zone->subreg);
     }
     if (zone->nfamname) {
+        for (n = 0; n < zone->nfamname; n++)
+            cgi_free_famname(&zone->famname[n]);
         free(zone->famname);
     }
 }
@@ -12388,6 +12417,8 @@ void cgi_free_family(cgns_family *family)
         free(family->rotating);
     }
     if (family->nfamname) {
+        for (n = 0; n < family->nfamname; n++)
+            cgi_free_famname(&family->famname[n]);
         free(family->famname);
     }
 }
@@ -12401,6 +12432,13 @@ void cgi_free_fambc(cgns_fambc *fambc)
             cgi_free_dataset(&fambc->dataset[n]);
         free(fambc->dataset);
     }
+}
+
+/* currently here only to support delete */
+void cgi_free_famname(cgns_famname *famname)
+{
+    famname->name[0] = 0;
+    famname->family[0] = 0;
 }
 
 void cgi_free_geo(cgns_geo *geo)
@@ -12661,6 +12699,8 @@ void cgi_free_boco(cgns_boco *boco)
         free(boco->bprop);
     }
     if (boco->nfamname) {
+        for (n = 0; n < boco->nfamname; n++)
+            cgi_free_famname(&boco->famname[n]);
         free(boco->famname);
     }
 }
@@ -13328,6 +13368,11 @@ void cgi_free_user_data(cgns_user_data *user_data)
             cgi_free_user_data(&user_data->user_data[n]);
         free(user_data->user_data);
     }
+    if (user_data->nfamname) {
+        for (n = 0; n < user_data->nfamname; n++)
+            cgi_free_famname(&user_data->famname[n]);
+        free(user_data->famname);
+    }
 }
 
 void cgi_free_subreg(cgns_subreg *subreg)
@@ -13361,6 +13406,8 @@ void cgi_free_subreg(cgns_subreg *subreg)
         free(subreg->user_data);
     }
     if (subreg->nfamname) {
+        for (n = 0; n < subreg->nfamname; n++)
+            cgi_free_famname(&subreg->famname[n]);
         free(subreg->famname);
     }
 }

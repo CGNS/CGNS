@@ -52,7 +52,7 @@ array set CGNSnodes {
   FamilyPointers               {1 DataArray_t C1 32 0}
   FlowEquationSet              {1 FlowEquationSet_t MT {} 0}
   FlowSolution                 {0 FlowSolution_t MT {} 1}
-  FlowSolutionsPointers        {1 DataArray_t C1 32 0}
+  FlowSolutionPointers         {1 DataArray_t C1 32 0}
   GasModel                     {1 GasModel_t C1 {} 0}
   GeometryEntity               {0 GeometryEntity_t MT {} 1}
   GeometryFile                 {1 GeometryFile_t C1 {} 0}
@@ -228,7 +228,7 @@ array set CGNSnodeChildren {
   ZoneGridConnectivity_t {Descriptor GridConnectivity \
       GridConnectivity1to1 OversetHoles UserDefinedData}
   ZoneIterativeData_t {ArbitraryGridMotionPointers DataArray DataClass \
-      Descriptor DimensionalUnits FlowSolutionsPointers \
+      Descriptor DimensionalUnits FlowSolutionPointers \
       GridCoordinatesPointers RigidGridMotionPointers UserDefinedData}
   ZoneSubRegion_t {BCRegionName DataArray DataClass DimensionalUnits \
       Descriptor FamilyName GridConnectivityRegionName GridLocation \
@@ -477,7 +477,7 @@ Constant or Frozen}}
       {32,MaxNumberOfZones,NumberOfSteps} {pointers to Family_t nodes}}
   FlowEquationSet_t {FlowEquationSet FlowEquationSet_t {0,1} MT {} {} {}}
   FlowSolution_t {{user defined} FlowSolution_t {0,N} MT {} {} {}}
-  FlowSolutionsPointers {FlowSolutionsPointers DataArray_t {0,1} C1 2 \
+  FlowSolutionPointers {FlowSolutionPointers DataArray_t {0,1} C1 2 \
       {32,NumberOfSteps} {pointers to FlowSolution_t nodes}}
   GasModel_t {GasModel GasModel_t {0,1} C1 1 {length of string} \
       {one of: Null, UserDefined, Ideal, VanderWaals, CaloricallyPerfect,\
@@ -568,9 +568,9 @@ Constant or Frozen}}
   PointListDonor {PointListDonor IndexArray_t {0,1} I4 2 \
       {IndexDimension of donor,ListLength} \
       {list of indices for vertices or cells on adjoining patch}}
-  PointRange {PointRange IndexRange_t 1 I4 2 {IndexDimension,2} \
+  PointRange {PointRange IndexRange_t {0,1} I4 2 {IndexDimension,2} \
       {begin[IndexDimension], end[IndexDimension]}}
-  PointRangeDonor {PointRangeDonor IndexRange_t 1 I4 2 \
+  PointRangeDonor {PointRangeDonor IndexRange_t {0,1} I4 2 \
       {IndexDimension of donor,2} \
       {begin[IndexDimension], end[IndexDimension] for adjoining patch}}
   ReferenceState_t {ReferenceState ReferenceState_t {0,1} MT {} {} {}}
@@ -729,7 +729,7 @@ array set CGNSnodeRef {
   FamilyPointers {{} {physical dataarray}}
   FlowEquationSet_t {{floweqn FlowEquationSet} {equation flowequationset}}
   FlowSolution_t {{gridflow FlowSolution} {solution flowsolution}}
-  FlowSolutionsPointers {}
+  FlowSolutionPointers {}
   GasModel_t {{floweqn GasModel} {equation auxiliary}}
   GeometryEntity_t {{} {families geometry}}
   GeometryFile_t {}
@@ -874,7 +874,7 @@ proc cgns_init {{version ""}} {
       ZoneGridConnectivity_t {Descriptor GridConnectivity \
         GridConnectivity1to1 OversetHoles}
       ZoneIterativeData_t {ArbitraryGridMotionPointers DataArray DataClass \
-        Descriptor DimensionalUnits FlowSolutionsPointers \
+        Descriptor DimensionalUnits FlowSolutionPointers \
         GridCoordinatesPointers RigidGridMotionPointers}
     }
   } else {
@@ -933,7 +933,7 @@ proc cgns_init {{version ""}} {
       ZoneGridConnectivity_t {Descriptor GridConnectivity \
         GridConnectivity1to1 OversetHoles UserDefinedData}
       ZoneIterativeData_t {ArbitraryGridMotionPointers DataArray DataClass \
-        Descriptor DimensionalUnits FlowSolutionsPointers \
+        Descriptor DimensionalUnits FlowSolutionPointers \
         GridCoordinatesPointers RigidGridMotionPointers UserDefinedData}
     }
   }
@@ -1072,7 +1072,7 @@ proc cgns_init {{version ""}} {
         GridLocation PointList PointRange Rind SolutionData \
         UserDefinedData}
       ZoneIterativeData_t {ArbitraryGridMotionPointers DataArray DataClass \
-        Descriptor DimensionalUnits FlowSolutionsPointers \
+        Descriptor DimensionalUnits FlowSolutionPointers \
         GridCoordinatesPointers RigidGridMotionPointers \
         ZoneGridConnectivityPointers ZoneSubRegionPointers UserDefinedData}
     }
@@ -1098,6 +1098,9 @@ element types are:
           ReferenceState UserDefinedData}
         Family_t {Descriptor FamilyBC FamilyNameReference GeometryReference \
           Ordinal RotatingCoordinates UserDefinedData}
+        UserDefinedData_t {AdditionalFamilyName DataArray DataClass Descriptor \
+          DimensionalUnits FamilyName GridLocation Ordinal PointList \
+          PointRange UserDefinedData}
         Zone_t {AdditionalFamilyName ArbitraryGridMotion DataClass Descriptor \
           DiscreteData DimensionalUnits Elements FamilyName FlowEquationSet \
           FlowSolution GridCoordinates IntegralData Ordinal ReferenceState \
