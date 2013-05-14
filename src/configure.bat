@@ -2008,6 +2008,7 @@ echo 	cgnsversion$(EXE) \>> tools\Makefile
 echo 	cgnsconvert$(EXE) \>> tools\Makefile
 echo 	cgnscompress$(EXE) \>> tools\Makefile
 echo 	cgnsdiff$(EXE) \>> tools\Makefile
+echo 	cgnsreplace$(EXE) \>> tools\Makefile
 echo 	cgnsnames$(EXE)>> tools\Makefile
 echo.>> tools\Makefile
 echo all : $(ALL)>> tools\Makefile
@@ -2056,6 +2057,13 @@ echo 	$(CC) $(COPTS) /c cgnsdiff.c>> tools\Makefile
 echo.>> tools\Makefile
 echo #---------->> tools\Makefile
 echo.>> tools\Makefile
+echo cgnsreplace$(EXE) : cgnsreplace.$(O) $(CGNSLIB)>> tools\Makefile
+echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsreplace.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
+echo cgnsreplace.$(O) : cgnsreplace.c>> tools\Makefile
+echo 	$(CC) $(COPTS) /c cgnsreplace.c>> tools\Makefile
+echo.>> tools\Makefile
+echo #---------->> tools\Makefile
+echo.>> tools\Makefile
 echo cgnsnames$(EXE) : cgnsnames.$(O) cgnames.$(O) $(CGNSLIB)>> tools\Makefile
 echo 	$(CC) $(CFLAGS) $(CEOUT)$@ cgnsnames.$(O) cgnames.$(O) $(LDLIBS) $(CLIBS)>> tools\Makefile
 echo cgnsnames.$(O) : cgnsnames.c cgnames.h>> tools\Makefile
@@ -2079,6 +2087,7 @@ echo 	$(INSTALL_PROG) cgnsversion$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsconvert$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnscompress$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsdiff$(EXE) $(BINDIR)>> tools\Makefile
+echo 	$(INSTALL_PROG) cgnsreplace$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) cgnsnames$(EXE) $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) adf2hdf.bat $(BINDIR)>> tools\Makefile
 echo 	$(INSTALL_PROG) hdf2adf.bat $(BINDIR)>> tools\Makefile

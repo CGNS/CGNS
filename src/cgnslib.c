@@ -10931,6 +10931,40 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_CHILD(rotating, cgi_free_rotating)
      /* ZoneType can not be deleted */
 
+/* Children of ZoneSubRegion_t */
+    } else if (strcmp(posit->label,"ZoneSubRegion_t")==0) {
+        cgns_subreg *parent = (cgns_subreg *)posit->posit;
+        if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"BCRegionName")==0)
+            CGNS_DELETE_CHILD(bcname, cgi_free_descr)
+        else if (strcmp(node_name,"GridConnectivityRegionName")==0)
+            CGNS_DELETE_CHILD(gcname, cgi_free_descr)
+        else if (strcmp(node_name,"PointList")==0 ||
+                 strcmp(node_name,"PointRange")==0)
+            CGNS_DELETE_CHILD(ptset, cgi_free_ptset)
+        else if (strcmp(node_name,"DataClass")==0)
+	  parent->data_class = CGNS_ENUMV( DataClassNull );
+        else if (strcmp(node_name,"FamilyName")==0)
+            parent->family_name[0]='\0';
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+        else if (strcmp(node_name,"GridLocation")==0)
+	  parent->location=CGNS_ENUMV( GridLocationNull );
+        else if (strcmp(node_name,"Rind")==0) {
+            if (posit_base && posit_zone) {
+                index_dim = cg->base[posit_base-1].zone[posit_zone-1].index_dim;
+            } else {
+                cgi_error("Can't find IndexDimension in cg_delete");
+                return CG_NO_INDEX_DIM;
+            }
+            for (n=0; n<2*index_dim; n++) parent->rind_planes[n] = 0;
+        }
+
 /* Children of GridCoordinates_t */
     } else if (strcmp(posit->label,"GridCoordinates_t")==0) {
         cgns_zcoor *parent = (cgns_zcoor *)posit->posit;

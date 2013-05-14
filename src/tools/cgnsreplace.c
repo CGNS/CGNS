@@ -77,7 +77,7 @@ static const char *fixed_names[] = {
     "CoordinateNames",
     "ElementConnectivity",
     "FamilyPointers",
-    "FlowSolutionsPointers",
+    "FlowSolutionPointers",
     "GravityVector",
     "GridCoordinatesPointers",
     "InterpolantsDonor",
