@@ -11033,6 +11033,12 @@ int cg_delete_node(const char *node_name)
         (strcmp(posit->label,"Zone_t")==0 &&
          strcmp(node_label,"ZoneType_t")==0 ) ||
 
+        (strcmp(posit->label,"ZoneSubRegion_t")==0 &&
+         (strcmp(node_name,"BCRegionName")==0 ||
+          strcmp(node_name,"GridConnectivityRegionName")==0 ||
+          strcmp(node_name,"PointList")==0 ||
+          strcmp(node_name,"PointRange")==0) ) ||
+
         (strcmp(posit->label,"GridConnectivity1to1_t")==0 &&
          (strcmp(node_name,"PointRange")==0 ||
           strcmp(node_name,"PointRangeDonor")==0) ) ||
@@ -11116,7 +11122,7 @@ int cg_delete_node(const char *node_name)
 
      /* Case 2: node_label = can only occur once under parent: */
         else if (strcmp(node_name,"SimulationType")==0) {
-	  parent->type = CGNS_ENUMV( SimulationTypeNull );
+	    parent->type = CGNS_ENUMV( SimulationTypeNull );
             parent->type_id = 0;
         }
         else if (strcmp(node_label,"BaseIterativeData_t")==0)
@@ -11161,12 +11167,14 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
         else if (strcmp(node_label,"AdditionalFamilyName_t")==0)
             CGNS_DELETE_SHIFT(nfamname, famname, cgi_free_famname)
+        else if (strcmp(node_label,"ZoneGridConnectivity_t")==0)
+            CGNS_DELETE_SHIFT(nzconn, zconn, cgi_free_zconn)
+        else if (strcmp(node_label,"ZoneSubRegion_t")==0)
+            CGNS_DELETE_SHIFT(nsubreg, subreg, cgi_free_subreg)
         else if (strcmp(node_name,"ZoneBC")==0)
             CGNS_DELETE_CHILD(zboco, cgi_free_zboco)
         else if (strcmp(node_name,"Ordinal")==0)
             parent->ordinal=0;
-        else if (strcmp(node_name,"ZoneGridConnectivity")==0)
-            CGNS_DELETE_CHILD(zconn, cgi_free_zconn)
         else if (strcmp(node_label,"ZoneIterativeData_t")==0)
             CGNS_DELETE_CHILD(ziter, cgi_free_ziter)
         else if (strcmp(node_name,"ReferenceState")==0)
@@ -11196,13 +11204,6 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
         else if (strcmp(node_label,"AdditionalFamilyName_t")==0)
             CGNS_DELETE_SHIFT(nfamname, famname, cgi_free_famname)
-        else if (strcmp(node_name,"BCRegionName")==0)
-            CGNS_DELETE_CHILD(bcname, cgi_free_descr)
-        else if (strcmp(node_name,"GridConnectivityRegionName")==0)
-            CGNS_DELETE_CHILD(gcname, cgi_free_descr)
-        else if (strcmp(node_name,"PointList")==0 ||
-                 strcmp(node_name,"PointRange")==0)
-            CGNS_DELETE_CHILD(ptset, cgi_free_ptset)
         else if (strcmp(node_name,"DataClass")==0)
 	  parent->data_class = CGNS_ENUMV( DataClassNull );
         else if (strcmp(node_name,"FamilyName")==0)
@@ -11267,6 +11268,9 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
         else if (strcmp(node_label,"DataArray_t")==0)
             CGNS_DELETE_SHIFT(nfields, field, cgi_free_array)
+        else if (strcmp(node_name,"PointList")==0 ||
+                 strcmp(node_name,"PointRange")==0)
+            CGNS_DELETE_CHILD(ptset, cgi_free_ptset)
         else if (strcmp(node_name,"DataClass")==0)
 	  parent->data_class = CGNS_ENUMV( DataClassNull );
         else if (strcmp(node_name,"DimensionalUnits")==0)
@@ -11425,6 +11429,9 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
         else if (strcmp(node_name,"DataClass")==0)
 	  parent->data_class = CGNS_ENUMV( DataClassNull );
+        else if (strcmp(node_name,"PointList")==0 ||
+                 strcmp(node_name,"PointRange")==0)
+            CGNS_DELETE_CHILD(ptset, cgi_free_ptset)
         else if (strcmp(node_name,"DimensionalUnits")==0)
             CGNS_DELETE_CHILD(units, cgi_free_units)
         else if (strcmp(node_name,"DirichletData")==0)
@@ -11460,6 +11467,9 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
         else if (strcmp(node_label,"DataArray_t")==0)
             CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+        else if (strcmp(node_name,"PointList")==0 ||
+                 strcmp(node_name,"PointRange")==0)
+            CGNS_DELETE_CHILD(ptset, cgi_free_ptset)
         else if (strcmp(node_name,"DataClass")==0)
 	  parent->data_class = CGNS_ENUMV( DataClassNull );
         else if (strcmp(node_name,"DimensionalUnits")==0)
@@ -11656,6 +11666,15 @@ int cg_delete_node(const char *node_name)
         else if (strcmp(node_name,"ParentData")==0)
             CGNS_DELETE_CHILD(parent, cgi_free_array)
 #endif
+        else if (strcmp(node_name,"Rind")==0) {
+            if (posit_base && posit_zone) {
+                index_dim = cg->base[posit_base-1].zone[posit_zone-1].index_dim;
+            } else {
+                cgi_error("Can't find IndexDimension in cg_delete");
+                return CG_NO_INDEX_DIM;
+            }
+            for (n=0; n<2*index_dim; n++) parent->rind_planes[n] = 0;
+        }
      /* ElementRange and ElementConnectivity can not be deleted */
 
 /* Children of RigidGridMotion_t */
@@ -11734,6 +11753,9 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
         else if (strcmp(node_label,"AdditionalFamilyName_t")==0)
             CGNS_DELETE_SHIFT(nfamname, famname, cgi_free_famname)
+        else if (strcmp(node_name,"PointList")==0 ||
+                 strcmp(node_name,"PointRange")==0)
+            CGNS_DELETE_CHILD(ptset, cgi_free_ptset)
         else if (strcmp(node_name,"DataClass")==0)
 	  parent->data_class = CGNS_ENUMV( DataClassNull );
         else if (strcmp(node_name,"DimensionalUnits")==0)
