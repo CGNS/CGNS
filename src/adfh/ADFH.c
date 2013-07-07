@@ -92,6 +92,10 @@ freely, subject to the following restrictions:
 
 static int CompressData = -1;
 
+#ifdef BUILD_PARALLEL
+static MPI_Comm ParallelMPICommunicator = MPI_COMM_WORLD;
+#endif
+
 #define TO_UPPER( c ) ((islower(c))?(toupper(c)):(c))
 
 /*
@@ -279,6 +283,7 @@ static struct _ErrorList {
   {ADFH_ERR_ROOTNULL,       "HDF5: Root descriptor is NULL"},
   {ADFH_ERR_NEED_TRANSPOSE, "dimensions need transposed - open in modify mode"},
   {ADFH_ERR_INVALID_OPTION, "invalid configuration option"},
+  {ADFH_ERR_INVALID_USER_DATA, "invalid configuration data passed in"},
 
   {ADFH_ERR_SENTINEL,       "<None>"}
 };
@@ -1428,6 +1433,16 @@ void ADFH_Configure(const int option, const void *value, int *err)
             CompressData = compress;
         set_error(NO_ERROR, err);
     }
+#ifdef BUILD_PARALLEL
+    else if (option == ADFH_CONFIG_MPI_COMM) {
+      if (!value) {
+        set_error(ADFH_ERR_INVALID_USER_DATA, err);
+      }
+      else {
+        ParallelMPICommunicator = (MPI_Comm)((size_t)value);
+      }
+    }
+#endif
     else {
         set_error(ADFH_ERR_INVALID_OPTION, err);
     }
@@ -2090,11 +2105,8 @@ void ADFH_Database_Open(const char   *name,
 #ifdef BUILD_PARALLEL
   /* Set the access property list to use MPI */
   if (0 == strcmp(fmt, "PARALLEL")) {
-      MPI_Comm comm = MPI_COMM_WORLD;
       MPI_Info info = MPI_INFO_NULL;
-
-/*      MPI_Info_create(&info);*/
-      H5Pset_fapl_mpio(g_propfileopen, comm, info);
+      H5Pset_fapl_mpio(g_propfileopen, ParallelMPICommunicator, info);
   }
 #endif
 

@@ -16,6 +16,7 @@
 
 int main(int argc, char *argv[])
 {
+    MPI_Comm comm = MPI_COMM_WORLD;
     int comm_size, comm_rank;
     int total_count, scale_factor = 10;
     int F, B, Z, E, S;
@@ -29,8 +30,8 @@ int main(int argc, char *argv[])
     static char *outmode[2] = {"direct", "queued"};
 
     MPI_Init(&argc,&argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+    MPI_Comm_size(comm, &comm_size);
+    MPI_Comm_rank(comm, &comm_rank);
     if (comm_size > 8) {
         if (comm_rank == 0)
             fprintf(stderr, "number of processes must be 8 or less\n");
@@ -77,6 +78,10 @@ int main(int argc, char *argv[])
         fflush(stdout);
 #endif
     }
+
+    /* the default here is to use MPI_COMM_WORLD,
+       but this allows assigning of any communicator */
+    cgp_mpi_comm(comm);
 
     DEBUG_PRINT(("[%d]cgp_open(write)\n",comm_rank))
     if (cgp_open("ctest.cgns", CG_MODE_WRITE, &F))
@@ -127,7 +132,7 @@ int main(int argc, char *argv[])
 
             DEBUG_PRINT(("[%d]cgp_queue_set(%s)\n",comm_rank,outmode[nz]))
             if (cgp_queue_set(nz)) cgp_error_exit();
-            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Barrier(comm);
             ts = MPI_Wtime();
 
             DEBUG_PRINT(("[%d]cgp_coord_write_data\n",comm_rank))
@@ -156,7 +161,7 @@ int main(int argc, char *argv[])
                 DEBUG_PRINT(("[%d]cgp_queue_flush\n",comm_rank))
                 if (cgp_queue_flush()) cgp_error_exit();
             }
-            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Barrier(comm);
             tt = MPI_Wtime() - ts;
             if (comm_rank == 0) {
                 printf("write: %lf secs, %lf Mb/sec (%s,%s)\n",
@@ -181,7 +186,7 @@ int main(int argc, char *argv[])
         if (cgp_pio_mode((CGNS_ENUMT(PIOmode_t))nb))
             cgp_error_exit();
 
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(comm);
         ts = MPI_Wtime();
 
         DEBUG_PRINT(("[%d]cgp_coord_read_data\n",comm_rank))
@@ -190,7 +195,7 @@ int main(int argc, char *argv[])
             cgp_coord_read_data(F,B,Z,3,&start,&end,z) ||
             cgp_elements_read_data(F,B,Z,E,start,end,e)) cgp_error_exit();
 
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(comm);
         tt = MPI_Wtime() - ts;
 
         errs = 0;
@@ -203,7 +208,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(comm);
         ts = MPI_Wtime();
 
         DEBUG_PRINT(("[%d]cgp_field_read_data\n",comm_rank))
@@ -211,7 +216,7 @@ int main(int argc, char *argv[])
             cgp_field_read_data(F,B,Z,S,2,&start,&end,y) ||
             cgp_field_read_data(F,B,Z,S,3,&start,&end,z)) cgp_error_exit();
 
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(comm);
         tt += (MPI_Wtime() - ts);
 
         for (n = 0; n < n_per_proc; n++) {
@@ -220,7 +225,7 @@ int main(int argc, char *argv[])
             if (z[n] != (double)(n + 1)) errs++;
         }
 
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(comm);
         ts = MPI_Wtime();
 
         DEBUG_PRINT(("[%d]cg_goto(UserDefinedData_t)\n",comm_rank))
@@ -231,7 +236,7 @@ int main(int argc, char *argv[])
             cgp_array_read_data(2,&start,&end,y) ||
             cgp_array_read_data(3,&start,&end,z)) cgp_error_exit();
 
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(comm);
         tt += (MPI_Wtime() - ts);
 
         for (n = 0; n < n_per_proc; n++) {

@@ -10,7 +10,7 @@ else (CGNS_USE_SHARED)
   link_libraries(cgns_static)
 endif (CGNS_USE_SHARED)
 
-if (ENABLE_HDF5 AND HDF5_LIBRARY)
+if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
   link_libraries(${HDF5_LIBRARY})
   if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
     link_libraries(${ZLIB_LIBRARY})
@@ -21,7 +21,7 @@ if (ENABLE_HDF5 AND HDF5_LIBRARY)
   if(HDF5_NEED_MPI AND MPI_LIBS)
     link_libraries(${MPI_LIBS})
   endif(HDF5_NEED_MPI AND MPI_LIBS)
-endif (ENABLE_HDF5 AND HDF5_LIBRARY)
+endif (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
 
 if (NOT WIN32)
   link_libraries(m)
@@ -75,21 +75,21 @@ if (WIN32)
         ${CMAKE_BINARY_DIR}/src/cgnsdll.dll
 	DESTINATION bin)
   endif (CGNS_USE_SHARED)
-  if (ENABLE_HDF5)
+  if (CGNS_ENABLE_HDF5)
     install(PROGRAMS
         adf2hdf.bat
         hdf2adf.bat
 	DESTINATION bin)
-  endif (ENABLE_HDF5)
+  endif (CGNS_ENABLE_HDF5)
 else (WIN32)
   install(PROGRAMS
         cgnsupdate
 	DESTINATION bin)
-  if (ENABLE_HDF5)
+  if (CGNS_ENABLE_HDF5)
     install(PROGRAMS
         adf2hdf
         hdf2adf
 	DESTINATION bin)
-  endif (ENABLE_HDF5)
+  endif (CGNS_ENABLE_HDF5)
 endif (WIN32)
 

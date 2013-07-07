@@ -45,33 +45,33 @@ CHECK_TYPE_SIZE(long SIZE_OF_LONG)
 CHECK_TYPE_SIZE(off_t SIZE_OF_OFF_T)
 
 if ("${SIZE_OF_OFF_T}" LESS 8)
-  option(ENABLE_LFS "Enable or disable large file support" "OFF")
+  option(CGNS_ENABLE_LFS "Enable or disable large file support" "OFF")
 endif ("${SIZE_OF_OFF_T}" LESS 8)
 
 if ("${CMAKE_SIZEOF_VOID_P}" GREATER 4)
-  option(ENABLE_64BIT "Enable or disable 64-bit code building" "OFF")
+  option(CGNS_ENABLE_64BIT "Enable or disable 64-bit code building" "OFF")
 else ("${CMAKE_SIZEOF_VOID_P}" GREATER 4)
-  set(ENABLE_64BIT "OFF")
+  set(CGNS_ENABLE_64BIT "OFF")
 endif ("${CMAKE_SIZEOF_VOID_P}" GREATER 4)
 
-option(ENABLE_LEGACY "Enable or disable building legacy code (3.0 compatible)" "OFF")
-option(ENABLE_SCOPING "Enable or disable scoping of enumeration values" "OFF")
+option(CGNS_ENABLE_LEGACY "Enable or disable building legacy code (3.0 compatible)" "OFF")
+option(CGNS_ENABLE_SCOPING "Enable or disable scoping of enumeration values" "OFF")
 
-if (ENABLE_LEGACY)
-  set(ENABLE_64BIT "OFF")
-  mark_as_advanced(FORCE ENABLE_64BIT)
-else (ENABLE_LEGACY)
-  mark_as_advanced(CLEAR ENABLE_64BIT)
-endif (ENABLE_LEGACY)
+if (CGNS_ENABLE_LEGACY)
+  set(CGNS_ENABLE_64BIT "OFF")
+  mark_as_advanced(FORCE CGNS_ENABLE_64BIT)
+else (CGNS_ENABLE_LEGACY)
+  mark_as_advanced(CLEAR CGNS_ENABLE_64BIT)
+endif (CGNS_ENABLE_LEGACY)
 
-if (ENABLE_64BIT)
-  set(ENABLE_LEGACY "OFF")
-  mark_as_advanced(FORCE ENABLE_LEGACY)
-else (ENABLE_64BIT)
-  mark_as_advanced(CLEAR ENABLE_LEGACY)
-endif (ENABLE_64BIT)
+if (CGNS_ENABLE_64BIT)
+  set(CGNS_ENABLE_LEGACY "OFF")
+  mark_as_advanced(FORCE CGNS_ENABLE_LEGACY)
+else (CGNS_ENABLE_64BIT)
+  mark_as_advanced(CLEAR CGNS_ENABLE_LEGACY)
+endif (CGNS_ENABLE_64BIT)
 
-if (ENABLE_LFS)
+if (CGNS_ENABLE_LFS)
   if (WIN32)
     add_definitions(-DHAVE_LSEEK64 -DHAVE_LSEEK64)
   else (WIN32)
@@ -85,21 +85,21 @@ if (ENABLE_LFS)
       add_definitions(-DHAVE_LSEEK64)
     endif (HAVE_LSEEK64)
   endif (WIN32)
-else (ENABLE_LFS)
+else (CGNS_ENABLE_LFS)
   remove_definitions(-DHAVE_OPEN64 -DHAVE_LSEEK64)
-endif (ENABLE_LFS)
+endif (CGNS_ENABLE_LFS)
 
-option(ENABLE_TESTS "Enable test programs" "OFF")
-if (ENABLE_TESTS)
+option(CGNS_ENABLE_TESTS "Enable test programs" "OFF")
+if (CGNS_ENABLE_TESTS)
   enable_testing()
-endif (ENABLE_TESTS)
+endif (CGNS_ENABLE_TESTS)
 
 ###########
 # Fortran #
 ###########
 
 # Allow fortran support to be toggled
-option(ENABLE_FORTRAN "Enable or disable the use of Fortran" "OFF")
+option(CGNS_ENABLE_FORTRAN "Enable or disable the use of Fortran" "OFF")
 if (NOT DEFINED FORTRAN_NAMING)
   set(FORTRAN_NAMING "UNKNOWN")
 endif (NOT DEFINED FORTRAN_NAMING)
@@ -120,7 +120,7 @@ does not work with your compiler, try the others until one does.
 # If we are using fortran, enable it and configure the C-Fortran interface
 # It would be nice to automatically detect this setting
 
-if(ENABLE_FORTRAN)
+if(CGNS_ENABLE_FORTRAN)
   mark_as_advanced(CLEAR FORTRAN_NAMING)
   #only do this once
   if (FORTRAN_NAMING STREQUAL "UNKNOWN")
@@ -147,12 +147,12 @@ if(ENABLE_FORTRAN)
       endforeach(nc ${F2CLIST})
     endif (CMAKE_Fortran_COMPILER_WORKS)
   endif (FORTRAN_NAMING STREQUAL "UNKNOWN")
-else(ENABLE_FORTRAN)
+else(CGNS_ENABLE_FORTRAN)
   mark_as_advanced(FORCE FORTRAN_NAMING)
-endif(ENABLE_FORTRAN)
+endif(CGNS_ENABLE_FORTRAN)
 
 # check that FORTRAN_NAMING is valid
-if (ENABLE_FORTRAN)
+if (CGNS_ENABLE_FORTRAN)
   if (FORTRAN_NAMING STREQUAL "UNKNOWN")
     if (WIN32)
       set(FORTRAN_NAMING "UPPERCASE" CACHE STRING ${FORTRAN_NAMING_HELP})
@@ -174,19 +174,19 @@ if (ENABLE_FORTRAN)
         UPPERRCASE__")
     endif (ListIndex LESS 0)
   endif (FORTRAN_NAMING STREQUAL "UNKNOWN")
-endif (ENABLE_FORTRAN)
+endif (CGNS_ENABLE_FORTRAN)
 
 # this forces cmake to set up the required Fortran variables
-if (ENABLE_FORTRAN AND HAS_FORTRAN)
+if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN)
   enable_language("Fortran")
-endif (ENABLE_FORTRAN AND HAS_FORTRAN)
+endif (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN)
 
 ########
 # HDF5 #
 ########
 
-option(ENABLE_HDF5 "Enable or disable HDF5 interface" "OFF")
-if (ENABLE_HDF5)
+option(CGNS_ENABLE_HDF5 "Enable or disable HDF5 interface" "OFF")
+if (CGNS_ENABLE_HDF5)
   find_path(HDF5_INCLUDE_PATH hdf5.h)
   find_library(HDF5_LIBRARY hdf5)
 
@@ -234,25 +234,25 @@ if (ENABLE_HDF5)
     mark_as_advanced(FORCE MPI_COMPILER MPI_INCLUDE_PATH MPI_LIBRARY MPI_EXTRA_LIBRARY MPIEXEC)
   endif (HDF5_NEED_MPI)
   mark_as_advanced(CLEAR HDF5_NEED_ZLIB HDF5_NEED_SZIP HDF5_NEED_MPI)
-else (ENABLE_HDF5)
+else (CGNS_ENABLE_HDF5)
   mark_as_advanced(FORCE HDF5_NEED_ZLIB HDF5_NEED_SZIP HDF5_NEED_MPI)
   mark_as_advanced(FORCE HDF5_INCLUDE_PATH HDF5_LIBRARY)
   mark_as_advanced(FORCE ZLIB_LIBRARY SZIP_LIBRARY)
   mark_as_advanced(FORCE MPI_C_COMPILER MPI_C_INCLUDE_PATH MPI_C_LIBRARIES)
   mark_as_advanced(FORCE MPI_COMPILER MPI_INCLUDE_PATH MPI_LIBRARY MPI_EXTRA_LIBRARY MPIEXEC)
-endif (ENABLE_HDF5)
+endif (CGNS_ENABLE_HDF5)
 
 #################
 # parallel cgns #
 #################
 
-if (ENABLE_HDF5 AND HDF5_NEED_MPI)
-  set(ENABLE_PARALLEL "OFF" CACHE BOOL "Enable or disable parallel interface ?")
-  mark_as_advanced(CLEAR ENABLE_PARALLEL)
-else (ENABLE_HDF5 AND HDF5_NEED_MPI)
-  set(ENABLE_PARALLEL "OFF")
-  mark_as_advanced(FORCE ENABLE_PARALLEL)
-endif (ENABLE_HDF5 AND HDF5_NEED_MPI)
+if (CGNS_ENABLE_HDF5 AND HDF5_NEED_MPI)
+  set(CGNS_ENABLE_PARALLEL "OFF" CACHE BOOL "Enable or disable parallel interface ?")
+  mark_as_advanced(CLEAR CGNS_ENABLE_PARALLEL)
+else (CGNS_ENABLE_HDF5 AND HDF5_NEED_MPI)
+  set(CGNS_ENABLE_PARALLEL "OFF")
+  mark_as_advanced(FORCE CGNS_ENABLE_PARALLEL)
+endif (CGNS_ENABLE_HDF5 AND HDF5_NEED_MPI)
 
 ####################
 # RPATH Management #

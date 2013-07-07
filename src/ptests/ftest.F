@@ -69,6 +69,9 @@
         print *,'total Mb for all data  =', dsize
       endif
 
+c default is MPI_COMM_WORLD, but can set another communicator with this
+c     call cgp_mpi_comm_f(MPI_COMM_WORLD,ierr)
+
       call cgp_open_f('ftest.cgns',CG_MODE_WRITE,F,ierr)
       if (ierr .ne. CG_OK) call cgp_error_exit_f
 

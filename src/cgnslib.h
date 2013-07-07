@@ -29,8 +29,8 @@
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
 
-#define CGNS_VERSION 3201
-#define CGNS_DOTVERS 3.201
+#define CGNS_VERSION 3210
+#define CGNS_DOTVERS 3.21
 
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
@@ -120,6 +120,7 @@
 #define CG_CONFIG_FILE_TYPE 5
 
 #define CG_CONFIG_HDF5_COMPRESS   201
+#define CG_CONFIG_HDF5_MPI_COMM   202
 
 #ifdef __cplusplus
 extern "C" {

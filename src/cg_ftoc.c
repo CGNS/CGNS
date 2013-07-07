@@ -3615,6 +3615,14 @@ CGNSDLL void FMNAME(cg_exit_on_error_f, CG_EXIT_ON_ERROR_F) (cgsize_t *flag)
  * parallel IO interface
  *======================================================================*/
 
+CGNSDLL void FMNAME(cgp_mpi_comm_f, CGP_MPI_COMM_F) (
+	cgsize_t *mpicomm, cgsize_t *ier)
+{
+    *ier = cgp_mpi_comm((int)*mpicomm);
+}
+
+/*-----------------------------------------------------------------------*/
+
 CGNSDLL void FMNAME(cgp_pio_mode_f, CGP_PIO_MODE_F) (
 	cgsize_t *mode, cgsize_t *ier)
 {

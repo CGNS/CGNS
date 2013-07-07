@@ -331,6 +331,13 @@ static int check_parallel(cgns_file *cgfile)
 /*== Begin Function Definitions ==*/
 /*================================*/
 
+int cgp_mpi_comm(int comm)
+{
+    return cgio_configure(CG_CONFIG_HDF5_MPI_COMM, (void *)((size_t)comm));
+}
+
+/*---------------------------------------------------------*/
+
 int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
 {
     if (mode == CGP_INDEPENDENT)

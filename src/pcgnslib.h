@@ -40,6 +40,10 @@ typedef enum {
     CGP_COLLECTIVE=1,
 } CGNS_ENUMT( PIOmode_t );
 
+/*===== MPI communicator =====*/
+
+CGNSDLL int cgp_mpi_comm(int mpicomm);
+
 /*===== parallel IO mode =====*/
 
 CGNSDLL int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode);

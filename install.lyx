@@ -147,7 +147,7 @@ If HDF5 is built with zlib and szip support, these need to be flagged with
 
 \end_deeper
 \begin_layout Enumerate
-Fortran can be enabled by toggling the 'ENABLE_FORTRAN' variable.
+Fortran can be enabled by toggling the 'CGNS_ENABLE_FORTRAN' variable.
 \end_layout
 
 \begin_deeper

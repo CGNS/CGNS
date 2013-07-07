@@ -2830,7 +2830,7 @@ static cgsize_t check_interface (ZONE *z, CGNS_ENUMT(PointSetType_t) ptype,
 
 /*-----------------------------------------------------------------------*/
 
-static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z,
+static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z, int is_boco,
     CGNS_ENUMT(PointSetType_t) ptype, CGNS_ENUMT(GridLocation_t) location)
 {
     switch (location) {
@@ -2879,7 +2879,8 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z,
             }
             break;
         case CGNS_ENUMV(CellCenter):
-            if (z->type == CGNS_ENUMV(Structured) && FileVersion >= 2300) {
+            if (is_boco && z->type == CGNS_ENUMV(Structured) &&
+                FileVersion >= 2300) {
                 warning (2, "use [IJK]FaceCenter location rather"
                     " than CellCenter");
             }
@@ -2993,7 +2994,7 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
         print_indent (indent);
         puts ("checking BCDataSet interface");
         fflush (stdout);
-        location = check_location (z, ptype, location);
+        location = check_location (z, 1, ptype, location);
         if (npnts < 1) {
             error ("number of points for Point Set less than 1");
             size = 0;
@@ -3124,7 +3125,7 @@ static void check_BC (int nb, int parclass, int *parunits)
 #endif
     if (verbose && hasl == CG_OK)
         printf ("    Grid Location=%s\n", cg_GridLocationName(location));
-    location = check_location (z, ptype, location);
+    location = check_location (z, 1, ptype, location);
 
     if (npts < 1) {
         error ("number of points is less than 1");
@@ -4382,7 +4383,7 @@ static void check_solution (int ns)
             error ("grid location not Vertex,CellCenter or [IJK]FaceCenter");
     }
 #else
-    location = check_location (z, CGNS_ENUMV(PointSetTypeNull), location);
+    location = check_location (z, 0, CGNS_ENUMV(PointSetTypeNull), location);
 #endif
 
     go_absolute ("Zone_t", cgnszone, "FlowSolution_t", ns, NULL);

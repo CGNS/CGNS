@@ -33,7 +33,7 @@
       to be flagged with 'HDF5_NEEDS_ZLIB' and 'HDF5_NEEDS_SZIP' 
       as well as the paths for those libraries.
 
-  (b) Fortran can be enabled by toggling the 'ENABLE_FORTRAN' 
+  (b) Fortran can be enabled by toggling the 'CGNS_ENABLE_FORTRAN' 
     variable.
 
     i. A view of the attempt to autodetect the correct interface 
