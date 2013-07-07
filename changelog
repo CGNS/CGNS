@@ -3,6 +3,12 @@
 - added check for open file to routines that don't take
   a file number (suggestion from Marc Poinet)
 - added HTMLHelp interface to cmake scripts
+- added AdditionalFamilyName to UserDefinedData
+- fixed compiler complaint about comparison between int and enum
+- added routines to set MPI communicator for parallel I/O
+- updated CMake scripts to work within other scripts (remove conflicts)
+- updates to some cgnstools utility conversion routines
+- fixes and updates to tests and cgnscheck
 
 == 3.2 ===
 - full integration of parallel I/O using HDF5 with MPI
