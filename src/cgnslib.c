@@ -330,7 +330,7 @@ int cg_is_cgns(const char *filename, int *file_type)
 
 int cg_open(const char * filename, int mode, int *file_number)
 {
-    int cgio;
+    int cgio, filetype;
     cgsize_t dim_vals;
     double dummy_id;
     float FileVersion;
@@ -380,10 +380,16 @@ int cg_open(const char * filename, int mode, int *file_number)
     n_cgns_files++;
     (*file_number) = n_cgns_files + file_number_offset;
 
+    if (cgio_get_file_type(cgio, &filetype)) {
+        cg_io_error("cgio_get_file_type");
+        return CG_ERROR;
+    }
+
     /* Keep in-memory copy of cgns file 'header' information */
     cg->mode = mode;
     cg->filename = CGNS_NEW(char,strlen(filename) + 1);
     strcpy(cg->filename, filename);
+    cg->filetype = filetype;
     cg->cgio = cgio;
     cgio_get_root_id(cgio, &cg->rootid);
     cg->file_number = (*file_number);
@@ -396,15 +402,17 @@ int cg_open(const char * filename, int mode, int *file_number)
         dim_vals = 1;
         /* FileVersion = (float) CGNS_DOTVERS; */
         /* Jiao: Changed to use older compatible version */
-        if ( cgns_filetype==CG_FILE_ADF2)
+        if (filetype == CG_FILE_ADF2) {
             FileVersion = (float) CGNS_COMPATDOTVERS;
-        else
+            cg->version = CGNS_COMPATVERSION;
+        } else {
             FileVersion = (float) CGNS_DOTVERS;
+            cg->version = CGNSLibVersion;
+        }
 
         if (cgi_new_node(cg->rootid, "CGNSLibraryVersion",
             "CGNSLibraryVersion_t", &dummy_id, "R4", 1, &dim_vals,
             (void *)&FileVersion)) return CG_ERROR;
-        cg->version = CGNSLibVersion;
     }
     else {
 
@@ -427,6 +435,12 @@ int cg_open(const char * filename, int mode, int *file_number)
                 cgi_warning("The file being read is more recent that the CGNS library used");
             }
         }
+#if CG_SIZEOF_SIZE == 32
+        if (mode == CG_MODE_MODIFY && cgns_filetype == CG_FILE_ADF2 &&
+            filetype == CG_FILE_ADF && cg->version <= CGNS_COMPATVERSION) {
+            filetype = cg->filetype = CG_FILE_ADF2;
+        }
+#endif
     }
 
     /* Get ADF Database version & dates, and ADF Library version */
@@ -449,13 +463,16 @@ int cg_open(const char * filename, int mode, int *file_number)
 
         /* update version number in modify mode */
         if (cg->version < CGNSLibVersion && mode == CG_MODE_MODIFY && 
-            (cgns_filetype!=CG_FILE_ADF2 || cg->version < CGNS_COMPATVERSION)) {
+            (cg->filetype != CG_FILE_ADF2 || cg->version < CGNS_COMPATVERSION)) {
             /* FileVersion = (float) CGNS_DOTVERS; */
             /* Jiao: Changed to use older compatible version */
-            if (cgns_filetype == CG_FILE_ADF2)
+            if (cg->filetype == CG_FILE_ADF2) {
                 FileVersion = (float) CGNS_COMPATDOTVERS;
-            else
+                cg->version = CGNS_COMPATVERSION;
+            } else {
                 FileVersion = (float) CGNS_DOTVERS;
+                cg->version = CGNSLibVersion;
+            }
 
             if (cgi_get_nodes(cg->rootid, "CGNSLibraryVersion_t",
                     &nnod, &id))
@@ -473,7 +490,6 @@ int cg_open(const char * filename, int mode, int *file_number)
                     "CGNSLibraryVersion_t", &dummy_id, "R4", 1, &dim_vals,
                     (void *)&FileVersion)) return CG_ERROR;
             }
-            cg->version = CGNSLibVersion;
         }
     } else {
         cg->nbases=0;
@@ -2542,28 +2558,36 @@ static int read_element_data(cgns_section *section)
 
 static void free_parent_data(cgns_section *section)
 {
-#ifdef CG_SPLIT_PARENT_DATA
-    if (section->parelem->data != NULL) {
+    if (section->parelem && section->parelem->data != NULL) {
         free(section->parelem->data);
         section->parelem->data = NULL;
     }
-    if (section->parface->data != NULL) {
+    if (section->parface && section->parface->data != NULL) {
         free(section->parface->data);
         section->parface->data = NULL;
     }
-#else
-    if (section->parent->data != NULL) {
-        free(section->parent->data);
-        section->parent->data = NULL;
-    }
-#endif
 }
 
 static int read_parent_data(cgns_section *section)
 {
     cgsize_t cnt;
 
-#ifdef CG_SPLIT_PARENT_DATA
+    if (0 == strcmp(section->parelem->name, "ParentData")) {
+        if (section->parelem->data == NULL) {
+            cnt = section->parelem->dim_vals[0] * 4;
+            section->parelem->data = malloc(cnt * sizeof(cgsize_t));
+            if (section->parelem->data == NULL) {
+                cgi_error("malloc failed for ParentData data");
+                return 1;
+            }
+            if (cgi_read_int_data(section->parelem->id,
+                section->parelem->data_type, cnt, section->parelem->data)) {
+                free_parent_data(section);
+                return 1;
+            }
+        }
+        return 0;
+    }
     if (section->parelem->dim_vals[0] != section->parface->dim_vals[0] ||
         section->parelem->dim_vals[1] != 2 ||
         section->parface->dim_vals[1] != 2) {
@@ -2595,21 +2619,6 @@ static int read_parent_data(cgns_section *section)
             return 1;
         }
     }
-#else
-    if (section->parent->data == NULL) {
-        cnt = section->parent->dim_vals[0] * 4;
-        section->parent->data = malloc(cnt * sizeof(cgsize_t));
-        if (section->parent->data == NULL) {
-            cgi_error("malloc failed for ParentData data");
-            return 1;
-        }
-        if (cgi_read_int_data(section->parent->id,
-                section->parent->data_type, cnt, section->parent->data)) {
-            free_parent_data(section);
-            return 1;
-        }
-    }
-#endif
     return 0;
 }
 
@@ -2653,12 +2662,8 @@ int cg_section_read(int file_number, int B, int Z, int S, char *SectionName,
     *end   = section->range[1];
     *nbndry = section->el_bound;
     *parent_flag=0;
-#ifdef CG_SPLIT_PARENT_DATA
     if (section->parelem && (section->parface ||
         0 == strcmp(section->parelem->name, "ParentData"))) *parent_flag=1;
-#else
-    if (section->parent) *parent_flag=1;
-#endif
     return CG_OK;
 }
 
@@ -2687,14 +2692,15 @@ int cg_section_write(int file_number, int B, int Z, const char * SectionName,
         cgi_error("Invalid boundary element number for section '%s'",SectionName);
         return CG_ERROR;
     }
-    if (cgns_filetype == CG_FILE_ADF2 &&
-        adf2_check_elems(type, num, elements)) return CG_ERROR;
 
      /* get file and check mode */
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    if (cg->filetype == CG_FILE_ADF2 &&
+        adf2_check_elems(type, num, elements)) return CG_ERROR;
 
     zone = cgi_get_zone(cg, B, Z);
     if (zone==0) return CG_ERROR;
@@ -2785,12 +2791,6 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
         cgi_error("Invalid boundary element number for section '%s'",SectionName);
         return CG_ERROR;
     }
-    if (cgns_filetype == CG_FILE_ADF2 && type > CGNS_ENUMV(MIXED)) {
-        /* Jiao: Changed to use older compatible version */
-        cgi_error("Element type %s not supported in ADF2.",
-            cg_ElementTypeName(type));
-        return CG_ERROR;
-    }
 
      /* Compute ElementDataSize */
     if (cg_npe(type, &elemsize)) return CG_ERROR;
@@ -2803,6 +2803,13 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
         return CG_ERROR;
+
+    if (cg->filetype == CG_FILE_ADF2 && type > CGNS_ENUMV(MIXED)) {
+        /* Jiao: Changed to use older compatible version */
+        cgi_error("Element type %s not supported in ADF2.",
+            cg_ElementTypeName(type));
+        return CG_ERROR;
+    }
 
     zone = cgi_get_zone(cg, B, Z);
     if (zone==0) return CG_ERROR;
@@ -2857,11 +2864,7 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
     section->id=0;
     section->link=0;
     section->ndescr=0;
-#ifdef CG_SPLIT_PARENT_DATA
     section->parelem = section->parface = NULL;
-#else
-    section->parent=0;
-#endif
     section->nuser_data=0;
     section->rind_planes=0;
 
@@ -2997,7 +3000,6 @@ int cg_elements_read(int file_number, int B, int Z, int S, cgsize_t *elements,
                 ElementDataSize, elements)) return CG_ERROR;
     }
 
-#ifdef CG_SPLIT_PARENT_DATA
     if (parent_data && section->parelem && (section->parface ||
         0 == strcmp(section->parelem->name, "ParentData"))) {
         if (0 == strcmp(section->parelem->name, "ParentData")) {
@@ -3011,12 +3013,6 @@ int cg_elements_read(int file_number, int B, int Z, int S, cgsize_t *elements,
                     num << 1, &parent_data[num << 1])) return CG_ERROR;
 	}
     }
-#else
-    if (section->parent && parent_data) {
-        if (cgi_read_int_data(section->parent->id, section->parent->data_type,
-                num << 2, parent_data)) return CG_ERROR;
-    }
-#endif
 
     return CG_OK;
 }
@@ -3082,7 +3078,6 @@ int cg_elements_partial_read(int file_number, int B, int Z, int S,
         memcpy(elements, &data[offset], (size_t)(size*sizeof(cgsize_t)));
     }
 
-#ifdef CG_SPLIT_PARENT_DATA
     if (parent_data && section->parelem && (section->parface ||
         0 == strcmp(section->parelem->name, "ParentData"))) {
         offset = start - section->range[0];
@@ -3188,44 +3183,6 @@ int cg_elements_partial_read(int file_number, int B, int Z, int S,
             }
 	}
     }
-#else
-    if (section->parent && parent_data) {
-        offset = start - section->range[0];
-        size = section->range[1] - section->range[0] + 1;
-        if (0 == strcmp(CG_SIZE_DATATYPE, section->parent->data_type)) {
-            s_start[0] = start - section->range[0] + 1;
-            s_end[0]   = end - section->range[0] + 1;
-            s_stride[0]= 1;
-            s_start[1] = 1;
-            s_end[1]   = 4;
-            s_stride[1]= 1;
-            m_start[0] = 1;
-            m_end[0]   = end - start + 1;
-            m_stride[0]= 1;
-            m_start[1] = 1;
-            m_end[1]   = 4;
-            m_stride[1]= 1;
-            m_dim[0]   = m_end[0];
-            m_dim[1]   = 4;
-
-            if (cgio_read_data(cg->cgio, section->parent->id,
-                    s_start, s_end, s_stride, 2, m_dim,
-                    m_start, m_end, m_stride, parent_data)) {
-                cg_io_error("cgio_read_data");
-                return CG_ERROR;
-            }
-        }
-        else {
-            if (read_parent_data(section)) return CG_ERROR;
-            data = (cgsize_t *)section->parent->data;
-            for (n = 0, j = 0; j < 4; j++) {
-                nn = j * size + offset;
-                for (i = start; i <= end; i++)
-                    parent_data[n++] = data[nn++];
-            }
-        }
-    }
-#endif
     return CG_OK;
 }
 
@@ -3267,7 +3224,8 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             CG_SIZE_DATATYPE, section->connect->data_type);
         return CG_ERROR;
     }
-    if (cgns_filetype == CG_FILE_ADF2 &&
+
+    if (cg->filetype == CG_FILE_ADF2 &&
         adf2_check_elems(type, num, elements)) return CG_ERROR;
 
 
@@ -3461,27 +3419,29 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
 
     newsize = section->range[1] - section->range[0] + 1;
 
-#ifdef CG_SPLIT_PARENT_DATA
-    if (section->parelem && section->parface &&
+    if (section->parelem && (section->parface ||
+        0 == strcmp(section->parelem->name, "ParentData")) &&
         newsize != section->parelem->dim_vals[0]) {
+        int cnt = section->parelem->dim_vals[1];
+ 
         if (read_parent_data(section)) return CG_ERROR;
 
-        newelems = (cgsize_t *)malloc((size_t)(2 * newsize * sizeof(cgsize_t)));
+        newelems = (cgsize_t *)malloc((size_t)(cnt * newsize * sizeof(cgsize_t)));
         if (NULL == newelems) {
             cgi_error("Error alocating new ParentElements data");
             return CG_ERROR;
         }
         offset = start - section->range[0];
 
-        for (n = 0; n < 2*newsize; n++)
+        for (n = 0; n < cnt*newsize; n++)
             newelems[n] = 0;
         oldelems = (cgsize_t *)section->parelem->data;
-        for (num = 0, i = 0; i < 2; i++) {
+        for (num = 0, i = 0; i < cnt; i++) {
             j = i * newsize + offset;
             for (n = 0; n < oldsize; n++)
                 newelems[j++] = oldelems[num++];
         }
-        for (i = 0; i < 2; i++) {
+        for (i = 0; i < cnt; i++) {
             j = i * newsize + offset;
             for (n = start; n <= end; n++)
                 newelems[j++] = 0;
@@ -3501,6 +3461,9 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             cg_io_error("cgio_write_all_data");
             return CG_ERROR;
         }
+
+        if (0 == strcmp(section->parelem->name, "ParentData"))
+            return CG_OK;
 
         for (n = 0; n < 2*newsize; n++)
             newelems[n] = 0;
@@ -3531,55 +3494,6 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             return CG_ERROR;
         }
     }
-#else
-    if (section->parent && newsize != section->parent->dim_vals[0]) {
-        if (read_parent_data(section)) return CG_ERROR;
-
-        oldelems = (cgsize_t *)section->parent->data;
-        newelems = (cgsize_t *)malloc((size_t)(4 * newsize * sizeof(cgsize_t)));
-        if (NULL == newelems) {
-            cgi_error("Error alocating new parent data");
-            return CG_ERROR;
-        }
-        for (n = 0; n < 4*newsize; n++)
-            newelems[n] = 0;
-
-        /* add previous data */
-
-        for (num = 0, i = 0; i < 4; i++) {
-            j = i * newsize + offset;
-            for (n = 0; n < oldsize; n++)
-                newelems[j++] = oldelems[num++];
-        }
-
-        /* overwrite with new range */
-
-        offset = start - section->range[0];
-        for (i = 0; i < 4; i++) {
-            j = i * newsize + offset;
-            for (n = start; n <= end; n++)
-                newelems[j++] = 0;
-        }
-
-        free(section->parent->data);
-        section->parent->data = newelems;
-        section->parent->dim_vals[0] = newsize;
-
-        /* update on disk */
-
-        if (cgio_set_dimensions(cg->cgio, section->parent->id,
-                section->parent->data_type, 2,
-                section->parent->dim_vals)) {
-            cg_io_error("cgio_set_dimensions");
-            return CG_ERROR;
-        }
-
-        if (cgio_write_all_data(cg->cgio, section->parent->id, newelems)) {
-            cg_io_error("cgio_write_all_data");
-            return CG_ERROR;
-        }
-    }
-#endif
 
     return CG_OK;
 }
@@ -3603,7 +3517,6 @@ int cg_parent_data_write(int file_number, int B, int Z, int S,
     if (section == 0) return CG_ERROR;
     num = section->range[1]-section->range[0]+1;
 
-#ifdef CG_SPLIT_PARENT_DATA
     if (section->parelem) {
         if (cg->mode==CG_MODE_WRITE) {
             cgi_error("ParentElements is already defined under Elements_t '%s'",
@@ -3617,19 +3530,35 @@ int cg_parent_data_write(int file_number, int B, int Z, int S,
     } else {
         section->parelem = CGNS_NEW(cgns_array, 1);
     }
-    
+
     strcpy(section->parelem->data_type, CG_SIZE_DATATYPE);
-    strcpy(section->parelem->name, "ParentElements");
     section->parelem->data_dim =2;
     section->parelem->dim_vals[0]=num;
-    section->parelem->dim_vals[1]=2;
+    if (cg->filetype == CG_FILE_ADF2) {
+        strcpy(section->parelem->name, "ParentData");
+        section->parelem->dim_vals[1]=4;
+    } else {
+        strcpy(section->parelem->name, "ParentElements");
+        section->parelem->dim_vals[1]=2;
+    }
     
     if (cgi_write_array(section->id, section->parelem)) return CG_ERROR;
     if (cgio_write_all_data(cg->cgio, section->parelem->id, parent_data)) {
         cg_io_error("cgio_write_all_data");
         return CG_ERROR;
     }
-    
+
+    if (cg->filetype == CG_FILE_ADF2) {
+        if (section->parface) {
+            if (cgi_delete_node(section->id, section->parface->id))
+                return CG_ERROR;
+            cgi_free_array(section->parface);
+            CGNS_FREE(section->parface);
+            section->parface = NULL;
+        }
+        return CG_OK;
+    }
+
     if (section->parface) {
         if (cg->mode==CG_MODE_WRITE) {
             cgi_error("ParentElementsPosition is already defined under Elements_t '%s'",
@@ -3655,34 +3584,6 @@ int cg_parent_data_write(int file_number, int B, int Z, int S,
         cg_io_error("cgio_write_all_data");
         return CG_ERROR;
     }
-#else
-    if (section->parent) {
-        if (cg->mode==CG_MODE_WRITE) {
-            cgi_error("ParentData is already defined under Elements_t '%s'",
-                   section->name);
-            return CG_ERROR;
-        }
-        if (cgi_delete_node(section->id, section->parent->id))
-            return CG_ERROR;
-        cgi_free_array(section->parent);
-        memset(section->parent, 0, sizeof(cgns_array));
-    } else {
-        section->parent = CGNS_NEW(cgns_array, 1);
-    }
-
-    num = section->range[1]-section->range[0]+1;
-    strcpy(section->parent->data_type, CG_SIZE_DATATYPE);
-    strcpy(section->parent->name, "ParentData");
-    section->parent->data_dim =2;
-    section->parent->dim_vals[0]=num;
-    section->parent->dim_vals[1]=4;
-
-    if (cgi_write_array(section->id, section->parent)) return CG_ERROR;
-    if (cgio_write_all_data(cg->cgio, section->parent->id, parent_data)) {
-        cg_io_error("cgio_write_all_data");
-        return CG_ERROR;
-    }
-#endif
     return CG_OK;
 }
 
@@ -3716,14 +3617,18 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
 
     /* create the parent data if it doesn't exist already */
 
-#ifdef CG_SPLIT_PARENT_DATA
     if (section->parelem == 0) {
         section->parelem = CGNS_NEW(cgns_array, 1);
         strcpy(section->parelem->data_type, CG_SIZE_DATATYPE);
-        strcpy(section->parelem->name, "ParentElements");
         section->parelem->data_dim =2;
         section->parelem->dim_vals[0]=size;
-        section->parelem->dim_vals[1]=2;
+        if (cg->filetype == CG_FILE_ADF2) {
+            strcpy(section->parelem->name, "ParentData");
+            section->parelem->dim_vals[1]=4;
+        } else {
+            strcpy(section->parelem->name, "ParentElements");
+            section->parelem->dim_vals[1]=2;
+        }
 
         if (cgi_write_array(section->id, section->parelem)) return CG_ERROR;
     }
@@ -3737,24 +3642,27 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
         return CG_ERROR;
     }
 
-    if (section->parface == 0) {
-        section->parface = CGNS_NEW(cgns_array, 1);
-        strcpy(section->parface->data_type, CG_SIZE_DATATYPE);
-        strcpy(section->parface->name, "ParentElementsPosition");
-        section->parface->data_dim =2;
-        section->parface->dim_vals[0]=size;
-        section->parface->dim_vals[1]=2;
+    if (strcmp(section->parelem->name, "ParentData")) {
+        if (section->parface == 0) {
+            section->parface = CGNS_NEW(cgns_array, 1);
+            strcpy(section->parface->data_type, CG_SIZE_DATATYPE);
+            strcpy(section->parface->name, "ParentElementsPosition");
+            section->parface->data_dim =2;
+            section->parface->dim_vals[0]=size;
+            section->parface->dim_vals[1]=2;
 
-        if (cgi_write_array(section->id, section->parface)) return CG_ERROR;
-    }
-    else if (strcmp(CG_SIZE_DATATYPE, section->parface->data_type)) {
-        cgi_error("ParentElementsPosition data type %s does not match stored value %s",
-            CG_SIZE_DATATYPE, section->parface->data_type);
-        return CG_ERROR;
-    }
-    if (size != section->parface->dim_vals[0]) {
-        cgi_error("internal errror - invalid ParentElementsPosition data size !!!");
-        return CG_ERROR;
+            if (cgi_write_array(section->id, section->parface))
+                return CG_ERROR;
+        }
+        else if (strcmp(CG_SIZE_DATATYPE, section->parface->data_type)) {
+            cgi_error("ParentElementsPosition data type %s does not match stored value %s",
+                CG_SIZE_DATATYPE, section->parface->data_type);
+            return CG_ERROR;
+        }
+        if (size != section->parface->dim_vals[0]) {
+            cgi_error("internal errror - invalid ParentElementsPosition data size !!!");
+            return CG_ERROR;
+        }
     }
         
     if (start >= section->range[0] && end <= section->range[1]) {
@@ -3765,13 +3673,13 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
         s_end[0]   = end - section->range[0] + 1;
         s_stride[0]= 1;
         s_start[1] = 1;
-        s_end[1]   = 2;
+        s_end[1]   = section->parelem->dim_vals[1];
         s_stride[1]= 1;
         m_start[0] = 1;
         m_end[0]   = end - start + 1;
         m_stride[0]= 1;
         m_start[1] = 1;
-        m_end[1]   = 2;
+        m_end[1]   = section->parelem->dim_vals[1];
         m_stride[1]= 1;
         m_dim[0]   = m_end[0];
         m_dim[1]   = 4;
@@ -3783,22 +3691,26 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
             return CG_ERROR;
         }
 
-	m_start[1] = 3;
-        m_end[1]   = 4;
+        if (strcmp(section->parelem->name, "ParentData")) {
+            m_start[1] = 3;
+            m_end[1]   = 4;
 
-        if (cgio_write_data(cg->cgio, section->parface->id,
-                s_start, s_end, s_stride, 2, m_dim,
-                m_start, m_end, m_stride, parent_data)) {
-            cg_io_error("cgio_write_data");
-            return CG_ERROR;
+            if (cgio_write_data(cg->cgio, section->parface->id,
+                    s_start, s_end, s_stride, 2, m_dim,
+                    m_start, m_end, m_stride, parent_data)) {
+                cg_io_error("cgio_write_data");
+                return CG_ERROR;
+            }
         }
         free_parent_data(section);
     }
     else {
+        int cnt = section->parelem->dim_vals[1];
+
         if (read_parent_data(section)) return CG_ERROR;
 
 	data = (cgsize_t *)section->parelem->data;
-        for (i = 0, num = 0; num < 2; num++) {
+        for (i = 0, num = 0; num < cnt; num++) {
             j = num * size + offset;
             for (n = start; n <= end; n++)
                 data[j++] = parent_data[i++];
@@ -3808,84 +3720,19 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
             return CG_ERROR;
         }
 
-	data = (cgsize_t *)section->parface->data;
-        for (i = 0, num = 2; num < 4; num++) {
-            j = num * size + offset;
-            for (n = start; n <= end; n++)
-                data[j++] = parent_data[i++];
-        }
-        if (cgio_write_all_data(cg->cgio, section->parface->id, data)) {
-            cg_io_error("cgio_write_all_data");
-            return CG_ERROR;
-        }
-    }
-#else
-    if (section->parent == 0) {
-        section->parent = CGNS_NEW(cgns_array, 1);
-        strcpy(section->parent->data_type, CG_SIZE_DATATYPE);
-        strcpy(section->parent->name, "ParentData");
-        section->parent->data_dim =2;
-        section->parent->dim_vals[0]=size;
-        section->parent->dim_vals[1]=4;
-
-        if (cgi_write_array(section->id, section->parent)) return CG_ERROR;
-    }
-    else if (strcmp(CG_SIZE_DATATYPE, section->parent->data_type)) {
-        cgi_error("parent data type %s does not match stored value %s",
-            CG_SIZE_DATATYPE, section->parent->data_type);
-        return CG_ERROR;
-    }
-
-    /* make sure parent data is correct */
-
-    if (size != section->parent->dim_vals[0]) {
-        cgi_error("internal errror - invalid parent data size !!!");
-        return CG_ERROR;
-    }
-        
-    if (start >= section->range[0] && end <= section->range[1]) {
-        cgsize_t s_start[2], s_end[2], s_stride[2];
-        cgsize_t m_start[2], m_end[2], m_stride[2], m_dim[2];
-
-        s_start[0] = start - section->range[0] + 1;
-        s_end[0]   = end - section->range[0] + 1;
-        s_stride[0]= 1;
-        s_start[1] = 1;
-        s_end[1]   = 4;
-        s_stride[1]= 1;
-        m_start[0] = 1;
-        m_end[0]   = end - start + 1;
-        m_stride[0]= 1;
-        m_start[1] = 1;
-        m_end[1]   = 4;
-        m_stride[1]= 1;
-        m_dim[0]   = m_end[0];
-        m_dim[1]   = 4;
-        
-        if (cgio_write_data(cg->cgio, section->parent->id,
-                s_start, s_end, s_stride, 2, m_dim,
-                m_start, m_end, m_stride, parent_data)) {
-            cg_io_error("cgio_write_data");
-            return CG_ERROR;
-        }
-        free_parent_data(section);
-    }
-    else {
-        if (read_parent_data(section)) return CG_ERROR;
-        data = (cgsize_t *)section->parent->data;
-
-        for (i = 0, num = 0; num < 4; num++) {
-            j = num * size + offset;
-            for (n = start; n <= end; n++)
-                data[j++] = parent_data[i++];
-        }
-
-        if (cgio_write_all_data(cg->cgio, section->parent->id, data)) {
-            cg_io_error("cgio_write_all_data");
-            return CG_ERROR;
+        if (strcmp(section->parelem->name, "ParentData")) {
+            data = (cgsize_t *)section->parface->data;
+            for (i = 0, num = 2; num < 4; num++) {
+                j = num * size + offset;
+                for (n = start; n <= end; n++)
+                    data[j++] = parent_data[i++];
+            }
+            if (cgio_write_all_data(cg->cgio, section->parface->id, data)) {
+                cg_io_error("cgio_write_all_data");
+                return CG_ERROR;
+            }
         }
     }
-#endif
     return CG_OK;
 }
 
@@ -6184,16 +6031,18 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
     location = CGNS_ENUMV(Vertex);
     if (ptset_type == CGNS_ENUMV(ElementList) ||
         ptset_type == CGNS_ENUMV(ElementRange)) {
-        if (ptset_type == CGNS_ENUMV(ElementList))
-            ptype = CGNS_ENUMV(PointList);
-        else
-            ptype = CGNS_ENUMV(PointRange);
-        if (cg->base[B-1].cell_dim == 1)
-            location = CGNS_ENUMV(Vertex);
-        else if (cg->base[B-1].cell_dim == 2)
-            location = CGNS_ENUMV(EdgeCenter);
-        else
-            location = CGNS_ENUMV(FaceCenter);
+        if (cg->filetype != CG_FILE_ADF2) {
+            if (ptset_type == CGNS_ENUMV(ElementList))
+                ptype = CGNS_ENUMV(PointList);
+            else
+                ptype = CGNS_ENUMV(PointRange);
+            if (cg->base[B-1].cell_dim == 1)
+                location = CGNS_ENUMV(Vertex);
+            else if (cg->base[B-1].cell_dim == 2)
+                location = CGNS_ENUMV(EdgeCenter);
+            else
+                location = CGNS_ENUMV(FaceCenter);
+        }
     } else {
         if (ptset_type != CGNS_ENUMV(PointList) &&
             ptset_type != CGNS_ENUMV(PointRange)) {
@@ -6201,8 +6050,10 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
             return CG_ERROR;
         }
     }
-    if ((ptype == CGNS_ENUMV(PointList) && npnts <= 0) ||
-        (ptype == CGNS_ENUMV(PointRange) && npnts != 2)) {
+    if (((ptype == CGNS_ENUMV(PointList) ||
+          ptype == CGNS_ENUMV(ElementList)) && npnts <= 0) ||
+        ((ptype == CGNS_ENUMV(PointRange) ||
+          ptype == CGNS_ENUMV(ElementRange)) && npnts != 2)) {
         cgi_error("Invalid input:  npoint=%d, point set type=%s",
                    npnts, PointSetTypeName[ptype]);
         return CG_ERROR;
@@ -6215,7 +6066,7 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
 
     if (cgi_check_location(cg->base[B-1].cell_dim,
             cg->base[B-1].zone[Z-1].type, location)) return CG_ERROR;
-#ifndef CG_ALLOW_BC_CELL_CENTER
+#ifdef CG_FIX_BC_CELL_CENTER
     if (location == CGNS_ENUMV(CellCenter)) {
         cgi_error("GridLocation CellCenter not valid - use Edge/FaceCenter");
         return CG_ERROR;
@@ -6326,7 +6177,7 @@ int cg_boco_gridlocation_write(int file_number, int B, int Z,
 
     if (cgi_check_location(cg->base[B-1].cell_dim,
             cg->base[B-1].zone[Z-1].type, location)) return CG_ERROR;
-#ifndef CG_ALLOW_BC_CELL_CENTER
+#ifdef CG_FIX_BC_CELL_CENTER
     if (location == CGNS_ENUMV(CellCenter)) {
         cgi_error("GridLocation CellCenter not valid - use Edge/FaceCenter");
         return CG_ERROR;
@@ -10061,7 +9912,7 @@ int cg_gridlocation_read(CGNS_ENUMT(GridLocation_t) *GridLocation)
     location = cgi_location_address(CG_MODE_READ, &ier);
     if (location==0) return ier;
 
-#ifndef CG_ALLOW_BC_CELL_CENTER
+#ifdef CG_FIX_BC_CELL_CENTER
     /* convert old BC_t CellCenter values */
     if (*location == CGNS_ENUMV(CellCenter) &&
         0 == strcmp(posit->label, "BC_t")) {
@@ -10129,7 +9980,7 @@ int cg_gridlocation_write(CGNS_ENUMT(GridLocation_t) GridLocation)
     else if (strcmp(posit->label,"BC_t")==0) {
       if (cgi_check_location(cell_dim, type, GridLocation))
           return CG_ERROR;
-#ifndef CG_ALLOW_BC_CELL_CENTER
+#ifdef CG_FIX_BC_CELL_CENTER
       if (GridLocation == CGNS_ENUMV(CellCenter)) {
           if (cell_dim == 1) GridLocation = CGNS_ENUMV(Vertex);
           else if (cell_dim == 2) GridLocation = CGNS_ENUMV(EdgeCenter);
@@ -10872,10 +10723,17 @@ int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
 
 	/* save data in file */
 	length = (cgsize_t)strlen(BCTypeName[dataset->type]);
-	if (cgi_new_node(posit_id, dataset->name, "FamilyBCDataSet_t",
-	        &dataset->id, "C1", 1, &length,
-	        (void *)BCTypeName[dataset->type]))
-	    return CG_ERROR;
+	if (cg->filetype == CG_FILE_ADF2) {
+	    if (cgi_new_node(posit_id, dataset->name, "BCDataSet_t",
+	            &dataset->id, "C1", 1, &length,
+	            (void *)BCTypeName[dataset->type]))
+	        return CG_ERROR;
+	} else {
+	    if (cgi_new_node(posit_id, dataset->name, "FamilyBCDataSet_t",
+	            &dataset->id, "C1", 1, &length,
+	            (void *)BCTypeName[dataset->type]))
+	        return CG_ERROR;
+	}
     }
 
     if (BCDataType == CGNS_ENUMV(Dirichlet)) {
@@ -11636,7 +11494,8 @@ int cg_delete_node(const char *node_name)
 /* Children of FamilyBC_t */
     } else if (strcmp(posit->label,"FamilyBC_t")==0) {
         cgns_fambc *parent = (cgns_fambc *)posit->posit;
-        if (strcmp(node_label,"FamilyBCDataSet_t")==0)
+        if (strcmp(node_label,"FamilyBCDataSet_t")==0 ||
+            strcmp(node_label,"BCDataSet_t")==0)
             CGNS_DELETE_SHIFT(ndataset, dataset, cgi_free_dataset)
 
 /* Children of GeometryReference_t */
@@ -11657,15 +11516,14 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
         else if (strcmp(node_label,"UserDefinedData_t")==0)
             CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
-#ifdef CG_SPLIT_PARENT_DATA
         else if (strcmp(node_name,"ParentElements")==0)
             CGNS_DELETE_CHILD(parelem, cgi_free_array)
         else if (strcmp(node_name,"ParentElementsPosition")==0)
             CGNS_DELETE_CHILD(parface, cgi_free_array)
-#else
-        else if (strcmp(node_name,"ParentData")==0)
-            CGNS_DELETE_CHILD(parent, cgi_free_array)
-#endif
+        else if (strcmp(node_name,"ParentData")==0) {
+            CGNS_DELETE_CHILD(parelem, cgi_free_array)
+            CGNS_DELETE_CHILD(parface, cgi_free_array)
+        }
         else if (strcmp(node_name,"Rind")==0) {
             if (posit_base && posit_zone) {
                 index_dim = cg->base[posit_base-1].zone[posit_zone-1].index_dim;

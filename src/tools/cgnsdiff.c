@@ -370,7 +370,7 @@ static void compare_nodes (char *name1, double id1, char *name2, double id2)
         compare_nodes (path1, cid1, path2, cid2);
         n2++;
     }
-    while (n2 < nc2-1) {
+    while (n2 < nc2) {
         printf ("> %s/%s\n", name2, &children2[33*n2]);
         n2++;
     }

@@ -3114,7 +3114,7 @@ static void check_BC (int nb, int parclass, int *parunits)
         }
     }
 
-#if CGNS_VERSION > 3100 && !defined(CG_ALLOW_ELEMENTLIST_RANGE)
+#if CGNS_VERSION > 3100
     if (cg_boco_gridlocation_read(cgnsfn, cgnsbase, cgnszone, nb, &location))
         error_exit("cg_boco_gridlocation_read");
     hasl = CG_OK;

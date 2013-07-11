@@ -32,8 +32,8 @@
 #define CGNS_VERSION 3210
 #define CGNS_DOTVERS 3.21
 
-#define CGNS_COMPATVERSION 2540
-#define CGNS_COMPATDOTVERS 2.54
+#define CGNS_COMPATVERSION 2550
+#define CGNS_COMPATDOTVERS 2.55
 
 #include "cgnstypes.h"
 

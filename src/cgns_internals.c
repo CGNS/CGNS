@@ -618,7 +618,7 @@ int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
     if (*ndataset <= 0) {
         if (cgi_get_nodes(parent_id, "BCDataSet_t", ndataset, &id))
             return 1;
-        modified = 1;
+        modified = (cg->filetype != CG_FILE_ADF2);
     }
     if (*ndataset <= 0) {
         *pdataset = NULL;
@@ -973,12 +973,8 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 
      /* initialize */
         section[0][n].connect = 0;
-#ifdef CG_SPLIT_PARENT_DATA
         section[0][n].parelem = 0;
         section[0][n].parface = 0;
-#else
-        section[0][n].parent = 0;
-#endif
 
      /* DataArray_t:  ElementConnectivity & ParentData DataArray_t */
         if (cgi_get_nodes(section[0][n].id, "DataArray_t", &nchild, &idi))
@@ -1134,7 +1130,6 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                     }
                 }
 
-#ifdef CG_SPLIT_PARENT_DATA
             } else if (strcmp(temp_name,"ParentData")==0) {
                 if (section[0][n].parelem) {
                     cgi_error("Error:  Element ParentData defined more than once");
@@ -1233,41 +1228,6 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                     return 1;
                 }
             }
-#else
-            } else if (strcmp(temp_name,"ParentData")==0) {
-                if (section[0][n].parent) {
-                    cgi_error("Error:  Element ParentData defined more than once");
-                    return 1;
-                }
-                section[0][n].parent = CGNS_NEW(cgns_array, 1);
-                section[0][n].parent->id = idi[i];
-                section[0][n].parent->link = cgi_read_link(idi[i]);
-                section[0][n].parent->in_link = linked;
-                if (cgi_read_array(section[0][n].parent, "Elements_t",
-                    section[0][n].id)) return 1;
-
-                /* check data */
-                if (strcmp(section[0][n].parent->data_type,"I4") &&
-                    strcmp(section[0][n].parent->data_type,"I8")) {
-                    cgi_error("Datatype %s not supported for element 'ParentData'",
-                        section[0][n].parent->data_type);
-                    return 1;
-                }
-                if(section[0][n].parent->range[0] > 0 &&
-                    section[0][n].parent->range[1] > 0)
-                    pdata_cnt = section[0][n].parent->range[1] -
-                            section[0][n].parent->range[0] + 1;
-                else
-                    pdata_cnt = nelements;
-
-                if (section[0][n].parent->dim_vals[0] != pdata_cnt ||
-                    section[0][n].parent->dim_vals[1] != 4 ||
-                    section[0][n].parent->data_dim != 2 ) {
-                    cgi_error("Error exit:  Element 'ParentData' incorrectly defined");
-                    return 1;
-                }
-            }
-#endif
         }   /* loop through DataArray_t */
 /* check
         cgi_array_print("connect",section[0][n].connect);
@@ -1284,10 +1244,10 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
         if (cgi_read_user_data(linked, section[0][n].id,
             &section[0][n].nuser_data, &section[0][n].user_data)) return 1;
 
-#ifdef CG_SPLIT_PARENT_DATA
 	if (section[0][n].parelem != NULL &&
 	    0 == strcmp(section[0][n].parelem->name, "ParentData") &&
-            cg->mode == CG_MODE_MODIFY && !linked) {
+            cg->mode == CG_MODE_MODIFY && !linked &&
+            cg->filetype != CG_FILE_ADF2) {
 	    void *pardata;
 	    pdata_cnt = section[0][n].parelem->dim_vals[0];
 	    strcpy(data_type, section[0][n].parelem->data_type);
@@ -1333,7 +1293,6 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 		return 1;
 	    }
 	}
-#endif
 
     }   /* loop through element sections */
     free(id);
@@ -2274,7 +2233,7 @@ int cgi_read_boco(cgns_boco *boco)
         return 1;
     }
 
-#ifndef CG_ALLOW_ELEMENTLIST_RANGE
+#ifdef CG_FIX_ELEMENTLIST_RANGE
     /* fix ElementList/Range - no longer allowed (CPEX 0031) */
     if (boco->ptset->type == CGNS_ENUMV(ElementList) ||
         boco->ptset->type == CGNS_ENUMV(ElementRange)) {
@@ -2293,7 +2252,7 @@ int cgi_read_boco(cgns_boco *boco)
 #endif
 
     /* fix GridLocation */
-#ifndef CG_ALLOW_BC_CELL_CENTER
+#ifdef CG_FIX_BC_CELL_CENTER
     if (boco->location == CGNS_ENUMV(CellCenter)) {
         if (Cdim == 1) boco->location = CGNS_ENUMV(Vertex);
         else if (Cdim == 2) boco->location = CGNS_ENUMV(EdgeCenter);
@@ -5999,15 +5958,10 @@ int cgi_write_section(double parent_id, cgns_section *section)
         cgi_write_array(section->id, section->connect)) return 1;
 
      /* ParentData */
-#ifdef CG_SPLIT_PARENT_DATA
     if (section->parelem &&
         cgi_write_array(section->id, section->parelem)) return 1;
     if (section->parface &&
         cgi_write_array(section->id, section->parface)) return 1;
-#else
-    if (section->parent &&
-        cgi_write_array(section->id, section->parent)) return 1;
-#endif
 
      /* Descriptor_t */
     for (n=0; n<section->ndescr; n++)
@@ -11562,12 +11516,9 @@ cgns_array *cgi_array_address(int local_mode, int given_no,
         cgns_section *section= (cgns_section *)posit->posit;
         if (local_mode==CG_MODE_WRITE) {
             if (strcmp(given_name,"ElementConnectivity") &&
-#ifdef CG_SPLIT_PARENT_DATA
 		strcmp(given_name,"ParentElements") &&
-		strcmp(given_name,"ParentElementsPosition")) {
-#else
+		strcmp(given_name,"ParentElementsPosition") &&
 		strcmp(given_name,"ParentData")) {
-#endif
                 cgi_error("User defined DataArray_t node not supported under '%s' type node",posit->label);
                 (*ier) = CG_ERROR;
                 return 0;
@@ -11575,47 +11526,34 @@ cgns_array *cgi_array_address(int local_mode, int given_no,
             if (section->connect==0 && strcmp(given_name,"ElementConnectivity")==0) {
                 section->connect = CGNS_NEW(cgns_array, 1);
                 array = section->connect;
-#ifdef CG_SPLIT_PARENT_DATA
-            } else if (section->parelem==0 && strcmp(given_name,"ParentElements")==0) {
+            } else if (section->parelem==0 && (strcmp(given_name,"ParentElements")==0 ||
+                       0 == strcmp(given_name, "ParentData"))) {
                 section->parelem = CGNS_NEW(cgns_array, 1);
                 array = section->parelem;
             } else if (section->parface==0 && strcmp(given_name,"ParentElementsPosition")==0) {
                 section->parface = CGNS_NEW(cgns_array, 1);
                 array = section->parface;
-#else
-            } else if (section->parent==0 && strcmp(given_name,"ParentData")==0) {
-                section->parent = CGNS_NEW(cgns_array, 1);
-                array = section->parent;
-#endif
             } else {
                 if (cg->mode == CG_MODE_WRITE) error1=1;
                 else {
                     parent_id = section->id;
                     if (section->connect && strcmp(given_name,"ElementConnectivity")==0)
                         array = section->connect;
-#ifdef CG_SPLIT_PARENT_DATA
-                    else if (section->parelem && strcmp(given_name,"ParentElements")==0)
+                    else if (section->parelem && (strcmp(given_name,"ParentElements")==0 ||
+                             0 == strcmp(given_name,"ParentData")))
                         array = section->parelem;
                     else if (section->parface && strcmp(given_name,"ParentElementsPosition")==0)
                         array = section->parface;
-#else
-                    else if (section->parent && strcmp(given_name,"ParentData")==0)
-                        array = section->parent;
-#endif
                 }
             }
         } else if (local_mode == CG_MODE_READ) {
             if (section->connect && strcmp(given_name,"ElementConnectivity")==0)
                 array = section->connect;
-#ifdef CG_SPLIT_PARENT_DATA
-            else if (section->parelem && strcmp(given_name,"ParentElements")==0)
+            else if (section->parelem && (strcmp(given_name,"ParentElements")==0 ||
+                     0 == strcmp(given_name,"ParentData")))
                 array = section->parelem;
             else if (section->parface && strcmp(given_name,"ParentElementsPosition")==0)
                 array = section->parface;
-#else
-            else if (section->parent && strcmp(given_name,"ParentData")==0)
-                array = section->parent;
-#endif
         }
 
      /* 0,N DataArray_t under FlowSolution_t */
@@ -12366,7 +12304,6 @@ void cgi_free_section(cgns_section *section)
         cgi_free_array(section->connect);
         free(section->connect);
     }
-#ifdef CG_SPLIT_PARENT_DATA
     if (section->parelem) {
         cgi_free_array(section->parelem);
         free(section->parelem);
@@ -12375,12 +12312,6 @@ void cgi_free_section(cgns_section *section)
         cgi_free_array(section->parface);
         free(section->parface);
     }
-#else
-    if (section->parent) {
-        cgi_free_array(section->parent);
-        free(section->parent);
-    }
-#endif
     if (section->nuser_data) {
         for (n=0; n<section->nuser_data; n++)
             cgi_free_user_data(&section->user_data[n]);

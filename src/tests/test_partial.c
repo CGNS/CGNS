@@ -84,10 +84,18 @@ int main (int argc, char **argv)
     if (argc > 1) {
         n = 0;
         if (argv[1][n] == '-') n++;
-        if (argv[1][n] == 'a' || argv[1][n] == 'A')
-            nn = CG_FILE_ADF;
-        else if (argv[1][n] == 'h' || argv[1][n] == 'H')
+        if (argv[1][n] == 'a' || argv[1][n] == 'A' || argv[1][n] == '1') {
+            if (NULL != strchr(argv[1], '2'))
+                nn = CG_FILE_ADF2;
+            else
+                nn = CG_FILE_ADF;
+        }
+        else if (argv[1][n] == 'h' || argv[1][n] == 'H' || argv[1][n] == '2') {
             nn = CG_FILE_HDF5;
+        }
+        else if (argv[1][n] == '3') {
+            nn = CG_FILE_ADF2;
+        }
         else {
             fprintf(stderr, "unknown option\n");
             exit (1);

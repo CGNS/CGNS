@@ -80,13 +80,17 @@ int main (int argc, char *argv[])
         int type = 0;
         int n = 0;
         if (argv[1][n] == '-') n++;
-        if (argv[1][n] == 'a' || argv[1][n] == 'A') {
-            type = CG_FILE_ADF;
-            strcpy (outfile, "test.cga");
+        if (argv[1][n] == 'a' || argv[1][n] == 'A' || argv[1][n] == '1') {
+            if (NULL != strchr(argv[1], '2'))
+                type = CG_FILE_ADF2;
+            else
+                type = CG_FILE_ADF;
         }
-        else if (argv[1][n] == 'h' || argv[1][n] == 'H') {
+        else if (argv[1][n] == 'h' || argv[1][n] == 'H' || argv[1][n] == '2') {
             type = CG_FILE_HDF5;
-            strcpy (outfile, "test.cgh");
+        }
+        else if (argv[1][n] == '3') {
+            type = CG_FILE_ADF2;
         }
         else {
             fprintf(stderr, "unknown option\n");
@@ -579,7 +583,10 @@ void write_structured()
 
     if (cg_family_write(cgfile, cgbase, "WallFamily", &cgfam) ||
         cg_fambc_write(cgfile, cgbase, cgfam, "WallBC",
-            CGNS_ENUMV(BCWall), &cgbc))
+            CGNS_ENUMV(BCWall), &cgbc) ||
+        cg_goto(cgfile, cgbase, "Family_t", 1, "FamilyBC_t", 1, "end") ||
+        cg_bcdataset_write("WallBCDataSet", CGNS_ENUMV(BCWall),
+            CGNS_ENUMV(Neumann)))
         error_exit("wall family bc");
 
     /* write out some bogus geometry info for the family */
