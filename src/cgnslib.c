@@ -437,7 +437,7 @@ int cg_open(const char * filename, int mode, int *file_number)
         }
 #if CG_SIZEOF_SIZE == 32
         if (mode == CG_MODE_MODIFY && cgns_filetype == CG_FILE_ADF2 &&
-            filetype == CG_FILE_ADF && cg->version <= CGNS_COMPATVERSION) {
+            filetype == CG_FILE_ADF && cg->version < 3000) {
             filetype = cg->filetype = CG_FILE_ADF2;
         }
 #endif
