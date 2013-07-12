@@ -25,18 +25,6 @@ freely, subject to the following restrictions:
 #include "cgnstypes.h"
 #include "cgns_io.h"
 
-/* define this to prevent conversion from ElementList/Range
-   to PointList/PointRange as per CPEX 0031 */
-#define CG_ALLOW_ELEMENTLIST_RANGE
-
-/* define this to enable CellCenter GridLocation for BC_t
-   not allowed in CPEX 0031 */
-#define CG_ALLOW_BC_CELL_CENTER
-
-/* this splits ParentData into ParentElements and ParentElementsPosition
-   Required by CPEX 0031 */
-#define CG_SPLIT_PARENT_DATA
-
 typedef char char_33[33];
 typedef char const cchar_33[33];
 typedef cgsize_t cgsize6_t[6];
@@ -543,12 +531,8 @@ typedef struct {            /* Elements_t node                      */
     cgsize_t range[2];      /* index of first and last element  */
     int *rind_planes;       /* No. of rind-elements                 */
     cgns_array *connect;    /* ElementConnectivity                  */
-#ifdef CG_SPLIT_PARENT_DATA
     cgns_array *parelem;    /* ParentElements                       */
     cgns_array *parface;    /* ParentElementsPosition               */
-#else
-    cgns_array *parent;     /* Parent Data                          */
-#endif
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
 } cgns_section;
@@ -907,17 +891,18 @@ typedef struct {            /* CGNSBase_t Node          */
 
 typedef struct {
     char *filename;         /* name of file                         */
-    int version;            /* version of the CGNS file * 1000  */
+    int filetype;           /* type of file                         */
+    int version;            /* version of the CGNS file * 1000      */
     int cgio;               /* index of I/O control                 */
     double rootid;          /* root ID of file                      */
     int mode;               /* reading or writing                   */
     int file_number;        /* external identifier                  */
     int deleted;            /* number of deleted nodes              */
     int added;              /* number of added nodes                */
-    char_33 dtb_version;    /* ADF Database Version         */
-    char_33 creation_date;  /* creation date of the file        */
+    char_33 dtb_version;    /* ADF Database Version                 */
+    char_33 creation_date;  /* creation date of the file            */
     char_33 modify_date;    /* last modification date of the file   */
-    char_33 adf_lib_version;/* ADF Library Version          */
+    char_33 adf_lib_version;/* ADF Library Version                  */
     int nbases;             /* number of bases in the file          */
     cgns_base *base;        /* ptrs to in-memory copies of bases    */
 } cgns_file;

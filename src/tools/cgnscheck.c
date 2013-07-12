@@ -2921,15 +2921,9 @@ static void check_BC (int nb, int parclass, int *parunits)
         }
     }
 
-#if CGNS_VERSION > 3100 && !defined(CG_ALLOW_ELEMENTLIST_RANGE)
-    if (cg_boco_gridlocation_read(cgnsfn, cgnsbase, cgnszone, nb, &location))
-        error_exit("cg_boco_gridlocation_read");
-    hasl = CG_OK;
-#else
     hasl = read_gridlocation (&location);
     if (hasl && hasl != CG_NODE_NOT_FOUND)
         error_exit("cg_gridlocation_read");
-#endif
     if (verbose && hasl == CG_OK)
         printf ("    Grid Location=%s\n", cg_GridLocationName(location));
     location = check_location (z, 1, ptype, location);

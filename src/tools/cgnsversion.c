@@ -854,15 +854,10 @@ void CGI_write_section(double parent_id, cgns_section *section)
         cg_error_exit();
 
      /* ParentData */
-#ifdef CG_SPLIT_PARENT_DATA
     if (section->parelem && cgi_write_array(section->id, section->parelem))
         cg_error_exit();
     if (section->parface && cgi_write_array(section->id, section->parface))
         cg_error_exit();
-#else
-    if (section->parent && cgi_write_array(section->id, section->parent))
-        cg_error_exit();
-#endif
 
      /* Descriptor_t */
     for (n=0; n<section->ndescr; n++)
