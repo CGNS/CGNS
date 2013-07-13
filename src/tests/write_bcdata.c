@@ -37,12 +37,16 @@ float start, finish;
 int main (int argc, char **argv)
 {
     int i, j, nb = 5, nv = 5;
+    float exps[5];
 
     if (argc > 1) {
         nb = atoi (argv[1]);
         if (argc > 2)
             nv = atoi (argv[2]);
     }
+    for (i = 0; i < 5; i++)
+        exps[i] = (float)0.0;
+    exps[1] = (float)1.0;
 
     unlink (fname);
     printf ("creating file ...");
@@ -51,14 +55,22 @@ int main (int argc, char **argv)
 
     if (cg_open (fname, CG_MODE_WRITE, &cgfile) ||
         cg_base_write (cgfile, "Base", 3, 3, &cgbase) ||
+        cg_goto(cgfile, cgbase, NULL) ||
+        cg_dataclass_write(CGNS_ENUMV(NormalizedByUnknownDimensional)) ||
         cg_zone_write (cgfile, cgbase, "Zone", size,
             CGNS_ENUMV(Unstructured), &cgzone) ||
         cg_coord_write (cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateX", coord[0], &cgcoord) ||
+        cg_gopath(cgfile, "/Base/Zone/GridCoordinates/CoordinateX") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps) ||
         cg_coord_write (cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateY", coord[1], &cgcoord) ||
+        cg_gopath(cgfile, "../CoordinateY") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps) ||
         cg_coord_write (cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateZ", coord[2], &cgcoord) ||
+        cg_gopath(cgfile, "../CoordinateZ") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps) ||
         cg_section_write (cgfile, cgbase, cgzone, "Tris",
             CGNS_ENUMV(TRI_3), 1, 4, 0, tris, &cgsect) ||
         cg_section_write (cgfile, cgbase, cgzone, "Tets",

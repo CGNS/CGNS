@@ -6,7 +6,9 @@
   The NASA Glenn website (or local copy) is now used instead.
 - save window size for cgnsview
 - fix to computing path lists in CMake script
+- fixes and updates to tests and cgnscheck
 - updates to support CG_FILE_ADF2 (2.5 compatibility)
+- fix for point set subregions
 
 == 3.1.4 ==
 - added some const definitions to library

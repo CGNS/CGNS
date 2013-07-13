@@ -496,8 +496,8 @@ void write_structured()
         range[n+3] = NUM_SIDE;
     }
     range[5] = 1;
-    for (n = 0, j = 1; j <= NUM_SIDE; j++) {
-        for (i = 1; i <= NUM_SIDE; i++) {
+    for (n = 0, j = 1; j < NUM_SIDE; j++) {
+        for (i = 1; i < NUM_SIDE; i++) {
             pts[n++] = i;
             pts[n++] = j;
             pts[n++] = NUM_SIDE;
@@ -506,6 +506,7 @@ void write_structured()
     for (n = 0; n < 6; n++)
         rind[n] = 1;
     dims[0] = NUM_SIDE * NUM_SIDE;
+    dims[1] = (NUM_SIDE - 1) * (NUM_SIDE - 1);
 
     for (nc = 3; nc <= NUM_ZCONN; nc++) {
         sprintf(sname, "SubRegion%d", nc);
@@ -533,9 +534,10 @@ void write_structured()
             sprintf(errmsg, "cg_exponents_write %s", sname);
             error_exit(errmsg);
         }
+
         if (cg_subreg_ptset_write(cgfile, cgbase, 2, sname, 2,
-                CGNS_ENUMV(EdgeCenter), CGNS_ENUMV(PointList),
-                npts, pts, &cgsr)) {
+                CGNS_ENUMV(KFaceCenter), CGNS_ENUMV(PointList),
+                dims[1], pts, &cgsr)) {
             sprintf(errmsg, "cg_subreg_ptset_write(%s PointList)", sname);
             error_exit(errmsg);
         }
@@ -544,7 +546,7 @@ void write_structured()
             error_exit(errmsg);
         }
         if (cg_array_write("DataArray", CGNS_ENUMV(RealSingle), 1,
-                dims, xcoord)) {
+                &dims[1], xcoord)) {
             sprintf(errmsg, "cg_array_write %s", sname);
             error_exit(errmsg);
         }
@@ -1056,8 +1058,9 @@ void test_subreg()
                 if (cg_rind_read(rind)) error_exit("cg_rind_read");
             }
             else {
-                if (location != CGNS_ENUMV(EdgeCenter) ||
-                    ptype != CGNS_ENUMV(PointList) || np != npts)
+                if (location != CGNS_ENUMV(KFaceCenter) ||
+                    ptype != CGNS_ENUMV(PointList) ||
+                    np != (NUM_SIDE-1)*(NUM_SIDE-1))
                     error_exit("not EdgeCenter,PointList or npts");
             }
             if (cg_subreg_ptset_read(cgfile, cgbase, cgzone, ns, pts))

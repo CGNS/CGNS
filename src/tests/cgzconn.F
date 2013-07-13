@@ -11,7 +11,7 @@
       cgsize_t i, j, k, n, size(9), dim
       cgsize_t ptrange(6), ptlist(125), transform(3)
       cgsize_t loc, type, ptype, npts, dztype, dptype, ddtype, dnpts
-      real*4 x(125), y(125), z(125)
+      real*4 x(125), y(125), z(125), exp(5)
       character*32 zname, dname, cname
 
 c open and write base
@@ -55,6 +55,10 @@ c create some bogus data
           ptlist(n) = 1
         enddo
       enddo
+      do n=1,5
+        exp(n) = 0
+      enddo
+      exp(2) = 1
 
 c loop over zones
       do n=1,2
@@ -69,15 +73,33 @@ c write zone
         call cg_zone_write_f(cgfile, cgbase, zname, size,
      &                       Structured, cgzone, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
+        call cg_goto_f(cgfile, cgbase, ierr, 'Zone_t', cgzone, 'end')
+        if (ierr .ne. CG_OK) call cg_error_exit_f
+        call cg_dataclass_write_f(NormalizedByDimensional, ierr)
+        if (ierr .ne. CG_OK) call cg_error_exit_f
 c write coordinates
         call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,
      &                        'CoordinateX', x, cgcoord, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
+        call cg_gopath_f(cgfile, 'GridCoordinates/CoordinateX', ierr)
+        if (ierr .ne. CG_OK) call cg_error_exit_f
+        call cg_exponents_write_f(RealSingle, exp, ierr)
+        if (ierr .ne. CG_OK) call cg_error_exit_f
+
         call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,
      &                        'CoordinateY', y, cgcoord, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
+        call cg_gopath_f(cgfile, '../CoordinateY', ierr)
+        if (ierr .ne. CG_OK) call cg_error_exit_f
+        call cg_exponents_write_f(RealSingle, exp, ierr)
+        if (ierr .ne. CG_OK) call cg_error_exit_f
+
         call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,
      &                        'CoordinateZ', z, cgcoord, ierr)
+        if (ierr .ne. CG_OK) call cg_error_exit_f
+        call cg_gopath_f(cgfile, '../CoordinateZ', ierr)
+        if (ierr .ne. CG_OK) call cg_error_exit_f
+        call cg_exponents_write_f(RealSingle, exp, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
 
 c write first ZoneGridConnectivity - will be active
