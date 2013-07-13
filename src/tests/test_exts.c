@@ -43,6 +43,7 @@ int main (int argc, char **argv)
     float data1 = 1;
     float data2 = 2;
     float exponents[8], rate[3], center[3];
+    float lenexp[5], ratexp[5];
     CGNS_ENUMT(GridLocation_t) gridloc;
     int ordinal, ndata, cgfam, cgbc, nunits, nexps;
     int elecflag, magnflag, condflag, dirichlet, neumann;
@@ -83,13 +84,22 @@ int main (int argc, char **argv)
         rate[n] = (float)n;
         center[n] = (float)n;
     }
+    for (n = 0; n < 5; n++) {
+        lenexp[n] = (float)0;
+        ratexp[n] = (float)0;
+    }
+    lenexp[1] = (float)1;
+    ratexp[2] = (float)-1;
+    ratexp[4] = (float)1;
     for (n = 0; n < NUM_SIDE*NUM_SIDE*NUM_SIDE; n++)
         coord[n] = (float)n;
 
     unlink (fname);
     printf ("creating CGNS file %s\n", fname);
     if (cg_open (fname, CG_MODE_WRITE, &cgfile) ||
-        cg_base_write (cgfile, "Base", 3, 3, &cgbase))
+        cg_base_write (cgfile, "Base", 3, 3, &cgbase) ||
+        cg_goto(cgfile, cgbase, NULL) ||
+        cg_dataclass_write(CGNS_ENUMV(NormalizedByDimensional)))
         error_exit ("write base");
 
     /* write electomagnetics model under base */
@@ -108,7 +118,11 @@ int main (int argc, char **argv)
     puts ("writing family/rotating");
     if (cg_family_write(cgfile, cgbase, "Family", &cgfam) ||
         cg_goto(cgfile, cgbase, "Family_t", cgfam, NULL) ||
-        cg_rotating_write (rate, center))
+        cg_rotating_write (rate, center) ||
+        cg_gopath(cgfile, "RotatingCoordinates/RotationCenter") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), lenexp) ||
+        cg_gopath(cgfile, "../RotationRateVector") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), ratexp))
         error_exit ("write family/rotating");
 
     /* write BCDataSet under FamilyBC_t */
@@ -161,10 +175,17 @@ int main (int argc, char **argv)
     if (cg_zone_write (cgfile, cgbase, "Zone", size, CGNS_ENUMV(Structured), &cgzone) ||
         cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateX", coord, &cgcoord) ||
+        cg_goto(cgfile, cgbase, "Zone_t", cgzone, "GridCoordinates", 0,
+            "CoordinateX", 0, NULL) ||
+        cg_exponents_write (CGNS_ENUMV(RealSingle), lenexp) ||
         cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateY", coord, &cgcoord) ||
+        cg_gopath(cgfile, "../CoordinateY") ||
+        cg_exponents_write (CGNS_ENUMV(RealSingle), lenexp) ||
         cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
-            "CoordinateZ", coord, &cgcoord))
+            "CoordinateZ", coord, &cgcoord) ||
+        cg_gopath(cgfile, "../CoordinateZ") ||
+        cg_exponents_write (CGNS_ENUMV(RealSingle), lenexp))
         cg_error_exit();
 
     /* create a BC node with point range and Dirichlet node*/

@@ -115,13 +115,20 @@ int main (int argc, char *argv[])
     cgsize_t ne;
     int fnum, bnum, znum, snum, cnum;
     cgsize_t size[3];
+    float exp[5];
     char *outfile = "elemtest.cgns";
 
     unlink (outfile);
 
     if (cg_open (outfile, CG_MODE_WRITE, &fnum) ||
-        cg_base_write (fnum, "Base", 3, 3, &bnum))
+        cg_base_write (fnum, "Base", 3, 3, &bnum) ||
+        cg_goto(fnum, bnum, NULL) ||
+        cg_dataclass_write(CGNS_ENUMV(NormalizedByDimensional)))
         cg_error_exit ();
+
+    for (n = 0; n < 5; n++)
+        exp[n] = (float)0.0;
+    exp[1] = (float)1.0;
 
     /* zone with linear elements */
 
@@ -132,10 +139,17 @@ int main (int argc, char *argv[])
             CGNS_ENUMV(Unstructured), &znum) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
             "CoordinateX", xc, &cnum) ||
+        cg_goto(fnum, bnum, "Zone_t", znum, "GridCoordinates", 0,
+            "CoordinateX", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
             "CoordinateY", yc, &cnum) ||
+        cg_gopath(fnum, "../CoordinateY") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
-            "CoordinateZ", zc, &cnum))
+            "CoordinateZ", zc, &cnum) ||
+        cg_gopath(fnum, "../CoordinateZ") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp))
         cg_error_exit ();
     ne = j = 0;
 
@@ -255,10 +269,17 @@ int main (int argc, char *argv[])
             CGNS_ENUMV(Unstructured), &znum) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
             "CoordinateX", xc, &cnum) ||
+        cg_goto(fnum, bnum, "Zone_t", znum, "GridCoordinates", 0,
+            "CoordinateX", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
             "CoordinateY", yc, &cnum) ||
+        cg_gopath(fnum, "../CoordinateY") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
-            "CoordinateZ", zc, &cnum))
+            "CoordinateZ", zc, &cnum) ||
+        cg_gopath(fnum, "../CoordinateZ") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp))
         cg_error_exit ();
     ne = j = 0;
 
@@ -355,10 +376,17 @@ int main (int argc, char *argv[])
             CGNS_ENUMV(Unstructured), &znum) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
             "CoordinateX", xc, &cnum) ||
+        cg_goto(fnum, bnum, "Zone_t", znum, "GridCoordinates", 0,
+            "CoordinateX", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
             "CoordinateY", yc, &cnum) ||
+        cg_gopath(fnum, "../CoordinateY") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
-            "CoordinateZ", zc, &cnum))
+            "CoordinateZ", zc, &cnum) ||
+        cg_gopath(fnum, "../CoordinateZ") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp))
         cg_error_exit ();
     ne = j = 0;
 
@@ -433,10 +461,17 @@ int main (int argc, char *argv[])
             CGNS_ENUMV(Unstructured), &znum) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
             "CoordinateX", x3, &cnum) ||
+        cg_goto(fnum, bnum, "Zone_t", znum, "GridCoordinates", 0,
+            "CoordinateX", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
             "CoordinateY", y3, &cnum) ||
+        cg_gopath(fnum, "../CoordinateY") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
-            "CoordinateZ", z3, &cnum))
+            "CoordinateZ", zc, &cnum) ||
+        cg_gopath(fnum, "../CoordinateZ") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp))
         cg_error_exit ();
     ne = j = 0;
 

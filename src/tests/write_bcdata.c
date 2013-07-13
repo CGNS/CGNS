@@ -37,13 +37,16 @@ float start, finish;
 int main (int argc, char **argv)
 {
     int i, j, nb = 5, nv = 5;
-    char buff1[64], buff2[64];
+    float exps[5];
 
     if (argc > 1) {
         nb = atoi (argv[1]);
         if (argc > 2)
             nv = atoi (argv[2]);
     }
+    for (i = 0; i < 5; i++)
+        exps[i] = (float)0.0;
+    exps[1] = (float)1.0;
 
     unlink (fname);
     printf ("creating file ...");
@@ -52,30 +55,33 @@ int main (int argc, char **argv)
 
     if (cg_open (fname, CG_MODE_WRITE, &cgfile) ||
         cg_base_write (cgfile, "Base", 3, 3, &cgbase) ||
+        cg_goto(cgfile, cgbase, NULL) ||
+        cg_dataclass_write(CGNS_ENUMV(NormalizedByUnknownDimensional)) ||
         cg_zone_write (cgfile, cgbase, "Zone", size,
             CGNS_ENUMV(Unstructured), &cgzone) ||
         cg_coord_write (cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateX", coord[0], &cgcoord) ||
+        cg_gopath(cgfile, "/Base/Zone/GridCoordinates/CoordinateX") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps) ||
         cg_coord_write (cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateY", coord[1], &cgcoord) ||
+        cg_gopath(cgfile, "../CoordinateY") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps) ||
         cg_coord_write (cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateZ", coord[2], &cgcoord) ||
+        cg_gopath(cgfile, "../CoordinateZ") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps) ||
         cg_section_write (cgfile, cgbase, cgzone, "Tris",
             CGNS_ENUMV(TRI_3), 1, 4, 0, tris, &cgsect) ||
         cg_section_write (cgfile, cgbase, cgzone, "Tets",
-            CGNS_ENUMV(TETRA_4), 5, 5, 0, tets, &cgsect) ||
-        cg_goto (cgfile, cgbase, "Zone_t", cgzone, "end") ||
-        cg_multifam_write("FamilyName:Motion","motion#1"))
+            CGNS_ENUMV(TETRA_4), 5, 5, 0, tets, &cgsect))
         cg_error_exit();
 
     dim = npnts;
     for (j = 1; j <= nb; j++) {
         sprintf (name, "BC%d", j);
         if (cg_boco_write (cgfile, cgbase, cgzone, name, CGNS_ENUMV(BCWall),
-                CGNS_ENUMV(ElementList), npnts, pnts, &cgbc) ||
-            cg_goto (cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", cgzone,
-                "BC_t", cgbc, "end") ||
-            cg_multifam_write("FamilyName:Pressure","PressureOutput"))
+                CGNS_ENUMV(ElementList), npnts, pnts, &cgbc))
             cg_error_exit();
 
         for (i = 1; i <= nv; i++) {
@@ -135,19 +141,6 @@ int main (int argc, char **argv)
     finish = (float)elapsed_time();
     printf (" %.2f secs\n", finish - start);
     cg_close (cgfile);
-
-    printf ("opening file  ...");
-    fflush (stdout);
-    start = (float)elapsed_time();
-    if (cg_open (fname, CG_MODE_MODIFY, &cgfile)) cg_error_exit();
-    cg_goto (cgfile, 1, "Zone_t", 1, "end");
-    cg_nmultifam(&nb);
-    printf ("read additional families  [%d]...",nb);
-    cg_multifam_read(1,buff1,buff2);
-    printf ("[%s] [%s]",buff1,buff2);
-    cg_close (cgfile);
-    finish = (float)elapsed_time();
-    printf (" %.2f secs\n", finish - start);
 
     return 0;
 }

@@ -4593,7 +4593,7 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *name,
         return CG_ERROR;
     }
     if (cg_index_dim(fn, B, Z, &index_dim)) return CG_ERROR;
-    if (cgi_check_location(dimension,
+    if (cgi_check_location(dimension+1,
             cg->base[B-1].zone[Z-1].type, location)) return CG_ERROR;
 
     subreg = cg_subreg_write(fn, B, Z, name, dimension, S);

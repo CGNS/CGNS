@@ -30,6 +30,7 @@ int main (int argc, char *argv[])
 {
     int i, j, k, n, nfam, nnames;
     int cgfile, cgbase, cgzone, cgfam, cgcoord, cgbc, cgsr;
+    float exp[5];
     char name[33], family[33], outfile[33];
     char tname[33], tfamily[33];
 
@@ -54,14 +55,18 @@ int main (int argc, char *argv[])
     if (cg_open(outfile, CG_MODE_WRITE, &cgfile))
         error_exit("cg_open");
 
-    if (cg_base_write(cgfile, "Structured", 3, 3, &cgbase))
+    if (cg_base_write(cgfile, "Structured", 3, 3, &cgbase) ||
+        cg_gopath(cgfile, "/Structured") ||
+        cg_dataclass_write(CGNS_ENUMV(Dimensional)) ||
+        cg_units_write(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
+            CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian)))
         error_exit("base write");
 
-    for (i = 1; i <= 3; i++) {
+    for (i = 1; i <= 4; i++) {
         sprintf(family, "TopFamily%d", i);
         if (cg_family_write(cgfile, cgbase, family, &cgfam))
             error_exit("family write");
-        for (j = 1; j <= 3; j++) {
+        for (j = 1; j <= 4; j++) {
             sprintf(name, "SubFamily%d", j);
             sprintf(family, "Family%d", j);
             if (cg_family_name_write(cgfile, cgbase, cgfam,
@@ -70,6 +75,9 @@ int main (int argc, char *argv[])
         }
     }
 
+    for (n = 0; n < 5; n++)
+        exp[n] = (float)0;
+    exp[1] = (float)1;
     if (cg_zone_write(cgfile, cgbase, "Zone", sizes,
             CGNS_ENUMV(Structured), &cgzone))
         error_exit("zone write");
@@ -78,7 +86,14 @@ int main (int argc, char *argv[])
         cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateY", ycoord, &cgcoord) ||
         cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
-            "CoordinateZ", zcoord, &cgcoord))
+            "CoordinateZ", zcoord, &cgcoord) ||
+        cg_goto(cgfile, cgbase, "Zone_t", cgzone, "GridCoordinates", 0,
+            "CoordinateX", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp) ||
+        cg_gopath(cgfile, "../CoordinateY") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp) ||
+        cg_gopath(cgfile, "../CoordinateZ") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exp))
         error_exit("coordinate write");
 
     if (cg_goto(cgfile, cgbase, "Zone", 0, NULL))
@@ -146,17 +161,17 @@ int main (int argc, char *argv[])
     cgbase = cgzone = 1;
     if (cg_nfamilies(cgfile, cgbase, &nfam))
         error_exit("number of families");
-    CHECK("cg_nfamilies", nfam == 3);
+    CHECK("cg_nfamilies", nfam == 4);
 
-    for (i = 1; i <= 3; i++) {
+    for (i = 1; i <= 4; i++) {
         sprintf(tfamily, "TopFamily%d", i);
         if (cg_family_read(cgfile, cgbase, i, family, &j, &k))
             error_exit("family read");
         CHECK("family", 0 == strcmp(family, tfamily));
         if (cg_nfamily_names(cgfile, cgbase, i, &nnames))
             error_exit("number of family names");
-        CHECK("number of family names", nnames == 3);
-        for (j = 1; j <= 3; j++) {
+        CHECK("number of family names", nnames == 4);
+        for (j = 1; j <= 4; j++) {
             sprintf(tname, "SubFamily%d", j);
             sprintf(tfamily, "Family%d", j);
             if (cg_family_name_read(cgfile, cgbase, i, j,
@@ -171,7 +186,7 @@ int main (int argc, char *argv[])
         if (cg_delete_node(tname)) error_exit("delete SubFamily");
         if (cg_nfamily_names(cgfile, cgbase, i, &nnames))
             error_exit("number of family names after delete");
-        CHECK("number of family names after delete", nnames == 2);
+        CHECK("number of family names after delete", nnames == 3);
     }
 
     if (cg_goto(cgfile, cgbase, "Zone", 0, NULL))

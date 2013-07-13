@@ -235,7 +235,9 @@ int main (int argc, char **argv)
     unlink (fname);
     printf ("creating CGNS file %s\n", fname);
     if (cg_open (fname, CG_MODE_WRITE, &cgfile) ||
-        cg_base_write (cgfile, "Base", 3, 3, &cgbase))
+        cg_base_write (cgfile, "Base", 3, 3, &cgbase) ||
+        cg_gopath (cgfile, "/Base") ||
+        cg_dataclass_write (CGNS_ENUMV(NormalizedByDimensional)))
         cg_error_exit ();
 
     /* create zone and sections */

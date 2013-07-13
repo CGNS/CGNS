@@ -346,6 +346,7 @@ void write_equationset ()
     float mu = (float)1.716e-5;
     float exp = (float)0.666;
     float pt = (float)0.9;
+    float exps[5];
 
     for (n = 0; n < 6; n++)
         diff[n] = 0;
@@ -381,6 +382,11 @@ void write_equationset ()
 
     /* gas model */
 
+    exps[0] = (float)0.0;
+    exps[1] = (float)2.0;
+    exps[2] = (float)-2.0;
+    exps[3] = (float)-1.0;
+    exps[4] = (float)0.0;
     if (cg_goto(cgfile, cgbase, "FlowEquationSet_t", 1,
             "GasModel_t", 1, "end") ||
         cg_dataclass_write(CGNS_ENUMV(DimensionlessConstant)) ||
@@ -392,17 +398,32 @@ void write_equationset ()
             "GasModel_t", 1, "DataArray_t", 2, "end") ||
         cg_dataclass_write(CGNS_ENUMV(Dimensional)) ||
         cg_units_write(CGNS_ENUMV(Slug), CGNS_ENUMV(Foot),
-            CGNS_ENUMV(Second), CGNS_ENUMV(Rankine), CGNS_ENUMV(Radian)))
+            CGNS_ENUMV(Second), CGNS_ENUMV(Rankine), CGNS_ENUMV(Radian)) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps))
         error_exit("gas model");
 
     /* viscosity model */
 
+    exps[1] = (float)0.0;
+    exps[2] = (float)0.0;
+    exps[3] = (float)1.0;
     if (cg_goto(cgfile, cgbase, "FlowEquationSet_t", 1,
             "ViscosityModel_t", 1, "end") ||
         cg_array_write("SutherlandLawConstant", CGNS_ENUMV(RealSingle),
             1, &dim, &ts) ||
+        cg_gopath(cgfile, "SutherlandLawConstant") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps))
+        error_exit("viscosity model");
+
+    exps[0] = (float)1.0;
+    exps[1] = (float)-1.0;
+    exps[2] = (float)-1.0;
+    exps[3] = (float)0.0;
+    if (cg_gopath(cgfile, "..") ||
         cg_array_write("ViscosityMolecularReference", CGNS_ENUMV(RealSingle),
-            1, &dim, &mu))
+            1, &dim, &mu) ||
+        cg_gopath(cgfile, "ViscosityMolecularReference") ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps))
         error_exit("viscosity model");
 
     /* thermal conductivity model */
@@ -431,6 +452,7 @@ void write_equationset ()
 void write_coords(int nz)
 {
     int k, nn, n, nij, koff, cgcoord;
+    float exps[5];
 
     koff = nz == 1 ? 1 - NUM_SIDE : 0;
     nij = NUM_SIDE * NUM_SIDE;
@@ -438,13 +460,25 @@ void write_coords(int nz)
         for (nn = 0; nn < nij; nn++)
             zcoord[n++] = (float)(k + koff);
     }
+    for (n = 0; n < 5; n++)
+        exps[n] = (float)0.0;
+    exps[1] = (float)1.0;
 
     if (cg_coord_write(cgfile, cgbase, nz, CGNS_ENUMV(RealSingle),
             "CoordinateX", xcoord, &cgcoord) ||
+        cg_goto(cgfile, cgbase, "Zone_t", nz, "GridCoordinates_t", 1,
+            "CoordinateX", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps) ||
         cg_coord_write(cgfile, cgbase, nz, CGNS_ENUMV(RealSingle),
             "CoordinateY", ycoord, &cgcoord) ||
+        cg_goto(cgfile, cgbase, "Zone_t", nz, "GridCoordinates_t", 1,
+            "CoordinateY", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps) ||
         cg_coord_write(cgfile, cgbase, nz, CGNS_ENUMV(RealSingle),
-            "CoordinateZ", zcoord, &cgcoord)) {
+            "CoordinateZ", zcoord, &cgcoord) ||
+        cg_goto(cgfile, cgbase, "Zone_t", nz, "GridCoordinates_t", 1,
+            "CoordinateZ", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps)) {
         sprintf (errmsg, "zone %d coordinates", nz);
         error_exit(errmsg);
     }
@@ -487,6 +521,7 @@ void write_structured()
     int transform[3];
     int cgsol, rind[6], cgfld;
     char name[33];
+    float exps[5];
 
     printf ("writing structured base\n");
     fflush (stdout);
@@ -609,7 +644,7 @@ void write_structured()
             CGNS_ENUMV(PointRange), 2, range, &cgbc) ||
         cg_goto(cgfile, cgbase, "Zone_t", 1, "ZoneBC_t", 1,
             "BC_t", cgbc, "end") ||
-        cg_multifam_write ("MultiFam Arg 1","MultiFam Arg 2") ||
+        cg_multifam_write ("MultiFam Arg 1", "MultiFam Arg 2") ||
         cg_famname_write("WallFamily"))
         error_exit("imin boco");
 
@@ -663,6 +698,10 @@ void write_structured()
 
     /* write solution for zone 1 as vertex with rind points */
 
+    exps[0] = (float)1.0;
+    exps[1] = (float)-3.0;
+    for (n = 2; n < 5; n++)
+        exps[n] = (float)0.0;
     for (n = 0; n < 6; n++)
         rind[n] = 1;
     if (cg_sol_write(cgfile, cgbase, 1, "VertexSolution",
@@ -670,7 +709,9 @@ void write_structured()
         cg_goto(cgfile, cgbase, "Zone_t", 1, "FlowSolution_t", cgsol, "end") ||
         cg_rind_write(rind) ||
         cg_field_write(cgfile, cgbase, 1, cgsol, CGNS_ENUMV(RealSingle),
-            "Density", solution, &cgfld))
+            "Density", solution, &cgfld) ||
+        cg_gorel(cgfile, "Density", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps))
         error_exit("zone 1 solution");
 
     /* write solution for zone 2 as cell center with rind points */
@@ -681,7 +722,9 @@ void write_structured()
         cg_goto(cgfile, cgbase, "Zone_t", 2, "FlowSolution_t", cgsol, "end") ||
         cg_rind_write(rind) ||
         cg_field_write(cgfile, cgbase, 2, cgsol, CGNS_ENUMV(RealSingle),
-            "Density", solution, &cgfld))
+            "Density", solution, &cgfld) ||
+        cg_gorel(cgfile, "Density", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps))
         error_exit("zone 2 solution");
 }
 
@@ -695,6 +738,7 @@ void write_unstructured()
     cgsize_t range[2];
     int cgsol, cgfld;
     char name[33];
+    float exps[5];
 #ifdef UNSTRUCTURED_1TO1
     int d_range[2], transform;
 #else
@@ -844,15 +888,25 @@ void write_unstructured()
 
     /* write solution for zone 1 as vertex and zone 2 as cell center */
 
+    exps[0] = (float)1.0;
+    exps[1] = (float)-3.0;
+    for (n = 2; n < 5; n++)
+        exps[n] = (float)0.0;
     if (cg_sol_write(cgfile, cgbase, 1, "VertexSolution",
             CGNS_ENUMV(Vertex), &cgsol) ||
         cg_field_write(cgfile, cgbase, 1, cgsol, CGNS_ENUMV(RealSingle),
-            "Density", solution, &cgfld))
+            "Density", solution, &cgfld) ||
+        cg_goto(cgfile, cgbase, "Zone_t", 1, "FlowSolution_t", cgsol,
+            "Density", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps))
         error_exit("zone 1 solution");
     if (cg_sol_write(cgfile, cgbase, 2, "CellCenterSolution",
             CGNS_ENUMV(CellCenter), &cgsol) ||
         cg_field_write(cgfile, cgbase, 2, cgsol, CGNS_ENUMV(RealSingle),
-            "Density", solution, &cgfld))
+            "Density", solution, &cgfld) ||
+        cg_goto(cgfile, cgbase, "Zone_t", 2, "FlowSolution_t", cgsol,
+            "Density", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps))
         error_exit("zone 2 solution");
 }
 
@@ -1090,6 +1144,7 @@ void write_mismatched()
     cgsize_t range[6], d_range[6];
     int transform[3];
     CGNS_ENUMT(PointSetType_t) d_type;
+    float exps[5];
 
     printf ("writing mismatched base\n");
     fflush (stdout);
@@ -1140,14 +1195,29 @@ void write_mismatched()
     }
     size[1] = nj;
     size[4] = nj - 1;
+    for (n = 0; n < 5; n++)
+        exps[n] = (float)0.0;
+    exps[1] = (float)1.0;
     if (cg_zone_write(cgfile, cgbase, "CylindricalZone", size,
             CGNS_ENUMV(Structured), &cgzone) ||
         cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateR", xcoord, &cgcoord) ||
+        cg_goto(cgfile, cgbase, "Zone_t", cgzone, "GridCoordinates", 0,
+            "CoordinateR", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps) ||
         cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
+            "CoordinateZ", zcoord, &cgcoord) ||
+        cg_goto(cgfile, cgbase, "Zone_t", cgzone, "GridCoordinates", 0,
+            "CoordinateZ", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps))
+        error_exit("cylindrical zone");
+    exps[1] = (float)0.0;
+    exps[4] = (float)1.0;
+    if (cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
             "CoordinateTheta", ycoord, &cgcoord) ||
-        cg_coord_write(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),
-            "CoordinateZ", zcoord, &cgcoord))
+        cg_goto(cgfile, cgbase, "Zone_t", cgzone, "GridCoordinates", 0,
+            "CoordinateTheta", 0, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps))
         error_exit("cylindrical zone");
 
     /* zone 1 -> zone 2 connectivity */

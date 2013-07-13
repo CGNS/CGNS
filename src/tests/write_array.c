@@ -15,7 +15,7 @@ int main (int argc, char **argv)
     cgsize_t arraysize = 1024;
     int cgfile, cgbase;
     char name[33];
-    float *array;
+    float *array, exps[5];
     double start, end;
     static char *fname = "array.cgns";
 
@@ -32,19 +32,28 @@ int main (int argc, char **argv)
     }
     for (na = 0; na < arraysize; na++)
         array[na] = (float)na;
+    exps[0] = 1.0;
+    for (na = 1; na < 5; na++)
+        exps[na] = 0.0;
 
     unlink (fname);
     start = elapsed_time ();
     if (cg_open (fname, CG_MODE_WRITE, &cgfile) ||
         cg_base_write (cgfile, "Base", 3, 3, &cgbase) ||
         cg_goto (cgfile, cgbase, NULL) ||
+        cg_dataclass_write(CGNS_ENUMV(Dimensional)) ||
+        cg_units_write(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
+            CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian)) ||
         cg_user_data_write ("Data") ||
         cg_goto (cgfile, cgbase, "UserDefinedData_t", 1, NULL))
         cg_error_exit();
 
     for (na = 1; na <= narrays; na++) {
         sprintf (name, "Array%d", na);
-        if (cg_array_write (name, CGNS_ENUMV( RealSingle ), 1, &arraysize, array))
+        if (cg_array_write (name, CGNS_ENUMV(RealSingle),1, &arraysize, array) ||
+        cg_gopath(cgfile, name) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exps) ||
+        cg_gopath(cgfile, ".."))
             cg_error_exit ();
     }
     if (cg_close(cgfile)) cg_error_exit();

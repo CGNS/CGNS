@@ -491,11 +491,13 @@ static cgsize_t find_extnode (ZONE *z, cgsize_t node)
 static size_t get_maxnode (void *vface, void *vmaxnode)
 {
     FACE *face = (FACE *)vface;
-    int n;
-    cgsize_t *maxnode = (cgsize_t *)vmaxnode;
 
-    for (n = 0; n < face->nnodes; n++) {
-        if (*maxnode < face->nodes[n]) *maxnode = face->nodes[n];
+    if (face->e2 == 0) {
+        int n;
+        cgsize_t *maxnode = (cgsize_t *)vmaxnode;
+        for (n = 0; n < face->nnodes; n++) {
+            if (*maxnode < face->nodes[n]) *maxnode = face->nodes[n];
+        }
     }
     return 0;
 }
@@ -1395,14 +1397,14 @@ static void read_zone (int nz)
     if (nodes == NULL)
         fatal_error("malloc failed for zone nodes\n");
     HashList (z->faces, get_extnodes, nodes);
-    for (ne = 0, k = 0; k < z->nnodes; k++) {
+    for (ne = 0, k = 0; k < maxnode; k++) {
         if (nodes[k]) ne++;
     }
     z->nextnodes = ne;
     z->extnodes = (cgsize_t *) malloc ((size_t)(ne * sizeof(cgsize_t)));
     if (z->extnodes == NULL)
         fatal_error("malloc failed for zone exterior nodes\n");
-    for (ne = 0, k = 0; k < z->nnodes; k++) {
+    for (ne = 0, k = 0; k < maxnode; k++) {
         if (nodes[k]) z->extnodes[ne++] = k + 1;
     }
     free (nodes);
@@ -2616,7 +2618,7 @@ static void check_elements (void)
 /*-----------------------------------------------------------------------*/
 
 static void check_struct_interface (ZONE *z, CGNS_ENUMT(PointSetType_t) ptype,
-    cgsize_t npts, cgsize_t *pts, int bndry)
+    CGNS_ENUMT(GridLocation_t) location, cgsize_t npts, cgsize_t *pts, int bndry)
 {
     int id, n1, n2, n3, nerr1, nerr2;
     cgsize_t n, np;
@@ -2636,18 +2638,13 @@ static void check_struct_interface (ZONE *z, CGNS_ENUMT(PointSetType_t) ptype,
                 n++;
             }
             if (n1) nerr1++;
-            if (!n2) nerr2++;
+            if (!n2 && bndry) nerr2++;
         }
-        if (nerr1)
-            error ("%d points are out of range", nerr1);
-        if (nerr2 && bndry)
-            warning (2, "%d points are not boundary points", nerr2);
-        return;
     }
 
-    /* faces */
+    /* boundary faces */
 
-    if (bndry) {
+    else if (bndry) {
         for (n = 0, np = 0; np < npts; np++) {
             n1 = n2 = n3 = 0;
             for (id = 0; id < z->idim; id++) {
@@ -2666,11 +2663,42 @@ static void check_struct_interface (ZONE *z, CGNS_ENUMT(PointSetType_t) ptype,
 
     /* cells */
 
-    else {
+    else if (location == CGNS_ENUMV(CellCenter)) {
         for (n = 0, np = 0; np < npts; np++) {
             n1 = 0;
             for (id = 0; id < z->idim; id++) {
                 if (pts[n] < 1 || pts[n] >= z->dims[0][id])
+                    n1++;
+                n++;
+            }
+            if (n1) nerr1++;
+        }
+    }
+
+    /* edges */
+
+    else if (location == CGNS_ENUMV(EdgeCenter)) {
+        warning(1, "don't know how to handle EdgeCenter location");
+        return;
+    }
+
+    /* faces */
+
+    else {
+        cgsize_t ndim[3];
+        for (id = 0; id < z->idim; id++)
+            ndim[id] = z->dims[0][id] - 1;
+        if (location == CGNS_ENUMV(IFaceCenter))
+            ndim[0] = z->dims[0][0];
+        else if (location == CGNS_ENUMV(JFaceCenter))
+            ndim[1] = z->dims[0][1];
+        else if (location == CGNS_ENUMV(KFaceCenter))
+            ndim[2] = z->dims[0][2];
+
+        for (n = 0, np = 0; np < npts; np++) {
+            n1 = 0;
+            for (id = 0; id < z->idim; id++) {
+                if (pts[n] < 1 || pts[n] > ndim[id])
                     n1++;
                 n++;
             }
@@ -2753,7 +2781,7 @@ static cgsize_t check_interface (ZONE *z, CGNS_ENUMT(PointSetType_t) ptype,
         error ("invalid point type");
         return 0;
     }
-    if (location < CGNS_ENUMV(Vertex) || location > CGNS_ENUMV(EdgeCenter)) {
+    if (location < CGNS_ENUMV(Vertex) || (int)location >= NofValidGridLocation) {
         error ("invalid grid location");
         return 0;
     }
@@ -2820,7 +2848,7 @@ static cgsize_t check_interface (ZONE *z, CGNS_ENUMT(PointSetType_t) ptype,
     }
 
     if (z->type == CGNS_ENUMV(Structured))
-        check_struct_interface (z, ptype, np, p, bndry);
+        check_struct_interface (z, ptype, location, np, p, bndry);
     else
         check_unstruct_interface (z, ptype, np, p, bndry);
 
