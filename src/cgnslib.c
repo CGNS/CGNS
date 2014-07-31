@@ -7791,6 +7791,43 @@ int cg_goto(int file_number, int B, ...)
     return cgi_set_posit(file_number, B, n, index, label);
 }
 
+/*              F2003 C-FORTRAN INTERFACE ROUTINE
+ *
+ *      cg_goto function which is compatible with F2003 and allows 
+ *      optional function parameters to be passed to a C function
+ *      which has variable number of arguments. This function is
+ *      directly callable from FORTRAN.
+ * 
+ */
+
+int cg_goto_f03(int file_number, int B, ...)
+{
+    int n;
+    va_list ap;
+    int index[CG_MAX_GOTO_DEPTH];
+    char *label[CG_MAX_GOTO_DEPTH];
+
+     /* initialize */
+    posit = 0;
+
+     /* set global variable cg */
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
+
+    va_start(ap, B);
+
+     /* read variable argument list */
+    for (n = 0; n < CG_MAX_GOTO_DEPTH; n++) {
+        label[n] = va_arg(ap,char *);
+        if (label[n] == NULL || label[n][0] == 0) break;
+        if (strcmp("end",label[n])==0 || strcmp("END",label[n])==0) break;
+        index[n] = (int)*va_arg(ap, int *);
+    }
+    va_end(ap);
+
+    return cgi_set_posit(file_number, B, n, index, label);
+}
+
 /*-----------------------------------------------------------------------*/
 
 int cg_gorel(int file_number, ...)
