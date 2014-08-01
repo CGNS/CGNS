@@ -71,6 +71,13 @@
         parameter (INCORRECT_PATH = 3)
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      Parallel CGNS parameters                                       *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+        integer@CGFSIZET@ CGP_INDEPENDENT, CGP_COLLECTIVE
+        parameter (CGP_INDEPENDENT = 0)
+        parameter (CGP_COLLECTIVE  = 1)
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Dimensional Units                                              *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
         integer@CGFSIZET@ CG_UserDefined, CG_Null
