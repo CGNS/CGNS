@@ -7791,7 +7791,8 @@ int cg_goto(int file_number, int B, ...)
     return cgi_set_posit(file_number, B, n, index, label);
 }
 
-/*              F2003 C-FORTRAN INTERFACE ROUTINE
+/*-----------------------------------------------------------------------
+ *              F2003 C-FORTRAN INTERFACE ROUTINE
  *
  *      cg_goto function which is compatible with F2003 and allows 
  *      optional function parameters to be passed to a C function
@@ -7852,6 +7853,43 @@ int cg_gorel(int file_number, ...)
         if (label[n] == NULL || label[n][0] == 0) break;
         if (strcmp("end",label[n])==0 || strcmp("END",label[n])==0) break;
         index[n] = va_arg(ap, int);
+    }
+    va_end(ap);
+
+    return cgi_update_posit(n, index, label);
+}
+
+/*-----------------------------------------------------------------------
+ *              F2003 C-FORTRAN INTERFACE ROUTINE
+ *
+ *      cg_gorel function which is compatible with F2003 and allows 
+ *      optional function parameters to be passed to a C function
+ *      which has variable number of arguments. This function is
+ *      directly callable from FORTRAN.
+ * 
+ */
+int cg_gorel_f03(int file_number, ...)
+{
+    int n = 0;
+    int index[CG_MAX_GOTO_DEPTH];
+    char *label[CG_MAX_GOTO_DEPTH];
+    va_list ap;
+
+    if (posit == 0) {
+        cgi_error ("position not set with cg_goto");
+        return CG_ERROR;
+    }
+    if (file_number != posit_file) {
+        cgi_error("current position is in the wrong file");
+        return CG_ERROR;
+    }
+
+    va_start (ap, file_number);
+    for (n = 0; n < CG_MAX_GOTO_DEPTH; n++) {
+        label[n] = va_arg(ap, char *);
+        if (label[n] == NULL || label[n][0] == 0) break;
+        if (strcmp("end",label[n])==0 || strcmp("END",label[n])==0) break;
+        index[n] = (int)*va_arg(ap, int *);
     }
     va_end(ap);
 
