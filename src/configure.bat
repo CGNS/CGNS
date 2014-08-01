@@ -1114,6 +1114,13 @@ echo         parameter (NODE_NOT_FOUND = 2)>> cgnslib_f.h
 echo         parameter (INCORRECT_PATH = 3)>> cgnslib_f.h
 echo.>> cgnslib_f.h
 echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
+echo !*      Parallel CGNS parameters                                       *>> cgnslib_f.h
+echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
+echo         integer%fbytes% CGP_INDEPENDENT, CGP_COLLECTIVE>> cgnslib_f.h
+echo         parameter (CGP_INDEPENDENT = 0)>> cgnslib_f.h
+echo         parameter (CGP_COLLECTIVE  = 1)>> cgnslib_f.h
+echo.>> cgnslib_f.h
+echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
 echo !*      Dimensional Units                                              *>> cgnslib_f.h
 echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
 echo         integer%fbytes% CG_UserDefined, CG_Null>> cgnslib_f.h
