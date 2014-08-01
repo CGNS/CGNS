@@ -8,12 +8,11 @@
 !
 ! @section DESCRIPTION
 ! Benchmarking program for pcgns library
-MODULE cgns_c_bindings
-
+!
+MODULE cgns_c_binding
 !
 ! Contains needed interfaces for calling the C functions
 ! 
-  
   IMPLICIT NONE
 
   INTERFACE
@@ -206,7 +205,6 @@ MODULE cgns_c_bindings
      END FUNCTION cgp_elements_write_data
   END INTERFACE
 
-
   INTERFACE     
      INTEGER(C_INT) FUNCTION cgp_elements_read_data(fn,B,Z,S,start,end,elements) BIND(C, name='cgp_elements_read_data')
        USE ISO_C_BINDING
@@ -274,19 +272,71 @@ MODULE cgns_c_bindings
        CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName
      END FUNCTION cg_user_data_write
   END INTERFACE
-  
+
+  ! The number of optional parameters should be set to 
+  ! CG_MAX_GOTO_DEPTH, which is currently set to 20.
   INTERFACE 
-     INTEGER(C_INT) FUNCTION cg_gorel(fn, UserDataName, i, end ) BIND(C, name='cg_gorel')
+     INTEGER(C_INT) FUNCTION cg_gorel(fn, &
+          UserDataName1, i1, UserDataName2, i2, &
+          UserDataName3, i3, UserDataName4, i4, &
+          UserDataName5, i5, UserDataName6, i6, &
+          UserDataName7, i7, UserDataName8, i8, &
+          UserDataName9, i9, UserDataName10, i10, &
+          UserDataName11, i11, UserDataName12, i12, &
+          UserDataName13, i13, UserDataName14, i14, &
+          UserDataName15, i15, UserDataName16, i16, &
+          UserDataName17, i17, UserDataName18, i18, &
+          UserDataName19, i19, UserDataName20, i20, &
+          end) BIND(C, name='cg_gorel_f03')
+
        USE ISO_C_BINDING
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: i
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: end
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i1
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName2
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i2
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName3
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i3
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName4
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i4
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName5
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i5
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName6
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i6
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName7
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i7
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName8
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i8
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName9
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i9
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName10
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i10
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName11
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i11
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName12
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i12
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName13
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i13
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName14
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i14
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName15
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i15
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName16
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i16
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName17
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i17
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName18
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i18
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName19
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i19
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName20
+       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i20
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end 
      END FUNCTION cg_gorel
   END INTERFACE
 
-  ! The number of optional parameters should be set to CG_MAX_GOTO_DEPTH, which
-  ! is currently set to 20.
+  ! The number of optional parameters should be set to 
+  ! CG_MAX_GOTO_DEPTH, which is currently set to 20.
   INTERFACE 
      INTEGER(C_INT) FUNCTION cg_goto(fn, B, &
           UserDataName1, i1, UserDataName2, i2, &
@@ -348,31 +398,79 @@ MODULE cgns_c_bindings
      END FUNCTION cg_goto
   END INTERFACE
 
-END MODULE cgns_c_bindings
+END MODULE cgns_c_binding
+
+MODULE testing_functions
+!
+! Contains functions to verify values
+!
+  INTERFACE check_eq
+     MODULE PROCEDURE c_float_eq, c_double_eq, c_long_eq, c_long_long_eq
+  END INTERFACE
+
+CONTAINS
+
+  LOGICAL FUNCTION c_float_eq(a,b)
+    USE ISO_C_BINDING
+    IMPLICIT NONE
+    ! Check if two C_FLOAT reals are equivalent
+    REAL(C_FLOAT), INTENT(IN):: a,b
+    REAL(C_FLOAT), PARAMETER :: eps = 1.e-8
+    c_float_eq = ABS(a-b) .LT. eps
+  END FUNCTION c_float_eq
+  
+  LOGICAL FUNCTION c_double_eq(a,b)
+    USE ISO_C_BINDING
+    IMPLICIT NONE
+    ! Check if two C_DOUBLE reals are equivalent
+    REAL(C_DOUBLE), INTENT(IN):: a,b
+    REAL(C_DOUBLE), PARAMETER :: eps = 1.e-8
+    c_double_eq = ABS(a-b) .LT. eps
+  END FUNCTION c_double_eq
+  
+  LOGICAL FUNCTION c_long_eq(a,b)
+    USE ISO_C_BINDING
+    IMPLICIT NONE
+    ! Check if two C_LONG integers are equivalent
+    INTEGER(C_INT32_T), INTENT(IN):: a,b
+    c_long_eq = a-b .EQ. 0_C_LONG
+  END FUNCTION c_long_eq
+  
+  LOGICAL FUNCTION c_long_long_eq(a,b)
+    USE ISO_C_BINDING
+    IMPLICIT NONE
+    ! Check if two C_LONG_LONG integers are equivalent
+    INTEGER(C_INT64_T), INTENT(IN):: a,b
+    c_long_long_eq = a-b .EQ. 0_C_LONG_LONG
+  END FUNCTION c_long_long_eq
+  
+END MODULE testing_functions
 
 PROGRAM main
 
   USE mpi
-  USE cgns_c_bindings
   USE ISO_C_BINDING
+  USE cgns_c_binding
+  USE testing_functions
   IMPLICIT NONE
 
   INCLUDE 'cgnslib_f.h'
 
-  CGSIZE_T, PARAMETER :: Nelem = 16 ! Use multiples of number of cores per node
+  INTEGER, PARAMETER :: dp = KIND(1.d0)
+  CGSIZE_T, PARAMETER :: Nelem = 32 ! Use multiples of number of cores per node
   CGSIZE_T, PARAMETER :: NodePerElem = 8
 
   CGSIZE_T :: Nnodes
-  INTEGER :: mpi_err
+  INTEGER(C_INT) :: mpi_err
   INTEGER(C_INT) :: err
-  INTEGER :: comm_size
-  INTEGER :: comm_rank
-  INTEGER :: info
+  INTEGER(C_INT) :: comm_size
+  INTEGER(C_INT) :: comm_rank
+  INTEGER(C_INT) :: info
   INTEGER(C_INT) :: fn
   INTEGER(C_INT) :: B
   INTEGER(C_INT) :: Z
   INTEGER(C_INT) :: S
-  INTEGER(C_INT) :: Cx,Cy,Cz, Fx, Fy, Fz, Ax, Ay, Az
+  INTEGER(C_INT) :: Cx,Cy,Cz, Fx, Fy, Fz, Ar, Ai
   INTEGER(C_INT), PARAMETER :: cell_dim = 3
   INTEGER(C_INT), PARAMETER :: phys_dim = 3
   INTEGER(C_INT) :: r_cell_dim = 0
@@ -381,29 +479,58 @@ PROGRAM main
   CGSIZE_T, DIMENSION(1:1) :: size_1D
   CGSIZE_T :: min, max
   INTEGER(C_INT) :: k, count
-  REAL(C_DOUBLE), DIMENSION(:), ALLOCATABLE, TARGET :: Coor_x, Coor_y, Coor_z, Data_Fx, Data_Fy, Data_Fz
-  REAL(C_DOUBLE), DIMENSION(:), ALLOCATABLE, TARGET :: Array_x, Array_y, Array_z
+  ! For writing and reading data
+  REAL(C_DOUBLE), DIMENSION(:), ALLOCATABLE, TARGET :: Coor_x, Coor_y, Coor_z
+  REAL(C_DOUBLE), DIMENSION(:), ALLOCATABLE, TARGET :: Data_Fx, Data_Fy, Data_Fz
+  REAL(C_DOUBLE), DIMENSION(:), ALLOCATABLE, TARGET :: Array_r
+  CGSIZE_T, DIMENSION(:), ALLOCATABLE, TARGET :: Array_i
   CGSIZE_T :: start, end, emin, emax
   CGSIZE_T, DIMENSION(:), ALLOCATABLE, TARGET :: elements
-  logical :: queue
+  LOGICAL :: queue, debug
   TYPE(C_PTR) :: f_ptr
   CHARACTER(KIND=C_CHAR,LEN=180) :: bname, zname
   INTEGER :: indx_null
+  ! Timing 
+  REAL(KIND=dp) :: t0, t1, t2
+  !
+  ! Timing storage convention:
+  ! timing(1) = Total program time
+  ! timing(2) = Time to write nodal coordinates
+  ! timing(3) = Time to write connectivity table
+  ! timing(4) = Time to write solution data (field data)
+  ! timing(5) = Time to write array data
+  ! timing(6) = Time to read nodal coordinates
+  ! timing(7) = Time to read connectivity table
+  ! timing(8) = Time to read solution data (field data)
+  ! timing(9) = Time to read array data
+  REAL(KIND=dp), DIMENSION(1:9) :: xtiming, timing, timingMin, timingMax
+  CHARACTER(LEN=6) :: ichr6
 
-  TYPE, BIND(C) :: goto_struct_1
-     CHARACTER(C_CHAR), DIMENSION(1:180) :: UserDataName
-     INTEGER(C_INT) :: i
-     CHARACTER(C_CHAR), DIMENSION(1:180) :: end
-  END TYPE goto_struct_1
+  ! CGP_INDEPENDENT is the default
+  INTEGER(C_INT), DIMENSION(1:2) :: piomode = (/CGP_INDEPENDENT, CGP_COLLECTIVE/)
+  CHARACTER(LEN=3), DIMENSION(1:2) :: piomodeC= (/"ind", "col"/)
+  CHARACTER(LEN=6), DIMENSION(1:2) :: outmode = (/'direct','queued'/)
+  INTEGER :: piomode_i
 
-  TYPE(goto_struct_1), TARGET, DIMENSION(1:1) :: gt_1
-
-
+  INTEGER(C_SIZE_T) :: int_sizeof
+  
   CALL MPI_INIT(mpi_err)
   CALL MPI_COMM_SIZE(MPI_COMM_WORLD,comm_size,mpi_err)
   CALL MPI_COMM_RANK(MPI_COMM_WORLD,comm_rank,mpi_err)
 
+  WRITE(ichr6,'(I6.6)') comm_size
+
+  ! parameters
+  piomode_i = 1
+
+  t0 = MPI_Wtime() ! Timer
+
   queue = .FALSE.
+  queue = .TRUE.
+  debug = .FALSE.
+  debug = .TRUE.
+
+  err = cgp_pio_mode(piomode(2)) ! default
 
   Nnodes = Nelem*NodePerElem
 
@@ -415,7 +542,7 @@ PROGRAM main
 ! ==    **WRITE THE CGNS FILE *       ==
 ! ======================================
 
-  err = cgp_open("test_unstructured_F90.cgns"//C_NULL_CHAR, CG_MODE_WRITE, fn)
+  err = cgp_open("benchmark_"//ichr6//"_"//piomodeC(piomode_i)//".cgns"//C_NULL_CHAR, CG_MODE_WRITE, fn)
   IF(err.NE.CG_OK) PRINT*,'*FAILED* cgp_open'
   err = cg_base_write(fn, "Base 1"//C_NULL_CHAR, cell_dim, phys_dim, B)
   IF(err.NE.CG_OK) PRINT*,'*FAILED* cgp_base_write'
@@ -436,9 +563,9 @@ PROGRAM main
   max = count*(comm_rank+1)
 
   DO k = 1, count
-     Coor_x(k) = REAL(comm_rank*count, KIND=C_DOUBLE) + k + 0.1_C_DOUBLE
-     Coor_y(k) = REAL(comm_rank*count, KIND=C_DOUBLE) + k + 0.2_C_DOUBLE
-     Coor_z(k) = REAL(comm_rank*count, KIND=C_DOUBLE) + k + 0.3_C_DOUBLE
+     Coor_x(k) = REAL(comm_rank*count + k, KIND=C_DOUBLE) + 0.1_C_DOUBLE
+     Coor_y(k) = Coor_x(k) + 0.1_C_DOUBLE
+     Coor_z(k) = Coor_y(k) + 0.1_C_DOUBLE
   ENDDO
 
   err = cgp_coord_write(fn,B,Z,RealDouble,"CoordinateX"//C_NULL_CHAR,Cx)
@@ -458,12 +585,13 @@ PROGRAM main
   ENDIF
 
   ! use queued IO
-  IF(queue) err = cgp_queue_set(1)
+  IF(queue) err = cgp_queue_set(1_C_INT)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_queue_set'
      err = cgp_error_exit()
   ENDIF
 
+  t1 = MPI_Wtime()
   f_ptr = C_LOC(Coor_x(1))
   err = cgp_coord_write_data(fn,B,Z,Cx,min,max,f_ptr)
   IF(err.NE.CG_OK)THEN
@@ -483,7 +611,10 @@ PROGRAM main
      err = cgp_error_exit()
   ENDIF
 
-  ! We need to keep the arrays allocate until cgp_queue_flush is called
+  t2 = MPI_Wtime()
+  xtiming(2) = t2-t1 
+
+  ! We need to keep the arrays allocate until cgp_queue_flush
   IF(.NOT.queue)THEN
      DEALLOCATE(Coor_x)
      DEALLOCATE(Coor_y)
@@ -497,7 +628,7 @@ PROGRAM main
   start = 1
   end = nijk(2)
 
-  err = cgp_section_write(fn,B,Z,"Elements"//C_NULL_CHAR,HEXA_8,start,END,0,S)
+  err = cgp_section_write(fn,B,Z,"Elements"//C_NULL_CHAR,HEXA_8,start,END,0_C_INT,S)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_section_write'
      err = cgp_error_exit()
@@ -514,12 +645,18 @@ PROGRAM main
   emin = count*comm_rank+1
   emax = count*(comm_rank+1)
 
+  t1 = MPI_Wtime()
   f_ptr = C_LOC(elements(1))
-
   err = cgp_elements_write_data(fn, B, Z, S, emin, emax, f_ptr)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_elements_write_data'
      err = cgp_error_exit()
+  ENDIF
+  t2 = MPI_Wtime()
+  xtiming(3) = t2-t1
+
+  IF(.NOT.queue)THEN
+     DEALLOCATE(elements)
   ENDIF
 
 
@@ -560,7 +697,7 @@ PROGRAM main
      PRINT*,'*FAILED* cgp_field_write'
      err = cgp_error_exit()
   ENDIF
-  
+  t1 = MPI_Wtime()
   f_ptr = C_LOC(Data_Fx(1))
   err = cgp_field_write_data(fn,B,Z,S,Fx,min,max,f_ptr)  
   IF(err.NE.CG_OK)THEN
@@ -579,6 +716,9 @@ PROGRAM main
      PRINT*,'*FAILED* cgp_field_write_data'
      err = cgp_error_exit()
   ENDIF
+ 
+  t2 = MPI_Wtime()
+  xtiming(4) = t2-t1  
 
   IF(.NOT.queue)THEN
      DEALLOCATE(Data_Fx)
@@ -593,20 +733,18 @@ PROGRAM main
   count = nijk(1)/comm_size
   count = nijk(1)/comm_size
 
-  ALLOCATE(Array_x(1:count))
-  ALLOCATE(Array_y(1:count))
-  ALLOCATE(Array_z(1:count))
+  ALLOCATE(Array_r(1:count))
+  ALLOCATE(Array_i(1:count))
 
   min = count*comm_rank+1
   max = count*(comm_rank+1)
 
   DO k = 1, count
-     Array_x(k) = REAL(comm_rank*count, KIND=C_DOUBLE) + k + 0.001_C_DOUBLE
-     Array_y(k) = REAL(comm_rank*count, KIND=C_DOUBLE) + k + 0.002_C_DOUBLE
-     Array_z(k) = REAL(comm_rank*count, KIND=C_DOUBLE) + k + 0.003_C_DOUBLE
+     Array_r(k) = REAL(comm_rank*count, KIND=C_DOUBLE) + k + 0.001_C_DOUBLE
+     Array_i(k) = comm_rank*count*NodePerElem + k
   ENDDO
 
-  err = cg_goto(fn, B, "Zone 1"//C_NULL_CHAR, 0, end="end"//C_NULL_CHAR)
+  err = cg_goto(fn, B, "Zone 1"//C_NULL_CHAR, 0_C_INT, end="end"//C_NULL_CHAR)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_goto'
      err = cgp_error_exit()
@@ -616,51 +754,60 @@ PROGRAM main
      PRINT*,'*FAILED* cg_user_data_write'
      err = cgp_error_exit()
   ENDIF
-  err = cg_gorel(fn, "User Data"//C_NULL_CHAR, 0, 'end'//C_NULL_CHAR)
+  err = cg_gorel(fn, "User Data"//C_NULL_CHAR, 0_C_INT, end="end"//C_NULL_CHAR)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_gorel'
      err = cgp_error_exit()
   ENDIF
+
   size_1D(1) = nijk(1)
-  err = cgp_array_write("ArrayX"//C_NULL_CHAR,RealDouble,1,size_1D,Ax)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_write'
-     err = cgp_error_exit()
-  ENDIF
-  err = cgp_array_write("ArrayY"//C_NULL_CHAR,RealDouble,1,size_1D,Ay)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_write'
-     err = cgp_error_exit()
-  ENDIF
-  err = cgp_array_write("ArrayZ"//C_NULL_CHAR,RealDouble,1,size_1D,Az)
+  err = cgp_array_write("ArrayR"//C_NULL_CHAR,RealDouble,1_C_INT,size_1D,Ar)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_array_write'
      err = cgp_error_exit()
   ENDIF
   
-  f_ptr = C_LOC(Array_x(1))
-  err = cgp_array_write_data(Ax,min,max,f_ptr)
+  int_sizeof = STORAGE_SIZE(Array_i(1),C_SIZE_T)/STORAGE_SIZE(c_char_'a',C_SIZE_T)
+
+  PRINT*,int_sizeof
+
+  IF(int_sizeof.EQ.4_C_SIZE_T)THEN
+     err = cgp_array_write("ArrayI"//C_NULL_CHAR,Integer,1_C_INT,size_1D,Ai)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_array_write'
+        err = cgp_error_exit()
+     ENDIF
+  ELSE IF(int_sizeof.EQ.8_C_SIZE_T)THEN
+     err = cgp_array_write("ArrayI"//C_NULL_CHAR,LongInteger,1_C_INT,size_1D,Ai)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_array_write'
+        err = cgp_error_exit()
+     ENDIF
+  ELSE
+     PRINT*,'*FAILED* Integer type not supported'
+     err = cgp_error_exit()
+  ENDIF
+
+  t1 = MPI_Wtime()
+  f_ptr = C_LOC(Array_i(1))
+  err = cgp_array_write_data(Ai,min,max,f_ptr)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_array_write'
      err = cgp_error_exit()
   ENDIF
-  f_ptr = C_LOC(Array_y(1))
-  err = cgp_array_write_data(Ay,min,max,f_ptr)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_write'
-     err = cgp_error_exit()
-  ENDIF
-  f_ptr = C_LOC(Array_z(1))
-  err = cgp_array_write_data(Az,min,max,f_ptr)
+  f_ptr = C_LOC(Array_r(1))
+  err = cgp_array_write_data(Ar,min,max,f_ptr)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_array_write'
      err = cgp_error_exit()
   ENDIF
 
+  t2 = MPI_Wtime()
+  xtiming(5) = t2-t1
+
   IF(.NOT.queue)THEN
-     DEALLOCATE(Array_x)
-     DEALLOCATE(Array_y)
-     DEALLOCATE(Array_z)
+     DEALLOCATE(Array_i)
+     DEALLOCATE(Array_r)
   ENDIF
 
   IF(queue)THEN
@@ -669,7 +816,7 @@ PROGRAM main
         PRINT*,'*FAILED* cgp_queue_flush'
         err = cgp_error_exit()
      ENDIF
-     err = cgp_queue_set(0)
+     err = cgp_queue_set(0_C_INT)
      IF(err.NE.CG_OK)THEN
         PRINT*,'*FAILED* cgp_queue_set'
         err = cgp_error_exit()
@@ -680,11 +827,8 @@ PROGRAM main
      DEALLOCATE(Data_Fx)
      DEALLOCATE(Data_Fy)
      DEALLOCATE(Data_Fz)
-     DEALLOCATE(Array_x)
-     DEALLOCATE(Array_y)
-     DEALLOCATE(Array_z)
-     DEALLOCATE(elements)
-  ELSE
+     DEALLOCATE(Array_i)
+     DEALLOCATE(Array_r)
      DEALLOCATE(elements)
   ENDIF
 
@@ -698,9 +842,14 @@ PROGRAM main
 ! ==    **  READ THE CGNS FILE **     ==
 ! ======================================
 
-  ! Open the cgns file
+  err = cgp_queue_set(0_C_INT) ! set to direct read
+  IF(err.NE.CG_OK)THEN
+     PRINT*,'*FAILED*  cgp_queue_set'
+     err = cgp_error_exit()
+  ENDIF
 
-  err = cgp_open("test_unstructured_F90.cgns"//C_NULL_CHAR, CG_MODE_READ, fn)
+  ! Open the cgns file
+  err = cgp_open("benchmark_"//ichr6//"_"//piomodeC(piomode_i)//".cgns"//C_NULL_CHAR, CG_MODE_READ, fn)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_open'
      err = cgp_error_exit()
@@ -764,12 +913,13 @@ PROGRAM main
   max = count*(comm_rank+1)
 
   ! use queued IO
-  IF(queue) err = cgp_queue_set(1)
+  IF(queue) err = cgp_queue_set(1_C_INT)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_queue_set'
      err = cgp_error_exit()
   ENDIF
 
+  t1 = MPI_Wtime()
   f_ptr = C_LOC(Coor_x(1))
   err = cgp_coord_read_data(fn,B,Z,Cx,min,max,f_ptr)
   IF(err.NE.CG_OK)THEN
@@ -789,17 +939,24 @@ PROGRAM main
      err = cgp_error_exit()
   ENDIF
 
-  ! See if read the data back correctly
-!!$  DO k = 1, count
-!!$     PRINT*,Coor_x(k),Coor_y(k),Coor_z(k)
-!!$  ENDDO
-
-  ! We need to keep the arrays allocate until cgp_queue_flush is called
-  IF(.NOT.queue)THEN
-     DEALLOCATE(Coor_x)
-     DEALLOCATE(Coor_y)
-     DEALLOCATE(Coor_z)
+  t2 = MPI_Wtime()
+  xtiming(6) = t2-t1
+  
+  ! Check if read the data back correctly
+  IF(debug)THEN
+     DO k = 1, count
+        IF(.NOT.check_eq(Coor_x(k), REAL(comm_rank*count + k, KIND=C_DOUBLE) + 0.1_C_DOUBLE).OR. &
+             .NOT.check_eq(Coor_y(k), REAL(comm_rank*count + k, KIND=C_DOUBLE) + 0.2_C_DOUBLE).OR. &
+             .NOT.check_eq(Coor_z(k), REAL(comm_rank*count + k, KIND=C_DOUBLE) + 0.3_C_DOUBLE)) THEN
+           PRINT*,'*FAILED* cgp_coord_read_data values are incorrect'
+           err = cgp_error_exit()
+        ENDIF
+     ENDDO
   ENDIF
+
+  DEALLOCATE(Coor_x)
+  DEALLOCATE(Coor_y)
+  DEALLOCATE(Coor_z)
 
 ! ======================================
 ! == (B) READ THE CONNECTIVITY TABLE  ==
@@ -811,14 +968,27 @@ PROGRAM main
   emin = count*comm_rank+1
   emax = count*(comm_rank+1)
 
+  t1 = MPI_Wtime()
   f_ptr = C_LOC(elements(1))
   err = cgp_elements_read_data(fn, B, Z, S, emin, emax, f_ptr)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_elements_read_data'
      err = cgp_error_exit()
   ENDIF
+  t2 = MPI_Wtime()
+  xtiming(7) = t2-t1
+ 
+  IF(debug)THEN
+     DO k = 1, count
+        IF(.NOT.check_eq(elements(k), comm_rank*count*NodePerElem + k)) THEN
+           PRINT*,'*FAILED* cgp_elements_read_data values are incorrect'
+           err = cgp_error_exit()
+        ENDIF
+     ENDDO
+  ENDIF
 
-!  PRINT*,elements
+  DEALLOCATE(elements)
+
 ! ======================================
 ! == (C) READ THE FIELD DATA          ==
 ! ======================================
@@ -828,6 +998,7 @@ PROGRAM main
   ALLOCATE(Data_Fy(1:count))
   ALLOCATE(Data_Fz(1:count))
 
+  t1 = MPI_Wtime()
   f_ptr = C_LOC(Data_Fx(1))
   err = cgp_field_read_data(fn,B,Z,S,Fx,min,max,f_ptr)  
   IF(err.NE.CG_OK)THEN
@@ -846,17 +1017,24 @@ PROGRAM main
      PRINT*,'*FAILED* cgp_field_read_data'
      err = cgp_error_exit()
   ENDIF
+  t2 = MPI_Wtime()
+  xtiming(8) = t2-t1
 
-  ! See if read the data back correctly
-!!$  DO k = 1, count
-!!$     PRINT*,Data_Fx(k),Data_Fy(k),Data_Fz(k)
-!!$  ENDDO
-
-  IF(.NOT.queue)THEN
-     DEALLOCATE(Data_Fx)
-     DEALLOCATE(Data_Fy)
-     DEALLOCATE(Data_Fz)
+  ! Check if read the data back correctly
+  IF(debug)THEN
+     DO k = 1, count
+        IF(.NOT.check_eq(Data_Fx(k), REAL(comm_rank*count + k, KIND=C_DOUBLE) + 0.01_C_DOUBLE).OR. &
+             .NOT.check_eq(Data_Fy(k), REAL(comm_rank*count + k, KIND=C_DOUBLE) + 0.02_C_DOUBLE).OR. &
+             .NOT.check_eq(Data_Fz(k), REAL(comm_rank*count + k, KIND=C_DOUBLE) + 0.03_C_DOUBLE)) THEN
+           PRINT*,'*FAILED* cgp_field_read_data values are incorrect'
+           err = cgp_error_exit()
+        ENDIF
+     ENDDO
   ENDIF
+
+  DEALLOCATE(Data_Fx)
+  DEALLOCATE(Data_Fy)
+  DEALLOCATE(Data_Fz)
 
 ! ======================================
 ! == (D) READ THE ARRAY DATA          ==
@@ -864,73 +1042,78 @@ PROGRAM main
 
   count = nijk(1)/comm_size
 
-  ALLOCATE(Array_x(1:count))
-  ALLOCATE(Array_y(1:count))
-  ALLOCATE(Array_z(1:count))
+  ALLOCATE(Array_i(1:count))
+  ALLOCATE(Array_r(1:count))
 
   min = count*comm_rank+1
   max = count*(comm_rank+1)
   
-  err = cg_goto(fn,B,"Zone_t"//C_NULL_CHAR,Z,"UserDefinedData_t"//C_NULL_CHAR,1,END="end"//C_NULL_CHAR)
+  err = cg_goto(fn,B,"Zone_t"//C_NULL_CHAR,Z,"UserDefinedData_t"//C_NULL_CHAR,1_C_INT,END="end"//C_NULL_CHAR)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_goto (User Defined Data)'
      err = cgp_error_exit()
   ENDIF
 
-  f_ptr = C_LOC(Array_x(1))
-  err = cgp_array_read_data(Ax, min, max,f_ptr)  
+  t1 = MPI_Wtime()
+  f_ptr = C_LOC(Array_r(1))
+  err = cgp_array_read_data(Ar, min, max,f_ptr)  
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_read_data'
      err = cgp_error_exit()
   ENDIF
-  f_ptr = C_LOC(Array_y(1))
-  err = cgp_array_read_data(Ay, min, max,f_ptr)  
+  f_ptr = C_LOC(Array_i(1))
+  err = cgp_array_read_data(Ai, min, max,f_ptr)  
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_read_data'
      err = cgp_error_exit()
   ENDIF
-  f_ptr = C_LOC(Array_z(1))
-  err = cgp_array_read_data(Az, min, max,f_ptr)  
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_field_read_data'
-     err = cgp_error_exit()
+  t2 = MPI_Wtime()
+  xtiming(9) = t2-t1
+  
+  ! Check if read the data back correctly
+  IF(debug)THEN
+     DO k = 1, count
+        IF(.NOT.check_eq(Array_r(k), REAL(comm_rank*count + k, KIND=C_DOUBLE) + 0.001_C_DOUBLE).OR. &
+             .NOT.check_eq(Array_i(k), comm_rank*count*NodePerElem + k)) THEN
+           PRINT*,'*FAILED* cgp_array_read_data values are incorrect'
+           err = cgp_error_exit()
+        ENDIF
+     ENDDO
   ENDIF
 
-  ! See if read the data back correctly
-!!$  DO k = 1, count
-!!$     PRINT*,Array_x(k),Array_y(k), Array_z(k)
-!!$  ENDDO
-
-  IF(.NOT.queue)THEN
-     DEALLOCATE(Array_x)
-     DEALLOCATE(Array_y)
-     DEALLOCATE(Array_z)
-  ENDIF
-
-  IF(queue)THEN
-     err = cgp_queue_flush()
-     IF(err.NE.CG_OK)THEN
-        PRINT*,'*FAILED* cgp_queue_flush'
-        err = cgp_error_exit()
-     ENDIF
-     err = cgp_queue_set(0)
-     IF(err.NE.CG_OK)THEN
-        PRINT*,'*FAILED* cgp_queue_set'
-        err = cgp_error_exit()
-     ENDIF
-     DEALLOCATE(Coor_x)
-     DEALLOCATE(Coor_y)
-     DEALLOCATE(Coor_z)
-     DEALLOCATE(elements)
-  ELSE
-     DEALLOCATE(elements)
-  ENDIF
+  DEALLOCATE(Array_r)
+  DEALLOCATE(Array_i)
 
 ! closeup shop and go home...
   err = cgp_close(fn)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_close'
      err = cgp_error_exit()
+  ENDIF
+
+  t2 = MPI_Wtime()
+  xtiming(1) = t2-t0
+
+  CALL MPI_Reduce(xtiming, timing, 9, MPI_DOUBLE, &
+               MPI_SUM, 0, MPI_COMM_WORLD, mpi_err)
+  CALL MPI_Reduce(xtiming, timingMin, 9, MPI_DOUBLE, &
+               MPI_MIN, 0, MPI_COMM_WORLD, mpi_err)
+  CALL MPI_Reduce(xtiming, timingMax, 9, MPI_DOUBLE, &
+               MPI_MAX, 0, MPI_COMM_WORLD, mpi_err)
+
+  IF(comm_rank.EQ.0)THEN
+     OPEN(10,FILE='timing_'//ichr6//'.dat', FORM='formatted')
+     WRITE(10,'(A)')"#nprocs, wcoord, welem, wfield, warray, rcoord, relem, rfield, rarray"
+     WRITE(10,'(i0,100(x,3(f14.7)))') comm_size, &
+         timing(1)/DBLE(comm_size), timingMin(1), timingMax(1), &
+         timing(2)/DBLE(comm_size), timingMin(2), timingMax(2), &
+         timing(3)/DBLE(comm_size), timingMin(3), timingMax(3), &
+         timing(4)/DBLE(comm_size), timingMin(4), timingMax(4), &
+         timing(5)/DBLE(comm_size), timingMin(5), timingMax(5), &
+         timing(6)/DBLE(comm_size), timingMin(6), timingMax(6), &
+         timing(7)/DBLE(comm_size), timingMin(7), timingMax(7), &
+         timing(8)/DBLE(comm_size), timingMin(8), timingMax(8), &
+         timing(9)/DBLE(comm_size), timingMin(9), timingMax(9)
   ENDIF
 
   CALL MPI_FINALIZE(mpi_err)
