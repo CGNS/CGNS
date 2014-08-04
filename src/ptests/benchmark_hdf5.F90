@@ -9,6 +9,8 @@
 ! @section DESCRIPTION
 ! Benchmarking program for pcgns library
 !
+! TO COMPILE: h5pfc -O3 benchmark_hdf5.F90 -I.. -L../lib -lcgns
+!
 MODULE cgns_c_binding
 !
 ! Contains needed interfaces for calling the C functions
@@ -273,130 +275,177 @@ MODULE cgns_c_binding
      END FUNCTION cg_user_data_write
   END INTERFACE
 
-  ! The number of optional parameters should be set to 
-  ! CG_MAX_GOTO_DEPTH, which is currently set to 20.
   INTERFACE 
      INTEGER(C_INT) FUNCTION cg_gorel(fn, &
-          UserDataName1, i1, UserDataName2, i2, &
-          UserDataName3, i3, UserDataName4, i4, &
-          UserDataName5, i5, UserDataName6, i6, &
-          UserDataName7, i7, UserDataName8, i8, &
-          UserDataName9, i9, UserDataName10, i10, &
-          UserDataName11, i11, UserDataName12, i12, &
-          UserDataName13, i13, UserDataName14, i14, &
-          UserDataName15, i15, UserDataName16, i16, &
-          UserDataName17, i17, UserDataName18, i18, &
-          UserDataName19, i19, UserDataName20, i20, &
-          end) BIND(C, name='cg_gorel_f03')
+          UserDataName1, i1, &
+          end) BIND(C, name='cg_gorel3')
 
        USE ISO_C_BINDING
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i1
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName2
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i2
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName3
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i3
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName4
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i4
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName5
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i5
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName6
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i6
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName7
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i7
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName8
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i8
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName9
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i9
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName10
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i10
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName11
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i11
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName12
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i12
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName13
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i13
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName14
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i14
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName15
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i15
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName16
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i16
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName17
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i17
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName18
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i18
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName19
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i19
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName20
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i20
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end 
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName1
+       INTEGER(C_INT)   , INTENT(IN) :: i1
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: end 
      END FUNCTION cg_gorel
   END INTERFACE
 
-  ! The number of optional parameters should be set to 
-  ! CG_MAX_GOTO_DEPTH, which is currently set to 20.
   INTERFACE 
      INTEGER(C_INT) FUNCTION cg_goto(fn, B, &
           UserDataName1, i1, UserDataName2, i2, &
-          UserDataName3, i3, UserDataName4, i4, &
-          UserDataName5, i5, UserDataName6, i6, &
-          UserDataName7, i7, UserDataName8, i8, &
-          UserDataName9, i9, UserDataName10, i10, &
-          UserDataName11, i11, UserDataName12, i12, &
-          UserDataName13, i13, UserDataName14, i14, &
-          UserDataName15, i15, UserDataName16, i16, &
-          UserDataName17, i17, UserDataName18, i18, &
-          UserDataName19, i19, UserDataName20, i20, &
-          end) BIND(C, name='cg_goto_f03')
+          end) BIND(C, name='cg_goto5')
 
        USE ISO_C_BINDING
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
        INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i1
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName2
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i2
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName3
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i3
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName4
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i4
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName5
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i5
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName6
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i6
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName7
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i7
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName8
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i8
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName9
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i9
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName10
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i10
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName11
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i11
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName12
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i12
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName13
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i13
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName14
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i14
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName15
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i15
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName16
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i16
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName17
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i17
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName18
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i18
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName19
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i19
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName20
-       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i20
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end 
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName1
+       INTEGER(C_INT)   , INTENT(IN) :: i1
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName2
+       INTEGER(C_INT)   , INTENT(IN) :: i2
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: end 
      END FUNCTION cg_goto
   END INTERFACE
+
+
+  INTERFACE 
+     INTEGER(C_INT) FUNCTION cg_goto3(fn, B, &
+          UserDataName1, i1, &
+          end) BIND(C, name='cg_goto3')
+
+       USE ISO_C_BINDING
+       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName1
+       INTEGER(C_INT)   , INTENT(IN) :: i1
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: end 
+     END FUNCTION cg_goto3
+  END INTERFACE
+
+! THIS CODE ONLY WORKS COMPILERS HAVING F2008 STANDARD EXTENSION:
+! TS 29113 Further Interoperability of FORTRAN with C WG5/N1942
+!!$
+!!$  ! The number of optional parameters should be set to 
+!!$  ! CG_MAX_GOTO_DEPTH, which is currently set to 20.
+!!$  INTERFACE 
+!!$     INTEGER(C_INT) FUNCTION cg_gorel(fn, &
+!!$          UserDataName1, i1, UserDataName2, i2, &
+!!$          UserDataName3, i3, UserDataName4, i4, &
+!!$          UserDataName5, i5, UserDataName6, i6, &
+!!$          UserDataName7, i7, UserDataName8, i8, &
+!!$          UserDataName9, i9, UserDataName10, i10, &
+!!$          UserDataName11, i11, UserDataName12, i12, &
+!!$          UserDataName13, i13, UserDataName14, i14, &
+!!$          UserDataName15, i15, UserDataName16, i16, &
+!!$          UserDataName17, i17, UserDataName18, i18, &
+!!$          UserDataName19, i19, UserDataName20, i20, &
+!!$          end) BIND(C, name='cg_gorel_f03')
+!!$
+!!$       USE ISO_C_BINDING
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i1
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName2
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i2
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName3
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i3
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName4
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i4
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName5
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i5
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName6
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i6
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName7
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i7
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName8
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i8
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName9
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i9
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName10
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i10
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName11
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i11
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName12
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i12
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName13
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i13
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName14
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i14
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName15
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i15
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName16
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i16
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName17
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i17
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName18
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i18
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName19
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i19
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName20
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i20
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end 
+!!$     END FUNCTION cg_gorel
+!!$  END INTERFACE
+
+  ! The number of optional parameters should be set to 
+  ! CG_MAX_GOTO_DEPTH, which is currently set to 20.
+!!$  INTERFACE 
+!!$     INTEGER(C_INT) FUNCTION cg_goto(fn, B, &
+!!$          UserDataName1, i1, UserDataName2, i2, &
+!!$          UserDataName3, i3, UserDataName4, i4, &
+!!$          UserDataName5, i5, UserDataName6, i6, &
+!!$          UserDataName7, i7, UserDataName8, i8, &
+!!$          UserDataName9, i9, UserDataName10, i10, &
+!!$          UserDataName11, i11, UserDataName12, i12, &
+!!$          UserDataName13, i13, UserDataName14, i14, &
+!!$          UserDataName15, i15, UserDataName16, i16, &
+!!$          UserDataName17, i17, UserDataName18, i18, &
+!!$          UserDataName19, i19, UserDataName20, i20, &
+!!$          end) BIND(C, name='cg_goto_f03')
+!!$
+!!$       USE ISO_C_BINDING
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i1
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName2
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i2
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName3
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i3
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName4
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i4
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName5
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i5
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName6
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i6
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName7
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i7
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName8
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i8
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName9
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i9
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName10
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i10
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName11
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i11
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName12
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i12
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName13
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i13
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName14
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i14
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName15
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i15
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName16
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i16
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName17
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i17
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName18
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i18
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName19
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i19
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName20
+!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i20
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end 
+!!$     END FUNCTION cg_goto
+!!$  END INTERFACE
 
 END MODULE cgns_c_binding
 
@@ -525,8 +574,8 @@ PROGRAM main
 
   t0 = MPI_Wtime() ! Timer
 
-  queue = .FALSE.
   queue = .TRUE.
+  queue = .FALSE.
   debug = .FALSE.
   debug = .TRUE.
 
@@ -744,9 +793,9 @@ PROGRAM main
      Array_i(k) = comm_rank*count*NodePerElem + k
   ENDDO
 
-  err = cg_goto(fn, B, "Zone 1"//C_NULL_CHAR, 0_C_INT, end="end"//C_NULL_CHAR)
+  err = cg_goto3(fn, B, "Zone 1"//C_NULL_CHAR, 0_C_INT, END="end"//C_NULL_CHAR)
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cg_goto'
+     PRINT*,'*FAILED* dfcg_goto'
      err = cgp_error_exit()
   ENDIF
   err = cg_user_data_write("User Data"//C_NULL_CHAR)
@@ -754,6 +803,7 @@ PROGRAM main
      PRINT*,'*FAILED* cg_user_data_write'
      err = cgp_error_exit()
   ENDIF
+
   err = cg_gorel(fn, "User Data"//C_NULL_CHAR, 0_C_INT, end="end"//C_NULL_CHAR)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_gorel'
@@ -766,27 +816,20 @@ PROGRAM main
      PRINT*,'*FAILED* cgp_array_write'
      err = cgp_error_exit()
   ENDIF
-  
-  int_sizeof = STORAGE_SIZE(Array_i(1),C_SIZE_T)/STORAGE_SIZE(c_char_'a',C_SIZE_T)
 
-  PRINT*,int_sizeof
-
-  IF(int_sizeof.EQ.4_C_SIZE_T)THEN
-     err = cgp_array_write("ArrayI"//C_NULL_CHAR,Integer,1_C_INT,size_1D,Ai)
-     IF(err.NE.CG_OK)THEN
-        PRINT*,'*FAILED* cgp_array_write'
-        err = cgp_error_exit()
-     ENDIF
-  ELSE IF(int_sizeof.EQ.8_C_SIZE_T)THEN
-     err = cgp_array_write("ArrayI"//C_NULL_CHAR,LongInteger,1_C_INT,size_1D,Ai)
-     IF(err.NE.CG_OK)THEN
-        PRINT*,'*FAILED* cgp_array_write'
-        err = cgp_error_exit()
-     ENDIF
-  ELSE
-     PRINT*,'*FAILED* Integer type not supported'
+#if CG_BUILD_64BIT
+  err = cgp_array_write("ArrayI"//C_NULL_CHAR,LongInteger,1_C_INT,size_1D,Ai)
+  IF(err.NE.CG_OK)THEN
+     PRINT*,'*FAILED* cgp_array_write'
      err = cgp_error_exit()
   ENDIF
+#else
+  err = cgp_array_write("ArrayI"//C_NULL_CHAR,INTEGER,1_C_INT,size_1D,Ai)
+  IF(err.NE.CG_OK)THEN
+     PRINT*,'*FAILED* cgp_array_write'
+     err = cgp_error_exit()
+  ENDIF
+#endif
 
   t1 = MPI_Wtime()
   f_ptr = C_LOC(Array_i(1))

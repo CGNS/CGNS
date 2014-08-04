@@ -1237,14 +1237,18 @@ CGNSDLL int cg_1to1_average_read(int file_number, int B, int Z, int I,
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_goto(int file_number, int B, ...);
-CGNSDLL int cg_goto_f03(int file_number, int B, ...);
+CGNSDLL int cg_goto_f08plus(int file_number, int B, ...);
 CGNSDLL int cg_gorel(int file_number, ...);
-CGNSDLL int cg_gorel_f03(int file_number, ...);
+CGNSDLL int cg_gorel_f08plus(int file_number, ...);
 CGNSDLL int cg_gopath(int file_number, const char *path);
 CGNSDLL int cg_golist(int file_number, int B, int depth, char **label,
 	int *num);
 CGNSDLL int cg_where(int *file_number, int *B, int *depth, char **label,
 	int *num);
+  /* not ideal */
+CGNSDLL int cg_goto3(int file_number, int B, ...);
+CGNSDLL int cg_goto5(int file_number, int B, ...);
+CGNSDLL int cg_gorel3(int file_number, ...);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write ConvergenceHistory_t Nodes                        *
