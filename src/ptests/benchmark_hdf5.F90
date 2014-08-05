@@ -275,178 +275,6 @@ MODULE cgns_c_binding
      END FUNCTION cg_user_data_write
   END INTERFACE
 
-  INTERFACE 
-     INTEGER(C_INT) FUNCTION cg_gorel(fn, &
-          UserDataName1, i1, &
-          end) BIND(C, name='cg_gorel3')
-
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName1
-       INTEGER(C_INT)   , INTENT(IN) :: i1
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: end 
-     END FUNCTION cg_gorel
-  END INTERFACE
-
-  INTERFACE 
-     INTEGER(C_INT) FUNCTION cg_goto(fn, B, &
-          UserDataName1, i1, UserDataName2, i2, &
-          end) BIND(C, name='cg_goto5')
-
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName1
-       INTEGER(C_INT)   , INTENT(IN) :: i1
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName2
-       INTEGER(C_INT)   , INTENT(IN) :: i2
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: end 
-     END FUNCTION cg_goto
-  END INTERFACE
-
-
-  INTERFACE 
-     INTEGER(C_INT) FUNCTION cg_goto3(fn, B, &
-          UserDataName1, i1, &
-          end) BIND(C, name='cg_goto3')
-
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName1
-       INTEGER(C_INT)   , INTENT(IN) :: i1
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: end 
-     END FUNCTION cg_goto3
-  END INTERFACE
-
-! THIS CODE ONLY WORKS COMPILERS HAVING F2008 STANDARD EXTENSION:
-! TS 29113 Further Interoperability of FORTRAN with C WG5/N1942
-!!$
-!!$  ! The number of optional parameters should be set to 
-!!$  ! CG_MAX_GOTO_DEPTH, which is currently set to 20.
-!!$  INTERFACE 
-!!$     INTEGER(C_INT) FUNCTION cg_gorel(fn, &
-!!$          UserDataName1, i1, UserDataName2, i2, &
-!!$          UserDataName3, i3, UserDataName4, i4, &
-!!$          UserDataName5, i5, UserDataName6, i6, &
-!!$          UserDataName7, i7, UserDataName8, i8, &
-!!$          UserDataName9, i9, UserDataName10, i10, &
-!!$          UserDataName11, i11, UserDataName12, i12, &
-!!$          UserDataName13, i13, UserDataName14, i14, &
-!!$          UserDataName15, i15, UserDataName16, i16, &
-!!$          UserDataName17, i17, UserDataName18, i18, &
-!!$          UserDataName19, i19, UserDataName20, i20, &
-!!$          end) BIND(C, name='cg_gorel_f03')
-!!$
-!!$       USE ISO_C_BINDING
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i1
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName2
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i2
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName3
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i3
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName4
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i4
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName5
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i5
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName6
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i6
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName7
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i7
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName8
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i8
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName9
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i9
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName10
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i10
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName11
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i11
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName12
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i12
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName13
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i13
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName14
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i14
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName15
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i15
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName16
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i16
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName17
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i17
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName18
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i18
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName19
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i19
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName20
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i20
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end 
-!!$     END FUNCTION cg_gorel
-!!$  END INTERFACE
-
-  ! The number of optional parameters should be set to 
-  ! CG_MAX_GOTO_DEPTH, which is currently set to 20.
-!!$  INTERFACE 
-!!$     INTEGER(C_INT) FUNCTION cg_goto(fn, B, &
-!!$          UserDataName1, i1, UserDataName2, i2, &
-!!$          UserDataName3, i3, UserDataName4, i4, &
-!!$          UserDataName5, i5, UserDataName6, i6, &
-!!$          UserDataName7, i7, UserDataName8, i8, &
-!!$          UserDataName9, i9, UserDataName10, i10, &
-!!$          UserDataName11, i11, UserDataName12, i12, &
-!!$          UserDataName13, i13, UserDataName14, i14, &
-!!$          UserDataName15, i15, UserDataName16, i16, &
-!!$          UserDataName17, i17, UserDataName18, i18, &
-!!$          UserDataName19, i19, UserDataName20, i20, &
-!!$          end) BIND(C, name='cg_goto_f03')
-!!$
-!!$       USE ISO_C_BINDING
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i1
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName2
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i2
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName3
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i3
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName4
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i4
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName5
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i5
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName6
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i6
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName7
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i7
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName8
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i8
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName9
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i9
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName10
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i10
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName11
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i11
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName12
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i12
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName13
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i13
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName14
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i14
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName15
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i15
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName16
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i16
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName17
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i17
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName18
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i18
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName19
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i19
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName20
-!!$       INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i20
-!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end 
-!!$     END FUNCTION cg_goto
-!!$  END INTERFACE
-
 END MODULE cgns_c_binding
 
 MODULE testing_functions
@@ -506,7 +334,7 @@ PROGRAM main
   INCLUDE 'cgnslib_f.h'
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
-  CGSIZE_T, PARAMETER :: Nelem = 32 ! Use multiples of number of cores per node
+  CGSIZE_T, PARAMETER :: Nelem = 4194304 ! Use multiples of number of cores per node
   CGSIZE_T, PARAMETER :: NodePerElem = 8
 
   CGSIZE_T :: Nnodes
@@ -560,7 +388,7 @@ PROGRAM main
   CHARACTER(LEN=3), DIMENSION(1:2) :: piomodeC= (/"ind", "col"/)
   CHARACTER(LEN=6), DIMENSION(1:2) :: outmode = (/'direct','queued'/)
   INTEGER :: piomode_i
-
+  INTEGER :: istat
   INTEGER(C_SIZE_T) :: int_sizeof
   
   CALL MPI_INIT(mpi_err)
@@ -570,16 +398,15 @@ PROGRAM main
   WRITE(ichr6,'(I6.6)') comm_size
 
   ! parameters
-  piomode_i = 1
-
-  t0 = MPI_Wtime() ! Timer
-
+  piomode_i = 2
   queue = .TRUE.
   queue = .FALSE.
   debug = .FALSE.
-  debug = .TRUE.
+!  debug = .TRUE.
 
-  err = cgp_pio_mode(piomode(2)) ! default
+  t0 = MPI_Wtime() ! Timer
+
+  err = cgp_pio_mode(piomode(piomode_i)) ! default
 
   Nnodes = Nelem*NodePerElem
 
@@ -594,9 +421,9 @@ PROGRAM main
   err = cgp_open("benchmark_"//ichr6//"_"//piomodeC(piomode_i)//".cgns"//C_NULL_CHAR, CG_MODE_WRITE, fn)
   IF(err.NE.CG_OK) PRINT*,'*FAILED* cgp_open'
   err = cg_base_write(fn, "Base 1"//C_NULL_CHAR, cell_dim, phys_dim, B)
-  IF(err.NE.CG_OK) PRINT*,'*FAILED* cgp_base_write'
+  IF(err.NE.CG_OK) PRINT*,'*FAILED* cg_base_write'
   err = cg_zone_write(fn, B, "Zone 1"//C_NULL_CHAR, nijk, Unstructured, Z)
-  IF(err.NE.CG_OK) PRINT*,'*FAILED* cgp_zone_write'
+  IF(err.NE.CG_OK) PRINT*,'*FAILED* cg_zone_write'
 
 ! ======================================
 ! == (A) WRITE THE NODAL COORDINATES  ==
@@ -604,9 +431,21 @@ PROGRAM main
 
   count = nijk(1)/comm_size
 
-  ALLOCATE(Coor_x(1:count))
-  ALLOCATE(Coor_y(1:count))
-  ALLOCATE(Coor_z(1:count))
+  ALLOCATE(Coor_x(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Coor_x'
+     err = cgp_error_exit()
+  ENDIF
+  ALLOCATE(Coor_y(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Coor_y'
+     err = cgp_error_exit()
+  ENDIF
+  ALLOCATE(Coor_z(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Coor_z'
+     err = cgp_error_exit()
+  ENDIF
 
   min = count*comm_rank+1
   max = count*(comm_rank+1)
@@ -684,7 +523,11 @@ PROGRAM main
   ENDIF
  
   count = nijk(2)/comm_size
-  ALLOCATE(elements(1:count*NodePerElem))
+  ALLOCATE(elements(1:count*NodePerElem), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of elements'
+     err = cgp_error_exit()
+  ENDIF
   
   ! Create ridiculous connectivity table ...
   DO k = 1, count*NodePerElem
@@ -715,14 +558,26 @@ PROGRAM main
 
   count = nijk(1)/comm_size
 
-  ALLOCATE(Data_Fx(1:count))
-  ALLOCATE(Data_Fy(1:count))
-  ALLOCATE(Data_Fz(1:count))
+  ALLOCATE(Data_Fx(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Data_Fx'
+     err = cgp_error_exit()
+  ENDIF
+  ALLOCATE(Data_Fy(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Data_Fy'
+     err = cgp_error_exit()
+  ENDIF
+  ALLOCATE(Data_Fz(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Data_Fz'
+     err = cgp_error_exit()
+  ENDIF
 
   DO k = 1, count
-     Data_Fx(k) = REAL(comm_rank*count, KIND=C_DOUBLE) + k + 0.01_C_DOUBLE
-     Data_Fy(k) = REAL(comm_rank*count, KIND=C_DOUBLE) + k + 0.02_C_DOUBLE
-     Data_Fz(k) = REAL(comm_rank*count, KIND=C_DOUBLE) + k + 0.03_C_DOUBLE
+     Data_Fx(k) = REAL(comm_rank*count+k, KIND=C_DOUBLE) + 0.01_C_DOUBLE
+     Data_Fy(k) = REAL(comm_rank*count+k, KIND=C_DOUBLE) + 0.02_C_DOUBLE
+     Data_Fz(k) = REAL(comm_rank*count+k, KIND=C_DOUBLE) + 0.03_C_DOUBLE
   ENDDO
 
   err = cg_sol_write(fn, B, Z, "Solution"//C_NULL_CHAR, Vertex, S)
@@ -782,18 +637,26 @@ PROGRAM main
   count = nijk(1)/comm_size
   count = nijk(1)/comm_size
 
-  ALLOCATE(Array_r(1:count))
-  ALLOCATE(Array_i(1:count))
+  ALLOCATE(Array_r(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Array_r'
+     err = cgp_error_exit()
+  ENDIF
+  ALLOCATE(Array_i(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Array_i'
+     err = cgp_error_exit()
+  ENDIF
 
   min = count*comm_rank+1
   max = count*(comm_rank+1)
 
   DO k = 1, count
-     Array_r(k) = REAL(comm_rank*count, KIND=C_DOUBLE) + k + 0.001_C_DOUBLE
+     Array_r(k) = REAL(comm_rank*count + k, KIND=C_DOUBLE) + 0.001_C_DOUBLE
      Array_i(k) = comm_rank*count*NodePerElem + k
   ENDDO
 
-  err = cg_goto3(fn, B, "Zone 1"//C_NULL_CHAR, 0_C_INT, END="end"//C_NULL_CHAR)
+  CALL cg_goto_f(fn, B, err, "Zone 1", 0_C_INT, 'end')
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* dfcg_goto'
      err = cgp_error_exit()
@@ -804,7 +667,7 @@ PROGRAM main
      err = cgp_error_exit()
   ENDIF
 
-  err = cg_gorel(fn, "User Data"//C_NULL_CHAR, 0_C_INT, end="end"//C_NULL_CHAR)
+  CALL cg_gorel_f(fn,err,'User Data',0_C_INT,'end')
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_gorel'
      err = cgp_error_exit()
@@ -947,10 +810,21 @@ PROGRAM main
 ! ======================================
 
   count = nijk(1)/comm_size
-
-  ALLOCATE(Coor_x(1:count))
-  ALLOCATE(Coor_y(1:count))
-  ALLOCATE(Coor_z(1:count))
+  ALLOCATE(Coor_x(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Coor_x'
+     err = cgp_error_exit()
+  ENDIF
+  ALLOCATE(Coor_y(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Coor_y'
+     err = cgp_error_exit()
+  ENDIF
+  ALLOCATE(Coor_z(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Coor_z'
+     err = cgp_error_exit()
+  ENDIF
 
   min = count*comm_rank+1
   max = count*(comm_rank+1)
@@ -1006,7 +880,11 @@ PROGRAM main
 ! ======================================
 
   count = nijk(2)/comm_size
-  ALLOCATE(elements(1:count*NodePerElem))
+  ALLOCATE(elements(1:count*NodePerElem), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of elements'
+     err = cgp_error_exit()
+  ENDIF
   
   emin = count*comm_rank+1
   emax = count*(comm_rank+1)
@@ -1037,9 +915,21 @@ PROGRAM main
 ! ======================================
   count = nijk(1)/comm_size
 
-  ALLOCATE(Data_Fx(1:count))
-  ALLOCATE(Data_Fy(1:count))
-  ALLOCATE(Data_Fz(1:count))
+  ALLOCATE(Data_Fx(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Data_Fx'
+     err = cgp_error_exit()
+  ENDIF
+  ALLOCATE(Data_Fy(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Data_Fy'
+     err = cgp_error_exit()
+  ENDIF
+  ALLOCATE(Data_Fz(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Data_Fz'
+     err = cgp_error_exit()
+  ENDIF
 
   t1 = MPI_Wtime()
   f_ptr = C_LOC(Data_Fx(1))
@@ -1085,13 +975,23 @@ PROGRAM main
 
   count = nijk(1)/comm_size
 
-  ALLOCATE(Array_i(1:count))
-  ALLOCATE(Array_r(1:count))
+  ALLOCATE(Array_r(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Array_r'
+     err = cgp_error_exit()
+  ENDIF
+  ALLOCATE(Array_i(1:count), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of Array_i'
+     err = cgp_error_exit()
+  ENDIF
 
   min = count*comm_rank+1
   max = count*(comm_rank+1)
   
-  err = cg_goto(fn,B,"Zone_t"//C_NULL_CHAR,Z,"UserDefinedData_t"//C_NULL_CHAR,1_C_INT,END="end"//C_NULL_CHAR)
+  CALL cg_goto_f(fn, B, err, "Zone_t",Z,"UserDefinedData_t",1_C_INT,"end") 
+
+  !err = cg_goto(fn,B,"Zone_t"//C_NULL_CHAR,Z,"UserDefinedData_t"//C_NULL_CHAR,1_C_INT,END="end"//C_NULL_CHAR)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_goto (User Defined Data)'
      err = cgp_error_exit()
