@@ -334,7 +334,7 @@ PROGRAM main
   INCLUDE 'cgnslib_f.h'
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
-  CGSIZE_T, PARAMETER :: Nelem = 4194304 ! Use multiples of number of cores per node
+  CGSIZE_T, PARAMETER :: Nelem = 8388608 ! 4194304 ! Use multiples of number of cores per node
   CGSIZE_T, PARAMETER :: NodePerElem = 8
 
   CGSIZE_T :: Nnodes
@@ -483,19 +483,19 @@ PROGRAM main
   f_ptr = C_LOC(Coor_x(1))
   err = cgp_coord_write_data(fn,B,Z,Cx,min,max,f_ptr)
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_coord_write_data'
+     PRINT*,'*FAILED* cgp_coord_write_data (Cx)'
      err = cgp_error_exit()
   ENDIF
   f_ptr = C_LOC(Coor_y(1))
   err = cgp_coord_write_data(fn,B,Z,Cy,min,max,f_ptr)
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_coord_write_data'
+     PRINT*,'*FAILED* cgp_coord_write_data (Cy)'
      err = cgp_error_exit()
   ENDIF
   f_ptr = C_LOC(Coor_z(1))
   err = cgp_coord_write_data(fn,B,Z,Cz,min,max,f_ptr)
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_coord_write_data'
+     PRINT*,'*FAILED* cgp_coord_write_data (Cz)'
      err = cgp_error_exit()
   ENDIF
 
@@ -605,19 +605,19 @@ PROGRAM main
   f_ptr = C_LOC(Data_Fx(1))
   err = cgp_field_write_data(fn,B,Z,S,Fx,min,max,f_ptr)  
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_field_write_data'
+     PRINT*,'*FAILED* cgp_field_write_data (Fx)'
      err = cgp_error_exit()
   ENDIF
   f_ptr = C_LOC(Data_Fy(1))
   err = cgp_field_write_data(fn,B,Z,S,Fy,min,max,f_ptr) 
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_field_write_data'
+     PRINT*,'*FAILED* cgp_field_write_data (Fy)'
      err = cgp_error_exit()
   ENDIF
   f_ptr = C_LOC(Data_Fz(1))
   err = cgp_field_write_data(fn,B,Z,S,Fz,min,max,f_ptr) 
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_field_write_data'
+     PRINT*,'*FAILED* cgp_field_write_data (Fz)'
      err = cgp_error_exit()
   ENDIF
  
@@ -663,7 +663,7 @@ PROGRAM main
   ENDIF
   err = cg_user_data_write("User Data"//C_NULL_CHAR)
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cg_user_data_write'
+     PRINT*,'*FAILED* cg_user_data_write '
      err = cgp_error_exit()
   ENDIF
 
@@ -676,20 +676,20 @@ PROGRAM main
   size_1D(1) = nijk(1)
   err = cgp_array_write("ArrayR"//C_NULL_CHAR,RealDouble,1_C_INT,size_1D,Ar)
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_write'
+     PRINT*,'*FAILED* cgp_array_write (Real)'
      err = cgp_error_exit()
   ENDIF
 
 #if CG_BUILD_64BIT
   err = cgp_array_write("ArrayI"//C_NULL_CHAR,LongInteger,1_C_INT,size_1D,Ai)
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_write'
+     PRINT*,'*FAILED* cgp_array_write  (Integer)'
      err = cgp_error_exit()
   ENDIF
 #else
   err = cgp_array_write("ArrayI"//C_NULL_CHAR,INTEGER,1_C_INT,size_1D,Ai)
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_write'
+     PRINT*,'*FAILED* cgp_array_write  (Integer)'
      err = cgp_error_exit()
   ENDIF
 #endif
@@ -698,13 +698,13 @@ PROGRAM main
   f_ptr = C_LOC(Array_i(1))
   err = cgp_array_write_data(Ai,min,max,f_ptr)
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_write'
+     PRINT*,'*FAILED* cgp_array_write_data (Integer)'
      err = cgp_error_exit()
   ENDIF
   f_ptr = C_LOC(Array_r(1))
   err = cgp_array_write_data(Ar,min,max,f_ptr)
   IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_write'
+     PRINT*,'*FAILED* cgp_array_write_data (Float)'
      err = cgp_error_exit()
   ENDIF
 
