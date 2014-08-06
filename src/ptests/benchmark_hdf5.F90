@@ -334,7 +334,7 @@ PROGRAM main
   INCLUDE 'cgnslib_f.h'
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
-  CGSIZE_T, PARAMETER :: Nelem = 8388608 ! 4194304 ! Use multiples of number of cores per node
+  CGSIZE_T, PARAMETER :: Nelem = 4194304 ! 16777216 !8388608 ! 4194304 ! 8388608 ! 4194304 ! Use multiples of number of cores per node
   CGSIZE_T, PARAMETER :: NodePerElem = 8
 
   CGSIZE_T :: Nnodes
@@ -399,7 +399,7 @@ PROGRAM main
 
   ! parameters
   piomode_i = 2
-  queue = .TRUE.
+ ! queue = .TRUE.
   queue = .FALSE.
   debug = .FALSE.
 !  debug = .TRUE.
@@ -424,6 +424,18 @@ PROGRAM main
   IF(err.NE.CG_OK) PRINT*,'*FAILED* cg_base_write'
   err = cg_zone_write(fn, B, "Zone 1"//C_NULL_CHAR, nijk, Unstructured, Z)
   IF(err.NE.CG_OK) PRINT*,'*FAILED* cg_zone_write'
+
+
+  ! use queued IO
+  IF(queue) THEN
+     err = cgp_queue_set(1_C_INT)
+  ELSE
+     err = cgp_queue_set(0_C_INT) ! default
+  ENDIF
+  IF(err.NE.CG_OK)THEN
+     PRINT*,'*FAILED* cgp_queue_set'
+     err = cgp_error_exit()
+  ENDIF
 
 ! ======================================
 ! == (A) WRITE THE NODAL COORDINATES  ==
@@ -469,13 +481,6 @@ PROGRAM main
   err = cgp_coord_write(fn,B,Z,RealDouble,"CoordinateZ"//C_NULL_CHAR,Cz)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_write'
-     err = cgp_error_exit()
-  ENDIF
-
-  ! use queued IO
-  IF(queue) err = cgp_queue_set(1_C_INT)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_queue_set'
      err = cgp_error_exit()
   ENDIF
 
@@ -722,7 +727,7 @@ PROGRAM main
         PRINT*,'*FAILED* cgp_queue_flush'
         err = cgp_error_exit()
      ENDIF
-     err = cgp_queue_set(0_C_INT)
+     err = cgp_queue_set(0_C_INT) ! set for reading the data back
      IF(err.NE.CG_OK)THEN
         PRINT*,'*FAILED* cgp_queue_set'
         err = cgp_error_exit()
@@ -747,12 +752,6 @@ PROGRAM main
 ! ======================================
 ! ==    **  READ THE CGNS FILE **     ==
 ! ======================================
-
-  err = cgp_queue_set(0_C_INT) ! set to direct read
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED*  cgp_queue_set'
-     err = cgp_error_exit()
-  ENDIF
 
   ! Open the cgns file
   err = cgp_open("benchmark_"//ichr6//"_"//piomodeC(piomode_i)//".cgns"//C_NULL_CHAR, CG_MODE_READ, fn)
@@ -782,7 +781,7 @@ PROGRAM main
   ! Read the zone information
 
   err = cg_zone_read(fn, B, Z, zname, sizes)
-  IF(err.NE.CG_OK) PRINT*,'*FAILED* cgp_zone_write'
+  IF(err.NE.CG_OK) PRINT*,'*FAILED* cgp_zone_read'
 
   ! Check the read zone information is correct 
   IF(sizes(1).NE.Nnodes)THEN
@@ -1045,7 +1044,7 @@ PROGRAM main
                MPI_MAX, 0, MPI_COMM_WORLD, mpi_err)
 
   IF(comm_rank.EQ.0)THEN
-     OPEN(10,FILE='timing_'//ichr6//'.dat', FORM='formatted')
+     OPEN(10,FILE="timing_"//ichr6//"_"//piomodeC(piomode_i)//".dat", FORM='formatted')
      WRITE(10,'(A)')"#nprocs, wcoord, welem, wfield, warray, rcoord, relem, rfield, rarray"
      WRITE(10,'(i0,100(x,3(f14.7)))') comm_size, &
          timing(1)/DBLE(comm_size), timingMin(1), timingMax(1), &
