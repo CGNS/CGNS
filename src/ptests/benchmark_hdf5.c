@@ -25,7 +25,7 @@ int comm_size;
 int comm_rank;
 MPI_Info info;
 
-cgsize_t Nelem = 16; /* 4194304; */ /* Use multiples of number of cores per node */
+cgsize_t Nelem = 16777216; /* 4194304; */ /* Use multiples of number of cores per node */
 cgsize_t NodePerElem = 8;
 
 cgsize_t Nnodes;
@@ -93,36 +93,6 @@ int initialize(int* argc, char** argv[]) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 	MPI_Info_create(&(info));
 
-/* 	nijk[0] = N; */
-/* 	nijk[1] = N; */
-/* 	nijk[2] = comm_size; */
-/* 	nijk[3] = nijk[0]-1; */
-/* 	nijk[4] = nijk[1]-1; */
-/* 	nijk[5] = nijk[2]-1; */
-/* 	nijk[6] = 0; */
-/* 	nijk[7] = 0; */
-/* 	nijk[8] = 0; */
-
-/* 	x = (double*) malloc(BUF_LENGTH*sizeof(double)); */
-/* 	y = (double*) malloc(BUF_LENGTH*sizeof(double)); */
-/* 	z = (double*) malloc(BUF_LENGTH*sizeof(double)); */
-
-/* 	for(i=0;i<N;i++) { */
-/* 		for(j=0;j<N;j++) { */
-/* 			x[i*N+j] = (double) (i); */
-/* 			y[i*N+j] = (double) (j); */
-/* 			z[i*N+j] = (double) (comm_rank); */
-/* 			} */
-/* 		} */
-
-/* 	min[2] = comm_rank + 1; */
-/* 	min[1] = 1; */
-/* 	min[0] = 1; */
-/* 	max[2] = comm_rank + 1; */
-/* 	max[1] = N; */
-/* 	max[0] = N; */
-
-
 	return 0;
 }
 
@@ -135,64 +105,6 @@ int c_double_eq(double a, double b) {
   }
   return 0;
 }
-
-
-/* int finalize() { */
-/* /\* 	free(x); *\/ */
-/* /\* 	free(y); *\/ */
-/* /\* 	free(z); *\/ */
-
-/* 	MPI_Finalize(); */
-
-/* 	return 0; */
-/* 	} */
-
-/* int doTimer(const char* msg, double time) { */
-/* 	double min; */
-/* 	double max; */
-/* 	double avg; */
-/* 	MPI_Reduce(&time, &min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD); */
-/* 	MPI_Reduce(&time, &max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD); */
-/* 	MPI_Reduce(&time, &avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD); */
-/* 	avg = avg/((double) comm_size); */
-/* 	if(comm_rank==0) printf("%20s Time = { min: %-20f max: %-20f avg: %-20f} s\n",msg,min,max,avg); */
-/* 	return 0; */
-/* 	} */
-
-/* int doBandwidth(const char* msg, double time) { */
-/* 	double min; */
-/* 	double max; */
-/* 	double avg; */
-
-/* 	double MB = ((double) BUF_LENGTH*sizeof(double))/(1024.0*1024.0); */
-/* 	MPI_Reduce(&time, &max, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD); */
-/* 	max = MB/max; */
-/* 	MPI_Reduce(&time, &min, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD); */
-/* 	min = MB/min; */
-/* 	MPI_Reduce(&time, &avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD); */
-/* 	avg = avg/((double) comm_size); */
-/* 	avg = MB/avg; */
-/* 	if(comm_rank==0) printf("%20s Band = { min: %-20f max: %-20f avg: %-20f} MB/s (local)\n",msg,min,max,avg); */
-/* 	return 0; */
-/* 	} */
-
-/* int doBandwidthAgg(const char* msg, double time) { */
-/* 	double min; */
-/* 	double max; */
-/* 	double avg; */
-
-/* 	double MB = ((double) BUF_LENGTH*sizeof(double))/(1024.0*1024.0)*((double) comm_size); */
-/* 	MPI_Reduce(&time, &max, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD); */
-/* 	max = MB/max; */
-/* 	MPI_Reduce(&time, &min, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD); */
-/* 	min = MB/min; */
-/* 	MPI_Reduce(&time, &avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD); */
-/* 	avg = avg/((double) comm_size); */
-/* 	avg = MB/avg; */
-/* 	if(comm_rank==0) printf("%20s Band = { min: %-20f max: %-20f avg: %-20f} MB/s (aggregate)\n",msg,min,max,avg); */
-/* 	return 0; */
-/* 	} */
-
 
 int main(int argc, char* argv[]) {
   /* Initialize variables */
@@ -759,15 +671,15 @@ int main(int argc, char* argv[]) {
       fprintf(fid,"#nprocs, wcoord, welem, wfield, warray, rcoord, relem, rfield, rarray \n");
 
       fprintf(fid,"%d %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f\n", comm_size,
-	      timing[1]/((double) comm_size), timingMin[0], timingMax[0],
-	      timing[2]/((double) comm_size), timingMin[1], timingMax[1],
-	      timing[3]/((double) comm_size), timingMin[2], timingMax[2],
-	      timing[4]/((double) comm_size), timingMin[3], timingMax[3],
-	      timing[5]/((double) comm_size), timingMin[4], timingMax[4],
-	      timing[6]/((double) comm_size), timingMin[5], timingMax[5],
-	      timing[7]/((double) comm_size), timingMin[6], timingMax[6],
-	      timing[8]/((double) comm_size), timingMin[7], timingMax[7],
-	      timing[9]/((double) comm_size), timingMin[8], timingMax[8] );
+	      timing[0]/((double) comm_size), timingMin[0], timingMax[0],
+	      timing[1]/((double) comm_size), timingMin[1], timingMax[1],
+	      timing[2]/((double) comm_size), timingMin[2], timingMax[2],
+	      timing[3]/((double) comm_size), timingMin[3], timingMax[3],
+	      timing[4]/((double) comm_size), timingMin[4], timingMax[4],
+	      timing[5]/((double) comm_size), timingMin[5], timingMax[5],
+	      timing[6]/((double) comm_size), timingMin[6], timingMax[6],
+	      timing[7]/((double) comm_size), timingMin[7], timingMax[7],
+	      timing[8]/((double) comm_size), timingMin[8], timingMax[8] );
     }
   }
 
