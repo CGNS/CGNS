@@ -20,13 +20,15 @@
 #include "pcgnslib.h"
 #include "mpi.h"
 
+#define false 0
+#define true 1
 
 int comm_size;
 int comm_rank;
 MPI_Info info;
 
-cgsize_t Nelem = 16777216; /* 4194304; */ /* Use multiples of number of cores per node */
-cgsize_t NodePerElem = 8;
+cgsize_t Nelem = 16; /* Use multiples of number of cores per node */
+cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
 int mpi_err;
@@ -60,31 +62,29 @@ cgsize_t start, end, emin, emax;
 cgsize_t* elements;
 char name[33];
 int queue, debug;
-/*   CHARACTER(KIND=C_CHAR,LEN=180) :: bname, zname; */
 double t0, t1, t2;
 
 /*
-  ! Timing storage convention:
-  ! timing(1) = Total program time
-  ! timing(2) = Time to write nodal coordinates
-  ! timing(3) = Time to write connectivity table
-  ! timing(4) = Time to write solution data (field data)
-  ! timing(5) = Time to write array data
-  ! timing(6) = Time to read nodal coordinates
-  ! timing(7) = Time to read connectivity table
-  ! timing(8) = Time to read solution data (field data)
-  ! timing(9) = Time to read array data */
+ * Timing storage convention:
+ * timing(0) = Total program time
+ * timing(1) = Time to write nodal coordinates
+ * timing(2) = Time to write connectivity table
+ * timing(3) = Time to write solution data (field data)
+ * timing(4) = Time to write array data
+ * timing(5) = Time to read nodal coordinates
+ * timing(6) = Time to read connectivity table
+ * timing(7) = Time to read solution data (field data)
+ * timing(8) = Time to read array data 
+ */
 double xtiming[9], timing[9], timingMin[9], timingMax[9];
-/*   CHARACTER(LEN=6) :: ichr6 */
 
 /*   ! CGP_INDEPENDENT is the default */
 /*   INT, DIMENSION(1:2) :: piomode = (/CGP_INDEPENDENT, CGP_COLLECTIVE/) */
 /* static char *piomode[2] = {"CGP_INDEPENDENT", "CGP_COLLECTIVE"}; */
+
 static char *outmode[2] = {"direct", "queued"};
 int piomode[2] = {0, 1};
 int piomode_i;
-/*   INTEGER :: istat */
-/*   INTEGER(C_SIZE_T) :: int_sizeof */
 
 int initialize(int* argc, char** argv[]) {
 	int i,j;
@@ -101,25 +101,22 @@ int c_double_eq(double a, double b) {
   double eps = 1.e-8;
   
   if(a-b < eps) {
-    return 1;
+    return true;
   }
-  return 0;
+  return false;
 }
 
 int main(int argc, char* argv[]) {
   /* Initialize variables */
   initialize(&argc,&argv);
 
-  char fname[31];
-  char name[31];
-
-
-/*   WRITE(ichr6,'(I6.6)') comm_size */
+  char fname[32];
+  char name[32];
 
   /* parameters */
   piomode_i = 1;
-  queue = 0; /*false default*/
-  debug = 1; /*false default*/
+  queue = false;
+  debug = false; 
 
   t0 = MPI_Wtime(); /* Timer */
   
@@ -135,7 +132,9 @@ int main(int argc, char* argv[]) {
   /* ==    **WRITE THE CGNS FILE *       == */
   /* ====================================== */
 
-  sprintf(fname, "benchmark_%06d_%d.cgns", comm_size, piomode_i+1);
+  /* for IBM */
+  sprintf(fname, "bglockless:benchmark_%06d_%d.cgns", comm_size, piomode_i+1);
+/*   sprintf(fname, "benchmark_%06d_%d.cgns", comm_size, piomode_i+1); */
 
   err = cgp_open(fname, CG_MODE_WRITE, &fn);
   if(err!=CG_OK) printf("*FAILED* cg_open\n");
@@ -150,10 +149,9 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 
-
-/* ====================================== */
-/* == (A) WRITE THE NODAL COORDINATES  == */
-/* ====================================== */
+  /* ====================================== */
+  /* == (A) WRITE THE NODAL COORDINATES  == */
+  /* ====================================== */
 
   count = nijk[0]/comm_size;
   
@@ -223,7 +221,7 @@ int main(int argc, char* argv[]) {
   start = 1;
   end = nijk[1];
 
-  if(cgp_section_write(fn,B,Z,"Elements",HEXA_8,start,end,0,&S) != CG_OK) {
+  if(cgp_section_write(fn,B,Z,"Elements",PENTA_6,start,end,0,&S) != CG_OK) {
     printf("*FAILED* cgp_section_write \n");
     cgp_error_exit();
   }
@@ -485,15 +483,15 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
   if (cgp_coord_read_data(fn,B,Z,Cx,&min,&max,Coor_x) != CG_OK) {
-    printf("*FAILED* cgp_coord_read_data (Coor_x) \n");
+    printf("*FAILED* cgp_coord_read_data ( Reading Coor_x) \n");
     cgp_error_exit();
   }
   if (cgp_coord_read_data(fn,B,Z,Cy,&min,&max,Coor_y) != CG_OK) {
-    printf("*FAILED* cgp_coord_read_data (Coor_y) \n");
+    printf("*FAILED* cgp_coord_read_data (Reading Coor_y) \n");
     cgp_error_exit();
   }
   if (cgp_coord_read_data(fn,B,Z,Cz,&min,&max,Coor_z) != CG_OK) {
-    printf("*FAILED* cgp_coord_read_data (Coor_z) \n");
+    printf("*FAILED* cgp_coord_read_data (Reading Coor_z) \n");
     cgp_error_exit();
   }
   t2 = MPI_Wtime();
@@ -530,7 +528,7 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
   if( cgp_elements_read_data(fn, B, Z, S, emin, emax, elements) != CG_OK) {
-    printf("*FAILED* cgp_elements_read_data (elements) \n");
+    printf("*FAILED* cgp_elements_read_data ( Reading elements) \n");
     cgp_error_exit();
   }
   t2 = MPI_Wtime();
@@ -552,17 +550,17 @@ int main(int argc, char* argv[]) {
   count = nijk[0]/comm_size;
 
   if( !(Data_Fx = (double*) malloc(count*sizeof(double))) ) {
-    printf("*FAILED* allocation of Data_Fx \n");
+    printf("*FAILED* allocation of Reading Data_Fx \n");
     cgp_error_exit();
   }
 
   if( !(Data_Fy = (double*) malloc(count*sizeof(double))) ) {
-    printf("*FAILED* allocation of Data_Fy \n");
+    printf("*FAILED* allocation of  Reading Data_Fy \n");
     cgp_error_exit();
   }
 
   if( !(Data_Fz = (double*) malloc(count*sizeof(double))) ) {
-    printf("*FAILED* allocation of Data_Fz \n");
+    printf("*FAILED* allocation of  Reading Data_Fz \n");
     cgp_error_exit();
   }
 
@@ -605,12 +603,12 @@ int main(int argc, char* argv[]) {
   count = nijk[0]/comm_size;
 
   if( !(Array_r = (double*) malloc(count*sizeof(double))) ) {
-    printf("*FAILED* allocation of Array_r \n");
+    printf("*FAILED* allocation of  Reading Array_r \n");
     cgp_error_exit();
   }
 
   if( !(Array_i= (int*) malloc(count*sizeof(int))) ) {
-    printf("*FAILED* allocation of Array_i  \n");
+    printf("*FAILED* allocation of  Reading Array_i  \n");
     cgp_error_exit();
   }
 
