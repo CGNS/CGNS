@@ -135,14 +135,18 @@ int main(int argc, char* argv[]) {
   /* for IBM */
   sprintf(fname, "bglockless:benchmark_%06d_%d.cgns", comm_size, piomode_i+1);
 /*   sprintf(fname, "benchmark_%06d_%d.cgns", comm_size, piomode_i+1); */
-
-  err = cgp_open(fname, CG_MODE_WRITE, &fn);
-  if(err!=CG_OK) printf("*FAILED* cg_open\n");
-  err = cg_base_write(fn, "Base 1", cell_dim, phys_dim, &B);
-  if(err!=CG_OK) printf("*FAILED* cg_base_write\n");
-  err = cg_zone_write(fn, B, "Zone 1", nijk, Unstructured, &Z);
-  if(err!=CG_OK) printf("*FAILED* cg_zone_write\n");
-
+  if(cgp_open(fname, CG_MODE_WRITE, &fn) != CG_OK) {
+    printf("*FAILED* cgp_open \n");
+    cgp_error_exit();
+  }
+  if(cg_base_write(fn, "Base 1", cell_dim, phys_dim, &B) != CG_OK) {
+    printf("*FAILED* cg_base_write \n");
+    cgp_error_exit();
+  }
+  if(cg_zone_write(fn, B, "Zone 1", nijk, Unstructured, &Z) != CG_OK) {
+    printf("*FAILED* cg_zone_write \n");
+    cgp_error_exit();
+  }
   /* use queued IO */
   if(cgp_queue_set(queue) != CG_OK) {
     printf("*FAILED* cgp_queue_set \n");
@@ -397,7 +401,10 @@ int main(int argc, char* argv[]) {
     free(Array_i);
   }
 
-  err = cgp_close(fn);
+  if(cgp_close(fn) != CG_OK) {
+    printf("*FAILED* cgp_close \n");
+    cgp_error_exit();
+  };
 
   /* ====================================== */
   /* ==    **  READ THE CGNS FILE **     == */
@@ -409,9 +416,11 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 
-  /* Open the cgns file */
-  err = cgp_open(fname, CG_MODE_READ, &fn);
-  if(err!=CG_OK) printf("*FAILED* cg_open\n");
+  /* Open the cgns file for reading */
+  if(cgp_open(fname, CG_MODE_READ, &fn) != CG_OK) {
+    printf("*FAILED* cgp_open \n");
+    cgp_error_exit();
+  }
 
   /* Read the base information */
   if(cg_base_read(fn, B, name, &r_cell_dim, &r_phys_dim) != CG_OK) {
