@@ -27,7 +27,7 @@ int comm_size;
 int comm_rank;
 MPI_Info info;
 
-cgsize_t Nelem = 16; /* Use multiples of number of cores per node */
+cgsize_t Nelem = 33554432; /* Use multiples of number of cores per node */
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
   /* ====================================== */
 
   /* for IBM */
-  sprintf(fname, "bglockless:benchmark_%06d_%d.cgns", comm_size, piomode_i+1);
+  sprintf(fname, "benchmark_%06d_%d.cgns", comm_size, piomode_i+1);
 /*   sprintf(fname, "benchmark_%06d_%d.cgns", comm_size, piomode_i+1); */
   if(cgp_open(fname, CG_MODE_WRITE, &fn) != CG_OK) {
     printf("*FAILED* cgp_open \n");
@@ -405,23 +405,20 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cgp_close \n");
     cgp_error_exit();
   };
-
   /* ====================================== */
   /* ==    **  READ THE CGNS FILE **     == */
   /* ====================================== */
-
+  MPI_Barrier(MPI_COMM_WORLD);
   /* use queued IO */
   if(cgp_queue_set(0) != CG_OK) {
     printf("*FAILED* cgp_queue_set \n");
     cgp_error_exit();
   }
-
   /* Open the cgns file for reading */
   if(cgp_open(fname, CG_MODE_READ, &fn) != CG_OK) {
     printf("*FAILED* cgp_open \n");
     cgp_error_exit();
   }
-
   /* Read the base information */
   if(cg_base_read(fn, B, name, &r_cell_dim, &r_phys_dim) != CG_OK) {
     printf("*FAILED* cg_base_read\n");
@@ -439,7 +436,6 @@ int main(int argc, char* argv[]) {
   }
 
   /* Read the zone information */
-
   if(cg_zone_read(fn, B, Z, name, sizes) != CG_OK) {
     printf("*FAILED* cg_zoneread\n");
     cgp_error_exit();
@@ -486,7 +482,6 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* allocation of Coor_z \n");
     cgp_error_exit();
   }
-
   min = count*comm_rank+1;
   max = count*(comm_rank+1);
 
@@ -661,7 +656,6 @@ int main(int argc, char* argv[]) {
      printf("*FAILED* cgp_close\n");
      cgp_error_exit();
   }
-
   t2 = MPI_Wtime();
   xtiming[0] = t2-t0;
   
@@ -677,7 +671,7 @@ int main(int argc, char* argv[]) {
     } else {
       fprintf(fid,"#nprocs, wcoord, welem, wfield, warray, rcoord, relem, rfield, rarray \n");
 
-      fprintf(fid,"%d %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f\n", comm_size,
+      fprintf(fid,"%d %20f %20f %20f %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f\n", comm_size,
 	      timing[0]/((double) comm_size), timingMin[0], timingMax[0],
 	      timing[1]/((double) comm_size), timingMin[1], timingMax[1],
 	      timing[2]/((double) comm_size), timingMin[2], timingMax[2],
