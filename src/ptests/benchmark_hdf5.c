@@ -27,7 +27,8 @@ int comm_size;
 int comm_rank;
 MPI_Info info;
 
-cgsize_t Nelem = 33554432; /* Use multiples of number of cores per node */
+cgsize_t Nelem = 33554432; 
+/*cgsize_t Nelem = 16777216;*/
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
@@ -330,7 +331,7 @@ int main(int argc, char* argv[]) {
   /* ====================================== */
   /* == (D) WRITE THE ARRAY DATA         == */
   /* ====================================== */
- 
+
   count = nijk[0]/comm_size;
 
   if( !(Array_r = (double*) malloc(count*sizeof(double))) ) {
@@ -338,7 +339,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 
-  if( !(Array_i= (int*) malloc(count*sizeof(int))) ) {
+  if( !(Array_i= (cgsize_t*) malloc(count*sizeof(cgsize_t))) ) {
     printf("*FAILED* allocation of Array_i  \n");
     cgp_error_exit();
   }
@@ -383,7 +384,6 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 #endif
-
   t1 = MPI_Wtime();
   if(cgp_array_write_data(Ai,&min,&max,Array_i) != CG_OK) {
     printf("*FAILED* cgp_field_array_data (Array_Ai)\n");
@@ -400,7 +400,7 @@ int main(int argc, char* argv[]) {
     free(Array_r);
     free(Array_i);
   }
-
+  
   if(cgp_close(fn) != CG_OK) {
     printf("*FAILED* cgp_close \n");
     cgp_error_exit();
@@ -415,7 +415,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
   /* Open the cgns file for reading */
-  if(cgp_open(fname, CG_MODE_READ, &fn) != CG_OK) {
+  if(cgp_open(fname, CG_MODE_MODIFY, &fn) != CG_OK) {
     printf("*FAILED* cgp_open \n");
     cgp_error_exit();
   }
@@ -434,7 +434,6 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* bad base name=%s\n", name);
     cgp_error_exit();
   }
-
   /* Read the zone information */
   if(cg_zone_read(fn, B, Z, name, sizes) != CG_OK) {
     printf("*FAILED* cg_zoneread\n");
@@ -461,7 +460,6 @@ int main(int argc, char* argv[]) {
     printf("bad zone name=%s\n", name);
     cgp_error_exit();
   }
-
   /* ====================================== */ 
   /* ==  (A) READ THE NODAL COORDINATES  == */ 
   /* ====================================== */ 
@@ -611,7 +609,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 
-  if( !(Array_i= (int*) malloc(count*sizeof(int))) ) {
+  if( !(Array_i= (cgsize_t*) malloc(count*sizeof(cgsize_t))) ) {
     printf("*FAILED* allocation of  Reading Array_i  \n");
     cgp_error_exit();
   }
@@ -650,13 +648,15 @@ int main(int argc, char* argv[]) {
 
   free(Array_r);
   free(Array_i);
-
+  t1 = MPI_Wtime();
   /* closeup shop and go home... */ 
   if(cgp_close(fn) !=CG_OK) {
      printf("*FAILED* cgp_close\n");
      cgp_error_exit();
   }
   t2 = MPI_Wtime();
+  printf(" cgp_close timing = %20f \n", t2-t1);
+
   xtiming[0] = t2-t0;
   
   MPI_Reduce(&xtiming, &timing, 9, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
