@@ -338,7 +338,7 @@ int cgp_mpi_comm(int comm)
 
 /*---------------------------------------------------------*/
 
-int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
+int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode, MPI_Info info)
 {
     if (mode == CGP_INDEPENDENT)
         default_pio_mode = H5FD_MPIO_INDEPENDENT;
@@ -348,6 +348,9 @@ int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
         cgi_error("unknown parallel IO mode");
         return CG_ERROR;
     }
+
+    pcg_mpi_info = info;
+
     return CG_OK;
 }
 

@@ -30,6 +30,7 @@
 #define PCGNSLIB_H_
 
 #include "cgnslib.h"
+#include "mpi.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,13 +41,16 @@ typedef enum {
     CGP_COLLECTIVE=1,
 } CGNS_ENUMT( PIOmode_t );
 
+/* MPI-2 info object */
+MPI_Info pcg_mpi_info;
+
 /*===== MPI communicator =====*/
 
 CGNSDLL int cgp_mpi_comm(int mpicomm);
 
 /*===== parallel IO mode =====*/
 
-CGNSDLL int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode);
+CGNSDLL int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode, MPI_Info info);
 
 /*===== queued IO =====*/
 

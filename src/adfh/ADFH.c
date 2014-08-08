@@ -44,6 +44,7 @@ freely, subject to the following restrictions:
 
 #ifdef BUILD_PARALLEL
 #include "mpi.h"
+#include "pcgnslib.h" /* for mpi info */
 #endif
 
 #define ADFH_FORCE_ID_CLOSE
@@ -2105,8 +2106,8 @@ void ADFH_Database_Open(const char   *name,
 #ifdef BUILD_PARALLEL
   /* Set the access property list to use MPI */
   if (0 == strcmp(fmt, "PARALLEL")) {
-      MPI_Info info = MPI_INFO_NULL;
-      H5Pset_fapl_mpio(g_propfileopen, ParallelMPICommunicator, info);
+   /*    MPI_Info info = MPI_INFO_NULL; */
+      H5Pset_fapl_mpio(g_propfileopen, ParallelMPICommunicator, pcg_mpi_info);
   }
 #endif
 

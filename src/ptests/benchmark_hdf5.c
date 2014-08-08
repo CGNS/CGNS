@@ -27,8 +27,8 @@ int comm_size;
 int comm_rank;
 MPI_Info info;
 
-cgsize_t Nelem = 33554432;
-/* cgsize_t Nelem = 2097152; */
+/* cgsize_t Nelem = 33554432; */
+cgsize_t Nelem = 2097152;
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
@@ -92,7 +92,10 @@ int initialize(int* argc, char** argv[]) {
 	MPI_Init(argc,argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-	MPI_Info_create(&(info));
+	MPI_Info_create(&info);
+	MPI_Info_set(info, "striping_unit", "8388608") ;
+	/* or whatever your GPFS block size actually is*/
+
 
 	return 0;
 }
@@ -121,7 +124,7 @@ int main(int argc, char* argv[]) {
 
   t0 = MPI_Wtime(); /* Timer */
   
-  err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode_i);
+  err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode_i, info);
   
   Nnodes = Nelem*NodePerElem;
   
