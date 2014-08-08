@@ -9,7 +9,7 @@
 ! @section DESCRIPTION
 ! Benchmarking program for pcgns library
 !
-! TO COMPILE: h5pcc -O3 benchmark_hdf5.F90 -I.. -L../lib -lcgns
+! TO COMPILE: h5pcc -O2 benchmark_hdf5.c -I.. -L../lib -lcgns
 !
 */
 #include <stdio.h>
@@ -27,8 +27,8 @@ int comm_size;
 int comm_rank;
 MPI_Info info;
 
-cgsize_t Nelem = 33554432; 
-/*cgsize_t Nelem = 16777216;*/
+cgsize_t Nelem = 33554432;
+/* cgsize_t Nelem = 2097152; */
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
@@ -328,6 +328,9 @@ int main(int argc, char* argv[]) {
     free(Data_Fz);
   }
 
+  /* skipping because the memory usage is not scalable (EXAHDF-65) */
+  goto skip1;
+
   /* ====================================== */
   /* == (D) WRITE THE ARRAY DATA         == */
   /* ====================================== */
@@ -400,6 +403,8 @@ int main(int argc, char* argv[]) {
     free(Array_r);
     free(Array_i);
   }
+
+ skip1:
   
   if(cgp_close(fn) != CG_OK) {
     printf("*FAILED* cgp_close \n");
@@ -598,6 +603,8 @@ int main(int argc, char* argv[]) {
   free(Data_Fy);
   free(Data_Fz);
 
+  /* skipping because the memory usage is not scalable (EXAHDF-65) */
+  goto skip2;
   /* ====================================== */ 
   /* == (D) READ THE ARRAY DATA          == */ 
   /* ====================================== */ 
@@ -648,14 +655,17 @@ int main(int argc, char* argv[]) {
 
   free(Array_r);
   free(Array_i);
-  t1 = MPI_Wtime();
+
+ skip2:
+
+  /* t1 = MPI_Wtime(); */
   /* closeup shop and go home... */ 
   if(cgp_close(fn) !=CG_OK) {
      printf("*FAILED* cgp_close\n");
      cgp_error_exit();
   }
-  t2 = MPI_Wtime();
-  printf(" cgp_close timing = %20f \n", t2-t1);
+/*   t2 = MPI_Wtime(); */
+/*   printf(" cgp_close timing = %20f \n", t2-t1); */
 
   xtiming[0] = t2-t0;
   
