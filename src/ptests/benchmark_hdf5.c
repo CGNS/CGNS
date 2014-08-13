@@ -27,7 +27,7 @@ int comm_size;
 int comm_rank;
 MPI_Info info;
 
- cgsize_t Nelem = 33554432;
+cgsize_t Nelem = 33554432;
 /* cgsize_t Nelem = 2097152; */
 cgsize_t NodePerElem = 6;
 
@@ -77,7 +77,7 @@ double t0, t1, t2;
  * timing(7) = Time to read solution data (field data)
  * timing(8) = Time to read array data 
  */
-double xtiming[9], timing[9], timingMin[9], timingMax[9];
+double xtiming[11], timing[11], timingMin[11], timingMax[11];
 
 /*   ! CGP_INDEPENDENT is the default */
 /*   INT, DIMENSION(1:2) :: piomode = (/CGP_INDEPENDENT, CGP_COLLECTIVE/) */
@@ -140,6 +140,8 @@ int main(int argc, char* argv[]) {
   /* for IBM */
   sprintf(fname, "benchmark_%06d_%d.cgns", comm_size, piomode_i+1);
 /*   sprintf(fname, "benchmark_%06d_%d.cgns", comm_size, piomode_i+1); */
+
+  t1 = MPI_Wtime();
   if(cgp_open(fname, CG_MODE_WRITE, &fn) != CG_OK) {
     printf("*FAILED* cgp_open \n");
     cgp_error_exit();
@@ -151,6 +153,9 @@ int main(int argc, char* argv[]) {
   if(cg_zone_write(fn, B, "Zone 1", nijk, Unstructured, &Z) != CG_OK) {
     printf("*FAILED* cg_zone_write \n");
     cgp_error_exit();
+  t2 = MPI_Wtime();
+  xtiming[9] = t2-t1;
+
   }
   /* use queued IO */
   if(cgp_queue_set(queue) != CG_OK) {
@@ -423,6 +428,8 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cgp_queue_set \n");
     cgp_error_exit();
   }
+
+  t1 = MPI_Wtime();
   /* Open the cgns file for reading */
   if(cgp_open(fname, CG_MODE_MODIFY, &fn) != CG_OK) {
     printf("*FAILED* cgp_open \n");
@@ -454,6 +461,9 @@ int main(int argc, char* argv[]) {
     printf("bad num points=%ld\n", (long)sizes[0]);
     cgp_error_exit();
   }
+
+  t2 = MPI_Wtime();
+  xtiming[10] = t2-t1;
      
   if(sizes[1] != Nelem) {
     printf("bad num points=%ld\n", (long)sizes[1]);
@@ -673,9 +683,9 @@ int main(int argc, char* argv[]) {
 
   xtiming[0] = t2-t0;
   
-  MPI_Reduce(&xtiming, &timing, 9, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&xtiming, &timingMin, 9, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&xtiming, &timingMax, 9, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timing, 11, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timingMin, 11, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timingMax, 11, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   if(comm_rank==0) {
     sprintf(fname, "timing_%06d_%d.dat", comm_size, piomode_i+1);
@@ -685,7 +695,7 @@ int main(int argc, char* argv[]) {
     } else {
       fprintf(fid,"#nprocs, wcoord, welem, wfield, warray, rcoord, relem, rfield, rarray \n");
 
-      fprintf(fid,"%d %20f %20f %20f %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f\n", comm_size,
+      fprintf(fid,"%d %20f %20f %20f %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f  %20f %20f %20f %20f %20f %20f %20f %20f %20f \n", comm_size,
 	      timing[0]/((double) comm_size), timingMin[0], timingMax[0],
 	      timing[1]/((double) comm_size), timingMin[1], timingMax[1],
 	      timing[2]/((double) comm_size), timingMin[2], timingMax[2],
@@ -694,7 +704,9 @@ int main(int argc, char* argv[]) {
 	      timing[5]/((double) comm_size), timingMin[5], timingMax[5],
 	      timing[6]/((double) comm_size), timingMin[6], timingMax[6],
 	      timing[7]/((double) comm_size), timingMin[7], timingMax[7],
-	      timing[8]/((double) comm_size), timingMin[8], timingMax[8] );
+	      timing[8]/((double) comm_size), timingMin[8], timingMax[8],
+	      timing[9]/((double) comm_size), timingMin[9], timingMax[9],
+	      timing[10]/((double) comm_size), timingMin[10], timingMax[10] );
     }
   }
 
