@@ -3626,7 +3626,7 @@ CGNSDLL void FMNAME(cgp_mpi_comm_f, CGP_MPI_COMM_F) (
 CGNSDLL void FMNAME(cgp_pio_mode_f, CGP_PIO_MODE_F) (
 	cgsize_t *mode, cgsize_t *ier)
 {
-    *ier = cgp_pio_mode((CGNS_ENUMT(PIOmode_t))*mode);
+  *ier = cgp_pio_mode((CGNS_ENUMT(PIOmode_t))*mode, MPI_INFO_NULL); /***FIX *****/
 }
 
 /*-----------------------------------------------------------------------*/
