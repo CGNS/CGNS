@@ -43,6 +43,10 @@ freely, subject to the following restrictions:
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
 #endif
+#ifdef BUILD_PARALLEL
+#include <mpi.h>
+#endif
+
 
 typedef struct {
     int type;
@@ -563,8 +567,22 @@ int cgio_check_file (const char *filename, int *file_type)
         last_err = CGIO_ERR_NOT_FOUND;
         return last_err;
     }
-
     *file_type = CGIO_FILE_NONE;
+    goto no_open; 
+#ifdef BUILD_PARALLEL
+    MPI_File fh;
+    MPIO_Request request;
+    char *new_str;
+    static char *str2 = "bgblockless:";
+    new_str = malloc(strlen(filename)+strlen(str2)+1);
+       new_str[0] = '\0';   // ensures the memory is an empty string
+       strcat(new_str,str2);
+       strcat(new_str,filename);
+    MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+    MPI_File_iread_at(fh, 0, buf, (int)sizeof(buf), MPI_CHAR, &request);
+    buf[sizeof(buf)-1] = 0;
+    MPI_File_close(&fh);
+#else
     if (NULL == (fp = fopen (filename, "rb"))) {
         if (errno == EMFILE)
             return set_error(CGIO_ERR_TOO_MANY);
@@ -573,6 +591,7 @@ int cgio_check_file (const char *filename, int *file_type)
     fread (buf, 1, sizeof(buf), fp);
     buf[sizeof(buf)-1] = 0;
     fclose (fp);
+#endif
 
     /* check for ADF */
 
@@ -587,12 +606,21 @@ int cgio_check_file (const char *filename, int *file_type)
         if (buf[n] != HDF5sig[n]) break;
     }
     if (n == 8) {
+#if BUILD_PARALLEL
+        *file_type = CGIO_FILE_PHDF5;        
+#else 
         *file_type = CGIO_FILE_HDF5;
+#endif
         return set_error(CGIO_ERR_NONE);
     }
 
     last_err = CGIO_ERR_FILE_TYPE;
     return last_err;
+
+no_open:
+    *file_type = CGIO_FILE_PHDF5;
+    return set_error(CGIO_ERR_NONE);
+    
 }
 
 /*---------------------------------------------------------*/
