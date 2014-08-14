@@ -706,7 +706,7 @@ int cgio_open_file (const char *filename, int file_mode,
                 return get_error();
 #ifdef BUILD_PARALLEL
             if (file_type == CGIO_FILE_PHDF5) {
-                if (type != CGIO_FILE_HDF5)
+                if (type != CGIO_FILE_PHDF5)
                     return set_error(CGIO_ERR_NOT_HDF5);
             }
             else
