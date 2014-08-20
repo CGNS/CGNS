@@ -1629,7 +1629,7 @@ void ADFH_Get_Label(const double  id,
   hid_t hid;
   char bufflabel[ADF_LABEL_LENGTH+1];
 
-  ADFH_DEBUG((">ADFH_Get_Label [%d]",id));
+  ADFH_DEBUG((">ADFH_Get_Label [%e]",id));
 
   if (label == NULL) {
     set_error(NULL_STRING_POINTER, err);
