@@ -2207,6 +2207,7 @@ void ADFH_Database_Get_Format(const double  rootid,
   char node[ADF_NAME_LENGTH+1];
   hid_t did;
   herr_t status;
+  hid_t xfer_prp = H5P_DEFAULT;
 
   ADFH_DEBUG(("ADFH_Database_Get_Format"));
 
@@ -2222,7 +2223,18 @@ void ADFH_Database_Get_Format(const double  rootid,
     set_error(ADFH_ERR_DOPEN, err);
     return;
   }
-  status = H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, format);
+
+#ifdef BUILD_PARALLEL
+  xfer_prp = H5Pcreate(H5P_DATASET_XFER);
+  ADFH_CHECK_HID(xfer_prp);
+  H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+#endif
+
+  status = H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, format);
+
+#ifdef BUILD_PARALLEL
+  H5Pclose(xfer_prp);
+#endif
   H5Dclose(did);
 
   if (status < 0)
@@ -2611,6 +2623,7 @@ void ADFH_Put_Dimension_Information(const double   id,
   hsize_t new_dims[ADF_MAX_DIMENSIONS];
   void *data = NULL;
   char new_type[3];
+  hid_t xfer_prp = H5P_DEFAULT;
 
   ADFH_DEBUG(("ADFH_Put_Dimension_Information [%d]",hid));
 
@@ -2714,7 +2727,15 @@ void ADFH_Put_Dimension_Information(const double   id,
     ADFH_CHECK_HID(mid);
     if (old_size < H5Dget_storage_size(did))
       H5Sset_extent_simple(sid, dims, old_dims, NULL);
-    H5Dwrite(did, mid, H5S_ALL, sid, H5P_DEFAULT, data);
+#ifdef BUILD_PARALLEL
+    xfer_prp = H5Pcreate(H5P_DATASET_XFER);
+    ADFH_CHECK_HID(xfer_prp);
+    H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+#endif
+    H5Dwrite(did, mid, H5S_ALL, sid, xfer_prp, data);
+#ifdef BUILD_PARALLEL
+    H5Pclose(xfer_prp);
+#endif
     H5Tclose(mid);
     free(data);
   }
@@ -2738,6 +2759,7 @@ void ADFH_Get_Link_Path(const double  id,
                         int    *err)
 {
   hid_t hid, did;
+  hid_t xfer_prp = H5P_DEFAULT;
 
   ADFH_DEBUG(("ADFH_Get_Link_Path"));
 
@@ -2748,21 +2770,31 @@ void ADFH_Get_Link_Path(const double  id,
     return;
   }
 
+#ifdef BUILD_PARALLEL
+    xfer_prp = H5Pcreate(H5P_DATASET_XFER);
+    ADFH_CHECK_HID(xfer_prp);
+    H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+#endif
+
   did = H5Dopen2(hid, D_PATH, H5P_DEFAULT);
   ADFH_CHECK_HID(did);
-  H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, link_path);
+  H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, link_path);
   H5Dclose(did);
 
   if (has_child(hid, D_FILE)) {
     did = H5Dopen2(hid, D_FILE, H5P_DEFAULT);
     ADFH_CHECK_HID(did);
-    H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, filename);
+    H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, filename);
     H5Dclose(did);
   }
   else
   {
     *filename = 0;
   }
+
+#ifdef BUILD_PARALLEL
+  H5Pclose(xfer_prp);
+#endif
 
   set_error(NO_ERROR, err);
 }
@@ -2990,6 +3022,7 @@ void ADFH_Read_Block_Data(const double ID,
   hid_t hid, did, mid, tid, dspace;
   size_t size, count, offset;
   char *buff;
+  hid_t xfer_prp = H5P_DEFAULT;
 
   ADFH_DEBUG(("ADFH_Read_Block_Data"));
 
@@ -3049,7 +3082,13 @@ void ADFH_Read_Block_Data(const double ID,
     return;
   }
 
-  if (H5Dread(did, mid, H5S_ALL, H5S_ALL, H5P_DEFAULT, buff) < 0)
+#ifdef BUILD_PARALLEL
+  xfer_prp = H5Pcreate(H5P_DATASET_XFER);
+  ADFH_CHECK_HID(xfer_prp);
+  H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+#endif
+
+  if (H5Dread(did, mid, H5S_ALL, H5S_ALL, xfer_prp, buff) < 0)
     set_error(ADFH_ERR_DREAD, err);
   else {
     offset = size * (size_t)(b_start - 1);
@@ -3059,6 +3098,9 @@ void ADFH_Read_Block_Data(const double ID,
   }
 
   free (buff);
+#ifdef BUILD_PARALLEL
+  H5Pclose(xfer_prp);
+#endif
   H5Tclose(mid);
   H5Tclose(tid);
   H5Dclose(did);
@@ -3086,6 +3128,7 @@ void ADFH_Read_Data(const double ID,
   hsize_t stride[ADF_MAX_DIMENSIONS];
   hsize_t count[ADF_MAX_DIMENSIONS];
   herr_t status;
+  hid_t xfer_prp = H5P_DEFAULT;
 
   ADFH_DEBUG(("ADFH_Read_Data"));
 
@@ -3208,8 +3251,18 @@ void ADFH_Read_Data(const double ID,
   ADFH_CHECK_HID(tid);
   mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
   ADFH_CHECK_HID(mid);
-  status = H5Dread(did, mid, mspace, dspace, H5P_DEFAULT, data);
 
+#ifdef BUILD_PARALLEL
+  xfer_prp = H5Pcreate(H5P_DATASET_XFER);
+  ADFH_CHECK_HID(xfer_prp);
+  H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+#endif
+
+  status = H5Dread(did, mid, mspace, dspace, xfer_prp, data);
+
+#ifdef BUILD_PARALLEL
+  H5Pclose(xfer_prp);
+#endif
   H5Sclose(mspace);
   H5Sclose(dspace);
   H5Tclose(mid);
@@ -3276,6 +3329,7 @@ void ADFH_Write_Block_Data(const double ID,
   hid_t hid, did, mid, tid, dspace;
   size_t size, count, offset;
   char *buff;
+  hid_t xfer_prp = H5P_DEFAULT;
 
   ADFH_DEBUG(("ADFH_Write_Block_Data"));
 
@@ -3335,19 +3389,28 @@ void ADFH_Write_Block_Data(const double ID,
     return;
   }
 
-  if (H5Dread(did, mid, H5S_ALL, H5S_ALL, H5P_DEFAULT, buff) < 0)
+#ifdef BUILD_PARALLEL
+  xfer_prp = H5Pcreate(H5P_DATASET_XFER);
+  ADFH_CHECK_HID(xfer_prp);
+  H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+#endif
+
+  if (H5Dread(did, mid, H5S_ALL, H5S_ALL, xfer_prp, buff) < 0)
     set_error(ADFH_ERR_DREAD, err);
   else {
     offset = size * (size_t)(b_start - 1);
     count = size * (size_t)(b_end - b_start + 1);
     memcpy(&buff[offset], data, count);
-    if (H5Dwrite(did, mid, H5S_ALL, H5S_ALL, H5P_DEFAULT, buff) < 0)
+    if (H5Dwrite(did, mid, H5S_ALL, H5S_ALL, xfer_prp, buff) < 0)
       set_error(ADFH_ERR_DWRITE, err);
     else
       set_error(NO_ERROR, err);
   }
 
   free (buff);
+#ifdef BUILD_PARALLEL
+  H5Pclose(xfer_prp);
+#endif
   H5Tclose(mid);
   H5Tclose(tid);
   H5Dclose(did);
@@ -3374,6 +3437,7 @@ void ADFH_Write_Data(const double ID,
   hsize_t stride[ADF_MAX_DIMENSIONS];
   hsize_t count[ADF_MAX_DIMENSIONS];
   herr_t status;
+  hid_t xfer_prp = H5P_DEFAULT;
 
   ADFH_DEBUG(("ADFH_Write_Data"));
 
@@ -3498,8 +3562,18 @@ void ADFH_Write_Data(const double ID,
   ADFH_CHECK_HID(tid);
   mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
   ADFH_CHECK_HID(mid);
-  status = H5Dwrite(did, mid, mspace, dspace, H5P_DEFAULT, data);
 
+#ifdef BUILD_PARALLEL
+  xfer_prp = H5Pcreate(H5P_DATASET_XFER);
+  ADFH_CHECK_HID(xfer_prp);
+  H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+#endif
+
+  status = H5Dwrite(did, mid, mspace, dspace, xfer_prp, data);
+
+#ifdef BUILD_PARALLEL
+  H5Pclose(xfer_prp);
+#endif
   H5Sclose(mspace);
   H5Sclose(dspace);
   H5Tclose(mid);
