@@ -68,8 +68,12 @@ CGNSDLL int cgp_coord_write(int fn, int B, int Z,
     CGNS_ENUMT(DataType_t) type, const char *coordname, int *C);
 CGNSDLL int cgp_coord_write_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *coord_array);
+CGNSDLL int cgp_coords_write_data(int fn, int B, int Z, int *C,
+    const cgsize_t *rmin, const cgsize_t *rmax, const void *coordsX, const void *coordsY, const void *coordsZ);
 CGNSDLL int cgp_coord_read_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coord_array);
+CGNSDLL int cgp_coords_read_data(int fn, int B, int Z, int *C,
+    const cgsize_t *rmin, const cgsize_t *rmax, void *coordsX, void *coordsY, void *coordsZ);
 
 /*===== Unstructured Grid Prototypes =====*/
 
