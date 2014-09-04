@@ -12,6 +12,7 @@ LDLIBS = $(CGNSLIB) $(BUILDLIBS)
 CALL =	ctest$(EXE) \
 	cexample$(EXE) \
 	benchmark$(EXE) \
+	benchmark_hdf5$(EXE) \
 	open_close$(EXE) \
 	test_base$(EXE) \
 	test_unstructured$(EXE) \
@@ -56,6 +57,12 @@ cexample$(EXE) : cexample.c $(CGNSLIB)
 
 benchmark$(EXE) : benchmark.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ benchmark.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+benchmark_hdf5$(EXE) : benchmark_hdf5.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ benchmark_hdf5.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
