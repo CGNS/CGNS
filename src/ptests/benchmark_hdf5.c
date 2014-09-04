@@ -77,7 +77,7 @@ double t0, t1, t2;
  * timing(7) = Time to read solution data (field data)
  * timing(8) = Time to read array data 
  */
-double xtiming[16], timing[16], timingMin[16], timingMax[16];
+double xtiming[15], timing[15], timingMin[15], timingMax[15];
 
 /*   ! CGP_INDEPENDENT is the default */
 /*   INT, DIMENSION(1:2) :: piomode = (/CGP_INDEPENDENT, CGP_COLLECTIVE/) */
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
   /* ====================================== */
 
   /* for IBM */
-  sprintf(fname, "benchmark_%06d_%d.cgns", comm_size, piomode_i+1);
+  sprintf(fname, "benchmark_%06d.cgns", comm_size);
 /*   sprintf(fname, "benchmark_%06d_%d.cgns", comm_size, piomode_i+1); */
 
   t1 = MPI_Wtime();
@@ -697,9 +697,9 @@ int main(int argc, char* argv[]) {
 
   xtiming[0] = t2-t0;
   
-  MPI_Reduce(&xtiming, &timing, 16, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&xtiming, &timingMin, 16, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&xtiming, &timingMax, 16, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timing, 15, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timingMin, 15, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timingMax, 15, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   if(comm_rank==0) {
     sprintf(fname, "timing_%06d_%d.dat", comm_size, piomode_i+1);
@@ -709,7 +709,7 @@ int main(int argc, char* argv[]) {
     } else {
       fprintf(fid,"#nprocs, wcoord, welem, wfield, warray, rcoord, relem, rfield, rarray \n%d", comm_size);
 
-      for ( k = 0; k < 16; k++) {
+      for ( k = 0; k < 15; k++) {
 	fprintf(fid," %20f %20f %20f ",timing[k]/((double) comm_size), timingMin[k], timingMax[k]);
       }
       fprintf(fid,"\n");
