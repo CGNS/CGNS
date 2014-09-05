@@ -31,7 +31,11 @@ freely, subject to the following restrictions:
 #endif
 #ifdef BUILD_PARALLEL
 #include "pcgnslib.h"
+/* Support for C to Fortran translation in MPI */
+#define MPI_Comm_f2c(comm) (MPI_Comm)(comm)
+#define MPI_Info_f2c(info) (MPI_Info)(info)
 #endif
+
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Convert between Fortran and C strings                            *
@@ -3616,17 +3620,25 @@ CGNSDLL void FMNAME(cg_exit_on_error_f, CG_EXIT_ON_ERROR_F) (cgsize_t *flag)
  *======================================================================*/
 
 CGNSDLL void FMNAME(cgp_mpi_comm_f, CGP_MPI_COMM_F) (
-	cgsize_t *mpicomm, cgsize_t *ier)
+	cgsize_t *mpi_comm_f, cgsize_t *ier)
 {
-    *ier = cgp_mpi_comm((int)*mpicomm);
+   MPI_Comm mpi_comm_c;
+   mpi_comm_c = MPI_Comm_f2c((int)*mpi_comm_f);
+   *ier = cgp_mpi_comm(mpi_comm_c);
 }
 
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cgp_pio_mode_f, CGP_PIO_MODE_F) (
-	cgsize_t *mode, cgsize_t *ier)
+	cgsize_t *mode, cgsize_t *pcg_mpi_info_f, cgsize_t *ier)
 {
-  *ier = cgp_pio_mode((CGNS_ENUMT(PIOmode_t))*mode, MPI_INFO_NULL); /***FIX *****/
+  
+  MPI_Info pcg_mpi_info_c;
+
+
+  pcg_mpi_info_c = MPI_Info_f2c((int)*pcg_mpi_info_f);
+
+  *ier = cgp_pio_mode((CGNS_ENUMT(PIOmode_t))*mode, pcg_mpi_info_c);
 }
 
 /*-----------------------------------------------------------------------*/

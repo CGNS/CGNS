@@ -2106,8 +2106,14 @@ void ADFH_Database_Open(const char   *name,
 #ifdef BUILD_PARALLEL
   /* Set the access property list to use MPI */
   if (0 == strcmp(fmt, "PARALLEL")) {
-      MPI_Info info = MPI_INFO_NULL; 
-      H5Pset_fapl_mpio(g_propfileopen, ParallelMPICommunicator, info);
+
+/*       int nkeys; */
+/*       char key[MPI_MAX_INFO_KEY]; */
+/*       MPI_Info_get_nkeys(pcg_mpi_info, &nkeys); */
+/*       MPI_Info_get_nthkey(pcg_mpi_info, 0, key); */
+/*       printf(" key = %s \n", key); */
+
+      H5Pset_fapl_mpio(g_propfileopen, ParallelMPICommunicator, pcg_mpi_info);
   }
   /*dataxfer_plist_id = H5Pcreate(H5P_DATASET_XFER);
   H5Pset_dxpl_mpio(dataxfer_plist_id, H5FD_MPIO_COLLECTIVE);*/

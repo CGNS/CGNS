@@ -26,12 +26,12 @@ MODULE cgns_c_binding
      END FUNCTION cgp_open
   END INTERFACE
 
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_pio_mode(mode) BIND(C, name='cgp_pio_mode')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)  , INTENT(IN), VALUE  :: mode
-     END FUNCTION cgp_pio_mode
-  END INTERFACE
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_pio_mode(mode) BIND(C, name='cgp_pio_mode')
+!!$       USE ISO_C_BINDING
+!!$       INTEGER(C_INT)  , INTENT(IN), VALUE  :: mode
+!!$     END FUNCTION cgp_pio_mode
+!!$  END INTERFACE
   
   INTERFACE     
      INTEGER(C_INT) FUNCTION cg_base_write(fn, basename, cell_dim, phys_dim, B) BIND(C, name='cg_base_write')
@@ -334,12 +334,13 @@ PROGRAM main
   INCLUDE 'cgnslib_f.h'
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
-  CGSIZE_T, PARAMETER :: Nelem = 4194304 ! 16777216 !8388608 ! 4194304 ! 8388608 ! 4194304 ! Use multiples of number of cores per node
-  CGSIZE_T, PARAMETER :: NodePerElem = 8
+  CGSIZE_T, PARAMETER :: Nelem = 33554432 ! Use multiples of number of cores per node
+  CGSIZE_T, PARAMETER :: NodePerElem = 6
 
   CGSIZE_T :: Nnodes
   INTEGER(C_INT) :: mpi_err
   INTEGER(C_INT) :: err
+  INTEGER :: ierr
   INTEGER(C_INT) :: comm_size
   INTEGER(C_INT) :: comm_rank
   INTEGER(C_INT) :: info
@@ -380,7 +381,7 @@ PROGRAM main
   ! timing(7) = Time to read connectivity table
   ! timing(8) = Time to read solution data (field data)
   ! timing(9) = Time to read array data
-  REAL(KIND=dp), DIMENSION(1:9) :: xtiming, timing, timingMin, timingMax
+  REAL(KIND=dp), DIMENSION(1:15) :: xtiming, timing, timingMin, timingMax
   CHARACTER(LEN=6) :: ichr6
 
   ! CGP_INDEPENDENT is the default
@@ -390,10 +391,14 @@ PROGRAM main
   INTEGER :: piomode_i
   INTEGER :: istat
   INTEGER(C_SIZE_T) :: int_sizeof
+  INTEGER :: comm_info
   
-  CALL MPI_INIT(mpi_err)
-  CALL MPI_COMM_SIZE(MPI_COMM_WORLD,comm_size,mpi_err)
-  CALL MPI_COMM_RANK(MPI_COMM_WORLD,comm_rank,mpi_err)
+  CALL MPI_Init(mpi_err)
+  CALL MPI_Comm_size(MPI_COMM_WORLD,comm_size,mpi_err)
+  CALL MPI_Comm_rank(MPI_COMM_WORLD,comm_rank,mpi_err)
+  CALL MPI_Info_Create(comm_info,mpi_err)
+
+  CALL MPI_Info_set(comm_info, "striping_unit", "8388608", mpi_err);
 
   WRITE(ichr6,'(I6.6)') comm_size
 
@@ -406,8 +411,10 @@ PROGRAM main
 
   t0 = MPI_Wtime() ! Timer
 
-  err = cgp_pio_mode(piomode(piomode_i)) ! default
+!!$  err = cgp_pio_mode(piomode(piomode_i)) ! default
 
+  CALL cgp_pio_mode_f(piomode_i-1, comm_info, ierr)
+  
   Nnodes = Nelem*NodePerElem
 
   nijk(1) = Nnodes ! Number of vertices
@@ -418,12 +425,23 @@ PROGRAM main
 ! ==    **WRITE THE CGNS FILE *       ==
 ! ======================================
 
-  err = cgp_open("benchmark_"//ichr6//"_"//piomodeC(piomode_i)//".cgns"//C_NULL_CHAR, CG_MODE_WRITE, fn)
+  t1 = MPI_Wtime()
+  err = cgp_open("benchmark_"//ichr6//".cgns"//C_NULL_CHAR, CG_MODE_WRITE, fn)
   IF(err.NE.CG_OK) PRINT*,'*FAILED* cgp_open'
+  t2 = MPI_Wtime()
+  xtiming(10) = t2-t1
+
+  t1 = MPI_Wtime()
   err = cg_base_write(fn, "Base 1"//C_NULL_CHAR, cell_dim, phys_dim, B)
   IF(err.NE.CG_OK) PRINT*,'*FAILED* cg_base_write'
+  t2 = MPI_Wtime()
+  xtiming(11) = t2-t1
+
+  t1 = MPI_Wtime()
   err = cg_zone_write(fn, B, "Zone 1"//C_NULL_CHAR, nijk, Unstructured, Z)
   IF(err.NE.CG_OK) PRINT*,'*FAILED* cg_zone_write'
+  t2 = MPI_Wtime()
+  xtiming(12) = t2-t1
 
 
   ! use queued IO
@@ -463,7 +481,7 @@ PROGRAM main
   max = count*(comm_rank+1)
 
   DO k = 1, count
-     Coor_x(k) = REAL(comm_rank*count + k, KIND=C_DOUBLE) + 0.1_C_DOUBLE
+     Coor_x(k) = REAL(comm_rank*count + k, KIND=C_DOUBLE) + 1.1_C_DOUBLE
      Coor_y(k) = Coor_x(k) + 0.1_C_DOUBLE
      Coor_z(k) = Coor_y(k) + 0.1_C_DOUBLE
   ENDDO
@@ -521,7 +539,7 @@ PROGRAM main
   start = 1
   end = nijk(2)
 
-  err = cgp_section_write(fn,B,Z,"Elements"//C_NULL_CHAR,HEXA_8,start,END,0_C_INT,S)
+  err = cgp_section_write(fn,B,Z,"Elements"//C_NULL_CHAR,PENTA_6,start,END,0_C_INT,S)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_section_write'
      err = cgp_error_exit()
@@ -749,23 +767,30 @@ PROGRAM main
      err = cgp_error_exit()
   ENDIF
 
+
 ! ======================================
 ! ==    **  READ THE CGNS FILE **     ==
 ! ======================================
 
   ! Open the cgns file
+  
+  t1 = MPI_Wtime()
   err = cgp_open("benchmark_"//ichr6//"_"//piomodeC(piomode_i)//".cgns"//C_NULL_CHAR, CG_MODE_READ, fn)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_open'
      err = cgp_error_exit()
   ENDIF
-
+  t2 = MPI_Wtime()
+  xtiming(13) = t2-t1
   ! Read the base information
+  t1 = MPI_Wtime()
   err = cg_base_read(fn, B, bname, r_cell_dim, r_phys_dim)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_base_read'
      err = cgp_error_exit()
   ENDIF
+  t2 = MPI_Wtime()
+  xtiming(14) = t2-t1
 
   IF(r_cell_dim.NE.cell_dim.OR.r_phys_dim.NE.phys_dim)THEN
      WRITE(*,'(2(A,I0))') '*FAILED* bad cell dim = ',r_cell_dim,'or phy dim =',r_phys_dim
@@ -780,8 +805,11 @@ PROGRAM main
 
   ! Read the zone information
 
+  t1 = MPI_Wtime()
   err = cg_zone_read(fn, B, Z, zname, sizes)
   IF(err.NE.CG_OK) PRINT*,'*FAILED* cgp_zone_read'
+  t2 = MPI_Wtime()
+  xtiming(15) = t2-t1
 
   ! Check the read zone information is correct 
   IF(sizes(1).NE.Nnodes)THEN
@@ -878,6 +906,8 @@ PROGRAM main
 ! == (B) READ THE CONNECTIVITY TABLE  ==
 ! ======================================
 
+
+
   count = nijk(2)/comm_size
   ALLOCATE(elements(1:count*NodePerElem), STAT = istat)
   IF (istat.NE.0)THEN
@@ -908,6 +938,7 @@ PROGRAM main
   ENDIF
 
   DEALLOCATE(elements)
+
 
 ! ======================================
 ! == (C) READ THE FIELD DATA          ==
@@ -964,6 +995,7 @@ PROGRAM main
      ENDDO
   ENDIF
 
+
   DEALLOCATE(Data_Fx)
   DEALLOCATE(Data_Fy)
   DEALLOCATE(Data_Fz)
@@ -988,6 +1020,7 @@ PROGRAM main
   min = count*comm_rank+1
   max = count*(comm_rank+1)
   
+
   CALL cg_goto_f(fn, B, err, "Zone_t",Z,"UserDefinedData_t",1_C_INT,"end") 
 
   !err = cg_goto(fn,B,"Zone_t"//C_NULL_CHAR,Z,"UserDefinedData_t"//C_NULL_CHAR,1_C_INT,END="end"//C_NULL_CHAR)
@@ -1032,15 +1065,14 @@ PROGRAM main
      PRINT*,'*FAILED* cgp_close'
      err = cgp_error_exit()
   ENDIF
-
   t2 = MPI_Wtime()
   xtiming(1) = t2-t0
 
-  CALL MPI_Reduce(xtiming, timing, 9, MPI_DOUBLE, &
+  CALL MPI_Reduce(xtiming, timing, 15, MPI_DOUBLE, &
                MPI_SUM, 0, MPI_COMM_WORLD, mpi_err)
-  CALL MPI_Reduce(xtiming, timingMin, 9, MPI_DOUBLE, &
+  CALL MPI_Reduce(xtiming, timingMin, 15, MPI_DOUBLE, &
                MPI_MIN, 0, MPI_COMM_WORLD, mpi_err)
-  CALL MPI_Reduce(xtiming, timingMax, 9, MPI_DOUBLE, &
+  CALL MPI_Reduce(xtiming, timingMax, 15, MPI_DOUBLE, &
                MPI_MAX, 0, MPI_COMM_WORLD, mpi_err)
 
   IF(comm_rank.EQ.0)THEN
@@ -1055,7 +1087,13 @@ PROGRAM main
          timing(6)/DBLE(comm_size), timingMin(6), timingMax(6), &
          timing(7)/DBLE(comm_size), timingMin(7), timingMax(7), &
          timing(8)/DBLE(comm_size), timingMin(8), timingMax(8), &
-         timing(9)/DBLE(comm_size), timingMin(9), timingMax(9)
+         timing(9)/DBLE(comm_size), timingMin(9), timingMax(9), &
+         timing(10)/DBLE(comm_size), timingMin(10), timingMax(10), &
+         timing(11)/DBLE(comm_size), timingMin(11), timingMax(11), &
+         timing(12)/DBLE(comm_size), timingMin(12), timingMax(12), &
+         timing(13)/DBLE(comm_size), timingMin(13), timingMax(13), &
+         timing(14)/DBLE(comm_size), timingMin(14), timingMax(14), &
+         timing(15)/DBLE(comm_size), timingMin(15), timingMax(15)
   ENDIF
 
   CALL MPI_FINALIZE(mpi_err)
