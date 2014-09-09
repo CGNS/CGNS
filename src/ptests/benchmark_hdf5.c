@@ -28,7 +28,7 @@ int comm_rank;
 MPI_Info info;
 
 /* cgsize_t Nelem = 33554432; */
-cgsize_t Nelem = 1024;
+cgsize_t Nelem = 33554432;
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
@@ -342,9 +342,6 @@ int main(int argc, char* argv[]) {
     free(Data_Fz);
   }
 
-  /* skipping because the memory usage is not scalable (EXAHDF-65) */
-  goto skip1;
-
   /* ====================================== */
   /* == (D) WRITE THE ARRAY DATA         == */
   /* ====================================== */
@@ -366,7 +363,7 @@ int main(int argc, char* argv[]) {
   
   for ( k = 0; k < count; k++) {
     Array_r[k] = comm_rank*count + k + 1.001;
-    Array_i[k] = comm_rank*count*NodePerElem + k + 1;
+    Array_i[k] = comm_rank*count + k + 1;
   }
 
   if(cg_goto(fn, B, "Zone 1", 0, "end") != CG_OK) {
@@ -417,13 +414,12 @@ int main(int argc, char* argv[]) {
     free(Array_r);
     free(Array_i);
   }
-
- skip1:
   
   if(cgp_close(fn) != CG_OK) {
     printf("*FAILED* cgp_close \n");
     cgp_error_exit();
   };
+  
   /* ====================================== */
   /* ==    **  READ THE CGNS FILE **     == */
   /* ====================================== */
@@ -627,9 +623,7 @@ int main(int argc, char* argv[]) {
   free(Data_Fx);
   free(Data_Fy);
   free(Data_Fz);
-
-  /* skipping because the memory usage is not scalable (EXAHDF-65) */
-  goto skip2;
+  
   /* ====================================== */ 
   /* == (D) READ THE ARRAY DATA          == */ 
   /* ====================================== */ 
@@ -648,7 +642,6 @@ int main(int argc, char* argv[]) {
 
   min = count*comm_rank+1;
   max = count*(comm_rank+1);
-  
   
   if(cg_goto(fn,B,"Zone_t",Z,"UserDefinedData_t",1,"end") != CG_OK) {
     printf("*FAILED* cg_goto (User Defined Data)\n");
@@ -671,7 +664,7 @@ int main(int argc, char* argv[]) {
   if(debug) {
     for ( k = 0; k < count; k++) {
       if(!c_double_eq(Array_r[k], comm_rank*count + k + 1.001) ||
-	 Array_i[k] != comm_rank*count*NodePerElem + k +1) {
+	 Array_i[k] != comm_rank*count + k +1) {
 	  printf("*FAILED* cgp_array_read_data values are incorrect \n");
 	  cgp_error_exit();
       }
@@ -680,8 +673,6 @@ int main(int argc, char* argv[]) {
 
   free(Array_r);
   free(Array_i);
-
- skip2:
 
   /* t1 = MPI_Wtime(); */
   /* closeup shop and go home... */ 
