@@ -2113,7 +2113,9 @@ void ADFH_Database_Open(const char   *name,
 /*       MPI_Info_get_nthkey(pcg_mpi_info, 0, key); */
 /*       printf(" key = %s \n", key); */
 
-      H5Pset_fapl_mpio(g_propfileopen, ParallelMPICommunicator, pcg_mpi_info);
+    if(!pcg_mpi_info) pcg_mpi_info = MPI_INFO_NULL;
+
+    H5Pset_fapl_mpio(g_propfileopen, ParallelMPICommunicator, pcg_mpi_info);
   }
   /*dataxfer_plist_id = H5Pcreate(H5P_DATASET_XFER);
   H5Pset_dxpl_mpio(dataxfer_plist_id, H5FD_MPIO_COLLECTIVE);*/
