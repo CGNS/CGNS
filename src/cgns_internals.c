@@ -4108,7 +4108,8 @@ int cgi_read_array(cgns_array *array, char *parent_label, double parent_id)
         strcmp(parent_label,"FlowSolution_t")==0 ||
         strcmp(parent_label,"Elements_t")==0 ||
         strcmp(parent_label,"ZoneSubRegion_t")==0 ||
-        strcmp(parent_label,"DiscreteData_t")==0) {
+        strcmp(parent_label,"DiscreteData_t")==0 ||
+	strcmp(parent_label,"UserDefinedData_t")==0) {
         data_flag=SKIP_DATA;
         array->data=0;
     }
