@@ -33,7 +33,7 @@
       call MPI_INIT(ierr)
       call MPI_COMM_SIZE(MPI_COMM_WORLD,commsize,ierr)
       call MPI_COMM_RANK(MPI_COMM_WORLD,commrank,ierr)
-
+      
       if (commsize .gt. 8) then
         if (commrank .eq. 0)
      .    print *, 'number of processes must be 8 or less'
@@ -79,7 +79,7 @@ c     call cgp_mpi_comm_f(MPI_COMM_WORLD,ierr)
         write(name,'(a4,i2)') 'Base',nb
         call cg_base_write_f(F,name,3,3,B,ierr)
         if (ierr .ne. CG_OK) call cgp_error_exit_f
-        call cgp_pio_mode_f(nb-1,ierr)
+        call cgp_pio_mode_f(nb-1, MPI_INFO_NULL, ierr)
         if (ierr .ne. CG_OK) call cgp_error_exit_f
 
         do nz=1,2
