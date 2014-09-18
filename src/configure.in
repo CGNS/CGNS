@@ -790,11 +790,19 @@ if test "$withhdf5" = "yes"; then
       fi
       MPIOPTS=`grep "^CFLAGS=" $MPICC | sed s/CFLAGS=// | sed s/\"//g`
       mpilib=`grep "^MPILIBNAME=" $MPICC | sed s/MPILIBNAME=// | sed s/\"//g`
-      MPILIBS="-L$mpidir/lib -l$mpilib"
+      if test "x$mpilib" = "x"; then
+        MPILIBS="-L$mpidir/lib"
+      else
+        MPILIBS="-L$mpidir/lib -l$mpilib"
+      fi
       plib=`grep "^NEEDSPLIB=" $MPICC | sed s/NEEDSPLIB=// | sed s/\"//g`
       if test "x$plib" = "xyes"; then
         pmpilib=`grep "^PMPILIBNAME=" $MPICC | sed s/PMPILIBNAME=// | sed s/\"//g`
-        MPILIBS="$MPILIBS -l$pmpilib"
+        if test "x$pmpilib" = "x"; then
+          MPILIBS="$MPILIBS"
+        else
+          MPILIBS="$MPILIBS -l$pmpilib"
+        fi
       fi
       extralibs=`grep "^LIBS=" $MPICC | sed s/LIBS=// | sed s/\"//g`
       MPILIBS="$MPILIBS $extralibs"
