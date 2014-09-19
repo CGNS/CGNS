@@ -75,20 +75,20 @@ double t0, t1, t2;
  * timing(5) = Time to read nodal coordinates
  * timing(6) = Time to read connectivity table
  * timing(7) = Time to read solution data (field data)
- * timing(8) = Time to read array data 
+ * timing(8) = Time to read array data
+ * timing(9) = Time for cgp_open, CG_MODE_WRITE 
+ * timing(10) = Time for cg_base_write 
+ * timing(11) = Time for cg_zone_write
+ * timing(12) = Time for cgp_open, CG_MODE_READ
+ * timing(13) = Time for cg_read_write 
+ * timing(14) = Time for cg_read_write
  */
 double xtiming[15], timing[15], timingMin[15], timingMax[15];
 
-/*   ! CGP_INDEPENDENT is the default */
-/*   INT, DIMENSION(1:2) :: piomode = (/CGP_INDEPENDENT, CGP_COLLECTIVE/) */
-/* static char *piomode[2] = {"CGP_INDEPENDENT", "CGP_COLLECTIVE"}; */
-
-static char *outmode[2] = {"direct", "queued"};
 int piomode[2] = {0, 1};
 int piomode_i;
 
 int initialize(int* argc, char** argv[]) {
-	int i,j;
 	MPI_Init(argc,argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
@@ -131,12 +131,10 @@ int main(int argc, char* argv[]) {
   nijk[2] = 0; /* Number of boundary vertices */
   
   /* ====================================== */
-  /* ==    **WRITE THE CGNS FILE *       == */
+  /* ==    **WRITE THE CGNS FILE **      == */
   /* ====================================== */
 
-  /* for IBM */
   sprintf(fname, "benchmark_%06d.cgns", comm_size);
-/*   sprintf(fname, "benchmark_%06d_%d.cgns", comm_size, piomode_i+1); */
 
   t1 = MPI_Wtime();
   if(cgp_open(fname, CG_MODE_WRITE, &fn) != CG_OK) {
@@ -404,7 +402,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
   if(cgp_array_write_data(Ar,&min,&max,Array_r) != CG_OK) {
-    printf("*FAILED* cgp_field_array_data (Array_r)\n");
+    printf("*FAILED* cgp_field_array_data (Array_Ar)\n");
     cgp_error_exit();
   }
   t2 = MPI_Wtime();
