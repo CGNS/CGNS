@@ -19,7 +19,7 @@ CALL =	ctest$(EXE) \
 	test_zone$(EXE) \
 	thesis_benchmark$(EXE)
 
-FALL =	ftest$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE)
+FALL =	ftest$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) benchmark_hdf5_f03$(EXE)
 
 ALL   = $(CALL) @FALL@
 TESTS = $(ALL)
@@ -111,6 +111,12 @@ fexample$(EXE) : fexample.F $(CGNSLIB)
 
 benchmark_hdf5_f90$(EXE) : benchmark_hdf5_f90.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ benchmark_hdf5_f90.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+benchmark_hdf5_f03$(EXE) : benchmark_hdf5_f03.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ benchmark_hdf5_f03.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

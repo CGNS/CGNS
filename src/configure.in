@@ -395,6 +395,84 @@ else
     F2CFLAGS=-D$withfortran
   fi
 
+  # Check if the Fortran compiler is F2003 compliant
+  AC_SUBST([HAVE_FORTRAN_2003])
+  ## --------------------------------------------------------------------
+  ## Default for FORTRAN 2003 compliant compilers
+  ##
+  HAVE_F2003_REQUIREMENTS="no"
+  AC_MSG_CHECKING([if Fortran compiler meets 2003 standard])
+
+ cat >> testf03.f90 << EOF
+       PROGRAM testf03
+  	 USE iso_c_binding
+  	 IMPLICIT NONE
+  	 INTEGER(C_INT) :: a
+  	 INTEGER(C_INT32_T) :: b
+  	 INTEGER(C_INT64_T) :: c
+         REAL(C_FLOAT) :: d
+  	 REAL(C_DOUBLE) :: e
+  	 CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: f
+  	 TYPE(C_PTR) :: g
+  	 g = C_LOC(f(1:1))
+         INTERFACE 
+           INTEGER(C_INT) FUNCTION test(A, UserDataName1, i1) BIND(C, name='cg_goto')
+             USE ISO_C_BINDING
+            INTEGER(C_INT)   , INTENT(IN), VALUE :: A
+            CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1
+            INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i1
+         END INTERFACE
+      END PROGRAM testf03
+EOF
+  msg=`${F77} -c testf03.f90 &> /dev/null`
+  if test -f testf03.o; then 
+    HAVE_F2003_REQUIREMENTS=yes
+    rm testf03.o
+  fi  
+  if test -f testf03.f90; then 
+    HAVE_F2003_REQUIREMENTS=yes
+    rm testf03.f90
+  fi
+  AC_MSG_RESULT($HAVE_F2003_REQUIREMENTS)
+
+ ## In F2003 and F2008 optional parameters are not allowed for functions that have BIND(C). 
+ ## In Fortran 2003 it is constraint C530, in the latest Fortran 2008 draft it is C516:
+ ## "The ALLOCATABLE, POINTER, or OPTIONAL attribute shall not be specifed
+ ## for a dummy argument of a procedure that has a proc-language-binding-spec."
+
+ ## However this is being addressed in:
+ ## TS 29113 Further Interoperability of Fortran with C WG5/N1942
+ ## Compilers status:
+ ##  IMPLEMENTED      -- gnu (4.7,4.8,4.9), intel, portland group
+ ##  NOT IMPLEMENTED  -- xlf 
+
+  HAVE_F2008TS_REQUIREMENTS="no"
+  AC_MSG_CHECKING([if Fortran compiler meets Technical Specification 29113])
+
+ cat >> testf03.f90 << EOF
+       PROGRAM testf03
+         USE ISO_C_BINDING
+         INTERFACE 
+            INTEGER(C_INT) FUNCTION test(A) BIND(C, name='test')
+              USE ISO_C_BINDING
+              INTEGER(C_INT), OPTIONAL :: A
+            END FUNCTION test
+         END INTERFACE
+       END PROGRAM testf03
+EOF
+  msg=`${F77} -c testf03.f90 &> /dev/null`
+  if test -f testf03.o; then 
+    HAVE_F2008TS_REQUIREMENTS=yes
+    rm testf03.o
+  fi
+  if test -f testf03.f90; then
+     rm testf03.f90
+  fi
+  AC_MSG_RESULT($HAVE_F2008TS_REQUIREMENTS)
+
+  AC_SUBST(HAVE_F2003_REQUIREMENTS)
+  AC_SUBST(HAVE_F2008TS_REQUIREMENTS)
+
   if test $need_f2c = yes; then
     if test "$ac_cv_prog_g77" = "yes"; then
       if test "$ac_cv_prog_gcc" = "no"; then

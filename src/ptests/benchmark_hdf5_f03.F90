@@ -1,3 +1,5 @@
+#define HAVE_F2003_REQUIREMENTS @HAVE_F2003_REQUIREMENTS@
+#define HAVE_F2008TS_REQUIREMENTS @HAVE_F2008TS_REQUIREMENTS@
 #include "cgnstypes_f.h"
 ! @file benchmark_hdf5.F90
 ! @author M. Scot Breitenfeld <brtnfld@hdfgroup.org>
@@ -7,11 +9,15 @@
 ! BSD style license
 !
 ! @section DESCRIPTION
-! Benchmarking program for pcgns library
+! Fortran2003 Benchmarking program for pcgns library
 !
-! TO COMPILE: h5pfc -O3 benchmark_hdf5.F90 -I.. -L../lib -lcgns
 !
+
+! Only compile this code if the Fortran compiler is Fortran 2003 compliant
+#ifdef HAVE_F2003_REQUIREMENTS
+
 MODULE cgns_c_binding
+
 !
 ! Contains needed interfaces for calling the C functions
 ! 
@@ -275,6 +281,71 @@ MODULE cgns_c_binding
      END FUNCTION cg_user_data_write
   END INTERFACE
 
+#ifdef HAVE_F2008TS_REQUIREMENTS
+
+  ! THE FOLLOWING CODE ONLY WORKS FOR COMPILERS HAVING F2008 STANDARD EXTENSION:
+  ! TS 29113 Further Interoperability of FORTRAN with C WG5/N1942
+
+  ! The number of optional parameters should be set to
+  ! CG_MAX_GOTO_DEPTH, which is currently set to 20.
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cg_gorel(fn, &
+          UserDataName1, i1, UserDataName2, i2, &
+          UserDataName3, i3, UserDataName4, i4, &
+          UserDataName5, i5, UserDataName6, i6, &
+          UserDataName7, i7, UserDataName8, i8, &
+          UserDataName9, i9, UserDataName10, i10, &
+          UserDataName11, i11, UserDataName12, i12, &
+          UserDataName13, i13, UserDataName14, i14, &
+          UserDataName15, i15, UserDataName16, i16, &
+          UserDataName17, i17, UserDataName18, i18, &
+          UserDataName19, i19, UserDataName20, i20, &
+          end) BIND(C, name='cg_gorel_f08')
+       
+       USE ISO_C_BINDING
+       INTEGER(C_INT) , INTENT(IN), VALUE :: fn
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
+            UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
+            UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
+            UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
+       
+       INTEGER(C_INT), INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
+            i17, i18, i19, i20
+       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end
+     END FUNCTION cg_gorel
+ END INTERFACE
+
+ ! The number of optional parameters should be set to
+ ! CG_MAX_GOTO_DEPTH, which is currently set to 20.
+
+ INTERFACE
+    INTEGER(C_INT) FUNCTION cg_goto(fn, B, &
+          UserDataName1, i1, UserDataName2, i2, &
+          UserDataName3, i3, UserDataName4, i4, &
+          UserDataName5, i5, UserDataName6, i6, &
+          UserDataName7, i7, UserDataName8, i8, &
+          UserDataName9, i9, UserDataName10, i10, &
+          UserDataName11, i11, UserDataName12, i12, &
+          UserDataName13, i13, UserDataName14, i14, &
+          UserDataName15, i15, UserDataName16, i16, &
+          UserDataName17, i17, UserDataName18, i18, &
+          UserDataName19, i19, UserDataName20, i20, &
+          end) BIND(C, name='cg_goto_f08')
+
+      USE ISO_C_BINDING
+      INTEGER(C_INT) , INTENT(IN), VALUE :: fn
+      INTEGER(C_INT) , INTENT(IN), VALUE :: B
+      CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
+           UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
+           UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
+           UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
+      INTEGER(C_INT), INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
+           i17, i18, i19, i20
+      CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end
+    END FUNCTION cg_goto
+ END INTERFACE 
+
+#endif
 END MODULE cgns_c_binding
 
 MODULE testing_functions
@@ -687,7 +758,11 @@ PROGRAM main
      Array_i(k) = comm_rank*count*NodePerElem + k
   ENDDO
 
+#ifdef HAVE_F2008TS_REQUIREMENTS
+  err = cg_goto(fn,B,"Zone 1"//C_NULL_CHAR,0_C_INT,END="end"//C_NULL_CHAR) 
+#else
   CALL cg_goto_f(fn, B, err, "Zone 1", 0_C_INT, 'end')
+#endif
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_goto_f'
      err = cgp_error_exit()
@@ -697,8 +772,11 @@ PROGRAM main
      PRINT*,'*FAILED* cg_user_data_write'
      err = cgp_error_exit()
   ENDIF
-
+#ifdef HAVE_F2008TS_REQUIREMENTS
+  err = cg_gorel(fn, "User Data"//C_NULL_CHAR, 0_C_INT, end="end"//C_NULL_CHAR)
+#else
   CALL cg_gorel_f(fn,err,'User Data',0_C_INT,'end')
+#endif
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_gorel'
      err = cgp_error_exit()
@@ -1020,10 +1098,13 @@ PROGRAM main
 
   min = count*comm_rank+1
   max = count*(comm_rank+1)
-  
-  CALL cg_goto_f(fn, B, err, "Zone_t",Z,"UserDefinedData_t",1_C_INT,"end") 
 
-  !err = cg_goto(fn,B,"Zone_t"//C_NULL_CHAR,Z,"UserDefinedData_t"//C_NULL_CHAR,1_C_INT,END="end"//C_NULL_CHAR)
+#ifdef HAVE_F2008TS_REQUIREMENTS
+  err = cg_goto(fn,B,"Zone_t"//C_NULL_CHAR,Z,"UserDefinedData_t",1_C_INT, END="end"//C_NULL_CHAR) 
+#else
+  CALL cg_goto_f(fn, B, err, "Zone_t",Z,"UserDefinedData_t",1_C_INT,"end") 
+#endif
+
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_goto (User Defined Data)'
      err = cgp_error_exit()
@@ -1097,5 +1178,15 @@ PROGRAM main
   CALL MPI_FINALIZE(mpi_err)
 
 END PROGRAM main
+
+! A valid F2003 compilers was not found
+#else 
+   PROGRAM main
+     IMPLICIT NONE
+     PRINT*,"**      FORTRAN 2003 STANDARD COMPILER NOT FOUND      **"
+     PRINT*," benchmark_hdf5_f03 -- placeholder program used instead"
+   END PROGRAM main
+#endif
+
 
         
