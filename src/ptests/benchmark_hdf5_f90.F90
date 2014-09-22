@@ -117,8 +117,8 @@ PROGRAM benchmark_hdf5_f90
   ! timing(10) = Time for cg_base_write 
   ! timing(11) = Time for cg_zone_write
   ! timing(12) = Time for cgp_open, CG_MODE_READ
-  ! timing(13) = Time for cg_read_write 
-  ! timing(14) = Time for cg_read_write
+  ! timing(13) = Time for cg_base_read 
+  ! timing(14) = Time for cg_zone_read
 
   REAL(KIND=dp), DIMENSION(1:15) :: xtiming, timing, timingMin, timingMax
 

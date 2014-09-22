@@ -441,17 +441,23 @@ PROGRAM main
   INTEGER :: indx_null
   ! Timing 
   REAL(KIND=dp) :: t0, t1, t2
-  !
+
   ! Timing storage convention:
-  ! timing(1) = Total program time
-  ! timing(2) = Time to write nodal coordinates
-  ! timing(3) = Time to write connectivity table
-  ! timing(4) = Time to write solution data (field data)
-  ! timing(5) = Time to write array data
-  ! timing(6) = Time to read nodal coordinates
-  ! timing(7) = Time to read connectivity table
-  ! timing(8) = Time to read solution data (field data)
-  ! timing(9) = Time to read array data
+  ! timing(0) = Total program time
+  ! timing(1) = Time to write nodal coordinates
+  ! timing(2) = Time to write connectivity table
+  ! timing(3) = Time to write solution data (field data)
+  ! timing(4) = Time to write array data
+  ! timing(5) = Time to read nodal coordinates
+  ! timing(6) = Time to read connectivity table
+  ! timing(7) = Time to read solution data (field data)
+  ! timing(8) = Time to read array data
+  ! timing(9) = Time for cgp_open, CG_MODE_WRITE 
+  ! timing(10) = Time for cg_base_write 
+  ! timing(11) = Time for cg_zone_write
+  ! timing(12) = Time for cgp_open, CG_MODE_READ
+  ! timing(13) = Time for cg_base_read 
+  ! timing(14) = Time for cg_zone_read
   REAL(KIND=dp), DIMENSION(1:15) :: xtiming, timing, timingMin, timingMax
   CHARACTER(LEN=6) :: ichr6
 
