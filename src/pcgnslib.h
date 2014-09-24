@@ -36,6 +36,20 @@
 extern "C" {
 #endif
 
+/* Determine if hdf5 has multi-dataset read/write capabilities;
+ * introduced in 1.8.14.
+ */
+/* #ifdef BUILD_HDF5 */
+/* # include "hdf5.h" */
+/* # if (H5_VERS_MAJOR > 1) || (H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 8) */
+/* #   define HDF5_HAVE_MULTI_DATASETS  */
+/* # else */
+/* #   if (H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 7 && H5_VERS_RELEASE > 13) */
+/* #     define HDF5_HAVE_MULTI_DATASETS */
+/* #   endif */
+/* # endif */
+/* #endif */
+
 typedef enum {
     CGP_INDEPENDENT=0,
     CGP_COLLECTIVE=1,
@@ -43,6 +57,8 @@ typedef enum {
 
 /* MPI-2 info object */
 MPI_Info pcg_mpi_info;
+int pcg_mpi_comm_size;
+int pcg_mpi_comm_rank;
 
 /*===== MPI communicator =====*/
 
@@ -68,11 +84,11 @@ CGNSDLL int cgp_coord_write(int fn, int B, int Z,
     CGNS_ENUMT(DataType_t) type, const char *coordname, int *C);
 CGNSDLL int cgp_coord_write_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *coord_array);
-CGNSDLL int cgp_coords_write_data(int fn, int B, int Z, int *C,
+CGNSDLL int cgp_coord_write_multi_data(int fn, int B, int Z, int *C,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *coordsX, const void *coordsY, const void *coordsZ);
 CGNSDLL int cgp_coord_read_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coord_array);
-CGNSDLL int cgp_coords_read_data(int fn, int B, int Z, int *C,
+CGNSDLL int cgp_coords_read_multi_data(int fn, int B, int Z, int *C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coordsX, void *coordsY, void *coordsZ);
 
 /*===== Unstructured Grid Prototypes =====*/

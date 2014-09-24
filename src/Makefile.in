@@ -193,10 +193,10 @@ $(OBJDIR)/cgns_io.$(O) : cgns_io.c cgnslib.h cgns_io.h \
 
 $(OBJDIR)/cg_ftoc.$(O) : cg_ftoc.c fortran_macros.h cgnslib.h \
 	cgns_header.h cgns_io.h
-	$(CC) $(COPTS) $(F2CFLAGS) $(COOUT)$@ -c cg_ftoc.c
+	$(CC) $(COPTS) $(HDF5INC) $(F2CFLAGS) $(COOUT)$@ -c cg_ftoc.c
 
 $(OBJDIR)/cgio_ftoc.$(O) : cgio_ftoc.c fortran_macros.h cgns_io.h
-	$(CC) $(COPTS) $(F2CFLAGS) $(COOUT)$@ -c cgio_ftoc.c
+	$(CC) $(COPTS) $(HDF5INC) $(F2CFLAGS) $(COOUT)$@ -c cgio_ftoc.c
 
 $(OBJDIR)/cg_malloc.$(O) : cg_malloc.c cg_malloc.h
 	$(CC) $(COPTS) $(COOUT)$@ -c cg_malloc.c

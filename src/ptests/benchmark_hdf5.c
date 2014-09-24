@@ -28,7 +28,7 @@ int comm_rank;
 MPI_Info info;
 
 /* cgsize_t Nelem = 33554432; */
-cgsize_t Nelem = 33554432;
+cgsize_t Nelem = 1024;
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
@@ -114,6 +114,7 @@ int main(int argc, char* argv[]) {
 
   char fname[32];
   char name[32];
+  int Cvec[3];
 
   /* parameters */
   piomode_i = 1;
@@ -171,7 +172,7 @@ int main(int argc, char* argv[]) {
   /* ====================================== */
 
   count = nijk[0]/comm_size;
-  
+
   if( !(Coor_x = (double*) malloc(count*sizeof(double))) ) {
     printf("*FAILED* allocation of Coor_x \n");
     cgp_error_exit();
@@ -210,6 +211,15 @@ int main(int argc, char* argv[]) {
   }
 
   t1 = MPI_Wtime();
+#ifdef HDF5_HAVE_MULTI_DATASETS
+  Cvec[0] = Cx;
+  Cvec[1] = Cy;
+  Cvec[2] = Cz;
+  if(cgp_coord_write_multi_data(fn, B, Z, Cvec, &min,&max, Coor_x, Coor_y, Coor_z)!= CG_OK) {
+    printf("*FAILED* cgp_coords_write_data \n");
+    cgp_error_exit();
+  }
+#else
   if((cgp_coord_write_data(fn,B,Z,Cx,&min,&max,Coor_x)) != CG_OK) {
     printf("*FAILED* cgp_coord_write_data (Coor_x) \n");
     cgp_error_exit();
@@ -222,7 +232,7 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cgp_coord_write_data (Coor_z) \n");
     cgp_error_exit();
   }
-
+#endif
   t2 = MPI_Wtime();
   xtiming[1] = t2-t1;
 
@@ -508,6 +518,16 @@ int main(int argc, char* argv[]) {
   max = count*(comm_rank+1);
 
   t1 = MPI_Wtime();
+#ifdef HDF5_HAVE_MULTI_DATASETS
+
+  Cvec[0] = Cx;
+  Cvec[1] = Cy;
+  Cvec[2] = Cz;
+  if (cgp_coord_read_multi_data(fn, B, Z, Cvec, &min,&max, Coor_x, Coor_y, Coor_z)!= CG_OK) {
+    printf("*FAILED* cgp_coords_read_data \n");
+    cgp_error_exit();
+  }
+#else
   if (cgp_coord_read_data(fn,B,Z,Cx,&min,&max,Coor_x) != CG_OK) {
     printf("*FAILED* cgp_coord_read_data ( Reading Coor_x) \n");
     cgp_error_exit();
@@ -520,6 +540,7 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cgp_coord_read_data (Reading Coor_z) \n");
     cgp_error_exit();
   }
+#endif
   t2 = MPI_Wtime();
   xtiming[5] = t2-t1;
   

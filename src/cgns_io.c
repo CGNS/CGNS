@@ -45,6 +45,7 @@ freely, subject to the following restrictions:
 #endif
 #ifdef BUILD_PARALLEL
 #include <mpi.h>
+#include "pcgnslib.h"
 #endif
 
 
@@ -562,65 +563,70 @@ int cgio_check_file (const char *filename, int *file_type)
     static char *HDF5sig = "\211HDF\r\n\032\n";
     struct stat st;
 
+    /* Flag is true if MPI_Init or MPI_Init_thread has been called and false otherwise. */
+    int flag = 0;
+    int mpibuf[2], err;
+
     if (ACCESS (filename, 0) || stat (filename, &st) ||
         S_IFREG != (st.st_mode & S_IFREG)) {
         last_err = CGIO_ERR_NOT_FOUND;
         return last_err;
     }
     *file_type = CGIO_FILE_NONE;
-    goto no_open; 
+ 
+
 #ifdef BUILD_PARALLEL
-    MPI_File fh;
-    MPIO_Request request;
-    char *new_str;
-    static char *str2 = "bgblockless:";
-    new_str = malloc(strlen(filename)+strlen(str2)+1);
-       new_str[0] = '\0';   // ensures the memory is an empty string
-       strcat(new_str,str2);
-       strcat(new_str,filename);
-    MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
-    MPI_File_iread_at(fh, 0, buf, (int)sizeof(buf), MPI_CHAR, &request);
-    buf[sizeof(buf)-1] = 0;
-    MPI_File_close(&fh);
-#else
-    if (NULL == (fp = fopen (filename, "rb"))) {
-        if (errno == EMFILE)
-            return set_error(CGIO_ERR_TOO_MANY);
-        return set_error(CGIO_ERR_FILE_OPEN);
-    }
+    /* check if we are actually running a parallel program */
+    MPI_Initialized(&flag);
+    /* don't overload the file system by having all the processors doing a read */
+    if(pcg_mpi_comm_rank == 0) {
+#endif
+    
+      fp = fopen(filename, "rb");
+      if (NULL == fp) {
+	if (errno == EMFILE) {
+	  err = set_error(CGIO_ERR_TOO_MANY);
+	} else {
+	  err = set_error(CGIO_ERR_FILE_OPEN);
+	}
+      }
     fread (buf, 1, sizeof(buf), fp);
     buf[sizeof(buf)-1] = 0;
     fclose (fp);
-#endif
 
     /* check for ADF */
-
     if (0 == strncmp (&buf[4], "ADF Database Version", 20)) {
-        *file_type = CGIO_FILE_ADF;
-        return set_error(CGIO_ERR_NONE);
-    }
-
-    /* check for HDF5 */
-
-    for (n = 0; n < 8; n++) {
-        if (buf[n] != HDF5sig[n]) break;
-    }
-    if (n == 8) {
+      *file_type = CGIO_FILE_ADF;
+      err = set_error(CGIO_ERR_NONE);
+    } else {
+      /* check for HDF5 */
+      for (n = 0; n < 8; n++) {
+	if (buf[n] != HDF5sig[n]) break;
+      }
+      if (n == 8) {
 #if BUILD_PARALLEL
-        *file_type = CGIO_FILE_PHDF5;        
+	*file_type = CGIO_FILE_PHDF5;        
 #else 
-        *file_type = CGIO_FILE_HDF5;
+	*file_type = CGIO_FILE_HDF5;
 #endif
-        return set_error(CGIO_ERR_NONE);
+	err = set_error(CGIO_ERR_NONE);
+      }
     }
+#ifdef BUILD_PARALLEL
+    }
+    if(flag) {
+      mpibuf[0] = err;
+      mpibuf[1] = *file_type;
+      MPI_Bcast(mpibuf, 2, MPI_INT, 0, MPI_COMM_WORLD);
+      err = mpibuf[0];
+      *file_type = mpibuf[1];
+    }
+#endif
+      
+    if(err == set_error(CGIO_ERR_NONE)) return err;
 
     last_err = CGIO_ERR_FILE_TYPE;
     return last_err;
-
-no_open:
-    *file_type = CGIO_FILE_PHDF5;
-    return set_error(CGIO_ERR_NONE);
-    
 }
 
 /*---------------------------------------------------------*/

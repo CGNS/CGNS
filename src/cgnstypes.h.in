@@ -40,6 +40,15 @@
 # define CG_LONG_T @CGLONGT@
 #endif
 
+/* ----------------------------------------------------------------
+ * convert between HDF5 and ADF ids
+ * ---------------------------------------------------------------- */
+
+#ifdef BUILD_HDF5
+#define to_ADF_ID(ID,ADF_ID) memcpy(&(ADF_ID),&(ID),sizeof(hid_t))
+#define to_HDF_ID(ADF_ID,ID) memcpy(&(ID),&(ADF_ID),sizeof(hid_t))
+#endif
+
 #if CG_BUILD_LEGACY
 # define CG_SIZEOF_SIZE    32
 # define CG_SIZE_DATATYPE "I4"
