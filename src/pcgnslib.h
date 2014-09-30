@@ -36,6 +36,8 @@
 extern "C" {
 #endif
 
+#define HDF5_HAVE_MULTI_DATASETS
+
 /* Determine if hdf5 has multi-dataset read/write capabilities;
  * introduced in 1.8.14.
  */
@@ -84,12 +86,16 @@ CGNSDLL int cgp_coord_write(int fn, int B, int Z,
     CGNS_ENUMT(DataType_t) type, const char *coordname, int *C);
 CGNSDLL int cgp_coord_write_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *coord_array);
-CGNSDLL int cgp_coord_write_multi_data(int fn, int B, int Z, int *C,
+CGNSDLL int cgp_coord_multi_write_data(int fn, int B, int Z, int *C,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *coordsX, const void *coordsY, const void *coordsZ);
 CGNSDLL int cgp_coord_read_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coord_array);
-CGNSDLL int cgp_coords_read_multi_data(int fn, int B, int Z, int *C,
-    const cgsize_t *rmin, const cgsize_t *rmax, void *coordsX, void *coordsY, void *coordsZ);
+
+CGNSDLL int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin, const cgsize_t *rmax,
+				      void *coordsX,  void *coordsY,  void *coordsZ);
+
+CGNSDLL int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmin, const cgsize_t *rmax, 
+				       const void *coordsX, const void *coordsY, const void *coordsZ);
 
 /*===== Unstructured Grid Prototypes =====*/
 
@@ -110,6 +116,12 @@ CGNSDLL int cgp_field_write_data(int fn, int B, int Z, int S, int F,
 CGNSDLL int cgp_field_read_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, void *data);
 
+CGNSDLL int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
+				      const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...);
+
+CGNSDLL int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F, 
+				       const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...);
+
 /*===== Array IO Prototypes =====*/
 
 CGNSDLL int cgp_array_write(const char *arrayname,
@@ -119,6 +131,12 @@ CGNSDLL int cgp_array_write_data(int A, const cgsize_t *rmin,
     const cgsize_t *rmax, const void *data);
 CGNSDLL int cgp_array_read_data(int A, const cgsize_t *rmin,
     const cgsize_t *rmax, void *data);
+
+CGNSDLL int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
+				       const cgsize_t *rmax, int nsets, ...);
+
+CGNSDLL int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
+				      const cgsize_t *rmax, int nsets, ...);
 
 /*===== exit with error and call MPI_Abort =====*/
 

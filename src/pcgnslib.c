@@ -20,6 +20,7 @@ freely, subject to the following restrictions:
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 
 #include "pcgnslib.h"
@@ -810,7 +811,7 @@ int cgp_array_read_data(int A, const cgsize_t *rmin,
 #ifdef HDF5_HAVE_MULTI_DATASETS
 
 static int readwrite_multi_data_parallel(hid_t fn, size_t count, H5D_rw_multi_t *multi_info,
-    int ndims, const cgsize_t *rmin, const cgsize_t *rmax, int rw_mode)
+					 int ndims, const cgsize_t *rmin, const cgsize_t *rmax, int rw_mode)
 {
     int k, n;
     hid_t data_id, mem_shape_id, data_shape_id, hid;
@@ -952,11 +953,12 @@ static int readwrite_multi_data_parallel(hid_t fn, size_t count, H5D_rw_multi_t 
 
 /*------------------- multi-dataset functions --------------------------------------*/
 
-int cgp_coord_read_multi_data(int fn, int B, int Z, int *C,
-    const cgsize_t *rmin, const cgsize_t *rmax, void *coordsX,  void *coordsY,  void *coordsZ)
+int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin, const cgsize_t *rmax,
+			       void *coordsX,  void *coordsY,  void *coordsZ)
 {
   int n;
   hid_t hid;
+  hid_t fid;
   cgns_zone *zone;
   cgns_zcoor *zcoor;
   cgsize_t dims[3];
@@ -966,6 +968,8 @@ int cgp_coord_read_multi_data(int fn, int B, int Z, int *C,
 
   cg = cgi_get_file(fn);
   if (check_parallel(cg)) return CG_ERROR;
+
+  to_HDF_ID(cg->rootid,fid);
 
   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
     return CG_ERROR;
@@ -1002,14 +1006,17 @@ int cgp_coord_read_multi_data(int fn, int B, int Z, int *C,
   multi_info[1].u.rbuf = coordsY;
   multi_info[2].u.rbuf = coordsZ;
   
-  return readwrite_multi_data_parallel(fn, 3, multi_info,
+  return readwrite_multi_data_parallel(fid, 3, multi_info,
 					 zone->index_dim, rmin, rmax, 0);
 }
 
-int cgp_coord_write_multi_data(int fn, int B, int Z, int *C,
-    const cgsize_t *rmin, const cgsize_t *rmax, const void *coordsX, const void *coordsY, const void *coordsZ)
+/*---------------------------------------------------------*/
+
+int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmin, const cgsize_t *rmax, 
+			       const void *coordsX, const void *coordsY, const void *coordsZ)
 {
     int n;
+    hid_t fid;
     cgns_zone *zone;
     cgns_zcoor *zcoor;
     cgsize_t dims[3];
@@ -1020,6 +1027,8 @@ int cgp_coord_write_multi_data(int fn, int B, int Z, int *C,
 
     cg = cgi_get_file(fn);
     if (check_parallel(cg)) return CG_ERROR;
+
+    to_HDF_ID(cg->rootid,fid);
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
         return CG_ERROR;
@@ -1056,8 +1065,246 @@ int cgp_coord_write_multi_data(int fn, int B, int Z, int *C,
     multi_info[1].u.wbuf = coordsY;
     multi_info[2].u.wbuf = coordsZ;
 
-    return readwrite_multi_data_parallel(fn, 3, multi_info,
+    return readwrite_multi_data_parallel(fid, 3, multi_info,
 					 zone->index_dim, rmin, rmax, 1);
+}
+
+/*---------------------------------------------------------*/
+
+int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F, 
+			       const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...)
+
+{
+    int n, m;
+    va_list ap;
+    hid_t hid;
+    hid_t fid;
+    cgns_array *field;
+    CGNS_ENUMT(DataType_t) type;
+    H5D_rw_multi_t *multi_info;
+    int status;
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    to_HDF_ID(cg->rootid,fid);
+
+    va_start(ap, nsets);
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+        return CG_ERROR;
+
+    multi_info = (H5D_rw_multi_t *)malloc(nsets*sizeof(H5D_rw_multi_t));
+
+    for (n = 0; n < nsets; n++) {
+      field = cgi_get_field(cg, B, Z, S, F[n]);
+      if (field==0) goto done;
+
+      /* verify that range requested does not exceed range stored */
+      for (m = 0; m < field->data_dim; m++) {
+        if (rmin[m] > rmax[m] ||
+            rmax[m] > field->dim_vals[m] ||
+            rmin[m] < 1) {
+	  cgi_error("Invalid range of data requested");
+	  goto done;
+        }
+      }
+
+      multi_info[n].u.wbuf = va_arg(ap, const void *);
+    
+      multi_info[n].mem_type_id = cgi_datatype(field->data_type);
+      to_HDF_ID(field->id,hid);
+      multi_info[n].dset_id = hid;
+    }
+
+    status = readwrite_multi_data_parallel(fid, nsets, multi_info,
+					   field->data_dim, rmin, rmax, 1);
+
+    free(multi_info);
+
+    return status;
+
+ done:
+    if(multi_info)
+      free(multi_info);
+    
+    return CG_ERROR;
+       
+
+}
+
+/*---------------------------------------------------------*/
+
+int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
+    const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...)
+{
+  int n, m;
+  va_list ap;
+  hid_t hid;
+  hid_t fid;
+  cgns_array *field;
+  CGNS_ENUMT(DataType_t) type;
+  H5D_rw_multi_t *multi_info;
+  int status;
+
+  cg = cgi_get_file(fn);
+  if (check_parallel(cg)) return CG_ERROR;
+
+  to_HDF_ID(cg->rootid,fid);
+
+  va_start(ap, nsets);
+
+  if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
+    return CG_ERROR;
+
+  multi_info = (H5D_rw_multi_t *)malloc(nsets*sizeof(H5D_rw_multi_t));
+
+  for (n = 0; n < nsets; n++) {
+
+    field = cgi_get_field(cg, B, Z, S, F[n]);
+    if (field==0) goto done;
+
+    /* verify that range requested does not exceed range stored */
+    for (m = 0; m < field->data_dim; m++) {
+      if (rmin[m] > rmax[m] ||
+	  rmax[m] > field->dim_vals[m] ||
+	  rmin[m] < 1) {
+	cgi_error("Invalid range of data requested");
+	goto done;
+      }
+    }
+    multi_info[n].u.rbuf = va_arg(ap, void *);
+    
+    multi_info[n].mem_type_id = cgi_datatype(field->data_type);
+    to_HDF_ID(field->id,hid);
+    multi_info[n].dset_id = hid;
+  }
+
+  status = readwrite_multi_data_parallel(fid, nsets, multi_info,
+			      field->data_dim, rmin, rmax, 0);
+  free(multi_info);
+
+  return status;
+
+ done:
+  if(multi_info)
+    free(multi_info);
+  
+  return CG_ERROR;
+}
+
+/*---------------------------------------------------------*/
+
+int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
+			       const cgsize_t *rmax, int nsets, ...)
+{
+  int n, m, ierr = 0;
+  hid_t hid;
+  hid_t fid;
+  va_list ap;
+  cgns_array *array;
+  CGNS_ENUMT(DataType_t) type;
+  H5D_rw_multi_t *multi_info;
+  int status;
+
+  cg = cgi_get_file(fn);
+  if (check_parallel(cg)) return CG_ERROR;
+
+  to_HDF_ID(cg->rootid,fid);
+
+  va_start(ap, nsets);
+
+  multi_info = (H5D_rw_multi_t *)malloc(nsets*sizeof(H5D_rw_multi_t));
+
+  for (n = 0; n < nsets; n++) {
+
+    array = cgi_array_address(CG_MODE_READ, A[n], "dummy", &ierr);
+    if (array == NULL) goto done;
+
+    for (m = 0; m < array->data_dim; m++) {
+      if (rmin[m] > rmax[m] ||
+	  rmax[m] > array->dim_vals[m] ||
+	  rmin[m] < 1) {
+	cgi_error("Invalid range of data requested");
+	goto done;
+      }
+    }
+
+    multi_info[n].u.wbuf = va_arg(ap, const void *);
+
+    multi_info[n].mem_type_id = cgi_datatype(array->data_type);
+    to_HDF_ID(array->id, hid);
+    multi_info[n].dset_id = hid;
+  }
+
+  status = readwrite_multi_data_parallel(fid, nsets, multi_info,
+               array->data_dim, rmin, rmax, 1);
+
+  free(multi_info);
+
+  return status;
+
+ done:
+    if(multi_info)
+      free(multi_info);
+    
+    return CG_ERROR;
+}
+
+/*---------------------------------------------------------*/
+
+int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
+			      const cgsize_t *rmax, int nsets, ...)
+{
+  int n, m, ierr = 0;
+  hid_t hid;
+  hid_t fid;
+  va_list ap;
+  cgns_array *array;
+  CGNS_ENUMT(DataType_t) type;
+  H5D_rw_multi_t *multi_info;
+  int status;
+
+  cg = cgi_get_file(fn);
+  if (check_parallel(cg)) return CG_ERROR;
+
+  to_HDF_ID(cg->rootid,fid);
+
+  va_start(ap, nsets);
+
+  multi_info = (H5D_rw_multi_t *)malloc(nsets*sizeof(H5D_rw_multi_t));
+
+  for (n = 0; n < nsets; n++) {
+
+    array = cgi_array_address(CG_MODE_READ, A[n], "dummy", &ierr);
+    if (array == NULL) goto done;
+    
+    for (m = 0; m < array->data_dim; m++) {
+      if (rmin[m] > rmax[m] ||
+	  rmax[m] > array->dim_vals[m] ||
+	  rmin[m] < 1) {
+	cgi_error("Invalid range of data requested");
+	goto done;
+      }
+    }
+    multi_info[n].u.rbuf = va_arg(ap, void *);
+    
+    multi_info[n].mem_type_id = cgi_datatype(array->data_type);
+    to_HDF_ID(array->id, hid);
+    multi_info[n].dset_id = hid;
+  }
+  status = readwrite_multi_data_parallel(fid, nsets, multi_info,
+               array->data_dim, rmin, rmax, 0);
+
+  free(multi_info);
+
+  return status;
+
+ done:
+  if(multi_info)
+    free(multi_info);
+  
+  return CG_ERROR;
 }
 
 #endif
