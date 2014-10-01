@@ -544,7 +544,6 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
 #ifdef HDF5_HAVE_MULTI_DATASETS
-
   Cvec[0] = Cx;
   Cvec[1] = Cy;
   Cvec[2] = Cz;

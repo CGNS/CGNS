@@ -180,7 +180,7 @@ c     call cgp_mpi_comm_f(MPI_COMM_WORLD,ierr)
       S = 1
       E = 1;
       do B=1,2
-        call cgp_pio_mode_f(B-1,ierr)
+        call cgp_pio_mode_f(B-1,MPI_INFO_NULL,ierr)
         if (ierr .ne. CG_OK) call cgp_error_exit_f
 
         call MPI_BARRIER(MPI_COMM_WORLD, ierr)

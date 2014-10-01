@@ -3879,5 +3879,104 @@ CGNSDLL void FMNAME(cgp_error_exit_f, CGP_ERROR_EXIT_F) ()
     cgp_error_exit();
 }
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *       cgp_coord_multi_read_data Function                              *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+#ifdef WIN32_FORTRAN
+ CGNSDLL void __stdcall cgp_coord_multi_read_data_f(cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *C, 
+						    cgsize_t *rmin, cgsize_t *rmax, 
+						    void *coordsX,  void *coordsY, void *coordsZ, cgsize_t *ier)
+#else
+CGNSDLL void FMNAME(cgp_coord_multi_read_data_f, CGP_COORD_MULTI_READ_DATA_F)(cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *C, 
+						    cgsize_t *rmin, cgsize_t *rmax, 
+						    void *coordsX, void *coordsY, void *coordsZ, cgsize_t *ier)
+#endif
+{
+  *ier = cgp_coord_multi_read_data((int)*fn, (int)*B, (int)*Z, C, rmin, rmax, coordsX, coordsY, coordsZ);
+
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *       cgp_coord_multi_write_data Function                              *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+#ifdef WIN32_FORTRAN
+ CGNSDLL void __stdcall cgp_coord_multi_write_data_f(cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *C, 
+						    cgsize_t *rmin, cgsize_t *rmax, 
+						    void *coordsX,  void *coordsY, void *coordsZ, cgsize_t *ier)
+#else
+CGNSDLL void FMNAME(cgp_coord_multi_write_data_f, CGP_COORD_MULTI_WRITE_DATA_F)(cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *C, 
+						    cgsize_t *rmin, cgsize_t *rmax, 
+						    void *coordsX, void *coordsY, void *coordsZ, cgsize_t *ier)
+#endif
+{
+  *ier = cgp_coord_multi_write_data((int)*fn, (int)*B, (int)*Z, C, rmin, rmax, coordsX, coordsY, coordsZ);
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *       cgp_field_multi_write_data Function                              *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL void FMNAME(cgp_field_multi_write_data_f, CGP_FIELD_MULTI_WRITE_DATA_F) (
+	cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *S,
+	cgsize_t *F, cgsize_t *rmin, cgsize_t *rmax, cgsize_t *ier, cgsize_t *nsets, ...)
+{
+  va_list ap; /* argument list passed from the API call */
+  
+  va_start(ap, nsets);
+
+  *ier = vcgp_field_multi_write_data((int)*fn, (int)*B, (int)*Z, (int)*S,
+				    F, rmin, rmax, (int)*nsets, ap);
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *       cgp_field_multi_read_data Function                              *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL void FMNAME(cgp_field_multi_read_data_f, CGP_FIELD_MULTI_READ_DATA_F) (
+	cgsize_t *fn, cgsize_t *B, cgsize_t *Z, cgsize_t *S,
+	cgsize_t *F, cgsize_t *rmin, cgsize_t *rmax, cgsize_t *ier, cgsize_t *nsets, ...)
+{
+  va_list ap; /* argument list passed from the API call */
+  
+  va_start(ap, nsets);
+
+  *ier = vcgp_field_multi_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
+				    F, rmin, rmax, (int)*nsets, ap);
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *        cgp_array_multi_write_data Function                              *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL void FMNAME(cgp_array_multi_write_data_f, CGP_ARRAY_MULTI_WRITE_DATA_F) (
+	cgsize_t *fn, cgsize_t *A, cgsize_t *rmin, cgsize_t *rmax,
+	cgsize_t *ier, cgsize_t *nsets, ...)
+{  
+
+  va_list ap; /* argument list passed from the API call */
+  
+  va_start(ap, nsets);
+  
+  *ier = vcgp_array_multi_write_data((int)*fn, A, rmin, rmax, (int)*nsets, ap);
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *        cgp_array_multi_read_data Function                              *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL void FMNAME(cgp_array_multi_read_data_f, CGP_ARRAY_MULTI_READ_DATA_F) (
+	cgsize_t *fn, cgsize_t *A, cgsize_t *rmin, cgsize_t *rmax,
+	cgsize_t *ier, cgsize_t *nsets, ...)
+{  
+
+  va_list ap; /* argument list passed from the API call */
+  
+  va_start(ap, nsets);
+  
+  *ier = vcgp_array_multi_read_data((int)*fn, A, rmin, rmax, (int)*nsets, ap);
+}
+
 #endif /*BUILD_PARALLEL*/
 

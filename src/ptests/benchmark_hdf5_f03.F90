@@ -15,7 +15,6 @@
 
 ! Only compile this code if the Fortran compiler is Fortran 2003 compliant
 #ifdef HAVE_F2003_REQUIREMENTS
-
 MODULE cgns_c_binding
 
 !
@@ -343,7 +342,7 @@ MODULE cgns_c_binding
            i17, i18, i19, i20
       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end
     END FUNCTION cg_goto
- END INTERFACE 
+ END INTERFACE
 
 #endif
 END MODULE cgns_c_binding
@@ -436,7 +435,7 @@ PROGRAM main
   CGSIZE_T :: start, end, emin, emax
   CGSIZE_T, DIMENSION(:), ALLOCATABLE, TARGET :: elements
   LOGICAL :: queue, debug
-  TYPE(C_PTR) :: f_ptr
+  TYPE(C_PTR) :: f_ptr, f_ptr1, f_ptr2, f_ptr3
   CHARACTER(KIND=C_CHAR,LEN=180) :: bname, zname
   INTEGER :: indx_null
   ! Timing 
@@ -469,6 +468,7 @@ PROGRAM main
   INTEGER :: istat
   INTEGER(C_SIZE_T) :: int_sizeof
   INTEGER :: comm_info
+  INTEGER(C_INT), DIMENSION(1:3), TARGET :: Cvec
   
   CALL MPI_Init(mpi_err)
   CALL MPI_Comm_size(MPI_COMM_WORLD,comm_size,mpi_err)
@@ -484,7 +484,7 @@ PROGRAM main
  ! queue = .TRUE.
   queue = .FALSE.
   debug = .FALSE.
-!  debug = .TRUE.
+  debug = .TRUE.
 
   t0 = MPI_Wtime() ! Timer
 
@@ -588,26 +588,25 @@ PROGRAM main
      err = cgp_error_exit()
   ENDIF
 
+  f_ptr1 = C_LOC(Coor_x(1))
+  f_ptr2 = C_LOC(Coor_y(1))
+  f_ptr3 = C_LOC(Coor_z(1))
   t1 = MPI_Wtime()
-  f_ptr = C_LOC(Coor_x(1))
-  err = cgp_coord_write_data(fn,B,Z,Cx,min,max,f_ptr)
+  err = cgp_coord_write_data(fn,B,Z,Cx,min,max,f_ptr1)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_write_data (Coor_x)'
      err = cgp_error_exit()
   ENDIF
-  f_ptr = C_LOC(Coor_y(1))
-  err = cgp_coord_write_data(fn,B,Z,Cy,min,max,f_ptr)
+  err = cgp_coord_write_data(fn,B,Z,Cy,min,max,f_ptr2)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_write_data (Coor_y)'
      err = cgp_error_exit()
   ENDIF
-  f_ptr = C_LOC(Coor_z(1))
-  err = cgp_coord_write_data(fn,B,Z,Cz,min,max,f_ptr)
+  err = cgp_coord_write_data(fn,B,Z,Cz,min,max,f_ptr3)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_write_data (Coor_z)'
      err = cgp_error_exit()
   ENDIF
-
   t2 = MPI_Wtime()
   xtiming(2) = t2-t1 
 
@@ -711,20 +710,21 @@ PROGRAM main
      err = cgp_error_exit()
   ENDIF
   t1 = MPI_Wtime()
-  f_ptr = C_LOC(Data_Fx(1))
-  err = cgp_field_write_data(fn,B,Z,S,Fx,min,max,f_ptr)  
+
+  f_ptr1 = C_LOC(Data_Fx(1))
+  f_ptr2 = C_LOC(Data_Fy(1))
+  f_ptr3 = C_LOC(Data_Fz(1))
+  err = cgp_field_write_data(fn,B,Z,S,Fx,min,max,f_ptr1)  
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_write_data (Data_Fx)'
      err = cgp_error_exit()
   ENDIF
-  f_ptr = C_LOC(Data_Fy(1))
-  err = cgp_field_write_data(fn,B,Z,S,Fy,min,max,f_ptr) 
+  err = cgp_field_write_data(fn,B,Z,S,Fy,min,max,f_ptr2) 
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_write_data (Data_Fy)'
      err = cgp_error_exit()
   ENDIF
-  f_ptr = C_LOC(Data_Fz(1))
-  err = cgp_field_write_data(fn,B,Z,S,Fz,min,max,f_ptr) 
+  err = cgp_field_write_data(fn,B,Z,S,Fz,min,max,f_ptr3) 
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_write_data (Data_Fz)'
      err = cgp_error_exit()
@@ -955,26 +955,25 @@ PROGRAM main
      err = cgp_error_exit()
   ENDIF
 
-  t1 = MPI_Wtime()
-  f_ptr = C_LOC(Coor_x(1))
-  err = cgp_coord_read_data(fn,B,Z,Cx,min,max,f_ptr)
+  t1 = MPI_Wtime()  
+  f_ptr1 = C_LOC(Coor_x(1))
+  f_ptr2 = C_LOC(Coor_y(1))
+  f_ptr3 = C_LOC(Coor_z(1))
+  err = cgp_coord_read_data(fn,B,Z,Cx,min,max,f_ptr1)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_read_data (Reading Coor_x)'
      err = cgp_error_exit()
   ENDIF
-  f_ptr = C_LOC(Coor_y(1))
-  err = cgp_coord_read_data(fn,B,Z,Cy,min,max,f_ptr)
+  err = cgp_coord_read_data(fn,B,Z,Cy,min,max,f_ptr2)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_read_data (Reading Coor_y)'
      err = cgp_error_exit()
   ENDIF
-  f_ptr = C_LOC(Coor_z(1))
-  err = cgp_coord_read_data(fn,B,Z,Cz,min,max,f_ptr)
+  err = cgp_coord_read_data(fn,B,Z,Cz,min,max,f_ptr3)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_read_data (Reading Coor_z)'
      err = cgp_error_exit()
   ENDIF
-
   t2 = MPI_Wtime()
   xtiming(6) = t2-t1
   
@@ -1106,7 +1105,7 @@ PROGRAM main
   max = count*(comm_rank+1)
 
 #ifdef HAVE_F2008TS_REQUIREMENTS
-  err = cg_goto(fn,B,"Zone_t"//C_NULL_CHAR,Z,"UserDefinedData_t",1_C_INT, END="end"//C_NULL_CHAR) 
+  err = cg_goto(fn,B,"Zone_t"//C_NULL_CHAR,Z,"UserDefinedData_t"//C_NULL_CHAR,1_C_INT, END="end"//C_NULL_CHAR) 
 #else
   CALL cg_goto_f(fn, B, err, "Zone_t",Z,"UserDefinedData_t",1_C_INT,"end") 
 #endif

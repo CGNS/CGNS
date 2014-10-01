@@ -874,7 +874,7 @@ static int readwrite_multi_data_parallel(hid_t fn, size_t count, H5D_rw_multi_t 
 	  return CG_ERROR;
 	}
 
-    /* Create a shape for the data in the file */
+	/* Create a shape for the data in the file */
 	multi_info[k].dset_space_id = H5Dget_space(multi_info[k].dset_id);
 	if (multi_info[k].dset_space_id < 0) {
 	  H5Sclose(multi_info[k].mem_space_id);
@@ -885,7 +885,7 @@ static int readwrite_multi_data_parallel(hid_t fn, size_t count, H5D_rw_multi_t 
 	  return CG_ERROR;
 	}
 
-    /* Select a section of the array in the file */
+	/* Select a section of the array in the file */
 	herr = H5Sselect_hyperslab(multi_info[k].dset_space_id, H5S_SELECT_SET, start,
 				   NULL, dims, NULL);
 	if (herr < 0) {
@@ -1071,12 +1071,11 @@ int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmi
 
 /*---------------------------------------------------------*/
 
-int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F, 
-			       const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...)
+int vcgp_field_multi_write_data(int fn, int B, int Z, int S, int *F, 
+			       const cgsize_t *rmin, const cgsize_t *rmax, int nsets, va_list ap)
 
 {
     int n, m;
-    va_list ap;
     hid_t hid;
     hid_t fid;
     cgns_array *field;
@@ -1089,8 +1088,6 @@ int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
 
     to_HDF_ID(cg->rootid,fid);
 
-    va_start(ap, nsets);
-
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
         return CG_ERROR;
 
@@ -1098,7 +1095,7 @@ int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
 
     for (n = 0; n < nsets; n++) {
       field = cgi_get_field(cg, B, Z, S, F[n]);
-      if (field==0) goto done;
+      if (field==0) goto error;
 
       /* verify that range requested does not exceed range stored */
       for (m = 0; m < field->data_dim; m++) {
@@ -1106,7 +1103,7 @@ int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
             rmax[m] > field->dim_vals[m] ||
             rmin[m] < 1) {
 	  cgi_error("Invalid range of data requested");
-	  goto done;
+	  goto error;
         }
       }
 
@@ -1124,22 +1121,32 @@ int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
 
     return status;
 
- done:
+ error:
     if(multi_info)
       free(multi_info);
     
     return CG_ERROR;
-       
+}
+
+int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F, 
+				const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...)
+{
+  va_list ap;
+  int status;
+  va_start(ap, nsets);
+  status = vcgp_field_multi_write_data(fn, B, Z, S, F, rmin, rmax, nsets, ap);
+  va_end(ap);
+  return status;
 
 }
 
+
 /*---------------------------------------------------------*/
 
-int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
-    const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...)
+int vcgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
+    const cgsize_t *rmin, const cgsize_t *rmax, int nsets, va_list ap)
 {
   int n, m;
-  va_list ap;
   hid_t hid;
   hid_t fid;
   cgns_array *field;
@@ -1152,8 +1159,6 @@ int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
 
   to_HDF_ID(cg->rootid,fid);
 
-  va_start(ap, nsets);
-
   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
     return CG_ERROR;
 
@@ -1162,7 +1167,7 @@ int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
   for (n = 0; n < nsets; n++) {
 
     field = cgi_get_field(cg, B, Z, S, F[n]);
-    if (field==0) goto done;
+    if (field==0) goto error;
 
     /* verify that range requested does not exceed range stored */
     for (m = 0; m < field->data_dim; m++) {
@@ -1170,7 +1175,7 @@ int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
 	  rmax[m] > field->dim_vals[m] ||
 	  rmin[m] < 1) {
 	cgi_error("Invalid range of data requested");
-	goto done;
+	goto error;
       }
     }
     multi_info[n].u.rbuf = va_arg(ap, void *);
@@ -1181,27 +1186,38 @@ int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
   }
 
   status = readwrite_multi_data_parallel(fid, nsets, multi_info,
-			      field->data_dim, rmin, rmax, 0);
+					 field->data_dim, rmin, rmax, 0);
   free(multi_info);
 
   return status;
 
- done:
+ error:
   if(multi_info)
     free(multi_info);
   
   return CG_ERROR;
 }
 
+int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
+    const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...)
+{
+  va_list ap;
+  int status;
+  va_start(ap, nsets);
+  status = vcgp_field_multi_read_data(fn, B, Z, S, F, rmin, rmax, nsets, ap);
+  va_end(ap);
+  return status;
+
+}
+
 /*---------------------------------------------------------*/
 
-int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
-			       const cgsize_t *rmax, int nsets, ...)
+int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
+			       const cgsize_t *rmax, int nsets, va_list ap)
 {
   int n, m, ierr = 0;
   hid_t hid;
   hid_t fid;
-  va_list ap;
   cgns_array *array;
   CGNS_ENUMT(DataType_t) type;
   H5D_rw_multi_t *multi_info;
@@ -1212,21 +1228,19 @@ int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
 
   to_HDF_ID(cg->rootid,fid);
 
-  va_start(ap, nsets);
-
   multi_info = (H5D_rw_multi_t *)malloc(nsets*sizeof(H5D_rw_multi_t));
 
   for (n = 0; n < nsets; n++) {
 
     array = cgi_array_address(CG_MODE_READ, A[n], "dummy", &ierr);
-    if (array == NULL) goto done;
+    if (array == NULL) goto error;
 
     for (m = 0; m < array->data_dim; m++) {
       if (rmin[m] > rmax[m] ||
 	  rmax[m] > array->dim_vals[m] ||
 	  rmin[m] < 1) {
 	cgi_error("Invalid range of data requested");
-	goto done;
+	goto error;
       }
     }
 
@@ -1244,22 +1258,33 @@ int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
 
   return status;
 
- done:
+ error:
     if(multi_info)
       free(multi_info);
     
     return CG_ERROR;
 }
 
+int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
+			       const cgsize_t *rmax, int nsets, ...)
+{
+  va_list ap;
+  int status;
+  va_start(ap, nsets);
+  status = vcgp_array_multi_write_data(fn, A, rmin, rmax, nsets, ap);
+  va_end(ap);
+  return status;
+
+}
+
 /*---------------------------------------------------------*/
 
-int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
-			      const cgsize_t *rmax, int nsets, ...)
+int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
+			      const cgsize_t *rmax, int nsets, va_list ap)
 {
   int n, m, ierr = 0;
   hid_t hid;
   hid_t fid;
-  va_list ap;
   cgns_array *array;
   CGNS_ENUMT(DataType_t) type;
   H5D_rw_multi_t *multi_info;
@@ -1270,21 +1295,19 @@ int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
 
   to_HDF_ID(cg->rootid,fid);
 
-  va_start(ap, nsets);
-
   multi_info = (H5D_rw_multi_t *)malloc(nsets*sizeof(H5D_rw_multi_t));
 
   for (n = 0; n < nsets; n++) {
 
     array = cgi_array_address(CG_MODE_READ, A[n], "dummy", &ierr);
-    if (array == NULL) goto done;
+    if (array == NULL) goto error;
     
     for (m = 0; m < array->data_dim; m++) {
       if (rmin[m] > rmax[m] ||
 	  rmax[m] > array->dim_vals[m] ||
 	  rmin[m] < 1) {
 	cgi_error("Invalid range of data requested");
-	goto done;
+	goto error;
       }
     }
     multi_info[n].u.rbuf = va_arg(ap, void *);
@@ -1300,11 +1323,23 @@ int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
 
   return status;
 
- done:
+ error:
   if(multi_info)
     free(multi_info);
   
   return CG_ERROR;
+}
+
+int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
+			      const cgsize_t *rmax, int nsets, ...)
+{
+  va_list ap;
+  int status;
+  va_start(ap, nsets);
+  status = vcgp_array_multi_read_data(fn, A, rmin, rmax, nsets, ap);
+  va_end(ap);
+  return status;
+
 }
 
 #endif
