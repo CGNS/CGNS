@@ -3923,11 +3923,30 @@ CGNSDLL void FMNAME(cgp_field_multi_write_data_f, CGP_FIELD_MULTI_WRITE_DATA_F) 
 	cgsize_t *F, cgsize_t *rmin, cgsize_t *rmax, cgsize_t *ier, cgsize_t *nsets, ...)
 {
   va_list ap; /* argument list passed from the API call */
-  
+  int *F_c;
+  int n;
+
   va_start(ap, nsets);
 
-  *ier = vcgp_field_multi_write_data((int)*fn, (int)*B, (int)*Z, (int)*S,
-				    F, rmin, rmax, (int)*nsets, ap);
+  if(sizeof(cgsize_t)!=sizeof(int)) {
+    /* type cast F from cgsize_t to an int */
+    if ((F_c = (int *)malloc(*nsets*sizeof(int)))==NULL) {
+      cgi_error("Error allocating memory...");
+      *ier = 1;
+      return;
+    }
+    for (n = 0; n < *nsets; n++) {
+      F_c[n] = (int)F[n]; 
+    }
+    *ier = vcgp_field_multi_write_data((int)*fn, (int)*B, (int)*Z, (int)*S,
+				       F_c, rmin, rmax, (int)*nsets, ap);
+    free(F_c);
+  } else {
+    *ier = vcgp_field_multi_write_data((int)*fn, (int)*B, (int)*Z, (int)*S,
+				       F, rmin, rmax, (int)*nsets, ap);
+  }
+  
+
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -3939,11 +3958,28 @@ CGNSDLL void FMNAME(cgp_field_multi_read_data_f, CGP_FIELD_MULTI_READ_DATA_F) (
 	cgsize_t *F, cgsize_t *rmin, cgsize_t *rmax, cgsize_t *ier, cgsize_t *nsets, ...)
 {
   va_list ap; /* argument list passed from the API call */
+  int *F_c;
+  int n;
   
   va_start(ap, nsets);
 
-  *ier = vcgp_field_multi_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
+  if(sizeof(cgsize_t)!=sizeof(int)) {
+    /* type cast F from cgsize_t to an int */
+    if ((F_c = (int *)malloc(*nsets*sizeof(int)))==NULL) {
+      cgi_error("Error allocating memory...");
+      *ier = 1;
+      return;
+    }
+    for (n = 0; n < *nsets; n++) {
+      F_c[n] = (int)F[n]; 
+    }
+    *ier = vcgp_field_multi_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
+				    F_c, rmin, rmax, (int)*nsets, ap);
+  } else {
+    *ier = vcgp_field_multi_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
 				    F, rmin, rmax, (int)*nsets, ap);
+  }
+    
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -3956,10 +3992,25 @@ CGNSDLL void FMNAME(cgp_array_multi_write_data_f, CGP_ARRAY_MULTI_WRITE_DATA_F) 
 {  
 
   va_list ap; /* argument list passed from the API call */
+  int *A_c;
+  int n;
   
   va_start(ap, nsets);
   
-  *ier = vcgp_array_multi_write_data((int)*fn, A, rmin, rmax, (int)*nsets, ap);
+  if(sizeof(cgsize_t)!=sizeof(int)) {
+    /* type cast F from cgsize_t to an int */
+    if ((A_c = (int *)malloc(*nsets*sizeof(int)))==NULL) {
+      cgi_error("Error allocating memory...");
+      *ier = 1;
+      return;
+    }
+    for (n = 0; n < *nsets; n++) {
+      A_c[n] = (int)A[n]; 
+    }
+    *ier = vcgp_array_multi_write_data((int)*fn, A_c, rmin, rmax, (int)*nsets, ap);
+  }else {
+    *ier = vcgp_array_multi_write_data((int)*fn, A, rmin, rmax, (int)*nsets, ap);
+  }
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -3972,10 +4023,26 @@ CGNSDLL void FMNAME(cgp_array_multi_read_data_f, CGP_ARRAY_MULTI_READ_DATA_F) (
 {  
 
   va_list ap; /* argument list passed from the API call */
+  int *A_c;
+  int n;
   
-  va_start(ap, nsets);
   
-  *ier = vcgp_array_multi_read_data((int)*fn, A, rmin, rmax, (int)*nsets, ap);
+  va_start(ap, nsets); 
+  if(sizeof(cgsize_t)!=sizeof(int)) {
+    /* type cast F from cgsize_t to an int */
+    if ((A_c = (int *)malloc(*nsets*sizeof(int)))==NULL) {
+      cgi_error("Error allocating memory...");
+      *ier = 1;
+      return;
+    }
+    for (n = 0; n < *nsets; n++) {
+      A_c[n] = (int)A[n]; 
+    }
+    *ier = vcgp_array_multi_read_data((int)*fn, A_c, rmin, rmax, (int)*nsets, ap);
+  }else {
+    *ier = vcgp_array_multi_read_data((int)*fn, A, rmin, rmax, (int)*nsets, ap);
+  }
+  
 }
 
 #endif /*BUILD_PARALLEL*/
