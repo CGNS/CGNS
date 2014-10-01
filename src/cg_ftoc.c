@@ -3879,6 +3879,8 @@ CGNSDLL void FMNAME(cgp_error_exit_f, CGP_ERROR_EXIT_F) ()
     cgp_error_exit();
 }
 
+#ifdef HDF5_HAVE_MULTI_DATASETS
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *       cgp_coord_multi_read_data Function                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -4044,6 +4046,6 @@ CGNSDLL void FMNAME(cgp_array_multi_read_data_f, CGP_ARRAY_MULTI_READ_DATA_F) (
   }
   
 }
-
+#endif /*HDF5_HAVE_MULTI_DATASETS*/
 #endif /*BUILD_PARALLEL*/
 
