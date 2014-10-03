@@ -7763,10 +7763,9 @@ int cg_1to1_average_write(int file_number, int B, int Z, int I,
  *           Go - To Function
 \*****************************************************************************/
 
-int cg_goto(int file_number, int B, ...)
+int vcg_goto(int file_number, int B, va_list ap)
 {
     int n;
-    va_list ap;
     int index[CG_MAX_GOTO_DEPTH];
     char *label[CG_MAX_GOTO_DEPTH];
 
@@ -7777,8 +7776,6 @@ int cg_goto(int file_number, int B, ...)
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
 
-    va_start(ap, B);
-
      /* read variable argument list */
     for (n = 0; n < CG_MAX_GOTO_DEPTH; n++) {
         label[n] = va_arg(ap,char *);
@@ -7786,9 +7783,17 @@ int cg_goto(int file_number, int B, ...)
         if (strcmp("end",label[n])==0 || strcmp("END",label[n])==0) break;
         index[n] = va_arg(ap, int);
     }
-    va_end(ap);
-
     return cgi_set_posit(file_number, B, n, index, label);
+}
+
+int cg_goto(int file_number, int B, ...)
+{
+    va_list ap;
+    int status;
+    va_start(ap, B);
+    status = vcg_goto(file_number, B, ap);
+    va_end(ap);
+    return status;
 }
 
 /*-----------------------------------------------------------------------
@@ -7833,12 +7838,11 @@ int cg_goto_f08(int file_number, int B, ...)
 
 /*-----------------------------------------------------------------------*/
 
-int cg_gorel(int file_number, ...)
+int vcg_gorel(int file_number, va_list ap)
 {
     int n = 0;
     int index[CG_MAX_GOTO_DEPTH];
     char *label[CG_MAX_GOTO_DEPTH];
-    va_list ap;
 
     if (posit == 0) {
         cgi_error ("position not set with cg_goto");
@@ -7849,16 +7853,24 @@ int cg_gorel(int file_number, ...)
         return CG_ERROR;
     }
 
-    va_start (ap, file_number);
     for (n = 0; n < CG_MAX_GOTO_DEPTH; n++) {
         label[n] = va_arg(ap, char *);
         if (label[n] == NULL || label[n][0] == 0) break;
         if (strcmp("end",label[n])==0 || strcmp("END",label[n])==0) break;
         index[n] = va_arg(ap, int);
     }
-    va_end(ap);
 
     return cgi_update_posit(n, index, label);
+}
+
+int cg_gorel(int file_number, ...)
+{
+    va_list ap;
+    int status;
+    va_start (ap, file_number);
+    status = vcg_gorel(file_number, ap);
+    va_end(ap);
+    return status;
 }
 
 /*-----------------------------------------------------------------------

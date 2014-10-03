@@ -1,4 +1,3 @@
-#include "cgnstypes_f.h"
 ! @file benchmark_hdf5_f90.F90
 ! @author M. Scot Breitenfeld <brtnfld@hdfgroup.org>
 ! @version 0.1
@@ -54,18 +53,19 @@ END MODULE testing_functions
 PROGRAM benchmark_hdf5_f90 
 
   USE mpi
+  USE ISO_C_BINDING
   USE testing_functions
   IMPLICIT NONE
 
 #ifdef WINNT
   INCLUDE 'cgnswin_f.h'
 #endif
-  INCLUDE 'cgnslib_f.h'
+#include "cgnslib_f03.h"
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
 
   ! Use powers of 2
-  cgsize_t, PARAMETER :: Nelem = 1024 ! 33554432
+  cgsize_t, PARAMETER :: Nelem = 32 ! 33554432
   cgsize_t, PARAMETER :: NodePerElem = 6
 
   cgsize_t :: Nnodes
@@ -150,7 +150,7 @@ PROGRAM benchmark_hdf5_f90
 
   t0 = MPI_Wtime()
 
-  CALL cgp_pio_mode_f(piomode_i, comm_info, ierr)
+!  CALL cgp_pio_mode_f(piomode_i, comm_info, ierr)
 
   Nnodes = Nelem*NodePerElem
 

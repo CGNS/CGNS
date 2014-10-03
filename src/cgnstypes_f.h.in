@@ -30,21 +30,39 @@
 #define CGNSTYPES_F_H
 
 #define CG_BUILD_64BIT @BUILD64BIT@
+#define HAVE_F2003_REQUIREMENTS @HAVE_F2003_REQUIREMENTS@
+#define HAVE_F2008TS_REQUIREMENTS @HAVE_F2008TS_REQUIREMENTS@
 
 #if CG_BUILD_64BIT
-# define cgsize_t integer*8
-# define CGSIZE_T integer*8
+#  ifdef HAVE_F2003_REQUIREMENTS
+#   define cgsize_t INTEGER(C_LONG)
+#   define CGSIZE_T INTEGER(C_LONG)
+#  else
+#   define cgsize_t integer*8
+#   define CGSIZE_T integer*8
+#  endif
 #else
-# define cgsize_t integer*4
-# define CGSIZE_T integer*4
+#  ifdef HAVE_F2003_REQUIREMENTS
+#   define cgsize_t INTEGER(C_INT)
+#   define CGSIZE_T INTEGER(C_INT)
+#  else
+#   define cgsize_t integer*4
+#   define CGSIZE_T integer*4
+#  endif
 #endif
 
-#define cglong_t integer*8
-#define CGLONG_T integer*8
-#define cgid_t   real*8
-#define CGID_T   real*8
-
+#ifdef HAVE_F2003_REQUIREMENTS
+#  define cglong_t INTEGER(C_LONG)
+#  define CGLONG_T INTEGER(C_LONG)
+#  define cgid_t   REAL(C_DOUBLE)
+#  define CGID_T   REAL(C_DOUBLE)
+#else
+#  define cglong_t integer*8
+#  define CGLONG_T integer*8
+#  define cgid_t   real*8
+#  define CGID_T   real*8
 #endif
+
 
 !#define HDF5_HAVE_MULTI_DATASETS
 
@@ -62,3 +80,5 @@
 !/* # endif */
 !/* #endif */
 
+
+#endif

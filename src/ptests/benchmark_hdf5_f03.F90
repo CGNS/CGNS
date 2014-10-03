@@ -1,7 +1,5 @@
-#define HAVE_F2003_REQUIREMENTS @HAVE_F2003_REQUIREMENTS@
-#define HAVE_F2008TS_REQUIREMENTS @HAVE_F2008TS_REQUIREMENTS@
-#include "cgnstypes_f.h"
-! @file benchmark_hdf5.F90
+
+! @file benchmark_hdf5_f03.F90
 ! @author M. Scot Breitenfeld <brtnfld@hdfgroup.org>
 ! @version 0.1
 !
@@ -13,14 +11,16 @@
 !
 !
 
-! Only compile this code if the Fortran compiler is Fortran 2003 compliant
-#ifdef HAVE_F2003_REQUIREMENTS
 MODULE cgns_c_binding
 
 !
 ! Contains needed interfaces for calling the C functions
 ! 
+
+  USE ISO_C_BINDING
   IMPLICIT NONE
+
+#include "cgnslib_f03.h"
 
   INTERFACE
      INTEGER(C_INT) FUNCTION cgp_open(filename, mode, fn) BIND(C, name='cgp_open')
@@ -401,8 +401,6 @@ PROGRAM main
   USE testing_functions
   IMPLICIT NONE
 
-  INCLUDE 'cgnslib_f.h'
-
   INTEGER, PARAMETER :: dp = KIND(1.d0)
   CGSIZE_T, PARAMETER :: Nelem = 1024 !33554432 ! Use multiples of number of cores per node
   CGSIZE_T, PARAMETER :: NodePerElem = 6
@@ -490,7 +488,7 @@ PROGRAM main
 
 !!$  err = cgp_pio_mode(piomode(piomode_i)) ! default
 
-  CALL cgp_pio_mode_f(piomode_i-1, comm_info, ierr)
+!  CALL cgp_pio_mode_f(piomode_i-1, comm_info, ierr)
   
   Nnodes = Nelem*NodePerElem
 
@@ -503,11 +501,16 @@ PROGRAM main
 ! ======================================
 
   t1 = MPI_Wtime()
+  PRINT*,CG_MODE_WRITE
   err = cgp_open("benchmark_"//ichr6//".cgns"//C_NULL_CHAR, CG_MODE_WRITE, fn)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_open'
      err = cgp_error_exit()
   ENDIF
+  CALL cgp_close_f(fn, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+  CALL MPI_FINALIZE(ierr)
+  stop
   t2 = MPI_Wtime()
   xtiming(10) = t2-t1
 
@@ -540,7 +543,6 @@ PROGRAM main
      PRINT*,'*FAILED* cgp_queue_set'
      err = cgp_error_exit()
   ENDIF
-
 ! ======================================
 ! == (A) WRITE THE NODAL COORDINATES  ==
 ! ======================================
@@ -624,7 +626,7 @@ PROGRAM main
   start = 1
   end = nijk(2)
 
-  err = cgp_section_write(fn,B,Z,"Elements"//C_NULL_CHAR,PENTA_6,start,end,0_C_INT,S)
+  err = cgp_section_write(fn,B,Z,"Elements"//C_NULL_CHAR, PENTA_6,start,end,0_C_INT,S)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_section_write'
      err = cgp_error_exit()
@@ -1183,15 +1185,6 @@ PROGRAM main
   CALL MPI_FINALIZE(mpi_err)
 
 END PROGRAM main
-
-! A valid F2003 compilers was not found
-#else 
-   PROGRAM main
-     IMPLICIT NONE
-     PRINT*,"**      FORTRAN 2003 STANDARD COMPILER NOT FOUND      **"
-     PRINT*," benchmark_hdf5_f03 -- placeholder program used instead"
-   END PROGRAM main
-#endif
 
 
         

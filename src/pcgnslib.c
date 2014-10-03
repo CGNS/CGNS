@@ -404,7 +404,9 @@ int cgp_open(const char *filename, int mode, int *fn)
 
     ierr = cg_set_file_type(CG_FILE_PHDF5);
     if (ierr) return ierr;
+    printf(" %d\n",mode);
     ierr = cg_open(filename, mode, fn);
+    printf(" %d\n",*fn);
     cgns_filetype = old_type;
     return ierr;
 }

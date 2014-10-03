@@ -97,14 +97,14 @@ thesis_benchmark$(EXE) : thesis_benchmark.c $(CGNSLIB)
 
 #----------
 
-ftest$(EXE) : ftest.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ ftest.F $(LDLIBS) $(FLIBS)
+ftest$(EXE) : ftest.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ ftest.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
-fexample$(EXE) : fexample.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ fexample.F $(LDLIBS) $(FLIBS)
+fexample$(EXE) : fexample.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ fexample.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

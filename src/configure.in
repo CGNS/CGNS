@@ -1490,7 +1490,7 @@ AC_SUBST(TCL_LIBRARY_SPEC)
 AC_SUBST(TK_LIBRARY_SPEC)
 AC_SUBST(LIBRARY_PATH_SPEC)
 
-AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnslib_f.h cgnsconfig.h Makefile \
+AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnslib_f.h cgnslib_f03.h cgnsconfig.h Makefile \
   make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile \
   cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig)
 

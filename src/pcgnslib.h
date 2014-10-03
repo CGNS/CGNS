@@ -36,7 +36,7 @@
 extern "C" {
 #endif
 
-#define HDF5_HAVE_MULTI_DATASETS
+/*#define HDF5_HAVE_MULTI_DATASETS*/
 
 /* Determine if hdf5 has multi-dataset read/write capabilities;
  * introduced in 1.8.14.

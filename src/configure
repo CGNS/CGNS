@@ -4206,7 +4206,7 @@ done
 ac_given_srcdir=$srcdir
 ac_given_INSTALL="$INSTALL"
 
-trap 'rm -fr `echo "cgnstypes.h cgnstypes_f.h cgnslib_f.h cgnsconfig.h Makefile \
+trap 'rm -fr `echo "cgnstypes.h cgnstypes_f.h cgnslib_f.h cgnslib_f03.h cgnsconfig.h Makefile \
   make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile \
   cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
@@ -4374,7 +4374,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"cgnstypes.h cgnstypes_f.h cgnslib_f.h cgnsconfig.h Makefile \
+CONFIG_FILES=\${CONFIG_FILES-"cgnstypes.h cgnstypes_f.h cgnslib_f.h cgnslib_f03.h cgnsconfig.h Makefile \
   make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile \
   cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig"}
 EOF
