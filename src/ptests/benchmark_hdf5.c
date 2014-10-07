@@ -213,7 +213,7 @@ int main(int argc, char* argv[]) {
   }
 
   t1 = MPI_Wtime();
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
   Cvec[0] = Cx;
   Cvec[1] = Cy;
   Cvec[2] = Cz; 
@@ -332,7 +332,7 @@ int main(int argc, char* argv[]) {
   t1 = MPI_Wtime();
 
 
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
 
   Fvec[0] = Fx;
   Fvec[1] = Fy;
@@ -423,7 +423,7 @@ int main(int argc, char* argv[]) {
 #endif
 
   t1 = MPI_Wtime();
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
   Avec[0] = Ai;
   Avec[1] = Ar;
   if(cgp_array_multi_write_data(fn, Avec,&min,&max, 2, Array_i, Array_r) != CG_OK) {
@@ -543,7 +543,7 @@ int main(int argc, char* argv[]) {
   max = count*(comm_rank+1);
 
   t1 = MPI_Wtime();
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
   Cvec[0] = Cx;
   Cvec[1] = Cy;
   Cvec[2] = Cz;
@@ -637,7 +637,7 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
 
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
 
   Fvec[0] = Fx;
   Fvec[1] = Fy;
@@ -704,7 +704,7 @@ int main(int argc, char* argv[]) {
   }
 
   t1 = MPI_Wtime();
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
 
   Avec[0] = Ar;
   Avec[1] = Ai;

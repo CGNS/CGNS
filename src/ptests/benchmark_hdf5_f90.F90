@@ -237,7 +237,7 @@ PROGRAM benchmark_hdf5_f90
   ENDIF
 
   t1 = MPI_Wtime()
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
   Cvec(1:3) = (/Cx,Cy,Cz/)
   CALL cgp_coord_multi_write_data_f(fn,B,Z,Cvec,min,max,Coor_x,Coor_y,Coor_z,err)
   IF(err.NE.CG_OK)THEN
@@ -356,7 +356,7 @@ PROGRAM benchmark_hdf5_f90
   ENDIF
 
   t1 = MPI_Wtime()
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
   Fvec(1:3) = (/Fx,Fy,Fz/)
   CALL cgp_field_multi_write_data_f(fn,B,Z,S,Fvec,min,max,err,3,Data_Fx,Data_Fy,Data_Fz)  
   IF(err.NE.CG_OK)THEN
@@ -450,7 +450,7 @@ PROGRAM benchmark_hdf5_f90
 
   t1 = MPI_Wtime()
 
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
   Avec = (/Ai,Ar/)
   CALL cgp_array_multi_write_data_f(fn,Avec,min,max,err,2,Array_i,Array_r)
   IF(err.NE.CG_OK)THEN
@@ -568,7 +568,7 @@ PROGRAM benchmark_hdf5_f90
   max = count*(comm_rank+1)
 
   t1 = MPI_Wtime()
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
   Cvec(1:3) = (/Cx,Cy,Cz/)
   CALL cgp_coord_multi_read_data_f(fn,B,Z,Cvec,min,max,Coor_x,Coor_y,Coor_z,err)
   IF(err.NE.CG_OK)THEN
@@ -664,7 +664,7 @@ PROGRAM benchmark_hdf5_f90
   ENDIF
 
   t1 = MPI_Wtime()
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
   Fvec(1:3) = (/Fx,Fy,Fz/)
   CALL cgp_field_multi_read_data_f(fn,B,Z,S,Fvec,min,max,err,3,Data_Fx,Data_Fy,Data_Fz)  
   IF(err.NE.CG_OK)THEN
@@ -732,7 +732,7 @@ PROGRAM benchmark_hdf5_f90
   ENDIF
 
   t1 = MPI_Wtime()
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
   Avec = (/Ai,Ar/)
   CALL cgp_array_multi_read_data_f(fn,Avec,min,max,err,2,Array_i,Array_r)
   IF(err.NE.CG_OK)THEN

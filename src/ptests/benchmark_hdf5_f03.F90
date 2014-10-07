@@ -10,7 +10,6 @@
 ! Fortran2003 Benchmarking program for pcgns library
 !
 !
-
 MODULE cgns_c_binding
 
 !
@@ -280,8 +279,7 @@ MODULE cgns_c_binding
      END FUNCTION cg_user_data_write
   END INTERFACE
 
-#ifdef HAVE_F2008TS_REQUIREMENTS
-
+#if HAVE_F2008TS_REQUIREMENTS
   ! THE FOLLOWING CODE ONLY WORKS FOR COMPILERS HAVING F2008 STANDARD EXTENSION:
   ! TS 29113 Further Interoperability of FORTRAN with C WG5/N1942
 
@@ -761,7 +759,7 @@ PROGRAM main
      Array_i(k) = comm_rank*count*NodePerElem + k
   ENDDO
 
-#ifdef HAVE_F2008TS_REQUIREMENTS
+#if HAVE_F2008TS_REQUIREMENTS
   err = cg_goto(fn,B,"Zone 1"//C_NULL_CHAR,0_C_INT,END="end"//C_NULL_CHAR) 
 #else
   CALL cg_goto_f(fn, B, err, "Zone 1", 0_C_INT, 'end')
@@ -775,7 +773,7 @@ PROGRAM main
      PRINT*,'*FAILED* cg_user_data_write'
      err = cgp_error_exit()
   ENDIF
-#ifdef HAVE_F2008TS_REQUIREMENTS
+#if HAVE_F2008TS_REQUIREMENTS
   err = cg_gorel(fn, "User Data"//C_NULL_CHAR, 0_C_INT, end="end"//C_NULL_CHAR)
 #else
   CALL cg_gorel_f(fn,err,'User Data',0_C_INT,'end')
@@ -1101,7 +1099,7 @@ PROGRAM main
   min = count*comm_rank+1
   max = count*(comm_rank+1)
 
-#ifdef HAVE_F2008TS_REQUIREMENTS
+#if HAVE_F2008TS_REQUIREMENTS
   err = cg_goto(fn,B,"Zone_t"//C_NULL_CHAR,Z,"UserDefinedData_t"//C_NULL_CHAR,1_C_INT, END="end"//C_NULL_CHAR) 
 #else
   CALL cg_goto_f(fn, B, err, "Zone_t",Z,"UserDefinedData_t",1_C_INT,"end") 

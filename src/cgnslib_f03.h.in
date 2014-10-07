@@ -780,7 +780,7 @@
         END ENUM 
 #else
         integer@CGFSIZET@ AverageAll, AverageCircumferential
-        integer@CGFSIZET@ AverageRadialAverageI, AverageJ, AverageK
+        integer@CGFSIZET@ AverageRadial, AverageI, AverageJ, AverageK
         parameter (AverageAll = 2)
         parameter (AverageCircumferential = 3)
         parameter (AverageRadial = 4)
