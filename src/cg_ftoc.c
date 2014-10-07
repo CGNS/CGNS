@@ -2500,7 +2500,7 @@ CGNSDLL void FMNAME(cg_goto_f, CG_GOTO_F)(cgint_f *fn, cgint_f *B, cgint_f *ier,
      /* initialize ap to the last parameter before the variable argument list */
      /* Note:  On HP, print statements btw va_start and va_end create major problems */
 
-    va_start(ap, (int*)ier);
+    va_start(ap, ier);
 
      /* read arguments */
     for (n = 0; n < CG_MAX_GOTO_DEPTH; n++)  {
@@ -2579,7 +2579,7 @@ CGNSDLL void FMNAME(cg_gorel_f, CG_GOREL_F)(cgint_f *fn, cgint_f *ier, ...)
      /* initialize ap to the last parameter before the variable argument list */
      /* Note:  On HP, print statements btw va_start and va_end create major problems */
 
-    va_start(ap, (int*)ier);
+    va_start(ap, ier);
 
      /* read arguments */
     for (n = 0; n < CG_MAX_GOTO_DEPTH; n++)  {
