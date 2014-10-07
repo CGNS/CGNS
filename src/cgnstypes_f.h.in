@@ -30,11 +30,11 @@
 #define CGNSTYPES_F_H
 
 #define CG_BUILD_64BIT @BUILD64BIT@
-#define HAVE_F2003_REQUIREMENTS @HAVE_F2003_REQUIREMENTS@
-#define HAVE_F2008TS_REQUIREMENTS @HAVE_F2008TS_REQUIREMENTS@
+#define HAVE_FORTRAN_2003 @HAVE_FORTRAN_2003@
+#define HAVE_FORTRAN_2008TS @HAVE_FORTRAN_2008TS@
 
 #if CG_BUILD_64BIT
-#  ifdef HAVE_F2003_REQUIREMENTS
+#  ifdef HAVE_FORTRAN_2003
 #   define cgsize_t INTEGER(C_LONG_LONG)
 #   define CGSIZE_T INTEGER(C_LONG_LONG)
 #  else
@@ -42,7 +42,7 @@
 #   define CGSIZE_T integer*8
 #  endif
 #else
-#  ifdef HAVE_F2003_REQUIREMENTS
+#  ifdef HAVE_FORTRAN_2003
 #   define cgsize_t INTEGER(C_INT)
 #   define CGSIZE_T INTEGER(C_INT)
 #  else
@@ -51,7 +51,7 @@
 #  endif
 #endif
 
-#ifdef HAVE_F2003_REQUIREMENTS
+#ifdef HAVE_FORTRAN_2003
 #  define cglong_t INTEGER(C_LONG)
 #  define CGLONG_T INTEGER(C_LONG)
 #  define cgid_t   REAL(C_DOUBLE)

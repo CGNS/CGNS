@@ -28,7 +28,7 @@
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      file types (found in cgnslib.h)                                *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
 	INTEGER(C_INT), PARAMETER :: CG_FILE_NONE = 0
 	INTEGER(C_INT), PARAMETER :: CG_FILE_ADF  = 1
 	INTEGER(C_INT), PARAMETER :: CG_FILE_HDF5 = 2
@@ -45,7 +45,7 @@
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      some error code (found in cgnslib.h)                           *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
 	INTEGER(C_INT), PARAMETER :: CG_OK              = 0
 	INTEGER(C_INT), PARAMETER :: CG_ERROR           = 1
 	INTEGER(C_INT), PARAMETER :: CG_NODE_NOT_FOUND  = 2
@@ -70,7 +70,7 @@
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Parallel CGNS parameters                                       *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         INTEGER(C_INT), PARAMETER :: CGP_INDEPENDENT = 0
 	INTEGER(C_INT), PARAMETER :: CGP_COLLECTIVE  = 1	
 #else
@@ -82,7 +82,7 @@
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Dimensional Units (found in cgnslib.h)                         *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
 	INTEGER(C_INT), PARAMETER :: CG_Null = 0
 	INTEGER(C_INT), PARAMETER :: CG_UserDefined = 1	
 #else
@@ -96,7 +96,7 @@
         parameter (UserDefined = 1)
 
         CHARACTER*32 MassUnitsName(0:5)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
 	   ENUMERATOR :: MassUnitsNull = CG_Null
   	   ENUMERATOR :: MassUnitsUserDefined = CG_UserDefined
@@ -113,7 +113,7 @@
         parameter (PoundMass = 5)
 #endif
         CHARACTER*32 LengthUnitsName(0:6)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
 	ENUM, BIND(C)
   	   ENUMERATOR :: LengthUnitsNull         = CG_Null
            ENUMERATOR :: LengthUnitsUserDefined  = CG_UserDefined
@@ -134,7 +134,7 @@
 #endif
 
         CHARACTER*32 TimeUnitsName(0:2)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
 	ENUM, BIND(C)
   	   ENUMERATOR :: TimeUnitsNull		= CG_Null
   	   ENUMERATOR :: TimeUnitsUserDefined	= CG_UserDefined
@@ -145,7 +145,7 @@
         parameter (Second = 2)
 #endif
         CHARACTER*32 TemperatureUnitsName(0:5)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
   	   ENUMERATOR :: TemperatureUnitsNull		= CG_Null
   	   ENUMERATOR :: TemperatureUnitsUserDefined	= CG_UserDefined
@@ -163,7 +163,7 @@
 #endif
 
         CHARACTER*32 AngleUnitsName(0:3)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
   	   ENUMERATOR :: AngleUnitsNull 	= CG_Null
   	   ENUMERATOR :: AngleUnitsUserDefined	= CG_UserDefined
@@ -177,7 +177,7 @@
 #endif
 
         CHARACTER*32 ElectricCurrentUnitsName(0:6)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
 	  ENUMERATOR :: ElectricCurrentUnitsNull 	= CG_Null
   	  ENUMERATOR :: ElectricCurrentUnitsUserDefined = CG_UserDefined
@@ -196,7 +196,7 @@
         parameter (auCurrent  = 6)
 #endif
         CHARACTER*32 SubstanceAmountUnitsName(0:5)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
   	   ENUMERATOR :: SubstanceAmountUnitsNull	= CG_Null
   	   ENUMERATOR :: SubstanceAmountUnitsUserDefined= CG_UserDefined
@@ -214,7 +214,7 @@
         parameter (StandardCubicMeter = 5)
 #endif
         CHARACTER*32 LuminousIntensityUnitsName(0:6)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
   	   ENUMERATOR :: LuminousIntensityUnitsNull	  = CG_Null
   	   ENUMERATOR ::LuminousIntensityUnitsUserDefined=CG_UserDefined
@@ -238,7 +238,7 @@
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
         CHARACTER*32 DataClassName(0:6)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
      	   ENUMERATOR :: DataClassNull			= CG_Null
      	   ENUMERATOR :: DataClassUserDefined		= CG_UserDefined
@@ -263,7 +263,7 @@
 !*      Grid Location                                                  *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
         CHARACTER*32 GridLocationName(0:8)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
      	   ENUMERATOR :: GridLocationNull	= CG_Null
      	   ENUMERATOR :: GridLocationUserDefined= CG_UserDefined
@@ -292,7 +292,7 @@
 !*      Grid Connectivity Types                                        *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
         CHARACTER*32 GridConnectivityTypeName(0:4)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
   	   ENUMERATOR :: GridConnectivityTypeNul	= CG_Null
   	   ENUMERATOR :: GridConnectivityTypeUserDefined= CG_UserDefined
@@ -311,7 +311,7 @@
 !*      Point Set Types                                                *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
         CHARACTER*32 PointSetTypeName(0:8)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
      	   ENUMERATOR :: PointSetTypeNull 	= CG_Null
      	   ENUMERATOR :: PointSetTypeUserDefined= CG_UserDefined
@@ -340,7 +340,7 @@
 !*      Governing Equations and Physical Models Types                  *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
         CHARACTER*32 GoverningEquationsTypeName(0:7)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
      	   ENUMERATOR :: GoverningEquationsNull		= CG_Null
      	   ENUMERATOR :: GoverningEquationsUserDefined 	= CG_UserDefined
@@ -395,7 +395,7 @@
 !**                             Chemistry_LinRessler
 
         CHARACTER*32 ModelTypeName(0:35)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
   	   ENUMERATOR :: ModelTypeNull 			= CG_Null
   	   ENUMERATOR :: ModelTypeUserDefined 		= CG_UserDefined
@@ -498,7 +498,7 @@
 !*      Boundary Condition Types                                       *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
         CHARACTER*32 BCTypeName(0:25)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
      	   ENUMERATOR :: BCTypeNull 		= CG_Null
      	   ENUMERATOR :: BCTypeUserDefined 	= CG_UserDefined
@@ -570,7 +570,7 @@
 !*      Data types                                                     *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
         CHARACTER*32 DataTypeName(0:6)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
 	   ENUMERATOR :: DataTypeNull,DataTypeUserDefined
            ENUMERATOR :: Integer,RealSingle
@@ -590,7 +590,7 @@
 !*      BCData_t types                                                 *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
         CHARACTER*32 BCDataTypeName(0:3)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
   	   ENUMERATOR :: BCDataTypeNull       	= CG_Null
   	   ENUMERATOR :: BCDataTypeUserDefined	= CG_UserDefined
@@ -608,7 +608,7 @@
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
         CHARACTER*32 ElementTypeName(0:39)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
 	   ENUMERATOR :: ElementTypeNull, ElementTypeUserDefined ! 0, 1,
 	   ENUMERATOR :: NODE, BAR_2, BAR_3                      ! 2, 3, 4,
@@ -678,7 +678,7 @@
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
         
         CHARACTER*32 ZoneTypeName(0:3)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
 	   ENUMERATOR :: ZoneTypeNull, ZoneTypeUserDefined
            ENUMERATOR :: Structured, Unstructured
@@ -695,7 +695,7 @@
 !*      Rigid Grid Motion types                                        *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
         CHARACTER*32 RigidGridMotionTypeName(0:3)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
 	   ENUMERATOR :: RigidGridMotionTypeNull
 	   ENUMERATOR :: RigidGridMotionTypeUserDefined
@@ -711,7 +711,7 @@
 !*      Arbitrary Grid Motion types                                    *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
         CHARACTER*32 ArbitraryGridMotionTypeName(0:3)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
 	   ENUMERATOR :: ArbitraryGridMotionTypeNull
            ENUMERATOR :: ArbitraryGridMotionTypeUserDefined
@@ -727,7 +727,7 @@
 !*      Simulation type                                                *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
         CHARACTER*32 SimulationTypeName(0:3)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
 	   ENUMERATOR :: SimulationTypeNull, SimulationTypeUserDefined
 	   ENUMERATOR :: TimeAccurate, NonTimeAccurate
@@ -743,7 +743,7 @@
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
         CHARACTER*32 WallFunctionTypeName(0:2)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
 	   ENUMERATOR:: WallFunctionTypeNull,WallFunctionTypeUserDefined
 	   ENUMERATOR:: Generic
@@ -754,7 +754,7 @@
 #endif
 
         CHARACTER*32 AreaTypeName(0:3)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
 	   ENUMERATOR :: AreaTypeNull, AreaTypeUserDefined
 	   ENUMERATOR :: BleedArea, CaptureArea
@@ -770,7 +770,7 @@
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
         CHARACTER*32 AverageInterfaceTypeName(0:7)
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_FORTRAN_2003
         ENUM, BIND(C)
 	   ENUMERATOR :: AverageInterfaceTypeNull
 	   ENUMERATOR :: AverageInterfaceTypeUserDefined
