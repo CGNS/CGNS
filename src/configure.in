@@ -487,7 +487,7 @@ EOF
  ## TS 29113 Further Interoperability of Fortran with C WG5/N1942
  ## Compilers status:
  ##  IMPLEMENTED      -- gnu (4.7,4.8,4.9), intel, portland group
- ##  NOT IMPLEMENTED  -- xlf 
+ ##                      xlf 15.1.0
 
   HAVE_FORTRAN_2008TS=0	
   HAVE_F2008TS_REQUIREMENTS="no"
