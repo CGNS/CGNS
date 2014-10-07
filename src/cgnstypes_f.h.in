@@ -35,8 +35,8 @@
 
 #if CG_BUILD_64BIT
 #  ifdef HAVE_F2003_REQUIREMENTS
-#   define cgsize_t INTEGER(C_LONG)
-#   define CGSIZE_T INTEGER(C_LONG)
+#   define cgsize_t INTEGER(C_LONG_LONG)
+#   define CGSIZE_T INTEGER(C_LONG_LONG)
 #  else
 #   define cgsize_t integer*8
 #   define CGSIZE_T integer*8

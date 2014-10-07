@@ -399,14 +399,13 @@ int cgp_open(const char *filename, int mode, int *fn)
 {
     int ierr, old_type = cgns_filetype;
 
+
     MPI_Comm_rank(MPI_COMM_WORLD, &pcg_mpi_comm_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &pcg_mpi_comm_size);
 
     ierr = cg_set_file_type(CG_FILE_PHDF5);
     if (ierr) return ierr;
-    printf(" %d\n",mode);
     ierr = cg_open(filename, mode, fn);
-    printf(" %d\n",*fn);
     cgns_filetype = old_type;
     return ierr;
 }
@@ -462,6 +461,7 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
     for (n = 0; n < zone->index_dim; n++) {
         dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
                                   zcoor->rind_planes[2*n+1];
+        /* printf("here, %d %d \n",rmin[n],rmax[n]); */
         if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
             cgi_error("Invalid index ranges.");
             return CG_ERROR;

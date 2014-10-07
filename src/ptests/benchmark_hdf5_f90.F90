@@ -85,7 +85,7 @@ PROGRAM benchmark_hdf5_f90
   cgsize_t, DIMENSION(1:3) :: nijk, sizes
   cgsize_t, DIMENSION(1:1) :: size_1D
   cgsize_t :: min, max
-  INTEGER :: k, count
+  cgsize_t :: k, count
   ! For writing and reading data
   REAL(KIND=dp), DIMENSION(:), ALLOCATABLE :: Coor_x
   REAL(KIND=dp), DIMENSION(:), ALLOCATABLE :: Coor_y
@@ -150,7 +150,7 @@ PROGRAM benchmark_hdf5_f90
 
   t0 = MPI_Wtime()
 
-!  CALL cgp_pio_mode_f(piomode_i, comm_info, ierr)
+  CALL cgp_pio_mode_f(piomode_i, comm_info, ierr)
 
   Nnodes = Nelem*NodePerElem
 
@@ -272,7 +272,6 @@ PROGRAM benchmark_hdf5_f90
 
   start = 1
   iend = nijk(2)
-
   CALL cgp_section_write_f(fn,B,Z,"Elements",PENTA_6,start,iend,0,S,err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_section_write_f'
@@ -506,7 +505,6 @@ PROGRAM benchmark_hdf5_f90
   ENDIF
   t2 = MPI_Wtime()
   xtiming(14) = t2-t1
-
   IF(r_cell_dim.NE.cell_dim.OR.r_phys_dim.NE.phys_dim)THEN
      WRITE(*,'(2(A,I0))') '*FAILED* bad cell dim = ',r_cell_dim,'or phy dim =',r_phys_dim
      CALL cgp_error_exit_f()

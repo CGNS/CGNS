@@ -10,18 +10,19 @@ PROGRAM fexample
 #endif
 #include "cgnslib_f03.h"
 
-  INTEGER nperside, totnodes, totelems
+  cgsize_t :: nperside, totnodes, totelems
   PARAMETER (nperside = 5)
   PARAMETER (totnodes=nperside*nperside*nperside)
   PARAMETER (totelems=(nperside-1)*(nperside-1)*(nperside-1))
   
   INTEGER commsize, commrank, ierr
-  INTEGER i, j, k, n, nn, ne
   INTEGER F, B, Z, E, S, Fs, Cx, Cy, Cz, A
-  INTEGER nnodes, nelems
-  INTEGER sizes(3), start, END
+  cgsize_t :: i, j, k, n, nn, ne
+  cgsize_t :: nnodes, nelems
+  cgsize_t :: sizes(3), start, END
+  cgsize_t, PARAMETER :: start_1 = 1
   REAL*4 fx(totnodes), fy(totnodes), fz(totnodes), fd(totelems)
-  INTEGER ie(8*totelems)
+  cgsize_t :: ie(8*totelems)
 !
 !---- initialize MPI
   CALL MPI_INIT(ierr)
@@ -92,7 +93,7 @@ PROGRAM fexample
   CALL cgp_queue_set_f(0, ierr)
 
 !---- create data node for elements
-  CALL cgp_section_write_f(F, B, Z, 'Hex', HEXA_8, 1, totelems, 0, E, ierr)
+  CALL cgp_section_write_f(F, B, Z, 'Hex', HEXA_8, start_1, totelems, 0, E, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- number of elements and range this process will write
@@ -161,7 +162,6 @@ PROGRAM fexample
 !---- write the array data in parallel
   CALL cgp_array_write_data_f(A, start, END, fd, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-
 !---- close the file and terminate MPI
   CALL cgp_close_f(F, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f

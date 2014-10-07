@@ -10,20 +10,22 @@ PROGRAM ftest
 
 #include "cgnslib_f03.h"
 
-  INTEGER totcnt
-  PARAMETER (totcnt = 40320 * 10)
-  
-  INTEGER npp, commsize, commrank
-  INTEGER i, j, n, nb, nz, nerrs
+  cgsize_t, PARAMETER :: totcnt = 40320 * 10
+
+  cgsize_t npp
+  INTEGER commsize, commrank
+  INTEGER i, nb, nz, nerrs
   INTEGER ierr, F, B, Z, E, S
   INTEGER Cx, Cy, Cz, Fx, Fy, Fz, Ax, Ay, Az
-  INTEGER sizes(3), start, END
+  cgsize_t sizes(3), start, END, n, j
+  cgsize_t, PARAMETER :: start_1 = 1
   REAL*8 ts, te, tt, dsize
   REAL*8 dx(totcnt), dy(totcnt), dz(totcnt)
-  cgsize_t ie(4*totcnt)
+  cgsize_t, ALLOCATABLE, DIMENSION(:) :: ie
   CHARACTER*32 name
   CHARACTER*11 piomode(2)
   CHARACTER*6 outmode(2)
+  INTEGER :: istat
       
   DATA piomode /'independent','collective'/
   DATA outmode /'direct','queued'/
@@ -38,13 +40,19 @@ PROGRAM ftest
      CALL cgp_error_exit_f
      STOP
   ENDIF
-  
+
+  ALLOCATE(ie(1:4*totcnt), STAT = istat)
+  IF (istat.NE.0)THEN
+     PRINT*, '*FAILED* allocation of ie'
+     CALL cgp_error_exit_f()
+  ENDIF
+
   npp = totcnt / commsize
   start = commrank * npp + 1
   end = start + npp - 1
 
   j = 0
-  DO n=1,npp
+  DO n=1,npp 
      dx(n) = start + n - 1
      dy(n) = commrank + 1
      dz(n) = n
@@ -53,7 +61,6 @@ PROGRAM ftest
         ie(j) = start + n - 1
      ENDDO
   ENDDO
- 
   sizes(1) = totcnt
   sizes(2) = totcnt
   sizes(3) = 0
@@ -79,7 +86,7 @@ PROGRAM ftest
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
      CALL cgp_pio_mode_f(nb-1, MPI_INFO_NULL, ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-     
+    
      DO nz=1,2
         WRITE(name,'(a4,i2)') 'Zone',nz
         CALL cg_zone_write_f(F,B,name,sizes,Unstructured,Z,ierr)
@@ -89,8 +96,8 @@ PROGRAM ftest
         CALL cgp_coord_write_f(F,B,Z,RealDouble,'CoordinateY',Cy,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cgp_coord_write_f(F,B,Z,RealDouble,'CoordinateZ',Cz,ierr)
-        IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_section_write_f(F,B,Z,'Tets',TETRA_4,1,totcnt,0,E,ierr)
+        IF (ierr .NE. CG_OK) CALL cgp_error_exit_f 
+        CALL cgp_section_write_f(F,B,Z,'Tets',TETRA_4,start_1,totcnt,0,E,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cg_sol_write_f(F,B,Z,'Solution',Vertex,S,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
@@ -112,21 +119,18 @@ PROGRAM ftest
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cgp_array_write_f('ArrayZ',RealDouble,1,totcnt,Az,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        
         CALL cgp_queue_set_f(nz-1,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL MPI_BARRIER(MPI_COMM_WORLD, ierr)
         ts = MPI_WTIME()
-
+   
         CALL cgp_coord_write_data_f(F,B,Z,Cx,start,END,dx,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cgp_coord_write_data_f(F,B,Z,Cy,start,END,dy,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cgp_coord_write_data_f(F,B,Z,Cz,start,END,dz,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        stop
         CALL cgp_elements_write_data_f(F,B,Z,E,start,END,ie,ierr)
-        stop
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cgp_field_write_data_f(F,B,Z,S,Fx,start,END,dx,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
@@ -156,11 +160,9 @@ PROGRAM ftest
         ENDIF
      ENDDO
   ENDDO
-
   CALL cgp_queue_set_f(0,ierr)
   CALL cgp_close_f(F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  
   CALL cgp_open_f('ftest.cgns',CG_MODE_READ,F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   
@@ -180,7 +182,7 @@ PROGRAM ftest
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
      CALL cgp_coord_read_data_f(F,B,Z,3,start,END,dz,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-   !  CALL cgp_elements_read_data_f(F,B,Z,E,start,END,ie,ierr)
+     CALL cgp_elements_read_data_f(F,B,Z,E,start,END,ie,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
      
      CALL MPI_BARRIER(MPI_COMM_WORLD, ierr)

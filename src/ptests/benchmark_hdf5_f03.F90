@@ -501,16 +501,11 @@ PROGRAM main
 ! ======================================
 
   t1 = MPI_Wtime()
-  PRINT*,CG_MODE_WRITE
   err = cgp_open("benchmark_"//ichr6//".cgns"//C_NULL_CHAR, CG_MODE_WRITE, fn)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_open'
      err = cgp_error_exit()
   ENDIF
-  CALL cgp_close_f(fn, ierr)
-  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL MPI_FINALIZE(ierr)
-  stop
   t2 = MPI_Wtime()
   xtiming(10) = t2-t1
 
@@ -573,7 +568,7 @@ PROGRAM main
      Coor_y(k) = Coor_x(k) + 0.1_C_DOUBLE
      Coor_z(k) = Coor_y(k) + 0.1_C_DOUBLE
   ENDDO
-
+  
   err = cgp_coord_write(fn,B,Z,RealDouble,"CoordinateX"//C_NULL_CHAR,Cx)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_write (Coor_X)'
