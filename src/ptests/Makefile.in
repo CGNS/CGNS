@@ -122,7 +122,7 @@ benchmark_hdf5_f03$(EXE) : benchmark_hdf5_f03.F90 $(CGNSLIB)
 #----------
 
 clean :
-	-$(RM) *.$(O)
+	-$(RM) *.$(O) *.mod *.MOD
 
 allclean : clean
 	-$(RM) $(ALL)
