@@ -2303,7 +2303,7 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
     cgns_zcoor *zcoor;
     cgns_array *coord;
     int n, index, index_dim;
-    hid_t hpid;
+    hid_t hid;
 
      /* verify input */
     if (cgi_check_strlen(coordname)) return CG_ERROR;
@@ -2314,9 +2314,7 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
      /* get memory address for file */
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
-
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
-
      /* get memory address for zone */
     zone = cgi_get_zone(cg, B, Z);
     if (zone==0) return CG_ERROR;
@@ -2370,8 +2368,8 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
     coord->data_dim=index_dim;
 
      /* Create GridCoodinates_t node if not already created */
-    to_HDF_ID(zcoor->id, hpid);
-    if (hpid == 0) {
+    to_HDF_ID(zcoor->id, hid);
+    if (hid == 0) {
         if (cgi_new_node(zone->id, "GridCoordinates", "GridCoordinates_t",
             &zcoor->id, "MT", 0, 0, 0)) return CG_ERROR;
     }
@@ -2393,6 +2391,7 @@ int cg_coord_partial_write(int file_number, int B, int Z,
     cgns_array *coord;
     int n, index, index_dim;
     cgsize_t dims[CGIO_MAX_DIMENSIONS];
+    hid_t hid;
 
      /* verify input */
     if (cgi_check_strlen(coordname)) return CG_ERROR;
@@ -2486,7 +2485,8 @@ int cg_coord_partial_write(int file_number, int B, int Z,
     coord->convert=0;
 
      /* Create GridCoodinates_t node if not already created */
-    if (zcoor->id == 0) {
+    to_HDF_ID(zcoor->id, hid);
+    if (hid == 0) {
         if (cgi_new_node(zone->id, "GridCoordinates", "GridCoordinates_t",
             &zcoor->id, "MT", 0, 0, 0)) return CG_ERROR;
     }
