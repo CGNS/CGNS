@@ -9,7 +9,7 @@
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      modes for cgns file                                            *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-#ifdef HAVE_F2003_REQUIREMENTS
+#if HAVE_F2003_REQUIREMENTS
 	INTEGER(C_INT), PARAMETER :: CG_MODE_READ   = 0
 	INTEGER(C_INT), PARAMETER :: CG_MODE_WRITE  = 1
 	INTEGER(C_INT), PARAMETER :: CG_MODE_MODIFY = 2
