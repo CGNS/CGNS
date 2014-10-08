@@ -2303,6 +2303,7 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
     cgns_zcoor *zcoor;
     cgns_array *coord;
     int n, index, index_dim;
+    hid_t hpid;
 
      /* verify input */
     if (cgi_check_strlen(coordname)) return CG_ERROR;
@@ -2319,11 +2320,9 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
      /* get memory address for zone */
     zone = cgi_get_zone(cg, B, Z);
     if (zone==0) return CG_ERROR;
-
      /* Get memory address for node "GridCoordinates" */
     zcoor = cgi_get_zcoorGC(cg, B, Z);
     if (zcoor==0) return CG_ERROR;
-
      /* Overwrite a DataArray_t Node of same size, name and data-type: */
     for (index=0; index<zcoor->ncoords; index++) {
         if (strcmp(coordname, zcoor->coord[index].name)==0) {
@@ -2371,7 +2370,8 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
     coord->data_dim=index_dim;
 
      /* Create GridCoodinates_t node if not already created */
-    if (zcoor->id == 0) {
+    to_HDF_ID(zcoor->id, hpid);
+    if (hpid == 0) {
         if (cgi_new_node(zone->id, "GridCoordinates", "GridCoordinates_t",
             &zcoor->id, "MT", 0, 0, 0)) return CG_ERROR;
     }
