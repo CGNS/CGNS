@@ -457,11 +457,10 @@ else
   	 CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: f
   	 TYPE(C_PTR) :: g
          INTERFACE 
-           INTEGER(C_INT) FUNCTION test(A, UserDataName1, i1) BIND(C, name='cg_goto')
+           INTEGER(C_INT) FUNCTION test(A, UserDataName1) BIND(C, name='cg_goto')
              USE ISO_C_BINDING
              INTEGER(C_INT)   , INTENT(IN), VALUE :: A
-             CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1
-             INTEGER(C_INT)   , INTENT(IN), OPTIONAL :: i1
+             CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName1
            END FUNCTION test
          END INTERFACE
   	 g = C_LOC(f(1:1))
