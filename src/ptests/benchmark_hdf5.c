@@ -36,7 +36,6 @@ int mpi_err;
 int err;
 int comm_size;
 int comm_rank;
-int info;
 int fn;
 int B;
 int Z;
