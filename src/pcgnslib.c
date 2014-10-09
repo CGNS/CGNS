@@ -36,7 +36,7 @@ freely, subject to the following restrictions:
                               type <= CGNS_ENUMV(HEXA_64)))
 
 static int write_to_queue = 0;
-static hid_t default_pio_mode = H5FD_MPIO_INDEPENDENT;
+static hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
 
 extern int cgns_filetype;
 
