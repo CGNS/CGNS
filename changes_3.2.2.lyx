@@ -1,0 +1,622 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+\usepackage{minted}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family rmdefault
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 12
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 0
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 2cm
+\topmargin 2cm
+\rightmargin 2cm
+\bottommargin 2cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Section
+Changes introduced in 3.2.2
+\end_layout
+
+\begin_layout Standard
+Items listed in blue effect compatibility of older code when using 3.2.2.
+ Known problems are highlighted in red.
+\end_layout
+
+\begin_layout Subsection
+General behavior changes and new recommendations for parallel performance
+\end_layout
+
+\begin_layout Enumerate
+The flush functions should not be used.
+ Staggering the writing and reading of the data avoids IO contention occurring
+ when flush is being used.
+\end_layout
+
+\begin_layout Enumerate
+The parallel routines are meant for parallel file systems (GPFS or Lustre).
+\end_layout
+
+\begin_layout Enumerate
+Functions for parallel reading and writing multi-component datasets using
+ a single call was introduced.
+ The new APIs uses new capabilities introduced in version 1.8.14 of the HDF5
+ library.
+ The new APIs pack multiple datasets into a single buffer and the underlining
+ MPI IO completes the IO request using just one call.
+ The availability of the new functions in the HDF5 library is checked at
+ compile time.
+ The current limitation (due to MPI) is that the size of the datasets must
+ be less than 2GB.
+\end_layout
+
+\begin_layout Enumerate
+
+\color blue
+The default for the parallel input/output mode was changed from CGP_INDEPENDENT
+ to CGP_COLLECTIVE.
+\end_layout
+
+\begin_layout Enumerate
+
+\color blue
+An extra argument for passing MPI info to the CGNS library was added to
+ cgp_pio_mode.
+ 
+\color white
+The extra argument should be used for MPI IO tuning hints, they are used
+ passed through the HDF5 library to the MPI IO library.
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}{c}     
+\end_layout
+
+\begin_layout Plain Layout
+
+    int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode, MPI_Info info)
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted} 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}{fortran}     
+\end_layout
+
+\begin_layout Plain Layout
+
+     CALL cgp_pio_mode_f(mode, comm_info, ierr)
+\end_layout
+
+\begin_layout Plain Layout
+
+        INTEGER(KIND(CGP_COLLECTIVE)) :: mode ! Use parameters CGP_INDEPENDENT
+ or CGP_COLLECTIVE
+\end_layout
+
+\begin_layout Plain Layout
+
+        INTEGER :: comm_info
+\end_layout
+
+\begin_layout Plain Layout
+
+        INTEGER :: ierr
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted} 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+New C changes
+\end_layout
+
+\begin_layout Subsubsection
+New parallel functions
+\end_layout
+
+\begin_layout Enumerate
+Functions for parallel reading and writing multi-component datasets using
+ a single call was introduced.
+ The new APIs uses new capabilities introduced in version 1.8.14 of the HDF5
+ library.
+ The new APIs pack multiple datasets into a single buffer and the underlining
+ MPI IO completes the IO request using just one call.
+ The availability of the new functions in the HDF5 library is checked at
+ compile time.
+\end_layout
+
+\begin_layout Subsection
+New Fortran changes
+\end_layout
+
+\begin_layout Standard
+All users are 
+\series bold
+\color white
+strongly
+\series default
+\color inherit
+ encouraged to use a Fortran 2003 standard compliant compiler.
+ Using a Fortran 2003 compiler guarantees interoperability with the C APIs
+ via the ISO_C_BINDING module.
+ Many changes where added to the CGNS library in order to take full advantage
+ of the interoperability offered by the ISO_C_BINDING module.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Configure was changed to check if the Fortran compiler is Fortran 2003 compliant.
+ If it is then the features of ISO_C_BINDING will be used.
+ 
+\end_layout
+
+\begin_layout Enumerate
+The predefined CGNS constant parameters data types where changed from INTEGER
+ to ENUM, BIND(C) for better C interoperability.
+ The users should use the predefined types whenever possible and not the
+ numerical value represented by the constant.
+\end_layout
+
+\begin_layout Enumerate
+
+\shape italic
+\color blue
+INCLUDE 
+\begin_inset Quotes eld
+\end_inset
+
+cgslib_h
+\begin_inset Quotes erd
+\end_inset
+
+
+\shape default
+ was changed to a preprocess include statement 
+\shape italic
+#include 
+\begin_inset Quotes eld
+\end_inset
+
+cgnslib_f03.h
+\begin_inset Quotes erd
+\end_inset
+
+.
+ 
+\shape default
+This allows the include file to be pre-processed.
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+NOTE: THIS MIGHT BE CHANGED TO USE A MODULE INSTEAD, i.e.
+ 
+\shape italic
+USE CGNS
+\shape default
+, BEFORE THE MERGE OF THE BRANCH TO THE TRUNK.
+ This would allow defining a KIND type for the integers instead of the current
+ way of using the preprocessor dependent 
+\shape italic
+cgsize_t
+\shape default
+.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+\begin_inset CommandInset label
+LatexCommand label
+name "enu:int64"
+
+\end_inset
+
+The user should be sure to declare the arguments declared 
+\shape italic
+int
+\shape default
+ in the C APIs as INTEGER in Fortran.
+ The ONLY fortran arguments declared as type 
+\shape italic
+cgsize_t
+\shape default
+ should be the arguments also declared
+\shape italic
+ cgsize_t
+\shape default
+ in the C APIs.
+ This is very important when building with option 
+\shape italic
+--enable-64bit
+\shape default
+ is being used.
+\end_layout
+
+\begin_layout Enumerate
+Assuming the rules in step 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "enu:int64"
+
+\end_inset
+
+ were followed, users should not need to or use the CG_BUILD_64BIT parameters
+ since Fortran's 
+\shape italic
+cgsize_t
+\shape default
+ is now guaranteed to match C's 
+\shape italic
+cgsize_t
+\shape default
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+
+\color red
+Fortran programs defining CGNS data types with a default INTEGER size of
+ 8 bytes are not currently compatible
+\color inherit
+.
+ This is independent of whether or not 
+\shape italic
+--enable-64bit
+\shape default
+ is being used.
+ For clarification, using 
+\shape italic
+--enable-64bit
+\shape default
+ allows for data types (i.e.
+ those declared as 
+\shape italic
+cgsize_t
+\shape default
+) to be able to store values which are too large to be stored as 4 byte
+ integers (i.e.
+ numbers greater then 2,147,483,647).
+ It is not necessary, or advisable, to have CGNS INTEGER types (types declared
+ 
+\shape italic
+int
+\shape default
+ in C) to be 8 bytes; the variables declared as 
+\shape italic
+cgsize_t
+\shape default
+ will automatically handle data types that can not be stored as 4 byte integers
+ when 
+\shape italic
+--enable-64bit
+\shape default
+ is being used.
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+CGNS developer's note: A new C data type, cgint_f, was introduced to be
+ interpretable with the C type 
+\shape italic
+int
+\shape default
+.
+ In order to allow for default 8 byte integers in Fortran: (1) The C API
+ wrappers in cg_ftoc.c need to be changed from 
+\shape italic
+cgsize_t
+\shape default
+ to 
+\shape italic
+cgint_f
+\shape default
+ everywhere the argument is declared as an 
+\shape italic
+int
+\shape default
+ in C, (2) configure needs to detect what size the default integer is in
+ Fortran and find the corresponding size in C so that information is used
+ to set the correct size of cgint_f.
+\end_layout
+
+\end_deeper
+\begin_layout Section
+Parallel installation instructions
+\end_layout
+
+\begin_layout Enumerate
+Install HDF5 on your system
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+HDF5 uses the standard GNU autotools, so './configure', 'make', 'sudo make
+ install' should install HDF5 without problems on most systems.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Unpack the tar ball containing the source code into some directory.
+\end_layout
+
+\begin_layout Enumerate
+Create a new director in which to build the library.
+\end_layout
+
+\begin_layout Enumerate
+Use cmake to initialize the build tree.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+user@hostname:build_path$ cmake /path/to/cgns/sources/
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Use ccmake to edit the control variables as needed.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+user@hostname:build_path$ ccmake .
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+The paths to the HDF5 libraries and header files must be set in 'HDF5_LIBRARY_DI
+R' and 'HDF5_INCLUDE_DIR' respectively.
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+If HDF5 is built with parallel-IO support via MPI, the 'HDF5_NEEDS_MPI'
+ flag must be set to true.
+\end_layout
+
+\begin_layout Enumerate
+If HDF5 is built with zlib and szip support, these need to be flagged with
+ 'HDF5_NEEDS_ZLIB' and 'HDF5_NEEDS_SZIP' as well as the paths for those
+ libraries.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Fortran can be enabled by toggling the 'CGNS_ENABLE_FORTRAN' variable.
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+A view of the attempt to autodetect the correct interface between Fortran
+ and C is show, setting the value of 'FORTRAN_NAMING'.
+\end_layout
+
+\begin_layout Enumerate
+For gfortran and pgf90 the value of 'FORTRAN_NAMING' shoud be 'LOWERCASE_'.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+The build system must be reconfigured after variable changes by pressing
+ 'c'.
+ Variables who's value has changed are maked with a '*' in the interface.
+\end_layout
+
+\begin_layout Enumerate
+After configuration, the Makefiles must be generated by pressing 'g'.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Use make to build the library.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+user@hostname:build_path$ make
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+A colorized review of the build process should follow.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Installation of the library is accomplished with the 'install' target of
+ the makefile.
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+user@hostname:build_path$ make install
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+You must have permissions to alter the directory where cgns will be installed.
+\end_layout
+
+\end_deeper
+\end_body
+\end_document
