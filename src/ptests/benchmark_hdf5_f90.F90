@@ -122,10 +122,6 @@ PROGRAM benchmark_hdf5_f90
 
   REAL(KIND=dp), DIMENSION(1:15) :: xtiming, timing, timingMin, timingMax
 
-  INTEGER, DIMENSION(1:2) :: piomode = (/CGP_INDEPENDENT, CGP_COLLECTIVE/)
-
-  INTEGER :: piomode_i
-
   INTEGER :: ierr
   INTEGER :: istat
   INTEGER :: comm_info
@@ -144,13 +140,12 @@ PROGRAM benchmark_hdf5_f90
   WRITE(ichr6,'(I6.6)') comm_size
 
   ! parameters
-  piomode_i = 2
   queue = .FALSE.
   debug = .TRUE.
 
   t0 = MPI_Wtime()
 
-  CALL cgp_pio_mode_f(piomode_i, comm_info, ierr)
+  CALL cgp_pio_mode_f(CGP_COLLECTIVE, comm_info, ierr)
 
   Nnodes = Nelem*NodePerElem
 

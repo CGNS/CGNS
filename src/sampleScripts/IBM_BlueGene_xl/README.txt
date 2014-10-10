@@ -1,6 +1,8 @@
 This example assumes all the needed packages are in ${HOME}/packages and the all the scripts 
 are placed in ${HOME}/packages.
 
+NOTE (1): If the system already has HDF5 installed then you can use it instead, as long as it was build with --enable-parallel.
+
 (1) Building zlib from source:
   
    Download and extract the zlib source: http://www.zlib.net/

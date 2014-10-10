@@ -30,12 +30,13 @@ MODULE cgns_c_binding
      END FUNCTION cgp_open
   END INTERFACE
 
-!!$  INTERFACE
-!!$     INTEGER(C_INT) FUNCTION cgp_pio_mode(mode) BIND(C, name='cgp_pio_mode')
-!!$       USE ISO_C_BINDING
-!!$       INTEGER(C_INT)  , INTENT(IN), VALUE  :: mode
-!!$     END FUNCTION cgp_pio_mode
-!!$  END INTERFACE
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_pio_mode(mode, info) BIND(C, name='cgp_pio_mode')
+       USE ISO_C_BINDING
+       INTEGER(KIND(CGP_COLLECTIVE)), INTENT(IN), VALUE  :: mode
+       INTEGER(C_INT)  , INTENT(IN), VALUE  :: info
+     END FUNCTION cgp_pio_mode
+  END INTERFACE
   
   INTERFACE     
      INTEGER(C_INT) FUNCTION cg_base_write(fn, basename, cell_dim, phys_dim, B) BIND(C, name='cg_base_write')
@@ -456,8 +457,6 @@ PROGRAM main
   REAL(KIND=dp), DIMENSION(1:15) :: xtiming, timing, timingMin, timingMax
   CHARACTER(LEN=6) :: ichr6
 
-  ! CGP_INDEPENDENT is the default
-  INTEGER(C_INT), DIMENSION(1:2) :: piomode = (/CGP_INDEPENDENT, CGP_COLLECTIVE/)
   CHARACTER(LEN=3), DIMENSION(1:2) :: piomodeC= (/"ind", "col"/)
   CHARACTER(LEN=6), DIMENSION(1:2) :: outmode = (/'direct','queued'/)
   INTEGER :: piomode_i
@@ -477,17 +476,14 @@ PROGRAM main
 
   ! parameters
   piomode_i = 2
- ! queue = .TRUE.
+  ! queue = .TRUE.
   queue = .FALSE.
   debug = .FALSE.
-  debug = .TRUE.
 
   t0 = MPI_Wtime() ! Timer
 
-!!$  err = cgp_pio_mode(piomode(piomode_i)) ! default
+  err = cgp_pio_mode(CGP_COLLECTIVE, comm_info)
 
-!  CALL cgp_pio_mode_f(piomode_i-1, comm_info, ierr)
-  
   Nnodes = Nelem*NodePerElem
 
   nijk(1) = Nnodes ! Number of vertices

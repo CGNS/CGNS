@@ -71,8 +71,10 @@
 !*      Parallel CGNS parameters                                       *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 #if HAVE_FORTRAN_2003
-        INTEGER(C_INT), PARAMETER :: CGP_INDEPENDENT = 0
-	INTEGER(C_INT), PARAMETER :: CGP_COLLECTIVE  = 1	
+        ENUM, BIND(C)
+            ENUMERATOR :: CGP_INDEPENDENT = 0
+	    ENUMERATOR :: CGP_COLLECTIVE  = 1
+        END ENUM	
 #else
         integer@CGFSIZET@ CGP_INDEPENDENT, CGP_COLLECTIVE
         parameter (CGP_INDEPENDENT = 0)
