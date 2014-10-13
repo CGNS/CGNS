@@ -8,344 +8,9 @@
 !
 ! @section DESCRIPTION
 ! Fortran2003 Benchmarking program for pcgns library
+! Calls the C functions directly.
 !
 !
-MODULE cgns_c_binding
-
-!
-! Contains needed interfaces for calling the C functions
-! 
-
-  USE ISO_C_BINDING
-  IMPLICIT NONE
-
-#include "cgnslib_f03.h"
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_open(filename, mode, fn) BIND(C, name='cgp_open')
-       USE ISO_C_BINDING
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: filename
-       INTEGER(C_INT)  , INTENT(IN), VALUE  :: mode
-       INTEGER(C_INT)  , INTENT(OUT) :: fn
-     END FUNCTION cgp_open
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_pio_mode(mode, info) BIND(C, name='cgp_pio_mode')
-       USE ISO_C_BINDING
-       INTEGER(KIND(CGP_COLLECTIVE)), INTENT(IN), VALUE  :: mode
-       INTEGER(C_INT)  , INTENT(IN), VALUE  :: info
-     END FUNCTION cgp_pio_mode
-  END INTERFACE
-  
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cg_base_write(fn, basename, cell_dim, phys_dim, B) BIND(C, name='cg_base_write')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: basename
-       INTEGER(C_INT)   , INTENT(IN), VALUE  :: cell_dim
-       INTEGER(C_INT)   , INTENT(IN), VALUE  :: phys_dim
-       INTEGER(C_INT)   , INTENT(OUT)  :: B
-     END FUNCTION cg_base_write
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cg_zone_write(fn, B, zonename, nijk, itype, Z) BIND(C, name='cg_zone_write')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE  :: B
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: zonename
-       CGSIZE_T, DIMENSION(*), INTENT(IN)  :: nijk
-       INTEGER(C_INT)   , INTENT(IN), VALUE  :: itype
-       INTEGER(C_INT)   , INTENT(OUT)  :: Z
-     END FUNCTION cg_zone_write
-  END INTERFACE 
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cg_base_read(fn, B, basename, cell_dim, phys_dim) BIND(C, name='cg_base_read')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(OUT)  :: basename
-       INTEGER(C_INT)   , INTENT(OUT)  :: cell_dim
-       INTEGER(C_INT)   , INTENT(OUT)  :: phys_dim
-     END FUNCTION cg_base_read
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cg_zone_read(fn, B, Z, zonename, nijk) BIND(C, name='cg_zone_read')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(OUT)  :: zonename
-       CGSIZE_T, DIMENSION(*), INTENT(OUT)  :: nijk
-     END FUNCTION cg_zone_read
-  END INTERFACE
-  
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_coord_write(fn, B, Z, itype, coordname, C) BIND(C, name='cgp_coord_write')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: itype
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: coordname
-       INTEGER(C_INT)   , INTENT(OUT)  :: C
-     END FUNCTION cgp_coord_write
-  END INTERFACE
-  
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_coord_write_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name='cgp_coord_write_data')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: C
-       CGSIZE_T, INTENT(IN) :: rmin
-       CGSIZE_T, INTENT(IN) :: rmax
-       TYPE(C_PTR), VALUE :: coords
-     END FUNCTION cgp_coord_write_data
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_field_write(fn, B, Z, S, itype, fieldname, F) BIND(C, name='cgp_field_write')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: itype
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: fieldname
-       INTEGER(C_INT)   , INTENT(OUT)  :: F
-     END FUNCTION cgp_field_write
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_field_write_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name='cgp_field_write_data')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: F
-       CGSIZE_T, INTENT(IN) :: rmin
-       CGSIZE_T, INTENT(IN) :: rmax
-       TYPE(C_PTR), VALUE :: data
-     END FUNCTION cgp_field_write_data
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_field_read_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name='cgp_field_read_data')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: F
-       CGSIZE_T, INTENT(IN) :: rmin
-       CGSIZE_T, INTENT(IN) :: rmax
-       TYPE(C_PTR), VALUE :: data
-     END FUNCTION cgp_field_read_data
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_coord_read_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name='cgp_coord_read_data')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: C
-       CGSIZE_T, INTENT(IN) :: rmin
-       CGSIZE_T, INTENT(IN) :: rmax
-       TYPE(C_PTR), VALUE :: coords
-     END FUNCTION cgp_coord_read_data
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_section_write(fn,B,Z,sectionname,itype,start,end,nbndry,S) BIND(C, name='cgp_section_write')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: sectionname
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: itype
-       CGSIZE_T, INTENT(IN), VALUE :: start
-       CGSIZE_T, INTENT(IN), VALUE :: end
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: nbndry
-       INTEGER(C_INT)   , INTENT(OUT) :: S
-     END FUNCTION cgp_section_write
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_array_write(arrayname,itype,DataDimension,DimensionVector,A) BIND(C, name='cgp_array_write')
-       USE ISO_C_BINDING
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: arrayname
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: itype
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: DataDimension
-       CGSIZE_T, DIMENSION(1:DataDimension), INTENT(IN) :: DimensionVector
-       INTEGER(C_INT)   , INTENT(OUT) :: A
-     END FUNCTION cgp_array_write
-  END INTERFACE
-
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_array_write_data(A, rmin, rmax, data) BIND(C, name='cgp_array_write_data')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: A
-       CGSIZE_T, INTENT(IN) :: rmin
-       CGSIZE_T, INTENT(IN) :: rmax
-       TYPE(C_PTR), VALUE :: data
-     END FUNCTION cgp_array_write_data
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_elements_write_data(fn,B,Z,S,emin,emax,elements) BIND(C, name='cgp_elements_write_data')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-       CGSIZE_T, INTENT(IN), VALUE :: emin
-       CGSIZE_T, INTENT(IN), VALUE :: emax
-       TYPE(C_PTR), VALUE :: elements
-     END FUNCTION cgp_elements_write_data
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_elements_read_data(fn,B,Z,S,start,end,elements) BIND(C, name='cgp_elements_read_data')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-       CGSIZE_T, INTENT(IN), VALUE :: start
-       CGSIZE_T, INTENT(IN), VALUE :: end
-       TYPE(C_PTR), VALUE :: elements
-     END FUNCTION cgp_elements_read_data
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_array_read_data(A, rmin, rmax, data) BIND(C, name='cgp_array_read_data')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: A
-       CGSIZE_T, INTENT(IN) :: rmin
-       CGSIZE_T, INTENT(IN) :: rmax
-       TYPE(C_PTR), VALUE :: data
-     END FUNCTION cgp_array_read_data
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cg_sol_write(fn,B,Z,solname,location,S) BIND(C, name='cg_sol_write')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: solname
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: location
-       INTEGER(C_INT)   , INTENT(OUT) :: S
-     END FUNCTION cg_sol_write
-  END INTERFACE
-  
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_error_exit() BIND(C, name='cgp_error_exit')
-       USE ISO_C_BINDING
-     END FUNCTION cgp_error_exit
-  END INTERFACE
-  
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_close(fn) BIND(C, name='cgp_close')
-       USE ISO_C_BINDING
-       INTEGER(C_INT), INTENT(IN), VALUE :: fn
-     END FUNCTION cgp_close
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_queue_set(use_queue) BIND(C, name='cgp_queue_set')
-       USE ISO_C_BINDING
-       INTEGER(C_INT), INTENT(IN), VALUE :: use_queue
-     END FUNCTION cgp_queue_set
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cgp_queue_flush() BIND(C, name='cgp_queue_flush')
-       USE ISO_C_BINDING
-     END FUNCTION cgp_queue_flush
-  END INTERFACE
-
-  INTERFACE     
-     INTEGER(C_INT) FUNCTION cg_user_data_write(UserDataName) BIND(C, name='cg_user_data_write')
-       USE ISO_C_BINDING
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName
-     END FUNCTION cg_user_data_write
-  END INTERFACE
-
-#if HAVE_FORTRAN_2008TS
-  ! THE FOLLOWING CODE ONLY WORKS FOR COMPILERS HAVING F2008 STANDARD EXTENSION:
-  ! TS 29113 Further Interoperability of FORTRAN with C WG5/N1942
-
-  ! The number of optional parameters should be set to
-  ! CG_MAX_GOTO_DEPTH, which is currently set to 20.
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cg_gorel(fn, &
-          UserDataName1, i1, UserDataName2, i2, &
-          UserDataName3, i3, UserDataName4, i4, &
-          UserDataName5, i5, UserDataName6, i6, &
-          UserDataName7, i7, UserDataName8, i8, &
-          UserDataName9, i9, UserDataName10, i10, &
-          UserDataName11, i11, UserDataName12, i12, &
-          UserDataName13, i13, UserDataName14, i14, &
-          UserDataName15, i15, UserDataName16, i16, &
-          UserDataName17, i17, UserDataName18, i18, &
-          UserDataName19, i19, UserDataName20, i20, &
-          end) BIND(C, name='cg_gorel_f08')
-       
-       USE ISO_C_BINDING
-       INTEGER(C_INT) , INTENT(IN), VALUE :: fn
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
-            UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
-            UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
-            UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
-       
-       INTEGER(C_INT), INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
-            i17, i18, i19, i20
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end
-     END FUNCTION cg_gorel
- END INTERFACE
-
- ! The number of optional parameters should be set to
- ! CG_MAX_GOTO_DEPTH, which is currently set to 20.
-
- INTERFACE
-    INTEGER(C_INT) FUNCTION cg_goto(fn, B, &
-          UserDataName1, i1, UserDataName2, i2, &
-          UserDataName3, i3, UserDataName4, i4, &
-          UserDataName5, i5, UserDataName6, i6, &
-          UserDataName7, i7, UserDataName8, i8, &
-          UserDataName9, i9, UserDataName10, i10, &
-          UserDataName11, i11, UserDataName12, i12, &
-          UserDataName13, i13, UserDataName14, i14, &
-          UserDataName15, i15, UserDataName16, i16, &
-          UserDataName17, i17, UserDataName18, i18, &
-          UserDataName19, i19, UserDataName20, i20, &
-          end) BIND(C, name='cg_goto_f08')
-
-      USE ISO_C_BINDING
-      INTEGER(C_INT) , INTENT(IN), VALUE :: fn
-      INTEGER(C_INT) , INTENT(IN), VALUE :: B
-      CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
-           UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
-           UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
-           UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
-      INTEGER(C_INT), INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
-           i17, i18, i19, i20
-      CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end
-    END FUNCTION cg_goto
- END INTERFACE
-
-#endif
-END MODULE cgns_c_binding
-
 MODULE testing_functions
 !
 ! Contains functions to verify values
@@ -390,21 +55,21 @@ CONTAINS
     c_long_long_eq = a-b .EQ. 0_C_LONG_LONG
   END FUNCTION c_long_long_eq
   
-END MODULE testing_functions
+END MODULE
 
 PROGRAM main
 
-  USE mpi
+  USE MPI
   USE ISO_C_BINDING
-  USE cgns_c_binding
+  USE cgns
   USE testing_functions
   IMPLICIT NONE
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
-  CGSIZE_T, PARAMETER :: Nelem = 1024 !33554432 ! Use multiples of number of cores per node
-  CGSIZE_T, PARAMETER :: NodePerElem = 6
+  INTEGER(CGSIZE_T), PARAMETER :: Nelem = 1024 !33554432 ! Use multiples of number of cores per node
+  INTEGER(CGSIZE_T), PARAMETER :: NodePerElem = 6
 
-  CGSIZE_T :: Nnodes
+  INTEGER(CGSIZE_T) :: Nnodes
   INTEGER(C_INT) :: mpi_err
   INTEGER(C_INT) :: err
   INTEGER :: ierr
@@ -420,17 +85,17 @@ PROGRAM main
   INTEGER(C_INT), PARAMETER :: phys_dim = 3
   INTEGER(C_INT) :: r_cell_dim = 0
   INTEGER(C_INT) :: r_phys_dim = 0
-  CGSIZE_T, DIMENSION(1:3) :: nijk, sizes
-  CGSIZE_T, DIMENSION(1:1) :: size_1D
-  CGSIZE_T :: min, max
+  INTEGER(CGSIZE_T), DIMENSION(1:3) :: nijk, sizes
+  INTEGER(CGSIZE_T), DIMENSION(1:1) :: size_1D
+  INTEGER(CGSIZE_T) :: min, max
   INTEGER(C_INT) :: k, count
   ! For writing and reading data
   REAL(C_DOUBLE), DIMENSION(:), ALLOCATABLE, TARGET :: Coor_x, Coor_y, Coor_z
   REAL(C_DOUBLE), DIMENSION(:), ALLOCATABLE, TARGET :: Data_Fx, Data_Fy, Data_Fz
   REAL(C_DOUBLE), DIMENSION(:), ALLOCATABLE, TARGET :: Array_r
-  CGSIZE_T, DIMENSION(:), ALLOCATABLE, TARGET :: Array_i
-  CGSIZE_T :: start, end, emin, emax
-  CGSIZE_T, DIMENSION(:), ALLOCATABLE, TARGET :: elements
+  INTEGER(CGSIZE_T), DIMENSION(:), ALLOCATABLE, TARGET :: Array_i
+  INTEGER(CGSIZE_T) :: start, end, emin, emax
+  INTEGER(CGSIZE_T), DIMENSION(:), ALLOCATABLE, TARGET :: elements
   LOGICAL :: queue, debug
   TYPE(C_PTR) :: f_ptr, f_ptr1, f_ptr2, f_ptr3
   CHARACTER(KIND=C_CHAR,LEN=180) :: bname, zname

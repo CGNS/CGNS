@@ -418,8 +418,12 @@ AC_ARG_WITH(fortran,
 test -z "$withfortran" && withfortran=yes
 AC_MSG_RESULT($withfortran)
 
-if test $withfortran = no; then
+  HAVE_FORTRAN_95=0
+  HAVE_FORTRAN_2003=0
+  HAVE_FORTRAN_2008TS=0
   BUILDFORTRAN=0
+
+if test $withfortran = no; then
   fortran=no
   F2CFLAGS=
 else
@@ -438,7 +442,6 @@ else
   fi
 
   # Check if the Fortran compiler is F2003 compliant
-  HAVE_FORTRAN_2003=0
   ## --------------------------------------------------------------------
   ## Default for FORTRAN 2003 compliant compilers
   ##
@@ -488,8 +491,9 @@ EOF
  ##  IMPLEMENTED      -- gnu (4.7,4.8,4.9), intel, portland group
  ##                      xlf 15.1.0
 
-  HAVE_FORTRAN_2008TS=0	
   HAVE_F2008TS_REQUIREMENTS="no"
+  if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
+
   AC_MSG_CHECKING([if Fortran compiler meets Technical Specification 29113])
 
  cat >> testf03.f90 << EOF
@@ -513,6 +517,34 @@ EOF
      rm testf03.f90
   fi
   AC_MSG_RESULT($HAVE_F2008TS_REQUIREMENTS)
+
+else 
+
+  # Check if the Fortran compiler is at least F95 compliant
+  ## --------------------------------------------------------------------
+  ## Default for FORTRAN 95 compliant compilers
+  ##
+  HAVE_F95_REQUIREMENTS="no"
+  AC_MSG_CHECKING([if Fortran compiler meets 95 standard])
+
+ cat >> testf95.f90 << EOF
+       PROGRAM testf95
+  	 IMPLICIT NONE
+         INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(5)
+      END PROGRAM testf95
+EOF
+  msg=`${F77} -c testf95.f90 &> /dev/null`
+  if test -f testf95.o; then 
+    HAVE_F95_REQUIREMENTS="yes"
+    HAVE_FORTRAN_95=1	
+    rm testf95.o
+  fi
+  if test -f testf95.f90; then
+    rm testf95.f90
+  fi
+  AC_MSG_RESULT($HAVE_F95_REQUIREMENTS)
+
+  fi
 
 
   if test $need_f2c = yes; then
@@ -1381,6 +1413,7 @@ AC_SUBST(BUILDLEGACY)
 AC_SUBST(BUILDSCOPE)
 AC_SUBST(BUILD64BIT)
 AC_SUBST(BUILDFORTRAN)
+AC_SUBST(HAVE_FORTRAN_95)
 AC_SUBST(HAVE_FORTRAN_2003)
 AC_SUBST(HAVE_FORTRAN_2008TS)
 AC_SUBST(BUILDPARALLEL)

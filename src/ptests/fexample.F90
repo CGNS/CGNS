@@ -3,26 +3,26 @@ PROGRAM fexample
 
   USE MPI
   USE ISO_C_BINDING
+  USE CGNS
   IMPLICIT NONE
 
 #ifdef WINNT
   INCLUDE 'cgnswin_f.h'
 #endif
-#include "cgnslib_f03.h"
 
-  cgsize_t :: nperside, totnodes, totelems
+  INTEGER(cgsize_t) :: nperside, totnodes, totelems
   PARAMETER (nperside = 5)
   PARAMETER (totnodes=nperside*nperside*nperside)
   PARAMETER (totelems=(nperside-1)*(nperside-1)*(nperside-1))
   
   INTEGER commsize, commrank, ierr
   INTEGER F, B, Z, E, S, Fs, Cx, Cy, Cz, A
-  cgsize_t :: i, j, k, n, nn, ne
-  cgsize_t :: nnodes, nelems
-  cgsize_t :: sizes(3), start, END
-  cgsize_t, PARAMETER :: start_1 = 1
+  INTEGER(cgsize_t) :: i, j, k, n, nn, ne
+  INTEGER(cgsize_t) :: nnodes, nelems
+  INTEGER(cgsize_t) :: sizes(3), start, END
+  INTEGER(cgsize_t), PARAMETER :: start_1 = 1
   REAL*4 fx(totnodes), fy(totnodes), fz(totnodes), fd(totelems)
-  cgsize_t :: ie(8*totelems)
+  INTEGER(cgsize_t) :: ie(8*totelems)
 !
 !---- initialize MPI
   CALL MPI_INIT(ierr)

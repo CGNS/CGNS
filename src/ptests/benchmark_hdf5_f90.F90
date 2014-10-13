@@ -55,20 +55,19 @@ PROGRAM benchmark_hdf5_f90
   USE mpi
   USE ISO_C_BINDING
   USE testing_functions
+  USE cgns
   IMPLICIT NONE
 
 #ifdef WINNT
   INCLUDE 'cgnswin_f.h'
 #endif
-#include "cgnslib_f03.h"
-
   INTEGER, PARAMETER :: dp = KIND(1.d0)
 
   ! Use powers of 2
-  cgsize_t, PARAMETER :: Nelem = 32 ! 33554432
-  cgsize_t, PARAMETER :: NodePerElem = 6
+  INTEGER(CGSIZE_T), PARAMETER :: Nelem = 32 ! 33554432
+  INTEGER(CGSIZE_T), PARAMETER :: NodePerElem = 6
 
-  cgsize_t :: Nnodes
+  INTEGER(CGSIZE_T) :: Nnodes
   INTEGER :: mpi_err
   INTEGER :: err
   INTEGER :: comm_size
@@ -82,10 +81,10 @@ PROGRAM benchmark_hdf5_f90
   INTEGER :: phys_dim = 3
   INTEGER :: r_cell_dim = 0
   INTEGER :: r_phys_dim = 0
-  cgsize_t, DIMENSION(1:3) :: nijk, sizes
-  cgsize_t, DIMENSION(1:1) :: size_1D
-  cgsize_t :: min, max
-  cgsize_t :: k, count
+  INTEGER(CGSIZE_T), DIMENSION(1:3) :: nijk, sizes
+  INTEGER(CGSIZE_T), DIMENSION(1:1) :: size_1D
+  INTEGER(CGSIZE_T) :: min, max
+  INTEGER(CGSIZE_T) :: k, count
   ! For writing and reading data
   REAL(KIND=dp), DIMENSION(:), ALLOCATABLE :: Coor_x
   REAL(KIND=dp), DIMENSION(:), ALLOCATABLE :: Coor_y
@@ -94,9 +93,9 @@ PROGRAM benchmark_hdf5_f90
   REAL(KIND=dp), DIMENSION(:), ALLOCATABLE :: Data_Fy
   REAL(KIND=dp), DIMENSION(:), ALLOCATABLE :: Data_Fz
   REAL(KIND=dp), DIMENSION(:), ALLOCATABLE :: Array_r
-  cgsize_t, DIMENSION(:), ALLOCATABLE :: Array_i
-  cgsize_t :: start, iend, emin, emax
-  cgsize_t, DIMENSION(:), ALLOCATABLE :: elements
+  INTEGER(CGSIZE_T), DIMENSION(:), ALLOCATABLE :: Array_i
+  INTEGER(CGSIZE_T) :: start, iend, emin, emax
+  INTEGER(CGSIZE_T), DIMENSION(:), ALLOCATABLE :: elements
   CHARACTER(LEN=32) :: fname, name
   CHARACTER(LEN=180) :: bname, zname
   INTEGER :: indx_null

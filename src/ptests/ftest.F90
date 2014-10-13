@@ -2,26 +2,26 @@ PROGRAM ftest
 
   USE mpi
   USE ISO_C_BINDING
+  USE CGNS
   IMPLICIT NONE
 
 #ifdef WINNT
   INCLUDE 'cgnswin_f.h'
 #endif
 
-#include "cgnslib_f03.h"
 
-  cgsize_t, PARAMETER :: totcnt = 40320 * 10
+  INTEGER(cgsize_t), PARAMETER :: totcnt = 40320 * 10
 
-  cgsize_t npp
+  INTEGER(cgsize_t) npp
   INTEGER commsize, commrank
   INTEGER i, nb, nz, nerrs
   INTEGER ierr, F, B, Z, E, S
   INTEGER Cx, Cy, Cz, Fx, Fy, Fz, Ax, Ay, Az
-  cgsize_t sizes(3), start, END, n, j
-  cgsize_t, PARAMETER :: start_1 = 1
+  INTEGER(cgsize_t) sizes(3), start, END, n, j
+  INTEGER(cgsize_t), PARAMETER :: start_1 = 1
   REAL*8 ts, te, tt, dsize
   REAL*8 dx(totcnt), dy(totcnt), dz(totcnt)
-  cgsize_t, ALLOCATABLE, DIMENSION(:) :: ie
+  INTEGER(cgsize_t), ALLOCATABLE, DIMENSION(:) :: ie
   CHARACTER*32 name
   CHARACTER*11 piomode(2)
   CHARACTER*6 outmode(2)

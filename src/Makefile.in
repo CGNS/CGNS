@@ -5,10 +5,11 @@ include make.defs
 CGNSVER = @CGNSVERS@
 
 .SUFFIXES :
-.SUFFIXES : .c .$(O) $(EXE)
+.SUFFIXES : .c .F90 .$(O) $(EXE)
 
 OBJDIR  = @BUILDDIR@
 COPTS	= $(CFLAGS) $(CFGFLAGS) -I. @BUILDOPTS@
+FOPTS   = $(FFLAGS) -I. @BUILDOPTS@
 CGNSLIB = $(LIBCGNS)
 INSTLIB = @CGNSLIB@
 
@@ -19,6 +20,9 @@ CGNSOBJS=\
 	$(OBJDIR)/cgns_internals.$(O) \
 	$(OBJDIR)/cgns_io.$(O) \
 	$(OBJDIR)/cgnslib.$(O)
+
+@FGNSOBJS@=\
+	$(OBJDIR)/cgns_f.$(O)
 
 # ADF/ADFH routines
 
@@ -40,9 +44,9 @@ install : install-cgns @INSTALLCGNSTOOLS@
 
 #----------
 
-$(CGNSLIB) : $(OBJDIR) $(CGNSOBJS) $(ADFOBJS) $(F2COBJS)
+$(CGNSLIB) : $(OBJDIR) $(CGNSOBJS) $(FGNSOBJS) $(ADFOBJS) $(F2COBJS)
 	-@$(RM) $@
-	@AR_LIB@ $@ $(CGNSOBJS) $(ADFOBJS) $(F2COBJS)
+	@AR_LIB@ $@ $(CGNSOBJS) $(FGNSOBJS) $(ADFOBJS) $(F2COBJS)
 	@RAN_LIB@ $@
 
 $(OBJDIR) :
@@ -202,6 +206,9 @@ $(OBJDIR)/cgio_ftoc.$(O) : cgio_ftoc.c fortran_macros.h cgns_io.h
 
 $(OBJDIR)/cg_malloc.$(O) : cg_malloc.c cg_malloc.h
 	$(CC) $(COPTS) $(COOUT)$@ -c cg_malloc.c
+
+$(OBJDIR)/cgns_f.$(O) : cgns_f.F90 cgnstypes_f.h
+	$(F77) $(FOPTS) $(COOUT)$@ -c cgns_f.F90
 
 cgnslib.h : cgnstypes.h
 cgns_header.h : cgnstypes.h
