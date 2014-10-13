@@ -86,8 +86,6 @@ CGNSDLL int cgp_coord_write(int fn, int B, int Z,
     CGNS_ENUMT(DataType_t) type, const char *coordname, int *C);
 CGNSDLL int cgp_coord_write_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *coord_array);
-CGNSDLL int cgp_coord_multi_write_data(int fn, int B, int Z, int *C,
-    const cgsize_t *rmin, const cgsize_t *rmax, const void *coordsX, const void *coordsY, const void *coordsZ);
 CGNSDLL int cgp_coord_read_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coord_array);
 
@@ -122,12 +120,6 @@ CGNSDLL int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
 CGNSDLL int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F, 
 				       const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...);
 
-/* CGNSDLL int vcgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,  */
-/* 				       const cgsize_t *rmin, const cgsize_t *rmax, int nsets, va_list ap ); */
-
-/* CGNSDLL int vcgp_field_multi_read_data(int fn, int B, int Z, int S, int *F, */
-/* 				      const cgsize_t *rmin, const cgsize_t *rmax, int nsets, va_list ap ); */
-
 /*===== Array IO Prototypes =====*/
 
 CGNSDLL int cgp_array_write(const char *arrayname,
@@ -143,12 +135,6 @@ CGNSDLL int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
 
 CGNSDLL int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
 				      const cgsize_t *rmax, int nsets, ...);
-
-/* CGNSDLL int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin, */
-/* 				       const cgsize_t *rmax, int nsets, va_list ap); */
-
-/* CGNSDLL int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin, */
-/* 				      const cgsize_t *rmax, int nsets, va_list ap); */
 
 /*===== exit with error and call MPI_Abort =====*/
 
