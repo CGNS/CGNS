@@ -2,9 +2,10 @@
 \lyxformat 474
 \begin_document
 \begin_header
-\textclass article
+\textclass extarticle
 \begin_preamble
 \usepackage{minted}
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
 \end_preamble
 \use_default_options true
 \maintain_unincluded_children false
@@ -27,7 +28,7 @@
 \output_sync 0
 \bibtex_command default
 \index_command default
-\paperfontsize 12
+\paperfontsize 11
 \spacing single
 \use_hyperref false
 \papersize default
@@ -55,10 +56,10 @@
 \shortcut idx
 \color #008000
 \end_index
-\leftmargin 2cm
-\topmargin 2cm
-\rightmargin 2cm
-\bottommargin 2cm
+\leftmargin 1cm
+\topmargin 1cm
+\rightmargin 1cm
+\bottommargin 1cm
 \secnumdepth 3
 \tocdepth 3
 \paragraph_separation indent
@@ -77,7 +78,7 @@
 \begin_body
 
 \begin_layout Section
-Changes introduced in 3.2.2
+Changes introduced in HDF5_Parallel Branch
 \end_layout
 
 \begin_layout Standard
@@ -89,45 +90,39 @@ Items listed in blue effect compatibility of older code when using 3.2.2.
 General behavior changes and new recommendations for parallel performance
 \end_layout
 
-\begin_layout Enumerate
+\begin_layout Itemize
 The flush functions should not be used.
- Staggering the writing and reading of the data avoids IO contention occurring
- when flush is being used.
+ Staggering the writing and reading by writing the data immediately avoids
+ IO contention occurring when flush is being used.
 \end_layout
 
-\begin_layout Enumerate
+\begin_layout Itemize
 The parallel routines are meant for parallel file systems (GPFS or Lustre).
 \end_layout
 
-\begin_layout Enumerate
-Functions for parallel reading and writing multi-component datasets using
- a single call was introduced.
- The new APIs uses new capabilities introduced in version 1.8.14 of the HDF5
- library.
- The new APIs pack multiple datasets into a single buffer and the underlining
- MPI IO completes the IO request using just one call.
- The availability of the new functions in the HDF5 library is checked at
- compile time.
- The current limitation (due to MPI) is that the size of the datasets must
- be less than 2GB.
-\end_layout
-
-\begin_layout Enumerate
+\begin_layout Itemize
 
 \color blue
-The default for the parallel input/output mode was changed from CGP_INDEPENDENT
+The default parallel input/output mode was changed from CGP_INDEPENDENT
  to CGP_COLLECTIVE.
 \end_layout
 
-\begin_layout Enumerate
+\begin_layout Itemize
 
 \color blue
 An extra argument for passing MPI info to the CGNS library was added to
  cgp_pio_mode.
  
 \color white
-The extra argument should be used for MPI IO tuning hints, they are used
- passed through the HDF5 library to the MPI IO library.
+The extra argument should be used for MPI IO tuning hints and are passed
+ through the HDF5 library to the MPI IO library.
+\end_layout
+
+\begin_layout Standard
+\align center
+
+\series bold
+C
 \end_layout
 
 \begin_layout Standard
@@ -138,7 +133,7 @@ status open
 
 
 \backslash
-begin{minted}{c}     
+begin{minted}[bgcolor=bg]{c}     
 \end_layout
 
 \begin_layout Plain Layout
@@ -159,6 +154,13 @@ end{minted}
 \end_layout
 
 \begin_layout Standard
+\align center
+
+\series bold
+Fortran
+\end_layout
+
+\begin_layout Standard
 \begin_inset ERT
 status open
 
@@ -166,7 +168,7 @@ status open
 
 
 \backslash
-begin{minted}{fortran}     
+begin{minted}[bgcolor=bg]{fortran}     
 \end_layout
 
 \begin_layout Plain Layout
@@ -202,23 +204,726 @@ end{minted}
 
 \end_layout
 
-\begin_layout Subsection
-New C changes
-\end_layout
-
-\begin_layout Subsubsection
-New parallel functions
-\end_layout
-
-\begin_layout Enumerate
+\begin_layout Itemize
 Functions for parallel reading and writing multi-component datasets using
  a single call was introduced.
- The new APIs uses new capabilities introduced in version 1.8.14 of the HDF5
- library.
+ The new APIs use new capabilities introduced in version 1.8.* (currently
+ not released as of 10.13.2014) of the HDF5 library.
  The new APIs pack multiple datasets into a single buffer and the underlining
  MPI IO completes the IO request using just one call.
  The availability of the new functions in the HDF5 library is checked at
  compile time.
+ The current limitation (due to MPI) is that the size of the datasets must
+ be less than 2GB.
+\end_layout
+
+\begin_layout Standard
+\align center
+
+\series bold
+C
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{c}
+\end_layout
+
+\begin_layout Plain Layout
+
+int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, 
+\end_layout
+
+\begin_layout Plain Layout
+
+                              const cgsize_t *rmin, const cgsize_t *rmax,
+\end_layout
+
+\begin_layout Plain Layout
+
+                              void *coordsX,  void *coordsY,  void *coordsZ);
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{c}  
+\end_layout
+
+\begin_layout Plain Layout
+
+int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, 
+\end_layout
+
+\begin_layout Plain Layout
+
+                               const cgsize_t *rmin, const cgsize_t *rmax,
+\end_layout
+
+\begin_layout Plain Layout
+
+                               const void *coordsX, const void *coordsY,
+ const void *coordsZ);
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{c}
+\end_layout
+
+\begin_layout Plain Layout
+
+ int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
+\end_layout
+
+\begin_layout Plain Layout
+
+                               const cgsize_t *rmin, const cgsize_t *rmax,
+\end_layout
+
+\begin_layout Plain Layout
+
+                               int nsets, ...);
+\end_layout
+
+\begin_layout Plain Layout
+
+/* ...
+ nsets of variable arguments, *solution_array, corresponding to the order
+ given by F */
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{c}
+\end_layout
+
+\begin_layout Plain Layout
+
+int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
+\end_layout
+
+\begin_layout Plain Layout
+
+                               const cgsize_t *rmin, const cgsize_t *rmax,
+\end_layout
+
+\begin_layout Plain Layout
+
+                               int nsets, ...);
+\end_layout
+
+\begin_layout Plain Layout
+
+/* ...
+ nsets of variable arguments, *solution_array, corresponding to the order
+ given by F */
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{c}
+\end_layout
+
+\begin_layout Plain Layout
+
+int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin, const
+ cgsize_t *rmax,
+\end_layout
+
+\begin_layout Plain Layout
+
+                               int nsets, ...);
+\end_layout
+
+\begin_layout Plain Layout
+
+/* ...
+ nsets of variable arguments, *field_array, corresponding to the order given
+ by F */
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{c}
+\end_layout
+
+\begin_layout Plain Layout
+
+int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,const
+ cgsize_t *rmax,
+\end_layout
+
+\begin_layout Plain Layout
+
+                              int nsets, ...);
+\end_layout
+
+\begin_layout Plain Layout
+
+/* ...
+ nsets of variable arguments, *field_array, corresponding to the order given
+ by F */
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+
+\series bold
+Fortran
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{fortran}
+\end_layout
+
+\begin_layout Plain Layout
+
+CALL cgp_coord_multi_read_data_f(fn, B, Z, C, rmin, rmax, coordsX, coordsY,
+ coordsZ, ier)
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: fn
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: B
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: Z
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: C
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(CG_SIZE_T) :: rmin
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(CG_SIZE_T) :: rmax
+\end_layout
+
+\begin_layout Plain Layout
+
+   REAL :: coordsX, coordsY, coordsZ
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: ier
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{fortran}
+\end_layout
+
+\begin_layout Plain Layout
+
+CALL cgp_coord_multi_write_data_f(fn, B, Z, C, rmin, rmax, coordsX, coordsY,
+ coordsZ, ier)
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: fn
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: B
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: Z
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: C
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(CG_SIZE_T) :: rmin
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(CG_SIZE_T) :: rmax
+\end_layout
+
+\begin_layout Plain Layout
+
+   REAL :: coordsX, coordsY, coordsZ
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: ier
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{fortran}
+\end_layout
+
+\begin_layout Plain Layout
+
+CALL cgp_field_multi_write_data_f(fn, B, Z, S, F, rmin, rmax, ier, nsets,
+ ...)
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: fn
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: B
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: Z
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: C
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(CG_SIZE_T) :: rmin
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(CG_SIZE_T) :: rmax
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: ier
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: nsets
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+ REAL, DIMENSION(*) :: field_array ! entered nsets times 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{fortran}
+\end_layout
+
+\begin_layout Plain Layout
+
+CALL cgp_field_multi_read_data_f(fn, B, Z, S, F, rmin, rmax, ier, nsets,
+ ...)
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: fn
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: B
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: Z
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: C
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(CG_SIZE_T) :: rmin
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(CG_SIZE_T) :: rmax
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: ier
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: nsets
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+ REAL, DIMENSION(*) :: field_array ! entered nsets times 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{fortran}
+\end_layout
+
+\begin_layout Plain Layout
+
+CALL cgp_array_multi_write_data_f(fn, B, Z, S, F, rmin, rmax, ier, nsets,
+ ...)
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: fn
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: B
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: Z
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: C
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(CG_SIZE_T) :: rmin
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(CG_SIZE_T) :: rmax
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: ier
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: nsets
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+ REAL, DIMENSION(*) :: data_array ! entered nsets times 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{fortran}
+\end_layout
+
+\begin_layout Plain Layout
+
+CALL cgp_array_multi_read_data_f(fn, B, Z, S, F, rmin, rmax, ier, nsets,
+ ...)
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: fn
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: B
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: Z
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: C
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(CG_SIZE_T) :: rmin
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(CG_SIZE_T) :: rmax
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: ier
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER :: nsets
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+ REAL, DIMENSION(*) :: data_array ! entered nsets times 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+New C changes
+\end_layout
+
+\begin_layout Itemize
+A new example benchmark program, benchmark_hdf5.c was added to ptests.
 \end_layout
 
 \begin_layout Subsection
@@ -267,37 +972,21 @@ cgslib_h
 
 
 \shape default
- was changed to a preprocess include statement 
-\shape italic
-#include 
-\begin_inset Quotes eld
-\end_inset
-
-cgnslib_f03.h
-\begin_inset Quotes erd
-\end_inset
-
-.
- 
-\shape default
-This allows the include file to be pre-processed.
- 
+ was changed to using a module, USE CGNS.
 \end_layout
 
 \begin_deeper
 \begin_layout Enumerate
-NOTE: THIS MIGHT BE CHANGED TO USE A MODULE INSTEAD, i.e.
- 
-\shape italic
-USE CGNS
-\shape default
-, BEFORE THE MERGE OF THE BRANCH TO THE TRUNK.
- This would allow defining a KIND type for the integers instead of the current
+This allows defining a KIND type for the integers instead of the current
  way of using the preprocessor dependent 
 \shape italic
 cgsize_t
 \shape default
 .
+\end_layout
+
+\begin_layout Enumerate
+Compatibility might be added back before the merge to the trunk.
 \end_layout
 
 \end_deeper
@@ -326,7 +1015,7 @@ cgsize_t
 \shape italic
 --enable-64bit
 \shape default
- is being used.
+.
 \end_layout
 
 \begin_layout Enumerate
@@ -337,7 +1026,7 @@ reference "enu:int64"
 
 \end_inset
 
- were followed, users should not need to or use the CG_BUILD_64BIT parameters
+ were followed, users should not need to, or use, the CG_BUILD_64BIT parameters
  since Fortran's 
 \shape italic
 cgsize_t
@@ -409,18 +1098,136 @@ cgsize_t
 \shape italic
 cgint_f
 \shape default
- everywhere the argument is declared as an 
+ everywhere the C argument is declared as an 
 \shape italic
 int
 \shape default
  in C, (2) configure needs to detect what size the default integer is in
- Fortran and find the corresponding size in C so that information is used
- to set the correct size of cgint_f.
+ Fortran and find the corresponding size in C in order to set the correct
+ size of cgint_f.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Two new benchmarking programs were introduced in directory ptests:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+benchnarking_hdf5_f90.F90 uses the conventional Fortran wrappers.
+\end_layout
+
+\begin_layout Enumerate
+benchmarking_hdf5_f03.F90 calls the C APIs directly, not Fortran wrappers
+ are used.
 \end_layout
 
 \end_deeper
 \begin_layout Section
 Parallel installation instructions
+\end_layout
+
+\begin_layout Standard
+Two parallel files systems have been investigated: GPFS (mira, Argonne National
+ Laboratory) and Lustre (Pleiades NASA).
+ The following descriptions were performed on these systems, but they procedure
+ should be similar for different machines of the same type.
+ Example build scripts for these systems can be found in src/sampleScripts.
+ They include scripts for building zlib, hdf5 (assuming the user does not
+ already have them install system wide) and a script for building CGNS.
+ All the scripts use autotools, cmake remains untested.
+ The next few examples assumes all the needed packages are in ${HOME}/packages
+ and all the scripts are placed in ${HOME}/packages.
+ This information can also be found in the README.txt in the scripts directory.
+\end_layout
+
+\begin_layout Subsection
+Building on IBM Blue Gene (GPFS)
+\end_layout
+
+\begin_layout Enumerate
+Building zlib from source: Download and extract the zlib source: http://www.zlib.n
+et/
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+cd into the top level zlib source directory.
+ 
+\end_layout
+
+\begin_layout Enumerate
+modify and run the script: ../build_zlib
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Building hdf5 from source
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+From the top level of the hdf5 library, change the ${HOME}/packages to where
+ zlib was installed in STEP 1.
+ 
+\end_layout
+
+\begin_layout Enumerate
+../build_hdf5 --without-pthread --disable-shared --enable-parallel --enable-produc
+tion 
+\backslash
+ --enable-fortran --enable-fortran2003 
+\backslash
+ --disable-stream-vfd --disable-direct-vfd 
+\backslash
+ --with-zlib=${HOME}/packages/zlib-1.2.8/lib --prefix=${HOME}/packages/phdf5-trunk
+\end_layout
+
+\begin_layout Standard
+where prefix is set for where the hdf5 library will get installed.
+ There should be no need to modify in the script.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Building cgns from source:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+cd into the cgns/src directory 
+\end_layout
+
+\begin_layout Enumerate
+modify and run: <pathto>/build_cgns 
+\end_layout
+
+\begin_layout Enumerate
+make
+\end_layout
+
+\begin_layout Enumerate
+To make the tests: cd ptests; make;make tests
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+IMPORTANT PARAMETERS FOR GOOD PERFORMANCE
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+The environment variable BGLOCKLESSMPIO_F_TYPE=0x47504653 should be set.
+ For example, this can be set using qsub --env BGLOCKLESSMPIO_F_TYPE=0x47504653
+\end_layout
+
+\end_deeper
+\begin_layout Subsection
+Building on SGI (Lustre)
+\end_layout
+
+\begin_layout Section
+General installation instructions
 \end_layout
 
 \begin_layout Enumerate
