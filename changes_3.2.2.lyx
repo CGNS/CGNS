@@ -84,6 +84,7 @@ Changes introduced in HDF5_Parallel Branch
 \begin_layout Standard
 Items listed in blue effect compatibility of older code when using 3.2.2.
  Known problems are highlighted in red.
+ The branch 
 \end_layout
 
 \begin_layout Subsection
@@ -933,7 +934,7 @@ New Fortran changes
 \begin_layout Standard
 All users are 
 \series bold
-\color white
+\color black
 strongly
 \series default
 \color inherit
@@ -952,10 +953,10 @@ Configure was changed to check if the Fortran compiler is Fortran 2003 compliant
 \end_layout
 
 \begin_layout Enumerate
-The predefined CGNS constant parameters data types where changed from INTEGER
+The predefined CGNS constant parameters data types were changed from INTEGER
  to ENUM, BIND(C) for better C interoperability.
- The users should use the predefined types whenever possible and not the
- numerical value represented by the constant.
+ The users should use the predefined constants whenever possible and not
+ the numerical value represented by the constants.
 \end_layout
 
 \begin_layout Enumerate
@@ -972,13 +973,13 @@ cgslib_h
 
 
 \shape default
- was changed to using a module, USE CGNS.
+ was changed in favore of using a module, USE CGNS.
 \end_layout
 
 \begin_deeper
 \begin_layout Enumerate
-This allows defining a KIND type for the integers instead of the current
- way of using the preprocessor dependent 
+This allows defining a KIND type for integers instead of the current way
+ of using the preprocessor dependent 
 \shape italic
 cgsize_t
 \shape default
@@ -986,7 +987,7 @@ cgsize_t
 \end_layout
 
 \begin_layout Enumerate
-Compatibility might be added back before the merge to the trunk.
+Backward compatibility might be added before the merge to the trunk.
 \end_layout
 
 \end_deeper
@@ -1026,8 +1027,8 @@ reference "enu:int64"
 
 \end_inset
 
- were followed, users should not need to, or use, the CG_BUILD_64BIT parameters
- since Fortran's 
+ were followed, users should not need to use parameter CG_BUILD_64BIT since
+ Fortran's 
 \shape italic
 cgsize_t
 \shape default
@@ -1114,11 +1115,11 @@ Two new benchmarking programs were introduced in directory ptests:
 
 \begin_deeper
 \begin_layout Enumerate
-benchnarking_hdf5_f90.F90 uses the conventional Fortran wrappers.
+benchmarking_hdf5_f90.F90 uses the conventional Fortran wrappers.
 \end_layout
 
 \begin_layout Enumerate
-benchmarking_hdf5_f03.F90 calls the C APIs directly, not Fortran wrappers
+benchmarking_hdf5_f03.F90 calls the C APIs directly, no Fortran wrappers
  are used.
 \end_layout
 
@@ -1128,16 +1129,21 @@ Parallel installation instructions
 \end_layout
 
 \begin_layout Standard
-Two parallel files systems have been investigated: GPFS (mira, Argonne National
+Two parallel files systems were investigated: GPFS (mira, Argonne National
  Laboratory) and Lustre (Pleiades NASA).
- The following descriptions were performed on these systems, but they procedure
- should be similar for different machines of the same type.
- Example build scripts for these systems can be found in src/sampleScripts.
+ The following descriptions were performed on these systems, but the overall
+ procedure should be similar on different machines of the same type.
+ Example build scripts for these systems can be found in src/sampleScripts
+ of the CGNS source code.
  They include scripts for building zlib, hdf5 (assuming the user does not
  already have them install system wide) and a script for building CGNS.
- All the scripts use autotools, cmake remains untested.
- The next few examples assumes all the needed packages are in ${HOME}/packages
- and all the scripts are placed in ${HOME}/packages.
+ All the scripts use autotools; 
+\color red
+cmake remains untested
+\color inherit
+.
+ The next few examples assume all the needed packages are in ${HOME}/packages
+ and all the build scripts are placed in ${HOME}/packages.
  This information can also be found in the README.txt in the scripts directory.
 \end_layout
 
@@ -1226,202 +1232,72 @@ The environment variable BGLOCKLESSMPIO_F_TYPE=0x47504653 should be set.
 Building on SGI (Lustre)
 \end_layout
 
-\begin_layout Section
-General installation instructions
-\end_layout
-
 \begin_layout Enumerate
-Install HDF5 on your system
+Building zlib from source: Download and extract the zlib source: http://www.zlib.n
+et/
 \end_layout
 
 \begin_deeper
 \begin_layout Enumerate
-HDF5 uses the standard GNU autotools, so './configure', 'make', 'sudo make
- install' should install HDF5 without problems on most systems.
+cd into the top level zlib source directory.
+ 
+\end_layout
+
+\begin_layout Enumerate
+modify and run the script: ../build_zlib
 \end_layout
 
 \end_deeper
 \begin_layout Enumerate
-Unpack the tar ball containing the source code into some directory.
-\end_layout
-
-\begin_layout Enumerate
-Create a new director in which to build the library.
-\end_layout
-
-\begin_layout Enumerate
-Use cmake to initialize the build tree.
+Building hdf5 from source
 \end_layout
 
 \begin_deeper
-\begin_layout Standard
-\begin_inset Box Frameless
-position "t"
-hor_pos "c"
-has_inner_box 1
-inner_pos "t"
-use_parbox 0
-use_makebox 0
-width "100col%"
-special "none"
-height "1in"
-height_special "totalheight"
-status open
-
-\begin_layout Plain Layout
-
-\family typewriter
-user@hostname:build_path$ cmake /path/to/cgns/sources/
+\begin_layout Enumerate
+From the top level of the hdf5 library, change the ${HOME}/packages to where
+ zlib was installed in STEP 1.
+ 
 \end_layout
 
-\end_inset
-
-
+\begin_layout Enumerate
+../build_hdf5
 \end_layout
 
 \end_deeper
 \begin_layout Enumerate
-Use ccmake to edit the control variables as needed.
-\end_layout
-
-\begin_deeper
-\begin_layout Standard
-\begin_inset Box Frameless
-position "t"
-hor_pos "c"
-has_inner_box 1
-inner_pos "t"
-use_parbox 0
-use_makebox 0
-width "100col%"
-special "none"
-height "1in"
-height_special "totalheight"
-status open
-
-\begin_layout Plain Layout
-
-\family typewriter
-user@hostname:build_path$ ccmake .
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Enumerate
-The paths to the HDF5 libraries and header files must be set in 'HDF5_LIBRARY_DI
-R' and 'HDF5_INCLUDE_DIR' respectively.
+Building cgns from source:
 \end_layout
 
 \begin_deeper
 \begin_layout Enumerate
-If HDF5 is built with parallel-IO support via MPI, the 'HDF5_NEEDS_MPI'
- flag must be set to true.
+cd into the cgns/src directory 
 \end_layout
 
 \begin_layout Enumerate
-If HDF5 is built with zlib and szip support, these need to be flagged with
- 'HDF5_NEEDS_ZLIB' and 'HDF5_NEEDS_SZIP' as well as the paths for those
- libraries.
+modify and run: <pathto>/build_cgns 
+\end_layout
+
+\begin_layout Enumerate
+make
+\end_layout
+
+\begin_layout Enumerate
+To make the tests: cd ptests; make;make tests
 \end_layout
 
 \end_deeper
 \begin_layout Enumerate
-Fortran can be enabled by toggling the 'CGNS_ENABLE_FORTRAN' variable.
+IMPORTANT PARAMETERS FOR GOOD PERFORMANCE
 \end_layout
 
 \begin_deeper
 \begin_layout Enumerate
-A view of the attempt to autodetect the correct interface between Fortran
- and C is show, setting the value of 'FORTRAN_NAMING'.
+The Lustre parameters have not been fully tested.
 \end_layout
 
 \begin_layout Enumerate
-For gfortran and pgf90 the value of 'FORTRAN_NAMING' shoud be 'LOWERCASE_'.
-\end_layout
-
-\end_deeper
-\begin_layout Enumerate
-The build system must be reconfigured after variable changes by pressing
- 'c'.
- Variables who's value has changed are maked with a '*' in the interface.
-\end_layout
-
-\begin_layout Enumerate
-After configuration, the Makefiles must be generated by pressing 'g'.
-\end_layout
-
-\end_deeper
-\begin_layout Enumerate
-Use make to build the library.
-\end_layout
-
-\begin_deeper
-\begin_layout Standard
-\begin_inset Box Frameless
-position "t"
-hor_pos "c"
-has_inner_box 1
-inner_pos "t"
-use_parbox 0
-use_makebox 0
-width "100col%"
-special "none"
-height "1in"
-height_special "totalheight"
-status open
-
-\begin_layout Plain Layout
-
-\family typewriter
-user@hostname:build_path$ make
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Enumerate
-A colorized review of the build process should follow.
-\end_layout
-
-\end_deeper
-\begin_layout Enumerate
-Installation of the library is accomplished with the 'install' target of
- the makefile.
-\end_layout
-
-\begin_deeper
-\begin_layout Standard
-\begin_inset Box Frameless
-position "t"
-hor_pos "c"
-has_inner_box 1
-inner_pos "t"
-use_parbox 0
-use_makebox 0
-width "100col%"
-special "none"
-height "1in"
-height_special "totalheight"
-status open
-
-\begin_layout Plain Layout
-
-\family typewriter
-user@hostname:build_path$ make install
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Enumerate
-You must have permissions to alter the directory where cgns will be installed.
+On Pleiades, lfs setstripe -c 64 -s 0 /nobackupp8/<dir>, has shown good
+ performance.
 \end_layout
 
 \end_deeper
