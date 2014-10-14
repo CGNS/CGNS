@@ -5,6 +5,24 @@
 
 #include "cgnstypes_f.h"
 
+#if CG_BUILD_64BIT
+#  if HAVE_FORTRAN_2003
+        INTEGER, PARAMETER :: CGSIZE_T = C_LONG_LONG
+#  else
+        INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(15) ! should map to INTEGER*8 on most modern processors
+        INTEGER, PARAMETER :: CGSIZE_T = cgint_kind
+#  endif
+        LOGICAL, PARAMETER :: CG_BUILD_64BIT_F = .TRUE.
+#else
+#  ifdef HAVE_FORTRAN_2003
+        INTEGER, PARAMETER :: CGSIZE_T = C_INT
+#  else
+        INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(5) ! should map to INTEGER*4 on most modern processors
+        INTEGER, PARAMETER :: CGSIZE_T = cgint_kind
+#  endif
+        LOGICAL, PARAMETER :: CG_BUILD_64BIT_F = .FALSE.
+#endif   
+
 ! Fortran version of cgnslib.h
 !
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *

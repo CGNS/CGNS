@@ -61,6 +61,9 @@ PROGRAM benchmark_hdf5_f90
 #ifdef WINNT
   INCLUDE 'cgnswin_f.h'
 #endif
+
+#include "cgnstypes_f.h"
+
   INTEGER, PARAMETER :: dp = KIND(1.d0)
 
   ! Use powers of 2

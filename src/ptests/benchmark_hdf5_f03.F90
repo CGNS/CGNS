@@ -65,6 +65,8 @@ PROGRAM main
   USE testing_functions
   IMPLICIT NONE
 
+#include "cgnstypes_f.h"
+
   INTEGER, PARAMETER :: dp = KIND(1.d0)
   INTEGER(CGSIZE_T), PARAMETER :: Nelem = 1024 !33554432 ! Use multiples of number of cores per node
   INTEGER(CGSIZE_T), PARAMETER :: NodePerElem = 6

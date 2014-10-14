@@ -34,34 +34,6 @@
 #define HAVE_FORTRAN_2003 @HAVE_FORTRAN_2003@
 #define HAVE_FORTRAN_2008TS @HAVE_FORTRAN_2008TS@
 
-#if @BUILD64BIT@
-#  if HAVE_FORTRAN_2003
-      INTEGER, PARAMETER :: CGSIZE_T = C_LONG_LONG
-#  else
-#    if HAVE_FORTRAN_95
-      INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(15) ! should map to INTEGER*8 on most modern processors
-      INTEGER, PARAMETER :: CGSIZE_T = cgint_kind
-#    else
-#     define cgsize_t integer*8
-#     define CGSIZE_T integer*8
-#    endif       
-#  endif
-      LOGICAL, PARAMETER :: CG_BUILD_64BIT_F = .TRUE.
-#else
-#  ifdef HAVE_FORTRAN_2003
-      INTEGER, PARAMETER :: CGSIZE_T = C_INT
-#  else
-#    if HAVE_FORTRAN_95
-      INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(5) ! should map to INTEGER*4 on most modern processors
-      INTEGER, PARAMETER :: CGSIZE_T = cgint_kind
-#    else
-#     define cgsize_t integer*4
-#     define CGSIZE_T integer*4
-#    endif       
-#  endif
-      LOGICAL, PARAMETER :: CG_BUILD_64BIT_F = .FALSE.
-#endif
-
 !#define HDF5_HAVE_MULTI_DATASETS
 
 !/* Determine if hdf5 has multi-dataset read/write capabilities;
@@ -77,6 +49,5 @@
 !/* #   endif */
 !/* # endif */
 !/* #endif */
-
 
 #endif
