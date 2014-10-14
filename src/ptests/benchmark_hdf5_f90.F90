@@ -82,7 +82,6 @@ PROGRAM benchmark_hdf5_f90
   INTEGER :: r_cell_dim = 0
   INTEGER :: r_phys_dim = 0
   INTEGER(CGSIZE_T), DIMENSION(1:3) :: nijk, sizes
-  INTEGER(CGSIZE_T), DIMENSION(1:1) :: size_1D
   INTEGER(CGSIZE_T) :: min, max
   INTEGER(CGSIZE_T) :: k, count
   ! For writing and reading data
@@ -127,6 +126,7 @@ PROGRAM benchmark_hdf5_f90
   CHARACTER(LEN=6) :: ichr6
   INTEGER, DIMENSION(1:3) :: Cvec, Fvec
   INTEGER, DIMENSION(1:2) :: Avec
+  INTEGER(KIND(LongInteger)) :: int_type
 
   CALL MPI_Init(mpi_err)
   CALL MPI_Comm_size(MPI_COMM_WORLD,comm_size,mpi_err)
@@ -421,26 +421,24 @@ PROGRAM benchmark_hdf5_f90
      CALL cgp_error_exit_f()
   ENDIF
 
-  size_1D(1) = nijk(1)
-  CALL cgp_array_write_f("ArrayR",RealDouble,1,size_1D,Ar, err)
+  CALL cgp_array_write_f("ArrayR",RealDouble,1,INT(nijk(1),cgsize_t),Ar, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_array_write_f (Array_Ar)'
      CALL cgp_error_exit_f()
   ENDIF
 
-#if CG_BUILD_64BIT
-  CALL cgp_array_write_f("ArrayI",LongInteger,1,size_1D,Ai, err)
+! determine the size of the integer
+  
+  int_type = Integer
+  IF(CG_BUILD_64BIT_F)THEN
+     int_type = LongInteger
+  ENDIF
+
+  CALL cgp_array_write_f("ArrayI",int_type,1,INT(nijk(1),cgsize_t),Ai, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_array_write_f   (Array_Ai)'
      CALL cgp_error_exit_f()
   ENDIF
-#else
-  call cgp_array_write_f("ArrayI",Integer,1,size_1D,Ai, err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_write_f   (Array Ai)'
-     CALL cgp_error_exit_f()
-  ENDIF
-#endif
 
   t1 = MPI_Wtime()
 

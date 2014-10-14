@@ -55,7 +55,7 @@
         ENUM, BIND(C)
             ENUMERATOR :: CGP_INDEPENDENT = 0
 	    ENUMERATOR :: CGP_COLLECTIVE  = 1
-        END ENUM	
+        END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Dimensional Units (found in cgnslib.h)                         *
@@ -644,7 +644,7 @@
              INTEGER(C_INT)   , INTENT(IN), VALUE  :: B
              CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: zonename
              INTEGER(CGSIZE_T), DIMENSION(*), INTENT(IN)  :: nijk
-             INTEGER(C_INT)   , INTENT(IN), VALUE  :: itype
+             INTEGER(KIND(CGP_COLLECTIVE)), INTENT(IN), VALUE  :: itype
              INTEGER(C_INT)   , INTENT(OUT)  :: Z
            END FUNCTION cg_zone_write
         END INTERFACE
@@ -678,7 +678,7 @@
              INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
              INTEGER(C_INT)   , INTENT(IN), VALUE :: B
              INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-             INTEGER(C_INT)   , INTENT(IN), VALUE :: itype
+             INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
              CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: coordname
              INTEGER(C_INT)   , INTENT(OUT)  :: C
            END FUNCTION cgp_coord_write
@@ -705,7 +705,7 @@
              INTEGER(C_INT)   , INTENT(IN), VALUE :: B
              INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
              INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-             INTEGER(C_INT)   , INTENT(IN), VALUE :: itype
+             INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
              CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: fieldname
              INTEGER(C_INT)   , INTENT(OUT)  :: F
            END FUNCTION cgp_field_write
@@ -763,7 +763,7 @@
              INTEGER(C_INT)   , INTENT(IN), VALUE :: B
              INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
              CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: sectionname
-             INTEGER(C_INT)   , INTENT(IN), VALUE :: itype
+             INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
              INTEGER(CGSIZE_T), INTENT(IN), VALUE :: start
              INTEGER(CGSIZE_T), INTENT(IN), VALUE :: end
              INTEGER(C_INT)   , INTENT(IN), VALUE :: nbndry
@@ -776,13 +776,12 @@
              USE ISO_C_BINDING
              IMPORT :: cgsize_t
              CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: arrayname
-             INTEGER(C_INT)   , INTENT(IN), VALUE :: itype
+             INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
              INTEGER(C_INT)   , INTENT(IN), VALUE :: DataDimension
              INTEGER(CGSIZE_T), DIMENSION(1:DataDimension), INTENT(IN) :: DimensionVector
              INTEGER(C_INT)   , INTENT(OUT) :: A
            END FUNCTION cgp_array_write
         END INTERFACE
-        
         
         INTERFACE     
            INTEGER(C_INT) FUNCTION cgp_array_write_data(A, rmin, rmax, data) BIND(C, name='cgp_array_write_data')
@@ -841,7 +840,7 @@
              INTEGER(C_INT)   , INTENT(IN), VALUE :: B
              INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
              CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: solname
-             INTEGER(C_INT)   , INTENT(IN), VALUE :: location
+             INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: location
              INTEGER(C_INT)   , INTENT(OUT) :: S
            END FUNCTION cg_sol_write
         END INTERFACE
