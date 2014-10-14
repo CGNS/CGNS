@@ -21,9 +21,6 @@ CGNSOBJS=\
 	$(OBJDIR)/cgns_io.$(O) \
 	$(OBJDIR)/cgnslib.$(O)
 
-@FGNSOBJS@=\
-	$(OBJDIR)/cgns_f.$(O)
-
 # ADF/ADFH routines
 
 ADFOBJS=@ADFOBJS@ \
@@ -31,8 +28,8 @@ ADFOBJS=@ADFOBJS@ \
 	$(OBJDIR)/ADF_internals.$(O)
 
 # Fortran interface routines
-# comment this out if you don't want/need Fortran
 
+@FGNSOBJS@=$(OBJDIR)/cgns_f.$(O)
 @F2COBJS@=$(OBJDIR)/cg_ftoc.$(O) $(OBJDIR)/cgio_ftoc.$(O)
 
 #----------
@@ -94,10 +91,10 @@ distclean :
 	-$(RM) $(CGNSLIB)
 	-$(RM) $(OBJDIR)/*.$(O)
 	-$(RMDIR) $(OBJDIR)
-	-$(RM) cgnsconfig.h cgnstypes.h cgnstypes_f.h cgnslib_f.h cgnslib_f03.h
+	-$(RM) cgnsconfig.h cgnstypes.h cgnstypes_f.h cgnslib_f.h
 	-$(RM) config.log config.status
 	-$(RM) make.defs cgnsBuild.defs Makefile
-	-$(RM) *~ *.bak 
+	-$(RM) *~ *.bak *.mod
 
 install-all : install
 
@@ -106,12 +103,14 @@ install-cgns : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR) @INSTALLPCGNS@ @INSTALLADF@
 	$(INSTALL_DATA) cgnstypes_f.h $(INCLUDEDIR)/cgnstypes_f.h
 	$(INSTALL_DATA) cgnslib.h $(INCLUDEDIR)/cgnslib.h
 	$(INSTALL_DATA) cgnslib_f.h $(INCLUDEDIR)/cgnslib_f.h
-	$(INSTALL_DATA) cgnslib_f03.h $(INCLUDEDIR)/cgnslib_f03.h
 	$(INSTALL_DATA) cgnswin_f.h $(INCLUDEDIR)/cgnswin_f.h
 	$(INSTALL_DATA) cgns_io.h $(INCLUDEDIR)/cgns_io.h
 	$(INSTALL_DATA) cgnsconfig.h $(INCLUDEDIR)/cgnsconfig.h
 	$(INSTALL_DATA) cgnsBuild.defs $(INCLUDEDIR)/cgnsBuild.defs
 	$(INSTALL_DATA) $(CGNSLIB) $(LIBDIR)/$(INSTLIB)
+	@if [ -f cgns.mod ] ; then \
+	$(INSTALL_DATA) cgns.mod $(INCLUDEDIR)/cgns.mod \
+	  fi;
 
 install-tools :
 	-cd tools && $(MAKE) install
@@ -163,11 +162,14 @@ uninstall :
 	-$(RM) $(INCLUDEDIR)/cgnstypes_f.h
 	-$(RM) $(INCLUDEDIR)/cgnslib.h
 	-$(RM) $(INCLUDEDIR)/cgnslib_f.h
-	-$(RM) $(INCLUDEDIR)/cgnslib_f03.h
 	-$(RM) $(INCLUDEDIR)/cgnswin_f.h
 	-$(RM) $(INCLUDEDIR)/cgns_io.h
 	-$(RM) $(INCLUDEDIR)/cgnsconfig.h
 	-$(RM) $(INCLUDEDIR)/cgnsBuild.defs
+	@if [ -f $(INCLUDEDIR)/cgns.mod ] ; then \
+	   $(RM) $(INCLUDEDIR)/cgns.mod \
+	  fi;
+	-$(RM) $(INCLUDEDIR)/cgns.mod
 	-$(RM) $(LIBDIR)/$(INSTLIB)
 	@if [ -f $(INCLUDEDIR)/adf/ADF.h ] ; then \
 	   $(RM) $(INCLUDEDIR)/adf/ADF.h; \
