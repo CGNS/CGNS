@@ -961,5 +961,41 @@
 
 #endif
 
+        INTERFACE cg_get_type
+           MODULE PROCEDURE cg_get_type_c_int
+           MODULE PROCEDURE cg_get_type_c_long_long
+           MODULE PROCEDURE cg_get_type_c_float
+           MODULE PROCEDURE cg_get_type_c_double
+        END INTERFACE cg_get_type
+           
+      CONTAINS
+
+        FUNCTION cg_get_type_c_int(a)
+          USE ISO_C_BINDING
+          INTEGER(C_INT) :: a
+          INTEGER(KIND(Integer)) :: cg_get_type_c_int
+          cg_get_type_c_int = Integer
+        END FUNCTION cg_get_type_c_int
+
+        FUNCTION cg_get_type_c_long_long(a)
+          USE ISO_C_BINDING
+          INTEGER(C_LONG_LONG) :: a
+          INTEGER(KIND(Longinteger)) :: cg_get_type_c_long_long 
+          cg_get_type_c_long_long = LongInteger
+        END FUNCTION cg_get_type_c_long_long
+
+        FUNCTION cg_get_type_c_float(a)
+          USE ISO_C_BINDING
+          REAL(C_FLOAT) :: a
+          INTEGER(KIND(RealSingle)) :: cg_get_type_c_float
+          cg_get_type_c_float = RealSingle
+        END FUNCTION cg_get_type_c_float
+
+        FUNCTION cg_get_type_c_double(a)
+          USE ISO_C_BINDING
+          REAL(C_DOUBLE) :: a
+          INTEGER(KIND(RealDouble)) :: cg_get_type_c_double
+          cg_get_type_c_double = RealDouble
+        END FUNCTION cg_get_type_c_double
 
       END MODULE cgns

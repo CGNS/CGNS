@@ -131,7 +131,6 @@ PROGRAM main
   INTEGER(C_SIZE_T) :: int_sizeof
   INTEGER :: comm_info
   INTEGER(C_INT), DIMENSION(1:3), TARGET :: Cvec
-  INTEGER(KIND(LongInteger)) :: int_type
   
   CALL MPI_Init(mpi_err)
   CALL MPI_Comm_size(MPI_COMM_WORLD,comm_size,mpi_err)
@@ -448,18 +447,13 @@ PROGRAM main
   ENDIF
 
   size_1D(1) = nijk(1)
-  err = cgp_array_write("ArrayR"//C_NULL_CHAR,RealDouble,1_C_INT,size_1D,Ar)
+  err = cgp_array_write("ArrayR"//C_NULL_CHAR,cg_get_type(Array_r(1)),1_C_INT,size_1D,Ar)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_array_write (Array_Ar)'
      err = cgp_error_exit()
   ENDIF
 
-  int_type = Integer
-  IF(CG_BUILD_64BIT_F)THEN
-     int_type = LongInteger
-  ENDIF
-
-  err = cgp_array_write("ArrayI"//C_NULL_CHAR,int_type,1_C_INT,size_1D,Ai)
+  err = cgp_array_write("ArrayI"//C_NULL_CHAR,cg_get_type(Array_i(1)),1_C_INT,size_1D,Ai)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_array_write  (Array_Ai)'
      err = cgp_error_exit()

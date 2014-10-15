@@ -129,7 +129,6 @@ PROGRAM benchmark_hdf5_f90
   CHARACTER(LEN=6) :: ichr6
   INTEGER, DIMENSION(1:3) :: Cvec, Fvec
   INTEGER, DIMENSION(1:2) :: Avec
-  INTEGER(KIND(LongInteger)) :: int_type
 
   CALL MPI_Init(mpi_err)
   CALL MPI_Comm_size(MPI_COMM_WORLD,comm_size,mpi_err)
@@ -424,20 +423,13 @@ PROGRAM benchmark_hdf5_f90
      CALL cgp_error_exit_f()
   ENDIF
 
-  CALL cgp_array_write_f("ArrayR",RealDouble,1,INT(nijk(1),cgsize_t),Ar, err)
+  CALL cgp_array_write_f("ArrayR",cg_get_type(Array_r(1)),1,INT(nijk(1),cgsize_t),Ar, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_array_write_f (Array_Ar)'
      CALL cgp_error_exit_f()
   ENDIF
 
-! determine the size of the integer
-  
-  int_type = Integer
-  IF(CG_BUILD_64BIT_F)THEN
-     int_type = LongInteger
-  ENDIF
-
-  CALL cgp_array_write_f("ArrayI",int_type,1,INT(nijk(1),cgsize_t),Ai, err)
+  CALL cgp_array_write_f("ArrayI",cg_get_type(Array_i(1)),1,INT(nijk(1),cgsize_t),Ai, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_array_write_f   (Array_Ai)'
      CALL cgp_error_exit_f()
