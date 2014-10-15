@@ -30,7 +30,16 @@
 \index_command default
 \paperfontsize 11
 \spacing single
-\use_hyperref false
+\use_hyperref true
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder false
+\pdf_colorlinks false
+\pdf_backref false
+\pdf_pdfusetitle true
 \papersize default
 \use_geometry true
 \use_package amsmath 1
@@ -57,9 +66,9 @@
 \color #008000
 \end_index
 \leftmargin 1cm
-\topmargin 1cm
-\rightmargin 1cm
-\bottommargin 1cm
+\topmargin 2cm
+\rightmargin 12mm
+\bottommargin 2cm
 \secnumdepth 3
 \tocdepth 3
 \paragraph_separation indent
@@ -77,24 +86,150 @@
 
 \begin_body
 
+\begin_layout Title
+Parallel and Large Scale Simulation Enhancements to CGNS
+\end_layout
+
+\begin_layout Author
+M.
+ Scot Breitenfeld, The HDF Group
+\end_layout
+
 \begin_layout Section
-Changes introduced in HDF5_Parallel Branch
+Overview of changes introduced in the HDF5_Parallel branch
 \end_layout
 
 \begin_layout Standard
-Items listed in blue effect compatibility of older code when using 3.2.2.
- Known problems are highlighted in red.
- The branch 
+Many of the changes discussed in the following sections address the currently
+ (as of version 3.2.1) underperforming parallel capabilities of the CGNS library.
+ For example, the CGNS function cgp_open, which opens a CGNS file for processing
+, has substantially increasing execution time as the number of processes
+ is increased, Fig.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Time-for-completion"
+
+\end_inset
+
+ (trunk).
+ The current improvement for cgp_open is substantial at 100-1000 times faster
+ (branch) than the previous implementation (trunk).
+ In fact, for runs with the largest number of processes (>1024) the batch
+ job had a time limit of 5 minutes and not all the processes had completed
+ cgp_open before this limit was reached.
+ Obviously, the previous implementation of cgp_open is a lot worse than
+ reported in the figure.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Standard
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename cgp_open.png
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Time-for-completion"
+
+\end_inset
+
+Time for completion of cgp_open in write mode for the original implementation
+ (trunk) and the current implementation (branch), the error bars correspond
+ to the minimum and maximum time over all the processes that had completed
+ before the batch job time limit was reached.
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:General-behavior-changes"
+
+\end_inset
+
+ lists changes to CGNS that could effect the end user and introduces new
+ functions and specifications.
+ Fortran programmers should take notice of Section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:New-Fortran-changes"
+
+\end_inset
+
+ which highlights changes introduced for better interoperability with the
+ C CGNS library.
+ Section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:Parallel-installation-instructio"
+
+\end_inset
+
+ gives example installation guides for GPFS and Lustre hardware.
+ Items listed in blue effect compatibility of older codes when using CGNS
+ v3.2.2.
+ Known problems are highlighted in red.
+ The branch can be checked out from sourceforge at,
+\end_layout
+
+\begin_layout Standard
+\begin_inset space \space{}
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+http://svn.code.sf.net/p/cgns/code/cgns/branches/HDF5_Parallel
+\end_layout
+
+\begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:General-behavior-changes"
+
+\end_inset
+
 General behavior changes and new recommendations for parallel performance
 \end_layout
 
 \begin_layout Itemize
 The flush functions should not be used.
- Staggering the writing and reading by writing the data immediately avoids
- IO contention occurring when flush is being used.
+ Writing and reading immediately avoids IO contention occurring when flush
+ is being used.
 \end_layout
 
 \begin_layout Itemize
@@ -214,8 +349,10 @@ Functions for parallel reading and writing multi-component datasets using
  MPI IO completes the IO request using just one call.
  The availability of the new functions in the HDF5 library is checked at
  compile time.
- The current limitation (due to MPI) is that the size of the datasets must
- be less than 2GB.
+ The current limitation (due to MPI) is the size of the sum of the datasets
+ must be less than 2GB.
+ Example usage can be found in benchmark_hdf5.c and benchmark_hdf5_f90.F90
+ in ptests.
 \end_layout
 
 \begin_layout Standard
@@ -924,10 +1061,17 @@ New C changes
 \end_layout
 
 \begin_layout Itemize
-A new example benchmark program, benchmark_hdf5.c was added to ptests.
+A new parallel example benchmark program, benchmark_hdf5.c, was added to
+ directory ptests.
 \end_layout
 
 \begin_layout Subsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:New-Fortran-changes"
+
+\end_inset
+
 New Fortran changes
 \end_layout
 
@@ -973,7 +1117,7 @@ cgslib_h
 
 
 \shape default
- was changed in favore of using a module, USE CGNS.
+ was changed in favor of using a module, USE CGNS.
 \end_layout
 
 \begin_deeper
@@ -1007,7 +1151,7 @@ int
 \shape italic
 cgsize_t
 \shape default
- should be the arguments also declared
+ should be the arguments which are also declared
 \shape italic
  cgsize_t
 \shape default
@@ -1124,15 +1268,111 @@ benchmarking_hdf5_f03.F90 calls the C APIs directly, no Fortran wrappers
 \end_layout
 
 \end_deeper
+\begin_layout Enumerate
+A new Fortran API was added for determining the CGNS data type of a variable
+ which is interoperable with the C data type.
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{fortran}
+\end_layout
+
+\begin_layout Plain Layout
+
+Function cg_get_type(var)
+\end_layout
+
+\begin_layout Plain Layout
+
+   type, INTENT(IN) :: var
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER(KIND(enumvar)) :: cg_get_type
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+An example of using the new function to automatically specify the CGNS type
+ corresponding to the Fortran data type is, 
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{minted}[bgcolor=bg]{fortran}
+\end_layout
+
+\begin_layout Plain Layout
+
+   INTEGER, DIMENSION(1:10) :: Array_i
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+   CALL cgp_array_write_f("ArrayI",cg_get_type(Array_i(1)),1,INT(nijk(1),cgsize_
+t),Ai, err) 
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{minted}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:Parallel-installation-instructio"
+
+\end_inset
+
 Parallel installation instructions
 \end_layout
 
 \begin_layout Standard
 Two parallel files systems were investigated: GPFS (mira, Argonne National
  Laboratory) and Lustre (Pleiades NASA).
- The following descriptions were performed on these systems, but the overall
- procedure should be similar on different machines of the same type.
+ The following descriptions were for those systems, but the overall procedure
+ should be similar on different machines of the same type.
  Example build scripts for these systems can be found in src/sampleScripts
  of the CGNS source code.
  They include scripts for building zlib, hdf5 (assuming the user does not
@@ -1191,7 +1431,7 @@ tion
 
 \begin_layout Standard
 where prefix is set for where the hdf5 library will get installed.
- There should be no need to modify in the script.
+ There should be no need to modify the script.
 \end_layout
 
 \end_deeper
@@ -1218,13 +1458,14 @@ To make the tests: cd ptests; make;make tests
 
 \end_deeper
 \begin_layout Enumerate
-IMPORTANT PARAMETERS FOR GOOD PERFORMANCE
+Important parameters for good performance on GPFS
 \end_layout
 
 \begin_deeper
 \begin_layout Enumerate
 The environment variable BGLOCKLESSMPIO_F_TYPE=0x47504653 should be set.
- For example, this can be set using qsub --env BGLOCKLESSMPIO_F_TYPE=0x47504653
+ For example, this can be set in a batch job using qsub --env BGLOCKLESSMPIO_F_T
+YPE=0x47504653
 \end_layout
 
 \end_deeper
@@ -1301,5 +1542,19 @@ On Pleiades, lfs setstripe -c 64 -s 0 /nobackupp8/<dir>, has shown good
 \end_layout
 
 \end_deeper
+\begin_layout Section*
+Acknowledgements
+\end_layout
+
+\begin_layout Standard
+This work was funded by NASA through the CGNS project, contract #.
+ Additionally, the computational studies done on vesta, cetus and mira at
+ Argonne National Laboratory used allocation time through the ExaHDF5 project,
+ DOE contract #DE-AC02-05CH11231.
+ Computational studies on the Lustre file system was done on Pleiades through
+ NASA's High-End Computer Capabilities Project.
+ 
+\end_layout
+
 \end_body
 \end_document
