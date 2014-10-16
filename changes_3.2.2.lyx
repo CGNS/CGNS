@@ -87,7 +87,7 @@
 \begin_body
 
 \begin_layout Title
-Parallel and Large Scale Simulation Enhancements to CGNS
+Parallel and Large-scale Simulation Enhancements to CGNS
 \end_layout
 
 \begin_layout Author
@@ -198,7 +198,7 @@ reference "sec:Parallel-installation-instructio"
 \end_inset
 
  gives example installation guides for GPFS and Lustre hardware.
- Items listed in blue effect compatibility of older codes when using CGNS
+ Items listed in blue affect compatibility of older codes when using CGNS
  v3.2.2.
  Known problems are highlighted in red.
  The branch can be checked out from sourceforge at,
@@ -345,12 +345,12 @@ Functions for parallel reading and writing multi-component datasets using
  a single call was introduced.
  The new APIs use new capabilities introduced in version 1.8.* (currently
  not released as of 10.13.2014) of the HDF5 library.
- The new APIs pack multiple datasets into a single buffer and the underlining
+ The new APIs pack multiple datasets into a single buffer and the underlying
  MPI IO completes the IO request using just one call.
  The availability of the new functions in the HDF5 library is checked at
  compile time.
- The current limitation (due to MPI) is the size of the sum of the datasets
- must be less than 2GB.
+ The current limitation (due to MPI) is that the size of the sum of the
+ datasets must be less than 2GB.
  Example usage can be found in benchmark_hdf5.c and benchmark_hdf5_f90.F90
  in ptests.
 \end_layout
@@ -1085,7 +1085,7 @@ strongly
  encouraged to use a Fortran 2003 standard compliant compiler.
  Using a Fortran 2003 compiler guarantees interoperability with the C APIs
  via the ISO_C_BINDING module.
- Many changes where added to the CGNS library in order to take full advantage
+ Many changes were added to the CGNS library in order to take full advantage
  of the interoperability offered by the ISO_C_BINDING module.
  
 \end_layout
@@ -1147,7 +1147,7 @@ The user should be sure to declare the arguments declared
 int
 \shape default
  in the C APIs as INTEGER in Fortran.
- The ONLY fortran arguments declared as type 
+ The ONLY Fortran arguments declared as type 
 \shape italic
 cgsize_t
 \shape default
@@ -1207,7 +1207,7 @@ cgsize_t
 \shape default
 ) to be able to store values which are too large to be stored as 4 byte
  integers (i.e.
- numbers greater then 2,147,483,647).
+ numbers greater than 2,147,483,647).
  It is not necessary, or advisable, to have CGNS INTEGER types (types declared
  
 \shape italic
@@ -1376,7 +1376,7 @@ Two parallel files systems were investigated: GPFS (mira, Argonne National
  Example build scripts for these systems can be found in src/sampleScripts
  of the CGNS source code.
  They include scripts for building zlib, hdf5 (assuming the user does not
- already have them install system wide) and a script for building CGNS.
+ already have them installed system wide) and a script for building CGNS.
  All the scripts use autotools; 
 \color red
 cmake remains untested
@@ -1458,7 +1458,7 @@ To make the tests: cd ptests; make;make tests
 
 \end_deeper
 \begin_layout Enumerate
-Important parameters for good performance on GPFS
+Important parameters for good performance on GPFS:
 \end_layout
 
 \begin_deeper
@@ -1490,7 +1490,7 @@ modify and run the script: ../build_zlib
 
 \end_deeper
 \begin_layout Enumerate
-Building hdf5 from source
+Building hdf5 from source:
 \end_layout
 
 \begin_deeper
@@ -1528,7 +1528,7 @@ To make the tests: cd ptests; make;make tests
 
 \end_deeper
 \begin_layout Enumerate
-IMPORTANT PARAMETERS FOR GOOD PERFORMANCE
+Important parameters for good performance:
 \end_layout
 
 \begin_deeper
@@ -1543,14 +1543,14 @@ On Pleiades, lfs setstripe -c 64 -s 0 /nobackupp8/<dir>, has shown good
 
 \end_deeper
 \begin_layout Section*
-Acknowledgements
+Acknowledgments
 \end_layout
 
 \begin_layout Standard
-This work was funded by NASA through the CGNS project, contract #.
- Additionally, the computational studies done on vesta, cetus and mira at
- Argonne National Laboratory used allocation time through the ExaHDF5 project,
- DOE contract #DE-AC02-05CH11231.
+This work was funded by NASA through the CGNS project, contract #NNL14AB41T.
+ Additionally, the computational studies done on cetus and mira at Argonne
+ National Laboratory used allocation time through the ExaHDF5 project, DOE
+ contract #DE-AC02-05CH11231.
  Computational studies on the Lustre file system was done on Pleiades through
  NASA's High-End Computer Capabilities Project.
  
