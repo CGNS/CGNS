@@ -1373,7 +1373,7 @@ Two parallel files systems were investigated: GPFS (mira, Argonne National
  Laboratory) and Lustre (Pleiades NASA).
  The following descriptions were for those systems, but the overall procedure
  should be similar on different machines of the same type.
- Example build scripts for these systems can be found in src/sampleScripts
+ Example build scripts for these systems can be found in src/SampleScripts
  of the CGNS source code.
  They include scripts for building zlib, hdf5 (assuming the user does not
  already have them installed system wide) and a script for building CGNS.
