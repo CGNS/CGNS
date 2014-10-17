@@ -626,6 +626,16 @@
      &       'AverageAll', 'AverageCircumferential', 'AverageRadial',   &
      &       'AverageI', 'AverageJ', 'AverageK' /
 
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      INTERFACES FOR THE C FUNCTIONS                                 *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      INTERFACES FOR THE C FUNCTIONS                                 *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+
+
         INTERFACE
            INTEGER(C_INT) FUNCTION cgp_open(filename, mode, fn) BIND(C, name='cgp_open')
              USE ISO_C_BINDING
