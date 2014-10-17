@@ -3,7 +3,7 @@
         USE ISO_C_BINDING
         IMPLICIT NONE
 
-#include "cgnstypes_f.h"
+#include "cgnstypes_f03.h"
 
 #if CG_BUILD_64BIT
 #  if HAVE_FORTRAN_2003
@@ -175,7 +175,7 @@
      	   ENUMERATOR :: DataClassNull			= CG_Null
      	   ENUMERATOR :: DataClassUserDefined		= CG_UserDefined
      	   ENUMERATOR :: Dimensional 			= 2
-     	   ENUMERATOR :: NormalizedByDimensiona		= 3
+     	   ENUMERATOR :: NormalizedByDimensional	= 3
      	   ENUMERATOR :: NormalizedByUnknownDimensional	= 4
      	   ENUMERATOR :: NondimensionalParameter	= 5
      	   ENUMERATOR :: DimensionlessConstant		= 6
