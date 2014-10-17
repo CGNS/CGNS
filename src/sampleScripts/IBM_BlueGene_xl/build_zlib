@@ -1,8 +1,0 @@
-#!/bin/tcsh
-
-setenv CC mpixlc
-setenv CFLAGS "-O3 -qsimd=auto -qhot=level=1 -qprefetch -qunroll=yes"
-
-./configure --prefix=$PROJECTS_DIR/zlib-1.2.8/lib
-make
-make install
