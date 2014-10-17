@@ -1,16 +1,16 @@
       program cgsubreg
 
-#include "cgnstypes_f.h"
 #ifdef WINNT
       include 'cgnswin_f.h'
 #endif
-      include 'cgnslib_f.h'
+      USE CGNS
+      IMPLICIT NONE
 
-      cgsize_t ierr, cgfile, cgbase, cgzone, cgcoord
-      cgsize_t csub, nsub, dim
-      cgsize_t i, j, k, n, size(9)
-      cgsize_t ptrange(6), ptlist(125)
-      cgsize_t loc, ptype, npts, bclen, gclen
+      integer ierr, cgfile, cgbase, cgzone, cgcoord
+      integer(cgsize_t) csub, nsub, dim
+      integer(cgsize_t) i, j, k, n, size(9)
+      integer(cgsize_t) ptrange(6), ptlist(125)
+      integer(cgsize_t) loc, ptype, npts, bclen, gclen
       real*4 x(125), y(125), z(125)
       character*32 sname, cname
 

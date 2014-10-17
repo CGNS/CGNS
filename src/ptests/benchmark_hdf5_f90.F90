@@ -62,7 +62,7 @@ PROGRAM benchmark_hdf5_f90
   INCLUDE 'cgnswin_f.h'
 #endif
 
-#include "cgnstypes_f.h"
+#include "cgnstypes_f03.h"
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
 

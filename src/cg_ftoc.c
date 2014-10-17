@@ -112,8 +112,8 @@ CGNSDLL void FMNAME(cg_is_cgns_f, CG_IS_CGNS_F) (STR_PSTR(filename),
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_open_f, CG_OPEN_F) (STR_PSTR(filename), cgsize_t *mode,
-	cgsize_t *fn, cgint_f *ier STR_PLEN(filename))
+CGNSDLL void FMNAME(cg_open_f, CG_OPEN_F) (STR_PSTR(filename), cgint_f *mode,
+	cgint_f *fn, cgint_f *ier STR_PLEN(filename))
 {
     int length, i_fn;
     char *c_name;
@@ -126,8 +126,8 @@ CGNSDLL void FMNAME(cg_open_f, CG_OPEN_F) (STR_PSTR(filename), cgsize_t *mode,
 #if DEBUG_FTOC
         printf("filename='%s'\n",c_name);
 #endif
-        *ier = cg_open(c_name, (int)*mode, &i_fn);
-        *fn  = i_fn;
+        *ier = (cgint_f)cg_open(c_name, (int)*mode, &i_fn);
+        *fn  = (cgint_f)i_fn;
     }
     free(c_name);
 }
@@ -137,17 +137,17 @@ CGNSDLL void FMNAME(cg_open_f, CG_OPEN_F) (STR_PSTR(filename), cgsize_t *mode,
 CGNSDLL void FMNAME(cg_version_f, CG_VERSION_F) (cgint_f *fn,
 	float *FileVersion, cgint_f *ier)
 {
-    *ier = cg_version((int)*fn, FileVersion);
+    *ier = (cgint_f)cg_version((int)*fn, FileVersion);
 }
 
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_precision_f, CG_PRECISION_F) (cgint_f *fn,
-	cgsize_t *precision, cgint_f *ier)
+	 cgint_f *precision, cgint_f *ier)
 {
     int i_precision;
 
-    *ier = cg_precision((int)*fn, &i_precision);
+    *ier = (cgint_f)cg_precision((int)*fn, &i_precision);
     *precision = i_precision;
 }
 
@@ -155,7 +155,7 @@ CGNSDLL void FMNAME(cg_precision_f, CG_PRECISION_F) (cgint_f *fn,
 
 CGNSDLL void FMNAME(cg_close_f, CG_CLOSE_F) (cgint_f *fn, cgint_f *ier)
 {
-    *ier = cg_close((int)*fn);
+  *ier = (cgint_f)cg_close((int)*fn);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -784,7 +784,7 @@ CGNSDLL void FMNAME(cg_coord_id_f, CG_COORD_ID_F) (cgint_f *fn, cgint_f *B,
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_coord_write_f, CG_COORD_WRITE_F) (cgint_f *fn, cgint_f *B,
-	cgint_f *Z, cgsize_t *type, STR_PSTR(coordname), void *coord, cgsize_t *C,
+	cgint_f *Z, cgsize_t *type, STR_PSTR(coordname), void *coord, cgint_f *C,
 	cgint_f *ier STR_PLEN(coordname))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
@@ -798,7 +798,7 @@ CGNSDLL void FMNAME(cg_coord_write_f, CG_COORD_WRITE_F) (cgint_f *fn, cgint_f *B
 #endif
     *ier = cg_coord_write((int)*fn, (int)*B, (int)*Z,
                (CGNS_ENUMT(DataType_t))*type, c_name, coord, &i_C);
-    *C = i_C;
+    *C = (cgint_f)i_C;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1332,12 +1332,12 @@ CGNSDLL void FMNAME(cg_subreg_gcname_write_f, CG_SUBREG_GCNAME_WRITE_F) (
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL void FMNAME(cg_nzconns_f, CG_NZCONNS_F) (cgint_f *fn,
-	cgint_f *B, cgint_f *Z, cgsize_t *nzconns, cgint_f *ier)
+	cgint_f *B, cgint_f *Z, cgint_f *nzconns, cgint_f *ier)
 {
     int i_nzconns;
 
     *ier = cg_nzconns((int)*fn, (int)*B, (int)*Z, &i_nzconns);
-    *nzconns = i_nzconns;
+    *nzconns = (cgint_f)i_nzconns;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1466,12 +1466,12 @@ CGNSDLL void FMNAME(cg_hole_write_f, CG_HOLE_WRITE_F) (cgint_f *fn, cgint_f *B,
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL void FMNAME(cg_nconns_f, CG_NCONNS_F) (cgint_f *fn, cgint_f *B,
-	cgint_f *Z, cgsize_t *nconns, cgint_f *ier)
+	cgint_f *Z, cgint_f *nconns, cgint_f *ier)
 {
     int i_nconns;
 
-    *ier = cg_nconns((int)*fn, (int)*B, (int)*Z, &i_nconns);
-    *nconns = i_nconns;
+    *ier = (cgint_f)cg_nconns((int)*fn, (int)*B, (int)*Z, &i_nconns);
+    *nconns = (cgint_f)i_nconns;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1536,11 +1536,16 @@ CGNSDLL void FMNAME(cg_conn_id_f, CG_CONN_ID_F) (cgint_f *fn, cgint_f *B,
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_conn_write_f, CG_CONN_WRITE_F) (cgint_f *fn, cgint_f *B,
-	cgint_f *Z, STR_PSTR(connectname), cgsize_t *location, cgsize_t *type,
-	cgsize_t *ptset_type, cgsize_t *npnts, cgsize_t *pnts,
-	STR_PSTR(donorname), cgsize_t *donor_zonetype, cgsize_t *donor_ptset_type,
-	cgsize_t *donor_datatype, cgsize_t *ndata_donor, cgsize_t *donor_data,
-	cgsize_t *I, cgint_f *ier STR_PLEN(connectname) STR_PLEN(donorname))
+	cgint_f *Z, STR_PSTR(connectname), 
+        CGNS_ENUMT(GridLocation_t)*location, 
+        CGNS_ENUMT(GridConnectivityType_t)*type,
+	CGNS_ENUMT(PointSetType_t)*ptset_type, 
+	cgsize_t *npnts, cgsize_t *pnts,
+	STR_PSTR(donorname), 
+        CGNS_ENUMT(ZoneType_t)*donor_zonetype, 
+        CGNS_ENUMT(PointSetType_t)*donor_ptset_type,
+	CGNS_ENUMT(DataType_t)*donor_datatype, cgsize_t *ndata_donor, cgsize_t *donor_data,
+	cgint_f *I, cgint_f *ier STR_PLEN(connectname) STR_PLEN(donorname))
 {
     char cc_name[CGIO_MAX_NAME_LENGTH+1], dc_name[CGIO_MAX_NAME_LENGTH+1];
     int i_I;
@@ -1564,7 +1569,7 @@ CGNSDLL void FMNAME(cg_conn_write_f, CG_CONN_WRITE_F) (cgint_f *fn, cgint_f *B,
                (CGNS_ENUMT(PointSetType_t))*donor_ptset_type,
                (CGNS_ENUMT(DataType_t))*donor_datatype,
                *ndata_donor, donor_data, &i_I);
-    *I = i_I;
+    *I = (cgint_f)i_I;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1601,12 +1606,12 @@ CGNSDLL void FMNAME(cg_conn_write_short_f, CG_CONN_WRITE_SHORT_F) (cgint_f *fn,
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL void FMNAME(cg_n1to1_f, CG_N1TO1_F) (cgint_f *fn, cgint_f *B,
-	cgint_f *Z, cgsize_t *n1to1, cgint_f *ier)
+	cgint_f *Z, cgint_f*n1to1, cgint_f *ier)
 {
     int i_n1to1;
 
     *ier = cg_n1to1((int)*fn, (int)*B, (int)*Z, &i_n1to1);
-    *n1to1 = i_n1to1;
+    *n1to1 = (cgint_f)i_n1to1;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -3471,7 +3476,7 @@ CGNSDLL void FMNAME(cg_unitsfull_write_f, CG_UNITSFULL_WRITE_F) (
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_exponents_write_f, CG_EXPONENTS_WRITE_F) (
-	cgsize_t *DataType, void *exponents, cgint_f *ier)
+	CGNS_ENUMT(DataType_t)*DataType, void *exponents, cgint_f *ier)
 {
     *ier = cg_exponents_write((CGNS_ENUMT(DataType_t))*DataType, exponents);
 }

@@ -1,16 +1,19 @@
       program cgzconn
 
-#include "cgnstypes_f.h"
 #ifdef WINNT
       include 'cgnswin_f.h'
 #endif
-      include 'cgnslib_f.h'
+      USE CGNS
+      IMPLICIT NONE
 
-      cgsize_t ierr, cgfile, cgbase, cgzone, cgcoord
-      cgsize_t cgz1, cgz2, cgconn, nzconn, nconn, n1to1
-      cgsize_t i, j, k, n, size(9), dim
-      cgsize_t ptrange(6), ptlist(125), transform(3)
-      cgsize_t loc, type, ptype, npts, dztype, dptype, ddtype, dnpts
+      INTEGER ierr, cgfile, cgbase, cgzone, cgcoord
+      INTEGER dim
+      INTEGER nzconn, nconn
+      INTEGER(cgsize_t) cgz1, cgz2, cgconn, n1to1
+      INTEGER(cgsize_t) i, j, k, n, size(9)
+      INTEGER(cgsize_t) ptrange(6), ptlist(125), transform(3)
+      INTEGER(cgsize_t) loc, type, ptype, npts
+      INTEGER(cgsize_t) dztype, dptype, ddtype, dnpts
       real*4 x(125), y(125), z(125), exp(5)
       character*32 zname, dname, cname
 
