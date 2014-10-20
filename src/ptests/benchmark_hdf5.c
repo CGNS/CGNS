@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
   /* parameters */
   piomode_i = 1;
   queue = false;
-  debug = true; 
+  debug = false; 
 
   t0 = MPI_Wtime(); /* Timer */
   
