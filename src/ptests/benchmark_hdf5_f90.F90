@@ -142,7 +142,7 @@ PROGRAM benchmark_hdf5_f90
 
   ! parameters
   queue = .FALSE.
-  debug = .TRUE.
+  debug = .FALSE.
 
   t0 = MPI_Wtime()
 
