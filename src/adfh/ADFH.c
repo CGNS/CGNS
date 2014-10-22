@@ -771,7 +771,7 @@ static int new_str_data(hid_t id, const char *name, const char *value,
   }
 
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(id) == H5FD_MPIO) {
+  if (pcg_mpi_initialized) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
   }
@@ -780,7 +780,7 @@ static int new_str_data(hid_t id, const char *name, const char *value,
   status = H5Dwrite(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, value);
 
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(id) == H5FD_MPIO) {
+  if (pcg_mpi_initialized) {
     H5Pclose(xfer_prp);
   }
 #endif
@@ -2748,7 +2748,7 @@ void ADFH_Put_Dimension_Information(const double   id,
     if (old_size < H5Dget_storage_size(did))
       H5Sset_extent_simple(sid, dims, old_dims, NULL);
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(id) == H5FD_MPIO) {
+  if (pcg_mpi_initialized) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
@@ -2756,7 +2756,7 @@ void ADFH_Put_Dimension_Information(const double   id,
 #endif
     H5Dwrite(did, mid, H5S_ALL, sid, xfer_prp, data);
 #ifdef BUILD_PARALLEL
-    if (H5Pget_driver(id) == H5FD_MPIO) {
+    if (pcg_mpi_initialized) {
       H5Pclose(xfer_prp);
     }
 #endif
@@ -2794,7 +2794,7 @@ void ADFH_Get_Link_Path(const double  id,
   }
 
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(id) == H5FD_MPIO) {
+  if (pcg_mpi_initialized) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
@@ -2818,7 +2818,7 @@ void ADFH_Get_Link_Path(const double  id,
   }
 
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(id) == H5FD_MPIO) {
+  if (pcg_mpi_initialized) {
     H5Pclose(xfer_prp);
   }
 #endif
@@ -3341,7 +3341,7 @@ void ADFH_Read_All_Data(const double  id,
     mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
     ADFH_CHECK_HID(mid);
 #ifdef BUILD_PARALLEL
-    if (H5Pget_driver(id) == H5FD_MPIO) {
+    if (pcg_mpi_initialized) {
       xfer_prp = H5Pcreate(H5P_DATASET_XFER);
       ADFH_CHECK_HID(xfer_prp);
       H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
@@ -3353,7 +3353,7 @@ void ADFH_Read_All_Data(const double  id,
       set_error(NO_ERROR, err);
 
 #ifdef BUILD_PARALLEL
-    if (H5Pget_driver(id) == H5FD_MPIO) {
+    if (pcg_mpi_initialized) {
       H5Pclose(xfer_prp);
     }
 #endif
@@ -3674,7 +3674,7 @@ void ADFH_Write_All_Data(const double  id,
     mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
     ADFH_CHECK_HID(mid);
 #ifdef BUILD_PARALLEL
-    if (H5Pget_driver(id) == H5FD_MPIO) {
+    if (pcg_mpi_initialized) {
       xfer_prp = H5Pcreate(H5P_DATASET_XFER);
       ADFH_CHECK_HID(xfer_prp);
       if (H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE) < 0)
@@ -3687,7 +3687,7 @@ void ADFH_Write_All_Data(const double  id,
     else
       set_error(NO_ERROR, err);
 #ifdef BUILD_PARALLEL
-    if (H5Pget_driver(id) == H5FD_MPIO) {
+    if (pcg_mpi_initialized) {
       H5Pclose(xfer_prp);
     }
 #endif

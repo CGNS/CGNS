@@ -61,6 +61,8 @@ typedef enum {
 MPI_Info pcg_mpi_info;
 int pcg_mpi_comm_size;
 int pcg_mpi_comm_rank;
+/* flag indicating if mpi_initialized was called */
+int pcg_mpi_initialized;
 
 /*===== MPI communicator =====*/
 

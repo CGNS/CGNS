@@ -563,8 +563,6 @@ int cgio_check_file (const char *filename, int *file_type)
     static char *HDF5sig = "\211HDF\r\n\032\n";
     struct stat st;
 
-    /* Flag is true if MPI_Init or MPI_Init_thread has been called and false otherwise. */
-    int flag = 0;
     int mpibuf[2], err;
 
     if (ACCESS (filename, 0) || stat (filename, &st) ||
@@ -576,8 +574,6 @@ int cgio_check_file (const char *filename, int *file_type)
  
 
 #ifdef BUILD_PARALLEL
-    /* check if we are actually running a parallel program */
-    MPI_Initialized(&flag);
     /* don't overload the file system by having all the processors doing a read */
     if(pcg_mpi_comm_rank == 0) {
 #endif
@@ -614,7 +610,7 @@ int cgio_check_file (const char *filename, int *file_type)
     }
 #ifdef BUILD_PARALLEL
     }
-    if(flag) {
+    if(pcg_mpi_initialized) {
       mpibuf[0] = err;
       mpibuf[1] = *file_type;
       MPI_Bcast(mpibuf, 2, MPI_INT, 0, MPI_COMM_WORLD);

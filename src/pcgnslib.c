@@ -403,6 +403,11 @@ int cgp_open(const char *filename, int mode, int *fn)
     MPI_Comm_rank(MPI_COMM_WORLD, &pcg_mpi_comm_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &pcg_mpi_comm_size);
 
+    /* Flag is true if MPI_Init or MPI_Init_thread has been called and false otherwise. */
+    pcg_mpi_initialized = 0;
+    /* check if we are actually running a parallel program */
+    MPI_Initialized(&pcg_mpi_initialized);
+
     ierr = cg_set_file_type(CG_FILE_PHDF5);
     if (ierr) return ierr;
     ierr = cg_open(filename, mode, fn);
