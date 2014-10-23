@@ -101,6 +101,174 @@ set(SZIPLIB "")
 set(ZLIBLIB "")
 set(MPIINC "")
 set(MPILIBS "")
+set(HAVE_FORTRAN_95 0)
+set(HAVE_FORTRAN_2003 0)
+set(HAVE_FORTRAN_2008TS 0)
+set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
+
+if (BUILDFORTRAN)
+
+ENABLE_LANGUAGE(Fortran)
+
+#-----------------------------------------------------------------------------
+# The provided CMake Fortran macros don't provide a general check function
+# so use this one.
+#-----------------------------------------------------------------------------
+MACRO (CHECK_FORTRAN_FEATURE FUNCTION CODE VARIABLE)
+  IF (NOT DEFINED ${VARIABLE})
+    MESSAGE (STATUS "Testing Fortran ${FUNCTION}")
+    IF (CMAKE_REQUIRED_LIBRARIES)
+      SET (CHECK_FUNCTION_EXISTS_ADD_LIBRARIES
+          "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}")
+    ELSE (CMAKE_REQUIRED_LIBRARIES)
+      SET (CHECK_FUNCTION_EXISTS_ADD_LIBRARIES)
+    ENDIF (CMAKE_REQUIRED_LIBRARIES)
+    FILE (WRITE
+        ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testFortranCompiler.f90
+        "${CODE}"
+    )
+    TRY_COMPILE (${VARIABLE}
+        ${CMAKE_BINARY_DIR}
+        ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testFortranCompiler.f90
+        CMAKE_FLAGS "${CHECK_FUNCTION_EXISTS_ADD_LIBRARIES}"
+        OUTPUT_VARIABLE OUTPUT
+    )
+
+#    MESSAGE ( "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ")
+#    MESSAGE ( "Test result ${OUTPUT}")
+#    MESSAGE ( "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ")
+
+    IF (${VARIABLE})
+      SET (${VARIABLE} 1 CACHE INTERNAL "Have Fortran function ${FUNCTION}")
+      MESSAGE (STATUS "Testing Fortran ${FUNCTION} - OK")
+      FILE (APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
+          "Determining if the Fortran ${FUNCTION} exists passed with the following output:\n"
+          "${OUTPUT}\n\n"
+      )
+    ELSE (${VARIABLE})
+      MESSAGE (STATUS "Testing Fortran ${FUNCTION} - Fail")
+      SET (${VARIABLE} "" CACHE INTERNAL "Have Fortran function ${FUNCTION}")
+      FILE (APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
+          "Determining if the Fortran ${FUNCTION} exists failed with the following output:\n"
+          "${OUTPUT}\n\n")
+    ENDIF (${VARIABLE})
+  ENDIF (NOT DEFINED ${VARIABLE})
+ENDMACRO (CHECK_FORTRAN_FEATURE)
+
+#-----------------------------------------------------------------------------
+# Configure Checks which require Fortran compilation must go in here
+# not in the main ConfigureChecks.cmake files, because if the user has
+# no Fortran compiler, problems arise.
+#
+#-----------------------------------------------------------------------------
+
+CHECK_FORTRAN_FEATURE(Fortran2003
+  "
+       PROGRAM testf03
+  	 USE iso_c_binding
+  	 IMPLICIT NONE
+  	 INTEGER(C_INT) :: a
+  	 INTEGER(C_INT32_T) :: b
+  	 INTEGER(C_INT64_T) :: c
+         REAL(C_FLOAT) :: d
+  	 REAL(C_DOUBLE) :: e
+  	 CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: f
+  	 TYPE(C_PTR) :: g
+         INTERFACE 
+           INTEGER(C_INT) FUNCTION test(A, UserDataName1) BIND(C, name='cg_goto')
+             USE ISO_C_BINDING
+             INTEGER(C_INT)   , INTENT(IN), VALUE :: A
+             CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName1
+           END FUNCTION test
+         END INTERFACE
+  	 g = C_LOC(f(1:1))
+      END PROGRAM testf03 
+  "
+  CHECK_FORTRAN_2003
+)
+if (CHECK_FORTRAN_2003)
+  set(HAVE_FORTRAN_2003 1)
+endif (CHECK_FORTRAN_2003)
+   
+
+
+
+if (HAVE_FORTRAN_2003)
+CHECK_FORTRAN_FEATURE(Fortran2008TS
+  " 
+       PROGRAM testf03
+         USE ISO_C_BINDING
+         INTERFACE 
+            INTEGER(C_INT) FUNCTION test(A) BIND(C, name='test')
+              USE ISO_C_BINDING
+              INTEGER(C_INT), OPTIONAL :: A
+            END FUNCTION test
+         END INTERFACE
+       END PROGRAM testf03 
+  "
+  CHECK_FORTRAN_2008TS
+)
+if (CHECK_FORTRAN_2008TS)
+  set(HAVE_FORTRAN_2008TS 1)
+endif (CHECK_FORTRAN_2008TS)
+
+CHECK_FORTRAN_FEATURE(Sizeof_int
+  "
+      MODULE mod
+
+        INTERFACE test_integer
+           MODULE PROCEDURE test_int
+           MODULE PROCEDURE test_c_int64
+        END INTERFACE
+        
+      CONTAINS
+        
+        SUBROUTINE test_c_int64(a)
+          USE ISO_C_BINDING
+          INTEGER(C_INT64_T) :: a
+        END SUBROUTINE test_c_int64
+        
+        SUBROUTINE test_int(a)
+          USE ISO_C_BINDING
+          INTEGER :: a
+        END SUBROUTINE test_int
+        
+      END MODULE mod
+
+      PROGRAM main
+        
+        USE mod
+        INTEGER :: a
+        
+        CALL test_integer(a)
+        
+      END PROGRAM main
+  "
+  CHECK_FORTRAN_DEFAULT_INTEGER_C_INT64_T
+)
+
+if (CHECK_FORTRAN_DEFAULT_INTEGER_C_INT64_T)
+  set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 1)
+endif (CHECK_FORTRAN_DEFAULT_INTEGER_C_INT64_T)
+
+else (HAVE_FORTRAN_2003)
+
+CHECK_FORTRAN_FEATURE(Fortran95
+  " 
+      PROGRAM testf95
+  	 IMPLICIT NONE
+         INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(5)
+      END PROGRAM testf95
+  "
+  CHECK_FORTRAN_95
+)
+
+if (CHECK_FORTRAN_95)
+  set(HAVE_FORTRAN_95 1)
+endif (CHECK_FORTRAN_95)
+endif (HAVE_FORTRAN_2003)
+
+endif (BUILDFORTRAN)
 
 macro(native_paths INPUT_PATH_VARIABLE RESULT_VARIABLE)
   set(${RESULT_VARIABLE} "")
@@ -144,12 +312,14 @@ if (CGNS_ENABLE_HDF5)
   endif (HDF5_NEED_MPI)
 endif (CGNS_ENABLE_HDF5)
 
-#create these in build directory so is doesn't mess up the
+#create these in build directory so it doesn't mess up the
 #source directory, then add the path to them
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes.h )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes_f.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes_f03.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f03.h )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnslib_f.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
@@ -182,7 +352,8 @@ endif (CGNS_ENABLE_HDF5)
 # All the Fortran files need by the cgns library (if enabled)
 set(cgns_F_FILES
 	cg_ftoc.c
-	cgio_ftoc.c)
+	cgio_ftoc.c
+	cgns_f.F90)
 
 # Only build those files that are needed
 if (CGNS_ENABLE_FORTRAN)
@@ -271,6 +442,7 @@ install(FILES
 	${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h
+	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f03.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs
 	DESTINATION include)
