@@ -546,6 +546,61 @@ EOF
 
   fi
 
+  # Check the size of the default fortran integer
+  ## --------------------------------------------------------------------
+
+  if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
+
+  AC_MSG_CHECKING([size of default Fortran integer ])
+  FORTRAN_DEFAULT_INTEGER_C_INT64_T=0
+ cat >> testf03.f90 << EOF
+      MODULE mod
+
+        INTERFACE test_integer
+           MODULE PROCEDURE test_int
+           MODULE PROCEDURE test_c_int64
+        END INTERFACE
+        
+      CONTAINS
+        
+        SUBROUTINE test_c_int64(a)
+          USE ISO_C_BINDING
+          INTEGER(C_INT64_T) :: a
+        END SUBROUTINE test_c_int64
+        
+        SUBROUTINE test_int(a)
+          USE ISO_C_BINDING
+          INTEGER :: a
+        END SUBROUTINE test_int
+        
+      END MODULE mod
+
+      PROGRAM main
+        
+        USE mod
+        INTEGER :: a
+        
+        CALL test_integer(a)
+        
+      END PROGRAM main
+EOF
+  msg=`${F77} $FFLAGS -c testf03.f90 &> /dev/null`
+  if test -f testf03.o; then 
+    AC_MSG_RESULT(c_int32_t)
+    rm testf03.o
+  else
+    FORTRAN_DEFAULT_INTEGER_C_INT64_T=1	
+    AC_MSG_RESULT(c_int64_t)
+  fi
+  if test -f testf03.f90; then
+     rm testf03.f90
+  fi
+  if test -f mod.mod; then
+     rm mod.mod
+  fi
+
+  fi
+
 
   if test $need_f2c = yes; then
     if test "$ac_cv_prog_g77" = "yes"; then
@@ -1418,6 +1473,7 @@ AC_SUBST(BUILDFORTRAN)
 AC_SUBST(HAVE_FORTRAN_95)
 AC_SUBST(HAVE_FORTRAN_2003)
 AC_SUBST(HAVE_FORTRAN_2008TS)
+AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(BUILDPARALLEL)
 
 AC_SUBST(CGNSTOOLS)

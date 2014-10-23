@@ -65,16 +65,13 @@ PROGRAM benchmark_hdf5_f90
 #include "cgnstypes_f03.h"
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
-
   ! Use powers of 2
-  INTEGER(CGSIZE_T), PARAMETER :: Nelem = 33554432
+  INTEGER(CGSIZE_T), PARAMETER :: Nelem = 33554432 ! Use multiples of number of cores per node
   INTEGER(CGSIZE_T), PARAMETER :: NodePerElem = 6
 
   INTEGER(CGSIZE_T) :: Nnodes
-  INTEGER :: mpi_err
+  INTEGER(C_INT) :: comm_size, comm_rank, comm_info, mpi_err
   INTEGER :: err
-  INTEGER :: comm_size
-  INTEGER :: comm_rank
   INTEGER :: fn
   INTEGER :: B
   INTEGER :: Z
@@ -125,7 +122,6 @@ PROGRAM benchmark_hdf5_f90
 
   INTEGER :: ierr
   INTEGER :: istat
-  INTEGER :: comm_info
   CHARACTER(LEN=6) :: ichr6
   INTEGER, DIMENSION(1:3) :: Cvec, Fvec
   INTEGER, DIMENSION(1:2) :: Avec
@@ -406,7 +402,7 @@ PROGRAM benchmark_hdf5_f90
      Array_i(k) = comm_rank*count*NodePerElem + k
   ENDDO
 
-  CALL cg_goto_f(fn, B, err, "Zone 1", 0, "end")
+  CALL cg_goto_f(fn, B, err, 'Zone 1', 0, 'end')
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_goto_f'
      CALL cgp_error_exit_f()
@@ -712,7 +708,7 @@ PROGRAM benchmark_hdf5_f90
   min = count*comm_rank+1
   max = count*(comm_rank+1)
 
-  CALL cg_goto_f(fn, B, err, "Zone_t",Z,"UserDefinedData_t",1,"end")
+  CALL cg_goto_f(fn, B, err, "Zone_t",Z,"UserDefinedData_t",1,'end')
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_goto (User Defined Data)'
      CALL cgp_error_exit_f()

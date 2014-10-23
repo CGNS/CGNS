@@ -15,7 +15,8 @@ PROGRAM fexample
   PARAMETER (totnodes=nperside*nperside*nperside)
   PARAMETER (totelems=(nperside-1)*(nperside-1)*(nperside-1))
   
-  INTEGER commsize, commrank, ierr
+  INTEGER(C_INT) commsize, commrank, mpi_err
+  INTEGER ierr
   INTEGER F, B, Z, E, S, Fs, Cx, Cy, Cz, A
   INTEGER(cgsize_t) :: i, j, k, n, nn, ne
   INTEGER(cgsize_t) :: nnodes, nelems
@@ -25,9 +26,9 @@ PROGRAM fexample
   INTEGER(cgsize_t) :: ie(8*totelems)
 !
 !---- initialize MPI
-  CALL MPI_INIT(ierr)
-  CALL MPI_COMM_SIZE(MPI_COMM_WORLD, commsize, ierr)
-  CALL MPI_COMM_RANK(MPI_COMM_WORLD, commrank, ierr)
+  CALL MPI_INIT(mpi_err)
+  CALL MPI_COMM_SIZE(MPI_COMM_WORLD, commsize, mpi_err)
+  CALL MPI_COMM_RANK(MPI_COMM_WORLD, commrank, mpi_err)
 
 !---- open file and create base and zone
   sizes(1) = totnodes
@@ -165,6 +166,6 @@ PROGRAM fexample
 !---- close the file and terminate MPI
   CALL cgp_close_f(F, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL MPI_FINALIZE(ierr)
+  CALL MPI_FINALIZE(mpi_err)
 END PROGRAM fexample
 

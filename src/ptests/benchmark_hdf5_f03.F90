@@ -129,7 +129,7 @@ PROGRAM main
   INTEGER :: piomode_i
   INTEGER :: istat
   INTEGER(C_SIZE_T) :: int_sizeof
-  INTEGER :: comm_info
+  INTEGER(C_INT) :: comm_info
   INTEGER(C_INT), DIMENSION(1:3), TARGET :: Cvec
   
   CALL MPI_Init(mpi_err)
@@ -143,7 +143,6 @@ PROGRAM main
 
   ! parameters
   piomode_i = 2
-  ! queue = .TRUE.
   queue = .FALSE.
   debug = .FALSE.
 

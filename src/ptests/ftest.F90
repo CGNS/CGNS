@@ -13,7 +13,7 @@ PROGRAM ftest
   INTEGER(cgsize_t), PARAMETER :: totcnt = 40320 * 10
 
   INTEGER(cgsize_t) npp
-  INTEGER commsize, commrank
+  INTEGER(C_INT) commsize, commrank, mpi_err
   INTEGER i, nb, nz, nerrs
   INTEGER ierr, F, B, Z, E, S
   INTEGER Cx, Cy, Cz, Fx, Fy, Fz, Ax, Ay, Az
@@ -30,9 +30,9 @@ PROGRAM ftest
   DATA piomode /'independent','collective'/
   DATA outmode /'direct','queued'/
 
-  CALL MPI_INIT(ierr)
-  CALL MPI_COMM_SIZE(MPI_COMM_WORLD,commsize,ierr)
-  CALL MPI_COMM_RANK(MPI_COMM_WORLD,commrank,ierr)
+  CALL MPI_INIT(mpi_err)
+  CALL MPI_COMM_SIZE(MPI_COMM_WORLD,commsize,mpi_err)
+  CALL MPI_COMM_RANK(MPI_COMM_WORLD,commrank,mpi_err)
   
   IF (commsize .GT. 8) THEN
      IF (commrank .EQ. 0) &
@@ -121,7 +121,7 @@ PROGRAM ftest
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cgp_queue_set_f(nz-1,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL MPI_BARRIER(MPI_COMM_WORLD, ierr)
+        CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
         ts = MPI_WTIME()
    
         CALL cgp_coord_write_data_f(F,B,Z,Cx,start,END,dx,ierr)
@@ -151,7 +151,7 @@ PROGRAM ftest
            IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         ENDIF
 
-        CALL MPI_BARRIER(MPI_COMM_WORLD, ierr)
+        CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
         te = MPI_WTIME()
         tt = te - ts;
         IF (commrank .EQ. 0) THEN
@@ -173,7 +173,7 @@ PROGRAM ftest
      CALL cgp_pio_mode_f(B-1,MPI_INFO_NULL,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
      
-     CALL MPI_BARRIER(MPI_COMM_WORLD, ierr)
+     CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      ts = MPI_WTIME()
      
      CALL cgp_coord_read_data_f(F,B,Z,1,start,END,dx,ierr)
@@ -185,7 +185,7 @@ PROGRAM ftest
      CALL cgp_elements_read_data_f(F,B,Z,E,start,END,ie,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
      
-     CALL MPI_BARRIER(MPI_COMM_WORLD, ierr)
+     CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      te = MPI_WTIME()
      tt = te - ts
 
@@ -201,7 +201,7 @@ PROGRAM ftest
         ENDDO
      ENDDO
      
-     CALL MPI_BARRIER(MPI_COMM_WORLD, ierr)
+     CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      ts = MPI_WTIME()
      
      CALL cgp_field_read_data_f(F,B,Z,S,1,start,END,dx,ierr)
@@ -211,7 +211,7 @@ PROGRAM ftest
      CALL cgp_field_read_data_f(F,B,Z,S,3,start,END,dz,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
-     CALL MPI_BARRIER(MPI_COMM_WORLD, ierr)
+     CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      te = MPI_WTIME()
      tt = tt + te - ts
 
@@ -221,7 +221,7 @@ PROGRAM ftest
         IF (dz(n) .NE. n) nerrs = nerrs + 1
      ENDDO
      
-     CALL MPI_BARRIER(MPI_COMM_WORLD, ierr)
+     CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      ts = MPI_WTIME()
      CALL cg_goto_f(F,B,ierr,'Zone_t',Z,'UserDefinedData_t',1,'end')
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
@@ -232,7 +232,7 @@ PROGRAM ftest
      CALL cgp_array_read_data_f(3,start,END,dz,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
-     CALL MPI_BARRIER(MPI_COMM_WORLD, ierr)
+     CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      te = MPI_WTIME()
      tt = tt + te - ts
      
@@ -251,6 +251,6 @@ PROGRAM ftest
   CALL cgp_close_f(F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   
-  CALL MPI_FINALIZE(ierr)
+  CALL MPI_FINALIZE(mpi_err)
 END PROGRAM ftest
 

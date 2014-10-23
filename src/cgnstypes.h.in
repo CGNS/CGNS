@@ -70,11 +70,15 @@
   typedef int cgint_t;
   typedef double cgid_t;
 
-/* Define an int type that is interoperabable with Fortran's INTEGER
- * **FIX** THIS NEEDS TO BE DETERMINED DURING CONFIGURE BY CHECKING IF THE 
- *     USER IS USING DEFAULT 8 BYTE INTEGERS (via a compiler flag). -MSB-
-*/
+/* Define an int type that is interoperabable with Fortran's INTEGER */
+
+#define FORTRAN_DEFAULT_INTEGER_C_INT64_T @FORTRAN_DEFAULT_INTEGER_C_INT64_T@
+#if FORTRAN_DEFAULT_INTEGER_C_INT64_T
+  typedef CG_LONG_T cgint_f;
+#else
   typedef int cgint_f;
+#endif
+
 #endif
 
 typedef CG_LONG_T cglong_t;
