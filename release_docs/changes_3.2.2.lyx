@@ -132,7 +132,7 @@ status open
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
-	filename cgp_open.png
+	filename figs/cgp_open.png
 	scale 30
 
 \end_inset
@@ -1596,6 +1596,263 @@ ptests
  directory.
  The benchmark simulates writing and then reading a ~33.5 million 6-node
  pentahedra elements mesh with ~201 million nodes.
+ The benchmark results from 
+\shape italic
+benchmark_hdf5.c
+\shape default
+ show improvement in cgp_open for up to 32,768 processes, Fig.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Results-for-benchmark_hdf5.c"
+
+\end_inset
+
+ over the previous implementation.
+ A comparison of 
+\shape italic
+benchmark_hdf5_f90.F90
+\shape default
+ and 
+\shape italic
+benchmark_hdf5_f03.F90
+\shape default
+ also shows negligible performance differences when using the Fortran 90
+ wrapper routines (
+\shape italic
+benchmark_hdf5_f90.F90)
+\shape default
+ and when calling the C CGNS APIs directly (
+\shape italic
+benchmark_hdf5_f03.F90)
+\shape default
+, Fig.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Results-for-benchmark_hdf5_f03.F"
+
+\end_inset
+
+.
+ Additionally, negligible difference in performance and scaling exists when
+ calling CGNS from Fortran and C, Fig.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Comparision-of-Fortran"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figs/C_gpfs.png
+	lyxscale 50
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Results-for-benchmark_hdf5.c"
+
+\end_inset
+
+Results for benchmark_hdf5.c on GPFS (cetus, ANL).
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figs/C_gpfs.png
+	lyxscale 50
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Results-for-benchmark_hdf5_f03.F"
+
+\end_inset
+
+Results for 
+\shape italic
+benchmark_hdf5_f03.F90
+\shape default
+ (shown in color) and 
+\shape italic
+benchmark_hdf5_f90.F90
+\shape default
+ (shown in grey) on GPFS (cetus, ANL).
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figs/f03_C_gpfs.png
+	lyxscale 50
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Comparision-of-Fortran"
+
+\end_inset
+
+Comparison of Fortran (
+\shape italic
+benchmark_hdf5_f03.F90, 
+\shape default
+solid lines) and C (
+\shape italic
+benchmark_hdf5
+\shape default
+.c, dashed lines) on GPFS (cetus, ANL).
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The benchmark results from 
+\shape italic
+benchmark_hdf5.c
+\shape default
+ on the Lustre file system (Pleiades, NASA) is presented in Fig.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Comparision-of-Fortran-1"
+
+\end_inset
+
+.
+ The system defaults for the Lustre file system were used along with a strip
+ count of 64 and a strip size of 4 MB.
+ Overall the Lustre file system appears to be faster at reading a writing,
+ but the GPFS scaled better for the benchmark.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figs/Lustre.png
+	lyxscale 50
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Comparision-of-Fortran-1"
+
+\end_inset
+
+Results for 
+\shape italic
+benchmark_hdf5.c
+\shape default
+ on Lustre file system (Pleiades, NASA).
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section*
