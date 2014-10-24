@@ -343,8 +343,8 @@ end{minted}
 \begin_layout Itemize
 Functions for parallel reading and writing multi-component datasets using
  a single call was introduced.
- The new APIs use new capabilities introduced in version 1.8.* (currently
- not released as of 10.13.2014) of the HDF5 library.
+ The new APIs use new capabilities are tentively to be introduced in version
+ 1.8.15 of the HDF5 library.
  The new APIs pack multiple datasets into a single buffer and the underlying
  MPI IO completes the IO request using just one call.
  The availability of the new functions in the HDF5 library is checked at
@@ -1065,6 +1065,44 @@ A new parallel example benchmark program, benchmark_hdf5.c, was added to
  directory ptests.
 \end_layout
 
+\begin_layout Subsubsection
+Internal library changes
+\end_layout
+
+\begin_layout Enumerate
+Fixed issue with autotools putting a blank 
+\begin_inset Quotes eld
+\end_inset
+
+-l
+\begin_inset Quotes erd
+\end_inset
+
+ in 
+\begin_inset Quotes eld
+\end_inset
+
+MPILIBS =
+\begin_inset Quotes erd
+\end_inset
+
+ when compiling library using using mpi.
+\end_layout
+
+\begin_layout Enumerate
+Replaced the hid_t to double (and vice-versa) utilities 
+\shape italic
+to_HDF_ID
+\shape default
+ and 
+\shape italic
+to_ADF_ID
+\shape default
+ from a type cast to a function which uses memcpy for the conversion.
+ This is need to for the upcomming release of HDF5 1.10 where hid_t was changed
+ from a 32 bit integer to a 64 bit integer.
+\end_layout
+
 \begin_layout Subsection
 \begin_inset CommandInset label
 LatexCommand label
@@ -1542,6 +1580,24 @@ On Pleiades, lfs setstripe -c 64 -s 0 /nobackupp8/<dir>, has shown good
 \end_layout
 
 \end_deeper
+\begin_layout Subsection
+Parallel performace results
+\end_layout
+
+\begin_layout Standard
+The following results are for the 
+\shape italic
+benchmark_hdf5*
+\shape default
+ programs found in the 
+\shape italic
+ptests
+\shape default
+ directory.
+ The benchmark simulates writing and then reading a ~33.5 million 6-node
+ pentahedra elements mesh with ~201 million nodes.
+\end_layout
+
 \begin_layout Section*
 Acknowledgments
 \end_layout
