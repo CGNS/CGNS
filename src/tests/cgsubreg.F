@@ -6,11 +6,13 @@
       USE CGNS
       IMPLICIT NONE
 
+      INTEGER, PARAMETER :: cgenum_t = KIND(CGP_INDEPENDENT) ! KIND type for enums
       integer ierr, cgfile, cgbase, cgzone, cgcoord
-      integer(cgsize_t) csub, nsub, dim
+      integer dim, csub, nsub
       integer(cgsize_t) i, j, k, n, size(9)
-      integer(cgsize_t) ptrange(6), ptlist(125)
-      integer(cgsize_t) loc, ptype, npts, bclen, gclen
+      integer(cgsize_t) ptrange(6), ptlist(125), npts
+      integer(cgenum_t) loc, ptype
+      integer bclen, gclen
       real*4 x(125), y(125), z(125)
       character*32 sname, cname
 
@@ -115,7 +117,6 @@ c close the file and reopen in read mode
         call cg_subreg_info_f(cgfile, cgbase, cgzone, csub, sname, dim,
      &                        loc, ptype, npts, bclen, gclen, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
-
         if (sname .eq. 'reg1') then
           if (bclen .ne. 6 .or. gclen .ne. 0 .or.
      &        ptype .ne. CG_NULL .or. npts .ne. 0) then
@@ -154,7 +155,6 @@ c close the file and reopen in read mode
           call cg_subreg_ptset_read_f(cgfile, cgbase, cgzone, csub,
      &                                ptrange, ierr)
           if (ierr .ne. CG_OK) call cg_error_exit_f
-
         elseif (sname .eq. 'reg4') then
           if (bclen .ne. 0 .or. gclen .ne. 0 .or.
      &        ptype .ne. PointList .or. npts .ne. 25 .or.
@@ -174,5 +174,4 @@ c close the file and reopen in read mode
 
       call cg_close_f(cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-
       end

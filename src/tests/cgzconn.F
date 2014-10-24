@@ -6,14 +6,17 @@
       USE CGNS
       IMPLICIT NONE
 
-      INTEGER ierr, cgfile, cgbase, cgzone, cgcoord
+      INTEGER, PARAMETER :: cgenum_t = KIND(CGP_INDEPENDENT) ! KIND type for enums
+      INTEGER ierr, cgfile, cgbase, cgzone, cgcoord, cgconn
       INTEGER dim
       INTEGER nzconn, nconn
-      INTEGER(cgsize_t) cgz1, cgz2, cgconn, n1to1
+      INTEGER n1to1, cgz1, cgz2
       INTEGER(cgsize_t) i, j, k, n, size(9)
-      INTEGER(cgsize_t) ptrange(6), ptlist(125), transform(3)
-      INTEGER(cgsize_t) loc, type, ptype, npts
-      INTEGER(cgsize_t) dztype, dptype, ddtype, dnpts
+      INTEGER ptlist(125), transform(3)
+      INTEGER(cgsize_t) ptrange(6)
+      INTEGER(cgsize_t) npts
+      INTEGER(cgenum_t) loc, type,  ptype, dztype, dptype, ddtype
+      INTEGER(cgsize_t) dnpts
       real*4 x(125), y(125), z(125), exp(5)
       character*32 zname, dname, cname
 
@@ -62,7 +65,6 @@ c create some bogus data
         exp(n) = 0
       enddo
       exp(2) = 1
-
 c loop over zones
       do n=1,2
         if (n .eq. 1) then
@@ -104,7 +106,6 @@ c write coordinates
         if (ierr .ne. CG_OK) call cg_error_exit_f
         call cg_exponents_write_f(RealSingle, exp, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
-
 c write first ZoneGridConnectivity - will be active
         call cg_zconn_write_f(cgfile, cgbase, cgzone,
      &                        'ZoneConnectivity1', cgz1, ierr)
@@ -125,15 +126,16 @@ c write general connectivity
 c set it back to previous ZoneGridConnectivity and write 1to1
         call cg_zconn_set_f(cgfile, cgbase, cgzone, cgz1, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
+	
         call cg_1to1_write_f(cgfile, cgbase, cgzone, '1to1', dname,
      &                       ptrange, ptrange, transform, cgconn, ierr)
+	
         if (ierr .ne. CG_OK) call cg_error_exit_f
       enddo
 
 c close the file and reopen in read mode
       call cg_close_f(cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-
       call cg_open_f('cgzconn.cgns', CG_MODE_READ, cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       cgbase = 1
@@ -173,7 +175,6 @@ c read should make ZoneGridConnectivity active
           print *,'invalid conn data'
           stop
         endif
-
 c read should make ZoneGridConnectivity active
         call cg_zconn_read_f(cgfile, cgbase, cgzone, cgz1, zname, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
@@ -191,6 +192,7 @@ c read should make ZoneGridConnectivity active
         endif
         call cg_1to1_read_f(cgfile, cgbase, cgzone, cgconn, cname,
      &                      dname, ptrange, ptrange, transform, ierr)
+
         if (ierr .ne. CG_OK) call cg_error_exit_f
         if (cname .ne. '1to1') then
           print *,'invalid 1to1 data'
