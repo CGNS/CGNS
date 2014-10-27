@@ -19,9 +19,9 @@
 	cgsize_t ndonor_ptset_type, ndonor_data_type
 	cgsize_t idataset, dirichletflag, neumannflag
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-	cgsize_t IndexDim, CellDim, PhysDim
-	cgsize_t ier, n, zonetype
-	cgsize_t nbases, nzones
+	integer IndexDim, CellDim, PhysDim
+	integer	 ier, n, zonetype
+	integer nbases, nzones
 	cgsize_t rmin(3), DataSize(Ndim)
 	cgsize_t size(Ndim*3)
 	cgsize_t ncoords, type, nsols, nfields, location
@@ -33,10 +33,10 @@
 	character*32 basename, zonename, solname, fieldname 
 	character*32 coordname, holename, connectname
 	character*32 boconame, donorname
-	cgsize_t cg, base, zone, coord, sol, field, discr
+	integer cg, base, zone, coord, sol, field, discr
 	cgsize_t hole, conn, one21, boco
 	cgsize_t range(Ndim, 2), donor_range(Ndim, 2)
- 	cgsize_t transform(Ndim)
+ 	integer transform(Ndim)
   	cgsize_t G_range(Ndim*2, Nglobal) 
 	cgsize_t G_donor_range(Ndim*2, Nglobal)
 	cgsize_t G_transform(Ndim, Nglobal)

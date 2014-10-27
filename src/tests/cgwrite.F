@@ -18,13 +18,14 @@
 	parameter (one = 1)
 	
 	cgsize_t index_dim, cell_dim, phys_dim
-	cgsize_t base_no, zone_no, coord_no, sol_no, discr_no, conn_no
+	integer base_no, zone_no, coord_no, sol_no, discr_no, conn_no
 	cgsize_t hole_no, boco_no, field_no, dset_no
 	cgsize_t num, NormalIndex(Ndim)
 	cgsize_t ndims, npnts,size(Ndim*3)
-	cgsize_t cg, ier, zone, coord, i, j, k, n, pos, sol, field
+	cgsize_t zone, coord, i, j, k, n, pos, sol, field
+	integer cg, ier 
 	cgsize_t pnts(Ndim,120), donor_pnts(Ndim,120)
-	cgsize_t transform(Ndim)
+	integer transform(Ndim)
 	cgsize_t nptsets, nrmlistflag
 	real*4 data(120), normals(360)
 	double precision Dxyz(120), values(120)
@@ -153,7 +154,7 @@
      &                           PointRange, nptsets, npnts, pnts,
      &                           hole_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
-
+	
 ! *** general connectivity
 	    do 100 n=1, 5
 	    do 100 i=1,3
@@ -187,7 +188,6 @@
 	    call cg_1to1_write_f(cg, base_no, zone_no, '1to1_#1',
      &		donorname, pnts, donor_pnts, transform, conn_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
-
 ! *** ZoneGridConnectivity attributes:  GOTO ZoneGridConnectivity_t node
 	    call cg_goto_f(cg, base_no, ier, 'Zone_t', zone,
      &                     'ZoneGridConnectivity_t', one, 'end')
@@ -215,7 +215,7 @@
 	    do i=1,phys_dim*npnts
 		normals(i)=i 
 	    enddo
-
+	
             nrmlistflag = 1
 	    call cg_boco_normal_write_f(cg, base_no, zone_no, boco_no,
      &         NormalIndex, nrmlistflag, RealSingle, normals, ier)
