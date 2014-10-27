@@ -627,13 +627,32 @@
      &       'AverageI', 'AverageJ', 'AverageK' /
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-!*      INTERFACES FOR THE C FUNCTIONS                                 *
+!*      INTERFACES FOR THE FORTRAN FUNCTIONS                           *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+	
+	INTERFACE
+           SUBROUTINE cg_is_cgns_f(file_type, ier)
+             USE ISO_C_BINDING
+             INTEGER(C_INT), INTENT(OUT) :: file_type
+	     INTEGER(C_INT), INTENT(OUT) :: ier
+           END SUBROUTINE cg_is_cgns_f
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_open_f(filename, mode, fn, ier)
+             USE ISO_C_BINDING
+             CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
+             INTEGER(C_INT)  , INTENT(IN)  :: mode
+             INTEGER(C_INT)  , INTENT(OUT) :: fn
+	     INTEGER(C_INT)  , INTENT(OUT) :: ier
+           END SUBROUTINE cg_open_f
+        END INTERFACE
 
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      INTERFACES FOR THE C FUNCTIONS                                 *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+
 
 
         INTERFACE
