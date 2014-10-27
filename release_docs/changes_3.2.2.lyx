@@ -1199,6 +1199,7 @@ cgsize_t
 --enable-64bit
 \shape default
 .
+ The test programs were updated in order to conform to this convention.
 \end_layout
 
 \begin_layout Enumerate
@@ -1394,6 +1395,32 @@ end{minted}
 \end_inset
 
 
+\end_layout
+
+\begin_layout Subsection
+Unfinished Fortran Features
+\end_layout
+
+\begin_layout Enumerate
+Fortran APIs currently do not have interfaces to the C APIs.
+ Therefore, there is no checking if the arguments passed to C are of the
+ correct type.
+ All the Fortran APIs need to have an interface.
+ They can also use BIND(C) in the interfaces, however the Fortran standard
+ does not allow passing a string of LEN greater then one for a subroutine
+ declined with BIND(C).
+ Therefore, a character array needs to be passed from the fortran API if
+ BIND(C) is used.
+\end_layout
+
+\begin_layout Enumerate
+Most of the serial Fortran APIs do not have the correct INTEGER type correspondi
+ng to the correct C integer type, mainly integers mistaking assumed cgsize_t.
+\end_layout
+
+\begin_layout Enumerate
+Default double precision for reals in Fortran leads to a mismatch in the
+ C APIs, which expect a float.
 \end_layout
 
 \begin_layout Section
