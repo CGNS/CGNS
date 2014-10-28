@@ -915,7 +915,7 @@ CGNSDLL void FMNAME(cg_section_read_f, CG_SECTION_READ_F) (cgint_f *fn,
     *ier = (cgint_f)cg_section_read((int)*fn, (int)*B, (int)*Z, (int)*E, c_name,
                &i_type, start, end, &i_nbndry, &i_parent_flag);
     if (*ier) return;
-    *type = CGNS_ENUMT(ElementType_t)i_type;
+    *type = (CGNS_ENUMT(ElementType_t))i_type;
     *nbndry = (cgint_f)i_nbndry;
     *parent_flag = (cgint_f)i_parent_flag;
     string_2_F_string(c_name, STR_PTR(section_name), STR_LEN(section_name), (int*)ier);
@@ -924,7 +924,7 @@ CGNSDLL void FMNAME(cg_section_read_f, CG_SECTION_READ_F) (cgint_f *fn,
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_elements_read_f, CG_ELEMENTS_READ_F) (cgint_f *fn,
-	cgint_f *B, cgint_f *Z, cgint_f *E cgsize_t *elements,
+	cgint_f *B, cgint_f *Z, cgint_f *E, cgsize_t *elements,
 	cgsize_t *parent_data, cgint_f *ier)
 {
     *ier = (cgint_f)cg_elements_read((int)*fn, (int)*B, (int)*Z, (int)*E,
@@ -934,7 +934,7 @@ CGNSDLL void FMNAME(cg_elements_read_f, CG_ELEMENTS_READ_F) (cgint_f *fn,
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_elementdatasize_f, CG_ELEMENTDATASIZE_F) (cgint_f *fn,
-	cgint_f *B, cgint_f *Z, cgint_f *E cgsize_t *ElementDataSize,
+	cgint_f *B, cgint_f *Z, cgint_f *E, cgsize_t *ElementDataSize,
 	cgint_f *ier)
 {
     *ier = (cgint_f)cg_ElementDataSize((int)*fn, (int)*B, (int)*Z, (int)*E,
@@ -944,7 +944,7 @@ CGNSDLL void FMNAME(cg_elementdatasize_f, CG_ELEMENTDATASIZE_F) (cgint_f *fn,
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_elementpartialsize_f, CG_ELEMENTPARTIALSIZE_F) (cgint_f *fn,
-	cgint_f *B, cgint_f *Z, cgint_f *E cgsize_t *start, cgsize_t *end,
+	cgint_f *B, cgint_f *Z, cgint_f *E, cgsize_t *start, cgsize_t *end,
 	cgsize_t *ElementDataSize, cgint_f *ier)
 {
     *ier = (cgint_f)cg_ElementPartialSize((int)*fn, (int)*B, (int)*Z, (int)*E,
