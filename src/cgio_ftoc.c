@@ -71,7 +71,7 @@ static int to_f_string(char *c_str, char *f_str, int f_len)
 
 /*---------------------------------------------------------*/
 
-static char *new_c_string (char *str, int len, cgsize_t *ier)
+static char *new_c_string (char *str, int len, int *ier)
 {
     char *c_str;
 
@@ -99,25 +99,27 @@ static char *new_c_string (char *str, int len, cgsize_t *ier)
  *=========================================================*/
 
 CGIODLL void FMNAME(cgio_path_add_f, CGIO_PATH_ADD_F) (
-    STR_PSTR(path), cgsize_t *ier STR_PLEN(path))
+    STR_PSTR(path), cgint_f *ier STR_PLEN(path))
 {
-    char *c_path = new_c_string(STR_PTR(path), STR_LEN(path), ier);
+  int c_ier;
+  char *c_path = new_c_string(STR_PTR(path), STR_LEN(path), &c_ier);
+  *ier = (cgint_f)c_ier;
 
-    if (*ier == 0) {
-        *ier = cgio_path_add(c_path);
-        free(c_path);
-    }
+  if (*ier == 0) {
+    *ier = (cgint_f)cgio_path_add(c_path);
+    free(c_path);
+  }
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_path_delete_f, CGIO_PATH_DELETE_F) (
-    STR_PSTR(path), cgsize_t *ier STR_PLEN(path))
+    STR_PSTR(path), cgint_f *ier STR_PLEN(path))
 {
     char *c_path = new_c_string(STR_PTR(path), STR_LEN(path), ier);
 
     if (*ier == CGIO_ERR_MALLOC) return;
-    *ier = cgio_path_delete(c_path);
+    *ier = (cgint_f)cgio_path_delete(c_path);
     if (c_path) free(c_path);
 }
 
@@ -128,20 +130,22 @@ CGIODLL void FMNAME(cgio_path_delete_f, CGIO_PATH_DELETE_F) (
 CGIODLL void FMNAME(cgio_is_supported_f, CGIO_IS_SUPPORTED_F) (
     cgsize_t *file_type, cgsize_t *ier)
 {
-    *ier = cgio_is_supported((int)*file_type);
+    *ier = (cgint_f)cgio_is_supported((int)*file_type);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_check_file_f, CGIO_CHECK_FILE_F) (
-    STR_PSTR(filename), cgsize_t *file_type, cgsize_t *ier STR_PLEN(filename))
+    STR_PSTR(filename), cgint_f *file_type, cgint_f *ier STR_PLEN(filename))
 {
     int i_file_type;
-    char *c_name = new_c_string(STR_PTR(filename), STR_LEN(filename), ier);
+    int c_ier;
+    char *c_name = new_c_string(STR_PTR(filename), STR_LEN(filename), &c_ier);
+    *ier = (cgint_f)c_ier;
 
     if (*ier == 0) {
-        *ier = cgio_check_file(c_name, &i_file_type);
-        *file_type = i_file_type;
+        *ier = (cgint_f)cgio_check_file(c_name, &i_file_type);
+        *file_type = (cgint_f)i_file_type;
         free(c_name);
     }
 }
@@ -151,15 +155,17 @@ CGIODLL void FMNAME(cgio_check_file_f, CGIO_CHECK_FILE_F) (
  *=========================================================*/
 
 CGIODLL void FMNAME(cgio_open_file_f, CGIO_OPEN_FILE_F) (
-    STR_PSTR(filename), cgsize_t *file_mode, cgsize_t *file_type,
-    cgsize_t *cgio_num, cgsize_t *ier STR_PLEN(filename))
+    STR_PSTR(filename), cgint_f *file_mode, cgint_f *file_type,
+    cgint_f *cgio_num, cgint_f *ier STR_PLEN(filename))
 {
     int i_cgio_num;
-    char *c_name = new_c_string(STR_PTR(filename), STR_LEN(filename), ier);
+    int c_ier;
+    char *c_name = new_c_string(STR_PTR(filename), STR_LEN(filename), &c_ier);
+    *ier = (cgint_f)c_ier;
 
     if (*ier == 0) {
-        *ier = cgio_open_file(c_name, (int)*file_mode, (int)*file_type, &i_cgio_num);
-        *cgio_num = i_cgio_num;
+        *ier = (cgint_f)cgio_open_file(c_name, (int)*file_mode, (int)*file_type, &i_cgio_num);
+        *cgio_num = (cgint_f)i_cgio_num;
         free(c_name);
     }
 }
@@ -167,17 +173,17 @@ CGIODLL void FMNAME(cgio_open_file_f, CGIO_OPEN_FILE_F) (
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_close_file_f, CGIO_CLOSE_FILE_F) (
-    cgsize_t *cgio_num, cgsize_t *ier)
+    cgint_f *cgio_num, cgint_f *ier)
 {
-    *ier = cgio_close_file((int)*cgio_num);
+    *ier = (cgint_f)cgio_close_file((int)*cgio_num);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_flush_to_disk_f, CGIO_FLUSH_TO_DISK_F) (
-    cgsize_t *cgio_num, cgsize_t *ier)
+    cgint_f *cgio_num, cgint_f *ier)
 {
-    *ier = cgio_flush_to_disk((int)*cgio_num);
+    *ier = (cgint_f)cgio_flush_to_disk((int)*cgio_num);
 }
 
 /*=========================================================
@@ -185,11 +191,11 @@ CGIODLL void FMNAME(cgio_flush_to_disk_f, CGIO_FLUSH_TO_DISK_F) (
  *=========================================================*/
 
 CGIODLL void FMNAME(cgio_library_version_f, CGIO_LIBRARY_VERSION_F) (
-    cgsize_t *cgio_num, STR_PSTR(version), cgsize_t *ier STR_PLEN(version))
+    cgint_f *cgio_num, STR_PSTR(version), cgint_f *ier STR_PLEN(version))
 {
     char c_version[CGIO_MAX_VERSION_LENGTH+1];
 
-    *ier = cgio_library_version((int)*cgio_num, c_version);
+    *ier = (cgint_f)cgio_library_version((int)*cgio_num, c_version);
     if (*ier == 0)
         to_f_string(c_version, STR_PTR(version), STR_LEN(version));
 }
@@ -197,15 +203,15 @@ CGIODLL void FMNAME(cgio_library_version_f, CGIO_LIBRARY_VERSION_F) (
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_file_version_f, CGIO_FILE_VERSION_F) (
-    cgsize_t *cgio_num, STR_PSTR(file_version), STR_PSTR(creation_date),
-    STR_PSTR(modified_date), cgsize_t *ier STR_PLEN(file_version)
+    cgint_f *cgio_num, STR_PSTR(file_version), STR_PSTR(creation_date),
+    STR_PSTR(modified_date), cgint_f *ier STR_PLEN(file_version)
     STR_PLEN(creation_date) STR_PLEN(modified_date))
 {
     char c_version[CGIO_MAX_VERSION_LENGTH+1];
     char c_cdate[CGIO_MAX_VERSION_LENGTH+1];
     char c_mdate[CGIO_MAX_VERSION_LENGTH+1];
 
-    *ier = cgio_file_version((int)*cgio_num, c_version, c_cdate, c_mdate);
+    *ier = (cgint_f)cgio_file_version((int)*cgio_num, c_version, c_cdate, c_mdate);
     if (*ier == 0) {
         to_f_string(c_version, STR_PTR(file_version), STR_LEN(file_version));
         to_f_string(c_cdate, STR_PTR(creation_date), STR_LEN(creation_date));
@@ -216,20 +222,20 @@ CGIODLL void FMNAME(cgio_file_version_f, CGIO_FILE_VERSION_F) (
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_get_root_id_f, CGIO_GET_ROOT_ID_F) (
-    cgsize_t *cgio_num, double *rootid, cgsize_t *ier)
+    cgint_f *cgio_num, double *rootid, cgint_f *ier)
 {
-    *ier = cgio_get_root_id((int)*cgio_num, rootid);
+    *ier = (cgint_f)cgio_get_root_id((int)*cgio_num, rootid);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_get_file_type_f, CGIO_GET_FILE_TYPE_F) (
-    cgsize_t *cgio_num, cgsize_t *file_type, cgsize_t *ier)
+    cgint_f *cgio_num, cgint_f *file_type, cgint_f *ier)
 {
     int i_file_type;
 
-    *ier = cgio_get_file_type(*cgio_num, &i_file_type);
-    *file_type = i_file_type;
+    *ier = (cgint_f)cgio_get_file_type((int)*cgio_num, &i_file_type);
+    *file_type = (cgint_f)i_file_type;
 }
 
 /*=========================================================
@@ -237,23 +243,23 @@ CGIODLL void FMNAME(cgio_get_file_type_f, CGIO_GET_FILE_TYPE_F) (
  *=========================================================*/
 
 CGIODLL void FMNAME(cgio_error_code_f, CGIO_ERROR_CODE_F) (
-    cgsize_t *errcode, cgsize_t *file_type)
+    cgint_f *errcode, cgint_f *file_type)
 {
     int i_errcode, i_file_type;
 
     cgio_error_code(&i_errcode, &i_file_type);
-    *errcode = i_errcode;
-    *file_type = i_file_type;
+    *errcode = (cgint_f)i_errcode;
+    *file_type = (cgint_f)i_file_type;
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_error_message_f, CGIO_ERROR_MESSAGE_F) (
-    STR_PSTR(errmsg), cgsize_t *ier STR_PLEN(errmsg))
+    STR_PSTR(errmsg), cgint_f *ier STR_PLEN(errmsg))
 {
     char c_error[CGIO_MAX_ERROR_LENGTH+1];
 
-    *ier = cgio_error_message(c_error);
+    *ier = (cgint_f)cgio_error_message(c_error);
     if (*ier == 0)
         to_f_string(c_error, STR_PTR(errmsg), STR_LEN(errmsg));
 }
@@ -263,7 +269,7 @@ CGIODLL void FMNAME(cgio_error_message_f, CGIO_ERROR_MESSAGE_F) (
 CGIODLL void FMNAME(cgio_error_exit_f, CGIO_ERROR_EXIT_F) (
     STR_PSTR(errmsg) STR_PLEN(errmsg))
 {
-    cgsize_t ier;
+    int ier;
     char *c_error = new_c_string(STR_PTR(errmsg), STR_LEN(errmsg), &ier);
 
     cgio_error_exit(c_error);
@@ -272,7 +278,7 @@ CGIODLL void FMNAME(cgio_error_exit_f, CGIO_ERROR_EXIT_F) (
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_error_abort_f, CGIO_ERROR_ABORT_F) (
-    cgsize_t *abort_flag)
+    cgint_f *abort_flag)
 {
     cgio_error_abort((int)*abort_flag);
 }
@@ -282,21 +288,21 @@ CGIODLL void FMNAME(cgio_error_abort_f, CGIO_ERROR_ABORT_F) (
  *=========================================================*/
 
 CGIODLL void FMNAME(cgio_create_node_f, CGIO_CREATE_NODE_F) (
-    cgsize_t *cgio_num, double *pid, STR_PSTR(name),
-    double *id, cgsize_t *ier STR_PLEN(name))
+    cgint_f *cgio_num, double *pid, STR_PSTR(name),
+    double *id, cgint_f *ier STR_PLEN(name))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
 
     to_c_string(STR_PTR(name), STR_LEN(name), c_name, CGIO_MAX_NAME_LENGTH);
-    *ier = cgio_create_node((int)*cgio_num, *pid, c_name, id);
+    *ier = (cgint_f)cgio_create_node((int)*cgio_num, *pid, c_name, id);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_new_node_f, CGIO_NEW_NODE_F) (
-    cgsize_t *cgio_num, double *pid, STR_PSTR(name), STR_PSTR(label),
-    STR_PSTR(data_type), cgsize_t *ndims, cgsize_t *dims, void *data,
-    double *id, cgsize_t *ier STR_PLEN(name) STR_PLEN(label) STR_PLEN(data_type))
+    cgint_f *cgio_num, double *pid, STR_PSTR(name), STR_PSTR(label),
+    STR_PSTR(data_type), cgint_f *ndims, cgsize_t *dims, void *data,
+    double *id, cgint_f *ier STR_PLEN(name) STR_PLEN(label) STR_PLEN(data_type))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
     char c_label[CGIO_MAX_LABEL_LENGTH+1];
@@ -306,14 +312,14 @@ CGIODLL void FMNAME(cgio_new_node_f, CGIO_NEW_NODE_F) (
     to_c_string(STR_PTR(label), STR_LEN(label), c_label, CGIO_MAX_LABEL_LENGTH);
     to_c_string(STR_PTR(data_type), STR_LEN(data_type),
                 c_dtype, CGIO_MAX_DATATYPE_LENGTH);
-    *ier = cgio_new_node((int)*cgio_num, *pid, c_name, c_label, c_dtype,
+    *ier = (cgint_f)cgio_new_node((int)*cgio_num, *pid, c_name, c_label, c_dtype,
                (int)*ndims, dims, data, id);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_delete_node_f, CGIO_DELETE_NODE_F) (
-    cgsize_t *cgio_num, double *pid, double *id, cgsize_t *ier)
+    cgint_f *cgio_num, double *pid, double *id, cgint_f *ier)
 {
     *ier = cgio_delete_node((int)*cgio_num, *pid, *id);
 }
@@ -321,17 +327,17 @@ CGIODLL void FMNAME(cgio_delete_node_f, CGIO_DELETE_NODE_F) (
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_move_node_f, CGIO_MOVE_NODE_F) (
-    cgsize_t *cgio_num, double *pid, double *id, double *npid, cgsize_t *ier)
+    cgint_f *cgio_num, double *pid, double *id, double *npid, cgint_f *ier)
 {
-    *ier = cgio_move_node((int)*cgio_num, *pid, *id, *npid);
+    *ier = (cgint_f)cgio_move_node((int)*cgio_num, *pid, *id, *npid);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_release_id_f, CGIO_RELEASE_ID_F) (
-    cgsize_t *cgio_num, double *id, cgsize_t *ier)
+    cgint_f *cgio_num, double *id, cgint_f *ier)
 {
-    *ier = cgio_release_id((int)*cgio_num, *id);
+    *ier = (cgint_f)cgio_release_id((int)*cgio_num, *id);
 }
 
 /*=========================================================
@@ -339,7 +345,7 @@ CGIODLL void FMNAME(cgio_release_id_f, CGIO_RELEASE_ID_F) (
  *=========================================================*/
 
 CGIODLL void FMNAME(cgio_is_link_f, CGIO_IS_LINK_F) (
-    cgsize_t *cgio_num, double *id, cgsize_t *link_len, cgsize_t *ier)
+    cgsize_t *cgio_num, double *id, cgsize_t *link_len, cgint_f *ier)
 {
     int i_link_len;
 
@@ -350,8 +356,8 @@ CGIODLL void FMNAME(cgio_is_link_f, CGIO_IS_LINK_F) (
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_link_size_f, CGIO_LINK_SIZE_F) (
-    cgsize_t *cgio_num, double *id, cgsize_t *file_len,
-    cgsize_t *name_len, cgsize_t *ier)
+    cgint_f *cgio_num, double *id, cgsize_t *file_len,
+    cgsize_t *name_len, cgint_f *ier)
 {
     int i_file_len, i_name_len;
 
@@ -363,25 +369,28 @@ CGIODLL void FMNAME(cgio_link_size_f, CGIO_LINK_SIZE_F) (
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_create_link_f, CGIO_CREATE_LINK_F) (
-    cgsize_t *cgio_num, double *pid, STR_PSTR(name), STR_PSTR(filename),
-    STR_PSTR(name_in_file), double *id, cgsize_t *ier
+    cgint_f *cgio_num, double *pid, STR_PSTR(name), STR_PSTR(filename),
+    STR_PSTR(name_in_file), double *id, cgint_f *ier
     STR_PLEN(name) STR_PLEN(filename) STR_PLEN(name_in_file))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
     char *c_file, *c_link;
+    int c_ier;
 
-    c_file = new_c_string(STR_PTR(filename), STR_LEN(filename), ier);
+    c_file = new_c_string(STR_PTR(filename), STR_LEN(filename), &c_ier);
+    *ier = (cgint_f)c_ier;
     if (*ier) {
         if (*ier != CGIO_ERR_NULL_STRING) return;
         c_file = "";
     }
-    c_link = new_c_string(STR_PTR(name_in_file), STR_LEN(name_in_file), ier);
+    c_link = new_c_string(STR_PTR(name_in_file), STR_LEN(name_in_file), &c_ier);
+    *ier = (cgint_f)c_ier;
     if (*ier) {
         if (*c_file) free(c_file);
         return;
     }
     to_c_string(STR_PTR(name), STR_LEN(name), c_name, CGIO_MAX_NAME_LENGTH);
-    *ier = cgio_create_link((int)*cgio_num, *pid, c_name, c_file, c_link, id);
+    *ier = (cgint_f)cgio_create_link((int)*cgio_num, *pid, c_name, c_file, c_link, id);
     if (*c_file) free(c_file);
     free(c_link);
 }
@@ -389,13 +398,13 @@ CGIODLL void FMNAME(cgio_create_link_f, CGIO_CREATE_LINK_F) (
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_get_link_f, CGIO_GET_LINK_F) (
-    cgsize_t *cgio_num, double *id, STR_PSTR(filename), STR_PSTR(name_in_file),
-    cgsize_t *ier STR_PLEN(filename) STR_PLEN(name_in_file))
+    cgint_f *cgio_num, double *id, STR_PSTR(filename), STR_PSTR(name_in_file),
+    cgint_f *ier STR_PLEN(filename) STR_PLEN(name_in_file))
 {
     char c_file[CGIO_MAX_FILE_LENGTH+1];
     char c_link[CGIO_MAX_LINK_LENGTH+1];
 
-    *ier = cgio_get_link((int)*cgio_num, *id, c_file, c_link);
+    *ier = (cgint_f)cgio_get_link((int)*cgio_num, *id, c_file, c_link);
     if (*ier == 0) {
         to_f_string(c_file, STR_PTR(filename), STR_LEN(filename));
         to_f_string(c_link, STR_PTR(name_in_file), STR_LEN(name_in_file));
@@ -407,43 +416,43 @@ CGIODLL void FMNAME(cgio_get_link_f, CGIO_GET_LINK_F) (
  *=========================================================*/
 
 CGIODLL void FMNAME(cgio_number_children_f, CGIO_NUMBER_CHILDREN_F) (
-    cgsize_t *cgio_num, double *pid, cgsize_t *num_children, cgsize_t *ier)
+    cgint_f *cgio_num, double *pid, cgint_f *num_children, cgint_f *ier)
 {
     int i_num_children;
 
     *ier = cgio_number_children(*cgio_num, *pid, &i_num_children);
-    *num_children = i_num_children;
+    *num_children = (cgint_f)i_num_children;
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_children_ids_f, CGIO_CHILDREN_IDS_F) (
-    cgsize_t *cgio_num, double *pid, cgsize_t *start, cgsize_t *max_ret,
-    cgsize_t *num_ret, double *ids, cgsize_t *ier)
+    cgint_f *cgio_num, double *pid, cgint_f *start, cgint_f *max_ret,
+    cgint_f *num_ret, double *ids, cgint_f *ier)
 {
     int i_num_ret;
 
     *ier = cgio_children_ids((int)*cgio_num, *pid, (int)*start, (int)*max_ret,
                &i_num_ret, ids);
-    *num_ret = i_num_ret;
+    *num_ret = (cgint_f)i_num_ret;
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_children_names_f, CGIO_CHILDREN_NAMES_F) (
-    cgsize_t *cgio_num, double *pid, cgsize_t *start, cgsize_t *max_ret,
-    cgsize_t *name_len, cgsize_t *num_ret, STR_PSTR(names),
-    cgsize_t *ier STR_PLEN(names))
+    cgint_f *cgio_num, double *pid, cgint_f *start, cgint_f *max_ret,
+    cgint_f *name_len, cgint_f *num_ret, STR_PSTR(names),
+    cgint_f *ier STR_PLEN(names))
 {
     int i_num_ret, i_name_len = (int)*name_len;
     char *c_names;
 
     c_names = (char *) malloc ((size_t)*max_ret * (CGIO_MAX_NAME_LENGTH + 1));
     if (c_names == NULL) {
-        *ier = CGIO_ERR_MALLOC;
+      *ier = (cgint_f)CGIO_ERR_MALLOC;
         return;
     }
-    *ier = cgio_children_names((int)*cgio_num, *pid, (int)*start, (int)*max_ret,
+    *ier = (cgint_f)cgio_children_names((int)*cgio_num, *pid, (int)*start, (int)*max_ret,
                CGIO_MAX_NAME_LENGTH + 1, &i_num_ret, c_names);
     if (*ier == 0) {
         int n;
@@ -454,7 +463,7 @@ CGIODLL void FMNAME(cgio_children_names_f, CGIO_CHILDREN_NAMES_F) (
             pc += (CGIO_MAX_NAME_LENGTH + 1);
             pf += i_name_len;
         }
-        *num_ret = i_num_ret;
+        *num_ret = (cgint_f)i_num_ret;
     }
     free(c_names);
 }
@@ -464,24 +473,24 @@ CGIODLL void FMNAME(cgio_children_names_f, CGIO_CHILDREN_NAMES_F) (
  *=========================================================*/
 
 CGIODLL void FMNAME(cgio_get_node_id_f, CGIO_GET_NODE_ID_F) (
-    cgsize_t *cgio_num, double *pid, STR_PSTR(name), double *id,
-    cgsize_t *ier STR_PLEN(name))
+    cgint_f *cgio_num, double *pid, STR_PSTR(name), double *id,
+    cgint_f *ier STR_PLEN(name))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
 
     to_c_string(STR_PTR(name), STR_LEN(name), c_name, CGIO_MAX_NAME_LENGTH);
-    *ier = cgio_get_node_id((int)*cgio_num, *pid, c_name, id);
+    *ier = (cgint_f)cgio_get_node_id((int)*cgio_num, *pid, c_name, id);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_get_name_f, CGIO_GET_NAME_F) (
-    cgsize_t *cgio_num, double *id, STR_PSTR(name),
-    cgsize_t *ier STR_PLEN(name))
+    cgint_f *cgio_num, double *id, STR_PSTR(name),
+    cgint_f *ier STR_PLEN(name))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
 
-    *ier = cgio_get_name((int)*cgio_num, *id, c_name);
+    *ier = (cgint_f)cgio_get_name((int)*cgio_num, *id, c_name);
     if (*ier == 0)
         to_f_string(c_name, STR_PTR(name), STR_LEN(name));
 }
@@ -489,12 +498,12 @@ CGIODLL void FMNAME(cgio_get_name_f, CGIO_GET_NAME_F) (
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_get_label_f, CGIO_GET_LABEL_F) (
-    cgsize_t *cgio_num, double *id, STR_PSTR(label),
-    cgsize_t *ier STR_PLEN(label))
+    cgint_f *cgio_num, double *id, STR_PSTR(label),
+    cgint_f *ier STR_PLEN(label))
 {
     char c_label[CGIO_MAX_LABEL_LENGTH+1];
 
-    *ier = cgio_get_label((int)*cgio_num, *id, c_label);
+    *ier = (cgint_f)cgio_get_label((int)*cgio_num, *id, c_label);
     if (*ier == 0)
         to_f_string(c_label, STR_PTR(label), STR_LEN(label));
 }
@@ -502,12 +511,12 @@ CGIODLL void FMNAME(cgio_get_label_f, CGIO_GET_LABEL_F) (
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_get_data_type_f, CGIO_GET_DATA_TYPE_F) (
-    cgsize_t *cgio_num, double *id, STR_PSTR(data_type),
-    cgsize_t *ier STR_PLEN(data_type))
+    cgint_f *cgio_num, double *id, STR_PSTR(data_type),
+    cgint_f *ier STR_PLEN(data_type))
 {
     char c_type[CGIO_MAX_DATATYPE_LENGTH+1];
 
-    *ier = cgio_get_data_type((int)*cgio_num, *id, c_type);
+    *ier = (cgint_f)cgio_get_data_type((int)*cgio_num, *id, c_type);
     if (*ier == 0)
         to_f_string(c_type, STR_PTR(data_type), STR_LEN(data_type));
 }
@@ -515,51 +524,51 @@ CGIODLL void FMNAME(cgio_get_data_type_f, CGIO_GET_DATA_TYPE_F) (
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_get_data_size_f, CGIO_GET_DATA_SIZE_F) (
-    cgsize_t *cgio_num, double *id, cgsize_t *size, cgsize_t *ier)
+    cgint_f *cgio_num, double *id, cgsize_t *size, cgint_f *ier)
 {
     cglong_t data_size;
 
-    *ier = cgio_get_data_size((int)*cgio_num, *id, &data_size);
+    *ier = (cgint_f)cgio_get_data_size((int)*cgio_num, *id, &data_size);
     *size = (cgsize_t)data_size;
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_get_dimensions_f, CGIO_GET_DIMENSIONS_F) (
-    cgsize_t *cgio_num, double *id, cgsize_t *ndims, cgsize_t *dims,
-    cgsize_t *ier)
+    cgint_f *cgio_num, double *id, cgint_f *ndims, cgsize_t *dims,
+    cgint_f *ier)
 {
     int i_ndims;
 
-    *ier = cgio_get_dimensions((int)*cgio_num, *id, &i_ndims, dims);
-    *ndims = i_ndims;
+    *ier = (cgint_f)cgio_get_dimensions((int)*cgio_num, *id, &i_ndims, dims);
+    *ndims = (cgint_f)i_ndims;
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_read_all_data_f, CGIO_READ_ALL_DATA_F) (
-    cgsize_t *cgio_num, double *id, void *data, cgsize_t *ier)
+    cgint_f *cgio_num, double *id, void *data, cgint_f *ier)
 {
-    *ier = cgio_read_all_data((int)*cgio_num, *id, data);
+    *ier = (cgint_f)cgio_read_all_data((int)*cgio_num, *id, data);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_read_block_data_f, CGIO_READ_BLOCK_DATA_F) (
-    cgsize_t *cgio_num, double *id, cgsize_t *b_start, cgsize_t *b_end,
-    void *data, cgsize_t *ier)
+    cgint_f *cgio_num, double *id, cgsize_t *b_start, cgsize_t *b_end,
+    void *data, cgint_f *ier)
 {
-    *ier = cgio_read_block_data((int)*cgio_num, *id, *b_start, *b_end, data);
+    *ier = (cgint_f)cgio_read_block_data((int)*cgio_num, *id, *b_start, *b_end, data);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_read_data_f, CGIO_READ_DATA_F) (
-    cgsize_t *cgio_num, double *id, cgsize_t *s_start, cgsize_t *s_end,
-    cgsize_t *s_stride, cgsize_t *m_ndims, cgsize_t *m_dims, cgsize_t *m_start,
-    cgsize_t *m_end, cgsize_t *m_stride, void *data, cgsize_t *ier)
+    cgint_f *cgio_num, double *id, cgsize_t *s_start, cgsize_t *s_end,
+    cgsize_t *s_stride, cgint_f *m_ndims, cgint_f *m_dims, cgsize_t *m_start,
+    cgsize_t *m_end, cgsize_t *m_stride, void *data, cgint_f *ier)
 {
-    *ier = cgio_read_data((int)*cgio_num, *id, s_start, s_end, s_stride,
+    *ier = (cgint_f)cgio_read_data((int)*cgio_num, *id, s_start, s_end, s_stride,
                (int)*m_ndims, m_dims, m_start, m_end, m_stride, data);
 }
 
@@ -568,65 +577,65 @@ CGIODLL void FMNAME(cgio_read_data_f, CGIO_READ_DATA_F) (
  *=========================================================*/
 
 CGIODLL void FMNAME(cgio_set_name_f, CGIO_SET_NAME_F) (
-    cgsize_t *cgio_num, double *pid, double *id, STR_PSTR(name),
-    cgsize_t *ier STR_PLEN(name))
+    cgint_f *cgio_num, double *pid, double *id, STR_PSTR(name),
+    cgint_f *ier STR_PLEN(name))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
 
     to_c_string(STR_PTR(name), STR_LEN(name), c_name, CGIO_MAX_NAME_LENGTH);
-    *ier = cgio_set_name((int)*cgio_num, *pid, *id, c_name);
+    *ier = (cgint_f)cgio_set_name((int)*cgio_num, *pid, *id, c_name);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_set_label_f, CGIO_SET_LABEL_F) (
-    cgsize_t *cgio_num, double *id, STR_PSTR(label),
-    cgsize_t *ier STR_PLEN(label))
+    cgint_f *cgio_num, double *id, STR_PSTR(label),
+    cgint_f *ier STR_PLEN(label))
 {
     char c_label[CGIO_MAX_LABEL_LENGTH+1];
 
     to_c_string(STR_PTR(label), STR_LEN(label), c_label, CGIO_MAX_LABEL_LENGTH);
-    *ier = cgio_set_label((int)*cgio_num, *id, c_label);
+    *ier = (cgint_f)cgio_set_label((int)*cgio_num, *id, c_label);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_set_dimensions_f, CGIO_SET_DIMENSIONS_F) (
-    cgsize_t *cgio_num, double *id, STR_PSTR(data_type), cgsize_t *ndims,
-    cgsize_t *dims, cgsize_t *ier STR_PLEN(data_type))
+    cgint_f *cgio_num, double *id, STR_PSTR(data_type), cgint_f *ndims,
+    cgsize_t *dims, cgint_f *ier STR_PLEN(data_type))
 {
     char c_type[CGIO_MAX_DATATYPE_LENGTH+1];
 
     to_c_string(STR_PTR(data_type), STR_LEN(data_type),
         c_type, CGIO_MAX_DATATYPE_LENGTH);
-    *ier = cgio_set_dimensions((int)*cgio_num, *id, c_type, (int)*ndims, dims);
+    *ier = (cgint_f)cgio_set_dimensions((int)*cgio_num, *id, c_type, (int)*ndims, dims);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_write_all_data_f, CGIO_WRITE_ALL_DATA_F) (
-    cgsize_t *cgio_num, double *id, void *data, cgsize_t *ier)
+    cgint_f *cgio_num, double *id, void *data, cgint_f *ier)
 {
-    *ier = cgio_write_all_data((int)*cgio_num, *id, data);
+    *ier = (cgint_f)cgio_write_all_data((int)*cgio_num, *id, data);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_write_block_data_f, CGIO_WRITE_BLOCK_DATA_F) (
-    cgsize_t *cgio_num, double *id, cgsize_t *b_start, cgsize_t *b_end,
-    void *data, cgsize_t *ier)
+    cgint_f *cgio_num, double *id, cgsize_t *b_start, cgsize_t *b_end,
+    void *data, cgint_f *ier)
 {
-    *ier = cgio_write_block_data((int)*cgio_num, *id, *b_start, *b_end, data);
+    *ier = (cgint_f)cgio_write_block_data((int)*cgio_num, *id, *b_start, *b_end, data);
 }
 
 /*---------------------------------------------------------*/
 
 CGIODLL void FMNAME(cgio_write_data_f, CGIO_WRITE_DATA_F) (
-    cgsize_t *cgio_num, double *id, cgsize_t *s_start, cgsize_t *s_end,
-    cgsize_t *s_stride, cgsize_t *m_ndims, cgsize_t *m_dims, cgsize_t *m_start,
-    cgsize_t *m_end, cgsize_t *m_stride, void *data, cgsize_t *ier)
+    cgint_f *cgio_num, double *id, cgsize_t *s_start, cgsize_t *s_end,
+    cgsize_t *s_stride, cgsize_t *m_ndims, cgint_f *m_dims, cgsize_t *m_start,
+    cgsize_t *m_end, cgsize_t *m_stride, void *data, cgint_f *ier)
 {
-    *ier = cgio_write_data((int)*cgio_num, *id, s_start, s_end, s_stride,
+    *ier = (cgint_f)cgio_write_data((int)*cgio_num, *id, s_start, s_end, s_stride,
                (int)*m_ndims, m_dims, m_start, m_end, m_stride, data);
 }
 
