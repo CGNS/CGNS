@@ -1078,9 +1078,27 @@ proc cgns_init {{version ""}} {
     }
 
     if {$version >= 3200} {
-      array set CGNSnodeDesc {
-        Elements_t {{user defined} Elements_t {0,N} I4 1 2 \
-          {ElementType, ElementSizeBoundary
+      if {$version >= 3220} {
+        array set CGNSnodeDesc {
+          Elements_t {{user defined} Elements_t {0,N} I4 1 2 \
+            {ElementType, ElementSizeBoundary
+
+element types are:
+0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
+5:TRI_3, 6:TRI_6, 7:QUAD_4, 8:QUAD_8, 9:QUAD_9, 10:TETRA_4, 11:TETRA_10,\
+12:PYRA_5, 13:PYRA_14, 14:PENTA_6, 15:PENTA_15, 16:PENTA_18, 17:HEXA_8,\
+18:HEXA_20, 19:HEXA_27, 20:MIXED, 21:PYRA_13, 22:NGON_n, 23:NFACE_n,\
+24:BAR_4, 25:TRI_9, 26:TRI_10, 27:QUAD_12, 28:QUAD_16, 29:TETRA_16,\
+30:TETRA_20, 31:PYRA_21, 32:PYRA_29, 33:PYRA_30, 34:PENTA_24,\
+35:PENTA_38, 36:PENTA_40, 37:HEXA_32, 38:HEXA_56, 39:HEXA_64,\
+40:BAR_5, 41:TRI_12, 42:TRI_15, 43:QUAD_P4_16, 44:QUAD_25, 45:TETRA_22,\
+46:TETRA_34, 47:TETRA_35, 48:PYRA_P4_29, 49:PYRA_50, 50:PYRA_55,\
+51:PENTA_33, 52:PENTA_66, 53:PENTA_75, 54:HEXA_44, 55:HEXA_98,\
+56:HEXA_125}}
+      }} else {
+        array set CGNSnodeDesc {
+          Elements_t {{user defined} Elements_t {0,N} I4 1 2 \
+            {ElementType, ElementSizeBoundary
 
 element types are:
 0:Null, 1:UserDefined, 2:NODE, 3:BAR_2, 4:BAR_3,\
@@ -1090,7 +1108,7 @@ element types are:
 24:BAR_4, 25:TRI_9, 26:TRI_10, 27:QUAD_12, 28:QUAD_16, 29:TETRA_16,\
 30:TETRA_20, 31:PYRA_21, 32:PYRA_29, 33:PYRA_30, 34:PENTA_24,\
 35:PENTA_38, 36:PENTA_40, 37:HEXA_32, 38:HEXA_56, 39:HEXA_64}}
-      }
+      }}
       array set CGNSnodeChildren {
         BC_t {AdditionalFamilyName BCDataSet BCProperty DataClass Descriptor \
           DimensionalUnits FamilyName GridLocation InwardNormalIndex \

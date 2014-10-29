@@ -1423,45 +1423,68 @@ echo         integer%fbytes% TETRA_16, TETRA_20>> cgnslib_f.h
 echo         integer%fbytes% PYRA_21, PYRA_29, PYRA_30>> cgnslib_f.h
 echo         integer%fbytes% PENTA_24, PENTA_38, PENTA_40>> cgnslib_f.h
 echo         integer%fbytes% HEXA_32, HEXA_56, HEXA_64>> cgnslib_f.h
-echo         character*32 ElementTypeName(0:39)>> cgnslib_f.h
-echo         parameter (NODE     =  2)>> cgnslib_f.h
-echo         parameter (BAR_2    =  3)>> cgnslib_f.h
-echo         parameter (BAR_3    =  4)>> cgnslib_f.h
-echo         parameter (TRI_3    =  5)>> cgnslib_f.h
-echo         parameter (TRI_6    =  6)>> cgnslib_f.h
-echo         parameter (QUAD_4   =  7)>> cgnslib_f.h
-echo         parameter (QUAD_8   =  8)>> cgnslib_f.h
-echo         parameter (QUAD_9   =  9)>> cgnslib_f.h
-echo         parameter (TETRA_4  = 10)>> cgnslib_f.h
-echo         parameter (TETRA_10 = 11)>> cgnslib_f.h
-echo         parameter (PYRA_5   = 12)>> cgnslib_f.h
-echo         parameter (PYRA_14  = 13)>> cgnslib_f.h
-echo         parameter (PENTA_6  = 14)>> cgnslib_f.h
-echo         parameter (PENTA_15 = 15)>> cgnslib_f.h
-echo         parameter (PENTA_18 = 16)>> cgnslib_f.h
-echo         parameter (HEXA_8   = 17)>> cgnslib_f.h
-echo         parameter (HEXA_20  = 18)>> cgnslib_f.h
-echo         parameter (HEXA_27  = 19)>> cgnslib_f.h
-echo         parameter (MIXED    = 20)>> cgnslib_f.h
-echo         parameter (PYRA_13  = 21)>> cgnslib_f.h
-echo         parameter (NGON_n   = 22)>> cgnslib_f.h
-echo         parameter (NFACE_n  = 23)>> cgnslib_f.h
-echo         parameter (BAR_4    = 24)>> cgnslib_f.h
-echo         parameter (TRI_9    = 25)>> cgnslib_f.h
-echo         parameter (TRI_10   = 26)>> cgnslib_f.h
-echo         parameter (QUAD_12  = 27)>> cgnslib_f.h
-echo         parameter (QUAD_16  = 28)>> cgnslib_f.h
-echo         parameter (TETRA_16 = 29)>> cgnslib_f.h
-echo         parameter (TETRA_20 = 30)>> cgnslib_f.h
-echo         parameter (PYRA_21  = 31)>> cgnslib_f.h
-echo         parameter (PYRA_29  = 32)>> cgnslib_f.h
-echo         parameter (PYRA_30  = 33)>> cgnslib_f.h
-echo         parameter (PENTA_24 = 34)>> cgnslib_f.h
-echo         parameter (PENTA_38 = 35)>> cgnslib_f.h
-echo         parameter (PENTA_40 = 36)>> cgnslib_f.h
-echo         parameter (HEXA_32  = 37)>> cgnslib_f.h
-echo         parameter (HEXA_56  = 38)>> cgnslib_f.h
-echo         parameter (HEXA_64  = 39)>> cgnslib_f.h
+echo         integer%fbytes% BAR_5, TRI_12, TRI_15>> cgnslib_f.h
+echo         integer%fbytes% QUAD_P4_16, QUAD_25>> cgnslib_f.h
+echo         integer%fbytes% TETRA_22, TETRA_34, TETRA_35>> cgnslib_f.h
+echo         integer%fbytes% PYRA_P4_29, PYRA_50, PYRA_55>> cgnslib_f.h
+echo         integer%fbytes% PENTA_33, PENTA_66, PENTA_75>> cgnslib_f.h
+echo         integer%fbytes% HEXA_44, HEXA_98, HEXA_125>> cgnslib_f.h
+echo         character*32 ElementTypeName(0:56)>> cgnslib_f.h
+echo         parameter (NODE       =  2)>> cgnslib_f.h
+echo         parameter (BAR_2      =  3)>> cgnslib_f.h
+echo         parameter (BAR_3      =  4)>> cgnslib_f.h
+echo         parameter (TRI_3      =  5)>> cgnslib_f.h
+echo         parameter (TRI_6      =  6)>> cgnslib_f.h
+echo         parameter (QUAD_4     =  7)>> cgnslib_f.h
+echo         parameter (QUAD_8     =  8)>> cgnslib_f.h
+echo         parameter (QUAD_9     =  9)>> cgnslib_f.h
+echo         parameter (TETRA_4    = 10)>> cgnslib_f.h
+echo         parameter (TETRA_10   = 11)>> cgnslib_f.h
+echo         parameter (PYRA_5     = 12)>> cgnslib_f.h
+echo         parameter (PYRA_14    = 13)>> cgnslib_f.h
+echo         parameter (PENTA_6    = 14)>> cgnslib_f.h
+echo         parameter (PENTA_15   = 15)>> cgnslib_f.h
+echo         parameter (PENTA_18   = 16)>> cgnslib_f.h
+echo         parameter (HEXA_8     = 17)>> cgnslib_f.h
+echo         parameter (HEXA_20    = 18)>> cgnslib_f.h
+echo         parameter (HEXA_27    = 19)>> cgnslib_f.h
+echo         parameter (MIXED      = 20)>> cgnslib_f.h
+echo         parameter (PYRA_13    = 21)>> cgnslib_f.h
+echo         parameter (NGON_n     = 22)>> cgnslib_f.h
+echo         parameter (NFACE_n    = 23)>> cgnslib_f.h
+echo         parameter (BAR_4      = 24)>> cgnslib_f.h
+echo         parameter (TRI_9      = 25)>> cgnslib_f.h
+echo         parameter (TRI_10     = 26)>> cgnslib_f.h
+echo         parameter (QUAD_12    = 27)>> cgnslib_f.h
+echo         parameter (QUAD_16    = 28)>> cgnslib_f.h
+echo         parameter (TETRA_16   = 29)>> cgnslib_f.h
+echo         parameter (TETRA_20   = 30)>> cgnslib_f.h
+echo         parameter (PYRA_21    = 31)>> cgnslib_f.h
+echo         parameter (PYRA_29    = 32)>> cgnslib_f.h
+echo         parameter (PYRA_30    = 33)>> cgnslib_f.h
+echo         parameter (PENTA_24   = 34)>> cgnslib_f.h
+echo         parameter (PENTA_38   = 35)>> cgnslib_f.h
+echo         parameter (PENTA_40   = 36)>> cgnslib_f.h
+echo         parameter (HEXA_32    = 37)>> cgnslib_f.h
+echo         parameter (HEXA_56    = 38)>> cgnslib_f.h
+echo         parameter (HEXA_64    = 39)>> cgnslib_f.h
+echo         parameter (BAR_5      = 40)>> cgnslib_f.h
+echo         parameter (TRI_12     = 41)>> cgnslib_f.h
+echo         parameter (TRI_15     = 42)>> cgnslib_f.h
+echo         parameter (QUAD_P4_16 = 43)>> cgnslib_f.h
+echo         parameter (QUAD_25    = 44)>> cgnslib_f.h
+echo         parameter (TETRA_22   = 45)>> cgnslib_f.h
+echo         parameter (TETRA_34   = 46)>> cgnslib_f.h
+echo         parameter (TETRA_35   = 47)>> cgnslib_f.h
+echo         parameter (PYRA_P4_29 = 48)>> cgnslib_f.h
+echo         parameter (PYRA_50    = 49)>> cgnslib_f.h
+echo         parameter (PYRA_55    = 50)>> cgnslib_f.h
+echo         parameter (PENTA_33   = 51)>> cgnslib_f.h
+echo         parameter (PENTA_66   = 52)>> cgnslib_f.h
+echo         parameter (PENTA_75   = 53)>> cgnslib_f.h
+echo         parameter (HEXA_44    = 54)>> cgnslib_f.h
+echo         parameter (HEXA_98    = 55)>> cgnslib_f.h
+echo         parameter (HEXA_125   = 56)>> cgnslib_f.h
 echo.>> cgnslib_f.h
 echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
 echo !*      Zone types                                                     *>> cgnslib_f.h
@@ -1655,7 +1678,13 @@ echo      ^&      'QUAD_12', 'QUAD_16',                                       ^&
 echo      ^&      'TETRA_16', 'TETRA_20',                                     ^&>> cgnslib_f.h
 echo      ^&      'PYRA_21', 'PYRA_29', 'PYRA_30',                            ^&>> cgnslib_f.h
 echo      ^&      'PENTA_24', 'PENTA_38', 'PENTA_40',                         ^&>> cgnslib_f.h
-echo      ^&      'HEXA_32', 'HEXA_56', 'HEXA_64' />> cgnslib_f.h
+echo      ^&      'HEXA_32', 'HEXA_56', 'HEXA_64',                            ^&>> cgnslib_f.h
+echo      ^&      'BAR_5', 'TRI_12'. 'TRI_15',                                ^&>> cgnslib_f.h
+echo      ^&      'QUAD_P4_16', 'QUAD_25',                                    ^&>> cgnslib_f.h
+echo      ^&      'TETRA_22', 'TETRA_34', 'TETRA_35',                         ^&>> cgnslib_f.h
+echo      ^&      'PYRA_P4_29', 'PYRA_50', 'PYRA_55',                         ^&>> cgnslib_f.h
+echo      ^&      'PENTA_33', 'PENTA_66', 'PENTA_75',                         ^&>> cgnslib_f.h
+echo      ^&      'HEXA_44', 'HEXA_98', 'HEXA_125' />> cgnslib_f.h
 echo.>> cgnslib_f.h
 echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
 echo !*      Zone types                                                     *>> cgnslib_f.h

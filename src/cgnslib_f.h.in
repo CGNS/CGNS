@@ -373,46 +373,68 @@
         integer@CGFSIZET@ PYRA_21, PYRA_29, PYRA_30
         integer@CGFSIZET@ PENTA_24, PENTA_38, PENTA_40
         integer@CGFSIZET@ HEXA_32, HEXA_56, HEXA_64
-        character*32 ElementTypeName(0:39)
-        parameter (NODE     =  2)
-        parameter (BAR_2    =  3)
-        parameter (BAR_3    =  4)
-        parameter (TRI_3    =  5)
-        parameter (TRI_6    =  6)
-        parameter (QUAD_4   =  7)
-        parameter (QUAD_8   =  8)
-        parameter (QUAD_9   =  9)
-        parameter (TETRA_4  = 10)
-        parameter (TETRA_10 = 11)
-        parameter (PYRA_5   = 12)
-        parameter (PYRA_14  = 13)
-        parameter (PENTA_6  = 14)
-        parameter (PENTA_15 = 15)
-        parameter (PENTA_18 = 16)
-        parameter (HEXA_8   = 17)
-        parameter (HEXA_20  = 18)
-        parameter (HEXA_27  = 19)
-        parameter (MIXED    = 20)
-        parameter (PYRA_13  = 21)
-        parameter (NGON_n   = 22)
-        parameter (NFACE_n  = 23)
-        parameter (BAR_4    = 24)
-        parameter (TRI_9    = 25)
-        parameter (TRI_10   = 26)
-        parameter (QUAD_12  = 27)
-        parameter (QUAD_16  = 28)
-        parameter (TETRA_16 = 29)
-        parameter (TETRA_20 = 30)
-        parameter (PYRA_21  = 31)
-        parameter (PYRA_29  = 32)
-        parameter (PYRA_30  = 33)
-        parameter (PENTA_24 = 34)
-        parameter (PENTA_38 = 35)
-        parameter (PENTA_40 = 36)
-        parameter (HEXA_32  = 37)
-        parameter (HEXA_56  = 38)
-        parameter (HEXA_64  = 39)
-
+        integer@CGFSIZET@ BAR_5, TRI_12, TRI_15
+        integer@CGFSIZET@ QUAD_P4_16, QUAD_25
+        integer@CGFSIZET@ TETRA_22, TETRA_34, TETRA_35
+        integer@CGFSIZET@ PYRA_P4_29, PYRA_50, PYRA_55
+        integer@CGFSIZET@ PENTA_33, PENTA_66, PENTA_75
+        integer@CGFSIZET@ HEXA_44, HEXA_98, HEXA_125
+        character*32 ElementTypeName(0:56)
+        parameter (NODE       =  2)
+        parameter (BAR_2      =  3)
+        parameter (BAR_3      =  4)
+        parameter (TRI_3      =  5)
+        parameter (TRI_6      =  6)
+        parameter (QUAD_4     =  7)
+        parameter (QUAD_8     =  8)
+        parameter (QUAD_9     =  9)
+        parameter (TETRA_4    = 10)
+        parameter (TETRA_10   = 11)
+        parameter (PYRA_5     = 12)
+        parameter (PYRA_14    = 13)
+        parameter (PENTA_6    = 14)
+        parameter (PENTA_15   = 15)
+        parameter (PENTA_18   = 16)
+        parameter (HEXA_8     = 17)
+        parameter (HEXA_20    = 18)
+        parameter (HEXA_27    = 19)
+        parameter (MIXED      = 20)
+        parameter (PYRA_13    = 21)
+        parameter (NGON_n     = 22)
+        parameter (NFACE_n    = 23)
+        parameter (BAR_4      = 24)
+        parameter (TRI_9      = 25)
+        parameter (TRI_10     = 26)
+        parameter (QUAD_12    = 27)
+        parameter (QUAD_16    = 28)
+        parameter (TETRA_16   = 29)
+        parameter (TETRA_20   = 30)
+        parameter (PYRA_21    = 31)
+        parameter (PYRA_29    = 32)
+        parameter (PYRA_30    = 33)
+        parameter (PENTA_24   = 34)
+        parameter (PENTA_38   = 35)
+        parameter (PENTA_40   = 36)
+        parameter (HEXA_32    = 37)
+        parameter (HEXA_56    = 38)
+        parameter (HEXA_64    = 39)
+        parameter (BAR_5      = 40)
+        parameter (TRI_12     = 41)
+        parameter (TRI_15     = 42)
+        parameter (QUAD_P4_16 = 43)
+        parameter (QUAD_25    = 44)
+        parameter (TETRA_22   = 45)
+        parameter (TETRA_34   = 46)
+        parameter (TETRA_35   = 47)
+        parameter (PYRA_P4_29 = 48)
+        parameter (PYRA_50    = 49)
+        parameter (PYRA_55    = 50)
+        parameter (PENTA_33   = 51)
+        parameter (PENTA_66   = 52)
+        parameter (PENTA_75   = 53)
+        parameter (HEXA_44    = 54)
+        parameter (HEXA_98    = 55)
+        parameter (HEXA_125   = 56)
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Zone types                                                     *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -605,8 +627,13 @@
      &      'TETRA_16', 'TETRA_20',                                     &
      &      'PYRA_21', 'PYRA_29', 'PYRA_30',                            &
      &      'PENTA_24', 'PENTA_38', 'PENTA_40',                         &
-     &      'HEXA_32', 'HEXA_56', 'HEXA_64' /
-
+     &      'HEXA_32', 'HEXA_56', 'HEXA_64',                            &
+     &      'BAR_5', 'TRI_12', 'TRI_15',                                &
+     &      'QUAD_P4_16', 'QUAD_25',                                    &
+     &      'TETRA_22', 'TETRA_34', 'TETRA_35',                         &
+     &      'PYRA_P4_29', 'PYRA_50', 'PYRA_55',                         &
+     &      'PENTA_33', 'PENTA_66', 'PENTA_75',                         &
+     &      'HEXA_44', 'HEXA_98', 'HEXA_125' /
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Zone types                                                     *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *

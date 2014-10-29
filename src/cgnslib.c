@@ -81,7 +81,7 @@ long _ftol2(double dValue) {return _ftol(dValue);}
                               type <= CGNS_ENUMV(HEXA_27)) || \
                               type == CGNS_ENUMV(PYRA_13) || \
                              (type >= CGNS_ENUMV(BAR_4) && \
-                              type <= CGNS_ENUMV(HEXA_64)))
+                              type <= CGNS_ENUMV(HEXA_125)))
 
 #define CHECK_FILE_OPEN if (cg == NULL) {\
     cgi_error("no current CGNS file open");\
@@ -213,7 +213,13 @@ const char * ElementTypeName[NofValidElementTypes] =
      "TETRA_16", "TETRA_20",
      "PYRA_21", "PYRA_29", "PYRA_30",
      "PENTA_24", "PENTA_38", "PENTA_40",
-     "HEXA_32", "HEXA_56", "HEXA_64"
+     "HEXA_32", "HEXA_56", "HEXA_64",
+     "BAR_5", "TRI_12", "TRI_15",
+     "QUAD_P4_16", "QUAD_25",
+     "TETRA_22", "TETRA_34", "TETRA_35",
+     "PYRA_P4_29", "PYRA_50", "PYRA_55",
+     "PENTA_33", "PENTA_66", "PENTA_75",
+     "HEXA_44", "HEXA_98", "HEXA_125"
     };
 const char * ZoneTypeName[NofValidZoneTypes] =
     {"Null", "UserDefined",
@@ -10893,7 +10899,24 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
         CG_NPE_PENTA_40,
         CG_NPE_HEXA_32,
         CG_NPE_HEXA_56,
-        CG_NPE_HEXA_64
+        CG_NPE_HEXA_64,
+        CG_NPE_BAR_5,
+        CG_NPE_TRI_12,
+        CG_NPE_TRI_15,
+        CG_NPE_QUAD_P4_16,
+        CG_NPE_QUAD_25,
+        CG_NPE_TETRA_22,
+        CG_NPE_TETRA_34,
+        CG_NPE_TETRA_35,
+        CG_NPE_PYRA_P4_29,
+        CG_NPE_PYRA_50,
+        CG_NPE_PYRA_55,
+        CG_NPE_PENTA_33,
+        CG_NPE_PENTA_66,
+        CG_NPE_PENTA_75,
+        CG_NPE_HEXA_44,
+        CG_NPE_HEXA_98,
+        CG_NPE_HEXA_125
 #else
         NPE_NODE,  /* NODE */
         NPE_BAR_2,  /* BAR_2 */
@@ -10932,7 +10955,24 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
         NPE_PENTA_40,
         NPE_HEXA_32,
         NPE_HEXA_56,
-        NPE_HEXA_64
+        NPE_HEXA_64,
+        NPE_BAR_5,
+        NPE_TRI_12,
+        NPE_TRI_15,
+        NPE_QUAD_P4_16,
+        NPE_QUAD_25,
+        NPE_TETRA_22,
+        NPE_TETRA_34,
+        NPE_TETRA_35,
+        NPE_PYRA_P4_29,
+        NPE_PYRA_50,
+        NPE_PYRA_55,
+        NPE_PENTA_33,
+        NPE_PENTA_66,
+        NPE_PENTA_75,
+        NPE_HEXA_44,
+        NPE_HEXA_98,
+        NPE_HEXA_125
 #endif
     };
     if (INVALID_ENUM(type,NofValidElementTypes)) {
