@@ -509,91 +509,142 @@ typedef enum {
   CGNS_ENUMV( PENTA_40 ) =36,
   CGNS_ENUMV( HEXA_32 ) =37,
   CGNS_ENUMV( HEXA_56 ) =38,
-  CGNS_ENUMV( HEXA_64 ) =39
+  CGNS_ENUMV( HEXA_64 ) =39,
+  CGNS_ENUMV( BAR_5 )=40,
+  CGNS_ENUMV( TRI_12 )=41,
+  CGNS_ENUMV( TRI_15 )=42,
+  CGNS_ENUMV( QUAD_P4_16 )=43,
+  CGNS_ENUMV( QUAD_25 )=44,
+  CGNS_ENUMV( TETRA_22 )=45,
+  CGNS_ENUMV( TETRA_34 )=46,
+  CGNS_ENUMV( TETRA_35 )=47,
+  CGNS_ENUMV( PYRA_P4_29 )=48,
+  CGNS_ENUMV( PYRA_50 )=49,
+  CGNS_ENUMV( PYRA_55 )=50,
+  CGNS_ENUMV( PENTA_33 )=51,
+  CGNS_ENUMV( PENTA_66 )=52,
+  CGNS_ENUMV( PENTA_75 )=53,
+  CGNS_ENUMV( HEXA_44 )=54,
+  CGNS_ENUMV( HEXA_98 )=55,
+  CGNS_ENUMV( HEXA_125 )=56
 } CGNS_ENUMT( ElementType_t );
 
-#define NofValidElementTypes 40
+#define NofValidElementTypes 57
 
 extern CGNSDLL const char * ElementTypeName[NofValidElementTypes];
 
 #ifdef CGNS_SCOPE_ENUMS
-#define  CG_NPE_NODE      1
-#define  CG_NPE_BAR_2     2
-#define  CG_NPE_BAR_3     3
-#define  CG_NPE_TRI_3     3
-#define  CG_NPE_TRI_6     6
-#define  CG_NPE_QUAD_4    4
-#define  CG_NPE_QUAD_8    8
-#define  CG_NPE_QUAD_9    9
-#define  CG_NPE_TETRA_4   4
-#define  CG_NPE_TETRA_10 10
-#define  CG_NPE_PYRA_5    5
-#define  CG_NPE_PYRA_13  13
-#define  CG_NPE_PYRA_14  14
-#define  CG_NPE_PENTA_6   6
-#define  CG_NPE_PENTA_15 15
-#define  CG_NPE_PENTA_18 18
-#define  CG_NPE_HEXA_8    8
-#define  CG_NPE_HEXA_20  20
-#define  CG_NPE_HEXA_27  27
-#define  CG_NPE_MIXED     0
-#define  CG_NPE_NGON_n    0
-#define  CG_NPE_NFACE_n   0
-#define  CG_NPE_BAR_4     4
-#define  CG_NPE_TRI_9     9
-#define  CG_NPE_TRI_10   10
-#define  CG_NPE_QUAD_12  12
-#define  CG_NPE_QUAD_16  16
-#define  CG_NPE_TETRA_16 16
-#define  CG_NPE_TETRA_20 20
-#define  CG_NPE_PYRA_21  21
-#define  CG_NPE_PYRA_29  29
-#define  CG_NPE_PYRA_30  30
-#define  CG_NPE_PENTA_24 24
-#define  CG_NPE_PENTA_38 38
-#define  CG_NPE_PENTA_40 40
-#define  CG_NPE_HEXA_32  32
-#define  CG_NPE_HEXA_56  56
-#define  CG_NPE_HEXA_64  64
+#define  CG_NPE_NODE         1
+#define  CG_NPE_BAR_2        2
+#define  CG_NPE_BAR_3        3
+#define  CG_NPE_TRI_3        3
+#define  CG_NPE_TRI_6        6
+#define  CG_NPE_QUAD_4       4
+#define  CG_NPE_QUAD_8       8
+#define  CG_NPE_QUAD_9       9
+#define  CG_NPE_TETRA_4      4
+#define  CG_NPE_TETRA_10    10
+#define  CG_NPE_PYRA_5       5
+#define  CG_NPE_PYRA_13     13
+#define  CG_NPE_PYRA_14     14
+#define  CG_NPE_PENTA_6      6
+#define  CG_NPE_PENTA_15    15
+#define  CG_NPE_PENTA_18    18
+#define  CG_NPE_HEXA_8       8
+#define  CG_NPE_HEXA_20     20
+#define  CG_NPE_HEXA_27     27
+#define  CG_NPE_MIXED        0
+#define  CG_NPE_NGON_n       0
+#define  CG_NPE_NFACE_n      0
+#define  CG_NPE_BAR_4        4
+#define  CG_NPE_TRI_9        9
+#define  CG_NPE_TRI_10      10
+#define  CG_NPE_QUAD_12     12
+#define  CG_NPE_QUAD_16     16
+#define  CG_NPE_TETRA_16    16
+#define  CG_NPE_TETRA_20    20
+#define  CG_NPE_PYRA_21     21
+#define  CG_NPE_PYRA_29     29
+#define  CG_NPE_PYRA_30     30
+#define  CG_NPE_PENTA_24    24
+#define  CG_NPE_PENTA_38    38
+#define  CG_NPE_PENTA_40    40
+#define  CG_NPE_HEXA_32     32
+#define  CG_NPE_HEXA_56     56
+#define  CG_NPE_HEXA_64     64
+#define  CG_NPE_BAR_5        5
+#define  CG_NPE_TRI_12      12
+#define  CG_NPE_TRI_15      15
+#define  CG_NPE_QUAD_P4_16  16
+#define  CG_NPE_QUAD_25     25
+#define  CG_NPE_TETRA_22    22
+#define  CG_NPE_TETRA_34    34
+#define  CG_NPE_TETRA_35    35
+#define  CG_NPE_PYRA_P4_29  29
+#define  CG_NPE_PYRA_50     50
+#define  CG_NPE_PYRA_55     55
+#define  CG_NPE_PENTA_33    33
+#define  CG_NPE_PENTA_66    66
+#define  CG_NPE_PENTA_75    75
+#define  CG_NPE_HEXA_44     44
+#define  CG_NPE_HEXA_98     98
+#define  CG_NPE_HEXA_125   125
 #else
-#define  NPE_NODE      1
-#define  NPE_BAR_2     2
-#define  NPE_BAR_3     3
-#define  NPE_TRI_3     3
-#define  NPE_TRI_6     6
-#define  NPE_QUAD_4    4
-#define  NPE_QUAD_8    8
-#define  NPE_QUAD_9    9
-#define  NPE_TETRA_4   4
-#define  NPE_TETRA_10 10
-#define  NPE_PYRA_5    5
-#define  NPE_PYRA_13  13
-#define  NPE_PYRA_14  14
-#define  NPE_PENTA_6   6
-#define  NPE_PENTA_15 15
-#define  NPE_PENTA_18 18
-#define  NPE_HEXA_8    8
-#define  NPE_HEXA_20  20
-#define  NPE_HEXA_27  27
-#define  NPE_MIXED     0
-#define  NPE_NGON_n    0
-#define  NPE_NFACE_n   0
-#define  NPE_BAR_4     4
-#define  NPE_TRI_9     9
-#define  NPE_TRI_10   10
-#define  NPE_QUAD_12  12
-#define  NPE_QUAD_16  16
-#define  NPE_TETRA_16 16
-#define  NPE_TETRA_20 20
-#define  NPE_PYRA_21  21
-#define  NPE_PYRA_29  29
-#define  NPE_PYRA_30  30
-#define  NPE_PENTA_24 24
-#define  NPE_PENTA_38 38
-#define  NPE_PENTA_40 40
-#define  NPE_HEXA_32  32
-#define  NPE_HEXA_56  56
-#define  NPE_HEXA_64  64
+#define  NPE_NODE         1
+#define  NPE_BAR_2        2
+#define  NPE_BAR_3        3
+#define  NPE_TRI_3        3
+#define  NPE_TRI_6        6
+#define  NPE_QUAD_4       4
+#define  NPE_QUAD_8       8
+#define  NPE_QUAD_9       9
+#define  NPE_TETRA_4      4
+#define  NPE_TETRA_10    10
+#define  NPE_PYRA_5       5
+#define  NPE_PYRA_13     13
+#define  NPE_PYRA_14     14
+#define  NPE_PENTA_6      6
+#define  NPE_PENTA_15    15
+#define  NPE_PENTA_18    18
+#define  NPE_HEXA_8       8
+#define  NPE_HEXA_20     20
+#define  NPE_HEXA_27     27
+#define  NPE_MIXED        0
+#define  NPE_NGON_n       0
+#define  NPE_NFACE_n      0
+#define  NPE_BAR_4        4
+#define  NPE_TRI_9        9
+#define  NPE_TRI_10      10
+#define  NPE_QUAD_12     12
+#define  NPE_QUAD_16     16
+#define  NPE_TETRA_16    16
+#define  NPE_TETRA_20    20
+#define  NPE_PYRA_21     21
+#define  NPE_PYRA_29     29
+#define  NPE_PYRA_30     30
+#define  NPE_PENTA_24    24
+#define  NPE_PENTA_38    38
+#define  NPE_PENTA_40    40
+#define  NPE_HEXA_32     32
+#define  NPE_HEXA_56     56
+#define  NPE_HEXA_64     64
+#define  NPE_BAR_5        5
+#define  NPE_TRI_12      12
+#define  NPE_TRI_15      15
+#define  NPE_QUAD_P4_16  16
+#define  NPE_QUAD_25     25
+#define  NPE_TETRA_22    22
+#define  NPE_TETRA_34    34
+#define  NPE_TETRA_35    35
+#define  NPE_PYRA_P4_29  29
+#define  NPE_PYRA_50     50
+#define  NPE_PYRA_55     55
+#define  NPE_PENTA_33    33
+#define  NPE_PENTA_66    66
+#define  NPE_PENTA_75    75
+#define  NPE_HEXA_44     44
+#define  NPE_HEXA_98     98
+#define  NPE_HEXA_125   125
 #endif
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\

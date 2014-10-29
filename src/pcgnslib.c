@@ -33,7 +33,7 @@ freely, subject to the following restrictions:
                               type <= CGNS_ENUMV(HEXA_27)) || \
                               type == CGNS_ENUMV(PYRA_13) || \
                              (type >= CGNS_ENUMV(BAR_4) && \
-                              type <= CGNS_ENUMV(HEXA_64)))
+                              type <= CGNS_ENUMV(HEXA_125)))
 
 static int write_to_queue = 0;
 static hid_t default_pio_mode = H5FD_MPIO_INDEPENDENT;
