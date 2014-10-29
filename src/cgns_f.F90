@@ -368,7 +368,7 @@ MODULE cgns
 !*      Element types                                                  *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
-        CHARACTER*32 ElementTypeName(0:39)
+        CHARACTER*32 ElementTypeName(0:56)
         ENUM, BIND(C)
 	   ENUMERATOR :: ElementTypeNull, ElementTypeUserDefined ! 0, 1,
 	   ENUMERATOR :: NODE, BAR_2, BAR_3                      ! 2, 3, 4,
@@ -379,6 +379,18 @@ MODULE cgns
 	   ENUMERATOR :: PENTA_6, PENTA_15, PENTA_18             ! 14, 15, 16,
 	   ENUMERATOR :: HEXA_8, HEXA_20, HEXA_27                ! 17, 18, 19,
 	   ENUMERATOR :: MIXED, PYRA_13, NGON_n, NFACE_n         ! 20, 21, 22, 23
+           ENUMERATOR :: BAR_4, TRI_9, TRI_10
+           ENUMERATOR :: QUAD_12, QUAD_16
+           ENUMERATOR :: TETRA_16, TETRA_20
+           ENUMERATOR :: PYRA_21, PYRA_29, PYRA_30
+           ENUMERATOR :: PENTA_24, PENTA_38, PENTA_40
+           ENUMERATOR :: HEXA_32, HEXA_56, HEXA_64
+           ENUMERATOR :: BAR_5, TRI_12, TRI_15
+           ENUMERATOR :: QUAD_P4_16, QUAD_25
+           ENUMERATOR :: TETRA_22, TETRA_34, TETRA_35
+           ENUMERATOR :: PYRA_P4_29, PYRA_50, PYRA_55
+           ENUMERATOR :: PENTA_33, PENTA_66, PENTA_75
+           ENUMERATOR :: HEXA_44, HEXA_98, HEXA_125
         END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -578,7 +590,13 @@ MODULE cgns
      &      'TETRA_16', 'TETRA_20',                                     &
      &      'PYRA_21', 'PYRA_29', 'PYRA_30',                            &
      &      'PENTA_24', 'PENTA_38', 'PENTA_40',                         &
-     &      'HEXA_32', 'HEXA_56', 'HEXA_64' /
+     &      'HEXA_32', 'HEXA_56', 'HEXA_64',                            &
+     &      'BAR_5', 'TRI_12', 'TRI_15',                                &
+     &      'QUAD_P4_16', 'QUAD_25',                                    &
+     &      'TETRA_22', 'TETRA_34', 'TETRA_35',                         &
+     &      'PYRA_P4_29', 'PYRA_50', 'PYRA_55',                         &
+     &      'PENTA_33', 'PENTA_66', 'PENTA_75',                         &
+     &      'HEXA_44', 'HEXA_98', 'HEXA_125' /
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Zone types                                                     *
