@@ -1,26 +1,26 @@
-        MODULE cgns
+MODULE cgns
           
-        USE ISO_C_BINDING
-        IMPLICIT NONE
+  USE ISO_C_BINDING
+  IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
 
 #if CG_BUILD_64BIT
 #  if HAVE_FORTRAN_2003
-        INTEGER, PARAMETER :: CGSIZE_T = C_LONG_LONG
+  INTEGER, PARAMETER :: CGSIZE_T = C_LONG_LONG
 #  else
-        INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(15) ! should map to INTEGER*8 on most modern processors
-        INTEGER, PARAMETER :: CGSIZE_T = cgint_kind
+  INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(15) ! should map to INTEGER*8 on most modern processors
+  INTEGER, PARAMETER :: CGSIZE_T = cgint_kind
 #  endif
-        LOGICAL, PARAMETER :: CG_BUILD_64BIT_F = .TRUE.
+  LOGICAL, PARAMETER :: CG_BUILD_64BIT_F = .TRUE.
 #else
-#  ifdef HAVE_FORTRAN_2003
-        INTEGER, PARAMETER :: CGSIZE_T = C_INT
+#  if HAVE_FORTRAN_2003
+  INTEGER, PARAMETER :: CGSIZE_T = C_INT
 #  else
-        INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(5) ! should map to INTEGER*4 on most modern processors
-        INTEGER, PARAMETER :: CGSIZE_T = cgint_kind
+  INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(5) ! should map to INTEGER*4 on most modern processors
+  INTEGER, PARAMETER :: CGSIZE_T = cgint_kind
 #  endif
-        LOGICAL, PARAMETER :: CG_BUILD_64BIT_F = .FALSE.
+  LOGICAL, PARAMETER :: CG_BUILD_64BIT_F = .FALSE.
 #endif   
 
 ! Fortran version of cgnslib.h
@@ -29,43 +29,43 @@
 !*      modes for cgns file                                            *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
-        INTEGER(C_INT) CG_MODE_READ, CG_MODE_WRITE, CG_MODE_MODIFY
-        PARAMETER (CG_MODE_READ   = 0)
-        PARAMETER (CG_MODE_WRITE  = 1)
-        PARAMETER (CG_MODE_MODIFY = 2)
+  INTEGER(C_INT) CG_MODE_READ, CG_MODE_WRITE, CG_MODE_MODIFY
+  PARAMETER (CG_MODE_READ   = 0)
+  PARAMETER (CG_MODE_WRITE  = 1)
+  PARAMETER (CG_MODE_MODIFY = 2)
 
 !* legacy code support
-        INTEGER(C_INT) MODE_READ, MODE_WRITE, MODE_MODIFY
-        PARAMETER (MODE_READ   = 0)
-        PARAMETER (MODE_WRITE  = 1)
-        PARAMETER (MODE_MODIFY = 2)
+  INTEGER(C_INT) MODE_READ, MODE_WRITE, MODE_MODIFY
+  PARAMETER (MODE_READ   = 0)
+  PARAMETER (MODE_WRITE  = 1)
+  PARAMETER (MODE_MODIFY = 2)
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      file types (found in cgnslib.h)                                *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
-	INTEGER(C_INT), PARAMETER :: CG_FILE_NONE = 0
-	INTEGER(C_INT), PARAMETER :: CG_FILE_ADF  = 1
-	INTEGER(C_INT), PARAMETER :: CG_FILE_HDF5 = 2
-	INTEGER(C_INT), PARAMETER :: CG_FILE_ADF2 = 3
-
+  INTEGER(C_INT), PARAMETER :: CG_FILE_NONE = 0
+  INTEGER(C_INT), PARAMETER :: CG_FILE_ADF  = 1
+  INTEGER(C_INT), PARAMETER :: CG_FILE_HDF5 = 2
+  INTEGER(C_INT), PARAMETER :: CG_FILE_ADF2 = 3
+  
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      some error code (found in cgnslib.h)                           *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
-	INTEGER(C_INT), PARAMETER :: CG_OK              = 0
-	INTEGER(C_INT), PARAMETER :: CG_ERROR           = 1
-	INTEGER(C_INT), PARAMETER :: CG_NODE_NOT_FOUND  = 2
-	INTEGER(C_INT), PARAMETER :: CG_INCORRECT_PATH  = 3
-	INTEGER(C_INT), PARAMETER :: CG_CG_NO_INDEX_DIM = 4
+  INTEGER(C_INT), PARAMETER :: CG_OK              = 0
+  INTEGER(C_INT), PARAMETER :: CG_ERROR           = 1
+  INTEGER(C_INT), PARAMETER :: CG_NODE_NOT_FOUND  = 2
+  INTEGER(C_INT), PARAMETER :: CG_INCORRECT_PATH  = 3
+  INTEGER(C_INT), PARAMETER :: CG_CG_NO_INDEX_DIM = 4
 
 !* legacy code support
-        INTEGER(C_INT) ALL_OK, ERROR, NODE_NOT_FOUND, INCORRECT_PATH
-        PARAMETER (ALL_OK         = 0)
-        PARAMETER (ERROR          = 1)
-        PARAMETER (NODE_NOT_FOUND = 2)
-        PARAMETER (INCORRECT_PATH = 3)
+  INTEGER(C_INT) ALL_OK, ERROR, NODE_NOT_FOUND, INCORRECT_PATH
+  PARAMETER (ALL_OK         = 0)
+  PARAMETER (ERROR          = 1)
+  PARAMETER (NODE_NOT_FOUND = 2)
+  PARAMETER (INCORRECT_PATH = 3)
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Parallel CGNS parameters                                       *
@@ -627,12 +627,19 @@
      &       'AverageI', 'AverageJ', 'AverageK' /
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      ENUMTYPE FOR FORTRAN FUNCTIONS                                 *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+
+        INTEGER, PARAMETER :: cgenum_t = KIND(CGP_INDEPENDENT)
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      INTERFACES FOR THE FORTRAN FUNCTIONS                           *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 	
 	INTERFACE
            SUBROUTINE cg_is_cgns_f(file_type, ier)
              USE ISO_C_BINDING
+             IMPLICIT NONE
              INTEGER, INTENT(OUT) :: file_type
 	     INTEGER, INTENT(OUT) :: ier
            END SUBROUTINE cg_is_cgns_f
@@ -641,6 +648,7 @@
 	INTERFACE
            SUBROUTINE cg_open_f(filename, mode, fn, ier)
              USE ISO_C_BINDING
+             IMPLICIT NONE
              CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
              INTEGER, INTENT(IN)  :: mode
              INTEGER, INTENT(OUT) :: fn
@@ -649,1926 +657,2013 @@
         END INTERFACE
 
 	INTERFACE
-           SUBROUTINE cg_version_f (fn,FileVersion, ier)
+           SUBROUTINE cg_version_f(fn,FileVersion, ier)
+             USE ISO_C_BINDING
+             IMPLICIT NONE
              INTEGER :: fn
-             REAL    :: FileVersion
+             REAL(C_FLOAT)    :: FileVersion
 	     INTEGER, INTENT(OUT) :: ier
            END SUBROUTINE cg_version_f
         END INTERFACE
 
 	INTERFACE
-           SUBROUTINE cg_precision_f (fn, precision, ier)
+           SUBROUTINE cg_precision_f(fn, precision, ier)
+             IMPLICIT NONE
              INTEGER :: fn
              INTEGER :: PRECISION
 	     INTEGER, INTENT(OUT) :: ier
            END SUBROUTINE 
         END INTERFACE
 
+	INTERFACE
+           SUBROUTINE cg_close_f(fn, ier)
+             IMPLICIT NONE
+             INTEGER :: fn
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_close_f
+        END INTERFACE
 
+	INTERFACE
+           SUBROUTINE cg_save_as_f(fn, filename, file_type, follow_links, ier)
+             USE ISO_C_BINDING
+             IMPLICIT NONE
+             INTEGER :: fn
+             CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
+             INTEGER :: file_type
+             INTEGER :: follow_links
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_save_as_f
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_set_file_type_f(ft, ier)
+             IMPLICIT NONE
+             INTEGER :: ft
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_set_file_type_f
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_get_file_type_f (fn, ft, ier)
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: ft
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_set_compress_f (cmpr, ier)
+             IMPLICIT NONE
+             INTEGER :: cmpr
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_get_compress_f (cmpr, ier)
+             INTEGER :: cmpr
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_set_path_f (pathname, ier)
+             USE ISO_C_BINDING
+             IMPLICIT NONE
+             CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: pathname
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_add_path_f (pathname, ier)
+             USE ISO_C_BINDING
+             IMPLICIT NONE
+             CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: pathname
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_get_cgio_f (fn, cgio_num, ier)
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: cgio_num
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_get_cgio_f
+        END INTERFACE
+
+	INTERFACE
+            SUBROUTINE cg_root_id_f(fn, rootid, ier)
+              USE ISO_C_BINDING
+             IMPLICIT NONE
+              INTEGER :: fn
+              REAL(C_DOUBLE) :: rootid
+              INTEGER, INTENT(OUT) :: ier
+            END SUBROUTINE cg_root_id_f
+        END INTERFACE
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+!      Read and write CGNSBase_t Nodes                                  
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+	INTERFACE
+           SUBROUTINE cg_nbases_f (fn, nbases, ier)
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: nbases
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_nbases_f
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_base_read_f(fn, B, basename, cell_dim, phys_dim, ier)
+             USE ISO_C_BINDING
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: basename
+             INTEGER :: cell_dim
+             INTEGER :: phys_dim
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_base_read_f
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_base_id_f (fn, B, base_id, ier)
+             USE ISO_C_BINDING
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             REAL(C_DOUBLE) :: base_id
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_base_id_f
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_base_write_f (fn, basename, cell_dim, phys_dim, B, ier)
+             USE ISO_C_BINDING
+             IMPLICIT NONE
+             INTEGER :: fn
+             CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: basename
+             INTEGER :: cell_dim
+             INTEGER :: phys_dim
+             INTEGER :: B
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_base_write_f
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_cell_dim_f (fn, B, dim, ier)
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: dim
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_cell_dim_f
+        END INTERFACE
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+!       Read and write Zone_t Nodes                                      
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	INTERFACE
+           SUBROUTINE cg_nzones_f (fn, B, nzones, ier)
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: nzones
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_zone_type_f (fn, B, Z, type, ier)
+             IMPORT :: cgenum_t, c_char 
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: Z
+             INTEGER(cgenum_t) :: type
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_zone_read_f (fn, B, Z, zonename, size, ier)
+             IMPORT :: cgsize_t, c_char 
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: Z
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: zonename
+             INTEGER(cgsize_t) :: size
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_zone_id_f (fn, B, Z, zone_id, ier) 
+             IMPORT :: c_double
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: Z
+             INTEGER(C_DOUBLE) :: zone_id
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
 
 !!$	INTERFACE
-!!$           SUBROUTINE cg_close_f (cgint_f *fn, cgint_f *ier)
-!!$ INTEGER(CGINT_F) :: fn
-!!$
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_save_as_f cgint_f *fn,
-!!$	STR_PSTR(filename), cgint_f *file_type, cgint_f *follow_links,
-!!$	cgint_f *ier STR_PLEN(filename))
-!!$ 
-!!$ INTEGER(CGINT_F) :: fn
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_set_file_type_f, CG_SET_FILE_TYPE_F) (
-!!$	cgint_f *ft, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_get_file_type_f, CG_GET_FILE_TYPE_F) (
-!!$	cgint_f *fn, cgint_f *ft, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_zone_write_f (fn, B, zonename, size, TYPE, Z, ier) 
+!!$             IMPORT :: cgenum_t, c_char, cgsize_t
+!!$             IMPLICIT NONE
+!!$             INTEGER :: fn
+!!$             INTEGER :: B
+!!$             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: zonename
+!!$             INTEGER(CGSIZE_T) :: size
+!!$             INTEGER(cgenum_t) :: TYPE
+!!$             INTEGER :: Z
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 
-!!$
+	INTERFACE
+           SUBROUTINE cg_index_dim_f (fn, B, Z, dim, ier)
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: Z
+             INTEGER :: dim
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_index_dim_f
+        END INTERFACE
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!      Read and write Family_t Nodes                                    *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+	INTERFACE
+           SUBROUTINE cg_nfamilies_f (fn, B, nfamilies, ier)
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: nfamilies
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_nfamilies_f
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_family_read_f (fn, B, F, family_name, nboco, ngeos, ier)
+             IMPORT :: c_char 
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: F
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family_name
+             INTEGER :: nboco
+             INTEGER :: ngeos
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_family_write_f (fn, B, family_name, F, ier)
+             IMPORT :: c_char 
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family_name
+             INTEGER :: F
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_nfamily_names_f (fn, B, F, nnames, ier)
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: F
+             INTEGER :: nnames
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_family_name_read_f (fn, B, F, N, name, family, ier)
+             IMPORT :: c_char 
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: F
+             INTEGER :: N
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_family_name_write_f (fn, B, F, name, family, ier)
+             IMPORT :: c_char 
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: F
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!      Read and write FamBC_t Nodes                                     *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+	INTERFACE
+           SUBROUTINE cg_fambc_read_f (fn, B, F, BC, fambc_name, bocotype, ier)
+             IMPORT :: c_char, cgenum_t
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: F
+             INTEGER :: BC
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fambc_name
+             INTEGER(cgenum_t) :: bocotype
+	     INTEGER, INTENT(OUT) :: ier
+          END SUBROUTINE cg_fambc_read_f
+        END INTERFACE
+
+	INTERFACE
+           SUBROUTINE cg_fambc_write_f (fn, B, F, fambc_name, bocotype, BC, ier)
+             IMPORT :: c_char, cgenum_t
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: F
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fambc_name
+             INTEGER(cgenum_t) :: bocotype
+             INTEGER :: BC
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE 
+        END INTERFACE
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!      Read and write GeometryReference_t Nodes                         *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+	INTERFACE
+           SUBROUTINE cg_geo_read_f(fn, B, F, G, geo_name, geo_file, CAD_name, npart, ier)
+             IMPORT :: c_char
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: F
+             INTEGER :: G
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_name
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_file
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: CAD_name
+             INTEGER :: npart
+	     INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_geo_read_f
+        END INTERFACE
+
+	INTERFACE
+    SUBROUTINE cg_geo_write_f(fn, B, F, geo_name, geo_file, CAD_name, G, ier)
+      
+      IMPORT :: c_char
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: F
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_name
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_file
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: CAD_name
+      INTEGER :: G
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_geo_write_f
+ END INTERFACE
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!      Read and write GeometryEntity_t Nodes                            *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+ 
+ INTERFACE
+    SUBROUTINE cg_part_read_f(fn, B, F,G, P, part_name, ier)
+      IMPORT :: c_char
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: F
+      INTEGER :: G
+      INTEGER :: P
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: part_name
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_part_read_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_part_write_f(fn, B, F, G, part_name, P, ier)
+      IMPORT :: c_char
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: F
+      INTEGER :: G
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: part_name
+      INTEGER :: P
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_part_write_f
+ END INTERFACE
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!      Read and write DiscreteData_t Nodes                              *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+ INTERFACE
+    SUBROUTINE cg_ndiscrete_f(fn, B, Z, ndiscrete, ier)
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: ndiscrete
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_ndiscrete_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_discrete_read_f(fn, B, Z, D, discrete_name, ier)
+      IMPORT :: c_char
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: D
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: discrete_name
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_discrete_read_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_discrete_write_f(fn, B, Z, discrete_name, D, ier)
+      IMPORT :: c_char
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: discrete_name
+      INTEGER :: D
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_discrete_write_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_discrete_size_f(fn, B, Z, D, ndim, dims, ier)
+      IMPORT :: cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: D
+      INTEGER :: ndim
+      INTEGER(CGSIZE_T) :: dims
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_discrete_size_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_discrete_ptset_info_f(fn, B, Z, S, ptype, npnts, ier)
+      IMPORT :: cgenum_t, cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER(cgenum_t) :: ptype
+      INTEGER(CGSIZE_T) :: npnts
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_discrete_ptset_info_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_discrete_ptset_read_f( fn, B, Z, S, pnts, ier)
+      IMPORT :: cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER(CGSIZE_T) :: pnts
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_discrete_ptset_read_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_discrete_ptset_write_f( fn, B, Z, name, location, ptype, npnts, pnts, D, ier)
+      IMPORT :: cgsize_t, cgenum_t, c_char
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name
+      INTEGER(cgenum_t) :: location
+      INTEGER(cgenum_t) :: ptype
+      INTEGER(CGSIZE_T) :: npnts
+      INTEGER(CGSIZE_T) :: pnts
+      INTEGER :: D
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_discrete_ptset_write_f
+ END INTERFACE
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!      Read and write GridCoordinates_t/DataArray_t Nodes               *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+ INTERFACE
+    SUBROUTINE cg_ncoords_f(fn, B, Z, ncoords, ier)
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: ncoords
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_ncoords_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_coord_info_f (fn, B, Z, C, TYPE, coordname, ier)
+      IMPORT :: c_char, cgenum_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: C
+      INTEGER(cgenum_t) :: TYPE
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_coord_info_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_coord_read_f (fn, B, Z, coordname, TYPE, rmin, rmax, coord, ier)
+      IMPORT :: c_char, cgenum_t, cgsize_t, c_ptr
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
+      INTEGER(cgenum_t) :: TYPE
+      INTEGER(CGSIZE_T) :: rmin
+      INTEGER(CGSIZE_T) :: rmax
+      TYPE(C_PTR) :: coord
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_coord_read_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_coord_id_f(fn, B, Z, C, coord_id, ier)
+      IMPORT :: c_double
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: C
+      INTEGER(C_DOUBLE) :: coord_id
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_coord_id_f
+ END INTERFACE
+
+!!$ INTERFACE
+!!$    SUBROUTINE cg_coord_write_f(fn, B, 	Z, TYPE, coordname, coord, C, ier)
+!!$      IMPORT :: c_char, cgenum_t, c_ptr
+!!$      IMPLICIT NONE
+!!$      INTEGER :: fn
+!!$      INTEGER :: B
+!!$      INTEGER :: Z
+!!$      INTEGER(cgenum_t) :: TYPE
+!!$      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
+!!$      TYPE(C_PTR), VALUE :: coord
+!!$      INTEGER :: C
+!!$      INTEGER, INTENT(OUT) :: ier
+!!$    END SUBROUTINE cg_coord_write_f
+!!$ END INTERFACE
+
+!!$ INTERFACE
+!!$    SUBROUTINE cg_coord_partial_write_f ( fn, B, Z, TYPE, coordname, rmin, rmax, coord, C, ier)
+!!$      IMPORT :: c_char, cgenum_t, cgsize_t, c_ptr
+!!$      IMPLICIT NONE
+!!$      INTEGER :: fn
+!!$      INTEGER :: B
+!!$      INTEGER :: Z
+!!$      INTEGER(cgenum_t) :: TYPE
+!!$      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
+!!$      INTEGER(CGSIZE_T) :: rmin
+!!$      INTEGER(CGSIZE_T) :: rmax
+!!$      TYPE(C_PTR) :: coord
+!!$      INTEGER :: C
+!!$      INTEGER, INTENT(OUT) :: ier
+!!$    END SUBROUTINE cg_coord_partial_write_f
+!!$ END INTERFACE
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!      Read and write Elements_t Nodes                                  *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+ INTERFACE
+    SUBROUTINE cg_nsections_f(fn, B, Z, nsections, ier)
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: nsections
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_nsections_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_section_read_f(fn, B, Z, E, section_name, TYPE, start, END, nbndry, parent_flag, ier)
+      IMPORT :: c_char, cgenum_t, cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: E
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: section_name
+      INTEGER(cgenum_t) :: TYPE
+      INTEGER(CGSIZE_T) ::start
+      INTEGER(CGSIZE_T) ::END
+      INTEGER :: nbndry
+      INTEGER :: parent_flag
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_section_read_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_elements_read_f(fn, B, Z, E, elements, parent_data, ier)
+      IMPORT :: cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: E
+      INTEGER(CGSIZE_T) :: elements
+      INTEGER(CGSIZE_T) :: parent_data
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_elements_read_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_elementdatasize_f(fn, B, Z, E, ElementDataSize, ier)
+      IMPORT :: cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: E
+      INTEGER(CGSIZE_T) :: ElementDataSize
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_elementdatasize_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_elementpartialsize_f(fn, B, Z, E, start, END, ElementDataSize, ier)
+      IMPORT :: cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: E
+      INTEGER(CGSIZE_T) :: start
+      INTEGER(CGSIZE_T) :: END
+      INTEGER(CGSIZE_T) :: ElementDataSize
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_elementpartialsize_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_section_write_f(fn, B, Z, section_name, TYPE, start, END, nbndry, elements, S, ier)
+      IMPORT :: c_char, cgenum_t, cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: section_name
+      INTEGER(cgenum_t) :: TYPE
+      INTEGER(CGSIZE_T) :: start
+      INTEGER(CGSIZE_T) :: END
+      INTEGER :: nbndry
+      INTEGER(CGSIZE_T) ::elements
+      INTEGER :: S
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_section_write_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_parent_data_write_f(fn, B, Z, S, parent_data, ier)
+      IMPORT :: cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER(CGSIZE_T) :: parent_data
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_parent_data_write_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_section_partial_write_f( fn, B, Z, section_name, TYPE, start, END, nbndry, S, ier)
+      IMPORT :: c_char, cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: section_name
+      INTEGER(CGSIZE_T) ::TYPE
+      INTEGER(CGSIZE_T) ::start
+      INTEGER(CGSIZE_T) ::END
+      INTEGER :: nbndry
+      INTEGER :: S
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_section_partial_write_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_elements_partial_write_f(fn, B, Z, S, rmin, rmax, elements, ier)
+      IMPORT :: cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER(CGSIZE_T) ::rmin
+      INTEGER(CGSIZE_T) ::rmax
+      INTEGER(CGSIZE_T) ::elements
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_elements_partial_write_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_parent_data_partial_write_f(fn, B, Z, S, rmin, rmax, parent_data, ier)
+      IMPORT :: cgsize_t
+      IMPLICIT NONE
+      
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER(CGSIZE_T) ::rmin
+      INTEGER(CGSIZE_T) ::rmax
+      INTEGER(CGSIZE_T) ::parent_data
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_parent_data_partial_write_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_elements_partial_read_f(fn, B, Z, S, rmin, rmax, elements, parent, ier)
+      IMPORT :: cgsize_t
+      IMPLICIT NONE
+      
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER(CGSIZE_T) ::rmin
+      INTEGER(CGSIZE_T) ::rmax
+      INTEGER(CGSIZE_T) ::elements
+      INTEGER(CGSIZE_T) ::parent
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_elements_partial_read_f
+ END INTERFACE
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!      Read and write FlowSolution_t Nodes                              *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+ INTERFACE
+    SUBROUTINE cg_nsols_f(fn, B, Z, nsols, ier)
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: nsols
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_nsols_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_sol_info_f(fn, B, Z, S, solname, location, ier)
+      IMPORT :: c_char, cgenum_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: solname
+      INTEGER(cgenum_t) :: location
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_sol_info_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_sol_id_f(fn, B, Z, S, sol_id, ier)
+      IMPORT :: c_double
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER(C_DOUBLE) :: sol_id
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_sol_id_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_sol_write_f(fn, B, Z, solname, location, S, ier)
+      IMPORT :: c_char, cgenum_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: solname
+      INTEGER(cgenum_t) :: location
+      INTEGER :: S
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_sol_write_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_sol_size_f(fn, B, Z, S, ndim, dims, ier)
+      IMPORT :: cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER :: ndim
+      INTEGER(CGSIZE_T) :: dims
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_sol_size_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_sol_ptset_info_f( fn, B, Z, S, ptype, npnts, ier)
+      IMPORT :: cgenum_t, cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER(cgenum_t) :: ptype
+      INTEGER(CGSIZE_T) :: npnts
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_sol_ptset_info_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_sol_ptset_read_f(fn, B, Z, S, pnts, ier)
+      IMPORT :: cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER(CGSIZE_T) ::pnts
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_sol_ptset_read_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_sol_ptset_write_f(fn, B, Z, name, location, ptype, npnts, pnts, S, ier)
+      IMPORT :: c_char, cgenum_t, cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name
+      INTEGER(cgenum_t) :: location
+      INTEGER(cgenum_t) :: ptype
+      INTEGER(CGSIZE_T) :: npnts
+      INTEGER(CGSIZE_T) :: pnts
+      INTEGER :: S
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_sol_ptset_write_f
+ END INTERFACE
+ 
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!      Read and write solution DataArray_t Nodes                        *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+ INTERFACE
+    SUBROUTINE cg_nfields_f(fn, B, Z, S, nfields, ier)
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER :: nfields
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_nfields_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_field_info_f(fn, B, Z, S, F, TYPE, fieldname, ier)
+      IMPORT :: c_char, cgenum_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER :: F
+      INTEGER(cgenum_t) :: TYPE
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fieldname
+      INTEGER, INTENT(OUT) :: ier
+   END SUBROUTINE cg_field_info_f
+END INTERFACE
+
+!!$INTERFACE
+!!$   SUBROUTINE cg_field_read_f(fn, B, Z, S, fieldname), TYPE, rmin, rmax, field_ptr, ier)
+!!$     INTEGER :: fn
+!!$     INTEGER :: B,
+!!$     INTEGER :: Z
+!!$     INTEGER :: S, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fieldname), INTEGER(cgenum_t) :: DataType_t) *TYPE
+!!$     INTEGER(CGSIZE_T) ::rmin,
+!!$     INTEGER(CGSIZE_T) ::rmax
+!!$     void *field_ptr,
+!!$     INTEGER, INTENT(OUT) :: ier
+!!$   END SUBROUTINE cg_field_read_f
+!!$END INTERFACE
+
+INTERFACE
+   SUBROUTINE cg_field_id_f(fn, B, Z, S, F, field_id, ier)
+     IMPORT :: c_double
+     IMPLICIT NONE
+     INTEGER :: fn
+     INTEGER :: B
+     INTEGER :: Z
+     INTEGER :: S
+     INTEGER :: F
+     INTEGER(C_DOUBLE) :: field_id
+     INTEGER, INTENT(OUT) :: ier
+   END SUBROUTINE cg_field_id_f
+END INTERFACE
+
+!!$INTERFACE
+!!$   SUBROUTINE cg_field_write_f(fn, B, Z, S, TYPE, fieldname, field_ptr, F, ier)
+!!$     INTEGER :: fn
+!!$     INTEGER :: B,
+!!$     INTEGER :: Z
+!!$     INTEGER :: S
+!!$     INTEGER(cgenum_t) :: TYPE
+!!$     CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fieldname
+!!$     void *field_ptr,
+!!$     INTEGER :: F
+!!$     INTEGER, INTENT(OUT) :: ier
+!!$   END SUBROUTINE cg_field_write_f
+!!$END INTERFACE
+
+!!$INTERFACE
+!!$   SUBROUTINE cg_field_partial_write_f) (fn, B, Z, S, TYPE, fieldname, rmin, rmax, void *field_ptr, F, ier)
+!!$     INTEGER :: fn,
+!!$     INTEGER :: B
+!!$     INTEGER :: Z
+!!$     INTEGER :: S, INTEGER(cgenum_t) :: TYPE
+!!$     CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fieldname
+!!$     INTEGER(CGSIZE_T) :: rmin
+!!$     INTEGER(CGSIZE_T) :: rmax
+!!$     void *field_ptr
+!!$     INTEGER :: F
+!!$     INTEGER, INTENT(OUT) :: ier
+!!$   END SUBROUTINE cg_field_partial_write_f
+!!$END INTERFACE
+
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!      Read and write ZoneSubRegion_t Nodes  			         *
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+ INTERFACE
+    SUBROUTINE cg_nsubregs_f(fn, B, Z, nsubreg, ier)
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: nsubreg
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_nsubregs_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_subreg_info_f(fn, B, Z, S, regname, DIMENSION, &
+         location, ptset_type, npnts, bcname_len, gcname_len, ier)
+      IMPORT :: c_char, cgenum_t, cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: regname
+      INTEGER :: DIMENSION
+      INTEGER(cgenum_t) :: location
+      INTEGER(cgenum_t) :: ptset_type
+      INTEGER(CGSIZE_T) ::npnts
+      INTEGER :: bcname_len
+      INTEGER :: gcname_len
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_subreg_info_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_subreg_ptset_read_f ( fn, B, Z, S, pnts, ier)
+      IMPORT :: cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER(CGSIZE_T), DIMENSION(*) :: pnts
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_subreg_ptset_read_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_subreg_bcname_read_f ( fn, B, Z, S, bcname, ier)
+      IMPORT :: c_char
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: bcname
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_subreg_bcname_read_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cg_subreg_gcname_read_f (fn, B, Z, S, gcname, ier)
+      IMPORT :: c_char
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: gcname
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_subreg_gcname_read_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_subreg_ptset_write_f (fn, B, Z, regname, DIMENSION, location, ptset_type, npnts, pnts, S, ier)
+      IMPORT :: cgenum_t, c_char, cgsize_t
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: regname
+      INTEGER :: DIMENSION
+      INTEGER(cgenum_t) :: location
+      INTEGER(cgenum_t) :: ptset_type
+      INTEGER(CGSIZE_T) :: npnts
+      INTEGER(CGSIZE_T), DIMENSION(*) :: pnts
+      INTEGER :: S
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_subreg_ptset_write_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_subreg_bcname_write_f ( fn, B, Z, regname, DIMENSION, bcname, S, ier)
+      IMPORT :: c_char
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: regname
+      INTEGER :: DIMENSION
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: bcname
+      INTEGER :: S
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_subreg_bcname_write_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_subreg_gcname_write_f ( fn, B, Z, regname, DIMENSION, gcname, S, ier)
+      IMPORT :: c_char
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: regname
+      INTEGER :: DIMENSION
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: gcname
+      INTEGER :: S
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_subreg_gcname_write_f
+ END INTERFACE
+
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write ZoneGridConnectivity_t Nodes  			 *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_set_compress_f, CG_SET_COMPRESS_F) (
-!!$	cgint_f *cmpr, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_nzconns_f, CG_NZCONNS_F) (fn,
+!!$	B, Z, nzconns, ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: nzconns,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_get_compress_f, CG_GET_COMPRESS_F) (
-!!$	cgint_f *cmpr, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_zconn_read_f, CG_ZCONN_READ_F) (fn,
+!!$	B, Z, C, name),
+!!$	ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: C, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_set_path_f, CG_SET_PATH_F) (STR_PSTR(pathname),
-!!$	cgint_f *ier STR_PLEN(pathname))
-!!$
+!!$           SUBROUTINE cg_zconn_write_f, CG_ZCONN_WRITE_F) (fn,
+!!$	B, Z, name), C,
+!!$	ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name), INTEGER :: C,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_add_path_f, CG_ADD_PATH_F) (STR_PSTR(pathname),
-!!$	cgint_f *ier STR_PLEN(pathname))
-!!$
+!!$           SUBROUTINE cg_zconn_get_f, CG_ZCONN_GET_F) (fn,
+!!$	B, Z, C, ier)
+!!$ INTEGER :: fn
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: C,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_get_cgio_f, CG_GET_CGIO_F) (cgint_f *fn,
-!!$	cgint_f *cgio_num, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_root_id_f, CG_ROOT_ID_F) (cgint_f *fn,
-!!$	double *rootid, cgint_f *ier)
-!!$
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-!!$!      Read and write CGNSBase_t Nodes                                  
-!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_nbases_f, CG_NBASES_F) (cgint_f *fn,
-!!$	cgint_f *nbases, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_base_read_f, CG_BASE_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	STR_PSTR(basename), cgint_f *cell_dim, cgint_f *phys_dim,
-!!$	cgint_f *ier STR_PLEN(basename))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_base_id_f, CG_BASE_ID_F) (cgint_f *fn, cgint_f *B,
-!!$	double *base_id, cgint_f *ier)
-!!$
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_base_write_f, CG_BASE_WRITE_F) (cgint_f *fn,
-!!$	STR_PSTR(basename), cgint_f *cell_dim, cgint_f *phys_dim,
-!!$	cgint_f *B, cgint_f *ier STR_PLEN(basename))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_cell_dim_f, CG_CELL_DIM_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_t *dim, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-!!$!       Read and write Zone_t Nodes                                      
-!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_nzones_f, CG_NZONES_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *nzones, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_zone_type_f, CG_ZONE_TYPE_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, CGNS_ENUMT(ZoneType_t)*type, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_zone_read_f, CG_ZONE_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, STR_PSTR(zonename), cgsize_t *size,
-!!$	cgint_f *ier STR_PLEN(zonename))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_zone_id_f, CG_ZONE_ID_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, double *zone_id, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_zone_write_f, CG_ZONE_WRITE_F) (cgint_f *fn, cgint_f *B,
-!!$	STR_PSTR(zonename), cgsize_t *size, CGNS_ENUMT(ZoneType_t) *type,
-!!$	cgint_f *Z, cgint_f *ier STR_PLEN(zonename))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_index_dim_f, CG_INDEX_DIM_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *dim, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_zconn_set_f, CG_ZCONN_SET_F) (INTEGER :: fn,
+!!$	B, Z, C, ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: C,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
 !!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$!      Read and write Family_t Nodes                                    *
+!!$!      Read and write OversetHoles_t Nodes                              *
 !!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_nfamilies_f, CG_NFAMILIES_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *nfamilies, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_family_read_f, CG_FAMILY_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *F, STR_PSTR(family_name), cgint_f *nboco, cgint_f *ngeos,
-!!$	cgint_f *ier STR_PLEN(family_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_family_write_f, CG_FAMILY_WRITE_F) (cgint_f *fn, cgint_f *B,
-!!$	STR_PSTR(family_name), cgint_f *F, cgint_f *ier STR_PLEN(family_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_nfamily_names_f, CG_NFAMILY_NAMES_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *F, cgint_f *nnames, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_family_name_read_f, CG_FAMILY_NAME_READ_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *F, cgint_f *N, STR_PSTR(name), STR_PSTR(family),
-!!$	cgint_f *ier STR_PLEN(name) STR_PLEN(family))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_family_name_write_f, CG_FAMILY_NAME_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *F, STR_PSTR(name), STR_PSTR(family),
-!!$	cgint_f *ier STR_PLEN(name) STR_PLEN(family))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write FamBC_t Nodes                                     *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_fambc_read_f, CG_FAMBC_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *F, cgint_f *BC, STR_PSTR(fambc_name), CGNS_ENUMT(BCType_t) *bocotype,
-!!$	cgint_f *ier STR_PLEN(fambc_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_fambc_write_f, CG_FAMBC_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *F, STR_PSTR(fambc_name), CGNS_ENUMT(BCType_t) *bocotype,
-!!$	cgint_f *BC, cgint_f *ier STR_PLEN(fambc_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write GeometryReference_t Nodes                         *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_geo_read_f, CG_GEO_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *F, cgint_f *G, STR_PSTR(geo_name), STR_PSTR(geo_file),
-!!$	STR_PSTR(CAD_name), cgint_f *npart, cgint_f *ier STR_PLEN(geo_name)
-!!$	STR_PLEN(geo_file) STR_PLEN(CAD_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_geo_write_f, CG_GEO_WRITE_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *F, STR_PSTR(geo_name), STR_PSTR(geo_file), STR_PSTR(CAD_name),
-!!$	cgint_f *G, cgint_f *ier STR_PLEN(geo_name) STR_PLEN(geo_file)
-!!$	STR_PLEN(CAD_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write GeometryEntity_t Nodes                            *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_part_read_f, CG_PART_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *F,cgint_f *G, cgint_f *P, STR_PSTR(part_name),
-!!$	cgint_f *ier STR_PLEN(part_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_part_write_f, CG_PART_WRITE_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *F, cgint_f *G, STR_PSTR(part_name), cgint_f *P,
-!!$	cgint_f *ier STR_PLEN(part_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write DiscreteData_t Nodes                              *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_ndiscrete_f, CG_NDISCRETE_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *ndiscrete, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_discrete_read_f, CG_DISCRETE_READ_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *D, STR_PSTR(discrete_name),
-!!$	cgint_f *ier STR_PLEN(discrete_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_discrete_write_f, CG_DISCRETE_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, STR_PSTR(discrete_name), cgint_f *D,
-!!$	cgint_f *ier STR_PLEN(discrete_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_discrete_size_f, CG_DISCRETE_SIZE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *D, cgint_f *ndim,
-!!$	cgsize_t *dims, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_discrete_ptset_info_f, CG_DISCRETE_PTSET_INFO_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
-!!$	CGNS_ENUMT(PointSetType_t) *ptype, cgsize_t *npnts, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_discrete_ptset_read_f, CG_DISCRETE_PTSET_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
-!!$	cgsize_t *pnts, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_discrete_ptset_write_f, CG_DISCRETE_PTSET_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(name),
-!!$	CGNS_ENUMT(GridLocation_t) *location, CGNS_ENUMT(PointSetType_t) *ptype, cgsize_t *npnts,
-!!$	cgsize_t *pnts, cgint_f *D, cgint_f *ier STR_PLEN(name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write GridCoordinates_t/DataArray_t Nodes               *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_ncoords_f, CG_NCOORDS_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *ncoords, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_coord_info_f, CG_COORD_INFO_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *C, CGNS_ENUMT(DataType_t) *type, STR_PSTR(coordname),
-!!$	cgint_f *ier STR_PLEN(coordname))
-!!$
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_coord_read_f, CG_COORD_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, STR_PSTR(coordname), CGNS_ENUMT(DataType_t) *type, cgsize_t *rmin,
-!!$	cgsize_t *rmax, void *coord, cgint_f *ier STR_PLEN(coordname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_coord_id_f, CG_COORD_ID_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *C, double *coord_id, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_coord_write_f, CG_COORD_WRITE_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, CGNS_ENUMT(DataType_t) *type, STR_PSTR(coordname), void *coord, cgint_f *C,
-!!$	cgint_f *ier STR_PLEN(coordname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_coord_partial_write_f, CG_COORD_PARTIAL_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, CGNS_ENUMT(DataType_t) *type, STR_PSTR(coordname),
-!!$	cgsize_t *rmin, cgsize_t *rmax, void *coord, cgint_f *C,
-!!$	cgint_f *ier STR_PLEN(coordname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write Elements_t Nodes                                  *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_nsections_f, CG_NSECTIONS_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *nsections, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_section_read_f, CG_SECTION_READ_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *E, STR_PSTR(section_name),
-!!$	CGNS_ENUMT(ElementType_t) *type, cgsize_t *start, cgsize_t *end, cgint_f *nbndry,
-!!$	cgint_f *parent_flag, cgint_f *ier STR_PLEN(section_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_elements_read_f, CG_ELEMENTS_READ_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *E, cgsize_t *elements,
-!!$	cgsize_t *parent_data, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_elementdatasize_f, CG_ELEMENTDATASIZE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *E, cgsize_t *ElementDataSize,
-!!$	cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_elementpartialsize_f, CG_ELEMENTPARTIALSIZE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *E, cgsize_t *start, cgsize_t *end,
-!!$	cgsize_t *ElementDataSize, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_section_write_f, CG_SECTION_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, STR_PSTR(section_name), CGNS_ENUMT(ElementType_t)*type,
-!!$	cgsize_t *start, cgsize_t *end, cgint_f *nbndry, cgsize_t *elements,
-!!$	cgint_f *S, cgint_f *ier STR_PLEN(section_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_parent_data_write_f, CG_PARENT_DATA_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *parent_data, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_section_partial_write_f, CG_SECTION_PARTIAL_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(section_name),
-!!$	cgsize_t *type, cgsize_t *start, cgsize_t *end, cgint_f *nbndry,
-!!$	cgint_f *S, cgint_f *ier STR_PLEN(section_name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_elements_partial_write_f, CG_ELEMENTS_PARTIAL_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *rmin,
-!!$	cgsize_t *rmax, cgsize_t *elements, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_parent_data_partial_write_f, CG_PARENT_DATA_PARTIAL_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *rmin,
-!!$	cgsize_t *rmax, cgsize_t *parent_data, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_elements_partial_read_f, CG_ELEMENTS_PARTIAL_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *rmin,
-!!$	cgsize_t *rmax, cgsize_t *elements, cgsize_t *parent, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write FlowSolution_t Nodes                              *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_nsols_f, CG_NSOLS_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *nsols, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_sol_info_f, CG_SOL_INFO_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *S, STR_PSTR(solname), CGNS_ENUMT(GridLocation_t) *location,
-!!$	cgint_f *ier STR_PLEN(solname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_sol_id_f, CG_SOL_ID_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *S, double *sol_id, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_sol_write_f, CG_SOL_WRITE_F)(cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, STR_PSTR(solname), CGNS_ENUMT(GridLocation_t)*location, cgint_f *S,
-!!$	cgint_f *ier STR_PLEN(solname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_sol_size_f, CG_SOL_SIZE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *S, cgint_f *ndim,
-!!$	cgsize_t *dims, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_sol_ptset_info_f, CG_SOL_PTSET_INFO_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
-!!$	CGNS_ENUMT(PointSetType_t) *ptype, cgsize_t *npnts, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_sol_ptset_read_f, CG_SOL_PTSET_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
-!!$	cgsize_t *pnts, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_sol_ptset_write_f, CG_SOL_PTSET_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(name),
-!!$	CGNS_ENUMT(GridLocation_t) *location, CGNS_ENUMT(PointSetType_t) *ptype, cgsize_t *npnts,
-!!$	cgsize_t *pnts, cgint_f *S, cgint_f *ier STR_PLEN(name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write solution DataArray_t Nodes                        *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_nfields_f, CG_NFIELDS_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *S, cgint_f *nfields, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_field_info_f, CG_FIELD_INFO_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *S, cgint_f *F, CGNS_ENUMT(DataType_t) *type, STR_PSTR(fieldname),
-!!$	cgint_f *ier STR_PLEN(fieldname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_field_read_f, CG_FIELD_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *S, STR_PSTR(fieldname), CGNS_ENUMT(DataType_t) *type, cgsize_t *rmin,
-!!$	cgsize_t *rmax, void *field_ptr, cgint_f *ier STR_PLEN(fieldname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_field_id_f, CG_FIELD_ID_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *S, cgint_f *F, double *field_id, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_field_write_f, CG_FIELD_WRITE_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *S, CGNS_ENUMT(DataType_t) *type, STR_PSTR(fieldname), void *field_ptr,
-!!$	cgint_f *F, cgint_f *ier STR_PLEN(fieldname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_field_partial_write_f, CG_FIELD_PARTIAL_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *S, CGNS_ENUMT(DataType_t) *type, STR_PSTR(fieldname),
-!!$	cgsize_t *rmin, cgsize_t *rmax, void *field_ptr, cgint_f *F,
-!!$	cgint_f *ier STR_PLEN(fieldname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write ZoneSubRegion_t Nodes  			         *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_nsubregs_f, CG_NSUBREGS_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *nsubreg, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_subreg_info_f, CG_SUBREG_INFO_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *S, STR_PSTR(regname),
-!!$	cgint_f *dimension, CGNS_ENUMT(GridLocation_t) *location,
-!!$	CGNS_ENUMT(PointSetType_t) *ptset_type,
-!!$	cgsize_t *npnts, cgint_f *bcname_len, cgint_f *gcname_len,
-!!$	cgint_f *ier STR_PLEN(regname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_subreg_ptset_read_f, CG_SUBREG_PTSET_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
-!!$	cgsize_t *pnts, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_subreg_bcname_read_f, CG_SUBREG_BCNAME_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
-!!$	STR_PSTR(bcname), cgint_f *ier STR_PLEN(bcname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_subreg_gcname_read_f, CG_SUBREG_GCNAME_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
-!!$	STR_PSTR(gcname), cgint_f *ier STR_PLEN(gcname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_subreg_ptset_write_f, CG_SUBREG_PTSET_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(regname),
-!!$	cgint_f *dimension, CGNS_ENUMT(GridLocation_t) *location, CGNS_ENUMT(PointSetType_t) *ptset_type,
-!!$	cgsize_t *npnts, cgsize_t *pnts, cgint_f *S,
-!!$	cgint_f *ier STR_PLEN(regname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_subreg_bcname_write_f, CG_SUBREG_BCNAME_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(regname),
-!!$	cgint_f *dimension, STR_PSTR(bcname), cgint_f *S,
-!!$	cgint_f *ier STR_PLEN(regname) STR_PLEN(bcname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_subreg_gcname_write_f, CG_SUBREG_GCNAME_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(regname),
-!!$	cgint_f *dimension, STR_PSTR(gcname), cgint_f *S,
-!!$	cgint_f *ier STR_PLEN(regname) STR_PLEN(gcname))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write ZoneGridConnectivity_t Nodes  			 *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_nzconns_f, CG_NZCONNS_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *nzconns, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_nholes_f, CG_NHOLES_F) (fn, B,
+!!$	Z, nholes, ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: nholes,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_zconn_read_f, CG_ZCONN_READ_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *C, STR_PSTR(name),
-!!$	cgint_f *ier STR_PLEN(name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_zconn_write_f, CG_ZCONN_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, STR_PSTR(name), cgint_f *C,
-!!$	cgint_f *ier STR_PLEN(name))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_zconn_get_f, CG_ZCONN_GET_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *C, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_zconn_set_f, CG_ZCONN_SET_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *C, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write OversetHoles_t Nodes                              *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_nholes_f, CG_NHOLES_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *nholes, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$
-!!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_hole_info_f, CG_HOLE_INFO_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *I, STR_PSTR(holename), CGNS_ENUMT(GridLocation_t) *location,
-!!$	CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *nptsets, cgsize_t *npnts,
-!!$	cgint_f *ier STR_PLEN(holename))
-!!$
+!!$           SUBROUTINE cg_hole_info_f, CG_HOLE_INFO_F) (fn, B,
+!!$	Z, I, holename), location,
+!!$	ptset_type, nptsets, npnts,
+!!$	ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: I, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: holename), INTEGER(cgenum_t) :: GridLocation_t) *location,
+!!$	INTEGER(cgenum_t) :: PointSetType_t) *ptset_type, INTEGER(CGSIZE_T) ::nptsets, INTEGER(CGSIZE_T) ::npnts
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_hole_read_f, CG_HOLE_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *I, cgsize_t *pnts, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_hole_read_f, CG_HOLE_READ_F) (fn, B,
+!!$	Z, I, pnts, ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: I, INTEGER(CGSIZE_T) ::pnts,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
 !!$
-!!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_hole_id_f, CG_HOLE_ID_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *I, double *hole_id, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_hole_id_f, CG_HOLE_ID_F) (fn, B,
+!!$	Z, I, hole_id, ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: I, INTEGER(C_DOUBLE) :: hole_id,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_hole_write_f, CG_HOLE_WRITE_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, STR_PSTR(holename), CGNS_ENUMT(GridLocation_t) *location,
-!!$	CGNS_ENUMT(PointSetType_t) *ptset_type, cgint_f *nptsets, cgsize_t *npnts,
-!!$	cgsize_t *pnts, cgint_f *I, cgint_f *ier STR_PLEN(holename))
-!!$
+!!$           SUBROUTINE cg_hole_write_f, CG_HOLE_WRITE_F) (fn, B,
+!!$	Z, holename), location,
+!!$	ptset_type, nptsets, npnts,
+!!$	pnts, I, ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: holename), INTEGER(cgenum_t) :: GridLocation_t) *location,
+!!$	INTEGER(cgenum_t) :: PointSetType_t) *ptset_type, INTEGER :: nptsets, INTEGER(CGSIZE_T) ::npnts,
+!!$	INTEGER(CGSIZE_T) ::pnts, INTEGER :: I
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write GridConnectivity_t Nodes                          *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write GridConnectivity_t Nodes                          *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_nconns_f, CG_NCONNS_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *nconns, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_nconns_f, CG_NCONNS_F) (fn, B,
+!!$	Z, nconns, ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: nconns,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_conn_info_f, CG_CONN_INFO_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *I, STR_PSTR(connectname), CGNS_ENUMT(GridLocation_t) *location,
-!!$	CGNS_ENUMT(GridConnectivityType_t) *type, CGNS_ENUMT(PointSetType_t) *ptset_type, 
-!!$	cgsize_t *npnts, STR_PSTR(donorname),
-!!$	CGNS_ENUMT(ZoneType_t) *donor_zonetype, 
-!!$	CGNS_ENUMT(PointSetType_t) *donor_ptset_type, 
-!!$	CGNS_ENUMT(DataType_t) *donor_datatype,
-!!$	cgsize_t *ndata_donor, cgint_f *ier STR_PLEN(connectname) STR_PLEN(donorname)) 
-!!$
+!!$           SUBROUTINE cg_conn_info_f, CG_CONN_INFO_F) (fn, B,
+!!$	Z, I, connectname), location,
+!!$	type, ptset_type, 
+!!$	npnts, donorname),
+!!$	donor_zonetype, 
+!!$	donor_ptset_type, 
+!!$	donor_datatype,
+!!$	ndata_donor, ier  ) 
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: I, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: connectname), INTEGER(cgenum_t) :: GridLocation_t) *location,
+!!$	INTEGER(cgenum_t) :: GridConnectivityType_t) *type, INTEGER(cgenum_t) :: PointSetType_t) *ptset_type, 
+!!$	INTEGER(CGSIZE_T) ::npnts, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: donorname),
+!!$	INTEGER(cgenum_t) :: ZoneType_t) *donor_zonetype, 
+!!$	INTEGER(cgenum_t) :: PointSetType_t) *donor_ptset_type, 
+!!$	INTEGER(cgenum_t) :: DataType_t) *donor_datatype,
+!!$	INTEGER(CGSIZE_T) ::ndata_donor,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
 !!$
-!!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_conn_read_f, CG_CONN_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *I, cgsize_t *pnts, CGNS_ENUMT(DataType_t) *donor_datatype,
-!!$	cgsize_t *donor_data, cgint_f *ier)
-!!${
-!!$    *ier = (cgint_f)cg_conn_read((int)*fn, (int)*B, (int)*Z, (int)*I, pnts,
-!!$               *donor_datatype, donor_data)
+!!$           SUBROUTINE cg_conn_read_f, (fn, B,
+!!$	Z, I, pnts, donor_datatype,
+!!$	donor_data, ier)
+!!$fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: I, INTEGER(CGSIZE_T) ::pnts, INTEGER(cgenum_t) :: DataType_t) *donor_datatype,
+!!$	INTEGER(CGSIZE_T) ::donor_data,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
 !!$
-!!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_conn_read_short_f, CG_CONN_READ_SHORT_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *I, cgsize_t *pnts, cgint_f *ier)
-!!${
-!!$    *ier = (cgint_f)cg_conn_read_short((int)*fn, (int)*B, (int)*Z, (int)*I, pnts)
+!!$           SUBROUTINE cg_conn_read_short_f (fn,
+!!$	B, Z, I, pnts, ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: I, INTEGER(CGSIZE_T) ::pnts
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
 !!$
-!!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_conn_id_f, CG_CONN_ID_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *I, double *conn_id, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_conn_id_f, CG_CONN_ID_F) (fn, B,
+!!$	Z, I, conn_id, ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: I, INTEGER(C_DOUBLE) :: conn_id,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_conn_write_f, CG_CONN_WRITE_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, STR_PSTR(connectname), 
-!!$        CGNS_ENUMT(GridLocation_t) *location, 
-!!$        CGNS_ENUMT(GridConnectivityType_t) *type,
-!!$	CGNS_ENUMT(PointSetType_t) *ptset_type, 
-!!$	cgsize_t *npnts, cgsize_t *pnts,
-!!$	STR_PSTR(donorname), 
+!!$           SUBROUTINE cg_conn_write_f, CG_CONN_WRITE_F) (fn, B,
+!!$	Z, connectname), 
+!!$        location, 
+!!$        type,
+!!$	ptset_type, 
+!!$	npnts, pnts,
+!!$	donorname), 
 !!$        CGNS_ENUMT(ZoneType_t)*donor_zonetype, 
 !!$        CGNS_ENUMT(PointSetType_t)*donor_ptset_type,
-!!$	CGNS_ENUMT(DataType_t)*donor_datatype, cgsize_t *ndata_donor, cgsize_t *donor_data,
-!!$	cgint_f *I, cgint_f *ier STR_PLEN(connectname) STR_PLEN(donorname))
-!!$
+!!$	CGNS_ENUMT(DataType_t)*donor_datatype, ndata_donor, donor_data,
+!!$	I, ier  )
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: connectname), 
+!!$        INTEGER(cgenum_t) :: GridLocation_t) *location, 
+!!$        INTEGER(cgenum_t) :: GridConnectivityType_t) *type,
+!!$	INTEGER(cgenum_t) :: PointSetType_t) *ptset_type, 
+!!$	INTEGER(CGSIZE_T) ::npnts, INTEGER(CGSIZE_T) ::pnts,
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: donorname), 
+!!$        INTEGER(cgenum_t) :: ZoneType_t)*donor_zonetype, 
+!!$        INTEGER(cgenum_t) :: PointSetType_t)*donor_ptset_type,
+!!$	INTEGER(cgenum_t) :: DataType_t)*donor_datatype, INTEGER(CGSIZE_T) ::ndata_donor, INTEGER(CGSIZE_T) ::donor_data,
+!!$	INTEGER :: I,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_conn_write_short_f, CG_CONN_WRITE_SHORT_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, STR_PSTR(connectname), CGNS_ENUMT(GridLocation_t) *location,
-!!$	CGNS_ENUMT(GridConnectivityType_t) *type, CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts,
-!!$	cgsize_t *pnts, STR_PSTR(donorname), cgint_f *I,
-!!$	cgint_f *ier STR_PLEN(connectname) STR_PLEN(donorname))
-!!$
+!!$           SUBROUTINE cg_conn_write_short_f, CG_CONN_WRITE_SHORT_F) (fn,
+!!$	B, Z, connectname), location,
+!!$	INTEGER(cgenum_t) :: GridConnectivityType_t) *type, INTEGER(cgenum_t) :: PointSetType_t) *ptset_type, npnts,
+!!$	pnts, donorname), I,
+!!$	ier  )
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: connectname), INTEGER(cgenum_t) :: GridLocation_t) *location,
+!!$	INTEGER(cgenum_t) :: GridConnectivityType_t) *type, INTEGER(cgenum_t) :: PointSetType_t) *ptset_type, INTEGER(CGSIZE_T) ::npnts,
+!!$	INTEGER(CGSIZE_T) ::pnts, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: donorname), INTEGER :: I
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write GridConnectivity1to1_t Nodes in a zone            *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write GridConnectivity1to1_t Nodes in a zone            *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_n1to1_f, CG_N1TO1_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f*n1to1, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_n1to1_f, CG_N1TO1_F) (fn, B,
+!!$	Z, cgint_f*n1to1, ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: n1to1,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_1to1_read_f, CG_1TO1_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *I, STR_PSTR(connectname), STR_PSTR(donorname),
-!!$	cgsize_t *range, cgsize_t *donor_range, cgint_f *transform,
-!!$	cgint_f *ier STR_PLEN(connectname) STR_PLEN(donorname))
-!!$
+!!$           SUBROUTINE cg_1to1_read_f, CG_1TO1_READ_F) (fn, B,
+!!$	Z, I, connectname), donorname),
+!!$	range, donor_range, transform,
+!!$	ier  )
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: I, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: connectname), CHARACTER(KIND=C_CHAR), DIMENSION(*) :: donorname),
+!!$	INTEGER(CGSIZE_T) ::range, INTEGER(CGSIZE_T) ::donor_range, INTEGER :: transform,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_1to1_id_f, CG_1TO1_ID_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *I, double *one21_id, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_1to1_id_f, CG_1TO1_ID_F) (fn, B,
+!!$	Z, I, one21_id, ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: I, INTEGER(C_DOUBLE) :: one21_id,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_1to1_write_f, CG_1TO1_WRITE_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, STR_PSTR(connectname), STR_PSTR(donorname), cgsize_t *range,
-!!$	cgsize_t *donor_range, cgint_f *transform, cgint_f *I,
-!!$	cgint_f *ier STR_PLEN(connectname) STR_PLEN(donorname))
-!!$
+!!$           SUBROUTINE cg_1to1_write_f, CG_1TO1_WRITE_F) (fn, B,
+!!$	Z, connectname), donorname), range,
+!!$	donor_range, transform, I,
+!!$	ier  )
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: connectname), CHARACTER(KIND=C_CHAR), DIMENSION(*) :: donorname), INTEGER(CGSIZE_T) ::range,
+!!$	INTEGER(CGSIZE_T) ::donor_range, INTEGER :: transform, INTEGER :: I
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read all GridConnectivity1to1_t Nodes of a base                  *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read all GridConnectivity1to1_t Nodes of a base                  *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_n1to1_global_f, CG_N1TO1_GLOBAL_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *n1to1_global, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_n1to1_global_f, CG_N1TO1_GLOBAL_F) (fn,
+!!$	B, n1to1_global, ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: n1to1_global
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_1to1_read_global_f, CG_1TO1_READ_GLOBAL_F) (cgint_f *fn,
-!!$	cgint_f *B, STR_PSTR(connectname), STR_PSTR(zonename), STR_PSTR(donorname),
-!!$	cgsize_t *range, cgsize_t *donor_range, cgint_f *transform,
-!!$	cgint_f *ier STR_PLEN(connectname) STR_PLEN(zonename) STR_PLEN(donorname))
-!!$
+!!$           SUBROUTINE cg_1to1_read_global_f, CG_1TO1_READ_GLOBAL_F) (fn,
+!!$	B, connectname), zonename), donorname),
+!!$	range, donor_range, transform,
+!!$	ier   )
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: connectname), CHARACTER(KIND=C_CHAR), DIMENSION(*) :: zonename), CHARACTER(KIND=C_CHAR), DIMENSION(*) :: donorname),
+!!$	INTEGER(CGSIZE_T) ::range, INTEGER(CGSIZE_T) ::donor_range, INTEGER :: transform
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write BC_t Nodes                                        *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write BC_t Nodes                                        *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_nbocos_f, CG_NBOCOS_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *nbocos, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_nbocos_f, CG_NBOCOS_F) (fn, B,
+!!$	Z, nbocos, ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: nbocos
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_boco_info_f, CG_BOCO_INFO_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *BC, STR_PSTR(boconame), CGNS_ENUMT(BCType_t) *bocotype,
-!!$	CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts, cgint_f *NormalIndex,
-!!$	cgsize_t *NormalListFlag, CGNS_ENUMT(DataType_t) *NormalDataType, cgint_f *ndataset,
-!!$	cgint_f *ier STR_PLEN(boconame))
-!!$
+!!$           SUBROUTINE cg_boco_info_f, CG_BOCO_INFO_F) (fn, B,
+!!$	Z, BC, boconame), bocotype,
+!!$	ptset_type, npnts, NormalIndex,
+!!$	NormalListFlag, NormalDataType, ndataset,
+!!$	ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: BC, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: boconame), INTEGER(cgenum_t) :: BCType_t) *bocotype,
+!!$	INTEGER(cgenum_t) :: PointSetType_t) *ptset_type, INTEGER(CGSIZE_T) ::npnts, INTEGER :: NormalIndex,
+!!$	INTEGER(CGSIZE_T) ::NormalListFlag, INTEGER(cgenum_t) :: DataType_t) *NormalDataType, INTEGER :: ndataset
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_boco_read_f, CG_BOCO_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *BC, cgsize_t *pnts, void *NormalList, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_boco_read_f, CG_BOCO_READ_F) (fn, B,
+!!$	Z, BC, pnts, void *NormalList, ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: BC, INTEGER(CGSIZE_T) ::pnts, void *NormalList,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_boco_id_f, CG_BOCO_ID_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *BC, double *boco_id, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_boco_id_f, CG_BOCO_ID_F) (fn, B,
+!!$	Z, BC, boco_id, ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: BC, INTEGER(C_DOUBLE) :: boco_id,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_boco_write_f, CG_BOCO_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, STR_PSTR(boconame), CGNS_ENUMT(BCType_t) *bocotype,
-!!$	CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts, cgsize_t *pnts,
-!!$	cgint_f *BC, cgint_f *ier STR_PLEN(boconame))
-!!$
+!!$           SUBROUTINE cg_boco_write_f, CG_BOCO_WRITE_F) (fn,
+!!$	B, Z, boconame), bocotype,
+!!$	ptset_type, npnts, pnts,
+!!$	BC, ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: boconame), INTEGER(cgenum_t) :: BCType_t) *bocotype,
+!!$	INTEGER(cgenum_t) :: PointSetType_t) *ptset_type, INTEGER(CGSIZE_T) ::npnts, INTEGER(CGSIZE_T) ::pnts,
+!!$	INTEGER :: BC
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_boco_normal_write_f, CG_BOCO_NORMAL_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *BC,
-!!$	cgsize_t *NormalIndex, cgint_f *NormalListFlag,
-!!$	CGNS_ENUMT(DataType_t) *NormalDataType, void *NormalList, cgint_f *ier)
+!!$	fn, B, Z, BC,
+!!$	NormalIndex, NormalListFlag,
+!!$	NormalDataType, void *NormalList, ier)
 !!$
+!!$	INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: BC,
+!!$	INTEGER(CGSIZE_T) ::NormalIndex, INTEGER :: NormalListFlag,
+!!$	INTEGER(cgenum_t) :: DataType_t) *NormalDataType, void *NormalList,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_boco_gridlocation_read_f, CG_BOCO_GRIDLOCATION_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *BC,
-!!$	CGNS_ENUMT(GridLocation_t) *location, cgint_f *ier)
-!!$
+!!$	fn, B, Z, BC,
+!!$	location, ier)
+!!$INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: BC,
+!!$	INTEGER(cgenum_t) :: GridLocation_t) *location
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_boco_gridlocation_write_f, CG_BOCO_GRIDLOCATION_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *BC,
-!!$	CGNS_ENUMT(GridLocation_t) *location, cgint_f *ier)
-!!$
+!!$	fn, B, Z, BC,
+!!$	location, ier)
+!!$INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: BC,
+!!$	INTEGER(cgenum_t) :: GridLocation_t) *location,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write BCProperty_t/WallFunction_t Nodes                 *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write BCProperty_t/WallFunction_t Nodes                 *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_bc_wallfunction_read_f, CG_BC_WALLFUNCTION_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *BC,
-!!$	CGNS_ENUMT(WallFunctionType_t) *WallFunctionType, cgint_f *ier)
-!!$
+!!$	fn, B, Z, BC,
+!!$	WallFunctionType, ier)
+!!$INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: BC,
+!!$	INTEGER(cgenum_t) :: WallFunctionType_t) *WallFunctionType,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_bc_wallfunction_write_f, CG_BC_WALLFUNCTION_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *BC,
-!!$	CGNS_ENUMT(WallFunctionType_t) *WallFunctionType, cgint_f *ier)
-!!$
+!!$	fn, B, Z, BC,
+!!$	WallFunctionType, ier)
+!!$INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: BC,
+!!$	INTEGER(cgenum_t) :: WallFunctionType_t) *WallFunctionType,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write BCProperty_t/Area_t Nodes                         *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write BCProperty_t/Area_t Nodes                         *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_bc_area_read_f, CG_BC_AREA_READ_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *BC, CGNS_ENUMT(AreaType_t) *AreaType,
-!!$	float *SurfaceArea, STR_PSTR(RegionName),
-!!$	cgint_f *ier STR_PLEN(RegionName))
-!!$
+!!$           SUBROUTINE cg_bc_area_read_f, CG_BC_AREA_READ_F) (fn,
+!!$	B, Z, BC, AreaType,
+!!$	float *SurfaceArea, RegionName),
+!!$	ier STR_PLEN(RegionName))
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: BC, INTEGER(cgenum_t) :: AreaType_t) *AreaType,
+!!$	float *SurfaceArea, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: RegionName),
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_bc_area_write_f, CG_BC_AREA_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *BC, CGNS_ENUMT(AreaType_t) *AreaType,
-!!$	float *SurfaceArea, STR_PSTR(RegionName),
-!!$	cgint_f *ier STR_PLEN(RegionName))
-!!$
+!!$           SUBROUTINE cg_bc_area_write_f, CG_BC_AREA_WRITE_F) (fn,
+!!$	B, Z, BC, AreaType,
+!!$	float *SurfaceArea, RegionName),
+!!$	ier STR_PLEN(RegionName))
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: BC, INTEGER(cgenum_t) :: AreaType_t) *AreaType,
+!!$	float *SurfaceArea, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: RegionName)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write GridConnectivityProperty_t/Periodic_t Nodes       *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write GridConnectivityProperty_t/Periodic_t Nodes       *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_conn_periodic_read_f, CG_CONN_PERIODIC_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *I,
+!!$	fn, B, Z, I,
 !!$	float *RotationCenter, float *RotationAngle, float *Translation,
-!!$	cgint_f *ier)
+!!$	ier)
+!!$	INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: I,
+!!$	float *RotationCenter, float *RotationAngle, float *Translation,
 !!$
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_conn_periodic_write_f, CG_CONN_PERIODIC_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *I,
+!!$	fn, B, Z, I,
 !!$	float *RotationCenter, float *RotationAngle, float *Translation,
-!!$	cgint_f *ier)
+!!$	ier)
+!!$	INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: I,
+!!$	float *RotationCenter, float *RotationAngle, float *Translation,
 !!$
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_1to1_periodic_read_f, CG_1TO1_PERIODIC_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *I,
+!!$	fn, B, Z, I,
 !!$	float *RotationCenter, float *RotationAngle, float *Translation,
-!!$	cgint_f *ier)
+!!$	ier)
 !!$
+!!$	INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: I,
+!!$	float *RotationCenter, float *RotationAngle, float *Translation,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_1to1_periodic_write_f, CG_1TO1_PERIODIC_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *I,
+!!$	fn, B, Z, I,
 !!$	float *RotationCenter, float *RotationAngle, float *Translation,
-!!$	cgint_f *ier)
+!!$	ier)
 !!$
+!!$	INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: I,
+!!$	float *RotationCenter, float *RotationAngle, float *Translation,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *   Read and write GridConnectivityProperty_t/AverageInterface_t Nodes  *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!   Read and write GridConnectivityProperty_t/AverageInterface_t Nodes  *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_conn_average_read_f, CG_CONN_AVERAGE_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *I,
-!!$	CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType, cgint_f *ier)
+!!$	fn, B, Z, I,
+!!$	AverageInterfaceType, ier)
 !!$
+!!$	INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: I,
+!!$	INTEGER(cgenum_t) :: AverageInterfaceType_t) *AverageInterfaceType,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_conn_average_write_f, CG_CONN_AVERAGE_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *I,
-!!$	CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType, cgint_f *ier)
+!!$	fn, B, Z, I,
+!!$	AverageInterfaceType, ier)
 !!$
+!!$	INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: I,
+!!$	INTEGER(cgenum_t) :: AverageInterfaceType_t) *AverageInterfaceType,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_1to1_average_read_f, CG_1TO1_AVERAGE_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *I,
-!!$	CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType, cgint_f *ier)
+!!$	fn, B, Z, I,
+!!$	AverageInterfaceType, ier)
 !!$
+!!$	INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: I,
+!!$	INTEGER(cgenum_t) :: AverageInterfaceType_t) *AverageInterfaceType, 
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_1to1_average_write_f, CG_1TO1_AVERAGE_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *I,
-!!$	CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType, cgint_f *ier)
+!!$	fn, B, Z, I,
+!!$	AverageInterfaceType, ier)
 !!$
+!!$	INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: I,
+!!$	INTEGER(cgenum_t) :: AverageInterfaceType_t) *AverageInterfaceType
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write BCDataSet_t Nodes                                 *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write BCDataSet_t Nodes                                 *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_dataset_read_f, CG_DATASET_READ_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *BC, cgint_f *DSet,
-!!$	STR_PSTR(Dataset_name), CGNS_ENUMT(BCType_t) *BCType, cgint_f *DirichletFlag,
-!!$	cgint_f *NeumannFlag, cgint_f *ier STR_PLEN(Dataset_name))
-!!$
+!!$           SUBROUTINE cg_dataset_read_f, CG_DATASET_READ_F) (fn,
+!!$	B, Z, BC, DSet,
+!!$	Dataset_name), BCType, DirichletFlag,
+!!$	NeumannFlag, ier STR_PLEN(Dataset_name))
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: BC, INTEGER :: DSet,
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: Dataset_name), INTEGER(cgenum_t) :: BCType_t) *BCType, INTEGER :: DirichletFlag,
+!!$	INTEGER :: NeumannFlag
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_dataset_write_f, CG_DATASET_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *BC, STR_PSTR(Dataset_name),
-!!$	CGNS_ENUMT(BCType_t) *BCType, cgint_f *Dset, cgint_f *ier STR_PLEN(Dataset_name))
-!!$
+!!$           SUBROUTINE cg_dataset_write_f, CG_DATASET_WRITE_F) (fn,
+!!$	B, Z, BC, Dataset_name),
+!!$	BCType, Dset, ier STR_PLEN(Dataset_name))
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: BC, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: Dataset_name),
+!!$	INTEGER(cgenum_t) :: BCType_t) *BCType, INTEGER :: Dset
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_bcdataset_write_f, CG_BCDATASET_WRITE_F) (
-!!$	STR_PSTR(Dataset_name), CGNS_ENUMT(BCType_t) *BCType, 
-!!$	CGNS_ENUMT(BCDataType_t) *BCDataType,
-!!$	cgint_f *ier STR_PLEN(Dataset_name))
+!!$	Dataset_name), BCType, 
+!!$	BCDataType,
+!!$	ier STR_PLEN(Dataset_name))
 !!$
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: Dataset_name), INTEGER(cgenum_t) :: BCType_t) *BCType, 
+!!$	INTEGER(cgenum_t) :: BCDataType_t) *BCDataType
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_bcdataset_info_f, CG_BCDATASET_INFO_F) (
-!!$	cgint_f *ndataset, cgint_f *ier STR_PLEN(Dataset_name))
+!!$	ndataset, ier STR_PLEN(Dataset_name))
 !!$
+!!$	INTEGER :: ndataset,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_bcdataset_read_f, CG_BCDATASET_READ_F) (
-!!$	cgsize_t *index, STR_PSTR(Dataset_name), CGNS_ENUMT(BCType_t) *BCType,
-!!$	cgint_f *DirichletFlag, cgint_f *NeumannFlag,
-!!$	cgint_f *ier STR_PLEN(Dataset_name))
+!!$	index, Dataset_name), BCType,
+!!$	DirichletFlag, NeumannFlag,
+!!$	ier STR_PLEN(Dataset_name))
 !!$
+!!$	INTEGER(CGSIZE_T) ::index, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: Dataset_name), INTEGER(cgenum_t) :: BCType_t) *BCType,
+!!$	INTEGER :: DirichletFlag, INTEGER :: NeumannFlag
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write BCData_t Nodes                                    *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write BCData_t Nodes                                    *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_bcdata_write_f, CG_BCDATA_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *BC, cgint_f *Dset,
-!!$	CGNS_ENUMT(BCDataType_t) *BCDataType, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_bcdata_write_f, CG_BCDATA_WRITE_F) (fn,
+!!$	B, Z, BC, Dset,
+!!$	BCDataType, ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: BC, INTEGER :: Dset,
+!!$	INTEGER(cgenum_t) :: BCDataType_t) *BCDataType,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write RigidGridMotion_t Nodes                           *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write RigidGridMotion_t Nodes                           *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_n_rigid_motions_f, CG_N_RIGID_MOTIONS_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *n_rigid_motions, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_n_rigid_motions_f, CG_N_RIGID_MOTIONS_F) (fn,
+!!$	B, Z, n_rigid_motions, ier)
+!!$fn,
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: n_rigid_motions
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_rigid_motion_read_f, CG_RIGID_MOTION_READ_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *R, STR_PSTR(rmotion_name),
-!!$	CGNS_ENUMT(RigidGridMotionType_t) *type, cgint_f *ier STR_PLEN(rmotion_name))
-!!$
+!!$           SUBROUTINE cg_rigid_motion_read_f, CG_RIGID_MOTION_READ_F) (fn,
+!!$	B, Z, R, rmotion_name),
+!!$	type, ier STR_PLEN(rmotion_name))
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: R, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: rmotion_name),
+!!$	INTEGER(cgenum_t) :: RigidGridMotionType_t) *type
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_rigid_motion_write_f, CG_RIGID_MOTION_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, STR_PSTR(rmotion_name),
-!!$	CGNS_ENUMT(RigidGridMotionType_t) *type, cgint_f *R, cgint_f *ier STR_PLEN(rmotion_name))
-!!$
+!!$           SUBROUTINE cg_rigid_motion_write_f, CG_RIGID_MOTION_WRITE_F) (INTEGER :: fn,
+!!$	B, Z, rmotion_name),
+!!$	type, R, ier STR_PLEN(rmotion_name))
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: rmotion_name),
+!!$	INTEGER(cgenum_t) :: RigidGridMotionType_t) *type, INTEGER :: R
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write ArbitraryGridMotion_t Nodes                       *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write ArbitraryGridMotion_t Nodes                       *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_n_arbitrary_motions_f, CG_N_ARBITRARY_MOTIONS_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *n_arbitrary_motions,
-!!$	cgint_f *ier)
-!!$
+!!$	fn, B, Z, n_arbitrary_motions,
+!!$	ier)
+!!$INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: n_arbitrary_motions
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_arbitrary_motion_read_f, CG_ARBITRARY_MOTION_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *A,
-!!$	STR_PSTR(amotion_name), CGNS_ENUMT(ArbitraryGridMotionType_t) *type,
-!!$	cgint_f *ier STR_PLEN(amotion_name))
-!!$
+!!$	fn, B, Z, A,
+!!$	amotion_name), type,
+!!$	ier STR_PLEN(amotion_name))
+!!$INTEGER :: fn, INTEGER :: B, INTEGER :: Z, INTEGER :: A,
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: amotion_name), INTEGER(cgenum_t) :: ArbitraryGridMotionType_t) *type
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_arbitrary_motion_write_f, CG_ARBITRARY_MOTION_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(amotion_name),
-!!$	CGNS_ENUMT(ArbitraryGridMotionType_t) *type, cgint_f *A, cgint_f *ier STR_PLEN(amotion_name))
+!!$	fn, B, Z, amotion_name),
+!!$	type, A, ier STR_PLEN(amotion_name))
 !!$
+!!$	INTEGER :: fn, INTEGER :: B, INTEGER :: Z, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: amotion_name),
+!!$	INTEGER(cgenum_t) :: ArbitraryGridMotionType_t) *type, INTEGER :: A
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write GridCoordinates_t Nodes                           *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write GridCoordinates_t Nodes                           *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_ngrids_f, CG_NGRIDS_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, cgint_f *ngrids, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_ngrids_f, CG_NGRIDS_F) (fn, B,
+!!$	Z, ngrids, ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, INTEGER :: ngrids,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_grid_read_f, CG_GRID_READ_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *G, STR_PSTR(gridname),
-!!$	cgint_f *ier STR_PLEN(gridname))
-!!$
+!!$           SUBROUTINE cg_grid_read_f, CG_GRID_READ_F) (fn,
+!!$	B, Z, G, gridname),
+!!$	ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, INTEGER :: G, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: gridname)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_grid_write_f, CG_GRID_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, STR_PSTR(gridname), cgint_f *G,
-!!$	cgint_f *ier STR_PLEN(gridname))
-!!$
+!!$           SUBROUTINE cg_grid_write_f, CG_GRID_WRITE_F) (fn,
+!!$	B, Z, gridname), G,
+!!$	ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, INTEGER :: Z, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: gridname), INTEGER :: G
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write SimulationType_t Node                             *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write SimulationType_t Node                             *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_simulation_type_read_f, CG_SIMULATION_TYPE_READ_F) (
-!!$	cgint_f *fn, cgint_f *B, CGNS_ENUMT(SimulationType_t) *type, cgint_f *ier)
-!!$
+!!$	fn, B, type, ier)
+!!$INTEGER :: fn, INTEGER :: B, INTEGER(cgenum_t) :: SimulationType_t) *type
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_simulation_type_write_f, CG_SIMULATION_TYPE_WRITE_F) (
-!!$
+!!$	fn, B, type, ier)
+!!$INTEGER :: fn, INTEGER :: B, INTEGER(cgenum_t) :: SimulationType_t) *type
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write BaseIterativeData_t Node                          *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write BaseIterativeData_t Node                          *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_biter_read_f, CG_BITER_READ_F) (cgint_f *fn,
-!!$	cgint_f *B, STR_PSTR(bitername), cgint_f *nsteps,
-!!$	cgint_f *ier STR_PLEN(bitername))
-!!$
+!!$           SUBROUTINE cg_biter_read_f, CG_BITER_READ_F) (fn,
+!!$	B, bitername), nsteps,
+!!$	ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: bitername), INTEGER :: nsteps
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_biter_write_f, CG_BITER_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, STR_PSTR(bitername), cgint_f *nsteps,
-!!$	cgint_f *ier STR_PLEN(bitername))
-!!$
+!!$           SUBROUTINE cg_biter_write_f, CG_BITER_WRITE_F) (fn,
+!!$	B, bitername), nsteps,
+!!$	ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: bitername), INTEGER :: nsteps
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write ZoneIterativeData_t Nodes                         *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write ZoneIterativeData_t Nodes                         *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_ziter_read_f, CG_ZITER_READ_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, STR_PSTR(zitername), cgint_f *ier STR_PLEN(zitername))
+!!$           SUBROUTINE cg_ziter_read_f, CG_ZITER_READ_F) (fn, B,
+!!$	Z, zitername), ier)
 !!$
-!!$
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: zitername)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_ziter_write_f, CG_ZITER_WRITE_F) (cgint_f *fn, cgint_f *B,
-!!$	cgint_f *Z, STR_PSTR(zitername), cgint_f *ier STR_PLEN(zitername))
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write Gravity_t Node                                    *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cg_gravity_read_f, CG_GRAVITY_READ_F) (cgint_f *fn,
-!!$	cgint_f *B, float *gravity_vector, cgint_f *ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE 
-!!$        END INTERFACE
-!!$
 !!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_gravity_write_f, CG_GRAVITY_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, float *gravity_vector, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_ziter_write_f, CG_ZITER_WRITE_F) (fn, B,
+!!$	Z, zitername), ier)
+!!$INTEGER :: fn, INTEGER :: B,
+!!$	INTEGER :: Z, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: zitername)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write Axisymmetry_t Node                                *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write Gravity_t Node                                    *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_axisym_read_f, CG_AXISYM_READ_F) (cgint_f *fn,
-!!$	cgint_f *B, float *ref_point, float *axis, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_gravity_read_f, CG_GRAVITY_READ_F) (fn,
+!!$	B, float *gravity_vector, ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, float *gravity_vector,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_axisym_write_f, CG_AXISYM_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, float *ref_point, float *axis, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_gravity_write_f, CG_GRAVITY_WRITE_F) (fn,
+!!$	B, float *gravity_vector, ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, float *gravity_vector,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write RotatingCoordinates_t Node                        *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write Axisymmetry_t Node                                *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$
+!!$	INTERFACE
+!!$           SUBROUTINE cg_axisym_read_f, CG_AXISYM_READ_F) (fn,
+!!$	B, float *ref_point, float *axis, ier)
+!!$fn,
+!!$	INTEGER :: B, float *ref_point, float *axis,
+!!$	     INTEGER, INTENT(OUT) :: ier
+!!$           END SUBROUTINE 
+!!$        END INTERFACE
+!!$
+!!$	INTERFACE
+!!$           SUBROUTINE cg_axisym_write_f, CG_AXISYM_WRITE_F) (fn,
+!!$	B, float *ref_point, float *axis, ier)
+!!$INTEGER :: fn,
+!!$	INTEGER :: B, float *ref_point, float *axis
+!!$	     INTEGER, INTENT(OUT) :: ier
+!!$           END SUBROUTINE 
+!!$        END INTERFACE
+!!$
+!!$^^
+!!$
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write RotatingCoordinates_t Node                        *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_rotating_read_f, CG_ROTATING_READ_F) (
-!!$	float *rot_rate, float *rot_center, cgint_f *ier)
+!!$	float *rot_rate, float *rot_center, ier)
 !!$
+!!$	float *rot_rate, float *rot_center
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_rotating_write_f, CG_ROTATING_WRITE_F) (
-!!$	float *rot_rate, float *rot_center, cgint_f *ier)
-!!$
+!!$	float *rot_rate, float *rot_center, ier)
+!!$float *rot_rate, float *rot_center,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Read and write  IndexArray/Range_t Nodes                         *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Read and write  IndexArray/Range_t Nodes                         *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_ptset_info_f, CG_PTSET_INFO_F) (
-!!$	CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts, cgint_f *ier)
-!!$
+!!$	ptset_type, cgsize_t *npnts, ier)
+!!$INTEGER(cgenum_t) :: PointSetType_t) *ptset_type, cgsize_t *npnts,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_ptset_read_f, CG_PTSET_READ_F) (
-!!$	cgsize_t *pnts, cgint_f *ier)
-!!$
+!!$	cgsize_t *pnts, ier)
+!!$cgsize_t *pnts,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_ptset_write_f, CG_PTSET_WRITE_F) (
-!!$	CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts, cgsize_t *pnts, cgint_f *ier)
-!!$
+!!$	ptset_type, cgsize_t *npnts, cgsize_t *pnts, ier)
+!!$	INTEGER(cgenum_t) :: PointSetType_t) *ptset_type, cgsize_t *npnts, cgsize_t *pnts,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Go - To Function                                                 *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Go - To Function                                                 *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
-!!$#ifdef WIN32_FORTRAN
-!!$CGNSDLL void __stdcall cg_goto_f(cgint_f *fn, cgint_f *B, cgint_f *ier, ...)
-!!$#else
 !!$	INTERFACE
-!!$           SUBROUTINE cg_goto_f, CG_GOTO_F)(cgint_f *fn, cgint_f *B, cgint_f *ier, ...)
-!!$#endif
-!!${
-!!$#ifdef _CRAY
-!!$    _fcd cray_string;
-!!$#endif
-!!$    char *f_label[CG_MAX_GOTO_DEPTH], *label[CG_MAX_GOTO_DEPTH];
-!!$    int index[CG_MAX_GOTO_DEPTH], n, i, len[CG_MAX_GOTO_DEPTH];
-!!$    va_list ap;
-!!$    int c_ier;
+!!$           SUBROUTINE cg_goto_f, CG_GOTO_F)(cgint_f *fn, cgint_f *B, ier, ...)
+!!$cgint_f *fn, cgint_f *B, ier, ...)
 !!$
-!!$     /* initialize ap to the last parameter before the variable argument list */
-!!$     /* Note:  On HP, print statements btw va_start and va_end create major problems */
-!!$
-!!$    va_start(ap, ier);
-!!$
-!!$     /* read arguments */
-!!$    for (n = 0; n < CG_MAX_GOTO_DEPTH; n++)  {
-!!$#ifdef _CRAY
-!!$        cray_string = va_arg(ap, _fcd);
-!!$        f_label[n] = _fcdtocp(cray_string);
-!!$        len[n] = _fcdlen(cray_string);
-!!$#else
-!!$        f_label[n] = va_arg(ap, char *);
-!!$# ifdef WIN32_FORTRAN
-!!$     /* In Windows, the arguments appear in a different order: char*, len, index,...*/
-!!$        len[n] = (int)va_arg(ap, int);
-!!$# endif
-!!$#endif
-!!$        if (f_label[n][0] == ' ' || 0 == strncmp(f_label[n],"end",3) ||
-!!$            0 == strncmp(f_label[n],"END",3)) break;
-!!$
-!!$        index[n] = (int)*(va_arg(ap, cgint_f *));
-!!$        if (index[n] < 0) {
-!!$            cgi_error("Incorrect input to function cg_goto_f");
-!!$            *ier = 1;
-!!$            return;
-!!$        }
-!!$    }
-!!$
-!!$#if !defined(_CRAY) && !defined(WIN32_FORTRAN)
-!!$    for (i=0; i<n; i++) {
-!!$      len[i] = va_arg(ap, int);
-!!$    }
-!!$#endif
-!!$    va_end(ap);
-!!$
-!!$     /* convert strings to C-strings */
-!!$    for (i=0; i < n; i++) {
-!!$        label[i] = CGNS_NEW(char,len[i]+1);
-!!$        string_2_C_string(f_label[i], len[i], label[i], len[i], &c_ier);
-!!$    }
-!!$
-!!$#if DEBUG_GOTO
-!!$    printf("\nIn cg_ftoc.c: narguments=%d\n",n);
-!!$    for (i=0; i<n; i++) printf("\targ %d: '%s' #%d\n",i,label[i], index[i]);
-!!$#endif
-!!$
-!!$    *ier = (cgint_f)cgi_set_posit((int)*fn, (int)*B, n, index, label);
-!!$
-!!$    for (i=0; i<n; i++) CGNS_FREE(label[i]);
-!!$    return
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
-!!$#ifdef WIN32_FORTRAN
-!!$CGNSDLL void __stdcall cg_gorel_f(cgint_f *fn, cgint_f *ier, ...)
-!!$#else
 !!$	INTERFACE
-!!$           SUBROUTINE cg_gorel_f, CG_GOREL_F)(cgint_f *fn, cgint_f *ier, ...)
-!!$#endif
-!!${
-!!$#ifdef _CRAY
-!!$    _fcd cray_string;
-!!$#endif
-!!$    char *f_label[CG_MAX_GOTO_DEPTH], *label[CG_MAX_GOTO_DEPTH];
-!!$    int index[CG_MAX_GOTO_DEPTH], n, i, len[CG_MAX_GOTO_DEPTH];
-!!$    va_list ap;
-!!$    int c_ier;
-!!$
-!!$    if (posit == 0) {
-!!$        cgi_error ("position not set with cg_goto");
-!!$        *ier = (cgint_f)CG_ERROR;
-!!$        return;
-!!$    }
-!!$    if ((int)*fn != posit_file) {
-!!$        cgi_error("current position is in the wrong file");
-!!$        *ier = (cgint_f)CG_ERROR;
-!!$        return;
-!!$    }
-!!$
-!!$     /* initialize ap to the last parameter before the variable argument list */
-!!$     /* Note:  On HP, print statements btw va_start and va_end create major problems */
-!!$
-!!$    va_start(ap, ier);
-!!$
-!!$     /* read arguments */
-!!$    for (n = 0; n < CG_MAX_GOTO_DEPTH; n++)  {
-!!$#ifdef _CRAY
-!!$        cray_string = va_arg(ap, _fcd);
-!!$        f_label[n] = _fcdtocp(cray_string);
-!!$        len[n] = _fcdlen(cray_string);
-!!$#else
-!!$        f_label[n] = va_arg(ap, char *);
-!!$# ifdef WIN32_FORTRAN
-!!$     /* In Windows, the arguments appear in a different order: char*, len, index,...*/
-!!$        len[n] = va_arg(ap, int);
-!!$# endif
-!!$#endif
-!!$        if (f_label[n][0] == ' ' || 0 == strncmp(f_label[n],"end",3) ||
-!!$            0 == strncmp(f_label[n],"END",3)) break;
-!!$
-!!$        index[n] = (int)*(va_arg(ap, cgint_f *));
-!!$        if (index[n] < 0) {
-!!$            cgi_error("Incorrect input to function cg_goto_f");
-!!$            *ier = 1;
-!!$            return;
-!!$        }
-!!$    }
-!!$
-!!$#if !defined(_CRAY) && !defined(WIN32_FORTRAN)
-!!$    for (i=0; i<n; i++) {
-!!$        len[i] = va_arg(ap, int);
-!!$    }
-!!$#endif
-!!$    va_end(ap);
-!!$
-!!$     /* convert strings to C-strings */
-!!$    for (i=0; i < n; i++) {
-!!$        label[i] = CGNS_NEW(char,len[i]+1);
-!!$        string_2_C_string(f_label[i], len[i], label[i], len[i], &c_ier);
-!!$	*ier = (cgint_f)c_ier;
-!!$	
-!!$    }
-!!$
-!!$#if DEBUG_GOTO
-!!$    printf("\nIn cg_ftoc.c: narguments=%d\n",n);
-!!$    for (i=0; i<n; i++) printf("\targ %d: '%s' #%d\n",i,label[i], index[i]);
-!!$#endif
-!!$
-!!$    *ier = (cgint_f)cgi_update_posit(n, index, label);
-!!$
-!!$    for (i=0; i<n; i++) CGNS_FREE(label[i]);
-!!$    return
+!!$           SUBROUTINE cg_gorel_f, CG_GOREL_F)(cgint_f *fn, ier, ...)
+!!$cgint_f *fn, ier, ...)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_gopath_f, CG_GOPATH_F) (cgint_f *fn,
-!!$	STR_PSTR(path), cgint_f *ier STR_PLEN(path))
-!!${
-!!$    int length;
-!!$    char *c_path;
-!!$    int c_ier;
-!!$
-!!$    length = (int) STR_LEN(path);
-!!$    c_path = CGNS_NEW(char, length+1);
-!!$
-!!$    string_2_C_string(STR_PTR(path), STR_LEN(path), c_path, length, &c_ier);
-!!$    *ier = (cgint_f)c_ier;
-!!$    if (*ier == 0)
-!!$        *ier = (cgint_f)cg_gopath((int)*fn, c_path);
-!!$    CGNS_FREE(c_path)
+!!$	path), ier)
+!!$cgint_f *fn,
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: path)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *              Read Multiple path nodes                         *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!              Read Multiple path nodes                         *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_famname_read_f, CG_FAMNAME_READ_F) (
-!!$	STR_PSTR(famname), cgint_f *ier STR_PLEN(famname))
+!!$	famname), ier)
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: famname)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
@@ -2577,55 +2672,48 @@
 !!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_nmultifam_f, CG_NMULTIFAM_F) (cgint_f *nfam, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_nmultifam_f, CG_NMULTIFAM_F) (cgint_f *nfam, ier)
+!!$cgint_f *nfam,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_multifam_read_f, CG_MULTIFAM_READ_F) (cgint_f *N,
-!!$	STR_PSTR(name), STR_PSTR(family),
-!!$	cgint_f *ier STR_PLEN(name) STR_PLEN(family))
-!!$
+!!$	name), family),
+!!$	ier  )
+!!$cgint_f *N,
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name), CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_convergence_read_f, CG_CONVERGENCE_READ_F) (
-!!$	cgint_f *iterations, STR_PSTR(NormDefinitions),
-!!$	cgint_f *ier STR_PLEN(NormDefinitions))
+!!$	cgint_f *iterations, NormDefinitions),
+!!$	ier STR_PLEN(NormDefinitions))
 !!$
+!!$	cgint_f *iterations, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: NormDefinitions)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_state_size_f, CG_STATE_SIZE_F) (
-!!$	cgint_f *size, cgint_f *ier)
+!!$	cgint_f *size, ier)
 !!$
+!!$	cgint_f *size,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_state_read_f, CG_STATE_READ_F) (
-!!$	STR_PSTR(StateDescription), cgint_f *ier STR_PLEN(StateDescription))
-!!$
+!!$	StateDescription), ier STR_PLEN(StateDescription))
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: StateDescription),
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_equationset_read_f, CG_EQUATIONSET_READ_F) (
@@ -2633,195 +2721,144 @@
 !!$	cgint_f *GasModelFlag, cgint_f *ViscosityModelFlag,
 !!$	cgint_f *ThermalConductivityModelFlag,
 !!$	cgint_f *TurbulenceClosureFlag, cgint_f *TurbulenceModelFlag,
-!!$	cgint_f *ier)
+!!$	ier)
 !!$
+!!$	cgint_f *EquationDimension, cgint_f *GoverningEquationsFlag,
+!!$	cgint_f *GasModelFlag, cgint_f *ViscosityModelFlag,
+!!$	cgint_f *ThermalConductivityModelFlag,
+!!$	cgint_f *TurbulenceClosureFlag, cgint_f *TurbulenceModelFlag,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_equationset_chemistry_read_f, CG_EQUATIONSET_CHEMISTRY_READ_F) (
-!!$	cgint_f *ThermalRelaxationFlag, cgint_f *ChemicalKineticsFlag, cgint_f *ier)
+!!$	cgint_f *ThermalRelaxationFlag, cgint_f *ChemicalKineticsFlag, ier)
+!!$	cgint_f *ThermalRelaxationFlag, cgint_f *ChemicalKineticsFlag,
 !!$
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_equationset_elecmagn_read_f, CG_EQUATIONSET_ELECMAGN_READ_F) (
 !!$	cgint_f *ElecFldModelFlag, cgint_f *MagnFldModelFlag,
-!!$	cgint_f *ConductivityModelFlag, cgint_f *ier)
+!!$	cgint_f *ConductivityModelFlag, ier)
 !!$
+!!$	cgint_f *ElecFldModelFlag, cgint_f *MagnFldModelFlag,
+!!$	cgint_f *ConductivityModelFlag,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_governing_read_f, CG_GOVERNING_READ_F) (
-!!$	CGNS_ENUMT(GoverningEquationsType_t) *EquationsType, cgint_f *ier)
+!!$	EquationsType, ier)
 !!$
+!!$	INTEGER(cgenum_t) :: GoverningEquationsType_t) *EquationsType,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_diffusion_read_f, CG_DIFFUSION_READ_F) (
-!!$	cgint_f *diffusion_model, cgint_f *ier)
+!!$	cgint_f *diffusion_model, ier)
 !!$
+!!$	cgint_f *diffusion_model,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_model_read_f, CG_MODEL_READ_F) (STR_PSTR(ModelLabel),
-!!$	CGNS_ENUMT(ModelType_t) *ModelType, cgint_f *ier STR_PLEN(ModelLabel))
+!!$           SUBROUTINE cg_model_read_f, CG_MODEL_READ_F) (ModelLabel),
+!!$	ModelType, ier STR_PLEN(ModelLabel))
 !!$
+!!$	INTEGER(cgenum_t) :: ModelType_t) *ModelType
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_narrays_f, CG_NARRAYS_F) (cgint_f *narrays, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_narrays_f, CG_NARRAYS_F) (cgint_f *narrays, ier)
+!!$cgint_f *narrays
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_array_info_f, CG_ARRAY_INFO_F) (cgint_f *A,
-!!$	STR_PSTR(ArrayName), CGNS_ENUMT(DataType_t) *DataType, cgint_f *DataDimension,
-!!$	cgsize_t *DimensionVector, cgint_f *ier STR_PLEN(ArrayName))
-!!$
+!!$	ArrayName), DataType, cgint_f *DataDimension,
+!!$	cgsize_t *DimensionVector, ier STR_PLEN(ArrayName))
+!!$cgint_f *A,
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName), DataType, cgint_f *DataDimension,
+!!$	cgsize_t *DimensionVector,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
-!!$#ifdef WIN32_FORTRAN
-!!$CGNSDLL void __stdcall cg_array_read_f(cgint_f *A, void *Data, ...)
-!!${
-!!$    va_list ap;
-!!$    cgint_f *ier;
-!!$    int DataDimension;
-!!$    cgsize_t DimensionVector[CGIO_MAX_DIMENSIONS];
-!!$    char ArrayName[CGIO_MAX_NAME_LENGTH+1];
-!!$    CGNS_ENUMT(DataType_t) DataType;
-!!$
-!!$    cg_array_info((int)*A, ArrayName, &DataType, &DataDimension, DimensionVector);
-!!$
-!!$    va_start(ap, Data);
-!!$    if (DataType == CGNS_ENUMV(Character)) (void) va_arg(ap, int);
-!!$    ier = va_arg(ap, cgsize_t *);
-!!$    va_end(ap);
-!!$#else
 !!$	INTERFACE
 !!$           SUBROUTINE cg_array_read_f, CG_ARRAY_READ_F) (cgint_f *A,
-!!$	void *Data, cgint_f *ier)
-!!${
-!!$#endif
-!!$    *ier = (cgint_f)cg_array_read((int)*A, Data)
+!!$	void *Data, ier)
+!!$ cgint_f *A,
+!!$ void *DATA,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
 !!$
 !!$
-!!$#ifdef WIN32_FORTRAN
-!!$CGNSDLL void __stdcall cg_array_read_as_f(cgint_f *A, CGNS_ENUMT(DataType_t) *type,
-!!$	void *Data, ...)
-!!${
-!!$    va_list ap;
-!!$    cgint_f *ier;
-!!$    va_start(ap, Data);
-!!$    if (*type == CGNS_ENUMV(Character))
-!!$        (void) va_arg(ap, int);
-!!$    ier = va_arg(ap, cgsize_t *);
-!!$    va_end(ap);
-!!$#else
 !!$    	INTERFACE
 !!$           SUBROUTINE cg_array_read_as_f, CG_ARRAY_READ_AS_F) (cgint_f *A,
-!!$	CGNS_ENUMT(DataType_t) *type, void *Data, cgint_f *ier)
-!!${
-!!$#endif
-!!$    *ier = (cgint_f)cg_array_read_as((int)*A, *type, Data)
+!!$	type, void *Data, ier)
+!!$cgint_f *A,
+!!$	INTEGER(cgenum_t) :: DataType_t) *type, void *Data,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_nintegrals_f, CG_NINTEGRALS_F) (
-!!$	cgint_f *nintegrals, cgint_f *ier)
-!!${
-!!$    int i_nintegrals;
+!!$	cgint_f *nintegrals, ier)
+!!$ cgint_f *nintegrals,
 !!$
-!!$    *ier = (cgint_f)cg_nintegrals(&i_nintegrals);
-!!$    *nintegrals = (cgint_f)i_nintegrals
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_integral_read_f, CG_INTEGRAL_READ_F) (
-!!$	cgint_f *IntegralDataIndex, STR_PSTR(IntegralDataName),
-!!$	cgint_f *ier STR_PLEN(IntegralDataName))
-!!${
-!!$    char c_name[CGIO_MAX_NAME_LENGTH+1];
-!!$    int c_ier;
+!!$	cgint_f *IntegralDataIndex, IntegralDataName),
+!!$	ier STR_PLEN(IntegralDataName))
 !!$
-!!$    *ier = (cgint_f)cg_integral_read((int)*IntegralDataIndex, c_name);
-!!$    if (!*ier) {
-!!$      string_2_F_string(c_name, STR_PTR(IntegralDataName),
-!!$			STR_LEN(IntegralDataName), &c_ier);
-!!$      *ier = (cgint_f)c_ier;
-!!$    }
-!!$}
-!!$
-!!$
+!!$	cgint_f *IntegralDataIndex, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: IntegralDataName)
+!!$	     INTEGER, INTENT(OUT) :: ier
+!!$           END SUBROUTINE 
+!!$        END INTERFACE
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_rind_read_f, CG_RIND_READ_F) (
-!!$	cgint_f *RindData, cgint_f *ier)
+!!$	cgint_f *RindData, ier)
 !!$
+!!$	cgint_f *RindData
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_ndescriptors_f, CG_NDESCRIPTORS_F) (
-!!$	cgint_f *ndescriptors, cgint_f *ier)
+!!$	cgint_f *ndescriptors, ier)
 !!$
+!!$	cgint_f *ndescriptors,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_descriptor_size_f, CG_DESCRIPTOR_SIZE_F) (
-!!$	cgint_f *descr_no, cgint_f *descr_size, cgint_f *ier)
+!!$	cgint_f *descr_no, cgint_f *descr_size, ier)
 !!$
 !!$
+!!$	cgint_f *descr_no, cgint_f *descr_size,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
@@ -2829,469 +2866,404 @@
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_descriptor_read_f, CG_DESCRIPTOR_READ_F) (
-!!$	cgint_f *descr_no, STR_PSTR(descr_name), STR_PSTR(descr_text),
-!!$	cgint_f *ier STR_PLEN(descr_name)  STR_PLEN(descr_text))
+!!$	cgint_f *descr_no, descr_name), descr_text),
+!!$	ier STR_PLEN(descr_name)  STR_PLEN(descr_text))
 !!$
+!!$	cgint_f *descr_no, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: descr_name), CHARACTER(KIND=C_CHAR), DIMENSION(*) :: descr_text)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_nunits_f, CG_NUNITS_F) (cgint_f *nunits, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_nunits_f, CG_NUNITS_F) (cgint_f *nunits, ier)
+!!$cgint_f *nunits,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_units_read_f, CG_UNITS_READ_F) (
-!!$	CGNS_ENUMT(MassUnits_t) *mass, CGNS_ENUMT(LengthUnits_t) *length,  CGNS_ENUMT(TimeUnits_t) *time,
-!!$	CGNS_ENUMT(TemperatureUnits_t) *temperature, CGNS_ENUMT(AngleUnits_t) *angle, cgint_f *ier)
+!!$	mass, length,  time,
+!!$	temperature, angle, ier)
 !!$
+!!$	INTEGER(cgenum_t) :: MassUnits_t) *mass, INTEGER(cgenum_t) :: LengthUnits_t) *length,  INTEGER(cgenum_t) :: TimeUnits_t) *time,
+!!$	INTEGER(cgenum_t) :: TemperatureUnits_t) *temperature, INTEGER(cgenum_t) :: AngleUnits_t) *angle
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_unitsfull_read_f, CG_UNITSFULL_READ_F) (
-!!$	CGNS_ENUMT(MassUnits_t) *mass, CGNS_ENUMT(LengthUnits_t) *length, CGNS_ENUMT(TimeUnits_t) *time,
-!!$	CGNS_ENUMT(TemperatureUnits_t) *temperature, CGNS_ENUMT(AngleUnits_t) *angle, CGNS_ENUMT(ElectricCurrentUnits_t) *current,
-!!$	CGNS_ENUMT(SubstanceAmountUnits_t) *amount, CGNS_ENUMT(LuminousIntensityUnits_t) *intensity, cgint_f *ier)
+!!$	mass, length, time,
+!!$	temperature, angle, current,
+!!$	amount, intensity, ier)
 !!$
+!!$	INTEGER(cgenum_t) :: MassUnits_t) *mass, INTEGER(cgenum_t) :: LengthUnits_t) *length, INTEGER(cgenum_t) :: TimeUnits_t) *time,
+!!$	INTEGER(cgenum_t) :: TemperatureUnits_t) *temperature, INTEGER(cgenum_t) :: AngleUnits_t) *angle, INTEGER(cgenum_t) :: ElectricCurrentUnits_t) *current,
+!!$	INTEGER(cgenum_t) :: SubstanceAmountUnits_t) *amount, INTEGER(cgenum_t) :: LuminousIntensityUnits_t) *intensity,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_exponents_info_f, CG_EXPONENTS_INFO_F) (
-!!$	 CGNS_ENUMT(DataType_t) *DataType, cgint_f *ier)
+!!$	 DataType, ier)
 !!$
+!!$	 INTEGER(cgenum_t) :: DataType_t) *DataType,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_nexponents_f, CG_NEXPONENTS_F) (
-!!$	cgint_f*nexps, cgint_f *ier)
+!!$	cgint_f*nexps, ier)
 !!$
+!!$	cgint_f*nexps
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_exponents_read_f, CG_EXPONENTS_READ_F) (
-!!$	void *exponents, cgint_f *ier)
+!!$	void *exponents, ier)
 !!$
+!!$	void *exponents
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_expfull_read_f, CG_EXPFULL_READ_F) (
-!!$	void *exponents, cgint_f *ier)
+!!$	void *exponents, ier)
 !!$
+!!$	void *exponents,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_conversion_info_f, CG_CONVERSION_INFO_F) (
-!!$	CGNS_ENUMT(DataType_t) *DataType, cgint_f *ier)
+!!$	DataType, ier)
 !!$
+!!$	INTEGER(cgenum_t) :: DataType_t) *DataType
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_conversion_read_f, CG_CONVERSION_READ_F) (
-!!$	void *ConversionFactors, cgint_f *ier)
+!!$	void *ConversionFactors, ier)
 !!$
+!!$	void *ConversionFactors,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_dataclass_read_f, CG_DATACLASS_READ_F) (
-!!$	CGNS_ENUMT(DataClass_t) *dataclass, cgint_f *ier)
+!!$	dataclass, ier)
 !!$
+!!$	INTEGER(cgenum_t) :: DataClass_t) *dataclass, ier)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_gridlocation_read_f, CG_GRIDLOCATION_READ_F) (
-!!$	CGNS_ENUMT(GridLocation_t) *GridLocation, cgint_f *ier)
+!!$	GridLocation, ier)
 !!$
+!!$	INTEGER(cgenum_t) :: GridLocation_t) *GridLocation
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_ordinal_read_f, CG_ORDINAL_READ_F) (
-!!$	cgint_f *Ordinal, cgint_f *ier)
+!!$	cgint_f *Ordinal, ier)
 !!$
+!!$	cgint_f *Ordinal
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_npe_f, CG_NPE_F) (CGNS_ENUMT(ElementType_t) *type,
-!!$	cgint_f *npe, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cg_npe_f, CG_NPE_F) (type,
+!!$	cgint_f *npe, ier)
+!!$INTEGER(cgenum_t) :: ElementType_t) *type,
+!!$	cgint_f *npe,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_is_link_f, CG_IS_LINK_F) (
-!!$	cgint_f *path_length, cgint_f *ier)
+!!$	cgint_f *path_length, ier)
 !!$
+!!$	cgint_f *path_length,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_link_read_f, CG_LINK_READ_F) (
-!!$	STR_PSTR(filename), STR_PSTR(link_path), cgint_f *ier
-!!$	STR_PLEN(filename)  STR_PLEN(link_path))
+!!$	filename), link_path), ier
+!!$	  STR_PLEN(link_path))
 !!$
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: filename), CHARACTER(KIND=C_CHAR), DIMENSION(*) :: link_path),
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_nuser_data_f, CG_NUSER_DATA_F) (
-!!$	cgint_f *nuser_data, cgint_f *ier)
+!!$	cgint_f *nuser_data, ier)
 !!$
+!!$	cgint_f *nuser_data,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_user_data_read_f, CG_USER_DATA_READ_F) (cgint_f *index,
-!!$	STR_PSTR(dataname), cgint_f *ier STR_PLEN(dataname))
-!!$
+!!$	dataname), ier)
+!!$cgint_f *index,
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: dataname),
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *                   Write Multiple path nodes                           *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!                   Write Multiple path nodes                           *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_famname_write_f, CG_FAMNAME_WRITE_F) (
-!!$	STR_PSTR(family_name), cgint_f *ier STR_PLEN(family_name))
+!!$	family_name), ier STR_PLEN(family_name))
 !!$
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family_name),
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_multifam_write_f, CG_MULTIFAM_WRITE_F) (
-!!$	STR_PSTR(name), STR_PSTR(family),
-!!$	cgint_f *ier STR_PLEN(name) STR_PLEN(family))
+!!$	name), family),
+!!$	ier  )
 !!$
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name), CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family),
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_convergence_write_f, CG_CONVERGENCE_WRITE_F) (
-!!$	cgint_f *iterations, STR_PSTR(NormDefinitions),
-!!$	cgint_f *ier STR_PLEN(NormDefinitions))
+!!$	cgint_f *iterations, NormDefinitions),
+!!$	ier STR_PLEN(NormDefinitions))
 !!$
+!!$	cgint_f *iterations, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: NormDefinitions)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_state_write_f, CG_STATE_WRITE_F) (STR_PSTR(StateDescription),
-!!$	cgint_f *ier STR_PLEN(StateDescription))
-!!$
+!!$           SUBROUTINE cg_state_write_f, CG_STATE_WRITE_F) (StateDescription),
+!!$	ier STR_PLEN(StateDescription))
+!!$CHARACTER(KIND=C_CHAR), DIMENSION(*) :: StateDescription),
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_equationset_write_f, CG_EQUATIONSET_WRITE_F) (
-!!$	cgint_f *EquationDimension, cgint_f *ier)
-!!$
+!!$	cgint_f *EquationDimension, ier)
+!!$cgint_f *EquationDimension
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_governing_write_f, CG_GOVERNING_WRITE_F) (
-!!$    CGNS_ENUMT(GoverningEquationsType_t) *Equationstype, cgint_f *ier)
-!!$
+!!$    Equationstype, ier)
+!!$ INTEGER(cgenum_t) :: GoverningEquationsType_t) *Equationstype
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_diffusion_write_f, CG_DIFFUSION_WRITE_F) (
-!!$	cgint_f *diffusion_model, cgint_f *ier)
-!!$
+!!$	cgint_f *diffusion_model, ier)
+!!$cgint_f *diffusion_model,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_model_write_f, CG_MODEL_WRITE_F) (STR_PSTR(ModelLabel),
-!!$	CGNS_ENUMT(ModelType_t) *ModelType, cgint_f *ier STR_PLEN(ModelLabel))
-!!$
+!!$           SUBROUTINE cg_model_write_f, CG_MODEL_WRITE_F) (ModelLabel),
+!!$	ModelType, ier STR_PLEN(ModelLabel))
+!!$CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ModelLabel),
+!!$	INTEGER(cgenum_t) :: ModelType_t) *ModelType,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
-!!$#ifdef WIN32_FORTRAN
-!!$CGNSDLL void __stdcall cg_array_write_f(STR_PSTR(ArrayName),
-!!$	CGNS_ENUMT(DataType_t) *DataType, cgint_f *DataDimension,
-!!$	cgsize_t *DimensionVector, void *Data, ...)
-!!${
-!!$    va_list ap;
-!!$    cgint_f *ier;
-!!$    char c_name[CGIO_MAX_NAME_LENGTH+1];
-!!$    int c_ier;
-!!$
-!!$    va_start(ap, Data);
-!!$    if ((CGNS_ENUMT(DataType_t))*DataType == CGNS_ENUMV(Character))
-!!$        (void) va_arg(ap, int);
-!!$    ier = va_arg(ap, cgsize_t *);
-!!$    va_end(ap);
-!!$#else
 !!$	INTERFACE
-!!$           SUBROUTINE cg_array_write_f, CG_ARRAY_WRITE_F) (STR_PSTR(ArrayName),
-!!$	CGNS_ENUMT(DataType_t) *DataType, cgint_f *DataDimension, cgsize_t *DimensionVector,
-!!$	void *Data, cgint_f *ier STR_PLEN(ArrayName))
-!!${
-!!$    char c_name[CGIO_MAX_NAME_LENGTH+1];
-!!$    int c_ier;
-!!$#endif
+!!$           SUBROUTINE cg_array_write_f (ArrayName),
+!!$	DataType, cgint_f *DataDimension, cgsize_t *DimensionVector,
+!!$	void *Data, ier STR_PLEN(ArrayName))CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName),
+!!$	INTEGER(cgenum_t) :: DataType_t) *DataType, cgint_f *DataDimension, cgsize_t *DimensionVector,
+!!$	void *Data
 !!$
-!!$     /* convert Fortran-text-string to a C-string */
-!!$    string_2_C_string(STR_PTR(ArrayName), STR_LEN(ArrayName),
-!!$        c_name, CGIO_MAX_NAME_LENGTH, &c_ier);
-!!$    *ier = (cgint_f)c_ier;
-!!$    if (*ier == 0)
-!!$        *ier = (cgint_f)cg_array_write(c_name, *DataType,
-!!$                              (int)*DataDimension, DimensionVector, Data)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_integral_write_f, CG_INTEGRAL_WRITE_F) (
-!!$	STR_PSTR(IntegralDataName), cgint_f *ier STR_PLEN(IntegralDataName))
-!!$
+!!$	IntegralDataName), ier STR_PLEN(IntegralDataName))
+!!$CHARACTER(KIND=C_CHAR), DIMENSION(*) :: IntegralDataName),
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_rind_write_f, CG_RIND_WRITE_F) (
-!!$	cgint_f *RindData, cgint_f *ier)
-!!$
+!!$	cgint_f *RindData, ier)
+!!$	cgint_f *RindData
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_descriptor_write_f, CG_DESCRIPTOR_WRITE_F) (
-!!$	STR_PSTR(descr_name), STR_PSTR(descr_text),
-!!$	cgint_f *ier STR_PLEN(descr_name) STR_PLEN(descr_text))
-!!$
+!!$	descr_name), descr_text),
+!!$	ier STR_PLEN(descr_name) STR_PLEN(descr_text))
+!!$CHARACTER(KIND=C_CHAR), DIMENSION(*) :: descr_name), CHARACTER(KIND=C_CHAR), DIMENSION(*) :: descr_text)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_units_write_f, CG_UNITS_WRITE_F) (
-!!$	CGNS_ENUMT(MassUnits_t) *mass, CGNS_ENUMT(LengthUnits_t) *length, CGNS_ENUMT(TimeUnits_t) *time,
-!!$	CGNS_ENUMT(TemperatureUnits_t) *temperature, CGNS_ENUMT(AngleUnits_t) *angle, cgint_f *ier)
+!!$	mass, length, time,
+!!$	temperature, angle, ier)
 !!$
+!!$	INTEGER(cgenum_t) :: MassUnits_t) *mass, INTEGER(cgenum_t) :: LengthUnits_t) *length, INTEGER(cgenum_t) :: TimeUnits_t) *time,
+!!$	INTEGER(cgenum_t) :: TemperatureUnits_t) *temperature, INTEGER(cgenum_t) :: AngleUnits_t) *angle,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_unitsfull_write_f, CG_UNITSFULL_WRITE_F) (
-!!$	CGNS_ENUMT(MassUnits_t) *mass, CGNS_ENUMT(LengthUnits_t) *length, CGNS_ENUMT(TimeUnits_t) *time,
-!!$	CGNS_ENUMT(TemperatureUnits_t) *temperature, CGNS_ENUMT(AngleUnits_t) *angle, CGNS_ENUMT(ElectricCurrentUnits_t) *current,
-!!$	CGNS_ENUMT(SubstanceAmountUnits_t) *amount, CGNS_ENUMT(LuminousIntensityUnits_t) *intensity, cgint_f *ier)
+!!$	mass, length, time,
+!!$	temperature, angle, current,
+!!$	amount, intensity, ier)
 !!$
+!!$	INTEGER(cgenum_t) :: MassUnits_t) *mass, INTEGER(cgenum_t) :: LengthUnits_t) *length, INTEGER(cgenum_t) :: TimeUnits_t) *time,
+!!$	INTEGER(cgenum_t) :: TemperatureUnits_t) *temperature, INTEGER(cgenum_t) :: AngleUnits_t) *angle, INTEGER(cgenum_t) :: ElectricCurrentUnits_t) *current,
+!!$	INTEGER(cgenum_t) :: SubstanceAmountUnits_t) *amount, INTEGER(cgenum_t) :: LuminousIntensityUnits_t) *intensity,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_exponents_write_f, CG_EXPONENTS_WRITE_F) (
-!!$	CGNS_ENUMT(DataType_t)*DataType, void *exponents, cgint_f *ier)
+!!$	CGNS_ENUMT(DataType_t)*DataType, void *exponents, ier)
 !!$
+!!$	INTEGER(cgenum_t) :: DataType_t)*DataType, void *exponents,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_expfull_write_f, CG_EXPFULL_WRITE_F) (
-!!$	CGNS_ENUMT(DataType_t) *DataType, void *exponents, cgint_f *ier)
+!!$	DataType, void *exponents, ier)
+!!$	INTEGER(cgenum_t) :: DataType_t) *DataType, void *exponents,
 !!$
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_conversion_write_f, CG_CONVERSION_WRITE_F) (
-!!$	CGNS_ENUMT(DataType_t) *DataType, void *ConversionFactors, cgint_f *ier)
+!!$	DataType, void *ConversionFactors, ier)
+!!$	INTEGER(cgenum_t) :: DataType_t) *DataType, void *ConversionFactors
 !!$
 !!$          
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_dataclass_write_f, CG_DATACLASS_WRITE_F) (
-!!$	CGNS_ENUMT(DataClass_t) *dataclass, cgint_f *ier)
+!!$	dataclass, ier)
+!!$	INTEGER(cgenum_t) :: DataClass_t) *dataclass,
 !!$
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_gridlocation_write_f, CG_GRIDLOCATION_WRITE_F) (
-!!$	CGNS_ENUMT(GridLocation_t) *GridLocation, cgint_f *ier)
+!!$	GridLocation, ier)
+!!$	INTEGER(cgenum_t) :: GridLocation_t) *GridLocation, 
 !!$
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_ordinal_write_f, CG_ORDINAL_WRITE_F) (
-!!$	cgint_f *Ordinal, cgint_f *ier)
+!!$	cgint_f *Ordinal, ier)
 !!$
+!!$	cgint_f *Ordinal
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_link_write_f, CG_LINK_WRITE_F) (
-!!$	STR_PSTR(nodename), STR_PSTR(filename), STR_PSTR(name_in_file), cgint_f *ier
-!!$	STR_PLEN(nodename)  STR_PLEN(filename)  STR_PLEN(name_in_file))
+!!$	nodename), filename), name_in_file), ier
+!!$	    STR_PLEN(name_in_file))
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: nodename), CHARACTER(KIND=C_CHAR), DIMENSION(*) :: filename), CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name_in_file),
 !!$
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_user_data_write_f, CG_USER_DATA_WRITE_F) (
-!!$	STR_PSTR(dataname), cgint_f *ier STR_PLEN(dataname))
+!!$	dataname), ier)
 !!$
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: dataname),
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      General Delete Function                      *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      General Delete Function                      *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cg_delete_node_f, CG_DELETE_NODE_F) (STR_PSTR(node_name),
-!!$	cgint_f *ier STR_PLEN(node_name))
-!!$
+!!$           SUBROUTINE cg_delete_node_f, CG_DELETE_NODE_F) (node_name),
+!!$	ier STR_PLEN(node_name))
+!!$CHARACTER(KIND=C_CHAR), DIMENSION(*) :: node_name),
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *      Error Handling Functions                                         *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!      Error Handling Functions                                         *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_get_error_f, CG_GET_ERROR_F) (
-!!$	STR_PSTR(errmsg) STR_PLEN(errmsg))
+!!$	errmsg) )
 !!$
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: errmsg)
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_error_exit_f, CG_ERROR_EXIT_F) ()
@@ -3300,8 +3272,6 @@
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_error_print_f, CG_ERROR_PRINT_F) ()
 !!$
@@ -3309,425 +3279,286 @@
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
 !!$	INTERFACE
 !!$           SUBROUTINE cg_exit_on_error_f, CG_EXIT_ON_ERROR_F) (cgint_f *flag)
-!!$
+!!$cgint_f *flag
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
 !!$#ifdef BUILD_PARALLEL
 !!$
-!!$/*======================================================================
-!!$ * parallel IO interface
-!!$ *======================================================================*/
+!!$!======================================================================
+!!$! parallel IO interface
+!!$!======================================================================
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_mpi_comm_f, CGP_MPI_COMM_F) (
-!!$	cgint_f *mpi_comm_f, cgint_f *ier)
+!!$	cgint_f *mpi_comm_f, ier)
 !!$
+!!$	cgint_f *mpi_comm_f,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_pio_mode_f, CGP_PIO_MODE_F) (
-!!$	CGNS_ENUMT(PIOmode_t) *mode, int *pcg_mpi_info_f, cgint_f *ier)
+!!$	mode, int *pcg_mpi_info_f, ier)
 !!$
+!!$	INTEGER(cgenum_t) :: PIOmode_t) *mode, int *pcg_mpi_info_f,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_queue_set_f, CGP_QUEUE_SET_F) (
-!!$	cgint_f *use_queue, cgint_f *ier)
+!!$	cgint_f *use_queue, ier)
 !!$
+!!$	cgint_f *use_queue,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cgp_queue_flush_f, CGP_QUEUE_FLUSH_F) (cgint_f *ier)
+!!$           SUBROUTINE cgp_queue_flush_f, CGP_QUEUE_FLUSH_F) (ier)
 !!$
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cgp_open_f, CGP_OPEN_F) (STR_PSTR(filename), int *mode,
-!!$	cgint_f *fn, cgint_f *ier STR_PLEN(filename))
-!!$
+!!$           SUBROUTINE cgp_open_f, CGP_OPEN_F) (filename), int *mode,
+!!$	cgint_f *fn, ier)
+!!$CHARACTER(KIND=C_CHAR), DIMENSION(*) :: filename), int *mode,
+!!$	cgint_f *fn,
 !!$
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cgp_close_f, CGP_CLOSE_F) (cgint_f *fn, cgint_f *ier)
-!!$
+!!$           SUBROUTINE cgp_close_f, CGP_CLOSE_F) (cgint_f *fn, ier)
+!!$cgint_f *fn,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_coord_write_f, CGP_COORD_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, CGNS_ENUMT(DataType_t) *type, STR_PSTR(coordname),
-!!$	cgint_f *C, cgint_f *ier STR_PLEN(coordname))
-!!$
+!!$	cgint_f *B, cgint_f *Z, type, coordname),
+!!$	cgint_f *C, ier)
+!!$cgint_f *fn,
+!!$	cgint_f *B, cgint_f *Z, INTEGER(cgenum_t) :: DataType_t) *type, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname),
+!!$	cgint_f *C,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_coord_write_data_f, CGP_COORD_WRITE_DATA_F) (
 !!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
-!!$	cgsize_t *rmin, cgsize_t *rmax, void *data, cgint_f *ier)
+!!$	cgsize_t *rmin, cgsize_t *rmax, void *data, ier)
 !!$
+!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
+!!$	cgsize_t *rmin, cgsize_t *rmax, void *data, 
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_coord_read_data_f, CGP_COORD_READ_DATA_F) (
 !!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
-!!$	cgsize_t *rmin, cgsize_t *rmax, void *data, cgint_f *ier)
+!!$	cgsize_t *rmin, cgsize_t *rmax, void *data, ier)
 !!$
+!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
+!!$	cgsize_t *rmin, cgsize_t *rmax, void *data, 
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_section_write_f, CGP_SECTION_WRITE_F) (
-!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(section_name),
+!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, section_name),
 !!$	CGNS_ENUMT(ElementType_t)*type, cgsize_t *start, cgsize_t *end, cgint_f *nbndry,
-!!$	cgint_f *S, cgint_f *ier STR_PLEN(section_name))
+!!$	cgint_f *S, ier STR_PLEN(section_name))
 !!$
+!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, CHARACTER(KIND=C_CHAR), DIMENSION(*) :: section_name),
+!!$	INTEGER(cgenum_t) :: ElementType_t)*type, cgsize_t *start, cgsize_t *end, cgint_f *nbndry,
+!!$	cgint_f *S,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_elements_write_data_f, CGP_ELEMENTS_WRITE_DATA_F) (
 !!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *start,
-!!$	cgsize_t *end, cgsize_t *elements, cgint_f *ier)
+!!$	cgsize_t *end, cgsize_t *elements, ier)
 !!$
+!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *start,
+!!$	cgsize_t *end, cgsize_t *elements,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_elements_read_data_f, CGP_ELEMENTS_READ_DATA_F) (
 !!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *start,
-!!$	cgsize_t *end, cgsize_t *elements, cgint_f *ier)
+!!$	cgsize_t *end, cgsize_t *elements, ier)
 !!$
+!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *start,
+!!$	cgsize_t *end, cgsize_t *elements,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_field_write_f, CGP_FIELD_WRITE_F) (cgint_f *fn,
-!!$	cgint_f *B, cgint_f *Z, cgint_f *S, CGNS_ENUMT(DataType_t) *type,
-!!$	STR_PSTR(fieldname), cgint_f *F, cgint_f *ier STR_PLEN(fieldname))
-!!$
+!!$	cgint_f *B, cgint_f *Z, cgint_f *S, type,
+!!$	fieldname), cgint_f *F, ier)
+!!$cgint_f *fn,
+!!$	cgint_f *B, cgint_f *Z, cgint_f *S, INTEGER(cgenum_t) :: DataType_t) *type,
+!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fieldname), cgint_f *F,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_field_read_data_f, CGP_FIELD_READ_DATA_F) (
 !!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
 !!$	cgint_f *F, cgsize_t *rmin, cgsize_t *rmax, void *field_ptr,
-!!$	cgint_f *ier)
+!!$	ier)
 !!$
+!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
+!!$	cgint_f *F, cgsize_t *rmin, cgsize_t *rmax, void *field_ptr
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cgp_array_write_f, CGP_ARRAY_WRITE_F) (STR_PSTR(ArrayName),
-!!$	CGNS_ENUMT(DataType_t) *DataType, cgint_f *DataDimension, cgsize_t *DimensionVector,
-!!$	cgint_f *A, cgint_f *ier STR_PLEN(ArrayName))
-!!$
+!!$           SUBROUTINE cgp_array_write_f, CGP_ARRAY_WRITE_F) (ArrayName),
+!!$	DataType, cgint_f *DataDimension, cgsize_t *DimensionVector,
+!!$	cgint_f *A, ier STR_PLEN(ArrayName))
+!!$CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName),
+!!$	INTEGER(cgenum_t) :: DataType_t) *DataType, cgint_f *DataDimension, cgsize_t *DimensionVector,
+!!$	cgint_f *A,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
-!!$#ifdef WIN32_FORTRAN
-!!$CGNSDLL void __stdcall cgp_array_write_data_f(cgint_f *A,
-!!$	cgsize_t *rmin, cgsize_t *rmax, void *data, ...)
-!!${
-!!$    va_list ap;
-!!$    int ierr;
-!!$    cgint_f *ier;
-!!$    cgns_array *array;
-!!$
-!!$    array = cgi_array_address(CG_MODE_READ, (int)*A, "dummy", &ierr);
-!!$    if (array == NULL) return;
-!!$    va_start(ap, data);
-!!$    if (0 == strcmp(array->data_type, "C1"))
-!!$        (void) va_arg(ap, int);
-!!$    ier = va_arg(ap, cgsize_t *);
-!!$    va_end(ap);
-!!$#else
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_array_write_data_f, CGP_ARRAY_WRITE_DATA_F) (
 !!$	cgint_f *A, cgsize_t *rmin, cgsize_t *rmax, void *data, 
-!!$	cgint_f *ier)
-!!${
-!!$#endif
-!!$    *ier = (cgint_f)cgp_array_write_data((int)*A, rmin, rmax, data)
+!!$	ier)
+!!$	cgint_f *A, cgsize_t *rmin, cgsize_t *rmax, void *data,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$
-!!$
-!!$#ifdef WIN32_FORTRAN
-!!$CGNSDLL void __stdcall cgp_array_read_data_f(cgint_f *A,
-!!$	cgsize_t *rmin, cgsize_t *rmax, void *data, ...)
-!!${
-!!$    va_list ap;
-!!$    int ierr;
-!!$    cgint_f *ier;
-!!$    cgns_array *array;
-!!$
-!!$    array = cgi_array_address(CG_MODE_READ, (int)*A, "dummy", &ierr);
-!!$    if (array == NULL) return;
-!!$    va_start(ap, data);
-!!$    if (0 == strcmp(array->data_type, "C1"))
-!!$        (void) va_arg(ap, int);
-!!$    ier = va_arg(ap, cgsize_t *);
-!!$    va_end(ap);
-!!$#else
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_array_read_data_f, CGP_ARRAY_READ_DATA_F) (
 !!$	cgint_f *A, cgsize_t *rmin, cgsize_t *rmax, void *data, 
-!!$	cgint_f *ier)
-!!${
-!!$#endif
-!!$    *ier = (cgint_f)cgp_array_read_data((int)*A, rmin, rmax, data)
+!!$	ier)
+!!$	cgint_f *A, cgsize_t *rmin, cgsize_t *rmax, void *data, 
+!!$
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
-!!$
-!!$
 !!$
 !!$	INTERFACE
-!!$           SUBROUTINE cgp_error_exit_f, CGP_ERROR_EXIT_F) ()
-!!${
-!!$    cgp_error_exit()
-!!$	     INTEGER, INTENT(OUT) :: ier
+!!$           SUBROUTINE cgp_error_exit_f()
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$#ifdef HDF5_HAVE_MULTI_DATASETS
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *       cgp_coord_multi_read_data Function                              *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$#ifdef WIN32_FORTRAN
-!!$ CGNSDLL void __stdcall cgp_coord_multi_read_data_f(cgint_f *fn, cgint_f *B, cgint_t *Z, cgint_t *C, 
-!!$	cgsize_t *rmin, cgsize_t *rmax, 
-!!$	void *coordsX,  void *coordsY, void *coordsZ, cgint_f *ier)
-!!$#else
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_coord_multi_read_data_f, CGP_COORD_MULTI_READ_DATA_F)(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C, 
 !!$	cgsize_t *rmin, cgsize_t *rmax, 
-!!$	void *coordsX, void *coordsY, void *coordsZ, cgint_f *ier)
-!!$#endif
-!!${
-!!$  *ier = (cgint_f)cgp_coord_multi_read_data((int)*fn, (int)*B, (int)*Z, C, rmin, rmax, coordsX, coordsY, coordsZ);
-!!$
-!!$}
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *       cgp_coord_multi_write_data Function                              *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$#ifdef WIN32_FORTRAN
-!!$ CGNSDLL void __stdcall cgp_coord_multi_write_data_f(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C, 
-!!$						    cgsize_t *rmin, cgsize_t *rmax, 
-!!$						    void *coordsX,  void *coordsY, void *coordsZ, cgint_f *ier)
-!!$#else
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_coord_multi_write_data_f, CGP_COORD_MULTI_WRITE_DATA_F)(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C, 
-!!$						    cgsize_t *rmin, cgsize_t *rmax, 
-!!$						    void *coordsX, void *coordsY, void *coordsZ, cgint_f *ier)
-!!$#endif
-!!${
-!!$  *ier = (cgint_f)cgp_coord_multi_write_data((int)*fn, (int)*B, (int)*Z, C, rmin, rmax, coordsX, coordsY, coordsZ)
+!!$	void *coordsX, void *coordsY, void *coordsZ, ier)
+!!$cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C, 
+!!$	cgsize_t *rmin, cgsize_t *rmax, 
+!!$	void *coordsX, void *coordsY, void *coordsZ,
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE 
 !!$        END INTERFACE
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *       cgp_field_multi_write_data Function                              *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!       cgp_coord_multi_write_data Function                              *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$
+!!$
+!!$	INTERFACE
+!!$           SUBROUTINE cgp_coord_multi_write_data_f, CGP_COORD_MULTI_WRITE_DATA_F)(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C, 
+!!$						    cgsize_t *rmin, cgsize_t *rmax, 
+!!$						    void *coordsX, void *coordsY, void *coordsZ, ier)
+!!$cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C, 
+!!$						    cgsize_t *rmin, cgsize_t *rmax, 
+!!$						    void *coordsX, void *coordsY, void *coordsZ
+!!$
+!!$	     INTEGER, INTENT(OUT) :: ier
+!!$           END SUBROUTINE 
+!!$        END INTERFACE
+!!$
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!       cgp_field_multi_write_data Function                              *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_field_multi_write_data_f, CGP_FIELD_MULTI_WRITE_DATA_F) (
 !!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
-!!$	cgint_f *F, cgsize_t *rmin, cgsize_t *rmax, cgint_f *ier, cgsize_t *nsets, ...)
-!!${
-!!$  va_list ap; /* argument list passed from the API call */
-!!$  int *F_c;
-!!$  int n;
+!!$	cgint_f *F, cgsize_t *rmin, cgsize_t *rmax, ier, cgsize_t *nsets, ...)
+!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
+!!$	cgint_f *F, cgsize_t *rmin, cgsize_t *rmax, ier, cgsize_t *nsets, ...
 !!$
-!!$  va_start(ap, nsets);
-!!$
-!!$  if(sizeof(cgsize_t)!=sizeof(int)) {
-!!$    /* type cast F from cgsize_t to an int */
-!!$    if ((F_c = (int *)malloc(*nsets*sizeof(int)))==NULL) {
-!!$      cgi_error("Error allocating memory...");
-!!$      *ier = 1;
-!!$      return;
-!!$    }
-!!$    for (n = 0; n < *nsets; n++) {
-!!$      F_c[n] = (int)F[n]; 
-!!$    }
-!!$    *ier = vcgp_field_multi_write_data((int)*fn, (int)*B, (int)*Z, (int)*S,
-!!$				       F_c, rmin, rmax, (int)*nsets, ap);
-!!$    free(F_c);
-!!$  } else {
-!!$    *ier = vcgp_field_multi_write_data((int)*fn, (int)*B, (int)*Z, (int)*S,
-!!$				       F, rmin, rmax, (int)*nsets, ap);
-!!$  }
-!!$  
-!!$
-!!$}
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *       cgp_field_multi_read_data Function                              *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$	     INTEGER, INTENT(OUT) :: ier
+!!$           END SUBROUTINE 
+!!$        END INTERFACE
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!       cgp_field_multi_read_data Function                              *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_field_multi_read_data_f, CGP_FIELD_MULTI_READ_DATA_F) (
 !!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
-!!$	cgint_f *F, cgsize_t *rmin, cgsize_t *rmax, cgint_f *ier, cgint_f *nsets, ...)
-!!${
-!!$  va_list ap; /* argument list passed from the API call */
-!!$  int *F_c;
-!!$  int n;
-!!$  
-!!$  va_start(ap, nsets);
+!!$	cgint_f *F, cgsize_t *rmin, cgsize_t *rmax, ier, cgint_f *nsets, ...)
 !!$
-!!$  if(sizeof(cgsize_t)!=sizeof(int)) {
-!!$    /* type cast F from cgsize_t to an int */
-!!$    if ((F_c = (int *)malloc(*nsets*sizeof(int)))==NULL) {
-!!$      cgi_error("Error allocating memory...");
-!!$      *ier = 1;
-!!$      return;
-!!$    }
-!!$    for (n = 0; n < *nsets; n++) {
-!!$      F_c[n] = (int)F[n]; 
-!!$    }
-!!$    *ier = (cgint_f)vcgp_field_multi_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
-!!$				    F_c, rmin, rmax, (int)*nsets, ap);
-!!$  } else {
-!!$    *ier = (cgint_f)vcgp_field_multi_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
-!!$				    F, rmin, rmax, (int)*nsets, ap);
-!!$  }
-!!$    
-!!$}
-!!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *        cgp_array_multi_write_data Function                              *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
+!!$	cgint_f *F, cgsize_t *rmin, cgsize_t *rmax, ier, cgint_f *nsets, ...
+!!$	     INTEGER, INTENT(OUT) :: ier
+!!$           END SUBROUTINE 
+!!$        END INTERFACE
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!        cgp_array_multi_write_data Function                              *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_array_multi_write_data_f, CGP_ARRAY_MULTI_WRITE_DATA_F) (
 !!$	cgint_f *fn, cgint_f *A, cgsize_t *rmin, cgsize_t *rmax,
-!!$	cgint_f *ier, cgint_f *nsets, ...)
-!!${  
+!!$	ier, cgint_f *nsets, ...)
+!!$	cgint_f *fn, cgint_f *A, cgsize_t *rmin, cgsize_t *rmax,
+!!$	ier, cgint_f *nsets, ...
+!!$	     INTEGER, INTENT(OUT) :: ier
+!!$           END SUBROUTINE 
+!!$        END INTERFACE
 !!$
-!!$  va_list ap; /* argument list passed from the API call */
-!!$  int *A_c;
-!!$  int n;
-!!$  
-!!$  va_start(ap, nsets);
-!!$  
-!!$  if(sizeof(cgsize_t)!=sizeof(int)) {
-!!$    /* type cast F from cgsize_t to an int */
-!!$    if ((A_c = (int *)malloc(*nsets*sizeof(int)))==NULL) {
-!!$      cgi_error("Error allocating memory...");
-!!$      *ier = 1;
-!!$      return;
-!!$    }
-!!$    for (n = 0; n < *nsets; n++) {
-!!$      A_c[n] = (int)A[n]; 
-!!$    }
-!!$    *ier = (cgint_f)vcgp_array_multi_write_data((int)*fn, A_c, rmin, rmax, (int)*nsets, ap);
-!!$  }else {
-!!$    *ier = (cgint_f)vcgp_array_multi_write_data((int)*fn, A, rmin, rmax, (int)*nsets, ap);
-!!$  }
-!!$}
 !!$
-!!$/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$ *        cgp_array_multi_read_data Function                              *
-!!$\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+!!$!        cgp_array_multi_read_data Function                              *
+!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_array_multi_read_data_f, CGP_ARRAY_MULTI_READ_DATA_F) (
 !!$	cgint_f *fn, cgint_f *A, cgsize_t *rmin, cgsize_t *rmax,
-!!$	cgint_f *ier, cgint_f *nsets, ...)
-!!${  
+!!$	ier, cgint_f *nsets, ...)
 !!$
-!!$  va_list ap; /* argument list passed from the API call */
-!!$  int *A_c;
-!!$  int n;
-!!$  
-!!$  
-!!$  va_start(ap, nsets); 
-!!$  if(sizeof(cgsize_t)!=sizeof(int)) {
-!!$    /* type cast F from cgsize_t to an int */
-!!$    if ((A_c = (int *)malloc(*nsets*sizeof(int)))==NULL) {
-!!$      cgi_error("Error allocating memory...");
-!!$      *ier = 1;
-!!$      return;
-!!$    }
-!!$    for (n = 0; n < *nsets; n++) {
-!!$      A_c[n] = (int)A[n]; 
-!!$    }
-!!$    *ier = (cgint_f)vcgp_array_multi_read_data((int)*fn, A_c, rmin, rmax, (int)*nsets, ap);
-!!$  }else {
-!!$    *ier = (cgint_f)vcgp_array_multi_read_data((int)*fn, A, rmin, rmax, (int)*nsets, ap);
-!!$  }
-!!$  
-!!$}
-!!$#endif /*HDF5_HAVE_MULTI_DATASETS*/
-!!$#endif /*BUILD_PARALLEL*/
+!!$	cgint_f *fn, cgint_f *A, cgsize_t *rmin, cgsize_t *rmax,
+!!$	     INTEGER, INTENT(OUT) :: ier
+!!$           END SUBROUTINE 
+!!$        END INTERFACE
+!!$
+!!$#endif HDF5_HAVE_MULTI_DATASETS
+!!$#endif BUILD_PARALLEL
 !!$
 !!$
 

@@ -342,7 +342,7 @@ CGNSDLL void FMNAME(cg_base_write_f, CG_BASE_WRITE_F) (cgint_f *fn,
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_cell_dim_f, CG_CELL_DIM_F) (cgint_f *fn,
-	cgint_f *B, cgint_t *dim, cgint_f *ier)
+	cgint_f *B, cgint_f *dim, cgint_f *ier)
 {
     int i_dim;
 
@@ -4134,7 +4134,7 @@ CGNSDLL void FMNAME(cgp_error_exit_f, CGP_ERROR_EXIT_F) ()
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifdef WIN32_FORTRAN
- CGNSDLL void __stdcall cgp_coord_multi_read_data_f(cgint_f *fn, cgint_f *B, cgint_t *Z, cgint_t *C, 
+ CGNSDLL void __stdcall cgp_coord_multi_read_data_f(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C, 
 	cgsize_t *rmin, cgsize_t *rmax, 
 	void *coordsX,  void *coordsY, void *coordsZ, cgint_f *ier)
 #else

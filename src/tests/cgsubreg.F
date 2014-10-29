@@ -6,7 +6,6 @@
       USE CGNS
       IMPLICIT NONE
 
-      INTEGER, PARAMETER :: cgenum_t = KIND(CGP_INDEPENDENT) ! KIND type for enums
       integer ierr, cgfile, cgbase, cgzone, cgcoord
       integer dim, csub, nsub
       integer(cgsize_t) i, j, k, n, size(9)
