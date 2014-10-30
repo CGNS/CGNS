@@ -1920,9 +1920,8 @@ void ADFH_Children_IDs(const double pid,
                          int   *err)
 {
   hid_t hpid;
-  *err = 0;
   ADFH_DEBUG(("ADFH_Children_IDs"));
-  /*ROOT_OR_DIE(err);*/
+  ROOT_OR_DIE(err);
   if (icount_ret == NULL) {
     set_error(NULL_POINTER, err);
     return;
@@ -2115,18 +2114,10 @@ void ADFH_Database_Open(const char   *name,
     /* Set the access property list to use MPI */
     if (0 == strcmp(fmt, "PARALLEL")) {
 
-/*       int nkeys; */
-/*       char key[MPI_MAX_INFO_KEY]; */
-/*       MPI_Info_get_nkeys(pcg_mpi_info, &nkeys); */
-/*       MPI_Info_get_nthkey(pcg_mpi_info, 0, key); */
-/*       printf(" key = %s \n", key); */
-
       if(!pcg_mpi_info) pcg_mpi_info = MPI_INFO_NULL;
       
       H5Pset_fapl_mpio(g_propfileopen, ParallelMPICommunicator, pcg_mpi_info);
     }
-  /*dataxfer_plist_id = H5Pcreate(H5P_DATASET_XFER);
-  H5Pset_dxpl_mpio(dataxfer_plist_id, H5FD_MPIO_COLLECTIVE);*/
   }
 #endif
 
