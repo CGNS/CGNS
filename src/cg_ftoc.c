@@ -3846,7 +3846,8 @@ CGNSDLL void __stdcall cgp_array_write_data_f(cgint_f *A,
     cgns_array *array;
 
     array = cgi_array_address(CG_MODE_READ, (int)*A, "dummy", &ierr);
-    if (array == NULL) return;
+    *ier = (cgint_f)ierr;
+    if (array == NULL || (*ier) == (cgint_f)CG_ERROR ) return;
     va_start(ap, data);
     if (0 == strcmp(array->data_type, "C1"))
         (void) va_arg(ap, int);
