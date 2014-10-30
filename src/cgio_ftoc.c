@@ -71,23 +71,23 @@ static int to_f_string(char *c_str, char *f_str, int f_len)
 
 /*---------------------------------------------------------*/
 
-static char *new_c_string (char *str, int len, int *ier)
+static char *new_c_string (char *str, int len, cgint_f *ier)
 {
     char *c_str;
 
     if (len < 1 || str == NULL) {
-        *ier = CGIO_ERR_NULL_STRING;
+      *ier = (cgint_f)CGIO_ERR_NULL_STRING;
         return NULL;
     }
     c_str = (char *) malloc (len + 1);
     if (c_str == NULL) {
-        *ier = CGIO_ERR_MALLOC;
+        *ier = (cgint_f)CGIO_ERR_MALLOC;
         return NULL;
     }
     to_c_string (str, len, c_str, len);
     if (strlen(c_str) < 1) {
         free (c_str);
-        *ier = CGIO_ERR_NULL_STRING;
+        *ier = (cgint_f)CGIO_ERR_NULL_STRING;
         return NULL;
     }
     *ier = 0;
@@ -101,9 +101,7 @@ static char *new_c_string (char *str, int len, int *ier)
 CGIODLL void FMNAME(cgio_path_add_f, CGIO_PATH_ADD_F) (
     STR_PSTR(path), cgint_f *ier STR_PLEN(path))
 {
-  int c_ier;
-  char *c_path = new_c_string(STR_PTR(path), STR_LEN(path), &c_ier);
-  *ier = (cgint_f)c_ier;
+  char *c_path = new_c_string(STR_PTR(path), STR_LEN(path), ier);
 
   if (*ier == 0) {
     *ier = (cgint_f)cgio_path_add(c_path);
@@ -139,9 +137,7 @@ CGIODLL void FMNAME(cgio_check_file_f, CGIO_CHECK_FILE_F) (
     STR_PSTR(filename), cgint_f *file_type, cgint_f *ier STR_PLEN(filename))
 {
     int i_file_type;
-    int c_ier;
-    char *c_name = new_c_string(STR_PTR(filename), STR_LEN(filename), &c_ier);
-    *ier = (cgint_f)c_ier;
+    char *c_name = new_c_string(STR_PTR(filename), STR_LEN(filename), ier);
 
     if (*ier == 0) {
         *ier = (cgint_f)cgio_check_file(c_name, &i_file_type);
@@ -159,9 +155,7 @@ CGIODLL void FMNAME(cgio_open_file_f, CGIO_OPEN_FILE_F) (
     cgint_f *cgio_num, cgint_f *ier STR_PLEN(filename))
 {
     int i_cgio_num;
-    int c_ier;
-    char *c_name = new_c_string(STR_PTR(filename), STR_LEN(filename), &c_ier);
-    *ier = (cgint_f)c_ier;
+    char *c_name = new_c_string(STR_PTR(filename), STR_LEN(filename), ier);
 
     if (*ier == 0) {
         *ier = (cgint_f)cgio_open_file(c_name, (int)*file_mode, (int)*file_type, &i_cgio_num);
@@ -375,16 +369,13 @@ CGIODLL void FMNAME(cgio_create_link_f, CGIO_CREATE_LINK_F) (
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
     char *c_file, *c_link;
-    int c_ier;
 
-    c_file = new_c_string(STR_PTR(filename), STR_LEN(filename), &c_ier);
-    *ier = (cgint_f)c_ier;
+    c_file = new_c_string(STR_PTR(filename), STR_LEN(filename), ier);
     if (*ier) {
         if (*ier != CGIO_ERR_NULL_STRING) return;
         c_file = "";
     }
-    c_link = new_c_string(STR_PTR(name_in_file), STR_LEN(name_in_file), &c_ier);
-    *ier = (cgint_f)c_ier;
+    c_link = new_c_string(STR_PTR(name_in_file), STR_LEN(name_in_file), ier);
     if (*ier) {
         if (*c_file) free(c_file);
         return;
