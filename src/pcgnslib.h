@@ -37,18 +37,18 @@ extern "C" {
 #endif
 
 /* Determine if hdf5 has multi-dataset read/write capabilities;
- * introduced in 1.8.15.
+ * Leave this commented until the feature is released for certain.
  */
-#ifdef BUILD_HDF5
-# include "hdf5.h"
-# if (H5_VERS_MAJOR > 1) || (H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 8)
-#   define HDF5_HAVE_MULTI_DATASETS
-# else
-#   if (H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 7 && H5_VERS_RELEASE > 14)
-#     define HDF5_HAVE_MULTI_DATASETS
-#   endif
-# endif
-#endif
+/* #ifdef BUILD_HDF5 */
+/* # include "hdf5.h" */
+/* # if (H5_VERS_MAJOR > 1) || (H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 8) */
+/* #   define HDF5_HAVE_MULTI_DATASETS */
+/* # else */
+/* #   if (H5_VERS_MAJOR == 1 && H5_VERS_MINOR > 7 && H5_VERS_RELEASE > 14) */
+/* #     define HDF5_HAVE_MULTI_DATASETS */
+/* #   endif */
+/* # endif */
+/* #endif */
 
 typedef enum {
     CGP_INDEPENDENT=0,
