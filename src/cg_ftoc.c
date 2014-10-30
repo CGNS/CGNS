@@ -3684,7 +3684,7 @@ CGNSDLL void FMNAME(cgp_open_f, CGP_OPEN_F) (STR_PSTR(filename), int *mode,
     c_name = CGNS_NEW(char, length+1);
 
     string_2_C_string(STR_PTR(filename), STR_LEN(filename), c_name, length, ier);
-    if (ier == 0) {
+    if (*ier == 0) {
 #if DEBUG_FTOC
         printf("filename='%s'\n",c_name);
 #endif
