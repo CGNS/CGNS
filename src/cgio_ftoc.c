@@ -565,7 +565,7 @@ CGIODLL void FMNAME(cgio_read_block_data_f, CGIO_READ_BLOCK_DATA_F) (
 
 CGIODLL void FMNAME(cgio_read_data_f, CGIO_READ_DATA_F) (
     cgint_f *cgio_num, double *id, cgsize_t *s_start, cgsize_t *s_end,
-    cgsize_t *s_stride, cgint_f *m_ndims, cgint_f *m_dims, cgsize_t *m_start,
+    cgsize_t *s_stride, cgint_f *m_ndims, cgsize_t *m_dims, cgsize_t *m_start,
     cgsize_t *m_end, cgsize_t *m_stride, void *data, cgint_f *ier)
 {
     *ier = (cgint_f)cgio_read_data((int)*cgio_num, *id, s_start, s_end, s_stride,
@@ -632,7 +632,7 @@ CGIODLL void FMNAME(cgio_write_block_data_f, CGIO_WRITE_BLOCK_DATA_F) (
 
 CGIODLL void FMNAME(cgio_write_data_f, CGIO_WRITE_DATA_F) (
     cgint_f *cgio_num, double *id, cgsize_t *s_start, cgsize_t *s_end,
-    cgsize_t *s_stride, cgsize_t *m_ndims, cgint_f *m_dims, cgsize_t *m_start,
+    cgsize_t *s_stride, cgsize_t *m_ndims, cgsize_t *m_dims, cgsize_t *m_start,
     cgsize_t *m_end, cgsize_t *m_stride, void *data, cgint_f *ier)
 {
     *ier = (cgint_f)cgio_write_data((int)*cgio_num, *id, s_start, s_end, s_stride,

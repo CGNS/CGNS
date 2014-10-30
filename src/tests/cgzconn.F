@@ -11,7 +11,8 @@
       INTEGER nzconn, nconn
       INTEGER n1to1, cgz1, cgz2
       INTEGER(cgsize_t) i, j, k, n, size(9)
-      INTEGER ptlist(125), transform(3)
+      INTEGER transform(3)
+      INTEGER(cgsize_t) ptlist(125)
       INTEGER(cgsize_t) ptrange(6)
       INTEGER(cgsize_t) npts
       INTEGER(cgenum_t) loc, type,  ptype, dztype, dptype, ddtype
