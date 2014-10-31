@@ -1139,6 +1139,10 @@ The predefined CGNS constant parameters data types were changed from INTEGER
  to ENUM, BIND(C) for better C interoperability.
  The users should use the predefined constants whenever possible and not
  the numerical value represented by the constants.
+ 
+\color blue
+A variable expecting an enum value returned from a Fortran API should be
+ declared, INTEGER(cgenum_t).
 \end_layout
 
 \begin_layout Enumerate
@@ -1166,10 +1170,6 @@ This allows defining a KIND type for integers instead of the current way
 cgsize_t
 \shape default
 .
-\end_layout
-
-\begin_layout Enumerate
-Backward compatibility might be added before the merge to the trunk.
 \end_layout
 
 \end_deeper
@@ -1227,7 +1227,8 @@ cgsize_t
 
 \color red
 Fortran programs defining CGNS data types with a default INTEGER size of
- 8 bytes are not currently compatible
+ 8 bytes also then need to compile the CGNS library with the default INTEGER
+ size of 8 bytes
 \color inherit
 .
  This is independent of whether or not 
@@ -1247,8 +1248,8 @@ cgsize_t
 ) to be able to store values which are too large to be stored as 4 byte
  integers (i.e.
  numbers greater than 2,147,483,647).
- It is not necessary, or advisable, to have CGNS INTEGER types (types declared
- 
+ It is not necessary, or advisable (since it waste memory), to have CGNS
+ INTEGER types (types declared 
 \shape italic
 int
 \shape default
@@ -1262,6 +1263,13 @@ cgsize_t
 --enable-64bit
 \shape default
  is being used.
+ If the CGNS library was not compiled with a default INTEGER of 8 bytes,
+ but the calling program was, then all integers passed to CGNS with C type
+ 
+\shape italic
+int
+\shape default
+ should be declared INTEGER(C_INT).
  
 \end_layout
 
@@ -1273,8 +1281,12 @@ CGNS developer's note: A new C data type, cgint_f, was introduced to be
 int
 \shape default
 .
- In order to allow for default 8 byte integers in Fortran: (1) The C API
- wrappers in cg_ftoc.c need to be changed from 
+ In order to allow for default 8 byte integers in Fortran: 
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+The C API wrappers in cg_ftoc.c were changed from 
 \shape italic
 cgsize_t
 \shape default
@@ -1286,11 +1298,19 @@ cgint_f
 \shape italic
 int
 \shape default
- in C, (2) configure needs to detect what size the default integer is in
- Fortran and find the corresponding size in C in order to set the correct
- size of cgint_f.
+ in C.
 \end_layout
 
+\begin_layout Enumerate
+Configure detects what size the default integer is in Fortran and finds
+ the corresponding size in C in order to set the correct size of 
+\shape italic
+cgint_f
+\shape default
+.
+\end_layout
+
+\end_deeper
 \end_deeper
 \begin_layout Enumerate
 Two new benchmarking programs were introduced in directory ptests:
@@ -1399,23 +1419,6 @@ end{minted}
 
 \begin_layout Subsection
 Unfinished Fortran Features
-\end_layout
-
-\begin_layout Enumerate
-Fortran APIs currently do not have interfaces to the C APIs.
- Therefore, there is no checking if the arguments passed to C are of the
- correct type.
- All the Fortran APIs need to have an interface.
- They can also use BIND(C) in the interfaces, however the Fortran standard
- does not allow passing a string of LEN greater then one for a subroutine
- declined with BIND(C).
- Therefore, a character array needs to be passed from the fortran API if
- BIND(C) is used.
-\end_layout
-
-\begin_layout Enumerate
-Most of the serial Fortran APIs do not have the correct INTEGER type correspondi
-ng to the correct C integer type, mainly integers mistaking assumed cgsize_t.
 \end_layout
 
 \begin_layout Enumerate
