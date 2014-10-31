@@ -1,64 +1,75 @@
 
 	program read_cgns_1
+
+
+#ifdef WINNT
+	include 'cgnswin_f.h'
+#endif
+
+	USE CGNS
+
 	implicit none
 
 ! This program reads a 3D mesh, structured or unstructured.
 
-#include "cgnstypes_f.h"
-#ifdef WINNT
-	include 'cgnswin_f.h'
-#endif
-	include 'cgnslib_f.h'
 
-	integer Ndim, Nglobal
+	integer :: Ndim, Nglobal
 	parameter (Ndim = 3)
 	parameter (Nglobal = 500)
 
-	cgsize_t i, narrays, iarray, nintegrals, integral
-	cgsize_t ndescriptors, idescr, nptsets, nzonetype
-	cgsize_t ndonor_ptset_type, ndonor_data_type
-	cgsize_t idataset, dirichletflag, neumannflag
+	INTEGER :: i, narrays, iarray 
+	INTEGER :: nintegrals, integral
+	INTEGER :: ndescriptors, idescr
+	INTEGER(cgenum_t) :: nzonetype
+	INTEGER(cgsize_t) :: nptsets
+	INTEGER(cgenum_t) :: ndonor_ptset_type, ndonor_data_type
+	INTEGER :: idataset, dirichletflag, neumannflag
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	integer IndexDim, CellDim, PhysDim
-	integer	 ier, n, zonetype
+	integer	ier, n
+	integer(cgenum_t) :: zonetype
 	integer nbases, nzones
-	cgsize_t rmin(3), DataSize(Ndim)
-	cgsize_t size(Ndim*3)
-	cgsize_t ncoords, type, nsols, nfields, location
-	cgsize_t nholes, nconns, n1to1, n1to1_global, nbocos
-	cgsize_t ptset_type
-	cgsize_t npnts, pnts(100000), donor_pnts(100000)
-        cgsize_t npnts_donor
-        cgsize_t bocotype, datatype
+	INTEGER(cgsize_t) :: rmin(3), DataSize(Ndim)
+	INTEGER(cgsize_t) :: size(Ndim*3)
+	INTEGER :: ncoords, nsols, nfields
+	integer(cgenum_t) :: location
+	INTEGER(cgenum_t) :: type
+	INTEGER :: nholes, nconns, n1to1, n1to1_global, nbocos
+	INTEGER(cgenum_t) :: ptset_type
+	INTEGER(cgsize_t) :: npnts, pnts(100000), donor_pnts(100000)
+        INTEGER(cgsize_t) :: npnts_donor
+        INTEGER(cgenum_t) :: bocotype, datatype
 	character*32 basename, zonename, solname, fieldname 
 	character*32 coordname, holename, connectname
 	character*32 boconame, donorname
 	integer cg, base, zone, coord, sol, field, discr
-	cgsize_t hole, conn, one21, boco
-	cgsize_t range(Ndim, 2), donor_range(Ndim, 2)
+	INTEGER :: hole, conn, one21, boco
+	INTEGER(cgsize_t) :: range(Ndim, 2), donor_range(Ndim, 2)
  	integer transform(Ndim)
-  	cgsize_t G_range(Ndim*2, Nglobal) 
-	cgsize_t G_donor_range(Ndim*2, Nglobal)
-	cgsize_t G_transform(Ndim, Nglobal)
+  	INTEGER(cgsize_t) :: G_range(Ndim*2, Nglobal) 
+	INTEGER(cgsize_t) :: G_donor_range(Ndim*2, Nglobal)
+	INTEGER :: G_transform(Ndim, Nglobal)
 	character*32 G_connectname(Nglobal), G_zonename(Nglobal)
 	character*32 G_donorname(Nglobal)
 	character*32 name, filename
 	character*40 text, NormDefinitions, StateDescription
-	cgsize_t equation_dimension, GoverningEquationsFlag
-	cgsize_t GasModelFlag, ViscosityModelFlag
-	cgsize_t ThermalConductivityModelFlag 
-	cgsize_t TurbulenceClosureFlag, TurbulenceModelFlag
-	cgsize_t diffusion_model(6), niterations
-	cgsize_t nndim, rind(6), ndiscrete, num
-	cgsize_t dim_vals(12)
-	cgsize_t mass, length, time, temp, deg
-	cgsize_t NormalIndex(3), ndataset
-	cgsize_t NormalListFlag
+	INTEGER :: equation_dimension, GoverningEquationsFlag
+	INTEGER :: GasModelFlag, ViscosityModelFlag
+	INTEGER :: ThermalConductivityModelFlag 
+	INTEGER :: TurbulenceClosureFlag, TurbulenceModelFlag
+	INTEGER :: diffusion_model(6)
+	INTEGER :: niterations
+	INTEGER :: rind(6), ndiscrete, num
+	INTEGER :: nndim
+	INTEGER(cgsize_t) :: dim_vals(12)
+	INTEGER(cgenum_t) :: mass, length, time, temp, deg
+	INTEGER :: NormalIndex(3), ndataset
+	INTEGER(cgsize_t) :: NormalListSize
 	real*4 data_single(100000)
 	double precision data_double(100000)
 	real*4 version
 
-        cgsize_t one
+        INTEGER one
         parameter (one = 1)
 
 ! *** open file
@@ -483,12 +494,14 @@
 
                 if (datatype .eq. RealSingle) then
         	    call cg_coord_read_f(cg, base, zone, coordname,
-     &                  RealSingle, rmin, DataSize, data_single, ier)
+     &                  cg_get_type(data_single(1)), rmin, DataSize,
+     &                   data_single, ier)
         	    if (ier .eq. ERROR) call cg_error_exit_f
-
+		    
                 elseif (datatype .eq. RealDouble) then
                     call cg_coord_read_f(cg, base, zone, coordname,
-     &                  RealDouble, rmin, DataSize, data_double, ier)
+     &                  cg_get_type(data_double(1)), rmin, DataSize, 
+     &                  data_double, ier)
                     if (ier .eq. ERROR) call cg_error_exit_f
                 endif
 	      enddo
@@ -781,7 +794,8 @@
      &            '   npnts_donor=',npnts_donor
 
                 call cg_conn_read_f(cg, base, zone, conn, pnts,
-     &                            Integer, donor_pnts, ier)
+     &                            cg_get_type(donor_pnts(1)), 
+     &                            donor_pnts, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 	        write(6,119) '   Current zone:',
@@ -931,7 +945,7 @@
 	      do boco=1, nbocos
 	        call cg_boco_info_f(cg, base, zone, boco, boconame, 
      &             bocotype, ptset_type, npnts, 
-     &             NormalIndex, NormalListFlag, datatype,
+     &             NormalIndex, NormalListSize, datatype,
      &             ndataset, ier)
 	   	if (ier .eq. ERROR) call cg_error_exit_f
            	write(6,105) ' boundary condition #',boco
@@ -941,7 +955,7 @@
      &            PointSetTypeName(ptset_type)
 		write(6,103) '  NormalIndex=',
      &            NormalIndex(1),NormalIndex(2), NormalIndex(3)
-		write(6,104) '  NormalListFlag=',NormalListFlag
+		write(6,104) '  NormalListSize=',NormalListSize
 		write(6,600) '  datatype for normals=',
      &            DataTypeName(datatype)
 
@@ -961,7 +975,7 @@
      &           '    last point :', pnts(3*npnts-2), pnts(3*npnts-1),
      &                               pnts(3*npnts)
 
-	 	if (NormalListFlag .ne. 0) then
+	 	if (NormalListSize .ne. 0) then
 		  if (datatype.eq.RealSingle) 
      &              write(6,126) '   Normals:',
      &           '    first point:', data_single(1),data_single(2),

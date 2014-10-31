@@ -1,4 +1,9 @@
 	program write_cgns_1
+
+#ifdef WINNT
+	include 'cgnswin_f.h'
+#endif
+	USE CGNS
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
@@ -6,27 +11,24 @@
 
 !       This example test the complete SIDS for multi-block data.
 !	It creates a dummy mesh composed of 2 structured blocks in 3D.
-#include "cgnstypes_f.h"
-#ifdef WINNT
-	include 'cgnswin_f.h'
-#endif
-	include 'cgnslib_f.h'
 
 	integer Ndim
 	parameter (Ndim = 3)
-	cgsize_t one
+	INTEGER :: one
 	parameter (one = 1)
 	
-	cgsize_t index_dim, cell_dim, phys_dim
+	INTEGER :: index_dim, cell_dim, phys_dim
 	integer base_no, zone_no, coord_no, sol_no, discr_no, conn_no
-	cgsize_t hole_no, boco_no, field_no, dset_no
-	cgsize_t num, NormalIndex(Ndim)
-	cgsize_t ndims, npnts,size(Ndim*3)
-	cgsize_t zone, coord, i, j, k, n, pos, sol, field
+	INTEGER :: hole_no, boco_no, field_no, dset_no
+	INTEGER :: num, NormalIndex(Ndim)
+	INTEGER :: ndims
+	INTEGER(cgsize_t) :: size(Ndim*3)
+	INTEGER(cgsize_t) :: npnts
+	INTEGER :: zone, coord, i, j, k, n, pos, sol, field
 	integer cg, ier 
-	cgsize_t pnts(Ndim,120), donor_pnts(Ndim,120)
+	INTEGER(CGSIZE_T) :: pnts(Ndim,120), donor_pnts(Ndim,120)
 	integer transform(Ndim)
-	cgsize_t nptsets, nrmlistflag
+	INTEGER :: nptsets, nrmlistflag
 	real*4 data(120), normals(360)
 	double precision Dxyz(120), values(120)
 	character*32 zonename, solname, fieldname

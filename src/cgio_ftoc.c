@@ -263,7 +263,7 @@ CGIODLL void FMNAME(cgio_error_message_f, CGIO_ERROR_MESSAGE_F) (
 CGIODLL void FMNAME(cgio_error_exit_f, CGIO_ERROR_EXIT_F) (
     STR_PSTR(errmsg) STR_PLEN(errmsg))
 {
-    int ier;
+    cgint_f ier;
     char *c_error = new_c_string(STR_PTR(errmsg), STR_LEN(errmsg), &ier);
 
     cgio_error_exit(c_error);

@@ -1822,7 +1822,7 @@ CGNSDLL void FMNAME(cg_nbocos_f, CG_NBOCOS_F) (cgint_f *fn, cgint_f *B,
 CGNSDLL void FMNAME(cg_boco_info_f, CG_BOCO_INFO_F) (cgint_f *fn, cgint_f *B,
 	cgint_f *Z, cgint_f *BC, STR_PSTR(boconame), CGNS_ENUMT(BCType_t) *bocotype,
 	CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts, cgint_f *NormalIndex,
-	cgsize_t *NormalListFlag, CGNS_ENUMT(DataType_t) *NormalDataType, cgint_f *ndataset,
+	cgsize_t *NormalListSize, CGNS_ENUMT(DataType_t) *NormalDataType, cgint_f *ndataset,
 	cgint_f *ier STR_PLEN(boconame))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
@@ -1835,7 +1835,7 @@ CGNSDLL void FMNAME(cg_boco_info_f, CG_BOCO_INFO_F) (cgint_f *fn, cgint_f *B,
     if (*ier) return;
     *ier = (cgint_f)cg_boco_info((int)*fn, (int)*B, (int)*Z, (int)*BC, c_name,
                &i_bocotype, &i_ptset_type, npnts, i_NormalIndex,
-               NormalListFlag, &i_NormalDataType, &i_ndataset);
+               NormalListSize, &i_NormalDataType, &i_ndataset);
     if (*ier) return;
     string_2_F_string(c_name, STR_PTR(boconame), STR_LEN(boconame), ier);
     
@@ -2106,7 +2106,7 @@ CGNSDLL void FMNAME(cg_dataset_read_f, CG_DATASET_READ_F) (cgint_f *fn,
     *ier = (cgint_f)cg_dataset_read((int)*fn, (int)*B, (int)*Z, (int)*BC, (int)*DSet,
                c_name, &i_BCType, &i_DirichletFlag, &i_NeumannFlag);
     if (*ier) return;
-    string_2_F_string(c_name, STR_PTR(Dataset_name), STR_LEN(Dataset_name), (int*)ier);
+    string_2_F_string(c_name, STR_PTR(Dataset_name), STR_LEN(Dataset_name), ier);
     *BCType = i_BCType;
     *DirichletFlag = (cgint_f)i_DirichletFlag;
     *NeumannFlag = (cgint_f)i_NeumannFlag;
@@ -3595,7 +3595,7 @@ CGNSDLL void FMNAME(cg_delete_node_f, CG_DELETE_NODE_F) (STR_PSTR(node_name),
 CGNSDLL void FMNAME(cg_get_error_f, CG_GET_ERROR_F) (
 	STR_PSTR(errmsg) STR_PLEN(errmsg))
 {
-    int ierr;
+    cgint_f ierr;
 
     string_2_F_string ((char *)cg_get_error(), STR_PTR(errmsg),
         STR_LEN(errmsg), &ierr);

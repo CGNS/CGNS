@@ -1224,21 +1224,21 @@ MODULE cgns
     END SUBROUTINE cg_coord_info_f
  END INTERFACE
 
- INTERFACE
-    SUBROUTINE cg_coord_read_f (fn, B, Z, coordname, TYPE, rmin, rmax, coord, ier)
-      IMPORT :: c_char, cgenum_t, cgsize_t, c_ptr
-      IMPLICIT NONE
-      INTEGER :: fn
-      INTEGER :: B
-      INTEGER :: Z
-      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
-      INTEGER(cgenum_t) :: TYPE
-      INTEGER(CGSIZE_T) :: rmin
-      INTEGER(CGSIZE_T) :: rmax
-      TYPE(C_PTR) :: coord
-      INTEGER, INTENT(OUT) :: ier
-    END SUBROUTINE cg_coord_read_f
- END INTERFACE
+!!$ INTERFACE
+!!$    SUBROUTINE cg_coord_read_f (fn, B, Z, coordname, TYPE, rmin, rmax, coord, ier)
+!!$      IMPORT :: c_char, cgenum_t, cgsize_t, c_ptr
+!!$      IMPLICIT NONE
+!!$      INTEGER :: fn
+!!$      INTEGER :: B
+!!$      INTEGER :: Z
+!!$      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
+!!$      INTEGER(cgenum_t) :: TYPE
+!!$      INTEGER(CGSIZE_T) :: rmin
+!!$      INTEGER(CGSIZE_T) :: rmax
+!!$      TYPE(C_PTR) :: coord
+!!$      INTEGER, INTENT(OUT) :: ier
+!!$    END SUBROUTINE cg_coord_read_f
+!!$ END INTERFACE
 
  INTERFACE
     SUBROUTINE cg_coord_id_f(fn, B, Z, C, coord_id, ier)
@@ -1882,7 +1882,7 @@ END INTERFACE
       INTEGER :: B
       INTEGER :: Z
       INTEGER :: I
-      INTEGER(CGSIZE_T) :: pnts
+      INTEGER(CGSIZE_T), DIMENSION(*) :: pnts
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_hole_read_f
  END INTERFACE
@@ -1911,8 +1911,8 @@ END INTERFACE
       INTEGER(cgenum_t) :: location
       INTEGER(cgenum_t) :: ptset_type
       INTEGER :: nptsets
-      INTEGER(CGSIZE_T) ::npnts
-      INTEGER(CGSIZE_T) ::pnts
+      INTEGER(CGSIZE_T) :: npnts
+      INTEGER(CGSIZE_T), DIMENSION(*) :: pnts
       INTEGER :: I
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_hole_write_f
@@ -1935,7 +1935,7 @@ END INTERFACE
  
  INTERFACE
     SUBROUTINE cg_conn_info_f(fn, B, Z, I, connectname, location, &
-         TYPE, ptset_type, npnts, donorname, donor_zonetype,donor_ptset_type, &
+         TYPE, ptset_type, npnts, donorname, donor_zonetype, donor_ptset_type, &
          donor_datatype, ndata_donor, ier)
       IMPORT :: c_char, cgenum_t, cgsize_t
       IMPLICIT NONE
@@ -1947,12 +1947,12 @@ END INTERFACE
       INTEGER(cgenum_t) :: location
       INTEGER(cgenum_t) :: TYPE
       INTEGER(cgenum_t) :: ptset_type
-      INTEGER(CGSIZE_T) ::npnts
+      INTEGER(CGSIZE_T) :: npnts
       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: donorname
       INTEGER(cgenum_t) :: donor_zonetype
       INTEGER(cgenum_t) :: donor_ptset_type
       INTEGER(cgenum_t) :: donor_datatype
-      INTEGER(CGSIZE_T) ::ndata_donor
+      INTEGER(CGSIZE_T) :: ndata_donor
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_conn_info_f
  END INTERFACE
@@ -1965,9 +1965,9 @@ END INTERFACE
       INTEGER :: B
       INTEGER :: Z
       INTEGER :: I
-      INTEGER(CGSIZE_T) ::pnts
+      INTEGER(CGSIZE_T), DIMENSION(*) :: pnts
       INTEGER(cgenum_t) :: donor_datatype
-      INTEGER(CGSIZE_T) ::donor_data
+      INTEGER(CGSIZE_T), DIMENSION(*) :: donor_data
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_conn_read_f
  END INTERFACE
@@ -2157,7 +2157,7 @@ END INTERFACE
  INTERFACE
     SUBROUTINE cg_boco_info_f(fn, B, Z, BC, boconame, bocotype, &
          ptset_type, npnts, NormalIndex, & 
-         NormalListFlag, NormalDataType, ndataset, ier)
+         NormalListSize, NormalDataType, ndataset, ier)
       IMPORT :: c_char, cgenum_t, cgsize_t
       IMPLICIT NONE
       INTEGER :: fn
@@ -2168,8 +2168,8 @@ END INTERFACE
       INTEGER(cgenum_t) :: bocotype
       INTEGER(cgenum_t) :: ptset_type
       INTEGER(CGSIZE_T) :: npnts
-      INTEGER :: NormalIndex
-      INTEGER(CGSIZE_T) :: NormalListFlag
+      INTEGER, DIMENSION(*) :: NormalIndex
+      INTEGER(CGSIZE_T) :: NormalListSize
       INTEGER(cgenum_t) :: NormalDataType
       INTEGER :: ndataset
       INTEGER, INTENT(OUT) :: ier
@@ -2213,8 +2213,8 @@ END INTERFACE
       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: boconame
       INTEGER(cgenum_t) :: bocotype
       INTEGER(cgenum_t) :: ptset_type
-      INTEGER(CGSIZE_T) ::npnts
-      INTEGER(CGSIZE_T) ::pnts
+      INTEGER(CGSIZE_T) :: npnts
+      INTEGER(CGSIZE_T), DIMENSION(*) :: pnts
       INTEGER :: BC
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_boco_write_f
@@ -2993,7 +2993,7 @@ END INTERFACE
  INTERFACE
     SUBROUTINE cg_diffusion_read_f(diffusion_model, ier)
       IMPLICIT NONE
-      INTEGER :: diffusion_model
+      INTEGER, DIMENSION(*) :: diffusion_model
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_diffusion_read_f
  END INTERFACE
@@ -3018,11 +3018,13 @@ END INTERFACE
  
  INTERFACE
     SUBROUTINE cg_array_info_f(A, ArrayName, DataType, DataDimension, DimensionVector, ier)
-      IMPORT :: c_char, cgsize_t
+      IMPORT :: c_char, cgsize_t, cgenum_t
       IMPLICIT NONE
       INTEGER :: A
-      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName, DataType, DataDimension
-      INTEGER(cgsize_t) :: DimensionVector
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName
+      INTEGER(cgenum_t) :: DataType
+      INTEGER :: DataDimension
+      INTEGER(cgsize_t), DIMENSION(*) :: DimensionVector
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_array_info_f
  END INTERFACE
@@ -3067,7 +3069,7 @@ END INTERFACE
  INTERFACE
     SUBROUTINE cg_rind_read_f(RindData, ier)
       IMPLICIT NONE
-      INTEGER :: RindData
+      INTEGER, DIMENSION(*) :: RindData
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_rind_read_f
  END INTERFACE
