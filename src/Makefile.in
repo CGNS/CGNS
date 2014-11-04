@@ -191,7 +191,7 @@ $(OBJDIR)/cgns_error.$(O) : cgns_error.c cgnslib.h cgns_header.h cgns_io.h
 
 $(OBJDIR)/cgns_internals.$(O) : cgns_internals.c cgnslib.h cgns_header.h \
 	cgns_io.h
-	$(CC) $(COPTS) $(COOUT)$@ -c cgns_internals.c
+	$(CC) $(COPTS) $(HDF5INC) $(COOUT)$@ -c cgns_internals.c
 
 $(OBJDIR)/cgnslib.$(O) : cgnslib.c cgnslib.h cgns_header.h cgns_io.h
 	$(CC) $(COPTS) $(HDF5INC) $(MPIINC) $(COOUT)$@ -c cgnslib.c
