@@ -45,7 +45,8 @@ freely, subject to the following restrictions:
 #endif
 #ifdef BUILD_PARALLEL
 #include <mpi.h>
-#include "pcgnslib.h"
+extern int pcg_mpi_comm_rank;
+extern int pcg_mpi_initialized;
 #endif
 
 

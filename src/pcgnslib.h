@@ -55,13 +55,6 @@ typedef enum {
     CGP_COLLECTIVE=1,
 } CGNS_ENUMT( PIOmode_t );
 
-/* MPI-2 info object */
-MPI_Info pcg_mpi_info;
-int pcg_mpi_comm_size;
-int pcg_mpi_comm_rank;
-/* flag indicating if mpi_initialized was called */
-int pcg_mpi_initialized;
-
 /*===== MPI communicator =====*/
 
 CGNSDLL int cgp_mpi_comm(int mpicomm);

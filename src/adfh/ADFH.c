@@ -44,7 +44,8 @@ freely, subject to the following restrictions:
 
 #ifdef BUILD_PARALLEL
 #include "mpi.h"
-#include "pcgnslib.h" /* for mpi info */
+extern int pcg_mpi_initialized;
+extern MPI_Info pcg_mpi_info;
 #endif
 
 #define ADFH_FORCE_ID_CLOSE
@@ -66,6 +67,7 @@ freely, subject to the following restrictions:
 #define H5E_error2_t H5E_error_t
 #define H5E_walk2_t  H5E_walk_t
 #define H5E_DEFAULT  0
+
 
 /* Currently, acpl_id and aapl_id are not used by HDF5 */
 #define H5Acreate2(loc_id, attr_name, type_id, space_id, acpl_id,aapl_id) \
