@@ -1611,7 +1611,7 @@ On Pleiades, lfs setstripe -c 64 -s 0 /nobackupp8/<dir>, has shown good
 
 \end_deeper
 \begin_layout Subsection
-Parallel performace results
+Parallel performance results
 \end_layout
 
 \begin_layout Standard
@@ -1639,6 +1639,17 @@ reference "fig:Results-for-benchmark_hdf5.c"
 \end_inset
 
  over the previous implementation.
+ A comparison of the maximum IO bandwidth speeds for reading and writing
+ CGNS data compared to the practical maximum IO bandwidth on cetus (ANL)
+ shows the extremely fast writing of the element connectivity table, Fig.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:IO-bandwidth-speeds"
+
+\end_inset
+
+.
  A comparison of 
 \shape italic
 benchmark_hdf5_f90.F90
@@ -1681,7 +1692,7 @@ reference "fig:Comparision-of-Fortran"
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \align center
@@ -1714,6 +1725,48 @@ Results for benchmark_hdf5.c on GPFS (cetus, ANL).
 \end_layout
 
 \begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figs/Bandwidth_cgns.png
+	lyxscale 50
+	scale 35
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:IO-bandwidth-speeds"
+
+\end_inset
+
+IO bandwidth speeds for benchmark_hdf5.c on GPFS (cetus, ANL) compared to
+ the practical maximum IO bandwidth speeds (shaded area).
+\end_layout
+
+\end_inset
+
 
 \end_layout
 
