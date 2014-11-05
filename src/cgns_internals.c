@@ -1515,9 +1515,6 @@ int cgi_read_1to1(cgns_1to1 *one21)
     char *string_data;
     void *vdata;
     cgsize_t dim_vals[12];
-#ifdef BUILD_HDF5
-    hid_t hid_ptset, hid_dptset; 
-#endif
 
      /* get donor name */
     if (cgi_read_string(one21->id, one21->name, &string_data)) return 1;
@@ -1559,25 +1556,32 @@ int cgi_read_1to1(cgns_1to1 *one21)
     }
     if (nIR_t>0) free(IR_id);
 
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      if (one21->ptset.id==0 || one21->dptset.id==0) {
+        cgi_error("PointRange or PointRangeDonor undefined for %s",one21->name);
+        return 1;
+      }
+    }
 #ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
     /* 
      * Convert the double id to a hid_t id and compare that to 0 instead of 
      * comparing doubles, this avoids issues with comparing doubles when 
      * compiler optimization is enabled.
      */
-    to_HDF_ID(one21->ptset.id,hid_ptset);
-    to_HDF_ID(one21->dptset.id,hid_dptset);
+      hid_t hid_ptset, hid_dptset;
+      to_HDF_ID(one21->ptset.id,hid_ptset);
+      to_HDF_ID(one21->dptset.id,hid_dptset);
     
-    if (hid_ptset==0 || hid_dptset==0) {
+      if (hid_ptset==0 || hid_dptset==0) {
         cgi_error("PointRange or PointRangeDonor undefined for %s",one21->name);
         return 1;
-    }
-#else
-    if (one21->ptset.id==0 || one21->dptset.id==0) {
-        cgi_error("PointRange or PointRangeDonor undefined for %s",one21->name);
-        return 1;
+      }
     }
 #endif
+    else {
+        return 1;
+    }
 
      /* Read Point set Receiver */
     if (cgi_read_ptset(one21->id, &one21->ptset)) return 1;
@@ -1728,10 +1732,26 @@ int cgi_read_conn(cgns_conn *conn)
     if (nchild>0) free(id);
 
      /* check */
-    if (conn->ptset.id==0) {
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      if (conn->ptset.id==0) {
         cgi_error("Niether PointRange nor PointList defined for GridConnectivity_t '%s'",
-        conn->name);
+		  conn->name);
         return 1;
+      }
+    }
+#ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+      hid_t hid;
+      to_HDF_ID(conn->ptset.id, hid);
+      if (hid==0) {
+        cgi_error("Niether PointRange nor PointList defined for GridConnectivity_t '%s'",
+		  conn->name);
+        return 1;
+      }
+    }
+#endif
+    else {
+      return 1;
     }
 
      /* Find the parent node for Donor IndexArray_t */

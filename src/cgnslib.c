@@ -2309,7 +2309,6 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
     cgns_zcoor *zcoor;
     cgns_array *coord;
     int n, index, index_dim;
-    hid_t hid;
 
      /* verify input */
     if (cgi_check_strlen(coordname)) return CG_ERROR;
@@ -2374,10 +2373,24 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
     coord->data_dim=index_dim;
 
      /* Create GridCoodinates_t node if not already created */
-    to_HDF_ID(zcoor->id, hid);
-    if (hid == 0) {
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      if (zcoor->id == 0) {
         if (cgi_new_node(zone->id, "GridCoordinates", "GridCoordinates_t",
-            &zcoor->id, "MT", 0, 0, 0)) return CG_ERROR;
+			 &zcoor->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) { 
+      hid_t hid;
+      to_HDF_ID(zcoor->id, hid);
+      if (hid == 0) {
+        if (cgi_new_node(zone->id, "GridCoordinates", "GridCoordinates_t",
+			 &zcoor->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#endif
+    else {
+      return CG_ERROR;
     }
      /* Create DataArray_t node on disk */
     if (cgi_new_node(zcoor->id, coord->name, "DataArray_t", &coord->id,
@@ -2397,7 +2410,6 @@ int cg_coord_partial_write(int file_number, int B, int Z,
     cgns_array *coord;
     int n, index, index_dim;
     cgsize_t dims[CGIO_MAX_DIMENSIONS];
-    hid_t hid;
 
      /* verify input */
     if (cgi_check_strlen(coordname)) return CG_ERROR;
@@ -2491,10 +2503,24 @@ int cg_coord_partial_write(int file_number, int B, int Z,
     coord->convert=0;
 
      /* Create GridCoodinates_t node if not already created */
-    to_HDF_ID(zcoor->id, hid);
-    if (hid == 0) {
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      if (zcoor->id == 0) {
         if (cgi_new_node(zone->id, "GridCoordinates", "GridCoordinates_t",
-            &zcoor->id, "MT", 0, 0, 0)) return CG_ERROR;
+			 &zcoor->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+      hid_t hid;
+      to_HDF_ID(zcoor->id, hid);
+      if (hid == 0) {
+        if (cgi_new_node(zone->id, "GridCoordinates", "GridCoordinates_t",
+			 &zcoor->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#endif
+    else {
+      return CG_ERROR;
     }
 
      /* Create DataArray_t node on disk */
@@ -5070,11 +5096,26 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
         }
     }
 
-     /* Create node ZoneGridConnectivity_t node, if not yet created */
-    if (zconn->id==0) {
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      if (zconn->id==0) {
         if (cgi_new_node(zone->id, zconn->name, "ZoneGridConnectivity_t",
-             &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
+			 &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
     }
+#ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+      hid_t hid;
+      to_HDF_ID(zconn->id, hid);
+      if (hid==0) {
+        if (cgi_new_node(zone->id, zconn->name, "ZoneGridConnectivity_t",
+			 &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#endif
+    else {
+        return CG_ERROR;
+    }
+
     if (cgi_new_node(zconn->id, hole->name, "OversetHoles_t",
         &hole->id, "MT", 0, 0, 0)) return CG_ERROR;
 
@@ -5477,12 +5518,28 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
     strcpy(dptset->data_type, CG_SIZE_DATATYPE);
     dptset->npts = ndata_donor;
     dptset->size_of_patch = ndata_donor;
-
-     /* Create node ZoneGridConnectivity_t node, if not yet created */
-    if (zconn->id==0) {
+    
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      /* Create node ZoneGridConnectivity_t node, if not yet created */
+      if (zconn->id==0) {
         if (cgi_new_node(zone->id, zconn->name, "ZoneGridConnectivity_t",
-            &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
+			 &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
     }
+#ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+      hid_t hid;
+      to_HDF_ID(zconn->id, hid);
+      if (hid==0) {
+        if (cgi_new_node(zone->id, zconn->name, "ZoneGridConnectivity_t",
+			 &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#endif
+    else {
+      return CG_ERROR;
+    }
+
      /* Create node GridConnectivity_t node */
     length = (cgsize_t)strlen(conn->donor);
     if (cgi_new_node(zconn->id, conn->name, "GridConnectivity_t", &conn->id,
@@ -5847,9 +5904,25 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
     memcpy((void *)one21->transform, (void *)transform, (size_t)(index_dim*sizeof(int)));
 
     /* Create node ZoneGridConnectivity_t node, if not yet created */
-    if (zconn->id==0) {
+
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      if (zconn->id==0) {
         if (cgi_new_node(zone->id, zconn->name, "ZoneGridConnectivity_t",
-            &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
+			 &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+      hid_t hid;
+      to_HDF_ID(zconn->id, hid);
+      if (hid==0) {
+        if (cgi_new_node(zone->id, zconn->name, "ZoneGridConnectivity_t",
+			 &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#endif
+    else {
+        return CG_ERROR;
     }
 
     /* Create the node */
@@ -6139,9 +6212,24 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
     }
 
     /* Create ZoneBC_t node if it doesn't yet exist */
-    if (zboco->id==0) {
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      if (zboco->id==0) {
         if (cgi_new_node(zone->id, "ZoneBC", "ZoneBC_t",
-            &zboco->id, "MT", 0, 0, 0)) return CG_ERROR;
+			 &zboco->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+      hid_t hid;
+      to_HDF_ID(zboco->id, hid);
+      if (hid==0) {
+        if (cgi_new_node(zone->id, "ZoneBC", "ZoneBC_t",
+			 &zboco->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#endif
+    else {
+        return CG_ERROR;
     }
     /* Create the BC_t Node */
     length = (cgsize_t)strlen(BCTypeName[boco->type]);
@@ -7126,11 +7214,26 @@ int cg_bc_wallfunction_write(int file_number, int B, int Z, int BC,
     strcpy(bcwall->name,"WallFunction");
 
     /* Create BCProperty_t node if it doesn't yet exist */
-    if (bprop->id==0) {
-        if (cgi_new_node(boco->id, "BCProperty", "BCProperty_t",
-             &bprop->id, "MT", 0, 0, 0)) return CG_ERROR;
-    }
 
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      if (bprop->id==0) {
+        if (cgi_new_node(boco->id, "BCProperty", "BCProperty_t",
+			 &bprop->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+      hid_t hid;
+      to_HDF_ID(bprop->id, hid);
+      if (hid==0) {
+        if (cgi_new_node(boco->id, "BCProperty", "BCProperty_t",
+			 &bprop->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#endif
+    else {
+        return CG_ERROR;
+    }
     /* Create the WallFunction_t Node */
     if (cgi_new_node(bprop->id, "WallFunction", "WallFunction_t",
         &bcwall->id, "MT", 0, 0, 0)) return CG_ERROR;
@@ -7271,9 +7374,24 @@ int cg_bc_area_write(int file_number, int B, int Z, int BC,
     bcarea->array[1].dim_vals[0]=32;
 
     /* Create BCProperty_t node if it doesn't yet exist */
-    if (bprop->id==0) {
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      if (bprop->id==0) {
         if (cgi_new_node(boco->id, "BCProperty", "BCProperty_t",
-             &bprop->id, "MT", 0, 0, 0)) return CG_ERROR;
+			 &bprop->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+      hid_t hid;
+      to_HDF_ID(bprop->id, hid);
+      if (hid==0) {
+        if (cgi_new_node(boco->id, "BCProperty", "BCProperty_t",
+			 &bprop->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#endif
+    else {
+        return CG_ERROR;
     }
     /* Create the Area_t Node */
     if (cgi_new_node(bprop->id, "Area", "Area_t",
@@ -7412,10 +7530,25 @@ int cg_conn_periodic_write(int file_number, int B, int Z, int I,
     strcpy(cperio->array[2].name,"Translation");
 
     /* Create GridConnectivityProperty_t node if it doesn't yet exist */
-    if (cprop->id==0) {
-        if (cgi_new_node(conn->id, "GridConnectivityProperty",
-            "GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0)) return CG_ERROR;
-    }
+   if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+     if (cprop->id==0) {
+       if (cgi_new_node(conn->id, "GridConnectivityProperty",
+			"GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0)) return CG_ERROR;
+     }
+   }
+#ifdef BUILD_HDF5
+   else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+     hid_t hid;
+     to_HDF_ID(cprop->id, hid);
+     if (hid==0) {
+       if (cgi_new_node(conn->id, "GridConnectivityProperty",
+			"GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0)) return CG_ERROR;
+     }
+   }
+#endif
+   else {
+     return CG_ERROR;
+   }
     /* Create the Periodic_t Node */
     if (cgi_new_node(cprop->id, "Periodic", "Periodic_t",
         &cperio->id, "MT", 0, 0, 0)) return CG_ERROR;
@@ -7508,9 +7641,24 @@ int cg_conn_average_write(int file_number, int B, int Z, int I,
     strcpy(caverage->name,"AverageInterface");
 
     /* Create GridConnectivityProperty_t node if it doesn't yet exist */
-    if (cprop->id==0) {
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      if (cprop->id==0) {
         if (cgi_new_node(conn->id, "GridConnectivityProperty",
-            "GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0)) return CG_ERROR;
+			 "GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+      hid_t hid;
+      to_HDF_ID(cprop->id, hid);
+      if (hid==0) {
+        if (cgi_new_node(conn->id, "GridConnectivityProperty",
+			 "GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0)) return CG_ERROR;
+      }
+    }
+#endif
+    else {
+        return CG_ERROR;
     }
     /* Create the AverageInterface_t Node */
     if (cgi_new_node(cprop->id, "AverageInterface", "AverageInterface_t",
@@ -7646,10 +7794,26 @@ int cg_1to1_periodic_write(int file_number, int B, int Z, int I,
     strcpy(cperio->array[2].name,"Translation");
 
     /* Create GridConnectivityProperty_t node if it doesn't yet exist */
-    if (cprop->id==0) {
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      if (cprop->id==0) {
         if (cgi_new_node(one21->id, "GridConnectivityProperty",
-            "GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0))
-            return CG_ERROR;
+			 "GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0))
+	  return CG_ERROR;
+      }
+    }
+#ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+      hid_t hid;
+      to_HDF_ID(cprop->id, hid);
+      if (hid==0) {
+	if (cgi_new_node(one21->id, "GridConnectivityProperty",
+			 "GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0))
+	  return CG_ERROR;
+      }
+    }
+#endif
+    else {
+        return CG_ERROR;
     }
     /* Create the Periodic_t Node */
     if (cgi_new_node(cprop->id, "Periodic", "Periodic_t",
@@ -7748,10 +7912,26 @@ int cg_1to1_average_write(int file_number, int B, int Z, int I,
     strcpy(caverage->name,"AverageInterface");
 
     /* Create GridConnectivityProperty_t node if it doesn't yet exist */
-    if (cprop->id==0) {
+    if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+      if (cprop->id==0) {
         if (cgi_new_node(one21->id, "GridConnectivityProperty",
-            "GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0))
-            return CG_ERROR;
+			 "GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0))
+	  return CG_ERROR;
+      }
+    }
+#ifdef BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+      hid_t hid;
+      to_HDF_ID(cprop->id, hid);
+      if (hid==0) {
+	if (cgi_new_node(one21->id, "GridConnectivityProperty",
+			 "GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0))
+	  return CG_ERROR;
+      }
+    }
+#endif
+    else {
+      return CG_ERROR;
     }
     /* Create the AverageInterface_t Node */
     if (cgi_new_node(cprop->id, "AverageInterface", "AverageInterface_t",
