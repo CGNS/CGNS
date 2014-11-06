@@ -473,7 +473,6 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
     for (n = 0; n < zone->index_dim; n++) {
         dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
                                   zcoor->rind_planes[2*n+1];
-        /* printf("here, %d %d \n",rmin[n],rmax[n]); */
         if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
             cgi_error("Invalid index ranges.");
             return CG_ERROR;
