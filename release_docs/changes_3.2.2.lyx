@@ -1065,6 +1065,34 @@ A new parallel example benchmark program, benchmark_hdf5.c, was added to
  directory ptests.
 \end_layout
 
+\begin_layout Itemize
+The cgp_*_read/write_dataset APIs now excepts non-allocated arrays, or NULL,
+ as valid parameters for the datasets.
+ Additionaly, the dimensional arrays
+\shape italic
+, rmin
+\shape default
+ and 
+\shape italic
+rmax
+\shape default
+, can also be NULL.
+ If the data array is NULL and the dimensional arrays are not NULL, then
+ the validity of the dimensional arrays, 
+\shape italic
+rmin
+\shape default
+ and 
+\shape italic
+rmax
+\shape default
+, is not check.
+ For collective parallel IO, this is used as a mechanism to indicated that
+ processes with NULL API parameter calls will not write any data to the
+ file.
+ 
+\end_layout
+
 \begin_layout Subsubsection
 Internal library changes
 \end_layout
