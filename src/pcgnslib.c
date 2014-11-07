@@ -47,10 +47,20 @@ static hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
 
 extern int cgns_filetype;
 
+typedef struct cg_rw_t {
+  union {
+    void *rbuf;             /* Pointer to buffer for read */
+    const void *wbuf;       /* Pointer to buffer to write */
+  } u;
+} cg_rw_t;
+
+
+
+
 /*===== parallel IO functions =============================*/
 
 static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
-    int ndims, const cgsize_t *rmin, const cgsize_t *rmax, const void *data, int rw_mode)
+    int ndims, const cgsize_t *rmin, const cgsize_t *rmax, cg_rw_t *data, int rw_mode)
 {
   /* 
    *  rw_mode: 0 -- read, 1 -- write
@@ -124,7 +134,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
     herr = H5Sselect_none(data_shape_id);
     herr1 = H5Sselect_none(mem_shape_id);
   }
-  
+
   if (herr < 0 || herr1 < 0) {
     H5Sclose(data_shape_id);
     H5Sclose(mem_shape_id);
@@ -157,13 +167,13 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
   /* Write the data in parallel I/O */
   if (rw_mode == 0) {
     herr = H5Dread(data_id, type_id, mem_shape_id,
-		   data_shape_id, plist_id, data);
+		   data_shape_id, plist_id, data[0].u.rbuf);
     if (herr < 0)
       cgi_error("H5Dread() failed");
     
   } else {
     herr = H5Dwrite(data_id, type_id, mem_shape_id,
-		    data_shape_id, plist_id, data);
+		    data_shape_id, plist_id, data[0].u.wbuf);
     if (herr < 0)
       cgi_error("H5Dwrite() failed");
   }
@@ -273,12 +283,14 @@ int cgp_queue_set(int use_queue)
 int cgp_queue_flush(void)
 {
   int n, errs = 0;
-  
+  cg_rw_t Data;
+
   if (write_queue_len) {
     for (n = 0; n < write_queue_len; n++) {
+      Data.u.wbuf = write_queue[n].data;
       if (readwrite_data_parallel(write_queue[n].pid, write_queue[n].type,
 				  write_queue[n].ndims, write_queue[n].rmin,
-				  write_queue[n].rmax, write_queue[n].data,1)) errs++;
+				  write_queue[n].rmax, &Data, 1)) errs++;
     }
     free(write_queue);
     write_queue = NULL;
@@ -386,8 +398,11 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
         return write_data_queue(hid, type,
                    zone->index_dim, rmin, rmax, coords);
     }
+
+    cg_rw_t Data;
+    Data.u.wbuf = coords;
     return readwrite_data_parallel(hid, type,
-			       zone->index_dim, rmin, rmax, coords, 1);
+				   zone->index_dim, rmin, rmax, &Data, 1);
 }
 
 /*---------------------------------------------------------*/
@@ -433,9 +448,10 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
 
     
     to_HDF_ID(zcoor->coord[C-1].id,hid);
-
+    cg_rw_t Data;
+    Data.u.rbuf = coords;
     return readwrite_data_parallel(hid, type,
-			      zone->index_dim, rmin, rmax, coords, 0);
+			      zone->index_dim, rmin, rmax, &Data, 0);
 }
 
 /*===== Elements IO Prototypes ============================*/
@@ -497,8 +513,10 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
         return write_data_queue(hid, type,
                    1, &rmin, &rmax, elements);
     }
+    cg_rw_t Data;
+    Data.u.wbuf = elements;
     return readwrite_data_parallel(hid, type,
-			       1, &rmin, &rmax, elements, 1);
+			       1, &rmin, &rmax, &Data, 1);
 }
 
 /*---------------------------------------------------------*/
@@ -539,9 +557,10 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     type = cgi_datatype(section->connect->data_type);
 
     to_HDF_ID(section->connect->id, hid);
-
+    cg_rw_t Data;
+    Data.u.rbuf = elements;
     return readwrite_data_parallel(hid, type,
-			      1, &rmin, &rmax, elements, 0);
+			      1, &rmin, &rmax, &Data, 0);
 }
 
 /*===== Solution IO Prototypes ============================*/
@@ -593,8 +612,10 @@ int cgp_field_write_data(int fn, int B, int Z, int S, int F,
         return write_data_queue(hid, type,
                    field->data_dim, rmin, rmax, data);
     }
+    cg_rw_t Data;
+    Data.u.wbuf = data;
     return readwrite_data_parallel(hid, type,
-			       field->data_dim, rmin, rmax, data, 1);
+			       field->data_dim, rmin, rmax, &Data, 1);
 }
 
 /*---------------------------------------------------------*/
@@ -630,9 +651,10 @@ int cgp_field_read_data(int fn, int B, int Z, int S, int F,
     type = cgi_datatype(field->data_type);
 
     to_HDF_ID(field->id, hid);
-
+    cg_rw_t Data;
+    Data.u.rbuf = data;
     return readwrite_data_parallel(hid, type,
-			      field->data_dim, rmin, rmax, data, 0);
+			      field->data_dim, rmin, rmax, &Data, 0);
 }
 
 /*===== Array IO Prototypes ===============================*/
@@ -698,8 +720,10 @@ int cgp_array_write_data(int A, const cgsize_t *rmin,
         return write_data_queue(hid, type,
                    array->data_dim, rmin, rmax, data);
     }
+    cg_rw_t Data;
+    Data.u.wbuf = data;
     return readwrite_data_parallel(hid, type,
-			       array->data_dim, rmin, rmax, data, 1);
+			       array->data_dim, rmin, rmax,  &Data, 1);
 }
 
 /*---------------------------------------------------------*/
@@ -728,8 +752,10 @@ int cgp_array_read_data(int A, const cgsize_t *rmin,
     type = cgi_datatype(array->data_type);
 
     to_HDF_ID(array->id, hid);
+    cg_rw_t Data;
+    Data.u.rbuf = data;
     return readwrite_data_parallel(hid, type,
-				   array->data_dim, rmin, rmax, data, 0);
+				   array->data_dim, rmin, rmax, &Data, 0);
 }
 
 #ifdef HDF5_HAVE_MULTI_DATASETS
