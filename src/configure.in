@@ -827,6 +827,7 @@ else
   AC_LANG_C
   HDF5_HAVE_MULTI_DATASETS=0
   AC_MSG_CHECKING([if HDF5 library has multi-dataset read/write APIs])
+
   cat >> test.c << EOF
 #include "hdf5.h"
 void main(void) 
@@ -841,7 +842,7 @@ EOF
     AC_MSG_RESULT(yes)
     rm test.o
   else
-    AC_MSG_RESULT(yes)
+    AC_MSG_RESULT(no)
   fi
   if test -f test.c; then
      rm test.c

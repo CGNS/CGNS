@@ -758,7 +758,7 @@ int cgp_array_read_data(int A, const cgsize_t *rmin,
 				   array->data_dim, rmin, rmax, &Data, 0);
 }
 
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
 
 static int readwrite_multi_data_parallel(hid_t fn, size_t count, H5D_rw_multi_t *multi_info,
 					 int ndims, const cgsize_t *rmin, const cgsize_t *rmax, int rw_mode)

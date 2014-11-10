@@ -3896,7 +3896,7 @@ CGNSDLL void FMNAME(cgp_error_exit_f, CGP_ERROR_EXIT_F) ()
     cgp_error_exit();
 }
 
-#ifdef HDF5_HAVE_MULTI_DATASETS
+#if HDF5_HAVE_MULTI_DATASETS
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *       cgp_coord_multi_read_data Function                              *
