@@ -40,13 +40,19 @@
 # define CG_LONG_T @CGLONGT@
 #endif
 
+#ifdef BUILD_HDF5
+
 /* ----------------------------------------------------------------
  * convert between HDF5 and ADF ids
  * ---------------------------------------------------------------- */
 
-#ifdef BUILD_HDF5
 #define to_ADF_ID(ID,ADF_ID) memcpy(&(ADF_ID),&(ID),sizeof(hid_t))
 #define to_HDF_ID(ADF_ID,ID) memcpy(&(ID),&(ADF_ID),sizeof(hid_t))
+
+/* Determine if hdf5 has multi-dataset read/write capabilities */
+
+#define HDF5_HAVE_MULTI_DATASETS @HDF5_HAVE_MULTI_DATASETS@
+
 #endif
 
 #if CG_BUILD_LEGACY
@@ -69,7 +75,6 @@
   typedef int cgerr_t;
   typedef int cgint_t;
   typedef double cgid_t;
-
 #endif
 
 /* Define an int type that is interoperabable with Fortran's INTEGER */
