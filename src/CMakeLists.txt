@@ -128,7 +128,6 @@ MACRO (CHECK_FORTRAN_FEATURE FUNCTION CODE VARIABLE)
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testFortranCompiler.f90
         "${CODE}"
     )
-    MESSAGE ( "${CHECK_FUNCTION_EXISTS_ADD_LIBRARIES}")
     TRY_COMPILE (${VARIABLE}
         ${CMAKE_BINARY_DIR}
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testFortranCompiler.f90
@@ -192,8 +191,6 @@ if (CHECK_FORTRAN_2003)
   set(HAVE_FORTRAN_2003 1)
 endif (CHECK_FORTRAN_2003)
    
-
-
 
 if (HAVE_FORTRAN_2003)
 CHECK_FORTRAN_FEATURE(Fortran2008TS
@@ -392,20 +389,7 @@ if (CGNS_ENABLE_HDF5)
     set(cgns_C_FILES ${cgns_C_FILES} pcgnslib.c)
   endif (CGNS_ENABLE_PARALLEL)
 
-CHECK_HDF5_FEATURE(Multi_Dataset
-  " 
-#include \"hdf5.h\"
-void main(void) 
-{
-  H5D_rw_multi_t *multi_info;
-  return;
-}
-  "
-  CHECK_HDF5_HAVE_MULTI_DATASETS
-)
-if (CHECK_HDF5_HAVE_MULTI_DATASETS)
-  set(HDF5_HAVE_MULTI_DATASETS 1)
-endif (CHECK_HDF5_HAVE_MULTI_DATASETS)
+
 
 endif (CGNS_ENABLE_HDF5)
 
