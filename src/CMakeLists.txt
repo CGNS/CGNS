@@ -104,6 +104,7 @@ set(MPILIBS "")
 set(HAVE_FORTRAN_95 0)
 set(HAVE_FORTRAN_2003 0)
 set(HAVE_FORTRAN_2008TS 0)
+set(HDF5_HAVE_MULTI_DATASETS 0)
 set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 
 if (BUILDFORTRAN)
@@ -342,11 +343,75 @@ set(cgns_C_FILES
 	adf/ADF_interface.c
 	adf/ADF_internals.c)
 
+ENABLE_LANGUAGE(C)
+
+#-----------------------------------------------------------------------------
+# The provided CMake HDF macros don't provide a general check function
+# so use this one.
+#-----------------------------------------------------------------------------
+MACRO (CHECK_HDF5_FEATURE FUNCTION CODE VARIABLE)
+  IF (NOT DEFINED ${VARIABLE})
+    MESSAGE (STATUS "Testing HDF5 ${FUNCTION}")
+    IF (CMAKE_REQUIRED_LIBRARIES)
+      SET (CHECK_FUNCTION_EXISTS_ADD_LIBRARIES
+          "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}")
+    ELSE (CMAKE_REQUIRED_LIBRARIES)
+      SET (CHECK_FUNCTION_EXISTS_ADD_LIBRARIES)
+    ENDIF (CMAKE_REQUIRED_LIBRARIES)
+    FILE (WRITE
+        ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/test_HDF.c
+        "${CODE}"
+    )
+    TRY_COMPILE (${VARIABLE}
+        ${CMAKE_BINARY_DIR}
+        ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/test_HDF.c
+        CMAKE_FLAGS "${CHECK_FUNCTION_EXISTS_ADD_LIBRARIES}"
+        OUTPUT_VARIABLE OUTPUT
+    )
+
+#    MESSAGE ( "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ")
+#    MESSAGE ( "Test result ${OUTPUT}")
+#    MESSAGE ( "* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ")
+
+    IF (${VARIABLE})
+      SET (${VARIABLE} 1 CACHE INTERNAL "Have HDF5 function ${FUNCTION}")
+      MESSAGE (STATUS "Testing HDF5 ${FUNCTION} - OK")
+      FILE (APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
+          "Determining if the HDF5 ${FUNCTION} exists passed with the following output:\n"
+          "${OUTPUT}\n\n"
+      )
+    ELSE (${VARIABLE})
+      MESSAGE (STATUS "Testing HDF5 ${FUNCTION} - Fail")
+      SET (${VARIABLE} "" CACHE INTERNAL "Have HDF5 function ${FUNCTION}")
+      FILE (APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
+          "Determining if the HDF5 ${FUNCTION} exists failed with the following output:\n"
+          "${OUTPUT}\n\n")
+    ENDIF (${VARIABLE})
+  ENDIF (NOT DEFINED ${VARIABLE})
+ENDMACRO (CHECK_HDF5_FEATURE)
+
 if (CGNS_ENABLE_HDF5)
   set(cgns_C_FILES ${cgns_C_FILES} adfh/ADFH.c)
   if (CGNS_ENABLE_PARALLEL)
     set(cgns_C_FILES ${cgns_C_FILES} pcgnslib.c)
   endif (CGNS_ENABLE_PARALLEL)
+
+CHECK_HDF5_FEATURE(multidataset 
+"
+#include \"hdf5.h\"
+void main(void) 
+ {
+   H5D_rw_multi_t *multi_info;
+   return;
+ }
+"
+  CHECK_HDF5_HAVE_MULTI_DATASETS
+)
+if (CHECK_HDF5_HAVE_MULTI_DATASETS)
+  set(HDF5_HAVE_MULTI_DATASETS 1)
+endif (CHECK_HDF5_HAVE_MULTI_DATASETS)
+
+
 endif (CGNS_ENABLE_HDF5)
 
 # All the Fortran files need by the cgns library (if enabled)
