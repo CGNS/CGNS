@@ -128,6 +128,7 @@ MACRO (CHECK_FORTRAN_FEATURE FUNCTION CODE VARIABLE)
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testFortranCompiler.f90
         "${CODE}"
     )
+    MESSAGE ( "${CHECK_FUNCTION_EXISTS_ADD_LIBRARIES}")
     TRY_COMPILE (${VARIABLE}
         ${CMAKE_BINARY_DIR}
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testFortranCompiler.f90
@@ -344,7 +345,6 @@ set(cgns_C_FILES
 	adf/ADF_internals.c)
 
 ENABLE_LANGUAGE(C)
-
 #-----------------------------------------------------------------------------
 # The provided CMake HDF macros don't provide a general check function
 # so use this one.
@@ -352,20 +352,15 @@ ENABLE_LANGUAGE(C)
 MACRO (CHECK_HDF5_FEATURE FUNCTION CODE VARIABLE)
   IF (NOT DEFINED ${VARIABLE})
     MESSAGE (STATUS "Testing HDF5 ${FUNCTION}")
-    IF (CMAKE_REQUIRED_LIBRARIES)
-      SET (CHECK_FUNCTION_EXISTS_ADD_LIBRARIES
-          "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}")
-    ELSE (CMAKE_REQUIRED_LIBRARIES)
-      SET (CHECK_FUNCTION_EXISTS_ADD_LIBRARIES)
-    ENDIF (CMAKE_REQUIRED_LIBRARIES)
     FILE (WRITE
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/test_HDF.c
         "${CODE}"
     )
+    SET (CHECK_FUNCTION_EXISTS_ADD_INCLUDE "-DINCLUDE_DIRECTORIES:STRING=${HDF5_INCLUDE_PATH}")
     TRY_COMPILE (${VARIABLE}
         ${CMAKE_BINARY_DIR}
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/test_HDF.c
-        CMAKE_FLAGS "${CHECK_FUNCTION_EXISTS_ADD_LIBRARIES}"
+        CMAKE_FLAGS "${CHECK_FUNCTION_EXISTS_ADD_INCLUDE}"
         OUTPUT_VARIABLE OUTPUT
     )
 
@@ -381,6 +376,7 @@ MACRO (CHECK_HDF5_FEATURE FUNCTION CODE VARIABLE)
           "${OUTPUT}\n\n"
       )
     ELSE (${VARIABLE})
+    MESSAGE ( "FAILED")
       MESSAGE (STATUS "Testing HDF5 ${FUNCTION} - Fail")
       SET (${VARIABLE} "" CACHE INTERNAL "Have HDF5 function ${FUNCTION}")
       FILE (APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
@@ -396,21 +392,20 @@ if (CGNS_ENABLE_HDF5)
     set(cgns_C_FILES ${cgns_C_FILES} pcgnslib.c)
   endif (CGNS_ENABLE_PARALLEL)
 
-CHECK_HDF5_FEATURE(multidataset 
-"
+CHECK_HDF5_FEATURE(Multi_Dataset
+  " 
 #include \"hdf5.h\"
 void main(void) 
- {
-   H5D_rw_multi_t *multi_info;
-   return;
- }
-"
+{
+  H5D_rw_multi_t *multi_info;
+  return;
+}
+  "
   CHECK_HDF5_HAVE_MULTI_DATASETS
 )
 if (CHECK_HDF5_HAVE_MULTI_DATASETS)
   set(HDF5_HAVE_MULTI_DATASETS 1)
 endif (CHECK_HDF5_HAVE_MULTI_DATASETS)
-
 
 endif (CGNS_ENABLE_HDF5)
 
