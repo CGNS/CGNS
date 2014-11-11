@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
   nijk[0] = Nnodes; /* Number of vertices */
   nijk[1] = Nelem; /* Number of cells */
   nijk[2] = 0; /* Number of boundary vertices */
-  
+
   /* ====================================== */
   /* ==    **WRITE THE CGNS FILE **      == */
   /* ====================================== */
@@ -162,18 +162,16 @@ int main(int argc, char* argv[]) {
   xtiming[11] = t2-t1;
 
   }
-  /* use queued IO */
-  if(cgp_queue_set(queue) != CG_OK) {
-    printf("*FAILED* cgp_queue_set \n");
-    cgp_error_exit();
-  }
 
   /* ====================================== */
   /* == (C) WRITE THE FIELD DATA         == */
   /* ====================================== */
 
   count = nijk[0]/comm_size;
-
+  
+  min = count*comm_rank+1;
+  max = count*(comm_rank+1);
+  
   if( !(Data_Fx = (double*) malloc(count*sizeof(double))) ) {
     printf("*FAILED* allocation of Data_Fx \n");
     cgp_error_exit();
