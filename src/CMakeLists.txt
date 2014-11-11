@@ -277,75 +277,11 @@ macro(native_paths INPUT_PATH_VARIABLE RESULT_VARIABLE)
   endforeach(PATH ${${INPUT_PATH_VARIABLE}})
 endmacro(native_paths)
 
-if (CGNS_ENABLE_HDF5)
-  set(BUILDHDF5 1)
-  if (HDF5_INCLUDE_PATH)
-    native_paths(HDF5_INCLUDE_PATH HDF5INC)
-  endif (HDF5_INCLUDE_PATH)
-  if (HDF5_LIBRARY)
-    native_paths(HDF5_LIBRARY HDF5LIB)
-  endif (HDF5_LIBRARY)
-  if (HDF5_NEED_SZIP)
-    set(H5NEEDSZIP 1)
-    if (SZIP_LIBRARY)
-      native_paths(SZIP_LIBRARY SZIPLIB)
-    endif (SZIP_LIBRARY)
-  endif (HDF5_NEED_SZIP)
-  if (HDF5_NEED_ZLIB)
-    set(H5NEEDZLIB 1)
-    if (ZLIB_LIBRARY)
-      native_paths(${ZLIB_LIBRARY} ZLIBLIB)
-    endif (ZLIB_LIBRARY)
-  endif (HDF5_NEED_ZLIB)
-  if (HDF5_NEED_MPI)
-    set(H5NEEDMPI 1)
-    if (MPI_INC)
-      native_paths(MPI_INC MPIINC)
-    endif (MPI_INC)
-    if (MPI_LIBS)
-      native_paths(MPI_LIBS MPILIBS)
-    endif (MPI_LIBS)
-    if (CGNS_ENABLE_PARALLEL)
-      set(BUILDPARALLEL 1)
-    endif (CGNS_ENABLE_PARALLEL)
-  endif (HDF5_NEED_MPI)
-endif (CGNS_ENABLE_HDF5)
-
-#create these in build directory so it doesn't mess up the
-#source directory, then add the path to them
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes.h.in
-		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes.h )
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes_f.h.in
-		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h )
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes_f03.h.in
-		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f03.h )
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnslib_f.h.in
-		${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h )
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
-		${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h )
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
-		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
-
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
-###########
-# Library #
-###########
-
-# All the C files needed by the cgns library
-set(cgns_C_FILES
-	cgns_error.c
-	cgns_internals.c
-	cgns_io.c
-	cgnslib.c
-	adf/ADF_interface.c
-	adf/ADF_internals.c)
-
-ENABLE_LANGUAGE(C)
 #-----------------------------------------------------------------------------
-# The provided CMake HDF macros don't provide a general check function
+# The provided CMake macros don't provide a general HDF5 check function
 # so use this one.
 #-----------------------------------------------------------------------------
+
 MACRO (CHECK_HDF5_FEATURE FUNCTION CODE VARIABLE)
   IF (NOT DEFINED ${VARIABLE})
     MESSAGE (STATUS "Testing HDF5 ${FUNCTION}")
@@ -384,13 +320,98 @@ MACRO (CHECK_HDF5_FEATURE FUNCTION CODE VARIABLE)
 ENDMACRO (CHECK_HDF5_FEATURE)
 
 if (CGNS_ENABLE_HDF5)
+  set(BUILDHDF5 1)
+  if (HDF5_INCLUDE_PATH)
+    native_paths(HDF5_INCLUDE_PATH HDF5INC)
+  endif (HDF5_INCLUDE_PATH)
+  if (HDF5_LIBRARY)
+    native_paths(HDF5_LIBRARY HDF5LIB)
+  endif (HDF5_LIBRARY)
+  if (HDF5_NEED_SZIP)
+    set(H5NEEDSZIP 1)
+    if (SZIP_LIBRARY)
+      native_paths(SZIP_LIBRARY SZIPLIB)
+    endif (SZIP_LIBRARY)
+  endif (HDF5_NEED_SZIP)
+  if (HDF5_NEED_ZLIB)
+    set(H5NEEDZLIB 1)
+    if (ZLIB_LIBRARY)
+      native_paths(${ZLIB_LIBRARY} ZLIBLIB)
+    endif (ZLIB_LIBRARY)
+  endif (HDF5_NEED_ZLIB)
+  if (HDF5_NEED_MPI)
+    set(H5NEEDMPI 1)
+    if (MPI_INC)
+      native_paths(MPI_INC MPIINC)
+    endif (MPI_INC)
+    if (MPI_LIBS)
+      native_paths(MPI_LIBS MPILIBS)
+    endif (MPI_LIBS)
+    if (CGNS_ENABLE_PARALLEL)
+      set(BUILDPARALLEL 1)
+    endif (CGNS_ENABLE_PARALLEL)
+  endif (HDF5_NEED_MPI)
+
   set(cgns_C_FILES ${cgns_C_FILES} adfh/ADFH.c)
   if (CGNS_ENABLE_PARALLEL)
     set(cgns_C_FILES ${cgns_C_FILES} pcgnslib.c)
   endif (CGNS_ENABLE_PARALLEL)
 
+  # Check if HDF5 library has multi-dataset read/write APIs
+  # --------------------------------------------------------------------
 
+CHECK_HDF5_FEATURE(Multi_Dataset
+  " 
+ #include \"hdf5.h\"
+ void main(void) 
+{
+  H5D_rw_multi_t *multi_info;
+  return;
+}
+  "
+   CHECK_HDF5_HAVE_MULTI_DATASETS
+ )
+ if (CHECK_HDF5_HAVE_MULTI_DATASETS)
+   set(HDF5_HAVE_MULTI_DATASETS 1)
+ endif (CHECK_HDF5_HAVE_MULTI_DATASETS)
 
+endif (CGNS_ENABLE_HDF5)
+
+#create these in build directory so it doesn't mess up the
+#source directory, then add the path to them
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes_f.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes_f03.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f03.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnslib_f.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+###########
+# Library #
+###########
+
+# All the C files needed by the cgns library
+set(cgns_C_FILES
+	cgns_error.c
+	cgns_internals.c
+	cgns_io.c
+	cgnslib.c
+	adf/ADF_interface.c
+	adf/ADF_internals.c)
+
+if (CGNS_ENABLE_HDF5)
+  set(cgns_C_FILES ${cgns_C_FILES} adfh/ADFH.c)
+  if (CGNS_ENABLE_PARALLEL)
+    set(cgns_C_FILES ${cgns_C_FILES} pcgnslib.c)
+  endif (CGNS_ENABLE_PARALLEL)
 endif (CGNS_ENABLE_HDF5)
 
 # All the Fortran files need by the cgns library (if enabled)
