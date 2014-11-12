@@ -54,17 +54,17 @@ typedef struct cg_rw_t {
   } u;
 } cg_rw_t;
 
-
-
+/* flag for parallel reading or parallel writing */ 
+enum cg_par_rw{
+  CG_PAR_READ,
+  CG_PAR_WRITE
+};
 
 /*===== parallel IO functions =============================*/
 
 static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
-    int ndims, const cgsize_t *rmin, const cgsize_t *rmax, cg_rw_t *data, int rw_mode)
+    int ndims, const cgsize_t *rmin, const cgsize_t *rmax, cg_rw_t *data, enum cg_par_rw rw_mode)
 {
-  /* 
-   *  rw_mode: 0 -- read, 1 -- write
-   */
   int k;
   hid_t data_id, mem_shape_id, data_shape_id;
   hsize_t start[3], dims[3];
@@ -165,7 +165,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
   }
 
   /* Write the data in parallel I/O */
-  if (rw_mode == 0) {
+  if (rw_mode == CG_PAR_READ) {
     herr = H5Dread(data_id, type_id, mem_shape_id,
 		   data_shape_id, plist_id, data[0].u.rbuf);
     if (herr < 0)
@@ -290,7 +290,7 @@ int cgp_queue_flush(void)
       Data.u.wbuf = write_queue[n].data;
       if (readwrite_data_parallel(write_queue[n].pid, write_queue[n].type,
 				  write_queue[n].ndims, write_queue[n].rmin,
-				  write_queue[n].rmax, &Data, 1)) errs++;
+				  write_queue[n].rmax, &Data, CG_PAR_WRITE)) errs++;
     }
     free(write_queue);
     write_queue = NULL;
@@ -402,7 +402,7 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
     cg_rw_t Data;
     Data.u.wbuf = coords;
     return readwrite_data_parallel(hid, type,
-				   zone->index_dim, rmin, rmax, &Data, 1);
+				   zone->index_dim, rmin, rmax, &Data, CG_PAR_WRITE);
 }
 
 /*---------------------------------------------------------*/
@@ -451,7 +451,7 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
     cg_rw_t Data;
     Data.u.rbuf = coords;
     return readwrite_data_parallel(hid, type,
-			      zone->index_dim, rmin, rmax, &Data, 0);
+			      zone->index_dim, rmin, rmax, &Data, CG_PAR_READ);
 }
 
 /*===== Elements IO Prototypes ============================*/
@@ -516,7 +516,7 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     cg_rw_t Data;
     Data.u.wbuf = elements;
     return readwrite_data_parallel(hid, type,
-			       1, &rmin, &rmax, &Data, 1);
+			       1, &rmin, &rmax, &Data, CG_PAR_WRITE);
 }
 
 /*---------------------------------------------------------*/
@@ -560,7 +560,7 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     cg_rw_t Data;
     Data.u.rbuf = elements;
     return readwrite_data_parallel(hid, type,
-			      1, &rmin, &rmax, &Data, 0);
+			      1, &rmin, &rmax, &Data, CG_PAR_READ);
 }
 
 /*===== Solution IO Prototypes ============================*/
@@ -615,7 +615,7 @@ int cgp_field_write_data(int fn, int B, int Z, int S, int F,
     cg_rw_t Data;
     Data.u.wbuf = data;
     return readwrite_data_parallel(hid, type,
-			       field->data_dim, rmin, rmax, &Data, 1);
+			       field->data_dim, rmin, rmax, &Data, CG_PAR_WRITE);
 }
 
 /*---------------------------------------------------------*/
@@ -654,7 +654,7 @@ int cgp_field_read_data(int fn, int B, int Z, int S, int F,
     cg_rw_t Data;
     Data.u.rbuf = data;
     return readwrite_data_parallel(hid, type,
-			      field->data_dim, rmin, rmax, &Data, 0);
+			      field->data_dim, rmin, rmax, &Data, CG_PAR_READ);
 }
 
 /*===== Array IO Prototypes ===============================*/
@@ -723,7 +723,7 @@ int cgp_array_write_data(int A, const cgsize_t *rmin,
     cg_rw_t Data;
     Data.u.wbuf = data;
     return readwrite_data_parallel(hid, type,
-			       array->data_dim, rmin, rmax,  &Data, 1);
+			       array->data_dim, rmin, rmax,  &Data, CG_PAR_WRITE);
 }
 
 /*---------------------------------------------------------*/
@@ -755,17 +755,15 @@ int cgp_array_read_data(int A, const cgsize_t *rmin,
     cg_rw_t Data;
     Data.u.rbuf = data;
     return readwrite_data_parallel(hid, type,
-				   array->data_dim, rmin, rmax, &Data, 0);
+				   array->data_dim, rmin, rmax, &Data, CG_PAR_READ);
 }
 
 #if HDF5_HAVE_MULTI_DATASETS
 
 static int readwrite_multi_data_parallel(hid_t fn, size_t count, H5D_rw_multi_t *multi_info,
-					 int ndims, const cgsize_t *rmin, const cgsize_t *rmax, int rw_mode)
+					 int ndims, const cgsize_t *rmin, const cgsize_t *rmax, enum cg_par_rw rw_mode)
 {
   /* 
-   *  rw_mode: 0 -- read, 1 -- write
-   *
    *  Needs to handle a NULL dataset. MSB
    */
     int k, n;
@@ -880,7 +878,7 @@ static int readwrite_multi_data_parallel(hid_t fn, size_t count, H5D_rw_multi_t 
     }
 
     /* Read or Write the data in parallel */
-    if (rw_mode == 0) {
+    if (rw_mode == CG_PAR_READ) {
       herr = H5Dread_multi(fn, plist_id, count, multi_info);
       if (herr < 0) {
         cgi_error("H5Dread_multi() failed");
@@ -956,7 +954,7 @@ int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin
   multi_info[2].u.rbuf = coordsZ;
   
   return readwrite_multi_data_parallel(fid, 3, multi_info,
-					 zone->index_dim, rmin, rmax, 0);
+					 zone->index_dim, rmin, rmax, CG_PAR_READ);
 }
 
 /*---------------------------------------------------------*/
@@ -1015,7 +1013,7 @@ int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmi
     multi_info[2].u.wbuf = coordsZ;
 
     return readwrite_multi_data_parallel(fid, 3, multi_info,
-					 zone->index_dim, rmin, rmax, 1);
+					 zone->index_dim, rmin, rmax, CG_PAR_WRITE);
 }
 
 /*---------------------------------------------------------*/
@@ -1064,7 +1062,7 @@ int vcgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
     }
 
     status = readwrite_multi_data_parallel(fid, nsets, multi_info,
-					   field->data_dim, rmin, rmax, 1);
+					   field->data_dim, rmin, rmax, CG_PAR_WRITE);
 
     free(multi_info);
 
@@ -1135,7 +1133,7 @@ int vcgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
   }
 
   status = readwrite_multi_data_parallel(fid, nsets, multi_info,
-					 field->data_dim, rmin, rmax, 0);
+					 field->data_dim, rmin, rmax, CG_PAR_READ);
   free(multi_info);
 
   return status;
@@ -1201,7 +1199,7 @@ int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
   }
 
   status = readwrite_multi_data_parallel(fid, nsets, multi_info,
-               array->data_dim, rmin, rmax, 1);
+               array->data_dim, rmin, rmax, CG_PAR_WRITE);
 
   free(multi_info);
 
@@ -1266,7 +1264,7 @@ int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
     multi_info[n].dset_id = hid;
   }
   status = readwrite_multi_data_parallel(fid, nsets, multi_info,
-               array->data_dim, rmin, rmax, 0);
+               array->data_dim, rmin, rmax, CG_PAR_READ);
 
   free(multi_info);
 
