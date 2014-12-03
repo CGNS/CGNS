@@ -3,10 +3,10 @@
 # modules loaded (Pleiades)
 #
 # module load comp-intel/2013.5.192
-# module load mpi-sgi/mpt.2.10r6
+# module load mpi-sgi/mpt.2.11r13
 
-setenv CC mpiicc
-setenv FC mpiifort
+setenv CC mpicc
+setenv FC mpif90
 setenv CFLAGS "-O3"
 setenv FCFLAGS "-O3"
 
