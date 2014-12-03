@@ -1088,8 +1088,7 @@ rmax
 \shape default
 , is not check.
  For collective parallel IO, this is used as a mechanism to indicated that
- processes with NULL API parameter calls will not write any data to the
- file.
+ processes with NULL API parameters will not write any data to the file.
  
 \end_layout
 
@@ -1549,7 +1548,7 @@ make
 \end_layout
 
 \begin_layout Enumerate
-To make the tests: cd ptests; make;make tests
+To make the tests: cd ptests; make;make test
 \end_layout
 
 \end_deeper
@@ -1619,7 +1618,7 @@ make
 \end_layout
 
 \begin_layout Enumerate
-To make the tests: cd ptests; make;make tests
+To make the tests: cd ptests; make;make test
 \end_layout
 
 \end_deeper
