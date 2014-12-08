@@ -11,7 +11,7 @@ PROGRAM fexample
 #endif
 
   INTEGER(cgsize_t) :: nperside, totnodes, totelems
-  PARAMETER (nperside = 5)
+  PARAMETER (nperside = 50)
   PARAMETER (totnodes=nperside*nperside*nperside)
   PARAMETER (totelems=(nperside-1)*(nperside-1)*(nperside-1))
   
