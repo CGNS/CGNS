@@ -31,6 +31,15 @@
 
 #define CG_BUILD_64BIT @BUILD64BIT@
 
+#if HAVE_FORTRAN_2003
+
+#define HAVE_FORTRAN_95 @HAVE_FORTRAN_95@
+#define HAVE_FORTRAN_2003 @HAVE_FORTRAN_2003@
+#define HAVE_FORTRAN_2008TS @HAVE_FORTRAN_2008TS@
+#define HDF5_HAVE_MULTI_DATASETS @HDF5_HAVE_MULTI_DATASETS@
+
+#else
+
 #if CG_BUILD_64BIT
 # define cgsize_t integer*8
 # define CGSIZE_T integer*8
@@ -46,3 +55,4 @@
 
 #endif
 
+#endif

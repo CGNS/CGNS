@@ -3,7 +3,7 @@ MODULE cgns
   USE ISO_C_BINDING
   IMPLICIT NONE
 
-#include "cgnstypes_f03.h"
+#include "cgnstypes_f.h"
 
 #if CG_BUILD_64BIT
 #  if HAVE_FORTRAN_2003

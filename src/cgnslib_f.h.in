@@ -26,10 +26,10 @@
 !
 ! * ------------------------------------------------------------------------- *
 !
-#if HAVE_FORTRAN_2003
 #ifndef CGNSLIB_F_H
 #define CGNSLIB_F_H
 
+#if HAVE_FORTRAN_2003
 #include "cgnstypes_f.h"
 #endif
 
@@ -998,3 +998,4 @@
      &       'AverageAll', 'AverageCircumferential', 'AverageRadial',   &
      &       'AverageI', 'AverageJ', 'AverageK' /
 
+#endif
