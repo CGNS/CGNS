@@ -91,7 +91,7 @@ distclean :
 	-$(RM) $(CGNSLIB)
 	-$(RM) $(OBJDIR)/*.$(O)
 	-$(RMDIR) $(OBJDIR)
-	-$(RM) cgnsconfig.h cgnstypes.h cgnstypes_f.h cgnslib_f.h
+	-$(RM) cgnsconfig.h cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnslib_f.h
 	-$(RM) config.log config.status
 	-$(RM) make.defs cgnsBuild.defs Makefile
 	-$(RM) *~ *.bak *.mod
@@ -101,6 +101,7 @@ install-all : install
 install-cgns : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR) @INSTALLPCGNS@ @INSTALLADF@
 	$(INSTALL_DATA) cgnstypes.h $(INCLUDEDIR)/cgnstypes.h
 	$(INSTALL_DATA) cgnstypes_f.h $(INCLUDEDIR)/cgnstypes_f.h
+	$(INSTALL_DATA) cgnstypes_f03.h $(INCLUDEDIR)/cgnstypes_f03.h
 	$(INSTALL_DATA) cgnslib.h $(INCLUDEDIR)/cgnslib.h
 	$(INSTALL_DATA) cgnslib_f.h $(INCLUDEDIR)/cgnslib_f.h
 	$(INSTALL_DATA) cgnswin_f.h $(INCLUDEDIR)/cgnswin_f.h
