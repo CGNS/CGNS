@@ -55,6 +55,8 @@
           mkdir 2M
 	  lfs setstripe -c 64 -s 2m 2M
 
+        Then run in subdirectory 2M
+
 	This will use a count of 64 and a strip size of 2M, which has shown good performance.
 
 
