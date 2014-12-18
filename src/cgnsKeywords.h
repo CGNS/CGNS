@@ -27,7 +27,7 @@ freely, subject to the following restrictions:
 /* ------------  IMPORTANT DEVELOPER'S NOTES  ---------------------------
  *
  * (1) If a new keyword is introduced into this file then the same keyword
- * needs to be added to cgnslib_f03.h.in in order to maintain Fortran
+ * needs to be added to cgnslib_f.h.in in order to maintain Fortran
  * compatibility.
  *
  */
