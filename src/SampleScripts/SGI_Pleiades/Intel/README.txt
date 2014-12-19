@@ -1,7 +1,8 @@
 2.2 Building on SGI (Lustre)
 
 0. Module Enviromnment:
-    1) comp-intel/2015.0.090   2) mpi-sgi/mpt.2.11r13 
+    1) comp-intel/2015.0.090   2) mpi-intel/5.0.1.035
+  (mpi-sgi/mpt.2.11r13 generates strange error messages at run time)
 
 
 1. Building zlib from source: Download and extract the zlib source: http://www.zlib.net/
@@ -34,7 +35,7 @@
 
    (a) cd into the cgns/src directory 
 
-   (b) modify and run: <pathto>/build_cgns 
+   (b) modify and run: <pathto>/build_cgns  (need to point to your own bin directory as noted above)
  
    (c) make
 
@@ -55,7 +56,7 @@
           mkdir 2M
 	  lfs setstripe -c 64 -s 2m 2M
 
-        Then run in subdirectory 2M
+        Then run in subdirectory 2M, using example submit script run_cgns.sh (appropriately modified)
 
 	This will use a count of 64 and a strip size of 2M, which has shown good performance.
 
