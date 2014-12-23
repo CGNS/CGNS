@@ -79,10 +79,9 @@ double t0, t1, t2;
  * timing(10) = Time for cg_base_write 
  * timing(11) = Time for cg_zone_write
  * timing(12) = Time for cgp_open, CG_MODE_READ
- * timing(13) = Time for cg_read_write 
- * timing(14) = Time for cg_read_write
+ * timing(13) = Time for cg_read base, zone
  */
-double xtiming[15], timing[15], timingMin[15], timingMax[15];
+double xtiming[14], timing[14], timingMin[14], timingMax[14];
 
 int piomode[2] = {0, 1};
 int piomode_i;
@@ -117,6 +116,8 @@ int main(int argc, char* argv[]) {
   int Fvec[3];
   int Avec[2];
 
+  size_t Mb_coor, Mb_elem, Mb_field, Mb_array;
+
   /* parameters */
   piomode_i = 1;
   queue = false;
@@ -127,10 +128,17 @@ int main(int argc, char* argv[]) {
   err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode_i, info);
   
   Nnodes = Nelem*NodePerElem;
+
   
   nijk[0] = Nnodes; /* Number of vertices */
   nijk[1] = Nelem; /* Number of cells */
   nijk[2] = 0; /* Number of boundary vertices */
+
+  /* Compute the size of the arrays */
+  Mb_coor = sizeof(double)*3*Nnodes/131072;
+  Mb_elem = sizeof(cgsize_t)*Nelem*NodePerElem/131072;
+  Mb_field = sizeof(double)*3*Nnodes/131072;
+  Mb_array = (sizeof(double)+sizeof(cgsize_t))*Nnodes/131072;
   
   /* ====================================== */
   /* ==    **WRITE THE CGNS FILE **      == */
@@ -477,8 +485,6 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cg_base_read\n");
     cgp_error_exit();
   }
-  t2 = MPI_Wtime();
-  xtiming[13] = t2-t1;
 
   if(r_cell_dim != cell_dim || r_phys_dim != phys_dim) {
     printf("*FAILED* bad cell dim=%d or phy dim=%d\n", r_cell_dim, r_phys_dim);
@@ -496,7 +502,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
   t2 = MPI_Wtime();
-  xtiming[14] = t2-t1;
+  xtiming[13] = t2-t1;
 
   /* Check the read zone information is correct */ 
   if(sizes[0] != Nnodes) {
@@ -749,9 +755,9 @@ int main(int argc, char* argv[]) {
 
   xtiming[0] = t2-t0;
   
-  MPI_Reduce(&xtiming, &timing, 15, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&xtiming, &timingMin, 15, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&xtiming, &timingMax, 15, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timing, 14, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timingMin, 14, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timingMax, 14, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   if(comm_rank==0) {
     sprintf(fname, "timing_%06d_%d.dat", comm_size, piomode_i+1);
@@ -759,12 +765,12 @@ int main(int argc, char* argv[]) {
     if (fid == NULL) {
       printf("Error opening timing file!\n");
     } else {
-      fprintf(fid,"#nprocs, wcoord, welem, wfield, warray, rcoord, relem, rfield, rarray \n%d", comm_size);
+      fprintf(fid,"#nprocs, total time, write: coord., elem., field, array, read: coord., elem., field, array, MB: coord, elem, field, array \n%d", comm_size);
 
-      for ( k = 0; k < 15; k++) {
+      for ( k = 0; k < 14; k++) {
 	fprintf(fid," %20f %20f %20f ",timing[k]/((double) comm_size), timingMin[k], timingMax[k]);
       }
-      fprintf(fid,"\n");
+      fprintf(fid," %zu %zu %zu %zu \n", Mb_coor, Mb_elem, Mb_field, Mb_array);
     }
   }
   
