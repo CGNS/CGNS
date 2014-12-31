@@ -27,10 +27,10 @@
     respectively.
 
     i. If HDF5 is built with parallel-IO support via MPI, the 
-      'HDF5_NEED_MPI' flag must be set to true.
+      'HDF5_NEEDS_MPI' flag must be set to true.
 
     ii. If HDF5 is built with zlib and szip support, these need 
-      to be flagged with 'HDF5_NEED_ZLIB' and 'HDF5_NEED_SZIP' 
+      to be flagged with 'HDF5_NEEDS_ZLIB' and 'HDF5_NEEDS_SZIP' 
       as well as the paths for those libraries.
 
   (b) Fortran can be enabled by toggling the 'CGNS_ENABLE_FORTRAN' 

@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
         DEBUG_PRINT(("[%d]cg_base_write(%s)\n",comm_rank,name))
         if (cg_base_write(F,name,3,3,&B)) cgp_error_exit();
         DEBUG_PRINT(("[%d]cgp_pio_mode(%s)\n",comm_rank,piomode[nb]))
-        if (cgp_pio_mode((CGNS_ENUMT(PIOmode_t))nb))
+	if (cgp_pio_mode((CGNS_ENUMT(PIOmode_t))nb,MPI_INFO_NULL))
             cgp_error_exit();
         for (nz = 0; nz < 2; nz++) {
             sprintf(name, "Zone %d", nz + 1);
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
     for (nb = 0; nb < 2; nb++) {
         B = nb + 1;
         DEBUG_PRINT(("[%d]cgp_pio_mode(%s)\n",comm_rank,piomode[nb]))
-        if (cgp_pio_mode((CGNS_ENUMT(PIOmode_t))nb))
+        if (cgp_pio_mode((CGNS_ENUMT(PIOmode_t))nb,MPI_INFO_NULL))
             cgp_error_exit();
 
         MPI_Barrier(comm);

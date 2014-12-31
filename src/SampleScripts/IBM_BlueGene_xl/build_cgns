@@ -1,0 +1,24 @@
+#!/bin/tcsh
+
+set HDF5=$HOME/packages/phdf5-1_8
+setenv LD_LIBRARY_PATH "HOME/packages/zlib-1.2.8/lib"
+setenv CFLAGS "-O2 "
+setenv CC "mpixlc"
+setenv FC "mpixlf2003"
+setenv F77 "mpixlf2003"
+setenv FFLAGS "-O2 "
+setenv LDFLAGS "-I$HOME/packages/zlib-1.2.8/lib/include"
+setenv FLIBS "-L$HOME/packages/zlib-1.2.8/lib/lib -lz"
+setenv CLIBS "-I$HOME/packages/zlib-1.2.8/lib/include -L$HOME/packages/zlib-1.2.8/lib/lib -lz"
+
+./configure --verbose \
+--enable-parallel \
+--with-fortran \
+--with-hdf5=$HDF5 \
+--with-mpi="/soft/compilers/wrappers/xl" \
+--with-zlib="$HOME/packages/zlib-1.2.8/lib"  \
+--enable-64bit \
+--enable-lfs \
+--disable-cgnstools \
+--disable-x 
+# --enable-debug

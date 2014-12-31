@@ -1,0 +1,8 @@
+#!/bin/csh
+
+setenv CC mpicc
+setenv CFLAGS "-O2 "
+
+./configure --prefix=$HOME/packages/zlib-1.2.8/lib
+make
+make install

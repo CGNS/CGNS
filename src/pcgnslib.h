@@ -30,6 +30,7 @@
 #define PCGNSLIB_H_
 
 #include "cgnslib.h"
+#include "mpi.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +47,7 @@ CGNSDLL int cgp_mpi_comm(int mpicomm);
 
 /*===== parallel IO mode =====*/
 
-CGNSDLL int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode);
+CGNSDLL int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode, MPI_Info info);
 
 /*===== queued IO =====*/
 
@@ -67,6 +68,12 @@ CGNSDLL int cgp_coord_write_data(int fn, int B, int Z, int C,
 CGNSDLL int cgp_coord_read_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coord_array);
 
+CGNSDLL int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin, const cgsize_t *rmax,
+				      void *coordsX,  void *coordsY,  void *coordsZ);
+
+CGNSDLL int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmin, const cgsize_t *rmax, 
+				       const void *coordsX, const void *coordsY, const void *coordsZ);
+
 /*===== Unstructured Grid Prototypes =====*/
 
 CGNSDLL int cgp_section_write(int fn, int B, int Z,
@@ -86,6 +93,12 @@ CGNSDLL int cgp_field_write_data(int fn, int B, int Z, int S, int F,
 CGNSDLL int cgp_field_read_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, void *data);
 
+CGNSDLL int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
+				      const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...);
+
+CGNSDLL int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F, 
+				       const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...);
+
 /*===== Array IO Prototypes =====*/
 
 CGNSDLL int cgp_array_write(const char *arrayname,
@@ -95,6 +108,12 @@ CGNSDLL int cgp_array_write_data(int A, const cgsize_t *rmin,
     const cgsize_t *rmax, const void *data);
 CGNSDLL int cgp_array_read_data(int A, const cgsize_t *rmin,
     const cgsize_t *rmax, void *data);
+
+CGNSDLL int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
+				       const cgsize_t *rmax, int nsets, ...);
+
+CGNSDLL int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
+				      const cgsize_t *rmax, int nsets, ...);
 
 /*===== exit with error and call MPI_Abort =====*/
 

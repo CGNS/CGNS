@@ -12,15 +12,16 @@ LDLIBS = $(CGNSLIB) $(BUILDLIBS)
 CALL =	ctest$(EXE) \
 	cexample$(EXE) \
 	benchmark$(EXE) \
+	benchmark_hdf5$(EXE) \
 	open_close$(EXE) \
 	test_base$(EXE) \
 	test_unstructured$(EXE) \
 	test_zone$(EXE) \
 	thesis_benchmark$(EXE)
 
-FALL =	ftest$(EXE) fexample$(EXE)
+FALL =	ftest$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) benchmark_hdf5_f03$(EXE)
 
-ALL   = $(CALL) @PFALL@
+ALL   = $(CALL) @FALL@
 TESTS = $(ALL)
 
 all : $(ALL)
@@ -60,6 +61,12 @@ benchmark$(EXE) : benchmark.c $(CGNSLIB)
 
 #----------
 
+benchmark_hdf5$(EXE) : benchmark_hdf5.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ benchmark_hdf5.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
 open_close$(EXE) : open_close.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ open_close.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
@@ -90,20 +97,32 @@ thesis_benchmark$(EXE) : thesis_benchmark.c $(CGNSLIB)
 
 #----------
 
-ftest$(EXE) : ftest.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ ftest.F $(LDLIBS) $(FLIBS)
+ftest$(EXE) : ftest.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ ftest.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
-fexample$(EXE) : fexample.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ fexample.F $(LDLIBS) $(FLIBS)
+fexample$(EXE) : fexample.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ fexample.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+benchmark_hdf5_f90$(EXE) : benchmark_hdf5_f90.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ benchmark_hdf5_f90.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+benchmark_hdf5_f03$(EXE) : benchmark_hdf5_f03.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ benchmark_hdf5_f03.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
 clean :
-	-$(RM) *.$(O)
+	-$(RM) *.$(O) *.mod *.MOD
 
 allclean : clean
 	-$(RM) $(ALL)

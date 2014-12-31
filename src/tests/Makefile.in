@@ -1,3 +1,6 @@
+NO_COLOR=\033[0m
+OK_COLOR=\033[32;01m
+ERROR_COLOR=\033[31;01m
 
 CGNSDIR = ..
 include $(CGNSDIR)/make.defs
@@ -30,10 +33,15 @@ FALL = \
 	cgwrite$(EXE) \
 	cgread$(EXE) \
 	cgzconn$(EXE) \
-	cgsubreg$(EXE)
+	cgsubreg$(EXE) \
+	cgiof_F03$(EXE) \
+	cgwrite_F03$(EXE) \
+	cgread_F03$(EXE) \
+	cgzconn_F03$(EXE) \
+	cgsubreg_F03$(EXE)
 
 CALL64 = test64c$(EXE)
-FALL64 = test64f$(EXE)
+FALL64 = test64f$(EXE) test64f_F03$(EXE)
 
 ALL = dbtest$(EXE) open_cgns$(EXE) $(CALL) @FALL@
 ALL64 = $(CALL64) @FALL64@
@@ -53,9 +61,9 @@ test : $(TESTS)
 	echo "=== running tests ==="; \
 	 for x in $(TESTS) ; do \
 	   if `./$$x >/dev/null 2>&1` ; then \
-	     echo "$$x ... passed"; \
+	     echo "$$x ... $(OK_COLOR) passed $(NO_COLOR)"; \
 	   else \
-	     echo "$$x ... *** FAILED ***"; \
+	     echo "$$x ... $(ERROR_COLOR) *** FAILED *** (NO_COLOR)"; \
 	   fi; \
 	 done; \
 	 echo "=== finished ==="; \
@@ -171,8 +179,20 @@ cgiof$(EXE) : cgiof.F $(CGNSLIB)
 
 #----------
 
+cgiof_F03$(EXE) : cgiof_f03.F $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgiof_f03.F $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
 cgwrite$(EXE) : cgwrite.F $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ cgwrite.F $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+cgwrite_F03$(EXE) : cgwrite_f03.F $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgwrite_f03.F $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
@@ -183,8 +203,20 @@ cgread$(EXE) : cgread.F $(CGNSLIB)
 
 #----------
 
+cgread_F03$(EXE) : cgread_f03.F $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgread_f03.F $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
 cgzconn$(EXE) : cgzconn.F $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ cgzconn.F $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+cgzconn_F03$(EXE) : cgzconn_f03.F $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgzconn_f03.F $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
@@ -193,6 +225,11 @@ cgsubreg$(EXE) : cgsubreg.F $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ cgsubreg.F $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
+#----------
+
+cgsubreg_F03$(EXE) : cgsubreg_f03.F $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgsubreg_f03.F $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
 #----------
 
 test64c$(EXE) : test64c.$(O) utils.$(O) $(CGNSLIB)
@@ -205,6 +242,10 @@ test64c.$(O) : test64c.c utils.h
 
 test64f$(EXE) : test64f.F $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ test64f.F $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+test64f_F03$(EXE) : test64f_f03.F $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test64f_f03.F $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

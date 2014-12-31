@@ -1,0 +1,29 @@
+#!/bin/csh
+
+set HDF5=$HOME/packages/phdf5-1_8_14
+setenv LD_LIBRARY_PATH "$HOME/packages/zlib-1.2.8/lib"
+setenv CFLAGS "-O2 "
+#setenv CC "mpicc"
+#setenv FC "mpif90"
+#setenv F77 "mpif90"
+setenv CC "/nasa/intel/impi/5.0.1.035/bin64/mpiicc"
+setenv FC "/nasa/intel/impi/5.0.1.035/bin64/mpiifort"
+setenv F77 "/nasa/intel/impi/5.0.1.035/bin64/mpiifort"
+setenv FFLAGS "-O2 "
+setenv LDFLAGS "-I$HOME/packages/zlib-1.2.8/lib/include"
+setenv FLIBS "-lmpi -L$HOME/packages/zlib-1.2.8/lib/lib -lz"
+setenv CLIBS "-lmpi -I$HOME/packages/zlib-1.2.8/lib/include -L$HOME/packages/zlib-1.2.8/lib/lib -lz"
+
+./configure --verbose \
+--enable-parallel \
+--with-fortran \
+--with-hdf5=$HDF5 \
+--with-mpi="/home1/mbreiten/bin" \
+--with-zlib="$LD_LIBRARY_PATH" \
+--enable-64bit \
+--enable-lfs \
+--disable-cgnstools \
+--disable-x
+# --enable-debug
+# --enable-64bit \
+# --with-mpi="/nasa/intel/impi/5.0.1.035/intel64/bin/" \

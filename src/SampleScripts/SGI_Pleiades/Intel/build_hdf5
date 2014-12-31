@@ -1,0 +1,12 @@
+#!/bin/csh
+
+#setenv CC mpicc
+#setenv FC mpif90
+setenv CC /nasa/intel/impi/5.0.1.035/bin64/mpiicc
+setenv FC /nasa/intel/impi/5.0.1.035/bin64/mpiifort
+setenv CFLAGS "-O3"
+setenv FCFLAGS "-O3"
+
+./configure --without-pthread --disable-shared --enable-parallel --enable-production --enable-fortran --enable-fortran2003 --disable-stream-vfd --disable-direct-vfd --with-zlib=${HOME}/packages/zlib-1.2.8/lib --prefix=${HOME}/packages/phdf5-1_8_14
+make
+make install

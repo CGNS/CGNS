@@ -31,6 +31,9 @@ add_executable(cexample ${cexample_FILES})
 set(benchmark_FILES benchmark.c)
 add_executable(benchmark ${benchmark_FILES})
 
+set(benchmark_hdf5_FILES benchmark_hdf5.c)
+add_executable(benchmark_hdf5 ${benchmark_hdf5_FILES})
+
 set(open_close_FILES open_close.c)
 add_executable(open_close ${open_close_FILES})
 
@@ -46,12 +49,16 @@ add_executable(test_zone ${test_zone_FILES})
 set(thesis_benchmark_FILES thesis_benchmark.c)
 add_executable(thesis_benchmark ${thesis_benchmark_FILES})
 
-if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND NOT CGNS_ENABLE_64BIT)
-  set(ftest_FILES ftest.F)
+if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND HAVE_FORTRAN_2003)
+  set(ftest_FILES ftest.F90)
   add_executable(ftest ${ftest_FILES})
-  set(fexample_FILES fexample.F)
+  set(fexample_FILES fexample.F90)
   add_executable(fexample ${fexample_FILES})
-endif (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND NOT CGNS_ENABLE_64BIT)
+  set(benchmark_hdf5_f90_FILES benchmark_hdf5_f90.F90)
+  add_executable(benchmark_hdf5_f90 ${benchmark_hdf5_f90_FILES})
+  set(benchmark_hdf5_f03_FILES benchmark_hdf5_f03.F90)
+  add_executable(benchmark_hdf5_f03 ${benchmark_hdf5_f03_FILES})
+endif (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND HAVE_FORTRAN_2003)
 
 # Add the tests so that cmake can find them
 if (CGNS_ENABLE_TESTS)
@@ -61,6 +68,8 @@ if (CGNS_ENABLE_TESTS)
       ${MPIEXEC_PREFLAGS} cexample ${MPIEXEC_POSTFLAGS})
   add_test(benchmark ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} benchmark ${MPIEXEC_POSTFLAGS})
+  add_test(benchmark_hdf5 ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+      ${MPIEXEC_PREFLAGS} benchmark_hdf5 ${MPIEXEC_POSTFLAGS})
   add_test(open_close ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} open_close ${MPIEXEC_POSTFLAGS})
   add_test(test_base ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
@@ -71,10 +80,14 @@ if (CGNS_ENABLE_TESTS)
       ${MPIEXEC_PREFLAGS} test_zone ${MPIEXEC_POSTFLAGS})
   add_test(thesis_benchmark ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} thesis_benchmark ${MPIEXEC_POSTFLAGS})
-  if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND NOT CGNS_ENABLE_64BIT)
+  if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND HAVE_FORTRAN_2003)
     add_test(ftest ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
         ${MPIEXEC_PREFLAGS} ftest ${MPIEXEC_POSTFLAGS})
     add_test(fexample ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
         ${MPIEXEC_PREFLAGS} fexample ${MPIEXEC_POSTFLAGS})
-  endif (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND NOT CGNS_ENABLE_64BIT)
+    add_test(benchmark_hdf5_f90 ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+        ${MPIEXEC_PREFLAGS} benchmark_hdf5_f90 ${MPIEXEC_POSTFLAGS})
+    add_test(benchmark_hdf5_f03 ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+        ${MPIEXEC_PREFLAGS} benchmark_hdf5_f03 ${MPIEXEC_POSTFLAGS})
+  endif (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND HAVE_FORTRAN_2003)
 endif (CGNS_ENABLE_TESTS)

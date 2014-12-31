@@ -40,6 +40,21 @@
 # define CG_LONG_T @CGLONGT@
 #endif
 
+#ifdef BUILD_HDF5
+
+/* ----------------------------------------------------------------
+ * convert between HDF5 and ADF ids
+ * ---------------------------------------------------------------- */
+
+#define to_ADF_ID(ID,ADF_ID) memcpy(&(ADF_ID),&(ID),sizeof(hid_t))
+#define to_HDF_ID(ADF_ID,ID) memcpy(&(ID),&(ADF_ID),sizeof(hid_t))
+
+/* Determine if hdf5 has multi-dataset read/write capabilities */
+
+#define HDF5_HAVE_MULTI_DATASETS @HDF5_HAVE_MULTI_DATASETS@
+
+#endif
+
 #if CG_BUILD_LEGACY
 # define CG_SIZEOF_SIZE    32
 # define CG_SIZE_DATATYPE "I4"
@@ -61,6 +76,15 @@
   typedef int cgint_t;
   typedef double cgid_t;
 #endif
+
+/* Define an int type that is interoperabable with Fortran's INTEGER */
+#define FORTRAN_DEFAULT_INTEGER_C_INT64_T @FORTRAN_DEFAULT_INTEGER_C_INT64_T@
+#if FORTRAN_DEFAULT_INTEGER_C_INT64_T
+  typedef CG_LONG_T cgint_f;
+#else
+  typedef int cgint_f;
+#endif
+
 
 typedef CG_LONG_T cglong_t;
 typedef unsigned CG_LONG_T cgulong_t;

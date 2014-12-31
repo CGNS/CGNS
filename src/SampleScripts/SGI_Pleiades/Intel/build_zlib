@@ -1,0 +1,8 @@
+#!/bin/csh
+
+setenv CC /nasa/intel/impi/5.0.1.035/bin64/mpiicc
+setenv CFLAGS "-O2 "
+
+./configure --prefix=$HOME/packages/zlib-1.2.8/lib
+make
+make install
