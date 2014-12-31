@@ -196,14 +196,14 @@ struct DATA_CHUNK_TABLE_ENTRY {
    struct DISK_POINTER  start ;
    struct DISK_POINTER  end ;
    } ;
-   
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 struct SUB_NODE_TABLE_ENTRY {
    char                 child_name[ ADF_NAME_LENGTH ] ;
    struct DISK_POINTER  child_location ;
    } ;
-   
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 struct TOKENIZED_DATA_TYPE {
    char           type[2] ;
@@ -665,7 +665,7 @@ extern  void    ADFI_string_2_C_string(
             const int string_length,
             char *c_string,
             int *error_return ) ;
-     
+
 extern  char    *ADFI_strtok(
 	    char *string,
 	    char **string_pos,
@@ -767,11 +767,11 @@ extern  void    ADFI_flush_buffers(
             const unsigned int file_index,
 	    int flush_mode,
             int *error_return ) ;
-	    
+
 extern  void    ADFI_fflush_file(
             const unsigned int file_index,
             int *error_return ) ;
-     
+
 extern  int     ADFI_stack_control(
 	    const unsigned int file_index,
 	    const cgulong_t file_block,

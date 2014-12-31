@@ -2337,7 +2337,7 @@ FILE *fp;
                     break;
 
                 /* function operations */
-            
+
                 case FUNC_ABS:
                     opname = "abs()";
                     break;

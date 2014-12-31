@@ -468,7 +468,7 @@ int cg_open(const char * filename, int mode, int *file_number)
         if (cgi_read()) return CG_ERROR;
 
         /* update version number in modify mode */
-        if (cg->version < CGNSLibVersion && mode == CG_MODE_MODIFY && 
+        if (cg->version < CGNSLibVersion && mode == CG_MODE_MODIFY &&
             (cg->filetype != CG_FILE_ADF2 || cg->version < CGNS_COMPATVERSION)) {
             /* FileVersion = (float) CGNS_DOTVERS; */
             /* Jiao: Changed to use older compatible version */
@@ -1969,7 +1969,7 @@ int cg_discrete_ptset_write(int fn, int B, int Z,
         return CG_ERROR;
     discrete = cgi_get_discrete(cg, B, Z, *D);
     if (discrete == 0) return CG_ERROR;
-    
+
     discrete->location = location;
     discrete->ptset = CGNS_NEW(cgns_ptset, 1);
     discrete->ptset->type = ptset_type;
@@ -2380,7 +2380,7 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) { 
+    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
       hid_t hid;
       to_HDF_ID(zcoor->id, hid);
       if (hid == 0) {
@@ -3114,7 +3114,7 @@ int cg_elements_partial_read(int file_number, int B, int Z, int S,
         0 == strcmp(section->parelem->name, "ParentData"))) {
         offset = start - section->range[0];
         size = section->range[1] - section->range[0] + 1;
-        
+
         /* read from ParentData */
         if (0 == strcmp(section->parelem->name, "ParentData")) {
             if (0 == strcmp(CG_SIZE_DATATYPE, section->parelem->data_type)) {
@@ -3199,7 +3199,7 @@ int cg_elements_partial_read(int file_number, int B, int Z, int S,
         else {
             if (read_parent_data(section)) return CG_ERROR;
             n = 0;
-            
+
             data = (cgsize_t *)section->parelem->data;
             for (j = 0; j < 2; j++) {
                 nn = j * size + offset;
@@ -3455,7 +3455,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
         0 == strcmp(section->parelem->name, "ParentData")) &&
         newsize != section->parelem->dim_vals[0]) {
         int cnt = section->parelem->dim_vals[1];
- 
+
         if (read_parent_data(section)) return CG_ERROR;
 
         newelems = (cgsize_t *)malloc((size_t)(cnt * newsize * sizeof(cgsize_t)));
@@ -3573,7 +3573,7 @@ int cg_parent_data_write(int file_number, int B, int Z, int S,
         strcpy(section->parelem->name, "ParentElements");
         section->parelem->dim_vals[1]=2;
     }
-    
+
     if (cgi_write_array(section->id, section->parelem)) return CG_ERROR;
     if (cgio_write_all_data(cg->cgio, section->parelem->id, parent_data)) {
         cg_io_error("cgio_write_all_data");
@@ -3604,13 +3604,13 @@ int cg_parent_data_write(int file_number, int B, int Z, int S,
     } else {
         section->parface = CGNS_NEW(cgns_array, 1);
     }
-    
+
     strcpy(section->parface->data_type, CG_SIZE_DATATYPE);
     strcpy(section->parface->name, "ParentElementsPosition");
     section->parface->data_dim =2;
     section->parface->dim_vals[0]=num;
     section->parface->dim_vals[1]=2;
-    
+
     if (cgi_write_array(section->id, section->parface)) return CG_ERROR;
     if (cgio_write_all_data(cg->cgio, section->parface->id, &parent_data[num<<1])) {
         cg_io_error("cgio_write_all_data");
@@ -3696,7 +3696,7 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
             return CG_ERROR;
         }
     }
-        
+
     if (start >= section->range[0] && end <= section->range[1]) {
         cgsize_t s_start[2], s_end[2], s_stride[2];
         cgsize_t m_start[2], m_end[2], m_stride[2], m_dim[2];
@@ -4857,7 +4857,7 @@ int cg_zconn_get(int fn, int B, int Z, int *C)
         cgi_error("no ZoneGridConnectivity_t node found.");
         return CG_NODE_NOT_FOUND;
     }
-        
+
     if (zone->active_zconn <= 0 || zone->active_zconn > zone->nzconn)
         zone->active_zconn = 1;
     *C = zone->active_zconn;
@@ -5518,7 +5518,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
     strcpy(dptset->data_type, CG_SIZE_DATATYPE);
     dptset->npts = ndata_donor;
     dptset->size_of_patch = ndata_donor;
-    
+
     if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
       /* Create node ZoneGridConnectivity_t node, if not yet created */
       if (zconn->id==0) {
@@ -7985,12 +7985,12 @@ int cg_goto(int file_number, int B, ...)
 /*-----------------------------------------------------------------------
  *              F2008 C-FORTRAN INTERFACE ROUTINE
  *
- *      cg_goto function which is compatible with F2008 and TS 29113 
- *      "Further Interoperability of Fortran with C WG5/N1942"  and 
+ *      cg_goto function which is compatible with F2008 and TS 29113
+ *      "Further Interoperability of Fortran with C WG5/N1942"  and
  *      allows optional function parameters to be passed to a C function
  *      which has variable number of arguments. This function is
  *      directly callable from FORTRAN.
- * 
+ *
  */
 
 int cg_goto_f08(int file_number, int B, ...)
@@ -8062,12 +8062,12 @@ int cg_gorel(int file_number, ...)
 /*-----------------------------------------------------------------------
  *              F2008 C-FORTRAN INTERFACE ROUTINE
  *
- *      cg_gorel function which is compatible with F2008 and TS 29113 
- *      "Further Interoperability of Fortran with C WG5/N1942"  and 
+ *      cg_gorel function which is compatible with F2008 and TS 29113
+ *      "Further Interoperability of Fortran with C WG5/N1942"  and
  *      allows optional function parameters to be passed to a C function
  *      which has variable number of arguments. This function is
  *      directly callable from FORTRAN.
- * 
+ *
  */
 int cg_gorel_f08(int file_number, ...)
 {

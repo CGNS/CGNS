@@ -459,7 +459,7 @@ else
   	 REAL(C_DOUBLE) :: e
   	 CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: f
   	 TYPE(C_PTR) :: g
-         INTERFACE 
+         INTERFACE
            INTEGER(C_INT) FUNCTION test(A, UserDataName1) BIND(C, name='cg_goto')
              USE ISO_C_BINDING
              INTEGER(C_INT)   , INTENT(IN), VALUE :: A
@@ -470,9 +470,9 @@ else
       END PROGRAM testf03
 EOF
   msg=`${F77} -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then 
+  if test -f testf03.o; then
     HAVE_F2003_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2003=1	
+    HAVE_FORTRAN_2003=1
     rm testf03.o
   fi
   if test -f testf03.f90; then
@@ -480,7 +480,7 @@ EOF
   fi
   AC_MSG_RESULT($HAVE_F2003_REQUIREMENTS)
 
- ## In F2003 and F2008 optional parameters are not allowed for functions that have BIND(C). 
+ ## In F2003 and F2008 optional parameters are not allowed for functions that have BIND(C).
  ## In Fortran 2003 it is constraint C530, in the latest Fortran 2008 draft it is C516:
  ## "The ALLOCATABLE, POINTER, or OPTIONAL attribute shall not be specifed
  ## for a dummy argument of a procedure that has a proc-language-binding-spec."
@@ -499,7 +499,7 @@ EOF
  cat >> testf03.f90 << EOF
        PROGRAM testf03
          USE ISO_C_BINDING
-         INTERFACE 
+         INTERFACE
             INTEGER(C_INT) FUNCTION test(A) BIND(C, name='test')
               USE ISO_C_BINDING
               INTEGER(C_INT), OPTIONAL :: A
@@ -508,9 +508,9 @@ EOF
        END PROGRAM testf03
 EOF
   msg=`${F77} -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then 
+  if test -f testf03.o; then
     HAVE_F2008TS_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2008TS=1	
+    HAVE_FORTRAN_2008TS=1
     rm testf03.o
   fi
   if test -f testf03.f90; then
@@ -518,7 +518,7 @@ EOF
   fi
   AC_MSG_RESULT($HAVE_F2008TS_REQUIREMENTS)
 
-else 
+else
 
   # Check if the Fortran compiler is at least F95 compliant
   ## --------------------------------------------------------------------
@@ -534,9 +534,9 @@ else
       END PROGRAM testf95
 EOF
   msg=`${F77} -c testf95.f90 &> /dev/null`
-  if test -f testf95.o; then 
+  if test -f testf95.o; then
     HAVE_F95_REQUIREMENTS="yes"
-    HAVE_FORTRAN_95=1	
+    HAVE_FORTRAN_95=1
     rm testf95.o
   fi
   if test -f testf95.f90; then
@@ -560,36 +560,36 @@ EOF
            MODULE PROCEDURE test_int
            MODULE PROCEDURE test_c_int64
         END INTERFACE
-        
+
       CONTAINS
-        
+
         SUBROUTINE test_c_int64(a)
           USE ISO_C_BINDING
           INTEGER(C_INT64_T) :: a
         END SUBROUTINE test_c_int64
-        
+
         SUBROUTINE test_int(a)
           USE ISO_C_BINDING
           INTEGER :: a
         END SUBROUTINE test_int
-        
+
       END MODULE mod
 
       PROGRAM main
-        
+
         USE mod
         INTEGER :: a
-        
+
         CALL test_integer(a)
-        
+
       END PROGRAM main
 EOF
   msg=`${F77} $FFLAGS -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then 
+  if test -f testf03.o; then
     AC_MSG_RESULT(c_int32_t)
     rm testf03.o
   else
-    FORTRAN_DEFAULT_INTEGER_C_INT64_T=1	
+    FORTRAN_DEFAULT_INTEGER_C_INT64_T=1
     AC_MSG_RESULT(c_int64_t)
   fi
   if test -f testf03.f90; then
@@ -830,7 +830,7 @@ else
 
   cat >> test.c << EOF
 #include "hdf5.h"
-void main(void) 
+void main(void)
 {
   H5D_rw_multi_t *multi_info;
   return;
@@ -838,7 +838,7 @@ void main(void)
 EOF
   msg=`${CC} -c test.c ${HDF5DEF} &> /dev/null`
   if test -f test.o; then
-    HDF5_HAVE_MULTI_DATASETS=1	
+    HDF5_HAVE_MULTI_DATASETS=1
     AC_MSG_RESULT(yes)
     rm test.o
   else

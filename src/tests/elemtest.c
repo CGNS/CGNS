@@ -154,7 +154,7 @@ int main (int argc, char *argv[])
     ne = j = 0;
 
     /* NGON_n first so polyhedra face references are correct */
- 
+
     if (cg_section_write (fnum, bnum, znum, "NGON_n", CGNS_ENUMV(NGON_n),
             ne+1, ne+npoly, 0, poly, &snum))
         cg_error_exit();
@@ -180,7 +180,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(BAR_2);
     for (n = 0; n < 2; n++)
         elems[j++] = bar[n];
-    
+
     /* TRI_3 */
 
     if (cg_section_write (fnum, bnum, znum, "TRI_3", CGNS_ENUMV(TRI_3),
@@ -191,7 +191,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(TRI_3);
     for (n = 0; n < 3; n++)
         elems[j++] = tri[n];
-    
+
     /* QUAD_4 */
 
     if (cg_section_write (fnum, bnum, znum, "QUAD_4", CGNS_ENUMV(QUAD_4),
@@ -202,9 +202,9 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(QUAD_4);
     for (n = 0; n < 4; n++)
         elems[j++] = quad[n];
-    
+
     /* TETRA_4 */
-    
+
     if (cg_section_write (fnum, bnum, znum, "TETRA_4", CGNS_ENUMV(TETRA_4),
             ne+1, ne+1, 0, tetra, &snum))
         cg_error_exit ();
@@ -213,7 +213,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(TETRA_4);
     for (n = 0; n < 4; n++)
         elems[j++] = tetra[n];
-    
+
     /* PYRA_5 */
 
     if (cg_section_write (fnum, bnum, znum, "PYRA_5", CGNS_ENUMV(PYRA_5),
@@ -224,7 +224,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(PYRA_5);
     for (n = 0; n < 5; n++)
         elems[j++] = pyra[n];
- 
+
     /* PENTA_6 */
 
     if (cg_section_write (fnum, bnum, znum, "PENTA_6", CGNS_ENUMV(PENTA_6),
@@ -235,7 +235,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(PENTA_6);
     for (n = 0; n < 6; n++)
         elems[j++] = penta[n];
-   
+
     /* HEXA_8 */
 
     if (cg_section_write (fnum, bnum, znum, "HEXA_8", CGNS_ENUMV(HEXA_8),
@@ -248,7 +248,7 @@ int main (int argc, char *argv[])
         elems[j++] = hexa[n];
 
     /* MIXED */
- 
+
     if (cg_section_write (fnum, bnum, znum, "MIXED", CGNS_ENUMV(MIXED),
             ne+1, ne+8, 0, elems, &snum))
         cg_error_exit ();
@@ -293,7 +293,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(BAR_3);
     for (n = 0; n < 3; n++)
         elems[j++] = bar[n];
-    
+
     /* TRI_6 */
 
     if (cg_section_write (fnum, bnum, znum, "TRI_6", CGNS_ENUMV(TRI_6),
@@ -304,7 +304,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(TRI_6);
     for (n = 0; n < 6; n++)
         elems[j++] = tri[n];
-    
+
     /* QUAD_8 */
 
     if (cg_section_write (fnum, bnum, znum, "QUAD_8", CGNS_ENUMV(QUAD_8),
@@ -315,9 +315,9 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(QUAD_8);
     for (n = 0; n < 8; n++)
         elems[j++] = quad[n];
-    
+
     /* TETRA_10 */
-    
+
     if (cg_section_write (fnum, bnum, znum, "TETRA_10", CGNS_ENUMV(TETRA_10),
             ne+1, ne+1, 0, tetra, &snum))
         cg_error_exit ();
@@ -326,7 +326,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(TETRA_10);
     for (n = 0; n < 10; n++)
         elems[j++] = tetra[n];
-    
+
     /* PYRA_13 */
 
     if (cg_section_write (fnum, bnum, znum, "PYRA_13", CGNS_ENUMV(PYRA_13),
@@ -337,7 +337,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(PYRA_13);
     for (n = 0; n < 13; n++)
         elems[j++] = pyra[n];
- 
+
     /* PENTA_15 */
 
     if (cg_section_write (fnum, bnum, znum, "PENTA_15", CGNS_ENUMV(PENTA_15),
@@ -348,7 +348,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(PENTA_15);
     for (n = 0; n < 15; n++)
         elems[j++] = penta[n];
-   
+
     /* HEXA_20 */
 
     if (cg_section_write (fnum, bnum, znum, "HEXA_20", CGNS_ENUMV(HEXA_20),
@@ -361,7 +361,7 @@ int main (int argc, char *argv[])
         elems[j++] = hexa[n];
 
     /* MIXED */
- 
+
     if (cg_section_write (fnum, bnum, znum, "MIXED", CGNS_ENUMV(MIXED),
             ne+1, ne+7, 0, elems, &snum))
         cg_error_exit ();
@@ -400,9 +400,9 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(QUAD_9);
     for (n = 0; n < 9; n++)
         elems[j++] = quad[n];
-    
+
     /* TETRA_10 */
-    
+
     if (cg_section_write (fnum, bnum, znum, "TETRA_10", CGNS_ENUMV(TETRA_10),
             ne+1, ne+1, 0, tetra, &snum))
         cg_error_exit ();
@@ -411,7 +411,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(TETRA_10);
     for (n = 0; n < 10; n++)
         elems[j++] = tetra[n];
-    
+
     /* PYRA_14 */
 
     if (cg_section_write (fnum, bnum, znum, "PYRA_14", CGNS_ENUMV(PYRA_14),
@@ -422,7 +422,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(PYRA_14);
     for (n = 0; n < 14; n++)
         elems[j++] = pyra[n];
- 
+
     /* PENTA_18 */
 
     if (cg_section_write (fnum, bnum, znum, "PENTA_18", CGNS_ENUMV(PENTA_18),
@@ -433,7 +433,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(PENTA_18);
     for (n = 0; n < 18; n++)
         elems[j++] = penta[n];
-   
+
     /* HEXA_27 */
 
     if (cg_section_write (fnum, bnum, znum, "HEXA_27", CGNS_ENUMV(HEXA_27),
@@ -446,12 +446,12 @@ int main (int argc, char *argv[])
         elems[j++] = hexa[n];
 
     /* MIXED */
- 
+
     if (cg_section_write (fnum, bnum, znum, "MIXED", CGNS_ENUMV(MIXED),
             ne+1, ne+5, 0, elems, &snum))
         cg_error_exit ();
     ne += 5;
- 
+
     /* zone with cubic elements */
 
     size[0] = 55;
@@ -485,7 +485,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(BAR_4);
     for (n = 0; n < 4; n++)
         elems[j++] = bar4[n];
-    
+
     /* TRI_9 */
 
     if (cg_section_write (fnum, bnum, znum, "TRI_9", CGNS_ENUMV(TRI_9),
@@ -496,7 +496,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(TRI_9);
     for (n = 0; n < 9; n++)
         elems[j++] = tri9[n];
-    
+
     /* QUAD_12 */
 
     if (cg_section_write (fnum, bnum, znum, "QUAD_12", CGNS_ENUMV(QUAD_12),
@@ -507,9 +507,9 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(QUAD_12);
     for (n = 0; n < 12; n++)
         elems[j++] = quad12[n];
-    
+
     /* TETRA_16 */
-    
+
     if (cg_section_write (fnum, bnum, znum, "TETRA_16", CGNS_ENUMV(TETRA_16),
             ne+1, ne+1, 0, tetra16, &snum))
         cg_error_exit ();
@@ -518,7 +518,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(TETRA_16);
     for (n = 0; n < 16; n++)
         elems[j++] = tetra16[n];
-    
+
     /* PYRA_21 */
 
     if (cg_section_write (fnum, bnum, znum, "PYRA_21", CGNS_ENUMV(PYRA_21),
@@ -529,7 +529,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(PYRA_21);
     for (n = 0; n < 21; n++)
         elems[j++] = pyra21[n];
- 
+
     /* PENTA_24 */
 
     if (cg_section_write (fnum, bnum, znum, "PENTA_24", CGNS_ENUMV(PENTA_24),
@@ -540,7 +540,7 @@ int main (int argc, char *argv[])
     elems[j++] = (int)CGNS_ENUMV(PENTA_24);
     for (n = 0; n < 24; n++)
         elems[j++] = penta24[n];
-   
+
     /* HEXA_32 */
 
     if (cg_section_write (fnum, bnum, znum, "HEXA_32", CGNS_ENUMV(HEXA_32),
@@ -553,7 +553,7 @@ int main (int argc, char *argv[])
         elems[j++] = hexa32[n];
 
     /* MIXED */
- 
+
     if (cg_section_write (fnum, bnum, znum, "MIXED", CGNS_ENUMV(MIXED),
             ne+1, ne+7, 0, elems, &snum))
         cg_error_exit ();

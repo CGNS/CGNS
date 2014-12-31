@@ -97,7 +97,7 @@ Quadric (Tcl_Interp *interp, int argc, char* argv [])
       }
       else break;
    }
-   for (; iarg < argc && icoord < 6; iarg++) {	
+   for (; iarg < argc && icoord < 6; iarg++) {
       if (Tcl_GetDouble (interp, argv [iarg], &val[icoord]) != TCL_OK) {
 	 ERRMSG2 ("\nInvalid value in ", argv [1]);
       }
@@ -107,41 +107,41 @@ Quadric (Tcl_Interp *interp, int argc, char* argv [])
    if (dlist != 0) glNewList (dlist, GL_COMPILE);
    switch (argv [1][0]) {
       case 'c': { /* Cylinder */
-	 if (iarg != argc || icoord > 5) 
+	 if (iarg != argc || icoord > 5)
 	    ERRMSG ("too many values for cylinder");
-	 if (icoord < 5) 
+	 if (icoord < 5)
 	    ERRMSG ("too few values for cylinder");
 	 gluCylinder (obj, val [0], val [1], val [2], (GLint) val [3],
 		      (GLint) val [4]);
 	 break;
       }
       case 'd': { /* Disk */
-	 if (iarg != argc || icoord > 4) 
+	 if (iarg != argc || icoord > 4)
 	    ERRMSG ("too many values for disk");
-	 if (icoord < 4) 
+	 if (icoord < 4)
 	    ERRMSG ("too few values for disk");
 	 gluDisk (obj, val [0], val [1], (GLint) val [2], (GLint) val [3]);
 	 break;
       }
       case 'p': { /* PartialDisk */
-	 if (iarg != argc || icoord > 6) 
+	 if (iarg != argc || icoord > 6)
 	    ERRMSG ("too many values for partialdisk");
-	 if (icoord < 6) 
+	 if (icoord < 6)
 	    ERRMSG ("too few values for partialdisk");
 	 gluPartialDisk (obj, val [0], val [1], (GLint) val [2],
 		      (GLint) val [3], val [4], val [5]);
 	 break;
       }
       case 's': { /* Sphere */
-	 if (iarg != argc || icoord > 3) 
+	 if (iarg != argc || icoord > 3)
 	    ERRMSG ("too many values for sphere");
-	 if (icoord < 3) 
+	 if (icoord < 3)
 	    ERRMSG ("too few values for sphere");
 	 gluSphere (obj, val [0], (GLint) val [1], (GLint) val [2]);
 	 break;
       }
    }
-	    
+
 done:
    gluDeleteQuadric (obj);
    if (dlist != 0) glEndList(); else return result;
@@ -160,8 +160,8 @@ done:
 
 
 
-	    
-	    
+
+
 
 
 

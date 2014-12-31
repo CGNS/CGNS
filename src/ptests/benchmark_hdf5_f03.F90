@@ -29,7 +29,7 @@ CONTAINS
     REAL(C_FLOAT), PARAMETER :: eps = 1.e-8
     c_float_eq = ABS(a-b) .LT. eps
   END FUNCTION c_float_eq
-  
+
   LOGICAL FUNCTION c_double_eq(a,b)
     USE ISO_C_BINDING
     IMPLICIT NONE
@@ -38,7 +38,7 @@ CONTAINS
     REAL(C_DOUBLE), PARAMETER :: eps = 1.e-8
     c_double_eq = ABS(a-b) .LT. eps
   END FUNCTION c_double_eq
-  
+
   LOGICAL FUNCTION c_long_eq(a,b)
     USE ISO_C_BINDING
     IMPLICIT NONE
@@ -46,7 +46,7 @@ CONTAINS
     INTEGER(C_INT32_T), INTENT(IN):: a,b
     c_long_eq = a-b .EQ. 0_C_LONG
   END FUNCTION c_long_eq
-  
+
   LOGICAL FUNCTION c_long_long_eq(a,b)
     USE ISO_C_BINDING
     IMPLICIT NONE
@@ -54,7 +54,7 @@ CONTAINS
     INTEGER(C_INT64_T), INTENT(IN):: a,b
     c_long_long_eq = a-b .EQ. 0_C_LONG_LONG
   END FUNCTION c_long_long_eq
-  
+
 END MODULE
 
 PROGRAM main
@@ -102,7 +102,7 @@ PROGRAM main
   TYPE(C_PTR) :: f_ptr, f_ptr1, f_ptr2, f_ptr3
   CHARACTER(KIND=C_CHAR,LEN=180) :: bname, zname
   INTEGER :: indx_null
-  ! Timing 
+  ! Timing
   REAL(KIND=dp) :: t0, t1, t2
 
   ! Timing storage convention:
@@ -115,11 +115,11 @@ PROGRAM main
   ! timing(6) = Time to read connectivity table
   ! timing(7) = Time to read solution data (field data)
   ! timing(8) = Time to read array data
-  ! timing(9) = Time for cgp_open, CG_MODE_WRITE 
-  ! timing(10) = Time for cg_base_write 
+  ! timing(9) = Time for cgp_open, CG_MODE_WRITE
+  ! timing(10) = Time for cg_base_write
   ! timing(11) = Time for cg_zone_write
   ! timing(12) = Time for cgp_open, CG_MODE_READ
-  ! timing(13) = Time for cg_base_read 
+  ! timing(13) = Time for cg_base_read
   ! timing(14) = Time for cg_zone_read
   REAL(KIND=dp), DIMENSION(1:15) :: xtiming, timing, timingMin, timingMax
   CHARACTER(LEN=6) :: ichr6
@@ -131,7 +131,7 @@ PROGRAM main
   INTEGER(C_SIZE_T) :: int_sizeof
   INTEGER(C_INT) :: comm_info
   INTEGER(C_INT), DIMENSION(1:3), TARGET :: Cvec
-  
+
   CALL MPI_Init(mpi_err)
   CALL MPI_Comm_size(MPI_COMM_WORLD,comm_size,mpi_err)
   CALL MPI_Comm_rank(MPI_COMM_WORLD,comm_rank,mpi_err)
@@ -228,7 +228,7 @@ PROGRAM main
      Coor_y(k) = Coor_x(k) + 0.1_C_DOUBLE
      Coor_z(k) = Coor_y(k) + 0.1_C_DOUBLE
   ENDDO
-  
+
   err = cgp_coord_write(fn,B,Z,RealDouble,"CoordinateX"//C_NULL_CHAR,Cx)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_write (Coor_X)'
@@ -265,7 +265,7 @@ PROGRAM main
      err = cgp_error_exit()
   ENDIF
   t2 = MPI_Wtime()
-  xtiming(2) = t2-t1 
+  xtiming(2) = t2-t1
 
   ! We need to keep the arrays allocate until cgp_queue_flush
   IF(.NOT.queue)THEN
@@ -286,14 +286,14 @@ PROGRAM main
      PRINT*,'*FAILED* cgp_section_write'
      err = cgp_error_exit()
   ENDIF
- 
+
   count = nijk(2)/comm_size
   ALLOCATE(elements(1:count*NodePerElem), STAT = istat)
   IF (istat.NE.0)THEN
      PRINT*, '*FAILED* allocation of elements'
      err = cgp_error_exit()
   ENDIF
-  
+
   ! Create ridiculous connectivity table ...
   DO k = 1, count*NodePerElem
      elements(k) = comm_rank*count*NodePerElem + k
@@ -371,24 +371,24 @@ PROGRAM main
   f_ptr1 = C_LOC(Data_Fx(1))
   f_ptr2 = C_LOC(Data_Fy(1))
   f_ptr3 = C_LOC(Data_Fz(1))
-  err = cgp_field_write_data(fn,B,Z,S,Fx,min,max,f_ptr1)  
+  err = cgp_field_write_data(fn,B,Z,S,Fx,min,max,f_ptr1)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_write_data (Data_Fx)'
      err = cgp_error_exit()
   ENDIF
-  err = cgp_field_write_data(fn,B,Z,S,Fy,min,max,f_ptr2) 
+  err = cgp_field_write_data(fn,B,Z,S,Fy,min,max,f_ptr2)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_write_data (Data_Fy)'
      err = cgp_error_exit()
   ENDIF
-  err = cgp_field_write_data(fn,B,Z,S,Fz,min,max,f_ptr3) 
+  err = cgp_field_write_data(fn,B,Z,S,Fz,min,max,f_ptr3)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_write_data (Data_Fz)'
      err = cgp_error_exit()
   ENDIF
- 
+
   t2 = MPI_Wtime()
-  xtiming(4) = t2-t1  
+  xtiming(4) = t2-t1
 
   IF(.NOT.queue)THEN
      DEALLOCATE(Data_Fx)
@@ -399,7 +399,7 @@ PROGRAM main
 ! ======================================
 ! == (D) WRITE THE ARRAY DATA         ==
 ! ======================================
- 
+
   count = nijk(1)/comm_size
 
   ALLOCATE(Array_r(1:count), STAT = istat)
@@ -422,7 +422,7 @@ PROGRAM main
   ENDDO
 
 #if HAVE_FORTRAN_2008TS
-  err = cg_goto(fn,B,"Zone 1"//C_NULL_CHAR,0_C_INT,END="end"//C_NULL_CHAR) 
+  err = cg_goto(fn,B,"Zone 1"//C_NULL_CHAR,0_C_INT,END="end"//C_NULL_CHAR)
 #else
   CALL cg_goto_f(fn, B, err, "Zone 1", 0_C_INT, 'end')
 #endif
@@ -513,7 +513,7 @@ PROGRAM main
 ! ======================================
   CALL MPI_Barrier(MPI_COMM_WORLD, mpi_err)
 
-  ! Open the cgns file  
+  ! Open the cgns file
   t1 = MPI_Wtime()
   err = cgp_open("benchmark_"//ichr6//".cgns"//C_NULL_CHAR, CG_MODE_MODIFY, fn)
   IF(err.NE.CG_OK)THEN
@@ -552,16 +552,16 @@ PROGRAM main
   t2 = MPI_Wtime()
   xtiming(15) = t2-t1
 
-  ! Check the read zone information is correct 
+  ! Check the read zone information is correct
   IF(sizes(1).NE.Nnodes)THEN
      WRITE(*,'(A,I0)') '*FAILED* bad num points = ',sizes(1)
      err = cgp_error_exit()
   ENDIF
-     
+
   IF(sizes(2).NE.Nelem)THEN
      WRITE(*,'(A,I0)') '*FAILED* bad num elements = ',sizes(2)
      err = cgp_error_exit()
-  ENDIF 
+  ENDIF
   IF(sizes(3).NE.0)THEN
      WRITE(*,'(A,I0)') '*FAILED* bad num elements = ',sizes(3)
      err = cgp_error_exit()
@@ -604,7 +604,7 @@ PROGRAM main
      err = cgp_error_exit()
   ENDIF
 
-  t1 = MPI_Wtime()  
+  t1 = MPI_Wtime()
   f_ptr1 = C_LOC(Coor_x(1))
   f_ptr2 = C_LOC(Coor_y(1))
   f_ptr3 = C_LOC(Coor_z(1))
@@ -625,7 +625,7 @@ PROGRAM main
   ENDIF
   t2 = MPI_Wtime()
   xtiming(6) = t2-t1
-  
+
   ! Check if read the data back correctly
   IF(debug)THEN
      DO k = 1, count
@@ -650,7 +650,7 @@ PROGRAM main
      PRINT*, '*FAILED* allocation of elements'
      err = cgp_error_exit()
   ENDIF
-  
+
   emin = count*comm_rank+1
   emax = count*(comm_rank+1)
 
@@ -663,7 +663,7 @@ PROGRAM main
   ENDIF
   t2 = MPI_Wtime()
   xtiming(7) = t2-t1
- 
+
   IF(debug)THEN
      DO k = 1, count
         IF(.NOT.check_eq(elements(k), comm_rank*count*NodePerElem + k)) THEN
@@ -699,13 +699,13 @@ PROGRAM main
 
   t1 = MPI_Wtime()
   f_ptr = C_LOC(Data_Fx(1))
-  err = cgp_field_read_data(fn,B,Z,S,Fx,min,max,f_ptr)  
+  err = cgp_field_read_data(fn,B,Z,S,Fx,min,max,f_ptr)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_read_data (Data_Fx)'
      err = cgp_error_exit()
   ENDIF
   f_ptr = C_LOC(Data_Fy(1))
-  err = cgp_field_read_data(fn,B,Z,S,Fy,min,max,f_ptr) 
+  err = cgp_field_read_data(fn,B,Z,S,Fy,min,max,f_ptr)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_read_data (Data_Fy)'
      err = cgp_error_exit()
@@ -754,9 +754,9 @@ PROGRAM main
   max = count*(comm_rank+1)
 
 #if HAVE_FORTRAN_2008TS
-  err = cg_goto(fn,B,"Zone_t"//C_NULL_CHAR,Z,"UserDefinedData_t"//C_NULL_CHAR,1_C_INT, END="end"//C_NULL_CHAR) 
+  err = cg_goto(fn,B,"Zone_t"//C_NULL_CHAR,Z,"UserDefinedData_t"//C_NULL_CHAR,1_C_INT, END="end"//C_NULL_CHAR)
 #else
-  CALL cg_goto_f(fn, B, err, "Zone_t",Z,"UserDefinedData_t",1_C_INT,"end") 
+  CALL cg_goto_f(fn, B, err, "Zone_t",Z,"UserDefinedData_t",1_C_INT,"end")
 #endif
 
   IF(err.NE.CG_OK)THEN
@@ -766,20 +766,20 @@ PROGRAM main
 
   t1 = MPI_Wtime()
   f_ptr = C_LOC(Array_r(1))
-  err = cgp_array_read_data(Ar, min, max,f_ptr)  
+  err = cgp_array_read_data(Ar, min, max,f_ptr)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_read_data (Array_r)'
      err = cgp_error_exit()
   ENDIF
   f_ptr = C_LOC(Array_i(1))
-  err = cgp_array_read_data(Ai, min, max,f_ptr)  
+  err = cgp_array_read_data(Ai, min, max,f_ptr)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_read_data (Array_i)'
      err = cgp_error_exit()
   ENDIF
   t2 = MPI_Wtime()
   xtiming(9) = t2-t1
-  
+
   ! Check if read the data back correctly
   IF(debug)THEN
      DO k = 1, count
@@ -834,4 +834,4 @@ PROGRAM main
 END PROGRAM main
 
 
-        
+

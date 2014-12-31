@@ -34,10 +34,10 @@ typedef StrokeFont* StrokeFontPtr;
  *  NewFont
  *  =======
  *
- *  Returns a pointer to a newly allocated empty font 
+ *  Returns a pointer to a newly allocated empty font
  */
 
-static StrokeFontPtr NewFont () 
+static StrokeFontPtr NewFont ()
 {
    StrokeFontPtr fontPtr = (StrokeFontPtr) malloc (sizeof (StrokeFont));
    int glyph;
@@ -83,7 +83,7 @@ static void FreeFont (StrokeFontPtr fontPtr)
  *  result indicating the success of the operation.
  */
 
-static int LoadFont (Tcl_Interp * interp, char * filename, StrokeFont font) 
+static int LoadFont (Tcl_Interp * interp, char * filename, StrokeFont font)
 {
    int glyph, x, y;
    CDesc *desc;
@@ -116,12 +116,12 @@ static int LoadFont (Tcl_Interp * interp, char * filename, StrokeFont font)
    glyph = -1;
 
    while (!feof (f)) {
-      if (fscanf (f, "%79s", buf) != 1) 
+      if (fscanf (f, "%79s", buf) != 1)
 	 ERROR("Error reading ", filename);
       if (strcasecmp (buf, "glyph") == 0) {
 	 if (glyph != -1) font [glyph] = desc;
 	 if (nstroke > 0) STORESTROKES;
-	 if (fscanf (f, "%d", &glyph)!= 1) 
+	 if (fscanf (f, "%d", &glyph)!= 1)
 	    ERROR ("Error in glyph ", filename);
 	 desc = (CDesc*) malloc (sizeof (CDesc));
 	 desc->box.x = desc->box.y = 0;
@@ -131,19 +131,19 @@ static int LoadFont (Tcl_Interp * interp, char * filename, StrokeFont font)
 	 desc->stroke = NULL;
       }
       else if (strcasecmp (buf, "blackbox") == 0) {
-	 if (fscanf (f, "%d %d", &x, &y) != 2) 
+	 if (fscanf (f, "%d %d", &x, &y) != 2)
 	    ERROR ("Error in blackbox", filename);
 	 desc->box.x = (unsigned char) x;
 	 desc->box.y = (unsigned char) y;
       }
       else if (strcasecmp (buf, "origin") == 0) {
-	 if (fscanf (f, "%d %d", &x, &y) != 2) 
+	 if (fscanf (f, "%d %d", &x, &y) != 2)
 	    ERROR ("Error in origin", filename);
 	 desc->org.x = (unsigned char) x;
 	 desc->org.y = (unsigned char) y;
       }
       else if (strcasecmp (buf, "cellinc") == 0) {
-	 if (fscanf (f, "%d %d", &x, &y) != 2) 
+	 if (fscanf (f, "%d %d", &x, &y) != 2)
 	    ERROR ("Error in cellinc", filename);
 	 desc->inc.x = (unsigned char) x;
 	 desc->inc.y = (unsigned char) y;
@@ -152,12 +152,12 @@ static int LoadFont (Tcl_Interp * interp, char * filename, StrokeFont font)
 	 npoint = 0;
 	 printf ("stroke\n");
 	 for (;;) {
-	    do { 
+	    do {
 	       ch = getc (f);
 	    } while (!feof (f) && isspace (ch));
 	    ungetc (ch, f);
 	    if (isalpha (ch)) break;
-	    if (fscanf (f, "%d %d", &x, &y) != 2) 
+	    if (fscanf (f, "%d %d", &x, &y) != 2)
 	       ERROR ("Error reading stroke in ", filename);
 	    pointbuf [npoint].x = (unsigned char) x;
 	    pointbuf [npoint].y = (unsigned char) y;
@@ -170,7 +170,7 @@ static int LoadFont (Tcl_Interp * interp, char * filename, StrokeFont font)
 	 nstroke++;
       }
    }
-   
+
    if (glyph != -1) font [glyph] = desc;
    if (nstroke > 0) STORESTROKES;
 
@@ -189,11 +189,11 @@ static int LoadFont (Tcl_Interp * interp, char * filename, StrokeFont font)
  */
 
 int StrokeFontExt (Tcl_Interp *interp, int argc, char* argv [])
-{   
+{
    int iarg;
    static StrokeFontPtr fontPtr = NULL;
-   
-   for (iarg = 2; iarg < argc; iarg++) {	
+
+   for (iarg = 2; iarg < argc; iarg++) {
       int len = strlen (argv [iarg]);
       if (strncmp (argv [iarg], "-load", len) == 0) {
 	 iarg++;

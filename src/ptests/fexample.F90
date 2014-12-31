@@ -14,7 +14,7 @@ PROGRAM fexample
   PARAMETER (nperside = 50)
   PARAMETER (totnodes=nperside*nperside*nperside)
   PARAMETER (totelems=(nperside-1)*(nperside-1)*(nperside-1))
-  
+
   INTEGER(C_INT) commsize, commrank, mpi_err
   INTEGER ierr
   INTEGER F, B, Z, E, S, Fs, Cx, Cy, Cz, A
@@ -34,7 +34,7 @@ PROGRAM fexample
   sizes(1) = totnodes
   sizes(2) = totelems
   sizes(3) = 0
-  
+
   CALL cgp_open_f('fexample.cgns', CG_MODE_WRITE, F, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cg_base_write_f(F, 'Base', 3, 3, B, ierr)
@@ -77,7 +77,7 @@ PROGRAM fexample
         ENDDO
      ENDDO
   ENDDO
-  
+
 !---- write the coordinate data in parallel to the queue
   CALL cgp_queue_set_f(1, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
@@ -145,7 +145,7 @@ PROGRAM fexample
         nn = nn + 1
      ENDIF
   ENDDO
-  
+
 !---- write the solution field data in parallel
   CALL cgp_field_write_data_f(F, B, Z, S, Fs, start, END, fd, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f

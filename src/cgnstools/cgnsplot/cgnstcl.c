@@ -464,7 +464,7 @@ static int structured_range (Regn *reg, cgsize_t *dim, cgsize_t *ptrng,
         reg->nedges = nfaces;
         reg->edges  = (Edge *) MALLOC (funcname,  (size_t)nfaces * sizeof(Edge));
         nf = 0;
-        kk = 0;        
+        kk = 0;
 
         if (n == 1) {
             ii = rng[0][0];
@@ -744,7 +744,7 @@ static int structured_list (Regn *mesh, Regn *reg, cgsize_t *dim, cgsize_t npts,
                 nn += 2;
             }
         }
-        
+
         if (ne == 0) {
             free(edges);
             strcpy (reg->errmsg, "couldn't find any exterior edges");

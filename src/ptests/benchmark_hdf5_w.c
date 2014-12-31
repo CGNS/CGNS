@@ -75,11 +75,11 @@ double t0, t1, t2;
  * timing(6) = Time to read connectivity table
  * timing(7) = Time to read solution data (field data)
  * timing(8) = Time to read array data
- * timing(9) = Time for cgp_open, CG_MODE_WRITE 
- * timing(10) = Time for cg_base_write 
+ * timing(9) = Time for cgp_open, CG_MODE_WRITE
+ * timing(10) = Time for cg_base_write
  * timing(11) = Time for cg_zone_write
  * timing(12) = Time for cgp_open, CG_MODE_READ
- * timing(13) = Time for cg_read_write 
+ * timing(13) = Time for cg_read_write
  * timing(14) = Time for cg_read_write
  */
 double xtiming[15], timing[15], timingMin[15], timingMax[15];
@@ -100,7 +100,7 @@ int initialize(int* argc, char** argv[]) {
 int c_double_eq(double a, double b) {
 
   double eps = 1.e-8;
-  
+
   if(a-b < eps) {
     return true;
   }
@@ -120,18 +120,18 @@ int main(int argc, char* argv[]) {
   /* parameters */
   piomode_i = 1;
   queue = false;
-  debug = false; 
+  debug = false;
 
   t0 = MPI_Wtime(); /* Timer */
-  
+
   err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode_i, info);
-  
+
   Nnodes = Nelem*NodePerElem;
-  
+
   nijk[0] = Nnodes; /* Number of vertices */
   nijk[1] = Nelem; /* Number of cells */
   nijk[2] = 0; /* Number of boundary vertices */
-  
+
   /* ====================================== */
   /* ==    **WRITE THE CGNS FILE **      == */
   /* ====================================== */
@@ -191,8 +191,8 @@ int main(int argc, char* argv[]) {
 
   min = count*comm_rank+1;
   max = count*(comm_rank+1);
-  
-  for (k=0; k < count; k++) { 
+
+  for (k=0; k < count; k++) {
     Coor_x[k] = comm_rank*count + k + 1.1;
     Coor_y[k] = Coor_x[k] + 0.1;
     Coor_z[k] = Coor_y[k] + 0.1;
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
 #if HDF5_HAVE_MULTI_DATASETS
   Cvec[0] = Cx;
   Cvec[1] = Cy;
-  Cvec[2] = Cz; 
+  Cvec[2] = Cz;
   if(cgp_coord_multi_write_data(fn, B, Z, Cvec, &min,&max, Coor_x, Coor_y, Coor_z)!= CG_OK) {
     printf("*FAILED* cgp_coords_write_data \n");
     cgp_error_exit();
@@ -247,9 +247,9 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cgp_close \n");
     cgp_error_exit();
   };
-  
+
   xtiming[0] = t2-t0;
-  
+
   MPI_Reduce(&xtiming, &timing, 15, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&xtiming, &timingMin, 15, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
   MPI_Reduce(&xtiming, &timingMax, 15, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -268,10 +268,10 @@ int main(int argc, char* argv[]) {
       fprintf(fid,"\n");
     }
   }
-  
+
   MPI_Finalize();
 
   return 0;
 }
 
-        
+

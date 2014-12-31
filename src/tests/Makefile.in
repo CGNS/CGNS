@@ -43,7 +43,7 @@ F_TESTS_03 = \
 	cgzconn_F03$(EXE) \
 	cgsubreg_F03$(EXE)
 
-# if --enable-64bit was specified then don't include F77 tests 
+# if --enable-64bit was specified then don't include F77 tests
 # because they will fail.
 
 ifeq ($(CGNS_64BIT), 1)

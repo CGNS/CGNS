@@ -437,7 +437,7 @@ CGNSDLL void FMNAME(cg_family_read_f, CG_FAMILY_READ_F) (cgint_f *fn, cgint_f *B
     *ier = (cgint_f)cg_family_read((int)*fn, (int)*B, (int)*F, c_name, &i_nboco, &i_ngeos);
     if (*ier) return;
     string_2_F_string(c_name, STR_PTR(family_name), STR_LEN(family_name), ier);
-    
+
     *nboco = (cgint_f)i_nboco;
     *ngeos = (cgint_f)i_ngeos;
 }
@@ -517,7 +517,7 @@ CGNSDLL void FMNAME(cg_fambc_read_f, CG_FAMBC_READ_F) (cgint_f *fn, cgint_f *B,
                c_name, &i_bocotype);
     if (*ier) return;
     string_2_F_string(c_name, STR_PTR(fambc_name), STR_LEN(fambc_name), ier);
-    
+
     *bocotype = (CGNS_ENUMT(BCType_t))i_bocotype;
 }
 
@@ -756,7 +756,7 @@ CGNSDLL void FMNAME(cg_coord_info_f, CG_COORD_INFO_F) (cgint_f *fn, cgint_f *B,
     if (*ier) return;
     *type = (CGNS_ENUMT(DataType_t))i_type;
     string_2_F_string(c_name, STR_PTR(coordname), STR_LEN(coordname), ier);
-    
+
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1482,12 +1482,12 @@ CGNSDLL void FMNAME(cg_nconns_f, CG_NCONNS_F) (cgint_f *fn, cgint_f *B,
 
 CGNSDLL void FMNAME(cg_conn_info_f, CG_CONN_INFO_F) (cgint_f *fn, cgint_f *B,
 	cgint_f *Z, cgint_f *I, STR_PSTR(connectname), CGNS_ENUMT(GridLocation_t) *location,
-	CGNS_ENUMT(GridConnectivityType_t) *type, CGNS_ENUMT(PointSetType_t) *ptset_type, 
+	CGNS_ENUMT(GridConnectivityType_t) *type, CGNS_ENUMT(PointSetType_t) *ptset_type,
 	cgsize_t *npnts, STR_PSTR(donorname),
-	CGNS_ENUMT(ZoneType_t) *donor_zonetype, 
-	CGNS_ENUMT(PointSetType_t) *donor_ptset_type, 
+	CGNS_ENUMT(ZoneType_t) *donor_zonetype,
+	CGNS_ENUMT(PointSetType_t) *donor_ptset_type,
 	CGNS_ENUMT(DataType_t) *donor_datatype,
-	cgsize_t *ndata_donor, cgint_f *ier STR_PLEN(connectname) STR_PLEN(donorname)) 
+	cgsize_t *ndata_donor, cgint_f *ier STR_PLEN(connectname) STR_PLEN(donorname))
 {
     char cc_name[CGIO_MAX_NAME_LENGTH+1], dc_name[CGIO_MAX_NAME_LENGTH+1];
     CGNS_ENUMT(GridLocation_t) i_location;
@@ -1543,13 +1543,13 @@ CGNSDLL void FMNAME(cg_conn_id_f, CG_CONN_ID_F) (cgint_f *fn, cgint_f *B,
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_conn_write_f, CG_CONN_WRITE_F) (cgint_f *fn, cgint_f *B,
-	cgint_f *Z, STR_PSTR(connectname), 
-        CGNS_ENUMT(GridLocation_t) *location, 
+	cgint_f *Z, STR_PSTR(connectname),
+        CGNS_ENUMT(GridLocation_t) *location,
         CGNS_ENUMT(GridConnectivityType_t) *type,
-	CGNS_ENUMT(PointSetType_t) *ptset_type, 
+	CGNS_ENUMT(PointSetType_t) *ptset_type,
 	cgsize_t *npnts, cgsize_t *pnts,
-	STR_PSTR(donorname), 
-        CGNS_ENUMT(ZoneType_t)*donor_zonetype, 
+	STR_PSTR(donorname),
+        CGNS_ENUMT(ZoneType_t)*donor_zonetype,
         CGNS_ENUMT(PointSetType_t)*donor_ptset_type,
 	CGNS_ENUMT(DataType_t)*donor_datatype, cgsize_t *ndata_donor, cgsize_t *donor_data,
 	cgint_f *I, cgint_f *ier STR_PLEN(connectname) STR_PLEN(donorname))
@@ -1838,7 +1838,7 @@ CGNSDLL void FMNAME(cg_boco_info_f, CG_BOCO_INFO_F) (cgint_f *fn, cgint_f *B,
                NormalListSize, &i_NormalDataType, &i_ndataset);
     if (*ier) return;
     string_2_F_string(c_name, STR_PTR(boconame), STR_LEN(boconame), ier);
-    
+
     *bocotype = i_bocotype;
     *ptset_type = i_ptset_type;
     *NormalDataType = i_NormalDataType;
@@ -2135,7 +2135,7 @@ CGNSDLL void FMNAME(cg_dataset_write_f, CG_DATASET_WRITE_F) (cgint_f *fn,
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_bcdataset_write_f, CG_BCDATASET_WRITE_F) (
-	STR_PSTR(Dataset_name), CGNS_ENUMT(BCType_t) *BCType, 
+	STR_PSTR(Dataset_name), CGNS_ENUMT(BCType_t) *BCType,
 	CGNS_ENUMT(BCDataType_t) *BCDataType,
 	cgint_f *ier STR_PLEN(Dataset_name))
 {
@@ -3649,7 +3649,7 @@ CGNSDLL void FMNAME(cgp_mpi_comm_f, CGP_MPI_COMM_F) (
 CGNSDLL void FMNAME(cgp_pio_mode_f, CGP_PIO_MODE_F) (
 	CGNS_ENUMT(PIOmode_t) *mode, int *pcg_mpi_info_f, cgint_f *ier)
 {
-  
+
   MPI_Info pcg_mpi_info_c;
 
   pcg_mpi_info_c = MPI_Info_f2c((int)*pcg_mpi_info_f);
@@ -3855,7 +3855,7 @@ CGNSDLL void __stdcall cgp_array_write_data_f(cgint_f *A,
     va_end(ap);
 #else
 CGNSDLL void FMNAME(cgp_array_write_data_f, CGP_ARRAY_WRITE_DATA_F) (
-	cgint_f *A, cgsize_t *rmin, cgsize_t *rmax, void *data, 
+	cgint_f *A, cgsize_t *rmin, cgsize_t *rmax, void *data,
 	cgint_f *ier)
 {
 #endif
@@ -3882,7 +3882,7 @@ CGNSDLL void __stdcall cgp_array_read_data_f(cgint_f *A,
     va_end(ap);
 #else
 CGNSDLL void FMNAME(cgp_array_read_data_f, CGP_ARRAY_READ_DATA_F) (
-	cgint_f *A, cgsize_t *rmin, cgsize_t *rmax, void *data, 
+	cgint_f *A, cgsize_t *rmin, cgsize_t *rmax, void *data,
 	cgint_f *ier)
 {
 #endif
@@ -3903,12 +3903,12 @@ CGNSDLL void FMNAME(cgp_error_exit_f, CGP_ERROR_EXIT_F) ()
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifdef WIN32_FORTRAN
- CGNSDLL void __stdcall cgp_coord_multi_read_data_f(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C, 
-	cgsize_t *rmin, cgsize_t *rmax, 
+ CGNSDLL void __stdcall cgp_coord_multi_read_data_f(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
+	cgsize_t *rmin, cgsize_t *rmax,
 	void *coordsX,  void *coordsY, void *coordsZ, cgint_f *ier)
 #else
-CGNSDLL void FMNAME(cgp_coord_multi_read_data_f, CGP_COORD_MULTI_READ_DATA_F)(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C, 
-	cgsize_t *rmin, cgsize_t *rmax, 
+CGNSDLL void FMNAME(cgp_coord_multi_read_data_f, CGP_COORD_MULTI_READ_DATA_F)(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
+	cgsize_t *rmin, cgsize_t *rmax,
 	void *coordsX, void *coordsY, void *coordsZ, cgint_f *ier)
 #endif
 {
@@ -3921,12 +3921,12 @@ CGNSDLL void FMNAME(cgp_coord_multi_read_data_f, CGP_COORD_MULTI_READ_DATA_F)(cg
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifdef WIN32_FORTRAN
- CGNSDLL void __stdcall cgp_coord_multi_write_data_f(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C, 
-						    cgsize_t *rmin, cgsize_t *rmax, 
+ CGNSDLL void __stdcall cgp_coord_multi_write_data_f(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
+						    cgsize_t *rmin, cgsize_t *rmax,
 						    void *coordsX,  void *coordsY, void *coordsZ, cgint_f *ier)
 #else
-CGNSDLL void FMNAME(cgp_coord_multi_write_data_f, CGP_COORD_MULTI_WRITE_DATA_F)(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C, 
-						    cgsize_t *rmin, cgsize_t *rmax, 
+CGNSDLL void FMNAME(cgp_coord_multi_write_data_f, CGP_COORD_MULTI_WRITE_DATA_F)(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
+						    cgsize_t *rmin, cgsize_t *rmax,
 						    void *coordsX, void *coordsY, void *coordsZ, cgint_f *ier)
 #endif
 {
@@ -3955,7 +3955,7 @@ CGNSDLL void FMNAME(cgp_field_multi_write_data_f, CGP_FIELD_MULTI_WRITE_DATA_F) 
       return;
     }
     for (n = 0; n < *nsets; n++) {
-      F_c[n] = (int)F[n]; 
+      F_c[n] = (int)F[n];
     }
     *ier = vcgp_field_multi_write_data((int)*fn, (int)*B, (int)*Z, (int)*S,
 				       F_c, rmin, rmax, (int)*nsets, ap);
@@ -3964,7 +3964,7 @@ CGNSDLL void FMNAME(cgp_field_multi_write_data_f, CGP_FIELD_MULTI_WRITE_DATA_F) 
     *ier = vcgp_field_multi_write_data((int)*fn, (int)*B, (int)*Z, (int)*S,
 				       F, rmin, rmax, (int)*nsets, ap);
   }
-  
+
 
 }
 
@@ -3979,7 +3979,7 @@ CGNSDLL void FMNAME(cgp_field_multi_read_data_f, CGP_FIELD_MULTI_READ_DATA_F) (
   va_list ap; /* argument list passed from the API call */
   int *F_c;
   int n;
-  
+
   va_start(ap, nsets);
 
   if(sizeof(cgsize_t)!=sizeof(int)) {
@@ -3990,7 +3990,7 @@ CGNSDLL void FMNAME(cgp_field_multi_read_data_f, CGP_FIELD_MULTI_READ_DATA_F) (
       return;
     }
     for (n = 0; n < *nsets; n++) {
-      F_c[n] = (int)F[n]; 
+      F_c[n] = (int)F[n];
     }
     *ier = (cgint_f)vcgp_field_multi_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
 				    F_c, rmin, rmax, (int)*nsets, ap);
@@ -3998,7 +3998,7 @@ CGNSDLL void FMNAME(cgp_field_multi_read_data_f, CGP_FIELD_MULTI_READ_DATA_F) (
     *ier = (cgint_f)vcgp_field_multi_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
 				    F, rmin, rmax, (int)*nsets, ap);
   }
-    
+
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -4008,14 +4008,14 @@ CGNSDLL void FMNAME(cgp_field_multi_read_data_f, CGP_FIELD_MULTI_READ_DATA_F) (
 CGNSDLL void FMNAME(cgp_array_multi_write_data_f, CGP_ARRAY_MULTI_WRITE_DATA_F) (
 	cgint_f *fn, cgint_f *A, cgsize_t *rmin, cgsize_t *rmax,
 	cgint_f *ier, cgint_f *nsets, ...)
-{  
+{
 
   va_list ap; /* argument list passed from the API call */
   int *A_c;
   int n;
-  
+
   va_start(ap, nsets);
-  
+
   if(sizeof(cgsize_t)!=sizeof(int)) {
     /* type cast F from cgsize_t to an int */
     if ((A_c = (int *)malloc(*nsets*sizeof(int)))==NULL) {
@@ -4024,7 +4024,7 @@ CGNSDLL void FMNAME(cgp_array_multi_write_data_f, CGP_ARRAY_MULTI_WRITE_DATA_F) 
       return;
     }
     for (n = 0; n < *nsets; n++) {
-      A_c[n] = (int)A[n]; 
+      A_c[n] = (int)A[n];
     }
     *ier = (cgint_f)vcgp_array_multi_write_data((int)*fn, A_c, rmin, rmax, (int)*nsets, ap);
   }else {
@@ -4039,14 +4039,14 @@ CGNSDLL void FMNAME(cgp_array_multi_write_data_f, CGP_ARRAY_MULTI_WRITE_DATA_F) 
 CGNSDLL void FMNAME(cgp_array_multi_read_data_f, CGP_ARRAY_MULTI_READ_DATA_F) (
 	cgint_f *fn, cgint_f *A, cgsize_t *rmin, cgsize_t *rmax,
 	cgint_f *ier, cgint_f *nsets, ...)
-{  
+{
 
   va_list ap; /* argument list passed from the API call */
   int *A_c;
   int n;
-  
-  
-  va_start(ap, nsets); 
+
+
+  va_start(ap, nsets);
   if(sizeof(cgsize_t)!=sizeof(int)) {
     /* type cast F from cgsize_t to an int */
     if ((A_c = (int *)malloc(*nsets*sizeof(int)))==NULL) {
@@ -4055,13 +4055,13 @@ CGNSDLL void FMNAME(cgp_array_multi_read_data_f, CGP_ARRAY_MULTI_READ_DATA_F) (
       return;
     }
     for (n = 0; n < *nsets; n++) {
-      A_c[n] = (int)A[n]; 
+      A_c[n] = (int)A[n];
     }
     *ier = (cgint_f)vcgp_array_multi_read_data((int)*fn, A_c, rmin, rmax, (int)*nsets, ap);
   }else {
     *ier = (cgint_f)vcgp_array_multi_read_data((int)*fn, A, rmin, rmax, (int)*nsets, ap);
   }
-  
+
 }
 #endif /*HDF5_HAVE_MULTI_DATASETS*/
 #endif /*BUILD_PARALLEL*/

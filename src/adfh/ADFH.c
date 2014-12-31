@@ -1531,7 +1531,7 @@ void ADFH_Set_Label(const double  id,
                     int          *err)
 {
   hid_t hid;
-  
+
   to_HDF_ID(id, hid);
 
   ADFH_DEBUG(("ADFH_Set_Label [%s]",label));
@@ -1565,7 +1565,7 @@ void ADFH_Put_Name(const double  pid,
 
   to_HDF_ID(pid,hpid);
   to_HDF_ID(id,hid);
-  
+
   ADFH_DEBUG(("ADFH_Put_Name [%s]",name));
 
   if ((nname = check_name(name, err)) == NULL) return;
@@ -2005,7 +2005,7 @@ void ADFH_Database_Open(const char   *name,
 #endif
     for (i = 0; i < ADFH_MAXIMUM_FILES; i++) mta_root->g_files[i] = 0;
     mta_root->g_init = 1;
-    
+
     /* create properties - these are persistent accross all open files.
        When all files are closed, then delete properties */
 #if !defined(HDF5_PRE_1_8)
@@ -2117,7 +2117,7 @@ void ADFH_Database_Open(const char   *name,
     if (0 == strcmp(fmt, "PARALLEL")) {
 
       if(!pcg_mpi_info) pcg_mpi_info = MPI_INFO_NULL;
-      
+
       H5Pset_fapl_mpio(g_propfileopen, ParallelMPICommunicator, pcg_mpi_info);
     }
   }
@@ -2419,7 +2419,7 @@ void ADFH_Is_Link(const double  id,
                   int          *err)
 {
   hid_t hid;
-  to_HDF_ID(id,hid); 
+  to_HDF_ID(id,hid);
 
   ADFH_DEBUG(("ADFH_Is_Link"));
 
@@ -2461,7 +2461,7 @@ void ADFH_Link_Size(const double  id,
                   int          *err)
 {
   hid_t hid;
-  to_HDF_ID(id,hid); 
+  to_HDF_ID(id,hid);
   ADFH_DEBUG(("ADFH_Link_Size"));
 
   *name_len = *file_len = 0;
@@ -2838,7 +2838,7 @@ void ADFH_Link(const double  pid,
   ADFH_Create(pid, name, id, err);
 
   if (*err != NO_ERROR) return;
-  
+
   to_HDF_ID(*id,lid);
   ADFH_CHECK_HID(lid);
   if (set_str_att(lid, A_TYPE, ADFH_LK, err)) return;
@@ -3386,7 +3386,7 @@ void ADFH_Write_Block_Data(const double ID,
     set_error(START_OUT_OF_DEFINED_RANGE, err);
     return;
   }
-  
+
   to_HDF_ID(ID,hid);
   if (is_link(hid)) {
     set_error(ADFH_ERR_LINK_DATA, err);

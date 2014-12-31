@@ -118,7 +118,7 @@
 ! write general connectivity
         npts = 2
         dnpts = 25
-        call cg_conn_write_f(cgfile, cgbase, cgzone, 'conn', Vertex,    & 
+        call cg_conn_write_f(cgfile, cgbase, cgzone, 'conn', Vertex,    &
      &                       Abutting1to1, PointRange, npts, ptrange,   &
      &                       dname, Structured, PointListDonor,         &
      &                       Integer, dnpts, ptlist, cgconn, ierr)
@@ -126,10 +126,10 @@
 ! set it back to previous ZoneGridConnectivity and write 1to1
         call cg_zconn_set_f(cgfile, cgbase, cgzone, cgz1, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
-	
+
         call cg_1to1_write_f(cgfile, cgbase, cgzone, '1to1', dname,     &
      &                       ptrange, ptrange, transform, cgconn, ierr)
-	
+
         if (ierr .ne. CG_OK) call cg_error_exit_f
       enddo
 

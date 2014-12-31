@@ -22,7 +22,7 @@
         print *, 'must be built in 64 bit mode'
         stop
       endif
-      
+
       call cg_open_f('test64.cgns',CG_MODE_WRITE,cgfile,ier)
       if (ier.ne.CG_OK) call cg_error_exit_f
 
@@ -66,7 +66,7 @@
 
       call cg_open_f('test64.cgns',CG_MODE_READ,cgfile,ier)
       if (ier.ne.CG_OK) call cg_error_exit_f
-      
+
       cgbase = 1
       cgzone = 1
 

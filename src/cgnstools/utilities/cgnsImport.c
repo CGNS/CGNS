@@ -1122,7 +1122,7 @@ cgsize_t cgnsImportGetNode (cgsize_t nodeid, double *x, double *y, double *z)
 cgsize_t *cgnsImportNodeList (void)
 {
     cgsize_t n, *nodeids;
-    
+
     nodeids = (cgsize_t *) malloc ((size_t)(num_nodes + 1) * sizeof(cgsize_t));
     if (NULL == nodeids)
         cgnsImportFatal ("cgnsImportNodeList:malloc failed for node ID list");
@@ -1279,7 +1279,7 @@ int cgnsImportGetElement (cgsize_t elemid, cgsize_t nodeid[])
 cgsize_t *cgnsImportElementList (void)
 {
     cgsize_t n, *elemids;
-    
+
     elemids = (cgsize_t *) malloc ((size_t)(num_elements + 1) * sizeof(int));
     if (NULL == elemids)
         cgnsImportFatal (

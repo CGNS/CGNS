@@ -234,7 +234,7 @@ int main (int argc, char **argv)
         for (n = 1; n <= 2; n++) {
             cg_gorel (cgfile, "DataArray_t", n, "end");
             cg_dataclass_write (CGNS_ENUMV(Dimensional));
-            cg_unitsfull_write (CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), 
+            cg_unitsfull_write (CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
                 CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian),
                 CGNS_ENUMV(Ampere), CGNS_ENUMV(Mole), CGNS_ENUMV(Candela));
             cg_expfull_write (CGNS_ENUMV(RealSingle), exponents);

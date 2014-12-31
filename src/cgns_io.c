@@ -572,13 +572,13 @@ int cgio_check_file (const char *filename, int *file_type)
         return last_err;
     }
     *file_type = CGIO_FILE_NONE;
- 
+
 
 #ifdef BUILD_PARALLEL
     /* don't overload the file system by having all the processors doing a read */
     if(pcg_mpi_comm_rank == 0) {
 #endif
-    
+
       fp = fopen(filename, "rb");
       if (NULL == fp) {
 	if (errno == EMFILE) {
@@ -602,8 +602,8 @@ int cgio_check_file (const char *filename, int *file_type)
       }
       if (n == 8) {
 #if BUILD_PARALLEL
-	*file_type = CGIO_FILE_PHDF5;        
-#else 
+	*file_type = CGIO_FILE_PHDF5;
+#else
 	*file_type = CGIO_FILE_HDF5;
 #endif
 	err = set_error(CGIO_ERR_NONE);
@@ -619,7 +619,7 @@ int cgio_check_file (const char *filename, int *file_type)
       *file_type = mpibuf[1];
     }
 #endif
-      
+
     if(err == set_error(CGIO_ERR_NONE)) return err;
 
     last_err = CGIO_ERR_FILE_TYPE;

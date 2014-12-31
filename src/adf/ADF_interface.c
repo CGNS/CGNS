@@ -2672,7 +2672,7 @@ else {
    bytes_read = 0 ;
    data_pointer = data ;
    for( i=0; i<(int)node.number_of_data_chunks; i++ ) {
-      bytes_to_read = 
+      bytes_to_read =
       (data_chunk_table[i].end.block - data_chunk_table[i].start.block) *
 		DISK_BLOCK_SIZE +
       (data_chunk_table[i].end.offset - data_chunk_table[i].start.offset) -
@@ -2815,7 +2815,7 @@ else {
    chunk_end_byte = 0 ;
    data_pointer = data ;
    for( i=0; i<(int)node.number_of_data_chunks; i++ ) {
-      chunk_size = 
+      chunk_size =
       (data_chunk_table[i].end.block - data_chunk_table[i].start.block) *
 		DISK_BLOCK_SIZE +
       (data_chunk_table[i].end.offset - data_chunk_table[i].start.offset) -
@@ -2851,7 +2851,7 @@ else {
 	 } /* end if */
       if( bytes_to_read == 0 || (chunk_end_byte-chunk_size) > end_byte )
 	 break ;
-      
+
       ADFI_read_data_chunk( file_index, &data_chunk_table[i].start,
 		tokenized_data_type, file_bytes, chunk_size, start_offset,
 		bytes_to_read, data_pointer, error_return ) ;
@@ -2876,11 +2876,11 @@ else {
 /***********************************************************************
 ADF Read Data:
 
-Read data from a node, with partial capabilities.  The partial 
-capabilities are both in the node's data and also in memory.  
+Read data from a node, with partial capabilities.  The partial
+capabilities are both in the node's data and also in memory.
 Vectors of integers are used to indicate the data to be accessed
-from the node, and another set of integer vectors is used to 
-describe the memory location for the data.  
+from the node, and another set of integer vectors is used to
+describe the memory location for the data.
 	Note:  If the data-type of the node is a compound data-type ("I4[3],R8")
 for example, the partial capabilities will access one or more of
 these 20-byte data entities.  You cannot access a subset of an
@@ -3145,7 +3145,7 @@ for( disk_elem=0; disk_elem<total_disk_elements; disk_elem++ ) {
        memory_offset = m_stride[0];
        current_memory[0] += disk_offset;
        if ( current_memory[0] > m_end[0] ) current_memory[0] = m_end[0] ;
-     } /* end if */ 
+     } /* end if */
      else {
        ADFI_increment_array(
 		(unsigned int)m_num_dims, memory_dims,
@@ -3251,7 +3251,7 @@ CHECK_ADF_ABORT( *error_return ) ;
 /***********************************************************************
 ADF Write All Data:
 
-Write all data to a Node.  Writes all the node's data from a contiguous 
+Write all data to a Node.  Writes all the node's data from a contiguous
 memory space.
 
 ADF_Write_All_Data( ID, data, error_return )
@@ -3484,7 +3484,7 @@ else { /** Multiple data chunks **/
    	    CHECK_ADF_ABORT( *error_return ) ;
 
 		/** allocate space for the new data-chunk-entry-table **/
-      	    ADFI_file_malloc( file_index, 2 * TAG_SIZE + 
+      	    ADFI_file_malloc( file_index, 2 * TAG_SIZE +
 		(2 * (node.number_of_data_chunks + 1) + 1) * DISK_POINTER_SIZE,
 		&dct_block_offset, error_return ) ;
       	    CHECK_ADF_ABORT( *error_return ) ;
@@ -3502,10 +3502,10 @@ else { /** Multiple data chunks **/
 		/** Free the old data-chunk-table **/
 	    ADFI_file_free( file_index, &node.data_chunks, 0, error_return ) ;
             CHECK_ADF_ABORT( *error_return ) ;
-	    
+
 		/** Update node header with number of data-chunks++ and the
 			pointer to the data-chunk-table **/
-	    node.number_of_data_chunks++ ; 
+	    node.number_of_data_chunks++ ;
       	    node.data_chunks.block = dct_block_offset.block ;
       	    node.data_chunks.offset = dct_block_offset.offset ;
       	    ADFI_write_node_header( file_index, &block_offset, &node,
@@ -3526,7 +3526,7 @@ CHECK_ADF_ABORT( *error_return ) ;
 /***********************************************************************
 ADF Write Block Data:
 
-Write all data to a Node.  Writes all the node's data from a contiguous 
+Write all data to a Node.  Writes all the node's data from a contiguous
 memory space.
 
 ADF_Write_All_Data( ID, data, error_return )
@@ -3811,7 +3811,7 @@ else { /** Multiple data chunks **/
    	    CHECK_ADF_ABORT( *error_return ) ;
 
         /** allocate space for the new data-chunk-entry-table **/
-      	    ADFI_file_malloc( file_index, 2 * TAG_SIZE + 
+      	    ADFI_file_malloc( file_index, 2 * TAG_SIZE +
 		(2 * (node.number_of_data_chunks + 1) + 1) * DISK_POINTER_SIZE,
 		&dct_block_offset, error_return ) ;
       	    CHECK_ADF_ABORT( *error_return ) ;
@@ -3841,10 +3841,10 @@ else { /** Multiple data chunks **/
         /** Free the old data-chunk-table **/
 	    ADFI_file_free( file_index, &node.data_chunks, 0, error_return ) ;
             CHECK_ADF_ABORT( *error_return ) ;
-	    
+
         /** Update node header with number of data-chunks++ and the
 			pointer to the data-chunk-table **/
-	    node.number_of_data_chunks++ ; 
+	    node.number_of_data_chunks++ ;
       	    node.data_chunks.block = dct_block_offset.block ;
       	    node.data_chunks.offset = dct_block_offset.offset ;
       	    ADFI_write_node_header( file_index, &block_offset, &node,
@@ -3864,15 +3864,15 @@ CHECK_ADF_ABORT( *error_return ) ;
 /***********************************************************************
 ADF Write Data:
 
-Write data to a Node, with partial capabilities.  See ADF_Read_Data for 
+Write data to a Node, with partial capabilities.  See ADF_Read_Data for
 description.
 
-ADF_Write_Data( ID, s_start[], s_end[], s_stride[], m_num_dims, 
+ADF_Write_Data( ID, s_start[], s_end[], s_stride[], m_num_dims,
 	m_dims[], m_start[], m_end[], m_stride[], data, error_return )
 input:  const double ID		The ID of the node to use.
-input:  const int s_start[]	The starting dimension values to use in 
+input:  const int s_start[]	The starting dimension values to use in
 				the database (node).
-input:  const int s_end[]	The ending dimension values to use in 
+input:  const int s_end[]	The ending dimension values to use in
 				the database (node).
 input:  const int s_stride[]	The stride values to use in the database (node).
 input:  const int m_num_dims	The number of dimensions to use in memory.
@@ -4137,7 +4137,7 @@ else { /** Multiple data chunks, check to see if we need to add one mode **/
       CHECK_ADF_ABORT( *error_return ) ;
 
 		/** allocate space for the new data-chunk-entry-table **/
-      ADFI_file_malloc( file_index, 2 * TAG_SIZE + 
+      ADFI_file_malloc( file_index, 2 * TAG_SIZE +
 		(2 * (node.number_of_data_chunks + 1) + 1) * DISK_POINTER_SIZE,
 		&dct_block_offset, error_return ) ;
       CHECK_ADF_ABORT( *error_return ) ;
@@ -4155,10 +4155,10 @@ else { /** Multiple data chunks, check to see if we need to add one mode **/
 		/** Free the old data-chunk-table **/
       ADFI_file_free( file_index, &node.data_chunks, 0, error_return ) ;
             CHECK_ADF_ABORT( *error_return ) ;
-	    
+
 		/** Update node header with number of data-chunks++ and the
 			pointer to the data-chunk-table **/
-      node.number_of_data_chunks++ ; 
+      node.number_of_data_chunks++ ;
       node.data_chunks.block = dct_block_offset.block ;
       node.data_chunks.offset = dct_block_offset.offset ;
       ADFI_write_node_header( file_index, &block_offset, &node,
@@ -4181,7 +4181,7 @@ if( node.number_of_data_chunks == 1 ) {
       current_disk[i] = s_start[i] ;
    for( i=0; i<m_num_dims; i++ )
       current_memory[i] = m_start[i] ;
-   
+
 	/** Adjust data pointer **/
    if( memory_offset != 0 )
       data += memory_offset * memory_bytes ;
@@ -4217,34 +4217,34 @@ if( node.number_of_data_chunks == 1 ) {
 	  disk_offset = s_stride[0];
 	  current_disk[0] += disk_offset;
 	  if ( current_disk[0] > s_end[0] ) current_disk[0] = s_end[0] ;
-	} /* end if */ 
+	} /* end if */
 	else {
   	  ADFI_increment_array(
 		    node.number_of_dimensions, node.dimension_values,
                     s_start, s_end, s_stride, current_disk, &disk_offset,
                     error_return ) ;
            CHECK_ADF_ABORT( *error_return ) ;
-	} /* end else */ 
+	} /* end else */
 
         if ( m_num_dims == 1 ) {
 	  memory_offset = m_stride[0];
 	  current_memory[0] += disk_offset;
 	  if ( current_memory[0] > m_end[0] ) current_memory[0] = m_end[0] ;
-	} /* end if */ 
+	} /* end if */
 	else {
            ADFI_increment_array(
 	        (unsigned int)m_num_dims, memory_dims,
 		m_start, m_end, m_stride,
                 current_memory, &memory_offset, error_return ) ;
            CHECK_ADF_ABORT( *error_return ) ;
-	} /* end else */ 
+	} /* end else */
 
          block_offset.offset += disk_offset * file_bytes ;
          if ( block_offset.offset > DISK_BLOCK_SIZE ) {
            ADFI_adjust_disk_pointer( &block_offset, error_return ) ;
            CHECK_ADF_ABORT( *error_return ) ;
            } /* end if */
-	 
+
 		/** Adjust data pointer **/
          data += memory_offset * memory_bytes ;
          } /* end if */
@@ -4266,7 +4266,7 @@ else {
       current_disk[i] = s_start[i] ;
    for( i=0; i<m_num_dims; i++ )
       current_memory[i] = m_start[i] ;
-   
+
 	/** Adjust data pointer **/
    if( memory_offset != 0 )
       data += memory_offset * memory_bytes ;
@@ -4332,7 +4332,7 @@ else {
           memory_offset = m_stride[0];
           current_memory[0] += disk_offset;
           if ( current_memory[0] > m_end[0] ) current_memory[0] = m_end[0] ;
-        } /* end if */ 
+        } /* end if */
         else {
           ADFI_increment_array(
 		(unsigned int)m_num_dims, memory_dims,

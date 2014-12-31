@@ -43,12 +43,12 @@ GetGlVal (Tcl_Interp *interp, int argc, char* argv [])
    char buf [80];
    GLfloat floatVal [16];
    GLint intVal [16];
- 
+
     if (argc != 3) {
         Tcl_AppendResult (interp, "wrong # args", (char*) NULL);
         return TCL_ERROR;
     }
-   
+
     len = (int)strlen (argv [2]);
     for (i = 0; i < sizeof(getTable)/sizeof(getStruct); i++) {
        if (strncmp (argv [2], getTable[i].name, len) == 0) goto found;
@@ -81,7 +81,7 @@ found:
 	    }
         default: break;
     }
-   
+
     return TCL_OK;
 }
 

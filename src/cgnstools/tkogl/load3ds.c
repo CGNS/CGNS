@@ -14,7 +14,7 @@
 
 /*---------------------------------------------------------------------------*
  *
- *  The following are data structures corresponding to the 
+ *  The following are data structures corresponding to the
  *  chunk/chunktype overall format of 3DStudio files
  *
  *---------------------------------------------------------------------------*/
@@ -73,25 +73,25 @@ enum {
 
 typedef void ChunkReadProc (Tcl_DString* desc, FILE *f, long p);
 
-static ChunkReadProc  
+static ChunkReadProc
    ChunkReader,
    TriMeshReader,
    RGBFReader,
-   RGBBReader,   
+   RGBBReader,
    PercentIReader,
    PercentFReader,
    ObjBlockReader,
    VertListReader,
    FaceListReader,
-   FaceMatReader, 
-   MapListReader, 
+   FaceMatReader,
+   MapListReader,
    SmooListReader,
    TrMatrixReader,
-   LightReader,   
+   LightReader,
    SpotLightReader,
-   CameraReader,  
-   MatNameReader, 
-   MapFileReader, 
+   CameraReader,
+   MatNameReader,
+   MapFileReader,
    FramesReader;
 
 /*---------------------------------------------------------------------------
@@ -135,13 +135,13 @@ struct {
     {CHUNK_SHININESS,   "shininess",        NULL},
     {CHUNK_SHININESS1,  "shininess1",       NULL},
     {CHUNK_SHININESS2,  "shininess2",       NULL},
-    
+
     {CHUNK_TEXTURE,     "texture-map",      NULL},
     {CHUNK_BUMPMAP,     "bump-map",         NULL},
     {CHUNK_MAPFILE,     "name",     	    MapFileReader},
 
     {CHUNK_KEYFRAMER,   "keyframer-data",   NULL},
-    {CHUNK_FRAMES,      "frames",           FramesReader},  
+    {CHUNK_FRAMES,      "frames",           FramesReader},
 
 };
 
@@ -160,7 +160,7 @@ typedef struct {
    dword group;
    word flags;
 } FaceInfo;
-   
+
 typedef struct SmoothInfoNode {
    Vector normal;
    dword group;
@@ -201,15 +201,15 @@ static MaterialFaceInfo * matface = NULL;
  *
  *---------------------------------------------------------------------------*/
 
-static void 
+static void
 AllocMatFace ()
 {
    /* Allocate and initialize vector matface */
    int i;
-   
+
    assert (nmat >= 0);
    assert (matface == NULL);
-   
+
    matface = (MaterialFaceInfo*) malloc (sizeof (MaterialFaceInfo) * nmat);
    assert (matface != NULL);
 
@@ -221,7 +221,7 @@ AllocMatFace ()
    }
 }
 
-static void 
+static void
 FreeMatFace ()
 {
    /* Frees the matface table */
@@ -244,7 +244,7 @@ FreeMatFace ()
    matface = NULL;
 }
 
-static void 
+static void
 AllocFace ()
 {
    /* Allocates and initializes the face table */
@@ -255,7 +255,7 @@ AllocFace ()
    assert (face != NULL);
 }
 
-static void 
+static void
 FreeFace ()
 {
    /* Frees memory associated with the face table */
@@ -271,10 +271,10 @@ AllocVtx ()
    int i;
    assert (vtx == NULL);
    assert (nvtx > 0);
-   
+
    vtx = (VertexInfo*) malloc (sizeof (VertexInfo) * nvtx);
    assert (vtx != NULL);
-   
+
    for (i = 0; i < nvtx; i++) {
       vtx [i].smoothList = (SmoothList) NULL;
    }
@@ -298,12 +298,12 @@ FreeVtx ()
    vtx = NULL;
    nvtx = 0;
 }
-	 
-static int 
+
+static int
 FindMatFace ()
 {
    /* Finds an unused matface entry in 'matface' and returns its index */
-   int i; 
+   int i;
 
    if (matface == NULL) {
       AllocMatFace ();
@@ -315,7 +315,7 @@ FindMatFace ()
    return -1;
 }
 
-   
+
 static void
 FindSmooth (int ivtx, dword group)
 {
@@ -328,7 +328,7 @@ FindSmooth (int ivtx, dword group)
 
    assert (vtx != NULL);
    assert (ivtx < nvtx);
-   
+
    ptr = &(vtx [ivtx].smoothList);
    while (*ptr != NULL) {
       if ((*ptr)->group == group) break;
@@ -370,7 +370,7 @@ SmoothVertices ()
    }
 }
 
-static int 
+static int
 RenderFaceList (FaceList ptr)
 {
    /* Renders all triangular faces in list 'ptr'. Returns
@@ -378,7 +378,7 @@ RenderFaceList (FaceList ptr)
     */
    int disp = glGenLists (1);
    assert (disp >= 0);
-	
+
    glNewList (disp, GL_COMPILE);
    glBegin (GL_TRIANGLES);
 
@@ -388,7 +388,7 @@ RenderFaceList (FaceList ptr)
       int i;
       for (i = 0; i < 3; i++) {
 	 int ivtx = face [iface].ivtx [i];
-	 FindSmooth (ivtx, group);	 
+	 FindSmooth (ivtx, group);
 	 glNormal3fv (vtx [ivtx].smoothList->normal);
 	 if (vtx [ivtx].texFlag) {
 	    glTexCoord2fv (vtx [ivtx].texCoord);
@@ -401,7 +401,7 @@ RenderFaceList (FaceList ptr)
    return disp;
 }
 
-static void 
+static void
 RenderAllFaces (Tcl_DString* desc)
 {
    int imatface, iface;
@@ -494,8 +494,8 @@ RenderAllFaces (Tcl_DString* desc)
  *
  *---------------------------------------------------------------------------*/
 
-static int 
-ReadWord (FILE *f, word *wptr) 
+static int
+ReadWord (FILE *f, word *wptr)
 {
 #if defined(__WIN32__) || defined(_WIN32) || defined(LINUX)
    unsigned char b [2];
@@ -513,8 +513,8 @@ ReadWord (FILE *f, word *wptr)
    return 1;
 }
 
-static int 
-ReadWords (FILE *f, word *wptr, int nwords) 
+static int
+ReadWords (FILE *f, word *wptr, int nwords)
 {
    while (nwords--) {
       if (ReadWord (f, wptr++) != 1) return 0;
@@ -522,8 +522,8 @@ ReadWords (FILE *f, word *wptr, int nwords)
    return 1;
 }
 
-static int 
-ReadDWord (FILE *f, dword *wptr) 
+static int
+ReadDWord (FILE *f, dword *wptr)
 {
 #if defined(__WIN32__) || defined(_WIN32) || defined(LINUX)
    word b [2];
@@ -533,15 +533,15 @@ ReadDWord (FILE *f, dword *wptr)
    if (ReadWords (f, b, 2) != 1) return 0;
    tmp = b [0];
    b [0] = b [1];
-   b [1] = tmp; 
+   b [1] = tmp;
 #endif
 
    memcpy ((char*) wptr, (char*) b, 4);
    return 1;
 }
 
-static int 
-ReadFloat (FILE *f, float* fptr) 
+static int
+ReadFloat (FILE *f, float* fptr)
 {
 #if defined(__WIN32__) || defined(_WIN32) || defined(LINUX)
    word b [2];
@@ -551,14 +551,14 @@ ReadFloat (FILE *f, float* fptr)
    if (ReadWords (f, b, 2) != 1) return 0;
    tmp = b [0];
    b [0] = b [1];
-   b [1] = tmp; 
+   b [1] = tmp;
 #endif
 
    memcpy ((char*) fptr, b, 4);
    return 1;
 }
 
-static int 
+static int
 ReadFloats (FILE *f, float *fptr, int nfloats)
 {
    while (nfloats--) {
@@ -571,14 +571,14 @@ ReadFloats (FILE *f, float *fptr, int nfloats)
 /*---------------------------------------------------------------------------
  *
  *  These are the various procedures for reading each chnk type. The
- *  default behaviour is to read the chunk and 
+ *  default behaviour is to read the chunk and
  *  store the appropriate information
- *  about the chunk in the Tcl Desc result string 
+ *  about the chunk in the Tcl Desc result string
  *
  *---------------------------------------------------------------------------*/
 
-static int 
-FindChunk(word id) 
+static int
+FindChunk(word id)
 {
     int i;
     for (i = 0; i < sizeof(ChunkNames)/sizeof(ChunkNames[0]); i++)
@@ -587,8 +587,8 @@ FindChunk(word id)
     return -1;
 }
 
-static void 
-ChunkReader(Tcl_DString* desc, FILE *f, long p) 
+static void
+ChunkReader(Tcl_DString* desc, FILE *f, long p)
 {
     TChunkHeader h;
     int n;
@@ -610,7 +610,7 @@ ChunkReader(Tcl_DString* desc, FILE *f, long p)
 		    h.id, pc, h.len);
 	   Tcl_DStringAppendElement (desc, buf);
 */
-	  if (h.len == 0) return;	     
+	  if (h.len == 0) return;
 	  fseek(f, pc + h.len, SEEK_SET);
        } else {
 	  Tcl_DStringStartSublist (desc);
@@ -628,8 +628,8 @@ ChunkReader(Tcl_DString* desc, FILE *f, long p)
     }
 }
 
-static void 
-TriMeshReader(Tcl_DString* desc, FILE *f, long p) 
+static void
+TriMeshReader(Tcl_DString* desc, FILE *f, long p)
 {
    TChunkHeader h;
    int n;
@@ -650,14 +650,14 @@ TriMeshReader(Tcl_DString* desc, FILE *f, long p)
 	    ChunkNames[n].func(desc, f, pc);
 	 else
 	    ChunkReader(desc, f, pc);
-	 
+
 	 Tcl_DStringEndSublist (desc);
 	 fseek(f, pc, SEEK_SET);
       }
       if (ferror(f))
 	 break;
    }
-    
+
    RenderAllFaces (desc);
    FreeVtx ();
    FreeMatFace ();
@@ -665,8 +665,8 @@ TriMeshReader(Tcl_DString* desc, FILE *f, long p)
 }
 
 
-static void 
-RGBFReader (Tcl_DString* desc, FILE *f, long p) 
+static void
+RGBFReader (Tcl_DString* desc, FILE *f, long p)
 {
    float c[3];
    char buf [80];
@@ -678,8 +678,8 @@ RGBFReader (Tcl_DString* desc, FILE *f, long p)
    }
 }
 
-static void 
-RGBBReader (Tcl_DString* desc, FILE *f, long p) 
+static void
+RGBBReader (Tcl_DString* desc, FILE *f, long p)
 {
    byte c[3];
    char buf [80];
@@ -691,8 +691,8 @@ RGBBReader (Tcl_DString* desc, FILE *f, long p)
    }
 }
 
-static void 
-PercentIReader (Tcl_DString* desc, FILE *f, long p) 
+static void
+PercentIReader (Tcl_DString* desc, FILE *f, long p)
 {
    word perc;
    char buf [80];
@@ -701,8 +701,8 @@ PercentIReader (Tcl_DString* desc, FILE *f, long p)
    Tcl_DStringAppendElement (desc, buf);
 }
 
-static void 
-PercentFReader (Tcl_DString* desc, FILE *f, long p) 
+static void
+PercentFReader (Tcl_DString* desc, FILE *f, long p)
 {
    float perc;
    char buf [80];
@@ -711,12 +711,12 @@ PercentFReader (Tcl_DString* desc, FILE *f, long p)
    Tcl_DStringAppendElement (desc, buf);
 }
 
-static void 
-ObjBlockReader (Tcl_DString* desc, FILE *f, long p) 
+static void
+ObjBlockReader (Tcl_DString* desc, FILE *f, long p)
 {
    int i, c;
    char buf [80];
-    
+
    /* Read ASCIIZ object name */
    for (i = 0; i < 80; i++) {
        c = fgetc(f);
@@ -724,12 +724,12 @@ ObjBlockReader (Tcl_DString* desc, FILE *f, long p)
        buf [i] = c;
    }
    buf [i] = '\0';
-   
+
    Tcl_DStringStartSublist (desc);
    Tcl_DStringAppendElement (desc, "name");
    Tcl_DStringAppendElement (desc, buf);
    Tcl_DStringEndSublist (desc);
-    
+
    /* Read rest of chunks inside this one. */
    ChunkReader(desc, f, p);
 }
@@ -793,7 +793,7 @@ VertListReader (Tcl_DString* desc, FILE *f, long p)
 }
 
 static void
-FaceListReader (Tcl_DString* desc, FILE *f, long p) 
+FaceListReader (Tcl_DString* desc, FILE *f, long p)
 {
    word iface, nv;
    word c[4];
@@ -842,8 +842,8 @@ FaceListReader (Tcl_DString* desc, FILE *f, long p)
 }
 
 
-static void 
-FaceMatReader (Tcl_DString* desc, FILE *f, long p) 
+static void
+FaceMatReader (Tcl_DString* desc, FILE *f, long p)
 {
    int c, i, imat;
    word n, nf;
@@ -862,7 +862,7 @@ FaceMatReader (Tcl_DString* desc, FILE *f, long p)
    imat = FindMatFace (buf);
    assert (imat >= 0 && imat < nmat);
 
-   strcpy (matface [imat].name, buf);   
+   strcpy (matface [imat].name, buf);
    if (ReadWord (f, &n) != 1) assert (0);
    matface [imat].n = n;
 
@@ -877,8 +877,8 @@ FaceMatReader (Tcl_DString* desc, FILE *f, long p)
    }
 }
 
-static void 
-MapListReader (Tcl_DString* desc, FILE *f, long p) 
+static void
+MapListReader (Tcl_DString* desc, FILE *f, long p)
 {
    word ivtx, nv;
    float c[2];
@@ -901,8 +901,8 @@ MapListReader (Tcl_DString* desc, FILE *f, long p)
    }
 }
 
-static void 
-SmooListReader (Tcl_DString* desc, FILE *f, long p) 
+static void
+SmooListReader (Tcl_DString* desc, FILE *f, long p)
 {
    dword s;
    int i, j, n, ivtx;
@@ -924,8 +924,8 @@ SmooListReader (Tcl_DString* desc, FILE *f, long p)
    assert (n == nface);
 }
 
-static void 
-TrMatrixReader(Tcl_DString* desc, FILE *f, long p) 
+static void
+TrMatrixReader(Tcl_DString* desc, FILE *f, long p)
 {
    float rot[12];
    int i;
@@ -939,8 +939,8 @@ TrMatrixReader(Tcl_DString* desc, FILE *f, long p)
    }
 }
 
-static void 
-LightReader(Tcl_DString* desc, FILE *f, long p) 
+static void
+LightReader(Tcl_DString* desc, FILE *f, long p)
 {
    float c[3];
    int i;
@@ -960,7 +960,7 @@ LightReader(Tcl_DString* desc, FILE *f, long p)
    ChunkReader(desc, f, p);
 }
 
-static void 
+static void
 SpotLightReader(Tcl_DString* desc, FILE *f, long p)
 {
    float c[5];
@@ -984,8 +984,8 @@ SpotLightReader(Tcl_DString* desc, FILE *f, long p)
    Tcl_DStringEndSublist (desc);
 
 }
- 
-static void 
+
+static void
 CameraReader(Tcl_DString* desc, FILE *f, long p)
 {
    float c[8];
@@ -1017,7 +1017,7 @@ CameraReader(Tcl_DString* desc, FILE *f, long p)
 
 }
 
-static void 
+static void
 MatNameReader (Tcl_DString* desc, FILE *f, long p)
 {
    int i, c;
@@ -1036,7 +1036,7 @@ MatNameReader (Tcl_DString* desc, FILE *f, long p)
    Tcl_DStringAppendElement (desc, buf);
 }
 
-static void 
+static void
 MapFileReader (Tcl_DString* desc, FILE *f, long p)
 {
    int i, c;
@@ -1053,13 +1053,13 @@ MapFileReader (Tcl_DString* desc, FILE *f, long p)
    Tcl_DStringAppendElement (desc, buf);
 }
 
-static void 
+static void
 FramesReader (Tcl_DString* desc, FILE *f, long p)
 {
    dword c[2];
    char buf[80];
 
-   if (ReadDWord (f, &c[0]) != 1 || 
+   if (ReadDWord (f, &c[0]) != 1 ||
        ReadDWord (f, &c[1]) != 1) return;
 
    Tcl_DStringStartSublist (desc);
@@ -1076,19 +1076,19 @@ FramesReader (Tcl_DString* desc, FILE *f, long p)
 
 
 /*
- *--------------------------------------------------------------------------- 
+ *---------------------------------------------------------------------------
  *
  *  This procedure loads a 3ds file created by the 3D-Studio software
  *  package and pipes any triangles it may find into the GL pipeline
  *
  *  The syntax is:
  *
- *  	<pathName> "load3ds" <filename> 
+ *  	<pathName> "load3ds" <filename>
  *
- *  where 
+ *  where
  *	<filename> is the name of an ASC file
  *
- *  Result: If OK, a list where each element is a property list of 
+ *  Result: If OK, a list where each element is a property list of
  * 	objects described in the file. Otherwise, an error message.
  *
  *---------------------------------------------------------------------------
@@ -1118,8 +1118,8 @@ glLoad3DStudio (interp, argc, argv)
 #else
    file3D = fopen (filename, "r");
 #endif
-    
-   if (file3D == NULL) { 
+
+   if (file3D == NULL) {
       Tcl_AppendResult (interp, "Could not read ", filename, (char*) NULL);
       return TCL_ERROR;
    }

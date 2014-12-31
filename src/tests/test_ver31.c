@@ -102,7 +102,7 @@ int main (int argc, char *argv[])
         }
     }
     if (cg_close(cgfile)) error_exit("cg_close");
-        
+
     return 0;
 }
 
@@ -385,7 +385,7 @@ void write_structured()
         error_exit("outlet boco");
 
     /* write connectivities in multiple ZoneGridConnectivity_t nodes */
-    
+
     for (nc = 1; nc <= NUM_ZCONN; nc++) {
         /* create ZoneGridConnectivity_t node */
         sprintf(zcname, "%s%d", ZCONN_NAME, nc);
@@ -434,15 +434,15 @@ void write_structured()
         }
 
         /* write hole in zone 1 as PointList */
-        
+
         if (cg_hole_write(cgfile, cgbase, 1, hname, CGNS_ENUMV(Vertex),
                 CGNS_ENUMV(PointList), 1, npts, d_pts, &cghole)) {
             sprintf(errmsg, "Zone1/%s/%s", zcname, hname);
             error_exit(errmsg);
         }
-        
+
         /* write hole in zone 2 as PointRange */
-        
+
         if (cg_hole_write(cgfile, cgbase, 2, hname, CGNS_ENUMV(Vertex),
                 CGNS_ENUMV(PointRange), 1, 2, range, &cghole)) {
             sprintf(errmsg, "Zone2/%s/%s", zcname, hname);
@@ -766,7 +766,7 @@ void write_unstructured()
             sprintf(errmsg, "Zone2/%s/%s", zcname, name);
             error_exit(errmsg);
         }
-        
+
         sprintf(name, "hole%d", nc);
 
         /* write hole in zone 1 as PointRange */
@@ -776,9 +776,9 @@ void write_unstructured()
             sprintf(errmsg, "Zone1/%s/%s", zcname, name);
             error_exit(errmsg);
         }
-        
+
         /* write hole in zone 2 as PointList */
-        
+
         if (cg_hole_write(cgfile, cgbase, 2, name, CGNS_ENUMV(Vertex),
                 CGNS_ENUMV(PointList), 1, npts, pts, &cghole)) {
             sprintf(errmsg, "Zone2/%s/%s", zcname, name);
@@ -790,7 +790,7 @@ void write_unstructured()
     }
 
     /* create BaseIterativeData_t node */
-    
+
 
     for (n = 0; n < NUM_ZCONN; n++)
         iter[n] = n + 1;
@@ -802,9 +802,9 @@ void write_unstructured()
         error_exit("cg_goto BaseIterativeData");
     if (cg_array_write("IterationValues", CGNS_ENUMV(Integer),
         1, dims, iter)) error_exit("cg_array_write IterationValues");
-    
+
     /* create the ZoneIterativeData_t node */
-    
+
     dims[0] = 32;
     dims[1] = NUM_ZCONN;
     n = 32 * NUM_ZCONN;
@@ -879,7 +879,7 @@ void test_zconn()
     if (cg_goto(cgfile, cgbase, "Zone_t", cgzone, name, 0, NULL))
         error_exit("cg_goto ziter");
     if (cg_array_read(1, pointers)) error_exit("cg_array_read");
-    
+
     for (nz = 0; nz < NUM_ZCONN; nz++) {
         strncpy(zcname, &pointers[32*nz], 32);
         zcname[32] = 0;
@@ -889,7 +889,7 @@ void test_zconn()
         set_zconn(zcname);
         n = strlen(ZCONN_NAME);
         nc = atoi(&zcname[n]);
-        
+
         if (cg_nconns(cgfile, cgbase, cgzone, &nconn)) {
             sprintf(errmsg, "%s:cg_nconns", zcname);
             error_exit(errmsg);
@@ -969,7 +969,7 @@ void test_subreg()
     CGNS_ENUMT(TemperatureUnits_t) temp;
     CGNS_ENUMT(AngleUnits_t) ang;
     cgsize_t np;
-    
+
     if (cg_nsubregs(cgfile, cgbase, cgzone, &ns))
         error_exit("cg_nsubregs");
     if (ns == 0 && cgbase == 2) return;
@@ -980,7 +980,7 @@ void test_subreg()
                 &location, &ptype, &np, &bclen, &gclen))
             error_exit("cg_subreg_info");
         if (dim != 2) error_exit("dim not 2");
-        
+
         if (bclen) {
             if (gclen || ptype != CGNS_ENUMV(PointSetTypeNull) || np)
                 error_exit("bclen");
@@ -1023,7 +1023,7 @@ void test_subreg()
                     error_exit("Userdata/Family");
             }
         }
-        
+
         else if (gclen) {
             if (bclen || ptype != CGNS_ENUMV(PointSetTypeNull) || np)
                 error_exit("gclen");

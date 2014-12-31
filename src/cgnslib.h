@@ -669,7 +669,7 @@ extern CGNSDLL const char * ZoneTypeName[NofValidZoneTypes];
 typedef enum {
   CGNS_ENUMV( RigidGridMotionTypeNull ) =CG_Null,
   CGNS_ENUMV( RigidGridMotionTypeUserDefined ) =CG_UserDefined,
-  CGNS_ENUMV( ConstantRate ) =2, 
+  CGNS_ENUMV( ConstantRate ) =2,
   CGNS_ENUMV( VariableRate ) =3
 } CGNS_ENUMT( RigidGridMotionType_t );
 
@@ -684,7 +684,7 @@ extern CGNSDLL const char * RigidGridMotionTypeName[NofValidRigidGridMotionTypes
 typedef enum {
   CGNS_ENUMV( ArbitraryGridMotionTypeNull ) =CG_Null,
   CGNS_ENUMV( ArbitraryGridMotionTypeUserDefined ) =CG_UserDefined,
-  CGNS_ENUMV( NonDeformingGrid ) =2, 
+  CGNS_ENUMV( NonDeformingGrid ) =2,
   CGNS_ENUMV( DeformingGrid ) =3
 } CGNS_ENUMT( ArbitraryGridMotionType_t );
 
@@ -699,7 +699,7 @@ extern CGNSDLL const char * ArbitraryGridMotionTypeName[NofValidArbitraryGridMot
 typedef enum {
   CGNS_ENUMV( SimulationTypeNull ) =CG_Null,
   CGNS_ENUMV( SimulationTypeUserDefined ) =CG_UserDefined,
-  CGNS_ENUMV( TimeAccurate ) =2, 
+  CGNS_ENUMV( TimeAccurate ) =2,
   CGNS_ENUMV( NonTimeAccurate ) =3
 } CGNS_ENUMT( SimulationType_t );
 
@@ -720,7 +720,7 @@ typedef enum {
 typedef enum {
   CGNS_ENUMV( AreaTypeNull ) =CG_Null,
   CGNS_ENUMV( AreaTypeUserDefined ) =CG_UserDefined,
-  CGNS_ENUMV( BleedArea ) =2, 
+  CGNS_ENUMV( BleedArea ) =2,
   CGNS_ENUMV( CaptureArea ) =3
 } CGNS_ENUMT( AreaType_t );
 
@@ -737,7 +737,7 @@ extern CGNSDLL const char * AreaTypeName[NofValidAreaTypes];
 typedef enum {
   CGNS_ENUMV( AverageInterfaceTypeNull ) =CG_Null,
   CGNS_ENUMV( AverageInterfaceTypeUserDefined ) =CG_UserDefined,
-  CGNS_ENUMV( AverageAll ) =2, 
+  CGNS_ENUMV( AverageAll ) =2,
   CGNS_ENUMV( AverageCircumferential ) =3,
   CGNS_ENUMV( AverageRadial ) =4,
   CGNS_ENUMV( AverageI ) =5,

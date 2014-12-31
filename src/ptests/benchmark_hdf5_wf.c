@@ -75,11 +75,11 @@ double t0, t1, t2;
  * timing(6) = Time to read connectivity table
  * timing(7) = Time to read solution data (field data)
  * timing(8) = Time to read array data
- * timing(9) = Time for cgp_open, CG_MODE_WRITE 
- * timing(10) = Time for cg_base_write 
+ * timing(9) = Time for cgp_open, CG_MODE_WRITE
+ * timing(10) = Time for cg_base_write
  * timing(11) = Time for cg_zone_write
  * timing(12) = Time for cgp_open, CG_MODE_READ
- * timing(13) = Time for cg_read_write 
+ * timing(13) = Time for cg_read_write
  * timing(14) = Time for cg_read_write
  */
 double xtiming[15], timing[15], timingMin[15], timingMax[15];
@@ -100,7 +100,7 @@ int initialize(int* argc, char** argv[]) {
 int c_double_eq(double a, double b) {
 
   double eps = 1.e-8;
-  
+
   if(a-b < eps) {
     return true;
   }
@@ -120,14 +120,14 @@ int main(int argc, char* argv[]) {
   /* parameters */
   piomode_i = 1;
   queue = false;
-  debug = false; 
+  debug = false;
 
   t0 = MPI_Wtime(); /* Timer */
-  
+
   err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode_i, info);
-  
+
   Nnodes = Nelem*NodePerElem;
-  
+
   nijk[0] = Nnodes; /* Number of vertices */
   nijk[1] = Nelem; /* Number of cells */
   nijk[2] = 0; /* Number of boundary vertices */
@@ -168,10 +168,10 @@ int main(int argc, char* argv[]) {
   /* ====================================== */
 
   count = nijk[0]/comm_size;
-  
+
   min = count*comm_rank+1;
   max = count*(comm_rank+1);
-  
+
   if( !(Data_Fx = (double*) malloc(count*sizeof(double))) ) {
     printf("*FAILED* allocation of Data_Fx \n");
     cgp_error_exit();
@@ -253,7 +253,7 @@ int main(int argc, char* argv[]) {
   }
 
   xtiming[0] = t2-t0;
-  
+
   MPI_Reduce(&xtiming, &timing, 15, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&xtiming, &timingMin, 15, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
   MPI_Reduce(&xtiming, &timingMax, 15, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -272,10 +272,10 @@ int main(int argc, char* argv[]) {
       fprintf(fid,"\n");
     }
   }
-  
+
   MPI_Finalize();
 
   return 0;
 }
 
-        
+

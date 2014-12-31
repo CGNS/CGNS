@@ -75,8 +75,8 @@ double t0, t1, t2;
  * timing(6) = Time to read connectivity table
  * timing(7) = Time to read solution data (field data)
  * timing(8) = Time to read array data
- * timing(9) = Time for cgp_open, CG_MODE_WRITE 
- * timing(10) = Time for cg_base_write 
+ * timing(9) = Time for cgp_open, CG_MODE_WRITE
+ * timing(10) = Time for cg_base_write
  * timing(11) = Time for cg_zone_write
  * timing(12) = Time for cgp_open, CG_MODE_READ
  * timing(13) = Time for cg_read base, zone
@@ -99,7 +99,7 @@ int initialize(int* argc, char** argv[]) {
 int c_double_eq(double a, double b) {
 
   double eps = 1.e-8;
-  
+
   if(a-b < eps) {
     return true;
   }
@@ -121,15 +121,15 @@ int main(int argc, char* argv[]) {
   /* parameters */
   piomode_i = 1;
   queue = false;
-  debug = false; 
+  debug = false;
 
   t0 = MPI_Wtime(); /* Timer */
-  
+
   err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode_i, info);
-  
+
   Nnodes = Nelem*NodePerElem;
 
-  
+
   nijk[0] = Nnodes; /* Number of vertices */
   nijk[1] = Nelem; /* Number of cells */
   nijk[2] = 0; /* Number of boundary vertices */
@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
   Mb_elem = sizeof(cgsize_t)*Nelem*NodePerElem/131072;
   Mb_field = sizeof(double)*3*Nnodes/131072;
   Mb_array = (sizeof(double)+sizeof(cgsize_t))*Nnodes/131072;
-  
+
   /* ====================================== */
   /* ==    **WRITE THE CGNS FILE **      == */
   /* ====================================== */
@@ -199,8 +199,8 @@ int main(int argc, char* argv[]) {
 
   min = count*comm_rank+1;
   max = count*(comm_rank+1);
-  
-  for (k=0; k < count; k++) { 
+
+  for (k=0; k < count; k++) {
     Coor_x[k] = comm_rank*count + k + 1.1;
     Coor_y[k] = Coor_x[k] + 0.1;
     Coor_z[k] = Coor_y[k] + 0.1;
@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
 #if HDF5_HAVE_MULTI_DATASETS
   Cvec[0] = Cx;
   Cvec[1] = Cy;
-  Cvec[2] = Cz; 
+  Cvec[2] = Cz;
   if(cgp_coord_multi_write_data(fn, B, Z, Cvec, &min,&max, Coor_x, Coor_y, Coor_z)!= CG_OK) {
     printf("*FAILED* cgp_coords_write_data \n");
     cgp_error_exit();
@@ -253,7 +253,7 @@ int main(int argc, char* argv[]) {
   /* ====================================== */
   /* == (B) WRITE THE CONNECTIVITY TABLE == */
   /* ====================================== */
-  
+
   start = 1;
   end = nijk[1];
 
@@ -261,19 +261,19 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cgp_section_write \n");
     cgp_error_exit();
   }
- 
+
   count = nijk[1]/comm_size;
 
   if( !(elements = malloc(count*NodePerElem*sizeof(cgsize_t)) )) {
     printf("*FAILED* allocation of elements \n");
     cgp_error_exit();
   }
-  
+
   /* Create ridiculous connectivity table ... */
   for ( k = 0; k < count*NodePerElem; k++) {
     elements[k] = comm_rank*count*NodePerElem + k + 1;
   }
-  
+
   emin = count*comm_rank+1;
   emax = count*(comm_rank+1);
 
@@ -454,12 +454,12 @@ int main(int argc, char* argv[]) {
     free(Array_r);
     free(Array_i);
   }
-  
+
   if(cgp_close(fn) != CG_OK) {
     printf("*FAILED* cgp_close \n");
     cgp_error_exit();
   };
-  
+
   /* ====================================== */
   /* ==    **  READ THE CGNS FILE **     == */
   /* ====================================== */
@@ -504,12 +504,12 @@ int main(int argc, char* argv[]) {
   t2 = MPI_Wtime();
   xtiming[13] = t2-t1;
 
-  /* Check the read zone information is correct */ 
+  /* Check the read zone information is correct */
   if(sizes[0] != Nnodes) {
     printf("bad num points=%ld\n", (long)sizes[0]);
     cgp_error_exit();
   }
-     
+
   if(sizes[1] != Nelem) {
     printf("bad num points=%ld\n", (long)sizes[1]);
     cgp_error_exit();
@@ -524,12 +524,12 @@ int main(int argc, char* argv[]) {
     printf("bad zone name=%s\n", name);
     cgp_error_exit();
   }
-  /* ====================================== */ 
-  /* ==  (A) READ THE NODAL COORDINATES  == */ 
-  /* ====================================== */ 
+  /* ====================================== */
+  /* ==  (A) READ THE NODAL COORDINATES  == */
+  /* ====================================== */
 
   count = nijk[0]/comm_size;
-  
+
   if( !(Coor_x = (double*) malloc(count*sizeof(double))) ) {
     printf("*FAILED* allocation of Coor_x \n");
     cgp_error_exit();
@@ -572,8 +572,8 @@ int main(int argc, char* argv[]) {
 #endif
   t2 = MPI_Wtime();
   xtiming[5] = t2-t1;
-  
-  /* Check if read the data back correctly */ 
+
+  /* Check if read the data back correctly */
   if(debug) {
     for ( k = 0; k < count; k++) {
       if( !c_double_eq(Coor_x[k], comm_rank*count + k + 1.1) ||
@@ -589,16 +589,16 @@ int main(int argc, char* argv[]) {
   free(Coor_y);
   free(Coor_z);
 
-/* ====================================== */ 
-/* == (B) READ THE CONNECTIVITY TABLE  == */ 
-/* ====================================== */ 
+/* ====================================== */
+/* == (B) READ THE CONNECTIVITY TABLE  == */
+/* ====================================== */
 
   count = nijk[1]/comm_size;
   if( !(elements = malloc(count*NodePerElem*sizeof(cgsize_t)) )) {
     printf("*FAILED* allocation of elements \n");
     cgp_error_exit();
   }
-  
+
   emin = count*comm_rank+1;
   emax = count*(comm_rank+1);
 
@@ -609,10 +609,10 @@ int main(int argc, char* argv[]) {
   }
   t2 = MPI_Wtime();
   xtiming[6] = t2-t1;
- 
+
   if(debug) {
     for ( k = 0; k < count; k++) {
-      if(elements[k] != comm_rank*count*NodePerElem + k + 1) { 
+      if(elements[k] != comm_rank*count*NodePerElem + k + 1) {
 	printf("*FAILED* cgp_elements_read_data values are incorrect\n");
 	cgp_error_exit();
       }
@@ -620,8 +620,8 @@ int main(int argc, char* argv[]) {
   }
   free(elements);
 
-  /* ====================================== */ 
-  /* == (C) READ THE FIELD DATA          == */ 
+  /* ====================================== */
+  /* == (C) READ THE FIELD DATA          == */
   /* ====================================== */
   count = nijk[0]/comm_size;
 
@@ -669,11 +669,11 @@ int main(int argc, char* argv[]) {
   t2 = MPI_Wtime();
   xtiming[7] = t2-t1;
 
-  /* Check if read the data back correctly */ 
+  /* Check if read the data back correctly */
   if(debug) {
     for ( k = 0; k < count; k++) {
       if(!c_double_eq(Data_Fx[k], comm_rank*count + k + 1.01) ||
-	 !c_double_eq(Data_Fy[k], comm_rank*count + k + 1.02) || 
+	 !c_double_eq(Data_Fy[k], comm_rank*count + k + 1.02) ||
 	 !c_double_eq(Data_Fz[k], comm_rank*count + k + 1.03) ) {
 	printf("*FAILED* cgp_field_read_data values are incorrect \n");
 	cgp_error_exit();
@@ -683,11 +683,11 @@ int main(int argc, char* argv[]) {
   free(Data_Fx);
   free(Data_Fy);
   free(Data_Fz);
-  
-  /* ====================================== */ 
-  /* == (D) READ THE ARRAY DATA          == */ 
-  /* ====================================== */ 
-  
+
+  /* ====================================== */
+  /* == (D) READ THE ARRAY DATA          == */
+  /* ====================================== */
+
   count = nijk[0]/comm_size;
 
   if( !(Array_r = (double*) malloc(count*sizeof(double))) ) {
@@ -702,7 +702,7 @@ int main(int argc, char* argv[]) {
 
   min = count*comm_rank+1;
   max = count*(comm_rank+1);
-  
+
   if(cg_goto(fn,B,"Zone_t",Z,"UserDefinedData_t",1,"end") != CG_OK) {
     printf("*FAILED* cg_goto (User Defined Data)\n");
     cgp_error_exit();
@@ -722,16 +722,16 @@ int main(int argc, char* argv[]) {
   if( cgp_array_read_data(Ar, &min, &max, Array_r) != CG_OK) {
     printf("*FAILED* cgp_array_read_data (Array_r) \n");
     cgp_error_exit();
-  } 
+  }
   if( cgp_array_read_data(Ai, &min, &max, Array_i) != CG_OK) {
     printf("*FAILED* cgp_array_read_data (Array_i) \n");
     cgp_error_exit();
-  } 
+  }
 #endif
   t2 = MPI_Wtime();
   xtiming[8] = t2-t1;
-  
-  /* Check if read the data back correctly */ 
+
+  /* Check if read the data back correctly */
   if(debug) {
     for ( k = 0; k < count; k++) {
       if(!c_double_eq(Array_r[k], comm_rank*count + k + 1.001) ||
@@ -754,7 +754,7 @@ int main(int argc, char* argv[]) {
 /*   printf(" cgp_close timing = %20f \n", t2-t1); */
 
   xtiming[0] = t2-t0;
-  
+
   MPI_Reduce(&xtiming, &timing, 14, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&xtiming, &timingMin, 14, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
   MPI_Reduce(&xtiming, &timingMax, 14, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -773,10 +773,10 @@ int main(int argc, char* argv[]) {
       fprintf(fid," %zu %zu %zu %zu \n", Mb_coor, Mb_elem, Mb_field, Mb_array);
     }
   }
-  
+
   MPI_Finalize();
 
   return 0;
 }
 
-        
+

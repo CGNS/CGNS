@@ -15,7 +15,7 @@ static Tcl_Interp * globalinterp;
 static int globalresult;
 
 static void TessError (GLenum errno) {
-   Tcl_AppendResult (globalinterp, "Tesselation error: ", 
+   Tcl_AppendResult (globalinterp, "Tesselation error: ",
 		     gluErrorString(errno), " ", (char*) NULL);
    globalresult = TCL_ERROR;
 }
@@ -25,7 +25,7 @@ static void TessError (GLenum errno) {
 #else
     typedef void (* TessCallback) ();
 #endif
-    
+
 int
 Tesselate (Tcl_Interp *interp, int argc, char* argv [])
 {
@@ -42,7 +42,7 @@ Tesselate (Tcl_Interp *interp, int argc, char* argv [])
    globalinterp = interp;
    globalresult = TCL_OK;
 
-   for (iarg = 2; iarg < argc; iarg++) {	
+   for (iarg = 2; iarg < argc; iarg++) {
       int len = (int)strlen (argv [iarg]);
       if (strncmp (argv [iarg], "-displaylist", len) == 0) {
 	 iarg++;
@@ -52,13 +52,13 @@ Tesselate (Tcl_Interp *interp, int argc, char* argv [])
          }
          if (strcmp (argv [iarg], "none") == 0) {
             dlist = 0;
-         } 
+         }
          else if (Tcl_GetInt (interp, argv [iarg], &dlist) != TCL_OK) {
 	    Tcl_AppendResult (interp,
 	           "\nError parsing display list number", (char*) NULL);
 	    return TCL_ERROR;
 	 }
-      } 
+      }
       else if (strncmp (argv [iarg], "-noedgeflags", len) == 0) {
 	 edgeflags = 0;
       }
@@ -78,15 +78,15 @@ Tesselate (Tcl_Interp *interp, int argc, char* argv [])
    assert (vtx != NULL);
 
    gluTessCallback(obj, GLU_BEGIN, glBegin);
-   gluTessCallback(obj, GLU_VERTEX, glVertex3fv); 
+   gluTessCallback(obj, GLU_VERTEX, glVertex3fv);
    gluTessCallback(obj, GLU_END, glEnd);
    gluTessCallback(obj, GLU_ERROR, (TessCallback) TessError);
    if (edgeflags) gluTessCallback (obj, GLU_EDGE_FLAG, (TessCallback) glEdgeFlag);
-   if (dlist == -1) dlist = glGenLists (1);   
+   if (dlist == -1) dlist = glGenLists (1);
    if (dlist != 0) glNewList (dlist, GL_COMPILE);
    gluBeginPolygon (obj);
 
-   for (; iarg < argc; iarg++) {	
+   for (; iarg < argc; iarg++) {
       int len = (int)strlen (argv [iarg]);
       if (strncmp (argv [iarg], "-contour", len) == 0) {
 	 gluNextContour (obj, GLU_UNKNOWN);
@@ -110,17 +110,17 @@ Tesselate (Tcl_Interp *interp, int argc, char* argv [])
 	 }
       }
    }
-   
+
    gluEndPolygon (obj);
    gluDeleteTess (obj);
    free (vtx);
-   if (dlist != 0) glEndList(); 
+   if (dlist != 0) glEndList();
 
    if (result != TCL_OK || globalresult != TCL_OK) {
       if (dlist != 0) glDeleteLists (dlist, 1);
       return TCL_ERROR;
    }
-   
+
    if (dlist != 0) {
      char tmp[128];
      sprintf (tmp, "%d", dlist);
@@ -132,8 +132,8 @@ Tesselate (Tcl_Interp *interp, int argc, char* argv [])
 
 
 
-	    
-	    
+
+
 
 
 

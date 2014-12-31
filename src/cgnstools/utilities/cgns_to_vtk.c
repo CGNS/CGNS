@@ -1030,7 +1030,7 @@ int main (int argc, char *argv[])
         }
         else
             FATAL ("invalid zone type");
-        
+
 
         create_filename (name, outfile);
         strcat (outfile, ".vtk");

@@ -53,8 +53,8 @@ typedef struct {
 				 * definitions. */
 
     int doubleBuffer,           /* Various options that control visual alloc. */
-        depthSize, 
-        stencilSize, 
+        depthSize,
+        stencilSize,
         alphaSize,
         accumSize;
 
@@ -382,10 +382,10 @@ static int WinMakeWindowExist (OGLwin* oglWinPtr)
   	            SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
    oglWinPtr->hwnd = hwnd;
    oglWinPtr->hdc = GetDC(hwnd);
-   
+
 
    SetDCPixelFormat (oglWinPtr);
-   winPtr->window = Tk_AttachHWND ((Tk_Window) winPtr, hwnd);   
+   winPtr->window = Tk_AttachHWND ((Tk_Window) winPtr, hwnd);
 
    /* Don't know why the things below are necessary (copied
       from togl code) */
@@ -395,7 +395,7 @@ static int WinMakeWindowExist (OGLwin* oglWinPtr)
    Tcl_SetHashValue(hPtr, winPtr);
    winPtr->dirtyAtts = 0;
    winPtr->dirtyChanges = 0;
-   
+
    Tk_MapWindow (oglWinPtr->tkwin);
    /* XMapWindow (dpy, Tk_WindowId(oglWinPtr->tkwin)); */
    wglMakeCurrent (oglWinPtr->hdc, oglWinPtr->hrc);
@@ -405,7 +405,7 @@ static int WinMakeWindowExist (OGLwin* oglWinPtr)
 } /* WinMakeWindowExist */
 
 
-#endif 
+#endif
 
 
 int GetAbsXY (OGLwin *glxwinPtr)
@@ -489,7 +489,7 @@ OGLwinCmd(clientData, interp, argc, argv)
     glxwinPtr->width  = 300;
     glxwinPtr->height = 300;
     glxwinPtr->absx = glxwinPtr->absy = 0;
-   
+
     glxwinPtr->context = (char*) NULL;
     glxwinPtr->updatePending = 0;
     glxwinPtr->redrawList = -1;
@@ -506,9 +506,9 @@ OGLwinCmd(clientData, interp, argc, argv)
     glxwinPtr->hrc = 0;
     glxwinPtr->hPalette = 0;
 #endif
-    
+
     /* create the widget itself */
-    Tk_CreateEventHandler(glxwinPtr->tkwin, 
+    Tk_CreateEventHandler(glxwinPtr->tkwin,
 			  ExposureMask|StructureNotifyMask,
 			  OGLwinEventProc,
 			  (ClientData) glxwinPtr);
@@ -538,7 +538,7 @@ OGLwinCmd(clientData, interp, argc, argv)
     confPtr = configuration;
     *confPtr++ = GLX_RGBA;
     if (glxwinPtr->doubleBuffer) {
-       *confPtr++ = GLX_DOUBLEBUFFER; 
+       *confPtr++ = GLX_DOUBLEBUFFER;
     }
     if (glxwinPtr->depthSize) {
        *confPtr++ = GLX_DEPTH_SIZE;
@@ -567,11 +567,11 @@ OGLwinCmd(clientData, interp, argc, argv)
 
     /*** find an appropriate visual and a colormap for it ***/
     /* first, try to find a 24 bit visual */
-    confPtr [0] = GLX_RED_SIZE; 
+    confPtr [0] = GLX_RED_SIZE;
     confPtr [1] = 8;
-    confPtr [2] = GLX_GREEN_SIZE; 
+    confPtr [2] = GLX_GREEN_SIZE;
     confPtr [3] = 8;
-    confPtr [4] = GLX_BLUE_SIZE; 
+    confPtr [4] = GLX_BLUE_SIZE;
     confPtr [5] = 8;
     confPtr [6] = None;
 
@@ -600,7 +600,7 @@ OGLwinCmd(clientData, interp, argc, argv)
     if ((Tk_Parent(tkwin) != NULL) &&
 	(Tk_Colormap(tkwin) != Tk_Colormap (Tk_Parent(tkwin)))) {
        TkWmAddToColormapWindows(tkwin);
-    } 
+    }
 
     /* See if this window will share display lists with another */
     if (glxwinPtr->context != NULL) {
@@ -608,7 +608,7 @@ OGLwinCmd(clientData, interp, argc, argv)
         if (!Tcl_GetCommandInfo (interp, glxwinPtr->context, &info) ||
 	        info.proc != (Tcl_CmdProc *)OGLwinWidgetCmd) {
 	        Tcl_AppendResult (interp, "Not a gl window: ", glxwinPtr->context,
-			    (char*) NULL);	  
+			    (char*) NULL);
     	    Tk_DestroyWindow(glxwinPtr->tkwin);
 	        return TCL_ERROR;
         }
@@ -623,8 +623,8 @@ OGLwinCmd(clientData, interp, argc, argv)
      }
 
     if (glxwinPtr->cx == NULL) {
-        Tcl_AppendResult (interp, "could not create rendering context", 
-			  (char*) NULL);	  
+        Tcl_AppendResult (interp, "could not create rendering context",
+			  (char*) NULL);
         Tk_DestroyWindow(glxwinPtr->tkwin);
         return TCL_ERROR;
     }
@@ -632,7 +632,7 @@ OGLwinCmd(clientData, interp, argc, argv)
     Tk_MapWindow (tkwin);
 
     XSetWMColormapWindows(glxwinPtr->display,
-			  Tk_WindowId(tkwin), 
+			  Tk_WindowId(tkwin),
 			  &(Tk_WindowId(tkwin)), 1 );
 
 #endif
@@ -640,7 +640,7 @@ OGLwinCmd(clientData, interp, argc, argv)
     OGLwinViewport (glxwinPtr);
     ARRANGE_REDRAW(glxwinPtr);
     GetAbsXY (glxwinPtr);
-    
+
     Tcl_SetResult(interp, Tk_PathName(glxwinPtr->tkwin), TCL_VOLATILE);
     return TCL_OK;
 }
@@ -651,7 +651,7 @@ OGLwinCmd(clientData, interp, argc, argv)
 /*---------------------------------------------------------------------------
  *
  * OGLwinViewport
- * 
+ *
  *    Called when window is resized. If a non-zero aspect ratio was defined
  *    for that window, a corresponding viewport is set by centering it
  *    inside the window.
@@ -659,7 +659,7 @@ OGLwinCmd(clientData, interp, argc, argv)
  *---------------------------------------------------------------------------
  */
 static void
-OGLwinViewport (OGLwin* oglWinPtr) 
+OGLwinViewport (OGLwin* oglWinPtr)
 {
    if (oglWinPtr->aspectRatio == 0.0) {
       glViewport (0, 0, oglWinPtr->width, oglWinPtr->height);
@@ -668,13 +668,13 @@ OGLwinViewport (OGLwin* oglWinPtr)
       if (oglWinPtr->width/oglWinPtr->aspectRatio >  oglWinPtr->height) {
 	 /* Should reduce the width of the viewport */
 	 int adjWidth = (int) (oglWinPtr->height * oglWinPtr->aspectRatio);
-	 glViewport ((oglWinPtr->width - adjWidth) / 2, 0, adjWidth, 
+	 glViewport ((oglWinPtr->width - adjWidth) / 2, 0, adjWidth,
 		     oglWinPtr->height);
       }
       else {
 	 /* Should reduce the height of the viewport */
 	 int adjHeight = (int) (oglWinPtr->width/oglWinPtr->aspectRatio);
-	 glViewport (0, (oglWinPtr->height - adjHeight) / 2, 
+	 glViewport (0, (oglWinPtr->height - adjHeight) / 2,
 		     oglWinPtr->width, adjHeight);
       }
    }
@@ -683,14 +683,14 @@ OGLwinViewport (OGLwin* oglWinPtr)
 /*---------------------------------------------------------------------------
  *
  * MakeCurrent
- * 
+ *
  *    Called whenever it is necessary that the OpenGL context for a
  *    given window is current.
  *
  *---------------------------------------------------------------------------
  */
 static void
-MakeCurrent (OGLwin* oglwinPtr) 
+MakeCurrent (OGLwin* oglwinPtr)
 {
    static OGLwin* previous = NULL;
    if (oglwinPtr == previous) return;
@@ -710,14 +710,14 @@ MakeCurrent (OGLwin* oglwinPtr)
 /*---------------------------------------------------------------------------
  *
  * OGLwinRedraw
- * 
+ *
  *    Sample redraw routine. Redraws
  *    display list redrawList if defined
  *
  *---------------------------------------------------------------------------
  */
-    
-static void 
+
+static void
 OGLwinRedraw (clientData)
      ClientData clientData;
 {
@@ -749,18 +749,18 @@ OGLwinRedraw (clientData)
 
 #else
    MakeCurrent(glxwinPtr);
-   
+
    if (glxwinPtr->redrawList != -1) {
       glCallList (glxwinPtr->redrawList);
    }
 
    if (glxwinPtr->doubleBuffer) {
       glXSwapBuffers(Tk_Display (glxwinPtr->tkwin),
-		     Tk_WindowId(glxwinPtr->tkwin));	
+		     Tk_WindowId(glxwinPtr->tkwin));
       /* buffer swap does implicit glFlush */
    }
    else {
-      glFlush();		
+      glFlush();
       /* explicit flush for single buffered case */
    }
 #endif
@@ -770,13 +770,13 @@ OGLwinRedraw (clientData)
 
 /*
  *----------------------------------------------------------------------
- * 
+ *
  * Display list management.
  *
  *----------------------------------------------------------------------
  */
 
-static int 
+static int
 UnusedDList ()
 {
    /* Returns an integer number corresponding to a free display list
@@ -789,7 +789,7 @@ FreeDisplayList (displayList)
      int displayList;
 {
    /* free the given display list. returns 0 if displayList is not in use or
-    *  1 if it was correctly freed 
+    *  1 if it was correctly freed
     */
    glDeleteLists (displayList, 1);
    return 1;
@@ -958,7 +958,7 @@ OGLwinWidgetCmd(clientData, interp, argc, argv)
         MAPWINDOW;
         if (glxwinPtr->redrawList != -1) {
             glDeleteLists (glxwinPtr->redrawList, 1);
-        } 
+        }
         else {
             glxwinPtr->redrawList = UnusedDList();
             if (glxwinPtr->redrawList == -1) {
@@ -986,8 +986,8 @@ OGLwinWidgetCmd(clientData, interp, argc, argv)
 	        if (Tcl_GetInt (interp, argv [2], &newlist) != TCL_OK) goto error;
 	        argc -= 3;
 	        argv += 3;
-        } 
-        else {	    
+        }
+        else {
 	        newlist = UnusedDList();
 	        argc -= 2;
 	        argv += 2;
@@ -1034,7 +1034,7 @@ OGLwinWidgetCmd(clientData, interp, argc, argv)
       }
       selectbuf = (GLuint*) malloc (sizeof (GLuint)*nvals);
       assert (selectbuf != NULL);
-      MAPWINDOW;      
+      MAPWINDOW;
       argc -= 3;
       argv += 3;
       glSelectBuffer (nvals, selectbuf);
@@ -1072,7 +1072,7 @@ OGLwinWidgetCmd(clientData, interp, argc, argv)
       /* 3 window(world) coordinates */
       GLdouble x, y, z, modelmatrix[16], projectmatrix[16];
       GLint viewport [4], retval;
-      if (argc != 5) {		
+      if (argc != 5) {
     	 Tcl_AppendResult (interp, argv [1], ": x y z coordinates expected",
 			   (char*) NULL);
 	     goto error;
@@ -1085,25 +1085,25 @@ OGLwinWidgetCmd(clientData, interp, argc, argv)
       glGetDoublev (GL_PROJECTION_MATRIX, projectmatrix);
       glGetIntegerv (GL_VIEWPORT, viewport);
       if (c == 'p') {
-    	 retval = gluProject (x, y, z, modelmatrix, projectmatrix, 
+    	 retval = gluProject (x, y, z, modelmatrix, projectmatrix,
 			      viewport, &x, &y, &z);
 	 y = viewport [3] - y;
-      } 
+      }
       else {
     	 y = viewport [3] - y;
-	 retval = gluUnProject (x, y, z, modelmatrix, projectmatrix, 
-				viewport, &x, &y, &z);	 
+	 retval = gluUnProject (x, y, z, modelmatrix, projectmatrix,
+				viewport, &x, &y, &z);
       }
       if (retval) {
 	char tmp[128];
 	sprintf (tmp, "%f %f %f", x, y, z);
 	Tcl_SetResult(interp, tmp, TCL_VOLATILE);
       }
-   } 
+   }
    else if ((c == 'r') && (strncmp(argv[1], "redraw", length) == 0)) {
       /* perform the redraw */
       ARRANGE_REDRAW(glxwinPtr);
-   } 
+   }
    else {
       /* handle extensions */
       struct TkOGLExtStruct * extPtr = TkOGLExtTable;
@@ -1206,7 +1206,7 @@ OGLwinEventProc(clientData, eventPtr)
     XEvent *eventPtr;		/* Information about event. */
 {
     OGLwin *glxwinPtr = (OGLwin *) clientData;
-    
+
 #ifdef __WIN32__
 
     assert (glxwinPtr->hwnd != 0);
@@ -1218,20 +1218,20 @@ OGLwinEventProc(clientData, eventPtr)
             * in its old position
             */
            Tk_ResizeWindow (glxwinPtr->tkwin, glxwinPtr->width, glxwinPtr->height);
-        } 
+        }
         ARRANGE_REDRAW(glxwinPtr);
-    } 
+    }
     else if (eventPtr->type == ConfigureNotify) {
-        GLsizei glnWidth = eventPtr->xconfigure.width; 
-        GLsizei glnHeight = eventPtr->xconfigure.height; 
+        GLsizei glnWidth = eventPtr->xconfigure.width;
+        GLsizei glnHeight = eventPtr->xconfigure.height;
         glxwinPtr->width = glnWidth;
         glxwinPtr->height = glnHeight;
         OGLwinViewport (glxwinPtr);
-    } 
+    }
 #else
     if (eventPtr->type == Expose) {
        ARRANGE_REDRAW(glxwinPtr);
-    } 
+    }
     else if (eventPtr->type == ConfigureNotify) {
        glxwinPtr->width = eventPtr->xconfigure.width;
        glxwinPtr->height = eventPtr->xconfigure.height;
@@ -1306,7 +1306,7 @@ OGLwinDestroy(char* clientData)
  *
  *----------------------------------------------------------------------
  */
- 
+
 static void SetDCPixelFormat (OGLwin* glxwinPtr)
 {
     HANDLE hHeap;
@@ -1338,15 +1338,15 @@ static void SetDCPixelFormat (OGLwin* glxwinPtr)
     XVisualInfo VisInf;
     XVisualInfo *visinfo = &VisInf;
     TkWinColormap *cmap = (TkWinColormap *) ckalloc(sizeof(TkWinColormap));
-    
+
     /* Just for portability, define the simplest visinfo */
-    visinfo->visual = DefaultVisual(glxwinPtr->display, 
+    visinfo->visual = DefaultVisual(glxwinPtr->display,
                                     DefaultScreen(glxwinPtr->display));
     visinfo->depth = visinfo->visual->bits_per_rgb;
 
     /* Set pfd fields according to the capabilities needed */
     if (glxwinPtr->doubleBuffer) {
-       pfd.dwFlags |= PFD_DOUBLEBUFFER; 
+       pfd.dwFlags |= PFD_DOUBLEBUFFER;
     }
     else {
        pfd.dwFlags &= ~PFD_DOUBLEBUFFER;
@@ -1374,7 +1374,7 @@ static void SetDCPixelFormat (OGLwin* glxwinPtr)
 
         (LPLOGPALETTE) lpPalette = HeapAlloc (hHeap, 0,
             sizeof (LOGPALETTE) + (nColors * sizeof (PALETTEENTRY)));
-            
+
         lpPalette->palVersion = 0x300;
         lpPalette->palNumEntries = nColors;
 
@@ -1399,11 +1399,11 @@ static void SetDCPixelFormat (OGLwin* glxwinPtr)
             SelectPalette (hdc, glxwinPtr->hPalette, FALSE);
             RealizePalette (hdc);
         }
-        
+
         cmap->palette = glxwinPtr->hPalette;
         cmap->size = nColors;
         cmap->stale = 0;
-        
+
         /* Since this is a private colormap of a fix size, we do not need
            a valid hash table, but a dummy one */
         Tcl_InitHashTable(&cmap->refCounts, TCL_ONE_WORD_KEYS);

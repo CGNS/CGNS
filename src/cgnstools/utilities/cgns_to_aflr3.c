@@ -893,7 +893,7 @@ static void boundary_conditions ()
     if (nBocos) {
         Bocos = (BOCO *)malloc(nBocos * sizeof(BOCO));
         if (Bocos == NULL) err_exit(NULL, "malloc failed for bocos");
- 
+
         for (nb = 1; nb <= nBocos; nb++) {
             if (cg_boco_info(cgFile, cgBase, cgZone, nb, name,
                     &bctype, &ptype, &np, nrmlindex, &is,
@@ -1085,7 +1085,7 @@ static void write_elements (FILE *fp, CGNS_ENUMT(ElementType_t) type)
             err_exit ("cg_section_read", NULL);
         if (elemtype != type &&
             elemtype != CGNS_ENUMV(MIXED)) continue;
- 
+
         ne = ie - is + 1;
         if (cg_ElementDataSize (cgFile, cgBase, cgZone, ns, &size))
             err_exit ("cg_ElementDataSize", NULL);
@@ -1094,7 +1094,7 @@ static void write_elements (FILE *fp, CGNS_ENUMT(ElementType_t) type)
             err_exit (NULL, "malloc failed for element connectivity");
         if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
             err_exit ("cg_elements_read", NULL);
- 
+
         if (elemtype == CGNS_ENUMV(MIXED)) {
             for (i = 0, n = 0; n < ne; n++) {
                 et = (CGNS_ENUMT(ElementType_t))conn[i++];
@@ -1289,7 +1289,7 @@ int main (int argc, char *argv[])
     printf("number pyras  = %ld\n", (long)nPyras);
     printf("number pentas = %ld\n", (long)nPrisms);
     printf("number hexas  = %ld\n", (long)nHexas);
-    
+
     /* verify dimensions fit in an integer */
 
     if ((3 * nTris + 4 * nQuads) > CG_MAX_INT32 ||
@@ -1345,7 +1345,7 @@ int main (int argc, char *argv[])
     idata[5] = (int)nPrisms;
     idata[6] = (int)nHexas;
     write_ints (fp, 7, idata);
-    
+
     write_coords (fp);
     if (is_structured) {
         write_structured(fp);

@@ -382,7 +382,7 @@ static void boundary_elements ()
             err_exit (NULL, "malloc failed for element connectivity");
         if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
             err_exit ("cg_elements_read", NULL);
- 
+
         ne = ie - is + 1;
         et = elemtype;
         for (i = 0, n = 0; n < ne; n++) {
@@ -433,7 +433,7 @@ static void boundary_elements ()
             err_exit (NULL, "malloc failed for element connectivity");
         if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
             err_exit ("cg_elements_read", NULL);
- 
+
         ne = ie - is + 1;
         et = elemtype;
         for (i = 0, n = 0; n < ne; n++) {
@@ -597,7 +597,7 @@ static void boundary_conditions ()
     if (nBocos) {
         Bocos = (BOCO *)malloc(nBocos * sizeof(BOCO));
         if (Bocos == NULL) err_exit(NULL, "malloc failed for bocos");
- 
+
         for (nb = 1; nb <= nBocos; nb++) {
             if (cg_boco_info(cgFile, cgBase, cgZone, nb, name,
                     &bctype, &ptype, &np, nrmlindex, &is,

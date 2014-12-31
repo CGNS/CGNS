@@ -155,7 +155,7 @@ static void read_cogsg(char *filename)
             fprintf(stderr, "realloc failed for coordinates\n");
             exit(1);
         }
-        
+
         if (np != bf_getdoubles(bf, np, &xCoord[nCoords]) ||
             np != bf_getdoubles(bf, np, &yCoord[nCoords]) ||
             np != bf_getdoubles(bf, np, &zCoord[nCoords])) {
@@ -164,7 +164,7 @@ static void read_cogsg(char *filename)
         }
         nCoords += np;
     }
-    
+
     bf_close(bf);
 }
 
@@ -219,7 +219,7 @@ static void read_bc(char *filename)
         for (i = 0; i < 3; i++)
             Faces[n].tri[i] = tri[i];
     }
-    
+
     fclose(fp);
 
     /* sort faces if needed */
@@ -305,7 +305,7 @@ static void read_mapbc(const char *filename)
         }
         np--;
         Patchs[np].bc = bc;
-        
+
         p = buf + nn;
         while (*p && isspace(*p)) p++;
         if (*p) {

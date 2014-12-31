@@ -636,7 +636,7 @@ int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
         dataset[n].link = cgi_read_link(id[n]);
         dataset[n].in_link = in_link;
         linked = dataset[n].link ? 1 : in_link;
-        
+
         if (cgi_read_string(dataset[n].id, dataset[n].name, &string_data) ||
             cgi_BCType(string_data, &dataset[n].type)) return 1;
         free(string_data);
@@ -1564,15 +1564,15 @@ int cgi_read_1to1(cgns_1to1 *one21)
     }
 #ifdef BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
-    /* 
-     * Convert the double id to a hid_t id and compare that to 0 instead of 
-     * comparing doubles, this avoids issues with comparing doubles when 
+    /*
+     * Convert the double id to a hid_t id and compare that to 0 instead of
+     * comparing doubles, this avoids issues with comparing doubles when
      * compiler optimization is enabled.
      */
       hid_t hid_ptset, hid_dptset;
       to_HDF_ID(one21->ptset.id,hid_ptset);
       to_HDF_ID(one21->dptset.id,hid_dptset);
-    
+
       if (hid_ptset==0 || hid_dptset==0) {
         cgi_error("PointRange or PointRangeDonor undefined for %s",one21->name);
         return 1;
@@ -3826,7 +3826,7 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
      /* Determine data size */
         if (cgi_datasize(Idim, CurrentDim, discrete[0][n].location,
             discrete[0][n].rind_planes, DataSize)) return 1;
-    
+
      /* check for PointList/PointRange */
         if (cgi_read_one_ptset(linked, discrete[0][n].id,
                 &discrete[0][n].ptset)) return 1;
@@ -4364,8 +4364,8 @@ int cgi_read_units(int in_link, double parent_id, cgns_units **units)
         return 1;
     }
     units[0]->nunits = 5;
- 
-    /* change from Celcius to Celsius */   
+
+    /* change from Celcius to Celsius */
     if (0 == strncmp(&string_data[96], "Celcius", 7)) {
         string_data[99] = 's';
         if (cg->mode == CG_MODE_MODIFY && !in_link) {
@@ -5067,7 +5067,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
             return 1;
         }
         reg[n].reg_dim = *((int *)data);
-        free(data); 
+        free(data);
 
         /* Descriptor_t */
         if (cgi_get_nodes(id[n], "Descriptor_t", &nn, &idi)) return 1;
@@ -5151,7 +5151,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
             &reg[n].location)) return 1;
 
         /* FamilyName_t */
-        if (cgi_read_family_name(linked, reg[n].id, 
+        if (cgi_read_family_name(linked, reg[n].id,
                 reg[n].name, reg[n].family_name))
             return 1;
 
@@ -5198,7 +5198,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
             reg[n].ptset->id=IR_id[nn];
             reg[n].ptset->link=cgi_read_link(IR_id[nn]);
             reg[n].ptset->in_link=linked;
-            if (cgi_read_ptset(reg[n].id, reg[n].ptset)) 
+            if (cgi_read_ptset(reg[n].id, reg[n].ptset))
                 return 1;
         }
         if (nIR_t) free(IR_id);
@@ -11879,7 +11879,7 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
  *  ZoneIterativeData_t, BaseIterativeData_t, Zone_t, GeometryReference_t,
  *  Family_t, CGNSBase_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t
  *  BCProperty_t, WallFunction_t, Area_t,
- *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t, 
+ *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t,
  *  UserDefinedData_t, ZoneSubRegion_t, FamilyBCDataSet_t
  */
     if (strcmp(posit->label,"IntegralData_t")==0)
@@ -11963,9 +11963,9 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
     else if (strcmp(posit->label,"AverageInterface_t")==0)
         ADDRESS4MULTIPLE(cgns_caverage, nuser_data, user_data, cgns_user_data)
     else if (strcmp(posit->label,"UserDefinedData_t")==0)
-        ADDRESS4MULTIPLE(cgns_user_data, nuser_data, user_data, cgns_user_data)    
+        ADDRESS4MULTIPLE(cgns_user_data, nuser_data, user_data, cgns_user_data)
     else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
-        ADDRESS4MULTIPLE(cgns_subreg, nuser_data, user_data, cgns_user_data)    
+        ADDRESS4MULTIPLE(cgns_subreg, nuser_data, user_data, cgns_user_data)
     else {
         cgi_error("UserDefinedData_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;

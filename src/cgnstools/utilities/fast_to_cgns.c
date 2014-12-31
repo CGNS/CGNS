@@ -223,7 +223,7 @@ static void read_fgrid(char *filename, int flags)
                 Tets[nn++] = nodes[i];
         }
     }
-    
+
     bf_close(bf);
 }
 
@@ -464,7 +464,7 @@ int main (int argc, char *argv[])
         return 1;
     }
     strcpy(basename, argv[argind++]);
-    
+
     /* read mesh */
 
     printf("reading grid from \"%s\"\n", basename);

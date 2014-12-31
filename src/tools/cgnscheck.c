@@ -632,7 +632,7 @@ static int valid_face (ZONE *z, cgsize_t elem)
             return 0;
         }
     }
-    return 0;            
+    return 0;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -794,7 +794,7 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
                     nn -= 54;
                     break;
             }
-#endif            
+#endif
             *nnodes = nn;
             return nodes;
         }
@@ -1040,7 +1040,7 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
 #ifdef USE_MID_NODES
             nodemap = tetra_20[fnum];
             break;
-#endif            
+#endif
         case CGNS_ENUMV(TETRA_16):
             nodemap = tetra_16[fnum];
             break;
@@ -1060,7 +1060,7 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
 #ifdef USE_MID_NODES
             nodemap = pyra_14[fnum];
             break;
-#endif            
+#endif
         case CGNS_ENUMV(PYRA_13):
             nodemap = pyra_13[fnum];
             break;
@@ -1069,7 +1069,7 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
 #ifdef USE_MID_NODES
             nodemap = pyra_29[fnum];
             break;
-#endif            
+#endif
         case CGNS_ENUMV(PYRA_21):
             nodemap = pyra_21[fnum];
             break;
@@ -1089,7 +1089,7 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
 #ifdef USE_MID_NODES
             nodemap = penta_18[fnum];
             break;
-#endif            
+#endif
         case CGNS_ENUMV(PENTA_15):
             nodemap = penta_15[fnum];
             break;
@@ -1098,7 +1098,7 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
 #ifdef USE_MID_NODES
             nodemap = penta_38[fnum];
             break;
-#endif            
+#endif
         case CGNS_ENUMV(PENTA_24):
             nodemap = penta_24[fnum];
             break;
@@ -1115,19 +1115,19 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
             nodemap = hexa_8[fnum];
             break;
         case CGNS_ENUMV(HEXA_27):
-#ifdef USE_MID_NODES        
+#ifdef USE_MID_NODES
             nodemap = hexa_27[fnum];
             break;
-#endif            
+#endif
         case CGNS_ENUMV(HEXA_20):
             nodemap = hexa_20[fnum];
             break;
         case CGNS_ENUMV(HEXA_56):
         case CGNS_ENUMV(HEXA_64):
-#ifdef USE_MID_NODES        
+#ifdef USE_MID_NODES
             nodemap = hexa_56[fnum];
             break;
-#endif            
+#endif
         case CGNS_ENUMV(HEXA_32):
             nodemap = hexa_32[fnum];
             break;
@@ -1147,7 +1147,7 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
     for (n = 0; n < face->nnodes; n++)
         face->nodes[n] = nodes[nodemap[n]];
     qsort (face->nodes, face->nnodes, sizeof(cgsize_t), sort_nodes);
-    return face;        
+    return face;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1547,7 +1547,7 @@ static void read_zone (int nz)
             pe += nn;
         }
     }
-    
+
     if (ierr)
         warning (1, "%d faces are shared by more than 2 volumes", ierr);
 
@@ -2738,7 +2738,7 @@ static void check_elements (void)
                 else if (type == CGNS_ENUMV(QUAD_25))
                     face = new_face (16, pe);
                 else
-#endif                               
+#endif
                 face = new_face (nn, pe);
                 pf = (FACE *) HashFind (z->faces, face);
                 free (face);
@@ -5002,7 +5002,7 @@ static void check_subreg (int ns)
     check_user_data (dataclass, punits, 4);
 
     /* check data arrays */
-    
+
     if (datasize) {
         if (verbose) printf("    Data Size=%ld\n", (long)datasize);
         if (cg_narrays (&nd)) error_exit("cg_narrays");

@@ -24,13 +24,13 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------*/
 
-/*    _____ __  __ _____   ____  _____ _______       _   _ _______ 
+/*    _____ __  __ _____   ____  _____ _______       _   _ _______
  *   |_   _|  \/  |  __ \ / __ \|  __ \__   __|/\   | \ | |__   __|
- *     | | | \  / | |__) | |  | | |__) | | |  /  \  |  \| |  | |   
- *     | | | |\/| |  ___/| |  | |  _  /  | | / /\ \ | . ` |  | |   
- *    _| |_| |  | | |    | |__| | | \ \  | |/ ____ \| |\  |  | |   
- *   |_____|_|  |_|_|     \____/|_|  \_\ |_/_/    \_\_| \_|  |_|   
- *                                                            
+ *     | | | \  / | |__) | |  | | |__) | | |  /  \  |  \| |  | |
+ *     | | | |\/| |  ___/| |  | |  _  /  | | / /\ \ | . ` |  | |
+ *    _| |_| |  | | |    | |__| | | \ \  | |/ ____ \| |\  |  | |
+ *   |_____|_|  |_|_|     \____/|_|  \_\ |_/_/    \_\_| \_|  |_|
+ *
  * -------------------  DEVELOPER'S NOTES  ---------------------------
  *
  * (1) If a new keyword is introduced into this file then the same keyword
@@ -394,7 +394,7 @@ typedef enum {
 #define Ideal_s                        "Ideal"
 #define VanderWaals_s                  "VanderWaals"
 #define Constant_s                     "Constant"
-#define PowerLaw_s                     "PowerLaw"    
+#define PowerLaw_s                     "PowerLaw"
 #define SutherlandLaw_s                "SutherlandLaw"
 #define ConstantPrandtl_s              "ConstantPrandtl"
 #define EddyViscosity_s                "EddyViscosity"
@@ -934,7 +934,7 @@ typedef enum {
 #define DataConversion_ts              "DataConversion_t"
 #define Descriptor_ts                  "Descriptor_t"
 #define DimensionalExponents_ts        "DimensionalExponents_t"
-#define DimensionalUnits_ts            "DimensionalUnits_t"   
+#define DimensionalUnits_ts            "DimensionalUnits_t"
 #define DiscreteData_ts                "DiscreteData_t"
 #define Elements_ts                    "Elements_t"
 #define FamilyBC_ts                    "FamilyBC_t"
@@ -956,7 +956,7 @@ typedef enum {
 #define GridCoordinates_ts             "GridCoordinates_t"
 #define GridLocation_ts                "GridLocation_t"
 #define IndexArray_ts                  "IndexArray_t"
-#define IndexRange_ts                  "IndexRange_t"   
+#define IndexRange_ts                  "IndexRange_t"
 #define IntegralData_ts                "IntegralData_t"
 #define InwardNormalList_ts            "InwardNormalList_t"
 #define Ordinal_ts                     "Ordinal_t"
@@ -964,7 +964,7 @@ typedef enum {
 #define Periodic_ts                    "Periodic_t"
 #define ReferenceState_ts              "ReferenceState_t"
 #define RigidGridMotion_ts             "RigidGridMotion_t"
-#define Rind_ts                        "Rind_t"   
+#define Rind_ts                        "Rind_t"
 #define RotatingCoordinates_ts         "RotatingCoordinates_t"
 #define SimulationType_ts              "SimulationType_t"
 #define ThermalConductivityModel_ts    "ThermalConductivityModel_t"

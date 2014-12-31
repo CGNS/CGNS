@@ -26,14 +26,14 @@ PROGRAM ftest
   CHARACTER*11 piomode(2)
   CHARACTER*6 outmode(2)
   INTEGER :: istat
-      
+
   DATA piomode /'independent','collective'/
   DATA outmode /'direct','queued'/
 
   CALL MPI_INIT(mpi_err)
   CALL MPI_COMM_SIZE(MPI_COMM_WORLD,commsize,mpi_err)
   CALL MPI_COMM_RANK(MPI_COMM_WORLD,commrank,mpi_err)
-  
+
   IF (commsize .GT. 8) THEN
      IF (commrank .EQ. 0) &
           PRINT *, 'number of processes must be 8 or less'
@@ -52,7 +52,7 @@ PROGRAM ftest
   end = start + npp - 1
 
   j = 0
-  DO n=1,npp 
+  DO n=1,npp
      dx(n) = start + n - 1
      dy(n) = commrank + 1
      dz(n) = n
@@ -64,16 +64,16 @@ PROGRAM ftest
   sizes(1) = totcnt
   sizes(2) = totcnt
   sizes(3) = 0
-  
+
   dsize = (9.0 * totcnt * 8.0 + 4.0 * totcnt * 4.0) / (1024.0 * 1024.0)
-     
+
   IF (commrank .EQ. 0) THEN
      PRINT *,'number processes       =', commsize
      PRINT *,'array size per process =', npp
      PRINT *,'total array size       =', totcnt
      PRINT *,'total Mb for all data  =', dsize
   ENDIF
-  
+
 ! default is MPI_COMM_WORLD, but can set another communicator with this
 !     call cgp_mpi_comm_f(MPI_COMM_WORLD,ierr)
 
@@ -86,7 +86,7 @@ PROGRAM ftest
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
      CALL cgp_pio_mode_f(nb-1, MPI_INFO_NULL, ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-    
+
      DO nz=1,2
         WRITE(name,'(a4,i2)') 'Zone',nz
         CALL cg_zone_write_f(F,B,name,sizes,Unstructured,Z,ierr)
@@ -96,7 +96,7 @@ PROGRAM ftest
         CALL cgp_coord_write_f(F,B,Z,RealDouble,'CoordinateY',Cy,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cgp_coord_write_f(F,B,Z,RealDouble,'CoordinateZ',Cz,ierr)
-        IF (ierr .NE. CG_OK) CALL cgp_error_exit_f 
+        IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cgp_section_write_f(F,B,Z,'Tets',TETRA_4,start_1,totcnt,0,E,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cg_sol_write_f(F,B,Z,'Solution',Vertex,S,ierr)
@@ -123,7 +123,7 @@ PROGRAM ftest
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
         ts = MPI_WTIME()
-   
+
         CALL cgp_coord_write_data_f(F,B,Z,Cx,start,END,dx,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cgp_coord_write_data_f(F,B,Z,Cy,start,END,dy,ierr)
@@ -165,17 +165,17 @@ PROGRAM ftest
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cgp_open_f('ftest.cgns',CG_MODE_READ,F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  
+
   Z = 1
   S = 1
   E = 1
   DO B=1,2
      CALL cgp_pio_mode_f(B-1,MPI_INFO_NULL,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-     
+
      CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      ts = MPI_WTIME()
-     
+
      CALL cgp_coord_read_data_f(F,B,Z,1,start,END,dx,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
      CALL cgp_coord_read_data_f(F,B,Z,2,start,END,dy,ierr)
@@ -184,7 +184,7 @@ PROGRAM ftest
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
      CALL cgp_elements_read_data_f(F,B,Z,E,start,END,ie,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-     
+
      CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      te = MPI_WTIME()
      tt = te - ts
@@ -200,10 +200,10 @@ PROGRAM ftest
          !  IF (ie(j) .NE. (start+n-1)) nerrs = nerrs + 1
         ENDDO
      ENDDO
-     
+
      CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      ts = MPI_WTIME()
-     
+
      CALL cgp_field_read_data_f(F,B,Z,S,1,start,END,dx,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
      CALL cgp_field_read_data_f(F,B,Z,S,2,start,END,dy,ierr)
@@ -220,7 +220,7 @@ PROGRAM ftest
         IF (dy(n) .NE. (commrank+1)) nerrs = nerrs + 1
         IF (dz(n) .NE. n) nerrs = nerrs + 1
      ENDDO
-     
+
      CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      ts = MPI_WTIME()
      CALL cg_goto_f(F,B,ierr,'Zone_t',Z,'UserDefinedData_t',1,'end')
@@ -235,7 +235,7 @@ PROGRAM ftest
      CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
      te = MPI_WTIME()
      tt = tt + te - ts
-     
+
      DO n=1,npp
         IF (dx(n) .NE. (start+n-1)) nerrs = nerrs + 1
         IF (dy(n) .NE. (commrank+1)) nerrs = nerrs + 1
@@ -247,10 +247,10 @@ PROGRAM ftest
              piomode(B),') errors =',nerrs
      ENDIF
   ENDDO
-  
+
   CALL cgp_close_f(F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  
+
   CALL MPI_FINALIZE(mpi_err)
 END PROGRAM ftest
 

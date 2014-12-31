@@ -72,7 +72,7 @@
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
 ! write first ZoneSubRegion as BCRegionName
-      dim = 2 
+      dim = 2
       call cg_subreg_bcname_write_f(cgfile, cgbase, cgzone, 'reg1',     &
      &                              dim, 'bcname', csub, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f

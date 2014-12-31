@@ -244,7 +244,7 @@ static parseItem enumTable [] = {
 /*---------------------------------------------------------------------------
  *
  * The following are tables of enum constants that are required as
- * arguments for various OpenGL functions 
+ * arguments for various OpenGL functions
  *
  *---------------------------------------------------------------------------*/
 
@@ -255,7 +255,7 @@ static GLenum primTable [] = {
 };
 
 /* Names for capabilities set/reset by glEnable/glDisable */
-static GLenum capabTable [] = { 
+static GLenum capabTable [] = {
    GL_ALPHA_TEST, GL_AUTO_NORMAL, GL_BLEND, GL_COLOR_MATERIAL,
    GL_CLIP_PLANE0, GL_CLIP_PLANE1, GL_CLIP_PLANE2, GL_CLIP_PLANE3,
    GL_CLIP_PLANE4, GL_CLIP_PLANE5, GL_CULL_FACE, GL_DEPTH_TEST,
@@ -268,14 +268,14 @@ static GLenum capabTable [] = {
    GL_MAP2_TEXTURE_COORD_1, GL_MAP2_TEXTURE_COORD_2,
    GL_MAP2_TEXTURE_COORD_3, GL_MAP2_TEXTURE_COORD_4, GL_NORMALIZE,
    GL_SCISSOR_TEST, GL_STENCIL_TEST,
-   GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_GEN_S, GL_TEXTURE_GEN_T 
+   GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_GEN_S, GL_TEXTURE_GEN_T
 };
 
 /* Names for glMatrixMode */
 static GLenum matrixModeTable [] = {
    GL_MODELVIEW, GL_PROJECTION, GL_TEXTURE,
 };
-  
+
 
 /* Names describing face sides (for glPolygonMode and Material) */
 static GLenum faceTable [] = {
@@ -306,7 +306,7 @@ static GLenum matParmTable[] = {
 
 /* Names for mode of glColorMaterial */
 static GLenum modeColorMatTable[] = {
-   GL_AMBIENT, GL_SPECULAR, GL_DIFFUSE, GL_EMISSION, 
+   GL_AMBIENT, GL_SPECULAR, GL_DIFFUSE, GL_EMISSION,
    GL_AMBIENT_AND_DIFFUSE
 };
 
@@ -390,7 +390,7 @@ static GLenum coordTexGenTable [] = {
    GL_S, GL_T, GL_R, GL_Q
 };
 
-/* pnames for glTexGen */ 
+/* pnames for glTexGen */
 static GLenum nameTexGenTable [] = {
    GL_TEXTURE_GEN_MODE, GL_OBJECT_PLANE, GL_EYE_PLANE
 };
@@ -443,14 +443,14 @@ static GLenum nameFrontFaceTable [] = {
 /* mode names for glDrawBuffer */
 static GLenum modeDrawBufferTable [] = {
    GL_FRONT, GL_BACK, GL_RIGHT, GL_LEFT, GL_FRONT_RIGHT, GL_FRONT_LEFT,
-   GL_BACK_RIGHT, GL_BACK_LEFT, GL_FRONT_AND_BACK, 
+   GL_BACK_RIGHT, GL_BACK_LEFT, GL_FRONT_AND_BACK,
    GL_AUX0, GL_AUX1, GL_AUX2, GL_AUX3, GL_NONE
 };
 
 /* mode names for glReadBuffer */
 static GLenum modeReadBufferTable [] = {
    GL_FRONT, GL_BACK, GL_RIGHT, GL_LEFT, GL_FRONT_RIGHT, GL_FRONT_LEFT,
-   GL_BACK_RIGHT, GL_BACK_LEFT, 
+   GL_BACK_RIGHT, GL_BACK_LEFT,
    GL_AUX0, GL_AUX1, GL_AUX2, GL_AUX3
 };
 
@@ -473,7 +473,7 @@ static GLenum opAccumTable [] = {
 
 /* sfactor names for glBlendFunc */
 static GLenum sfactorBlendTable [] = {
-   GL_ZERO, GL_ONE, GL_DST_COLOR, 
+   GL_ZERO, GL_ONE, GL_DST_COLOR,
    GL_ONE_MINUS_DST_COLOR,  GL_SRC_ALPHA,
    GL_ONE_MINUS_SRC_ALPHA, GL_DST_ALPHA, GL_ONE_MINUS_DST_ALPHA,
    GL_SRC_ALPHA_SATURATE
@@ -488,10 +488,10 @@ static GLenum dfactorBlendTable [] = {
 
 /* clipplane names for glClipPlane */
 static GLenum clipPlaneTable [] = {
-   GL_CLIP_PLANE0, GL_CLIP_PLANE1,  GL_CLIP_PLANE2, 
+   GL_CLIP_PLANE0, GL_CLIP_PLANE1,  GL_CLIP_PLANE2,
    GL_CLIP_PLANE3, GL_CLIP_PLANE4,  GL_CLIP_PLANE5
 };
- 
+
 /* bit names for glPushAttrib */
 static GLenum attribNameTable [] = {
    GL_ACCUM_BUFFER_BIT, GL_ALL_ATTRIB_BITS, GL_COLOR_BUFFER_BIT,
@@ -509,7 +509,7 @@ static GLenum newListTable [] = {
 
 /*  target names for glHint */
 static GLenum hintTargetTable [] = {
-   GL_FOG_HINT, GL_LINE_SMOOTH_HINT, GL_PERSPECTIVE_CORRECTION_HINT, 
+   GL_FOG_HINT, GL_LINE_SMOOTH_HINT, GL_PERSPECTIVE_CORRECTION_HINT,
    GL_POINT_SMOOTH_HINT, GL_POLYGON_SMOOTH_HINT
 };
 
@@ -556,7 +556,7 @@ typedef struct ArgDetailStruct {
 
 
 /*----------------------------------------------------------------------------
- * 
+ *
  * Each of the following procs generates an appropriate Arg Detail description
  *
  *---------------------------------------------------------------------------*/
@@ -568,8 +568,8 @@ typedef struct ArgDetailStruct {
    ArgEnumTable (enumTable, sizeof(enumTable)/sizeof(GLenum), ARG_BIT_FIELD,\
 		 next)
 
-static ArgDetailList 
-ArgEnumTable (enumTable, enumTableSize, type, next) 
+static ArgDetailList
+ArgEnumTable (enumTable, enumTableSize, type, next)
    GLenum * enumTable;
    int enumTableSize;
    ArgDetailList next;
@@ -669,102 +669,102 @@ ArgVarFloat (minArgs, maxArgs, def0, def1, def2, next)
  * Data structures that define how to parse command lines that generate
  * calls to GL functions. Each GL function has an entry in funcDescTable
  * which contains the corresponding tcl binding (that has to be preceded
- * by a dash in the style of tcl options),  an encoded description of its 
- * argument list and a function which is to be called if the parse is 
+ * by a dash in the style of tcl options),  an encoded description of its
+ * argument list and a function which is to be called if the parse is
  * successful
  *
  *---------------------------------------------------------------------------*/
 
 typedef int TkOGLFunc _ANSI_ARGS_((Tcl_Interp* interp, void** args, int nargs));
 
-static TkOGLFunc 
-    TkAccum, 	  
-    TkAlphaFunc,   
-    TkBegin,        
+static TkOGLFunc
+    TkAccum,
+    TkAlphaFunc,
+    TkBegin,
     TkBlendFunc,
-    TkCall,        
+    TkCall,
     TkClear,
-    TkClearAccum,   
-    TkClearColor,  
-    TkClearDepth,  
-    TkClearStencil, 
-    TkClipPlane,   
+    TkClearAccum,
+    TkClearColor,
+    TkClearDepth,
+    TkClearStencil,
+    TkClipPlane,
     TkColor,
-    TkColorMask,   
+    TkColorMask,
     TkColorMaterial,
     TkCopyPixels,
     TkCullFace,
     TkDepthFunc,
     TkDepthMask,
-    TkDisable,     
-    TkDrawBuffer,     
+    TkDisable,
+    TkDrawBuffer,
     TkDrawPixels,
     TkEdgeFlag,
-    TkEnable,      
-    TkEnd,          
+    TkEnable,
+    TkEnd,
     TkEndList,
     TkEvalCoord1,
     TkEvalCoord2,
-    TkEvalMesh1,   
+    TkEvalMesh1,
     TkEvalMesh2,
     TkFlush,
     TkFinish,
-    TkFog, 	 
-    TkFrontFace, 	  
-    TkFrustum,      
-    TkHint, 
+    TkFog,
+    TkFrontFace,
+    TkFrustum,
+    TkHint,
     TkInitNames,
-    TkLight,       
-    TkLightModel,   
-    TkLineStipple, 
+    TkLight,
+    TkLightModel,
+    TkLineStipple,
     TkLineWidth,
-    TkLoadIdentity, 
-    TkLoadMatrix,  
-    TkLoadName, 
+    TkLoadIdentity,
+    TkLoadMatrix,
+    TkLoadName,
     TkLookAt,
-    TkMap1,      
-    TkMap2,      
-    TkMapGrid1,  
+    TkMap1,
+    TkMap2,
+    TkMapGrid1,
     TkMapGrid2,
-    TkMaterial,    
+    TkMaterial,
     TkMatrixMode,
-    TkMultMatrix,  
-    TkNewList, 	  
-    TkNormal,      
-    TkOrtho,        
+    TkMultMatrix,
+    TkNewList,
+    TkNormal,
+    TkOrtho,
     TkPerspective,
-    TkPickMatrix,  
-    TkPixelTransfer, 
-    TkPixelZoom,     
-    TkPointSize, 	  
-    TkPolygonMode, 
-    TkPopAttrib, 	 
-    TkPopMatrix,   
-    TkPopName,  
-    TkPushAttrib,  
+    TkPickMatrix,
+    TkPixelTransfer,
+    TkPixelZoom,
+    TkPointSize,
+    TkPolygonMode,
+    TkPopAttrib,
+    TkPopMatrix,
+    TkPopName,
+    TkPushAttrib,
     TkPushMatrix,
-    TkPushName,   
+    TkPushName,
     TkRasterPos,
-    TkReadBuffer,   
-    TkReadPixels, 
-    TkRect,  
-    TkRotate,      
+    TkReadBuffer,
+    TkReadPixels,
+    TkRect,
+    TkRotate,
     TkScale,
     TkScissor,
-    TkShadeModel,  
-    TkStencilFunc, 
-    TkStencilMask,	 
-    TkStencilOp,    
-    TkTexCoord,      
-    TkTexEnv,        
-    TkTexGen,        
-    TkTexImage1D,    
-    TkTexImage2D,    
-    TkTexParameter,  
-    TkTranslate,   
+    TkShadeModel,
+    TkStencilFunc,
+    TkStencilMask,
+    TkStencilOp,
+    TkTexCoord,
+    TkTexEnv,
+    TkTexGen,
+    TkTexImage1D,
+    TkTexImage2D,
+    TkTexParameter,
+    TkTranslate,
     TkVertex;
 
-    
+
 typedef struct funcDescStruct {
    TkOGLFunc *func;
    ArgDetailList argList;
@@ -772,12 +772,12 @@ typedef struct funcDescStruct {
 
 /*---------------------------------------------------------------------------
  *
- *  Initialization of the Hash Tables that govern the parsing 
+ *  Initialization of the Hash Tables that govern the parsing
  *  subsystem
  *
  *---------------------------------------------------------------------------*/
 
-Tcl_HashTable 
+Tcl_HashTable
    funcDescHashTable,
    enumHashTable;
 
@@ -800,7 +800,7 @@ InsDesc (tclName, func, argList)
 }
 
 void
-InitHashTables () 
+InitHashTables ()
 {
    int i, newEntry;
    Tcl_HashEntry *enumEntry;
@@ -808,11 +808,11 @@ InitHashTables ()
    Tcl_InitHashTable (&enumHashTable, TCL_STRING_KEYS);
 
    for (i = 0; i < sizeof (enumTable)/sizeof(parseItem); i++) {
-      enumEntry = Tcl_CreateHashEntry (&enumHashTable, 
+      enumEntry = Tcl_CreateHashEntry (&enumHashTable,
 				       enumTable [i].name, &newEntry);
       Tcl_SetHashValue (enumEntry, (ClientData)((size_t)(enumTable [i].code)));
       assert (newEntry);
-   }	       
+   }
 
    InsDesc ("matrixmode" , TkMatrixMode,  ArgEnum(matrixModeTable, NULL));
    InsDesc ("pushmatrix" , TkPushMatrix,  NULL);
@@ -834,15 +834,15 @@ InitHashTables ()
    InsDesc ("clearstencil",TkClearStencil,ArgInt(1, NULL));
    InsDesc ("enable"     , TkEnable,      ArgEnum(capabTable, NULL));
    InsDesc ("disable"    , TkDisable,     ArgEnum(capabTable, NULL));
-   InsDesc ("polygonmode", TkPolygonMode, ArgEnum(faceTable, 
+   InsDesc ("polygonmode", TkPolygonMode, ArgEnum(faceTable,
 					  ArgEnum (pModeTable, NULL)));
-   InsDesc ("material"   , TkMaterial,    ArgEnum(faceTable, 
-					  ArgEnum (matParmTable, 
+   InsDesc ("material"   , TkMaterial,    ArgEnum(faceTable,
+					  ArgEnum (matParmTable,
 					  ArgVarFloat(1,4, 0., 0., 1.,NULL))));
-   InsDesc ("light"      , TkLight,       ArgEnum(lightNumberTable, 
-					  ArgEnum (lightParmTable, 
+   InsDesc ("light"      , TkLight,       ArgEnum(lightNumberTable,
+					  ArgEnum (lightParmTable,
 					  ArgVarFloat(1,4, 0., 0., 1.,NULL))));
-   InsDesc ("lightmodel" , TkLightModel,  ArgEnum(lightModelTable, 
+   InsDesc ("lightmodel" , TkLightModel,  ArgEnum(lightModelTable,
 					  ArgVarFloat(1,4, .2, .2, 1.,NULL)));
    InsDesc ("shademodel" , TkShadeModel,  ArgEnum(shadeModelTable, NULL));
    InsDesc ("begin"      , TkBegin,       ArgEnum(primTable, NULL));
@@ -857,20 +857,20 @@ InitHashTables ()
    InsDesc ("copypixels" , TkCopyPixels,  ArgInt (4, NULL));
    InsDesc ("pixelzoom"  , TkPixelZoom,   ArgFloat (2, NULL));
    InsDesc ("rasterpos"  , TkRasterPos,   ArgVarFloat (2, 4, 0., 1., 0.,NULL));
-   InsDesc ("pixeltransfer", TkPixelTransfer, ArgEnum(pixelTransferTable, 
+   InsDesc ("pixeltransfer", TkPixelTransfer, ArgEnum(pixelTransferTable,
 					      ArgFloat(1, NULL)));
    InsDesc ("texcoord"   , TkTexCoord,    ArgVarFloat (1, 4, 0., 0., 1.,NULL));
-   InsDesc ("teximage2d" , TkTexImage2D,  ArgInt(2, 
+   InsDesc ("teximage2d" , TkTexImage2D,  ArgInt(2,
 					  ArgString(NULL)));
-   InsDesc ("teximage1d" , TkTexImage1D,  ArgInt(2, 
+   InsDesc ("teximage1d" , TkTexImage1D,  ArgInt(2,
 					  ArgString(NULL)));
-   InsDesc ("texparameter",TkTexParameter,ArgEnum(targetTexParamTable, 
+   InsDesc ("texparameter",TkTexParameter,ArgEnum(targetTexParamTable,
 					  ArgEnum(nameTexParamTable,
 					  ArgDontCare(NULL))));
-   InsDesc ("texenv",      TkTexEnv,      ArgEnum(targetTexEnvTable, 
+   InsDesc ("texenv",      TkTexEnv,      ArgEnum(targetTexEnvTable,
 					  ArgEnum(nameTexEnvTable,
 					  ArgDontCare(NULL))));
-   InsDesc ("texgen",      TkTexGen,      ArgEnum(coordTexGenTable, 
+   InsDesc ("texgen",      TkTexGen,      ArgEnum(coordTexGenTable,
 					  ArgEnum(nameTexGenTable,
 					  ArgDontCare(NULL))));
    InsDesc ("initnames",   TkInitNames,   NULL);
@@ -893,7 +893,7 @@ InitHashTables ()
    InsDesc ("mapgrid1",    TkMapGrid1,    ArgInt (1,
 					  ArgFloat (2, NULL)));
    InsDesc ("mapgrid2",    TkMapGrid2,    ArgInt (1,
-					  ArgFloat (2, 
+					  ArgFloat (2,
 					  ArgInt (1,
 					  ArgFloat (2, NULL)))));
    InsDesc ("evalmesh1",   TkEvalMesh1,   ArgEnum (modeMesh1Table,
@@ -926,32 +926,32 @@ InitHashTables ()
    InsDesc ("accum",       TkAccum,       ArgEnum (opAccumTable,
 					  ArgFloat (1, NULL)));
    InsDesc ("readbuffer",  TkReadBuffer,  ArgEnum (modeReadBufferTable, NULL));
-   InsDesc ("blendfunc",   TkBlendFunc,   ArgEnum (sfactorBlendTable, 
+   InsDesc ("blendfunc",   TkBlendFunc,   ArgEnum (sfactorBlendTable,
 					  ArgEnum (dfactorBlendTable, NULL)));
    InsDesc ("clipplane",   TkClipPlane,   ArgEnum (clipPlaneTable,
 					  ArgFloat (4, NULL)));
    InsDesc ("pushattrib",  TkPushAttrib,  ArgBitField(attribNameTable, NULL));
    InsDesc ("popattrib",   TkPopAttrib,   NULL);
-   InsDesc ("newlist",     TkNewList,     ArgInt (1, 
+   InsDesc ("newlist",     TkNewList,     ArgInt (1,
 					  ArgEnum (newListTable, NULL)));
    InsDesc ("endlist",     TkEndList,     NULL);
    InsDesc ("edgeflag",    TkEdgeFlag,    ArgBoolean (1, NULL));
    InsDesc ("flush",       TkFlush,       NULL);
    InsDesc ("finish",      TkFinish,      NULL);
-   InsDesc ("hint",        TkHint,        ArgEnum (hintTargetTable, 
+   InsDesc ("hint",        TkHint,        ArgEnum (hintTargetTable,
                                           ArgEnum (hintModeTable, NULL)));
    InsDesc ("rect",        TkRect,        ArgFloat (4, NULL));
    InsDesc ("cullface",    TkCullFace, 	  ArgEnum (cullFaceTable, NULL));
 }
 
-     
+
 /*---------------------------------------------------------------------------
  *
  * Main routines that parse a tcl binding for a GL function
  *
  *---------------------------------------------------------------------------*/
 
-int 
+int
 SearchEnumVal (interp, name, val)
      Tcl_Interp* interp;
      char * name;
@@ -973,7 +973,7 @@ SearchEnumVal (interp, name, val)
    return TCL_OK;
 }
 
-int 
+int
 SearchEnumName (interp, val, name)
      Tcl_Interp* interp;
      GLenum val;
@@ -996,7 +996,7 @@ SearchEnumName (interp, val, name)
 }
 
 static int
-SearchEnum (interp, table, tablesize, name, val) 
+SearchEnum (interp, table, tablesize, name, val)
      Tcl_Interp* interp;
      GLenum* table;
      int tablesize;
@@ -1010,7 +1010,7 @@ SearchEnum (interp, table, tablesize, name, val)
       if (table [i] == *val) return TCL_OK;
    }
 
-   Tcl_AppendResult (interp, "Invalid enum for this function: ", 
+   Tcl_AppendResult (interp, "Invalid enum for this function: ",
 		     name, "\n One of the following was expected: " ,
 		     (char*) NULL);
 
@@ -1041,7 +1041,7 @@ SearchFuncDesc (tclName)
    return (FuncDesc*) (Tcl_GetHashValue (entry));
 }
 
-int 
+int
 ParseGLFunc (interp, argc, argv, nArg)
      Tcl_Interp *interp;
      int argc;
@@ -1051,7 +1051,7 @@ ParseGLFunc (interp, argc, argv, nArg)
    static GLfloat floatArgs [MAXARGS];
    static GLenum enumArgs [MAXARGS];
    static GLint intArgs [MAXARGS];
-   static void *argVal [MAXARGS]; 
+   static void *argVal [MAXARGS];
    ArgDetailList argList;
    FuncDesc* funcDesc = NULL;
    char *glcmdstring = argv [0];
@@ -1069,15 +1069,15 @@ ParseGLFunc (interp, argc, argv, nArg)
    argc--;
    argv++;
    argList = funcDesc->argList;
-   for (iarg = 0; 
-	argList != NULL && 
-	iarg < argc && 
-	!(argv [iarg][0] == '-' && isalpha(argv [iarg][1])); 
-	iarg++, argList = argList->next) {      
+   for (iarg = 0;
+	argList != NULL &&
+	iarg < argc &&
+	!(argv [iarg][0] == '-' && isalpha(argv [iarg][1]));
+	iarg++, argList = argList->next) {
       assert (ival < MAXARGS);
       switch (argList->type) {
 	 case ARG_ENUM: {
-	    result = SearchEnum (interp, argList->detail.enumDetail.enumTable, 
+	    result = SearchEnum (interp, argList->detail.enumDetail.enumTable,
 				 argList->detail.enumDetail.enumSize,
 				 argv [iarg], &enumArgs [ival]);
 	    if (result != TCL_OK) goto done;
@@ -1089,12 +1089,12 @@ ParseGLFunc (interp, argc, argv, nArg)
 	    int i;
 	    int mask = 0;
 	    GLenum val;
-	    for (i = 0; 
+	    for (i = 0;
 		 iarg < argc &&
-		 !(argv [iarg][0] == '-' && isalpha(argv [iarg][1])); 
+		 !(argv [iarg][0] == '-' && isalpha(argv [iarg][1]));
 		 iarg++, i++) {
-	       result = SearchEnum (interp, 
-				    argList->detail.enumDetail.enumTable, 
+	       result = SearchEnum (interp,
+				    argList->detail.enumDetail.enumTable,
 				    argList->detail.enumDetail.enumSize,
 				    argv [iarg], &val);
 	       if (result != TCL_OK) goto done;
@@ -1108,10 +1108,10 @@ ParseGLFunc (interp, argc, argv, nArg)
 	 }
 	 case ARG_FLOAT: {
 	    int i;
-	    for (i = 0; 
+	    for (i = 0;
 		 iarg < argc &&
 		 i < argList->detail.nValues &&
-		 !(argv [iarg][0] == '-' && isalpha(argv [iarg][1])); 
+		 !(argv [iarg][0] == '-' && isalpha(argv [iarg][1]));
 		 iarg++, i++) {
 	       double d;
 	       assert (iarg < MAXARGS);
@@ -1131,9 +1131,9 @@ ParseGLFunc (interp, argc, argv, nArg)
 	 }
 	 case ARG_DONT_CARE: {
 	    int i;
-	    for (i = 0; 
+	    for (i = 0;
 		 iarg < argc &&
-		 !(argv [iarg][0] == '-' && isalpha(argv [iarg][1])); 
+		 !(argv [iarg][0] == '-' && isalpha(argv [iarg][1]));
 		 iarg++, i++) {
 	       assert (iarg < MAXARGS);
 	       argVal [ival] = argv [iarg];
@@ -1152,10 +1152,10 @@ ParseGLFunc (interp, argc, argv, nArg)
 	 }
 	 case ARG_INT: {
 	    int i;
-	    for (i = 0; 
+	    for (i = 0;
 		 iarg < argc &&
 		 i < argList->detail.nValues &&
-		 !(argv [iarg][0] == '-' && isalpha(argv [iarg][1])); 
+		 !(argv [iarg][0] == '-' && isalpha(argv [iarg][1]));
 		 iarg++, i++) {
 	       int j;
 	       assert (iarg < MAXARGS);
@@ -1201,7 +1201,7 @@ ParseGLFunc (interp, argc, argv, nArg)
 	    for (i = 0;
 		 iarg < argc &&
 		 i < argList->detail.varFloatDetail.maxArgs &&
-		 !(argv [iarg][0] == '-' && isalpha(argv [iarg][1])); 
+		 !(argv [iarg][0] == '-' && isalpha(argv [iarg][1]));
 		 iarg++, i++) {
 	       double d;
 	       assert (iarg < MAXARGS);
@@ -1216,17 +1216,17 @@ ParseGLFunc (interp, argc, argv, nArg)
 	    if (i < argList->detail.varFloatDetail.minArgs) {
 	       ERRMSG ("Not enough arguments were specified");
 	    }
-	    for (j = i-argList->detail.varFloatDetail.minArgs; 
-		 i < argList->detail.varFloatDetail.maxArgs; 
+	    for (j = i-argList->detail.varFloatDetail.minArgs;
+		 i < argList->detail.varFloatDetail.maxArgs;
 		 i++,j++) {
 	       floatArgs [ival] = argList->detail.varFloatDetail.def [j];
 	       argVal [ival] = &floatArgs [ival];
 	       ival++;
 	    }
-	    iarg--;		 
+	    iarg--;
 	    break;
 	 }
-      }  
+      }
    }
    if (argList != NULL) {
       ERRMSG2 ("Not enough arguments for command: ", argv [-1]);
@@ -1235,9 +1235,9 @@ done:
    if (result == TCL_OK) {
       result = (*(funcDesc->func)) (interp, argVal, ival);
       *nArg = iarg+1;
-   } 
+   }
    if (result == TCL_ERROR) {
-      Tcl_AppendResult (interp, "\nError processing gl command ", 
+      Tcl_AppendResult (interp, "\nError processing gl command ",
 			glcmdstring, (char*)NULL);
    }
    return result;
@@ -1250,7 +1250,7 @@ done:
  *---------------------------------------------------------------------------*/
 
 static int
-TkMatrixMode (interp, args, nargs) 
+TkMatrixMode (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1260,8 +1260,8 @@ TkMatrixMode (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkPushMatrix (interp, args, nargs) 
+static int
+TkPushMatrix (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1271,8 +1271,8 @@ TkPushMatrix (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkPopMatrix (interp, args, nargs) 
+static int
+TkPopMatrix (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1282,8 +1282,8 @@ TkPopMatrix (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkLoadIdentity (interp, args, nargs) 
+static int
+TkLoadIdentity (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1293,8 +1293,8 @@ TkLoadIdentity (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkMultMatrix (interp, args, nargs) 
+static int
+TkMultMatrix (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1304,8 +1304,8 @@ TkMultMatrix (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkLoadMatrix (interp, args, nargs) 
+static int
+TkLoadMatrix (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1315,12 +1315,12 @@ TkLoadMatrix (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkTranslate (interp, args, nargs) 
+static int
+TkTranslate (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
-{  
+{
    GLfloat* coord;
    assert (nargs == 3);
    coord = (GLfloat*) args [0];
@@ -1328,8 +1328,8 @@ TkTranslate (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkRotate (interp, args, nargs) 
+static int
+TkRotate (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1341,8 +1341,8 @@ TkRotate (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkScale (interp, args, nargs) 
+static int
+TkScale (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1352,8 +1352,8 @@ TkScale (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkCall (interp, args, nargs) 
+static int
+TkCall (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1363,8 +1363,8 @@ TkCall (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkVertex (interp, args, nargs) 
+static int
+TkVertex (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1380,8 +1380,8 @@ TkVertex (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkNormal (interp, args, nargs) 
+static int
+TkNormal (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1393,8 +1393,8 @@ TkNormal (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkColor (interp, args, nargs) 
+static int
+TkColor (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1409,8 +1409,8 @@ TkColor (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkClear (interp, args, nargs) 
+static int
+TkClear (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1419,8 +1419,8 @@ TkClear (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkClearColor (interp, args, nargs) 
+static int
+TkClearColor (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1432,8 +1432,8 @@ TkClearColor (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkClearDepth (interp, args, nargs) 
+static int
+TkClearDepth (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1442,8 +1442,8 @@ TkClearDepth (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkClearStencil (interp, args, nargs) 
+static int
+TkClearStencil (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1452,8 +1452,8 @@ TkClearStencil (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkEnable (interp, args, nargs) 
+static int
+TkEnable (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1462,8 +1462,8 @@ TkEnable (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkDisable (interp, args, nargs) 
+static int
+TkDisable (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1473,8 +1473,8 @@ TkDisable (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkPolygonMode (interp, args, nargs) 
+static int
+TkPolygonMode (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1484,13 +1484,13 @@ TkPolygonMode (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkMaterial (interp, args, nargs) 
+static int
+TkMaterial (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
 {
-   GLenum face, parm; 
+   GLenum face, parm;
    GLfloat* val;
    assert (nargs>2);
    face = *((GLenum*) args [0]);
@@ -1500,13 +1500,13 @@ TkMaterial (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkLight (interp, args, nargs) 
+static int
+TkLight (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
 {
-   GLenum light, parm; 
+   GLenum light, parm;
    GLfloat* val;
    assert (nargs>2);
    light = *((GLenum*) args [0]);
@@ -1516,13 +1516,13 @@ TkLight (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkLightModel (interp, args, nargs) 
+static int
+TkLightModel (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
 {
-   GLenum parm; 
+   GLenum parm;
    GLfloat* val;
    assert (nargs>=2);
    parm = *((GLenum*) args [0]);
@@ -1531,8 +1531,8 @@ TkLightModel (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkShadeModel (interp, args, nargs) 
+static int
+TkShadeModel (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1542,8 +1542,8 @@ TkShadeModel (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkPerspective (interp, args, nargs) 
+static int
+TkPerspective (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1555,8 +1555,8 @@ TkPerspective (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkLookAt (interp, args, nargs) 
+static int
+TkLookAt (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1569,8 +1569,8 @@ TkLookAt (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkOrtho (interp, args, nargs) 
+static int
+TkOrtho (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1582,8 +1582,8 @@ TkOrtho (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkFrustum (interp, args, nargs) 
+static int
+TkFrustum (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1595,8 +1595,8 @@ TkFrustum (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkBegin (interp, args, nargs) 
+static int
+TkBegin (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1606,8 +1606,8 @@ TkBegin (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkEnd (interp, args, nargs) 
+static int
+TkEnd (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -1617,7 +1617,7 @@ TkEnd (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
+static int
 TkReadPixels (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1634,9 +1634,9 @@ TkReadPixels (interp, args, nargs)
    imagename = (char*) args [2];
    handle = Tk_FindPhoto (interp, imagename);
    if (handle == NULL) ERRMSG2 ("Photo not defined: ", imagename);
-   if (Tk_PhotoGetImage (handle, &block) != 1) 
+   if (Tk_PhotoGetImage (handle, &block) != 1)
       ERRMSG2 ("Could not get image of photo ", imagename);
-   if (block.pixelSize != 3 && block.pixelSize != 4) 
+   if (block.pixelSize != 3 && block.pixelSize != 4)
       ERRMSG ("Image has invalid pixel size");
    switch (block.pitch - block.width * block.pixelSize) {
       case 0: {
@@ -1651,8 +1651,8 @@ TkReadPixels (interp, args, nargs)
       case 3: {
 	 glPixelStorei (GL_PACK_ALIGNMENT, 4);
 	 break;
-      }	 
-      default: 
+      }
+      default:
          printf ("unknown alignment\n");
    }
    glReadPixels (x, y, block.width, block.height,
@@ -1674,11 +1674,11 @@ TkReadPixels (interp, args, nargs)
    }
 done:
    return result;
-}   
+}
 
 
 
-static int 
+static int
 TkDrawPixels (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1692,9 +1692,9 @@ TkDrawPixels (interp, args, nargs)
    imagename = (char*) args [0];
    handle = Tk_FindPhoto (interp, imagename);
    if (handle == NULL) ERRMSG2 ("Photo not defined: ", imagename);
-   if (Tk_PhotoGetImage (handle, &block) != 1) 
+   if (Tk_PhotoGetImage (handle, &block) != 1)
       ERRMSG2 ("Could not get image of photo ", imagename);
-   if (block.pixelSize != 3 && block.pixelSize != 4) 
+   if (block.pixelSize != 3 && block.pixelSize != 4)
       ERRMSG ("Image has invalid pixel size");
    glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
    glDrawPixels (block.width, block.height,
@@ -1702,10 +1702,10 @@ TkDrawPixels (interp, args, nargs)
 		 GL_UNSIGNED_BYTE, block.pixelPtr);
 done:
    return result;
-}   
+}
 
 
-static int 
+static int
 TkCopyPixels (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1717,7 +1717,7 @@ TkCopyPixels (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
+static int
 TkRasterPos (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1729,7 +1729,7 @@ TkRasterPos (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
+static int
 TkPixelZoom (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1741,7 +1741,7 @@ TkPixelZoom (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
+static int
 TkPixelTransfer (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1756,7 +1756,7 @@ TkPixelTransfer (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
+static int
 TkTexCoord (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1783,7 +1783,7 @@ GLubyte checkImage[checkImageWidth][checkImageHeight][3];
 void makeCheckImage(void)
 {
     int i, j, c;
-    
+
     for (i = 0; i < checkImageWidth; i++) {
 	for (j = 0; j < checkImageHeight; j++) {
 	    c = (((i&0x8)==0)^((j&0x8)==0))*255;
@@ -1795,7 +1795,7 @@ void makeCheckImage(void)
 }
 #endif
 
-static int 
+static int
 TkTexImage2D (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1812,9 +1812,9 @@ TkTexImage2D (interp, args, nargs)
    imagename = (char*) args [2];
    handle = Tk_FindPhoto (interp, imagename);
    if (handle == NULL) ERRMSG2 ("Photo not defined: ", imagename);
-   if (Tk_PhotoGetImage (handle, &block) != 1) 
+   if (Tk_PhotoGetImage (handle, &block) != 1)
       ERRMSG2 ("Could not get image of photo ", imagename);
-   if (block.pixelSize != 3 && block.pixelSize != 4) 
+   if (block.pixelSize != 3 && block.pixelSize != 4)
       ERRMSG ("Image has invalid pixel size");
    n = block.width - border;
    for (i = 0; i < 16; i++) {
@@ -1835,8 +1835,8 @@ TkTexImage2D (interp, args, nargs)
       ERRMSG2 ("image height must be a power of 2", buf);
    }
    glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
-   glTexImage2D (GL_TEXTURE_2D, level, 
-		 block.pixelSize, 
+   glTexImage2D (GL_TEXTURE_2D, level,
+		 block.pixelSize,
 		 block.width, block.height, border,
 		 block.pixelSize == 3 ? GL_RGB : GL_RGBA,
 		 GL_UNSIGNED_BYTE, block.pixelPtr);
@@ -1844,7 +1844,7 @@ done:
    return result;
 }
 
-static int 
+static int
 TkTexImage1D (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1861,9 +1861,9 @@ TkTexImage1D (interp, args, nargs)
    imagename = (char*) args [2];
    handle = Tk_FindPhoto (interp, imagename);
    if (handle == NULL) ERRMSG2 ("Photo not defined: ", imagename);
-   if (Tk_PhotoGetImage (handle, &block) != 1) 
+   if (Tk_PhotoGetImage (handle, &block) != 1)
       ERRMSG2 ("Could not get image of photo ", imagename);
-   if (block.pixelSize != 3 && block.pixelSize != 4) 
+   if (block.pixelSize != 3 && block.pixelSize != 4)
       ERRMSG ("Image has invalid pixel size");
    n = block.width - border;
    for (i = 0; i < 16; i++) {
@@ -1875,8 +1875,8 @@ TkTexImage1D (interp, args, nargs)
       ERRMSG2 ("image width must be a power of 2", buf);
    }
    glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
-   glTexImage1D (GL_TEXTURE_1D, level, 
-		 block.pixelSize, 
+   glTexImage1D (GL_TEXTURE_1D, level,
+		 block.pixelSize,
 		 block.width, border,
 		 block.pixelSize == 3 ? GL_RGB : GL_RGBA,
 		 GL_UNSIGNED_BYTE, block.pixelPtr);
@@ -1884,7 +1884,7 @@ done:
    return result;
 }
 
-static int 
+static int
 TkTexParameter (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1908,7 +1908,7 @@ TkTexParameter (interp, args, nargs)
       glTexParameterfv (target, pname, val);
    }
    else {
-      result = SearchEnum (interp, valueTexParamTable, 
+      result = SearchEnum (interp, valueTexParamTable,
 			   sizeof (valueTexParamTable)/sizeof(GLenum),
 			   (char*) args [2], &pval);
       if (result != TCL_OK) goto done;
@@ -1918,7 +1918,7 @@ done:
    return result;
 }
 
-static int 
+static int
 TkTexEnv (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1942,7 +1942,7 @@ TkTexEnv (interp, args, nargs)
       glTexEnvfv (target, pname, val);
    }
    else {
-      result = SearchEnum (interp, valueTexEnvTable, 
+      result = SearchEnum (interp, valueTexEnvTable,
 			   sizeof(valueTexEnvTable)/sizeof(GLenum),
 			   (char*) args [2], &pval);
       if (result != TCL_OK) goto done;
@@ -1952,7 +1952,7 @@ done:
    return result;
 }
 
-static int 
+static int
 TkTexGen (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1986,7 +1986,7 @@ done:
    return result;
 }
 
-static int 
+static int
 TkInitNames (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -1996,7 +1996,7 @@ TkInitNames (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
+static int
 TkLoadName (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -2007,7 +2007,7 @@ TkLoadName (interp, args, nargs)
 }
 
 
-static int 
+static int
 TkPushName (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -2018,7 +2018,7 @@ TkPushName (interp, args, nargs)
 }
 
 
-static int 
+static int
 TkPopName (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -2028,7 +2028,7 @@ TkPopName (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
+static int
 TkPickMatrix (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
@@ -2040,7 +2040,7 @@ TkPickMatrix (interp, args, nargs)
    glGetIntegerv (GL_VIEWPORT, viewport);
    gluPickMatrix ((double) val [0], (double) (viewport [3] - val [1]),
 		  val [2], val [3], viewport);
-   
+
    return TCL_OK;
 }
 
@@ -2123,7 +2123,7 @@ TkMap2 (interp, args, nargs)
       }
       pt [i] = (GLfloat)d;
    }
-   glMap2f (target, u [0], u [1], ustride, uorder, 
+   glMap2f (target, u [0], u [1], ustride, uorder,
 	    v [0], v [1], vstride, vorder, pt);
    free (pt);
 
@@ -2546,8 +2546,8 @@ TkHint (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkRect (interp, args, nargs) 
+static int
+TkRect (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;
@@ -2558,8 +2558,8 @@ TkRect (interp, args, nargs)
    return TCL_OK;
 }
 
-static int 
-TkCullFace (interp, args, nargs) 
+static int
+TkCullFace (interp, args, nargs)
      Tcl_Interp* interp;
      void** args;
      int nargs;

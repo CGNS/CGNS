@@ -1338,7 +1338,7 @@ void write_zones (void)
                 cg_units_write ((CGNS_ENUMT(MassUnits_t))baseunits[0],
                                 (CGNS_ENUMT(LengthUnits_t))baseunits[1],
                                 (CGNS_ENUMT(TimeUnits_t))baseunits[2],
-                                (CGNS_ENUMT(TemperatureUnits_t))baseunits[3], 
+                                (CGNS_ENUMT(TemperatureUnits_t))baseunits[3],
                                 (CGNS_ENUMT(AngleUnits_t))baseunits[4]))
                 FATAL ("write_zones", NULL);
             break;

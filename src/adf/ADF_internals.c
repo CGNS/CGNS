@@ -2680,7 +2680,7 @@ printf("\n" ) ;
 
    case EVAL_2_BYTES( 'X', '8' ):
       ADFI_cray_to_little_endian( from_format, from_os_size,
-	 to_format, to_os_size, "R8", delta_from_bytes, 
+	 to_format, to_os_size, "R8", delta_from_bytes,
 	 delta_to_bytes, from_data, to_data, error_return ) ;
       if( *error_return != NO_ERROR )
          return ;
@@ -4029,7 +4029,7 @@ if( number_of_bytes == 0 ) {
          if( *error_return != NO_ERROR )
             return ;
       }
-      
+
 	   /** Get the end_of_chunk-tag block/offset from disk **/
       ADFI_read_disk_pointer_from_disk( file_index, tmp_blk_ofst.block,
            tmp_blk_ofst.offset, &end_of_chunk_tag, error_return ) ;
@@ -4139,7 +4139,7 @@ else {	/** Add this chunk to the free table **/
          free_chunk_table.medium_first_block.offset = block_offset->offset ;
 
 	/** If linked-list was empty, also point to this as the last. **/
-         if( free_chunk.next_chunk.offset == BLANK_BLOCK_OFFSET ) { 
+         if( free_chunk.next_chunk.offset == BLANK_BLOCK_OFFSET ) {
             free_chunk_table.medium_last_block.block = block_offset->block ;
             free_chunk_table.medium_last_block.offset = block_offset->offset ;
 	    } /* end if */
@@ -4156,7 +4156,7 @@ else {	/** Add this chunk to the free table **/
          free_chunk_table.large_first_block.offset = block_offset->offset ;
 
 	/** If linked-list was empty, also point to this as the last. **/
-         if( free_chunk.next_chunk.offset == BLANK_BLOCK_OFFSET ) { 
+         if( free_chunk.next_chunk.offset == BLANK_BLOCK_OFFSET ) {
             free_chunk_table.large_last_block.block = block_offset->block ;
             free_chunk_table.large_last_block.offset = block_offset->offset ;
 	    } /* end if */
@@ -4419,7 +4419,7 @@ void    ADFI_fill_initial_file_header(
         int *error_return )
 {
 int i ;
-  
+
 if( what_string == NULL ) {
    *error_return = NULL_STRING_POINTER ;
    return ;
@@ -4508,7 +4508,7 @@ else
       *error_return = MACHINE_FORMAT_NOT_RECOGNIZED ;
       return ;
   } /* end switch */
-  
+
   file_header->sizeof_char =	 (unsigned int)machine_sizes[i][ 0] ;
   file_header->sizeof_short =	 (unsigned int)machine_sizes[i][ 3] ;
   file_header->sizeof_int =	 (unsigned int)machine_sizes[i][ 5] ;
@@ -5072,7 +5072,7 @@ void    ADFI_little_endian_32_swap_64(
 		unsigned char *to_data,
 		int *error_return )
 {
-  
+
 if( (from_data == NULL) || (to_data == NULL) ) {
    *error_return = NULL_STRING_POINTER ;
    return ;
@@ -5380,13 +5380,13 @@ printf("\n" ) ;
 
    case EVAL_2_BYTES( 'X', '4' ):
       ADFI_little_endian_to_cray( from_format, from_os_size,
-	 to_format, to_os_size, "R4", delta_from_bytes, 
+	 to_format, to_os_size, "R4", delta_from_bytes,
 	 delta_to_bytes, from_data, to_data, error_return ) ;
       if( *error_return != NO_ERROR )
          return ;
 
       ADFI_little_endian_to_cray( from_format, from_os_size,
-	 to_format, to_os_size, "R4", delta_from_bytes, 
+	 to_format, to_os_size, "R4", delta_from_bytes,
 	 delta_to_bytes, &from_data[4], &to_data[8], error_return ) ;
       if( *error_return != NO_ERROR )
          return ;
@@ -5400,7 +5400,7 @@ printf("\n" ) ;
          return ;
 
       ADFI_little_endian_to_cray( from_format, from_os_size,
-	 to_format, to_os_size, "R8", delta_from_bytes, 
+	 to_format, to_os_size, "R8", delta_from_bytes,
 	 delta_to_bytes, &from_data[8], &to_data[8], error_return ) ;
       if( *error_return != NO_ERROR )
          return ;
@@ -5740,7 +5740,7 @@ else {
 /* file ADFI_read_data_chunk.c */
 /***********************************************************************
 ADFI read data chunk:
-	
+
 input:  const unsigned int file_index	The file index.
 input:  const struct DISK_POINTER *block_offset  Block & offset in the file.
 input:  const char *data_type		The defined datatype.
@@ -5912,7 +5912,7 @@ if( ADFI_stridx_c( tag, data_chunk_table_start_tag ) != 0 ) {
    return ;
    } /* end if */
 
-number_of_bytes_to_read = 
+number_of_bytes_to_read =
 	(end_of_chunk_tag.block - block_offset->block) * DISK_BLOCK_SIZE +
 	(end_of_chunk_tag.offset - block_offset->offset) -
 	(TAG_SIZE + DISK_POINTER_SIZE) ;
@@ -8462,7 +8462,7 @@ if( strncmp( free_chunk_table->start_tag, free_chunk_table_start_tag,
    return ;
    } /* end if */
 
-if( strncmp( free_chunk_table->end_tag, free_chunk_table_end_tag, 
+if( strncmp( free_chunk_table->end_tag, free_chunk_table_end_tag,
 							TAG_SIZE ) != 0 ) {
    *error_return = ADF_MEMORY_TAG_ERROR ;
    return ;
@@ -8946,9 +8946,9 @@ char   *ADFI_strtok(
 
   /* Set the begining fof the sub string */
   sub_string = tmp_ptr ;
-  
+
   /* Find the next token or the end of the string */
-  
+
   while ( string_len > 0 ) {
      if ( tmp_ptr[0] != token[0] ) {
         tmp_ptr++ ;
@@ -8968,7 +8968,7 @@ char   *ADFI_strtok(
      *string_pos = NULL ;
 
   return sub_string ;
-  
+
 } /* end of ADFI_strtok */
 /* end of file ADFI_strtok.c */
 /* end of combine 2.0 */

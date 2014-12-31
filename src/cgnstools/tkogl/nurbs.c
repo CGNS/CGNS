@@ -29,8 +29,8 @@ typedef struct {
    GLfloat *value;
 } FloatArrayStruct, * FloatArray;
 
-static FloatArray 
-NewFloatArray () 
+static FloatArray
+NewFloatArray ()
 {
    FloatArray ptr = malloc (sizeof(FloatArrayStruct));
    assert (ptr != NULL);
@@ -50,13 +50,13 @@ DestroyFloatArray (FloatArray ptr)
    free (ptr);
 }
 
-static void 
+static void
 AddFloat (FloatArray ptr, GLfloat val)
 {
    assert (ptr != NULL);
    assert (ptr->count <= ptr->size);
    if (ptr->count == ptr->size) {
-      ptr->size *= 2;	
+      ptr->size *= 2;
       ptr->value = realloc (ptr->value, sizeof (GLfloat)*ptr->size);
       assert (ptr->value != NULL);
    }
@@ -64,14 +64,14 @@ AddFloat (FloatArray ptr, GLfloat val)
 }
 
 #if 0
-static void 
-SetFloat (FloatArray ptr, int index, GLfloat val) 
+static void
+SetFloat (FloatArray ptr, int index, GLfloat val)
 {
    assert (ptr != NULL);
    assert (ptr->count <= ptr->size);
    assert (index <= ptr->count);
    if (index == ptr->size) {
-      ptr->size *= 2;	
+      ptr->size *= 2;
       ptr->value = realloc (ptr->value, sizeof (GLfloat)*ptr->size);
       assert (ptr->value != NULL);
    }
@@ -111,23 +111,23 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
    int iarg;
    int dlist = 0;
 
-   for (iarg = 2; iarg < argc; iarg++) {	
+   for (iarg = 2; iarg < argc; iarg++) {
       int len = (int)strlen (argv [iarg]);
       if (strncmp (argv [iarg], "-uorder", len) == 0) {
 	 int val;
 	 iarg++;
 	 if (iarg >= argc) ERRMSG ("No value given for -uorder");
 	 if (Tcl_GetInt (interp, argv [iarg], &val) != TCL_OK ||
-	     val < 2 || val > 8) 
+	     val < 2 || val > 8)
 	    ERRMSG2 ("\nInvalid value for -uorder:", argv [iarg]);
 	 uOrder = val;
-      } 
+      }
       else if (strncmp (argv [iarg], "-vorder", len) == 0) {
 	 int val;
 	 iarg++;
 	 if (iarg >= argc) ERRMSG ("No value given for -vorder");
 	 if (Tcl_GetInt (interp, argv [iarg], &val) != TCL_OK ||
-	     val < 2 || val > 8) 
+	     val < 2 || val > 8)
 	    ERRMSG2 ("\nInvalid value for -vorder:", argv [iarg]);
 	 vOrder = val;
       }
@@ -137,48 +137,48 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
 	 while (iarg < argc &&
 		!(argv [iarg][0] == '-' && isalpha(argv [iarg][1]))) {
 	    double val;
-	    if (Tcl_GetDouble (interp, argv [iarg], &val) != TCL_OK) 
+	    if (Tcl_GetDouble (interp, argv [iarg], &val) != TCL_OK)
 	       ERRMSG ("\nError parsing uknot value");
 	    if (uKnot->count > 0 &&
-		uKnot->value [uKnot->count-1] > val) 
+		uKnot->value [uKnot->count-1] > val)
 	       ERRMSG ("uknot values not in non-descending order");
 	    AddFloat (uKnot, (GLfloat)val);
 	    iarg++;
 	 }
 	 iarg--;
-      }	
+      }
       else if (strncmp (argv [iarg], "-vknots", len) == 0) {
 	 if (vKnot->count != 0) ERRMSG ("vknot values already given");
 	 iarg++;
 	 while (iarg < argc &&
 		!(argv [iarg][0] == '-' && isalpha(argv [iarg][1]))) {
 	    double val;
-	    if (Tcl_GetDouble (interp, argv [iarg], &val) != TCL_OK) 
+	    if (Tcl_GetDouble (interp, argv [iarg], &val) != TCL_OK)
 	       ERRMSG ("\nError parsing uknot value");
 	    if (vKnot->count > 0 &&
-		vKnot->value [vKnot->count-1] > val) 
+		vKnot->value [vKnot->count-1] > val)
 	       ERRMSG ("vknot values not in non-descending order");
 	    AddFloat (vKnot, (GLfloat)val);
 	    iarg++;
 	 }
 	 iarg--;
-      }	
+      }
       else if (strncmp (argv [iarg], "-controlpoints", len) == 0) {
 	 if (cPoint->count != 0) ERRMSG ("controlpoint values already given");
 	 iarg++;
 	 while (iarg < argc &&
 		!(argv [iarg][0] == '-' && isalpha(argv [iarg][1]))) {
 	    double val;
-	    if (Tcl_GetDouble (interp, argv [iarg], &val) != TCL_OK) 
+	    if (Tcl_GetDouble (interp, argv [iarg], &val) != TCL_OK)
 	       ERRMSG ("\nError parsing uknot value");
 	    AddFloat (cPoint, (GLfloat)val);
 	    iarg++;
 	 }
 	 iarg--;
-      }	      
+      }
       else if (strncmp (argv [iarg], "-type", len) == 0) {
 	 iarg++;
-	 if (iarg >= argc) ERRMSG ("No -type value given");	 
+	 if (iarg >= argc) ERRMSG ("No -type value given");
 	 if (strcmp (argv [iarg], "map2vertex3") ==0) {
 	    type = GL_MAP2_VERTEX_3; nCoords = 3;
 	 } else if (strcmp (argv [iarg], "map2vertex4") == 0) {
@@ -186,29 +186,29 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
 	 } else if (strcmp (argv [iarg], "map2color4") == 0) {
 	    type = GL_MAP2_COLOR_4; nCoords = 4;
 	 } else if (strcmp (argv [iarg], "map2normal") == 0) {
-	    type = GL_MAP2_NORMAL; nCoords = 3; 
+	    type = GL_MAP2_NORMAL; nCoords = 3;
 	 } else if (strcmp (argv [iarg], "map2texturecoord1") == 0) {
-	    type = GL_MAP2_TEXTURE_COORD_1; nCoords = 1; 
+	    type = GL_MAP2_TEXTURE_COORD_1; nCoords = 1;
 	 } else if (strcmp (argv [iarg], "map2texturecoord2") == 0) {
 	    type = GL_MAP2_TEXTURE_COORD_2; nCoords = 2;
 	 } else if (strcmp (argv [iarg], "map2texturecoord3") == 0) {
 	    type = GL_MAP2_TEXTURE_COORD_3; nCoords = 3;
 	 } else if (strcmp (argv [iarg], "map2texturecoord4") == 0) {
 	    type = GL_MAP2_TEXTURE_COORD_4; nCoords = 4;
-	 } else 
+	 } else
 	    ERRMSG2 ("not a valid type:", argv [iarg]);
       }
       else if (strncmp (argv [iarg], "-samplingtolerance", len) == 0) {
 	 double val;
 	 iarg++;
-	 if (iarg >= argc) ERRMSG ("No -samplingtolerance value given"); 
-	 if (Tcl_GetDouble (interp, argv [iarg], &val) != TCL_OK) 
+	 if (iarg >= argc) ERRMSG ("No -samplingtolerance value given");
+	 if (Tcl_GetDouble (interp, argv [iarg], &val) != TCL_OK)
 	    ERRMSG ("\nError parsing sampling tolerance");
 	 samplingTolerance = (GLfloat)val;
       }
       else if (strncmp (argv [iarg], "-displaymode", len) == 0) {
 	 iarg++;
-	 if (iarg >= argc) ERRMSG ("No -displaymode value given");	 
+	 if (iarg >= argc) ERRMSG ("No -displaymode value given");
 	 if (strcmp (argv [iarg], "fill") == 0) {
 	    displayMode = GLU_FILL;
 	 } else if (strcmp (argv [iarg], "outlinepolygon") == 0) {
@@ -222,8 +222,8 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
       else if (strncmp (argv [iarg], "-culling", len) == 0) {
 	 int val;
 	 iarg++;
-	 if (iarg >= argc) ERRMSG ("No -culling value given");	 
-	 if (Tcl_GetBoolean (interp, argv [iarg], &val) != TCL_OK) 
+	 if (iarg >= argc) ERRMSG ("No -culling value given");
+	 if (Tcl_GetBoolean (interp, argv [iarg], &val) != TCL_OK)
 	    ERRMSG ("\nError parsing culling value");
 	 culling = (GLfloat)val;
       }
@@ -232,7 +232,7 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
       }
    }
 
-   if (vKnot->count == 0 || uKnot->count == 0 || cPoint->count == 0) 
+   if (vKnot->count == 0 || uKnot->count == 0 || cPoint->count == 0)
       ERRMSG ("All of -uknot, -vknot and -cpoint options must be specified");
 
    /* Now try to guess the remaining arguments and call gluNurbsSurface */
@@ -259,9 +259,9 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
       gluNurbsProperty (obj, GLU_SAMPLING_TOLERANCE, samplingTolerance);
       gluNurbsProperty (obj, GLU_DISPLAY_MODE, displayMode);
       gluNurbsProperty (obj, GLU_CULLING, culling);
-      glNewList (dlist, GL_COMPILE); 
+      glNewList (dlist, GL_COMPILE);
       gluBeginSurface (obj);
-      gluNurbsSurface (obj, uKnotCount, uKnot->value, 
+      gluNurbsSurface (obj, uKnotCount, uKnot->value,
 		       vKnotCount, vKnot->value,
 		       uStride, vStride, cPoint->value,
 		       uOrder, vOrder, type);
@@ -269,10 +269,10 @@ NurbsSurface (Tcl_Interp *interp, int argc, char* argv [])
       /* This is never used because of a bug in AIX OpenGL 1.0.
 	 gluDeleteNurbsObj (obj);
       */
-      glEndList(); 
+      glEndList();
       glFlush();
    }
-      
+
 done:
 
    DestroyFloatArray (uKnot);

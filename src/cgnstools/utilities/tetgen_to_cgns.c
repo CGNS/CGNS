@@ -311,7 +311,7 @@ int read_mesh (char *fname)
         ok = read_tets(fp);
         fclose(fp);
     }
-    
+
     if (ok) {
         printf("%d nodes, ", nCoords);
         if (nEdges)
@@ -451,13 +451,13 @@ void write_tris (int cgfile, int cgbase, int cgzone, cgsize_t *start)
             break;
         }
     }
-    
+
     tris = (cgsize_t *)malloc(3 * nTris * sizeof(cgsize_t));
     if (tris == NULL) {
         fprintf(stderr, "malloc failed for tri data\n");
         exit(1);
     }
-    
+
     if (hasmarks) {
         int is, ie, mark;
         char name[33];
@@ -480,7 +480,7 @@ void write_tris (int cgfile, int cgbase, int cgzone, cgsize_t *start)
                 cg_error_exit();
             *start = end;
             is = ie;
-        }            
+        }
     }
     else {
         for (nn = 0, nt = 0; nt < nTris; nt++) {
@@ -493,7 +493,7 @@ void write_tris (int cgfile, int cgbase, int cgzone, cgsize_t *start)
             cg_error_exit();
         *start = end;
     }
-    
+
     free(tris);
     for (nt = 0; nt < nTris; nt++)
         free(Tris[nt].nodes);
@@ -515,13 +515,13 @@ void write_faces (int cgfile, int cgbase, int cgzone, cgsize_t *start)
         np += Faces[nf].nnodes;
     }
     if (nn) qsort(Faces, nFaces, sizeof(ELEMENT), compare_marker);
-    
+
     faces = (cgsize_t *)malloc((np + nFaces) * sizeof(cgsize_t));
     if (faces == NULL) {
         fprintf(stderr, "malloc failed for face data\n");
         exit(1);
     }
-    
+
     if (hasmarks) {
         int is, ie, mark;
         char name[33];
@@ -549,7 +549,7 @@ void write_faces (int cgfile, int cgbase, int cgzone, cgsize_t *start)
                 cg_error_exit();
             *start = end;
             is = ie;
-        }            
+        }
     }
     else {
         for (nn = 0, nf = 0; nf < nFaces; nf++) {
@@ -564,7 +564,7 @@ void write_faces (int cgfile, int cgbase, int cgzone, cgsize_t *start)
             cg_error_exit();
         *start = end;
     }
-    
+
     free(faces);
     for (nf = 0; nf < nFaces; nf++)
         free(Faces[nf].nodes);
@@ -586,14 +586,14 @@ void write_tets (int cgfile, int cgbase, int cgzone, cgsize_t *start)
             break;
         }
     }
-    
+
     nptet = Tets[0].nnodes;
     tets = (cgsize_t *)malloc(nptet * nTets * sizeof(cgsize_t));
     if (tets == NULL) {
         fprintf(stderr, "malloc failed for tet data\n");
         exit(1);
     }
-    
+
     if (hasmarks) {
         int is, ie, mark;
         char name[33];
@@ -616,7 +616,7 @@ void write_tets (int cgfile, int cgbase, int cgzone, cgsize_t *start)
                 cg_error_exit();
             *start = end;
             is = ie;
-        }            
+        }
     }
     else {
         for (nn = 0, nt = 0; nt < nTets; nt++) {
@@ -630,7 +630,7 @@ void write_tets (int cgfile, int cgbase, int cgzone, cgsize_t *start)
             cg_error_exit();
         *start = end;
     }
-    
+
     free(tets);
     for (nt = 0; nt < nTets; nt++)
         free(Tets[nt].nodes);
@@ -671,7 +671,7 @@ int main (int argc, char *argv[])
             type = 3;
         }
     }
- 
+
     if (type == 0) {
         ext = basename + strlen(basename);
         strcpy(ext, ".node");
@@ -740,7 +740,7 @@ int main (int argc, char *argv[])
     }
     printf("writing CGNS to %s\n", outfile);
     fflush(stdout);
-  
+
     if (cg_open (outfile, CG_MODE_WRITE, &cgfile) ||
         cg_base_write (cgfile, "Base", celldim, phydim, &cgbase) ||
         cg_zone_write (cgfile, cgbase, "Zone", sizes,

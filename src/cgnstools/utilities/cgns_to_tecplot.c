@@ -308,7 +308,7 @@ int main (int argc, char *argv[])
     read_zones ();
     if (!nZones)
         FATAL (NULL, "no zones in the CGNS file");
-    
+
     /* verify dimensions fit in an integer */
 
     for (nz = 0; nz < nZones; nz++) {

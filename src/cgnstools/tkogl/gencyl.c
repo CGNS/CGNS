@@ -39,15 +39,15 @@
 typedef GLfloat Vector [3];
 typedef GLfloat Matrix [4][4];
 
-static void 
-MatrixMult (Matrix m1, Matrix m2, Matrix result) 
+static void
+MatrixMult (Matrix m1, Matrix m2, Matrix result)
 {
    /* Multiplies m1 by m2 storing the result in result */
    int i, j, k;
    Matrix tmp;
 
    for (i = 0; i < 4; i++) {
-      for (j = 0; j < 4; j++) { 
+      for (j = 0; j < 4; j++) {
          tmp [i][j] = 0.0;
          for (k = 0; k < 4; k++) {
             tmp [i][j] += m1 [i][k] * m2 [k][j];
@@ -61,10 +61,10 @@ MatrixMult (Matrix m1, Matrix m2, Matrix result)
    }
 }
 
-static void 
+static void
 TransformVector (const Vector v, Matrix m, Vector result)
 {
-   /* Applies affine linear transformation m to v storing the result in 
+   /* Applies affine linear transformation m to v storing the result in
     * result */
    int i, j;
    Vector tmp;
@@ -80,7 +80,7 @@ TransformVector (const Vector v, Matrix m, Vector result)
    }
 }
 
-static void 
+static void
 NormalizeVector (Vector v)
 {
    /* Makes v a unit vector */
@@ -95,7 +95,7 @@ NormalizeVector (Vector v)
    v [2] /= hypot;
 }
 
-static void 
+static void
 AddVector (const Vector v1, const Vector v2, Vector result)
 {
    /* Adds v1 to v2 and stores in result */
@@ -115,7 +115,7 @@ ComputeTriangleNormal2 (const Vector v1, const Vector v2, const Vector v3,
 {
    /* Computes the normal of the triangle given by the three vertices v1, v2, v3
     * and stores it in the vector given by normal */
-   Vector e1, e2; 
+   Vector e1, e2;
    InitVector (e1, v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2]);
    InitVector (e2, v3[0] - v2[0], v3[1] - v2[1], v3[2] - v2[2]);
    normal [0] = e1[1]*e2[2]-e1[2]*e2[1];
@@ -124,7 +124,7 @@ ComputeTriangleNormal2 (const Vector v1, const Vector v2, const Vector v3,
 }
 
 static void
-ComputeQuadNormal (const Vector v1, const Vector v2, const Vector v3, 
+ComputeQuadNormal (const Vector v1, const Vector v2, const Vector v3,
                    const Vector v4, Vector normal)
 {
    /* Computes the normal at vertex v1 of the quadrilateral given
@@ -150,9 +150,9 @@ ComputeQuadNormal (const Vector v1, const Vector v2, const Vector v3,
 }
 #endif
 
-static void                                                                               
-ComputeQuadNormal2 (const Vector v1, const Vector v2, const Vector v3,                    
-                    const Vector v4, Vector normal)  
+static void
+ComputeQuadNormal2 (const Vector v1, const Vector v2, const Vector v3,
+                    const Vector v4, Vector normal)
 {
    /* Computes the squared normal at vertex v1 of the quadrilateral given
     * by v1-v2-v3-v4 and stores it in the vector given by normal */
@@ -186,13 +186,13 @@ typedef struct {
    Vector * vtx; /* Vertex Coordinates */
    Vector * normalUL,  /* Normal to the Up Left Side of the vertex */
           * normalUR,  /* Normal to the Up Right Side of the vertex */
-          * normalDL,  /* Normal to the Down Left Side of the vertex */  
-          * normalDR ; /* Normal to the Down Right Side of the vertex */ 
+          * normalDL,  /* Normal to the Down Left Side of the vertex */
+          * normalDR ; /* Normal to the Down Right Side of the vertex */
    int nvtx,     /* Number of vertices in cross section */
        vtxsize;  /* Number of vertices allocated in vtx */
 } CrossSection;
 
-static CrossSection* 
+static CrossSection*
 NewCrossSection ()
 {
    /* Allocates a new cross section structure */
@@ -206,7 +206,7 @@ NewCrossSection ()
    return result;
 }
 
-static void 
+static void
 FreeCrossSection (CrossSection * s)
 {
    /* Deallocates the memory associated with cross-section s */
@@ -221,7 +221,7 @@ FreeCrossSection (CrossSection * s)
 }
 
 static void
-AddCrossSectionVtx (CrossSection * s, GLfloat x, GLfloat y, GLfloat z) 
+AddCrossSectionVtx (CrossSection * s, GLfloat x, GLfloat y, GLfloat z)
 {
    /* Stores another vertex with coords (x,y,0) as the next vertex in
     * cross section 's' */
@@ -237,7 +237,7 @@ AddCrossSectionVtx (CrossSection * s, GLfloat x, GLfloat y, GLfloat z)
    s->nvtx++;
 }
 
-static CrossSection* 
+static CrossSection*
 PolygonCrossSection (GLfloat radius, int nsides)
 {
    /* Returns a cross section which is a regular polygon with 'nsides' sides
@@ -256,7 +256,7 @@ PolygonCrossSection (GLfloat radius, int nsides)
    return cross;
 }
 
-static void 
+static void
 TransformCrossSection (CrossSection* s, Matrix m)
 {
    /* Apply transformation m to cross section s */
@@ -266,7 +266,7 @@ TransformCrossSection (CrossSection* s, Matrix m)
    }
 }
 
-static void 
+static void
 DupCrossSection (const CrossSection* src, CrossSection* dst)
 {
    /* Make dst an exact copy of src */
@@ -279,7 +279,7 @@ DupCrossSection (const CrossSection* src, CrossSection* dst)
    memcpy (dst->vtx, src->vtx, sizeof (Vector)*dst->nvtx);
 }
 
-static void 
+static void
 ExpandCrossSection (const CrossSection* src, CrossSection* dst, int ndst)
 {
    /* Make dst a copy of src expanded to have n vertices */
@@ -327,25 +327,25 @@ typedef struct {
    CrossSection** cross;
 } Model;
 
-static Model * 
-NewModel () 
+static Model *
+NewModel ()
 {
    /* Allocates a new model and returns a pointer to it */
    Model* result;
-   
+
    result = (Model*) malloc (sizeof (Model));
    result->adaptivethreshold = 0;
    result->ncross = 0;
    result->sizecross = 8;
-   result->cross = (CrossSection**) malloc (sizeof (CrossSection*) * 
+   result->cross = (CrossSection**) malloc (sizeof (CrossSection*) *
                                             result->sizecross);
    assert (result->cross != NULL);
    return result;
 }
 
-static void 
+static void
 FreeModel (Model* model)
-{      
+{
    /* Deallocates all memory associated with model model */
    int i;
    for (i = 0; i < model->ncross; i++) {
@@ -367,17 +367,17 @@ AddModelCrossSection (Model* model, CrossSection* cross)
 }
 
 static void
-UniformCrossSectionLengths (Model * model) 
+UniformCrossSectionLengths (Model * model)
 {
    /* Force all CrossSections to be of uniform length */
    int icross, maxlength;
    maxlength = 0;
-   for (icross = 0; icross < model->ncross; icross++) {   
+   for (icross = 0; icross < model->ncross; icross++) {
       if (model->cross [icross]->nvtx > maxlength) {
          maxlength = model->cross [icross]->nvtx;
       }
    }
-   for (icross = 0; icross < model->ncross; icross++) {   
+   for (icross = 0; icross < model->ncross; icross++) {
       if (model->cross [icross]->nvtx < maxlength) {
          CrossSection* tmp = NewCrossSection ();
          ExpandCrossSection (model->cross [icross], tmp, maxlength);
@@ -395,7 +395,7 @@ ComputeModelNormals (Model* model)
    int flags = model->flags;
    CrossSection *thisCross, *nextCross, *prevCross = NULL;
    Vector *a, *b, *c, *d;
-   int nvtx = model->cross [0]->nvtx; /* Assume every cross section has the 
+   int nvtx = model->cross [0]->nvtx; /* Assume every cross section has the
                                          same number of vertices */
    assert (model->ncross > 1);
    assert (nvtx > 1);
@@ -409,16 +409,16 @@ ComputeModelNormals (Model* model)
          if (flags&STITCH_ENDS) {
             /* Assume last cross section wraps with first cross section */
             nextCross = model->cross [0];
-         } 
+         }
          else {
-            /* Last Cross section repeats normals at right from previous cross 
+            /* Last Cross section repeats normals at right from previous cross
                sections */
             assert (prevCross != NULL);
             memcpy (thisCross->normalUR, prevCross->normalUR,
                     sizeof (Vector) * nvtx);
             break;
          }
-      } 
+      }
       else {
          nextCross = model->cross [icross+1];
       }
@@ -428,7 +428,7 @@ ComputeModelNormals (Model* model)
                /* Assume last vertex wraps with first */
                b = &(thisCross->vtx [0]);
                c = &(nextCross->vtx [0]);
-            } 
+            }
             else {
                /* Last Vertex repeats normal above from previous vertex */
                CopyVector (thisCross->normalUR[ivtx],
@@ -450,7 +450,7 @@ ComputeModelNormals (Model* model)
 
    /* If only face normals are needed, return here */
    if ((flags&(SHADE_SMOOTH_ROWS | SHADE_SMOOTH_COLS)) == 0) return;
-   
+
    /* Copy normals to the remaining 3 directions */
    for (icross = 0; icross < model->ncross; icross++) {
       thisCross = model->cross [icross];
@@ -461,12 +461,12 @@ ComputeModelNormals (Model* model)
          if (flags&STITCH_ENDS) {
             /* Assume first cross section wraps with last cross section */
             prevCross = model->cross [model->ncross-1];
-         } 
+         }
          else {
-            /* First Cross section repeats normals at left from the right*/ 
+            /* First Cross section repeats normals at left from the right*/
             prevCross = thisCross;
          }
-      } 
+      }
       else {
          prevCross = model->cross [icross-1];
       }
@@ -475,7 +475,7 @@ ComputeModelNormals (Model* model)
             if (flags&STITCH_LOOPS) {
                /* Assume last vertex wraps with first */
                prevvtx = nvtx-1;
-            } 
+            }
             else {
                /* First Vertex repeats normal below from above */
                prevvtx = 0;
@@ -497,20 +497,20 @@ ComputeModelNormals (Model* model)
          if ((flags & SHADE_SMOOTH_ROWS)) {
             Vector tmp;
             if (!(flags&ADAPTIVE)||
-                DotProduct(thisCross->normalUL [ivtx], 
+                DotProduct(thisCross->normalUL [ivtx],
                            thisCross->normalUR [ivtx])
                 > model->adaptivethreshold) {
-               AddVector (thisCross->normalUL [ivtx], 
+               AddVector (thisCross->normalUL [ivtx],
                           thisCross->normalUR [ivtx], tmp);
                NormalizeVector (tmp);
                CopyVector (thisCross->normalUL [ivtx], tmp);
                CopyVector (thisCross->normalUR [ivtx], tmp);
             }
             if (!(flags&ADAPTIVE)||
-                DotProduct(thisCross->normalDL [ivtx], 
+                DotProduct(thisCross->normalDL [ivtx],
                            thisCross->normalDR [ivtx])
                 > model->adaptivethreshold) {
-               AddVector (thisCross->normalDL [ivtx], 
+               AddVector (thisCross->normalDL [ivtx],
                           thisCross->normalDR [ivtx], tmp);
                NormalizeVector (tmp);
                CopyVector (thisCross->normalDL [ivtx], tmp);
@@ -520,20 +520,20 @@ ComputeModelNormals (Model* model)
          if (flags & SHADE_SMOOTH_COLS) {
             Vector tmp;
             if (!(flags&ADAPTIVE)||
-                DotProduct(thisCross->normalUL [ivtx], 
+                DotProduct(thisCross->normalUL [ivtx],
                            thisCross->normalDL [ivtx])
                 > model->adaptivethreshold) {
-               AddVector (thisCross->normalUL [ivtx], 
+               AddVector (thisCross->normalUL [ivtx],
                           thisCross->normalDL [ivtx], tmp);
                NormalizeVector (tmp);
                CopyVector (thisCross->normalUL [ivtx], tmp);
                CopyVector (thisCross->normalDL [ivtx], tmp);
             }
             if (!(flags&ADAPTIVE)||
-                DotProduct(thisCross->normalUR [ivtx], 
+                DotProduct(thisCross->normalUR [ivtx],
                            thisCross->normalDR [ivtx])
                 > model->adaptivethreshold) {
-               AddVector (thisCross->normalUR [ivtx], 
+               AddVector (thisCross->normalUR [ivtx],
                           thisCross->normalDR [ivtx], tmp);
                NormalizeVector (tmp);
                CopyVector (thisCross->normalUR [ivtx], tmp);
@@ -607,18 +607,18 @@ RenderModel (Model* model)
    }
    if (flags&STITCH_LOOPS) {
       texincr [1] = (GLfloat)((model->smax-model->smin) / nvtx);
-   } 
+   }
    else {
       texincr [1] = (GLfloat)((model->smax-model->smin) / (nvtx-1));
    }
    while (icross < ncross) {
       CrossSection *a = model->cross [previcross];
-      CrossSection *b = model->cross [icross];     
+      CrossSection *b = model->cross [icross];
       assert (a->nvtx == b->nvtx);
       if (flags & STITCH_LOOPS) {
          ivtx = 0;
          previvtx = nvtx-1;
-      } 
+      }
       else {
          ivtx = 1;
          previvtx = 0;
@@ -638,11 +638,11 @@ RenderModel (Model* model)
             glNormal3fv (b->normalUL [previvtx]);
             glVertex3fv (b->vtx [previvtx]);
 
-            if (gentex) glTexCoord2f (texcoord [0], texcoord [1]+texincr[1]);      
+            if (gentex) glTexCoord2f (texcoord [0], texcoord [1]+texincr[1]);
             glNormal3fv (a->normalDR [ivtx]);
             glVertex3fv (a->vtx [ivtx]);
 
-            if (gentex) glTexCoord2f (texcoord [0]+texincr[0], texcoord [1]+texincr[1]);      
+            if (gentex) glTexCoord2f (texcoord [0]+texincr[0], texcoord [1]+texincr[1]);
             glNormal3fv (b->normalDL [ivtx]);
             glVertex3fv (b->vtx [ivtx]);
 
@@ -662,10 +662,10 @@ RenderModel (Model* model)
             if (gentex) glTexCoord2f (texcoord [0]+texincr[0], texcoord [1]);
             glVertex3fv (b->vtx [previvtx]);
 
-            if (gentex) glTexCoord2f (texcoord [0], texcoord [1]+texincr[1]);      
+            if (gentex) glTexCoord2f (texcoord [0], texcoord [1]+texincr[1]);
             glVertex3fv (a->vtx [ivtx]);
 
-            if (gentex) glTexCoord2f (texcoord [0]+texincr[0], texcoord [1]+texincr[1]);      
+            if (gentex) glTexCoord2f (texcoord [0]+texincr[0], texcoord [1]+texincr[1]);
             glVertex3fv (b->vtx [ivtx]);
 
             previvtx = ivtx;
@@ -679,12 +679,12 @@ RenderModel (Model* model)
       icross++;
    }
    if (flags&(CLOSE_FIRST|CLOSE_LAST)) {
-      GLUtriangulatorObj* obj;      
+      GLUtriangulatorObj* obj;
       Vector normal;
       GLdouble v [3];
       obj = gluNewTess();
       gluTessCallback(obj, GLU_BEGIN, glBegin);
-      gluTessCallback(obj, GLU_VERTEX, glVertex3fv); 
+      gluTessCallback(obj, GLU_VERTEX, glVertex3fv);
       gluTessCallback(obj, GLU_END, glEnd);
       if (flags&CLOSE_FIRST) {
          CrossSection *a = model->cross [0];
@@ -764,7 +764,7 @@ GenericCylinder (Tcl_Interp *interp, int argc, char* argv [])
    AddCrossSectionVtx (currentCross, 1.0, 1.0, 0.0);
    AddCrossSectionVtx (currentCross, 1.0, -1.0, 0.0);
 
-   for (iarg = 2; iarg < argc; iarg++) {        
+   for (iarg = 2; iarg < argc; iarg++) {
       int len = (int)strlen (argv [iarg]);
       if (strncmp (argv [iarg], "-plot", len) == 0) {
          CrossSection* cross = NewCrossSection ();
@@ -869,7 +869,7 @@ GenericCylinder (Tcl_Interp *interp, int argc, char* argv [])
          double ang;
          model->flags |= ADAPTIVE;
          if (iarg+1 >= argc ||
-             Tcl_GetDouble (interp, argv [iarg+1], &ang) != TCL_OK) 
+             Tcl_GetDouble (interp, argv [iarg+1], &ang) != TCL_OK)
             ERRMSG ("\nError in -adaptive");
          model->adaptivethreshold = cos(ang*PI/180);
          iarg++;
@@ -909,15 +909,15 @@ GenericCylinder (Tcl_Interp *interp, int argc, char* argv [])
          angle *= PI/180;
          sint = sin(angle);
          cost = cos(angle);
-         m [0][0] = (GLfloat)(x*x + cost * (1 - x*x) + sint * 0); 
-         m [0][1] = (GLfloat)(x*y + cost * (0 - x*y) + sint * (-z)); 
+         m [0][0] = (GLfloat)(x*x + cost * (1 - x*x) + sint * 0);
+         m [0][1] = (GLfloat)(x*y + cost * (0 - x*y) + sint * (-z));
          m [0][2] = (GLfloat)(x*z + cost * (0 - x*z) + sint * (y));
          m [1][0] = (GLfloat)(y*x + cost * (0 - y*x) + sint * (z));
          m [1][1] = (GLfloat)(y*y + cost * (1 - y*y) + sint * 0);
          m [1][2] = (GLfloat)(y*z + cost * (0 - y*z) + sint * (-x));
          m [2][0] = (GLfloat)(z*x + cost * (0 - z*x) + sint * (-y));
          m [2][1] = (GLfloat)(z*y + cost * (0 - z*y) + sint * (x));
-         m [2][2] = (GLfloat)(z*z + cost * (1 - z*z) + sint * 0); 
+         m [2][2] = (GLfloat)(z*z + cost * (1 - z*z) + sint * 0);
          MatrixMult (m, transf, transf);
       }
       else if (strncmp (argv [iarg], "-translate", len) == 0) {
@@ -971,8 +971,8 @@ done:
 
 
 
-            
-            
+
+
 
 
 

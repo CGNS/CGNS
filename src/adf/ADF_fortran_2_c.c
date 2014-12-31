@@ -198,12 +198,12 @@ ADFI_string_2_C_string( F2CP(filename),
 	c_filename, error_return ) ;
 if( *error_return != NO_ERROR )
    return ;
-ADFI_string_2_C_string( F2CP(status_in), 
+ADFI_string_2_C_string( F2CP(status_in),
         MIN(ADF_NAME_LENGTH, *status_length),
 	c_status, error_return ) ;
 if( *error_return != NO_ERROR )
    return ;
-ADFI_string_2_C_string( F2CP(format), 
+ADFI_string_2_C_string( F2CP(format),
         MIN(ADF_NAME_LENGTH, *format_length), c_format,
 	error_return ) ;
 if( *error_return != NO_ERROR )
@@ -225,7 +225,7 @@ void    FNAME(adfdsf2,ADFDSF2)(
 {
 char	c_format[ ADF_NAME_LENGTH + 1 ] ;
 
-ADFI_string_2_C_string( F2CP(format), 
+ADFI_string_2_C_string( F2CP(format),
         MIN(ADF_NAME_LENGTH, *format_length), c_format,
 	error_return ) ;
 if( *error_return != NO_ERROR )
@@ -248,7 +248,7 @@ void    FNAME(adfdve2,ADFDVE2)(
 		const Fint *m_length,
                 Fint *error_return )
 {
-ADF_Database_Version( *Root_ID, F2CP(version), F2CP(creation_date), 
+ADF_Database_Version( *Root_ID, F2CP(version), F2CP(creation_date),
                 F2CP(modification_date), error_return ) ;
 
 ADFI_blank_fill_string( F2CP(version), *v_length ) ;
@@ -488,17 +488,17 @@ char	c_name[ ADF_FILENAME_LENGTH + 1 ],
 	c_file[ ADF_FILENAME_LENGTH + 1 ],
 	c_nfile[ ADF_MAX_LINK_DATA_SIZE + 1 ] ;
 
-ADFI_string_2_C_string( F2CP(name), 
+ADFI_string_2_C_string( F2CP(name),
                 MIN(ADF_FILENAME_LENGTH, *name_length),
 		c_name, error_return ) ;
 if( *error_return != NO_ERROR )
    return ;
-ADFI_string_2_C_string( F2CP(file), 
+ADFI_string_2_C_string( F2CP(file),
                 MIN(ADF_FILENAME_LENGTH, *file_length),
 		c_file, error_return ) ;
 if( *error_return != NO_ERROR )
    return ;
-ADFI_string_2_C_string( F2CP(name_in_file), 
+ADFI_string_2_C_string( F2CP(name_in_file),
                 MIN(ADF_MAX_LINK_DATA_SIZE, *nfile_length),
 		c_nfile,
 	error_return ) ;
@@ -567,7 +567,7 @@ for (i=0;i<ADF_DATA_TYPE_LENGTH;i++)
 c_data_type[i] = '\0';
 
 
-ADFI_string_2_C_string( F2CP(data_type), 
+ADFI_string_2_C_string( F2CP(data_type),
         MIN(ADF_DATA_TYPE_LENGTH, *data_type_length),
         c_data_type, error_return ) ;
 if( *error_return != NO_ERROR )
@@ -590,7 +590,7 @@ void    FNAME(adfpna2,ADFPNA2)(
 {
 char    c_name[ ADF_NAME_LENGTH + 1 ] ;
 
-ADFI_string_2_C_string( F2CP(name), 
+ADFI_string_2_C_string( F2CP(name),
                 MIN(ADF_NAME_LENGTH, *name_length), c_name,
                 error_return ) ;
 if( *error_return != NO_ERROR )
@@ -722,24 +722,24 @@ ADFREAD   ADF_Read_Data:
 
    A 1-based system is used with all index values  (the first element has
    an index of 1, not 0).
-   R1: Read data from a node, with partial capabilities.  The partial 
-   capabilities are both in the node's data and also in memory.  
-   Vectors of integers are used to indicate the data to be accessed 
-   from the node, and another set of integer vectors is used to 
-   describe the memory location for the data.  
-    Note:  If the data-type of the node is a compound data-type ("I4[3],R8") 
-   for example, the partial capabilities will access one or more of 
-   these 20-byte data entities.  You cannot access a subset of an 
+   R1: Read data from a node, with partial capabilities.  The partial
+   capabilities are both in the node's data and also in memory.
+   Vectors of integers are used to indicate the data to be accessed
+   from the node, and another set of integer vectors is used to
+   describe the memory location for the data.
+    Note:  If the data-type of the node is a compound data-type ("I4[3],R8")
+   for example, the partial capabilities will access one or more of
+   these 20-byte data entities.  You cannot access a subset of an
    occurrence of the data-type.
 
-   f77: ADFREAD( ID, sstart[], send[], sstrid[], mnumd, 
+   f77: ADFREAD( ID, sstart[], send[], sstrid[], mnumd,
        mdims[], mstart[], mend[], mstrid[], data, ierr )
    input:  real*8  ID            The ID of the node to use.
-   input:  integer sstart(12)    The starting dimension values to use 
+   input:  integer sstart(12)    The starting dimension values to use
                                  in the database (node).
-   input:  integer send(12)      The ending dimension values to use in 
+   input:  integer send(12)      The ending dimension values to use in
                                  the database (node).
-   input:  integer sstrid(12)    The stride values to use in the 
+   input:  integer sstrid(12)    The stride values to use in the
                                  database (node).
    input:  integer mnumd         The number of dimensions to use in memory.
    input:  integer mdims(mnumd)  The dimensionality to use in memory.
@@ -747,7 +747,7 @@ ADFREAD   ADF_Read_Data:
                                  to use in memory.
    input:  integer mend(mnumd)   The ending dimension values to
                                  use in memory.
-   input:  integer mstrid(mnumd) The stride values to use 
+   input:  integer mstrid(mnumd) The stride values to use
                                  in memory.
    output:  character*(*) data   The start of the data in memory.
    output:  integer ierr
@@ -831,12 +831,12 @@ void    FNAME(adfslb2,ADFSLB2)(
 {
 char    c_label[ ADF_LABEL_LENGTH + 1 ] ;
 
-ADFI_string_2_C_string( F2CP(label), 
+ADFI_string_2_C_string( F2CP(label),
                 MIN(ADF_LABEL_LENGTH, *label_length),
                 c_label, error_return ) ;
 if( *error_return != NO_ERROR )
    return ;
-   
+
 ADF_Set_Label( *ID, c_label, error_return ) ;
 }
 /* end of file ADFSLB2.c */
@@ -984,14 +984,14 @@ ADFWRIT   ADF_Write_Data:
    Write data to a Node, with partial capabilities.
    See ADF_Read_Data for description.
 
-   f77: ADFWRIT( ID, sstart[], send[], sstrid[], mnumd, 
+   f77: ADFWRIT( ID, sstart[], send[], sstrid[], mnumd,
                  mdims[], mstart[], mend[], mstrid[], data, ierr )
    input:  real*8 ID             The ID of the node to use.
-   input:  integer sstart(12)    The starting dimension values to use 
+   input:  integer sstart(12)    The starting dimension values to use
                                  in the database (node).
-   input:  integer send(12)      The ending dimension values to use in 
+   input:  integer send(12)      The ending dimension values to use in
                                  the database (node).
-   input:  integer sstrid(12)    The stride values to use in the 
+   input:  integer sstrid(12)    The stride values to use in the
                                  database (node).
    input:  integer mnumd         The number of dimensions to use in memory.
    input:  integer mdims(mnumd)  The dimensionality to use in memory.

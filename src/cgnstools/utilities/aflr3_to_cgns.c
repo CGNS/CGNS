@@ -389,7 +389,7 @@ static void read_ugrid(char *filename, int flags)
                 Hexas[nn++] = nodes[i];
         }
     }
-    
+
     bf_close(bf);
 }
 
@@ -695,7 +695,7 @@ int main (int argc, char *argv[])
         return 1;
     }
     strcpy(basename, argv[argind++]);
-    
+
     /* read mesh */
 
     printf("reading grid from \"%s\"\n", basename);
@@ -721,7 +721,7 @@ int main (int argc, char *argv[])
         tail++;
     if ((p = strrchr(tail, '.')) == NULL)
         p = basename + strlen(basename);
- 
+
     strcpy(p, ".mapbc");
     n = ACCESS(basename, 0);
     if (n) {

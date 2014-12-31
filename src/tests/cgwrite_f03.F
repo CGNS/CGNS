@@ -16,7 +16,7 @@
       parameter (Ndim = 3)
       INTEGER :: one
       parameter (one = 1)
-	
+
       INTEGER :: index_dim, cell_dim, phys_dim
       integer :: base_no, zone_no, coord_no, sol_no, discr_no, conn_no
       INTEGER :: hole_no, boco_no, field_no, dset_no
@@ -25,7 +25,7 @@
       INTEGER(cgsize_t) :: size(Ndim*3)
       INTEGER(cgsize_t) :: npnts
       INTEGER :: zone, coord, i, j, k, n, pos, sol, field
-      integer cg, ier 
+      integer cg, ier
       INTEGER(CGSIZE_T) :: pnts(Ndim,120), donor_pnts(Ndim,120)
       integer transform(Ndim)
       INTEGER :: nptsets, nrmlistflag
@@ -138,7 +138,7 @@
 	    call cg_units_write_f(Kilogram, Meter, Second, Kelvin,      &
      &                            Radian, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
-		
+
 ! *** overset holes
 	 !  create dummy data
 	    do i=1,3
@@ -156,14 +156,14 @@
      &                           PointRange, nptsets, npnts, pnts,      &
      &                           hole_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
-	
+
 ! *** general connectivity
 	    do 100 n=1, 5
 	    do 100 i=1,3
 	        pnts(i,n)=i		! * dummy data
 		donor_pnts(i,n)=i*2
  100        continue
-	  ! create a point matching connectivity 
+	  ! create a point matching connectivity
 	    npnts = 5
 	    call cg_conn_write_f(cg, base_no, zone_no, 'Connect#1',     &
      &          Vertex, Abutting1to1, PointList, npnts, pnts, 'zone#2', &
@@ -215,9 +215,9 @@
 	    enddo
 	    NormalIndex(1)=1
 	    do i=1,phys_dim*npnts
-		normals(i)=i 
+		normals(i)=i
 	    enddo
-	
+
             nrmlistflag = 1
 	    call cg_boco_normal_write_f(cg, base_no, zone_no, boco_no,  &
      &         NormalIndex, nrmlistflag, RealSingle, normals, ier)
@@ -241,11 +241,11 @@
 	    call cg_bcdata_write_f(cg, base_no, zone,                   &
      &         boco_no, dset_no, Neumann, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
-	     
+
 ! ** boundary condition data arrays: GOTO BCData_t node
 	    CALL cg_goto_f(cg, base_no, ier, 'Zone_t', zone_no,         &
      &          'ZoneBC_t', one, 'BC_t', boco_no, 'BCDataSet_t',        &
-     &          dset_no, 'BCData_t', Neumann, 'end') 
+     &          dset_no, 'BCData_t', Neumann, 'end')
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 	    do i=1, npnts
@@ -256,7 +256,7 @@
      &           ndims, npnts, data, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
-! ** boundary condition data attributes: 
+! ** boundary condition data attributes:
 	    call cg_dataclass_write_f(NormalizedByDimensional, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 

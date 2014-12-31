@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
 	printf("%d:%d\n",comm_rank,nelems);
 	emin = (9/comm_size)*comm_rank+1;
 	emax = (comm_rank!=comm_size-1)?(9/comm_size)*(comm_rank+1):9;
-	
+
 	elements = (cgsize_t *)malloc(nelems*2*sizeof(cgsize_t));
 	for(k=0;k<nelems;k++) {
 		elements[2*k] = k+emin;
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
 	if (cgp_elements_write_data(fn,B,Z,S,emin,emax,elements) ||
 	    cgp_queue_flush())
 	    cgp_error_exit();
-	
+
 	cgp_queue_set(0);
 
 	if (cgp_close(fn)) cgp_error_exit();

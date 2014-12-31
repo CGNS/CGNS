@@ -18,7 +18,7 @@
 typedef int PrintVtx (Tcl_DString *, GLfloat* );
 
 static int
-ProcessBuffer (Tcl_Interp *interp, int size, GLfloat* buffer, PrintVtx * proc) 
+ProcessBuffer (Tcl_Interp *interp, int size, GLfloat* buffer, PrintVtx * proc)
 {
    Tcl_DString list;
    int i, j, n;
@@ -78,8 +78,8 @@ ProcessBuffer (Tcl_Interp *interp, int size, GLfloat* buffer, PrintVtx * proc)
 
    return TCL_OK;
 }
-  
-static int 
+
+static int
 PrintVtx2D (Tcl_DString *list, GLfloat* buffer)
 {
    char buf [80];
@@ -92,7 +92,7 @@ PrintVtx2D (Tcl_DString *list, GLfloat* buffer)
    return 2;
 }
 
-static int 
+static int
 PrintVtx3D (Tcl_DString *list, GLfloat* buffer)
 {
    char buf [80];
@@ -105,7 +105,7 @@ PrintVtx3D (Tcl_DString *list, GLfloat* buffer)
    return 3;
 }
 
-static int 
+static int
 PrintVtx3DColor (Tcl_DString *list, GLfloat* buffer)
 {
    char buf [80];
@@ -123,7 +123,7 @@ PrintVtx3DColor (Tcl_DString *list, GLfloat* buffer)
    return 7;
 }
 
-static int 
+static int
 PrintVtx3DColorTexture (Tcl_DString *list, GLfloat* buffer)
 {
    char buf [80];
@@ -146,7 +146,7 @@ PrintVtx3DColorTexture (Tcl_DString *list, GLfloat* buffer)
    return 11;
 }
 
-static int 
+static int
 PrintVtx4DColorTexture (Tcl_DString *list, GLfloat* buffer)
 {
    char buf [80];
@@ -183,7 +183,7 @@ Feedback (Tcl_Interp *interp, int argc, char* argv [])
    if (argc < 4) {
       Tcl_AppendResult (interp, "Not enough args", (char*) NULL);
       return TCL_ERROR;
-   } 
+   }
 
    /* Parse 'size' */
    if (Tcl_GetInt (interp, argv [2], &size) != TCL_OK || size <= 0) {
@@ -196,28 +196,28 @@ Feedback (Tcl_Interp *interp, int argc, char* argv [])
    if (strncasecmp (argv [3], "2d", len) == 0) {
       type = GL_2D;
       proc = PrintVtx2D;
-   } 
-   else if (strncasecmp (argv [3], "3d", len) == 0) {	
+   }
+   else if (strncasecmp (argv [3], "3d", len) == 0) {
       type = GL_3D;
       proc = PrintVtx3D;
-   } 
-   else if (strncasecmp (argv [3], "3dColor", len) == 0) {	
+   }
+   else if (strncasecmp (argv [3], "3dColor", len) == 0) {
       type = GL_3D_COLOR;
       proc = PrintVtx3DColor;
-   } 
-   else if (strncasecmp (argv [3], "3dColorTexture", len) == 0) {	
+   }
+   else if (strncasecmp (argv [3], "3dColorTexture", len) == 0) {
       type = GL_3D_COLOR_TEXTURE;
       proc = PrintVtx3DColorTexture;
-   } 
-   else if (strncasecmp (argv [3], "4dColorTexture", len) == 0) {	
+   }
+   else if (strncasecmp (argv [3], "4dColorTexture", len) == 0) {
       type = GL_4D_COLOR_TEXTURE;
       proc = PrintVtx4DColorTexture;
-   } 
+   }
    else {
       Tcl_AppendResult (interp, "Unknown type:", argv [3]);
       return TCL_ERROR;
    }
-      
+
    /* Allocate feedback 'buffer' */
    buffer = (GLfloat*) malloc (sizeof (GLfloat)*size);
    assert (buffer != NULL);

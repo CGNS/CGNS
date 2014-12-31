@@ -50,7 +50,7 @@ CONTAINS
 
 END MODULE testing_functions
 
-PROGRAM benchmark_hdf5_f90 
+PROGRAM benchmark_hdf5_f90
 
   USE mpi
   USE ISO_C_BINDING
@@ -111,11 +111,11 @@ PROGRAM benchmark_hdf5_f90
   ! timing(6) = Time to read connectivity table
   ! timing(7) = Time to read solution data (field data)
   ! timing(8) = Time to read array data
-  ! timing(9) = Time for cgp_open, CG_MODE_WRITE 
-  ! timing(10) = Time for cg_base_write 
+  ! timing(9) = Time for cgp_open, CG_MODE_WRITE
+  ! timing(10) = Time for cg_base_write
   ! timing(11) = Time for cg_zone_write
   ! timing(12) = Time for cgp_open, CG_MODE_READ
-  ! timing(13) = Time for cg_base_read 
+  ! timing(13) = Time for cg_base_read
   ! timing(14) = Time for cg_zone_read
 
   REAL(KIND=dp), DIMENSION(1:15) :: xtiming, timing, timingMin, timingMax
@@ -146,13 +146,13 @@ PROGRAM benchmark_hdf5_f90
 
   Nnodes = Nelem*NodePerElem
 
-  nijk(1) = Nnodes ! Number of vertices 
-  nijk(2) = Nelem  ! Number of cells 
-  nijk(3) = 0      ! Number of boundary vertices 
+  nijk(1) = Nnodes ! Number of vertices
+  nijk(2) = Nelem  ! Number of cells
+  nijk(3) = 0      ! Number of boundary vertices
 
-  ! ====================================== 
-  ! ==    **WRITE THE CGNS FILE **      == 
-  ! ====================================== 
+  ! ======================================
+  ! ==    **WRITE THE CGNS FILE **      ==
+  ! ======================================
 
   t1 = MPI_Wtime()
   CALL cgp_open_f("benchmark_"//ichr6//".cgns", CG_MODE_WRITE, fn, err)
@@ -181,9 +181,9 @@ PROGRAM benchmark_hdf5_f90
   t2 = MPI_Wtime()
   xtiming(12) = t2-t1
 
-  ! ====================================== 
-  ! == (A) WRITE THE NODAL COORDINATES  == 
-  ! ====================================== 
+  ! ======================================
+  ! == (A) WRITE THE NODAL COORDINATES  ==
+  ! ======================================
 
   count = nijk(1)/comm_size
 
@@ -258,9 +258,9 @@ PROGRAM benchmark_hdf5_f90
 
   DEALLOCATE(Coor_x, Coor_y, Coor_z)
 
-  ! ====================================== 
-  ! == (B) WRITE THE CONNECTIVITY TABLE == 
-  ! ====================================== 
+  ! ======================================
+  ! == (B) WRITE THE CONNECTIVITY TABLE ==
+  ! ======================================
 
   start = 1
   iend = nijk(2)
@@ -297,9 +297,9 @@ PROGRAM benchmark_hdf5_f90
 
   DEALLOCATE(elements)
 
-  ! ====================================== 
-  ! == (C) WRITE THE FIELD DATA         == 
-  ! ====================================== 
+  ! ======================================
+  ! == (C) WRITE THE FIELD DATA         ==
+  ! ======================================
 
   count = nijk(1)/comm_size
 
@@ -350,23 +350,23 @@ PROGRAM benchmark_hdf5_f90
   t1 = MPI_Wtime()
 #if HDF5_HAVE_MULTI_DATASETS
   Fvec(1:3) = (/Fx,Fy,Fz/)
-  CALL cgp_field_multi_write_data_f(fn,B,Z,S,Fvec,min,max,err,3,Data_Fx,Data_Fy,Data_Fz)  
+  CALL cgp_field_multi_write_data_f(fn,B,Z,S,Fvec,min,max,err,3,Data_Fx,Data_Fy,Data_Fz)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_multi_write_data_f'
      CALL cgp_error_exit_f()
   ENDIF
 #else
-  call cgp_field_write_data_f(fn,B,Z,S,Fx,min,max,Data_Fx, err) 
+  call cgp_field_write_data_f(fn,B,Z,S,Fx,min,max,Data_Fx, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_write_data (Data_Fx)'
      CALL cgp_error_exit_f()
   ENDIF
-  call cgp_field_write_data_f(fn,B,Z,S,Fy,min,max,Data_Fy, err) 
+  call cgp_field_write_data_f(fn,B,Z,S,Fy,min,max,Data_Fy, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_write_data (Data_Fy)'
      CALL cgp_error_exit_f()
   ENDIF
-  call cgp_field_write_data_f(fn,B,Z,S,Fz,min,max,Data_Fz, err) 
+  call cgp_field_write_data_f(fn,B,Z,S,Fz,min,max,Data_Fz, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_write_data (Data_Fz)'
      CALL cgp_error_exit_f()
@@ -375,11 +375,11 @@ PROGRAM benchmark_hdf5_f90
   t2 = MPI_Wtime()
   xtiming(4) = t2-t1
 
-  DEALLOCATE(Data_Fx,Data_Fy,Data_Fz) 
+  DEALLOCATE(Data_Fx,Data_Fy,Data_Fz)
 
-  ! ====================================== 
-  ! == (D) WRITE THE ARRAY DATA         == 
-  ! ====================================== 
+  ! ======================================
+  ! == (D) WRITE THE ARRAY DATA         ==
+  ! ======================================
 
   count = nijk(1)/comm_size
 
@@ -463,14 +463,14 @@ PROGRAM benchmark_hdf5_f90
      CALL cgp_error_exit_f()
   ENDIF
 
-  ! ====================================== 
-  ! ==    **  READ THE CGNS FILE **     == 
+  ! ======================================
+  ! ==    **  READ THE CGNS FILE **     ==
   ! ======================================
 
   CALL MPI_Barrier(MPI_COMM_WORLD, mpi_err)
 
   t1 = MPI_Wtime()
-  ! Open the cgns file for reading 
+  ! Open the cgns file for reading
   CALL cgp_open_f("benchmark_"//ichr6//".cgns", CG_MODE_MODIFY, fn, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_open_f'
@@ -479,7 +479,7 @@ PROGRAM benchmark_hdf5_f90
   t2 = MPI_Wtime()
   xtiming(13) = t2-t1
 
-  ! Read the base information 
+  ! Read the base information
   t1 = MPI_Wtime()
   CALL cg_base_read_f(fn, B, bname, r_cell_dim, r_phys_dim, err)
   IF(err.NE.CG_OK)THEN
@@ -498,14 +498,14 @@ PROGRAM benchmark_hdf5_f90
      CALL cgp_error_exit_f()
   ENDIF
 
-  ! Read the zone information 
+  ! Read the zone information
   t1 = MPI_Wtime()
   CALL cg_zone_read_f(fn, B, Z, zname, sizes, err)
   IF(err.NE.CG_OK) PRINT*,'*FAILED* cgp_zone_read_f'
   t2 = MPI_Wtime()
   xtiming(15) = t2-t1
 
-  ! Check the read zone information is correct 
+  ! Check the read zone information is correct
   IF(sizes(1).NE.Nnodes)THEN
      WRITE(*,'(A,I0)') '*FAILED* bad num points = ',sizes(1)
      CALL cgp_error_exit_f()
@@ -526,9 +526,9 @@ PROGRAM benchmark_hdf5_f90
   ENDIF
 
 
-  ! ======================================  
-  ! ==  (A) READ THE NODAL COORDINATES  ==  
-  ! ======================================  
+  ! ======================================
+  ! ==  (A) READ THE NODAL COORDINATES  ==
+  ! ======================================
 
   count = nijk(1)/comm_size
   ALLOCATE(Coor_x(1:count), STAT = istat)
@@ -592,9 +592,9 @@ PROGRAM benchmark_hdf5_f90
 
   DEALLOCATE(Coor_x, Coor_y, Coor_z)
 
-  ! ======================================  
-  ! == (B) READ THE CONNECTIVITY TABLE  ==  
-  ! ======================================  
+  ! ======================================
+  ! == (B) READ THE CONNECTIVITY TABLE  ==
+  ! ======================================
 
   count = nijk(2)/comm_size
   ALLOCATE(elements(1:count*NodePerElem), STAT = istat)
@@ -625,9 +625,9 @@ PROGRAM benchmark_hdf5_f90
 
   DEALLOCATE(elements)
 
-  ! ======================================  
-  ! == (C) READ THE FIELD DATA          ==  
-  ! ====================================== 
+  ! ======================================
+  ! == (C) READ THE FIELD DATA          ==
+  ! ======================================
   count = nijk(1)/comm_size
 
   ALLOCATE(Data_Fx(1:count), STAT = istat)
@@ -649,18 +649,18 @@ PROGRAM benchmark_hdf5_f90
   t1 = MPI_Wtime()
 #if HDF5_HAVE_MULTI_DATASETS
   Fvec(1:3) = (/Fx,Fy,Fz/)
-  CALL cgp_field_multi_read_data_f(fn,B,Z,S,Fvec,min,max,err,3,Data_Fx,Data_Fy,Data_Fz)  
+  CALL cgp_field_multi_read_data_f(fn,B,Z,S,Fvec,min,max,err,3,Data_Fx,Data_Fy,Data_Fz)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_multi_read_data_f'
      CALL cgp_error_exit_f()
   ENDIF
 #else
-  CALL cgp_field_read_data_f(fn,B,Z,S,Fx,min,max,Data_Fx,err)  
+  CALL cgp_field_read_data_f(fn,B,Z,S,Fx,min,max,Data_Fx,err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_read_data (Data_Fx)'
      CALL cgp_error_exit_f()
   ENDIF
-  CALL cgp_field_read_data_f(fn,B,Z,S,Fy,min,max,Data_Fy,err) 
+  CALL cgp_field_read_data_f(fn,B,Z,S,Fy,min,max,Data_Fy,err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_read_data (Data_Fy)'
      CALL cgp_error_exit_f()
@@ -688,9 +688,9 @@ PROGRAM benchmark_hdf5_f90
 
   DEALLOCATE(Data_Fx,Data_Fy,Data_Fz)
 
-  ! ======================================  
-  ! == (D) READ THE ARRAY DATA          ==  
-  ! ======================================  
+  ! ======================================
+  ! == (D) READ THE ARRAY DATA          ==
+  ! ======================================
 
   count = nijk(1)/comm_size
 
@@ -723,12 +723,12 @@ PROGRAM benchmark_hdf5_f90
      CALL cgp_error_exit_f()
   ENDIF
 #else
-  CALL cgp_array_read_data_f(Ar, min, max, Array_r, err)  
+  CALL cgp_array_read_data_f(Ar, min, max, Array_r, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_read_data (Array_r)'
      CALL cgp_error_exit_f()
   ENDIF
-  CALL cgp_array_read_data_f(Ai, min, max, Array_i, err)  
+  CALL cgp_array_read_data_f(Ai, min, max, Array_i, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_read_data (Array_i)'
      CALL cgp_error_exit_f()
