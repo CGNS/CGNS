@@ -4,6 +4,7 @@ ERROR_COLOR=\033[31;01m
 
 CGNSDIR = ..
 include $(CGNSDIR)/make.defs
+include $(CGNSDIR)/cgnsBuild.defs
 
 CGNSLIB = $(CGNSDIR)/$(LIBCGNS)
 
@@ -28,17 +29,28 @@ CALL = \
 	write_zones$(EXE) \
 	write_rind$(EXE)
 
-FALL = \
+F_TESTS_77 = \
 	cgiof$(EXE) \
 	cgwrite$(EXE) \
 	cgread$(EXE) \
 	cgzconn$(EXE) \
-	cgsubreg$(EXE) \
+	cgsubreg$(EXE)
+
+F_TESTS_03 = \
 	cgiof_F03$(EXE) \
 	cgwrite_F03$(EXE) \
 	cgread_F03$(EXE) \
 	cgzconn_F03$(EXE) \
 	cgsubreg_F03$(EXE)
+
+# if --enable-64bit was specified then don't include F77 tests 
+# because they will fail.
+
+ifeq ($(CGNS_64BIT), 1)
+FALL = $(F_TESTS_03)
+else
+FALL = $(F_TESTS_77) $(F_TESTS_03)
+endif
 
 CALL64 = test64c$(EXE)
 FALL64 = test64f$(EXE) test64f_F03$(EXE)
@@ -61,9 +73,9 @@ test : $(TESTS)
 	echo "=== running tests ==="; \
 	 for x in $(TESTS) ; do \
 	   if `./$$x >/dev/null 2>&1` ; then \
-	     echo "$$x ... $(OK_COLOR) passed $(NO_COLOR)"; \
+	     echo -e "$$x ... $(OK_COLOR) passed $(NO_COLOR)"; \
 	   else \
-	     echo "$$x ... $(ERROR_COLOR) *** FAILED *** (NO_COLOR)"; \
+	     echo -e "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR)"; \
 	   fi; \
 	 done; \
 	 echo "=== finished ==="; \
