@@ -20,14 +20,14 @@
       real*4 x(125), y(125), z(125), exp(5)
       character*32 zname, dname, cname
 
-c open and write base
+! open and write base
       dim = 3
       call cg_open_f('cgzconn.cgns', CG_MODE_WRITE, cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_base_write_f(cgfile, 'Base', dim, dim, cgbase, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c create some bogus data
+! create some bogus data
       do n=1,3
         size(n)   = 5
         size(n+3) = 4
@@ -65,7 +65,7 @@ c create some bogus data
         exp(n) = 0
       enddo
       exp(2) = 1
-c loop over zones
+! loop over zones
       do n=1,2
         if (n .eq. 1) then
           zname = 'Zone1'
@@ -74,16 +74,16 @@ c loop over zones
           zname = 'Zone2'
           dname = 'Zone1'
         endif
-c write zone
-        call cg_zone_write_f(cgfile, cgbase, zname, size,
+! write zone
+        call cg_zone_write_f(cgfile, cgbase, zname, size,               &
      &                       Structured, cgzone, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
         call cg_goto_f(cgfile, cgbase, ierr, 'Zone_t', cgzone, 'end')
         if (ierr .ne. CG_OK) call cg_error_exit_f
         call cg_dataclass_write_f(NormalizedByDimensional, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
-c write coordinates
-        call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,
+! write coordinates
+        call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,       &
      &                        'CoordinateX', x, cgcoord, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
         call cg_gopath_f(cgfile, 'GridCoordinates/CoordinateX', ierr)
@@ -91,7 +91,7 @@ c write coordinates
         call cg_exponents_write_f(RealSingle, exp, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
 
-        call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,
+        call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,       &
      &                        'CoordinateY', y, cgcoord, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
         call cg_gopath_f(cgfile, '../CoordinateY', ierr)
@@ -99,41 +99,41 @@ c write coordinates
         call cg_exponents_write_f(RealSingle, exp, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
 
-        call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,
+        call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,       &
      &                        'CoordinateZ', z, cgcoord, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
         call cg_gopath_f(cgfile, '../CoordinateZ', ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
         call cg_exponents_write_f(RealSingle, exp, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
-c write first ZoneGridConnectivity - will be active
-        call cg_zconn_write_f(cgfile, cgbase, cgzone,
+! write first ZoneGridConnectivity - will be active
+        call cg_zconn_write_f(cgfile, cgbase, cgzone,                   &
      &                        'ZoneConnectivity1', cgz1, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c write second ZoneGridConnectivity - will be active
-        call cg_zconn_write_f(cgfile, cgbase, cgzone,
+! write second ZoneGridConnectivity - will be active
+        call cg_zconn_write_f(cgfile, cgbase, cgzone,                   &
      &                        'ZoneConnectivity2', cgz2, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
-c write general connectivity
+! write general connectivity
         npts = 2
         dnpts = 25
-        call cg_conn_write_f(cgfile, cgbase, cgzone, 'conn', Vertex,
-     &                       Abutting1to1, PointRange, npts, ptrange,
-     &                       dname, Structured, PointListDonor,
+        call cg_conn_write_f(cgfile, cgbase, cgzone, 'conn', Vertex,    & 
+     &                       Abutting1to1, PointRange, npts, ptrange,   &
+     &                       dname, Structured, PointListDonor,         &
      &                       Integer, dnpts, ptlist, cgconn, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
-c set it back to previous ZoneGridConnectivity and write 1to1
+! set it back to previous ZoneGridConnectivity and write 1to1
         call cg_zconn_set_f(cgfile, cgbase, cgzone, cgz1, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
 	
-        call cg_1to1_write_f(cgfile, cgbase, cgzone, '1to1', dname,
+        call cg_1to1_write_f(cgfile, cgbase, cgzone, '1to1', dname,     &
      &                       ptrange, ptrange, transform, cgconn, ierr)
 	
         if (ierr .ne. CG_OK) call cg_error_exit_f
       enddo
 
-c close the file and reopen in read mode
+! close the file and reopen in read mode
       call cg_close_f(cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_open_f('cgzconn.cgns', CG_MODE_READ, cgfile, ierr)
@@ -149,7 +149,7 @@ c close the file and reopen in read mode
           print *,'nzconn != 2'
           stop
         endif
-c read should make ZoneGridConnectivity active
+! read should make ZoneGridConnectivity active
         call cg_zconn_read_f(cgfile, cgbase, cgzone, cgz2, zname, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
         if (zname .ne. 'ZoneConnectivity2') then
@@ -164,18 +164,18 @@ c read should make ZoneGridConnectivity active
           print *,'expecting nconn=1,n1to1=0 - got',nconn,n1to1
           stop
         endif
-        call cg_conn_info_f(cgfile, cgbase, cgzone, cgconn, cname,
-     &                      loc, type, ptype, npts, dname, dztype,
+        call cg_conn_info_f(cgfile, cgbase, cgzone, cgconn, cname,      &
+     &                      loc, type, ptype, npts, dname, dztype,      &
      &                      dptype, ddtype, dnpts, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
-        if (cname .ne. 'conn' .or. loc .ne. Vertex .or.
-     &      type .ne. Abutting1to1 .or. ptype .ne. PointRange .or.
-     &      npts .ne. 2 .or. dztype .ne. Structured .or.
+        if (cname .ne. 'conn' .or. loc .ne. Vertex .or.                 &
+     &      type .ne. Abutting1to1 .or. ptype .ne. PointRange .or.      &
+     &      npts .ne. 2 .or. dztype .ne. Structured .or.                &
      &      dptype .ne. PointListDonor .or. dnpts .ne. 25) then
           print *,'invalid conn data'
           stop
         endif
-c read should make ZoneGridConnectivity active
+! read should make ZoneGridConnectivity active
         call cg_zconn_read_f(cgfile, cgbase, cgzone, cgz1, zname, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
         if (zname .ne. 'ZoneConnectivity1') then
@@ -190,7 +190,7 @@ c read should make ZoneGridConnectivity active
           print *,'expecting nconn=0,n1to1=1 - got',nconn,n1to1
           stop
         endif
-        call cg_1to1_read_f(cgfile, cgbase, cgzone, cgconn, cname,
+        call cg_1to1_read_f(cgfile, cgbase, cgzone, cgconn, cname,      &
      &                      dname, ptrange, ptrange, transform, ierr)
 
         if (ierr .ne. CG_OK) call cg_error_exit_f

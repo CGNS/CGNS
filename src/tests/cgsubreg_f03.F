@@ -15,14 +15,14 @@
       real*4 x(125), y(125), z(125)
       character*32 sname, cname
 
-c open and write base
+! open and write base
       dim = 3
       call cg_open_f('cgsubreg.cgns', CG_MODE_WRITE, cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_base_write_f(cgfile, 'Base', dim, dim, cgbase, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c create some bogus data
+! create some bogus data
       do n=1,3
         size(n)   = 5
         size(n+3) = 4
@@ -56,47 +56,47 @@ c create some bogus data
         enddo
       enddo
 
-c write zone
-      call cg_zone_write_f(cgfile, cgbase, 'Zone', size,
+! write zone
+      call cg_zone_write_f(cgfile, cgbase, 'Zone', size,                &
      &                     Structured, cgzone, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-c write coordinates
-      call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,
+! write coordinates
+      call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,         &
      &                      'CoordinateX', x, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,
+      call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,         &
      &                      'CoordinateY', y, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,
+      call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,         &
      &                      'CoordinateZ', z, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c write first ZoneSubRegion as BCRegionName
-      dim = 2
-      call cg_subreg_bcname_write_f(cgfile, cgbase, cgzone, 'reg1',
+! write first ZoneSubRegion as BCRegionName
+      dim = 2 
+      call cg_subreg_bcname_write_f(cgfile, cgbase, cgzone, 'reg1',     &
      &                              dim, 'bcname', csub, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c write second ZoneSubRegion as GridConnectivityRegionName
-      call cg_subreg_gcname_write_f(cgfile, cgbase, cgzone, 'reg2',
+! write second ZoneSubRegion as GridConnectivityRegionName
+      call cg_subreg_gcname_write_f(cgfile, cgbase, cgzone, 'reg2',     &
      &                              dim, 'gcname', csub, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c write third ZoneSubRegion as PointRange
+! write third ZoneSubRegion as PointRange
       npts = 2
-      call cg_subreg_ptset_write_f(cgfile, cgbase, cgzone, 'reg3',
-     &                             dim, Vertex, PointRange, npts,
+      call cg_subreg_ptset_write_f(cgfile, cgbase, cgzone, 'reg3',      &
+     &                             dim, Vertex, PointRange, npts,       &
      &                             ptrange, csub, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c write fourth ZoneSubRegion as PointList
+! write fourth ZoneSubRegion as PointList
       npts = 25
-      call cg_subreg_ptset_write_f(cgfile, cgbase, cgzone, 'reg4',
-     &                             dim, EdgeCenter, PointList, npts,
+      call cg_subreg_ptset_write_f(cgfile, cgbase, cgzone, 'reg4',      &
+     &                             dim, EdgeCenter, PointList, npts,    &
      &                             ptlist, csub, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c close the file and reopen in read mode
+! close the file and reopen in read mode
       call cg_close_f(cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
@@ -113,16 +113,16 @@ c close the file and reopen in read mode
       endif
 
       do csub=1,4
-        call cg_subreg_info_f(cgfile, cgbase, cgzone, csub, sname, dim,
+        call cg_subreg_info_f(cgfile, cgbase, cgzone, csub, sname, dim, &
      &                        loc, ptype, npts, bclen, gclen, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
         if (sname .eq. 'reg1') then
-          if (bclen .ne. 6 .or. gclen .ne. 0 .or.
+          if (bclen .ne. 6 .or. gclen .ne. 0 .or.                       &
      &        ptype .ne. CG_NULL .or. npts .ne. 0) then
             print *,'bad info for',sname
             stop
           endif
-          call cg_subreg_bcname_read_f(cgfile, cgbase, cgzone, csub,
+          call cg_subreg_bcname_read_f(cgfile, cgbase, cgzone, csub,    &
      &                                 cname, ierr)
           if (ierr .ne. CG_OK) call cg_error_exit_f
           if (cname .ne. 'bcname') then
@@ -131,12 +131,12 @@ c close the file and reopen in read mode
           endif
 
         elseif (sname .eq. 'reg2') then
-          if (bclen .ne. 0 .or. gclen .ne. 6 .or.
+          if (bclen .ne. 0 .or. gclen .ne. 6 .or.                       &
      &        ptype .ne. CG_NULL .or. npts .ne. 0) then
             print *,'bad info for',sname
             stop
           endif
-          call cg_subreg_gcname_read_f(cgfile, cgbase, cgzone, csub,
+          call cg_subreg_gcname_read_f(cgfile, cgbase, cgzone, csub,    &
      &                                 cname, ierr)
           if (ierr .ne. CG_OK) call cg_error_exit_f
           if (cname .ne. 'gcname') then
@@ -145,23 +145,23 @@ c close the file and reopen in read mode
           endif
 
         elseif (sname .eq. 'reg3') then
-          if (bclen .ne. 0 .or. gclen .ne. 0 .or.
-     &        ptype .ne. PointRange .or. npts .ne. 2 .or.
+          if (bclen .ne. 0 .or. gclen .ne. 0 .or.                       &
+     &        ptype .ne. PointRange .or. npts .ne. 2 .or.               &
      &        loc .ne. Vertex) then
             print *,'bad info for',sname
             stop
           endif
-          call cg_subreg_ptset_read_f(cgfile, cgbase, cgzone, csub,
+          call cg_subreg_ptset_read_f(cgfile, cgbase, cgzone, csub,     &
      &                                ptrange, ierr)
           if (ierr .ne. CG_OK) call cg_error_exit_f
         elseif (sname .eq. 'reg4') then
-          if (bclen .ne. 0 .or. gclen .ne. 0 .or.
-     &        ptype .ne. PointList .or. npts .ne. 25 .or.
+          if (bclen .ne. 0 .or. gclen .ne. 0 .or.                       &
+     &        ptype .ne. PointList .or. npts .ne. 25 .or.               &
      &        loc .ne. EdgeCenter) then
             print *,'bad info for',sname
             stop
           endif
-          call cg_subreg_ptset_read_f(cgfile, cgbase, cgzone, csub,
+          call cg_subreg_ptset_read_f(cgfile, cgbase, cgzone, csub,     &
      &                                ptlist, ierr)
           if (ierr .ne. CG_OK) call cg_error_exit_f
 
