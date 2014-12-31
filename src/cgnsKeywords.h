@@ -24,10 +24,17 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------*/
 
-/* ------------  IMPORTANT DEVELOPER'S NOTES  ---------------------------
+/*    _____ __  __ _____   ____  _____ _______       _   _ _______ 
+ *   |_   _|  \/  |  __ \ / __ \|  __ \__   __|/\   | \ | |__   __|
+ *     | | | \  / | |__) | |  | | |__) | | |  /  \  |  \| |  | |   
+ *     | | | |\/| |  ___/| |  | |  _  /  | | / /\ \ | . ` |  | |   
+ *    _| |_| |  | | |    | |__| | | \ \  | |/ ____ \| |\  |  | |   
+ *   |_____|_|  |_|_|     \____/|_|  \_\ |_/_/    \_\_| \_|  |_|   
+ *                                                            
+ * -------------------  DEVELOPER'S NOTES  ---------------------------
  *
  * (1) If a new keyword is introduced into this file then the same keyword
- * needs to be added to cgnslib_f.h.in in order to maintain Fortran
+ * needs to be added to cgns_f.F90 in order to maintain Fortran
  * compatibility.
  *
  */
