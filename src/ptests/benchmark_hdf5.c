@@ -135,10 +135,10 @@ int main(int argc, char* argv[]) {
   nijk[2] = 0; /* Number of boundary vertices */
 
   /* Compute the size of the arrays */
-  Mb_coor = sizeof(double)*3*Nnodes/131072;
-  Mb_elem = sizeof(cgsize_t)*Nelem*NodePerElem/131072;
-  Mb_field = sizeof(double)*3*Nnodes/131072;
-  Mb_array = (sizeof(double)+sizeof(cgsize_t))*Nnodes/131072;
+  Mb_coor = sizeof(double)*3*Nnodes/1048576;
+  Mb_elem = sizeof(cgsize_t)*Nelem*NodePerElem/1048576;
+  Mb_field = sizeof(double)*3*Nnodes/1048576;
+  Mb_array = (sizeof(double)+sizeof(cgsize_t))*Nnodes/1048576;
 
   /* ====================================== */
   /* ==    **WRITE THE CGNS FILE **      == */
