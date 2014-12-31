@@ -69,7 +69,7 @@ add_executable( write_zones   ${write_zones_FILES}   )
 
 # Conditionally build the fortran tests
 if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN)
-	add_executable( f2c_test         ${f2c_test_FILES} )
+	#add_executable( f2c_test         ${f2c_test_FILES} )
 	add_executable( cgiof_f03       ${cgiof_f03_FILES}  )
 	add_executable( cgwrite_f03      ${cgwrite_f03_FILES}  )
 	add_executable( cgread_f03       ${cgread_f03_FILES}   )
@@ -103,7 +103,7 @@ if (CGNS_ENABLE_TESTS)
 
   # Conditionally add the fortran tests
   if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN)
-	add_test( f2c_test f2c_test ) # This still needs a regex test
+	#add_test( f2c_test f2c_test ) # This still needs a regex test
 	add_test( cgiof_f03 cgiof_f03)
 	add_test( cgwrite_f03  cgwrite_f03  )
 	add_test( cgread_f03   cgread_f03   )
