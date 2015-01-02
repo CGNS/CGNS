@@ -48,7 +48,7 @@ int r_phys_dim = 0;
 cgsize_t nijk[3], sizes[3];
 cgsize_t size_1D[1];
 cgsize_t min, max;
-int k, count;
+cgsize_t k, count;
 /* For writing and reading data*/
 double* Coor_x;
 double* Coor_y;

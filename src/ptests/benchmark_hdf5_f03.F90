@@ -90,7 +90,7 @@ PROGRAM main
   INTEGER(CGSIZE_T), DIMENSION(1:3) :: nijk, sizes
   INTEGER(CGSIZE_T), DIMENSION(1:1) :: size_1D
   INTEGER(CGSIZE_T) :: min, max
-  INTEGER(C_INT) :: k, count
+  INTEGER(CGSIZE_T) :: k, count
   ! For writing and reading data
   REAL(C_DOUBLE), DIMENSION(:), ALLOCATABLE, TARGET :: Coor_x, Coor_y, Coor_z
   REAL(C_DOUBLE), DIMENSION(:), ALLOCATABLE, TARGET :: Data_Fx, Data_Fy, Data_Fz

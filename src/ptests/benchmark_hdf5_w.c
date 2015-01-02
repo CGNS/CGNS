@@ -28,7 +28,7 @@ int comm_rank;
 MPI_Info info;
 
 /* cgsize_t Nelem = 33554432; */
-cgsize_t Nelem = 33554432;
+cgsize_t Nelem = 1073741824;
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
@@ -48,7 +48,7 @@ int r_phys_dim = 0;
 cgsize_t nijk[3], sizes[3];
 cgsize_t size_1D[1];
 cgsize_t min, max;
-int k, count;
+cgsize_t k, count;
 /* For writing and reading data*/
 double* Coor_x;
 double* Coor_y;
@@ -179,68 +179,28 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 
-  if( !(Coor_y= (double*) malloc(count*sizeof(double))) ) {
-    printf("*FAILED* allocation of Coor_y \n");
-    cgp_error_exit();
-  }
-
-  if( !(Coor_z= (double*) malloc(count*sizeof(double))) ) {
-    printf("*FAILED* allocation of Coor_z \n");
-    cgp_error_exit();
-  }
-
   min = count*comm_rank+1;
   max = count*(comm_rank+1);
 
   for (k=0; k < count; k++) {
     Coor_x[k] = comm_rank*count + k + 1.1;
-    Coor_y[k] = Coor_x[k] + 0.1;
-    Coor_z[k] = Coor_y[k] + 0.1;
   }
 
   if(cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateX",&Cx) != CG_OK) {
     printf("*FAILED* cgp_coord_write (Coor_x) \n");
     cgp_error_exit();
   }
-  if(cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateY",&Cy) != CG_OK) {
-    printf("*FAILED* cgp_coord_write (Coor_y) \n");
-    cgp_error_exit();
-  }
-  if(cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateZ",&Cz) != CG_OK) {
-    printf("*FAILED* cgp_coord_write (Coor_z) \n");
-    cgp_error_exit();
-  }
 
   t1 = MPI_Wtime();
-#if HDF5_HAVE_MULTI_DATASETS
-  Cvec[0] = Cx;
-  Cvec[1] = Cy;
-  Cvec[2] = Cz;
-  if(cgp_coord_multi_write_data(fn, B, Z, Cvec, &min,&max, Coor_x, Coor_y, Coor_z)!= CG_OK) {
-    printf("*FAILED* cgp_coords_write_data \n");
-    cgp_error_exit();
-  }
-#else
   if((cgp_coord_write_data(fn,B,Z,Cx,&min,&max,Coor_x)) != CG_OK) {
     printf("*FAILED* cgp_coord_write_data (Coor_x) \n");
     cgp_error_exit();
   }
-  if((cgp_coord_write_data(fn,B,Z,Cy,&min,&max,Coor_y)) != CG_OK) {
-    printf("*FAILED* cgp_coord_write_data (Coor_y) \n");
-    cgp_error_exit();
-  }
-  if((cgp_coord_write_data(fn,B,Z,Cz,&min,&max,Coor_z)) != CG_OK) {
-    printf("*FAILED* cgp_coord_write_data (Coor_z) \n");
-    cgp_error_exit();
-  }
-#endif
   t2 = MPI_Wtime();
   xtiming[1] = t2-t1;
 
   if(!queue) {
     free(Coor_x);
-    free(Coor_y);
-    free(Coor_z);
   }
 
   if(cgp_close(fn) != CG_OK) {
