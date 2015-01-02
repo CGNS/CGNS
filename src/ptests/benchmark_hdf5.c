@@ -9,8 +9,38 @@
 ! @section DESCRIPTION
 ! Benchmarking program for pcgns library
 !
-! TO COMPILE: h5pcc -O2 benchmark_hdf5.c -I.. -L../lib -lcgns
+! Results From Largest Simulation to-date:
+! --------------------------------------------
+!  1/2/2015
+!  Cetus@Argonne National Laboratory: IBM Blue Gene/Q, GPFS
+!  (Note: uses Multi-dataset APIs)
+!  Number of Elements = 8,589,934,592
+!  Number of Nodes    = 51,539,607,552
+!  Resulting File Size = 3.375 TiB
 !
+!  Total Time to Run Program (@4096 processors) 1379s
+!  Total Time to Write Coordinates: 215s (71s in MPI IO)
+!  Total Time to Write Elements: 71s (0.04s in MPI IO)
+!  Total Time to Write Fields: 216s (72s in MPI IO)
+!  Total Time to Write Arrays: 143s (71s in MPI IO)
+!  Total Time to Read Coordinates: 237s (71s in MPI IO)
+!  Total Time to Read Elements: 79s (0.04s in MPI IO)
+!  Total Time to Read Fields: 237s (78s in MPI IO)
+!  Total Time to Read Arrays: 158s (79s in MPI IO)
+
+!  Number of Elements = 1,073,741,824
+!  Number of Nodes    = 6,442,450,944
+!  Resulting File Size = 431 GiB
+!
+!  Total Time to Run Program (@256 processors) 439s
+!  Total Time to Write Coordinates: 59s
+!  Total Time to Write Elements: 20s
+!  Total Time to Write Fields: 61s
+!  Total Time to Write Arrays: 40s
+!  Total Time to Read Coordinates: 83s
+!  Total Time to Read Elements: 27s
+!  Total Time to Read Fields: 83s
+!  Total Time to Read Arrays: 55s
 */
 #include <stdio.h>
 #include <stdlib.h>
