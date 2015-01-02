@@ -37,7 +37,7 @@
 !                                   in favor of using the Fortran module cgns_f.F90.
 !                                   All new Fortran definitions should instead be
 !                                   added to cgns_f.F90.
-!                                   This file is only for present for backward
+!                                   This file is only present for backward
 !                                   compatibility.
 !
 ! Fortran version of cgnslib.h
