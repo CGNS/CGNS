@@ -36,11 +36,11 @@ endif (CGNS_ENABLE_HDF5)
 # create configed header files #
 ################################
 
-if (${SIZE_OF_LONG} GREATER 4)
+if ("${SIZE_OF_LONG}" GREATER 4)
   set(CGLONGT long)
-else (${SIZE_OF_LONG} GREATER 4)
+else ("${SIZE_OF_LONG}" GREATER 4)
   set(CGLONGT "long long")
-endif (${SIZE_OF_LONG} GREATER 4)
+endif ("${SIZE_OF_LONG}" GREATER 4)
 
 set(BUILDLEGACY 0)
 set(BUILD64BIT 0)
@@ -478,12 +478,12 @@ if(CGNS_BUILD_SHARED)
 endif(CGNS_BUILD_SHARED)
 
 # Set the version numbers
-set_target_properties(cgns_static PROPERTIES VERSION ${CGNS_VERSION})
-set_target_properties(cgns_static PROPERTIES SOVERSION ${CGNS_VERSION})
+set_target_properties(cgns_static PROPERTIES VERSION "${CGNS_VERSION}")
+set_target_properties(cgns_static PROPERTIES SOVERSION "${CGNS_VERSION}")
 
 if(CGNS_BUILD_SHARED)
-  set_target_properties(cgns_shared PROPERTIES VERSION ${CGNS_VERSION})
-  set_target_properties(cgns_shared PROPERTIES SOVERSION ${CGNS_VERSION})
+  set_target_properties(cgns_shared PROPERTIES VERSION "${CGNS_VERSION}")
+  set_target_properties(cgns_shared PROPERTIES SOVERSION "${CGNS_VERSION}")
 endif(CGNS_BUILD_SHARED)
 
 # Set the install path of the static library
