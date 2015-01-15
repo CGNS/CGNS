@@ -117,7 +117,6 @@ ENABLE_LANGUAGE(Fortran)
 #-----------------------------------------------------------------------------
 MACRO (CHECK_FORTRAN_FEATURE FUNCTION CODE VARIABLE)
   IF (NOT DEFINED ${VARIABLE})
-    MESSAGE (STATUS "Testing Fortran ${FUNCTION}")
     IF (CMAKE_REQUIRED_LIBRARIES)
       SET (CHECK_FUNCTION_EXISTS_ADD_LIBRARIES
           "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}")
@@ -284,7 +283,6 @@ endmacro(native_paths)
 
 MACRO (CHECK_HDF5_FEATURE FUNCTION CODE VARIABLE)
   IF (NOT DEFINED ${VARIABLE})
-    MESSAGE (STATUS "Testing HDF5 ${FUNCTION}")
     FILE (WRITE
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/test_HDF.c
         "${CODE}"
@@ -309,8 +307,7 @@ MACRO (CHECK_HDF5_FEATURE FUNCTION CODE VARIABLE)
           "${OUTPUT}\n\n"
       )
     ELSE (${VARIABLE})
-    MESSAGE ( "FAILED")
-      MESSAGE (STATUS "Testing HDF5 ${FUNCTION} - Fail")
+      MESSAGE (STATUS "Testing HDF5 ${FUNCTION} - NOT FOUND")
       SET (${VARIABLE} "" CACHE INTERNAL "Have HDF5 function ${FUNCTION}")
       FILE (APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
           "Determining if the HDF5 ${FUNCTION} exists failed with the following output:\n"
