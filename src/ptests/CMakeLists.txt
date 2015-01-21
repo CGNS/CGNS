@@ -49,7 +49,7 @@ add_executable(test_zone ${test_zone_FILES})
 set(thesis_benchmark_FILES thesis_benchmark.c)
 add_executable(thesis_benchmark ${thesis_benchmark_FILES})
 
-if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND HAVE_FORTRAN_2003)
+if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
   set(ftest_FILES ftest.F90)
   add_executable(ftest ${ftest_FILES})
   set(fexample_FILES fexample.F90)
@@ -58,7 +58,7 @@ if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND HAVE_FORTRAN_2003)
   add_executable(benchmark_hdf5_f90 ${benchmark_hdf5_f90_FILES})
   set(benchmark_hdf5_f03_FILES benchmark_hdf5_f03.F90)
   add_executable(benchmark_hdf5_f03 ${benchmark_hdf5_f03_FILES})
-endif (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND HAVE_FORTRAN_2003)
+endif (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
 
 # Add the tests so that cmake can find them
 if (CGNS_ENABLE_TESTS)
@@ -80,7 +80,7 @@ if (CGNS_ENABLE_TESTS)
       ${MPIEXEC_PREFLAGS} test_zone ${MPIEXEC_POSTFLAGS})
   add_test(thesis_benchmark ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} thesis_benchmark ${MPIEXEC_POSTFLAGS})
-  if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND HAVE_FORTRAN_2003)
+  if (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
     add_test(ftest ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
         ${MPIEXEC_PREFLAGS} ftest ${MPIEXEC_POSTFLAGS})
     add_test(fexample ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
@@ -89,5 +89,5 @@ if (CGNS_ENABLE_TESTS)
         ${MPIEXEC_PREFLAGS} benchmark_hdf5_f90 ${MPIEXEC_POSTFLAGS})
     add_test(benchmark_hdf5_f03 ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
         ${MPIEXEC_PREFLAGS} benchmark_hdf5_f03 ${MPIEXEC_POSTFLAGS})
-  endif (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN AND HAVE_FORTRAN_2003)
+  endif (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
 endif (CGNS_ENABLE_TESTS)
