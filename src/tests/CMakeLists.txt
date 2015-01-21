@@ -68,7 +68,7 @@ add_executable( write_test    ${write_test_FILES}    )
 add_executable( write_zones   ${write_zones_FILES}   )
 
 # Conditionally build the fortran tests
-if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN)
+if (CGNS_ENABLE_FORTRAN)
 	#add_executable( f2c_test         ${f2c_test_FILES} )
 	add_executable( cgiof_f03       ${cgiof_f03_FILES}  )
 	add_executable( cgwrite_f03      ${cgwrite_f03_FILES}  )
@@ -83,7 +83,7 @@ if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN)
 	  add_executable( cgzconn      ${cgzconn_FILES}  )
 	  add_executable( cgsubreg     ${cgsubreg_FILES}  )
 	endif (NOT CGNS_ENABLE_64BIT)
-endif (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN)
+endif (CGNS_ENABLE_FORTRAN)
 
 # Add the tests so that ctest can find them
 if (CGNS_ENABLE_TESTS)
@@ -102,7 +102,7 @@ if (CGNS_ENABLE_TESTS)
   add_test( write_zones   write_zones             )
 
   # Conditionally add the fortran tests
-  if (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN)
+  if (CGNS_ENABLE_FORTRAN)
 	#add_test( f2c_test f2c_test ) # This still needs a regex test
 	add_test( cgiof_f03 cgiof_f03)
 	add_test( cgwrite_f03  cgwrite_f03  )
@@ -116,5 +116,5 @@ if (CGNS_ENABLE_TESTS)
 	  add_test( cgzconn   cgzconn  )
 	  add_test( cgsubreg  cgsubreg )
 	endif (NOT CGNS_ENABLE_64BIT)
-  endif (CGNS_ENABLE_FORTRAN AND HAS_FORTRAN)
+  endif (CGNS_ENABLE_FORTRAN)
 endif (CGNS_ENABLE_TESTS)
