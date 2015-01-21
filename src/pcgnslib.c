@@ -36,11 +36,11 @@ freely, subject to the following restrictions:
                               type <= CGNS_ENUMV(HEXA_125)))
 
 /* MPI-2 info object */
-MPI_Info pcg_mpi_info;
-int pcg_mpi_comm_size;
-int pcg_mpi_comm_rank;
+extern MPI_Info pcg_mpi_info;
+extern int pcg_mpi_comm_size;
+extern int pcg_mpi_comm_rank;
 /* flag indicating if mpi_initialized was called */
-int pcg_mpi_initialized;
+extern int pcg_mpi_initialized;
 
 static int write_to_queue = 0;
 static hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;

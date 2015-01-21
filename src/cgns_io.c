@@ -45,8 +45,10 @@ freely, subject to the following restrictions:
 #endif
 #ifdef BUILD_PARALLEL
 #include <mpi.h>
-extern int pcg_mpi_comm_rank;
-extern int pcg_mpi_initialized;
+int pcg_mpi_comm_size;
+int pcg_mpi_comm_rank;
+int pcg_mpi_initialized;
+MPI_Info pcg_mpi_info;
 #endif
 
 
