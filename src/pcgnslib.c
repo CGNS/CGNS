@@ -247,9 +247,9 @@ static int check_parallel(cgns_file *cgfile)
 /*== Begin Function Definitions ==*/
 /*================================*/
 
-int cgp_mpi_comm(int comm)
+int cgp_mpi_comm(MPI_Comm comm)
 {
-    return cgio_configure(CG_CONFIG_HDF5_MPI_COMM, (void *)((size_t)comm));
+    return cgio_configure(CG_CONFIG_HDF5_MPI_COMM, (void *)(comm));
 }
 
 /*---------------------------------------------------------*/

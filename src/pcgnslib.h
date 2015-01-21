@@ -43,7 +43,7 @@ typedef enum {
 
 /*===== MPI communicator =====*/
 
-CGNSDLL int cgp_mpi_comm(int mpicomm);
+CGNSDLL int cgp_mpi_comm(MPI_Comm mpicomm);
 
 /*===== parallel IO mode =====*/
 

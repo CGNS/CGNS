@@ -31,9 +31,6 @@ freely, subject to the following restrictions:
 #endif
 #ifdef BUILD_PARALLEL
 #include "pcgnslib.h"
-/* Support for C to Fortran translation in MPI */
-#define MPI_Comm_f2c(comm) (MPI_Comm)(comm)
-#define MPI_Info_f2c(info) (MPI_Info)(info)
 #endif
 
 
