@@ -2094,6 +2094,29 @@ void ADFH_Database_Open(const char   *name,
     return;
   }
 
+  // Patch from Manuel Gageik on IBM BLUEgene/Q systems for better cgp_open performance.
+#ifdef JFC_PATCH_2015.2
+
+  // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
+  // default setting is 2048 bytes
+  H5Pset_meta_block_size(g_propfileopen, 4096);  // 1024*1024  
+  
+  // http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
+  // attention: this can increase filesize dramatically if lots of small datasets
+  H5Pset_alignment(g_propfileopen, 4096, 4096); 
+  
+  // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
+  // 1 MByte is default of hdf5
+  void *tconv; void *bkg;
+  H5Pset_buffer(g_propfileopen, 10*1024*1024,tconv, bkg);
+  
+  // http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
+  // '..  used by file drivers that are capable of using data sieving'
+  //  1 MByte is default of hdf5
+  H5Pset_sieve_buf_size(g_propfileopen, 4*1024*1024);
+  
+#endif
+
   g_propfileopen = H5Pcreate(H5P_FILE_ACCESS);
 #ifdef ADFH_H5F_CLOSE_STRONG
   /* set access property to close all open accesses when file closed */
@@ -2127,6 +2150,30 @@ void ADFH_Database_Open(const char   *name,
 
   if (mode == ADFH_MODE_NEW) {
     hid_t g_propfilecreate = H5Pcreate(H5P_FILE_CREATE);
+
+#ifdef JFC_PATCH_2015.2
+
+  // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
+  // default setting is 2048 bytes
+  H5Pset_meta_block_size(g_propfilecreate, 4096);  // 1024*1024  
+        
+  // http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
+  // attention: this can increase filesize dramatically if lots of small datasets
+  H5Pset_alignment(g_propfilecreate, 4096, 4096); 
+                
+  // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
+  // 1 MByte is default of hdf5
+  void *tconv; void *bkg;  
+  H5Pset_buffer(g_propfilecreate, 10*1024*1024,tconv, bkg);                    
+                        
+  // http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
+  // '..  used by file drivers that are capable of using data sieving'
+  //  1 MByte is default of hdf5
+  H5Pset_sieve_buf_size(g_propfilecreate, 4*1024*1024);
+                         
+#endif    
+
+
 #if !defined(HDF5_PRE_1_8)
     /* add creation time for groups (used by iterators)
       (prop set to file creation )*/
