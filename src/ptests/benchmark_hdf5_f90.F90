@@ -142,7 +142,8 @@ PROGRAM benchmark_hdf5_f90
 
   t0 = MPI_Wtime()
 
-  CALL cgp_pio_mode_f(CGP_COLLECTIVE, comm_info, ierr)
+  CALL cgp_mpi_info_f(comm_info, ierr)
+  CALL cgp_pio_mode_f(CGP_COLLECTIVE, ierr)
 
   Nnodes = Nelem*NodePerElem
 

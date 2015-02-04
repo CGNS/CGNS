@@ -84,7 +84,7 @@ PROGRAM ftest
      WRITE(name,'(a4,i2)') 'Base',nb
      CALL cg_base_write_f(F,name,3,3,B,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-     CALL cgp_pio_mode_f(nb-1, MPI_INFO_NULL, ierr)
+     CALL cgp_pio_mode_f(nb-1, ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
      DO nz=1,2
@@ -170,7 +170,7 @@ PROGRAM ftest
   S = 1
   E = 1
   DO B=1,2
-     CALL cgp_pio_mode_f(B-1,MPI_INFO_NULL,ierr)
+     CALL cgp_pio_mode_f(B-1,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
      CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)

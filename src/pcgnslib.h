@@ -45,9 +45,13 @@ typedef enum {
 
 CGNSDLL int cgp_mpi_comm(MPI_Comm mpicomm);
 
+/*===== MPI info =====*/
+
+CGNSDLL int cgp_mpi_info(MPI_Info info);
+
 /*===== parallel IO mode =====*/
 
-CGNSDLL int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode, MPI_Info info);
+CGNSDLL int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode);
 
 /*===== queued IO =====*/
 

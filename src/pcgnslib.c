@@ -252,9 +252,16 @@ int cgp_mpi_comm(MPI_Comm comm)
     return cgio_configure(CG_CONFIG_HDF5_MPI_COMM, (void *)(comm));
 }
 
+int cgp_mpi_info(MPI_Info info)
+{
+    pcg_mpi_info = info;
+
+    return CG_OK;
+}
+
 /*---------------------------------------------------------*/
 
-int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode, MPI_Info info)
+int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
 {
     if (mode == CGP_INDEPENDENT)
         default_pio_mode = H5FD_MPIO_INDEPENDENT;
@@ -264,8 +271,6 @@ int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode, MPI_Info info)
         cgi_error("unknown parallel IO mode");
         return CG_ERROR;
     }
-
-    pcg_mpi_info = info;
 
     return CG_OK;
 }

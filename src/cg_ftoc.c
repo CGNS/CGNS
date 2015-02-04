@@ -3641,17 +3641,20 @@ CGNSDLL void FMNAME(cgp_mpi_comm_f, CGP_MPI_COMM_F) (
    *ier = (cgint_f)cgp_mpi_comm(mpi_comm_c);
 }
 
+CGNSDLL void FMNAME(cgp_mpi_info_f, CGP_MPI_INFO_F) (
+	int *pcg_mpi_info_f, cgint_f *ier)
+{
+  MPI_Info pcg_mpi_info_c;
+  pcg_mpi_info_c = MPI_Info_f2c((int)*pcg_mpi_info_f);
+  *ier = (cgint_f)cgp_mpi_info(pcg_mpi_info_c);
+}
+
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cgp_pio_mode_f, CGP_PIO_MODE_F) (
-	CGNS_ENUMT(PIOmode_t) *mode, int *pcg_mpi_info_f, cgint_f *ier)
+	CGNS_ENUMT(PIOmode_t) *mode, cgint_f *ier)
 {
-
-  MPI_Info pcg_mpi_info_c;
-
-  pcg_mpi_info_c = MPI_Info_f2c((int)*pcg_mpi_info_f);
-
-  *ier = (cgint_f)cgp_pio_mode(*mode, pcg_mpi_info_c);
+  *ier = (cgint_f)cgp_pio_mode(*mode);
 }
 
 /*-----------------------------------------------------------------------*/

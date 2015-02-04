@@ -2095,7 +2095,7 @@ void ADFH_Database_Open(const char   *name,
   }
 
   // Patch from Manuel Gageik on IBM BLUEgene/Q systems for better cgp_open performance.
-#ifdef JFC_PATCH_2015.2
+#ifdef JFC_PATCH_2015_2
 
   // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
   // default setting is 2048 bytes
@@ -2151,7 +2151,7 @@ void ADFH_Database_Open(const char   *name,
   if (mode == ADFH_MODE_NEW) {
     hid_t g_propfilecreate = H5Pcreate(H5P_FILE_CREATE);
 
-#ifdef JFC_PATCH_2015.2
+#ifdef JFC_PATCH_2015_2
 
   // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
   // default setting is 2048 bytes
@@ -2172,7 +2172,6 @@ void ADFH_Database_Open(const char   *name,
   H5Pset_sieve_buf_size(g_propfilecreate, 4*1024*1024);
                          
 #endif    
-
 
 #if !defined(HDF5_PRE_1_8)
     /* add creation time for groups (used by iterators)

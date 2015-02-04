@@ -135,9 +135,6 @@ PROGRAM main
   CALL MPI_Init(mpi_err)
   CALL MPI_Comm_size(MPI_COMM_WORLD,comm_size,mpi_err)
   CALL MPI_Comm_rank(MPI_COMM_WORLD,comm_rank,mpi_err)
-  CALL MPI_Info_Create(comm_info,mpi_err)
-
-  CALL MPI_Info_set(comm_info, "striping_unit", "8388608", mpi_err);
 
   WRITE(ichr6,'(I6.6)') comm_size
 
@@ -148,7 +145,7 @@ PROGRAM main
 
   t0 = MPI_Wtime() ! Timer
 
-  err = cgp_pio_mode(CGP_COLLECTIVE, comm_info)
+  err = cgp_pio_mode(CGP_COLLECTIVE)
 
   Nnodes = Nelem*NodePerElem
 
