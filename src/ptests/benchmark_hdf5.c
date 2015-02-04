@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
 
   t0 = MPI_Wtime(); /* Timer */
 
-  err = (int)cgp_mpi_info(info)
+  err = (int)cgp_mpi_info(info);
   err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode_i);
 
   Nnodes = Nelem*NodePerElem;

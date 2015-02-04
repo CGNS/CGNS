@@ -3848,10 +3848,9 @@ END INTERFACE
         END INTERFACE
 
         INTERFACE
-           INTEGER(C_INT) FUNCTION cgp_pio_mode(mode, info) BIND(C, name='cgp_pio_mode')
+           INTEGER(C_INT) FUNCTION cgp_pio_mode(mode) BIND(C, name='cgp_pio_mode')
              USE ISO_C_BINDING
              INTEGER(KIND(CGP_COLLECTIVE)), INTENT(IN), VALUE  :: mode
-             INTEGER(C_INT), INTENT(IN), VALUE  :: info
            END FUNCTION cgp_pio_mode
         END INTERFACE
 
