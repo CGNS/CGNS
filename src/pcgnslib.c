@@ -765,7 +765,7 @@ int cgp_array_read_data(int A, const cgsize_t *rmin,
 
 #if HDF5_HAVE_MULTI_DATASETS
 
-static int readwrite_multi_data_parallel(hid_t fn, size_t count, H5D_rw_multi_t *multi_info,
+static int readwrite_multi_data_parallel(size_t count, H5D_rw_multi_t *multi_info,
 					 int ndims, const cgsize_t *rmin, const cgsize_t *rmax, enum cg_par_rw rw_mode)
 {
   /*
@@ -884,12 +884,12 @@ static int readwrite_multi_data_parallel(hid_t fn, size_t count, H5D_rw_multi_t 
 
     /* Read or Write the data in parallel */
     if (rw_mode == CG_PAR_READ) {
-      herr = H5Dread_multi(fn, plist_id, count, multi_info);
+      herr = H5Dread_multi(plist_id, count, multi_info);
       if (herr < 0) {
         cgi_error("H5Dread_multi() failed");
       }
     } else {
-      herr = H5Dwrite_multi(fn, plist_id, count, multi_info);
+      herr = H5Dwrite_multi(plist_id, count, multi_info);
       if (herr < 0) {
         cgi_error("H5Dwrite_multi() failed");
       }
@@ -910,7 +910,6 @@ int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin
 {
   int n;
   hid_t hid;
-  hid_t fid;
   cgns_zone *zone;
   cgns_zcoor *zcoor;
   cgsize_t dims[3];
@@ -920,8 +919,6 @@ int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin
 
   cg = cgi_get_file(fn);
   if (check_parallel(cg)) return CG_ERROR;
-
-  to_HDF_ID(cg->rootid,fid);
 
   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
     return CG_ERROR;
@@ -958,7 +955,7 @@ int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin
   multi_info[1].u.rbuf = coordsY;
   multi_info[2].u.rbuf = coordsZ;
 
-  return readwrite_multi_data_parallel(fid, 3, multi_info,
+  return readwrite_multi_data_parallel(3, multi_info,
 					 zone->index_dim, rmin, rmax, CG_PAR_READ);
 }
 
@@ -968,7 +965,6 @@ int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmi
 			       const void *coordsX, const void *coordsY, const void *coordsZ)
 {
     int n;
-    hid_t fid;
     cgns_zone *zone;
     cgns_zcoor *zcoor;
     cgsize_t dims[3];
@@ -979,8 +975,6 @@ int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmi
 
     cg = cgi_get_file(fn);
     if (check_parallel(cg)) return CG_ERROR;
-
-    to_HDF_ID(cg->rootid,fid);
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
         return CG_ERROR;
@@ -1017,7 +1011,7 @@ int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmi
     multi_info[1].u.wbuf = coordsY;
     multi_info[2].u.wbuf = coordsZ;
 
-    return readwrite_multi_data_parallel(fid, 3, multi_info,
+    return readwrite_multi_data_parallel(3, multi_info,
 					 zone->index_dim, rmin, rmax, CG_PAR_WRITE);
 }
 
@@ -1029,7 +1023,6 @@ int vcgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
 {
     int n, m;
     hid_t hid;
-    hid_t fid;
     cgns_array *field;
     CGNS_ENUMT(DataType_t) type;
     H5D_rw_multi_t *multi_info;
@@ -1037,8 +1030,6 @@ int vcgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
 
     cg = cgi_get_file(fn);
     if (check_parallel(cg)) return CG_ERROR;
-
-    to_HDF_ID(cg->rootid,fid);
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
         return CG_ERROR;
@@ -1066,7 +1057,7 @@ int vcgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
       multi_info[n].dset_id = hid;
     }
 
-    status = readwrite_multi_data_parallel(fid, nsets, multi_info,
+    status = readwrite_multi_data_parallel(nsets, multi_info,
 					   field->data_dim, rmin, rmax, CG_PAR_WRITE);
 
     free(multi_info);
@@ -1100,7 +1091,6 @@ int vcgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
 {
   int n, m;
   hid_t hid;
-  hid_t fid;
   cgns_array *field;
   CGNS_ENUMT(DataType_t) type;
   H5D_rw_multi_t *multi_info;
@@ -1108,8 +1098,6 @@ int vcgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
 
   cg = cgi_get_file(fn);
   if (check_parallel(cg)) return CG_ERROR;
-
-  to_HDF_ID(cg->rootid,fid);
 
   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
     return CG_ERROR;
@@ -1137,7 +1125,7 @@ int vcgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
     multi_info[n].dset_id = hid;
   }
 
-  status = readwrite_multi_data_parallel(fid, nsets, multi_info,
+  status = readwrite_multi_data_parallel(nsets, multi_info,
 					 field->data_dim, rmin, rmax, CG_PAR_READ);
   free(multi_info);
 
@@ -1169,7 +1157,6 @@ int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
 {
   int n, m, ierr = 0;
   hid_t hid;
-  hid_t fid;
   cgns_array *array;
   CGNS_ENUMT(DataType_t) type;
   H5D_rw_multi_t *multi_info;
@@ -1177,8 +1164,6 @@ int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
 
   cg = cgi_get_file(fn);
   if (check_parallel(cg)) return CG_ERROR;
-
-  to_HDF_ID(cg->rootid,fid);
 
   multi_info = (H5D_rw_multi_t *)malloc(nsets*sizeof(H5D_rw_multi_t));
 
@@ -1203,7 +1188,7 @@ int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
     multi_info[n].dset_id = hid;
   }
 
-  status = readwrite_multi_data_parallel(fid, nsets, multi_info,
+  status = readwrite_multi_data_parallel(nsets, multi_info,
                array->data_dim, rmin, rmax, CG_PAR_WRITE);
 
   free(multi_info);
@@ -1236,7 +1221,6 @@ int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
 {
   int n, m, ierr = 0;
   hid_t hid;
-  hid_t fid;
   cgns_array *array;
   CGNS_ENUMT(DataType_t) type;
   H5D_rw_multi_t *multi_info;
@@ -1244,8 +1228,6 @@ int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
 
   cg = cgi_get_file(fn);
   if (check_parallel(cg)) return CG_ERROR;
-
-  to_HDF_ID(cg->rootid,fid);
 
   multi_info = (H5D_rw_multi_t *)malloc(nsets*sizeof(H5D_rw_multi_t));
 
@@ -1268,7 +1250,7 @@ int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
     to_HDF_ID(array->id, hid);
     multi_info[n].dset_id = hid;
   }
-  status = readwrite_multi_data_parallel(fid, nsets, multi_info,
+  status = readwrite_multi_data_parallel(nsets, multi_info,
                array->data_dim, rmin, rmax, CG_PAR_READ);
 
   free(multi_info);
