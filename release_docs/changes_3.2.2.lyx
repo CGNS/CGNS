@@ -246,12 +246,8 @@ The default parallel input/output mode was changed from CGP_INDEPENDENT
 \begin_layout Itemize
 
 \color blue
-An extra argument for passing MPI info to the CGNS library was added to
- cgp_pio_mode.
+A new function was added for passing MPI info to the CGNS library.
  
-\color white
-The extra argument should be used for MPI IO tuning hints and are passed
- through the HDF5 library to the MPI IO library.
 \end_layout
 
 \begin_layout Standard
@@ -274,7 +270,7 @@ begin{minted}[bgcolor=bg]{c}
 
 \begin_layout Plain Layout
 
-    int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode, MPI_Info info)
+    int cgp_mpi_info(MPI_Info info)
 \end_layout
 
 \begin_layout Plain Layout
@@ -309,13 +305,7 @@ begin{minted}[bgcolor=bg]{fortran}
 
 \begin_layout Plain Layout
 
-     CALL cgp_pio_mode_f(mode, comm_info, ierr)
-\end_layout
-
-\begin_layout Plain Layout
-
-        INTEGER(KIND(CGP_COLLECTIVE)) :: mode ! Use parameters CGP_INDEPENDENT
- or CGP_COLLECTIVE
+     CALL cgp_mpi_info_f(comm_info, ierr)
 \end_layout
 
 \begin_layout Plain Layout
@@ -1068,7 +1058,7 @@ A new parallel example benchmark program, benchmark_hdf5.c, was added to
 \begin_layout Itemize
 The cgp_*_read/write_dataset APIs now excepts non-allocated arrays, or NULL,
  as valid parameters for the datasets.
- Additionaly, the dimensional arrays
+ Additionally, the dimensional arrays
 \shape italic
 , rmin
 \shape default
