@@ -41,6 +41,11 @@
 !                                   compatibility.
 !
 ! Fortran version of cgnslib.h
+!#define HAVE_FORTRAN_2003 @HAVE_FORTRAN_2003@
+!
+!#if HAVE_FORTRAN_2003
+!        USE ISO_C_BINDING
+!#endif
         integer CG_BUILD_64BIT
         parameter (CG_BUILD_64BIT = @BUILD64BIT@)
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *

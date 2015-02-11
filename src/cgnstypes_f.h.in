@@ -30,7 +30,8 @@
 #define CGNSTYPES_F_H
 
 #define CG_BUILD_64BIT @BUILD64BIT@
-#define HAVE_FORTRAN_2003 @HAVE_FORTRAN_2003@
+!#define HAVE_FORTRAN_2003 @HAVE_FORTRAN_2003@
+#define HAVE_FORTRAN_2003 0
 
 #if HAVE_FORTRAN_2003
 #  if CG_BUILD_64BIT
@@ -58,5 +59,6 @@
 #  define CGLONG_T integer*8
 #  define cgid_t   real*8
 #  define CGID_T   real*8
+#endif
 #endif
 
