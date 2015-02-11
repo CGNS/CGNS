@@ -8,17 +8,28 @@ MODULE cgns
 #if CG_BUILD_64BIT
 #  if HAVE_FORTRAN_2003
   INTEGER, PARAMETER :: CGSIZE_T = C_LONG_LONG
+  INTEGER, PARAMETER :: CGID_T = C_DOUBLE
+  INTEGER, PARAMETER :: CGLONG_T = C_LONG_LONG
 #  else
   INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(15) ! should map to INTEGER*8 on most modern processors
+  INTEGER, PARAMETER :: cgdouble_kind = SELECTED_REAL_KIND(10) ! should map to REAL*8 on most modern processors
   INTEGER, PARAMETER :: CGSIZE_T = cgint_kind
+  INTEGER, PARAMETER :: CGID_T = cgdouble_kind
+  INTEGER, PARAMETER :: CGLONG_T = cgint_kind
 #  endif
   LOGICAL, PARAMETER :: CG_BUILD_64BIT_F = .TRUE.
 #else
 #  if HAVE_FORTRAN_2003
   INTEGER, PARAMETER :: CGSIZE_T = C_INT
+  INTEGER, PARAMETER :: CGID_T = C_DOUBLE
+  INTEGER, PARAMETER :: CGLONG_T = C_LONG_LONG
 #  else
   INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(5) ! should map to INTEGER*4 on most modern processors
+  INTEGER, PARAMETER :: cglong_kind = SELECTED_INT_KIND(15) ! should map to INTEGER*8 on most modern processors
+  INTEGER, PARAMETER :: cgdouble_kind = SELECTED_REAL_KIND(10) ! should map to REAL*8 on most modern processors
   INTEGER, PARAMETER :: CGSIZE_T = cgint_kind
+  INTEGER, PARAMETER :: CGID_T = cgdouble_kind
+  INTEGER, PARAMETER :: CGLONG_T = cglong_kind
 #  endif
   LOGICAL, PARAMETER :: CG_BUILD_64BIT_F = .FALSE.
 #endif

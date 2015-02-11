@@ -30,19 +30,33 @@
 #define CGNSTYPES_F_H
 
 #define CG_BUILD_64BIT @BUILD64BIT@
+#define HAVE_FORTRAN_2003 @HAVE_FORTRAN_2003@
 
-#if CG_BUILD_64BIT
-# define cgsize_t integer*8
-# define CGSIZE_T integer*8
+#if HAVE_FORTRAN_2003
+#  if CG_BUILD_64BIT
+#   define cgsize_t INTEGER(KIND=C_LONG_LONG)
+#   define CGSIZE_T INTEGER(KIND=C_LONG_LONG)
+#  else
+#   define cgsize_t INTEGER(KIND=C_INT)
+#   define CGSIZE_T INTEGER(KIND=C_INT)
+#  endif
+
+#  define cglong_t INTEGER(KIND=C_LONG_LONG)
+#  define CGLONG_T INTEGER(KIND=C_LONG_LONG)
+#  define cgid_t   REAL(KIND=C_DOUBLE)
+#  define CGID_T   REAL(KIND=C_DOUBLE)
 #else
-# define cgsize_t integer*4
-# define CGSIZE_T integer*4
-#endif
+#  if CG_BUILD_64BIT
+#   define cgsize_t integer*8
+#   define CGSIZE_T integer*8
+#  else
+#   define cgsize_t integer*4
+#   define CGSIZE_T integer*4
+#  endif
 
-#define cglong_t integer*8
-#define CGLONG_T integer*8
-#define cgid_t   real*8
-#define CGID_T   real*8
-
+#  define cglong_t integer*8
+#  define CGLONG_T integer*8
+#  define cgid_t   real*8
+#  define CGID_T   real*8
 #endif
 
