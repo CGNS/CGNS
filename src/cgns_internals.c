@@ -281,7 +281,7 @@ int cgi_read_zone(cgns_zone *zone)
     if (0 == strcmp(data_type, "I8")) {
         cglong_t *mesh_dim = (cglong_t *)vdata;
 #if CG_SIZEOF_SIZE == 32
-        if (cgi_check_dimensions(ndim, mesh_dim)) return 1;
+        if (cgi_check_dimensions(zone->index_dim, mesh_dim)) return 1;
 #endif
         for (n=0; n<zone->index_dim; n++) {
             zone->nijk[n] = (cgsize_t)mesh_dim[n];
