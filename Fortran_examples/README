@@ -1,0 +1,28 @@
+This contains a number of Fortran test cases to test the CGNS library.
+
+***** NOTE *****
+You will first have to edit the Makefile include to set up your
+CGNS location and compiler and options
+
+Edit 'make.defs' for Linux/Unix or Windows using gmake.
+Edit 'make.win" for Windows using nmake
+
+To just build the code, use
+    make
+on linux/Unix, or
+    nmake -f Makefile.win
+on Windows
+
+To build and run the tests, use
+    make test
+or
+    nmake -f Makefile.win test
+
+To clean everything up, use
+    make clean
+or
+    nmake -f Makefile.win clean
+
+If you just want to look at a specific example, then cd to the
+directory and use the make commands above there.
+

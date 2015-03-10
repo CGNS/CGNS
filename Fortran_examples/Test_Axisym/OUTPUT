@@ -1,0 +1,106 @@
+READING FILE Test_V2                         
+Library Version used for file creation:2.400
+nbases=    1
+BaseName = "Basename                        "
+cell_dimension= 2
+
+Base Descriptor_t Information:
+No. of descriptors= 1
+ DescriptorName="BaseDescriptorName              "
+ DescriptorText="BaseDescriptorText                                                                                  "
+ref_point=  0.0  0.0
+axis=  0.0  1.0
+
+Axisymmetry Descriptor_t Information:
+No. of descriptors= 2
+ DescriptorName="AxisymDescriptorName            "
+ DescriptorText="AxisymDescriptorText                                                                                "
+ DescriptorName="LinkToBaseDescr                 "
+ DescriptorText="BaseDescriptorText                                                                                  "
+DataClassName=Dimensional                     
+Axisymmetry Dimensional Units:
+    Mass units: Kilogram                        
+    Length units: Meter                           
+    Temperature units: Kelvin                          
+    Time units: Second                          
+    Angle units:Radian                          
+
+Axisymmetry User Data Information:
+No. of UserData= 1
+ user_data_name="UserData1                       "
+
+No. of DataArray_t= 4
+     DataArray_t # 1:
+       Name = AxisymmetryReferencePoint       
+       Type = RealSingle                      
+       Ndim= 1
+       DataDim(1)=       2
+     DataArray_t # 2:
+       Name = AxisymmetryAxisVector           
+       Type = RealSingle                      
+       Ndim= 1
+       DataDim(1)=       2
+     DataArray_t # 3:
+       Name = AxisymmetryAngle                
+       Type = RealSingle                      
+       Ndim= 1
+       DataDim(1)=       1
+     DataArray_t # 4:
+       Name = CoordinateNames                 
+       Type = Character                       
+       Ndim= 2
+       DataDim(1)=      32
+       DataDim(2)=       2
+1st coord=CoordinateX                     
+2nd coord=CoordinateZ                     
+  ref_point=     0.000     0.000
+  axis     =     0.000     1.000
+  angle    =   360.000
+
+Axisymmetry DataArray # 1 Descriptor Information:
+
+No. of descriptors= 1
+ DescriptorName="DescriptorName4Array1           "
+ DescriptorText="DescriptorText4Array1                                                                               "
+Axisymmetry DataArray Dimensional Units:
+    Mass units: Kilogram                        
+    Length units: Meter                           
+    Temperature units: Kelvin                          
+    Time units: Second                          
+    Angle units:Degree                          
+
+Axisymmetry DataArray # 2 Descriptor Information:
+
+No. of descriptors= 1
+ DescriptorName="DescriptorName4Array2           "
+ DescriptorText="DescriptorText4Array2                                                                               "
+Axisymmetry DataArray Dimensional Units:
+    Mass units: Kilogram                        
+    Length units: Meter                           
+    Temperature units: Kelvin                          
+    Time units: Second                          
+    Angle units:Degree                          
+
+Axisymmetry DataArray # 3 Descriptor Information:
+
+No. of descriptors= 1
+ DescriptorName="DescriptorName4Array3           "
+ DescriptorText="DescriptorText4Array3                                                                               "
+Axisymmetry DataArray Dimensional Units:
+    Mass units: Kilogram                        
+    Length units: Meter                           
+    Temperature units: Kelvin                          
+    Time units: Second                          
+    Angle units:Degree                          
+
+Axisymmetry DataArray # 4 Descriptor Information:
+
+No. of descriptors= 1
+ DescriptorName="DescriptorName4Array4           "
+ DescriptorText="DescriptorText4Array4                                                                               "
+Axisymmetry DataArray Dimensional Units:
+    Mass units: Kilogram                        
+    Length units: Meter                           
+    Temperature units: Kelvin                          
+    Time units: Second                          
+    Angle units:Degree                          

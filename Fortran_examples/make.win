@@ -1,0 +1,31 @@
+CGNSdir = c:\cgns-install
+HDF5lib = c:\hdf5-1.8.5\dll\hdf5dll.lib
+
+# location for the CGNS includes and required libraries
+CGNSinclude = $(CGNSdir)\include
+CGNSlibs    = $(CGNSdir)\lib\cgns.lib
+
+# you could also use your build directory as in:
+#CGNSinclude = c:\cgnslib_3.1\src
+#CGNSlibs    = c:\cgnslib_3.1\src\WIN32\libcgns.lib
+
+# if you are using CGNS version 3.1 and have built as 64-bit,
+# then you wiil need to set this option to whatever your Fortran compiler
+# uses to automatically promote integer values to integer*8
+#I8OPT =
+
+# Fortran compiler and options
+# the WINNT define causes the fortran to include cgnswin_f.h
+F77   = f77
+FOPTS = -I$(CGNSinclude) $(I8OPT) -DWINNT
+LIBS  = $(CGNSlib) $(HDF5lib)
+
+# directory to create exes and output
+OUTDIR = win
+
+# diff command, or : if none
+DIFF = :
+
+.F{$(OUTDIR)}.exe :
+	$(F77) $(FOPTS) /exe:$@ $< $(LIBS)
+

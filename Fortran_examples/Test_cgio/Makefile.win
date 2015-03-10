@@ -1,0 +1,20 @@
+
+!include ..\make.win
+
+ADFTEST = $(OUTDIR)\adftest$(EXE)
+
+$(ADFTEST) : $(OUTDIR) adftest.F
+
+test : $(ADFTEST)
+	-@del adf_file_*.adf
+	$(ADFTEST) > $(OUTDIR)\output
+	-$(DIFF) OUTPUT $(OUTDIR)\output
+
+$(OUTDIR) :
+	-mkdir $(OUTDIR)
+
+clean :
+	-del adf_file_*.adf
+	-del $(ADFTEST) $(OUTDIR)\output
+	-rmdir $(OUTDIR)
+

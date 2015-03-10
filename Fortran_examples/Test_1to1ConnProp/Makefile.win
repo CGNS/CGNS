@@ -1,0 +1,27 @@
+
+!include ..\make.win
+
+WRITE  = $(OUTDIR)\cgwrite.exe
+READ   = $(OUTDIR)\cgread.exe
+
+all    : write read
+write  : $(OUTDIR) $(WRITE)
+read   : $(OUTDIR) $(READ)
+
+test  : write read
+	-@del Test_V2
+	$(WRITE)
+	$(READ) > $(OUTDIR)\output
+	-$(DIFF) OUTPUT $(OUTDIR)\output
+
+$(OUTDIR) :
+	-mkdir $(OUTDIR)
+
+$(WRITE)  : cgwrite.F
+$(READ)   : cgread.F
+
+clean :
+	-del Test_V2
+	-del /q $(OUTDIR)\*.*
+	-rmdir $(OUTDIR)
+

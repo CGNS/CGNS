@@ -1,0 +1,87 @@
+READING FILE Test_V2                         
+Library Version used for file creation:   2.400
+nbases=    1
+BaseName = "Basename                        "
+cell_dimension= 3
+
+Base Descriptor_t Information:
+
+No. of descriptors= 1
+ DescriptorName="BaseDescriptorName              "
+ DescriptorText="BaseDescriptorText                                                                                  "
+nzones=    1
+Name of Zone    1 is "Zone#1                          "
+  Zone type is Structured                      
+  IndexDimension=    3
+2 bound. conditions found for Zone#1                          
+ boundary condition # 1
+  boconame=boco#1                          
+  bocotype=BCInflow                        
+  ptset_type=PointRange                      
+  NormalIndex undefined
+  NormalListFlag=    0
+   Bound. Condition Patch:
+    first point: 1 1 1
+    last point : 1 4 5
+ boundary condition # 2
+  boconame=boco#2                          
+  bocotype=BCOutflow                       
+  ptset_type=PointRange                      
+  NormalIndex undefined
+  NormalListFlag=    0
+   Bound. Condition Patch:
+    first point: 3 1 1
+    last point : 3 4 5
+   WallFunctionTypeName= "Generic                         "
+   AreaTypeName= "BleedArea                       "
+   RegionName= "myRegion                        "
+   SurfaceArea= 123.456
+
+BCProperty Descriptor_t Information:
+
+No. of descriptors= 2
+ DescriptorName="BCpropDescriptorName            "
+ DescriptorText="BCpropDescriptorText                                                                                "
+ DescriptorName="LinkToBaseDescr                 "
+ DescriptorText="BaseDescriptorText                                                                                  "
+
+BCProperty User Data Information:
+
+No. of UserData= 1
+ user_data_name="BCPropUserData                  "
+
+
+WallFunction Descriptor_t Information:
+
+No. of descriptors= 2
+ DescriptorName="WFDescriptorName                "
+ DescriptorText="WFDescriptorText                                                                                    "
+ DescriptorName="LinkToBaseDescr                 "
+ DescriptorText="BaseDescriptorText                                                                                  "
+
+WallFunction User Data Information:
+
+No. of UserData= 1
+ user_data_name="WFUserData                      "
+
+
+Area Descriptor_t Information:
+
+No. of descriptors= 2
+ DescriptorName="AreaDescriptorName              "
+ DescriptorText="AreaDescriptorText                                                                                  "
+ DescriptorName="LinkToBaseDescr                 "
+ DescriptorText="BaseDescriptorText                                                                                  "
+
+Area User Data Information:
+
+No. of UserData= 1
+ user_data_name="AreaUserData                    "
+
+DataClassName=Dimensional                     
+SurfaceArea Dimensional Units:
+    Mass units: Kilogram                        
+    Length units: Meter                           
+    Temperature units: Kelvin                          
+    Time units: Second                          
+    Angle units:Radian                          

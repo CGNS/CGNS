@@ -1,0 +1,139 @@
+READING FILE Test_V2                         
+Library Version used for file creation:2.400
+nbases=    1
+BaseName = "Basename                        "
+cell_dimension= 3
+
+FlowEquationSet_t Information:
+
+ equation_dimension=    3
+ GasModelType="ConstantDensity                 "
+ ThermalRelaxationModel="Frozen                          "
+ ChemicalKineticsModel="ChemicalEquilibCurveFit         "
+
+Descriptor_t Information:
+
+ DescriptorName="ReactionEquation                "
+ DescriptorText="CO + 0.5O2 = CO2                        "
+
+                             *     *     *
+
+ChemicalKineticsModel_t contains  4 array(s)
+ DataArrayName="HeatOfFormationCO               "
+ DataType="RealSingle                      "
+ DataNdim=    1
+ DataDim=    1
+ Data:
+   -26.420
+DataClassName=Dimensional                     
+Dimensional Units:
+    Mass units: UserDefined                     
+    Length units: UserDefined                     
+    Time units: UserDefined                     
+    Temperature units: UserDefined                     
+    Angle units:UserDefined                     
+
+Descriptor_t Information:
+
+ DescriptorName="Units                           "
+ DescriptorText="kcal/mole                               "
+
+                             *     *     *
+
+ DataArrayName="HeatOfFormationO2               "
+ DataType="RealSingle                      "
+ DataNdim=    1
+ DataDim=    1
+ Data:
+     0.000
+DataClassName=Dimensional                     
+Dimensional Units:
+    Mass units: UserDefined                     
+    Length units: UserDefined                     
+    Time units: UserDefined                     
+    Temperature units: UserDefined                     
+    Angle units:UserDefined                     
+
+Descriptor_t Information:
+
+ DescriptorName="Units                           "
+ DescriptorText="kcal/mole                               "
+
+                             *     *     *
+
+ DataArrayName="HeatOfFormationCO2              "
+ DataType="RealSingle                      "
+ DataNdim=    1
+ DataDim=    1
+ Data:
+   -94.054
+DataClassName=Dimensional                     
+Dimensional Units:
+    Mass units: UserDefined                     
+    Length units: UserDefined                     
+    Time units: UserDefined                     
+    Temperature units: UserDefined                     
+    Angle units:UserDefined                     
+
+Descriptor_t Information:
+
+ DescriptorName="Units                           "
+ DescriptorText="kcal/mole                               "
+
+                             *     *     *
+
+ DataArrayName="ReferenceTemperatureHOF         "
+ DataType="RealSingle                      "
+ DataNdim=    1
+ DataDim=    1
+ Data:
+   298.150
+DataClassName=Dimensional                     
+Dimensional Units:
+    Mass units: Null                            
+    Length units: Null                            
+    Time units: Null                            
+    Temperature units: Kelvin                          
+    Angle units:Null                            
+Dimensional Exponents:
+    Mass exponent:   0.0
+    Length exponent:   0.0
+    Time exponent:   0.0
+    Temperature exponent:   1.0
+    Angle exponent:  0.0
+
+                             *     *     *
+
+ EMElectricFieldModel="Voltage                         "
+
+                             *     *     *
+
+EMElectricFieldModel_t contains  1 array(s)
+ DataArrayName="ElectricalConductivity          "
+ DataType="RealSingle                      "
+ DataNdim=    1
+ DataDim=    1
+ Data:
+    55.000
+DataClassName=Dimensional                     
+Dimensional Units:
+    Mass units: Kilogram                        
+    Length units: Meter                           
+    Time units: Second                          
+    Temperature units: Null                            
+    Angle units:Null                            
+Dimensional Exponents:
+    Mass exponent:  -1.0
+    Length exponent:  -3.0
+    Time exponent:   2.0
+    Temperature exponent:   0.0
+    Angle exponent:  0.0
+    Electric Current exponent:   2.0
+    Substance Amount exponent:   0.0
+    Luminous Intensity exponent:   0.0
+
+                             *     *     *
+
+
+                             *     *     *
+

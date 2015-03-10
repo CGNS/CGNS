@@ -1,0 +1,64 @@
+MAKE = nmake -f Makefile.win
+
+#----------
+
+all :
+	-cd Test1 && $(MAKE)
+	-cd Test_1to1ConnProp && $(MAKE)
+	-cd Test_Axisym && $(MAKE)
+	-cd Test_BCProperty && $(MAKE)
+	-cd Test_cgio && $(MAKE)
+	-cd Test_chemistry && $(MAKE)
+	-cd Test_ConnProperty && $(MAKE)
+	-cd Test_EM && $(MAKE)
+	-cd Test_Family && $(MAKE)
+	-cd Test_Gravity && $(MAKE)
+	-cd Test_Links && $(MAKE)
+	-cd Test_mixed_elements && $(MAKE)
+	-cd Test_mixed_grid && $(MAKE)
+	-cd Test_motion && $(MAKE)
+	-cd Test_PartRdWr && $(MAKE)
+	-cd Test_RotatingCoordinates && $(MAKE)
+	-cd Test_UD_BCData && $(MAKE)
+	-cd Test_UserDefinedData && $(MAKE)
+
+test : $(TESTS)
+	-cd Test1 && $(MAKE) test
+	-cd Test_1to1ConnProp && $(MAKE) test
+	-cd Test_Axisym && $(MAKE) test
+	-cd Test_BCProperty && $(MAKE) test
+	-cd Test_cgio && $(MAKE) test
+	-cd Test_chemistry && $(MAKE) test
+	-cd Test_ConnProperty && $(MAKE) test
+	-cd Test_EM && $(MAKE) test
+	-cd Test_Family && $(MAKE) test
+	-cd Test_Gravity && $(MAKE) test
+	-cd Test_Links && $(MAKE) test
+	-cd Test_mixed_elements && $(MAKE) test
+	-cd Test_mixed_grid && $(MAKE) test
+	-cd Test_motion && $(MAKE) test
+	-cd Test_PartRdWr && $(MAKE) test
+	-cd Test_RotatingCoordinates && $(MAKE) test
+	-cd Test_UD_BCData && $(MAKE) test
+	-cd Test_UserDefinedData && $(MAKE) test
+
+clean : $(CLEAN)
+	-cd Test1 && $(MAKE) clean
+	-cd Test_1to1ConnProp && $(MAKE) clean
+	-cd Test_Axisym && $(MAKE) clean
+	-cd Test_BCProperty && $(MAKE) clean
+	-cd Test_cgio && $(MAKE) clean
+	-cd Test_chemistry && $(MAKE) clean
+	-cd Test_ConnProperty && $(MAKE) clean
+	-cd Test_EM && $(MAKE) clean
+	-cd Test_Family && $(MAKE) clean
+	-cd Test_Gravity && $(MAKE) clean
+	-cd Test_Links && $(MAKE) clean
+	-cd Test_mixed_elements && $(MAKE) clean
+	-cd Test_mixed_grid && $(MAKE) clean
+	-cd Test_motion && $(MAKE) clean
+	-cd Test_PartRdWr && $(MAKE) clean
+	-cd Test_RotatingCoordinates && $(MAKE) clean
+	-cd Test_UD_BCData && $(MAKE) clean
+	-cd Test_UserDefinedData && $(MAKE) clean
+

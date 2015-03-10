@@ -1,0 +1,30 @@
+
+!include ..\make.win
+
+WRITE  = $(OUTDIR)\cgwrite.exe
+READ   = $(OUTDIR)\cgread.exe
+MODIFY = $(OUTDIR)\cgmodify.exe
+
+all    : write read modify
+write  : $(OUTDIR) $(WRITE)
+read   : $(OUTDIR) $(READ)
+modify : $(OUTDIR) $(MODIFY)
+
+test  : write read
+	-@del Test_V2
+	$(WRITE)
+	$(READ) > $(OUTDIR)\output
+	-$(DIFF) OUTPUT $(OUTDIR)\output
+
+$(OUTDIR) :
+	-mkdir $(OUTDIR)
+
+$(WRITE)  : cgwrite.F
+$(READ)   : cgread.F
+$(MODIFY) : cgmodify.F
+
+clean :
+	-del Test_V2
+	-del /q $(OUTDIR)\*.*
+	-rmdir $(OUTDIR)
+
