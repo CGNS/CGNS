@@ -603,7 +603,7 @@ int cgio_check_file (const char *filename, int *file_type)
 	if (buf[n] != HDF5sig[n]) break;
       }
       if (n == 8) {
-#if BUILD_PARALLEL
+#ifdef BUILD_PARALLEL
 	*file_type = CGIO_FILE_PHDF5;
 #else
 	*file_type = CGIO_FILE_HDF5;

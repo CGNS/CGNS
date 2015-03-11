@@ -60,7 +60,6 @@ MODULE cgns
   INTEGER(C_INT), PARAMETER :: CG_FILE_HDF5 = 2
   INTEGER(C_INT), PARAMETER :: CG_FILE_ADF2 = 3
 
-
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      some error code (found in cgnslib.h)                           *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -81,33 +80,32 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Parallel CGNS parameters                                       *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-        ENUM, BIND(C)
-            ENUMERATOR :: CGP_INDEPENDENT = 0
-	    ENUMERATOR :: CGP_COLLECTIVE  = 1
-        END ENUM
+  ENUM, BIND(C)
+      ENUMERATOR :: CGP_INDEPENDENT = 0
+      ENUMERATOR :: CGP_COLLECTIVE  = 1
+  END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Dimensional Units (found in cgnslib.h)                         *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
-	INTEGER(C_INT), PARAMETER :: CG_Null = 0
-	INTEGER(C_INT), PARAMETER :: CG_UserDefined = 1
+  INTEGER(C_INT), PARAMETER :: CG_Null = 0
+  INTEGER(C_INT), PARAMETER :: CG_UserDefined = 1
 
 !* legacy code support
-        INTEGER(C_INT) Null, UserDefined
-        PARAMETER (Null = 0)
-        PARAMETER (UserDefined = 1)
+  INTEGER(C_INT) Null, UserDefined
+  PARAMETER (Null = 0)
+  PARAMETER (UserDefined = 1)
 
-        CHARACTER*32 MassUnitsName(0:5)
-
-        ENUM, BIND(C)
-	   ENUMERATOR :: MassUnitsNull = CG_Null
-  	   ENUMERATOR :: MassUnitsUserDefined = CG_UserDefined
-  	   ENUMERATOR :: Kilogram = 2
-           ENUMERATOR :: Gram = 3
-           ENUMERATOR :: Slug = 4
-           ENUMERATOR :: PoundMass = 5
-        END ENUM
+  CHARACTER*32 MassUnitsName(0:5)
+  ENUM, BIND(C)
+      ENUMERATOR :: MassUnitsNull = CG_Null
+      ENUMERATOR :: MassUnitsUserDefined = CG_UserDefined
+      ENUMERATOR :: Kilogram = 2
+      ENUMERATOR :: Gram = 3
+      ENUMERATOR :: Slug = 4
+      ENUMERATOR :: PoundMass = 5
+  END ENUM
 
         CHARACTER*32 LengthUnitsName(0:6)
 	ENUM, BIND(C)
@@ -908,14 +906,14 @@ MODULE cgns
 !!$           SUBROUTINE cg_zone_write_f (fn, B, zonename, size, TYPE, Z, ier)
 !!$             IMPORT :: cgenum_t, c_char, cgsize_t
 !!$             IMPLICIT NONE
-!!$             INTEGER :: fn
-!!$             INTEGER :: B
-!!$             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: zonename
-!!$             INTEGER(CGSIZE_T) :: size
-!!$             INTEGER(cgenum_t) :: TYPE
-!!$             INTEGER :: Z
+!!$             INTEGER, INTENT(IN) :: fn
+!!$             INTEGER, INTENT(IN) :: B
+!!$             CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: zonename
+!!$             INTEGER(CGSIZE_T), INTENT(IN) :: size
+!!$             INTEGER(cgenum_t), INTENT(IN) :: TYPE
+!!$             INTEGER, INTENT(OUT) :: Z
 !!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
+!!$           END SUBROUTINE cg_zone_write_f
 !!$        END INTERFACE
 
 	INTERFACE
@@ -1060,20 +1058,19 @@ MODULE cgns
         END INTERFACE
 
 	INTERFACE
-    SUBROUTINE cg_geo_write_f(fn, B, F, geo_name, geo_file, CAD_name, G, ier)
-
-      IMPORT :: c_char
-      IMPLICIT NONE
-      INTEGER :: fn
-      INTEGER :: B
-      INTEGER :: F
-      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_name
-      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_file
-      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: CAD_name
-      INTEGER :: G
-      INTEGER, INTENT(OUT) :: ier
-    END SUBROUTINE cg_geo_write_f
- END INTERFACE
+           SUBROUTINE cg_geo_write_f(fn, B, F, geo_name, geo_file, CAD_name, G, ier)
+             IMPORT :: c_char
+             IMPLICIT NONE
+             INTEGER :: fn
+             INTEGER :: B
+             INTEGER :: F
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_name
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_file
+             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: CAD_name
+             INTEGER :: G
+             INTEGER, INTENT(OUT) :: ier
+           END SUBROUTINE cg_geo_write_f
+        END INTERFACE
 
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
 !      Read and write GeometryEntity_t Nodes                            *
@@ -3528,93 +3525,85 @@ END INTERFACE
       INTEGER :: flag
     END SUBROUTINE cg_exit_on_error_f
  END INTERFACE
-!!$
-!!$#ifdef BUILD_PARALLEL
-!!$
-!!$!======================================================================
-!!$! parallel IO interface
-!!$!======================================================================
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_mpi_comm_f(
-!!$	mpi_comm_f, ier)
-!!$
-!!$	INTEGER :: mpi_comm_f,
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_pio_mode_f(
-!!$	mode, int *pcg_mpi_info_f, ier)
-!!$
-!!$	INTEGER(cgenum_t) :: mode, int *pcg_mpi_info_f,
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_queue_set_f(
-!!$	use_queue, ier)
-!!$
-!!$	INTEGER :: use_queue,
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_queue_flush_f(ier)
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_open_f(filename, int *mode,
-!!$	fn, ier)
-!!$CHARACTER(KIND=C_CHAR), DIMENSION(*) :: filename, int *mode,
-!!$	INTEGER :: fn,
-!!$
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_close_f(fn, ier)
-!!$INTEGER :: fn,
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_coord_write_f(fn,
-!!$	B, Z, type, coordname,
-!!$	INTEGER :: C, ier)
-!!$INTEGER :: fn,
-!!$	INTEGER :: B
-!!$      INTEGER :: Z
-!!$      INTEGER(cgenum_t) :: type
-!!$      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname,
-!!$	INTEGER :: C,
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_coord_write_data_f(
-!!$	fn, B, Z, C,
+
+#ifdef BUILD_PARALLEL
+
+!======================================================================
+! parallel IO interface
+!======================================================================
+
+ INTERFACE
+    SUBROUTINE cgp_mpi_comm_f( mpi_comm_f, ier)
+      IMPLICIT NONE
+      INTEGER :: mpi_comm_f,
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cgp_mpi_comm_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cgp_pio_mode_f( mode, int *pcg_mpi_info_f, ier)
+      IMPLICIT NONE
+      INTEGER(cgenum_t) :: mode, pcg_mpi_info_f
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cgp_pio_mode_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cgp_queue_set_f( use_queue, ier)
+      IMPLICIT NONE
+      INTEGER :: use_queue
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cgp_queue_set_f
+ END INTERFACE
+
+
+ INTERFACE
+    SUBROUTINE cgp_queue_flush_f(ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cgp_queue_flush_f
+ END INTERFACE
+ 
+ INTERFACE
+    SUBROUTINE cgp_open_f(filename, mode, fn, ier)
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: filename
+      INTEGER :: mode, fn
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cgp_open_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cgp_close_f(fn, ier)
+      INTEGER, INTENT(IN)  :: fn
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cgp_close_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cgp_coord_write_f(fn, B, Z, type, coordname, C, ier)
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER(cgenum_t), INTENT(IN) :: type
+      CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: coordname
+      INTEGER, INTENT(IN)  :: C
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cgp_coord_write_f
+ END INTERFACE
+
+!!$ INTERFACE
+!!$    SUBROUTINE cgp_coord_write_data_f(fn, B, Z, C,
 !!$	cgsize_t *rmin, cgsize_t *rmax, void *data, ier)
 !!$
-!!$	INTEGER :: fn
-!!$      INTEGER :: B
-!!$      INTEGER :: Z
-!!$      INTEGER :: C,
-!!$	INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax, void *data,
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
+!!$ INTEGER :: fn
+!!$ INTEGER :: B
+!!$ INTEGER :: Z
+!!$ INTEGER :: C,
+!!$ INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax, void *DATA,
+!!$ INTEGER, INTENT(OUT) :: ier
+!!$END SUBROUTINE cgp_coord_write_data_f
+!!$END INTERFACE
+
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_coord_read_data_f(
 !!$	fn, B, Z, C,
@@ -3628,71 +3617,70 @@ END INTERFACE
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
 !!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_section_write_f(
-!!$	fn, B, Z, section_name,
-!!$	CGNS_ENUMT(ElementType_t)*type, INTEGER(cgsize_t) :: start, INTEGER(cgsize_t) :: end, nbndry,
-!!$	S, ier
-!!$
-!!$	INTEGER :: fn
-!!$      INTEGER :: B
-!!$      INTEGER :: Z
-!!$      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: section_name,
-!!$	INTEGER(cgenum_t) :: ElementType_t)*type, cgsize_t *start, INTEGER(cgsize_t) :: end
-!!$      INTEGER :: nbndry,
-!!$	INTEGER :: S,
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_elements_write_data_f(
-!!$	fn, B, Z, S, cgsize_t *start,
-!!$	cgsize_t *end, cgsize_t *elements, ier)
-!!$
-!!$	INTEGER :: fn
-!!$      INTEGER :: B
-!!$      INTEGER :: Z
-!!$      INTEGER :: S, INTEGER(cgsize_t) :: start,
-!!$	INTEGER(cgsize_t) :: end, INTEGER(cgsize_t) :: elements,
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_elements_read_data_f(
-!!$	fn, B, Z, S, cgsize_t *start,
-!!$	cgsize_t *end, cgsize_t *elements, ier)
-!!$
-!!$	INTEGER :: fn
-!!$      INTEGER :: B
-!!$      INTEGER :: Z
-!!$      INTEGER :: S, INTEGER(cgsize_t) :: start,
-!!$	INTEGER(cgsize_t) :: end, INTEGER(cgsize_t) :: elements,
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_field_write_f(fn,
-!!$	B, Z, S, type,
-!!$	fieldname, F, ier)
-!!$INTEGER :: fn,
-!!$	INTEGER :: B
-!!$      INTEGER :: Z
-!!$      INTEGER :: S
-!!$      INTEGER(cgenum_t) :: type,
-!!$	CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fieldname
-!!$      INTEGER :: F,
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_field_read_data_f(
-!!$	fn, B, Z, S,
-!!$	F, cgsize_t *rmin, cgsize_t *rmax, void *field_ptr,
+
+ INTERFACE
+    SUBROUTINE cgp_section_write_f( fn, B, Z, section_name, &
+         TYPE,start,END, nbndry, S, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: section_name
+      INTEGER(cgenum_t) :: TYPE
+      INTEGER(cgsize_t), INTENT(IN) :: start
+      INTEGER(cgsize_t), INTENT(IN) :: END
+      INTEGER, INTENT(IN) :: nbndry
+      INTEGER, INTENT(IN) :: S
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cgp_section_write_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cgp_elements_write_data_f( fn, B, Z, S, cgsize_t *start, &
+         cgsize_t *END, cgsize_t *elements, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER, INTENT(IN) :: S
+      INTEGER(cgsize_t), INTENT(IN)  :: start
+      INTEGER(cgsize_t), INTENT(IN)  :: end
+      INTEGER(cgsize_t) , INTENT(IN) :: elements
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cgp_elements_write_data_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cgp_elements_read_data_f(fn, B, Z, S, start, &
+        end, elements, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER, INTENT(IN) :: S
+      INTEGER(cgsize_t), INTENT(IN) :: start
+      INTEGER(cgsize_t), INTENT(IN) :: end
+      INTEGER(cgsize_t) :: elements
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cgp_elements_read_data_f
+ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cgp_field_write_f(fn, B, Z, S, TYPE, fieldname, F, ier)
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      INTEGER :: S
+      INTEGER(cgenum_t) :: type,
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fieldname
+      INTEGER :: F,
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cgp_field_write_f
+ END INTERFACE
+
+!!$ INTERFACE
+!!$    SUBROUTINE cgp_field_read_data_f( fn, B, Z, S, F, rmin, rmax, void *field_ptr,
 !!$	ier)
 !!$
 !!$	INTEGER :: fn
@@ -3703,19 +3691,19 @@ END INTERFACE
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
 !!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_array_write_f(ArrayName,
-!!$	DataType, DataDimension, cgsize_t *DimensionVector,
-!!$	A, ier
-!!$CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName,
-!!$	INTEGER(cgenum_t) :: DataType
-!!$      INTEGER :: DataDimension, INTEGER(cgsize_t) :: DimensionVector,
-!!$	INTEGER :: A,
-!!$	     INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
+
+ INTERFACE
+    SUBROUTINE cgp_array_write_f(ArrayName, DataType, DataDimension, DimensionVector, A, ier)
+      IMPLICIT NONE
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName
+      INTEGER(cgenum_t) :: DataType
+      INTEGER :: DataDimension
+      INTEGER(cgsize_t) :: DimensionVector
+      INTEGER :: A
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cgp_array_write_f
+ END INTERFACE
+
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_array_write_data_f(
 !!$	A, cgsize_t *rmin, cgsize_t *rmax, void *data,
@@ -3724,7 +3712,7 @@ END INTERFACE
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
 !!$        END INTERFACE
-!!$
+
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_array_read_data_f(
 !!$	A, cgsize_t *rmin, cgsize_t *rmax, void *data,
@@ -3734,12 +3722,12 @@ END INTERFACE
 !!$	     INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
 !!$        END INTERFACE
-!!$
-!!$	INTERFACE
-!!$           SUBROUTINE cgp_error_exit_f()
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
+
+	INTERFACE
+           SUBROUTINE cgp_error_exit_f()
+           END SUBROUTINE
+        END INTERFACE
+
 !!$
 !!$	INTERFACE
 !!$           SUBROUTINE cgp_coord_multi_read_data_f, CGP_COORD_MULTI_READ_DATA_F)(fn, B, Z, C,
@@ -3844,7 +3832,7 @@ END INTERFACE
 !!$        END INTERFACE
 !!$
 !!$#endif HDF5_HAVE_MULTI_DATASETS
-!!$#endif BUILD_PARALLEL
+#endif
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      INTERFACES FOR THE C FUNCTIONS                                 *
