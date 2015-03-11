@@ -5,6 +5,14 @@ MODULE cgns
 
 #include "cgnstypes_f03.h"
 
+!These definitions are needed for Windows DLLs
+!DEC$ IF DEFINED(WINNT)
+!DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_goto_f
+!DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_array_read_f
+!DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_array_read_as_f
+!DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_array_write_f
+!DEC$ ENDIF
+
 #if CG_BUILD_64BIT
 #  if HAVE_FORTRAN_2003
   INTEGER, PARAMETER :: CGSIZE_T = C_LONG_LONG
