@@ -1,0 +1,47 @@
+#!/bin/csh
+
+#   ___  __           _      __     __
+#  / _ )/ /_ _____   | | /| / /__ _/ /____ _______
+# / _  / / // / -_)  | |/ |/ / _ `/ __/ -_) __(_-<
+#/____/_/\_,_/\__/   |__/|__/\_,_/\__/\__/_/ /___/
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# Build script for CGNS on Blue Waters (Cray XE/XK) 
+# using cray compilers.
+# NCSA, University of Illinois Urbana-Champaign
+
+# Note: I created a bin directory which contains
+# mpi links (mpif90, mpicc) to the system compilers 
+# since configure expects only those names (need to fix
+# this in configure)
+
+module swap cce cce/8.3.9
+module unload cray-libsci atp
+module load xpmem dmapp ugni udreg
+module swap cray-mpich/7.0.3 cray-mpich/7.1.3
+module list
+
+# use the system zlib
+set ZLIB=/usr/lib64
+# location of the installed HDF5 library
+set HDF5=$HOME/packages/phdf5_trunk_cray
+setenv LD_LIBRARY_PATH "$ZLIB"
+setenv CFLAGS "-O2 "
+setenv CC "cc"
+setenv FC "ftn"
+setenv F77 "ftn"
+setenv FFLAGS "-O2 "
+setenv FLIBS "-lz -ldl -I../lib"
+setenv CLIBS "-lz"
+setenv LIBS "-lz -ldl"
+
+./configure --verbose \
+--enable-parallel \
+--with-fortran \
+--with-hdf5=$HDF5 \
+--with-mpi=$HOME/bin \
+--enable-64bit \
+--enable-lfs \
+--disable-cgnstools \
+--disable-x
+
