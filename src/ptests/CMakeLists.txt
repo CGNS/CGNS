@@ -56,8 +56,6 @@ if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
   add_executable(fexample ${fexample_FILES})
   set(benchmark_hdf5_f90_FILES benchmark_hdf5_f90.F90)
   add_executable(benchmark_hdf5_f90 ${benchmark_hdf5_f90_FILES})
-  set(benchmark_hdf5_f03_FILES benchmark_hdf5_f03.F90)
-  add_executable(benchmark_hdf5_f03 ${benchmark_hdf5_f03_FILES})
 endif (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
 
 # Add the tests so that cmake can find them
@@ -87,7 +85,5 @@ if (CGNS_ENABLE_TESTS)
         ${MPIEXEC_PREFLAGS} fexample ${MPIEXEC_POSTFLAGS})
     add_test(benchmark_hdf5_f90 ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
         ${MPIEXEC_PREFLAGS} benchmark_hdf5_f90 ${MPIEXEC_POSTFLAGS})
-    add_test(benchmark_hdf5_f03 ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-        ${MPIEXEC_PREFLAGS} benchmark_hdf5_f03 ${MPIEXEC_POSTFLAGS})
   endif (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
 endif (CGNS_ENABLE_TESTS)
