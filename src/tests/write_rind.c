@@ -38,14 +38,14 @@ cgsize_t num_element, *elements;
 
 float *solution;
 
-static void compute_coord (n, i, j, k)
+static void compute_coord (int n, int i, int j, int k)
 {
     xcoord[n] = (float)(i - rind[0]);
     ycoord[n] = (float)(j - rind[2]);
     zcoord[n] = (float)(k - rind[4]);
 }
 
-static void compute_element (ne, i, j, k)
+static void compute_element (int ne, int i, int j, int k)
 {
     int n = ne << 3;
 
