@@ -26,11 +26,11 @@ set ZLIB=/usr/lib64
 # location of the installed HDF5 library
 set HDF5=$HOME/packages/phdf5_trunk_cray
 setenv LD_LIBRARY_PATH "$ZLIB"
-setenv CFLAGS "-O2 "
+setenv CFLAGS "-O3 "
 setenv CC "cc"
 setenv FC "ftn"
 setenv F77 "ftn"
-setenv FFLAGS "-O2 "
+setenv FFLAGS "-O3 "
 setenv FLIBS "-lz -ldl -I../lib"
 setenv CLIBS "-lz"
 setenv LIBS "-lz -ldl"
