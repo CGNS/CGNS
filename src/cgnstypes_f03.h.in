@@ -37,4 +37,27 @@
 
 #define CG_BUILD_SCOPE  @BUILDSCOPE@
 
+#if CG_BUILD_SCOPE
+# ifndef CGNS_SCOPE_ENUMS
+#  define CGNS_SCOPE_ENUMS
+# endif
+#else
+# ifdef CGNS_SCOPE_ENUMS
+#  undef CGNS_SCOPE_ENUMS
+# endif
+#endif
+
+#if  __STDC__
+#define CONS(a,b) a##b
+#else
+#define CONS(a,b) a/**/b
+#endif
+
+#ifdef CGNS_SCOPE_ENUMS
+! set scope prefix (case does not matter in Fortran)
+#define CGNS_ENUMV(x) CONS(CG_,x)
+#else
+#define CGNS_ENUMV(x) x
+#endif
+
 #endif

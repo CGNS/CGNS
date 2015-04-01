@@ -5,39 +5,39 @@ MODULE cgns
 
 #include "cgnstypes_f03.h"
 
-  !These definitions are needed for Windows DLLs
-  !DEC$ IF DEFINED(WINNT)
-  !DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_goto_f
-  !DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_array_read_f
-  !DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_array_read_as_f
-  !DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_array_write_f
-  !DEC$ ENDIF
+!These definitions are needed for Windows DLLs
+!DEC$ IF DEFINED(WINNT)
+!DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_goto_f
+!DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_array_read_f
+!DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_array_read_as_f
+!DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_array_write_f
+!DEC$ ENDIF
 
 #if CG_BUILD_64BIT
 #  if HAVE_FORTRAN_2003
   INTEGER, PARAMETER :: CGSIZE_T = C_LONG_LONG
-  INTEGER, PARAMETER :: CGID_T = C_DOUBLE
+  INTEGER, PARAMETER :: CGID_T   = C_DOUBLE
   INTEGER, PARAMETER :: CGLONG_T = C_LONG_LONG
 #  else
-  INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(15) ! should map to INTEGER*8 on most modern processors
+  INTEGER, PARAMETER :: cgint_kind    = SELECTED_INT_KIND(15) ! should map to INTEGER*8 on most modern processors
   INTEGER, PARAMETER :: cgdouble_kind = SELECTED_REAL_KIND(10) ! should map to REAL*8 on most modern processors
-  INTEGER, PARAMETER :: CGSIZE_T = cgint_kind
-  INTEGER, PARAMETER :: CGID_T = cgdouble_kind
-  INTEGER, PARAMETER :: CGLONG_T = cgint_kind
+  INTEGER, PARAMETER :: CGSIZE_T      = cgint_kind
+  INTEGER, PARAMETER :: CGID_T        = cgdouble_kind
+  INTEGER, PARAMETER :: CGLONG_T      = cgint_kind
 #  endif
   LOGICAL, PARAMETER :: CG_BUILD_64BIT_F = .TRUE.
 #else
 #  if HAVE_FORTRAN_2003
   INTEGER, PARAMETER :: CGSIZE_T = C_INT
-  INTEGER, PARAMETER :: CGID_T = C_DOUBLE
+  INTEGER, PARAMETER :: CGID_T   = C_DOUBLE
   INTEGER, PARAMETER :: CGLONG_T = C_LONG_LONG
 #  else
-  INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(5) ! should map to INTEGER*4 on most modern processors
-  INTEGER, PARAMETER :: cglong_kind = SELECTED_INT_KIND(15) ! should map to INTEGER*8 on most modern processors
+  INTEGER, PARAMETER :: cgint_kind    = SELECTED_INT_KIND(5) ! should map to INTEGER*4 on most modern processors
+  INTEGER, PARAMETER :: cglong_kind   = SELECTED_INT_KIND(15) ! should map to INTEGER*8 on most modern processors
   INTEGER, PARAMETER :: cgdouble_kind = SELECTED_REAL_KIND(10) ! should map to REAL*8 on most modern processors
-  INTEGER, PARAMETER :: CGSIZE_T = cgint_kind
-  INTEGER, PARAMETER :: CGID_T = cgdouble_kind
-  INTEGER, PARAMETER :: CGLONG_T = cglong_kind
+  INTEGER, PARAMETER :: CGSIZE_T      = cgint_kind
+  INTEGER, PARAMETER :: CGID_T        = cgdouble_kind
+  INTEGER, PARAMETER :: CGLONG_T      = cglong_kind
 #  endif
   LOGICAL, PARAMETER :: CG_BUILD_64BIT_F = .FALSE.
 #endif
@@ -110,80 +110,80 @@ MODULE cgns
 
   CHARACTER(LEN=MAX_LEN) :: MassUnitsName(0:5)
   ENUM, BIND(C)
-      ENUMERATOR :: MassUnitsNull        = CG_Null
-      ENUMERATOR :: MassUnitsUserDefined = CG_UserDefined
-      ENUMERATOR :: Kilogram             = 2
-      ENUMERATOR :: Gram                 = 3
-      ENUMERATOR :: Slug                 = 4
-      ENUMERATOR :: PoundMass            = 5
+      ENUMERATOR :: CGNS_ENUMV(MassUnitsNull)        = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(MassUnitsUserDefined) = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Kilogram)             = 2
+      ENUMERATOR :: CGNS_ENUMV(Gram)                 = 3
+      ENUMERATOR :: CGNS_ENUMV(Slug)                 = 4
+      ENUMERATOR :: CGNS_ENUMV(PoundMass)            = 5
   END ENUM
 
   CHARACTER(LEN=MAX_LEN) :: LengthUnitsName(0:6)
   ENUM, BIND(C)
-      ENUMERATOR :: LengthUnitsNull         = CG_Null
-      ENUMERATOR :: LengthUnitsUserDefined  = CG_UserDefined
-      ENUMERATOR :: Meter                   = 2
-      ENUMERATOR :: Centimeter              = 3
-      ENUMERATOR :: Millimeter              = 4
-      ENUMERATOR :: Foot                    = 5
-      ENUMERATOR :: Inch                    = 6
+      ENUMERATOR :: CGNS_ENUMV(LengthUnitsNull)         = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(LengthUnitsUserDefined)  = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Meter)                   = 2
+      ENUMERATOR :: CGNS_ENUMV(Centimeter)              = 3
+      ENUMERATOR :: CGNS_ENUMV(Millimeter)              = 4
+      ENUMERATOR :: CGNS_ENUMV(Foot)                    = 5
+      ENUMERATOR :: CGNS_ENUMV(Inch)                    = 6
   END ENUM
 
   CHARACTER(LEN=MAX_LEN) :: TimeUnitsName(0:2)
   ENUM, BIND(C)
-      ENUMERATOR :: TimeUnitsNull         = CG_Null
-      ENUMERATOR :: TimeUnitsUserDefined  = CG_UserDefined
-      ENUMERATOR :: Second                = 2
+      ENUMERATOR :: CGNS_ENUMV(TimeUnitsNull)         = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(TimeUnitsUserDefined)  = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Second)                = 2
   END ENUM
 
   CHARACTER(LEN=MAX_LEN) :: TemperatureUnitsName(0:5)
   ENUM, BIND(C)
-      ENUMERATOR :: TemperatureUnitsNull        = CG_Null
-      ENUMERATOR :: TemperatureUnitsUserDefined = CG_UserDefined
-      ENUMERATOR :: Kelvin                      = 2
-      ENUMERATOR :: Celsius                     = 3
-      ENUMERATOR :: Rankine                     = 4
-      ENUMERATOR :: Fahrenheit                  = 5
+      ENUMERATOR :: CGNS_ENUMV(TemperatureUnitsNull)        = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(TemperatureUnitsUserDefined) = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Kelvin)                      = 2
+      ENUMERATOR :: CGNS_ENUMV(Celsius)                     = 3
+      ENUMERATOR :: CGNS_ENUMV(Rankine)                     = 4
+      ENUMERATOR :: CGNS_ENUMV(Fahrenheit)                  = 5
   END ENUM
 
   CHARACTER(LEN=MAX_LEN) :: AngleUnitsName(0:3)
   ENUM, BIND(C)
-      ENUMERATOR :: AngleUnitsNull              = CG_Null
-      ENUMERATOR :: AngleUnitsUserDefined       = CG_UserDefined
-      ENUMERATOR :: Degree                      = 2
-      ENUMERATOR :: Radian                      = 3
+      ENUMERATOR :: CGNS_ENUMV(AngleUnitsNull)              = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(AngleUnitsUserDefined)       = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Degree)                      = 2
+      ENUMERATOR :: CGNS_ENUMV(Radian)                      = 3
   END ENUM
 
   CHARACTER(LEN=MAX_LEN) :: ElectricCurrentUnitsName(0:6)
   ENUM, BIND(C)
-      ENUMERATOR :: ElectricCurrentUnitsNull        = CG_Null
-      ENUMERATOR :: ElectricCurrentUnitsUserDefined = CG_UserDefined
-      ENUMERATOR :: Ampere                          = 2
-      ENUMERATOR :: Abampere                        = 3
-      ENUMERATOR :: Statampere                      = 4
-      ENUMERATOR :: Edison                          = 5
-      ENUMERATOR :: auCurrent                       = 6
+      ENUMERATOR :: CGNS_ENUMV(ElectricCurrentUnitsNull)        = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(ElectricCurrentUnitsUserDefined) = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Ampere)                          = 2
+      ENUMERATOR :: CGNS_ENUMV(Abampere)                        = 3
+      ENUMERATOR :: CGNS_ENUMV(Statampere)                      = 4
+      ENUMERATOR :: CGNS_ENUMV(Edison)                          = 5
+      ENUMERATOR :: CGNS_ENUMV(auCurrent)                       = 6
   END ENUM
 
   CHARACTER(LEN=MAX_LEN) :: SubstanceAmountUnitsName(0:5)
   ENUM, BIND(C)
-      ENUMERATOR :: SubstanceAmountUnitsNull        = CG_Null
-      ENUMERATOR :: SubstanceAmountUnitsUserDefined = CG_UserDefined
-      ENUMERATOR :: Mole                            = 2
-      ENUMERATOR :: Entities                        = 3
-      ENUMERATOR :: StandardCubicFoot               = 4
-      ENUMERATOR :: StandardCubicMeter              = 5
+      ENUMERATOR :: CGNS_ENUMV(SubstanceAmountUnitsNull)        = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(SubstanceAmountUnitsUserDefined) = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Mole)                            = 2
+      ENUMERATOR :: CGNS_ENUMV(Entities)                        = 3
+      ENUMERATOR :: CGNS_ENUMV(StandardCubicFoot)               = 4
+      ENUMERATOR :: CGNS_ENUMV(StandardCubicMeter)              = 5
   END ENUM
 
   CHARACTER(LEN=MAX_LEN) :: LuminousIntensityUnitsName(0:6)
   ENUM, BIND(C)
-      ENUMERATOR :: LuminousIntensityUnitsNull       = CG_Null
-      ENUMERATOR ::LuminousIntensityUnitsUserDefined = CG_UserDefined
-      ENUMERATOR :: Candela                          = 2
-      ENUMERATOR :: Candle                           = 3
-      ENUMERATOR :: Carcel                           = 4
-      ENUMERATOR :: Hefner                           = 5
-      ENUMERATOR :: Violle                           = 6
+      ENUMERATOR :: CGNS_ENUMV(LuminousIntensityUnitsNull)        = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(LuminousIntensityUnitsUserDefined) = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Candela)                            = 2
+      ENUMERATOR :: CGNS_ENUMV(Candle)                             = 3
+      ENUMERATOR :: CGNS_ENUMV(Carcel)                             = 4
+      ENUMERATOR :: CGNS_ENUMV(Hefner)                             = 5
+      ENUMERATOR :: CGNS_ENUMV(Violle)                             = 6
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -192,13 +192,13 @@ MODULE cgns
 
   CHARACTER(LEN=MAX_LEN) :: DataClassName(0:6)
   ENUM, BIND(C)
-      ENUMERATOR :: DataClassNull                       = CG_Null
-      ENUMERATOR :: DataClassUserDefined                = CG_UserDefined
-      ENUMERATOR :: Dimensional                         = 2
-      ENUMERATOR :: NormalizedByDimensional             = 3
-      ENUMERATOR :: NormalizedByUnknownDimensional      = 4
-      ENUMERATOR :: NondimensionalParameter             = 5
-      ENUMERATOR :: DimensionlessConstant               = 6
+      ENUMERATOR :: CGNS_ENUMV(DataClassNull)                       = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(DataClassUserDefined)                = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Dimensional)                         = 2
+      ENUMERATOR :: CGNS_ENUMV(NormalizedByDimensional)             = 3
+      ENUMERATOR :: CGNS_ENUMV(NormalizedByUnknownDimensional)      = 4
+      ENUMERATOR :: CGNS_ENUMV(NondimensionalParameter)             = 5
+      ENUMERATOR :: CGNS_ENUMV(DimensionlessConstant)               = 6
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -206,15 +206,15 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   CHARACTER(LEN=MAX_LEN) :: GridLocationName(0:8)
   ENUM, BIND(C)
-      ENUMERATOR :: GridLocationNull        = CG_Null
-      ENUMERATOR :: GridLocationUserDefined = CG_UserDefined
-      ENUMERATOR :: Vertex                  = 2
-      ENUMERATOR :: CellCenter              = 3
-      ENUMERATOR :: FaceCenter              = 4
-      ENUMERATOR :: IFaceCenter             = 5
-      ENUMERATOR :: JFaceCenter             = 6
-      ENUMERATOR :: KFaceCenter             = 7
-      ENUMERATOR :: EdgeCenter              = 8
+      ENUMERATOR :: CGNS_ENUMV(GridLocationNull)        = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(GridLocationUserDefined) = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Vertex)                  = 2
+      ENUMERATOR :: CGNS_ENUMV(CellCenter)              = 3
+      ENUMERATOR :: CGNS_ENUMV(FaceCenter)              = 4
+      ENUMERATOR :: CGNS_ENUMV(IFaceCenter)             = 5
+      ENUMERATOR :: CGNS_ENUMV(JFaceCenter)             = 6
+      ENUMERATOR :: CGNS_ENUMV(KFaceCenter)             = 7
+      ENUMERATOR :: CGNS_ENUMV(EdgeCenter)              = 8
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -222,11 +222,11 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   CHARACTER(LEN=MAX_LEN) :: GridConnectivityTypeName(0:4)
   ENUM, BIND(C)
-      ENUMERATOR :: GridConnectivityTypeNul         = CG_Null
-      ENUMERATOR :: GridConnectivityTypeUserDefined = CG_UserDefined
-      ENUMERATOR :: Overset                         = 2
-      ENUMERATOR :: Abutting                        = 3
-      ENUMERATOR :: Abutting1to1                    = 4
+      ENUMERATOR :: CGNS_ENUMV(GridConnectivityTypeNull)       = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(GridConnectivityTypeUserDefined) = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Overset)                         = 2
+      ENUMERATOR :: CGNS_ENUMV(Abutting)                        = 3
+      ENUMERATOR :: CGNS_ENUMV(Abutting1to1)                    = 4
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -234,15 +234,15 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   CHARACTER(LEN=MAX_LEN) :: PointSetTypeName(0:8)
   ENUM, BIND(C)
-      ENUMERATOR :: PointSetTypeNull        = CG_Null
-      ENUMERATOR :: PointSetTypeUserDefined = CG_UserDefined
-      ENUMERATOR :: PointList               = 2
-      ENUMERATOR :: PointListDonor          = 3
-      ENUMERATOR :: PointRange              = 4
-      ENUMERATOR :: PointRangeDonor         = 5
-      ENUMERATOR :: ElementRange            = 6
-      ENUMERATOR :: ElementList             = 7
-      ENUMERATOR :: CellListDonor           = 8
+      ENUMERATOR :: CGNS_ENUMV(PointSetTypeNull)        = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(PointSetTypeUserDefined) = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(PointList)               = 2
+      ENUMERATOR :: CGNS_ENUMV(PointListDonor)          = 3
+      ENUMERATOR :: CGNS_ENUMV(PointRange)              = 4
+      ENUMERATOR :: CGNS_ENUMV(PointRangeDonor)         = 5
+      ENUMERATOR :: CGNS_ENUMV(ElementRange)            = 6
+      ENUMERATOR :: CGNS_ENUMV(ElementList)             = 7
+      ENUMERATOR :: CGNS_ENUMV(CellListDonor)           = 8
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -250,14 +250,14 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   CHARACTER(LEN=MAX_LEN) :: GoverningEquationsTypeName(0:7)
   ENUM, BIND(C)
-      ENUMERATOR :: GoverningEquationsNull        = CG_Null
-      ENUMERATOR :: GoverningEquationsUserDefined = CG_UserDefined
-      ENUMERATOR :: FullPotential                 = 2
-      ENUMERATOR :: Euler                         = 3
-      ENUMERATOR :: NSLaminar                     = 4
-      ENUMERATOR :: NSTurbulent                   = 5
-      ENUMERATOR :: NSLaminarIncompressible       = 6
-      ENUMERATOR :: NSTurbulentIncompressible     = 7
+      ENUMERATOR :: CGNS_ENUMV(GoverningEquationsNull)        = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(GoverningEquationsUserDefined) = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(FullPotential)                 = 2
+      ENUMERATOR :: CGNS_ENUMV(Euler)                         = 3
+      ENUMERATOR :: CGNS_ENUMV(NSLaminar)                     = 4
+      ENUMERATOR :: CGNS_ENUMV(NSTurbulent)                   = 5
+      ENUMERATOR :: CGNS_ENUMV(NSLaminarIncompressible)       = 6
+      ENUMERATOR :: CGNS_ENUMV(NSTurbulentIncompressible)     = 7
   END ENUM
 
 !** Any model type will accept both ModelTypeNull and ModelTypeUserDefined.
@@ -292,42 +292,42 @@ MODULE cgns
 
   CHARACTER(LEN=MAX_LEN) :: ModelTypeName(0:35)
   ENUM, BIND(C)
-      ENUMERATOR :: ModelTypeNull               = CG_Null
-      ENUMERATOR :: ModelTypeUserDefined        = CG_UserDefined
-      ENUMERATOR :: Ideal                       = 2
-      ENUMERATOR :: VanderWaals                 = 3
-      ENUMERATOR :: Constant                    = 4
-      ENUMERATOR :: PowerLaw                    = 5
-      ENUMERATOR :: SutherlandLaw               = 6
-      ENUMERATOR :: ConstantPrandtl             = 7
-      ENUMERATOR :: EddyViscosity               = 8
-      ENUMERATOR :: ReynoldsStress              = 9
-      ENUMERATOR :: ReynoldsStressAlgebraic     = 10
-      ENUMERATOR :: Algebraic_BaldwinLomax      = 11
-      ENUMERATOR :: Algebraic_CebeciSmith       = 12
-      ENUMERATOR :: HalfEquation_JohnsonKing    = 13
-      ENUMERATOR :: OneEquation_BaldwinBarth    = 14
-      ENUMERATOR :: OneEquation_SpalartAllmaras = 15
-      ENUMERATOR :: TwoEquation_JonesLaunder    = 16
-      ENUMERATOR :: TwoEquation_MenterSST       = 17
-      ENUMERATOR :: TwoEquation_Wilcox          = 18
-      ENUMERATOR :: CaloricallyPerfect          = 19
-      ENUMERATOR :: ThermallyPerfect            = 20
-      ENUMERATOR :: ConstantDensity             = 21
-      ENUMERATOR :: RedlichKwong                = 22
-      ENUMERATOR :: Frozen                      = 23
-      ENUMERATOR :: ThermalEquilib              = 24
-      ENUMERATOR :: ThermalNonequilib           = 25
-      ENUMERATOR :: ChemicalEquilibCurveFit     = 26
-      ENUMERATOR :: ChemicalEquilibMinimization = 27
-      ENUMERATOR :: ChemicalNonequilib          = 28
-      ENUMERATOR :: EMElectricField             = 29
-      ENUMERATOR :: EMMagneticField             = 30
-      ENUMERATOR :: EMConductivity              = 31
-      ENUMERATOR :: Voltage                     = 32
-      ENUMERATOR :: Interpolated                = 33
-      ENUMERATOR :: Equilibrium_LinRessler      = 34
-      ENUMERATOR :: Chemistry_LinRessler        = 35
+      ENUMERATOR :: CGNS_ENUMV(ModelTypeNull)               = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(ModelTypeUserDefined)        = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Ideal)                       = 2
+      ENUMERATOR :: CGNS_ENUMV(VanderWaals)                 = 3
+      ENUMERATOR :: CGNS_ENUMV(Constant)                    = 4
+      ENUMERATOR :: CGNS_ENUMV(PowerLaw)                    = 5
+      ENUMERATOR :: CGNS_ENUMV(SutherlandLaw)               = 6
+      ENUMERATOR :: CGNS_ENUMV(ConstantPrandtl)             = 7
+      ENUMERATOR :: CGNS_ENUMV(EddyViscosity)               = 8
+      ENUMERATOR :: CGNS_ENUMV(ReynoldsStress)              = 9
+      ENUMERATOR :: CGNS_ENUMV(ReynoldsStressAlgebraic)     = 10
+      ENUMERATOR :: CGNS_ENUMV(Algebraic_BaldwinLomax)      = 11
+      ENUMERATOR :: CGNS_ENUMV(Algebraic_CebeciSmith)       = 12
+      ENUMERATOR :: CGNS_ENUMV(HalfEquation_JohnsonKing)    = 13
+      ENUMERATOR :: CGNS_ENUMV(OneEquation_BaldwinBarth)    = 14
+      ENUMERATOR :: CGNS_ENUMV(OneEquation_SpalartAllmaras) = 15
+      ENUMERATOR :: CGNS_ENUMV(TwoEquation_JonesLaunder)    = 16
+      ENUMERATOR :: CGNS_ENUMV(TwoEquation_MenterSST)       = 17
+      ENUMERATOR :: CGNS_ENUMV(TwoEquation_Wilcox)          = 18
+      ENUMERATOR :: CGNS_ENUMV(CaloricallyPerfect)          = 19
+      ENUMERATOR :: CGNS_ENUMV(ThermallyPerfect)            = 20
+      ENUMERATOR :: CGNS_ENUMV(ConstantDensity)             = 21
+      ENUMERATOR :: CGNS_ENUMV(RedlichKwong)                = 22
+      ENUMERATOR :: CGNS_ENUMV(Frozen)                      = 23
+      ENUMERATOR :: CGNS_ENUMV(ThermalEquilib)              = 24
+      ENUMERATOR :: CGNS_ENUMV(ThermalNonequilib)           = 25
+      ENUMERATOR :: CGNS_ENUMV(ChemicalEquilibCurveFit)     = 26
+      ENUMERATOR :: CGNS_ENUMV(ChemicalEquilibMinimization) = 27
+      ENUMERATOR :: CGNS_ENUMV(ChemicalNonequilib)          = 28
+      ENUMERATOR :: CGNS_ENUMV(EMElectricField)             = 29
+      ENUMERATOR :: CGNS_ENUMV(EMMagneticField)             = 30
+      ENUMERATOR :: CGNS_ENUMV(EMConductivity)              = 31
+      ENUMERATOR :: CGNS_ENUMV(Voltage)                     = 32
+      ENUMERATOR :: CGNS_ENUMV(Interpolated)                = 33
+      ENUMERATOR :: CGNS_ENUMV(Equilibrium_LinRessler)      = 34
+      ENUMERATOR :: CGNS_ENUMV(Chemistry_LinRessler)        = 35
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -335,32 +335,32 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   CHARACTER(LEN=MAX_LEN) :: BCTypeName(0:25)
   ENUM, BIND(C)
-      ENUMERATOR :: BCTypeNull              = CG_Null
-      ENUMERATOR :: BCTypeUserDefined       = CG_UserDefined
-      ENUMERATOR :: BCAxisymmetricWedge     = 2
-      ENUMERATOR :: BCDegenerateLine        = 3
-      ENUMERATOR :: BCDegeneratePoint       = 4
-      ENUMERATOR :: BCDirichlet             = 5
-      ENUMERATOR :: BCExtrapolate           = 6
-      ENUMERATOR :: BCFarfield              = 7
-      ENUMERATOR :: BCGeneral               = 8
-      ENUMERATOR :: BCInflow                = 9
-      ENUMERATOR :: BCInflowSubsonic        = 10
-      ENUMERATOR :: BCInflowSupersonic      = 11
-      ENUMERATOR :: BCNeumann               = 12
-      ENUMERATOR :: BCOutflow               = 13
-      ENUMERATOR :: BCOutflowSubsonic       = 14
-      ENUMERATOR :: BCOutflowSupersonic     = 15
-      ENUMERATOR :: BCSymmetryPlane         = 16
-      ENUMERATOR :: BCSymmetryPolar         = 17
-      ENUMERATOR :: BCTunnelInflow          = 18
-      ENUMERATOR :: BCTunnelOutflow         = 19
-      ENUMERATOR :: BCWall                  = 20
-      ENUMERATOR :: BCWallInviscid          = 21
-      ENUMERATOR :: BCWallViscous           = 22
-      ENUMERATOR :: BCWallViscousHeatFlux   = 23
-      ENUMERATOR :: BCWallViscousIsothermal = 24
-      ENUMERATOR :: FamilySpecified         = 25
+      ENUMERATOR :: CGNS_ENUMV(BCTypeNull)              = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(BCTypeUserDefined)       = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(BCAxisymmetricWedge)     = 2
+      ENUMERATOR :: CGNS_ENUMV(BCDegenerateLine)        = 3
+      ENUMERATOR :: CGNS_ENUMV(BCDegeneratePoint)       = 4
+      ENUMERATOR :: CGNS_ENUMV(BCDirichlet)             = 5
+      ENUMERATOR :: CGNS_ENUMV(BCExtrapolate)           = 6
+      ENUMERATOR :: CGNS_ENUMV(BCFarfield)              = 7
+      ENUMERATOR :: CGNS_ENUMV(BCGeneral)               = 8
+      ENUMERATOR :: CGNS_ENUMV(BCInflow)                = 9
+      ENUMERATOR :: CGNS_ENUMV(BCInflowSubsonic)        = 10
+      ENUMERATOR :: CGNS_ENUMV(BCInflowSupersonic)      = 11
+      ENUMERATOR :: CGNS_ENUMV(BCNeumann)               = 12
+      ENUMERATOR :: CGNS_ENUMV(BCOutflow)               = 13
+      ENUMERATOR :: CGNS_ENUMV(BCOutflowSubsonic)       = 14
+      ENUMERATOR :: CGNS_ENUMV(BCOutflowSupersonic)     = 15
+      ENUMERATOR :: CGNS_ENUMV(BCSymmetryPlane)         = 16
+      ENUMERATOR :: CGNS_ENUMV(BCSymmetryPolar)         = 17
+      ENUMERATOR :: CGNS_ENUMV(BCTunnelInflow)          = 18
+      ENUMERATOR :: CGNS_ENUMV(BCTunnelOutflow)         = 19
+      ENUMERATOR :: CGNS_ENUMV(BCWall)                  = 20
+      ENUMERATOR :: CGNS_ENUMV(BCWallInviscid)          = 21
+      ENUMERATOR :: CGNS_ENUMV(BCWallViscous)           = 22
+      ENUMERATOR :: CGNS_ENUMV(BCWallViscousHeatFlux)   = 23
+      ENUMERATOR :: CGNS_ENUMV(BCWallViscousIsothermal) = 24
+      ENUMERATOR :: CGNS_ENUMV(FamilySpecified)         = 25
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -368,9 +368,13 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   CHARACTER(LEN=MAX_LEN) :: DataTypeName(0:6)
   ENUM, BIND(C)
-      ENUMERATOR :: DataTypeNull,DataTypeUserDefined
-      ENUMERATOR :: INTEGER,RealSingle
-      ENUMERATOR :: RealDouble,CHARACTER,LongInteger
+      ENUMERATOR :: CGNS_ENUMV(DataTypeNull)
+      ENUMERATOR :: CGNS_ENUMV(DataTypeUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(Integer)
+      ENUMERATOR :: CGNS_ENUMV(RealSingle)
+      ENUMERATOR :: CGNS_ENUMV(RealDouble)
+      ENUMERATOR :: CGNS_ENUMV(Character)
+      ENUMERATOR :: CGNS_ENUMV(LongInteger)
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -378,10 +382,10 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   CHARACTER(LEN=MAX_LEN) :: BCDataTypeName(0:3)
   ENUM, BIND(C)
-      ENUMERATOR :: BCDataTypeNull        = CG_Null
-      ENUMERATOR :: BCDataTypeUserDefined = CG_UserDefined
-      ENUMERATOR :: Dirichlet             = 2
-      ENUMERATOR :: Neumann               = 3
+      ENUMERATOR :: CGNS_ENUMV(BCDataTypeNull)        = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(BCDataTypeUserDefined) = CG_UserDefined
+      ENUMERATOR :: CGNS_ENUMV(Dirichlet)             = 2
+      ENUMERATOR :: CGNS_ENUMV(Neumann)               = 3
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -390,27 +394,63 @@ MODULE cgns
 
   CHARACTER(LEN=MAX_LEN) :: ElementTypeName(0:56)
   ENUM, BIND(C)
-      ENUMERATOR :: ElementTypeNull, ElementTypeUserDefined ! 0, 1,
-      ENUMERATOR :: NODE, BAR_2, BAR_3                      ! 2, 3, 4,
-      ENUMERATOR :: TRI_3, TRI_6                            ! 5, 6,
-      ENUMERATOR :: QUAD_4, QUAD_8, QUAD_9                  ! 7, 8, 9,
-      ENUMERATOR :: TETRA_4, TETRA_10                       ! 10, 11,
-      ENUMERATOR :: PYRA_5, PYRA_14                         ! 12, 13,
-      ENUMERATOR :: PENTA_6, PENTA_15, PENTA_18             ! 14, 15, 16,
-      ENUMERATOR :: HEXA_8, HEXA_20, HEXA_27                ! 17, 18, 19,
-      ENUMERATOR :: MIXED, PYRA_13, NGON_n, NFACE_n         ! 20, 21, 22, 23
-      ENUMERATOR :: BAR_4, TRI_9, TRI_10
-      ENUMERATOR :: QUAD_12, QUAD_16
-      ENUMERATOR :: TETRA_16, TETRA_20
-      ENUMERATOR :: PYRA_21, PYRA_29, PYRA_30
-      ENUMERATOR :: PENTA_24, PENTA_38, PENTA_40
-      ENUMERATOR :: HEXA_32, HEXA_56, HEXA_64
-      ENUMERATOR :: BAR_5, TRI_12, TRI_15
-      ENUMERATOR :: QUAD_P4_16, QUAD_25
-      ENUMERATOR :: TETRA_22, TETRA_34, TETRA_35
-      ENUMERATOR :: PYRA_P4_29, PYRA_50, PYRA_55
-      ENUMERATOR :: PENTA_33, PENTA_66, PENTA_75
-      ENUMERATOR :: HEXA_44, HEXA_98, HEXA_125
+      ENUMERATOR :: CGNS_ENUMV(ElementTypeNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(ElementTypeUserDefined) 
+      ENUMERATOR :: CGNS_ENUMV(NODE)
+      ENUMERATOR :: CGNS_ENUMV(BAR_2)
+      ENUMERATOR :: CGNS_ENUMV(BAR_3)
+      ENUMERATOR :: CGNS_ENUMV(TRI_3)
+      ENUMERATOR :: CGNS_ENUMV(TRI_6) 
+      ENUMERATOR :: CGNS_ENUMV(QUAD_4)
+      ENUMERATOR :: CGNS_ENUMV(QUAD_8)
+      ENUMERATOR :: CGNS_ENUMV(QUAD_9)
+      ENUMERATOR :: CGNS_ENUMV(TETRA_4)
+      ENUMERATOR :: CGNS_ENUMV(TETRA_10)
+      ENUMERATOR :: CGNS_ENUMV(PYRA_5)
+      ENUMERATOR :: CGNS_ENUMV(PYRA_14)
+      ENUMERATOR :: CGNS_ENUMV(PENTA_6)
+      ENUMERATOR :: CGNS_ENUMV(PENTA_15)
+      ENUMERATOR :: CGNS_ENUMV(PENTA_18)
+      ENUMERATOR :: CGNS_ENUMV(HEXA_8)
+      ENUMERATOR :: CGNS_ENUMV(HEXA_20)
+      ENUMERATOR :: CGNS_ENUMV(HEXA_27)
+      ENUMERATOR :: CGNS_ENUMV(MIXED)
+      ENUMERATOR :: CGNS_ENUMV(PYRA_13)
+      ENUMERATOR :: CGNS_ENUMV(NGON_n)
+      ENUMERATOR :: CGNS_ENUMV(NFACE_n)
+      ENUMERATOR :: CGNS_ENUMV(BAR_4)
+      ENUMERATOR :: CGNS_ENUMV(TRI_9)
+      ENUMERATOR :: CGNS_ENUMV(TRI_10)
+      ENUMERATOR :: CGNS_ENUMV(QUAD_12)
+      ENUMERATOR :: CGNS_ENUMV(QUAD_16)
+      ENUMERATOR :: CGNS_ENUMV(TETRA_16)
+      ENUMERATOR :: CGNS_ENUMV(TETRA_20)
+      ENUMERATOR :: CGNS_ENUMV(PYRA_21)
+      ENUMERATOR :: CGNS_ENUMV(PYRA_29)
+      ENUMERATOR :: CGNS_ENUMV(PYRA_30)
+      ENUMERATOR :: CGNS_ENUMV(PENTA_24)
+      ENUMERATOR :: CGNS_ENUMV(PENTA_38)
+      ENUMERATOR :: CGNS_ENUMV(PENTA_40)
+      ENUMERATOR :: CGNS_ENUMV(HEXA_32)
+      ENUMERATOR :: CGNS_ENUMV(HEXA_56)
+      ENUMERATOR :: CGNS_ENUMV(HEXA_64)
+      ENUMERATOR :: CGNS_ENUMV(BAR_5)
+      ENUMERATOR :: CGNS_ENUMV(TRI_12)
+      ENUMERATOR :: CGNS_ENUMV(TRI_15)
+      ENUMERATOR :: CGNS_ENUMV(QUAD_P4_16)
+      ENUMERATOR :: CGNS_ENUMV(QUAD_25)
+      ENUMERATOR :: CGNS_ENUMV(TETRA_22)
+      ENUMERATOR :: CGNS_ENUMV(TETRA_34)
+      ENUMERATOR :: CGNS_ENUMV(TETRA_35)
+      ENUMERATOR :: CGNS_ENUMV(PYRA_P4_29)
+      ENUMERATOR :: CGNS_ENUMV(PYRA_50)
+      ENUMERATOR :: CGNS_ENUMV(PYRA_55)
+      ENUMERATOR :: CGNS_ENUMV(PENTA_33)
+      ENUMERATOR :: CGNS_ENUMV(PENTA_66)
+      ENUMERATOR :: CGNS_ENUMV(PENTA_75)
+      ENUMERATOR :: CGNS_ENUMV(HEXA_44)
+      ENUMERATOR :: CGNS_ENUMV(HEXA_98)
+      ENUMERATOR :: CGNS_ENUMV(HEXA_125)
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -419,8 +459,10 @@ MODULE cgns
 
   CHARACTER(LEN=MAX_LEN) :: ZoneTypeName(0:3)
   ENUM, BIND(C)
-      ENUMERATOR :: ZoneTypeNull, ZoneTypeUserDefined
-      ENUMERATOR :: Structured, Unstructured
+      ENUMERATOR :: CGNS_ENUMV(ZoneTypeNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(ZoneTypeUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(Structured)
+      ENUMERATOR :: CGNS_ENUMV(Unstructured)
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -428,9 +470,10 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   CHARACTER(LEN=MAX_LEN) :: RigidGridMotionTypeName(0:3)
   ENUM, BIND(C)
-      ENUMERATOR :: RigidGridMotionTypeNull
-      ENUMERATOR :: RigidGridMotionTypeUserDefined
-      ENUMERATOR :: ConstantRate, VariableRate
+      ENUMERATOR :: CGNS_ENUMV(RigidGridMotionTypeNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(RigidGridMotionTypeUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(ConstantRate)
+      ENUMERATOR :: CGNS_ENUMV(VariableRate)
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -438,9 +481,10 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   CHARACTER(LEN=MAX_LEN) :: ArbitraryGridMotionTypeName(0:3)
   ENUM, BIND(C)
-      ENUMERATOR :: ArbitraryGridMotionTypeNull
-      ENUMERATOR :: ArbitraryGridMotionTypeUserDefined
-      ENUMERATOR :: NonDeformingGrid, DeformingGrid
+      ENUMERATOR :: CGNS_ENUMV(ArbitraryGridMotionTypeNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(ArbitraryGridMotionTypeUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(NonDeformingGrid)
+      ENUMERATOR :: CGNS_ENUMV(DeformingGrid)
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -448,8 +492,10 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   CHARACTER(LEN=MAX_LEN) :: SimulationTypeName(0:3)
   ENUM, BIND(C)
-      ENUMERATOR :: SimulationTypeNull, SimulationTypeUserDefined
-      ENUMERATOR :: TimeAccurate, NonTimeAccurate
+      ENUMERATOR :: CGNS_ENUMV(SimulationTypeNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(SimulationTypeUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(TimeAccurate)
+      ENUMERATOR :: CGNS_ENUMV(NonTimeAccurate)
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -458,14 +504,17 @@ MODULE cgns
 
   CHARACTER(LEN=MAX_LEN) :: WallFunctionTypeName(0:2)
   ENUM, BIND(C)
-      ENUMERATOR:: WallFunctionTypeNull,WallFunctionTypeUserDefined
-      ENUMERATOR:: Generic
+      ENUMERATOR :: CGNS_ENUMV(WallFunctionTypeNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(WallFunctionTypeUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(Generic)
   END ENUM
 
   CHARACTER(LEN=MAX_LEN) :: AreaTypeName(0:3)
   ENUM, BIND(C)
-      ENUMERATOR :: AreaTypeNull, AreaTypeUserDefined
-      ENUMERATOR :: BleedArea, CaptureArea
+      ENUMERATOR :: CGNS_ENUMV(AreaTypeNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(AreaTypeUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(BleedArea)
+      ENUMERATOR :: CGNS_ENUMV(CaptureArea)
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -474,11 +523,14 @@ MODULE cgns
 
   CHARACTER(LEN=MAX_LEN) :: AverageInterfaceTypeName(0:7)
   ENUM, BIND(C)
-      ENUMERATOR :: AverageInterfaceTypeNull
-      ENUMERATOR :: AverageInterfaceTypeUserDefined
-      ENUMERATOR :: AverageAll, AverageCircumferential
-      ENUMERATOR :: AverageRadial, AverageI
-      ENUMERATOR :: AverageJ, AverageK
+      ENUMERATOR :: CGNS_ENUMV(AverageInterfaceTypeNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(AverageInterfaceTypeUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(AverageAll)
+      ENUMERATOR :: CGNS_ENUMV(AverageCircumferential)
+      ENUMERATOR :: CGNS_ENUMV(AverageRadial)
+      ENUMERATOR :: CGNS_ENUMV(AverageI)
+      ENUMERATOR :: CGNS_ENUMV(AverageJ)
+      ENUMERATOR :: CGNS_ENUMV(AverageK)
   END ENUM
 
 ! For portability to Linux Absoft, all data statements were moved after the
@@ -688,7 +740,7 @@ MODULE cgns
        USE ISO_C_BINDING
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
-       INTEGER, INTENT(IN)  :: mode
+       INTEGER(C_INT), INTENT(IN)  :: mode
        INTEGER, INTENT(OUT) :: fn
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_open_f
@@ -890,13 +942,13 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_zone_read_f (fn, B, Z, zonename, size, ier)
-       IMPORT :: cgsize_t, c_char
+       IMPORT :: CGSIZE_T, c_char
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
        INTEGER :: Z
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: zonename
-       INTEGER(cgsize_t), DIMENSION(*) :: size
+       INTEGER(CGSIZE_T), DIMENSION(*) :: size
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_zone_read_f
   END INTERFACE
@@ -913,19 +965,19 @@ MODULE cgns
      END SUBROUTINE cg_zone_id_f
   END INTERFACE
 
-!!$     INTERFACE
-!!$           SUBROUTINE cg_zone_write_f (fn, B, zonename, size, TYPE, Z, ier)
-!!$             IMPORT :: cgenum_t, c_char, cgsize_t
-!!$             IMPLICIT NONE
-!!$             INTEGER, INTENT(IN) :: fn
-!!$             INTEGER, INTENT(IN) :: B
-!!$             CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: zonename
-!!$             INTEGER(CGSIZE_T), INTENT(IN) :: size
-!!$             INTEGER(cgenum_t), INTENT(IN) :: TYPE
-!!$             INTEGER, INTENT(OUT) :: Z
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE cg_zone_write_f
-!!$        END INTERFACE
+!!$  INTERFACE
+!!$     SUBROUTINE cg_zone_write_f03 (fn, B, zonename, size, TYPE, Z, ier)
+!!$       IMPORT :: cgenum_t, c_char, CGSIZE_T
+!!$       IMPLICIT NONE
+!!$       INTEGER, INTENT(IN) :: fn
+!!$       INTEGER, INTENT(IN) :: B
+!!$       CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: zonename
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: size
+!!$       INTEGER(cgenum_t), INTENT(IN) :: TYPE
+!!$       INTEGER, INTENT(OUT) :: Z
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cg_zone_write_f03
+!!$  END INTERFACE
 
   INTERFACE
      SUBROUTINE cg_index_dim_f (fn, B, Z, dim, ier)
@@ -1158,7 +1210,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_discrete_size_f(fn, B, Z, D, ndim, dims, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1172,7 +1224,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_discrete_ptset_info_f(fn, B, Z, S, ptype, npnts, ier)
-       IMPORT :: cgenum_t, cgsize_t
+       IMPORT :: cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1186,7 +1238,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_discrete_ptset_read_f( fn, B, Z, S, pnts, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1199,7 +1251,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_discrete_ptset_write_f( fn, B, Z, name, location, ptype, npnts, pnts, D, ier)
-       IMPORT :: cgsize_t, cgenum_t, c_char
+       IMPORT :: CGSIZE_T, cgenum_t, c_char
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1245,7 +1297,7 @@ MODULE cgns
 
 !!$ INTERFACE
 !!$    SUBROUTINE cg_coord_read_f (fn, B, Z, coordname, TYPE, rmin, rmax, coord, ier)
-!!$      IMPORT :: c_char, cgenum_t, cgsize_t, c_ptr
+!!$      IMPORT :: c_char, cgenum_t, CGSIZE_T, c_ptr
 !!$      IMPLICIT NONE
 !!$      INTEGER :: fn
 !!$      INTEGER :: B
@@ -1258,6 +1310,22 @@ MODULE cgns
 !!$      INTEGER, INTENT(OUT) :: ier
 !!$    END SUBROUTINE cg_coord_read_f
 !!$ END INTERFACE
+
+ INTERFACE
+    SUBROUTINE cg_coord_read_f03(fn, B, Z, coordname, TYPE, rmin, rmax, coord, ier)
+      IMPORT :: c_char, cgenum_t, CGSIZE_T, c_ptr
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
+      INTEGER(cgenum_t) :: TYPE
+      INTEGER(CGSIZE_T) :: rmin
+      INTEGER(CGSIZE_T) :: rmax
+      TYPE(C_PTR) :: coord
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_coord_read_f03
+ END INTERFACE
 
   INTERFACE
      SUBROUTINE cg_coord_id_f(fn, B, Z, C, coord_id, ier)
@@ -1289,7 +1357,7 @@ MODULE cgns
 
 !!$ INTERFACE
 !!$    SUBROUTINE cg_coord_partial_write_f ( fn, B, Z, TYPE, coordname, rmin, rmax, coord, C, ier)
-!!$      IMPORT :: c_char, cgenum_t, cgsize_t, c_ptr
+!!$      IMPORT :: c_char, cgenum_t, CGSIZE_T, c_ptr
 !!$      IMPLICIT NONE
 !!$      INTEGER :: fn
 !!$      INTEGER :: B
@@ -1321,7 +1389,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_section_read_f(fn, B, Z, E, section_name, TYPE, start, END, nbndry, parent_flag, ier)
-       IMPORT :: c_char, cgenum_t, cgsize_t
+       IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1339,7 +1407,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_elements_read_f(fn, B, Z, E, elements, parent_data, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1353,7 +1421,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_elementdatasize_f(fn, B, Z, E, ElementDataSize, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1366,7 +1434,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_elementpartialsize_f(fn, B, Z, E, start, END, ElementDataSize, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1381,7 +1449,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_section_write_f(fn, B, Z, section_name, TYPE, start, END, nbndry, elements, S, ier)
-       IMPORT :: c_char, cgenum_t, cgsize_t
+       IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1399,7 +1467,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_parent_data_write_f(fn, B, Z, S, parent_data, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1412,7 +1480,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_section_partial_write_f( fn, B, Z, section_name, TYPE, start, END, nbndry, S, ier)
-       IMPORT :: c_char, cgsize_t
+       IMPORT :: c_char, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1429,7 +1497,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_elements_partial_write_f(fn, B, Z, S, rmin, rmax, elements, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1444,7 +1512,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_parent_data_partial_write_f(fn, B, Z, S, rmin, rmax, parent_data, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
 
        INTEGER :: fn
@@ -1460,7 +1528,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_elements_partial_read_f(fn, B, Z, S, rmin, rmax, elements, parent, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
 
        INTEGER :: fn
@@ -1533,7 +1601,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_sol_size_f(fn, B, Z, S, ndim, dims, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1547,7 +1615,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_sol_ptset_info_f( fn, B, Z, S, ptype, npnts, ier)
-       IMPORT :: cgenum_t, cgsize_t
+       IMPORT :: cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1561,7 +1629,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_sol_ptset_read_f(fn, B, Z, S, pnts, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1574,7 +1642,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_sol_ptset_write_f(fn, B, Z, name, location, ptype, npnts, pnts, S, ier)
-       IMPORT :: c_char, cgenum_t, cgsize_t
+       IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1694,7 +1762,7 @@ MODULE cgns
   INTERFACE
      SUBROUTINE cg_subreg_info_f(fn, B, Z, S, regname, DIMENSION, &
           location, ptset_type, npnts, bcname_len, gcname_len, ier)
-       IMPORT :: c_char, cgenum_t, cgsize_t
+       IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1713,7 +1781,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_subreg_ptset_read_f ( fn, B, Z, S, pnts, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1752,7 +1820,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_subreg_ptset_write_f (fn, B, Z, regname, DIMENSION, location, ptset_type, npnts, pnts, S, ier)
-       IMPORT :: cgenum_t, c_char, cgsize_t
+       IMPORT :: cgenum_t, c_char, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1878,7 +1946,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_hole_info_f(fn, B, Z, I, holename, location, ptset_type, nptsets, npnts, ier)
-       IMPORT :: c_char, cgenum_t, cgsize_t
+       IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1895,7 +1963,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_hole_read_f(fn, B, Z, I, pnts, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1921,7 +1989,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_hole_write_f(fn, B, Z, holename, location, ptset_type, nptsets, npnts, pnts, I, ier)
-       IMPORT :: c_char, cgenum_t, cgsize_t
+       IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1956,7 +2024,7 @@ MODULE cgns
      SUBROUTINE cg_conn_info_f(fn, B, Z, I, connectname, location, &
           TYPE, ptset_type, npnts, donorname, donor_zonetype, donor_ptset_type, &
           donor_datatype, ndata_donor, ier)
-       IMPORT :: c_char, cgenum_t, cgsize_t
+       IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1978,7 +2046,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_conn_read_f(fn, B, Z, I, pnts, donor_datatype, donor_data, ier)
-       IMPORT :: cgenum_t, cgsize_t
+       IMPORT :: cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1993,7 +2061,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_conn_read_short_f (fn, B, Z, I, pnts, ier)
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -2021,7 +2089,7 @@ MODULE cgns
      SUBROUTINE cg_conn_write_f(fn, B, Z, connectname, location, TYPE, ptset_type, &
           npnts, pnts, donorname, donor_zonetype, donor_ptset_type, &
           donor_datatype, ndata_donor, donor_data, I, ier)
-       IMPORT :: c_char, cgenum_t, cgsize_t
+       IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -2046,7 +2114,7 @@ MODULE cgns
   INTERFACE
      SUBROUTINE cg_conn_write_short_f(fn, B, Z, connectname, location, &
           TYPE, ptset_type, npnts, pnts, donorname, I, ier)
-       IMPORT :: c_char, cgenum_t, cgsize_t
+       IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -2081,7 +2149,7 @@ MODULE cgns
   INTERFACE
      SUBROUTINE cg_1to1_read_f(fn, B, Z, I, connectname, donorname, &
           range, donor_range, transform, ier)
-       IMPORT :: c_char, cgsize_t
+       IMPORT :: c_char, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -2112,7 +2180,7 @@ MODULE cgns
   INTERFACE
      SUBROUTINE cg_1to1_write_f(fn, B, Z, connectname, donorname, range, &
           donor_range, transform, I, ier)
-       IMPORT :: c_char, cgsize_t
+       IMPORT :: c_char, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -2144,7 +2212,7 @@ MODULE cgns
   INTERFACE
      SUBROUTINE cg_1to1_read_global_f(fn, B, connectname, zonename, donorname, &
           range, donor_range, transform, ier)
-       IMPORT :: c_char, cgsize_t
+       IMPORT :: c_char, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -2177,7 +2245,7 @@ MODULE cgns
      SUBROUTINE cg_boco_info_f(fn, B, Z, BC, boconame, bocotype, &
           ptset_type, npnts, NormalIndex, &
           NormalListSize, NormalDataType, ndataset, ier)
-       IMPORT :: c_char, cgenum_t, cgsize_t
+       IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -2197,7 +2265,7 @@ MODULE cgns
 
 !!$ INTERFACE
 !!$    SUBROUTINE cg_boco_read_f(fn, B, Z, BC, pnts, NormalList, ier)
-!!$      IMPORT :: cgsize_t
+!!$      IMPORT :: CGSIZE_T
 !!$      IMPLICIT NONE
 !!$      INTEGER :: fn
 !!$      INTEGER :: B
@@ -2224,7 +2292,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_boco_write_f(fn, B, Z, boconame, bocotype, ptset_type, npnts, pnts, BC, ier)
-       IMPORT :: c_char, cgenum_t, cgsize_t
+       IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -2524,7 +2592,7 @@ MODULE cgns
   INTERFACE
      SUBROUTINE cg_bcdataset_read_f(index, Dataset_name, BCType, &
           DirichletFlag, NeumannFlag,ier)
-       IMPORT :: c_char, cgenum_t, cgsize_t
+       IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER(CGSIZE_T) ::index
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: Dataset_name
@@ -2848,30 +2916,30 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_ptset_info_f(ptset_type, npnts, ier)
-       IMPORT :: cgenum_t, cgsize_t
+       IMPORT :: cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER(cgenum_t) :: ptset_type
-       INTEGER(cgsize_t) :: npnts
+       INTEGER(CGSIZE_T) :: npnts
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_ptset_info_f
   END INTERFACE
 
   INTERFACE
      SUBROUTINE cg_ptset_read_f(pnts, ier)
-       IMPORT :: cgenum_t, cgsize_t
+       IMPORT :: cgenum_t, CGSIZE_T
        IMPLICIT NONE
-       INTEGER(cgsize_t) :: pnts
+       INTEGER(CGSIZE_T) :: pnts
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_ptset_read_f
   END INTERFACE
 
   INTERFACE
      SUBROUTINE cg_ptset_write_f(ptset_type, npnts, pnts, ier)
-       IMPORT :: cgenum_t, cgsize_t
+       IMPORT :: cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER(cgenum_t) :: ptset_type
-       INTEGER(cgsize_t) :: npnts
-       INTEGER(cgsize_t) :: pnts
+       INTEGER(CGSIZE_T) :: npnts
+       INTEGER(CGSIZE_T) :: pnts
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_ptset_write_f
   END INTERFACE
@@ -3037,13 +3105,13 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_array_info_f(A, ArrayName, DataType, DataDimension, DimensionVector, ier)
-       IMPORT :: c_char, cgsize_t, cgenum_t
+       IMPORT :: c_char, CGSIZE_T, cgenum_t
        IMPLICIT NONE
        INTEGER :: A
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName
        INTEGER(cgenum_t) :: DataType
        INTEGER :: DataDimension
-       INTEGER(cgsize_t), DIMENSION(*) :: DimensionVector
+       INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_array_info_f
   END INTERFACE
@@ -3362,7 +3430,7 @@ MODULE cgns
 !!$      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName
 !!$      INTEGER(cgenum_t) :: DataType
 !!$      INTEGER :: DataDimension
-!!$      INTEGER(cgsize_t) :: DimensionVector
+!!$      INTEGER(CGSIZE_T) :: DimensionVector
 !!$      void *DATA
 !!$      INTEGER, INTENT(OUT) :: ier
 !!$    END SUBROUTINE cg_array_write_f
@@ -3604,13 +3672,13 @@ MODULE cgns
 
 !!$ INTERFACE
 !!$    SUBROUTINE cgp_coord_write_data_f(fn, B, Z, C,
-!!$     cgsize_t *rmin, cgsize_t *rmax, void *data, ier)
+!!$     CGSIZE_T *rmin, CGSIZE_T *rmax, void *data, ier)
 !!$
 !!$ INTEGER :: fn
 !!$ INTEGER :: B
 !!$ INTEGER :: Z
 !!$ INTEGER :: C,
-!!$ INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax, void *DATA,
+!!$ INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, void *DATA,
 !!$ INTEGER, INTENT(OUT) :: ier
 !!$END SUBROUTINE cgp_coord_write_data_f
 !!$END INTERFACE
@@ -3618,13 +3686,13 @@ MODULE cgns
 !!$     INTERFACE
 !!$           SUBROUTINE cgp_coord_read_data_f(
 !!$     fn, B, Z, C,
-!!$     cgsize_t *rmin, cgsize_t *rmax, void *data, ier)
+!!$     CGSIZE_T *rmin, CGSIZE_T *rmax, void *data, ier)
 !!$
 !!$     INTEGER :: fn
 !!$      INTEGER :: B
 !!$      INTEGER :: Z
 !!$      INTEGER :: C,
-!!$     INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax, void *data,
+!!$     INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, void *data,
 !!$          INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
 !!$        END INTERFACE
@@ -3638,8 +3706,8 @@ MODULE cgns
        INTEGER, INTENT(IN) :: Z
        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: section_name
        INTEGER(cgenum_t) :: TYPE
-       INTEGER(cgsize_t), INTENT(IN) :: start
-       INTEGER(cgsize_t), INTENT(IN) :: END
+       INTEGER(CGSIZE_T), INTENT(IN) :: start
+       INTEGER(CGSIZE_T), INTENT(IN) :: END
        INTEGER, INTENT(IN) :: nbndry
        INTEGER, INTENT(IN) :: S
        INTEGER, INTENT(OUT) :: ier
@@ -3647,16 +3715,16 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cgp_elements_write_data_f( fn, B, Z, S, cgsize_t *start, &
-          cgsize_t *END, cgsize_t *elements, ier)
+     SUBROUTINE cgp_elements_write_data_f( fn, B, Z, S, CGSIZE_T *start, &
+          CGSIZE_T *END, CGSIZE_T *elements, ier)
        IMPLICIT NONE
        INTEGER, INTENT(IN) :: fn
        INTEGER, INTENT(IN) :: B
        INTEGER, INTENT(IN) :: Z
        INTEGER, INTENT(IN) :: S
-       INTEGER(cgsize_t), INTENT(IN)  :: start
-       INTEGER(cgsize_t), INTENT(IN)  :: end
-       INTEGER(cgsize_t) , INTENT(IN) :: elements
+       INTEGER(CGSIZE_T), INTENT(IN)  :: start
+       INTEGER(CGSIZE_T), INTENT(IN)  :: end
+       INTEGER(CGSIZE_T) , INTENT(IN) :: elements
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_elements_write_data_f
   END INTERFACE
@@ -3669,9 +3737,9 @@ MODULE cgns
        INTEGER, INTENT(IN) :: B
        INTEGER, INTENT(IN) :: Z
        INTEGER, INTENT(IN) :: S
-       INTEGER(cgsize_t), INTENT(IN) :: start
-       INTEGER(cgsize_t), INTENT(IN) :: end
-       INTEGER(cgsize_t) :: elements
+       INTEGER(CGSIZE_T), INTENT(IN) :: start
+       INTEGER(CGSIZE_T), INTENT(IN) :: end
+       INTEGER(CGSIZE_T) :: elements
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_elements_read_data_f
   END INTERFACE
@@ -3698,7 +3766,7 @@ MODULE cgns
 !!$      INTEGER :: B
 !!$      INTEGER :: Z
 !!$      INTEGER :: S,
-!!$     INTEGER :: F, INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax, void *field_ptr
+!!$     INTEGER :: F, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, void *field_ptr
 !!$          INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
 !!$        END INTERFACE
@@ -3709,7 +3777,7 @@ MODULE cgns
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName
        INTEGER(cgenum_t) :: DataType
        INTEGER :: DataDimension
-       INTEGER(cgsize_t) :: DimensionVector
+       INTEGER(CGSIZE_T) :: DimensionVector
        INTEGER :: A
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_array_write_f
@@ -3717,18 +3785,18 @@ MODULE cgns
 
 !!$     INTERFACE
 !!$           SUBROUTINE cgp_array_write_data_f(
-!!$     A, cgsize_t *rmin, cgsize_t *rmax, void *data,
+!!$     A, CGSIZE_T *rmin, CGSIZE_T *rmax, void *data,
 !!$     ier)
-!!$     INTEGER :: A, INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax, void *data,
+!!$     INTEGER :: A, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, void *data,
 !!$          INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
 !!$        END INTERFACE
 
 !!$     INTERFACE
 !!$           SUBROUTINE cgp_array_read_data_f(
-!!$     A, cgsize_t *rmin, cgsize_t *rmax, void *data,
+!!$     A, CGSIZE_T *rmin, CGSIZE_T *rmax, void *data,
 !!$     ier)
-!!$     INTEGER :: A, INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax, void *data,
+!!$     INTEGER :: A, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, void *data,
 !!$
 !!$          INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
@@ -3742,13 +3810,13 @@ MODULE cgns
 !!$
 !!$     INTERFACE
 !!$           SUBROUTINE cgp_coord_multi_read_data_f, CGP_COORD_MULTI_READ_DATA_F)(fn, B, Z, C,
-!!$     cgsize_t *rmin, cgsize_t *rmax,
+!!$     CGSIZE_T *rmin, CGSIZE_T *rmax,
 !!$     void *coordsX, void *coordsY, void *coordsZ, ier)
 !!$INTEGER :: fn
 !!$      INTEGER :: B
 !!$      INTEGER :: Z
 !!$      INTEGER :: C,
-!!$     INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax,
+!!$     INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax,
 !!$     void *coordsX, void *coordsY, void *coordsZ,
 !!$          INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
@@ -3762,13 +3830,13 @@ MODULE cgns
 !!$
 !!$     INTERFACE
 !!$           SUBROUTINE cgp_coord_multi_write_data_f, CGP_COORD_MULTI_WRITE_DATA_F)(fn, B, Z, C,
-!!$                                                 cgsize_t *rmin, cgsize_t *rmax,
+!!$                                                 CGSIZE_T *rmin, CGSIZE_T *rmax,
 !!$                                                 void *coordsX, void *coordsY, void *coordsZ, ier)
 !!$INTEGER :: fn
 !!$      INTEGER :: B
 !!$      INTEGER :: Z
 !!$      INTEGER :: C,
-!!$                                                 INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax,
+!!$                                                 INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax,
 !!$                                                 void *coordsX, void *coordsY, void *coordsZ
 !!$
 !!$          INTEGER, INTENT(OUT) :: ier
@@ -3782,9 +3850,9 @@ MODULE cgns
 !!$     INTERFACE
 !!$           SUBROUTINE cgp_field_multi_write_data_f(
 !!$     fn, B, Z, S,
-!!$     F, cgsize_t *rmin, cgsize_t *rmax, ier, cgsize_t *nsets, ...)
+!!$     F, CGSIZE_T *rmin, CGSIZE_T *rmax, ier, CGSIZE_T *nsets, ...)
 !!$     fn, B, Z, S,
-!!$     F, INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax, ier, INTEGER(cgsize_t) :: nsets, ...
+!!$     F, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, ier, INTEGER(CGSIZE_T) :: nsets, ...
 !!$
 !!$          INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
@@ -3799,13 +3867,13 @@ MODULE cgns
 !!$      INTEGER :: B
 !!$      INTEGER :: Z
 !!$      INTEGER :: S,
-!!$     F, INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax, ier, nsets, ...)
+!!$     F, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, ier, nsets, ...)
 !!$
 !!$     INTEGER :: fn
 !!$      INTEGER :: B
 !!$      INTEGER :: Z
 !!$      INTEGER :: S,
-!!$     INTEGER :: F, INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax, ier
+!!$     INTEGER :: F, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, ier
 !!$      INTEGER :: nsets, ...
 !!$          INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
@@ -3816,10 +3884,10 @@ MODULE cgns
 !!$
 !!$     INTERFACE
 !!$           SUBROUTINE cgp_array_multi_write_data_f(
-!!$     fn, A, cgsize_t *rmin, cgsize_t *rmax,
+!!$     fn, A, CGSIZE_T *rmin, CGSIZE_T *rmax,
 !!$     ier, nsets, ...)
 !!$     INTEGER :: fn
-!!$      INTEGER :: A, INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax,
+!!$      INTEGER :: A, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax,
 !!$     ier
 !!$      INTEGER :: nsets, ...
 !!$          INTEGER, INTENT(OUT) :: ier
@@ -3833,11 +3901,11 @@ MODULE cgns
 !!$
 !!$     INTERFACE
 !!$           SUBROUTINE cgp_array_multi_read_data_f(
-!!$     fn, A, cgsize_t *rmin, cgsize_t *rmax,
+!!$     fn, A, CGSIZE_T *rmin, CGSIZE_T *rmax,
 !!$     ier, nsets, ...)
 !!$
 !!$     INTEGER :: fn
-!!$      INTEGER :: A, INTEGER(cgsize_t) :: rmin, INTEGER(cgsize_t) :: rmax,
+!!$      INTEGER :: A, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax,
 !!$          INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
 !!$        END INTERFACE
@@ -3878,7 +3946,7 @@ MODULE cgns
   INTERFACE
      INTEGER(C_INT) FUNCTION cg_zone_write(fn, B, zonename, nijk, itype, Z) BIND(C, name='cg_zone_write')
        USE ISO_C_BINDING
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
        INTEGER(C_INT)   , INTENT(IN), VALUE  :: B
        CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: zonename
@@ -3902,7 +3970,7 @@ MODULE cgns
   INTERFACE
      INTEGER(C_INT) FUNCTION cg_zone_read(fn, B, Z, zonename, nijk) BIND(C, name='cg_zone_read')
        USE ISO_C_BINDING
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
        INTEGER(C_INT)   , INTENT(IN), VALUE :: B
        INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
@@ -3926,7 +3994,7 @@ MODULE cgns
   INTERFACE
      INTEGER(C_INT) FUNCTION cgp_coord_write_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name='cgp_coord_write_data')
        USE ISO_C_BINDING
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
        INTEGER(C_INT)   , INTENT(IN), VALUE :: B
        INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
@@ -3953,7 +4021,7 @@ MODULE cgns
   INTERFACE
      INTEGER(C_INT) FUNCTION cgp_field_write_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name='cgp_field_write_data')
        USE ISO_C_BINDING
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
        INTEGER(C_INT)   , INTENT(IN), VALUE :: B
        INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
@@ -3968,7 +4036,7 @@ MODULE cgns
   INTERFACE
      INTEGER(C_INT) FUNCTION cgp_field_read_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name='cgp_field_read_data')
        USE ISO_C_BINDING
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
        INTEGER(C_INT)   , INTENT(IN), VALUE :: B
        INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
@@ -3983,7 +4051,7 @@ MODULE cgns
   INTERFACE
      INTEGER(C_INT) FUNCTION cgp_coord_read_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name='cgp_coord_read_data')
        USE ISO_C_BINDING
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
        INTEGER(C_INT)   , INTENT(IN), VALUE :: B
        INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
@@ -3997,7 +4065,7 @@ MODULE cgns
   INTERFACE
      INTEGER(C_INT) FUNCTION cgp_section_write(fn,B,Z,sectionname,itype,start,end,nbndry,S) BIND(C, name='cgp_section_write')
        USE ISO_C_BINDING
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
        INTEGER(C_INT)   , INTENT(IN), VALUE :: B
        INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
@@ -4013,7 +4081,7 @@ MODULE cgns
   INTERFACE
      INTEGER(C_INT) FUNCTION cgp_array_write(arrayname,itype,DataDimension,DimensionVector,A) BIND(C, name='cgp_array_write')
        USE ISO_C_BINDING
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: arrayname
        INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
        INTEGER(C_INT)   , INTENT(IN), VALUE :: DataDimension
@@ -4025,7 +4093,7 @@ MODULE cgns
   INTERFACE
      INTEGER(C_INT) FUNCTION cgp_array_write_data(A, rmin, rmax, data) BIND(C, name='cgp_array_write_data')
        USE ISO_C_BINDING
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        INTEGER(C_INT)   , INTENT(IN), VALUE :: A
        INTEGER(CGSIZE_T), INTENT(IN) :: rmin
        INTEGER(CGSIZE_T), INTENT(IN) :: rmax
@@ -4036,7 +4104,7 @@ MODULE cgns
   INTERFACE
      INTEGER(C_INT) FUNCTION cgp_elements_write_data(fn,B,Z,S,emin,emax,elements) BIND(C, name='cgp_elements_write_data')
        USE ISO_C_BINDING
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
        INTEGER(C_INT)   , INTENT(IN), VALUE :: B
        INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
@@ -4050,7 +4118,7 @@ MODULE cgns
   INTERFACE
      INTEGER(C_INT) FUNCTION cgp_elements_read_data(fn,B,Z,S,start,end,elements) BIND(C, name='cgp_elements_read_data')
        USE ISO_C_BINDING
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
        INTEGER(C_INT)   , INTENT(IN), VALUE :: B
        INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
@@ -4064,7 +4132,7 @@ MODULE cgns
   INTERFACE
      INTEGER(C_INT) FUNCTION cgp_array_read_data(A, rmin, rmax, data) BIND(C, name='cgp_array_read_data')
        USE ISO_C_BINDING
-       IMPORT :: cgsize_t
+       IMPORT :: CGSIZE_T
        INTEGER(C_INT)   , INTENT(IN), VALUE :: A
        INTEGER(CGSIZE_T), INTENT(IN) :: rmin
        INTEGER(CGSIZE_T), INTENT(IN) :: rmax
@@ -4194,29 +4262,29 @@ CONTAINS
   FUNCTION cg_get_type_c_int(a)
     USE ISO_C_BINDING
     INTEGER(C_INT) :: a
-    INTEGER(KIND(Integer)) :: cg_get_type_c_int
-    cg_get_type_c_int = Integer
+    INTEGER(KIND(CGNS_ENUMV(Integer))) :: cg_get_type_c_int
+    cg_get_type_c_int = CGNS_ENUMV(Integer)
   END FUNCTION cg_get_type_c_int
 
   FUNCTION cg_get_type_c_long_long(a)
     USE ISO_C_BINDING
     INTEGER(C_LONG_LONG) :: a
-    INTEGER(KIND(Longinteger)) :: cg_get_type_c_long_long
-    cg_get_type_c_long_long = LongInteger
+    INTEGER(KIND(CGNS_ENUMV(Longinteger))) :: cg_get_type_c_long_long
+    cg_get_type_c_long_long = CGNS_ENUMV(LongInteger)
   END FUNCTION cg_get_type_c_long_long
 
   FUNCTION cg_get_type_c_float(a)
     USE ISO_C_BINDING
     REAL(C_FLOAT) :: a
-    INTEGER(KIND(RealSingle)) :: cg_get_type_c_float
-    cg_get_type_c_float = RealSingle
+    INTEGER(KIND(CGNS_ENUMV(RealSingle))) :: cg_get_type_c_float
+    cg_get_type_c_float = CGNS_ENUMV(RealSingle)
   END FUNCTION cg_get_type_c_float
 
   FUNCTION cg_get_type_c_double(a)
     USE ISO_C_BINDING
     REAL(C_DOUBLE) :: a
-    INTEGER(KIND(RealDouble)) :: cg_get_type_c_double
-    cg_get_type_c_double = RealDouble
+    INTEGER(KIND(CGNS_ENUMV(RealDouble))) :: cg_get_type_c_double
+    cg_get_type_c_double = CGNS_ENUMV(RealDouble)
   END FUNCTION cg_get_type_c_double
 
 END MODULE cgns
