@@ -29,7 +29,7 @@
 !    constant parameters.
 !
 !
-!  KNOW ISSUES:
+!  KNOWN ISSUES:
 !    Routines passing an argument to a C API argument of type
 !    void * do not have explicit interfaces. They are the routines which 
 !    are commented out.
