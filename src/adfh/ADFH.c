@@ -1423,7 +1423,7 @@ void ADFH_Configure(const int option, const void *value, int *err)
         set_error(ADFH_ERR_INVALID_USER_DATA, err);
       }
       else {
-        ParallelMPICommunicator = *((MPI_Comm*)value);
+        ParallelMPICommunicator = (MPI_Comm)value;
       }
     }
 #endif
