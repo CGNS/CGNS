@@ -7675,11 +7675,16 @@ int cgi_new_node(double parent_id, char const *name, char const *label,
  * using ADF_Write_Data(..).
 */
 int cgi_new_node_partial(double parent_id, char const *name, char const *label,
-                         double *node_id, char const *data_type, int ndim,
-                         cgsize_t const *dim_vals, cgsize_t const *rmin,
-                         cgsize_t const *rmax, void const *data)
+                         double *node_id, char const *data_type,
+                         int numdim, cgsize_t const *dims,
+                         cgsize_t const *s_start, cgsize_t const *s_end,
+                         int m_numdim, cgsize_t const *m_dims,
+                         cgsize_t const *m_start, cgsize_t const *m_end,
+                         void const *data)
 {
-    cgsize_t i, m_start[12], m_end[12], m_dim[12], stride[12];
+    cgsize_t i;
+     /* stride used for both file and memory */
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
 
      /* verify input */
     if (cgi_check_strlen(name) || cgi_check_strlen(label) ||
@@ -7697,15 +7702,7 @@ int cgi_new_node_partial(double parent_id, char const *name, char const *label,
      /* return if empty */
     if (strcmp(data_type, "MT")==0) return 0;
 
-    for (i = 0; i < ndim; ++i)
-    {
-        m_start[i] = 1;
-        m_end[i] = rmax[i] - rmin[i] + 1;
-        m_dim[i] = m_end[i];
-        stride[i] = 1;
-    }
-
-    if (cgio_set_dimensions(cg->cgio, *node_id, data_type, ndim, dim_vals)) {
+    if (cgio_set_dimensions(cg->cgio, *node_id, data_type, numdim, dims)) {
          cg_io_error("cgio_set_dimensions");
          return 1;
     }
@@ -7718,8 +7715,8 @@ int cgi_new_node_partial(double parent_id, char const *name, char const *label,
         strcmp(data_type,"R4")==0 || strcmp(data_type,"R8")==0) {
         cgsize_t ndata = 1, nbad=0;
 
-        for (i=0; i<ndim; i++)
-            ndata *= rmax[i] - rmin[i] + 1;
+        for (i=0; i<numdim; i++)
+            ndata *= s_end[i] - s_start[i] + 1;
 
         if (strcmp(data_type,"I4")==0) {
             for (i=0; i<ndata; i++) if (CGNS_NAN(*((int *)data+i))) nbad++;
@@ -7737,9 +7734,13 @@ int cgi_new_node_partial(double parent_id, char const *name, char const *label,
     }
 #endif
 
+    for (i = 0; i < numdim; ++i) {
+        stride[i] = 1;
+    }
+
      /* Write the data to disk */
-    if (cgio_write_data(cg->cgio, *node_id, rmin, rmax, stride,
-            ndim, m_dim, m_start, m_end, stride, data)) {
+    if (cgio_write_data(cg->cgio, *node_id, s_start, s_end, stride,
+            m_numdim, m_dims, m_start, m_end, stride, data)) {
         cg_io_error("cgio_write_data");
         return 1;
     }

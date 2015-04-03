@@ -986,6 +986,11 @@ CGNSDLL int cg_field_info(int fn,int B,int Z,int S, int F,
 CGNSDLL int cg_field_read(int fn, int B, int Z, int S, const char *fieldname,
 	CGNS_ENUMT(DataType_t) type, const cgsize_t *rmin,
         const cgsize_t *rmax, void *field_ptr);
+CGNSDLL int cg_field_general_read(int fn, int B, int Z, int S,
+        const char *fieldname, CGNS_ENUMT(DataType_t) type,
+        const cgsize_t *rmin, const cgsize_t *rmax, int m_numdim,
+        const cgsize_t *m_dim, const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+        void *field_ptr);
 CGNSDLL int cg_field_id(int fn, int B, int Z,int S, int F, double *field_id);
 CGNSDLL int cg_field_write(int fn,int B,int Z,int S,
 	CGNS_ENUMT(DataType_t) type, const char * fieldname,
@@ -995,6 +1000,13 @@ CGNSDLL int cg_field_partial_write(int fn, int B, int Z, int S,
 	CGNS_ENUMT(DataType_t) type, const char * fieldname,
 	const cgsize_t *rmin, const cgsize_t *rmax,
         const void * field_ptr, int *F);
+CGNSDLL int cg_field_general_write(
+        int fn, int B, int Z, int S,
+        CGNS_ENUMT(DataType_t) type, const char * fieldname,
+        const cgsize_t *rmin, const cgsize_t *rmax,
+        int m_numdim, const cgsize_t *m_dims,
+        const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+        const void *field_ptr, int *F);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write ZoneSubRegion_t Nodes                             *

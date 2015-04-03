@@ -1167,9 +1167,10 @@ CGNSDLL int cgi_new_node(double parent_id, char const *name, char const *label,
 	double *node_id, char const *data_type,
 	int ndim, cgsize_t const *dim_vals, void const *data);
 int cgi_new_node_partial(double parent_id, char const *name, char const *label,
-	double *node_id, char const *data_type, int ndim,
-	cgsize_t const *dim_vals, cgsize_t const *rmin, cgsize_t const *rmax,
-	void const *data);
+	double *node_id, char const *data_type, int numdim,
+	cgsize_t const *dims, cgsize_t const *s_start, cgsize_t const *s_end,
+        int m_numdim, cgsize_t const *m_dims,
+        cgsize_t const *m_start, cgsize_t const *m_end, void const *data);
 int cgi_move_node(double old_id, double node_id, double new_id, cchar_33 node_name);
 int cgi_delete_node (double parent_id, double node_id);
 

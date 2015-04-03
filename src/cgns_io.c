@@ -1276,7 +1276,7 @@ int cgio_copy_node (int cgio_num_inp, double id_inp,
             if (data_size) {
                 data = malloc((size_t)data_size);
                 if (data == NULL) return set_error(CGIO_ERR_MALLOC);
-                ADFH_Read_All_Data(id_inp, (char *)data, &ierr);
+                ADFH_Read_All_Data(id_inp, NULL, (char *)data, &ierr);
                 if (ierr > 0) {
                     free(data);
                     return set_error(ierr);
@@ -1735,7 +1735,37 @@ int cgio_read_all_data (int cgio_num, double id, void *data)
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5 ||
              cgio->type == CGIO_FILE_PHDF5) {
-        ADFH_Read_All_Data(id, (char *)data, &ierr);
+        ADFH_Read_All_Data(id, NULL, (char *)data, &ierr);
+        if (ierr > 0) return set_error(ierr);
+    }
+#endif
+    else {
+        return set_error(CGIO_ERR_FILE_TYPE);
+    }
+
+    return CGIO_ERR_NONE;
+}
+
+/*---------------------------------------------------------*/
+
+int cgio_read_all_data_type (int cgio_num, double id, const char *m_data_type,
+    void *data)
+{
+    int ierr;
+    cgns_io *cgio;
+
+    if ((cgio = get_cgnsio(cgio_num, 0)) == NULL)
+        return get_error();
+
+    if (cgio->type == CGIO_FILE_ADF || cgio->type == CGIO_FILE_ADF2) {
+         /* Changing type when reading to shaped arrays is not supported with
+          * adf files */
+        return set_error(CGIO_ERR_NOT_HDF5);
+    }
+#ifdef BUILD_HDF5
+    else if (cgio->type == CGIO_FILE_HDF5 ||
+             cgio->type == CGIO_FILE_PHDF5) {
+        ADFH_Read_All_Data(id, m_data_type, (char *)data, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
 #endif
@@ -1797,7 +1827,41 @@ int cgio_read_data (int cgio_num, double id,
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5 ||
              cgio->type == CGIO_FILE_PHDF5) {
-        ADFH_Read_Data(id, s_start, s_end, s_stride, m_num_dims,
+        ADFH_Read_Data(id, s_start, s_end, s_stride, NULL, m_num_dims,
+            m_dims, m_start, m_end, m_stride, (char *)data, &ierr);
+        if (ierr > 0) return set_error(ierr);
+    }
+#endif
+    else {
+        return set_error(CGIO_ERR_FILE_TYPE);
+    }
+
+    return CGIO_ERR_NONE;
+}
+
+/*---------------------------------------------------------*/
+
+int cgio_read_data_type (int cgio_num, double id,
+    const cgsize_t *s_start, const cgsize_t *s_end,
+    const cgsize_t *s_stride, const char *m_data_type,
+    int m_num_dims, const cgsize_t *m_dims, const cgsize_t *m_start,
+    const cgsize_t *m_end, const cgsize_t *m_stride, void *data)
+{
+    int ierr;
+    cgns_io *cgio;
+
+    if ((cgio = get_cgnsio(cgio_num, 0)) == NULL)
+        return get_error();
+
+    if (cgio->type == CGIO_FILE_ADF || cgio->type == CGIO_FILE_ADF2) {
+         /* Changing type when reading to shaped arrays is not supported with
+          * adf files */
+        return set_error(CGIO_ERR_NOT_HDF5);
+    }
+#ifdef BUILD_HDF5
+    else if (cgio->type == CGIO_FILE_HDF5 ||
+             cgio->type == CGIO_FILE_PHDF5) {
+        ADFH_Read_Data(id, s_start, s_end, s_stride, m_data_type, m_num_dims,
             m_dims, m_start, m_end, m_stride, (char *)data, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
