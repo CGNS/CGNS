@@ -625,6 +625,129 @@ int cgp_field_write_data(int fn, int B, int Z, int S, int F,
 
 /*---------------------------------------------------------*/
 
+int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
+                                 const cgsize_t *rmin, const cgsize_t *rmax,
+                                 int m_numdim, const cgsize_t *m_dims,
+                                 const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                                 const void *data)
+{
+    int n;
+    hid_t hid;
+    cgns_zone *zone;
+    cgns_sol *sol;
+    cgns_array *field;
+    CGNS_ENUMT(DataType_t) type;
+    cgsize_t numpt = 1, dimpt = 0, m_numpt = 1;
+    cgsize_t s_start[CGIO_MAX_DIMENSIONS], s_end[CGIO_MAX_DIMENSIONS];
+    cgsize_t m_start[CGIO_MAX_DIMENSIONS], m_end[CGIO_MAX_DIMENSIONS];
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+        return CG_ERROR;
+
+    zone = cgi_get_zone(cg, B, Z);
+    if (zone==0) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol==0) return CG_ERROR;
+
+    field = cgi_get_field(cg, B, Z, S, F);
+    if (field==0) return CG_ERROR;
+
+    if (data) {
+        /*** verfication for dataset in file */
+        /* verify that range requested does not exceed range stored */
+        if(rmin == NULL || rmax == NULL) {
+            cgi_error("NULL range value.");
+            return CG_ERROR;
+        }
+        for (n=0; n<field->data_dim; n++) {
+            dimpt = rmax[n] - rmin[n] + 1;
+            numpt *= dimpt;
+            if (rmin[n]>rmax[n] ||
+                rmax[n]>field->dim_vals[n] ||
+                rmin[n]<1) {
+                cgi_error("Invalid range of file data requested");
+                return CG_ERROR;
+            }
+        }
+
+        /*** verification for dataset in memory */
+        /* verify the rank and dimensions of the memory array */
+        if (m_numdim<=0 || m_numdim>field->data_dim) {
+            cgi_error("Invalid number of dimensions in memory array");
+            return CG_ERROR;
+        }
+
+        if (m_dims == NULL) {
+            cgi_error("NULL dimension value.");
+            return CG_ERROR;
+        }
+
+        for (n=0; n<m_numdim; n++) {
+            if (m_dims[n] < 1) {
+                cgi_error("Invalid size of dimension in memory array");
+                return CG_ERROR;
+            }
+        }
+
+        if (m_rmin == NULL || m_rmax == NULL) {
+            cgi_error("NULL range value.");
+            return CG_ERROR;
+        }
+
+        /* verify that range requested does not exceed range available */
+        for (n=0; n<m_numdim; n++) {
+            dimpt = m_rmax[n] - m_rmin[n] + 1;
+            m_numpt *= dimpt;
+            if (m_rmin[n]>m_rmax[n] ||
+                m_rmax[n]>m_dims[n] ||
+                m_rmin[n]<1) {
+                cgi_error("Invalid range of memory array provided");
+                return CG_ERROR;
+            }
+        }
+
+        /* both the file hyperslab and memory hyperslab must have same number of
+         * points */
+        if (numpt != m_numpt) {
+            cgi_error("Size of memory array does not match size of requested range");
+            return CG_ERROR;
+        }
+
+        /* Size and shape of file space */
+        for (n = 0; n < field->data_dim; n++) {
+            s_start[n] = rmin[n] + sol->rind_planes[2*n];
+            s_end[n]   = rmax[n] + sol->rind_planes[2*n];
+        }
+        /* Size and shape of memory space */
+        for (n = 0; n < m_numdim; n++) {
+            m_start[n] = m_rmin[n];
+            m_end[n]   = m_rmax[n];
+        }
+    }
+
+    type = cgi_datatype(field->data_type);
+
+    to_HDF_ID(field->id,hid);
+
+    if (write_to_queue) {
+        cgi_error("Write queue is not supported for write from shaped memory");
+        return CG_ERROR;
+    }
+    cg_rw_t Data;
+    Data.u.wbuf = data;
+    /* return readwrite_data_parallel( */
+    /*     hid, type, */
+    /*     field->data_dim, field->dim_vals, s_start, s_end, */
+    /*     m_numdim, m_dims, m_start, m_end, */
+    /*     &Data, CG_PAR_WRITE); */
+}
+
+/*---------------------------------------------------------*/
+
 int cgp_field_read_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, void *data)
 {

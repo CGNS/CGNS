@@ -97,6 +97,13 @@ CGNSDLL int cgp_field_write_data(int fn, int B, int Z, int S, int F,
 CGNSDLL int cgp_field_read_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, void *data);
 
+CGNSDLL int cgp_field_general_write_data(
+  int fn, int B, int Z, int S, int F,
+  const cgsize_t *rmin, const cgsize_t *rmax,
+  int m_numdim, const cgsize_t *m_dims,
+  const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+  const void *data);
+
 CGNSDLL int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
 				      const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...);
 
