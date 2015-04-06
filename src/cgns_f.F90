@@ -17,12 +17,12 @@
 !
 !3. This notice may not be removed or altered from any source distribution.
 !-------------------------------------------------------------------------
-!   _____ _____ _   _  _____ 
+!   _____ _____ _   _  _____
 !  / ____/ ____| \ | |/ ____|
-! | |   | |  __|  \| | (___  
-! | |   | | |_ | . ` |\___ \ 
+! | |   | |  __|  \| | (___
+! | |   | | |_ | . ` |\___ \
 ! | |___| |__| | |\  |____) |
-!  \_____\_____|_| \_|_____/ 
+!  \_____\_____|_| \_|_____/
 !                            
 !  PURPOSE:
 !    Provides a module for the Fortran wrapper interfaces and CGNS
@@ -1001,19 +1001,19 @@ MODULE cgns
      END SUBROUTINE cg_zone_id_f
   END INTERFACE
 
-!!$  INTERFACE
-!!$     SUBROUTINE cg_zone_write_f03 (fn, B, zonename, size, TYPE, Z, ier)
-!!$       IMPORT :: cgenum_t, c_char, CGSIZE_T
-!!$       IMPLICIT NONE
-!!$       INTEGER, INTENT(IN) :: fn
-!!$       INTEGER, INTENT(IN) :: B
-!!$       CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: zonename
-!!$       INTEGER(CGSIZE_T), INTENT(IN) :: size
-!!$       INTEGER(cgenum_t), INTENT(IN) :: TYPE
-!!$       INTEGER, INTENT(OUT) :: Z
-!!$       INTEGER, INTENT(OUT) :: ier
-!!$     END SUBROUTINE cg_zone_write_f03
-!!$  END INTERFACE
+  INTERFACE
+     SUBROUTINE cg_zone_write_f(fn, B, zonename, size, TYPE, Z, ier)
+       IMPORT :: cgenum_t, c_char, cgsize_t
+       IMPLICIT NONE
+       INTEGER, INTENT(IN) :: fn
+       INTEGER, INTENT(IN) :: B
+       CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: zonename
+       INTEGER(CGSIZE_T), DIMENSION(*), INTENT(IN) :: size
+       INTEGER(cgenum_t), INTENT(IN) :: TYPE
+       INTEGER, INTENT(OUT) :: Z
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_zone_write_f
+  END INTERFACE
 
   INTERFACE
      SUBROUTINE cg_index_dim_f (fn, B, Z, dim, ier)
@@ -1331,24 +1331,37 @@ MODULE cgns
      END SUBROUTINE cg_coord_info_f
   END INTERFACE
 
-!!$ INTERFACE
-!!$    SUBROUTINE cg_coord_read_f (fn, B, Z, coordname, TYPE, rmin, rmax, coord, ier)
-!!$      IMPORT :: c_char, cgenum_t, CGSIZE_T, c_ptr
-!!$      IMPLICIT NONE
-!!$      INTEGER :: fn
-!!$      INTEGER :: B
-!!$      INTEGER :: Z
-!!$      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
-!!$      INTEGER(cgenum_t) :: TYPE
-!!$      INTEGER(CGSIZE_T) :: rmin
-!!$      INTEGER(CGSIZE_T) :: rmax
-!!$      TYPE(C_PTR) :: coord
-!!$      INTEGER, INTENT(OUT) :: ier
-!!$    END SUBROUTINE cg_coord_read_f
-!!$ END INTERFACE
+#if HAVE_FORTRAN_2008
+  INTERFACE cg_coord_read_f
+    SUBROUTINE cg_coord_read_c_double (fn, B, Z, coordname, TYPE, rmin, rmax, coord, ier)
+      IMPORT :: c_char, cgenum_t, CGSIZE_T, c_double
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
+      INTEGER(cgenum_t) :: TYPE
+      INTEGER(CGSIZE_T) :: rmin
+      INTEGER(CGSIZE_T) :: rmax
+      REAL(C_DOUBLE), DIMENSION(*) :: coord
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_coord_read_c_double
 
- INTERFACE
-    SUBROUTINE cg_coord_read_f03(fn, B, Z, coordname, TYPE, rmin, rmax, coord, ier)
+    SUBROUTINE cg_coord_read_c_float (fn, B, Z, coordname, TYPE, rmin, rmax, coord, ier)
+      IMPORT :: c_char, cgenum_t, CGSIZE_T, c_float
+      IMPLICIT NONE
+      INTEGER :: fn
+      INTEGER :: B
+      INTEGER :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
+      INTEGER(cgenum_t) :: TYPE
+      INTEGER(CGSIZE_T) :: rmin
+      INTEGER(CGSIZE_T) :: rmax
+      REAL(C_FLOAT), DIMENSION(*) :: coord
+      INTEGER, INTENT(OUT) :: ier
+    END SUBROUTINE cg_coord_read_c_float
+
+    SUBROUTINE cg_coord_read_f03 (fn, B, Z, coordname, TYPE, rmin, rmax, coord, ier)
       IMPORT :: c_char, cgenum_t, CGSIZE_T, c_ptr
       IMPLICIT NONE
       INTEGER :: fn
@@ -1358,10 +1371,11 @@ MODULE cgns
       INTEGER(cgenum_t) :: TYPE
       INTEGER(CGSIZE_T) :: rmin
       INTEGER(CGSIZE_T) :: rmax
-      TYPE(C_PTR) :: coord
+      TYPE(C_PTR), VALUE :: coord
       INTEGER, INTENT(OUT) :: ier
     END SUBROUTINE cg_coord_read_f03
- END INTERFACE
+  END INTERFACE
+#endif
 
   INTERFACE
      SUBROUTINE cg_coord_id_f(fn, B, Z, C, coord_id, ier)

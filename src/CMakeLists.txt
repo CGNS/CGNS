@@ -103,6 +103,7 @@ set(MPIINC "")
 set(MPILIBS "")
 set(HAVE_FORTRAN_95 0)
 set(HAVE_FORTRAN_2003 0)
+set(HAVE_FORTRAN_2008 0)
 set(HAVE_FORTRAN_2008TS 0)
 set(HDF5_HAVE_MULTI_DATASETS 0)
 set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
@@ -209,6 +210,29 @@ CHECK_FORTRAN_FEATURE(Fortran2008TS
 if (CHECK_FORTRAN_2008TS)
   set(HAVE_FORTRAN_2008TS 1)
 endif (CHECK_FORTRAN_2008TS)
+
+if (HAVE_FORTRAN_2003)
+CHECK_FORTRAN_FEATURE(Fortran2008
+  " 
+       MODULE test
+         USE ISO_C_BINDING
+         INTERFACE binding
+           FUNCTION bind1(x) BIND(C, name='Cfunc')
+             IMPORT :: C_FLOAT
+             REAL(C_FLOAT) :: x
+           END FUNCTION bind1
+           FUNCTION bind2(x) BIND(C, name='Cfunc')
+             IMPORT :: C_DOUBLE
+             REAL(C_DOUBLE) :: x
+           END FUNCTION bind2
+         END INTERFACE
+       END MODULE test
+  "
+  CHECK_FORTRAN_2008
+)
+if (CHECK_FORTRAN_2008)
+  set(HAVE_FORTRAN_2008 1)
+endif (CHECK_FORTRAN_2008)
 
 CHECK_FORTRAN_FEATURE(Sizeof_int
   "

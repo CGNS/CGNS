@@ -420,6 +420,7 @@ AC_MSG_RESULT($withfortran)
 
   HAVE_FORTRAN_95=0
   HAVE_FORTRAN_2003=0
+  HAVE_FORTRAN_2008=0
   HAVE_FORTRAN_2008TS=0
   BUILDFORTRAN=0
 
@@ -518,6 +519,43 @@ EOF
   fi
   AC_MSG_RESULT($HAVE_F2008TS_REQUIREMENTS)
 
+  ## Fortran 2008 permits having different identifiers for the same binding label,
+  ## so check if the compiler has this feature.
+  HAVE_F2008_REQUIREMENTS="no"
+  if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
+
+  AC_MSG_CHECKING([if Fortran compiler meets the Fortran 2008 Standard])
+
+ cat >> testf08.f90 << EOF
+       MODULE test
+         USE ISO_C_BINDING
+         INTERFACE binding
+           FUNCTION bind1(x) BIND(C, name='Cfunc')
+	     IMPORT :: C_FLOAT
+             REAL(C_FLOAT) :: x
+	   END FUNCTION bind1
+           FUNCTION bind2(x) BIND(C, name='Cfunc')
+             IMPORT :: C_DOUBLE
+	     REAL(C_DOUBLE) :: x
+	   END FUNCTION bind2
+         END INTERFACE
+      END MODULE test
+EOF
+  msg=`${F77} -c testf08.f90 &> /dev/null`
+  if test -f testf08.o; then
+    HAVE_F2008_REQUIREMENTS="yes"
+    HAVE_FORTRAN_2008=1
+    rm testf08.o
+  fi
+  if test -f testf08.f90; then
+     rm testf08.f90
+  fi
+  if test -f testf08.mod; then
+     rm testf08.mod
+  fi
+  AC_MSG_RESULT($HAVE_F2008_REQUIREMENTS)
+  fi
+  
 else
 
   # Check if the Fortran compiler is at least F95 compliant
