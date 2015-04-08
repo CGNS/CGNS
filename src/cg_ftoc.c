@@ -131,16 +131,14 @@ CGNSDLL void FMNAME(cg_open_f, CG_OPEN_F) (STR_PSTR(filename), cgint_f *mode,
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_version_f, CG_VERSION_F) (cgint_f *fn,
-	float *FileVersion, cgint_f *ier)
+CGNSDLL void cg_version_f(cgint_f *fn, float *FileVersion, cgint_f *ier)
 {
     *ier = (cgint_f)cg_version((int)*fn, FileVersion);
 }
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_precision_f, CG_PRECISION_F) (cgint_f *fn,
-	 cgint_f *precision, cgint_f *ier)
+CGNSDLL void cg_precision_f(cgint_f *fn, cgint_f *precision, cgint_f *ier)
 {
     int i_precision;
 
@@ -150,7 +148,7 @@ CGNSDLL void FMNAME(cg_precision_f, CG_PRECISION_F) (cgint_f *fn,
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_close_f, CG_CLOSE_F) (cgint_f *fn, cgint_f *ier)
+CGNSDLL void cg_close_f(cgint_f *fn, cgint_f *ier)
 {
   *ier = (cgint_f)cg_close((int)*fn);
 }
@@ -175,16 +173,14 @@ CGNSDLL void FMNAME(cg_save_as_f, CG_SAVE_AS_F) (cgint_f *fn,
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_set_file_type_f, CG_SET_FILE_TYPE_F) (
-	cgint_f *ft, cgint_f *ier)
+CGNSDLL void cg_set_file_type_f(cgint_f *ft, cgint_f *ier)
 {
     *ier = (cgint_f)cg_set_file_type((int)*ft);
 }
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_get_file_type_f, CG_GET_FILE_TYPE_F) (
-	cgint_f *fn, cgint_f *ft, cgint_f *ier)
+CGNSDLL void cg_get_file_type_f(cgint_f *fn, cgint_f *ft, cgint_f *ier)
 {
     int i_ft;
 

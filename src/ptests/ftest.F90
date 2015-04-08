@@ -26,6 +26,7 @@ PROGRAM ftest
   CHARACTER*11 piomode(2)
   CHARACTER*6 outmode(2)
   INTEGER :: istat
+  INTEGER :: precision
 
   DATA piomode /'independent','collective'/
   DATA outmode /'direct','queued'/
@@ -165,6 +166,9 @@ PROGRAM ftest
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cgp_open_f('ftest.cgns',CG_MODE_READ,F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+  CALL cg_precision_f(F, PRECISION, ierr)
+  PRINT*,'PPP',PRECISION
 
   Z = 1
   S = 1

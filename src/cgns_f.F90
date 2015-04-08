@@ -763,9 +763,10 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
   INTERFACE
-     SUBROUTINE cg_is_cgns_f(file_type, ier)
+     SUBROUTINE cg_is_cgns_f(filename, file_type, ier)
        USE ISO_C_BINDING
        IMPLICIT NONE
+       CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
        INTEGER, INTENT(OUT) :: file_type
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_is_cgns_f
@@ -783,7 +784,7 @@ MODULE cgns
   END INTERFACE
   
   INTERFACE
-     SUBROUTINE cg_version_f(fn,FileVersion, ier)
+     SUBROUTINE cg_version_f(fn,FileVersion, ier) BIND(C,NAME="cg_version_f")
        USE ISO_C_BINDING
        IMPLICIT NONE
        INTEGER :: fn
@@ -793,7 +794,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_precision_f(fn, precision, ier)
+     SUBROUTINE cg_precision_f(fn, PRECISION, ier) BIND(C,NAME="cg_precision_f")
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: PRECISION
@@ -802,7 +803,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_close_f(fn, ier)
+     SUBROUTINE cg_close_f(fn, ier) BIND(C,NAME="cg_close_f")
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER, INTENT(OUT) :: ier
@@ -822,7 +823,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_set_file_type_f(ft, ier)
+     SUBROUTINE cg_set_file_type_f(ft, ier) BIND(C,NAME="cg_set_file_type_f")
        IMPLICIT NONE
        INTEGER :: ft
        INTEGER, INTENT(OUT) :: ier
@@ -830,7 +831,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_get_file_type_f (fn, ft, ier)
+     SUBROUTINE cg_get_file_type_f(fn, ft, ier) BIND(C,NAME="cg_get_file_type_f")
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: ft
@@ -839,7 +840,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_set_compress_f (cmpr, ier)
+     SUBROUTINE cg_set_compress_f(cmpr, ier)
        IMPLICIT NONE
        INTEGER :: cmpr
        INTEGER, INTENT(OUT) :: ier
@@ -847,14 +848,14 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_get_compress_f (cmpr, ier)
+     SUBROUTINE cg_get_compress_f(cmpr, ier)
        INTEGER :: cmpr
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_get_compress_f
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_set_path_f (pathname, ier)
+     SUBROUTINE cg_set_path_f(pathname, ier)
        USE ISO_C_BINDING
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: pathname
@@ -863,7 +864,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_add_path_f (pathname, ier)
+     SUBROUTINE cg_add_path_f(pathname, ier)
        USE ISO_C_BINDING
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: pathname
@@ -872,7 +873,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_get_cgio_f (fn, cgio_num, ier)
+     SUBROUTINE cg_get_cgio_f(fn, cgio_num, ier)
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: cgio_num
@@ -895,7 +896,7 @@ MODULE cgns
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   INTERFACE
-     SUBROUTINE cg_nbases_f (fn, nbases, ier)
+     SUBROUTINE cg_nbases_f(fn, nbases, ier)
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: nbases
@@ -917,7 +918,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_base_id_f (fn, B, base_id, ier)
+     SUBROUTINE cg_base_id_f(fn, B, base_id, ier)
        USE ISO_C_BINDING
        IMPLICIT NONE
        INTEGER :: fn
@@ -928,7 +929,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_base_write_f (fn, basename, cell_dim, phys_dim, B, ier)
+     SUBROUTINE cg_base_write_f(fn, basename, cell_dim, phys_dim, B, ier)
        USE ISO_C_BINDING
        IMPLICIT NONE
        INTEGER :: fn
@@ -941,7 +942,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_cell_dim_f (fn, B, dim, ier)
+     SUBROUTINE cg_cell_dim_f(fn, B, dim, ier)
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -955,7 +956,7 @@ MODULE cgns
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   INTERFACE
-     SUBROUTINE cg_nzones_f (fn, B, nzones, ier)
+     SUBROUTINE cg_nzones_f(fn, B, nzones, ier)
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -965,7 +966,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_zone_type_f (fn, B, Z, type, ier)
+     SUBROUTINE cg_zone_type_f(fn, B, Z, type, ier)
        IMPORT :: cgenum_t, c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -977,7 +978,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_zone_read_f (fn, B, Z, zonename, size, ier)
+     SUBROUTINE cg_zone_read_f(fn, B, Z, zonename, size, ier)
        IMPORT :: CGSIZE_T, c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -990,7 +991,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_zone_id_f (fn, B, Z, zone_id, ier)
+     SUBROUTINE cg_zone_id_f(fn, B, Z, zone_id, ier)
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: fn
@@ -1016,7 +1017,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_index_dim_f (fn, B, Z, dim, ier)
+     SUBROUTINE cg_index_dim_f(fn, B, Z, dim, ier)
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1031,7 +1032,7 @@ MODULE cgns
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
   INTERFACE
-     SUBROUTINE cg_nfamilies_f (fn, B, nfamilies, ier)
+     SUBROUTINE cg_nfamilies_f(fn, B, nfamilies, ier)
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1041,7 +1042,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_family_read_f (fn, B, F, family_name, nboco, ngeos, ier)
+     SUBROUTINE cg_family_read_f(fn, B, F, family_name, nboco, ngeos, ier)
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -1055,7 +1056,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_family_write_f (fn, B, family_name, F, ier)
+     SUBROUTINE cg_family_write_f(fn, B, family_name, F, ier)
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -1067,7 +1068,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_nfamily_names_f (fn, B, F, nnames, ier)
+     SUBROUTINE cg_nfamily_names_f(fn, B, F, nnames, ier)
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
@@ -1078,7 +1079,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_family_name_read_f (fn, B, F, N, name, family, ier)
+     SUBROUTINE cg_family_name_read_f(fn, B, F, N, name, family, ier)
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -1092,7 +1093,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_family_name_write_f (fn, B, F, name, family, ier)
+     SUBROUTINE cg_family_name_write_f(fn, B, F, name, family, ier)
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -1109,7 +1110,7 @@ MODULE cgns
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
   INTERFACE
-     SUBROUTINE cg_fambc_read_f (fn, B, F, BC, fambc_name, bocotype, ier)
+     SUBROUTINE cg_fambc_read_f(fn, B, F, BC, fambc_name, bocotype, ier)
        IMPORT :: c_char, cgenum_t
        IMPLICIT NONE
        INTEGER :: fn
@@ -1123,7 +1124,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_fambc_write_f (fn, B, F, fambc_name, bocotype, BC, ier)
+     SUBROUTINE cg_fambc_write_f(fn, B, F, fambc_name, bocotype, BC, ier)
        IMPORT :: c_char, cgenum_t
        IMPLICIT NONE
        INTEGER :: fn
@@ -1318,7 +1319,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_coord_info_f (fn, B, Z, C, TYPE, coordname, ier)
+     SUBROUTINE cg_coord_info_f(fn, B, Z, C, TYPE, coordname, ier)
        IMPORT :: c_char, cgenum_t
        IMPLICIT NONE
        INTEGER :: fn
@@ -1406,7 +1407,7 @@ MODULE cgns
 !!$ END INTERFACE
 
 !!$ INTERFACE
-!!$    SUBROUTINE cg_coord_partial_write_f ( fn, B, Z, TYPE, coordname, rmin, rmax, coord, C, ier)
+!!$    SUBROUTINE cg_coord_partial_write_f( fn, B, Z, TYPE, coordname, rmin, rmax, coord, C, ier)
 !!$      IMPORT :: c_char, cgenum_t, CGSIZE_T, c_ptr
 !!$      IMPLICIT NONE
 !!$      INTEGER :: fn
@@ -1830,7 +1831,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_subreg_ptset_read_f ( fn, B, Z, S, pnts, ier)
+     SUBROUTINE cg_subreg_ptset_read_f( fn, B, Z, S, pnts, ier)
        IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
@@ -1843,7 +1844,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_subreg_bcname_read_f ( fn, B, Z, S, bcname, ier)
+     SUBROUTINE cg_subreg_bcname_read_f( fn, B, Z, S, bcname, ier)
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -1856,7 +1857,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_subreg_gcname_read_f (fn, B, Z, S, gcname, ier)
+     SUBROUTINE cg_subreg_gcname_read_f(fn, B, Z, S, gcname, ier)
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -1869,7 +1870,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_subreg_ptset_write_f (fn, B, Z, regname, DIMENSION, location, ptset_type, npnts, pnts, S, ier)
+     SUBROUTINE cg_subreg_ptset_write_f(fn, B, Z, regname, DIMENSION, location, ptset_type, npnts, pnts, S, ier)
        IMPORT :: cgenum_t, c_char, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
@@ -1887,7 +1888,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_subreg_bcname_write_f ( fn, B, Z, regname, DIMENSION, bcname, S, ier)
+     SUBROUTINE cg_subreg_bcname_write_f( fn, B, Z, regname, DIMENSION, bcname, S, ier)
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -1902,7 +1903,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_subreg_gcname_write_f ( fn, B, Z, regname, DIMENSION, gcname, S, ier)
+     SUBROUTINE cg_subreg_gcname_write_f( fn, B, Z, regname, DIMENSION, gcname, S, ier)
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -2110,7 +2111,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_conn_read_short_f (fn, B, Z, I, pnts, ier)
+     SUBROUTINE cg_conn_read_short_f(fn, B, Z, I, pnts, ier)
        IMPORT :: CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
@@ -3475,7 +3476,7 @@ MODULE cgns
   END INTERFACE
 
 !!$ INTERFACE
-!!$    SUBROUTINE cg_array_write_f (ArrayName, DataType, DataDimension, DimensionVector, &
+!!$    SUBROUTINE cg_array_write_f(ArrayName, DataType, DataDimension, DimensionVector, &
 !!$     void *Data, ier)
 !!$      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName
 !!$      INTEGER(cgenum_t) :: DataType

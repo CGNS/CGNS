@@ -47,15 +47,22 @@
 # endif
 #endif
 
-#if  __STDC__
-#define CONS(a,b) a##b
+#ifdef NO_CONCATENATION
+# define IDENTITY(x)      x
+# define CONCATENATE(a,b) IDENTITY(a)b
 #else
-#define CONS(a,b) a/**/b
+# define CONCATENATE(a,b) a##b
 #endif
+
+!#if  __STDC__
+!#define CONCATENATE(a,b) a##b
+!#else
+!#define CONCATENATE(a,b) a/**/b
+!#endif
 
 #ifdef CGNS_SCOPE_ENUMS
 ! set scope prefix (case does not matter in Fortran)
-#define CGNS_ENUMV(x) CONS(CG_,x)
+#define CGNS_ENUMV(x) CONCATENATE(CG_,x)
 #else
 #define CGNS_ENUMV(x) x
 #endif
