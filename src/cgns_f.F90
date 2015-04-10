@@ -978,7 +978,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_zone_read_f(fn, B, Z, zonename, size, ier) BIND(C, NAME="cg_zone_read_f")
+     SUBROUTINE cg_zone_read_f(fn, B, Z, zonename, size, ier) !BIND(C, NAME="cg_zone_read_f")
        IMPORT :: CGSIZE_T, c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -1613,7 +1613,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_sol_info_f(fn, B, Z, S, solname, location, ier) BIND(C, NAME="cg_sol_info_f")
+     SUBROUTINE cg_sol_info_f(fn, B, Z, S, solname, location, ier) !BIND(C, NAME="cg_sol_info_f")
        IMPORT :: c_char, cgenum_t
        IMPLICIT NONE
        INTEGER :: fn
@@ -1815,7 +1815,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_subreg_info_f(fn, B, Z, S, regname, DIMENSION, &
-          location, ptset_type, npnts, bcname_len, gcname_len, ier) BIND(C, NAME="cg_subreg_info_f")
+          location, ptset_type, npnts, bcname_len, gcname_len, ier) !BIND(C, NAME="cg_subreg_info_f")
        IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
@@ -3148,7 +3148,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_model_read_f(ModelLabel, ModelType, ier) BIND(C, NAME="cg_model_read_f")
+     SUBROUTINE cg_model_read_f(ModelLabel, ModelType, ier) !BIND(C, NAME="cg_model_read_f")
        IMPORT :: c_char, cgenum_t
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ModelLabel
@@ -4030,7 +4030,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     INTEGER(C_INT) FUNCTION cg_zone_read(fn, B, Z, zonename, nijk) BIND(C, name='cg_zone_read')
+     INTEGER(C_INT) FUNCTION cg_zone_read(fn, B, Z, zonename, nijk) !BIND(C, name='cg_zone_read')
        USE ISO_C_BINDING
        IMPORT :: CGSIZE_T
        INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
