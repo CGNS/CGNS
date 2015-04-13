@@ -90,45 +90,6 @@ static void string_2_F_string(char *c_string, char *string,
  *      LIBRARY FUNCTIONS                                                *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL void FMNAME(cg_is_cgns_f, CG_IS_CGNS_F) (STR_PSTR(filename),
-	cgint_f *file_type, cgint_f *ier STR_PLEN(filename))
-{
-    int length, i_file_type;
-    char *c_name;
-
-    length = (int) STR_LEN(filename);
-    c_name = CGNS_NEW(char, length+1);
-
-    string_2_C_string(STR_PTR(filename), STR_LEN(filename), c_name, length, ier);
-    if (*ier == 0) {
-        *ier = (cgint_f)cg_is_cgns(c_name, &i_file_type);
-        *file_type = (cgint_f)i_file_type;
-    }
-    CGNS_FREE(c_name);
-}
-
-/*-----------------------------------------------------------------------*/
-
-CGNSDLL void FMNAME(cg_open_f, CG_OPEN_F) (STR_PSTR(filename), cgint_f *mode,
-	cgint_f *fn, cgint_f *ier STR_PLEN(filename))
-{
-    int length, i_fn;
-    char *c_name;
-
-    length = (int) STR_LEN(filename);
-    c_name = CGNS_NEW(char, length+1);
-
-    string_2_C_string(STR_PTR(filename), STR_LEN(filename), c_name, length, ier);
-    if (*ier == 0) {
-#if DEBUG_FTOC
-        printf("filename='%s'\n",c_name);
-#endif
-        *ier = (cgint_f)cg_open(c_name, (int)*mode, &i_fn);
-        *fn  = (cgint_f)i_fn;
-    }
-    free(c_name);
-}
-
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void cg_version_f(cgint_f *fn, float *FileVersion, cgint_f *ier)

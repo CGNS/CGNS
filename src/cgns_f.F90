@@ -87,10 +87,10 @@ MODULE cgns
   !*      modes for cgns file                                            *
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
-  INTEGER(C_INT) CG_MODE_READ, CG_MODE_WRITE, CG_MODE_MODIFY
-  PARAMETER (CG_MODE_READ   = 0)
-  PARAMETER (CG_MODE_WRITE  = 1)
-  PARAMETER (CG_MODE_MODIFY = 2)
+  INTEGER(C_INT), PARAMETER :: CG_MODE_READ   = 0
+  INTEGER(C_INT), PARAMETER :: CG_MODE_WRITE  = 1
+  INTEGER(C_INT), PARAMETER :: CG_MODE_MODIFY = 2
+  INTEGER(C_INT), PARAMETER :: CG_MODE_CLOSED = 3
 
   !* legacy code support
   INTEGER(C_INT) MODE_READ, MODE_WRITE, MODE_MODIFY
@@ -102,10 +102,11 @@ MODULE cgns
   !*      file types (found in cgnslib.h)                                *
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
-  INTEGER(C_INT), PARAMETER :: CG_FILE_NONE = 0
-  INTEGER(C_INT), PARAMETER :: CG_FILE_ADF  = 1
-  INTEGER(C_INT), PARAMETER :: CG_FILE_HDF5 = 2
-  INTEGER(C_INT), PARAMETER :: CG_FILE_ADF2 = 3
+  INTEGER(C_INT), PARAMETER :: CG_FILE_NONE  = 0
+  INTEGER(C_INT), PARAMETER :: CG_FILE_ADF   = 1
+  INTEGER(C_INT), PARAMETER :: CG_FILE_HDF5  = 2
+  INTEGER(C_INT), PARAMETER :: CG_FILE_ADF2  = 3
+  INTEGER(C_INT), PARAMETER :: CG_FILE_PHDF5 = 4
 
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   !*      some error code (found in cgnslib.h)                           *
@@ -763,24 +764,22 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 
   INTERFACE
-     SUBROUTINE cg_is_cgns_f(filename, file_type, ier) !BIND(C,NAME="cg_is_cgns_f")
+     INTEGER(C_INT) FUNCTION cg_is_cgns(filename, file_type) BIND(C,NAME="cg_is_cgns")
        USE ISO_C_BINDING
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
        INTEGER, INTENT(OUT) :: file_type
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_is_cgns_f
+     END FUNCTION cg_is_cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_open_f(filename, mode, fn, ier) !BIND(C,NAME="cg_open_f")
+     INTEGER(C_INT) FUNCTION cg_open(filename, mode, fn) BIND(C,NAME="cg_open")
        USE ISO_C_BINDING
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
-       INTEGER(C_INT), INTENT(IN)  :: mode
+       INTEGER(C_INT), INTENT(IN), VALUE  :: mode
        INTEGER, INTENT(OUT) :: fn
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_open_f
+     END FUNCTION cg_open
   END INTERFACE
   
   INTERFACE
@@ -4348,5 +4347,28 @@ CONTAINS
     INTEGER(KIND(CGNS_ENUMV(RealDouble))) :: cg_get_type_c_double
     cg_get_type_c_double = CGNS_ENUMV(RealDouble)
   END FUNCTION cg_get_type_c_double
+
+  SUBROUTINE cg_is_cgns_f(filename, file_type, ier)
+    USE ISO_C_BINDING
+    IMPLICIT NONE
+    CHARACTER(KIND=C_CHAR, LEN=*), INTENT(IN) :: filename
+    INTEGER, INTENT(OUT) :: file_type
+    INTEGER, INTENT(OUT) :: ier
+
+    ier = cg_is_cgns(TRIM(filename)//C_NULL_CHAR, file_type)
+
+  END SUBROUTINE cg_is_cgns_f
+
+  SUBROUTINE cg_open_f(filename, mode, fn, ier)
+    USE ISO_C_BINDING
+    IMPLICIT NONE
+    CHARACTER(KIND=C_CHAR, LEN=*), INTENT(IN) :: filename
+    INTEGER(C_INT), INTENT(IN) :: mode
+    INTEGER, INTENT(OUT) :: fn
+    INTEGER, INTENT(OUT) :: ier
+
+    ier = cg_open(TRIM(filename)//C_NULL_CHAR, mode, fn)
+
+  END SUBROUTINE cg_open_f
 
 END MODULE cgns

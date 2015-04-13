@@ -334,7 +334,7 @@ int cg_is_cgns(const char *filename, int *file_type)
  *
  ***********************************************************************/
 
-int cg_open(const char * filename, int mode, int *file_number)
+int cg_open(const char *filename, int mode, int *file_number)
 {
     int cgio, filetype;
     cgsize_t dim_vals;
@@ -345,7 +345,7 @@ int cg_open(const char * filename, int mode, int *file_number)
     fprintf(stderr, "before open:files %d/%d: memory %d/%d\n", n_open,
         cgns_file_size, cgmemnow(), cgmemmax());
 #endif
-
+    printf("%s %d \n",filename, mode);
     /* check file mode */
     switch(mode) {
         case CG_MODE_READ:

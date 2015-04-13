@@ -24,6 +24,12 @@
 
   3. This notice may not be removed or altered from any source distribution.
 
+ * -------------------------------------------------------------------------
+ * 
+ *  DEVELOPER'S NOTE:
+ *    When adding a defined constant to this file, also add the same defined 
+ *    constant to cgns_f.F90
+ *          
  * ------------------------------------------------------------------------- */
 
 #ifndef CGNSLIB_H
