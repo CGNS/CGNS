@@ -3614,7 +3614,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_user_data_write_f(dataname, ier) BIND(C, NAME="cg_user_data_write_f")
+     SUBROUTINE cg_user_data_write_f(dataname, ier) ! BIND(C, NAME="cg_user_data_write_f")
        IMPORT :: c_char
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: dataname
@@ -3675,15 +3675,16 @@ MODULE cgns
   INTERFACE
      SUBROUTINE cgp_mpi_comm_f( mpi_comm_f, ier) BIND(C, NAME="cgp_mpi_comm_f")
        IMPLICIT NONE
-       INTEGER :: mpi_comm_f,
+       INTEGER :: mpi_comm_f
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_mpi_comm_f
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cgp_pio_mode_f( mode, int *pcg_mpi_info_f, ier) BIND(C, NAME="cgp_pio_mode_f")
+     SUBROUTINE cgp_pio_mode_f( mode, ier) BIND(C, NAME="cgp_pio_mode_f")
+       IMPORT :: cgenum_t
        IMPLICIT NONE
-       INTEGER(cgenum_t) :: mode, pcg_mpi_info_f
+       INTEGER(cgenum_t) :: mode
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_pio_mode_f
   END INTERFACE
@@ -3706,6 +3707,8 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cgp_open_f(filename, mode, fn, ier) !BIND(C, NAME="cgp_open_f")
+       IMPORT :: C_CHAR
+       IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: filename
        INTEGER :: mode, fn
        INTEGER, INTENT(OUT) :: ier
@@ -3714,6 +3717,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cgp_close_f(fn, ier) BIND(C, NAME="cgp_close_f")
+       IMPLICIT NONE
        INTEGER, INTENT(IN)  :: fn
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_close_f
@@ -3721,6 +3725,8 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cgp_coord_write_f(fn, B, Z, type, coordname, C, ier) !BIND(C, NAME="cgp_coord_write_f")
+       IMPORT :: cgenum_t, c_char
+       IMPLICIT NONE
        INTEGER, INTENT(IN) :: fn
        INTEGER, INTENT(IN) :: B
        INTEGER, INTENT(IN) :: Z
@@ -3761,6 +3767,7 @@ MODULE cgns
   INTERFACE
      SUBROUTINE cgp_section_write_f( fn, B, Z, section_name, &
           TYPE,start,END, nbndry, S, ier) !BIND(C, NAME="cgp_section_write_f")
+       IMPORT :: cgenum_t, cgsize_t, c_char
        IMPLICIT NONE
        INTEGER, INTENT(IN) :: fn
        INTEGER, INTENT(IN) :: B
@@ -3775,46 +3782,50 @@ MODULE cgns
      END SUBROUTINE cgp_section_write_f
   END INTERFACE
 
-  INTERFACE
-     SUBROUTINE cgp_elements_write_data_f( fn, B, Z, S, CGSIZE_T *start, &
-          CGSIZE_T *END, CGSIZE_T *elements, ier) BIND(C, NAME="cgp_elements_write_data_f")
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: Z
-       INTEGER, INTENT(IN) :: S
-       INTEGER(CGSIZE_T), INTENT(IN)  :: start
-       INTEGER(CGSIZE_T), INTENT(IN)  :: end
-       INTEGER(CGSIZE_T) , INTENT(IN) :: elements
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cgp_elements_write_data_f
-  END INTERFACE
+!!$  INTERFACE
+!!$     SUBROUTINE cgp_elements_write_data_f( fn, B, Z, S, CGSIZE_T *start, &
+!!$          CGSIZE_T *END, CGSIZE_T *elements, ier) BIND(C, NAME="cgp_elements_write_data_f")
+!!$       IMPORT :: cgsize_t
+!!$       IMPLICIT NONE
+!!$       IMPLICIT NONE
+!!$       INTEGER, INTENT(IN) :: fn
+!!$       INTEGER, INTENT(IN) :: B
+!!$       INTEGER, INTENT(IN) :: Z
+!!$       INTEGER, INTENT(IN) :: S
+!!$       INTEGER(CGSIZE_T), INTENT(IN)  :: start
+!!$       INTEGER(CGSIZE_T), INTENT(IN)  :: end
+!!$       INTEGER(CGSIZE_T) , INTENT(IN) :: elements
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cgp_elements_write_data_f
+!!$  END INTERFACE
 
-  INTERFACE
-     SUBROUTINE cgp_elements_read_data_f(fn, B, Z, S, start, &
-          end, elements, ier) BIND(C, NAME="cgp_elements_read_data_f")
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: Z
-       INTEGER, INTENT(IN) :: S
-       INTEGER(CGSIZE_T), INTENT(IN) :: start
-       INTEGER(CGSIZE_T), INTENT(IN) :: end
-       INTEGER(CGSIZE_T) :: elements
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cgp_elements_read_data_f
-  END INTERFACE
+!!$  INTERFACE
+!!$     SUBROUTINE cgp_elements_read_data_f(fn, B, Z, S, start, &
+!!$          end, elements, ier) BIND(C, NAME="cgp_elements_read_data_f")
+!!$       IMPORT :: cgsize_t
+!!$       IMPLICIT NONE
+!!$       INTEGER, INTENT(IN) :: fn
+!!$       INTEGER, INTENT(IN) :: B
+!!$       INTEGER, INTENT(IN) :: Z
+!!$       INTEGER, INTENT(IN) :: S
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: start
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: end
+!!$       INTEGER(CGSIZE_T) :: elements
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cgp_elements_read_data_f
+!!$  END INTERFACE
 
   INTERFACE
      SUBROUTINE cgp_field_write_f(fn, B, Z, S, TYPE, fieldname, F, ier)! BIND(C, NAME="cgp_field_write_f")
+       IMPORT :: cgenum_t, c_char
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
        INTEGER :: Z
        INTEGER :: S
-       INTEGER(cgenum_t) :: type,
+       INTEGER(cgenum_t) :: type
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fieldname
-       INTEGER :: F,
+       INTEGER :: F
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_field_write_f
   END INTERFACE
@@ -3832,17 +3843,18 @@ MODULE cgns
 !!$           END SUBROUTINE
 !!$        END INTERFACE
 
-  INTERFACE
-     SUBROUTINE cgp_array_write_f(ArrayName, DataType, DataDimension, DimensionVector, A, ier) !BIND(C, NAME="cgp_array_write_f")
-       IMPLICIT NONE
-       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName
-       INTEGER(cgenum_t) :: DataType
-       INTEGER :: DataDimension
-       INTEGER(CGSIZE_T) :: DimensionVector
-       INTEGER :: A
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cgp_array_write_f
-  END INTERFACE
+!!$  INTERFACE
+!!$     SUBROUTINE cgp_array_write_f(ArrayName, DataType, DataDimension, DimensionVector, A, ier) !BIND(C, NAME="cgp_array_write_f")
+!!$       IMPORT :: cgenum_t, cgsize_t, c_char
+!!$       IMPLICIT NONE
+!!$       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName
+!!$       INTEGER(cgenum_t) :: DataType
+!!$       INTEGER :: DataDimension
+!!$       INTEGER(CGSIZE_T) :: DimensionVector
+!!$       INTEGER :: A
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cgp_array_write_f
+!!$  END INTERFACE
 
 !!$     INTERFACE
 !!$           SUBROUTINE cgp_array_write_data_f(
@@ -3865,9 +3877,17 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cgp_error_exit_f() BIND(C, NAME="cgp_error_exit_f")
+       IMPLICIT NONE
      END SUBROUTINE cgp_error_exit_f
   END INTERFACE
 
+  INTERFACE
+     SUBROUTINE cgp_mpi_info_f(pcg_mpi_info_f, ier) BIND(C,NAME='cgp_mpi_info_f')
+       IMPLICIT NONE
+       INTEGER, INTENT(IN)  :: pcg_mpi_info_f
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cgp_mpi_info_f
+  END INTERFACE
 !!$
 !!$     INTERFACE
 !!$           SUBROUTINE cgp_coord_multi_read_data_f, CGP_COORD_MULTI_READ_DATA_F)(fn, B, Z, C,
@@ -3977,274 +3997,275 @@ MODULE cgns
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   !*      INTERFACES FOR THE C FUNCTIONS                                 *
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_open(filename, mode, fn) BIND(C, name='cgp_open')
-       USE ISO_C_BINDING
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: filename
-       INTEGER(C_INT), INTENT(IN), VALUE  :: mode
-       INTEGER(C_INT), INTENT(OUT) :: fn
-     END FUNCTION cgp_open
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_pio_mode(mode) BIND(C, name='cgp_pio_mode')
-       USE ISO_C_BINDING
-       INTEGER(KIND(CGP_COLLECTIVE)), INTENT(IN), VALUE  :: mode
-     END FUNCTION cgp_pio_mode
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cg_base_write(fn, basename, cell_dim, phys_dim, B) BIND(C, name='cg_base_write')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: basename
-       INTEGER(C_INT)   , INTENT(IN), VALUE  :: cell_dim
-       INTEGER(C_INT)   , INTENT(IN), VALUE  :: phys_dim
-       INTEGER(C_INT)   , INTENT(OUT)  :: B
-     END FUNCTION cg_base_write
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cg_zone_write(fn, B, zonename, nijk, itype, Z) BIND(C, name='cg_zone_write')
-       USE ISO_C_BINDING
-       IMPORT :: CGSIZE_T
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE  :: B
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: zonename
-       INTEGER(CGSIZE_T), DIMENSION(*), INTENT(IN)  :: nijk
-       INTEGER(KIND(CGP_COLLECTIVE)), INTENT(IN), VALUE  :: itype
-       INTEGER(C_INT)   , INTENT(OUT)  :: Z
-     END FUNCTION cg_zone_write
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cg_base_read(fn, B, basename, cell_dim, phys_dim) BIND(C, name='cg_base_read')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(OUT)  :: basename
-       INTEGER(C_INT)   , INTENT(OUT)  :: cell_dim
-       INTEGER(C_INT)   , INTENT(OUT)  :: phys_dim
-     END FUNCTION cg_base_read
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cg_zone_read(fn, B, Z, zonename, nijk) !BIND(C, name='cg_zone_read')
-       USE ISO_C_BINDING
-       IMPORT :: CGSIZE_T
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(OUT)  :: zonename
-       INTEGER(CGSIZE_T), DIMENSION(*), INTENT(OUT)  :: nijk
-     END FUNCTION cg_zone_read
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_coord_write(fn, B, Z, itype, coordname, C) BIND(C, name='cgp_coord_write')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: coordname
-       INTEGER(C_INT)   , INTENT(OUT)  :: C
-     END FUNCTION cgp_coord_write
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_coord_write_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name='cgp_coord_write_data')
-       USE ISO_C_BINDING
-       IMPORT :: CGSIZE_T
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: C
-       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-       TYPE(C_PTR), VALUE :: coords
-     END FUNCTION cgp_coord_write_data
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_field_write(fn, B, Z, S, itype, fieldname, F) BIND(C, name='cgp_field_write')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: fieldname
-       INTEGER(C_INT)   , INTENT(OUT)  :: F
-     END FUNCTION cgp_field_write
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_field_write_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name='cgp_field_write_data')
-       USE ISO_C_BINDING
-       IMPORT :: CGSIZE_T
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: F
-       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-       TYPE(C_PTR), VALUE :: data
-     END FUNCTION cgp_field_write_data
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_field_read_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name='cgp_field_read_data')
-       USE ISO_C_BINDING
-       IMPORT :: CGSIZE_T
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: F
-       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-       TYPE(C_PTR), VALUE :: data
-     END FUNCTION cgp_field_read_data
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_coord_read_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name='cgp_coord_read_data')
-       USE ISO_C_BINDING
-       IMPORT :: CGSIZE_T
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: C
-       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-       TYPE(C_PTR), VALUE :: coords
-     END FUNCTION cgp_coord_read_data
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_section_write(fn,B,Z,sectionname,itype,start,end,nbndry,S) BIND(C, name='cgp_section_write')
-       USE ISO_C_BINDING
-       IMPORT :: CGSIZE_T
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: sectionname
-       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
-       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: start
-       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: end
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: nbndry
-       INTEGER(C_INT)   , INTENT(OUT) :: S
-     END FUNCTION cgp_section_write
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_array_write(arrayname,itype,DataDimension,DimensionVector,A) BIND(C, name='cgp_array_write')
-       USE ISO_C_BINDING
-       IMPORT :: CGSIZE_T
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: arrayname
-       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: DataDimension
-       INTEGER(CGSIZE_T), DIMENSION(1:DataDimension), INTENT(IN) :: DimensionVector
-       INTEGER(C_INT)   , INTENT(OUT) :: A
-     END FUNCTION cgp_array_write
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_array_write_data(A, rmin, rmax, data) BIND(C, name='cgp_array_write_data')
-       USE ISO_C_BINDING
-       IMPORT :: CGSIZE_T
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: A
-       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-       TYPE(C_PTR), VALUE :: data
-     END FUNCTION cgp_array_write_data
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_elements_write_data(fn,B,Z,S,emin,emax,elements) BIND(C, name='cgp_elements_write_data')
-       USE ISO_C_BINDING
-       IMPORT :: CGSIZE_T
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: emin
-       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: emax
-       TYPE(C_PTR), VALUE :: elements
-     END FUNCTION cgp_elements_write_data
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_elements_read_data(fn,B,Z,S,start,end,elements) BIND(C, name='cgp_elements_read_data')
-       USE ISO_C_BINDING
-       IMPORT :: CGSIZE_T
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
-       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: start
-       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: end
-       TYPE(C_PTR), VALUE :: elements
-     END FUNCTION cgp_elements_read_data
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_array_read_data(A, rmin, rmax, data) BIND(C, name='cgp_array_read_data')
-       USE ISO_C_BINDING
-       IMPORT :: CGSIZE_T
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: A
-       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
-       TYPE(C_PTR), VALUE :: data
-     END FUNCTION cgp_array_read_data
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cg_sol_write(fn,B,Z,solname,location,S) BIND(C, name='cg_sol_write')
-       USE ISO_C_BINDING
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
-       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: solname
-       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: location
-       INTEGER(C_INT)   , INTENT(OUT) :: S
-     END FUNCTION cg_sol_write
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_error_exit() BIND(C, name='cgp_error_exit')
-       USE ISO_C_BINDING
-     END FUNCTION cgp_error_exit
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_close(fn) BIND(C, name='cgp_close')
-       USE ISO_C_BINDING
-       INTEGER(C_INT), INTENT(IN), VALUE :: fn
-     END FUNCTION cgp_close
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_queue_set(use_queue) BIND(C, name='cgp_queue_set')
-       USE ISO_C_BINDING
-       INTEGER(C_INT), INTENT(IN), VALUE :: use_queue
-     END FUNCTION cgp_queue_set
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cgp_queue_flush() BIND(C, name='cgp_queue_flush')
-       USE ISO_C_BINDING
-     END FUNCTION cgp_queue_flush
-  END INTERFACE
-
-  INTERFACE
-     INTEGER(C_INT) FUNCTION cg_user_data_write(UserDataName) BIND(C, name='cg_user_data_write')
-       USE ISO_C_BINDING
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName
-     END FUNCTION cg_user_data_write
-  END INTERFACE
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_open(filename, mode, fn) BIND(C, name='cgp_open')
+!!$       IMPORT :: c_int, c_char
+!!$       IMPLICIT NONE
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: filename
+!!$       INTEGER(C_INT), INTENT(IN), VALUE  :: mode
+!!$       INTEGER(C_INT), INTENT(OUT) :: fn
+!!$     END FUNCTION cgp_open
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_pio_mode(mode) BIND(C, name='cgp_pio_mode')
+!!$       USE ISO_C_BINDING
+!!$       INTEGER(KIND(CGP_COLLECTIVE)), INTENT(IN), VALUE  :: mode
+!!$     END FUNCTION cgp_pio_mode
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cg_base_write(fn, basename, cell_dim, phys_dim, B) BIND(C, name='cg_base_write')
+!!$       USE ISO_C_BINDING
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: basename
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE  :: cell_dim
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE  :: phys_dim
+!!$       INTEGER(C_INT)   , INTENT(OUT)  :: B
+!!$     END FUNCTION cg_base_write
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cg_zone_write(fn, B, zonename, nijk, itype, Z) BIND(C, name='cg_zone_write')
+!!$       USE ISO_C_BINDING
+!!$       IMPORT :: CGSIZE_T
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE  :: B
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: zonename
+!!$       INTEGER(CGSIZE_T), DIMENSION(*), INTENT(IN)  :: nijk
+!!$       INTEGER(KIND(CGP_COLLECTIVE)), INTENT(IN), VALUE  :: itype
+!!$       INTEGER(C_INT)   , INTENT(OUT)  :: Z
+!!$     END FUNCTION cg_zone_write
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cg_base_read(fn, B, basename, cell_dim, phys_dim) BIND(C, name='cg_base_read')
+!!$       USE ISO_C_BINDING
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(OUT)  :: basename
+!!$       INTEGER(C_INT)   , INTENT(OUT)  :: cell_dim
+!!$       INTEGER(C_INT)   , INTENT(OUT)  :: phys_dim
+!!$     END FUNCTION cg_base_read
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cg_zone_read(fn, B, Z, zonename, nijk) !BIND(C, name='cg_zone_read')
+!!$       USE ISO_C_BINDING
+!!$       IMPORT :: CGSIZE_T
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(OUT)  :: zonename
+!!$       INTEGER(CGSIZE_T), DIMENSION(*), INTENT(OUT)  :: nijk
+!!$     END FUNCTION cg_zone_read
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_coord_write(fn, B, Z, itype, coordname, C) BIND(C, name='cgp_coord_write')
+!!$       USE ISO_C_BINDING
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
+!!$       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: coordname
+!!$       INTEGER(C_INT)   , INTENT(OUT)  :: C
+!!$     END FUNCTION cgp_coord_write
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_coord_write_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name='cgp_coord_write_data')
+!!$       USE ISO_C_BINDING
+!!$       IMPORT :: CGSIZE_T
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: C
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
+!!$       TYPE(C_PTR), VALUE :: coords
+!!$     END FUNCTION cgp_coord_write_data
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_field_write(fn, B, Z, S, itype, fieldname, F) BIND(C, name='cgp_field_write')
+!!$       USE ISO_C_BINDING
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
+!!$       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: fieldname
+!!$       INTEGER(C_INT)   , INTENT(OUT)  :: F
+!!$     END FUNCTION cgp_field_write
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_field_write_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name='cgp_field_write_data')
+!!$       USE ISO_C_BINDING
+!!$       IMPORT :: CGSIZE_T
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: F
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
+!!$       TYPE(C_PTR), VALUE :: data
+!!$     END FUNCTION cgp_field_write_data
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_field_read_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name='cgp_field_read_data')
+!!$       USE ISO_C_BINDING
+!!$       IMPORT :: CGSIZE_T
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: F
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
+!!$       TYPE(C_PTR), VALUE :: data
+!!$     END FUNCTION cgp_field_read_data
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_coord_read_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name='cgp_coord_read_data')
+!!$       USE ISO_C_BINDING
+!!$       IMPORT :: CGSIZE_T
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: C
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
+!!$       TYPE(C_PTR), VALUE :: coords
+!!$     END FUNCTION cgp_coord_read_data
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_section_write(fn,B,Z,sectionname,itype,start,end,nbndry,S) BIND(C, name='cgp_section_write')
+!!$       USE ISO_C_BINDING
+!!$       IMPORT :: CGSIZE_T
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: sectionname
+!!$       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
+!!$       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: start
+!!$       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: end
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: nbndry
+!!$       INTEGER(C_INT)   , INTENT(OUT) :: S
+!!$     END FUNCTION cgp_section_write
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_array_write(arrayname,itype,DataDimension,DimensionVector,A) BIND(C, name='cgp_array_write')
+!!$       USE ISO_C_BINDING
+!!$       IMPORT :: CGSIZE_T
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: arrayname
+!!$       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: itype
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: DataDimension
+!!$       INTEGER(CGSIZE_T), DIMENSION(1:DataDimension), INTENT(IN) :: DimensionVector
+!!$       INTEGER(C_INT)   , INTENT(OUT) :: A
+!!$     END FUNCTION cgp_array_write
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_array_write_data(A, rmin, rmax, data) BIND(C, name='cgp_array_write_data')
+!!$       USE ISO_C_BINDING
+!!$       IMPORT :: CGSIZE_T
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: A
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
+!!$       TYPE(C_PTR), VALUE :: data
+!!$     END FUNCTION cgp_array_write_data
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_elements_write_data(fn,B,Z,S,emin,emax,elements) BIND(C, name='cgp_elements_write_data')
+!!$       USE ISO_C_BINDING
+!!$       IMPORT :: CGSIZE_T
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
+!!$       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: emin
+!!$       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: emax
+!!$       TYPE(C_PTR), VALUE :: elements
+!!$     END FUNCTION cgp_elements_write_data
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_elements_read_data(fn,B,Z,S,start,end,elements) BIND(C, name='cgp_elements_read_data')
+!!$       USE ISO_C_BINDING
+!!$       IMPORT :: CGSIZE_T
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: S
+!!$       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: start
+!!$       INTEGER(CGSIZE_T), INTENT(IN), VALUE :: end
+!!$       TYPE(C_PTR), VALUE :: elements
+!!$     END FUNCTION cgp_elements_read_data
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_array_read_data(A, rmin, rmax, data) BIND(C, name='cgp_array_read_data')
+!!$       USE ISO_C_BINDING
+!!$       IMPORT :: CGSIZE_T
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: A
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmin
+!!$       INTEGER(CGSIZE_T), INTENT(IN) :: rmax
+!!$       TYPE(C_PTR), VALUE :: data
+!!$     END FUNCTION cgp_array_read_data
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cg_sol_write(fn,B,Z,solname,location,S) BIND(C, name='cg_sol_write')
+!!$       USE ISO_C_BINDING
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
+!!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: Z
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: solname
+!!$       INTEGER(KIND(CGP_INDEPENDENT)), INTENT(IN), VALUE :: location
+!!$       INTEGER(C_INT)   , INTENT(OUT) :: S
+!!$     END FUNCTION cg_sol_write
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_error_exit() BIND(C, name='cgp_error_exit')
+!!$       USE ISO_C_BINDING
+!!$     END FUNCTION cgp_error_exit
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_close(fn) BIND(C, name='cgp_close')
+!!$       USE ISO_C_BINDING
+!!$       INTEGER(C_INT), INTENT(IN), VALUE :: fn
+!!$     END FUNCTION cgp_close
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_queue_set(use_queue) BIND(C, name='cgp_queue_set')
+!!$       USE ISO_C_BINDING
+!!$       INTEGER(C_INT), INTENT(IN), VALUE :: use_queue
+!!$     END FUNCTION cgp_queue_set
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cgp_queue_flush() BIND(C, name='cgp_queue_flush')
+!!$       USE ISO_C_BINDING
+!!$     END FUNCTION cgp_queue_flush
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     INTEGER(C_INT) FUNCTION cg_user_data_write(UserDataName) BIND(C, name='cg_user_data_write')
+!!$       USE ISO_C_BINDING
+!!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName
+!!$     END FUNCTION cg_user_data_write
+!!$  END INTERFACE
 
 #if HAVE_FORTRAN_2008TS
   ! THE FOLLOWING CODE ONLY WORKS FOR COMPILERS HAVING F2008 STANDARD EXTENSION:
