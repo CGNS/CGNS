@@ -3649,7 +3649,7 @@ CGNSDLL void FMNAME(cgp_coord_write_f, CGP_COORD_WRITE_F) (cgint_f *fn,
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cgp_coord_write_data_f(
+CGNSDLL void FMNAME(cgp_coord_write_data_f,CGP_COORD_WRITE_DATA_F)(
 	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
 	cgsize_t *rmin, cgsize_t *rmax, void *data, cgint_f *ier)
 {
@@ -3659,7 +3659,7 @@ CGNSDLL void cgp_coord_write_data_f(
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cgp_coord_read_data_f(
+CGNSDLL void FMNAME(cgp_coord_read_data_f,CGP_COORD_WRITE_DATA_F)(
 	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
 	cgsize_t *rmin, cgsize_t *rmax, void *data, cgint_f *ier)
 {
@@ -3688,7 +3688,7 @@ CGNSDLL void FMNAME(cgp_section_write_f, CGP_SECTION_WRITE_F) (
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cgp_elements_write_data_f(
+CGNSDLL void FMNAME(cgp_elements_write_data_f,CGP_ELEMENTS_WRITE_DATA_F)(
 	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *start,
 	cgsize_t *end, cgsize_t *elements, cgint_f *ier)
 {
@@ -3698,7 +3698,7 @@ CGNSDLL void cgp_elements_write_data_f(
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cgp_elements_read_data_f(
+CGNSDLL void FMNAME(cgp_elements_read_data_f,CGP_ELEMENTS_READ_DATA_F)(
 	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *start,
 	cgsize_t *end, cgsize_t *elements, cgint_f *ier)
 {
@@ -3725,7 +3725,7 @@ CGNSDLL void FMNAME(cgp_field_write_f, CGP_FIELD_WRITE_F) (cgint_f *fn,
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cgp_field_write_data_f(
+ CGNSDLL void FMNAME(cgp_field_write_data_f,CGP_FIELD_WRITE_DATA_F)(
 	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
 	cgint_f *F, cgsize_t *rmin, cgsize_t *rmax, void *field_ptr,
 	cgint_f *ier)
@@ -3736,7 +3736,7 @@ CGNSDLL void cgp_field_write_data_f(
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cgp_field_read_data_f(
+ CGNSDLL void FMNAME(cgp_field_read_data_f,CGP_FIELD_READ_DATA_F)(
 	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
 	cgint_f *F, cgsize_t *rmin, cgsize_t *rmax, void *field_ptr,
 	cgint_f *ier)
