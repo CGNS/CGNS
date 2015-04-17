@@ -3682,9 +3682,9 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cgp_pio_mode_f( mode, ier) BIND(C, NAME="cgp_pio_mode_f")
-       IMPORT :: cgenum_t
+       IMPORT :: C_INT
        IMPLICIT NONE
-       INTEGER(cgenum_t) :: mode
+       INTEGER(C_INT) :: mode
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_pio_mode_f
   END INTERFACE
@@ -3707,10 +3707,11 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cgp_open_f(filename, mode, fn, ier) !BIND(C, NAME="cgp_open_f")
-       IMPORT :: C_CHAR
+       IMPORT :: C_CHAR, C_INT
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: filename
-       INTEGER :: mode, fn
+       INTEGER(C_INT) :: mode
+       INTEGER :: fn
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_open_f
   END INTERFACE
@@ -3883,8 +3884,9 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cgp_mpi_info_f(pcg_mpi_info_f, ier) BIND(C,NAME='cgp_mpi_info_f')
+       IMPORT :: C_INT
        IMPLICIT NONE
-       INTEGER, INTENT(IN)  :: pcg_mpi_info_f
+       INTEGER(C_INT), INTENT(IN)  :: pcg_mpi_info_f
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_mpi_info_f
   END INTERFACE
