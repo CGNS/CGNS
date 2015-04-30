@@ -106,12 +106,13 @@ double t0, t1, t2;
  * timing(7) = Time to read solution data (field data)
  * timing(8) = Time to read array data
  * timing(9) = Time for cgp_open, CG_MODE_WRITE
- * timing(10) = Time for cg_base_write
- * timing(11) = Time for cg_zone_write
- * timing(12) = Time for cgp_open, CG_MODE_READ
- * timing(13) = Time for cg_read base, zone
+ * timing(10) = Time for cg_base_write, cg_zone_write
+ * timing(11) = Time for cgp_open, CG_MODE_READ
+ * timing(12) = Time for cg_read base, zone
+ * timing(13) = Time for cg_close, WRITE
+ * timing(14) = Time for cg_close, READ
  */
-double xtiming[14], timing[14], timingMin[14], timingMax[14];
+double xtiming[15], timing[15], timingMin[15], timingMax[15];
 
 int piomode[2] = {0, 1};
 int piomode_i;
@@ -190,15 +191,11 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cg_base_write \n");
     cgp_error_exit();
   }
-  t2 = MPI_Wtime();
-  xtiming[10] = t2-t1;
-
-  t1 = MPI_Wtime();
   if(cg_zone_write(fn, B, "Zone 1", nijk, Unstructured, &Z) != CG_OK) {
     printf("*FAILED* cg_zone_write \n");
     cgp_error_exit();
   t2 = MPI_Wtime();
-  xtiming[11] = t2-t1;
+  xtiming[10] = t2-t1;
 
   }
   /* use queued IO */
@@ -485,11 +482,13 @@ int main(int argc, char* argv[]) {
     free(Array_r);
     free(Array_i);
   }
-
+  t1 = MPI_Wtime();
   if(cgp_close(fn) != CG_OK) {
     printf("*FAILED* cgp_close \n");
     cgp_error_exit();
   };
+  t2 = MPI_Wtime();
+  xtiming[13] = t2-t1;
 
   /* ====================================== */
   /* ==    **  READ THE CGNS FILE **     == */
@@ -508,7 +507,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
   t2 = MPI_Wtime();
-  xtiming[12] = t2-t1;
+  xtiming[11] = t2-t1;
 
   /* Read the base information */
   t1 = MPI_Wtime();
@@ -533,7 +532,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
   t2 = MPI_Wtime();
-  xtiming[13] = t2-t1;
+  xtiming[12] = t2-t1;
 
   /* Check the read zone information is correct */
   if(sizes[0] != Nnodes) {
@@ -776,19 +775,19 @@ int main(int argc, char* argv[]) {
   free(Array_r);
   free(Array_i);
 
-  /* t1 = MPI_Wtime(); */
+  t1 = MPI_Wtime();
   if(cgp_close(fn) !=CG_OK) {
      printf("*FAILED* cgp_close\n");
      cgp_error_exit();
   }
-/*   t2 = MPI_Wtime(); */
-/*   printf(" cgp_close timing = %20f \n", t2-t1); */
+  t2 = MPI_Wtime();
+  xtiming[14] = t2-t1;
 
   xtiming[0] = t2-t0;
 
-  MPI_Reduce(&xtiming, &timing, 14, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&xtiming, &timingMin, 14, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&xtiming, &timingMax, 14, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timing, 15, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timingMin, 15, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timingMax, 15, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   if(comm_rank==0) {
     sprintf(fname, "timing_%06d_%d.dat", comm_size, piomode_i+1);
@@ -798,7 +797,7 @@ int main(int argc, char* argv[]) {
     } else {
       fprintf(fid,"#nprocs, total time, write: coord., elem., field, array, read: coord., elem., field, array, MB: coord, elem, field, array \n%d", comm_size);
 
-      for ( k = 0; k < 14; k++) {
+      for ( k = 0; k < 15; k++) {
 	fprintf(fid," %20f %20f %20f ",timing[k]/((double) comm_size), timingMin[k], timingMax[k]);
       }
       fprintf(fid," %zu %zu %zu %zu \n", Mb_coor, Mb_elem, Mb_field, Mb_array);
