@@ -802,6 +802,7 @@ int main(int argc, char* argv[]) {
 	fprintf(fid," %20f %20f %20f ",timing[k]/((double) comm_size), timingMin[k], timingMax[k]);
       }
       fprintf(fid," %zu %zu %zu %zu \n", Mb_coor, Mb_elem, Mb_field, Mb_array);
+      fclose(fid);
     }
   }
 
