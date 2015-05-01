@@ -186,6 +186,158 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
   return herr < 0 ? CG_ERROR : CG_OK;
 }
 
+/* How do we create null zones? */
+static int readwrite_data_parallel(
+    hid_t group_id, CGNS_ENUMT(DataType_t) type,
+    const cgsize_t *s_start, const cg_size_t *s_end, const cg_size_t *s_stride,
+    int m_ndims, const cgsize_t *m_dims,
+    const cgsize_t *m_start, const cg_size_t *m_end, const cg_size_t *m_stride,
+    cg_rw_t *data, enum cg_par_rw rw_mode)
+{
+    hid_t data_id, mem_shape_id, data_shape_id;
+    hid_t type_id, plist_id;
+    hsize_t dims[CGIO_MAX_DIMENSIONS];
+    hsize_t start[CGIO_MAX_DIMENSIONS];
+    hsize_t stride[CGIO_MAX_DIMENSIONS];
+    hsize_t count[CGIO_MAX_DIMENSIONS];
+    herr_t herr;
+    int n, s_ndims;
+
+    /* convert from CGNS to HDF5 data type */
+    switch (type) {
+    case CGNS_ENUMV(Character):
+        type_id = H5T_NATIVE_CHAR;
+        break;
+    case CGNS_ENUMV(Integer):
+        type_id = H5T_NATIVE_INT32;
+        break;
+    case CGNS_ENUMV(LongInteger):
+        type_id = H5T_NATIVE_INT64;
+        break;
+    case CGNS_ENUMV(RealSingle):
+        type_id = H5T_NATIVE_FLOAT;
+        break;
+    case CGNS_ENUMV(RealDouble):
+        type_id = H5T_NATIVE_DOUBLE;
+        break;
+    default:
+        cgi_error("Unhandled data type %d\n", type);
+        herr = -1;
+        goto error_0;
+    }
+
+    /* Open the data */
+    data_id = H5Dopen2(group_id, " data", H5P_DEFAULT);
+    if (data_id < 0) {
+        cgi_error("H5Dopen2() failed");
+        herr = -1;
+        goto error_0;
+    }
+
+    /* Get file dataspace extents */
+    data_shape_id = H5Dget_space(data_id);
+    if (data_shape_id < 0) {
+        cgi_error("H5Dget_space() failed");
+        herr = -1;
+        goto error_1df;
+    }
+    s_ndims = H5Sget_simple_extent_ndims(data_shape_id);
+    H5Sget_simple_extent_dims(data_shape_id, dims, NULL);
+
+    /* Create file hyperslab (shape for data in the file) */
+    if (data) {
+        /* Reverse unit stride dimension (because of Fortran ordering) */
+        for (n = 0; n < s_ndims; n++) {
+            start[s_ndims-1-n] = s_start[n] - 1;
+            stride[s_ndims-1-n] = s_stride[n];
+            count[s_ndims-1-n] = (s_end[n] - s_start[n] + 1) / s_stride[n];
+        }
+        herr = H5Sselect_hyperslab(data_shape_id, H5S_SELECT_SET,
+                                   start, stride, count, NULL);
+    } else {
+        herr = H5Sselect_none(data_shape_id);
+    }
+    if (herr < 0) {
+        cgi_error("H5Sselect_hyperslab() for file data failed");
+        goto error_2ds;
+    }
+
+    /* Create memory hyperslab (shape for data in memory) */
+    if (data) {
+        /* Reverse unit stride dimension (because of Fortran ordering) */
+        for (n = 0; n < m_ndims; n++) {
+            dims[m_ndims-1-n] = m_dims[n];
+            start[m_ndims-1-n] = m_start[n] - 1;
+            stride[m_ndims-1-n] = m_stride[n];
+            count[m_ndims-1-n] = (m_end[n] - m_start[n] + 1) / m_stride[n];
+        }
+        mem_shape_id = H5Screate_simple(m_ndims, dims, NULL);
+        if (mem_shape_id < 0) {
+            cgi_error("H5Screate_simple() for memory space failed");
+            herr = -1;
+            goto error_2ds;
+        }
+        herr = H5Sselect_hyperslab(mem_shape_id, H5S_SELECT_SET,
+                                   start, stride, count, NULL);
+    } else {  /* m_ndims should be valid and dims[:] should be 0 */
+        mem_shape_id = H5Screate_simple(m_ndims, dims, NULL);
+        if (mem_shape_id < 0) {
+            cgi_error("H5Screate_simple() for null memory space failed");
+            herr = -1;
+            goto error_2ds;
+        }
+        herr = H5Sselect_none(mem_shape_id);
+    }
+    if (herr < 0) {
+        cgi_error("H5Sselect_hyperslab() for memory data failed");
+        goto error_3ms;
+    }
+
+    /* Make sure memory space and file space have same number of points */
+    if (H5Sget_select_npoints(mem_shape_id) !=
+        H5Sget_select_npoints(data_shape_id)) {
+        cgi_error("Unequal points in memory and file space");
+        herr = -1;
+        goto error_3ms;
+    }
+
+    /* Set the access property list for data transfer */
+    plist_id = H5Pcreate(H5P_DATASET_XFER);
+    if (plist_id < 0) {
+        cgi_error("H5Pcreate() failed");
+        herr = -1;
+        status = CG_ERROR;
+        goto error_3ms;
+    }
+
+    /* Set MPI-IO independent or collective communication */
+    herr = H5Pset_dxpl_mpio(plist_id, default_pio_mode);
+    if (herr < 0) {
+        cgi_error("H5Pset_dxpl_mpio() failed");
+        goto error_4pl;
+    }
+
+    /* Read/write the data in parallel I/O */
+    if (rw_mode == CG_PAR_READ) {
+        herr = H5Dread(data_id, type_id, mem_shape_id,
+                       data_shape_id, plist_id, data[0].u.rbuf);
+        if (herr < 0)
+            cgi_error("H5Dread() failed");
+    } else {
+        herr = H5Dwrite(data_id, type_id, mem_shape_id,
+                        data_shape_id, plist_id, data[0].u.wbuf);
+        if (herr < 0)
+            cgi_error("H5Dwrite() failed");
+    }
+
+error_4pl: H5Pclose(plist_id);
+error_3ms: H5Sclose(mem_shape_id);
+error_2ds: H5Sclose(data_shape_id);
+error_1df: H5Dclose(data_id);
+error_0: ;
+    return herr < 0 ? CG_ERROR : CG_OK;
+}   
+
 /*===== queued IO functions ===============================*/
 
 typedef struct slice_s {
@@ -627,7 +779,7 @@ int cgp_field_write_data(int fn, int B, int Z, int S, int F,
 
 int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
                                  const cgsize_t *rmin, const cgsize_t *rmax,
-                                 int m_numdim, const cgsize_t *m_dims,
+                                 int m_numdim, const cgsize_t *m_arg_dims,
                                  const cgsize_t *m_rmin, const cgsize_t *m_rmax,
                                  const void *data)
 {
@@ -640,6 +792,9 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
     cgsize_t numpt = 1, dimpt = 0, m_numpt = 1;
     cgsize_t s_start[CGIO_MAX_DIMENSIONS], s_end[CGIO_MAX_DIMENSIONS];
     cgsize_t m_start[CGIO_MAX_DIMENSIONS], m_end[CGIO_MAX_DIMENSIONS];
+    /* We may modify m_arg_dims but do not want to change user assignments so
+     * m_arg_dims will be copied here */
+    cgsize_t m_dims[CGIO_MAX_DIMENSIONS];
 
     cg = cgi_get_file(fn);
     if (check_parallel(cg)) return CG_ERROR;
@@ -681,16 +836,17 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
             return CG_ERROR;
         }
 
-        if (m_dims == NULL) {
+        if (m_argdims == NULL) {
             cgi_error("NULL dimension value.");
             return CG_ERROR;
         }
 
         for (n=0; n<m_numdim; n++) {
-            if (m_dims[n] < 1) {
+            if (m_argdims[n] < 1) {
                 cgi_error("Invalid size of dimension in memory array");
                 return CG_ERROR;
             }
+            m_dims[n] = m_arg_dims[n];
         }
 
         if (m_rmin == NULL || m_rmax == NULL) {
@@ -718,14 +874,21 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
         }
 
         /* Size and shape of file space */
-        for (n = 0; n < field->data_dim; n++) {
+        for (n=0; n<field->data_dim; n++) {
             s_start[n] = rmin[n] + sol->rind_planes[2*n];
             s_end[n]   = rmax[n] + sol->rind_planes[2*n];
         }
         /* Size and shape of memory space */
-        for (n = 0; n < m_numdim; n++) {
+        for (n=0; n<m_numdim; n++) {
             m_start[n] = m_rmin[n];
             m_end[n]   = m_rmax[n];
+        }
+    } else {
+        /* If null data, set memory rank to same as file and memory dimensions
+         * to 0 */
+        m_numdim = field->data_dim;
+        for (n=0; n<m_numdim; n++) {
+            m_dims[n] = 0;
         }
     }
 
