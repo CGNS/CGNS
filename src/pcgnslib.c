@@ -187,11 +187,11 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
 }
 
 /* How do we create null zones? */
-static int readwrite_data_parallel(
+static int readwrite_shaped_data_parallel(
     hid_t group_id, CGNS_ENUMT(DataType_t) type,
-    const cgsize_t *s_start, const cg_size_t *s_end, const cg_size_t *s_stride,
+    const cgsize_t *s_start, const cgsize_t *s_end, const cgsize_t *s_stride,
     int m_ndims, const cgsize_t *m_dims,
-    const cgsize_t *m_start, const cg_size_t *m_end, const cg_size_t *m_stride,
+    const cgsize_t *m_start, const cgsize_t *m_end, const cgsize_t *m_stride,
     cg_rw_t *data, enum cg_par_rw rw_mode)
 {
     hid_t data_id, mem_shape_id, data_shape_id;
@@ -306,7 +306,6 @@ static int readwrite_data_parallel(
     if (plist_id < 0) {
         cgi_error("H5Pcreate() failed");
         herr = -1;
-        status = CG_ERROR;
         goto error_3ms;
     }
 
@@ -836,13 +835,13 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
             return CG_ERROR;
         }
 
-        if (m_argdims == NULL) {
+        if (m_arg_dims == NULL) {
             cgi_error("NULL dimension value.");
             return CG_ERROR;
         }
 
         for (n=0; n<m_numdim; n++) {
-            if (m_argdims[n] < 1) {
+            if (m_arg_dims[n] < 1) {
                 cgi_error("Invalid size of dimension in memory array");
                 return CG_ERROR;
             }
@@ -902,11 +901,11 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
     }
     cg_rw_t Data;
     Data.u.wbuf = data;
-    /* return readwrite_data_parallel( */
-    /*     hid, type, */
-    /*     field->data_dim, field->dim_vals, s_start, s_end, */
-    /*     m_numdim, m_dims, m_start, m_end, */
-    /*     &Data, CG_PAR_WRITE); */
+    return readwrite_shaped_data_parallel(
+        hid, type,
+        field->data_dim, field->dim_vals, s_start, s_end,
+        m_numdim, m_dims, m_start, m_end,
+        &Data, CG_PAR_WRITE);
 }
 
 /*---------------------------------------------------------*/
