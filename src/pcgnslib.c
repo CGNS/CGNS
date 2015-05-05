@@ -789,6 +789,7 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
     cgns_array *field;
     CGNS_ENUMT(DataType_t) type;
     cgsize_t numpt = 1, dimpt = 0, m_numpt = 1;
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
     cgsize_t s_start[CGIO_MAX_DIMENSIONS], s_end[CGIO_MAX_DIMENSIONS];
     cgsize_t m_start[CGIO_MAX_DIMENSIONS], m_end[CGIO_MAX_DIMENSIONS];
     /* We may modify m_arg_dims but do not want to change user assignments so
@@ -876,6 +877,7 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
         for (n=0; n<field->data_dim; n++) {
             s_start[n] = rmin[n] + sol->rind_planes[2*n];
             s_end[n]   = rmax[n] + sol->rind_planes[2*n];
+            stride[n]  = 1;
         }
         /* Size and shape of memory space */
         for (n=0; n<m_numdim; n++) {
@@ -903,8 +905,8 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
     Data.u.wbuf = data;
     return readwrite_shaped_data_parallel(
         hid, type,
-        field->data_dim, field->dim_vals, s_start, s_end,
-        m_numdim, m_dims, m_start, m_end,
+        s_start, s_end, stride,
+        m_numdim, m_dims, m_start, m_end, stride,
         &Data, CG_PAR_WRITE);
 }
 
