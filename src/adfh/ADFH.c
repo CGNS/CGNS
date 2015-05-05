@@ -3007,7 +3007,7 @@ void ADFH_Database_Version(const double  root_id,
 #endif
   }
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(did) == H5FD_MPIO) {
+  if (pcg_mpi_initialized) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
   }
@@ -3015,7 +3015,7 @@ void ADFH_Database_Version(const double  root_id,
   status = H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, buff);
   H5Dclose(did);
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(did) == H5FD_MPIO) {
+  if (pcg_mpi_initialized) {
     H5Pclose(xfer_prp);
   }
 #endif
