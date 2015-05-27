@@ -96,21 +96,21 @@ double t0, t1, t2;
 
 /*
  * Timing storage convention:
- * timing(0) = Total program time
- * timing(1) = Time to write nodal coordinates
- * timing(2) = Time to write connectivity table
- * timing(3) = Time to write solution data (field data)
- * timing(4) = Time to write array data
- * timing(5) = Time to read nodal coordinates
- * timing(6) = Time to read connectivity table
- * timing(7) = Time to read solution data (field data)
- * timing(8) = Time to read array data
- * timing(9) = Time for cgp_open, CG_MODE_WRITE
- * timing(10) = Time for cg_base_write, cg_zone_write
- * timing(11) = Time for cgp_open, CG_MODE_READ
- * timing(12) = Time for cg_read base, zone
- * timing(13) = Time for cg_close, WRITE
- * timing(14) = Time for cg_close, READ
+ * timing(0) = Total program time, 2,3,4
+ * timing(1) = Time to write nodal coordinates, 5,6,7
+ * timing(2) = Time to write connectivity table, 8,9,10
+ * timing(3) = Time to write solution data (field data), 11,12,13
+ * timing(4) = Time to write array data, 14,15,16
+ * timing(5) = Time to read nodal coordinates, 17,18,19
+ * timing(6) = Time to read connectivity table, 20,21,22
+ * timing(7) = Time to read solution data (field data), 23,24,25
+ * timing(8) = Time to read array data, 26,27,28
+ * timing(9) = Time for cgp_open, CG_MODE_WRITE, 29,30,31
+ * timing(10) = Time for cg_base_write, cg_zone_write, 32,33,34
+ * timing(11) = Time for cgp_open, CG_MODE_READ, 35,36,37
+ * timing(12) = Time for cg_read base, zone, 38,39,40
+ * timing(13) = Time for cg_close, WRITE, 41,42,43
+ * timing(14) = Time for cg_close, READ, 44,45,46
  */
 double xtiming[15], timing[15], timingMin[15], timingMax[15];
 
