@@ -74,6 +74,10 @@ The CFD General Notation System (CGNS) provides a standard for recording and rec
       
 ## Usage
 
+## License
+
+{{'md license.txt'}}
+
 ## Development
 CGNS uses the branching/release model as summarized at:
 
