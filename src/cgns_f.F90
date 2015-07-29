@@ -1391,7 +1391,7 @@ MODULE cgns
   END INTERFACE
 
 !!$ INTERFACE
-!!$    SUBROUTINE cg_coord_write_f(fn, B,       Z, TYPE, coordname, coord, C, ier) BIND(C, NAME="")
+!!$    SUBROUTINE cg_coord_write_f(fn, B, Z, TYPE, coordname, coord, C, ier) BIND(C, NAME="")
 !!$      IMPORT :: c_char, cgenum_t, c_ptr
 !!$      IMPLICIT NONE
 !!$      INTEGER :: fn
