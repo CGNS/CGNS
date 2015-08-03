@@ -3,11 +3,11 @@ CGNS version 3.3.0
 
 INTRODUCTION
 
-This document describes the difference between CGNS x.x.x and
-CGNS y.y.y, and contains information on known problems in
-CGNS y.y.y.
+This document describes the difference between CGNS 3.2.1 and
+CGNS 3.3.0, and contains information on known problems in
+CGNS 3.3.0.
 
-Links to the CGNS y.y.y source code can be found at:
+Links to the CGNS 3.3.3 source code can be found at:
 
 User documentation for the current release can be found at:
 
@@ -18,7 +18,7 @@ CONTENTS
 
 - New Features
 - Support for new platforms and languages
-- Bug Fixes since CGNS x.x.x
+- Bug Fixes since CGNS 3.2.1
 - Known Problems
 
 New Features
@@ -29,9 +29,12 @@ New Features
 
     Library:
     --------
+    * 
+
 
     Parallel Library:
     -----------------
+    * The default parallel input/output mode was changed from CGP_INDEPENDENT to CGP_COLLECTIVE.
 
     Fortran Library:
     ----------------
@@ -39,7 +42,7 @@ New Features
     Tools:
     ------
 
-Bug Fixes since CGNS x.x.x release
+Bug Fixes since CGNS 3.2.1 release
 ==================================
 
     Library:
