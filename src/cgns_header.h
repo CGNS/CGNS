@@ -26,6 +26,11 @@ freely, subject to the following restrictions:
 #include "cgns_io.h"
 
 typedef char char_33[33];
+#ifdef CG_BUILD_BASESCOPE
+typedef char char_66[66]; /* 32 + '/' + 32 + '\0' */
+#else
+typedef char char_66[33]; /* 32 + '\0' (caller's malloc compat issues) */
+#endif
 typedef char const cchar_33[33];
 typedef cgsize_t cgsize6_t[6];
 typedef int cgint3_t[3];
@@ -155,7 +160,7 @@ typedef struct {            /* Descriptor_t node            */
 typedef struct {
     double id;
     char_33 name;
-    char_33 family;
+    char_66 family;
 } cgns_famname;
 
 typedef struct {            /* DimensionalUnits_t Node      */
@@ -238,7 +243,7 @@ typedef struct cgns_user_data_s /* UserDefinedData_t Node       */
     CGNS_ENUMT(DataClass_t) data_class; /* Class of data                        */
     cgns_units *units;      /* ptrs to in-memory copy of units      */
     CGNS_ENUMT(GridLocation_t) location;/* Grid location where data is recorded */
-    char_33 family_name;    /* Family name              */
+    char_66 family_name;    /* Family name              */
     int ordinal;            /* option to specify a rank     */
     cgns_ptset *ptset;      /* PointList, PointRange                */
     int nuser_data;         /* number of user defined data nodes    */
@@ -557,7 +562,7 @@ typedef struct {            /* BC_t node                */
     CGNS_ENUMT(GridLocation_t) location;/* Grid location                        */
     CGNS_ENUMT(BCType_t) type;          /* type of boco                         */
     cgns_ptset *ptset;      /* PointList, PointRange                */
-    char_33 family_name;    /* Family name for the bound. patch */
+    char_66 family_name;    /* Family name for the bound. patch */
     int *Nindex;            /* Inward Normal Index          */
     double index_id;        /* ADF ID number of InwardNormalIndex   */
     cgns_array *normal;     /* Inward Normal List           */
@@ -618,7 +623,7 @@ typedef struct {            /* GridConnectivity_t node      */
     cgns_ptset dptset;      /* PointListDonor or CellListDonor      */
     int narrays;            /* should be 0 or 1         */
     cgns_array *interpolants;/* InterpolantsDonor                   */
-    char_33 donor;          /* donor name               */
+    char_66 donor;          /* donor name               */
     cgns_cprop *cprop;      /* ptrs to in-memory copies of cprop    */  /* V2.2 */
     int ordinal;            /* option to specify a rank     */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
@@ -635,7 +640,7 @@ typedef struct {            /* GridConnectivity1to1_t node      */
     int *transform;         /* short form of transformation matrix  */
     cgns_ptset ptset;       /* PointRange               */
     cgns_ptset dptset;      /* PointRangeDonor          */
-    char_33 donor;          /* donor name                           */
+    char_66 donor;          /* donor name                           */
     int ordinal;            /* option to specify a rank     */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
@@ -774,7 +779,7 @@ typedef struct {            /* ZoneSubRegion_t Node                 */
     CGNS_ENUMT(DataClass_t) data_class; /* Class of data            */
     cgns_units *units;      /* Dimensional Units                    */
     CGNS_ENUMT(GridLocation_t) location;/* Grid location where data is recorded */
-    char_33 family_name;    /* Family name                          */
+    char_66 family_name;    /* Family name                          */
     int *rind_planes;       /* No. of rind-planes on each zone face */
     int nuser_data;         /* number of user defined data nodes    */
     cgns_user_data *user_data; /* User defined data.                */
@@ -797,7 +802,7 @@ typedef struct {            /* Zone_t Node              */
     cgns_zcoor *zcoor;      /* ptrs to in-memory copies of coords   */
     int nsections;          /* no of Elements_t nodes       */
     cgns_section *section;  /* ptrs to in-memory copies of section  */
-    char_33 family_name;    /* family name of the unstr. zone   */
+    char_66 family_name;    /* family name of the unstr. zone   */
     int nsols;              /* number of FlowSolution_t nodes   */
     cgns_sol *sol;          /* ptrs to in-memory copies of sols */
     int ndiscrete;          /* number of DiscreteData_t nodes   */

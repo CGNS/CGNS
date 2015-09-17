@@ -7958,6 +7958,50 @@ int cgi_check_strlen(char const *string)
     return 0;
 }
 
+int cgi_check_strlen_x2(char const *string)
+{
+    int n1,n2,p;
+
+    if (strlen(string) > 65) {
+        cgi_error("Name exceeds 65 characters limit: %s",string);
+        return 1;
+    }
+    p=0;
+    n1=0;
+    n2=0;
+    while (string[p])
+    {
+      if (string[p]=='/')
+      {
+	if (n2!=0){
+	  cgi_error("Zone or Family with base scope should have only one / : %s",string);
+	  return 1;
+	}
+	if (n1==0){
+	  cgi_error("Base part of the name is empty in %s",string);
+	  return 1;
+	}
+	if (p==strlen(string)-1){
+	  cgi_error("Zone or Family part of the name is empty in %s",string);
+	  return 1;
+	}
+	n2++;
+      }
+      if (!n2) n1++;
+      else     n2++;
+      if (n1>32){
+        cgi_error("Base part of the name exceed 32 chars limit: %s",string);
+        return 1;
+      }
+      if (n2>34){
+        cgi_error("Zone or Family part of the name exceed 32 chars limit: %s",string);
+        return 1;
+      }
+      p++;
+    }
+    return 0;
+}
+
 int cgi_check_mode(char const *filename, int file_mode, int mode_wanted)
 {
     if (mode_wanted==CG_MODE_READ && file_mode==CG_MODE_WRITE) {

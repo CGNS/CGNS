@@ -345,6 +345,7 @@ int cg_open(const char *filename, int mode, int *file_number)
     fprintf(stderr, "before open:files %d/%d: memory %d/%d\n", n_open,
         cgns_file_size, cgmemnow(), cgmemmax());
 #endif
+
     /* check file mode */
     switch(mode) {
         case CG_MODE_READ:
@@ -5802,7 +5803,11 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
 
      /* verify input */
     if (cgi_check_strlen(connectname)) return CG_ERROR;
+#ifdef CG_BUILD_BASESCOPE
+    if (cgi_check_strlen_x2(donorname)) return CG_ERROR;
+#else
     if (cgi_check_strlen(donorname)) return CG_ERROR;
+#endif
 
      /* get memory address of file */
     cg = cgi_get_file(file_number);
@@ -8341,8 +8346,14 @@ int cg_multifam_write(const char *name, const char *family)
 
     CHECK_FILE_OPEN
 
-    if (cgi_check_strlen(name) || cgi_check_strlen(family) ||
+    if (cgi_check_strlen(name) || 
         cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+#ifdef CG_BUILD_BASESCOPE
+    if (cgi_check_strlen_x2(family)) return CG_ERROR;
+#else
+    if (cgi_check_strlen(family)) return CG_ERROR;
+#endif
 
     famname = cgi_multfam_address(CG_MODE_WRITE, 0, name, &ier);
     if (famname == 0) return ier;
