@@ -390,6 +390,22 @@ fi
 AC_MSG_RESULT($enableval)
 
 #--------------------------------------------------------------------------
+# check if base scope for family/zone ref-to requested
+#--------------------------------------------------------------------------
+
+BUILDBASESCOPE=0
+
+AC_MSG_CHECKING([if base scope for family/zone ref-to enabled])
+AC_ARG_ENABLE(scope,
+  [  --enable-scope          base scope for family/zone ref-to [default=no]],,
+  enableval=no)
+if test ! "$enableval" = "no" ; then
+  enableval=yes
+  BUILDBASESCOPE=1
+fi
+AC_MSG_RESULT($enableval)
+
+#--------------------------------------------------------------------------
 # get a usable 64-bit type
 #--------------------------------------------------------------------------
 
@@ -1540,6 +1556,7 @@ AC_SUBST(HAVE_FORTRAN_2008TS)
 AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
 AC_SUBST(BUILDPARALLEL)
+AC_SUBST(BUILDBASESCOPE)
 
 AC_SUBST(CGNSTOOLS)
 AC_SUBST(CGLONGT)

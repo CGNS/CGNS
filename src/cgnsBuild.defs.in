@@ -6,20 +6,22 @@
 #-----------------------------------------------------------------------
 # CGNS library build options. A 1 indicates that the library
 # was built with that option, a 0 indicates without
-# CGNS_DEBUG    = debug
-# CGNS_LEGACY   = legacy code (prior to 3.0)
-# CGNS_SCOPING  = scoping of enums
-# CGNS_64BIT    = 64 bit support
-# CGNS_FORTRAN  = Fortran interface
-# CGNS_PARALLEL = parallel I/O
+# CGNS_DEBUG     = debug
+# CGNS_LEGACY    = legacy code (prior to 3.0)
+# CGNS_SCOPING   = scoping of enums
+# CGNS_64BIT     = 64 bit support
+# CGNS_FORTRAN   = Fortran interface
+# CGNS_PARALLEL  = parallel I/O
+# CGNS_BASESCOPE = Base scope for family and zone reference-to
 #-----------------------------------------------------------------------
 
-CGNS_DEBUG    = @BUILDDEBUG@
-CGNS_LEGACY   = @BUILDLEGACY@
-CGNS_SCOPING  = @BUILDSCOPE@
-CGNS_64BIT    = @BUILD64BIT@
-CGNS_FORTRAN  = @BUILDFORTRAN@
-CGNS_PARALLEL = @BUILDPARALLEL@
+CGNS_DEBUG     = @BUILDDEBUG@
+CGNS_LEGACY    = @BUILDLEGACY@
+CGNS_SCOPING   = @BUILDSCOPE@
+CGNS_64BIT     = @BUILD64BIT@
+CGNS_FORTRAN   = @BUILDFORTRAN@
+CGNS_PARALLEL  = @BUILDPARALLEL@
+CGNS_BASESCOPE = @BUILDBASESCOPE@
 
 #-----------------------------------------------------------------------
 # CGNS_LIBDIR     - installation directory for CGNS library

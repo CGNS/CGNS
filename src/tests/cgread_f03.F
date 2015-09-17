@@ -39,8 +39,13 @@
         INTEGER(cgsize_t) :: npnts_donor
         INTEGER(cgenum_t) :: bocotype, datatype
 	character*32 basename, zonename, solname, fieldname
-	character*32 coordname, holename, connectname
-	character*32 boconame, donorname
+	character*32 coordname, holename
+#ifndef CG_BASESCOPE
+	character*32 connectname, donorname
+#else
+	character*65 connectname, donorname
+#endif
+	character*32 boconame
 	integer cg, base, zone, coord, sol, field, discr
 	INTEGER :: hole, conn, one21, boco
 	INTEGER(cgsize_t) :: range(Ndim, 2), donor_range(Ndim, 2)
@@ -48,8 +53,12 @@
   	INTEGER(cgsize_t) :: G_range(Ndim*2, Nglobal)
 	INTEGER(cgsize_t) :: G_donor_range(Ndim*2, Nglobal)
 	INTEGER :: G_transform(Ndim, Nglobal)
-	character*32 G_connectname(Nglobal), G_zonename(Nglobal)
-	character*32 G_donorname(Nglobal)
+	character*32 G_zonename(Nglobal)
+#ifndef CG_BASESCOPE
+	character*32 G_connectname(Nglobal), G_donorname(Nglobal)
+#else
+	character*65 G_connectname(Nglobal), G_donorname(Nglobal)
+#endif
 	character*32 name, filename
 	character*40 text, NormDefinitions, StateDescription
 	INTEGER :: equation_dimension, GoverningEquationsFlag

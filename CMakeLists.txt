@@ -56,6 +56,7 @@ endif ("${CMAKE_SIZEOF_VOID_P}" GREATER 4)
 
 option(CGNS_ENABLE_LEGACY "Enable or disable building legacy code (3.0 compatible)" "OFF")
 option(CGNS_ENABLE_SCOPING "Enable or disable scoping of enumeration values" "OFF")
+option(CGNS_ENABLE_BASE_SCOPE "Enable or disable base scoped families or connectivities" "OFF")
 
 if (CGNS_ENABLE_LEGACY)
   set(CGNS_ENABLE_64BIT "OFF")

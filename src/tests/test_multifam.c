@@ -31,8 +31,13 @@ int main (int argc, char *argv[])
     int i, j, k, n, nfam, nnames;
     int cgfile, cgbase, cgzone, cgfam, cgcoord, cgbc, cgsr;
     float exp[5];
-    char name[33], family[33], outfile[33];
-    char tname[33], tfamily[33];
+    char name[33], outfile[33];
+    char tname[33];
+#ifdef CG_BUILD_BASESCOPE
+    char tfamily[66],family[66];
+#else
+    char tfamily[33],family[33];
+#endif
 
     strcpy (outfile, "multifam.cgns");
 
@@ -119,6 +124,16 @@ int main (int argc, char *argv[])
         error_exit("go to BC");
     if (cg_famname_write("TopFamily2"))
         error_exit("zone family write");
+#ifdef CG_BUILD_BASESCOPE
+    if (cg_multifam_write("F1","BASE/TopFamily2"))
+      cg_error_print();
+    if (cg_multifam_write("F2","BaseWithAQuiteLongNameToTestSize/TopFamily2"))
+      cg_error_print();
+    if (cg_multifam_write("F3","B/FamilyNameHasExactly32Characters"))
+      cg_error_print();
+    if (cg_multifam_write("F4","BaseWithAQuiteLongNameToTestSize/FamilyNameHasExactly32Characters"))
+      cg_error_print();
+#endif
     for (j = 1; j <= 3; j++) {
         sprintf(name, "BCFamily%d", j);
         sprintf(family, "Family%d", j);
@@ -209,19 +224,29 @@ int main (int argc, char *argv[])
     if (cg_goto(cgfile, cgbase, "Zone", 0, "ZoneBC", 0, "Inflow", 0, NULL))
         error_exit("go to BC");
     if (cg_nmultifam(&nnames)) error_exit("BC nmultifam");
+#ifdef CG_BUILD_BASESCOPE
+    CHECK("BC nmultifam", nnames == 7);
+#else
     CHECK("BC nmultifam", nnames == 3);
+#endif
     for (j = 1; j <= 3; j++) {
         sprintf(tname, "BCFamily%d", j);
         sprintf(tfamily, "Family%d", j);
         if (cg_multifam_read(j, name, family))
             error_exit("BC multifam read");
+#ifndef CG_BUILD_BASESCOPE
         CHECK("node name", 0 == strcmp(name, tname));
         CHECK("family name", 0 == strcmp(family, tfamily));
+#endif
     }
     if (cg_delete_node("BCFamily1"))
         error_exit("delete BCFamily1");
     if (cg_nmultifam(&nnames)) error_exit("BC nmultifam after delete");
+#ifdef CG_BUILD_BASESCOPE
+    CHECK("BC nmultifam after delete", nnames == 6);
+#else
     CHECK("BC nmultifam after delete", nnames == 2);
+#endif
 
     if (cg_goto(cgfile, cgbase, "Zone", 0, "SubRegion", 0, NULL))
         error_exit("go to subregion");
