@@ -41,17 +41,24 @@ New Features
     * Replaced the hid_t to double (and vice-versa) utilities to_HDF_ID and to_ADF_ID 
       from a type cast to a function which uses memcpy for the conversion. This is needed 
       for the upcomming release of HDF5 1.10 where hid_t was changed from a 32 bit integer 
-      to a 64 bit integer.
+      to a 64 bit integer. Should be transparent to user.
+
+    * Implemented CPEX0039 : To enable with CGNS_ENABLE_BASE_SCOPE
+
+    * Implemented CPEX0038 : Quadratic Elements for High Order
 
 
     Parallel Library:
     -----------------
     * The default parallel input/output mode was changed from CGP_INDEPENDENT 
       to CGP_COLLECTIVE.
+
     * A new function was added for passing MPI info to the CGNS library:
       cgp_mpi_info (cgp_mpi_info_f)
+
     * A new parallel example benchmark program, benchmark_hdf5.c, was added 
       to directory ptests.
+
     * The cgp_*_read/write_dataset APIs now excepts non-allocated arrays, or NULL, 
       as valid parameters for the datasets. Additionally, the dimensional arrays, 
       rmin and rmax, can also be NULL. If the data array is NULL and the dimensional 
@@ -59,28 +66,33 @@ New Features
       is not checked. For collective parallel IO, this is used as a mechanism to 
       indicated that processes with NULL API parameters will not write any data to the file.
 
-
     Fortran Library:
     ----------------
-    * SUPPORT WAS DROPPED FOR NON-FORTRAN 2003 COMPLIANT COMPILERS. 
+    * SUPPORT WAS DROPPED FOR NON-FORTRAN 2003 COMPLIANT COMPILERS.
+
     * Configure was changed to check if the Fortran compiler is Fortran 2003 compliant.
+
     * The predefined CGNS constant parameters data types were changed from 
       INTEGER to ENUM, BIND(C) for better C interoperability. The users should use the 
       predefined constants whenever possible and not the numerical value represented by 
       the constants. A variable expecting an enum value returned from a Fortran API should be 
       declared, INTEGER(cgenum_t).
+
     * INCLUDE "cgslib_h" was changed in favor of using a module, USE CGNS.
       - This allows defining a KIND type for integers instead of 
         the current way of using the preprocessor dependent cgsize_t.
+
     * The user should be sure to declare the arguments 
       declared int in the C APIs as INTEGER in Fortran. The ONLY 
       Fortran arguments declared as type cgsize_t should be the 
       arguments which are also declared cgsize_t in the C APIs. This 
       is very important when building with option --enable-64bit. The 
       test programs were updated in order to conform to this convention.
+
     * Assuming the rules in step [enu:int64] were followed, users 
       should not need to use parameter CG_BUILD_64BIT since Fortran's 
       cgsize_t is now guaranteed to match C's cgsize_t. 
+
     * Fortran programs defining CGNS data types with a default 
       INTEGER size of 8 bytes also then need to compile the CGNS 
       library with the default INTEGER size of 8 bytes. This is 
@@ -96,6 +108,7 @@ New Features
       the CGNS library was not compiled with a default INTEGER of 8 
       bytes, but the calling program was, then all integers passed to 
       CGNS with C type int should be declared INTEGER(C_INT).   
+
     * A new Fortran API was added for determining the CGNS data type of a 
       variable which is interoperable with the C data type. 
 
@@ -127,7 +140,8 @@ Bug Fixes since CGNS 3.2.1 release
 
     Fortran:
     --------
-    - None
+    - Fixed cgnslib_f.h to be both free and fixed form compatible.
+
     Tools:
     ------
     - None
