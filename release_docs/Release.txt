@@ -66,6 +66,8 @@ New Features
       is not checked. For collective parallel IO, this is used as a mechanism to 
       indicated that processes with NULL API parameters will not write any data to the file.
 
+    * cgp_queue_set and cgp_queue_flush were depreciated in this release.
+
     Fortran Library:
     ----------------
     * SUPPORT WAS DROPPED FOR NON-FORTRAN 2003 COMPLIANT COMPILERS.
