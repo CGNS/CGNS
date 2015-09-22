@@ -1,13 +1,10 @@
-#!/bin/csh
+#!/bin/sh
 git clone https://github.com/CGNS/CGNS.git
 cd CGNS/src
 git checkout develop
-setenv HDF5 $HOME/trunk/hdf5
-setenv FC gfortran
-setenv CC gcc
 ./configure \
 --with-fortran \
---with-hdf5=$HDF5 \
+--with-hdf5=$HOME/hdf5_1_8/hdf5 \
 --enable-lfs \
 --enable-64bit \
 --disable-shared \
@@ -15,6 +12,7 @@ setenv CC gcc
 --with-zlib \
 --disable-cgnstools \
 --disable-x \
---enable-64bit
+--enable-64bit FC=gfortran CC=gcc
+
 
 
