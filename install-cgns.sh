@@ -2,6 +2,8 @@
 git clone https://github.com/CGNS/CGNS.git
 cd CGNS/src
 git checkout develop
+export FC=gfortran
+export CC=gcc
 ./configure \
 --with-fortran \
 --with-hdf5=$HOME/hdf5_1_8/hdf5 \
@@ -12,7 +14,7 @@ git checkout develop
 --with-zlib \
 --disable-cgnstools \
 --disable-x \
---enable-64bit FC=gfortran CC=gcc
+--enable-64bit
 
 
 
