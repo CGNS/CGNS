@@ -427,18 +427,19 @@ CFLAGS=$CFLAGS_SAVE
 # set the Fortran interface
 #--------------------------------------------------------------------------
 
+FORTRAN_DEFAULT_INTEGER_C_INT64_T=0
+HAVE_FORTRAN_95=0
+HAVE_FORTRAN_2003=0
+HAVE_FORTRAN_2008=0
+HAVE_FORTRAN_2008TS=0
+BUILDFORTRAN=0
+
 AC_MSG_CHECKING([if Fortran interface is enabled])
 AC_ARG_WITH(fortran,
   [  --with-fortran[=F2C]    enable Fortran interface [default=yes]],
   withfortran=$withval,withfortran=yes)
 test -z "$withfortran" && withfortran=yes
 AC_MSG_RESULT($withfortran)
-
-  HAVE_FORTRAN_95=0
-  HAVE_FORTRAN_2003=0
-  HAVE_FORTRAN_2008=0
-  HAVE_FORTRAN_2008TS=0
-  BUILDFORTRAN=0
 
 if test $withfortran = no; then
   fortran=no
@@ -606,7 +607,6 @@ EOF
   if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
 
   AC_MSG_CHECKING([size of default Fortran integer ])
-  FORTRAN_DEFAULT_INTEGER_C_INT64_T=0
  cat >> testf03.f90 << EOF
       MODULE mod
 
