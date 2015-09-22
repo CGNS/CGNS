@@ -562,7 +562,7 @@ if exist %mpidir%\bin\mpiexec.exe (
   set mpiexec=%mpidir%\bin\mpiexec.exe
 )
 echo checking for MPI library ...
-for %%l in ( mpi mpich libmpi mpid mpichd libmpid ) do (
+for %%l in ( mpi mpich libmpi mpid mpichd libmpid impi) do (
   if exist %mpidir%\lib\%%l.lib (
     echo %mpidir%\lib\%%l.lib
     set mpilibs=%mpidir%\lib\%%l.lib
