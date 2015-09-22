@@ -1,0 +1,25 @@
+language: python
+
+python:
+  - 2.7
+
+# whitelist
+branches:
+  only:
+    - develop
+
+notifications:
+  email: false
+
+before_install:
+    - ./install-hdf.sh
+    - sudo apt-get update -qq
+    - sudo apt-get install gfortran-4.9
+    - sudo ln -fs /usr/bin/gfortran-4.9 /usr/bin/gfortran && gfortran --version
+
+install:
+    - ./install-cgns.sh
+
+#script:
+#    - python setup.py build -f
+#    - python setup.py test
