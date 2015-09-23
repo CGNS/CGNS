@@ -7,8 +7,10 @@ export F77=gfortran
 export CC=gcc
 export FLIBS="-Wl,--no-as-needed -ldl -lz"
 export LDFLAGS="-Wl,--no-as-needed -ldl"
+export LIBS="-Wl,--no-as-needed -ldl -lz"
 ./configure \
 --with-hdf5=$HOME/hdf5 \
+--with-fortran \
 --enable-lfs \
 --enable-64bit \
 --disable-shared \
@@ -19,8 +21,6 @@ export LDFLAGS="-Wl,--no-as-needed -ldl"
 --enable-64bit
 echo $PWD
 make
-
-#--with-fortran \
 
 
 
