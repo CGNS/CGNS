@@ -19,8 +19,8 @@ export LIBS="-Wl,--no-as-needed -ldl -lz"
 --disable-cgnstools \
 --disable-x \
 --enable-64bit
-echo $PWD
 make
+make test
 
 
 
