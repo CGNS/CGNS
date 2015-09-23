@@ -1,4 +1,4 @@
-# CGNS https://travis-ci.org/CGNS/CGNS.svg?branch=develop
+# CGNS [![Build Status](https://travis-ci.org/CGNS/CGNS.svg?branch=develop)](https://travis-ci.org/CGNS/CGNS)
 
 ## About
 

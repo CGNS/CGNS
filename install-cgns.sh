@@ -15,6 +15,8 @@ export CC=gcc
 --disable-cgnstools \
 --disable-x \
 --enable-64bit
+echo $PWD
+make
 
 #--with-fortran \
 
