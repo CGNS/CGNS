@@ -74,12 +74,15 @@ test : $(TESTS)
 	 for x in $(TESTS) ; do \
 	   if `./$$x >/dev/null 2>&1` ; then \
 	     echo -e "$$x ... $(OK_COLOR) passed $(NO_COLOR)"; \
+             status = 0;\
 	   else \
 	     echo -e "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR)"; \
+             status = 1;\
 	   fi; \
 	 done; \
 	 echo "=== finished ==="; \
 	echo " ";
+        exit $(status);
 
 #----------
 
