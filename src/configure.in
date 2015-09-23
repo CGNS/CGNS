@@ -136,30 +136,34 @@ LIBEXT=a
 # or the compiler doesn't work (don't use AC_PROG_F77)
 # If running under CYGWIN, make sure we get g77 instead of Visual Fortran
 #--------------------------------------------------------------------------
-
-if test -z "$F77"; then
-  if test "$ac_cv_cygwin" = "yes"; then
-    AC_CHECK_PROGS(F77, g77 f2c)
-  else
-    if test $use_gcc = yes; then
-      AC_CHECK_PROGS(F77, g77 f77 f90 f95 f2c)
+if test "x" != "x$FC"; then
+    has_f77=yes
+    F77=$FC
+else
+  if test -z "$F77"; then
+    if test "$ac_cv_cygwin" = "yes"; then
+      AC_CHECK_PROGS(F77, g77 f2c)
     else
-      AC_CHECK_PROGS(F77, f77 f90 f95 g77 f2c)
+      if test $use_gcc = yes; then
+        AC_CHECK_PROGS(F77, g77 f77 f90 f95 f2c)
+      else
+        AC_CHECK_PROGS(F77, f77 f90 f95 g77 f2c)
+      fi
     fi
   fi
-fi
-if test -z "$F77"; then
-  has_f77=no
-  F77=f77
-  AC_MSG_WARN(no Fortran compiler was found)
-else
-  has_f77=yes
-  AC_PROG_F77_GNU
-  if test "$ac_cv_prog_g77" = "yes"; then
-    test -z "$FFLAGS" && FFLAGS=-O2
-    test ! "$F77" = "f95" && FFLAGS="$FFLAGS -Wno-globals"
+  if test -z "$F77"; then
+    has_f77=no
+    F77=f77
+    AC_MSG_WARN(no Fortran compiler was found)
+  else
+    has_f77=yes
+    AC_PROG_F77_GNU
+    if test "$ac_cv_prog_g77" = "yes"; then
+      test -z "$FFLAGS" && FFLAGS=-O2
+      test ! "$F77" = "f95" && FFLAGS="$FFLAGS -Wno-globals"
+    fi
+    rm -f conftest*
   fi
-  rm -f conftest*
 fi
 FEOUT="-o \$(SPACE)"
 
