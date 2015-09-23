@@ -1,6 +1,6 @@
 language: C
 
-sudo: false
+#sudo: false
 
 # whitelist
 branches:
@@ -12,6 +12,7 @@ notifications:
 
 before_install:
     - ./install-hdf.sh
+    - sudo apt-get install gfortran
 
 install:
     - ./install-cgns.sh

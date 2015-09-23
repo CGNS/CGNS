@@ -6,7 +6,7 @@ export FC=gfortran
 export F77=gfortran
 export CC=gcc
 ./configure \
---with-hdf5=$HOME/build/CGNS/CGNS/hdf5_1_8/hdf5 \
+--with-hdf5=$HOME/hdf5 \
 --enable-lfs \
 --enable-64bit \
 --disable-shared \
