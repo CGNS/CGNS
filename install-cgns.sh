@@ -5,6 +5,8 @@ git checkout develop
 export FC=gfortran
 export F77=gfortran
 export CC=gcc
+export FLIBS="-ldl -lz"
+export CFLAGS="-ldl"
 ./configure \
 --with-hdf5=$HOME/hdf5 \
 --enable-lfs \
