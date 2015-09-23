@@ -36,6 +36,9 @@ New Features
       hdf5 (assuming the user does not already have them installed system wide) 
       and a script for building CGNS. All the scripts use autotools; cmake remains untested.
 
+    * The Fortran compiler environment variable can now be set with "FC", this is the preferred
+      method.
+
     Library:
     --------
     * Replaced the hid_t to double (and vice-versa) utilities to_HDF_ID and to_ADF_ID 
@@ -151,4 +154,8 @@ Bug Fixes since CGNS 3.2.1 release
 Known Problems
 ==============
 
-   * Building CGNS with Fortran enabled is not working on Windows. 
+   * Building CGNS with Fortran enabled is not working on Windows.
+   * When building with PGI and gcc compilers it might be necassary to set the
+     environment variables:
+            FLIBS="-Wl,--no-as-needed -ldl"
+            LIBS="-Wl,--no-as-needed -ldl"
