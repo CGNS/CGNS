@@ -1215,6 +1215,7 @@ int cgi_sort_names(int n, double *ids);
 int size_of(char_33 adf_type);
 char *type_of(char_33 data_type);
 int cgi_check_strlen(char const * string);
+int cgi_check_strlen_x2(char const *string);
 int cgi_check_mode(char const * filename, int file_mode, int mode_wanted);
 const char *cgi_adf_datatype(CGNS_ENUMT(DataType_t) type);
 CGNSDLL CGNS_ENUMT(DataType_t) cgi_datatype(cchar_33 adf_type);
