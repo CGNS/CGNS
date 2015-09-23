@@ -29,7 +29,7 @@
       INTEGER NUMDIM, I, J 
       
 !
-      if (CG_BUILD_64BIT .eq. 0) then
+      if (.nOT.CG_BUILD_64BIT) then
         PRINT *,'PROGRAM NOT SET UP FOR 64-BIT'
         STOP
       endif
