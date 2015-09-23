@@ -80,7 +80,7 @@
 
 /* Define an int type that is interoperabable with Fortran's INTEGER */
 #define FORTRAN_DEFAULT_INTEGER_C_INT64_T @FORTRAN_DEFAULT_INTEGER_C_INT64_T@
-#if FORTRAN_DEFAULT_INTEGER_C_INT64_T
+#if FORTRAN_DEFAULT_INTEGER_C_INT64_T == 1
   typedef CG_LONG_T cgint_f;
 #else
   typedef int cgint_f;
