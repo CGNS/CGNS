@@ -18,7 +18,13 @@ export LIBS="-Wl,--no-as-needed -ldl -lz"
 --disable-x \
 --enable-64bit
 make
+if [ $? -ne 0 ]
+  exit 1
+fi
 make test
+if [ $? -ne 0 ]
+  exit 1
+fi
 
 
 
