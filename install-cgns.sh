@@ -20,7 +20,6 @@ export LIBS="-Wl,--no-as-needed -ldl -lz"
 --disable-x \
 --enable-64bit
 echo $PWD
-make
 
 
 

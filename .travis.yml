@@ -17,6 +17,7 @@ before_install:
 install:
     - ./install-cgns.sh
 
-#script:
+script: make
+    
 #    - python setup.py build -f
 #    - python setup.py test
