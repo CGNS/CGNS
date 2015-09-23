@@ -14,10 +14,5 @@ before_install:
     - ./install-hdf.sh
     - sudo apt-get install gfortran
 
-#install:
-#    - ./install-cgns.sh
-
 script:
      - ./install-cgns.sh
-#    - python setup.py build -f
-#    - python setup.py test
