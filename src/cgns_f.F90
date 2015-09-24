@@ -4347,6 +4347,26 @@ MODULE cgns
   END INTERFACE
 
 #endif
+  INTERFACE
+     SUBROUTINE cg_open_f(filename, mode, fn, ier)
+       IMPORT :: C_CHAR, C_INT
+       IMPLICIT NONE
+       CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
+       INTEGER(C_INT), INTENT(IN) :: mode
+       INTEGER, INTENT(OUT) :: fn
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_open_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_is_cgns_f(filename, file_type, ier)
+        IMPORT :: C_CHAR
+        IMPLICIT NONE
+        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
+        INTEGER, INTENT(OUT) :: file_type
+        INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_is_cgns_f
+  END INTERFACE
 
   INTERFACE cg_get_type
      MODULE PROCEDURE cg_get_type_c_int
@@ -4385,27 +4405,29 @@ CONTAINS
     cg_get_type_c_double = CGNS_ENUMV(RealDouble)
   END FUNCTION cg_get_type_c_double
 
-  SUBROUTINE cg_is_cgns_f(filename, file_type, ier)
-    USE ISO_C_BINDING
-    IMPLICIT NONE
-    CHARACTER(KIND=C_CHAR, LEN=*), INTENT(IN) :: filename
-    INTEGER, INTENT(OUT) :: file_type
-    INTEGER, INTENT(OUT) :: ier
-
-    ier = cg_is_cgns(TRIM(filename)//C_NULL_CHAR, file_type)
-
-  END SUBROUTINE cg_is_cgns_f
-
-  SUBROUTINE cg_open_f(filename, mode, fn, ier)
-    USE ISO_C_BINDING
-    IMPLICIT NONE
-    CHARACTER(KIND=C_CHAR, LEN=*), INTENT(IN) :: filename
-    INTEGER(C_INT), INTENT(IN) :: mode
-    INTEGER, INTENT(OUT) :: fn
-    INTEGER, INTENT(OUT) :: ier
-
-    ier = cg_open(TRIM(filename)//C_NULL_CHAR, mode, fn)
-
-  END SUBROUTINE cg_open_f
+!  These have issues when using xlf and the calling
+!  program does not use the modules, CGNS-25 
+!  SUBROUTINE cg_is_cgns_f(filename, file_type, ier)
+!    USE ISO_C_BINDING
+!    IMPLICIT NONE
+!    CHARACTER(KIND=C_CHAR, LEN=*), INTENT(IN) :: filename
+!    INTEGER, INTENT(OUT) :: file_type
+!    INTEGER, INTENT(OUT) :: ier
+!
+!    ier = cg_is_cgns(TRIM(filename)//C_NULL_CHAR, file_type)
+!
+!  END SUBROUTINE cg_is_cgns_f
+!
+!  SUBROUTINE cg_open_f(filename, mode, fn, ier)
+!    USE ISO_C_BINDING
+!    IMPLICIT NONE
+!    CHARACTER(KIND=C_CHAR, LEN=*), INTENT(IN) :: filename
+!    INTEGER(C_INT), INTENT(IN) :: mode
+!    INTEGER, INTENT(OUT) :: fn
+!    INTEGER, INTENT(OUT) :: ier
+!
+!    ier = cg_open(TRIM(filename)//C_NULL_CHAR, mode, fn)
+!
+!  END SUBROUTINE cg_open_f
 
 END MODULE cgns
