@@ -1492,6 +1492,18 @@ if test "$enableval" = "yes" ; then
 
 fi
 
+#----------- Determine if the Fortran compiler xlf ------------------------
+# xlf preprocessor needs the -WF,-D prefix, FC_D_PRE is used when passing -D 
+# options to fortran programs.
+#--------------------------------------------------------------------------
+FC_D_PRE='' 
+if test "$withfortran" = "yes"; then
+    fc_vender="`$FC -qversion 2>&1 |grep 'IBM XL'`"
+    if test X != "X$fc_vender"; then
+      FC_D_PRE='-WF,' 
+    fi
+fi
+
 #--------------------------------------------------------------------------
 # substitutions and write Makefile and make.defs
 #--------------------------------------------------------------------------
@@ -1559,6 +1571,7 @@ AC_SUBST(HAVE_FORTRAN_2003)
 AC_SUBST(HAVE_FORTRAN_2008TS)
 AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
+AC_SUBST(FC_D_PRE)
 AC_SUBST(BUILDPARALLEL)
 AC_SUBST(BUILDBASESCOPE)
 
