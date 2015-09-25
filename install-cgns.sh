@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 git clone -b develop --single-branch https://github.com/CGNS/CGNS.git
 cd CGNS/src
 export FC=gfortran
