@@ -1498,8 +1498,8 @@ fi
 #--------------------------------------------------------------------------
 FC_D_PRE='' 
 if test "$withfortran" = "yes"; then
-    fc_vender="`$FC -qversion 2>&1 |grep 'IBM XL'`"
-    if test X != "X$fc_vender"; then
+    fc_vendor="`$FC -qversion 2>&1 |grep 'IBM XL'`"
+    if test X != "X$fc_vendor"; then
       FC_D_PRE='-WF,' 
     fi
 fi
