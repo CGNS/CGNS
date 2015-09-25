@@ -1949,7 +1949,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_zconn_read_f(fn, B, Z, C, name, ier) BIND(C, NAME="cg_zconn_read_f")
+     SUBROUTINE cg_zconn_read_f(fn, B, Z, C, name, ier) !BIND(C, NAME="cg_zconn_read_f")
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: fn
