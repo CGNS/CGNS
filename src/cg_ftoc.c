@@ -1330,7 +1330,7 @@ CGNSDLL void cg_nzconns_f(cgint_f *fn,
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cg_zconn_read_f(cgint_f *fn,
+CGNSDLL void FMNAME(cg_zconn_read_f, CG_ZCONN_READ_F) (cgint_f *fn,
 	cgint_f *B, cgint_f *Z, cgint_f *C, STR_PSTR(name),
 	cgint_f *ier STR_PLEN(name))
 {
