@@ -740,7 +740,8 @@ void write_unstructured()
     char name[33];
     float exps[5];
 #ifdef UNSTRUCTURED_1TO1
-    int d_range[2], transform;
+    cgsize_t d_range[2];
+    int transform;
 #else
 # ifdef ABUTTING1TO1_FACES
     GridLocation_t location;
