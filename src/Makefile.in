@@ -10,8 +10,12 @@ CGNSVER = @CGNSVERS@
 OBJDIR  = @BUILDDIR@
 COPTS	= $(CFLAGS) $(CFGFLAGS) -I. @BUILDOPTS@
 FOPTS   = $(FFLAGS) -I. @BUILDOPTS@
+D_PRE   = @FC_D_PRE@
 CGNSLIB = $(LIBCGNS)
 INSTLIB = @CGNSLIB@
+
+# Prepend to "-D" if necessary (xlf compilers)
+FOPTS_MOD=$(subst -D,$(D_PRE)-D,$(FOPTS))
 
 #----------
 
@@ -211,7 +215,7 @@ $(OBJDIR)/cg_malloc.$(O) : cg_malloc.c cg_malloc.h
 	$(CC) $(COPTS) $(COOUT)$@ -c cg_malloc.c
 
 $(OBJDIR)/cgns_f.$(O) : cgns_f.F90 cgnstypes_f.h
-	$(F77) $(FOPTS) $(COOUT)$@ -c cgns_f.F90
+	$(F77) $(FOPTS_MOD) $(COOUT)$@ -c cgns_f.F90
 
 cgnslib.h : cgnstypes.h
 cgns_header.h : cgnstypes.h

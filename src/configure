@@ -4133,6 +4133,18 @@ fi
 
 fi
 
+#----------- Determine if the Fortran compiler xlf ------------------------
+# xlf preprocessor needs the -WF,-D prefix, FC_D_PRE is used when passing -D 
+# options to fortran programs.
+#--------------------------------------------------------------------------
+FC_D_PRE='' 
+if test "$withfortran" = "yes"; then
+    fc_vender="`$FC -qversion 2>&1 |grep 'IBM XL'`"
+    if test X != "X$fc_vender"; then
+      FC_D_PRE='-WF,' 
+    fi
+fi
+
 #--------------------------------------------------------------------------
 # substitutions and write Makefile and make.defs
 #--------------------------------------------------------------------------
@@ -4189,7 +4201,7 @@ CGNSLIB=libcgns.$EXT_LIB
 test "$LIBS" = "-lm -lm " && LIBS=-lm
 
 echo $ac_n "checking whether ${MAKE-make} sets \${MAKE}""... $ac_c" 1>&6
-echo "configure:4193: checking whether ${MAKE-make} sets \${MAKE}" >&5
+echo "configure:4205: checking whether ${MAKE-make} sets \${MAKE}" >&5
 set dummy ${MAKE-make}; ac_make=`echo "$2" | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_prog_make_${ac_make}_set'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -4214,6 +4226,7 @@ else
   echo "$ac_t""no" 1>&6
   SET_MAKE="MAKE=${MAKE-make}"
 fi
+
 
 
 
@@ -4464,6 +4477,7 @@ s%@HAVE_FORTRAN_2003@%$HAVE_FORTRAN_2003%g
 s%@HAVE_FORTRAN_2008TS@%$HAVE_FORTRAN_2008TS%g
 s%@FORTRAN_DEFAULT_INTEGER_C_INT64_T@%$FORTRAN_DEFAULT_INTEGER_C_INT64_T%g
 s%@HDF5_HAVE_MULTI_DATASETS@%$HDF5_HAVE_MULTI_DATASETS%g
+s%@FC_D_PRE@%$FC_D_PRE%g
 s%@BUILDPARALLEL@%$BUILDPARALLEL%g
 s%@BUILDBASESCOPE@%$BUILDBASESCOPE%g
 s%@CGNSTOOLS@%$CGNSTOOLS%g
