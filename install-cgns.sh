@@ -20,11 +20,13 @@ export LIBS="-Wl,--no-as-needed -ldl -lz"
 make
 if [ $? -ne 0 ]
 then
+  echo "**FAILED** IN MAKE"
   exit 1
 fi
 make test
 if [ $? -ne 0 ]
 then
+  echo "**FAILED** IN MAKE TEST"
   exit 1
 fi
 
