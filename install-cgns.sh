@@ -18,6 +18,7 @@ export LIBS="-Wl,--no-as-needed -ldl -lz"
 --disable-x \
 --enable-64bit
 make
+echo $?
 if [ "$?" -ne "0" ];then
   echo "**FAILED** IN MAKE"
   exit 1
