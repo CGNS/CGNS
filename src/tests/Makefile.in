@@ -28,13 +28,13 @@ CALL = \
 	write_test$(EXE) \
 	write_zones$(EXE) \
 	write_rind$(EXE)
-
-F_TESTS_77 = \
-	cgiof$(EXE) \
-	cgwrite$(EXE) \
-	cgread$(EXE) \
-	cgzconn$(EXE) \
-	cgsubreg$(EXE)
+F_TESTS_77 =""
+#F_TESTS_77 = \
+#	cgiof$(EXE) \
+#	cgwrite$(EXE) \
+#	cgread$(EXE) \
+#	cgzconn$(EXE) \
+#	cgsubreg$(EXE)
 
 F_TESTS_03 = \
 	cgiof_F03$(EXE) \
