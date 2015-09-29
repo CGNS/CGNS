@@ -4933,7 +4933,7 @@ CONTAINS
   SUBROUTINE cgio_set_dimensions_f_0(cgio_num, id, data_type, ndims, dims, ier)
     IMPLICIT NONE
     INTEGER :: cgio_num
-    REAL*8 :: id
+    REAL(C_DOUBLE) :: id
     CHARACTER(KIND=C_CHAR), DIMENSION(*) :: data_type
     INTEGER :: ndims
     INTEGER(CGSIZE_T) :: dims
@@ -4946,7 +4946,7 @@ CONTAINS
   SUBROUTINE cgio_set_dimensions_f_1(cgio_num, id, data_type, ndims, dims, ier)
     IMPLICIT NONE
     INTEGER :: cgio_num
-   REAL*8 :: id
+    REAL(C_DOUBLE) :: id
     CHARACTER(KIND=C_CHAR), DIMENSION(*) :: data_type
     INTEGER :: ndims
     INTEGER(CGSIZE_T), DIMENSION(*) :: dims
