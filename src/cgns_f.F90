@@ -4642,7 +4642,7 @@ MODULE cgns
        IMPLICIT NONE
        INTEGER :: cgio_num
        REAL(C_DOUBLE) :: id
-       INTEGER :: link_len
+       INTEGER :: file_len
        INTEGER :: name_len
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgio_link_size_f
