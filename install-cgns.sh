@@ -1,7 +1,8 @@
 #!/bin/sh
 set -e
-git clone -b develop --single-branch https://github.com/CGNS/CGNS.git
-cd CGNS/src
+#git clone -b develop --single-branch https://github.com/CGNS/CGNS.git
+#cd CGNS/src
+cd src
 export FC=gfortran
 export F77=gfortran
 export CC=gcc
