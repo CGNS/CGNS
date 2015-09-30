@@ -20,6 +20,7 @@ export LIBS="-Wl,--no-as-needed -ldl -lz"
 --enable-64bit
 make;echo $? > result
 res=$(cat "result")
+echo "$res"
 if [ "$res" -ne "0" ];then
   echo "**FAILED** IN MAKE"
   exit 1
