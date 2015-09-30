@@ -4929,12 +4929,11 @@ CONTAINS
 !
 !  END SUBROUTINE cg_open_f
 
-
   SUBROUTINE cgio_set_dimensions_f_0(cgio_num, id, data_type, ndims, dims, ier)
     IMPLICIT NONE
     INTEGER :: cgio_num
     REAL(C_DOUBLE) :: id
-    CHARACTER(KIND=C_CHAR), DIMENSION(*) :: data_type
+    CHARACTER(KIND=C_CHAR, LEN=*) :: data_type
     INTEGER :: ndims
     INTEGER(CGSIZE_T) :: dims
     INTEGER, INTENT(OUT) :: ier
@@ -4947,7 +4946,7 @@ CONTAINS
     IMPLICIT NONE
     INTEGER :: cgio_num
     REAL(C_DOUBLE) :: id
-    CHARACTER(KIND=C_CHAR), DIMENSION(*) :: data_type
+    CHARACTER(KIND=C_CHAR, LEN=*) :: data_type
     INTEGER :: ndims
     INTEGER(CGSIZE_T), DIMENSION(*) :: dims
     INTEGER, INTENT(OUT) :: ier
