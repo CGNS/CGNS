@@ -20,7 +20,8 @@ before_install:
 
 install:
     - echo $PWD
-    - cd src
+    - ls
+    - cd CGNS/src
     - echo $PWD
     - ls
     - make
