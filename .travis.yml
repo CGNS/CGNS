@@ -20,5 +20,7 @@ script:
 install:
     - echo $PWD
     - cd src
+    - echo $PWD
+    - ls
     - make
     - make tests
