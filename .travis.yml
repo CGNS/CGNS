@@ -13,9 +13,10 @@ notifications:
 before_install:
     - ./install-hdf.sh
     - sudo apt-get install gfortran
+    - ./install-cgns.sh
 
-script:
-     - ./install-cgns.sh
+#script:
+#     - ./install-cgns.sh
 
 install:
     - echo $PWD
