@@ -18,6 +18,7 @@ script:
      - ./install-cgns.sh
 
 install:
-    - cd CGNS/src
+    - echo $PWD
+    - cd src
     - make
     - make tests
