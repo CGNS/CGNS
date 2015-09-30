@@ -18,13 +18,15 @@ export LIBS="-Wl,--no-as-needed -ldl -lz"
 --disable-cgnstools \
 --disable-x \
 --enable-64bit
-make
-if [ "$?" -ne "0" ];then
+make;echo $? > result
+res=$(cat "result")
+if [ "$res" -ne "0" ];then
   echo "**FAILED** IN MAKE"
   exit 1
 fi
-make test
-if [ "$?" -ne "0" ];then
+make test;echo $? > result
+res=$(cat "result")
+if [ "$res" -ne "0" ];then
   echo "**FAILED** IN MAKE TEST"
   exit 1
 fi

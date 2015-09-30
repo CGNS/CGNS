@@ -33,6 +33,7 @@
         PRINT *,'PROGRAM NOT SET UP FOR 64-BIT'
         STOP
       ENDIF
+      debug
 !
 !     SET ERROR FLAG TO ABORT ON ERROR
 !
