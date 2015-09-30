@@ -19,7 +19,6 @@ export LIBS="-Wl,--no-as-needed -ldl -lz"
 --disable-cgnstools \
 --disable-x \
 --enable-64bit
-echo "install **** $PWD"
 #make;echo $? > result
 #res=$(cat "result")
 #echo "$res"
