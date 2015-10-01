@@ -78,7 +78,11 @@ static char *new_c_string (char *str, int len, cgint_f *ier)
     if (len < 1 || str == NULL) {
       *ier = (cgint_f)CGIO_ERR_NULL_STRING;
         return NULL;
+    } else if ( len == 2 && strncmp(str, "/0", 2) == 0 ) {
+      *ier = (cgint_f)CGIO_ERR_NULL_STRING;
+      return NULL;
     }
+
     c_str = (char *) malloc (len + 1);
     if (c_str == NULL) {
         *ier = (cgint_f)CGIO_ERR_MALLOC;
