@@ -133,8 +133,8 @@ if(CGNS_ENABLE_FORTRAN)
     if (CMAKE_Fortran_COMPILER_WORKS)
       foreach(nc ${F2CLIST})
         try_compile(NAMING_TEST_RESULT
-	    "${CMAKE_BINARY_DIR}/fortran_test"
-	    "${CMAKE_SOURCE_DIR}/fortran_test"
+	    "${CMAKE_BINARY_DIR}/Fortran_test"
+	    "${CMAKE_SOURCE_DIR}/Fortran_test"
 	    projectName ${nc})
         if(${NAMING_TEST_RESULT} STREQUAL "TRUE")
           set(FORTRAN_NAMING "${nc}" CACHE STRING ${FORTRAN_NAMING_HELP})
