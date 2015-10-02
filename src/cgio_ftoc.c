@@ -78,7 +78,7 @@ static char *new_c_string (char *str, int len, cgint_f *ier)
     if (len < 1 || str == NULL) {
       *ier = (cgint_f)CGIO_ERR_NULL_STRING;
         return NULL;
-    } else if ( len == 2 && strncmp(str, "\0", 2) == 0 ) {
+    } else if ( len == 2 && strncmp(str, "\0", 2) == 92 ) {
       *ier = (cgint_f)CGIO_ERR_NULL_STRING;
       return NULL;
     }
