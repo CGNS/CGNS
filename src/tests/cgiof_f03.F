@@ -1,10 +1,13 @@
       PROGRAM TEST
+
 !
 !     SAMPLE ADF TEST PROGRAM TO BUILD FILES ILLUSTRATED
 !     IN THE EXAMPLE DATABASE FIGURE
 !
       USE CGNS
+      IMPLICIT NONE
 !
+      INTEGER MAXCHR
       PARAMETER (MAXCHR=32)
 !
       CHARACTER*(MAXCHR) TSTLBL,DTYPE
@@ -14,7 +17,7 @@
       REAL A(4,3),B(4,3)
       INTEGER*4 IC(6),ID(6)
       INTEGER IERR,ICGIO,ICGIO2
-      INTEGER IDIM(2),IDIMA(2),IDIMC,IDIMD
+      INTEGER(CGSIZE_T) :: IDIM(2),IDIMA(2),IDIMC,IDIMD
 !
       DATA A /1.1,2.1,3.1,4.1,                                          &
      &      1.2,2.2,3.2,4.2,                                            &
@@ -23,11 +26,13 @@
 !
       DATA IC /1,2,3,4,5,6/
       DATA IDIMC /6/
+      INTEGER NUMDIM, I, J 
+      
 !
-      if (CG_BUILD_64BIT .eq. 0) then
+      IF (CG_BUILD_64BIT) THEN
         PRINT *,'PROGRAM NOT SET UP FOR 64-BIT'
         STOP
-      endif
+      ENDIF
 !
 !     SET ERROR FLAG TO ABORT ON ERROR
 !
@@ -207,6 +212,7 @@
 ! ************* SUBROUTINES ****************
 !
       SUBROUTINE PRTCLD(ICGIO,PID)
+      USE CGNS
 !
 ! *** PRINT TABLE OF CHILDREN GIVEN A PARENT NODE-ID
 !

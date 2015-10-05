@@ -1,4 +1,4 @@
-Currently at Release 3.1.2
+Currently at Release 3.3
 
 The simple programs contained here go along with the User's Guide to CGNS.
 They read and write very simple example CGNS files, in order to help
@@ -103,3 +103,10 @@ Changes from Release 3.1:
     and ElementList has been deprecated as of version 3.1.3.
 - Switched read_bcpnts_unst_NR.f (and .c) with read_bcpnts_unst.f (and .c) because use of ElementRange 
     and ElementList has been deprecated as of version 3.1.3.
+
+Changes from Release 3.1.2:
+- None.
+
+--------------------
+
+The UserGuideCode software is included as part of the CGNS downloadable package.
