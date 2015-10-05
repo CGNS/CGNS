@@ -66,7 +66,7 @@ PROGRAM benchmark_hdf5_f90
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
   ! Use powers of 2
-  INTEGER(CGSIZE_T), PARAMETER :: Nelem = 33554432 ! Use multiples of number of cores per node
+  INTEGER(CGSIZE_T), PARAMETER :: Nelem = 65536 ! 33554432 ! Use multiples of number of cores per node
   INTEGER(CGSIZE_T), PARAMETER :: NodePerElem = 6
 
   INTEGER(CGSIZE_T) :: Nnodes

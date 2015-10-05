@@ -58,7 +58,7 @@ int comm_rank;
 MPI_Info info;
 
 /* cgsize_t Nelem = 33554432; */
-cgsize_t Nelem = 33554432;
+cgsize_t Nelem = 65536;
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
