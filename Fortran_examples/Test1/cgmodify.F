@@ -9,7 +9,7 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
+	USE CGNS
 
 	parameter (Ndim = 3)
 	integer index_dim, cell_dim, phys_dim, pos
