@@ -1,4 +1,5 @@
 	program write_chemistry
+	USE CGNS
 
 !       author: Diane Poirier (diane@icemcfd.com)
 !       last revised on March 8 2000
@@ -12,7 +13,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
 
 	parameter (Ndim = 3)
 	integer index_dim, cell_dim, phys_dim, pos

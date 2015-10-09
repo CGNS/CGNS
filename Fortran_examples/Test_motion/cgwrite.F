@@ -1,4 +1,5 @@
 	program write_cgns_motion
+	USE CGNS
 
 !       author: Diane Poirier (diane@icemcfd.com)
 !       last revised on November 2000
@@ -7,7 +8,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
 
 	parameter (Ndim = 3, NumberOfSteps=2)
 	parameter (Nnodes = 120)

@@ -1,4 +1,5 @@
       PROGRAM TEST
+      USE CGNS
       
 c---- This code has been modified to use the cgio interface
 c---- The old ADF code has been left in to show the difference
@@ -274,6 +275,7 @@ C ************* SUBROUTINES ****************
 C
 c      SUBROUTINE PRTCLD(PID)
       subroutine prtcld(cgnum, pid)
+      USE CGNS
 C
 C *** PRINT TABLE OF CHILDREN GIVEN A PARENT NODE-ID
 C

@@ -1,5 +1,6 @@
 
 	program read_chemistry
+	USE CGNS
 	implicit none
 
 ! Demonstrate Version 2.1 chemistry extensions.
@@ -8,7 +9,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
 
 	integer Ndim, Nglobal
 	parameter (Ndim = 3)

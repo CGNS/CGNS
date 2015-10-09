@@ -1,5 +1,6 @@
 
         program read_mixed_grid
+	USE CGNS
 
 !	author: Diane Poirier
 !       last revised on October 12 2001
@@ -14,7 +15,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
 
         parameter (NNODES=200000, NELEMENTS=200000)
 

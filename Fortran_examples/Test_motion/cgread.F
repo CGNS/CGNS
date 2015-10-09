@@ -1,12 +1,12 @@
 
 	program read_cgns_motion
+	USE CGNS
 
 ! This program reads the CGNS file created with write_cgns_motion
 
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
 
 	parameter (Ndim = 3)
 	parameter (Nglobal = 500)

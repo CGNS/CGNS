@@ -1,5 +1,6 @@
 
         program write_mixed_grid
+	USE CGNS
 
 !	author: Diane Poirier
 !	last revised on March 8 2000
@@ -14,7 +15,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
 
 	parameter (Ndim = 3)
 	integer index_dim, cell_dim, phys_dim

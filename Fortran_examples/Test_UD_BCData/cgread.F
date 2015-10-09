@@ -1,5 +1,6 @@
 
 	program read_udata 
+	USE CGNS
 	implicit none
 
 ! This program reads a 3D mesh, structured or unstructured.
@@ -11,7 +12,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
 
 	integer Ndim, Nglobal
 	integer i, narrays, iarray, nintegrals, integral 

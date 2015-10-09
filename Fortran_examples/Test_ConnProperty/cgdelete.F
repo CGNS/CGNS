@@ -1,4 +1,5 @@
 	program delete_cprop
+	USE CGNS
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
@@ -15,7 +16,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
 
 	integer Ndim 
 	parameter (Ndim = 3)
