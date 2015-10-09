@@ -534,6 +534,7 @@ install(FILES
 	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f03.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnslib_f.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs
+        ${CMAKE_CURRENT_BINARY_DIR}/cgns.mod
 	DESTINATION include)
 
 if (CGNS_ENABLE_PARALLEL)
