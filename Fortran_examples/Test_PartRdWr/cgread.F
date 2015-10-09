@@ -1,5 +1,6 @@
 
         program read_partial_data
+        USE CGNS
 
 !	original author (of write_mixed_elements): Diane Poirier 
 !       author: Ken Wall
@@ -10,7 +11,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-        include 'cgnslib_f.h'
 
         parameter (NNODES=27, NELEMENTS=3)
 

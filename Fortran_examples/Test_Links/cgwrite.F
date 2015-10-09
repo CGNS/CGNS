@@ -1,4 +1,5 @@
 	program write_links
+	USE CGNS
 
 !       author: Diane Poirier (diane@icemcfd.com)
 !
@@ -16,7 +17,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
 
 	parameter (Ndim = 3)
 	integer index_dim, cell_dim, phys_dim, pos

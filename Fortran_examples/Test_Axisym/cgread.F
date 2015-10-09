@@ -1,5 +1,6 @@
 
 	program read_axisym
+	USE CGNS
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
@@ -10,7 +11,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
 
 	integer Ndim
 	parameter (Ndim = 2)

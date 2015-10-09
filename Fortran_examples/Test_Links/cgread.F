@@ -1,5 +1,6 @@
 
 	program read_links
+	USE CGNS
 
 ! This program reads a 3D mesh, structured or unstructured.
 ! Reports if GridCoordinates node is a link.
@@ -8,7 +9,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
 
 	parameter (Ndim = 3)
 	parameter (Nglobal = 500)

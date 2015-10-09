@@ -1,5 +1,6 @@
 
         program read_mixed_elements
+        USE CGNS
 
 !	author: Diane Poirier
 !       last revised on April 19 2000
@@ -9,7 +10,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-        include 'cgnslib_f.h'
 
         parameter (NNODES=27, NELEMENTS=3)
 

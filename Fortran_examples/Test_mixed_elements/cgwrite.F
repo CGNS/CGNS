@@ -1,5 +1,6 @@
 
         program write_mixed_elements
+	USE CGNS
 
 !	author: Diane Poirier
 !	last revised on March 15 2000
@@ -11,7 +12,6 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-	include 'cgnslib_f.h'
 
 	integer index_dim, cell_dim, phys_dim
 	integer cg, base, zone, size(3), ier, index, ZoneType
