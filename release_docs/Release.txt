@@ -130,6 +130,7 @@ New Features
     Tools:
     ------
      - None
+
 Bug Fixes since CGNS 3.2.1 release
 ==================================
 
@@ -143,13 +144,25 @@ Bug Fixes since CGNS 3.2.1 release
 
     * Generally improved the performance of cgp_open (cgp_open_f).
 
+    * Fixed elemtest.c to compile for SunOS 5.12, CGNS-29.
+
+    
+
     Fortran:
     --------
-    - Fixed cgnslib_f.h to be both free and fixed form compatible.
+    * Fixed cgnslib_f.h to be both free and fixed form compatible.
+
+    * cgio_link_size_f -- file_len and name_len were changed from cgsize_t to integer to match the C API, CGNS-37.
+
+    * cgio_is_link_f -- cgio_num was changed from type cgsize_t to an integer to match the C API, CGNS-36.
+
+    * cgio_is_supported_f -- ier changed from cgsize_t to integer to match the C API, CGNS-35.
+
+
 
     Tools:
     ------
-    - None
+    * None
 
 Known Problems
 ==============
@@ -159,3 +172,4 @@ Known Problems
      environment variables:
             FLIBS="-Wl,--no-as-needed -ldl"
             LIBS="-Wl,--no-as-needed -ldl"
+   * cg_goto_f fails with the PGI compilers on x86_64 platforms, CGNS-40.
