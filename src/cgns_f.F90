@@ -3529,9 +3529,9 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_rind_write_f(RindData, ier) !BIND(C, NAME="cg_rind_write_f")
+     SUBROUTINE cg_rind_write_f(RindData, ier) BIND(C, NAME="cg_rind_write_f")
        IMPLICIT NONE
-       INTEGER :: RindData
+       INTEGER, DIMENSION(*) :: RindData
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_rind_write_f
   END INTERFACE
