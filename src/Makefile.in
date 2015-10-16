@@ -38,9 +38,11 @@ ADFOBJS=@ADFOBJS@ \
 
 #----------
 
+MakeTests = runtests @PTESTS@
 all     : $(CGNSLIB) tools @CGNSTOOLS@
 cgns    : $(CGNSLIB)
-test    : runtests @PTESTS@
+test    : $(MakeTests)
+check   : $(MakeTests)
 install : install-cgns @INSTALLCGNSTOOLS@
 
 #----------
