@@ -18,7 +18,7 @@ before_install:
       if [ "$(uname)" = "Linux" ]; then 
          sudo apt-get install gfortran;
       else
-         brew install gcc49
+         brew install gcc52
       fi
     - ./install-hdf.sh
 
