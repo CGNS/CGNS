@@ -14,11 +14,13 @@ notifications:
   email: false
 
 before_install:
-    - ./install-hdf.sh
-    - if [ "$(uname)" = "Linux" ]; then 
-         sudo apt-get install gfortran; 
+    - |
+      if [ "$(uname)" = "Linux" ]; then 
+         sudo apt-get install gfortran;
+      else
+         brew install gcc49
       fi
-    - brew install gcc
+    - ./install-hdf.sh
 
 script:
     - ./install-cgns.sh
