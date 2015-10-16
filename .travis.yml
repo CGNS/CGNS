@@ -2,7 +2,7 @@ language: C
 sudo: required
 
 os:
-#  - linux
+  - linux
   - osx
 
 # whitelist
