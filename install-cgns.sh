@@ -12,8 +12,9 @@ else
   export F77=gfortran
   export CC=gcc
 fi
-export FLIBS="-Wl,--no-as-needed -ldl -lz"
-export LIBS="-Wl,--no-as-needed -ldl -lz"
+#export FLIBS="-Wl,--no-as-needed -ldl -lz"
+#export LIBS="-Wl,--no-as-needed -ldl -lz"
+
 ./configure \
 --with-hdf5=$HOME/hdf5 \
 --with-fortran \
