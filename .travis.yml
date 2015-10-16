@@ -15,8 +15,10 @@ notifications:
 
 before_install:
     - ./install-hdf.sh
-#    - sudo apt-get install gfortran
-#    - brew install gfortran
+    - if [ "$(uname)" = "Linux" ]; then 
+         sudo apt-get install gfortran; 
+      fi
+    - brew install gcc
 
 script:
     - ./install-cgns.sh
