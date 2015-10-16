@@ -17,7 +17,7 @@ before_install:
     - |
       if [ "$(uname)" = "Linux" ]; then 
          sudo apt-get install gfortran;
-         sudo apt-get install libhdf5-10
+         sudo apt-get install libhdf5-serial-dev
       else
          ./install-hdf.sh
       fi
