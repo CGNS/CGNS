@@ -16,7 +16,7 @@ notifications:
 before_install:
     - ./install-hdf.sh
 #    - sudo apt-get install gfortran
-    - brew install gfortran
+#    - brew install gfortran
 
 script:
     - ./install-cgns.sh
