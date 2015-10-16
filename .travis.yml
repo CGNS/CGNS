@@ -1,6 +1,9 @@
 language: C
+sudo: required
 
-#sudo: false
+os:
+#  - linux
+  - osx
 
 # whitelist
 branches:
@@ -12,7 +15,8 @@ notifications:
 
 before_install:
     - ./install-hdf.sh
-    - sudo apt-get install gfortran
+#    - sudo apt-get install gfortran
+    - brew install gfortran
 
 script:
     - ./install-cgns.sh
