@@ -1,6 +1,6 @@
 #!/bin/sh
 echo "****"
-whereis gfortran
+find / -iname 'gfortran*'
 echo "****"
 #trunk
 #svn co https://svn.hdfgroup.uiuc.edu/hdf5/trunk
