@@ -39,6 +39,9 @@ New Features
     * The Fortran compiler environment variable can now be set with "FC", this is the preferred
       method.
 
+    * The Fortran compiler flags can now be set with "FCFLAGS", this is the preferred method.
+      If both FFLAGS (which predates FCFLAGS) and FCFLAGS are set then FCFLAGS is ignored. (CGNS-23)
+
     Library:
     --------
     * Replaced the hid_t to double (and vice-versa) utilities to_HDF_ID and to_ADF_ID 
