@@ -132,7 +132,7 @@ LIBEXT=a
 
 # Set the Fortran flags using FCFLAGS. If both FFLAGS (which predates FCFLAGS)
 # and FCFLAGS is set then FFLAGS is set and FCFLAGS is ignored.
-if test "x" = "x$FFLAGS" && "x" != "x$FCFLAGS"; then
+if test "x" = "x$FFLAGS" && test "x" != "x$FCFLAGS"; then
    FFLAGS="$FCFLAGS"
 fi
 
