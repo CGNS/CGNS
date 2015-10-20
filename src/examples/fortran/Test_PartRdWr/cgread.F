@@ -24,6 +24,7 @@
         double precision data_double(NNODES)
         integer el_st, el_end
         integer parent(1000)
+        integer parent_flag
 
 !       initialize
         ier = 0
