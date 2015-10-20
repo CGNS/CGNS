@@ -1,4 +1,3 @@
-
         program write_mixed_grid
 	USE CGNS
 
