@@ -25,14 +25,11 @@ all :
 	-@for d in $(DIRS) ; do \
 	  cd $$d && make; \
 	  cd ..; \
-	done;
+	done; \
+	test.sh.in
 
 test : $(TESTS)
-	-@for d in $(DIRS) ; do \
-	  echo "********** testing $$d"; \
-	  cd $$d && make test; \
-	  cd ..; \
-	done;
+	test.sh.in
 
 clean : $(CLEAN)
 	-@for d in $(DIRS) ; do \
