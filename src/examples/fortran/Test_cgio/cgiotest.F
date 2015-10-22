@@ -261,8 +261,8 @@ c      CALL ADFDOPN('adf_file_two.adf','OLD',' ',RID,IERR)
       call cgio_close_file_f(cgnum,ierr)
       PRINT *,' '
       PRINT *,' COMPARISON OF ROOT ID: '
-      PRINT *,' ADF_FILE_TWO.ADF ORIGINAL ROOT ID = ',RIDF2
-      PRINT *,' ADF_FILE_TWO.ADF NEW ROOT ID      = ',RID
+      WRITE(*,'(A,F12.8)')' ADF_FILE_TWO.ADF ORIGINAL ROOT ID = ',RIDF2
+      WRITE(*,'(A,F12.8)')' ADF_FILE_TWO.ADF NEW ROOT ID      = ',RID
 C
       STOP
       END
