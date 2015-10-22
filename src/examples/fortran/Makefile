@@ -29,10 +29,10 @@ all :
 
 test : $(TESTS)
 	-@for d in $(DIRS) ; do \
-	  echo "********** testing $$d"; \
-	  cd $$d && make test; \
+	  cd $$d && make; \
 	  cd ..; \
-	done;
+	done; \
+	test.sh
 
 clean : $(CLEAN)
 	-@for d in $(DIRS) ; do \

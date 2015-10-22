@@ -28,28 +28,15 @@ CALL = \
 	write_test$(EXE) \
 	write_zones$(EXE) \
 	write_rind$(EXE)
-#F_TESTS_77 = \
-#	cgiof$(EXE) \
-#	cgwrite$(EXE) \
-#	cgread$(EXE) \
-#	cgzconn$(EXE) \
-#	cgsubreg$(EXE)
 
-F_TESTS_03 = \
+F_TESTS = \
 	cgiof_F03$(EXE) \
 	cgwrite_F03$(EXE) \
 	cgread_F03$(EXE) \
 	cgzconn_F03$(EXE) \
 	cgsubreg_F03$(EXE)
 
-# if --enable-64bit was specified then don't include F77 tests
-# because they will fail.
-
-ifeq ($(CGNS_64BIT), 1)
-FALL = $(F_TESTS_03)
-else
-FALL = $(F_TESTS_77) $(F_TESTS_03)
-endif
+FALL = $(F_TESTS)
 
 CALL64 = test64c$(EXE)
 FALL64 = test64f$(EXE) test64f_F03$(EXE)

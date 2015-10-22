@@ -1,4 +1,3 @@
-
         program write_mixed_grid
 	USE CGNS
 
@@ -51,13 +50,13 @@
 
 !****** Create 2 volume and 1 face families
 	call cg_family_write_f(cg, base, 'Family#1', index, ier)
-	write(6,*)'index1=',index
+!	write(6,*)'index1=',index
 	if (ier .eq. ERROR) call cg_error_exit_f
 	call cg_family_write_f(cg, base, 'Family#2', index, ier)
-	write(6,*)'index2=',index
+!	write(6,*)'index2=',index
 	if (ier .eq. ERROR) call cg_error_exit_f
         call cg_family_write_f(cg, base, 'Outflow', index, ier)
-	write(6,*)'index3=',index
+!	write(6,*)'index3=',index
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ******write CGNSBase substructure: Zone 

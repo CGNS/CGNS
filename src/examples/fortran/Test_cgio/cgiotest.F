@@ -27,10 +27,6 @@ C
       DATA IC /1,2,3,4,5,6/
       DATA IDIMC /6/
 c
-      integer MODE_READ, MODE_WRITE
-      parameter (MODE_READ  = 0)
-      parameter (MODE_WRITE = 1)
-c
       integer FILE_NONE, FILE_ADF, FILE_HDF5
       parameter (FILE_NONE = 0)
       parameter (FILE_ADF  = 1)

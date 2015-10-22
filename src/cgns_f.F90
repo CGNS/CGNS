@@ -1478,19 +1478,19 @@ MODULE cgns
      END SUBROUTINE cg_section_read_f
   END INTERFACE
 
-  INTERFACE
-     SUBROUTINE cg_elements_read_f(fn, B, Z, E, elements, parent_data, ier) BIND(C, NAME="cg_elements_read_f")
-       IMPORT :: CGSIZE_T
-       IMPLICIT NONE
-       INTEGER :: fn
-       INTEGER :: B
-       INTEGER :: Z
-       INTEGER :: E
-       INTEGER(CGSIZE_T) :: elements
-       INTEGER(CGSIZE_T) :: parent_data
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_elements_read_f
-  END INTERFACE
+!!$  INTERFACE
+!!$     SUBROUTINE cg_elements_read_f(fn, B, Z, E, elements, parent_data, ier) BIND(C, NAME="cg_elements_read_f")
+!!$       IMPORT :: CGSIZE_T
+!!$       IMPLICIT NONE
+!!$       INTEGER :: fn
+!!$       INTEGER :: B
+!!$       INTEGER :: Z
+!!$       INTEGER :: E
+!!$       INTEGER(CGSIZE_T), DIMENSION(*) :: elements
+!!$       INTEGER(CGSIZE_T), DIMENSION(*) :: parent_data
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cg_elements_read_f
+!!$  END INTERFACE
 
   INTERFACE
      SUBROUTINE cg_elementdatasize_f(fn, B, Z, E, ElementDataSize, ier) BIND(C, NAME="cg_elementdatasize_f")
@@ -1520,36 +1520,36 @@ MODULE cgns
      END SUBROUTINE cg_elementpartialsize_f
   END INTERFACE
 
-  INTERFACE
-     SUBROUTINE cg_section_write_f(fn, B, Z, section_name, TYPE, start, END, nbndry, elements, S, ier) !BIND(C, NAME="cg_section_write_f")
-       IMPORT :: c_char, cgenum_t, CGSIZE_T
-       IMPLICIT NONE
-       INTEGER :: fn
-       INTEGER :: B
-       INTEGER :: Z
-       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: section_name
-       INTEGER(cgenum_t) :: TYPE
-       INTEGER(CGSIZE_T) :: start
-       INTEGER(CGSIZE_T) :: END
-       INTEGER :: nbndry
-       INTEGER(CGSIZE_T) ::elements
-       INTEGER :: S
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_section_write_f
-  END INTERFACE
+!!$  INTERFACE
+!!$     SUBROUTINE cg_section_write_f(fn, B, Z, section_name, TYPE, start, END, nbndry, elements, S, ier) !BIND(C, NAME="cg_section_write_f")
+!!$       IMPORT :: c_char, cgenum_t, CGSIZE_T
+!!$       IMPLICIT NONE
+!!$       INTEGER :: fn
+!!$       INTEGER :: B
+!!$       INTEGER :: Z
+!!$       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: section_name
+!!$       INTEGER(cgenum_t) :: TYPE
+!!$       INTEGER(CGSIZE_T) :: start
+!!$       INTEGER(CGSIZE_T) :: END
+!!$       INTEGER :: nbndry
+!!$       INTEGER(CGSIZE_T), DIMENSION() :: elements
+!!$       INTEGER :: S
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cg_section_write_f
+!!$  END INTERFACE
 
-  INTERFACE
-     SUBROUTINE cg_parent_data_write_f(fn, B, Z, S, parent_data, ier) BIND(C, NAME="cg_parent_data_write_f")
-       IMPORT :: CGSIZE_T
-       IMPLICIT NONE
-       INTEGER :: fn
-       INTEGER :: B
-       INTEGER :: Z
-       INTEGER :: S
-       INTEGER(CGSIZE_T) :: parent_data
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_parent_data_write_f
-  END INTERFACE
+!!$  INTERFACE
+!!$     SUBROUTINE cg_parent_data_write_f(fn, B, Z, S, parent_data, ier) BIND(C, NAME="cg_parent_data_write_f")
+!!$       IMPORT :: CGSIZE_T
+!!$       IMPLICIT NONE
+!!$       INTEGER :: fn
+!!$       INTEGER :: B
+!!$       INTEGER :: Z
+!!$       INTEGER :: S
+!!$       INTEGER(CGSIZE_T), DIMENSION(*) :: parent_data
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cg_parent_data_write_f
+!!$  END INTERFACE
 
   INTERFACE
      SUBROUTINE cg_section_partial_write_f( fn, B, Z, section_name, TYPE, start, END, nbndry, S, ier) !BIND(C, NAME="cg_section_partial_write_f")
@@ -1568,56 +1568,56 @@ MODULE cgns
      END SUBROUTINE cg_section_partial_write_f
   END INTERFACE
 
-  INTERFACE
-     SUBROUTINE cg_elements_partial_write_f(fn, B, Z, S, rmin, rmax, elements, ier) &
-          BIND(C, NAME="cg_elements_partial_write_f")
-       IMPORT :: CGSIZE_T
-       IMPLICIT NONE
-       INTEGER :: fn
-       INTEGER :: B
-       INTEGER :: Z
-       INTEGER :: S
-       INTEGER(CGSIZE_T) ::rmin
-       INTEGER(CGSIZE_T) ::rmax
-       INTEGER(CGSIZE_T) ::elements
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_elements_partial_write_f
-  END INTERFACE
+!!$  INTERFACE
+!!$     SUBROUTINE cg_elements_partial_write_f(fn, B, Z, S, rmin, rmax, elements, ier) &
+!!$          BIND(C, NAME="cg_elements_partial_write_f")
+!!$       IMPORT :: CGSIZE_T
+!!$       IMPLICIT NONE
+!!$       INTEGER :: fn
+!!$       INTEGER :: B
+!!$       INTEGER :: Z
+!!$       INTEGER :: S
+!!$       INTEGER(CGSIZE_T) :: rmin
+!!$       INTEGER(CGSIZE_T) :: rmax
+!!$       INTEGER(CGSIZE_T), DIMENSION(*) :: elements
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cg_elements_partial_write_f
+!!$  END INTERFACE
 
-  INTERFACE
-     SUBROUTINE cg_parent_data_partial_write_f(fn, B, Z, S, rmin, rmax, parent_data, ier) &
-          BIND(C, NAME="cg_parent_data_partial_write_f")
-       IMPORT :: CGSIZE_T
-       IMPLICIT NONE
-
-       INTEGER :: fn
-       INTEGER :: B
-       INTEGER :: Z
-       INTEGER :: S
-       INTEGER(CGSIZE_T) ::rmin
-       INTEGER(CGSIZE_T) ::rmax
-       INTEGER(CGSIZE_T) ::parent_data
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_parent_data_partial_write_f
-  END INTERFACE
-
-  INTERFACE
-     SUBROUTINE cg_elements_partial_read_f(fn, B, Z, S, rmin, rmax, elements, parent, ier) &
-          BIND(C, NAME="cg_elements_partial_read_f")
-       IMPORT :: CGSIZE_T
-       IMPLICIT NONE
-
-       INTEGER :: fn
-       INTEGER :: B
-       INTEGER :: Z
-       INTEGER :: S
-       INTEGER(CGSIZE_T) ::rmin
-       INTEGER(CGSIZE_T) ::rmax
-       INTEGER(CGSIZE_T) ::elements
-       INTEGER(CGSIZE_T) ::parent
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_elements_partial_read_f
-  END INTERFACE
+!!$  INTERFACE
+!!$     SUBROUTINE cg_parent_data_partial_write_f(fn, B, Z, S, rmin, rmax, parent_data, ier) &
+!!$          BIND(C, NAME="cg_parent_data_partial_write_f")
+!!$       IMPORT :: CGSIZE_T
+!!$       IMPLICIT NONE
+!!$
+!!$       INTEGER :: fn
+!!$       INTEGER :: B
+!!$       INTEGER :: Z
+!!$       INTEGER :: S
+!!$       INTEGER(CGSIZE_T) :: rmin
+!!$       INTEGER(CGSIZE_T) :: rmax
+!!$       INTEGER(CGSIZE_T), DIMENSION(*) :: parent_data
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cg_parent_data_partial_write_f
+!!$  END INTERFACE
+!!$
+!!$  INTERFACE
+!!$     SUBROUTINE cg_elements_partial_read_f(fn, B, Z, S, rmin, rmax, elements, parent, ier) &
+!!$          BIND(C, NAME="cg_elements_partial_read_f")
+!!$       IMPORT :: CGSIZE_T
+!!$       IMPLICIT NONE
+!!$
+!!$       INTEGER :: fn
+!!$       INTEGER :: B
+!!$       INTEGER :: Z
+!!$       INTEGER :: S
+!!$       INTEGER(CGSIZE_T) ::rmin
+!!$       INTEGER(CGSIZE_T) ::rmax
+!!$       INTEGER(CGSIZE_T), DIMENSION(*) :: elements
+!!$       INTEGER(CGSIZE_T), DIMENSION(*) :: parent
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cg_elements_partial_read_f
+!!$  END INTERFACE
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write FlowSolution_t Nodes                              *
@@ -2502,9 +2502,9 @@ MODULE cgns
        INTEGER :: B
        INTEGER :: Z
        INTEGER :: I
-       REAL(C_FLOAT) :: RotationCenter
-       REAL(C_FLOAT) :: RotationAngle
-       REAL(C_FLOAT) :: Translation
+       REAL(C_FLOAT), DIMENSION(*) :: RotationCenter
+       REAL(C_FLOAT), DIMENSION(*) :: RotationAngle
+       REAL(C_FLOAT), DIMENSION(*) :: Translation
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_conn_periodic_read_f
   END INTERFACE
@@ -2518,9 +2518,9 @@ MODULE cgns
        INTEGER :: B
        INTEGER :: Z
        INTEGER :: I
-       REAL(C_FLOAT) :: RotationCenter
-       REAL(C_FLOAT) :: RotationAngle
-       REAL(C_FLOAT) :: Translation
+       REAL(C_FLOAT), DIMENSION(*)  :: RotationCenter
+       REAL(C_FLOAT), DIMENSION(*)  :: RotationAngle
+       REAL(C_FLOAT), DIMENSION(*)  :: Translation
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_conn_periodic_write_f
   END INTERFACE
@@ -2534,9 +2534,9 @@ MODULE cgns
        INTEGER :: B
        INTEGER :: Z
        INTEGER :: I
-       REAL(C_FLOAT) :: RotationCenter
-       REAL(C_FLOAT) :: RotationAngle
-       REAL(C_FLOAT) :: Translation
+       REAL(C_FLOAT), DIMENSION(*)  :: RotationCenter
+       REAL(C_FLOAT), DIMENSION(*)  :: RotationAngle
+       REAL(C_FLOAT), DIMENSION(*)  :: Translation
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_1to1_periodic_read_f
   END INTERFACE
@@ -2550,9 +2550,9 @@ MODULE cgns
        INTEGER :: B
        INTEGER :: Z
        INTEGER :: I
-       REAL(C_FLOAT) :: RotationCenter
-       REAL(C_FLOAT) :: RotationAngle
-       REAL(C_FLOAT) :: Translation
+       REAL(C_FLOAT), DIMENSION(*)  :: RotationCenter
+       REAL(C_FLOAT), DIMENSION(*)  :: RotationAngle
+       REAL(C_FLOAT), DIMENSION(*)  :: Translation
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_1to1_periodic_write_f
   END INTERFACE
@@ -2665,7 +2665,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_bcdataset_info_f(ndataset, ier) BIND(C, NAME="")
+     SUBROUTINE cg_bcdataset_info_f(ndataset, ier) BIND(C, NAME="cg_bcdataset_info_f")
        IMPLICIT NONE
        INTEGER :: ndataset
        INTEGER, INTENT(OUT) :: ier
@@ -2806,7 +2806,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_grid_read_f(fn, B, Z, G, gridname, ier) BIND(C, NAME="cg_grid_read_f")
+     SUBROUTINE cg_grid_read_f(fn, B, Z, G, gridname, ier) ! BIND(C, NAME="cg_grid_read_f")
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -2924,7 +2924,7 @@ MODULE cgns
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
-       REAL(C_FLOAT) :: gravity_vector
+       REAL(C_FLOAT), DIMENSION(*) :: gravity_vector
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_gravity_read_f
   END INTERFACE
@@ -2935,7 +2935,7 @@ MODULE cgns
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
-       REAL(C_FLOAT) :: gravity_vector
+       REAL(C_FLOAT), DIMENSION(*) :: gravity_vector
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_gravity_write_f
   END INTERFACE
@@ -2950,8 +2950,8 @@ MODULE cgns
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
-       REAL(C_FLOAT) :: ref_point
-       REAL(C_FLOAT) :: axis
+       REAL(C_FLOAT), DIMENSION(*) :: ref_point
+       REAL(C_FLOAT), DIMENSION(*) :: axis
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_axisym_read_f
   END INTERFACE
@@ -2962,8 +2962,8 @@ MODULE cgns
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
-       REAL(C_FLOAT) :: ref_point
-       REAL(C_FLOAT) :: axis
+       REAL(C_FLOAT), DIMENSION(*) :: ref_point
+       REAL(C_FLOAT), DIMENSION(*) :: axis
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_axisym_write_f
   END INTERFACE
@@ -2977,8 +2977,8 @@ MODULE cgns
      SUBROUTINE cg_rotating_read_f(rot_rate, rot_center, ier) BIND(C, NAME="cg_rotating_read_f")
        IMPORT :: c_float
        IMPLICIT NONE
-       REAL(C_FLOAT) :: rot_rate
-       REAL(C_FLOAT) :: rot_center
+       REAL(C_FLOAT), DIMENSION(*) :: rot_rate
+       REAL(C_FLOAT), DIMENSION(*) :: rot_center
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_rotating_read_f
   END INTERFACE
@@ -2987,8 +2987,8 @@ MODULE cgns
      SUBROUTINE cg_rotating_write_f(rot_rate, rot_center, ier) BIND(C, NAME="cg_rotating_write_f")
        IMPORT :: c_float
        IMPLICIT NONE
-       REAL(C_FLOAT) :: rot_rate
-       REAL(C_FLOAT) :: rot_center
+       REAL(C_FLOAT), DIMENSION(*) :: rot_rate
+       REAL(C_FLOAT), DIMENSION(*) :: rot_center
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_rotating_write_f
   END INTERFACE
@@ -3007,25 +3007,25 @@ MODULE cgns
      END SUBROUTINE cg_ptset_info_f
   END INTERFACE
 
-  INTERFACE
-     SUBROUTINE cg_ptset_read_f(pnts, ier) BIND(C, NAME="cg_ptset_read_f")
-       IMPORT :: cgenum_t, CGSIZE_T
-       IMPLICIT NONE
-       INTEGER(CGSIZE_T) :: pnts
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_ptset_read_f
-  END INTERFACE
+!!$  INTERFACE
+!!$     SUBROUTINE cg_ptset_read_f(pnts, ier) BIND(C, NAME="cg_ptset_read_f")
+!!$       IMPORT :: cgenum_t, CGSIZE_T
+!!$       IMPLICIT NONE
+!!$       INTEGER(CGSIZE_T), DIMENSION(*) :: pnts
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cg_ptset_read_f
+!!$  END INTERFACE
 
-  INTERFACE
-     SUBROUTINE cg_ptset_write_f(ptset_type, npnts, pnts, ier) BIND(C, NAME="cg_ptset_write_f")
-       IMPORT :: cgenum_t, CGSIZE_T
-       IMPLICIT NONE
-       INTEGER(cgenum_t) :: ptset_type
-       INTEGER(CGSIZE_T) :: npnts
-       INTEGER(CGSIZE_T) :: pnts
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_ptset_write_f
-  END INTERFACE
+!!$  INTERFACE
+!!$     SUBROUTINE cg_ptset_write_f(ptset_type, npnts, pnts, ier) BIND(C, NAME="cg_ptset_write_f")
+!!$       IMPORT :: cgenum_t, CGSIZE_T
+!!$       IMPLICIT NONE
+!!$       INTEGER(cgenum_t) :: ptset_type
+!!$       INTEGER(CGSIZE_T) :: npnts
+!!$       INTEGER(CGSIZE_T), DIMENSION() :: pnts
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cg_ptset_write_f
+!!$  END INTERFACE
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Go - To Function                                                 *
@@ -3529,9 +3529,9 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_rind_write_f(RindData, ier) !BIND(C, NAME="cg_rind_write_f")
+     SUBROUTINE cg_rind_write_f(RindData, ier) BIND(C, NAME="cg_rind_write_f")
        IMPLICIT NONE
-       INTEGER :: RindData
+       INTEGER, DIMENSION(*) :: RindData
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_rind_write_f
   END INTERFACE
@@ -3618,7 +3618,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_ordinal_write_f(Ordinal, ier) BIND(C, NAME="")
+     SUBROUTINE cg_ordinal_write_f(Ordinal, ier) BIND(C, NAME="cg_ordinal_write_f")
        IMPLICIT NONE
        INTEGER :: Ordinal
        INTEGER, INTENT(OUT) :: ier

@@ -1,9 +1,10 @@
 
-        program read_mixed_elements
+        program read_partial_data
         USE CGNS
 
-!	author: Diane Poirier
-!       last revised on April 19 2000
+!	original author (of write_mixed_elements): Diane Poirier 
+!       author: Ken Wall
+!	May 13 2004
 
 ! 	This example reads an unstructured zone mixed element section
 
@@ -13,14 +14,17 @@
 
         parameter (NNODES=27, NELEMENTS=3)
 
-	integer Cdim, Pdim, Idim, ier, count
+	integer Cdim, Pdim, Idim, ier
 	integer cg, base, zone, size(3), ZoneType
 	integer nbases, nzones, ncoords, nsections
 	integer i, n, sect, range_min(3), range_max(3)
-	integer start, end, nbndry, type
+	integer nbndry, type, count
         integer elements(1000), ElementDataSize
 	character*32 coordname(3), filename, nodename
         double precision data_double(NNODES)
+        integer el_st, el_end
+        integer parent(1000)
+        integer parent_flag
 
 !       initialize
         ier = 0
@@ -85,7 +89,7 @@
 
 	write(6,104)'Idim=',Idim
 	do i=1, Idim
-	    range_min(i)=1
+	    range_min(i)= 5
 	    range_max(i)=size(i)
         enddo
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
@@ -101,7 +105,7 @@
 	    if (ier .eq. ERROR) call cg_error_exit_f 
 	    write(6,103)coordname(i)
 	    write(6,109)'first point:',data_double(1)
-	    write(6,109)'last point :',data_double(size(1))
+	    write(6,109)'last point :',data_double(size(1)-range_min(1)+1)
 	enddo
 
 ! ELEMENTS
@@ -113,33 +117,36 @@
 
 ! Read all element info:
 	    call cg_section_read_f(cg, base, zone, sect,
-     &              nodename, type, start, end, nbndry, 
+     &              nodename, type, el_st, el_end, nbndry, 
      &              parent_flag, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 	    call cg_ElementDataSize_f(cg, base, zone, sect, 
      &                                ElementDataSize, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
-	    
-	    call cg_elements_read_f(cg, base, zone, sect,
-     &                 elements, parent_data, ier)
-	    if (ier .eq. ERROR) call cg_error_exit_f
-
 
 ! Print out element info:
 	    write(6,113)'  *** Section ',sect,' ***'
 	    write(6,103)'Name= ',nodename
-            write(6,108)'Range= ',start,end
+            write(6,108)'Connectivity data range = ', el_st, el_end
             if (nbndry .ne. 0) write(6,103)'Sorted elements'
+
+	    write(6,107) 'ElementDataSize =',ElementDataSize
+            write(6,103) 'Section Element Type= ',
+     &                         ElementTypeName(type)
+
+            el_st = el_st + 1
+            call cg_elements_partial_read_f(cg, base, zone, sect,
+     &                 el_st, el_end, elements, parent, ier);
+	    if (ier .eq. ERROR) call cg_error_exit_f
+
+            write(6,108)'Connect and Parent data for element range  = ', 
+     &                 el_st, el_end
 
             call cg_npe_f(type, npe, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
-	    
-	    write(6,107) 'ElementDataSize =',ElementDataSize
-            write(6,103) 'Section Element Type= ',
-     &                             ElementTypeName(type)
 
-	    nelem = end-start+1
+	    nelem = el_end - el_st +1
 	    write(6,103)'Element Connectivity:'
 	    if (type .lt. MIXED) then
 	        do i=1, nelem
@@ -168,11 +175,16 @@
 		    count = count + 1
 		    npe = elements(count)
 		    write(6,111) 
-     &                    'Element Number Points=',npe
+     &                    'Element Number Points = ',npe
 		    write(6,110)(elements(count+n),n=1,npe)
 		    count = count+npe
 		enddo
 	    endif
+
+            write(6,103)'Parent Data:'
+            do i=1, nelem
+	        write(6,110)(parent((i-1)*4+n),n=1,4)
+    	    enddo
 	enddo
 
 ! Write & close CGNS file

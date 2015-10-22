@@ -47,6 +47,7 @@
 	integer path_length
 	character*10 lfilename
 	character*100 lpath
+	INTEGER DirichletFlag, NeumannFlag
 
 ! *** open file
 !	write(6,*) 'Input filename'
