@@ -1,6 +1,6 @@
 
         program read_mixed_grid
-	USE CGNS
+        USE CGNS
 
 !	author: Diane Poirier
 !       last revised on October 12 2001
@@ -387,8 +387,11 @@
      &                             PointSetTypeName(ptset_type)
                 write(6,105)'npnts=',npnts
 
-		write(6,102)'NormalIndex:'
-		write(6,112)(NormalIndex(i),i=1,Idim)
+              ! note: Normal index has no definition in unstructured
+                if (Idim /= 1) then
+                  write(6,102)'NormalIndex:'
+                  write(6,112)(NormalIndex(i),i=1,Idim)
+                end if
 		write(6,105)'NormalListFlag=',NormalListFlag
 		write(6,102)'NormalDataType= ',
      &                             DataTypeName(datatype)

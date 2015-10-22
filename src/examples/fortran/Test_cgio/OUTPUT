@@ -1,8 +1,8 @@
   NODE F3 THROUGH LINK L3:
     LABEL       = LABEL ON NODE F3                
     DATA TYPE   = R4                              
-    NUM OF DIMS =  2
-    DIM VALS    =  4 3
+    NUM OF DIMS =            2
+    DIM VALS    =            4           3
     DATA:
            1.10      1.20      1.30
            2.10      2.20      2.30
@@ -12,8 +12,8 @@
   NODE N13:
     LABEL       = LABEL ON NODE N13               
     DATA TYPE   = I4                              
-    NUM OF DIMS =  1
-    DIM VALS    =  6
+    NUM OF DIMS =            1
+    DIM VALS    =            6
     DATA:
           1     2     3     4     5     6
   
@@ -42,5 +42,5 @@
         N11                             
   
   COMPARISON OF ROOT ID: 
-  ADF_FILE_TWO.ADF ORIGINAL ROOT ID =   2.
-  ADF_FILE_TWO.ADF NEW ROOT ID      =   2.25
+  ADF_FILE_TWO.ADF ORIGINAL ROOT ID =    2.00000000000012     
+  ADF_FILE_TWO.ADF NEW ROOT ID      =    2.00000000000012     

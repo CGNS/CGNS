@@ -50,7 +50,7 @@ File Opened and Read
         Dirichlet data Dimensional Units:
               Mass units: Kilogram                        
               Length units: Meter                           
-              Temperature units: Null                            
+              Temperature units: Celsius                         
               Time units: Second                          
               Angle units:Degree                          
 
@@ -118,7 +118,7 @@ File Opened and Read
         Dirichlet data Dimensional Units:
               Mass units: Kilogram                        
               Length units: Meter                           
-              Temperature units: Null                            
+              Temperature units: Celsius                         
               Time units: Second                          
               Angle units:Degree                          
 
@@ -186,7 +186,7 @@ File Opened and Read
         Dirichlet data Dimensional Units:
               Mass units: Kilogram                        
               Length units: Meter                           
-              Temperature units: Null                            
+              Temperature units: Celsius                         
               Time units: Second                          
               Angle units:Degree                          
 
@@ -327,8 +327,6 @@ Interpolants(3,  9)= 0.833333E-01
       BCType= UserDefined                     
       PtsetType= PointList                       
       npnts=    9
-      NormalIndex:
-             -1
       NormalListFlag=   27
       NormalDataType= RealDouble                      
       ndataset=    0
@@ -344,8 +342,6 @@ Interpolants(3,  9)= 0.833333E-01
       BCType= BCOutflow                       
       PtsetType= PointList                       
       npnts=    4
-      NormalIndex:
-             -1
       NormalListFlag=   12
       NormalDataType= RealDouble                      
       ndataset=    0

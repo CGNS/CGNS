@@ -220,6 +220,7 @@ Interpolants(3,  9)= 0.833333E-01
       1st and last normal vector:
             -0.100000E+01 0.000000E+00 0.000000E+00
             -0.100000E+01 0.000000E+00 0.000000E+00
+      FamilyName= "myboco"
 *** Zone_t node ***
       Name= "UnstructuredZone#1"
       ZoneType= Unstructured                    
@@ -255,8 +256,6 @@ Interpolants(3,  9)= 0.833333E-01
       BCType= UserDefined                     
       PtsetType= PointList                       
       npnts=    9
-      NormalIndex:
-             -1
       NormalListFlag=   27
       NormalDataType= RealDouble                      
       ndataset=    0
@@ -267,13 +266,12 @@ Interpolants(3,  9)= 0.833333E-01
       1st and last normal vector:
              0.100000E+01 0.000000E+00 0.000000E+00
              0.100000E+01 0.000000E+00 0.000000E+00
+      FamilyName= "point_patch"
 *** BC_t node ***
       Name= "shell_patch"
       BCType= BCOutflow                       
       PtsetType= PointList                       
       npnts=    4
-      NormalIndex:
-             -1
       NormalListFlag=   12
       NormalDataType= RealDouble                      
       ndataset=    0

@@ -75,19 +75,6 @@
         call cg_link_write_f('LinkToBaseDescr', ' ',linkpath, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-! * GravityVector/Descriptor
-	call cg_goto_f(cg, base_no, ier, 'Gravity_t', 1, 'DataArray_t',
-     &                 1, 'end')
-        if (ier .eq. ERROR) call cg_error_exit_f
-	call cg_descriptor_write_f('GravityVectorDescriptorName',
-     &       'GravityVectorDescriptorText', ier)
-	if (ier .eq. ERROR) call cg_error_exit_f
-	
-! * GravityVector/DimensionalUnits
-	call cg_units_write_f(Kilogram, Meter, Second, Kelvin,
-     &                        Radian, ier)
-        if (ier .eq. ERROR) call cg_error_exit_f
-
 ! *** close CGNS file
 	call cg_close_f(cg, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f

@@ -1,6 +1,6 @@
 
         program write_mixed_elements
-	USE CGNS
+        USE CGNS
 
 !	author: Diane Poirier
 !	last revised on March 15 2000
@@ -15,7 +15,7 @@
 
 	integer index_dim, cell_dim, phys_dim
 	integer cg, base, zone, size(3), ier, index, ZoneType
-	integer i, j, k, n, pos, coord, element(22), section_no
+	integer i, j, k, n, pos, coord, element(20), section_no
 	character*32 ZoneName, coordname(3)
         double precision data_double(27)
 	integer grid_no, count
@@ -100,10 +100,10 @@
 	    count = count + 1
             element(count)=i
         enddo
-! 3rd element NGON_7, so set ElementType to NGON_n+7
-	count = count + 1
-	element(count)=NGON_n+7
-	do i=1,7
+! third element PYRA_5
+        count = count + 1
+        element(count)=PYRA_5
+        do i=1,5
             count = count + 1
             element(count)=i
         enddo
