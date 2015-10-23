@@ -86,6 +86,7 @@ clean :
 	-$(RM) $(OBJDIR)/*.$(O)
 	-cd tools && $(MAKE) clean
 	-cd tests && $(MAKE) clean
+	-cd examples/fortran && $(MAKE) clean
 	-cd ptests && $(MAKE) clean
 	-cd cgnstools && $(MAKE) clean
 
@@ -95,6 +96,7 @@ distclean :
 	-cd tools && $(MAKE) allclean
 	-$(RM) tools/Makefile
 	-cd tests && $(MAKE) allclean
+	-cd examples/fortran && $(MAKE) clean
 	-$(RM) tests/Makefile
 	-cd ptests && $(MAKE) allclean
 	-$(RM) ptests/Makefile
