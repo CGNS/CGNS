@@ -18,7 +18,8 @@
 	parameter (Nglobal = 500)
 	integer IndexDim, CellDim, PhysDim
 	integer ier, n, zonetype
-	integer nbases, nzones, size(Ndim*3), DataSize(Ndim)
+	integer nbases, nzones, DataSize(Ndim)
+	integer size(Ndim*3)
 	integer ncoords, type, nsols, nfields, location
 	integer nholes, nconns, n1to1, n1to1_global, nbocos
 	integer ptset_type, npnts, pnts(100000), donor_pnts(100000)
@@ -27,8 +28,9 @@
 	character*32 coordname, holename, connectname
 	character*32 boconame, donorname
 	integer cg, base, zone, coord, sol, field, discr
-	integer hole, conn, one21, boco, rmin(3)
-	integer range(Ndim, 2), donor_range(Ndim, 2)
+	integer hole, conn, one21, boco
+	integer(cgsize_t) rmin(3)
+	integer(cgsize_t) range(Ndim, 2), donor_range(Ndim, 2)
  	integer transform(Ndim)
   	integer G_range(Ndim*2, Nglobal) 
 	integer G_donor_range(Ndim*2, Nglobal)
