@@ -21,7 +21,6 @@
 	integer(cgsize_t) size(Ndim*3)
 	integer cg, ier, zone, coord, i, j, k, n, pos, sol, field
 	integer(cgsize_t) pnts(Ndim,120), donor_pnts(Ndim,120)
-	integer
 	integer transform(Ndim)
 	real*4 data(120), normals(360)
 	double precision Dxyz(120), values(120)
