@@ -24,4 +24,12 @@ script:
     - ./install-cgns.sh
     - cd src
     - make
+    - cd tests
+    - make
+    - make test
+    - cd ../ptests
+    - make
+    - make test
+    - cd ../example/fortran
+    - make
     - make test
