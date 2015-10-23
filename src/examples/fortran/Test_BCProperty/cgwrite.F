@@ -28,8 +28,10 @@
 	integer index_dim, cell_dim, phys_dim
 	character*100 linkpath
 
-	integer cg, base, zone, boco, ier, size(Ndim*3), i, num
-	integer WallFunctionType, AreaType, pnts(Ndim,2)
+	integer cg, base, zone, boco, ier, i, num
+	integer(cgsize_t) size(Ndim*3) 
+	integer WallFunctionType, AreaType
+	integer(cgsize_t) pnts(Ndim,2)
 	character*32 RegionName32
 	character*10 RegionName10
 	character*100 RegionName100
@@ -80,7 +82,7 @@
 	enddo
 	pnts(1,2) = 1
         call cg_boco_write_f(cg, base, zone, 'boco#1',
-     &       BCInflow, PointRange, 2, pnts, boco, ier)
+     &       BCInflow, PointRange, 2_cgsize_t, pnts, boco, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         ! imax face
@@ -90,7 +92,7 @@
         enddo
         pnts(1,1) = size(1)
 	call cg_boco_write_f(cg, base, zone, 'boco#2',
-     &       BCOutflow, PointRange, 2, pnts, boco, ier)
+     &       BCOutflow, PointRange, 2_cgsize_t, pnts, boco, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 	

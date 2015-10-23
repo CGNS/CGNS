@@ -27,8 +27,10 @@
 	integer index_dim, cell_dim, phys_dim
 	character*100 linkpath
 
-	integer cg, base, zone, conn, ier, size(Ndim*3), i, num, n
-	integer AverageInterfaceType, pnts(Ndim,20), donor_pnts(Ndim,20)
+	integer cg, base, zone, conn, ier, i, num, n
+	integer(cgsize_t) size(Ndim*3)
+	integer AverageInterfaceType
+        integer(cgsize_t) pnts(Ndim,20), donor_pnts(Ndim,20)
 	real *4 RotationCenter(Ndim), RotationAngle(Ndim)
 	real *4 Translation(Ndim)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
@@ -85,14 +87,14 @@
             donor_pnts(i,n)=i*2
  100    continue
         call cg_conn_write_f(cg, base, zone, 'Connect#1',
-     &      Vertex, Abutting1to1, PointList, 5, pnts, 'Zone#2',
-     &      Structured, PointListDonor, Integer, 5, donor_pnts,
+     &      Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts, 'Zone#2',
+     &      Structured, PointListDonor, Integer, 5_cgsize_t, donor_pnts,
      &      conn, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_conn_write_f(cg, base, zone, 'Connect#2',
-     &      Vertex, Abutting1to1, PointList, 5, pnts, 'Zone#2',
-     &      Structured, PointListDonor, Integer, 5, donor_pnts,
+     &      Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts, 'Zone#2',
+     &      Structured, PointListDonor, Integer, 5_cgsize_t, donor_pnts,
      &      conn, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 

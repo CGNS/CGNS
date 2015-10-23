@@ -18,7 +18,8 @@
 	integer ier, n, cg, nbases, base, type
 	integer ndescriptors, idescr, nuser_data
 	integer mass, length, time, temp, deg, i
-        integer narrays, iarray, datatype, nndim, dim_vals(12), num
+        integer narrays, iarray, datatype, nndim, num
+	integer(cgsize_t) dim_vals(12)
 	real*4 version, ref_point(Ndim), axis(Ndim), angle
 	character*32 name, filename, basename, user_data_name
 	character*100 text

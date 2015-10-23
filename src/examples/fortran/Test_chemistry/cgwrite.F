@@ -20,7 +20,7 @@
 	integer hole_no, boco_no, field_no, dset_no
 	integer num, size(Ndim*3), npnts, NormalIndex(Ndim)
 	integer cg, ier, zone, coord, i, sol, field
-	integer pnts(Ndim,120), donor_pnts(Ndim,120)
+	integer(cgsize_t) pnts(Ndim,120), donor_pnts(Ndim,120)
 	integer transform(Ndim)
         real*4 units(5)
 	real*4 data(120), normals(360)
@@ -288,7 +288,8 @@
 	    enddo
 	  ! Hole defined with 2 point set type PointRange, so 4 points:
 	    call cg_hole_write_f(cg, base_no, zone_no, 'hole#1', Vertex,
-     &                           PointRange, 2, 4, pnts, hole_no, ier)
+     &                           PointRange, 2, 4_cgsize_t, pnts, 
+     &                           hole_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** general connectivity
@@ -299,9 +300,10 @@
  100        continue
 	  ! create a point matching connectivity
 	    call cg_conn_write_f(cg, base_no, zone_no, 'Connect#1',
-     &          Vertex, Abutting1to1, PointList, 5, pnts, 'zone#2',
-     &          Structured, PointListDonor, Integer, 5, donor_pnts,
-     &          conn_no, ier)
+     &          Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts,
+     &          'zone#2',
+     &          Structured, PointListDonor, Integer, 5_cgsize_t,
+     &          donor_pnts, conn_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** connectivity 1to1
@@ -335,7 +337,7 @@
 
 ! *** bocos
 	    call cg_boco_write_f(cg, base_no, zone_no, 'boco#1',
-     &           BCInflow, PointRange, 2, pnts, boco_no, ier)
+     &           BCInflow, PointRange, 2_cgsize_t, pnts, boco_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** boco normal
