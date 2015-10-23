@@ -33,6 +33,7 @@ test : $(TESTS)
 	  cd ..; \
 	done; \
 	test.sh
+	exit $?;
 
 clean : $(CLEAN)
 	-@for d in $(DIRS) ; do \
