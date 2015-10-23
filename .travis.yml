@@ -27,6 +27,6 @@ script:
     - cd tests
     - make
     - make test
-    - cd ../example/fortran
+    - cd ../examples/fortran
     - make
     - make test
