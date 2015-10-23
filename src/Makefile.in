@@ -37,6 +37,10 @@ ADFOBJS=@ADFOBJS@ \
 @F2COBJS@=$(OBJDIR)/cg_ftoc.$(O) $(OBJDIR)/cgio_ftoc.$(O)
 
 #----------
+FORTRAN_TESTS=
+ifeq ("$(BUILDFORTRAN)" , "1")
+	FORTRAN_TESTS=-cd examples/fortran && $(MAKE) test
+endif
 
 MakeTests = runtests @PTESTS@
 all     : $(CGNSLIB) tools @CGNSTOOLS@
@@ -71,6 +75,7 @@ ptests : $(CGNSLIB)
 
 runtests : $(CGNSLIB)
 	-cd tests && $(MAKE) test
+	$(FORTRAN_TESTS)
 
 runptests : $(CGNSLIB)
 	-cd ptests && $(MAKE) test

@@ -49,10 +49,14 @@ LIBCGNS = @BUILDDIR@/@CGNSLIB@
 #
 # CFGFLAGS defines any additional compiler options needed to build
 # the CGNS library. This is typically set by the configure script.
+#
+# BUILDFORTRAN - Fortran is enabled (1), or not (0)
+#
 #------------------------------------------------------------------------
 
 F2CFLAGS = @F2CFLAGS@
 CFGFLAGS = @CFGFLAGS@
+BUILDFORTRAN = @BUILDFORTRAN@
 
 #------------------------------------------------------------------------
 # These are not used to build the CGNS library.
