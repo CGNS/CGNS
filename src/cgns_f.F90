@@ -1553,7 +1553,7 @@ MODULE cgns
 
   INTERFACE
      SUBROUTINE cg_section_partial_write_f( fn, B, Z, section_name, TYPE, start, END, nbndry, S, ier) !BIND(C, NAME="cg_section_partial_write_f")
-       IMPORT :: c_char, CGSIZE_T
+       IMPORT :: c_char, CGSIZE_T, cgenum_t
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: B
