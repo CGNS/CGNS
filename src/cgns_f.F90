@@ -1559,7 +1559,7 @@ MODULE cgns
        INTEGER :: B
        INTEGER :: Z
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: section_name
-       INTEGER(CGSIZE_T) ::TYPE
+       INTEGER(cgenum_t) ::TYPE
        INTEGER(CGSIZE_T) ::start
        INTEGER(CGSIZE_T) ::END
        INTEGER :: nbndry
