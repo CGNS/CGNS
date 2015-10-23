@@ -28,7 +28,8 @@
 	parameter (Ndim = 3)
 	integer ier, cg, nbases, base, nzones, zone, nconns, conn
 	integer CellDim, PhysDim, IndexDim
-	integer ndescriptors, idescr, size(3*Ndim), zonetype
+	integer ndescriptors, idescr, zonetype
+	integer(cgsize_t) size(3*Ndim)
 	integer ptset_type, ndonor_ptset_type, npnts, npnts_donor
 	integer location, nzonetype, donor_datatype
 	integer AverageInterfaceType, nuser_data, n
@@ -38,7 +39,7 @@
 	character*100 text
 	real*4 version, Translation(Ndim)
 	real *4 RotationCenter(Ndim), RotationAngle(Ndim)
-	integer range(Ndim, 2), donor_range(Ndim, 2)
+	integer(cgsize_t) range(Ndim, 2), donor_range(Ndim, 2)
  	integer transform(Ndim)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 
