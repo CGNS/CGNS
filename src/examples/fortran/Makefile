@@ -22,16 +22,21 @@ DIRS = \
 #----------
 
 all :
-	-@for d in $(DIRS) ; do \
+	@status=0 ;for d in $(DIRS) ; do \
 	  cd $$d && make; \
+	  ((status = status + $$?)); \
 	  cd ..; \
-	done;
+	done;\
+	if [ $$status -ne 0 ]; then \
+		exit $$status; \
+	fi
 
 test : $(TESTS)
-	-@for d in $(DIRS) ; do \
+	@status=0 ;for d in $(DIRS) ; do \
 	  cd $$d && make; \
+	  ((status = status + $$?)); \
 	  cd ..; \
-	done; \
+	done;\
 	test.sh
 	exit $$?;
 
