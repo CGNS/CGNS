@@ -110,7 +110,7 @@
 ! create section with 3 elements
 
 	call cg_section_partial_write_f(cg, base, zone, 'MixedElements',
-     &       MIXED, 1, 3, 0, section_no, ier)
+     &       MIXED, 1_cgsize_t, 3_cgsize_t, 0, section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Generate dummy elements

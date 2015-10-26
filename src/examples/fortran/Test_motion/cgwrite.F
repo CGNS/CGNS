@@ -13,7 +13,8 @@
 	parameter (Nnodes = 120)
 	integer index_dim, cell_dim, phys_dim, pos
 	integer base_no, zone_no, coord_no, sol_no, field_no
-	integer num, size(Ndim*3), data_size(2) 
+	integer num, data_size(2)
+	integer(cgsize_t) size(Ndim*3)
 	integer cg, ier, coord, i, sol, field
 	double precision Dxyz(Nnodes), values(Nnodes)
 	character*32 zonename, solname, fieldname, coordname(Ndim)

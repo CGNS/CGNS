@@ -12,13 +12,15 @@
 	parameter (Nglobal = 500)
 	integer IndexDim, CellDim, PhysDim
 	integer ier, zonetype
-	integer nbases, nzones, size(Ndim*3)
+	integer nbases, nzones
+	integer(cgsize_t) size(Ndim*3)
 	integer nsols, location
         integer datatype
 	character*32 basename, zonename
 	integer cg, base, zone, sol
 	character*32 name, filename
-	integer nndim, dim_vals(12), rind(6), num
+	integer nndim, rind(6), num
+	integer(cgsize_t) dim_vals(12)
 	real*4 data_single(100000), version
 	double precision data_double(100000)
 	integer*4 data_int(100000)

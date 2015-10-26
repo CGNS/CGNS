@@ -18,10 +18,14 @@
 
 	parameter (Ndim = 3)
 	integer index_dim, cell_dim, phys_dim
-	integer cg, base, zone, num, size(Ndim*3), ier, index, ZoneType
+	integer cg, base, zone, num, ier, index, ZoneType
+        integer(cgsize_t) size(Ndim*3)
 	integer i, j, k, n, pos, coord, element(8,8)
-	integer hexa_section_no, quad_section_no, parent(4,4), elist(4) 
-	integer quads(4,4), pnts(3,9), uns_pnts(9), dim_vals(12) 
+	integer hexa_section_no, quad_section_no, parent(4,4)
+        integer(cgsize_t) elist(4) 
+	integer quads(4,4)
+        integer(cgsize_t)  pnts(3,9), uns_pnts(9)
+        integer(cgsize_t) dim_vals(12) 
 	integer Nindex(3)
 	double precision VertexNormals(3,9), FaceNormals(3,4)
 	integer fam, geo, part, bc
@@ -160,9 +164,10 @@
                 pnts(3,2)=3
 
 	        call cg_conn_write_f(cg, base, zone, 'str_to_unstr',
-     & 	            Vertex, Abutting1to1, PointRange, 2, pnts,
+     & 	            Vertex, Abutting1to1, PointRange, 2_cgsize_t, pnts,
      &              'UnstructuredZone#1', Unstructured, 
-     &              PointListDonor, Integer, 9, uns_pnts, index, ier)
+     &              PointListDonor, Integer, 9_cgsize_t, uns_pnts,index,
+     &              ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Fake similation of Overset or Abutting-mismatch: str to unstr
@@ -202,9 +207,10 @@
 		enddo
 
 		call cg_conn_write_f(cg, base, zone, 'unstr_to_str',
-     &              Vertex, Abutting1to1, PointList, 9, uns_pnts,
+     &              Vertex, Abutting1to1, PointList, 9_cgsize_t, 
+     &              uns_pnts,
      &              'StructuredZone#1', Structured, PointListDonor,
-     &		    Integer, 9, pnts, index, ier)
+     &		    Integer, 9_cgsize_t, pnts, index, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
             endif
 
@@ -213,7 +219,7 @@
 	    if (zone.eq.1) then
 	      ! write a PointRange patch (3,1,1) to (3,3,3) for a structured zone
 	        call cg_boco_write_f(cg, base, zone, 'myboco',
-     &            UserDefined, PointRange, 2, pnts, index, ier)
+     &            UserDefined, PointRange, 2_cgsize_t, pnts, index, ier)
 	        if (ier .eq. ERROR) call cg_error_exit_f
 
 	      ! Write Normal index and Normal vectors 
@@ -234,7 +240,8 @@
 	    else if (zone.eq.2) then
 	      ! BC patch defined using points and normals at the points:
 		call cg_boco_write_f(cg, base, zone, 'point_patch',
-     &            UserDefined, PointList, 9, uns_pnts, index, ier)
+     &            UserDefined, PointList, 9_cgsize_t, uns_pnts, index,
+     &            ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 	      ! note: Normal index has no definition in unstructured
@@ -253,7 +260,7 @@
 		  FaceNormals(3,n)=0
 		enddo
 		call cg_boco_write_f(cg, base, zone, 'shell_patch',
-     &            BCOutflow, PointList, 4, elist, index, ier)
+     &            BCOutflow, PointList, 4_cgsize_t, elist, index, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
 	     ! Specify that the GridLocation is FaceCenter
