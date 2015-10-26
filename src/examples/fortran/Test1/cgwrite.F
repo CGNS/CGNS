@@ -17,7 +17,8 @@
 	integer index_dim, cell_dim, phys_dim
 	integer base_no, zone_no, coord_no, sol_no, discr_no, conn_no
 	integer hole_no, boco_no, field_no, dset_no
-	integer num, npnts, NormalIndex(Ndim)
+	integer num, NormalIndex(Ndim)
+	integer(cgsize_t) npnts
 	integer(cgsize_t) size(Ndim*3)
 	integer cg, ier, zone, coord, i, j, k, n, pos, sol, field
 	integer(cgsize_t) pnts(Ndim,120), donor_pnts(Ndim,120)
@@ -61,7 +62,6 @@
     	    call cg_zone_write_f(cg, base_no, zonename, size,
      &                           Structured, zone_no, ier)
     	    if (ier .eq. ERROR) call cg_error_exit_f
-
 ! *** coordinate
      	    do coord=1, phys_dim
  		do k=1, size(3)

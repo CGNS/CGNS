@@ -28,8 +28,10 @@
 	parameter (Ndim = 3)
 	integer ier, cg, nbases, base, nzones, zone, nconns, conn
 	integer CellDim, PhysDim, IndexDim
-	integer ndescriptors, idescr, size(3*Ndim), zonetype
-	integer ptset_type, ndonor_ptset_type, npnts, npnts_donor
+	integer(cgsize_t) size(3*Ndim)
+	integer ndescriptors, idescr, zonetype
+	integer ptset_type, ndonor_ptset_type
+	integer(cgsize_t) npnts, npnts_donor
 	integer location, nzonetype, donor_datatype
 	integer AverageInterfaceType, nuser_data, n
 	integer type, mass, length, time, temp, deg

@@ -14,11 +14,13 @@
 
 	integer Ndim
 	parameter (Ndim = 3)
-	integer CellDim, PhysDim, size(Ndim*3)
+	integer CellDim, PhysDim
+	integer(cgsize_t) size(Ndim*3)
 	integer ier, n, cg, nbases, base, type, zone, nzones
 	integer ndescriptors, idescr, nuser_data
 	integer mass, length, time, temp, deg
-	integer narrays, iarray, nndim, dim_vals(12), datatype, zonetype
+	integer narrays, iarray, nndim, datatype, zonetype
+	integer(cgsize_t) dim_vals(12)
 	real*4 version, rot_rate(Ndim), rot_center(Ndim), data_single(100)
 	character*32 name, filename, basename, user_data_name, zonename
 	character*100 text

@@ -19,24 +19,31 @@
         parameter (NNODES=200000, NELEMENTS=200000)
 
 	integer Cdim, Pdim, Idim, Idim_donor
-	integer cg, base, zone, size(3*3), ier, ZoneType
+	integer cg, base, zone, ier, ZoneType
+        integer(cgsize_t) size(3*3)
 	integer nbases, nzones, ncoords, nsections, nconns, nbocos
-	integer nfambc, ngeo, nfamilies, nparts, dim_vals(12)
-	integer i, n, sect, range_min(3), range_max(3)
-	integer start, end, nbndry, type
-	integer pnts(3*NNODES), donor_data(3*NNODES) 
+	integer nfambc, ngeo, nfamilies, nparts
+        integer(cgsize_t) dim_vals(12)
+	integer i, n, sect
+        integer(cgsize_t) range_min(3), range_max(3)
+	integer(cgsize_t) start, end
+        integer nbndry, type
+	integer(cgsize_t) pnts(3*NNODES), donor_data(3*NNODES) 
 	integer fam, geo, part,bc, bctype, location, connect_type
-	integer ptset_type, npnts, ndata_donor, datatype
+	integer ptset_type, datatype
+        integer(cgsize_t) npnts, ndata_donor
 	integer donor_ptset_type, donor_datatype, donor_zonetype
 	character*32 nodename, cadformat, filename, donorname
 	character*32 coordname(3)
 	character*200 cadfile, descriptor
         double precision data_double(NNODES)
-	integer NormalIndex(3), NormalListFlag, ndataset
+	integer NormalIndex(3), ndataset
+        integer(cgsize_t) NormalListFlag
 	integer size_of_patch, multiplier, narrays, pos, parent_flag
 	integer ilen, ilen2
 	integer ordinal
-        integer nbcdatasets, bcdataset, dirichletflag, neumannflag
+        integer nbcdatasets, dirichletflag, neumannflag
+        integer(cgsize_t) bcdataset
         integer mass, length, time, temp, deg
         character*32 dataset_name
         real*4 rot_rate(3), rot_center(3)

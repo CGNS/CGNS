@@ -18,7 +18,9 @@
 	integer index_dim, cell_dim, phys_dim, pos
 	integer base_no, zone_no, coord_no, sol_no, discr_no, conn_no
 	integer hole_no, boco_no, field_no, dset_no
-	integer num, size(Ndim*3), npnts, NormalIndex(Ndim)
+	integer num, NormalIndex(Ndim)
+	integer(cgsize_t) npnts
+	integer(cgsize_t) size(Ndim*3)
 	integer cg, ier, zone, coord, i, sol, field
 	integer(cgsize_t) pnts(Ndim,120), donor_pnts(Ndim,120)
 	integer transform(Ndim)
@@ -85,8 +87,8 @@
      &    'FlowEquationSet_t',1,'ChemicalKineticsModel_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_array_write_f('HeatOfFormationCO',RealSingle,1,1,
-     &    hofCO,ier)
+        call cg_array_write_f('HeatOfFormationCO',RealSingle,1,
+     &    1_cgsize_t,hofCO,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier,
@@ -110,8 +112,8 @@
      &    'FlowEquationSet_t',1,'ChemicalKineticsModel_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_array_write_f('HeatOfFormationO2',RealSingle,1,1,
-     &    hofO2,ier)
+        call cg_array_write_f('HeatOfFormationO2',RealSingle,1,
+     &    1_cgsize_t,hofO2,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier,
@@ -135,8 +137,8 @@
      &    'FlowEquationSet_t',1,'ChemicalKineticsModel_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_array_write_f('HeatOfFormationCO2',RealSingle,1,1,
-     &    hofCO2,ier)
+        call cg_array_write_f('HeatOfFormationCO2',RealSingle,1,
+     &    1_cgsize_t,hofCO2,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier,
@@ -160,8 +162,8 @@
      &    'FlowEquationSet_t',1,'ChemicalKineticsModel_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_array_write_f('ReferenceTemperatureHOF',RealSingle,1,1,
-     &    RThof,ier)
+        call cg_array_write_f('ReferenceTemperatureHOF',RealSingle,1,
+     &    1_cgsize_t,RThof,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier,

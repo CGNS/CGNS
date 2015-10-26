@@ -14,12 +14,14 @@
         parameter (NNODES=27, NELEMENTS=3)
 
 	integer Cdim, Pdim, Idim, ier, count
-	integer cg, base, zone, size(3), ZoneType
+	integer cg, base, zone, ZoneType
+        integer(cgsize_t) size(3)
 	integer nbases, nzones, ncoords, nsections
 	integer i, n, sect, range_min(3), range_max(3)
-	integer start, end, nbndry, type
+	integer(cgsize_t)  start, end
+        integer nbndry, type
         integer(cgsize_t) elements(1000)
-        integer ElementDataSize
+        integer(cgsize_t) ElementDataSize
 	character*32 coordname(3), filename, nodename
         double precision data_double(NNODES)
         integer parent_flag

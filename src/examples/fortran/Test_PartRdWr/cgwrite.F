@@ -17,7 +17,8 @@
 #endif
 
 	integer index_dim, cell_dim, phys_dim
-	integer cg, base, zone, size(3), ier, index, ZoneType
+	integer cg, base, zone, ier, index, ZoneType
+        integer(cgsize_t) size(3)
 	integer i, j, k, n, pos, coord, element(20), section_no
 	character*32 ZoneName, coordname(3)
         real*8 data_double(27)

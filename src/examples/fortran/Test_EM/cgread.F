@@ -30,7 +30,8 @@
 	integer ElecFieldModelFlag, MagnFieldModelFlag
 	integer ConductivityModelFlag
 	integer diffusion_model(6)
-	integer nndim, dim_vals(12)
+	integer nndim
+	integer(cgsize_t) dim_vals(12)
 	integer mass, length, time, temp, deg, iarray, i,narrays
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	real*4 data_single(100000)

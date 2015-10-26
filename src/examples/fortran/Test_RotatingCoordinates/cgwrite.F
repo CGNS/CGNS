@@ -14,7 +14,8 @@
 	integer Ndim
 	parameter (Ndim = 3)
 	integer index_dim, cell_dim, phys_dim, i
-	integer cg, base_no, zone_no, size(Ndim*3), ier
+	integer cg, base_no, zone_no, ier
+	integer(cgsize_t) size(Ndim*3)
 	real*4 rot_rate(Ndim), rot_center(Ndim)
 	character*100 linkpath
 

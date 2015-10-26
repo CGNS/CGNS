@@ -27,9 +27,12 @@
 	integer Ndim
 	parameter (Ndim = 3)
 	integer ier, cg, nbases, base, nzones, zone, nbocos, boco
-	integer CellDim, PhysDim, IndexDim, NormalListFlag, datatype
-	integer ndescriptors, idescr, size(3*Ndim), zonetype, ndataset
-	integer bocotype, ptset_type, npnts, NormalIndex(3), AreaType
+	integer CellDim, PhysDim, IndexDim, datatype
+	integer(cgsize_t) NormalListFlag
+	integer ndescriptors, idescr, zonetype, ndataset
+	integer(cgsize_t) size(3*Ndim)
+	integer bocotype, ptset_type, NormalIndex(3), AreaType
+	integer(cgsize_t) npnts
 	integer WallFunctionType, nuser_data, n, pnts(100000)
 	integer type, mass, length, time, temp, deg
 	character*32 filename, basename, zonename, boconame, bpropname
