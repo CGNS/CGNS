@@ -20,8 +20,10 @@ before_install:
       fi
     - ./install-hdf.sh
 
-script:
+before_script:
     - ./install-cgns.sh
+
+script:
     - cd src
     - make
     - cd tests
