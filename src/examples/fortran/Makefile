@@ -32,11 +32,14 @@ all :
 	fi
 
 test : $(TESTS)
-	@status=0 ;for d in $(DIRS) ; do \
+	@for d in $(DIRS) ; do \
 	  cd $$d && make; \
 	  ((status = status + $$?)); \
 	  cd ..; \
 	done;\
+	if [ $$status -ne 0 ]; then \
+		exit $$status; \
+	fi
 	test.sh
 	exit $$?;
 
