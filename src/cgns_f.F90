@@ -3254,7 +3254,7 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cg_descriptor_size_f(descr_no, descr_size, ier) !BIND(C, NAME="cg_descriptor_size_f")
+     SUBROUTINE cg_descriptor_size_f(descr_no, descr_size, ier) BIND(C, NAME="cg_descriptor_size_f")
        IMPLICIT NONE
        INTEGER :: descr_no
        INTEGER :: descr_size
