@@ -1,0 +1,20 @@
+This contains a Fortran test cases from UserGuideCode.
+...still being developed... NOT DONE YET
+
+***** NOTE *****
+You will first have to edit the Makefile include to set up your
+CGNS location and compiler and options
+
+Edit 'make.defs' for Linux/Unix
+Not checked for Windows yet.
+
+To just build the code, use
+    make
+on linux/Unix
+
+To build and run the tests, use
+    make test
+
+To clean everything up, use
+    make clean
+
