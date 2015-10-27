@@ -2677,7 +2677,7 @@ MODULE cgns
           DirichletFlag, NeumannFlag,ier) !BIND(C, NAME="cg_bcdataset_read_f")
        IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
-       INTEGER(CGSIZE_T) ::index
+       INTEGER ::index
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: Dataset_name
        INTEGER(cgenum_t) :: BCType
        INTEGER :: DirichletFlag
