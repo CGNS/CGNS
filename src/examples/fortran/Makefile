@@ -4,7 +4,6 @@ DIRS = \
 	Test_1to1ConnProp \
 	Test_Axisym \
 	Test_BCProperty \
-	Test_cgio \
 	Test_chemistry \
 	Test_ConnProperty \
 	Test_EM \
@@ -19,12 +18,14 @@ DIRS = \
 	Test_UD_BCData \
 	Test_UserDefinedData
 
+#	Test_cgio \
+
 #----------
 
 all :
-	@status=0 ;for d in $(DIRS) ; do \
+	-@for d in $(DIRS) ; do \
 	  cd $$d && make; \
-	  ((status = status + $$?)); \
+	  ((status=status + $$?)); \
 	  cd ..; \
 	done;\
 	if [ $$status -ne 0 ]; then \
@@ -34,7 +35,7 @@ all :
 test : $(TESTS)
 	@for d in $(DIRS) ; do \
 	  cd $$d && make; \
-	  ((status = status + $$?)); \
+	  ((status=status + $$?)); \
 	  cd ..; \
 	done;\
 	if [ $$status -ne 0 ]; then \
