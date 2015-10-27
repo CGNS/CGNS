@@ -16,7 +16,8 @@
 	integer index_dim, cell_dim, phys_dim
 	integer cg, base, zone, ier, index, ZoneType
         integer(cgsize_t) size(3)
-	integer i, j, k, n, pos, coord, element(20), section_no
+	integer i, j, k, n, pos, coord, section_no
+        integer(cgsize_t) element(20)
 	character*32 ZoneName, coordname(3)
         double precision data_double(27)
 	integer grid_no, count
@@ -112,7 +113,8 @@
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 ! Write MIXED element section
 	call cg_section_write_f(cg, base, zone, 'MixedElements', MIXED, 
-     &                          1, 3, 0, element, section_no, ier)
+     &                          1_cgsize_t, 3_cgsize_t, 0, element, 
+     &                          section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Write section of 4 NGON_n of 3 nodes 
@@ -126,7 +128,8 @@
 	    enddo
 	enddo
 	call cg_section_write_f(cg, base, zone, 'NGON_n(3)', 
-     &                 NGON_n, 1, 4, 0, element, section_no, ier)
+     &                 NGON_n, 1_cgsize_t, 4_cgsize_t, 0, element, 
+     &                 section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Write & close CGNS file

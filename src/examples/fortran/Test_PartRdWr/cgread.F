@@ -18,14 +18,15 @@
 	integer cg, base, zone, ZoneType
         integer(cgsize_t) size(3)
 	integer nbases, nzones, ncoords, nsections
-	integer i, n, sect, range_min(3), range_max(3)
+	integer i, n, sect
+        integer(cgsize_t) range_min(3), range_max(3)
 	integer nbndry, type, count
-        integer elements(1000)
+        integer(cgsize_t) elements(1000)
         integer(cgsize_t) ElementDataSize
 	character*32 coordname(3), filename, nodename
         double precision data_double(NNODES)
         integer(cgsize_t) el_st, el_end
-        integer parent(1000)
+        integer(cgsize_t) parent(1000)
         integer parent_flag
 
 !       initialize

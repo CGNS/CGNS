@@ -17,7 +17,8 @@
 	integer cg, base, zone, ZoneType
         integer(cgsize_t) size(3)
 	integer nbases, nzones, ncoords, nsections
-	integer i, n, sect, range_min(3), range_max(3)
+	integer i, n, sect
+        integer(cgsize_t) range_min(3), range_max(3)
 	integer(cgsize_t)  start, end
         integer nbndry, type
         integer(cgsize_t) elements(1000)

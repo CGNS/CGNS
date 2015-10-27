@@ -1,5 +1,5 @@
 READING FILE Test_V2                         
-Library Version used for file creation:   2.400
+Library Version used for file creation:   3.300
 nbases=    1
 BaseName = "Basename                        "
 cell_dimension= 3
@@ -22,7 +22,7 @@ Name of Zone    1 is "Zone#1                          "
    npnts=   5   donorname="Zone#2                          "
    donor zonetype=Structured                      
    donor ptset type=PointListDonor                  
-   donor datatype=Integer                         
+   DonorDatatype=LongInteger                     
    npnts_donor=   5
   GridConnectivity #2:
    connect name=Connect#2                       
@@ -32,7 +32,7 @@ Name of Zone    1 is "Zone#1                          "
    npnts=   5   donorname="Zone#2                          "
    donor zonetype=Structured                      
    donor ptset type=PointListDonor                  
-   donor datatype=Integer                         
+   DonorDatatype=LongInteger                     
    npnts_donor=   5
    AverageInterfaceTypeName= "AverageCircumferential          "
    RotationCenter=  1.1  2.2  3.3

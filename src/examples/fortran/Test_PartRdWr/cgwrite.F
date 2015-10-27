@@ -19,11 +19,12 @@
 	integer index_dim, cell_dim, phys_dim
 	integer cg, base, zone, ier, index, ZoneType
         integer(cgsize_t) size(3)
-	integer i, j, k, n, pos, coord, element(20), section_no
+	integer i, j, k, n, pos, coord, section_no
+        integer(cgsize_t) element(20)
 	character*32 ZoneName, coordname(3)
         real*8 data_double(27)
 	integer grid_no, C, count
-        integer rmin, rmax, parent(12)
+        integer(cgsize_t) rmin, rmax, parent(12)
 
 !       initialize
         ier = 0
@@ -137,7 +138,6 @@
 	call cg_elements_partial_write_f(cg, base, zone, section_no,
      &       rmin, rmax, element, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-
 ! second element TETRA_4
 	count = 1
 	element(count)=TETRA_4
@@ -173,7 +173,7 @@
 
         ! write parent data for the second and third elements
         call cg_parent_data_partial_write_f(cg, base, zone, section_no,
-     &       2, 3, parent, ier)
+     &       2_cgsize_t, 3_cgsize_t, parent, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
         count = 0
@@ -184,7 +184,7 @@
 
         ! write parent data for the first element
         call cg_parent_data_partial_write_f(cg, base, zone, section_no,
-     &       1, 1, parent, ier)
+     &       1_cgsize_t, 1_cgsize_t, parent, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Write & close CGNS file

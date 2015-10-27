@@ -22,7 +22,8 @@
 	integer index_dim, cell_dim, phys_dim, pos
 	integer base_no, zone_no, coord_no, sol_no, discr_no, conn_no
 	integer hole_no, boco_no, field_no, dset_no
-	integer num, NormalIndex(Ndim)
+	integer num
+	integer(cgsize_t) NormalIndex(Ndim)
 	integer(cgsize_t) npnts
 	integer(cgsize_t) size(Ndim*3)
 	integer cg1, cg2, ier, zone, coord, i, sol, field

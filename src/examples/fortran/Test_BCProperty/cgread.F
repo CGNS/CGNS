@@ -33,7 +33,8 @@
 	integer(cgsize_t) size(3*Ndim)
 	integer bocotype, ptset_type, NormalIndex(3), AreaType
 	integer(cgsize_t) npnts
-	integer WallFunctionType, nuser_data, n, pnts(100000)
+	integer WallFunctionType, nuser_data, n
+	integer(cgsize_t) pnts(100000)
 	integer type, mass, length, time, temp, deg
 	character*32 filename, basename, zonename, boconame, bpropname
 	character*32 name, RegionName, user_data_name

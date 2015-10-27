@@ -23,8 +23,8 @@
 	parameter (Nglobal = 500)
 	integer IndexDim, CellDim, PhysDim
 	integer ier, n, zonetype
-	integer nbases, nzones, DataSize(Ndim)
-	integer(cgsize_t) size(Ndim*3)
+	integer nbases, nzones
+	integer(cgsize_t) size(Ndim*3), DataSize(Ndim)
 	integer ncoords, type, nsols, nfields, location
 	integer nholes, nconns, n1to1, n1to1_global, nbocos
 	integer ptset_type
@@ -794,7 +794,7 @@
      &            '   donor zonetype=',ZoneTypeName(nzonetype),
      &            '   donor ptset type=',
      &                PointSetTypeName(ndonor_ptset_type),
-     &            '   donor datatype=',DataTypeName(donor_datatype),
+     &            '   DonorDatatype=',DataTypeName(donor_datatype),
      &            '   npnts_donor=',npnts_donor
 
 

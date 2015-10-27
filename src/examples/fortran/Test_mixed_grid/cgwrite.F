@@ -20,12 +20,14 @@
 	integer index_dim, cell_dim, phys_dim
 	integer cg, base, zone, num, ier, index, ZoneType
         integer(cgsize_t) size(Ndim*3)
-	integer i, j, k, n, pos, coord, element(8,8)
-	integer hexa_section_no, quad_section_no, parent(4,4)
+	integer i, j, k, n, pos, coord
+        integer(cgsize_t) element(8,8)
+	integer hexa_section_no, quad_section_no
+        integer(cgsize_t) parent(4,4)
         integer(cgsize_t) elist(4) 
-	integer quads(4,4)
+	integer(cgsize_t) quads(4,4)
         integer(cgsize_t) pnts(3,9), uns_pnts(9), dim_vals(12) 
-	integer Nindex(3)
+	integer(cgsize_t) Nindex(3)
 	double precision VertexNormals(3,9), FaceNormals(3,4)
 	integer fam, geo, part, bc
 	integer sol_no, field_no
@@ -308,7 +310,7 @@
  30             continue
 
 		call cg_section_write_f(cg, base, zone,
-     &            'VolumeElements', HEXA_8, 1, 8, 0,
+     &            'VolumeElements', HEXA_8, 1_cgsize_t, 8_cgsize_t, 0,
      &             element, hexa_section_no, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -326,7 +328,8 @@
                 enddo
 
 		call cg_section_write_f(cg, base, zone, 'outflow',
-     &            QUAD_4, 9_cgsize_t,12, 0, quads, quad_section_no, ier)
+     &            QUAD_4, 9_cgsize_t, 12_cgsize_t, 0, quads,
+     &            quad_section_no, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
 	     !  GENERATE Parent Data for shell elements

@@ -24,7 +24,8 @@
 	integer nbases, nzones, ncoords, nsections, nconns, nbocos
 	integer nfambc, ngeo, nfamilies, nparts
         integer(cgsize_t) dim_vals(12)
-	integer i, n, sect, range_min(3), range_max(3)
+	integer i, n, sect
+        integer(cgsize_t) range_min(3), range_max(3)
 	integer nbndry, type
         integer(cgsize_t) start, end
 	integer(cgsize_t) pnts(3*NNODES), donor_data(3*NNODES) 
@@ -48,7 +49,7 @@
 !	real*4 NormalListSingle(3*NNODES)
 
 ! Replace with the following fixed size, but without understanding the problem
-	integer elements(8000), parent_data(4000)
+	integer(cgsize_t) elements(8000), parent_data(4000)
 	double precision NormalListDouble(3000)
 	real*4 NormalListSingle(3000)
 

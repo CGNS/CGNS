@@ -24,7 +24,9 @@
 	integer index_dim, cell_dim, phys_dim
 	integer base_no, zone_no, coord_no, sol_no, discr_no, conn_no
 	integer hole_no, boco_no, field_no, dset_no
-	integer num,  npnts, NormalIndex(Ndim)
+	integer num
+	integer(cgsize_t) NormalIndex(Ndim)
+	integer(cgsize_t) npnts
 	integer(cgsize_t) size(Ndim*3)
 	integer cg, ier, zone, coord, i, sol, field
 	integer(cgsize_t) pnts(Ndim,120), donor_pnts(Ndim,120)
@@ -185,7 +187,7 @@
             enddo    
 
 	    ! ** write PointSet data:
-	    call cg_ptset_write_f(PointRange, 2, pnts, ier)
+	    call cg_ptset_write_f(PointRange, 2_cgsize_t, pnts, ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
 
 	    ! ** write PointSet data:
@@ -358,7 +360,7 @@
 	       enddo    
 
 	        ! ** write PointSet data:
-	       call cg_ptset_write_f(PointRange, 2, pnts, ier)
+	       call cg_ptset_write_f(PointRange, 2_cgsize_t, pnts, ier)
  	       if (ier .eq. ERROR) call cg_error_exit_f
 	    endif
 ! ** end KMW

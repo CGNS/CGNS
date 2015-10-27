@@ -1,5 +1,5 @@
 READING FILE Test_V2_links                   
-Library Version used for file creation:2.400
+Library Version used for file creation:3.300
 nbases=    1
 BaseName = "Basename                        "
 cell_dimension= 3
@@ -183,7 +183,7 @@ Interblock Connectivity for zone#1
 
    0 descriptors for hole#1                          
  1 GridConnectivity_t found
-   datatype= 2
+   datatype= 6
   GridConnectivity #1:
    connect name=Connect#1                       
    Grid location=Vertex                          
@@ -192,7 +192,7 @@ Interblock Connectivity for zone#1
    npnts=   5   donorname="zone#2                          "
    donor zonetype=Structured                      
    donor ptset type=PointListDonor                  
-   donor datatype=Integer                         
+   DonorDatatype=LongInteger                     
    npnts_donor=   5
    Current zone:
     first point: 1 2 3
@@ -428,7 +428,7 @@ Interblock Connectivity for zone#2
 
    0 descriptors for hole#1                          
  1 GridConnectivity_t found
-   datatype= 2
+   datatype= 6
   GridConnectivity #1:
    connect name=Connect#1                       
    Grid location=Vertex                          
@@ -437,7 +437,7 @@ Interblock Connectivity for zone#2
    npnts=   5   donorname="zone#2                          "
    donor zonetype=Structured                      
    donor ptset type=PointListDonor                  
-   donor datatype=Integer                         
+   DonorDatatype=LongInteger                     
    npnts_donor=   5
    Current zone:
     first point: 1 2 3

@@ -826,7 +826,7 @@
      &            '   donor zonetype=',ZoneTypeName(nzonetype),
      &            '   donor ptset type=',
      &                PointSetTypeName(ndonor_ptset_type),
-     &            '   donor datatype=',DataTypeName(donor_datatype),
+     &            '   DonorDatatype=',DataTypeName(donor_datatype),
      &            '   npnts_donor=',npnts_donor
 
 

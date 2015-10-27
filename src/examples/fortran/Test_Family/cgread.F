@@ -42,8 +42,7 @@
 	integer size_of_patch, multiplier, narrays, pos, parent_flag
 	integer ilen, ilen2
 	integer ordinal
-        integer nbcdatasets, dirichletflag, neumannflag
-        integer(cgsize_t) bcdataset
+        integer bcdataset, nbcdatasets, dirichletflag, neumannflag
         integer mass, length, time, temp, deg
         character*32 dataset_name
         real*4 rot_rate(3), rot_center(3)
@@ -54,7 +53,7 @@
 !	real*4 NormalListSingle(3*NNODES)
 
 ! Replace with the following fixed size, but without understanding the problem
-	integer elements(8000), parent_data(4000)
+	integer(cgsize_t) elements(8000), parent_data(4000)
 	double precision NormalListDouble(3000)
 	real*4 NormalListSingle(3000)
 
@@ -443,7 +442,6 @@
 		    endif
 		endif
 	    enddo
-
 ! BOUNDARY CONDITION PATCH: Put a user defined b.c. at interface
             write(6,100)'*** ZoneBC_t node ***'
 	    call cg_nbocos_f(cg, base, zone, nbocos, ier)

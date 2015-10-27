@@ -52,7 +52,7 @@ do
     cd $dir/build
     cgwrite
     cgread > output
-    diff -I 'Library Version used for file creation*' output ../OUTPUT &> results.txt
+    diff -I 'Library Version used for file creation*' -I 'DonorDatatype' -I 'datatype=' output ../OUTPUT &> results.txt
     status=$?
     echoresults $status
     return_val=`expr $status + $return_val`
