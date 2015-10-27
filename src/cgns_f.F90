@@ -3493,7 +3493,7 @@ MODULE cgns
   INTERFACE
      SUBROUTINE cg_diffusion_write_f(diffusion_model, ier) BIND(C, NAME="cg_diffusion_write_f")
        IMPLICIT NONE
-       INTEGER :: diffusion_model
+       INTEGER, DIMENSION(*) :: diffusion_model
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_diffusion_write_f
   END INTERFACE
@@ -3518,6 +3518,19 @@ MODULE cgns
 !!$      void *DATA
 !!$      INTEGER, INTENT(OUT) :: ier
 !!$    END SUBROUTINE cg_array_write_f
+!!$ END INTERFACE
+
+!!$ INTERFACE
+!!$    SUBROUTINE cg_array_write_f03(ArrayName, DataType, DataDimension, DimensionVector, DATA, ier) &
+!!$         BIND(C, NAME="cg_array_write_f03")
+!!$      IMPORT :: c_char, cgenum_t, cgsize_t, c_ptr
+!!$      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName
+!!$      INTEGER(cgenum_t) :: DataType
+!!$      INTEGER :: DataDimension
+!!$      INTEGER(cgsize_t), DIMENSION(*) :: DimensionVector
+!!$      TYPE(C_PTR), VALUE :: Data
+!!$      INTEGER, INTENT(OUT) :: ier
+!!$    END SUBROUTINE cg_array_write_f03
 !!$ END INTERFACE
 
   INTERFACE
