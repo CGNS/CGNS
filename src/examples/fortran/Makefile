@@ -4,6 +4,7 @@ DIRS = \
 	Test_1to1ConnProp \
 	Test_Axisym \
 	Test_BCProperty \
+	Test_cgio \
 	Test_chemistry \
 	Test_ConnProperty \
 	Test_EM \
@@ -17,8 +18,6 @@ DIRS = \
 	Test_RotatingCoordinates \
 	Test_UD_BCData \
 	Test_UserDefinedData
-
-#	Test_cgio \
 
 #----------
 
