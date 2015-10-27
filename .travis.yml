@@ -31,4 +31,5 @@ script:
     - make test
     - cd ../examples/fortran
     - make
-    - make test
+
+#    - make test
