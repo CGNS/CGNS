@@ -38,8 +38,8 @@ test : $(TESTS)
 	done;\
 	if [ $$status -ne 0 ]; then \
 		exit $$status; \
-	fi
-	test.sh
+	fi;\
+	test.sh;\
 	exit $$?;
 
 clean : $(CLEAN)
