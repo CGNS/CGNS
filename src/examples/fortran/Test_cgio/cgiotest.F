@@ -17,7 +17,7 @@ C
 c      INTEGER IC(6),ID(6)
       integer*4 ic(6),id(6)
       INTEGER IERR,cgnum
-      INTEGER IDIM(2),IDIMC,IDIMD
+      INTEGER(CGSIZE_T) IDIMC, IDIMD, IDIM(2)
       INTEGER(CGSIZE_T) IDIMA(2)
 C
       DATA A /1.1,2.1,3.1,4.1,
