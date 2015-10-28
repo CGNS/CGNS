@@ -22,12 +22,13 @@ DIRS = \
 #----------
 
 all :
-	-@for d in $(DIRS) ; do \
+	@for d in $(DIRS) ; do \
 	  cd $$d && make; \
 	  status=`expr $$status + $$?`; \
 	  cd ..; \
 	done;\
 	if [ $$status -ne 0 ]; then \
+                echo "SS $$status" \
 		exit $$status; \
 	fi
 
