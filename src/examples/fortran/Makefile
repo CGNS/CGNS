@@ -1,5 +1,3 @@
-include make.defs
-
 DIRS = \
 	Test1 \
 	Test_1to1ConnProp \
