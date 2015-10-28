@@ -18,3 +18,5 @@ To build and run the tests, use
 To clean everything up, use
     make clean
 
+Note: executables, output files, and the resulting CGNS file are put in
+each Subdirectory/build/ directory

@@ -26,23 +26,23 @@ test  : write read
 $(OUTDIR) :
 	-@$(MKDIR) $(OUTDIR)
 
-$(WRITE1) : write_grid_unst.f
-	$(F77) $(FOPTS) $(FEOUT)$@ write_grid_unst.f $(LIBS)
+$(WRITE1) : ../write_grid_unst.f
+	$(F77) $(FOPTS) $(FEOUT)$@ ../write_grid_unst.f $(LIBS)
 
-$(WRITE2) : write_flowvert_unst.f
-	$(F77) $(FOPTS) $(FEOUT)$@ write_flowvert_unst.f $(LIBS)
+$(WRITE2) : ../write_flowvert_unst.f
+	$(F77) $(FOPTS) $(FEOUT)$@ ../write_flowvert_unst.f $(LIBS)
 
-$(WRITE3) : write_bcpnts_unst.f
-	$(F77) $(FOPTS) $(FEOUT)$@ write_bcpnts_unst.f $(LIBS)
+$(WRITE3) : ../write_bcpnts_unst.f
+	$(F77) $(FOPTS) $(FEOUT)$@ ../write_bcpnts_unst.f $(LIBS)
 
-$(READ1) : read_grid_unst.f
-	$(F77) $(FOPTS) $(FEOUT)$@ read_grid_unst.f $(LIBS)
+$(READ1) : ../read_grid_unst.f
+	$(F77) $(FOPTS) $(FEOUT)$@ ../read_grid_unst.f $(LIBS)
 
-$(READ2) : read_flowvert_unst.f
-	$(F77) $(FOPTS) $(FEOUT)$@ read_flowvert_unst.f $(LIBS)
+$(READ2) : ../read_flowvert_unst.f
+	$(F77) $(FOPTS) $(FEOUT)$@ ../read_flowvert_unst.f $(LIBS)
 
-$(READ3) : read_bcpnts_unst.f
-	$(F77) $(FOPTS) $(FEOUT)$@ read_bcpnts_unst.f $(LIBS)
+$(READ3) : ../read_bcpnts_unst.f
+	$(F77) $(FOPTS) $(FEOUT)$@ ../read_bcpnts_unst.f $(LIBS)
 
 clean :
 	-$(RM) grid.cgns
