@@ -1,3 +1,4 @@
+include make.defs
 
 DIRS = \
 	Test1 \
