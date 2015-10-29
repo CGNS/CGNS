@@ -1,0 +1,44 @@
+
+BC number: 1
+   name= Ilo
+   type= BCTunnelInflow
+   i-range= 1,1
+   j-range= 1,17
+   k-range= 1,9
+
+BC number: 2
+   name= Ihi
+   type= BCExtrapolate
+   i-range= 21,21
+   j-range= 1,17
+   k-range= 1,9
+
+BC number: 3
+   name= Jlo
+   type= BCWallInviscid
+   i-range= 1,21
+   j-range= 1,1
+   k-range= 1,9
+
+BC number: 4
+   name= Jhi
+   type= BCWallInviscid
+   i-range= 1,21
+   j-range= 17,17
+   k-range= 1,9
+
+BC number: 5
+   name= Klo
+   type= BCWallInviscid
+   i-range= 1,21
+   j-range= 1,17
+   k-range= 1,1
+
+BC number: 6
+   name= Khi
+   type= BCWallInviscid
+   i-range= 1,21
+   j-range= 1,17
+   k-range= 9,9
+
+Successfully read BCs (PointRange format) from file grid_c.cgns
