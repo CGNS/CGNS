@@ -50,8 +50,8 @@ for dir in $DIRS
 do
     printf "%-40s" "Testing $dir..."
     cd $dir/build
-    cgwrite
-    cgread > output
+    ./cgwrite
+    ./cgread > output
     diff -I 'Library Version used for file creation*' -I 'DonorDatatype' -I 'datatype=' output ../OUTPUT &> results.txt
     status=$?
     echoresults $status
@@ -66,7 +66,7 @@ done
 dir=Test_cgio
 printf "%-40s" "Testing $dir..."
 cd $dir/build
-cgiotest > output
+./cgiotest > output
 diff -I 'Library Version used for file creation*' output ../OUTPUT &> results.txt
 status=$?
 echoresults $status
