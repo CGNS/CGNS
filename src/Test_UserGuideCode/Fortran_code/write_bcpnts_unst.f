@@ -37,6 +37,11 @@ c
       parameter (maxcount=960)
       integer(cgsize_t) ipnts(maxcount),icounts
 c
+      write(6,'('' Program write_bcpnts_unst'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...using 64-bit mode for particular integers'')')
+      end if
+c
 c  WRITE BOUNDARY CONDITIONS TO EXISTING CGNS FILE
 c  open CGNS file for modify
       call cg_open_f('grid.cgns',CG_MODE_MODIFY,index_file,ier)

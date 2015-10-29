@@ -32,9 +32,10 @@ int main()
 {
     double x[21*17*9],y[21*17*9],z[21*17*9];
     cgsize_t isize[3][1],ielem[maxelemi][8],jelem[maxelemj][4];
+    cgsize_t nelem_start,nelem_end;
     int ni,nj,nk,iset,i,j,k,index_file,icelldim,iphysdim;
-    int index_base,index_zone,index_coord,ielem_no,nelem_start;
-    int ifirstnode,nelem_end,nbdyelem,index_section;
+    int index_base,index_zone,index_coord,ielem_no;
+    int ifirstnode,nbdyelem,index_section;
     char basename[33],zonename[33];
 
 /* create gridpoints for simple example: */

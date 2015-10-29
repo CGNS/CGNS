@@ -32,6 +32,11 @@ c
       integer(cgsize_t) isize(3,3),ipnts(3,2),ipntsdonor(3,2)
       character donorname*32,zonename(2)*32
 c
+      write(6,'('' Program write_con2zn_str'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...using 64-bit mode for particular integers'')')
+      end if
+c
 c  WRITE 1-TO-1 CONNECTIVITY INFORMATION TO EXISTING CGNS FILE
 c  open CGNS file for modify
       call cg_open_f('grid.cgns',CG_MODE_MODIFY,index_file,ier)

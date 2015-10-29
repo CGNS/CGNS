@@ -1,5 +1,5 @@
-This contains a Fortran test cases from UserGuideCode.
-...still being developed... NOT DONE YET
+This contains a set of Fortran test cases from UserGuideCode.
+(modified for use with V3.3)
 
 ***** NOTE *****
 You will first have to edit the Makefile include to set up your

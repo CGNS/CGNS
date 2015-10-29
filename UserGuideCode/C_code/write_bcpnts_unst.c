@@ -41,7 +41,7 @@ int main()
 {
     int index_file,index_base,index_zone;
     int nelem_start,nelem_end,icount,index_bc,ibc,n;
-    cgsize_t ipnts[maxcount];
+    cgsize_t ipnts[maxcount],icounts;
 
 /* WRITE BOUNDARY CONDITIONS TO EXISTING CGNS FILE */
 /* open CGNS file for modify */
@@ -66,8 +66,9 @@ int main()
       return 1;
     }
 /* write boundary conditions for ilo face */
+    icounts=icount;
     cg_boco_write(index_file,index_base,index_zone,"Ilo",BCTunnelInflow,
-        PointList,icount,ipnts,&index_bc);
+        PointList,icounts,ipnts,&index_bc);
 /* we know that for the unstructured zone, the following face elements */
 /* have been defined as outflow (real working code would check!): */
     nelem_start=2689;
@@ -84,8 +85,9 @@ int main()
       return 1;
     }
 /* write boundary conditions for ihi face */
+    icounts=icount;
     cg_boco_write(index_file,index_base,index_zone,"Ihi",BCExtrapolate,
-        PointList,icount,ipnts,&index_bc);
+        PointList,icounts,ipnts,&index_bc);
 /* we know that for the unstructured zone, the following face elements */
 /* have been defined as walls (real working code would check!): */
     nelem_start=2817;
@@ -102,8 +104,9 @@ int main()
       return 1;
     }
 /* write boundary conditions for wall faces */
+    icounts=icount;
     cg_boco_write(index_file,index_base,index_zone,"Walls",BCWallInviscid,
-        PointList,icount,ipnts,&index_bc);
+        PointList,icounts,ipnts,&index_bc);
 
 /* the above are all face-center locations for the BCs - must indicate this, */
 /* otherwise Vertices will be assumed! */

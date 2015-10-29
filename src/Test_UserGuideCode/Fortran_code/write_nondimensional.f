@@ -31,6 +31,12 @@ c   Note Windows machines need to include cgnswin_f.h
 c
       real*8 xmach,reue,xmv,xmc,rev,rel,renu,rho0,gamma,p0,c0,vm0,
      +  xlength0,vx,vy,vz
+      integer(cgsize_t) nuse
+c
+      write(6,'('' Program write_nondimensional'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...using 64-bit mode for particular integers'')')
+      end if
 c   define nondimensional parameters
       xmach=4.6d0
       reue=6000000.d0
@@ -48,6 +54,7 @@ c   define nondimensional parameters
       vx=xmach
       vy=0.d0
       vz=0.d0
+      nuse=1
 c   WRITE NONDIMENSIONAL INFO
 c   open CGNS file for modify
       call cg_open_f('grid.cgns',CG_MODE_MODIFY,index_file,ier)
@@ -72,14 +79,14 @@ c   put ReferenceState under Base
 c   Go to ReferenceState node, write Mach array and its dataclass
       call cg_goto_f(index_file,index_base,ier,'ReferenceState_t',1,
      +  'end')
-      call cg_array_write_f('Mach',RealDouble,1,1,xmach,ier)
+      call cg_array_write_f('Mach',RealDouble,1,nuse,xmach,ier)
       call cg_goto_f(index_file,index_base,ier,'ReferenceState_t',1,
      +  'DataArray_t',1,'end')
       call cg_dataclass_write_f(NondimensionalParameter,ier)
 c   Go to ReferenceState node, write Reynolds array and its dataclass
       call cg_goto_f(index_file,index_base,ier,'ReferenceState_t',1,
      +  'end')
-      call cg_array_write_f('Reynolds',RealDouble,1,1,reue,ier)
+      call cg_array_write_f('Reynolds',RealDouble,1,nuse,reue,ier)
       call cg_goto_f(index_file,index_base,ier,'ReferenceState_t',1,
      +  'DataArray_t',2,'end')
       call cg_dataclass_write_f(NondimensionalParameter,ier)
@@ -88,39 +95,39 @@ c   Go to ReferenceState node to write reference quantities:
      +  'end')
 c   First, write reference quantities that make up Mach and Reynolds:
 c   Mach_Velocity
-      call cg_array_write_f('Mach_Velocity',RealDouble,1,1,xmv,ier)
+      call cg_array_write_f('Mach_Velocity',RealDouble,1,nuse,xmv,ier)
 c   Mach_VelocitySound
       call cg_array_write_f('Mach_VelocitySound',RealDouble,
-     +   1,1,xmc,ier)
+     +   1,nuse,xmc,ier)
 c   Reynolds_Velocity
       call cg_array_write_f('Reynolds_Velocity',RealDouble,
-     +   1,1,rev,ier)
+     +   1,nuse,rev,ier)
 c   Reynolds_Length
       call cg_array_write_f('Reynolds_Length',RealDouble,
-     +   1,1,rel,ier)
+     +   1,nuse,rel,ier)
 c   Reynolds_ViscosityKinematic
       call cg_array_write_f('Reynolds_ViscosityKinematic',RealDouble,
-     +   1,1,renu,ier)
+     +   1,nuse,renu,ier)
 c
 c   Next, write flow field reference quantities:
 c   Density
-      call cg_array_write_f('Density',RealDouble,1,1,rho0,ier)
+      call cg_array_write_f('Density',RealDouble,1,nuse,rho0,ier)
 c   Pressure
-      call cg_array_write_f('Pressure',RealDouble,1,1,p0,ier)
+      call cg_array_write_f('Pressure',RealDouble,1,nuse,p0,ier)
 c   VelocitySound
-      call cg_array_write_f('VelocitySound',RealDouble,1,1,c0,ier)
+      call cg_array_write_f('VelocitySound',RealDouble,1,nuse,c0,ier)
 c   ViscosityMolecular
       call cg_array_write_f('ViscosityMolecular',RealDouble,
-     +   1,1,vm0,ier)
+     +   1,nuse,vm0,ier)
 c   LengthReference
       call cg_array_write_f('LengthReference',RealDouble,
-     +   1,1,xlength0,ier)
+     +   1,nuse,xlength0,ier)
 c   VelocityX
-      call cg_array_write_f('VelocityX',RealDouble,1,1,vx,ier)
+      call cg_array_write_f('VelocityX',RealDouble,1,nuse,vx,ier)
 c   VelocityY
-      call cg_array_write_f('VelocityY',RealDouble,1,1,vy,ier)
+      call cg_array_write_f('VelocityY',RealDouble,1,nuse,vy,ier)
 c   VelocityZ
-      call cg_array_write_f('VelocityZ',RealDouble,1,1,vz,ier)
+      call cg_array_write_f('VelocityZ',RealDouble,1,nuse,vz,ier)
 c   close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully wrote nondimensional info to file'',

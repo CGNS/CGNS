@@ -32,6 +32,11 @@ c
       integer(cgsize_t) isize(3,3),ipnts(3,2)
       character zonename*32
 c
+      write(6,'('' Program write_bc_str'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...using 64-bit mode for particular integers'')')
+      end if
+c
 c  WRITE BOUNDARY CONDITIONS TO EXISTING CGNS FILE
 c  open CGNS file for modify
       call cg_open_f('grid.cgns',CG_MODE_MODIFY,index_file,ier)

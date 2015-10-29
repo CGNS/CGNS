@@ -28,6 +28,11 @@ c
       real*8 cl(ntt)
       integer(cgsize_t) nuse
 c
+      write(6,'('' Program write_convergence'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...using 64-bit mode for particular integers'')')
+      end if
+c
 c   create history array simple example:
       do n=1,ntt
         cl(n)=float(n)

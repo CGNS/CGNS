@@ -34,6 +34,11 @@ c
       dimension exponents(5)
       character fieldname*32
 c
+      write(6,'('' Program write_dimensional'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...compiled in 64-bit mode, but not needed'')')
+      end if
+c
 c   WRITE DIMENSIONAL INFO FOR GRID AND FLOW SOLN
 c   open CGNS file for modify
       call cg_open_f('grid.cgns',CG_MODE_MODIFY,index_file,ier)

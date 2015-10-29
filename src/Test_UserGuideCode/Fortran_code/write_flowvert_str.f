@@ -36,6 +36,11 @@ c   subroutine and dimension exactly there):
       real*8 r(21,17,9),p(21,17,9)
       character solname*32
 c
+      write(6,'('' Program write_flowvert_str'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...compiled in 64-bit mode, but not needed'')')
+      end if
+c
 c   create fake flow solution AT VERTICES for simple example:
       ni=21
       nj=17

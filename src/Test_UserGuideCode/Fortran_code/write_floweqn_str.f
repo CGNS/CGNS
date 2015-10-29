@@ -26,6 +26,12 @@ c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
       dimension idata(6)
+      integer(cgsize_t) nuse
+c
+      write(6,'('' Program write_floweqn_str'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...using 64-bit mode for particular integers'')')
+      end if
 c
 c   data for writing
       gamma=1.4
@@ -61,6 +67,7 @@ c   Create 'DiffusionModel' node under 'GoverningEquations'
       idata(6)=0
       call cg_diffusion_write_f(idata,ier)
 c
+      nuse=1
 c   Create 'GasModel' under 'FlowEquationSet'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,
      + 'FlowEquationSet_t',1,'end')
@@ -68,7 +75,7 @@ c   Create 'GasModel' under 'FlowEquationSet'
 c   Create 'SpecificHeatRatio' under GasModel
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,
      + 'FlowEquationSet_t',1,'GasModel_t',1,'end')
-      call cg_array_write_f('SpecificHeatRatio',RealSingle,1,1, 
+      call cg_array_write_f('SpecificHeatRatio',RealSingle,1,nuse, 
      + gamma,ier)
 c   Create 'DataClass' under 'SpecificHeatRatio'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,
@@ -84,7 +91,7 @@ c   Create 'TurbulenceClosure' under 'FlowEquationSet'
 c   Create 'PrandtlTurbulent' under 'TurbulenceClosure'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,
      + 'FlowEquationSet_t',1,'TurbulenceClosure_t',1,'end')
-      call cg_array_write_f('PrandtlTurbulent',RealSingle,1,1,
+      call cg_array_write_f('PrandtlTurbulent',RealSingle,1,nuse,
      + prandtl,ier)
 c   Create 'DataClass' under 'PrandtlTurbulent'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,

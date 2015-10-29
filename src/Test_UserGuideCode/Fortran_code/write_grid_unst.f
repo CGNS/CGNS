@@ -26,7 +26,13 @@ c
       parameter (maxelemi=20*16*8, maxelemj=1216)
       real*8 x(21*17*9),y(21*17*9),z(21*17*9)
       integer(cgsize_t) isize(1,3),ielem(8,maxelemi),jelem(4,maxelemj)
+      integer(cgsize_t) nelem_start,nelem_end
       character basename*32,zonename*32
+c
+      write(6,'('' Program write_grid_unst'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...using 64-bit mode for particular integers'')')
+      end if
 c
 c   create gridpoints for simple example:
       ni=21

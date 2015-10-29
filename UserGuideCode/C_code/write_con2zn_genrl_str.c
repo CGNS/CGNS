@@ -39,6 +39,7 @@ int main()
     int index_file,index_base,nzone,index_zone,nconns,n1to1,index_conn,iz;
     char donorname[33],zonename0[33],zonename1[33],zn[33];
     cgsize_t isize[3][3],ipnts[maxcount][3],ipntsdonor[maxcount][3];
+    cgsize_t icounts;
 
 /* WRITE GENERAL CONNECTIVITY INFORMATION TO EXISTING CGNS FILE */
 /* open CGNS file for modify */
@@ -138,9 +139,10 @@ int main()
         }
       }
 /* write integer connectivity info (user can give any name) */
+      icounts=icount;
       cg_conn_write(index_file,index_base,iz,"GenInterface",Vertex,Abutting1to1,
-          PointList,icount,ipnts[0],donorname,Structured,
-          PointListDonor,Integer,icount,ipntsdonor[0],&index_conn);
+          PointList,icounts,ipnts[0],donorname,Structured,
+          PointListDonor,Integer,icounts,ipntsdonor[0],&index_conn);
     }
 /* close CGNS file */
     cg_close(index_file);

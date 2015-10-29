@@ -7,7 +7,6 @@ echoresults() {
     if test $* -ne 0
     then
         echo -e "$ERROR_COLOR *** FAILED *** $NO_COLOR"
-        cat results.txt
     else
         echo -e "$OK_COLOR passed $NO_COLOR"
     fi

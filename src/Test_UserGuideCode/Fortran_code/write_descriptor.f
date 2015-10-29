@@ -27,6 +27,11 @@ c   Note Windows machines need to include cgnswin_f.h
 c
       character text1*36,text2*36,textstring*73
 c
+      write(6,'('' Program write_descriptor'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...compiled in 64-bit mode, but not needed'')')
+      end if
+c
 c  WRITE DESCRIPTOR NODE AT BASE LEVEL
 c  open CGNS file for modify
       call cg_open_f('grid.cgns',CG_MODE_MODIFY,index_file,ier)

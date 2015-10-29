@@ -34,7 +34,7 @@ library libcgns.a is located)
 
 int main()
 {
-    cgsize_t isize[3][3],ipnts[maxcount][3];
+    cgsize_t isize[3][3],ipnts[maxcount][3],icounts;
     int index_file,index_base,index_zone,index_bc;
     int ilo,ihi,jlo,jhi,klo,khi;
     int icount,i,j,k;
@@ -74,8 +74,9 @@ int main()
       printf("\nError. Need to increase maxcount to at least %i\n",icount);
       return 1;
     }
+    icounts=icount;
     cg_boco_write(index_file,index_base,index_zone,"Ilo",BCTunnelInflow,
-        PointList,icount,ipnts[0],&index_bc);
+        PointList,icounts,ipnts[0],&index_bc);
 /* write boundary conditions for ihi face, defining pointlist first */
 /* (user can give any name) */
     icount=0;
@@ -94,8 +95,9 @@ int main()
       printf("\nError. Need to increase maxcount to at least %i\n",icount);
       return 1;
     }
+    icounts=icount;
     cg_boco_write(index_file,index_base,index_zone,"Ihi",BCExtrapolate,
-        PointList,icount,ipnts[0],&index_bc);
+        PointList,icounts,ipnts[0],&index_bc);
 /* write boundary conditions for jlo face, defining pointlist first */
 /* (user can give any name) */
     icount=0;
@@ -114,8 +116,9 @@ int main()
       printf("\nError. Need to increase maxcount to at least %i\n",icount);
       return 1;
     }
+    icounts=icount;
     cg_boco_write(index_file,index_base,index_zone,"Jlo",BCWallInviscid,
-        PointList,icount,ipnts[0],&index_bc);
+        PointList,icounts,ipnts[0],&index_bc);
 /* write boundary conditions for jhi face, defining pointlist first */
 /* (user can give any name) */
     icount=0;
@@ -134,8 +137,9 @@ int main()
       printf("\nError. Need to increase maxcount to at least %i\n",icount);
       return 1;
     }
+    icounts=icount;
     cg_boco_write(index_file,index_base,index_zone,"Jhi",BCWallInviscid,
-        PointList,icount,ipnts[0],&index_bc);
+        PointList,icounts,ipnts[0],&index_bc);
 /* write boundary conditions for klo face, defining pointlist first */
 /* (user can give any name) */
     icount=0;
@@ -154,8 +158,9 @@ int main()
       printf("\nError. Need to increase maxcount to at least %i\n",icount);
       return 1;
     }
+    icounts=icount;
     cg_boco_write(index_file,index_base,index_zone,"Klo",BCWallInviscid,
-        PointList,icount,ipnts[0],&index_bc);
+        PointList,icounts,ipnts[0],&index_bc);
 /* write boundary conditions for khi face, defining pointlist first */
 /* (user can give any name) */
     icount=0;
@@ -174,8 +179,9 @@ int main()
       printf("\nError. Need to increase maxcount to at least %i\n",icount);
       return 1;
     }
+    icounts=icount;
     cg_boco_write(index_file,index_base,index_zone,"Khi",BCWallInviscid,
-        PointList,icount,ipnts[0],&index_bc);
+        PointList,icounts,ipnts[0],&index_bc);
 /* close CGNS file */
     cg_close(index_file);
     printf("\nSuccessfully added BCs (PointList) to file grid_c.cgns\n");

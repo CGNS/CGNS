@@ -86,7 +86,7 @@ int main()
       printf("   pointset type=%s\n",PointSetTypeName[iptset_type]);
       printf("   donor zonetype=%s\n",ZoneTypeName[idonor_zonetype]);
       printf("   donor pointset type=%s\n",PointSetTypeName[idonor_ptset_type]);
-      printf("   data type=%s\n",DataTypeName[idonor_datatype]);
+/*    printf("   data type=%s\n",DataTypeName[idonor_datatype]); */
       printf("   ipnts and ipntsdonor arrays read, only some written out here:\n");
       for (i=0; i < 10; i++)
       {

@@ -40,8 +40,13 @@ c   subroutine and dimension exactly there):
       real*8 r2(21,17,9),p2(21,17,9)
       real*8 r3(21,17,9),p3(21,17,9)
       real*8 time(3)
-      integer(cgsize_t) idata(2)
+      integer(cgsize_t) idata(2),nuse
       character solname(3)*32
+c
+      write(6,'('' Program write_timevert_str'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...using 64-bit mode for particular integers'')')
+      end if
 c
 c   set up the times corresponding to the 3 solutions to be
 c   stored:
@@ -112,7 +117,8 @@ c   create BaseIterativeData
 c   go to BaseIterativeData level and write time values
       call cg_goto_f(index_file,index_base,ier,'BaseIterativeData_t',
      + 1,'end')
-      call cg_array_write_f('TimeValues',RealDouble,1,3,time,ier)
+      nuse=3
+      call cg_array_write_f('TimeValues',RealDouble,1,nuse,time,ier)
 c   create ZoneIterativeData
       call cg_ziter_write_f(index_file,index_base,index_zone,
      + 'ZoneIterativeData',ier)

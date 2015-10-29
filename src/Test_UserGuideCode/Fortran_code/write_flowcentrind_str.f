@@ -39,6 +39,11 @@ c   Rind cells are stored in array locations (i,1,k), (i,18,k), (1,j,k), (22,j,k
       dimension irinddata(6)
       character solname*32
 c
+      write(6,'('' Program write_flowcentrind_str'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...compiled in 64-bit mode, but not needed'')')
+      end if
+c
 c   create fake flow solution AT CELL CENTERS for simple example:
       ni=20
       nj=16

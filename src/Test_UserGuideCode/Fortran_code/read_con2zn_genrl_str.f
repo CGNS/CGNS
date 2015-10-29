@@ -82,8 +82,8 @@ c   read general connectivity info
      +   ZoneTypeName(idonor_zonetype)
         write(6,'(''    donor pointset type='',a32)') 
      +   PointSetTypeName(idonor_ptset_type)
-        write(6,'(''    data type='',a32)') 
-     +   DataTypeName(idonor_datatype)
+c       write(6,'(''    data type='',a32)') 
+c    +   DataTypeName(idonor_datatype)
         write(6,'(''    ipnts and ipntsdonor arrays read, only some'',
      +   '' written out here:'')')
         do i=1,10
