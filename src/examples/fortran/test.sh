@@ -6,10 +6,10 @@ ERROR_COLOR="\033[31;01m"
 echoresults() {
     if test $* -ne 0
     then
-        echo -e "$ERROR_COLOR *** FAILED *** $NO_COLOR"
+        printf "$ERROR_COLOR *** FAILED *** $NO_COLOR"
         cat results.txt
     else
-        echo -e "$OK_COLOR passed $NO_COLOR"
+        printf "$OK_COLOR passed $NO_COLOR"
     fi
 }
 
@@ -69,6 +69,7 @@ cd $dir/build
 ./cgiotest > output
 diff -I 'Library Version used for file creation*' output ../OUTPUT &> results.txt
 status=$?
+cat results.txt
 echo "here io $status"
 echoresults $status
 return_val=`expr $status + $return_val`
