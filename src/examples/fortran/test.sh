@@ -9,7 +9,7 @@ echoresults() {
         printf "$ERROR_COLOR *** FAILED *** $NO_COLOR \n"
         cat results.txt
     else
-        printf "$OK_COLOR passed $NO_COLOR \n"
+        printf "$OK_COLOR PASSED $NO_COLOR \n"
     fi
 }
 
@@ -67,9 +67,8 @@ dir=Test_cgio
 printf "%-40s" "Testing $dir..."
 cd $dir/build
 ./cgiotest > output
-diff -I 'Library Version used for file creation*' output ../OUTPUT > results.txt
+diff -b -I 'Library Version used for file creation*' output ../OUTPUT > results.txt
 status=$?
-echo "here io $status"
 echoresults $status
 return_val=`expr $status + $return_val`
 cd ../..
