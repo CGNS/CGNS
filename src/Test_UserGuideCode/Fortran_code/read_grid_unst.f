@@ -26,7 +26,8 @@ c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
       dimension x(21*17*9),y(21*17*9),z(21*17*9)
-      dimension isize(1,3),ielem(8,20*16*8)
+      integer(cgsize_t) isize(1,3),ielem(8,20*16*8)
+      integer(cgsize_t) irmin,irmax,istart,iend,iparentdata
       character zonename*32,sectionname*32
 c
 c   READ X, Y, Z GRID POINTS FROM CGNS FILE

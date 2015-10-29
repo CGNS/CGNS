@@ -96,14 +96,154 @@ status=$?
 echoresults $status
 return_val=`expr $status + $return_val`
 
+write_dimensional
+read_dimensional > output3
+diff -I 'Library Version used for file creation*' output3 ../OUTPUT3 &> results3.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+write_descriptor
+read_descriptor > output4
+diff -I 'Library Version used for file creation*' output4 ../OUTPUT4 &> results4.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+write_convergence
+read_convergence > output5
+diff -I 'Library Version used for file creation*' output5 ../OUTPUT5 &> results5.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
 write_bcpnts_unst
-read_bcpnts_unst > output3
+read_bcpnts_unst > output6
+diff -I 'Library Version used for file creation*' output6 ../OUTPUT6 &> results6.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+cd ../..
+
+###############################
+
+dir=Test_Grid_Str_Timeacc
+printf "%-40s" "Testing $dir..."
+cd $dir/build
+
+write_grid_str
+read_grid_str > output1
+diff -I 'Library Version used for file creation*' output1 ../OUTPUT1 &> results1.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+write_timevert_str
+read_timevert_str > output2
+diff -I 'Library Version used for file creation*' output2 ../OUTPUT2 &> results2.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+cd ../..
+
+###############################
+
+dir=Test_Grid_Str_FlowCent
+printf "%-40s" "Testing $dir..."
+cd $dir/build
+
+write_grid_str
+read_grid_str > output1
+diff -I 'Library Version used for file creation*' output1 ../OUTPUT1 &> results1.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+write_flowcent_str
+read_flowcent_str > output2
+diff -I 'Library Version used for file creation*' output2 ../OUTPUT2 &> results2.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+write_bc_str
+read_bc_str > output3
 diff -I 'Library Version used for file creation*' output3 ../OUTPUT3 &> results3.txt
 status=$?
 echoresults $status
 return_val=`expr $status + $return_val`
 
 cd ../..
+
+###############################
+
+dir=Test_Grid_Str_FlowCentRind
+printf "%-40s" "Testing $dir..."
+cd $dir/build
+
+write_grid_str
+read_grid_str > output1
+diff -I 'Library Version used for file creation*' output1 ../OUTPUT1 &> results1.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+write_flowcentrind_str
+read_flowcentrind_str > output2
+diff -I 'Library Version used for file creation*' output2 ../OUTPUT2 &> results2.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+cd ../..
+
+###############################
+
+dir=Test_Grid_Str_2zn
+printf "%-40s" "Testing $dir..."
+cd $dir/build
+
+write_grid2zn_str
+read_grid2zn_str > output1
+diff -I 'Library Version used for file creation*' output1 ../OUTPUT1 &> results1.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+write_con2zn_str
+read_con2zn_str > output2
+diff -I 'Library Version used for file creation*' output2 ../OUTPUT2 &> results2.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+cd ../..
+
+###############################
+
+dir=Test_Grid_Str_2zngenrl
+printf "%-40s" "Testing $dir..."
+cd $dir/build
+
+write_grid2zn_str
+read_grid2zn_str > output1
+diff -I 'Library Version used for file creation*' output1 ../OUTPUT1 &> results1.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+write_con2zn_genrl_str
+read_con2zn_genrl_str > output2
+diff -I 'Library Version used for file creation*' output2 ../OUTPUT2 &> results2.txt
+status=$?
+echoresults $status
+return_val=`expr $status + $return_val`
+
+cd ../..
+
+###############################
 
 echo "=== finished ==="
 echo "$return_val tests failed"

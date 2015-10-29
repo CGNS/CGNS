@@ -26,6 +26,7 @@ c   Note Windows machines need to include cgnswin_f.h
 c
       parameter (ntt=20)
       real*8 cl(ntt)
+      integer(cgsize_t) nuse
 c
 c   create history array simple example:
       do n=1,ntt
@@ -47,7 +48,8 @@ c   go to new history node
       call cg_goto_f(index_file,index_base,ier,'ConvergenceHistory_t',
      +  1,'end')
 c   write lift coefficient array (user must use SIDS-standard name here)
-      call cg_array_write_f('CoefLift',RealDouble,1,ntt,cl,ier)
+      nuse=ntt
+      call cg_array_write_f('CoefLift',RealDouble,1,nuse,cl,ier)
 c  close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully wrote cl history to file grid.cgns'')')

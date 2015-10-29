@@ -32,7 +32,7 @@ c   the CGNS file incorrectly!  Other options are to use 1-D
 c   arrays, use dynamic memory, or pass index values to a 
 c   subroutine and dimension exactly there):
       dimension x(21,17,9),y(21,17,9),z(21,17,9)
-      dimension isize(3,3),irmin(3),irmax(3)
+      integer(cgsize_t) isize(3,3),irmin(3),irmax(3)
       character zonename*32
 c
 c   READ X, Y, Z GRID POINTS FROM CGNS FILE

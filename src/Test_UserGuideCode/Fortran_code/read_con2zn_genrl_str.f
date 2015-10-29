@@ -29,7 +29,8 @@ c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
       parameter (maxpnts=400)
-      dimension ipnts(3,maxpnts),ipntsdonor(3,maxpnts)
+      integer(cgsize_t) npts,ndata_donor
+      integer(cgsize_t) ipnts(3,maxpnts),ipntsdonor(3,maxpnts)
       character donorname*32,connectname*32
 c
 c  READ GENERAL CONNECTIVITY INFORMATION FROM EXISTING CGNS FILE

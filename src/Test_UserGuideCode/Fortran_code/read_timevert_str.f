@@ -38,13 +38,12 @@ c   subroutine and dimension exactly there):
       dimension r1(21,17,9),p1(21,17,9)
       dimension r2(21,17,9),p2(21,17,9)
       dimension r3(21,17,9),p3(21,17,9)
-      dimension isize(3,3),irmin(3),irmax(3)
+      integer(cgsize_t) isize(3,3),irmin(3),irmax(3)
       dimension time(3)
       character zonename*32,bitername*32,zitername*32
       character arrayname*32
       character solname(3)*32,solname2*32
-      integer idims(2)
-      integer(cgsize_t) id2(1)
+      integer(cgsize_t) idims(2),id2(1)
 c
 c   READ FLOW SOLUTION FROM CGNS FILE
 c   open CGNS file for read-only

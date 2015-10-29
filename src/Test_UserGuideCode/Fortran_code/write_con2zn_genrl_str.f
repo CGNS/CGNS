@@ -29,8 +29,9 @@ c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
       parameter (maxcount=400)
-      dimension isize(3,3),ilo(2),ihi(2),jlo(2),jhi(2),klo(2),khi(2)
-      dimension ipnts(3,maxcount),ipntsdonor(3,maxcount)
+      dimension ilo(2),ihi(2),jlo(2),jhi(2),klo(2),khi(2)
+      integer(cgsize_t) isize(3,3),ipnts(3,maxcount)
+      integer(cgsize_t) ipntsdonor(3,maxcount),icounts
       character donorname*32,zonename(2)*32
 c
 c  WRITE GENERAL CONNECTIVITY INFORMATION TO EXISTING CGNS FILE
@@ -113,9 +114,10 @@ c   set up point lists
           donorname=zonename(1)
         end if
 c   write integer connectivity info (user can give any name)
+        icounts=icount
         call cg_conn_write_f(index_file,index_base,index_zone,
-     +    'GenInterface',Vertex,Abutting1to1,PointList,icount,ipnts,
-     +    donorname,Structured,PointListDonor,Integer,icount,
+     +    'GenInterface',Vertex,Abutting1to1,PointList,icounts,ipnts,
+     +    donorname,Structured,PointListDonor,Integer,icounts,
      +    ipntsdonor,index_conn,ier)
       enddo
 c  close CGNS file

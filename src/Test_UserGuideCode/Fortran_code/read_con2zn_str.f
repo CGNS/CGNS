@@ -27,7 +27,8 @@ c   The following is no longer supported; now superceded by "use cgns":
 c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
-      dimension ipnts(3,2),ipntsdonor(3,2),itranfrm(3)
+      integer(cgsize_t) ipnts(3,2),ipntsdonor(3,2)
+      dimension itranfrm(3)
       character donorname*32,connectname*32
 c
 c  READ 1-TO-1 CONNECTIVITY INFORMATION FROM EXISTING CGNS FILE

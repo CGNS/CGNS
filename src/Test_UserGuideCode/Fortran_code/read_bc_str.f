@@ -29,7 +29,8 @@ c   The following is no longer supported; now superceded by "use cgns":
 c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
-      dimension ipnts(3,2),normalindex(3)
+      integer(cgsize_t) ipnts(3,2),npts,normallistflag
+      dimension normalindex(3)
       character boconame*32
 c
 c  READ BOUNDARY CONDITIONS FROM EXISTING CGNS FILE

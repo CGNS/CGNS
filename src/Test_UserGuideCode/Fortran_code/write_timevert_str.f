@@ -40,7 +40,7 @@ c   subroutine and dimension exactly there):
       real*8 r2(21,17,9),p2(21,17,9)
       real*8 r3(21,17,9),p3(21,17,9)
       real*8 time(3)
-      dimension idata(2)
+      integer(cgsize_t) idata(2)
       character solname(3)*32
 c
 c   set up the times corresponding to the 3 solutions to be

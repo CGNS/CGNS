@@ -31,7 +31,8 @@ c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
       parameter (maxpnts=960)
-      dimension ipnts(maxpnts),normalindex(3)
+      integer(cgsize_t) ipnts(maxpnts),npts,normallistflag
+      dimension normalindex(3)
       character boconame*32
 c
 c  READ BOUNDARY CONDITIONS FROM EXISTING CGNS FILE

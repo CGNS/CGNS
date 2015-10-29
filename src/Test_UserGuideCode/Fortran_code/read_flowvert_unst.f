@@ -33,7 +33,7 @@ c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
       dimension r(21*17*9),p(21*17*9)
-      dimension isize(1,3)
+      integer(cgsize_t) isize(1,3),irmin,irmax
       character*32 zonename,solname
 c
 c   READ FLOW SOLUTION FROM CGNS FILE

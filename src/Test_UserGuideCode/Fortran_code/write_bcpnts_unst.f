@@ -35,7 +35,7 @@ c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
       parameter (maxcount=960)
-      dimension ipnts(maxcount)
+      integer(cgsize_t) ipnts(maxcount),icounts
 c
 c  WRITE BOUNDARY CONDITIONS TO EXISTING CGNS FILE
 c  open CGNS file for modify
@@ -60,8 +60,9 @@ c  have been defined as inflow (real working code would check!):
         stop
       end if
 c  write boundary conditions for ilo face
+      icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Ilo',
-     + BCTunnelInflow,PointList,icount,ipnts,index_bc,ier)
+     + BCTunnelInflow,PointList,icounts,ipnts,index_bc,ier)
 c  we know that for the unstructured zone, the following face elements
 c  have been defined as outflow (real working code would check!):
       nelem_start=2689
@@ -77,8 +78,9 @@ c  have been defined as outflow (real working code would check!):
         stop
       end if
 c  write boundary conditions for ihi face
+      icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Ihi',
-     + BCExtrapolate,PointList,icount,ipnts,index_bc,ier)
+     + BCExtrapolate,PointList,icounts,ipnts,index_bc,ier)
 c  we know that for the unstructured zone, the following face elements
 c  have been defined as walls (real working code would check!):
       nelem_start=2817
@@ -94,8 +96,9 @@ c  have been defined as walls (real working code would check!):
         stop
       end if
 c  write boundary conditions for wall faces
+      icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Walls',
-     + BCWallInviscid,PointList,icount,ipnts,index_bc,ier)
+     + BCWallInviscid,PointList,icounts,ipnts,index_bc,ier)
 c
 c  the above are all face-center locations for the BCs - must indicate this,
 c  otherwise Vertices will be assumed!

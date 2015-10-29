@@ -30,8 +30,13 @@ c   the CGNS file incorrectly!  Other options are to use 1-D
 c   arrays, use dynamic memory, or pass index values to a 
 c   subroutine and dimension exactly there):
       real*8 x(21,17,9),y(21,17,9),z(21,17,9)
-      dimension isize(3,3)
+      integer(cgsize_t) isize(3,3)
       character basename*32,zonename*32
+c
+      write(6,'('' Program write_grid_str'')')
+      if (CG_BUILD_64BIT) then
+        write(6,'('' ...using 64-bit mode for particular integers'')')
+      end if
 c
 c   create gridpoints for simple example:
       ni=21

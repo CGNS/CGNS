@@ -26,7 +26,9 @@ library libcgns.a is located)
 /* cgnslib_f.h file must be located in directory specified by -I during compile: */
 #include "cgnslib.h"
 
-#if CGNS_VERSION >= 3100
+#if CGNS_VERSION < 3100
+# define cgsize_t int
+#else
 # if CG_BUILD_SCOPE
 #  error enumeration scoping needs to be off
 # endif

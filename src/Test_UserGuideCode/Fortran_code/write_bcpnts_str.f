@@ -30,7 +30,7 @@ c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
       parameter (maxcount=400)
-      dimension isize(3,3),ipnts(3,maxcount)
+      integer(cgsize_t) isize(3,3),ipnts(3,maxcount),icounts
       character zonename*32
 c
 c  WRITE BOUNDARY CONDITIONS TO EXISTING CGNS FILE
@@ -67,8 +67,9 @@ c  (user can give any name)
      +    i5)') icount
         stop
       end if
+      icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Ilo',
-     + BCTunnelInflow,PointList,icount,ipnts,index_bc,ier)
+     + BCTunnelInflow,PointList,icounts,ipnts,index_bc,ier)
 c  write boundary conditions for ihi face, defining pointlist first
 c  (user can give any name)
       icount=0
@@ -85,8 +86,9 @@ c  (user can give any name)
      +    i5)') icount
         stop
       end if
+      icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Ihi',
-     + BCExtrapolate,PointList,icount,ipnts,index_bc,ier)
+     + BCExtrapolate,PointList,icounts,ipnts,index_bc,ier)
 c  write boundary conditions for jlo face, defining pointlist first
 c  (user can give any name)
       icount=0
@@ -103,8 +105,9 @@ c  (user can give any name)
      +    i5)') icount
         stop
       end if
+      icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Jlo',
-     + BCWallInviscid,PointList,icount,ipnts,index_bc,ier)
+     + BCWallInviscid,PointList,icounts,ipnts,index_bc,ier)
 c  write boundary conditions for jhi face, defining pointlist first
 c  (user can give any name)
       icount=0
@@ -121,8 +124,9 @@ c  (user can give any name)
      +    i5)') icount
         stop
       end if
+      icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Jhi',
-     + BCWallInviscid,PointList,icount,ipnts,index_bc,ier)
+     + BCWallInviscid,PointList,icounts,ipnts,index_bc,ier)
 c  write boundary conditions for klo face, defining pointlist first
 c  (user can give any name)
       icount=0
@@ -139,8 +143,9 @@ c  (user can give any name)
      +    i5)') icount
         stop
       end if
+      icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Klo',
-     + BCWallInviscid,PointList,icount,ipnts,index_bc,ier)
+     + BCWallInviscid,PointList,icounts,ipnts,index_bc,ier)
 c  write boundary conditions for khi face, defining pointlist first
 c  (user can give any name)
       icount=0
@@ -157,8 +162,9 @@ c  (user can give any name)
      +    i5)') icount
         stop
       end if
+      icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Khi',
-     + BCWallInviscid,PointList,icount,ipnts,index_bc,ier)
+     + BCWallInviscid,PointList,icounts,ipnts,index_bc,ier)
 c  close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully added BCs (PointList) to file'',

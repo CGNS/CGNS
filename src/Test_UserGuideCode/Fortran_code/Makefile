@@ -1,7 +1,12 @@
 
 DIRS = \
 	Test_Grid_Str \
-	Test_Grid_Unstr
+	Test_Grid_Unstr \
+	Test_Grid_Str_Timeacc \
+	Test_Grid_Str_FlowCent \
+	Test_Grid_Str_FlowCentRind \
+	Test_Grid_Str_2zn \
+	Test_Grid_Str_2zngenrl
 
 #----------
 

@@ -35,7 +35,7 @@ c   the CGNS file incorrectly!  Other options are to use 1-D
 c   arrays, use dynamic memory, or pass index values to a 
 c   subroutine and dimension exactly there):
       real*8 r(20,16,8),p(20,16,8)
-      dimension isize(3,3),irmin(3),irmax(3)
+      integer(cgsize_t) isize(3,3),irmin(3),irmax(3)
       character*32 zonename,solname
 c
 c   READ FLOW SOLUTION FROM CGNS FILE

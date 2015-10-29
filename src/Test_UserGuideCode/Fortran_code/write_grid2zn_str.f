@@ -31,7 +31,7 @@ c   arrays, use dynamic memory, or pass index values to a
 c   subroutine and dimension exactly there):
       real*8 x1(21,17,9),y1(21,17,9),z1(21,17,9)
       real*8 x2(21,17,9),y2(21,17,9),z2(21,17,9)
-      dimension isize(3,3)
+      integer(cgsize_t) isize(3,3)
       character basename*32,zonename*32
 c
 c   create gridpoints for simple example:

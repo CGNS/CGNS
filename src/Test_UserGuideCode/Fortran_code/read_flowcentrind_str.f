@@ -37,7 +37,8 @@ c   arrays, use dynamic memory, or pass index values to a
 c   subroutine and dimension exactly there):
 c   Rind cells are stored in array locations (i,1,k), (i,18,k), (1,j,k), (22,j,k)
       dimension r(22,18,8),p(22,18,8)
-      dimension isize(3,3),irmin(3),irmax(3),irinddata(6)
+      integer(cgsize_t) isize(3,3),irmin(3),irmax(3)
+      dimension irinddata(6)
       character*32 zonename,solname
 c
 c   READ FLOW SOLUTION FROM CGNS FILE
