@@ -1,0 +1,24 @@
+# location for the CGNS includes and required libraries
+CGNSDIR = ../../..
+include $(CGNSDIR)/make.defs
+include $(CGNSDIR)/cgnsBuild.defs
+
+CGNSLIB = $(CGNSDIR)/$(LIBCGNS)
+
+CGNSinclude = ../../../
+CGNSlibs = $(CGNSLIB) $(HDF5LIB)
+
+# C compiler and options
+COPTS = -I$(CGNSinclude) $(CFLAGS)
+LIBS  = $(CGNSlibs) -lm $(FLIBS) $(SZIPLIB) $(ZLIBLIB)
+
+# how to name output executable and extension
+FEOUT = -o
+EXE   =
+
+# working directory for output
+OUTDIR = build
+
+# additional commands
+MKDIR = mkdir
+DIFF  = diff -w

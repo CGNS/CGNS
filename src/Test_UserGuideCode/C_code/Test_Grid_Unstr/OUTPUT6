@@ -1,0 +1,56 @@
+
+GridLocation=FaceCenter means BC data refers to elements, not nodes
+
+BC number: 1
+   name= Ilo
+   type= BCTunnelInflow
+   no of elements= 128
+      (these elements read here, but only some printed out:)
+    ipnts[0]=2561
+    ipnts[1]=2562
+    ipnts[2]=2563
+    ipnts[3]=2564
+    ipnts[4]=2565
+    ipnts[5]=2566
+    ipnts[6]=2567
+    ipnts[7]=2568
+    ipnts[8]=2569
+    ipnts[9]=2570
+
+GridLocation=FaceCenter means BC data refers to elements, not nodes
+
+BC number: 2
+   name= Ihi
+   type= BCExtrapolate
+   no of elements= 128
+      (these elements read here, but only some printed out:)
+    ipnts[0]=2689
+    ipnts[1]=2690
+    ipnts[2]=2691
+    ipnts[3]=2692
+    ipnts[4]=2693
+    ipnts[5]=2694
+    ipnts[6]=2695
+    ipnts[7]=2696
+    ipnts[8]=2697
+    ipnts[9]=2698
+
+GridLocation=FaceCenter means BC data refers to elements, not nodes
+
+BC number: 3
+   name= Walls
+   type= BCWallInviscid
+   no of elements= 960
+      (these elements read here, but only some printed out:)
+    ipnts[0]=2817
+    ipnts[1]=2818
+    ipnts[2]=2819
+    ipnts[3]=2820
+    ipnts[4]=2821
+    ipnts[5]=2822
+    ipnts[6]=2823
+    ipnts[7]=2824
+    ipnts[8]=2825
+    ipnts[9]=2826
+
+Successfully read BCs (PointList format) from file grid_c.cgns

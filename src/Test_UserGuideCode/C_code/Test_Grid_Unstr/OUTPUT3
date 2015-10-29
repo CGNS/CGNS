@@ -1,0 +1,46 @@
+
+DataClass = Dimensional
+
+Units=
+    Kilogram
+    Meter
+    Second
+    Kelvin
+    Degree
+
+For Density, exponents are:
+    1.000000
+    -3.000000
+    0.000000
+    0.000000
+    0.000000
+
+For Pressure, exponents are:
+    1.000000
+    -1.000000
+    -2.000000
+    0.000000
+    0.000000
+
+For CoordinateX, exponents are:
+    0.000000
+    1.000000
+    0.000000
+    0.000000
+    0.000000
+
+For CoordinateY, exponents are:
+    0.000000
+    1.000000
+    0.000000
+    0.000000
+    0.000000
+
+For CoordinateZ, exponents are:
+    0.000000
+    1.000000
+    0.000000
+    0.000000
+    0.000000
+
+Successfully read dimensional data from file grid_c.cgns
