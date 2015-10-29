@@ -63,15 +63,16 @@ done
 # Special cases
 ###############################
 
-#dir=Test_cgio
-#printf "%-40s" "Testing $dir..."
-#cd $dir/build
-#./cgiotest > output
-#diff -I 'Library Version used for file creation*' output ../OUTPUT &> results.txt
-#status=$?
-#echoresults $status
-#return_val=`expr $status + $return_val`
-#cd ../..
+dir=Test_cgio
+printf "%-40s" "Testing $dir..."
+cd $dir/build
+./cgiotest > output
+diff -I 'Library Version used for file creation*' output ../OUTPUT &> results.txt
+status=$?
+echo "here io $status"
+echoresults $status
+return_val=`expr $status + $return_val`
+cd ../..
 
 ###############################
 
