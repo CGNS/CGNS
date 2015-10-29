@@ -39,7 +39,7 @@ test : $(TESTS)
 	if [ $$status -ne 0 ]; then \
 		exit $$status; \
 	fi;\
-	echo $$PWD; ./test.sh \
+	./test.sh; \
 	exit $$?;
 
 clean : $(CLEAN)

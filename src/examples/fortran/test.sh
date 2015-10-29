@@ -50,6 +50,7 @@ for dir in $DIRS
 do
     printf "%-40s" "Testing $dir..."
     cd $dir/build
+    ls
     cgwrite
     cgread > output
     diff -I 'Library Version used for file creation*' -I 'DonorDatatype' -I 'datatype=' output ../OUTPUT &> results.txt
