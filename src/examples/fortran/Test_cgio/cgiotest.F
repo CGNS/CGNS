@@ -151,7 +151,7 @@ C
 c      CALL ADFGNID(RID,'/N3/N10',PID,IERR)
       call cgio_get_node_id_f(cgnum,rid,'/N3/N10',pid,ierr)
 c      CALL ADFLINK(PID,'L1',' ','/N3/N9/N13',TMPID,IERR)
-      call cgio_create_link_f(cgnum,pid,'L1','','/N3/N9/N13',
+      call cgio_create_link_f(cgnum,pid,'L1','\0','/N3/N9/N13',
      &                        tmpid,ierr)
 c      CALL ADFCRE(PID,'N14',TMPID,IERR)
       call cgio_create_node_f(cgnum,pid,'N14',tmpid,ierr)
@@ -161,7 +161,7 @@ C
 c      CALL ADFGNID(RID,'/N3/N11',PID,IERR)
       call cgio_get_node_id_f(cgnum,rid,'/N3/N11',pid,ierr)
 c      CALL ADFLINK(PID,'L2',' ','/N3/N9/N13',TMPID,IERR)
-      call cgio_create_link_f(cgnum,pid,'L2','','/N3/N9/N13',
+      call cgio_create_link_f(cgnum,pid,'L2','\0','/N3/N9/N13',
      &                        tmpid,ierr)
 c      CALL ADFCRE(PID,'N15',TMPID,IERR)
       call cgio_create_node_f(cgnum,pid,'N15',tmpid,ierr)
@@ -265,7 +265,6 @@ c      CALL ADFDOPN('adf_file_two.adf','OLD',' ',RID,IERR)
       WRITE(*,'(A,F12.8)')' ADF_FILE_TWO.ADF ORIGINAL ROOT ID = ',RIDF2
       WRITE(*,'(A,F12.8)')' ADF_FILE_TWO.ADF NEW ROOT ID      = ',RID
 C
-      STOP
       END
 C
 C ************* SUBROUTINES ****************
