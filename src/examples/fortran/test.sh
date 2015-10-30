@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 NO_COLOR="\033[0m"
 OK_COLOR="\033[32;01m"
 ERROR_COLOR="\033[31;01m"
@@ -52,7 +52,8 @@ do
     cd $dir/build
     ./cgwrite
     ./cgread > output
-    diff -I 'Library Version used for file creation*' -I 'DonorDatatype' -I 'datatype=' output ../OUTPUT > results.txt
+    diff <( sed '/Library/ d' output | sed '/DonorDatatype/ d' | sed '/datatype=/ d') <( sed '/Library/ d' ../OUTPUT | sed '/DonorDatatype/ d' | sed '/datatype=/ d') > results.txt
+#   diff -I 'Library Version used for file creation*' -I 'DonorDatatype' -I 'datatype=' output ../OUTPUT > results.txt
     status=$?
     echoresults $status
     return_val=`expr $status + $return_val`
@@ -67,7 +68,8 @@ dir=Test_cgio
 printf "%-40s" "Testing $dir..."
 cd $dir/build
 ./cgiotest > output
-diff -I 'Library Version used for file creation*' output ../OUTPUT > results.txt
+diff <( sed '/Library/ d' output) <( sed '/Library/ d' ../OUTPUT) > results.txt
+#diff -I 'Library Version used for file creation*' output ../OUTPUT > results.txt
 status=$?
 echoresults $status
 return_val=`expr $status + $return_val`
