@@ -207,7 +207,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
  100 	format(a/,'    Mass units: ',a/,'    Length units: ',a/,&
-         '    Temperature units: ',a/,'    Time units: ',a/,
+         '    Temperature units: ',a/,'    Time units: ',a/,&
          '    Angle units:',a)
  102 	format(a,f5.3)
  104	format(a,i2,3a)
