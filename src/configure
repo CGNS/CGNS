@@ -4139,15 +4139,24 @@ fi
 
 fi
 
+FC_D_PRE='' 
+if test "$withfortran" = "yes"; then
+
 #----------- Determine if the Fortran compiler xlf ------------------------
 # xlf preprocessor needs the -WF,-D prefix, FC_D_PRE is used when passing -D 
 # options to fortran programs.
 #--------------------------------------------------------------------------
-FC_D_PRE='' 
-if test "$withfortran" = "yes"; then
     fc_vendor="`$FC -qversion 2>&1 |grep 'IBM XL'`"
     if test X != "X$fc_vendor"; then
       FC_D_PRE='-WF,' 
+    fi
+#----------- Determine if the Fortran compiler pgi ------------------------
+# The PGI compiler segfaults wehn va_start is called, so we need to add
+# a special compiler flag, see CGNS-40.
+#--------------------------------------------------------------------------
+    fc_vendor="`$FC --version 2>&1 |grep -i 'Portland Group'`"
+    if test X != "X$fc_vendor"; then
+      FFLAGS='$FFLAGS -Mx,125,0x200' 
     fi
 fi
 
@@ -4207,7 +4216,7 @@ CGNSLIB=libcgns.$EXT_LIB
 test "$LIBS" = "-lm -lm " && LIBS=-lm
 
 echo $ac_n "checking whether ${MAKE-make} sets \${MAKE}""... $ac_c" 1>&6
-echo "configure:4211: checking whether ${MAKE-make} sets \${MAKE}" >&5
+echo "configure:4220: checking whether ${MAKE-make} sets \${MAKE}" >&5
 set dummy ${MAKE-make}; ac_make=`echo "$2" | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_prog_make_${ac_make}_set'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
