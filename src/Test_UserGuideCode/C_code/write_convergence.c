@@ -4,12 +4,12 @@ Adds convergence history to an existing CGNS file.
 
 The CGNS grid file 'grid_c.cgns' must already exist.
 
-Example compilation for this program is (change paths!):
+Example compilation for this program is (change paths if needed!):
 
-cc -I ../../../CGNS_github/CGNS/src -c write_convergence.c
-cc -o write_convergence_c write_convergence.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+cc -I ../.. -c write_convergence.c
+cc -o write_convergence_c write_convergence.o -L ../../lib -lcgns
 
-(../../../CGNS_github/CGNS/src/lib is the location where the compiled
+(../../lib is the location where the compiled
 library libcgns.a is located)
 */
 

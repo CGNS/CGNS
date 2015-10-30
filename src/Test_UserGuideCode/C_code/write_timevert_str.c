@@ -9,12 +9,12 @@ with solutions at 3 different time steps.
 The CGNS grid file 'grid_c.cgns' must already exist
 (created using write_grid_str.c)
 
-Example compilation for this program is (change paths!):
+Example compilation for this program is (change paths if needed!):
 
-cc -I ../../../CGNS_github/CGNS/src -c write_timevert_str.c
-cc -o write_timevert_str_c write_timevert_str.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+cc -I ../.. -c write_timevert_str.c
+cc -o write_timevert_str_c write_timevert_str.o -L ../../lib -lcgns
 
-(../../../CGNS_github/CGNS/src/lib is the location where the compiled
+(../../lib is the location where the compiled
 library libcgns.a is located)
 */
  

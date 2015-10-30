@@ -7,12 +7,12 @@ NONDIMENSIONAL data set.
 The CGNS grid file 'grid_c.cgns' must already exist,
 processed further using write_nondimensional.c.
 
-Example compilation for this program is (change paths!):
+Example compilation for this program is (change paths if needed!):
 
-cc -I ../../../CGNS_github/CGNS/src -c read_nondimensional.c
-cc -o read_nondimensional_c read_nondimensional.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+cc -I ../.. -c read_nondimensional.c
+cc -o read_nondimensional_c read_nondimensional.o -L ../../lib -lcgns
 
-(../../../CGNS_github/CGNS/src/lib is the location where the compiled
+(../../lib is the location where the compiled
 library libcgns.a is located)
 */
 

@@ -11,12 +11,12 @@ r and p, this program is essentially identical to that for
 writing flow solutions to a structured zone:
 write_flowvert_str.c
 
-Example compilation for this program is (change paths!):
+Example compilation for this program is (change paths if needed!):
 
-cc -I ../../../CGNS_github/CGNS/src -c write_flowvert_unst.c
-cc -o write_flowvert_unst_c write_flowvert_unst.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+cc -I ../.. -c write_flowvert_unst.c
+cc -o write_flowvert_unst_c write_flowvert_unst.o -L ../../lib -lcgns
 
-(../../../CGNS_github/CGNS/src/lib is the location where the compiled
+(../../lib is the location where the compiled
 library libcgns.a is located)
 */
 

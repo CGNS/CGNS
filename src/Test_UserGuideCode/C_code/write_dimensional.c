@@ -11,12 +11,12 @@ The CGNS grid file 'grid_c.cgns' must already exist
     write_grid_str.c followed by write_flowcentrind_str.c or
     write_grid_unst.c followed by write_flowvert_unst.c)
 
-Example compilation for this program is (change paths!):
+Example compilation for this program is (change paths if needed!):
 
-cc -I ../../../CGNS_github/CGNS/src -c write_dimensional.c
-cc -o write_dimensional_c write_dimensional.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+cc -I ../.. -c write_dimensional.c
+cc -o write_dimensional_c write_dimensional.o -L ../../lib -lcgns
 
-(../../../CGNS_github/CGNS/src/lib is the location where the compiled
+(../../lib is the location where the compiled
 library libcgns.a is located)
 */
 
