@@ -37,4 +37,5 @@ script:
     - make test
     - cd ../C_code
     - make
+    - make test
     
