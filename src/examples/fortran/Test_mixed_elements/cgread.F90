@@ -95,15 +95,15 @@
 	    range_max(i)=size(i)
         enddo
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-	write(6,107) 'range:',(range_min(i),i=1,Idim),
-     &                                 (range_max(i),i=1,Idim)
+	write(6,107) 'range:',(range_min(i),i=1,Idim), &
+                                      (range_max(i),i=1,Idim)
 ! Name convention
         coordname(1) = 'CoordinateX'
         coordname(2) = 'CoordinateY'
         coordname(3) = 'CoordinateZ'
 	do i=1, Pdim
-	    call cg_coord_read_f(cg, base, zone, coordname(i), 
-     &            RealDouble, range_min, range_max, data_double, ier)
+	    call cg_coord_read_f(cg, base, zone, coordname(i), &
+                  RealDouble, range_min, range_max, data_double, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f 
 	    write(6,103)coordname(i)
 	    write(6,109)'first point:',data_double(1)
@@ -118,17 +118,17 @@
 	do sect=1, nsections
 
 ! Read all element info:
-	    call cg_section_read_f(cg, base, zone, sect,
-     &              nodename, type, start, end, nbndry, 
-     &              parent_flag, ier)
+	    call cg_section_read_f(cg, base, zone, sect, &
+                    nodename, type, start, end, nbndry, &
+                    parent_flag, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
-	    call cg_ElementDataSize_f(cg, base, zone, sect, 
-     &                                ElementDataSize, ier)
+	    call cg_ElementDataSize_f(cg, base, zone, sect, &
+                                      ElementDataSize, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 	    
-	    call cg_elements_read_f(cg, base, zone, sect,
-     &                 elements, parent_data, ier)
+	    call cg_elements_read_f(cg, base, zone, sect, &
+                       elements, parent_data, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 
@@ -142,8 +142,8 @@
             if (ier .eq. ERROR) call cg_error_exit_f
 	    
 	    write(6,107) 'ElementDataSize =',ElementDataSize
-            write(6,103) 'Section Element Type= ',
-     &                             ElementTypeName(type)
+            write(6,103) 'Section Element Type= ', &
+                                   ElementTypeName(type)
 
 	    nelem = end-start+1
 	    write(6,103)'Element Connectivity:'
@@ -158,12 +158,12 @@
 		    type = elements(count)
 		    if (type .gt. NGON_n) then
 			npe = type - NGON_n
-			write(6,111) 
-     &                    'Element Type= NGON_n, npe =',npe
+			write(6,111) &
+                          'Element Type= NGON_n, npe =',npe
 		    else
 			call cg_npe_f(type, npe, ier)
-			write(6,112)'Element Type= ',
-     &                             ElementTypeName(type)
+			write(6,112)'Element Type= ', &
+                                   ElementTypeName(type)
 		    endif
 		    write(6,110)(elements(count+n),n=1,npe)
 		    count = count+npe
@@ -173,8 +173,8 @@
 	        do i=1, nelem
 		    count = count + 1
 		    npe = elements(count)
-		    write(6,111) 
-     &                    'Element Number Points=',npe
+		    write(6,111) &
+                          'Element Number Points=',npe
 		    write(6,110)(elements(count+n),n=1,npe)
 		    count = count+npe
 		enddo

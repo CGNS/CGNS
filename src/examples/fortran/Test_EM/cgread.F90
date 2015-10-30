@@ -50,8 +50,8 @@
 ! *** CGNS Library Version used for file creation (version must be real*4):
 	call cg_version_f(cg, version, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,102)
-     &     'Library Version used for file creation:',version
+	write(6,102) &
+          'Library Version used for file creation:',version
 
 ! *** base
 	call cg_nbases_f(cg, nbases, ier)
@@ -61,8 +61,8 @@
 	do base=1, nbases
 	  call cg_base_read_f(cg, base, basename, CellDim, PhysDim, ier)
 	  if (ier .eq. ERROR) call cg_error_exit_f
-	  write(6,300)'BaseName = "',basename,'"',
-     &                'cell_dimension=',CellDim
+	  write(6,300)'BaseName = "',basename,'"', &
+                      'cell_dimension=',CellDim
 
 ! *** base attribute:  GOTO base node
 	  call cg_goto_f(cg, base, ier, 'end')
@@ -73,20 +73,20 @@
           if (ier .eq. ERROR) call cg_error_exit_f
           if (ier.eq.ALL_OK) then
             write(6,400)'Base Descriptor_t Information:'
-            write(6,500)' DescriptorName="',name,'"',
-     &                  ' DescriptorText="',text,'"'
+            write(6,500)' DescriptorName="',name,'"', &
+                        ' DescriptorText="',text,'"'
           endif
 
 ! ***     base attribute: flow equation set:
-	  call cg_equationset_read_f(equation_dimension,
-     &      GoverningEquationsFlag,  GasModelFlag,
-     &      ViscosityModelFlag, ThermalConductivityModelFlag,
-     &      TurbulenceClosureFlag,  TurbulenceModelFlag, ier)
+	  call cg_equationset_read_f(equation_dimension, &
+            GoverningEquationsFlag,  GasModelFlag, &
+            ViscosityModelFlag, ThermalConductivityModelFlag, &
+            TurbulenceClosureFlag,  TurbulenceModelFlag, ier)
 	  if (ier .eq. ERROR) then
 	    call cg_error_exit_f
 	  elseif (ier .eq. NODE_NOT_FOUND) then
-	    write(6,200)
-     &      'FlowEquationSet_t not defined under CGNSBase_t #',base
+	    write(6,200) &
+            'FlowEquationSet_t not defined under CGNSBase_t #',base
 	  elseif (ier .eq. INCORRECT_PATH) then
   	    write(6,400)'Incorrect path input to cg_goto_f'
 	  else
@@ -94,25 +94,25 @@
 	    write(6,200)' equation_dimension=',equation_dimension
 
 ! *** chemistry attributes: flow equation set:
-	    call cg_equationset_chemistry_read_f(ThermalRelaxationFlag,
-     &        ChemicalKineticsFlag, ier)
+	    call cg_equationset_chemistry_read_f(ThermalRelaxationFlag, &
+              ChemicalKineticsFlag, ier)
 	    if (ier .eq. ERROR) then
 	      call cg_error_exit_f
 	    elseif (ier .eq. NODE_NOT_FOUND) then
-	      write(6,200)
-     &        'FlowEquationSet_t not defined under CGNSBase_t #',base
+	      write(6,200) &
+              'FlowEquationSet_t not defined under CGNSBase_t #',base
 	    elseif (ier .eq. INCORRECT_PATH) then
   	      write(6,400)'Incorrect path input to cg_goto_f'
 	    endif
 
 ! begin KMW Electromagnetics extension
-	    call cg_equationset_elecmagn_read_f(ElecFieldModelFlag,
-     &        MagnFieldModelFlag, ConductivityModelFlag, ier)
+	    call cg_equationset_elecmagn_read_f(ElecFieldModelFlag, &
+              MagnFieldModelFlag, ConductivityModelFlag, ier)
 	    if (ier .eq. ERROR) then
 	      call cg_error_exit_f
 	    elseif (ier .eq. NODE_NOT_FOUND) then
-	      write(6,200)
-     &        'FlowEquationSet_t not defined under CGNSBase_t #',base
+	      write(6,200) &
+              'FlowEquationSet_t not defined under CGNSBase_t #',base
 	    elseif (ier .eq. INCORRECT_PATH) then
   	      write(6,400)'Incorrect path input to cg_goto_f'
 	    endif
@@ -125,73 +125,73 @@
 ! ***       flow equation set attribute: Descriptor
             call cg_descriptor_read_f(1, name,text,ier)
             if (ier .eq. ERROR) call cg_error_exit_f
-            if (ier .eq. ALL_OK) write(6,500)
-     &        ' DescriptorName="',name,'"',' DescriptorText="',text,'"'
+            if (ier .eq. ALL_OK) write(6,500) &
+              ' DescriptorName="',name,'"',' DescriptorText="',text,'"'
 
 ! ***       flow equation set attribute: Gas Model Type
 	    if (GasModelFlag.eq.1) then
                 call cg_model_read_f('GasModel_t', type, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
-                if (ier .eq. ALL_OK) write(6,600)
-     &            ' GasModelType="',ModelTypeName(type),'"'
+                if (ier .eq. ALL_OK) write(6,600) &
+                  ' GasModelType="',ModelTypeName(type),'"'
             endif
 
 ! ***       flow equation set attribute: ViscosityModel Type
             if (ViscosityModelFlag.eq.1) then
               call cg_model_read_f('ViscosityModel_t', type, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
-              if (ier .eq. ALL_OK) write(6,600)
-     &          ' ViscosityModelType="',ModelTypeName(type),'"'
+              if (ier .eq. ALL_OK) write(6,600) &
+                ' ViscosityModelType="',ModelTypeName(type),'"'
             endif
 
 ! ***       flow equation set attribute:  TypmlConductivityModel Type
             if (ThermalConductivityModelFlag.eq.1) then
-              call cg_model_read_f('ThermalConductivityModel_t',
-     &                  type, ier)
+              call cg_model_read_f('ThermalConductivityModel_t', &
+                        type, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
-              if (ier .eq. ALL_OK) write(6,600)
-     &          ' ThermalConductivityModelType=',
-     &            ModelTypeName(type),'"'
+              if (ier .eq. ALL_OK) write(6,600) &
+                ' ThermalConductivityModelType=', &
+                  ModelTypeName(type),'"'
             endif
 
 ! ***   flow equation set attribute: TurbulenceClosureType
             if (TurbulenceClosureFlag.eq.1) then
               call cg_model_read_f('TurbulenceClosure_t', type, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
-              if (ier .eq. ALL_OK) write(6,600)
-     &          ' TurbulenceClosureType="', ModelTypeName(type),'"'
+              if (ier .eq. ALL_OK) write(6,600) &
+                ' TurbulenceClosureType="', ModelTypeName(type),'"'
             endif
 
 ! ***   flow equation set attribute: TurbulenceModelType
             if (TurbulenceModelFlag.eq.1) then
               call cg_model_read_f('TurbulenceModel_t', type, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
-              if (ier .eq. ALL_OK) write(6,600)
-     &          ' TurbulenceModelType="',ModelTypeName(type),'"'
+              if (ier .eq. ALL_OK) write(6,600) &
+                ' TurbulenceModelType="',ModelTypeName(type),'"'
             endif
 
 ! ***   flow equation set attribute: Governing Equations Type
             if (GoverningEquationsFlag .eq. 1) then
               call cg_governing_read_f(type, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
-              if (ier.eq.ALL_OK)
-     &          write(6,600)' GoverningEquationsType="',
-     &                          GoverningEquationsTypeName(type),'"'
+              if (ier.eq.ALL_OK) &
+                write(6,600)' GoverningEquationsType="', &
+                                GoverningEquationsTypeName(type),'"'
 
     	! *** Governing Equations attribute:  GOTO GoverningEquations_t node
-	      call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1,
-     &            'GoverningEquations_t',1,'end')
+	      call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1, &
+                  'GoverningEquations_t',1,'end')
 	      if (ier .eq. ERROR) call cg_error_exit_f
 
         ! *** Governing Equations attribute:  Diffusion model
 	      call cg_diffusion_read_f(diffusion_model, ier)
 	      if (ier .eq. ERROR) call cg_error_exit_f
-	      if (ier.eq.ALL_OK)write(6,103)'   Diffusion model=',
-     &                           (diffusion_model(i), i=1,6)
+	      if (ier.eq.ALL_OK)write(6,103)'   Diffusion model=', &
+                                 (diffusion_model(i), i=1,6)
 
 ! ***         flow equation set attributes:  GOTO FlowEquationSet_t node
-              call cg_goto_f(cg, base, ier, 'FlowEquationSet_t', 1, 
-     &	        'end')
+              call cg_goto_f(cg, base, ier, 'FlowEquationSet_t', 1,  &
+      	        'end')
               if (ier .eq. ERROR) call cg_error_exit_f
 
             endif       ! If Governing Equations are defined
@@ -199,24 +199,24 @@
 
 ! ***   flow equation set attribute: ThermalRelaxationModel
             if (ThermalRelaxationFlag.eq.1) then
-              call cg_model_read_f('ThermalRelaxationModel_t', 
-     &	        type, ier)
+              call cg_model_read_f('ThermalRelaxationModel_t',  &
+      	        type, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
-              if (ier .eq. ALL_OK) write(6,600)
-     &          ' ThermalRelaxationModel="',ModelTypeName(type),'"'
+              if (ier .eq. ALL_OK) write(6,600) &
+                ' ThermalRelaxationModel="',ModelTypeName(type),'"'
             endif
 
 ! ***   flow equation set attribute: ChemicalKineticsModel
             if (ChemicalKineticsFlag.eq.1) then
-              call cg_model_read_f('ChemicalKineticsModel_t', 
-     &	        type, ier)
+              call cg_model_read_f('ChemicalKineticsModel_t',  &
+      	        type, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
-              if (ier .eq. ALL_OK) write(6,600)
-     &          ' ChemicalKineticsModel="',ModelTypeName(type),'"'
+              if (ier .eq. ALL_OK) write(6,600) &
+                ' ChemicalKineticsModel="',ModelTypeName(type),'"'
 
     	! *** GOTO ChemicalKineticsModel_t node
-	      call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1,
-     &            'ChemicalKineticsModel_t',1,'end')
+	      call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1, &
+                  'ChemicalKineticsModel_t',1,'end')
 	      if (ier .eq. ERROR) call cg_error_exit_f
 
            ! ** ChemicalKineticsModel_t attributes: Descriptor
@@ -224,8 +224,8 @@
               if (ier .eq. ERROR) call cg_error_exit_f
               if (ier.eq.ALL_OK) then
                 write(6,400)'Descriptor_t Information:'
-                write(6,500)' DescriptorName="',name,'"',
-     &                      ' DescriptorText="',text,'"'
+                write(6,500)' DescriptorName="',name,'"', &
+                            ' DescriptorText="',text,'"'
               endif
 
               write(6,400)'                             *     *     *'
@@ -233,12 +233,12 @@
          ! ** ChemicalKineticsModel_t attributes: DataArray_t
 	      call cg_narrays_f(narrays, ier)
 	      if (ier .eq. ERROR) call cg_error_exit_f
-	      write(6,105) 'ChemicalKineticsModel_t contains ',
-     &                      narrays,' array(s)'
+	      write(6,105) 'ChemicalKineticsModel_t contains ', &
+                            narrays,' array(s)'
 	      do iarray=1, narrays
 
-                call cg_array_info_f(iarray, name, datatype,
-     &                             nndim, dim_vals, ier)
+                call cg_array_info_f(iarray, name, datatype, &
+                                   nndim, dim_vals, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 	        write(6,600) ' DataArrayName="',name,'"'
@@ -258,9 +258,9 @@
 	        endif
 
     	  ! *** GOTO DataArray_t node
-	        call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1,
-     &              'ChemicalKineticsModel_t',1,
-     &              'DataArray_t',iarray,'end')
+	        call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1, &
+                    'ChemicalKineticsModel_t',1, &
+                    'DataArray_t',iarray,'end')
 	        if (ier .eq. ERROR) call cg_error_exit_f
 
            ! ** DataArray_t attributes: DataClass_t
@@ -272,21 +272,21 @@
 	        call cg_units_read_f(mass, length, time, temp, deg, ier)
 	        if (ier .eq. ERROR) call cg_error_exit_f
 	        if (ier .eq. ALL_OK) then
-	          write(6,100)
-     &	 	    'Dimensional Units:',
-     &              MassUnitsName(mass), LengthUnitsName(length),
-     &              TimeUnitsName(time), TemperatureUnitsName(temp), 
-     &              AngleUnitsName(deg)
+	          write(6,100) &
+      	 	    'Dimensional Units:', &
+                    MassUnitsName(mass), LengthUnitsName(length), &
+                    TimeUnitsName(time), TemperatureUnitsName(temp),  &
+                    AngleUnitsName(deg)
 	        endif
 
            ! ** DataArray_t attributes: DimensionalExponents_t
                 call cg_exponents_read_f(exponents, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
                 if (ier .eq. ALL_OK) then
-                  write(6,99)
-     &              'Dimensional Exponents:',
-     &              exponents(1), exponents(2), exponents(3),
-     &              exponents(4), exponents(5)
+                  write(6,99) &
+                    'Dimensional Exponents:', &
+                    exponents(1), exponents(2), exponents(3), &
+                    exponents(4), exponents(5)
                 endif
 
            ! ** DataArray_t attributes: Descriptor
@@ -294,13 +294,13 @@
                 if (ier .eq. ERROR) call cg_error_exit_f
                 if (ier.eq.ALL_OK) then
                   write(6,400)'Descriptor_t Information:'
-                  write(6,500)' DescriptorName="',name,'"',
-     &                        ' DescriptorText="',text,'"'
+                  write(6,500)' DescriptorName="',name,'"', &
+                              ' DescriptorText="',text,'"'
                 endif
 
     	  ! *** GOTO ChemicalKineticsModel_t node
-	        call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1,
-     &              'ChemicalKineticsModel_t',1,'end')
+	        call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1, &
+                    'ChemicalKineticsModel_t',1,'end')
 	        if (ier .eq. ERROR) call cg_error_exit_f
 
               write(6,400)'                             *     *     *'
@@ -313,15 +313,15 @@
 	      call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1,'end')
 	        if (ier .eq. ERROR) call cg_error_exit_f
 
-              call cg_model_read_f('EMElectricFieldModel_t', 
-     &	        type, ier)
+              call cg_model_read_f('EMElectricFieldModel_t',  &
+      	        type, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
-              if (ier .eq. ALL_OK) write(6,600)
-     &          ' EMElectricFieldModel="',ModelTypeName(type),'"'
+              if (ier .eq. ALL_OK) write(6,600) &
+                ' EMElectricFieldModel="',ModelTypeName(type),'"'
 
     	! *** GOTO EMElectricFieldModel_t node
-	      call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1,
-     &            'EMElectricFieldModel_t',1,'end')
+	      call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1, &
+                  'EMElectricFieldModel_t',1,'end')
 	      if (ier .eq. ERROR) call cg_error_exit_f
 
            ! ** EMElectricFieldModel_t attributes: Descriptor
@@ -329,8 +329,8 @@
               if (ier .eq. ERROR) call cg_error_exit_f
               if (ier.eq.ALL_OK) then
                 write(6,400)'Descriptor_t Information:'
-                write(6,500)' DescriptorName="',name,'"',
-     &                      ' DescriptorText="',text,'"'
+                write(6,500)' DescriptorName="',name,'"', &
+                            ' DescriptorText="',text,'"'
               endif
 
               write(6,400)'                             *     *     *'
@@ -338,12 +338,12 @@
          ! ** EMElectricFieldModel_t attributes: DataArray_t
 	      call cg_narrays_f(narrays, ier)
 	      if (ier .eq. ERROR) call cg_error_exit_f
-	      write(6,105) 'EMElectricFieldModel_t contains ',
-     &                      narrays,' array(s)'
+	      write(6,105) 'EMElectricFieldModel_t contains ', &
+                            narrays,' array(s)'
 	      do iarray=1, narrays
 
-                call cg_array_info_f(iarray, name, datatype,
-     &                             nndim, dim_vals, ier)
+                call cg_array_info_f(iarray, name, datatype, &
+                                   nndim, dim_vals, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 	        write(6,600) ' DataArrayName="',name,'"'
@@ -363,9 +363,9 @@
 	        endif
 
     	  ! *** GOTO DataArray_t node
-	        call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1,
-     &              'EMElectricFieldModel_t',1,
-     &              'DataArray_t',iarray,'end')
+	        call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1, &
+                    'EMElectricFieldModel_t',1, &
+                    'DataArray_t',iarray,'end')
 	        if (ier .eq. ERROR) call cg_error_exit_f
 
            ! ** DataArray_t attributes: DataClass_t
@@ -377,22 +377,22 @@
 	        call cg_units_read_f(mass, length, time, temp, deg, ier)
 	        if (ier .eq. ERROR) call cg_error_exit_f
 	        if (ier .eq. ALL_OK) then
-	          write(6,100)
-     &	 	    'Dimensional Units:',
-     &              MassUnitsName(mass), LengthUnitsName(length),
-     &              TimeUnitsName(time), TemperatureUnitsName(temp), 
-     &              AngleUnitsName(deg)
+	          write(6,100) &
+      	 	    'Dimensional Units:', &
+                    MassUnitsName(mass), LengthUnitsName(length), &
+                    TimeUnitsName(time), TemperatureUnitsName(temp),  &
+                    AngleUnitsName(deg)
 	        endif
 
            ! ** DataArray_t attributes: DimensionalExponents_t
                 call cg_expfull_read_f(exponents, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
                 if (ier .eq. ALL_OK) then
-                  write(6,199)
-     &              'Dimensional Exponents:',
-     &              exponents(1), exponents(2), exponents(3),
-     &              exponents(4), exponents(5), exponents(6),
-     &              exponents(7), exponents(8)
+                  write(6,199) &
+                    'Dimensional Exponents:', &
+                    exponents(1), exponents(2), exponents(3), &
+                    exponents(4), exponents(5), exponents(6), &
+                    exponents(7), exponents(8)
                 endif
 
            ! ** DataArray_t attributes: Descriptor
@@ -400,13 +400,13 @@
                 if (ier .eq. ERROR) call cg_error_exit_f
                 if (ier.eq.ALL_OK) then
                   write(6,400)'Descriptor_t Information:'
-                  write(6,500)' DescriptorName="',name,'"',
-     &                        ' DescriptorText="',text,'"'
+                  write(6,500)' DescriptorName="',name,'"', &
+                              ' DescriptorText="',text,'"'
                 endif
 
     	  ! *** GOTO EMElectricFieldModel_t node
-	        call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1,
-     &              'EMElectricFieldModel_t',1,'end')
+	        call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1, &
+                    'EMElectricFieldModel_t',1,'end')
 	        if (ier .eq. ERROR) call cg_error_exit_f
 
               write(6,400)'                             *     *     *'
@@ -420,18 +420,18 @@
         call cg_close_f(cg, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-  99    format(a/,'    Mass exponent: ',f5.1/,'    Length exponent: ',
-     &    f5.1/,'    Time exponent: ',f5.1/,
-     &    '    Temperature exponent: ',f5.1/,'    Angle exponent:',f5.1)
- 100 	format(a/,'    Mass units: ',a/,'    Length units: ',a/,
-     &    '    Time units: ',a/,'    Temperature units: ',a/,
-     &    '    Angle units:',a)
- 199    format(a/,'    Mass exponent: ',f5.1/,'    Length exponent: ',
-     &    f5.1/,'    Time exponent: ',f5.1/,
-     &    '    Temperature exponent: ',f5.1/,'    Angle exponent:',f5.1
-     &    /,'    Electric Current exponent: ',f5.1/,
-     &    '    Substance Amount exponent: ',f5.1/,
-     &    '    Luminous Intensity exponent: ',f5.1)
+  99    format(a/,'    Mass exponent: ',f5.1/,'    Length exponent: ', &
+          f5.1/,'    Time exponent: ',f5.1/, &
+          '    Temperature exponent: ',f5.1/,'    Angle exponent:',f5.1)
+ 100 	format(a/,'    Mass units: ',a/,'    Length units: ',a/, &
+          '    Time units: ',a/,'    Temperature units: ',a/, &
+          '    Angle units:',a)
+ 199    format(a/,'    Mass exponent: ',f5.1/,'    Length exponent: ', &
+          f5.1/,'    Time exponent: ',f5.1/, &
+          '    Temperature exponent: ',f5.1/,'    Angle exponent:',f5.1 &
+          /,'    Electric Current exponent: ',f5.1/, &
+          '    Substance Amount exponent: ',f5.1/, &
+          '    Luminous Intensity exponent: ',f5.1)
  101	format(a,i1,a,/2a,/2a,/2a,/3a,/a,i4,3a,/2a,/2a,/2a,/a,i4)
  102 	format(a,f5.3)
  103	format(a,6i2)

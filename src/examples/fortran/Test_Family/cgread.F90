@@ -98,8 +98,8 @@
 	if (ier .eq. ERROR) call cg_error_exit_f
 
         do fam=1,nfamilies
-	   call cg_family_read_f(cg, base, fam, nodename, nfambc, ngeo, 
-     &             ier)
+	   call cg_family_read_f(cg, base, fam, nodename, nfambc, ngeo, &
+                  ier)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	   if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -113,8 +113,8 @@
 
           ! A family may have several GeometryReference_t node
             do geo=1, ngeo
-                call cg_geo_read_f(cg, base, fam, geo, nodename, 
-     &              cadfile, cadformat, nparts, ier)
+                call cg_geo_read_f(cg, base, fam, geo, nodename, &
+                    cadfile, cadformat, nparts, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 		write(6,106)'*** GeometryReference_t nodes ***'
@@ -132,8 +132,8 @@
 
                 ! A GeometryReference_t may encompass several parts
                 do part = 1, nparts
-                    call cg_part_read_f(cg, base, fam, geo, part,
-     &                  nodename, ier)
+                    call cg_part_read_f(cg, base, fam, geo, part, &
+                       nodename, ier)
                     if (ier .eq. ERROR) call cg_error_exit_f
 		    ilen=32
 		    call no_blank(nodename, ilen)
@@ -141,8 +141,8 @@
                 enddo
 
               ! GeometryReference_t descriptor
-                call cg_goto_f(cg, base, ier, 'Family_t', fam,
-     &           'GeometryReference_t',geo,'end')
+                call cg_goto_f(cg, base, ier, 'Family_t', fam, &
+                 'GeometryReference_t',geo,'end')
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 		if (ier .eq. ALL_OK) then
@@ -154,30 +154,30 @@
 		    write(6,100)' '
 
 		    do i=1, n
-                        call cg_descriptor_read_f(i,nodename,
-     &                     descriptor, ier)
+                        call cg_descriptor_read_f(i,nodename, &
+                           descriptor, ier)
                         if (ier .eq. ERROR) call cg_error_exit_f
 			ilen = 32
 			ilen2=200
 			call no_blank(nodename, ilen)
 			call no_blank(descriptor, ilen2)
-		        write(6,111)'Descriptor_t: "',nodename(1:ilen),
-     &                    '" is "',descriptor(1:ilen2),'"'
+		        write(6,111)'Descriptor_t: "',nodename(1:ilen), &
+                          '" is "',descriptor(1:ilen2),'"'
 		    enddo
 		endif
             enddo
 
             do bc=1,nfambc
 	        write(6,106)'*** FamilyBC_t nodes ***'
-                call cg_fambc_read_f(cg, base, fam, bc, nodename,
-     &            bctype, ier)
+                call cg_fambc_read_f(cg, base, fam, bc, nodename, &
+                  bctype, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 		ilen=32
 		call no_blank(nodename, ilen)
 		write(6,109)'Name= "',nodename(1:ilen),'"'
-		write(6,109)
-     &            'BCType= ',BCTypeName(bctype)
+		write(6,109) &
+                  'BCType= ',BCTypeName(bctype)
 		write(6,100)' '
 
 ! begin KMW family functionality extension
@@ -185,8 +185,8 @@
                 write(6,106)' look for DataSet info under FamilyBC'
                 write(6,100)' '
 
-                call cg_goto_f(cg, base, ier, 'Family_t', fam, 
-     &                     'FamilyBC_t', bc,'end')
+                call cg_goto_f(cg, base, ier, 'Family_t', fam, &
+                           'FamilyBC_t', bc,'end')
                 if (ier .ne. CG_OK) call cg_error_exit_f
 
                 call cg_bcdataset_info_f(nbcdatasets, ier)
@@ -198,8 +198,8 @@
                 else
 
                   do bcdataset=1,nbcdatasets
-                    call cg_bcdataset_read_f(bcdataset, dataset_name,
-     &                    type, DirichletFlag, NeumannFlag, ier)
+                    call cg_bcdataset_read_f(bcdataset, dataset_name, &
+                          type, DirichletFlag, NeumannFlag, ier)
                     if (ier .eq. ERROR) call cg_error_exit_f
 
                     write(6,107)'   Dataset #',bcdataset
@@ -208,22 +208,22 @@
 
              ! ** boundary condition data:  GOTO BCData_t node
                     if (DirichletFlag.eq.1) then
-		      call cg_goto_f(cg, base, ier, 'Family_t', fam, 
-     &                     'FamilyBC_t', bc, 'BCDataSet_t',
-     &                     bcdataset,'BCData_t',Dirichlet,'end')
+		      call cg_goto_f(cg, base, ier, 'Family_t', fam, &
+                           'FamilyBC_t', bc, 'BCDataSet_t', &
+                           bcdataset,'BCData_t',Dirichlet,'end')
 		      if (ier .eq. ERROR) call cg_error_exit_f
 
-                      call cg_units_read_f(mass, length, time, temp,
-     &                                     deg, ier)
+                      call cg_units_read_f(mass, length, time, temp, &
+                                           deg, ier)
                       if (ier .eq. ERROR) call cg_error_exit_f
                       if (ier .eq. ALL_OK) then
-                        write(6,700)
-     &                      '        Dirichlet data Dimensional Units:',
-     &                      MassUnitsName(mass), 
-     &                      LengthUnitsName(length),
-     &                      TemperatureUnitsName(temp),
-     &                      TimeUnitsName(time),
-     &                      AngleUnitsName(deg)
+                        write(6,700) &
+                            '        Dirichlet data Dimensional Units:', &
+                            MassUnitsName(mass), &
+                            LengthUnitsName(length), &
+                            TemperatureUnitsName(temp), &
+                            TimeUnitsName(time), &
+                            AngleUnitsName(deg)
                       endif
 		    endif
                   enddo
@@ -245,10 +245,10 @@
             call cg_rotating_read_f(rot_rate, rot_center, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 
-            write(6,701)'rot_rate=',rot_rate(1),
-     &               rot_rate(2), rot_rate(3)
-            write(6,701)'rot_center=',rot_center(1),
-     &               rot_center(2), rot_center(3)
+            write(6,701)'rot_rate=',rot_rate(1), &
+                     rot_rate(2), rot_rate(3)
+            write(6,701)'rot_center=',rot_center(1), &
+                     rot_center(2), rot_center(3)
             write(6,100)' '
 
 ! end KMW family functionality extension
@@ -259,8 +259,8 @@
 	        if (ier .eq. ERROR) call cg_error_exit_f
 		write(6,107)'ndescriptors=',n
                 do i=1, n
-                    call cg_descriptor_read_f(i,nodename,
-     &                 descriptor, ier)
+                    call cg_descriptor_read_f(i,nodename, &
+                       descriptor, ier)
 		    if (ier .eq. ERROR) call cg_error_exit_f
 
 		    ilen = 32
@@ -268,14 +268,14 @@
                     call no_blank(nodename, ilen)
                     call no_blank(descriptor, ilen2)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-                    write(6,111)'Descriptor_t: "',
-     &              nodename(1:ilen),'" is "',descriptor(1:ilen2),'"'
+                    write(6,111)'Descriptor_t: "', &
+                    nodename(1:ilen),'" is "',descriptor(1:ilen2),'"'
                 enddo
 
                 call cg_ordinal_read_f(ordinal, ier)
 	        if (ier .eq. ERROR) call cg_error_exit_f
-                if (ier.eq.ALL_OK)
-     &              write(6,108)'Ordinal=',ordinal
+                if (ier.eq.ALL_OK) &
+                    write(6,108)'Ordinal=',ordinal
 		    write(6,100)' '
 	    endif
         enddo
@@ -315,16 +315,16 @@
 		range_min(i)=1
 		range_max(i)=size(i)
 	    enddo
-	    write(6,113)
-     &           'range:',(range_min(i),i=1,Idim),
-     &                    (range_max(i),i=1,Idim)
+	    write(6,113) &
+                 'range:',(range_min(i),i=1,Idim), &
+                          (range_max(i),i=1,Idim)
 ! Name convention
             coordname(1) = 'CoordinateX'
             coordname(2) = 'CoordinateY'
             coordname(3) = 'CoordinateZ'
 	    do i=1, Pdim
-	        call cg_coord_read_f(cg, base, zone, coordname(i), 
-     &            RealDouble, range_min, range_max, data_double, ier)
+	        call cg_coord_read_f(cg, base, zone, coordname(i), &
+                  RealDouble, range_min, range_max, data_double, ier)
 	        if (ier .eq. ERROR) call cg_error_exit_f 
 		write(6,114)coordname(i),'=',data_double(1)
 	    enddo
@@ -339,8 +339,8 @@
 		    ilen=32
               	    call no_blank(nodename, ilen)
 		    if (ilen.gt.0) then
-		      write(6,102) 'FamilyName= "',
-     &                                    nodename(1:ilen),'"'
+		      write(6,102) 'FamilyName= "', &
+                                          nodename(1:ilen),'"'
 		    endif
 		endif
 	    endif
@@ -351,42 +351,42 @@
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 	    do n=1, nconns
-		call cg_conn_info_f(cg, base, zone, n, nodename, 
-     &           location, connect_type, ptset_type, npnts,
-     &           donorname, donor_zonetype, donor_ptset_type,
-     &           donor_datatype, ndata_donor, ier)
+		call cg_conn_info_f(cg, base, zone, n, nodename, &
+                 location, connect_type, ptset_type, npnts, &
+                 donorname, donor_zonetype, donor_ptset_type, &
+                 donor_datatype, ndata_donor, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
                 write(6,100)'*** GridConnectivity_t node ***'
                 ilen=32
                 call no_blank(nodename, ilen)
                 write(6,102)'Name= "',nodename(1:ilen),'"'
-                write(6,102)'GridLocation=',
-     &                             GridLocationName(location)
-                write(6,102)'Connectivity Type=',
-     &              GridConnectivityTypeName(connect_type)
-                write(6,102)'PtsetType=',
-     &                             PointSetTypeName(ptset_type)
+                write(6,102)'GridLocation=', &
+                                   GridLocationName(location)
+                write(6,102)'Connectivity Type=', &
+                    GridConnectivityTypeName(connect_type)
+                write(6,102)'PtsetType=', &
+                                   PointSetTypeName(ptset_type)
                 write(6,104)'npnts=',npnts
                 ilen=32
                 call no_blank(donorname, ilen)
                 write(6,102)'DonorName="',donorname(1:ilen),'"'
-                write(6,102)'DonorZonetype=',
-     &              ZoneTypeName(donor_zonetype)
-                write(6,102)'DonorDatatype=',
-     &              DataTypeName(donor_datatype)
-                write(6,102)'DonorPtsetType=',
-     &              PointSetTypeName(donor_ptset_type)
+                write(6,102)'DonorZonetype=', &
+                    ZoneTypeName(donor_zonetype)
+                write(6,102)'DonorDatatype=', &
+                    DataTypeName(donor_datatype)
+                write(6,102)'DonorPtsetType=', &
+                    PointSetTypeName(donor_ptset_type)
                 write(6,104)'ndata_donor=',ndata_donor
 
-                call cg_conn_read_f(cg, base, zone, n,
-     &              pnts, Integer, donor_data, ier)
+                call cg_conn_read_f(cg, base, zone, n, &
+                    pnts, Integer, donor_data, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 		write(6,102) 'pnts receiver:'
 		write(6,112)(pnts(i),i=1,Idim)
-		write(6,108)' to ',
-     &               (pnts((npnts-1)*Idim+i),i=1,Idim)
+		write(6,108)' to ', &
+                     (pnts((npnts-1)*Idim+i),i=1,Idim)
 
 		if (donor_zonetype .eq. Unstructured) then
 		    Idim_donor = 1
@@ -395,46 +395,46 @@
 		endif
 		write(6,102) 'pnts donor:'
 		write(6,112)(donor_data(i), i=1,Idim_donor)
-		write(6,108)' to ',
-     &		    (donor_data((ndata_donor-1)*Idim_donor+i),
-     &			i=1,Idim_donor)
+		write(6,108)' to ', &
+      		    (donor_data((ndata_donor-1)*Idim_donor+i), &
+      			i=1,Idim_donor)
 		
 ! Look for interpolants
 	        if (donor_ptset_type .eq. CellListDonor) then
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 		    
-		    call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                  'ZoneGridConnectivity_t', 1,
-     &                  'GridConnectivity_t', 1, 'end')
+		    call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                        'ZoneGridConnectivity_t', 1, &
+                        'GridConnectivity_t', 1, 'end')
                     if (ier .eq. ERROR) call cg_error_exit_f
 
 		    if (ier .eq. ALL_OK) then
 		        call cg_narrays_f(narrays, ier)
 		        if (ier .eq. ERROR) call cg_error_exit_f
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-			write(6,103)'narrays under GridConnectivity_t=',
-     &			    narrays
+			write(6,103)'narrays under GridConnectivity_t=', &
+      			    narrays
 		    endif
 
 		    if (narrays .eq. 1) then
-			call cg_array_info_f(1, nodename, datatype, 
-     &                       ndim, dim_vals, ier)
+			call cg_array_info_f(1, nodename, datatype, &
+                             ndim, dim_vals, ier)
 			if (ier .eq. ERROR) call cg_error_exit_f
 			write(6,114)'nodename=',nodename
 			write(6,103)'ndim=',ndim
 			do i=1,ndim
 			   write(6,103)'dim_vals=',dim_vals(i)
 			enddo
-	                write(6,102)'Interpolants Datatype=',
-     &              		DataTypeName(datatype)
+	                write(6,102)'Interpolants Datatype=', &
+                    		DataTypeName(datatype)
 
 			call cg_array_read_f(1, data_double, ier)
 			if (ier .eq. ERROR) call cg_error_exit_f
 			do j=1,dim_vals(2)
 			do i=1,dim_vals(1)
 			  pos = (j-1)*dim_vals(1) + i
-		          write(6,120)'Interpolants(',i,',',j,')=',
-     &                                 data_double(pos)
+		          write(6,120)'Interpolants(',i,',',j,')=', &
+                                       data_double(pos)
 			enddo
 			enddo
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
@@ -452,16 +452,16 @@
 	    do bc=1, nbocos
 	
 		write(6,100)'*** BC_t node ***'
-		call cg_boco_info_f(cg, base, zone, bc, nodename,
-     &           bctype, ptset_type, npnts, NormalIndex, NormalListFlag,
-     &           datatype, ndataset, ier)
+		call cg_boco_info_f(cg, base, zone, bc, nodename, &
+                 bctype, ptset_type, npnts, NormalIndex, NormalListFlag, &
+                 datatype, ndataset, ier)
 
                 ilen=32
                 call no_blank(nodename, ilen)
                 write(6,102)'Name= "',nodename(1:ilen),'"'
                 write(6,102)'BCType= ',BCTypeName(bctype)
-                write(6,102)'PtsetType= ',
-     &                             PointSetTypeName(ptset_type)
+                write(6,102)'PtsetType= ', &
+                                   PointSetTypeName(ptset_type)
                 write(6,105)'npnts=',npnts
 
               ! note: Normal index has no definition in unstructured
@@ -470,31 +470,31 @@
 		  write(6,112)(NormalIndex(i),i=1,Idim)
                 end if
 		write(6,105)'NormalListFlag=',NormalListFlag
-		write(6,102)'NormalDataType= ',
-     &                             DataTypeName(datatype)
+		write(6,102)'NormalDataType= ', &
+                                   DataTypeName(datatype)
 		write(6,105)'ndataset=',ndataset
 
 		if (datatype.eq.RealSingle) then
-	            call cg_boco_read_f(cg, base, zone, bc, pnts, 
-     &              	NormalListSingle, ier)
+	            call cg_boco_read_f(cg, base, zone, bc, pnts, &
+                    	NormalListSingle, ier)
 	            if (ier .eq. ERROR) call cg_error_exit_f
 		else 
-		    call cg_boco_read_f(cg, base, zone, bc, pnts,
-     &                  NormalListDouble, ier)
+		    call cg_boco_read_f(cg, base, zone, bc, pnts, &
+                        NormalListDouble, ier)
 		    if (ier .eq. ERROR) call cg_error_exit_f
 		endif
 
                 write(6,102) 'pnts range:'
 		write(6,112)(pnts(i),i=1,Idim)
-                write(6,108)' to ',
-     &               (pnts((npnts-1)*Idim+i),i=1,Idim)
+                write(6,108)' to ', &
+                     (pnts((npnts-1)*Idim+i),i=1,Idim)
 
               ! number of points or faces in bcpatch
-                if (ptset_type.eq.PointList .or.
-     &              ptset_type.eq.ElementList) then
+                if (ptset_type.eq.PointList .or. &
+                    ptset_type.eq.ElementList) then
                     size_of_patch = npnts
-                else if (ptset_type.eq.PointRange .or.
-     &                   ptset_type.eq.ElementRange) then
+                else if (ptset_type.eq.PointRange .or. &
+                         ptset_type.eq.ElementRange) then
                     size_of_patch=1
                     do i=1,Idim
                         multiplier=pnts((npnts-1)*Idim+i) - pnts(i) + 1
@@ -508,19 +508,19 @@
 		    if (datatype.eq.RealSingle) then
 			write(6,102) '1st and last normal vector:'
 			write(6,118)(NormalListSingle(i),i=1,Pdim)
-			write(6,118)
-     &                  (NormalListSingle((npnts-1)*Pdim+i),i=1,Pdim)
+			write(6,118) &
+                        (NormalListSingle((npnts-1)*Pdim+i),i=1,Pdim)
 		    else
 		  	write(6,102) '1st and last normal vector:'
                         write(6,118)(NormalListDouble(i),i=1,Pdim)
-                        write(6,118)
-     &                  (NormalListDouble((npnts-1)*Pdim+i),i=1,Pdim)
+                        write(6,118) &
+                        (NormalListDouble((npnts-1)*Pdim+i),i=1,Pdim)
 		    endif
 		endif
 
 
-		call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &             'ZoneBC_t', 1, 'BC_t', bc, 'end')
+		call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                   'ZoneBC_t', 1, 'BC_t', bc, 'end')
 		if (ier .eq. ERROR) call cg_error_exit_f
 
 		if (ier .eq. ALL_OK) then
@@ -529,9 +529,9 @@
                     if (ier .eq. ALL_OK) then
 		        ilen=32
 		        call no_blank(nodename, ilen)
-		        if (ilen.gt.0)
-     &		            write(6,102)'FamilyName= "',
-     &                                   nodename(1:ilen),'"'
+		        if (ilen.gt.0) &
+      		            write(6,102)'FamilyName= "', &
+                                         nodename(1:ilen),'"'
 		    endif
 		endif
 	    enddo
@@ -551,9 +551,9 @@
 		do sect=1, nsections
 		    write(6,201)'  *** Section ',sect,' ***'
  201	format(/a,i2,a)
-		    call cg_section_read_f(cg, base, zone, sect,
-     &                  nodename, type, start, end, nbndry, 
-     &                  parent_flag, ier)
+		    call cg_section_read_f(cg, base, zone, sect, &
+                        nodename, type, start, end, nbndry, &
+                        parent_flag, ier)
 		    if (ier .eq. ERROR) call cg_error_exit_f
 
 		    call cg_npe_f(type, npe, ier)
@@ -568,14 +568,14 @@
 		    if (type .gt. NGON_n) then 
                          write(6,100) 'Element Type= NGON_n'
                     else 
-			write(6,102)'Element Type= ',
-     &                                ElementTypeName(type)
+			write(6,102)'Element Type= ', &
+                                      ElementTypeName(type)
 		    endif
 		    write(6,113)'Range= ',start,end 
 		    if (nbndry .ne. 0) write(6,102)'Sorted elements'
 
-		    call cg_elements_read_f(cg, base, zone, sect,
-     &                 elements, parent_data, ier)
+		    call cg_elements_read_f(cg, base, zone, sect, &
+                       elements, parent_data, ier)
 		    if (ier.eq.ERROR)  call cg_error_exit_f
 
 		    nelem = end-start+1
@@ -590,21 +590,21 @@
 		    if (parent_flag .ne. 0) then
 			write(6,102)'Parent Data:'
 			do i=1, 4
-			     write(6,116)
-     & 				(parent_data((i-1)*nelem+n), n=1,nelem)
+			     write(6,116) &
+       				(parent_data((i-1)*nelem+n), n=1,nelem)
 			enddo
 		    endif
 ! Auxiliary data
-		    call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                  'Elements_t', sect, 'end')
+		    call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                        'Elements_t', sect, 'end')
 		    if (ier .eq. ERROR) call cg_error_exit_f
 
 		    if (ier .eq. ALL_OK) then
 			call cg_ndescriptors_f(n, ier)
                 	if (ier .eq. ERROR) call cg_error_exit_f
                 	do i=1, n
-                    	    call cg_descriptor_read_f(i,nodename,
-     &                 	                              descriptor, ier)
+                    	    call cg_descriptor_read_f(i,nodename, &
+                       	                              descriptor, ier)
                     	    if (ier .eq. ERROR) call cg_error_exit_f
 
                             ilen = 32
@@ -612,9 +612,9 @@
                             call no_blank(nodename, ilen)
                             call no_blank(descriptor, ilen2)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-                            write(6,117)'Descriptor_t: "',
-     &                                  nodename(1:ilen),'" is "',
-     &                                    descriptor(1:ilen2),'"'
+                            write(6,117)'Descriptor_t: "', &
+                                        nodename(1:ilen),'" is "', &
+                                          descriptor(1:ilen2),'"'
                 	enddo
 		    endif
 		enddo
@@ -628,9 +628,9 @@
 	call cg_close_f(cg, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f()
 
- 700    format(a/, 10x,'    Mass units: ',a/, 10x,'    Length units: ',
-     &    a/, 10x,'    Temperature units: ',a/, 10x,'    Time units: ',
-     &    a/, 10x,'    Angle units:',a/)
+ 700    format(a/, 10x,'    Mass units: ',a/, 10x,'    Length units: ', &
+          a/, 10x,'    Temperature units: ',a/, 10x,'    Time units: ', &
+          a/, 10x,'    Angle units:',a/)
  701    format(10x,a,5f5.1)
 
  102    format(6x,3a)

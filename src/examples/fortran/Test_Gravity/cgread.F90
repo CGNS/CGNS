@@ -33,8 +33,8 @@
 ! *** CGNS Library Version used for file creation:
 	call cg_version_f(cg, version, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,102)
-     &     'Library Version used for file creation:',version
+	write(6,102) &
+          'Library Version used for file creation:',version
 
 ! *** base
 	call cg_nbases_f(cg, nbases, ier)
@@ -45,8 +45,8 @@
 
 	call cg_base_read_f(cg, base, basename, CellDim, PhysDim, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,300)'BaseName = "',basename,'"', 
-     &                'cell_dimension=',CellDim
+	write(6,300)'BaseName = "',basename,'"',  &
+                      'cell_dimension=',CellDim
 
 ! *** base attribute:  GOTO base node
 	call cg_goto_f(cg, base, ier, 'end')
@@ -62,8 +62,8 @@
           call cg_descriptor_read_f(idescr, name, text, ier)
           if (ier .eq. ERROR) call cg_error_exit_f
           if (ier.eq.ALL_OK) then
-            write(6,500)' DescriptorName="',name,'"',
-     &                  ' DescriptorText="',text,'"'
+            write(6,500)' DescriptorName="',name,'"', &
+                        ' DescriptorText="',text,'"'
           endif
 	enddo
 
@@ -71,8 +71,8 @@
 	call cg_gravity_read_f(cg, base, gravity_vector, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-	write(6,110)'gravity_vector=',gravity_vector(1),
-     &               gravity_vector(2), gravity_vector(3)
+	write(6,110)'gravity_vector=',gravity_vector(1), &
+                     gravity_vector(2), gravity_vector(3)
 
 ! *** read children of Gravity_t
 	call cg_goto_f(cg, base, ier, 'Gravity_t', 1, 'end')
@@ -87,8 +87,8 @@
         do idescr=1, ndescriptors
           call cg_descriptor_read_f(idescr, name, text, ier)
           if (ier .eq. ERROR) call cg_error_exit_f
-          write(6,500) ' DescriptorName="',name,'"',
-     &                       ' DescriptorText="',text,'"'
+          write(6,500) ' DescriptorName="',name,'"', &
+                             ' DescriptorText="',text,'"'
         enddo
 
 ! * DataClass
@@ -100,11 +100,11 @@
         call cg_units_read_f(mass, length, time, temp, deg, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
         if (ier .eq. ALL_OK) then
-          write(6,100)
-     &      'Gravity Dimensional Units:',
-     &      MassUnitsName(mass), LengthUnitsName(length),
-     &      TemperatureUnitsName(temp), TimeUnitsName(time),
-     &      AngleUnitsName(deg)
+          write(6,100) &
+            'Gravity Dimensional Units:', &
+            MassUnitsName(mass), LengthUnitsName(length), &
+            TemperatureUnitsName(temp), TimeUnitsName(time), &
+            AngleUnitsName(deg)
         endif
 
 ! * UserDefinedData
@@ -120,8 +120,8 @@
 	enddo
 
 ! * GravityVector/Descriptor
-        call cg_goto_f(cg, base, ier, 'Gravity_t', 1, 'DataArray_t',
-     &                 1, 'end')
+        call cg_goto_f(cg, base, ier, 'Gravity_t', 1, 'DataArray_t', &
+                       1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_ndescriptors_f(ndescriptors, ier)
@@ -132,26 +132,26 @@
         do idescr=1, ndescriptors
           call cg_descriptor_read_f(idescr, name, text, ier)
           if (ier .eq. ERROR) call cg_error_exit_f
-          write(6,500) ' DescriptorName="',name,'"',
-     &                       ' DescriptorText="',text,'"'
+          write(6,500) ' DescriptorName="',name,'"', &
+                             ' DescriptorText="',text,'"'
         enddo
 
 ! * GravityVector/DimensionalUnits
         call cg_units_read_f(mass, length, time, temp, deg, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
         if (ier .eq. ALL_OK) then
-          write(6,100)
-     &      'Gravity Vector Dimensional Units:',
-     &      MassUnitsName(mass), LengthUnitsName(length),
-     &      TemperatureUnitsName(temp), TimeUnitsName(time),
-     &      AngleUnitsName(deg)
+          write(6,100) &
+            'Gravity Vector Dimensional Units:', &
+            MassUnitsName(mass), LengthUnitsName(length), &
+            TemperatureUnitsName(temp), TimeUnitsName(time), &
+            AngleUnitsName(deg)
         endif
         call cg_close_f(cg, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
- 100 	format(a/,'    Mass units: ',a/,'    Length units: ',a/,
-     &    '    Temperature units: ',a/,'    Time units: ',a/,
-     &    '    Angle units:',a)
+ 100 	format(a/,'    Mass units: ',a/,'    Length units: ',a/, &
+          '    Temperature units: ',a/,'    Time units: ',a/, &
+          '    Angle units:',a)
  102 	format(a,f5.3)
  105	format(a,i2,a)
  110	format(a,5f5.1)
