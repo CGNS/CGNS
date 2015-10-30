@@ -90,7 +90,7 @@ return_val=`expr $status + $return_val`
 
 ./write_flowvert_unst
 ./read_flowvert_unst > output2
-diff -I 'Library Version used for file creation*' output2 ../OUTPUT2 > results2.txt
+diff <( sed '/Library/ d' output2) <( sed '/Library/ d' ../OUTPUT2) > results2.txt
 status=$?
 echoresults $status
 return_val=`expr $status + $return_val`
