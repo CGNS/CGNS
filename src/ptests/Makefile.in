@@ -1,3 +1,7 @@
+NO_COLOR=\033[0m
+OK_COLOR=\033[32;01m
+ERROR_COLOR=\033[31;01m
+
 CGNSDIR = ..
 include $(CGNSDIR)/make.defs
 
@@ -30,16 +34,18 @@ all : $(ALL)
 
 test : $(TESTS)
 	@echo " "; \
+	status=0; \
 	echo "=== running parallel tests ==="; \
 	 for x in $(TESTS) ; do \
 	   if `$(MPIEXEC) -np 2 $$x >/dev/null 2>&1` ; then \
-	     echo "  $$x ... passed"; \
+	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
 	   else \
-	     echo "  $$x ... *** FAILED ***"; \
+	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
+		status=1; \
 	   fi; \
 	 done; \
 	 echo "=== finished ==="; \
-	echo " ";
+	 exit $$status;
 
 #----------
 

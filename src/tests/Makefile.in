@@ -60,9 +60,9 @@ test : $(TESTS)
 	echo "=== running tests ==="; \
 	 for x in $(TESTS) ; do \
 	   if `./$$x >/dev/null 2>&1` ; then \
-	     echo -e "$$x ... $(OK_COLOR) passed $(NO_COLOR)"; \
+	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
 	   else \
-	     echo -e "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR)"; \
+	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
 		status=1; \
 	   fi; \
 	 done; \
