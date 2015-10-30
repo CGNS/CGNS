@@ -125,7 +125,7 @@ int main()
     printf("\nFlow solution names corresponding to each are:\n");
     for (n=0; n < nsteps; n++)
     {
-      printf(" %s\n",sn[n]);
+      printf(" %.32s\n",sn[n]);
     }
 /* read SimulationType */
     cg_simulation_type_read(index_file,index_base,&isim);
