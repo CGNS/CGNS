@@ -36,8 +36,8 @@
 ! *** CGNS Library Version used for file creation:
 	call cg_version_f(cg, version, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,102)
-     &     'Library Version used for file creation:',version
+	write(6,102) &
+          'Library Version used for file creation:',version
 
 ! *** base
 	call cg_nbases_f(cg, nbases, ier)
@@ -48,8 +48,8 @@
 
 	call cg_base_read_f(cg, base, basename, CellDim, PhysDim, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,300)'BaseName = "',basename,'"', 
-     &                'cell_dimension=',CellDim
+	write(6,300)'BaseName = "',basename,'"', &
+                     'cell_dimension=',CellDim
 
 ! *** base attribute:  GOTO base node
 	call cg_goto_f(cg, base, ier, 'end')
@@ -65,8 +65,8 @@
           call cg_descriptor_read_f(idescr, name, text, ier)
           if (ier .eq. ERROR) call cg_error_exit_f
           if (ier.eq.ALL_OK) then
-            write(6,500)' DescriptorName="',name,'"',
-     &                  ' DescriptorText="',text,'"'
+            write(6,500)' DescriptorName="',name,'"', &
+                       ' DescriptorText="',text,'"'
           endif
 	enddo
 
@@ -90,8 +90,8 @@
         do idescr=1, ndescriptors
           call cg_descriptor_read_f(idescr, name, text, ier)
           if (ier .eq. ERROR) call cg_error_exit_f
-          write(6,500) ' DescriptorName="',name,'"',
-     &                 ' DescriptorText="',text,'"'
+          write(6,500) ' DescriptorName="',name,'"', &
+                      ' DescriptorText="',text,'"'
         enddo
 
 ! * DataClass
@@ -103,11 +103,11 @@
         call cg_units_read_f(mass, length, time, temp, deg, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
         if (ier .eq. ALL_OK) then
-          write(6,100)
-     &      'Axisymmetry Dimensional Units:',
-     &      MassUnitsName(mass), LengthUnitsName(length),
-     &      TemperatureUnitsName(temp), TimeUnitsName(time),
-     &      AngleUnitsName(deg)
+          write(6,100) &
+           'Axisymmetry Dimensional Units:',&
+           MassUnitsName(mass), LengthUnitsName(length),&
+           TemperatureUnitsName(temp), TimeUnitsName(time),&
+           AngleUnitsName(deg)
         endif
 
 ! * UserDefinedData
@@ -129,8 +129,8 @@
 
 	do iarray=1,narrays
 
-            call cg_array_info_f(iarray, arrayname, datatype,
-     &                nndim, dim_vals, ier)
+            call cg_array_info_f(iarray, arrayname, datatype,&
+                     nndim, dim_vals, ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
             write(6,108)'     DataArray_t #',iarray,':'
@@ -172,33 +172,33 @@
 
 ! * Axisymmetry_t/DataArray_t/Descriptor
         do iarray=1,narrays
-            call cg_goto_f(cg, base, ier, 'Axisymmetry_t', 1,
-     &                     'DataArray_t', iarray, 'end')
+            call cg_goto_f(cg, base, ier, 'Axisymmetry_t', 1,&
+                          'DataArray_t', iarray, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 
             call cg_ndescriptors_f(ndescriptors, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-            write(6,400)'Axisymmetry DataArray # ',iarray,
-     &                  ' Descriptor Information:'
+            write(6,400)'Axisymmetry DataArray # ',iarray,&
+                       ' Descriptor Information:'
             write(6,105) 'No. of descriptors=',ndescriptors
 
             do idescr=1, ndescriptors
               call cg_descriptor_read_f(idescr, name, text, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
-              write(6,500) ' DescriptorName="',name,'"',
-     &                       ' DescriptorText="',text,'"'
+              write(6,500) ' DescriptorName="',name,'"',&
+                            ' DescriptorText="',text,'"'
             enddo
 
 ! * Axisymmetry_t/DataArray_t/DimensionalUnits
             call cg_units_read_f(mass, length, time, temp, deg, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
             if (ier .eq. ALL_OK) then
-              write(6,100)
-     &          'Axisymmetry DataArray Dimensional Units:',
-     &          MassUnitsName(mass), LengthUnitsName(length),
-     &          TemperatureUnitsName(temp), TimeUnitsName(time),
-     &          AngleUnitsName(deg)
+              write(6,100) &
+               'Axisymmetry DataArray Dimensional Units:',&
+               MassUnitsName(mass), LengthUnitsName(length),&
+               TemperatureUnitsName(temp), TimeUnitsName(time),&
+               AngleUnitsName(deg)
             endif
 	enddo
 
@@ -206,9 +206,9 @@
         call cg_close_f(cg, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
- 100 	format(a/,'    Mass units: ',a/,'    Length units: ',a/,
-     &    '    Temperature units: ',a/,'    Time units: ',a/,
-     &    '    Angle units:',a)
+ 100 	format(a/,'    Mass units: ',a/,'    Length units: ',a/,&
+         '    Temperature units: ',a/,'    Time units: ',a/,
+         '    Angle units:',a)
  102 	format(a,f5.3)
  104	format(a,i2,3a)
  105	format(a,i2,a)
