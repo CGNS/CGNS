@@ -5,12 +5,12 @@ Reads simple 3-D unstructured grid from a CGNS file
 
 The CGNS grid file 'grid_c.cgns' must already exist.
 
-Example compilation for this program is (change paths!):
+Example compilation for this program is (change paths if needed!):
 
-cc -I ../../../CGNS_github/CGNS/src -c read_grid_unst.c
-cc -o read_grid_unst_c read_grid_unst.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+cc -I ../.. -c read_grid_unst.c
+cc -o read_grid_unst_c read_grid_unst.o -L ../../lib -lcgns
 
-(../../../CGNS_github/CGNS/src/lib is the location where the compiled
+(../../lib is the location where the compiled
 library libcgns.a is located)
 */
 

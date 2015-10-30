@@ -5,12 +5,12 @@ Reads simple 3-D structured 2-zone grid from CGNS file
 
 The CGNS grid file 'grid_c.cgns' must already exist.
 
-Example compilation for this program is (change paths!):
+Example compilation for this program is (change paths if needed!):
 
-cc -I ../../../CGNS_github/CGNS/src -c read_grid2zn_str.c
-cc -o read_grid2zn_str_c read_grid2zn_str.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+cc -I ../.. -c read_grid2zn_str.c
+cc -o read_grid2zn_str_c read_grid2zn_str.o -L ../../lib -lcgns
 
-(../../../CGNS_github/CGNS/src/lib is the location where the compiled
+(../../lib is the location where the compiled
 library libcgns.a is located)
 */
 

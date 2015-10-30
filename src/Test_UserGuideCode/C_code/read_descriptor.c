@@ -5,12 +5,12 @@ Reads descriptor node (under CGNSBase_t) from an existing CGNS file.
 The CGNS grid file 'grid_c.cgns' must already exist.
 and a descriptor node should be in it (using write_descriptor.c).
 
-Example compilation for this program is (change paths!):
+Example compilation for this program is (change paths if needed!):
 
-cc -I ../../../CGNS_github/CGNS/src -c read_descriptor.c
-cc -o read_descriptor_c read_descriptor.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+cc -I ../.. -c read_descriptor.c
+cc -o read_descriptor_c read_descriptor.o -L ../../lib -lcgns
 
-(../../../CGNS_github/CGNS/src/lib is the location where the compiled
+(../../lib is the location where the compiled
 library libcgns.a is located)
 */
 

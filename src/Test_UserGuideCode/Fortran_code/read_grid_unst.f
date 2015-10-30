@@ -10,15 +10,15 @@ c   This program uses the fortran convention that all
 c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
-c   Example compilation for this program is (change paths!):
+c   Example compilation for this program is (change paths if needed!):
 c   Note: when using the cgns module file, you must use the SAME fortran compiler 
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
-c   ifort -I ../../../CGNS_github/CGNS/src -c read_grid_unst.f
-c   ifort -o read_grid_unst read_grid_unst.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+c   ifort -I ../.. -c read_grid_unst.f
+c   ifort -o read_grid_unst read_grid_unst.o -L ../../lib -lcgns
 c
-c   (../../../CGNS_github/CGNS/src/lib is the location where the compiled
+c   (../../lib is the location where the compiled
 c   library libcgns.a is located)
 c
 c   The following is no longer supported; now superceded by "use cgns":

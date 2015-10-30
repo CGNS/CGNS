@@ -12,12 +12,12 @@ r and p, this program is very similar to that for
 reading flow solutions from a structured zone:
 read_flowvert_str.c
 
-Example compilation for this program is (change paths!):
+Example compilation for this program is (change paths if needed!):
 
-cc -I ../../../CGNS_github/CGNS/src -c read_flowvert_unst.c
-cc -o read_flowvert_unst_c read_flowvert_unst.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+cc -I ../.. -c read_flowvert_unst.c
+cc -o read_flowvert_unst_c read_flowvert_unst.o -L ../../lib -lcgns
 
-(../../../CGNS_github/CGNS/src/lib is the location where the compiled
+(../../lib is the location where the compiled
 library libcgns.a is located)
 */
 

@@ -5,12 +5,12 @@ CGNSBase_t node).
 
 The CGNS grid file 'grid_c.cgns' must already exist.
 
-Example compilation for this program is (change paths!):
+Example compilation for this program is (change paths if needed!):
 
-cc -I ../../../CGNS_github/CGNS/src -c write_descriptor.c
-cc -o write_descriptor_c write_descriptor.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+cc -I ../.. -c write_descriptor.c
+cc -o write_descriptor_c write_descriptor.o -L ../../lib -lcgns
 
-(../../../CGNS_github/CGNS/src/lib is the location where the compiled
+(../../lib is the location where the compiled
 library libcgns.a is located)
 */
 

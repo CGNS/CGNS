@@ -3,12 +3,12 @@
 Creates simple 3-D unstructured grid and writes it to a 
 CGNS file.
 
-Example compilation for this program is (change paths!):
+Example compilation for this program is (change paths if needed!):
 
-cc -I ../../../CGNS_github/CGNS/src -c write_grid_unst.c
-cc -o write_grid_unst_c write_grid_unst.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+cc -I ../.. -c write_grid_unst.c
+cc -o write_grid_unst_c write_grid_unst.o -L ../../lib -lcgns
 
-(../../../CGNS_github/CGNS/src/lib is the location where the compiled
+(../../lib is the location where the compiled
 library libcgns.a is located)
 */
  

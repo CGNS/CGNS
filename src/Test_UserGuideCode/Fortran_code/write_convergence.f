@@ -9,15 +9,15 @@ c   This program uses the fortran convention that all
 c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
-c   Example compilation for this program is (change paths!):
+c   Example compilation for this program is (change paths if needed!):
 c   Note: when using the cgns module file, you must use the SAME fortran compiler 
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
-c   ifort -I ../../../CGNS_github/CGNS/src -c write_convergence.f
-c   ifort -o write_convergence write_convergence.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+c   ifort -I ../.. -c write_convergence.f
+c   ifort -o write_convergence write_convergence.o -L ../../lib -lcgns
 c
-c   (../../../CGNS_github/CGNS/src/lib is the location where the compiled
+c   (../../lib is the location where the compiled
 c   library libcgns.a is located)
 c
 c   The following is no longer supported; now superceded by "use cgns":
@@ -48,7 +48,7 @@ c  we know there is only one base (real working code would check!)
 c   go to base node
       call cg_goto_f(index_file,index_base,ier,'end')
 c   create history node (SIDS names it GlobalConvergenceHistory at base level)
-      call cg_convergence_write_f(ntt,'',ier)
+      call cg_convergence_write_f(ntt,'\0',ier)
 c   go to new history node
       call cg_goto_f(index_file,index_base,ier,'ConvergenceHistory_t',
      +  1,'end')

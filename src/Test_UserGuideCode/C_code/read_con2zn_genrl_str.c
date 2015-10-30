@@ -8,12 +8,12 @@ connectivity info.
 The CGNS grid file 'grid_c.cgns' must already exist
 (created using write_grid2zn_str.c plus write_con2zn_genrl_str.c)
 
-Example compilation for this program is (change paths!):
+Example compilation for this program is (change paths if needed!):
 
-cc -I ../../../CGNS_github/CGNS/src -c read_con2zn_genrl_str.c
-cc -o read_con2zn_genrl_str_c read_con2zn_genrl_str.o -L ../../../CGNS_github/CGNS/src/lib -lcgns
+cc -I ../.. -c read_con2zn_genrl_str.c
+cc -o read_con2zn_genrl_str_c read_con2zn_genrl_str.o -L ../../lib -lcgns
 
-(../../../CGNS_github/CGNS/src/lib is the location where the compiled
+(../../lib is the location where the compiled
 library libcgns.a is located)
 */
 
