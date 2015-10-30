@@ -32,3 +32,7 @@ script:
     - cd ../examples/fortran
     - make
     - make test
+    - cd ../../Test_UserGuideCode/Fortran_code
+    - make
+    - make test
+    
