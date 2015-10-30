@@ -180,14 +180,16 @@ c      CALL ADFGDV(PID,IDIM,IERR)
       call cgio_get_dimensions_f(cgnum,pid,numdim,idim,ierr)
 c      CALL ADFRALL(PID,B,IERR)
       call cgio_read_all_data_f(cgnum,pid,b,ierr)
-      PRINT *,' NODE F3 THROUGH LINK L3:'
-      PRINT *,'   LABEL       = ',TSTLBL
-      PRINT *,'   DATA TYPE   = ',DTYPE
-      PRINT *,'   NUM OF DIMS = ',NUMDIM
-      PRINT *,'   DIM VALS    = ',IDIM
+      PRINT *,    ' NODE F3 THROUGH LINK L3:'
+      PRINT *,    '   LABEL       = ',TSTLBL
+      PRINT *,    '   DATA TYPE   = ',DTYPE
+      WRITE(*,101)'   NUM OF DIMS = ',NUMDIM
+      WRITE(*,102)'   DIM VALS    = ',IDIM
       PRINT *,'   DATA:'
       WRITE(*,100)((B(J,I),I=1,3),J=1,4)
   100 FORMAT(5X,3F10.2)
+  101 FORMAT(A,I6)
+  102 FORMAT(A,2I6)
 C
 C     2.) N13
 C
@@ -202,13 +204,13 @@ c      CALL ADFGDV(PID,IDIMD,IERR)
       call cgio_get_dimensions_f(cgnum,pid,numdim,idimd,ierr)
 c      CALL ADFRALL(PID,ID,IERR)
       call cgio_read_all_data_f(cgnum,pid,id,ierr)
-      PRINT *,' '
-      PRINT *,' NODE N13:'
-      PRINT *,'   LABEL       = ',TSTLBL
-      PRINT *,'   DATA TYPE   = ',DTYPE
-      PRINT *,'   NUM OF DIMS = ',NUMDIM
-      PRINT *,'   DIM VALS    = ',IDIMD
-      PRINT *,'   DATA:'
+      PRINT *,    ' '
+      PRINT *,    ' NODE N13:'
+      PRINT *,    '   LABEL       = ',TSTLBL
+      PRINT *,    '   DATA TYPE   = ',DTYPE
+      WRITE(*,101)'   NUM OF DIMS = ',NUMDIM
+      WRITE(*,101)'   DIM VALS    = ',IDIMD
+      PRINT *,    '   DATA:'
       WRITE(*,200)(ID(I),I=1,6)
   200 FORMAT(5X,6I6)
 C
