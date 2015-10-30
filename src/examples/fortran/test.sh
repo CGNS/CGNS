@@ -67,7 +67,7 @@ dir=Test_cgio
 printf "%-40s" "Testing $dir..."
 cd $dir/build
 ./cgiotest > output
-diff -b -I 'Library Version used for file creation*' output ../OUTPUT > results.txt
+diff -I 'Library Version used for file creation*' output ../OUTPUT > results.txt
 status=$?
 echoresults $status
 return_val=`expr $status + $return_val`
