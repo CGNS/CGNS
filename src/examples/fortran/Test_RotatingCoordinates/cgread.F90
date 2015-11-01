@@ -1,4 +1,3 @@
-
 	program read_gravity
 	USE CGNS
 	implicit none
@@ -36,8 +35,8 @@
 ! *** CGNS Library Version used for file creation:
 	call cg_version_f(cg, version, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,102)
-     &     'Library Version used for file creation:',version
+	write(6,102) &
+          'Library Version used for file creation:',version
 
 ! *** base
 	call cg_nbases_f(cg, nbases, ier)
@@ -48,8 +47,8 @@
 
 	call cg_base_read_f(cg, base, basename, CellDim, PhysDim, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,300)'BaseName = "',basename,'"', 
-     &                'cell_dimension=',CellDim
+	write(6,300)'BaseName = "',basename,'"',  &
+                      'cell_dimension=',CellDim
 
 ! *** base attribute:  GOTO base node
 	call cg_goto_f(cg, base, ier, 'end')
@@ -65,8 +64,8 @@
           call cg_descriptor_read_f(idescr, name, text, ier)
           if (ier .eq. ERROR) call cg_error_exit_f
           if (ier.eq.ALL_OK) then
-            write(6,500)' DescriptorName="',name,'"',
-     &                  ' DescriptorText="',text,'"'
+            write(6,500)' DescriptorName="',name,'"', &
+                        ' DescriptorText="',text,'"'
           endif
 	enddo
 
@@ -74,10 +73,10 @@
 	call cg_rotating_read_f(rot_rate, rot_center, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-	write(6,110)'rot_rate=',rot_rate(1),
-     &               rot_rate(2), rot_rate(3)
-	write(6,110)'rot_center=',rot_center(1),
-     &               rot_center(2), rot_center(3)
+	write(6,110)'rot_rate=',rot_rate(1), &
+                     rot_rate(2), rot_rate(3)
+	write(6,110)'rot_center=',rot_center(1), &
+                     rot_center(2), rot_center(3)
 
 ! *** read children of RotatingCoordinates_t
 	call cg_goto_f(cg, base, ier, 'RotatingCoordinates_t', 1, 'end')
@@ -92,8 +91,8 @@
         do idescr=1, ndescriptors
           call cg_descriptor_read_f(idescr, name, text, ier)
           if (ier .eq. ERROR) call cg_error_exit_f
-          write(6,500) ' DescriptorName="',name,'"',
-     &                       ' DescriptorText="',text,'"'
+          write(6,500) ' DescriptorName="',name,'"', &
+                             ' DescriptorText="',text,'"'
         enddo
 
 ! * DataClass
@@ -105,11 +104,11 @@
         call cg_units_read_f(mass, length, time, temp, deg, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
         if (ier .eq. ALL_OK) then
-          write(6,100)
-     &      'RotatingCoordinates Dimensional Units:',
-     &      MassUnitsName(mass), LengthUnitsName(length),
-     &      TemperatureUnitsName(temp), TimeUnitsName(time),
-     &      AngleUnitsName(deg)
+          write(6,100) &
+            'RotatingCoordinates Dimensional Units:', &
+            MassUnitsName(mass), LengthUnitsName(length), &
+            TemperatureUnitsName(temp), TimeUnitsName(time), &
+            AngleUnitsName(deg)
         endif
 
 ! * UserDefinedData
@@ -128,14 +127,14 @@
 
 	call cg_narrays_f(narrays, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,105) 'RotatingCoordinates contains ',
-     &                      narrays,' array(s)'
+	write(6,105) 'RotatingCoordinates contains ', &
+                            narrays,' array(s)'
 	do iarray=1, narrays
-            call cg_goto_f(cg, base, ier, 'RotatingCoordinates_t',
-     &                     1, 'end')
+            call cg_goto_f(cg, base, ier, 'RotatingCoordinates_t', &
+                           1, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
-            call cg_array_info_f(iarray, name, datatype,
-     &                         nndim, dim_vals, ier)
+            call cg_array_info_f(iarray, name, datatype, &
+                               nndim, dim_vals, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
             write(6,600) ' DataArrayName="',name,'"'
             write(6,600) ' DataType="',DataTypeName(datatype),'"'
@@ -147,8 +146,8 @@
             write(6,106) (data_single(n),n=1,dim_vals(1))
 
 ! * Descriptor for DataArray_t (RotationCenter & RotationRateVector) 
-            call cg_goto_f(cg, base, ier, 'RotatingCoordinates_t', 1, 
-     &                 'DataArray_t', iarray, 'end')
+            call cg_goto_f(cg, base, ier, 'RotatingCoordinates_t', 1,  &
+                       'DataArray_t', iarray, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 
             call cg_ndescriptors_f(ndescriptors, ier)
@@ -159,19 +158,19 @@
             do idescr=1, ndescriptors
               call cg_descriptor_read_f(idescr, name, text, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
-              write(6,500) ' DescriptorName="',name,'"',
-     &                       ' DescriptorText="',text,'"'
+              write(6,500) ' DescriptorName="',name,'"', &
+                             ' DescriptorText="',text,'"'
             enddo
 
 ! * DimensionalUnits for DataArray_t (RotationCenter & RotationRateVector)
             call cg_units_read_f(mass, length, time, temp, deg, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
             if (ier .eq. ALL_OK) then
-              write(6,100)
-     &        'DataArray_t Dimensional Units:',
-     &        MassUnitsName(mass), LengthUnitsName(length),
-     &        TemperatureUnitsName(temp), TimeUnitsName(time),
-     &        AngleUnitsName(deg)
+              write(6,100) &
+              'DataArray_t Dimensional Units:', &
+              MassUnitsName(mass), LengthUnitsName(length), &
+              TemperatureUnitsName(temp), TimeUnitsName(time), &
+              AngleUnitsName(deg)
             endif
 	    write(6,102) ' '
 	enddo
@@ -206,8 +205,8 @@
           call cg_descriptor_read_f(idescr, name, text, ier)
           if (ier .eq. ERROR) call cg_error_exit_f
           if (ier.eq.ALL_OK) then
-            write(6,500)' DescriptorName="',name,'"',
-     &                  ' DescriptorText="',text,'"'
+            write(6,500)' DescriptorName="',name,'"', &
+                        ' DescriptorText="',text,'"'
           endif
 	enddo
 
@@ -215,14 +214,14 @@
 	call cg_rotating_read_f(rot_rate, rot_center, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-	write(6,110)'rot_rate=',rot_rate(1),
-     &               rot_rate(2), rot_rate(3)
-	write(6,110)'rot_center=',rot_center(1),
-     &               rot_center(2), rot_center(3)
+	write(6,110)'rot_rate=',rot_rate(1), &
+                     rot_rate(2), rot_rate(3)
+	write(6,110)'rot_center=',rot_center(1), &
+                     rot_center(2), rot_center(3)
 
 ! *** read children of RotatingCoordinates_t
-	call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                 'RotatingCoordinates_t', 1, 'end')
+	call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                       'RotatingCoordinates_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * Descriptor
@@ -234,8 +233,8 @@
         do idescr=1, ndescriptors
           call cg_descriptor_read_f(idescr, name, text, ier)
           if (ier .eq. ERROR) call cg_error_exit_f
-          write(6,500) ' DescriptorName="',name,'"',
-     &                 ' DescriptorText="',text,'"'
+          write(6,500) ' DescriptorName="',name,'"', &
+                       ' DescriptorText="',text,'"'
         enddo
 
 ! * DataClass
@@ -247,11 +246,11 @@
         call cg_units_read_f(mass, length, time, temp, deg, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
         if (ier .eq. ALL_OK) then
-          write(6,100)
-     &      'RotatingCoordinates Dimensional Units:',
-     &      MassUnitsName(mass), LengthUnitsName(length),
-     &      TemperatureUnitsName(temp), TimeUnitsName(time),
-     &      AngleUnitsName(deg)
+          write(6,100) &
+            'RotatingCoordinates Dimensional Units:', &
+            MassUnitsName(mass), LengthUnitsName(length), &
+            TemperatureUnitsName(temp), TimeUnitsName(time), &
+            AngleUnitsName(deg)
         endif
 
 ! * UserDefinedData
@@ -270,15 +269,15 @@
 
 	call cg_narrays_f(narrays, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,105) 'RotatingCoordinates contains ',
-     &                      narrays,' array(s)'
+	write(6,105) 'RotatingCoordinates contains ', &
+                            narrays,' array(s)'
 	do iarray=1, narrays
-            call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                 'RotatingCoordinates_t', 1, 'end')
+            call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                       'RotatingCoordinates_t', 1, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 
-            call cg_array_info_f(iarray, name, datatype,
-     &                         nndim, dim_vals, ier)
+            call cg_array_info_f(iarray, name, datatype, &
+                               nndim, dim_vals, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
             write(6,600) ' DataArrayName="',name,'"'
             write(6,600) ' DataType="',DataTypeName(datatype),'"'
@@ -290,8 +289,8 @@
             write(6,106) (data_single(n),n=1,dim_vals(1))
 
 ! * Descriptor for DataArray_t (RotationCenter & RotationRateVector) 
-            call cg_goto_f(cg, base, ier, 'RotatingCoordinates_t', 1, 
-     &                 'DataArray_t', iarray, 'end')
+            call cg_goto_f(cg, base, ier, 'RotatingCoordinates_t', 1,  &
+                       'DataArray_t', iarray, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 
             call cg_ndescriptors_f(ndescriptors, ier)
@@ -302,19 +301,19 @@
             do idescr=1, ndescriptors
               call cg_descriptor_read_f(idescr, name, text, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
-              write(6,500) ' DescriptorName="',name,'"',
-     &                     ' DescriptorText="',text,'"'
+              write(6,500) ' DescriptorName="',name,'"', &
+                           ' DescriptorText="',text,'"'
             enddo
 
 ! * DimensionalUnits for DataArray_t (RotationCenter & RotationRateVector)
             call cg_units_read_f(mass, length, time, temp, deg, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
             if (ier .eq. ALL_OK) then
-              write(6,100)
-     &        'DataArray_t Dimensional Units:',
-     &        MassUnitsName(mass), LengthUnitsName(length),
-     &        TemperatureUnitsName(temp), TimeUnitsName(time),
-     &        AngleUnitsName(deg)
+              write(6,100) &
+              'DataArray_t Dimensional Units:', &
+              MassUnitsName(mass), LengthUnitsName(length), &
+              TemperatureUnitsName(temp), TimeUnitsName(time), &
+              AngleUnitsName(deg)
 	      write(6,102) ' '
             endif
 	enddo
@@ -322,9 +321,9 @@
         call cg_close_f(cg, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
- 100 	format(a/,'    Mass units: ',a/,'    Length units: ',a/,
-     &    '    Temperature units: ',a/,'    Time units: ',a/,
-     &    '    Angle units:',a)
+ 100 	format(a/,'    Mass units: ',a/,'    Length units: ',a/, &
+          '    Temperature units: ',a/,'    Time units: ',a/, &
+          '    Angle units:',a)
  102 	format(a,f5.3)
  104    format(a,i5,3a)
  105	format(a,i2,a)
