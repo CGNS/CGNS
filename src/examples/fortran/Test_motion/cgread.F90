@@ -1,4 +1,3 @@
-
 	program read_cgns_motion
 	USE CGNS
 
@@ -58,8 +57,8 @@
 ! *** CGNS Library Version used for file creation:
 	call cg_version_f(cg, version, ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
-	write(6,102)
-     &     'Library Version used for file creation:',version
+	write(6,102) &
+          'Library Version used for file creation:',version
 
 ! *** base
 	call cg_nbases_f(cg, nbases, ier)
@@ -70,15 +69,15 @@
 
 	  call cg_base_read_f(cg, base, basename, CellDim, PhysDim, ier)
 	  if (ier .ne. ALL_OK) call cg_error_exit_f
-	  write(6,300)'BaseName = "',basename,'"', 
-     &                'cell_dimension=',Celldim,
-     &                'physical_dimension=',PhysDim
+	  write(6,300)'BaseName = "',basename,'"',  &
+                      'cell_dimension=',Celldim, &
+                      'physical_dimension=',PhysDim
 
 ! *** simulation type
 	  call cg_simulation_type_read_f(cg, base, simulation, ier)
 	  if (ier .ne. ALL_OK) call cg_error_exit_f
-	  write(6,600)' Simulation Type is ',
-     &                  SimulationTypeName(simulation)
+	  write(6,600)' Simulation Type is ', &
+                        SimulationTypeName(simulation)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	
 ! *** base iterative data
@@ -89,8 +88,8 @@
 	      write(6,200)'   nsteps=',nsteps
 
         ! *** Data arrays under BaseIterativeData_t node
-	      call cg_goto_f(cg, base, ier, 'BaseIterativeData_t',
-     &                       1, 'end')
+	      call cg_goto_f(cg, base, ier, 'BaseIterativeData_t', &
+                             1, 'end')
 	      if (ier .ne. ALL_OK) call cg_error_exit_f
 
               call cg_narrays_f(narrays, ier)
@@ -99,8 +98,8 @@
 
               do iarray=1,narrays
 		
-              	call cg_array_info_f(iarray, arrayname, datatype,
-     &                nndim, dim_vals, ier)
+              	call cg_array_info_f(iarray, arrayname, datatype, &
+                      nndim, dim_vals, ier)
                 if (ier .ne. ALL_OK) call cg_error_exit_f
 
                 write(6,108)'     DataArray_t #',iarray,':'
@@ -122,8 +121,8 @@
 		        do mzone=1,dim_vals(2)
 			  start = ((step-1)*dim_vals(2)+(mzone-1))*32+1
 			  end=start+32-1
-			  write(6,601)'step ',step,' zone ',mzone,
-     &                                ' is ',(data_char(i),i=start,end)
+			  write(6,601)'step ',step,' zone ',mzone, &
+                                      ' is ',(data_char(i),i=start,end)
 			enddo
 		      enddo
 		    endif
@@ -172,8 +171,8 @@
               write(6,300)' ZoneIterativeData_t name ="',zitername,'"'
 
         ! *** Data arrays under BaseIterativeData_t node
-              call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
-     &                       'ZoneIterativeData_t', 1, 'end')
+              call cg_goto_f(cg, base, ier, 'Zone_t', zone,  &
+                             'ZoneIterativeData_t', 1, 'end')
               if (ier .ne. ALL_OK) call cg_error_exit_f
 
               call cg_narrays_f(narrays, ier)
@@ -182,8 +181,8 @@
 
               do iarray=1,narrays
 
-                call cg_array_info_f(iarray, arrayname, datatype,
-     &                nndim, dim_vals, ier)
+                call cg_array_info_f(iarray, arrayname, datatype, &
+                      nndim, dim_vals, ier)
                 if (ier .ne. ALL_OK) call cg_error_exit_f
 
                 write(6,108)'     DataArray_t #',iarray,':'
@@ -200,16 +199,16 @@
                 if (datatype .eq. Character) then
                     call cg_array_read_f(iarray, data_char, ier)
                     if (ier .ne. ALL_OK) call cg_error_exit_f
-                    if (arrayname(1:23).eq.'GridCoordinatesPointers'.or.
-     &                arrayname(1:20).eq.'FlowSolutionPointers'.or.
-     &                arrayname(1:23).eq.'RigidGridMotionPointers'.or.
-     &                arrayname(1:27).eq.'ArbitraryGridMotionPointers')
-     &                then
+                    if (arrayname(1:23).eq.'GridCoordinatesPointers'.or. &
+                      arrayname(1:20).eq.'FlowSolutionPointers'.or. &
+                      arrayname(1:23).eq.'RigidGridMotionPointers'.or. &
+                      arrayname(1:27).eq.'ArbitraryGridMotionPointers') &
+                      then
                       do step=1, nsteps
                           start = (step-1)*32+1
                           end=start+32-1
-                          write(6,602)'step ',step,
-     &                                ' is ',(data_char(i),i=start,end)
+                          write(6,602)'step ',step, &
+                                      ' is ',(data_char(i),i=start,end)
                       enddo
                     endif
 		endif
@@ -221,8 +220,8 @@
 	    call cg_ngrids_f(cg, base, zone, ngrids, ier)
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
 
-            write(6,113) ngrids,' GridCoordinates_t node(s)',
-     &              'found for ',zonename
+            write(6,113) ngrids,' GridCoordinates_t node(s)', &
+                    'found for ',zonename
 	    
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	    do grid=1, ngrids
@@ -234,8 +233,8 @@
               write(6,600)'   Name = ',gridname
 
         ! *** GOTO GridCoordinates_t node
-              call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                       'GridCoordinates_t', grid, 'end')
+              call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                             'GridCoordinates_t', grid, 'end')
        	      if (ier .ne. ALL_OK) call cg_error_exit_f
 
         ! *** Read coordinate arrays
@@ -246,8 +245,8 @@
 	      do iarray=1,narrays
 
 	  ! *** GridCoordinates_t attribute: DataArray_t
-                call cg_array_info_f(iarray, name, datatype,
-     &                               nndim, dim_vals, ier)
+                call cg_array_info_f(iarray, name, datatype, &
+                                     nndim, dim_vals, ier)
                 if (ier .ne. ALL_OK) call cg_error_exit_f
                 write(6,600)' DataArrayName="',name,'"'
                 write(6,600)' DataType=',DataTypeName(datatype)
@@ -285,26 +284,26 @@
 	   
 	    call cg_nsols_f(cg, base, zone, nsols, ier)
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
-	    write(6,113) nsols,' FlowSolution_t node(s)',
-     &              'found for ',zonename
+	    write(6,113) nsols,' FlowSolution_t node(s)', &
+                    'found for ',zonename
 
       ! *** Read solution with general cg_array_read function
 	    do sol=1, nsols
-	      call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &            'FlowSolution_t', sol, 'end')
+	      call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                  'FlowSolution_t', sol, 'end')
 	      if (ier .ne. ALL_OK) call cg_error_exit_f
 
 	! *** FlowSolution_t attribute:  DataArray_t
 	      call cg_narrays_f(narrays, ier)
 	      if (ier .ne. ALL_OK) call cg_error_exit_f
-              write(6,108) ' FlowSolution_t #',sol,
-     &              ' contains ',narrays,' solution arrays'
+              write(6,108) ' FlowSolution_t #',sol, &
+                    ' contains ',narrays,' solution arrays'
 
 	! *** FlowSolution_t attribute:  GridLocation
 	      call cg_gridlocation_read_f(location, ier)
 	      if (ier .eq. ERROR) call cg_error_exit_f
-	      write(6,600)'  The solution data are recorded at the ',
-     &                 GridLocationName(location)
+	      write(6,600)'  The solution data are recorded at the ', &
+                       GridLocationName(location)
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	! *** FlowSolution_t attribute:  Rind
@@ -313,12 +312,12 @@
 	      write(6,103)'  The Rind Data is ',(rind(i),i=1,6)
 
               do iarray=1,narrays
-	        call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &            'FlowSolution_t', sol, 'end')
+	        call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                  'FlowSolution_t', sol, 'end')
                 if (ier .ne. ALL_OK) call cg_error_exit_f
 
-                call cg_array_info_f(iarray, name, datatype,
-     &                               nndim, dim_vals, ier)
+                call cg_array_info_f(iarray, name, datatype, &
+                                     nndim, dim_vals, ier)
                 if (ier .ne. ALL_OK) call cg_error_exit_f
 	        write(6,114) '  DataArray #',iarray
                 write(6,600) '   Name="',name,'"'
@@ -350,21 +349,21 @@
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	    call cg_n_rigid_motions_f(cg, base, zone, nrmotion, ier)
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
-            write(6,113) nrmotion,' RigidGridMotion_t node(s)',
-     &              'found for ',zonename
+            write(6,113) nrmotion,' RigidGridMotion_t node(s)', &
+                    'found for ',zonename
 
 	    do rmotion=1, nrmotion
-	        call cg_rigid_motion_read_f(cg, base, zone, rmotion,
-     &		    rmotionname, rmotiontype, ier)
+	        call cg_rigid_motion_read_f(cg, base, zone, rmotion, &
+      		    rmotionname, rmotiontype, ier)
 	        if (ier .ne. ALL_OK) call cg_error_exit_f
 
                 write(6,108)' RigidGridMotion_t #',rmotion,':'
 	        write(6,600)'   Name = ',rmotionname
-	        write(6,600)'   Type = ',
-     &                       RigidGridMotionTypeName(rmotiontype)
+	        write(6,600)'   Type = ', &
+                             RigidGridMotionTypeName(rmotiontype)
 
-                call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                         'RigidGridMotion_t', rmotion, 'end')
+                call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                               'RigidGridMotion_t', rmotion, 'end')
                 if (ier .ne. ALL_OK) call cg_error_exit_f
 
 		call cg_ndescriptors_f(ndescr, ier)
@@ -372,8 +371,8 @@
 		write(6,105) '   ',ndescr, ' Descriptor_t node(s)'
 
 		do descr=1, ndescr
-		    call cg_descriptor_read_f(descr, descrname, 
-     &                   descrtext, ier)
+		    call cg_descriptor_read_f(descr, descrname,  &
+                         descrtext, ier)
 		    if (ier .ne. ALL_OK) call cg_error_exit_f
 		    write(6,108)'     Descriptor_t #',descr,':'
 		    write(6,600)'       Name = ',descrname
@@ -387,11 +386,11 @@
 		write(6,105) '   ',narrays,' DataArray_t nodes(s)'
 
 		do iarray=1,narrays
-		    call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                         'RigidGridMotion_t', rmotion, 'end')
+		    call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                               'RigidGridMotion_t', rmotion, 'end')
 
-		    call cg_array_info_f(iarray, arrayname, datatype,
-     &                nndim, dim_vals, ier)
+		    call cg_array_info_f(iarray, arrayname, datatype, &
+                      nndim, dim_vals, ier)
 		    if (ier .ne. ALL_OK) call cg_error_exit_f
 
 		    write(6,108)'     DataArray_t #',iarray,':'
@@ -408,29 +407,29 @@
                     if (datatype .eq. RealSingle) then
                         call cg_array_read_f(iarray, data_single, ier)
                         if (ier .ne. ALL_OK) call cg_error_exit_f
-                  	write(6,106)'       first pts:',
-     &                               (data_single(i),i=1,dim_vals(1))
+                  	write(6,106)'       first pts:', &
+                                     (data_single(i),i=1,dim_vals(1))
 		    else if (datatype .eq. RealDouble) then
 			call cg_array_read_f(iarray, data_double, ier)
 		  	if (ier .ne. ALL_OK) call cg_error_exit_f
-			write(6,106)'       first pts:',
-     &                               (data_double(i),i=1,dim_vals(1))
+			write(6,106)'       first pts:', &
+                                     (data_double(i),i=1,dim_vals(1))
 		    endif
 
-		    call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                         'RigidGridMotion_t', rmotion,
-     &                         'DataArray_t', iarray, 'end')
+		    call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                               'RigidGridMotion_t', rmotion, &
+                               'DataArray_t', iarray, 'end')
 		    if (ier .ne. ALL_OK) call cg_error_exit_f
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 		    call cg_units_read_f(mass,length,time,temp,deg,ier)
               	    if (ier .eq. ERROR) call cg_error_exit_f
               	    if (ier .eq. ALL_OK) then
-                	write(6,100)
-     &            	'       Dimensional Units:',
-     &            	MassUnitsName(mass), LengthUnitsName(length),
-     &            	TemperatureUnitsName(temp), TimeUnitsName(time),
-     &            	AngleUnitsName(deg)
+                	write(6,100) &
+                  	'       Dimensional Units:', &
+                  	MassUnitsName(mass), LengthUnitsName(length), &
+                  	TemperatureUnitsName(temp), TimeUnitsName(time), &
+                  	AngleUnitsName(deg)
 		    endif
 		enddo	! loop through data arrays
 	    enddo	! loop through rmotion
@@ -441,22 +440,22 @@
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
             call cg_n_arbitrary_motions_f(cg, base, zone, namotion, ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
-            write(6,113) namotion,' ArbitraryGridMotion_t node(s)',
-     &              'found for ',zonename
+            write(6,113) namotion,' ArbitraryGridMotion_t node(s)', &
+                    'found for ',zonename
 
             do amotion=1, namotion
-                call cg_arbitrary_motion_read_f(cg, base, zone, amotion,
-     &              amotionname, amotiontype, ier)
+                call cg_arbitrary_motion_read_f(cg, base, zone, amotion, &
+                    amotionname, amotiontype, ier)
                 if (ier .ne. ALL_OK) call cg_error_exit_f
 
                 write(6,108)' ArbitraryGridMotion_t #',amotion,':'
                 write(6,600)'   Name = ',amotionname
-                write(6,600)'   Type = ',
-     &                       ArbitraryGridMotionTypeName(amotiontype)
+                write(6,600)'   Type = ', &
+                             ArbitraryGridMotionTypeName(amotiontype)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 
-                call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                     'ArbitraryGridMotion_t', amotion, 'end')
+                call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                           'ArbitraryGridMotion_t', amotion, 'end')
                 if (ier .ne. ALL_OK) call cg_error_exit_f
 
                 call cg_ndescriptors_f(ndescr, ier)
@@ -464,8 +463,8 @@
                 write(6,105) '   ',ndescr, ' Descriptor_t node(s)'
 
                 do descr=1, ndescr
-                    call cg_descriptor_read_f(descr, descrname,
-     &                   descrtext, ier)
+                    call cg_descriptor_read_f(descr, descrname, &
+                         descrtext, ier)
                     if (ier .ne. ALL_OK) call cg_error_exit_f
                     write(6,108)'     Descriptor_t #',descr,':'
                     write(6,600)'       Name = ',descrname
@@ -478,11 +477,11 @@
                 write(6,105) '   ',narrays,' DataArray_t nodes(s)'
 
                 do iarray=1,narrays
-                    call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                     'ArbitraryGridMotion_t', amotion, 'end')
+                    call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                           'ArbitraryGridMotion_t', amotion, 'end')
 
-                    call cg_array_info_f(iarray, arrayname, datatype,
-     &                nndim, dim_vals, ier)
+                    call cg_array_info_f(iarray, arrayname, datatype, &
+                      nndim, dim_vals, ier)
                     if (ier .ne. ALL_OK) call cg_error_exit_f
 
                     write(6,108)'     DataArray_t #',iarray,':'
@@ -499,29 +498,29 @@
                     if (datatype .eq. RealSingle) then
                         call cg_array_read_f(iarray, data_single, ier)
                         if (ier .ne. ALL_OK) call cg_error_exit_f
-                        write(6,106)'       first pts:',
-     &                               (data_single(i),i=1,dim_vals(1))
+                        write(6,106)'       first pts:', &
+                                     (data_single(i),i=1,dim_vals(1))
 		    else if (datatype .eq. RealDouble) then
                         call cg_array_read_f(iarray, data_double, ier)
                         if (ier .ne. ALL_OK) call cg_error_exit_f
-                        write(6,106)'       first pts:',
-     &                               (data_double(i),i=1,dim_vals(1))
+                        write(6,106)'       first pts:', &
+                                     (data_double(i),i=1,dim_vals(1))
                     endif
 
-                    call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                     'ArbitraryGridMotion_t', amotion,
-     &                         'DataArray_t', iarray, 'end')
+                    call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
+                           'ArbitraryGridMotion_t', amotion, &
+                               'DataArray_t', iarray, 'end')
                     if (ier .ne. ALL_OK) call cg_error_exit_f
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
                     call cg_units_read_f(mass,length,time,temp,deg,ier)
                     if (ier .eq. ERROR) call cg_error_exit_f
                     if (ier .eq. ALL_OK) then
-                        write(6,100)
-     &                  '       Dimensional Units:',
-     &                  MassUnitsName(mass), LengthUnitsName(length),
-     &                  TemperatureUnitsName(temp), TimeUnitsName(time),
-     &                  AngleUnitsName(deg)
+                        write(6,100) &
+                        '       Dimensional Units:', &
+                        MassUnitsName(mass), LengthUnitsName(length), &
+                        TemperatureUnitsName(temp), TimeUnitsName(time), &
+                        AngleUnitsName(deg)
                     endif
                 enddo   ! loop through data arrays
             enddo       ! loop through amotion
@@ -532,11 +531,11 @@
         call cg_close_f(cg, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
- 100 	format(a/,'        Mass units: ',a/,
-     &            '        Length units: ',a/,
-     &            '        Temperature units: ',a/,
-     &            '        Time units: ',a/,
-     &            '        Angle units:',a)
+ 100 	format(a/,'        Mass units: ',a/, &
+                  '        Length units: ',a/, &
+                  '        Temperature units: ',a/, &
+                  '        Time units: ',a/, &
+                  '        Angle units:',a)
  101	format(a,i1,a,/2a,/2a,/2a,/3a,/a,i4,3a,/2a,/2a,/2a,/a,i4)
  102 	format(a,f5.3)
  103	format(a,6i2)
