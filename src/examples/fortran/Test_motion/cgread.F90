@@ -160,8 +160,11 @@
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
 	    write(6,600)'  Zone type is ', ZoneTypeName(zonetype)
 
-	    if (zonetype.eq.Structured) IndexDim=CellDim
-	    else IndexDim=1
+	    if (zonetype.eq.Structured) then
+                 IndexDim=CellDim
+	    else 
+                 IndexDim=1
+            endif
 	    write(6,104)'  IndexDimension=',IndexDim
 
 ! *** zone iterative data
