@@ -1,11 +1,11 @@
 /*   Program write_bcpnts_str   */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
+Opens an existing CGNS file that contains a simple 3-D
 structured grid, and adds BC definitions (defined
 as individual points = PointList)
 
 The CGNS grid file 'grid_c.cgns' must already exist
-(created using write_grid_str.c).  Note: whether the 
+(created using write_grid_str.c).  Note: whether the
 existing CGNS file has a flow solution in it already or
 not is irrelevant.
 

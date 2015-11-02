@@ -18,7 +18,7 @@
 !	- cg_narray, cg_array_read under Periodic_t
 !	- links under GridConnectivityProperty_t, AverageInterface_t, Periodic_t
 !	- cg_goto to GridConnectivityProperty_t, AverageInterface_t, Periodic_t
-! 	- Memory check with Insure 
+! 	- Memory check with Insure
 
 #ifdef WINNT
 	include 'cgnswin_f.h'
@@ -67,7 +67,7 @@
 	call cg_base_read_f(cg, base, basename, CellDim, PhysDim, ier)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,300)'BaseName = "',basename,'"', 
+	write(6,300)'BaseName = "',basename,'"',
      &                'cell_dimension=',CellDim
 
 ! *** base attribute:  GOTO base node
@@ -146,7 +146,7 @@
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 ! *** read GridConnectivityProperty_t node
 
-	    call cg_1to1_average_read_f(cg, base, zone, conn, 
+	    call cg_1to1_average_read_f(cg, base, zone, conn,
      &		AverageInterfaceType, ier)
 !	    if (ier .ne. ALL_OK) call cg_error_print_f
 	    if (ier .eq. ERROR) call cg_error_exit_f
@@ -157,7 +157,7 @@
      & 		    AverageInterfaceTypeName(AverageInterfaceType),'"'
 	    endif
 
-	    call cg_1to1_periodic_read_f(cg, base, zone, conn, 
+	    call cg_1to1_periodic_read_f(cg, base, zone, conn,
      &		RotationCenter, RotationAngle, Translation, ier)
 !           if (ier .ne. ALL_OK) call cg_error_print_f
 	    if (ier .eq. ERROR) call cg_error_exit_f
@@ -174,7 +174,7 @@
 
 ! *** read Descriptor_t & UserDefinedData_t under...
 ! ...   GridConnectivityProperty_t
-            call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+            call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &		'ZoneGridConnectivity_t', 1, 'GridConnectivity1to1_t',conn,
      &		'GridConnectivityProperty_t', 1, 'end')
 !	    if (ier .ne. ALL_OK) call cg_error_print_f
@@ -208,10 +208,10 @@
 
 ! ...   AverageInterface_t
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-            call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
-     & 		'ZoneGridConnectivity_t', 1, 
+            call cg_goto_f(cg, base, ier, 'Zone_t', zone,
+     & 		'ZoneGridConnectivity_t', 1,
      &          'GridConnectivity1to1_t', conn,
-     &		'GridConnectivityProperty_t', 1, 'AverageInterface_t', 
+     &		'GridConnectivityProperty_t', 1, 'AverageInterface_t',
      &		1, 'end')
 !	    if (ier .ne. ALL_OK) call cg_error_print_f
 	    if (ier .eq. ERROR) call cg_error_exit_f
@@ -245,8 +245,8 @@
 
 ! ...   Periodic_t
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-            call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
-     &		'ZoneGridConnectivity_t', 1, 
+            call cg_goto_f(cg, base, ier, 'Zone_t', zone,
+     &		'ZoneGridConnectivity_t', 1,
      &	        'GridConnectivity1to1_t', conn,
      &		'GridConnectivityProperty_t', 1, 'Periodic_t', 1, 'end')
 !           if (ier .ne. ALL_OK) call cg_error_print_f
@@ -277,9 +277,9 @@
 
 ! * Read DataClass & DimensionalUnits under RotationCenter
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-		call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
-     &		    'ZoneGridConnectivity_t', 1, 
-     &              'GridConnectivity1to1_t', conn, 
+		call cg_goto_f(cg, base, ier, 'Zone_t', zone,
+     &		    'ZoneGridConnectivity_t', 1,
+     &              'GridConnectivity1to1_t', conn,
      &              'GridConnectivityProperty_t', 1,
      &		    'Periodic_t', 1, 'DataArray_t', 1, 'end')
 

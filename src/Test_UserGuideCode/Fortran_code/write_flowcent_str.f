@@ -1,7 +1,7 @@
       program write_flowcent_str
       use cgns
 c
-c   Opens an existing CGNS file that contains a simple 3-D 
+c   Opens an existing CGNS file that contains a simple 3-D
 c   structured grid, and adds a flow solution (at CELL CENTERS)
 c   to it.  (Compare this program with write_flowvert_str)
 c
@@ -13,7 +13,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
@@ -29,10 +29,10 @@ c   Note Windows machines need to include cgnswin_f.h
 c
 c
 c   dimension statements (note that tri-dimensional arrays
-c   r and p must be dimensioned exactly as (21-1,17-1,N-1) (N>=9) 
-c   for this particular case or else they will be written to 
-c   the CGNS file incorrectly!  Other options are to use 1-D 
-c   arrays, use dynamic memory, or pass index values to a 
+c   r and p must be dimensioned exactly as (21-1,17-1,N-1) (N>=9)
+c   for this particular case or else they will be written to
+c   the CGNS file incorrectly!  Other options are to use 1-D
+c   arrays, use dynamic memory, or pass index values to a
 c   subroutine and dimension exactly there):
       real*8 r(20,16,8),p(20,16,8)
       character solname*32
@@ -76,7 +76,7 @@ c   write flow solution (user must use SIDS-standard names here)
      + RealDouble,'Pressure',p,index_field,ier)
 c   close CGNS file
       call cg_close_f(index_file,ier)
-      write(6,'('' Successfully added CellCenter flow solution data'', 
+      write(6,'('' Successfully added CellCenter flow solution data'',
      + '' to file grid.cgns'')')
       write(6,'(''   Note:  if the original CGNS file already had'',
      + '' a FlowSolution_t node,'')')

@@ -6,11 +6,11 @@ as individual FaceCenter "points" = PointList+GridLocation=FaceCenter)
 The BCs are added as FaceCenter points, associated with
 face elements (QUAD_4), rather than associated to nodes
 
-For the following, be sure you are using Version 2.0 or 
+For the following, be sure you are using Version 2.0 or
 later release of the API
 
 The CGNS grid file 'grid_c.cgns' must already exist
-(created using write_grid_unst.c).  Note: whether the 
+(created using write_grid_unst.c).  Note: whether the
 existing CGNS file has a flow solution in it already or
 not is irrelevant.
 

@@ -1,10 +1,10 @@
       program write_timevert_str
       use cgns
 c
-c   Opens an existing CGNS file that contains a simple 3-D 
-c   structured grid, and adds 3 different flow solutions 
+c   Opens an existing CGNS file that contains a simple 3-D
+c   structured grid, and adds 3 different flow solutions
 c   (at VERTICES) to it, along with time-accurate info.
-c   In this example, r1 & p1, r2 & p2, r3 & p3 correspond 
+c   In this example, r1 & p1, r2 & p2, r3 & p3 correspond
 c   with solutions at 3 different time steps.
 c
 c   The CGNS grid file 'grid.cgns' must already exist
@@ -15,7 +15,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
@@ -30,11 +30,11 @@ c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
 c   dimension statements (note that tri-dimensional arrays
-c   r1, r2, r3 and p1, p2, p3 
-c   must be dimensioned exactly as (21,17,N) (N>=9) 
-c   for this particular case or else they will be written to 
-c   the CGNS file incorrectly!  Other options are to use 1-D 
-c   arrays, use dynamic memory, or pass index values to a 
+c   r1, r2, r3 and p1, p2, p3
+c   must be dimensioned exactly as (21,17,N) (N>=9)
+c   for this particular case or else they will be written to
+c   the CGNS file incorrectly!  Other options are to use 1-D
+c   arrays, use dynamic memory, or pass index values to a
 c   subroutine and dimension exactly there):
       real*8 r1(21,17,9),p1(21,17,9)
       real*8 r2(21,17,9),p2(21,17,9)

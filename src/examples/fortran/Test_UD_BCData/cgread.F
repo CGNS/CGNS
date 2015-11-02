@@ -1,5 +1,5 @@
 
-	program read_udata 
+	program read_udata
 	USE CGNS
 	implicit none
 
@@ -14,7 +14,7 @@
 #endif
 
 	integer Ndim, Nglobal
-	integer i, narrays, iarray, nintegrals, integral 
+	integer i, narrays, iarray, nintegrals, integral
 	integer ndescriptors, idescr, nzonetype
 	integer(cgsize_t) nptsets
 	integer ndonor_ptset_type, idataset, dirichletflag, neumannflag
@@ -658,7 +658,7 @@
 
 	! *** discrete data attribute:  GOTO DiscreteData_t/UserDefinedData_t node
 	      call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                'DiscreteData_t',  discr, 
+     &                'DiscreteData_t',  discr,
      &                'UserDefinedData_t', 1, 'end')
 	      if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -695,7 +695,7 @@
 
           ! *** discrete data arrays attribute: GOTO UserDefinedData/DataArray node
                 call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &            'DiscreteData_t', discr, 
+     &            'DiscreteData_t', discr,
      &            'UserDefinedData_t', 1,
      &            'DataArray_t', iarray, 'end')
 	        if (ier .eq. ERROR) call cg_error_exit_f
@@ -711,12 +711,12 @@
                 endif
 	      enddo		! loop through DataArray_t
 
-! ** begin KMW read new UD 
+! ** begin KMW read new UD
 
 	      write(6,400) ' BEGIN V2.4 UserDefinedData extension '
 
 	      call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                'DiscreteData_t',  discr, 
+     &                'DiscreteData_t',  discr,
      &                'UserDefinedData_t', 1, 'end')
 	      if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -754,7 +754,7 @@
 	      ! *** user defined data attribute:  PointSet data
 	        call cg_ptset_read_f(pnts, ier)
 	        if (ier .eq. ERROR) call cg_error_exit_f
-	        if (ier .eq. ALL_OK) write(6,119)    
+	        if (ier .eq. ALL_OK) write(6,119)
      &             '   UserDefined PointSet points:',
      &             '    first point:', pnts(1),pnts(2),pnts(3),
      &             '    last point :', pnts(3*npnts-2), pnts(3*npnts-1),
@@ -762,11 +762,11 @@
               endif
 
 	      call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                'DiscreteData_t',  discr, 
+     &                'DiscreteData_t',  discr,
      &                'UserDefinedData_t', 1,
      &                'UserDefinedData_t', 1, 'end')
 	      if (ier .eq. ERROR) call cg_error_exit_f
-	      
+	
 	      call cg_user_data_read_f(1, user_data_name, ier)
 	      if (ier .eq. ERROR) call cg_error_exit_f
 	      if (ier .eq. ALL_OK) write(6,600)
@@ -1212,8 +1212,8 @@
 	             ! *** BCDataSet data attribute:  PointSet data
 		     call cg_ptset_read_f(pnts, ier)
 		     if (ier .eq. ERROR) call cg_error_exit_f
-!		     if (ier .eq. ALL_OK) 
-		     write(6,119)    
+!		     if (ier .eq. ALL_OK)
+		     write(6,119)
      &		     '   BCDataSet PointSet points:',
      &		     '    first point:', pnts(1),pnts(2),pnts(3),
      &		     '    last point :', pnts(3*npnts-2), pnts(3*npnts-1),

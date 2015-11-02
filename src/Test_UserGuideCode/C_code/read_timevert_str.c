@@ -1,6 +1,6 @@
 /*   Program read_timevert_str   */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
+Opens an existing CGNS file that contains a simple 3-D
 structured grid plus 3 different flow solutions (at VERTICES),
 along with time-accurate info, and reads it.
 

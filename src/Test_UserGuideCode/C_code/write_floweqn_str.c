@@ -33,7 +33,7 @@ int main()
     cgsize_t nuse;
 
     printf("\nProgram write_floweqn_str\n");
- 
+
 /* data for writing */
     gamma=1.4;
     prandtl=0.90;
@@ -89,7 +89,7 @@ int main()
     cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1,
         "TurbulenceClosure_t",1,"DataArray_t",1,"end");
     cg_dataclass_write(NondimensionalParameter);
- 
+
 /* Create 'TurbulenceModel' under 'FlowEquationSet' */
     cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1,"end");
     cg_model_write("TurbulenceModel_t",OneEquation_SpalartAllmaras);

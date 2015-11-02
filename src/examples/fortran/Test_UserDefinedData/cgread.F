@@ -1,6 +1,6 @@
 
 	program read_udata
-	USE CGNS 
+	USE CGNS
 	implicit none
 
 ! This program reads a 3D mesh, structured or unstructured.
@@ -14,7 +14,7 @@
 #endif
 
 	integer Ndim, Nglobal
-	integer i, narrays, iarray, nintegrals, integral 
+	integer i, narrays, iarray, nintegrals, integral
 	integer ndescriptors, idescr, nzonetype
 	integer(cgsize_t) nptsets
 	integer ndonor_ptset_type, idataset, dirichletflag, neumannflag
@@ -655,7 +655,7 @@
 
         ! *** discrete data attribute:  GOTO DiscreteData_t/UserDefinedData_t node
 	      call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                'DiscreteData_t',  discr, 
+     &                'DiscreteData_t',  discr,
      &                'UserDefinedData_t', 1, 'end')
 	      if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -692,7 +692,7 @@
 
           ! *** discrete data arrays attribute: GOTO UserDefinedData/DataArray node
                 call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &            'DiscreteData_t', discr, 
+     &            'DiscreteData_t', discr,
      &            'UserDefinedData_t', 1,
      &            'DataArray_t', iarray, 'end')
 	        if (ier .eq. ERROR) call cg_error_exit_f

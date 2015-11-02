@@ -34,7 +34,7 @@
 ! *** Multiple GridCoordinates_t node
 	integer grid_no, grid
 	character*32 gridname
- 
+
 ! *** Base/Zone IterativeData_t nodes
 !	real*4 time(2)
 	double precision time(2)
@@ -60,9 +60,9 @@
 ! *** open CGNS file for writing
  	call cg_open_f('Test_V2', MODE_WRITE, cg, ier)
  	if (ier .ne. ALL_OK) call cg_error_exit_f
-	    
+	
 ! *** base
- 	call cg_base_write_f(cg, 'Basename', cell_dim, phys_dim, 
+ 	call cg_base_write_f(cg, 'Basename', cell_dim, phys_dim,
      &                       base_no, ier)
  	if (ier .ne. ALL_OK) call cg_error_exit_f
 
@@ -94,7 +94,7 @@
 	call cg_array_write_f('TimeValues', RealDouble, 1,
      &                         INT(nsteps,cgsize_t), time, ier)
         if (ier .ne. ALL_OK) call cg_error_exit_f
-	call cg_array_write_f('IterationValues', Integer, 1, 
+	call cg_array_write_f('IterationValues', Integer, 1,
      &                         INT(nsteps,cgsize_t),iteration, ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 	call cg_array_write_f('NumberOfZones', Integer, 1,
@@ -142,10 +142,10 @@
 	dimval(1)=32
 	dimval(2)=nsteps
 
-	call cg_array_write_f('GridCoordinatesPointers', Character, 2, 
+	call cg_array_write_f('GridCoordinatesPointers', Character, 2,
      &                         dimval, grid_ptrs, ier)
         if (ier .ne. ALL_OK) call cg_error_exit_f
-	call cg_array_write_f('FlowSolutionPointers', Character, 2, 
+	call cg_array_write_f('FlowSolutionPointers', Character, 2,
      &                         dimval, sol_ptrs, ier)
         if (ier .ne. ALL_OK) call cg_error_exit_f
 	call cg_array_write_f('RigidGridMotionPointers', Character, 2,
@@ -180,14 +180,14 @@
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	do grid = 1,2
 	    write(gridname,100)'GridCoordinates#',grid
-	    call cg_grid_write_f(cg, base_no, zone_no, gridname, 
+	    call cg_grid_write_f(cg, base_no, zone_no, gridname,
      &                           grid_no, ier)
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
 
 	    call cg_goto_f(cg, base_no, ier, 'Zone_t', zone_no,
      &                     'GridCoordinates_t', grid_no, 'end')
             if (ier .ne. ALL_OK) call cg_error_exit_f
-	    
+	
 	    call cg_array_write_f('CoordinateX', RealDouble, 3,
      &                             size, Dxyz, ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
@@ -208,7 +208,7 @@
 ! *** solution
      	do sol=1, 2
  	    write(solname,100) 'Solution#',sol
- 	    call cg_sol_write_f(cg, base_no, zone_no, solname, 
+ 	    call cg_sol_write_f(cg, base_no, zone_no, solname,
      &                          Vertex, sol_no, ier)
  	    if (ier .ne. ALL_OK) call cg_error_exit_f
 
@@ -236,11 +236,11 @@
 	        angle(coord) = 5.0 * rmotion
 		velocity(coord) = 7.0
 	    enddo
-	    call cg_rigid_motion_write_f(cg, base_no, zone_no, 
+	    call cg_rigid_motion_write_f(cg, base_no, zone_no,
      &      rmotionname, ConstantRate, rmotion_no, ier)
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
 
-! ** Goto RigidGridMotion_t node 
+! ** Goto RigidGridMotion_t node
 	    call cg_goto_f(cg, base_no, ier, 'Zone_t', zone_no,
      &                     'RigidGridMotion_t', rmotion_no, 'end')
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
@@ -270,7 +270,7 @@
 
 ! *** Add an attribute for this data array: GOTO DataArray node
 	    call cg_goto_f(cg, base_no, ier, 'Zone_t', zone_no,
-     &                     'RigidGridMotion_t', rmotion_no, 
+     &                     'RigidGridMotion_t', rmotion_no,
      &                     'DataArray_t', 3, 'end')
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
 
@@ -311,8 +311,8 @@
  13	    continue
 
 ! *** Add a DataArray_t 'GridVelocityX' under ArbitraryGridMotion_t
-            !call cg_array_write_f('GridVelocityX', RealSingle, 
-            call cg_array_write_f('GridVelocityX', RealDouble, 
+            !call cg_array_write_f('GridVelocityX', RealSingle,
+            call cg_array_write_f('GridVelocityX', RealDouble,
      &		                  index_dim, size, GridVelocity, ier)
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
 

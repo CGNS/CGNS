@@ -1,11 +1,11 @@
 /*    Program write_dimensional   */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
-grid plus a flow solution and adds its dimensionality 
+Opens an existing CGNS file that contains a simple 3-D
+grid plus a flow solution and adds its dimensionality
 (dimensional data).
 
 The CGNS grid file 'grid_c.cgns' must already exist
-(for example, created using 
+(for example, created using
     write_grid_str.c followed by write_flowcent_str.c or
     write_grid_str.c followed by write_flowvert_str.c or
     write_grid_str.c followed by write_flowcentrind_str.c or
@@ -59,7 +59,7 @@ int main()
     cg_dataclass_write(Dimensional);
     cg_units_write(Kilogram,Meter,Second,Kelvin,Degree);
 /* read fields */
-    cg_nfields(index_file,index_base,index_zone,index_flow,&nfields); 
+    cg_nfields(index_file,index_base,index_zone,index_flow,&nfields);
     if (nfields != 2)
     {
       printf("\nError! expecting 2 fields, read %d\n",nfields);

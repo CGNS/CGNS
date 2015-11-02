@@ -1,7 +1,7 @@
       program write_grid_unst
       use cgns
 c
-c   Creates simple 3-D unstructured grid and writes it to a 
+c   Creates simple 3-D unstructured grid and writes it to a
 c   CGNS file.
 c
 c   This program uses the fortran convention that all
@@ -9,7 +9,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c

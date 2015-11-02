@@ -1,15 +1,15 @@
       program write_flowvert_unst
       use cgns
 c
-c   Opens an existing CGNS file that contains a simple 3-D 
+c   Opens an existing CGNS file that contains a simple 3-D
 c   unstructured grid, and adds a flow solution (at VERTICES)
 c   to it.
 c
 c   The CGNS grid file 'grid.cgns' must already exist
 c   (created using write_grid_unst.f)
 c   Note that, other than the dimensions of the variables
-c   r and p, this program is essentially identical to that for 
-c   writing flow solutions to a structured zone:  
+c   r and p, this program is essentially identical to that for
+c   writing flow solutions to a structured zone:
 c   write_flowvert_str.f
 c
 c   This program uses the fortran convention that all
@@ -17,7 +17,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
@@ -75,7 +75,7 @@ c   write flow solution (user must use SIDS-standard names here)
      + RealDouble,'Pressure',p,index_field,ier)
 c   close CGNS file
       call cg_close_f(index_file,ier)
-      write(6,'('' Successfully added flow solution data to file'', 
+      write(6,'('' Successfully added flow solution data to file'',
      + '' grid.cgns (unstructured)'')')
       write(6,'(''   Note:  if the original CGNS file already had'',
      + '' a FlowSolution_t node,'')')

@@ -30,10 +30,10 @@ int main()
 {
 /*
   dimension statements (note that tri-dimensional arrays
-  x,y,z must be dimensioned exactly as [N][17][21] (N>=9) 
+  x,y,z must be dimensioned exactly as [N][17][21] (N>=9)
   for this particular case or else they will be read from
-  the CGNS file incorrectly!  Other options are to use 1-D 
-  arrays, use dynamic memory, or pass index values to a 
+  the CGNS file incorrectly!  Other options are to use 1-D
+  arrays, use dynamic memory, or pass index values to a
   subroutine and dimension exactly there):
 */
     float x[9][17][21],y[9][17][21],z[9][17][21];

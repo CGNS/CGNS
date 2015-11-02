@@ -3,7 +3,7 @@
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
-!       last revised on June 7 2002 
+!       last revised on June 7 2002
 
 !       This example tests the Axisymmetry_t data structure and its children
 
@@ -19,7 +19,7 @@
 	character*100 linkpath, DescriptorText
 	character*32 CoordinateNames(2), DescriptorName, basename
         real*4 version
-        
+
 
 ! *** initialize
 	ier = 0
@@ -77,7 +77,7 @@
 	call cg_array_write_f('AxisymmetryAngle', RealSingle, 1,
      &       1, angle, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
- 
+
 ! * DataArray_t CoordinateNames
         dimval(1)=32
         dimval(2)=2
@@ -92,7 +92,7 @@
      &       'AxisymDescriptorText', ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-! * DataClass 
+! * DataClass
         call cg_dataclass_write_f(Dimensional, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -101,7 +101,7 @@
      &                        Radian, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-! * UserDefinedData  
+! * UserDefinedData
         call cg_user_data_write_f('UserData1', ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -113,7 +113,7 @@
 ! * DataArray_t/Descriptor
 	do i=1, 4
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-	    call cg_goto_f(cg, base_no, ier, 'Axisymmetry_t', 1, 
+	    call cg_goto_f(cg, base_no, ier, 'Axisymmetry_t', 1,
      &                     'DataArray_t', i, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 	    write(DescriptorName,'(a,i1)') 'DescriptorName4Array',i

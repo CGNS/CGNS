@@ -17,7 +17,7 @@ cc -o write_nondimensional_c write_nondimensional.o -L ../../lib -lcgns
 (../../lib is the location where the compiled
 library libcgns.a is located)
 */
- 
+
 #include <stdio.h>
 /* cgnslib.h file must be located in directory specified by -I during compile: */
 #include "cgnslib.h"

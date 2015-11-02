@@ -402,7 +402,7 @@
 	    if (path_length .gt. 0) then
               call cg_link_read_f(lfilename, lpath, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
-              write(6,700)'GridCoordinates_t -> link to file = ', 
+              write(6,700)'GridCoordinates_t -> link to file = ',
      &	         lfilename, ', link path = ', lpath
 	    endif
 
@@ -472,7 +472,7 @@
 	        if (path_length .gt. 0) then
                     call cg_link_read_f(lfilename, lpath, ier)
                     if (ier .eq. ERROR) call cg_error_exit_f
-                    write(6,700)'GridCoordinates_t -> link to file = ', 
+                    write(6,700)'GridCoordinates_t -> link to file = ',
      &	                lfilename, ', link path = ', lpath
 	        endif
 
@@ -679,7 +679,7 @@
 	        if (path_length .gt. 0) then
                     call cg_link_read_f(lfilename, lpath, ier)
                     if (ier .eq. ERROR) call cg_error_exit_f
-                    write(6,700)'GridCoordinates_t -> link to file = ', 
+                    write(6,700)'GridCoordinates_t -> link to file = ',
      &	                lfilename, ', link path = ', lpath
 	        endif
 

@@ -123,7 +123,7 @@
 	  write(6,500) ' user_data_name="',user_data_name,'"'
 	enddo
 
-! * DataArray_t 
+! * DataArray_t
 
 	call cg_narrays_f(narrays, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
@@ -145,7 +145,7 @@
             if (ier .eq. ERROR) call cg_error_exit_f
             write(6,106) (data_single(n),n=1,dim_vals(1))
 
-! * Descriptor for DataArray_t (RotationCenter & RotationRateVector) 
+! * Descriptor for DataArray_t (RotationCenter & RotationRateVector)
             call cg_goto_f(cg, base, ier, 'RotatingCoordinates_t', 1,  &
                        'DataArray_t', iarray, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
@@ -265,7 +265,7 @@
 	  write(6,500) ' user_data_name="',user_data_name,'"'
 	enddo
 
-! * DataArray_t 
+! * DataArray_t
 
 	call cg_narrays_f(narrays, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
@@ -288,7 +288,7 @@
             if (ier .eq. ERROR) call cg_error_exit_f
             write(6,106) (data_single(n),n=1,dim_vals(1))
 
-! * Descriptor for DataArray_t (RotationCenter & RotationRateVector) 
+! * Descriptor for DataArray_t (RotationCenter & RotationRateVector)
             call cg_goto_f(cg, base, ier, 'RotatingCoordinates_t', 1,  &
                        'DataArray_t', iarray, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f

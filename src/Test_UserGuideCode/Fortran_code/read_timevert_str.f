@@ -1,7 +1,7 @@
       program read_timevert_str
       use cgns
 c
-c   Opens an existing CGNS file that contains a simple 3-D 
+c   Opens an existing CGNS file that contains a simple 3-D
 c   structured grid plus 3 different flow solutions (at VERTICES),
 c   along with time-accurate info, and reads it.
 c
@@ -14,7 +14,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
@@ -118,12 +118,12 @@ c   read ZoneIterativeData
 c   read SimulationType
       call cg_simulation_type_read_f(index_file,index_base,
      + isim,ier)
-      write(6,'('' Simulation type is: '',a32)') 
+      write(6,'('' Simulation type is: '',a32)')
      + SimulationTypeName(isim)
 c   do loop to read flow solutions
       do n=1,nsteps
-c   check that soln names match, and also check GridLocation (real 
-c   working code would check to make sure there are no Rind cells 
+c   check that soln names match, and also check GridLocation (real
+c   working code would check to make sure there are no Rind cells
 c   also!):
       call cg_sol_info_f(index_file,index_base,index_zone,n,
      + solname2,loc,ier)

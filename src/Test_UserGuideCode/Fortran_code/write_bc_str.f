@@ -1,12 +1,12 @@
       program write_bc_str
       use cgns
 c
-c   Opens an existing CGNS file that contains a simple 3-D 
+c   Opens an existing CGNS file that contains a simple 3-D
 c   structured grid, and adds BC definitions (defined
 c   over a range of points = PointRange)
 c
 c   The CGNS grid file 'grid.cgns' must already exist
-c   (created using write_grid_str.f).  Note: whether the 
+c   (created using write_grid_str.f).  Note: whether the
 c   existing CGNS file has a flow solution in it already or
 c   not is irrelevant.
 c
@@ -15,7 +15,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c

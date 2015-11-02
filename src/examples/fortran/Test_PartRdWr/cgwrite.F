@@ -2,7 +2,7 @@
         program write_partial_data
         USE CGNS
 
-!	original author (of write_mixed_elements): Diane Poirier 
+!	original author (of write_mixed_elements): Diane Poirier
 !       author: Ken Wall
 !	May 13 2004
 
@@ -48,11 +48,11 @@
 	ZoneType=Unstructured
 	write(ZoneName,100) 'UnstructuredZone#1'
  100	format(a)
-	size(1) = 27		! no of nodes 
+	size(1) = 27		! no of nodes
 	size(2) = 3		! no of elements
-	size(3) = 0		! unsorted nodes    
+	size(3) = 0		! unsorted nodes
 
-	call cg_zone_write_f(cg, base, 'UnstructuredZone#1', size, 
+	call cg_zone_write_f(cg, base, 'UnstructuredZone#1', size,
      &                       ZoneType, index, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -79,7 +79,7 @@
                 if (coord.eq.3) data_double(pos) = i
  20         continue
 
-            call cg_coord_partial_write_f(cg, base, zone, RealDouble, 
+            call cg_coord_partial_write_f(cg, base, zone, RealDouble,
      &                  coordname(coord), rmin, rmax, data_double, C,
      &                  ier)
             if (ier .eq. ERROR) call cg_error_exit_f
@@ -91,7 +91,7 @@
             rmax = 14
 
 ! create coordinate data(10x10x10 box with 3x3x3 equidistant nodes)
-            
+
         do coord=1,phys_dim
             pos = 0
             do 21 i=rmin, rmax
@@ -101,7 +101,7 @@
                 if (coord.eq.3) data_double(pos) = -i
  21          continue
 
-            call cg_coord_partial_write_f(cg, base, zone, RealDouble, 
+            call cg_coord_partial_write_f(cg, base, zone, RealDouble,
      &                  coordname(coord), rmin, rmax, data_double, C,
      &                  ier)
             if (ier .eq. ERROR) call cg_error_exit_f

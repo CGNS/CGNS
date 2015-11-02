@@ -1,6 +1,6 @@
 /*   Program read_flowcent_str   */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
+Opens an existing CGNS file that contains a simple 3-D
 structured grid plus a flow solution (at CELL CENTERS),
 and reads it.  (Compare this program with read_flowvert_str)
 
@@ -33,10 +33,10 @@ int main()
 {
 /*
   dimension statements (note that tri-dimensional arrays
-  r and p must be dimensioned exactly as [N-1][17-1][21-1] (N>=9) 
-  for this particular case or else they will be read from 
-  the CGNS file incorrectly!  Other options are to use 1-D 
-  arrays, use dynamic memory, or pass index values to a 
+  r and p must be dimensioned exactly as [N-1][17-1][21-1] (N>=9)
+  for this particular case or else they will be read from
+  the CGNS file incorrectly!  Other options are to use 1-D
+  arrays, use dynamic memory, or pass index values to a
   subroutine and dimension exactly there):
 */
     double r[8][16][20],p[8][16][20];

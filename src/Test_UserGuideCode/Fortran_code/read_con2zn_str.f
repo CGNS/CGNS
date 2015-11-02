@@ -1,8 +1,8 @@
       program read_con2zn_str
       use cgns
 c
-c   Opens an existing CGNS file that contains a simple 3-D 
-c   structured grid (2 zones) plus 1-to-1 connectivity 
+c   Opens an existing CGNS file that contains a simple 3-D
+c   structured grid (2 zones) plus 1-to-1 connectivity
 c   information, and reads the connectivity info.
 c
 c   The CGNS grid file 'grid.cgns' must already exist
@@ -13,7 +13,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
@@ -44,7 +44,7 @@ c   get number of zones (should be 2 for our case)
      +    '' read'')') nzone
          stop
       end if
-c   loop over zones 
+c   loop over zones
       do index_zone=1,nzone
 c   find out how many 1-to-1 interfaces there are in this zone
 c   (for this program, there should only be one)

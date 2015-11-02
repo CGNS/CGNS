@@ -184,7 +184,7 @@
 		else if (zone .eq. 2) then
 		   pnts(i,2)=size(i)
 		endif
-            enddo    
+            enddo
 
 	    ! ** write PointSet data:
 	    call cg_ptset_write_f(PointRange, 2_cgsize_t, pnts, ier)
@@ -205,7 +205,7 @@
 	    call cg_user_data_write_f('UserData_c2', ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
 
-! ** end KMW	    
+! ** end KMW	
 
   	! *** discrete data arrays attribute: GOTO DataArray node
 	    call cg_goto_f(cg, base_no, ier, 'Zone_t', zone,
@@ -231,7 +231,7 @@
 	    enddo
 	  ! Hole defined with 2 point set type PointRange, so 4 points:
 	    call cg_hole_write_f(cg, base_no, zone_no, 'hole#1', Vertex,
-     &                           PointRange, 2, 4_cgsize_t, pnts, 
+     &                           PointRange, 2, 4_cgsize_t, pnts,
      &                           hole_no, ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -243,9 +243,9 @@
  100        continue
 	  ! create a point matching connectivity
 	    call cg_conn_write_f(cg, base_no, zone_no, 'Connect#1',
-     &          Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts, 
+     &          Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts,
      &          'zone#2',
-     &          Structured, PointListDonor, Integer, 5_cgsize_t, 
+     &          Structured, PointListDonor, Integer, 5_cgsize_t,
      &          donor_pnts,
      &          conn_no, ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
@@ -357,7 +357,7 @@
 		!**make up some dummy data:
 		  pnts(i,1)=1
 		  pnts(i,2)=size(i)
-	       enddo    
+	       enddo
 
 	        ! ** write PointSet data:
 	       call cg_ptset_write_f(PointRange, 2_cgsize_t, pnts, ier)

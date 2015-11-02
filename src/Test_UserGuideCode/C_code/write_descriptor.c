@@ -1,6 +1,6 @@
 /*   Program write_descriptor   */
 /*
-Adds descriptor node to an existing CGNS file (under the 
+Adds descriptor node to an existing CGNS file (under the
 CGNSBase_t node).
 
 The CGNS grid file 'grid_c.cgns' must already exist.

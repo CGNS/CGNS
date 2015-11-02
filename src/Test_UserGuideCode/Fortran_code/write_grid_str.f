@@ -1,7 +1,7 @@
       program write_grid_str
       use cgns
 c
-c   Creates simple 3-D structured grid and writes it to a 
+c   Creates simple 3-D structured grid and writes it to a
 c   CGNS file.
 c
 c   This program uses the fortran convention that all
@@ -9,7 +9,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
@@ -24,10 +24,10 @@ c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
 c   dimension statements (note that tri-dimensional arrays
-c   x,y,z must be dimensioned exactly as (21,17,N) (N>=9) 
-c   for this particular case or else they will be written to 
-c   the CGNS file incorrectly!  Other options are to use 1-D 
-c   arrays, use dynamic memory, or pass index values to a 
+c   x,y,z must be dimensioned exactly as (21,17,N) (N>=9)
+c   for this particular case or else they will be written to
+c   the CGNS file incorrectly!  Other options are to use 1-D
+c   arrays, use dynamic memory, or pass index values to a
 c   subroutine and dimension exactly there):
       real*8 x(21,17,9),y(21,17,9),z(21,17,9)
       integer(cgsize_t) isize(3,3)

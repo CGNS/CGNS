@@ -11,7 +11,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
@@ -41,7 +41,7 @@ c   Read info from 'FlowEquationSet' node under 'Zone_t'
      +   'end')
       call cg_equationset_read_f(id,ige,igm,ivm,itcm,itc,itm,ier)
       if (ier .gt. 0) then
-        write(6,'('' Error!  FlowEquationSet node does not exist.'')') 
+        write(6,'('' Error!  FlowEquationSet node does not exist.'')')
         stop
       end if
       write(6,'('' Eqn dimension = '',i5)') id
@@ -50,7 +50,7 @@ c   Read 'GoverningEquations' node
         call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,
      +    'FlowEquationSet_t',1,'end')
         call cg_governing_read_f(itype,ier)
-        write(6,'('' Gov eqn = '',a32)') 
+        write(6,'('' Gov eqn = '',a32)')
      +    GoverningEquationsTypeName(itype)
 c   Read 'DiffusionModel' node
         call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,

@@ -3,7 +3,7 @@
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
-!       last revised on June 7 2002 
+!       last revised on June 7 2002
 
 !       This example tests the Axisymmetry_t data structure and its children
 

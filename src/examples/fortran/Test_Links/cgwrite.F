@@ -8,8 +8,8 @@
 !	It creates a dummy mesh composed of 2 structured blocks in 3D.
 
 !       Modified for Version 2.1 Link_t extensions.  Creates a file
-!	Test_V2 with a grid and no solution.  Creates a second file 
-!       Test_V2_links with a solution and links to the grid and other 
+!	Test_V2 with a grid and no solution.  Creates a second file
+!       Test_V2_links with a solution and links to the grid and other
 !       nodes in file Test_V2.
 !
 !       Don Leich, Intelligent Light 30-Nov-01
@@ -163,7 +163,7 @@
 	    enddo
 	  ! Hole defined with 2 point set type PointRange, so 4 points:
 	    call cg_hole_write_f(cg1, base_no, zone_no, 'hole#1', Vertex,
-     &                           PointRange, 2, 4_cgsize_t, pnts, 
+     &                           PointRange, 2, 4_cgsize_t, pnts,
      &                           hole_no, ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -175,9 +175,9 @@
  100        continue
 	  ! create a point matching connectivity
 	    call cg_conn_write_f(cg1, base_no, zone_no, 'Connect#1',
-     &          Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts, 
+     &          Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts,
      &          'zone#2',
-     &          Structured, PointListDonor, Integer, 5_cgsize_t, 
+     &          Structured, PointListDonor, Integer, 5_cgsize_t,
      &          donor_pnts, conn_no, ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -234,7 +234,7 @@
 
 ! ** boundary condition attributes: GOTO BC_t node
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-            call cg_goto_f(cg1, base_no, ier, 'Zone_t', zone, 
+            call cg_goto_f(cg1, base_no, ier, 'Zone_t', zone,
      &          'ZoneBC_t', 1, 'BC_t', boco_no, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 

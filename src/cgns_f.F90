@@ -23,7 +23,7 @@
 ! | |   | | |_ | . ` |\___ \
 ! | |___| |__| | |\  |____) |
 !  \_____\_____|_| \_|_____/
-!                            
+!
 !  PURPOSE:
 !    Provides a module for the Fortran wrapper interfaces and CGNS
 !    constant parameters.
@@ -31,9 +31,9 @@
 !
 !  KNOWN ISSUES:
 !    Routines passing an argument to a C API argument of type
-!    void * do not have explicit interfaces. They are the routines which 
+!    void * do not have explicit interfaces. They are the routines which
 !    are commented out.
-!                        
+!
 MODULE cgns
 
   USE ISO_C_BINDING
@@ -113,7 +113,7 @@ MODULE cgns
   INTEGER(C_INT), PARAMETER :: CGIO_FILE_HDF5 = 2
   INTEGER(C_INT), PARAMETER :: CGIO_FILE_ADF2 = 3
 
-  
+
 
   !* legacy code support
   INTEGER(C_INT) MODE_READ, MODE_WRITE, MODE_MODIFY
@@ -455,12 +455,12 @@ MODULE cgns
   CHARACTER(LEN=MAX_LEN) :: ElementTypeName(0:56)
   ENUM, BIND(C)
       ENUMERATOR :: CGNS_ENUMV(ElementTypeNull) = CG_Null
-      ENUMERATOR :: CGNS_ENUMV(ElementTypeUserDefined) 
+      ENUMERATOR :: CGNS_ENUMV(ElementTypeUserDefined)
       ENUMERATOR :: CGNS_ENUMV(NODE)
       ENUMERATOR :: CGNS_ENUMV(BAR_2)
       ENUMERATOR :: CGNS_ENUMV(BAR_3)
       ENUMERATOR :: CGNS_ENUMV(TRI_3)
-      ENUMERATOR :: CGNS_ENUMV(TRI_6) 
+      ENUMERATOR :: CGNS_ENUMV(TRI_6)
       ENUMERATOR :: CGNS_ENUMV(QUAD_4)
       ENUMERATOR :: CGNS_ENUMV(QUAD_8)
       ENUMERATOR :: CGNS_ENUMV(QUAD_9)
@@ -603,17 +603,17 @@ MODULE cgns
        'Slug','PoundMass'/
   DATA LengthUnitsName / 'Null', 'UserDefined', &
        'Meter','Centimeter','Millimeter','Foot','Inch'/
-  
+
   DATA TimeUnitsName /'Null','UserDefined','Second'/
-  
+
   DATA TemperatureUnitsName /'Null','UserDefined', &
        'Kelvin','Celsius','Rankine','Fahrenheit'/
 
   DATA AngleUnitsName /'Null','UserDefined','Degree','Radian'/
-  
+
   DATA ElectricCurrentUnitsName /'Null', 'UserDefined', 'Ampere', &
        'Abampere', 'Statampere', 'Edison', 'a.u.'/
-  
+
   DATA SubstanceAmountUnitsName /'Null', 'UserDefined', 'Mole', &
        'Entities', 'StandardCubicFoot', 'StandardCubicMeter'/
 
@@ -659,7 +659,7 @@ MODULE cgns
   DATA GoverningEquationsTypeName / 'Null','UserDefined', &
        'FullPotential','Euler', 'NSLaminar', 'NSTurbulent', &
        'NSLaminarIncompressible', 'NSTurbulentIncompressible'/
-  
+
   DATA ModelTypeName / 'Null','UserDefined', &
        'Ideal','VanderWaals', 'Constant','PowerLaw', &
        'SutherlandLaw','ConstantPrandtl','EddyViscosity', &
@@ -757,7 +757,7 @@ MODULE cgns
 
   DATA SimulationTypeName / 'Null','UserDefined', &
        'TimeAccurate', 'NonTimeAccurate' /
-  
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      BC Property types                                              *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -804,7 +804,7 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: fn
      END FUNCTION cg_open
   END INTERFACE
-  
+
   INTERFACE
      SUBROUTINE cg_version_f(fn,FileVersion, ier) BIND(C,NAME="cg_version_f")
        USE ISO_C_BINDING
@@ -4435,7 +4435,7 @@ MODULE cgns
          INTEGER, INTENT(OUT) :: ier
        END SUBROUTINE cgio_is_supported_f
     END INTERFACE
-    
+
 !*---------------------------------------------------------
   INTERFACE
      SUBROUTINE cgio_check_file_f(filename, file_type, ier) !BIND(C,NAME='cgio_check_file_f')
@@ -4488,7 +4488,7 @@ MODULE cgns
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: cgio_num
-       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: version 
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: version
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgio_library_version_f
   END INTERFACE
@@ -4700,7 +4700,7 @@ MODULE cgns
        REAL(C_DOUBLE) :: pid
        INTEGER :: num_children
        INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cgio_number_children_f 
+     END SUBROUTINE cgio_number_children_f
   END INTERFACE
 
 !*---------------------------------------------------------
@@ -4918,7 +4918,7 @@ CONTAINS
   END FUNCTION cg_get_type_c_double
 
 !  These have issues when using xlf and the calling
-!  program does not use the modules, CGNS-25 
+!  program does not use the modules, CGNS-25
 !  SUBROUTINE cg_is_cgns_f(filename, file_type, ier) BIND(C,NAME='')
 !    USE ISO_C_BINDING
 !    IMPLICIT NONE
@@ -4963,12 +4963,12 @@ CONTAINS
     INTEGER :: ndims
     INTEGER(CGSIZE_T), DIMENSION(*) :: dims
     INTEGER, INTENT(OUT) :: ier
-    
+
     CALL cgio_set_dimensions_f_c(cgio_num, id, data_type, ndims, dims, ier)
 
   END SUBROUTINE cgio_set_dimensions_f_1
 
-  SUBROUTINE cgio_get_dimensions_f_0(cgio_num, id, ndims, dims, ier) 
+  SUBROUTINE cgio_get_dimensions_f_0(cgio_num, id, ndims, dims, ier)
     IMPLICIT NONE
     INTEGER :: cgio_num
     REAL(C_DOUBLE) :: id

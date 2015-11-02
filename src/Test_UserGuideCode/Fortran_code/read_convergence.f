@@ -11,7 +11,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
@@ -38,12 +38,12 @@ c  we know there is only one base (real working code would check!)
       index_base=1
 c   go to base node
       call cg_goto_f(index_file,index_base,ier,'end')
-c   go to history node (we assume it exists and that there is only one - 
+c   go to history node (we assume it exists and that there is only one -
 c   real working code would check!)
       call cg_goto_f(index_file,index_base,ier,'ConvergenceHistory_t',
      +  1,'end')
 c   find out how many arrays are here (there should be only one!):
-      call cg_narrays_f(narrays,ier) 
+      call cg_narrays_f(narrays,ier)
       index_array=narrays
 c   some checks:
       if (narrays .ne. 1) then
@@ -51,10 +51,10 @@ c   some checks:
      +    narrays
         stop
       end if
-      call cg_array_info_f(index_array,arrayname,itype,ndim, 
+      call cg_array_info_f(index_array,arrayname,itype,ndim,
      +  idim,ier)
       if (idim(1) .gt. ntt) then
-        write(6,'('' Error! must increase ntt to at least '',i5)') 
+        write(6,'('' Error! must increase ntt to at least '',i5)')
      +    idim(1)
         stop
       end if

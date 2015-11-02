@@ -11,7 +11,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
@@ -75,7 +75,7 @@ c   Create 'GasModel' under 'FlowEquationSet'
 c   Create 'SpecificHeatRatio' under GasModel
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,
      + 'FlowEquationSet_t',1,'GasModel_t',1,'end')
-      call cg_array_write_f('SpecificHeatRatio',RealSingle,1,nuse, 
+      call cg_array_write_f('SpecificHeatRatio',RealSingle,1,nuse,
      + gamma,ier)
 c   Create 'DataClass' under 'SpecificHeatRatio'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,

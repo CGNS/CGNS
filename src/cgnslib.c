@@ -8346,7 +8346,7 @@ int cg_multifam_write(const char *name, const char *family)
 
     CHECK_FILE_OPEN
 
-    if (cgi_check_strlen(name) || 
+    if (cgi_check_strlen(name) ||
         cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
 
 #ifdef CG_BUILD_BASESCOPE

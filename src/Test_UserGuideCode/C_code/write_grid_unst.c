@@ -1,6 +1,6 @@
 /*    Program write_grid_unst   */
 /*
-Creates simple 3-D unstructured grid and writes it to a 
+Creates simple 3-D unstructured grid and writes it to a
 CGNS file.
 
 Example compilation for this program is (change paths if needed!):
@@ -11,7 +11,7 @@ cc -o write_grid_unst_c write_grid_unst.o -L ../../lib -lcgns
 (../../lib is the location where the compiled
 library libcgns.a is located)
 */
- 
+
 #include <stdio.h>
 #include <string.h>
 /* cgnslib.h file must be located in directory specified by -I during compile: */
@@ -98,7 +98,7 @@ int main()
       {
         for (i=1; i < ni; i++)
         {
-/* 
+/*
 in this example, due to the order in the node numbering, the
 hexahedral elements can be reconstructed using the following
 relationships:
@@ -247,7 +247,7 @@ maintain SIDS-standard ordering
     }
 /* index no of last element */
     nelem_end=nelem_start+ielem_no-1;
-    if (ielem_no > maxelemj) 
+    if (ielem_no > maxelemj)
     {
       printf("\nError, must increase maxelemj to at least %d\n",ielem_no);
       return 1;

@@ -1,6 +1,6 @@
 /*   Program read_flowvert_str   */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
+Opens an existing CGNS file that contains a simple 3-D
 structured grid plus a flow solution (at VERTICES),
 and reads it.
 
@@ -33,10 +33,10 @@ int main()
 {
 /*
   dimension statements (note that tri-dimensional arrays
-  r and p must be dimensioned exactly as [N][17][21] (N>=9) 
-  for this particular case or else they will be read from 
-  the CGNS file incorrectly!  Other options are to use 1-D 
-  arrays, use dynamic memory, or pass index values to a 
+  r and p must be dimensioned exactly as [N][17][21] (N>=9)
+  for this particular case or else they will be read from
+  the CGNS file incorrectly!  Other options are to use 1-D
+  arrays, use dynamic memory, or pass index values to a
   subroutine and dimension exactly there):
 */
     float r[9][17][21],p[9][17][21];

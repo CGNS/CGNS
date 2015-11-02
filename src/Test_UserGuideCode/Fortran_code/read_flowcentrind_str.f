@@ -1,9 +1,9 @@
       program read_flowcentrind_str
       use cgns
 c
-c   Opens an existing CGNS file that contains a simple 3-D 
+c   Opens an existing CGNS file that contains a simple 3-D
 c   structured grid plus a flow solution (at CELL CENTERS PLUS
-c   RIND CELLS IN THE I AND J DIRECTIONS), and reads it.  
+c   RIND CELLS IN THE I AND J DIRECTIONS), and reads it.
 c   (Compare this program with read_flowcent_str)
 c
 c   The CGNS grid file 'grid.cgns' must already exist
@@ -15,7 +15,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
@@ -30,10 +30,10 @@ c     include 'cgnslib_f.h'
 c   Note Windows machines need to include cgnswin_f.h
 c
 c   dimension statements (note that tri-dimensional arrays
-c   r and p must be dimensioned exactly as (21-1+2,17-1+2,N-1) (N>=9) 
-c   for this particular case or else they will be read from 
-c   the CGNS file incorrectly!  Other options are to use 1-D 
-c   arrays, use dynamic memory, or pass index values to a 
+c   r and p must be dimensioned exactly as (21-1+2,17-1+2,N-1) (N>=9)
+c   for this particular case or else they will be read from
+c   the CGNS file incorrectly!  Other options are to use 1-D
+c   arrays, use dynamic memory, or pass index values to a
 c   subroutine and dimension exactly there):
 c   Rind cells are stored in array locations (i,1,k), (i,18,k), (1,j,k), (22,j,k)
       dimension r(22,18,8),p(22,18,8)

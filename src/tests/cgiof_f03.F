@@ -26,8 +26,8 @@
 !
       DATA IC /1,2,3,4,5,6/
       DATA IDIMC /6/
-      INTEGER NUMDIM, I, J 
-      
+      INTEGER NUMDIM, I, J
+
 !
       IF (CG_BUILD_64BIT) THEN
         PRINT *,'PROGRAM NOT SET UP FOR 64-BIT'

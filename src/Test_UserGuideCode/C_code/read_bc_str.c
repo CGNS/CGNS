@@ -1,6 +1,6 @@
 /*   Program read_bc_str   */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
+Opens an existing CGNS file that contains a simple 3-D
 structured grid + BCs (in PointRange format), and reads the BCs
 
 The CGNS grid file 'grid_c.cgns' must already exist

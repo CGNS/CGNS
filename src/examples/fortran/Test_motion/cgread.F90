@@ -162,7 +162,7 @@
 
 	    if (zonetype.eq.Structured) then
                  IndexDim=CellDim
-	    else 
+	    else
                  IndexDim=1
             endif
 	    write(6,104)'  IndexDimension=',IndexDim
@@ -217,7 +217,7 @@
 		endif
               enddo     ! loop through arrays
 	    endif	! if ZoneIterativeData_t exist
-! *** 
+! ***
 
 ! *** Multiple GridCoordinates_t Nodes
 	    call cg_ngrids_f(cg, base, zone, ngrids, ier)
@@ -225,7 +225,7 @@
 
             write(6,113) ngrids,' GridCoordinates_t node(s)', &
                     'found for ',zonename
-	    
+	
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	    do grid=1, ngrids
 	! *** GridCoordinates_t info
@@ -284,7 +284,7 @@
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 
 ! *** solution
-	   
+	
 	    call cg_nsols_f(cg, base, zone, nsols, ier)
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
 	    write(6,113) nsols,' FlowSolution_t node(s)', &
@@ -438,7 +438,7 @@
 	    enddo	! loop through rmotion
             write(6,400)'                             *     *     *'
 
-	    
+	
 ! *** Read arbitrary grid motion
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
             call cg_n_arbitrary_motions_f(cg, base, zone, namotion, ier)

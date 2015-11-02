@@ -1,6 +1,6 @@
 /*   Program write_grid2zn_str.c    */
 /*
-Creates simple 3-D structured grid WITH 2 ZONES and writes 
+Creates simple 3-D structured grid WITH 2 ZONES and writes
 it to a CGNS file.
 
 Example compilation for this program is (change paths if needed!):
@@ -29,10 +29,10 @@ int main()
 {
 /*
     dimension statements (note that tri-dimensional arrays
-    x,y,z must be dimensioned exactly as [N][17][21] (N>=9) 
-    for this particular case or else they will be written to 
-    the CGNS file incorrectly!  Other options are to use 1-D 
-    arrays, use dynamic memory, or pass index values to a 
+    x,y,z must be dimensioned exactly as [N][17][21] (N>=9)
+    for this particular case or else they will be written to
+    the CGNS file incorrectly!  Other options are to use 1-D
+    arrays, use dynamic memory, or pass index values to a
     subroutine and dimension exactly there):
 */
     double x1[9][17][21],y1[9][17][21],z1[9][17][21];

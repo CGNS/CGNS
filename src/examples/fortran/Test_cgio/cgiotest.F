@@ -1,6 +1,6 @@
       PROGRAM TEST
       USE CGNS
-      
+
 c---- This code has been modified to use the cgio interface
 c---- The old ADF code has been left in to show the difference
 C

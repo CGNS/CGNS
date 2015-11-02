@@ -1,6 +1,6 @@
 /*    Program write_flowvert_unst   */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
+Opens an existing CGNS file that contains a simple 3-D
 unstructured grid, and adds a flow solution (at VERTICES)
 to it.
 

@@ -1,7 +1,7 @@
 /*   Program read_con2zn_str   */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
-structured grid (2 zones) plus 1-to-1 connectivity 
+Opens an existing CGNS file that contains a simple 3-D
+structured grid (2 zones) plus 1-to-1 connectivity
 information, and reads the connectivity info.
 
 The CGNS grid file 'grid_c.cgns' must already exist

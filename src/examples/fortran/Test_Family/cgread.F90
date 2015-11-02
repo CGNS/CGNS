@@ -8,7 +8,7 @@
 ! 	This example test the new data structures created for
 ! 	unstructured data and geometry reference data.  The
 ! 	model being read is composed of 2 zones.  The 1st
-!	one is a structured 3x3x3 block, and the 2nd is 
+!	one is a structured 3x3x3 block, and the 2nd is
 !	an unstructured 3x3x3 block composed of 8 hexa elements.
 ! 	The 2 zones interface (Abutting1to1) on one 9-nodes face.
 
@@ -28,7 +28,7 @@
         integer(cgsize_t) range_min(3), range_max(3)
 	integer(cgsize_t) start, end
         integer nbndry, type
-	integer(cgsize_t) pnts(3*NNODES), donor_data(3*NNODES) 
+	integer(cgsize_t) pnts(3*NNODES), donor_data(3*NNODES)
 	integer fam, geo, part,bc, bctype, location, connect_type
 	integer ptset_type, datatype
         integer(cgsize_t) npnts, ndata_donor
@@ -103,7 +103,7 @@
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	   if (ier .eq. ERROR) call cg_error_exit_f
 
-	    ilen=32 
+	    ilen=32
 	    call no_blank(nodename, ilen)
             write(6,103)'*** Family_t nodes ***'
 	    write(6,106)'Name= "',nodename(1:ilen),'"'
@@ -118,13 +118,13 @@
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 		write(6,106)'*** GeometryReference_t nodes ***'
-		ilen=32 
+		ilen=32
                 call no_blank(nodename, ilen)
 		write(6,109)'Name= "',nodename(1:ilen),'"'
-                ilen=32 
+                ilen=32
                 call no_blank(cadfile, ilen)
 		write(6,109)'cadfile= "',cadfile(1:ilen),'"'
-                ilen=32 
+                ilen=32
                 call no_blank(cadformat, ilen)
 		write(6,109)'cadformat= "',cadformat(1:ilen),'"'
 		write(6,110)'nparts=',nparts
@@ -325,7 +325,7 @@
 	    do i=1, Pdim
 	        call cg_coord_read_f(cg, base, zone, coordname(i), &
                   RealDouble, range_min, range_max, data_double, ier)
-	        if (ier .eq. ERROR) call cg_error_exit_f 
+	        if (ier .eq. ERROR) call cg_error_exit_f
 		write(6,114)coordname(i),'=',data_double(1)
 	    enddo
 
@@ -402,7 +402,7 @@
 ! Look for interpolants
 	        if (donor_ptset_type .eq. CellListDonor) then
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-		    
+		
 		    call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
                         'ZoneGridConnectivity_t', 1, &
                         'GridConnectivity_t', 1, 'end')
@@ -478,7 +478,7 @@
 	            call cg_boco_read_f(cg, base, zone, bc, pnts, &
                     	NormalListSingle, ier)
 	            if (ier .eq. ERROR) call cg_error_exit_f
-		else 
+		else
 		    call cg_boco_read_f(cg, base, zone, bc, pnts, &
                         NormalListDouble, ier)
 		    if (ier .eq. ERROR) call cg_error_exit_f
@@ -565,13 +565,13 @@
                     call no_blank(nodename, ilen)
                     write(6,102)'Name= "',nodename(1:ilen),'"'
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-		    if (type .gt. NGON_n) then 
+		    if (type .gt. NGON_n) then
                          write(6,100) 'Element Type= NGON_n'
-                    else 
+                    else
 			write(6,102)'Element Type= ', &
                                       ElementTypeName(type)
 		    endif
-		    write(6,113)'Range= ',start,end 
+		    write(6,113)'Range= ',start,end
 		    if (nbndry .ne. 0) write(6,102)'Sorted elements'
 
 		    call cg_elements_read_f(cg, base, zone, sect, &
@@ -580,7 +580,7 @@
 
 		    nelem = end-start+1
 		    write(6,102)'Element Connectivity:'
-		    
+		
 		    do i=1, nelem
 		       write(6,115)(elements((i-1)*npe+n),n=1,npe)
 			if (i.eq.10) goto 17

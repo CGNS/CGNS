@@ -21,7 +21,7 @@
 	integer i, n, sect, range_min(3), range_max(3)
 	integer start, end, nbndry, type
         integer elements(NELEMENTS*8), parent_data(NELEMENTS*4)
-	integer pnts(3*NNODES), donor_data(3*NNODES) 
+	integer pnts(3*NNODES), donor_data(3*NNODES)
 	integer fam, geo, part,bc, bctype, location, connect_type
 	integer ptset_type, npnts, ndata_donor, datatype
 	integer donor_ptset_type, donor_datatype, donor_zonetype
@@ -78,12 +78,12 @@
 	if (ier .eq. ERROR) call cg_error_exit_f
 
         do fam=1,nfamilies
-	   call cg_family_read_f(cg, base, fam, nodename, nfambc, ngeo, 
+	   call cg_family_read_f(cg, base, fam, nodename, nfambc, ngeo,
      &             ier)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	   if (ier .eq. ERROR) call cg_error_exit_f
 
-	    ilen=32 
+	    ilen=32
 	    call no_blank(nodename, ilen)
             write(6,103)'*** Family_t nodes ***'
 	    write(6,106)'Name= "',nodename(1:ilen),'"'
@@ -93,18 +93,18 @@
 
           ! A family may have several GeometryReference_t node
             do geo=1, ngeo
-                call cg_geo_read_f(cg, base, fam, geo, nodename, 
+                call cg_geo_read_f(cg, base, fam, geo, nodename,
      &              cadfile, cadformat, nparts, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 		write(6,106)'*** GeometryReference_t nodes ***'
-		ilen=32 
+		ilen=32
                 call no_blank(nodename, ilen)
 		write(6,109)'Name= "',nodename(1:ilen),'"'
-                ilen=32 
+                ilen=32
                 call no_blank(cadfile, ilen)
 		write(6,109)'cadfile= "',cadfile(1:ilen),'"'
-                ilen=32 
+                ilen=32
                 call no_blank(cadformat, ilen)
 		write(6,109)'cadformat= "',cadformat(1:ilen),'"'
 		write(6,110)'nparts=',nparts
@@ -235,9 +235,9 @@
             coordname(2) = 'CoordinateY'
             coordname(3) = 'CoordinateZ'
 	    do i=1, Pdim
-	        call cg_coord_read_f(cg, base, zone, coordname(i), 
+	        call cg_coord_read_f(cg, base, zone, coordname(i),
      &            RealDouble, range_min, range_max, data_double, ier)
-	        if (ier .eq. ERROR) call cg_error_exit_f 
+	        if (ier .eq. ERROR) call cg_error_exit_f
 		write(6,114)coordname(i),'=',data_double(1)
 	    enddo
 
@@ -263,7 +263,7 @@
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 	    do n=1, nconns
-		call cg_conn_info_f(cg, base, zone, n, nodename, 
+		call cg_conn_info_f(cg, base, zone, n, nodename,
      &           location, connect_type, ptset_type, npnts,
      &           donorname, donor_zonetype, donor_ptset_type,
      &           donor_datatype, ndata_donor, ier)
@@ -320,7 +320,7 @@
 
 		    if (ier .eq. ALL_OK) then
 
-			call cg_array_info_f(1, nodename, datatype, 
+			call cg_array_info_f(1, nodename, datatype,
      &                       ndim, dim_vals, ier)
 			if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -360,10 +360,10 @@
 		write(6,105)'ndataset=',ndataset
 
 		if (datatype.eq.RealSingle) then
-	            call cg_boco_read_f(cg, base, zone, bc, pnts, 
+	            call cg_boco_read_f(cg, base, zone, bc, pnts,
      &              	NormalListSingle, ier)
 	            if (ier .eq. ERROR) call cg_error_exit_f
-		else 
+		else
 		    call cg_boco_read_f(cg, base, zone, bc, pnts,
      &                  NormalListDouble, ier)
 		    if (ier .eq. ERROR) call cg_error_exit_f
@@ -437,7 +437,7 @@
 		    write(6,201)'  *** Section ',sect,' ***'
  201	format(/a,i2,a)
 		    call cg_section_read_f(cg, base, zone, sect,
-     &                  nodename, type, start, end, nbndry, 
+     &                  nodename, type, start, end, nbndry,
      &                  parent_flag, ier)
 		    if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -452,13 +452,13 @@
                     call no_blank(nodename, ilen)
                     write(6,102)'Name= "',nodename(1:ilen),'"'
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-		    if (type .gt. NGON_n) then 
+		    if (type .gt. NGON_n) then
                          write(6,100) 'Element Type= NGON_n'
-                    else 
+                    else
 			write(6,102)'Element Type= ',
      &                                ElementTypeName(type)
 		    endif
-		    write(6,113)'Range= ',start,end 
+		    write(6,113)'Range= ',start,end
 		    if (nbndry .ne. 0) write(6,102)'Sorted elements'
 
 		    call cg_elements_read_f(cg, base, zone, sect,
@@ -467,7 +467,7 @@
 
 		    nelem = end-start+1
 		    write(6,102)'Element Connectivity:'
-		    
+		
 		    icount = 1
 		    do i=1, nelem
 		        if (type.eq.MIXED) then

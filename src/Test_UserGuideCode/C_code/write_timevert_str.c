@@ -1,9 +1,9 @@
 /*   Program write_timevert_str   */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
-structured grid, and adds 3 different flow solutions 
+Opens an existing CGNS file that contains a simple 3-D
+structured grid, and adds 3 different flow solutions
 (at VERTICES) to it, along with time-accurate info.
-In this example, r1 & p1, r2 & p2, r3 & p3 correspond 
+In this example, r1 & p1, r2 & p2, r3 & p3 correspond
 with solutions at 3 different time steps.
 
 The CGNS grid file 'grid_c.cgns' must already exist
@@ -17,7 +17,7 @@ cc -o write_timevert_str_c write_timevert_str.o -L ../../lib -lcgns
 (../../lib is the location where the compiled
 library libcgns.a is located)
 */
- 
+
 #include <stdio.h>
 #include <string.h>
 /* cgnslib.h file must be located in directory specified by -I during compile: */
@@ -35,11 +35,11 @@ int main()
 {
 /*
 dimension statements (note that tri-dimensional arrays
-r1, r2, r3 and p1, p2, p3 
-must be dimensioned exactly as [N][17][21] (N>=9) 
-for this particular case or else they will be written to 
-the CGNS file incorrectly!  Other options are to use 1-D 
-arrays, use dynamic memory, or pass index values to a 
+r1, r2, r3 and p1, p2, p3
+must be dimensioned exactly as [N][17][21] (N>=9)
+for this particular case or else they will be written to
+the CGNS file incorrectly!  Other options are to use 1-D
+arrays, use dynamic memory, or pass index values to a
 subroutine and dimension exactly there):
 */
     double r1[9][17][21],p1[9][17][21];
@@ -50,7 +50,7 @@ subroutine and dimension exactly there):
     cgsize_t idata[2],nuse;
     int index_flow,index_field,nsteps,n;
     char sn[3][33];
-    char solname[97];  /* need an extra byte for the terminating 0 */ 
+    char solname[97];  /* need an extra byte for the terminating 0 */
 
     printf("\nProgram write_timevert_str\n");
 
@@ -102,7 +102,7 @@ subroutine and dimension exactly there):
       cg_sol_write(index_file,index_base,index_zone,sn[n],Vertex,&index_flow);
       printf("\n ...writing solution number %d\n",index_flow);
 /* write flow solution (user must use SIDS-standard names here) */
-      if (n == 0) 
+      if (n == 0)
       {
         cg_field_write(index_file,index_base,index_zone,index_flow,RealDouble,"Density",
                        r1[0][0],&index_field);

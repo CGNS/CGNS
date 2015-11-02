@@ -34,7 +34,7 @@
 
 !*******write CGNSBase
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-	call cg_base_write_f(cg, 'MixedElementBase', cell_dim, phys_dim, 
+	call cg_base_write_f(cg, 'MixedElementBase', cell_dim, phys_dim,
      &			     base, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -43,11 +43,11 @@
 	ZoneType=Unstructured
 	write(ZoneName,100) 'UnstructuredZone#1'
  100	format(a)
-	size(1) = 27		! no of nodes 
+	size(1) = 27		! no of nodes
 	size(2) = 3		! no of elements
-	size(3) = 0		! unsorted nodes    
+	size(3) = 0		! unsorted nodes
 
-	call cg_zone_write_f(cg, base, 'UnstructuredZone#1', size, 
+	call cg_zone_write_f(cg, base, 'UnstructuredZone#1', size,
      &                       ZoneType, index, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -79,7 +79,7 @@
      &                     'GridCoordinates_t', 1, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 
-            call cg_array_write_f(coordname(coord), RealDouble, 
+            call cg_array_write_f(coordname(coord), RealDouble,
      &                            index_dim, size, data_double, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 	enddo	! coord. loop
@@ -111,11 +111,11 @@
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 ! Write MIXED element section
-	call cg_section_write_f(cg, base, zone, 'MixedElements', MIXED, 
+	call cg_section_write_f(cg, base, zone, 'MixedElements', MIXED,
      &                          1, 3, 0, element, section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-! Write section of 4 NGON_n of 3 nodes 
+! Write section of 4 NGON_n of 3 nodes
         count = 0
 	do n=1,4
 	    count = count + 1
@@ -125,7 +125,7 @@
 		element(count)=10*n+i
 	    enddo
 	enddo
-	call cg_section_write_f(cg, base, zone, 'NGON_n(3)', 
+	call cg_section_write_f(cg, base, zone, 'NGON_n(3)',
      &                 NGON_n+3, 1, 4, 0, element, section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 

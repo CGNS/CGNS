@@ -3,7 +3,7 @@
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
-!       last revised on May 31 2002 
+!       last revised on May 31 2002
 
 !       This example test the Gravity_t data structure and its children
 
@@ -29,7 +29,7 @@
 ! *** open CGNS file for modifying
  	call cg_open_f('Test_V2', MODE_MODIFY, cg, ier)
  	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,600)'MODIFYING FILE Test_V2'   
+	write(6,600)'MODIFYING FILE Test_V2'
 
 ! *** CGNS Library Version used for file creation:
         call cg_version_f(cg, version, ier)
@@ -48,7 +48,7 @@
         write(6,300)'BaseName = "',basename,'"',
      &                'cell_dimension=',cell_dim
 
-! *** Delete the Gravity_t node         
+! *** Delete the Gravity_t node
         call cg_goto_f(cg, base_no, ier, 'end')
 	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -71,7 +71,7 @@
 !	  &       'GravityDescriptorText', ier)
 !	 if (ier .eq. ERROR) call cg_error_exit_f
 
-! * DataClass 
+! * DataClass
 !       call cg_dataclass_write_f(Dimensional, ier)
 !	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -80,7 +80,7 @@
 !	     &                        Radian, ier)
 !		if (ier .eq. ERROR) call cg_error_exit_f
 
-! * UserDefinedData  
+! * UserDefinedData
 !        call cg_user_data_write_f('UserData1', ier)
 !        if (ier .eq. ERROR) call cg_error_exit_f
 

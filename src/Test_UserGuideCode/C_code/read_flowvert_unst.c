@@ -1,6 +1,6 @@
 /*   Program read_flowvert_unst   */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
+Opens an existing CGNS file that contains a simple 3-D
 unstructured grid plus a flow solution (at VERTICES),
 and reads it.
 

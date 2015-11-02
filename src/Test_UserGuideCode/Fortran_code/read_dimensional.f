@@ -1,12 +1,12 @@
       program read_dimensional
       use cgns
 c
-c   Opens an existing CGNS file that contains a simple 3-D 
+c   Opens an existing CGNS file that contains a simple 3-D
 c   grid plus a flow solution WITH DIMENSIONALITY, and reads
 c   the dimensionality.
 c
 c   The CGNS grid file 'grid.cgns' must already exist
-c   (for example, created using 
+c   (for example, created using
 c       write_grid_str.f followed by write_flowcent_str.f or
 c       write_grid_str.f followed by write_flowvert_str.f or
 c       write_grid_str.f followed by write_flowcentrind_str.f or
@@ -18,7 +18,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c
@@ -61,7 +61,7 @@ c   read DataClass and DimensionalUnits under Base
      + TemperatureUnitsName(ix),AngleUnitsName(ia)
 c   read fields
       call cg_nfields_f(index_file,index_base,index_zone,index_flow,
-     +  nfields,ier) 
+     +  nfields,ier)
       if (nfields .ne. 2) then
         write(6,'('' Error! expecting 2 fields, read '',i5)') nfields
         stop

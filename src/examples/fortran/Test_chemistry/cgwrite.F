@@ -290,7 +290,7 @@
 	    enddo
 	  ! Hole defined with 2 point set type PointRange, so 4 points:
 	    call cg_hole_write_f(cg, base_no, zone_no, 'hole#1', Vertex,
-     &                           PointRange, 2, 4_cgsize_t, pnts, 
+     &                           PointRange, 2, 4_cgsize_t, pnts,
      &                           hole_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 

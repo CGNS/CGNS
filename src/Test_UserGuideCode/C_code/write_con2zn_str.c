@@ -1,6 +1,6 @@
 /*   Program write_con2zn_str.c    */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
+Opens an existing CGNS file that contains a simple 3-D
 structured grid (2 zones), and adds 1-to-1
 connectivity information to it.
 

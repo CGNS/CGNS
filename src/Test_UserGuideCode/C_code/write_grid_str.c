@@ -1,17 +1,17 @@
 /*   Program write_grid_str.c    */
 /*
-Creates simple 3-D structured grid and writes it to a 
+Creates simple 3-D structured grid and writes it to a
 CGNS file.
 
 Example compilation for this program is (change paths if needed!):
- 
+
 cc -I ../.. -c write_grid_str.c
 cc -o write_grid_str_c write_grid_str.o -L ../../lib -lcgns
- 
+
 (../../lib is the location where the compiled
 library libcgns.a is located)
 */
- 
+
 #include <stdio.h>
 #include <string.h>
 /* cgnslib.h file must be located in directory specified by -I during compile: */
@@ -29,10 +29,10 @@ int main()
 {
 /*
    dimension statements (note that tri-dimensional arrays
-   x,y,z must be dimensioned exactly as [N][17][21] (N>=9) 
-   for this particular case or else they will be written to 
-   the CGNS file incorrectly!  Other options are to use 1-D 
-   arrays, use dynamic memory, or pass index values to a 
+   x,y,z must be dimensioned exactly as [N][17][21] (N>=9)
+   for this particular case or else they will be written to
+   the CGNS file incorrectly!  Other options are to use 1-D
+   arrays, use dynamic memory, or pass index values to a
    subroutine and dimension exactly there):
 */
    double x[9][17][21],y[9][17][21],z[9][17][21];

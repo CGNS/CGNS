@@ -1,6 +1,6 @@
 /*   Program write_con2zn_genrl_str   */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
+Opens an existing CGNS file that contains a simple 3-D
 structured grid (2 zones), and adds 1-to-1
 connectivity information to it (using GENERAL
 method, as opposed to specific 1-to-1 method).
@@ -148,6 +148,6 @@ int main()
     }
 /* close CGNS file */
     cg_close(index_file);
-    printf("\nSuccessfully added 1-to-1 connectivity info to file grid_c.cgns (using GENERAL method)\n"); 
+    printf("\nSuccessfully added 1-to-1 connectivity info to file grid_c.cgns (using GENERAL method)\n");
     return 0;
 }

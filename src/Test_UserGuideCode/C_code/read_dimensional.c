@@ -1,11 +1,11 @@
 /*   Program read_dimensional  */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
+Opens an existing CGNS file that contains a simple 3-D
 grid plus a flow solution WITH DIMENSIONALITY, and reads
 the dimensionality.
 
 The CGNS grid file 'grid_c.cgns' must already exist
-(for example, created using 
+(for example, created using
     write_grid_str.f followed by write_flowcent_str.f or
     write_grid_str.f followed by write_flowvert_str.f or
     write_grid_str.f followed by write_flowcentrind_str.f or
@@ -73,7 +73,7 @@ int main()
            MassUnitsName[im],LengthUnitsName[il],TimeUnitsName[it],
            TemperatureUnitsName[ix],AngleUnitsName[ia]);
 /* read fields */
-    cg_nfields(index_file,index_base,index_zone,index_flow,&nfields); 
+    cg_nfields(index_file,index_base,index_zone,index_flow,&nfields);
     if (nfields != 2)
     {
       printf("\nError! expecting 2 fields, read %i\n",nfields);

@@ -104,7 +104,7 @@
 	do i=1, Pdim
 	    call cg_coord_read_f(cg, base, zone, coordname(i), &
                   RealDouble, range_min, range_max, data_double, ier)
-	    if (ier .eq. ERROR) call cg_error_exit_f 
+	    if (ier .eq. ERROR) call cg_error_exit_f
 	    write(6,103)coordname(i)
 	    write(6,109)'first point:',data_double(1)
 	    write(6,109)'last point :',data_double(size(1))
@@ -126,7 +126,7 @@
 	    call cg_ElementDataSize_f(cg, base, zone, sect, &
                                       ElementDataSize, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
-	    
+	
 	    call cg_elements_read_f(cg, base, zone, sect, &
                        elements, parent_data, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
@@ -140,7 +140,7 @@
 
             call cg_npe_f(type, npe, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
-	    
+	
 	    write(6,107) 'ElementDataSize =',ElementDataSize
             write(6,103) 'Section Element Type= ', &
                                    ElementTypeName(type)

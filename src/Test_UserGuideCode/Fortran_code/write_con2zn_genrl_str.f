@@ -1,7 +1,7 @@
       program write_con2zn_genrl_str
       use cgns
 c
-c   Opens an existing CGNS file that contains a simple 3-D 
+c   Opens an existing CGNS file that contains a simple 3-D
 c   structured grid (2 zones), and adds 1-to-1
 c   connectivity information to it (using GENERAL
 c   method, as opposed to specific 1-to-1 method).
@@ -14,7 +14,7 @@ c   variables beginning with the letters i-n are integers,
 c   by default, and all others are real
 c
 c   Example compilation for this program is (change paths if needed!):
-c   Note: when using the cgns module file, you must use the SAME fortran compiler 
+c   Note: when using the cgns module file, you must use the SAME fortran compiler
 c   used to compile CGNS (see make.defs file)
 c   ...or change, for example, via environment "setenv FC ifort"
 c

@@ -3,7 +3,7 @@
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
-!       last revised on May 31 2002 
+!       last revised on May 31 2002
 
 !       This example test the RotatingCoordinates_t data structure and its children
 
@@ -30,7 +30,7 @@
  	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** base
- 	call cg_base_write_f(cg, 'Basename', cell_dim, phys_dim, 
+ 	call cg_base_write_f(cg, 'Basename', cell_dim, phys_dim,
      &                       base_no, ier)
  	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -46,14 +46,14 @@
 	rot_rate(1)=10.1
 	rot_rate(2)=0
 	rot_rate(3)=0
-	rot_center(1) = 1.1    
-	rot_center(2) = 1.2    
-	rot_center(3) = 1.3    
+	rot_center(1) = 1.1
+	rot_center(2) = 1.2
+	rot_center(3) = 1.3
 	call cg_rotating_write_f(rot_rate, rot_center, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** write children of RotatingCoordinates_t node
-	call cg_goto_f(cg, base_no, ier, 'RotatingCoordinates_t', 
+	call cg_goto_f(cg, base_no, ier, 'RotatingCoordinates_t',
      &                 1, 'end')
 	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -62,7 +62,7 @@
      &       'RotatingCoordinatesDescriptorText', ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-! * DataClass 
+! * DataClass
         call cg_dataclass_write_f(Dimensional, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -71,7 +71,7 @@
      &                        Radian, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-! * UserDefinedData  
+! * UserDefinedData
         call cg_user_data_write_f('UserData1', ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -81,7 +81,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * RotationCenter/Descriptor
-	call cg_goto_f(cg, base_no, ier, 'RotatingCoordinates_t', 1, 
+	call cg_goto_f(cg, base_no, ier, 'RotatingCoordinates_t', 1,
      &                 'DataArray_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 	call cg_descriptor_write_f('RotationCenterDescriptorName',
@@ -122,7 +122,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** write children of RotatingCoordinates_t node
-        call cg_goto_f(cg, base_no, ier, 'Zone_t', 1, 
+        call cg_goto_f(cg, base_no, ier, 'Zone_t', 1,
      &                 'RotatingCoordinates_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -150,7 +150,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * RotationCenter/Descriptor
-        call cg_goto_f(cg, base_no, ier, 'Zone_t', 1, 
+        call cg_goto_f(cg, base_no, ier, 'Zone_t', 1,
      &       'RotatingCoordinates_t', 1, 'DataArray_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
         call cg_descriptor_write_f('RotationCenterDescriptorName',

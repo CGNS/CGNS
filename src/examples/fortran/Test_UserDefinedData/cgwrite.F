@@ -181,7 +181,7 @@
 	    enddo
 	  ! Hole defined with 2 point set type PointRange, so 4 points:
 	    call cg_hole_write_f(cg, base_no, zone_no, 'hole#1', Vertex,
-     &                           PointRange, 2, 4_cgsize_t, pnts, 
+     &                           PointRange, 2, 4_cgsize_t, pnts,
      &                           hole_no, ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -193,9 +193,9 @@
  100        continue
 	  ! create a point matching connectivity
 	    call cg_conn_write_f(cg, base_no, zone_no, 'Connect#1',
-     &          Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts, 
+     &          Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts,
      &          'zone#2',
-     &          Structured, PointListDonor, Integer, 5_cgsize_t, 
+     &          Structured, PointListDonor, Integer, 5_cgsize_t,
      &          donor_pnts, conn_no, ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
 

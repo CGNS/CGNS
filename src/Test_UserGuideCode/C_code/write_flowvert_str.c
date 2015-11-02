@@ -1,6 +1,6 @@
 /*    Program write_flowvert_str   */
 /*
-Opens an existing CGNS file that contains a simple 3-D 
+Opens an existing CGNS file that contains a simple 3-D
 structured grid, and adds a flow solution (at VERTICES)
 to it.  (Compare this program with write_flowcent_str)
 
@@ -34,9 +34,9 @@ int main()
 /*
   dimension statements (note that tri-dimensional arrays
   r and p must be dimensioned exactly as [N][17][21] (N>=9)
-  for this particular case or else they will be written to 
-  the CGNS file incorrectly!  Other options are to use 1-D 
-  arrays, use dynamic memory, or pass index values to a 
+  for this particular case or else they will be written to
+  the CGNS file incorrectly!  Other options are to use 1-D
+  arrays, use dynamic memory, or pass index values to a
   subroutine and dimension exactly there):
 */
     double r[9][17][21],p[9][17][21];
