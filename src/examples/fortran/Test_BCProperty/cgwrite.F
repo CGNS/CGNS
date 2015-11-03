@@ -3,7 +3,7 @@
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
-!       last revised on August 2002 
+!       last revised on August 2002
 
 !       This example test the BCProperty_t data structure and its children
 !       It tests the functions:
@@ -17,19 +17,21 @@
 !       - cg_array_write under Area_t => should return an error
 !       - links under BCProperty_t, WallFunction_t, Area_t
 !       - cg_goto to BCProperty_t, WallFunction_t, Area_t
-!       - Memory check with Insure  
+!       - Memory check with Insure
 
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
 
-	integer Ndim 
+	integer Ndim
 	parameter (Ndim = 3)
 	integer index_dim, cell_dim, phys_dim
 	character*100 linkpath
 
-	integer cg, base, zone, boco, ier, size(Ndim*3), i, num
-	integer WallFunctionType, AreaType, pnts(Ndim,2)
+	integer cg, base, zone, boco, ier, i, num
+	integer(cgsize_t) size(Ndim*3)
+	integer WallFunctionType, AreaType
+	integer(cgsize_t) pnts(Ndim,2)
 	character*32 RegionName32
 	character*10 RegionName10
 	character*100 RegionName100
@@ -48,7 +50,7 @@
  	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** base
- 	call cg_base_write_f(cg, 'Basename', cell_dim, phys_dim, 
+ 	call cg_base_write_f(cg, 'Basename', cell_dim, phys_dim,
      &                       base, ier)
  	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -80,7 +82,7 @@
 	enddo
 	pnts(1,2) = 1
         call cg_boco_write_f(cg, base, zone, 'boco#1',
-     &       BCInflow, PointRange, 2, pnts, boco, ier)
+     &       BCInflow, PointRange, 2_cgsize_t, pnts, boco, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         ! imax face
@@ -90,7 +92,7 @@
         enddo
         pnts(1,1) = size(1)
 	call cg_boco_write_f(cg, base, zone, 'boco#2',
-     &       BCOutflow, PointRange, 2, pnts, boco, ier)
+     &       BCOutflow, PointRange, 2_cgsize_t, pnts, boco, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 	
@@ -111,10 +113,10 @@
 !	RegionName10 = 'myRegion'
  	RegionName100 = 'myRegion'
 !	write(RegionName32,'(a10)')'myRegion32'
-	call cg_bc_area_write_f(cg, base, zone, boco, AreaType, 
+	call cg_bc_area_write_f(cg, base, zone, boco, AreaType,
      & 	     SurfaceArea, RegionName100, ier)
 
-! *** write Descriptor_t, UserDefinedData_t & Link under... 
+! *** write Descriptor_t, UserDefinedData_t & Link under...
 ! ...   BCProperty_t
         call cg_goto_f(cg, base, ier, 'Zone_t', zone, 'ZoneBC_t', 1,
      &	    'BC_t', boco, 'BCProperty_t', 1, 'end')
@@ -162,7 +164,7 @@
 
  	dim_vals(1)=3
  	dim_vals(2)=2
- 	call cg_array_write_f('arraysize', Integer, 2, dim_vals, 
+ 	call cg_array_write_f('arraysize', Integer, 2, dim_vals,
      &        size, ier)
  	if (ier .ne. ERROR) write(6,'(a)') 'Error in API'
 

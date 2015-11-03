@@ -1,6 +1,6 @@
 
 	program read_udata
-	USE CGNS 
+	USE CGNS
 	implicit none
 
 ! This program reads a 3D mesh, structured or unstructured.
@@ -14,28 +14,33 @@
 #endif
 
 	integer Ndim, Nglobal
-	integer i, narrays, iarray, nintegrals, integral 
-	integer ndescriptors, idescr, nptsets, nzonetype
+	integer i, narrays, iarray, nintegrals, integral
+	integer ndescriptors, idescr, nzonetype
+	integer(cgsize_t) nptsets
 	integer ndonor_ptset_type, idataset, dirichletflag, neumannflag
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	parameter (Ndim = 3)
 	parameter (Nglobal = 500)
 	integer IndexDim, CellDim, PhysDim
 	integer ier, n, zonetype
-	integer nbases, nzones, size(Ndim*3), DataSize(Ndim)
+	integer nbases, nzones
+	integer(cgsize_t) size(Ndim*3), DataSize(Ndim)
 	integer ncoords, type, nsols, nfields, location
 	integer nholes, nconns, n1to1, n1to1_global, nbocos
-	integer ptset_type, npnts, pnts(100000), donor_pnts(100000)
-        integer npnts_donor, donor_datatype, bocotype, datatype
+	integer ptset_type
+        integer(cgsize_t) npnts, pnts(100000), donor_pnts(100000)
+        integer donor_datatype, bocotype, datatype
+	integer(cgsize_t) npnts_donor
 	character*32 basename, zonename, solname, fieldname
 	character*32 coordname, holename, connectname
 	character*32 boconame, donorname
 	integer cg, base, zone, coord, sol, field, discr
-	integer hole, conn, one21, boco, rmin(3)
-	integer range(Ndim, 2), donor_range(Ndim, 2)
+	integer hole, conn, one21, boco
+	integer(cgsize_t) rmin(3)
+	integer(cgsize_t) range(Ndim, 2), donor_range(Ndim, 2)
  	integer transform(Ndim)
-  	integer G_range(Ndim*2, Nglobal)
-	integer G_donor_range(Ndim*2, Nglobal)
+  	integer(cgsize_t) G_range(Ndim*2, Nglobal)
+	integer(cgsize_t) G_donor_range(Ndim*2, Nglobal)
 	integer G_transform(Ndim, Nglobal)
 	character*32 G_connectname(Nglobal), G_zonename(Nglobal)
 	character*32 G_donorname(Nglobal)
@@ -46,9 +51,11 @@
 	integer ThermalConductivityModelFlag
 	integer TurbulenceClosureFlag, TurbulenceModelFlag
 	integer diffusion_model(6), niterations
-	integer nndim, dim_vals(12), rind(6), ndiscrete, num
+	integer nndim, rind(6), ndiscrete, num
+	integer(cgsize_t) dim_vals(12)
 	integer mass, length, time, temp, deg
-	integer NormalIndex(3), NormalListFlag, ndataset
+	integer NormalIndex(3), ndataset
+	integer(cgsize_t) NormalListFlag
 	real*4 data_single(100000)
 	double precision data_double(100000)
 	real*4 version
@@ -648,7 +655,7 @@
 
         ! *** discrete data attribute:  GOTO DiscreteData_t/UserDefinedData_t node
 	      call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &                'DiscreteData_t',  discr, 
+     &                'DiscreteData_t',  discr,
      &                'UserDefinedData_t', 1, 'end')
 	      if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -685,7 +692,7 @@
 
           ! *** discrete data arrays attribute: GOTO UserDefinedData/DataArray node
                 call cg_goto_f(cg, base, ier, 'Zone_t', zone,
-     &            'DiscreteData_t', discr, 
+     &            'DiscreteData_t', discr,
      &            'UserDefinedData_t', 1,
      &            'DataArray_t', iarray, 'end')
 	        if (ier .eq. ERROR) call cg_error_exit_f
@@ -787,7 +794,7 @@
      &            '   donor zonetype=',ZoneTypeName(nzonetype),
      &            '   donor ptset type=',
      &                PointSetTypeName(ndonor_ptset_type),
-     &            '   donor datatype=',DataTypeName(donor_datatype),
+     &            '   DonorDatatype=',DataTypeName(donor_datatype),
      &            '   npnts_donor=',npnts_donor
 
 

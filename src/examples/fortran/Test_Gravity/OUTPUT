@@ -1,5 +1,5 @@
 READING FILE Test_V2                         
-Library Version used for file creation:2.400
+Library Version used for file creation:3.300
 nbases=    1
 BaseName = "Basename                        "
 cell_dimension= 3
@@ -34,12 +34,4 @@ No. of UserData= 1
 
 Gravity Vector Descriptor_t Information:
 
-No. of descriptors= 1
- DescriptorName="GravityVectorDescriptorName     "
- DescriptorText="GravityVectorDescriptorText                                                                         "
-Gravity Vector Dimensional Units:
-    Mass units: Kilogram                        
-    Length units: Meter                           
-    Temperature units: Kelvin                          
-    Time units: Second                          
-    Angle units:Radian                          
+No. of descriptors= 0

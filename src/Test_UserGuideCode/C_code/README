@@ -1,0 +1,33 @@
+This contains a set of C test cases from UserGuideCode.
+(modified for use with V3.3)
+
+If CGNS is compiled with --enable-64bit, then the created "grid_c.cgns"
+file will use 64-bit integers as appropriate
+
+Currently, the testing (make test) only compares output files of some
+of the variables written to and read from the grid_c.cgns file.  It
+does not check whether the 64-bit integers were necessarily written
+as I8 or not.  To check this, one could use "cgnsview" to look at the
+grid_c.cgns file(s) directly.  For example, with 64-bit integers, in
+the cgns file under Test_Grid_Str, the PointList data type under
+the BC_t nodes (under ZoneBC_t) should be I8 rather than I4.
+
+***** NOTE *****
+You will first have to edit the Makefile include to set up your
+CGNS location and compiler and options
+
+Edit 'make.defs' for Linux/Unix
+Not checked for Windows yet.
+
+To just build the code, use
+    make
+on linux/Unix
+
+To build and run the tests, use
+    make test
+
+Note: executables, output files, and the resulting CGNS file are put in
+each Subdirectory/build/ directory
+
+To clean everything up, use
+    make clean

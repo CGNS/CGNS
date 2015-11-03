@@ -18,7 +18,7 @@
 !	- cg_narray, cg_array_read under Area_t
 !	- links under BCProperty_t, WallFunction_t, Area_t
 !	- cg_goto to BCProperty_t, WallFunction_t, Area_t
-! 	- Memory check with Insure 
+! 	- Memory check with Insure
 
 #ifdef WINNT
 	include 'cgnswin_f.h'
@@ -27,10 +27,14 @@
 	integer Ndim
 	parameter (Ndim = 3)
 	integer ier, cg, nbases, base, nzones, zone, nbocos, boco
-	integer CellDim, PhysDim, IndexDim, NormalListFlag, datatype
-	integer ndescriptors, idescr, size(3*Ndim), zonetype, ndataset
-	integer bocotype, ptset_type, npnts, NormalIndex(3), AreaType
-	integer WallFunctionType, nuser_data, n, pnts(100000)
+	integer CellDim, PhysDim, IndexDim, datatype
+	integer(cgsize_t) NormalListFlag
+	integer ndescriptors, idescr, zonetype, ndataset
+	integer(cgsize_t) size(3*Ndim)
+	integer bocotype, ptset_type, NormalIndex(3), AreaType
+	integer(cgsize_t) npnts
+	integer WallFunctionType, nuser_data, n
+	integer(cgsize_t) pnts(100000)
 	integer type, mass, length, time, temp, deg
 	character*32 filename, basename, zonename, boconame, bpropname
 	character*32 name, RegionName, user_data_name
@@ -61,7 +65,7 @@
 
 	call cg_base_read_f(cg, base, basename, CellDim, PhysDim, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,300)'BaseName = "',basename,'"', 
+	write(6,300)'BaseName = "',basename,'"',
      &                'cell_dimension=',CellDim
 
 ! *** base attribute:  GOTO base node
@@ -124,13 +128,13 @@
 	    if (NormalIndex(1).eq.0 .and. NormalIndex(2).eq.0 .and.
      &          NormalIndex(3).eq.0) then
 	        write(6,103) '  NormalIndex undefined'
-	    else 
+	    else
                 write(6,103) '  NormalIndex=', NormalIndex(1),
      &                          NormalIndex(2), NormalIndex(3)
 	    endif
             write(6,104) '  NormalListFlag=',NormalListFlag
 	    if (NormalListFlag .eq. 1) then
-                write(6,600) '  datatype for normals=', 
+                write(6,600) '  datatype for normals=',
      &		    	        DataTypeName(datatype)
 	    endif
 
@@ -153,7 +157,7 @@
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 ! *** read BCProperty_t node
 
-	    call cg_bc_wallfunction_read_f(cg, base, zone, boco, 
+	    call cg_bc_wallfunction_read_f(cg, base, zone, boco,
      &		WallFunctionType, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -272,7 +276,7 @@
                 enddo
 
 ! * Read DataClass & DimensionalUnits under SurfaceArea
-		call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+		call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &		    'ZoneBC_t', 1, 'BC_t', boco, 'BCProperty_t', 1,
      &		    'Area_t', 1, 'DataArray_t', 1, 'end')
 

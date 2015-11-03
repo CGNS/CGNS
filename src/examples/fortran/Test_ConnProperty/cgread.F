@@ -18,7 +18,7 @@
 !	- cg_narray, cg_array_read under Periodic_t
 !	- links under GridConnectivityProperty_t, AverageInterface_t, Periodic_t
 !	- cg_goto to GridConnectivityProperty_t, AverageInterface_t, Periodic_t
-! 	- Memory check with Insure 
+! 	- Memory check with Insure
 
 #ifdef WINNT
 	include 'cgnswin_f.h'
@@ -28,8 +28,10 @@
 	parameter (Ndim = 3)
 	integer ier, cg, nbases, base, nzones, zone, nconns, conn
 	integer CellDim, PhysDim, IndexDim
-	integer ndescriptors, idescr, size(3*Ndim), zonetype
-	integer ptset_type, ndonor_ptset_type, npnts, npnts_donor
+	integer(cgsize_t) size(3*Ndim)
+	integer ndescriptors, idescr, zonetype
+	integer ptset_type, ndonor_ptset_type
+	integer(cgsize_t) npnts, npnts_donor
 	integer location, nzonetype, donor_datatype
 	integer AverageInterfaceType, nuser_data, n
 	integer type, mass, length, time, temp, deg
@@ -64,7 +66,7 @@
 	call cg_base_read_f(cg, base, basename, CellDim, PhysDim, ier)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	if (ier .eq. ERROR) call cg_error_exit_f
-	write(6,300)'BaseName = "',basename,'"', 
+	write(6,300)'BaseName = "',basename,'"',
      &                'cell_dimension=',CellDim
 
 ! *** base attribute:  GOTO base node
@@ -133,14 +135,14 @@
      &        '   donor zonetype=',ZoneTypeName(nzonetype),
      &        '   donor ptset type=',
      &            PointSetTypeName(ndonor_ptset_type),
-     &        '   donor datatype=',DataTypeName(donor_datatype),
+     &        '   DonorDatatype=',DataTypeName(donor_datatype),
      &        '   npnts_donor=',npnts_donor
 
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 ! *** read GridConnectivityProperty_t node
 
-	    call cg_conn_average_read_f(cg, base, zone, conn, 
+	    call cg_conn_average_read_f(cg, base, zone, conn,
      &		AverageInterfaceType, ier)
 !	    if (ier .ne. ALL_OK) call cg_error_print_f
 	    if (ier .eq. ERROR) call cg_error_exit_f
@@ -151,7 +153,7 @@
      & 		    AverageInterfaceTypeName(AverageInterfaceType),'"'
 	    endif
 
-	    call cg_conn_periodic_read_f(cg, base, zone, conn, 
+	    call cg_conn_periodic_read_f(cg, base, zone, conn,
      &		RotationCenter, RotationAngle, Translation, ier)
 !           if (ier .ne. ALL_OK) call cg_error_print_f
 	    if (ier .eq. ERROR) call cg_error_exit_f
@@ -168,7 +170,7 @@
 
 ! *** read Descriptor_t & UserDefinedData_t under...
 ! ...   GridConnectivityProperty_t
-            call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+            call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &		'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', conn,
      &		'GridConnectivityProperty_t', 1, 'end')
 !	    if (ier .ne. ALL_OK) call cg_error_print_f
@@ -202,9 +204,9 @@
 
 ! ...   AverageInterface_t
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-            call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+            call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      & 		'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', conn,
-     &		'GridConnectivityProperty_t', 1, 'AverageInterface_t', 
+     &		'GridConnectivityProperty_t', 1, 'AverageInterface_t',
      &		1, 'end')
 !	    if (ier .ne. ALL_OK) call cg_error_print_f
 	    if (ier .eq. ERROR) call cg_error_exit_f
@@ -238,7 +240,7 @@
 
 ! ...   Periodic_t
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-            call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+            call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &		'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', conn,
      &		'GridConnectivityProperty_t', 1, 'Periodic_t', 1, 'end')
 !           if (ier .ne. ALL_OK) call cg_error_print_f
@@ -269,8 +271,8 @@
 
 ! * Read DataClass & DimensionalUnits under RotationCenter
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-		call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
-     &		    'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', 
+		call cg_goto_f(cg, base, ier, 'Zone_t', zone,
+     &		    'ZoneGridConnectivity_t', 1, 'GridConnectivity_t',
      & 		    conn, 'GridConnectivityProperty_t', 1,
      &		    'Periodic_t', 1, 'DataArray_t', 1, 'end')
 

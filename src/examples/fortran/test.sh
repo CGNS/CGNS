@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 NO_COLOR="\033[0m"
 OK_COLOR="\033[32;01m"
 ERROR_COLOR="\033[31;01m"
@@ -6,10 +6,10 @@ ERROR_COLOR="\033[31;01m"
 echoresults() {
     if test $* -ne 0
     then
-        echo -e "$ERROR_COLOR *** FAILED *** $NO_COLOR"
+        printf "$ERROR_COLOR *** FAILED *** $NO_COLOR \n"
         cat results.txt
     else
-        echo -e "$OK_COLOR passed $NO_COLOR"
+        printf "$OK_COLOR PASSED $NO_COLOR \n"
     fi
 }
 
@@ -50,9 +50,10 @@ for dir in $DIRS
 do
     printf "%-40s" "Testing $dir..."
     cd $dir/build
-    cgwrite
-    cgread > output
-    diff -I 'Library Version used for file creation*' output ../OUTPUT &> results.txt
+    ./cgwrite
+    ./cgread > output
+    diff <( sed '/Library/ d' output | sed '/DonorDatatype/ d' | sed '/datatype=/ d') <( sed '/Library/ d' ../OUTPUT | sed '/DonorDatatype/ d' | sed '/datatype=/ d') > results.txt
+#   diff -I 'Library Version used for file creation*' -I 'DonorDatatype' -I 'datatype=' output ../OUTPUT > results.txt
     status=$?
     echoresults $status
     return_val=`expr $status + $return_val`
@@ -66,8 +67,9 @@ done
 dir=Test_cgio
 printf "%-40s" "Testing $dir..."
 cd $dir/build
-cgiotest > output
-diff -I 'Library Version used for file creation*' output ../OUTPUT &> results.txt
+./cgiotest > output
+diff <( sed '/Library/ d' output) <( sed '/Library/ d' ../OUTPUT) > results.txt
+#diff -I 'Library Version used for file creation*' output ../OUTPUT > results.txt
 status=$?
 echoresults $status
 return_val=`expr $status + $return_val`

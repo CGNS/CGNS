@@ -1,0 +1,4 @@
+ Successfully read grid from file grid.cgns
+   For example, zone 1 x,y,z(21,17,9)=    20.00000    16.00000     8.00000
+                zone 2 x,y,z(21,17,9)=    40.00000    16.00000     8.00000
+ Program successful... ending now

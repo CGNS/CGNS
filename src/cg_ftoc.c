@@ -908,7 +908,7 @@ CGNSDLL void  FMNAME(cg_parent_data_write_f, CG_PARENT_DATA_WRITE_F )(cgint_f *f
 
 CGNSDLL void FMNAME(cg_section_partial_write_f, CG_SECTION_PARTIAL_WRITE_F) (
 	cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(section_name),
-	cgsize_t *type, cgsize_t *start, cgsize_t *end, cgint_f *nbndry,
+	CGNS_ENUMT(ElementType_t)*type, cgsize_t *start, cgsize_t *end, cgint_f *nbndry,
 	cgint_f *S, cgint_f *ier STR_PLEN(section_name))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
@@ -2149,7 +2149,7 @@ CGNSDLL void cg_bcdataset_info_f(
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_bcdataset_read_f, CG_BCDATASET_READ_F) (
-	cgsize_t *index, STR_PSTR(Dataset_name), CGNS_ENUMT(BCType_t) *BCType,
+	cgint_f *index, STR_PSTR(Dataset_name), CGNS_ENUMT(BCType_t) *BCType,
 	cgint_f *DirichletFlag, cgint_f *NeumannFlag,
 	cgint_f *ier STR_PLEN(Dataset_name))
 {
@@ -3357,6 +3357,20 @@ CGNSDLL void FMNAME(cg_array_write_f, CG_ARRAY_WRITE_F) (STR_PSTR(ArrayName),
         *ier = (cgint_f)cg_array_write(c_name, *DataType,
                               (int)*DataDimension, DimensionVector, Data);
 }
+
+/* CGNSDLL void cg_array_write_f03 (ArrayName, */
+/* 	CGNS_ENUMT(DataType_t) *DataType, cgint_f *DataDimension, cgsize_t *DimensionVector, */
+/* 	void *Data, cgint_f *ier STR_PLEN(ArrayName)) */
+/* { */
+/*     char c_name[CGIO_MAX_NAME_LENGTH+1]; */
+
+/*      /\* convert Fortran-text-string to a C-string *\/ */
+/*     string_2_C_string(STR_PTR(ArrayName), STR_LEN(ArrayName), */
+/*         c_name, CGIO_MAX_NAME_LENGTH, ier); */
+/*     if (*ier == 0) */
+/*         *ier = (cgint_f)cg_array_write(c_name, *DataType, */
+/*                               (int)*DataDimension, DimensionVector, Data); */
+/* } */
 
 /*-----------------------------------------------------------------------*/
 

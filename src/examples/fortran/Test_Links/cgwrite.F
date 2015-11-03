@@ -8,8 +8,8 @@
 !	It creates a dummy mesh composed of 2 structured blocks in 3D.
 
 !       Modified for Version 2.1 Link_t extensions.  Creates a file
-!	Test_V2 with a grid and no solution.  Creates a second file 
-!       Test_V2_links with a solution and links to the grid and other 
+!	Test_V2 with a grid and no solution.  Creates a second file
+!       Test_V2_links with a solution and links to the grid and other
 !       nodes in file Test_V2.
 !
 !       Don Leich, Intelligent Light 30-Nov-01
@@ -22,9 +22,12 @@
 	integer index_dim, cell_dim, phys_dim, pos
 	integer base_no, zone_no, coord_no, sol_no, discr_no, conn_no
 	integer hole_no, boco_no, field_no, dset_no
-	integer num, size(Ndim*3), npnts, NormalIndex(Ndim)
+	integer num
+	integer(cgsize_t) NormalIndex(Ndim)
+	integer(cgsize_t) npnts
+	integer(cgsize_t) size(Ndim*3)
 	integer cg1, cg2, ier, zone, coord, i, sol, field
-	integer pnts(Ndim,120), donor_pnts(Ndim,120)
+	integer(cgsize_t) pnts(Ndim,120), donor_pnts(Ndim,120)
 	integer transform(Ndim)
 	real*4 data(120), normals(360)
 	double precision Dxyz(120), values(120)
@@ -160,7 +163,8 @@
 	    enddo
 	  ! Hole defined with 2 point set type PointRange, so 4 points:
 	    call cg_hole_write_f(cg1, base_no, zone_no, 'hole#1', Vertex,
-     &                           PointRange, 2, 4, pnts, hole_no, ier)
+     &                           PointRange, 2, 4_cgsize_t, pnts,
+     &                           hole_no, ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** general connectivity, only for the first file - link to from the second
@@ -171,9 +175,10 @@
  100        continue
 	  ! create a point matching connectivity
 	    call cg_conn_write_f(cg1, base_no, zone_no, 'Connect#1',
-     &          Vertex, Abutting1to1, PointList, 5, pnts, 'zone#2',
-     &          Structured, PointListDonor, Integer, 5, donor_pnts,
-     &          conn_no, ier)
+     &          Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts,
+     &          'zone#2',
+     &          Structured, PointListDonor, Integer, 5_cgsize_t,
+     &          donor_pnts, conn_no, ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** connectivity 1to1
@@ -208,7 +213,7 @@
 
 ! *** bocos
 	    call cg_boco_write_f(cg1, base_no, zone_no, 'boco#1',
-     &           BCInflow, PointRange, 2, pnts, boco_no, ier)
+     &           BCInflow, PointRange, 2_cgsize_t, pnts, boco_no, ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** boco normal
@@ -229,7 +234,7 @@
 
 ! ** boundary condition attributes: GOTO BC_t node
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-            call cg_goto_f(cg1, base_no, ier, 'Zone_t', zone, 
+            call cg_goto_f(cg1, base_no, ier, 'Zone_t', zone,
      &          'ZoneBC_t', 1, 'BC_t', boco_no, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 

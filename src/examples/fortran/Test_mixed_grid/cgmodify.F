@@ -8,7 +8,7 @@
 ! 	This example test the new data structures created for
 ! 	unstructured data and geometry reference data.  The
 ! 	model being create is composed of 2 zones.  The 1st
-!	one is a structured 3x3x3 block, and the 2nd is 
+!	one is a structured 3x3x3 block, and the 2nd is
 !	an unstructured 3x3x3 block composed of 8 hexa elements.
 ! 	The 2 zones interface (Abutting1to1) on one 9-nodes face.
 
@@ -18,10 +18,14 @@
 
 	parameter (Ndim = 3)
 	integer index_dim, cell_dim, phys_dim
-	integer cg, base, zone, num, size(Ndim*3), ier, index, ZoneType
+	integer cg, base, zone, num, ier, index, ZoneType
+        integer(cgsize_t) size(Ndim*3)
 	integer i, j, k, n, pos, coord, element(8,8)
-	integer hexa_section_no, quad_section_no, parent(4,4), elist(4) 
-	integer quads(4,4), pnts(3,9), uns_pnts(9), dim_vals(12) 
+	integer hexa_section_no, quad_section_no, parent(4,4)
+        integer(cgsize_t) elist(4)
+	integer quads(4,4)
+        integer(cgsize_t)  pnts(3,9), uns_pnts(9)
+        integer(cgsize_t) dim_vals(12)
 	integer Nindex(3)
 	double precision VertexNormals(3,9), FaceNormals(3,4)
 	integer fam, geo, part, bc
@@ -43,7 +47,7 @@
 
 !*******write CGNSBase
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-	call cg_base_write_f(cg, 'Name of my Base', cell_dim, phys_dim, 
+	call cg_base_write_f(cg, 'Name of my Base', cell_dim, phys_dim,
      &			     base, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -55,7 +59,7 @@
         call cg_family_write_f(cg, base, 'Outflow', index, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-! ******write CGNSBase substructure: Zone 
+! ******write CGNSBase substructure: Zone
 	do zone=1, 2
 
 ! Structured zone:
@@ -75,16 +79,16 @@
 		ZoneType=Unstructured
 		write(ZoneName,'(a)') 'UnstructuredZone#1'
 		index_dim = 1
-		size(1) = 27		! no of nodes 
+		size(1) = 27		! no of nodes
 	 	size(2) = 8		! no of elements
-		size(3) = 0		! unsorted nodes    
+		size(3) = 0		! unsorted nodes
 	    endif
 
 	    num = 1
             do i=1, index_dim               		
                 num = num * size(i)
             enddo
-	    call cg_zone_write_f(cg,base,ZoneName,size,ZoneType, 
+	    call cg_zone_write_f(cg,base,ZoneName,size,ZoneType,
      &                           index,ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -93,7 +97,7 @@
             if (ier .eq. ERROR) call cg_error_exit_f
 	    if (zone.eq.1) then
 	  	call cg_famname_write_f('Family#1', ier)
-	    else 
+	    else
 		call cg_famname_write_f('Family#2', ier)
 	    endif
 	    if (ier .eq. ERROR) call cg_error_exit_f
@@ -114,7 +118,7 @@
                 do 20 j=1, 3
                 do 20 i=1, 3
                     pos = i + (j-1)*3 + (k-1)*9
-                    if (coord.eq.1) data_double(pos) = (i-1)*5 + 
+                    if (coord.eq.1) data_double(pos) = (i-1)*5 +
      &                  (zone-1)*10
                     if (coord.eq.2) data_double(pos) = (j-1)*5
                     if (coord.eq.3) data_double(pos) = (k-1)*5
@@ -152,7 +156,7 @@
 
 	    if (zone .eq. 1) then
 		! PointRange for structured zone:
-	        pnts(1,1)=3   
+	        pnts(1,1)=3
 	        pnts(2,1)=1
 	        pnts(3,1)=1
 	        pnts(1,2)=3
@@ -160,9 +164,10 @@
                 pnts(3,2)=3
 
 	        call cg_conn_write_f(cg, base, zone, 'str_to_unstr',
-     & 	            Vertex, Abutting1to1, PointRange, 2, pnts,
-     &              'UnstructuredZone#1', Unstructured, 
-     &              PointListDonor, Integer, 9, uns_pnts, index, ier)
+     & 	            Vertex, Abutting1to1, PointRange, 2_cgsize_t, pnts,
+     &              'UnstructuredZone#1', Unstructured,
+     &              PointListDonor, Integer, 9_cgsize_t, uns_pnts,index,
+     &              ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Fake similation of Overset or Abutting-mismatch: str to unstr
@@ -185,7 +190,7 @@
 		
 	    endif
 
-	    
+	
 
 ! Grid Connectivity 1to1:  From an unstructured zone to a structured zone
 	    if (zone .eq. 2) then
@@ -202,9 +207,10 @@
 		enddo
 
 		call cg_conn_write_f(cg, base, zone, 'unstr_to_str',
-     &              Vertex, Abutting1to1, PointList, 9, uns_pnts,
+     &              Vertex, Abutting1to1, PointList, 9_cgsize_t,
+     &              uns_pnts,
      &              'StructuredZone#1', Structured, PointListDonor,
-     &		    Integer, 9, pnts, index, ier)
+     &		    Integer, 9_cgsize_t, pnts, index, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
             endif
 
@@ -213,10 +219,10 @@
 	    if (zone.eq.1) then
 	      ! write a PointRange patch (3,1,1) to (3,3,3) for a structured zone
 	        call cg_boco_write_f(cg, base, zone, 'myboco',
-     &            UserDefined, PointRange, 2, pnts, index, ier)
+     &            UserDefined, PointRange, 2_cgsize_t, pnts, index, ier)
 	        if (ier .eq. ERROR) call cg_error_exit_f
 
-	      ! Write Normal index and Normal vectors 
+	      ! Write Normal index and Normal vectors
 		Nindex(1)=-1
 		Nindex(2)=0
 		Nindex(3)=0
@@ -225,7 +231,7 @@
 		    VertexNormals(2,n) = 0	! y-coord
 		    VertexNormals(3,n) = 0	! z-coord
 		enddo
-		    
+		
 		call cg_boco_normal_write_f(cg, base, zone, index, Nindex,
      &                1, RealDouble, VertexNormals, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
@@ -234,7 +240,8 @@
 	    else if (zone.eq.2) then
 	      ! BC patch defined using points and normals at the points:
 		call cg_boco_write_f(cg, base, zone, 'point_patch',
-     &            UserDefined, PointList, 9, uns_pnts, index, ier)
+     &            UserDefined, PointList, 9_cgsize_t, uns_pnts, index,
+     &            ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 	      ! note: Normal index has no definition in unstructured
@@ -253,7 +260,7 @@
 		  FaceNormals(3,n)=0
 		enddo
 		call cg_boco_write_f(cg, base, zone, 'shell_patch',
-     &            BCOutflow, PointList, 4, elist, index, ier)
+     &            BCOutflow, PointList, 4_cgsize_t, elist, index, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
 	     ! Specify that the GridLocation is FaceCenter
@@ -264,7 +271,7 @@
 		call cg_gridlocation_write_f(FaceCenter, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
-                call cg_boco_normal_write_f(cg, base, zone, index, 
+                call cg_boco_normal_write_f(cg, base, zone, index,
      &                Nindex, 1, RealDouble, FaceNormals, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -316,7 +323,7 @@
                     quads(4,n)=quads(1,n)+9
                 enddo
 
-		call cg_section_write_f(cg, base, zone, 'outflow', 
+		call cg_section_write_f(cg, base, zone, 'outflow',
      &            QUAD_4, 9, 12, 0, quads, quad_section_no, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -328,7 +335,7 @@
 		    parent(n,4) = 0	! face of 2nd parent
 		enddo
 
-		call cg_parent_data_write_f(cg, base, zone, 
+		call cg_parent_data_write_f(cg, base, zone,
      &               quad_section_no, parent, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 

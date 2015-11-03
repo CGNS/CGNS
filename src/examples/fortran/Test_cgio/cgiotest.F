@@ -1,6 +1,6 @@
       PROGRAM TEST
       USE CGNS
-      
+
 c---- This code has been modified to use the cgio interface
 c---- The old ADF code has been left in to show the difference
 C
@@ -17,7 +17,8 @@ C
 c      INTEGER IC(6),ID(6)
       integer*4 ic(6),id(6)
       INTEGER IERR,cgnum
-      INTEGER IDIM(2),IDIMA(2),IDIMC,IDIMD
+      INTEGER(CGSIZE_T) IDIMC, IDIMD, IDIM(2)
+      INTEGER(CGSIZE_T) IDIMA(2)
 C
       DATA A /1.1,2.1,3.1,4.1,
      X        1.2,2.2,3.2,4.2,
@@ -150,7 +151,7 @@ C
 c      CALL ADFGNID(RID,'/N3/N10',PID,IERR)
       call cgio_get_node_id_f(cgnum,rid,'/N3/N10',pid,ierr)
 c      CALL ADFLINK(PID,'L1',' ','/N3/N9/N13',TMPID,IERR)
-      call cgio_create_link_f(cgnum,pid,'L1','','/N3/N9/N13',
+      call cgio_create_link_f(cgnum,pid,'L1','\0','/N3/N9/N13',
      &                        tmpid,ierr)
 c      CALL ADFCRE(PID,'N14',TMPID,IERR)
       call cgio_create_node_f(cgnum,pid,'N14',tmpid,ierr)
@@ -160,7 +161,7 @@ C
 c      CALL ADFGNID(RID,'/N3/N11',PID,IERR)
       call cgio_get_node_id_f(cgnum,rid,'/N3/N11',pid,ierr)
 c      CALL ADFLINK(PID,'L2',' ','/N3/N9/N13',TMPID,IERR)
-      call cgio_create_link_f(cgnum,pid,'L2','','/N3/N9/N13',
+      call cgio_create_link_f(cgnum,pid,'L2','\0','/N3/N9/N13',
      &                        tmpid,ierr)
 c      CALL ADFCRE(PID,'N15',TMPID,IERR)
       call cgio_create_node_f(cgnum,pid,'N15',tmpid,ierr)
@@ -179,14 +180,16 @@ c      CALL ADFGDV(PID,IDIM,IERR)
       call cgio_get_dimensions_f(cgnum,pid,numdim,idim,ierr)
 c      CALL ADFRALL(PID,B,IERR)
       call cgio_read_all_data_f(cgnum,pid,b,ierr)
-      PRINT *,' NODE F3 THROUGH LINK L3:'
-      PRINT *,'   LABEL       = ',TSTLBL
-      PRINT *,'   DATA TYPE   = ',DTYPE
-      PRINT *,'   NUM OF DIMS = ',NUMDIM
-      PRINT *,'   DIM VALS    = ',IDIM
+      PRINT *,    ' NODE F3 THROUGH LINK L3:'
+      PRINT *,    '   LABEL       = ',TSTLBL
+      PRINT *,    '   DATA TYPE   = ',DTYPE
+      WRITE(*,101)'   NUM OF DIMS = ',NUMDIM
+      WRITE(*,102)'   DIM VALS    = ',IDIM
       PRINT *,'   DATA:'
       WRITE(*,100)((B(J,I),I=1,3),J=1,4)
   100 FORMAT(5X,3F10.2)
+  101 FORMAT(A,I6)
+  102 FORMAT(A,2I6)
 C
 C     2.) N13
 C
@@ -201,13 +204,13 @@ c      CALL ADFGDV(PID,IDIMD,IERR)
       call cgio_get_dimensions_f(cgnum,pid,numdim,idimd,ierr)
 c      CALL ADFRALL(PID,ID,IERR)
       call cgio_read_all_data_f(cgnum,pid,id,ierr)
-      PRINT *,' '
-      PRINT *,' NODE N13:'
-      PRINT *,'   LABEL       = ',TSTLBL
-      PRINT *,'   DATA TYPE   = ',DTYPE
-      PRINT *,'   NUM OF DIMS = ',NUMDIM
-      PRINT *,'   DIM VALS    = ',IDIMD
-      PRINT *,'   DATA:'
+      PRINT *,    ' '
+      PRINT *,    ' NODE N13:'
+      PRINT *,    '   LABEL       = ',TSTLBL
+      PRINT *,    '   DATA TYPE   = ',DTYPE
+      WRITE(*,101)'   NUM OF DIMS = ',NUMDIM
+      WRITE(*,101)'   DIM VALS    = ',IDIMD
+      PRINT *,    '   DATA:'
       WRITE(*,200)(ID(I),I=1,6)
   200 FORMAT(5X,6I6)
 C
@@ -261,10 +264,9 @@ c      CALL ADFDOPN('adf_file_two.adf','OLD',' ',RID,IERR)
       call cgio_close_file_f(cgnum,ierr)
       PRINT *,' '
       PRINT *,' COMPARISON OF ROOT ID: '
-      PRINT *,' ADF_FILE_TWO.ADF ORIGINAL ROOT ID = ',RIDF2
-      PRINT *,' ADF_FILE_TWO.ADF NEW ROOT ID      = ',RID
+      WRITE(*,'(A,F12.8)')' ADF_FILE_TWO.ADF ORIGINAL ROOT ID = ',RIDF2
+      WRITE(*,'(A,F12.8)')' ADF_FILE_TWO.ADF NEW ROOT ID      = ',RID
 C
-      STOP
       END
 C
 C ************* SUBROUTINES ****************

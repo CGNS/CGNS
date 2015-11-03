@@ -2,7 +2,7 @@
         program read_partial_data
         USE CGNS
 
-!	original author (of write_mixed_elements): Diane Poirier 
+!	original author (of write_mixed_elements): Diane Poirier
 !       author: Ken Wall
 !	May 13 2004
 
@@ -15,15 +15,18 @@
         parameter (NNODES=27, NELEMENTS=3)
 
 	integer Cdim, Pdim, Idim, ier
-	integer cg, base, zone, size(3), ZoneType
+	integer cg, base, zone, ZoneType
+        integer(cgsize_t) size(3)
 	integer nbases, nzones, ncoords, nsections
-	integer i, n, sect, range_min(3), range_max(3)
+	integer i, n, sect
+        integer(cgsize_t) range_min(3), range_max(3)
 	integer nbndry, type, count
-        integer elements(1000), ElementDataSize
+        integer(cgsize_t) elements(1000)
+        integer(cgsize_t) ElementDataSize
 	character*32 coordname(3), filename, nodename
         double precision data_double(NNODES)
-        integer el_st, el_end
-        integer parent(1000)
+        integer(cgsize_t) el_st, el_end
+        integer(cgsize_t) parent(1000)
         integer parent_flag
 
 !       initialize
@@ -100,9 +103,9 @@
         coordname(2) = 'CoordinateY'
         coordname(3) = 'CoordinateZ'
 	do i=1, Pdim
-	    call cg_coord_read_f(cg, base, zone, coordname(i), 
+	    call cg_coord_read_f(cg, base, zone, coordname(i),
      &            RealDouble, range_min, range_max, data_double, ier)
-	    if (ier .eq. ERROR) call cg_error_exit_f 
+	    if (ier .eq. ERROR) call cg_error_exit_f
 	    write(6,103)coordname(i)
 	    write(6,109)'first point:',data_double(1)
 	    write(6,109)'last point :',data_double(size(1)-range_min(1)+1)
@@ -117,11 +120,11 @@
 
 ! Read all element info:
 	    call cg_section_read_f(cg, base, zone, sect,
-     &              nodename, type, el_st, el_end, nbndry, 
+     &              nodename, type, el_st, el_end, nbndry,
      &              parent_flag, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
-	    call cg_ElementDataSize_f(cg, base, zone, sect, 
+	    call cg_ElementDataSize_f(cg, base, zone, sect,
      &                                ElementDataSize, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -140,7 +143,7 @@
      &                 el_st, el_end, elements, parent, ier);
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
-            write(6,108)'Connect and Parent data for element range  = ', 
+            write(6,108)'Connect and Parent data for element range  = ',
      &                 el_st, el_end
 
             call cg_npe_f(type, npe, ier)
@@ -159,7 +162,7 @@
 		    type = elements(count)
 		    if (type .gt. NGON_n) then
 			npe = type - NGON_n
-			write(6,111) 
+			write(6,111)
      &                    'Element Type= NGON_n, npe =',npe
 		    else
 			call cg_npe_f(type, npe, ier)
@@ -174,7 +177,7 @@
 	        do i=1, nelem
 		    count = count + 1
 		    npe = elements(count)
-		    write(6,111) 
+		    write(6,111)
      &                    'Element Number Points = ',npe
 		    write(6,110)(elements(count+n),n=1,npe)
 		    count = count+npe

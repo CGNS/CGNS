@@ -1498,15 +1498,24 @@ if test "$enableval" = "yes" ; then
 
 fi
 
+FC_D_PRE='' 
+if test "$withfortran" = "yes"; then
+
 #----------- Determine if the Fortran compiler xlf ------------------------
 # xlf preprocessor needs the -WF,-D prefix, FC_D_PRE is used when passing -D 
 # options to fortran programs.
 #--------------------------------------------------------------------------
-FC_D_PRE='' 
-if test "$withfortran" = "yes"; then
     fc_vendor="`$FC -qversion 2>&1 |grep 'IBM XL'`"
     if test X != "X$fc_vendor"; then
       FC_D_PRE='-WF,' 
+    fi
+#----------- Determine if the Fortran compiler pgi ------------------------
+# The PGI compiler segfaults wehn va_start is called, so we need to add
+# a special compiler flag, see CGNS-40.
+#--------------------------------------------------------------------------
+    fc_vendor="`$FC --version 2>&1 |grep -i 'Portland Group'`"
+    if test X != "X$fc_vendor"; then
+      FFLAGS='$FFLAGS -Mx,125,0x200' 
     fi
 fi
 

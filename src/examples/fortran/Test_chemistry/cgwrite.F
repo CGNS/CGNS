@@ -18,9 +18,11 @@
 	integer index_dim, cell_dim, phys_dim, pos
 	integer base_no, zone_no, coord_no, sol_no, discr_no, conn_no
 	integer hole_no, boco_no, field_no, dset_no
-	integer num, size(Ndim*3), npnts, NormalIndex(Ndim)
+	integer num, NormalIndex(Ndim)
+	integer(cgsize_t) npnts
+	integer(cgsize_t) size(Ndim*3)
 	integer cg, ier, zone, coord, i, sol, field
-	integer pnts(Ndim,120), donor_pnts(Ndim,120)
+	integer(cgsize_t) pnts(Ndim,120), donor_pnts(Ndim,120)
 	integer transform(Ndim)
         real*4 units(5)
 	real*4 data(120), normals(360)
@@ -85,8 +87,8 @@
      &    'FlowEquationSet_t',1,'ChemicalKineticsModel_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_array_write_f('HeatOfFormationCO',RealSingle,1,1,
-     &    hofCO,ier)
+        call cg_array_write_f('HeatOfFormationCO',RealSingle,1,
+     &    1_cgsize_t,hofCO,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier,
@@ -110,8 +112,8 @@
      &    'FlowEquationSet_t',1,'ChemicalKineticsModel_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_array_write_f('HeatOfFormationO2',RealSingle,1,1,
-     &    hofO2,ier)
+        call cg_array_write_f('HeatOfFormationO2',RealSingle,1,
+     &    1_cgsize_t,hofO2,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier,
@@ -135,8 +137,8 @@
      &    'FlowEquationSet_t',1,'ChemicalKineticsModel_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_array_write_f('HeatOfFormationCO2',RealSingle,1,1,
-     &    hofCO2,ier)
+        call cg_array_write_f('HeatOfFormationCO2',RealSingle,1,
+     &    1_cgsize_t,hofCO2,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier,
@@ -160,8 +162,8 @@
      &    'FlowEquationSet_t',1,'ChemicalKineticsModel_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_array_write_f('ReferenceTemperatureHOF',RealSingle,1,1,
-     &    RThof,ier)
+        call cg_array_write_f('ReferenceTemperatureHOF',RealSingle,1,
+     &    1_cgsize_t,RThof,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier,
@@ -288,7 +290,8 @@
 	    enddo
 	  ! Hole defined with 2 point set type PointRange, so 4 points:
 	    call cg_hole_write_f(cg, base_no, zone_no, 'hole#1', Vertex,
-     &                           PointRange, 2, 4, pnts, hole_no, ier)
+     &                           PointRange, 2, 4_cgsize_t, pnts,
+     &                           hole_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** general connectivity
@@ -299,9 +302,10 @@
  100        continue
 	  ! create a point matching connectivity
 	    call cg_conn_write_f(cg, base_no, zone_no, 'Connect#1',
-     &          Vertex, Abutting1to1, PointList, 5, pnts, 'zone#2',
-     &          Structured, PointListDonor, Integer, 5, donor_pnts,
-     &          conn_no, ier)
+     &          Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts,
+     &          'zone#2',
+     &          Structured, PointListDonor, Integer, 5_cgsize_t,
+     &          donor_pnts, conn_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** connectivity 1to1
@@ -335,7 +339,7 @@
 
 ! *** bocos
 	    call cg_boco_write_f(cg, base_no, zone_no, 'boco#1',
-     &           BCInflow, PointRange, 2, pnts, boco_no, ier)
+     &           BCInflow, PointRange, 2_cgsize_t, pnts, boco_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** boco normal

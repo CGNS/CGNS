@@ -3,7 +3,7 @@
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
-!       last revised on June 7 2002 
+!       last revised on June 7 2002
 
 !       This example tests the Axisymmetry_t data structure and its children
 
@@ -14,7 +14,8 @@
 	integer Ndim
 	parameter (Ndim = 2)
 	integer index_dim, cell_dim, phys_dim, i
-	integer cg, base_no, ier, dimval(2)
+	integer cg, base_no, ier
+        integer(cgsize_t) dimval(2)
 	real*4 ref_point(Ndim), axis(Ndim), angle
 	character*100 linkpath, DescriptorText
 	character*32 CoordinateNames(2), DescriptorName
@@ -61,7 +62,7 @@
 	angle = 360
 	dimval(1)=1
 	call cg_array_write_f('AxisymmetryAngle', RealSingle, 1,
-     &       1, angle, ier)
+     &       1_cgsize_t, angle, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataArray_t CoordinateNames

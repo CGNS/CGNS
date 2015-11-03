@@ -2098,22 +2098,22 @@ void ADFH_Database_Open(const char   *name,
 
   // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
   // default setting is 2048 bytes
-  H5Pset_meta_block_size(g_propfileopen, 4096);  // 1024*1024  
-  
+  H5Pset_meta_block_size(g_propfileopen, 4096);  // 1024*1024
+
   // http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
   // attention: this can increase filesize dramatically if lots of small datasets
-  H5Pset_alignment(g_propfileopen, 4096, 4096); 
-  
+  H5Pset_alignment(g_propfileopen, 4096, 4096);
+
   // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
   // 1 MByte is default of hdf5
   void *tconv; void *bkg;
   H5Pset_buffer(g_propfileopen, 10*1024*1024,tconv, bkg);
-  
+
   // http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
   // '..  used by file drivers that are capable of using data sieving'
   //  1 MByte is default of hdf5
   H5Pset_sieve_buf_size(g_propfileopen, 4*1024*1024);
-  
+
 #endif
 
   g_propfileopen = H5Pcreate(H5P_FILE_ACCESS);
@@ -2154,23 +2154,23 @@ void ADFH_Database_Open(const char   *name,
 
   // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
   // default setting is 2048 bytes
-  H5Pset_meta_block_size(g_propfilecreate, 4096);  // 1024*1024  
-        
+  H5Pset_meta_block_size(g_propfilecreate, 4096);  // 1024*1024
+
   // http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
   // attention: this can increase filesize dramatically if lots of small datasets
-  H5Pset_alignment(g_propfilecreate, 4096, 4096); 
-                
+  H5Pset_alignment(g_propfilecreate, 4096, 4096);
+
   // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
   // 1 MByte is default of hdf5
-  void *tconv; void *bkg;  
-  H5Pset_buffer(g_propfilecreate, 10*1024*1024,tconv, bkg);                    
-                        
+  void *tconv; void *bkg;
+  H5Pset_buffer(g_propfilecreate, 10*1024*1024,tconv, bkg);
+
   // http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
   // '..  used by file drivers that are capable of using data sieving'
   //  1 MByte is default of hdf5
   H5Pset_sieve_buf_size(g_propfilecreate, 4*1024*1024);
-                         
-#endif    
+
+#endif
 
 #if !defined(HDF5_PRE_1_8)
     /* add creation time for groups (used by iterators)
@@ -2273,7 +2273,9 @@ void ADFH_Database_Get_Format(const double  rootid,
   }
 
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(hid) == H5FD_MPIO) {
+  hid_t fid = get_file_id(hid);
+  hid_t fapl=H5Fget_access_plist(fid);
+  if (H5Pget_driver(fapl) == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
@@ -2283,7 +2285,7 @@ void ADFH_Database_Get_Format(const double  rootid,
   status = H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, format);
 
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(hid) == H5FD_MPIO) {
+  if (H5Pget_driver(fapl) == H5FD_MPIO) {
     H5Pclose(xfer_prp);
   }
 #endif
@@ -3006,7 +3008,9 @@ void ADFH_Database_Version(const double  root_id,
 #endif
   }
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(did) == H5FD_MPIO) {
+  hid_t fid = get_file_id(hid);
+  hid_t fapl=H5Fget_access_plist(fid);
+  if (H5Pget_driver(fapl) == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
   }
@@ -3014,7 +3018,8 @@ void ADFH_Database_Version(const double  root_id,
   status = H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, buff);
   H5Dclose(did);
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(did) == H5FD_MPIO) {
+
+  if (H5Pget_driver(fapl) == H5FD_MPIO) {
     H5Pclose(xfer_prp);
   }
 #endif
@@ -3157,7 +3162,9 @@ void ADFH_Read_Block_Data(const double ID,
   }
 
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(hid) == H5FD_MPIO) {
+  hid_t fid = get_file_id(hid);
+  hid_t fapl=H5Fget_access_plist(fid);
+  if (H5Pget_driver(fapl) == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
@@ -3175,7 +3182,7 @@ void ADFH_Read_Block_Data(const double ID,
 
   free (buff);
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(hid) == H5FD_MPIO) {
+  if (H5Pget_driver(fapl) == H5FD_MPIO) {
     H5Pclose(xfer_prp);
   }
 #endif
@@ -3331,7 +3338,9 @@ void ADFH_Read_Data(const double ID,
   ADFH_CHECK_HID(mid);
 
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(hid) == H5FD_MPIO) {
+  hid_t fid = get_file_id(hid);
+  hid_t fapl=H5Fget_access_plist(fid);
+  if (H5Pget_driver(fapl) == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
@@ -3341,7 +3350,7 @@ void ADFH_Read_Data(const double ID,
   status = H5Dread(did, mid, mspace, dspace, xfer_prp, data);
 
 #ifdef BUILD_PARALLEL
-  if (H5Pget_driver(hid) == H5FD_MPIO) {
+  if (H5Pget_driver(fapl) == H5FD_MPIO) {
     H5Pclose(xfer_prp);
   }
 #endif
@@ -3477,7 +3486,9 @@ void ADFH_Write_Block_Data(const double ID,
   }
 
 #ifdef BUILD_PARALLEL
-    if (H5Pget_driver(hid) == H5FD_MPIO) {
+    hid_t fid = get_file_id(hid);
+    hid_t fapl=H5Fget_access_plist(fid);
+    if (H5Pget_driver(fapl) == H5FD_MPIO) {
       xfer_prp = H5Pcreate(H5P_DATASET_XFER);
       ADFH_CHECK_HID(xfer_prp);
       H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
@@ -3498,7 +3509,7 @@ void ADFH_Write_Block_Data(const double ID,
 
   free (buff);
 #ifdef BUILD_PARALLEL
-    if (H5Pget_driver(hid) == H5FD_MPIO) {
+    if (H5Pget_driver(fapl) == H5FD_MPIO) {
       H5Pclose(xfer_prp);
     }
 #endif
@@ -3655,19 +3666,21 @@ void ADFH_Write_Data(const double ID,
   ADFH_CHECK_HID(mid);
 
 #ifdef BUILD_PARALLEL
-    if (H5Pget_driver(hid) == H5FD_MPIO) {
-      xfer_prp = H5Pcreate(H5P_DATASET_XFER);
-      ADFH_CHECK_HID(xfer_prp);
-      H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
-    }
+  hid_t fid = get_file_id(hid);
+  hid_t fapl=H5Fget_access_plist(fid);
+  if (H5Pget_driver(fapl) == H5FD_MPIO) {
+    xfer_prp = H5Pcreate(H5P_DATASET_XFER);
+    ADFH_CHECK_HID(xfer_prp);
+    H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+  }
 #endif
 
   status = H5Dwrite(did, mid, mspace, dspace, xfer_prp, data);
 
 #ifdef BUILD_PARALLEL
-    if (H5Pget_driver(hid) == H5FD_MPIO) {
-      H5Pclose(xfer_prp);
-    }
+  if (H5Pget_driver(fapl) == H5FD_MPIO) {
+    H5Pclose(xfer_prp);
+  }
 #endif
   H5Sclose(mspace);
   H5Sclose(dspace);

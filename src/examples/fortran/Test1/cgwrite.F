@@ -17,9 +17,12 @@
 	integer index_dim, cell_dim, phys_dim
 	integer base_no, zone_no, coord_no, sol_no, discr_no, conn_no
 	integer hole_no, boco_no, field_no, dset_no
-	integer num, size(Ndim*3), npnts, NormalIndex(Ndim)
+	integer num
+	integer(cgsize_t) NormalIndex(Ndim)
+	integer(cgsize_t) npnts
+	integer(cgsize_t) size(Ndim*3)
 	integer cg, ier, zone, coord, i, j, k, n, pos, sol, field
-	integer pnts(Ndim,120), donor_pnts(Ndim,120)
+	integer(cgsize_t) pnts(Ndim,120), donor_pnts(Ndim,120)
 	integer transform(Ndim)
 	real*4 data(120), normals(360)
 	double precision Dxyz(120), values(120)
@@ -42,7 +45,7 @@
  	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** base
- 	call cg_base_write_f(cg, 'Basename', cell_dim, phys_dim, 
+ 	call cg_base_write_f(cg, 'Basename', cell_dim, phys_dim,
      &                       base_no, ier)
  	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -60,7 +63,6 @@
     	    call cg_zone_write_f(cg, base_no, zonename, size,
      &                           Structured, zone_no, ier)
     	    if (ier .eq. ERROR) call cg_error_exit_f
-
 ! *** coordinate
      	    do coord=1, phys_dim
  		do k=1, size(3)
@@ -84,7 +86,7 @@
 ! *** solution
      	    do sol=1, 2
  		write(solname,'(a5,i1,a5,i1)') 'Zone#',zone,' sol#',sol
- 		call cg_sol_write_f(cg, base_no, zone_no, solname, 
+ 		call cg_sol_write_f(cg, base_no, zone_no, solname,
      &                              Vertex, sol_no, ier)
  		if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -127,7 +129,7 @@
      &	            'DiscreteData_t', discr_no, 'DataArray_t', 1, 'end')
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
-	    call cg_units_write_f(Kilogram, Meter, Second, Kelvin, 
+	    call cg_units_write_f(Kilogram, Meter, Second, Kelvin,
      &                            Radian, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 		
@@ -143,7 +145,8 @@
 	    enddo
 	  ! Hole defined with 2 point set type PointRange, so 4 points:
 	    call cg_hole_write_f(cg, base_no, zone_no, 'hole#1', Vertex,
-     &                           PointRange, 2, 4, pnts, hole_no, ier)
+     &                           PointRange, 2, 4_cgsize_t, pnts,
+     &                           hole_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** general connectivity
@@ -152,11 +155,12 @@
 	        pnts(i,n)=i		! * dummy data
 		donor_pnts(i,n)=i*2
  100        continue
-	  ! create a point matching connectivity 
-	    call cg_conn_write_f(cg, base_no, zone_no, 'Connect#1', 
-     &          Vertex, Abutting1to1, PointList, 5, pnts, 'zone#2', 
-     &          Structured, PointListDonor, Integer, 5, donor_pnts,
-     &          conn_no, ier)
+	  ! create a point matching connectivity
+	    call cg_conn_write_f(cg, base_no, zone_no, 'Connect#1',
+     &          Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts,
+     &          'zone#2',
+     &          Structured, PointListDonor, Integer, 5_cgsize_t,
+     &          donor_pnts, conn_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** connectivity 1to1
@@ -191,7 +195,7 @@
 
 ! *** bocos
 	    call cg_boco_write_f(cg, base_no, zone_no, 'boco#1',
-     &           BCInflow, PointRange, 2, pnts, boco_no, ier)
+     &           BCInflow, PointRange, 2_cgsize_t, pnts, boco_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** boco normal
@@ -203,7 +207,7 @@
 	    enddo
 	    NormalIndex(1)=1
 	    do i=1,phys_dim*npnts
-		normals(i)=i 
+		normals(i)=i
 	    enddo
 
 	    call cg_boco_normal_write_f(cg, base_no, zone_no, boco_no,
@@ -228,21 +232,21 @@
 	    call cg_bcdata_write_f(cg, base_no, zone,
      &         boco_no, dset_no, Neumann, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
-	     
+	
 ! ** boundary condition data arrays: GOTO BCData_t node
-	    call cg_goto_f(cg, base_no, ier, 'Zone_t', zone_no, 
+	    call cg_goto_f(cg, base_no, ier, 'Zone_t', zone_no,
      &          'ZoneBC_t', 1, 'BC_t', boco_no, 'BCDataSet_t', dset_no,
-     &          'BCData_t', Neumann, 'end') 
+     &          'BCData_t', Neumann, 'end')
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 	    do i=1, npnts
 		data(i) = i
 	    enddo
-	    call cg_array_write_f('dataset_arrayname', RealSingle, 
+	    call cg_array_write_f('dataset_arrayname', RealSingle,
      &           1, npnts, data, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
-! ** boundary condition data attributes: 
+! ** boundary condition data attributes:
 	    call cg_dataclass_write_f(NormalizedByDimensional, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 

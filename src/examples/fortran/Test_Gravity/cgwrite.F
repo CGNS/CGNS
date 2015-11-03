@@ -3,7 +3,7 @@
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
-!       last revised on May 31 2002 
+!       last revised on May 31 2002
 
 !       This example test the Gravity_t data structure and its children
 
@@ -29,7 +29,7 @@
  	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** base
- 	call cg_base_write_f(cg, 'Basename', cell_dim, phys_dim, 
+ 	call cg_base_write_f(cg, 'Basename', cell_dim, phys_dim,
      &                       base_no, ier)
  	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -57,7 +57,7 @@
      &       'GravityDescriptorText', ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-! * DataClass 
+! * DataClass
         call cg_dataclass_write_f(Dimensional, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -66,26 +66,13 @@
      &                        Radian, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-! * UserDefinedData  
+! * UserDefinedData
         call cg_user_data_write_f('UserData1', ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * Link to BaseDescriptorName
         write(linkpath,'(a)') '/Basename/BaseDescriptorName'
         call cg_link_write_f('LinkToBaseDescr', ' ',linkpath, ier)
-        if (ier .eq. ERROR) call cg_error_exit_f
-
-! * GravityVector/Descriptor
-	call cg_goto_f(cg, base_no, ier, 'Gravity_t', 1, 'DataArray_t',
-     &                 1, 'end')
-        if (ier .eq. ERROR) call cg_error_exit_f
-	call cg_descriptor_write_f('GravityVectorDescriptorName',
-     &       'GravityVectorDescriptorText', ier)
-	if (ier .eq. ERROR) call cg_error_exit_f
-	
-! * GravityVector/DimensionalUnits
-	call cg_units_write_f(Kilogram, Meter, Second, Kelvin,
-     &                        Radian, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** close CGNS file

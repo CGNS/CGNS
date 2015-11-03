@@ -1,0 +1,24 @@
+
+number of time steps stored = 3
+
+Times stored are:
+ 10.000000
+ 20.000000
+ 50.000000
+
+Flow solution names corresponding to each are:
+ FlowSolution1                   
+ FlowSolution2                   
+ FlowSolution3                   
+
+Simulation type is: TimeAccurate
+
+Successfully read 3 flow solutions from file grid_c.cgns
+   For example, r1,p1[0][0][0]=0.000000, 0.000000
+                r2,p2[0][0][0]=1.000000, 1.000000
+                r3,p3[0][0][0]=2.000000, 2.000000
+   For example, r1,p1[8][16][20]=20.000000, 16.000000
+                r2,p2[8][16][20]=21.000000, 17.000000
+                r3,p3[8][16][20]=22.000000, 18.000000
+
+Program successful... ending now

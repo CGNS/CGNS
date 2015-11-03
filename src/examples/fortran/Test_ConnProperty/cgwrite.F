@@ -3,7 +3,7 @@
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
-!       last revised on August 2002 
+!       last revised on August 2002
 
 !       This example test the GridConnectivityProperty_t data structure and its children
 !       It tests the functions:
@@ -16,19 +16,21 @@
 !       - cg_array_write under Periodic_t => should return an error
 !       - links under GridConnectivityProperty_t, AverageInterface_t, Periodic_t
 !       - cg_goto to GridConnectivityProperty_t, AverageInterface_t, Periodic_t
-!       - Memory check with Insure  
+!       - Memory check with Insure
 
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
 
-	integer Ndim 
+	integer Ndim
 	parameter (Ndim = 3)
 	integer index_dim, cell_dim, phys_dim
 	character*100 linkpath
 
-	integer cg, base, zone, conn, ier, size(Ndim*3), i, num, n
-	integer AverageInterfaceType, pnts(Ndim,20), donor_pnts(Ndim,20)
+	integer cg, base, zone, conn, ier, i, num, n
+	integer(cgsize_t) size(Ndim*3)
+	integer AverageInterfaceType
+        integer(cgsize_t) pnts(Ndim,20), donor_pnts(Ndim,20)
 	real *4 RotationCenter(Ndim), RotationAngle(Ndim)
 	real *4 Translation(Ndim)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
@@ -47,7 +49,7 @@
 
 ! *** base
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
- 	call cg_base_write_f(cg, 'Basename', cell_dim, phys_dim, 
+ 	call cg_base_write_f(cg, 'Basename', cell_dim, phys_dim,
      &                       base, ier)
  	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -84,14 +86,14 @@
             donor_pnts(i,n)=i*2
  100    continue
         call cg_conn_write_f(cg, base, zone, 'Connect#1',
-     &      Vertex, Abutting1to1, PointList, 5, pnts, 'Zone#2',
-     &      Structured, PointListDonor, Integer, 5, donor_pnts,
+     &      Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts, 'Zone#2',
+     &      Structured, PointListDonor, Integer, 5_cgsize_t, donor_pnts,
      &      conn, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_conn_write_f(cg, base, zone, 'Connect#2',
-     &      Vertex, Abutting1to1, PointList, 5, pnts, 'Zone#2',
-     &      Structured, PointListDonor, Integer, 5, donor_pnts,
+     &      Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts, 'Zone#2',
+     &      Structured, PointListDonor, Integer, 5_cgsize_t, donor_pnts,
      &      conn, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 	
@@ -113,14 +115,14 @@
 	    Translation(n) = (n+6)*1.1
 	enddo
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-	call cg_conn_periodic_write_f(cg, base, zone, conn, 
+	call cg_conn_periodic_write_f(cg, base, zone, conn,
      & 	     RotationCenter, RotationAngle, Translation, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-! *** write Descriptor_t, UserDefinedData_t & Link under... 
+! *** write Descriptor_t, UserDefinedData_t & Link under...
 ! ...   GridConnectivityProperty_t
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-        call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+        call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &      'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', conn,
      &	    'GridConnectivityProperty_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
@@ -138,9 +140,9 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ...   AverageInterface_t
-	call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+	call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &	    'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', conn,
-     &      'GridConnectivityProperty_t', 1, 'AverageInterface_t', 1, 
+     &      'GridConnectivityProperty_t', 1, 'AverageInterface_t', 1,
      &      'end')
 	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -157,7 +159,7 @@
 
 ! ...   Periodic_t
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-        call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+        call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &      'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', conn,
      &      'GridConnectivityProperty_t', 1, 'Periodic_t', 1, 'end')
 	if (ier .eq. ERROR) call cg_error_exit_f
@@ -173,7 +175,7 @@
         call cg_link_write_f('LinkToBaseDescr', ' ',linkpath, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-! * DataClass & DimensionalUnits under Periodic               
+! * DataClass & DimensionalUnits under Periodic
         call cg_dataclass_write_f(Dimensional, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
         call cg_units_write_f(Kilogram, Meter, Second, Kelvin,
@@ -183,15 +185,15 @@
 ! * DataArray under Periodic
  	dim_vals(1)=3
  	dim_vals(2)=2
- 	call cg_array_write_f('arraysize', Integer, 2, dim_vals, 
+ 	call cg_array_write_f('arraysize', Integer, 2, dim_vals,
      &        size, ier)
  	if (ier .ne. ERROR) write(6,'(a)') 'Error in API'
 
 ! * DataClass & DimensionalUnits under RotationCenter
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-	call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+	call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &      'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', conn,
-     &      'GridConnectivityProperty_t', 1, 'Periodic_t', 1, 
+     &      'GridConnectivityProperty_t', 1, 'Periodic_t', 1,
      &      'DataArray_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 

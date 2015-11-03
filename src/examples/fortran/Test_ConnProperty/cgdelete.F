@@ -3,7 +3,7 @@
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
-!       last revised on August 2002 
+!       last revised on August 2002
 
 !       This example test deleting the GridConnectivityProperty_t data structure and its children
 !       It tests cg_delete for the following nodes:
@@ -17,7 +17,7 @@
 	include 'cgnswin_f.h'
 #endif
 
-	integer Ndim 
+	integer Ndim
 	parameter (Ndim = 3)
 	integer index_dim, cell_dim, phys_dim
 	character*100 linkpath
@@ -62,11 +62,11 @@
 	zone = 1
 	conn = 2
 
-! *** delete children of DataArray_t "RotationCenter" 
+! *** delete children of DataArray_t "RotationCenter"
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-        call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+        call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &	    'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', conn,
-     &      'GridConnectivityProperty_t', 1, 'Periodic_t', 1, 
+     &      'GridConnectivityProperty_t', 1, 'Periodic_t', 1,
      &	    'DataArray_t', 1, 'end')
 
         if (ier. eq. ALL_OK) then
@@ -80,10 +80,10 @@
 	    read(5,600) dummy
         endif
 
-! *** delete children of Periodic_t: RotationCenter, RotationAngle, 
+! *** delete children of Periodic_t: RotationCenter, RotationAngle,
 !     Translation, Descriptor_t, UserDef._t, DataClass, DimensionalUnits
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-        call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+        call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &      'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', conn,
      &      'GridConnectivityProperty_t', 1, 'Periodic_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
@@ -118,9 +118,9 @@
 
 ! *** delete children of AverageInterface_t: AverageInterfaceType_t, Descriptor_t, UserDef._t
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-        call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+        call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &      'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', conn,
-     &      'GridConnectivityProperty_t', 1, 'AverageInterface_t', 1, 
+     &      'GridConnectivityProperty_t', 1, 'AverageInterface_t', 1,
      &	    'end')
 
         if (ier. eq. ALL_OK) then
@@ -137,9 +137,9 @@
             read(5,600) dummy
         endif
 
-! *** delete children of GridConnectivityProperty_t: AverageInterface_t, 
+! *** delete children of GridConnectivityProperty_t: AverageInterface_t,
 !	Periodic_t, Descriptor_t, UserDef._t
-        call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+        call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &      'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', conn,
      &      'GridConnectivityProperty_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
@@ -163,7 +163,7 @@
 	endif
 
 ! *** delete child of GridConnectivity_:  GridConnectivityProperty_t
-        call cg_goto_f(cg, base, ier, 'Zone_t', zone, 
+        call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &      'ZoneGridConnectivity_t', 1, 'GridConnectivity_t', conn,
      &	    'end')
 	if (ier .eq. ERROR) call cg_error_exit_f
@@ -176,7 +176,7 @@
 	    read(5,600) dummy
 	endif
 
-! Rewrite everything back 
+! Rewrite everything back
 
 ! *** write GridConnectivityProperty_t/AverageInterface_t node under conn#2
         AverageInterfaceType = AverageCircumferential

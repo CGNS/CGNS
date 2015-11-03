@@ -3,7 +3,7 @@
 	implicit none
 
 !       author: Diane Poirier (diane@icemcfd.com)
-!       last revised on August 2002 
+!       last revised on August 2002
 
 !       This example test the BCProperty_t data structure and its children
 !       It tests cg_delete for the following nodes:
@@ -16,7 +16,7 @@
 	include 'cgnswin_f.h'
 #endif
 
-	integer Ndim 
+	integer Ndim
 	parameter (Ndim = 3)
 	integer index_dim, cell_dim, phys_dim
 	character*100 linkpath
@@ -61,7 +61,7 @@
 	boco = 2
 
 ! *** delete children of DataArray_t "SurfaceArea"
-        call cg_goto_f(cg, base, ier, 'Zone_t', zone, 'ZoneBC_t', 1, 
+        call cg_goto_f(cg, base, ier, 'Zone_t', zone, 'ZoneBC_t', 1,
      &      'BC_t', boco, 'BCProperty_t', 1, 'Area_t', 1, 'DataArray_t',
      &      1, 'end')
 
@@ -157,10 +157,10 @@
 	    read(5,600) dummy
 	endif
 
-! Rewrite everything back 
+! Rewrite everything back
 
 ! *** write BCProperty_t/WallFunction_t node under boco#2
-        WallFunctionType = Generic   
+        WallFunctionType = Generic
         call cg_bc_wallfunction_write_f(cg, base, zone,
      &        boco, WallFunctionType, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
@@ -177,7 +177,7 @@
         write(6,*)'Area_t written'
 
 
-! *** write Descriptor_t, UserDefinedData_t & Link under... 
+! *** write Descriptor_t, UserDefinedData_t & Link under...
 ! ...   BCProperty_t
         call cg_goto_f(cg, base, ier, 'Zone_t', zone, 'ZoneBC_t', 1,
      &      'BC_t', boco, 'BCProperty_t', 1, 'end')
