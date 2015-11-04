@@ -1,9 +1,0 @@
- Eqn dimension =     3
- Gov eqn = NSTurbulent                     
-    diffusion=    0    1    0    0    0    0
- Gas model type = Ideal                           
-    gamma=     1.40000
- Turbulence closure type = EddyViscosity                   
-    turb prandtl number =      0.90000
- Turbulence model type = OneEquation_SpalartAllmaras     
- Successfully read equation set info from file grid.cgns
