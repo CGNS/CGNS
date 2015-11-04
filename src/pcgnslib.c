@@ -101,7 +101,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
 
   /* Set the start position and size for the data write */
   /* fix dimensions due to Fortran indexing and ordering */
-  if(data) {
+  if((rw_mode == CG_PAR_WRITE && data[0].u.wbuf) || (rw_mode == CG_PAR_READ && data[0].u.rbuf)) {
       for (k = 0; k < ndims; k++) {
 	start[k] = rmin[ndims-k-1] - 1;
 	dims[k] = rmax[ndims-k-1] - start[k];
@@ -125,7 +125,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
     return CG_ERROR;
   }
 
-  if(data) {
+  if((rw_mode == CG_PAR_WRITE && data[0].u.wbuf) || (rw_mode == CG_PAR_READ && data[0].u.rbuf)) {
     /* Select a section of the array in the file */
     herr = H5Sselect_hyperslab(data_shape_id, H5S_SELECT_SET, start,
 			       NULL, dims, NULL);
