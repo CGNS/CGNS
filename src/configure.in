@@ -1515,10 +1515,9 @@ if test "$withfortran" = "yes"; then
 #--------------------------------------------------------------------------
     fc_vendor="`$FC --version 2>&1 |grep -i 'Portland Group'`"
     if test X != "X$fc_vendor"; then
-      FFLAGS='$FFLAGS -Mx,125,0x200' 
+      FFLAGS="$FFLAGS -Mx,125,0x200" 
     fi
 fi
-
 #--------------------------------------------------------------------------
 # substitutions and write Makefile and make.defs
 #--------------------------------------------------------------------------
