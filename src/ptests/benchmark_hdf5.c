@@ -63,7 +63,7 @@ cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
 int mpi_err;
-int err;
+
 int comm_size;
 int comm_rank;
 int fn;
@@ -138,6 +138,7 @@ int c_double_eq(double a, double b) {
 }
 
 int main(int argc, char* argv[]) {
+  int err;
   /* Initialize variables */
   initialize(&argc,&argv);
 
