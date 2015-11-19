@@ -3726,22 +3726,6 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-     SUBROUTINE cgp_queue_set_f( use_queue, ier) BIND(C, NAME="cgp_queue_set_f")
-       IMPLICIT NONE
-       INTEGER :: use_queue
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cgp_queue_set_f
-  END INTERFACE
-
-
-  INTERFACE
-     SUBROUTINE cgp_queue_flush_f(ier) BIND(C, NAME="cgp_queue_flush_f")
-       IMPLICIT NONE
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cgp_queue_flush_f
-  END INTERFACE
-
-  INTERFACE
      SUBROUTINE cgp_open_f(filename, mode, fn, ier) !BIND(C, NAME="cgp_open_f")
        IMPORT :: C_CHAR, C_INT
        IMPLICIT NONE
