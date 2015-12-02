@@ -130,6 +130,10 @@ New Features
          INTEGER, DIMENSION(1:10) :: Array_i
          CALL cgp_array_write_f("ArrayI",cg_get_type(Array_i(1)),1,INT(nijk(1),cgsize_t),Ai, err)
 
+    * Removed all parallel flush/queue functions (CGNS-9)
+
+    * Removed support of "include cgns_f.h", all examples and tests were updated to reflect these changes (CGNS-34)
+
     Tools:
     ------
      - None
@@ -142,18 +146,21 @@ Bug Fixes since CGNS 3.2.1 release
     * Fixed issue with autotools putting a blank "-l" in "MPILIBS =" when compiling the library
       using mpi.
 
+    * Added a new PGI fortran compiler flag fix issue when  passing to C varags (CGNS-40)
+
     Library:
     -------
 
     * Generally improved the performance of cgp_open (cgp_open_f).
 
-    * Fixed elemtest.c to compile for SunOS 5.12, CGNS-29.
+    * Fixed elemtest.c to compile for SunOS 5.12 (CGNS-29)
 
+    * Fixed parallel issue when not all processors involved in reading/writing (CGNS-51)
     
+    * Fixed argument being passed to H5Pget_driver in ADFH.c (CGNS-50)
 
     Fortran:
     --------
-    * Fixed cgnslib_f.h to be both free and fixed form compatible.
 
     * cgio_link_size_f -- file_len and name_len were changed from cgsize_t to integer to match the C API, CGNS-37.
 
