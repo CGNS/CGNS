@@ -84,19 +84,11 @@ int main(int argc, char *argv[])
         }
     }
 
-    /* write the coordinate data in parallel to the queue */
-    DEBUG_PRINT(("[%d]cgp_queue_set(1)\n",comm_rank))
-    if (cgp_queue_set(1)) cgp_error_exit();
     DEBUG_PRINT(("[%d]cgp_coord_write_data\n",comm_rank))
     if (cgp_coord_write_data(F, B, Z, Cx, &start, &end, x) ||
         cgp_coord_write_data(F, B, Z, Cy, &start, &end, y) ||
         cgp_coord_write_data(F, B, Z, Cz, &start, &end, z))
         cgp_error_exit();
-
-    /* write out the queued coordinate data */
-    DEBUG_PRINT(("[%d]cgp_queue_flush\n",comm_rank))
-    if (cgp_queue_flush()) cgp_error_exit();
-    cgp_queue_set(0);
 
     /* create data node for elements */
     DEBUG_PRINT(("[%d]cgp_section_write\n",comm_rank))

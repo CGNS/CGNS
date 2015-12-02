@@ -46,47 +46,47 @@ test  : write read
 $(OUTDIR) :
 	-@$(MKDIR) $(OUTDIR)
 
-$(WRITE1) : ../write_grid_str.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_grid_str.f $(LIBS)
+$(WRITE1) : ../write_grid_str.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../write_grid_str.F90 $(LIBS)
 
-$(WRITE2) : ../write_flowvert_str.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_flowvert_str.f $(LIBS)
+$(WRITE2) : ../write_flowvert_str.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../write_flowvert_str.F90 $(LIBS)
 
-$(WRITE3) : ../write_nondimensional.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_nondimensional.f $(LIBS)
+$(WRITE3) : ../write_nondimensional.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../write_nondimensional.F90 $(LIBS)
 
-$(WRITE4) : ../write_descriptor.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_descriptor.f $(LIBS)
+$(WRITE4) : ../write_descriptor.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../write_descriptor.F90 $(LIBS)
 
-$(WRITE5) : ../write_convergence.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_convergence.f $(LIBS)
+$(WRITE5) : ../write_convergence.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../write_convergence.F90 $(LIBS)
 
-$(WRITE6) : ../write_floweqn_str.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_floweqn_str.f $(LIBS)
+$(WRITE6) : ../write_floweqn_str.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../write_floweqn_str.F90 $(LIBS)
 
-$(WRITE7) : ../write_bcpnts_str.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_bcpnts_str.f $(LIBS)
+$(WRITE7) : ../write_bcpnts_str.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../write_bcpnts_str.F90 $(LIBS)
 
-$(READ1) : ../read_grid_str.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_grid_str.f $(LIBS)
+$(READ1) : ../read_grid_str.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../read_grid_str.F90 $(LIBS)
 
-$(READ2) : ../read_flowvert_str.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_flowvert_str.f $(LIBS)
+$(READ2) : ../read_flowvert_str.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../read_flowvert_str.F90 $(LIBS)
 
-$(READ3) : ../read_nondimensional.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_nondimensional.f $(LIBS)
+$(READ3) : ../read_nondimensional.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../read_nondimensional.F90 $(LIBS)
 
-$(READ4) : ../read_descriptor.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_descriptor.f $(LIBS)
+$(READ4) : ../read_descriptor.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../read_descriptor.F90 $(LIBS)
 
-$(READ5) : ../read_convergence.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_convergence.f $(LIBS)
+$(READ5) : ../read_convergence.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../read_convergence.F90 $(LIBS)
 
-$(READ6) : ../read_floweqn_str.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_floweqn_str.f $(LIBS)
+$(READ6) : ../read_floweqn_str.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../read_floweqn_str.F90 $(LIBS)
 
-$(READ7) : ../read_bcpnts_str.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_bcpnts_str.f $(LIBS)
+$(READ7) : ../read_bcpnts_str.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../read_bcpnts_str.F90 $(LIBS)
 
 clean :
 	-$(RM) grid.cgns

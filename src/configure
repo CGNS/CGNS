@@ -4156,10 +4156,9 @@ if test "$withfortran" = "yes"; then
 #--------------------------------------------------------------------------
     fc_vendor="`$FC --version 2>&1 |grep -i 'Portland Group'`"
     if test X != "X$fc_vendor"; then
-      FFLAGS='$FFLAGS -Mx,125,0x200' 
+      FFLAGS="$FFLAGS -Mx,125,0x200" 
     fi
 fi
-
 #--------------------------------------------------------------------------
 # substitutions and write Makefile and make.defs
 #--------------------------------------------------------------------------
@@ -4216,7 +4215,7 @@ CGNSLIB=libcgns.$EXT_LIB
 test "$LIBS" = "-lm -lm " && LIBS=-lm
 
 echo $ac_n "checking whether ${MAKE-make} sets \${MAKE}""... $ac_c" 1>&6
-echo "configure:4220: checking whether ${MAKE-make} sets \${MAKE}" >&5
+echo "configure:4219: checking whether ${MAKE-make} sets \${MAKE}" >&5
 set dummy ${MAKE-make}; ac_make=`echo "$2" | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_prog_make_${ac_make}_set'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -4432,7 +4431,7 @@ done
 ac_given_srcdir=$srcdir
 ac_given_INSTALL="$INSTALL"
 
-trap 'rm -fr `echo "cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnslib_f.h cgnsconfig.h Makefile \
+trap 'rm -fr `echo "cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h Makefile \
   make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile \
   cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
@@ -4605,7 +4604,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnslib_f.h cgnsconfig.h Makefile \
+CONFIG_FILES=\${CONFIG_FILES-"cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h Makefile \
   make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile \
   cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig"}
 EOF

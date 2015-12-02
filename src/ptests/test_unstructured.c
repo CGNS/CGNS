@@ -73,13 +73,9 @@ int main(int argc, char* argv[]) {
 	    cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateZ",&Cz))
 	    cgp_error_exit();
 
-	/* use queued IO */
-	cgp_queue_set(1);
-
 	if (cgp_coord_write_data(fn,B,Z,Cx,&min,&max,x) ||
 	    cgp_coord_write_data(fn,B,Z,Cy,&min,&max,y) ||
-	    cgp_coord_write_data(fn,B,Z,Cz,&min,&max,z) ||
-	    cgp_queue_flush())
+	    cgp_coord_write_data(fn,B,Z,Cz,&min,&max,z))
 	    cgp_error_exit();
 
 	start = 1;
@@ -99,11 +95,8 @@ int main(int argc, char* argv[]) {
 		}
 	printf("%d:%d %d %d\n",comm_rank,nelems,(int)emin,(int)emax);
 
-	if (cgp_elements_write_data(fn,B,Z,S,emin,emax,elements) ||
-	    cgp_queue_flush())
+	if (cgp_elements_write_data(fn,B,Z,S,emin,emax,elements))
 	    cgp_error_exit();
-
-	cgp_queue_set(0);
 
 	if (cgp_close(fn)) cgp_error_exit();
 
