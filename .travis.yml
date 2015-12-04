@@ -14,10 +14,10 @@ notifications:
   email: false
 
 before_install:
-    - |
-      if [ "$(uname)" = "Linux" ]; then 
-         sudo apt-get install gfortran;
-      fi
+#    - |
+#      if [ "$(uname)" = "Linux" ]; then 
+#         sudo apt-get install gfortran;
+#      fi
     - ./install-hdf.sh
 
 before_script:
