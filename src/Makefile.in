@@ -39,7 +39,7 @@ ADFOBJS=@ADFOBJS@ \
 #----------
 FORTRAN_TESTS=
 ifeq ("$(BUILDFORTRAN)" , "1")
-	FORTRAN_TESTS=-cd examples/fortran && $(MAKE) test && cd ../../Test_UserGuideCode/Fortran_code && $(MAKE) test
+	FORTRAN_TESTS=cd examples/fortran && $(MAKE) test && cd ../../Test_UserGuideCode/Fortran_code && $(MAKE) test
 endif
 
 MakeTests = runtests @PTESTS@
@@ -62,24 +62,24 @@ $(OBJDIR) :
 #----------
 
 tools : $(CGNSLIB)
-	-cd tools && $(MAKE)
+	cd tools && $(MAKE)
 
 cgnstools : $(CGNSLIB)
-	-cd cgnstools && $(MAKE)
+	cd cgnstools && $(MAKE)
 
 tests : $(CGNSLIB)
-	-cd tests && $(MAKE)
+	cd tests && $(MAKE)
 
 ptests : $(CGNSLIB)
-	-cd ptests && $(MAKE)
+	cd ptests && $(MAKE)
 
 runtests : $(CGNSLIB)
-	-cd tests && $(MAKE) test
-	-cd Test_UserGuideCode/C_code && $(MAKE) test
+	cd tests && $(MAKE) test
+	cd Test_UserGuideCode/C_code && $(MAKE) test
 	$(FORTRAN_TESTS)
 
 runptests : $(CGNSLIB)
-	-cd ptests && $(MAKE) test
+	cd ptests && $(MAKE) test
 
 #----------
 
