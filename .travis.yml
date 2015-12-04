@@ -16,8 +16,7 @@ notifications:
 before_install:
     - |
       if [ "$(uname)" = "Linux" ]; then
-         sudo apt-get update;
-         apt-cache search gfortran;
+         sudo apt-get update -qq;
          sudo apt-get install gfortran;
       fi
     - ./install-hdf.sh
