@@ -24,12 +24,10 @@ PROGRAM ftest
   INTEGER(cgsize_t), ALLOCATABLE, DIMENSION(:) :: ie
   CHARACTER*32 name
   CHARACTER*11 piomode(2)
-  CHARACTER*6 outmode(2)
   INTEGER :: istat
   INTEGER :: precision
 
   DATA piomode /'independent','collective'/
-  DATA outmode /'direct','queued'/
 
   CALL MPI_INIT(mpi_err)
   CALL MPI_COMM_SIZE(MPI_COMM_WORLD,commsize,mpi_err)
@@ -120,8 +118,6 @@ PROGRAM ftest
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cgp_array_write_f('ArrayZ',RealDouble,1,totcnt,Az,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_queue_set_f(nz-1,ierr)
-        IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
         ts = MPI_WTIME()
 
@@ -147,21 +143,16 @@ PROGRAM ftest
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cgp_array_write_data_f(Az,start,END,dz,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        IF (nz .EQ. 2) THEN
-           CALL cgp_queue_flush_f(ierr)
-           IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        ENDIF
 
         CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
         te = MPI_WTIME()
         tt = te - ts;
         IF (commrank .EQ. 0) THEN
            PRINT *,'write:',tt,' secs,', dsize/tt, ' Mb/sec (', &
-                piomode(nb),',',outmode(nz),')'
+                piomode(nb),')'
         ENDIF
      ENDDO
   ENDDO
-  CALL cgp_queue_set_f(0,ierr)
   CALL cgp_close_f(F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cgp_open_f('ftest.cgns',CG_MODE_READ,F,ierr)

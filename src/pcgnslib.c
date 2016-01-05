@@ -42,7 +42,6 @@ extern int pcg_mpi_comm_rank;
 /* flag indicating if mpi_initialized was called */
 extern int pcg_mpi_initialized;
 
-static int write_to_queue = 0;
 static hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
 
 extern int cgns_filetype;
@@ -186,48 +185,6 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
   return herr < 0 ? CG_ERROR : CG_OK;
 }
 
-/*===== queued IO functions ===============================*/
-
-typedef struct slice_s {
-    hid_t pid;
-    CGNS_ENUMT(DataType_t) type;
-    int ndims;
-    cgsize_t rmin[3];
-    cgsize_t rmax[3];
-    const void *data;
-} slice_t;
-
-static slice_t *write_queue = NULL;
-static int write_queue_len = 0;
-
-/*---------------------------------------------------------*/
-
-static int write_data_queue(hid_t pid, CGNS_ENUMT(DataType_t) type,
-    int ndims, const cgsize_t *rmin, const cgsize_t *rmax, const void *data)
-{
-    int n;
-    slice_t *slice;
-
-    if (write_queue_len == 0) {
-        write_queue = (slice_t *)malloc(sizeof(slice_t));
-    }
-    else {
-        write_queue = (slice_t *)realloc(write_queue,
-                          (write_queue_len+1) * sizeof(slice_t));
-    }
-    slice = &write_queue[write_queue_len++];
-
-    slice->pid = pid;
-    slice->type = type;
-    slice->ndims = ndims;
-    for (n = 0; n < ndims; n++) {
-        slice->rmin[n] = rmin[n];
-        slice->rmax[n] = rmax[n];
-    }
-    slice->data = data;
-    return CG_OK;
-}
-
 /*---------------------------------------------------------*/
 
 static int check_parallel(cgns_file *cgfile)
@@ -275,34 +232,6 @@ int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
     return CG_OK;
 }
 
-/*---------------------------------------------------------*/
-
-int cgp_queue_set(int use_queue)
-{
-    write_to_queue = use_queue;
-    return CG_OK;
-}
-
-/*---------------------------------------------------------*/
-
-int cgp_queue_flush(void)
-{
-  int n, errs = 0;
-  cg_rw_t Data;
-
-  if (write_queue_len) {
-    for (n = 0; n < write_queue_len; n++) {
-      Data.u.wbuf = write_queue[n].data;
-      if (readwrite_data_parallel(write_queue[n].pid, write_queue[n].type,
-				  write_queue[n].ndims, write_queue[n].rmin,
-				  write_queue[n].rmax, &Data, CG_PAR_WRITE)) errs++;
-    }
-    free(write_queue);
-    write_queue = NULL;
-    write_queue_len = 0;
-  }
-  return errs ? CG_ERROR : CG_OK;
-}
 
 /*---------------------------------------------------------*/
 
@@ -342,7 +271,6 @@ int cgp_open(const char *filename, int mode, int *fn)
 
 int cgp_close(int fn)
 {
-    cgp_queue_flush();
     return cg_close(fn);
 }
 
@@ -399,10 +327,6 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
     type = cgi_datatype(zcoor->coord[C-1].data_type);
 
     to_HDF_ID(zcoor->coord[C-1].id,hid);
-    if (write_to_queue) {
-        return write_data_queue(hid, type,
-                   zone->index_dim, rmin, rmax, coords);
-    }
 
     cg_rw_t Data;
     Data.u.wbuf = coords;
@@ -514,10 +438,7 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     type = cgi_datatype(section->connect->data_type);
 
     to_HDF_ID(section->connect->id, hid);
-    if (write_to_queue) {
-        return write_data_queue(hid, type,
-                   1, &rmin, &rmax, elements);
-    }
+
     cg_rw_t Data;
     Data.u.wbuf = elements;
     return readwrite_data_parallel(hid, type,
@@ -613,10 +534,6 @@ int cgp_field_write_data(int fn, int B, int Z, int S, int F,
 
     to_HDF_ID(field->id,hid);
 
-    if (write_to_queue) {
-        return write_data_queue(hid, type,
-                   field->data_dim, rmin, rmax, data);
-    }
     cg_rw_t Data;
     Data.u.wbuf = data;
     return readwrite_data_parallel(hid, type,
@@ -721,10 +638,7 @@ int cgp_array_write_data(int A, const cgsize_t *rmin,
     type = cgi_datatype(array->data_type);
 
     to_HDF_ID(array->id, hid);
-    if (write_to_queue) {
-        return write_data_queue(hid, type,
-                   array->data_dim, rmin, rmax, data);
-    }
+
     cg_rw_t Data;
     Data.u.wbuf = data;
     return readwrite_data_parallel(hid, type,

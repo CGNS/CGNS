@@ -1,4 +1,4 @@
-This contains a set of Fortran test cases from UserGuideCode.
+This contains a set of Fortran90 test cases from UserGuideCode.
 (modified for use with V3.3)
 
 If CGNS is compiled with --enable-64bit, then the created "grid.cgns"

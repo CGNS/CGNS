@@ -78,20 +78,13 @@ PROGRAM fexample
      ENDDO
   ENDDO
 
-!---- write the coordinate data in parallel to the queue
-  CALL cgp_queue_set_f(1, ierr)
-  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+!---- write the coordinate data in parallel
   CALL cgp_coord_write_data_f(F, B, Z, Cx, start, END, fx, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cgp_coord_write_data_f(F, B, Z, Cy, start, END, fy, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cgp_coord_write_data_f(F, B, Z, Cz, start, END, fz, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-
-!---- write out the queued coordinate data
-  CALL cgp_queue_flush_f(ierr)
-  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_queue_set_f(0, ierr)
 
 !---- create data node for elements
   CALL cgp_section_write_f(F, B, Z, 'Hex', HEXA_8, start_1, totelems, 0, E, ierr)

@@ -21,17 +21,17 @@ test  : write read
 $(OUTDIR) :
 	-@$(MKDIR) $(OUTDIR)
 
-$(WRITE1) : ../write_grid_str.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_grid_str.f $(LIBS)
+$(WRITE1) : ../write_grid_str.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../write_grid_str.F90 $(LIBS)
 
-$(WRITE2) : ../write_flowcentrind_str.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_flowcentrind_str.f $(LIBS)
+$(WRITE2) : ../write_flowcentrind_str.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../write_flowcentrind_str.F90 $(LIBS)
 
-$(READ1) : ../read_grid_str.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_grid_str.f $(LIBS)
+$(READ1) : ../read_grid_str.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../read_grid_str.F90 $(LIBS)
 
-$(READ2) : ../read_flowcentrind_str.f
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_flowcentrind_str.f $(LIBS)
+$(READ2) : ../read_flowcentrind_str.F90
+	$(F77) $(FOPTS) $(FEOUT)$@ ../read_flowcentrind_str.F90 $(LIBS)
 
 clean :
 	-$(RM) grid.cgns

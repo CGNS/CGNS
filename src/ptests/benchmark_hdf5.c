@@ -63,7 +63,7 @@ cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
 int mpi_err;
-int err;
+
 int comm_size;
 int comm_rank;
 int fn;
@@ -91,7 +91,7 @@ cgsize_t* Array_i;
 cgsize_t start, end, emin, emax;
 cgsize_t* elements;
 char name[33];
-int queue, debug;
+int  debug;
 double t0, t1, t2;
 
 /*
@@ -138,6 +138,7 @@ int c_double_eq(double a, double b) {
 }
 
 int main(int argc, char* argv[]) {
+  int err;
   /* Initialize variables */
   initialize(&argc,&argv);
 
@@ -151,7 +152,6 @@ int main(int argc, char* argv[]) {
 
   /* parameters */
   piomode_i = 1;
-  queue = false;
   debug = false;
 
   t0 = MPI_Wtime(); /* Timer */
@@ -197,11 +197,6 @@ int main(int argc, char* argv[]) {
   t2 = MPI_Wtime();
   xtiming[10] = t2-t1;
 
-  }
-  /* use queued IO */
-  if(cgp_queue_set(queue) != CG_OK) {
-    printf("*FAILED* cgp_queue_set \n");
-    cgp_error_exit();
   }
 
   /* ====================================== */
@@ -273,11 +268,9 @@ int main(int argc, char* argv[]) {
   t2 = MPI_Wtime();
   xtiming[1] = t2-t1;
 
-  if(!queue) {
-    free(Coor_x);
-    free(Coor_y);
-    free(Coor_z);
-  }
+  free(Coor_x);
+  free(Coor_y);
+  free(Coor_z);
   /* ====================================== */
   /* == (B) WRITE THE CONNECTIVITY TABLE == */
   /* ====================================== */
@@ -314,9 +307,7 @@ int main(int argc, char* argv[]) {
   t2 = MPI_Wtime();
   xtiming[2] = t2-t1;
 
-  if(!queue) {
-    free(elements);
-  }
+  free(elements);
 
 
   /* ====================================== */
@@ -394,11 +385,9 @@ int main(int argc, char* argv[]) {
   t2 = MPI_Wtime();
   xtiming[3] = t2-t1;
 
-  if(!queue) {
-    free(Data_Fx);
-    free(Data_Fy);
-    free(Data_Fz);
-  }
+  free(Data_Fx);
+  free(Data_Fy);
+  free(Data_Fz);
 
   /* ====================================== */
   /* == (D) WRITE THE ARRAY DATA         == */
@@ -478,10 +467,9 @@ int main(int argc, char* argv[]) {
   t2 = MPI_Wtime();
   xtiming[4] = t2-t1;
 
-  if(!queue) {
-    free(Array_r);
-    free(Array_i);
-  }
+  free(Array_r);
+  free(Array_i);
+
   t1 = MPI_Wtime();
   if(cgp_close(fn) != CG_OK) {
     printf("*FAILED* cgp_close \n");
@@ -494,11 +482,6 @@ int main(int argc, char* argv[]) {
   /* ==    **  READ THE CGNS FILE **     == */
   /* ====================================== */
   MPI_Barrier(MPI_COMM_WORLD);
-  /* use queued IO */
-  if(cgp_queue_set(0) != CG_OK) {
-    printf("*FAILED* cgp_queue_set \n");
-    cgp_error_exit();
-  }
 
   t1 = MPI_Wtime();
   /* Open the cgns file for reading */

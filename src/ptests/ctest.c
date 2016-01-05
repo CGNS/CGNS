@@ -27,7 +27,6 @@ int main(int argc, char *argv[])
     char name[33];
     double ts, tt, data_size;
     static char *piomode[2] = {"independent", "collective"};
-    static char *outmode[2] = {"direct", "queued"};
 
     MPI_Init(&argc,&argv);
     MPI_Comm_size(comm, &comm_size);
@@ -130,8 +129,6 @@ int main(int argc, char *argv[])
                 cgp_array_write("ArrayZ",CGNS_ENUMV(RealDouble),1,sizes,&Az))
                 cgp_error_exit();
 
-            DEBUG_PRINT(("[%d]cgp_queue_set(%s)\n",comm_rank,outmode[nz]))
-            if (cgp_queue_set(nz)) cgp_error_exit();
             MPI_Barrier(comm);
             ts = MPI_Wtime();
 
@@ -157,15 +154,12 @@ int main(int argc, char *argv[])
                 cgp_array_write_data(Az,&start,&end,z))
                 cgp_error_exit();
 
-            if (nz) {
-                DEBUG_PRINT(("[%d]cgp_queue_flush\n",comm_rank))
-                if (cgp_queue_flush()) cgp_error_exit();
-            }
+
             MPI_Barrier(comm);
             tt = MPI_Wtime() - ts;
             if (comm_rank == 0) {
-                printf("write: %lf secs, %lf Mb/sec (%s,%s)\n",
-                    tt, data_size / tt, piomode[nb], outmode[nz]);
+                printf("write: %lf secs, %lf Mb/sec (%s)\n",
+                    tt, data_size / tt, piomode[nb]);
 #ifdef DEBUG_MPI
                 fflush(stdout);
 #endif
@@ -173,7 +167,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    cgp_queue_set(0);
     DEBUG_PRINT(("[%d]cgp_close\n",comm_rank))
     if (cgp_close(F)) cgp_error_exit();
     DEBUG_PRINT(("[%d]cgp_open(read)\n",comm_rank))

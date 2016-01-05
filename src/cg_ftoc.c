@@ -3642,19 +3642,6 @@ CGNSDLL void cgp_pio_mode_f(CGNS_ENUMT(PIOmode_t) *mode, cgint_f *ier)
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cgp_queue_set_f(cgint_f *use_queue, cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_queue_set((int)*use_queue);
-}
-
-/*-----------------------------------------------------------------------*/
-CGNSDLL void cgp_queue_flush_f(cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_queue_flush();
-}
-
-/*-----------------------------------------------------------------------*/
-
 CGNSDLL void FMNAME(cgp_open_f, CGP_OPEN_F) (STR_PSTR(filename), int *mode,
 	cgint_f *fn, cgint_f *ier STR_PLEN(filename))
 
