@@ -109,7 +109,7 @@ ftest$(EXE) : ftest.F90 $(CGNSLIB)
 
 #----------
 
-ftest$(EXE) : ftest_zone.F90 $(CGNSLIB)
+ftest_zone$(EXE) : ftest_zone.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ ftest_zone.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
