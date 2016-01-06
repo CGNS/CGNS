@@ -37,7 +37,7 @@ test : $(TESTS)
 	status=0; \
 	echo "=== running parallel tests ==="; \
 	 for x in $(TESTS) ; do \
-	   if `$(MPIEXEC) -np 2 $$x >/dev/null 2>&1` ; then \
+	   if `$(MPIEXEC) -np 2 ./$$x >/dev/null 2>&1` ; then \
 	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
 	   else \
 	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
