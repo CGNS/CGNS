@@ -114,6 +114,14 @@ set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 
 if (BUILDFORTRAN)
 
+#----------- Determine if the Fortran compiler pgi ------------------------
+# The PGI compiler segfaults wehn va_start is called, so we need to add
+# a special compiler flag, see CGNS-40.
+#--------------------------------------------------------------------------
+IF (CMAKE_C_COMPILER_ID MATCHES "PGI")
+ SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Mx,125,0x200")
+ENDIF()
+
 ENABLE_LANGUAGE(Fortran)
 
 #-----------------------------------------------------------------------------
