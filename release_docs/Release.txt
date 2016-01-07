@@ -186,7 +186,6 @@ Known Problems
             FLIBS="-Wl,--no-as-needed -ldl"
             LIBS="-Wl,--no-as-needed -ldl"
 
-
 Supported Platforms
 ===================
 The following platforms are supported and have been tested for this release.
