@@ -531,8 +531,13 @@ install(FILES
 	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f03.h
 	${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs
-        ${CMAKE_CURRENT_BINARY_DIR}/cgns.mod
 	DESTINATION include)
+
+if (CGNS_ENABLE_FORTRAN)
+  install(FILES
+          ${CMAKE_CURRENT_BINARY_DIR}/cgns.mod
+          DESTINATION include)
+endif (CGNS_ENABLE_FORTRAN)
 
 if (CGNS_ENABLE_PARALLEL)
   install(FILES	pcgnslib.h DESTINATION include)

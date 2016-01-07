@@ -23,7 +23,7 @@ CALL =	ctest$(EXE) \
 	test_zone$(EXE) \
 	thesis_benchmark$(EXE)
 
-FALL =	ftest$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) 
+FALL =	ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) 
 
 ALL   = $(CALL) @FALL@
 TESTS = $(ALL)
@@ -37,7 +37,7 @@ test : $(TESTS)
 	status=0; \
 	echo "=== running parallel tests ==="; \
 	 for x in $(TESTS) ; do \
-	   if `$(MPIEXEC) -np 2 $$x >/dev/null 2>&1` ; then \
+	   if `$(MPIEXEC) -np 2 ./$$x >/dev/null 2>&1` ; then \
 	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
 	   else \
 	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
@@ -105,6 +105,12 @@ thesis_benchmark$(EXE) : thesis_benchmark.c $(CGNSLIB)
 
 ftest$(EXE) : ftest.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ ftest.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+ftest_zone$(EXE) : ftest_zone.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ ftest_zone.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
