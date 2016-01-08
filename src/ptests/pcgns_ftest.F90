@@ -1,4 +1,4 @@
-PROGRAM ftest
+PROGRAM pcgns_ftest
 
   USE mpi
   USE ISO_C_BINDING
@@ -76,7 +76,7 @@ PROGRAM ftest
 ! default is MPI_COMM_WORLD, but can set another communicator with this
 !     call cgp_mpi_comm_f(MPI_COMM_WORLD,ierr)
 
-  CALL cgp_open_f('ftest.cgns',CG_MODE_WRITE,F,ierr)
+  CALL cgp_open_f('pcgns_ftest.cgns',CG_MODE_WRITE,F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   DO nb=1,2
@@ -155,7 +155,7 @@ PROGRAM ftest
   ENDDO
   CALL cgp_close_f(F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_open_f('ftest.cgns',CG_MODE_READ,F,ierr)
+  CALL cgp_open_f('pcgns_ftest.cgns',CG_MODE_READ,F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   CALL cg_precision_f(F, PRECISION, ierr)
@@ -247,5 +247,5 @@ PROGRAM ftest
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   CALL MPI_FINALIZE(mpi_err)
-END PROGRAM ftest
+END PROGRAM pcgns_ftest
 

@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
     cgp_mpi_comm(comm);
 
     DEBUG_PRINT(("[%d]cgp_open(write)\n",comm_rank))
-    if (cgp_open("ctest.cgns", CG_MODE_WRITE, &F))
+    if (cgp_open("pcgns_ctest.cgns", CG_MODE_WRITE, &F))
         cgp_error_exit();
 
     for (nb = 0; nb < 2; nb++) {
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
     DEBUG_PRINT(("[%d]cgp_close\n",comm_rank))
     if (cgp_close(F)) cgp_error_exit();
     DEBUG_PRINT(("[%d]cgp_open(read)\n",comm_rank))
-    if (cgp_open("ctest.cgns", CG_MODE_READ, &F)) cgp_error_exit();
+    if (cgp_open("pcgns_ctest.cgns", CG_MODE_READ, &F)) cgp_error_exit();
 
     Z = S = E = 1;
     for (nb = 0; nb < 2; nb++) {

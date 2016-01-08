@@ -22,8 +22,8 @@ if (NOT WIN32)
   link_libraries(m)
 endif (NOT WIN32)
 
-set(ctest_FILES ctest.c)
-add_executable(ctest ${ctest_FILES})
+set(pcgns_ctest_FILES pcgns_ctest.c)
+add_executable(pcgns_ctest ${pcgns_ctest_FILES})
 
 set(cexample_FILES cexample.c)
 add_executable(cexample ${cexample_FILES})
@@ -50,8 +50,8 @@ set(thesis_benchmark_FILES thesis_benchmark.c)
 add_executable(thesis_benchmark ${thesis_benchmark_FILES})
 
 if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
-  set(ftest_FILES ftest.F90)
-  add_executable(ftest ${ftest_FILES})
+  set(pcgns_ftest_FILES pcgns_ftest.F90)
+  add_executable(pcgns_ftest ${pcgns_ftest_FILES})
   set(fexample_FILES fexample.F90)
   add_executable(fexample ${fexample_FILES})
   set(benchmark_hdf5_f90_FILES benchmark_hdf5_f90.F90)
@@ -60,8 +60,8 @@ endif (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
 
 # Add the tests so that cmake can find them
 if (CGNS_ENABLE_TESTS)
-  add_test(ctest ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-      ${MPIEXEC_PREFLAGS} ctest ${MPIEXEC_POSTFLAGS})
+  add_test(pcgns_ctest ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+      ${MPIEXEC_PREFLAGS} pcgns_ctest ${MPIEXEC_POSTFLAGS})
   add_test(cexample ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} cexample ${MPIEXEC_POSTFLAGS})
   add_test(benchmark ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
@@ -79,8 +79,8 @@ if (CGNS_ENABLE_TESTS)
   add_test(thesis_benchmark ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} thesis_benchmark ${MPIEXEC_POSTFLAGS})
   if (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
-    add_test(ftest ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-        ${MPIEXEC_PREFLAGS} ftest ${MPIEXEC_POSTFLAGS})
+    add_test(pcgns_ftest ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+        ${MPIEXEC_PREFLAGS} pcgns_ftest ${MPIEXEC_POSTFLAGS})
     add_test(fexample ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
         ${MPIEXEC_PREFLAGS} fexample ${MPIEXEC_POSTFLAGS})
     add_test(benchmark_hdf5_f90 ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
