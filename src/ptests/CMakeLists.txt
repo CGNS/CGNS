@@ -61,29 +61,29 @@ endif (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
 # Add the tests so that cmake can find them
 if (CGNS_ENABLE_TESTS)
   add_test(pcgns_ctest ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-      ${MPIEXEC_PREFLAGS} pcgns_ctest ${MPIEXEC_POSTFLAGS})
+      ${MPIEXEC_PREFLAGS} ./pcgns_ctest ${MPIEXEC_POSTFLAGS})
   add_test(cexample ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-      ${MPIEXEC_PREFLAGS} cexample ${MPIEXEC_POSTFLAGS})
+      ${MPIEXEC_PREFLAGS} ./cexample ${MPIEXEC_POSTFLAGS})
   add_test(benchmark ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-      ${MPIEXEC_PREFLAGS} benchmark ${MPIEXEC_POSTFLAGS})
+      ${MPIEXEC_PREFLAGS} ./benchmark ${MPIEXEC_POSTFLAGS})
   add_test(benchmark_hdf5 ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-      ${MPIEXEC_PREFLAGS} benchmark_hdf5 ${MPIEXEC_POSTFLAGS})
+      ${MPIEXEC_PREFLAGS} ./benchmark_hdf5 ${MPIEXEC_POSTFLAGS})
   add_test(open_close ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-      ${MPIEXEC_PREFLAGS} open_close ${MPIEXEC_POSTFLAGS})
+      ${MPIEXEC_PREFLAGS} ./open_close ${MPIEXEC_POSTFLAGS})
   add_test(test_base ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-      ${MPIEXEC_PREFLAGS} test_base ${MPIEXEC_POSTFLAGS})
+      ${MPIEXEC_PREFLAGS} ./test_base ${MPIEXEC_POSTFLAGS})
   add_test(test_unstructured ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-      ${MPIEXEC_PREFLAGS} test_unstructured ${MPIEXEC_POSTFLAGS})
+      ${MPIEXEC_PREFLAGS} ./test_unstructured ${MPIEXEC_POSTFLAGS})
   add_test(test_zone ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-      ${MPIEXEC_PREFLAGS} test_zone ${MPIEXEC_POSTFLAGS})
+      ${MPIEXEC_PREFLAGS} ./test_zone ${MPIEXEC_POSTFLAGS})
   add_test(thesis_benchmark ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-      ${MPIEXEC_PREFLAGS} thesis_benchmark ${MPIEXEC_POSTFLAGS})
+      ${MPIEXEC_PREFLAGS} ./thesis_benchmark ${MPIEXEC_POSTFLAGS})
   if (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
     add_test(pcgns_ftest ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-        ${MPIEXEC_PREFLAGS} pcgns_ftest ${MPIEXEC_POSTFLAGS})
+        ${MPIEXEC_PREFLAGS} ./pcgns_ftest ${MPIEXEC_POSTFLAGS})
     add_test(fexample ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-        ${MPIEXEC_PREFLAGS} fexample ${MPIEXEC_POSTFLAGS})
+        ${MPIEXEC_PREFLAGS} ./fexample ${MPIEXEC_POSTFLAGS})
     add_test(benchmark_hdf5_f90 ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-        ${MPIEXEC_PREFLAGS} benchmark_hdf5_f90 ${MPIEXEC_POSTFLAGS})
+        ${MPIEXEC_PREFLAGS} ./benchmark_hdf5_f90 ${MPIEXEC_POSTFLAGS})
   endif (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
 endif (CGNS_ENABLE_TESTS)
