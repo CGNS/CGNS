@@ -25,6 +25,7 @@ endif (NOT WIN32)
 
 # Set the files needed by each test
 set (examples
+	write_grid_str
 	write_bc_str
 	write_bcpnts_str
 	write_bcpnts_unst
@@ -39,7 +40,6 @@ set (examples
 	write_flowvert_str
 	write_flowvert_unst
 	write_grid2zn_str
-	write_grid_str
 	write_grid_unst
 	write_nondimensional
 	write_timevert_str
