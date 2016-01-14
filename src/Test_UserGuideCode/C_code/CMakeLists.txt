@@ -69,8 +69,32 @@ foreach (example ${examples})
 endforeach (example ${examples})
 
 # Add the tests so that ctest can find them
-if (CGNS_ENABLE_TESTS)
-	foreach (example ${examples})
-	  add_test (${example} ${example})
-	endforeach (example ${examples})
-endif (CGNS_ENABLE_TESTS)
+#if (CGNS_ENABLE_TESTS)
+#	foreach (example ${examples})
+#	  add_test (${example} ${example})
+#	endforeach (example ${examples})
+#endif (CGNS_ENABLE_TESTS)
+#	write_grid_str
+#	write_flowvert_str
+#	write_nondimensional
+#	write_descriptor
+#	write_convergence
+#	write_floweqn_str
+#	write_bcpnts_str
+#	write_grid_unst
+#	write_flowvert_unst
+#	write_dimensional
+#	write_descriptor
+#	write_convergence
+#	write_bcpnts_unst
+#	write_grid_str
+#	write_timevert_str
+#	write_grid_str
+#	write_flowcent_str
+#	write_bc_str
+#	write_grid_str
+#	write_flowcentrind_str
+#	write_grid2zn_str
+#	write_con2zn_str
+#	write_grid2zn_str
+#	write_con2zn_genrl_str
