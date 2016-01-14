@@ -25,6 +25,24 @@ endif (NOT WIN32)
 
 # Set the files needed by each test
 set (examples
+	write_bc_str
+	write_bcpnts_str
+	write_bcpnts_unst
+	write_con2zn_str
+	write_con2zn_genrl_str
+	write_convergence
+	write_descriptor
+	write_dimensional
+	write_flowcent_str
+	write_flowcentrind_str
+	write_floweqn_str
+	write_flowvert_str
+	write_flowvert_unst
+	write_grid2zn_str
+	write_grid_str
+	write_grid_unst
+	write_nondimensional
+	write_timevert_str
 	read_bc_str
 	read_bcpnts_str
 	read_bcpnts_unst
@@ -43,24 +61,6 @@ set (examples
 	read_grid_unst
 	read_nondimensional
 	read_timevert_str
-	write_bc_str
-	write_bcpnts_str
-	write_bcpnts_unst
-	write_con2zn_genrl_str
-	write_con2zn_str
-	write_convergence
-	write_descriptor
-	write_dimensional
-	write_flowcent_str
-	write_flowcentrind_str
-	write_floweqn_str
-	write_flowvert_str
-	write_flowvert_unst
-	write_grid2zn_str
-	write_grid_str
-	write_grid_unst
-	write_nondimensional
-	write_timevert_str
 )
 
 # Build each test
