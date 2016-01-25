@@ -20,10 +20,6 @@ if (CGNS_ENABLE_HDF5)
       endif (HDF5isDLL)
     endif (HDF5_LIBRARY)
   endif (WIN32)
-  # Includes from HDF5
-  if (HDF5_INCLUDE_PATH)
-    include_directories(${HDF5_INCLUDE_PATH})
-  endif (HDF5_INCLUDE_PATH)
   if(HDF5_NEED_MPI AND MPI_INC)
     include_directories(${MPI_INC})
   endif(HDF5_NEED_MPI AND MPI_INC)
@@ -113,6 +109,14 @@ set(HDF5_HAVE_MULTI_DATASETS 0)
 set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 
 if (BUILDFORTRAN)
+
+#----------- Determine if the Fortran compiler pgi ------------------------
+# The PGI compiler segfaults wehn va_start is called, so we need to add
+# a special compiler flag, see CGNS-40.
+#--------------------------------------------------------------------------
+IF (CMAKE_C_COMPILER_ID MATCHES "PGI")
+ SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Mx,125,0x200")
+ENDIF()
 
 ENABLE_LANGUAGE(Fortran)
 
@@ -314,7 +318,7 @@ MACRO (CHECK_HDF5_FEATURE FUNCTION CODE VARIABLE)
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/test_HDF.c
         "${CODE}"
     )
-    SET (CHECK_FUNCTION_EXISTS_ADD_INCLUDE "-DINCLUDE_DIRECTORIES:STRING=${HDF5_INCLUDE_PATH}")
+    SET (CHECK_FUNCTION_EXISTS_ADD_INCLUDE "-DINCLUDE_DIRECTORIES:STRING=${HDF5_INCLUDE_DIR}")
     TRY_COMPILE (${VARIABLE}
         ${CMAKE_BINARY_DIR}
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/test_HDF.c
@@ -345,12 +349,12 @@ ENDMACRO (CHECK_HDF5_FEATURE)
 
 if (CGNS_ENABLE_HDF5)
   set(BUILDHDF5 1)
-  if (HDF5_INCLUDE_PATH)
-    native_paths(HDF5_INCLUDE_PATH HDF5INC)
-  endif (HDF5_INCLUDE_PATH)
-  if (HDF5_LIBRARY)
-    native_paths(HDF5_LIBRARY HDF5LIB)
-  endif (HDF5_LIBRARY)
+#  if (HDF5_INCLUDE_PATH)
+#    native_paths(HDF5_INCLUDE_PATH HDF5INC)
+#  endif (HDF5_INCLUDE_PATH)
+#  if (HDF5_LIBRARY)
+#    native_paths(HDF5_LIBRARY HDF5LIB)
+#  endif (HDF5_LIBRARY)
   if (HDF5_NEED_SZIP)
     set(H5NEEDSZIP 1)
     if (SZIP_LIBRARY)
@@ -562,6 +566,7 @@ add_subdirectory(tools)
 
 if (CGNS_ENABLE_TESTS)
   add_subdirectory(tests)
+  add_subdirectory(Test_UserGuideCode/C_code)
   if (CGNS_ENABLE_PARALLEL)
     add_subdirectory(ptests)
   endif (CGNS_ENABLE_PARALLEL)
