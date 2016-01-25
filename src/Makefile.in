@@ -122,9 +122,9 @@ install-cgns : $(CGNSLIB) $(INCLUDEDIR) $(LIBDIR) @INSTALLPCGNS@ @INSTALLADF@
 	$(INSTALL_DATA) cgnsconfig.h $(INCLUDEDIR)/cgnsconfig.h
 	$(INSTALL_DATA) cgnsBuild.defs $(INCLUDEDIR)/cgnsBuild.defs
 	$(INSTALL_DATA) $(CGNSLIB) $(LIBDIR)/$(INSTLIB)
-	@if [ -f cgns.mod ] ; then \
-	$(INSTALL_DATA) cgns.mod $(INCLUDEDIR)/cgns.mod \
-	  fi;
+	@if test -f cgns.mod; then \
+	$(INSTALL_DATA) cgns.mod $(INCLUDEDIR)/cgns.mod; \
+	  fi
 
 install-tools :
 	-cd tools && $(MAKE) install
