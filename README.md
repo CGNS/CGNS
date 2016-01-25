@@ -4,6 +4,10 @@
 
 The CFD General Notation System (CGNS) provides a standard for recording and recovering computer data associated with the numerical solution of fluid dynamics equations.
 
+## Bugs/Feature and issue tracking
+
+https://cgnsorg.atlassian.net
+
 ## Installation
 
 ### Installation Instructions using cmake
