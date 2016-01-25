@@ -148,6 +148,10 @@ Bug Fixes since CGNS 3.2.1 release
 
     * Added a new PGI fortran compiler flag fix issue when  passing to C varags (CGNS-40)
 
+    * CMake find_package was added for HDF5, users should use -D CMAKE_PREFIX_PATH=$HDF_DIR to
+      specify a specific version of HDF5.
+
+
     Library:
     -------
 
