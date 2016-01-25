@@ -16,6 +16,7 @@ else
 fi
 
 ./configure \
+--prefix=$PWD/cgns_build \
 --with-hdf5=$HOME/hdf5 \
 --with-fortran \
 --enable-lfs \
