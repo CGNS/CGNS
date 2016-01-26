@@ -241,7 +241,7 @@ if (CGNS_ENABLE_HDF5)
 #Legacy find_package does not set HDF5_TOOLS_DIR, so we set it here
     set(HDF5_TOOLS_DIR ${HDF5_LIBRARY_DIRS}/../bin)
 #Legacy find_package does not set HDF5_BUILD_SHARED_LIBS, so we set it here
-    if (CGNS_BUILD_SHARED AND EXISTS "${HDF5_LIBRARY_DIRS}/libhdf5.so")
+    if (CGNS_BUILD_SHARED AND EXISTS "${HDF5_LIBRARY_DIRS}/libhdf5${CMAKE_SHARED_LIBRARY_SUFFIX}")
       set (HDF5_BUILD_SHARED_LIBS 1)
       add_definitions (-DH5_BUILT_AS_DYNAMIC_LIB)
     else ()
