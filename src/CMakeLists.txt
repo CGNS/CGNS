@@ -471,7 +471,7 @@ if(CGNS_BUILD_SHARED)
   # and link with the HDF5 libraries to build a dll
   if (WIN32 OR CYGWIN)
     add_definitions(-DBUILD_DLL)
-  endif(WIND32 OR CYGWIN)
+  endif (WIN32 OR CYGWIN)
   if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
     target_link_libraries(cgns_shared ${HDF5_LIBRARY})
     if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
