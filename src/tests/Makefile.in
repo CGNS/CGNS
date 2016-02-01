@@ -58,13 +58,19 @@ test : $(TESTS)
 	@echo " "; \
 	status=0; \
 	echo "=== running tests ==="; \
+        \rm ./CGNS_timing_1;\
 	 for x in $(TESTS) ; do \
+           start=`date +%s%N`; \
 	   if `./$$x >/dev/null 2>&1` ; then \
 	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
 	   else \
 	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
 		status=1; \
 	   fi; \
+           end=`date +%s%N`; \
+           runtime=$$((end-start));\
+           runtime=`echo "scale=6;$$((runtime)) / 1000000000" | bc`;\
+           `printf "%s %f\n" $$x  $$runtime >> ./CGNS_timing_1`;\
 	 done; \
 	 echo "=== finished ==="; \
 	 exit $$status;
