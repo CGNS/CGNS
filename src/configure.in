@@ -1517,6 +1517,13 @@ if test "$withfortran" = "yes"; then
     if test X != "X$fc_vendor"; then
       FFLAGS="$FFLAGS -Mx,125,0x200" 
     fi
+#----------- Determine if the Fortran compiler gfortran -------------------
+#   Turn off warnings for passing non-ANSI types to BIND().
+#--------------------------------------------------------------------------
+     fc_vendor="`$FC --version 2>&1 |grep -i 'gcc'`"
+     if test X != "X$fc_vendor"; then
+       FFLAGS="$FFLAGS -Wno-c-binding-type"
+     fi
 fi
 #--------------------------------------------------------------------------
 # substitutions and write Makefile and make.defs
