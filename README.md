@@ -1,6 +1,6 @@
 # CGNS 
 [![Build Status](https://travis-ci.org/CGNS/CGNS.svg?branch=develop)](https://travis-ci.org/CGNS/CGNS) 
-#[![Build Status: Windows](https://ci.appveyor.com/api/projects/status/jux83kxj0r234oy6?svg=true)]
+[![Build Status: Windows](https://ci.appveyor.com/api/projects/status/jux83kxj0r234oy6?svg=true)](https://ci.appveyor.com/project/brtnfld/cgns)
 
 ## About
 
