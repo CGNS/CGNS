@@ -85,6 +85,7 @@ before_build:
   - echo Running cmake...
   - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
+  - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/1.8.16/cmake/hdf5
   - cmake -G "Visual Studio 12 2013 Win64" ^
      -D CMAKE_C_FLAGS:STRING="" ^
      -D CMAKE_BUILD_TYPE:STRING=Release ^
@@ -102,5 +103,4 @@ before_build:
      -D CGNS_ENABLE_FORTRAN:BOOL=OFF ^
      -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
      -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
-
-
+  -cmake --build .
