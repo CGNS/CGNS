@@ -84,8 +84,6 @@ configuration: Release
 before_build:
   - echo Running cmake...
   - mkdir c:\projects\CGNS_BUILD
-  - cd c:\Program Files\HDF_Group\HDF5\1.8.16\cmake
-  - dir
   - cd c:\projects\CGNS_BUILD
 
 
@@ -107,4 +105,4 @@ before_build:
      -D CGNS_ENABLE_FORTRAN:BOOL=OFF ^
      -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
      -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
-  - cmake --build .
+#  - cmake --build .
