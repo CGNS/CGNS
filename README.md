@@ -1,4 +1,6 @@
-# CGNS [![Build Status](https://travis-ci.org/CGNS/CGNS.svg?branch=develop)](https://travis-ci.org/CGNS/CGNS)
+# CGNS 
+[![Build Status](https://travis-ci.org/CGNS/CGNS.svg?branch=develop)](https://travis-ci.org/CGNS/CGNS) 
+#[![Build Status: Windows](https://ci.appveyor.com/api/projects/status/jux83kxj0r234oy6?svg=true)]
 
 ## About
 
