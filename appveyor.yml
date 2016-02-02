@@ -39,7 +39,7 @@ init:
 clone_folder: c:\projects\CGNS
 
 environment:
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.8.16/"
+    HDF_DIR: "/Program Files (x86)/HDF_Group/HDF5/1.8.16/cmake/hdf5"
 
 # scripts that run after cloning repository
 install:
@@ -53,10 +53,10 @@ install:
 
 # install hdf5
   - mkdir hdf5lib
-  - curl -O https://www.hdfgroup.org/ftp/HDF5/current/bin/windows/extra/hdf5-1.8.16-win32-vs2015-shared.zip
-  - unzip hdf5-1.8.16-win32-vs2015-shared.zip
+  - curl -O http://www.hdfgroup.org/ftp/HDF5/current/bin/windows/extra/hdf5-1.8.16-win64-vs2015-shared.zip
+  - unzip hdf5-1.8.16-win64-vs2015-shared.zip
   - cd hdf5
-  - msiexec /i HDF5-1.8.16-win32.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-1.8.16-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..
 
@@ -65,11 +65,11 @@ install:
 #---------------------------------#
 
 # build platform, i.e. x86, x64, Any CPU. This setting is optional.
-#platform: Any CPU
+platform: Any CPU
 
 # to add several platforms to build matrix:
-platform:
-  - x86
+#platform:
+#  - x86
 #  - Any CPU
 
 # build Configuration, i.e. Debug, Release, etc.
@@ -94,7 +94,7 @@ before_build:
      -D HDF5_NEED_ZLIB:BOOL=ON ^
      -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
      -D CGNS_ENABLE_HDF5:BOOL=ON ^
-     -D HDF5_ROOT="/Program Files/HDF_Group/HDF5/1.8.16/" ^
+     -D HDF5_ROOT="/Program Files (x86)/HDF_Group/HDF5/1.8.16/" ^
      -D CGNS_ENABLE_TESTS:BOOL=ON ^
      -D CGNS_ENABLE_LFS:BOOL=OFF ^
      -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF ^
