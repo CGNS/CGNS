@@ -53,8 +53,8 @@ install:
 
 # install hdf5
   - mkdir hdf5lib
-  - curl -O http://www.hdfgroup.org/ftp/HDF5/current/bin/windows/extra/hdf5-1.8.16-win64-vs2015-shared.zip
-  - unzip hdf5-1.8.16-win64-vs2015-shared.zip
+  - curl -O http://www.hdfgroup.org/ftp/HDF5/current/bin/windows/extra/hdf5-1.8.16-win64-vs2013-shared.zip
+  - unzip hdf5-1.8.16-win64-vs2013-shared.zip
   - cd hdf5
   - msiexec /i HDF5-1.8.16-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
