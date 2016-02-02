@@ -84,6 +84,8 @@ configuration: Release
 before_build:
   - echo Running cmake...
   - mkdir c:\projects\CGNS_BUILD
+  - cd c:\Program Files\HDF_Group\HDF5\1.8.16\cmake\hdf5
+  - dir
   - cd c:\projects\CGNS_BUILD
   - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/1.8.16/cmake/hdf5
   - cmake -G "Visual Studio 12 2013 Win64" ^
