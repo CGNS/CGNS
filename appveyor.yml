@@ -76,11 +76,6 @@ platform: Any CPU
 configuration:
   - Release
 
-# to add several configurations to build matrix:
-configuration:
-#  - Debug
-  - Release
-
 # scripts to run before build
 before_build:
   - echo Running cmake...
