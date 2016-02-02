@@ -73,12 +73,13 @@ platform: Any CPU
 #  - Any CPU
 
 # build Configuration, i.e. Debug, Release, etc.
-configuration: Release
+configuration:
+  - Release
 
 # to add several configurations to build matrix:
-#configuration:
+configuration:
 #  - Debug
-#  - Release
+  - Release
 
 # scripts to run before build
 before_build:
@@ -105,4 +106,6 @@ before_build:
      -D CGNS_ENABLE_FORTRAN:BOOL=OFF ^
      -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
      -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
-#  - cmake --build .
+
+build_script:
+  - cmd: cmake --build . --config "%configuration%"
