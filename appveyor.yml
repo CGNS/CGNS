@@ -38,8 +38,7 @@ init:
 # clone directory
 clone_folder: c:\projects\CGNS
 
-
-# environment:
+environment:
   global:
     HDF_DIR: "C:/Program Files (x86)/HDF_Group/HDF5/1.8.16/lib"
 
