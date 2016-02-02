@@ -39,7 +39,7 @@ init:
 clone_folder: c:\projects\CGNS
 
 environment:
-    HDF_DIR: "/Program Files (x86)/HDF_Group/HDF5/1.8.16/"
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.8.16/"
 
 # scripts that run after cloning repository
 install:
@@ -94,7 +94,7 @@ before_build:
      -D HDF5_NEED_ZLIB:BOOL=ON ^
      -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
      -D CGNS_ENABLE_HDF5:BOOL=ON ^
-     -D HDF5_ROOT="/Program Files (x86)/HDF_Group/HDF5/1.8.16/" ^
+     -D HDF5_ROOT="/Program Files/HDF_Group/HDF5/1.8.16/" ^
      -D CGNS_ENABLE_TESTS:BOOL=ON ^
      -D CGNS_ENABLE_LFS:BOOL=OFF ^
      -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF ^
