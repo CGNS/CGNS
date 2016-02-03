@@ -273,7 +273,6 @@ AC_MSG_RESULT($LIB_INSTALL_DIR)
 
 BUILDDIR=lib
 BUILD64BIT=0
-CGFSIZET=\*4
 
 test ! -x cgsystem && \
   chmod +x cgsystem
@@ -296,7 +295,6 @@ if test -z "$withsys" || test "$withsys" = "no"; then
   AC_MSG_RESULT($SYSTEM)
   if test $do64bit = yes; then
     BUILD64BIT=1
-    CGFSIZET=\*8
     is64bit=`echo $SYSTEM | grep 64`
     test -z "$is64bit" && \
       AC_MSG_WARN(64bit support not found for your machine)
@@ -1551,7 +1549,6 @@ fi
 
 if test $BUILDLEGACY -ne 0 ; then
   BUILD64BIT=0
-  CGFSIZET=
   if test "$withhdf5" = "yes"; then
     INSTALLADF="install-adf install-adfh"
   else
@@ -1598,7 +1595,6 @@ AC_SUBST(BUILDBASESCOPE)
 
 AC_SUBST(CGNSTOOLS)
 AC_SUBST(CGLONGT)
-AC_SUBST(CGFSIZET)
 
 AC_SUBST(SYSTEM)
 AC_SUBST(CGNSVERS)
