@@ -1,5 +1,5 @@
 
-AC_PREREQ(2.13)
+AC_PREREQ(2.69)
 
 #--------------------------------------------------------------------------
 # Redefine the cache macros so that a cache file is not created.
@@ -126,11 +126,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[extern int func(int,int);
 int func(int i, int j){return i + j;}]],[[func(0,1)]])],
 [proto=yes],[proto=no])
 
-#AC_TRY_COMPILE(
-#[extern int func(int,int);
-#int func(int i, int j){return i + j;}],
-#[func(0,1)],proto=yes,proto=no)
-
 AC_MSG_RESULT($proto)
 test $proto = no && \
   AC_MSG_ERROR([compiler does not support prototyping])
@@ -176,12 +171,11 @@ else
     AC_MSG_WARN(no Fortran compiler was found)
   else
     has_f77=yes
-   ## --------------------------------------------------------------------
-   ## Check for a Fortran compiler and how to include modules.
-   ##
+   # --------------------------------------------------------------------
+   # Check for a Fortran compiler
+   #
    AC_PROG_FC([PAC_FC_SEARCH_LIST],)
-   #AC_F9X_MODS
-  #  AC_PROG_F77_GNU
+  ##  AC_PROG_F77_GNU
     if test "$ac_cv_prog_g77" = "yes"; then
       test -z "$FFLAGS" && FFLAGS=-O2
       test ! "$F77" = "f95" && FFLAGS="$FFLAGS -Wno-globals"
@@ -1192,8 +1186,8 @@ EOF
     AC_MSG_CHECKING([for off64_t])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]],[[off64_t n = 0;]])],
 	[has_lfs=yes],[has_lfs=no])
-#    AC_TRY_COMPILE([#include <sys/types.h>], [off64_t n = 0;],
-#      has_lfs=yes, has_lfs=no)
+##    AC_TRY_COMPILE([#include <sys/types.h>], [off64_t n = 0;],
+##      has_lfs=yes, has_lfs=no)
     AC_MSG_RESULT($has_lfs)
     if test $has_lfs = yes; then
       AC_CHECK_FUNC(open64, LFS="-DHAS_OPEN64 $LFS")

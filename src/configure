@@ -3561,11 +3561,6 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-#AC_TRY_COMPILE(
-#[extern int func(int,int);
-#int func(int i, int j){return i + j;}],
-#[func(0,1)],proto=yes,proto=no)
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $proto" >&5
 $as_echo "$proto" >&6; }
 test $proto = no && \
@@ -3736,9 +3731,9 @@ done
 $as_echo "$as_me: WARNING: no Fortran compiler was found" >&2;}
   else
     has_f77=yes
-   ## --------------------------------------------------------------------
-   ## Check for a Fortran compiler and how to include modules.
-   ##
+   # --------------------------------------------------------------------
+   # Check for a Fortran compiler
+   #
    ac_ext=${ac_fc_srcext-f}
 ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
 ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
@@ -3950,8 +3945,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-   #AC_F9X_MODS
-  #  AC_PROG_F77_GNU
+  ##  AC_PROG_F77_GNU
     if test "$ac_cv_f77_compiler_gnu" = "yes"; then
       test -z "$FFLAGS" && FFLAGS=-O2
       test ! "$F77" = "f95" && FFLAGS="$FFLAGS -Wno-globals"
