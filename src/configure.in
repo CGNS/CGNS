@@ -85,9 +85,15 @@ test ! "$enableval" = "no" && enableval=yes
 use_gcc=$enableval
 AC_MSG_RESULT($use_gcc)
 
-if test $use_gcc = yes; then
-  AC_PROG_CC
-else
+# ----------------------------------------------------------------------
+# Check for programs.
+#
+AC_PROG_CC
+CC_BASENAME="`echo $CC | cut -f1 -d' ' | xargs basename 2>/dev/null`"
+
+##if test $use_gcc = yes; then
+##  AC_PROG_CC
+##else
   if test -z "$CC"; then
     AC_CHECK_PROG(CC, cc, cc, , , /usr/ucb/cc)
     if test -z "$CC"; then
@@ -97,9 +103,10 @@ else
       fi
     fi
   fi
-  AC_PROG_CC_WORKS
-  AC_PROG_CC_GNU
-fi
+##  AC_PROG_CC
+##  AC_PROG_CC_WORKS
+##  AC_PROG_CC_GNU
+##fi
 
 if test "$ac_cv_prog_gcc" = "yes"; then
   test -z "$CFLAGS" && CFLAGS=-O2
@@ -112,12 +119,18 @@ COOUT="-o \$(SPACE)"
 
 # check if the compiler supports prototyping - required
 
-AC_LANG_C
+AC_LANG_PUSH(C)
 AC_MSG_CHECKING([if compiler supports prototyping])
-AC_TRY_COMPILE(
-[extern int func(int,int);
-int func(int i, int j){return i + j;}],
-[func(0,1)],proto=yes,proto=no)
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[extern int func(int,int);
+int func(int i, int j){return i + j;}]],[[func(0,1)]])],
+[proto=yes],[proto=no])
+
+#AC_TRY_COMPILE(
+#[extern int func(int,int);
+#int func(int i, int j){return i + j;}],
+#[func(0,1)],proto=yes,proto=no)
+
 AC_MSG_RESULT($proto)
 test $proto = no && \
   AC_MSG_ERROR([compiler does not support prototyping])
@@ -126,8 +139,8 @@ test $proto = no && \
 # get object and executable extensions
 #--------------------------------------------------------------------------
 
-AC_OBJEXT
-AC_EXEEXT
+##AC_OBJEXT
+##AC_EXEEXT
 LIBEXT=a
 
 # Set the Fortran flags using FCFLAGS. If both FFLAGS (which predates FCFLAGS)
@@ -163,7 +176,12 @@ else
     AC_MSG_WARN(no Fortran compiler was found)
   else
     has_f77=yes
-    AC_PROG_F77_GNU
+   ## --------------------------------------------------------------------
+   ## Check for a Fortran compiler and how to include modules.
+   ##
+   AC_PROG_FC([PAC_FC_SEARCH_LIST],)
+   #AC_F9X_MODS
+  #  AC_PROG_F77_GNU
     if test "$ac_cv_prog_g77" = "yes"; then
       test -z "$FFLAGS" && FFLAGS=-O2
       test ! "$F77" = "f95" && FFLAGS="$FFLAGS -Wno-globals"
@@ -217,7 +235,7 @@ AROUT=
 
 AC_HEADER_STDC
 test "$ac_cv_header_stdc" = "no" && \
-  AC_MSG_WARN(Standard C header files not found - may not compile)
+	AC_MSG_WARN(Standard C header files not found - may not compile)
 
 #--------------------------------------------------------------------------
 # check for typedefs and structures
@@ -688,13 +706,18 @@ EOF
       LIBS_SAVE="$LIBS"
       AC_LANG_SAVE
       for func in ffunc_ ffunc FFUNC FFUNC_ ffunc__ FFUNC__; do
-        AC_LANG_C
+        AC_LANG_PUSH(C)
         echo "void $func(){}" > conftest.c
         AC_TRY_EVAL(ac_compile)
-        mv conftest.$OBJEXT conffunc.$OBJEXT
-        AC_LANG_FORTRAN77
-        LIBS="conffunc.$OBJEXT $LIBS_SAVE"
-        AC_TRY_LINK(,ffunc,linked=yes)
+
+        #mv conftest.$ac_objext conffunc.$ac_objext
+	mv conftest.o  conffunc.o
+        AC_LANG_PUSH(Fortran)
+        #LIBS="conffunc.$ac_objext $LIBS_SAVE"
+	LIBS="conffunc.o $LIBS_SAVE"
+        #AC_TRY_LINK(,ffunc,linked=yes)
+	AC_LINK_IFELSE(ffunc,[linked="yes"],[])
+
         rm -f conffunc* conftest*
         if test "$linked" = "yes"; then
           case $func in
@@ -1167,8 +1190,10 @@ EOF
     has_lfs=yes
   else
     AC_MSG_CHECKING([for off64_t])
-    AC_TRY_COMPILE([#include <sys/types.h>], [off64_t n = 0;],
-      has_lfs=yes, has_lfs=no)
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]],[[off64_t n = 0;]])],
+	[has_lfs=yes],[has_lfs=no])
+#    AC_TRY_COMPILE([#include <sys/types.h>], [off64_t n = 0;],
+#      has_lfs=yes, has_lfs=no)
     AC_MSG_RESULT($has_lfs)
     if test $has_lfs = yes; then
       AC_CHECK_FUNC(open64, LFS="-DHAS_OPEN64 $LFS")
@@ -1635,6 +1660,7 @@ AC_SUBST(CFGFLAGS)
 AC_SUBST(STRIP)
 
 AC_SUBST(SYSFFLAGS)
+AC_SUBST(FFLAGS)
 AC_SUBST(FEOUT)
 AC_SUBST(FLIBS)
 
