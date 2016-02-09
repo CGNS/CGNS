@@ -698,21 +698,24 @@ EOF
     AC_MSG_CHECKING([Fortran to C interface])
     if test $has_f77 = yes; then
       LIBS_SAVE="$LIBS"
+
+      AC_LANG_PUSH(C)
+      AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+       void ffunc(){}
+      ])],[mv conftest.$OBJEXT conffunc.$OBJEXT],[])
+
+      LIBS="conffunc.$OBJEXT $LIBS_SAVE"
       AC_LANG_SAVE
+
+      AC_LANG_PUSH(Fortran)
       for func in ffunc_ ffunc FFUNC FFUNC_ ffunc__ FFUNC__; do
-        AC_LANG_PUSH(C)
-        echo "void $func(){}" > conftest.c
-        AC_TRY_EVAL(ac_compile)
 
-        #mv conftest.$ac_objext conffunc.$ac_objext
-	mv conftest.o  conffunc.o
-        AC_LANG_PUSH(Fortran)
-        #LIBS="conffunc.$ac_objext $LIBS_SAVE"
-	LIBS="conffunc.o $LIBS_SAVE"
-        #AC_TRY_LINK(,ffunc,linked=yes)
-	AC_LINK_IFELSE(ffunc,[linked="yes"],[])
+	AC_LINK_IFELSE([AC_LANG_SOURCE([
+           PROGRAM main
+             func=$func()
+           END PROGRAM
+        ])],[linked="yes"],[])
 
-        rm -f conffunc* conftest*
         if test "$linked" = "yes"; then
           case $func in
             ffunc)   f2c=LOWERCASE ;;
@@ -725,6 +728,7 @@ EOF
           break
         fi
       done
+      rm -f conffunc.$OBJEXT
       LIBS="$LIBS_SAVE"
       AC_LANG_RESTORE
     fi

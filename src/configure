@@ -5316,33 +5316,40 @@ $as_echo_n "checking Fortran to C interface... " >&6; }
     if test $has_f77 = yes; then
       LIBS_SAVE="$LIBS"
 
-      for func in ffunc_ ffunc FFUNC FFUNC_ ffunc__ FFUNC__; do
-        ac_ext=c
+      ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-        echo "void $func(){}" > conftest.c
-        { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 
-        #mv conftest.$ac_objext conffunc.$ac_objext
-	mv conftest.o  conffunc.o
-        ac_ext=${ac_fc_srcext-f}
+       void ffunc(){}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mv conftest.$OBJEXT conffunc.$OBJEXT
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+      LIBS="conffunc.$OBJEXT $LIBS_SAVE"
+
+
+      ac_ext=${ac_fc_srcext-f}
 ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
 ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_fc_compiler_gnu
 
-        #LIBS="conffunc.$ac_objext $LIBS_SAVE"
-	LIBS="conffunc.o $LIBS_SAVE"
-        #AC_TRY_LINK(,ffunc,linked=yes)
+      for func in ffunc_ ffunc FFUNC FFUNC_ ffunc__ FFUNC__; do
+
 
 cat > conftest.$ac_ext <<_ACEOF
-ffunc
+
+           PROGRAM main
+             func=$func()
+           END PROGRAM
+
 _ACEOF
 if ac_fn_fc_try_link "$LINENO"; then :
   linked="yes"
@@ -5350,7 +5357,6 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-        rm -f conffunc* conftest*
         if test "$linked" = "yes"; then
           case $func in
             ffunc)   f2c=LOWERCASE ;;
@@ -5363,6 +5369,7 @@ rm -f core conftest.err conftest.$ac_objext \
           break
         fi
       done
+      rm -f conffunc.$OBJEXT
       LIBS="$LIBS_SAVE"
       ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -6167,8 +6174,8 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-#    AC_TRY_COMPILE([#include <sys/types.h>], [off64_t n = 0;],
-#      has_lfs=yes, has_lfs=no)
+##    AC_TRY_COMPILE([#include <sys/types.h>], [off64_t n = 0;],
+##      has_lfs=yes, has_lfs=no)
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $has_lfs" >&5
 $as_echo "$has_lfs" >&6; }
     if test $has_lfs = yes; then
