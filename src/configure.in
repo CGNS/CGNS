@@ -9,7 +9,6 @@ AC_PREREQ(2.69)
 define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
 
-
 AC_INIT(cgnslib.c)
 
 #--------------------------------------------------------------------------
@@ -134,8 +133,6 @@ test $proto = no && \
 # get object and executable extensions
 #--------------------------------------------------------------------------
 
-##AC_OBJEXT
-##AC_EXEEXT
 LIBEXT=a
 
 # Set the Fortran flags using FCFLAGS. If both FFLAGS (which predates FCFLAGS)
@@ -486,37 +483,32 @@ else
   HAVE_F2003_REQUIREMENTS="no"
   AC_MSG_CHECKING([if Fortran compiler meets 2003 standard])
 
- cat >> testf03.f90 << EOF
-       PROGRAM testf03
-  	 USE iso_c_binding
-  	 IMPLICIT NONE
-  	 INTEGER(C_INT) :: a
-  	 INTEGER(C_INT32_T) :: b
-  	 INTEGER(C_INT64_T) :: c
-         REAL(C_FLOAT) :: d
-  	 REAL(C_DOUBLE) :: e
-  	 CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: f
-  	 TYPE(C_PTR) :: g
-         INTERFACE
-           INTEGER(C_INT) FUNCTION test(A, UserDataName1) BIND(C, name='cg_goto')
-             USE ISO_C_BINDING
-             INTEGER(C_INT)   , INTENT(IN), VALUE :: A
-             CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName1
-           END FUNCTION test
-         END INTERFACE
-  	 g = C_LOC(f(1:1))
+  AC_LANG_PUSH(Fortran)
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+      PROGRAM testf03
+  	USE iso_c_binding
+  	IMPLICIT NONE
+  	INTEGER(C_INT) :: a
+  	INTEGER(C_INT32_T) :: b
+  	INTEGER(C_INT64_T) :: c
+        REAL(C_FLOAT) :: d
+  	REAL(C_DOUBLE) :: e
+  	CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: f
+  	TYPE(C_PTR) :: g
+        INTERFACE
+         INTEGER(C_INT) FUNCTION test(A,UserData) BIND(C,name='cg_goto')
+           USE ISO_C_BINDING
+           INTEGER(C_INT)   , INTENT(IN), VALUE :: A
+           CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserData
+         END FUNCTION test
+        END INTERFACE
+  	g = C_LOC(f(1:1))
       END PROGRAM testf03
-EOF
-  msg=`${F77} -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then
-    HAVE_F2003_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2003=1
-    rm testf03.o
-  fi
-  if test -f testf03.f90; then
-    rm testf03.f90
-  fi
-  AC_MSG_RESULT($HAVE_F2003_REQUIREMENTS)
+  ])],[  AC_MSG_RESULT([yes])
+         HAVE_F2003_REQUIREMENTS="yes"
+         HAVE_FORTRAN_2003=1],
+      [AC_MSG_RESULT([no])])
+  AC_LANG_POP(Fortran)
 
  ## In F2003 and F2008 optional parameters are not allowed for functions that have BIND(C).
  ## In Fortran 2003 it is constraint C530, in the latest Fortran 2008 draft it is C516:
@@ -532,10 +524,11 @@ EOF
   HAVE_F2008TS_REQUIREMENTS="no"
   if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
 
-  AC_MSG_CHECKING([if Fortran compiler meets Technical Specification 29113])
+    AC_MSG_CHECKING([if Fortran compiler meets Technical Specification 29113])
 
- cat >> testf03.f90 << EOF
-       PROGRAM testf03
+    AC_LANG_PUSH(Fortran)
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+        PROGRAM testf03
          USE ISO_C_BINDING
          INTERFACE
             INTEGER(C_INT) FUNCTION test(A) BIND(C, name='test')
@@ -544,26 +537,22 @@ EOF
             END FUNCTION test
          END INTERFACE
        END PROGRAM testf03
-EOF
-  msg=`${F77} -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then
-    HAVE_F2008TS_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2008TS=1
-    rm testf03.o
-  fi
-  if test -f testf03.f90; then
-     rm testf03.f90
-  fi
-  AC_MSG_RESULT($HAVE_F2008TS_REQUIREMENTS)
+    ])],[  AC_MSG_RESULT([yes])
+     	 HAVE_F2008TS_REQUIREMENTS="yes"
+         HAVE_FORTRAN_2008TS=1],
+      [AC_MSG_RESULT([no])])
+
+    AC_LANG_POP(Fortran)
 
   ## Fortran 2008 permits having different identifiers for the same binding label,
   ## so check if the compiler has this feature.
-  HAVE_F2008_REQUIREMENTS="no"
-  if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
+    HAVE_F2008_REQUIREMENTS="no"
+    if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
 
-  AC_MSG_CHECKING([if Fortran compiler meets the Fortran 2008 Standard])
+      AC_MSG_CHECKING([if Fortran compiler meets the Fortran 2008 Standard])
 
- cat >> testf08.f90 << EOF
+      AC_LANG_PUSH(Fortran)
+      AC_COMPILE_IFELSE([AC_LANG_SOURCE([
        MODULE test
          USE ISO_C_BINDING
          INTERFACE binding
@@ -577,47 +566,34 @@ EOF
 	   END FUNCTION bind2
          END INTERFACE
       END MODULE test
-EOF
-  msg=`${F77} -c testf08.f90 &> /dev/null`
-  if test -f testf08.o; then
-    HAVE_F2008_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2008=1
-    rm testf08.o
-  fi
-  if test -f testf08.f90; then
-     rm testf08.f90
-  fi
-  if test -f testf08.mod; then
-     rm testf08.mod
-  fi
-  AC_MSG_RESULT($HAVE_F2008_REQUIREMENTS)
-  fi
+      ])],[  AC_MSG_RESULT([yes])
+         HAVE_F2008_REQUIREMENTS="yes"
+         HAVE_FORTRAN_2008=1],
+      [AC_MSG_RESULT([no])])
+
+      AC_LANG_POP(Fortran)
+    fi
   
-else
+  else
 
   # Check if the Fortran compiler is at least F95 compliant
   ## --------------------------------------------------------------------
   ## Default for FORTRAN 95 compliant compilers
   ##
-  HAVE_F95_REQUIREMENTS="no"
-  AC_MSG_CHECKING([if Fortran compiler meets 95 standard])
-
- cat >> testf95.f90 << EOF
+    HAVE_F95_REQUIREMENTS="no"
+    AC_MSG_CHECKING([if Fortran compiler meets 95 standard])
+    AC_LANG_PUSH(Fortran)
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
        PROGRAM testf95
   	 IMPLICIT NONE
          INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(5)
       END PROGRAM testf95
-EOF
-  msg=`${F77} -c testf95.f90 &> /dev/null`
-  if test -f testf95.o; then
-    HAVE_F95_REQUIREMENTS="yes"
-    HAVE_FORTRAN_95=1
-    rm testf95.o
-  fi
-  if test -f testf95.f90; then
-    rm testf95.f90
-  fi
-  AC_MSG_RESULT($HAVE_F95_REQUIREMENTS)
+    ])],[  AC_MSG_RESULT([yes])
+           HAVE_F95_REQUIREMENTS="yes"
+           HAVE_FORTRAN_95=1],
+      [AC_MSG_RESULT([no])])
+
+    AC_LANG_POP(Fortran)
 
   fi
 
@@ -626,8 +602,10 @@ EOF
 
   if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
 
-  AC_MSG_CHECKING([size of default Fortran integer ])
- cat >> testf03.f90 << EOF
+    AC_MSG_CHECKING([size of default Fortran integer ])
+
+    AC_LANG_PUSH(Fortran)
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
       MODULE mod
 
         INTERFACE test_integer
@@ -657,22 +635,10 @@ EOF
         CALL test_integer(a)
 
       END PROGRAM main
-EOF
-  msg=`${F77} $FFLAGS -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then
-    AC_MSG_RESULT(c_int32_t)
-    rm testf03.o
-  else
-    FORTRAN_DEFAULT_INTEGER_C_INT64_T=1
-    AC_MSG_RESULT(c_int64_t)
-  fi
-  if test -f testf03.f90; then
-     rm testf03.f90
-  fi
-  if test -f mod.mod; then
-     rm mod.mod
-  fi
-
+    ])],[ AC_MSG_RESULT(c_int32_t)],
+        [ AC_MSG_RESULT(c_int64_t)
+	FORTRAN_DEFAULT_INTEGER_C_INT64_T=1])
+    AC_LANG_POP(Fortran)
   fi
 
   if test $need_f2c = yes; then

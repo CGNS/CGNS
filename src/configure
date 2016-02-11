@@ -3570,8 +3570,6 @@ test $proto = no && \
 # get object and executable extensions
 #--------------------------------------------------------------------------
 
-##AC_OBJEXT
-##AC_EXEEXT
 LIBEXT=a
 
 # Set the Fortran flags using FCFLAGS. If both FFLAGS (which predates FCFLAGS)
@@ -5092,38 +5090,51 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Fortran compiler meets 2003 standard" >&5
 $as_echo_n "checking if Fortran compiler meets 2003 standard... " >&6; }
 
- cat >> testf03.f90 << EOF
-       PROGRAM testf03
-  	 USE iso_c_binding
-  	 IMPLICIT NONE
-  	 INTEGER(C_INT) :: a
-  	 INTEGER(C_INT32_T) :: b
-  	 INTEGER(C_INT64_T) :: c
-         REAL(C_FLOAT) :: d
-  	 REAL(C_DOUBLE) :: e
-  	 CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: f
-  	 TYPE(C_PTR) :: g
-         INTERFACE
-           INTEGER(C_INT) FUNCTION test(A, UserDataName1) BIND(C, name='cg_goto')
-             USE ISO_C_BINDING
-             INTEGER(C_INT)   , INTENT(IN), VALUE :: A
-             CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName1
-           END FUNCTION test
-         END INTERFACE
-  	 g = C_LOC(f(1:1))
+  ac_ext=${ac_fc_srcext-f}
+ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
+ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_fc_compiler_gnu
+
+
+cat > conftest.$ac_ext <<_ACEOF
+
+      PROGRAM testf03
+  	USE iso_c_binding
+  	IMPLICIT NONE
+  	INTEGER(C_INT) :: a
+  	INTEGER(C_INT32_T) :: b
+  	INTEGER(C_INT64_T) :: c
+        REAL(C_FLOAT) :: d
+  	REAL(C_DOUBLE) :: e
+  	CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: f
+  	TYPE(C_PTR) :: g
+        INTERFACE
+         INTEGER(C_INT) FUNCTION test(A,UserData) BIND(C,name='cg_goto')
+           USE ISO_C_BINDING
+           INTEGER(C_INT)   , INTENT(IN), VALUE :: A
+           CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserData
+         END FUNCTION test
+        END INTERFACE
+  	g = C_LOC(f(1:1))
       END PROGRAM testf03
-EOF
-  msg=`${F77} -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then
-    HAVE_F2003_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2003=1
-    rm testf03.o
-  fi
-  if test -f testf03.f90; then
-    rm testf03.f90
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_F2003_REQUIREMENTS" >&5
-$as_echo "$HAVE_F2003_REQUIREMENTS" >&6; }
+
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+         HAVE_F2003_REQUIREMENTS="yes"
+         HAVE_FORTRAN_2003=1
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
  ## In F2003 and F2008 optional parameters are not allowed for functions that have BIND(C).
  ## In Fortran 2003 it is constraint C530, in the latest Fortran 2008 draft it is C516:
@@ -5139,11 +5150,17 @@ $as_echo "$HAVE_F2003_REQUIREMENTS" >&6; }
   HAVE_F2008TS_REQUIREMENTS="no"
   if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Fortran compiler meets Technical Specification 29113" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Fortran compiler meets Technical Specification 29113" >&5
 $as_echo_n "checking if Fortran compiler meets Technical Specification 29113... " >&6; }
 
- cat >> testf03.f90 << EOF
-       PROGRAM testf03
+    ac_ext=${ac_fc_srcext-f}
+ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
+ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_fc_compiler_gnu
+
+    cat > conftest.$ac_ext <<_ACEOF
+
+        PROGRAM testf03
          USE ISO_C_BINDING
          INTERFACE
             INTEGER(C_INT) FUNCTION test(A) BIND(C, name='test')
@@ -5152,28 +5169,41 @@ $as_echo_n "checking if Fortran compiler meets Technical Specification 29113... 
             END FUNCTION test
          END INTERFACE
        END PROGRAM testf03
-EOF
-  msg=`${F77} -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then
-    HAVE_F2008TS_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2008TS=1
-    rm testf03.o
-  fi
-  if test -f testf03.f90; then
-     rm testf03.f90
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_F2008TS_REQUIREMENTS" >&5
-$as_echo "$HAVE_F2008TS_REQUIREMENTS" >&6; }
+
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+     	 HAVE_F2008TS_REQUIREMENTS="yes"
+         HAVE_FORTRAN_2008TS=1
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+    ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
   ## Fortran 2008 permits having different identifiers for the same binding label,
   ## so check if the compiler has this feature.
-  HAVE_F2008_REQUIREMENTS="no"
-  if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
+    HAVE_F2008_REQUIREMENTS="no"
+    if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Fortran compiler meets the Fortran 2008 Standard" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Fortran compiler meets the Fortran 2008 Standard" >&5
 $as_echo_n "checking if Fortran compiler meets the Fortran 2008 Standard... " >&6; }
 
- cat >> testf08.f90 << EOF
+      ac_ext=${ac_fc_srcext-f}
+ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
+ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_fc_compiler_gnu
+
+      cat > conftest.$ac_ext <<_ACEOF
+
        MODULE test
          USE ISO_C_BINDING
          INTERFACE binding
@@ -5187,50 +5217,66 @@ $as_echo_n "checking if Fortran compiler meets the Fortran 2008 Standard... " >&
 	   END FUNCTION bind2
          END INTERFACE
       END MODULE test
-EOF
-  msg=`${F77} -c testf08.f90 &> /dev/null`
-  if test -f testf08.o; then
-    HAVE_F2008_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2008=1
-    rm testf08.o
-  fi
-  if test -f testf08.f90; then
-     rm testf08.f90
-  fi
-  if test -f testf08.mod; then
-     rm testf08.mod
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_F2008_REQUIREMENTS" >&5
-$as_echo "$HAVE_F2008_REQUIREMENTS" >&6; }
-  fi
 
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+         HAVE_F2008_REQUIREMENTS="yes"
+         HAVE_FORTRAN_2008=1
 else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+      ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+    fi
+
+  else
 
   # Check if the Fortran compiler is at least F95 compliant
   ## --------------------------------------------------------------------
   ## Default for FORTRAN 95 compliant compilers
   ##
-  HAVE_F95_REQUIREMENTS="no"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Fortran compiler meets 95 standard" >&5
+    HAVE_F95_REQUIREMENTS="no"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Fortran compiler meets 95 standard" >&5
 $as_echo_n "checking if Fortran compiler meets 95 standard... " >&6; }
+    ac_ext=${ac_fc_srcext-f}
+ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
+ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_fc_compiler_gnu
 
- cat >> testf95.f90 << EOF
+    cat > conftest.$ac_ext <<_ACEOF
+
        PROGRAM testf95
   	 IMPLICIT NONE
          INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(5)
       END PROGRAM testf95
-EOF
-  msg=`${F77} -c testf95.f90 &> /dev/null`
-  if test -f testf95.o; then
-    HAVE_F95_REQUIREMENTS="yes"
-    HAVE_FORTRAN_95=1
-    rm testf95.o
-  fi
-  if test -f testf95.f90; then
-    rm testf95.f90
-  fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_F95_REQUIREMENTS" >&5
-$as_echo "$HAVE_F95_REQUIREMENTS" >&6; }
+
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+           HAVE_F95_REQUIREMENTS="yes"
+           HAVE_FORTRAN_95=1
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+    ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
   fi
 
@@ -5239,9 +5285,16 @@ $as_echo "$HAVE_F95_REQUIREMENTS" >&6; }
 
   if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking size of default Fortran integer " >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking size of default Fortran integer " >&5
 $as_echo_n "checking size of default Fortran integer ... " >&6; }
- cat >> testf03.f90 << EOF
+
+    ac_ext=${ac_fc_srcext-f}
+ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
+ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_fc_compiler_gnu
+
+    cat > conftest.$ac_ext <<_ACEOF
+
       MODULE mod
 
         INTERFACE test_integer
@@ -5271,23 +5324,22 @@ $as_echo_n "checking size of default Fortran integer ... " >&6; }
         CALL test_integer(a)
 
       END PROGRAM main
-EOF
-  msg=`${F77} $FFLAGS -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: c_int32_t" >&5
+
+_ACEOF
+if ac_fn_fc_try_compile "$LINENO"; then :
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: c_int32_t" >&5
 $as_echo "c_int32_t" >&6; }
-    rm testf03.o
-  else
-    FORTRAN_DEFAULT_INTEGER_C_INT64_T=1
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: c_int64_t" >&5
+else
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: c_int64_t" >&5
 $as_echo "c_int64_t" >&6; }
-  fi
-  if test -f testf03.f90; then
-     rm testf03.f90
-  fi
-  if test -f mod.mod; then
-     rm mod.mod
-  fi
+	FORTRAN_DEFAULT_INTEGER_C_INT64_T=1
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
   fi
 
@@ -5343,8 +5395,7 @@ ac_compiler_gnu=$ac_cv_fc_compiler_gnu
 
       for func in ffunc_ ffunc FFUNC FFUNC_ ffunc__ FFUNC__; do
 
-
-cat > conftest.$ac_ext <<_ACEOF
+	cat > conftest.$ac_ext <<_ACEOF
 
            PROGRAM main
              func=$func()
