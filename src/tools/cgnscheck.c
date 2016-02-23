@@ -2243,7 +2243,7 @@ static void check_equation_set (int *flags, int parclass, int *parunits,
     }
     ierr = cg_equationset_elecmagn_read (&emelec, &emmagn, &emcond);
     if (ierr) {
-        if (ierr != CG_NODE_NOT_FOUND);
+        if (ierr != CG_NODE_NOT_FOUND)
             error_exit("cg_equationset_elecmagn_read");
         emelec = emmagn = emcond = 0;
     }
