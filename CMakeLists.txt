@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
   if (${CMAKE_MAJOR_VERSION} GREATER 2 OR ${CMAKE_MINOR_VERSION} GREATER 7)
@@ -106,56 +106,56 @@ option(CGNS_ENABLE_FORTRAN "Enable or disable the use of Fortran" "OFF")
 if (NOT DEFINED FORTRAN_NAMING)
   set(FORTRAN_NAMING "UNKNOWN")
 endif (NOT DEFINED FORTRAN_NAMING)
-set(F2CLIST  "LOWERCASE" "LOWERCASE_" "LOWERCASE__" "UPPERCASE" "UPPERCASE_" "UPPERCASE__")
-set(FORTRAN_NAMING_HELP
-"Configures how to link the Fortran components into the C library.
-Options are:
-	LOWERCASE
-	LOWERCASE_
-	LOWERCASE__
-	UPPERCASE
-	UPPERRCASE_
-	UPPERRCASE__
-LOWERCASE_ is known to work with gfortran.  If this setting
-does not work with your compiler, try the others until one does.
-")
 
 # If we are using fortran, enable it and configure the C-Fortran interface
 # It would be nice to automatically detect this setting
 
 if(CGNS_ENABLE_FORTRAN)
-  mark_as_advanced(CLEAR FORTRAN_NAMING)
-  #only do this once
-  if (FORTRAN_NAMING STREQUAL "UNKNOWN")
+
     enable_language("Fortran" OPTIONAL)
-    set(HAS_FORTRAN ${CMAKE_Fortran_COMPILER_WORKS} CACHE INTERNAL "")
-    # if no Fortran compiler, skip this
-    if (CMAKE_Fortran_COMPILER_WORKS)
-      foreach(nc ${F2CLIST})
-        try_compile(NAMING_TEST_RESULT
-	    "${CMAKE_BINARY_DIR}/Fortran_test"
-	    "${CMAKE_SOURCE_DIR}/Fortran_test"
-	    projectName ${nc})
-        if(${NAMING_TEST_RESULT} STREQUAL "TRUE")
-          set(FORTRAN_NAMING "${nc}" CACHE STRING ${FORTRAN_NAMING_HELP})
-          if (${CMAKE_MAJOR_VERSION} GREATER 2 OR ${CMAKE_MINOR_VERSION} GREATER 7)
-            set_property(CACHE FORTRAN_NAMING PROPERTY STRINGS ${F2CLIST})
-          endif (${CMAKE_MAJOR_VERSION} GREATER 2 OR ${CMAKE_MINOR_VERSION} GREATER 7)
-          message(STATUS "Trying Fortran naming convention ${FORTRAN_NAMING}: success")
-          message(STATUS "Setting fortran naming convention to ${FORTRAN_NAMING}")
-          break()
-        else(${NAMING_TEST_RESULT} STREQUAL "TRUE")
-          message(STATUS "Trying Fortran naming convention ${nc}: failure")
-        endif(${NAMING_TEST_RESULT} STREQUAL "TRUE")
-      endforeach(nc ${F2CLIST})
-    endif (CMAKE_Fortran_COMPILER_WORKS)
-  endif (FORTRAN_NAMING STREQUAL "UNKNOWN")
-else(CGNS_ENABLE_FORTRAN)
-  mark_as_advanced(FORCE FORTRAN_NAMING)
-endif(CGNS_ENABLE_FORTRAN)
+
+#-----------------------------------------------------------------------------
+# Detect name mangling convention used between Fortran and C
+#-----------------------------------------------------------------------------
+
+  set(F2CLIST  "LOWERCASE" "LOWERCASE_" "LOWERCASE__" "UPPERCASE" "UPPERCASE_" "UPPERCASE__")
+  set(FORTRAN_NAMING_HELP
+  "Configures how to link the Fortran components into the C library.
+  Options are:
+  	  LOWERCASE
+	  LOWERCASE_
+	  LOWERCASE__
+	  UPPERCASE
+	  UPPERRCASE_
+	  UPPERRCASE__
+  LOWERCASE_ is known to work with gfortran.  If this setting
+  does not work with your compiler, try the others until one does.
+  ")
+
+  include(FortranCInterface)
+  set(FortranCInterface_GLOBAL_SYMBOLS mysub mysub_ mysub__ MYSUB MYSUB_ MYSUB__)
+  FortranCInterface_HEADER(${CMAKE_BINARY_DIR}/FCMangle.h 
+  			   MACRO_NAMESPACE "CGNS_FC_"
+  			   SYMBOL_NAMESPACE "CGNS_FC_")
+
+  file (STRINGS ${CMAKE_BINARY_DIR}/FCMangle.h CONTENTS REGEX "CGNS_FC_GLOBAL\\(.*,.*\\) +(.*)")
+  string (REGEX MATCH "CGNS_FC_GLOBAL\\(.*,.*\\) +(.*)" RESULT ${CONTENTS})
+  set (CGNS_FC_FUNC "${CMAKE_MATCH_1}")
+
+  if(${CGNS_FC_FUNC} MATCHES "^NAME(.*)")
+     set (FORTRAN_NAMING "UPPERCASE")
+  elseif(${CGNS_FC_FUNC} MATCHES "^name(.*)")
+     set (FORTRAN_NAMING "LOWERCASE")
+  endif()
+  if(${CGNS_FC_FUNC} MATCHES "(.*)__$")
+     set (FORTRAN_NAMING "${FORTRAN_NAMING}__")
+  elseif(${CGNS_FC_FUNC} MATCHES "(.*)_$")
+     set (FORTRAN_NAMING "${FORTRAN_NAMING}_")
+  endif()
+
+  message(STATUS "Fortran name mangling convention: ${FORTRAN_NAMING}")
 
 # check that FORTRAN_NAMING is valid
-if (CGNS_ENABLE_FORTRAN)
   if (FORTRAN_NAMING STREQUAL "UNKNOWN")
     if (WIN32)
       set(FORTRAN_NAMING "UPPERCASE" CACHE STRING ${FORTRAN_NAMING_HELP})
