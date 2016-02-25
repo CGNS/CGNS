@@ -39,6 +39,7 @@ freely, subject to the following restrictions:
 #include "adf/ADF.h"
 #ifdef BUILD_HDF5
 #include "adfh/ADFH.h"
+char hdf5_access[64] = "NATIVE";
 #endif
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
@@ -701,7 +702,7 @@ int cgio_open_file (const char *filename, int file_mode,
             if (cgio_check_file(filename, &type))
                 return get_error();
 #ifdef BUILD_PARALLEL
-            if (file_type == CGIO_FILE_HDF5) {
+           if (file_type == CGIO_FILE_HDF5) {
                 if (type != CGIO_FILE_HDF5)
                     return set_error(CGIO_ERR_NOT_HDF5);
             }
@@ -725,11 +726,10 @@ int cgio_open_file (const char *filename, int file_mode,
             if (cgio_check_file(filename, &type))
                 return get_error();
 #ifdef BUILD_PARALLEL
-            if (file_type == CGIO_FILE_HDF5) {
+           if (file_type == CGIO_FILE_HDF5) {
                 if (type != CGIO_FILE_HDF5)
                     return set_error(CGIO_ERR_NOT_HDF5);
             }
-            else
 #endif
             file_type = type;
             file_mode = CGIO_MODE_MODIFY;
@@ -756,14 +756,8 @@ int cgio_open_file (const char *filename, int file_mode,
     }
 #endif
 #ifdef BUILD_HDF5
-#ifdef BUILD_PARALLEL
     else if (file_type == CGIO_FILE_HDF5) {
-        ADFH_Database_Open(filename, fmode, "PARALLEL", &rootid, &ierr);
-        if (ierr > 0) return set_error(ierr);
-    }
-#endif
-    else if (file_type == CGIO_FILE_HDF5) {
-        ADFH_Database_Open(filename, fmode, "NATIVE", &rootid, &ierr);
+        ADFH_Database_Open(filename, fmode, hdf5_access, &rootid, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
 #endif

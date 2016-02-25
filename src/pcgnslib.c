@@ -39,6 +39,8 @@ freely, subject to the following restrictions:
 extern MPI_Info pcg_mpi_info;
 extern int pcg_mpi_comm_size;
 extern int pcg_mpi_comm_rank;
+/* Flag indicating if HDF5 file accesses is PARALLEL or NATIVE */
+extern char hdf5_access[64];
 /* flag indicating if mpi_initialized was called */
 extern int pcg_mpi_initialized;
 
@@ -260,10 +262,17 @@ int cgp_open(const char *filename, int mode, int *fn)
     /* check if we are actually running a parallel program */
     MPI_Initialized(&pcg_mpi_initialized);
 
+    /* Flag this as a parallel access */
+    strcpy(hdf5_access,"PARALLEL");	
+
     ierr = cg_set_file_type(CG_FILE_HDF5);
     if (ierr) return ierr;
     ierr = cg_open(filename, mode, fn);
     cgns_filetype = old_type;
+
+    /* reset parallel access */
+    strcpy(hdf5_access,"NATIVE");
+
     return ierr;
 }
 
