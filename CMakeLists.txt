@@ -142,6 +142,8 @@ if(CGNS_ENABLE_FORTRAN)
   string (REGEX MATCH "CGNS_FC_GLOBAL\\(.*,.*\\) +(.*)" RESULT ${CONTENTS})
   set (CGNS_FC_FUNC "${CMAKE_MATCH_1}")
 
+  file(REMOVE ${CMAKE_BINARY_DIR}/FCMangle.h)
+
   if(CGNS_FC_FUNC MATCHES "^NAME(.*)")
      set (FORTRAN_NAMING "UPPERCASE")
   elseif(CGNS_FC_FUNC MATCHES "^name(.*)")
