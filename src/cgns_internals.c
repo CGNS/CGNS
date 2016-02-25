@@ -1563,7 +1563,7 @@ int cgi_read_1to1(cgns_1to1 *one21)
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
     /*
      * Convert the double id to a hid_t id and compare that to 0 instead of
      * comparing doubles, this avoids issues with comparing doubles when
@@ -1740,7 +1740,7 @@ int cgi_read_conn(cgns_conn *conn)
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(conn->ptset.id, hid);
       if (hid==0) {

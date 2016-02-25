@@ -98,7 +98,6 @@
 #define CG_FILE_ADF   1
 #define CG_FILE_HDF5  2
 #define CG_FILE_ADF2  3
-#define CG_FILE_PHDF5 4
 
 /* function return codes */
 

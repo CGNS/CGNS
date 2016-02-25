@@ -89,14 +89,14 @@
 	call cg_is_cgns_f(filename, is_cgns, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
         if ((is_cgns.ne.CG_FILE_ADF).AND.(is_cgns.ne.CG_FILE_HDF5).AND. &
-     &     (is_cgns.ne.CG_FILE_ADF2).AND.(is_cgns.ne.CG_FILE_PHDF5))    &
+     &     (is_cgns.ne.CG_FILE_ADF2))                                   &
      &     call cg_error_exit_f
 
 ! *** check if the user passes a file name with the null terminator
 	call cg_is_cgns_f(TRIM(filename)//C_NULL_CHAR, is_cgns, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
         if ((is_cgns.ne.CG_FILE_ADF).AND.(is_cgns.ne.CG_FILE_HDF5).AND. &
-     &     (is_cgns.ne.CG_FILE_ADF2).AND.(is_cgns.ne.CG_FILE_PHDF5))    &
+     &     (is_cgns.ne.CG_FILE_ADF2))                                   &
      &     call cg_error_exit_f
 
 	call cg_open_f(filename, CG_MODE_READ, cg, ier)

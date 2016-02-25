@@ -48,7 +48,6 @@
 #define CGIO_FILE_ADF    1
 #define CGIO_FILE_HDF5   2
 #define CGIO_FILE_ADF2   3
-#define CGIO_FILE_PHDF5  4
 
 /* currently these are the same as for ADF */
 

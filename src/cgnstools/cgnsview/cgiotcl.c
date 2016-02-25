@@ -1032,7 +1032,7 @@ static int CGNSfile (ClientData data, Tcl_Interp *interp,
         return (get_error (interp, "cgio_check_file"));
     if (file_type == CGIO_FILE_ADF)
         Tcl_SetResult (interp, "adf", TCL_STATIC);
-    else if (file_type == CGIO_FILE_HDF5 || file_type == CGIO_FILE_PHDF5)
+    else if (file_type == CGIO_FILE_HDF5)
         Tcl_SetResult (interp, "hdf5", TCL_STATIC);
     else {
         Tcl_SetResult (interp, "unknown file type", TCL_STATIC);

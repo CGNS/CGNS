@@ -193,7 +193,7 @@ static int check_parallel(cgns_file *cgfile)
 
     if (cgfile == NULL) return CG_ERROR;
     if (cgio_get_file_type(cgfile->cgio, &type) ||
-        type != CGIO_FILE_PHDF5) {
+        type != CGIO_FILE_HDF5) {
         cgi_error("file not opened for parallel IO");
         return CG_ERROR;
     }
@@ -260,7 +260,7 @@ int cgp_open(const char *filename, int mode, int *fn)
     /* check if we are actually running a parallel program */
     MPI_Initialized(&pcg_mpi_initialized);
 
-    ierr = cg_set_file_type(CG_FILE_PHDF5);
+    ierr = cg_set_file_type(CG_FILE_HDF5);
     if (ierr) return ierr;
     ierr = cg_open(filename, mode, fn);
     cgns_filetype = old_type;

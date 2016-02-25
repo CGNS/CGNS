@@ -707,11 +707,6 @@ int cg_set_file_type(int file_type)
 #endif
         }
 #ifdef BUILD_HDF5
-#ifdef BUILD_PARALLEL
-	else if (*type == '4' || *type == 'p' || *type == 'P') {
-            cgns_filetype = CG_FILE_PHDF5;
-        }
-#endif
 	else if (*type == '2' || *type == 'h' || *type == 'H') {
             cgns_filetype = CG_FILE_HDF5;
         }
@@ -2380,7 +2375,7 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(zcoor->id, hid);
       if (hid == 0) {
@@ -2510,7 +2505,7 @@ int cg_coord_partial_write(int file_number, int B, int Z,
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(zcoor->id, hid);
       if (hid == 0) {
@@ -5103,7 +5098,7 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(zconn->id, hid);
       if (hid==0) {
@@ -5527,7 +5522,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(zconn->id, hid);
       if (hid==0) {
@@ -5916,7 +5911,7 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(zconn->id, hid);
       if (hid==0) {
@@ -6223,7 +6218,7 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(zboco->id, hid);
       if (hid==0) {
@@ -7226,7 +7221,7 @@ int cg_bc_wallfunction_write(int file_number, int B, int Z, int BC,
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(bprop->id, hid);
       if (hid==0) {
@@ -7385,7 +7380,7 @@ int cg_bc_area_write(int file_number, int B, int Z, int BC,
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(bprop->id, hid);
       if (hid==0) {
@@ -7541,7 +7536,7 @@ int cg_conn_periodic_write(int file_number, int B, int Z, int I,
      }
    }
 #ifdef BUILD_HDF5
-   else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+   else if (cg->filetype == CGIO_FILE_HDF5) {
      hid_t hid;
      to_HDF_ID(cprop->id, hid);
      if (hid==0) {
@@ -7652,7 +7647,7 @@ int cg_conn_average_write(int file_number, int B, int Z, int I,
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(cprop->id, hid);
       if (hid==0) {
@@ -7806,7 +7801,7 @@ int cg_1to1_periodic_write(int file_number, int B, int Z, int I,
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(cprop->id, hid);
       if (hid==0) {
@@ -7924,7 +7919,7 @@ int cg_1to1_average_write(int file_number, int B, int Z, int I,
       }
     }
 #ifdef BUILD_HDF5
-    else if (cg->filetype == CGIO_FILE_HDF5 || cg->filetype == CGIO_FILE_PHDF5) {
+    else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(cprop->id, hid);
       if (hid==0) {

@@ -129,7 +129,6 @@ MODULE cgns
   INTEGER(C_INT), PARAMETER :: CG_FILE_ADF   = 1
   INTEGER(C_INT), PARAMETER :: CG_FILE_HDF5  = 2
   INTEGER(C_INT), PARAMETER :: CG_FILE_ADF2  = 3
-  INTEGER(C_INT), PARAMETER :: CG_FILE_PHDF5 = 4
 
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   !*      some error code (found in cgnslib.h)                           *
