@@ -34,7 +34,7 @@ int main (int argc, char **argv)
     int force = 0;
     struct stat inpst, outst;
     time_t ts, te;
-    static char *FileType[] = {"NONE", "ADF", "HDF5"};
+    static char *FileType[] = {"NONE", "ADF", "HDF5", "ADF2"};
 
     if (argc < 2)
         print_usage (usgmsg, NULL);
@@ -87,11 +87,13 @@ int main (int argc, char **argv)
         else
             outtype = CGIO_FILE_ADF;
     }
-    if (!force && outtype == inptype) {
-        cgio_close_file(inpcg);
-        fputs("input and output formats the same: use -f to force write\n",
-            stderr);
-        return 1;
+    if (!force) {
+        if (((inptype == CGIO_FILE_ADF  || inptype == CGIO_FILE_ADF2)  && (outtype == CGIO_FILE_ADF  || outtype == CGIO_FILE_ADF2)) ||
+            ((inptype == CGIO_FILE_HDF5) && (outtype == CGIO_FILE_HDF5))) {
+            cgio_close_file(inpcg);
+            fputs("input and output formats the same: use -f to force write\n", stderr);
+            return 1;
+        }
     }
 
     printf("converting %s file %s to %s file %s\n",
