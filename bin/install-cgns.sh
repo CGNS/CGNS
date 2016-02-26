@@ -24,8 +24,7 @@ fi
 --disable-shared \
 --enable-debug \
 --with-zlib \
---disable-cgnstools \
---disable-x \
+--enable-cgnstools \
 --enable-64bit
 
 
