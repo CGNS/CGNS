@@ -36,6 +36,7 @@ freely, subject to the following restrictions:
 #include <errno.h>
 
 #include "cgns_io.h"
+#include "cgnslib.h"
 #include "adf/ADF.h"
 #ifdef BUILD_HDF5
 #include "adfh/ADFH.h"
@@ -146,38 +147,38 @@ static int recurse_nodes (int input, double InputID,
     /* Copy the data from the current input node to the output node */
 
     if (depth && cgio_copy_node(input, InputID, output, OutputID))
-        return 1;
+        return CG_ERROR;
 
     /* Loop through the children of the current node */
 
     if (cgio_number_children(input, InputID, &nchild))
-        return 1;
+        return CG_ERROR;
     for (n = 1; n <= nchild; n++) {
         if (cgio_children_ids(input, InputID, n, 1, &cnt, &childID) ||
             cgio_get_name(input, childID, name) ||
             cgio_is_link(input, childID, &name_len))
-            return 1;
+            return CG_ERROR;
         if (name_len) {
             if (cgio_link_size(input, childID, &file_len, &name_len))
-                return 1;
+                return CG_ERROR;
         }
         if (name_len && (file_len == 0 || follow_links == 0)) {
             link_file = (char *) malloc (file_len + name_len + 2);
             if (link_file == NULL) {
                 set_error(CGIO_ERR_MALLOC);
-                return 1;
+                return CG_ERROR;
             }
             link_name = link_file + file_len + 1;
             if (cgio_get_link(input, childID, link_file, link_name)) {
                 free (link_name);
-                return 1;
+                return CG_ERROR;
             }
             link_file[file_len] = 0;
             link_name[name_len] = 0;
             if (cgio_create_link(output, OutputID, name, link_file,
                     link_name, &newID)) {
                 free (link_file);
-                return 1;
+                return CG_ERROR;
             }
             free (link_file);
         }
@@ -185,10 +186,10 @@ static int recurse_nodes (int input, double InputID,
             if (cgio_create_node(output, OutputID, name, &newID) ||
                 recurse_nodes(input, childID, output, newID,
                     follow_links, ++depth))
-                return 1;
+                return CG_ERROR;
         }
     }
-    return 0;
+    return CG_OK;
 }
 
 /*---------------------------------------------------------*/
@@ -637,7 +638,7 @@ int cgio_compute_data_size (const char *data_type,
     switch (*data_type) {
         case 'B':
         case 'C':
-            return 1;
+            return CG_ERROR;
         case 'I':
         case 'U':
             if (data_type[1] == '4') return sizeof(int);
@@ -652,7 +653,7 @@ int cgio_compute_data_size (const char *data_type,
             if (data_type[1] == '8') return (2 * sizeof(double));
             break;
     }
-    return 0;
+    return CG_OK;
 }
 
 /*---------------------------------------------------------*/
