@@ -971,7 +971,14 @@ echo #define CG_BUILD_SCOPE  %doscope% >> cgnstypes.h
 echo #define CG_BUILD_BASESCOPE  %dobasescope% >> cgnstypes.h
 echo.>> cgnstypes.h
 echo #define CG_MAX_INT32 0x7FFFFFFF>> cgnstypes.h
+echo #ifdef _WIN32>> cgnstypes.h
 echo #define CG_LONG_T    __int64>> cgnstypes.h
+echo #ifdef CG_BUILD_64BIT>> cgnstypes.h
+echo #define stat _stat32i64>> cgnstypes.h
+echo #endif>> cgnstypes.h
+echo #else>> cgnstypes.h
+echo # define CG_LONG_T long long>> cgnstypes.h
+echo #endif>> cgnstypes.h
 echo.>> cgnstypes.h
 echo #if CG_BUILD_LEGACY>> cgnstypes.h
 echo # define CG_SIZEOF_SIZE    32 >> cgnstypes.h
