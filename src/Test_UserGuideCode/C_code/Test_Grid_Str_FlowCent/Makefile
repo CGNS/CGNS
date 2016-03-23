@@ -1,15 +1,18 @@
 include ../make.defs
 
-WRITE1 = $(OUTDIR)/write_grid_str$(EXE)
-WRITE2 = $(OUTDIR)/write_flowcent_str$(EXE)
-WRITE3 = $(OUTDIR)/write_bc_str$(EXE)
-READ1  = $(OUTDIR)/read_grid_str$(EXE)
-READ2  = $(OUTDIR)/read_flowcent_str$(EXE)
-READ3  = $(OUTDIR)/read_bc_str$(EXE)
+WRITE1 = write_grid_str$(EXE)
+WRITE2 = write_flowcent_str$(EXE)
+WRITE3 = write_bc_str$(EXE)
+READ1  = read_grid_str$(EXE)
+READ2  = read_flowcent_str$(EXE)
+READ3  = read_bc_str$(EXE)
+
+WRITE_PROGS = $(WRITE1) $(WRITE2) $(WRITE3)
+READ_PROGS = $(READ1) $(READ2) $(READ3)
 
 all    : write read
-write  : $(OUTDIR) $(WRITE1) $(WRITE2) $(WRITE3)
-read   : $(OUTDIR) $(READ1) $(READ2) $(READ3)
+write  : $(OUTDIR) $(WRITE_PROGS)
+read   : $(OUTDIR) $(READ_PROGS)
 
 test  : write read
 	-@$(RM) grid.cgns
@@ -45,6 +48,6 @@ $(READ3) : ../read_bc_str.c
 	$(CC) $(COPTS) $(FEOUT)$@ ../read_bc_str.c $(LIBS)
 
 clean :
-	-$(RM) grid.cgns
+	-$(RM) grid.cgns $(WRITE_PROGS) $(READ_PROGS)
 	-$(RMDIR) $(OUTDIR)
 

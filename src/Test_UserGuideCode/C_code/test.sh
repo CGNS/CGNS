@@ -28,20 +28,20 @@ declare -a r_arr=("read_grid_str" "read_flowvert_str" "read_nondimensional" "rea
 
 dir=Test_Grid_Str
 printf "%-40s" "Testing $dir..."
-cd $dir/build
+cd $dir
 
 # loop through tests
 size_arr=${#w_arr[@]} #Number of elements in the array
 for i in $(seq 1 $size_arr);do
    ./${w_arr[$i-1]}
-   ./${r_arr[$i-1]} > output$i
-   diff <( sed '/Library/ d' output$i) <( sed '/Library/ d' ../OUTPUT$i) > results$i.txt
+   ./${r_arr[$i-1]} > build/output$i
+   diff <( sed '/Library/ d' build/output$i) <( sed '/Library/ d' ./OUTPUT$i) > build/results$i.txt
    status=$?
    echoresults $status
    return_val=`expr $status + $return_val`
 done
 
-cd ../..
+cd ..
 
 ###############################
 
@@ -51,20 +51,20 @@ declare -a r_arr=("read_grid_unst" "read_flowvert_unst" "read_dimensional" "read
 
 dir=Test_Grid_Unstr
 printf "%-40s" "Testing $dir..."
-cd $dir/build
+cd $dir
 
 # loop through tests
 size_arr=${#w_arr[@]} #Number of elements in the array
 for i in $(seq 1 $size_arr);do
    ./${w_arr[$i-1]}
-   ./${r_arr[$i-1]} > output$i
-   diff <( sed '/Library/ d' output$i) <( sed '/Library/ d' ../OUTPUT$i) > results$i.txt
+   ./${r_arr[$i-1]} > build/output$i
+   diff <( sed '/Library/ d' build/output$i) <( sed '/Library/ d' ./OUTPUT$i) > build/results$i.txt
    status=$?
    echoresults $status
    return_val=`expr $status + $return_val`
 done
 
-cd ../..
+cd ..
 
 ###############################
 
@@ -74,20 +74,20 @@ declare -a r_arr=("read_grid_str" "read_timevert_str")
 
 dir=Test_Grid_Str_Timeacc
 printf "%-40s" "Testing $dir..."
-cd $dir/build
+cd $dir
 
 # loop through tests
 size_arr=${#w_arr[@]} #Number of elements in the array
 for i in $(seq 1 $size_arr);do
    ./${w_arr[$i-1]}
-   ./${r_arr[$i-1]} > output$i
-   diff <( sed '/Library/ d' output$i) <( sed '/Library/ d' ../OUTPUT$i) > results$i.txt
+   ./${r_arr[$i-1]} > build/output$i
+   diff <( sed '/Library/ d' build/output$i) <( sed '/Library/ d' ./OUTPUT$i) > build/results$i.txt
    status=$?
    echoresults $status
    return_val=`expr $status + $return_val`
 done
 
-cd ../..
+cd ..
 
 ###############################
 
@@ -97,20 +97,20 @@ declare -a r_arr=("read_grid_str" "read_flowcent_str" "read_bc_str")
 
 dir=Test_Grid_Str_FlowCent
 printf "%-40s" "Testing $dir..."
-cd $dir/build
+cd $dir
 
 # loop through tests
 size_arr=${#w_arr[@]} #Number of elements in the array
 for i in $(seq 1 $size_arr);do
    ./${w_arr[$i-1]}
-   ./${r_arr[$i-1]} > output$i
-   diff <( sed '/Library/ d' output$i) <( sed '/Library/ d' ../OUTPUT$i) > results$i.txt
+   ./${r_arr[$i-1]} > build/output$i
+   diff <( sed '/Library/ d' build/output$i) <( sed '/Library/ d' ./OUTPUT$i) > build/results$i.txt
    status=$?
    echoresults $status
    return_val=`expr $status + $return_val`
 done
 
-cd ../..
+cd ..
 
 ###############################
 
@@ -120,20 +120,20 @@ declare -a r_arr=("read_grid_str" "read_flowcentrind_str")
 
 dir=Test_Grid_Str_FlowCentRind
 printf "%-40s" "Testing $dir..."
-cd $dir/build
+cd $dir
 
 # loop through tests
 size_arr=${#w_arr[@]} #Number of elements in the array
 for i in $(seq 1 $size_arr);do
    ./${w_arr[$i-1]}
-   ./${r_arr[$i-1]} > output$i
-   diff <( sed '/Library/ d' output$i) <( sed '/Library/ d' ../OUTPUT$i) > results$i.txt
+   ./${r_arr[$i-1]} > build/output$i
+   diff <( sed '/Library/ d' build/output$i) <( sed '/Library/ d' ./OUTPUT$i) > build/results$i.txt
    status=$?
    echoresults $status
    return_val=`expr $status + $return_val`
 done
 
-cd ../..
+cd ..
 
 ###############################
 
@@ -143,20 +143,20 @@ declare -a r_arr=("read_grid2zn_str" "read_con2zn_str")
 
 dir=Test_Grid_Str_2zn
 printf "%-40s" "Testing $dir..."
-cd $dir/build
+cd $dir
 
 # loop through tests
 size_arr=${#w_arr[@]} #Number of elements in the array
 for i in $(seq 1 $size_arr);do
    ./${w_arr[$i-1]}
-   ./${r_arr[$i-1]} > output$i
-   diff <( sed '/Library/ d' output$i) <( sed '/Library/ d' ../OUTPUT$i) > results$i.txt
+   ./${r_arr[$i-1]} > build/output$i
+   diff <( sed '/Library/ d' build/output$i) <( sed '/Library/ d' ./OUTPUT$i) > build/results$i.txt
    status=$?
    echoresults $status
    return_val=`expr $status + $return_val`
 done
 
-cd ../..
+cd ..
 
 ###############################
 
@@ -166,20 +166,20 @@ declare -a r_arr=("read_grid2zn_str" "read_con2zn_genrl_str")
 
 dir=Test_Grid_Str_2zngenrl
 printf "%-40s" "Testing $dir..."
-cd $dir/build
+cd $dir
 
 # loop through tests
 size_arr=${#w_arr[@]} #Number of elements in the array
 for i in $(seq 1 $size_arr);do
    ./${w_arr[$i-1]}
-   ./${r_arr[$i-1]} > output$i
-   diff <( sed '/Library/ d' output$i) <( sed '/Library/ d' ../OUTPUT$i) > results$i.txt
+   ./${r_arr[$i-1]} > build/output$i
+   diff <( sed '/Library/ d' build/output$i) <( sed '/Library/ d' ./OUTPUT$i) > build/results$i.txt
    status=$?
    echoresults $status
    return_val=`expr $status + $return_val`
 done
 
-cd ../..
+cd ..
 
 ###############################
 
