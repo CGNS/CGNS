@@ -1,6 +1,6 @@
 include ../make.defs
 
-CGIOTEST = $(OUTDIR)/cgiotest$(EXE)
+CGIOTEST = cgiotest$(EXE)
 
 $(CGIOTEST) : $(OUTDIR) cgiotest.F
 	$(F77) $(FOPTS) $(FEOUT)$@ cgiotest.F $(LIBS)
@@ -14,7 +14,7 @@ $(OUTDIR) :
 	-@$(MKDIR) $(OUTDIR)
 
 clean :
-	-$(RM) $(OUTDIR)/*
+	-$(RM) $(OUTDIR)/* $(CGIOTEST)
 	-$(RMDIR) $(OUTDIR)
 	-$(RM) adf_file_*.adf
 

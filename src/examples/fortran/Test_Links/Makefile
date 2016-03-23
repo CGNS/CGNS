@@ -1,7 +1,7 @@
 include ../make.defs
 
-WRITE = $(OUTDIR)/cgwrite$(EXE)
-READ  = $(OUTDIR)/cgread$(EXE)
+WRITE = cgwrite$(EXE)
+READ  = cgread$(EXE)
 
 all   : write read
 write : $(OUTDIR) $(WRITE)
@@ -23,6 +23,6 @@ $(READ) : cgread.F
 	$(F77) $(FOPTS) $(FEOUT)$@ cgread.F $(LIBS)
 
 clean :
-	-$(RM) Test_V2*
+	-$(RM) Test_V2* $(WRITE) $(READ) 
 	-$(RMDIR) $(OUTDIR)
 
