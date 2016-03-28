@@ -95,7 +95,7 @@ int main (int argc, char **argv)
 
     printf ("opening top link file (child still open) ...");
     fflush (stdout);
-    if (cg_open (fname, CG_MODE_READ, &cgftop)) cg_error_exit();
+    if (cg_open (fname, CG_MODE_MODIFY, &cgftop)) cg_error_exit();
     cg_nzones(cgftop,1,&n);
     printf (" [%d] zones...",n);
     cg_close (cgftop);
