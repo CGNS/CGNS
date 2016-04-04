@@ -58,12 +58,12 @@ int comm_rank;
 MPI_Info info;
 
 /* cgsize_t Nelem = 33554432; */
-cgsize_t Nelem = 33554432;
+cgsize_t Nelem = 65536;
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
 int mpi_err;
-int err;
+
 int comm_size;
 int comm_rank;
 int fn;
@@ -91,27 +91,28 @@ cgsize_t* Array_i;
 cgsize_t start, end, emin, emax;
 cgsize_t* elements;
 char name[33];
-int queue, debug;
+int  debug;
 double t0, t1, t2;
 
 /*
  * Timing storage convention:
- * timing(0) = Total program time
- * timing(1) = Time to write nodal coordinates
- * timing(2) = Time to write connectivity table
- * timing(3) = Time to write solution data (field data)
- * timing(4) = Time to write array data
- * timing(5) = Time to read nodal coordinates
- * timing(6) = Time to read connectivity table
- * timing(7) = Time to read solution data (field data)
- * timing(8) = Time to read array data
- * timing(9) = Time for cgp_open, CG_MODE_WRITE
- * timing(10) = Time for cg_base_write
- * timing(11) = Time for cg_zone_write
- * timing(12) = Time for cgp_open, CG_MODE_READ
- * timing(13) = Time for cg_read base, zone
+ * timing(0) = Total program time, 2,3,4
+ * timing(1) = Time to write nodal coordinates, 5,6,7
+ * timing(2) = Time to write connectivity table, 8,9,10
+ * timing(3) = Time to write solution data (field data), 11,12,13
+ * timing(4) = Time to write array data, 14,15,16
+ * timing(5) = Time to read nodal coordinates, 17,18,19
+ * timing(6) = Time to read connectivity table, 20,21,22
+ * timing(7) = Time to read solution data (field data), 23,24,25
+ * timing(8) = Time to read array data, 26,27,28
+ * timing(9) = Time for cgp_open, CG_MODE_WRITE, 29,30,31
+ * timing(10) = Time for cg_base_write, cg_zone_write, 32,33,34
+ * timing(11) = Time for cgp_open, CG_MODE_READ, 35,36,37
+ * timing(12) = Time for cg_read base, zone, 38,39,40
+ * timing(13) = Time for cg_close, WRITE, 41,42,43
+ * timing(14) = Time for cg_close, READ, 44,45,46
  */
-double xtiming[14], timing[14], timingMin[14], timingMax[14];
+double xtiming[15], timing[15], timingMin[15], timingMax[15];
 
 int piomode[2] = {0, 1};
 int piomode_i;
@@ -137,6 +138,7 @@ int c_double_eq(double a, double b) {
 }
 
 int main(int argc, char* argv[]) {
+  int err;
   /* Initialize variables */
   initialize(&argc,&argv);
 
@@ -150,7 +152,6 @@ int main(int argc, char* argv[]) {
 
   /* parameters */
   piomode_i = 1;
-  queue = false;
   debug = false;
 
   t0 = MPI_Wtime(); /* Timer */
@@ -190,21 +191,12 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cg_base_write \n");
     cgp_error_exit();
   }
-  t2 = MPI_Wtime();
-  xtiming[10] = t2-t1;
-
-  t1 = MPI_Wtime();
   if(cg_zone_write(fn, B, "Zone 1", nijk, Unstructured, &Z) != CG_OK) {
     printf("*FAILED* cg_zone_write \n");
     cgp_error_exit();
   t2 = MPI_Wtime();
-  xtiming[11] = t2-t1;
+  xtiming[10] = t2-t1;
 
-  }
-  /* use queued IO */
-  if(cgp_queue_set(queue) != CG_OK) {
-    printf("*FAILED* cgp_queue_set \n");
-    cgp_error_exit();
   }
 
   /* ====================================== */
@@ -276,11 +268,9 @@ int main(int argc, char* argv[]) {
   t2 = MPI_Wtime();
   xtiming[1] = t2-t1;
 
-  if(!queue) {
-    free(Coor_x);
-    free(Coor_y);
-    free(Coor_z);
-  }
+  free(Coor_x);
+  free(Coor_y);
+  free(Coor_z);
   /* ====================================== */
   /* == (B) WRITE THE CONNECTIVITY TABLE == */
   /* ====================================== */
@@ -317,9 +307,7 @@ int main(int argc, char* argv[]) {
   t2 = MPI_Wtime();
   xtiming[2] = t2-t1;
 
-  if(!queue) {
-    free(elements);
-  }
+  free(elements);
 
 
   /* ====================================== */
@@ -397,11 +385,9 @@ int main(int argc, char* argv[]) {
   t2 = MPI_Wtime();
   xtiming[3] = t2-t1;
 
-  if(!queue) {
-    free(Data_Fx);
-    free(Data_Fy);
-    free(Data_Fz);
-  }
+  free(Data_Fx);
+  free(Data_Fy);
+  free(Data_Fz);
 
   /* ====================================== */
   /* == (D) WRITE THE ARRAY DATA         == */
@@ -481,25 +467,21 @@ int main(int argc, char* argv[]) {
   t2 = MPI_Wtime();
   xtiming[4] = t2-t1;
 
-  if(!queue) {
-    free(Array_r);
-    free(Array_i);
-  }
+  free(Array_r);
+  free(Array_i);
 
+  t1 = MPI_Wtime();
   if(cgp_close(fn) != CG_OK) {
     printf("*FAILED* cgp_close \n");
     cgp_error_exit();
   };
+  t2 = MPI_Wtime();
+  xtiming[13] = t2-t1;
 
   /* ====================================== */
   /* ==    **  READ THE CGNS FILE **     == */
   /* ====================================== */
   MPI_Barrier(MPI_COMM_WORLD);
-  /* use queued IO */
-  if(cgp_queue_set(0) != CG_OK) {
-    printf("*FAILED* cgp_queue_set \n");
-    cgp_error_exit();
-  }
 
   t1 = MPI_Wtime();
   /* Open the cgns file for reading */
@@ -508,7 +490,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
   t2 = MPI_Wtime();
-  xtiming[12] = t2-t1;
+  xtiming[11] = t2-t1;
 
   /* Read the base information */
   t1 = MPI_Wtime();
@@ -533,7 +515,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
   t2 = MPI_Wtime();
-  xtiming[13] = t2-t1;
+  xtiming[12] = t2-t1;
 
   /* Check the read zone information is correct */
   if(sizes[0] != Nnodes) {
@@ -776,19 +758,19 @@ int main(int argc, char* argv[]) {
   free(Array_r);
   free(Array_i);
 
-  /* t1 = MPI_Wtime(); */
+  t1 = MPI_Wtime();
   if(cgp_close(fn) !=CG_OK) {
      printf("*FAILED* cgp_close\n");
      cgp_error_exit();
   }
-/*   t2 = MPI_Wtime(); */
-/*   printf(" cgp_close timing = %20f \n", t2-t1); */
+  t2 = MPI_Wtime();
+  xtiming[14] = t2-t1;
 
   xtiming[0] = t2-t0;
 
-  MPI_Reduce(&xtiming, &timing, 14, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&xtiming, &timingMin, 14, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&xtiming, &timingMax, 14, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timing, 15, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timingMin, 15, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&xtiming, &timingMax, 15, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   if(comm_rank==0) {
     sprintf(fname, "timing_%06d_%d.dat", comm_size, piomode_i+1);
@@ -798,10 +780,11 @@ int main(int argc, char* argv[]) {
     } else {
       fprintf(fid,"#nprocs, total time, write: coord., elem., field, array, read: coord., elem., field, array, MB: coord, elem, field, array \n%d", comm_size);
 
-      for ( k = 0; k < 14; k++) {
+      for ( k = 0; k < 15; k++) {
 	fprintf(fid," %20f %20f %20f ",timing[k]/((double) comm_size), timingMin[k], timingMax[k]);
       }
       fprintf(fid," %zu %zu %zu %zu \n", Mb_coor, Mb_elem, Mb_field, Mb_array);
+      fclose(fid);
     }
   }
 

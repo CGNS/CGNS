@@ -1,0 +1,91 @@
+ BC number:     1
+    name=Ilo                             
+    type=BCTunnelInflow                  
+    no of pts=  153
+      (these points read here, but only some printed out:)
+ ipnts(1, 1), (2, 1), (3, 1)=   1   1   1
+ ipnts(1, 2), (2, 2), (3, 2)=   1   1   2
+ ipnts(1, 3), (2, 3), (3, 3)=   1   1   3
+ ipnts(1, 4), (2, 4), (3, 4)=   1   1   4
+ ipnts(1, 5), (2, 5), (3, 5)=   1   1   5
+ ipnts(1, 6), (2, 6), (3, 6)=   1   1   6
+ ipnts(1, 7), (2, 7), (3, 7)=   1   1   7
+ ipnts(1, 8), (2, 8), (3, 8)=   1   1   8
+ ipnts(1, 9), (2, 9), (3, 9)=   1   1   9
+ ipnts(1,10), (2,10), (3,10)=   1   2   1
+ BC number:     2
+    name=Ihi                             
+    type=BCExtrapolate                   
+    no of pts=  153
+      (these points read here, but only some printed out:)
+ ipnts(1, 1), (2, 1), (3, 1)=  21   1   1
+ ipnts(1, 2), (2, 2), (3, 2)=  21   1   2
+ ipnts(1, 3), (2, 3), (3, 3)=  21   1   3
+ ipnts(1, 4), (2, 4), (3, 4)=  21   1   4
+ ipnts(1, 5), (2, 5), (3, 5)=  21   1   5
+ ipnts(1, 6), (2, 6), (3, 6)=  21   1   6
+ ipnts(1, 7), (2, 7), (3, 7)=  21   1   7
+ ipnts(1, 8), (2, 8), (3, 8)=  21   1   8
+ ipnts(1, 9), (2, 9), (3, 9)=  21   1   9
+ ipnts(1,10), (2,10), (3,10)=  21   2   1
+ BC number:     3
+    name=Jlo                             
+    type=BCWallInviscid                  
+    no of pts=  189
+      (these points read here, but only some printed out:)
+ ipnts(1, 1), (2, 1), (3, 1)=   1   1   1
+ ipnts(1, 2), (2, 2), (3, 2)=   1   1   2
+ ipnts(1, 3), (2, 3), (3, 3)=   1   1   3
+ ipnts(1, 4), (2, 4), (3, 4)=   1   1   4
+ ipnts(1, 5), (2, 5), (3, 5)=   1   1   5
+ ipnts(1, 6), (2, 6), (3, 6)=   1   1   6
+ ipnts(1, 7), (2, 7), (3, 7)=   1   1   7
+ ipnts(1, 8), (2, 8), (3, 8)=   1   1   8
+ ipnts(1, 9), (2, 9), (3, 9)=   1   1   9
+ ipnts(1,10), (2,10), (3,10)=   2   1   1
+ BC number:     4
+    name=Jhi                             
+    type=BCWallInviscid                  
+    no of pts=  189
+      (these points read here, but only some printed out:)
+ ipnts(1, 1), (2, 1), (3, 1)=   1  17   1
+ ipnts(1, 2), (2, 2), (3, 2)=   1  17   2
+ ipnts(1, 3), (2, 3), (3, 3)=   1  17   3
+ ipnts(1, 4), (2, 4), (3, 4)=   1  17   4
+ ipnts(1, 5), (2, 5), (3, 5)=   1  17   5
+ ipnts(1, 6), (2, 6), (3, 6)=   1  17   6
+ ipnts(1, 7), (2, 7), (3, 7)=   1  17   7
+ ipnts(1, 8), (2, 8), (3, 8)=   1  17   8
+ ipnts(1, 9), (2, 9), (3, 9)=   1  17   9
+ ipnts(1,10), (2,10), (3,10)=   2  17   1
+ BC number:     5
+    name=Klo                             
+    type=BCWallInviscid                  
+    no of pts=  357
+      (these points read here, but only some printed out:)
+ ipnts(1, 1), (2, 1), (3, 1)=   1   1   1
+ ipnts(1, 2), (2, 2), (3, 2)=   1   2   1
+ ipnts(1, 3), (2, 3), (3, 3)=   1   3   1
+ ipnts(1, 4), (2, 4), (3, 4)=   1   4   1
+ ipnts(1, 5), (2, 5), (3, 5)=   1   5   1
+ ipnts(1, 6), (2, 6), (3, 6)=   1   6   1
+ ipnts(1, 7), (2, 7), (3, 7)=   1   7   1
+ ipnts(1, 8), (2, 8), (3, 8)=   1   8   1
+ ipnts(1, 9), (2, 9), (3, 9)=   1   9   1
+ ipnts(1,10), (2,10), (3,10)=   1  10   1
+ BC number:     6
+    name=Khi                             
+    type=BCWallInviscid                  
+    no of pts=  357
+      (these points read here, but only some printed out:)
+ ipnts(1, 1), (2, 1), (3, 1)=   1   1   9
+ ipnts(1, 2), (2, 2), (3, 2)=   1   2   9
+ ipnts(1, 3), (2, 3), (3, 3)=   1   3   9
+ ipnts(1, 4), (2, 4), (3, 4)=   1   4   9
+ ipnts(1, 5), (2, 5), (3, 5)=   1   5   9
+ ipnts(1, 6), (2, 6), (3, 6)=   1   6   9
+ ipnts(1, 7), (2, 7), (3, 7)=   1   7   9
+ ipnts(1, 8), (2, 8), (3, 8)=   1   8   9
+ ipnts(1, 9), (2, 9), (3, 9)=   1   9   9
+ ipnts(1,10), (2,10), (3,10)=   1  10   9
+ Successfully read BCs (PointList format) from file grid.cgns

@@ -1,0 +1,43 @@
+language: C
+sudo: required
+
+os:
+  - linux
+  - osx
+
+# whitelist
+branches:
+  only:
+    - develop
+
+notifications:
+  email: false
+
+before_install:
+    - |
+      if [ "$(uname)" = "Linux" ]; then
+         sudo apt-get update -qq;
+         sudo apt-get install -qq gfortran;
+      fi
+    - ./bin/install-hdf.sh
+
+before_script:
+    - ./bin/install-cgns.sh
+
+script:
+    - cd src
+    - make
+    - make install
+    - cd tests
+    - make
+    - make test
+    - cd ../examples/fortran
+    - make
+    - make test
+    - cd ../../Test_UserGuideCode/Fortran_code
+    - make
+    - make test
+    - cd ../C_code
+    - make
+    - make test
+    

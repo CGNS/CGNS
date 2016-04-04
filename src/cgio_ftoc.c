@@ -78,7 +78,11 @@ static char *new_c_string (char *str, int len, cgint_f *ier)
     if (len < 1 || str == NULL) {
       *ier = (cgint_f)CGIO_ERR_NULL_STRING;
         return NULL;
+    } else if ( len == 2 && strncmp(str, "\0", 2) == 92 ) {
+      *ier = (cgint_f)CGIO_ERR_NULL_STRING;
+      return NULL;
     }
+
     c_str = (char *) malloc (len + 1);
     if (c_str == NULL) {
         *ier = (cgint_f)CGIO_ERR_MALLOC;
@@ -125,8 +129,8 @@ CGIODLL void FMNAME(cgio_path_delete_f, CGIO_PATH_DELETE_F) (
  * utility routines independent of open files
  *=========================================================*/
 
-CGIODLL void FMNAME(cgio_is_supported_f, CGIO_IS_SUPPORTED_F) (
-    cgsize_t *file_type, cgsize_t *ier)
+CGIODLL void cgio_is_supported_f(
+    cgsize_t *file_type, cgint_f *ier)
 {
     *ier = (cgint_f)cgio_is_supported((int)*file_type);
 }
@@ -166,7 +170,7 @@ CGIODLL void FMNAME(cgio_open_file_f, CGIO_OPEN_FILE_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_close_file_f, CGIO_CLOSE_FILE_F) (
+CGIODLL void cgio_close_file_f(
     cgint_f *cgio_num, cgint_f *ier)
 {
     *ier = (cgint_f)cgio_close_file((int)*cgio_num);
@@ -174,7 +178,7 @@ CGIODLL void FMNAME(cgio_close_file_f, CGIO_CLOSE_FILE_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_flush_to_disk_f, CGIO_FLUSH_TO_DISK_F) (
+CGIODLL void cgio_flush_to_disk_f(
     cgint_f *cgio_num, cgint_f *ier)
 {
     *ier = (cgint_f)cgio_flush_to_disk((int)*cgio_num);
@@ -215,7 +219,7 @@ CGIODLL void FMNAME(cgio_file_version_f, CGIO_FILE_VERSION_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_get_root_id_f, CGIO_GET_ROOT_ID_F) (
+CGIODLL void cgio_get_root_id_f(
     cgint_f *cgio_num, double *rootid, cgint_f *ier)
 {
     *ier = (cgint_f)cgio_get_root_id((int)*cgio_num, rootid);
@@ -223,7 +227,7 @@ CGIODLL void FMNAME(cgio_get_root_id_f, CGIO_GET_ROOT_ID_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_get_file_type_f, CGIO_GET_FILE_TYPE_F) (
+CGIODLL void cgio_get_file_type_f(
     cgint_f *cgio_num, cgint_f *file_type, cgint_f *ier)
 {
     int i_file_type;
@@ -236,7 +240,7 @@ CGIODLL void FMNAME(cgio_get_file_type_f, CGIO_GET_FILE_TYPE_F) (
  * error handling
  *=========================================================*/
 
-CGIODLL void FMNAME(cgio_error_code_f, CGIO_ERROR_CODE_F) (
+CGIODLL void cgio_error_code_f(
     cgint_f *errcode, cgint_f *file_type)
 {
     int i_errcode, i_file_type;
@@ -248,7 +252,7 @@ CGIODLL void FMNAME(cgio_error_code_f, CGIO_ERROR_CODE_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_error_message_f, CGIO_ERROR_MESSAGE_F) (
+CGIODLL void FMNAME(cgio_error_message_f,CGIO_ERROR_MESSAGE_F) (
     STR_PSTR(errmsg), cgint_f *ier STR_PLEN(errmsg))
 {
     char c_error[CGIO_MAX_ERROR_LENGTH+1];
@@ -260,7 +264,7 @@ CGIODLL void FMNAME(cgio_error_message_f, CGIO_ERROR_MESSAGE_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_error_exit_f, CGIO_ERROR_EXIT_F) (
+CGIODLL void FMNAME(cgio_error_exit_f, CGIO_ERROR_EXIT_F)(
     STR_PSTR(errmsg) STR_PLEN(errmsg))
 {
     cgint_f ier;
@@ -271,7 +275,7 @@ CGIODLL void FMNAME(cgio_error_exit_f, CGIO_ERROR_EXIT_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_error_abort_f, CGIO_ERROR_ABORT_F) (
+CGIODLL void cgio_error_abort_f(
     cgint_f *abort_flag)
 {
     cgio_error_abort((int)*abort_flag);
@@ -312,15 +316,15 @@ CGIODLL void FMNAME(cgio_new_node_f, CGIO_NEW_NODE_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_delete_node_f, CGIO_DELETE_NODE_F) (
+CGIODLL void cgio_delete_node_f(
     cgint_f *cgio_num, double *pid, double *id, cgint_f *ier)
 {
-    *ier = cgio_delete_node((int)*cgio_num, *pid, *id);
+    *ier = (cgint_f)cgio_delete_node((int)*cgio_num, *pid, *id);
 }
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_move_node_f, CGIO_MOVE_NODE_F) (
+CGIODLL void cgio_move_node_f(
     cgint_f *cgio_num, double *pid, double *id, double *npid, cgint_f *ier)
 {
     *ier = (cgint_f)cgio_move_node((int)*cgio_num, *pid, *id, *npid);
@@ -328,7 +332,7 @@ CGIODLL void FMNAME(cgio_move_node_f, CGIO_MOVE_NODE_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_release_id_f, CGIO_RELEASE_ID_F) (
+CGIODLL void cgio_release_id_f(
     cgint_f *cgio_num, double *id, cgint_f *ier)
 {
     *ier = (cgint_f)cgio_release_id((int)*cgio_num, *id);
@@ -338,26 +342,26 @@ CGIODLL void FMNAME(cgio_release_id_f, CGIO_RELEASE_ID_F) (
  * links
  *=========================================================*/
 
-CGIODLL void FMNAME(cgio_is_link_f, CGIO_IS_LINK_F) (
-    cgsize_t *cgio_num, double *id, cgsize_t *link_len, cgint_f *ier)
+CGIODLL void cgio_is_link_f(
+    cgint_f *cgio_num, double *id, cgint_f *link_len, cgint_f *ier)
 {
     int i_link_len;
 
-    *ier = cgio_is_link((int)*cgio_num, *id, &i_link_len);
-    *link_len = i_link_len;
+    *ier = (cgint_f)cgio_is_link((int)*cgio_num, *id, &i_link_len);
+    *link_len = (cgint_f)i_link_len;
 }
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_link_size_f, CGIO_LINK_SIZE_F) (
-    cgint_f *cgio_num, double *id, cgsize_t *file_len,
-    cgsize_t *name_len, cgint_f *ier)
+CGIODLL void cgio_link_size_f(
+    cgint_f *cgio_num, double *id, cgint_f *file_len,
+    cgint_f *name_len, cgint_f *ier)
 {
     int i_file_len, i_name_len;
 
-    *ier = cgio_link_size((int)*cgio_num, *id, &i_file_len, &i_name_len);
-    *file_len = i_file_len;
-    *name_len = i_name_len;
+    *ier = (cgint_f)cgio_link_size((int)*cgio_num, *id, &i_file_len, &i_name_len);
+    *file_len = (cgint_f)i_file_len;
+    *name_len = (cgint_f)i_name_len;
 }
 
 /*---------------------------------------------------------*/
@@ -406,7 +410,7 @@ CGIODLL void FMNAME(cgio_get_link_f, CGIO_GET_LINK_F) (
  * node children
  *=========================================================*/
 
-CGIODLL void FMNAME(cgio_number_children_f, CGIO_NUMBER_CHILDREN_F) (
+CGIODLL void cgio_number_children_f(
     cgint_f *cgio_num, double *pid, cgint_f *num_children, cgint_f *ier)
 {
     int i_num_children;
@@ -417,7 +421,7 @@ CGIODLL void FMNAME(cgio_number_children_f, CGIO_NUMBER_CHILDREN_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_children_ids_f, CGIO_CHILDREN_IDS_F) (
+CGIODLL void cgio_children_ids_f(
     cgint_f *cgio_num, double *pid, cgint_f *start, cgint_f *max_ret,
     cgint_f *num_ret, double *ids, cgint_f *ier)
 {
@@ -430,7 +434,7 @@ CGIODLL void FMNAME(cgio_children_ids_f, CGIO_CHILDREN_IDS_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_children_names_f, CGIO_CHILDREN_NAMES_F) (
+CGIODLL void FMNAME(cgio_children_names_f, cgio_children_names_f) (
     cgint_f *cgio_num, double *pid, cgint_f *start, cgint_f *max_ret,
     cgint_f *name_len, cgint_f *num_ret, STR_PSTR(names),
     cgint_f *ier STR_PLEN(names))
@@ -514,7 +518,7 @@ CGIODLL void FMNAME(cgio_get_data_type_f, CGIO_GET_DATA_TYPE_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_get_data_size_f, CGIO_GET_DATA_SIZE_F) (
+CGIODLL void cgio_get_data_size_f(
     cgint_f *cgio_num, double *id, cgsize_t *size, cgint_f *ier)
 {
     cglong_t data_size;
@@ -525,7 +529,7 @@ CGIODLL void FMNAME(cgio_get_data_size_f, CGIO_GET_DATA_SIZE_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_get_dimensions_f, CGIO_GET_DIMENSIONS_F) (
+CGIODLL void FMNAME(cgio_get_dimensions_f_c, CGIO_GET_DIMENSIONS_F_C) (
     cgint_f *cgio_num, double *id, cgint_f *ndims, cgsize_t *dims,
     cgint_f *ier)
 {
@@ -591,7 +595,7 @@ CGIODLL void FMNAME(cgio_set_label_f, CGIO_SET_LABEL_F) (
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_set_dimensions_f, CGIO_SET_DIMENSIONS_F) (
+CGIODLL void FMNAME(cgio_set_dimensions_f_c, CGIO_SET_DIMENSIONS_F_C) (
     cgint_f *cgio_num, double *id, STR_PSTR(data_type), cgint_f *ndims,
     cgsize_t *dims, cgint_f *ier STR_PLEN(data_type))
 {

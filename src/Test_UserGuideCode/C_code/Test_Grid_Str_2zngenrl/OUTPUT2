@@ -1,0 +1,42 @@
+
+In zone 1:
+   donor name=Zone  2
+   number of connectivity pts=153
+   grid location=Vertex
+   connectivity type=Abutting1to1
+   pointset type=PointList
+   donor zonetype=Structured
+   donor pointset type=PointListDonor
+   ipnts and ipntsdonor arrays read, only some written out here:
+    ipnts[0][0], [0][1], [0][2]=21,1,1    ipntsdonor[0][0], [0][1], [0][2]=1,1,1
+    ipnts[1][0], [1][1], [1][2]=21,1,2    ipntsdonor[1][0], [1][1], [1][2]=1,1,2
+    ipnts[2][0], [2][1], [2][2]=21,1,3    ipntsdonor[2][0], [2][1], [2][2]=1,1,3
+    ipnts[3][0], [3][1], [3][2]=21,1,4    ipntsdonor[3][0], [3][1], [3][2]=1,1,4
+    ipnts[4][0], [4][1], [4][2]=21,1,5    ipntsdonor[4][0], [4][1], [4][2]=1,1,5
+    ipnts[5][0], [5][1], [5][2]=21,1,6    ipntsdonor[5][0], [5][1], [5][2]=1,1,6
+    ipnts[6][0], [6][1], [6][2]=21,1,7    ipntsdonor[6][0], [6][1], [6][2]=1,1,7
+    ipnts[7][0], [7][1], [7][2]=21,1,8    ipntsdonor[7][0], [7][1], [7][2]=1,1,8
+    ipnts[8][0], [8][1], [8][2]=21,1,9    ipntsdonor[8][0], [8][1], [8][2]=1,1,9
+    ipnts[9][0], [9][1], [9][2]=21,2,1    ipntsdonor[9][0], [9][1], [9][2]=1,2,1
+
+In zone 2:
+   donor name=Zone  1
+   number of connectivity pts=153
+   grid location=Vertex
+   connectivity type=Abutting1to1
+   pointset type=PointList
+   donor zonetype=Structured
+   donor pointset type=PointListDonor
+   ipnts and ipntsdonor arrays read, only some written out here:
+    ipnts[0][0], [0][1], [0][2]=1,1,1    ipntsdonor[0][0], [0][1], [0][2]=21,1,1
+    ipnts[1][0], [1][1], [1][2]=1,1,2    ipntsdonor[1][0], [1][1], [1][2]=21,1,2
+    ipnts[2][0], [2][1], [2][2]=1,1,3    ipntsdonor[2][0], [2][1], [2][2]=21,1,3
+    ipnts[3][0], [3][1], [3][2]=1,1,4    ipntsdonor[3][0], [3][1], [3][2]=21,1,4
+    ipnts[4][0], [4][1], [4][2]=1,1,5    ipntsdonor[4][0], [4][1], [4][2]=21,1,5
+    ipnts[5][0], [5][1], [5][2]=1,1,6    ipntsdonor[5][0], [5][1], [5][2]=21,1,6
+    ipnts[6][0], [6][1], [6][2]=1,1,7    ipntsdonor[6][0], [6][1], [6][2]=21,1,7
+    ipnts[7][0], [7][1], [7][2]=1,1,8    ipntsdonor[7][0], [7][1], [7][2]=21,1,8
+    ipnts[8][0], [8][1], [8][2]=1,1,9    ipntsdonor[8][0], [8][1], [8][2]=21,1,9
+    ipnts[9][0], [9][1], [9][2]=1,2,1    ipntsdonor[9][0], [9][1], [9][2]=21,2,1
+
+Successfully read general 1-to-1 connectivity info from file grid_c.cgns

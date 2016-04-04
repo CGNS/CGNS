@@ -2,7 +2,7 @@
 setlocal
 
 set args=-MD -MT -debug -lfs -legacy -64 -scope -dll -install -f2c -ifort
-set args=%args% -absoft -hdf5 -zlib -szip -mpi -parallel
+set args=%args% -absoft -hdf5 -zlib -szip -mpi -parallel -basescope
 set args=%args% -cgnstools -tcl -tk -nocut -nomesh -winhtml
 set copts=
 set debug=
@@ -12,6 +12,7 @@ set build=
 set dolegacy=0
 set do64bit=0
 set doscope=0
+set dobasescope=0
 set target=cgns
 set make=nmake /nologo
 set f2c=
@@ -101,6 +102,15 @@ rem ----- enable enum scoping
 if %1 == -scope (
   echo enabling enumeration scoping
   set doscope=1
+  shift
+  goto next
+)
+
+rem ----- enable base scope for family/zone ref-to
+
+if %1 == -basescope (
+  echo enabling base scope for family/zone ref-to
+  set dobasescope=1
   shift
   goto next
 )
@@ -552,7 +562,7 @@ if exist %mpidir%\bin\mpiexec.exe (
   set mpiexec=%mpidir%\bin\mpiexec.exe
 )
 echo checking for MPI library ...
-for %%l in ( mpi mpich libmpi mpid mpichd libmpid ) do (
+for %%l in ( mpi mpich libmpi mpid mpichd libmpid impi) do (
   if exist %mpidir%\lib\%%l.lib (
     echo %mpidir%\lib\%%l.lib
     set mpilibs=%mpidir%\lib\%%l.lib
@@ -645,6 +655,7 @@ echo   -64 : build 64-bit version
 echo   -scope : enable enumeration scoping by prefixing CG_
 echo   -parallel : enable parallel IO
 echo   -cgnstools : build CGNStools
+echo   -basescope : enable base scope for family/zone ref-to
 echo   -dll : build DLL istead of static library
 echo   -ifort : use ifort Fortran compiler (implies -f2c UPPERCASE)
 echo   -absoft : use the absoft Fortran compiler (implies -f2c LOWERCASE)
@@ -957,9 +968,17 @@ echo.>> cgnstypes.h
 echo #define CG_BUILD_LEGACY %dolegacy% >> cgnstypes.h
 echo #define CG_BUILD_64BIT  %do64bit% >> cgnstypes.h
 echo #define CG_BUILD_SCOPE  %doscope% >> cgnstypes.h
+echo #define CG_BUILD_BASESCOPE  %dobasescope% >> cgnstypes.h
 echo.>> cgnstypes.h
 echo #define CG_MAX_INT32 0x7FFFFFFF>> cgnstypes.h
+echo #ifdef _WIN32>> cgnstypes.h
 echo #define CG_LONG_T    __int64>> cgnstypes.h
+echo #ifdef CG_BUILD_64BIT>> cgnstypes.h
+echo #define stat _stat32i64>> cgnstypes.h
+echo #endif>> cgnstypes.h
+echo #else>> cgnstypes.h
+echo # define CG_LONG_T long long>> cgnstypes.h
+echo #endif>> cgnstypes.h
 echo.>> cgnstypes.h
 echo #if CG_BUILD_LEGACY>> cgnstypes.h
 echo # define CG_SIZEOF_SIZE    32 >> cgnstypes.h
@@ -1974,6 +1993,7 @@ echo.>> cgnsBuild.defs
 echo CGNS_DEBUG    = %dodebug% >> cgnsBuild.defs
 echo CGNS_LEGACY   = %dolegacy% >> cgnsBuild.defs
 echo CGNS_SCOPING  = %doscope% >> cgnsBuild.defs
+echo CGNS_BASESCOPE = %dobasescope% >> cgnsBuild.defs
 echo CGNS_64BIT    = %do64bit% >> cgnsBuild.defs
 echo CGNS_FORTRAN  = %dofortran% >> cgnsBuild.defs
 echo CGNS_PARALLEL = %doparallel% >> cgnsBuild.defs

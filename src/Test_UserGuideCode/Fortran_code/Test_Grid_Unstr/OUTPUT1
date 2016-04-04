@@ -1,0 +1,25 @@
+ number of sections=      4
+ Reading section data...
+    section name=Elem                            
+    section type=HEXA_8                          
+    istart,iend=     1  2560
+    reading element data for this element
+ Reading section data...
+    section name=InflowElem                      
+    section type=QUAD_4                          
+    istart,iend=  2561  2688
+    not reading element data for this element
+ Reading section data...
+    section name=OutflowElem                     
+    section type=QUAD_4                          
+    istart,iend=  2689  2816
+    not reading element data for this element
+ Reading section data...
+    section name=SidewallElem                    
+    section type=QUAD_4                          
+    istart,iend=  2817  3776
+    not reading element data for this element
+ Successfully read unstructured grid from file grid.cgns
+   for example, element 1 is made up of nodes:    1    2   23   22  358  359  380  379
+   x,y,z of node 358 are:     0.00000     0.00000     1.00000
+   x,y,z of node 1358 are:    13.00000    13.00000     3.00000

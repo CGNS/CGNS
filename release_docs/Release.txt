@@ -1,0 +1,127 @@
+CGNS version 3.3.0
+=================================
+
+INTRODUCTION
+
+This document describes the difference between CGNS x.x.x and
+CGNS y.y.y, and contains information on known problems in
+CGNS y.y.y.
+
+Links to the CGNS y.y.y source code can be found at:
+
+User documentation for the current release can be found at:
+
+For more information, see the CGNS home page:
+
+
+CONTENTS
+
+- New Features
+- Support for new platforms and languages
+- Bug Fixes since CGNS x.x.x
+- Known Problems
+
+New Features
+============
+
+    Configuration:
+    -------------
+
+    Library:
+    --------
+
+    Parallel Library:
+    -----------------
+
+    Fortran Library:
+    ----------------
+
+    Tools:
+    ------
+
+Bug Fixes since CGNS x.x.x release
+==================================
+
+    Library:
+    -------
+
+    Fortran:
+    --------
+
+    Configuration:
+    -------------
+
+    Tools:
+    ------
+
+Known Problems
+==============
+
+
+Supported Platforms
+===================
+The following platforms are supported and have been tested for this release.
+They are built with the configure process unless specified otherwise.
+
+    Linux 2.6.32-573.3.1.el6      GNU C (gcc), Fortran (gfortran)   compilers:
+    #1 SMP x86_64 GNU/Linux          Version 4.4.7 20120313 
+    (platypus)                       Version 4.8.4, Version 5.2.0
+                                  PGI C, Fortran for 64-bit target on x86-64;
+                                      Version 15.7-0
+                                  Intel(R) C (icc), C++ (icpc), Fortran (icc)
+                                  compilers:
+                                     Version 15.0.3.187 Build 20150407
+                                  MPICH 3.1.4 compiled with GCC 4.9.3
+
+    Linux 2.6.32-504.8.1.el6.ppc64 gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-11)
+    #1 SMP ppc64 GNU/Linux         GNU Fortran (GCC) 4.4.7 20120313 (Red Hat 4.4.7-11)
+    (ostrich)                      IBM XL C/C++ V13.1
+                                   IBM XL Fortran V15.1
+                                  
+
+    Linux 3.10.0-229.14.1.el7   GNU C (gcc), Fortran (gfortran)
+    #1 SMP x86_64 GNU/Linux       compilers:
+    (kituo/moohan)                  Version 4.8.3 20140911 (Red Hat 4.8.3-9)
+                                    Version 5.2.0
+                                  Intel(R) C (icc), Fortran (icc)
+                                  compilers:
+                                     Version 15.0.3.187 Build 20150407
+                                  MPICH 3.1.4 compiled with GCC 4.9.3
+
+    SunOS 5.11 32- and 64-bit     Sun C 5.12 SunOS_sparc
+    (emu)                         Sun Fortran 95 8.6 SunOS_sparc
+
+    Mac OS X Yosemite 10.10.5     Apple clang/clang++ version 6.0 from Xcode 7.0.0
+    64-bit                        gfortran GNU Fortran (GCC) 4.9.2
+    (osx1010dev/osx1010test)      Intel icc/icpc/ifort version 15.0.3
+
+Tested Configuration Features Summary
+=====================================
+
+    In the table below
+          y   = tested
+          n   = not tested in this release
+          x   = not working in this release
+          dna = does not apply
+
+Platform                              C         F90/   F90     
+                                      parallel  F2003  parallel
+SunOS 5.11 32-bit                       n        y/y    n      
+SunOS 5.11 64-bit                       n        y/y    n      
+Windows 7                               n        x/x    n      
+Windows 7 x64                           n        x/x    n      
+Windows 7 Cygwin                        n        x/x    n      
+Windows 8.1                             n        x/x    n      
+Windows 8.1 x64                         n        x/x    n        
+Windows 10                              n        x/x    n      
+Windows 10  x64                         n        x/x    n      
+Mac OS X Mountain Lion 10.8.5 64-bit    n        y/y    n      
+Mac OS X Mavericks 10.9.5 64-bit        n        y/y    n     
+Mac OS X Yosemeti 10.10.5 64-bit        n        y/y    n     
+AIX 6.1 32- and 64-bit                  n        y/n    n    
+CentOS 6.7 Linux 2.6.32 x86_64 GNU      y        y/y    y    
+CentOS 6.7 Linux 2.6.32 x86_64 Intel    n        y/y    n    
+CentOS 6.7 Linux 2.6.32 x86_64 PGI      n        y/y    n    
+CentOS 7.1 Linux 3.10.0 x86_64 GNU      y        y/y    y    
+CentOS 7.1 Linux 3.10.0 x86_64 Intel    n        y/y    n    
+Linux 2.6.32-431.11.2.el6.ppc64         n        y/n    n    

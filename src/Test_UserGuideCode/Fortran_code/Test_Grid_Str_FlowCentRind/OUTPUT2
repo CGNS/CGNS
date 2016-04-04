@@ -1,0 +1,5 @@
+ Successfully read flow solution from file grid.cgns
+   For example, r,p(21,17,8)=    19.00000    15.00000
+          rind: r,p(1,17,8)=  1055.00000  1056.00000
+          rind: r,p(22,17,8)= -1055.00000 -1056.00000
+ Program successful... ending now

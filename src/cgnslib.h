@@ -24,13 +24,19 @@
 
   3. This notice may not be removed or altered from any source distribution.
 
+ * -------------------------------------------------------------------------
+ * 
+ *  DEVELOPER'S NOTE:
+ *    When adding a defined constant to this file, also add the same defined 
+ *    constant to cgns_f.F90
+ *          
  * ------------------------------------------------------------------------- */
 
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
 
-#define CGNS_VERSION 3210
-#define CGNS_DOTVERS 3.21
+#define CGNS_VERSION 3300
+#define CGNS_DOTVERS 3.30
 
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
@@ -92,7 +98,6 @@
 #define CG_FILE_ADF   1
 #define CG_FILE_HDF5  2
 #define CG_FILE_ADF2  3
-#define CG_FILE_PHDF5 4
 
 /* function return codes */
 

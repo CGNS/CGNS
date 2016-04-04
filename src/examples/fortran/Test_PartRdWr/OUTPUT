@@ -1,0 +1,41 @@
+File Opened and Read 
+*** CGNSBase_t node ***
+      Name= PartialReadWriteBase            
+      CellDimension= 3
+      PhysDimension= 3
+
+*** Zone_t node ***
+      Name= UnstructuredZone#1              
+      ZoneType= Unstructured                    
+      Size= 27 3 0
+      ncoords= 3
+      Idim= 1
+      range:  5 27
+      CoordinateX                     
+        first point:  -5.000
+        last point :  27.000
+      CoordinateY                     
+        first point:   5.000
+        last point : -27.000
+      CoordinateZ                     
+        first point:  -5.000
+        last point :  27.000
+
+*** Elements_t Nodes ***
+
+  *** Section  1 ***
+      Name= MixedElements                   
+      Connectivity data range =     1    3
+      ElementDataSize = 20
+      Section Element Type= MIXED                           
+      Connect and Parent data for element range  =     2    3
+      Element Connectivity:
+        Element Type= TETRA_4                         
+         -1 -2 -3 -4
+        Element Type= PYRA_5                          
+          1  2  3  4  5
+      Parent Data:
+          5  6  7  8
+          9 10 11 12
+
+CGNS File written & closed

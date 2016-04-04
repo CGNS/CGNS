@@ -53,11 +53,6 @@ CGNSDLL int cgp_mpi_info(MPI_Info info);
 
 CGNSDLL int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode);
 
-/*===== queued IO =====*/
-
-CGNSDLL int cgp_queue_set(int use_queue);
-CGNSDLL int cgp_queue_flush(void);
-
 /*===== File IO Prototypes =====*/
 
 CGNSDLL int cgp_open(const char *filename, int mode, int *fn);

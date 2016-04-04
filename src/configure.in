@@ -1,5 +1,5 @@
 
-AC_PREREQ(2.13)
+AC_PREREQ(2.69)
 
 #--------------------------------------------------------------------------
 # Redefine the cache macros so that a cache file is not created.
@@ -8,7 +8,6 @@ AC_PREREQ(2.13)
 
 define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
-
 
 AC_INIT(cgnslib.c)
 
@@ -85,9 +84,15 @@ test ! "$enableval" = "no" && enableval=yes
 use_gcc=$enableval
 AC_MSG_RESULT($use_gcc)
 
-if test $use_gcc = yes; then
-  AC_PROG_CC
-else
+# ----------------------------------------------------------------------
+# Check for programs.
+#
+AC_PROG_CC
+CC_BASENAME="`echo $CC | cut -f1 -d' ' | xargs basename 2>/dev/null`"
+
+##if test $use_gcc = yes; then
+##  AC_PROG_CC
+##else
   if test -z "$CC"; then
     AC_CHECK_PROG(CC, cc, cc, , , /usr/ucb/cc)
     if test -z "$CC"; then
@@ -97,9 +102,10 @@ else
       fi
     fi
   fi
-  AC_PROG_CC_WORKS
-  AC_PROG_CC_GNU
-fi
+##  AC_PROG_CC
+##  AC_PROG_CC_WORKS
+##  AC_PROG_CC_GNU
+##fi
 
 if test "$ac_cv_prog_gcc" = "yes"; then
   test -z "$CFLAGS" && CFLAGS=-O2
@@ -112,12 +118,13 @@ COOUT="-o \$(SPACE)"
 
 # check if the compiler supports prototyping - required
 
-AC_LANG_C
+AC_LANG_PUSH(C)
 AC_MSG_CHECKING([if compiler supports prototyping])
-AC_TRY_COMPILE(
-[extern int func(int,int);
-int func(int i, int j){return i + j;}],
-[func(0,1)],proto=yes,proto=no)
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[extern int func(int,int);
+int func(int i, int j){return i + j;}]],[[func(0,1)]])],
+[proto=yes],[proto=no])
+
 AC_MSG_RESULT($proto)
 test $proto = no && \
   AC_MSG_ERROR([compiler does not support prototyping])
@@ -126,9 +133,13 @@ test $proto = no && \
 # get object and executable extensions
 #--------------------------------------------------------------------------
 
-AC_OBJEXT
-AC_EXEEXT
 LIBEXT=a
+
+# Set the Fortran flags using FCFLAGS. If both FFLAGS (which predates FCFLAGS)
+# and FCFLAGS is set then FFLAGS is set and FCFLAGS is ignored.
+if test "x" = "x$FFLAGS" && test "x" != "x$FCFLAGS"; then
+   FFLAGS="$FCFLAGS"
+fi
 
 #--------------------------------------------------------------------------
 # get the Fortran compiler
@@ -136,30 +147,38 @@ LIBEXT=a
 # or the compiler doesn't work (don't use AC_PROG_F77)
 # If running under CYGWIN, make sure we get g77 instead of Visual Fortran
 #--------------------------------------------------------------------------
-
-if test -z "$F77"; then
-  if test "$ac_cv_cygwin" = "yes"; then
-    AC_CHECK_PROGS(F77, g77 f2c)
-  else
-    if test $use_gcc = yes; then
-      AC_CHECK_PROGS(F77, g77 f77 f90 f95 f2c)
+if test "x" != "x$FC"; then
+    has_f77=yes
+    F77=$FC
+else
+  if test -z "$F77"; then
+    if test "$ac_cv_cygwin" = "yes"; then
+      AC_CHECK_PROGS(F77, g77 f2c)
     else
-      AC_CHECK_PROGS(F77, f77 f90 f95 g77 f2c)
+      if test $use_gcc = yes; then
+        AC_CHECK_PROGS(F77, g77 f77 f90 f95 f2c)
+      else
+        AC_CHECK_PROGS(F77, f77 f90 f95 g77 f2c)
+      fi
     fi
   fi
-fi
-if test -z "$F77"; then
-  has_f77=no
-  F77=f77
-  AC_MSG_WARN(no Fortran compiler was found)
-else
-  has_f77=yes
-  AC_PROG_F77_GNU
-  if test "$ac_cv_prog_g77" = "yes"; then
-    test -z "$FFLAGS" && FFLAGS=-O2
-    test ! "$F77" = "f95" && FFLAGS="$FFLAGS -Wno-globals"
+  if test -z "$F77"; then
+    has_f77=no
+    F77=f77
+    AC_MSG_WARN(no Fortran compiler was found)
+  else
+    has_f77=yes
+   # --------------------------------------------------------------------
+   # Check for a Fortran compiler
+   #
+   AC_PROG_FC([PAC_FC_SEARCH_LIST],)
+  ##  AC_PROG_F77_GNU
+    if test "$ac_cv_prog_g77" = "yes"; then
+      test -z "$FFLAGS" && FFLAGS=-O2
+      test ! "$F77" = "f95" && FFLAGS="$FFLAGS -Wno-globals"
+    fi
+    rm -f conftest*
   fi
-  rm -f conftest*
 fi
 FEOUT="-o \$(SPACE)"
 
@@ -207,7 +226,7 @@ AROUT=
 
 AC_HEADER_STDC
 test "$ac_cv_header_stdc" = "no" && \
-  AC_MSG_WARN(Standard C header files not found - may not compile)
+	AC_MSG_WARN(Standard C header files not found - may not compile)
 
 #--------------------------------------------------------------------------
 # check for typedefs and structures
@@ -263,7 +282,6 @@ AC_MSG_RESULT($LIB_INSTALL_DIR)
 
 BUILDDIR=lib
 BUILD64BIT=0
-CGFSIZET=\*4
 
 test ! -x cgsystem && \
   chmod +x cgsystem
@@ -286,7 +304,6 @@ if test -z "$withsys" || test "$withsys" = "no"; then
   AC_MSG_RESULT($SYSTEM)
   if test $do64bit = yes; then
     BUILD64BIT=1
-    CGFSIZET=\*8
     is64bit=`echo $SYSTEM | grep 64`
     test -z "$is64bit" && \
       AC_MSG_WARN(64bit support not found for your machine)
@@ -390,6 +407,22 @@ fi
 AC_MSG_RESULT($enableval)
 
 #--------------------------------------------------------------------------
+# check if base scope for family/zone ref-to requested
+#--------------------------------------------------------------------------
+
+BUILDBASESCOPE=0
+
+AC_MSG_CHECKING([if base scope for family/zone ref-to enabled])
+AC_ARG_ENABLE(scope,
+  [  --enable-scope          base scope for family/zone ref-to [default=no]],,
+  enableval=no)
+if test ! "$enableval" = "no" ; then
+  enableval=yes
+  BUILDBASESCOPE=1
+fi
+AC_MSG_RESULT($enableval)
+
+#--------------------------------------------------------------------------
 # get a usable 64-bit type
 #--------------------------------------------------------------------------
 
@@ -411,17 +444,19 @@ CFLAGS=$CFLAGS_SAVE
 # set the Fortran interface
 #--------------------------------------------------------------------------
 
+FORTRAN_DEFAULT_INTEGER_C_INT64_T=0
+HAVE_FORTRAN_95=0
+HAVE_FORTRAN_2003=0
+HAVE_FORTRAN_2008=0
+HAVE_FORTRAN_2008TS=0
+BUILDFORTRAN=0
+
 AC_MSG_CHECKING([if Fortran interface is enabled])
 AC_ARG_WITH(fortran,
   [  --with-fortran[=F2C]    enable Fortran interface [default=yes]],
   withfortran=$withval,withfortran=yes)
 test -z "$withfortran" && withfortran=yes
 AC_MSG_RESULT($withfortran)
-
-  HAVE_FORTRAN_95=0
-  HAVE_FORTRAN_2003=0
-  HAVE_FORTRAN_2008TS=0
-  BUILDFORTRAN=0
 
 if test $withfortran = no; then
   fortran=no
@@ -448,37 +483,32 @@ else
   HAVE_F2003_REQUIREMENTS="no"
   AC_MSG_CHECKING([if Fortran compiler meets 2003 standard])
 
- cat >> testf03.f90 << EOF
-       PROGRAM testf03
-  	 USE iso_c_binding
-  	 IMPLICIT NONE
-  	 INTEGER(C_INT) :: a
-  	 INTEGER(C_INT32_T) :: b
-  	 INTEGER(C_INT64_T) :: c
-         REAL(C_FLOAT) :: d
-  	 REAL(C_DOUBLE) :: e
-  	 CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: f
-  	 TYPE(C_PTR) :: g
-         INTERFACE
-           INTEGER(C_INT) FUNCTION test(A, UserDataName1) BIND(C, name='cg_goto')
-             USE ISO_C_BINDING
-             INTEGER(C_INT)   , INTENT(IN), VALUE :: A
-             CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName1
-           END FUNCTION test
-         END INTERFACE
-  	 g = C_LOC(f(1:1))
+  AC_LANG_PUSH(Fortran)
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+      PROGRAM testf03
+  	USE iso_c_binding
+  	IMPLICIT NONE
+  	INTEGER(C_INT) :: a
+  	INTEGER(C_INT32_T) :: b
+  	INTEGER(C_INT64_T) :: c
+        REAL(C_FLOAT) :: d
+  	REAL(C_DOUBLE) :: e
+  	CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: f
+  	TYPE(C_PTR) :: g
+        INTERFACE
+         INTEGER(C_INT) FUNCTION test(A,UserData) BIND(C,name='cg_goto')
+           USE ISO_C_BINDING
+           INTEGER(C_INT)   , INTENT(IN), VALUE :: A
+           CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserData
+         END FUNCTION test
+        END INTERFACE
+  	g = C_LOC(f(1:1))
       END PROGRAM testf03
-EOF
-  msg=`${F77} -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then
-    HAVE_F2003_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2003=1
-    rm testf03.o
-  fi
-  if test -f testf03.f90; then
-    rm testf03.f90
-  fi
-  AC_MSG_RESULT($HAVE_F2003_REQUIREMENTS)
+  ])],[  AC_MSG_RESULT([yes])
+         HAVE_F2003_REQUIREMENTS="yes"
+         HAVE_FORTRAN_2003=1],
+      [AC_MSG_RESULT([no])])
+  AC_LANG_POP(Fortran)
 
  ## In F2003 and F2008 optional parameters are not allowed for functions that have BIND(C).
  ## In Fortran 2003 it is constraint C530, in the latest Fortran 2008 draft it is C516:
@@ -494,10 +524,11 @@ EOF
   HAVE_F2008TS_REQUIREMENTS="no"
   if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
 
-  AC_MSG_CHECKING([if Fortran compiler meets Technical Specification 29113])
+    AC_MSG_CHECKING([if Fortran compiler meets Technical Specification 29113])
 
- cat >> testf03.f90 << EOF
-       PROGRAM testf03
+    AC_LANG_PUSH(Fortran)
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+        PROGRAM testf03
          USE ISO_C_BINDING
          INTERFACE
             INTEGER(C_INT) FUNCTION test(A) BIND(C, name='test')
@@ -506,43 +537,63 @@ EOF
             END FUNCTION test
          END INTERFACE
        END PROGRAM testf03
-EOF
-  msg=`${F77} -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then
-    HAVE_F2008TS_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2008TS=1
-    rm testf03.o
-  fi
-  if test -f testf03.f90; then
-     rm testf03.f90
-  fi
-  AC_MSG_RESULT($HAVE_F2008TS_REQUIREMENTS)
+    ])],[  AC_MSG_RESULT([yes])
+     	 HAVE_F2008TS_REQUIREMENTS="yes"
+         HAVE_FORTRAN_2008TS=1],
+      [AC_MSG_RESULT([no])])
 
-else
+    AC_LANG_POP(Fortran)
+
+  ## Fortran 2008 permits having different identifiers for the same binding label,
+  ## so check if the compiler has this feature.
+    HAVE_F2008_REQUIREMENTS="no"
+    if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
+
+      AC_MSG_CHECKING([if Fortran compiler meets the Fortran 2008 Standard])
+
+      AC_LANG_PUSH(Fortran)
+      AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+       MODULE test
+         USE ISO_C_BINDING
+         INTERFACE binding
+           FUNCTION bind1(x) BIND(C, name='Cfunc')
+	     IMPORT :: C_FLOAT
+             REAL(C_FLOAT) :: x
+	   END FUNCTION bind1
+           FUNCTION bind2(x) BIND(C, name='Cfunc')
+             IMPORT :: C_DOUBLE
+	     REAL(C_DOUBLE) :: x
+	   END FUNCTION bind2
+         END INTERFACE
+      END MODULE test
+      ])],[  AC_MSG_RESULT([yes])
+         HAVE_F2008_REQUIREMENTS="yes"
+         HAVE_FORTRAN_2008=1],
+      [AC_MSG_RESULT([no])])
+
+      AC_LANG_POP(Fortran)
+    fi
+  
+  else
 
   # Check if the Fortran compiler is at least F95 compliant
   ## --------------------------------------------------------------------
   ## Default for FORTRAN 95 compliant compilers
   ##
-  HAVE_F95_REQUIREMENTS="no"
-  AC_MSG_CHECKING([if Fortran compiler meets 95 standard])
-
- cat >> testf95.f90 << EOF
+    HAVE_F95_REQUIREMENTS="no"
+    AC_MSG_CHECKING([if Fortran compiler meets 95 standard])
+    AC_LANG_PUSH(Fortran)
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
        PROGRAM testf95
   	 IMPLICIT NONE
          INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(5)
       END PROGRAM testf95
-EOF
-  msg=`${F77} -c testf95.f90 &> /dev/null`
-  if test -f testf95.o; then
-    HAVE_F95_REQUIREMENTS="yes"
-    HAVE_FORTRAN_95=1
-    rm testf95.o
-  fi
-  if test -f testf95.f90; then
-    rm testf95.f90
-  fi
-  AC_MSG_RESULT($HAVE_F95_REQUIREMENTS)
+    ])],[  AC_MSG_RESULT([yes])
+           HAVE_F95_REQUIREMENTS="yes"
+           HAVE_FORTRAN_95=1],
+      [AC_MSG_RESULT([no])])
+
+    AC_LANG_POP(Fortran)
 
   fi
 
@@ -551,9 +602,10 @@ EOF
 
   if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
 
-  AC_MSG_CHECKING([size of default Fortran integer ])
-  FORTRAN_DEFAULT_INTEGER_C_INT64_T=0
- cat >> testf03.f90 << EOF
+    AC_MSG_CHECKING([size of default Fortran integer ])
+
+    AC_LANG_PUSH(Fortran)
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
       MODULE mod
 
         INTERFACE test_integer
@@ -583,22 +635,10 @@ EOF
         CALL test_integer(a)
 
       END PROGRAM main
-EOF
-  msg=`${F77} $FFLAGS -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then
-    AC_MSG_RESULT(c_int32_t)
-    rm testf03.o
-  else
-    FORTRAN_DEFAULT_INTEGER_C_INT64_T=1
-    AC_MSG_RESULT(c_int64_t)
-  fi
-  if test -f testf03.f90; then
-     rm testf03.f90
-  fi
-  if test -f mod.mod; then
-     rm mod.mod
-  fi
-
+    ])],[ AC_MSG_RESULT(c_int32_t)],
+        [ AC_MSG_RESULT(c_int64_t)
+	FORTRAN_DEFAULT_INTEGER_C_INT64_T=1])
+    AC_LANG_POP(Fortran)
   fi
 
   if test $need_f2c = yes; then
@@ -624,16 +664,24 @@ EOF
     AC_MSG_CHECKING([Fortran to C interface])
     if test $has_f77 = yes; then
       LIBS_SAVE="$LIBS"
+
+      AC_LANG_PUSH(C)
+      AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+       void ffunc(){}
+      ])],[mv conftest.$OBJEXT conffunc.$OBJEXT],[])
+
+      LIBS="conffunc.$OBJEXT $LIBS_SAVE"
       AC_LANG_SAVE
+
+      AC_LANG_PUSH(Fortran)
       for func in ffunc_ ffunc FFUNC FFUNC_ ffunc__ FFUNC__; do
-        AC_LANG_C
-        echo "void $func(){}" > conftest.c
-        AC_TRY_EVAL(ac_compile)
-        mv conftest.$OBJEXT conffunc.$OBJEXT
-        AC_LANG_FORTRAN77
-        LIBS="conffunc.$OBJEXT $LIBS_SAVE"
-        AC_TRY_LINK(,ffunc,linked=yes)
-        rm -f conffunc* conftest*
+
+	AC_LINK_IFELSE([AC_LANG_SOURCE([
+           PROGRAM main
+             func=$func()
+           END PROGRAM
+        ])],[linked="yes"],[])
+
         if test "$linked" = "yes"; then
           case $func in
             ffunc)   f2c=LOWERCASE ;;
@@ -646,6 +694,7 @@ EOF
           break
         fi
       done
+      rm -f conffunc.$OBJEXT
       LIBS="$LIBS_SAVE"
       AC_LANG_RESTORE
     fi
@@ -1105,8 +1154,10 @@ EOF
     has_lfs=yes
   else
     AC_MSG_CHECKING([for off64_t])
-    AC_TRY_COMPILE([#include <sys/types.h>], [off64_t n = 0;],
-      has_lfs=yes, has_lfs=no)
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]],[[off64_t n = 0;]])],
+	[has_lfs=yes],[has_lfs=no])
+##    AC_TRY_COMPILE([#include <sys/types.h>], [off64_t n = 0;],
+##      has_lfs=yes, has_lfs=no)
     AC_MSG_RESULT($has_lfs)
     if test $has_lfs = yes; then
       AC_CHECK_FUNC(open64, LFS="-DHAS_OPEN64 $LFS")
@@ -1434,6 +1485,33 @@ if test "$enableval" = "yes" ; then
 
 fi
 
+FC_D_PRE='' 
+if test "$withfortran" = "yes"; then
+
+#----------- Determine if the Fortran compiler xlf ------------------------
+# xlf preprocessor needs the -WF,-D prefix, FC_D_PRE is used when passing -D 
+# options to fortran programs.
+#--------------------------------------------------------------------------
+    fc_vendor="`$FC -qversion 2>&1 |grep 'IBM XL'`"
+    if test X != "X$fc_vendor"; then
+      FC_D_PRE='-WF,' 
+    fi
+#----------- Determine if the Fortran compiler pgi ------------------------
+# The PGI compiler segfaults wehn va_start is called, so we need to add
+# a special compiler flag, see CGNS-40.
+#--------------------------------------------------------------------------
+    fc_vendor="`$FC --version 2>&1 |grep -i 'Portland Group'`"
+    if test X != "X$fc_vendor"; then
+      FFLAGS="$FFLAGS -Mx,125,0x200" 
+    fi
+#----------- Determine if the Fortran compiler gfortran -------------------
+#   Turn off warnings for passing non-ANSI types to BIND().
+#--------------------------------------------------------------------------
+     fc_vendor="`$FC --version 2>&1 |grep -i 'gcc'`"
+     if test X != "X$fc_vendor"; then
+       FFLAGS="$FFLAGS -Wno-c-binding-type"
+     fi
+fi
 #--------------------------------------------------------------------------
 # substitutions and write Makefile and make.defs
 #--------------------------------------------------------------------------
@@ -1460,7 +1538,6 @@ fi
 
 if test $BUILDLEGACY -ne 0 ; then
   BUILD64BIT=0
-  CGFSIZET=
   if test "$withhdf5" = "yes"; then
     INSTALLADF="install-adf install-adfh"
   else
@@ -1501,11 +1578,12 @@ AC_SUBST(HAVE_FORTRAN_2003)
 AC_SUBST(HAVE_FORTRAN_2008TS)
 AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
+AC_SUBST(FC_D_PRE)
 AC_SUBST(BUILDPARALLEL)
+AC_SUBST(BUILDBASESCOPE)
 
 AC_SUBST(CGNSTOOLS)
 AC_SUBST(CGLONGT)
-AC_SUBST(CGFSIZET)
 
 AC_SUBST(SYSTEM)
 AC_SUBST(CGNSVERS)
@@ -1546,6 +1624,7 @@ AC_SUBST(CFGFLAGS)
 AC_SUBST(STRIP)
 
 AC_SUBST(SYSFFLAGS)
+AC_SUBST(FFLAGS)
 AC_SUBST(FEOUT)
 AC_SUBST(FLIBS)
 
@@ -1611,7 +1690,7 @@ AC_SUBST(TCL_LIBRARY_SPEC)
 AC_SUBST(TK_LIBRARY_SPEC)
 AC_SUBST(LIBRARY_PATH_SPEC)
 
-AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnslib_f.h cgnsconfig.h Makefile \
+AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h Makefile \
   make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile \
   cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig)
 

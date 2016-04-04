@@ -36,7 +36,7 @@ static double zc[42] = {
 static cgsize_t node[1]   = {1};
 static cgsize_t bar[3]    = {1, 2, 12};
 static cgsize_t tri[6]    = {4, 3, 9, 14, 31, 32};
-static cgsize_t quad[9]   = {1, 2, 3, 4, 12, 13, 14, 15, 24};
+static cgsize_t quad9[9]   = {1, 2, 3, 4, 12, 13, 14, 15, 24};
 static cgsize_t tetra[10] = {8, 7, 10, 11, 22, 35, 36, 41, 40, 42};
 static cgsize_t pyra[14]  = {5, 6, 7, 8, 11, 20, 21, 22, 23, 38, 39,
                              40, 41, 29};
@@ -195,13 +195,13 @@ int main (int argc, char *argv[])
     /* QUAD_4 */
 
     if (cg_section_write (fnum, bnum, znum, "QUAD_4", CGNS_ENUMV(QUAD_4),
-            ne+1, ne+1, 0, quad, &snum))
+            ne+1, ne+1, 0, quad9, &snum))
         cg_error_exit ();
     ne++;
 
     elems[j++] = (int)CGNS_ENUMV(QUAD_4);
     for (n = 0; n < 4; n++)
-        elems[j++] = quad[n];
+        elems[j++] = quad9[n];
 
     /* TETRA_4 */
 
@@ -308,13 +308,13 @@ int main (int argc, char *argv[])
     /* QUAD_8 */
 
     if (cg_section_write (fnum, bnum, znum, "QUAD_8", CGNS_ENUMV(QUAD_8),
-            ne+1, ne+1, 0, quad, &snum))
+            ne+1, ne+1, 0, quad9, &snum))
         cg_error_exit ();
     ne++;
 
     elems[j++] = (int)CGNS_ENUMV(QUAD_8);
     for (n = 0; n < 8; n++)
-        elems[j++] = quad[n];
+        elems[j++] = quad9[n];
 
     /* TETRA_10 */
 
@@ -393,13 +393,13 @@ int main (int argc, char *argv[])
     /* QUAD_9 */
 
     if (cg_section_write (fnum, bnum, znum, "QUAD_9", CGNS_ENUMV(QUAD_9),
-            ne+1, ne+1, 0, quad, &snum))
+            ne+1, ne+1, 0, quad9, &snum))
         cg_error_exit ();
     ne++;
 
     elems[j++] = (int)CGNS_ENUMV(QUAD_9);
     for (n = 0; n < 9; n++)
-        elems[j++] = quad[n];
+        elems[j++] = quad9[n];
 
     /* TETRA_10 */
 

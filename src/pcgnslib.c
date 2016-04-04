@@ -39,10 +39,11 @@ freely, subject to the following restrictions:
 extern MPI_Info pcg_mpi_info;
 extern int pcg_mpi_comm_size;
 extern int pcg_mpi_comm_rank;
+/* Flag indicating if HDF5 file accesses is PARALLEL or NATIVE */
+extern char hdf5_access[64];
 /* flag indicating if mpi_initialized was called */
 extern int pcg_mpi_initialized;
 
-static int write_to_queue = 0;
 static hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
 
 extern int cgns_filetype;
@@ -67,7 +68,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
 {
   int k;
   hid_t data_id, mem_shape_id, data_shape_id;
-  hsize_t start[3], dims[3];
+  hsize_t start[ndims], dims[ndims];
   herr_t herr, herr1;
   hid_t type_id, plist_id;
 
@@ -101,7 +102,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
 
   /* Set the start position and size for the data write */
   /* fix dimensions due to Fortran indexing and ordering */
-  if(data) {
+  if((rw_mode == CG_PAR_WRITE && data[0].u.wbuf) || (rw_mode == CG_PAR_READ && data[0].u.rbuf)) {
       for (k = 0; k < ndims; k++) {
 	start[k] = rmin[ndims-k-1] - 1;
 	dims[k] = rmax[ndims-k-1] - start[k];
@@ -125,7 +126,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
     return CG_ERROR;
   }
 
-  if(data) {
+  if((rw_mode == CG_PAR_WRITE && data[0].u.wbuf) || (rw_mode == CG_PAR_READ && data[0].u.rbuf)) {
     /* Select a section of the array in the file */
     herr = H5Sselect_hyperslab(data_shape_id, H5S_SELECT_SET, start,
 			       NULL, dims, NULL);
@@ -335,48 +336,6 @@ error_2ds: H5Sclose(data_shape_id);
 error_1df: H5Dclose(data_id);
 error_0: ;
     return herr < 0 ? CG_ERROR : CG_OK;
-}   
-
-/*===== queued IO functions ===============================*/
-
-typedef struct slice_s {
-    hid_t pid;
-    CGNS_ENUMT(DataType_t) type;
-    int ndims;
-    cgsize_t rmin[3];
-    cgsize_t rmax[3];
-    const void *data;
-} slice_t;
-
-static slice_t *write_queue = NULL;
-static int write_queue_len = 0;
-
-/*---------------------------------------------------------*/
-
-static int write_data_queue(hid_t pid, CGNS_ENUMT(DataType_t) type,
-    int ndims, const cgsize_t *rmin, const cgsize_t *rmax, const void *data)
-{
-    int n;
-    slice_t *slice;
-
-    if (write_queue_len == 0) {
-        write_queue = (slice_t *)malloc(sizeof(slice_t));
-    }
-    else {
-        write_queue = (slice_t *)realloc(write_queue,
-                          (write_queue_len+1) * sizeof(slice_t));
-    }
-    slice = &write_queue[write_queue_len++];
-
-    slice->pid = pid;
-    slice->type = type;
-    slice->ndims = ndims;
-    for (n = 0; n < ndims; n++) {
-        slice->rmin[n] = rmin[n];
-        slice->rmax[n] = rmax[n];
-    }
-    slice->data = data;
-    return CG_OK;
 }
 
 /*---------------------------------------------------------*/
@@ -387,7 +346,7 @@ static int check_parallel(cgns_file *cgfile)
 
     if (cgfile == NULL) return CG_ERROR;
     if (cgio_get_file_type(cgfile->cgio, &type) ||
-        type != CGIO_FILE_PHDF5) {
+        type != CGIO_FILE_HDF5) {
         cgi_error("file not opened for parallel IO");
         return CG_ERROR;
     }
@@ -426,34 +385,6 @@ int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
     return CG_OK;
 }
 
-/*---------------------------------------------------------*/
-
-int cgp_queue_set(int use_queue)
-{
-    write_to_queue = use_queue;
-    return CG_OK;
-}
-
-/*---------------------------------------------------------*/
-
-int cgp_queue_flush(void)
-{
-  int n, errs = 0;
-  cg_rw_t Data;
-
-  if (write_queue_len) {
-    for (n = 0; n < write_queue_len; n++) {
-      Data.u.wbuf = write_queue[n].data;
-      if (readwrite_data_parallel(write_queue[n].pid, write_queue[n].type,
-				  write_queue[n].ndims, write_queue[n].rmin,
-				  write_queue[n].rmax, &Data, CG_PAR_WRITE)) errs++;
-    }
-    free(write_queue);
-    write_queue = NULL;
-    write_queue_len = 0;
-  }
-  return errs ? CG_ERROR : CG_OK;
-}
 
 /*---------------------------------------------------------*/
 
@@ -482,10 +413,17 @@ int cgp_open(const char *filename, int mode, int *fn)
     /* check if we are actually running a parallel program */
     MPI_Initialized(&pcg_mpi_initialized);
 
-    ierr = cg_set_file_type(CG_FILE_PHDF5);
+    /* Flag this as a parallel access */
+    strcpy(hdf5_access,"PARALLEL");	
+
+    ierr = cg_set_file_type(CG_FILE_HDF5);
     if (ierr) return ierr;
     ierr = cg_open(filename, mode, fn);
     cgns_filetype = old_type;
+
+    /* reset parallel access */
+    strcpy(hdf5_access,"NATIVE");
+
     return ierr;
 }
 
@@ -493,7 +431,6 @@ int cgp_open(const char *filename, int mode, int *fn)
 
 int cgp_close(int fn)
 {
-    cgp_queue_flush();
     return cg_close(fn);
 }
 
@@ -550,10 +487,6 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
     type = cgi_datatype(zcoor->coord[C-1].data_type);
 
     to_HDF_ID(zcoor->coord[C-1].id,hid);
-    if (write_to_queue) {
-        return write_data_queue(hid, type,
-                   zone->index_dim, rmin, rmax, coords);
-    }
 
     cg_rw_t Data;
     Data.u.wbuf = coords;
@@ -665,10 +598,7 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     type = cgi_datatype(section->connect->data_type);
 
     to_HDF_ID(section->connect->id, hid);
-    if (write_to_queue) {
-        return write_data_queue(hid, type,
-                   1, &rmin, &rmax, elements);
-    }
+
     cg_rw_t Data;
     Data.u.wbuf = elements;
     return readwrite_data_parallel(hid, type,
@@ -764,10 +694,6 @@ int cgp_field_write_data(int fn, int B, int Z, int S, int F,
 
     to_HDF_ID(field->id,hid);
 
-    if (write_to_queue) {
-        return write_data_queue(hid, type,
-                   field->data_dim, rmin, rmax, data);
-    }
     cg_rw_t Data;
     Data.u.wbuf = data;
     return readwrite_data_parallel(hid, type,
@@ -1008,10 +934,7 @@ int cgp_array_write_data(int A, const cgsize_t *rmin,
     type = cgi_datatype(array->data_type);
 
     to_HDF_ID(array->id, hid);
-    if (write_to_queue) {
-        return write_data_queue(hid, type,
-                   array->data_dim, rmin, rmax, data);
-    }
+
     cg_rw_t Data;
     Data.u.wbuf = data;
     return readwrite_data_parallel(hid, type,

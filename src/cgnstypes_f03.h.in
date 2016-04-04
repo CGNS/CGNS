@@ -29,10 +29,44 @@
 #ifndef CGNSTYPES_F03_H
 #define CGNSTYPES_F03_H
 
-#define CG_BUILD_64BIT @BUILD64BIT@
+#define CG_BUILD_64BIT_F @BUILD64BIT@
 #define HAVE_FORTRAN_95 @HAVE_FORTRAN_95@
 #define HAVE_FORTRAN_2003 @HAVE_FORTRAN_2003@
 #define HAVE_FORTRAN_2008TS @HAVE_FORTRAN_2008TS@
 #define HDF5_HAVE_MULTI_DATASETS @HDF5_HAVE_MULTI_DATASETS@
+
+#define CG_BUILD_SCOPE  @BUILDSCOPE@
+
+#define CGNS_BASESCOPE  @BUILDBASESCOPE@
+
+#if CG_BUILD_SCOPE
+# ifndef CGNS_SCOPE_ENUMS
+#  define CGNS_SCOPE_ENUMS
+# endif
+#else
+# ifdef CGNS_SCOPE_ENUMS
+#  undef CGNS_SCOPE_ENUMS
+# endif
+#endif
+
+#ifdef NO_CONCATENATION
+# define IDENTITY(x)      x
+# define CONCATENATE(a,b) IDENTITY(a)b
+#else
+# define CONCATENATE(a,b) a##b
+#endif
+
+!#if  __STDC__
+!#define CONCATENATE(a,b) a##b
+!#else
+!#define CONCATENATE(a,b) a/**/b
+!#endif
+
+#ifdef CGNS_SCOPE_ENUMS
+! set scope prefix (case does not matter in Fortran)
+#define CGNS_ENUMV(x) CONCATENATE(CG_,x)
+#else
+#define CGNS_ENUMV(x) x
+#endif
 
 #endif

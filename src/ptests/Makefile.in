@@ -1,3 +1,7 @@
+NO_COLOR=\033[0m
+OK_COLOR=\033[32;01m
+ERROR_COLOR=\033[31;01m
+
 CGNSDIR = ..
 include $(CGNSDIR)/make.defs
 
@@ -9,7 +13,7 @@ LDLIBS = $(CGNSLIB) $(BUILDLIBS)
 
 #----------
 
-CALL =	ctest$(EXE) \
+CALL =	pcgns_ctest$(EXE) \
 	cexample$(EXE) \
 	benchmark$(EXE) \
 	benchmark_hdf5$(EXE) \
@@ -19,7 +23,7 @@ CALL =	ctest$(EXE) \
 	test_zone$(EXE) \
 	thesis_benchmark$(EXE)
 
-FALL =	ftest$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) 
+FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) 
 
 ALL   = $(CALL) @FALL@
 TESTS = $(ALL)
@@ -30,21 +34,23 @@ all : $(ALL)
 
 test : $(TESTS)
 	@echo " "; \
+	status=0; \
 	echo "=== running parallel tests ==="; \
 	 for x in $(TESTS) ; do \
-	   if `$(MPIEXEC) -np 2 $$x >/dev/null 2>&1` ; then \
-	     echo "  $$x ... passed"; \
+	   if `$(MPIEXEC) -np 2 ./$$x >/dev/null 2>&1` ; then \
+	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
 	   else \
-	     echo "  $$x ... *** FAILED ***"; \
+	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
+		status=1; \
 	   fi; \
 	 done; \
 	 echo "=== finished ==="; \
-	echo " ";
+	 exit $$status;
 
 #----------
 
-ctest$(EXE) : ctest.c $(CGNSLIB)
-	$(CC) $(COPTS) $(CEOUT)$@ ctest.c $(LDLIBS) $(CLIBS)
+pcgns_ctest$(EXE) : pcgns_ctest.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ pcgns_ctest.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
@@ -97,8 +103,14 @@ thesis_benchmark$(EXE) : thesis_benchmark.c $(CGNSLIB)
 
 #----------
 
-ftest$(EXE) : ftest.F90 $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ ftest.F90 $(LDLIBS) $(FLIBS)
+pcgns_ftest$(EXE) : pcgns_ftest.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ pcgns_ftest.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+ftest_zone$(EXE) : ftest_zone.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ ftest_zone.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

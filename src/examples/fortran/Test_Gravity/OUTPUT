@@ -1,0 +1,37 @@
+READING FILE Test_V2                         
+Library Version used for file creation:3.300
+nbases=    1
+BaseName = "Basename                        "
+cell_dimension= 3
+
+Base Descriptor_t Information:
+
+No. of descriptors= 1
+ DescriptorName="BaseDescriptorName              "
+ DescriptorText="BaseDescriptorText                                                                                  "
+gravity_vector=  0.0  0.0  9.8
+
+Gravity Descriptor_t Information:
+
+No. of descriptors= 2
+ DescriptorName="GravityDescriptorName           "
+ DescriptorText="GravityDescriptorText                                                                               "
+ DescriptorName="LinkToBaseDescr                 "
+ DescriptorText="BaseDescriptorText                                                                                  "
+DataClassName=Dimensional                     
+Gravity Dimensional Units:
+    Mass units: Kilogram                        
+    Length units: Meter                           
+    Temperature units: Kelvin                          
+    Time units: Second                          
+    Angle units:Radian                          
+
+Gravity User Data Information:
+
+No. of UserData= 1
+ user_data_name="UserData1                       "
+
+
+Gravity Vector Descriptor_t Information:
+
+No. of descriptors= 0

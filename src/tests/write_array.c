@@ -79,6 +79,9 @@ int main (int argc, char **argv)
     printf ("time = %g secs, size = %g Mb\n",
         end - start, file_size(fname));
 #endif
+
+    cg_free(array);
+
     return 0;
 }
 

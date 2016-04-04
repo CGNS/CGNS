@@ -1,0 +1,323 @@
+
+File Opened and Read 
+
+*** CGNSBase_t node ***
+      Name= "Name of my Base"
+      CellDimension=  3
+      PhysDimension=  3
+ 
+      *** Family_t nodes ***
+        Name= "Family#1"
+        no.of FamilyBC_t=  2
+        no.of GEO=  2
+ 
+        *** GeometryReference_t nodes ***
+          Name= "Geo#1_of_fam#1"
+          cadfile= "CADFile#1"
+          cadformat= "IGES"
+          nparts=  2
+ 
+            part= "Part#1"
+            part= "Part#2"
+ 
+          ndescr=  1
+ 
+            Descriptor_t: "Descriptor" is "Geo#1_of_fam#1"
+
+        *** GeometryReference_t nodes ***
+          Name= "Geo#2_of_fam#1"
+          cadfile= "CADFile#2"
+          cadformat= "IGES"
+          nparts=  2
+ 
+            part= "Part#1"
+            part= "Part#2"
+ 
+          ndescr=  1
+ 
+            Descriptor_t: "Descriptor" is "Geo#2_of_fam#1"
+
+        *** FamilyBC_t nodes ***
+          Name= "FamBC#1"
+          BCType= BCGeneral                       
+ 
+        *** FamilyBC_t nodes ***
+          Name= "FamBC#2"
+          BCType= BCGeneral                       
+ 
+        ndescriptors=  1
+            Descriptor_t: "Fam_Descr_Name" is "Fam_Descr_Text"
+
+        Ordinal=  1
+ 
+      *** Family_t nodes ***
+        Name= "Family#2"
+        no.of FamilyBC_t=  2
+        no.of GEO=  2
+ 
+        *** GeometryReference_t nodes ***
+          Name= "Geo#1_of_fam#2"
+          cadfile= "CADFile#1"
+          cadformat= "IGES"
+          nparts=  2
+ 
+            part= "Part#1"
+            part= "Part#2"
+ 
+          ndescr=  1
+ 
+            Descriptor_t: "Descriptor" is "Geo#1_of_fam#2"
+
+        *** GeometryReference_t nodes ***
+          Name= "Geo#2_of_fam#2"
+          cadfile= "CADFile#2"
+          cadformat= "IGES"
+          nparts=  2
+ 
+            part= "Part#1"
+            part= "Part#2"
+ 
+          ndescr=  1
+ 
+            Descriptor_t: "Descriptor" is "Geo#2_of_fam#2"
+
+        *** FamilyBC_t nodes ***
+          Name= "FamBC#1"
+          BCType= BCGeneral                       
+ 
+        *** FamilyBC_t nodes ***
+          Name= "FamBC#2"
+          BCType= BCGeneral                       
+ 
+        ndescriptors=  1
+            Descriptor_t: "Fam_Descr_Name" is "Fam_Descr_Text"
+
+        Ordinal=  2
+ 
+      *** Family_t nodes ***
+        Name= "Outflow"
+        no.of FamilyBC_t=  2
+        no.of GEO=  2
+ 
+        *** GeometryReference_t nodes ***
+          Name= "Geo#1_of_fam#3"
+          cadfile= "CADFile#1"
+          cadformat= "IGES"
+          nparts=  2
+ 
+            part= "Part#1"
+            part= "Part#2"
+ 
+          ndescr=  1
+ 
+            Descriptor_t: "Descriptor" is "Geo#1_of_fam#3"
+
+        *** GeometryReference_t nodes ***
+          Name= "Geo#2_of_fam#3"
+          cadfile= "CADFile#2"
+          cadformat= "IGES"
+          nparts=  2
+ 
+            part= "Part#1"
+            part= "Part#2"
+ 
+          ndescr=  1
+ 
+            Descriptor_t: "Descriptor" is "Geo#2_of_fam#3"
+
+        *** FamilyBC_t nodes ***
+          Name= "FamBC#1"
+          BCType= BCGeneral                       
+ 
+        *** FamilyBC_t nodes ***
+          Name= "FamBC#2"
+          BCType= BCGeneral                       
+ 
+        ndescriptors=  1
+            Descriptor_t: "Fam_Descr_Name" is "Fam_Descr_Text"
+
+        Ordinal=  3
+ 
+      nzones=  2
+ 
+*** Zone_t node ***
+      Name= "StructuredZone#1"
+      ZoneType= Structured                      
+      Size=      3     3     3     2     2     2     0     0     0
+      ncoords=  3
+      Idim=  3
+      range:     1     1     1     3     3     3
+      CoordinateX                     = 0.000000E+00
+      CoordinateY                     = 0.000000E+00
+      CoordinateZ                     = 0.000000E+00
+      FamilyName= "Family#1"
+*** GridConnectivity_t node ***
+      Name= "str_to_unstr"
+      GridLocation=Vertex                          
+      Connectivity Type=Abutting1to1                    
+      PtsetType=PointRange                      
+      npnts=  2
+      DonorName="UnstructuredZone#1"
+      DonorZonetype=Unstructured                    
+      DonorDatatype=Integer                         
+      DonorPtsetType=CellListDonor                   
+      ndata_donor=  9
+      pnts receiver:
+              3  1  1
+         to   3  3  3
+      pnts donor:
+              1
+         to  25
+      narrays under GridConnectivity_t=  1
+      nodename=InterpolantsDonor               
+      ndim=  2
+      dim_vals=  3
+      dim_vals=  9
+      Interpolants Datatype=RealDouble                      
+Interpolants(1,  1)= 0.500000E+00
+Interpolants(2,  1)= 0.333333E+00
+Interpolants(3,  1)= 0.250000E+00
+Interpolants(1,  2)= 0.333333E+00
+Interpolants(2,  2)= 0.250000E+00
+Interpolants(3,  2)= 0.200000E+00
+Interpolants(1,  3)= 0.250000E+00
+Interpolants(2,  3)= 0.200000E+00
+Interpolants(3,  3)= 0.166667E+00
+Interpolants(1,  4)= 0.200000E+00
+Interpolants(2,  4)= 0.166667E+00
+Interpolants(3,  4)= 0.142857E+00
+Interpolants(1,  5)= 0.166667E+00
+Interpolants(2,  5)= 0.142857E+00
+Interpolants(3,  5)= 0.125000E+00
+Interpolants(1,  6)= 0.142857E+00
+Interpolants(2,  6)= 0.125000E+00
+Interpolants(3,  6)= 0.111111E+00
+Interpolants(1,  7)= 0.125000E+00
+Interpolants(2,  7)= 0.111111E+00
+Interpolants(3,  7)= 0.100000E+00
+Interpolants(1,  8)= 0.111111E+00
+Interpolants(2,  8)= 0.100000E+00
+Interpolants(3,  8)= 0.909091E-01
+Interpolants(1,  9)= 0.100000E+00
+Interpolants(2,  9)= 0.909091E-01
+Interpolants(3,  9)= 0.833333E-01
+*** ZoneBC_t node ***
+      nbocos=  1
+*** BC_t node ***
+      Name= "myboco"
+      BCType= UserDefined                     
+      PtsetType= PointRange                      
+      npnts=    2
+      NormalIndex:
+             -1  0  0
+      NormalListFlag=   27
+      NormalDataType= RealDouble                      
+      ndataset=    0
+      pnts range:
+              3  1  1
+         to   3  3  3
+      size_of_patch=    9
+      1st and last normal vector:
+            -0.100000E+01 0.000000E+00 0.000000E+00
+            -0.100000E+01 0.000000E+00 0.000000E+00
+      FamilyName= "myboco"
+*** Zone_t node ***
+      Name= "UnstructuredZone#1"
+      ZoneType= Unstructured                    
+      Size=     27     8     0
+      ncoords=  3
+      Idim=  1
+      range:     1    27
+      CoordinateX                     = 0.100000E+02
+      CoordinateY                     = 0.000000E+00
+      CoordinateZ                     = 0.000000E+00
+      FamilyName= "Family#2"
+*** GridConnectivity_t node ***
+      Name= "unstr_to_str"
+      GridLocation=Vertex                          
+      Connectivity Type=Abutting1to1                    
+      PtsetType=PointList                       
+      npnts=  9
+      DonorName="StructuredZone#1"
+      DonorZonetype=Structured                      
+      DonorDatatype=Integer                         
+      DonorPtsetType=PointListDonor                  
+      ndata_donor=  9
+      pnts receiver:
+              1
+         to  25
+      pnts donor:
+              3  1  1
+         to   3  3  3
+*** ZoneBC_t node ***
+      nbocos=  2
+*** BC_t node ***
+      Name= "point_patch"
+      BCType= UserDefined                     
+      PtsetType= PointList                       
+      npnts=    9
+      NormalListFlag=   27
+      NormalDataType= RealDouble                      
+      ndataset=    0
+      pnts range:
+              1
+         to  25
+      size_of_patch=    9
+      1st and last normal vector:
+             0.100000E+01 0.000000E+00 0.000000E+00
+             0.100000E+01 0.000000E+00 0.000000E+00
+      FamilyName= "point_patch"
+*** BC_t node ***
+      Name= "shell_patch"
+      BCType= BCOutflow                       
+      PtsetType= PointList                       
+      npnts=    4
+      NormalListFlag=   12
+      NormalDataType= RealDouble                      
+      ndataset=    0
+      pnts range:
+              9
+         to  12
+      size_of_patch=    4
+      1st and last normal vector:
+             0.100000E+01 0.000000E+00 0.000000E+00
+             0.100000E+01 0.000000E+00 0.000000E+00
+      FamilyName= "Outflow"
+*** Elements_t Nodes ***
+      nsections=  2
+
+  *** Section  1 ***
+      npe=  8
+      type= 17
+      Name= "VolumeElements"
+      Element Type= HEXA_8                          
+      Range=      1     8
+      Element Connectivity:
+           1     2     5     4    10    11    14    13
+           2     3     6     5    11    12    15    14
+           4     5     8     7    13    14    17    16
+           5     6     9     8    14    15    18    17
+          10    11    14    13    19    20    23    22
+          11    12    15    14    20    21    24    23
+          13    14    17    16    22    23    26    25
+          14    15    18    17    23    24    27    26
+      Descriptor_t: "Descriptor_Name" is "Descriptor_Text"
+
+
+  *** Section  2 ***
+      npe=  4
+      type=  7
+      Name= "outflow"
+      Element Type= QUAD_4                          
+      Range=      9    12
+      Element Connectivity:
+           3     6    15    12
+           6     9    18    15
+          12    15    24    21
+          15    18    27    24
+      Parent Data:
+        2  4  6  8
+        0  0  0  0
+        3  3  3  3
+        0  0  0  0
+calling cg_close_f

@@ -29,28 +29,14 @@ CALL = \
 	write_zones$(EXE) \
 	write_rind$(EXE)
 
-F_TESTS_77 = \
-	cgiof$(EXE) \
-	cgwrite$(EXE) \
-	cgread$(EXE) \
-	cgzconn$(EXE) \
-	cgsubreg$(EXE)
-
-F_TESTS_03 = \
+F_TESTS = \
 	cgiof_F03$(EXE) \
 	cgwrite_F03$(EXE) \
 	cgread_F03$(EXE) \
 	cgzconn_F03$(EXE) \
 	cgsubreg_F03$(EXE)
 
-# if --enable-64bit was specified then don't include F77 tests
-# because they will fail.
-
-ifeq ($(CGNS_64BIT), 1)
-FALL = $(F_TESTS_03)
-else
-FALL = $(F_TESTS_77) $(F_TESTS_03)
-endif
+FALL = $(F_TESTS)
 
 CALL64 = test64c$(EXE)
 FALL64 = test64f$(EXE) test64f_F03$(EXE)
@@ -59,6 +45,13 @@ ALL = dbtest$(EXE) open_cgns$(EXE) $(CALL) @FALL@
 ALL64 = $(CALL64) @FALL64@
 
 TESTS = $(CALL) @FALL@
+
+TIMING_AVAIL:=$(shell /usr/bin/time -a -o CGNS_timing.txt -f "%e" pwd > /dev/null; echo $$?)
+ifeq ("$(TIMING_AVAIL)" , "0")
+  TIMING = /usr/bin/time -a -o CGNS_timing.txt -f "$$x %e" ./$$x >/dev/null 2>&1
+else
+  TIMING = ./$$x >/dev/null 2>&1
+endif
 
 #----------
 
@@ -70,16 +63,19 @@ test64 : $(ALL64)
 
 test : $(TESTS)
 	@echo " "; \
+	status=0; \
 	echo "=== running tests ==="; \
+        \rm ./CGNS_timing.txt 2> /dev/null;\
 	 for x in $(TESTS) ; do \
-	   if `./$$x >/dev/null 2>&1` ; then \
-	     echo -e "$$x ... $(OK_COLOR) passed $(NO_COLOR)"; \
+	   if `$(TIMING)` ; then \
+	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
 	   else \
-	     echo -e "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR)"; \
+	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
+		status=1; \
 	   fi; \
 	 done; \
 	 echo "=== finished ==="; \
-	echo " ";
+	 exit $$status;
 
 #----------
 

@@ -32,10 +32,14 @@
 #define CG_BUILD_LEGACY @BUILDLEGACY@
 #define CG_BUILD_64BIT  @BUILD64BIT@
 #define CG_BUILD_SCOPE  @BUILDSCOPE@
+#define CG_BUILD_BASESCOPE @BUILDBASESCOPE@
 
 #define CG_MAX_INT32 0x7FFFFFFF
 #ifdef _WIN32
 # define CG_LONG_T __int64
+#ifdef CG_BUILD_64BIT
+#define stat _stat32i64
+#endif
 #else
 # define CG_LONG_T @CGLONGT@
 #endif
@@ -79,7 +83,7 @@
 
 /* Define an int type that is interoperabable with Fortran's INTEGER */
 #define FORTRAN_DEFAULT_INTEGER_C_INT64_T @FORTRAN_DEFAULT_INTEGER_C_INT64_T@
-#if FORTRAN_DEFAULT_INTEGER_C_INT64_T
+#if FORTRAN_DEFAULT_INTEGER_C_INT64_T == 1
   typedef CG_LONG_T cgint_f;
 #else
   typedef int cgint_f;

@@ -1,0 +1,89 @@
+READING FILE Test_V2                         
+Library Version used for file creation:   3.300
+nbases=    1
+BaseName = "Basename                        "
+cell_dimension= 3
+
+Base Descriptor_t Information:
+
+No. of descriptors= 1
+ DescriptorName="BaseDescriptorName              "
+ DescriptorText="BaseDescriptorText                                                                                  "
+nzones=    2
+Name of Zone    1 is "Zone#1                          "
+  Zone type is Structured                      
+  IndexDimension=    3
+2 GridConnectivity_t found for Zone#1                          
+  GridConnectivity #1:
+   connect name=Connect#1                       
+   Grid location=Vertex                          
+   Connect-type=Abutting1to1                    
+   ptset type="PointList                       "
+   npnts=   5   donorname="Zone#2                          "
+   donor zonetype=Structured                      
+   donor ptset type=PointListDonor                  
+   DonorDatatype=LongInteger                     
+   npnts_donor=   5
+  GridConnectivity #2:
+   connect name=Connect#2                       
+   Grid location=Vertex                          
+   Connect-type=Abutting1to1                    
+   ptset type="PointList                       "
+   npnts=   5   donorname="Zone#2                          "
+   donor zonetype=Structured                      
+   donor ptset type=PointListDonor                  
+   DonorDatatype=LongInteger                     
+   npnts_donor=   5
+   AverageInterfaceTypeName= "AverageCircumferential          "
+   RotationCenter=  1.1  2.2  3.3
+   RotationAngle=  4.4  5.5  6.6
+   Translation=  7.7  8.8  9.9
+
+GridConnProperty Descriptor_t Information:
+
+No. of descriptors= 2
+ DescriptorName="GridConnPropDescriptorName      "
+ DescriptorText="GridConnPropDescriptorText                                                                          "
+ DescriptorName="LinkToBaseDescr                 "
+ DescriptorText="BaseDescriptorText                                                                                  "
+
+GridConnProperty User Data Information:
+
+No. of UserData= 1
+ user_data_name="GridConnPropUserData            "
+
+
+AverageInterface Descriptor_t Information:
+
+No. of descriptors= 2
+ DescriptorName="AverageInterfaceDescriptorName  "
+ DescriptorText="AverageInterfaceDescriptorText                                                                      "
+ DescriptorName="LinkToBaseDescr                 "
+ DescriptorText="BaseDescriptorText                                                                                  "
+
+AverageInterface User Data Information:
+
+No. of UserData= 1
+ user_data_name="AverageInterfaceUserData        "
+
+
+Periodic Descriptor_t Information:
+
+No. of descriptors= 2
+ DescriptorName="PeriodicDescriptorName          "
+ DescriptorText="PeriodicDescriptorText                                                                              "
+ DescriptorName="LinkToBaseDescr                 "
+ DescriptorText="BaseDescriptorText                                                                                  "
+
+Periodic User Data Information:
+
+No. of UserData= 1
+ user_data_name="PeriodicUserData                "
+
+DataClassName=Dimensional                     
+SurfacePeriodic Dimensional Units:
+    Mass units: Kilogram                        
+    Length units: Meter                           
+    Temperature units: Kelvin                          
+    Time units: Second                          
+    Angle units:Radian                          
