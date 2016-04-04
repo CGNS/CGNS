@@ -823,10 +823,6 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
 
     to_HDF_ID(field->id,hid);
 
-    if (write_to_queue) {
-        cgi_error("Write queue is not supported for write from shaped memory");
-        return CG_ERROR;
-    }
     cg_rw_t Data;
     Data.u.wbuf = data;
     return readwrite_shaped_data_parallel(

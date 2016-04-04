@@ -1723,7 +1723,7 @@ int cgio_read_all_data_type (int cgio_num, double id, const char *m_data_type,
         return set_error(CGIO_ERR_NOT_HDF5);
     }
 #ifdef BUILD_HDF5
-    else if (cgio->type == CGIO_FILE_HDF5 {
+    else if (cgio->type == CGIO_FILE_HDF5) {
         ADFH_Read_All_Data(id, m_data_type, (char *)data, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1816,7 +1816,7 @@ int cgio_read_data_type (int cgio_num, double id,
         return set_error(CGIO_ERR_NOT_HDF5);
     }
 #ifdef BUILD_HDF5
-    else if (cgio->type == CGIO_FILE_HDF5 {
+    else if (cgio->type == CGIO_FILE_HDF5) {
         ADFH_Read_Data(id, s_start, s_end, s_stride, m_data_type, m_num_dims,
             m_dims, m_start, m_end, m_stride, (char *)data, &ierr);
         if (ierr > 0) return set_error(ierr);
