@@ -320,6 +320,11 @@ else
   is64bit=yes
 fi
 
+case $SYSTEM in
+  DARWIN) STRIP="$STRIP -x" ;;
+esac
+echo "$STRIP"
+
 if test "$ac_cv_prog_gcc" = "no"; then
   case $SYSTEM in
     CRAY)   AR="bld rz" ;;

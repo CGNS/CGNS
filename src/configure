@@ -4803,6 +4803,11 @@ else
   is64bit=yes
 fi
 
+case $SYSTEM in
+  DARWIN) STRIP="$STRIP -x" ;;
+esac
+echo "$STRIP"
+
 if test "$ac_cv_c_compiler_gnu" = "no"; then
   case $SYSTEM in
     CRAY)   AR="bld rz" ;;
@@ -6387,6 +6392,7 @@ ac_x_header_dirs='
 /usr/athena/include
 /usr/local/x11r5/include
 /usr/lpp/Xamples/include
+/opt/X11/include
 
 /usr/openwin/include
 /usr/openwin/share/include'
