@@ -793,9 +793,11 @@ if test $shared = yes; then
     fi
   fi
   if test $shared = yes; then
-    case $SYSTEM in
-      DARWIN) STRIP="$STRIP -x" ;;
-    esac
+    if test $STRIP = "strip"; then
+      case $SYSTEM in
+        DARWIN) STRIP="$STRIP -x" ;;
+      esac
+    fi
     RAN_LIB="\$(STRIP)"
   fi
 fi
