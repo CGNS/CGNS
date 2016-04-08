@@ -320,11 +320,6 @@ else
   is64bit=yes
 fi
 
-case $SYSTEM in
-  DARWIN) STRIP="$STRIP -x" ;;
-esac
-echo "$STRIP"
-
 if test "$ac_cv_prog_gcc" = "no"; then
   case $SYSTEM in
     CRAY)   AR="bld rz" ;;
@@ -798,6 +793,9 @@ if test $shared = yes; then
     fi
   fi
   if test $shared = yes; then
+    case $SYSTEM in
+      DARWIN) STRIP="$STRIP -x" ;;
+    esac
     RAN_LIB="\$(STRIP)"
   fi
 fi

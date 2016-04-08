@@ -4803,11 +4803,6 @@ else
   is64bit=yes
 fi
 
-case $SYSTEM in
-  DARWIN) STRIP="$STRIP -x" ;;
-esac
-echo "$STRIP"
-
 if test "$ac_cv_c_compiler_gnu" = "no"; then
   case $SYSTEM in
     CRAY)   AR="bld rz" ;;
@@ -5571,6 +5566,9 @@ $as_echo "$as_me: WARNING: can't yet build shared library under CYGWIN" >&2;}
     fi
   fi
   if test $shared = yes; then
+    case $SYSTEM in
+      DARWIN) STRIP="$STRIP -x" ;;
+    esac
     RAN_LIB="\$(STRIP)"
   fi
 fi
