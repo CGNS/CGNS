@@ -5,8 +5,8 @@
 #PBS -q low
 #PBS -W group_list=a1519
 
-module load comp-intel/2013.5.192
-module load mpi-sgi/mpt.2.11r13
+module load mpi-sgi/mpt.2.12r26 
+module load comp-intel/2016.2.181
 
 # By default, PBS executes your job from your home directory.
 # However, you can use the environment variable
