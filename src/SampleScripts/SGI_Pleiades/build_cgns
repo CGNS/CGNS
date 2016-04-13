@@ -11,7 +11,7 @@ setenv FLIBS "-lmpi -L$HOME/packages/zlib-1.2.8/lib/lib -lz"
 setenv CLIBS "-lmpi -I$HOME/packages/zlib-1.2.8/lib/include -L$HOME/packages/zlib-1.2.8/lib/lib -lz"
 
 ./configure --verbose \
---prefix="$HOME/scrach/cgns_1_8" \
+--prefix="$HOME/scratch/cgns_1_8" \
 --enable-parallel \
 --with-fortran \
 --with-hdf5=$HDF5 \
