@@ -979,13 +979,22 @@ if test "$withhdf5" = "yes"; then
                      [CPPFLAGS="$saved_CPPFLAGS"] [unset HAVE_ZLIB])
 
 
-    if test -n "$zlib_lib"; then
+    if test $shared = yes; then
       ZLIBLIB="-L$zlib_lib"
+    else
+      if test -n "$zlib_lib"; then
+        for a in $exts ; do
+          if test -f $zlib_lib/libz.$a; then
+            ZLIBLIB=$zlib_lib/libz.$a
+            break
+          fi
+        done
+      fi
     fi
 
     if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
       AC_CHECK_LIB([z], [compress2],,
-                   [ZLIBLIB="$ZLIBLIB"; unset HAVE_ZLIB])
+                   [unset HAVE_ZLIB])
     fi
 
     if test -z "$HAVE_ZLIB"; then
@@ -993,6 +1002,10 @@ if test "$withhdf5" = "yes"; then
     else
       AC_CHECK_FUNC([compress2], [HAVE_COMPRESS2="yes"])
     fi
+    AC_MSG_CHECKING([for zlib library path])	
+    AC_MSG_RESULT([$zlib_lib])
+    AC_MSG_CHECKING([for zlib include path])	
+    AC_MSG_RESULT([$zlib_inc])
     ;;
   esac
 	
