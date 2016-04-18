@@ -779,6 +779,7 @@ enable_scope
 with_fortran
 enable_shared
 with_hdf5
+with_fnord
 with_zlib
 with_szip
 with_mpi
@@ -1433,7 +1434,17 @@ Optional Packages:
   --with-system=SYSTEM  specify system
   --with-fortran=F2C    enable Fortran interface default=yes
   --with-hdf5=DIR       use HDF5 default=no
-  --with-zlib=DIR/LIB   use zlib with HDF5 default=no
+
+ For the --with-zlib option, you can specify where the header
+ files and libraries are in two different ways:
+
+    --with-xxx=INC,LIB - Specify individually the include directory and
+                         library directory separated by a comma
+    --with-xxx=DIR     - Specify only the directory which contains the
+                         include/ and lib/ subdirectories
+
+  --with-zlib=DIR         Use zlib library for external deflate I/O filter
+                          [default=no]
   --with-szip=LIB       use szip with HDF5 default=no
   --with-mpi=DIR/mpicc  use MPI with HDF5 default=no
   --with-x                use the X Window System
@@ -5709,90 +5720,271 @@ fi
 
 H5NEEDZLIB=0
 ZLIBLIB=""
-
-if test "$withhdf5" = "yes"; then
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using zlib" >&5
-$as_echo_n "checking if using zlib... " >&6; }
-
-# Check whether --with-zlib was given.
-if test "${with_zlib+set}" = set; then :
-  withval=$with_zlib; withzlib=$withval
-else
-  withzlib="no"
-fi
-
-  if test "$withzlib" = "no"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-  else
-    H5NEEDZLIB=1
-    if test -z "$withzlib" || test "$withzlib" = "yes"; then
-      zlibdir=""
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-      ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = xyes; then :
-  installed=yes
-else
-  installed=no
-fi
-
-
-      if test "$installed" = "yes"; then
-        ZLIBLIB=-lz
-      else
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for local zlib distribution" >&5
-$as_echo_n "checking for local zlib distribution... " >&6; }
-        for d in \
-          `ls -dr * 2>/dev/null` \
-          `ls -dr ../* 2>/dev/null` \
-          `ls -dr ../../* 2>/dev/null` \
-          `ls -dr ../../../* 2>/dev/null` ; do
-          if test -f "$d/zlib.h"; then
-            zlibdir=`(cd $d; pwd)`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $zlibdir" >&5
-$as_echo "$zlibdir" >&6; }
-            break
-          fi
-        done
-        test -z "$zlibdir" && { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
-$as_echo "not found" >&6; }
-      fi
-    else
-      if test -f "$withzlib/zlib.h"; then
-        zlibdir=$withzlib
-      else
-        zlibdir=`dirname $withzlib`
-      fi
-      withzlib=yes
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $zlibdir" >&5
-$as_echo "$zlibdir" >&6; }
-    fi
-
-    if test -z "$ZLIBLIB"; then
-      test -z "$zlibdir" && \
-        as_fn_error $? "need specify the zlib directory with --with-zlib=DIR" "$LINENO" 5
-      if test -f "$zlibdir/zlib.h"; then
-        for a in $exts ; do
-          if test -f $zlibdir/libz.$a; then
-            ZLIBLIB=$zlibdir/libz.$a
-            break
-          fi
-        done
-        test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/libz.a
-      else
-        as_fn_error $? "$zlibdir directory does not contain zlib.h" "$LINENO" 5
-      fi
-    fi
-
-  fi
-fi
-
 H5NEEDSZIP=0
 SZIPLIB=""
 
+## ----------------------------------------------------------------------
+## Fake --with-xxx option to allow us to create a help message for the
+## following --with-xxx options which can take either a =DIR or =INC,LIB
+## specifier.
+##
+
+# Check whether --with-fnord was given.
+if test "${with_fnord+set}" = set; then :
+  withval=$with_fnord;
+fi
+
+
 if test "$withhdf5" = "yes"; then
+
+
+# Check whether --with-zlib was given.
+if test "${with_zlib+set}" = set; then :
+  withval=$with_zlib;
+else
+  withval=no
+fi
+
+
+  case $withval in
+    yes)
+      H5NEEDZLIB=1
+      HAVE_ZLIB="yes"
+      for ac_header in zlib.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_zlib_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ZLIB_H 1
+_ACEOF
+ HAVE_ZLIB_H="yes"
+else
+  unset HAVE_ZLIB
+fi
+
+done
+
+      if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for compress2 in -lz" >&5
+$as_echo_n "checking for compress2 in -lz... " >&6; }
+if ${ac_cv_lib_z_compress2+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char compress2 ();
+int
+main ()
+{
+return compress2 ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_z_compress2=yes
+else
+  ac_cv_lib_z_compress2=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_compress2" >&5
+$as_echo "$ac_cv_lib_z_compress2" >&6; }
+if test "x$ac_cv_lib_z_compress2" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBZ 1
+_ACEOF
+
+  LIBS="-lz $LIBS"
+
+else
+  unset HAVE_ZLIB
+fi
+
+      fi
+      if test -z "$HAVE_ZLIB"; then
+        as_fn_error $? "couldn't find zlib library" "$LINENO" 5
+      fi
+      ;;
+    no)
+      HAVE_ZLIB="no"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using zlib with HDF5" >&5
+$as_echo_n "checking if using zlib with HDF5... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      ;;
+    *)
+      H5NEEDZLIB=1
+      HAVE_ZLIB="yes"
+
+      case "$withval" in
+        *,*)
+          zlib_inc="`echo $withval | cut -f1 -d,`"
+          zlib_lib="`echo $withval | cut -f2 -d, -s`"
+          ;;
+        *)
+          if test -n "$withval"; then
+            zlib_inc="$withval/include"
+            zlib_lib="$withval/lib"
+          fi
+          ;;
+      esac
+
+    if test -n "$zlib_inc"; then
+      CPPFLAGS="$CPPFLAGS -I$zlib_inc"
+    fi
+
+    for ac_header in zlib.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_zlib_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ZLIB_H 1
+_ACEOF
+ HAVE_ZLIB_H="yes"
+else
+  CPPFLAGS="$saved_CPPFLAGS" unset HAVE_ZLIB
+fi
+
+done
+
+
+
+    if test -n "$zlib_lib"; then
+      ZLIBLIB="-L$zlib_lib"
+    fi
+
+    if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for compress2 in -lz" >&5
+$as_echo_n "checking for compress2 in -lz... " >&6; }
+if ${ac_cv_lib_z_compress2+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char compress2 ();
+int
+main ()
+{
+return compress2 ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_z_compress2=yes
+else
+  ac_cv_lib_z_compress2=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_compress2" >&5
+$as_echo "$ac_cv_lib_z_compress2" >&6; }
+if test "x$ac_cv_lib_z_compress2" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBZ 1
+_ACEOF
+
+  LIBS="-lz $LIBS"
+
+else
+  ZLIBLIB="$ZLIBLIB"; unset HAVE_ZLIB
+fi
+
+    fi
+
+    if test -z "$HAVE_ZLIB"; then
+      as_fn_error $? "couldn't find zlib library" "$LINENO" 5
+    else
+      ac_fn_c_check_func "$LINENO" "compress2" "ac_cv_func_compress2"
+if test "x$ac_cv_func_compress2" = xyes; then :
+  HAVE_COMPRESS2="yes"
+fi
+
+    fi
+    ;;
+  esac
+
+
+#  AC_MSG_CHECKING([if using zlib])
+#  AC_ARG_WITH(zlib,
+#    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=no]],
+#    withzlib=$withval,withzlib="no")
+#  if test "$withzlib" = "no"; then
+#    AC_MSG_RESULT(no)
+#  else
+#    H5NEEDZLIB=1
+#    if test -z "$withzlib" || test "$withzlib" = "yes"; then
+#      zlibdir=""
+#      AC_MSG_RESULT(yes)
+#      AC_CHECK_HEADER(zlib.h,installed=yes,installed=no)
+#      if test "$installed" = "yes"; then
+#        ZLIBLIB=-lz
+#      else
+#        AC_MSG_CHECKING([for local zlib distribution])
+#        for d in \
+#          `ls -dr * 2>/dev/null` \
+#          `ls -dr ../* 2>/dev/null` \
+#          `ls -dr ../../* 2>/dev/null` \
+#          `ls -dr ../../../* 2>/dev/null` ; do
+#          if test -f "$d/zlib.h"; then
+#            zlibdir=`(cd $d; pwd)`
+#            AC_MSG_RESULT($zlibdir)
+#            break
+#          fi
+#        done
+#        test -z "$zlibdir" && AC_MSG_RESULT(not found)
+#      fi
+#    else
+#      if test -f "$withzlib/include/zlib.h"; then
+#        zlibdir=$withzlib
+#      else
+#        zlibdir=`dirname $withzlib`
+#      fi
+#      withzlib=yes
+#      AC_MSG_RESULT($zlibdir)
+#    fi
+#
+#    if test -z "$ZLIBLIB"; then
+#      test -z "$zlibdir" && \
+#        AC_MSG_ERROR(need specify the zlib directory with --with-zlib=DIR)
+#      if test -f "$zlibdir/include/zlib.h"; then
+#        for a in $exts ; do
+#          if test -f $zlibdir/lib/libz.$a; then
+#            ZLIBLIB=$zlibdir/lib/libz.$a
+#            break
+#          fi
+#        done
+#        test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/lib/libz.a
+#      else
+#        AC_MSG_ERROR($zlibdir/include directory does not contain zlib.h)
+#      fi
+#    fi
+
+#  fi
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using szip" >&5
 $as_echo_n "checking if using szip... " >&6; }
 
