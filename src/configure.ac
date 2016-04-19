@@ -945,8 +945,9 @@ if test "$withhdf5" = "yes"; then
         AC_CHECK_LIB([z], [compress2],, [unset HAVE_ZLIB])
       fi
       if test -z "$HAVE_ZLIB"; then
-        AC_MSG_ERROR([couldn't find zlib library])
+        AC_MSG_ERROR([couldn't find zlib library: specify the zlib directory with --with-zlib=DIR])
       fi
+      ZLIBLIB=-lz
       ;;
     no)
       HAVE_ZLIB="no"

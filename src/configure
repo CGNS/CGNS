@@ -5814,8 +5814,9 @@ fi
 
       fi
       if test -z "$HAVE_ZLIB"; then
-        as_fn_error $? "couldn't find zlib library" "$LINENO" 5
+        as_fn_error $? "couldn't find zlib library: specify the zlib directory with --with-zlib=DIR" "$LINENO" 5
       fi
+      ZLIBLIB=-lz
       ;;
     no)
       HAVE_ZLIB="no"
