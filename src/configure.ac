@@ -793,6 +793,11 @@ if test $shared = yes; then
     fi
   fi
   if test $shared = yes; then
+    if test $STRIP = "strip"; then
+      case $SYSTEM in
+        DARWIN) STRIP="$STRIP -x" ;;
+      esac
+    fi
     RAN_LIB="\$(STRIP)"
   fi
 fi
@@ -904,71 +909,165 @@ fi
 
 H5NEEDZLIB=0
 ZLIBLIB=""
-
-if test "$withhdf5" = "yes"; then
-
-  AC_MSG_CHECKING([if using zlib])
-  AC_ARG_WITH(zlib,
-    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=no]],
-    withzlib=$withval,withzlib="no")
-  if test "$withzlib" = "no"; then
-    AC_MSG_RESULT(no)
-  else
-    H5NEEDZLIB=1
-    if test -z "$withzlib" || test "$withzlib" = "yes"; then
-      zlibdir=""
-      AC_MSG_RESULT(yes)
-      AC_CHECK_HEADER(zlib.h,installed=yes,installed=no)
-      if test "$installed" = "yes"; then
-        ZLIBLIB=-lz
-      else
-        AC_MSG_CHECKING([for local zlib distribution])
-        for d in \
-          `ls -dr * 2>/dev/null` \
-          `ls -dr ../* 2>/dev/null` \
-          `ls -dr ../../* 2>/dev/null` \
-          `ls -dr ../../../* 2>/dev/null` ; do
-          if test -f "$d/zlib.h"; then
-            zlibdir=`(cd $d; pwd)`
-            AC_MSG_RESULT($zlibdir)
-            break
-          fi
-        done
-        test -z "$zlibdir" && AC_MSG_RESULT(not found)
-      fi
-    else
-      if test -f "$withzlib/zlib.h"; then
-        zlibdir=$withzlib
-      else
-        zlibdir=`dirname $withzlib`
-      fi
-      withzlib=yes
-      AC_MSG_RESULT($zlibdir)
-    fi
-
-    if test -z "$ZLIBLIB"; then
-      test -z "$zlibdir" && \
-        AC_MSG_ERROR(need specify the zlib directory with --with-zlib=DIR)
-      if test -f "$zlibdir/zlib.h"; then
-        for a in $exts ; do
-          if test -f $zlibdir/libz.$a; then
-            ZLIBLIB=$zlibdir/libz.$a
-            break
-          fi
-        done
-        test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/libz.a
-      else
-        AC_MSG_ERROR($zlibdir directory does not contain zlib.h)
-      fi
-    fi
-
-  fi
-fi
-
 H5NEEDSZIP=0
 SZIPLIB=""
 
+## ----------------------------------------------------------------------
+## Fake --with-xxx option to allow us to create a help message for the
+## following --with-xxx options which can take either a =DIR or =INC,LIB
+## specifier.
+##
+AC_ARG_WITH([fnord],
+  [
+ For the --with-zlib option, you can specify where the header
+ files and libraries are in two different ways:
+
+    --with-xxx=INC,LIB - Specify individually the include directory and
+                         library directory separated by a comma
+    --with-xxx=DIR     - Specify only the directory which contains the
+                         include/ and lib/ subdirectories
+  ])
+
 if test "$withhdf5" = "yes"; then
+
+  AC_ARG_WITH([zlib],
+               [AS_HELP_STRING([--with-zlib=DIR],
+                              [Use zlib library for external deflate I/O
+                               filter [default=no]])],,
+               [withval=no])
+
+  case $withval in
+    yes)
+      H5NEEDZLIB=1
+      HAVE_ZLIB="yes"
+      AC_CHECK_HEADERS([zlib.h], [HAVE_ZLIB_H="yes"], [unset HAVE_ZLIB])
+      if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
+        AC_CHECK_LIB([z], [compress2],, [unset HAVE_ZLIB])
+      fi
+      if test -z "$HAVE_ZLIB"; then
+        AC_MSG_ERROR([couldn't find zlib library: specify the zlib directory with --with-zlib=DIR])
+      fi
+      ZLIBLIB=-lz
+      ;;
+    no)
+      HAVE_ZLIB="no"
+      AC_MSG_CHECKING([if using zlib with HDF5])
+      AC_MSG_RESULT([no])
+      ;;
+    *)
+      H5NEEDZLIB=1
+      HAVE_ZLIB="yes"
+ 
+      case "$withval" in
+        *,*)
+          zlib_inc="`echo $withval | cut -f1 -d,`"
+          zlib_lib="`echo $withval | cut -f2 -d, -s`"
+          ;;
+        *)
+          if test -n "$withval"; then
+            zlib_inc="$withval/include"
+            zlib_lib="$withval/lib"
+          fi
+          ;;
+      esac
+
+    if test -n "$zlib_inc"; then
+      CPPFLAGS="$CPPFLAGS -I$zlib_inc"
+    fi
+
+    AC_CHECK_HEADERS([zlib.h],
+                     [HAVE_ZLIB_H="yes"],
+                     [CPPFLAGS="$saved_CPPFLAGS"] [unset HAVE_ZLIB])
+
+
+    if test $shared = yes; then
+      ZLIBLIB="-L$zlib_lib"
+    else
+      if test -n "$zlib_lib"; then
+        for a in $exts ; do
+          if test -f $zlib_lib/libz.$a; then
+            ZLIBLIB=$zlib_lib/libz.$a
+            break
+          fi
+        done
+      fi
+    fi
+
+    if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
+      AC_CHECK_LIB([z], [compress2],,
+                   [unset HAVE_ZLIB])
+    fi
+
+    if test -z "$HAVE_ZLIB"; then
+      AC_MSG_ERROR([couldn't find zlib library])
+    else
+      AC_CHECK_FUNC([compress2], [HAVE_COMPRESS2="yes"])
+    fi
+    AC_MSG_CHECKING([for zlib library path])	
+    AC_MSG_RESULT([$zlib_lib])
+    AC_MSG_CHECKING([for zlib include path])	
+    AC_MSG_RESULT([$zlib_inc])
+    ;;
+  esac
+	
+
+#  AC_MSG_CHECKING([if using zlib])
+#  AC_ARG_WITH(zlib,
+#    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=no]],
+#    withzlib=$withval,withzlib="no")
+#  if test "$withzlib" = "no"; then
+#    AC_MSG_RESULT(no)
+#  else
+#    H5NEEDZLIB=1
+#    if test -z "$withzlib" || test "$withzlib" = "yes"; then
+#      zlibdir=""
+#      AC_MSG_RESULT(yes)
+#      AC_CHECK_HEADER(zlib.h,installed=yes,installed=no)
+#      if test "$installed" = "yes"; then
+#        ZLIBLIB=-lz
+#      else
+#        AC_MSG_CHECKING([for local zlib distribution])
+#        for d in \
+#          `ls -dr * 2>/dev/null` \
+#          `ls -dr ../* 2>/dev/null` \
+#          `ls -dr ../../* 2>/dev/null` \
+#          `ls -dr ../../../* 2>/dev/null` ; do
+#          if test -f "$d/zlib.h"; then
+#            zlibdir=`(cd $d; pwd)`
+#            AC_MSG_RESULT($zlibdir)
+#            break
+#          fi
+#        done
+#        test -z "$zlibdir" && AC_MSG_RESULT(not found)
+#      fi
+#    else
+#      if test -f "$withzlib/include/zlib.h"; then
+#        zlibdir=$withzlib
+#      else
+#        zlibdir=`dirname $withzlib`
+#      fi
+#      withzlib=yes
+#      AC_MSG_RESULT($zlibdir)
+#    fi
+#
+#    if test -z "$ZLIBLIB"; then
+#      test -z "$zlibdir" && \
+#        AC_MSG_ERROR(need specify the zlib directory with --with-zlib=DIR)
+#      if test -f "$zlibdir/include/zlib.h"; then
+#        for a in $exts ; do
+#          if test -f $zlibdir/lib/libz.$a; then
+#            ZLIBLIB=$zlibdir/lib/libz.$a
+#            break
+#          fi
+#        done
+#        test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/lib/libz.a
+#      else
+#        AC_MSG_ERROR($zlibdir/include directory does not contain zlib.h)
+#      fi
+#    fi
+
+#  fi
+
   AC_MSG_CHECKING([if using szip])
   AC_ARG_WITH(szip,
     [  --with-szip[=LIB]       use szip with HDF5 [default=no]],
