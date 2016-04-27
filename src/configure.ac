@@ -1208,6 +1208,13 @@ AC_ARG_ENABLE(parallel,
 if test ! "x$enableval" = "xno" && enableval=yes; then
   BUILDPARALLEL=1
   parallel=$enableval
+
+  ## Set MPIEXEC to mpiexec if not set yet.
+  if test "X$parallel" = "Xyes" -a -z "$MPIEXEC"; then
+      MPIEXEC="mpiexec"
+  fi
+
+
 fi
 AC_MSG_RESULT($parallel)
 
