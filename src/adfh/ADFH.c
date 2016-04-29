@@ -2141,7 +2141,7 @@ void ADFH_Database_Open(const char   *name,
 
       if(!pcg_mpi_info) pcg_mpi_info = MPI_INFO_NULL;
 
-      H5Pset_coll_metadata_write( g_propfileopen, 1 );
+      H5Pset_coll_metadata_write(g_propfileopen, 1);
 
       H5Pset_fapl_mpio(g_propfileopen, ParallelMPICommunicator, pcg_mpi_info);
     }
@@ -2209,7 +2209,6 @@ void ADFH_Database_Open(const char   *name,
     }
 #ifdef BUILD_PARALLEL
     H5Pset_all_coll_metadata_ops( g_propfileopen, 1 );
-    H5Pset_coll_metadata_write( g_propfileopen, 1 );
 #endif
     if (mode == ADFH_MODE_RDO) {
       fid = H5Fopen(name, H5F_ACC_RDONLY, g_propfileopen);
