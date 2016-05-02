@@ -9,7 +9,6 @@ SHELL = @SHELL@
 # CEOUT   - flag to name the output executable (typically -o).
 # LDFLAGS - any additional linking flags
 # CLIBS   - any additional libraries needed to link a CGNS application
-# FLIBS   - any additional libraries needed to link a CGNS application
 #------------------------------------------------------------------------
 
 CC      = @CC@
@@ -18,7 +17,6 @@ COOUT   = @COOUT@
 CEOUT   = @CEOUT@
 LDFLAGS = @LDFLAGS@
 CLIBS   = @LIBS@
-FLIBS   = @LIBS@
 
 #------------------------------------------------------------------------
 # SPACE  - used to force a space in the compiler executable output flag
