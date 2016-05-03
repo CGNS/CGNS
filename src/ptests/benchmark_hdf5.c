@@ -95,22 +95,22 @@ int  debug;
 double t0, t1, t2;
 
 /*
- * Timing storage convention:
- * timing(0) = Total program time, 2,3,4
- * timing(1) = Time to write nodal coordinates, 5,6,7
- * timing(2) = Time to write connectivity table, 8,9,10
- * timing(3) = Time to write solution data (field data), 11,12,13
- * timing(4) = Time to write array data, 14,15,16
- * timing(5) = Time to read nodal coordinates, 17,18,19
- * timing(6) = Time to read connectivity table, 20,21,22
- * timing(7) = Time to read solution data (field data), 23,24,25
- * timing(8) = Time to read array data, 26,27,28
- * timing(9) = Time for cgp_open, CG_MODE_WRITE, 29,30,31
- * timing(10) = Time for cg_base_write, cg_zone_write, 32,33,34
- * timing(11) = Time for cgp_open, CG_MODE_READ, 35,36,37
- * timing(12) = Time for cg_read base, zone, 38,39,40
- * timing(13) = Time for cg_close, WRITE, 41,42,43
- * timing(14) = Time for cg_close, READ, 44,45,46
+ * Timing storage convention:                            avg.| min. | max.
+ * timing(0) = Total program time,                        2,    3,    4
+ * timing(1) = Time to write nodal coordinates            5,    6,    7
+ * timing(2) = Time to write connectivity table           8,    9,    10
+ * timing(3) = Time to write solution data (field data)  11,   12,    13
+ * timing(4) = Time to write array data                  14,   15,    16
+ * timing(5) = Time to read nodal coordinates            17,   18,    19
+ * timing(6) = Time to read connectivity table,          20,   21,    22
+ * timing(7) = Time to read solution data (field data)   23,   24,    25
+ * timing(8) = Time to read array data                   26,   27,    28
+ * timing(9) = Time for cgp_open, CG_MODE_WRITE          29,   30,    31
+ * timing(10) = Time for cgp_open, CG_MODE_READ          32,   33,    34
+ * timing(11) = Time for cg_close, WRITE                 35,   36,    37
+ * timing(12) = Time for cg_close, READ                  38,   39,    40
+ * timing(13) = Time for cg_base_write, cg_zone_write    41,   42,    43
+ * timing(14) = Time for cg_read base, cg_zone_read      44,   45,    46
  */
 double xtiming[15], timing[15], timingMin[15], timingMax[15];
 
@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cg_zone_write \n");
     cgp_error_exit();
   t2 = MPI_Wtime();
-  xtiming[10] = t2-t1;
+  xtiming[13] = t2-t1;
 
   }
 
@@ -476,7 +476,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   };
   t2 = MPI_Wtime();
-  xtiming[13] = t2-t1;
+  xtiming[11] = t2-t1;
 
   /* ====================================== */
   /* ==    **  READ THE CGNS FILE **     == */
@@ -490,7 +490,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
   t2 = MPI_Wtime();
-  xtiming[11] = t2-t1;
+  xtiming[10] = t2-t1;
 
   /* Read the base information */
   t1 = MPI_Wtime();
@@ -515,7 +515,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
   t2 = MPI_Wtime();
-  xtiming[12] = t2-t1;
+  xtiming[14] = t2-t1;
 
   /* Check the read zone information is correct */
   if(sizes[0] != Nnodes) {
@@ -764,7 +764,7 @@ int main(int argc, char* argv[]) {
      cgp_error_exit();
   }
   t2 = MPI_Wtime();
-  xtiming[14] = t2-t1;
+  xtiming[12] = t2-t1;
 
   xtiming[0] = t2-t0;
 
@@ -781,7 +781,7 @@ int main(int argc, char* argv[]) {
       fprintf(fid,"#nprocs, total time, write: coord., elem., field, array, read: coord., elem., field, array, MB: coord, elem, field, array \n%d", comm_size);
 
       for ( k = 0; k < 15; k++) {
-	fprintf(fid," %20f %20f %20f ",timing[k]/((double) comm_size), timingMin[k], timingMax[k]);
+	fprintf(fid," %.3f %.3f %.3f ",timing[k]/((double) comm_size), timingMin[k], timingMax[k]);
       }
       fprintf(fid," %zu %zu %zu %zu \n", Mb_coor, Mb_elem, Mb_field, Mb_array);
       fclose(fid);
