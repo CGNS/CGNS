@@ -901,6 +901,35 @@ EOF
   if test -f test.c; then
      rm test.c
   fi
+
+  # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
+  ## --------------------------------------------------------------------
+
+  AC_LANG_C
+  HDF5_HAVE_COLL_METADATA=0
+  AC_MSG_CHECKING([if HDF5 library has collective metadata APIs])
+
+  cat >> test.c << EOF
+#include "hdf5.h"
+void main(void)
+{
+  hid_t foo;
+  H5Pset_coll_metadata_write(foo, 1);
+  H5Pset_all_coll_metadata_ops(foo, 1);
+  return;
+}
+EOF
+  msg=`${CC} -c test.c ${HDF5DEF} &> /dev/null`
+  if test -f test.o; then
+    HDF5_HAVE_COLL_METADATA=1
+    AC_MSG_RESULT(yes)
+    rm test.o
+  else
+    AC_MSG_RESULT(no)
+  fi
+  if test -f test.c; then
+     rm test.c
+  fi
 fi
 
 #---------------------------------------------------------------------------
@@ -1684,6 +1713,7 @@ AC_SUBST(HAVE_FORTRAN_2003)
 AC_SUBST(HAVE_FORTRAN_2008TS)
 AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
+AC_SUBST(HDF5_HAVE_COLL_METADATA)
 AC_SUBST(FC_D_PRE)
 AC_SUBST(BUILDPARALLEL)
 AC_SUBST(BUILDBASESCOPE)

@@ -693,6 +693,7 @@ CGNSTOOLS
 BUILDBASESCOPE
 BUILDPARALLEL
 FC_D_PRE
+HDF5_HAVE_COLL_METADATA
 HDF5_HAVE_MULTI_DATASETS
 FORTRAN_DEFAULT_INTEGER_C_INT64_T
 HAVE_FORTRAN_2008TS
@@ -5709,6 +5710,43 @@ $as_echo "no" >&6; }
   if test -f test.c; then
      rm test.c
   fi
+
+  # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
+  ## --------------------------------------------------------------------
+
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+  HDF5_HAVE_COLL_METADATA=0
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if HDF5 library has collective metadata APIs" >&5
+$as_echo_n "checking if HDF5 library has collective metadata APIs... " >&6; }
+
+  cat >> test.c << EOF
+#include "hdf5.h"
+void main(void)
+{
+  hid_t foo;
+  H5Pset_coll_metadata_write(foo, 1);
+  H5Pset_all_coll_metadata_ops(foo, 1);
+  return;
+}
+EOF
+  msg=`${CC} -c test.c ${HDF5DEF} &> /dev/null`
+  if test -f test.o; then
+    HDF5_HAVE_COLL_METADATA=1
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    rm test.o
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  fi
+  if test -f test.c; then
+     rm test.c
+  fi
 fi
 
 #---------------------------------------------------------------------------
@@ -7165,6 +7203,7 @@ else
 $as_echo "no" >&6; }
   SET_MAKE="MAKE=${MAKE-make}"
 fi
+
 
 
 

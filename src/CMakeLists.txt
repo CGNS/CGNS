@@ -103,6 +103,7 @@ set(HAVE_FORTRAN_2003 0)
 set(HAVE_FORTRAN_2008 0)
 set(HAVE_FORTRAN_2008TS 0)
 set(HDF5_HAVE_MULTI_DATASETS 0)
+set(HDF5_HAVE_COLL_METADATA 0)
 set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 
 if (BUILDFORTRAN)
@@ -399,6 +400,27 @@ CHECK_HDF5_FEATURE(Multi_Dataset
  if (CHECK_HDF5_HAVE_MULTI_DATASETS)
    set(HDF5_HAVE_MULTI_DATASETS 1)
  endif (CHECK_HDF5_HAVE_MULTI_DATASETS)
+
+  # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
+  # --------------------------------------------------------------------
+
+CHECK_HDF5_FEATURE(Collective_metadata
+  " 
+ #include \"hdf5.h\"
+ void main(void)
+ {
+   hid_t foo;
+   H5Pset_coll_metadata_write(foo, 1);
+   H5Pset_all_coll_metadata_ops(foo, 1);
+   return;
+ }
+  "
+   HDF5_HAVE_COLL_METADATA
+ )
+ if (CHECK_HDF5_HAVE_COLL_METADATA)
+   set(HDF5_HAVE_COLL_METADATA 1)
+ endif (CHECK_HDF5_HAVE_COLL_METADATA)
+
 
 endif (CGNS_ENABLE_HDF5)
 
