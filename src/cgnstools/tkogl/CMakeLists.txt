@@ -2,7 +2,7 @@
 # tkogl #
 #########
 
-include_directories(${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH})
+include_directories(${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH} ${OPENGL_INCLUDE_DIR})
 
 set(tkogl_FILES 
 	tkogl.c
