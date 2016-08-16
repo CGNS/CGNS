@@ -1744,7 +1744,7 @@ void write_solution_field (int nz, int ns, int nf)
         if (f->exptype == CGNS_ENUMV(RealSingle)) {
             float exp[5];
             for (n = 0; n < 5; n++)
-                exp[n] = (float)f->dataconv[n];
+                exp[n] = (float)f->exponent[n];
             if (cg_goto (cgnsfn, cgnsbase, "Zone_t", z->id,
                 "FlowSolution_t", s->id, "DataArray_t", f->id, "end") ||
                 cg_exponents_write (CGNS_ENUMV(RealSingle), exp))
