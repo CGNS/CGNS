@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cg_base_write \n");
     cgp_error_exit();
   }
-  if(cg_zone_write(fn, B, "Zone 1", nijk, Unstructured, &Z) != CG_OK) {
+  if(cg_zone_write(fn, B, "Zone 1", nijk, CGNS_ENUMV(Unstructured), &Z) != CG_OK) {
     printf("*FAILED* cg_zone_write \n");
     cgp_error_exit();
   t2 = MPI_Wtime();
@@ -278,7 +278,7 @@ int main(int argc, char* argv[]) {
   start = 1;
   end = nijk[1];
 
-  if(cgp_section_write(fn,B,Z,"Elements",PENTA_6,start,end,0,&S) != CG_OK) {
+  if(cgp_section_write(fn,B,Z,"Elements",CGNS_ENUMV(PENTA_6),start,end,0,&S) != CG_OK) {
     printf("*FAILED* cgp_section_write \n");
     cgp_error_exit();
   }
@@ -337,7 +337,7 @@ int main(int argc, char* argv[]) {
      Data_Fz[k] = comm_rank*count+k + 1.03;
   }
 
-  if(cg_sol_write(fn, B, Z, "Solution", Vertex, &S) != CG_OK) {
+  if(cg_sol_write(fn, B, Z, "Solution", CGNS_ENUMV(Vertex), &S) != CG_OK) {
     printf("*FAILED* cg_sol_write \n");
     cgp_error_exit();
   }
