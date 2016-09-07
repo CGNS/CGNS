@@ -3672,7 +3672,7 @@ static void check_1to1 (int nzc, int nc)
             if (dp < 0) dp = -dp;
             np *= (dp + 1);
         }
-        for (n = 0; n < z->idim; n++) {
+        for (n = 0; n < dz->idim; n++) {
             dp = drange[n+dz->idim] - drange[n];
             if (dp < 0) dp = -dp;
             dnp *= (dp + 1);
