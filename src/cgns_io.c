@@ -170,7 +170,7 @@ static int recurse_nodes (int input, double InputID,
             }
             link_name = link_file + file_len + 1;
             if (cgio_get_link(input, childID, link_file, link_name)) {
-                free (link_name);
+                free (link_file);
                 return CG_ERROR;
             }
             link_file[file_len] = 0;
