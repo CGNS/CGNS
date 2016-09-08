@@ -131,7 +131,7 @@ int c_double_eq(double a, double b) {
 
   double eps = 1.e-8;
 
-  if(fabs(a-b) < eps) {
+  if(a-b < eps) {
     return true;
   }
   return false;
