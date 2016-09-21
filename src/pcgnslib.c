@@ -108,6 +108,11 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
 	dims[k] = rmax[ndims-k-1] - start[k];
       }
   }
+  else { /* no data to read or write, but must still call H5Screate_simple */
+      for (k = 0; k < ndims; k++) {
+        dims[k] = 0;
+      }
+  }
 
   /* Create a shape for the data in memory */
   mem_shape_id = H5Screate_simple(ndims, dims, NULL);
