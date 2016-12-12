@@ -1424,6 +1424,7 @@ void ADFH_Configure(const int option, const void *value, int *err)
       }
       else {
         ParallelMPICommunicator = (MPI_Comm)value;
+	set_error(NO_ERROR, err);
       }
     }
 #endif
