@@ -7,9 +7,9 @@ set -e
 #cd CGNS/src
 cd src
 if [ $TRAVIS_OS_NAME = "osx" ]; then
-  export FC=gfortran-5
-  export F77=gfortran-5
-  export CC=gcc-5
+  export FC=gfortran
+  export F77=gfortran
+  export CC=gcc-6
 else
   export FC=gfortran
   export F77=gfortran
