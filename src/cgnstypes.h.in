@@ -57,6 +57,10 @@
 
 #define HDF5_HAVE_MULTI_DATASETS @HDF5_HAVE_MULTI_DATASETS@
 
+/* Determine if hdf5 has collective metadata APIs  */
+
+#define HDF5_HAVE_COLL_METADATA @HDF5_HAVE_COLL_METADATA@
+
 #endif
 
 #if CG_BUILD_LEGACY

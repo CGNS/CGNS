@@ -59,6 +59,7 @@ add_dependencies(plot3d_to_cgns cgns_static calclib)
 set(cgns_to_plot3d_FILES 
 	cgns_to_plot3d.c
 	cgnsutil.c
+	binaryio.c
 	../common/getargs.c
 	p3dfout.c)
 

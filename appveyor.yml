@@ -39,7 +39,7 @@ init:
 clone_folder: c:\projects\CGNS
 
 environment:
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.8.16/cmake"
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.8.18/cmake"
 
 # scripts that run after cloning repository
 install:
@@ -53,10 +53,10 @@ install:
 
 # install hdf5
   - mkdir hdf5lib
-  - curl -O http://www.hdfgroup.org/ftp/HDF5/current/bin/windows/hdf5-1.8.16-win64-vs2013-shared.zip
-  - unzip hdf5-1.8.16-win64-vs2013-shared.zip
+  - curl -O http://support.hdfgroup.org/ftp/HDF5/current18/bin/windows/hdf5-1.8.18-win64-vs2013-shared.zip
+  - unzip hdf5-1.8.18-win64-vs2013-shared.zip
   - cd hdf5
-  - msiexec /i HDF5-1.8.16-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-1.8.18-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..
 
@@ -82,7 +82,7 @@ before_build:
   - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
   - cmake --version
-  - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/1.8.16/cmake
+  - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/1.8.18/cmake
   - cmake -G "Visual Studio 12 2013 Win64" ^
      -D CMAKE_C_FLAGS:STRING="" ^
      -D CMAKE_BUILD_TYPE:STRING=Release ^
@@ -92,7 +92,7 @@ before_build:
      -D HDF5_NEED_ZLIB:BOOL=ON ^
      -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
      -D CGNS_ENABLE_HDF5:BOOL=ON ^
-     -D HDF5_ROOT="/Program Files/HDF_Group/HDF5/1.8.16/" ^
+     -D HDF5_ROOT="/Program Files/HDF_Group/HDF5/1.8.18/" ^
      -D CGNS_ENABLE_TESTS:BOOL=ON ^
      -D CGNS_ENABLE_LFS:BOOL=OFF ^
      -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF ^

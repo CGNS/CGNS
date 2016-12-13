@@ -19,6 +19,7 @@ before_install:
          sudo apt-get update -qq;
          sudo apt-get install -qq gfortran;
       fi
+    - sudo rvm get stable --auto-dotfiles
     - ./bin/install-hdf.sh
 
 before_script:

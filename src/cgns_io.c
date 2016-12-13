@@ -170,7 +170,7 @@ static int recurse_nodes (int input, double InputID,
             }
             link_name = link_file + file_len + 1;
             if (cgio_get_link(input, childID, link_file, link_name)) {
-                free (link_name);
+                free (link_file);
                 return CG_ERROR;
             }
             link_file[file_len] = 0;
@@ -563,7 +563,7 @@ int cgio_check_file (const char *filename, int *file_type)
     static char *HDF5sig = "\211HDF\r\n\032\n";
     struct stat st;
 
-    int mpibuf[2], err;
+    int mpibuf[2], err = CGIO_ERR_NONE;
 
     if (ACCESS (filename, 0) || stat (filename, &st) ||
         S_IFREG != (st.st_mode & S_IFREG)) {
@@ -585,6 +585,7 @@ int cgio_check_file (const char *filename, int *file_type)
 	} else {
 	  err = set_error(CGIO_ERR_FILE_OPEN);
 	}
+	return err;
       }
     fread (buf, 1, sizeof(buf), fp);
     buf[sizeof(buf)-1] = 0;

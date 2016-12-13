@@ -108,6 +108,11 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
 	dims[k] = rmax[ndims-k-1] - start[k];
       }
   }
+  else { /* no data to read or write, but must still call H5Screate_simple */
+      for (k = 0; k < ndims; k++) {
+        dims[k] = 0;
+      }
+  }
 
   /* Create a shape for the data in memory */
   mem_shape_id = H5Screate_simple(ndims, dims, NULL);
@@ -430,11 +435,13 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     section = cgi_get_section(cg, B, Z, S);
     if (section == 0 || section->connect == 0) return CG_ERROR;
 
-    if (start > end ||
-        start < section->range[0] ||
-        end > section->range[1]) {
-	cgi_error("Error in requested element data range.");
-        return CG_ERROR;
+    if (elements) {
+    	if (start > end ||
+            start < section->range[0] ||
+            end > section->range[1]) {
+	    cgi_error("Error in requested element data range.");
+            return CG_ERROR;
+        }    
     }
     if (!IS_FIXED_SIZE(section->el_type)) {
         cgi_error("element must be a fixed size for parallel IO");
@@ -475,11 +482,13 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     section = cgi_get_section(cg, B, Z, S);
     if (section == 0 || section->connect == 0) return CG_ERROR;
 
-    if (start > end ||
-        start < section->range[0] ||
-        end > section->range[1]) {
-	cgi_error("Error in requested element data range.");
-        return CG_ERROR;
+    if (elements) { /* A processor may have nothing to read */
+    	if (start > end ||
+            start < section->range[0] ||
+            end > section->range[1]) {
+	   cgi_error("Error in requested element data range.");
+           return CG_ERROR;
+        }
     }
     if (!IS_FIXED_SIZE(section->el_type)) {
         cgi_error("element must be a fixed size for parallel IO");

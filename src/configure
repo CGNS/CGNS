@@ -693,6 +693,7 @@ CGNSTOOLS
 BUILDBASESCOPE
 BUILDPARALLEL
 FC_D_PRE
+HDF5_HAVE_COLL_METADATA
 HDF5_HAVE_MULTI_DATASETS
 FORTRAN_DEFAULT_INTEGER_C_INT64_T
 HAVE_FORTRAN_2008TS
@@ -705,7 +706,6 @@ BUILDLEGACY
 BUILDDEBUG
 SET_MAKE
 XMKMF
-MPICC
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
@@ -782,7 +782,6 @@ with_hdf5
 with_fnord
 with_zlib
 with_szip
-with_mpi
 enable_parallel
 enable_lfs
 enable_cgnstools
@@ -1446,7 +1445,6 @@ Optional Packages:
   --with-zlib=DIR         Use zlib library for external deflate I/O filter
                           [default=no]
   --with-szip=LIB       use szip with HDF5 default=no
-  --with-mpi=DIR/mpicc  use MPI with HDF5 default=no
   --with-x                use the X Window System
   --with-tcl=TCLdir       directory containing Tcl distribution
   --with-tk=TKdir         directory containing TK distribution
@@ -5712,6 +5710,43 @@ $as_echo "no" >&6; }
   if test -f test.c; then
      rm test.c
   fi
+
+  # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
+  ## --------------------------------------------------------------------
+
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+  HDF5_HAVE_COLL_METADATA=0
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if HDF5 library has collective metadata APIs" >&5
+$as_echo_n "checking if HDF5 library has collective metadata APIs... " >&6; }
+
+  cat >> test.c << EOF
+#include "hdf5.h"
+void main(void)
+{
+  hid_t foo;
+  H5Pset_coll_metadata_write(foo, 1);
+  H5Pset_all_coll_metadata_ops(foo, 1);
+  return;
+}
+EOF
+  msg=`${CC} -c test.c ${HDF5DEF} &> /dev/null`
+  if test -f test.o; then
+    HDF5_HAVE_COLL_METADATA=1
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    rm test.o
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  fi
+  if test -f test.c; then
+     rm test.c
+  fi
 fi
 
 #---------------------------------------------------------------------------
@@ -6091,7 +6126,6 @@ fi
 #---------------------------------------------------------------------------
 # does HDF5 require MPI ?
 #---------------------------------------------------------------------------
-
 withmpi=no
 
 H5NEEDMPI=0
@@ -6102,130 +6136,82 @@ MPILIBS=""
 MPICC=""
 MPIEXEC=""
 
-if test "$withhdf5" = "yes"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using MPI" >&5
-$as_echo_n "checking if using MPI... " >&6; }
+#if test "$withhdf5" = "yes"; then
+#  AC_MSG_CHECKING([if using MPI])
+#  AC_ARG_WITH(mpi,
+#    [  --with-mpi[=DIR/mpicc]  use MPI with HDF5 [default=no]],
+#    withmpi=$withval,withmpi="no")
+#  if test "x$withmpi" = "xno"; then
+#    AC_MSG_RESULT(no)
+#  else
+#    H5NEEDMPI=1
+#    if test -z "$withmpi" || test "$withmpi" = "yes"; then
+#      AC_MSG_RESULT(yes)
+#      AC_PATH_PROG(MPICC, mpicc,)
+#      if test "x$MPICC" = "x"; then
+#        AC_MSG_CHECKING([for local mpicc executable])
+#        for d in \
+#          `ls -dr * 2>/dev/null` \
+#          `ls -dr ../* 2>/dev/null` \
+#          `ls -dr ../../* 2>/dev/null` \
+#          `ls -dr ../../../* 2>/dev/null` ; do
+#          if test -x "$d/mpicc"; then
+#            MPICC=`(cd $d; pwd)`/mpicc
+#            break
+#          fi
+#          if test -x "$d/bin/mpicc"; then
+#            MPICC=`(cd $d; pwd)`/bin/mpicc
+#            break
+#          fi
+#        done
+#      fi
+#    else
+#      mpidir=$withmpi
+#      test ! -d $withmpi && mpidir=`dirname $withmpi`
+#      if test -x "$mpidir/mpicc"; then
+#        MPICC=`(cd $mpidir; pwd)`/mpicc
+#      fi
+#      if test -x "$mpidir/bin/mpicc"; then
+#        MPICC=`(cd $mpidir; pwd)`/bin/mpicc
+#      fi
+#    fi
+#
+#    if test "x$MPICC" = "x"; then
+#      AC_MSG_ERROR(mpicc not found)
+#    else
+#      AC_MSG_RESULT($MPICC)
+#      MPIEXEC=`echo $MPICC | sed "s/mpicc/mpiexec/"`
+#      mpibin=`dirname $MPICC`
+#      mpidir=`dirname $mpibin`
+#      if test -d "$mpidir/src/include" ; then
+#        MPIINC=$mpidir/src/include
+#      else
+#        MPIINC=$mpidir/include
+#      fi
+#      MPIOPTS=`grep "^CFLAGS=" $MPICC | sed s/CFLAGS=// | sed s/\"//g`
+#      mpilib=`grep "^MPILIBNAME=" $MPICC | sed s/MPILIBNAME=// | sed s/\"//g`
+#      if test "x$mpilib" = "x"; then
+#        MPILIBS="-L$mpidir/lib"
+#      else
+#        MPILIBS="-L$mpidir/lib -l$mpilib"
+#      fi
+#      plib=`grep "^NEEDSPLIB=" $MPICC | sed s/NEEDSPLIB=// | sed s/\"//g`
+#      if test "x$plib" = "xyes"; then
+#        pmpilib=`grep "^PMPILIBNAME=" $MPICC | sed s/PMPILIBNAME=// | sed s/\"//g`
+#        if test "x$pmpilib" = "x"; then
+#          MPILIBS="$MPILIBS"
+#        else
+#          MPILIBS="$MPILIBS -l$pmpilib"
+#        fi
+#      fi
+#      extralibs=`grep "^LIBS=" $MPICC | sed s/LIBS=// | sed s/\"//g`
+#      MPILIBS="$MPILIBS $extralibs"
+#    fi
+#    MPIDEF=-I$MPIINC
+#    withmpi=yes
+#  fi
+#fi
 
-# Check whether --with-mpi was given.
-if test "${with_mpi+set}" = set; then :
-  withval=$with_mpi; withmpi=$withval
-else
-  withmpi="no"
-fi
-
-  if test "x$withmpi" = "xno"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-  else
-    H5NEEDMPI=1
-    if test -z "$withmpi" || test "$withmpi" = "yes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-      # Extract the first word of "mpicc", so it can be a program name with args.
-set dummy mpicc; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_MPICC+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $MPICC in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_MPICC="$MPICC" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_MPICC="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-MPICC=$ac_cv_path_MPICC
-if test -n "$MPICC"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MPICC" >&5
-$as_echo "$MPICC" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-      if test "x$MPICC" = "x"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for local mpicc executable" >&5
-$as_echo_n "checking for local mpicc executable... " >&6; }
-        for d in \
-          `ls -dr * 2>/dev/null` \
-          `ls -dr ../* 2>/dev/null` \
-          `ls -dr ../../* 2>/dev/null` \
-          `ls -dr ../../../* 2>/dev/null` ; do
-          if test -x "$d/mpicc"; then
-            MPICC=`(cd $d; pwd)`/mpicc
-            break
-          fi
-          if test -x "$d/bin/mpicc"; then
-            MPICC=`(cd $d; pwd)`/bin/mpicc
-            break
-          fi
-        done
-      fi
-    else
-      mpidir=$withmpi
-      test ! -d $withmpi && mpidir=`dirname $withmpi`
-      if test -x "$mpidir/mpicc"; then
-        MPICC=`(cd $mpidir; pwd)`/mpicc
-      fi
-      if test -x "$mpidir/bin/mpicc"; then
-        MPICC=`(cd $mpidir; pwd)`/bin/mpicc
-      fi
-    fi
-
-    if test "x$MPICC" = "x"; then
-      as_fn_error $? "mpicc not found" "$LINENO" 5
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MPICC" >&5
-$as_echo "$MPICC" >&6; }
-      MPIEXEC=`echo $MPICC | sed "s/mpicc/mpiexec/"`
-      mpibin=`dirname $MPICC`
-      mpidir=`dirname $mpibin`
-      if test -d "$mpidir/src/include" ; then
-        MPIINC=$mpidir/src/include
-      else
-        MPIINC=$mpidir/include
-      fi
-      MPIOPTS=`grep "^CFLAGS=" $MPICC | sed s/CFLAGS=// | sed s/\"//g`
-      mpilib=`grep "^MPILIBNAME=" $MPICC | sed s/MPILIBNAME=// | sed s/\"//g`
-      if test "x$mpilib" = "x"; then
-        MPILIBS="-L$mpidir/lib"
-      else
-        MPILIBS="-L$mpidir/lib -l$mpilib"
-      fi
-      plib=`grep "^NEEDSPLIB=" $MPICC | sed s/NEEDSPLIB=// | sed s/\"//g`
-      if test "x$plib" = "xyes"; then
-        pmpilib=`grep "^PMPILIBNAME=" $MPICC | sed s/PMPILIBNAME=// | sed s/\"//g`
-        if test "x$pmpilib" = "x"; then
-          MPILIBS="$MPILIBS"
-        else
-          MPILIBS="$MPILIBS -l$pmpilib"
-        fi
-      fi
-      extralibs=`grep "^LIBS=" $MPICC | sed s/LIBS=// | sed s/\"//g`
-      MPILIBS="$MPILIBS $extralibs"
-    fi
-    MPIDEF=-I$MPIINC
-    withmpi=yes
-  fi
-fi
 
 #-----------------------------------------------------------------------
 # build parallel code ?
@@ -6234,22 +6220,29 @@ fi
 BUILDPARALLEL=0
 parallel=no
 
-if test "$withmpi" = "yes"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if parallel IO support is requested" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if parallel IO support is requested" >&5
 $as_echo_n "checking if parallel IO support is requested... " >&6; }
-  # Check whether --enable-parallel was given.
+# Check whether --enable-parallel was given.
 if test "${enable_parallel+set}" = set; then :
   enableval=$enable_parallel;
 else
   enableval="no"
 fi
 
-  test ! "x$enableval" = "xno" && enableval=yes
+
+if test ! "x$enableval" = "xno" && enableval=yes; then
   BUILDPARALLEL=1
   parallel=$enableval
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $parallel" >&5
-$as_echo "$parallel" >&6; }
+
+  ## Set MPIEXEC to mpiexec if not set yet.
+  if test "X$parallel" = "Xyes" -a -z "$MPIEXEC"; then
+      MPIEXEC="mpiexec"
+  fi
+
+
 fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $parallel" >&5
+$as_echo "$parallel" >&6; }
 
 #--------------------------------------------------------------------------
 # check for libraries
@@ -7210,6 +7203,7 @@ else
 $as_echo "no" >&6; }
   SET_MAKE="MAKE=${MAKE-make}"
 fi
+
 
 
 

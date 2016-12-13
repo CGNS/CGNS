@@ -21,7 +21,7 @@ static char *usgmsg[] = {
     "   -a : write ADF file",
     "   -h : write HDF5 file",
     "   -f : force output if input format is same as output",
-    "   -l : expand links in ouput file",
+    "   -l : expand links in output file",
     NULL
 };
 

@@ -3485,7 +3485,7 @@ CGNSDLL void FMNAME(cg_exponents_write_f,CG_EXPONENTS_WRITE_F) (
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cg_conversion_write_f(
+CGNSDLL void FMNAME(cg_conversion_write_f, CG_CONVERSION_WRITE_F) (
 	CGNS_ENUMT(DataType_t) *DataType, void *ConversionFactors, cgint_f *ier)
 {
     *ier = (cgint_f)cg_conversion_write(*DataType,
