@@ -3,7 +3,7 @@
 #svn co https://svn.hdfgroup.uiuc.edu/hdf5/trunk
 #cd trunk && ./autogen.sh ./configure --disable-fortran --disable-hl CC=gcc && make && make install
 if [ $TRAVIS_OS_NAME = "osx" ]; then
-  export CC=gcc-4.9
+  export CC=gcc-5
 else
   export CC=gcc
 fi
