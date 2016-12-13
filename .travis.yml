@@ -31,8 +31,8 @@ matrix:
        compiler: gcc-4.9
        install: export CC="gcc" export FC="gfortran" export F77="gfortran"
      - os: osx
-       compiler: gcc-6
-       install: export CC="gcc-6" export FC="gfortran-6" export F77="gfortran-6"
+       compiler: /usr/local/Cellar/gcc6/6.2.0/bin/gcc-6
+       install: export CC="/usr/local/Cellar/gcc6/6.2.0/bin/gcc-6" export FC="/usr/local/Cellar/gcc6/6.2.0/bin/gfortran-6" export F77="/usr/local/Cellar/gcc6/6.2.0/bin/gfortran-6"
 
 before_script:
     - ./bin/install-hdf.sh
