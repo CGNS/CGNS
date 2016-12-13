@@ -6,11 +6,11 @@ set -e
 #git clone -b develop --single-branch https://github.com/CGNS/CGNS.git
 #cd CGNS/src
 cd src
-if [ $TRAVIS_OS_NAME = "osx" ]; then
+if [ $TRAVIS_OS_NAME = "linux" ]; then
 #  export FC=gfortran
 #  export F77=gfortran
 #  export CC=gcc-6case 
-else
+#else
 #  export FC=gfortran
 #  export F77=gfortran
 #  export CC=gcc

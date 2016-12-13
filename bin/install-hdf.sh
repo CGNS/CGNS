@@ -7,8 +7,6 @@
 #else
 #  export CC=gcc
 #fi
-$(CC) --version
-ls /usr/local/Cellar/gcc/6.2.0/*
 # 1.8 branch
 git clone https://bitbucket.hdfgroup.org/scm/hdffv/hdf5.git --branch hdf5_1_8 --single-branch hdf5_1_8
 cd hdf5_1_8
