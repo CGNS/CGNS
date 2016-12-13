@@ -1,9 +1,10 @@
+osx_image: xcode8.1
 language: C
 sudo: required
 
 os:
-  - linux
   - osx
+#  - linux
 
 # whitelist
 branches:
@@ -18,9 +19,8 @@ before_install:
       if [ "$(uname)" = "Linux" ]; then
          sudo apt-get update -qq;
          sudo apt-get install -qq gfortran;
-      else
-         osx_image: xcode8.1;
       fi
+    - 'if [[ "$TRAVIS_OS_NAME" == "osx"]]; then brew install gcc; CC=gcc-5; FC=gfortran-5; F77=gfortran-5; fi'
     - ./bin/install-hdf.sh
 
 before_script:
