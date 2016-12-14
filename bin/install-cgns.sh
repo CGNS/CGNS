@@ -7,13 +7,6 @@ set -e
 #cd CGNS/src
 cd src
 if [ $TRAVIS_OS_NAME = "linux" ]; then
-#  export FC=gfortran
-#  export F77=gfortran
-#  export CC=gcc-6case 
-#else
-#  export FC=gfortran
-#  export F77=gfortran
-#  export CC=gcc
   export FLIBS="-Wl,--no-as-needed -ldl -lz"
   export LIBS="-Wl,--no-as-needed -ldl -lz"
 fi

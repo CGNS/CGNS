@@ -3,9 +3,6 @@ language: C
 sudo: required
 
 #dist: trusty
-#os:
-#  - osx
-#  - linux
 
 # whitelist
 branches:
@@ -24,6 +21,8 @@ before_install:
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
     - test $(uname) = "Darwin" && brew install gcc6 || true
+
+# Need to set the homebrew path to gcc, 
 
 matrix:
    include:
