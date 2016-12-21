@@ -47,6 +47,7 @@ char hdf5_access[64] = "NATIVE";
 #endif
 #ifdef BUILD_PARALLEL
 #include <mpi.h>
+MPI_Comm pcg_mpi_comm=MPI_COMM_WORLD;
 int pcg_mpi_comm_size;
 int pcg_mpi_comm_rank;
 int pcg_mpi_initialized;
@@ -610,7 +611,7 @@ int cgio_check_file (const char *filename, int *file_type)
     if(pcg_mpi_initialized) {
       mpibuf[0] = err;
       mpibuf[1] = *file_type;
-      MPI_Bcast(mpibuf, 2, MPI_INT, 0, MPI_COMM_WORLD);
+      MPI_Bcast(mpibuf, 2, MPI_INT, 0, pcg_mpi_comm);
       err = mpibuf[0];
       *file_type = mpibuf[1];
     }
