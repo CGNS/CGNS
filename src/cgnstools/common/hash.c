@@ -211,7 +211,7 @@ size_t HashList (HASH hash, size_t (*listentry)(void *entry, void *userdata),
 #define MAXINT  ((size_t) ~ 0)
 #define MAXLEN  128
 
-void HastStats (HASH hash)
+void HashStats (HASH hash)
 {
     HASH_TAB *tabp = (HASH_TAB *)hash;
     BUCKET *p;
