@@ -508,8 +508,7 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
 }
 
 int cgp_parent_data_write(int fn, int B, int Z, int S,
-			  cgsize_t start, cgsize_t end,
-			  const cgsize_t *parent_data)
+    cgsize_t start, cgsize_t end, const cgsize_t *parent_data)
 {
     cgns_section *section;
     cgsize_t *data, i, j, n;
