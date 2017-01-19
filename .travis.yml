@@ -26,10 +26,11 @@ before_install:
 
 matrix:
    include:
-     - os: linux
-       compiler: gcc-4.9
-       install: export CC="gcc" export FC="gfortran" export F77="gfortran"
+#     - os: linux
+#       compiler: gcc-4.9
+#       install: export CC="gcc" export FC="gfortran" export F77="gfortran"
      - os: osx
+       env: CCOMPILER=gcc-6 FCOMPILER=gfortran-6
        compiler: gcc-6
        install: export CC="gcc-6" export FC="gfortran-6" export F77="gfortran-6"
 
@@ -39,6 +40,8 @@ before_script:
 
 script:
     - cd src
+    - ls /usr/local/bin/gcc*
+    - ls /usr/local/Cellar/gcc*
     - make
     - make install
     - cd tests
