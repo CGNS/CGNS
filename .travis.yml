@@ -21,8 +21,8 @@ before_install:
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
     - test $(uname) = "Darwin" && brew install gcc6 || true
-    - find /usr/local/Cellar -iname "gcc-6"
-    - find /usr/local/Cellar -iname "gfortran-6"
+	
+    - test $(uname) = "Darwin" && cd /usr/local/Cellar/gcc-*/*/;ln -sf gcc-* /usr/local/bin/;ln -sf gfortran-* /usr/local/bin/ || true
 
 # Need to set the homebrew path to gcc, 
 
@@ -33,7 +33,7 @@ matrix:
 #       install: export CC="gcc" export FC="gfortran" export F77="gfortran"
      - os: osx
        compiler: gcc-6
-       install: export CC="gcc-6" export FC="gfortran-6" export F77="gfortran-6"
+       install: export CC="/usr/local/bin/gcc-6" export FC="/usr/local/bin/gfortran-6" export F77="/usr/local/bin/gfortran-6"
 
 before_script:
     - ls /usr/local/Cellar/g*
