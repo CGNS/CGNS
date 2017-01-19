@@ -34,11 +34,9 @@ matrix:
 #       install: export CC="gcc" export FC="gfortran" export F77="gfortran"
      - os: osx
        compiler: gcc-6
-       install: export CC="gcc" export FC="gfortran-6" export F77="/usr/local/bin/gfortran-6"
+       install: export CC="gcc" export FC="gfortran-6" export F77="gfortran-6"
 
 before_script:
-    - ls /usr/local/g*
-    - ls /usr/local/bin/g*
     - ./bin/install-hdf.sh
     - ./bin/install-cgns.sh
 
