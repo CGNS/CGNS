@@ -35,13 +35,13 @@ matrix:
        install: export CC="gcc-6" export FC="gfortran-6" export F77="gfortran-6"
 
 before_script:
+    - ls /usr/local/bin/g*
+    - ls /usr/local/Cellar/g*
     - ./bin/install-hdf.sh
     - ./bin/install-cgns.sh
 
 script:
     - cd src
-    - ls /usr/local/bin/gcc*
-    - ls /usr/local/Cellar/gcc*
     - make
     - make install
     - cd tests
