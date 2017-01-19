@@ -21,7 +21,6 @@ before_install:
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
     - test $(uname) = "Darwin" && brew install gcc6 || true
-	
     - test $(uname) = "Darwin" && cd /usr/local/Cellar/gcc-*/*/;ln -sf gcc-* /usr/local/bin/;ln -sf gfortran-* /usr/local/bin/ || true
 
 # Need to set the homebrew path to gcc, 
