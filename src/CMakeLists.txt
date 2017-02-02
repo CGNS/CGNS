@@ -295,6 +295,21 @@ if (CHECK_FORTRAN_95)
 endif (CHECK_FORTRAN_95)
 endif (HAVE_FORTRAN_2003)
 
+CHECK_FORTRAN_FEATURE(FortranConcat
+  "
+# define CONCATENATE(a,b) a##b
+      CONCATENATE(PRO,GRAM) testconcat
+         IMPLICIT NONE
+          integer a
+          a = 10
+      END PROGRAM testconcat
+  "
+  CHECK_FORTRAN_CONCAT
+)
+if (NOT CHECK_FORTRAN_CONCAT)
+ SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DNO_CONCATENATION")
+endif (NOT CHECK_FORTRAN_CONCAT)
+
 endif (BUILDFORTRAN)
 
 macro(native_paths INPUT_PATH_VARIABLE RESULT_VARIABLE)
