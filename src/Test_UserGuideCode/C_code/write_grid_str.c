@@ -19,10 +19,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -85,13 +81,13 @@ int main()
    isize[2][1]=0;
    isize[2][2]=0;
 /* create zone */
-   cg_zone_write(index_file,index_base,zonename,*isize,Structured,&index_zone);
+   cg_zone_write(index_file,index_base,zonename,*isize,CGNS_ENUMV(Structured),&index_zone);
 /* write grid coordinates (user must use SIDS-standard names here) */
-   cg_coord_write(index_file,index_base,index_zone,RealDouble,"CoordinateX",
+   cg_coord_write(index_file,index_base,index_zone,CGNS_ENUMV(RealDouble),"CoordinateX",
        x,&index_coord);
-   cg_coord_write(index_file,index_base,index_zone,RealDouble,"CoordinateY",
+   cg_coord_write(index_file,index_base,index_zone,CGNS_ENUMV(RealDouble),"CoordinateY",
        y,&index_coord);
-   cg_coord_write(index_file,index_base,index_zone,RealDouble,"CoordinateZ",
+   cg_coord_write(index_file,index_base,index_zone,CGNS_ENUMV(RealDouble),"CoordinateZ",
        z,&index_coord);
 /* close CGNS file */
    cg_close(index_file);

@@ -23,10 +23,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -43,7 +39,7 @@ int main()
     cgsize_t isize[3][3],irmin[3],irmax[3];
     int index_file,index_base,index_zone,index_flow;
     char zonename[33],solname[33];
-    GridLocation_t loc;
+    CGNS_ENUMT(GridLocation_t) loc;
 
 /* READ FLOW SOLUTION FROM CGNS FILE */
 /* open CGNS file for read-only */
@@ -64,7 +60,7 @@ int main()
 /* checking GridLocation first (real working code would check */
 /* to make sure there are no Rind cells also!): */
     cg_sol_info(index_file,index_base,index_zone,index_flow,solname,&loc);
-    if (loc != Vertex)
+    if (loc != CGNS_ENUMV(Vertex))
     {
       printf("\nError, GridLocation must be Vertex! Currently: %s\n",
           GridLocationName[loc]);
@@ -75,9 +71,9 @@ int main()
     irmax[2]=isize[0][2];
 /* read flow solution */
     cg_field_read(index_file,index_base,index_zone,index_flow,"Density",
-                  RealSingle,irmin,irmax,r[0][0]);
+                  CGNS_ENUMV(RealSingle),irmin,irmax,r[0][0]);
     cg_field_read(index_file,index_base,index_zone,index_flow,"Pressure",
-                  RealSingle,irmin,irmax,p[0][0]);
+                  CGNS_ENUMV(RealSingle),irmin,irmax,p[0][0]);
 /* close CGNS file */
     cg_close(index_file);
     printf("\nSuccessfully read flow solution from file grid_c.cgns\n");

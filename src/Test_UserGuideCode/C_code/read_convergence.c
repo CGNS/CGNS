@@ -21,10 +21,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 #define ntt 20
@@ -34,7 +30,7 @@ int main()
     float cl[ntt];
     int index_file,index_base,narrays,index_array,ndim;
     char arrayname[33];
-    DataType_t itype;
+    CGNS_ENUMT(DataType_t) itype;
     cgsize_t idim;
 
 /* READ CONVERGENCE HISTORY INFORMATION FROM EXISTING CGNS FILE */
@@ -68,7 +64,7 @@ int main()
       return 1;
     }
 /* read lift coefficient array */
-    cg_array_read_as(index_array,RealSingle,cl);
+    cg_array_read_as(index_array,CGNS_ENUMV(RealSingle),cl);
 /* close CGNS file */
     cg_close(index_file);
     printf("\nSuccessfully read cl history from file grid_c.cgns\n");

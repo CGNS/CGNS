@@ -20,10 +20,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -69,11 +65,11 @@ int main()
       irmax[2]=isize[0][2];
 /* read grid coordinates */
       cg_coord_read(index_file,index_base,index_zone,"CoordinateX", \
-                    RealSingle,irmin,irmax,x[0][0]);
+                    CGNS_ENUMV(RealSingle),irmin,irmax,x[0][0]);
       cg_coord_read(index_file,index_base,index_zone,"CoordinateY", \
-                    RealSingle,irmin,irmax,y[0][0]);
+                    CGNS_ENUMV(RealSingle),irmin,irmax,y[0][0]);
       cg_coord_read(index_file,index_base,index_zone,"CoordinateZ", \
-                    RealSingle,irmin,irmax,z[0][0]);
+                    CGNS_ENUMV(RealSingle),irmin,irmax,z[0][0]);
 /* store grid coordinates in xsav,ysav,zsav array: */
       for (i=0; i < isize[0][0]; i++)
       {

@@ -19,10 +19,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 #define maxelemi 20*16*8
@@ -77,13 +73,13 @@ int main()
 /* boundary vertex size (zero if elements not sorted) */
     isize[2][0]=0;
 /* create zone */
-    cg_zone_write(index_file,index_base,zonename,isize[0],Unstructured,&index_zone);
+    cg_zone_write(index_file,index_base,zonename,isize[0],CGNS_ENUMV(Unstructured),&index_zone);
 /* write grid coordinates (user must use SIDS-standard names here) */
-    cg_coord_write(index_file,index_base,index_zone,RealDouble,"CoordinateX",
+    cg_coord_write(index_file,index_base,index_zone,CGNS_ENUMV(RealDouble),"CoordinateX",
         x,&index_coord);
-    cg_coord_write(index_file,index_base,index_zone,RealDouble,"CoordinateY",
+    cg_coord_write(index_file,index_base,index_zone,CGNS_ENUMV(RealDouble),"CoordinateY",
         y,&index_coord);
-    cg_coord_write(index_file,index_base,index_zone,RealDouble,"CoordinateZ",
+    cg_coord_write(index_file,index_base,index_zone,CGNS_ENUMV(RealDouble),"CoordinateZ",
         z,&index_coord);
 /* set element connectivity: */
 /* ---------------------------------------------------------- */
@@ -125,8 +121,8 @@ relationships:
     }
 /* unsorted boundary elements */
     nbdyelem=0;
-/* write HEXA_8 element connectivity (user can give any name) */
-    cg_section_write(index_file,index_base,index_zone,"Elem",HEXA_8,nelem_start,
+/* write CGNS_ENUMV(HEXA_8) element connectivity (user can give any name) */
+    cg_section_write(index_file,index_base,index_zone,"Elem",CGNS_ENUMV(HEXA_8),nelem_start,
                      nelem_end,nbdyelem,ielem[0],&index_section);
 /* ---------------------------------------------------------- */
 /*
@@ -160,7 +156,7 @@ maintain SIDS-standard ordering
       return 1;
     }
 /* write QUAD element connectivity for inflow face (user can give any name) */
-    cg_section_write(index_file,index_base,index_zone,"InflowElem",QUAD_4,nelem_start,
+    cg_section_write(index_file,index_base,index_zone,"InflowElem",CGNS_ENUMV(QUAD_4),nelem_start,
                      nelem_end,nbdyelem,jelem[0],&index_section);
 /* OUTFLOW: */
     ielem_no=0;
@@ -187,7 +183,7 @@ maintain SIDS-standard ordering
       return 1;
     }
 /* write QUAD element connectivity for outflow face (user can give any name) */
-    cg_section_write(index_file,index_base,index_zone,"OutflowElem",QUAD_4,nelem_start,
+    cg_section_write(index_file,index_base,index_zone,"OutflowElem",CGNS_ENUMV(QUAD_4),nelem_start,
                      nelem_end,nbdyelem,jelem[0],&index_section);
 /* SIDEWALLS: */
     ielem_no=0;
@@ -253,7 +249,7 @@ maintain SIDS-standard ordering
       return 1;
     }
 /* write QUAD element connectivity for sidewall face (user can give any name) */
-    cg_section_write(index_file,index_base,index_zone,"SidewallElem",QUAD_4,nelem_start,
+    cg_section_write(index_file,index_base,index_zone,"SidewallElem",CGNS_ENUMV(QUAD_4),nelem_start,
                      nelem_end,nbdyelem,jelem[0],&index_section);
 /* ---------------------------------------------------------- */
 /* close CGNS file */

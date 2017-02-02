@@ -24,10 +24,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 #define maxcount 400
@@ -142,9 +138,9 @@ int main()
       }
 /* write integer connectivity info (user can give any name) */
       icounts=icount;
-      cg_conn_write(index_file,index_base,iz,"GenInterface",Vertex,Abutting1to1,
-          PointList,icounts,ipnts[0],donorname,Structured,
-          PointListDonor,Integer,icounts,ipntsdonor[0],&index_conn);
+      cg_conn_write(index_file,index_base,iz,"GenInterface",CGNS_ENUMV(Vertex),CGNS_ENUMV(Abutting1to1),
+          CGNS_ENUMV(PointList),icounts,ipnts[0],donorname,CGNS_ENUMV(Structured),
+          CGNS_ENUMV(PointListDonor),CGNS_ENUMV(Integer),icounts,ipntsdonor[0],&index_conn);
     }
 /* close CGNS file */
     cg_close(index_file);

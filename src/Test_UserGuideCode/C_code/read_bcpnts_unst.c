@@ -25,10 +25,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 #define maxpnts 960
@@ -39,10 +35,10 @@ int main()
     int normalindex[3],ndataset;
     int i,normallist;
     char boconame[33];
-    BCType_t ibocotype;
-    PointSetType_t iptset;
-    DataType_t normaldatatype;
-    GridLocation_t igr;
+    CGNS_ENUMT(BCType_t) ibocotype;
+    CGNS_ENUMT(PointSetType_t) iptset;
+    CGNS_ENUMT(DataType_t) normaldatatype;
+    CGNS_ENUMT(GridLocation_t) igr;
     cgsize_t npts,normallistflag;
     cgsize_t ipnts[maxpnts];
 
@@ -61,14 +57,14 @@ int main()
 /* find out what BC grid location is (expecting FaceCenter) */
       cg_goto(index_file,index_base,"Zone_t",1,"ZoneBC_t",1,"BC_t",ib,"end");
       cg_gridlocation_read(&igr);
-      if (igr == FaceCenter)
+      if (igr == CGNS_ENUMV(FaceCenter))
       {
         printf("\nGridLocation=FaceCenter means BC data refers to elements, not nodes\n");
       }
 /* get BC info */
       cg_boco_info(index_file,index_base,index_zone,ib,boconame,&ibocotype,
                    &iptset,&npts,normalindex,&normallistflag,&normaldatatype,&ndataset);
-      if (iptset != PointList)
+      if (iptset != CGNS_ENUMV(PointList))
       {
         printf("\nError.  For this program, BCs must be set up as PointList type %s\n",
             PointSetTypeName[iptset]);

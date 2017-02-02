@@ -24,10 +24,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -36,7 +32,7 @@ int main()
     double p0,c0,vm0,xlength0,vx,vy,vz;
     double gamma;
     int index_file,index_base;
-    DataClass_t idata;
+    CGNS_ENUMT(DataClass_t) idata;
     cgsize_t nuse;
 
     printf("\nProgram write_nondimensional\n");
@@ -73,50 +69,50 @@ int main()
       printf("  Re-make CGNS file without it and related info, then try again\n");
       return 1;
     }
-    cg_dataclass_write(NormalizedByUnknownDimensional);
+    cg_dataclass_write(CGNS_ENUMV(NormalizedByUnknownDimensional));
 /* put ReferenceState under Base */
     cg_state_write("ReferenceQuantities");
 /* Go to ReferenceState node, write Mach array and its dataclass */
     cg_goto(index_file,index_base,"ReferenceState_t",1,"end");
-    cg_array_write("Mach",RealDouble,1,&nuse,&xmach);
+    cg_array_write("Mach",CGNS_ENUMV(RealDouble),1,&nuse,&xmach);
     cg_goto(index_file,index_base,"ReferenceState_t",1,"DataArray_t",1,"end");
-    cg_dataclass_write(NondimensionalParameter);
+    cg_dataclass_write(CGNS_ENUMV(NondimensionalParameter));
 /* Go to ReferenceState node, write Reynolds array and its dataclass */
     cg_goto(index_file,index_base,"ReferenceState_t",1,"end");
-    cg_array_write("Reynolds",RealDouble,1,&nuse,&reue);
+    cg_array_write("Reynolds",CGNS_ENUMV(RealDouble),1,&nuse,&reue);
     cg_goto(index_file,index_base,"ReferenceState_t",1,"DataArray_t",2,"end");
-    cg_dataclass_write(NondimensionalParameter);
+    cg_dataclass_write(CGNS_ENUMV(NondimensionalParameter));
 /* Go to ReferenceState node to write reference quantities: */
     cg_goto(index_file,index_base,"ReferenceState_t",1,"end");
 /* First, write reference quantities that make up Mach and Reynolds: */
 /* Mach_Velocity */
-    cg_array_write("Mach_Velocity",RealDouble,1,&nuse,&xmv);
+    cg_array_write("Mach_Velocity",CGNS_ENUMV(RealDouble),1,&nuse,&xmv);
 /* Mach_VelocitySound */
-    cg_array_write("Mach_VelocitySound",RealDouble,1,&nuse,&xmc);
+    cg_array_write("Mach_VelocitySound",CGNS_ENUMV(RealDouble),1,&nuse,&xmc);
 /* Reynolds_Velocity */
-    cg_array_write("Reynolds_Velocity",RealDouble,1,&nuse,&rev);
+    cg_array_write("Reynolds_Velocity",CGNS_ENUMV(RealDouble),1,&nuse,&rev);
 /* Reynolds_Length */
-    cg_array_write("Reynolds_Length",RealDouble,1,&nuse,&rel);
+    cg_array_write("Reynolds_Length",CGNS_ENUMV(RealDouble),1,&nuse,&rel);
 /* Reynolds_ViscosityKinematic */
-    cg_array_write("Reynolds_ViscosityKinematic",RealDouble,1,&nuse,&renu);
+    cg_array_write("Reynolds_ViscosityKinematic",CGNS_ENUMV(RealDouble),1,&nuse,&renu);
 
 /* Next, write flow field reference quantities: */
 /* Density */
-    cg_array_write("Density",RealDouble,1,&nuse,&rho0);
+    cg_array_write("Density",CGNS_ENUMV(RealDouble),1,&nuse,&rho0);
 /* Pressure */
-    cg_array_write("Pressure",RealDouble,1,&nuse,&p0);
+    cg_array_write("Pressure",CGNS_ENUMV(RealDouble),1,&nuse,&p0);
 /* VelocitySound */
-    cg_array_write("VelocitySound",RealDouble,1,&nuse,&c0);
+    cg_array_write("VelocitySound",CGNS_ENUMV(RealDouble),1,&nuse,&c0);
 /* ViscosityMolecular */
-    cg_array_write("ViscosityMolecular",RealDouble,1,&nuse,&vm0);
+    cg_array_write("ViscosityMolecular",CGNS_ENUMV(RealDouble),1,&nuse,&vm0);
 /* LengthReference */
-    cg_array_write("LengthReference",RealDouble,1,&nuse,&xlength0);
+    cg_array_write("LengthReference",CGNS_ENUMV(RealDouble),1,&nuse,&xlength0);
 /* VelocityX */
-    cg_array_write("VelocityX",RealDouble,1,&nuse,&vx);
+    cg_array_write("VelocityX",CGNS_ENUMV(RealDouble),1,&nuse,&vx);
 /* VelocityY */
-    cg_array_write("VelocityY",RealDouble,1,&nuse,&vy);
+    cg_array_write("VelocityY",CGNS_ENUMV(RealDouble),1,&nuse,&vy);
 /* VelocityZ */
-    cg_array_write("VelocityZ",RealDouble,1,&nuse,&vz);
+    cg_array_write("VelocityZ",CGNS_ENUMV(RealDouble),1,&nuse,&vz);
 /* close CGNS file */
     cg_close(index_file);
     printf("\nSuccessfully wrote nondimensional info to file grid_c.cgns\n");

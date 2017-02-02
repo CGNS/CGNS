@@ -24,10 +24,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 #define maxpnts 400
@@ -38,9 +34,9 @@ int main()
     int normalindex[3],ndataset;
     int i,normallist;
     char boconame[33];
-    BCType_t ibocotype;
-    PointSetType_t iptset;
-    DataType_t normaldatatype;
+    CGNS_ENUMT(BCType_t) ibocotype;
+    CGNS_ENUMT(PointSetType_t) iptset;
+    CGNS_ENUMT(DataType_t) normaldatatype;
     cgsize_t npts,normallistflag;
     cgsize_t ipnts[maxpnts][3];
 
@@ -59,7 +55,7 @@ int main()
 /* get BC info */
       cg_boco_info(index_file,index_base,index_zone,ib,boconame,&ibocotype,
                    &iptset,&npts,normalindex,&normallistflag,&normaldatatype,&ndataset);
-      if (iptset != PointList)
+      if (iptset != CGNS_ENUMV(PointList))
       {
         printf("\nError.  For this program, BCs must be set up as PointList type %s\n",
             PointSetTypeName[iptset]);
