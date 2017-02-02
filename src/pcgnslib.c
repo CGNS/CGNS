@@ -507,6 +507,118 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
 			      1, &rmin, &rmax, &Data, CG_PAR_READ);
 }
 
+int cgp_parent_data_write(int fn, int B, int Z, int S,
+    cgsize_t start, cgsize_t end, const cgsize_t *parent_data)
+{
+    cgns_section *section;
+    cgsize_t *data, i, j, n;
+    hid_t hid;
+    cgsize_t rmin[2], rmax[2];
+    CGNS_ENUMT(DataType_t) type;
+
+     /* get file and check mode */
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+      return CG_ERROR;
+
+    section = cgi_get_section(cg, B, Z, S);
+    if (section == 0) return CG_ERROR;
+
+    /* check input range */
+    if (parent_data) {
+      if (start > end ||
+	  start < section->range[0] ||
+	  end > section->range[1]) {
+	cgi_error("Error in requested element data range.");
+	return CG_ERROR;
+      }
+    }
+
+    if (!IS_FIXED_SIZE(section->el_type)) {
+        cgi_error("element must be a fixed size for parallel IO");
+        return CG_ERROR;
+    }
+
+    /* ParentElements ... */
+    if (section->parelem) {
+        if (cg->mode == CG_MODE_WRITE) {
+            cgi_error("ParentElements is already defined under Elements_t '%s'",
+                   section->name);
+            return CG_ERROR;
+        }
+        if (cgi_delete_node(section->id, section->parelem->id))
+            return CG_ERROR;
+        cgi_free_array(section->parelem);
+        memset(section->parelem, 0, sizeof(cgns_array));
+    } else {
+        section->parelem = CGNS_NEW(cgns_array, 1);
+    }
+
+    /* Get total size across all processors */
+    cgsize_t num = end - start + 1;
+    num = num < 0 ? 0 : num;
+    MPI_Datatype mpi_type = sizeof(cgsize_t) == 32 ? MPI_INT : MPI_LONG_LONG_INT;
+    MPI_Allreduce(MPI_IN_PLACE, &num, 1, mpi_type, MPI_SUM, MPI_COMM_WORLD);
+
+    strcpy(section->parelem->data_type, CG_SIZE_DATATYPE);
+    section->parelem->data_dim = 2;
+    section->parelem->dim_vals[0] = num;
+    section->parelem->dim_vals[1] = 2;
+    strcpy(section->parelem->name, "ParentElements");
+
+    if (cgi_write_array(section->id, section->parelem)) return CG_ERROR;
+
+    /* ParentElementsPosition ... */
+    if (section->parface) {
+        if (cg->mode==CG_MODE_WRITE) {
+            cgi_error("ParentElementsPosition is already defined under Elements_t '%s'",
+                   section->name);
+            return CG_ERROR;
+        }
+        if (cgi_delete_node(section->id, section->parface->id))
+            return CG_ERROR;
+        cgi_free_array(section->parface);
+        memset(section->parface, 0, sizeof(cgns_array));
+    } else {
+        section->parface = CGNS_NEW(cgns_array, 1);
+    }
+
+    strcpy(section->parface->data_type, CG_SIZE_DATATYPE);
+    section->parface->data_dim = 2;
+    section->parface->dim_vals[0] = num;
+    section->parface->dim_vals[1] = 2;
+    strcpy(section->parface->name, "ParentElementsPosition");
+
+    if (cgi_write_array(section->id, section->parface)) return CG_ERROR;
+
+    /* ParentElements -- write data */
+    rmin[0] = start - section->range[0] + 1;
+    rmax[0] = end - section->range[0] + 1;
+    rmin[1] = 1;
+    rmax[1] = 2;
+    type = cgi_datatype(section->parelem->data_type);
+
+    cg_rw_t Data;
+    Data.u.wbuf = parent_data;
+
+    to_HDF_ID(section->parelem->id, hid);
+    int herr = readwrite_data_parallel(hid, type, 2, rmin, rmax, &Data, CG_PAR_WRITE);
+    if (herr != CG_OK)
+      return herr;
+
+    /* ParentElementsPosition -- data follows ParentElements data */
+    type = cgi_datatype(section->parface->data_type);
+
+    if (parent_data) {
+      cgsize_t delta = rmax[0] - rmin[0] + 1;
+      Data.u.wbuf = &parent_data[2*delta];
+    }
+    to_HDF_ID(section->parface->id, hid);
+    return readwrite_data_parallel(hid, type, 2, rmin, rmax, &Data, CG_PAR_WRITE);
+}
+
 /*===== Solution IO Prototypes ============================*/
 
 int cgp_field_write(int fn, int B, int Z, int S,
