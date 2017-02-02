@@ -59,7 +59,7 @@ int main()
     cg_goto(index_file,index_base,"end");
     cg_dataclass_read(&id);
     printf("\nDataClass = %s\n",DataClassName[id]);
-    if (strcmp(DataClassName[id],"CGNS_ENUMV(Dimensional)") != 0)
+    if (strcmp(DataClassName[id],"Dimensional") != 0)
     {
       printf("\nError!  Expecting Dimensional\n");
       return 1;
