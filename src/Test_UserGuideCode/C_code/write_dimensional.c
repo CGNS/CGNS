@@ -27,10 +27,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -39,7 +35,7 @@ int main()
     int index_file,index_base,index_zone,index_flow,index_grid;
     int nfields,iff,icc,ncoords;
     char fieldname[33];
-    DataType_t idatatype;
+    CGNS_ENUMT(DataType_t) idatatype;
 
     printf("\nProgram write_dimensional\n");
 
@@ -56,8 +52,8 @@ int main()
     index_grid=1;
 /* put DataClass and DimensionalUnits under Base */
     cg_goto(index_file,index_base,"end");
-    cg_dataclass_write(Dimensional);
-    cg_units_write(Kilogram,Meter,Second,Kelvin,Degree);
+    cg_dataclass_write(CGNS_ENUMV(Dimensional));
+    cg_units_write(CGNS_ENUMV(Kilogram),CGNS_ENUMV(Meter),CGNS_ENUMV(Second),CGNS_ENUMV(Kelvin),CGNS_ENUMV(Degree));
 /* read fields */
     cg_nfields(index_file,index_base,index_zone,index_flow,&nfields);
     if (nfields != 2)
@@ -92,7 +88,7 @@ int main()
       }
 /* write DimensionalExponents */
       cg_goto(index_file,index_base,"Zone_t",1,"FlowSolution_t",1,"DataArray_t",iff,"end");
-      cg_exponents_write(RealSingle,exponents);
+      cg_exponents_write(CGNS_ENUMV(RealSingle),exponents);
     }
 /* read grid */
     cg_ncoords(index_file,index_base,index_zone,&ncoords);
@@ -105,7 +101,7 @@ int main()
     {
 /* write DimensionalExponents */
       cg_goto(index_file,index_base,"Zone_t",1,"GridCoordinates_t",1,"DataArray_t",icc,"end");
-      cg_exponents_write(RealSingle,exponents);
+      cg_exponents_write(CGNS_ENUMV(RealSingle),exponents);
     }
 /* close CGNS file */
     cg_close(index_file);

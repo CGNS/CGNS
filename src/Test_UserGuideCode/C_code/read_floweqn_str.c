@@ -20,10 +20,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -32,8 +28,8 @@ int main()
     int index_file,index_base,index_zone;
     int id,ige,igm,ivm,itcm,itc,itm;
     float gamma,prandtl;
-    GoverningEquationsType_t itype;
-    ModelType_t mtype;
+    CGNS_ENUMT(GoverningEquationsType_t) itype;
+    CGNS_ENUMT(ModelType_t) mtype;
 
 /* READ FLOW EQUATION SET INFO */
 /* open CGNS file for read-only */
@@ -72,7 +68,7 @@ int main()
       printf(" Gas model type = %s\n",ModelTypeName[mtype]);
       cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1, \
               "GasModel_t",1,"end");
-      cg_array_read_as(1,RealSingle,&gamma);
+      cg_array_read_as(1,CGNS_ENUMV(RealSingle),&gamma);
       printf("     gamma = %f\n",gamma);
     }
 /* Read turbulence closure */
@@ -83,7 +79,7 @@ int main()
       printf(" Turbulence closure type = %s\n",ModelTypeName[mtype]);
       cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1, \
               "TurbulenceClosure_t",1,"end");
-      cg_array_read_as(1,RealSingle,&prandtl);
+      cg_array_read_as(1,CGNS_ENUMV(RealSingle),&prandtl);
       printf("     turb prandtl number = %f\n",prandtl);
     }
     if (itm == 1)
