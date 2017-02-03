@@ -2601,6 +2601,7 @@ echo 	benchmark$(EXE) \>> ptests\Makefile
 echo 	open_close$(EXE) \>> ptests\Makefile
 echo 	test_base$(EXE) \>> ptests\Makefile
 echo 	test_unstructured$(EXE) \>> ptests\Makefile
+echo 	test_unstruc_quad$(EXE) \>> ptests\Makefile
 echo 	test_zone$(EXE) \>> ptests\Makefile
 echo 	thesis_benchmark$(EXE)>> ptests\Makefile
 echo FALL =	ftest$^(EXE^)>> ptests\Makefile
@@ -2625,6 +2626,7 @@ echo 	-@runptest.bat $(MPIEXEC) benchmark$(EXE)>> ptests\Makefile
 echo 	-@runptest.bat $(MPIEXEC) open_close$(EXE)>> ptests\Makefile
 echo 	-@runptest.bat $(MPIEXEC) test_base$(EXE)>> ptests\Makefile
 echo 	-@runptest.bat $(MPIEXEC) test_unstructured$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) test_unstruc_quad$(EXE)>> ptests\Makefile
 echo 	-@runptest.bat $(MPIEXEC) test_zone$(EXE)>> ptests\Makefile
 echo 	-@runptest.bat $(MPIEXEC) thesis_benchmark$(EXE)>> ptests\Makefile
 if not "%f2c%" == "none" (
@@ -2661,6 +2663,9 @@ echo #---------->> ptests\Makefile
 echo.>> ptests\Makefile
 echo test_unstructured$(EXE) : test_unstructured.c $(CGNSLIB)>> ptests\Makefile
 echo 	$(CC) $(COPTS) $(CEOUT)$@ test_unstructured.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo test_unstruc_quad$(EXE) : test_unstruc_quad.c $(CGNSLIB)>> ptests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ test_unstruc_quad.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
 echo.>> ptests\Makefile
 echo #---------->> ptests\Makefile
 echo.>> ptests\Makefile
