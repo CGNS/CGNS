@@ -20,6 +20,7 @@ CALL =	pcgns_ctest$(EXE) \
 	open_close$(EXE) \
 	test_base$(EXE) \
 	test_unstructured$(EXE) \
+	test_unstruc_quad$(EXE) \
 	test_zone$(EXE) \
 	thesis_benchmark$(EXE)
 
@@ -87,6 +88,12 @@ test_base$(EXE) : test_base.c $(CGNSLIB)
 
 test_unstructured$(EXE) : test_unstructured.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_unstructured.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_unstruc_quad$(EXE) : test_unstruc_quad.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_unstruc_quad.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
