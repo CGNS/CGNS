@@ -37,6 +37,7 @@ freely, subject to the following restrictions:
 
 /* MPI-2 info object */
 extern MPI_Info pcg_mpi_info;
+extern MPI_Comm pcg_mpi_comm;
 extern int pcg_mpi_comm_size;
 extern int pcg_mpi_comm_rank;
 /* Flag indicating if HDF5 file accesses is PARALLEL or NATIVE */
@@ -213,6 +214,7 @@ static int check_parallel(cgns_file *cgfile)
 
 int cgp_mpi_comm(MPI_Comm comm)
 {
+    pcg_mpi_comm=comm;
     return cgio_configure(CG_CONFIG_HDF5_MPI_COMM, (void *)(comm));
 }
 
@@ -259,8 +261,8 @@ int cgp_open(const char *filename, int mode, int *fn)
     int ierr, old_type = cgns_filetype;
 
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &pcg_mpi_comm_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &pcg_mpi_comm_size);
+    MPI_Comm_rank(pcg_mpi_comm, &pcg_mpi_comm_rank);
+    MPI_Comm_size(pcg_mpi_comm, &pcg_mpi_comm_size);
 
     /* Flag is true if MPI_Init or MPI_Init_thread has been called and false otherwise. */
     pcg_mpi_initialized = 0;
