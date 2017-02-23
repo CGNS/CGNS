@@ -42,12 +42,12 @@ MODULE cgns
 #include "cgnstypes_f03.h"
 
 !These definitions are needed for Windows DLLs
-!DEC$ IF DEFINED(WINNT)
+!!DEC$ IF DEFINED(WINNT)
 !DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_goto_f
 !DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_array_read_f
 !DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_array_read_as_f
 !DEC$ ATTRIBUTES REFERENCE, C, VARYING :: cg_array_write_f
-!DEC$ ENDIF
+!!DEC$ ENDIF
 
 
 #if CG_BUILD_64BIT_F
@@ -3199,7 +3199,7 @@ MODULE cgns
      END SUBROUTINE cg_array_info_f
   END INTERFACE
 
-!!$ INTERFACE
+!$ INTERFACE
 !!$    SUBROUTINE cg_array_read_f(A, DATA, ier) BIND(C, NAME="")
 !!$      INTEGER :: A,
 !!$      void *DATA,
@@ -4703,7 +4703,7 @@ MODULE cgns
 
 !*---------------------------------------------------------
   INTERFACE
-     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier)!BIND(C,NAME='cgio_children_names_f')
+     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier) BIND(C,NAME='cgio_children_names_f')
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num

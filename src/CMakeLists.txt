@@ -477,8 +477,7 @@ endif (CGNS_ENABLE_HDF5)
 # All the Fortran files need by the cgns library (if enabled)
 set(cgns_F_FILES
 	cg_ftoc.c
-	cgio_ftoc.c
-	cgns_f.F90)
+	cgio_ftoc.c)
 
 # Only build those files that are needed
 if (CGNS_ENABLE_FORTRAN)
@@ -487,6 +486,7 @@ if (CGNS_ENABLE_FORTRAN)
       PROPERTY COMPILE_DEFINITIONS ${FORTRAN_NAMING})
   endif (FORTRAN_NAMING)
   set(cgns_FILES ${cgns_C_FILES} ${cgns_F_FILES})
+  add_library(cgns_f2c OBJECT cgns_f.F90)
 else (CGNS_ENABLE_FORTRAN)
   set(cgns_FILES ${cgns_C_FILES})
 endif (CGNS_ENABLE_FORTRAN)
@@ -495,7 +495,12 @@ set(CGNS_BUILD_SHARED "ON" CACHE BOOL "Build a shared version of the library")
 option(CGNS_USE_SHARED "Link programs to the CGNS shared library" "ON")
 
 # Build a static version of the library
-add_library(cgns_static STATIC ${cgns_FILES})
+if (CGNS_ENABLE_FORTRAN)
+    add_library(cgns_static ${cgns_FILES} $<TARGET_OBJECTS:cgns_f2c>)
+else (CGNS_ENABLE_FORTRAN)
+  add_library(cgns_static ${cgns_FILES})
+endif (CGNS_ENABLE_FORTRAN)
+
 
 # Build a shared version of the library
 if(CGNS_BUILD_SHARED)
