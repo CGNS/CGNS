@@ -598,7 +598,7 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Dimensional Units                                              *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-  DATA MassUnitsName /'Null','UserDefined','Kilogram','Gram', &
+  DATA MassUnitsName /'Null','UserDefined','Kilogram','Gram', & 
        'Slug','PoundMass'/
   DATA LengthUnitsName / 'Null', 'UserDefined', &
        'Meter','Centimeter','Millimeter','Foot','Inch'/
@@ -4676,7 +4676,8 @@ MODULE cgns
 !* node children
 !*=========================================================
   INTERFACE
-     SUBROUTINE cgio_number_children_f(cgio_num, pid, num_children, ier) BIND(C,NAME='cgio_number_children_f')
+     SUBROUTINE cgio_number_children_f(cgio_num, pid, num_children, ier) &
+                BIND(C,NAME='cgio_number_children_f')
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4688,7 +4689,8 @@ MODULE cgns
 
 !*---------------------------------------------------------
   INTERFACE
-     SUBROUTINE cgio_children_ids_f(cgio_num, pid, start, max_ret, num_ret, ids, ier) BIND(C,NAME='cgio_children_ids_f')
+     SUBROUTINE cgio_children_ids_f(cgio_num, pid, start, max_ret, num_ret, ids, ier) &
+                BIND(C,NAME='cgio_children_ids_f')
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4703,7 +4705,8 @@ MODULE cgns
 
 !*---------------------------------------------------------
   INTERFACE
-     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier) BIND(C,NAME='cgio_children_names_f')
+     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier) &
+                BIND(C,NAME='cgio_children_names_f')
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
