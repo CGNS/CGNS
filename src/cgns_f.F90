@@ -4705,8 +4705,7 @@ MODULE cgns
 
 !*---------------------------------------------------------
   INTERFACE
-     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier) &
-                BIND(C,NAME='cgio_children_names_f')
+     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier) ! BIND(C,NAME='cgio_children_names_f')
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
