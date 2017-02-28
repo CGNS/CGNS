@@ -2149,7 +2149,10 @@ void ADFH_Database_Open(const char   *name,
     }
   }
 #endif
-
+  if (0 == strcmp(fmt, "DISKLESS")) {
+    H5Pset_fapl_core(g_propfileopen, 4096, true);
+  }
+	
   set_error(NO_ERROR, err);
 
   if (mode == ADFH_MODE_NEW) {
