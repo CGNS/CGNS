@@ -11,7 +11,8 @@ void *cgmalloc(size_t bytes) {
     size_t *data = (size_t *) malloc (bytes + 2 * sizeof(size_t));
     if (data) {
         *data++ = bytes;
-        *data++ = (size_t)(data + 1);
+        *data = (size_t)(data + 1);
+        data++;
         mem_now += bytes;
         if (mem_max < mem_now) mem_max = mem_now;
     }
@@ -28,7 +29,8 @@ void *cgrealloc(void *olddata, size_t bytes) {
     data = (size_t *) realloc (data, bytes + 2 * sizeof(size_t));
     if (data) {
         *data++ = bytes;
-        *data++ = (size_t)(data + 1);
+        *data = (size_t)(data + 1);
+        data++;
         mem_now += bytes;
         if (mem_max < mem_now) mem_max = mem_now;
     }
@@ -41,7 +43,8 @@ void *cgcalloc(size_t num, size_t bytes) {
     size_t *data = (size_t *) malloc (count + 2 * sizeof(size_t));
     if (data) {
         *data++ = count;
-        *data++ = (size_t)(data + 1);
+        *data = (size_t)(data + 1);
+        data++;
         mem_now += count;
         if (mem_max < mem_now) mem_max = mem_now;
         memset(data, 0, count);
