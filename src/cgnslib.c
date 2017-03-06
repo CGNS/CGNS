@@ -342,8 +342,8 @@ int cg_open(const char *filename, int mode, int *file_number)
     float FileVersion;
 
 #ifdef __CG_MALLOC_H__
-    fprintf(stderr, "before open:files %d/%d: memory %d/%d\n", n_open,
-        cgns_file_size, cgmemnow(), cgmemmax());
+    fprintf(stderr, "CGNS MEM_DEBUG: before open:files %d/%d: memory %d/%d: calls %d/%d\n", n_open,
+	    cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
 #endif
 
     /* check file mode */
@@ -503,8 +503,8 @@ int cg_open(const char *filename, int mode, int *file_number)
     }
 
 #ifdef __CG_MALLOC_H__
-    fprintf(stderr, "after  open:files %d/%d: memory %d/%d\n", n_open,
-        cgns_file_size, cgmemnow(), cgmemmax());
+    fprintf(stderr, "CGNS MEM_DEBUG: after  open:files %d/%d: memory %d/%d: calls %d/%d\n", n_open,
+	    cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
 #endif
 
     return CG_OK;
@@ -621,8 +621,8 @@ int cg_close(int file_number)
     if (cg == 0) return CG_ERROR;
 
 #ifdef __CG_MALLOC_H__
-    fprintf(stderr, "before close:files %d/%d: memory %d/%d\n", n_open,
-        cgns_file_size, cgmemnow(), cgmemmax());
+    fprintf(stderr, "CGNS MEM_DEBUG: before close:files %d/%d: memory %d/%d: calls %d/%d\n", n_open,
+	    cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
 #endif
 
     if (cgns_compress && cg->mode == CG_MODE_MODIFY &&
@@ -656,8 +656,8 @@ int cg_close(int file_number)
     }
 
 #ifdef __CG_MALLOC_H__
-    fprintf(stderr, "after  close:files %d/%d: memory %d/%d\n",
-        n_open, cgns_file_size, cgmemnow(), cgmemmax());
+    fprintf(stderr, "CGNS MEM_DEBUG: after  close:files %d/%d: memory %d/%d: calls %d/%d\n", n_open,
+	    cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
 #endif
 
 #ifdef DEBUG_HDF5_OBJECTS_CLOSE

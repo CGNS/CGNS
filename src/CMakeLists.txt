@@ -467,6 +467,11 @@ set(cgns_C_FILES
 	adf/ADF_interface.c
 	adf/ADF_internals.c)
 
+if (CGNS_ENABLE_MEM_DEBUG)
+  set(cgns_C_FILES ${cgns_C_FILES} cg_malloc.c)
+  add_definitions("-DMEM_DEBUG")
+endif(CGNS_ENABLE_MEM_DEBUG)
+
 if (CGNS_ENABLE_HDF5)
   set(cgns_C_FILES ${cgns_C_FILES} adfh/ADFH.c)
   if (CGNS_ENABLE_PARALLEL)
