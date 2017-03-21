@@ -43,7 +43,6 @@ environment:
 
 # scripts that run after cloning repository
 install:
-   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
   # by default, all script lines are interpreted as batch
   #- echo This is batch
   # to run script as a PowerShell command prepend it with ps:
@@ -53,6 +52,7 @@ install:
   #- cmd: set MY_VAR=12345
 
 # install hdf5
+  - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
   - mkdir hdf5lib
   - curl -O http://support.hdfgroup.org/ftp/HDF5/current18/bin/windows/hdf5-1.8.18-win64-vs2013-shared.zip
   - unzip hdf5-1.8.18-win64-vs2013-shared.zip
