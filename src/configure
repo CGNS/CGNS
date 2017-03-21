@@ -5734,12 +5734,12 @@ void main(void)
   return;
 }
 EOF
-  msg=`${CC} -c test.c ${HDF5DEF} &> /dev/null`
-  if test -f test.o; then
+  msg=`${CC} test.c -o test_coll ${HDF5DEF} ${HDF5LIB} &> /dev/null`
+  if test -f test_coll; then
     HDF5_HAVE_COLL_METADATA=1
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-    rm test.o
+    rm test_coll*
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -6595,7 +6595,6 @@ ac_x_header_dirs='
 /usr/athena/include
 /usr/local/x11r5/include
 /usr/lpp/Xamples/include
-/opt/X11/include
 
 /usr/openwin/include
 /usr/openwin/share/include'

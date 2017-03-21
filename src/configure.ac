@@ -919,11 +919,11 @@ void main(void)
   return;
 }
 EOF
-  msg=`${CC} -c test.c ${HDF5DEF} &> /dev/null`
-  if test -f test.o; then
+  msg=`${CC} test.c -o test_coll ${HDF5DEF} ${HDF5LIB} &> /dev/null`
+  if test -f test_coll; then
     HDF5_HAVE_COLL_METADATA=1
     AC_MSG_RESULT(yes)
-    rm test.o
+    rm test_coll*
   else
     AC_MSG_RESULT(no)
   fi
