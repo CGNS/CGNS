@@ -905,30 +905,14 @@ EOF
   # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
   ## --------------------------------------------------------------------
 
-  AC_LANG_C
   HDF5_HAVE_COLL_METADATA=0
   AC_MSG_CHECKING([if HDF5 library has collective metadata APIs])
-
-  cat >> test.c << EOF
-#include "hdf5.h"
-void main(void)
-{
-  hid_t foo;
-  H5Pset_coll_metadata_write(foo, 1);
-  H5Pset_all_coll_metadata_ops(foo, 1);
-  return;
-}
-EOF
-  msg=`${CC} test.c -o test_coll ${HDF5DEF} ${HDF5LIB} &> /dev/null`
-  if test -f test_coll; then
+  chck_coll=`grep -i '_coll_metadata_' $HDF5INC/H5Ppublic.h`
+  if test "x$chck_coll" = "x"; then
+    AC_MSG_RESULT(no)
+  else
     HDF5_HAVE_COLL_METADATA=1
     AC_MSG_RESULT(yes)
-    rm test_coll*
-  else
-    AC_MSG_RESULT(no)
-  fi
-  if test -f test.c; then
-     rm test.c
   fi
 fi
 

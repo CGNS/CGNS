@@ -5714,39 +5714,18 @@ $as_echo "no" >&6; }
   # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
   ## --------------------------------------------------------------------
 
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
   HDF5_HAVE_COLL_METADATA=0
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if HDF5 library has collective metadata APIs" >&5
 $as_echo_n "checking if HDF5 library has collective metadata APIs... " >&6; }
-
-  cat >> test.c << EOF
-#include "hdf5.h"
-void main(void)
-{
-  hid_t foo;
-  H5Pset_coll_metadata_write(foo, 1);
-  H5Pset_all_coll_metadata_ops(foo, 1);
-  return;
-}
-EOF
-  msg=`${CC} test.c -o test_coll ${HDF5DEF} ${HDF5LIB} &> /dev/null`
-  if test -f test_coll; then
-    HDF5_HAVE_COLL_METADATA=1
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    rm test_coll*
-  else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  chck_coll=`grep -i '_coll_metadata_' $HDF5INC/H5Ppublic.h`
+   if test "x$chck_coll" = "x"; then
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-  fi
-  if test -f test.c; then
-     rm test.c
-  fi
+   else
+     HDF5_HAVE_COLL_METADATA=1
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
 fi
 
 #---------------------------------------------------------------------------
