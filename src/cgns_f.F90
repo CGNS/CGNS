@@ -4705,11 +4705,7 @@ MODULE cgns
 
 !*---------------------------------------------------------
   INTERFACE
-#if defined(__INTEL_COMPILER) 
-     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier) BIND(C,NAME='cgio_children_names_f')
-#else
      SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier) !BIND(C,NAME='cgio_children_names_f')
-#endif
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
