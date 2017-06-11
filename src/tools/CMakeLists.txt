@@ -69,12 +69,6 @@ if (WIN32)
   install(PROGRAMS
         cgnsupdate.bat
 	DESTINATION bin)
-  # lets also put the dll in here so they run
-  if (CGNS_USE_SHARED)
-    install(PROGRAMS
-        ${CMAKE_BINARY_DIR}/src/cgnsdll.dll
-	DESTINATION bin)
-  endif (CGNS_USE_SHARED)
   if (CGNS_ENABLE_HDF5)
     install(PROGRAMS
         adf2hdf.bat
