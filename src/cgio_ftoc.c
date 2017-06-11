@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
 #endif
 
 #if defined(_WIN32) && defined(BUILD_DLL)
-# define CGIODLL _declspec(dllexport)
+# define CGIODLL __declspec(dllexport)
 #else
 # define CGIODLL
 #endif

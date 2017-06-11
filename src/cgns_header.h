@@ -944,7 +944,7 @@ typedef struct {
 /* need some of these routines exported for CGNStools */
 
 #if defined(_WIN32) && defined(BUILD_DLL)
-# define CGNSDLL _declspec(dllexport)
+# define CGNSDLL __declspec(dllexport)
 #else
 # define CGNSDLL
 #endif
