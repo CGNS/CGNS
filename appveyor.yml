@@ -55,7 +55,7 @@ install:
   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
   - mkdir hdf5lib
   - curl -O http://support.hdfgroup.org/ftp/HDF5/current18/bin/windows/hdf5-1.8.19-win64-vs2015-shared.zip
-  - unzip hdf5-1.8.19-win64-vs2015-shared.zip
+  - 7z hdf5-1.8.19-win64-vs2015-shared.zip
   - cd hdf5
   - msiexec /i HDF5-1.8.19-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
@@ -106,4 +106,4 @@ build_script:
   - cmd: cmake --build . --config "%configuration%"
 
 test_script:
-  - cmd: ctest . 
+  - cmd: ctest .
