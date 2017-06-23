@@ -54,10 +54,9 @@ install:
 # install hdf5
   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
   - mkdir hdf5lib
-#  - curl -O http://support.hdfgroup.org/ftp/HDF5/current18/bin/windows/hdf5-1.8.19-win64-vs2015-shared.zip
   - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.19/bin/windows/hdf5-1.8.19-Std-win10_64-vs2015.zip
   - ps: Expand-Archive hdf5-1.8.19-Std-win10_64-vs2015.zip -DestinationPath .
-  - cd hdf5
+  - cd hdf
   - msiexec /i HDF5-1.8.19-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..
