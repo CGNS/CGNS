@@ -56,9 +56,9 @@
 #ifndef CGNSDLL
 # ifdef _WIN32
 #  if defined(BUILD_DLL)
-#    define CGNSDLL _declspec(dllexport)
+#    define CGNSDLL __declspec(dllexport)
 #  elif defined(USE_DLL)
-#    define CGNSDLL _declspec(dllimport)
+#    define CGNSDLL __declspec(dllimport)
 #  else
 #    define CGNSDLL
 #  endif

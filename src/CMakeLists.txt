@@ -562,12 +562,9 @@ install(TARGETS cgns_static ARCHIVE DESTINATION lib)
 # Set the install path of the shared library
 if(CGNS_BUILD_SHARED)
   # for windows, need to install both cgnsdll.dll and cgnsdll.lib
-  if (WIN32 OR CYGWIN)
-    install(TARGETS cgns_shared ARCHIVE DESTINATION lib)
-    install(TARGETS cgns_shared RUNTIME DESTINATION lib)
-  else (WIN32 OR CYGWIN)
-    install(TARGETS cgns_shared LIBRARY DESTINATION lib)
-  endif (WIN32 OR CYGWIN)
+  install (TARGETS cgns_shared LIBRARY DESTINATION lib
+                               ARCHIVE DESTINATION lib
+                               RUNTIME DESTINATION bin)
 endif(CGNS_BUILD_SHARED)
 
 # Set the install path of the header files
