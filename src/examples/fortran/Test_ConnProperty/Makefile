@@ -1,9 +1,9 @@
 include ../make.defs
 
-WRITE  = $(OUTDIR)/cgwrite$(EXE)
-READ   = $(OUTDIR)/cgread$(EXE)
-MODIFY = $(OUTDIR)/cgmodify$(EXE)
-DELETE = $(OUTDIR)/cgdelete$(EXE)
+WRITE  = cgwrite$(EXE)
+READ   = cgread$(EXE)
+MODIFY = gmodify$(EXE)
+DELETE = cgdelete$(EXE)
 
 all    : write read modify delete
 write  : $(OUTDIR) $(WRITE)
@@ -33,6 +33,6 @@ $(DELETE) : cgdelete.F
 	$(F77) $(FOPTS) $(FEOUT)$@ cgdelete.F $(LIBS)
 
 clean :
-	-$(RM) Test_V2
+	-$(RM) Test_V2 $(WRITE) $(READ) $(MODIFY) $(DELETE)
 	-$(RMDIR) $(OUTDIR)
 

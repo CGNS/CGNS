@@ -24,7 +24,7 @@ freely, subject to the following restrictions:
 #include "ADF_internals.h"
 
 #if defined(_WIN32) && defined(BUILD_DLL)
-# define CGNSDLL _declspec(dllexport)
+# define CGNSDLL __declspec(dllexport)
 #else
 # define CGNSDLL
 #endif

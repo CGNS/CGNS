@@ -25,10 +25,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -99,28 +95,28 @@ subroutine and dimension exactly there):
     for (n=0; n < 3; n++)
     {
 /* create flow solution node */
-      cg_sol_write(index_file,index_base,index_zone,sn[n],Vertex,&index_flow);
+      cg_sol_write(index_file,index_base,index_zone,sn[n],CGNS_ENUMV(Vertex),&index_flow);
       printf("\n ...writing solution number %d\n",index_flow);
 /* write flow solution (user must use SIDS-standard names here) */
       if (n == 0)
       {
-        cg_field_write(index_file,index_base,index_zone,index_flow,RealDouble,"Density",
+        cg_field_write(index_file,index_base,index_zone,index_flow,CGNS_ENUMV(RealDouble),"Density",
                        r1[0][0],&index_field);
-        cg_field_write(index_file,index_base,index_zone,index_flow,RealDouble,"Pressure",
+        cg_field_write(index_file,index_base,index_zone,index_flow,CGNS_ENUMV(RealDouble),"Pressure",
                        p1[0][0],&index_field);
       }
       else if (n == 1)
       {
-        cg_field_write(index_file,index_base,index_zone,index_flow,RealDouble,"Density",
+        cg_field_write(index_file,index_base,index_zone,index_flow,CGNS_ENUMV(RealDouble),"Density",
                        r2[0][0],&index_field);
-        cg_field_write(index_file,index_base,index_zone,index_flow,RealDouble,"Pressure",
+        cg_field_write(index_file,index_base,index_zone,index_flow,CGNS_ENUMV(RealDouble),"Pressure",
                        p2[0][0],&index_field);
       }
       else
       {
-        cg_field_write(index_file,index_base,index_zone,index_flow,RealDouble,"Density",
+        cg_field_write(index_file,index_base,index_zone,index_flow,CGNS_ENUMV(RealDouble),"Density",
                        r3[0][0],&index_field);
-        cg_field_write(index_file,index_base,index_zone,index_flow,RealDouble,"Pressure",
+        cg_field_write(index_file,index_base,index_zone,index_flow,CGNS_ENUMV(RealDouble),"Pressure",
                        p3[0][0],&index_field);
       }
     }
@@ -130,7 +126,7 @@ subroutine and dimension exactly there):
 /* go to BaseIterativeData level and write time values */
     cg_goto(index_file,index_base,"BaseIterativeData_t",1,"end");
     nuse=3;
-    cg_array_write("TimeValues",RealDouble,1,&nuse,&time);
+    cg_array_write("TimeValues",CGNS_ENUMV(RealDouble),1,&nuse,&time);
 /* create ZoneIterativeData */
     cg_ziter_write(index_file,index_base,index_zone,"ZoneIterativeData");
 /* go to ZoneIterativeData level and give info telling which */
@@ -139,9 +135,9 @@ subroutine and dimension exactly there):
     cg_goto(index_file,index_base,"Zone_t",index_zone,"ZoneIterativeData_t",1,"end");
     idata[0]=32;
     idata[1]=3;
-    cg_array_write("FlowSolutionPointers",Character,2,idata,solname);
+    cg_array_write("FlowSolutionPointers",CGNS_ENUMV(Character),2,idata,solname);
 /* add SimulationType */
-    cg_simulation_type_write(index_file,index_base,TimeAccurate);
+    cg_simulation_type_write(index_file,index_base,CGNS_ENUMV(TimeAccurate));
 /* close CGNS file */
     cg_close(index_file);
     printf("\nSuccessfully added 3 times of flow solution data and time info to file grid_c.cgns\n");

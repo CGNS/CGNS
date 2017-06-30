@@ -971,7 +971,14 @@ echo #define CG_BUILD_SCOPE  %doscope% >> cgnstypes.h
 echo #define CG_BUILD_BASESCOPE  %dobasescope% >> cgnstypes.h
 echo.>> cgnstypes.h
 echo #define CG_MAX_INT32 0x7FFFFFFF>> cgnstypes.h
+echo #ifdef _WIN32>> cgnstypes.h
 echo #define CG_LONG_T    __int64>> cgnstypes.h
+echo #ifdef CG_BUILD_64BIT>> cgnstypes.h
+echo #define stat _stat32i64>> cgnstypes.h
+echo #endif>> cgnstypes.h
+echo #else>> cgnstypes.h
+echo # define CG_LONG_T long long>> cgnstypes.h
+echo #endif>> cgnstypes.h
 echo.>> cgnstypes.h
 echo #if CG_BUILD_LEGACY>> cgnstypes.h
 echo # define CG_SIZEOF_SIZE    32 >> cgnstypes.h
@@ -2594,6 +2601,7 @@ echo 	benchmark$(EXE) \>> ptests\Makefile
 echo 	open_close$(EXE) \>> ptests\Makefile
 echo 	test_base$(EXE) \>> ptests\Makefile
 echo 	test_unstructured$(EXE) \>> ptests\Makefile
+echo 	test_unstruc_quad$(EXE) \>> ptests\Makefile
 echo 	test_zone$(EXE) \>> ptests\Makefile
 echo 	thesis_benchmark$(EXE)>> ptests\Makefile
 echo FALL =	ftest$^(EXE^)>> ptests\Makefile
@@ -2618,6 +2626,7 @@ echo 	-@runptest.bat $(MPIEXEC) benchmark$(EXE)>> ptests\Makefile
 echo 	-@runptest.bat $(MPIEXEC) open_close$(EXE)>> ptests\Makefile
 echo 	-@runptest.bat $(MPIEXEC) test_base$(EXE)>> ptests\Makefile
 echo 	-@runptest.bat $(MPIEXEC) test_unstructured$(EXE)>> ptests\Makefile
+echo 	-@runptest.bat $(MPIEXEC) test_unstruc_quad$(EXE)>> ptests\Makefile
 echo 	-@runptest.bat $(MPIEXEC) test_zone$(EXE)>> ptests\Makefile
 echo 	-@runptest.bat $(MPIEXEC) thesis_benchmark$(EXE)>> ptests\Makefile
 if not "%f2c%" == "none" (
@@ -2654,6 +2663,9 @@ echo #---------->> ptests\Makefile
 echo.>> ptests\Makefile
 echo test_unstructured$(EXE) : test_unstructured.c $(CGNSLIB)>> ptests\Makefile
 echo 	$(CC) $(COPTS) $(CEOUT)$@ test_unstructured.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
+echo.>> ptests\Makefile
+echo test_unstruc_quad$(EXE) : test_unstruc_quad.c $(CGNSLIB)>> ptests\Makefile
+echo 	$(CC) $(COPTS) $(CEOUT)$@ test_unstruc_quad.c $(LDLIBS) $(CLIBS)>> ptests\Makefile
 echo.>> ptests\Makefile
 echo #---------->> ptests\Makefile
 echo.>> ptests\Makefile

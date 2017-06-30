@@ -1,13 +1,17 @@
 include ../make.defs
 
-WRITE1 = $(OUTDIR)/write_grid2zn_str$(EXE)
-WRITE2 = $(OUTDIR)/write_con2zn_str$(EXE)
-READ1  = $(OUTDIR)/read_grid2zn_str$(EXE)
-READ2  = $(OUTDIR)/read_con2zn_str$(EXE)
+WRITE1 = write_grid2zn_str$(EXE)
+WRITE2 = write_con2zn_str$(EXE)
+READ1  = read_grid2zn_str$(EXE)
+READ2  = read_con2zn_str$(EXE)
+
+
+WRITE_PROGS = $(WRITE1) $(WRITE2)
+READ_PROGS = $(READ1) $(READ2)
 
 all    : write read
-write  : $(OUTDIR) $(WRITE1) $(WRITE2)
-read   : $(OUTDIR) $(READ1) $(READ2)
+write  : $(OUTDIR) $(WRITE_PROGS)
+read   : $(OUTDIR) $(READ_PROGS)
 
 test  : write read
 	-@$(RM) grid.cgns
@@ -34,6 +38,6 @@ $(READ2) : ../read_con2zn_str.F90
 	$(F77) $(FOPTS) $(FEOUT)$@ ../read_con2zn_str.F90 $(LIBS)
 
 clean :
-	-$(RM) grid.cgns
+	-$(RM) grid.cgns $(WRITE_PROGS) $(READ_PROGS)
 	-$(RMDIR) $(OUTDIR)
 

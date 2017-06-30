@@ -56,9 +56,9 @@
 #ifndef CGNSDLL
 # ifdef _WIN32
 #  if defined(BUILD_DLL)
-#    define CGNSDLL _declspec(dllexport)
+#    define CGNSDLL __declspec(dllexport)
 #  elif defined(USE_DLL)
-#    define CGNSDLL _declspec(dllimport)
+#    define CGNSDLL __declspec(dllimport)
 #  else
 #    define CGNSDLL
 #  endif
@@ -98,7 +98,6 @@
 #define CG_FILE_ADF   1
 #define CG_FILE_HDF5  2
 #define CG_FILE_ADF2  3
-#define CG_FILE_PHDF5 4
 
 /* function return codes */
 

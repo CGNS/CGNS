@@ -23,10 +23,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 #define maxpnts 400
@@ -35,11 +31,11 @@ int main()
 {
     int i,index_file,index_base,nzone,index_zone,nconns,index_conn;
     char donorname[33],connectname[33];
-    GridLocation_t location;
-    GridConnectivityType_t iconnect_type;
-    PointSetType_t iptset_type,idonor_ptset_type;
-    ZoneType_t idonor_zonetype;
-    DataType_t idonor_datatype;
+    CGNS_ENUMT(GridLocation_t) location;
+    CGNS_ENUMT(GridConnectivityType_t) iconnect_type;
+    CGNS_ENUMT(PointSetType_t) iptset_type,idonor_ptset_type;
+    CGNS_ENUMT(ZoneType_t) idonor_zonetype;
+    CGNS_ENUMT(DataType_t) idonor_datatype;
     cgsize_t npts,ndata_donor;
     cgsize_t ipnts[maxpnts][3],ipntsdonor[maxpnts][3];
 

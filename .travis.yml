@@ -1,9 +1,8 @@
+osx_image: xcode8.1
 language: C
 sudo: required
 
-os:
-  - linux
-  - osx
+#dist: trusty
 
 # whitelist
 branches:
@@ -19,10 +18,23 @@ before_install:
          sudo apt-get update -qq;
          sudo apt-get install -qq gfortran;
       fi
-    - ./install-hdf.sh
+    - test $(uname) = "Darwin" && brew update || true
+    - test $(uname) = "Darwin" && brew tap homebrew/versions || true
+    - test $(uname) = "Darwin" && brew install gcc6 || true
+    - test $(uname) = "Darwin" && brew link --overwrite gcc || true
+
+matrix:
+   include:
+     - os: linux
+       compiler: gcc-4.9
+       install: export CC="gcc" export FC="gfortran" export F77="gfortran"
+     - os: osx
+       compiler: gcc
+       install: export CC="gcc" export FC="gfortran-7" export F77="gfortran-7"
 
 before_script:
-    - ./install-cgns.sh
+    - ./bin/install-hdf.sh
+    - ./bin/install-cgns.sh
 
 script:
     - cd src

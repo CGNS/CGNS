@@ -19,10 +19,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 #define ntt 20
@@ -55,7 +51,7 @@ int main()
     cg_goto(index_file,index_base,"ConvergenceHistory_t",1,"end");
 /* write lift coefficient array (user must use SIDS-standard name here) */
     nuse=ntt;
-    cg_array_write("CoefLift",RealDouble,1,&nuse,&cl);
+    cg_array_write("CoefLift",CGNS_ENUMV(RealDouble),1,&nuse,&cl);
 /* close CGNS file */
     cg_close(index_file);
     printf("\nSuccessfully wrote cl history to file grid_c.cgns\n");

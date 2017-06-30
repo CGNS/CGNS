@@ -28,10 +28,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -40,13 +36,13 @@ int main()
     int iff,ic;
     float exponents[5];
     char fieldname[33],coordname[33];
-    DataClass_t id;
-    MassUnits_t im;
-    LengthUnits_t il;
-    TimeUnits_t it;
-    TemperatureUnits_t ix;
-    AngleUnits_t ia;
-    DataType_t idatatype;
+    CGNS_ENUMT(DataClass_t) id;
+    CGNS_ENUMT(MassUnits_t) im;
+    CGNS_ENUMT(LengthUnits_t) il;
+    CGNS_ENUMT(TimeUnits_t) it;
+    CGNS_ENUMT(TemperatureUnits_t) ix;
+    CGNS_ENUMT(AngleUnits_t) ia;
+    CGNS_ENUMT(DataType_t) idatatype;
 
 /* READ DIMENSIONAL INFO FOR GRID AND FLOW SOLN */
 /* open CGNS file for read-only */

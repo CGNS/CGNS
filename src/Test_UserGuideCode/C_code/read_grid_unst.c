@@ -20,10 +20,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -35,7 +31,7 @@ int main()
     int nsections,index_sect,nbndry,iparent_flag;
     cgsize_t iparentdata;
     char zonename[33],sectionname[33];
-    ElementType_t itype;
+    CGNS_ENUMT(ElementType_t) itype;
 
 /* READ X, Y, Z GRID POINTS FROM CGNS FILE */
 /* open CGNS file for read-only */
@@ -52,11 +48,11 @@ int main()
     irmax=isize[0][0];
 /* read grid coordinates */
     cg_coord_read(index_file,index_base,index_zone,"CoordinateX",
-                  RealSingle,&irmin,&irmax,x);
+                  CGNS_ENUMV(RealSingle),&irmin,&irmax,x);
     cg_coord_read(index_file,index_base,index_zone,"CoordinateY",
-                  RealSingle,&irmin,&irmax,y);
+                  CGNS_ENUMV(RealSingle),&irmin,&irmax,y);
     cg_coord_read(index_file,index_base,index_zone,"CoordinateZ",
-                  RealSingle,&irmin,&irmax,z);
+                  CGNS_ENUMV(RealSingle),&irmin,&irmax,z);
 /* find out how many sections */
     cg_nsections(index_file,index_base,index_zone,&nsections);
     printf("\nnumber of sections=%i\n",nsections);
@@ -69,7 +65,7 @@ int main()
       printf("   section name=%s\n",sectionname);
       printf("   section type=%s\n",ElementTypeName[itype]);
       printf("   istart,iend=%i, %i\n",(int)istart,(int)iend);
-      if (itype == HEXA_8)
+      if (itype == CGNS_ENUMV(HEXA_8))
       {
         printf("   reading element data for this element\n");
         cg_elements_read(index_file,index_base,index_zone,index_sect,ielem[0], \

@@ -22,10 +22,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -33,8 +29,8 @@ int main()
     double data;
     int index_file,index_base,narrays,n,idim;
     char *state,arrayname[33];
-    DataClass_t id;
-    DataType_t idata;
+    CGNS_ENUMT(DataClass_t) id;
+    CGNS_ENUMT(DataType_t) idata;
     cgsize_t idimvec;
 
 /* READ NONDIMENSIONAL INFO */
@@ -46,7 +42,7 @@ int main()
     cg_goto(index_file,index_base,"end");
     cg_dataclass_read(&id);
     printf("\nDataClass = %s\n",DataClassName[id]);
-    if (id != NormalizedByUnknownDimensional)
+    if (id != CGNS_ENUMV(NormalizedByUnknownDimensional))
     {
       printf("\nError!  Expecting NormalizedByUnknownDimensional\n");
       return 1;
@@ -67,7 +63,7 @@ int main()
         printf("   they are idim,idimvec= %i, %i\n",idim,(int)idimvec);
         return 1;
       }
-      cg_array_read_as(n,RealDouble,&data);
+      cg_array_read_as(n,CGNS_ENUMV(RealDouble),&data);
       printf("Variable=%s\n",arrayname);
       printf("    data=%18.8f\n",data);
     }

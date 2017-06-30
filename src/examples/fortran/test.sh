@@ -49,15 +49,15 @@ echo "=== running tests ==="; \
 for dir in $DIRS
 do
     printf "%-40s" "Testing $dir..."
-    cd $dir/build
+    cd $dir
     ./cgwrite
-    ./cgread > output
-    diff <( sed '/Library/ d' output | sed '/DonorDatatype/ d' | sed '/datatype=/ d') <( sed '/Library/ d' ../OUTPUT | sed '/DonorDatatype/ d' | sed '/datatype=/ d') > results.txt
-#   diff -I 'Library Version used for file creation*' -I 'DonorDatatype' -I 'datatype=' output ../OUTPUT > results.txt
+    ./cgread > build/output
+    diff <( sed '/Library/ d' build/output | sed '/DonorDatatype/ d' | sed '/datatype=/ d') <( sed '/Library/ d' ./OUTPUT | sed '/DonorDatatype/ d' | sed '/datatype=/ d') > build/results.txt
+#   diff -I 'Library Version used for file creation*' -I 'DonorDatatype' -I 'datatype=' output ./OUTPUT > results.txt
     status=$?
     echoresults $status
     return_val=`expr $status + $return_val`
-    cd ../..
+    cd ..
 done
 
 ###############################
@@ -66,14 +66,14 @@ done
 
 dir=Test_cgio
 printf "%-40s" "Testing $dir..."
-cd $dir/build
-./cgiotest > output
-diff <( sed '/Library/ d' output) <( sed '/Library/ d' ../OUTPUT) > results.txt
-#diff -I 'Library Version used for file creation*' output ../OUTPUT > results.txt
+cd $dir
+./cgiotest > build/output
+diff <( sed '/Library/ d' build/output) <( sed '/Library/ d' ./OUTPUT) > build/results.txt
+#diff -I 'Library Version used for file creation*' output ./OUTPUT > results.txt
 status=$?
 echoresults $status
 return_val=`expr $status + $return_val`
-cd ../..
+cd ..
 
 ###############################
 

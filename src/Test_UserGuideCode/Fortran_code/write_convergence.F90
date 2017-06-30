@@ -46,7 +46,7 @@
 !   go to base node
       call cg_goto_f(index_file,index_base,ier,'end')
 !   create history node (SIDS names it GlobalConvergenceHistory at base level)
-      call cg_convergence_write_f(ntt,'\0',ier)
+      call cg_convergence_write_f(ntt,CHAR(0),ier)
 !   go to new history node
       call cg_goto_f(index_file,index_base,ier,'ConvergenceHistory_t',1,'end')
 !   write lift coefficient array (user must use SIDS-standard name here)

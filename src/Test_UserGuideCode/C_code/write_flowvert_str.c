@@ -23,10 +23,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -72,12 +68,12 @@ int main()
 /* define flow solution node name (user can give any name) */
     strcpy(solname,"FlowSolution");
 /* create flow solution node */
-    cg_sol_write(index_file,index_base,index_zone,solname,Vertex,&index_flow);
+    cg_sol_write(index_file,index_base,index_zone,solname,CGNS_ENUMV(Vertex),&index_flow);
 /* write flow solution (user must use SIDS-standard names here) */
     cg_field_write(index_file,index_base,index_zone,index_flow,
-        RealDouble,"Density",r[0][0],&index_field);
+        CGNS_ENUMV(RealDouble),"Density",r[0][0],&index_field);
     cg_field_write(index_file,index_base,index_zone,index_flow,
-        RealDouble,"Pressure",p[0][0],&index_field);
+        CGNS_ENUMV(RealDouble),"Pressure",p[0][0],&index_field);
 /* close CGNS file */
     cg_close(index_file);
     printf("\nSuccessfully added Vertex flow solution data to file grid_c.cgns\n");

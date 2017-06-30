@@ -1,0 +1,109 @@
+# Notes:
+#   - Minimal appveyor.yml file is an empty file. All sections are optional.
+#   - Indent each level of configuration with 2 spaces. Do not use tabs!
+#   - All section names are case-sensitive.
+#   - Section names should be unique on each level.
+
+#---------------------------------#
+#      general configuration      #
+#---------------------------------#
+
+# version format
+version: 3.3.{build}
+
+# branches to build
+branches:
+  # whitelist
+  only:
+    - develop
+
+  # blacklist
+  # except:
+  #   - gh-pages
+
+# Do not build on tags (GitHub only)
+skip_tags: true
+
+#---------------------------------#
+#    environment configuration    #
+#---------------------------------#
+
+# Operating system (build VM template)
+os: Visual Studio 2015
+
+# scripts that are called at very beginning, before repo cloning
+init:
+  - git config --global core.autocrlf input
+
+# clone directory
+clone_folder: c:\projects\CGNS
+
+environment:
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.8.19/cmake"
+
+# scripts that run after cloning repository
+install:
+  # by default, all script lines are interpreted as batch
+  #- echo This is batch
+  # to run script as a PowerShell command prepend it with ps:
+  #- ps: Write-Host 'This is PowerShell'
+  # batch commands start from cmd:
+  #- cmd: echo This is batch again
+  #- cmd: set MY_VAR=12345
+
+# install hdf5
+  - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
+  - mkdir hdf5lib
+  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.19/bin/windows/hdf5-1.8.19-Std-win10_64-vs2015.zip
+  - ps: Expand-Archive hdf5-1.8.19-Std-win10_64-vs2015.zip -DestinationPath .
+  - cd hdf
+  - msiexec /i HDF5-1.8.19-win64.msi /quiet /qn /norestart /log install.log
+  - type install.log
+  - cd ..
+
+#---------------------------------#
+#       build configuration       #
+#---------------------------------#
+
+# build platform, i.e. x86, x64, Any CPU. This setting is optional.
+platform: Any CPU
+
+# to add several platforms to build matrix:
+#platform:
+#  - x86
+#  - Any CPU
+
+# build Configuration, i.e. Debug, Release, etc.
+configuration:
+  - Release
+
+# scripts to run before build
+before_build:
+  - echo Running cmake...
+  - mkdir c:\projects\CGNS_BUILD
+  - cd c:\projects\CGNS_BUILD
+  - cmake --version
+  - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/1.8.19/cmake
+  - cmake -G "Visual Studio 14 Win64" ^
+     -D CMAKE_C_FLAGS:STRING="" ^
+     -D CMAKE_BUILD_TYPE:STRING=Release ^
+     -D CGNS_BUILD_SHARED:BOOL=OFF ^
+     -D CGNS_USE_SHARED:BOOL=OFF ^
+     -D CGNS_ENABLE_64BIT:BOOL=ON ^
+     -D HDF5_NEED_ZLIB:BOOL=ON ^
+     -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
+     -D CGNS_ENABLE_HDF5:BOOL=ON ^
+     -D HDF5_ROOT="/Program Files/HDF_Group/HDF5/1.8.19/" ^
+     -D CGNS_ENABLE_TESTS:BOOL=ON ^
+     -D CGNS_ENABLE_LFS:BOOL=OFF ^
+     -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF ^
+     -D CGNS_ENABLE_SCOPING:BOOL=OFF ^
+     -D CGNS_ENABLE_FORTRAN:BOOL=OFF ^
+     -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
+     -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
+
+build_script:
+  - cmd: cmake --build . --config "%configuration%"
+
+test_script:
+  - cmd: ctest .

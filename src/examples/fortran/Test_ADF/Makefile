@@ -1,6 +1,6 @@
 include ../make.defs
 
-ADFTEST = $(OUTDIR)/adftest$(EXE)
+ADFTEST = adftest$(EXE)
 
 $(ADFTEST) : $(OUTDIR) adftest.F
 	$(F77) $(FOPTS) $(FEOUT)$@ adftest.F $(LIBS)
@@ -15,7 +15,7 @@ $(OUTDIR) :
 	-@$(MKDIR) $(OUTDIR)
 
 clean :
-	-$(RM) $(OUTDIR)/*
+	-$(RM) $(OUTDIR)/* $(ADFTEST)
 	-$(RMDIR) $(OUTDIR)
 	-$(RM) adf_file_*.adf
 

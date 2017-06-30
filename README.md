@@ -1,4 +1,11 @@
-# CGNS [![Build Status](https://travis-ci.org/CGNS/CGNS.svg?branch=develop)](https://travis-ci.org/CGNS/CGNS)
+# CGNS 
+[![Build Status](https://travis-ci.org/CGNS/CGNS.svg?branch=develop)](https://travis-ci.org/CGNS/CGNS) 
+[![Build Status: Windows](https://ci.appveyor.com/api/projects/status/jux83kxj0r234oy6?svg=true)](https://ci.appveyor.com/project/brtnfld/cgns)
+
+<a href="https://scan.coverity.com/projects/cgns-cgns">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/7923/badge.svg"/>
+</a>
 
 ## About
 

@@ -24,10 +24,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -53,9 +49,9 @@ int main()
     char arrayname[33];
     char solname[97],solname2[33];
     char sn[3][33];
-    DataType_t idatatype;
-    SimulationType_t isim;
-    GridLocation_t loc;
+    CGNS_ENUMT(DataType_t) idatatype;
+    CGNS_ENUMT(SimulationType_t) isim;
+    CGNS_ENUMT(GridLocation_t) loc;
 
 /* READ FLOW SOLUTION FROM CGNS FILE */
 /* open CGNS file for read-only */
@@ -96,7 +92,7 @@ int main()
               "BaseIterativeData... read %i, %i\n",id1,(int)id2);
       return 1;
     }
-    cg_array_read_as(1,RealSingle,time);
+    cg_array_read_as(1,CGNS_ENUMV(RealSingle),time);
     printf("\nTimes stored are:\n");
     for (n=0; n < nsteps; n++)
     {
@@ -118,7 +114,7 @@ int main()
              "ZoneIterativeData... read %i, %i\n",id1,(int)idims[0]);
       return 1;
     }
-    cg_array_read_as(1,Character,solname);
+    cg_array_read_as(1,CGNS_ENUMV(Character),solname);
     strncpy(sn[0],&solname[0],32);
     strncpy(sn[1],&solname[32],32);
     strncpy(sn[2],&solname[64],32);
@@ -144,7 +140,7 @@ int main()
         printf(" sn[%i]=%s\n",n-1,sn[n-1]);
         return 1;
       }
-      if (loc != Vertex)
+      if (loc != CGNS_ENUMV(Vertex))
       {
         printf("\nError, GridLocation must be Vertex!  Currently: %s\n",
                GridLocationName[loc]);
@@ -153,23 +149,23 @@ int main()
       if (n == 1)
       {
         cg_field_read(index_file,index_base,index_zone,n,"Density",
-                      RealSingle,irmin,irmax,r1[0][0]);
+                      CGNS_ENUMV(RealSingle),irmin,irmax,r1[0][0]);
         cg_field_read(index_file,index_base,index_zone,n,"Pressure",
-                      RealSingle,irmin,irmax,p1[0][0]);
+                      CGNS_ENUMV(RealSingle),irmin,irmax,p1[0][0]);
       }
       else if (n == 2)
       {
         cg_field_read(index_file,index_base,index_zone,n,"Density",
-                      RealSingle,irmin,irmax,r2[0][0]);
+                      CGNS_ENUMV(RealSingle),irmin,irmax,r2[0][0]);
         cg_field_read(index_file,index_base,index_zone,n,"Pressure",
-                      RealSingle,irmin,irmax,p2[0][0]);
+                      CGNS_ENUMV(RealSingle),irmin,irmax,p2[0][0]);
       }
       else
       {
         cg_field_read(index_file,index_base,index_zone,n,"Density",
-                      RealSingle,irmin,irmax,r3[0][0]);
+                      CGNS_ENUMV(RealSingle),irmin,irmax,r3[0][0]);
         cg_field_read(index_file,index_base,index_zone,n,"Pressure",
-                      RealSingle,irmin,irmax,p3[0][0]);
+                      CGNS_ENUMV(RealSingle),irmin,irmax,p3[0][0]);
       }
     }
 /* close CGNS file */

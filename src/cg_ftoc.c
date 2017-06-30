@@ -3485,7 +3485,7 @@ CGNSDLL void FMNAME(cg_exponents_write_f,CG_EXPONENTS_WRITE_F) (
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cg_conversion_write_f(
+CGNSDLL void FMNAME(cg_conversion_write_f, CG_CONVERSION_WRITE_F) (
 	CGNS_ENUMT(DataType_t) *DataType, void *ConversionFactors, cgint_f *ier)
 {
     *ier = (cgint_f)cg_conversion_write(*DataType,
@@ -3699,7 +3699,7 @@ CGNSDLL void FMNAME(cgp_coord_write_data_f,CGP_COORD_WRITE_DATA_F)(
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cgp_coord_read_data_f,CGP_COORD_WRITE_DATA_F)(
+CGNSDLL void FMNAME(cgp_coord_read_data_f,CGP_COORD_READ_DATA_F)(
 	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
 	cgsize_t *rmin, cgsize_t *rmax, void *data, cgint_f *ier)
 {

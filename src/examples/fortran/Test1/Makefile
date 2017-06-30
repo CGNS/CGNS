@@ -1,8 +1,8 @@
 include ../make.defs
 
-WRITE  = $(OUTDIR)/cgwrite$(EXE)
-READ   = $(OUTDIR)/cgread$(EXE)
-MODIFY = $(OUTDIR)/cgmodify$(EXE)
+WRITE  = cgwrite$(EXE)
+READ   = cgread$(EXE)
+MODIFY = cgmodify$(EXE)
 
 all    : write read modify
 write  : $(OUTDIR) $(WRITE)
@@ -28,6 +28,6 @@ $(MODIFY) : cgmodify.F
 	$(F77) $(FOPTS) $(FEOUT)$@ cgmodify.F $(LIBS)
 
 clean :
-	-$(RM) Test_V2
+	-$(RM) Test_V2 $(WRITE) $(READ) $(MODIFY)
 	-$(RMDIR) $(OUTDIR)
 

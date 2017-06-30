@@ -1,5 +1,5 @@
 
-AC_PREREQ(2.13)
+AC_PREREQ(2.69)
 
 #--------------------------------------------------------------------------
 # Redefine the cache macros so that a cache file is not created.
@@ -8,7 +8,6 @@ AC_PREREQ(2.13)
 
 define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
-
 
 AC_INIT(cgnslib.c)
 
@@ -85,9 +84,15 @@ test ! "$enableval" = "no" && enableval=yes
 use_gcc=$enableval
 AC_MSG_RESULT($use_gcc)
 
-if test $use_gcc = yes; then
-  AC_PROG_CC
-else
+# ----------------------------------------------------------------------
+# Check for programs.
+#
+AC_PROG_CC
+CC_BASENAME="`echo $CC | cut -f1 -d' ' | xargs basename 2>/dev/null`"
+
+##if test $use_gcc = yes; then
+##  AC_PROG_CC
+##else
   if test -z "$CC"; then
     AC_CHECK_PROG(CC, cc, cc, , , /usr/ucb/cc)
     if test -z "$CC"; then
@@ -97,9 +102,10 @@ else
       fi
     fi
   fi
-  AC_PROG_CC_WORKS
-  AC_PROG_CC_GNU
-fi
+##  AC_PROG_CC
+##  AC_PROG_CC_WORKS
+##  AC_PROG_CC_GNU
+##fi
 
 if test "$ac_cv_prog_gcc" = "yes"; then
   test -z "$CFLAGS" && CFLAGS=-O2
@@ -112,12 +118,13 @@ COOUT="-o \$(SPACE)"
 
 # check if the compiler supports prototyping - required
 
-AC_LANG_C
+AC_LANG_PUSH(C)
 AC_MSG_CHECKING([if compiler supports prototyping])
-AC_TRY_COMPILE(
-[extern int func(int,int);
-int func(int i, int j){return i + j;}],
-[func(0,1)],proto=yes,proto=no)
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[extern int func(int,int);
+int func(int i, int j){return i + j;}]],[[func(0,1)]])],
+[proto=yes],[proto=no])
+
 AC_MSG_RESULT($proto)
 test $proto = no && \
   AC_MSG_ERROR([compiler does not support prototyping])
@@ -126,8 +133,6 @@ test $proto = no && \
 # get object and executable extensions
 #--------------------------------------------------------------------------
 
-AC_OBJEXT
-AC_EXEEXT
 LIBEXT=a
 
 # Set the Fortran flags using FCFLAGS. If both FFLAGS (which predates FCFLAGS)
@@ -163,7 +168,11 @@ else
     AC_MSG_WARN(no Fortran compiler was found)
   else
     has_f77=yes
-    AC_PROG_F77_GNU
+   # --------------------------------------------------------------------
+   # Check for a Fortran compiler
+   #
+   AC_PROG_FC([PAC_FC_SEARCH_LIST],)
+  ##  AC_PROG_F77_GNU
     if test "$ac_cv_prog_g77" = "yes"; then
       test -z "$FFLAGS" && FFLAGS=-O2
       test ! "$F77" = "f95" && FFLAGS="$FFLAGS -Wno-globals"
@@ -217,7 +226,7 @@ AROUT=
 
 AC_HEADER_STDC
 test "$ac_cv_header_stdc" = "no" && \
-  AC_MSG_WARN(Standard C header files not found - may not compile)
+	AC_MSG_WARN(Standard C header files not found - may not compile)
 
 #--------------------------------------------------------------------------
 # check for typedefs and structures
@@ -273,7 +282,6 @@ AC_MSG_RESULT($LIB_INSTALL_DIR)
 
 BUILDDIR=lib
 BUILD64BIT=0
-CGFSIZET=\*4
 
 test ! -x cgsystem && \
   chmod +x cgsystem
@@ -296,7 +304,6 @@ if test -z "$withsys" || test "$withsys" = "no"; then
   AC_MSG_RESULT($SYSTEM)
   if test $do64bit = yes; then
     BUILD64BIT=1
-    CGFSIZET=\*8
     is64bit=`echo $SYSTEM | grep 64`
     test -z "$is64bit" && \
       AC_MSG_WARN(64bit support not found for your machine)
@@ -476,37 +483,32 @@ else
   HAVE_F2003_REQUIREMENTS="no"
   AC_MSG_CHECKING([if Fortran compiler meets 2003 standard])
 
- cat >> testf03.f90 << EOF
-       PROGRAM testf03
-  	 USE iso_c_binding
-  	 IMPLICIT NONE
-  	 INTEGER(C_INT) :: a
-  	 INTEGER(C_INT32_T) :: b
-  	 INTEGER(C_INT64_T) :: c
-         REAL(C_FLOAT) :: d
-  	 REAL(C_DOUBLE) :: e
-  	 CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: f
-  	 TYPE(C_PTR) :: g
-         INTERFACE
-           INTEGER(C_INT) FUNCTION test(A, UserDataName1) BIND(C, name='cg_goto')
-             USE ISO_C_BINDING
-             INTEGER(C_INT)   , INTENT(IN), VALUE :: A
-             CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName1
-           END FUNCTION test
-         END INTERFACE
-  	 g = C_LOC(f(1:1))
+  AC_LANG_PUSH(Fortran)
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+      PROGRAM testf03
+  	USE iso_c_binding
+  	IMPLICIT NONE
+  	INTEGER(C_INT) :: a
+  	INTEGER(C_INT32_T) :: b
+  	INTEGER(C_INT64_T) :: c
+        REAL(C_FLOAT) :: d
+  	REAL(C_DOUBLE) :: e
+  	CHARACTER(LEN=1,KIND=C_CHAR), TARGET :: f
+  	TYPE(C_PTR) :: g
+        INTERFACE
+         INTEGER(C_INT) FUNCTION test(A,UserData) BIND(C,name='cg_goto')
+           USE ISO_C_BINDING
+           INTEGER(C_INT)   , INTENT(IN), VALUE :: A
+           CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserData
+         END FUNCTION test
+        END INTERFACE
+  	g = C_LOC(f(1:1))
       END PROGRAM testf03
-EOF
-  msg=`${F77} -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then
-    HAVE_F2003_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2003=1
-    rm testf03.o
-  fi
-  if test -f testf03.f90; then
-    rm testf03.f90
-  fi
-  AC_MSG_RESULT($HAVE_F2003_REQUIREMENTS)
+  ])],[  AC_MSG_RESULT([yes])
+         HAVE_F2003_REQUIREMENTS="yes"
+         HAVE_FORTRAN_2003=1],
+      [AC_MSG_RESULT([no])])
+  AC_LANG_POP(Fortran)
 
  ## In F2003 and F2008 optional parameters are not allowed for functions that have BIND(C).
  ## In Fortran 2003 it is constraint C530, in the latest Fortran 2008 draft it is C516:
@@ -522,10 +524,11 @@ EOF
   HAVE_F2008TS_REQUIREMENTS="no"
   if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
 
-  AC_MSG_CHECKING([if Fortran compiler meets Technical Specification 29113])
+    AC_MSG_CHECKING([if Fortran compiler meets Technical Specification 29113])
 
- cat >> testf03.f90 << EOF
-       PROGRAM testf03
+    AC_LANG_PUSH(Fortran)
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+        PROGRAM testf03
          USE ISO_C_BINDING
          INTERFACE
             INTEGER(C_INT) FUNCTION test(A) BIND(C, name='test')
@@ -534,26 +537,22 @@ EOF
             END FUNCTION test
          END INTERFACE
        END PROGRAM testf03
-EOF
-  msg=`${F77} -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then
-    HAVE_F2008TS_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2008TS=1
-    rm testf03.o
-  fi
-  if test -f testf03.f90; then
-     rm testf03.f90
-  fi
-  AC_MSG_RESULT($HAVE_F2008TS_REQUIREMENTS)
+    ])],[  AC_MSG_RESULT([yes])
+     	 HAVE_F2008TS_REQUIREMENTS="yes"
+         HAVE_FORTRAN_2008TS=1],
+      [AC_MSG_RESULT([no])])
+
+    AC_LANG_POP(Fortran)
 
   ## Fortran 2008 permits having different identifiers for the same binding label,
   ## so check if the compiler has this feature.
-  HAVE_F2008_REQUIREMENTS="no"
-  if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
+    HAVE_F2008_REQUIREMENTS="no"
+    if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
 
-  AC_MSG_CHECKING([if Fortran compiler meets the Fortran 2008 Standard])
+      AC_MSG_CHECKING([if Fortran compiler meets the Fortran 2008 Standard])
 
- cat >> testf08.f90 << EOF
+      AC_LANG_PUSH(Fortran)
+      AC_COMPILE_IFELSE([AC_LANG_SOURCE([
        MODULE test
          USE ISO_C_BINDING
          INTERFACE binding
@@ -567,47 +566,34 @@ EOF
 	   END FUNCTION bind2
          END INTERFACE
       END MODULE test
-EOF
-  msg=`${F77} -c testf08.f90 &> /dev/null`
-  if test -f testf08.o; then
-    HAVE_F2008_REQUIREMENTS="yes"
-    HAVE_FORTRAN_2008=1
-    rm testf08.o
-  fi
-  if test -f testf08.f90; then
-     rm testf08.f90
-  fi
-  if test -f testf08.mod; then
-     rm testf08.mod
-  fi
-  AC_MSG_RESULT($HAVE_F2008_REQUIREMENTS)
-  fi
+      ])],[  AC_MSG_RESULT([yes])
+         HAVE_F2008_REQUIREMENTS="yes"
+         HAVE_FORTRAN_2008=1],
+      [AC_MSG_RESULT([no])])
+
+      AC_LANG_POP(Fortran)
+    fi
   
-else
+  else
 
   # Check if the Fortran compiler is at least F95 compliant
   ## --------------------------------------------------------------------
   ## Default for FORTRAN 95 compliant compilers
   ##
-  HAVE_F95_REQUIREMENTS="no"
-  AC_MSG_CHECKING([if Fortran compiler meets 95 standard])
-
- cat >> testf95.f90 << EOF
+    HAVE_F95_REQUIREMENTS="no"
+    AC_MSG_CHECKING([if Fortran compiler meets 95 standard])
+    AC_LANG_PUSH(Fortran)
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
        PROGRAM testf95
   	 IMPLICIT NONE
          INTEGER, PARAMETER :: cgint_kind = SELECTED_INT_KIND(5)
       END PROGRAM testf95
-EOF
-  msg=`${F77} -c testf95.f90 &> /dev/null`
-  if test -f testf95.o; then
-    HAVE_F95_REQUIREMENTS="yes"
-    HAVE_FORTRAN_95=1
-    rm testf95.o
-  fi
-  if test -f testf95.f90; then
-    rm testf95.f90
-  fi
-  AC_MSG_RESULT($HAVE_F95_REQUIREMENTS)
+    ])],[  AC_MSG_RESULT([yes])
+           HAVE_F95_REQUIREMENTS="yes"
+           HAVE_FORTRAN_95=1],
+      [AC_MSG_RESULT([no])])
+
+    AC_LANG_POP(Fortran)
 
   fi
 
@@ -616,8 +602,10 @@ EOF
 
   if test "$HAVE_F2003_REQUIREMENTS" = "yes"; then
 
-  AC_MSG_CHECKING([size of default Fortran integer ])
- cat >> testf03.f90 << EOF
+    AC_MSG_CHECKING([size of default Fortran integer ])
+
+    AC_LANG_PUSH(Fortran)
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
       MODULE mod
 
         INTERFACE test_integer
@@ -647,22 +635,10 @@ EOF
         CALL test_integer(a)
 
       END PROGRAM main
-EOF
-  msg=`${F77} $FFLAGS -c testf03.f90 &> /dev/null`
-  if test -f testf03.o; then
-    AC_MSG_RESULT(c_int32_t)
-    rm testf03.o
-  else
-    FORTRAN_DEFAULT_INTEGER_C_INT64_T=1
-    AC_MSG_RESULT(c_int64_t)
-  fi
-  if test -f testf03.f90; then
-     rm testf03.f90
-  fi
-  if test -f mod.mod; then
-     rm mod.mod
-  fi
-
+    ])],[ AC_MSG_RESULT(c_int32_t)],
+        [ AC_MSG_RESULT(c_int64_t)
+	FORTRAN_DEFAULT_INTEGER_C_INT64_T=1])
+    AC_LANG_POP(Fortran)
   fi
 
   if test $need_f2c = yes; then
@@ -688,16 +664,24 @@ EOF
     AC_MSG_CHECKING([Fortran to C interface])
     if test $has_f77 = yes; then
       LIBS_SAVE="$LIBS"
+
+      AC_LANG_PUSH(C)
+      AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+       void ffunc(){}
+      ])],[mv conftest.$OBJEXT conffunc.$OBJEXT],[])
+
+      LIBS="conffunc.$OBJEXT $LIBS_SAVE"
       AC_LANG_SAVE
+
+      AC_LANG_PUSH(Fortran)
       for func in ffunc_ ffunc FFUNC FFUNC_ ffunc__ FFUNC__; do
-        AC_LANG_C
-        echo "void $func(){}" > conftest.c
-        AC_TRY_EVAL(ac_compile)
-        mv conftest.$OBJEXT conffunc.$OBJEXT
-        AC_LANG_FORTRAN77
-        LIBS="conffunc.$OBJEXT $LIBS_SAVE"
-        AC_TRY_LINK(,ffunc,linked=yes)
-        rm -f conffunc* conftest*
+
+	AC_LINK_IFELSE([AC_LANG_SOURCE([
+           PROGRAM main
+             func=$func()
+           END PROGRAM
+        ])],[linked="yes"],[])
+
         if test "$linked" = "yes"; then
           case $func in
             ffunc)   f2c=LOWERCASE ;;
@@ -710,6 +694,7 @@ EOF
           break
         fi
       done
+      rm -f conffunc.$OBJEXT
       LIBS="$LIBS_SAVE"
       AC_LANG_RESTORE
     fi
@@ -808,6 +793,11 @@ if test $shared = yes; then
     fi
   fi
   if test $shared = yes; then
+    if test $STRIP = "strip"; then
+      case $SYSTEM in
+        DARWIN) STRIP="$STRIP -x" ;;
+      esac
+    fi
     RAN_LIB="\$(STRIP)"
   fi
 fi
@@ -911,6 +901,19 @@ EOF
   if test -f test.c; then
      rm test.c
   fi
+
+  # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
+  ## --------------------------------------------------------------------
+
+  HDF5_HAVE_COLL_METADATA=0
+  AC_MSG_CHECKING([if HDF5 library has collective metadata APIs])
+  chck_coll=`grep -i '_coll_metadata_' $HDF5INC/H5Ppublic.h`
+  if test "x$chck_coll" = "x"; then
+    AC_MSG_RESULT(no)
+  else
+    HDF5_HAVE_COLL_METADATA=1
+    AC_MSG_RESULT(yes)
+  fi
 fi
 
 #---------------------------------------------------------------------------
@@ -919,71 +922,165 @@ fi
 
 H5NEEDZLIB=0
 ZLIBLIB=""
-
-if test "$withhdf5" = "yes"; then
-
-  AC_MSG_CHECKING([if using zlib])
-  AC_ARG_WITH(zlib,
-    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=no]],
-    withzlib=$withval,withzlib="no")
-  if test "$withzlib" = "no"; then
-    AC_MSG_RESULT(no)
-  else
-    H5NEEDZLIB=1
-    if test -z "$withzlib" || test "$withzlib" = "yes"; then
-      zlibdir=""
-      AC_MSG_RESULT(yes)
-      AC_CHECK_HEADER(zlib.h,installed=yes,installed=no)
-      if test "$installed" = "yes"; then
-        ZLIBLIB=-lz
-      else
-        AC_MSG_CHECKING([for local zlib distribution])
-        for d in \
-          `ls -dr * 2>/dev/null` \
-          `ls -dr ../* 2>/dev/null` \
-          `ls -dr ../../* 2>/dev/null` \
-          `ls -dr ../../../* 2>/dev/null` ; do
-          if test -f "$d/zlib.h"; then
-            zlibdir=`(cd $d; pwd)`
-            AC_MSG_RESULT($zlibdir)
-            break
-          fi
-        done
-        test -z "$zlibdir" && AC_MSG_RESULT(not found)
-      fi
-    else
-      if test -f "$withzlib/zlib.h"; then
-        zlibdir=$withzlib
-      else
-        zlibdir=`dirname $withzlib`
-      fi
-      withzlib=yes
-      AC_MSG_RESULT($zlibdir)
-    fi
-
-    if test -z "$ZLIBLIB"; then
-      test -z "$zlibdir" && \
-        AC_MSG_ERROR(need specify the zlib directory with --with-zlib=DIR)
-      if test -f "$zlibdir/zlib.h"; then
-        for a in $exts ; do
-          if test -f $zlibdir/libz.$a; then
-            ZLIBLIB=$zlibdir/libz.$a
-            break
-          fi
-        done
-        test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/libz.a
-      else
-        AC_MSG_ERROR($zlibdir directory does not contain zlib.h)
-      fi
-    fi
-
-  fi
-fi
-
 H5NEEDSZIP=0
 SZIPLIB=""
 
+## ----------------------------------------------------------------------
+## Fake --with-xxx option to allow us to create a help message for the
+## following --with-xxx options which can take either a =DIR or =INC,LIB
+## specifier.
+##
+AC_ARG_WITH([fnord],
+  [
+ For the --with-zlib option, you can specify where the header
+ files and libraries are in two different ways:
+
+    --with-xxx=INC,LIB - Specify individually the include directory and
+                         library directory separated by a comma
+    --with-xxx=DIR     - Specify only the directory which contains the
+                         include/ and lib/ subdirectories
+  ])
+
 if test "$withhdf5" = "yes"; then
+
+  AC_ARG_WITH([zlib],
+               [AS_HELP_STRING([--with-zlib=DIR],
+                              [Use zlib library for external deflate I/O
+                               filter [default=no]])],,
+               [withval=no])
+
+  case $withval in
+    yes)
+      H5NEEDZLIB=1
+      HAVE_ZLIB="yes"
+      AC_CHECK_HEADERS([zlib.h], [HAVE_ZLIB_H="yes"], [unset HAVE_ZLIB])
+      if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
+        AC_CHECK_LIB([z], [compress2],, [unset HAVE_ZLIB])
+      fi
+      if test -z "$HAVE_ZLIB"; then
+        AC_MSG_ERROR([couldn't find zlib library: specify the zlib directory with --with-zlib=DIR])
+      fi
+      ZLIBLIB=-lz
+      ;;
+    no)
+      HAVE_ZLIB="no"
+      AC_MSG_CHECKING([if using zlib with HDF5])
+      AC_MSG_RESULT([no])
+      ;;
+    *)
+      H5NEEDZLIB=1
+      HAVE_ZLIB="yes"
+ 
+      case "$withval" in
+        *,*)
+          zlib_inc="`echo $withval | cut -f1 -d,`"
+          zlib_lib="`echo $withval | cut -f2 -d, -s`"
+          ;;
+        *)
+          if test -n "$withval"; then
+            zlib_inc="$withval/include"
+            zlib_lib="$withval/lib"
+          fi
+          ;;
+      esac
+
+    if test -n "$zlib_inc"; then
+      CPPFLAGS="$CPPFLAGS -I$zlib_inc"
+    fi
+
+    AC_CHECK_HEADERS([zlib.h],
+                     [HAVE_ZLIB_H="yes"],
+                     [CPPFLAGS="$saved_CPPFLAGS"] [unset HAVE_ZLIB])
+
+
+    if test $shared = yes; then
+      ZLIBLIB="-L$zlib_lib"
+    else
+      if test -n "$zlib_lib"; then
+        for a in $exts ; do
+          if test -f $zlib_lib/libz.$a; then
+            ZLIBLIB=$zlib_lib/libz.$a
+            break
+          fi
+        done
+      fi
+    fi
+
+    if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
+      AC_CHECK_LIB([z], [compress2],,
+                   [unset HAVE_ZLIB])
+    fi
+
+    if test -z "$HAVE_ZLIB"; then
+      AC_MSG_ERROR([couldn't find zlib library])
+    else
+      AC_CHECK_FUNC([compress2], [HAVE_COMPRESS2="yes"])
+    fi
+    AC_MSG_CHECKING([for zlib library path])	
+    AC_MSG_RESULT([$zlib_lib])
+    AC_MSG_CHECKING([for zlib include path])	
+    AC_MSG_RESULT([$zlib_inc])
+    ;;
+  esac
+	
+
+#  AC_MSG_CHECKING([if using zlib])
+#  AC_ARG_WITH(zlib,
+#    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=no]],
+#    withzlib=$withval,withzlib="no")
+#  if test "$withzlib" = "no"; then
+#    AC_MSG_RESULT(no)
+#  else
+#    H5NEEDZLIB=1
+#    if test -z "$withzlib" || test "$withzlib" = "yes"; then
+#      zlibdir=""
+#      AC_MSG_RESULT(yes)
+#      AC_CHECK_HEADER(zlib.h,installed=yes,installed=no)
+#      if test "$installed" = "yes"; then
+#        ZLIBLIB=-lz
+#      else
+#        AC_MSG_CHECKING([for local zlib distribution])
+#        for d in \
+#          `ls -dr * 2>/dev/null` \
+#          `ls -dr ../* 2>/dev/null` \
+#          `ls -dr ../../* 2>/dev/null` \
+#          `ls -dr ../../../* 2>/dev/null` ; do
+#          if test -f "$d/zlib.h"; then
+#            zlibdir=`(cd $d; pwd)`
+#            AC_MSG_RESULT($zlibdir)
+#            break
+#          fi
+#        done
+#        test -z "$zlibdir" && AC_MSG_RESULT(not found)
+#      fi
+#    else
+#      if test -f "$withzlib/include/zlib.h"; then
+#        zlibdir=$withzlib
+#      else
+#        zlibdir=`dirname $withzlib`
+#      fi
+#      withzlib=yes
+#      AC_MSG_RESULT($zlibdir)
+#    fi
+#
+#    if test -z "$ZLIBLIB"; then
+#      test -z "$zlibdir" && \
+#        AC_MSG_ERROR(need specify the zlib directory with --with-zlib=DIR)
+#      if test -f "$zlibdir/include/zlib.h"; then
+#        for a in $exts ; do
+#          if test -f $zlibdir/lib/libz.$a; then
+#            ZLIBLIB=$zlibdir/lib/libz.$a
+#            break
+#          fi
+#        done
+#        test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/lib/libz.a
+#      else
+#        AC_MSG_ERROR($zlibdir/include directory does not contain zlib.h)
+#      fi
+#    fi
+
+#  fi
+
   AC_MSG_CHECKING([if using szip])
   AC_ARG_WITH(szip,
     [  --with-szip[=LIB]       use szip with HDF5 [default=no]],
@@ -1022,7 +1119,6 @@ fi
 #---------------------------------------------------------------------------
 # does HDF5 require MPI ?
 #---------------------------------------------------------------------------
-
 withmpi=no
 
 H5NEEDMPI=0
@@ -1033,81 +1129,82 @@ MPILIBS=""
 MPICC=""
 MPIEXEC=""
 
-if test "$withhdf5" = "yes"; then
-  AC_MSG_CHECKING([if using MPI])
-  AC_ARG_WITH(mpi,
-    [  --with-mpi[=DIR/mpicc]  use MPI with HDF5 [default=no]],
-    withmpi=$withval,withmpi="no")
-  if test "x$withmpi" = "xno"; then
-    AC_MSG_RESULT(no)
-  else
-    H5NEEDMPI=1
-    if test -z "$withmpi" || test "$withmpi" = "yes"; then
-      AC_MSG_RESULT(yes)
-      AC_PATH_PROG(MPICC, mpicc,)
-      if test "x$MPICC" = "x"; then
-        AC_MSG_CHECKING([for local mpicc executable])
-        for d in \
-          `ls -dr * 2>/dev/null` \
-          `ls -dr ../* 2>/dev/null` \
-          `ls -dr ../../* 2>/dev/null` \
-          `ls -dr ../../../* 2>/dev/null` ; do
-          if test -x "$d/mpicc"; then
-            MPICC=`(cd $d; pwd)`/mpicc
-            break
-          fi
-          if test -x "$d/bin/mpicc"; then
-            MPICC=`(cd $d; pwd)`/bin/mpicc
-            break
-          fi
-        done
-      fi
-    else
-      mpidir=$withmpi
-      test ! -d $withmpi && mpidir=`dirname $withmpi`
-      if test -x "$mpidir/mpicc"; then
-        MPICC=`(cd $mpidir; pwd)`/mpicc
-      fi
-      if test -x "$mpidir/bin/mpicc"; then
-        MPICC=`(cd $mpidir; pwd)`/bin/mpicc
-      fi
-    fi
+#if test "$withhdf5" = "yes"; then
+#  AC_MSG_CHECKING([if using MPI])
+#  AC_ARG_WITH(mpi,
+#    [  --with-mpi[=DIR/mpicc]  use MPI with HDF5 [default=no]],
+#    withmpi=$withval,withmpi="no")
+#  if test "x$withmpi" = "xno"; then
+#    AC_MSG_RESULT(no)
+#  else
+#    H5NEEDMPI=1
+#    if test -z "$withmpi" || test "$withmpi" = "yes"; then
+#      AC_MSG_RESULT(yes)
+#      AC_PATH_PROG(MPICC, mpicc,)
+#      if test "x$MPICC" = "x"; then
+#        AC_MSG_CHECKING([for local mpicc executable])
+#        for d in \
+#          `ls -dr * 2>/dev/null` \
+#          `ls -dr ../* 2>/dev/null` \
+#          `ls -dr ../../* 2>/dev/null` \
+#          `ls -dr ../../../* 2>/dev/null` ; do
+#          if test -x "$d/mpicc"; then
+#            MPICC=`(cd $d; pwd)`/mpicc
+#            break
+#          fi
+#          if test -x "$d/bin/mpicc"; then
+#            MPICC=`(cd $d; pwd)`/bin/mpicc
+#            break
+#          fi
+#        done
+#      fi
+#    else
+#      mpidir=$withmpi
+#      test ! -d $withmpi && mpidir=`dirname $withmpi`
+#      if test -x "$mpidir/mpicc"; then
+#        MPICC=`(cd $mpidir; pwd)`/mpicc
+#      fi
+#      if test -x "$mpidir/bin/mpicc"; then
+#        MPICC=`(cd $mpidir; pwd)`/bin/mpicc
+#      fi
+#    fi
+#
+#    if test "x$MPICC" = "x"; then
+#      AC_MSG_ERROR(mpicc not found)
+#    else
+#      AC_MSG_RESULT($MPICC)
+#      MPIEXEC=`echo $MPICC | sed "s/mpicc/mpiexec/"`
+#      mpibin=`dirname $MPICC`
+#      mpidir=`dirname $mpibin`
+#      if test -d "$mpidir/src/include" ; then
+#        MPIINC=$mpidir/src/include
+#      else
+#        MPIINC=$mpidir/include
+#      fi
+#      MPIOPTS=`grep "^CFLAGS=" $MPICC | sed s/CFLAGS=// | sed s/\"//g`
+#      mpilib=`grep "^MPILIBNAME=" $MPICC | sed s/MPILIBNAME=// | sed s/\"//g`
+#      if test "x$mpilib" = "x"; then
+#        MPILIBS="-L$mpidir/lib"
+#      else
+#        MPILIBS="-L$mpidir/lib -l$mpilib"
+#      fi
+#      plib=`grep "^NEEDSPLIB=" $MPICC | sed s/NEEDSPLIB=// | sed s/\"//g`
+#      if test "x$plib" = "xyes"; then
+#        pmpilib=`grep "^PMPILIBNAME=" $MPICC | sed s/PMPILIBNAME=// | sed s/\"//g`
+#        if test "x$pmpilib" = "x"; then
+#          MPILIBS="$MPILIBS"
+#        else
+#          MPILIBS="$MPILIBS -l$pmpilib"
+#        fi
+#      fi
+#      extralibs=`grep "^LIBS=" $MPICC | sed s/LIBS=// | sed s/\"//g`
+#      MPILIBS="$MPILIBS $extralibs"
+#    fi
+#    MPIDEF=-I$MPIINC
+#    withmpi=yes
+#  fi
+#fi
 
-    if test "x$MPICC" = "x"; then
-      AC_MSG_ERROR(mpicc not found)
-    else
-      AC_MSG_RESULT($MPICC)
-      MPIEXEC=`echo $MPICC | sed "s/mpicc/mpiexec/"`
-      mpibin=`dirname $MPICC`
-      mpidir=`dirname $mpibin`
-      if test -d "$mpidir/src/include" ; then
-        MPIINC=$mpidir/src/include
-      else
-        MPIINC=$mpidir/include
-      fi
-      MPIOPTS=`grep "^CFLAGS=" $MPICC | sed s/CFLAGS=// | sed s/\"//g`
-      mpilib=`grep "^MPILIBNAME=" $MPICC | sed s/MPILIBNAME=// | sed s/\"//g`
-      if test "x$mpilib" = "x"; then
-        MPILIBS="-L$mpidir/lib"
-      else
-        MPILIBS="-L$mpidir/lib -l$mpilib"
-      fi
-      plib=`grep "^NEEDSPLIB=" $MPICC | sed s/NEEDSPLIB=// | sed s/\"//g`
-      if test "x$plib" = "xyes"; then
-        pmpilib=`grep "^PMPILIBNAME=" $MPICC | sed s/PMPILIBNAME=// | sed s/\"//g`
-        if test "x$pmpilib" = "x"; then
-          MPILIBS="$MPILIBS"
-        else
-          MPILIBS="$MPILIBS -l$pmpilib"
-        fi
-      fi
-      extralibs=`grep "^LIBS=" $MPICC | sed s/LIBS=// | sed s/\"//g`
-      MPILIBS="$MPILIBS $extralibs"
-    fi
-    MPIDEF=-I$MPIINC
-    withmpi=yes
-  fi
-fi
 
 #-----------------------------------------------------------------------
 # build parallel code ?
@@ -1116,16 +1213,23 @@ fi
 BUILDPARALLEL=0
 parallel=no
 
-if test "$withmpi" = "yes"; then
-  AC_MSG_CHECKING([if parallel IO support is requested])
-  AC_ARG_ENABLE(parallel,
+AC_MSG_CHECKING([if parallel IO support is requested])
+AC_ARG_ENABLE(parallel,
     [  --enable-parallel       enable parallel IO support [default=no]],,
     enableval="no")
-  test ! "x$enableval" = "xno" && enableval=yes
+  
+if test ! "x$enableval" = "xno" && enableval=yes; then
   BUILDPARALLEL=1
   parallel=$enableval
-  AC_MSG_RESULT($parallel)
+
+  ## Set MPIEXEC to mpiexec if not set yet.
+  if test "X$parallel" = "Xyes" -a -z "$MPIEXEC"; then
+      MPIEXEC="mpiexec"
+  fi
+
+
 fi
+AC_MSG_RESULT($parallel)
 
 #--------------------------------------------------------------------------
 # check for libraries
@@ -1169,8 +1273,10 @@ EOF
     has_lfs=yes
   else
     AC_MSG_CHECKING([for off64_t])
-    AC_TRY_COMPILE([#include <sys/types.h>], [off64_t n = 0;],
-      has_lfs=yes, has_lfs=no)
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]],[[off64_t n = 0;]])],
+	[has_lfs=yes],[has_lfs=no])
+##    AC_TRY_COMPILE([#include <sys/types.h>], [off64_t n = 0;],
+##      has_lfs=yes, has_lfs=no)
     AC_MSG_RESULT($has_lfs)
     if test $has_lfs = yes; then
       AC_CHECK_FUNC(open64, LFS="-DHAS_OPEN64 $LFS")
@@ -1517,6 +1623,13 @@ if test "$withfortran" = "yes"; then
     if test X != "X$fc_vendor"; then
       FFLAGS="$FFLAGS -Mx,125,0x200" 
     fi
+#----------- Determine if the Fortran compiler gfortran -------------------
+#   Turn off warnings for passing non-ANSI types to BIND().
+#--------------------------------------------------------------------------
+     fc_vendor="`$FC --version 2>&1 |grep -i 'gcc'`"
+     if test X != "X$fc_vendor"; then
+       FFLAGS="$FFLAGS -Wno-c-binding-type"
+     fi
 fi
 #--------------------------------------------------------------------------
 # substitutions and write Makefile and make.defs
@@ -1544,7 +1657,6 @@ fi
 
 if test $BUILDLEGACY -ne 0 ; then
   BUILD64BIT=0
-  CGFSIZET=
   if test "$withhdf5" = "yes"; then
     INSTALLADF="install-adf install-adfh"
   else
@@ -1585,13 +1697,13 @@ AC_SUBST(HAVE_FORTRAN_2003)
 AC_SUBST(HAVE_FORTRAN_2008TS)
 AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
+AC_SUBST(HDF5_HAVE_COLL_METADATA)
 AC_SUBST(FC_D_PRE)
 AC_SUBST(BUILDPARALLEL)
 AC_SUBST(BUILDBASESCOPE)
 
 AC_SUBST(CGNSTOOLS)
 AC_SUBST(CGLONGT)
-AC_SUBST(CGFSIZET)
 
 AC_SUBST(SYSTEM)
 AC_SUBST(CGNSVERS)
@@ -1632,6 +1744,7 @@ AC_SUBST(CFGFLAGS)
 AC_SUBST(STRIP)
 
 AC_SUBST(SYSFFLAGS)
+AC_SUBST(FFLAGS)
 AC_SUBST(FEOUT)
 AC_SUBST(FLIBS)
 

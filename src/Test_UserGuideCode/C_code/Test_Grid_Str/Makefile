@@ -1,23 +1,26 @@
 include ../make.defs
 
-WRITE1 = $(OUTDIR)/write_grid_str$(EXE)
-WRITE2 = $(OUTDIR)/write_flowvert_str$(EXE)
-WRITE3 = $(OUTDIR)/write_nondimensional$(EXE)
-WRITE4 = $(OUTDIR)/write_descriptor$(EXE)
-WRITE5 = $(OUTDIR)/write_convergence$(EXE)
-WRITE6 = $(OUTDIR)/write_floweqn_str$(EXE)
-WRITE7 = $(OUTDIR)/write_bcpnts_str$(EXE)
-READ1  = $(OUTDIR)/read_grid_str$(EXE)
-READ2  = $(OUTDIR)/read_flowvert_str$(EXE)
-READ3  = $(OUTDIR)/read_nondimensional$(EXE)
-READ4  = $(OUTDIR)/read_descriptor$(EXE)
-READ5  = $(OUTDIR)/read_convergence$(EXE)
-READ6  = $(OUTDIR)/read_floweqn_str$(EXE)
-READ7  = $(OUTDIR)/read_bcpnts_str$(EXE)
+WRITE1 = write_grid_str$(EXE)
+WRITE2 = write_flowvert_str$(EXE)
+WRITE3 = write_nondimensional$(EXE)
+WRITE4 = write_descriptor$(EXE)
+WRITE5 = write_convergence$(EXE)
+WRITE6 = write_floweqn_str$(EXE)
+WRITE7 = write_bcpnts_str$(EXE)
+READ1  = read_grid_str$(EXE)
+READ2  = read_flowvert_str$(EXE)
+READ3  = read_nondimensional$(EXE)
+READ4  = read_descriptor$(EXE)
+READ5  = read_convergence$(EXE)
+READ6  = read_floweqn_str$(EXE)
+READ7  = read_bcpnts_str$(EXE)
+
+WRITE_PROGS = $(WRITE1) $(WRITE2) $(WRITE3) $(WRITE4) $(WRITE5) $(WRITE6) $(WRITE7)
+READ_PROGS = $(READ1) $(READ2) $(READ3) $(READ4) $(READ5) $(READ6) $(READ7)
 
 all    : write read
-write  : $(OUTDIR) $(WRITE1) $(WRITE2) $(WRITE3) $(WRITE4) $(WRITE5) $(WRITE6) $(WRITE7)
-read   : $(OUTDIR) $(READ1) $(READ2) $(READ3) $(READ4) $(READ5) $(READ6) $(READ7)
+write  : $(OUTDIR) $(WRITE_PROGS)
+read   : $(OUTDIR) $(READ_PROGS)
 
 test  : write read
 	-@$(RM) grid.cgns
@@ -89,6 +92,6 @@ $(READ7) : ../read_bcpnts_str.c
 	$(CC) $(COPTS) $(FEOUT)$@ ../read_bcpnts_str.c $(LIBS)
 
 clean :
-	-$(RM) grid.cgns
+	-$(RM) grid.cgns $(WRITE_PROGS) $(READ_PROGS)
 	-$(RMDIR) $(OUTDIR)
 

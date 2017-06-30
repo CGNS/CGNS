@@ -46,6 +46,13 @@ ALL64 = $(CALL64) @FALL64@
 
 TESTS = $(CALL) @FALL@
 
+TIMING_AVAIL:=$(shell /usr/bin/time -a -o CGNS_timing.txt -f "%e" pwd > /dev/null; echo $$?)
+ifeq ("$(TIMING_AVAIL)" , "0")
+  TIMING = /usr/bin/time -a -o CGNS_timing.txt -f "$$x %e" ./$$x >/dev/null 2>&1
+else
+  TIMING = ./$$x >/dev/null 2>&1
+endif
+
 #----------
 
 all : $(ALL)
@@ -58,8 +65,9 @@ test : $(TESTS)
 	@echo " "; \
 	status=0; \
 	echo "=== running tests ==="; \
+        \rm ./CGNS_timing.txt 2> /dev/null;\
 	 for x in $(TESTS) ; do \
-	   if `./$$x >/dev/null 2>&1` ; then \
+	   if `$(TIMING)` ; then \
 	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
 	   else \
 	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
