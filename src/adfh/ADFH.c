@@ -1841,7 +1841,6 @@ void ADFH_Get_Node_ID(const double  pid,
     ADFH_DEBUG(("<ADFH_Get_Node_ID open_link [%d]",lid));
     if (lid < 0) return;
     sid = H5Gopen2(lid, name, H5P_DEFAULT);
-    ADFH_CHECK_HID(sid);
     H5Gclose(lid);
     if(sid < 0)
     {

@@ -333,8 +333,8 @@ end{minted}
 \begin_layout Itemize
 Functions for parallel reading and writing multi-component datasets using
  a single call was introduced.
- The new APIs use new capabilities are tentively to be introduced in version
- 1.8.15 of the HDF5 library.
+ The new APIs use new capabilities are tentatively to be introduced in version
+ 1.10.0 of the HDF5 library.
  The new APIs pack multiple datasets into a single buffer and the underlying
  MPI IO completes the IO request using just one call.
  The availability of the new functions in the HDF5 library is checked at
