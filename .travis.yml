@@ -21,7 +21,7 @@ before_install:
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
     - test $(uname) = "Darwin" && brew install gcc@6 || true
-    - test $(uname) = "Darwin" && brew link --overwrite gcc || true
+    - test $(uname) = "Darwin" && brew link --overwrite gcc@6 || true
 
 matrix:
    include:
@@ -38,7 +38,7 @@ before_script:
 
 script:
     - cd src
-    - find / -iname '*gfortran*' 
+    - find /usr -iname '*gfortran*' 
     - make
     - make install
     - cd tests
