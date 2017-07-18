@@ -20,7 +20,7 @@ before_install:
       fi
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
-    - test $(uname) = "Darwin" && brew install gcc6 || true
+    - test $(uname) = "Darwin" && brew install gcc@6 || true
     - test $(uname) = "Darwin" && brew link --overwrite gcc || true
 
 matrix:
@@ -30,7 +30,7 @@ matrix:
        install: export CC="gcc" export FC="gfortran" export F77="gfortran"
      - os: osx
        compiler: gcc
-       install: export CC="gcc" export FC="gfortran-7" export F77="gfortran-7"
+       install: export CC="gcc" export FC="gfortran-6" export F77="gfortran-6"
 
 before_script:
     - ./bin/install-hdf.sh
@@ -38,6 +38,7 @@ before_script:
 
 script:
     - cd src
+    - find / -iname '*gfortran*' 
     - make
     - make install
     - cd tests
