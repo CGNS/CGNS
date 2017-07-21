@@ -2,54 +2,43 @@ osx_image: xcode8.1
 language: C
 sudo: required
 
-#dist: trusty
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "L5XJlid9CY5V5zz587J76UghhyGpgS6mBUXeZL0PLtVfnXKqPRacWzj2jAGEAuZ8htHRN9gLBDfVx9zUbKKbWBQFPx9QfA2qor5YtlBdbFuT+Q32IUIVotOHmjVxMFHsix0uFZnBl73bGWfddTOuK4AHPbHgwUXenVtOYTm24FW2cCQTboEFbT5L7VXA4EmzTq9uDuXEEuB3GMEYKX8r+ZUsTR60pTlLhmD6BtQi5kZ19IGyDHoHKrcuJTy1ejShCFcyiOjMIPCav6a70G6dyuBcu4OhSlJvjOMm8xIkp9AYQj8i5wBX9ffqykAZ4xwIZedahkM7+akowGE5jJ6D14WPWAAouILd9TRg7y19S0tv9WDuABS1kd/6xCR5wcV51IKnlPyJrVQ9dKRcz2mnNJu0FunFyyK05Qw1G1r85CrEww5h8uj/rbupmDOn8pSEAYE6KOnOxgy7ZNYQ0ITI/bTJzMwEZtF/KcmMvNOKQB5mpteT1NFMbLTNzB3v3UDNEeC7bD9Yl97KGGOMOI+PELJnEJC6f4yltsNAZaVh3FDM2XIsRb79E3tiNCxh90JpzJk9UoDQGY2rzXxB7SvRGbDHauzIHz/FPs+0rInzyq//kdEnaHOetMIYTl7+2NApffOSeViWhkSlRbV3Pr/gwsBtHGLmsr+ezAVAwBNFhKk="
+
 
 # whitelist
 branches:
   only:
-    - develop
+    - coverity_scan
 
 notifications:
   email: false
 
 before_install:
+    - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
     - |
       if [ "$(uname)" = "Linux" ]; then
          sudo apt-get update -qq;
          sudo apt-get install -qq gfortran;
       fi
-    - test $(uname) = "Darwin" && brew update || true
-    - test $(uname) = "Darwin" && brew tap homebrew/versions || true
-    - test $(uname) = "Darwin" && brew install gcc@6 || true
-    - test $(uname) = "Darwin" && brew link --overwrite gcc@6 || true
+
 
 matrix:
    include:
      - os: linux
        compiler: gcc-4.9
        install: export CC="gcc" export FC="gfortran" export F77="gfortran"
-     - os: osx
-       compiler: gcc
-       install: export CC="gcc" export FC="gfortran-6" export F77="gfortran-6"
 
-before_script:
-    - ./bin/install-hdf.sh
-    - ./bin/install-cgns.sh
-
-script:
-    - cd src
-    - make
-    - make install
-    - cd tests
-    - make
-    - make test
-    - cd ../examples/fortran
-    - make
-    - make test
-    - cd ../../Test_UserGuideCode/Fortran_code
-    - make
-    - make test
-    - cd ../C_code
-    - make
-    - make test
     
+addons:
+  coverity_scan:
+    project:
+      name: "CGNS/CGNS"
+      description: "Build submitted via Travis CI"
+    notification_email: brtnfld@hdfgroup.org
+    build_command_prepend: "./bin/install-hdf.sh;./bin/install-cgns.sh"
+    build_command:   "cd src; make -j 4"
+    branch_pattern: coverity_scan
