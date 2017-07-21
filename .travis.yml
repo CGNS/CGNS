@@ -40,5 +40,5 @@ addons:
       description: "Build submitted via Travis CI"
     notification_email: brtnfld@hdfgroup.org
     build_command_prepend: "./bin/install-hdf.sh;./bin/install-cgns.sh"
-    build_command:   "cd src; make -j 4"
+    build_command:   "make -j 4; make install; cd tests; make; make tests"
     branch_pattern: coverity_scan
