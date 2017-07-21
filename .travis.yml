@@ -40,8 +40,13 @@ addons:
       description: "Build submitted via Travis CI"
     notification_email: brtnfld@hdfgroup.org
     build_command_prepend: "./bin/install-hdf.sh && ./bin/install-cgns.sh"
-    build_command:   "make && make install && cd tests && make && make test"
+    build_command:   "make"
     branch_pattern: coverity_scan
 
 script:
-    - cd src
+  - if [[ "${COVERITY_SCAN_BRANCH}" == 1 ]];
+    then
+      echo "Don't build on coverty_scan branch.";
+      exit 0;
+    fi
+  - cd src
