@@ -39,6 +39,14 @@ addons:
       name: "CGNS/CGNS"
       description: "Build submitted via Travis CI"
     notification_email: brtnfld@hdfgroup.org
-    build_command_prepend: "./bin/install-hdf.sh;./bin/install-cgns.sh"
-    build_command:   "make -j 4; make install; cd tests; make; make tests"
+    build_command_prepend: "./bin/install-hdf.sh && ./bin/install-cgns.sh"
+    build_command:   "make && make install && cd tests && make && make test"
     branch_pattern: coverity_scan
+
+script:
+    - cd src
+    - make
+    - make install
+    - cd tests
+    - make
+    - make test
