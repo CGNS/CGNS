@@ -93,7 +93,7 @@ int cgi_read()
     if (cg->nbases==0) return CG_OK;
     cg->base = CGNS_NEW(cgns_base,cg->nbases);
     for (b=0; b<cg->nbases; b++) cg->base[b].id = id[b];
-    free(id);
+    CGNS_FREE(id);
 
      /* read and save CGNSBase_t data */
     for (b=0; b<cg->nbases; b++) if (cgi_read_base(&cg->base[b])) return CG_ERROR;
@@ -135,7 +135,7 @@ int cgi_read_base(cgns_base *base)
         base->cell_dim = index[0];
         base->phys_dim = index[1];
     }
-    free(vdata);
+    CGNS_FREE(vdata);
 
     if (base->cell_dim<1 || base->cell_dim>3) {
         cgi_error("Invalid value for base cell dimension (=%d)",
@@ -178,7 +178,7 @@ int cgi_read_base(cgns_base *base)
             base->family[n].in_link = 0;
             if (cgi_read_family(&base->family[n])) return CG_ERROR;
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* ReferenceState_t */
@@ -233,7 +233,7 @@ int cgi_read_base(cgns_base *base)
             base->zone[n].in_link = 0;
             if (cgi_read_zone(&base->zone[n])) return CG_ERROR;
         }
-        free(id);
+        CGNS_FREE(id);
     }
     return CG_OK;
 }
@@ -304,7 +304,7 @@ int cgi_read_zone(cgns_zone *zone)
                zone->name, data_type);
         return CG_ERROR;
     }
-    free(vdata);
+    CGNS_FREE(vdata);
 
      /* save Global Variables */
     for (n=0; n<Idim*3; n++) CurrentDim[n] = zone->nijk[n];
@@ -366,9 +366,9 @@ int cgi_read_zone(cgns_zone *zone)
             zone->famname[n].id = id[n];
             if (cgi_read_string(id[n], zone->famname[n].name, &fam)) return CG_ERROR;
             strncpy(zone->famname[n].family, fam, 32);
-            free(fam);
+            CGNS_FREE(fam);
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* FlowSolution_t */
@@ -455,9 +455,9 @@ int cgi_read_family(cgns_family *family)
             family->famname[n].id = id[n];
             if (cgi_read_string(id[n], family->famname[n].name, &fam)) return CG_ERROR;
             strncpy(family->famname[n].family, fam, 32);
-            free(fam);
+            CGNS_FREE(fam);
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* FamilyBC_t */
@@ -473,7 +473,7 @@ int cgi_read_family(cgns_family *family)
                 return CG_ERROR;
              /* get BCType */
             if (cgi_BCType(boconame, &family->fambc[n].type)) return CG_ERROR;
-            free(boconame);
+            CGNS_FREE(boconame);
             /* FamilyBCDataSet_t */
             linked = family->fambc[n].link ? 1 : in_link;
             if (cgi_read_family_dataset(linked, family->fambc[n].id,
@@ -481,7 +481,7 @@ int cgi_read_family(cgns_family *family)
                                         &family->fambc[n].dataset))
                 return CG_ERROR;
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* GeometryReference_t */
@@ -507,7 +507,7 @@ int cgi_read_family(cgns_family *family)
                 &family->geo[n].nuser_data, &family->geo[n].user_data))
                 return CG_ERROR;
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* GeometryReference_t Children */
@@ -529,7 +529,7 @@ int cgi_read_family(cgns_family *family)
                 if (cgi_read_string(id[i], geo->descr[i].name,
                     &geo->descr[i].text)) return CG_ERROR;
             }
-            free(id);
+            CGNS_FREE(id);
         }
 
      /* GeometryFile_t */
@@ -540,7 +540,7 @@ int cgi_read_family(cgns_family *family)
             cgi_error("Incorrect definition of GeometryFile_t");
             return CG_ERROR;
         }
-        if (flag) free(id);
+        if (flag) CGNS_FREE(id);
 
      /* GeometryFormat_t */
         if (cgi_get_nodes(geo->id, "GeometryFormat_t", &flag, &id)) return CG_ERROR;
@@ -551,12 +551,12 @@ int cgi_read_family(cgns_family *family)
                 cgi_error("Geometry File Format is limited to 32 characters");
                 return CG_ERROR;
             } else strcpy(geo->format, geoformat);
-            free(geoformat);
+            CGNS_FREE(geoformat);
         } else {
             cgi_error("Incorrect definition of GeometryFormat_t");
             return CG_ERROR;
         }
-        if (flag) free(id);
+        if (flag) CGNS_FREE(id);
 
      /* GeometryEntity_t */
         if (cgi_get_nodes(geo->id, "GeometryEntity_t", &geo->npart, &id))
@@ -572,7 +572,7 @@ int cgi_read_family(cgns_family *family)
                     return CG_ERROR;
                 }
             }
-            free(id);
+            CGNS_FREE(id);
         }
     }   /* loop through ngeos */
 
@@ -588,7 +588,7 @@ int cgi_read_family(cgns_family *family)
             if (cgi_read_string(id[n], family->descr[n].name,
                 &family->descr[n].text)) return CG_ERROR;
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* Ordinal_t */
@@ -639,7 +639,7 @@ int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
 
         if (cgi_read_string(dataset[n].id, dataset[n].name, &string_data) ||
             cgi_BCType(string_data, &dataset[n].type)) return CG_ERROR;
-        free(string_data);
+        CGNS_FREE(string_data);
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
         if (cgi_read_DDD(linked, dataset[n].id, &dataset[n].ndescr,
@@ -684,7 +684,7 @@ int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
                     if (cgi_read_bcdata(dataset[n].neumann)) return CG_ERROR;
                 }
             }
-            free(ids);
+            CGNS_FREE(ids);
         }
 
         /* UserDefinedData_t */
@@ -699,7 +699,7 @@ int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
             }
         }
     }
-    free(id);
+    CGNS_FREE(id);
 
     return CG_OK;
 }
@@ -722,7 +722,7 @@ int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
             if (cgi_read_string(id[0], NodeName, &FamilyName)) return CG_ERROR;
             if (strlen(FamilyName) > 32) FamilyName[32]='\0';
             strcpy(family_name, FamilyName);
-            if (FamilyName) free(FamilyName);
+            if (FamilyName) CGNS_FREE(FamilyName);
 
         } else {
          /* FamilyName is the ADF node name */
@@ -740,7 +740,7 @@ int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
                     return CG_ERROR;
             }
         }
-        free(id);
+        CGNS_FREE(id);
 
     } else if (fam_flag<0 || fam_flag>1) {
         cgi_error("Family name defined incorrectly under '%s',",parent_name);
@@ -808,7 +808,7 @@ int cgi_read_zcoor(int in_link, double parent_id, int *nzcoor, cgns_zcoor **zcoo
                     return CG_ERROR;
                 }
             }
-            free(id);
+            CGNS_FREE(id);
         }
 
          /* Descriptor_t, DataClass_t, DimensionalUnits_t */
@@ -821,7 +821,7 @@ int cgi_read_zcoor(int in_link, double parent_id, int *nzcoor, cgns_zcoor **zcoo
             &zcoor[0][g].user_data)) return CG_ERROR;
 
     }
-    free(idg);
+    CGNS_FREE(idg);
 
     return CG_OK;
 }
@@ -898,7 +898,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
         }
         section[0][n].el_type = el_type;
         section[0][n].el_bound = edata[1];
-        free(vdata);
+        CGNS_FREE(vdata);
 
         if (INVALID_ENUM(el_type,NofValidElementTypes)) {
             cgi_error("Invalid Element Type for Elements_t :'%s'",
@@ -918,7 +918,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                 if (cgi_read_string(idi[i], section[0][n].descr[i].name,
                     &section[0][n].descr[i].text)) return CG_ERROR;
             }
-            free(idi);
+            CGNS_FREE(idi);
         }
 
      /* IndexRange_t */
@@ -934,7 +934,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
             cgi_error("Error exit: ElementRange incorrectly defined");
             return CG_ERROR;
         }
-        if (nchild) free(idi);
+        if (nchild) CGNS_FREE(idi);
 
      /* verify that the name matches the type intended */
         if (strcmp(temp_name,"ElementRange")) {
@@ -969,7 +969,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
             return CG_ERROR;
         }
         nelements = section[0][n].range[1] - section[0][n].range[0] + 1;
-        free(vdata);
+        CGNS_FREE(vdata);
 
      /* rind elements */
         if (cgi_read_rind(section[0][n].id, &section[0][n].rind_planes))
@@ -1237,7 +1237,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
         cgi_array_print("connect",section[0][n].connect);
         if (section[0][n].parent) cgi_array_print("parent",section[0][n].parent);
 */
-        if (nchild) free(idi);
+        if (nchild) CGNS_FREE(idi);
         if (section[0][n].connect == 0) {
             cgi_error("Error exit: ElementConnectivity undefined in Element_t node '%s'.",
                 section[0][n].name);
@@ -1299,7 +1299,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 	}
 
     }   /* loop through element sections */
-    free(id);
+    CGNS_FREE(id);
 
     return CG_OK;
 }
@@ -1394,7 +1394,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                     return CG_ERROR;
                 }
             }
-            free(idf);
+            CGNS_FREE(idf);
         }
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
@@ -1407,7 +1407,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
             &sol[0][s].user_data)) return CG_ERROR;
     }
 
-    free(id);
+    CGNS_FREE(id);
 
     return CG_OK;
 }
@@ -1450,7 +1450,7 @@ int cgi_read_zconn(int in_link, double parent_id, int *nzconn, cgns_zconn **zcon
                 zc[i].hole[n].in_link = linked;
                 if (cgi_read_hole(&zc[i].hole[n])) return CG_ERROR;
             }
-            free(id);
+            CGNS_FREE(id);
         }
 
         /* GridConnectivity_t */
@@ -1464,7 +1464,7 @@ int cgi_read_zconn(int in_link, double parent_id, int *nzconn, cgns_zconn **zcon
                 zc[i].conn[n].in_link = linked;
                 if (cgi_read_conn(&zc[i].conn[n])) return CG_ERROR;
             }
-            free(id);
+            CGNS_FREE(id);
         }
 
         /* GridConnectivity1to1_t */
@@ -1478,7 +1478,7 @@ int cgi_read_zconn(int in_link, double parent_id, int *nzconn, cgns_zconn **zcon
                 zc[i].one21[n].in_link = linked;
                 if (cgi_read_1to1(&zc[i].one21[n])) return CG_ERROR;
             }
-            free(id);
+            CGNS_FREE(id);
         }
 
         /* Descriptor_t */
@@ -1493,7 +1493,7 @@ int cgi_read_zconn(int in_link, double parent_id, int *nzconn, cgns_zconn **zcon
                 if (cgi_read_string(id[n], zc[i].descr[n].name,
                     &zc[i].descr[n].text)) return CG_ERROR;
             }
-            free(id);
+            CGNS_FREE(id);
         }
 
         /* UserDefinedData_t */
@@ -1501,7 +1501,7 @@ int cgi_read_zconn(int in_link, double parent_id, int *nzconn, cgns_zconn **zcon
             &zc[i].user_data)) return CG_ERROR;
     }
 
-    free(ids);
+    CGNS_FREE(ids);
     return CG_OK;
 }
 
@@ -1519,7 +1519,7 @@ int cgi_read_1to1(cgns_1to1 *one21)
      /* get donor name */
     if (cgi_read_string(one21->id, one21->name, &string_data)) return CG_ERROR;
     strcpy(one21->donor, string_data);
-    free(string_data);
+    CGNS_FREE(string_data);
 
      /* get ADF-ID of point sets for donor and receiver */
     one21->ptset.id=0;
@@ -1554,7 +1554,7 @@ int cgi_read_1to1(cgns_1to1 *one21)
             }
         }
     }
-    if (nIR_t>0) free(IR_id);
+    if (nIR_t>0) CGNS_FREE(IR_id);
 
     if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
       if (one21->ptset.id==0 || one21->dptset.id==0) {
@@ -1628,7 +1628,7 @@ int cgi_read_1to1(cgns_1to1 *one21)
                 return CG_ERROR;
             }
         }
-        free(IA_id);
+        CGNS_FREE(IA_id);
     }
      /* Ordinal_t */
     if (cgi_read_ordinal(one21->id, &one21->ordinal)) return CG_ERROR;
@@ -1645,7 +1645,7 @@ int cgi_read_1to1(cgns_1to1 *one21)
             if (cgi_read_string(id[n], one21->descr[n].name,
                 &one21->descr[n].text)) return CG_ERROR;
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* UserDefinedData_t */
@@ -1670,7 +1670,7 @@ int cgi_read_conn(cgns_conn *conn)
     if (cgi_read_string(conn->id, conn->name, &string_data)) return CG_ERROR;
     if (cgi_check_strlen(string_data)) return CG_ERROR;
     strcpy(conn->donor, string_data);
-    free(string_data);
+    CGNS_FREE(string_data);
 
      /* GridLocation */
     if (cgi_read_location(conn->id, conn->name, &conn->location)) return CG_ERROR;
@@ -1707,7 +1707,7 @@ int cgi_read_conn(cgns_conn *conn)
             }
         }
     }
-    if (nchild>0) free(id);
+    if (nchild>0) CGNS_FREE(id);
 
      /* Receiver IndexRange_t ? */
     if (cgi_get_nodes(conn->id, "IndexRange_t", &nchild, &id)) return CG_ERROR;
@@ -1729,7 +1729,7 @@ int cgi_read_conn(cgns_conn *conn)
             }
         }
     }
-    if (nchild>0) free(id);
+    if (nchild>0) CGNS_FREE(id);
 
      /* check */
     if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
@@ -1773,7 +1773,7 @@ int cgi_read_conn(cgns_conn *conn)
         } else if (nchild==1) {
             parent_id = id[0];
             strcpy(parent_label,"StructuredDonor_t");
-            free(id);
+            CGNS_FREE(id);
         }
         if (cgi_get_nodes(conn->id, "UnstructuredDonor_t", &nchild, &id))
             return CG_ERROR;
@@ -1788,7 +1788,7 @@ int cgi_read_conn(cgns_conn *conn)
             }
             parent_id = id[0];
             strcpy(parent_label,"UnstructuredDonor_t");
-            free(id);
+            CGNS_FREE(id);
         }
         if (!parent_id) {
             cgi_error("Error:  Donor data undefined for GridConnectivity_t '%s'", conn->name);
@@ -1827,7 +1827,7 @@ int cgi_read_conn(cgns_conn *conn)
             return CG_ERROR;
         }
     }
-    if (nchild>0) free(id);
+    if (nchild>0) CGNS_FREE(id);
 /*
     if (conn->dptset.id==0) {
         cgi_error("Error:  Donor patch undefined for GridConnectivity_t '%s'", conn->name);
@@ -1860,7 +1860,7 @@ int cgi_read_conn(cgns_conn *conn)
                 return CG_ERROR;
             }
         }
-        if (nchild) free(id);
+        if (nchild) CGNS_FREE(id);
     }
 
      /* Get GridConnectivityType_t (conn->type) */
@@ -1876,9 +1876,9 @@ int cgi_read_conn(cgns_conn *conn)
      /* Read the grid connectivity type value in the GridConnectivityType_t node */
         if (cgi_read_string(id[0], name, &string_data)) return CG_ERROR;
         if (cgi_GridConnectivityType(string_data, &conn->type)) return CG_ERROR;
-        free(string_data);
+        CGNS_FREE(string_data);
     }
-    if (nchild) free(id);
+    if (nchild) CGNS_FREE(id);
 
     /* update the version */
     if (cg->mode == CG_MODE_MODIFY && !linked &&
@@ -1913,7 +1913,7 @@ int cgi_read_conn(cgns_conn *conn)
             if (cgi_read_string(id[i], conn->descr[i].name,
                 &conn->descr[i].text)) return CG_ERROR;
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* GridConnectivityProperty_t */
@@ -1940,7 +1940,7 @@ int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop)
         return CG_OK;
     } else if (nchild>1) {
         cgi_error("Error: Multiple GridConnectivityProperty_t found...");
-        free(id);
+        CGNS_FREE(id);
         return CG_ERROR;
     }
     cprop[0] = CGNS_NEW(cgns_cprop, 1);
@@ -1948,7 +1948,7 @@ int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop)
     cprop[0]->link = cgi_read_link(id[0]);
     cprop[0]->in_link = in_link;
     linked = cprop[0]->link ? 1 : in_link;
-    free(id);
+    CGNS_FREE(id);
 
      /* Descriptor_t */
     if (cgi_get_nodes(cprop[0]->id, "Descriptor_t", &nchild, &id)) return CG_ERROR;
@@ -1963,7 +1963,7 @@ int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop)
             if (cgi_read_string(id[n], cprop[0]->descr[n].name,
                 &cprop[0]->descr[n].text)) return CG_ERROR;
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* UserDefinedData_t */
@@ -1977,7 +1977,7 @@ int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop)
         cprop[0]->caverage = 0;
     } else if (nchild>1) {
         cgi_error("Error: Multiple AverageInterface_t found...");
-        free(id);
+        CGNS_FREE(id);
         return CG_ERROR;
     } else {
         cprop[0]->caverage = CGNS_NEW(cgns_caverage, 1);
@@ -1985,7 +1985,7 @@ int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop)
         cprop[0]->caverage->link = cgi_read_link(id[0]);
         cprop[0]->caverage->in_link = linked;
         in_link = cprop[0]->caverage->link ? 1 : linked;
-        free(id);
+        CGNS_FREE(id);
 
      /* Descriptor_t */
         if (cgi_get_nodes(cprop[0]->caverage->id, "Descriptor_t", &nchild, &id))
@@ -2001,7 +2001,7 @@ int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop)
                 if (cgi_read_string(id[n], cprop[0]->caverage->descr[n].name,
                     &cprop[0]->caverage->descr[n].text)) return CG_ERROR;
             }
-            free(id);
+            CGNS_FREE(id);
         }
 
      /* UserDefinedData_t */
@@ -2017,14 +2017,14 @@ int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop)
             return CG_ERROR;
         } else if (nchild >1) {
             cgi_error("File incorrect: multiple definition of AverageInterfaceType");
-            free(id);
+            CGNS_FREE(id);
             return CG_ERROR;
         } else {
             if (cgi_read_string(id[0], name, &type_name)) return CG_ERROR;
-            free(id);
+            CGNS_FREE(id);
             if (cgi_AverageInterfaceType(type_name, &cprop[0]->caverage->type))
                 return CG_ERROR;
-            free(type_name);
+            CGNS_FREE(type_name);
         }
     }
 
@@ -2034,7 +2034,7 @@ int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop)
         cprop[0]->cperio = 0;
     } else if (nchild>1) {
         cgi_error("Error: Multiple Periodic_t found...");
-        free(id);
+        CGNS_FREE(id);
         return CG_ERROR;
     } else {
         cprop[0]->cperio = CGNS_NEW(cgns_cperio, 1);
@@ -2042,7 +2042,7 @@ int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop)
         cprop[0]->cperio->link = cgi_read_link(id[0]);
         cprop[0]->cperio->in_link = linked;
         in_link = cprop[0]->cperio->link ? 1 : linked;
-        free(id);
+        CGNS_FREE(id);
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
         if (cgi_read_DDD(in_link, cprop[0]->cperio->id,
@@ -2063,7 +2063,7 @@ int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop)
             return CG_ERROR;
         } else if (nchild!=3) {
             cgi_error("Error: 3 DataArray_t required under Periodic_t");
-            free(id);
+            CGNS_FREE(id);
             return CG_ERROR;
         }
         cprop[0]->cperio->narrays = nchild;
@@ -2085,16 +2085,16 @@ int cgi_read_cprop(int in_link, double parent_id, cgns_cprop **cprop)
                 strcmp("RotationAngle",array->name) &&
                 strcmp("Translation",array->name)) {
                 cgi_error("Error: Wrong DataArray_t found under Periodic_t: '%s'",array->name);
-                free(id);
+                CGNS_FREE(id);
                 return CG_ERROR;
             } else if (strcmp(array->data_type,"R4") || array->data_dim!=1
                 || array->dim_vals[0]!=Pdim) {
                 cgi_error("Error: Array '%s' incorrectly sized",array->name);
-                free(id);
+                CGNS_FREE(id);
                 return CG_ERROR;
             }
         } /* loop through arrays */
-        free(id);
+        CGNS_FREE(id);
     }
     return CG_OK;
 }
@@ -2136,7 +2136,7 @@ int cgi_read_hole(cgns_hole *hole)
             hole->ptset[set].type = CGNS_ENUMV( PointRange );
             if (cgi_read_ptset(hole->id, &hole->ptset[set])) return CG_ERROR;
         }
-        free(IR_id);
+        CGNS_FREE(IR_id);
 
      /* Hole defined with one single PointList */
     } else if (nIA_t==1 && nIR_t==0) {
@@ -2147,7 +2147,7 @@ int cgi_read_hole(cgns_hole *hole)
         hole->ptset[0].in_link = linked;
         hole->ptset[0].type = CGNS_ENUMV( PointList );
         if (cgi_read_ptset(hole->id, &hole->ptset[0])) return CG_ERROR;
-        free(IA_id);
+        CGNS_FREE(IA_id);
 
      /* Empty hole (requested by Cetin) */
     } else if (nIA_t==0 && nIR_t==0) {
@@ -2177,7 +2177,7 @@ int cgi_read_hole(cgns_hole *hole)
             if (cgi_read_string(id[n], hole->descr[n].name,
                 &hole->descr[n].text)) return CG_ERROR;
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* UserDefinedData_t */
@@ -2202,7 +2202,7 @@ int cgi_read_zboco(int in_link, double parent_id, cgns_zboco **zboco)
     zboco[0]->link = cgi_read_link(id[0]);
     zboco[0]->in_link = in_link;
     linked = zboco[0]->link ? 1 : in_link;
-    free(id);
+    CGNS_FREE(id);
 
      /* Name */
     if (cgio_get_name(cg->cgio, zboco[0]->id, zboco[0]->name)) {
@@ -2220,7 +2220,7 @@ int cgi_read_zboco(int in_link, double parent_id, cgns_zboco **zboco)
             zboco[0]->boco[n].in_link = linked;
             if (cgi_read_boco(&zboco[0]->boco[n])) return CG_ERROR;
         }               /* loop through BC_t nodes      */
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
@@ -2253,7 +2253,7 @@ int cgi_read_boco(cgns_boco *boco)
      /* get BC_t */
     if (cgi_read_string(boco->id, boco->name, &boconame) ||
         cgi_BCType(boconame, &boco->type)) return CG_ERROR;
-    free(boconame);
+    CGNS_FREE(boconame);
 
     /* GridLocation_t */
     if (cg->version > 1200) {
@@ -2320,9 +2320,9 @@ int cgi_read_boco(cgns_boco *boco)
             boco->famname[n].id = id[n];
             if (cgi_read_string(id[n], boco->famname[n].name, &fam)) return CG_ERROR;
             strncpy(boco->famname[n].family, fam, 32);
-            free(fam);
+            CGNS_FREE(fam);
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* InwardNormalList */
@@ -2365,7 +2365,7 @@ int cgi_read_boco(cgns_boco *boco)
         }
         break;
     }
-    if (nIA_t) free(IA_id);
+    if (nIA_t) CGNS_FREE(IA_id);
 
      /* InwardNormalIndex */
     boco->Nindex = 0;
@@ -2390,7 +2390,7 @@ int cgi_read_boco(cgns_boco *boco)
         boco->Nindex = (int *)vdata;
         break;
     }
-    if (nIA_t) free(IA_id);
+    if (nIA_t) CGNS_FREE(IA_id);
 
      /* BCDataSet_t */
     if (cgi_read_dataset(linked, boco->id, &boco->ndataset, &boco->dataset))
@@ -2480,7 +2480,7 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
         return CG_OK;
     } else if (nchild>1) {
         cgi_error("Error: Multiple BCProperty_t found...");
-        free(id);
+        CGNS_FREE(id);
         return CG_ERROR;
     }
     bprop[0] = CGNS_NEW(cgns_bprop, 1);
@@ -2488,7 +2488,7 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
     bprop[0]->link = cgi_read_link(id[0]);
     bprop[0]->in_link = in_link;
     linked = bprop[0]->link ? 1 : in_link;
-    free(id);
+    CGNS_FREE(id);
 
      /* Descriptor_t */
     if (cgi_get_nodes(bprop[0]->id, "Descriptor_t", &nchild, &id)) return CG_ERROR;
@@ -2503,7 +2503,7 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
             if (cgi_read_string(id[n], bprop[0]->descr[n].name,
                 &bprop[0]->descr[n].text)) return CG_ERROR;
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* UserDefinedData_t */
@@ -2516,7 +2516,7 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
         bprop[0]->bcwall = 0;
     } else if (nchild>1) {
         cgi_error("Error: Multiple WallFunction_t found...");
-        free(id);
+        CGNS_FREE(id);
         return CG_ERROR;
     } else {
         bprop[0]->bcwall = CGNS_NEW(cgns_bcwall, 1);
@@ -2524,7 +2524,7 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
         bprop[0]->bcwall->link = cgi_read_link(id[0]);
         bprop[0]->bcwall->in_link = linked;
         in_link = bprop[0]->bcwall->link ? 1 : linked;
-        free(id);
+        CGNS_FREE(id);
 
      /* Descriptor_t */
         if (cgi_get_nodes(bprop[0]->bcwall->id, "Descriptor_t", &nchild, &id))
@@ -2540,7 +2540,7 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
                 if (cgi_read_string(id[n], bprop[0]->bcwall->descr[n].name,
                     &bprop[0]->bcwall->descr[n].text)) return CG_ERROR;
             }
-            free(id);
+            CGNS_FREE(id);
         }
 
      /* UserDefinedData_t */
@@ -2556,13 +2556,13 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
             return CG_ERROR;
         } else if (nchild >1) {
             cgi_error("File incorrect: multiple definition of WallFunctionType");
-            free(id);
+            CGNS_FREE(id);
             return CG_ERROR;
         } else {
             if (cgi_read_string(id[0], name, &type_name)) return CG_ERROR;
-            free(id);
+            CGNS_FREE(id);
             if (cgi_WallFunctionType(type_name, &bprop[0]->bcwall->type)) return CG_ERROR;
-            free(type_name);
+            CGNS_FREE(type_name);
         }
     }
 
@@ -2572,7 +2572,7 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
         bprop[0]->bcarea = 0;
     } else if (nchild>1) {
         cgi_error("Error: Multiple Area_t found...");
-        free(id);
+        CGNS_FREE(id);
         return CG_ERROR;
     } else {
         bprop[0]->bcarea = CGNS_NEW(cgns_bcarea, 1);
@@ -2580,7 +2580,7 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
         bprop[0]->bcarea->link = cgi_read_link(id[0]);
         bprop[0]->bcarea->in_link = linked;
         in_link = bprop[0]->bcarea->link ? 1 : linked;
-        free(id);
+        CGNS_FREE(id);
 
      /* Descriptor_t */
         if (cgi_get_nodes(bprop[0]->bcarea->id, "Descriptor_t", &nchild, &id))
@@ -2596,7 +2596,7 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
                 if (cgi_read_string(id[n], bprop[0]->bcarea->descr[n].name,
                     &bprop[0]->bcarea->descr[n].text)) return CG_ERROR;
             }
-            free(id);
+            CGNS_FREE(id);
         }
 
      /* UserDefinedData_t */
@@ -2612,13 +2612,13 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
             return CG_ERROR;
         } else if (nchild >1) {
             cgi_error("File incorrect: multiple definition of AreaType");
-            free(id);
+            CGNS_FREE(id);
             return CG_ERROR;
         } else {
             if (cgi_read_string(id[0], name, &type_name)) return CG_ERROR;
-            free(id);
+            CGNS_FREE(id);
             if (cgi_AreaType(type_name, &bprop[0]->bcarea->type)) return CG_ERROR;
-            free(type_name);
+            CGNS_FREE(type_name);
         }
 
      /* DataArray_t: SurfaceArea <real,1,1>, RegionName <char, 1, 32> */
@@ -2629,7 +2629,7 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
             return CG_ERROR;
         } else if (nchild!=2) {
             cgi_error("Error: 2 DataArray_t (SurfaceArea & RegionName) required under Area_t");
-            free(id);
+            CGNS_FREE(id);
             return CG_ERROR;
         }
         bprop[0]->bcarea->narrays = nchild;
@@ -2651,15 +2651,15 @@ int cgi_read_bprop(int in_link, double parent_id, cgns_bprop **bprop)
                 (strcmp("RegionName",array->name)==0 && (strcmp(array->data_type,"C1")
                 || array->data_dim!=1 || array->dim_vals[0]!=32)) ){
                 cgi_error("Error: Array '%s' incorrectly sized",array->name);
-                free(id);
+                CGNS_FREE(id);
                 return CG_ERROR;
             } else if (strcmp("SurfaceArea",array->name) && strcmp("RegionName",array->name)) {
                 cgi_error("Error: Wrong DataArray_t found under Area_t: '%s'",array->name);
-                free(id);
+                CGNS_FREE(id);
                 return CG_ERROR;
             }
         } /* loop through arrays */
-        free(id);
+        CGNS_FREE(id);
     }
     return CG_OK;
 }
@@ -2688,7 +2688,7 @@ int cgi_read_dataset(int in_link, double parent_id, int *ndataset,
         linked = dataset[0][n].link ? 1 : in_link;
         if (cgi_read_string(dataset[0][n].id, dataset[0][n].name, &string_data) ||
             cgi_BCType(string_data, &dataset[0][n].type)) return CG_ERROR;
-        free(string_data);
+        CGNS_FREE(string_data);
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
         if (cgi_read_DDD(linked, dataset[0][n].id, &dataset[0][n].ndescr,
@@ -2734,7 +2734,7 @@ int cgi_read_dataset(int in_link, double parent_id, int *ndataset,
                     if (cgi_read_bcdata(dataset[0][n].neumann)) return CG_ERROR;
                 }
             }
-            free(ids);
+            CGNS_FREE(ids);
         }
 
      /* UserDefinedData_t */
@@ -2784,7 +2784,7 @@ int cgi_read_dataset(int in_link, double parent_id, int *ndataset,
             if (cgi_read_ptset(dataset[0][n].id, dataset[0][n].ptset))
                 return CG_ERROR;
         }
-        if (nIR_t) free(IR_id);
+        if (nIR_t) CGNS_FREE(IR_id);
 
         for (nn=0; nn<nIA_t; nn++)
         {
@@ -2811,10 +2811,10 @@ int cgi_read_dataset(int in_link, double parent_id, int *ndataset,
                 return CG_ERROR;
         }
 
-        if (nIA_t) free(IA_id);
+        if (nIA_t) CGNS_FREE(IA_id);
 
     }
-    free(id);
+    CGNS_FREE(id);
 
     return CG_OK;
 }
@@ -2836,7 +2836,7 @@ int cgi_read_bcdata(cgns_bcdata *bcdata)
             bcdata->array[n].in_link = linked;
             cgi_read_array(&bcdata->array[n],"BCData_t",bcdata->id);
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
@@ -2880,7 +2880,7 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
         ptset->in_link=linked;
         if (cgi_read_ptset(I_id[i], ptset)) return CG_ERROR;
     }
-    if (nI_t) free(I_id);
+    if (nI_t) CGNS_FREE(I_id);
 
     if (cgi_get_nodes(parent_id, "IndexRange_t", &nI_t, &I_id))
         return CG_ERROR;
@@ -2905,7 +2905,7 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
         ptset->in_link=linked;
         if (cgi_read_ptset(I_id[i], ptset)) return CG_ERROR;
     }
-    if (nI_t) free(I_id);
+    if (nI_t) CGNS_FREE(I_id);
 
     *pptset = ptset;
     return CG_OK;
@@ -2993,7 +2993,7 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
             }
 #endif
             for (i=0; i<Idim; i++) total *= (pnts[i+Idim]-pnts[i]+1);
-            free(pnts);
+            CGNS_FREE(pnts);
 #if CG_SIZEOF_SIZE == 32
             if (total > CG_MAX_INT32) {
                 cgi_error("patch size too large for a 32-bit integer");
@@ -3010,7 +3010,7 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
             }
             ptset->size_of_patch = 1;
             for (i=0; i<Idim; i++) ptset->size_of_patch *= (pnts[i+Idim]-pnts[i]+1);
-            free(pnts);
+            CGNS_FREE(pnts);
         }
         else {
             cgi_error("Invalid datatype for a range pointset");
@@ -3040,7 +3040,7 @@ int cgi_read_equations(int in_link, double parent_id,
     equations[0]->link = cgi_read_link(id[0]);
     equations[0]->in_link = in_link;
     linked = equations[0]->link ? 1 : in_link;
-    free(id);
+    CGNS_FREE(id);
     strcpy(equations[0]->name, "FlowEquationSet");
 
      /* GoverningEquations_t */
@@ -3055,8 +3055,8 @@ int cgi_read_equations(int in_link, double parent_id,
         if (cgi_read_string(id[0], equations[0]->governing->name, &string_data) ||
             cgi_GoverningEquationsType(string_data, &equations[0]->governing->type))
             return CG_ERROR;
-        free(string_data);
-        free(id);
+        CGNS_FREE(string_data);
+        CGNS_FREE(id);
 
      /* initialize dependants */
         equations[0]->governing->diffusion_model=0;
@@ -3077,7 +3077,7 @@ int cgi_read_equations(int in_link, double parent_id,
             }
             equations[0]->governing->dim_vals = (int)dim_vals[0],
             equations[0]->governing->diffusion_model = (int *)vdata;
-            free(id);
+            CGNS_FREE(id);
         }
 
      /* Descriptor_t */
@@ -3092,7 +3092,7 @@ int cgi_read_equations(int in_link, double parent_id,
                 if (cgi_read_string(id[n], equations[0]->governing->descr[n].name,
                     &equations[0]->governing->descr[n].text)) return CG_ERROR;
             }
-            free(id);
+            CGNS_FREE(id);
         }
 
      /* UserDefinedData_t */
@@ -3141,7 +3141,7 @@ int cgi_read_equations(int in_link, double parent_id,
             }
             equations[0]->turbulence->dim_vals = (int)dim_vals[0],
             equations[0]->turbulence->diffusion_model = (int *)vdata;
-            free(id);
+            CGNS_FREE(id);
         }
     }
 
@@ -3169,8 +3169,8 @@ int cgi_read_equations(int in_link, double parent_id,
             return CG_ERROR;
         }
         equations[0]->equation_dim = *((int *)vdata);
-        free(vdata);
-        free(id);
+        CGNS_FREE(vdata);
+        CGNS_FREE(id);
     }
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
@@ -3215,12 +3215,12 @@ int cgi_read_model(int in_link, double parent_id, char *label,
     model[0]->link = cgi_read_link(id[0]);
     model[0]->in_link = in_link;
     linked = model[0]->link ? 1 : in_link;
-    free(id);
+    CGNS_FREE(id);
 
      /* Model Type */
     if (cgi_read_string(model[0]->id, model[0]->name, &string_data)) return CG_ERROR;
     if (cgi_ModelType(string_data, &model[0]->type)) return CG_ERROR;
-    free(string_data);
+    CGNS_FREE(string_data);
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
     if (cgi_read_DDD(linked, model[0]->id, &model[0]->ndescr,
@@ -3246,7 +3246,7 @@ int cgi_read_model(int in_link, double parent_id, char *label,
                 return CG_ERROR;
             }
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* UserDefinedData_t */
@@ -3273,7 +3273,7 @@ int cgi_read_state(int in_link, double parent_id, cgns_state **state)
     state[0]->link=cgi_read_link(id[0]);
     state[0]->in_link=in_link;
     linked = state[0]->link ? 1 : in_link;
-    free(id);
+    CGNS_FREE(id);
 
      /* Name */
     if (cgio_get_name(cg->cgio, state[0]->id, state[0]->name)) {
@@ -3320,7 +3320,7 @@ int cgi_read_state(int in_link, double parent_id, cgns_state **state)
                 defined ++;
             }
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* DataClass_t */
@@ -3328,8 +3328,8 @@ int cgi_read_state(int in_link, double parent_id, cgns_state **state)
     if (nnod>0) {
         if (cgi_read_string(id[0], name, &string_data)) return CG_ERROR;
         cgi_DataClass(string_data, &state[0]->data_class);
-        free(string_data);
-        free(id);
+        CGNS_FREE(string_data);
+        CGNS_FREE(id);
     }
 
      /* DimensionalUnits_t */
@@ -3355,7 +3355,7 @@ int cgi_read_state(int in_link, double parent_id, cgns_state **state)
                 return CG_ERROR;
             }
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* UserDefinedData_t */
@@ -3381,7 +3381,7 @@ int cgi_read_gravity(int in_link, double parent_id, cgns_gravity **gravity)
     gravity[0]->link=cgi_read_link(id[0]);
     gravity[0]->in_link=in_link;
     linked = gravity[0]->link ? 1 : in_link;
-    free(id);
+    CGNS_FREE(id);
 
      /* Name */
     if (cgio_get_name(cg->cgio, gravity[0]->id, gravity[0]->name)) {
@@ -3427,7 +3427,7 @@ int cgi_read_gravity(int in_link, double parent_id, cgns_gravity **gravity)
             }
         }
     }   /* loop through DataArray_t */
-    if (nnod) free(id);
+    if (nnod) CGNS_FREE(id);
 
      /* check data */
     if (gravity[0]->vector == 0) {
@@ -3462,7 +3462,7 @@ int cgi_read_axisym(int in_link, double parent_id, cgns_axisym **axisym)
     axisym[0]->link=cgi_read_link(id[0]);
     axisym[0]->in_link=in_link;
     linked = axisym[0]->link ? 1 : in_link;
-    free(id);
+    CGNS_FREE(id);
 
      /* Name */
     if (cgio_get_name(cg->cgio, axisym[0]->id, axisym[0]->name)) {
@@ -3560,7 +3560,7 @@ int cgi_read_axisym(int in_link, double parent_id, cgns_axisym **axisym)
             axisym[0]->narrays ++;
         }
     }   /* loop through DataArray_t */
-    if (nnod) free(id);
+    if (nnod) CGNS_FREE(id);
 
      /* check data */
     if (!ref_point_flag || !axis_flag) {
@@ -3591,7 +3591,7 @@ int cgi_read_rotating(int in_link, double parent_id, cgns_rotating **rotating)
     rotating[0]->link=cgi_read_link(id[0]);
     rotating[0]->in_link=in_link;
     linked = rotating[0]->link ? 1 : in_link;
-    free(id);
+    CGNS_FREE(id);
 
      /* Name */
     if (cgio_get_name(cg->cgio, rotating[0]->id, rotating[0]->name)) {
@@ -3646,7 +3646,7 @@ int cgi_read_rotating(int in_link, double parent_id, cgns_rotating **rotating)
             rotating[0]->narrays ++;
         }
     }   /* loop through DataArray_t */
-    if (nnod) free(id);
+    if (nnod) CGNS_FREE(id);
 
      /* check data */
     if (!rot_rate_flag || !rot_center_flag) {
@@ -3681,7 +3681,7 @@ int cgi_read_converg(int in_link, double parent_id, cgns_converg **converg)
     converg[0]->link = cgi_read_link(id[0]);
     converg[0]->in_link = in_link;
     linked = converg[0]->link ? 1 : in_link;
-    free(id);
+    CGNS_FREE(id);
 
     if (cgi_read_node(converg[0]->id, converg[0]->name, data_type, &ndim,
             dim_vals, &iterations, READ_DATA)) {
@@ -3694,13 +3694,13 @@ int cgi_read_converg(int in_link, double parent_id, cgns_converg **converg)
         return CG_ERROR;
     }
     converg[0]->iterations = *((int *)iterations);
-    free(iterations);
+    CGNS_FREE(iterations);
       */
      /* The check was removed because Bob was storing other type of data
     at the level.  This is a temporary changed */
     if (strcmp(data_type,"I4")==0 && dim_vals[0]>=1) {
         converg[0]->iterations = *((int *)iterations);
-        free(iterations);
+        CGNS_FREE(iterations);
     } else converg[0]->iterations=0;
 
      /* initialize dependents */
@@ -3740,7 +3740,7 @@ int cgi_read_converg(int in_link, double parent_id, cgns_converg **converg)
                 nnorm ++;
             }
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* DataClass_t */
@@ -3748,8 +3748,8 @@ int cgi_read_converg(int in_link, double parent_id, cgns_converg **converg)
     if (nnod>0) {
         if (cgi_read_string(id[0], name, &string_data)) return CG_ERROR;
         cgi_DataClass(string_data, &converg[0]->data_class);
-        free(string_data);
-        free(id);
+        CGNS_FREE(string_data);
+        CGNS_FREE(id);
     }
 
      /* DimensionalUnits_t */
@@ -3774,7 +3774,7 @@ int cgi_read_converg(int in_link, double parent_id, cgns_converg **converg)
             }
               */
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* UserDefinedData_t */
@@ -3879,14 +3879,14 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                     return CG_ERROR;
                 }
             }
-            free(idi);
+            CGNS_FREE(idi);
         }
 
      /* UserDefinedData_t */
         if (cgi_read_user_data(linked, discrete[0][n].id,
             &discrete[0][n].nuser_data, &discrete[0][n].user_data)) return CG_ERROR;
     }
-    free(id);
+    CGNS_FREE(id);
 
     return CG_OK;
 }
@@ -3942,14 +3942,14 @@ int cgi_read_integral(int in_link, double parent_id, int *nintegrals,
              */
 
             }
-            free(idi);
+            CGNS_FREE(idi);
         }
 
      /* UserDefinedData_t */
         if (cgi_read_user_data(linked, integral[0][n].id,
             &integral[0][n].nuser_data, &integral[0][n].user_data)) return CG_ERROR;
     }
-    free(id);
+    CGNS_FREE(id);
 
     return CG_OK;
 }
@@ -3985,7 +3985,7 @@ int cgi_read_rmotion(int in_link, double parent_id, int *nrmotions,
         if (cgi_read_string(id[n], rmotion[0][n].name, &string_data) ||
             cgi_RigidGridMotionType(string_data, &rmotion[0][n].type))
             return CG_ERROR;
-        free(string_data);
+        CGNS_FREE(string_data);
 
      /* DataArrays */
         if (cgi_get_nodes(id[n], "DataArray_t", &rmotion[0][n].narrays, &idi))
@@ -4029,14 +4029,14 @@ int cgi_read_rmotion(int in_link, double parent_id, int *nrmotions,
                 return CG_ERROR;
             }
         }
-        free(idi);
+        CGNS_FREE(idi);
 
      /* UserDefinedData_t */
         if (cgi_read_user_data(linked, rmotion[0][n].id,
             &rmotion[0][n].nuser_data, &rmotion[0][n].user_data)) return CG_ERROR;
 
     }           /* loop through RigidGridMotion_t */
-    free(id);
+    CGNS_FREE(id);
     return CG_OK;
 }
 
@@ -4070,7 +4070,7 @@ int cgi_read_amotion(int in_link, double parent_id, int *namotions,
         if (cgi_read_string(id[n], amotion[0][n].name, &string_data) ||
             cgi_ArbitraryGridMotionType(string_data, &amotion[0][n].type))
             return CG_ERROR;
-        free(string_data);
+        CGNS_FREE(string_data);
 
      /* GridLocation */
         if (cgi_read_location(id[n], amotion[0][n].name,
@@ -4124,14 +4124,14 @@ int cgi_read_amotion(int in_link, double parent_id, int *namotions,
                     return CG_ERROR;
                 }
             }
-            free(idi);
+            CGNS_FREE(idi);
         }
 
      /* UserDefinedData_t */
         if (cgi_read_user_data(linked, amotion[0][n].id,
             &amotion[0][n].nuser_data, &amotion[0][n].user_data)) return CG_ERROR;
     }
-    free(id);
+    CGNS_FREE(id);
     return CG_OK;
 }
 
@@ -4183,7 +4183,7 @@ int cgi_read_array(cgns_array *array, char *parent_label, double parent_id)
             return CG_ERROR;
         }
 
-        if (nchild) free(idi);
+        if (nchild) CGNS_FREE(idi);
 
      /* verify that the name matches the type intended */
         if (strcmp(temp_name,"ArrayDataRange")) {
@@ -4218,7 +4218,7 @@ int cgi_read_array(cgns_array *array, char *parent_label, double parent_id)
             array->range[0] = (cgsize_t)data[0];
             array->range[1] = (cgsize_t)data[1];
         }
-        free(vdata);
+        CGNS_FREE(vdata);
     }
 
     return CG_OK;
@@ -4239,7 +4239,7 @@ int cgi_read_conversion(int in_link, double parent_id, cgns_conversion **convert
     convert[0]->id = id[0];
     convert[0]->link = cgi_read_link(id[0]);
     convert[0]->in_link = in_link;
-    free(id);
+    CGNS_FREE(id);
 
     if (cgi_read_node(convert[0]->id, convert[0]->name, convert[0]->data_type,
         &ndim, dim_vals,  &convert[0]->data, READ_DATA)) {
@@ -4272,7 +4272,7 @@ int cgi_read_exponents(int in_link, double parent_id, cgns_exponent **exponents)
     exponents[0]->id = id[0];
     exponents[0]->link = cgi_read_link(id[0]);
     exponents[0]->in_link = in_link;
-    free(id);
+    CGNS_FREE(id);
 
     if (cgi_read_node(exponents[0]->id, exponents[0]->name,
         exponents[0]->data_type, &ndim, dim_vals, &exponents[0]->data, READ_DATA)) {
@@ -4298,20 +4298,20 @@ int cgi_read_exponents(int in_link, double parent_id, cgns_exponent **exponents)
         void *data;
         ierr = cgi_read_node(id[0], name, data_type, &ndim, dim_vals,
                              &data, READ_DATA);
-        free(id);
+        CGNS_FREE(id);
         if (ierr) {
             cgi_error("Error reading AdditionalExponents for 's'",
                 exponents[0]->name);
             return CG_ERROR;
         }
         if (strcmp(data_type, exponents[0]->data_type)) {
-            free(data);
+            CGNS_FREE(data);
             cgi_error("mismatch in data type for AdditionalExponents for '%s'",
                 exponents[0]->name);
             return CG_ERROR;
         }
         if (ndim != 1 || dim_vals[0] != 3) {
-            free(data);
+            CGNS_FREE(data);
             cgi_error("Wrong dimensions in AdditionalExponents for '%s'",
                 exponents[0]->name);
             return CG_ERROR;
@@ -4319,7 +4319,7 @@ int cgi_read_exponents(int in_link, double parent_id, cgns_exponent **exponents)
         exponents[0]->data = (void *) realloc (exponents[0]->data,
             8 * size_of(exponents[0]->data_type));
         if (exponents[0]->data == NULL) {
-            free(data);
+            CGNS_FREE(data);
             cgi_error("realloc failed for DimensionalExponents");
             return CG_ERROR;
         }
@@ -4334,7 +4334,7 @@ int cgi_read_exponents(int in_link, double parent_id, cgns_exponent **exponents)
         }
 
         exponents[0]->nexps = 8;
-        free(data);
+        CGNS_FREE(data);
     }
     return CG_OK;
 }
@@ -4355,11 +4355,11 @@ int cgi_read_units(int in_link, double parent_id, cgns_units **units)
     units[0]->id = id[0];
     units[0]->link = cgi_read_link(id[0]);
     units[0]->in_link = in_link;
-    free(id);
+    CGNS_FREE(id);
 
     if (cgi_read_string(units[0]->id, units[0]->name, &string_data)) return CG_ERROR;
     if (strlen(string_data) != 32*5) {
-        free(string_data);
+        CGNS_FREE(string_data);
         cgi_error("Dimensional Units defined incorrectly.");
         return CG_ERROR;
     }
@@ -4396,7 +4396,7 @@ int cgi_read_units(int in_link, double parent_id, cgns_units **units)
     unit_name[32] = 0;
     cgi_AngleUnits(unit_name, &units[0]->angle);
 
-    free(string_data);
+    CGNS_FREE(string_data);
 
     units[0]->current = CGNS_ENUMV( ElectricCurrentUnitsNull );
     units[0]->amount = CGNS_ENUMV( SubstanceAmountUnitsNull );
@@ -4406,10 +4406,10 @@ int cgi_read_units(int in_link, double parent_id, cgns_units **units)
         return CG_ERROR;
     if (nnod > 0) {
         int ierr = cgi_read_string(id[0], unit_name, &string_data);
-        free(id);
+        CGNS_FREE(id);
         if (ierr) return CG_ERROR;
         if (strlen(string_data) != 32*3) {
-            free(string_data);
+            CGNS_FREE(string_data);
             cgi_error("AdditionalUnits for '%s' defined incorrectly.",
                 units[0]->name);
             return CG_ERROR;
@@ -4428,7 +4428,7 @@ int cgi_read_units(int in_link, double parent_id, cgns_units **units)
         unit_name[32] = 0;
         cgi_LuminousIntensityUnits(unit_name, &units[0]->intensity);
 
-        free(string_data);
+        CGNS_FREE(string_data);
     }
 
     return CG_OK;
@@ -4478,7 +4478,7 @@ int cgi_read_DDD(int in_link, double parent_id, int *ndescr,
             if (cgi_read_string(id[n], descr[0][n].name,
                 &descr[0][n].text)) return CG_ERROR;
         }
-        free(id);
+        CGNS_FREE(id);
     }
 
      /* DataClass_t */
@@ -4487,8 +4487,8 @@ int cgi_read_DDD(int in_link, double parent_id, int *ndescr,
     if (nnod>0) {
         if (cgi_read_string(id[0], name, &string_data)) return CG_ERROR;
         cgi_DataClass(string_data, data_class);
-        free(string_data);
-        free(id);
+        CGNS_FREE(string_data);
+        CGNS_FREE(id);
     }
 
      /* DimensionalUnits_t */
@@ -4519,9 +4519,9 @@ int cgi_read_ordinal(double parent_id, int *ordinal)
         cgi_error("Ordinal '%s' defined incorrectly",name);
         return CG_ERROR;
     }
-    free(id);
+    CGNS_FREE(id);
     (*ordinal)=*(int *)ordinal_data;
-    free(ordinal_data);
+    CGNS_FREE(ordinal_data);
     return CG_OK;
 }
 
@@ -4553,7 +4553,7 @@ int cgi_read_rind(double parent_id, int **rind_planes)
         cgi_error("Rind Planes '%s' defined incorrectly",name);
         return CG_ERROR;
     }
-    free(id);
+    CGNS_FREE(id);
     return CG_OK;
 }
 
@@ -4577,10 +4577,10 @@ int cgi_read_location(double parent_id, char_33 parent_name,
 
      /* Read the grid location value in the GridLocation_t node */
         if (cgi_read_string(id[0], name, &location_name)) return CG_ERROR;
-        free(id);
+        CGNS_FREE(id);
 
         if (cgi_GridLocation(location_name, location)) return CG_ERROR;
-        free(location_name);
+        CGNS_FREE(location_name);
 
     }
     return CG_OK;
@@ -4608,10 +4608,10 @@ int cgi_read_zonetype(double parent_id, char_33 parent_name,
     }
 
     if (cgi_read_string(id[0], name, &zonetype_name)) return CG_ERROR;
-    free(id);
+    CGNS_FREE(id);
 
     if (cgi_ZoneType(zonetype_name, type)) return CG_ERROR;
-    free(zonetype_name);
+    CGNS_FREE(zonetype_name);
     return CG_OK;
 }
 
@@ -4636,10 +4636,10 @@ int cgi_read_simulation(double parent_id, CGNS_ENUMT(SimulationType_t) *type,
     }
     *type_id = id[0];
     if (cgi_read_string(id[0], name, &type_name)) return CG_ERROR;
-    free(id);
+    CGNS_FREE(id);
 
     if (cgi_SimulationType(type_name, type)) return CG_ERROR;
-    free(type_name);
+    CGNS_FREE(type_name);
     return CG_OK;
 }
 
@@ -4670,7 +4670,7 @@ int cgi_read_biter(int in_link, double parent_id, cgns_biter **biter)
     biter[0]->link = cgi_read_link(id[0]);
     biter[0]->in_link = in_link;
     linked = biter[0]->link ? 1 : in_link;
-    free(id);
+    CGNS_FREE(id);
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
     if (cgi_read_DDD(linked, biter[0]->id, &biter[0]->ndescr, &biter[0]->descr,
@@ -4694,7 +4694,7 @@ int cgi_read_biter(int in_link, double parent_id, cgns_biter **biter)
     }
     NumberOfSteps = biter[0]->nsteps = data[0];
     if (biter[0]->nsteps == 0) return CG_OK;
-    free(vdata);
+    CGNS_FREE(vdata);
 
      /* UserDefinedData_t */
     if (cgi_read_user_data(linked, biter[0]->id, &biter[0]->nuser_data,
@@ -4732,7 +4732,7 @@ int cgi_read_biter(int in_link, double parent_id, cgns_biter **biter)
         }
     }       /* loop through arrays */
 
-    free(id);
+    CGNS_FREE(id);
 
      /* check data: verify that at least one of {TimeValues or IterationValues} is defined */
     for (i=0; i<(biter[0]->narrays); i++) {
@@ -4811,35 +4811,35 @@ int cgi_read_ziter(int in_link, double parent_id, cgns_ziter **ziter)
         cgi_error("Error: Multiple ZoneIterativeData_t found...");
         return CG_ERROR;
     }
+
     ziter[0] = CGNS_NEW(cgns_ziter, 1);
     ziter[0]->id = id[0];
     ziter[0]->link = cgi_read_link(id[0]);
     ziter[0]->in_link = in_link;
     linked = ziter[0]->link ? 1 : in_link;
-    free(id);
 
      /* Name */
     if (cgi_read_node(ziter[0]->id, ziter[0]->name, datatype, &ndim,
         dim_vals, &data, READ_DATA)) {
         cgi_error("Error reading ZoneIterativeData_t");
-        return CG_ERROR;
+        goto cleanup;
     }
     if (strcmp(datatype,"MT")) {
         cgi_error("Error in ZoneIterativeData_t node");
-        return CG_ERROR;
+        goto cleanup;
     }
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
     if (cgi_read_DDD(linked, ziter[0]->id, &ziter[0]->ndescr, &ziter[0]->descr,
-        &ziter[0]->data_class, &ziter[0]->units)) return CG_ERROR;
+        &ziter[0]->data_class, &ziter[0]->units)) goto cleanup;
 
      /* UserDefinedData_t */
     if (cgi_read_user_data(linked, ziter[0]->id, &ziter[0]->nuser_data,
-        &ziter[0]->user_data)) return CG_ERROR;
+        &ziter[0]->user_data)) goto cleanup;
 
      /* DataArray_t */
     if (cgi_get_nodes(ziter[0]->id, "DataArray_t", &ziter[0]->narrays, &id))
-        return CG_ERROR;
+        goto cleanup;
     if (ziter[0]->narrays==0) return CG_OK; /* If no arrays we're done. */
     ziter[0]->array = CGNS_NEW(cgns_array,ziter[0]->narrays);
 
@@ -4848,7 +4848,7 @@ int cgi_read_ziter(int in_link, double parent_id, cgns_ziter **ziter)
         ziter[0]->array[i].link = cgi_read_link(id[i]);
         ziter[0]->array[i].in_link = linked;
         if (cgi_read_array(&ziter[0]->array[i], "ZoneIterativeData_t",
-            ziter[0]->id)) return CG_ERROR;
+            ziter[0]->id)) goto cleanup;
         array = &ziter[0]->array[i];
 
      /* check data */
@@ -4859,17 +4859,21 @@ int cgi_read_ziter(int in_link, double parent_id, cgns_ziter **ziter)
             if (array->data_dim!=2 || array->dim_vals[0]!=32 ||
                 array->dim_vals[1]!=NumberOfSteps) {
                 cgi_error("Error: Array '%s/%s' incorrectly sized", ziter[0]->name, array->name);
-                return CG_ERROR;
+                goto cleanup;
             }
             if (strcmp(array->data_type,"C1")) {
                 cgi_error("Incorrect data type for %s under %s",array->name,ziter[0]->name);
-                return CG_ERROR;
+                goto cleanup;
             }
         }
     }       /* loop through arrays */
-    free(id);
-
+    CGNS_FREE(id);
     return CG_OK;
+
+ cleanup:
+    CGNS_FREE(id);
+    return CG_ERROR;
+
 }
 
 int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
@@ -4918,7 +4922,7 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
                 if (cgi_read_array(&user_data[0][n].array[i],
                     "UserDefinedData_t", user_data[0][n].id)) return CG_ERROR;
             }
-            free(idi);
+            CGNS_FREE(idi);
         }
 
      /* GridLocation_t */
@@ -4943,9 +4947,9 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
                 if (cgi_read_string(idi[i], user_data[0][n].famname[i].name,
                         &fam)) return CG_ERROR;
                 strncpy(user_data[0][n].famname[i].family, fam, 32);
-                free(fam);
+                CGNS_FREE(fam);
             }
-            free(idi);
+            CGNS_FREE(idi);
         }
 
      /* Ordinal_t */
@@ -4989,7 +4993,7 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
             if (cgi_read_ptset(user_data[0][n].id, user_data[0][n].ptset))
                 return CG_ERROR;
         }
-        if (nIR_t) free(IR_id);
+        if (nIR_t) CGNS_FREE(IR_id);
 
         for (nn=0; nn<nIA_t; nn++)
         {
@@ -5016,13 +5020,13 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
                 return CG_ERROR;
         }
 
-        if (nIA_t) free(IA_id);
+        if (nIA_t) CGNS_FREE(IA_id);
 
         /* UserDefinedData_t */
         if (cgi_read_user_data(linked, user_data[0][n].id,
             &user_data[0][n].nuser_data, &user_data[0][n].user_data)) return CG_ERROR;
     }
-    free(id);
+    CGNS_FREE(id);
 
     return CG_OK;
 }
@@ -5067,7 +5071,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
             return CG_ERROR;
         }
         reg[n].reg_dim = *((int *)data);
-        free(data);
+        CGNS_FREE(data);
 
         /* Descriptor_t */
         if (cgi_get_nodes(id[n], "Descriptor_t", &nn, &idi)) return CG_ERROR;
@@ -5092,7 +5096,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
                     reg[n].gcname->text = text;
                 }
                 else {
-                    free(text);
+                    CGNS_FREE(text);
                     ndescr++;
                 }
             }
@@ -5113,19 +5117,19 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
                     j++;
                 }
                 else {
-                    free(text);
+                    CGNS_FREE(text);
                 }
             }
         }
-        if (nn) free(idi);
+        if (nn) CGNS_FREE(idi);
 
         /* DataClass_t */
         if (cgi_get_nodes(id[n], "DataClass_t", &nn, &idi)) return CG_ERROR;
         if (nn > 0) {
             if (cgi_read_string(idi[0], name, &text)) return CG_ERROR;
             cgi_DataClass(text, &reg[n].data_class);
-            free(text);
-            free(idi);
+            CGNS_FREE(text);
+            CGNS_FREE(idi);
         }
 
         /* DimensionalUnits_t */
@@ -5143,7 +5147,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
                 if (cgi_read_array(&reg[n].array[i],
                         "ZoneSubRegion_t", reg[n].id)) return CG_ERROR;
             }
-            free(idi);
+            CGNS_FREE(idi);
         }
 
         /* GridLocation_t */
@@ -5165,9 +5169,9 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
                 reg[n].famname[i].id = idi[i];
                 if (cgi_read_string(idi[i], reg[n].famname[i].name, &fam)) return CG_ERROR;
                 strncpy(reg[n].famname[i].family, fam, 32);
-                free(fam);
+                CGNS_FREE(fam);
             }
-            free(idi);
+            CGNS_FREE(idi);
         }
 
         /* PointSet */
@@ -5201,7 +5205,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
             if (cgi_read_ptset(reg[n].id, reg[n].ptset))
                 return CG_ERROR;
         }
-        if (nIR_t) free(IR_id);
+        if (nIR_t) CGNS_FREE(IR_id);
 
         for (nn = 0; nn < nIA_t; nn++) {
             if (cgio_get_name(cg->cgio, IA_id[nn], name)) {
@@ -5224,7 +5228,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
                 return CG_ERROR;
         }
 
-        if (nIA_t) free(IA_id);
+        if (nIA_t) CGNS_FREE(IA_id);
 
          /* Rind Planes */
         if (cgi_read_rind(reg[n].id, &reg[n].rind_planes)) return CG_ERROR;
@@ -5233,7 +5237,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
         if (cgi_read_user_data(linked, reg[n].id,
             &reg[n].nuser_data, &reg[n].user_data)) return CG_ERROR;
     }
-    free(id);
+    CGNS_FREE(id);
 
     return CG_OK;
 }
@@ -5408,12 +5412,12 @@ int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data
         }
         if (cgio_read_all_data(cg->cgio, id, (void *)pnts)) {
             cg_io_error("cgio_read_all_data");
-            free(pnts);
+            CGNS_FREE(pnts);
             return CG_ERROR;
         }
         for (n = 0; n < cnt; n++)
             data[n] = (cgsize_t)pnts[n];
-        free(pnts);
+        CGNS_FREE(pnts);
     }
 #else
     if (0 == strcmp(data_type, "I8")) {
@@ -5424,12 +5428,12 @@ int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data
         }
         if (cgio_read_all_data(cg->cgio, id, (void *)pnts)) {
             cg_io_error("cgio_read_all_data");
-            free(pnts);
+            CGNS_FREE(pnts);
             return CG_ERROR;
         }
         for (n = 0; n < cnt; n++)
             data[n] = (cgsize_t)pnts[n];
-        free(pnts);
+        CGNS_FREE(pnts);
     }
 #endif
     else {
@@ -5692,7 +5696,7 @@ int cgi_write(int file_number)
         dim_vals=2;
         if (cgi_new_node(cg->rootid, base->name, "CGNSBase_t", &base->id,
             "I4", 1, &dim_vals, (void *)data)) return CG_ERROR;
-        free(data);
+        CGNS_FREE(data);
 
      /* set Global variable */
         Cdim = base->cell_dim;
@@ -7454,7 +7458,7 @@ int cgi_write_units(double parent_id, cgns_units *units)
             &dummy_id, "C1", 2, dim_vals, (void *)string_data)) return CG_ERROR;
     }
 
-    free(string_data);
+    CGNS_FREE(string_data);
 
     return CG_OK;
 }
@@ -7789,6 +7793,7 @@ int cgi_sort_names(int nnam, double *ids)
     for (i=0; i<nnam; i++) {
         if (cgio_get_name(cg->cgio, ids[i], names[i])) {
             cg_io_error("cgio_get_name");
+	    CGNS_FREE(names);
             return CG_ERROR;
         }
     }
@@ -7827,7 +7832,7 @@ int cgi_sort_names(int nnam, double *ids)
         }
     }
 
-    free(names);
+    CGNS_FREE(names);
 
     return CG_OK;
 }
@@ -10750,7 +10755,7 @@ char *cgi_famname_address(int local_mode, int *ier)
                 (*ier) = CG_ERROR;
                 return CG_OK;
             }
-            free(id);
+            CGNS_FREE(id);
         }
     }
     return family_name;
@@ -10898,7 +10903,7 @@ CGNS_ENUMV(DataClass_t) *cgi_dataclass_address(int local_mode, int *ier)
                 (*ier) = CG_ERROR;
                 return CG_OK;
             }
-            free(id);
+            CGNS_FREE(id);
         }
     }
     return data_class;
@@ -11060,7 +11065,7 @@ int *cgi_ordinal_address(int local_mode, int *ier)
                 (*ier) = CG_ERROR;
                 return CG_OK;
             }
-            free(id);
+            CGNS_FREE(id);
         }
     }
 /*    if ((*ordinal)==0) (*ier)= CG_NODE_NOT_FOUND;*/
@@ -11129,7 +11134,7 @@ int *cgi_rind_address(int local_mode, int *ier)
                 (*ier) = CG_ERROR;
                 return CG_OK;
             }
-            free(id);
+            CGNS_FREE(id);
         }
     }
     return rind_planes;
@@ -11182,7 +11187,7 @@ CGNS_ENUMT(GridLocation_t) *cgi_location_address(int local_mode, int *ier)
                 (*ier) = CG_ERROR;
                 return CG_OK;
             }
-            free(id);
+            CGNS_FREE(id);
         }
     }
     return location;
@@ -11562,9 +11567,9 @@ int *cgi_diffusion_address(int local_mode, int *ier)
                 (*ier) = CG_ERROR;
                 return CG_OK;
             }
-            free(id);
+            CGNS_FREE(id);
         }
-        free(diffusion_model);
+        CGNS_FREE(diffusion_model);
     }
     return diffusion_model;
 }
@@ -12211,11 +12216,11 @@ void cgi_free_file(cgns_file *cg)
 {
     int b;
 
-    free(cg->filename);
+    CGNS_FREE(cg->filename);
     if (cg->nbases) {
         for (b=0; b<cg->nbases; b++)
             cgi_free_base(&cg->base[b]);
-        free(cg->base);
+        CGNS_FREE(cg->base);
     }
 }
 
@@ -12226,59 +12231,59 @@ void cgi_free_base(cgns_base *base)
     if (base->nzones) {
         for (n=0; n<base->nzones; n++)
             cgi_free_zone(&base->zone[n]);
-        free(base->zone);
+        CGNS_FREE(base->zone);
     }
     if (base->ndescr) {
         for (n=0; n<base->ndescr; n++)
             cgi_free_descr(&base->descr[n]);
-        free(base->descr);
+        CGNS_FREE(base->descr);
     }
     if (base->state) {
         cgi_free_state(base->state);
-        free(base->state);
+        CGNS_FREE(base->state);
     }
     if (base->units) {
         cgi_free_units(base->units);
-        free(base->units);
+        CGNS_FREE(base->units);
     }
     if (base->equations) {
         cgi_free_equations(base->equations);
-        free(base->equations);
+        CGNS_FREE(base->equations);
     }
     if (base->converg) {
         cgi_free_converg(base->converg);
-        free(base->converg);
+        CGNS_FREE(base->converg);
     }
     if (base->nintegrals) {
         for (n=0; n<base->nintegrals; n++)
             cgi_free_integral(&base->integral[n]);
-        free(base->integral);
+        CGNS_FREE(base->integral);
     }
     if (base->nfamilies) {
         for (n=0; n<base->nfamilies; n++)
             cgi_free_family(&base->family[n]);
-        free(base->family);
+        CGNS_FREE(base->family);
     }
     if (base->biter) {
         cgi_free_biter(base->biter);
-        free(base->biter);
+        CGNS_FREE(base->biter);
     }
     if (base->nuser_data) {
         for (n=0; n<base->nuser_data; n++)
             cgi_free_user_data(&base->user_data[n]);
-        free(base->user_data);
+        CGNS_FREE(base->user_data);
     }
     if (base->gravity) {
         cgi_free_gravity(base->gravity);
-        free(base->gravity);
+        CGNS_FREE(base->gravity);
     }
     if (base->axisym) {
         cgi_free_axisym(base->axisym);
-        free(base->axisym);
+        CGNS_FREE(base->axisym);
     }
     if (base->rotating) {
         cgi_free_rotating(base->rotating);
-        free(base->rotating);
+        CGNS_FREE(base->rotating);
     }
 }
 
@@ -12286,170 +12291,170 @@ void cgi_free_zone(cgns_zone *zone)
 {
     int n;
 
-    if (zone->link) free(zone->link);
-    free(zone->nijk);
+    if (zone->link) CGNS_FREE(zone->link);
+    CGNS_FREE(zone->nijk);
     if (zone->ndescr) {
         for (n=0; n<zone->ndescr; n++)
             cgi_free_descr(&zone->descr[n]);
-        free(zone->descr);
+        CGNS_FREE(zone->descr);
     }
     if (zone->nzcoor) {
         for (n=0; n<zone->nzcoor; n++)
             cgi_free_zcoor(&zone->zcoor[n]);
-        free(zone->zcoor);
+        CGNS_FREE(zone->zcoor);
     }
     if (zone->nsections) {
         for (n=0; n<zone->nsections; n++)
             cgi_free_section(&zone->section[n]);
-        free(zone->section);
+        CGNS_FREE(zone->section);
     }
     if (zone->nsols) {
         for (n=0; n<zone->nsols; n++)
             cgi_free_sol(&zone->sol[n]);
-        free(zone->sol);
+        CGNS_FREE(zone->sol);
     }
     if (zone->ndiscrete) {
         for (n=0; n<zone->ndiscrete; n++)
             cgi_free_discrete(&zone->discrete[n]);
-        free(zone->discrete);
+        CGNS_FREE(zone->discrete);
     }
     if (zone->nintegrals) {
         for (n=0; n<zone->nintegrals; n++)
             cgi_free_integral(&zone->integral[n]);
-        free(zone->integral);
+        CGNS_FREE(zone->integral);
     }
     if (zone->nzconn) {
         for (n=0; n<zone->nzconn; n++)
             cgi_free_zconn(&zone->zconn[n]);
-        free(zone->zconn);
+        CGNS_FREE(zone->zconn);
     }
     if (zone->zboco) {
         cgi_free_zboco(zone->zboco);
-        free(zone->zboco);
+        CGNS_FREE(zone->zboco);
     }
     if (zone->state) {
         cgi_free_state(zone->state);
-        free(zone->state);
+        CGNS_FREE(zone->state);
     }
     if (zone->units) {
         cgi_free_units(zone->units);
-        free(zone->units);
+        CGNS_FREE(zone->units);
     }
     if (zone->equations) {
         cgi_free_equations(zone->equations);
-        free(zone->equations);
+        CGNS_FREE(zone->equations);
     }
     if (zone->converg) {
         cgi_free_converg(zone->converg);
-        free(zone->converg);
+        CGNS_FREE(zone->converg);
     }
     if (zone->nrmotions) {
         for (n=0; n<zone->nrmotions; n++)
             cgi_free_rmotion(&zone->rmotion[n]);
-        free(zone->rmotion);
+        CGNS_FREE(zone->rmotion);
     }
     if (zone->namotions) {
         for (n=0; n<zone->namotions; n++)
             cgi_free_amotion(&zone->amotion[n]);
-        free(zone->amotion);
+        CGNS_FREE(zone->amotion);
     }
     if (zone->ziter) {
         cgi_free_ziter(zone->ziter);
-        free(zone->ziter);
+        CGNS_FREE(zone->ziter);
     }
     if (zone->nuser_data) {
         for (n=0; n<zone->nuser_data; n++)
             cgi_free_user_data(&zone->user_data[n]);
-        free(zone->user_data);
+        CGNS_FREE(zone->user_data);
     }
     if (zone->rotating) {
         cgi_free_rotating(zone->rotating);
-        free(zone->rotating);
+        CGNS_FREE(zone->rotating);
     }
     if (zone->nsubreg) {
         for (n=0; n<zone->nsubreg; n++)
             cgi_free_subreg(&zone->subreg[n]);
-        free(zone->subreg);
+        CGNS_FREE(zone->subreg);
     }
     if (zone->nfamname) {
         for (n = 0; n < zone->nfamname; n++)
             cgi_free_famname(&zone->famname[n]);
-        free(zone->famname);
+        CGNS_FREE(zone->famname);
     }
 }
 
 void cgi_free_section(cgns_section *section)
 {
     int n;
-    if (section->link) free(section->link);
+    if (section->link) CGNS_FREE(section->link);
     if (section->ndescr) {
         for (n=0; n<section->ndescr; n++)
             cgi_free_descr(&section->descr[n]);
-        free(section->descr);
+        CGNS_FREE(section->descr);
     }
-    if (section->rind_planes) free(section->rind_planes);
+    if (section->rind_planes) CGNS_FREE(section->rind_planes);
     if (section->connect) {
         cgi_free_array(section->connect);
-        free(section->connect);
+        CGNS_FREE(section->connect);
     }
     if (section->parelem) {
         cgi_free_array(section->parelem);
-        free(section->parelem);
+        CGNS_FREE(section->parelem);
     }
     if (section->parface) {
         cgi_free_array(section->parface);
-        free(section->parface);
+        CGNS_FREE(section->parface);
     }
     if (section->nuser_data) {
         for (n=0; n<section->nuser_data; n++)
             cgi_free_user_data(&section->user_data[n]);
-        free(section->user_data);
+        CGNS_FREE(section->user_data);
     }
 }
 
 void cgi_free_family(cgns_family *family)
 {
     int n;
-    if (family->link) free(family->link);
+    if (family->link) CGNS_FREE(family->link);
     if (family->ndescr) {
         for (n=0; n<family->ndescr; n++)
             cgi_free_descr(&family->descr[n]);
-        free(family->descr);
+        CGNS_FREE(family->descr);
     }
     if (family->nfambc) {
         for (n=0; n<family->nfambc; n++)
             cgi_free_fambc(&family->fambc[n]);
-        free(family->fambc);
+        CGNS_FREE(family->fambc);
     }
     if (family->ngeos) {
         for (n=0; n<family->ngeos; n++)
             cgi_free_geo(&family->geo[n]);
-        free(family->geo);
+        CGNS_FREE(family->geo);
     }
     if (family->nuser_data) {
         for (n=0; n<family->nuser_data; n++)
             cgi_free_user_data(&family->user_data[n]);
-        free(family->user_data);
+        CGNS_FREE(family->user_data);
     }
     if (family->rotating) {
         cgi_free_rotating(family->rotating);
-        free(family->rotating);
+        CGNS_FREE(family->rotating);
     }
     if (family->nfamname) {
         for (n = 0; n < family->nfamname; n++)
             cgi_free_famname(&family->famname[n]);
-        free(family->famname);
+        CGNS_FREE(family->famname);
     }
 }
 
 void cgi_free_fambc(cgns_fambc *fambc)
 {
-    if (fambc->link) free(fambc->link);
+    if (fambc->link) CGNS_FREE(fambc->link);
     if (fambc->ndataset) {
         int n;
         for (n=0; n<fambc->ndataset; n++)
             cgi_free_dataset(&fambc->dataset[n]);
-        free(fambc->dataset);
+        CGNS_FREE(fambc->dataset);
     }
 }
 
@@ -12463,229 +12468,229 @@ void cgi_free_famname(cgns_famname *famname)
 void cgi_free_geo(cgns_geo *geo)
 {
     int n;
-    if (geo->link) free(geo->link);
+    if (geo->link) CGNS_FREE(geo->link);
     if (geo->ndescr) {
         for (n=0; n<geo->ndescr; n++)
             cgi_free_descr(&geo->descr[n]);
-        free(geo->descr);
+        CGNS_FREE(geo->descr);
     }
-    if (geo->file) free(geo->file);
+    if (geo->file) CGNS_FREE(geo->file);
     if (geo->npart) {
         for (n=0; n<geo->npart; n++)
             cgi_free_part(&geo->part[n]);
-        free(geo->part);
+        CGNS_FREE(geo->part);
     }
     if (geo->nuser_data) {
         for (n=0; n<geo->nuser_data; n++)
             cgi_free_user_data(&geo->user_data[n]);
-        free(geo->user_data);
+        CGNS_FREE(geo->user_data);
     }
 }
 
 void cgi_free_part(cgns_part *part)
 {
-    if (part->link) free(part->link);
+    if (part->link) CGNS_FREE(part->link);
 }
 
 void cgi_free_zcoor(cgns_zcoor *zcoor)
 {
     int n;
-    if (zcoor->link) free(zcoor->link);
+    if (zcoor->link) CGNS_FREE(zcoor->link);
     if (zcoor->ndescr) {
         for (n=0; n<zcoor->ndescr; n++)
             cgi_free_descr(&zcoor->descr[n]);
-        free(zcoor->descr);
+        CGNS_FREE(zcoor->descr);
     }
-    if (zcoor->rind_planes) free(zcoor->rind_planes);
+    if (zcoor->rind_planes) CGNS_FREE(zcoor->rind_planes);
     if (zcoor->ncoords) {
         for (n=0; n<zcoor->ncoords; n++)
             cgi_free_array(&zcoor->coord[n]);
-        free(zcoor->coord);
+        CGNS_FREE(zcoor->coord);
     }
     if (zcoor->units) {
         cgi_free_units(zcoor->units);
-        free(zcoor->units);
+        CGNS_FREE(zcoor->units);
     }
     if (zcoor->nuser_data) {
         for (n=0; n<zcoor->nuser_data; n++)
             cgi_free_user_data(&zcoor->user_data[n]);
-        free(zcoor->user_data);
+        CGNS_FREE(zcoor->user_data);
     }
 }
 
 void cgi_free_zboco(cgns_zboco *zboco)
 {
     int n;
-    if (zboco->link) free(zboco->link);
+    if (zboco->link) CGNS_FREE(zboco->link);
     if (zboco->ndescr) {
         for (n=0; n<zboco->ndescr; n++)
             cgi_free_descr(&zboco->descr[n]);
-        free(zboco->descr);
+        CGNS_FREE(zboco->descr);
     }
     if (zboco->nbocos) {
         for (n=0; n<zboco->nbocos; n++)
             cgi_free_boco(&zboco->boco[n]);
-        free(zboco->boco);
+        CGNS_FREE(zboco->boco);
     }
     if (zboco->state) {
         cgi_free_state(zboco->state);
-        free(zboco->state);
+        CGNS_FREE(zboco->state);
     }
     if (zboco->units) {
         cgi_free_units(zboco->units);
-        free(zboco->units);
+        CGNS_FREE(zboco->units);
     }
     if (zboco->nuser_data) {
         for (n=0; n<zboco->nuser_data; n++)
             cgi_free_user_data(&zboco->user_data[n]);
-        free(zboco->user_data);
+        CGNS_FREE(zboco->user_data);
     }
 }
 
 void cgi_free_zconn(cgns_zconn *zconn)
 {
     int n;
-    if (zconn->link) free(zconn->link);
+    if (zconn->link) CGNS_FREE(zconn->link);
     if (zconn->ndescr) {
         for (n=0; n<zconn->ndescr; n++)
             cgi_free_descr(&zconn->descr[n]);
-        free(zconn->descr);
+        CGNS_FREE(zconn->descr);
     }
     if (zconn->n1to1) {
         for (n=0; n<zconn->n1to1; n++)
             cgi_free_1to1(&zconn->one21[n]);
-        free(zconn->one21);
+        CGNS_FREE(zconn->one21);
     }
     if (zconn->nconns) {
         for (n=0; n<zconn->nconns; n++)
             cgi_free_conn(&zconn->conn[n]);
-        free(zconn->conn);
+        CGNS_FREE(zconn->conn);
     }
     if (zconn->nholes) {
         for (n=0; n<zconn->nholes; n++)
             cgi_free_hole(&zconn->hole[n]);
-        free(zconn->hole);
+        CGNS_FREE(zconn->hole);
     }
     if (zconn->nuser_data) {
         for (n=0; n<zconn->nuser_data; n++)
             cgi_free_user_data(&zconn->user_data[n]);
-        free(zconn->user_data);
+        CGNS_FREE(zconn->user_data);
     }
 }
 
 void cgi_free_sol(cgns_sol *sol)
 {
     int n;
-    if (sol->link) free(sol->link);
+    if (sol->link) CGNS_FREE(sol->link);
     if (sol->ndescr) {
         for (n=0; n<sol->ndescr; n++)
             cgi_free_descr(&sol->descr[n]);
-        free(sol->descr);
+        CGNS_FREE(sol->descr);
     }
     if (sol->nfields) {
         for (n=0; n<sol->nfields; n++)
             cgi_free_array(&sol->field[n]);
-        free(sol->field);
+        CGNS_FREE(sol->field);
     }
-    if (sol->rind_planes) free(sol->rind_planes);
+    if (sol->rind_planes) CGNS_FREE(sol->rind_planes);
     if (sol->units) {
         cgi_free_units(sol->units);
-        free(sol->units);
+        CGNS_FREE(sol->units);
     }
     if (sol->nuser_data) {
         for (n=0; n<sol->nuser_data; n++)
             cgi_free_user_data(&sol->user_data[n]);
-        free(sol->user_data);
+        CGNS_FREE(sol->user_data);
     }
     if (sol->ptset) {
         cgi_free_ptset(sol->ptset);
-        free(sol->ptset);
+        CGNS_FREE(sol->ptset);
     }
 }
 
 void cgi_free_1to1(cgns_1to1 *one21)
 {
     int n;
-    if (one21->link) free(one21->link);
-    free(one21->transform);
+    if (one21->link) CGNS_FREE(one21->link);
+    CGNS_FREE(one21->transform);
     if (one21->ndescr) {
         for (n=0; n<one21->ndescr; n++)
             cgi_free_descr(&one21->descr[n]);
-        free(one21->descr);
+        CGNS_FREE(one21->descr);
     }
     if (one21->nuser_data) {
         for (n=0; n<one21->nuser_data; n++)
             cgi_free_user_data(&one21->user_data[n]);
-        free(one21->user_data);
+        CGNS_FREE(one21->user_data);
     }
     if (one21->cprop) {
         cgi_free_cprop(one21->cprop);
-        free(one21->cprop);
+        CGNS_FREE(one21->cprop);
     }
 }
 
 void cgi_free_hole(cgns_hole *hole)
 {
     int n;
-    if (hole->link) free(hole->link);
+    if (hole->link) CGNS_FREE(hole->link);
     if (hole->ndescr) {
         for (n=0; n<hole->ndescr; n++)
             cgi_free_descr(&hole->descr[n]);
-        free(hole->descr);
+        CGNS_FREE(hole->descr);
     }
     if (hole->nptsets) {
         for (n=0; n<hole->nptsets; n++)
             cgi_free_ptset(&hole->ptset[n]);
-        free(hole->ptset);
+        CGNS_FREE(hole->ptset);
     }
     if (hole->nuser_data) {
         for (n=0; n<hole->nuser_data; n++)
             cgi_free_user_data(&hole->user_data[n]);
-        free(hole->user_data);
+        CGNS_FREE(hole->user_data);
     }
 }
 
 void cgi_free_conn(cgns_conn *conn)
 {
     int n;
-    if (conn->link) free(conn->link);
+    if (conn->link) CGNS_FREE(conn->link);
     if (conn->ndescr) {
         for (n=0; n<conn->ndescr; n++)
             cgi_free_descr(&conn->descr[n]);
-        free(conn->descr);
+        CGNS_FREE(conn->descr);
     }
     if (conn->interpolants) {
         cgi_free_array(conn->interpolants);
-        free(conn->interpolants);
+        CGNS_FREE(conn->interpolants);
     }
     if (conn->nuser_data) {
         for (n=0; n<conn->nuser_data; n++)
             cgi_free_user_data(&conn->user_data[n]);
-        free(conn->user_data);
+        CGNS_FREE(conn->user_data);
     }
     if (conn->cprop) {
         cgi_free_cprop(conn->cprop);
-        free(conn->cprop);
+        CGNS_FREE(conn->cprop);
     }
 }
 
 void cgi_free_boco(cgns_boco *boco)
 {
     int n;
-    if (boco->link) free(boco->link);
+    if (boco->link) CGNS_FREE(boco->link);
     if (boco->ndescr) {
         for (n=0; n<boco->ndescr; n++)
             cgi_free_descr(&boco->descr[n]);
-        free(boco->descr);
+        CGNS_FREE(boco->descr);
     }
     if (boco->ptset) {
         cgi_free_ptset(boco->ptset);
-        free(boco->ptset);
+        CGNS_FREE(boco->ptset);
     }
-    if (boco->Nindex) free(boco->Nindex);
+    if (boco->Nindex) CGNS_FREE(boco->Nindex);
     if (boco->normal) {
         cgi_free_array(boco->normal);
-        free(boco->normal);
+        CGNS_FREE(boco->normal);
     }
     if (boco->ndataset) {
         for (n=0; n<boco->ndataset; n++)
@@ -12698,736 +12703,736 @@ void cgi_free_boco(cgns_boco *boco)
                 boco->dataset[n].ptset = 0;
             cgi_free_dataset(&boco->dataset[n]);
         }
-        free(boco->dataset);
+        CGNS_FREE(boco->dataset);
     }
     if (boco->state) {
         cgi_free_state(boco->state);
-        free(boco->state);
+        CGNS_FREE(boco->state);
     }
     if (boco->units) {
         cgi_free_units(boco->units);
-        free(boco->units);
+        CGNS_FREE(boco->units);
     }
     if (boco->nuser_data) {
         for (n=0; n<boco->nuser_data; n++)
             cgi_free_user_data(&boco->user_data[n]);
-        free(boco->user_data);
+        CGNS_FREE(boco->user_data);
     }
     if (boco->bprop) {
         cgi_free_bprop(boco->bprop);
-        free(boco->bprop);
+        CGNS_FREE(boco->bprop);
     }
     if (boco->nfamname) {
         for (n = 0; n < boco->nfamname; n++)
             cgi_free_famname(&boco->famname[n]);
-        free(boco->famname);
+        CGNS_FREE(boco->famname);
     }
 }
 
 void cgi_free_dataset(cgns_dataset *dataset)
 {
     int n;
-    if (dataset->link) free(dataset->link);
+    if (dataset->link) CGNS_FREE(dataset->link);
     if (dataset->ndescr) {
         for (n=0; n<dataset->ndescr; n++)
             cgi_free_descr(&dataset->descr[n]);
-        free(dataset->descr);
+        CGNS_FREE(dataset->descr);
     }
     if (dataset->dirichlet) {
        cgi_free_bcdata(dataset->dirichlet);
-       free(dataset->dirichlet);
+       CGNS_FREE(dataset->dirichlet);
     }
     if (dataset->neumann) {
         cgi_free_bcdata(dataset->neumann);
-        free(dataset->neumann);
+        CGNS_FREE(dataset->neumann);
     }
     if (dataset->state) {
         cgi_free_state(dataset->state);
-        free(dataset->state);
+        CGNS_FREE(dataset->state);
     }
     if (dataset->units) {
         cgi_free_units(dataset->units);
-        free(dataset->units);
+        CGNS_FREE(dataset->units);
     }
     if (dataset->nuser_data) {
         for (n=0; n<dataset->nuser_data; n++)
             cgi_free_user_data(&dataset->user_data[n]);
-        free(dataset->user_data);
+        CGNS_FREE(dataset->user_data);
     }
     if (dataset->ptset) {
         cgi_free_ptset(dataset->ptset);
-        free(dataset->ptset);
+        CGNS_FREE(dataset->ptset);
     }
 }
 
 void cgi_free_bcdata(cgns_bcdata *bcdata)
 {
     int n;
-    if (bcdata->link) free(bcdata->link);
+    if (bcdata->link) CGNS_FREE(bcdata->link);
     if (bcdata->ndescr) {
         for (n=0; n<bcdata->ndescr; n++)
             cgi_free_descr(&bcdata->descr[n]);
-        free(bcdata->descr);
+        CGNS_FREE(bcdata->descr);
     }
     if (bcdata->narrays) {
         for (n=0; n<bcdata->narrays; n++)
             cgi_free_array(&bcdata->array[n]);
-        free(bcdata->array);
+        CGNS_FREE(bcdata->array);
     }
     if (bcdata->units) {
         cgi_free_units(bcdata->units);
-        free(bcdata->units);
+        CGNS_FREE(bcdata->units);
     }
     if (bcdata->nuser_data) {
         for (n=0; n<bcdata->nuser_data; n++)
             cgi_free_user_data(&bcdata->user_data[n]);
-        free(bcdata->user_data);
+        CGNS_FREE(bcdata->user_data);
     }
 }
 
 void cgi_free_ptset(cgns_ptset *ptset)
 {
-    if (ptset->link) free(ptset->link);
-    if (ptset->data) free(ptset->data);
+    if (ptset->link) CGNS_FREE(ptset->link);
+    if (ptset->data) CGNS_FREE(ptset->data);
 }
 
 void cgi_free_equations(cgns_equations *equations)
 {
     int n;
-    if (equations->link) free(equations->link);
+    if (equations->link) CGNS_FREE(equations->link);
     if (equations->ndescr) {
         for (n=0; n<equations->ndescr; n++)
             cgi_free_descr(&equations->descr[n]);
-        free(equations->descr);
+        CGNS_FREE(equations->descr);
     }
     if (equations->governing) {
         cgi_free_governing(equations->governing);
-        free(equations->governing);
+        CGNS_FREE(equations->governing);
     }
     if (equations->gas) {
         cgi_free_model(equations->gas);
-        free(equations->gas);
+        CGNS_FREE(equations->gas);
     }
     if (equations->visc) {
         cgi_free_model(equations->visc);
-        free(equations->visc);
+        CGNS_FREE(equations->visc);
     }
     if (equations->conduct) {
         cgi_free_model(equations->conduct);
-        free(equations->conduct);
+        CGNS_FREE(equations->conduct);
     }
     if (equations->closure) {
         cgi_free_model(equations->closure);
-        free(equations->closure);
+        CGNS_FREE(equations->closure);
     }
     if (equations->turbulence) {
         if (equations->turbulence->diffusion_model)
-            free(equations->turbulence->diffusion_model);
+            CGNS_FREE(equations->turbulence->diffusion_model);
         cgi_free_model(equations->turbulence);
-        free(equations->turbulence);
+        CGNS_FREE(equations->turbulence);
     }
     if (equations->relaxation) {
         cgi_free_model(equations->relaxation);
-        free(equations->relaxation);
+        CGNS_FREE(equations->relaxation);
     }
     if (equations->chemkin) {
         cgi_free_model(equations->chemkin);
-        free(equations->chemkin);
+        CGNS_FREE(equations->chemkin);
     }
     if (equations->units) {
         cgi_free_units(equations->units);
-        free(equations->units);
+        CGNS_FREE(equations->units);
     }
     if (equations->nuser_data) {
         for (n=0; n<equations->nuser_data; n++)
             cgi_free_user_data(&equations->user_data[n]);
-        free(equations->user_data);
+        CGNS_FREE(equations->user_data);
     }
     if (equations->elecfield) {
         cgi_free_model(equations->elecfield);
-        free(equations->elecfield);
+        CGNS_FREE(equations->elecfield);
     }
     if (equations->magnfield) {
         cgi_free_model(equations->magnfield);
-        free(equations->magnfield);
+        CGNS_FREE(equations->magnfield);
     }
     if (equations->emconduct) {
         cgi_free_model(equations->emconduct);
-        free(equations->emconduct);
+        CGNS_FREE(equations->emconduct);
     }
 }
 
 void cgi_free_governing(cgns_governing *governing)
 {
     int n;
-    if (governing->link) free(governing->link);
+    if (governing->link) CGNS_FREE(governing->link);
     if (governing->ndescr) {
         for (n=0; n<governing->ndescr; n++)
             cgi_free_descr(&governing->descr[n]);
-        free(governing->descr);
+        CGNS_FREE(governing->descr);
     }
-    if (governing->diffusion_model) free(governing->diffusion_model);
+    if (governing->diffusion_model) CGNS_FREE(governing->diffusion_model);
     if (governing->nuser_data) {
         for (n=0; n<governing->nuser_data; n++)
             cgi_free_user_data(&governing->user_data[n]);
-        free(governing->user_data);
+        CGNS_FREE(governing->user_data);
     }
 }
 
 void cgi_free_model(cgns_model *model)
 {
     int n;
-    if (model->link) free(model->link);
+    if (model->link) CGNS_FREE(model->link);
     if (model->ndescr) {
         for (n=0; n<model->ndescr; n++)
             cgi_free_descr(&model->descr[n]);
-        free(model->descr);
+        CGNS_FREE(model->descr);
     }
     if (model->narrays) {
         for (n=0; n<model->narrays; n++)
             cgi_free_array(&model->array[n]);
-        free(model->array);
+        CGNS_FREE(model->array);
     }
     if (model->units) {
         cgi_free_units(model->units);
-        free(model->units);
+        CGNS_FREE(model->units);
     }
     if (model->nuser_data) {
         for (n=0; n<model->nuser_data; n++)
             cgi_free_user_data(&model->user_data[n]);
-        free(model->user_data);
+        CGNS_FREE(model->user_data);
     }
 }
 
 void cgi_free_state(cgns_state *state)
 {
     int n;
-    if (state->link) free(state->link);
+    if (state->link) CGNS_FREE(state->link);
     if (state->ndescr) {
         for (n=0; n<state->ndescr; n++)
             cgi_free_descr(&state->descr[n]);
-        free(state->descr);
+        CGNS_FREE(state->descr);
     }
     if (state->StateDescription) {
         cgi_free_descr(state->StateDescription);
-        free(state->StateDescription);
+        CGNS_FREE(state->StateDescription);
     }
     if (state->narrays) {
         for (n=0; n<state->narrays; n++)
             cgi_free_array(&state->array[n]);
-        free(state->array);
+        CGNS_FREE(state->array);
     }
     if (state->units) {
         cgi_free_units(state->units);
-        free(state->units);
+        CGNS_FREE(state->units);
     }
     if (state->nuser_data) {
         for (n=0; n<state->nuser_data; n++)
             cgi_free_user_data(&state->user_data[n]);
-        free(state->user_data);
+        CGNS_FREE(state->user_data);
     }
 }
 
 void cgi_free_converg(cgns_converg *converg)
 {
     int n;
-    if (converg->link) free(converg->link);
+    if (converg->link) CGNS_FREE(converg->link);
     if (converg->ndescr) {
         for (n=0; n<converg->ndescr; n++)
             cgi_free_descr(&converg->descr[n]);
-        free(converg->descr);
+        CGNS_FREE(converg->descr);
     }
     if (converg->NormDefinitions) {
         cgi_free_descr(converg->NormDefinitions);
-        free(converg->NormDefinitions);
+        CGNS_FREE(converg->NormDefinitions);
     }
     if (converg->narrays) {
         for (n=0; n<converg->narrays; n++)
             cgi_free_array(&converg->array[n]);
-        free(converg->array);
+        CGNS_FREE(converg->array);
     }
     if (converg->units) {
         cgi_free_units(converg->units);
-        free(converg->units);
+        CGNS_FREE(converg->units);
     }
     if (converg->nuser_data) {
         for (n=0; n<converg->nuser_data; n++)
             cgi_free_user_data(&converg->user_data[n]);
-        free(converg->user_data);
+        CGNS_FREE(converg->user_data);
     }
 }
 
 void cgi_free_discrete(cgns_discrete *discrete)
 {
     int n;
-    if (discrete->link) free(discrete->link);
+    if (discrete->link) CGNS_FREE(discrete->link);
     if (discrete->ndescr) {
         for (n=0; n<discrete->ndescr; n++)
             cgi_free_descr(&discrete->descr[n]);
-        free(discrete->descr);
+        CGNS_FREE(discrete->descr);
     }
-    if (discrete->rind_planes) free(discrete->rind_planes);
+    if (discrete->rind_planes) CGNS_FREE(discrete->rind_planes);
     if (discrete->narrays) {
         for (n=0; n<discrete->narrays; n++)
             cgi_free_array(&discrete->array[n]);
-        free(discrete->array);
+        CGNS_FREE(discrete->array);
     }
     if (discrete->units) {
         cgi_free_units(discrete->units);
-        free(discrete->units);
+        CGNS_FREE(discrete->units);
     }
     if (discrete->nuser_data) {
         for (n=0; n<discrete->nuser_data; n++)
             cgi_free_user_data(&discrete->user_data[n]);
-        free(discrete->user_data);
+        CGNS_FREE(discrete->user_data);
     }
     if (discrete->ptset) {
         cgi_free_ptset(discrete->ptset);
-        free(discrete->ptset);
+        CGNS_FREE(discrete->ptset);
     }
 }
 
 void cgi_free_integral(cgns_integral *integral)
 {
     int n;
-    if (integral->link) free(integral->link);
+    if (integral->link) CGNS_FREE(integral->link);
     if (integral->ndescr) {
         for (n=0; n<integral->ndescr; n++)
             cgi_free_descr(&integral->descr[n]);
-        free(integral->descr);
+        CGNS_FREE(integral->descr);
     }
     if (integral->narrays) {
         for (n=0; n<integral->narrays; n++)
             cgi_free_array(&integral->array[n]);
-        free(integral->array);
+        CGNS_FREE(integral->array);
     }
     if (integral->units) {
         cgi_free_units(integral->units);
-        free(integral->units);
+        CGNS_FREE(integral->units);
     }
     if (integral->nuser_data) {
         for (n=0; n<integral->nuser_data; n++)
             cgi_free_user_data(&integral->user_data[n]);
-        free(integral->user_data);
+        CGNS_FREE(integral->user_data);
     }
 }
 
 void cgi_free_array(cgns_array *array)
 {
     int n;
-    if (array->link) free(array->link);
-    if (array->data) free(array->data);
+    if (array->link) CGNS_FREE(array->link);
+    if (array->data) CGNS_FREE(array->data);
     if (array->ndescr) {
         for (n=0; n<array->ndescr; n++)
             cgi_free_descr(&array->descr[n]);
-        free(array->descr);
+        CGNS_FREE(array->descr);
     }
     if (array->units) {
         cgi_free_units(array->units);
-        free(array->units);
+        CGNS_FREE(array->units);
     }
     if (array->exponents) {
         cgi_free_exponents(array->exponents);
-        free(array->exponents);
+        CGNS_FREE(array->exponents);
     }
     if (array->convert) {
         cgi_free_convert(array->convert);
-        free(array->convert);
+        CGNS_FREE(array->convert);
     }
 }
 
 void cgi_free_convert(cgns_conversion *convert)
 {
-    if (convert->link) free(convert->link);
-    free(convert->data);
+    if (convert->link) CGNS_FREE(convert->link);
+    CGNS_FREE(convert->data);
 }
 
 void cgi_free_exponents(cgns_exponent *exponents)
 {
-    if (exponents->link) free(exponents->link);
-    free(exponents->data);
+    if (exponents->link) CGNS_FREE(exponents->link);
+    CGNS_FREE(exponents->data);
 }
 
 void cgi_free_units(cgns_units *units)
 {
-    if (units->link) free(units->link);
+    if (units->link) CGNS_FREE(units->link);
 }
 
 void cgi_free_descr(cgns_descr *descr)
 {
-    if (descr->link) free(descr->link);
-    if (descr->text) free(descr->text);
+    if (descr->link) CGNS_FREE(descr->link);
+    if (descr->text) CGNS_FREE(descr->text);
 }
 
 void cgi_free_rmotion(cgns_rmotion *rmotion)
 {
     int n;
-    if (rmotion->link) free(rmotion->link);
+    if (rmotion->link) CGNS_FREE(rmotion->link);
     if (rmotion->ndescr) {
         for (n=0; n<rmotion->ndescr; n++)
             cgi_free_descr(&rmotion->descr[n]);
-        free(rmotion->descr);
+        CGNS_FREE(rmotion->descr);
     }
     if (rmotion->narrays) {
         for (n=0; n<rmotion->narrays; n++)
             cgi_free_array(&rmotion->array[n]);
-        free(rmotion->array);
+        CGNS_FREE(rmotion->array);
     }
     if (rmotion->units) {
         cgi_free_units(rmotion->units);
-        free(rmotion->units);
+        CGNS_FREE(rmotion->units);
     }
     if (rmotion->nuser_data) {
         for (n=0; n<rmotion->nuser_data; n++)
             cgi_free_user_data(&rmotion->user_data[n]);
-        free(rmotion->user_data);
+        CGNS_FREE(rmotion->user_data);
     }
 }
 
 void cgi_free_amotion(cgns_amotion *amotion)
 {
     int n;
-    if (amotion->link) free(amotion->link);
+    if (amotion->link) CGNS_FREE(amotion->link);
     if (amotion->ndescr) {
         for (n=0; n<amotion->ndescr; n++)
             cgi_free_descr(&amotion->descr[n]);
-        free(amotion->descr);
+        CGNS_FREE(amotion->descr);
     }
-    if (amotion->rind_planes) free(amotion->rind_planes);
+    if (amotion->rind_planes) CGNS_FREE(amotion->rind_planes);
     if (amotion->narrays) {
         for (n=0; n<amotion->narrays; n++)
             cgi_free_array(&amotion->array[n]);
-        free(amotion->array);
+        CGNS_FREE(amotion->array);
     }
     if (amotion->units) {
         cgi_free_units(amotion->units);
-        free(amotion->units);
+        CGNS_FREE(amotion->units);
     }
     if (amotion->nuser_data) {
         for (n=0; n<amotion->nuser_data; n++)
             cgi_free_user_data(&amotion->user_data[n]);
-        free(amotion->user_data);
+        CGNS_FREE(amotion->user_data);
     }
 }
 
 void cgi_free_biter(cgns_biter *biter)
 {
     int n;
-    if (biter->link) free(biter->link);
+    if (biter->link) CGNS_FREE(biter->link);
     if (biter->ndescr) {
         for (n=0; n<biter->ndescr; n++)
             cgi_free_descr(&biter->descr[n]);
-        free(biter->descr);
+        CGNS_FREE(biter->descr);
     }
     if (biter->narrays) {
         for (n=0; n<biter->narrays; n++)
             cgi_free_array(&biter->array[n]);
-        free(biter->array);
+        CGNS_FREE(biter->array);
     }
     if (biter->units) {
         cgi_free_units(biter->units);
-        free(biter->units);
+        CGNS_FREE(biter->units);
     }
     if (biter->nuser_data) {
         for (n=0; n<biter->nuser_data; n++)
             cgi_free_user_data(&biter->user_data[n]);
-        free(biter->user_data);
+        CGNS_FREE(biter->user_data);
     }
 }
 
 void cgi_free_ziter(cgns_ziter *ziter)
 {
     int n;
-    if (ziter->link) free(ziter->link);
+    if (ziter->link) CGNS_FREE(ziter->link);
     if (ziter->ndescr) {
         for (n=0; n<ziter->ndescr; n++)
             cgi_free_descr(&ziter->descr[n]);
-        free(ziter->descr);
+        CGNS_FREE(ziter->descr);
     }
     if (ziter->narrays) {
         for (n=0; n<ziter->narrays; n++)
             cgi_free_array(&ziter->array[n]);
-        free(ziter->array);
+        CGNS_FREE(ziter->array);
     }
     if (ziter->units) {
         cgi_free_units(ziter->units);
-        free(ziter->units);
+        CGNS_FREE(ziter->units);
     }
     if (ziter->nuser_data) {
         for (n=0; n<ziter->nuser_data; n++)
             cgi_free_user_data(&ziter->user_data[n]);
-        free(ziter->user_data);
+        CGNS_FREE(ziter->user_data);
     }
 }
 
 void cgi_free_gravity(cgns_gravity *gravity)
 {
     int n;
-    if (gravity->link) free(gravity->link);
+    if (gravity->link) CGNS_FREE(gravity->link);
     if (gravity->ndescr) {
         for (n=0; n<gravity->ndescr; n++)
             cgi_free_descr(&gravity->descr[n]);
-        free(gravity->descr);
+        CGNS_FREE(gravity->descr);
     }
     if (gravity->vector) {
         cgi_free_array(gravity->vector);
-        free(gravity->vector);
+        CGNS_FREE(gravity->vector);
     }
     if (gravity->units) {
         cgi_free_units(gravity->units);
-        free(gravity->units);
+        CGNS_FREE(gravity->units);
     }
     if (gravity->nuser_data) {
         for (n=0; n<gravity->nuser_data; n++)
             cgi_free_user_data(&gravity->user_data[n]);
-        free(gravity->user_data);
+        CGNS_FREE(gravity->user_data);
     }
 }
 
 void cgi_free_axisym(cgns_axisym *axisym)
 {
     int n;
-    if (axisym->link) free(axisym->link);
+    if (axisym->link) CGNS_FREE(axisym->link);
     if (axisym->ndescr) {
         for (n=0; n<axisym->ndescr; n++)
             cgi_free_descr(&axisym->descr[n]);
-        free(axisym->descr);
+        CGNS_FREE(axisym->descr);
     }
     if (axisym->units) {
         cgi_free_units(axisym->units);
-        free(axisym->units);
+        CGNS_FREE(axisym->units);
     }
     if (axisym->narrays) {
         for (n=0; n<axisym->narrays; n++)
             cgi_free_array(&axisym->array[n]);
-        free(axisym->array);
+        CGNS_FREE(axisym->array);
     }
     if (axisym->nuser_data) {
         for (n=0; n<axisym->nuser_data; n++)
             cgi_free_user_data(&axisym->user_data[n]);
-        free(axisym->user_data);
+        CGNS_FREE(axisym->user_data);
     }
 }
 
 void cgi_free_rotating(cgns_rotating *rotating)
 {
     int n;
-    if (rotating->link) free(rotating->link);
+    if (rotating->link) CGNS_FREE(rotating->link);
     if (rotating->ndescr) {
         for (n=0; n<rotating->ndescr; n++)
             cgi_free_descr(&rotating->descr[n]);
-        free(rotating->descr);
+        CGNS_FREE(rotating->descr);
     }
     if (rotating->units) {
         cgi_free_units(rotating->units);
-        free(rotating->units);
+        CGNS_FREE(rotating->units);
     }
     if (rotating->narrays) {
         for (n=0; n<rotating->narrays; n++)
             cgi_free_array(&rotating->array[n]);
-        free(rotating->array);
+        CGNS_FREE(rotating->array);
     }
     if (rotating->nuser_data) {
         for (n=0; n<rotating->nuser_data; n++)
             cgi_free_user_data(&rotating->user_data[n]);
-        free(rotating->user_data);
+        CGNS_FREE(rotating->user_data);
     }
 }
 
 void cgi_free_bprop(cgns_bprop *bprop)
 {
     int n;
-    if (bprop->link) free(bprop->link);
+    if (bprop->link) CGNS_FREE(bprop->link);
     if (bprop->ndescr) {
         for (n=0; n<bprop->ndescr; n++)
             cgi_free_descr(&bprop->descr[n]);
-        free(bprop->descr);
+        CGNS_FREE(bprop->descr);
     }
     if (bprop->bcwall) {
         cgi_free_bcwall(bprop->bcwall);
-        free(bprop->bcwall);
+        CGNS_FREE(bprop->bcwall);
     }
     if (bprop->bcarea) {
         cgi_free_bcarea(bprop->bcarea);
-        free(bprop->bcarea);
+        CGNS_FREE(bprop->bcarea);
     }
     if (bprop->nuser_data) {
         for (n=0; n<bprop->nuser_data; n++)
             cgi_free_user_data(&bprop->user_data[n]);
-        free(bprop->user_data);
+        CGNS_FREE(bprop->user_data);
     }
 }
 
 void cgi_free_cprop(cgns_cprop *cprop)
 {
     int n;
-    if (cprop->link) free(cprop->link);
+    if (cprop->link) CGNS_FREE(cprop->link);
     if (cprop->ndescr) {
         for (n=0; n<cprop->ndescr; n++)
             cgi_free_descr(&cprop->descr[n]);
-        free(cprop->descr);
+        CGNS_FREE(cprop->descr);
     }
     if (cprop->cperio) {
         cgi_free_cperio(cprop->cperio);
-        free(cprop->cperio);
+        CGNS_FREE(cprop->cperio);
     }
     if (cprop->caverage) {
         cgi_free_caverage(cprop->caverage);
-        free(cprop->caverage);
+        CGNS_FREE(cprop->caverage);
     }
     if (cprop->nuser_data) {
         for (n=0; n<cprop->nuser_data; n++)
             cgi_free_user_data(&cprop->user_data[n]);
-        free(cprop->user_data);
+        CGNS_FREE(cprop->user_data);
     }
 }
 
 void cgi_free_bcwall(cgns_bcwall *bcwall)
 {
     int n;
-    if (bcwall->link) free(bcwall->link);
+    if (bcwall->link) CGNS_FREE(bcwall->link);
     if (bcwall->ndescr) {
         for (n=0; n<bcwall->ndescr; n++)
             cgi_free_descr(&bcwall->descr[n]);
-        free(bcwall->descr);
+        CGNS_FREE(bcwall->descr);
     }
     if (bcwall->nuser_data) {
         for (n=0; n<bcwall->nuser_data; n++)
             cgi_free_user_data(&bcwall->user_data[n]);
-        free(bcwall->user_data);
+        CGNS_FREE(bcwall->user_data);
     }
 }
 
 void cgi_free_bcarea(cgns_bcarea *bcarea)
 {
     int n;
-    if (bcarea->link) free(bcarea->link);
+    if (bcarea->link) CGNS_FREE(bcarea->link);
     if (bcarea->ndescr) {
         for (n=0; n<bcarea->ndescr; n++)
             cgi_free_descr(&bcarea->descr[n]);
-        free(bcarea->descr);
+        CGNS_FREE(bcarea->descr);
     }
     if (bcarea->narrays) {
         for (n=0; n<bcarea->narrays; n++)
             cgi_free_array(&bcarea->array[n]);
-        free(bcarea->array);
+        CGNS_FREE(bcarea->array);
     }
     if (bcarea->nuser_data) {
         for (n=0; n<bcarea->nuser_data; n++)
             cgi_free_user_data(&bcarea->user_data[n]);
-        free(bcarea->user_data);
+        CGNS_FREE(bcarea->user_data);
     }
 }
 
 void cgi_free_cperio(cgns_cperio *cperio)
 {
     int n;
-    if (cperio->link) free(cperio->link);
+    if (cperio->link) CGNS_FREE(cperio->link);
     if (cperio->ndescr) {
         for (n=0; n<cperio->ndescr; n++)
             cgi_free_descr(&cperio->descr[n]);
-        free(cperio->descr);
+        CGNS_FREE(cperio->descr);
     }
     if (cperio->narrays) {
         for (n=0; n<cperio->narrays; n++)
             cgi_free_array(&cperio->array[n]);
-        free(cperio->array);
+        CGNS_FREE(cperio->array);
     }
     if (cperio->units) {
         cgi_free_units(cperio->units);
-        free(cperio->units);
+        CGNS_FREE(cperio->units);
     }
     if (cperio->nuser_data) {
         for (n=0; n<cperio->nuser_data; n++)
             cgi_free_user_data(&cperio->user_data[n]);
-        free(cperio->user_data);
+        CGNS_FREE(cperio->user_data);
     }
 }
 
 void cgi_free_caverage(cgns_caverage *caverage)
 {
     int n;
-    if (caverage->link) free(caverage->link);
+    if (caverage->link) CGNS_FREE(caverage->link);
     if (caverage->ndescr) {
         for (n=0; n<caverage->ndescr; n++)
             cgi_free_descr(&caverage->descr[n]);
-        free(caverage->descr);
+        CGNS_FREE(caverage->descr);
     }
     if (caverage->nuser_data) {
         for (n=0; n<caverage->nuser_data; n++)
             cgi_free_user_data(&caverage->user_data[n]);
-        free(caverage->user_data);
+        CGNS_FREE(caverage->user_data);
     }
 }
 
 void cgi_free_user_data(cgns_user_data *user_data)
 {
     int n;
-    if (user_data->link) free(user_data->link);
+    if (user_data->link) CGNS_FREE(user_data->link);
     if (user_data->ndescr) {
         for (n=0; n<user_data->ndescr; n++)
             cgi_free_descr(&user_data->descr[n]);
-        free(user_data->descr);
+        CGNS_FREE(user_data->descr);
     }
     if (user_data->narrays) {
         for (n=0; n<user_data->narrays; n++)
             cgi_free_array(&user_data->array[n]);
-        free(user_data->array);
+        CGNS_FREE(user_data->array);
     }
     if (user_data->ptset) {
         cgi_free_ptset(user_data->ptset);
-        free(user_data->ptset);
+        CGNS_FREE(user_data->ptset);
     }
     if (user_data->units) {
         cgi_free_units(user_data->units);
-        free(user_data->units);
+        CGNS_FREE(user_data->units);
     }
     if (user_data->nuser_data) {
         for (n=0; n < user_data->nuser_data; n++)
             cgi_free_user_data(&user_data->user_data[n]);
-        free(user_data->user_data);
+        CGNS_FREE(user_data->user_data);
     }
     if (user_data->nfamname) {
         for (n = 0; n < user_data->nfamname; n++)
             cgi_free_famname(&user_data->famname[n]);
-        free(user_data->famname);
+        CGNS_FREE(user_data->famname);
     }
 }
 
 void cgi_free_subreg(cgns_subreg *subreg)
 {
     int n;
-    if (subreg->link) free(subreg->link);
+    if (subreg->link) CGNS_FREE(subreg->link);
     if (subreg->ndescr) {
         for (n=0; n<subreg->ndescr; n++)
             cgi_free_descr(&subreg->descr[n]);
-        free(subreg->descr);
+        CGNS_FREE(subreg->descr);
     }
     if (subreg->narrays) {
         for (n=0; n<subreg->narrays; n++)
             cgi_free_array(&subreg->array[n]);
-        free(subreg->array);
+        CGNS_FREE(subreg->array);
     }
     if (subreg->ptset) {
         cgi_free_ptset(subreg->ptset);
-        free(subreg->ptset);
+        CGNS_FREE(subreg->ptset);
     }
     if (subreg->bcname) cgi_free_descr(subreg->bcname);
     if (subreg->gcname) cgi_free_descr(subreg->gcname);
     if (subreg->units) {
         cgi_free_units(subreg->units);
-        free(subreg->units);
+        CGNS_FREE(subreg->units);
     }
-    if (subreg->rind_planes) free(subreg->rind_planes);
+    if (subreg->rind_planes) CGNS_FREE(subreg->rind_planes);
     if (subreg->nuser_data) {
         for (n=0; n < subreg->nuser_data; n++)
             cgi_free_user_data(&subreg->user_data[n]);
-        free(subreg->user_data);
+        CGNS_FREE(subreg->user_data);
     }
     if (subreg->nfamname) {
         for (n = 0; n < subreg->nfamname; n++)
             cgi_free_famname(&subreg->famname[n]);
-        free(subreg->famname);
+        CGNS_FREE(subreg->famname);
     }
 }
 

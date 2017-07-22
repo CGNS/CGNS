@@ -5879,7 +5879,7 @@ static void check_base_iter (void)
 
 static void check_base (void)
 {
-    char basename[33], name[33], *desc;
+  char basename[33], name[33], *desc1, *desc2, *desc3;
     int n, nz, ierr, nd, nf, eqset[7];
     float point[3], vector[3];
     CGNS_ENUMT(SimulationType_t) simulation;
@@ -5967,11 +5967,11 @@ static void check_base (void)
     if (verbose > 1) {
         if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
         for (n = 1; n <= nd; n++) {
-            if (cg_descriptor_read (n, name, &desc))
+            if (cg_descriptor_read (n, name, &desc1))
                 error_exit("cg_descriptor_read");
-            if (desc != NULL) {
-                printf ("  Descriptor %s:\n%s\n", name, desc);
-                cg_free (desc);
+            if (desc1 != NULL) {
+                printf ("  Descriptor %s:\n%s\n", name, desc1);
+                cg_free (desc1);
             }
         }
     }
@@ -5995,14 +5995,14 @@ static void check_base (void)
 
     /*----- ReferenceState -----*/
 
-    ierr = cg_state_read (&desc);
+    ierr = cg_state_read (&desc2);
     if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_state_read");
     if (ierr == CG_OK) {
         puts ("checking reference state");
-        if (desc != NULL) {
+        if (desc2 != NULL) {
             if (verbose > 1)
-                printf ("  Descriptor:%s\n", desc);
-            cg_free (desc);
+                printf ("  Descriptor:%s\n", desc2);
+            cg_free (desc2);
         }
         fflush (stdout);
         go_absolute ("ReferenceState_t", 1, NULL);
@@ -6079,15 +6079,15 @@ static void check_base (void)
     /*----- ConvergenceHistory -----*/
 
     go_absolute (NULL);
-    ierr = cg_convergence_read (&nd, &desc);
+    ierr = cg_convergence_read (&nd, &desc3);
     if (ierr && ierr != CG_NODE_NOT_FOUND)
         error_exit("cg_convergence_read");
     if (ierr == CG_OK && nd) {
         puts ("checking global convergence history");
         fflush (stdout);
         go_absolute ("ConvergenceHistory_t", 1, NULL);
-        check_convergence (nd, desc, BaseClass, pBaseUnits, 2);
-        if (desc != NULL) cg_free (desc);
+        check_convergence (nd, desc3, BaseClass, pBaseUnits, 2);
+        cg_free (desc3);
     }
 
     /*=----- IntegralData -----*/
