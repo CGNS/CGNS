@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Builds CGNS for travis CI.
+# Builds and tests CGNS for travis CI.
 #
 cd src
 make

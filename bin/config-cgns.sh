@@ -1,10 +1,8 @@
 #!/bin/sh
 #
-# Builds CGNS for travis CI. 
+# Configure CGNS for travis CI. 
 #
 set -e
-#git clone -b develop --single-branch https://github.com/CGNS/CGNS.git
-#cd CGNS/src
 cd src
 if [ $TRAVIS_OS_NAME = "linux" ]; then
   export FLIBS="-Wl,--no-as-needed -ldl -lz"

@@ -25,21 +25,19 @@ before_install:
          sudo apt-get install -qq gfortran;
       fi
 
-
 matrix:
    include:
      - os: linux
        compiler: gcc-4.9
        install: export CC="gcc" export FC="gfortran" export F77="gfortran"
 
-    
 addons:
   coverity_scan:
     project:
       name: "CGNS/CGNS"
       description: "Build submitted via Travis CI"
     notification_email: brtnfld@hdfgroup.org
-    build_command_prepend: "./bin/install-hdf.sh && ./bin/install-cgns.sh"
+    build_command_prepend: "./bin/install-hdf.sh && ./bin/config-cgns.sh"
     build_command:   "./bin/build-cgns.sh"
     branch_pattern: coverity_scan
 
@@ -49,4 +47,3 @@ script:
       echo "Don't build on coverty_scan branch.";
       exit 0;
     fi
-  - cd src
