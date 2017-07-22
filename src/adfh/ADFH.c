@@ -1825,7 +1825,7 @@ void ADFH_Get_Node_ID(const double  pid,
   set_error(NO_ERROR, err);
   if (*name == '/') {
     hid_t rid;
-    char *path = (char *) malloc (strlen(name));
+    char *path = (char *) malloc (strlen(name)+1);
     if (path == NULL) {
       set_error(MEMORY_ALLOCATION_FAILED, err);
       return;

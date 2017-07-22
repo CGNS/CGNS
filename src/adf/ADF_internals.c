@@ -2841,6 +2841,7 @@ for( i=0, found = -1 ; i<(int)parent_node.num_sub_nodes ; i++ ) {
 
 if( found == -1 ) {
    *error_return = SUB_NODE_TABLE_ENTRIES_BAD ;
+   free(sub_node_table);
    return ;
 }
 
