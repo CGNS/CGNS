@@ -639,7 +639,7 @@ static int valid_face (ZONE *z, cgsize_t elem)
 
 static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
 {
-    int ns, nn;
+    int ns, nn=0;
     cgsize_t ne, *nodes;
     CGNS_ENUMT(ElementType_t) type;
 
