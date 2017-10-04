@@ -505,9 +505,9 @@ option(CGNS_USE_SHARED "Link programs to the CGNS shared library" "ON")
 
 # Build a static version of the library
 if (CGNS_ENABLE_FORTRAN)
-    add_library(cgns_static ${cgns_FILES} $<TARGET_OBJECTS:cgns_f2c>)
+    add_library(cgns_static STATIC ${cgns_FILES} $<TARGET_OBJECTS:cgns_f2c>)
 else (CGNS_ENABLE_FORTRAN)
-  add_library(cgns_static ${cgns_FILES})
+  add_library(cgns_static STATIC ${cgns_FILES})
 endif (CGNS_ENABLE_FORTRAN)
 
 
