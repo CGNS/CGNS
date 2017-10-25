@@ -5653,12 +5653,16 @@ $as_echo "$hdf5dir" >&6; }
     if test -f "$hdf5dir/include/hdf5.h"; then
       HDF5INC=$hdf5dir/include
       for a in $exts ; do
+	if test -f $hdf5dir/lib64/libhdf5.$a; then
+          HDF5LIB=$hdf5dir/lib64/libhdf5.$a
+          break
+        fi
         if test -f $hdf5dir/lib/libhdf5.$a; then
           HDF5LIB=$hdf5dir/lib/libhdf5.$a
           break
         fi
       done
-      test -z "$HDF5LIB" && HDF5LIB=$hdf5dir/lib/libhdf5.a
+      test -z "$HDF5LIB" && (HDF5LIB=$hdf5dir/lib/libhdf5.a || HDF5LIB=$hdf5dir/lib64/libhdf5.a)
     else
       if test -f "$hdf5dir/src/hdf5.h"; then
         HDF5INC=$hdf5dir/src
@@ -5718,14 +5722,14 @@ $as_echo "no" >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if HDF5 library has collective metadata APIs" >&5
 $as_echo_n "checking if HDF5 library has collective metadata APIs... " >&6; }
   chck_coll=`grep -i '_coll_metadata_' $HDF5INC/H5Ppublic.h`
-   if test "x$chck_coll" = "x"; then
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  if test "x$chck_coll" = "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-   else
-     HDF5_HAVE_COLL_METADATA=1
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+  else
+    HDF5_HAVE_COLL_METADATA=1
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
+  fi
 fi
 
 #---------------------------------------------------------------------------

@@ -852,12 +852,16 @@ else
     if test -f "$hdf5dir/include/hdf5.h"; then
       HDF5INC=$hdf5dir/include
       for a in $exts ; do
+	if test -f $hdf5dir/lib64/libhdf5.$a; then
+          HDF5LIB=$hdf5dir/lib64/libhdf5.$a
+          break
+        fi
         if test -f $hdf5dir/lib/libhdf5.$a; then
           HDF5LIB=$hdf5dir/lib/libhdf5.$a
           break
         fi
       done
-      test -z "$HDF5LIB" && HDF5LIB=$hdf5dir/lib/libhdf5.a
+      test -z "$HDF5LIB" && (HDF5LIB=$hdf5dir/lib/libhdf5.a || HDF5LIB=$hdf5dir/lib64/libhdf5.a)
     else
       if test -f "$hdf5dir/src/hdf5.h"; then
         HDF5INC=$hdf5dir/src
