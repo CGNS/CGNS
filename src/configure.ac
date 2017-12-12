@@ -1621,9 +1621,10 @@ if test "$withfortran" = "yes"; then
     fi
 #----------- Determine if the Fortran compiler pgi ------------------------
 # The PGI compiler segfaults wehn va_start is called, so we need to add
-# a special compiler flag, see CGNS-40.
+# a special compiler flag, see CGNS-40. -Mx,125,0x200 is now called
+# -Mvarargs
 #--------------------------------------------------------------------------
-    fc_vendor="`$FC --version 2>&1 |grep -i 'Portland Group'`"
+    fc_vendor="`$FC --version 2>&1 |grep 'PGI'`"
     if test X != "X$fc_vendor"; then
       FFLAGS="$FFLAGS -Mx,125,0x200" 
     fi
