@@ -83,7 +83,6 @@ before_build:
   - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
   - cmake --version
-  - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/1.8.19/cmake
   - cmake -G "Visual Studio 14 Win64" ^
      -D CMAKE_C_FLAGS:STRING="" ^
      -D CMAKE_BUILD_TYPE:STRING=Release ^
@@ -91,9 +90,11 @@ before_build:
      -D CGNS_USE_SHARED:BOOL=ON ^
      -D CGNS_ENABLE_64BIT:BOOL=ON ^
      -D HDF5_NEED_ZLIB:BOOL=ON ^
+     -D ZLIB_LIBRARY:PATH="C:/Program Files/HDF_Group/HDF5/1.8.19/lib/zlib.lib" ^
      -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
      -D CGNS_ENABLE_HDF5:BOOL=ON ^
-     -D HDF5_ROOT="/Program Files/HDF_Group/HDF5/1.8.19/" ^
+     -D HDF5_DIR:PATH="C:/Program Files/HDF_Group/HDF5/1.8.19/cmake" ^
+     -D HDF5_LIBRARY:PATH="C:/Program Files/HDF_Group/HDF5/1.8.19/lib/hdf5.lib" ^
      -D CGNS_ENABLE_TESTS:BOOL=ON ^
      -D CGNS_ENABLE_LFS:BOOL=OFF ^
      -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF ^
