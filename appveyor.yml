@@ -79,6 +79,7 @@ configuration:
 
 # scripts to run before build
 before_build:
+  - set PATH=C:\Program Files\HDF_Group\HDF5\1.8.19\bin;%PATH%
   - echo Running cmake...
   - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
