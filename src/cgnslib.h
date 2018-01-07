@@ -35,8 +35,8 @@
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
 
-#define CGNS_VERSION 3320
-#define CGNS_DOTVERS 3.32
+#define CGNS_VERSION 3400
+#define CGNS_DOTVERS 3.40
 
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
@@ -933,11 +933,11 @@ CGNSDLL int cg_section_read(int file_number, int B, int Z, int S,
 	char *SectionName,  CGNS_ENUMT(ElementType_t) *type,
 	cgsize_t *start, cgsize_t *end, int *nbndry, int *parent_flag);
 CGNSDLL int cg_elements_read(int file_number, int B, int Z, int S,
-	cgsize_t *elements, cgsize_t *parent_data);
+	cgsize_t *elements, cgsize_t *connect_offset, cgsize_t *parent_data);
 CGNSDLL int cg_section_write(int file_number, int B, int Z,
 	const char * SectionName, CGNS_ENUMT(ElementType_t) type,
 	cgsize_t start, cgsize_t end, int nbndry, const cgsize_t * elements,
-	int *S);
+    const cgsize_t * connect_offset, int *S);
 CGNSDLL int cg_parent_data_write(int file_number, int B, int Z, int S,
 	const cgsize_t * parent_data);
 CGNSDLL int cg_npe( CGNS_ENUMT(ElementType_t) type, int *npe);
@@ -949,13 +949,13 @@ CGNSDLL int cg_section_partial_write(int file_number, int B, int Z,
 	cgsize_t start, cgsize_t end, int nbndry, int *S);
 
 CGNSDLL int cg_elements_partial_write(int fn, int B, int Z, int S,
-	cgsize_t start, cgsize_t end, const cgsize_t *elements);
+	cgsize_t start, cgsize_t end, const cgsize_t *elements, const cgsize_t *connect_offset);
 
 CGNSDLL int cg_parent_data_partial_write(int fn, int B, int Z, int S,
 	cgsize_t start, cgsize_t end, const cgsize_t *ParentData);
 
 CGNSDLL int cg_elements_partial_read(int file_number, int B, int Z, int S,
-	cgsize_t start, cgsize_t end, cgsize_t *elements, cgsize_t *parent_data);
+	cgsize_t start, cgsize_t end, cgsize_t *elements, cgsize_t *connect_offset, cgsize_t *parent_data);
 
 CGNSDLL int cg_ElementPartialSize(int file_number, int B, int Z, int S,
 	cgsize_t start, cgsize_t end, cgsize_t *ElementDataSize);

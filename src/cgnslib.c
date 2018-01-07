@@ -2583,6 +2583,33 @@ static int read_element_data(cgns_section *section)
     return CG_OK;
 }
 
+static void free_offset_data(cgns_section *section)
+{
+    if (section->connect_offset->data != NULL) {
+        free(section->connect_offset->data);
+        section->connect_offset->data = NULL;
+    }
+}
+
+static int read_offset_data(cgns_section *section)
+{
+    if (section->connect_offset->data == NULL) {
+	cgsize_t cnt = section->connect_offset->dim_vals[0];
+
+        section->connect_offset->data = malloc(cnt * sizeof(cgsize_t));
+        if (section->connect_offset->data == NULL) {
+            cgi_error("malloc failed for element connectivity offset data");
+            return CG_ERROR;
+        }
+        if (cgi_read_int_data(section->connect_offset->id,
+                section->connect_offset->data_type, cnt, section->connect_offset->data)) {
+            free_offset_data(section);
+            return CG_ERROR;
+        }
+    }
+    return CG_OK;
+}
+
 static void free_parent_data(cgns_section *section)
 {
     if (section->parelem && section->parelem->data != NULL) {
@@ -2696,7 +2723,8 @@ int cg_section_read(int file_number, int B, int Z, int S, char *SectionName,
 
 int cg_section_write(int file_number, int B, int Z, const char * SectionName,
                      CGNS_ENUMT(ElementType_t)type, cgsize_t start, cgsize_t end,
-                     int nbndry, const cgsize_t * elements, int *S)
+                     int nbndry, const cgsize_t * elements, const cgsize_t * connect_offset,
+                     int *S)
 {
     cgns_zone *zone;
     cgns_section *section = NULL;
@@ -2774,7 +2802,7 @@ int cg_section_write(int file_number, int B, int Z, const char * SectionName,
     section->el_bound = nbndry;
 
      /* Compute ElementDataSize */
-    ElementDataSize = cgi_element_data_size(type, num, elements);
+    ElementDataSize = cgi_element_data_size(type, num, elements, connect_offset);
     if (ElementDataSize < 0) return CG_ERROR;
 
      /* Write element connectivity in internal data structure */
@@ -2783,6 +2811,15 @@ int cg_section_write(int file_number, int B, int Z, const char * SectionName,
     strcpy(section->connect->data_type, CG_SIZE_DATATYPE);
     section->connect->data_dim=1;
     section->connect->dim_vals[0]=ElementDataSize;
+    
+    if (connect_offset) {
+         /* Write element start offset connectivity in internal data structure */
+        section->connect_offset = CGNS_NEW(cgns_array, 1);
+        strcpy(section->connect_offset->name,"ElementStartOffset");
+        strcpy(section->connect_offset->data_type, CG_SIZE_DATATYPE);
+        section->connect_offset->data_dim=1;
+        section->connect_offset->dim_vals[0] = end-start+2;
+    }
 
     if (cgi_write_section(zone->id, section))
         return CG_ERROR;
@@ -2790,6 +2827,13 @@ int cg_section_write(int file_number, int B, int Z, const char * SectionName,
         cg_io_error("cgio_write_all_data");
         return CG_ERROR;
     }
+    if (section->connect_offset) {
+        if (cgio_write_all_data(cg->cgio, section->connect_offset->id, connect_offset)) {
+            cg_io_error("cgio_write_all_data");
+            return CG_ERROR;
+        }
+    }    
+    
     return CG_OK;
 }
 
@@ -2948,7 +2992,7 @@ int cg_ElementPartialSize(int file_number, int B, int Z, int S,
 	cgsize_t start, cgsize_t end, cgsize_t *ElementDataSize)
 {
     cgns_section *section;
-    cgsize_t size, offset, *data;
+    cgsize_t size, offset, *data, *offset_data;
 
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
@@ -2970,20 +3014,21 @@ int cg_ElementPartialSize(int file_number, int B, int Z, int S,
     }
 
     if (IS_FIXED_SIZE(section->el_type)) {
-        size = cgi_element_data_size(section->el_type, end - start + 1, NULL);
+        size = cgi_element_data_size(section->el_type, end - start + 1, NULL, NULL);
         if (size < 0) return CG_ERROR;
         *ElementDataSize = size;
         return CG_OK;
     }
 
     if (read_element_data(section)) return CG_ERROR;
+    if (read_offset_data(section)) return CG_ERROR;
 
     data = (cgsize_t *)section->connect->data;
+    offset_data = (cgsize_t *)section->connect_offset->data;
     offset = cgi_element_data_size(section->el_type,
-                 start - section->range[0], data);
+                 start - section->range[0], data, offset_data);
     if (offset < 0) return CG_ERROR;
-    size = cgi_element_data_size(section->el_type,
-               end - start + 1, &data[offset]);
+    size = offset_data[end-start+1] - offset_data[start];
     if (size < 0) return CG_ERROR;
     *ElementDataSize = size;
     return CG_OK;
@@ -2992,10 +3037,11 @@ int cg_ElementPartialSize(int file_number, int B, int Z, int S,
 /*----------------------------------------------------------------------*/
 
 int cg_elements_read(int file_number, int B, int Z, int S, cgsize_t *elements,
-                     cgsize_t *parent_data)
+                     cgsize_t *connect_offset, cgsize_t *parent_data)
 {
     cgns_section *section;
-    cgsize_t count, num, ElementDataSize=0;
+    cgsize_t count, num, ElementDataSize=0, ConnectOffsetSize=0;
+    cgsize_t *offset_data=0;
 
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
@@ -3010,8 +3056,12 @@ int cg_elements_read(int file_number, int B, int Z, int S, cgsize_t *elements,
     ElementDataSize = section->connect->dim_vals[0];
 
      /* Double check ElementDataSize (not necessary) */
+    if (section->connect_offset) {
+        offset_data = section->connect_offset->data;
+    }
     num = section->range[1] - section->range[0] +1;
-    count = cgi_element_data_size(section->el_type, num, section->connect->data);
+    count = cgi_element_data_size(section->el_type, num, 
+                                  section->connect->data, offset_data);
     if (count < 0) return CG_ERROR;
     if (count && count != ElementDataSize) {
         cgi_error("Error in recorded element connectivity array...");
@@ -3025,6 +3075,17 @@ int cg_elements_read(int file_number, int B, int Z, int S, cgsize_t *elements,
     else {
         if (cgi_read_int_data(section->connect->id, section->connect->data_type,
                 ElementDataSize, elements)) return CG_ERROR;
+    }
+    
+    if (connect_offset && section->connect_offset) {
+        ConnectOffsetSize  = section->connect_offset->dim_vals[0];
+        if (section->connect_offset->data &&
+            0 == strcmp(CG_SIZE_DATATYPE, section->connect->data_type)) {
+            memcpy(connect_offset, section->connect_offset->data, (size_t)(ConnectOffsetSize*sizeof(cgsize_t)));
+        } else {
+            if (cgi_read_int_data(section->connect_offset->id, section->connect_offset->data_type,
+                ConnectOffsetSize, connect_offset)) return CG_ERROR;
+        }
     }
 
     if (parent_data && section->parelem && (section->parface ||
@@ -3046,7 +3107,7 @@ int cg_elements_read(int file_number, int B, int Z, int S, cgsize_t *elements,
 
 int cg_elements_partial_read(int file_number, int B, int Z, int S,
                              cgsize_t start, cgsize_t end, cgsize_t *elements,
-                             cgsize_t *parent_data)
+                             cgsize_t *connect_offset, cgsize_t *parent_data)
 {
     cgns_section *section;
     cgsize_t offset, size, n;
@@ -3072,37 +3133,81 @@ int cg_elements_partial_read(int file_number, int B, int Z, int S,
     }
 
     /* if the elements are fixed size, read directly into user memory */
-    if (section->connect->data == 0 && IS_FIXED_SIZE(section->el_type) &&
-        0 == strcmp(CG_SIZE_DATATYPE, section->connect->data_type)) {
+    if (IS_FIXED_SIZE(section->el_type)) {
+        if (section->connect->data == 0 &&
+            0 == strcmp(CG_SIZE_DATATYPE, section->connect->data_type)) {
 
-        size = cgi_element_data_size(section->el_type, end - start + 1, NULL);
-        if (size < 0) return CG_ERROR;
-        s_start[0]  = cgi_element_data_size(section->el_type,
-                          start - section->range[0], NULL) + 1;
-        s_end[0]    = cgi_element_data_size(section->el_type,
-                          end - section->range[0] + 1, NULL);
-        s_stride[0] = 1;
-        m_start[0]  = 1;
-        m_end[0]    = size;
-        m_stride[0] = 1;
-        m_dim[0]    = size;
+            size = cgi_element_data_size(section->el_type, end - start + 1, NULL, NULL);
+            if (size < 0) return CG_ERROR;
+            s_start[0]  = cgi_element_data_size(section->el_type,
+                          start - section->range[0], NULL, NULL) + 1;
+            s_end[0]    = cgi_element_data_size(section->el_type,
+                          end - section->range[0] + 1, NULL, NULL);
+            s_stride[0] = 1;
+            m_start[0]  = 1;
+            m_end[0]    = size;
+            m_stride[0] = 1;
+            m_dim[0]    = size;
 
-        if (cgio_read_data(cg->cgio, section->connect->id,
+            if (cgio_read_data(cg->cgio, section->connect->id,
                 s_start, s_end, s_stride, 1, m_dim,
                 m_start, m_end, m_stride, elements)) {
-            cg_io_error("cgio_read_data");
+                cg_io_error("cgio_read_data");
+                return CG_ERROR;
+           }
+        } else {
+            /* need to get the elements to compute locations */
+            if (read_element_data(section)) return CG_ERROR;
+            data = (cgsize_t *)section->connect->data;
+            offset = cgi_element_data_size(section->el_type,
+                     start - section->range[0], data, NULL);
+            size = cgi_element_data_size(section->el_type,
+                     end - start + 1, &data[offset], NULL);
+            memcpy(elements, &data[offset], (size_t)(size*sizeof(cgsize_t)));
+        }
+    }   
+    else {
+        /* need to get the connectivity offset to compute locations */
+        if (read_offset_data(section)) return CG_ERROR;
+        
+        cgsize_t *tmp_connect_offset = (cgsize_t *) section->connect_offset->data;
+        offset = tmp_connect_offset[start - section->range[0]];
+        size = tmp_connect_offset[end-section->range[0]+1] - offset;
+        
+        if (section->connect->data == 0 &&
+            0 == strcmp(CG_SIZE_DATATYPE, section->connect->data_type)) {
+            s_start[0]  = offset+1;
+            s_end[0]    = tmp_connect_offset[end-section->range[0]+1];
+            s_stride[0] = 1;
+            m_start[0]  = 1;
+            m_end[0]    = size;
+            m_stride[0] = 1;
+            m_dim[0]    = size;
+            
+            if (cgio_read_data(cg->cgio, section->connect->id,
+                s_start, s_end, s_stride, 1, m_dim,
+                m_start, m_end, m_stride, elements)) {
+                cg_io_error("cgio_read_data");
+                return CG_ERROR;
+           }
+        } else {
+            /* need to get the elements */
+            if (read_element_data(section)) return CG_ERROR;
+            data = (cgsize_t *)section->connect->data;
+            memcpy(elements, &data[offset], (size_t)(size*sizeof(cgsize_t)));
+        }
+        
+        if (connect_offset == 0) {
+            cgi_error("missing connectivity offset for reading");
             return CG_ERROR;
         }
-    }
-    else {
-        /* need to get the elements to compute locations */
-        if (read_element_data(section)) return CG_ERROR;
-        data = (cgsize_t *)section->connect->data;
-        offset = cgi_element_data_size(section->el_type,
-                     start - section->range[0], data);
-        size = cgi_element_data_size(section->el_type,
-                     end - start + 1, &data[offset]);
-        memcpy(elements, &data[offset], (size_t)(size*sizeof(cgsize_t)));
+        
+        memcpy(connect_offset, &tmp_connect_offset[start-section->range[0]],(size_t)((end-start+2)*sizeof(cgsize_t)));
+        offset = connect_offset[0];
+        for (n=0; n< (end-start+2); n++)
+        {
+            connect_offset[n] -= offset;
+        }
     }
 
     if (parent_data && section->parelem && (section->parface ||
@@ -3215,7 +3320,7 @@ int cg_elements_partial_read(int file_number, int B, int Z, int S,
 
 int cg_elements_partial_write(int file_number, int B, int Z, int S,
 			      cgsize_t start, cgsize_t end,
-			      const cgsize_t *elements)
+			      const cgsize_t *elements, const cgsize_t *connect_offset)
 {
     cgns_section *section;
     CGNS_ENUMT(ElementType_t) type;
@@ -3262,32 +3367,33 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
 
     offset  = start < section->range[0] ? section->range[0] - start : 0;
     oldsize = section->range[1] - section->range[0] + 1;
-    ElementDataSize = cgi_element_data_size(type, end - start + 1, elements);
+    ElementDataSize = cgi_element_data_size(type, end - start + 1,
+                                            elements, connect_offset);
     if (ElementDataSize < 0) return CG_ERROR;
 
-    /* can we just use the user's data ? */
+    if (IS_FIXED_SIZE(type)) {
+        /* can we just use the user's data ? */    
+        if (start >= section->range[0] && end <= section->range[1] &&
+            section->connect->data == 0) {
+            cgsize_t s_start, s_end, s_stride;
+            cgsize_t m_start, m_end, m_stride, m_dim;
 
-    if (start >= section->range[0] && end <= section->range[1] &&
-        IS_FIXED_SIZE(type) && section->connect->data == 0) {
-        cgsize_t s_start, s_end, s_stride;
-        cgsize_t m_start, m_end, m_stride, m_dim;
+            s_start  = cgi_element_data_size(type, start - section->range[0], 0, 0) + 1;
+            s_end    = cgi_element_data_size(type, end - section->range[0] + 1, 0, 0);
+            s_stride = 1;
+            m_start  = 1;
+            m_end    = ElementDataSize;
+            m_dim    = ElementDataSize;
+            m_stride = 1;
 
-        s_start  = cgi_element_data_size(type, start - section->range[0], 0) + 1;
-        s_end    = cgi_element_data_size(type, end - section->range[0] + 1, 0);
-        s_stride = 1;
-        m_start  = 1;
-        m_end    = ElementDataSize;
-        m_dim    = ElementDataSize;
-        m_stride = 1;
-
-        if (cgio_write_data(cg->cgio, section->connect->id,
+            if (cgio_write_data(cg->cgio, section->connect->id,
                 &s_start, &s_end, &s_stride, 1, &m_dim,
                 &m_start, &m_end, &m_stride, elements)) {
-            cg_io_error("cgio_write_data");
-            return CG_ERROR;
+                cg_io_error("cgio_write_data");
+                return CG_ERROR;
+            }
         }
-    }
-    else {
+        else {
 
         /* got to do it in memory */
 
@@ -3309,13 +3415,13 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             /* overlap */
             if (start >= section->range[0]) {
                 num = start - section->range[0];
-                size = cgi_element_data_size(type, num, oldelems);
+                size = cgi_element_data_size(type, num, oldelems, NULL);
                 if (size < 0) return CG_ERROR;
                 newsize += size;
             }
             if (end <= section->range[1]) {
                 num = end - section->range[0] + 1;
-                offset = cgi_element_data_size(type, num, oldelems);
+                offset = cgi_element_data_size(type, num, oldelems, NULL);
                 if (offset < 0) return CG_ERROR;
                 size = oldsize - offset;
                 newsize += size;
@@ -3352,7 +3458,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
                 n += oldsize;
             } else if (end < section->range[1]) {
                 num = end - section->range[0] + 1;
-                offset = cgi_element_data_size(type, num, oldelems);
+                offset = cgi_element_data_size(type, num, oldelems, NULL);
                 if (offset < 0) return CG_ERROR;
                 size = oldsize - offset;
                 memcpy(&newelems[n], &oldelems[offset], (size_t)(size*sizeof(cgsize_t)));
@@ -3379,14 +3485,14 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             n += ElementDataSize;
         } else {
             num = start - section->range[0];
-            size = cgi_element_data_size(type, num, oldelems);
+            size = cgi_element_data_size(type, num, oldelems, NULL);
             memcpy(newelems, oldelems, (size_t)(size*sizeof(cgsize_t)));
             n += size;
             memcpy(&newelems[n], elements, (size_t)(ElementDataSize*sizeof(cgsize_t)));
             n += ElementDataSize;
             if (end < section->range[1]) {
                 num = end - section->range[0] + 1;
-                offset = cgi_element_data_size(type, num, oldelems);
+                offset = cgi_element_data_size(type, num, oldelems, NULL);
                 if (offset < 0) {
                     free(newelems);
                     return CG_ERROR;
@@ -3440,8 +3546,38 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
             cg_io_error("cgio_write_all_data");
             return CG_ERROR;
         }
+        }
+    } else {
+        
+        /* NOT FIXED SIZE: NGON_n, NFACE_n, MIXED */
+        
+        // TODO : code it properly
+        
+        
+        if (strcmp(CG_SIZE_DATATYPE, section->connect_offset->data_type)) {
+            cgi_error("element offsets data type %s does not match stored value %s",
+                      CG_SIZE_DATATYPE, section->connect_offset->data_type);
+            return CG_ERROR;
+        }
+        //
+        //
+        if (read_offset_data(section)) return CG_ERROR;
+        
+        //cgsize_t s_conn_size, m_conn_size;
+        //cgsize_t *section_offset =  section->connect_offset->data;
+        //if (start >= section->range[0] && end <= section->range[1]) {
+        //    s_conn_size = section_offset[end - section->range[0] + 1] - section_offset[start - section->range[0]];
+        //    m_conn_size = connect_offset[end - start + 1] - connect_offset[0];
+        //    /* use user data */
+        //    if (section->connect->data == 0 && (s_conn_size == m_conn_size)){
+        //        //
+        //    }
+        //}        
+        
+        cgi_error("not implemented yet");
+        return CG_ERROR;
     }
-
+    
     /* update the parent data array if it exists */
 
     newsize = section->range[1] - section->range[0] + 1;

@@ -347,7 +347,7 @@ static void write_cgns(char *filename)
     if (nTets) {
         end = start + nTets - 1;
         if (cg_section_write(cgfile, cgbase, cgzone, "TetElements",
-                CGNS_ENUMV(TETRA_4), start, end, 0, Tets, &cgsect))
+                CGNS_ENUMV(TETRA_4), start, end, 0, Tets, NULL, &cgsect))
             cg_error_exit();
         free(Tets);
         start = end + 1;
@@ -380,7 +380,7 @@ static void write_cgns(char *filename)
         end = start + TriSets[ns].end - TriSets[ns].start;
         sprintf(name, "TriElements %d", ns+1);
         if (cg_section_write(cgfile, cgbase, cgzone, name,
-                CGNS_ENUMV(TRI_3), start, end, 0, nodes, &cgsect))
+                CGNS_ENUMV(TRI_3), start, end, 0, nodes, NULL, &cgsect))
             cg_error_exit();
         TriSets[ns].start = (int)start;
         TriSets[ns].end = (int)end;
