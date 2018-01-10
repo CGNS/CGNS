@@ -8247,10 +8247,10 @@ cgsize_t cgi_element_data_size(CGNS_ENUMT(ElementType_t) type,
                 }   
             } else {
                cgi_error("missing ElementStartOffset for NGON_n or NFACE_n\n");
-               return -1;    
+               return -1;
             }
         } else {
-            size = connect_offset[nelems];
+            size = (connect_offset[nelems] - connect_offset[0]);
         }
     }
     else {
