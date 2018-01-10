@@ -2949,15 +2949,37 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
     section->connect->convert=0;
 
     /* if not fixed element size, need to create valid data for sizing */
-
     if (!IS_FIXED_SIZE(type)) {
         cgsize_t n, nn, *data = CGNS_NEW(cgsize_t, ElementDataSize);
-	cgsize_t val = (type == CGNS_ENUMV(MIXED) ? (cgsize_t)CGNS_ENUMV(NODE) : 1);
+        cgsize_t *data_connect = CGNS_NEW(cgsize_t, (size_t)(num+1));
+        cgsize_t val = (type == CGNS_ENUMV(MIXED) ? (cgsize_t)CGNS_ENUMV(NODE) : 0);
         for (nn = 0, n = 0; n < num; n++) {
-	    data[nn++] = val;
+            data[nn++] = val;
             data[nn++] = 0;
         }
         section->connect->data = (void *)data;
+        //
+        section->connect_offset = 0;
+        section->connect_offset = CGNS_NEW(cgns_array, 1);
+        section->connect_offset->data = 0;
+        strcpy(section->connect_offset->name,"ElementStartOffset");
+        strcpy(section->connect_offset->data_type,CG_SIZE_DATATYPE);
+        section->connect_offset->data_dim=1;
+        section->connect_offset->dim_vals[0]=(num+1);
+        //
+        section->connect_offset->id=0;
+        section->connect_offset->link=0;
+        section->connect_offset->ndescr=0;
+        section->connect_offset->data_class=CGNS_ENUMV(DataClassNull);
+        section->connect_offset->units=0;
+        section->connect_offset->exponents=0;
+        section->connect_offset->convert=0;
+        
+        data_connect[0] = 0;
+        for (n = 0; n < num; n++) {
+            data_connect[n+1] = data_connect[n]+2;
+        }
+        section->connect_offset->data = (void *) data_connect;
     }
 
     if (cgi_write_section(zone->id, section))
