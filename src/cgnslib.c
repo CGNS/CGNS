@@ -3044,13 +3044,13 @@ int cg_ElementPartialSize(int file_number, int B, int Z, int S,
 
     if (read_element_data(section)) return CG_ERROR;
     if (read_offset_data(section)) return CG_ERROR;
-
+    
     data = (cgsize_t *)section->connect->data;
     offset_data = (cgsize_t *)section->connect_offset->data;
     offset = cgi_element_data_size(section->el_type,
                  start - section->range[0], data, offset_data);
     if (offset < 0) return CG_ERROR;
-    size = offset_data[end-start+1] - offset_data[start];
+    size = offset_data[end] - offset_data[start-1];
     if (size < 0) return CG_ERROR;
     *ElementDataSize = size;
     return CG_OK;
@@ -3623,7 +3623,13 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
                 }
 
                 /* update offset */
-                memcpy(&section_offset[start-section->range[0]], connect_offset, (size_t)(end-start+1)*sizeof(cgsize_t));
+                //memcpy(&section_offset[start-section->range[0]], connect_offset, (size_t)(end-start+1)*sizeof(cgsize_t));
+                j = start-section->range[0];
+                for (cgsize_t ii=0; ii<end-start+1; ii++) {
+                    section_offset[j+1] = (connect_offset[ii+1] - connect_offset[ii]) + section_offset[j];
+                    j++;
+                }
+
                 if (cgio_write_all_data(cg->cgio, section->connect_offset->id, section->connect_offset)) {
                     cg_io_error("cgio_write_all_data");
                     return CG_ERROR;
@@ -3705,6 +3711,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
                         newelems[n++] = 0;
                         newoffsets[j+1] = newoffsets[j] + 2;
                         j++;
+                        n++;
                     }
 
                     memcpy(&newelems[n], oldelems, (size_t)(oldsize*sizeof(cgsize_t)));
@@ -3738,6 +3745,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
                     newelems[n++] = 0;
                     newoffsets[j+1] = newoffsets[j] + 2;
                     j++;
+                    n++;
                 }
                 memcpy(&newelems[n], elements, (size_t)(ElementDataSize*sizeof(cgsize_t)));
                 n += ElementDataSize;
