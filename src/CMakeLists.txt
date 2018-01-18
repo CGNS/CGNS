@@ -8,7 +8,7 @@ if (WIN32)
 endif (WIN32)
 
 # Include the local directory
-include_directories(.)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 if (CGNS_ENABLE_HDF5)
   add_definitions(-DBUILD_HDF5)
   if (WIN32)
