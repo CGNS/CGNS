@@ -35,8 +35,6 @@
 #ifndef CGNSCONFIG_H
 #define CGNSCONFIG_H
 
-#include "cgnstypes.h"
-
 #define CG_BUILD_HDF5      @BUILDHDF5@
 #define CG_BUILD_DEBUG     @BUILDDEBUG@
 #define CG_BUILD_FORTRAN   @BUILDFORTRAN@
@@ -57,5 +55,7 @@
 
 #define MPI_INC          "@MPIINC@"
 #define MPI_LIBS         "@MPILIBS@"
+
+#include "cgnstypes.h"
 
 #endif
