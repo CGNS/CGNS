@@ -18,6 +18,7 @@ CALL =	pcgns_ctest$(EXE) \
 	benchmark$(EXE) \
 	benchmark_hdf5$(EXE) \
 	open_close$(EXE) \
+        comm_test$(EXE) \
 	test_base$(EXE) \
 	test_unstructured$(EXE) \
 	test_unstruc_quad$(EXE) \
@@ -76,6 +77,12 @@ benchmark_hdf5$(EXE) : benchmark_hdf5.c $(CGNSLIB)
 
 open_close$(EXE) : open_close.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ open_close.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+comm_test$(EXE) : comm_test.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ comm_test.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------

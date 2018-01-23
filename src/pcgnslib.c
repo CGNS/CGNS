@@ -215,7 +215,10 @@ static int check_parallel(cgns_file *cgfile)
 int cgp_mpi_comm(MPI_Comm comm)
 {
     pcg_mpi_comm=comm;
-    return cgio_configure(CG_CONFIG_HDF5_MPI_COMM, (void *)(comm));
+    if( cgio_configure(CG_CONFIG_HDF5_MPI_COMM, &comm) != -1) {
+      return CG_ERROR;
+    }
+    return CG_OK;
 }
 
 int cgp_mpi_info(MPI_Info info)
