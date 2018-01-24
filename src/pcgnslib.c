@@ -600,8 +600,9 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
     if (cgi_write_array(section->id, section->parface)) return CG_ERROR;
 
     /* ParentElements -- write data */
+    cgsize_t delta = end - start;
     rmin[0] = start - section->range[0] + 1;
-    rmax[0] = end - section->range[0] + 1;
+    rmax[0] = rmin[0] + delta;
     rmin[1] = 1;
     rmax[1] = 2;
     type = cgi_datatype(section->parelem->data_type);
