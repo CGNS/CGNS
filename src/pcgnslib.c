@@ -540,6 +540,8 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
 	cgi_error("Error in requested element data range.");
 	return CG_ERROR;
       }    
+    } else {
+        start = end = 0;
     }
 
     if (!IS_FIXED_SIZE(section->el_type)) {
