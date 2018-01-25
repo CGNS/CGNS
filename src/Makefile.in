@@ -88,6 +88,8 @@ clean :
 	-cd tools && $(MAKE) clean
 	-cd tests && $(MAKE) clean
 	-cd examples/fortran && $(MAKE) clean
+	-cd Test_UserGuideCode/C_code && $(MAKE) clean
+	-cd Test_UserGuideCode/Fortran_code && $(MAKE) clean
 	-cd ptests && $(MAKE) clean
 	-cd cgnstools && $(MAKE) clean
 
@@ -98,6 +100,8 @@ distclean :
 	-$(RM) tools/Makefile
 	-cd tests && $(MAKE) allclean
 	-cd examples/fortran && $(MAKE) clean
+	-cd Test_UserGuideCode/C_code && $(MAKE) clean
+	-cd Test_UserGuideCode/Fortran_code && $(MAKE) clean
 	-$(RM) tests/Makefile
 	-cd ptests && $(MAKE) allclean
 	-$(RM) ptests/Makefile

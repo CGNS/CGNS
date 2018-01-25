@@ -33,33 +33,17 @@ CGNSDIR=`/bin/pwd`
 ## The following variables are used to distinguish between building a
 ## serial and parallel library.
 ##
-##    HAVE_PARALLEL	-- defined in #scot# H5config.h if we are building
-##			   a parallel library even if configure wasn't
-##			   able to find some header file or library that
-##			   might be required. This is defined if the
-##			   compiler looks like a parallel compiler (e.g.,
-##			   mpicc or mpcc) or if the user explicitly states
-##			   that a parallel library is being built by supplying
-##			   the `--enable-parallel' configure switch.
 ##
 ##    PARALLEL		-- This variable is set to a non-null value if
 ##			   configure thinks we're compiling a parallel
 ##			   version of the library.
 ##
-##    RUNSERIAL	        -- This is a command which will be prepended to
-##			   the executable name to run the executable using
-##			   a single process. For serial versions of the
-##			   library this will normally be empty. For parallel
-##			   versions it might be something like `mpiexec -n 1'.
-##			   The value of this variable is substituted in *.in
-##			   files.
-##
-##    RUNPARALLEL	-- This is a command which will be prepended to
+##    MPIEXEC	        -- This is a command which will be prepended to
 ##			   the executable name to run the executable on
 ##			   multiple processors. For the serial library the
 ##			   value will normally be the empty string. For
 ##			   parallel library it should be something like
-##			   "mpiexec -n \$\${NPROCS:=6}" where NPROCS will
+##			   "mpiexec -n \$\${NPROCS:=4}" where NPROCS will
 ##			   eventually contain the number of processors on which
 ##			   to run the executable (the double dollarsigns are to
 ##			   protect the expansion until make executes the
@@ -67,9 +51,6 @@ CGNSDIR=`/bin/pwd`
 ##			   substituted in *.in files.
 ##
 AC_SUBST([PARALLEL])
-AC_SUBST([RUNSERIAL])
-AC_SUBST([RUNPARALLEL])
-AC_SUBST([TESTPARALLEL])
 
 #--------------------------------------------------------------------------
 # get the C compiler
@@ -1131,7 +1112,6 @@ MPIINC=""
 MPIOPTS=""
 MPILIBS=""
 MPICC=""
-MPIEXEC=""
 
 #if test "$withhdf5" = "yes"; then
 #  AC_MSG_CHECKING([if using MPI])
@@ -1226,14 +1206,33 @@ if test ! "x$enableval" = "xno" && enableval=yes; then
   BUILDPARALLEL=1
   parallel=$enableval
 
-  ## Set MPIEXEC to mpiexec if not set yet.
-  if test "X$parallel" = "Xyes" -a -z "$MPIEXEC"; then
-      MPIEXEC="mpiexec"
+  ## Set MPIEXEC if not set yet. Defaults to running on
+  ## four processes.
+  if test -z "$MPIEXEC"; then
+    MPIEXEC="mpiexec -n \$\${NPROCS:=4}"
   fi
 
+  ## There *must* be some way to run in parallel even if it's just the
+  ## word `none'.
+  if test -z "$MPIEXEC"; then
+    AC_MSG_ERROR([no way to run a parallel program])
+  fi
+
+  ## If MPIEXEC is the word `none' then replace it with
+  ## the empty string. This means that no launch commands were requested,
+  ## so we will not use any launch commands.
+  if test "X$MPIEXEC" = "Xnone"; then
+    MPIEXEC=""
+  fi
 
 fi
 AC_MSG_RESULT($parallel)
+
+if test "$parallel" = "yes"; then
+  ## Display what we found about running programs
+  AC_MSG_CHECKING([prefix for running in parallel])
+  AC_MSG_RESULT([$MPIEXEC])
+fi
 
 #--------------------------------------------------------------------------
 # check for libraries

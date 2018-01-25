@@ -37,6 +37,9 @@ add_executable(benchmark_hdf5 ${benchmark_hdf5_FILES})
 set(open_close_FILES open_close.c)
 add_executable(open_close ${open_close_FILES})
 
+set(comm_test_FILES comm_test.c)
+add_executable(comm_test ${comm_test_FILES})
+
 set(test_base_FILES test_base.c)
 add_executable(test_base ${test_base_FILES})
 
@@ -73,6 +76,8 @@ if (CGNS_ENABLE_TESTS)
       ${MPIEXEC_PREFLAGS} ./benchmark_hdf5 ${MPIEXEC_POSTFLAGS})
   add_test(open_close ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} ./open_close ${MPIEXEC_POSTFLAGS})
+  add_test(comm_test ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+      ${MPIEXEC_PREFLAGS} ./comm_test ${MPIEXEC_POSTFLAGS})
   add_test(test_base ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} ./test_base ${MPIEXEC_POSTFLAGS})
   add_test(test_unstructured ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
