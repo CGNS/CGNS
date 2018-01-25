@@ -19,13 +19,13 @@ $(OUTDIR) :
 	-@$(MKDIR) $(OUTDIR)
 
 $(WRITE) : cgwrite.F
-	$(F77) $(FOPTS) $(FEOUT)$@ cgwrite.F $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ cgwrite.F $(LIBS)
 
 $(READ) : cgread.F
-	$(F77) $(FOPTS) $(FEOUT)$@ cgread.F $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ cgread.F $(LIBS)
 
 $(MODIFY) : cgmodify.F
-	$(F77) $(FOPTS) $(FEOUT)$@ cgmodify.F $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ cgmodify.F $(LIBS)
 
 clean :
 	-$(RM) Test_V2 $(WRITE) $(READ) $(MODIFY)
