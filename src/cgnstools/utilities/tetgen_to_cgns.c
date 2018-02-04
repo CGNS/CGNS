@@ -545,7 +545,7 @@ void write_faces (int cgfile, int cgbase, int cgzone, cgsize_t *start)
             end = *start + ie - is;
             if (cg_section_write (cgfile, cgbase, cgzone, name,
                     CGNS_ENUMV(NGON_n), *start, end-1,
-                    0, faces, NULL, &cgsect)) // TODO NGON_n
+                    0, faces, NULL, &cgsect)) /* TODO NGON_n */
                 cg_error_exit();
             *start = end;
             is = ie;
@@ -560,7 +560,7 @@ void write_faces (int cgfile, int cgbase, int cgzone, cgsize_t *start)
         }
         end = *start + nFaces;
         if (cg_section_write (cgfile, cgbase, cgzone, "Polygons",
-                CGNS_ENUMV(NGON_n), *start, end-1, 0, faces, NULL, &cgsect)) // NGON_n
+                CGNS_ENUMV(NGON_n), *start, end-1, 0, faces, NULL, &cgsect)) /* NGON_n */
             cg_error_exit();
         *start = end;
     }

@@ -764,7 +764,7 @@ static cgsize_t write_node_region (cgnsREGN *reg, cgsize_t offset)
     }
 
     if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, reg->name,
-            elemtype, offset, offset + nfaces - 1, 0, conns, NULL ,&isect)) // TODO
+            elemtype, offset, offset + nfaces - 1, 0, conns, NULL ,&isect)) /* TODO */
         cgnsImportFatal ((char *)cg_get_error());
 
     /* create parent cell mapping */

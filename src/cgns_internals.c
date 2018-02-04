@@ -1151,9 +1151,10 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                         connect_offset = CGNS_NEW(cgsize_t, size_offset);
                         connect_offset[0] = 0;
                         for (size = 0, size_connect = 0, ne = 0; ne < nelements; ne++) {
+                            int idx = 0;
                             npe = (int) elem_data[size++];
                             connect_offset[ne + 1] = connect_offset[ne] + npe;
-                            for (int idx = 0; idx < npe; idx++) {
+                            for (idx = 0; idx < npe; idx++) {
                                 elem_data[size_connect] = elem_data[size];
                                 size_connect++;
                                 size++;

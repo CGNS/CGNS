@@ -52,7 +52,7 @@ int convert_elements(int cgio_num, double elem_id)
         return 1;
     }
 
-    // allocate data
+    /* allocate data */
     for (n = 0; n < ndim; n++) {
         size *= dim_vals[n];
     }
@@ -60,7 +60,7 @@ int convert_elements(int cgio_num, double elem_id)
         return 1;
     }
     data = malloc((size_t) size*sizeof(int));
-    // read elem type
+    /* read elem type */
     if (cgio_read_all_data(cgio_num, elem_id, data) != CG_OK) {
         free(data);
         return 1;
@@ -98,28 +98,29 @@ int convert_elements(int cgio_num, double elem_id)
             cgsize_t idx = 0;
             cgsize_t cur_idx = 0;
             cgsize_t cur_elem = 0;
-            //
+            cgsize_t local_idx;
+            
             connectivity = malloc((size_t)sizeof(int)*elem_size);
             cgio_read_all_data(cgio_num, connect_id, (void *)connectivity);
-            // first count number of elements
+            /* first count number of elements */
             idx = 0;
             while (idx < elem_size) {
                 num_elem += 1;
                 idx += connectivity[idx] + 1;
             }
-            //
+            
             new_connectivity = malloc((size_t)(elem_size - num_elem)*sizeof(int));
             new_offset = malloc((size_t)(num_elem + 1)*sizeof(int));
-            //
+            
             idx = 0;
             cur_elem = 0;
             cur_idx = 0;
             new_offset[0] = 0;
-            //
+            
             for (idx = 0; idx < num_elem; ++idx) {
                 int nparts_in_elem = connectivity[cur_elem];
                 new_offset[idx + 1] = new_offset[idx] + nparts_in_elem;
-                for (cgsize_t local_idx = 0; local_idx < nparts_in_elem; local_idx++) {
+                for (local_idx = 0; local_idx < nparts_in_elem; local_idx++) {
                     new_connectivity[cur_idx] = connectivity[cur_elem + local_idx + 1];
                     cur_idx++;
                 }
@@ -130,13 +131,13 @@ int convert_elements(int cgio_num, double elem_id)
             dim_vals[0] = new_offset[num_elem];
             cgio_set_dimensions(cgio_num, connect_id, "I4", 1, dim_vals);
             cgio_write_all_data(cgio_num, connect_id, new_connectivity);
-            //
+            
             cgio_create_node(cgio_num, elem_id, offset_name, &offset_id);
             cgio_set_label(cgio_num, offset_id, offset_label);
             dim_vals[0] = num_elem + 1;
             cgio_set_dimensions(cgio_num, offset_id, "I4", 1, dim_vals);
             cgio_write_all_data(cgio_num, offset_id, new_offset);
-            //
+            
             free(new_offset);
             free(new_connectivity);
         }
@@ -148,28 +149,29 @@ int convert_elements(int cgio_num, double elem_id)
             cgsize_t idx = 0;
             cgsize_t cur_idx = 0;
             cgsize_t cur_elem = 0;
+            cgsize_t local_idx;
             connectivity = malloc((size_t)sizeof(cglong_t)*elem_size);
             cgio_read_all_data(cgio_num, connect_id, (void *)connectivity);
-            // first count number of elements
+            /* first count number of elements */
             while (idx < elem_size) {
                 idx += connectivity[idx] +1;
                 num_elem += 1;
             }
-            //
+            
             new_connectivity = malloc((size_t)(elem_size - num_elem) * sizeof(cglong_t));
             new_offset = malloc((size_t)(num_elem + 1) * sizeof(cglong_t));
-            //
+            
             idx = 0;
             cur_elem = 0;
             cur_idx = 0;
             new_offset[0] = 0;
-            //
+            
             for (idx = 0; idx < num_elem; ++idx) {
                 int nparts_in_elem = connectivity[cur_elem];
 
                 new_offset[idx + 1] = new_offset[idx] + nparts_in_elem;
 
-                for (cgsize_t local_idx = 0; local_idx < nparts_in_elem; local_idx++)
+                for (local_idx = 0; local_idx < nparts_in_elem; local_idx++)
                 {
                     new_connectivity[cur_idx] = connectivity[cur_elem + local_idx + 1];
                     cur_idx++;
@@ -181,13 +183,13 @@ int convert_elements(int cgio_num, double elem_id)
             dim_vals[0] = new_offset[num_elem];
             cgio_set_dimensions(cgio_num, connect_id, "I8", 1, dim_vals);
             cgio_write_all_data(cgio_num, connect_id, new_connectivity);
-            //
+            
             cgio_create_node(cgio_num, elem_id, offset_name, &offset_id);
             cgio_set_label(cgio_num, offset_id, offset_label);
             dim_vals[0] = num_elem + 1;
             cgio_set_dimensions(cgio_num, offset_id, "I8", 1, dim_vals);
             cgio_write_all_data(cgio_num, offset_id, new_offset);
-            //
+            
             free(new_offset);
             free(new_connectivity);
         }
@@ -197,11 +199,11 @@ int convert_elements(int cgio_num, double elem_id)
     }
     /* Handle MIXED connectivity */
     if (elem_type == CGNS_ENUMV(MIXED)) {
-        // Cannot do the same thing as in NGON_n NFACE_n
-        // since we would need one more array to store celltypes. Do we want it ?
-        // If we want to mix NGON_n NFACE_n and other elements inside MIXED celltypes array will be necessary
-        // For now keep ElementConnectivity as it is and add offset
-        // to allow for parallel reading. So no mix off ngon with elements.
+        /* Cannot do the same thing as in NGON_n NFACE_n
+           since we would need one more array to store celltypes. Do we want it ?
+           If we want to mix NGON_n NFACE_n and other elements inside MIXED celltypes array will be necessary
+           For now keep ElementConnectivity as it is and add offset
+           to allow for parallel reading. So no mix off ngon with elements. */
         const char* connectivity_path = "ElementConnectivity";
         const char* offset_name = "ElementStartOffset";
         const char* offset_label = "DataArray_t";
@@ -230,10 +232,10 @@ int convert_elements(int cgio_num, double elem_id)
             cgsize_t idx = 0;
             cgsize_t cur_idx = 0;
             cgsize_t cur_elem = 0;
-            //
+            
             connectivity = malloc((size_t)sizeof(int)*elem_size);
             cgio_read_all_data(cgio_num, connect_id, (void *)connectivity);
-            // first count number of elements
+            /* first count number of elements */
             while (idx < elem_size) {
                 int celltype = connectivity[idx];
                 int npe;
@@ -241,14 +243,14 @@ int convert_elements(int cgio_num, double elem_id)
                 idx += npe + 1;
                 num_elem += 1;
             }
-            //
+            
             new_offset = malloc((size_t)(num_elem + 1) * sizeof(int));
-            //
+            
             idx = 0;
             cur_elem = 0;
             cur_idx = 0;
             new_offset[0] = 0;
-            //
+            
             for (idx = 0; idx < num_elem; ++idx) {
                 cg_npe(connectivity[cur_elem], &nparts_in_elem);
                 new_offset[idx + 1] = new_offset[idx] + nparts_in_elem + 1;
@@ -260,7 +262,7 @@ int convert_elements(int cgio_num, double elem_id)
             dim_vals[0] = num_elem + 1;
             cgio_set_dimensions(cgio_num, offset_id, "I4", 1, dim_vals);
             cgio_write_all_data(cgio_num, offset_id, new_offset);
-            //
+            
             free(new_offset);
             free(connectivity);
         }
@@ -272,10 +274,10 @@ int convert_elements(int cgio_num, double elem_id)
             cgsize_t cur_idx = 0;
             cgsize_t cur_elem = 0;
             int nparts_in_elem;
-            //
+            
             connectivity = malloc((size_t)sizeof(cglong_t)*elem_size);
             cgio_read_all_data(cgio_num, connect_id, (void *)connectivity);
-            // first count number of elements
+            /* first count number of elements */
             while (idx < elem_size) {
                 cglong_t celltype = connectivity[idx];
                 int npe;
@@ -283,14 +285,14 @@ int convert_elements(int cgio_num, double elem_id)
                 idx += npe + 1;
                 num_elem += 1;
             }
-            //
+            
             new_offset = malloc((size_t)(num_elem + 1) * sizeof(cglong_t));
-            //
+            
             idx = 0;
             cur_elem = 0;
             cur_idx = 0;
             new_offset[0] = 0;
-            //
+            
             for (idx = 0; idx < num_elem; ++idx) {
                 cg_npe(connectivity[cur_elem], &nparts_in_elem);
                 new_offset[idx + 1] = new_offset[idx] + nparts_in_elem + 1;
@@ -302,7 +304,7 @@ int convert_elements(int cgio_num, double elem_id)
             dim_vals[0] = num_elem + 1;
             cgio_set_dimensions(cgio_num, offset_id, "I8", 1, dim_vals);
             cgio_write_all_data(cgio_num, offset_id, new_offset);
-            //
+            
             free(new_offset);
             free(connectivity);
         }
@@ -316,12 +318,13 @@ int convert_elements(int cgio_num, double elem_id)
 
 int convert_zone(int cgio_num, double zone_id)
 {
-    // Test unstructured
+    /* Test unstructured */
     CGNS_ENUMT(ZoneType_t) zt = CGNS_ENUMV(ZoneTypeNull);
 
     zt = CGNS_ENUMV(Structured);
     int len;
     int nchildren = 0;
+    int child;
     char nodelabel[CGIO_MAX_NAME_LENGTH + 1];
     double * node_ids = NULL;
 
@@ -337,7 +340,7 @@ int convert_zone(int cgio_num, double zone_id)
         return 1;
     }
     
-    for (int child = 0; child < nchildren; child++) {
+    for (child = 0; child < nchildren; child++) {
         double childid = node_ids[child];
         if (cgio_get_label(cgio_num, childid, nodelabel) != CG_OK) {
             free(node_ids);
@@ -347,6 +350,7 @@ int convert_zone(int cgio_num, double zone_id)
             cgsize_t size = 1;
             cgsize_t dim_vals[12];
             int ndim;
+            int n;
             char *data;
 
             if (cgio_get_dimensions(cgio_num, childid, &ndim, dim_vals) != CG_OK) {
@@ -354,8 +358,8 @@ int convert_zone(int cgio_num, double zone_id)
                 cgio_error_exit("cgio_get_dimensions");
                 return 1;
             }
-            // allocate data
-            for (int n = 0; n < ndim; n++) {
+            /* allocate data */
+            for (n = 0; n < ndim; n++) {
                 size *= dim_vals[n];
             }
             if (size <= 0) {
@@ -363,7 +367,7 @@ int convert_zone(int cgio_num, double zone_id)
                 return 1;
             }
             data = malloc((size_t)sizeof(char)*(size + 1));
-            // read data zonetype
+            /* read data zonetype */
             if (cgio_read_all_data(cgio_num, childid, (void*)data) != CG_OK) {
                 data[0] = '\0';
             }
@@ -390,7 +394,7 @@ int convert_zone(int cgio_num, double zone_id)
     /* handle Unstructured zone only ! */
     if (zt == CGNS_ENUMV(Unstructured)) {
         /* process each section */
-        for (int child = 0; child < nchildren; child++) {
+        for (child = 0; child < nchildren; child++) {
             double childid = node_ids[child];
             if (cgio_get_label(cgio_num, childid, nodelabel) != CG_OK) {
                 free(node_ids);
@@ -403,7 +407,7 @@ int convert_zone(int cgio_num, double zone_id)
         }
     } /* Unstructured zone handling done */
     /* Release all nodes */
-    for (int child = 0; child < nchildren; child++) {
+    for (child = 0; child < nchildren; child++) {
         double childid = node_ids[child];
         cgio_release_id(cgio_num, childid);
     }
@@ -415,6 +419,7 @@ int convert_base (int cgio_num, double baseid)
     double * node_ids = NULL;
     int len = 0;
     int nchildren = 0;
+    int child;
     char label[CGIO_MAX_NAME_LENGTH + 1];
  
     cgio_number_children(cgio_num, baseid, &nchildren);
@@ -427,14 +432,14 @@ int convert_base (int cgio_num, double baseid)
         FATAL(NULL, msg);
         return 1;
     }
-    for (int child = 0; child < nchildren; child++) {
+    for (child = 0; child < nchildren; child++) {
         double child_id = node_ids[child];
         if (cgio_get_label(cgio_num, child_id, label) != CG_OK) {
             free(node_ids);
             return 1;
         }
         if (strcmp(label, "Zone_t") == 0) {
-            // Try to convert inside zone
+            /* Try to convert inside zone */
             convert_zone(cgio_num, child_id);
         }
         else {
@@ -520,7 +525,7 @@ int main (int argc, char *argv[])
     double root_id;
     double *child_ids = NULL;
 
-    int nchildren, len;
+    int nchildren, len, child;
     int inpcg = 0;
     int inptype;
     int argind = 1;
@@ -581,11 +586,11 @@ int main (int argc, char *argv[])
         exit(1);
     }
     
-    for (int child = 0; child < nchildren; child++) {
+    for (child = 0; child < nchildren; child++) {
         double child_id = child_ids[child];
         cgio_get_label(inpcg, child_id, label);
         if (strcmp(label, "CGNSBase_t") == 0) {
-            // Try to convert inside a base
+            /* Try to convert inside a base */
             convert_base(inpcg, child_id);
         }
         else {

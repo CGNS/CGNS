@@ -745,7 +745,7 @@ int main (int argc, char **argv)
     n = mixed_offset((int)rmin, nelems);
     get_parent((int)rmin, (int)rmax, 0, np);
 
-    // TODO add correct offsets !
+    /* TODO add correct offsets ! */
     printf("mixed %d -> %d\n", (int)rmin, (int)rmax);
     if (cg_elements_partial_write(cgfile, cgbase, cgzone,
             cgsect, rmin, rmax, &elements[n], &offsets[rmin-1]) ||

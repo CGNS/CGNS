@@ -215,7 +215,7 @@ static void count_elements ()
             conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
             if (conn == NULL)
                 err_exit (NULL, "malloc failed for element connectivity");
-           if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL, NULL)) // TODO MIXED !
+           if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL, NULL)) /* TODO MIXED ! */
                 err_exit ("cg_elements_read", NULL);
             for (i = 0, n = 0; n < ne; n++) {
                 et = (CGNS_ENUMT(ElementType_t))conn[i++];

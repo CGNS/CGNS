@@ -2958,7 +2958,7 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
             data[nn++] = 0;
         }
         section->connect->data = (void *)data;
-        //
+        
         section->connect_offset = 0;
         section->connect_offset = CGNS_NEW(cgns_array, 1);
         section->connect_offset->data = 0;
@@ -2966,7 +2966,7 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
         strcpy(section->connect_offset->data_type,CG_SIZE_DATATYPE);
         section->connect_offset->data_dim=1;
         section->connect_offset->dim_vals[0]=(num+1);
-        //
+        
         section->connect_offset->id=0;
         section->connect_offset->link=0;
         section->connect_offset->ndescr=0;
@@ -3574,7 +3574,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
     } else {
 
         /* NOT FIXED SIZE: NGON_n, NFACE_n, MIXED */
-        // TODO : code it properly
+        /* TODO : code it properly */
         if (connect_offset == NULL){
             cgi_error("element offsets not provided for partial write\n");
             return CG_ERROR;
@@ -3592,7 +3592,6 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
         }
         
         if (read_offset_data(section)) return CG_ERROR;
-        //
      
         cgsize_t s_conn_size, m_conn_size;
         cgsize_t *section_offset =  section->connect_offset->data;
@@ -3603,9 +3602,10 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
 
             /* use user data */
             if (section->connect->data == 0 && (s_conn_size == m_conn_size)){
-                // connectivity is of same size
+                /* connectivity is of same size */
                 cgsize_t s_start, s_end, s_stride;
                 cgsize_t m_start, m_end, m_stride, m_dim;
+                cgsize_t ii;
 
                 s_start  = section_offset[start - section->range[0]];
                 s_end    = section_offset[end - section->range[0] + 1] - 1;
@@ -3623,9 +3623,9 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
                 }
 
                 /* update offset */
-                //memcpy(&section_offset[start-section->range[0]], connect_offset, (size_t)(end-start+1)*sizeof(cgsize_t));
+                /* memcpy(&section_offset[start-section->range[0]], connect_offset, (size_t)(end-start+1)*sizeof(cgsize_t)); */
                 j = start-section->range[0];
-                for (cgsize_t ii=0; ii<end-start+1; ii++) {
+                for (ii=0; ii<end-start+1; ii++) {
                     section_offset[j+1] = (connect_offset[ii+1] - connect_offset[ii]) + section_offset[j];
                     j++;
                 }
@@ -3641,6 +3641,8 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
         if (do_it_in_memory) {
             cgsize_t *newoffsets;
             cgsize_t elemcount;
+            cgsize_t ii;
+
             /* got to do it in memory */
             if (read_element_data(section)) return CG_ERROR;
 
@@ -3716,7 +3718,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
 
                     memcpy(&newelems[n], oldelems, (size_t)(oldsize*sizeof(cgsize_t)));
                     n += oldsize;
-                    for (cgsize_t ii=0; ii<(section->range[1]-section->range[0]+1); ii++) {
+                    for (ii=0; ii<(section->range[1]-section->range[0]+1); ii++) {
                         newoffsets[j+1] = (section_offset[ii+1] - section_offset[ii]) + newoffsets[j];
                         j++;
                     }
@@ -3727,12 +3729,13 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
                     size = section_offset[section->range[1]-section->range[0]+1] - section_offset[num];
                     memcpy(&newelems[n], &oldelems[offset], (size_t)(size*sizeof(cgsize_t)));
                     n += size;
-                    for (cgsize_t ii=num; ii<(section->range[1]-section->range[0]+1); ii++) {
+                    for (ii=num; ii<(section->range[1]-section->range[0]+1); ii++) {
                         newoffsets[j+1] = (section_offset[ii+1] - section_offset[ii]) + newoffsets[j];
                         j++;
                     }
                 }
             } else if (start > section->range[1]) {
+                cgsize_t ii;
                 memcpy(newelems, oldelems, (size_t)(oldsize*sizeof(cgsize_t)));
                 memcpy(newoffsets, section_offset, (size_t)((section->range[1]-section->range[0]+2)*sizeof(cgsize_t)));
                 n += oldsize;
@@ -3749,11 +3752,12 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
                 }
                 memcpy(&newelems[n], elements, (size_t)(ElementDataSize*sizeof(cgsize_t)));
                 n += ElementDataSize;
-                for (cgsize_t ii=0; ii<(end-start+1); ii++) {
+                for (ii=0; ii<(end-start+1); ii++) {
                     newoffsets[j+1] = (connect_offset[ii+1] - connect_offset[ii]) + newoffsets[j];
                     j++;
                 }
             } else {
+                cgsize_t ii;
                 num = start - section->range[0];
                 size = section_offset[num];
                 memcpy(newelems, oldelems, (size_t)(size*sizeof(cgsize_t)));
@@ -3761,7 +3765,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
                 n += size;
                 j += num;
                 memcpy(&newelems[n], elements, (size_t)(ElementDataSize*sizeof(cgsize_t)));
-                for (cgsize_t ii=0; ii<(end-start+1); ii++) {
+                for (ii=0; ii<(end-start+1); ii++) {
                     newoffsets[j+1] = (connect_offset[ii+1] - connect_offset[ii]) + newoffsets[j];
                     j++;
                 }
@@ -3777,7 +3781,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
                     size = oldsize - offset;
                     memcpy(&newelems[n], &oldelems[offset], (size_t)(size*sizeof(cgsize_t)));
                     n += size;
-                    for (cgsize_t ii=num; ii<(section->range[1]-section->range[0]+1); ii++) {
+                    for (ii=num; ii<(section->range[1]-section->range[0]+1); ii++) {
                         newoffsets[j+1] = (section_offset[ii+1] - section_offset[ii]) + newoffsets[j];
                         j++;
                     }
