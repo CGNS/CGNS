@@ -15,14 +15,6 @@
 #include "tk.h"
 #include "locale.h"
 
-/*
- * The following variable is a special hack that is needed in order for
- * Sun shared libraries to be used for Tcl.
- */
-
-extern int matherr();
-int *tclDummyMathPtr = (int *) matherr;
-
 extern int Cgnstcl_Init _ANSI_ARGS_((Tcl_Interp *interp));
 extern int Tkogl_Init _ANSI_ARGS_((Tcl_Interp *interp));
 
