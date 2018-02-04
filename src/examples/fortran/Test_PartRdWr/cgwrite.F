@@ -136,7 +136,7 @@
         rmin = 1
         rmax = 2
 	call cg_elements_partial_write_f(cg, base, zone, section_no,
-     &       rmin, rmax, element, ier)
+     &       rmin, rmax, element, c_null_ptr, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 ! second element TETRA_4
 	count = 1
@@ -158,7 +158,7 @@
         rmin = 2
         rmax = 3
 	call cg_elements_partial_write_f(cg, base, zone, section_no,
-     &       rmin, rmax, element, ier)
+     &       rmin, rmax, element, c_null_ptr, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012

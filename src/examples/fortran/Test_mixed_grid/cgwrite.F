@@ -311,7 +311,7 @@
 
 		call cg_section_write_f(cg, base, zone,
      &            'VolumeElements', HEXA_8, 1_cgsize_t, 8_cgsize_t, 0,
-     &             element, hexa_section_no, ier)
+     &             element, c_null_ptr, hexa_section_no, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
 	      ! GENERATE some quad elements
@@ -329,7 +329,7 @@
 
 		call cg_section_write_f(cg, base, zone, 'outflow',
      &            QUAD_4, 9_cgsize_t, 12_cgsize_t, 0, quads,
-     &            quad_section_no, ier)
+     &            c_null_ptr, quad_section_no, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
 	     !  GENERATE Parent Data for shell elements

@@ -114,7 +114,7 @@
 ! Write MIXED element section
 	call cg_section_write_f(cg, base, zone, 'MixedElements', MIXED,
      &                          1_cgsize_t, 3_cgsize_t, 0, element,
-     &                          section_no, ier)
+     &                          c_null_ptr, section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Write section of 4 NGON_n of 3 nodes
@@ -129,7 +129,7 @@
 	enddo
 	call cg_section_write_f(cg, base, zone, 'NGON_n(3)',
      &                 NGON_n, 1_cgsize_t, 4_cgsize_t, 0, element,
-     &                 section_no, ier)
+     &                 c_null_ptr, section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Write & close CGNS file

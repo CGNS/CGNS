@@ -2812,7 +2812,7 @@ int cg_section_write(int file_number, int B, int Z, const char * SectionName,
     section->connect->data_dim=1;
     section->connect->dim_vals[0]=ElementDataSize;
     
-    if (connect_offset) {
+    if (connect_offset && ! IS_FIXED_SIZE(type)) {
          /* Write element start offset connectivity in internal data structure */
         section->connect_offset = CGNS_NEW(cgns_array, 1);
         strcpy(section->connect_offset->name,"ElementStartOffset");

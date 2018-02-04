@@ -128,7 +128,7 @@
 	    if (ier .eq. ERROR) call cg_error_exit_f
 	
 	    call cg_elements_read_f(cg, base, zone, sect, &
-                       elements, parent_data, ier)
+                       elements, c_null_ptr, parent_data, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 

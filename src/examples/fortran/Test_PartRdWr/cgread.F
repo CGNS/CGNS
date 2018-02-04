@@ -140,7 +140,7 @@
 
             el_st = el_st + 1
             call cg_elements_partial_read_f(cg, base, zone, sect,
-     &                 el_st, el_end, elements, parent, ier);
+     &                 el_st, el_end, elements, c_null_ptr, parent, ier);
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
             write(6,108)'Connect and Parent data for element range  = ',

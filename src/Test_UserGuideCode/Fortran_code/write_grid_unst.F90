@@ -118,7 +118,7 @@
 !  write HEXA_8 element connectivity (user can give any name)
       call cg_section_write_f(index_file,index_base,index_zone,                &
            'Elem',HEXA_8,nelem_start,nelem_end,nbdyelem,ielem,                 &
-           index_section,ier)
+           c_null_ptr,index_section,ier)
 !  ----------------------------------------------------------
 !  do boundary (QUAD) elements (this part is optional,
 !  but you must do it if you eventually want to define BCs
@@ -149,7 +149,7 @@
 !  write QUAD element connectivity for inflow face (user can give any name)
       call cg_section_write_f(index_file,index_base,index_zone,                &
            'InflowElem',QUAD_4,nelem_start,nelem_end,nbdyelem,                 &
-           jelem,index_section,ier)
+           jelem,c_null_ptr,index_section,ier)
 !  OUTFLOW:
       ielem_no=0
 !  index no of first element
@@ -175,7 +175,7 @@
 !  write QUAD element connectivity for outflow face (user can give any name)
       call cg_section_write_f(index_file,index_base,index_zone,                &
            'OutflowElem',QUAD_4,nelem_start,nelem_end,nbdyelem,                &
-           jelem,index_section,ier)
+           jelem,c_null_ptr,index_section,ier)
 !  SIDEWALLS:
       ielem_no=0
 !  index no of first element
@@ -234,7 +234,7 @@
 !  write QUAD element connectivity for sidewall face (user can give any name)
       call cg_section_write_f(index_file,index_base,index_zone,                &
            'SidewallElem',QUAD_4,nelem_start,nelem_end,nbdyelem,               &
-           jelem,index_section,ier)
+           jelem,c_null_ptr,index_section,ier)
 !  ----------------------------------------------------------
 !   close CGNS file
       call cg_close_f(index_file,ier)
