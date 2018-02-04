@@ -18,6 +18,7 @@
         integer(cgsize_t) size(3)
 	integer i, j, k, n, pos, coord, section_no
         integer(cgsize_t) element(20)
+        integer(cgsize_t) connect_offsets(10)
 	character*32 ZoneName, coordname(3)
         double precision data_double(27)
 	integer grid_no, count
@@ -88,48 +89,54 @@
 ! Generate dummy elements
 
 	count = 0
+	connect_offsets(1) = 0
 ! first element HEXA_8
-	count = count + 1
-	element(count)=HEXA_8
-	do i=1,8
-	    count = count + 1
-	    element(count)=i
-	enddo
+        count = count + 1
+        element(count)=HEXA_8
+        do i=1,8
+          count = count + 1
+          element(count)=i
+        enddo
 ! second element TETRA_4
-	count = count + 1
-	element(count)=TETRA_4
-	do i=1,4
-	    count = count + 1
-            element(count)=i
+        connect_offsets(2) = count
+        count = count + 1
+        element(count)=TETRA_4
+        do i=1,4
+          count = count + 1
+          element(count)=i
         enddo
 ! third element PYRA_5
+        connect_offsets(3) = count
         count = count + 1
         element(count)=PYRA_5
         do i=1,5
-            count = count + 1
-            element(count)=i
+          count = count + 1
+          element(count)=i
         enddo
+        connect_offsets(4) = count
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 ! Write MIXED element section
 	call cg_section_write_f(cg, base, zone, 'MixedElements', MIXED,
      &                          1_cgsize_t, 3_cgsize_t, 0, element,
-     &                          c_null_ptr, section_no, ier)
+     &                          connect_offsets, section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Write section of 4 NGON_n of 3 nodes
         count = 0
 	do n=1,4
-	    count = count + 1
-	    element(count)=3
+	    !count = count + 1
+	    !element(count)=3
+	    connect_offsets(n) = count
 	    do i=1,3
 		count = count + 1
 		element(count)=10*n+i
 	    enddo
 	enddo
+	connect_offsets(5) = count
 	call cg_section_write_f(cg, base, zone, 'NGON_n(3)',
      &                 NGON_n, 1_cgsize_t, 4_cgsize_t, 0, element,
-     &                 c_null_ptr, section_no, ier)
+     &                 connect_offsets, section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Write & close CGNS file
