@@ -28,6 +28,11 @@ skip_tags: true
 #    environment configuration    #
 #---------------------------------#
 
+environment:
+  matrix:
+  - build_opt: -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON  
+  - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF 
+
 # Operating system (build VM template)
 os: Visual Studio 2015
 
@@ -87,9 +92,7 @@ before_build:
   - cmake -G "Visual Studio 14 Win64" ^
      -D CMAKE_C_FLAGS:STRING="" ^
      -D CMAKE_BUILD_TYPE:STRING=Release ^
-     -D CGNS_BUILD_SHARED:BOOL=ON ^
-     -D CGNS_USE_SHARED:BOOL=ON ^
-     -D CGNS_ENABLE_64BIT:BOOL=ON ^
+     %build_opts% ^
      -D HDF5_NEED_ZLIB:BOOL=ON ^
      -D ZLIB_LIBRARY:PATH="C:/Program Files/HDF_Group/HDF5/1.8.19/lib/zlib.lib" ^
      -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
