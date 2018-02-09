@@ -174,7 +174,7 @@
 	Prototypes for Interface Routines
 ***********************************************************************/
 
-#if defined(WIN32) && defined(BUILD_DLL)
+#if defined(_WIN32) && defined(BUILD_DLL)
 # define EXTERN extern __declspec(dllexport)
 #else
 # define EXTERN extern

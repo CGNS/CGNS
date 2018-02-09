@@ -243,7 +243,6 @@ if (CGNS_ENABLE_HDF5)
       set_property (TARGET h5dump PROPERTY IMPORTED_LOCATION "${HDF5_TOOLS_DIR}/h5dump")
     endif (BUILD_SHARED_LIBS AND WIN32)
   else (HDF5_FOUND)
-    message( STATUS 'Hello there D')
     find_package (HDF5) # Legacy find
     #Legacy find_package does not set HDF5_TOOLS_DIR, so we set it here
     set(HDF5_TOOLS_DIR ${HDF5_LIBRARY_DIRS}/../bin)
