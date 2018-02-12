@@ -70,7 +70,7 @@ install:
   - cd HDF5_BIN
   - ps: Expand-Archive hdf5-1.10.1-Std-win10_64-vs2015.zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-1.8.19-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-1.10.1-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..
 
