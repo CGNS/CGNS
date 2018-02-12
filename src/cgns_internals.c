@@ -26,7 +26,6 @@ freely, subject to the following restrictions:
 #if !defined(_WIN32) || defined(__NUTC__)
 #include <unistd.h>
 #endif
-#include "cgnsconfig.h"
 #include "cgnslib.h"
 #include "cgns_header.h"
 #include "cgns_io.h"

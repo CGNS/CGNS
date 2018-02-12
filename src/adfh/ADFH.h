@@ -33,7 +33,6 @@
 #ifndef _ADFH_H_
 #define _ADFH_H_
 
-#include "cgnsconfig.h"
 #include "cgnstypes.h"
 
 /* some stuff needed from standard ADF.h */
