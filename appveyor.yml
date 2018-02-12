@@ -32,8 +32,10 @@ environment:
   matrix:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
     HDF_DIR: "/Program Files/HDF_Group/HDF5/1.8.19/cmake"
+    HDF_VER: "1.8.19"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON 
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.8.19/cmake" 
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.10.1/cmake"
+    HDF_VER: "1.10.1"
 
 # Operating system (build VM template)
 os: Visual Studio 2015
@@ -64,6 +66,13 @@ install:
   - msiexec /i HDF5-1.8.19-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..
+  - git clone https://github.com/CGNS/HDF5_BIN.git
+  - cd HDF5_BIN
+  - ps: Expand-Archive hdf5-1.10.1-Std-win10_64-vs2015.zip -DestinationPath .
+  - cd hdf
+  - msiexec /i HDF5-1.8.19-win64.msi /quiet /qn /norestart /log install.log
+  - type install.log
+  - cd ..
 
 #---------------------------------#
 #       build configuration       #
@@ -87,7 +96,7 @@ before_build:
   - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
   - cmake --version
-  - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/1.8.19/cmake
+  - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF_VER%/cmake
   - cmake -G "Visual Studio 14 Win64" ^
      %build_opts% ^
      -D CMAKE_C_FLAGS:STRING="" ^
