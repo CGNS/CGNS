@@ -31,8 +31,8 @@ skip_tags: true
 environment:
   matrix:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.8.19/cmake"
-    HDF_VER: "1.8.19"
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.8.20/cmake"
+    HDF_VER: "1.8.20"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON 
     HDF_DIR: "/Program Files/HDF_Group/HDF5/1.10.1/cmake"
     HDF_VER: "1.10.1"
@@ -59,20 +59,22 @@ install:
 
 # install hdf5
   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
-  - mkdir hdf5lib
-  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.19/bin/windows/hdf5-1.8.19-Std-win10_64-vs2015.zip
-  - ps: Expand-Archive hdf5-1.8.19-Std-win10_64-vs2015.zip -DestinationPath .
+  - mkdir 1.8
+  - cd 1.8
+  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/binaries/windows/hdf5-1.8.20-Std-win10_64-vs14.zip
+  - ps: Expand-Archive hdf5-1.8.20-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-1.8.19-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-1.8.20-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
-  - cd ..
-  - git clone https://github.com/CGNS/HDF5_BIN.git
-  - cd HDF5_BIN
-  - ps: Expand-Archive hdf5-1.10.1-Std-win10_64-vs2015.zip -DestinationPath .
+  - cd ..\..
+  - mkdir 1.10
+  - cd 1.10
+  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf5110/binaries/windows/hdf5-1.10.1-Std-win10_64-vs14.zip
+  - ps: Expand-Archive hdf5-1.10.1-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
   - msiexec /i HDF5-1.10.1-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
-  - cd ..
+  - cd ..\..
 
 #---------------------------------#
 #       build configuration       #
