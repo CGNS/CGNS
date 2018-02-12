@@ -58,7 +58,7 @@ install:
   #- cmd: set MY_VAR=12345
 
 # install hdf5
-  if [%HDF_VER%]==[1.8.20] (
+  - if [%HDF_VER%]==[1.8.20] (
   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
   - mkdir 1.8
   - cd 1.8
@@ -67,7 +67,7 @@ install:
   - cd hdf
   - msiexec /i HDF5-1.8.20-win64.msi /quiet /qn /norestart /log install.log
   - type install.log)
-  if [%HDF_VER%]==[1.10.1] (
+  - if [%HDF_VER%]==[1.10.1] (
   - mkdir 1.10
   - cd 1.10
   - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf5110/binaries/windows/hdf5-1.10.1-Std-win10_64-vs14.zip
