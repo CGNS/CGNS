@@ -8,7 +8,7 @@ if (WIN32)
 endif (WIN32)
 
 # Include the local directory
-include_directories(.)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 if (CGNS_ENABLE_HDF5)
   add_definitions(-DBUILD_HDF5)
   if (WIN32)
@@ -576,33 +576,38 @@ if(CGNS_BUILD_SHARED)
 endif(CGNS_BUILD_SHARED)
 
 # Set the install path of the header files
-install(FILES
-	cgnslib.h
-	cgns_io.h
-	cgnswin_f.h
-	${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h
-	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes.h
-	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h
-	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f03.h
-	${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs
-	DESTINATION include)
+set(headers
+  cgnslib.h
+  cgns_io.h
+  cgnswin_f.h
+  ${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h
+  ${CMAKE_CURRENT_BINARY_DIR}/cgnstypes.h
+  ${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h
+  ${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f03.h
+  ${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs)
 
 if (CGNS_ENABLE_FORTRAN)
-  install(FILES
-          ${CMAKE_CURRENT_BINARY_DIR}/cgns.mod
-          DESTINATION include)
+  list(APPEND headers
+    ${CMAKE_CURRENT_BINARY_DIR}/cgns.mod)
 endif (CGNS_ENABLE_FORTRAN)
 
 if (CGNS_ENABLE_PARALLEL)
-  install(FILES	pcgnslib.h DESTINATION include)
+  list(APPEND headers
+    pcgnslib.h)
 endif (CGNS_ENABLE_PARALLEL)
 
 if (CGNS_ENABLE_LEGACY)
-  install(FILES adf/ADF.h DESTINATION include/adf)
+  list(APPEND headers
+    adf/ADF.h)
   if (CGNS_ENABLE_HDF5)
-    install(FILES adfh/ADFH.h DESTINATION include/adfh)
+    list(APPEND headers
+      adfh/ADFH.h)
   endif (CGNS_ENABLE_HDF5)
 endif (CGNS_ENABLE_LEGACY)
+
+# Set the install path of the header files
+install(FILES ${headers}
+	DESTINATION include)
 
 #########
 # Tools #

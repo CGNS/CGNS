@@ -46,7 +46,7 @@
 # define CG_LONG_T @CGLONGT@
 #endif
 
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
 
 /* ----------------------------------------------------------------
  * convert between HDF5 and ADF ids
