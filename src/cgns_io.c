@@ -624,7 +624,15 @@ int cgio_check_file (const char *filename, int *file_type)
     fclose (fp);
 
     /* check for ADF */
-    if (0 == strncmp (&buf[4], "ADF Database Version", 20)) {
+    /*
+     * CD-ADAPCO (now Siemens) replaced " Version" with ">"
+     * to detect detect binary/ascii conversion etc.
+     *
+     * Accept that too so that we can view .ccm files
+     */
+    if (
+           0 == strncmp (&buf[4], "ADF Database Version", 20)
+        || 0 == strncmp (&buf[4], "ADF Database>", 13)) {
       *file_type = CGIO_FILE_ADF;
       err = set_error(CGIO_ERR_NONE);
     } else {
