@@ -30,7 +30,6 @@ cgsize_t nnY=32768;
 cgsize_t Nelem;
 cgsize_t NodePerElem = 6;
 cgsize_t Nnodes;
-int mpi_err;
 
 int comm_rank;
 int fn;
