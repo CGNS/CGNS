@@ -15,6 +15,7 @@ LDLIBS = $(CGNSLIB) $(BUILDLIBS)
 #----------
 
 CALL = \
+	benchmark_hdf5$(EXE) \
 	cgioc$(EXE) \
 	elemtest$(EXE) \
 	test_exts$(EXE) \
@@ -76,6 +77,12 @@ test : $(TESTS)
 	 done; \
 	 echo "=== finished ==="; \
 	 exit $$status;
+
+#----------
+
+benchmark_hdf5$(EXE) : benchmark_hdf5.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ benchmark_hdf5.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
 
 #----------
 
