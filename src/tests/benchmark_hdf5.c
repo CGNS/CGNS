@@ -25,7 +25,7 @@
 #define true 1
 
 /* Number of nodes on one edge of the box */
-cgsize_t nnY=20;
+cgsize_t nnY=32768;
 
 
 cgsize_t Nelem;
@@ -60,7 +60,6 @@ cgsize_t start, end, emin, emax;
 cgsize_t* elements;
 char name[33];
 int  debug;
-double t0, t1, t2;
 
 /*
  * Timing storage convention:                            avg.| min. | max.
