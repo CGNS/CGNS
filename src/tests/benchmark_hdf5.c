@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
   double DimY = 10.0;
   double dy;
   double dval;
-  cgsize_t i, count;
+  cgsize_t i;
  
   /* parameters */
   debug = true;
