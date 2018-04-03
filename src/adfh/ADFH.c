@@ -2685,7 +2685,7 @@ void ADFH_Put_Dimension_Information(const double   id,
                                     int           *err)
 {
   hid_t hid;
-  hid_t did, tid, sid, mid;
+  hid_t did, tid, sid, mid, pid;
   int i, swap = 0;
   hsize_t old_size;
   hsize_t old_dims[ADF_MAX_DIMENSIONS];
@@ -2693,6 +2693,7 @@ void ADFH_Put_Dimension_Information(const double   id,
   void *data = NULL;
   char new_type[3];
   hid_t xfer_prp = H5P_DEFAULT;
+  hsize_t chunk_dim[ADF_MAX_DIMENSIONS];
 
   to_HDF_ID(id,hid);
 
@@ -2765,24 +2766,28 @@ void ADFH_Put_Dimension_Information(const double   id,
   tid = to_HDF_data_type(new_type);
   ADFH_CHECK_HID(tid);
   sid = H5Screate_simple(dims, new_dims, NULL);
-  /* better idea? how to guess the right size? */
+
+  pid = H5Pcreate(H5P_DATASET_CREATE);
+
   if (CompressData >= 0)
   {
-    H5Pset_deflate(mta_root->g_propdataset, CompressData);
+    for (i = 0; i < dims; ++i) {
+      // currently it is hard coded that the 
+      // array is divided into 5 for each dimensions.
+      chunk_dim[i] = (new_dims[i]) / 5;
+      if (chunk_dim[i] < 100)
+        chunk_dim[i] = new_dims[i];
+      if (chunk_dim[i] > 1000000)
+        chunk_dim[i] = 1000000;
+    }
+    
+    H5Pset_chunk(pid, dims, chunk_dim);
+    H5Pset_deflate(pid, CompressData);
   }
-#if 0
-  this causes a problem with memory allocation. For example,
-  writing an unstructured coordinate array of 5 billion values
-  will result in the HDF5 library trying to allocation 20Gb
-  of memory for the chunk, since the first dimension is 5 billion.
-  We really need to try to do something more intelligent here
-
-  H5Pset_chunk(mta_root->g_propdataset, dims, new_dims);
-#endif
 
   ADFH_CHECK_HID(sid);
   did = H5Dcreate2(hid, D_DATA, tid, sid,
-		   H5P_DEFAULT, mta_root->g_propdataset, H5P_DEFAULT);
+		   H5P_DEFAULT, pid, H5P_DEFAULT);
 /*  H5Eprint1(stdout);*/
   ADFH_CHECK_HID(did);
 
@@ -2822,6 +2827,7 @@ void ADFH_Put_Dimension_Information(const double   id,
     set_error(ADFH_ERR_DCREATE, err);
   else {
     H5Dclose(did);
+    H5Pclose(pid);
     set_error(NO_ERROR, err);
   }
 }
