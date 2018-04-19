@@ -11,6 +11,14 @@
 #include <sys/times.h>
 #endif
 
+#if CG_HAVE_STAT64_STRUCT
+#ifdef _WIN32
+#define stat _stat64
+#else
+#define stat stat64
+#endif
+#endif
+
 double elapsed_time (void)
 {
 #if defined(_WIN32) && !defined(__NUTC__)

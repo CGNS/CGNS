@@ -38,6 +38,15 @@
 # define CG_MODE_MODIFY MODE_MODIFY
 #endif
 
+#if CG_HAVE_STAT64_STRUCT
+#ifdef _WIN32
+#define stat _stat64
+#else
+#define stat stat64
+#endif
+#endif
+
+
 int nZones = 0;
 ZONE *Zones;
 

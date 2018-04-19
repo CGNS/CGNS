@@ -12,6 +12,14 @@
 # define cgsize_t int
 #endif
 
+#if CG_HAVE_STAT64_STRUCT
+#ifdef _WIN32
+#define stat _stat64
+#else
+#define stat stat64
+#endif
+#endif
+
 #define MAX_LEADER 1024
 #define INDENT     2
 
