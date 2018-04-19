@@ -687,7 +687,7 @@ else
         BSDMIPS)  f2c=UPPERCASE ;;
         HP*)      f2c=LOWERCASE ;;
         IBM)      f2c=LOWERCASE ;;
-        DARWIN)   f2c=LOWERCASE ;;
+        MACOSX)   f2c=LOWERCASE ;;
         M88K)     f2c=UPPERCASE ;;
         NEXT)     f2c=LOWERCASE ;;
       esac
