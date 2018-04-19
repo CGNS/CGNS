@@ -451,16 +451,20 @@ endif (CGNS_ENABLE_HDF5)
 
   # Check for stat64 struct
   ## --------------------------------------------------------------------
-include(CheckStructHasMember)
-if ( WIN32 )
-CHECK_STRUCT_HAS_MEMBER("struct _stat64" st_atime sys/stat.h  CHECK_HAVE_STAT64_STRUCT LANGUAGE C)
-else ( WIN32 )
-CHECK_STRUCT_HAS_MEMBER("struct stat64" st_atime sys/stat.h  CHECK_HAVE_STAT64_STRUCT LANGUAGE C)
-endif( WIN32)
+  #  stat64 is deprecated for OS X
 
-if (CHECK_HAVE_STAT64_STRUCT)
-  set(HAVE_STAT64_STRUCT 1)
-endif (CHECK_HAVE_STAT64_STRUCT)
+if (NOT APPLE)
+  include(CheckStructHasMember)
+  if ( WIN32 )
+    CHECK_STRUCT_HAS_MEMBER("struct _stat64" st_atime sys/stat.h  CHECK_HAVE_STAT64_STRUCT LANGUAGE C)
+  else ( WIN32 )
+    CHECK_STRUCT_HAS_MEMBER("struct stat64" st_atime sys/stat.h  CHECK_HAVE_STAT64_STRUCT LANGUAGE C)
+  endif( WIN32)
+
+  if (CHECK_HAVE_STAT64_STRUCT)
+    set(HAVE_STAT64_STRUCT 1)
+  endif (CHECK_HAVE_STAT64_STRUCT)
+endif(NOT APPLE)
 
 #create these in build directory so it doesn't mess up the
 #source directory, then add the path to them

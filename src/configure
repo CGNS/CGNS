@@ -5425,7 +5425,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
         BSDMIPS)  f2c=UPPERCASE ;;
         HP*)      f2c=LOWERCASE ;;
         IBM)      f2c=LOWERCASE ;;
-        MACOSX)   f2c=LOWERCASE ;;
+        DARWIN)   f2c=LOWERCASE ;;
         M88K)     f2c=UPPERCASE ;;
         NEXT)     f2c=LOWERCASE ;;
       esac
@@ -6438,8 +6438,12 @@ fi
 
   # Check for stat64 struct
   ## --------------------------------------------------------------------
+  #  stat64 is deprecated for Mac OS X
 
-  HAVE_STAT64_STRUCT=0
+HAVE_STAT64_STRUCT=0
+
+if test ! "$SYSTEM" = "DARWIN"; then
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stat64" >&5
 $as_echo_n "checking for stat64... " >&6; }
 
@@ -6465,6 +6469,8 @@ $as_echo "no" >&6; }
   if test -f test.c; then
      rm test.c
   fi
+
+fi
 
 #---------------------------------------------------------------------------
 # build CGNStools

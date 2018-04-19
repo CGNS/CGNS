@@ -687,7 +687,7 @@ else
         BSDMIPS)  f2c=UPPERCASE ;;
         HP*)      f2c=LOWERCASE ;;
         IBM)      f2c=LOWERCASE ;;
-        MACOSX)   f2c=LOWERCASE ;;
+        DARWIN)   f2c=LOWERCASE ;;
         M88K)     f2c=UPPERCASE ;;
         NEXT)     f2c=LOWERCASE ;;
       esac
@@ -1292,8 +1292,12 @@ fi
 
   # Check for stat64 struct
   ## --------------------------------------------------------------------
+  #  stat64 is deprecated for Mac OS X
 
-  HAVE_STAT64_STRUCT=0
+HAVE_STAT64_STRUCT=0
+
+if test ! "$SYSTEM" = "DARWIN"; then
+
   AC_MSG_CHECKING([for stat64])
 
   cat >> test.c << EOF
@@ -1316,6 +1320,8 @@ EOF
   if test -f test.c; then
      rm test.c
   fi
+
+fi
 
 #---------------------------------------------------------------------------
 # build CGNStools
