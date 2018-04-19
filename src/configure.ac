@@ -887,34 +887,6 @@ EOF
      rm test.c
   fi
 
-  # Check for stat64 struct
-  ## --------------------------------------------------------------------
-
-  HAVE_STAT64_STRUCT=0
-  AC_MSG_CHECKING([for stat64])
-
-  cat >> test.c << EOF
-#include <sys/types.h>
-#include <sys/stat.h>
-struct stat64 sb;
-int main()
-{
-  return 0;
-}
-EOF
-  msg=`${CC} -c test.c &> /dev/null`
-  if test -f test.o; then
-    HAVE_STAT64_STRUCT=1
-    AC_MSG_RESULT(yes)
-    rm test.o
-  else
-    AC_MSG_RESULT(no)
-  fi
-  if test -f test.c; then
-     rm test.c
-  fi
-
-
   # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
   ## --------------------------------------------------------------------
 
@@ -1317,6 +1289,33 @@ EOF
   CFLAGS=$CFLAGS_SAVE
   test $has_lfs = yes && CFGFLAGS="$LFS $CFGFLAGS"
 fi
+
+  # Check for stat64 struct
+  ## --------------------------------------------------------------------
+
+  HAVE_STAT64_STRUCT=0
+  AC_MSG_CHECKING([for stat64])
+
+  cat >> test.c << EOF
+#include <sys/types.h>
+#include <sys/stat.h>
+struct stat64 sb;
+int main()
+{
+  return 0;
+}
+EOF
+  msg=`${CC} -c test.c &> /dev/null`
+  if test -f test.o; then
+    HAVE_STAT64_STRUCT=1
+    AC_MSG_RESULT(yes)
+    rm test.o
+  else
+    AC_MSG_RESULT(no)
+  fi
+  if test -f test.c; then
+     rm test.c
+  fi
 
 #---------------------------------------------------------------------------
 # build CGNStools
