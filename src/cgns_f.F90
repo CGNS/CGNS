@@ -4928,6 +4928,7 @@ CONTAINS
 !  END SUBROUTINE cg_open_f
 
   SUBROUTINE cgio_set_dimensions_f_0(cgio_num, id, data_type, ndims, dims, ier)
+    !DEC$ ATTRIBUTES DLLEXPORT,ALIAS:"cgio_set_dimensions_f_0" :: cgio_set_dimensions_f_0
     IMPLICIT NONE
     INTEGER :: cgio_num
     REAL(C_DOUBLE) :: id
@@ -4941,6 +4942,7 @@ CONTAINS
   END SUBROUTINE cgio_set_dimensions_f_0
 
   SUBROUTINE cgio_set_dimensions_f_1(cgio_num, id, data_type, ndims, dims, ier)
+    !DEC$ ATTRIBUTES DLLEXPORT,ALIAS:"cgio_set_dimensions_f_1" :: cgio_set_dimensions_f_1
     IMPLICIT NONE
     INTEGER :: cgio_num
     REAL(C_DOUBLE) :: id
@@ -4954,6 +4956,7 @@ CONTAINS
   END SUBROUTINE cgio_set_dimensions_f_1
 
   SUBROUTINE cgio_get_dimensions_f_0(cgio_num, id, ndims, dims, ier)
+    !DEC$ ATTRIBUTES DLLEXPORT,ALIAS:"cgio_get_dimensions_f_0" :: cgio_get_dimensions_f_0
     IMPLICIT NONE
     INTEGER :: cgio_num
     REAL(C_DOUBLE) :: id
@@ -4966,6 +4969,7 @@ CONTAINS
   END SUBROUTINE cgio_get_dimensions_f_0
 
   SUBROUTINE cgio_get_dimensions_f_1(cgio_num, id, ndims, dims, ier)
+    !DEC$ ATTRIBUTES DLLEXPORT,ALIAS:"cgio_get_dimensions_f_1" :: cgio_get_dimensions_f_1
     IMPLICIT NONE
     INTEGER :: cgio_num
     REAL(C_DOUBLE) :: id
