@@ -887,6 +887,34 @@ EOF
      rm test.c
   fi
 
+  # Check for stat64 struct
+  ## --------------------------------------------------------------------
+
+  HAVE_STAT64_STRUCT=0
+  AC_MSG_CHECKING([for stat64])
+
+  cat >> test.c << EOF
+#include <sys/types.h>
+#include <sys/stat.h>
+struct stat64 sb;
+int main()
+{
+  return 0;
+}
+EOF
+  msg=`${CC} -c test.c &> /dev/null`
+  if test -f test.o; then
+    HAVE_STAT64_STRUCT=1
+    AC_MSG_RESULT(yes)
+    rm test.o
+  else
+    AC_MSG_RESULT(no)
+  fi
+  if test -f test.c; then
+     rm test.c
+  fi
+
+
   # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
   ## --------------------------------------------------------------------
 
@@ -1701,6 +1729,7 @@ AC_SUBST(HAVE_FORTRAN_2003)
 AC_SUBST(HAVE_FORTRAN_2008TS)
 AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
+AC_SUBST(HAVE_STAT64_STRUCT)
 AC_SUBST(HDF5_HAVE_COLL_METADATA)
 AC_SUBST(FC_D_PRE)
 AC_SUBST(BUILDPARALLEL)

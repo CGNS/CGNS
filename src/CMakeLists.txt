@@ -108,6 +108,7 @@ set(HAVE_FORTRAN_2008TS 0)
 set(HDF5_HAVE_MULTI_DATASETS 0)
 set(HDF5_HAVE_COLL_METADATA 0)
 set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
+set(HAVE_STAT64_STRUCT 0)
 
 if (BUILDFORTRAN)
 
@@ -447,6 +448,14 @@ CHECK_HDF5_FEATURE(Collective_metadata
 
 
 endif (CGNS_ENABLE_HDF5)
+
+  # Check for stat64 struct
+  ## --------------------------------------------------------------------
+include(CheckStructHasMember)
+CHECK_STRUCT_HAS_MEMBER("struct stat64" st_atime sys/stat.h  CHECK_HAVE_STAT64_STRUCT LANGUAGE C)
+if (CHECK_HAVE_STAT64_STRUCT)
+  set(HAVE_STAT64_STRUCT 1)
+endif (CHECK_HAVE_STAT64_STRUCT)
 
 #create these in build directory so it doesn't mess up the
 #source directory, then add the path to them

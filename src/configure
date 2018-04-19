@@ -694,6 +694,7 @@ BUILDBASESCOPE
 BUILDPARALLEL
 FC_D_PRE
 HDF5_HAVE_COLL_METADATA
+HAVE_STAT64_STRUCT
 HDF5_HAVE_MULTI_DATASETS
 FORTRAN_DEFAULT_INTEGER_C_INT64_T
 HAVE_FORTRAN_2008TS
@@ -5693,6 +5694,37 @@ $as_echo "no" >&6; }
      rm test.c
   fi
 
+  # Check for stat64 struct
+  ## --------------------------------------------------------------------
+
+  HAVE_STAT64_STRUCT=0
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stat64" >&5
+$as_echo_n "checking for stat64... " >&6; }
+
+  cat >> test.c << EOF
+#include <sys/types.h>
+#include <sys/stat.h>
+struct stat64 sb;
+int main()
+{
+  return 0;
+}
+EOF
+  msg=`${CC} -c test.c &> /dev/null`
+  if test -f test.o; then
+    HAVE_STAT64_STRUCT=1
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    rm test.o
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  fi
+  if test -f test.c; then
+     rm test.c
+  fi
+
+
   # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
   ## --------------------------------------------------------------------
 
@@ -7184,6 +7216,7 @@ else
 $as_echo "no" >&6; }
   SET_MAKE="MAKE=${MAKE-make}"
 fi
+
 
 
 
