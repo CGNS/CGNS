@@ -66,6 +66,7 @@ MPI_Info pcg_mpi_info;
 typedef struct {
     int type;
     int mode;
+    int mpi_initialized;
     double rootid;
 } cgns_io;
 
@@ -584,7 +585,7 @@ int cgio_check_file (const char *filename, int *file_type)
 
 #ifdef BUILD_PARALLEL
     /* don't overload the file system by having all the processors doing a read */
-    if(pcg_mpi_comm_rank == 0) {
+    if(!pcg_mpi_initialized || pcg_mpi_comm_rank == 0) {
 #endif
 
       fp = fopen(filename, "rb");
@@ -800,6 +801,7 @@ int cgio_open_file (const char *filename, int file_mode,
     }
     iolist[n].type = file_type;
     iolist[n].mode = file_mode;
+    iolist[n].mpi_initialized = pcg_mpi_initialized;
     iolist[n].rootid = rootid;
     *cgio_num = n + 1;
     num_open++;
@@ -811,8 +813,8 @@ int cgio_open_file (const char *filename, int file_mode,
 
 int cgio_close_file (int cgio_num)
 {
-    int ierr;
-    cgns_io *cgio;
+    int ierr = 0;
+    cgns_io *cgio = NULL;
 
     if ((cgio = get_cgnsio(cgio_num, 0)) == NULL)
         return get_error();
@@ -823,6 +825,7 @@ int cgio_close_file (int cgio_num)
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Database_Close(cgio->rootid, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -908,6 +911,7 @@ int cgio_flush_to_disk (int cgio_num)
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Flush_to_Disk(cgio->rootid, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -937,6 +941,7 @@ int cgio_library_version (int cgio_num, char *version)
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Library_Version(version, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -966,6 +971,7 @@ int cgio_file_version (int cgio_num, char *file_version,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Database_Version(cgio->rootid, file_version,
             creation_date, modified_date, &ierr);
         if (ierr > 0) return set_error(ierr);
@@ -1088,6 +1094,7 @@ int cgio_create_node (int cgio_num, double pid,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Create(pid, name, id, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1127,6 +1134,7 @@ int cgio_new_node (int cgio_num, double pid, const char *name,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Create(pid, name, id, &ierr);
         if (ierr > 0) return set_error(ierr);
         ADFH_Set_Label(*id, label, &ierr);
@@ -1164,6 +1172,7 @@ int cgio_delete_node (int cgio_num, double pid, double id)
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Delete(pid, id, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1192,6 +1201,7 @@ int cgio_move_node (int cgio_num, double pid, double id,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Move_Child(pid, id, new_pid, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1247,6 +1257,7 @@ int cgio_copy_node (int cgio_num_inp, double id_inp,
     }
 #ifdef BUILD_HDF5
     else if (input->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = input->mpi_initialized;
         ADFH_Get_Label(id_inp, label, &ierr);
         if (ierr > 0) return set_error(ierr);
         ADFH_Get_Data_Type(id_inp, data_type, &ierr);
@@ -1289,6 +1300,7 @@ int cgio_copy_node (int cgio_num_inp, double id_inp,
     }
 #ifdef BUILD_HDF5
     else if (output->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = output->mpi_initialized;
         ADFH_Set_Label(id_out, label, &ierr);
         if (ierr <= 0) {
             ADFH_Put_Dimension_Information(id_out, data_type, ndims,
@@ -1318,6 +1330,7 @@ int cgio_release_id (int cgio_num, double id)
     if ((cgio = get_cgnsio(cgio_num, 0)) == NULL)
         return get_error();
     if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Release_ID(id);
     }
 #endif
@@ -1343,6 +1356,7 @@ int cgio_is_link (int cgio_num, double id, int *link_len)
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Is_Link(id, link_len, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1371,6 +1385,7 @@ int cgio_link_size (int cgio_num, double id, int *file_len,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Link_Size(id, file_len, name_len, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1399,6 +1414,7 @@ int cgio_create_link (int cgio_num, double pid, const char *name,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Link(pid, name, filename, name_in_file, id, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1427,6 +1443,7 @@ int cgio_get_link (int cgio_num, double id,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Get_Link_Path(id, filename, name_in_file, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1457,6 +1474,7 @@ int cgio_number_children (int cgio_num, double id,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Number_of_Children(id, num_children, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1485,6 +1503,7 @@ int cgio_children_ids (int cgio_num, double pid,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Children_IDs(pid, start, max_ret, num_ret, ids, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1514,6 +1533,7 @@ int cgio_children_names (int cgio_num, double pid, int start, int max_ret,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Children_Names(pid, start, max_ret, name_len,
             num_ret, names, &ierr);
         if (ierr > 0) return set_error(ierr);
@@ -1545,6 +1565,7 @@ int cgio_get_node_id (int cgio_num, double pid,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Get_Node_ID(pid, name, id, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1572,6 +1593,7 @@ int cgio_get_name (int cgio_num, double id, char *name)
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Get_Name(id, name, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1599,6 +1621,7 @@ int cgio_get_label (int cgio_num, double id, char *label)
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Get_Label(id, label, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1626,6 +1649,7 @@ int cgio_get_data_type (int cgio_num, double id, char *data_type)
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Get_Data_Type(id, data_type, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1675,6 +1699,7 @@ int cgio_get_dimensions (int cgio_num, double id,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Get_Number_of_Dimensions(id, num_dims, &ierr);
         if (NULL != dims && ierr <= 0 && *num_dims > 0) {
             ADFH_Get_Dimension_Values(id, dims, &ierr);
@@ -1705,6 +1730,7 @@ int cgio_read_all_data (int cgio_num, double id, void *data)
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Read_All_Data(id, (char *)data, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1733,6 +1759,7 @@ int cgio_read_block_data (int cgio_num, double id,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Read_Block_Data(id, b_start, b_end, (char *)data, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1765,6 +1792,7 @@ int cgio_read_data (int cgio_num, double id,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Read_Data(id, s_start, s_end, s_stride, m_num_dims,
             m_dims, m_start, m_end, m_stride, (char *)data, &ierr);
         if (ierr > 0) return set_error(ierr);
@@ -1796,6 +1824,7 @@ int cgio_set_name (int cgio_num, double pid, double id,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Put_Name(pid, id, name, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1823,6 +1852,7 @@ int cgio_set_label (int cgio_num, double id, const char *label)
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Set_Label(id, label, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1851,6 +1881,7 @@ int cgio_set_dimensions (int cgio_num, double id,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Put_Dimension_Information(id, data_type, num_dims, dims, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1879,6 +1910,7 @@ int cgio_write_all_data (int cgio_num, double id,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Write_All_Data(id, (const char *)data, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1907,6 +1939,7 @@ int cgio_write_block_data (int cgio_num, double id,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Write_Block_Data(id, b_start, b_end, (char *)data, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
@@ -1939,6 +1972,7 @@ int cgio_write_data (int cgio_num, double id,
     }
 #ifdef BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
+        pcg_mpi_initialized = cgio->mpi_initialized;
         ADFH_Write_Data(id, s_start, s_end, s_stride, m_num_dims,
             m_dims, m_start, m_end, m_stride, (const char *)data, &ierr);
         if (ierr > 0) return set_error(ierr);
