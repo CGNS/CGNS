@@ -45,12 +45,12 @@ char hdf5_access[64] = "NATIVE";
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
 #endif
+int pcg_mpi_initialized;
 #ifdef BUILD_PARALLEL
 #include <mpi.h>
 MPI_Comm pcg_mpi_comm=MPI_COMM_WORLD;
 int pcg_mpi_comm_size;
 int pcg_mpi_comm_rank;
-int pcg_mpi_initialized;
 MPI_Info pcg_mpi_info;
 #endif
 
@@ -801,7 +801,7 @@ int cgio_open_file (const char *filename, int file_mode,
     }
     iolist[n].type = file_type;
     iolist[n].mode = file_mode;
-#ifdef BUILD_HDF5
+#ifdef BUILD_PARALLEL
     iolist[n].mpi_initialized = pcg_mpi_initialized;
 #else
     iolist[n].mpi_initialized = 0;
