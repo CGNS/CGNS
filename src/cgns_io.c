@@ -801,7 +801,11 @@ int cgio_open_file (const char *filename, int file_mode,
     }
     iolist[n].type = file_type;
     iolist[n].mode = file_mode;
+#ifdef BUILD_HDF5
     iolist[n].mpi_initialized = pcg_mpi_initialized;
+#else
+    iolist[n].mpi_initialized = 0;
+#endif
     iolist[n].rootid = rootid;
     *cgio_num = n + 1;
     num_open++;
