@@ -764,7 +764,7 @@ static cgsize_t write_node_region (cgnsREGN *reg, cgsize_t offset)
     }
 
     if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, reg->name,
-            elemtype, offset, offset + nfaces - 1, 0, conns, &isect))
+            elemtype, offset, offset + nfaces - 1, 0, conns, NULL ,&isect)) /* TODO */
         cgnsImportFatal ((char *)cg_get_error());
 
     /* create parent cell mapping */
@@ -837,7 +837,7 @@ static cgsize_t write_face_region (cgnsREGN *reg, cgsize_t offset)
     }
 
     if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, reg->name,
-            elemtype, offset, offset + reg->nobjs - 1, 0, conns, &isect))
+            elemtype, offset, offset + reg->nobjs - 1, 0, conns, NULL, &isect))
         cgnsImportFatal ((char *)cg_get_error());
 
     free (conns);
@@ -1856,7 +1856,7 @@ int cgnsImportWrite (void)
     }
 
     if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, "GridElements",
-            elemtype, 1, num_elements, 0, conns, &isect))
+            elemtype, 1, num_elements, 0, conns, NULL, &isect))
         cgnsImportFatal ((char *)cg_get_error());
 
     free (conns);

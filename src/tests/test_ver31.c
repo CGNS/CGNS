@@ -291,9 +291,9 @@ void write_elements(int nz)
     int cgsect;
 
     if (cg_section_write(cgfile, cgbase, nz, "Elements", CGNS_ENUMV(HEXA_8),
-            1, num_element, 0, elements, &cgsect) ||
+            1, num_element, 0, elements, NULL, &cgsect) ||
         cg_section_write(cgfile, cgbase, nz, "Faces", CGNS_ENUMV(QUAD_4),
-            num_element+1, num_element+num_face, 0, faces, &cgsect) ||
+            num_element+1, num_element+num_face, 0, faces, NULL, &cgsect) ||
         cg_parent_data_write(cgfile, cgbase, nz, cgsect, parent)) {
         sprintf (errmsg, "zone %d elements", nz);
         error_exit(errmsg);

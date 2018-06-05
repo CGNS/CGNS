@@ -315,7 +315,7 @@ int main (int argc, char *argv[])
        write all the elements, then use goto to add rind */
 
     if (cg_section_write(cgfile, cgbase, cgzone, "Elements", CGNS_ENUMV( HEXA_8 ),
-            1, num_element, 0, elements, &cgsect) ||
+            1, num_element, 0, elements, NULL, &cgsect) ||
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "Elements_t", cgsect, "end") ||
         cg_rind_write(erind))

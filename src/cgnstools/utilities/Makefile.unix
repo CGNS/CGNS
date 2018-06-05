@@ -27,7 +27,8 @@ ALL = \
 	convert_variables$(EXE) \
 	convert_dataclass$(EXE) \
 	extract_subset$(EXE) \
-	interpolate_cgns$(EXE)
+	interpolate_cgns$(EXE) \
+	update_ngon$(EXE)
 
 OTHERS = \
 	cgns_info$(EXE) \
@@ -265,6 +266,15 @@ interpolate_cgns$(EXE) : interpolate_cgns.$(O) cgnsutil.$(O) getargs.$(O)
 	$(STRIP) $@
 
 interpolate_cgns.$(O) : interpolate_cgns.c cgnsutil.h
+
+#--------------------------------------------------
+
+update_ngon$(EXE) : update_ngon.$(O) cgnsutil.$(O) getargs.$(O)
+	$(CC) $(LDFLAGS) -o $@ update_ngon.$(O) cgnsutil.$(O) \
+	getargs.$(O) $(LDLIST)
+	$(STRIP) $@
+
+update_ngon.$(O) : update_ngon.c cgnsutil.h
 
 #--------------------------------------------------
 

@@ -72,9 +72,9 @@ int main (int argc, char **argv)
         cg_gopath(cgfile, "../CoordinateZ") ||
         cg_exponents_write(CGNS_ENUMV(RealSingle), exps) ||
         cg_section_write (cgfile, cgbase, cgzone, "Tris",
-            CGNS_ENUMV(TRI_3), 1, 4, 0, tris, &cgsect) ||
+            CGNS_ENUMV(TRI_3), 1, 4, 0, tris, NULL, &cgsect) ||
         cg_section_write (cgfile, cgbase, cgzone, "Tets",
-            CGNS_ENUMV(TETRA_4), 5, 5, 0, tets, &cgsect))
+            CGNS_ENUMV(TETRA_4), 5, 5, 0, tets, NULL, &cgsect))
         cg_error_exit();
 
     dim = npnts;

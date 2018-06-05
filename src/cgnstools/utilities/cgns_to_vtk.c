@@ -552,7 +552,7 @@ static void write_volume_cells (FILE *fp, int nz)
         if (elemtype < CGNS_ENUMV(TETRA_4) || elemtype > CGNS_ENUMV(MIXED)) continue;
         nelems = ie - is + 1;
         if (elemtype == CGNS_ENUMV(MIXED)) {
-            if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL))
+            if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL, NULL))
                 FATAL (NULL);
             for (i = 0, n = 0; n < nelems; n++) {
                 et = (int)conn[i++];
@@ -642,7 +642,7 @@ static void write_volume_cells (FILE *fp, int nz)
             FATAL (NULL);
         if (elemtype < CGNS_ENUMV(TETRA_4) || elemtype > CGNS_ENUMV(MIXED)) continue;
         nelems = ie - is + 1;
-        if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL))
+        if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL, NULL))
             FATAL (NULL);
         et = elemtype;
         for (i = 0, n = 0; n < nelems; n++) {
@@ -729,7 +729,7 @@ static void write_element_sets (int nz, cgsize_t *sizes)
         conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
         if (conn == NULL)
             FATAL ("malloc failed for element connectivity");
-        if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL))
+        if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL, NULL))
             FATAL (NULL);
 
         for (n = 0; n < nnodes; n++)

@@ -22,6 +22,7 @@
         integer(cgsize_t) range_min(3), range_max(3)
 	integer nbndry, type, count
         integer(cgsize_t) elements(1000)
+        integer(cgsize_t) connect_offsets(100)
         integer(cgsize_t) ElementDataSize
 	character*32 coordname(3), filename, nodename
         double precision data_double(NNODES)
@@ -140,7 +141,8 @@
 
             el_st = el_st + 1
             call cg_elements_partial_read_f(cg, base, zone, sect,
-     &                 el_st, el_end, elements, parent, ier);
+     &                 el_st, el_end, elements, connect_offsets,
+     &                 parent, ier);
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
             write(6,108)'Connect and Parent data for element range  = ',
@@ -175,8 +177,9 @@
 	    else
 		count = 0
 	        do i=1, nelem
-		    count = count + 1
-		    npe = elements(count)
+		    !count = count + 1
+		    !npe = elements(count)
+                    npe = connect_offsets(n+1) - connect_offsets(n)
 		    write(6,111)
      &                    'Element Number Points = ',npe
 		    write(6,110)(elements(count+n),n=1,npe)

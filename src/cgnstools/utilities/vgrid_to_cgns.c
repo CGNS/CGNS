@@ -382,7 +382,7 @@ static void write_cgns(char *filename)
     free(zCoord);
 
     if (cg_section_write(cgfile, cgbase, cgzone, "Tetrahedra",
-            CGNS_ENUMV(TETRA_4), 1, nTets, 0, Tets, &cgsect))
+            CGNS_ENUMV(TETRA_4), 1, nTets, 0, Tets, NULL, &cgsect))
         cg_error_exit();
     free(Tets);
 
@@ -400,7 +400,7 @@ static void write_cgns(char *filename)
         start = nTets + 1;
         end = start + nFaces;
         if (cg_section_write(cgfile, cgbase, cgzone, "Triangles",
-                CGNS_ENUMV(TRI_3), start, end, 0, tris, &cgsect))
+                CGNS_ENUMV(TRI_3), start, end, 0, tris, NULL, &cgsect))
             cg_error_exit();
         free(tris);
         free(Faces);
@@ -478,7 +478,7 @@ static void write_cgns(char *filename)
             sizes[0] = start;
             sizes[1] = end;
             if (cg_section_write(cgfile, cgbase, cgzone, name,
-                    CGNS_ENUMV(TRI_3), start, end, 0, tris, &cgsect) ||
+                    CGNS_ENUMV(TRI_3), start, end, 0, tris, NULL, &cgsect) ||
 #if CGNS_VERSION < 3100
                 cg_boco_write(cgfile, cgbase, cgzone, name,
                     bctype, CGNS_ENUMV(ElementRange), 2, sizes, &cgbc))

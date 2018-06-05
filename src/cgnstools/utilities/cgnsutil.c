@@ -897,6 +897,15 @@ int read_zone_element (int nz)
             if (NULL == eset->conn)
                 FATAL ("read_zone_element",
                     "malloc failed for element connectivity");
+            eset->offsets = NULL;
+            if (eset->type == CGNS_ENUMV(MIXED) ||
+                eset->type == CGNS_ENUMV(NFACE_n) ||
+                eset->type == CGNS_ENUMV(NGON_n)) {
+                eset->offsets = (cgsize_t *) malloc ((size_t)((eset->end-eset->start+2) * sizeof(cgsize_t)));
+                if (NULL == eset->offsets)
+                    FATAL("read_zone_element", "malloc failed for offsets\n");
+            }
+            
             if (iparent) {
                 size = 4 * (eset->end - eset->start + 1);
                 eset->parent = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
@@ -904,7 +913,7 @@ int read_zone_element (int nz)
                     FATAL ("read_zone_element","malloc failed for parent data");
             }
             if (cg_elements_read (cgnsfn, cgnsbase, nz, ns,
-                    eset->conn, eset->parent))
+                    eset->conn, eset->offsets, eset->parent))
                 FATAL ("read_zone_element", NULL);
         }
     }
@@ -932,6 +941,7 @@ int structured_elements (int nz)
     eset->end = nelems;
     eset->nbndry = 0;
     eset->conn = (cgsize_t *) malloc ((size_t)(8 * nelems) * sizeof(cgsize_t));
+    eset->offsets = 0;
     if (NULL == eset->conn)
         FATAL ("structured_elements", "malloc failed for element connectivity");
     eset->parent = NULL;
@@ -1528,7 +1538,7 @@ void write_zone_element (int nz)
             if (cg_section_write (cgnsfn, cgnsbase, z->id,
                     eset->name, (CGNS_ENUMT(ElementType_t))eset->type,
                     eset->start, eset->end, eset->nbndry,
-                    eset->conn, &eset->id))
+                    eset->conn, eset->offsets, &eset->id))
                 FATAL ("write_zone_element", NULL);
             if (eset->parent != NULL &&
                 cg_parent_data_write (cgnsfn, cgnsbase, z->id,
