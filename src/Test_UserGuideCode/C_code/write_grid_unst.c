@@ -123,7 +123,7 @@ relationships:
     nbdyelem=0;
 /* write CGNS_ENUMV(HEXA_8) element connectivity (user can give any name) */
     cg_section_write(index_file,index_base,index_zone,"Elem",CGNS_ENUMV(HEXA_8),nelem_start,
-                     nelem_end,nbdyelem,ielem[0], NULL, &index_section);
+                     nelem_end,nbdyelem,ielem[0],&index_section);
 /* ---------------------------------------------------------- */
 /*
 do boundary (QUAD) elements (this part is optional,
@@ -157,7 +157,7 @@ maintain SIDS-standard ordering
     }
 /* write QUAD element connectivity for inflow face (user can give any name) */
     cg_section_write(index_file,index_base,index_zone,"InflowElem",CGNS_ENUMV(QUAD_4),nelem_start,
-                     nelem_end,nbdyelem,jelem[0], NULL, &index_section);
+                     nelem_end,nbdyelem,jelem[0],&index_section);
 /* OUTFLOW: */
     ielem_no=0;
 /* index no of first element */
@@ -184,7 +184,7 @@ maintain SIDS-standard ordering
     }
 /* write QUAD element connectivity for outflow face (user can give any name) */
     cg_section_write(index_file,index_base,index_zone,"OutflowElem",CGNS_ENUMV(QUAD_4),nelem_start,
-                     nelem_end,nbdyelem,jelem[0], NULL, &index_section);
+                     nelem_end,nbdyelem,jelem[0],&index_section);
 /* SIDEWALLS: */
     ielem_no=0;
 /* index no of first element */
@@ -250,7 +250,7 @@ maintain SIDS-standard ordering
     }
 /* write QUAD element connectivity for sidewall face (user can give any name) */
     cg_section_write(index_file,index_base,index_zone,"SidewallElem",CGNS_ENUMV(QUAD_4),nelem_start,
-                     nelem_end,nbdyelem,jelem[0], NULL, &index_section);
+                     nelem_end,nbdyelem,jelem[0],&index_section);
 /* ---------------------------------------------------------- */
 /* close CGNS file */
     cg_close(index_file);

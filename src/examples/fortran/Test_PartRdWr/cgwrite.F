@@ -20,8 +20,7 @@
 	integer cg, base, zone, ier, index, ZoneType
         integer(cgsize_t) size(3)
 	integer i, j, k, n, pos, coord, section_no
-	integer(cgsize_t) element(20)
-	integer(cgsize_t) connect_offsets(20)
+        integer(cgsize_t) element(20)
 	character*32 ZoneName, coordname(3)
         real*8 data_double(27)
 	integer grid_no, C, count
@@ -118,7 +117,6 @@
 ! Generate dummy elements
 
 	count = 0
-	connect_offsets(1) = 0
 ! first element HEXA_8
 	count = count + 1
 	element(count)=HEXA_8
@@ -127,30 +125,26 @@
 	    element(count)=i
 	enddo
 ! second element TETRA_4
-	connect_offsets(2) = count
 	count = count + 1
 	element(count)=TETRA_4
 	do i=1,4
 	    count = count + 1
             element(count)=i
         enddo
-        connect_offsets(3) = count
 
 ! Write first 2 elements of the MIXED element section
         rmin = 1
         rmax = 2
 	call cg_elements_partial_write_f(cg, base, zone, section_no,
-     &       rmin, rmax, element, connect_offsets, ier)
+     &       rmin, rmax, element, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 ! second element TETRA_4
-	connect_offsets(1) = 0
 	count = 1
 	element(count)=TETRA_4
 	do i=1,4
 	    count = count + 1
             element(count)= -i
         enddo
-	connect_offsets(2) = count
 
 ! third element PYRA_5
         count = count + 1
@@ -159,13 +153,12 @@
             count = count + 1
             element(count)=i
         enddo
-        connect_offsets(3) = count
 
 ! Write second and third elements of the MIXED element section
         rmin = 2
         rmax = 3
 	call cg_elements_partial_write_f(cg, base, zone, section_no,
-     &       rmin, rmax, element, connect_offsets, ier)
+     &       rmin, rmax, element, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012

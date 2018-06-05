@@ -66,7 +66,7 @@
         if (ElementTypeName(itype) .eq. 'HEXA_8') then
           write(6,'(''    reading element data for this element'')')
           call cg_elements_read_f(index_file,index_base,index_zone,            &
-               index_sect,ielem,c_null_ptr,iparentdata,ier)
+               index_sect,ielem,iparentdata,ier)
         else
           write(6,'(''    not reading element data for this element'')')
         end if

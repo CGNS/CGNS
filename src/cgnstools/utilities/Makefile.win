@@ -24,8 +24,7 @@ ALL = \
 	convert_variables.exe \
 	convert_dataclass.exe \
 	extract_subset.exe \
-	interpolate_cgns.exe \
-	update_ngon.exe
+	interpolate_cgns.exe
 
 OTHERS = \
 	cgns_info.exe \
@@ -280,16 +279,6 @@ interpolate_cgns.exe : interpolate_cgns.obj cgnsutil.obj getargs.obj
 	$(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
 interpolate_cgns.obj : interpolate_cgns.c cgnsutil.h
-
-#--------------------------------------------------
-
-update_ngon : update_ngon.exe
-
-update_ngon.exe : update_ngon.obj cgnsutil.obj getargs.obj
-	$(LINK) $(LFLAGS) update_ngon.obj cgnsutil.obj getargs.obj \
-	$(CGNSLIB) $(BUILDLIBS) $(CLIBS)
-
-update_ngon.obj : update_ngon.c cgnsutil.h
 
 #--------------------------------------------------
 

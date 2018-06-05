@@ -513,7 +513,7 @@ static void write_cgns(char *filename)
     if (nTets) {
         end = start + nTets - 1;
         if (cg_section_write(cgfile, cgbase, cgzone, "TetElements",
-                CGNS_ENUMV(TETRA_4), start, end, 0, Tets, NULL, &cgsect))
+                CGNS_ENUMV(TETRA_4), start, end, 0, Tets, &cgsect))
             cg_error_exit();
         free(Tets);
         start = end + 1;
@@ -521,7 +521,7 @@ static void write_cgns(char *filename)
     if (nPyras) {
         end = start + nPyras - 1;
         if (cg_section_write(cgfile, cgbase, cgzone, "PyraElements",
-                CGNS_ENUMV(PYRA_5), start, end, 0, Pyras, NULL, &cgsect))
+                CGNS_ENUMV(PYRA_5), start, end, 0, Pyras, &cgsect))
             cg_error_exit();
         free(Pyras);
         start = end + 1;
@@ -529,7 +529,7 @@ static void write_cgns(char *filename)
     if (nPrisms) {
         end = start + nPrisms - 1;
         if (cg_section_write(cgfile, cgbase, cgzone, "PentaElements",
-                CGNS_ENUMV(PENTA_6), start, end, 0, Prisms, NULL, &cgsect))
+                CGNS_ENUMV(PENTA_6), start, end, 0, Prisms, &cgsect))
             cg_error_exit();
         free(Prisms);
         start = end + 1;
@@ -537,7 +537,7 @@ static void write_cgns(char *filename)
     if (nHexas) {
         end = start + nHexas - 1;
         if (cg_section_write(cgfile, cgbase, cgzone, "HexaElements",
-                CGNS_ENUMV(HEXA_8), start, end, 0, Hexas, NULL, &cgsect))
+                CGNS_ENUMV(HEXA_8), start, end, 0, Hexas, &cgsect))
             cg_error_exit();
         free(Hexas);
         start = end + 1;
@@ -574,7 +574,7 @@ static void write_cgns(char *filename)
         end = start + TriSets[ns].end - TriSets[ns].start;
         sprintf(name, "TriElements %d", ns+1);
         if (cg_section_write(cgfile, cgbase, cgzone, name,
-                CGNS_ENUMV(TRI_3), start, end, 0, nodes, NULL, &cgsect))
+                CGNS_ENUMV(TRI_3), start, end, 0, nodes, &cgsect))
             cg_error_exit();
         TriSets[ns].start = (int)start;
         TriSets[ns].end = (int)end;
@@ -592,7 +592,7 @@ static void write_cgns(char *filename)
         end = start + QuadSets[ns].end - QuadSets[ns].start;
         sprintf(name, "QuadElements %d", ns+1+nTriSets);
         if (cg_section_write(cgfile, cgbase, cgzone, name,
-                CGNS_ENUMV(QUAD_4), start, end, 0, nodes, NULL, &cgsect))
+                CGNS_ENUMV(QUAD_4), start, end, 0, nodes, &cgsect))
             cg_error_exit();
         QuadSets[ns].start = (int)start;
         QuadSets[ns].end = (int)end;

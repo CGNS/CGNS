@@ -430,7 +430,7 @@ void write_edges (int cgfile, int cgbase, int cgzone, cgsize_t *start)
     cgsize_t end = *start + nEdges;
 
     if (cg_section_write (cgfile, cgbase, cgzone, "Edges",
-            CGNS_ENUMV(BAR_2), *start, end-1, 0, Edges, NULL, &cgsect))
+            CGNS_ENUMV(BAR_2), *start, end-1, 0, Edges, &cgsect))
         cg_error_exit();
     *start = end;
     free (Edges);
@@ -476,7 +476,7 @@ void write_tris (int cgfile, int cgbase, int cgzone, cgsize_t *start)
             end = *start + ie - is;
             if (cg_section_write (cgfile, cgbase, cgzone, name,
                     CGNS_ENUMV(TRI_3), *start, end-1,
-                    0, tris, NULL, &cgsect))
+                    0, tris, &cgsect))
                 cg_error_exit();
             *start = end;
             is = ie;
@@ -489,7 +489,7 @@ void write_tris (int cgfile, int cgbase, int cgzone, cgsize_t *start)
         }
         end = *start + nTris;
         if (cg_section_write (cgfile, cgbase, cgzone, "Triangles",
-                CGNS_ENUMV(TRI_3), *start, end-1, 0, tris, NULL, &cgsect))
+                CGNS_ENUMV(TRI_3), *start, end-1, 0, tris, &cgsect))
             cg_error_exit();
         *start = end;
     }
@@ -545,7 +545,7 @@ void write_faces (int cgfile, int cgbase, int cgzone, cgsize_t *start)
             end = *start + ie - is;
             if (cg_section_write (cgfile, cgbase, cgzone, name,
                     CGNS_ENUMV(NGON_n), *start, end-1,
-                    0, faces, NULL, &cgsect)) /* TODO NGON_n */
+                    0, faces, &cgsect))
                 cg_error_exit();
             *start = end;
             is = ie;
@@ -560,7 +560,7 @@ void write_faces (int cgfile, int cgbase, int cgzone, cgsize_t *start)
         }
         end = *start + nFaces;
         if (cg_section_write (cgfile, cgbase, cgzone, "Polygons",
-                CGNS_ENUMV(NGON_n), *start, end-1, 0, faces, NULL, &cgsect)) /* NGON_n */
+                CGNS_ENUMV(NGON_n), *start, end-1, 0, faces, &cgsect))
             cg_error_exit();
         *start = end;
     }
@@ -612,7 +612,7 @@ void write_tets (int cgfile, int cgbase, int cgzone, cgsize_t *start)
             end = *start + ie - is;
             if (cg_section_write (cgfile, cgbase, cgzone, name,
                     nptet == 10 ? CGNS_ENUMV(TETRA_10) : CGNS_ENUMV(TETRA_4),
-                    *start, end-1, 0, tets, NULL, &cgsect))
+                    *start, end-1, 0, tets, &cgsect))
                 cg_error_exit();
             *start = end;
             is = ie;
@@ -626,7 +626,7 @@ void write_tets (int cgfile, int cgbase, int cgzone, cgsize_t *start)
         end = *start + nTets;
         if (cg_section_write (cgfile, cgbase, cgzone, "Tetrahedra",
                 nptet == 10 ? CGNS_ENUMV(TETRA_10) : CGNS_ENUMV(TETRA_4),
-                *start, end-1, 0, tets, NULL, &cgsect))
+                *start, end-1, 0, tets, &cgsect))
             cg_error_exit();
         *start = end;
     }
