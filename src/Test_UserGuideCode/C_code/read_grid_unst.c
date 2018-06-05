@@ -68,8 +68,8 @@ int main()
       if (itype == CGNS_ENUMV(HEXA_8))
       {
         printf("   reading element data for this element\n");
-        cg_elements_read(index_file,index_base,index_zone,index_sect,ielem[0],
-                         NULL, &iparentdata);
+        cg_elements_read(index_file,index_base,index_zone,index_sect,ielem[0], \
+                         &iparentdata);
       }
       else
       {
