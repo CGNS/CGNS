@@ -77,7 +77,7 @@ if (CGNS_ENABLE_LFS)
   if (WIN32)
     # Are these functions always available on windows that we don't need to
     # check?
-    set(HAVE_OPEN64 1)
+    set(HAVE_OPEN64 0)
     set(HAVE_LSEEK64 1)
   else (WIN32)
     include(CheckSymbolExists)
