@@ -74,6 +74,7 @@ else (CGNS_ENABLE_64BIT)
 endif (CGNS_ENABLE_64BIT)
 	
 if (CGNS_ENABLE_LFS)
+  include(CheckSymbolExists)
   if (WIN32)
     # Windows does not have an _open64 function
     set(HAVE_OPEN64 0)
