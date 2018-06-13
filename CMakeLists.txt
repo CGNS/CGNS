@@ -72,13 +72,12 @@ if (CGNS_ENABLE_64BIT)
 else (CGNS_ENABLE_64BIT)
   mark_as_advanced(CLEAR CGNS_ENABLE_LEGACY)
 endif (CGNS_ENABLE_64BIT)
-
+	
 if (CGNS_ENABLE_LFS)
   if (WIN32)
-    # Are these functions always available on windows that we don't need to
-    # check?
-    set(HAVE_OPEN64 1)
-    set(HAVE_LSEEK64 1)
+    # Windows does not have an _open64 function
+    set(HAVE_OPEN64 0)
+    check_symbol_exists(_lseeki64 "io.h" HAVE_LSEEK64)
   else (WIN32)
     include(CheckSymbolExists)
     check_symbol_exists(open64 "sys/types.h;sys/stat.h;unistd.h" HAVE_OPEN64)
