@@ -2299,6 +2299,7 @@ void ADFH_Database_Get_Format(const double  rootid,
   if (H5Pget_driver(fapl) == H5FD_MPIO) {
     H5Pclose(xfer_prp);
   }
+  H5Pclose(fapl); /* close the property list */
 #endif
   H5Dclose(did);
 
