@@ -1106,7 +1106,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                         }
                     }
                     size = cgi_element_data_size(section[0][n].el_type,
-                                                 nelements, elem_data);
+                                                 nelements, elem_data, NULL);
                     if (size < 0) return CG_ERROR;
                     /* size may be zero, since elements not read */
                     if ((size && section[0][n].connect->dim_vals[0] != size) ||
@@ -1151,7 +1151,133 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                         section[0][n].connect->data = (void *)elem_data;
                     }
                 }
+                if (cg->version < 3400) {
+                    cgsize_t size, *elem_data = 0;
+                    if (section[0][n].el_type == CGNS_ENUMV(NGON_n) ||
+                        section[0][n].el_type == CGNS_ENUMV(NFACE_n) ) {
+                        cgsize_t size_offset, size_connect;
+                        cgsize_t *connect_offset = 0;
+                        cgsize_t *connect_new = 0;
+                        cgsize_t ne;
 
+                        size = section[0][n].connect->dim_vals[0];
+                        elem_data = CGNS_NEW(cgsize_t, size);
+                        if (cgi_read_int_data(section[0][n].connect->id,
+                                section[0][n].connect->data_type,
+                                size, elem_data)) return CG_ERROR;
+                        size_offset = nelements +1;
+                        connect_offset = CGNS_NEW(cgsize_t, size_offset);
+                        connect_offset[0] = 0;
+                        for (size = 0, size_connect = 0, ne = 0; ne < nelements; ne++) {
+                            int idx = 0;
+                            npe = (int) elem_data[size++];
+                            connect_offset[ne + 1] = connect_offset[ne] + npe;
+                            for (idx = 0; idx < npe; idx++) {
+                                elem_data[size_connect] = elem_data[size];
+                                size_connect++;
+                                size++;
+                            }
+                        }
+                        if (section[0][n].connect_offset) {
+                            CGNS_FREE(section[0][n].connect_offset);
+                            section[0][n].connect_offset = 0;
+                        }
+                        section[0][n].connect_offset = CGNS_NEW(cgns_array, 1);
+                        memset(section[0][n].connect_offset, 0, sizeof(cgns_array));
+                        strcpy(section[0][n].connect_offset->data_type, CG_SIZE_DATATYPE);
+                        strcpy(section[0][n].connect_offset->name, "ElementStartOffset");
+                        section[0][n].connect_offset->data_dim = 1;
+                        section[0][n].connect_offset->dim_vals[0] = size_offset;
+                        section[0][n].connect_offset->data = (void *)connect_offset;
+
+                        if (cg->mode == CG_MODE_MODIFY && !linked) {
+                            section[0][n].connect->dim_vals[0] = size_connect;
+                            if (cgio_set_dimensions(cg->cgio,
+                                section[0][n].connect->id, CG_SIZE_DATATYPE,
+                                1, section[0][n].connect->dim_vals)) {
+                                cg_io_error("cgio_set_dimensions");
+                                return CG_ERROR;
+                            }
+                            strcpy(section[0][n].connect->data_type, CG_SIZE_DATATYPE);
+                            if (cgio_write_all_data(cg->cgio,
+                                    section[0][n].connect->id, elem_data)) {
+                                cg_io_error("cgio_write_all_data");
+                                return CG_ERROR;
+                            }
+                            CGNS_FREE(elem_data);
+                            elem_data = 0;
+                            cgi_write_array(section[0][n].id, section[0][n].connect_offset);
+                            section[0][n].connect_offset->data = 0;
+                            CGNS_FREE(connect_offset);
+                            connect_offset = 0;
+                        } else {
+                            connect_new = CGNS_NEW(cgsize_t, size_connect);
+                            memcpy(connect_new, elem_data, size_connect*sizeof(cgsize_t));
+                            strcpy(section[0][n].connect->data_type, CG_SIZE_DATATYPE);
+                            section[0][n].connect->dim_vals[0] = size_connect;
+                            section[0][n].connect->data = (void *) connect_new;
+                            CGNS_FREE(elem_data);
+                            elem_data = 0;
+                        }
+                    }
+                    if (section[0][n].el_type == CGNS_ENUMV(MIXED)) {
+                        cgsize_t size_offset;
+                        cgsize_t *elem_offset = 0;
+                        int ne;
+                        size = section[0][n].connect->dim_vals[0];
+                        elem_data = CGNS_NEW(cgsize_t, size);
+                        if (cgi_read_int_data(section[0][n].connect->id,
+                                section[0][n].connect->data_type,
+                                size, elem_data)) return CG_ERROR;
+                        size_offset = nelements +1;
+                        elem_offset = CGNS_NEW(cgsize_t, size_offset);
+                        elem_offset[0] = 0;
+                        for (size = 0, ne = 0; ne < nelements; ne++) {
+                            cg_npe(elem_data[size], &npe);
+                            elem_offset[ne + 1] = elem_offset[ne] + (npe + 1);
+                            size += (npe + 1);
+                        }
+                        CGNS_FREE(elem_data);
+                        elem_data = 0;
+                        /* check */
+                        if (section[0][n].connect_offset) {
+                            CGNS_FREE(section[0][n].connect_offset);
+                            section[0][n].connect_offset = 0;
+                        }
+                        section[0][n].connect_offset = CGNS_NEW(cgns_array, 1);
+                        memset(section[0][n].connect_offset, 0, sizeof(cgns_array));
+                        strcpy(section[0][n].connect_offset->data_type, CG_SIZE_DATATYPE);
+                        strcpy(section[0][n].connect_offset->name, "ElementStartOffset");
+                        section[0][n].connect_offset->data_dim = 1;
+                        section[0][n].connect_offset->dim_vals[0] = size_offset;
+                        section[0][n].connect_offset->data = (void *)elem_offset;
+                        if (cg->mode == CG_MODE_MODIFY && !linked) {
+                            cgi_write_array(section[0][n].id, section[0][n].connect_offset);
+                            section[0][n].connect_offset->data = 0;
+                            CGNS_FREE(elem_offset);
+                            elem_offset = 0;
+                        }
+                    }
+                }
+
+            } else if (strcmp(temp_name,"ElementStartOffset")==0) {
+                if (section[0][n].connect_offset) {
+                    cgi_error("Error:  ElementStartOffset defined more than once");
+                    return CG_ERROR;
+                }
+                section[0][n].connect_offset = CGNS_NEW(cgns_array, 1);
+                section[0][n].connect_offset->id = idi[i];
+                section[0][n].connect_offset->link = cgi_read_link(idi[i]);
+                section[0][n].connect_offset->in_link = linked;
+                if (cgi_read_array(section[0][n].connect_offset, "Elements_t",
+                    section[0][n].id)) return CG_ERROR;
+                /* check data */
+                if (strcmp(section[0][n].connect_offset->data_type,"I4") &&
+                    strcmp(section[0][n].connect_offset->data_type,"I8")) {
+                    cgi_error("Datatype %s not supported for element 'ElementStartOffset'",
+                        section[0][n].connect_offset->data_type);
+                    return CG_ERROR;
+                }
             } else if (strcmp(temp_name,"ParentData")==0) {
                 if (section[0][n].parelem) {
                     cgi_error("Error:  Element ParentData defined more than once");
@@ -6024,6 +6150,10 @@ int cgi_write_section(double parent_id, cgns_section *section)
     if (section->connect &&
         cgi_write_array(section->id, section->connect)) return CG_ERROR;
 
+     /* ElementStartOffset */
+    if (section->connect_offset &&
+        cgi_write_array(section->id, section->connect_offset)) return CG_ERROR;
+
      /* ParentData */
     if (section->parelem &&
         cgi_write_array(section->id, section->parelem)) return CG_ERROR;
@@ -8105,7 +8235,8 @@ int cgi_add_czone(char_33 zonename, cgsize6_t range, cgsize6_t donor_range,
    and returns the total size required for the connectivity */
 
 cgsize_t cgi_element_data_size(CGNS_ENUMT(ElementType_t) type,
-                               cgsize_t nelems, const cgsize_t *connect)
+                               cgsize_t nelems, const cgsize_t *connect,
+                               const cgsize_t *connect_offset)
 {
     int npe;
     cgsize_t ne, size = 0;
@@ -8127,9 +8258,19 @@ cgsize_t cgi_element_data_size(CGNS_ENUMT(ElementType_t) type,
     }
     else if (type == CGNS_ENUMV(NGON_n) || type == CGNS_ENUMV(NFACE_n)) {
         if (connect == 0) return CG_OK;
-        for (ne = 0; ne < nelems; ne++) {
-            npe = (int)connect[size++];
-            size += npe;
+        /* Need to handle old version when opening old files */
+        if (connect_offset == 0) {
+            if (cg->version < 3400) {
+                for (ne = 0; ne < nelems; ne++) {
+                    npe = (int)connect[size++];
+                    size += npe;
+                }
+            } else {
+               cgi_error("missing ElementStartOffset for NGON_n or NFACE_n\n");
+               return -1;
+            }
+        } else {
+            size = (connect_offset[nelems] - connect_offset[0]);
         }
     }
     else {
@@ -12415,6 +12556,10 @@ void cgi_free_section(cgns_section *section)
     if (section->connect) {
         cgi_free_array(section->connect);
         CGNS_FREE(section->connect);
+    }
+    if (section->connect_offset) {
+        cgi_free_array(section->connect_offset);
+        CGNS_FREE(section->connect_offset);
     }
     if (section->parelem) {
         cgi_free_array(section->parelem);

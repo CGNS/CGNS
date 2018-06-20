@@ -39,7 +39,7 @@ File Opened and Read
   *** Section  2 ***
       Name= NGON_n(3)                       
       Range=     1    4
-      ElementDataSize = 16
+      ElementDataSize = 12
       Section Element Type= NGON_n                          
       Element Connectivity:
         Element Number Points=  3
