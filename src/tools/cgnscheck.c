@@ -1258,6 +1258,12 @@ static void read_zone (int nz)
         es->elements = (cgsize_t *) malloc ((size_t)(se * sizeof(cgsize_t)));
         if (NULL == es->elements)
             fatal_error("malloc failed for elements\n");
+        es->parent = NULL;
+        if (hasparent) {
+            es->parent = (cgsize_t *) malloc ((size_t)(4 * nelem * sizeof(cgsize_t)));
+            if (NULL == es->parent)
+                fatal_error("malloc failed for elemset parent data\n");
+        }
         es->offsets = NULL;
         if (es->type == CGNS_ENUMV(MIXED) ||
             es->type == CGNS_ENUMV(NFACE_n) ||
@@ -1271,12 +1277,6 @@ static void read_zone (int nz)
         else {
             if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, es->elements,
                     es->parent)) error_exit ("cg_elements_read");
-        }
-        es->parent = NULL;
-        if (hasparent) {
-            es->parent = (cgsize_t *) malloc ((size_t)(4 * nelem * sizeof(cgsize_t)));
-            if (NULL == es->parent)
-                fatal_error("malloc failed for elemset parent data\n");
         }
 
         go_absolute ("Zone_t", nz, "Elements_t", ns, NULL);

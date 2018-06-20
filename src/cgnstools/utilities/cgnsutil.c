@@ -902,6 +902,12 @@ int read_zone_element (int nz)
             if (NULL == eset->conn)
                 FATAL ("read_zone_element",
                     "malloc failed for element connectivity");
+            if (iparent) {
+                size = 4 * (eset->end - eset->start + 1);
+                eset->parent = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
+                if (NULL == eset->conn)
+                    FATAL ("read_zone_element","malloc failed for parent data");
+            }
             eset->offsets = NULL;
             if (eset->type == CGNS_ENUMV(MIXED) ||
                 eset->type == CGNS_ENUMV(NFACE_n) ||
@@ -917,13 +923,6 @@ int read_zone_element (int nz)
                 if (cg_elements_read (cgnsfn, cgnsbase, nz, ns,
                         eset->conn, eset->parent))
                     FATAL ("read_zone_element", NULL);
-            }
-
-            if (iparent) {
-                size = 4 * (eset->end - eset->start + 1);
-                eset->parent = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
-                if (NULL == eset->conn)
-                    FATAL ("read_zone_element","malloc failed for parent data");
             }
         }
     }
