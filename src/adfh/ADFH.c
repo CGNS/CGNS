@@ -2212,7 +2212,9 @@ void ADFH_Database_Open(const char   *name,
     }
 #ifdef BUILD_PARALLEL
 #if HDF5_HAVE_COLL_METADATA
-    H5Pset_all_coll_metadata_ops( g_propfileopen, 1 );
+    if (0 == strcmp(fmt, "PARALLEL")) {
+      H5Pset_all_coll_metadata_ops( g_propfileopen, 1 );
+    }
 #endif
 #endif
     if (mode == ADFH_MODE_RDO) {
@@ -2456,9 +2458,13 @@ void ADFH_Database_Close(const double  root,
 
   ADFH_DEBUG(("ADFH_Database_Close 1"));
   idx=0;
-  for (n = 0; n < ADFH_MAXIMUM_FILES; n++)  idx+=mta_root->g_files[n];
+  for (n = 0; n < ADFH_MAXIMUM_FILES; n++)  {
+    if (mta_root->g_files[n] > 0) {
+      idx++;
+    }
+  }
   /* if no more files open, close properties and free MTA */
-  if (!idx) {
+  if (idx == 0) {
 #if !defined(HDF5_PRE_1_8)
     H5Pclose(mta_root->g_proplink);
     H5Pclose(mta_root->g_propgroupcreate);
