@@ -667,6 +667,7 @@ int main (int argc, char **argv)
     }
 
 #endif
+    free (xcoord);
 
     puts("deleting Elements and Faces and creating Mixed");
 
@@ -852,6 +853,9 @@ int main (int argc, char **argv)
 
     puts ("closing file");
     cg_close (cgfile);
+    free (elements);
+    free (offsets);
+    free (parent);
 
     return 0;
 }
