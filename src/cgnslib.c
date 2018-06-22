@@ -3045,6 +3045,7 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
     section->parelem = section->parface = NULL;
     section->nuser_data=0;
     section->rind_planes=0;
+    section->connect_offset=0;
 
      /* initialize other fields */
     section->connect->id=0;
@@ -3066,7 +3067,6 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
         }
         section->connect->data = (void *)data;
 
-        section->connect_offset = 0;
         section->connect_offset = CGNS_NEW(cgns_array, 1);
         section->connect_offset->data = 0;
         strcpy(section->connect_offset->name,"ElementStartOffset");
