@@ -5826,22 +5826,26 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
      /* verify input */
     index_dim = zone->index_dim;
     for (i=0; i<index_dim; i++) {   /* can't check donorrange because it may not yet be written */
-        if (range[i]<=0 || range[i+index_dim]>zone->nijk[i]) {
-            cgi_error("Invalid input range:  %d->%d",range[i], range[i+index_dim]);
+        if (range[i]<=0 ) {
+	    cgi_error("Invalid input range for %s at index %d, range is non-positive: %d", connectname, i, range[i]);
             return CG_ERROR;
         }
-        if (abs(transform[i])<0 || abs(transform[i])>index_dim) {
-            cgi_error("Invalid transformation index: %d.  The indices must all be between 1 and %d",i, index_dim);
+        else if (range[i+index_dim]>zone->nijk[i]) {
+	    cgi_error("Invalid input range for %s at index %d, range exceeds zone bounds: %d -> %d", connectname, i, range[i+index_dim], zone->nijk[i]);
             return CG_ERROR;
         }
-        if (abs(transform[i])>0) {
+        if (abs(transform[i])>index_dim) {
+            cgi_error("Invalid transformation for %s at index %d.  The indices must all be between 0 and %d", connectname, i, index_dim); 
+           return CG_ERROR;
+        }
+        if (transform[i] != 0) {
 	    cgsize_t dr, ddr;
             j = abs(transform[i])-1;
 	    dr = range[i+index_dim] - range[i];
 	    ddr = donor_range[j+index_dim] - donor_range[j];
 	    if (dr != ddr && dr != -ddr) {
-                cgi_error("Invalid input:  range = %d->%d and donor_range = %d->%d",
-                range[i], range[i+index_dim], donor_range[j], donor_range[j+index_dim]);
+                cgi_error("Invalid input for %s:  range = %d->%d and donor_range = %d->%d",
+                connectname, range[i], range[i+index_dim], donor_range[j], donor_range[j+index_dim]);
                 return CG_ERROR;
             }
         }

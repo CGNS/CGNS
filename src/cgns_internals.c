@@ -26,6 +26,7 @@ freely, subject to the following restrictions:
 #if !defined(_WIN32) || defined(__NUTC__)
 #include <unistd.h>
 #endif
+#include "cgnsconfig.h"
 #include "cgnslib.h"
 #include "cgns_header.h"
 #include "cgns_io.h"
@@ -281,7 +282,24 @@ int cgi_read_zone(cgns_zone *zone)
     if (0 == strcmp(data_type, "I8")) {
         cglong_t *mesh_dim = (cglong_t *)vdata;
 #if CG_SIZEOF_SIZE == 32
-        if (cgi_check_dimensions(zone->index_dim, mesh_dim)) return CG_ERROR;
+        /*if (cgi_check_dimensions(zone->index_dim, mesh_dim)) return CG_ERROR;*/
+        /*
+            Modified by zbhfut <zhangbing_end@163.com>, 2017-11-09
+            For unstructured mesh, mesh_dim = {nnode,nelem}, the multiply product
+            of mesh_dim may be exceed the limit of 32-bit integer. We don't need 
+            check the product actually but the component of mesh_dim. 
+        */
+        if (zone->type == CGNS_ENUMV(Structured)) {
+            if (cgi_check_dimensions(zone->index_dim, mesh_dim)) return 1;
+        }
+        else{
+            for (n=0; n<zone->index_dim; ++n) {
+                if (mesh_dim[n] > CG_MAX_INT32) {
+                    cgi_error("array size exceeds that for a 32-bit integer");
+                    return 1;
+                }
+            }
+        }
 #endif
         for (n=0; n<zone->index_dim; n++) {
             zone->nijk[n] = (cgsize_t)mesh_dim[n];

@@ -54,6 +54,14 @@ int pcg_mpi_initialized;
 MPI_Info pcg_mpi_info;
 #endif
 
+#if CG_HAVE_STAT64_STRUCT
+#ifdef _WIN32
+#define stat _stat64
+#else
+#define stat stat64
+#endif
+#endif
+
 
 typedef struct {
     int type;

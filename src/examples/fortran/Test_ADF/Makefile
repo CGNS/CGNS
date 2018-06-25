@@ -3,7 +3,7 @@ include ../make.defs
 ADFTEST = adftest$(EXE)
 
 $(ADFTEST) : $(OUTDIR) adftest.F
-	$(F77) $(FOPTS) $(FEOUT)$@ adftest.F $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ adftest.F $(LIBS)
 	-$(STRIP) $@
 
 test : $(ADFTEST)

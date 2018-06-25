@@ -65,6 +65,8 @@
 
 #endif
 
+#define  CG_HAVE_STAT64_STRUCT @HAVE_STAT64_STRUCT@
+
 #if CG_BUILD_LEGACY
 # define CG_SIZEOF_SIZE    32
 # define CG_SIZE_DATATYPE "I4"

@@ -33,33 +33,17 @@ CGNSDIR=`/bin/pwd`
 ## The following variables are used to distinguish between building a
 ## serial and parallel library.
 ##
-##    HAVE_PARALLEL	-- defined in #scot# H5config.h if we are building
-##			   a parallel library even if configure wasn't
-##			   able to find some header file or library that
-##			   might be required. This is defined if the
-##			   compiler looks like a parallel compiler (e.g.,
-##			   mpicc or mpcc) or if the user explicitly states
-##			   that a parallel library is being built by supplying
-##			   the `--enable-parallel' configure switch.
 ##
 ##    PARALLEL		-- This variable is set to a non-null value if
 ##			   configure thinks we're compiling a parallel
 ##			   version of the library.
 ##
-##    RUNSERIAL	        -- This is a command which will be prepended to
-##			   the executable name to run the executable using
-##			   a single process. For serial versions of the
-##			   library this will normally be empty. For parallel
-##			   versions it might be something like `mpiexec -n 1'.
-##			   The value of this variable is substituted in *.in
-##			   files.
-##
-##    RUNPARALLEL	-- This is a command which will be prepended to
+##    MPIEXEC	        -- This is a command which will be prepended to
 ##			   the executable name to run the executable on
 ##			   multiple processors. For the serial library the
 ##			   value will normally be the empty string. For
 ##			   parallel library it should be something like
-##			   "mpiexec -n \$\${NPROCS:=6}" where NPROCS will
+##			   "mpiexec -n \$\${NPROCS:=4}" where NPROCS will
 ##			   eventually contain the number of processors on which
 ##			   to run the executable (the double dollarsigns are to
 ##			   protect the expansion until make executes the
@@ -67,9 +51,6 @@ CGNSDIR=`/bin/pwd`
 ##			   substituted in *.in files.
 ##
 AC_SUBST([PARALLEL])
-AC_SUBST([RUNSERIAL])
-AC_SUBST([RUNPARALLEL])
-AC_SUBST([TESTPARALLEL])
 
 #--------------------------------------------------------------------------
 # get the C compiler
@@ -852,12 +833,16 @@ else
     if test -f "$hdf5dir/include/hdf5.h"; then
       HDF5INC=$hdf5dir/include
       for a in $exts ; do
+	if test -f $hdf5dir/lib64/libhdf5.$a; then
+          HDF5LIB=$hdf5dir/lib64/libhdf5.$a
+          break
+        fi
         if test -f $hdf5dir/lib/libhdf5.$a; then
           HDF5LIB=$hdf5dir/lib/libhdf5.$a
           break
         fi
       done
-      test -z "$HDF5LIB" && HDF5LIB=$hdf5dir/lib/libhdf5.a
+      test -z "$HDF5LIB" && (HDF5LIB=$hdf5dir/lib/libhdf5.a || HDF5LIB=$hdf5dir/lib64/libhdf5.a)
     else
       if test -f "$hdf5dir/src/hdf5.h"; then
         HDF5INC=$hdf5dir/src
@@ -1127,7 +1112,6 @@ MPIINC=""
 MPIOPTS=""
 MPILIBS=""
 MPICC=""
-MPIEXEC=""
 
 #if test "$withhdf5" = "yes"; then
 #  AC_MSG_CHECKING([if using MPI])
@@ -1222,14 +1206,33 @@ if test ! "x$enableval" = "xno" && enableval=yes; then
   BUILDPARALLEL=1
   parallel=$enableval
 
-  ## Set MPIEXEC to mpiexec if not set yet.
-  if test "X$parallel" = "Xyes" -a -z "$MPIEXEC"; then
-      MPIEXEC="mpiexec"
+  ## Set MPIEXEC if not set yet. Defaults to running on
+  ## four processes.
+  if test -z "$MPIEXEC"; then
+    MPIEXEC="mpiexec -n \$\${NPROCS:=4}"
   fi
 
+  ## There *must* be some way to run in parallel even if it's just the
+  ## word `none'.
+  if test -z "$MPIEXEC"; then
+    AC_MSG_ERROR([no way to run a parallel program])
+  fi
+
+  ## If MPIEXEC is the word `none' then replace it with
+  ## the empty string. This means that no launch commands were requested,
+  ## so we will not use any launch commands.
+  if test "X$MPIEXEC" = "Xnone"; then
+    MPIEXEC=""
+  fi
 
 fi
 AC_MSG_RESULT($parallel)
+
+if test "$parallel" = "yes"; then
+  ## Display what we found about running programs
+  AC_MSG_CHECKING([prefix for running in parallel])
+  AC_MSG_RESULT([$MPIEXEC])
+fi
 
 #--------------------------------------------------------------------------
 # check for libraries
@@ -1285,6 +1288,39 @@ EOF
   fi
   CFLAGS=$CFLAGS_SAVE
   test $has_lfs = yes && CFGFLAGS="$LFS $CFGFLAGS"
+fi
+
+  # Check for stat64 struct
+  ## --------------------------------------------------------------------
+  #  stat64 is deprecated for Mac OS X
+
+HAVE_STAT64_STRUCT=0
+
+if test ! "$SYSTEM" = "DARWIN"; then
+
+  AC_MSG_CHECKING([for stat64])
+
+  cat >> test.c << EOF
+#include <sys/types.h>
+#include <sys/stat.h>
+struct stat64 sb;
+int main()
+{
+  return 0;
+}
+EOF
+  msg=`${CC} -c test.c &> /dev/null`
+  if test -f test.o; then
+    HAVE_STAT64_STRUCT=1
+    AC_MSG_RESULT(yes)
+    rm test.o
+  else
+    AC_MSG_RESULT(no)
+  fi
+  if test -f test.c; then
+     rm test.c
+  fi
+
 fi
 
 #---------------------------------------------------------------------------
@@ -1617,9 +1653,10 @@ if test "$withfortran" = "yes"; then
     fi
 #----------- Determine if the Fortran compiler pgi ------------------------
 # The PGI compiler segfaults wehn va_start is called, so we need to add
-# a special compiler flag, see CGNS-40.
+# a special compiler flag, see CGNS-40. -Mx,125,0x200 is now called
+# -Mvarargs
 #--------------------------------------------------------------------------
-    fc_vendor="`$FC --version 2>&1 |grep -i 'Portland Group'`"
+    fc_vendor="`$FC --version 2>&1 |grep 'PGI'`"
     if test X != "X$fc_vendor"; then
       FFLAGS="$FFLAGS -Mx,125,0x200" 
     fi
@@ -1697,6 +1734,7 @@ AC_SUBST(HAVE_FORTRAN_2003)
 AC_SUBST(HAVE_FORTRAN_2008TS)
 AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
+AC_SUBST(HAVE_STAT64_STRUCT)
 AC_SUBST(HDF5_HAVE_COLL_METADATA)
 AC_SUBST(FC_D_PRE)
 AC_SUBST(BUILDPARALLEL)

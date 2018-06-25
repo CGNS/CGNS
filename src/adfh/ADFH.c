@@ -1419,11 +1419,12 @@ void ADFH_Configure(const int option, const void *value, int *err)
     }
 #ifdef BUILD_PARALLEL
     else if (option == ADFH_CONFIG_MPI_COMM) {
-      if (!value) {
+      MPI_Comm* comm = (MPI_Comm*)value;
+      if (!comm) {
         set_error(ADFH_ERR_INVALID_USER_DATA, err);
       }
       else {
-        ParallelMPICommunicator = (MPI_Comm)value;
+        ParallelMPICommunicator = (MPI_Comm)*comm;
 	set_error(NO_ERROR, err);
       }
     }
@@ -2298,6 +2299,7 @@ void ADFH_Database_Get_Format(const double  rootid,
   if (H5Pget_driver(fapl) == H5FD_MPIO) {
     H5Pclose(xfer_prp);
   }
+  H5Pclose(fapl); /* close the property list */
 #endif
   H5Dclose(did);
 

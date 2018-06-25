@@ -215,7 +215,10 @@ static int check_parallel(cgns_file *cgfile)
 int cgp_mpi_comm(MPI_Comm comm)
 {
     pcg_mpi_comm=comm;
-    return cgio_configure(CG_CONFIG_HDF5_MPI_COMM, (void *)(comm));
+    if( cgio_configure(CG_CONFIG_HDF5_MPI_COMM, &comm) != -1) {
+      return CG_ERROR;
+    }
+    return CG_OK;
 }
 
 int cgp_mpi_info(MPI_Info info)
@@ -537,6 +540,8 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
 	cgi_error("Error in requested element data range.");
 	return CG_ERROR;
       }    
+    } else {
+        start = end = 0;
     }
 
     if (!IS_FIXED_SIZE(section->el_type)) {

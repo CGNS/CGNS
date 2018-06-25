@@ -25,8 +25,8 @@ CLIBS   = @LIBS@
 # EXE     - executable extension (typically blank)
 # LIBCGNS - CGNS library name
 #------------------------------------------------------------------------
-
-SPACE   =
+EMPTY   :=
+SPACE   := $(EMPTY) $(EMPTY)
 O       = @OBJEXT@
 A       = @LIBEXT@
 EXE     = @EXEEXT@

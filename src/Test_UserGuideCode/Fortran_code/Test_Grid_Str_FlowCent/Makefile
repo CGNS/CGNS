@@ -30,22 +30,22 @@ $(OUTDIR) :
 	-@$(MKDIR) $(OUTDIR)
 
 $(WRITE1) : ../write_grid_str.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_grid_str.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../write_grid_str.F90 $(LIBS)
 
 $(WRITE2) : ../write_flowcent_str.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_flowcent_str.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../write_flowcent_str.F90 $(LIBS)
 
 $(WRITE3) : ../write_bc_str.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_bc_str.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../write_bc_str.F90 $(LIBS)
 
 $(READ1) : ../read_grid_str.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_grid_str.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../read_grid_str.F90 $(LIBS)
 
 $(READ2) : ../read_flowcent_str.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_flowcent_str.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../read_flowcent_str.F90 $(LIBS)
 
 $(READ3) : ../read_bc_str.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_bc_str.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../read_bc_str.F90 $(LIBS)
 
 clean :
 	-$(RM) grid.cgns $(WRITE_PROGS) $(READ_PROGS)

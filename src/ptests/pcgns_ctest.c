@@ -18,7 +18,8 @@ int main(int argc, char *argv[])
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     int comm_size, comm_rank;
-    int total_count, scale_factor = 10;
+    /*    int total_count, scale_factor = 10; */
+    int total_count, scale_factor = 400;
     int F, B, Z, E, S;
     int Cx, Cy, Cz, Fx, Fy, Fz, Ax, Ay, Az;
     int i, j, n, nb, nz, n_per_proc, errs;

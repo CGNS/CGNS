@@ -1786,7 +1786,7 @@ static void print_units (int *units, int indent)
         cg_MassUnitsName(units[0]),
         cg_LengthUnitsName(units[1]),
         cg_TimeUnitsName(units[2]),
-        cg_TemperatureUnitsName(units[4]),
+        cg_TemperatureUnitsName(units[3]),
         cg_AngleUnitsName(units[4]));
     if (units[8] > 5)
         printf (",%s,%s,%s",
