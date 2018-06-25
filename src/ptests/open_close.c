@@ -60,6 +60,18 @@ int main(int argc, char* argv[]) {
 	t2 = MPI_Wtime();
 	xtiming[1] = t2-t1;
 
+	t1 = MPI_Wtime();
+	if (cgp_open("open_close.cgns", CG_MODE_READ, &fn))
+	    cgp_error_exit();
+	t2 = MPI_Wtime();
+	xtiming[0] +=  t2-t1;
+	t1 = MPI_Wtime();
+	if (cgp_close(fn))
+	    cgp_error_exit();
+	t2 = MPI_Wtime();
+	xtiming[1] +=  t2-t1;
+
+
 	MPI_Reduce(&xtiming, &timing, 2, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&xtiming, &timingMin, 2, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&xtiming, &timingMax, 2, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
