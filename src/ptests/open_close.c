@@ -27,6 +27,7 @@ int main(int argc, char* argv[]) {
 	int comm_rank;
 	MPI_Info info;
 	int fn;
+	int k;
 	char fname[32];
 
 	err = MPI_Init(&argc,&argv);
@@ -70,7 +71,7 @@ int main(int argc, char* argv[]) {
 	    printf("Error opening timing file!\n");
 	  } else {
 	    fprintf(fid,"#nprocs, cgp_open, (min, max), cgp_close, (min, max)\n %d", comm_size);
-	    for ( int k = 0; k < 2; k++) {
+	    for (k = 0; k < 2; k++) {
 	      fprintf(fid," %.3f %.3f %.3f ",timing[k]/((double)comm_size), timingMin[k], timingMax[k]);
 	    }
 	    fprintf(fid,"\n");
