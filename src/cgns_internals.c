@@ -87,18 +87,42 @@ int cgi_read()
 {
     int b;
     double *id;
+    double t1, t2;
+    double xtiming[3], timing[3], timingMin[3], timingMax[3];
 
      /* get number of CGNSBase_t nodes and their ID */
-
+    t1 = MPI_Wtime();
     if (cgi_get_nodes(cg->rootid, "CGNSBase_t", &cg->nbases, &id)) return CG_ERROR;
+    t2 = MPI_Wtime();
+    xtiming[0] = t2-t1;
+    
+    t1 = MPI_Wtime();
     if (cg->nbases==0) return CG_OK;
     cg->base = CGNS_NEW(cgns_base,cg->nbases);
     for (b=0; b<cg->nbases; b++) cg->base[b].id = id[b];
     CGNS_FREE(id);
-
+    t2 = MPI_Wtime();
+    xtiming[1] = t2-t1;
+    t1 = MPI_Wtime();
      /* read and save CGNSBase_t data */
     for (b=0; b<cg->nbases; b++) if (cgi_read_base(&cg->base[b])) return CG_ERROR;
+    t2 = MPI_Wtime();
+    xtiming[2] = t2-t1;
 
+    MPI_Reduce(&xtiming, &timing, 3, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&xtiming, &timingMin, 3, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&xtiming, &timingMax, 3, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+    int comm_rank;
+    int comm_size;
+    int k;
+    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+    if(comm_rank==0) {
+      for (k = 0; k < 3; k++) {
+	printf(" %.3f %.3f %.3f ",timing[k]/((double)comm_size), timingMin[k], timingMax[k]);
+      }
+    }
     return CG_OK;
 }
 
