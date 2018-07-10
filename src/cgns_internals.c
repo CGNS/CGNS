@@ -4812,11 +4812,11 @@ int cgi_read_biter(int in_link, double parent_id, cgns_biter **biter)
 
 int cgi_read_ziter(int in_link, double parent_id, cgns_ziter **ziter)
 {
-    double *id;
-    cgns_array *array;
+    double *id = NULL;
+    cgns_array *array = NULL;
     char_33 datatype;
     int ndim, nnod;
-    void *data;
+    void *data = NULL;
     int i, linked;
     cgsize_t dim_vals[12];
 
@@ -4827,7 +4827,7 @@ int cgi_read_ziter(int in_link, double parent_id, cgns_ziter **ziter)
         return CG_OK;
     } else if (nnod>1) {
         cgi_error("Error: Multiple ZoneIterativeData_t found...");
-        return CG_ERROR;
+	goto cleanup;
     }
 
     ziter[0] = CGNS_NEW(cgns_ziter, 1);
@@ -4856,6 +4856,7 @@ int cgi_read_ziter(int in_link, double parent_id, cgns_ziter **ziter)
         &ziter[0]->user_data)) goto cleanup;
 
      /* DataArray_t */
+    CGNS_FREE(id);
     if (cgi_get_nodes(ziter[0]->id, "DataArray_t", &ziter[0]->narrays, &id))
         goto cleanup;
     if (ziter[0]->narrays==0) return CG_OK; /* If no arrays we're done. */
