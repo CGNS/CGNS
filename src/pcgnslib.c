@@ -69,9 +69,14 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
 {
   int k;
   hid_t data_id, mem_shape_id, data_shape_id;
-  hsize_t start[ndims], dims[ndims];
+  hsize_t *start, *dims;
   herr_t herr, herr1;
   hid_t type_id, plist_id;
+
+  start = (hsize_t*)malloc(ndims * sizeof(hsize_t));
+  dims  = (hsize_t*)malloc(ndims * sizeof(hsize_t));
+
+  //hsize_t start[ndims], dims[ndims]; // does not work with VC++
 
   /* convert from CGNS to HDF5 data type */
   switch (type) {
@@ -92,12 +97,14 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
     break;
   default:
     cgi_error("unhandled data type %d\n", type);
+    free(start); free(dims);
     return CG_ERROR;
   }
 
   /* Open the data */
   if ((data_id = H5Dopen2(group_id, " data", H5P_DEFAULT)) < 0) {
     cgi_error("H5Dopen2() failed");
+    free(start); free(dims);
     return CG_ERROR;
   }
 
@@ -120,6 +127,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
   if (mem_shape_id < 0) {
     H5Dclose(data_id);
     cgi_error("H5Screate_simple() failed");
+    free(start); free(dims);
     return CG_ERROR;
   }
 
@@ -129,6 +137,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
     H5Sclose(mem_shape_id);
     H5Dclose(data_id);
     cgi_error("H5Dget_space() failed");
+    free(start); free(dims);
     return CG_ERROR;
   }
 
@@ -147,6 +156,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
     H5Sclose(mem_shape_id);
     H5Dclose(data_id);
     cgi_error("H5Sselect_hyperslab() failed");
+    free(start); free(dims);
     return CG_ERROR;
   }
 
@@ -157,6 +167,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
     H5Sclose(mem_shape_id);
     H5Dclose(data_id);
     cgi_error("H5Pcreate() failed");
+    free(start); free(dims);
     return CG_ERROR;
   }
 
@@ -168,6 +179,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
     H5Sclose(mem_shape_id);
     H5Dclose(data_id);
     cgi_error("H5Pset_dxpl_mpio() failed");
+    free(start); free(dims);
     return CG_ERROR;
   }
 
@@ -189,6 +201,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
   H5Sclose(data_shape_id);
   H5Sclose(mem_shape_id);
   H5Dclose(data_id);
+  free(start); free(dims);
 
   return herr < 0 ? CG_ERROR : CG_OK;
 }
