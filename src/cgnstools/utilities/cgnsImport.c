@@ -840,7 +840,7 @@ static cgsize_t write_face_region (cgnsREGN *reg, cgsize_t offset)
         }
     }
 
-    if (elemtype = CGNS_ENUMV(MIXED))
+    if (elemtype == CGNS_ENUMV(MIXED))
     {
         conns_offset = (cgsize_t *) malloc ((size_t)(reg->nobjs+1) * sizeof(cgsize_t));
         if (NULL == conns_offset)
