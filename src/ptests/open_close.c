@@ -16,7 +16,7 @@
 #include "pcgnslib.h"
 #include "mpi.h"
 
-double xtiming[2], timing[2], timingMin[2], timingMax[2];
+double xtiming[3], timing[3], timingMin[3], timingMax[3];
 double t1, t2;
 
 #define cgp_doError {printf("Error at %s:%u\n",__FILE__, __LINE__); return 1;}
@@ -49,6 +49,8 @@ int main(int argc, char* argv[]) {
 	if (cgp_close(fn))
 	    cgp_error_exit();
 #else
+
+	/* Create the file */
 	t1 = MPI_Wtime();
 	if (cgp_open("open_close.cgns", CG_MODE_WRITE, &fn))
 	    cgp_error_exit();
@@ -59,7 +61,8 @@ int main(int argc, char* argv[]) {
 	    cgp_error_exit();
 	t2 = MPI_Wtime();
 	xtiming[1] = t2-t1;
-#if 0
+
+	/* Open in read only mode */
 	t1 = MPI_Wtime();
 	if (cgp_open("open_close.cgns", CG_MODE_READ, &fn))
 	    cgp_error_exit();
@@ -70,11 +73,22 @@ int main(int argc, char* argv[]) {
 	    cgp_error_exit();
 	t2 = MPI_Wtime();
 	xtiming[1] +=  t2-t1;
-#endif
 
-	MPI_Reduce(&xtiming, &timing, 2, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&xtiming, &timingMin, 2, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&xtiming, &timingMax, 2, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+	/* Open in read/write mode */
+	t1 = MPI_Wtime();
+	if (cgp_open("open_close.cgns", CG_MODE_MODIFY, &fn))
+	    cgp_error_exit();
+	t2 = MPI_Wtime();
+	xtiming[2] +=  t2-t1;
+	t1 = MPI_Wtime();
+	if (cgp_close(fn))
+	    cgp_error_exit();
+	t2 = MPI_Wtime();
+	xtiming[3] +=  t2-t1;
+
+	MPI_Reduce(&xtiming, &timing, 3, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&xtiming, &timingMin, 3, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&xtiming, &timingMax, 3, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
 	if(comm_rank==0) {
 	  sprintf(fname, "OpenClose_time_%06d.dat", comm_size);
@@ -82,8 +96,9 @@ int main(int argc, char* argv[]) {
 	  if (fid == NULL) {
 	    printf("Error opening timing file!\n");
 	  } else {
+	    fprintf(fid,"#(1) Write only mode, (2) Read only mode, (3) Read/Write mode \n");
 	    fprintf(fid,"#nprocs, cgp_open, (min, max), cgp_close, (min, max)\n %d", comm_size);
-	    for (k = 0; k < 2; k++) {
+	    for (k = 0; k < 3; k++) {
 	      fprintf(fid," %.3f %.3f %.3f ",timing[k]/((double)comm_size), timingMin[k], timingMax[k]);
 	    }
 	    fprintf(fid,"\n");
