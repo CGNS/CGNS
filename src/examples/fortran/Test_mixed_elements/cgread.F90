@@ -22,6 +22,7 @@
 	integer(cgsize_t)  start, end
         integer nbndry, type
         integer(cgsize_t) elements(1000)
+        integer(cgsize_t) connect_offsets(100)
         integer(cgsize_t) ElementDataSize
 	character*32 coordname(3), filename, nodename
         double precision data_double(NNODES)
@@ -127,10 +128,15 @@
                                       ElementDataSize, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 	
-	    call cg_elements_read_f(cg, base, zone, sect, &
-                       elements, parent_data, ier)
-	    if (ier .eq. ERROR) call cg_error_exit_f
-
+	    if (type .ge. MIXED) then
+	        call cg_poly_elements_read_f(cg, base, zone, sect, &
+	            elements, connect_offsets, parent_data, ier)
+	        if (ier.eq.ERROR)  call cg_error_exit_f
+	    else
+	        call cg_elements_read_f(cg, base, zone, sect, &
+                    elements, parent_data, ier)
+	        if (ier.eq.ERROR)  call cg_error_exit_f
+	    endif
 
 ! Print out element info:
 	    write(6,113)'  *** Section ',sect,' ***'
@@ -170,9 +176,10 @@
 		enddo
 	    else
 		count = 0
-	        do i=1, nelem
-		    count = count + 1
-		    npe = elements(count)
+        do i=1, nelem
+		    !count = count + 1
+		    npe = connect_offsets(i+1)-connect_offsets(i)
+		    !npe = elements(count)
 		    write(6,111) &
                           'Element Number Points=',npe
 		    write(6,110)(elements(count+n),n=1,npe)

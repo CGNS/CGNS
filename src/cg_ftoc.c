@@ -857,6 +857,16 @@ CGNSDLL void FMNAME(cg_elements_read_f, CG_ELEMENTS_READ_F) (cgint_f *fn,
 
 /*-----------------------------------------------------------------------*/
 
+CGNSDLL void FMNAME(cg_poly_elements_read_f, CG_POLY_ELEMENTS_READ_F) (cgint_f *fn,
+	cgint_f *B, cgint_f *Z, cgint_f *E, cgsize_t *elements,
+	cgsize_t *connect_offset, cgsize_t *parent_data, cgint_f *ier)
+{
+    *ier = (cgint_f)cg_poly_elements_read((int)*fn, (int)*B, (int)*Z, (int)*E,
+               elements, connect_offset, parent_data);
+}
+
+/*-----------------------------------------------------------------------*/
+
 CGNSDLL void cg_elementdatasize_f(cgint_f *fn,
 	cgint_f *B, cgint_f *Z, cgint_f *E, cgsize_t *ElementDataSize,
 	cgint_f *ier)
@@ -893,6 +903,28 @@ CGNSDLL void FMNAME(cg_section_write_f, CG_SECTION_WRITE_F) (cgint_f *fn,
     *ier = (cgint_f)cg_section_write((int)*fn, (int)*B, (int)*Z, c_name,
 				     *type, *start, *end,
 				     (int)*nbndry, elements, &i_S);
+    *S = (cgint_f)i_S;
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cg_poly_section_write_f, CG_POLY_SECTION_WRITE_F)
+	(cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(section_name),
+	CGNS_ENUMT(ElementType_t)*type,	cgsize_t *start, cgsize_t *end,
+	cgint_f *nbndry, cgsize_t *elements, cgsize_t *connect_offset,
+	cgint_f *S, cgint_f *ier STR_PLEN(section_name))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    int i_S;
+
+     /* convert Fortran-text-string to a C-string */
+    string_2_C_string(STR_PTR(section_name), STR_LEN(section_name),
+        c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+
+    *ier = (cgint_f)cg_poly_section_write((int)*fn, (int)*B, (int)*Z, c_name,
+		     *type, *start, *end,
+		     (int)*nbndry, elements, connect_offset, &i_S);
     *S = (cgint_f)i_S;
 }
 
@@ -936,6 +968,16 @@ CGNSDLL void FMNAME(cg_elements_partial_write_f, CG_ELEMENTS_PARTIAL_WRITE_F) (
 
 /*-----------------------------------------------------------------------*/
 
+CGNSDLL void FMNAME(cg_poly_elements_partial_write_f, CG_POLY_ELEMENTS_PARTIAL_WRITE_F) (
+	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *rmin,
+	cgsize_t *rmax, cgsize_t *elements, cgsize_t *connect_offset, cgint_f *ier)
+{
+    *ier = (cgint_f)cg_poly_elements_partial_write((int)*fn, (int)*B, (int)*Z, (int)*S,
+               *rmin, *rmax, elements, connect_offset);
+}
+
+/*-----------------------------------------------------------------------*/
+
 CGNSDLL void FMNAME(cg_parent_data_partial_write_f, CG_PARENT_DATA_PARTIAL_WRITE_F) (
 	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *rmin,
 	cgsize_t *rmax, cgsize_t *parent_data, cgint_f *ier)
@@ -952,6 +994,16 @@ CGNSDLL void FMNAME(cg_elements_partial_read_f, CG_ELEMENTS_PARTIAL_READ_F) (
 {
     *ier = (cgint_f)cg_elements_partial_read((int)*fn, (int)*B, (int)*Z, (int)*S,
                *rmin, *rmax, elements, parent);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cg_poly_elements_partial_read_f, CG_POLY_ELEMENTS_PARTIAL_READ_F) (
+	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *rmin,
+	cgsize_t *rmax, cgsize_t *elements, cgsize_t *connect_offset, cgsize_t *parent, cgint_f *ier)
+{
+    *ier = (cgint_f)cg_poly_elements_partial_read((int)*fn, (int)*B, (int)*Z, (int)*S,
+               *rmin, *rmax, elements, connect_offset, parent);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
