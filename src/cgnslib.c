@@ -2193,9 +2193,16 @@ int cg_coord_read(int file_number, int B, int Z, const char * coordname,
 
     index_dim=cg->base[B-1].zone[Z-1].index_dim;
 
+    /* verify that range requested is not NULL */
+    if(rmin == NULL || rmax == NULL) {
+      cgi_error("NULL range value.");
+      return CG_ERROR;
+    }
      /* verify that range requested does not exceed range stored */
     for (n=0; n<index_dim; n++) {
-        if (rmin[n]>rmax[n] || rmax[n]>coord->dim_vals[n] || rmin[n]<1) {
+        if (rmin[n]>rmax[n] ||
+            rmax[n]>(coord->dim_vals[n] - zcoor->rind_planes[2*n]) ||
+            rmin[n]<(1 - zcoor->rind_planes[2*n])) {
             cgi_error("Invalid range of data requested");
             return CG_ERROR;
         }
@@ -2203,7 +2210,7 @@ int cg_coord_read(int file_number, int B, int Z, const char * coordname,
 
      /* check if requested to return full range */
     for (n=0; n<index_dim; n++) {
-        if (rmin[n]!=1 || rmax[n] != coord->dim_vals[n]) {
+        if ((rmax[n] - rmin[n] + 1)!=coord->dim_vals[n]){
             read_full_range=0;
             break;
         }
@@ -2218,9 +2225,11 @@ int cg_coord_read(int file_number, int B, int Z, const char * coordname,
         for (n = 0; n < index_dim; n++) {
             npt = rmax[n] - rmin[n] + 1;
             num *= npt;
-            s_start[n]  = rmin[n];
-            s_end[n]    = rmax[n];
+            /* s_ is where you are reading */
+            s_start[n]  = rmin[n] + zcoor->rind_planes[2*n];
+            s_end[n]    = rmax[n] + zcoor->rind_planes[2*n];
             s_stride[n] = 1;
+            /* m_ is where you are writing */
             m_start[n]  = 1;
             m_end[n]    = npt;
             m_stride[n] = 1;
@@ -2395,8 +2404,8 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
 }
 
 int cg_coord_partial_write(int file_number, int B, int Z,
-			   CGNS_ENUMT( DataType_t )  type,
-			   const char *coordname, const cgsize_t *rmin,
+                           CGNS_ENUMT( DataType_t )  type,
+                           const char *coordname, const cgsize_t *rmin,
                            const cgsize_t *rmax, const void *coord_ptr,
                            int *C)
 {
@@ -2406,6 +2415,7 @@ int cg_coord_partial_write(int file_number, int B, int Z,
     int n, index, index_dim;
     cgsize_t dims[CGIO_MAX_DIMENSIONS];
     int m_numdim;
+    cgsize_t s_start[CGIO_MAX_DIMENSIONS], s_end[CGIO_MAX_DIMENSIONS];
     cgsize_t m_start[CGIO_MAX_DIMENSIONS], m_end[CGIO_MAX_DIMENSIONS];
     cgsize_t m_dims[CGIO_MAX_DIMENSIONS], stride[CGIO_MAX_DIMENSIONS];
 
@@ -2417,8 +2427,8 @@ int cg_coord_partial_write(int file_number, int B, int Z,
     }
 
     if(rmin == NULL || rmax == NULL) {
-	cgi_error("NULL range value.");
-	return CG_ERROR;
+      cgi_error("NULL range value.");
+      return CG_ERROR;
     }
 
      /* get memory address for file */
@@ -2440,10 +2450,18 @@ int cg_coord_partial_write(int file_number, int B, int Z,
     for (n = 0; n < index_dim; n++) {
         dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
                                   zcoor->rind_planes[2*n+1];
-        if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
+        if (rmin[n] > rmax[n] ||
+            rmin[n] < (1 - zcoor->rind_planes[2*n]) ||
+            rmax[n] > (dims[n]-zcoor->rind_planes[2*n])) {
             cgi_error("Invalid index ranges.");
             return CG_ERROR;
         }
+    }
+
+      /* Size and shape of file space */
+    for (n = 0; n < index_dim; n++) {
+        s_start[n] = rmin[n] + zcoor->rind_planes[2*n];
+        s_end[n]   = rmax[n] + zcoor->rind_planes[2*n];
     }
 
      /* Size and shape of memory space */
@@ -2465,7 +2483,7 @@ int cg_coord_partial_write(int file_number, int B, int Z,
                 return CG_ERROR;
             }
 
-            if (cgio_write_data(cg->cgio, coord->id, rmin, rmax, stride,
+            if (cgio_write_data(cg->cgio, coord->id, s_start, s_end, stride,
                            coord->data_dim, m_dims, m_start, m_end,
                            stride, coord_ptr)) {
                 cg_io_error("cgio_write_data");
@@ -2516,9 +2534,9 @@ int cg_coord_partial_write(int file_number, int B, int Z,
 
      /* Create DataArray_t node on disk */
     if (cgi_new_node_partial(zcoor->id, coord->name, "DataArray_t", &coord->id,
-        coord->data_type, index_dim, dims, rmin, rmax,
+        coord->data_type, index_dim, dims, s_start, s_end,
         m_numdim, m_dims, m_start, m_end, coord_ptr))
-	return CG_ERROR;
+        return CG_ERROR;
 
     return CG_OK;
 }
