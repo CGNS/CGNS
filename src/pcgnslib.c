@@ -505,6 +505,148 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
 }
 
 /*---------------------------------------------------------*/
+int cgp_coord_general_write_data(int fn, int B, int Z, int G, int C,
+                                 const cgsize_t *rmin, const cgsize_t *rmax,
+                                 int m_numdim, const cgsize_t *m_arg_dims,
+                                 const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                                 const void *coords)
+{
+    int n, index_dim;
+    hid_t hid;
+    cgns_zone *zone;
+    cgns_zcoor *zcoor;
+    CGNS_ENUMT(DataType_t) type;
+    cgsize_t numpt = 1, dimpt = 0, m_numpt = 1;
+    cgsize_t dims[CGIO_MAX_DIMENSIONS], stride[CGIO_MAX_DIMENSIONS];
+    cgsize_t s_start[CGIO_MAX_DIMENSIONS], s_end[CGIO_MAX_DIMENSIONS];
+    cgsize_t m_start[CGIO_MAX_DIMENSIONS], m_end[CGIO_MAX_DIMENSIONS];
+    /* We may modify m_arg_dims but do not want to change user assignments so
+     * m_arg_dims will be copied here */
+    cgsize_t m_dims[CGIO_MAX_DIMENSIONS];
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+        return CG_ERROR;
+
+    zone = cgi_get_zone(cg, B, Z);
+    if (zone==0) return CG_ERROR;
+
+     /* negative C recover cg_coord_write behavior
+      * may be useful for later refactoring */
+    if (G < 1){
+        zcoor = cgi_get_zcoorGC(cg, B, Z);
+    }
+    else {
+        zcoor = cgi_get_zcoor(cg, B, Z, G);
+    }
+    if (zcoor==0) return CG_ERROR;
+
+    if (C > zcoor->ncoords || C <= 0) {
+        cgi_error("coord number %d invalid",C);
+        return CG_ERROR;
+    }
+    index_dim = zone->index_dim;
+
+    if (coords) {
+        /*** verfication for dataset in file */
+        /* verify that range requested does not exceed range stored */
+        if(rmin == NULL || rmax == NULL) {
+            cgi_error("NULL range value.");
+            return CG_ERROR;
+        }
+        for (n=0; n<index_dim; n++) {
+            dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n]
+                                    + zcoor->rind_planes[2*n+1];
+            dimpt = rmax[n] - rmin[n] + 1;
+            numpt *= dimpt;
+            if (rmin[n]>rmax[n] ||
+                rmax[n]>(dims[n]-zcoor->rind_planes[2*n]) ||
+                rmin[n]<(1-zcoor->rind_planes[2*n])) {
+                cgi_error("Invalid range of file data requested");
+                return CG_ERROR;
+            }
+        }
+
+        /*** verification for dataset in memory */
+        /* verify the rank and dimensions of the memory array */
+        if (m_numdim<=0 || m_numdim>index_dim) {
+            cgi_error("Invalid number of dimensions in memory array");
+            return CG_ERROR;
+        }
+
+        if (m_arg_dims == NULL) {
+            cgi_error("NULL dimension value.");
+            return CG_ERROR;
+        }
+
+        for (n=0; n<m_numdim; n++) {
+            if (m_arg_dims[n] < 1) {
+                cgi_error("Invalid size of dimension in memory array");
+                return CG_ERROR;
+            }
+            m_dims[n] = m_arg_dims[n];
+        }
+
+        if (m_rmin == NULL || m_rmax == NULL) {
+            cgi_error("NULL range value.");
+            return CG_ERROR;
+        }
+
+        /* verify that range requested does not exceed range available */
+        for (n=0; n<m_numdim; n++) {
+            dimpt = m_rmax[n] - m_rmin[n] + 1;
+            m_numpt *= dimpt;
+            if (m_rmin[n]>m_rmax[n] ||
+                m_rmax[n]>m_dims[n] ||
+                m_rmin[n]<1) {
+                cgi_error("Invalid range of memory array provided");
+                return CG_ERROR;
+            }
+        }
+
+        /* both the file hyperslab and memory hyperslab must have same number of
+         * points */
+        if (numpt != m_numpt) {
+            cgi_error("Size of memory array does not match size of requested range");
+            return CG_ERROR;
+        }
+
+        /* Size and shape of file space */
+        for (n=0; n<index_dim; n++) {
+            s_start[n] = rmin[n] + zcoor->rind_planes[2*n];
+            s_end[n]   = rmax[n] + zcoor->rind_planes[2*n];
+            stride[n]  = 1;
+        }
+        /* Size and shape of memory space */
+        for (n=0; n<m_numdim; n++) {
+            m_start[n] = m_rmin[n];
+            m_end[n]   = m_rmax[n];
+        }
+    } else {
+        /* If null data, set memory rank to same as file and memory dimensions
+         * to 0 */
+        m_numdim = index_dim;
+        for (n=0; n<m_numdim; n++) {
+            m_dims[n] = 0;
+        }
+    }
+
+    type = cgi_datatype(zcoor->coord[C-1].data_type);
+
+    to_HDF_ID(zcoor->coord[C-1].id,hid);
+
+    cg_rw_t Data;
+    Data.u.wbuf = coords;
+    return readwrite_shaped_data_parallel(
+        hid, type,
+        s_start, s_end, stride,
+        m_numdim, m_dims, m_start, m_end, stride,
+        &Data, CG_PAR_WRITE);
+}
+
+/*---------------------------------------------------------*/
 
 int cgp_coord_read_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coords)
