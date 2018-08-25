@@ -914,6 +914,12 @@ CGNSDLL int cg_coord_info(int fn, int B, int Z, int C,
 CGNSDLL int cg_coord_read(int fn, int B, int Z, const char * coordname,
 	CGNS_ENUMT(DataType_t) type, const cgsize_t * rmin,
 	const cgsize_t * rmax, void *coord);
+CGNSDLL int cg_coord_general_read(int fn, int B, int Z, int G,
+	const char * coordname, CGNS_ENUMT(DataType_t) type,
+	const cgsize_t *rmin, const cgsize_t *rmax,
+	int m_numdim, const cgsize_t *m_dim,
+	const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+	void *coord_ptr);
 CGNSDLL int cg_coord_id(int fn, int B, int Z, int C, double *coord_id);
 CGNSDLL int cg_coord_write(int fn, int B, int Z,
 	CGNS_ENUMT(DataType_t) type, const char * coordname,
@@ -921,8 +927,14 @@ CGNSDLL int cg_coord_write(int fn, int B, int Z,
 
 CGNSDLL int cg_coord_partial_write(int fn, int B, int Z,
 	CGNS_ENUMT(DataType_t) type, const char * coordname,
-        const cgsize_t *rmin, const cgsize_t *rmax,
-        const void * coord_ptr, int *C);
+    const cgsize_t *rmin, const cgsize_t *rmax,
+    const void * coord_ptr, int *C);
+CGNSDLL int cg_coord_general_write(int fn, int B, int Z, int G,
+	CGNS_ENUMT(DataType_t) type, const char *coordname,
+	const cgsize_t *rmin, const cgsize_t *rmax,
+	int m_numdim, const cgsize_t *m_dims,
+	const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+	const void *coord_ptr, int *C);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write Elements_t Nodes                                  *
