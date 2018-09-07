@@ -24,10 +24,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -65,8 +61,8 @@ int main()
     ipnts[1][0]=ilo;
     ipnts[1][1]=jhi;
     ipnts[1][2]=khi;
-    cg_boco_write(index_file,index_base,index_zone,"Ilo",BCTunnelInflow,
-        PointRange,2,ipnts[0],&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Ilo",CGNS_ENUMV(BCTunnelInflow),
+        CGNS_ENUMV(PointRange),2,ipnts[0],&index_bc);
 /* write boundary conditions for ihi face, defining range first */
 /* (user can give any name) */
 /* lower point of range */
@@ -77,8 +73,8 @@ int main()
     ipnts[1][0]=ihi;
     ipnts[1][1]=jhi;
     ipnts[1][2]=khi;
-    cg_boco_write(index_file,index_base,index_zone,"Ihi",BCExtrapolate,
-        PointRange,2,ipnts[0],&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Ihi",CGNS_ENUMV(BCExtrapolate),
+        CGNS_ENUMV(PointRange),2,ipnts[0],&index_bc);
 /* write boundary conditions for jlo face, defining range first */
 /* (user can give any name) */
 /* lower point of range */
@@ -89,8 +85,8 @@ int main()
     ipnts[1][0]=ihi;
     ipnts[1][1]=jlo;
     ipnts[1][2]=khi;
-    cg_boco_write(index_file,index_base,index_zone,"Jlo",BCWallInviscid,
-        PointRange,2,ipnts[0],&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Jlo",CGNS_ENUMV(BCWallInviscid),
+        CGNS_ENUMV(PointRange),2,ipnts[0],&index_bc);
 /* write boundary conditions for jhi face, defining range first */
 /* (user can give any name) */
 /* lower point of range */
@@ -101,8 +97,8 @@ int main()
     ipnts[1][0]=ihi;
     ipnts[1][1]=jhi;
     ipnts[1][2]=khi;
-    cg_boco_write(index_file,index_base,index_zone,"Jhi",BCWallInviscid,
-        PointRange,2,ipnts[0],&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Jhi",CGNS_ENUMV(BCWallInviscid),
+        CGNS_ENUMV(PointRange),2,ipnts[0],&index_bc);
 /* write boundary conditions for klo face, defining range first */
 /* (user can give any name) */
 /* lower point of range */
@@ -113,8 +109,8 @@ int main()
     ipnts[1][0]=ihi;
     ipnts[1][1]=jhi;
     ipnts[1][2]=klo;
-    cg_boco_write(index_file,index_base,index_zone,"Klo",BCWallInviscid,
-        PointRange,2,ipnts[0],&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Klo",CGNS_ENUMV(BCWallInviscid),
+        CGNS_ENUMV(PointRange),2,ipnts[0],&index_bc);
 /* write boundary conditions for khi face, defining range first */
 /* (user can give any name) */
 /* lower point of range */
@@ -125,8 +121,8 @@ int main()
     ipnts[1][0]=ihi;
     ipnts[1][1]=jhi;
     ipnts[1][2]=khi;
-    cg_boco_write(index_file,index_base,index_zone,"Khi",BCWallInviscid,
-        PointRange,2,ipnts[0],&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Khi",CGNS_ENUMV(BCWallInviscid),
+        CGNS_ENUMV(PointRange),2,ipnts[0],&index_bc);
 /* close CGNS file */
     cg_close(index_file);
     printf("\nSuccessfully added BCs (PointRange) to file grid_c.cgns\n");

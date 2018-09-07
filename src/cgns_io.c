@@ -47,10 +47,19 @@ char hdf5_access[64] = "NATIVE";
 #endif
 #ifdef BUILD_PARALLEL
 #include <mpi.h>
+MPI_Comm pcg_mpi_comm=MPI_COMM_WORLD;
 int pcg_mpi_comm_size;
 int pcg_mpi_comm_rank;
 int pcg_mpi_initialized;
 MPI_Info pcg_mpi_info;
+#endif
+
+#if CG_HAVE_STAT64_STRUCT
+#ifdef _WIN32
+#define stat _stat64
+#else
+#define stat stat64
+#endif
 #endif
 
 
@@ -170,7 +179,7 @@ static int recurse_nodes (int input, double InputID,
             }
             link_name = link_file + file_len + 1;
             if (cgio_get_link(input, childID, link_file, link_name)) {
-                free (link_name);
+                free (link_file);
                 return CG_ERROR;
             }
             link_file[file_len] = 0;
@@ -563,7 +572,7 @@ int cgio_check_file (const char *filename, int *file_type)
     static char *HDF5sig = "\211HDF\r\n\032\n";
     struct stat st;
 
-    int mpibuf[2], err;
+    int mpibuf[2], err = CGIO_ERR_NONE;
 
     if (ACCESS (filename, 0) || stat (filename, &st) ||
         S_IFREG != (st.st_mode & S_IFREG)) {
@@ -585,6 +594,7 @@ int cgio_check_file (const char *filename, int *file_type)
 	} else {
 	  err = set_error(CGIO_ERR_FILE_OPEN);
 	}
+	return err;
       }
     fread (buf, 1, sizeof(buf), fp);
     buf[sizeof(buf)-1] = 0;
@@ -609,7 +619,7 @@ int cgio_check_file (const char *filename, int *file_type)
     if(pcg_mpi_initialized) {
       mpibuf[0] = err;
       mpibuf[1] = *file_type;
-      MPI_Bcast(mpibuf, 2, MPI_INT, 0, MPI_COMM_WORLD);
+      MPI_Bcast(mpibuf, 2, MPI_INT, 0, pcg_mpi_comm);
       err = mpibuf[0];
       *file_type = mpibuf[1];
     }

@@ -33,33 +33,17 @@ CGNSDIR=`/bin/pwd`
 ## The following variables are used to distinguish between building a
 ## serial and parallel library.
 ##
-##    HAVE_PARALLEL	-- defined in #scot# H5config.h if we are building
-##			   a parallel library even if configure wasn't
-##			   able to find some header file or library that
-##			   might be required. This is defined if the
-##			   compiler looks like a parallel compiler (e.g.,
-##			   mpicc or mpcc) or if the user explicitly states
-##			   that a parallel library is being built by supplying
-##			   the `--enable-parallel' configure switch.
 ##
 ##    PARALLEL		-- This variable is set to a non-null value if
 ##			   configure thinks we're compiling a parallel
 ##			   version of the library.
 ##
-##    RUNSERIAL	        -- This is a command which will be prepended to
-##			   the executable name to run the executable using
-##			   a single process. For serial versions of the
-##			   library this will normally be empty. For parallel
-##			   versions it might be something like `mpiexec -n 1'.
-##			   The value of this variable is substituted in *.in
-##			   files.
-##
-##    RUNPARALLEL	-- This is a command which will be prepended to
+##    MPIEXEC	        -- This is a command which will be prepended to
 ##			   the executable name to run the executable on
 ##			   multiple processors. For the serial library the
 ##			   value will normally be the empty string. For
 ##			   parallel library it should be something like
-##			   "mpiexec -n \$\${NPROCS:=6}" where NPROCS will
+##			   "mpiexec -n \$\${NPROCS:=4}" where NPROCS will
 ##			   eventually contain the number of processors on which
 ##			   to run the executable (the double dollarsigns are to
 ##			   protect the expansion until make executes the
@@ -67,9 +51,6 @@ CGNSDIR=`/bin/pwd`
 ##			   substituted in *.in files.
 ##
 AC_SUBST([PARALLEL])
-AC_SUBST([RUNSERIAL])
-AC_SUBST([RUNPARALLEL])
-AC_SUBST([TESTPARALLEL])
 
 #--------------------------------------------------------------------------
 # get the C compiler
@@ -793,6 +774,11 @@ if test $shared = yes; then
     fi
   fi
   if test $shared = yes; then
+    if test $STRIP = "strip"; then
+      case $SYSTEM in
+        DARWIN) STRIP="$STRIP -x" ;;
+      esac
+    fi
     RAN_LIB="\$(STRIP)"
   fi
 fi
@@ -847,12 +833,16 @@ else
     if test -f "$hdf5dir/include/hdf5.h"; then
       HDF5INC=$hdf5dir/include
       for a in $exts ; do
+	if test -f $hdf5dir/lib64/libhdf5.$a; then
+          HDF5LIB=$hdf5dir/lib64/libhdf5.$a
+          break
+        fi
         if test -f $hdf5dir/lib/libhdf5.$a; then
           HDF5LIB=$hdf5dir/lib/libhdf5.$a
           break
         fi
       done
-      test -z "$HDF5LIB" && HDF5LIB=$hdf5dir/lib/libhdf5.a
+      test -z "$HDF5LIB" && (HDF5LIB=$hdf5dir/lib/libhdf5.a || HDF5LIB=$hdf5dir/lib64/libhdf5.a)
     else
       if test -f "$hdf5dir/src/hdf5.h"; then
         HDF5INC=$hdf5dir/src
@@ -896,6 +886,19 @@ EOF
   if test -f test.c; then
      rm test.c
   fi
+
+  # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
+  ## --------------------------------------------------------------------
+
+  HDF5_HAVE_COLL_METADATA=0
+  AC_MSG_CHECKING([if HDF5 library has collective metadata APIs])
+  chck_coll=`grep -i '_coll_metadata_' $HDF5INC/H5Ppublic.h`
+  if test "x$chck_coll" = "x"; then
+    AC_MSG_RESULT(no)
+  else
+    HDF5_HAVE_COLL_METADATA=1
+    AC_MSG_RESULT(yes)
+  fi
 fi
 
 #---------------------------------------------------------------------------
@@ -904,71 +907,165 @@ fi
 
 H5NEEDZLIB=0
 ZLIBLIB=""
-
-if test "$withhdf5" = "yes"; then
-
-  AC_MSG_CHECKING([if using zlib])
-  AC_ARG_WITH(zlib,
-    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=no]],
-    withzlib=$withval,withzlib="no")
-  if test "$withzlib" = "no"; then
-    AC_MSG_RESULT(no)
-  else
-    H5NEEDZLIB=1
-    if test -z "$withzlib" || test "$withzlib" = "yes"; then
-      zlibdir=""
-      AC_MSG_RESULT(yes)
-      AC_CHECK_HEADER(zlib.h,installed=yes,installed=no)
-      if test "$installed" = "yes"; then
-        ZLIBLIB=-lz
-      else
-        AC_MSG_CHECKING([for local zlib distribution])
-        for d in \
-          `ls -dr * 2>/dev/null` \
-          `ls -dr ../* 2>/dev/null` \
-          `ls -dr ../../* 2>/dev/null` \
-          `ls -dr ../../../* 2>/dev/null` ; do
-          if test -f "$d/zlib.h"; then
-            zlibdir=`(cd $d; pwd)`
-            AC_MSG_RESULT($zlibdir)
-            break
-          fi
-        done
-        test -z "$zlibdir" && AC_MSG_RESULT(not found)
-      fi
-    else
-      if test -f "$withzlib/zlib.h"; then
-        zlibdir=$withzlib
-      else
-        zlibdir=`dirname $withzlib`
-      fi
-      withzlib=yes
-      AC_MSG_RESULT($zlibdir)
-    fi
-
-    if test -z "$ZLIBLIB"; then
-      test -z "$zlibdir" && \
-        AC_MSG_ERROR(need specify the zlib directory with --with-zlib=DIR)
-      if test -f "$zlibdir/zlib.h"; then
-        for a in $exts ; do
-          if test -f $zlibdir/libz.$a; then
-            ZLIBLIB=$zlibdir/libz.$a
-            break
-          fi
-        done
-        test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/libz.a
-      else
-        AC_MSG_ERROR($zlibdir directory does not contain zlib.h)
-      fi
-    fi
-
-  fi
-fi
-
 H5NEEDSZIP=0
 SZIPLIB=""
 
+## ----------------------------------------------------------------------
+## Fake --with-xxx option to allow us to create a help message for the
+## following --with-xxx options which can take either a =DIR or =INC,LIB
+## specifier.
+##
+AC_ARG_WITH([fnord],
+  [
+ For the --with-zlib option, you can specify where the header
+ files and libraries are in two different ways:
+
+    --with-xxx=INC,LIB - Specify individually the include directory and
+                         library directory separated by a comma
+    --with-xxx=DIR     - Specify only the directory which contains the
+                         include/ and lib/ subdirectories
+  ])
+
 if test "$withhdf5" = "yes"; then
+
+  AC_ARG_WITH([zlib],
+               [AS_HELP_STRING([--with-zlib=DIR],
+                              [Use zlib library for external deflate I/O
+                               filter [default=no]])],,
+               [withval=no])
+
+  case $withval in
+    yes)
+      H5NEEDZLIB=1
+      HAVE_ZLIB="yes"
+      AC_CHECK_HEADERS([zlib.h], [HAVE_ZLIB_H="yes"], [unset HAVE_ZLIB])
+      if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
+        AC_CHECK_LIB([z], [compress2],, [unset HAVE_ZLIB])
+      fi
+      if test -z "$HAVE_ZLIB"; then
+        AC_MSG_ERROR([couldn't find zlib library: specify the zlib directory with --with-zlib=DIR])
+      fi
+      ZLIBLIB=-lz
+      ;;
+    no)
+      HAVE_ZLIB="no"
+      AC_MSG_CHECKING([if using zlib with HDF5])
+      AC_MSG_RESULT([no])
+      ;;
+    *)
+      H5NEEDZLIB=1
+      HAVE_ZLIB="yes"
+ 
+      case "$withval" in
+        *,*)
+          zlib_inc="`echo $withval | cut -f1 -d,`"
+          zlib_lib="`echo $withval | cut -f2 -d, -s`"
+          ;;
+        *)
+          if test -n "$withval"; then
+            zlib_inc="$withval/include"
+            zlib_lib="$withval/lib"
+          fi
+          ;;
+      esac
+
+    if test -n "$zlib_inc"; then
+      CPPFLAGS="$CPPFLAGS -I$zlib_inc"
+    fi
+
+    AC_CHECK_HEADERS([zlib.h],
+                     [HAVE_ZLIB_H="yes"],
+                     [CPPFLAGS="$saved_CPPFLAGS"] [unset HAVE_ZLIB])
+
+
+    if test $shared = yes; then
+      ZLIBLIB="-L$zlib_lib"
+    else
+      if test -n "$zlib_lib"; then
+        for a in $exts ; do
+          if test -f $zlib_lib/libz.$a; then
+            ZLIBLIB=$zlib_lib/libz.$a
+            break
+          fi
+        done
+      fi
+    fi
+
+    if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
+      AC_CHECK_LIB([z], [compress2],,
+                   [unset HAVE_ZLIB])
+    fi
+
+    if test -z "$HAVE_ZLIB"; then
+      AC_MSG_ERROR([couldn't find zlib library])
+    else
+      AC_CHECK_FUNC([compress2], [HAVE_COMPRESS2="yes"])
+    fi
+    AC_MSG_CHECKING([for zlib library path])	
+    AC_MSG_RESULT([$zlib_lib])
+    AC_MSG_CHECKING([for zlib include path])	
+    AC_MSG_RESULT([$zlib_inc])
+    ;;
+  esac
+	
+
+#  AC_MSG_CHECKING([if using zlib])
+#  AC_ARG_WITH(zlib,
+#    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=no]],
+#    withzlib=$withval,withzlib="no")
+#  if test "$withzlib" = "no"; then
+#    AC_MSG_RESULT(no)
+#  else
+#    H5NEEDZLIB=1
+#    if test -z "$withzlib" || test "$withzlib" = "yes"; then
+#      zlibdir=""
+#      AC_MSG_RESULT(yes)
+#      AC_CHECK_HEADER(zlib.h,installed=yes,installed=no)
+#      if test "$installed" = "yes"; then
+#        ZLIBLIB=-lz
+#      else
+#        AC_MSG_CHECKING([for local zlib distribution])
+#        for d in \
+#          `ls -dr * 2>/dev/null` \
+#          `ls -dr ../* 2>/dev/null` \
+#          `ls -dr ../../* 2>/dev/null` \
+#          `ls -dr ../../../* 2>/dev/null` ; do
+#          if test -f "$d/zlib.h"; then
+#            zlibdir=`(cd $d; pwd)`
+#            AC_MSG_RESULT($zlibdir)
+#            break
+#          fi
+#        done
+#        test -z "$zlibdir" && AC_MSG_RESULT(not found)
+#      fi
+#    else
+#      if test -f "$withzlib/include/zlib.h"; then
+#        zlibdir=$withzlib
+#      else
+#        zlibdir=`dirname $withzlib`
+#      fi
+#      withzlib=yes
+#      AC_MSG_RESULT($zlibdir)
+#    fi
+#
+#    if test -z "$ZLIBLIB"; then
+#      test -z "$zlibdir" && \
+#        AC_MSG_ERROR(need specify the zlib directory with --with-zlib=DIR)
+#      if test -f "$zlibdir/include/zlib.h"; then
+#        for a in $exts ; do
+#          if test -f $zlibdir/lib/libz.$a; then
+#            ZLIBLIB=$zlibdir/lib/libz.$a
+#            break
+#          fi
+#        done
+#        test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/lib/libz.a
+#      else
+#        AC_MSG_ERROR($zlibdir/include directory does not contain zlib.h)
+#      fi
+#    fi
+
+#  fi
+
   AC_MSG_CHECKING([if using szip])
   AC_ARG_WITH(szip,
     [  --with-szip[=LIB]       use szip with HDF5 [default=no]],
@@ -1007,7 +1104,6 @@ fi
 #---------------------------------------------------------------------------
 # does HDF5 require MPI ?
 #---------------------------------------------------------------------------
-
 withmpi=no
 
 H5NEEDMPI=0
@@ -1016,83 +1112,83 @@ MPIINC=""
 MPIOPTS=""
 MPILIBS=""
 MPICC=""
-MPIEXEC=""
 
-if test "$withhdf5" = "yes"; then
-  AC_MSG_CHECKING([if using MPI])
-  AC_ARG_WITH(mpi,
-    [  --with-mpi[=DIR/mpicc]  use MPI with HDF5 [default=no]],
-    withmpi=$withval,withmpi="no")
-  if test "x$withmpi" = "xno"; then
-    AC_MSG_RESULT(no)
-  else
-    H5NEEDMPI=1
-    if test -z "$withmpi" || test "$withmpi" = "yes"; then
-      AC_MSG_RESULT(yes)
-      AC_PATH_PROG(MPICC, mpicc,)
-      if test "x$MPICC" = "x"; then
-        AC_MSG_CHECKING([for local mpicc executable])
-        for d in \
-          `ls -dr * 2>/dev/null` \
-          `ls -dr ../* 2>/dev/null` \
-          `ls -dr ../../* 2>/dev/null` \
-          `ls -dr ../../../* 2>/dev/null` ; do
-          if test -x "$d/mpicc"; then
-            MPICC=`(cd $d; pwd)`/mpicc
-            break
-          fi
-          if test -x "$d/bin/mpicc"; then
-            MPICC=`(cd $d; pwd)`/bin/mpicc
-            break
-          fi
-        done
-      fi
-    else
-      mpidir=$withmpi
-      test ! -d $withmpi && mpidir=`dirname $withmpi`
-      if test -x "$mpidir/mpicc"; then
-        MPICC=`(cd $mpidir; pwd)`/mpicc
-      fi
-      if test -x "$mpidir/bin/mpicc"; then
-        MPICC=`(cd $mpidir; pwd)`/bin/mpicc
-      fi
-    fi
+#if test "$withhdf5" = "yes"; then
+#  AC_MSG_CHECKING([if using MPI])
+#  AC_ARG_WITH(mpi,
+#    [  --with-mpi[=DIR/mpicc]  use MPI with HDF5 [default=no]],
+#    withmpi=$withval,withmpi="no")
+#  if test "x$withmpi" = "xno"; then
+#    AC_MSG_RESULT(no)
+#  else
+#    H5NEEDMPI=1
+#    if test -z "$withmpi" || test "$withmpi" = "yes"; then
+#      AC_MSG_RESULT(yes)
+#      AC_PATH_PROG(MPICC, mpicc,)
+#      if test "x$MPICC" = "x"; then
+#        AC_MSG_CHECKING([for local mpicc executable])
+#        for d in \
+#          `ls -dr * 2>/dev/null` \
+#          `ls -dr ../* 2>/dev/null` \
+#          `ls -dr ../../* 2>/dev/null` \
+#          `ls -dr ../../../* 2>/dev/null` ; do
+#          if test -x "$d/mpicc"; then
+#            MPICC=`(cd $d; pwd)`/mpicc
+#            break
+#          fi
+#          if test -x "$d/bin/mpicc"; then
+#            MPICC=`(cd $d; pwd)`/bin/mpicc
+#            break
+#          fi
+#        done
+#      fi
+#    else
+#      mpidir=$withmpi
+#      test ! -d $withmpi && mpidir=`dirname $withmpi`
+#      if test -x "$mpidir/mpicc"; then
+#        MPICC=`(cd $mpidir; pwd)`/mpicc
+#      fi
+#      if test -x "$mpidir/bin/mpicc"; then
+#        MPICC=`(cd $mpidir; pwd)`/bin/mpicc
+#      fi
+#    fi
+#
+#    if test "x$MPICC" = "x"; then
+#      AC_MSG_ERROR(mpicc not found)
+#    else
+#      AC_MSG_RESULT($MPICC)
+#      MPIEXEC=`echo $MPICC | sed "s/mpicc/mpiexec/"`
+#      mpibin=`dirname $MPICC`
+#      mpidir=`dirname $mpibin`
+#      if test -d "$mpidir/src/include" ; then
+#        MPIINC=$mpidir/src/include
+#      else
+#        MPIINC=$mpidir/include
+#      fi
+#      MPIOPTS=`grep "^CFLAGS=" $MPICC | sed s/CFLAGS=// | sed s/\"//g`
+#      mpilib=`grep "^MPILIBNAME=" $MPICC | sed s/MPILIBNAME=// | sed s/\"//g`
+#      if test "x$mpilib" = "x"; then
+#        MPILIBS="-L$mpidir/lib"
+#      else
+#        MPILIBS="-L$mpidir/lib -l$mpilib"
+#      fi
+#      plib=`grep "^NEEDSPLIB=" $MPICC | sed s/NEEDSPLIB=// | sed s/\"//g`
+#      if test "x$plib" = "xyes"; then
+#        pmpilib=`grep "^PMPILIBNAME=" $MPICC | sed s/PMPILIBNAME=// | sed s/\"//g`
+#        if test "x$pmpilib" = "x"; then
+#          MPILIBS="$MPILIBS"
+#        else
+#          MPILIBS="$MPILIBS -l$pmpilib"
+#        fi
+#      fi
+#      extralibs=`grep "^LIBS=" $MPICC | sed s/LIBS=// | sed s/\"//g`
+#      MPILIBS="$MPILIBS $extralibs"
+#    fi
+#    MPIDEF=-I$MPIINC
+#    withmpi=yes
+#  fi
+#fi
 
-    if test "x$MPICC" = "x"; then
-      AC_MSG_ERROR(mpicc not found)
-    else
-      AC_MSG_RESULT($MPICC)
-      MPIEXEC=`echo $MPICC | sed "s/mpicc/mpiexec/"`
-      mpibin=`dirname $MPICC`
-      mpidir=`dirname $mpibin`
-      if test -d "$mpidir/src/include" ; then
-        MPIINC=$mpidir/src/include
-      else
-        MPIINC=$mpidir/include
-      fi
-      MPIOPTS=`grep "^CFLAGS=" $MPICC | sed s/CFLAGS=// | sed s/\"//g`
-      mpilib=`grep "^MPILIBNAME=" $MPICC | sed s/MPILIBNAME=// | sed s/\"//g`
-      if test "x$mpilib" = "x"; then
-        MPILIBS="-L$mpidir/lib"
-      else
-        MPILIBS="-L$mpidir/lib -l$mpilib"
-      fi
-      plib=`grep "^NEEDSPLIB=" $MPICC | sed s/NEEDSPLIB=// | sed s/\"//g`
-      if test "x$plib" = "xyes"; then
-        pmpilib=`grep "^PMPILIBNAME=" $MPICC | sed s/PMPILIBNAME=// | sed s/\"//g`
-        if test "x$pmpilib" = "x"; then
-          MPILIBS="$MPILIBS"
-        else
-          MPILIBS="$MPILIBS -l$pmpilib"
-        fi
-      fi
-      extralibs=`grep "^LIBS=" $MPICC | sed s/LIBS=// | sed s/\"//g`
-      MPILIBS="$MPILIBS $extralibs"
-    fi
-    MPIDEF=-I$MPIINC
-    withmpi=yes
-  fi
-fi
 
 #-----------------------------------------------------------------------
 # build parallel code ?
@@ -1101,15 +1197,41 @@ fi
 BUILDPARALLEL=0
 parallel=no
 
-if test "$withmpi" = "yes"; then
-  AC_MSG_CHECKING([if parallel IO support is requested])
-  AC_ARG_ENABLE(parallel,
+AC_MSG_CHECKING([if parallel IO support is requested])
+AC_ARG_ENABLE(parallel,
     [  --enable-parallel       enable parallel IO support [default=no]],,
     enableval="no")
-  test ! "x$enableval" = "xno" && enableval=yes
+  
+if test ! "x$enableval" = "xno" && enableval=yes; then
   BUILDPARALLEL=1
   parallel=$enableval
-  AC_MSG_RESULT($parallel)
+
+  ## Set MPIEXEC if not set yet. Defaults to running on
+  ## four processes.
+  if test -z "$MPIEXEC"; then
+    MPIEXEC="mpiexec -n \$\${NPROCS:=4}"
+  fi
+
+  ## There *must* be some way to run in parallel even if it's just the
+  ## word `none'.
+  if test -z "$MPIEXEC"; then
+    AC_MSG_ERROR([no way to run a parallel program])
+  fi
+
+  ## If MPIEXEC is the word `none' then replace it with
+  ## the empty string. This means that no launch commands were requested,
+  ## so we will not use any launch commands.
+  if test "X$MPIEXEC" = "Xnone"; then
+    MPIEXEC=""
+  fi
+
+fi
+AC_MSG_RESULT($parallel)
+
+if test "$parallel" = "yes"; then
+  ## Display what we found about running programs
+  AC_MSG_CHECKING([prefix for running in parallel])
+  AC_MSG_RESULT([$MPIEXEC])
 fi
 
 #--------------------------------------------------------------------------
@@ -1166,6 +1288,39 @@ EOF
   fi
   CFLAGS=$CFLAGS_SAVE
   test $has_lfs = yes && CFGFLAGS="$LFS $CFGFLAGS"
+fi
+
+  # Check for stat64 struct
+  ## --------------------------------------------------------------------
+  #  stat64 is deprecated for Mac OS X
+
+HAVE_STAT64_STRUCT=0
+
+if test ! "$SYSTEM" = "DARWIN"; then
+
+  AC_MSG_CHECKING([for stat64])
+
+  cat >> test.c << EOF
+#include <sys/types.h>
+#include <sys/stat.h>
+struct stat64 sb;
+int main()
+{
+  return 0;
+}
+EOF
+  msg=`${CC} -c test.c &> /dev/null`
+  if test -f test.o; then
+    HAVE_STAT64_STRUCT=1
+    AC_MSG_RESULT(yes)
+    rm test.o
+  else
+    AC_MSG_RESULT(no)
+  fi
+  if test -f test.c; then
+     rm test.c
+  fi
+
 fi
 
 #---------------------------------------------------------------------------
@@ -1498,9 +1653,10 @@ if test "$withfortran" = "yes"; then
     fi
 #----------- Determine if the Fortran compiler pgi ------------------------
 # The PGI compiler segfaults wehn va_start is called, so we need to add
-# a special compiler flag, see CGNS-40.
+# a special compiler flag, see CGNS-40. -Mx,125,0x200 is now called
+# -Mvarargs
 #--------------------------------------------------------------------------
-    fc_vendor="`$FC --version 2>&1 |grep -i 'Portland Group'`"
+    fc_vendor="`$FC --version 2>&1 |grep 'PGI'`"
     if test X != "X$fc_vendor"; then
       FFLAGS="$FFLAGS -Mx,125,0x200" 
     fi
@@ -1578,6 +1734,8 @@ AC_SUBST(HAVE_FORTRAN_2003)
 AC_SUBST(HAVE_FORTRAN_2008TS)
 AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
+AC_SUBST(HAVE_STAT64_STRUCT)
+AC_SUBST(HDF5_HAVE_COLL_METADATA)
 AC_SUBST(FC_D_PRE)
 AC_SUBST(BUILDPARALLEL)
 AC_SUBST(BUILDBASESCOPE)

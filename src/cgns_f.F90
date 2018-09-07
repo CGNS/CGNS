@@ -598,7 +598,7 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Dimensional Units                                              *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-  DATA MassUnitsName /'Null','UserDefined','Kilogram','Gram', &
+  DATA MassUnitsName /'Null','UserDefined','Kilogram','Gram', & 
        'Slug','PoundMass'/
   DATA LengthUnitsName / 'Null', 'UserDefined', &
        'Meter','Centimeter','Millimeter','Foot','Inch'/
@@ -3199,7 +3199,7 @@ MODULE cgns
      END SUBROUTINE cg_array_info_f
   END INTERFACE
 
-!!$ INTERFACE
+!$ INTERFACE
 !!$    SUBROUTINE cg_array_read_f(A, DATA, ier) BIND(C, NAME="")
 !!$      INTEGER :: A,
 !!$      void *DATA,
@@ -4676,7 +4676,8 @@ MODULE cgns
 !* node children
 !*=========================================================
   INTERFACE
-     SUBROUTINE cgio_number_children_f(cgio_num, pid, num_children, ier) BIND(C,NAME='cgio_number_children_f')
+     SUBROUTINE cgio_number_children_f(cgio_num, pid, num_children, ier) &
+                BIND(C,NAME='cgio_number_children_f')
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4688,7 +4689,8 @@ MODULE cgns
 
 !*---------------------------------------------------------
   INTERFACE
-     SUBROUTINE cgio_children_ids_f(cgio_num, pid, start, max_ret, num_ret, ids, ier) BIND(C,NAME='cgio_children_ids_f')
+     SUBROUTINE cgio_children_ids_f(cgio_num, pid, start, max_ret, num_ret, ids, ier) &
+                BIND(C,NAME='cgio_children_ids_f')
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4703,7 +4705,7 @@ MODULE cgns
 
 !*---------------------------------------------------------
   INTERFACE
-     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier)!BIND(C,NAME='cgio_children_names_f')
+     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier) !BIND(C,NAME='cgio_children_names_f')
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4926,6 +4928,7 @@ CONTAINS
 !  END SUBROUTINE cg_open_f
 
   SUBROUTINE cgio_set_dimensions_f_0(cgio_num, id, data_type, ndims, dims, ier)
+    !DEC$ ATTRIBUTES DLLEXPORT,ALIAS:"cgio_set_dimensions_f_0" :: cgio_set_dimensions_f_0
     IMPLICIT NONE
     INTEGER :: cgio_num
     REAL(C_DOUBLE) :: id
@@ -4939,6 +4942,7 @@ CONTAINS
   END SUBROUTINE cgio_set_dimensions_f_0
 
   SUBROUTINE cgio_set_dimensions_f_1(cgio_num, id, data_type, ndims, dims, ier)
+    !DEC$ ATTRIBUTES DLLEXPORT,ALIAS:"cgio_set_dimensions_f_1" :: cgio_set_dimensions_f_1
     IMPLICIT NONE
     INTEGER :: cgio_num
     REAL(C_DOUBLE) :: id
@@ -4952,6 +4956,7 @@ CONTAINS
   END SUBROUTINE cgio_set_dimensions_f_1
 
   SUBROUTINE cgio_get_dimensions_f_0(cgio_num, id, ndims, dims, ier)
+    !DEC$ ATTRIBUTES DLLEXPORT,ALIAS:"cgio_get_dimensions_f_0" :: cgio_get_dimensions_f_0
     IMPLICIT NONE
     INTEGER :: cgio_num
     REAL(C_DOUBLE) :: id
@@ -4964,6 +4969,7 @@ CONTAINS
   END SUBROUTINE cgio_get_dimensions_f_0
 
   SUBROUTINE cgio_get_dimensions_f_1(cgio_num, id, ndims, dims, ier)
+    !DEC$ ATTRIBUTES DLLEXPORT,ALIAS:"cgio_get_dimensions_f_1" :: cgio_get_dimensions_f_1
     IMPLICIT NONE
     INTEGER :: cgio_num
     REAL(C_DOUBLE) :: id

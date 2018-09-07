@@ -24,10 +24,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 #define maxcount 400
@@ -77,8 +73,8 @@ int main()
       return 1;
     }
     icounts=icount;
-    cg_boco_write(index_file,index_base,index_zone,"Ilo",BCTunnelInflow,
-        PointList,icounts,ipnts[0],&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Ilo",CGNS_ENUMV(BCTunnelInflow),
+        CGNS_ENUMV(PointList),icounts,ipnts[0],&index_bc);
 /* write boundary conditions for ihi face, defining pointlist first */
 /* (user can give any name) */
     icount=0;
@@ -98,8 +94,8 @@ int main()
       return 1;
     }
     icounts=icount;
-    cg_boco_write(index_file,index_base,index_zone,"Ihi",BCExtrapolate,
-        PointList,icounts,ipnts[0],&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Ihi",CGNS_ENUMV(BCExtrapolate),
+        CGNS_ENUMV(PointList),icounts,ipnts[0],&index_bc);
 /* write boundary conditions for jlo face, defining pointlist first */
 /* (user can give any name) */
     icount=0;
@@ -119,8 +115,8 @@ int main()
       return 1;
     }
     icounts=icount;
-    cg_boco_write(index_file,index_base,index_zone,"Jlo",BCWallInviscid,
-        PointList,icounts,ipnts[0],&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Jlo",CGNS_ENUMV(BCWallInviscid),
+        CGNS_ENUMV(PointList),icounts,ipnts[0],&index_bc);
 /* write boundary conditions for jhi face, defining pointlist first */
 /* (user can give any name) */
     icount=0;
@@ -140,8 +136,8 @@ int main()
       return 1;
     }
     icounts=icount;
-    cg_boco_write(index_file,index_base,index_zone,"Jhi",BCWallInviscid,
-        PointList,icounts,ipnts[0],&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Jhi",CGNS_ENUMV(BCWallInviscid),
+        CGNS_ENUMV(PointList),icounts,ipnts[0],&index_bc);
 /* write boundary conditions for klo face, defining pointlist first */
 /* (user can give any name) */
     icount=0;
@@ -161,8 +157,8 @@ int main()
       return 1;
     }
     icounts=icount;
-    cg_boco_write(index_file,index_base,index_zone,"Klo",BCWallInviscid,
-        PointList,icounts,ipnts[0],&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Klo",CGNS_ENUMV(BCWallInviscid),
+        CGNS_ENUMV(PointList),icounts,ipnts[0],&index_bc);
 /* write boundary conditions for khi face, defining pointlist first */
 /* (user can give any name) */
     icount=0;
@@ -182,8 +178,8 @@ int main()
       return 1;
     }
     icounts=icount;
-    cg_boco_write(index_file,index_base,index_zone,"Khi",BCWallInviscid,
-        PointList,icounts,ipnts[0],&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Khi",CGNS_ENUMV(BCWallInviscid),
+        CGNS_ENUMV(PointList),icounts,ipnts[0],&index_bc);
 /* close CGNS file */
     cg_close(index_file);
     printf("\nSuccessfully added BCs (PointList) to file grid_c.cgns\n");

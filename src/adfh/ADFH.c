@@ -1419,11 +1419,13 @@ void ADFH_Configure(const int option, const void *value, int *err)
     }
 #ifdef BUILD_PARALLEL
     else if (option == ADFH_CONFIG_MPI_COMM) {
-      if (!value) {
+      MPI_Comm* comm = (MPI_Comm*)value;
+      if (!comm) {
         set_error(ADFH_ERR_INVALID_USER_DATA, err);
       }
       else {
-        ParallelMPICommunicator = (MPI_Comm)value;
+        ParallelMPICommunicator = (MPI_Comm)*comm;
+	set_error(NO_ERROR, err);
       }
     }
 #endif
@@ -1621,7 +1623,7 @@ void ADFH_Get_Label(const double  id,
                     int          *err)
 {
   hid_t hid;
-  char bufflabel[ADF_LABEL_LENGTH+1];
+  char bufflabel[ADF_LABEL_LENGTH+1] = "";
   ADFH_DEBUG((">ADFH_Get_Label [%d]",id));
 
   if (label == NULL) {
@@ -1824,7 +1826,7 @@ void ADFH_Get_Node_ID(const double  pid,
   set_error(NO_ERROR, err);
   if (*name == '/') {
     hid_t rid;
-    char *path = (char *) malloc (strlen(name));
+    char *path = (char *) malloc (strlen(name)+1);
     if (path == NULL) {
       set_error(MEMORY_ALLOCATION_FAILED, err);
       return;
@@ -2140,6 +2142,9 @@ void ADFH_Database_Open(const char   *name,
     if (0 == strcmp(fmt, "PARALLEL")) {
 
       if(!pcg_mpi_info) pcg_mpi_info = MPI_INFO_NULL;
+#if HDF5_HAVE_COLL_METADATA  
+      H5Pset_coll_metadata_write(g_propfileopen, 1);
+#endif /*HDF5_HAVE_COLL_METADATA*/
 
       H5Pset_fapl_mpio(g_propfileopen, ParallelMPICommunicator, pcg_mpi_info);
     }
@@ -2205,6 +2210,11 @@ void ADFH_Database_Open(const char   *name,
       set_error(ADFH_ERR_NOT_HDF5_FILE, err);
       return;
     }
+#ifdef BUILD_PARALLEL
+#if HDF5_HAVE_COLL_METADATA
+    H5Pset_all_coll_metadata_ops( g_propfileopen, 1 );
+#endif
+#endif
     if (mode == ADFH_MODE_RDO) {
       fid = H5Fopen(name, H5F_ACC_RDONLY, g_propfileopen);
     }
@@ -2289,6 +2299,7 @@ void ADFH_Database_Get_Format(const double  rootid,
   if (H5Pget_driver(fapl) == H5FD_MPIO) {
     H5Pclose(xfer_prp);
   }
+  H5Pclose(fapl); /* close the property list */
 #endif
   H5Dclose(did);
 

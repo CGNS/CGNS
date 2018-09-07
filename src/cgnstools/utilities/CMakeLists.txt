@@ -59,6 +59,7 @@ add_dependencies(plot3d_to_cgns cgns_static calclib)
 set(cgns_to_plot3d_FILES 
 	cgns_to_plot3d.c
 	cgnsutil.c
+	binaryio.c
 	../common/getargs.c
 	p3dfout.c)
 
@@ -214,6 +215,14 @@ set(interpolate_cgns_FILES
 add_executable(interpolate_cgns ${interpolate_cgns_FILES})
 add_dependencies(interpolate_cgns cgns_static calclib)
 
+# update_ngon
+set(update_ngon_FILES
+	update_ngon.c
+	cgnsutil.c
+	../common/getargs.c)
+
+add_executable(update_ngon ${update_ngon_FILES})
+
 if (WIN32)
   install(TARGETS
         plot3d_to_cgns
@@ -233,6 +242,7 @@ if (WIN32)
 	convert_dataclass
 	extract_subset
 	interpolate_cgns
+	update_ngon
 	RUNTIME DESTINATION bin)
   install(FILES
 	conserved.cnv
@@ -269,6 +279,7 @@ else (WIN32)
 	convert_dataclass
 	extract_subset
 	interpolate_cgns
+	update_ngon
 	RUNTIME DESTINATION bin/cgnstools)
   install(FILES
 	conserved.cnv

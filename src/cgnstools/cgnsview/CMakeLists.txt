@@ -2,7 +2,7 @@
 # cgnsview  #
 #############
 
-include_directories(${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH})
+include_directories(${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH} ${OPENGL_INCLUDE_DIR})
 include_directories(../common)
 include_directories(../..)
 link_directories(.)
@@ -13,7 +13,7 @@ else (CGNS_USE_SHARED)
 endif (CGNS_USE_SHARED)
 link_libraries(${TCL_LIBRARY} ${TK_LIBRARY})
 
-if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
+if (CGNS_ENABLE_HDF5)
   link_libraries(${HDF5_LIBRARY})
   if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
     link_libraries(${ZLIB_LIBRARY})
@@ -24,7 +24,7 @@ if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
   if(HDF5_NEED_MPI AND MPI_LIBS)
     link_libraries(${MPI_LIBS})
   endif(HDF5_NEED_MPI AND MPI_LIBS)
-endif (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
+endif (CGNS_ENABLE_HDF5)
 
 if (WIN32)
   if (HTML_HELP_INCLUDE_PATH AND HTML_HELP_LIBRARY)
@@ -88,5 +88,5 @@ else (WIN32)
 	import.tcl
 	tools.tcl
 	DESTINATION share/cgnstools)
-endif (WIN32)
+endif (WIN32) 
 

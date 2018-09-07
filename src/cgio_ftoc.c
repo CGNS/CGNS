@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
 #endif
 
 #if defined(_WIN32) && defined(BUILD_DLL)
-# define CGIODLL _declspec(dllexport)
+# define CGIODLL __declspec(dllexport)
 #else
 # define CGIODLL
 #endif
@@ -434,7 +434,7 @@ CGIODLL void cgio_children_ids_f(
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_children_names_f, cgio_children_names_f) (
+CGIODLL void FMNAME(cgio_children_names_f, CGIO_CHILDREN_NAMES_F) (
     cgint_f *cgio_num, double *pid, cgint_f *start, cgint_f *max_ret,
     cgint_f *name_len, cgint_f *num_ret, STR_PSTR(names),
     cgint_f *ier STR_PLEN(names))

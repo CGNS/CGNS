@@ -32,7 +32,7 @@
 #include "cgnstypes.h"
 
 #if defined(_WIN32) && defined(BUILD_DLL)
-# define CGEXTERN extern _declspec(dllexport)
+# define CGEXTERN extern __declspec(dllexport)
 #else
 # define CGEXTERN extern
 #endif

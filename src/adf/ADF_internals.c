@@ -187,6 +187,7 @@ bytes   start   end   description      range / format
 #else
 # include <unistd.h>
 # include <sys/param.h>
+# include <sys/stat.h>
 # define ACCESS access
 # define OPEN   open
 # define CLOSE  close
@@ -2841,6 +2842,7 @@ for( i=0, found = -1 ; i<(int)parent_node.num_sub_nodes ; i++ ) {
 
 if( found == -1 ) {
    *error_return = SUB_NODE_TABLE_ENTRIES_BAD ;
+   free(sub_node_table);
    return ;
 }
 

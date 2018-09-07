@@ -1,23 +1,22 @@
 #!/bin/csh
 
-set HDF5=$HOME/packages/phdf5-1_8_13
-setenv LD_LIBRARY_PATH "$HOME/packages/zlib-1.2.8/lib"
+set HDF5=$HOME/packages/phdf5-1_8
+setenv LD_LIBRARY_PATH "$HOME/packages/zlib-1.2.8/lib:/nasa/sgi/mpt/2.12r26/lib"
 setenv CFLAGS "-O2 "
 setenv CC "mpicc"
 setenv FC "mpif90"
 setenv F77 "mpif90"
 setenv FFLAGS "-O2 "
-setenv LDFLAGS "-I$HOME/packages/zlib-1.2.8/lib/include"
 setenv FLIBS "-lmpi -L$HOME/packages/zlib-1.2.8/lib/lib -lz"
 setenv CLIBS "-lmpi -I$HOME/packages/zlib-1.2.8/lib/include -L$HOME/packages/zlib-1.2.8/lib/lib -lz"
 
 ./configure --verbose \
+--prefix="$HOME/scratch/cgns_1_8" \
 --enable-parallel \
 --with-fortran \
 --with-hdf5=$HDF5 \
---with-mpi="/nasa/sgi/mpt/2.10r6/bin/" \
---with-zlib="$LD_LIBRARY_PATH" \
+--with-mpi="/nasa/sgi/mpt/2.12r26" \
+--with-zlib="$HOME/packages/zlib-1.2.8/lib" \
 --enable-64bit \
 --enable-lfs \
---disable-cgnstools \
---disable-x
+--disable-cgnstools 

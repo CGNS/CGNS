@@ -17,6 +17,7 @@ LDLIBS = $(CGNSLIB) $(BUILDLIBS)
 CALL = \
 	cgioc$(EXE) \
 	elemtest$(EXE) \
+	ser_benchmark_hdf5$(EXE) \
 	test_exts$(EXE) \
 	test_goto$(EXE) \
 	test_multifam$(EXE) \
@@ -77,6 +78,8 @@ test : $(TESTS)
 	 echo "=== finished ==="; \
 	 exit $$status;
 
+
+
 #----------
 
 cgioc$(EXE) : cgioc.c $(CGNSLIB)
@@ -104,6 +107,12 @@ open_cgns$(EXE) : open_cgns.$(O) utils.$(O) $(CGNSLIB)
 	$(STRIP) $@
 open_cgns.$(O) : open_cgns.c utils.h
 	$(CC) $(COPTS) -c open_cgns.c
+
+#----------
+
+ser_benchmark_hdf5$(EXE) : ser_benchmark_hdf5.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ ser_benchmark_hdf5.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
 
 #----------
 

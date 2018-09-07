@@ -20,7 +20,7 @@ void OPENF (int *read, char *fname, int length)
     MACH_LOCAL == MACH_UNKNOWN
     fprintf (stderr,
         "Fortran unformatted output not supported for %s machine\n",
-        bf_machname (MACH_LOCAL);
+        bf_machname (MACH_LOCAL));
     exit (1);
 #else
     buff = (char *) malloc (length + 1);

@@ -29,10 +29,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 #define maxcount 960
@@ -69,8 +65,8 @@ int main()
     }
 /* write boundary conditions for ilo face */
     icounts=icount;
-    cg_boco_write(index_file,index_base,index_zone,"Ilo",BCTunnelInflow,
-        PointList,icounts,ipnts,&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Ilo",CGNS_ENUMV(BCTunnelInflow),
+        CGNS_ENUMV(PointList),icounts,ipnts,&index_bc);
 /* we know that for the unstructured zone, the following face elements */
 /* have been defined as outflow (real working code would check!): */
     nelem_start=2689;
@@ -88,8 +84,8 @@ int main()
     }
 /* write boundary conditions for ihi face */
     icounts=icount;
-    cg_boco_write(index_file,index_base,index_zone,"Ihi",BCExtrapolate,
-        PointList,icounts,ipnts,&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Ihi",CGNS_ENUMV(BCExtrapolate),
+        CGNS_ENUMV(PointList),icounts,ipnts,&index_bc);
 /* we know that for the unstructured zone, the following face elements */
 /* have been defined as walls (real working code would check!): */
     nelem_start=2817;
@@ -107,8 +103,8 @@ int main()
     }
 /* write boundary conditions for wall faces */
     icounts=icount;
-    cg_boco_write(index_file,index_base,index_zone,"Walls",BCWallInviscid,
-        PointList,icounts,ipnts,&index_bc);
+    cg_boco_write(index_file,index_base,index_zone,"Walls",CGNS_ENUMV(BCWallInviscid),
+        CGNS_ENUMV(PointList),icounts,ipnts,&index_bc);
 
 /* the above are all face-center locations for the BCs - must indicate this, */
 /* otherwise Vertices will be assumed! */
@@ -117,7 +113,7 @@ int main()
 /*    (the following call positions you in BC_t - it assumes there */
 /*    is only one Zone_t and one ZoneBC_t - real working code would check!) */
       cg_goto(index_file,index_base,"Zone_t",1,"ZoneBC_t",1,"BC_t",ibc,"end");
-      cg_gridlocation_write(FaceCenter);
+      cg_gridlocation_write(CGNS_ENUMV(FaceCenter));
     }
 /* close CGNS file */
     cg_close(index_file);

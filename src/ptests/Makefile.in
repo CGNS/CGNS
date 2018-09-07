@@ -18,8 +18,10 @@ CALL =	pcgns_ctest$(EXE) \
 	benchmark$(EXE) \
 	benchmark_hdf5$(EXE) \
 	open_close$(EXE) \
+        comm_test$(EXE) \
 	test_base$(EXE) \
 	test_unstructured$(EXE) \
+	test_unstruc_quad$(EXE) \
 	test_zone$(EXE) \
 	thesis_benchmark$(EXE)
 
@@ -37,7 +39,7 @@ test : $(TESTS)
 	status=0; \
 	echo "=== running parallel tests ==="; \
 	 for x in $(TESTS) ; do \
-	   if `$(MPIEXEC) -np 2 ./$$x >/dev/null 2>&1` ; then \
+	   if `$(MPIEXEC) ./$$x >/dev/null 2>&1` ; then \
 	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
 	   else \
 	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
@@ -79,6 +81,12 @@ open_close$(EXE) : open_close.c $(CGNSLIB)
 
 #----------
 
+comm_test$(EXE) : comm_test.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ comm_test.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
 test_base$(EXE) : test_base.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_base.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
@@ -87,6 +95,12 @@ test_base$(EXE) : test_base.c $(CGNSLIB)
 
 test_unstructured$(EXE) : test_unstructured.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_unstructured.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_unstruc_quad$(EXE) : test_unstruc_quad.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_unstruc_quad.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------

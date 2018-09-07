@@ -2,14 +2,22 @@
 
 # modules loaded (Pleiades)
 #
-# module load comp-intel/2013.5.192
-# module load mpi-sgi/mpt.2.11r13
+# module load comp-intel/2016.2.181
+# module load mpi-sgi/mpt.2.12r26
 
 setenv CC mpicc
 setenv FC mpif90
 setenv CFLAGS "-O3"
 setenv FCFLAGS "-O3"
 
-./configure --without-pthread --disable-shared --enable-parallel --enable-production --enable-fortran --enable-fortran2003 --disable-stream-vfd --disable-direct-vfd --with-zlib=${HOME}/packages/zlib-1.2.8/lib --prefix=${HOME}/packages/phdf5-1_8
+grep -q "1.10" ./configure.ac
+if ( $? == 0 ) then
+  set CONFIG_OPT = "--enable-build-mode=production --enable-fortran"
+  set VERS = "1_10"
+else
+  set CONFIG_OPT = "--enable-production --enable-fortran --enable-fortran2003"
+  set VERS = "1_8"
+endif
+./configure --without-pthread --disable-shared --enable-parallel $CONFIG_OPT --disable-direct-vfd --with-zlib=$HOME/packages/zlib-1.2.8/lib --prefix=$HOME/packages/phdf5-$VERS
 make
 make install

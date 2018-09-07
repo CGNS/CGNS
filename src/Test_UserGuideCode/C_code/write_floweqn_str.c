@@ -20,10 +20,6 @@ library libcgns.a is located)
 
 #if CGNS_VERSION < 3100
 # define cgsize_t int
-#else
-# if CG_BUILD_SCOPE
-#  error enumeration scoping needs to be off
-# endif
 #endif
 
 int main()
@@ -53,7 +49,7 @@ int main()
 
 /* Create 'GoverningEquations' node under 'FlowEquationSet' */
     cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1,"end");
-    cg_governing_write(NSTurbulent);
+    cg_governing_write(CGNS_ENUMV(NSTurbulent));
 /* Create 'DiffusionModel' node under 'GoverningEquations' */
     cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1,
         "GoverningEquations_t",1,"end");
@@ -68,31 +64,31 @@ int main()
     nuse=1;
 /* Create 'GasModel' under 'FlowEquationSet' */
     cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1,"end");
-    cg_model_write("GasModel_t",Ideal);
+    cg_model_write("GasModel_t",CGNS_ENUMV(Ideal));
 /* Create 'SpecificHeatRatio' under GasModel */
     cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1,
         "GasModel_t",1,"end");
-    cg_array_write("SpecificHeatRatio",RealSingle,1,&nuse,&gamma);
+    cg_array_write("SpecificHeatRatio",CGNS_ENUMV(RealSingle),1,&nuse,&gamma);
 /* Create 'DataClass' under 'SpecificHeatRatio' */
     cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1,
         "GasModel_t",1,"DataArray_t",1,"end");
-    cg_dataclass_write(NondimensionalParameter);
+    cg_dataclass_write(CGNS_ENUMV(NondimensionalParameter));
 
 /* Create 'TurbulenceClosure' under 'FlowEquationSet' */
     cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1,"end");
-    cg_model_write("TurbulenceClosure_t",EddyViscosity);
+    cg_model_write("TurbulenceClosure_t",CGNS_ENUMV(EddyViscosity));
 /* Create 'PrandtlTurbulent' under 'TurbulenceClosure' */
     cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1,
         "TurbulenceClosure_t",1,"end");
-    cg_array_write("PrandtlTurbulent",RealSingle,1,&nuse,&prandtl);
+    cg_array_write("PrandtlTurbulent",CGNS_ENUMV(RealSingle),1,&nuse,&prandtl);
 /* Create 'DataClass' under 'PrandtlTurbulent' */
     cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1,
         "TurbulenceClosure_t",1,"DataArray_t",1,"end");
-    cg_dataclass_write(NondimensionalParameter);
+    cg_dataclass_write(CGNS_ENUMV(NondimensionalParameter));
 
 /* Create 'TurbulenceModel' under 'FlowEquationSet' */
     cg_goto(index_file,index_base,"Zone_t",index_zone,"FlowEquationSet_t",1,"end");
-    cg_model_write("TurbulenceModel_t",OneEquation_SpalartAllmaras);
+    cg_model_write("TurbulenceModel_t",CGNS_ENUMV(OneEquation_SpalartAllmaras));
 /* close CGNS file */
     cg_close(index_file);
     printf("\nSuccessfully wrote equation set info to file grid_c.cgns\n");

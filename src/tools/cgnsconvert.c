@@ -14,6 +14,14 @@
 #include "cgns_io.h"
 #include "getargs.h"
 
+#if CG_HAVE_STAT64_STRUCT
+#ifdef _WIN32
+#define stat _stat64
+#else
+#define stat stat64
+#endif
+#endif
+
 static char options[] = "ahfl";
 static char *usgmsg[] = {
     "usage  : cgnsconvert [options] InputFile [OutputFile]",
@@ -21,7 +29,7 @@ static char *usgmsg[] = {
     "   -a : write ADF file",
     "   -h : write HDF5 file",
     "   -f : force output if input format is same as output",
-    "   -l : expand links in ouput file",
+    "   -l : expand links in output file",
     NULL
 };
 

@@ -693,7 +693,7 @@ static cgsize_t write_node_region (cgnsREGN *reg, cgsize_t offset)
 {
     int nn, isect;
     cgsize_t i, j, mid, lo, hi, pos;
-    cgsize_t nfaces, nc, *conns;
+    cgsize_t nfaces, nc, *conns, *conns_offset;
     CGNS_ENUMT(ElementType_t) elemtype = CGNS_ENUMV(ElementTypeNull);
     cgnsNODE *node;
 
@@ -748,13 +748,23 @@ static cgsize_t write_node_region (cgnsREGN *reg, cgsize_t offset)
     if (NULL == conns)
         cgnsImportFatal ("write_node_region:malloc failed for connectivity");
 
+    if (elemtype == CGNS_ENUMV(MIXED)){
+        conns_offset =(cgsize_t *) malloc ((size_t)(num_faces+1) * sizeof(cgsize_t));
+        if (NULL == conns_offset)
+            cgnsImportFatal ("write_node_region:malloc failed for connectivity offset");
+        conns_offset[0] = 0;
+    }
+
     /* write face connectivities */
 
-    for (nc = 0, j = 0; j < num_faces; j++) {
+    for (nc = 0, j = 0, i = 0; j < num_faces; j++) {
         if (facelist[j]->flags) {
-            if (elemtype == CGNS_ENUMV(MIXED))
+            if (elemtype == CGNS_ENUMV(MIXED)){
                 conns[nc++] = facelist[j]->nnodes == 3 ?
                               CGNS_ENUMV(TRI_3) : CGNS_ENUMV(QUAD_4);
+                conns_offset[i+1] = conns_offset[i] + conns[nc-1] + 1;
+                i++;
+            }
             for (nn = 0; nn < facelist[j]->nnodes; nn++) {
                 if (NULL == (node = GetNode (facelist[j]->nodeid[nn], &pos)))
                     cgnsImportFatal ("write_node_region:missing element node");
@@ -763,9 +773,17 @@ static cgsize_t write_node_region (cgnsREGN *reg, cgsize_t offset)
         }
     }
 
-    if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, reg->name,
+    if (elemtype == CGNS_ENUMV(MIXED)) {
+        if (cg_poly_section_write (cgnsFile, cgnsBase, cgnsZone, reg->name,
+            elemtype, offset, offset + nfaces - 1, 0, conns, conns_offset, &isect))
+            cgnsImportFatal ((char *)cg_get_error());
+        free(conns_offset);
+    }
+    else {
+        if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, reg->name,
             elemtype, offset, offset + nfaces - 1, 0, conns, &isect))
-        cgnsImportFatal ((char *)cg_get_error());
+            cgnsImportFatal ((char *)cg_get_error());
+    }
 
     /* create parent cell mapping */
 
@@ -796,7 +814,7 @@ static cgsize_t write_face_region (cgnsREGN *reg, cgsize_t offset)
 {
     int nn, facenum, i, isect;
     cgsize_t elemid, nodeid[4];
-    cgsize_t n, nc, pos, *conns;
+    cgsize_t n, nc, pos, *conns, *conns_offset;
     CGNS_ENUMT(ElementType_t) elemtype = CGNS_ENUMV(ElementTypeNull);
     cgnsELEM *elem;
     cgnsNODE *node;
@@ -822,13 +840,23 @@ static cgsize_t write_face_region (cgnsREGN *reg, cgsize_t offset)
         }
     }
 
+    if (elemtype == CGNS_ENUMV(MIXED))
+    {
+        conns_offset = (cgsize_t *) malloc ((size_t)(reg->nobjs+1) * sizeof(cgsize_t));
+        if (NULL == conns_offset)
+            cgnsImportFatal ("write_face_region:malloc failed for connectivity offset");
+        conns_offset[0] = 0;
+    }
+
     for (nc = 0, n = 0; n < reg->nobjs; n++) {
         elemid = reg->objid[n] >> 3;
         facenum = (int)(reg->objid[n] & 7) - 1;
         elem = GetElement (elemid, &pos);
         nn = get_face_nodes ((pos << 3) | facenum, nodeid);
-        if (elemtype == CGNS_ENUMV(MIXED))
+        if (elemtype == CGNS_ENUMV(MIXED)) {
             conns[nc++] = nn == 3 ? CGNS_ENUMV(TRI_3) : CGNS_ENUMV(QUAD_4);
+            conns_offset[n+1] = conns_offset[n] + conns[nc-1] + 1;
+        }
         for (i = 0; i < nn; i++) {
             if (NULL == (node = GetNode (nodeid[i], &pos)))
                 cgnsImportFatal ("write_face_region:missing element node");
@@ -836,9 +864,18 @@ static cgsize_t write_face_region (cgnsREGN *reg, cgsize_t offset)
         }
     }
 
-    if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, reg->name,
-            elemtype, offset, offset + reg->nobjs - 1, 0, conns, &isect))
-        cgnsImportFatal ((char *)cg_get_error());
+    if (elemtype == CGNS_ENUMV(MIXED))
+    {
+        if (cg_poly_section_write (cgnsFile, cgnsBase, cgnsZone, reg->name,
+                elemtype, offset, offset + reg->nobjs - 1, 0, conns, conns_offset, &isect))
+            cgnsImportFatal ((char *)cg_get_error());
+        free(conns_offset);
+    }
+    else {
+        if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, reg->name,
+                elemtype, offset, offset + reg->nobjs - 1, 0, conns, &isect))
+            cgnsImportFatal ((char *)cg_get_error());
+    }
 
     free (conns);
     return reg->nobjs;
@@ -1681,7 +1718,7 @@ int cgnsImportWrite (void)
 {
     int icoord, isect;
     cgsize_t n, nn, nnodes, sizes[3];
-    cgsize_t nc, nconn, *conns, pos;
+    cgsize_t nc, nconn, *conns, *conns_offset, pos;
     CGNS_ENUMT(ElementType_t) elemtype = CGNS_ENUMV(ElementTypeNull);
 #ifdef DOUBLE_PRECISION
     CGNS_ENUMT(DataType_t) datatype = CGNS_ENUMV(RealDouble);
@@ -1829,6 +1866,13 @@ int cgnsImportWrite (void)
     if (NULL == conns)
         cgnsImportFatal ("cgnsImportWrite:malloc failed for element data");
 
+    if (elemtype == CGNS_ENUMV(MIXED)) {
+        conns_offset = (cgsize_t *) malloc ((size_t)(num_elements+1) * sizeof(cgsize_t));
+        if (NULL == conns_offset)
+            cgnsImportFatal ("cgnsImportWrite:malloc failed for element offset data");
+        conns_offset[0] = 0;
+    }
+
     nc = 0;
     for (n = 0, elem = elemlist; n < num_elements; n++, elem++) {
         if (elemtype == CGNS_ENUMV(MIXED)) {
@@ -1846,6 +1890,7 @@ int cgnsImportWrite (void)
                     conns[nc] = CGNS_ENUMV(HEXA_8);
                     break;
             }
+            conns_offset[n+1] = conns_offset[n] + conns[nc] + 1;
             nc++;
         }
         for (nn = 0; nn < elem->elemtype; nn++) {
@@ -1855,9 +1900,17 @@ int cgnsImportWrite (void)
         }
     }
 
-    if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, "GridElements",
-            elemtype, 1, num_elements, 0, conns, &isect))
-        cgnsImportFatal ((char *)cg_get_error());
+    if (elemtype == CGNS_ENUMV(MIXED)) {
+        if (cg_poly_section_write (cgnsFile, cgnsBase, cgnsZone, "GridElements",
+                elemtype, 1, num_elements, 0, conns, conns_offset, &isect))
+            cgnsImportFatal ((char *)cg_get_error());
+        free(conns_offset);
+    }
+    else {
+        if (cg_section_write (cgnsFile, cgnsBase, cgnsZone, "GridElements",
+                elemtype, 1, num_elements, 0, conns, &isect))
+            cgnsImportFatal ((char *)cg_get_error());
+    }
 
     free (conns);
 

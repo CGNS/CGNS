@@ -546,6 +546,7 @@ typedef struct {            /* Elements_t node                      */
     cgsize_t range[2];      /* index of first and last element  */
     int *rind_planes;       /* No. of rind-elements                 */
     cgns_array *connect;    /* ElementConnectivity                  */
+    cgns_array *connect_offset; /* ElementStartOffset               */
     cgns_array *parelem;    /* ParentElements                       */
     cgns_array *parface;    /* ParentElementsPosition               */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
@@ -944,7 +945,7 @@ typedef struct {
 /* need some of these routines exported for CGNStools */
 
 #if defined(_WIN32) && defined(BUILD_DLL)
-# define CGNSDLL _declspec(dllexport)
+# define CGNSDLL __declspec(dllexport)
 #else
 # define CGNSDLL
 #endif
@@ -988,7 +989,6 @@ CGNSDLL cgns_axisym    *cgi_get_axisym (cgns_file *cg, int B);
 CGNSDLL cgns_ziter     *cgi_get_ziter  (cgns_file *cg, int B, int Z);
 CGNSDLL cgns_zcoor     *cgi_get_zcoor  (cgns_file *cg, int B, int Z, int C);
 CGNSDLL cgns_zcoor     *cgi_get_zcoorGC(cgns_file *cg, int B, int Z);
-CGNSDLL cgns_array     *cgi_get_coord  (cgns_file *cg, int B, int Z, int C);
 CGNSDLL cgns_section   *cgi_get_section(cgns_file *cg, int B, int Z, int S);
 CGNSDLL cgns_sol       *cgi_get_sol    (cgns_file *cg, int B, int Z, int S);
 CGNSDLL cgns_array     *cgi_get_field  (cgns_file *cg, int B, int Z, int S, int F);
@@ -1235,7 +1235,7 @@ int cgi_add_czone(char_33 zonename, cgsize6_t range, cgsize6_t donor_range,
 void cgi_array_print(char *routine, cgns_array *array);
 
 cgsize_t cgi_element_data_size(CGNS_ENUMT(ElementType_t) type,
-			       cgsize_t nelems, const cgsize_t *connect);
+			       cgsize_t nelems, const cgsize_t *connect, const cgsize_t *connect_offset);
 
 /* free memory */
 void cgi_free_file(cgns_file *cg);
@@ -1283,7 +1283,6 @@ void cgi_free_bcarea(cgns_bcarea *bcarea);
 void cgi_free_cprop(cgns_cprop *cprop);
 void cgi_free_cperio(cgns_cperio *cperio);
 void cgi_free_caverage(cgns_caverage *caverage);
-void cgi_free_link(cgns_link *link);
 void cgi_free_user_data(cgns_user_data *user_data);
 void cgi_free_subreg(cgns_subreg *subreg);
 

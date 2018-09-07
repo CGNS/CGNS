@@ -17,10 +17,10 @@ $(OUTDIR) :
 	-@$(MKDIR) $(OUTDIR)
 
 $(WRITE) : cgwrite.F
-	$(F77) $(FOPTS) $(FEOUT)$@ cgwrite.F $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ cgwrite.F $(LIBS)
 
 $(READ) : cgread.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ cgread.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ cgread.F90 $(LIBS)
 
 clean :
 	-$(RM) Test_V2 $(WRITE) $(READ)
