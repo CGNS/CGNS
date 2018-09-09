@@ -2154,33 +2154,33 @@ int cg_coord_read(int file_number, int B, int Z, const char * coordname,
                   const cgsize_t * rmax, void *coord_ptr)
 {
     cgsize_t m_rmin[3], m_rmax[3], m_dim[3];
-	cgsize_t npt = 0;
-	int G = 0;
-	int m_numdim = 1;
-	int n;
+    cgsize_t npt = 0;
+    int G = 0;
+    int m_numdim = 1;
+    int n;
 
-	cg = cgi_get_file(file_number);
-	if (cg == 0) return CG_ERROR;
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
 
-	m_numdim = cg->base[B - 1].zone[Z - 1].index_dim;
+    m_numdim = cg->base[B - 1].zone[Z - 1].index_dim;
 
-	/* verify that range requested is not NULL */
-	if (rmin == NULL || rmax == NULL) {
-		cgi_error("NULL range value.");
-		return CG_ERROR;
-	}
+    /* verify that range requested is not NULL */
+    if (rmin == NULL || rmax == NULL) {
+        cgi_error("NULL range value.");
+        return CG_ERROR;
+    }
 
-	for (n = 0; n < m_numdim; n++) {
-		npt = rmax[n] - rmin[n] + 1;
-		m_rmin[n] = 1;
-		m_rmax[n] = npt;
-		m_dim[n] = npt;
-	}
+    for (n = 0; n < m_numdim; n++) {
+        npt = rmax[n] - rmin[n] + 1;
+        m_rmin[n] = 1;
+        m_rmax[n] = npt;
+        m_dim[n] = npt;
+    }
 
-	return cg_coord_general_read(file_number, B, Z, G,
-		coordname, type, rmin, rmax,
-		m_numdim, m_dim, m_rmin, m_rmax,
-		coord_ptr);
+    return cg_coord_general_read(file_number, B, Z, G,
+        coordname, type, rmin, rmax,
+        m_numdim, m_dim, m_rmin, m_rmax,
+        coord_ptr);
 }
 
 int cg_coord_id(int file_number, int B, int Z, int C, double *coord_id)
@@ -2219,6 +2219,7 @@ int cg_coord_general_read(int file_number, int B, int Z, int G,
     int n, c;
     int read_full_range=1;
     int index_dim, ierr = 0;
+    void *xyz;
     cgsize_t num = 1, npt = 0, m_num = 1;
     cgsize_t s_start[3], s_end[3], s_stride[3];
     cgsize_t m_start[3], m_end[3], m_stride[3];
@@ -2370,6 +2371,38 @@ int cg_coord_general_read(int file_number, int B, int Z, int G,
         return CG_OK;
     }
 
+      /* ADF handling should be improved in ADF layer */
+    if (cg->filetype == CGIO_FILE_ADF2 ||
+        cg->filetype == CGIO_FILE_ADF) {
+        /* need to read into temp array to convert data */
+        xyz = malloc((size_t)(num*size_of(coord->data_type)));
+        if (xyz == NULL) {
+            cgi_error("Error allocating xyz");
+            return CG_ERROR;
+        }
+        if (read_full_range) {
+            if (cgio_read_all_data(cg->cgio, coord->id, xyz)) {
+                free(xyz);
+                cg_io_error("cgio_read_all_data");
+                return CG_ERROR;
+            }
+        }
+        else {
+            if (cgio_read_data(cg->cgio, coord->id,
+                    s_start, s_end, s_stride, index_dim, m_dim,
+                    m_start, m_end, m_stride, xyz)) {
+                free(xyz);
+                cg_io_error("cgio_read_data");
+               return CG_ERROR;
+            }
+        }
+        ierr = cgi_convert_data(num, cgi_datatype(coord->data_type),
+                   xyz, type, coord_ptr);
+        free(xyz);
+        return ierr ? CG_ERROR : CG_OK;
+    }
+
+
       /* in-situ conversion */
     if (read_full_range) {
         if (cgio_read_all_data_type(cg->cgio, coord->id, cgi_adf_datatype(type),
@@ -2393,38 +2426,38 @@ int cg_coord_general_read(int file_number, int B, int Z, int G,
 int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
                    const char * coordname, const void * coord_ptr, int *C)
 {
-	cgns_zone *zone;
-	cgns_zcoor *zcoor;
-	cgsize_t rmin[CGIO_MAX_DIMENSIONS], rmax[CGIO_MAX_DIMENSIONS];
-	cgsize_t m_rmin[CGIO_MAX_DIMENSIONS], m_rmax[CGIO_MAX_DIMENSIONS];
-	cgsize_t m_dims[CGIO_MAX_DIMENSIONS];
-	int n, m_numdim;
-	int G = 0;
+    cgns_zone *zone;
+    cgns_zcoor *zcoor;
+    cgsize_t rmin[CGIO_MAX_DIMENSIONS], rmax[CGIO_MAX_DIMENSIONS];
+    cgsize_t m_rmin[CGIO_MAX_DIMENSIONS], m_rmax[CGIO_MAX_DIMENSIONS];
+    cgsize_t m_dims[CGIO_MAX_DIMENSIONS];
+    int n, m_numdim;
+    int G = 0;
 
-	cg = cgi_get_file(file_number);
-	if (cg == 0) return CG_ERROR;
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
 
-	zone = cgi_get_zone(cg, B, Z);
-	if (zone == 0) return CG_ERROR;
+    zone = cgi_get_zone(cg, B, Z);
+    if (zone == 0) return CG_ERROR;
 
-	zcoor = cgi_get_zcoorGC(cg, B, Z);
-	if (zcoor == 0) return CG_ERROR;
+    zcoor = cgi_get_zcoorGC(cg, B, Z);
+    if (zcoor == 0) return CG_ERROR;
 
-	m_numdim = zone->index_dim;
-	for (n = 0; n < m_numdim; n++) {
-		m_dims[n] = zone->nijk[n] + zcoor->rind_planes[2 * n]
+    m_numdim = zone->index_dim;
+    for (n = 0; n < m_numdim; n++) {
+        m_dims[n] = zone->nijk[n] + zcoor->rind_planes[2 * n]
                   + zcoor->rind_planes[2 * n + 1];
-		rmin[n] = 1 - zcoor->rind_planes[2 * n];
-		rmax[n] = zone->nijk[n] + zcoor->rind_planes[2 * n + 1];
-		m_rmin[n] = 1;
-		m_rmax[n] = m_dims[n];
-	}
+        rmin[n] = 1 - zcoor->rind_planes[2 * n];
+        rmax[n] = zone->nijk[n] + zcoor->rind_planes[2 * n + 1];
+        m_rmin[n] = 1;
+        m_rmax[n] = m_dims[n];
+    }
 
-	return cg_coord_general_write(
-		file_number, B, Z, G,
-		type, coordname, rmin, rmax,
-		m_numdim, m_dims, m_rmin, m_rmax,
-		coord_ptr, C);
+    return cg_coord_general_write(
+        file_number, B, Z, G,
+        type, coordname, rmin, rmax,
+        m_numdim, m_dims, m_rmin, m_rmax,
+        coord_ptr, C);
 }
 
 int cg_coord_partial_write(int file_number, int B, int Z,
@@ -2433,35 +2466,35 @@ int cg_coord_partial_write(int file_number, int B, int Z,
                            const cgsize_t *rmax, const void *coord_ptr,
                            int *C)
 {
-	cgns_zone *zone;
+    cgns_zone *zone;
     cgsize_t m_rmin[CGIO_MAX_DIMENSIONS], m_rmax[CGIO_MAX_DIMENSIONS];
     cgsize_t m_dims[CGIO_MAX_DIMENSIONS];
-	int n, m_numdim;
-	int G = 0;
+    int n, m_numdim;
+    int G = 0;
 
-	if (rmin == NULL || rmax == NULL) {
-		cgi_error("NULL range value.");
-		return CG_ERROR;
-	}
+    if (rmin == NULL || rmax == NULL) {
+        cgi_error("NULL range value.");
+        return CG_ERROR;
+    }
 
-	cg = cgi_get_file(file_number);
-	if (cg == 0) return CG_ERROR;
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
 
-	zone = cgi_get_zone(cg, B, Z);
-	if (zone == 0) return CG_ERROR;
+    zone = cgi_get_zone(cg, B, Z);
+    if (zone == 0) return CG_ERROR;
 
-	m_numdim = zone->index_dim;
-	for (n = 0; n < m_numdim; n++) {
-		m_rmin[n] = 1;
-		m_rmax[n] = rmax[n] - rmin[n] + 1;
-		m_dims[n] = m_rmax[n];
-	}
+    m_numdim = zone->index_dim;
+    for (n = 0; n < m_numdim; n++) {
+        m_rmin[n] = 1;
+        m_rmax[n] = rmax[n] - rmin[n] + 1;
+        m_dims[n] = m_rmax[n];
+    }
 
-	return cg_coord_general_write(
-		file_number, B, Z, G,
-		type, coordname, rmin, rmax,
-		m_numdim, m_dims, m_rmin, m_rmax,
-		coord_ptr, C);
+    return cg_coord_general_write(
+        file_number, B, Z, G,
+        type, coordname, rmin, rmax,
+        m_numdim, m_dims, m_rmin, m_rmax,
+        coord_ptr, C);
 }
 
 int cg_coord_general_write(
