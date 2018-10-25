@@ -69,7 +69,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
 {
   int k;
   hid_t data_id, mem_shape_id, data_shape_id;
-  hsize_t start[ndims], dims[ndims];
+  hsize_t start[CGIO_MAX_DIMENSIONS], dims[CGIO_MAX_DIMENSIONS];
   herr_t herr, herr1;
   hid_t type_id, plist_id;
 
