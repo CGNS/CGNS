@@ -3769,7 +3769,6 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
         oldelems = (cgsize_t *)section->connect->data;
         oldsize = section->connect->dim_vals[0];
         newsize = ElementDataSize;
-        printf("newsize : %d\n", newsize);
 
         if (end < section->range[0]) {
             newsize += oldsize;
