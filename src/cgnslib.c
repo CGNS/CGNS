@@ -99,6 +99,7 @@ int posit_file, posit_base, posit_zone;
 int CGNSLibVersion=CGNS_VERSION;/* Version of the CGNSLibrary*1000  */
 int cgns_compress = 0;
 int cgns_filetype = CG_FILE_NONE;
+int cgns_rindindex = CG_CONFIG_RIND_CORE;
 
 extern void (*cgns_error_handler)(int, char *);
 
@@ -793,6 +794,15 @@ int cg_configure(int what, void *value)
     /* default file type */
     else if (what == CG_CONFIG_FILE_TYPE) {
         return cg_set_file_type((int)((size_t)value));
+    }
+    /* allow pre v3.4 rind-plane indexing */
+    else if (what == CG_CONFIG_FILE_TYPE) {
+      int ivalue = (int)((size_t)value);
+      if (ivalue != CG_CONFIG_RIND_ZERO && ivalue != CG_CONFIG_RIND_CORE) {
+        cgi_error("unknown config setting");
+        return CG_ERROR;
+      }
+      cgns_rindindex = ivalue;
     }
     else {
         cgi_error("unknown config setting");
@@ -5192,8 +5202,16 @@ int cg_field_read(int file_number, int B, int Z, int S, const char *fieldname,
             npt = rmax[n] - rmin[n] + 1;
             num *= npt;
              /* s_ is where you are reading */
-            s_start[n]  = rmin[n] + sol->rind_planes[2*n];
-            s_end[n]    = rmax[n] + sol->rind_planes[2*n];
+            if (cgns_rindindex == CG_CONFIG_RIND_ZERO) {
+              /* old obsolete behavior (versions < 3.4) */
+              s_start[n]  = rmin[n];
+              s_end[n]    = rmax[n];
+            }
+            else {
+              /* new behavior consitent with SIDS */
+              s_start[n]  = rmin[n] + sol->rind_planes[2*n];
+              s_end[n]    = rmax[n] + sol->rind_planes[2*n];
+            }
             s_stride[n] = 1;
              /* m_ is where you are writing */
             m_start[n]  = 1;
@@ -5590,8 +5608,16 @@ int cg_field_partial_write(int file_number, int B, int Z, int S,
 
      /* Size and shape of file space */
     for (n = 0; n < index_dim; n++) {
+      if (cgns_rindindex == CG_CONFIG_RIND_ZERO) {
+        /* old obsolete behavior (versions < 3.4) */
+        s_start[n] = rmin[n];
+        s_end[n]   = rmax[n];
+      }
+      else {
+        /* new behavior consitent with SIDS */
         s_start[n] = rmin[n] + sol->rind_planes[2*n];
         s_end[n]   = rmax[n] + sol->rind_planes[2*n];
+      }
         stride[n]  = 1;
     }
      /* Size and shape of memory space */

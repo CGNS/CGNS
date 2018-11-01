@@ -71,7 +71,7 @@ CGNSDLL int cgp_coord_general_write_data(int fn, int B, int Z, int G, int C,
                                  const cgsize_t *rmin, const cgsize_t *rmax,
                                  int m_numdim, const cgsize_t *m_arg_dims,
                                  const cgsize_t *m_rmin, const cgsize_t *m_rmax,
-                                 const void *coords)
+                                         const void *coords);
 
 CGNSDLL int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin, const cgsize_t *rmax,
 				      void *coordsX,  void *coordsY,  void *coordsZ);

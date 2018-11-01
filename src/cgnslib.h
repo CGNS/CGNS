@@ -118,14 +118,20 @@
 
 /* configuration options */
 
-#define CG_CONFIG_ERROR     1
-#define CG_CONFIG_COMPRESS  2
-#define CG_CONFIG_SET_PATH  3
-#define CG_CONFIG_ADD_PATH  4
-#define CG_CONFIG_FILE_TYPE 5
+#define CG_CONFIG_ERROR      1
+#define CG_CONFIG_COMPRESS   2
+#define CG_CONFIG_SET_PATH   3
+#define CG_CONFIG_ADD_PATH   4
+#define CG_CONFIG_FILE_TYPE  5
+#define CG_CONFIG_RIND_INDEX 6
 
 #define CG_CONFIG_HDF5_COMPRESS   201
 #define CG_CONFIG_HDF5_MPI_COMM   202
+
+/* note: CG_CONFIG_RIND_ZERO is obsolete and considered a bug.  Users are given
+ *       the option only for backwards compatibilty */
+#define CG_CONFIG_RIND_ZERO 0
+#define CG_CONFIG_RIND_CORE 1
 
 #ifdef __cplusplus
 extern "C" {

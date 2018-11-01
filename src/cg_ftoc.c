@@ -241,6 +241,20 @@ CGNSDLL void FMNAME(cg_add_path_f, CG_ADD_PATH_F) (STR_PSTR(pathname),
 
 /*-----------------------------------------------------------------------*/
 
+CGNSDLL void cg_set_rind_zero_f(cgint_f *ier)
+{
+    *ier = (cgint_f)cg_configure(CG_CONFIG_RIND_INDEX, CG_CONFIG_RIND_ZERO);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void cg_set_rind_core_f(cgint_f *ier)
+{
+    *ier = (cgint_f)cg_configure(CG_CONFIG_RIND_INDEX, CG_CONFIG_RIND_CORE);
+}
+
+/*-----------------------------------------------------------------------*/
+
 CGNSDLL void cg_get_cgio_f(cgint_f *fn, cgint_f *cgio_num, cgint_f *ier)
 {
     int i_cgio_num;

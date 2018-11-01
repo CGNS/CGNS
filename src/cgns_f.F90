@@ -894,6 +894,20 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
+     SUBROUTINE cg_set_rind_zero_f(ier) BIND(C, NAME="cg_set_rind_zero_f")
+       IMPLICIT NONE
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_set_rind_zero_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_set_rind_core_f(ier) BIND(C, NAME="cg_set_rind_core_f")
+       IMPLICIT NONE
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_set_rind_core_f
+  END INTERFACE
+
+  INTERFACE
      SUBROUTINE cg_get_cgio_f(fn, cgio_num, ier) BIND(C, NAME="cg_get_cgio_f")
        IMPLICIT NONE
        INTEGER :: fn
