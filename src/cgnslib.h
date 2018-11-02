@@ -1405,9 +1405,21 @@ CGNSDLL int cg_array_info(int A, char *ArrayName,
 	int *DataDimension, cgsize_t *DimensionVector);
 CGNSDLL int cg_array_read(int A, void *Data);
 CGNSDLL int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data);
+CGNSDLL int cg_array_general_read(int A, CGNS_ENUMT(DataType_t) DataType,
+        const cgsize_t *RangeMin, const cgsize_t *RangeMax,
+        int MemoryDataDimension, const cgsize_t *MemoryDimensionVector,
+        const cgsize_t *MemoryRangeMin, const cgsize_t *MemoryRangeMax,
+        void *Data);
 CGNSDLL int cg_array_write(const char * ArrayName,
 	CGNS_ENUMT(DataType_t) DataType, int DataDimension,
 	const cgsize_t * DimensionVector, const void * Data);
+CGNSDLL int cg_array_general_write(const char * ArrayName,
+        CGNS_ENUMT(DataType_t) DataType, int DataDimension,
+        const cgsize_t * DimensionVector,
+        const cgsize_t *RangeMin, const cgsize_t *RangeMax,
+        int MemoryDataDimension, const cgsize_t* MemoryDimensionVector,
+        const cgsize_t *MemoryRangeMin, const cgsize_t *MemoryRangeMax,
+        const void * Data);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write UserDefinedData_t Nodes - new in version 2.1      *
