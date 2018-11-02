@@ -3667,6 +3667,54 @@ CGNSDLL void cg_exit_on_error_f(cgint_f *flag)
   cg_error_handler((int)*flag ? exit_on_error : NULL);
 }
 
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgio_set_dimensions_f_0, CGIO_SET_DIMENSIONS_F_0) (
+    cgint_f *cgio_num, double *id, STR_PSTR(data_type), cgint_f *ndims,
+    cgsize_t *dims, cgint_f *ier STR_PLEN(data_type) )
+{
+    char c_type[CGIO_MAX_DATATYPE_LENGTH+1];
+
+    string_2_C_string(STR_PTR(data_type), STR_LEN(data_type),
+        c_type, CGIO_MAX_DATATYPE_LENGTH, ier);
+    if (*ier) return;
+
+    *ier = (cgint_f)cgio_set_dimensions((int)*cgio_num, *id, c_type, (int)*ndims, dims);
+}
+
+CGNSDLL void FMNAME(cgio_set_dimensions_f_1, CGIO_SET_DIMENSIONS_F_1) (
+    cgint_f *cgio_num, double *id, STR_PSTR(data_type), cgint_f *ndims,
+    cgsize_t *dims, cgint_f *ier STR_PLEN(data_type) )
+{
+    char c_type[CGIO_MAX_DATATYPE_LENGTH+1];
+
+    string_2_C_string(STR_PTR(data_type), STR_LEN(data_type),
+        c_type, CGIO_MAX_DATATYPE_LENGTH, ier);
+    if (*ier) return;
+
+    *ier = (cgint_f)cgio_set_dimensions((int)*cgio_num, *id, c_type, (int)*ndims, dims);
+}
+
+CGNSDLL void cgio_get_dimensions_f_0(
+    cgint_f *cgio_num, double *id, cgint_f *ndims, cgsize_t *dims,
+    cgint_f *ier)
+{
+    int i_ndims;
+
+    *ier = (cgint_f)cgio_get_dimensions((int)*cgio_num, *id, &i_ndims, dims);
+    *ndims = (cgint_f)i_ndims;
+}
+
+CGNSDLL void cgio_get_dimensions_f_1(
+    cgint_f *cgio_num, double *id, cgint_f *ndims, cgsize_t *dims,
+    cgint_f *ier)
+{
+    int i_ndims;
+
+    *ier = (cgint_f)cgio_get_dimensions((int)*cgio_num, *id, &i_ndims, dims);
+    *ndims = (cgint_f)i_ndims;
+}
+
 #ifdef BUILD_PARALLEL
 
 /*======================================================================
