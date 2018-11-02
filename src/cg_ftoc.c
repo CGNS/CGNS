@@ -3056,6 +3056,19 @@ CGNSDLL void __stdcall cg_array_read_as_f(cgint_f *A, CGNS_ENUMT(DataType_t) *ty
 
 /*-----------------------------------------------------------------------*/
 
+CGNSDLL void FMNAME(cg_array_general_read_f, CG_ARRAY_GENERAL_READ_F) (cgint_f *A,
+        CGNS_ENUMT(DataType_t) *DataType, cgsize_t *RangeMin, cgsize_t *RangeMax,
+        cgint_f *MemoryDataDimension, cgsize_t *MemoryDimensionVector,
+        cgsize_t *MemoryRangeMin, cgsize_t *MemoryRangeMax,
+        void *Data, cgint_f *ier)
+{
+    *ier = (cgint_f)cg_array_general_read((int)*A, *DataType, RangeMin, RangeMax,
+                            (int)*MemoryDataDimension, MemoryDimensionVector,
+                            MemoryRangeMin, MemoryRangeMax, Data);
+}
+
+/*-----------------------------------------------------------------------*/
+
 CGNSDLL void cg_nintegrals_f(
 	cgint_f *nintegrals, cgint_f *ier)
 {
@@ -3516,6 +3529,29 @@ CGNSDLL void FMNAME(cg_array_write_f, CG_ARRAY_WRITE_F) (STR_PSTR(ArrayName),
 /*         *ier = (cgint_f)cg_array_write(c_name, *DataType, */
 /*                               (int)*DataDimension, DimensionVector, Data); */
 /* } */
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cg_array_general_write_f, CG_ARRAY_GENERAL_WRITE_F) (STR_PSTR(ArrayName),
+        CGNS_ENUMT(DataType_t) *DataType, cgint_f *DataDimension, cgsize_t *DimensionVector,
+        cgsize_t *RangeMin, cgsize_t *RangeMax,
+        cgint_f *MemoryDataDimension, cgsize_t *MemoryDimensionVector,
+        cgsize_t *MemoryRangeMin, cgsize_t *MemoryRangeMax,
+        void *Data, cgint_f *ier STR_PLEN(ArrayName))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+
+    string_2_C_string(STR_PTR(ArrayName), STR_LEN(ArrayName),
+        c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+#if DEBUG_FTOC
+    printf("      ArrayName='%s'\n", c_name);
+#endif
+    *ier = (cgint_f)cg_array_general_write(c_name, *DataType, (int)*DataDimension,
+                            DimensionVector, RangeMin, RangeMax,
+                            (int)*MemoryDataDimension, MemoryDimensionVector,
+                            MemoryRangeMin, MemoryRangeMax, Data);
+}
 
 /*-----------------------------------------------------------------------*/
 

@@ -1399,7 +1399,7 @@ CGNSDLL int cg_array_info(int A, char *ArrayName,
 	int *DataDimension, cgsize_t *DimensionVector);
 CGNSDLL int cg_array_read(int A, void *Data);
 CGNSDLL int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data);
-CGNSDLL int cg_array_general_read(int A, CGNS_ENUMT(DataType_t) type,
+CGNSDLL int cg_array_general_read(int A, CGNS_ENUMT(DataType_t) DataType,
         const cgsize_t *RangeMin, const cgsize_t *RangeMax,
         int MemoryDataDimension, const cgsize_t *MemoryDimensionVector,
         const cgsize_t *MemoryRangeMin, const cgsize_t *MemoryRangeMax,
