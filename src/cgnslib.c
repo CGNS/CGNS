@@ -10615,6 +10615,152 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
     return ier ? CG_ERROR : CG_OK;
 }
 
+int cg_array_general_read(int A, CGNS_ENUMT(DataType_t) type,
+                          const cgsize_t *RangeMin, const cgsize_t *RangeMax,
+                          int MemoryDataDimension, const cgsize_t *MemoryDimensionVector,
+                          const cgsize_t *MemoryRangeMin, const cgsize_t *MemoryRangeMax,
+                          void *Data)
+{
+    cgns_array *array;
+    int n, ier=0;
+    int read_full_range=1;
+    cgsize_t num = 1;
+    cgsize_t s_stride[CGIO_MAX_DIMENSIONS], m_stride[CGIO_MAX_DIMENSIONS];
+    cgsize_t size_arr=1, mem_size_arr=1, dim_arr=0;
+
+    CHECK_FILE_OPEN
+
+     /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    array = cgi_array_address(CG_MODE_READ, A, "dummy", &ier);
+    if (array==0) return ier;
+
+    for (n=0; n<array->data_dim; n++) num *= array->dim_vals[n];
+
+    if (MemoryDataDimension>12) {
+        cgi_error("Data arrays are limited to 12 dimensions");
+        return CG_ERROR;
+    }
+    if (MemoryDimensionVector == NULL) {
+        cgi_error("Invalid NULL MemoryDimensionVector");
+        return CG_ERROR;
+    }
+    for (n=0; n<MemoryDataDimension; n++) {
+        if (MemoryDimensionVector[n]<=0) {
+            cgi_error("Invalid array size: %d",MemoryDimensionVector[n]);
+            return CG_ERROR;
+        }
+    }
+
+     /* Check Ranges */
+    if (RangeMin == NULL || RangeMax == NULL) {
+        cgi_error("Invalid NULL RangeMin or RangeMax.");
+        return CG_ERROR;
+    }
+
+    if (MemoryRangeMin == NULL || MemoryRangeMax == NULL) {
+        cgi_error("Invalid NULL MemoryRangeMin or MemoryRangeMax.");
+        return CG_ERROR;
+    }
+
+    for (n=0; n<array->data_dim; n++) {
+        dim_arr = RangeMax[n] - RangeMin[n] + 1;
+        size_arr *= dim_arr;
+        if (RangeMin[n]>RangeMax[n]) {
+            cgi_error("Invalid index range.");
+            return CG_ERROR;
+        }
+    }
+
+    for (n=0; n<MemoryDataDimension; n++) {
+        dim_arr = MemoryRangeMax[n] - MemoryRangeMin[n] + 1;
+        mem_size_arr *= dim_arr;
+        if (MemoryRangeMin[n]>MemoryRangeMax[n] ||
+            MemoryRangeMax[n]>MemoryDimensionVector[n] ||
+            MemoryRangeMin[n]<1) {
+            cgi_error("Invalid index MemoryRange.");
+            return CG_ERROR;
+        }
+    }
+
+     /* both the file hyperslab and memory hyperslab must have same
+      * number of elements */
+    if (size_arr != mem_size_arr) {
+        cgi_error("Size of memory array does not match size of requested range");
+        return CG_ERROR;
+    }
+
+     /* check if requested to return full range */
+    for (n=0; n<array->data_dim; n++) {
+        if ((RangeMax[n] - RangeMin[n] + 1)!=array->dim_vals[n]){
+            read_full_range=0;
+            break;
+        }
+    }
+
+     /* Special for Character arrays */
+    if ((type == CGNS_ENUMV(Character) &&
+         cgi_datatype(array->data_type) != CGNS_ENUMV(Character)) ||
+        (type != CGNS_ENUMV(Character) &&
+         cgi_datatype(array->data_type) == CGNS_ENUMV(Character))) {
+        cgi_error("Error exit:  Character array can only be read as character");
+        return CG_ERROR;
+    }
+
+    if (!read_full_range) {
+        for (n = 0; n < array->data_dim; n++) {
+             /* s_ is where you are reading */
+            s_stride[n] = 1;
+        }
+        for (n = 0; n < MemoryDataDimension; n++) {
+             /* m_ is where you are writing */
+            m_stride[n] = 1;
+        }
+    }
+
+     /* quick transfer of data if same data types */
+    if (type == cgi_datatype(array->data_type)) {
+        if (read_full_range) {
+            if (cgio_read_all_data(cg->cgio, array->id, Data)) {
+                cg_io_error("cgio_read_all_data");
+                return CG_ERROR;
+            }
+        }
+        else {
+            if (cgio_read_data(cg->cgio, array->id,
+                    RangeMin, RangeMax, s_stride, MemoryDataDimension,
+                    MemoryDimensionVector, MemoryRangeMin, MemoryRangeMax,
+                    m_stride, Data)) {
+                cg_io_error("cgio_read_data");
+                return CG_ERROR;
+            }
+        }
+        return CG_OK;
+    }
+
+     /* in-situ conversion */
+    if (read_full_range) {
+        if (cgio_read_all_data_type(cg->cgio, array->id, cgi_adf_datatype(type),
+            Data)) {
+            cg_io_error("cgio_read_all_data");
+            return CG_ERROR;
+        }
+    }
+    else {
+        if (cgio_read_data_type(cg->cgio, array->id,
+            RangeMin, RangeMax, s_stride,
+            cgi_adf_datatype(type), MemoryDataDimension, MemoryDimensionVector,
+            MemoryRangeMin, MemoryRangeMax, m_stride,
+            Data)) {
+            cg_io_error("cgio_read_data");
+            return CG_ERROR;
+        }
+    }
+
+    return ier ? CG_ERROR : CG_OK;
+}
+
 int cg_array_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
                    int DataDimension, const cgsize_t * DimensionVector,
                    const void * Data)
@@ -10672,6 +10818,129 @@ int cg_array_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
     if (cgi_posit_id(&posit_id)) return CG_ERROR;
     if (cgi_new_node(posit_id, array->name, "DataArray_t", &array->id,
         array->data_type, array->data_dim, array->dim_vals, Data)) return CG_ERROR;
+
+    return CG_OK;
+}
+
+int cg_array_general_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
+                   int DataDimension, const cgsize_t * DimensionVector,
+                   const cgsize_t *RangeMin, const cgsize_t *RangeMax,
+                   int MemoryDataDimension, const cgsize_t* MemoryDimensionVector,
+                   const cgsize_t *MemoryRangeMin, const cgsize_t *MemoryRangeMax,
+                   const void * Data)
+{
+    cgns_array *array;
+    int n, ier=0;
+    cgsize_t size_arr=1, mem_size_arr=1, dim_arr=0;
+    double posit_id;
+
+    CHECK_FILE_OPEN
+
+     /* verify input */
+    if (cgi_check_strlen(ArrayName)) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+    if (DataType != CGNS_ENUMV(RealSingle) &&
+        DataType != CGNS_ENUMV(RealDouble) &&
+        DataType != CGNS_ENUMV(Integer) &&
+        DataType != CGNS_ENUMV(LongInteger) &&
+        DataType != CGNS_ENUMV(Character)) {
+        cgi_error("Invalid datatype for data array:  %d", DataType);
+        return CG_ERROR;
+    }
+    if (DataDimension>12) {
+        cgi_error("Data arrays are limited to 12 dimensions");
+        return CG_ERROR;
+    }
+    if (DimensionVector == NULL) {
+        cgi_error("Invalid NULL DimensionVector");
+        return CG_ERROR;
+    }
+    for (n=0; n<DataDimension; n++) {
+        if (DimensionVector[n]<=0) {
+            cgi_error("Invalid array size: %d",DimensionVector[n]);
+            return CG_ERROR;
+        }
+    }
+
+    if (MemoryDataDimension>12) {
+        cgi_error("Data arrays are limited to 12 dimensions");
+        return CG_ERROR;
+    }
+    if (MemoryDimensionVector == NULL) {
+        cgi_error("Invalid NULL MemoryDimensionVector");
+        return CG_ERROR;
+    }
+    for (n=0; n<MemoryDataDimension; n++) {
+        if (MemoryDimensionVector[n]<=0) {
+            cgi_error("Invalid array size: %d",MemoryDimensionVector[n]);
+            return CG_ERROR;
+        }
+    }
+
+     /* Check Ranges */
+    if (RangeMin == NULL || RangeMax == NULL) {
+        cgi_error("Invalid NULL RangeMin or RangeMax.");
+        return CG_ERROR;
+    }
+
+    if (MemoryRangeMin == NULL || MemoryRangeMax == NULL) {
+        cgi_error("Invalid NULL MemoryRangeMin or MemoryRangeMax.");
+        return CG_ERROR;
+    }
+
+    for (n=0; n<DataDimension; n++) {
+        dim_arr = RangeMax[n] - RangeMin[n] + 1;
+        size_arr *= dim_arr;
+        if (RangeMin[n]>RangeMax[n]) {
+            cgi_error("Invalid index range.");
+            return CG_ERROR;
+        }
+    }
+
+    for (n=0; n<MemoryDataDimension; n++) {
+        dim_arr = MemoryRangeMax[n] - MemoryRangeMin[n] + 1;
+        mem_size_arr *= dim_arr;
+        if (MemoryRangeMin[n]>MemoryRangeMax[n] ||
+            MemoryRangeMax[n]>MemoryDimensionVector[n] ||
+            MemoryRangeMin[n]<1) {
+            cgi_error("Invalid index MemoryRange.");
+            return CG_ERROR;
+        }
+    }
+
+     /* both the file hyperslab and memory hyperslab must have same
+      * number of elements */
+    if (size_arr != mem_size_arr) {
+        cgi_error("Size of memory array does not match size of requested range");
+        return CG_ERROR;
+    }
+
+     /* get address */
+    array = cgi_array_address(CG_MODE_WRITE, 0, ArrayName, &ier);
+
+    if (array==0) return ier;
+
+     /* Save data */
+    strcpy(array->name, ArrayName);
+    strcpy(array->data_type, cgi_adf_datatype(DataType));
+    array->data_dim = DataDimension;
+    for (n=0; n<DataDimension; n++) array->dim_vals[n]=DimensionVector[n];
+
+     /* initialize other fields */
+    array->link=0;
+    array->ndescr=0;
+    array->data_class=CGNS_ENUMV(DataClassNull);
+    array->units=0;
+    array->exponents=0;
+    array->convert=0;
+    array->data=0;
+
+     /* write to disk */
+    if (cgi_posit_id(&posit_id)) return CG_ERROR;
+    if (cgi_new_node_partial(posit_id, array->name, "DataArray_t", &array->id,
+        array->data_type, array->data_dim, array->dim_vals,
+        RangeMin, RangeMax, MemoryDataDimension, MemoryDimensionVector,
+        MemoryRangeMin, MemoryRangeMax, Data)) return CG_ERROR;
 
     return CG_OK;
 }
