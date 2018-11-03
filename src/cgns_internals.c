@@ -7039,7 +7039,7 @@ int cgi_write_model(double parent_id, cgns_model *model)
     }
 
      /* xModel_t */
-    sprintf(label,"%.30s_t",model->name);
+    sprintf(label,"%s_t",model->name);
     dim_vals = (cgsize_t)strlen(ModelTypeName[model->type]);
 
     if (cgi_new_node(parent_id, model->name, label, &model->id,
