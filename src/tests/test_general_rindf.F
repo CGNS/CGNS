@@ -90,17 +90,17 @@ c write zone
      &               'GridCoordinates_t', cggrid, 'end')
       call cg_rind_write_f(rind, ierr)
 c write coordinates
-      call cg_coord_general_write_f(cgfile, cgbase, cgzone, cggrid,
+      call cg_coord_general_write_f(cgfile, cgbase, cgzone,
      &                      Realsingle, coordname(1),
      &                      rmin, rmax, 3, dims, mrmin, mrmax,
      &                      x, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_general_write_f(cgfile, cgbase, cgzone, cggrid,
+      call cg_coord_general_write_f(cgfile, cgbase, cgzone,
      &                      RealSingle, coordname(2),
      &                      rmin, rmax, 3, dims, mrmin, mrmax,
      &                      y, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_general_write_f(cgfile, cgbase, cgzone, cggrid,
+      call cg_coord_general_write_f(cgfile, cgbase, cgzone,
      &                      RealSingle, coordname(3),
      &                      rmin, rmax, 3, dims, mrmin, mrmax,
      &                      z, cgcoord, ierr)
@@ -142,7 +142,7 @@ c only load core coordinates without rind but inside memory with rind
         mrmax(n) = rind(2*n-1) + size(n)
       enddo
 
-      call cg_coord_general_read_f(cgfile, cgbase, cgzone, cggrid,
+      call cg_coord_general_read_f(cgfile, cgbase, cgzone,
      &     'CoordinateX', RealSingle, rmin, rmax, 3,
      &     dims, mrmin, mrmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
@@ -161,7 +161,7 @@ c only load core coordinates without rind but inside memory with rind
         print *,'differences in CoordinateX'
       endif
 
-      call cg_coord_general_read_f(cgfile, cgbase, cgzone, cggrid,
+      call cg_coord_general_read_f(cgfile, cgbase, cgzone,
      &     'CoordinateY', RealSingle, rmin, rmax, 3,
      &     dims, mrmin, mrmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
@@ -180,7 +180,7 @@ c only load core coordinates without rind but inside memory with rind
         print *,'differences in CoordinateY'
       endif
 
-      call cg_coord_general_read_f(cgfile, cgbase, cgzone, cggrid,
+      call cg_coord_general_read_f(cgfile, cgbase, cgzone,
      &     'CoordinateZ', RealSingle, rmin, rmax, 3,
      &     dims, mrmin, mrmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f

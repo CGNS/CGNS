@@ -5498,7 +5498,6 @@ int cg_field_partial_write(int file_number, int B, int Z, int S,
 {
     cgns_zone *zone;
     cgns_sol *sol;
-    cgns_array *field;
     int n, m_numdim;
     cgsize_t m_dims[CGIO_MAX_DIMENSIONS];
     cgsize_t m_rmin[CGIO_MAX_DIMENSIONS], m_rmax[CGIO_MAX_DIMENSIONS];
