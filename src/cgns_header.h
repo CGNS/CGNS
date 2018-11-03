@@ -1180,8 +1180,8 @@ int cgi_move_node(double old_id, double node_id, double new_id, cchar_33 node_na
 int cgi_delete_node (double parent_id, double node_id);
 
 /* error handling */
-CGNSDLL void cgi_error(char *format, ...);
-CGNSDLL void cgi_warning(char *format, ...);
+CGNSDLL void cgi_error(const char *format, ...);
+CGNSDLL void cgi_warning(const char *format, ...);
 CGNSDLL void cg_io_error(const char *routine_name);
 
 /* retrieve list number from list name */
