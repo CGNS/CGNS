@@ -122,13 +122,13 @@ int main (int argc, char *argv[])
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "GridCoordinates_t", cggrid, "end") ||
         cg_rind_write(rind) ||
-	cg_coord_general_write(cgfile, cgbase, cgzone, cggrid,
+	cg_coord_general_write(cgfile, cgbase, cgzone,
 	       	CGNS_ENUMV( RealSingle ), "CoordinateX",
 		rmin, rmax, 3, dims, m_rmin, m_rmax, xcoord, &cgcoor) ||
-	cg_coord_general_write(cgfile, cgbase, cgzone, cggrid,
+	cg_coord_general_write(cgfile, cgbase, cgzone,
 	       	CGNS_ENUMV( RealSingle ), "CoordinateY",
 		rmin, rmax, 3, dims, m_rmin, m_rmax, ycoord, &cgcoor) ||
-	cg_coord_general_write(cgfile, cgbase, cgzone, cggrid,
+	cg_coord_general_write(cgfile, cgbase, cgzone,
 		CGNS_ENUMV( RealSingle ), "CoordinateZ",
 		rmin, rmax, 3, dims, m_rmin, m_rmax, zcoord, &cgcoor))
         cg_error_exit();
@@ -169,7 +169,7 @@ int main (int argc, char *argv[])
         m_rmax[n] = rind[2*n] + size[n];
     }
 
-    if (cg_coord_general_read(cgfile, cgbase, cgzone, cggrid, "CoordinateX",
+    if (cg_coord_general_read(cgfile, cgbase, cgzone, "CoordinateX",
             CGNS_ENUMV(RealSingle), rmin, rmax, 3, dims, m_rmin, m_rmax, fbuf))
         cg_error_exit();
 
@@ -185,7 +185,7 @@ int main (int argc, char *argv[])
     nn += np;
     if (np) printf("%d differences in CoordinateX\n", np);
 
-    if (cg_coord_general_read(cgfile, cgbase, cgzone, cggrid, "CoordinateY",
+    if (cg_coord_general_read(cgfile, cgbase, cgzone, "CoordinateY",
             CGNS_ENUMV(RealSingle), rmin, rmax, 3, dims, m_rmin, m_rmax, fbuf))
         cg_error_exit();
 
@@ -201,7 +201,7 @@ int main (int argc, char *argv[])
     nn += np;
     if (np) printf("%d differences in CoordinateY\n", np);
 
-    if (cg_coord_general_read(cgfile, cgbase, cgzone, cggrid, "CoordinateZ",
+    if (cg_coord_general_read(cgfile, cgbase, cgzone, "CoordinateZ",
             CGNS_ENUMV(RealSingle), rmin, rmax, 3, dims, m_rmin, m_rmax, fbuf))
         cg_error_exit();
                                                                                   

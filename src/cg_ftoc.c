@@ -243,14 +243,14 @@ CGNSDLL void FMNAME(cg_add_path_f, CG_ADD_PATH_F) (STR_PSTR(pathname),
 
 CGNSDLL void cg_set_rind_zero_f(cgint_f *ier)
 {
-    *ier = (cgint_f)cg_configure(CG_CONFIG_RIND_INDEX, CG_CONFIG_RIND_ZERO);
+    *ier = (cgint_f)cg_configure(CG_CONFIG_RIND_INDEX, (void *)CG_CONFIG_RIND_ZERO);
 }
 
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void cg_set_rind_core_f(cgint_f *ier)
 {
-    *ier = (cgint_f)cg_configure(CG_CONFIG_RIND_INDEX, CG_CONFIG_RIND_CORE);
+    *ier = (cgint_f)cg_configure(CG_CONFIG_RIND_INDEX, (void *)CG_CONFIG_RIND_CORE);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -779,7 +779,7 @@ CGNSDLL void FMNAME(cg_coord_read_f, CG_COORD_READ_F) (cgint_f *fn, cgint_f *B,
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_coord_general_read_f, CG_COORD_GENERAL_READ_F) (cgint_f *fn,
-        cgint_f *B, cgint_f *Z, cgint_f *G, STR_PSTR(coordname),
+        cgint_f *B, cgint_f *Z, STR_PSTR(coordname),
         CGNS_ENUMT(DataType_t) *type, cgsize_t *rmin, cgsize_t *rmax,
         cgint_f *m_numdim, cgsize_t *m_dim,
         cgsize_t *m_rmin, cgsize_t *m_rmax,
@@ -793,7 +793,7 @@ CGNSDLL void FMNAME(cg_coord_general_read_f, CG_COORD_GENERAL_READ_F) (cgint_f *
 #if DEBUG_FTOC
     printf("coordname='%s'\n", c_name);
 #endif
-    *ier = (cgint_f)cg_coord_general_read((int)*fn, (int)*B, (int)*Z, (int)*G,
+    *ier = (cgint_f)cg_coord_general_read((int)*fn, (int)*B, (int)*Z,
                c_name, *type, rmin, rmax, (int)*m_numdim, m_dim,
 	       m_rmin, m_rmax, coord);
 }
@@ -851,7 +851,7 @@ CGNSDLL void FMNAME(cg_coord_partial_write_f, CG_COORD_PARTIAL_WRITE_F) (
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_coord_general_write_f, CG_COORD_GENERAL_WRITE_F) (
-        cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *G, CGNS_ENUMT(DataType_t) *type,
+        cgint_f *fn, cgint_f *B, cgint_f *Z, CGNS_ENUMT(DataType_t) *type,
         STR_PSTR(coordname), cgsize_t *rmin, cgsize_t *rmax, cgint_f *m_numdim,
         cgsize_t *m_dims, cgsize_t *m_rmin, cgsize_t *m_rmax, void *coord, cgint_f *C,
         cgint_f *ier STR_PLEN(coordname))
@@ -866,7 +866,7 @@ CGNSDLL void FMNAME(cg_coord_general_write_f, CG_COORD_GENERAL_WRITE_F) (
     printf("    coordname='%s'\n", c_name);
 #endif
     *ier = (cgint_f)cg_coord_general_write((int)*fn, (int)*B, (int)*Z,
-               (int)*G, (CGNS_ENUMT(DataType_t))*type, c_name,
+               (CGNS_ENUMT(DataType_t))*type, c_name,
 	       rmin, rmax, (int)*m_numdim, m_dims, m_rmin, m_rmax,
                coord, &i_C);
     *C = (cgint_f)i_C;
