@@ -934,7 +934,7 @@ CGNSDLL int cg_coord_partial_write(int fn, int B, int Z,
 	CGNS_ENUMT(DataType_t) type, const char * coordname,
     const cgsize_t *rmin, const cgsize_t *rmax,
     const void * coord_ptr, int *C);
-CGNSDLL int cg_coord_general_write(int fn, int B, int Z, int G,
+CGNSDLL int cg_coord_general_write(int fn, int B, int Z,
 	CGNS_ENUMT(DataType_t) type, const char *coordname,
 	const cgsize_t *rmin, const cgsize_t *rmax,
 	int m_numdim, const cgsize_t *m_dims,
