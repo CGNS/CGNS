@@ -56,43 +56,6 @@ extern MPI_Info pcg_mpi_info;
 #define ADFH_USE_STRINGS
 #define ADFH_FORTRAN_INDEXING
 
-#if H5_VERS_MAJOR < 2 && H5_VERS_MINOR < 8
-#define HDF5_PRE_1_8 1
-#endif
-
-#ifdef HDF5_PRE_1_8
-# warning Building using older version of HDF5. Support for links will be disabled. */
-
-#define H5A_info_t   void
-#define H5E_error2_t H5E_error_t
-#define H5E_walk2_t  H5E_walk_t
-#define H5E_DEFAULT  0
-
-
-/* Currently, acpl_id and aapl_id are not used by HDF5 */
-#define H5Acreate2(loc_id, attr_name, type_id, space_id, acpl_id,aapl_id) \
-  H5Acreate(loc_id, attr_name, type_id, space_id, acpl_id)
-
-/* dapl_id has no effect at this point is is always H5P_DEFAULT_*/
-#define H5Dopen2(file_id, name, dapl_id)  H5Dopen(file_id, name)
-
-/* lcpl_id is for link creation and is not supported by older HDF5. */
-#define H5Dcreate2(loc_id, name, type_id, space_id, lcpl_id, dcpl_id, dapl_id)\
-  H5Dcreate(loc_id, name, type_id, space_id, dcpl_id)
-
-/* These functions are for error handling */
-#define H5Ewalk2(a1, a2, a3, a4)  H5Ewalk(a2,a3,a4)
-#define H5Eset_auto2(estack_id, func, client_data)  \
-  H5Eset_auto(func, client_data)
-
-/* gapl_id has no effect at this point is is always H5P_DEFAULT */
-#define H5Gopen2(loc_id, name, gapl_id)   H5Gopen(loc_id, name)
-/* The property lists are always H5P_DEFAULT so they have no effect. */
-#define H5Gcreate2(loc_id, name, lcpl_id,gcpl_id, gapl_id) \
-  H5Gcreate(loc_id, name, 0);
-
-#endif /* HDF5_PRE_1_8 */
-
 static int CompressData = -1;
 
 #ifdef BUILD_PARALLEL
@@ -187,10 +150,8 @@ typedef struct _ADFH_MTA {
   int i_count;
 #endif
   /* HDF5 property lists */
-#if !defined(HDF5_PRE_1_8)
   hid_t g_proplink;
   hid_t g_propgroupcreate;
-#endif
   hid_t g_propdataset;
 
   int   g_flags;
@@ -354,11 +315,7 @@ static herr_t print_H5_error(int n, H5E_error2_t *desc, void *data)
 
 /* ----------------------------------------------------------------- */
 
-#ifdef HDF5_PRE_1_8
-static herr_t walk_H5_error(void *data)
-#else
 static herr_t walk_H5_error(hid_t estack, void *data)
-#endif /* HDF5_PRE_1_8 */
 {
   if ((mta_root != NULL) && (mta_root->g_error_state)) {
     fflush(stdout);
@@ -491,11 +448,9 @@ static hid_t get_att_id(hid_t id, const char *name, int *err)
 
   /* H5Aclose() performed elsewhere */
   if (aid < 0) {
-#if !defined(HDF5_PRE_1_8)
     if (!has_att(id, name))
       set_error(ADFH_ERR_NO_ATT, err);
     else
-#endif /* HDF5_PRE_1_8 */
       set_error(ADFH_ERR_AOPEN, err);
   }
   else
@@ -899,12 +854,9 @@ static herr_t count_children(hid_t id, const char *name, void *number)
 }
 
 /* ----------------------------------------------------------------- */
-#if defined(HDF5_PRE_1_8)
-static herr_t children_names(hid_t id, const char *name, void *namelist)
-#else
+
 static herr_t children_names(hid_t id, const char *name,
 			     const H5L_info_t *linfo, void *namelist)
-#endif
 {
 #ifndef ADFH_NO_ORDER
   hid_t gid;
@@ -942,12 +894,8 @@ static herr_t children_names(hid_t id, const char *name,
 }
 
 /* ----------------------------------------------------------------- */
-#if defined(HDF5_PRE_1_8)
-static herr_t children_ids(hid_t id, const char *name, void *idlist)
-#else
 static herr_t children_ids(hid_t id, const char *name,
 			   const H5L_info_t *linfo, void *idlist)
-#endif
 
 {
   hid_t gid;
@@ -1060,9 +1008,7 @@ static hid_t open_link(hid_t id, int *err)
   const char  *path;
   H5G_stat_t	sb; /* Object information */
 
-#if !defined(HDF5_PRE_1_8)
   char  querybuff[512];
-#endif
 
 #ifdef ADFH_DEBUG_ON
   H5O_info_t oinfo;/* debug purpose only */
@@ -1072,13 +1018,11 @@ static hid_t open_link(hid_t id, int *err)
   ADFH_DEBUG((">ADFH open_link [%s]",buffname));
 #endif
 
-#if !defined(HDF5_PRE_1_8)
   if (H5Lis_registered(H5L_TYPE_EXTERNAL) != 1)
   {
     set_error(ADFH_ERR_LIBREG, err);
     return -1;
   }
-#endif /* HDF5_PRE_1_8 */
   herr=H5Gget_objinfo(id, D_LINK, (hbool_t)0, &sb);
 
   if (herr<0)
@@ -1093,7 +1037,6 @@ static hid_t open_link(hid_t id, int *err)
 
   if (H5G_LINK != sb.type)
   {
-#if !defined(HDF5_PRE_1_8)
     if (H5G_UDLINK != sb.type)
     {
       set_error(ADFH_ERR_NOTXLINK, err);
@@ -1111,7 +1054,6 @@ static hid_t open_link(hid_t id, int *err)
       set_error(ADFH_ERR_XLINK_UNPACK, err);
       return -1;
     }
-#endif /* HDF5_PRE_1_8 */
     /* open the actual link >> IN THE LINK GROUP << */
     ADFH_DEBUG((">ADFH open_link (external)"));
     if ((lid = H5Gopen2(id, D_LINK, H5P_DEFAULT)) < 0)
@@ -1898,9 +1840,6 @@ void ADFH_Children_Names(const double pid,
   /*initialize names to null*/
   memset(names, 0, ilen*name_length);
   if ((hpid = open_node(pid, err)) >= 0) {
-#if defined(HDF5_PRE_1_8)
-    H5Giterate(hpid, ".", NULL, children_names, (void *)names);
-#else
     H5Literate(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
 	       NULL,children_names,(void *)names);
     if (names[0]==0)
@@ -1908,7 +1847,6 @@ void ADFH_Children_Names(const double pid,
       H5Literate(hpid,H5_INDEX_NAME,H5_ITER_INC,
 		 NULL,children_names,(void *)names);
     }
-#endif
     H5Gclose(hpid);
   }
   *ilen_ret = mta_root->n_names;
@@ -1942,9 +1880,6 @@ void ADFH_Children_IDs(const double pid,
   mta_root->i_count = 0;
 #endif
   if ((hpid = open_node(pid, err)) >= 0) {
-#if defined(HDF5_PRE_1_8)
-    H5Giterate(hpid, ".", NULL, children_ids, (void *)IDs);
-#else
     H5Literate(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
 	       NULL,children_ids,(void *)IDs);
     if (IDs[0]==-1)
@@ -1952,7 +1887,6 @@ void ADFH_Children_IDs(const double pid,
       H5Literate(hpid,H5_INDEX_NAME,H5_ITER_INC,
 		 NULL,children_ids,(void *)IDs);
     }
-#endif
     H5Gclose(hpid);
   }
   *icount_ret = mta_root->n_names;
@@ -2010,14 +1944,12 @@ void ADFH_Database_Open(const char   *name,
 
     /* create properties - these are persistent accross all open files.
        When all files are closed, then delete properties */
-#if !defined(HDF5_PRE_1_8)
     /* H5Pclose performed at file close time */
     mta_root->g_proplink=H5Pcreate(H5P_LINK_ACCESS);
     H5Pset_nlinks(mta_root->g_proplink, ADF_MAXIMUM_LINK_DEPTH);
     mta_root->g_propgroupcreate=H5Pcreate(H5P_GROUP_CREATE);
     H5Pset_link_creation_order(mta_root->g_propgroupcreate,
 			     H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
-#endif
     mta_root->g_propdataset=H5Pcreate(H5P_DATASET_CREATE);
   }
 
@@ -2126,11 +2058,9 @@ void ADFH_Database_Open(const char   *name,
 #endif
 
   /*  H5Pset_latest_format(fapl, 1); */
-#if !defined(HDF5_PRE_1_8)
   /* Performance patch applied by KSH on 2009.05.18 */
   H5Pset_libver_bounds(g_propfileopen,
 		       H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
-#endif
   /* open the file */
 
 #ifdef BUILD_PARALLEL
@@ -2178,12 +2108,10 @@ void ADFH_Database_Open(const char   *name,
 
 #endif
 
-#if !defined(HDF5_PRE_1_8)
     /* add creation time for groups (used by iterators)
       (prop set to file creation )*/
     H5Pset_link_creation_order(g_propfilecreate,
 			     H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
-#endif
     fid = H5Fcreate(name, H5F_ACC_TRUNC, g_propfilecreate, g_propfileopen);
     H5Pclose(g_propfilecreate);
     H5Pclose(g_propfileopen);
@@ -2460,10 +2388,8 @@ void ADFH_Database_Close(const double  root,
   for (n = 0; n < ADFH_MAXIMUM_FILES; n++)  idx+=mta_root->g_files[n];
   /* if no more files open, close properties and free MTA */
   if (!idx) {
-#if !defined(HDF5_PRE_1_8)
     H5Pclose(mta_root->g_proplink);
     H5Pclose(mta_root->g_propgroupcreate);
-#endif /* HDF5_PRE_1_8 */
     H5Pclose(mta_root->g_propdataset);
     free(mta_root);
     mta_root=NULL;
@@ -2902,7 +2828,6 @@ void ADFH_Link(const double  pid,
   ADFH_CHECK_HID(lid);
   if (set_str_att(lid, A_TYPE, ADFH_LK, err)) return;
 
-#if !defined(HDF5_PRE_1_8)
   /*
    * If this is a link to a file, then need to create external link
    * Otherwise, create a soft link
@@ -2920,7 +2845,6 @@ void ADFH_Link(const double  pid,
 		     mta_root->g_proplink);
   }
   else
-#endif
   {
     target = (char *) malloc (strlen(name_in_file)+2);
     if (target == NULL) {

@@ -288,6 +288,11 @@ if (CGNS_ENABLE_HDF5)
     mark_as_advanced(FORCE SZIP_LIBRARY)
   endif (HDF5_NEED_SZIP)
 
+  # Check if HDF5 version is 1.8 or greater
+  if (HDF5_VERSION VERSION_LESS "1.8.0")
+    message (FATAL_ERROR "HDF5 version must be greater than 1.8.0")
+  endif (HDF5_VERSION VERSION_LESS "1.8.0")
+
   set(HDF5_NEED_MPI "OFF" CACHE BOOL "Does the HDF5 library require linking to mpi? (Only true if using parallel HDF5)")
   set(MPI_INC)
   set(MPI_LIBS)

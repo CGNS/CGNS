@@ -5659,6 +5659,29 @@ $as_echo "$hdf5dir" >&6; }
   fi
   HDF5DEF=-I$HDF5INC
 
+
+  # Checking version of HDF5 (req. minimum 1.8)
+  ## --------------------------------------------------------------------
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking HDF5 library version" >&5
+$as_echo_n "checking HDF5 library version... " >&6; }
+  H5_VERS_MAJOR=`grep "#define H5_VERS_MAJOR" $HDF5INC/H5public.h | sed "s/H5_VERS_MAJOR//g" | sed "s/[^0-9]*//g"`
+  H5_VERS_MINOR=`grep "#define H5_VERS_MINOR" $HDF5INC/H5public.h | sed "s/H5_VERS_MINOR//g" | sed "s/[^0-9]*//g"`
+  H5_VERS_RELEASE=`grep "#define H5_VERS_RELEASE" $HDF5INC/H5public.h | sed "s/H5_VERS_RELEASE//g" | sed "s/[^0-9]*//g"`
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${H5_VERS_MAJOR}.${H5_VERS_MINOR}.${H5_VERS_RELEASE}" >&5
+$as_echo "${H5_VERS_MAJOR}.${H5_VERS_MINOR}.${H5_VERS_RELEASE}" >&6; }
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if HDF5 is 1.8 or greater" >&5
+$as_echo_n "checking if HDF5 is 1.8 or greater... " >&6; }
+  function version_gt {
+       test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" != "$1";
+  }
+  if version_gt ${H5_VERS_MAJOR}.${H5_VERS_MINOR} "1.7"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  else
+    as_fn_error $? "no" "$LINENO" 5
+  fi
+
   # Check if HDF5 library has multi-dataset read and write APIs
   ## --------------------------------------------------------------------
 
