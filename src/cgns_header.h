@@ -1179,6 +1179,20 @@ int cgi_new_node_partial(double parent_id, char const *name, char const *label,
 int cgi_move_node(double old_id, double node_id, double new_id, cchar_33 node_name);
 int cgi_delete_node (double parent_id, double node_id);
 
+/* general array reading and writing */
+int cgi_array_general_read(const cgns_array *array,
+    const int rind_index, const int* rind_planes, const int s_numdim,
+    const cgsize_t *rmin, const cgsize_t *rmax,
+    CGNS_ENUMT(DataType_t) m_type, const int m_numdim,
+    const cgsize_t *m_dimvals, const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+    void* data);
+int cgi_array_general_write(const cgns_array *array,
+    CGNS_ENUMT(DataType_t) s_type, int s_numdim, const cgsize_t *s_dimvals,
+    const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+    CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t *m_dimvals,
+    const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+    void* data);
+
 /* error handling */
 CGNSDLL void cgi_error(const char *format, ...);
 CGNSDLL void cgi_warning(const char *format, ...);
@@ -1213,7 +1227,7 @@ int cgi_zone_no(cgns_base *base, char *zonename, int *zone_no);
 
 /* miscelleneous */
 int cgi_sort_names(int n, double *ids);
-int size_of(char_33 adf_type);
+int size_of(const char_33 adf_type);
 char *type_of(char_33 data_type);
 int cgi_check_strlen(char const * string);
 int cgi_check_strlen_x2(char const *string);

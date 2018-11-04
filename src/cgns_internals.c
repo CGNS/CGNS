@@ -7928,6 +7928,225 @@ int cgi_delete_node (double parent_id, double node_id)
 }
 
 /***********************************************************************\
+ *              General array reading and writing outine               *
+\***********************************************************************/
+
+
+int cgi_array_general_read(const cgns_array *array,
+    const int rind_index, const int* rind_planes, const int s_numdim,
+    const cgsize_t *rmin, const cgsize_t *rmax,
+    CGNS_ENUMT(DataType_t) m_type, const int m_numdim,
+    const cgsize_t *m_dimvals, const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+    void* data)
+{
+    int n, npt, ierr = CG_OK, read_full_range = 1;
+    cgsize_t s_numpt = 1, m_numpt = 1;
+    cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
+    cgsize_t s_stride[CGIO_MAX_DIMENSIONS], m_stride[CGIO_MAX_DIMENSIONS];
+    void *conv_data;
+
+    CGNS_ENUMT(DataType_t) s_type = cgi_datatype(array->data_type);
+    const cgsize_t *s_dimvals = array->dim_vals;
+
+     /*** verfication for dataset in file */
+     /* verify that range requested is not NULL */
+    if (s_rmin == NULL || s_rmax == NULL) {
+        cgi_error("NULL range value.");
+        return CG_ERROR;
+    }
+
+     /* verify that range requested does not exceed range stored */
+    for (n=0; n<s_numdim; n++) {
+        if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
+             /* old obsolete behavior (versions < 3.4) */
+            if (rmin[n] > rmax[n] ||
+                rmax[n] > s_dimvals[n] ||
+                rmin[n] < 1) {
+                cgi_error("Invalid range of data requested");
+                return CG_ERROR;
+            }
+        }
+        else {
+             /* new behavior consitent with SIDS */
+            if (rmin[n] > rmax[n] ||
+                rmax[n] > (s_dimvals[n] - rind_planes[2*n]) ||
+                rmin[n] < (1 - rind_planes[2*n])) {
+                cgi_error("Invalid range of data requested");
+                return CG_ERROR;
+            }
+        }
+    }
+
+     /* check if requested to return full range */
+    for (n=0; n<s_numdim; n++) {
+        npt = s_rmax[n] - s_rmin[n] + 1;
+        s_numpt *= npt;
+        if (npt != s_dimvals[n]) {
+            read_full_range = 0;
+            break;
+        }
+    }
+
+     /*** verification for dataset in memory */
+     /* verify the rank and dimensions of the memory array */
+    if (m_numdim <= 0 || m_numdim > CGIO_MAX_DIMENSIONS) {
+        cgi_error("Invalid number of dimensions in memory array");
+        return CG_ERROR;
+    }
+
+    if (m_dimvals == NULL) {
+        cgi_error("NULL dimension value.");
+        return CG_ERROR;
+    }
+
+    for (n=0; n<m_numdim; n++) {
+        if (m_dimvals[n] < 1) {
+            cgi_error("Invalid size of dimension in memory array");
+            return CG_ERROR;
+        }
+    }
+
+     /* verify that range requested is not NULL */
+    if (m_rmin == NULL || m_rmax == NULL) {
+        cgi_error("NULL range value.");
+        return CG_ERROR;
+    }
+
+     /* verify that range requested does not exceed range available */
+    for (n=0; n<m_numdim; n++) {
+        if (m_rmin[n] > m_rmax[n] ||
+            m_rmax[n] > m_dimvals[n] ||
+            m_rmin[n] < 1) {
+            cgi_error("Invalid range of memory array provided");
+            return CG_ERROR;
+        }
+    }
+
+     /* check if requested to return full range */
+    for (n=0; n<m_numdim; n++) {
+        npt = m_rmax[n] - m_rmin[n] + 1;
+        m_numpt *= npt;
+        if (npt != m_dimvals[n]) {
+            read_full_range = 0;
+            break;
+        }
+    }
+
+     /* both the file hyperslab and memory hyperslab must have same number of
+      * points */
+    if (s_numpt != m_numpt) {
+        cgi_error("Size of memory array does not match size of requested "
+                  "range");
+        return CG_ERROR;
+    }
+
+    if (!read_full_range) {
+         /* size and shape of file space (read from s) */
+        for (n = 0; n < s_numdim; n++) {
+          if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
+                 /* old obsolete behavior (versions < 3.4) */
+                s_rmin[n] = rmin[n];
+                s_rmax[n] = rmax[n];
+            }
+            else {
+                 /* new behavior consitent with SIDS */
+                s_rmin[n] = rmin[n] + rind_planes[2*n];
+                s_rmax[n] = rmax[n] + rind_planes[2*n];
+            }
+            s_stride[n] = 1;
+        }
+         /* size and shape of memory space (write to m) */
+        for (n = 0; n < m_numdim; n++) {
+            m_stride[n] = 1;
+        }
+    }
+
+     /* quick transfer of data if same data types */
+    if (s_type == m_type) {
+        if (read_full_range) {
+            if (cgio_read_all_data(cg->cgio, array->id, data)) {
+                cg_io_error("cgio_read_all_data");
+                return CG_ERROR;
+            }
+        }
+        else {
+            if (cgio_read_data(cg->cgio, array->id,
+                               s_rmin, s_rmax, s_stride, m_numdim, m_dimvals,
+                               m_rmin, m_rmax, m_stride, data)) {
+                cg_io_error("cgio_read_data");
+                return CG_ERROR;
+            }
+        }
+        return CG_OK;
+    }
+
+    if (cg->filetype == CGIO_FILE_ADF2 ||
+        cg->filetype == CGIO_FILE_ADF) {
+        /* need to read into temp array to convert data */
+        conv_data = malloc((size_t)(s_numpt*size_of(array->data_type)));
+        if (conv_data == NULL) {
+            cgi_error("Error allocating conv_data");
+            return CG_ERROR;
+        }
+        if (read_full_range) {
+            if (cgio_read_all_data(cg->cgio, array->id, conv_data)) {
+                free(conv_data);
+                cg_io_error("cgio_read_all_data");
+                return CG_ERROR;
+            }
+        }
+        else if (s_numdim == m_numdim) {
+            if (cgio_read_data(cg->cgio, array->id,
+                    s_rmin, s_rmax, s_stride, s_numdim, m_dimvals,
+                    m_rmin, m_rmax, m_stride, conv_data)) {
+                free(conv_data);
+                cg_io_error("cgio_read_data");
+               return CG_ERROR;
+            }
+        }
+        else {
+            /* Cannot do an ADF read with type converison and unequal rank */
+            free(conv_data);
+            cgi_error("Reading array with type conversion and unequal rank is "
+                      "not supported in ADF files.");
+            return CG_ERROR;
+        }
+        ierr = cgi_convert_data(s_numpt, s_type, conv_data, m_type, data);
+        free(conv_data);
+        return ierr ? CG_ERROR : CG_OK;
+    }
+
+     /* in-situ conversion */
+    if (read_full_range) {
+        if (cgio_read_all_data_type(cg->cgio, array->id,
+                                    cgi_adf_datatype(m_type), data)) {
+            cg_io_error("cgio_read_all_data");
+            return CG_ERROR;
+        }
+    }
+    else {
+        if (cgio_read_data_type(cg->cgio, array->id,
+                                s_rmin, s_rmax, s_stride,
+                                cgi_adf_datatype(m_type), m_numdim, m_dimvals,
+                                m_rmin, m_rmax, m_stride,
+                                data)) {
+            cg_io_error("cgio_read_data");
+            return CG_ERROR;
+        }
+    }
+    return CG_OK;
+}
+
+int cgi_array_general_write(const cgns_array *array,
+    CGNS_ENUMT(DataType_t) s_type, int s_numdim, const cgsize_t *s_dimvals,
+    const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+    CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t *m_dimvals,
+    const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+    void* data)
+{
+}
+
+/***********************************************************************\
  *            Alphanumerical sorting routine               *
 \***********************************************************************/
 
@@ -8053,7 +8272,7 @@ char *type_of(char_33 data_type)
     }
 }
 
-int size_of(char_33 data_type)
+int size_of(const char_33 data_type)
 {
     if (strcmp(data_type, "I4") == 0) return sizeof(int);
     if (strcmp(data_type, "I8") == 0) return sizeof(cglong_t);
