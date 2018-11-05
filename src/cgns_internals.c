@@ -8144,6 +8144,7 @@ int cgi_array_general_read(
     return CG_OK;
 }
 
+/* s_ prefix is file space, m_ prefix is memory space, p_ is parent node data */
 int cgi_array_general_write(
     const double p_id,                  /* [I] id of parent node */
     int *p_narraylist,                  /* [I/O] number of arrays in parent */
