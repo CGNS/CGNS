@@ -7947,7 +7947,7 @@ int cgi_array_general_read(
     const cgsize_t *m_rmax,             /* [I] range max in memory */
     void* data)                         /* [O] data to load */
 {
-    int n, npt, ierr = CG_OK, read_full_range = 1;
+    int n, npt, read_full_range = 1;
     cgsize_t s_numpt = 1, m_numpt = 1;
 
     CGNS_ENUMT(DataType_t) s_type = cgi_datatype(array->data_type);
@@ -8088,6 +8088,7 @@ int cgi_array_general_read(
     if (cg->filetype == CGIO_FILE_ADF2 ||
         cg->filetype == CGIO_FILE_ADF) {
         /* need to read into temp array to convert data */
+        int ierr = CG_OK;
         void *conv_data;
         conv_data = malloc((size_t)(s_numpt*size_of(array->data_type)));
         if (conv_data == NULL) {
@@ -8162,7 +8163,6 @@ int cgi_array_general_write(
     const void* data,                   /* [I] data to store */
     int *A)                             /* [O] array index for new array */
 {
-    cgns_array *array;
     int n, idx;
     cgsize_t s_numpt = 1, m_numpt = 1;
 
@@ -8268,6 +8268,8 @@ int cgi_array_general_write(
     for (n = 0; n<m_numdim; n++) {
         m_stride[n] = 1;
     }
+
+    cgns_array *array;
 
      /* overwrite a DataArray_t node of same size, name and data-type: */
     for (idx=0; idx<(*p_narraylist); idx++) {
