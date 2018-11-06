@@ -4009,7 +4009,9 @@ CGNSDLL void __stdcall cgp_array_write_data_f(cgint_f *A,
     cgint_f *ier;
     cgns_array *array;
 
-    array = cgi_array_address(CG_MODE_READ, (int)*A, "dummy", &ierr);
+    int have_dup = 0;
+    array = cgi_array_address(CG_MODE_READ, 0, (int)*A, "dummy", &have_dup,
+                              &ierr);
     *ier = (cgint_f)ierr;
     if (array == NULL || (*ier) == (cgint_f)CG_ERROR ) return;
     va_start(ap, data);
@@ -4037,7 +4039,9 @@ CGNSDLL void __stdcall cgp_array_read_data_f(cgint_f *A,
     cgint_f *ier;
     cgns_array *array;
 
-    array = cgi_array_address(CG_MODE_READ, (int)*A, "dummy", &ierr);
+    int have_dup = 0;
+    array = cgi_array_address(CG_MODE_READ, 0, (int)*A, "dummy", &have_dup,
+                              &ierr);
     if (array == NULL) return;
     va_start(ap, data);
     if (0 == strcmp(array->data_type, "C1"))

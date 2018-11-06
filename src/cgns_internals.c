@@ -7887,7 +7887,7 @@ int cgi_new_node_partial(double parent_id, char const *name, char const *label,
     }
 #endif
 
-    for (i = 0; i < numdim; ++i) {
+    for (i = 0; i < CGIO_MAX_DIMENSIONS; ++i) {
         stride[i] = 1;
     }
 
@@ -7956,7 +7956,7 @@ int cgi_array_general_read(
      /*** verfication for dataset in file */
      /* verify that range requested is not NULL */
     if (rmin == NULL || rmax == NULL) {
-        cgi_error("NULL range value.");
+        cgi_error("NULL range value");
         return CG_ERROR;
     }
 
@@ -7999,7 +7999,7 @@ int cgi_array_general_read(
     }
 
     if (m_dimvals == NULL) {
-        cgi_error("NULL dimension value.");
+        cgi_error("NULL dimension value");
         return CG_ERROR;
     }
 
@@ -8012,7 +8012,7 @@ int cgi_array_general_read(
 
      /* verify that range requested is not NULL */
     if (m_rmin == NULL || m_rmax == NULL) {
-        cgi_error("NULL range value.");
+        cgi_error("NULL range value");
         return CG_ERROR;
     }
 
@@ -8043,8 +8043,8 @@ int cgi_array_general_read(
         return CG_ERROR;
     }
 
+//FIXME fix strides
     cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
-    cgsize_t s_stride[CGIO_MAX_DIMENSIONS], m_stride[CGIO_MAX_DIMENSIONS];
     if (!read_full_range) {
          /* size and shape of file space (read from s) */
         for (n = 0; n<s_numdim; n++) {
@@ -8058,12 +8058,13 @@ int cgi_array_general_read(
                 s_rmin[n] = rmin[n] + rind_planes[2*n];
                 s_rmax[n] = rmax[n] + rind_planes[2*n];
             }
-            s_stride[n] = 1;
         }
-         /* size and shape of memory space (write to m) */
-        for (n = 0; n<m_numdim; n++) {
-            m_stride[n] = 1;
-        }
+    }
+
+     /* strides are all unit */
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
+    for (n = 0; n<CGIO_MAX_DIMENSIONS; n++) {
+        stride[n] = 1;
     }
 
      /* quick transfer of data if same data types */
@@ -8076,8 +8077,8 @@ int cgi_array_general_read(
         }
         else {
             if (cgio_read_data(cg->cgio, array->id,
-                               s_rmin, s_rmax, s_stride, m_numdim, m_dimvals,
-                               m_rmin, m_rmax, m_stride, data)) {
+                               s_rmin, s_rmax, stride, m_numdim, m_dimvals,
+                               m_rmin, m_rmax, stride, data)) {
                 cg_io_error("cgio_read_data");
                 return CG_ERROR;
             }
@@ -8102,21 +8103,14 @@ int cgi_array_general_read(
                 return CG_ERROR;
             }
         }
-        else if (s_numdim == m_numdim) {
+        else {
             if (cgio_read_data(cg->cgio, array->id,
-                    s_rmin, s_rmax, s_stride, s_numdim, m_dimvals,
-                    m_rmin, m_rmax, m_stride, conv_data)) {
+                               s_rmin, s_rmax, stride, m_numdim, m_dimvals,
+                               m_rmin, m_rmax, stride, conv_data)) {
                 free(conv_data);
                 cg_io_error("cgio_read_data");
                return CG_ERROR;
             }
-        }
-        else {
-            /* Cannot do an ADF read with type converison and unequal rank */
-            free(conv_data);
-            cgi_error("Reading array with type conversion and unequal rank is "
-                      "not supported in ADF files.");
-            return CG_ERROR;
         }
         ierr = cgi_convert_data(s_numpt, s_type, conv_data, m_type, data);
         free(conv_data);
@@ -8133,9 +8127,9 @@ int cgi_array_general_read(
     }
     else {
         if (cgio_read_data_type(cg->cgio, array->id,
-                                s_rmin, s_rmax, s_stride,
+                                s_rmin, s_rmax, stride,
                                 cgi_adf_datatype(m_type), m_numdim, m_dimvals,
-                                m_rmin, m_rmax, m_stride,
+                                m_rmin, m_rmax, stride,
                                 data)) {
             cg_io_error("cgio_read_data");
             return CG_ERROR;
@@ -8171,7 +8165,7 @@ int cgi_array_general_write(
      /* verify that range requested is not NULL */
      /* verify that range requested does not exceed range of zone */
     if (rmin == NULL || rmax == NULL) {
-        cgi_error("NULL range value.");
+        cgi_error("NULL range value");
         return CG_ERROR;
     }
 
@@ -8209,7 +8203,7 @@ int cgi_array_general_write(
     }
 
     if (m_dimvals == NULL) {
-        cgi_error("NULL dimension value.");
+        cgi_error("NULL dimension value");
         return CG_ERROR;
     }
 
@@ -8222,7 +8216,7 @@ int cgi_array_general_write(
 
      /* verify that range requested is not NULL */
     if (m_rmin == NULL || m_rmax == NULL) {
-        cgi_error("NULL range value.");
+        cgi_error("NULL range value");
         return CG_ERROR;
     }
 
@@ -8250,7 +8244,6 @@ int cgi_array_general_write(
     }
 
     cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
-    cgsize_t s_stride[CGIO_MAX_DIMENSIONS], m_stride[CGIO_MAX_DIMENSIONS];
      /* size and shape of file space (read from s) */
     for (n = 0; n<s_numdim; n++) {
         if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
@@ -8263,43 +8256,76 @@ int cgi_array_general_write(
             s_rmin[n] = rmin[n] + rind_planes[2*n];
             s_rmax[n] = rmax[n] + rind_planes[2*n];
         }
-        s_stride[n] = 1;
     }
-     /* size and shape of memory space (write to m) */
-    for (n = 0; n<m_numdim; n++) {
-        m_stride[n] = 1;
+
+     /* strides are all unit */
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
+    for (n = 0; n<CGIO_MAX_DIMENSIONS; n++) {
+        stride[n] = 1;
     }
 
     cgns_array *array;
 
-     /* overwrite a DataArray_t node of same size, name and data-type: */
-    for (idx=0; idx<(*p_narraylist); idx++) {
-        if (strcmp(arrayname, (*p_arraylist)[idx].name) == 0) {
-            array = &((*p_arraylist)[idx]);
-             /* data type must be the same */
-            if (strcmp(array->data_type, cgi_adf_datatype(m_type))) {
-                cgi_error("Mismatch in data types.");
-                return CG_ERROR;
+     /* check for existing array */
+    int have_dup = 0;
+    if (p_narraylist == NULL) {  /* data array */
+        int ier = 0;
+         /* note: this will allocate a DataArray_t node if existing not found */
+        array = cgi_array_address(CG_MODE_WRITE, 1, 0, arrayname, &have_dup,
+                                  &ier);
+        if (array == 0) return ier;
+    }
+    else {
+        for (idx=0; idx<(*p_narraylist); idx++) {
+            if (strcmp(arrayname, (*p_arraylist)[idx].name) == 0) {
+                have_dup = 1;
+                array = &((*p_arraylist)[idx]);
+                break;
             }
-
-            if (cgio_write_data(cg->cgio, array->id, s_rmin, s_rmax, s_stride,
-                    m_numdim, m_dimvals, m_rmin, m_rmax, m_stride, data)) {
-                cg_io_error("cgio_write_data");
-                return CG_ERROR;
-            }
-            return CG_OK;
         }
     }
 
-     /* add a DataArray_t node: */
-    if (*p_narraylist == 0) {
-        *p_arraylist = CGNS_NEW(cgns_array, (*p_narraylist)+1);
-    } else {
-        *p_arraylist = CGNS_RENEW(cgns_array, (*p_narraylist)+1, *p_arraylist);
+     /* overwrite a DataArray_t node of same name, size and data-type: */
+    if (have_dup) {
+         /* array rank must be the same */
+        if (array->data_dim != s_numdim) {
+            cgi_error("Mismatch in array rank");
+            return CG_ERROR;
+        }
+         /* array dimensions must be the same */
+        for (n = 0; n<s_numdim; n++) {
+            if (array->dim_vals[n] != s_dimvals[n]) {
+                cgi_error("Mismatch in array dimension %d", n);
+                return CG_ERROR;
+            }
+        }
+         /* data type must be the same */
+        if (strcmp(array->data_type, cgi_adf_datatype(m_type))) {
+            cgi_error("Mismatch in data types");
+            return CG_ERROR;
+        }
+
+        if (cgio_write_data(cg->cgio, array->id, s_rmin, s_rmax, stride,
+                            m_numdim, m_dimvals, m_rmin, m_rmax, stride,
+                            data)) {
+            cg_io_error("cgio_write_data");
+            return CG_ERROR;
+        }
+        return CG_OK;
     }
-    array = &((*p_arraylist)[*p_narraylist]);
-    ++(*p_narraylist);
-    (*A) = *p_narraylist;
+
+     /* add a DataArray_t node if not already done */
+    if (p_narraylist) {
+        if (*p_narraylist == 0) {
+            *p_arraylist = CGNS_NEW(cgns_array, (*p_narraylist)+1);
+        } else {
+            *p_arraylist = CGNS_RENEW(cgns_array, (*p_narraylist)+1,
+                                      *p_arraylist);
+        }
+        array = &((*p_arraylist)[*p_narraylist]);
+        ++(*p_narraylist);
+        (*A) = *p_narraylist;
+    }
 
      /* save array information */
     memset(array, 0, sizeof(cgns_array));
@@ -11121,7 +11147,7 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
                               char const *given_name, int *ier)
 {
     cgns_descr *descr=0;
-    int n, error1=0, error2=0;
+    int n, allow_dup=0, error1=0, error2=0;
     double parent_id=0;
 
     /* check for valid posit */
@@ -11320,7 +11346,7 @@ cgns_famname *cgi_multfam_address(int local_mode, int given_no,
                                   char const *given_name, int *ier)
 {
     cgns_famname *famname=0;
-    int n, error1=0, error2=0;
+    int n, allow_dup=0, error1=0, error2=0;
     double parent_id=0;
 
     if (posit == 0) {
@@ -11838,7 +11864,7 @@ cgns_integral *cgi_integral_address(int local_mode, int given_no,
                                     char const *given_name, int *ier)
 {
     cgns_integral *integral=0;
-    int n, error1=0, error2=0;
+    int n, allow_dup=0, error1=0, error2=0;
     double parent_id=0;
 
     /* check for valid posit */
@@ -12129,8 +12155,8 @@ int *cgi_diffusion_address(int local_mode, int *ier)
     return diffusion_model;
 }
 
-cgns_array *cgi_array_address(int local_mode, int given_no,
-                              char const *given_name, int *ier)
+cgns_array *cgi_array_address(int local_mode, int allow_dup, int given_no,
+                              char const *given_name, int* have_dup, int *ier)
 {
     cgns_array *array=0, *coord=0;
     int n, error1=0, error2=0;
@@ -12343,10 +12369,13 @@ cgns_array *cgi_array_address(int local_mode, int given_no,
         return CG_OK;
     }
     if (error1) {
-        cgi_error("Duplicate child name found (%s) found under %s",
-            given_name, posit->label);
-        (*ier) = CG_ERROR;
-        return CG_OK;
+        *have_dup = 1;
+        if (!allow_dup) {
+            cgi_error("Duplicate child name found (%s) found under %s",
+                given_name, posit->label);
+            (*ier) = CG_ERROR;
+            return CG_OK;
+        }
     }
     if (error2) {
         cgi_error("DataArray_t index number %d doesn't exist under %s",
@@ -12354,7 +12383,7 @@ cgns_array *cgi_array_address(int local_mode, int given_no,
         (*ier) = CG_NODE_NOT_FOUND;
         return CG_OK;
     }
-    if (parent_id) {    /* parent_id!=0 only when overwriting */
+    if (parent_id && !allow_dup) {  /* parent_id!=0 only when overwriting */
         if (cgi_delete_node (parent_id, array->id)) {
             (*ier) = CG_ERROR;
             return CG_OK;
@@ -12368,7 +12397,7 @@ cgns_model *cgi_model_address(int local_mode, char const *ModelLabel, int *ier)
 {
     cgns_model *model=0;
     double parent_id=0;
-    int error1=0;
+    int allow_dup=0, error1=0;
 
     /* check for valid posit */
     if (posit == 0) {
@@ -12464,7 +12493,7 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
                                       char const *given_name, int *ier)
 {
     cgns_user_data *user_data=0;
-    int n, error1=0, error2=0;
+    int n, allow_dup=0, error1=0, error2=0;
     double parent_id=0;
 
     /* check for valid posit */
@@ -12648,7 +12677,7 @@ cgns_dataset *cgi_bcdataset_address(int local_mode, int given_no,
                                     char const *given_name, int *ier)
 {
     cgns_dataset *dataset=0;
-    int n, error1=0, error2=0;
+    int n, allow_dup=0, error1=0, error2=0;
     double parent_id=0;
 
     /* check for valid posit */

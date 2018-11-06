@@ -1159,7 +1159,8 @@ int cgp_array_write(const char *ArrayName, CGNS_ENUMT(DataType_t) DataType,
     ierr = cg_array_write(ArrayName, DataType, DataDimension,
                           DimensionVector, NULL);
     if (ierr) return ierr;
-    array = cgi_array_address(CG_MODE_READ, 1, "dummy", &ierr);
+    int have_dup = 0;
+    array = cgi_array_address(CG_MODE_READ, 0, 1, "dummy", &have_dup, &ierr);
     if (array == NULL) return ierr;
     ierr = cg_narrays(&na);
     if (ierr) return ierr;
@@ -1185,7 +1186,8 @@ int cgp_array_write_data(int A, const cgsize_t *rmin,
     cgns_array *array;
     CGNS_ENUMT(DataType_t) type;
 
-    array = cgi_array_address(CG_MODE_READ, A, "dummy", &ierr);
+    int have_dup = 0;
+    array = cgi_array_address(CG_MODE_READ, 0, A, "dummy", &have_dup, &ierr);
     if (array == NULL) return ierr;
 
     if (data) {
@@ -1218,7 +1220,8 @@ int cgp_array_read_data(int A, const cgsize_t *rmin,
     cgns_array *array;
     CGNS_ENUMT(DataType_t) type;
 
-    array = cgi_array_address(CG_MODE_READ, A, "dummy", &ierr);
+    int have_dup = 0;
+    array = cgi_array_address(CG_MODE_READ, 0, A, "dummy", &have_dup, &ierr);
     if (array == NULL) return ierr;
 
     if (data) {
@@ -1646,7 +1649,8 @@ int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
 
   for (n = 0; n < nsets; n++) {
 
-    array = cgi_array_address(CG_MODE_READ, A[n], "dummy", &ierr);
+    int have_dup = 0;
+    array = cgi_array_address(CG_MODE_READ, 0, A[n], "dummy", &have_dup, &ierr);
     if (array == NULL) goto error;
 
     for (m = 0; m < array->data_dim; m++) {
@@ -1710,7 +1714,8 @@ int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
 
   for (n = 0; n < nsets; n++) {
 
-    array = cgi_array_address(CG_MODE_READ, A[n], "dummy", &ierr);
+    int have_dup = 0;
+    array = cgi_array_address(CG_MODE_READ, 0, A[n], "dummy", &have_dup, &ierr);
     if (array == NULL) goto error;
 
     for (m = 0; m < array->data_dim; m++) {

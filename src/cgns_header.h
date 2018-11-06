@@ -72,7 +72,7 @@ typedef int cgint3_t[3];
       parent->nchild++;\
     } else {\
       if (cg->mode == CG_MODE_WRITE) error1=1;\
-      else {\
+      if (cg->mode != CG_MODE_WRITE || allow_dup) {\
         parent_id = parent->id;\
         child= &(parent->child[n]);\
       }\
@@ -1041,7 +1041,7 @@ cgns_state *cgi_state_address(int local_mode, int *ier);
 cgns_converg *cgi_converg_address(int local_mode, int *ier);
 cgns_governing *cgi_governing_address(int local_mode, int *ier);
 int *cgi_diffusion_address(int local_mode, int *ier);
-cgns_array *cgi_array_address(int local_mode, int array_no, char const *array_name, int *ier);
+cgns_array *cgi_array_address(int local_mode, int allow_dup, int array_no, char const *array_name, int* have_dup, int *ier);
 cgns_model *cgi_model_address(int local_mode, char const *ModelLabel, int *ier);
 char *cgi_famname_address(int local_mode, int *ier);
 cgns_famname *cgi_multfam_address(int mode, int num, char const *name, int *ier);
