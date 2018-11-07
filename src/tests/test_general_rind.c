@@ -10,14 +10,6 @@
 #endif
 #include "cgnslib.h"
 
-#ifndef CGNSTYPES_H
-# define cgsize_t int
-#endif
-#ifndef CGNS_ENUMT
-# define CGNS_ENUMT(e) e
-# define CGNS_ENUMV(e) e
-#endif
-
 int CellDim = 3, PhyDim = 3;
 int cgfile, cgbase, cgzone, cggrid, cgsol, cgfld, cgcoor;
 
@@ -39,6 +31,14 @@ static void compute_coord (int n, int i, int j, int k)
     xcoord[n] = (float)(i - rind[0]);
     ycoord[n] = (float)(j - rind[2]);
     zcoord[n] = (float)(k - rind[4]);
+}
+
+static void compute_sol (int i, int j, int k)
+{
+    int sign = 1 - 2*((i < rind[0]) + (i >= size[0] + rind[0]) +
+                      (j < rind[2]) + (j >= size[1] + rind[2]) +
+                      (k < rind[4]) + (k >= size[2] + rind[4]) > 0);
+    solution[INDEX(i, j, k)] = (float)(sign*(1 + (k+1)*1100 + INDEX(i, j, 0)));
 }
 
 int main (int argc, char *argv[])
@@ -77,9 +77,6 @@ int main (int argc, char *argv[])
     solution = zcoord + num_coord;
     fbuf = solution + num_coord;
 
-    for (n = 0; n < num_coord; n++)
-        solution[n] = (float)n;
-
     unlink("rind.cgns");
     if (cg_open("rind.cgns", CG_MODE_WRITE, &cgfile))
         cg_error_exit();
@@ -93,14 +90,14 @@ int main (int argc, char *argv[])
         for (j = 0; j < NUM_J; j++) {
             for (i = 0; i < NUM_I; i++) {
                 compute_coord(n++, i, j, k);
+                compute_sol(i, j, k);
             }
         }
     }
 
     if (cg_base_write(cgfile, "Structured", CellDim, PhyDim, &cgbase) ||
-        cg_goto(cgfile, cgbase, "end") ||
-        cg_dataclass_write(CGNS_ENUMV( NormalizedByUnknownDimensional )) ||
-        cg_zone_write(cgfile, cgbase, "Zone", size, CGNS_ENUMV( Structured ), &cgzone))
+        cg_zone_write(cgfile, cgbase, "Zone", size, CGNS_ENUMV( Structured ),
+                      &cgzone))
         cg_error_exit();
 
     /* use cg_coord_general_write to write coordinates with all rinds

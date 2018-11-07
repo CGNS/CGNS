@@ -7960,34 +7960,39 @@ int cgi_array_general_read(
         return CG_ERROR;
     }
 
-     /* verify that range requested does not exceed range stored */
-    for (n=0; n<s_numdim; n++) {
-        if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
-             /* old obsolete behavior (versions < 3.4) */
-            if (rmin[n] > rmax[n] ||
-                rmax[n] > s_dimvals[n] ||
-                rmin[n] < 1) {
-                cgi_error("Invalid range of data requested");
-                return CG_ERROR;
-            }
-        }
-        else {
-             /* new behavior consitent with SIDS */
-            if (rmin[n] > rmax[n] ||
-                rmax[n] > (s_dimvals[n] - rind_planes[2*n]) ||
-                rmin[n] < (1 - rind_planes[2*n])) {
-                cgi_error("Invalid range of data requested");
-                return CG_ERROR;
-            }
-        }
-    }
-
      /* check if requested to return full range */
+    int s_read_full_range = 1;
     for (n=0; n<s_numdim; n++) {
         npt = rmax[n] - rmin[n] + 1;
         s_numpt *= npt;
         if (npt != s_dimvals[n]) {
+            s_read_full_range = 0;
             read_full_range = 0;
+        }
+    }
+
+     /* verify that range requested does not exceed range stored (if not
+      * reading full range). */
+    if (!s_read_full_range) {
+        for (n=0; n<s_numdim; n++) {
+            if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
+                /* old obsolete behavior (versions < 3.4) */
+                if (rmin[n] > rmax[n] ||
+                    rmax[n] > s_dimvals[n] ||
+                    rmin[n] < 1) {
+                    cgi_error("Invalid range of data requested");
+                    return CG_ERROR;
+                }
+            }
+            else {
+                /* new behavior consitent with SIDS */
+                if (rmin[n] > rmax[n] ||
+                    rmax[n] > (s_dimvals[n] - rind_planes[2*n]) ||
+                    rmin[n] < (1 - rind_planes[2*n])) {
+                    cgi_error("Invalid range of data requested");
+                    return CG_ERROR;
+                }
+            }
         }
     }
 
@@ -8043,20 +8048,30 @@ int cgi_array_general_read(
         return CG_ERROR;
     }
 
-//FIXME fix strides
     cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
     if (!read_full_range) {
          /* size and shape of file space (read from s) */
-        for (n = 0; n<s_numdim; n++) {
-          if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
-                 /* old obsolete behavior (versions < 3.4) */
-                s_rmin[n] = rmin[n];
-                s_rmax[n] = rmax[n];
+        if (s_read_full_range) {
+             /* reset range and discard provided values */
+            s_rmin[n] = 1;
+            s_rmax[n] = s_dimvals[n];
+            if (rind_planes) {
+                s_rmax[n] += rind_planes[2*n] + rind_planes[2*n+1];
             }
-            else {
-                 /* new behavior consitent with SIDS */
-                s_rmin[n] = rmin[n] + rind_planes[2*n];
-                s_rmax[n] = rmax[n] + rind_planes[2*n];
+        }
+        else {
+            for (n = 0; n<s_numdim; n++) {
+                if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
+                     /* old obsolete behavior (versions < 3.4) */
+                    s_rmin[n] = rmin[n];
+                    s_rmax[n] = rmax[n];
+                }
+                else {
+                     /* new behavior consistent with SIDS */
+                     /* convert to first rind at 1 */
+                    s_rmin[n] = rmin[n] + rind_planes[2*n];
+                    s_rmax[n] = rmax[n] + rind_planes[2*n];
+                }
             }
         }
     }

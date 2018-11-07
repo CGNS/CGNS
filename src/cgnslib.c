@@ -796,7 +796,7 @@ int cg_configure(int what, void *value)
         return cg_set_file_type((int)((size_t)value));
     }
     /* allow pre v3.4 rind-plane indexing */
-    else if (what == CG_CONFIG_FILE_TYPE) {
+    else if (what == CG_CONFIG_RIND_INDEX) {
       int ivalue = (int)((size_t)value);
       if (ivalue != CG_CONFIG_RIND_ZERO && ivalue != CG_CONFIG_RIND_CORE) {
         cgi_error("unknown config setting");
