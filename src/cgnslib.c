@@ -5065,7 +5065,7 @@ int cg_field_general_write(int file_number, int B, int Z, int S,
      /* s_ prefix is file space, m_ prefix is memory space */
     cgns_zone *zone;
     cgns_sol *sol;
-    int n, s_numdim;
+    int s_numdim;
 
      /* verify input */
     if (cgi_check_strlen(fieldname)) return CG_ERROR;
@@ -10016,9 +10016,7 @@ int cg_array_general_write(const char *arrayname, CGNS_ENUMT(DataType_t) type,
                            const void *data)
 {
      /* s_ prefix is file space, m_ prefix is memory space */
-    int n, ier=0;
-    cgsize_t size_arr=1, mem_size_arr=1, dim_arr=0;
-    double posit_id;
+    int n;
 
     CHECK_FILE_OPEN
 

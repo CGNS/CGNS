@@ -45,7 +45,6 @@ int main (int argc, char *argv[])
 {
     int n, nn, i, j, k, np;
     cgsize_t dims[3];
-    cgsize_t m_dims[3];
     cgsize_t rmin[3];
     cgsize_t rmax[3];
     cgsize_t m_rmin[3];
