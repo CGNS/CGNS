@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 #ifdef _WIN32
 # include <io.h>
 # define unlink _unlink
@@ -10,40 +11,76 @@
 #endif
 #include "cgnslib.h"
 
-int CellDim = 3, PhyDim = 3;
-int cgfile, cgbase, cgzone, cggrid, cgsol, cgfld, cgcoor;
+const int CellDim = 3, PhyDim = 3;
 
-cgsize_t size[9] = {5, 5, 5,  4, 4, 4,  0, 0, 0};
-int rind[6] = {2, 2,  2, 2,  1, 1};
+const cgsize_t size[3][3] = { {5, 5, 5},  {4, 4, 4},  {0, 0, 0} };
+const int      rind[3][2] = { {2, 2},  {2, 2},  {1, 1}};
 
-#define NUM_I (size[0] + rind[0] + rind[1])
-#define NUM_J (size[1] + rind[2] + rind[3])
-#define NUM_K (size[2] + rind[4] + rind[5])
+#define NUM_I (size[0][0] + rind[0][0] + rind[0][1])
+#define NUM_J (size[0][1] + rind[1][0] + rind[1][1])
+#define NUM_K (size[0][2] + rind[2][0] + rind[2][1])
+#define num_coord (NUM_I * NUM_J * NUM_K)
 
-#define INDEX(I,J,K) (int)((I) + NUM_I * ((J) + NUM_J * (K)))
-
-cgsize_t num_coord;
 float *xcoord, *ycoord, *zcoord;
 float *solution, *fbuf;
 
-static void compute_coord (int n, int i, int j, int k)
-{
-    xcoord[n] = (float)(i - rind[0]);
-    ycoord[n] = (float)(j - rind[2]);
-    zcoord[n] = (float)(k - rind[4]);
+inline static cgsize_t INDEX(cgsize_t ii, cgsize_t jj, cgsize_t kk) {
+    return ii + NUM_I*(jj + NUM_J*(kk));
 }
 
-static void compute_sol (int i, int j, int k)
+/* ranges for arrays sent to CGNS */
+inline static cgsize_t get_s_rmin(const int n, const int nr) {
+    assert(nr >= 0 && nr <= rind[n][0]);
+    return 1 - nr;
+}
+
+inline static cgsize_t get_s_rmax(const int n, const int nr) {
+    assert(nr >= 0 && nr <= rind[n][1]);
+    return size[0][n] + nr;
+}
+
+inline static cgsize_t get_m_rmin(const int n, const int nr) {
+    assert(nr >= 0 && nr <= rind[n][0]);
+    return 1 + rind[n][0] - nr;
+}
+
+inline static cgsize_t get_m_rmax(const int n, const int nr) {
+    assert(nr >= 0 && nr <= rind[n][1]);
+    return rind[n][0] + size[0][n] + nr;
+}
+
+/* ranges for accessing arrays */
+inline static cgsize_t idxmin(const int n, const int nr) {
+    return get_m_rmin(n, nr) - 1;
+}
+
+inline static cgsize_t idxmax(const int n, const int nr) {
+    return get_m_rmax(n, nr) - 1;
+}
+
+/* initial data */
+static void compute_coord(int i, int j, int k)
 {
-    int sign = 1 - 2*((i < rind[0]) + (i >= size[0] + rind[0]) +
-                      (j < rind[2]) + (j >= size[1] + rind[2]) +
-                      (k < rind[4]) + (k >= size[2] + rind[4]) > 0);
+    xcoord[INDEX(i, j, k)] = (float)(i - rind[0][0]);
+    ycoord[INDEX(i, j, k)] = (float)(j - rind[1][0]);
+    zcoord[INDEX(i, j, k)] = (float)(k - rind[2][0]);
+}
+
+static void compute_sol(int i, int j, int k)
+{
+    int sign = 1 - 2*((i < rind[0][0]) + (i >= size[0][0] + rind[0][0]) +
+                      (j < rind[1][0]) + (j >= size[0][1] + rind[1][0]) +
+                      (k < rind[2][0]) + (k >= size[0][2] + rind[2][0]) > 0);
     solution[INDEX(i, j, k)] = (float)(sign*(1 + (k+1)*1100 + INDEX(i, j, 0)));
 }
 
+
 int main (int argc, char *argv[])
 {
-    int n, nn, i, j, k, np;
+    int cgfile, cgbase, cgzone, cggrid, cgcoord, cgsol, cgfld;
+    int nn, np;
+
+    int i, j, k, n;
     cgsize_t dims[3];
     cgsize_t rmin[3];
     cgsize_t rmax[3];
@@ -65,7 +102,6 @@ int main (int argc, char *argv[])
             cg_error_exit();
     }
 
-    num_coord = NUM_I * NUM_J * NUM_K;
     xcoord = (float *) malloc((size_t)(5 * num_coord * sizeof(float)));
     if (NULL == xcoord) {
         fprintf(stderr, "malloc failed for data\n");
@@ -76,27 +112,31 @@ int main (int argc, char *argv[])
     solution = zcoord + num_coord;
     fbuf = solution + num_coord;
 
-    unlink("rind.cgns");
-    if (cg_open("rind.cgns", CG_MODE_WRITE, &cgfile))
-        cg_error_exit();
-
-    /*--- structured grid with rind ---*/
-
-    printf ("writing structured base with rind\n");
-    fflush (stdout);
-
-    for (n = 0, k = 0; k < NUM_K; k++) {
+    for (k = 0; k < NUM_K; k++) {
         for (j = 0; j < NUM_J; j++) {
             for (i = 0; i < NUM_I; i++) {
-                compute_coord(n++, i, j, k);
+                compute_coord(i, j, k);
                 compute_sol(i, j, k);
             }
         }
     }
 
+    /* open */
+
+    unlink("rind.cgns");
+    if (cg_open("rind.cgns", CG_MODE_WRITE, &cgfile))
+        cg_error_exit();
+
+    /*---- structured grid with rind ----*/
+
+    printf ("writing structured base with rind\n");
+    fflush (stdout);
+
+    /* write base and zone */
+
     if (cg_base_write(cgfile, "Structured", CellDim, PhyDim, &cgbase) ||
-        cg_zone_write(cgfile, cgbase, "Zone", size, CGNS_ENUMV( Structured ),
-                      &cgzone))
+        cg_zone_write(cgfile, cgbase, "Zone", (cgsize_t*)size,
+                      CGNS_ENUMV( Structured ), &cgzone))
         cg_error_exit();
 
     /* use cg_coord_general_write to write coordinates with all rinds
@@ -108,39 +148,44 @@ int main (int argc, char *argv[])
     dims[2] = NUM_K;
 
     for (n=0; n<3; n++) {
-        rmin[n]   = 1-rind[2*n];
-        rmax[n]   = size[n] + rind[2*n+1];
-        m_rmin[n] = 1;
-        m_rmax[n] = dims[n];
+        rmin[n]   = get_s_rmin(n, rind[n][0]);
+        rmax[n]   = get_s_rmax(n, rind[n][1]);
+        m_rmin[n] = get_m_rmin(n, rind[n][0]);
+        m_rmax[n] = get_m_rmax(n, rind[n][1]);
     }
+
+    /* write coordinates with rind */
 
     if (cg_grid_write(cgfile, cgbase, cgzone, "GridCoordinates", &cggrid) ||
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "GridCoordinates_t", cggrid, "end") ||
-        cg_rind_write(rind) ||
+        cg_rind_write((int*)rind) ||
 	cg_coord_general_write(cgfile, cgbase, cgzone,
 	       	CGNS_ENUMV( RealSingle ), "CoordinateX",
-		rmin, rmax, 3, dims, m_rmin, m_rmax, xcoord, &cgcoor) ||
+		rmin, rmax, 3, dims, m_rmin, m_rmax, xcoord, &cgcoord) ||
 	cg_coord_general_write(cgfile, cgbase, cgzone,
 	       	CGNS_ENUMV( RealSingle ), "CoordinateY",
-		rmin, rmax, 3, dims, m_rmin, m_rmax, ycoord, &cgcoor) ||
+		rmin, rmax, 3, dims, m_rmin, m_rmax, ycoord, &cgcoord) ||
 	cg_coord_general_write(cgfile, cgbase, cgzone,
 		CGNS_ENUMV( RealSingle ), "CoordinateZ",
-		rmin, rmax, 3, dims, m_rmin, m_rmax, zcoord, &cgcoor))
+		rmin, rmax, 3, dims, m_rmin, m_rmax, zcoord, &cgcoord))
         cg_error_exit();
 
-    /* solution with rind,
-       and the solution dimensions come from the zone sizes */
+    /* write solution with rind, and the solution dimensions come from the zone
+     * sizes */
 
     if (cg_sol_write(cgfile, cgbase, cgzone, "VertexSolution",
 		     CGNS_ENUMV( Vertex ), &cgsol) ||
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "FlowSolution_t", cgsol, "end") ||
-        cg_rind_write(rind) ||
-	cg_field_general_write(cgfile, cgbase, cgzone, cgsol, CGNS_ENUMV( RealSingle ), 
-            "Density", rmin, rmax, 3, dims, m_rmin, m_rmax, solution, &cgfld))
+        cg_rind_write((int*)rind) ||
+	cg_field_general_write(cgfile, cgbase, cgzone, cgsol,
+                               CGNS_ENUMV( RealSingle ), "Density",
+                               rmin, rmax,
+                               3, dims, m_rmin, m_rmax, solution, &cgfld))
         cg_error_exit();
 
+    /* close the file and reopen in read mode */
 
     puts ("closing and reopening in read mode");
     cg_close(cgfile);
@@ -156,70 +201,67 @@ int main (int argc, char *argv[])
     nn = 0;
 
     /* check coordinates */
-    /* Only load core coordinates without rind but inside memory with rind !*/
+    /* Only load core coordinates without rind but inside memory with rind */
 
     for (n=0; n<3; n++) {
-        rmin[n]   = 1;
-        rmax[n]   = size[n];
-        m_rmin[n] = 1 + rind[2*n];
-        m_rmax[n] = rind[2*n] + size[n];
+        rmin[n]   = get_s_rmin(n, 0);
+        rmax[n]   = get_s_rmax(n, 0);
+        m_rmin[n] = get_m_rmin(n, 0);
+        m_rmax[n] = get_m_rmax(n, 0);
     }
 
+    /* X */
     if (cg_coord_general_read(cgfile, cgbase, cgzone, "CoordinateX",
             CGNS_ENUMV(RealSingle), rmin, rmax, 3, dims, m_rmin, m_rmax, fbuf))
         cg_error_exit();
-
     np = 0;
-    for (k = 0 + rind[4]; k < NUM_K-rind[5]; k++) {
-        for (j = 0 + rind[2]; j < NUM_J-rind[3]; j++) {
-            for (i = 0 + rind[0]; i < NUM_I-rind[1]; i++) {
+    for (k = idxmin(2,0); k < idxmax(2,0); k++) {
+        for (j = idxmin(1,0); j < idxmax(1,0); j++) {
+            for (i = idxmin(0,0); i < idxmax(0,0); i++) {
                 if (fbuf[INDEX(i,j,k)] != xcoord[INDEX(i,j,k)]) np++;
             }
         }
     }
-
     nn += np;
     if (np) printf("%d differences in CoordinateX\n", np);
 
+    /* Y */
     if (cg_coord_general_read(cgfile, cgbase, cgzone, "CoordinateY",
             CGNS_ENUMV(RealSingle), rmin, rmax, 3, dims, m_rmin, m_rmax, fbuf))
         cg_error_exit();
-
     np = 0;
-    for (k = 0 + rind[4]; k < NUM_K-rind[5]; k++) {
-        for (j = 0 + rind[2]; j < NUM_J-rind[3]; j++) {
-            for (i = 0 + rind[0]; i < NUM_I-rind[1]; i++) {
+    for (k = idxmin(2,0); k < idxmax(2,0); k++) {
+        for (j = idxmin(1,0); j < idxmax(1,0); j++) {
+            for (i = idxmin(0,0); i < idxmax(0,0); i++) {
                 if (fbuf[INDEX(i,j,k)] != ycoord[INDEX(i,j,k)]) np++;
             }
         }
     }
-
     nn += np;
     if (np) printf("%d differences in CoordinateY\n", np);
 
+    /* Z */
     if (cg_coord_general_read(cgfile, cgbase, cgzone, "CoordinateZ",
             CGNS_ENUMV(RealSingle), rmin, rmax, 3, dims, m_rmin, m_rmax, fbuf))
         cg_error_exit();
-                                                                                  
     np = 0;
-    for (k = 0 + rind[4]; k < NUM_K-rind[5]; k++) {
-        for (j = 0 + rind[2]; j < NUM_J-rind[3]; j++) {
-            for (i = 0 + rind[0]; i < NUM_I-rind[1]; i++) {
+    for (k = idxmin(2,0); k < idxmax(2,0); k++) {
+        for (j = idxmin(1,0); j < idxmax(1,0); j++) {
+            for (i = idxmin(0,0); i < idxmax(0,0); i++) {
                 if (fbuf[INDEX(i,j,k)] != zcoord[INDEX(i,j,k)]) np++;
             }
         }
     }
-
     nn += np;
     if (np) printf("%d differences in CoordinateZ\n", np);
 
-    /* check Field with one layer of rind */
+    /* check field with one layer of rind */
 
     for (n=0; n<3; n++) {
-        rmin[n]   = 1 - 1;
-        rmax[n]   = size[n] + 1;
-        m_rmin[n] = 1 - 1 + rind[2*n];
-        m_rmax[n] = rind[2*n] + size[n] + 1;
+        rmin[n]   = get_s_rmin(n, 1);
+        rmax[n]   = get_s_rmax(n, 1);
+        m_rmin[n] = get_m_rmin(n, 1);
+        m_rmax[n] = get_m_rmax(n, 1);
     }
 
     if (cg_field_general_read(cgfile, cgbase, cgzone, cgsol, "Density",
@@ -227,17 +269,18 @@ int main (int argc, char *argv[])
         cg_error_exit();
 
     np = 0;
-    for (k = 0+rind[4]-1; k < NUM_K-rind[5]+1; k++) {
-        for (j = 0+rind[2]-1; j < NUM_J-rind[3]+1; j++) {
-            for (i = 0+rind[0]-1; i < NUM_I-rind[1]+1; i++) {
+    for (k = idxmin(2,1); k < idxmax(2,1); k++) {
+        for (j = idxmin(1,1); j < idxmax(1,1); j++) {
+            for (i = idxmin(0,1); i < idxmax(0,1); i++) {
                 if (fbuf[INDEX(i,j,k)] != solution[INDEX(i,j,k)]) np++;
             }
         }
     }
-    
     nn += np;
     if (np) printf("%d differences in Field\n", np);
+
     if (nn == 0) puts("no differences");
+
     puts ("closing file");
     cg_close (cgfile);
     free(xcoord);
