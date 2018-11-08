@@ -12412,7 +12412,7 @@ cgns_model *cgi_model_address(int local_mode, char const *ModelLabel, int *ier)
 {
     cgns_model *model=0;
     double parent_id=0;
-    int allow_dup=0, error1=0;
+    int error1=0;
 
     /* check for valid posit */
     if (posit == 0) {
