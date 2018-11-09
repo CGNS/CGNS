@@ -7935,7 +7935,7 @@ int cgi_delete_node (double parent_id, double node_id)
 /* s_ prefix is file space, m_ prefix is memory space */
 int cgi_array_general_read(
     const cgns_array *array,            /* [I] array to read */
-    const int rind_index,               /* [I] how to index rind planes */
+    const void* rind_index,             /* [I] how to index rind planes */
     const int* rind_planes,             /* [I] sizes of rind planes */
     const int s_numdim,                 /* [I] rank in file */
     const cgsize_t *rmin,               /* [I] range min in file */
@@ -8043,8 +8043,9 @@ int cgi_array_general_read(
      /* both the file hyperslab and memory hyperslab must have same number of
       * points */
     if (s_numpt != m_numpt) {
-        cgi_error("Size of memory array does not match size of requested "
-                  "range");
+        cgi_error("Number of locations in range of memory array (%d) do not "
+                  "match number of locations requested in range of file (%d)",
+                  m_numpt, s_numpt);
         return CG_ERROR;
     }
 
@@ -8159,7 +8160,7 @@ int cgi_array_general_write(
     int *p_narraylist,                  /* [I/O] number of arrays in parent */
     cgns_array **p_arraylist,           /* [I/O] arrays in parent */
     const char *const arrayname,        /* [I] name of array to write to */
-    const int rind_index,               /* [I] how to index rind planes */
+    const void* rind_index,             /* [I] how to index rind planes */
     const int* rind_planes,             /* [I] sizes of rind planes */
     const int s_numdim,                 /* [I] rank in file */
     const cgsize_t *s_dimvals,          /* [I] dimensions of array in file */
@@ -8253,8 +8254,9 @@ int cgi_array_general_write(
      /* both the file hyperslab and memory hyperslab must have same number of
       * points */
     if (s_numpt != m_numpt) {
-        cgi_error("Size of memory array does not match size of requested "
-                  "range");
+        cgi_error("Number of locations in range of memory array (%d) do not "
+                  "match number of locations requested in range of file (%d)",
+                  m_numpt, s_numpt);
         return CG_ERROR;
     }
 

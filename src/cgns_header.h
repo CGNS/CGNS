@@ -1181,14 +1181,14 @@ int cgi_delete_node (double parent_id, double node_id);
 
 /* general array reading and writing */
 int cgi_array_general_read(const cgns_array *array,
-    const int rind_index, const int *rind_planes, const int s_numdim,
+    const void* rind_index, const int *rind_planes, const int s_numdim,
     const cgsize_t *rmin, const cgsize_t *rmax,
     CGNS_ENUMT(DataType_t) m_type, const int m_numdim,
     const cgsize_t *m_dimvals, const cgsize_t *m_rmin, const cgsize_t *m_rmax,
     void* data);
 int cgi_array_general_write(const double p_id,
     int *p_narraylist, cgns_array **p_arraylist, const char *const arrayname,
-    const int rind_index, const int* rind_planes, const int s_numdim,
+    const void* rind_index, const int* rind_planes, const int s_numdim,
     const cgsize_t *s_dimvals, const cgsize_t *rmin, const cgsize_t *rmax,
     CGNS_ENUMT(DataType_t) m_type, const int m_numdim,
     const cgsize_t *m_dimvals, const cgsize_t *m_rmin, const cgsize_t *m_rmax,

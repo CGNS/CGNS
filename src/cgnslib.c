@@ -99,7 +99,7 @@ int posit_file, posit_base, posit_zone;
 int CGNSLibVersion=CGNS_VERSION;/* Version of the CGNSLibrary*1000  */
 int cgns_compress = 0;
 int cgns_filetype = CG_FILE_NONE;
-int cgns_rindindex = CG_CONFIG_RIND_CORE;
+void* cgns_rindindex = CG_CONFIG_RIND_CORE;
 
 extern void (*cgns_error_handler)(int, char *);
 
@@ -797,12 +797,12 @@ int cg_configure(int what, void *value)
     }
     /* allow pre v3.4 rind-plane indexing */
     else if (what == CG_CONFIG_RIND_INDEX) {
-      int ivalue = (int)((size_t)value);
-      if (ivalue != CG_CONFIG_RIND_ZERO && ivalue != CG_CONFIG_RIND_CORE) {
-        cgi_error("unknown config setting");
-        return CG_ERROR;
-      }
-      cgns_rindindex = ivalue;
+        if (value != CG_CONFIG_RIND_ZERO &&
+            value != CG_CONFIG_RIND_CORE) {
+            cgi_error("unknown config setting");
+            return CG_ERROR;
+        }
+        cgns_rindindex = value;
     }
     else {
         cgi_error("unknown config setting");
