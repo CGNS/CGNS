@@ -11,7 +11,7 @@
 #endif
 #include "cgnslib.h"
 
-/* From cgns_internal: so we can reset expected error messages */
+/* from cgns_internal: so we can reset expected error messages */
 void cgi_error(const char *format, ...);
 
 const int CellDim = 3, PhyDim = 3;
@@ -32,6 +32,8 @@ inline static cgsize_t INDEX(cgsize_t ii, cgsize_t jj, cgsize_t kk) {
 }
 
 /* ranges for arrays sent to CGNS */
+/* s_ is the range in file space.  Core cells start at 1 so rind planes are
+ * <= 0. */
 inline static cgsize_t get_s_rmin(const int n, int nr) {
     if (nr < 0) nr = rind[n][0];
     assert(nr <= rind[n][0]);
@@ -44,6 +46,8 @@ inline static cgsize_t get_s_rmax(const int n, int nr) {
     return size[0][n] + nr;
 }
 
+/* m_ is the range in memory.  The lowest index in each dimension is 1.  If
+ * there are rind planes, then he core cells start at a value > 1. */
 inline static cgsize_t get_m_rmin(const int n, int nr) {
     if (nr < 0) nr = rind[n][0];
     assert(nr <= rind[n][0]);
@@ -296,7 +300,7 @@ int main (int argc, char *argv[])
 
 /*============================================================================*/
 
-/* We know go to modify mode and repeadtely test writing and reading of the
+/* We now go to modify mode and repeadtely test writing and reading of the
  * field */
 
     /* close the file and reopen in modify mode */
@@ -319,8 +323,8 @@ int main (int argc, char *argv[])
 
     /* verify the written data */
     for (n=0; n<3; n++) {
-        rmin[n]   = get_s_rmin(n, -1);
-        rmax[n]   = get_s_rmax(n, -1);
+        rmin[n] = get_s_rmin(n, -1);
+        rmax[n] = get_s_rmax(n, -1);
     }
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
                       RealSingle, rmin, rmax, fbuf)) cg_error_exit();
