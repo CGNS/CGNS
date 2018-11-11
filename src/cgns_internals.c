@@ -8156,7 +8156,7 @@ int cgi_array_general_read(
 
 /* s_ prefix is file space, m_ prefix is memory space, p_ is parent node data */
 int cgi_array_general_write(
-    const double p_id,                  /* [I] id of parent node */
+    double p_id,                        /* [I] id of parent node */
     int *p_narraylist,                  /* [I/O] number of arrays in parent */
     cgns_array **p_arraylist,           /* [I/O] arrays in parent */
     const char *const arrayname,        /* [I] name of array to write to */
@@ -8291,6 +8291,7 @@ int cgi_array_general_write(
         array = cgi_array_address(CG_MODE_WRITE, 1, 0, arrayname, &have_dup,
                                   &ier);
         if (array == 0) return ier;
+        if (cgi_posit_id(&p_id)) return CG_ERROR;
     }
     else {
         for (idx=0; idx<(*p_narraylist); idx++) {

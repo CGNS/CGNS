@@ -71,7 +71,7 @@ typedef int cgint3_t[3];
       child = &parent->child[parent->nchild];\
       parent->nchild++;\
     } else {\
-      if (cg->mode == CG_MODE_WRITE) error1=1;\
+      if (cg->mode == CG_MODE_WRITE || allow_dup) error1=1;\
       if (cg->mode != CG_MODE_WRITE || allow_dup) {\
         parent_id = parent->id;\
         child= &(parent->child[n]);\
@@ -1186,7 +1186,7 @@ int cgi_array_general_read(const cgns_array *array,
     CGNS_ENUMT(DataType_t) m_type, const int m_numdim,
     const cgsize_t *m_dimvals, const cgsize_t *m_rmin, const cgsize_t *m_rmax,
     void* data);
-int cgi_array_general_write(const double p_id,
+int cgi_array_general_write(double p_id,
     int *p_narraylist, cgns_array **p_arraylist, const char *const arrayname,
     const void* rind_index, const int* rind_planes, const int s_numdim,
     const cgsize_t *s_dimvals, const cgsize_t *rmin, const cgsize_t *rmax,
