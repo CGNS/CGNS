@@ -7928,30 +7928,32 @@ int cgi_delete_node (double parent_id, double node_id)
 }
 
 /***********************************************************************\
- *              General array reading and writing outine               *
+ *              General array reading and writing                      *
 \***********************************************************************/
 
-
-/* s_ prefix is file space, m_ prefix is memory space */
-int cgi_array_general_read(
-    const cgns_array *array,            /* [I] array to read */
+int cgi_array_general_verify_range(
+    const cgi_rw op_rw,                 /* [I] CGI_Read or CGI_Write */
     const void* rind_index,             /* [I] how to index rind planes */
     const int* rind_planes,             /* [I] sizes of rind planes */
     const int s_numdim,                 /* [I] rank in file */
+    const cgsize_t *s_dimvals,          /* [I] dimensions of array in memory */
     const cgsize_t *rmin,               /* [I] range min in file */
     const cgsize_t *rmax,               /* [I] range max in file */
-    CGNS_ENUMT(DataType_t) m_type,      /* [I] data type in memory */
     const int m_numdim,                 /* [I] rank in memory */
     const cgsize_t *m_dimvals,          /* [I] dimensions of array in memory */
     const cgsize_t *m_rmin,             /* [I] range min in memory */
     const cgsize_t *m_rmax,             /* [I] range max in memory */
-    void* data)                         /* [O] data to load */
+    cgsize_t *s_rmin,                   /* [O] internal range min in file */
+    cgsize_t *s_rmax,                   /* [O] internal range max in file */
+    cgsize_t *stride,                   /* [O] stride (always 1) */
+    int *access_full_range,             /* [O] T: access all of both arrays */
+    cgsize_t *numpt)                    /* [O] number of points accessed */
 {
-    int n, npt, read_full_range = 1;
     cgsize_t s_numpt = 1, m_numpt = 1;
+    int n, npt;
+    int s_access_full_range = 1;  /* File-space array only */
 
-    CGNS_ENUMT(DataType_t) s_type = cgi_datatype(array->data_type);
-    const cgsize_t *s_dimvals = array->dim_vals;
+    *access_full_range = 1;       /* Both arrays */
 
      /*** verfication for dataset in file */
      /* verify that range requested is not NULL */
@@ -7961,19 +7963,25 @@ int cgi_array_general_read(
     }
 
      /* check if requested to return full range */
-    int s_read_full_range = 1;
     for (n=0; n<s_numdim; n++) {
         npt = rmax[n] - rmin[n] + 1;
         s_numpt *= npt;
         if (npt != s_dimvals[n]) {
-            s_read_full_range = 0;
-            read_full_range = 0;
+            s_access_full_range = 0;
+            *access_full_range = 0;
         }
+    }
+
+     /* s_access_full_range allows the user to specify any range if it fully
+        spans the dimension of the file-space range (i.e., they can ignore the
+        indexing of rind and core cells).  But this is disabled for writing. */
+    if (op_rw == CGI_Write) {
+        s_access_full_range = 0;
     }
 
      /* verify that range requested does not exceed range stored (if not
       * reading full range). */
-    if (!s_read_full_range) {
+    if (!s_access_full_range) {
         for (n=0; n<s_numdim; n++) {
             if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
                 /* old obsolete behavior (versions < 3.4) */
@@ -8036,7 +8044,7 @@ int cgi_array_general_read(
         npt = m_rmax[n] - m_rmin[n] + 1;
         m_numpt *= npt;
         if (npt != m_dimvals[n]) {
-            read_full_range = 0;
+            *access_full_range = 0;
         }
     }
 
@@ -8048,39 +8056,74 @@ int cgi_array_general_read(
                   m_numpt, s_numpt);
         return CG_ERROR;
     }
+    *numpt = s_numpt;
 
-    cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
-    if (!read_full_range) {
-         /* size and shape of file space (read from s) */
-        if (s_read_full_range) {
-             /* reset range and discard provided values */
-            for (n = 0; n<s_numdim; n++) {
-                s_rmin[n] = 1;
-                s_rmax[n] = s_dimvals[n];
-            }
+     /* set s_rmin and s_rmax to file-space ranges used internally (the lower
+        bound of the arrays is 1 whereas from the user perspective, the lower
+        core cells have index 1) */
+     /* note: s_rmin and s_rmax are not used if reading full range in serial */
+    if (s_access_full_range) {
+         /* reset range and discard provided values */
+        for (n = 0; n<s_numdim; n++) {
+            s_rmin[n] = 1;
+            s_rmax[n] = s_dimvals[n];
         }
-        else {
-            for (n = 0; n<s_numdim; n++) {
-                if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
-                     /* old obsolete behavior (versions < 3.4) */
-                    s_rmin[n] = rmin[n];
-                    s_rmax[n] = rmax[n];
-                }
-                else {
-                     /* new behavior consistent with SIDS */
-                     /* convert to first rind at 1 */
-                    s_rmin[n] = rmin[n] + rind_planes[2*n];
-                    s_rmax[n] = rmax[n] + rind_planes[2*n];
-                }
+    }
+    else {
+        for (n = 0; n<s_numdim; n++) {
+            if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
+                 /* old obsolete behavior (versions < 3.4) */
+                s_rmin[n] = rmin[n];
+                s_rmax[n] = rmax[n];
+            }
+            else {
+                 /* new behavior consistent with SIDS */
+                 /* convert to have first rind at index 1 */
+                s_rmin[n] = rmin[n] + rind_planes[2*n];
+                s_rmax[n] = rmax[n] + rind_planes[2*n];
             }
         }
     }
 
      /* strides are all unit */
-    cgsize_t stride[CGIO_MAX_DIMENSIONS];
     for (n = 0; n<CGIO_MAX_DIMENSIONS; n++) {
         stride[n] = 1;
     }
+
+    return CG_OK;
+}
+
+/* s_ prefix is file space, m_ prefix is memory space */
+int cgi_array_general_read(
+    const cgns_array *array,            /* [I] array to read */
+    const void* rind_index,             /* [I] how to index rind planes */
+    const int* rind_planes,             /* [I] sizes of rind planes */
+    const int s_numdim,                 /* [I] rank in file */
+    const cgsize_t *rmin,               /* [I] range min in file */
+    const cgsize_t *rmax,               /* [I] range max in file */
+    CGNS_ENUMT(DataType_t) m_type,      /* [I] data type in memory */
+    const int m_numdim,                 /* [I] rank in memory */
+    const cgsize_t *m_dimvals,          /* [I] dimensions of array in memory */
+    const cgsize_t *m_rmin,             /* [I] range min in memory */
+    const cgsize_t *m_rmax,             /* [I] range max in memory */
+    void* data)                         /* [O] data to load */
+{
+    int read_full_range, ier;
+    cgsize_t numpt;
+
+    CGNS_ENUMT(DataType_t) s_type = cgi_datatype(array->data_type);
+    const cgsize_t *s_dimvals = array->dim_vals;
+
+     /* verify the ranges provided and set s_rmin and s_rmax giving internal
+        file-space ranges */
+    cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
+    ier = cgi_array_general_verify_range(
+        CGI_Read, rind_index, rind_planes,
+        s_numdim, s_dimvals,   rmin,   rmax,
+        m_numdim, m_dimvals, m_rmin, m_rmax,
+        s_rmin, s_rmax, stride, &read_full_range, &numpt);
+    if (ier != CG_OK) return ier;
 
      /* quick transfer of data if same data types */
     if (s_type == m_type) {
@@ -8106,7 +8149,7 @@ int cgi_array_general_read(
         /* need to read into temp array to convert data */
         int ierr = CG_OK;
         void *conv_data;
-        conv_data = malloc((size_t)(s_numpt*size_of(array->data_type)));
+        conv_data = malloc((size_t)(numpt*size_of(array->data_type)));
         if (conv_data == NULL) {
             cgi_error("Error allocating conv_data");
             return CG_ERROR;
@@ -8127,7 +8170,7 @@ int cgi_array_general_read(
                return CG_ERROR;
             }
         }
-        ierr = cgi_convert_data(s_numpt, s_type, conv_data, m_type, data);
+        ierr = cgi_convert_data(numpt, s_type, conv_data, m_type, data);
         free(conv_data);
         return ierr ? CG_ERROR : CG_OK;
     }
@@ -8173,112 +8216,20 @@ int cgi_array_general_write(
     const void* data,                   /* [I] data to store */
     int *A)                             /* [O] array index for new array */
 {
-    int n, idx;
-    cgsize_t s_numpt = 1, m_numpt = 1;
+    int n, idx, ier;
 
-     /*** verfication for dataset in file */
-     /* verify that range requested is not NULL */
-     /* verify that range requested does not exceed range of zone */
-    if (rmin == NULL || rmax == NULL) {
-        cgi_error("NULL range value");
-        return CG_ERROR;
-    }
-
-    for (n=0; n<s_numdim; n++) {
-        if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
-             /* old obsolete behavior (versions < 3.4) */
-            if (rmin[n] > rmax[n] ||
-                rmax[n] > s_dimvals[n] ||
-                rmin[n] < 1) {
-                cgi_error("Invalid range of data requested");
-                return CG_ERROR;
-            }
-        }
-        else {
-             /* new behavior consitent with SIDS */
-            if (rmin[n] > rmax[n] ||
-                rmax[n] > (s_dimvals[n] - rind_planes[2*n]) ||
-                rmin[n] < (1 - rind_planes[2*n])) {
-                cgi_error("Invalid range of data requested");
-                return CG_ERROR;
-            }
-        }
-    }
-
-     /* count points in file */
-    for (n=0; n<s_numdim; n++) {
-        s_numpt *= rmax[n] - rmin[n] + 1;
-    }
-
-     /*** verification for dataset in memory */
-     /* verify the rank and dimensions of the memory array */
-    if (m_numdim <= 0 || m_numdim > CGIO_MAX_DIMENSIONS) {
-        cgi_error("Invalid number of dimensions in memory array");
-        return CG_ERROR;
-    }
-
-    if (m_dimvals == NULL) {
-        cgi_error("NULL dimension value");
-        return CG_ERROR;
-    }
-
-    for (n=0; n<m_numdim; n++) {
-        if (m_dimvals[n] < 1) {
-            cgi_error("Invalid size of dimension in memory array");
-            return CG_ERROR;
-        }
-    }
-
-     /* verify that range requested is not NULL */
-    if (m_rmin == NULL || m_rmax == NULL) {
-        cgi_error("NULL range value");
-        return CG_ERROR;
-    }
-
-     /* verify that range requested does not exceed range available */
-    for (n=0; n<m_numdim; n++) {
-        if (m_rmin[n] > m_rmax[n] ||
-            m_rmax[n] > m_dimvals[n] ||
-            m_rmin[n] < 1) {
-            cgi_error("Invalid range of memory array provided");
-            return CG_ERROR;
-        }
-    }
-
-     /* count points in memory */
-    for (n=0; n<m_numdim; n++) {
-        m_numpt *= m_rmax[n] - m_rmin[n] + 1;
-    }
-
-     /* both the file hyperslab and memory hyperslab must have same number of
-      * points */
-    if (s_numpt != m_numpt) {
-        cgi_error("Number of locations in range of memory array (%d) do not "
-                  "match number of locations requested in range of file (%d)",
-                  m_numpt, s_numpt);
-        return CG_ERROR;
-    }
-
+    int write_full_range;  /* unused */
+    cgsize_t numpt;        /* unused */
+     /* verify the ranges provided and set s_rmin and s_rmax giving internal
+        file-space ranges */
     cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
-     /* size and shape of file space (read from s) */
-    for (n = 0; n<s_numdim; n++) {
-        if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
-             /* old obsolete behavior (versions < 3.4) */
-            s_rmin[n] = rmin[n];
-            s_rmax[n] = rmax[n];
-        }
-        else {
-             /* new behavior consitent with SIDS */
-            s_rmin[n] = rmin[n] + rind_planes[2*n];
-            s_rmax[n] = rmax[n] + rind_planes[2*n];
-        }
-    }
-
-     /* strides are all unit */
     cgsize_t stride[CGIO_MAX_DIMENSIONS];
-    for (n = 0; n<CGIO_MAX_DIMENSIONS; n++) {
-        stride[n] = 1;
-    }
+    ier = cgi_array_general_verify_range(
+        CGI_Write, rind_index, rind_planes,
+        s_numdim, s_dimvals,   rmin,   rmax,
+        m_numdim, m_dimvals, m_rmin, m_rmax,
+        s_rmin, s_rmax, stride, &write_full_range, &numpt);
+    if (ier != CG_OK) return ier;
 
     cgns_array *array;
 

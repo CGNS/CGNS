@@ -134,6 +134,12 @@ typedef int cgint3_t[3];
 #define SKIP_DATA 0
 #define READ_DATA 1
 
+/* flag for parallel reading or parallel writing */
+typedef enum {
+  CGI_Read,
+  CGI_Write
+} cgi_rw;
+
 /*
  * Internal Structures:
  */
@@ -1180,6 +1186,15 @@ int cgi_move_node(double old_id, double node_id, double new_id, cchar_33 node_na
 int cgi_delete_node (double parent_id, double node_id);
 
 /* general array reading and writing */
+
+int cgi_array_general_verify_range(const cgi_rw op_rw,
+    const void* rind_index, const int* rind_planes,
+    const int s_numdim, const cgsize_t *s_dimvals,
+    const cgsize_t *rmin, const cgsize_t *rmax,
+    const int m_numdim, const cgsize_t *m_dimvals,
+    const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+    cgsize_t *s_rmin, cgsize_t *s_rmax, cgsize_t *stride,
+    int *access_full_range, cgsize_t *numpt);
 int cgi_array_general_read(const cgns_array *array,
     const void* rind_index, const int *rind_planes, const int s_numdim,
     const cgsize_t *rmin, const cgsize_t *rmax,
