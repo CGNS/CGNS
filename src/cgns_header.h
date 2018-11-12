@@ -72,7 +72,7 @@ typedef int cgint3_t[3];
       parent->nchild++;\
     } else {\
       if (cg->mode == CG_MODE_WRITE || allow_dup) error1=1;\
-      if (cg->mode != CG_MODE_WRITE || allow_dup) {\
+      if (cg->mode != CG_MODE_WRITE) {\
         parent_id = parent->id;\
         child= &(parent->child[n]);\
       }\
