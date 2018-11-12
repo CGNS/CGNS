@@ -74,24 +74,20 @@ int main()
     irmin[0]=1-irinddata[0][0];
     irmin[1]=1-irinddata[1][0];
     irmin[2]=1-irinddata[2][0];
-    printf("irmin %d %d %d\n", irmin[0], irmin[1], irmin[2]);
 /* upper range index in file - use vertex dimensions for k */
     irmax[0]=isize[1][0]+irinddata[0][1];
     irmax[1]=isize[1][1]+irinddata[1][1];
     irmax[2]=isize[0][2]+irinddata[2][1];
-    printf("irmax %d %d %d\n", irmax[0], irmax[1], irmax[2]);
 /* in memory space, the lower bound ALWAYS starts at index 1 (in this example,
  * core cells start at 2) */
 /* lower range index in memory */
     m_rmin[0] = 2-irinddata[0][0];
     m_rmin[1] = 2-irinddata[1][0];
     m_rmin[2] = 2-irinddata[2][0];
-    printf("m_rmin %d %d %d\n", m_rmin[0], m_rmin[1], m_rmin[2]);
 /* upper range index in memory */
     m_rmax[0] = 1+20+irinddata[0][1];
     m_rmax[1] = 1+16+irinddata[1][1];
     m_rmax[2] = 1+ 9+irinddata[2][1];
-    printf("m_rmax %d %d %d\n", m_rmax[0], m_rmax[1], m_rmax[2]);
 /* read discrete data */
     if (cg_array_general_read(1, CGNS_ENUMV(RealSingle), irmin, irmax,
                               3, m_dims, m_rmin, m_rmax, f[0][0]))
