@@ -469,6 +469,59 @@ int main (int argc, char *argv[])
     nn += np;
     if (np) printf("%d differences in values (T6)\n", np);
 
+    /*--- 1d mem full write/read with rind planes ---*/
+
+    if (cg_delete_node("FValues")) cg_error_exit();
+    if (cg_delete_node("DValues")) cg_error_exit();
+    int rind[6] = { 1, 1, 1, 1, 1, 1 };
+    if (cg_rind_write(rind)) cg_error_exit();
+
+    for (k = 0; k < dims_3d(2); k++) {
+        for (j = 0; j < dims_3d(1); j++) {
+            for (i = 0; i < dims_3d(0); i++) {
+                compute_values(i, j, k, 3);
+            }
+        }
+    }
+    for (n=0; n<3; n++) {
+        dims[n] = dims_3d(n);
+        rmin[n] = 0;
+        rmax[n] = dims_3d(n)-1;
+    }
+    m_dims[0] = dims_1d(n);
+    m_rmin[0] = 1;
+    m_rmax[0] = dims_1d(n);
+    if (cg_array_general_write("FValues", RealSingle,
+                               3,   dims,   rmin,   rmax,
+                               1, m_dims, m_rmin, m_rmax, fvalues_1d))
+        cg_error_exit();
+    if (cg_array_general_write("DValues", RealDouble,
+                               3, dims,   rmin,   rmax,
+                               1, m_dims, m_rmin, m_rmax, dvalues_1d))
+        cg_error_exit();
+    /* verify the written data */
+    np = 0;
+    if (cg_array_general_read(1, RealSingle, rmin, rmax,
+                              1, m_dims, m_rmin, m_rmax, fbuf_1d))
+      cg_error_exit();
+    for (i = 0; i < dims_1d(0); i++) {
+        if (fbuf_1d[i] != fvalues_1d[i]) ++np;
+    }
+    /* read the second in 3d */
+    for (n=0; n<3; n++) {
+        m_dims[n] = dims_3d(n);
+        m_rmin[n] = 1;
+        m_rmax[n] = dims_3d(n);
+    }
+    if (cg_array_general_read(2, RealDouble, rmin, rmax,
+                              3, m_dims, m_rmin, m_rmax, dbuf_1d))
+      cg_error_exit();
+    for (i = 0; i < dims_1d(0); i++) {
+        if (dbuf_1d[i] != dvalues_1d[i]) ++np;
+    }
+    nn += np;
+    if (np) printf("%d differences in values (T7)\n", np);
+
     if (nn == 0) puts("no differences");
 
     puts ("closing file");

@@ -9941,7 +9941,11 @@ int cg_array_general_read(int A, CGNS_ENUMT(DataType_t) type,
         return CG_ERROR;
     }
 
-    return cgi_array_general_read(array, CG_CONFIG_RIND_ZERO, NULL,
+     /* do we have rind planes? */
+    int *rind_planes = cgi_rind_address(CG_MODE_READ, &ier);
+    if (ier != CG_OK) rind_planes = NULL;
+
+    return cgi_array_general_read(array, cgns_rindindex, rind_planes,
                                   s_numdim, s_rmin, s_rmax, type,
                                   m_numdim, m_dimvals, m_rmin, m_rmax,
                                   data);
@@ -10016,7 +10020,7 @@ int cg_array_general_write(const char *arrayname, CGNS_ENUMT(DataType_t) type,
                            const void *data)
 {
      /* s_ prefix is file space, m_ prefix is memory space */
-    int n;
+  int n, ier = CG_OK;
 
     CHECK_FILE_OPEN
 
@@ -10052,9 +10056,13 @@ int cg_array_general_write(const char *arrayname, CGNS_ENUMT(DataType_t) type,
         }
     }
 
+     /* do we have rind planes? */
+    int *rind_planes = cgi_rind_address(CG_MODE_READ, &ier);
+    if (ier != CG_OK) rind_planes = NULL;
+
     int A = 0;  /* unused */
     return cgi_array_general_write(0.0, NULL, NULL, arrayname,
-                                   CG_CONFIG_RIND_ZERO, NULL,
+                                   cgns_rindindex, rind_planes,
                                    s_numdim, s_dimvals, s_rmin, s_rmax, type,
                                    m_numdim, m_dimvals, m_rmin, m_rmax,
                                    data, &A);
@@ -10171,7 +10179,7 @@ int cg_rind_read(int *RindData)
 int cg_rind_write(const int * RindData)
 {
     int n, ier=0;
-    int *rind, index_dim;
+    int *rind, index_dim, narrays;
     double posit_id;
 
     CHECK_FILE_OPEN
@@ -10194,6 +10202,16 @@ int cg_rind_write(const int * RindData)
      /* save data in file & if different from default (6*0) */
     if (cgi_posit_id(&posit_id)) return CG_ERROR;
     if (cgi_write_rind(posit_id, rind, index_dim)) return CG_ERROR;
+
+     /* Writing rind planes invalidates dimensions of existing arrays.  The rind
+        planes are still written but an error is returned */
+    ier = cg_narrays(&narrays);
+    if (ier == CG_OK && narrays > 0) {
+        cgi_error("Writing rind planes invalidates dimensions of exisitng "
+                  "array(s).");
+        return CG_ERROR;
+    }
+
     return CG_OK;
 }
 

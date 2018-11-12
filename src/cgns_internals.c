@@ -8054,10 +8054,9 @@ int cgi_array_general_read(
          /* size and shape of file space (read from s) */
         if (s_read_full_range) {
              /* reset range and discard provided values */
-            s_rmin[n] = 1;
-            s_rmax[n] = s_dimvals[n];
-            if (rind_planes) {
-                s_rmax[n] += rind_planes[2*n] + rind_planes[2*n+1];
+            for (n = 0; n<s_numdim; n++) {
+                s_rmin[n] = 1;
+                s_rmax[n] = s_dimvals[n];
             }
         }
         else {
