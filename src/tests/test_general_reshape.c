@@ -167,13 +167,15 @@ int main (int argc, char *argv[])
                 "end") ||
         cg_gridlocation_write(CellCenter))
         cg_error_exit();
-    if (cg_array_general_write("FValues", RealSingle,
-                               3,   dims,   rmin,   rmax,
-                               3, m_dims, m_rmin, m_rmax, fvalues_1d))
+    if (cg_array_general_write("FValues",
+                               RealSingle, 3,   dims,   rmin,   rmax,
+                               RealSingle, 3, m_dims, m_rmin, m_rmax,
+                               fvalues_1d))
         cg_error_exit();
-    if (cg_array_general_write("DValues", RealDouble,
-                               3,   dims,   rmin,   rmax,
-                               3, m_dims, m_rmin, m_rmax, dvalues_1d))
+    if (cg_array_general_write("DValues",
+                               RealDouble, 3,   dims,   rmin,   rmax,
+                               RealDouble, 3, m_dims, m_rmin, m_rmax,
+                               dvalues_1d))
         cg_error_exit();
 
     /* close the file and reopen in modify mode */
@@ -250,21 +252,7 @@ int main (int argc, char *argv[])
         if (ibuf_1d[i] != (int)fvalues_1d[i]) ++np;
     }
     nn += np;
-    if (np) printf("%d differences in values (T2)\n", np);    
-
-    /*--- check error for type mismatch on write ---*/
-
-    printf("Next error is required: ");
-    fflush (stdout);
-    if (!cg_array_general_write("FValues", RealDouble,
-                                3,   dims,   rmin,   rmax,
-                                3, m_dims, m_rmin, m_rmax, dvalues_1d)) {
-        
-        printf("write with mismatched types failed to produce error (T3)\n");
-        ++n;
-    }
-    cg_error_print();
-    cgi_error("no CGNS error reported");  /* reset */
+    if (np) printf("%d differences in values (T2)\n", np);
 
     /*--- 2d mem full write/read ---*/
 
@@ -280,13 +268,15 @@ int main (int argc, char *argv[])
         m_rmin[n] = 1;
         m_rmax[n] = dims_2d(n);
     }
-    if (cg_array_general_write("FValues", RealSingle,
-                               3,   dims,   rmin,   rmax,
-                               2, m_dims, m_rmin, m_rmax, fvalues_1d))
+    if (cg_array_general_write("FValues",
+                               RealSingle, 3,   dims,   rmin,   rmax,
+                               RealSingle, 2, m_dims, m_rmin, m_rmax,
+                               fvalues_1d))
         cg_error_exit();
-    if (cg_array_general_write("DValues", RealDouble,
-                               3, dims,   rmin,   rmax,
-                               2, m_dims, m_rmin, m_rmax, dvalues_1d))
+    if (cg_array_general_write("DValues",
+                               RealDouble, 3,   dims,   rmin,   rmax,
+                               RealDouble, 2, m_dims, m_rmin, m_rmax,
+                               dvalues_1d))
         cg_error_exit();
     /* verify the written data */
     np = 0;
@@ -323,7 +313,7 @@ int main (int argc, char *argv[])
         if (fbuf_1d[i] != (float)dvalues_1d[i]) ++np;
     }
     nn += np;
-    if (np) printf("%d differences in values (T4)\n", np);
+    if (np) printf("%d differences in values (T3)\n", np);
 
     /*--- 1d mem full write/read ---*/
 
@@ -339,13 +329,15 @@ int main (int argc, char *argv[])
         m_rmin[n] = 1;
         m_rmax[n] = dims_1d(n);
     }
-    if (cg_array_general_write("FValues", RealSingle,
-                               3,   dims,   rmin,   rmax,
-                               1, m_dims, m_rmin, m_rmax, fvalues_1d))
+    if (cg_array_general_write("FValues",
+                               RealSingle, 3,   dims,   rmin,   rmax,
+                               RealSingle, 1, m_dims, m_rmin, m_rmax,
+                               fvalues_1d))
         cg_error_exit();
-    if (cg_array_general_write("DValues", RealDouble,
-                               3, dims,   rmin,   rmax,
-                               1, m_dims, m_rmin, m_rmax, dvalues_1d))
+    if (cg_array_general_write("DValues",
+                               RealDouble, 3,   dims,   rmin,   rmax,
+                               RealDouble, 1, m_dims, m_rmin, m_rmax,
+                               dvalues_1d))
         cg_error_exit();
     /* verify the written data */
     np = 0;
@@ -382,7 +374,7 @@ int main (int argc, char *argv[])
         if (ibuf_1d[i] != (int)dvalues_1d[i]) ++np;
     }
     nn += np;
-    if (np) printf("%d differences in values (T5)\n", np);
+    if (np) printf("%d differences in values (T4)\n", np);
 
     /*--- 3d partial write/full and partial read ---*/
 
@@ -408,13 +400,15 @@ int main (int argc, char *argv[])
         m_rmin[n] = 1 + 1;
         m_rmax[n] = dims_3d(n) - 1;
     }
-    if (cg_array_general_write("FValues", RealSingle,
-                               3,   dims,   rmin,   rmax,
-                               3, m_dims, m_rmin, m_rmax, fvalues_1d))
+    if (cg_array_general_write("FValues",
+                               RealSingle, 3,   dims,   rmin,   rmax,
+                               RealSingle, 3, m_dims, m_rmin, m_rmax,
+                               fvalues_1d))
         cg_error_exit();
-    if (cg_array_general_write("DValues", RealDouble,
-                               3,   dims,   rmin,   rmax,
-                               3, m_dims, m_rmin, m_rmax, dvalues_1d))
+    if (cg_array_general_write("DValues",
+                               RealDouble, 3,   dims,   rmin,   rmax,
+                               RealDouble, 3, m_dims, m_rmin, m_rmax,
+                               dvalues_1d))
         cg_error_exit();
     /* verify the written data using a partial read */
     np = 0;
@@ -467,7 +461,7 @@ int main (int argc, char *argv[])
         if (fbuf_1d[i] != (float)dvalues_1d[i]) ++np;
     }
     nn += np;
-    if (np) printf("%d differences in values (T6)\n", np);
+    if (np) printf("%d differences in values (T5)\n", np);
 
     /*--- 1d mem full write/read with rind planes ---*/
 
@@ -491,13 +485,15 @@ int main (int argc, char *argv[])
     m_dims[0] = dims_1d(n);
     m_rmin[0] = 1;
     m_rmax[0] = dims_1d(n);
-    if (cg_array_general_write("FValues", RealSingle,
-                               3,   dims,   rmin,   rmax,
-                               1, m_dims, m_rmin, m_rmax, fvalues_1d))
+    if (cg_array_general_write("FValues",
+                               RealSingle, 3,   dims,   rmin,   rmax,
+                               RealSingle, 1, m_dims, m_rmin, m_rmax,
+                               fvalues_1d))
         cg_error_exit();
-    if (cg_array_general_write("DValues", RealDouble,
-                               3, dims,   rmin,   rmax,
-                               1, m_dims, m_rmin, m_rmax, dvalues_1d))
+    if (cg_array_general_write("DValues",
+                               RealDouble, 3,   dims,   rmin,   rmax,
+                               RealDouble, 1, m_dims, m_rmin, m_rmax,
+                               dvalues_1d))
         cg_error_exit();
     /* verify the written data */
     np = 0;
@@ -520,7 +516,7 @@ int main (int argc, char *argv[])
         if (dbuf_1d[i] != dvalues_1d[i]) ++np;
     }
     nn += np;
-    if (np) printf("%d differences in values (T7)\n", np);
+    if (np) printf("%d differences in values (T6)\n", np);
 
     if (nn == 0) puts("no differences");
 

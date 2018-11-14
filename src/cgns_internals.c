@@ -8125,8 +8125,8 @@ int cgi_array_general_read(
         s_rmin, s_rmax, stride, &read_full_range, &numpt);
     if (ier != CG_OK) return ier;
 
-     /* quick transfer of data if same data types */
     if (s_type == m_type) {
+         /* quick transfer of data if same data types */
         if (read_full_range) {
             if (cgio_read_all_data(cg->cgio, array->id, data)) {
                 cg_io_error("cgio_read_all_data");
@@ -8141,13 +8141,9 @@ int cgi_array_general_read(
                 return CG_ERROR;
             }
         }
-        return CG_OK;
     }
-
-    if (cg->filetype == CGIO_FILE_ADF2 ||
-        cg->filetype == CGIO_FILE_ADF) {
+    else if (cg->filetype == CGIO_FILE_ADF2 || cg->filetype == CGIO_FILE_ADF) {
         /* need to read into temp array to convert data */
-        int ierr = CG_OK;
         void *conv_data;
         conv_data = malloc((size_t)(numpt*size_of(array->data_type)));
         if (conv_data == NULL) {
@@ -8170,27 +8166,28 @@ int cgi_array_general_read(
                return CG_ERROR;
             }
         }
-        ierr = cgi_convert_data(numpt, s_type, conv_data, m_type, data);
+        ier = cgi_convert_data(numpt, s_type, conv_data, m_type, data);
         free(conv_data);
-        return ierr ? CG_ERROR : CG_OK;
-    }
-
-     /* in-situ conversion */
-    if (read_full_range) {
-        if (cgio_read_all_data_type(cg->cgio, array->id,
-                                    cgi_adf_datatype(m_type), data)) {
-            cg_io_error("cgio_read_all_data");
-            return CG_ERROR;
-        }
+        if (ier) return CG_ERROR;
     }
     else {
-        if (cgio_read_data_type(cg->cgio, array->id,
-                                s_rmin, s_rmax, stride,
-                                cgi_adf_datatype(m_type), m_numdim, m_dimvals,
-                                m_rmin, m_rmax, stride,
-                                data)) {
-            cg_io_error("cgio_read_data");
-            return CG_ERROR;
+         /* in-situ conversion */
+        if (read_full_range) {
+            if (cgio_read_all_data_type(cg->cgio, array->id,
+                                        cgi_adf_datatype(m_type), data)) {
+                cg_io_error("cgio_read_all_data");
+                return CG_ERROR;
+            }
+        }
+        else {
+            if (cgio_read_data_type(cg->cgio, array->id,
+                                    s_rmin, s_rmax, stride,
+                                    cgi_adf_datatype(m_type),
+                                    m_numdim, m_dimvals, m_rmin, m_rmax, stride,
+                                    data)) {
+                cg_io_error("cgio_read_data");
+                return CG_ERROR;
+            }
         }
     }
     return CG_OK;
@@ -8204,6 +8201,7 @@ int cgi_array_general_write(
     const char *const arrayname,        /* [I] name of array to write to */
     const void* rind_index,             /* [I] how to index rind planes */
     const int* rind_planes,             /* [I] sizes of rind planes */
+    CGNS_ENUMT(DataType_t) s_type,      /* [I] data type in file */
     const int s_numdim,                 /* [I] rank in file */
     const cgsize_t *s_dimvals,          /* [I] dimensions of array in file */
     const cgsize_t *rmin,               /* [I] range min in file */
@@ -8216,10 +8214,9 @@ int cgi_array_general_write(
     const void* data,                   /* [I] data to store */
     int *A)                             /* [O] array index for new array */
 {
-    int n, idx, ier;
+    int write_full_range, n, idx, ier;
+    cgsize_t numpt;
 
-    int write_full_range;  /* unused */
-    cgsize_t numpt;        /* unused */
      /* verify the ranges provided and set s_rmin and s_rmax giving internal
         file-space ranges */
     cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
@@ -8253,63 +8250,125 @@ int cgi_array_general_write(
         }
     }
 
-     /* overwrite a DataArray_t node of same name, size and data-type: */
     if (have_dup) {
-         /* array rank must be the same */
+         /* overwrite a DataArray_t node of same name, size and data-type: */
+         /* array rank in file must agree */
         if (array->data_dim != s_numdim) {
             cgi_error("Mismatch in array rank");
             return CG_ERROR;
         }
-         /* array dimensions must be the same */
+         /* array dimensions in file must agree */
         for (n = 0; n<s_numdim; n++) {
             if (array->dim_vals[n] != s_dimvals[n]) {
                 cgi_error("Mismatch in array dimension %d", n);
                 return CG_ERROR;
             }
         }
-         /* data type must be the same */
-        if (strcmp(array->data_type, cgi_adf_datatype(m_type))) {
+         /* data type in file must agree */
+        if (strcmp(array->data_type, cgi_adf_datatype(s_type))) {
             cgi_error("Mismatch in data types");
             return CG_ERROR;
         }
+    }
+    else {
+         /* add a DataArray_t node if not already done */
+        if (p_narraylist) {
+            if (*p_narraylist == 0) {
+                *p_arraylist = CGNS_NEW(cgns_array, (*p_narraylist)+1);
+            } else {
+                *p_arraylist = CGNS_RENEW(cgns_array, (*p_narraylist)+1,
+                                          *p_arraylist);
+            }
+            array = &((*p_arraylist)[*p_narraylist]);
+            ++(*p_narraylist);
+            (*A) = *p_narraylist;
+        }
 
-        if (cgio_write_data(cg->cgio, array->id, s_rmin, s_rmax, stride,
-                            m_numdim, m_dimvals, m_rmin, m_rmax, stride,
-                            data)) {
-            cg_io_error("cgio_write_data");
+         /* save array information in memory */
+        memset(array, 0, sizeof(cgns_array));
+        strcpy(array->data_type, cgi_adf_datatype(m_type));
+        strcpy(array->name, arrayname);
+        array->data_dim = s_numdim;
+        for (n = 0; n<s_numdim; n++) {
+            array->dim_vals[n] = s_dimvals[n];
+        }
+
+         /* save DataArray_t node on disk: */
+        if (cgi_new_node_partial(p_id, array->name, "DataArray_t", &array->id,
+                                 array->data_type,
+                                 s_numdim, s_dimvals, s_rmin, s_rmax,
+                                 m_numdim, m_dimvals, m_rmin, m_rmax, NULL)) {
             return CG_ERROR;
         }
-        return CG_OK;
     }
 
-     /* add a DataArray_t node if not already done */
-    if (p_narraylist) {
-        if (*p_narraylist == 0) {
-            *p_arraylist = CGNS_NEW(cgns_array, (*p_narraylist)+1);
-        } else {
-            *p_arraylist = CGNS_RENEW(cgns_array, (*p_narraylist)+1,
-                                      *p_arraylist);
+    if (s_type == m_type) {
+     /* quick transfer of data if same data types */
+        if (write_full_range) {
+            if (cgio_write_all_data(cg->cgio, array->id, data)) {
+                cg_io_error("cgio_write_all_data");
+                return CG_ERROR;
+            }
         }
-        array = &((*p_arraylist)[*p_narraylist]);
-        ++(*p_narraylist);
-        (*A) = *p_narraylist;
+        else {
+            if (cgio_write_data(cg->cgio, array->id, s_rmin, s_rmax, stride,
+                                m_numdim, m_dimvals, m_rmin, m_rmax, stride,
+                                data)) {
+                cg_io_error("cgio_write_data");
+                return CG_ERROR;
+            }
+        }
     }
-
-     /* save array information */
-    memset(array, 0, sizeof(cgns_array));
-    strcpy(array->data_type, cgi_adf_datatype(m_type));
-    strcpy(array->name, arrayname);
-    array->data_dim = s_numdim;
-    for (n = 0; n<s_numdim; n++) {
-        array->dim_vals[n] = s_dimvals[n];
+    else if (cg->filetype == CGIO_FILE_ADF2 || cg->filetype == CGIO_FILE_ADF) {
+        /* need to read into temp array to convert data */
+        void *conv_data;
+        conv_data = malloc((size_t)(numpt*size_of(array->data_type)));
+        if (conv_data == NULL) {
+            cgi_error("Error allocating conv_data");
+            return CG_ERROR;
+        }
+        if (cgi_convert_data(numpt, m_type, data, s_type, conv_data))
+          {
+              free(conv_data);
+              return CG_ERROR;
+          }
+        if (write_full_range) {
+            if (cgio_write_all_data(cg->cgio, array->id, data)) {
+                free(conv_data);
+                cg_io_error("cgio_write_all_data");
+                return CG_ERROR;
+            }
+        }
+        else {
+            if (cgio_write_data(cg->cgio, array->id, s_rmin, s_rmax, stride,
+                                m_numdim, m_dimvals, m_rmin, m_rmax, stride,
+                                data)) {
+                free(conv_data);
+                cg_io_error("cgio_write_data");
+                return CG_ERROR;
+            }
+        }
+        free(conv_data);
     }
-
-     /* save DataArray_t node on disk: */
-    if (cgi_new_node_partial(p_id, array->name, "DataArray_t", &array->id,
-                             array->data_type,
-                             s_numdim, s_dimvals, s_rmin, s_rmax,
-                             m_numdim, m_dimvals, m_rmin, m_rmax, data)) {
-	return CG_ERROR;
+    else {
+         /* in-situ conversion */
+        if (write_full_range) {
+            if (cgio_write_all_data_type(cg->cgio, array->id,
+                                        cgi_adf_datatype(m_type), data)) {
+                cg_io_error("cgio_read_all_data");
+                return CG_ERROR;
+            }
+        }
+        else {
+            if (cgio_write_data_type(cg->cgio, array->id,
+                                     s_rmin, s_rmax, stride,
+                                     cgi_adf_datatype(m_type),
+                                     m_numdim, m_dimvals, m_rmin, m_rmax,
+                                     stride, data)) {
+                cg_io_error("cgio_read_data");
+                return CG_ERROR;
+            }
+        }
     }
 
     return CG_OK;

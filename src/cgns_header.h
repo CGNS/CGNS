@@ -1203,8 +1203,9 @@ int cgi_array_general_read(const cgns_array *array,
     void* data);
 int cgi_array_general_write(double p_id,
     int *p_narraylist, cgns_array **p_arraylist, const char *const arrayname,
-    const void* rind_index, const int* rind_planes, const int s_numdim,
-    const cgsize_t *s_dimvals, const cgsize_t *rmin, const cgsize_t *rmax,
+    const void* rind_index, const int* rind_planes,
+    CGNS_ENUMT(DataType_t) s_type, const int s_numdim,
+    const cgsize_t *s_dimvals, const cgsize_t   *rmin, const cgsize_t   *rmax,
     CGNS_ENUMT(DataType_t) m_type, const int m_numdim,
     const cgsize_t *m_dimvals, const cgsize_t *m_rmin, const cgsize_t *m_rmax,
     const void* data, int *A);

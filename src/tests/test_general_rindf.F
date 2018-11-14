@@ -91,18 +91,21 @@ c     write coordinates with rind
       call cg_rind_write_f(rind, ierr)
 
       call cg_coord_general_write_f(cgfile, cgbase, cgzone,
-     &                              RealSingle, coordname(1),
-     &                              rmin, rmax, 3, dims, m_rmin, m_rmax,
+     &                              coordname(1), RealSingle,
+     &                              rmin, rmax, RealSingle,
+     &                              3, dims, m_rmin, m_rmax,
      &                              xcoord, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_coord_general_write_f(cgfile, cgbase, cgzone,
-     &                              RealSingle, coordname(2),
-     &                              rmin, rmax, 3, dims, m_rmin, m_rmax,
+     &                              coordname(2), RealSingle,
+     &                              rmin, rmax, RealSingle,
+     &                              3, dims, m_rmin, m_rmax,
      &                              ycoord, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_coord_general_write_f(cgfile, cgbase, cgzone,
-     &                              RealSingle, coordname(3),
-     &                              rmin, rmax, 3, dims, m_rmin, m_rmax,
+     &                              coordname(3), RealSingle,
+     &                              rmin, rmax, RealSingle,
+     &                              3, dims, m_rmin, m_rmax,
      &                              zcoord, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
@@ -115,8 +118,9 @@ c     sizes
      &               'FlowSolution_t', cgsol, 'end')
       call cg_rind_write_f(rind, ierr)
       call cg_field_general_write_f(cgfile, cgbase, cgzone, cgsol,
-     &                              RealSingle, fieldname,
-     &                              rmin, rmax, 3, dims, m_rmin, m_rmax,
+     &                              fieldname, RealSingle,
+     &                              rmin, rmax, RealSingle,
+     &                              3, dims, m_rmin, m_rmax,
      &                              solution, cgfld, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
@@ -451,8 +455,9 @@ c     repeated.  But put the file in the same state by doing tests T13 and T14.
       m_rmin(3) = get_m_rmin(3, 0)
       m_rmax(3) = get_m_rmax(3, 0)
       call cg_field_general_write_f(cgfile, cgbase, cgzone, cgsol,
-     &                              RealSingle, fieldname,
-     &                              rmin, rmax, 3, dims, m_rmin, m_rmax,
+     &                              fieldname, RealSingle,
+     &                              rmin, rmax, RealSingle,
+     &                              3, dims, m_rmin, m_rmax,
      &                              solution, cgfld, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 c     verify the written data

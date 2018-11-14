@@ -136,8 +136,10 @@ int main()
     m_rmax[0] = 1+ni+irinddata[0][0];
     m_rmax[1] = 1+nj+irinddata[1][0];
     m_rmax[2] = 1+nk+irinddata[2][0];
-    if (cg_array_general_write("K-Flux", CGNS_ENUMV(RealDouble),
+    if (cg_array_general_write("K-Flux",
+                               CGNS_ENUMV(RealDouble),
                                3,   dims,   rmin,   rmax,
+                               CGNS_ENUMV(RealDouble),
                                3, m_dims, m_rmin, m_rmax, f))
       cg_error_exit();
 /* close CGNS file */

@@ -851,9 +851,10 @@ CGNSDLL void FMNAME(cg_coord_partial_write_f, CG_COORD_PARTIAL_WRITE_F) (
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_coord_general_write_f, CG_COORD_GENERAL_WRITE_F) (
-        cgint_f *fn, cgint_f *B, cgint_f *Z, CGNS_ENUMT(DataType_t) *type,
-        STR_PSTR(coordname), cgsize_t *rmin, cgsize_t *rmax, cgint_f *m_numdim,
-        cgsize_t *m_dims, cgsize_t *m_rmin, cgsize_t *m_rmax, void *coord, cgint_f *C,
+        cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(coordname),
+        CGNS_ENUMT(DataType_t) *s_type, cgsize_t *s_rmin, cgsize_t *s_rmax,
+        CGNS_ENUMT(DataType_t) *m_type, cgint_f *m_numdim, cgsize_t *m_dims,
+        cgsize_t *m_rmin, cgsize_t *m_rmax, void *coord, cgint_f *C,
         cgint_f *ier STR_PLEN(coordname))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
@@ -866,9 +867,9 @@ CGNSDLL void FMNAME(cg_coord_general_write_f, CG_COORD_GENERAL_WRITE_F) (
     printf("    coordname='%s'\n", c_name);
 #endif
     *ier = (cgint_f)cg_coord_general_write((int)*fn, (int)*B, (int)*Z,
-               (CGNS_ENUMT(DataType_t))*type, c_name,
-	       rmin, rmax, (int)*m_numdim, m_dims, m_rmin, m_rmax,
-               coord, &i_C);
+                                           c_name, *s_type, s_rmin, s_rmax,
+                                           *m_type, (int)*m_numdim, m_dims,
+                                           m_rmin, m_rmax, coord, &i_C);
     *C = (cgint_f)i_C;
 }
 
@@ -1298,9 +1299,10 @@ CGNSDLL void FMNAME(cg_field_partial_write_f, CG_FIELD_PARTIAL_WRITE_F) (cgint_f
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_field_general_write_f, CG_FIELD_GENERAL_WRITE_F) (cgint_f *fn,
-	cgint_f *B, cgint_f *Z, cgint_f *S, CGNS_ENUMT(DataType_t) *type, STR_PSTR(fieldname),
-	cgsize_t *rmin, cgsize_t *rmax, cgint_f *m_numdim, cgsize_t *m_dims,
+CGNSDLL void FMNAME(cg_field_general_write_f, CG_FIELD_GENERAL_WRITE_F) (
+        cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, STR_PSTR(fieldname),
+        CGNS_ENUMT(DataType_t) *s_type, cgsize_t *s_rmin, cgsize_t *s_rmax,
+        CGNS_ENUMT(DataType_t) *m_type, cgint_f *m_numdim, cgsize_t *m_dims,
 	cgsize_t *m_rmin, cgsize_t *m_rmax, void *field_ptr, cgint_f *F,
 	cgint_f *ier STR_PLEN(fieldname))
 {
@@ -1314,9 +1316,9 @@ CGNSDLL void FMNAME(cg_field_general_write_f, CG_FIELD_GENERAL_WRITE_F) (cgint_f
     printf("      fieldname='%s'\n", c_name);
 #endif
     *ier = (cgint_f)cg_field_general_write((int)*fn, (int)*B, (int)*Z, (int)*S,
-					   *type, c_name,
-					   rmin, rmax, (int)*m_numdim, m_dims,
-					   m_rmin, m_rmax, field_ptr, &i_F);
+                                           c_name, *s_type, s_rmin, s_rmax,
+                                           *m_type, (int)*m_numdim, m_dims,
+                                           m_rmin, m_rmax, field_ptr, &i_F);
     *F = (cgint_f)i_F;
 }
 
@@ -3546,25 +3548,25 @@ CGNSDLL void FMNAME(cg_array_write_f, CG_ARRAY_WRITE_F) (STR_PSTR(ArrayName),
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_array_general_write_f, CG_ARRAY_GENERAL_WRITE_F) (STR_PSTR(ArrayName),
-        CGNS_ENUMT(DataType_t) *DataType, cgint_f *DataDimension, cgsize_t *DimensionVector,
-        cgsize_t *RangeMin, cgsize_t *RangeMax,
-        cgint_f *MemoryDataDimension, cgsize_t *MemoryDimensionVector,
-        cgsize_t *MemoryRangeMin, cgsize_t *MemoryRangeMax,
-        void *Data, cgint_f *ier STR_PLEN(ArrayName))
+CGNSDLL void FMNAME(cg_array_general_write_f, CG_ARRAY_GENERAL_WRITE_F) (
+        STR_PSTR(arrayname), CGNS_ENUMT(DataType_t) *s_type, cgint_f *s_numdim, cgsize_t *s_dimvals,
+        cgsize_t *s_rmin, cgsize_t *s_rmax,
+        CGNS_ENUMT(DataType_t) *m_type, cgint_f *m_numdim, cgsize_t *m_dimvals,
+        cgsize_t *m_rmin, cgsize_t *m_rmax,
+        void *data, cgint_f *ier STR_PLEN(arrayname))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
 
-    string_2_C_string(STR_PTR(ArrayName), STR_LEN(ArrayName),
+    string_2_C_string(STR_PTR(arrayname), STR_LEN(arrayname),
         c_name, CGIO_MAX_NAME_LENGTH, ier);
     if (*ier) return;
 #if DEBUG_FTOC
-    printf("      ArrayName='%s'\n", c_name);
+    printf("      arrayname='%s'\n", c_name);
 #endif
-    *ier = (cgint_f)cg_array_general_write(c_name, *DataType, (int)*DataDimension,
-                            DimensionVector, RangeMin, RangeMax,
-                            (int)*MemoryDataDimension, MemoryDimensionVector,
-                            MemoryRangeMin, MemoryRangeMax, Data);
+    *ier = (cgint_f)cg_array_general_write(c_name, *s_type, (int)*s_numdim,
+                                           s_dimvals, s_rmin, s_rmax,
+                                           *m_type, (int)*m_numdim,
+                                           m_dimvals, m_rmin, m_rmax, data);
 }
 
 /*-----------------------------------------------------------------------*/

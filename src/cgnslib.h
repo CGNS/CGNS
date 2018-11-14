@@ -935,9 +935,9 @@ CGNSDLL int cg_coord_partial_write(int fn, int B, int Z,
     const cgsize_t *rmin, const cgsize_t *rmax,
     const void * coord_ptr, int *C);
 CGNSDLL int cg_coord_general_write(int fn, int B, int Z,
-	CGNS_ENUMT(DataType_t) type, const char *coordname,
+	const char *coordname, CGNS_ENUMT(DataType_t) s_type,
 	const cgsize_t *rmin, const cgsize_t *rmax,
-	int m_numdim, const cgsize_t *m_dims,
+	CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t *m_dims,
 	const cgsize_t *m_rmin, const cgsize_t *m_rmax,
 	const void *coord_ptr, int *C);
 
@@ -1032,11 +1032,10 @@ CGNSDLL int cg_field_partial_write(int fn, int B, int Z, int S,
 	CGNS_ENUMT(DataType_t) type, const char * fieldname,
 	const cgsize_t *rmin, const cgsize_t *rmax,
         const void * field_ptr, int *F);
-CGNSDLL int cg_field_general_write(
-        int fn, int B, int Z, int S,
-        CGNS_ENUMT(DataType_t) type, const char * fieldname,
+CGNSDLL int cg_field_general_write(int fn, int B, int Z, int S,
+        const char * fieldname, CGNS_ENUMT(DataType_t) s_type,
         const cgsize_t *rmin, const cgsize_t *rmax,
-        int m_numdim, const cgsize_t *m_dims,
+        CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t *m_dims,
         const cgsize_t *m_rmin, const cgsize_t *m_rmax,
         const void *field_ptr, int *F);
 
@@ -1412,13 +1411,11 @@ CGNSDLL int cg_array_general_read(int A, CGNS_ENUMT(DataType_t) DataType,
 CGNSDLL int cg_array_write(const char * ArrayName,
 	CGNS_ENUMT(DataType_t) DataType, int DataDimension,
 	const cgsize_t * DimensionVector, const void * Data);
-CGNSDLL int cg_array_general_write(const char * ArrayName,
-        CGNS_ENUMT(DataType_t) DataType, int DataDimension,
-        const cgsize_t * DimensionVector,
-        const cgsize_t *RangeMin, const cgsize_t *RangeMax,
-        int MemoryDataDimension, const cgsize_t* MemoryDimensionVector,
-        const cgsize_t *MemoryRangeMin, const cgsize_t *MemoryRangeMax,
-        const void * Data);
+CGNSDLL int cg_array_general_write(const char *arrayname,
+        CGNS_ENUMT(DataType_t) s_type, int s_numdim, const cgsize_t *s_dimvals,
+        const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+        CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t* m_dimvals,
+        const cgsize_t *m_rmin, const cgsize_t *m_rmax, const void *data);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write UserDefinedData_t Nodes - new in version 2.1      *

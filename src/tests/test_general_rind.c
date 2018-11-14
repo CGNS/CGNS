@@ -170,17 +170,17 @@ int main (int argc, char *argv[])
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "GridCoordinates_t", cggrid, "end") ||
         cg_rind_write((int*)rind) ||
-	cg_coord_general_write(cgfile, cgbase, cgzone,
-                               RealSingle, "CoordinateX",
-                               rmin, rmax, 3, dims, m_rmin, m_rmax,
+	cg_coord_general_write(cgfile, cgbase, cgzone, "CoordinateX",
+                               RealSingle, rmin, rmax,
+                               RealSingle, 3, dims, m_rmin, m_rmax,
                                xcoord, &cgcoord) ||
-	cg_coord_general_write(cgfile, cgbase, cgzone,
-                               RealSingle, "CoordinateY",
-                               rmin, rmax, 3, dims, m_rmin, m_rmax,
+	cg_coord_general_write(cgfile, cgbase, cgzone, "CoordinateY",
+                               RealSingle, rmin, rmax,
+                               RealSingle, 3, dims, m_rmin, m_rmax,
                                ycoord, &cgcoord) ||
-	cg_coord_general_write(cgfile, cgbase, cgzone,
-                               RealSingle, "CoordinateZ",
-                               rmin, rmax, 3, dims, m_rmin, m_rmax,
+	cg_coord_general_write(cgfile, cgbase, cgzone, "CoordinateZ",
+                               RealSingle, rmin, rmax,
+                               RealSingle, 3, dims, m_rmin, m_rmax,
                                zcoord, &cgcoord))
         cg_error_exit();
 
@@ -192,9 +192,9 @@ int main (int argc, char *argv[])
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "FlowSolution_t", cgsol, "end") ||
         cg_rind_write((int*)rind) ||
-	cg_field_general_write(cgfile, cgbase, cgzone, cgsol,
-                               RealSingle, "Density",
-                               rmin, rmax, 3, dims, m_rmin, m_rmax,
+	cg_field_general_write(cgfile, cgbase, cgzone, cgsol, "Density",
+                               RealSingle, rmin, rmax,
+                               RealSingle, 3, dims, m_rmin, m_rmax,
                                solution, &cgfld))
         cg_error_exit();
 
@@ -585,10 +585,10 @@ int main (int argc, char *argv[])
     m_rmax[1] = get_m_rmin(1, 0) + 1;
     m_rmin[2] = get_m_rmin(2, 0);
     m_rmax[2] = get_m_rmin(2, 0);
-    if (cg_field_general_write(cgfile, cgbase, cgzone, cgsol,
-                               RealSingle, "Density",
-                               rmin, rmax,
-                               3, dims, m_rmin, m_rmax, solution, &cgfld))
+    if (cg_field_general_write(cgfile, cgbase, cgzone, cgsol, "Density",
+                               RealSingle, rmin, rmax,
+                               RealSingle, 3, dims, m_rmin, m_rmax,
+                               solution, &cgfld))
         cg_error_exit();
     /* Reset the solution array */
     for (k = 0; k < NUM_K; k++) {

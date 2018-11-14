@@ -2210,7 +2210,7 @@ int cg_coord_general_read(int file_number, int B, int Z,
 
      /* verify input */
     if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble)) {
-        cgi_error("Invalid data type for coord. array: %d",type);
+        cgi_error("Invalid data type for coord. array: %d", type);
         return CG_ERROR;
     }
      /* find address */
@@ -2306,14 +2306,14 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
         m_rmax[n] = m_dimvals[n];
     }
 
-    return cg_coord_general_write(file_number, B, Z, type, coordname,
-                                  s_rmin, s_rmax,
-                                  m_numdim, m_dimvals, m_rmin, m_rmax,
+    return cg_coord_general_write(file_number, B, Z, coordname,
+                                  type, s_rmin, s_rmax,
+                                  type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   coord_ptr, C);
 }
 
 int cg_coord_partial_write(int file_number, int B, int Z,
-                           CGNS_ENUMT( DataType_t ) type,
+                           CGNS_ENUMT(DataType_t) type,
                            const char *coordname, const cgsize_t *s_rmin,
                            const cgsize_t *s_rmax, const void *coord_ptr,
                            int *C)
@@ -2343,15 +2343,17 @@ int cg_coord_partial_write(int file_number, int B, int Z,
         m_dimvals[n] = m_rmax[n];
     }
 
-    return cg_coord_general_write(file_number, B, Z, type, coordname,
-                                  s_rmin, s_rmax,
-                                  m_numdim, m_dimvals, m_rmin, m_rmax,
+    return cg_coord_general_write(file_number, B, Z, coordname,
+                                  type, s_rmin, s_rmax,
+                                  type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   coord_ptr, C);
 }
 
 int cg_coord_general_write(int file_number, int B, int Z,
-                           CGNS_ENUMT( DataType_t ) type, const char *coordname,
+                           const char *coordname,
+                           CGNS_ENUMT(DataType_t) s_type,
                            const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                           CGNS_ENUMT(DataType_t) m_type,
                            int m_numdim, const cgsize_t *m_dimvals,
                            const cgsize_t *m_rmin, const cgsize_t *m_rmax,
                            const void *coord_ptr, int *C)
@@ -2363,8 +2365,13 @@ int cg_coord_general_write(int file_number, int B, int Z,
 
      /* verify input */
     if (cgi_check_strlen(coordname)) return CG_ERROR;
-    if (type!=CGNS_ENUMV( RealSingle ) && type!=CGNS_ENUMV( RealDouble )) {
-        cgi_error("Invalid datatype for coord. array:  %d", type);
+    if (s_type!=CGNS_ENUMV(RealSingle) && s_type!=CGNS_ENUMV(RealDouble)) {
+        cgi_error("Invalid file data type for coord. array: %d", s_type);
+        return CG_ERROR;
+    }
+    if (m_type != CGNS_ENUMV(RealSingle) && m_type != CGNS_ENUMV(RealDouble) &&
+        m_type != CGNS_ENUMV(Integer) && m_type != CGNS_ENUMV(LongInteger)) {
+        cgi_error("Invalid input data type for coord. array: %d", m_type);
         return CG_ERROR;
     }
 
@@ -2412,8 +2419,8 @@ int cg_coord_general_write(int file_number, int B, int Z,
     return cgi_array_general_write(zcoor->id, &(zcoor->ncoords),
                                    &(zcoor->coord), coordname,
                                    cgns_rindindex, zcoor->rind_planes,
-                                   s_numdim, s_dimvals, s_rmin, s_rmax, type,
-                                   m_numdim, m_dimvals, m_rmin, m_rmax,
+                                   s_type, s_numdim, s_dimvals, s_rmin, s_rmax,
+                                   m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                    coord_ptr, C);
 }
 
@@ -4900,7 +4907,7 @@ int cg_field_general_read(int file_number, int B, int Z, int S,
 
      /* verify input */
     if (INVALID_ENUM(type,NofValidDataTypes)) {
-        cgi_error("Invalid data type requested for flow solution: %d",type);
+        cgi_error("Invalid data type requested for flow solution: %d", type);
         return CG_ERROR;
     }
 
@@ -5002,9 +5009,9 @@ int cg_field_write(int file_number, int B, int Z, int S,
         m_rmax[n] = m_dimvals[n];
     }
 
-    return cg_field_general_write(file_number, B, Z, S, type, fieldname,
-                                  s_rmin, s_rmax,
-                                  m_numdim, m_dimvals, m_rmin, m_rmax,
+    return cg_field_general_write(file_number, B, Z, S, fieldname,
+                                  type, s_rmin, s_rmax,
+                                  type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   field_ptr, F);
 }
 
@@ -5049,15 +5056,17 @@ int cg_field_partial_write(int file_number, int B, int Z, int S,
         m_dimvals[n] = m_rmax[n];
     }
 
-    return cg_field_general_write(file_number, B, Z, S, type, fieldname,
-                                  s_rmin, s_rmax,
-                                  m_numdim, m_dimvals, m_rmin, m_rmax,
+    return cg_field_general_write(file_number, B, Z, S, fieldname,
+                                  type, s_rmin, s_rmax,
+                                  type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   field_ptr, F);
 }
 
 int cg_field_general_write(int file_number, int B, int Z, int S,
-                           CGNS_ENUMT( DataType_t ) type, const char *fieldname,
+                           const char *fieldname,
+                           CGNS_ENUMT(DataType_t) s_type,
                            const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                           CGNS_ENUMT(DataType_t) m_type,
                            int m_numdim, const cgsize_t *m_dimvals,
                            const cgsize_t *m_rmin, const cgsize_t *m_rmax,
                            const void *field_ptr, int *F)
@@ -5069,9 +5078,16 @@ int cg_field_general_write(int file_number, int B, int Z, int S,
 
      /* verify input */
     if (cgi_check_strlen(fieldname)) return CG_ERROR;
-    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble) &&
-        type != CGNS_ENUMV(Integer) && type != CGNS_ENUMV(LongInteger)) {
-        cgi_error("Invalid datatype for solution array %s: %d",fieldname, type);
+    if (s_type != CGNS_ENUMV(RealSingle) && s_type != CGNS_ENUMV(RealDouble) &&
+        s_type != CGNS_ENUMV(Integer) && s_type != CGNS_ENUMV(LongInteger)) {
+        cgi_error("Invalid file data type for solution array %s: %d",
+                  fieldname, s_type);
+        return CG_ERROR;
+    }
+    if (m_type != CGNS_ENUMV(RealSingle) && m_type != CGNS_ENUMV(RealDouble) &&
+        m_type != CGNS_ENUMV(Integer) && m_type != CGNS_ENUMV(LongInteger)) {
+        cgi_error("Invalid input data type for solution array %s: %d",
+                  fieldname, m_type);
         return CG_ERROR;
     }
 
@@ -5102,8 +5118,8 @@ int cg_field_general_write(int file_number, int B, int Z, int S,
     return cgi_array_general_write(sol->id, &(sol->nfields),
                                    &(sol->field), fieldname,
                                    cgns_rindindex, sol->rind_planes,
-                                   s_numdim, s_dimvals, s_rmin, s_rmax, type,
-                                   m_numdim, m_dimvals, m_rmin, m_rmax,
+                                   s_type, s_numdim, s_dimvals, s_rmin, s_rmax,
+                                   m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                    field_ptr, F);
 }
 
@@ -10012,9 +10028,11 @@ int cg_array_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
     return CG_OK;
 }
 
-int cg_array_general_write(const char *arrayname, CGNS_ENUMT(DataType_t) type,
+int cg_array_general_write(const char *arrayname,
+                           CGNS_ENUMT(DataType_t) s_type,
                            int s_numdim, const cgsize_t *s_dimvals,
                            const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                           CGNS_ENUMT(DataType_t) m_type,
                            int m_numdim, const cgsize_t* m_dimvals,
                            const cgsize_t *m_rmin, const cgsize_t *m_rmax,
                            const void *data)
@@ -10027,12 +10045,16 @@ int cg_array_general_write(const char *arrayname, CGNS_ENUMT(DataType_t) type,
      /* verify input */
     if (cgi_check_strlen(arrayname)) return CG_ERROR;
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
-    if (type != CGNS_ENUMV(RealSingle) &&
-        type != CGNS_ENUMV(RealDouble) &&
-        type != CGNS_ENUMV(Integer) &&
-        type != CGNS_ENUMV(LongInteger) &&
-        type != CGNS_ENUMV(Character)) {
-        cgi_error("Invalid datatype for data array: %d", type);
+    if (s_type != CGNS_ENUMV(RealSingle) && s_type != CGNS_ENUMV(RealDouble) &&
+        s_type != CGNS_ENUMV(Integer) && s_type != CGNS_ENUMV(LongInteger) &&
+        s_type != CGNS_ENUMV(Character)) {
+        cgi_error("Invalid file data type for data array: %d", s_type);
+        return CG_ERROR;
+    }
+    if (m_type != CGNS_ENUMV(RealSingle) && m_type != CGNS_ENUMV(RealDouble) &&
+        m_type != CGNS_ENUMV(Integer) && m_type != CGNS_ENUMV(LongInteger) &&
+        m_type != CGNS_ENUMV(Character)) {
+        cgi_error("Invalid input data type for data array: %d", m_type);
         return CG_ERROR;
     }
 
@@ -10063,8 +10085,8 @@ int cg_array_general_write(const char *arrayname, CGNS_ENUMT(DataType_t) type,
     int A = 0;  /* unused */
     return cgi_array_general_write(0.0, NULL, NULL, arrayname,
                                    cgns_rindindex, rind_planes,
-                                   s_numdim, s_dimvals, s_rmin, s_rmax, type,
-                                   m_numdim, m_dimvals, m_rmin, m_rmax,
+                                   s_type, s_numdim, s_dimvals, s_rmin, s_rmax,
+                                   m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                    data, &A);
 }
 
