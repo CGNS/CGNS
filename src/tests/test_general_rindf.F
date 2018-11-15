@@ -9,7 +9,7 @@
       integer, parameter :: celldim = 3, physdim = 3
       integer(cgsize_t), parameter :: size(3,3) =
      &  reshape((/5,5,5, 4,4,4, 0,0,0 /), (/3, 3/))
-      integer, parameter :: rind(2,3) =
+      integer(kind=4), parameter :: rind(2,3) =
      &  reshape((/2,2, 2,2, 1,1/), (/2, 3/))
       integer(cgsize_t), parameter :: NUM_I =
      &  size(1,1) + rind(1,1) + rind(2,1)
@@ -28,8 +28,9 @@
       integer(cgsize_t) :: rmin(3), rmax(3)
       integer(cgsize_t) :: m_rmin(3), m_rmax(3)
 
-      real*4, dimension(NUM_I, NUM_J, NUM_K) :: xcoord, ycoord, zcoord
-      real*4, dimension(NUM_I, NUM_J, NUM_K) :: solution, fbuf
+      real(kind=4), dimension(NUM_I, NUM_J, NUM_K) :: xcoord, ycoord
+      real(kind=4), dimension(NUM_I, NUM_J, NUM_K) :: zcoord
+      real(kind=4), dimension(NUM_I, NUM_J, NUM_K) :: solution, fbuf
 
       character*32 coordname(3)
       character*32 fieldname
@@ -76,10 +77,10 @@ c     position at the node, then write rind */
       dims(3) = NUM_K
 
       do n=1,3
-        rmin(n)   = get_s_rmin(n, rind(1,n))
-        rmax(n)   = get_s_rmax(n, rind(2,n))
-        m_rmin(n) = get_m_rmin(n, rind(1,n))
-        m_rmax(n) = get_m_rmax(n, rind(2,n))
+        rmin(n)   = get_s_rmin(n, int(rind(1,n),kind(n)))
+        rmax(n)   = get_s_rmax(n, int(rind(2,n),kind(n)))
+        m_rmin(n) = get_m_rmin(n, int(rind(1,n),kind(n)))
+        m_rmax(n) = get_m_rmax(n, int(rind(2,n),kind(n)))
       enddo
 
 c     write coordinates with rind
@@ -148,10 +149,10 @@ c     check coordinates
 c     Only load core coordinates without rind but inside memory with rind
 
       do n=1,3
-        rmin(n)   = get_s_rmin(n, 0)
-        rmax(n)   = get_s_rmax(n, 0)
-        m_rmin(n) = get_m_rmin(n, 0)
-        m_rmax(n) = get_m_rmax(n, 0)
+        rmin(n)   = get_s_rmin(n, int(0,kind(n)))
+        rmax(n)   = get_s_rmax(n, int(0,kind(n)))
+        m_rmin(n) = get_m_rmin(n, int(0,kind(n)))
+        m_rmax(n) = get_m_rmax(n, int(0,kind(n)))
       enddo
 
 c     X
@@ -220,10 +221,10 @@ c     Z
 c     check field with only one rind layer
 
       do n=1,3
-        rmin(n)   = get_s_rmin(n, 1)
-        rmax(n)   = get_s_rmax(n, 1)
-        m_rmin(n) = get_m_rmin(n, 1)
-        m_rmax(n) = get_m_rmax(n, 1)
+        rmin(n)   = get_s_rmin(n, int(1,kind(n)))
+        rmax(n)   = get_s_rmax(n, int(1,kind(n)))
+        m_rmin(n) = get_m_rmin(n, int(1,kind(n)))
+        m_rmax(n) = get_m_rmax(n, int(1,kind(n)))
       enddo
 
       call cg_field_general_read_f(cgfile, cgbase, cgzone, cgsol,
@@ -276,8 +277,8 @@ c     write the field using high-level routine
 
 c     verify the written data
       do n=1,3
-        rmin(n) = get_s_rmin(n, -1)
-        rmax(n) = get_s_rmax(n, -1)
+        rmin(n) = get_s_rmin(n, int(-1,kind(n)))
+        rmax(n) = get_s_rmax(n, int(-1,kind(n)))
       enddo
       call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname,
      &                     RealSingle, rmin, rmax, fbuf, ierr)
@@ -413,8 +414,8 @@ c     reading full range should still work for any dimension
 c     ranges are checked if they do not span the full dimensions.  Now,
 c     rmin < 1 is a failure
       do n=1,3
-        rmin(n) = get_s_rmin(n, 1)
-        rmax(n) = get_s_rmax(n, 1)
+        rmin(n) = get_s_rmin(n, int(1,kind(n)))
+        rmax(n) = get_s_rmax(n, int(1,kind(n)))
       enddo
       write (*, '(" Next error is required: ")', advance='no')
       call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname,
@@ -442,18 +443,18 @@ c     repeated.  But put the file in the same state by doing tests T13 and T14.
       solution(idxmin(1, 1)+1, idxmin(2, 0)  , idxmin(3, 0)) = 8888.6
       solution(idxmin(1, 1)  , idxmin(2, 0)+1, idxmin(3, 0)) = 8888.7
       solution(idxmin(1, 1)+1, idxmin(2, 0)+1, idxmin(3, 0)) = 8888.8
-      rmin(1)   = get_s_rmin(1, 1)
-      rmax(1)   = get_s_rmin(1, 1) + 1
-      rmin(2)   = get_s_rmin(2, 0)
-      rmax(2)   = get_s_rmin(2, 0) + 1
-      rmin(3)   = get_s_rmin(3, 0)
-      rmax(3)   = get_s_rmax(3, 0)
-      m_rmin(1) = get_m_rmin(1, 1)
-      m_rmax(1) = get_m_rmin(1, 1) + 1
-      m_rmin(2) = get_m_rmin(2, 0)
-      m_rmax(2) = get_m_rmin(2, 0) + 1
-      m_rmin(3) = get_m_rmin(3, 0)
-      m_rmax(3) = get_m_rmax(3, 0)
+      rmin(1)   = get_s_rmin(int(1,kind(n)), int(1,kind(n)))
+      rmax(1)   = get_s_rmin(int(1,kind(n)), int(1,kind(n))) + 1
+      rmin(2)   = get_s_rmin(int(2,kind(n)), int(0,kind(n)))
+      rmax(2)   = get_s_rmin(int(2,kind(n)), int(0,kind(n))) + 1
+      rmin(3)   = get_s_rmin(int(3,kind(n)), int(0,kind(n)))
+      rmax(3)   = get_s_rmax(int(3,kind(n)), int(0,kind(n)))
+      m_rmin(1) = get_m_rmin(int(1,kind(n)), int(1,kind(n)))
+      m_rmax(1) = get_m_rmin(int(1,kind(n)), int(1,kind(n))) + 1
+      m_rmin(2) = get_m_rmin(int(2,kind(n)), int(0,kind(n)))
+      m_rmax(2) = get_m_rmin(int(2,kind(n)), int(0,kind(n))) + 1
+      m_rmin(3) = get_m_rmin(int(3,kind(n)), int(0,kind(n)))
+      m_rmax(3) = get_m_rmax(int(3,kind(n)), int(0,kind(n)))
       call cg_field_general_write_f(cgfile, cgbase, cgzone, cgsol,
      &                              fieldname, RealSingle,
      &                              rmin, rmax, RealSingle,
@@ -462,8 +463,8 @@ c     repeated.  But put the file in the same state by doing tests T13 and T14.
       if (ierr .ne. CG_OK) call cg_error_exit_f
 c     verify the written data
       do n=1,3
-        rmin(n) = get_s_rmin(n, -1)
-        rmax(n) = get_s_rmax(n, -1)
+        rmin(n) = get_s_rmin(n, int(-1,kind(n)))
+        rmax(n) = get_s_rmax(n, int(-1,kind(n)))
       enddo
       call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname,
      &                     RealSingle, rmin, rmax, fbuf, ierr)
@@ -488,12 +489,12 @@ c     verify again by only reading the 4 locations
       fbuf(idxmin(1, 1)+1, idxmin(2, 0)  , idxmin(3, 0)) = 0.
       fbuf(idxmin(1, 1)  , idxmin(2, 0)+1, idxmin(3, 0)) = 0.
       fbuf(idxmin(1, 1)+1, idxmin(2, 0)+1, idxmin(3, 0)) = 0.
-      rmin(1) = get_s_rmin(1, 1)
-      rmax(1) = get_s_rmin(1, 1) + 1
-      rmin(2) = get_s_rmin(2, 0)
-      rmax(2) = get_s_rmin(2, 0) + 1
-      rmin(3) = get_s_rmin(3, 0)
-      rmax(3) = get_s_rmax(3, 0)
+      rmin(1) = get_s_rmin(int(1,kind(n)), int(1,kind(n)))
+      rmax(1) = get_s_rmin(int(1,kind(n)), int(1,kind(n))) + 1
+      rmin(2) = get_s_rmin(int(2,kind(n)), int(0,kind(n)))
+      rmax(2) = get_s_rmin(int(2,kind(n)), int(0,kind(n))) + 1
+      rmin(3) = get_s_rmin(int(3,kind(n)), int(0,kind(n)))
+      rmax(3) = get_s_rmax(int(3,kind(n)), int(0,kind(n)))
       call cg_field_general_read_f(cgfile, cgbase, cgzone, cgsol,
      &                             'Density', RealSingle,
      &                             rmin, rmax,
@@ -542,8 +543,8 @@ c     s_ is the range in file space.  Core cells start at 1 so rind planes are
 c     <= 0.
       function get_s_rmin(n, nr)
       integer(cgsize_t) :: get_s_rmin
-      integer :: n, nr
-      integer :: nrl
+      integer(cgsize_t) :: n, nr
+      integer(cgsize_t) :: nrl
       if (nr < 0) then
          nrl = rind(1,n)
       else
@@ -554,8 +555,8 @@ c     <= 0.
 
       function get_s_rmax(n, nr)
       integer(cgsize_t) :: get_s_rmax
-      integer :: n, nr
-      integer :: nrl
+      integer(cgsize_t) :: n, nr
+      integer(cgsize_t) :: nrl
       if (nr < 0) then
          nrl = rind(2,n)
       else
@@ -568,8 +569,8 @@ c     m_ is the range in memory.  The lowest index in each dimension is 1.  If
 c     there are rind planes, then he core cells start at a value > 1.
       function get_m_rmin(n, nr)
       integer(cgsize_t) :: get_m_rmin
-      integer :: n, nr
-      integer :: nrl
+      integer(cgsize_t) :: n, nr
+      integer(cgsize_t) :: nrl
       if (nr < 0) then
          nrl = rind(1,n)
       else
@@ -580,8 +581,8 @@ c     there are rind planes, then he core cells start at a value > 1.
 
       function get_m_rmax(n, nr)
       integer(cgsize_t) :: get_m_rmax
-      integer :: n, nr
-      integer :: nrl
+      integer(cgsize_t) :: n, nr
+      integer(cgsize_t) :: nrl
       if (nr < 0) then
          nrl = rind(2,n)
       else
@@ -594,13 +595,13 @@ c     ranges for accessing arrays
       function idxmin(n, nr)
       integer(cgsize_t) :: idxmin
       integer :: n, nr
-      idxmin = get_m_rmin(n, nr);
+      idxmin = get_m_rmin(int(n,kind(idxmin)), int(nr,kind(idxmin)));
       end function
 
       function idxmax(n, nr)
       integer(cgsize_t) :: idxmax
       integer :: n, nr
-      idxmax = get_m_rmax(n, nr);
+      idxmax = get_m_rmax(int(n,kind(idxmax)), int(nr,kind(idxmax)));
       end function
 
 c     initial data
@@ -620,7 +621,8 @@ c     initial data
       else
         sign = 1
       endif
-      solution(i, j, k) = sign*(1 + (k)*1100 + INDEX(i - 1, j - 1, 0))
+      solution(i, j, k) = sign*(1 + (k)*1100 
+     &       + INDEX(i - 1, j - 1, int(0,kind(n))))
       end subroutine
 
       end program

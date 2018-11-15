@@ -63,7 +63,9 @@ int main (int argc, char *argv[])
     int cgfile, cgbase, cgzone, cgdiscr;
     int nn, np;
 
-    int n, i, j, k, ii, jj, kk;
+    int n, l, m;
+    cgsize_t i, j, k;
+    cgsize_t ii, jj, kk;
     cgsize_t dims[3];
     cgsize_t rmin[3];
     cgsize_t rmax[3];
@@ -199,19 +201,19 @@ int main (int argc, char *argv[])
     if (cg_goto(cgfile, cgbase, "Zone_t", cgzone, "DiscreteData_t", cgdiscr,
                 "end") ||
         cg_narrays(&n) ||
-        cg_array_info(1, name1, &type1, &i, rmin) ||
-        cg_array_info(2, name2, &type2, &j, rmax))
+        cg_array_info(1, name1, &type1, &l, rmin) ||
+        cg_array_info(2, name2, &type2, &m, rmax))
         cg_error_exit();
     if (n != 2) ++nn;
     if (strcmp(name1, "FValues") != 0) ++nn;
     if (type1 != RealSingle) ++nn;
-    if (i != 3) ++nn;
+    if (l != 3) ++nn;
     for (n=0; n<3; n++) {
         if (rmin[n] != dims_3d(n)) ++nn;
     }
     if (strcmp(name2, "DValues") != 0) ++nn;
     if (type2 != RealDouble) ++nn;
-    if (j != 3) ++nn;
+    if (m != 3) ++nn;
     for (n=0; n<3; n++) {
         if (rmax[n] != dims_3d(n)) ++nn;
     }
