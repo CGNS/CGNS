@@ -37,6 +37,7 @@ int* ibuf_1d;
 inline static cgsize_t idx3d_1d(cgsize_t ii, cgsize_t jj, cgsize_t kk) {
     return ii + dims_3d(0)*(jj + dims_3d(1)*(kk));
 }
+
 inline static void idx1d_3d(cgsize_t nn,
                             cgsize_t *ii, cgsize_t *jj, cgsize_t *kk) {
     *kk =    nn/(dims_3d(0)*dims_3d(1));
@@ -50,7 +51,7 @@ inline static cgsize_t idx2d_1d(cgsize_t ii, cgsize_t jj) {
     return ii + dims_2d(0)*(jj);
 }
 
-static void compute_values(int i, int j, int k, int a)
+static void compute_values(cgsize_t i, cgsize_t j, cgsize_t k, int a)
 {
     fvalues_1d[idx3d_1d(i, j, k)] = (float)(1 + (k+a+0)*1100 +
                                             idx3d_1d(i, j, 0));
@@ -62,8 +63,9 @@ int main (int argc, char *argv[])
 {
     int cgfile, cgbase, cgzone, cgdiscr;
     int nn, np;
+    int n, narr, rank1, rank2;
 
-    int n, i, j, k, ii, jj, kk;
+    cgsize_t i, j, k, ii, jj, kk;
     cgsize_t dims[3];
     cgsize_t rmin[3];
     cgsize_t rmax[3];
@@ -198,20 +200,20 @@ int main (int argc, char *argv[])
     DataType_t type1, type2;
     if (cg_goto(cgfile, cgbase, "Zone_t", cgzone, "DiscreteData_t", cgdiscr,
                 "end") ||
-        cg_narrays(&n) ||
-        cg_array_info(1, name1, &type1, &i, rmin) ||
-        cg_array_info(2, name2, &type2, &j, rmax))
+        cg_narrays(&narr) ||
+        cg_array_info(1, name1, &type1, &rank1, rmin) ||
+        cg_array_info(2, name2, &type2, &rank2, rmax))
         cg_error_exit();
-    if (n != 2) ++nn;
+    if (narr != 2) ++nn;
     if (strcmp(name1, "FValues") != 0) ++nn;
     if (type1 != RealSingle) ++nn;
-    if (i != 3) ++nn;
+    if (rank1 != 3) ++nn;
     for (n=0; n<3; n++) {
         if (rmin[n] != dims_3d(n)) ++nn;
     }
     if (strcmp(name2, "DValues") != 0) ++nn;
     if (type2 != RealDouble) ++nn;
-    if (j != 3) ++nn;
+    if (rank2 != 3) ++nn;
     for (n=0; n<3; n++) {
         if (rmax[n] != dims_3d(n)) ++nn;
     }

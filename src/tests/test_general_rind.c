@@ -70,14 +70,14 @@ inline static cgsize_t idxmax(const int n, const int nr) {
 }
 
 /* initial data */
-static void compute_coord(int i, int j, int k)
+static void compute_coord(cgsize_t i, cgsize_t j, cgsize_t k)
 {
     xcoord[INDEX(i, j, k)] = (float)(i - rind[0][0]);
     ycoord[INDEX(i, j, k)] = (float)(j - rind[1][0]);
     zcoord[INDEX(i, j, k)] = (float)(k - rind[2][0]);
 }
 
-static void compute_sol(int i, int j, int k)
+static void compute_sol(cgsize_t i, cgsize_t j, cgsize_t k)
 {
     int sign = 1 - 2*((i < rind[0][0]) + (i >= size[0][0] + rind[0][0]) +
                       (j < rind[1][0]) + (j >= size[0][1] + rind[1][0]) +
@@ -88,9 +88,9 @@ static void compute_sol(int i, int j, int k)
 int main (int argc, char *argv[])
 {
     int cgfile, cgbase, cgzone, cggrid, cgcoord, cgsol, cgfld;
-    int nn, np;
+    int n, nn, np;
 
-    int i, j, k, n;
+    cgsize_t i, j, k;
     cgsize_t dims[3];
     cgsize_t rmin[3];
     cgsize_t rmax[3];

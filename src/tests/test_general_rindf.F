@@ -21,9 +21,9 @@
 
       integer :: ierr
       integer :: cgfile, cgbase, cgzone, cggrid, cgcoord, cgsol, cgfld
-      integer :: nn, np
+      integer :: n, nn, np
 
-      integer(cgsize_t) :: i, j, k, n
+      integer(cgsize_t) :: i, j, k
       integer(cgsize_t) :: dims(3)
       integer(cgsize_t) :: rmin(3), rmax(3)
       integer(cgsize_t) :: m_rmin(3), m_rmax(3)
@@ -549,7 +549,7 @@ c     <= 0.
       else
          nrl = nr
       endif
-      get_s_rmin = 1 - nrl
+      get_s_rmin = int(1 - nrl, kind=cgsize_t)
       end function
 
       function get_s_rmax(n, nr)
@@ -561,7 +561,7 @@ c     <= 0.
       else
          nrl = nr
       endif
-      get_s_rmax = size(n,1) + nrl
+      get_s_rmax = int(size(n,1) + nrl, kind=cgsize_t)
       end function
 
 c     m_ is the range in memory.  The lowest index in each dimension is 1.  If
@@ -575,7 +575,7 @@ c     there are rind planes, then he core cells start at a value > 1.
       else
          nrl = nr
       endif
-      get_m_rmin = 1 + rind(1,n) - nrl;
+      get_m_rmin =  int(1 + rind(1,n) - nrl, kind=cgsize_t)
       end function
 
       function get_m_rmax(n, nr)
@@ -587,7 +587,7 @@ c     there are rind planes, then he core cells start at a value > 1.
       else
          nrl = nr
       endif
-      get_m_rmax = rind(1,n) + size(n,1) + nrl;
+      get_m_rmax = int(rind(1,n) + size(n,1) + nrl, kind=cgsize_t)
       end function
 
 c     ranges for accessing arrays
@@ -620,7 +620,8 @@ c     initial data
       else
         sign = 1
       endif
-      solution(i, j, k) = sign*(1 + (k)*1100 + INDEX(i - 1, j - 1, 0))
+      solution(i, j, k) = sign*(1 + (k)*1100 +
+     &  INDEX(i - 1, j - 1, 0_cgsize_t))
       end subroutine
 
       end program
