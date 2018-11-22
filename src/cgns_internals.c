@@ -7946,14 +7946,16 @@ int cgi_array_general_verify_range(
     cgsize_t *s_rmin,                   /* [O] internal range min in file */
     cgsize_t *s_rmax,                   /* [O] internal range max in file */
     cgsize_t *stride,                   /* [O] stride (always 1) */
-    int *access_full_range,             /* [O] T: access all of both arrays */
+    int *s_access_full_range,           /* [O] T: access all of file array */
+    int *m_access_full_range,           /* [O] T: access all of memory array */
     cgsize_t *numpt)                    /* [O] number of points accessed */
 {
     cgsize_t s_numpt = 1, m_numpt = 1;
     int n, npt;
-    int s_access_full_range = 1;  /* File-space array only */
 
-    *access_full_range = 1;       /* Both arrays */
+    int s_reset_range = 1;
+    *s_access_full_range = 1;
+    *m_access_full_range = 1;
 
      /*** verfication for dataset in file */
      /* verify that range requested is not NULL */
@@ -7967,21 +7969,21 @@ int cgi_array_general_verify_range(
         npt = rmax[n] - rmin[n] + 1;
         s_numpt *= npt;
         if (npt != s_dimvals[n]) {
-            s_access_full_range = 0;
-            *access_full_range = 0;
+            *s_access_full_range = 0;
+            s_reset_range = 0;
         }
     }
 
-     /* s_access_full_range allows the user to specify any range if it fully
+     /* s_reset_range allows the user to specify any range if it fully
         spans the dimension of the file-space range (i.e., they can ignore the
         indexing of rind and core cells).  But this is disabled for writing. */
     if (op_rw == CGI_Write) {
-        s_access_full_range = 0;
+        s_reset_range = 0;
     }
 
      /* verify that range requested does not exceed range stored (if not
       * reading full range). */
-    if (!s_access_full_range) {
+    if (!(s_reset_range)) {
         for (n=0; n<s_numdim; n++) {
             if (rind_index == CG_CONFIG_RIND_ZERO || rind_planes == NULL) {
                 /* old obsolete behavior (versions < 3.4) */
@@ -8044,7 +8046,7 @@ int cgi_array_general_verify_range(
         npt = m_rmax[n] - m_rmin[n] + 1;
         m_numpt *= npt;
         if (npt != m_dimvals[n]) {
-            *access_full_range = 0;
+            *m_access_full_range = 0;
         }
     }
 
@@ -8062,7 +8064,7 @@ int cgi_array_general_verify_range(
         bound of the arrays is 1 whereas from the user perspective, the lower
         core cells have index 1) */
      /* note: s_rmin and s_rmax are not used if reading full range in serial */
-    if (s_access_full_range) {
+    if (s_reset_range) {
          /* reset range and discard provided values */
         for (n = 0; n<s_numdim; n++) {
             s_rmin[n] = 1;
@@ -8108,7 +8110,7 @@ int cgi_array_general_read(
     const cgsize_t *m_rmax,             /* [I] range max in memory */
     void* data)                         /* [O] data to load */
 {
-    int read_full_range, ier;
+    int s_access_full_range, m_access_full_range, ier;
     cgsize_t numpt;
 
     CGNS_ENUMT(DataType_t) s_type = cgi_datatype(array->data_type);
@@ -8122,12 +8124,15 @@ int cgi_array_general_read(
         CGI_Read, rind_index, rind_planes,
         s_numdim, s_dimvals,   rmin,   rmax,
         m_numdim, m_dimvals, m_rmin, m_rmax,
-        s_rmin, s_rmax, stride, &read_full_range, &numpt);
+        s_rmin, s_rmax, stride, &s_access_full_range, &m_access_full_range,
+        &numpt);
     if (ier != CG_OK) return ier;
+    const int access_full_range =
+        (s_access_full_range == 1) && (m_access_full_range == 1);
 
     if (s_type == m_type) {
          /* quick transfer of data if same data types */
-        if (read_full_range) {
+        if (access_full_range) {
             if (cgio_read_all_data(cg->cgio, array->id, data)) {
                 cg_io_error("cgio_read_all_data");
                 return CG_ERROR;
@@ -8143,14 +8148,20 @@ int cgi_array_general_read(
         }
     }
     else if (cg->filetype == CGIO_FILE_ADF2 || cg->filetype == CGIO_FILE_ADF) {
-        /* need to read into temp array to convert data */
+         /* need to read into temp array to convert data */
+         /* only able to convert for full range in memory */
+        if (!m_access_full_range) {
+            cgi_error("Reading to partial range in memory with data conversion "
+                      "is not supported in ADF file format");
+            return CG_ERROR;
+        }
         void *conv_data;
         conv_data = malloc((size_t)(numpt*size_of(array->data_type)));
         if (conv_data == NULL) {
             cgi_error("Error allocating conv_data");
             return CG_ERROR;
         }
-        if (read_full_range) {
+        if (access_full_range) {
             if (cgio_read_all_data(cg->cgio, array->id, conv_data)) {
                 free(conv_data);
                 cg_io_error("cgio_read_all_data");
@@ -8158,9 +8169,9 @@ int cgi_array_general_read(
             }
         }
         else {
-            if (cgio_read_data(cg->cgio, array->id,
-                               s_rmin, s_rmax, stride, m_numdim, m_dimvals,
-                               m_rmin, m_rmax, stride, conv_data)) {
+            if (cgio_read_data(cg->cgio, array->id, s_rmin, s_rmax, stride,
+                               m_numdim, m_dimvals, m_rmin, m_rmax, stride,
+                               conv_data)) {
                 free(conv_data);
                 cg_io_error("cgio_read_data");
                return CG_ERROR;
@@ -8172,7 +8183,7 @@ int cgi_array_general_read(
     }
     else {
          /* in-situ conversion */
-        if (read_full_range) {
+        if (access_full_range) {
             if (cgio_read_all_data_type(cg->cgio, array->id,
                                         cgi_adf_datatype(m_type), data)) {
                 cg_io_error("cgio_read_all_data");
@@ -8214,7 +8225,7 @@ int cgi_array_general_write(
     const void* data,                   /* [I] data to store */
     int *A)                             /* [O] array index for new array */
 {
-    int write_full_range, n, idx, ier;
+    int s_access_full_range, m_access_full_range, n, idx, ier;
     cgsize_t numpt;
 
      /* verify the ranges provided and set s_rmin and s_rmax giving internal
@@ -8225,8 +8236,11 @@ int cgi_array_general_write(
         CGI_Write, rind_index, rind_planes,
         s_numdim, s_dimvals,   rmin,   rmax,
         m_numdim, m_dimvals, m_rmin, m_rmax,
-        s_rmin, s_rmax, stride, &write_full_range, &numpt);
+        s_rmin, s_rmax, stride, &s_access_full_range, &m_access_full_range,
+        &numpt);
     if (ier != CG_OK) return ier;
+    const int access_full_range =
+        (s_access_full_range == 1) && (m_access_full_range == 1);
 
     cgns_array *array;
 
@@ -8303,8 +8317,8 @@ int cgi_array_general_write(
     }
 
     if (s_type == m_type) {
-     /* quick transfer of data if same data types */
-        if (write_full_range) {
+         /* quick transfer of data if same data types */
+        if (access_full_range) {
             if (cgio_write_all_data(cg->cgio, array->id, data)) {
                 cg_io_error("cgio_write_all_data");
                 return CG_ERROR;
@@ -8320,7 +8334,13 @@ int cgi_array_general_write(
         }
     }
     else if (cg->filetype == CGIO_FILE_ADF2 || cg->filetype == CGIO_FILE_ADF) {
-        /* need to read into temp array to convert data */
+         /* need to read into temp array to convert data */
+         /* only able to convert for full range in memory */
+        if (!m_access_full_range) {
+            cgi_error("Writing from partial range in memory with data "
+                      "conversion is not supported in ADF file format");
+            return CG_ERROR;
+        }
         void *conv_data;
         conv_data = malloc((size_t)(numpt*size_of(array->data_type)));
         if (conv_data == NULL) {
@@ -8332,8 +8352,8 @@ int cgi_array_general_write(
               free(conv_data);
               return CG_ERROR;
           }
-        if (write_full_range) {
-            if (cgio_write_all_data(cg->cgio, array->id, data)) {
+        if (access_full_range) {
+            if (cgio_write_all_data(cg->cgio, array->id, conv_data)) {
                 free(conv_data);
                 cg_io_error("cgio_write_all_data");
                 return CG_ERROR;
@@ -8342,7 +8362,7 @@ int cgi_array_general_write(
         else {
             if (cgio_write_data(cg->cgio, array->id, s_rmin, s_rmax, stride,
                                 m_numdim, m_dimvals, m_rmin, m_rmax, stride,
-                                data)) {
+                                conv_data)) {
                 free(conv_data);
                 cg_io_error("cgio_write_data");
                 return CG_ERROR;
@@ -8352,7 +8372,7 @@ int cgi_array_general_write(
     }
     else {
          /* in-situ conversion */
-        if (write_full_range) {
+        if (access_full_range) {
             if (cgio_write_all_data_type(cg->cgio, array->id,
                                         cgi_adf_datatype(m_type), data)) {
                 cg_io_error("cgio_read_all_data");

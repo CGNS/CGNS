@@ -113,6 +113,8 @@ int main (int argc, char *argv[])
     // 3d reshape
     float (*fvalues_3d)[dims_3d(1)][dims_3d(0)] =
       (float (*)[dims_3d(1)][dims_3d(0)])fvalues_1d;
+    float (*fbuf_3d)[dims_3d(1)][dims_3d(0)] =
+      (float (*)[dims_3d(1)][dims_3d(0)])fbuf_1d;
     double (*dvalues_3d)[dims_3d(1)][dims_3d(0)] =
       (double (*)[dims_3d(1)][dims_3d(0)])dvalues_1d;
     double (*dbuf_3d)[dims_3d(1)][dims_3d(0)] =
@@ -189,6 +191,9 @@ int main (int argc, char *argv[])
         cg_error_exit();
     fflush (stdout);
     cgbase = cgzone = cgdiscr = 1;
+    int isHDF5;
+    if (cg_get_file_type(cgfile, &isHDF5)) cg_error_exit();
+    isHDF5 = (isHDF5 == CG_FILE_HDF5);
 
     puts("checking the data");
 
@@ -227,13 +232,13 @@ int main (int argc, char *argv[])
     np = 0;
     if (cg_array_general_read(1, RealSingle, rmin, rmax,
                               3, m_dims, m_rmin, m_rmax, fbuf_1d))
-      cg_error_exit();
+        cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
         if (fbuf_1d[i] != fvalues_1d[i]) ++np;
     }
     if (cg_array_general_read(2, RealDouble, rmin, rmax,
                               3, m_dims, m_rmin, m_rmax, dbuf_1d))
-      cg_error_exit();
+        cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
         if (dbuf_1d[i] != dvalues_1d[i]) ++np;
     }
@@ -243,42 +248,146 @@ int main (int argc, char *argv[])
     np = 0;
     if (cg_array_general_read(1, RealDouble, rmin, rmax,
                               3, m_dims, m_rmin, m_rmax, dbuf_1d))
-      cg_error_exit();
+        cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
         if (dbuf_1d[i] != (double)fvalues_1d[i]) ++np;
     }
     if (cg_array_general_read(1, Integer, rmin, rmax,
                               3, m_dims, m_rmin, m_rmax, ibuf_1d))
-      cg_error_exit();
+        cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
         if (ibuf_1d[i] != (int)fvalues_1d[i]) ++np;
     }
     nn += np;
     if (np) printf("%d differences in values (T2)\n", np);
 
+    /*--- 3d mem partial write/read with and without conversion ---*/
+
+    /* only supported in hdf5 */
+    if (isHDF5) {
+        for (k = 0; k < dims_3d(2); k++) {
+            for (j = 0; j < dims_3d(1); j++) {
+                for (i = 0; i < dims_3d(0); i++) {
+                    compute_values(i, j, k, 1);
+                }
+            }
+        }
+        for (n=0; n<3; n++) {
+            dims[n]   = dims_3d(n);
+            rmin[n]   = 2;
+            rmax[n]   = dims_3d(n);
+            m_dims[n] = dims_3d(n);
+            m_rmin[n] = 2;
+            m_rmax[n] = dims_3d(n);
+        }
+        if (cg_array_general_write("FValues",
+                                   RealSingle, 3,   dims,   rmin,   rmax,
+                                   RealSingle, 3, m_dims, m_rmin, m_rmax,
+                                   fvalues_1d))
+            cg_error_exit();
+        if (cg_array_general_write("DValues",
+                                   RealDouble, 3,   dims,   rmin,   rmax,
+                                   RealDouble, 3, m_dims, m_rmin, m_rmax,
+                                   dvalues_1d))
+            cg_error_exit();
+        /* read with conversion */
+        if (cg_array_general_read(1, RealDouble, rmin, rmax,
+                                  3, m_dims, m_rmin, m_rmax, dbuf_1d))
+            cg_error_exit();
+        for (k = 1; k < dims_3d(2); k++) {
+            for (j = 1; j < dims_3d(1); j++) {
+                for (i = 1; i < dims_3d(0); i++) {
+                    if (dbuf_3d[k][j][i] != (double)fvalues_3d[k][j][i]) ++np;
+                }
+            }
+        }
+        if (cg_array_general_read(2, RealSingle, rmin, rmax,
+                                  3, m_dims, m_rmin, m_rmax, fbuf_1d))
+            cg_error_exit();
+        for (k = 1; k < dims_3d(2); k++) {
+            for (j = 1; j < dims_3d(1); j++) {
+                for (i = 1; i < dims_3d(0); i++) {
+                    if (fbuf_3d[k][j][i] != (float)dvalues_3d[k][j][i]) ++np;
+                }
+            }
+        }
+        /* write with conversion */
+        for (i = 0; i < dims_1d(0); i++) {
+            dbuf_1d[i] = fvalues_1d[i];
+        }
+        if (cg_array_general_write("FValues",
+                                   RealSingle, 3,   dims,   rmin,   rmax,
+                                   RealDouble, 3, m_dims, m_rmin, m_rmax,
+                                   dbuf_1d))
+            cg_error_exit();
+        for (i = 0; i < dims_1d(0); i++) {
+            fbuf_1d[i] = dvalues_1d[i];
+        }
+        if (cg_array_general_write("DValues",
+                                   RealDouble, 3,   dims,   rmin,   rmax,
+                                   RealSingle, 3, m_dims, m_rmin, m_rmax,
+                                   fbuf_1d))
+            cg_error_exit();
+        if (cg_array_general_read(1, RealSingle, rmin, rmax,
+                                  3, m_dims, m_rmin, m_rmax, fbuf_1d))
+            cg_error_exit();
+        for (k = 1; k < dims_3d(2); k++) {
+            for (j = 1; j < dims_3d(1); j++) {
+                for (i = 1; i < dims_3d(0); i++) {
+                    if (fbuf_3d[k][j][i] != fvalues_3d[k][j][i]) ++np;
+                }
+            }
+        }
+        if (cg_array_general_read(2, RealDouble, rmin, rmax,
+                                  3, m_dims, m_rmin, m_rmax, dbuf_1d))
+            cg_error_exit();
+        for (k = 1; k < dims_3d(2); k++) {
+            for (j = 1; j < dims_3d(1); j++) {
+                for (i = 1; i < dims_3d(0); i++) {
+                    if (dbuf_3d[k][j][i] != dvalues_3d[k][j][i]) ++np;
+                }
+            }
+        }
+    }
+    nn += np;
+    if (np) printf("%d differences in values (T3)\n", np);
+
     /*--- 2d mem full write/read ---*/
 
     for (k = 0; k < dims_3d(2); k++) {
         for (j = 0; j < dims_3d(1); j++) {
             for (i = 0; i < dims_3d(0); i++) {
-                compute_values(i, j, k, 1);
+                compute_values(i, j, k, 2);
             }
         }
+    }
+    for (n=0; n<3; n++) {
+        dims[n] = dims_3d(n);
+        rmin[n] = 1;
+        rmax[n] = dims_3d(n);
     }
     for (n=0; n<2; n++) {
         m_dims[n] = dims_2d(n);
         m_rmin[n] = 1;
         m_rmax[n] = dims_2d(n);
     }
+    /* write to float location with double */
+    for (i = 0; i < dims_1d(0); i++) {
+        dbuf_1d[i] = fvalues_1d[i];
+    }
     if (cg_array_general_write("FValues",
                                RealSingle, 3,   dims,   rmin,   rmax,
-                               RealSingle, 2, m_dims, m_rmin, m_rmax,
-                               fvalues_1d))
+                               RealDouble, 2, m_dims, m_rmin, m_rmax,
+                               dbuf_1d))
         cg_error_exit();
+    /* write to double location with integer */
+    for (i = 0; i < dims_1d(0); i++) {
+        ibuf_1d[i] = dvalues_1d[i];
+    }
     if (cg_array_general_write("DValues",
                                RealDouble, 3,   dims,   rmin,   rmax,
-                               RealDouble, 2, m_dims, m_rmin, m_rmax,
-                               dvalues_1d))
+                               Integer, 2, m_dims, m_rmin, m_rmax,
+                               ibuf_1d))
         cg_error_exit();
     /* verify the written data */
     np = 0;
@@ -315,14 +424,14 @@ int main (int argc, char *argv[])
         if (fbuf_1d[i] != (float)dvalues_1d[i]) ++np;
     }
     nn += np;
-    if (np) printf("%d differences in values (T3)\n", np);
+    if (np) printf("%d differences in values (T4)\n", np);
 
     /*--- 1d mem full write/read ---*/
 
     for (k = 0; k < dims_3d(2); k++) {
         for (j = 0; j < dims_3d(1); j++) {
             for (i = 0; i < dims_3d(0); i++) {
-                compute_values(i, j, k, 2);
+                compute_values(i, j, k, 3);
             }
         }
     }
@@ -376,7 +485,7 @@ int main (int argc, char *argv[])
         if (ibuf_1d[i] != (int)dvalues_1d[i]) ++np;
     }
     nn += np;
-    if (np) printf("%d differences in values (T4)\n", np);
+    if (np) printf("%d differences in values (T5)\n", np);
 
     /*--- 3d partial write/full and partial read ---*/
 
@@ -393,6 +502,7 @@ int main (int argc, char *argv[])
             }
         }
     }
+
     /* partial write of negative data */
     for (n=0; n<3; n++) {
         dims[n] = dims_3d(n);
@@ -412,23 +522,27 @@ int main (int argc, char *argv[])
                                RealDouble, 3, m_dims, m_rmin, m_rmax,
                                dvalues_1d))
         cg_error_exit();
-    /* verify the written data using a partial read */
+    /* verify the written data using a partial read (only supported with hdf5
+       files */
     np = 0;
-    for (n = 0; n < dims_1d(0); n++) {
-        fbuf_1d[n] = 0.f;
-        dbuf_1d[n] = 0.;
-        ibuf_1d[n] = 0;
-    }
-    if (cg_array_general_read(1, RealDouble, rmin, rmax,
-                              3, m_dims, m_rmin, m_rmax, dbuf_1d))
-      cg_error_exit();
-    for (k = 0; k < dims_3d(2); k++) {
-        for (j = 0; j < dims_3d(1); j++) {
-            for (i = 0; i < dims_3d(0); i++) {
-                if (i > 0 && i < dims_3d(0)-1 &&
-                    j > 0 && j < dims_3d(1)-1 &&
-                    k > 0 && k < dims_3d(2)-1) {
-                    if (dbuf_3d[k][j][i] != (double)fvalues_3d[k][j][i]) ++np;
+    if (isHDF5) {
+        for (n = 0; n < dims_1d(0); n++) {
+            fbuf_1d[n] = 0.f;
+            dbuf_1d[n] = 0.;
+            ibuf_1d[n] = 0;
+        }
+        if (cg_array_general_read(1, RealDouble, rmin, rmax,
+                                  3, m_dims, m_rmin, m_rmax, dbuf_1d))
+            cg_error_exit();
+        for (k = 0; k < dims_3d(2); k++) {
+            for (j = 0; j < dims_3d(1); j++) {
+                for (i = 0; i < dims_3d(0); i++) {
+                    if (i > 0 && i < dims_3d(0)-1 &&
+                        j > 0 && j < dims_3d(1)-1 &&
+                        k > 0 && k < dims_3d(2)-1) {
+                        if (dbuf_3d[k][j][i] != (double)fvalues_3d[k][j][i])
+                            ++np;
+                    }
                 }
             }
         }
@@ -449,7 +563,7 @@ int main (int argc, char *argv[])
     for (k = 0; k < dims_3d(2); k++) {
         for (j = 0; j < dims_3d(1); j++) {
             for (i = 0; i < dims_3d(0); i++) {
-                compute_values(i, j, k, 2);
+                compute_values(i, j, k, 3);
                 if (i > 0 && i < dims_3d(0)-1 &&
                     j > 0 && j < dims_3d(1)-1 &&
                     k > 0 && k < dims_3d(2)-1) {
@@ -463,7 +577,7 @@ int main (int argc, char *argv[])
         if (fbuf_1d[i] != (float)dvalues_1d[i]) ++np;
     }
     nn += np;
-    if (np) printf("%d differences in values (T5)\n", np);
+    if (np) printf("%d differences in values (T6)\n", np);
 
     /*--- 1d mem full write/read with rind planes ---*/
 
@@ -475,7 +589,7 @@ int main (int argc, char *argv[])
     for (k = 0; k < dims_3d(2); k++) {
         for (j = 0; j < dims_3d(1); j++) {
             for (i = 0; i < dims_3d(0); i++) {
-                compute_values(i, j, k, 3);
+                compute_values(i, j, k, 4);
             }
         }
     }
@@ -518,7 +632,7 @@ int main (int argc, char *argv[])
         if (dbuf_1d[i] != dvalues_1d[i]) ++np;
     }
     nn += np;
-    if (np) printf("%d differences in values (T6)\n", np);
+    if (np) printf("%d differences in values (T7)\n", np);
 
     if (nn == 0) puts("no differences");
 

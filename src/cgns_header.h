@@ -1194,7 +1194,7 @@ int cgi_array_general_verify_range(const cgi_rw op_rw,
     const int m_numdim, const cgsize_t *m_dimvals,
     const cgsize_t *m_rmin, const cgsize_t *m_rmax,
     cgsize_t *s_rmin, cgsize_t *s_rmax, cgsize_t *stride,
-    int *access_full_range, cgsize_t *numpt);
+    int *s_access_full_range, int *m_access_full_range, cgsize_t *numpt);
 int cgi_array_general_read(const cgns_array *array,
     const void* rind_index, const int *rind_planes, const int s_numdim,
     const cgsize_t *rmin, const cgsize_t *rmax,
