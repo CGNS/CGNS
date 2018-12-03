@@ -8315,6 +8315,8 @@ int cgi_array_general_write(
             return CG_ERROR;
         }
     }
+    /* Needed for parallel write */
+    if (data == NULL) return CG_OK;
 
     if (s_type == m_type) {
          /* quick transfer of data if same data types */
