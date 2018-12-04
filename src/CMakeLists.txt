@@ -532,6 +532,8 @@ if (CGNS_ENABLE_FORTRAN)
 else (CGNS_ENABLE_FORTRAN)
   add_library(cgns_static STATIC ${cgns_FILES})
 endif (CGNS_ENABLE_FORTRAN)
+# Needed to work around a CMake > 3.8 bug on Windows with MSVS and Intel Fortran
+set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
 
 
 # Build a shared version of the library
