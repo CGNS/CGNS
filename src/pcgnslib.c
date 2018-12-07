@@ -302,6 +302,7 @@ static int readwrite_shaped_data_parallel(
 
     /* Make sure memory space and file space have same number of points */
     if (H5Sget_select_npoints(mem_shape_id) !=
+
         H5Sget_select_npoints(data_shape_id)) {
         cgi_error("Unequal points in memory and file space");
         herr = -1;
@@ -695,6 +696,98 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
 			      zone->index_dim, rmin, rmax, &Data, CG_PAR_READ);
 }
 
+/*---------------------------------------------------------*/
+
+int cgp_coord_general_read_data(int fn, int B, int Z, int C,
+           CGNS_ENUMT(DataType_t) m_type, 
+           const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+           int m_numdim, const cgsize_t *m_dimvals,
+           const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+           void *coords)
+{
+    int n;
+    hid_t hid;
+    cgns_zone *zone;
+    cgns_zcoor *zcoor;
+    cgsize_t dims[3];
+    CGNS_ENUMT(DataType_t) s_type;
+    cgsize_t s_start[CGIO_MAX_DIMENSIONS], s_end[CGIO_MAX_DIMENSIONS];
+    cgsize_t m_start[CGIO_MAX_DIMENSIONS], m_end[CGIO_MAX_DIMENSIONS];
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
+
+    if (m_type != CGNS_ENUMV(RealSingle) &&
+        m_type != CGNS_ENUMV(RealDouble)) {
+        cgi_error("Invalid data type for coord. array: %d", m_type);
+        return CG_ERROR;
+    }
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
+        return CG_ERROR;
+
+    zone = cgi_get_zone(cg, B, Z);
+    if (zone==0) return CG_ERROR;
+
+    zcoor = cgi_get_zcoorGC(cg, B, Z);
+    if (zcoor==0) return CG_ERROR;
+
+    if (C > zcoor->ncoords || C <= 0) {
+        cgi_error("coord number %d invalid",C);
+        return CG_ERROR;
+    }
+    
+
+    for (n = 0; n < zone->index_dim; n++) {
+        dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
+                                  zcoor->rind_planes[2*n+1];
+	if(coords) {
+	  if (s_rmin[n] > s_rmax[n] ||
+              s_rmin[n] < (1- zcoor->rind_planes[2*n]) ||
+              s_rmax[n] > (dims[n]-zcoor->rind_planes[2*n])) {
+            cgi_error("Invalid index ranges.");
+            return CG_ERROR;
+	  }
+	}
+    }
+
+     /* verify that range requested does not exceed range available */
+    for (n=0; n<m_numdim; n++) {
+        if (m_rmin[n] > m_rmax[n] ||
+            m_rmax[n] > m_dimvals[n] ||
+            m_rmin[n] < 1) {
+            cgi_error("Invalid range of memory array provided");
+            return CG_ERROR;
+        }
+    }
+
+     /* Size and shape of file space */
+    for (n=0; n < zone->index_dim; n++) {
+        s_start[n] = s_rmin[n] + zcoor->rind_planes[2*n];
+        s_end[n]   = s_rmax[n] + zcoor->rind_planes[2*n];
+        stride[n]  = 1;
+    }
+     /* Size and shape of memory space */
+    for (n=0; n<m_numdim; n++) {
+        m_start[n] = m_rmin[n];
+        m_end[n]   = m_rmax[n];
+    }
+
+    s_type = cgi_datatype(zcoor->coord[C-1].data_type);
+
+    to_HDF_ID(zcoor->coord[C-1].id,hid);
+    cg_rw_t Data;
+    Data.u.rbuf = coords;
+
+    return readwrite_shaped_data_parallel(
+        hid, m_type,
+        s_start, s_end, stride,
+        m_numdim, m_dimvals, m_start, m_end, stride,
+        &Data, CG_PAR_READ);
+}
+
+
 /*===== Elements IO Prototypes ============================*/
 
 int cgp_section_write(int fn, int B, int Z, const char *sectionname,
@@ -1019,8 +1112,8 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
             dimpt = rmax[n] - rmin[n] + 1;
             numpt *= dimpt;
             if (rmin[n]>rmax[n] ||
-                rmax[n]>field->dim_vals[n] ||
-                rmin[n]<1) {
+                rmax[n]>(field->dim_vals[n]+sol->rind_planes[2*n]) ||
+                rmin[n]<(1-sol->rind_planes[2*n])) {
                 cgi_error("Invalid range of file data requested");
                 return CG_ERROR;
             }
@@ -1099,7 +1192,7 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
     return readwrite_shaped_data_parallel(
         hid, type,
         s_start, s_end, stride,
-        m_numdim, m_dims, m_start, m_end, stride,
+        m_numdim, m_arg_dims, m_start, m_end, stride,
         &Data, CG_PAR_WRITE);
 }
 
@@ -1140,6 +1233,74 @@ int cgp_field_read_data(int fn, int B, int Z, int S, int F,
     Data.u.rbuf = data;
     return readwrite_data_parallel(hid, type,
 			      field->data_dim, rmin, rmax, &Data, CG_PAR_READ);
+}
+
+/*---------------------------------------------------------*/
+
+int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
+                        CGNS_ENUMT(DataType_t) m_type, 
+                        const cgsize_t *rmin, const cgsize_t *rmax,
+                        int m_numdim, const cgsize_t *m_arg_dims,
+                        const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                        void *data)
+{
+    int n;
+    hid_t hid;
+    cgns_sol *sol;
+    cgns_array *field;
+    CGNS_ENUMT(DataType_t) type;
+    cgsize_t s_start[CGIO_MAX_DIMENSIONS], s_end[CGIO_MAX_DIMENSIONS];
+    cgsize_t m_start[CGIO_MAX_DIMENSIONS], m_end[CGIO_MAX_DIMENSIONS];
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
+        return CG_ERROR;
+
+     /* get memory address for solution */
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    field = cgi_get_field(cg, B, Z, S, F);
+    if (field==0) return CG_ERROR;
+
+     /* verify that range requested does not exceed range stored */
+    if (data) {
+      for (n = 0; n < field->data_dim; n++) {
+        if (rmin[n] > rmax[n] ||
+            rmax[n] > (field->dim_vals[n]+sol->rind_planes[2*n]) ||
+            rmin[n] < (1-sol->rind_planes[2*n])) {
+	  cgi_error("Invalid range of data requested");
+	  return CG_ERROR;
+        }
+      }
+    }
+
+     /* Size and shape of file space */
+    for (n=0; n < field->data_dim; n++) {
+        s_start[n] = rmin[n] + sol->rind_planes[2*n];
+        s_end[n]   = rmax[n] + sol->rind_planes[2*n];
+        stride[n]  = 1;
+    }
+     /* Size and shape of memory space */
+    for (n=0; n<m_numdim; n++) {
+        m_start[n] = m_rmin[n];
+        m_end[n]   = m_rmax[n];
+    }
+
+    type = cgi_datatype(field->data_type);
+
+    to_HDF_ID(field->id, hid);
+    cg_rw_t Data;
+    Data.u.rbuf = data;
+    return readwrite_shaped_data_parallel(
+        hid, type,
+        s_start, s_end, stride,
+        m_numdim, m_arg_dims, m_start, m_end, stride,
+        &Data, CG_PAR_READ);
+
 }
 
 /*===== Array IO Prototypes ===============================*/
