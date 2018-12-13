@@ -64,6 +64,12 @@ static MPI_Comm ParallelMPICommunicator = MPI_COMM_WORLD;
 
 #define TO_UPPER( c ) ((islower(c))?(toupper(c)):(c))
 
+/* HDF5 compact storage limit */
+#define CGNS_64KB (64 * 1024)
+
+/* Flag for contiguous (0) or compact storage (1) */
+extern int CGNS_HDF5_contiguous;
+
 /*
  * ADF names are not allowed to start with a space.
  * Since HDF5 allows this, use the space to hide data
@@ -712,6 +718,7 @@ static int new_str_data(hid_t id, const char *name, const char *value,
   hsize_t dim;
   herr_t status;
   hid_t xfer_prp=H5P_DEFAULT;
+  hid_t dcpl_id=H5P_DEFAULT;
 
   dim = size+1;
   sid = H5Screate_simple(1, &dim, NULL);
@@ -720,9 +727,18 @@ static int new_str_data(hid_t id, const char *name, const char *value,
     return 1;
   }
 
-  did = H5Dcreate2(id, name, H5T_NATIVE_CHAR, sid, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  dcpl_id = H5Pcreate(H5P_DATASET_CREATE);
+
+  /* compact storage */
+  if(size+1 < CGNS_64KB)
+    H5Pset_layout(dcpl_id, H5D_COMPACT);
+  else
+    H5Pset_layout(dcpl_id, H5D_CONTIGUOUS);
+
+  did = H5Dcreate2(id, name, H5T_NATIVE_CHAR, sid, H5P_DEFAULT, dcpl_id, H5P_DEFAULT);
   if (did < 0) {
     H5Sclose(sid);
+    H5Pclose(dcpl_id);
     set_error(ADFH_ERR_DCREATE, err);
     return 1;
   }
@@ -744,6 +760,7 @@ static int new_str_data(hid_t id, const char *name, const char *value,
 
   H5Dclose(did);
   H5Sclose(sid);
+  H5Pclose(dcpl_id);
 
   if (status < 0) {
     set_error(ADFH_ERR_DWRITE, err);

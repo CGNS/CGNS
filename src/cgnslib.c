@@ -97,6 +97,9 @@ int CGNSLibVersion=CGNS_VERSION;/* Version of the CGNSLibrary*1000  */
 int cgns_compress = 0;
 int cgns_filetype = CG_FILE_NONE;
 
+/* Flag for contiguous (0) or compact storage (1) */
+int CGNS_HDF5_contiguous;
+
 extern void (*cgns_error_handler)(int, char *);
 
 /***********************************************************************
