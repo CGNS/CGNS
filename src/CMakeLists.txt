@@ -612,8 +612,13 @@ set(headers
   ${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs)
 
 if (CGNS_ENABLE_FORTRAN)
-  list(APPEND headers
-    $<TARGET_FILE_DIR:cgns_static>/cgns.mod)
+  if(DEFINED CMAKE_Fortran_MODULE_DIRECTORY)
+    list(APPEND headers
+      ${CMAKE_Fortran_MODULE_DIRECTORY}/cgns.mod)
+  else()
+    list(APPEND headers
+      $<TARGET_FILE_DIR:cgns_static>/cgns.mod)
+  endif()
 endif (CGNS_ENABLE_FORTRAN)
 
 if (CGNS_ENABLE_PARALLEL)
