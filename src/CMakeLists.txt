@@ -608,7 +608,7 @@ set(headers
 
 if (CGNS_ENABLE_FORTRAN)
   list(APPEND headers
-    ${CMAKE_CURRENT_BINARY_DIR}/cgns.mod)
+    $<TARGET_FILE_DIR:cgns_static>/cgns.mod)
 endif (CGNS_ENABLE_FORTRAN)
 
 if (CGNS_ENABLE_PARALLEL)
