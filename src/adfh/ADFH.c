@@ -67,9 +67,6 @@ static MPI_Comm ParallelMPICommunicator = MPI_COMM_WORLD;
 /* HDF5 compact storage limit */
 #define CGNS_64KB (64 * 1024)
 
-/* Flag for contiguous (0) or compact storage (1) */
-extern int CGNS_HDF5_contiguous;
-
 /*
  * ADF names are not allowed to start with a space.
  * Since HDF5 allows this, use the space to hide data
@@ -1742,7 +1739,7 @@ void ADFH_Number_of_Children(const double  id,
                              int    *err)
 {
   hid_t hid;
-  int nn,gskip=0;
+  int gskip=0;
 
   ADFH_DEBUG((">ADFH_Number_of_Children"));
 
@@ -1756,8 +1753,7 @@ void ADFH_Number_of_Children(const double  id,
     H5Giterate(hid, ".", &gskip, count_children, (void*)number);
     H5Gclose(hid);
   }
-  nn=*number;
-  ADFH_DEBUG(("<ADFH_Number_of_Children [%d]",nn));
+  ADFH_DEBUG(("<ADFH_Number_of_Children [%d]",*number));
 }
 
 /* ----------------------------------------------------------------- */
@@ -1933,7 +1929,6 @@ void ADFH_Database_Open(const char   *name,
   char *format, buff[ADF_VERSION_LENGTH+1];
   int i, pos, mode;
   hid_t g_propfileopen;
-  hid_t dataxfer_plist_id;
 
   ADFH_DEBUG(("ADFH_Database_Open [%s]",name));
 
@@ -2626,6 +2621,7 @@ void ADFH_Put_Dimension_Information(const double   id,
                                     const char    *data_type,
                                     const int      dims,
                                     const cgsize_t dim_vals[],
+                                    const int      HDF5storage_type,
                                     int           *err)
 {
   hid_t hid;
@@ -2723,6 +2719,17 @@ void ADFH_Put_Dimension_Information(const double   id,
 
   H5Pset_chunk(mta_root->g_propdataset, dims, new_dims);
 #endif
+
+  hssize_t dset_size = H5Sget_select_npoints(sid);
+  size_t dtype_size = H5Tget_size(tid); 
+
+  /* Chunked datasets are currently not supported */
+
+  /* Compact storage has a dataset size limit of 64 KiB */
+  if(HDF5storage_type == CGIO_COMPACT && dset_size*(hssize_t)dtype_size  < (hssize_t)CGNS_64KB)
+    H5Pset_layout(mta_root->g_propdataset, H5D_COMPACT);
+  else
+    H5Pset_layout(mta_root->g_propdataset, H5D_CONTIGUOUS);
 
   ADFH_CHECK_HID(sid);
   did = H5Dcreate2(hid, D_DATA, tid, sid,
@@ -2832,7 +2839,7 @@ void ADFH_Link(const double  pid,
 {
   char *target;
   herr_t status;
-  hid_t lid, hid;
+  hid_t lid;
 
   ADFH_DEBUG(("ADFH_Link [%s][%s][%s]",name,file,name_in_file));
 
@@ -2887,6 +2894,7 @@ void ADFH_Link(const double  pid,
   if (new_str_data(lid,D_PATH,name_in_file,(int)strlen(name_in_file),err)) return;
   if (*file && new_str_data(lid,D_FILE,file,(int)strlen(file),err))        return;
 #ifndef ADFH_FORCE_ID_CLOSE
+  hid_t hid;
   to_HDF_ID(pid,hid);
   track_id(hid,lid);
 #endif

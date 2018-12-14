@@ -500,7 +500,7 @@ int main (int argc, char *argv[])
         cg_gopath(fnum, "../CoordinateY") ||
         cg_exponents_write(CGNS_ENUMV(RealSingle), exp) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
-            "CoordinateZ", zc, &cnum) ||
+            "CoordinateZ", z3, &cnum) ||
         cg_gopath(fnum, "../CoordinateZ") ||
         cg_exponents_write(CGNS_ENUMV(RealSingle), exp))
         cg_error_exit ();

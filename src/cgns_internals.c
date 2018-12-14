@@ -40,6 +40,7 @@ freely, subject to the following restrictions:
 
 #define CGNS_NAN(x)  (!((x) < HUGE_VAL && (x) > -HUGE_VAL))
 
+
 /***********************************************************************
  * global variable definitions
  ***********************************************************************/

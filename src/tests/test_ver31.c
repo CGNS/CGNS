@@ -624,7 +624,7 @@ void write_structured()
 
 void write_unstructured()
 {
-    int n, nelem, nc, cgconn, cgz, cghole;
+    int n, nc, cgconn, cgz, cghole;
     int iter[NUM_ZCONN];
     cgsize_t range[2], dims[2];
     char name[33], zcname[33], pointers[32*NUM_ZCONN+1];
@@ -662,10 +662,12 @@ void write_unstructured()
         write_coords(n);
         write_elements(n);
     }
-    nelem = (NUM_SIDE - 1) * (NUM_SIDE - 1);
+
+#ifdef ABUTTING1TO1_FACES
+    int nelem = (NUM_SIDE - 1) * (NUM_SIDE - 1);
+#endif
 
     /* write connectivities in multiple ZoneGridConnectivity_t nodes */
-
     for (nc = 1; nc <= NUM_ZCONN; nc++) {
         /* create ZoneGridConnectivity_t node */
         sprintf(zcname, "%s%d", ZCONN_NAME, nc);

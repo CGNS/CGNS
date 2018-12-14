@@ -49,8 +49,6 @@ static hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
 
 extern int cgns_filetype;
 
-extern int cgns_hdf5_contiguous;
-
 typedef struct cg_rw_t {
   union {
     void *rbuf;             /* Pointer to buffer for read */

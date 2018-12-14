@@ -350,6 +350,7 @@ EXTERN	void	ADFH_Put_Dimension_Information(
 			const char *data_type,
 			const int dims,
 			const cgsize_t dim_vals[],
+                        const int HDF5storage_type,
 			int *error_return ) ;
 
 EXTERN	void	ADFH_Put_Name(

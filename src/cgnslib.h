@@ -127,6 +127,12 @@
 #define CG_CONFIG_HDF5_COMPRESS   201
 #define CG_CONFIG_HDF5_MPI_COMM   202
 
+/* HDF5 dataset storage layout */
+
+#define CG_CONTIGUOUS 0
+#define CG_COMPACT    1
+#define CG_CHUNKED    2
+
 #ifdef __cplusplus
 extern "C" {
 #endif

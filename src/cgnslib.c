@@ -98,7 +98,7 @@ int cgns_compress = 0;
 int cgns_filetype = CG_FILE_NONE;
 
 /* Flag for contiguous (0) or compact storage (1) */
-int CGNS_HDF5_contiguous;
+int HDF5storage_type = CG_CONTIGUOUS;
 
 extern void (*cgns_error_handler)(int, char *);
 
@@ -415,10 +415,11 @@ int cg_open(const char *filename, int mode, int *file_number)
             FileVersion = (float) CGNS_DOTVERS;
             cg->version = CGNSLibVersion;
         }
-
+        HDF5storage_type = CG_COMPACT;
         if (cgi_new_node(cg->rootid, "CGNSLibraryVersion",
             "CGNSLibraryVersion_t", &dummy_id, "R4", 1, &dim_vals,
             (void *)&FileVersion)) return CG_ERROR;
+        HDF5storage_type = CG_CONTIGUOUS;
     }
     else {
 
@@ -492,9 +493,11 @@ int cg_open(const char *filename, int mode, int *file_number)
             }
             else {
                 dim_vals = 1;
+                HDF5storage_type = CG_COMPACT;
                 if (cgi_new_node(cg->rootid, "CGNSLibraryVersion",
                     "CGNSLibraryVersion_t", &dummy_id, "R4", 1, &dim_vals,
                     (void *)&FileVersion)) return CG_ERROR;
+                HDF5storage_type = CG_CONTIGUOUS;
             }
         }
     } else {
@@ -1081,9 +1084,11 @@ int cg_base_write(int file_number, const char * basename, int cell_dim,
     data[0] = cell_dim;
     data[1] = phys_dim;
     dim_vals=2;
+    
+    HDF5storage_type = CG_COMPACT;
     if (cgi_new_node(cg->rootid, base->name, "CGNSBase_t", &base->id,
         "I4", 1, &dim_vals, (void *)data)) return CG_ERROR;
-
+    HDF5storage_type = CG_CONTIGUOUS;
     return CG_OK;
 }
 
@@ -1264,12 +1269,14 @@ int cg_zone_write(int file_number, int B, const char *zonename, const cgsize_t *
      /* save data in file */
     dim_vals[0]=zone->index_dim;
     dim_vals[1]=3;
+    HDF5storage_type = CG_COMPACT;
     if (cgi_new_node(base->id, zone->name, "Zone_t", &zone->id,
         CG_SIZE_DATATYPE, 2, dim_vals, (void *)zone->nijk)) return CG_ERROR;
 
     dim_vals[0] = (cgsize_t)strlen(ZoneTypeName[type]);
     if (cgi_new_node(zone->id, "ZoneType", "ZoneType_t", &dummy_id,
         "C1", 1, dim_vals, ZoneTypeName[type])) return CG_ERROR;
+    HDF5storage_type = CG_CONTIGUOUS;
 
     return CG_OK;
 }
@@ -1461,8 +1468,10 @@ int cg_family_name_write(int file_number, int B, int F,
     strcpy(famname->family, family);
     dim = (cgsize_t)strlen(famname->family);
 
+    HDF5storage_type = CG_COMPACT;
     if (cgi_new_node(fam->id, famname->name, "FamilyName_t", &famname->id,
         "C1", 1, &dim, famname->family)) return CG_ERROR;
+    HDF5storage_type = CG_CONTIGUOUS;
 
     return CG_OK;
 }
@@ -1553,10 +1562,12 @@ int cg_fambc_write(int file_number, int B, int F, const char * fambc_name,
     strcpy(fambc->name, fambc_name);
     fambc->type = bocotype;
 
-     /* save data in file */
+     /* save data in file */ 
+    HDF5storage_type = CG_COMPACT;
     length = (cgsize_t)strlen(BCTypeName[bocotype]);
     if (cgi_new_node(family->id, fambc->name, "FamilyBC_t", &fambc->id,
-        "C1", 1, &length, BCTypeName[bocotype])) return CG_ERROR;
+        "C1", 1, &length, BCTypeName[bocotype])) return CG_ERROR; 
+    HDF5storage_type = CG_CONTIGUOUS;
     return CG_OK;
 }
 
@@ -1666,13 +1677,15 @@ int cg_geo_write(int file_number, int B, int F, const char * geo_name,
 
      /* save data in file */
     if (cgi_new_node(family->id, geo->name, "GeometryReference_t", &geo->id,
-        "MT", 0, 0, 0)) return CG_ERROR;
+        "MT", 0, 0, 0)) return CG_ERROR; 
+    HDF5storage_type = CG_COMPACT;
     length = (cgsize_t)strlen(geo->file);
     if (cgi_new_node(geo->id, "GeometryFile", "GeometryFile_t", &dummy_id,
         "C1", 1, &length, geo->file)) return CG_ERROR;
     length = (cgsize_t)strlen(geo->format);
     if (cgi_new_node(geo->id, "GeometryFormat", "GeometryFormat_t", &dummy_id,
         "C1", 1, &length, geo->format)) return CG_ERROR;
+    HDF5storage_type = CG_CONTIGUOUS;
     return CG_OK;
 }
 
@@ -1988,9 +2001,11 @@ int cg_discrete_ptset_write(int fn, int B, int Z,
             index_dim, (void *)pnts)) return CG_ERROR;
     if (location != CGNS_ENUMV(Vertex)) {
         dim_vals = (cgsize_t)strlen(GridLocationName[location]);
+        HDF5storage_type = CG_COMPACT;
         if (cgi_new_node(discrete->id, "GridLocation", "GridLocation_t", &id,
-                "C1", 1, &dim_vals, (void *)GridLocationName[location]))
-            return CG_ERROR;
+                         "C1", 1, &dim_vals, (void *)GridLocationName[location]))
+          return CG_ERROR;
+        HDF5storage_type = CG_CONTIGUOUS;
     }
     return CG_OK;
 }
@@ -4777,8 +4792,10 @@ int cg_sol_write(int file_number, int B, int Z, const char * solname,
     if (sol->location != CGNS_ENUMV(Vertex)) {
         cgsize_t length = (cgsize_t)strlen(GridLocationName[sol->location]);
         double GL_id;
+        HDF5storage_type = CG_COMPACT;
         if (cgi_new_node(sol->id, "GridLocation", "GridLocation_t", &GL_id,
             "C1", 1, &length, (void *)GridLocationName[sol->location])) return CG_ERROR;
+        HDF5storage_type = CG_CONTIGUOUS;
     }
 
     return CG_OK;
@@ -4908,9 +4925,11 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
             (void *)pnts)) return CG_ERROR;
     if (location != CGNS_ENUMV(Vertex)) {
         dim_vals = (cgsize_t)strlen(GridLocationName[location]);
+        HDF5storage_type = CG_COMPACT;
         if (cgi_new_node(sol->id, "GridLocation", "GridLocation_t", &id,
                 "C1", 1, &dim_vals, (void *)GridLocationName[location]))
             return CG_ERROR;
+        HDF5storage_type = CG_CONTIGUOUS;
     }
     return CG_OK;
 }
@@ -5516,17 +5535,21 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *name,
     /* save data in file */
 
     zone = cgi_get_zone(cg, B, Z);
+    HDF5storage_type = CG_COMPACT;
     if (cgi_new_node(zone->id, subreg->name, "ZoneSubRegion_t",
             &subreg->id, "I4", 1, &dim_vals, &subreg->reg_dim))
         return CG_ERROR;
+    HDF5storage_type = CG_CONTIGUOUS;
     strcpy(PointSetName, PointSetTypeName[subreg->ptset->type]);
     if (cgi_write_ptset(subreg->id, PointSetName, subreg->ptset, index_dim,
             (void *)pnts)) return CG_ERROR;
     if (location != CGNS_ENUMV(Vertex)) {
         dim_vals = (cgsize_t)strlen(GridLocationName[location]);
+        HDF5storage_type = CG_COMPACT;
         if (cgi_new_node(subreg->id, "GridLocation", "GridLocation_t", &id,
                 "C1", 1, &dim_vals, (void *)GridLocationName[location]))
             return CG_ERROR;
+        HDF5storage_type = CG_CONTIGUOUS;
     }
 
     return CG_OK;
@@ -5559,9 +5582,11 @@ int cg_subreg_bcname_write(int fn, int B, int Z, const char *name, int dimension
     /* save data in file */
 
     zone = cgi_get_zone(cg, B, Z);
+    HDF5storage_type = CG_COMPACT;
     if (cgi_new_node(zone->id, subreg->name, "ZoneSubRegion_t",
             &subreg->id, "I4", 1, &dim_vals, &subreg->reg_dim))
         return CG_ERROR;
+    HDF5storage_type = CG_CONTIGUOUS;
     if (cgi_write_descr(subreg->id, subreg->bcname)) return CG_ERROR;
 
     return CG_OK;
@@ -5594,9 +5619,11 @@ int cg_subreg_gcname_write(int fn, int B, int Z, const char *name, int dimension
     /* save data in file */
 
     zone = cgi_get_zone(cg, B, Z);
+    HDF5storage_type = CG_COMPACT;
     if (cgi_new_node(zone->id, subreg->name, "ZoneSubRegion_t",
             &subreg->id, "I4", 1, &dim_vals, &subreg->reg_dim))
         return CG_ERROR;
+    HDF5storage_type = CG_CONTIGUOUS;
     if (cgi_write_descr(subreg->id, subreg->gcname)) return CG_ERROR;
 
     return CG_OK;
@@ -5986,8 +6013,10 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
     if (hole->location != CGNS_ENUMV(Vertex)) {
         double GL_id;
         cgsize_t length = (cgsize_t)strlen(GridLocationName[hole->location]);
+        HDF5storage_type = CG_COMPACT;
         if (cgi_new_node(hole->id, "GridLocation", "GridLocation_t", &GL_id,
             "C1", 1, &length, GridLocationName[hole->location])) return CG_ERROR;
+        HDF5storage_type = CG_CONTIGUOUS;
     }
 
     for (set=0; set<nptsets; set++) {
@@ -6404,6 +6433,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
       return CG_ERROR;
     }
 
+    HDF5storage_type = CG_COMPACT;
      /* Create node GridConnectivity_t node */
     length = (cgsize_t)strlen(conn->donor);
     if (cgi_new_node(zconn->id, conn->name, "GridConnectivity_t", &conn->id,
@@ -6421,6 +6451,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
             "C1", 1, &length, GridLocationName[conn->location])) return CG_ERROR;
     }
 
+    HDF5storage_type = CG_CONTIGUOUS;
      /* Write Point Sets to disk */
     if (npnts>0) {
         char_33 PointSetName;
@@ -6793,6 +6824,8 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
         return CG_ERROR;
     }
 
+    HDF5storage_type = CG_COMPACT;
+
     /* Create the node */
     length = (cgsize_t)strlen(one21->donor);
     if (cgi_new_node(zconn->id, one21->name, "GridConnectivity1to1_t",
@@ -6806,7 +6839,9 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
     if (cgi_write_ptset(one21->id, "PointRange", &one21->ptset, (int)index_dim,
         (void *)range)) return CG_ERROR;
 
-     /* Create DONOR Point Set node on disk */
+    HDF5storage_type = CG_CONTIGUOUS;
+
+    /* Create DONOR Point Set node on disk */
     if (cgi_write_ptset(one21->id, "PointRangeDonor", &one21->dptset, (int)index_dim,
         (void *)donor_range)) return CG_ERROR;
 
@@ -7078,7 +7113,7 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
         for (i=0; i<index_dim; i++)
             boco->ptset->size_of_patch = boco->ptset->size_of_patch * (pnts[i+index_dim]-pnts[i]+1);
     }
-
+    HDF5storage_type = CG_COMPACT;
     /* Create ZoneBC_t node if it doesn't yet exist */
     if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
       if (zboco->id==0) {
@@ -7118,7 +7153,7 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
                 &dummy_id, "C1", 1, &length,
                 GridLocationName[boco->location])) return CG_ERROR;
     }
-
+    HDF5storage_type = CG_CONTIGUOUS;
     return CG_OK;
 }
 
@@ -7146,11 +7181,12 @@ int cg_boco_gridlocation_write(int file_number, int B, int Z,
     }
 #endif
     boco->location = location;
-
+    HDF5storage_type = CG_COMPACT;
     dim_vals = (cgsize_t)strlen(GridLocationName[location]);
     if (cgi_new_node(boco->id, "GridLocation", "GridLocation_t",
             &dummy_id, "C1", 1, &dim_vals,
             (void *)GridLocationName[location])) return CG_ERROR;
+    HDF5storage_type = CG_CONTIGUOUS;
     return CG_OK;
 }
 
@@ -7173,6 +7209,8 @@ int cg_boco_normal_write(int file_number, int B, int Z, int BC, const int * Norm
     npnts = boco->ptset->size_of_patch;
 
     phys_dim=cg->base[B-1].phys_dim;
+
+    HDF5storage_type = CG_COMPACT;
 
     if (NormalListFlag && npnts) {
         cgns_array *normal;
@@ -7230,6 +7268,9 @@ int cg_boco_normal_write(int file_number, int B, int Z, int BC, const int * Norm
             &boco->index_id, "I4", 1, &index_dim, (void *)NormalIndex))
             return CG_ERROR;
     }
+
+    HDF5storage_type = CG_CONTIGUOUS;
+
     return CG_OK;
 }
 
@@ -7325,8 +7366,10 @@ int cg_dataset_write(int file_number, int B, int Z, int BC, const char * name,
 
      /* save data in file */
     length = (cgsize_t)strlen(BCTypeName[dataset->type]);
+    HDF5storage_type = CG_COMPACT;
     if (cgi_new_node(boco->id, dataset->name, "BCDataSet_t", &dataset->id,
         "C1", 1, &length, (void *)BCTypeName[dataset->type])) return CG_ERROR;
+    HDF5storage_type = CG_CONTIGUOUS;
     return CG_OK;
 }
 
@@ -7500,9 +7543,10 @@ int cg_rigid_motion_write(int file_number, int B, int Z, const char * rmotionnam
 
      /* Create node RigidGridMotion_t */
     length = (cgsize_t)strlen(RigidGridMotionTypeName[rmotion->type]);
+    HDF5storage_type = CG_COMPACT;
     if (cgi_new_node(zone->id, rmotion->name, "RigidGridMotion_t", &rmotion->id,
         "C1", 1, &length, (void *)RigidGridMotionTypeName[rmotion->type])) return CG_ERROR;
-
+    HDF5storage_type = CG_CONTIGUOUS;
     return CG_OK;
 }
 
@@ -7613,8 +7657,10 @@ int cg_arbitrary_motion_write(int file_number, int B, int Z, const char * amotio
 
      /* Create node ArbitraryGridMotion_t */
     length = (cgsize_t)strlen(ArbitraryGridMotionTypeName[amotion->type]);
+    HDF5storage_type = CG_COMPACT;
     if (cgi_new_node(zone->id, amotion->name, "ArbitraryGridMotion_t", &amotion->id,
         "C1", 1, &length, (void *)ArbitraryGridMotionTypeName[amotion->type])) return CG_ERROR;
+    HDF5storage_type = CG_CONTIGUOUS;
     return CG_OK;
 }
 
@@ -7675,8 +7721,10 @@ int cg_simulation_type_write(int file_number, int B, CGNS_ENUMT(SimulationType_t
 
      /* save data in file */
     length = (cgsize_t)strlen(SimulationTypeName[type]);
+    HDF5storage_type = CG_COMPACT;
     if (cgi_new_node(base->id, "SimulationType", "SimulationType_t", &base->type_id,
         "C1", 1, &length, (void *)SimulationTypeName[type])) return CG_ERROR;
+    HDF5storage_type = CG_CONTIGUOUS;
 
     return CG_OK;
 }
