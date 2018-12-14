@@ -324,7 +324,7 @@ static herr_t walk_H5_error(hid_t estack, void *data)
     fflush(stdout);
     fprintf(stderr, "\nHDF5 Error Trace Back\n");
     return H5Ewalk2(H5E_DEFAULT, H5E_WALK_DOWNWARD,
-		    (H5E_walk2_t)print_H5_error, data);
+                    (H5E_walk2_t)print_H5_error, data);
   }
   return 0;
 }
@@ -406,12 +406,12 @@ static track_id(hid_t refid, hid_t trackid)
       maxhid=mta_root->x_extids[fn]*sizeof(hid_t*);
       mta_root->g_extids[fn]=(hid_t*)realloc(mta_root->g_extids[fn],maxhid);
       ADFH_DEBUG((">ADFH track_ids realloc up to [%d]",\
-		  mta_root->x_extids[fn]));
+                  mta_root->x_extids[fn]));
 
     }
     mta_root->g_extids[fn][mta_root->n_extids[fn]]=trackid;
     ADFH_DEBUG((">ADFH track_ids [%d][%d][%s]",\
-		mta_root->n_extids[fn],trackid,oname));
+                mta_root->n_extids[fn],trackid,oname));
     mta_root->n_extids[fn]++;
   }
 }
@@ -870,7 +870,7 @@ static herr_t count_children(hid_t id, const char *name, void *number)
 /* ----------------------------------------------------------------- */
 
 static herr_t children_names(hid_t id, const char *name,
-			     const H5L_info_t *linfo, void *namelist)
+                             const H5L_info_t *linfo, void *namelist)
 {
 #ifndef ADFH_NO_ORDER
   hid_t gid;
@@ -909,7 +909,7 @@ static herr_t children_names(hid_t id, const char *name,
 
 /* ----------------------------------------------------------------- */
 static herr_t children_ids(hid_t id, const char *name,
-			   const H5L_info_t *linfo, void *idlist)
+                           const H5L_info_t *linfo, void *idlist)
 
 {
   hid_t gid;
@@ -1020,7 +1020,7 @@ static hid_t open_link(hid_t id, int *err)
 
   const char  *file;
   const char  *path;
-  H5G_stat_t	sb; /* Object information */
+  H5G_stat_t  sb; /* Object information */
 
   char  querybuff[512];
 
@@ -1072,8 +1072,8 @@ static hid_t open_link(hid_t id, int *err)
     ADFH_DEBUG((">ADFH open_link (external)"));
     if ((lid = H5Gopen2(id, D_LINK, H5P_DEFAULT)) < 0)
       {
-	set_error(LINK_TARGET_NOT_THERE, err);
-	return lid;
+        set_error(LINK_TARGET_NOT_THERE, err);
+        eturn lid;
       }
   }
   else
@@ -1081,8 +1081,8 @@ static hid_t open_link(hid_t id, int *err)
     ADFH_DEBUG((">ADFH open_link (symbolic)"));
     if ((lid = H5Gopen2(id, D_LINK, H5P_DEFAULT)) < 0)
       {
-	set_error(LINK_TARGET_NOT_THERE, err);
-	return lid;
+        set_error(LINK_TARGET_NOT_THERE, err);
+        return lid;
       }
   }
 #ifdef ADFH_DEBUG_ON
@@ -1381,7 +1381,7 @@ void ADFH_Configure(const int option, const void *value, int *err)
       }
       else {
         ParallelMPICommunicator = (MPI_Comm)*comm;
-	set_error(NO_ERROR, err);
+        set_error(NO_ERROR, err);
       }
     }
 #endif
@@ -1638,7 +1638,7 @@ void ADFH_Create(const double  pid,
 
   *id = 0;
   gid = H5Gcreate2(hpid, pname,
-		   H5P_DEFAULT, mta_root->g_propgroupcreate, H5P_DEFAULT);
+                   H5P_DEFAULT, mta_root->g_propgroupcreate, H5P_DEFAULT);
 #ifdef ADFH_DEBUG_ON
   H5Lget_info(hpid,pname,&lkbuff,H5P_DEFAULT);
   ADFH_DEBUG((">ADFH_Create [%s] index [%d]",pname,lkbuff.corder));
@@ -1854,11 +1854,11 @@ void ADFH_Children_Names(const double pid,
   memset(names, 0, ilen*name_length);
   if ((hpid = open_node(pid, err)) >= 0) {
     H5Literate(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
-	       NULL,children_names,(void *)names);
+               NULL,children_names,(void *)names);
     if (names[0]==0)
     {
       H5Literate(hpid,H5_INDEX_NAME,H5_ITER_INC,
-		 NULL,children_names,(void *)names);
+                 NULL,children_names,(void *)names);
     }
     H5Gclose(hpid);
   }
@@ -1894,11 +1894,11 @@ void ADFH_Children_IDs(const double pid,
 #endif
   if ((hpid = open_node(pid, err)) >= 0) {
     H5Literate(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
-	       NULL,children_ids,(void *)IDs);
+               NULL,children_ids,(void *)IDs);
     if (IDs[0]==-1)
     {
       H5Literate(hpid,H5_INDEX_NAME,H5_ITER_INC,
-		 NULL,children_ids,(void *)IDs);
+                 NULL,children_ids,(void *)IDs);
     }
     H5Gclose(hpid);
   }
@@ -1961,7 +1961,7 @@ void ADFH_Database_Open(const char   *name,
     H5Pset_nlinks(mta_root->g_proplink, ADF_MAXIMUM_LINK_DEPTH);
     mta_root->g_propgroupcreate=H5Pcreate(H5P_GROUP_CREATE);
     H5Pset_link_creation_order(mta_root->g_propgroupcreate,
-			     H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
+                               H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
     mta_root->g_propdataset=H5Pcreate(H5P_DATASET_CREATE);
   }
 
@@ -2072,7 +2072,7 @@ void ADFH_Database_Open(const char   *name,
   /*  H5Pset_latest_format(fapl, 1); */
   /* Performance patch applied by KSH on 2009.05.18 */
   H5Pset_libver_bounds(g_propfileopen,
-		       H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+                       H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
   /* open the file */
 
 #ifdef BUILD_PARALLEL
@@ -2123,7 +2123,7 @@ void ADFH_Database_Open(const char   *name,
     /* add creation time for groups (used by iterators)
       (prop set to file creation )*/
     H5Pset_link_creation_order(g_propfilecreate,
-			     H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
+                               H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
     fid = H5Fcreate(name, H5F_ACC_TRUNC, g_propfilecreate, g_propfileopen);
     H5Pclose(g_propfilecreate);
     H5Pclose(g_propfileopen);
@@ -2306,7 +2306,7 @@ void ADFH_Database_Close(const double  root,
   for (nobj=0;nobj<mta_root->n_extids[fn];nobj++)
   {
     ADFH_DEBUG(("ADFH_Database_Close 3 [%.6d/%.6d]:[%d]",\
-		nobj,mta_root->n_extids[fn],mta_root->g_extids[fn][nobj]));
+                nobj,mta_root->n_extids[fn],mta_root->g_extids[fn][nobj]));
     if (H5Iis_valid(mta_root->g_extids[fn][nobj]))
     {
       H5Oclose(mta_root->g_extids[fn][nobj]);
@@ -2598,14 +2598,14 @@ void ADFH_Get_Dimension_Values(const double  id,
         if (ndims > 1) swap = swap_dimensions(hid);
 #endif
         if (swap) {
-	  for (i = 0; i < ndims; i++) {
+          for (i = 0; i < ndims; i++) {
             dim_vals[i] = (cgsize_t)temp_vals[ndims-1-i];
-	  }
+          }
         }
         else {
-	  for (i = 0; i < ndims; i++) {
+          for (i = 0; i < ndims; i++) {
             dim_vals[i] = (cgsize_t)temp_vals[i];
-	  }
+          }
         }
       }
       H5Sclose(sid);
@@ -2733,7 +2733,7 @@ void ADFH_Put_Dimension_Information(const double   id,
 
   ADFH_CHECK_HID(sid);
   did = H5Dcreate2(hid, D_DATA, tid, sid,
-		   H5P_DEFAULT, mta_root->g_propdataset, H5P_DEFAULT);
+                   H5P_DEFAULT, mta_root->g_propdataset, H5P_DEFAULT);
 /*  H5Eprint1(stdout);*/
   ADFH_CHECK_HID(did);
 
@@ -2862,11 +2862,11 @@ void ADFH_Link(const double  pid,
      because we cannot have a node ID  and a link on this ID (can we?)
      set actual link to D_LINK name (not the current node) */
   H5Lcreate_external(file,
-		     name_in_file,
-		     lid,
-		     D_LINK,
-		     H5P_DEFAULT,
-		     mta_root->g_proplink);
+                     name_in_file,
+                     lid,
+                     D_LINK,
+                     H5P_DEFAULT,
+                     mta_root->g_proplink);
   }
   else
   {
@@ -3690,7 +3690,7 @@ void ADFH_Write_All_Data(const double  id,
       xfer_prp = H5Pcreate(H5P_DATASET_XFER);
       ADFH_CHECK_HID(xfer_prp);
       if (H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE) < 0)
-	set_error(ADFH_ERR_DWRITE, err);
+        set_error(ADFH_ERR_DWRITE, err);
     }
 #endif
 
