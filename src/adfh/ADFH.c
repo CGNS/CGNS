@@ -1073,7 +1073,7 @@ static hid_t open_link(hid_t id, int *err)
     if ((lid = H5Gopen2(id, D_LINK, H5P_DEFAULT)) < 0)
       {
         set_error(LINK_TARGET_NOT_THERE, err);
-        eturn lid;
+        return lid;
       }
   }
   else
