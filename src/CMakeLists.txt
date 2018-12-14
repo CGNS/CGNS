@@ -236,6 +236,11 @@ CHECK_FORTRAN_FEATURE(Fortran2008
            END FUNCTION bind2
          END INTERFACE
        END MODULE test
+
+       PROGRAM main
+         USE test
+         IMPLICIT NONE
+       END PROGRAM
   "
   CHECK_FORTRAN_2008
 )
