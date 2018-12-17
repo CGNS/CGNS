@@ -92,8 +92,8 @@ int cgi_read()
     double *id;
 
      /* get number of CGNSBase_t nodes and their ID */
-
     if (cgi_get_nodes(cg->rootid, "CGNSBase_t", &cg->nbases, &id)) return CG_ERROR;
+
     if (cg->nbases==0) return CG_OK;
     cg->base = CGNS_NEW(cgns_base,cg->nbases);
     for (b=0; b<cg->nbases; b++) cg->base[b].id = id[b];
@@ -759,7 +759,6 @@ int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
                 if (cgi_new_node(parent_id, "FamilyName", "FamilyName_t",
                     &dummy_id, "C1", 1, &len, (void *)family_name))
                     return CG_ERROR;
-                
             }
         }
         CGNS_FREE(id);
@@ -2588,11 +2587,9 @@ int cgi_read_boco(cgns_boco *boco)
         if (boco->location != CGNS_ENUMV(Vertex)) {
             const char *locname = GridLocationName[boco->location];
             cgsize_t len = (cgsize_t)strlen(locname);
-            
             if (cgi_new_node(boco->id, "GridLocation", "GridLocation_t",
                     &dummy_id, "C1", 1, &len, locname))
                 return CG_ERROR;
-            
         }
     }
 
@@ -5830,11 +5827,9 @@ int cgi_write(int file_number)
     }
 */
     FileVersion = (float) CGNS_DOTVERS;
-    
     if (cgi_new_node(cg->rootid, "CGNSLibraryVersion",
         "CGNSLibraryVersion_t", &dummy_id, "R4", 1, &dim_vals,
         (void *)&FileVersion)) return CG_ERROR;
-    
 
      /* write all CGNSBase_t nodes in ADF file */
     for (b=0; b<cg->nbases; b++) {
@@ -5847,10 +5842,8 @@ int cgi_write(int file_number)
 
      /* Create the CGNSBase_t nodes */
         dim_vals=2;
-        
         if (cgi_new_node(cg->rootid, base->name, "CGNSBase_t", &base->id,
             "I4", 1, &dim_vals, (void *)data)) return CG_ERROR;
-        
         CGNS_FREE(data);
 
      /* set Global variable */
@@ -5905,10 +5898,8 @@ int cgi_write(int file_number)
      /* SimulationType_t */
         if (base->type) {
             dim_vals = (cgsize_t)strlen(SimulationTypeName[base->type]);
-            
             if (cgi_new_node(base->id, "SimulationType", "SimulationType_t", &base->type_id,
                 "C1", 1, &dim_vals, (void *)SimulationTypeName[base->type])) return CG_ERROR;
-            
         }
 
      /* BaseIterativeData_t */
@@ -5936,8 +5927,6 @@ int cgi_write_zone(double parent_id, cgns_zone *zone)
      /* Create the Zone_t nodes */
     dim_vals[0]= Idim;
     dim_vals[1]= 3;
-    
-    
     if (cgi_new_node(parent_id, zone->name, "Zone_t", &zone->id,
         CG_SIZE_DATATYPE, 2, dim_vals, (void *)zone->nijk)) return CG_ERROR;
 
@@ -5949,12 +5938,11 @@ int cgi_write_zone(double parent_id, cgns_zone *zone)
      /* set Global variable
     for (n=0; n<Idim*3; n++) CurrentDim[n]=zone->nijk[n];
       */
-    
+
      /* GridCoordinates_t */
     for (n=0; n<zone->nzcoor; n++)
         if (cgi_write_zcoor(zone->id, &zone->zcoor[n])) return CG_ERROR;
 
-    
      /* FamilyName_t */
     if (zone->family_name[0]!='\0') {
         dim_vals[0] = (cgsize_t)strlen(zone->family_name);
@@ -5968,7 +5956,6 @@ int cgi_write_zone(double parent_id, cgns_zone *zone)
         if (cgi_new_node(zone->id, zone->famname[n].name, "AdditionalFamilyName_t",
             &dummy_id, "C1", 1, dim_vals, (void *)zone->famname[n].family)) return CG_ERROR;
     }
-    
 
      /* Elements_t */
     for (n=0; n<zone->nsections; n++)
@@ -6055,14 +6042,13 @@ int cgi_write_family(double parent_id, cgns_family *family)
         &family->id, "MT", 0, 0, 0)) return CG_ERROR;
 
     /* CPEX 0033 */
-    
     for (n = 0; n < family->nfamname; n++) {
         dim_vals = (cgsize_t)strlen(family->famname[n].family);
         if (cgi_new_node(family->id, family->famname[n].name, "FamilyName_t",
             &family->famname[n].id, "C1", 1, &dim_vals,
             (void *)family->famname[n].family)) return CG_ERROR;
     }
-    
+
      /* Descriptor_t */
     for (n=0; n<family->ndescr; n++)
         if (cgi_write_descr(family->id, &family->descr[n])) return CG_ERROR;
@@ -6075,12 +6061,10 @@ int cgi_write_family(double parent_id, cgns_family *family)
                 fambc->link, &fambc->id)) return CG_ERROR;
         }
         else {
-            
             dim_vals = (cgsize_t)strlen(BCTypeName[fambc->type]);
             if (cgi_new_node(family->id, fambc->name, "FamilyBC_t",
                 &fambc->id, "C1", 1, &dim_vals, BCTypeName[fambc->type]))
                 return CG_ERROR;
-            
              /* FamilyBCDataSet_t */
             for (n=0; n < fambc->ndataset; n++)
                 if (cgi_write_dataset(fambc->id, "FamilyBCDataSet_t",
@@ -6105,7 +6089,6 @@ int cgi_write_family(double parent_id, cgns_family *family)
             for (i=0; i<geo->ndescr; i++)
                 if (cgi_write_descr(geo->id, &geo->descr[i])) return CG_ERROR;
 
-            
          /* GeometryFile */
             dim_vals = (cgsize_t)strlen(geo->file);
             if (cgi_new_node(geo->id, "GeometryFile", "GeometryFile_t",
@@ -6115,7 +6098,7 @@ int cgi_write_family(double parent_id, cgns_family *family)
             dim_vals = (cgsize_t)strlen(geo->format);
             if (cgi_new_node(geo->id, "GeometryFormat", "GeometryFormat_t",
                 &dummy_id, "C1", 1, &dim_vals, geo->format)) return CG_ERROR;
-            
+
          /* GeometryEntities */
             for (i=0; i<geo->npart; i++) {
                 if (cgi_new_node(geo->id, geo->part[i].name, "GeometryEntity_t",
@@ -6247,14 +6230,12 @@ int cgi_write_sol(double parent_id, cgns_sol *sol)
         &sol->id, "MT", 0, 0, 0)) return CG_ERROR;
 
      /* GridLocation_t */
-    
     if (sol->location!=CGNS_ENUMV( Vertex )) {
         dim_vals = (cgsize_t)strlen(GridLocationName[sol->location]);
         if (cgi_new_node(sol->id, "GridLocation", "GridLocation_t",
             &dummy_id, "C1", 1, &dim_vals,
             (void *)GridLocationName[sol->location])) return CG_ERROR;
     }
-    
 
      /* Rind_t */
     if (cgi_write_rind(sol->id, sol->rind_planes, Idim)) return CG_ERROR;
@@ -6329,7 +6310,6 @@ int cgi_write_1to1(double parent_id, cgns_1to1 *one21)
             one21->link, &one21->id);
     }
 
-    
     dim_vals = (cgsize_t)strlen(one21->donor);
     if (cgi_new_node(parent_id, one21->name, "GridConnectivity1to1_t",
         &one21->id, "C1", 1, &dim_vals, one21->donor)) return CG_ERROR;
@@ -6338,7 +6318,6 @@ int cgi_write_1to1(double parent_id, cgns_1to1 *one21)
     dim_vals = Idim;
     if (cgi_new_node(one21->id, "Transform", "\"int[IndexDimension]\"", &dummy_id,
         "I4", 1, &dim_vals, (void *)one21->transform)) return CG_ERROR;
-    
 
      /* PointRange & PointRangeDonor: Move nodes to their final positions */
     ptset = &(one21->ptset);
@@ -6474,11 +6453,9 @@ int cgi_write_cprop(double parent_id, cgns_cprop *cprop)
 
          /* AverageInterface_t/AverageInterfaceType_t */
             dim_vals = (cgsize_t)strlen(AverageInterfaceTypeName[caverage->type]);
-            
             if (cgi_new_node(caverage->id, "AverageInterfaceType",
                 "AverageInterfaceType_t", &dummy_id, "C1", 1, &dim_vals,
                 (void *)AverageInterfaceTypeName[caverage->type])) return CG_ERROR;
-            
 
          /* AverageInterface_t/UserDefinedData_t */
             for (n=0; n<caverage->nuser_data; n++)
@@ -6547,11 +6524,9 @@ int cgi_write_holes(double parent_id, cgns_hole *hole)
      /* GridLocation_t */
     if (hole->location!=CGNS_ENUMV( Vertex )) {
         dim_vals = (cgsize_t)strlen(GridLocationName[hole->location]);
-        
         if (cgi_new_node(hole->id, "GridLocation", "GridLocation_t",
             &dummy_id, "C1", 1, &dim_vals,
             (void *)GridLocationName[hole->location])) return CG_ERROR;
-        
     }
 
      /* PointRange(s) and PointList */
@@ -6626,8 +6601,6 @@ int cgi_write_boco(double parent_id, cgns_boco *boco)
         return cgi_write_link(parent_id, boco->name,
             boco->link, &boco->id);
     }
-
-    
 
      /* BC_t */
     dim_vals = (cgsize_t)strlen(BCTypeName[boco->type]);
@@ -6714,8 +6687,6 @@ int cgi_write_boco(double parent_id, cgns_boco *boco)
      /* UserDefinedData_t */
     for (n=0; n<boco->nuser_data; n++)
         if (cgi_write_user_data(boco->id, &boco->user_data[n])) return CG_ERROR;
-    
-    
 
     return CG_OK;
 }
@@ -6755,11 +6726,9 @@ int cgi_write_bprop(double parent_id, cgns_bprop *bprop)
                 if (cgi_write_descr(bcwall->id, &bcwall->descr[n])) return CG_ERROR;
 
          /* WallFunction_t/WallFunctionType_t */
-            
             dim_vals = (cgsize_t)strlen(WallFunctionTypeName[bcwall->type]);
             if (cgi_new_node(bcwall->id, "WallFunctionType", "WallFunctionType_t",
                 &dummy_id, "C1", 1, &dim_vals, (void *)WallFunctionTypeName[bcwall->type])) return CG_ERROR;
-            
          /* WallFunction_t/UserDefinedData_t */
             for (n=0; n<bcwall->nuser_data; n++)
                 if (cgi_write_user_data(bcwall->id, &bcwall->user_data[n])) return CG_ERROR;
