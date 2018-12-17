@@ -863,15 +863,15 @@ else
 
   # Checking version of HDF5 (req. minimum 1.8) 
   ## --------------------------------------------------------------------
-  AC_MSG_CHECKING([HDF5 library version])	
-  H5_VERS_MAJOR=`grep "#define H5_VERS_MAJOR" $HDF5INC/H5public.h | sed "s/H5_VERS_MAJOR//g" | sed "s/[^0-9]*//g"`	
+  AC_MSG_CHECKING([HDF5 library version])
+  H5_VERS_MAJOR=`grep "#define H5_VERS_MAJOR" $HDF5INC/H5public.h | sed "s/H5_VERS_MAJOR//g" | sed "s/[^0-9]*//g"`
   H5_VERS_MINOR=`grep "#define H5_VERS_MINOR" $HDF5INC/H5public.h | sed "s/H5_VERS_MINOR//g" | sed "s/[^0-9]*//g"`
   H5_VERS_RELEASE=`grep "#define H5_VERS_RELEASE" $HDF5INC/H5public.h | sed "s/H5_VERS_RELEASE//g" | sed "s/[^0-9]*//g"`
-  AC_MSG_RESULT(${H5_VERS_MAJOR}.${H5_VERS_MINOR}.${H5_VERS_RELEASE})	
+  AC_MSG_RESULT(${H5_VERS_MAJOR}.${H5_VERS_MINOR}.${H5_VERS_RELEASE})
 
   AC_MSG_CHECKING([if HDF5 is 1.8 or greater])
   function version_gt {
-       test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" != "$1"; 
+       test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" != "$1";
   }
   if version_gt ${H5_VERS_MAJOR}.${H5_VERS_MINOR} "1.7"; then
     AC_MSG_RESULT(yes)
