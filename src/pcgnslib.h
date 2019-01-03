@@ -64,14 +64,18 @@ CGNSDLL int cgp_coord_write(int fn, int B, int Z,
     CGNS_ENUMT(DataType_t) type, const char *coordname, int *C);
 CGNSDLL int cgp_coord_write_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *coord_array);
+CGNSDLL int cgp_coord_general_write_data(int fn, int B, int Z, int C,
+    const cgsize_t *rmin, const cgsize_t *rmax,
+    CGNS_ENUMT(DataType_t) m_type,
+    int m_numdim, const cgsize_t *m_arg_dimvals,
+    const cgsize_t *m_rmin, const cgsize_t *m_rmax, const void *coords);
 CGNSDLL int cgp_coord_read_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coord_array);
-
-CGNSDLL int cgp_coord_general_write_data(int fn, int B, int Z, int G, int C,
-                                 const cgsize_t *rmin, const cgsize_t *rmax,
-                                 int m_numdim, const cgsize_t *m_arg_dims,
-                                 const cgsize_t *m_rmin, const cgsize_t *m_rmax,
-                                         const void *coords);
+CGNSDLL int cgp_coord_general_read_data(int fn, int B, int Z, int C,
+    const cgsize_t *rmin, const cgsize_t *rmax,
+    CGNS_ENUMT(DataType_t) m_type,
+    int m_numdim, const cgsize_t *m_arg_dimvals,
+    const cgsize_t *m_rmin, const cgsize_t *m_rmax, void *coords);
 
 CGNSDLL int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin, const cgsize_t *rmax,
 				      void *coordsX,  void *coordsY,  void *coordsZ);
@@ -99,15 +103,18 @@ CGNSDLL int cgp_field_write(int fn, int B, int Z, int S,
     CGNS_ENUMT(DataType_t) type, const char *fieldname, int *F);
 CGNSDLL int cgp_field_write_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *data);
+CGNSDLL int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
+    const cgsize_t *rmin, const cgsize_t *rmax,
+    CGNS_ENUMT(DataType_t) m_type,
+    int m_numdim, const cgsize_t *m_arg_dimvals,
+    const cgsize_t *m_rmin, const cgsize_t *m_rmax, const void *data);
 CGNSDLL int cgp_field_read_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, void *data);
-
-CGNSDLL int cgp_field_general_write_data(
-  int fn, int B, int Z, int S, int F,
-  const cgsize_t *rmin, const cgsize_t *rmax,
-  int m_numdim, const cgsize_t *m_dims,
-  const cgsize_t *m_rmin, const cgsize_t *m_rmax,
-  const void *data);
+CGNSDLL int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
+    const cgsize_t *rmin, const cgsize_t *rmax,
+    CGNS_ENUMT(DataType_t) m_type, 
+    int m_numdim, const cgsize_t *m_arg_dimvals,
+    const cgsize_t *m_rmin, const cgsize_t *m_rmax, void *data);
 
 CGNSDLL int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
 				      const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...);

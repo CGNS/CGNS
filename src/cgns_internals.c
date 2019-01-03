@@ -8186,7 +8186,7 @@ int cgi_array_general_read(
         if (access_full_range) {
             if (cgio_read_all_data_type(cg->cgio, array->id,
                                         cgi_adf_datatype(m_type), data)) {
-                cg_io_error("cgio_read_all_data");
+                cg_io_error("cgio_read_all_data_type");
                 return CG_ERROR;
             }
         }
@@ -8196,7 +8196,7 @@ int cgi_array_general_read(
                                     cgi_adf_datatype(m_type),
                                     m_numdim, m_dimvals, m_rmin, m_rmax, stride,
                                     data)) {
-                cg_io_error("cgio_read_data");
+                cg_io_error("cgio_read_data_type");
                 return CG_ERROR;
             }
         }
@@ -8316,6 +8316,10 @@ int cgi_array_general_write(
         }
     }
 
+    /* Do not write the data if NULL pointer.  This is often used in parallel
+     * cgns where only the metadata is being written in serial */
+    if (data == NULL) return CG_OK;
+
     if (s_type == m_type) {
          /* quick transfer of data if same data types */
         if (access_full_range) {
@@ -8334,7 +8338,7 @@ int cgi_array_general_write(
         }
     }
     else if (cg->filetype == CGIO_FILE_ADF2 || cg->filetype == CGIO_FILE_ADF) {
-         /* need to read into temp array to convert data */
+         /* need to write into temp array to convert data */
          /* only able to convert for full range in memory */
         if (!m_access_full_range) {
             cgi_error("Writing from partial range in memory with data "
@@ -8375,7 +8379,7 @@ int cgi_array_general_write(
         if (access_full_range) {
             if (cgio_write_all_data_type(cg->cgio, array->id,
                                         cgi_adf_datatype(m_type), data)) {
-                cg_io_error("cgio_read_all_data");
+                cg_io_error("cgio_write_all_data_type");
                 return CG_ERROR;
             }
         }
@@ -8385,7 +8389,7 @@ int cgi_array_general_write(
                                      cgi_adf_datatype(m_type),
                                      m_numdim, m_dimvals, m_rmin, m_rmax,
                                      stride, data)) {
-                cg_io_error("cgio_read_data");
+                cg_io_error("cgio_write_data_type");
                 return CG_ERROR;
             }
         }
