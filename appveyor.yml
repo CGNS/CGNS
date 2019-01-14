@@ -100,7 +100,7 @@ before_build:
   - cmake --version
   - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF_VER%/cmake
   - cmake -G "Visual Studio 14 Win64" ^
-     %build_opts% ^
+     %build_opt% ^
      -D CMAKE_C_FLAGS:STRING="" ^
      -D CMAKE_BUILD_TYPE:STRING=Release ^
      -D HDF5_NEED_ZLIB:BOOL=ON ^

@@ -1417,6 +1417,10 @@ if test "$enableval" = "yes" ; then
         `ls -dr ../tk8* 2>/dev/null` \
         `ls -dr ../../tk8* 2>/dev/null` \
         `ls -dr ../../../tk8* 2>/dev/null` ; do
+        if test -f "$d/tkConfig.sh"; then
+          tkdir=`(cd $d; pwd)`
+          break
+        fi
         if test -f "$d/unix/tkConfig.sh"; then
           tkdir=`(cd $d; pwd)`
           break
@@ -1454,12 +1458,18 @@ if test "$enableval" = "yes" ; then
       AC_MSG_ERROR(Tcl directory $tcldir not found)
     fi
     tcldir=`(cd $tcldir; pwd)`
-    if test ! -f "$tcldir/unix/tclConfig.sh"; then
-      AC_MSG_ERROR(tclConfig.sh not found in $tcldir/unix)
+    if test ! -f "$tcldir/tclConfig.sh"; then
+      if test ! -f "$tcldir/unix/tclConfig.sh"; then
+        AC_MSG_ERROR(tclConfig.sh not found in $tcldir or $tcldir/unix)
+      fi
     fi
     if test -z "$tkdir"; then
       dir=`dirname $tcldir`
       for d in `ls -dr $dir/tk* 2>/dev/null` ; do
+        if test -f "$d/tkConfig.sh"; then
+          tkdir=$d
+          break
+        fi
         if test -f "$d/unix/tkConfig.sh"; then
           tkdir=$d
           break
@@ -1470,20 +1480,30 @@ if test "$enableval" = "yes" ; then
       fi
     fi
   fi
-
+  TKUNIX=""
+  TCLUNIX=""
   if test ! -z "$tkdir"; then
     if test ! -d "$tkdir"; then
       AC_MSG_ERROR(Tk directory $tkdir not found)
     fi
     tkdir=`(cd $tkdir; pwd)`
-    TKCONFIG="$tkdir/unix/tkConfig.sh"
+    TKCONFIG="$tkdir/tkConfig.sh"	
     if test ! -f "$TKCONFIG"; then
-      AC_MSG_ERROR(tkConfig.sh not found in $tkdir/unix)
+      TKUNIX="unix"
+      TKCONFIG="$tkdir/$TKUNIX/tkConfig.sh"
+      if test ! -f "$TKCONFIG"; then
+        AC_MSG_ERROR(tkConfig.sh not found in $tkdir or $tkdir/unix)
+      fi
     fi
     if test -z "$tcldir"; then
       dir=`dirname $tkdir`
       for d in `ls -dr $dir/tcl* 2>/dev/null` ; do
+        if test -f "$d/tclConfig.sh"; then
+          tcldir=$d
+          break
+        fi
         if test -f "$d/unix/tclConfig.sh"; then
+	  TCLUNIX="unix"
           tcldir=$d
           break
         fi
@@ -1493,8 +1513,8 @@ if test "$enableval" = "yes" ; then
       fi
     fi
     . $TKCONFIG
-    tcllib=`ls -d $tcldir/unix/libtcl8* 2>/dev/null`
-    tklib=`ls -d $tkdir/unix/libtk8* 2>/dev/null`
+    tcllib=`ls -d $tcldir/$TCLUNIX/libtcl8* 2>/dev/null`
+    tklib=`ls -d $tkdir/$TKUNIX/libtk8* 2>/dev/null`
     X11LIBS=""
     TKINCS="-I$tcldir/generic -I$tkdir/generic"
     if test "$ac_cv_cygwin" = "yes"; then
@@ -1503,7 +1523,7 @@ if test "$enableval" = "yes" ; then
     TKLIBS="$tcllib $tklib $TK_LIBS"
     TCL_LIBRARY="$tcldir/library"
     TK_LIBRARY="$tkdir/library"
-    LIBRARY_PATH="$tcldir/unix:$tkdir/unix"
+    LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
   fi
 
   if test -z "$TKCONFIG"; then
