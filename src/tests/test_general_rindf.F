@@ -156,8 +156,8 @@ c     Only load core coordinates without rind but inside memory with rind
 
 c     X
       call cg_coord_general_read_f(cgfile, cgbase, cgzone,
-     &                             'CoordinateX', RealSingle,
-     &                             rmin, rmax,
+     &                             'CoordinateX',
+     &                             rmin, rmax, RealSingle,
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
       np = 0
@@ -177,8 +177,8 @@ c     X
 
 c     Y
       call cg_coord_general_read_f(cgfile, cgbase, cgzone,
-     &                             'CoordinateY', RealSingle,
-     &                             rmin, rmax,
+     &                             'CoordinateY',
+     &                             rmin, rmax, RealSingle,
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
       np = 0
@@ -198,8 +198,8 @@ c     Y
 
 c     Z
       call cg_coord_general_read_f(cgfile, cgbase, cgzone,
-     &                             'CoordinateZ', RealSingle,
-     &                             rmin, rmax,
+     &                             'CoordinateZ',
+     &                             rmin, rmax, RealSingle,
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
       np = 0
@@ -227,8 +227,8 @@ c     check field with only one rind layer
       enddo
 
       call cg_field_general_read_f(cgfile, cgbase, cgzone, cgsol,
-     &                             'Density', RealSingle,
-     &                             rmin, rmax,
+     &                             'Density',
+     &                             rmin, rmax, RealSingle,
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
       np = 0
@@ -495,8 +495,8 @@ c     verify again by only reading the 4 locations
       rmin(3) = get_s_rmin(3, 0)
       rmax(3) = get_s_rmax(3, 0)
       call cg_field_general_read_f(cgfile, cgbase, cgzone, cgsol,
-     &                             'Density', RealSingle,
-     &                             rmin, rmax,
+     &                             'Density',
+     &                             rmin, rmax, RealSingle,
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0

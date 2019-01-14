@@ -89,7 +89,7 @@ int main()
     m_rmax[1] = 1+16+irinddata[1][1];
     m_rmax[2] = 1+ 9+irinddata[2][1];
 /* read discrete data */
-    if (cg_array_general_read(1, CGNS_ENUMV(RealSingle), irmin, irmax,
+    if (cg_array_general_read(1, irmin, irmax, CGNS_ENUMV(RealSingle),
                               3, m_dims, m_rmin, m_rmax, f[0][0]))
       cg_error_exit();
 /* close CGNS file */

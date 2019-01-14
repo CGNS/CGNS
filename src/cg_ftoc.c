@@ -778,12 +778,12 @@ CGNSDLL void FMNAME(cg_coord_read_f, CG_COORD_READ_F) (cgint_f *fn, cgint_f *B,
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_coord_general_read_f, CG_COORD_GENERAL_READ_F) (cgint_f *fn,
-        cgint_f *B, cgint_f *Z, STR_PSTR(coordname),
-        CGNS_ENUMT(DataType_t) *type, cgsize_t *rmin, cgsize_t *rmax,
-        cgint_f *m_numdim, cgsize_t *m_dim,
-        cgsize_t *m_rmin, cgsize_t *m_rmax,
-        void *coord, cgint_f *ier STR_PLEN(coordname))
+CGNSDLL void FMNAME(cg_coord_general_read_f, CG_COORD_GENERAL_READ_F) (
+        cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(coordname),
+        cgsize_t *s_rmin, cgsize_t *s_rmax, CGNS_ENUMT(DataType_t) *m_type,
+        cgint_f *m_numdim, cgsize_t *m_dimvals,
+        cgsize_t *m_rmin, cgsize_t *m_rmax, void *coord,
+        cgint_f *ier STR_PLEN(coordname))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
 
@@ -793,9 +793,10 @@ CGNSDLL void FMNAME(cg_coord_general_read_f, CG_COORD_GENERAL_READ_F) (cgint_f *
 #if DEBUG_FTOC
     printf("coordname='%s'\n", c_name);
 #endif
-    *ier = (cgint_f)cg_coord_general_read((int)*fn, (int)*B, (int)*Z,
-               c_name, *type, rmin, rmax, (int)*m_numdim, m_dim,
-	       m_rmin, m_rmax, coord);
+    *ier = (cgint_f)cg_coord_general_read(
+        (int)*fn, (int)*B, (int)*Z, c_name,
+        s_rmin, s_rmax,
+        *m_type, (int)*m_numdim, m_dimvals, m_rmin, m_rmax, coord);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1228,11 +1229,12 @@ CGNSDLL void FMNAME(cg_field_read_f, CG_FIELD_READ_F) (cgint_f *fn, cgint_f *B,
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_field_general_read_f, CG_FIELD_GENERAL_READ_F) (cgint_f *fn,
-        cgint_f *B, cgint_f *Z, cgint_f *S, STR_PSTR(fieldname),
-        CGNS_ENUMT(DataType_t) *type, cgsize_t *rmin, cgsize_t *rmax,
-        cgint_f *m_numdim, cgsize_t *m_dim, cgsize_t *m_rmin,
-        cgsize_t *m_rmax, void *field_ptr, cgint_f *ier STR_PLEN(fieldname))
+CGNSDLL void FMNAME(cg_field_general_read_f, CG_FIELD_GENERAL_READ_F) (
+        cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, STR_PSTR(fieldname),
+        cgsize_t *s_rmin, cgsize_t *s_rmax, CGNS_ENUMT(DataType_t) *m_type,
+        cgint_f *m_numdim, cgsize_t *m_dimvals,
+        cgsize_t *m_rmin, cgsize_t *m_rmax, void *field_ptr,
+        cgint_f *ier STR_PLEN(fieldname))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
 
@@ -1242,9 +1244,10 @@ CGNSDLL void FMNAME(cg_field_general_read_f, CG_FIELD_GENERAL_READ_F) (cgint_f *
 #if DEBUG_FTOC
     printf("fieldname='%s'\n", c_name);
 #endif
-    *ier = (cgint_f)cg_field_general_read((int)*fn, (int)*B, (int)*Z, (int)*S, c_name,
-				  *type, rmin, rmax, (int)*m_numdim, m_dim,
-				  m_rmin, m_rmax, field_ptr);
+    *ier = (cgint_f)cg_field_general_read(
+        (int)*fn, (int)*B, (int)*Z, (int)*S, c_name,
+        s_rmin, s_rmax,
+        *m_type, (int)*m_numdim, m_dimvals, m_rmin, m_rmax, field_ptr);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -3072,15 +3075,17 @@ CGNSDLL void __stdcall cg_array_read_as_f(cgint_f *A, CGNS_ENUMT(DataType_t) *ty
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_array_general_read_f, CG_ARRAY_GENERAL_READ_F) (cgint_f *A,
-        CGNS_ENUMT(DataType_t) *DataType, cgsize_t *RangeMin, cgsize_t *RangeMax,
-        cgint_f *MemoryDataDimension, cgsize_t *MemoryDimensionVector,
-        cgsize_t *MemoryRangeMin, cgsize_t *MemoryRangeMax,
-        void *Data, cgint_f *ier)
+CGNSDLL void FMNAME(cg_array_general_read_f, CG_ARRAY_GENERAL_READ_F) (
+        cgint_f *A,
+        cgsize_t *s_rmin, cgsize_t *s_rmax, CGNS_ENUMT(DataType_t) *m_type, 
+        cgint_f *m_numdim, cgsize_t *m_dimvals,
+        cgsize_t *m_rmin, cgsize_t *m_rmax, void *data,
+        cgint_f *ier)
 {
-    *ier = (cgint_f)cg_array_general_read((int)*A, *DataType, RangeMin, RangeMax,
-                            (int)*MemoryDataDimension, MemoryDimensionVector,
-                            MemoryRangeMin, MemoryRangeMax, Data);
+    *ier = (cgint_f)cg_array_general_read(
+        (int)*A,
+        s_rmin, s_rmax,
+        *m_type, (int)*m_numdim, m_dimvals, m_rmin, m_rmax, data);
 }
 
 /*-----------------------------------------------------------------------*/

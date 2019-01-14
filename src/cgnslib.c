@@ -2190,15 +2190,14 @@ int cg_coord_read(int file_number, int B, int Z, const char *coordname,
     }
 
     return cg_coord_general_read(file_number, B, Z, coordname,
-                                 type, s_rmin, s_rmax,
+                                 s_rmin, s_rmax, type,
                                  m_numdim, m_dimvals, m_rmin, m_rmax,
                                  coord_ptr);
 }
 
-int cg_coord_general_read(int file_number, int B, int Z,
-                          const char *coordname,
-                          CGNS_ENUMT(DataType_t) type,
+int cg_coord_general_read(int fn, int B, int Z, const char *coordname,
                           const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                          CGNS_ENUMT(DataType_t) m_type,
                           int m_numdim, const cgsize_t *m_dimvals,
                           const cgsize_t *m_rmin, const cgsize_t *m_rmax,
                           void *coord_ptr)
@@ -2209,12 +2208,12 @@ int cg_coord_general_read(int file_number, int B, int Z,
     int c, s_numdim;
 
      /* verify input */
-    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble)) {
-        cgi_error("Invalid data type for coord. array: %d", type);
+    if (m_type != CGNS_ENUMV(RealSingle) && m_type != CGNS_ENUMV(RealDouble)) {
+        cgi_error("Invalid data type for coord. array: %d", m_type);
         return CG_ERROR;
     }
      /* find address */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -2240,8 +2239,8 @@ int cg_coord_general_read(int file_number, int B, int Z,
     s_numdim = cg->base[B-1].zone[Z-1].index_dim;
 
     return cgi_array_general_read(coord, cgns_rindindex, zcoor->rind_planes,
-                                  s_numdim, s_rmin, s_rmax, type,
-                                  m_numdim, m_dimvals, m_rmin, m_rmax,
+                                  s_numdim, s_rmin, s_rmax,
+                                  m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   coord_ptr);
 }
 
@@ -2349,8 +2348,7 @@ int cg_coord_partial_write(int file_number, int B, int Z,
                                   coord_ptr, C);
 }
 
-int cg_coord_general_write(int file_number, int B, int Z,
-                           const char *coordname,
+int cg_coord_general_write(int fn, int B, int Z, const char *coordname,
                            CGNS_ENUMT(DataType_t) s_type,
                            const cgsize_t *s_rmin, const cgsize_t *s_rmax,
                            CGNS_ENUMT(DataType_t) m_type,
@@ -2376,7 +2374,7 @@ int cg_coord_general_write(int file_number, int B, int Z,
     }
 
      /* get memory addresses */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -4887,15 +4885,14 @@ int cg_field_read(int file_number, int B, int Z, int S, const char *fieldname,
     }
 
     return cg_field_general_read(file_number, B, Z, S, fieldname,
-                                 type, s_rmin, s_rmax,
+                                 s_rmin, s_rmax, type,
                                  m_numdim, m_dimvals, m_rmin, m_rmax,
                                  field_ptr);
 }
 
-int cg_field_general_read(int file_number, int B, int Z, int S,
-                          const char *fieldname,
-                          CGNS_ENUMT(DataType_t) type,
+int cg_field_general_read(int fn, int B, int Z, int S, const char *fieldname,
                           const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                          CGNS_ENUMT(DataType_t) m_type,
                           int m_numdim, const cgsize_t *m_dimvals,
                           const cgsize_t *m_rmin, const cgsize_t *m_rmax,
                           void *field_ptr)
@@ -4906,13 +4903,13 @@ int cg_field_general_read(int file_number, int B, int Z, int S,
     int f, s_numdim;
 
      /* verify input */
-    if (INVALID_ENUM(type,NofValidDataTypes)) {
-        cgi_error("Invalid data type requested for flow solution: %d", type);
+    if (INVALID_ENUM(m_type, NofValidDataTypes)) {
+        cgi_error("Invalid data type requested for flow solution: %d", m_type);
         return CG_ERROR;
     }
 
      /* find address */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -4941,8 +4938,8 @@ int cg_field_general_read(int file_number, int B, int Z, int S,
         s_numdim = 1;
 
     return cgi_array_general_read(field, cgns_rindindex, sol->rind_planes,
-                                  s_numdim, s_rmin, s_rmax, type,
-                                  m_numdim, m_dimvals, m_rmin, m_rmax,
+                                  s_numdim, s_rmin, s_rmax,
+                                  m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   field_ptr);
 }
 
@@ -5062,8 +5059,7 @@ int cg_field_partial_write(int file_number, int B, int Z, int S,
                                   field_ptr, F);
 }
 
-int cg_field_general_write(int file_number, int B, int Z, int S,
-                           const char *fieldname,
+int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
                            CGNS_ENUMT(DataType_t) s_type,
                            const cgsize_t *s_rmin, const cgsize_t *s_rmax,
                            CGNS_ENUMT(DataType_t) m_type,
@@ -5092,7 +5088,7 @@ int cg_field_general_write(int file_number, int B, int Z, int S,
     }
 
      /* get memory addresses */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -9928,8 +9924,9 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
     return ier ? CG_ERROR : CG_OK;
 }
 
-int cg_array_general_read(int A, CGNS_ENUMT(DataType_t) type,
+int cg_array_general_read(int A,
                           const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                          CGNS_ENUMT(DataType_t) m_type,
                           int m_numdim, const cgsize_t *m_dimvals,
                           const cgsize_t *m_rmin, const cgsize_t *m_rmax,
                           void *data)
@@ -9951,7 +9948,7 @@ int cg_array_general_read(int A, CGNS_ENUMT(DataType_t) type,
     s_numdim = array->data_dim;
 
      /* special for Character arrays */
-    if ((type != CGNS_ENUMV(Character) &&
+    if ((m_type != CGNS_ENUMV(Character) &&
          cgi_datatype(array->data_type) == CGNS_ENUMV(Character))) {
         cgi_error("Error exit:  Character array can only be read as character");
         return CG_ERROR;
@@ -9962,8 +9959,8 @@ int cg_array_general_read(int A, CGNS_ENUMT(DataType_t) type,
     if (ier != CG_OK) rind_planes = NULL;
 
     return cgi_array_general_read(array, cgns_rindindex, rind_planes,
-                                  s_numdim, s_rmin, s_rmax, type,
-                                  m_numdim, m_dimvals, m_rmin, m_rmax,
+                                  s_numdim, s_rmin, s_rmax,
+                                  m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   data);
 }
 

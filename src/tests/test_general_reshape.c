@@ -230,13 +230,13 @@ int main (int argc, char *argv[])
     }
     /* verify the written data */
     np = 0;
-    if (cg_array_general_read(1, RealSingle, rmin, rmax,
+    if (cg_array_general_read(1, rmin, rmax, RealSingle,
                               3, m_dims, m_rmin, m_rmax, fbuf_1d))
         cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
         if (fbuf_1d[i] != fvalues_1d[i]) ++np;
     }
-    if (cg_array_general_read(2, RealDouble, rmin, rmax,
+    if (cg_array_general_read(2, rmin, rmax, RealDouble,
                               3, m_dims, m_rmin, m_rmax, dbuf_1d))
         cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
@@ -246,13 +246,13 @@ int main (int argc, char *argv[])
     if (np) printf("%d differences in values (T1)\n", np);
     /* verify with type conversion */
     np = 0;
-    if (cg_array_general_read(1, RealDouble, rmin, rmax,
+    if (cg_array_general_read(1, rmin, rmax, RealDouble,
                               3, m_dims, m_rmin, m_rmax, dbuf_1d))
         cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
         if (dbuf_1d[i] != (double)fvalues_1d[i]) ++np;
     }
-    if (cg_array_general_read(1, Integer, rmin, rmax,
+    if (cg_array_general_read(1, rmin, rmax, Integer,
                               3, m_dims, m_rmin, m_rmax, ibuf_1d))
         cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
@@ -291,7 +291,7 @@ int main (int argc, char *argv[])
                                    dvalues_1d))
             cg_error_exit();
         /* read with conversion */
-        if (cg_array_general_read(1, RealDouble, rmin, rmax,
+        if (cg_array_general_read(1, rmin, rmax, RealDouble,
                                   3, m_dims, m_rmin, m_rmax, dbuf_1d))
             cg_error_exit();
         for (k = 1; k < dims_3d(2); k++) {
@@ -301,7 +301,7 @@ int main (int argc, char *argv[])
                 }
             }
         }
-        if (cg_array_general_read(2, RealSingle, rmin, rmax,
+        if (cg_array_general_read(2, rmin, rmax, RealSingle,
                                   3, m_dims, m_rmin, m_rmax, fbuf_1d))
             cg_error_exit();
         for (k = 1; k < dims_3d(2); k++) {
@@ -328,7 +328,7 @@ int main (int argc, char *argv[])
                                    RealSingle, 3, m_dims, m_rmin, m_rmax,
                                    fbuf_1d))
             cg_error_exit();
-        if (cg_array_general_read(1, RealSingle, rmin, rmax,
+        if (cg_array_general_read(1, rmin, rmax, RealSingle,
                                   3, m_dims, m_rmin, m_rmax, fbuf_1d))
             cg_error_exit();
         for (k = 1; k < dims_3d(2); k++) {
@@ -338,7 +338,7 @@ int main (int argc, char *argv[])
                 }
             }
         }
-        if (cg_array_general_read(2, RealDouble, rmin, rmax,
+        if (cg_array_general_read(2, rmin, rmax, RealDouble,
                                   3, m_dims, m_rmin, m_rmax, dbuf_1d))
             cg_error_exit();
         for (k = 1; k < dims_3d(2); k++) {
@@ -391,14 +391,14 @@ int main (int argc, char *argv[])
         cg_error_exit();
     /* verify the written data */
     np = 0;
-    if (cg_array_general_read(1, RealSingle, rmin, rmax,
+    if (cg_array_general_read(1, rmin, rmax, RealSingle,
                               2, m_dims, m_rmin, m_rmax, fbuf_1d))
       cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
         if (fbuf_1d[i] != fvalues_1d[i]) ++np;
     }
     /* read as double */
-    if (cg_array_general_read(1, RealDouble, rmin, rmax,
+    if (cg_array_general_read(1, rmin, rmax, RealDouble,
                               2, m_dims, m_rmin, m_rmax, dbuf_1d))
       cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
@@ -410,14 +410,14 @@ int main (int argc, char *argv[])
         m_rmin[n] = 1;
         m_rmax[n] = dims_3d(n);
     }
-    if (cg_array_general_read(2, RealDouble, rmin, rmax,
+    if (cg_array_general_read(2, rmin, rmax, RealDouble,
                               3, m_dims, m_rmin, m_rmax, dbuf_1d))
       cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
         if (dbuf_1d[i] != dvalues_1d[i]) ++np;
     }
     /* read as float */
-    if (cg_array_general_read(2, RealSingle, rmin, rmax,
+    if (cg_array_general_read(2, rmin, rmax, RealSingle,
                               3, m_dims, m_rmin, m_rmax, fbuf_1d))
       cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
@@ -452,14 +452,14 @@ int main (int argc, char *argv[])
         cg_error_exit();
     /* verify the written data */
     np = 0;
-    if (cg_array_general_read(1, RealSingle, rmin, rmax,
+    if (cg_array_general_read(1, rmin, rmax, RealSingle,
                               1, m_dims, m_rmin, m_rmax, fbuf_1d))
       cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
         if (fbuf_1d[i] != fvalues_1d[i]) ++np;
     }
     /* read as int */
-    if (cg_array_general_read(1, Integer, rmin, rmax,
+    if (cg_array_general_read(1, rmin, rmax, Integer,
                               1, m_dims, m_rmin, m_rmax, ibuf_1d))
       cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
@@ -471,14 +471,14 @@ int main (int argc, char *argv[])
         m_rmin[n] = 1;
         m_rmax[n] = dims_3d(n);
     }
-    if (cg_array_general_read(2, RealDouble, rmin, rmax,
+    if (cg_array_general_read(2, rmin, rmax, RealDouble,
                               3, m_dims, m_rmin, m_rmax, dbuf_1d))
       cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
         if (dbuf_1d[i] != dvalues_1d[i]) ++np;
     }
     /* read as int */
-    if (cg_array_general_read(2, Integer, rmin, rmax,
+    if (cg_array_general_read(2, rmin, rmax, Integer,
                               3, m_dims, m_rmin, m_rmax, ibuf_1d))
       cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
@@ -531,7 +531,7 @@ int main (int argc, char *argv[])
             dbuf_1d[n] = 0.;
             ibuf_1d[n] = 0;
         }
-        if (cg_array_general_read(1, RealDouble, rmin, rmax,
+        if (cg_array_general_read(1, rmin, rmax, RealDouble,
                                   3, m_dims, m_rmin, m_rmax, dbuf_1d))
             cg_error_exit();
         for (k = 0; k < dims_3d(2); k++) {
@@ -556,7 +556,7 @@ int main (int argc, char *argv[])
         m_rmin[n] = 1;
         m_rmax[n] = dims_3d(n);
     }
-    if (cg_array_general_read(2, RealSingle, rmin, rmax,
+    if (cg_array_general_read(2, rmin, rmax, RealSingle,
                               3, m_dims, m_rmin, m_rmax, fbuf_1d))
       cg_error_exit();
     /* expected values */
@@ -613,7 +613,7 @@ int main (int argc, char *argv[])
         cg_error_exit();
     /* verify the written data */
     np = 0;
-    if (cg_array_general_read(1, RealSingle, rmin, rmax,
+    if (cg_array_general_read(1, rmin, rmax, RealSingle,
                               1, m_dims, m_rmin, m_rmax, fbuf_1d))
       cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
@@ -625,7 +625,7 @@ int main (int argc, char *argv[])
         m_rmin[n] = 1;
         m_rmax[n] = dims_3d(n);
     }
-    if (cg_array_general_read(2, RealDouble, rmin, rmax,
+    if (cg_array_general_read(2, rmin, rmax, RealDouble,
                               3, m_dims, m_rmin, m_rmax, dbuf_1d))
       cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {

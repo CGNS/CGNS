@@ -921,10 +921,9 @@ CGNSDLL int cg_coord_read(int fn, int B, int Z, const char * coordname,
 	CGNS_ENUMT(DataType_t) type, const cgsize_t * rmin,
 	const cgsize_t * rmax, void *coord);
 CGNSDLL int cg_coord_general_read(int fn, int B, int Z,
-        const char * coordname, CGNS_ENUMT(DataType_t) type,
-        const cgsize_t *rmin, const cgsize_t *rmax, int m_numdim,
-        const cgsize_t *m_dim, const cgsize_t *m_rmin, const cgsize_t *m_rmax,
-	void *coord_ptr);
+        const char * coordname, const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+        CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t *m_dimvals,
+        const cgsize_t *m_rmin, const cgsize_t *m_rmax, void *coord_ptr);
 CGNSDLL int cg_coord_id(int fn, int B, int Z, int C, double *coord_id);
 CGNSDLL int cg_coord_write(int fn, int B, int Z,
 	CGNS_ENUMT(DataType_t) type, const char * coordname,
@@ -1019,10 +1018,9 @@ CGNSDLL int cg_field_read(int fn, int B, int Z, int S, const char *fieldname,
 	CGNS_ENUMT(DataType_t) type, const cgsize_t *rmin,
         const cgsize_t *rmax, void *field_ptr);
 CGNSDLL int cg_field_general_read(int fn, int B, int Z, int S,
-        const char *fieldname, CGNS_ENUMT(DataType_t) type,
-        const cgsize_t *rmin, const cgsize_t *rmax, int m_numdim,
-        const cgsize_t *m_dim, const cgsize_t *m_rmin, const cgsize_t *m_rmax,
-        void *field_ptr);
+        const char *fieldname, const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+        CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t *m_dimvals,
+        const cgsize_t *m_rmin, const cgsize_t *m_rmax, void *field_ptr);
 CGNSDLL int cg_field_id(int fn, int B, int Z,int S, int F, double *field_id);
 CGNSDLL int cg_field_write(int fn,int B,int Z,int S,
 	CGNS_ENUMT(DataType_t) type, const char * fieldname,
@@ -1403,18 +1401,17 @@ CGNSDLL int cg_array_info(int A, char *ArrayName,
 	int *DataDimension, cgsize_t *DimensionVector);
 CGNSDLL int cg_array_read(int A, void *Data);
 CGNSDLL int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data);
-CGNSDLL int cg_array_general_read(int A, CGNS_ENUMT(DataType_t) DataType,
-        const cgsize_t *RangeMin, const cgsize_t *RangeMax,
-        int MemoryDataDimension, const cgsize_t *MemoryDimensionVector,
-        const cgsize_t *MemoryRangeMin, const cgsize_t *MemoryRangeMax,
-        void *Data);
+CGNSDLL int cg_array_general_read(int A,
+        const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+        CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t *m_dimvals,
+        const cgsize_t *m_rmin, const cgsize_t *m_rmax, void *data);
 CGNSDLL int cg_array_write(const char * ArrayName,
 	CGNS_ENUMT(DataType_t) DataType, int DataDimension,
 	const cgsize_t * DimensionVector, const void * Data);
 CGNSDLL int cg_array_general_write(const char *arrayname,
         CGNS_ENUMT(DataType_t) s_type, int s_numdim, const cgsize_t *s_dimvals,
         const cgsize_t *s_rmin, const cgsize_t *s_rmax,
-        CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t* m_dimvals,
+        CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t *m_dimvals,
         const cgsize_t *m_rmin, const cgsize_t *m_rmax, const void *data);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\

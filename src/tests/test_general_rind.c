@@ -225,7 +225,7 @@ int main (int argc, char *argv[])
 
     /* X */
     if (cg_coord_general_read(cgfile, cgbase, cgzone, "CoordinateX",
-                              RealSingle, rmin, rmax, 3, dims, m_rmin, m_rmax,
+                              rmin, rmax, RealSingle, 3, dims, m_rmin, m_rmax,
                               fbuf))
         cg_error_exit();
     np = 0;
@@ -241,7 +241,7 @@ int main (int argc, char *argv[])
 
     /* Y */
     if (cg_coord_general_read(cgfile, cgbase, cgzone, "CoordinateY",
-                              RealSingle, rmin, rmax, 3, dims, m_rmin, m_rmax,
+                              rmin, rmax, RealSingle, 3, dims, m_rmin, m_rmax,
                               fbuf))
         cg_error_exit();
     np = 0;
@@ -257,7 +257,7 @@ int main (int argc, char *argv[])
 
     /* Z */
     if (cg_coord_general_read(cgfile, cgbase, cgzone, "CoordinateZ",
-                              RealSingle, rmin, rmax, 3, dims, m_rmin, m_rmax,
+                              rmin, rmax, RealSingle, 3, dims, m_rmin, m_rmax,
                               fbuf))
         cg_error_exit();
     np = 0;
@@ -281,7 +281,7 @@ int main (int argc, char *argv[])
     }
 
     if (cg_field_general_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                              RealSingle, rmin, rmax, 3, dims, m_rmin, m_rmax,
+                              rmin, rmax, RealSingle, 3, dims, m_rmin, m_rmax,
                               fbuf))
         cg_error_exit();
 
@@ -632,7 +632,7 @@ int main (int argc, char *argv[])
     rmin[2] = get_s_rmin(2, 0);
     rmax[2] = get_s_rmin(2, 0);
     if (cg_field_general_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                              RealSingle, rmin, rmax, 3, dims, m_rmin, m_rmax,
+                              rmin, rmax, RealSingle, 3, dims, m_rmin, m_rmax,
                               fbuf)) cg_error_exit();
     np = 0;
     for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
