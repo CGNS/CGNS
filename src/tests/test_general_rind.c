@@ -229,9 +229,9 @@ int main (int argc, char *argv[])
                               fbuf))
         cg_error_exit();
     np = 0;
-    for (k = idxmin(2,0); k < idxmax(2,0); k++) {
-        for (j = idxmin(1,0); j < idxmax(1,0); j++) {
-            for (i = idxmin(0,0); i < idxmax(0,0); i++) {
+    for (k = idxmin(2,0); k <= idxmax(2,0); k++) {
+        for (j = idxmin(1,0); j <= idxmax(1,0); j++) {
+            for (i = idxmin(0,0); i <= idxmax(0,0); i++) {
                 if (fbuf[INDEX(i,j,k)] != xcoord[INDEX(i,j,k)]) np++;
             }
         }
@@ -245,9 +245,9 @@ int main (int argc, char *argv[])
                               fbuf))
         cg_error_exit();
     np = 0;
-    for (k = idxmin(2,0); k < idxmax(2,0); k++) {
-        for (j = idxmin(1,0); j < idxmax(1,0); j++) {
-            for (i = idxmin(0,0); i < idxmax(0,0); i++) {
+    for (k = idxmin(2,0); k <= idxmax(2,0); k++) {
+        for (j = idxmin(1,0); j <= idxmax(1,0); j++) {
+            for (i = idxmin(0,0); i <= idxmax(0,0); i++) {
                 if (fbuf[INDEX(i,j,k)] != ycoord[INDEX(i,j,k)]) np++;
             }
         }
@@ -261,9 +261,9 @@ int main (int argc, char *argv[])
                               fbuf))
         cg_error_exit();
     np = 0;
-    for (k = idxmin(2,0); k < idxmax(2,0); k++) {
-        for (j = idxmin(1,0); j < idxmax(1,0); j++) {
-            for (i = idxmin(0,0); i < idxmax(0,0); i++) {
+    for (k = idxmin(2,0); k <= idxmax(2,0); k++) {
+        for (j = idxmin(1,0); j <= idxmax(1,0); j++) {
+            for (i = idxmin(0,0); i <= idxmax(0,0); i++) {
                 if (fbuf[INDEX(i,j,k)] != zcoord[INDEX(i,j,k)]) np++;
             }
         }
@@ -286,9 +286,9 @@ int main (int argc, char *argv[])
         cg_error_exit();
 
     np = 0;
-    for (k = idxmin(2,1); k < idxmax(2,1); k++) {
-        for (j = idxmin(1,1); j < idxmax(1,1); j++) {
-            for (i = idxmin(0,1); i < idxmax(0,1); i++) {
+    for (k = idxmin(2,1); k <= idxmax(2,1); k++) {
+        for (j = idxmin(1,1); j <= idxmax(1,1); j++) {
+            for (i = idxmin(0,1); i <= idxmax(0,1); i++) {
                 if (fbuf[INDEX(i,j,k)] != solution[INDEX(i,j,k)]) np++;
             }
         }
@@ -329,9 +329,9 @@ int main (int argc, char *argv[])
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
                       RealSingle, rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
-    for (k = idxmin(2,-1); k < idxmax(2,-1); k++) {
-        for (j = idxmin(1,-1); j < idxmax(1,-1); j++) {
-            for (i = idxmin(0,-1); i < idxmax(0,-1); i++) {
+    for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
+        for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
+            for (i = idxmin(0,-1); i <= idxmax(0,-1); i++) {
                 if (fbuf[INDEX(i,j,k)] != solution[INDEX(i,j,k)]) np++;
             }
         }
@@ -349,9 +349,9 @@ int main (int argc, char *argv[])
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
                       RealSingle, rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
-    for (k = idxmin(2,-1); k < idxmax(2,-1); k++) {
-        for (j = idxmin(1,-1); j < idxmax(1,-1); j++) {
-            for (i = idxmin(0,-1); i < idxmax(0,-1); i++) {
+    for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
+        for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
+            for (i = idxmin(0,-1); i <= idxmax(0,-1); i++) {
                 if (fbuf[INDEX(i,j,k)] != solution[INDEX(i,j,k)]) np++;
             }
         }
@@ -367,9 +367,9 @@ int main (int argc, char *argv[])
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
                       RealSingle, rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
-    for (k = idxmin(2,-1); k < idxmax(2,-1); k++) {
-        for (j = idxmin(1,-1); j < idxmax(1,-1); j++) {
-            for (i = idxmin(0,-1); i < idxmax(0,-1); i++) {
+    for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
+        for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
+            for (i = idxmin(0,-1); i <= idxmax(0,-1); i++) {
                 if (fbuf[INDEX(i,j,k)] != solution[INDEX(i,j,k)]) np++;
             }
         }
@@ -405,9 +405,9 @@ int main (int argc, char *argv[])
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
                       RealSingle, rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
-    for (k = idxmin(2,-1); k < idxmax(2,-1); k++) {
-        for (j = idxmin(1,-1); j < idxmax(1,-1); j++) {
-            for (i = idxmin(0,-1); i < idxmax(0,-1); i++) {
+    for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
+        for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
+            for (i = idxmin(0,-1); i <= idxmax(0,-1); i++) {
                 if (fbuf[INDEX(i,j,k)] != solution[INDEX(i,j,k)]) np++;
             }
         }
@@ -423,9 +423,9 @@ int main (int argc, char *argv[])
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
                       RealSingle, rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
-    for (k = idxmin(2,-1); k < idxmax(2,-1); k++) {
-        for (j = idxmin(1,-1); j < idxmax(1,-1); j++) {
-            for (i = idxmin(0,-1); i < idxmax(0,-1); i++) {
+    for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
+        for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
+            for (i = idxmin(0,-1); i <= idxmax(0,-1); i++) {
                 if (fbuf[INDEX(i,j,k)] != solution[INDEX(i,j,k)]) np++;
             }
         }
@@ -488,9 +488,9 @@ int main (int argc, char *argv[])
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
                       RealSingle, rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
-    for (k = idxmin(2,-1); k < idxmax(2,-1); k++) {
-        for (j = idxmin(1,-1); j < idxmax(1,-1); j++) {
-            for (i = idxmin(0,-1); i < idxmax(0,-1); i++) {
+    for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
+        for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
+            for (i = idxmin(0,-1); i <= idxmax(0,-1); i++) {
                 if (fbuf[INDEX(i,j,k)] != solution[INDEX(i,j,k)]) np++;
             }
         }
@@ -536,9 +536,9 @@ int main (int argc, char *argv[])
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
                       RealSingle, rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
-    for (k = idxmin(2,-1); k < idxmax(2,-1); k++) {
-        for (j = idxmin(1,-1); j < idxmax(1,-1); j++) {
-            for (i = idxmin(0,-1); i < idxmax(0,-1); i++) {
+    for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
+        for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
+            for (i = idxmin(0,-1); i <= idxmax(0,-1); i++) {
                 if (fbuf[INDEX(i,j,k)] != solution[INDEX(i,j,k)]) np++;
             }
         }
@@ -610,9 +610,9 @@ int main (int argc, char *argv[])
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
                       RealSingle, rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
-    for (k = idxmin(2,-1); k < idxmax(2,-1); k++) {
-        for (j = idxmin(1,-1); j < idxmax(1,-1); j++) {
-            for (i = idxmin(0,-1); i < idxmax(0,-1); i++) {
+    for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
+        for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
+            for (i = idxmin(0,-1); i <= idxmax(0,-1); i++) {
                 if (fbuf[INDEX(i,j,k)] != solution[INDEX(i,j,k)]) np++;
             }
         }
@@ -635,9 +635,9 @@ int main (int argc, char *argv[])
                               RealSingle, rmin, rmax, 3, dims, m_rmin, m_rmax,
                               fbuf)) cg_error_exit();
     np = 0;
-    for (k = idxmin(2,-1); k < idxmax(2,-1); k++) {
-        for (j = idxmin(1,-1); j < idxmax(1,-1); j++) {
-            for (i = idxmin(0,-1); i < idxmax(0,-1); i++) {
+    for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
+        for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
+            for (i = idxmin(0,-1); i <= idxmax(0,-1); i++) {
                 if (fbuf[INDEX(i,j,k)] != solution[INDEX(i,j,k)]) np++;
             }
         }
@@ -654,4 +654,3 @@ int main (int argc, char *argv[])
 
     return 0;
 }
-
