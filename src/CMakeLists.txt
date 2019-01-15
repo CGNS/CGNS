@@ -642,6 +642,7 @@ if (CGNS_ENABLE_TESTS)
   add_subdirectory(Test_UserGuideCode/C_code)
   if (CGNS_ENABLE_PARALLEL)
     add_subdirectory(ptests)
+    add_subdirectory(Test_UserGuideCode/C_code_parallel)
   endif (CGNS_ENABLE_PARALLEL)
 endif (CGNS_ENABLE_TESTS)
 

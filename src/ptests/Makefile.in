@@ -23,7 +23,7 @@ CALL =	pcgns_ctest$(EXE) \
 	test_unstructured$(EXE) \
 	test_unstruc_quad$(EXE) \
 	test_zone$(EXE) \
-	test_cgp_general_rind$(EXE) \
+	test_general_readwrite$(EXE) \
 	thesis_benchmark$(EXE)
 
 FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) 
