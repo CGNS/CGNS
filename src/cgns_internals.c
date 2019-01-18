@@ -171,7 +171,7 @@ int cgi_read_base(cgns_base *base)
         }
     }
 
-     /* Family_t */
+     /* Family_t */ /* -- FAMILY TREE -- */
     if (cgi_get_nodes(base->id, "Family_t", &base->nfamilies, &id)) return CG_ERROR;
     if (base->nfamilies>0) {
          /* read & save families */
@@ -373,11 +373,11 @@ int cgi_read_zone(cgns_zone *zone)
         return CG_ERROR;
     }
 
-     /* FamilyName_t */
+     /* FamilyName_t */ /* -- FAMILY TREE -- */
     if (cgi_read_family_name(in_link, zone->id, zone->name, zone->family_name))
         return CG_ERROR;
 
-    /* CPEX 0034 */
+    /* CPEX 0034 */ /* -- FAMILY TREE -- */
     if (cgi_get_nodes(zone->id, "AdditionalFamilyName_t", &zone->nfamname, &id))
         return CG_ERROR;
     if (zone->nfamname > 0) {
@@ -454,7 +454,7 @@ int cgi_read_zone(cgns_zone *zone)
     return CG_OK;
 }
 
-int cgi_read_family(cgns_family *family)
+int cgi_read_family(cgns_family *family) /* ** FAMILY TREE ** */
 {
     int n, linked, in_link = family->link ? 1 : family->in_link;
     double *id;
@@ -612,7 +612,21 @@ int cgi_read_family(cgns_family *family)
         CGNS_FREE(id);
     }
 
-     /* Ordinal_t */
+    /* Family_t */ /* ** FAMILY TREE ** */
+    if (cgi_get_nodes(family->id, "Family_t", &family->nfamilies, &id)) return CG_ERROR;
+    if (family->nfamilies>0) {
+         /* read & save families */
+        family->family = CGNS_NEW(cgns_family, family->nfamilies);
+        for (n=0; n<family->nfamilies; n++) {
+            family->family[n].id = id[n];
+            family->family[n].link = cgi_read_link(id[n]);
+            family->family[n].in_link = 0;
+            if (cgi_read_family(&family->family[n])) return CG_ERROR;
+        }
+        CGNS_FREE(id);
+    }
+
+    /* Ordinal_t */
     if (cgi_read_ordinal(family->id, &family->ordinal)) return CG_ERROR;
 
      /* UserDefinedData_t */
@@ -725,8 +739,9 @@ int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
     return CG_OK;
 }
 
+/* ** FAMILY TREE ** */
 int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
-                         char_33 family_name)
+                         char_md family_name)
 {
     int fam_flag;
     double *id;
@@ -741,7 +756,7 @@ int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
 
          /* FamilyName in data field of the ADF node */
             if (cgi_read_string(id[0], NodeName, &FamilyName)) return CG_ERROR;
-            if (strlen(FamilyName) > 32) FamilyName[32]='\0';
+            if (strlen(FamilyName) > (20*33)-1) FamilyName[(20*33)-1]='\0'; /* ** FAMILY TREE ** */
             strcpy(family_name, FamilyName);
             if (FamilyName) CGNS_FREE(FamilyName);
 
@@ -2453,7 +2468,7 @@ int cgi_read_boco(cgns_boco *boco)
     }
 #endif
 
-     /* FamilyName_t */
+     /* FamilyName_t */ /* -- FAMILY TREE -- */
     if (cgi_read_family_name(linked, boco->id, boco->name, boco->family_name))
         return CG_ERROR;
 
@@ -5078,7 +5093,7 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
         if (cgi_read_location(user_data[0][n].id, user_data[0][n].name,
             &user_data[0][n].location)) return CG_ERROR;
 
-     /* FamilyName_t */
+     /* FamilyName_t */ /* -- FAMILY TREE -- */
         if (cgi_read_family_name(linked, user_data[0][n].id,
                                  user_data[0][n].name,
                                  user_data[0][n].family_name))
@@ -5303,7 +5318,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
         if (cgi_read_location(reg[n].id, reg[n].name,
             &reg[n].location)) return CG_ERROR;
 
-        /* FamilyName_t */
+        /* FamilyName_t */ /* -- FAMILY TREE -- */
         if (cgi_read_family_name(linked, reg[n].id,
                 reg[n].name, reg[n].family_name))
             return CG_ERROR;
@@ -6028,7 +6043,7 @@ int cgi_write_zone(double parent_id, cgns_zone *zone)
     return CG_OK;
 }
 
-int cgi_write_family(double parent_id, cgns_family *family)
+int cgi_write_family(double parent_id, cgns_family *family) /* ** FAMILY TREE ** */
 {
     int n;
     cgsize_t dim_vals;
@@ -6125,6 +6140,11 @@ int cgi_write_family(double parent_id, cgns_family *family)
      /* RotatingCoordinates_t */
     if (family->rotating && cgi_write_rotating(family->id, family->rotating))
         return CG_ERROR;
+
+    /* ** FAMILY TREE ** */
+    for( n = 0; n < family->nfamilies; n++ ) {
+        if (cgi_write_family(family->id, &family->family[n])) return CG_ERROR;
+    }
 
     return CG_OK;
 }
@@ -10513,6 +10533,22 @@ static int cgi_next_posit(char *label, int index, char *name)
                            label, index + 1, f->user_data[index].id);
             }
         }
+        /* ** FAMILY TREE ** */
+        else if (0 == strcmp (label, "Family_t")) {
+            if (--index < 0) {
+                for (n = 0; n < f->nfamilies; n++) {
+                    if (0 == strcmp (f->family[n].name, name)) {
+                        index = n;
+                        break;
+                    }
+                }
+            }
+
+            if (index >= 0 && index < f->nfamilies) {
+                return cgi_add_posit((void *)&f->family[index],
+                           label, index + 1, f->family[index].id);
+            }
+        }
         else
             return CG_INCORRECT_PATH;
     }
@@ -11293,7 +11329,7 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_state, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"DataArray_t")==0)
         ADDRESS4MULTIPLE(cgns_array, ndescr, descr, cgns_descr)
-    else if (strcmp(posit->label,"Family_t")==0)
+    else if (strcmp(posit->label,"Family_t")==0)/* -- FAMILY TREE -- */
         ADDRESS4MULTIPLE(cgns_family, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"GeometryReference_t")==0)
         ADDRESS4MULTIPLE(cgns_geo, ndescr, descr, cgns_descr)
@@ -11356,7 +11392,7 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
     return descr;
 }
 
-char *cgi_famname_address(int local_mode, int *ier)
+char *cgi_famname_address(int local_mode, int *ier)/* -- FAMILY TREE -- */
 {
     double *id, parent_id;
     char *family_name=0;
@@ -11388,13 +11424,18 @@ char *cgi_famname_address(int local_mode, int *ier)
         cgns_subreg *subreg = (cgns_subreg *)posit->posit;
         family_name = subreg->family_name;
         parent_id = subreg->id;
+        /* Extension for FAMILY TREE ? */
+/*    } else if ( strcmp(posit->label,"Family_t")==0) {
+    	cgns_family *family = (cgns_family*)posit->posit;
+    	family_name = family->family_name;
+    	parent_id = family->id;*/
     } else {
         cgi_error("FamilyName_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
         return CG_OK;
     }
     if (cg->mode == CG_MODE_MODIFY && local_mode == CG_MODE_WRITE) {
-        if (cgi_get_nodes(parent_id, "FamilyName_t", &nnod, &id)) {
+        if (cgi_get_nodes(parent_id, "FamilyName_t", &nnod, &id)) {/* -- FAMILY TREE -- */
             *ier = CG_ERROR;
             return CG_OK;
         }
@@ -11429,6 +11470,8 @@ cgns_famname *cgi_multfam_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_subreg, nfamname, famname, cgns_famname)
     else if (0 == strcmp(posit->label, "UserDefinedData_t"))
         ADDRESS4MULTIPLE(cgns_user_data, nfamname, famname, cgns_famname)
+    else if (0 == strcmp(posit->label, "Family_t")) /* ** FAMILY TREE ** */
+        ADDRESS4MULTIPLE(cgns_family, nfamname, famname, cgns_famname)
     else {
         cgi_error("AdditionalFamilyName_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
@@ -12694,6 +12737,56 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
     return user_data;
 }
 
+/* ** FAMILY TREE ** */
+cgns_family *cgi_family_address(int local_mode, int given_no,
+                                char const *given_name, int *ier)
+{
+    cgns_family *family=0;
+    int n, error1=0, error2=0;
+    double parent_id=0;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        (*ier) = CG_ERROR;
+        return CG_OK;
+    }
+
+/* Possible parents of Family_t node:
+ *  Family_t, CGNSBase_t
+ */
+
+    if (strcmp(posit->label,"Family_t")==0)
+        ADDRESS4MULTIPLE(cgns_family, nfamilies, family, cgns_family)
+    else if (strcmp(posit->label,"CGNSBase_t")==0)
+        ADDRESS4MULTIPLE(cgns_base, nfamilies, family, cgns_family)
+    else {
+        cgi_error("Family_t node not supported under '%s' type node",posit->label);
+        (*ier) = CG_INCORRECT_PATH;
+        return CG_OK;
+    }
+    if (error1) {
+        cgi_error("Duplicate child name found (%s) found under %s",
+            given_name, posit->label);
+        (*ier) = CG_ERROR;
+        return CG_OK;
+    }
+    if (error2) {
+        cgi_error("UserDefinedData index number %d doesn't exist under %s",
+            given_no, posit->label);
+        (*ier) = CG_NODE_NOT_FOUND;
+        return CG_OK;
+    }
+    if (parent_id) {     /* parent_id!=0 only when overwriting */
+        if (cgi_delete_node (parent_id, family->id)) {
+            (*ier) = CG_ERROR;
+            return CG_OK;
+        }
+        cgi_free_family(family);
+    }
+    return family;
+}
+
 cgns_rotating *cgi_rotating_address(int local_mode, int *ier)
 {
     cgns_rotating *rotating=0;
@@ -13068,7 +13161,7 @@ void cgi_free_section(cgns_section *section)
     }
 }
 
-void cgi_free_family(cgns_family *family)
+void cgi_free_family(cgns_family *family) /* ** FAMILY TREE ** */
 {
     int n;
     if (family->link) CGNS_FREE(family->link);
@@ -13087,6 +13180,14 @@ void cgi_free_family(cgns_family *family)
             cgi_free_geo(&family->geo[n]);
         CGNS_FREE(family->geo);
     }
+
+    /* FAMILY TREE : Free Family_t nodes */
+    if ( family->nfamilies ) {
+    	for( n = 0; n < family->nfamilies; n++ )
+    		cgi_free_family( &family->family[n] );
+    	CGNS_FREE( family->family );
+    }
+
     if (family->nuser_data) {
         for (n=0; n<family->nuser_data; n++)
             cgi_free_user_data(&family->user_data[n]);

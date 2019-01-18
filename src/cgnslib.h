@@ -869,6 +869,15 @@ CGNSDLL int cg_family_name_read(int file_number, int B, int F,
 CGNSDLL int cg_family_name_write(int file_number, int B, int F,
 	const char *name, const char *family);
 
+/* FamilyTree extension */ /* ** FAMILY TREE ** */
+CGNSDLL int cg_node_family_write( const char* family_name, int* F);
+CGNSDLL int cg_node_nfamilies( int* nfamilies );
+CGNSDLL int cg_node_family_read( int F, char* family_name, int* nFamBC, int *nGeo );
+CGNSDLL int cg_node_family_name_write( const char* node_name, const char* family_name );
+CGNSDLL int cg_node_nfamily_names( int* nnames );
+CGNSDLL int cg_node_family_name_read(int N, char* node_name, char* family_name );
+
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write Family Hierarchy                                  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
