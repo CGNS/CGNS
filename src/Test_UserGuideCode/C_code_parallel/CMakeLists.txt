@@ -27,6 +27,7 @@ endif (NOT WIN32)
 set (examples
 	write_grid_str_parinzone
 	write_grid_str_paroverzone
+	write_flowcentrind_str_paroverzone
 	read_grid_str_parinzone
 	read_grid_str_paroverzone
 )

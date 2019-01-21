@@ -17,10 +17,9 @@ mpirun -np 2 write_grid_str_parinzone
 int main(int argc, const char* argv[])
 {
    cgsize_t zoneSize[3][3];
-   int i, j, k, n, comm_size, comm_rank;
-   int index_file, index_base;
-   int index_zone, index_grid, index_coordx, index_coordy, index_coordz;
-   char basename[33], zonename[33];
+   int n, comm_size, comm_rank;
+   int index_file, index_base, index_zone;
+   char zonename[33];
 
    MPI_Init(&argc, (char***)(&argv));
    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);

@@ -16,7 +16,7 @@ mpirun -np 2 write_grid_str_paroverzone
 
 int main(int argc, const char* argv[])
 {
-   int i, j, k, n, comm_size, comm_rank;
+   int n, comm_size, comm_rank;
    int index_file, index_base, index_zone;
    char zonename[33];
 
@@ -28,7 +28,7 @@ int main(int argc, const char* argv[])
 /* open CGNS file for read-only */
    if (cgp_open("grid_poz_c.cgns", CG_MODE_READ, &index_file)) cg_error_exit();
 /* we know there is only one base (real working code would check!) */
-   index_base=1;
+   index_base = 1;
 /* get the number of zones (should be 2) */
    int numZone;
    if (cg_nzones(index_file, index_base, &numZone)) cg_error_exit();
@@ -111,9 +111,9 @@ int main(int argc, const char* argv[])
                                        s_rmin, s_rmax, CGNS_ENUMV(RealDouble),
                                        3, m_dimvals, m_rmin, m_rmax,
                                        z)) cgp_error_exit();
-       for (i = 0; i < comm_size; ++i)
+       for (n = 0; n < comm_size; ++n)
          {
-           if (i == comm_rank)
+           if (n == comm_rank)
              {
                if (idxGlobalZone < numZone)
                  {
