@@ -25,7 +25,10 @@ endif (NOT WIN32)
 
 # Set the files needed by each test
 set (examples
+	write_grid_str_parinzone
 	write_grid_str_paroverzone
+	read_grid_str_parinzone
+	read_grid_str_paroverzone
 )
 
 # Build each test

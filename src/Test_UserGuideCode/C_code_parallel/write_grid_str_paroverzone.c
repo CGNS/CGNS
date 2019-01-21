@@ -1,7 +1,7 @@
 /*   Program write_grid_str_paroverzone.c    */
 /*
 Creates simple 3-D structured grid and writes it to a CGNS file.  Each processor
-write data to one zone (parallelism over zones)
+writes data to one zone (parallelism over zones)
 
 mpicxx write_grid_str_paroverzone.c -lcgns -lhdf5 -lsz -lz -o write_grid_str_paroverzone
 mpirun -np 2 write_grid_str_paroverzone
@@ -16,14 +16,7 @@ mpirun -np 2 write_grid_str_paroverzone
 
 int main(int argc, const char* argv[])
 {
-/*
-   dimension statements (note that tri-dimensional arrays
-   x,y,z must be dimensioned exactly as [N][17][21] (N>=9) 
-   for this particular case or else they will be written to 
-   the CGNS file incorrectly!  Other options are to use 1-D 
-   arrays, use dynamic memory, or pass index values to a 
-   subroutine and dimension exactly there):
-*/
+/* dimension statements for the zones are given here */
    const int numZone = 2;
    const cgsize_t zoneSize[2][3][3] = {
      /* zone 1 */
@@ -37,15 +30,18 @@ int main(int argc, const char* argv[])
    int i, j, k, n, comm_size, comm_rank;
    int index_file, index_base;
    int index_zone, index_grid, index_coordx, index_coordy, index_coordz;
-   char basename[33],zonename[33];
+   char basename[33], zonename[33];
 
    MPI_Init(&argc, (char***)(&argv));
    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-   /* number of zones on this processor and global index of the first one. */
-   int maxLocalZone;
-   int idxGlobalZoneBeg;
-   int numLocalZone = numZone/comm_size;
+
+/* partition the zones among the processes */
+   int maxLocalZone;      /* the maximum number of zones on any process */
+   int idxGlobalZoneBeg;  /* the global index of the first zone on this
+                             process */
+   int numLocalZone = numZone/comm_size;  /* the number of zones local to this
+                                             process */
    {
      int numUnevenZone = numZone - numLocalZone*comm_size;
      maxLocalZone = numLocalZone + (numUnevenZone > 0);
@@ -63,18 +59,18 @@ int main(int argc, const char* argv[])
 
    cgp_mpi_comm(MPI_COMM_WORLD);
 
-/* open CGNS file for write */
-   if (cgp_open("grid_c.cgns", CG_MODE_WRITE, &index_file)) cg_error_exit();
+/* open CGNS file for writing */
+   if (cgp_open("grid_poz_c.cgns", CG_MODE_WRITE, &index_file)) cg_error_exit();
 /* create base (user can give any name) */
    strcpy(basename, "Base");
    int icelldim = 3;
    int iphysdim = 3;
    cg_base_write(index_file, basename, icelldim, iphysdim, &index_base);
 
-/* CREATION OF FILE STRUCTURE -- all processors write the same information */
+/* CREATION OF FILE STRUCTURE -- all processors write the same information.
+   Only zone meta-data is written to the library at this stage */
 
    int idxZone;
-   int idxLocalZone = 0;
    for (idxZone = 0; idxZone != numZone; ++idxZone)
      {
 /* define zone name (user can give any name) */
@@ -86,18 +82,22 @@ int main(int argc, const char* argv[])
        if (cg_grid_write(index_file, index_base, index_zone,
                          "GridCoordinates", &index_grid)) cg_error_exit();
 /* construct the grid coordinates nodes (user must use SIDS-standard names
-   here).  No data is written */
-       cgp_coord_write(index_file, index_base, index_zone,
-                       CGNS_ENUMV(RealSingle), "CoordinateX", &index_coordx);
-       cgp_coord_write(index_file, index_base, index_zone,
-                       CGNS_ENUMV(RealSingle), "CoordinateY", &index_coordy);
-       cgp_coord_write(index_file, index_base, index_zone,
-                       CGNS_ENUMV(RealSingle), "CoordinateZ", &index_coordz);
+   here) */
+       if (cgp_coord_write(index_file, index_base, index_zone,
+                           CGNS_ENUMV(RealSingle), "CoordinateX",
+                           &index_coordx)) cgp_error_exit();
+       if (cgp_coord_write(index_file, index_base, index_zone,
+                           CGNS_ENUMV(RealSingle), "CoordinateY",
+                           &index_coordy)) cgp_error_exit();
+       if (cgp_coord_write(index_file, index_base, index_zone,
+                           CGNS_ENUMV(RealSingle), "CoordinateZ",
+                           &index_coordz)) cgp_error_exit();
      }
 
 /* COLLECTIVE WRITING OF FILE DATA -- each processor writes to a separate
    zone */
 
+   int idxLocalZone;
    for (idxLocalZone = 0; idxLocalZone < maxLocalZone; ++idxLocalZone)
      {
        const int idxGlobalZone = idxGlobalZoneBeg + idxLocalZone;
@@ -129,13 +129,13 @@ int main(int argc, const char* argv[])
                      }
                  }
              }
-           // Shape in file space
+           /* shape in file space */
            for (n = 0; n < 3; ++n)
              {
                s_rmin[n] = 1;
                s_rmax[n] = zoneSize[idxGlobalZone][0][n];
              }
-           // Shape in memory
+           /* shape in memory */
            for (n = 0; n < 3; ++n)
              {
                m_dimvals[n] = zoneSize[idxGlobalZone][0][n];
@@ -143,17 +143,22 @@ int main(int argc, const char* argv[])
                m_rmax[n]    = zoneSize[idxGlobalZone][0][n];
              }
          }
-       const int cgns_index_zone =
-         (idxGlobalZone < numZone) ? idxGlobalZone + 1 : 1;
-       cgp_coord_general_write_data(index_file, index_base, cgns_index_zone, 1,
-                                    s_rmin, s_rmax, CGNS_ENUMV(RealDouble),
-                                    3, m_dimvals, m_rmin, m_rmax, x);
-       cgp_coord_general_write_data(index_file, index_base, cgns_index_zone, 2,
-                                    s_rmin, s_rmax, CGNS_ENUMV(RealDouble),
-                                    3, m_dimvals, m_rmin, m_rmax, y);
-       cgp_coord_general_write_data(index_file, index_base, cgns_index_zone, 3,
-                                    s_rmin, s_rmax, CGNS_ENUMV(RealDouble),
-                                    3, m_dimvals, m_rmin, m_rmax, z);
+       /* if there is nothing for this process to write, a valid zone index must
+          be provided and data array = NULL */
+       index_zone = (idxGlobalZone < numZone) ? idxGlobalZone + 1 : 1;
+       /* the data is defined as double but will be written as single */
+       if (cgp_coord_general_write_data(index_file, index_base, index_zone, 1,
+                                        s_rmin, s_rmax, CGNS_ENUMV(RealDouble),
+                                        3, m_dimvals, m_rmin, m_rmax,
+                                        x)) cgp_error_exit();
+       if (cgp_coord_general_write_data(index_file, index_base, index_zone, 2,
+                                        s_rmin, s_rmax, CGNS_ENUMV(RealDouble),
+                                        3, m_dimvals, m_rmin, m_rmax,
+                                        y)) cgp_error_exit();
+       if (cgp_coord_general_write_data(index_file, index_base, index_zone, 3,
+                                        s_rmin, s_rmax, CGNS_ENUMV(RealDouble),
+                                        3, m_dimvals, m_rmin, m_rmax,
+                                        z)) cgp_error_exit();
        if (idxGlobalZone < numZone)
          {
            free(x);
@@ -164,7 +169,7 @@ int main(int argc, const char* argv[])
    MPI_Finalize();
    if (comm_rank == 0)
      {
-       printf("\nSuccessfully wrote grid to file grid_c.cgns\n");
+       printf("\nSuccessfully wrote grid to file grid_poz_c.cgns\n");
      }
    return 0;
 }
