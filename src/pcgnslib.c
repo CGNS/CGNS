@@ -847,7 +847,6 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
 			  const cgsize_t *parent_data)
 {
     cgns_section *section;
-    cgsize_t *data, i, j, n;
     hid_t hid;
     cgsize_t rmin[2], rmax[2];
     CGNS_ENUMT(DataType_t) type;
@@ -1406,7 +1405,7 @@ int cgp_array_general_read_data(int A,
                                 CGNS_ENUMT(DataType_t) m_type,
                                 int m_numdim, const cgsize_t *m_arg_dimvals,
                                 const cgsize_t *m_rmin, const cgsize_t *m_rmax,
-                                const void *data)
+                                void *data)
 {
     int n, ier;
     hid_t hid;

@@ -140,7 +140,7 @@ CGNSDLL int cgp_array_general_read_data(int A,
     const cgsize_t *rmin, const cgsize_t *rmax,
     CGNS_ENUMT(DataType_t) m_type,
     int m_numdim, const cgsize_t *m_arg_dimvals,
-    const cgsize_t *m_rmin, const cgsize_t *m_rmax, const void *data);
+    const cgsize_t *m_rmin, const cgsize_t *m_rmax, void *data);
 
 CGNSDLL int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
 				       const cgsize_t *rmax, int nsets, ...);

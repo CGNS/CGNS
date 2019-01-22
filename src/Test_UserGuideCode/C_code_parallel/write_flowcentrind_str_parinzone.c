@@ -1,7 +1,7 @@
 /*    Program write_flowcentrind_str_parinzone   */
 /*
-Opens an existing CGNS file that contains a simple two-zone
-3-D  structured grid, and adds a flow solution (at CELL
+Opens an existing CGNS file that contains a simple
+3-D structured grid, and adds a flow solution (at CELL
 CENTERS PLUS RIND CELLS IN I AND J DIRECTIONS) to it.
 
 The CGNS grid file 'grid_piz_c.cgns' must already exist
@@ -179,8 +179,10 @@ int main(int argc, const char* argv[])
    MPI_Finalize();
    if (comm_rank == 0)
      {
-       printf("\nSuccessfully added flow solution data to file grid_piz_c.cgns\n");
-       printf("\nNote:  if the original CGNS file already had a FlowSolution_t node,");
+       printf("\nSuccessfully added flow solution data to file "
+              "grid_piz_c.cgns\n");
+       printf("\nNote:  if the original CGNS file already had a FlowSolution_t "
+              "node,");
        printf("\n          it has been overwritten\n");
      }
    return 0;

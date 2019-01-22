@@ -1,14 +1,20 @@
-/*   Program read_grid_str_paroverzone.c    */
+/*    Program read_flowcentrind_str_paroverzone   */
 /*
-Reads a simple 3-D structured grid from a CGNS file.  Each processor reads data
-from one zone (parallelism over zones).
+Opens an existing CGNS file that contains a simple two-zone
+3-D structured grid plus a flow solution (at CELL
+CENTERS PLUS RIND CELLS IN I AND J DIRECTIONS) and reads it.
+Each processor reads data from one zone (parallelism over zones).
 
-The CGNS grid file 'grid_poz_c.cgns' must already exist.
+The CGNS grid file 'grid_poz_c.cgns' must already exist
+(created using write_grid_str_paroverzone.c followed by
+write_flowcentrind_str_paroverzone.c)
 
-mpicxx read_grid_str_paroverzone.c -lcgns -lhdf5 -lsz -lz -o read_grid_str_paroverzone
-mpirun -np 2 write_grid_str_paroverzone
+Example compilation for this program is (change paths!):
+
+mpicxx read_flowcentrind_str_paroverzone.c -lcgns -lhdf5 -lsz -lz -o read_flowcentrind_str_paroverzone
+mpirun -np 2 read_flowcentrind_str_paroverzone
 */
- 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +25,7 @@ mpirun -np 2 write_grid_str_paroverzone
 int main(int argc, const char* argv[])
 {
    int n, comm_size, comm_rank;
-   int index_file, index_base, index_zone;
+   int index_file, index_base, index_zone, index_flow;
    char zonename[33];
 
    MPI_Init(&argc, (char***)(&argv));
@@ -34,6 +40,8 @@ int main(int argc, const char* argv[])
 /* get the number of zones (should be 2) */
    int numZone;
    if (cg_nzones(index_file, index_base, &numZone)) cg_error_exit();
+/* we know there is only one FlowSolution_t (real working code would check!) */
+   index_flow=1;
 
 /* COLLECTIVE READING OF FILE DATA -- each processor reads from a separate
    zone */
@@ -64,10 +72,9 @@ int main(int argc, const char* argv[])
      {
        const int idxGlobalZone = idxGlobalZoneBeg + idxLocalZone;
        cgsize_t zoneSize[3][3];
-       cgsize_t s_rmin[3], s_rmax[3], m_dimvals[3], m_rmin[3], m_rmax[3];
-       double *x = NULL;
-       double *y = NULL;
-       double *z = NULL;
+       int s_rmin[3], s_rmax[3], m_dimvals[3], m_rmin[3], m_rmax[3];
+       double *r = NULL;
+       double *p = NULL;
        int ni, nj, nk;
        /* if there is nothing for this process to read, a valid zone index must
           be provided and data array = NULL */
@@ -78,54 +85,59 @@ int main(int argc, const char* argv[])
            if (cg_zone_read(index_file, index_base, index_zone, zonename,
                             (cgsize_t*)zoneSize)) cg_error_exit();
 
-           /* allocate memory for reading */
-           ni = zoneSize[0][0];
-           nj = zoneSize[0][1];
-           nk = zoneSize[0][2];
+           /* allocate memory for reading (all rind planes) */
+           ni = zoneSize[1][0] + 2;
+           nj = zoneSize[1][1] + 2;
+           nk = zoneSize[1][2] + 2;
            const int num_vertex = ni*nj*nk;
-           x = (double*)malloc(3*num_vertex*sizeof(double));
-           y = x + num_vertex;
-           z = y + num_vertex;
-           /* shape in file space */
-           for (n = 0; n < 3; ++n)
+           r = (double*)malloc(2*num_vertex*sizeof(double));
+           p = r + num_vertex;
+           /* shape in file space (core cells start at 1) */
+           for (n = 0; n < 2; ++n)
              {
-               s_rmin[n] = 1;
-               s_rmax[n] = zoneSize[0][n];
+               s_rmin[n] = 0;
+               s_rmax[n] = zoneSize[1][n] + 1;
              }
-           /* shape in memory */
-           for (n = 0; n < 3; ++n)
+           s_rmin[2] = 1;  /* but no rind cells in k-direction */
+           s_rmax[2] = zoneSize[1][n];
+           /* shape in memory (array starts at 1)*/
+           for (n = 0; n < 2; ++n)
              {
-               m_dimvals[n] = zoneSize[0][n];
+               m_dimvals[n] = zoneSize[1][n] + 2;
                m_rmin[n]    = 1;
-               m_rmax[n]    = zoneSize[0][n];
+               m_rmax[n]    = zoneSize[1][n] + 2;
              }
+           m_dimvals[2] = zoneSize[1][n] + 2;
+           m_rmin[2]    = 2;  /* but no rind cells in k-direction */
+           m_rmax[2]    = zoneSize[1][n] + 1;
          }
-       /* the file data is defined as single but will be read as double */
-       if (cgp_coord_general_read_data(index_file, index_base, index_zone, 1,
+       if (cgp_field_general_read_data(index_file, index_base, index_zone,
+                                       index_flow, 1,
                                        s_rmin, s_rmax, CGNS_ENUMV(RealDouble),
                                        3, m_dimvals, m_rmin, m_rmax,
-                                       x)) cgp_error_exit();
-       if (cgp_coord_general_read_data(index_file, index_base, index_zone, 2,
+                                       r)) cgp_error_exit();
+       if (cgp_field_general_read_data(index_file, index_base, index_zone,
+                                       index_flow, 2,
                                        s_rmin, s_rmax, CGNS_ENUMV(RealDouble),
                                        3, m_dimvals, m_rmin, m_rmax,
-                                       y)) cgp_error_exit();
-       if (cgp_coord_general_read_data(index_file, index_base, index_zone, 3,
-                                       s_rmin, s_rmax, CGNS_ENUMV(RealDouble),
-                                       3, m_dimvals, m_rmin, m_rmax,
-                                       z)) cgp_error_exit();
+                                       p)) cgp_error_exit();
        for (n = 0; n < comm_size; ++n)
          {
            if (n == comm_rank)
              {
                if (idxGlobalZone < numZone)
                  {
-                   printf("\nProcess %d successfully read grid from file "
-                          "grid_poz_c.cgns\n", comm_rank);
-                   printf("  For example, zone %d x,y,z[8][18][16]= "
-                          "%f, %f, %f\n", index_zone,
-                          x[(8*nj + 18)*ni + 16],
-                          y[(8*nj + 18)*ni + 16],
-                          z[(8*nj + 18)*ni + 16]);
+                   int imax = zoneSize[1][0];
+                   printf("\nProcess %d successfully read flow solution from "
+                          "zone %d in file grid_poz_c.cgns\n", comm_rank,
+                          index_zone);
+                   printf("  For example, r,p[8][18][%d]= %f, %f\n", imax,
+                          r[(8*nj + 18)*ni + imax], p[(8*nj + 18)*ni + imax]);
+                   printf("         rind: r,p[8][18][ 0]= %f, %f\n",
+                          r[(8*nj + 18)*ni +  0], p[(8*nj + 18)*ni +  0]);
+                   printf("         rind: r,p[8][18][%d]= %f, %f\n", imax+1,
+                          r[(8*nj + 18)*ni + imax+1],
+                          p[(8*nj + 18)*ni + imax+1]);
                    fflush(stdout);
                  }
              }
@@ -134,11 +146,11 @@ int main(int argc, const char* argv[])
          }
        if (idxGlobalZone < numZone)
          {
-           free(x);
+           free(r);
          }
      }
 /* close CGNS file */
-   cgp_close(index_file);
+   cg_close(index_file);
    MPI_Finalize();
    if (comm_rank == 0)
      {

@@ -1,7 +1,9 @@
 /*   Program read_grid_str_parinzone.c    */
 /*
 Reads a simple 3-D structured grid from a CGNS file.  Each processor reads a
-slab of data from one zone (parallelism within a zone)
+slab of data from one zone (parallelism within a zone).
+
+The CGNS grid file 'grid_piz_c.cgns' must already exist.
 
 mpicxx read_grid_str_parinzone.c -lcgns -lhdf5 -lsz -lz -o read_grid_str_parinzone
 mpirun -np 2 write_grid_str_parinzone
@@ -36,7 +38,9 @@ int main(int argc, const char* argv[])
     if (cg_zone_read(index_file, index_base, index_zone, zonename,
                      (cgsize_t*)zoneSize)) cg_error_exit();
 
-/* partition the k-index of the zone among the processes */
+/* COLLECTIVE READING OF FILE DATA -- each processor reads a part of the zone */
+
+   /* partition the k-index of the zone among the processes */
    int kIdxBeg;  /* beginning k-index for this processor */
    int numLocalkIdx = zoneSize[0][2]/comm_size;  /* the number of k-indices
                                                     local to this process */
@@ -53,8 +57,6 @@ int main(int argc, const char* argv[])
          kIdxBeg += (comm_rank - numUnevenkIdx)*numLocalkIdx;
        }
    }
-
-/* COLLECTIVE READING OF FILE DATA -- each processor reads a part of the zone */
 
    int s_rmin[3], s_rmax[3], m_dimvals[3], m_rmin[3], m_rmax[3];
    double *x = NULL;

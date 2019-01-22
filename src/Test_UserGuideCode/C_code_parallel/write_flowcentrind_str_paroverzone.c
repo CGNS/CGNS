@@ -36,7 +36,7 @@ int main(int argc, const char* argv[])
      cg_error_exit();
 /* we know there is only one base (real working code would check!) */
    index_base = 1;
-/* get the number of zones (should be 2, real working code would check!) */
+/* set the number of zones (should be 2, real working code would check!) */
    int numZone = 2;
 
 /* CREATION OF FILE STRUCTURE -- all processors write the same information.
@@ -205,8 +205,10 @@ int main(int argc, const char* argv[])
    MPI_Finalize();
    if (comm_rank == 0)
      {
-       printf("\nSuccessfully added flow solution data to file grid_poz_c.cgns\n");
-       printf("\nNote:  if the original CGNS file already had a FlowSolution_t node,");
+       printf("\nSuccessfully added flow solution data to file "
+              "grid_poz_c.cgns\n");
+       printf("\nNote:  if the original CGNS file already had a FlowSolution_t "
+              "node,");
        printf("\n          it has been overwritten\n");
      }
    return 0;

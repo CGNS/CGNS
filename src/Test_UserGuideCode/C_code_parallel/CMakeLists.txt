@@ -31,6 +31,8 @@ set (examples
 	write_flowcentrind_str_paroverzone
 	read_grid_str_parinzone
 	read_grid_str_paroverzone
+	read_flowcentrind_str_parinzone
+	read_flowcentrind_str_paroverzone
 )
 
 # Build each test

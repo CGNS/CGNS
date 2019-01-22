@@ -96,8 +96,6 @@ int main (int argc, char *argv[])
       cgfld;
     int n, nn, np, global_nn, global_np;
 
-    cgsize_t full_size[3][3];
-
     cgsize_t i, j, k;
     cgsize_t dims[3];
     cgsize_t rmin[3];
