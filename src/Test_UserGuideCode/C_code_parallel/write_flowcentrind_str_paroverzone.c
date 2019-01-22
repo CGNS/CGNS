@@ -1,10 +1,10 @@
-/*    Program write_flowcentrind_str   */
+/*    Program write_flowcentrind_str_paroverzone   */
 /*
 Opens an existing CGNS file that contains a simple two-zone
 3-D  structured grid, and adds a flow solution (at CELL
 CENTERS PLUS RIND CELLS IN I AND J DIRECTIONS) to it.
 
-The CGNS grid file 'grid_pov_c.cgns' must already exist
+The CGNS grid file 'grid_poz_c.cgns' must already exist
 (created using write_grid_str_paroverzone.c)
 
 Example compilation for this program is (change paths!):
@@ -39,7 +39,36 @@ int main(int argc, const char* argv[])
 /* get the number of zones (should be 2, real working code would check!) */
    int numZone = 2;
 
-/* partition the zones among the processes */
+/* CREATION OF FILE STRUCTURE -- all processors write the same information.
+   Only meta-data is written to the library at this stage */
+
+   int idxZone;
+   for (idxZone = 0; idxZone != numZone; ++idxZone)
+     {
+       index_zone = idxZone + 1;
+/* define flow solution node name (user can give any name) */
+       strcpy(solname, "FlowSolution");
+/* create flow solution node (NOTE USE OF CGNS_ENUMV(CellCenter) HERE) */
+       cg_sol_write(index_file, index_base, index_zone, solname,
+                    CGNS_ENUMV(CellCenter), &index_flow);
+/* go to position within tree at FlowSolution_t node */
+       cg_goto(index_file, index_base, "Zone_t", index_zone, "FlowSolution_t",
+               index_flow, "end");
+/* write rind information under FlowSolution_t node (ilo,ihi,jlo,jhi,klo,khi) */
+       int irinddata[6] = { 1, 1, 1, 1, 0, 0 };
+       cg_rind_write(irinddata);
+       if (cgp_field_write(index_file, index_base, index_zone, index_flow,
+                           CGNS_ENUMV(RealDouble), "Density",
+                           &index_field)) cgp_error_exit();
+       if (cgp_field_write(index_file, index_base, index_zone, index_flow,
+                           CGNS_ENUMV(RealDouble), "Pressure",
+                           &index_field)) cgp_error_exit();
+     }
+
+/* COLLECTIVE WRITING OF FILE DATA -- each processor writes to a separate
+   zone */
+
+   /* partition the zones among the processes */
    int maxLocalZone;      /* the maximum number of zones on any process */
    int idxGlobalZoneBeg;  /* the global index of the first zone on this
                              process */
@@ -59,36 +88,6 @@ int main(int argc, const char* argv[])
          idxGlobalZoneBeg += (comm_rank - numUnevenZone)*numLocalZone;
        }
    }
-
-/* CREATION OF FILE STRUCTURE -- all processors write the same information.
-   Only meta-data is written to the library at this stage */
-
-   int idxZone;
-   for (idxZone = 0; idxZone != numZone; ++idxZone)
-     {
-       index_zone = idxZone + 1;
-/* define flow solution node name (user can give any name) */
-       strcpy(solname, "FlowSolution");
-/* create flow solution node (NOTE USE OF CGNS_ENUMV(CellCenter) HERE) */
-       cg_sol_write(index_file, index_base, index_zone, solname,
-                    CGNS_ENUMV(CellCenter), &index_flow);
-/* go to position within tree at FlowSolution_t node */
-       cg_goto(index_file, index_base, "Zone_t", index_zone, "FlowSolution_t",
-               index_flow, "end");
-/* write rind information under FlowSolution_t node (ilo,ihi,jlo,jhi,klo,khi) */
-
-       int irinddata[6] = { 1, 1, 1, 1, 0, 0 };
-       cg_rind_write(irinddata);
-       if (cgp_field_write(index_file, index_base, index_zone, index_flow,
-                           CGNS_ENUMV(RealDouble), "Density",
-                           &index_field)) cgp_error_exit();
-       if (cgp_field_write(index_file, index_base, index_zone, index_flow,
-                           CGNS_ENUMV(RealDouble), "Pressure",
-                           &index_field)) cgp_error_exit();
-     }
-
-/* COLLECTIVE WRITING OF FILE DATA -- each processor writes to a separate
-   zone */
 
    int idxLocalZone;
    for (idxLocalZone = 0; idxLocalZone < maxLocalZone; ++idxLocalZone)
@@ -184,6 +183,8 @@ int main(int argc, const char* argv[])
            m_rmin[2]    = 2;  /* but no rind cells in k-direction */
            m_rmax[2]    = zoneSize[1][n] + 1;
          }
+       /* if there is nothing for this process to write, a valid zone index must
+          be provided and data array = NULL */
        if (cgp_field_general_write_data(index_file, index_base, index_zone,
                                         index_flow, 1,
                                         s_rmin, s_rmax, CGNS_ENUMV(RealDouble),

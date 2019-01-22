@@ -35,28 +35,6 @@ int main(int argc, const char* argv[])
    MPI_Init(&argc, (char***)(&argv));
    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-
-/* partition the zones among the processes */
-   int maxLocalZone;      /* the maximum number of zones on any process */
-   int idxGlobalZoneBeg;  /* the global index of the first zone on this
-                             process */
-   int numLocalZone = numZone/comm_size;  /* the number of zones local to this
-                                             process */
-   {
-     int numUnevenZone = numZone - numLocalZone*comm_size;
-     maxLocalZone = numLocalZone + (numUnevenZone > 0);
-     if (comm_rank < numUnevenZone)
-       {
-         ++numLocalZone;
-         idxGlobalZoneBeg = comm_rank*numLocalZone;
-       }
-     else
-       {
-         idxGlobalZoneBeg = numUnevenZone*(numLocalZone + 1);
-         idxGlobalZoneBeg += (comm_rank - numUnevenZone)*numLocalZone;
-       }
-   }
-
    cgp_mpi_comm(MPI_COMM_WORLD);
 
 /* open CGNS file for writing */
@@ -96,6 +74,27 @@ int main(int argc, const char* argv[])
 
 /* COLLECTIVE WRITING OF FILE DATA -- each processor writes to a separate
    zone */
+
+   /* partition the zones among the processes */
+   int maxLocalZone;      /* the maximum number of zones on any process */
+   int idxGlobalZoneBeg;  /* the global index of the first zone on this
+                             process */
+   int numLocalZone = numZone/comm_size;  /* the number of zones local to this
+                                             process */
+   {
+     int numUnevenZone = numZone - numLocalZone*comm_size;
+     maxLocalZone = numLocalZone + (numUnevenZone > 0);
+     if (comm_rank < numUnevenZone)
+       {
+         ++numLocalZone;
+         idxGlobalZoneBeg = comm_rank*numLocalZone;
+       }
+     else
+       {
+         idxGlobalZoneBeg = numUnevenZone*(numLocalZone + 1);
+         idxGlobalZoneBeg += (comm_rank - numUnevenZone)*numLocalZone;
+       }
+   }
 
    int idxLocalZone;
    for (idxLocalZone = 0; idxLocalZone < maxLocalZone; ++idxLocalZone)

@@ -29,25 +29,6 @@ int main(int argc, const char* argv[])
    MPI_Init(&argc, (char***)(&argv));
    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-
-/* partition the k-index of the zone among the processes */
-   int kIdxBeg;  /* beginning k-index for this processor */
-   int numLocalkIdx = zoneSize[0][2]/comm_size;  /* the number of k-indices
-                                                    local to this process */
-   {
-     int numUnevenkIdx = zoneSize[0][2] - numLocalkIdx*comm_size;
-     if (comm_rank < numUnevenkIdx)
-       {
-         ++numLocalkIdx;
-         kIdxBeg = comm_rank*numLocalkIdx;
-       }
-     else
-       {
-         kIdxBeg = numUnevenkIdx*(numLocalkIdx + 1);
-         kIdxBeg += (comm_rank - numUnevenkIdx)*numLocalkIdx;
-       }
-   }
-
    cgp_mpi_comm(MPI_COMM_WORLD);
 
 /* open CGNS file for write */
@@ -82,6 +63,24 @@ int main(int argc, const char* argv[])
 
 /* COLLECTIVE WRITING OF FILE DATA -- each processor writes a part of the
    zone */
+
+   /* partition the k-index of the zone among the processes */
+   int kIdxBeg;  /* beginning k-index for this processor */
+   int numLocalkIdx = zoneSize[0][2]/comm_size;  /* the number of k-indices
+                                                    local to this process */
+   {
+     int numUnevenkIdx = zoneSize[0][2] - numLocalkIdx*comm_size;
+     if (comm_rank < numUnevenkIdx)
+       {
+         ++numLocalkIdx;
+         kIdxBeg = comm_rank*numLocalkIdx;
+       }
+     else
+       {
+         kIdxBeg = numUnevenkIdx*(numLocalkIdx + 1);
+         kIdxBeg += (comm_rank - numUnevenkIdx)*numLocalkIdx;
+       }
+   }
 
    cgsize_t s_rmin[3], s_rmax[3], m_dimvals[3], m_rmin[3], m_rmax[3];
    double *x = NULL;
