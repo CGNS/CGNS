@@ -881,7 +881,7 @@ CGNSDLL int cg_node_family_name_read(int N, char* node_name, char* family_name )
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write Family Hierarchy                                  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-CGNSDLL int cg_node_family_write(char *FamilyName, int *Fam);
+//CGNSDLL int cg_node_family_write(char *FamilyName, int *Fam);
   
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FamilyName_t Nodes                                *
