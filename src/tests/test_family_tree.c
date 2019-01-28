@@ -192,6 +192,12 @@ int main (int argc, char *argv[])
     if( cg_family_write(cgfile, cgtree, "/FamilyTree/Family4/Family4.3", &cgfam ))
         error_exit( "write Family4.3");
 
+    if (cg_goto(cgfile, cgtree,  NULL))
+        error_exit("go to family tree base");
+    if( cg_node_family_write( "FamilyN", &cgfam ) )
+        error_exit( "write /FamilyTree/FamilyN (node based writem follow cg_gopath) ");
+    printf("Creation of Family_t write /FamilyTree/FamilyN (node based writem follow cg_gopath) [%d]\n", cgfam );
+
     // FAMILY (TREE) NAME CREATION
 
     if (cg_goto(cgfile, cgbase, "Zone", 0, NULL))
@@ -312,7 +318,7 @@ int main (int argc, char *argv[])
     if (cg_nfamilies(cgfile, cgtree, &nfam))
         error_exit("number of families");
 
-    CHECK("cg_nfamilies", nfam == 4);
+    CHECK("cg_nfamilies", nfam == 5);
 
     // FAMILY NODE DELETION
 
