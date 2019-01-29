@@ -29,7 +29,7 @@ void error_exit (char *where)
 
 int main (int argc, char *argv[])
 {
-    int i, j, k, n, nfam, nb, ng, nnames;
+    int i, j, k, n, nfam, nb, ng, nnames, ier;
 
     int cgfile, cgbase, cgtree, cgzone, cgfam, cgcoord, cgbc, cgsr;
     float exp[5];
@@ -262,6 +262,8 @@ int main (int argc, char *argv[])
         error_exit("go to zone");
     if (cg_user_data_write("UserData"))
         error_exit("user data write");
+    if (cg_user_data_write("UserData2"))
+        error_exit("user data write2");
     if (cg_goto(cgfile, cgbase, "Zone", 0, "UserData", 0, NULL))
         error_exit("go to user data");
     if (cg_famname_write("/FamilyTree/Family4"))
@@ -408,6 +410,37 @@ int main (int argc, char *argv[])
         CHECK( "FamilyName data",      strcmp( tfamily_name, family_name ) == 0 );
     }
 
+
+    if( cg_gopath( cgfile, "/Structured/Zone/UserData") )
+        error_exit( "gopath /Structured/Zone/UserData" );
+
+    if( cg_nmultifam( &nnames ) )
+        error_exit( "nfamily names in /Structured/Zone/UserData" );
+    printf( "nfamily names in /Structured/Zone/UserData : %d\n", nnames );
+
+    if( cg_famname_read( family_name ) )
+        error_exit( "family_name read ud\n" );
+
+    printf( "family_name %s\n", family_name);
+
+    if( cg_gopath( cgfile, "/Structured/Zone/UserData2") )
+        error_exit( "gopath /Structured/Zone/UserData2" );
+
+    if( cg_nmultifam( &nnames ) )
+        error_exit( "nfamily names in /Structured/Zone/UserData2" );
+    printf( "nfamily names in /Structured/Zone/UserData2 : %d\n", nnames );
+
+    ier = cg_famname_read( family_name );
+    if( ier )
+    {
+        if( ier == CG_NODE_NOT_FOUND ) {
+            printf( "No associated FamilyName\n" );
+        }
+        else
+            error_exit( "family_name read ud2\n" );
+    }
+    else
+        printf( "family_name %s\n", family_name);
 
     TRACE( "Closing file" );
     if (cg_close(cgfile)) error_exit("cg_close");

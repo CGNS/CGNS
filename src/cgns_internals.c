@@ -386,7 +386,7 @@ int cgi_read_zone(cgns_zone *zone)
         for (n = 0; n < zone->nfamname; n++) {
             zone->famname[n].id = id[n];
             if (cgi_read_string(id[n], zone->famname[n].name, &fam)) return CG_ERROR;
-            strncpy(zone->famname[n].family, fam, 32);
+            strncpy(zone->famname[n].family, fam, (20*33)-1);
             CGNS_FREE(fam);
         }
         CGNS_FREE(id);
@@ -475,7 +475,7 @@ int cgi_read_family(cgns_family *family) /* ** FAMILY TREE ** */
         for (n = 0; n < family->nfamname; n++) {
             family->famname[n].id = id[n];
             if (cgi_read_string(id[n], family->famname[n].name, &fam)) return CG_ERROR;
-            strncpy(family->famname[n].family, fam, 32);
+            strncpy(family->famname[n].family, fam,(20*33)-1);
             CGNS_FREE(fam);
         }
         CGNS_FREE(id);
@@ -2481,7 +2481,7 @@ int cgi_read_boco(cgns_boco *boco)
         for (n = 0; n < boco->nfamname; n++) {
             boco->famname[n].id = id[n];
             if (cgi_read_string(id[n], boco->famname[n].name, &fam)) return CG_ERROR;
-            strncpy(boco->famname[n].family, fam, 32);
+            strncpy(boco->famname[n].family, fam, (20*33)-1);
             CGNS_FREE(fam);
         }
         CGNS_FREE(id);
@@ -5110,7 +5110,7 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
                 user_data[0][n].famname[i].id = idi[i];
                 if (cgi_read_string(idi[i], user_data[0][n].famname[i].name,
                         &fam)) return CG_ERROR;
-                strncpy(user_data[0][n].famname[i].family, fam, 32);
+                strncpy(user_data[0][n].famname[i].family, fam, (20*33)-1);
                 CGNS_FREE(fam);
             }
             CGNS_FREE(idi);
@@ -5332,7 +5332,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
             for (i = 0; i < reg[n].nfamname; i++) {
                 reg[n].famname[i].id = idi[i];
                 if (cgi_read_string(idi[i], reg[n].famname[i].name, &fam)) return CG_ERROR;
-                strncpy(reg[n].famname[i].family, fam, 32);
+                strncpy(reg[n].famname[i].family, fam, (20*33)-1);
                 CGNS_FREE(fam);
             }
             CGNS_FREE(idi);
@@ -11392,7 +11392,7 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
     return descr;
 }
 
-char *cgi_famname_address(int local_mode, int *ier)/* -- FAMILY TREE -- */
+char *cgi_famname_address(int local_mode, int *ier)
 {
     double *id, parent_id;
     char *family_name=0;
@@ -11424,11 +11424,6 @@ char *cgi_famname_address(int local_mode, int *ier)/* -- FAMILY TREE -- */
         cgns_subreg *subreg = (cgns_subreg *)posit->posit;
         family_name = subreg->family_name;
         parent_id = subreg->id;
-        /* Extension for FAMILY TREE ? */
-/*    } else if ( strcmp(posit->label,"Family_t")==0) {
-    	cgns_family *family = (cgns_family*)posit->posit;
-    	family_name = family->family_name;
-    	parent_id = family->id;*/
     } else {
         cgi_error("FamilyName_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
