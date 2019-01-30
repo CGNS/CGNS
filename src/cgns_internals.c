@@ -6058,14 +6058,15 @@ int cgi_write_family(double parent_id, cgns_family *family)
                 fambc->link, &fambc->id)) return CG_ERROR;
         }
         else {
+	    int i;
             dim_vals = (cgsize_t)strlen(BCTypeName[fambc->type]);
             if (cgi_new_node(family->id, fambc->name, "FamilyBC_t",
                 &fambc->id, "C1", 1, &dim_vals, BCTypeName[fambc->type]))
                 return CG_ERROR;
              /* FamilyBCDataSet_t */
-            for (n=0; n < fambc->ndataset; n++)
+            for (i=0; i < fambc->ndataset; i++)
                 if (cgi_write_dataset(fambc->id, "FamilyBCDataSet_t",
-                    &fambc->dataset[n])) return CG_ERROR;
+                    &fambc->dataset[i])) return CG_ERROR;
         }
     }
 
