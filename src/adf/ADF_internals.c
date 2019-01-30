@@ -4885,9 +4885,6 @@ double     root_ID = 0;
 int        i ;
 
 
-*error_return = NO_ERROR ;
-*found = 0;
-
 if( (file_index == NULL) || (ID == NULL) || (found == NULL) ) {
    *error_return = NULL_POINTER ;
    return ;
@@ -4897,6 +4894,9 @@ if( file_name == NULL ) {
    *error_return = NULL_STRING_POINTER ;
    return ;
    } /* end if */
+
+*error_return = NO_ERROR ;
+*found = 0;
 
 for( i=0; i<maximum_files; i++ ) {
    if( ADF_file[i].in_use && ADF_file[i].file_name != NULL ) {
