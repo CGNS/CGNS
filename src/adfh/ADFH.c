@@ -2617,7 +2617,6 @@ void ADFH_Put_Dimension_Information(const double   id,
   hsize_t old_size;
   hsize_t old_dims[ADF_MAX_DIMENSIONS];
   hsize_t new_dims[ADF_MAX_DIMENSIONS];
-  void *data = NULL;
   char new_type[3];
   hid_t xfer_prp = H5P_DEFAULT;
 
@@ -2671,7 +2670,6 @@ void ADFH_Put_Dimension_Information(const double   id,
   }
 
   if (set_str_att(hid, A_TYPE, new_type, err)) {
-    if (data != NULL) free(data);
     return;
   }
 
@@ -2712,35 +2710,6 @@ void ADFH_Put_Dimension_Information(const double   id,
 		   H5P_DEFAULT, mta_root->g_propdataset, H5P_DEFAULT);
 /*  H5Eprint1(stdout);*/
   ADFH_CHECK_HID(did);
-
-  if (did < 0 && data != NULL) {
-    free(data);
-    data = NULL;
-  }
-
-  /* write the saved data back to the data space */
-
-  if (data != NULL) {
-    mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
-    ADFH_CHECK_HID(mid);
-    if (old_size < H5Dget_storage_size(did))
-      H5Sset_extent_simple(sid, dims, old_dims, NULL);
-#ifdef BUILD_PARALLEL
-  if (pcg_mpi_initialized) {
-    xfer_prp = H5Pcreate(H5P_DATASET_XFER);
-    ADFH_CHECK_HID(xfer_prp);
-    H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
-  }
-#endif
-    H5Dwrite(did, mid, H5S_ALL, sid, xfer_prp, data);
-#ifdef BUILD_PARALLEL
-    if (pcg_mpi_initialized) {
-      H5Pclose(xfer_prp);
-    }
-#endif
-    H5Tclose(mid);
-    free(data);
-  }
 
   H5Sclose(sid);
   H5Tclose(tid);
