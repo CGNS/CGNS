@@ -10,6 +10,8 @@ CGNS_mp_cg_set_compress_f
 CGNS_mp_cg_get_compress_f
 CGNS_mp_cg_set_path_f
 CGNS_mp_cg_add_path_f
+CGNS_mp_cg_set_rind_zero_f
+CGNS_mp_cg_set_rind_core_f
 CGNS_mp_cg_get_cgio_f
 CGNS_mp_cg_root_id_f
 CGNS_mp_cg_nbases_f
