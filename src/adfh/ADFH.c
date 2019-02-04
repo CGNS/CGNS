@@ -1740,6 +1740,7 @@ void ADFH_Number_of_Children(const double  id,
     H5Gclose(hid);
   }
   nn=*number;
+  (void)nn;  /* avoid unused variable warning */
   ADFH_DEBUG(("<ADFH_Number_of_Children [%d]",nn));
 }
 
@@ -1916,7 +1917,6 @@ void ADFH_Database_Open(const char   *name,
   char *format, buff[ADF_VERSION_LENGTH+1];
   int i, pos, mode;
   hid_t g_propfileopen;
-  hid_t dataxfer_plist_id;
 
   ADFH_DEBUG(("ADFH_Database_Open [%s]",name));
 
@@ -2816,6 +2816,7 @@ void ADFH_Link(const double  pid,
   char *target;
   herr_t status;
   hid_t lid, hid;
+  (void)hid;  /* avoid unused variable warning */
 
   ADFH_DEBUG(("ADFH_Link [%s][%s][%s]",name,file,name_in_file));
 
@@ -3131,16 +3132,17 @@ void ADFH_Read_Block_Data(const double ID,
 /* ----------------------------------------------------------------- */
 
 void ADFH_Read_Data(const double ID,
-                     const cgsize_t s_start[],
-                     const cgsize_t s_end[],
-                     const cgsize_t s_stride[],
-                     const int m_num_dims,
-                     const cgsize_t m_dims[],
-                     const cgsize_t m_start[],
-                     const cgsize_t m_end[],
-                     const cgsize_t m_stride[],
-                     char *data,
-                     int *err )
+                    const cgsize_t s_start[],
+                    const cgsize_t s_end[],
+                    const cgsize_t s_stride[],
+                    const char *m_data_type,
+                    const int m_num_dims,
+                    const cgsize_t m_dims[],
+                    const cgsize_t m_start[],
+                    const cgsize_t m_end[],
+                    const cgsize_t m_stride[],
+                    char *data,
+                    int *err )
 {
   int n, ndim;
   hid_t hid, did, mid, tid, dspace, mspace;
@@ -3270,7 +3272,12 @@ void ADFH_Read_Data(const double ID,
 
   tid = H5Dget_type(did);
   ADFH_CHECK_HID(tid);
-  mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
+  if (m_data_type) {
+    mid = to_HDF_data_type(m_data_type);
+  }
+  else {
+    mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
+  }
   ADFH_CHECK_HID(mid);
 
 #ifdef BUILD_PARALLEL
@@ -3306,6 +3313,7 @@ void ADFH_Read_Data(const double ID,
 /* ----------------------------------------------------------------- */
 
 void ADFH_Read_All_Data(const double  id,
+                        const char   *m_data_type,
                         char         *data,
                         int          *err)
 {
@@ -3321,7 +3329,12 @@ void ADFH_Read_All_Data(const double  id,
     ADFH_CHECK_HID(did);
     tid = H5Dget_type(did);
     ADFH_CHECK_HID(tid);
-    mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
+    if (m_data_type) {
+      mid = to_HDF_data_type(m_data_type);
+    }
+    else {
+      mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
+    }
     ADFH_CHECK_HID(mid);
 #ifdef BUILD_PARALLEL
     if (pcg_mpi_initialized) {
@@ -3457,16 +3470,17 @@ void ADFH_Write_Block_Data(const double ID,
 /* ----------------------------------------------------------------- */
 
 void ADFH_Write_Data(const double ID,
-                      const cgsize_t s_start[],
-                      const cgsize_t s_end[],
-                      const cgsize_t s_stride[],
-                      const int m_num_dims,
-                      const cgsize_t m_dims[],
-                      const cgsize_t m_start[],
-                      const cgsize_t m_end[],
-                      const cgsize_t m_stride[],
-                      const char *data,
-                      int *err )
+                     const cgsize_t s_start[],
+                     const cgsize_t s_end[],
+                     const cgsize_t s_stride[],
+                     const char *m_data_type,
+                     const int m_num_dims,
+                     const cgsize_t m_dims[],
+                     const cgsize_t m_start[],
+                     const cgsize_t m_end[],
+                     const cgsize_t m_stride[],
+                     const char *data,
+                     int *err )
 {
   int n, ndim;
   hid_t hid, did, mid, tid, dspace, mspace;
@@ -3598,7 +3612,12 @@ void ADFH_Write_Data(const double ID,
   ADFH_CHECK_HID(did);
   tid = H5Dget_type(did);
   ADFH_CHECK_HID(tid);
-  mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
+  if (m_data_type) {
+    mid = to_HDF_data_type(m_data_type);
+  }
+  else {
+    mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
+  }
   ADFH_CHECK_HID(mid);
 
 #ifdef BUILD_PARALLEL
@@ -3633,6 +3652,7 @@ void ADFH_Write_Data(const double ID,
 /* ----------------------------------------------------------------- */
 
 void ADFH_Write_All_Data(const double  id,
+                         const char   *m_data_type,
                          const char   *data,
                          int          *err)
 {
@@ -3658,7 +3678,12 @@ void ADFH_Write_All_Data(const double  id,
     ADFH_CHECK_HID(did);
     tid = H5Dget_type(did);
     ADFH_CHECK_HID(tid);
-    mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
+    if (m_data_type) {
+      mid = to_HDF_data_type(m_data_type);
+    }
+    else {
+      mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
+    }
     ADFH_CHECK_HID(mid);
 #ifdef BUILD_PARALLEL
     if (pcg_mpi_initialized) {

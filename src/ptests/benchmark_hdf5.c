@@ -46,9 +46,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-
+#include <stdint.h>
+#include <limits.h>
 #include "pcgnslib.h"
 #include "mpi.h"
+
+#if SIZE_MAX == UCHAR_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_CHAR
+#elif SIZE_MAX == USHRT_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_SHORT
+#elif SIZE_MAX == UINT_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED
+#elif SIZE_MAX == ULONG_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_LONG
+#elif SIZE_MAX == ULLONG_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_LONG_LONG
+#else
+   #error "size_t size not found"
+#endif
 
 #define false 0
 #define true 1
@@ -117,14 +132,34 @@ double xtiming[15], timing[15], timingMin[15], timingMax[15];
 int piomode[2] = {0, 1};
 int piomode_i;
 
+
+int read_inputs(int* argc, char*** argv) {
+  int k;
+
+  if(comm_rank==0) {
+    for(k=1;k<*argc;k++) {
+      if(strcmp((*argv)[k],"-nelem")==0) {
+        k++;
+        sscanf((*argv)[k],"%zu",&Nelem);
+      }
+    }
+  }
+  MPI_Bcast(&Nelem, 1, MPI_SIZE_T, 0, MPI_COMM_WORLD);
+  return 0;
+}
+
 int initialize(int* argc, char** argv[]) {
-	MPI_Init(argc,argv);
-	MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-	MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-	MPI_Info_create(&info);
-	MPI_Info_set(info, "striping_unit", "8388608");
-	/* or whatever your GPFS block size actually is*/
-	return 0;
+  MPI_Init(argc,argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+  MPI_Info_create(&info);
+  MPI_Info_set(info, "striping_unit", "8388608");
+  /* or whatever your GPFS block size actually is*/
+
+  if(*argc > 2) 
+    read_inputs(argc,argv);
+  
+  return 0;
 }
 
 int c_double_eq(double a, double b) {
@@ -778,6 +813,7 @@ int main(int argc, char* argv[]) {
     if (fid == NULL) {
       printf("Error opening timing file!\n");
     } else {
+      fprintf(fid,"#nelem = %zu \n",Nelem);
       fprintf(fid,"#nprocs, total time, write: coord., elem., field, array, read: coord., elem., field, array, MB: coord, elem, field, array \n%d", comm_size);
 
       for ( k = 0; k < 15; k++) {

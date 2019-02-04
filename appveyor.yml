@@ -29,13 +29,15 @@ skip_tags: true
 #---------------------------------#
 
 environment:
+  HDF5_1_8_VER: 1.8.21
+  HDF5_1_10_VER: 1.10.1
   matrix:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.8.20/cmake"
-    HDF_VER: "1.8.20"
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_1_8_VER%/cmake"
+    HDF_VER: %HDF5_1_8_VER%
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON 
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.10.1/cmake"
-    HDF_VER: "1.10.1"
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_1_10_VER%/cmake"
+    HDF_VER: %HDF5_1_10_VER%
 
 # Operating system (build VM template)
 os: Visual Studio 2015
@@ -61,18 +63,18 @@ install:
   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
   - mkdir 1.8
   - cd 1.8
-  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/binaries/windows/hdf5-1.8.20-Std-win10_64-vs14.zip
-  - ps: Expand-Archive hdf5-1.8.20-Std-win10_64-vs14.zip -DestinationPath .
+  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/relbinaries/windows/hdf5-%HDF5_1_8_VER%-Std-win10_64-vs14.zip
+  - ps: Expand-Archive hdf5-%HDF5_1_8_VER%-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-1.8.20-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-%HDF5_1_8_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
   - mkdir 1.10
   - cd 1.10
-  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf5110/binaries/windows/hdf5-1.10.1-Std-win10_64-vs14.zip
-  - ps: Expand-Archive hdf5-1.10.1-Std-win10_64-vs14.zip -DestinationPath .
+  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf5110/relbinaries/windows/hdf5-%HDF5_1_10_VER%-Std-win10_64-vs14.zip
+  - ps: Expand-Archive hdf5-%HDF5_1_10_VER%-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-1.10.1-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-%HDF5_1_10_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
 
