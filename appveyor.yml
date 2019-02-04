@@ -37,7 +37,7 @@ environment:
     HDF5_VER: 1.8.21
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
-    HDF5_VER:  %1_10%
+    HDF5_VER:  1.10.1
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
 
 # Operating system (build VM template)
