@@ -79,7 +79,7 @@ install:
   - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf5110/relbinaries/windows/hdf5-%HDF5_1_10_VER%-Std-win10_64-vs14.zip
   - ps: Expand-Archive hdf5-1.10.4-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-*1_10-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-%HDF5_1_10_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
 
