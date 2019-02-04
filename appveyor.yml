@@ -30,13 +30,17 @@ skip_tags: true
 
 environment:
   1_8: &1_8 1.8.21
-  1_10: &1_10 1.10.1
+  1_10: &1_10 1.10.4
   matrix:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
     HDF5_VER: *1_8
+    HDF5_1_8_VER: *1_8   
+    HDF5_1_10_VER: *1_10  
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
     HDF5_VER: *1_10
+    HDF5_1_8_VER: *1_8   
+    HDF5_1_10_VER: *1_10  
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
 
 # Operating system (build VM template)
@@ -63,10 +67,10 @@ install:
   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
   - mkdir 1.8
   - cd 1.8
-  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/relbinaries/windows/hdf5-*1_8-Std-win10_64-vs14.zip
-  - ps: Expand-Archive hdf5-*1_8-Std-win10_64-vs14.zip -DestinationPath .
+  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/relbinaries/windows/hdf5-%HDF5_1_8_VER%-Std-win10_64-vs14.zip
+  - ps: Expand-Archive hdf5-%HDF5_1_8_VER%-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-*1_8-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-%HDF5_1_8_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
   - mkdir 1.10
