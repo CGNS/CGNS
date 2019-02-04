@@ -61,7 +61,7 @@ install:
   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
   - mkdir 1.8
   - cd 1.8
-  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/binaries/windows/hdf5-1.8.20-Std-win10_64-vs14.zip
+  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/relbinaries/windows/hdf5-1.8.21-Std-win10_64-vs14.zip
   - ps: Expand-Archive hdf5-1.8.20-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
   - msiexec /i HDF5-1.8.20-win64.msi /quiet /qn /norestart /log install.log
@@ -69,7 +69,7 @@ install:
   - cd ..\..
   - mkdir 1.10
   - cd 1.10
-  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf5110/binaries/windows/hdf5-1.10.1-Std-win10_64-vs14.zip
+  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf5110/relbinaries/windows/hdf5-1.10.1-Std-win10_64-vs14.zip
   - ps: Expand-Archive hdf5-1.10.1-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
   - msiexec /i HDF5-1.10.1-win64.msi /quiet /qn /norestart /log install.log
