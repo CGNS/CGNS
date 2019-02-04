@@ -67,8 +67,9 @@ install:
   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
   - mkdir 1.8
   - cd 1.8
+  - set HDF5_1_8=%HDF5_1_8_VER%
   - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/relbinaries/windows/hdf5-%HDF5_1_8_VER%-Std-win10_64-vs14.zip
-  - ps: Expand-Archive hdf5-1.8.21-Std-win10_64-vs14.zip -DestinationPath .
+  - ps: Expand-Archive hdf5-$HDF5_1_8-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
   - msiexec /i HDF5-%HDF5_1_8_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
