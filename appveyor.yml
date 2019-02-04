@@ -31,15 +31,15 @@ skip_tags: true
 environment:
   matrix:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_1_8_VER%/cmake"
     HDF5_1_8_VER: 1.8.21
     HDF5_1_10_VER: 1.10.1
     HDF_VER: %HDF5_1_8_VER%
-  - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON 
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_1_10_VER%/cmake"
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_1_8_VER%/cmake"
+  - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
     HDF5_1_8_VER: 1.8.21
     HDF5_1_10_VER: 1.10.1
     HDF_VER: %HDF5_1_10_VER%
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_1_10_VER%/cmake"
 
 # Operating system (build VM template)
 os: Visual Studio 2015
