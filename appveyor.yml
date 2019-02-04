@@ -28,7 +28,6 @@ skip_tags: true
 #    environment configuration    #
 #---------------------------------#
 
-
 environment:
   1_8: &1_8 1.8.21
   1_10: &1_10 1.10.1
@@ -64,18 +63,18 @@ install:
   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
   - mkdir 1.8
   - cd 1.8
-  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/relbinaries/windows/hdf5-%1_8%-Std-win10_64-vs14.zip
-  - ps: Expand-Archive hdf5-%1_8%-Std-win10_64-vs14.zip -DestinationPath .
+  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/relbinaries/windows/hdf5-*1_8-Std-win10_64-vs14.zip
+  - ps: Expand-Archive hdf5-*1_8-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-%1_8%-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-*1_8-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
   - mkdir 1.10
   - cd 1.10
-  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf5110/relbinaries/windows/hdf5-%1_10%-Std-win10_64-vs14.zip
-  - ps: Expand-Archive hdf5-%1_10%-Std-win10_64-vs14.zip -DestinationPath .
+  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf5110/relbinaries/windows/hdf5-*1_10-Std-win10_64-vs14.zip
+  - ps: Expand-Archive hdf5-*1_10-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-%1_10%-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-*1_10-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
 
