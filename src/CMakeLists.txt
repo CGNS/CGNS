@@ -236,6 +236,11 @@ CHECK_FORTRAN_FEATURE(Fortran2008
            END FUNCTION bind2
          END INTERFACE
        END MODULE test
+
+       PROGRAM main
+         USE test
+         IMPLICIT NONE
+       END PROGRAM
   "
   CHECK_FORTRAN_2008
 )
@@ -532,6 +537,8 @@ if (CGNS_ENABLE_FORTRAN)
 else (CGNS_ENABLE_FORTRAN)
   add_library(cgns_static STATIC ${cgns_FILES})
 endif (CGNS_ENABLE_FORTRAN)
+# Needed to work around a CMake > 3.8 bug on Windows with MSVS and Intel Fortran
+set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
 
 
 # Build a shared version of the library
@@ -605,8 +612,13 @@ set(headers
   ${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs)
 
 if (CGNS_ENABLE_FORTRAN)
-  list(APPEND headers
-    ${CMAKE_CURRENT_BINARY_DIR}/cgns.mod)
+  if(DEFINED CMAKE_Fortran_MODULE_DIRECTORY)
+    list(APPEND headers
+      ${CMAKE_Fortran_MODULE_DIRECTORY}/cgns.mod)
+  else()
+    list(APPEND headers
+      $<TARGET_FILE_DIR:cgns_static>/cgns.mod)
+  endif()
 endif (CGNS_ENABLE_FORTRAN)
 
 if (CGNS_ENABLE_PARALLEL)
@@ -642,6 +654,7 @@ if (CGNS_ENABLE_TESTS)
   add_subdirectory(Test_UserGuideCode/C_code)
   if (CGNS_ENABLE_PARALLEL)
     add_subdirectory(ptests)
+    add_subdirectory(Test_UserGuideCode/C_code_parallel)
   endif (CGNS_ENABLE_PARALLEL)
 endif (CGNS_ENABLE_TESTS)
 

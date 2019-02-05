@@ -367,6 +367,13 @@ CGEXTERN int cgio_read_all_data (
     void *data
 );
 
+CGEXTERN int cgio_read_all_data_type (
+    int cgio_num,
+    double id,
+    const char *m_data_type,
+    void *data
+);
+
 CGEXTERN int cgio_read_block_data (
     int cgio_num,
     double id,
@@ -381,6 +388,21 @@ CGEXTERN int cgio_read_data (
     const cgsize_t *s_start,
     const cgsize_t *s_end,
     const cgsize_t *s_stride,
+    int m_num_dims,
+    const cgsize_t *m_dims,
+    const cgsize_t *m_start,
+    const cgsize_t *m_end,
+    const cgsize_t *m_stride,
+    void *data
+);
+
+CGEXTERN int cgio_read_data_type (
+    int cgio_num,
+    double id,
+    const cgsize_t *s_start,
+    const cgsize_t *s_end,
+    const cgsize_t *s_stride,
+    const char *m_data_type,
     int m_num_dims,
     const cgsize_t *m_dims,
     const cgsize_t *m_start,
@@ -418,6 +440,13 @@ CGEXTERN int cgio_write_all_data (
     const void *data
 );
 
+CGEXTERN int cgio_write_all_data_type (
+    int cgio_num,
+    double id,
+    const char *m_data_type,
+    const void *data
+);
+
 CGEXTERN int cgio_write_block_data (
     int cgio_num,
     double id,
@@ -432,6 +461,21 @@ CGEXTERN int cgio_write_data (
     const cgsize_t *s_start,
     const cgsize_t *s_end,
     const cgsize_t *s_stride,
+    int m_num_dims,
+    const cgsize_t *m_dims,
+    const cgsize_t *m_start,
+    const cgsize_t *m_end,
+    const cgsize_t *m_stride,
+    const void *data
+);
+
+CGEXTERN int cgio_write_data_type (
+    int cgio_num,
+    double id,
+    const cgsize_t *s_start,
+    const cgsize_t *s_end,
+    const cgsize_t *s_stride,
+    const char *m_data_type,
     int m_num_dims,
     const cgsize_t *m_dims,
     const cgsize_t *m_start,
