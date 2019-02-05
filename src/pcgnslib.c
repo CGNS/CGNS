@@ -551,10 +551,10 @@ int cgp_coord_general_write_data(int fn, int B, int Z, int C,
     cgsize_t stride[CGIO_MAX_DIMENSIONS];
     if (coords) {
         cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
-        for (int n=0; n<s_numdim; n++) {
+        for (n=0; n<s_numdim; n++) {
             s_dimvals[n] = zcoor->coord[C-1].dim_vals[n];
         }
-        for (int n=0; n<m_numdim; n++) {
+        for (n=0; n<m_numdim; n++) {
             m_dimvals[n] = m_arg_dimvals[n];
         }
          /* verify the ranges provided and set s_rmin and s_rmax giving internal
@@ -689,10 +689,10 @@ int cgp_coord_general_read_data(int fn, int B, int Z, int C,
     cgsize_t stride[CGIO_MAX_DIMENSIONS];
     if (coords) {
         cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
-        for (int n=0; n<s_numdim; n++) {
+        for (n=0; n<s_numdim; n++) {
             s_dimvals[n] = zcoor->coord[C-1].dim_vals[n];
         }
-        for (int n=0; n<m_numdim; n++) {
+        for (n=0; n<m_numdim; n++) {
             m_dimvals[n] = m_arg_dimvals[n];
         }
          /* verify the ranges provided and set s_rmin and s_rmax giving internal
@@ -1049,10 +1049,10 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
     cgsize_t stride[CGIO_MAX_DIMENSIONS];
     if (data) {
         cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
-        for (int n=0; n<s_numdim; n++) {
+        for (n=0; n<s_numdim; n++) {
             s_dimvals[n] = field->dim_vals[n];
         }
-        for (int n=0; n<m_numdim; n++) {
+        for (n=0; n<m_numdim; n++) {
             m_dimvals[n] = m_arg_dimvals[n];
         }
          /* verify the ranges provided and set s_rmin and s_rmax giving internal
@@ -1172,10 +1172,10 @@ int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
     cgsize_t stride[CGIO_MAX_DIMENSIONS];
     if (data) {
         cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
-        for (int n=0; n<s_numdim; n++) {
+        for (n=0; n<s_numdim; n++) {
             s_dimvals[n] = field->dim_vals[n];
         }
-        for (int n=0; n<m_numdim; n++) {
+        for (n=0; n<m_numdim; n++) {
             m_dimvals[n] = m_arg_dimvals[n];
         }
          /* verify the ranges provided and set s_rmin and s_rmax giving internal
@@ -1314,10 +1314,10 @@ int cgp_array_general_write_data(int A,
     cgsize_t stride[CGIO_MAX_DIMENSIONS];
     if (data) {
         cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
-        for (int n=0; n<s_numdim; n++) {
+        for (n=0; n<s_numdim; n++) {
             s_dimvals[n] = array->dim_vals[n];
         }
-        for (int n=0; n<m_numdim; n++) {
+        for (n=0; n<m_numdim; n++) {
             m_dimvals[n] = m_arg_dimvals[n];
         }
 
@@ -1426,10 +1426,10 @@ int cgp_array_general_read_data(int A,
     cgsize_t stride[CGIO_MAX_DIMENSIONS];
     if (data) {
         cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
-        for (int n=0; n<s_numdim; n++) {
+        for (n=0; n<s_numdim; n++) {
             s_dimvals[n] = array->dim_vals[n];
         }
-        for (int n=0; n<m_numdim; n++) {
+        for (n=0; n<m_numdim; n++) {
             m_dimvals[n] = m_arg_dimvals[n];
         }
 
