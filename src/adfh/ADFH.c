@@ -46,6 +46,7 @@ freely, subject to the following restrictions:
 #include "mpi.h"
 extern int pcg_mpi_initialized;
 extern MPI_Info pcg_mpi_info;
+extern hid_t default_pio_mode;
 #endif
 
 #define ADFH_FORCE_ID_CLOSE
@@ -3255,7 +3256,7 @@ void ADFH_Read_Data(const double ID,
   if (H5Pget_driver(fapl) == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
-    H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+    H5Pset_dxpl_mpio(xfer_prp, default_pio_mode);
   }
 #endif
 
@@ -3595,7 +3596,7 @@ void ADFH_Write_Data(const double ID,
   if (H5Pget_driver(fapl) == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
-    H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
+    H5Pset_dxpl_mpio(xfer_prp, default_pio_mode);
   }
 #endif
 

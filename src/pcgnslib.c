@@ -45,7 +45,7 @@ extern char hdf5_access[64];
 /* flag indicating if mpi_initialized was called */
 extern int pcg_mpi_initialized;
 
-static hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
+hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
 
 extern int cgns_filetype;
 extern void* cgns_rindindex;

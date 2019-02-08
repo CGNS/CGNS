@@ -72,8 +72,10 @@ int comm_size;
 int comm_rank;
 MPI_Info info;
 
+
+int piomode = CGP_COLLECTIVE; /* DEFAULT */ 
 /* cgsize_t Nelem = 33554432; */
-cgsize_t Nelem = 65536;
+cgsize_t Nelem = 65536; /* DEFAULT */
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
@@ -129,10 +131,6 @@ double t0, t1, t2;
  */
 double xtiming[15], timing[15], timingMin[15], timingMax[15];
 
-int piomode[2] = {0, 1};
-int piomode_i;
-
-
 int read_inputs(int* argc, char*** argv) {
   int k;
 
@@ -142,9 +140,15 @@ int read_inputs(int* argc, char*** argv) {
         k++;
         sscanf((*argv)[k],"%zu",&Nelem);
       }
+      if(strcmp((*argv)[k],"-ind")==0) {
+        piomode = CGP_INDEPENDENT; 
+      }
+
     }
   }
   MPI_Bcast(&Nelem, 1, MPI_SIZE_T, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&piomode, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
   return 0;
 }
 
@@ -185,14 +189,15 @@ int main(int argc, char* argv[]) {
 
   size_t Mb_coor, Mb_elem, Mb_field, Mb_array;
 
+  const char* PIOMODE[] = {"IND", "COLL"};
+
   /* parameters */
-  piomode_i = 1;
   debug = false;
 
   t0 = MPI_Wtime(); /* Timer */
 
   err = (int)cgp_mpi_info(info);
-  err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode_i);
+  err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode);
 
   Nnodes = Nelem*NodePerElem;
 
@@ -808,7 +813,7 @@ int main(int argc, char* argv[]) {
   MPI_Reduce(&xtiming, &timingMax, 15, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   if(comm_rank==0) {
-    sprintf(fname, "timing_%06d_%d.dat", comm_size, piomode_i+1);
+    sprintf(fname, "timing_%06d_%s.dat", comm_size, PIOMODE[piomode]);
     FILE *fid = fopen(fname, "w");
     if (fid == NULL) {
       printf("Error opening timing file!\n");
