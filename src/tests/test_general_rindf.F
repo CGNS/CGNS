@@ -526,8 +526,6 @@ c     verify again by only reading the 4 locations
         stop
       endif
 
-      return
-
 c- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
       contains
