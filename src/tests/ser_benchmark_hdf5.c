@@ -12,10 +12,8 @@
 ! The value of nnY is the number of nodes along the Y direction. 
 !
 */
-#ifndef __SUNPRO_C
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 500
-#endif
 #endif
 #include <stdio.h>
 #include <stdlib.h>
