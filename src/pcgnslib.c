@@ -421,7 +421,7 @@ int cgp_open(const char *filename, int mode, int *fn)
 
     /* Flag is true if MPI_Init or MPI_Init_thread has been called and false otherwise. */
     pcg_mpi_initialized = 0;
-    if (mode < 10) {
+    if (mode < CG_MODE_READ_SERIAL) {
        // Parallel 
        /* check if we are actually running a parallel program */
        MPI_Initialized(&pcg_mpi_initialized);
@@ -432,7 +432,7 @@ int cgp_open(const char *filename, int mode, int *fn)
      else {
 	// Access the file serially
         strcpy(hdf5_access,"NATIVE");
-        mode = mode - 10;
+        mode = mode - CG_MODE_READ_SERIAL;
      }
 
     ierr = cg_set_file_type(CG_FILE_HDF5);
