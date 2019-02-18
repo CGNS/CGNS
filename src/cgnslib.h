@@ -91,6 +91,10 @@
 #define CG_MODE_WRITE	1
 #define CG_MODE_MODIFY  2
 #define CG_MODE_CLOSED  3
+#define CG_MODE_READ_SERIAL   10
+#define CG_MODE_WRITE_SERIAL  11
+#define CG_MODE_MODIFY_SERIAL 12
+
 
 /* file types */
 
