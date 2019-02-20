@@ -22,8 +22,8 @@ CALL = \
 	test_goto$(EXE) \
 	test_multifam$(EXE) \
 	test_partial$(EXE) \
-	test_general_rind$(EXE) \
 	test_general_reshape$(EXE) \
+	test_general_rind$(EXE) \
 	test_ver31$(EXE) \
 	write_array$(EXE) \
 	write_links$(EXE) \
@@ -127,6 +127,12 @@ test_exts$(EXE) : test_exts.c $(CGNSLIB)
 
 test_partial$(EXE) : test_partial.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_partial.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_general_reshape$(EXE) : test_general_reshape.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_general_reshape.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
