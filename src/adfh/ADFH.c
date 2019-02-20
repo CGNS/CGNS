@@ -2386,9 +2386,13 @@ void ADFH_Database_Close(const double  root,
 
   ADFH_DEBUG(("ADFH_Database_Close 1"));
   idx=0;
-  for (n = 0; n < ADFH_MAXIMUM_FILES; n++)  idx+=mta_root->g_files[n];
+  for (n = 0; n < ADFH_MAXIMUM_FILES; n++) {
+    if (mta_root->g_files[n]) {
+      idx++;
+    }
+  }
   /* if no more files open, close properties and free MTA */
-  if (!idx) {
+  if (idx == 0) {
     H5Pclose(mta_root->g_proplink);
     H5Pclose(mta_root->g_propgroupcreate);
     H5Pclose(mta_root->g_propdataset);
