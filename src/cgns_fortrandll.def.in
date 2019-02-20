@@ -10,6 +10,8 @@ CGNS_mp_cg_set_compress_f
 CGNS_mp_cg_get_compress_f
 CGNS_mp_cg_set_path_f
 CGNS_mp_cg_add_path_f
+CGNS_mp_cg_set_rind_zero_f
+CGNS_mp_cg_set_rind_core_f
 CGNS_mp_cg_get_cgio_f
 CGNS_mp_cg_root_id_f
 CGNS_mp_cg_nbases_f
@@ -204,6 +206,10 @@ CGNS_mp_cg_get_error_f
 CGNS_mp_cg_error_exit_f
 CGNS_mp_cg_error_print_f
 CGNS_mp_cg_exit_on_error_f
+CGNS_mp_cgio_set_dimensions_f_0
+CGNS_mp_cgio_set_dimensions_f_1
+CGNS_mp_cgio_get_dimensions_f_0
+CGNS_mp_cgio_get_dimensions_f_1
 CGNS_mp_cgp_mpi_comm_f
 CGNS_mp_cgp_pio_mode_f
 CGNS_mp_cgp_queue_set_f

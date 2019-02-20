@@ -29,13 +29,18 @@ skip_tags: true
 #---------------------------------#
 
 environment:
+  global:
+    1_8: &1_8 1.8.21
+    1_10: &1_10 1.10.4
+    HDF5_1_8_VER: *1_8   
+    HDF5_1_10_VER: *1_10
   matrix:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.8.20/cmake"
-    HDF_VER: "1.8.20"
-  - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON 
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/1.10.1/cmake"
-    HDF_VER: "1.10.1"
+    HDF5_VER: *1_8
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
+  - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
+    HDF5_VER: *1_10
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
 
 # Operating system (build VM template)
 os: Visual Studio 2015
@@ -61,18 +66,20 @@ install:
   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
   - mkdir 1.8
   - cd 1.8
-  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/binaries/windows/hdf5-1.8.20-Std-win10_64-vs14.zip
-  - ps: Expand-Archive hdf5-1.8.20-Std-win10_64-vs14.zip -DestinationPath .
+  - set HDF5_1_8_VER=%HDF5_1_8_VER%
+  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/relbinaries/windows/hdf5-%HDF5_1_8_VER%-Std-win10_64-vs14.zip
+  - ps: Expand-Archive hdf5-$($env:HDF5_1_8_VER)-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-1.8.20-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-%HDF5_1_8_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
   - mkdir 1.10
   - cd 1.10
-  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf5110/binaries/windows/hdf5-1.10.1-Std-win10_64-vs14.zip
-  - ps: Expand-Archive hdf5-1.10.1-Std-win10_64-vs14.zip -DestinationPath .
+  - set HDF5_1_10=%HDF5_1_10_VER%
+  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf5110/relbinaries/windows/hdf5-%HDF5_1_10_VER%-Std-win10_64-vs14.zip
+  - ps: Expand-Archive hdf5-$($env:HDF5_1_10_VER)-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-1.10.1-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-%HDF5_1_10_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
 
@@ -98,9 +105,9 @@ before_build:
   - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
   - cmake --version
-  - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF_VER%/cmake
+  - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
   - cmake -G "Visual Studio 14 Win64" ^
-     %build_opts% ^
+     %build_opt% ^
      -D CMAKE_C_FLAGS:STRING="" ^
      -D CMAKE_BUILD_TYPE:STRING=Release ^
      -D HDF5_NEED_ZLIB:BOOL=ON ^
