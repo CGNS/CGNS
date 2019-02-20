@@ -187,7 +187,7 @@ int main (int argc, char *argv[])
     /* write solution with rind, and the solution dimensions come from the zone
      * sizes */
 
-    if (cg_sol_write(cgfile, cgbase, cgzone, "VertexSolution", Vertex,
+    if (cg_sol_write(cgfile, cgbase, cgzone, "VertexSolution", CGNS_ENUMV(Vertex),
                      &cgsol) ||
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "FlowSolution_t", cgsol, "end") ||
