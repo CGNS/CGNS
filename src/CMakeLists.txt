@@ -8,7 +8,7 @@ if (WIN32)
 endif (WIN32)
 
 # Include the local directory
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (CGNS_ENABLE_HDF5)
   add_definitions(-DBUILD_HDF5)
   if (WIN32)
@@ -484,7 +484,7 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 ###########
 # Library #
