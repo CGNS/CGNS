@@ -145,7 +145,7 @@ int main (int argc, char *argv[])
     /* write base and zone */
 
     if (cg_base_write(cgfile, "Structured", CellDim, PhyDim, &cgbase) ||
-        cg_zone_write(cgfile, cgbase, "Zone", (cgsize_t*)size, Structured,
+        cg_zone_write(cgfile, cgbase, "Zone", (cgsize_t*)size, CGNS_ENUMV(Structured),
                       &cgzone))
         cg_error_exit();
 
@@ -171,16 +171,16 @@ int main (int argc, char *argv[])
             "GridCoordinates_t", cggrid, "end") ||
         cg_rind_write((int*)rind) ||
 	cg_coord_general_write(cgfile, cgbase, cgzone, "CoordinateX",
-                               RealSingle, rmin, rmax,
-                               RealSingle, 3, dims, m_rmin, m_rmax,
+                               CGNS_ENUMV(RealSingle), rmin, rmax,
+                               CGNS_ENUMV(RealSingle), 3, dims, m_rmin, m_rmax,
                                xcoord, &cgcoord) ||
 	cg_coord_general_write(cgfile, cgbase, cgzone, "CoordinateY",
-                               RealSingle, rmin, rmax,
-                               RealSingle, 3, dims, m_rmin, m_rmax,
+                               CGNS_ENUMV(RealSingle), rmin, rmax,
+                               CGNS_ENUMV(RealSingle), 3, dims, m_rmin, m_rmax,
                                ycoord, &cgcoord) ||
 	cg_coord_general_write(cgfile, cgbase, cgzone, "CoordinateZ",
-                               RealSingle, rmin, rmax,
-                               RealSingle, 3, dims, m_rmin, m_rmax,
+                               CGNS_ENUMV(RealSingle), rmin, rmax,
+                               CGNS_ENUMV(RealSingle), 3, dims, m_rmin, m_rmax,
                                zcoord, &cgcoord))
         cg_error_exit();
 
@@ -193,8 +193,8 @@ int main (int argc, char *argv[])
             "FlowSolution_t", cgsol, "end") ||
         cg_rind_write((int*)rind) ||
 	cg_field_general_write(cgfile, cgbase, cgzone, cgsol, "Density",
-                               RealSingle, rmin, rmax,
-                               RealSingle, 3, dims, m_rmin, m_rmax,
+                               CGNS_ENUMV(RealSingle), rmin, rmax,
+                               CGNS_ENUMV(RealSingle), 3, dims, m_rmin, m_rmax,
                                solution, &cgfld))
         cg_error_exit();
 
@@ -225,7 +225,7 @@ int main (int argc, char *argv[])
 
     /* X */
     if (cg_coord_general_read(cgfile, cgbase, cgzone, "CoordinateX",
-                              rmin, rmax, RealSingle, 3, dims, m_rmin, m_rmax,
+                              rmin, rmax, CGNS_ENUMV(RealSingle), 3, dims, m_rmin, m_rmax,
                               fbuf))
         cg_error_exit();
     np = 0;
@@ -241,7 +241,7 @@ int main (int argc, char *argv[])
 
     /* Y */
     if (cg_coord_general_read(cgfile, cgbase, cgzone, "CoordinateY",
-                              rmin, rmax, RealSingle, 3, dims, m_rmin, m_rmax,
+                              rmin, rmax, CGNS_ENUMV(RealSingle), 3, dims, m_rmin, m_rmax,
                               fbuf))
         cg_error_exit();
     np = 0;
@@ -257,7 +257,7 @@ int main (int argc, char *argv[])
 
     /* Z */
     if (cg_coord_general_read(cgfile, cgbase, cgzone, "CoordinateZ",
-                              rmin, rmax, RealSingle, 3, dims, m_rmin, m_rmax,
+                              rmin, rmax, CGNS_ENUMV(RealSingle), 3, dims, m_rmin, m_rmax,
                               fbuf))
         cg_error_exit();
     np = 0;
@@ -281,7 +281,7 @@ int main (int argc, char *argv[])
     }
 
     if (cg_field_general_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                              rmin, rmax, RealSingle, 3, dims, m_rmin, m_rmax,
+                              rmin, rmax, CGNS_ENUMV(RealSingle), 3, dims, m_rmin, m_rmax,
                               fbuf))
         cg_error_exit();
 
@@ -317,7 +317,7 @@ int main (int argc, char *argv[])
         cg_error_exit();
 
     /* write the field using high-level routine */
-    if (cg_field_write(cgfile, cgbase, cgzone, cgsol, RealSingle, "Density",
+    if (cg_field_write(cgfile, cgbase, cgzone, cgsol, CGNS_ENUMV(RealSingle), "Density",
                        solution, &cgfld))
         cg_error_exit();
 
@@ -327,7 +327,7 @@ int main (int argc, char *argv[])
         rmax[n] = get_s_rmax(n, -1);
     }
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                      RealSingle, rmin, rmax, fbuf)) cg_error_exit();
+                      CGNS_ENUMV(RealSingle), rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
     for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
         for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
@@ -347,7 +347,7 @@ int main (int argc, char *argv[])
         rmax[n] = dims[n];
     }
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                      RealSingle, rmin, rmax, fbuf)) cg_error_exit();
+                      CGNS_ENUMV(RealSingle), rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
     for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
         for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
@@ -365,7 +365,7 @@ int main (int argc, char *argv[])
         rmax[n] = rmin[n] + dims[n] - 1;
     }
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                      RealSingle, rmin, rmax, fbuf)) cg_error_exit();
+                      CGNS_ENUMV(RealSingle), rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
     for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
         for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
@@ -386,7 +386,7 @@ int main (int argc, char *argv[])
     printf("Next error is required: ");
     fflush (stdout);
     if (!cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                       RealSingle, rmin, rmax, fbuf)) {
+                       CGNS_ENUMV(RealSingle), rmin, rmax, fbuf)) {
         printf("read failed to produce error (T4)\n");
         ++nn;
     }
@@ -403,7 +403,7 @@ int main (int argc, char *argv[])
         rmax[n] = dims[n];
     }
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                      RealSingle, rmin, rmax, fbuf)) cg_error_exit();
+                      CGNS_ENUMV(RealSingle), rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
     for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
         for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
@@ -421,7 +421,7 @@ int main (int argc, char *argv[])
         rmax[n] = rmin[n] + dims[n] - 1;
     }
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                      RealSingle, rmin, rmax, fbuf)) cg_error_exit();
+                      CGNS_ENUMV(RealSingle), rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
     for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
         for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
@@ -442,7 +442,7 @@ int main (int argc, char *argv[])
     printf("Next error is required: ");
     fflush (stdout);
     if (!cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                       RealSingle, rmin, rmax, fbuf)) {
+                       CGNS_ENUMV(RealSingle), rmin, rmax, fbuf)) {
         printf("read failed to produce error (T7)\n");
         ++nn;
     }
@@ -468,7 +468,7 @@ int main (int argc, char *argv[])
     printf("Next error is required: ");
     fflush (stdout);
     if (!cg_field_partial_write(cgfile, cgbase, cgzone, cgsol,
-                                RealSingle, "Density", rmin, rmax,
+                                CGNS_ENUMV(RealSingle), "Density", rmin, rmax,
                                 solution, &cgfld))
       {
         printf("write failed to produce error (T8)\n");
@@ -483,10 +483,10 @@ int main (int argc, char *argv[])
         rmax[n]   = dims[n];
     }
     if (cg_field_partial_write(cgfile, cgbase, cgzone, cgsol,
-                               RealSingle, "Density", rmin, rmax,
+                               CGNS_ENUMV(RealSingle), "Density", rmin, rmax,
                                solution, &cgfld)) cg_error_exit();
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                      RealSingle, rmin, rmax, fbuf)) cg_error_exit();
+                      CGNS_ENUMV(RealSingle), rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
     for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
         for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
@@ -516,7 +516,7 @@ int main (int argc, char *argv[])
     printf("Next error is required: ");
     fflush (stdout);
     if (!cg_field_partial_write(cgfile, cgbase, cgzone, cgsol,
-                                RealSingle, "Density", rmin, rmax,
+                                CGNS_ENUMV(RealSingle), "Density", rmin, rmax,
                                 solution, &cgfld))
       {
         printf("write failed to produce error (T10)\n");
@@ -531,10 +531,10 @@ int main (int argc, char *argv[])
         rmax[n]   = get_s_rmax(n, -1);
     }
     if (cg_field_partial_write(cgfile, cgbase, cgzone, cgsol,
-                               RealSingle, "Density", rmin, rmax,
+                               CGNS_ENUMV(RealSingle), "Density", rmin, rmax,
                                solution, &cgfld)) cg_error_exit();
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                      RealSingle, rmin, rmax, fbuf)) cg_error_exit();
+                      CGNS_ENUMV(RealSingle), rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
     for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
         for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
@@ -555,13 +555,13 @@ int main (int argc, char *argv[])
     rmin[2] = get_s_rmin(2, 0);
     rmax[2] = get_s_rmin(2, 0);
     if (cg_field_partial_write(cgfile, cgbase, cgzone, cgsol,
-                               RealSingle, "Density", rmin, rmax,
+                               CGNS_ENUMV(RealSingle), "Density", rmin, rmax,
                                solution, &cgfld)) cg_error_exit();
     for (n = 0; n < 4; ++n) {
         fbuf[n] = 0.;
     }
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                      RealSingle, rmin, rmax, fbuf)) cg_error_exit();
+                      CGNS_ENUMV(RealSingle), rmin, rmax, fbuf)) cg_error_exit();
     for (n = 0; n < 4; ++n) {
         if (fbuf[n] != solution[n]) np++;
     }
@@ -586,8 +586,8 @@ int main (int argc, char *argv[])
     m_rmin[2] = get_m_rmin(2, 0);
     m_rmax[2] = get_m_rmin(2, 0);
     if (cg_field_general_write(cgfile, cgbase, cgzone, cgsol, "Density",
-                               RealSingle, rmin, rmax,
-                               RealSingle, 3, dims, m_rmin, m_rmax,
+                               CGNS_ENUMV(RealSingle), rmin, rmax,
+                               CGNS_ENUMV(RealSingle), 3, dims, m_rmin, m_rmax,
                                solution, &cgfld))
         cg_error_exit();
     /* Reset the solution array */
@@ -608,7 +608,7 @@ int main (int argc, char *argv[])
         rmax[n] = get_s_rmax(n, -1);
     }
     if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                      RealSingle, rmin, rmax, fbuf)) cg_error_exit();
+                      CGNS_ENUMV(RealSingle), rmin, rmax, fbuf)) cg_error_exit();
     np = 0;
     for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
         for (j = idxmin(1,-1); j <= idxmax(1,-1); j++) {
@@ -632,7 +632,7 @@ int main (int argc, char *argv[])
     rmin[2] = get_s_rmin(2, 0);
     rmax[2] = get_s_rmin(2, 0);
     if (cg_field_general_read(cgfile, cgbase, cgzone, cgsol, "Density",
-                              rmin, rmax, RealSingle, 3, dims, m_rmin, m_rmax,
+                              rmin, rmax, CGNS_ENUMV(RealSingle), 3, dims, m_rmin, m_rmax,
                               fbuf)) cg_error_exit();
     np = 0;
     for (k = idxmin(2,-1); k <= idxmax(2,-1); k++) {
