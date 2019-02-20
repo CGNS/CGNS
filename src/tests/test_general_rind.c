@@ -145,7 +145,7 @@ int main (int argc, char *argv[])
     /* write base and zone */
 
     if (cg_base_write(cgfile, "Structured", CellDim, PhyDim, &cgbase) ||
-        cg_zone_write(cgfile, cgbase, "Zone", (cgsize_t*)size, Structured,
+        cg_zone_write(cgfile, cgbase, "Zone", (cgsize_t*)size, CGNS_ENUMV(Structured),
                       &cgzone))
         cg_error_exit();
 
