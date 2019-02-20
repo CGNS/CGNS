@@ -182,7 +182,11 @@ done
 cd ..
 
 ###############################
-
 echo "=== finished ==="
-echo "$return_val tests failed"
+if test $return_val != 0; then
+  printf "$ERROR_COLOR"
+else
+  printf "$OK_COLOR"
+fi
+printf "$return_val tests failed $NO_COLOR \n"
 exit $return_val
