@@ -791,6 +791,7 @@ BUILDHDF5=0
 HDF5DEF=""
 HDF5INC=""
 HDF5LIB=""
+HDF5BIN=""
 
 AC_MSG_CHECKING([if using HDF5])
 AC_ARG_WITH(hdf5,
@@ -859,7 +860,11 @@ else
     fi
   fi
   HDF5DEF=-I$HDF5INC
+  HDF5BIN=$hdf5dir/bin
 
+  if test -z "$HDF5BIN"; then
+     AC_MSG_ERROR(failed to find the HDF5 bin directory $HDF5BIN)    
+  fi
 
   # Checking version of HDF5 (req. minimum 1.8) 
   ## --------------------------------------------------------------------
@@ -924,10 +929,14 @@ fi
 # locate zlib and szip libraries
 #---------------------------------------------------------------------------
 
+# Automatically search for zlib and szip from HDF5 build specs, but
+# only do this if --with-zlib and --with-szip is not specified.
+
 H5NEEDZLIB=0
 ZLIBLIB=""
 H5NEEDSZIP=0
 SZIPLIB=""
+HDF5LIB_DEP=""
 
 ## ----------------------------------------------------------------------
 ## Fake --with-xxx option to allow us to create a help message for the
@@ -943,9 +952,99 @@ AC_ARG_WITH([fnord],
                          library directory separated by a comma
     --with-xxx=DIR     - Specify only the directory which contains the
                          include/ and lib/ subdirectories
+
+  NOTE: CGNS will automatically search for zlib and szip used in
+        building HDF5 only if these options are not specified. 
+
   ])
 
 if test "$withhdf5" = "yes"; then
+
+  AC_ARG_WITH([zlib],,[withval_zlib=yes],[withval_zlib=no])
+  AC_ARG_WITH([szip],,[withval_szip=yes],[withval_szip=no])
+
+  if test $withval_zlib == "no" && test $withval_szip == "no"; then
+
+  AC_MSG_CHECKING([if HDF5 library has compression dependencies])      
+
+  H5CC=$HDF5BIN/h5*cc
+  H5BLD_CPPFLAGS=`cat $H5CC | grep "H5BLD_CPPFLAGS=" | sed -e 's/.*H5BLD_CPPFLAGS="*\(.*\) ".*/\1/'` 
+  H5BLD_LDFLAGS=`cat $H5CC | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS="*\(.*\) ".*/\1/'` 
+  H5BLD_LIBS=`cat $H5CC | grep "H5BLD_LIBS=" | sed -e 's/.*H5BLD_LIBS="*\(.*\) ".*/\1/'`
+
+  LDFLAGS="$LDFLAGS $H5BLD_LDFLAGS"
+  CPPFLAGS="$CPPFLAGS $H5BLD_CPPFLAGS"
+
+# check if linking in szip or zlib
+# HDF5 does not add LDFLAGS for libraries in standard locations, so process the LIBS being
+# linked in.
+  LZLIB=""
+  LSZIP=""
+  LNUMLIBS=`echo $H5BLD_LIBS | awk '{print NF}'`
+  for i in `seq 1 $LNUMLIBS` ; do
+     LIBX=`echo $H5BLD_LIBS | cut -d' ' -f$i`  
+     if test `echo $LIBX | grep "\-lz" &>/dev/null; echo $?` == 0; then
+       LZLIB="-lz"
+     fi
+     if test `echo $LIBX | grep "\-lsz" &>/dev/null; echo $?` == 0; then 
+       LSZIP="-lsz"
+     else
+       if test `echo $LIBX | grep "\-lszip" &>/dev/null; echo $?` == 0; then
+         LSZIP="-lszip"
+       fi
+     fi
+  done
+
+  if test $shared = yes; then
+     LDFLAGS="$LDFLAGS $H5BLD_LDFLAGS"
+     HDF5LIB_DEP="$LDFLAGS $H5BLD_LDFLAGS"  
+     LIBS="$LIBS $LZLIB $LSZIP"
+     FLIBS="$FLIBS $LZLIB $LSZIP"
+  else
+     H5BLD_LDFLAGS_PATH=`echo $H5BLD_LDFLAGS | sed 's/-L//g'`       
+     NUMLIBS=`echo $H5BLD_LDFLAGS_PATH | awk '{print NF}'`
+
+     HDF5LIB_DEP=""
+     FOUNDZLIB="false"
+     FOUNDSZIP="false"
+     for i in `seq 1 $NUMLIBS` ; do
+       LIB_PATH=`echo $H5BLD_LDFLAGS_PATH | cut -d' ' -f$i`
+       for a in $exts ; do
+          if test -f $LIB_PATH/libz.$a; then
+            HDF5LIB_DEP="$LIB_PATH/libz.$a $HDF5LIB_DEP"
+            FOUNDZLIB="true"
+            break
+          fi
+          if test -f $LIB_PATH/libsz.$a; then
+            HDF5LIB_DEP="$LIB_PATH/libsz.$a $HDF5LIB_DEP"
+            FOUNDSZIP="true"
+            break
+          fi
+          if test -f $LIB_PATH/libszip.$a; then
+            HDF5LIB_DEP="$LIB_PATH/libszip.$a $HDF5LIB_DEP"
+            FOUNDSZIP="true"
+            break
+          fi
+       done
+     done
+
+     if test "x$LSZIP" != "x" && test "$FOUNDSZIP" == "false";then
+       LIBS="$LIBS $LSZIP"
+       FLIBS="$FLIBS $LSZIP"
+     fi
+     if test "x$LZLIB" != "x" && test "$FOUNDZLIB" == "false";then
+       LIBS="$LIBS $LZLIB"
+       FLIBS="$FLIBS $LZLIB"
+     fi
+  fi
+
+  if test "x$HDF5LIB_DEP" = "x"; then
+    AC_MSG_RESULT(no)
+  else
+    AC_MSG_RESULT($HDF5LIB_DEP)
+  fi    
+
+  else
 
   AC_ARG_WITH([zlib],
                [AS_HELP_STRING([--with-zlib=DIR],
@@ -1106,6 +1205,9 @@ if test "$withhdf5" = "yes"; then
     AC_MSG_RESULT([$szip_inc])
     ;;
   esac
+
+  fi
+
 fi
 
 #---------------------------------------------------------------------------
@@ -1789,6 +1891,7 @@ AC_SUBST(H5NEEDZLIB)
 AC_SUBST(HDF5DEF)
 AC_SUBST(HDF5INC)
 AC_SUBST(HDF5LIB)
+AC_SUBST(HDF5LIB_DEP)
 AC_SUBST(ZLIBLIB)
 AC_SUBST(SZIPLIB)
 
