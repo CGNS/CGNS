@@ -31,9 +31,9 @@ int main()
   dimension statements (note that tri-dimensional arrays
   r and p must be dimensioned exactly as [N-1][17-1][21-1] (N>=9)
   for this particular case or else they will be written to
-  the CGNS file incorrectly!  Other options are to use
-  cg_field_general_write, use 1-D arrays, use dynamic memory, or
-  pass index values to a subroutine and dimension exactly there):
+  the CGNS file incorrectly!  Other options are to use 1-D
+  arrays, use dynamic memory, or pass index values to a
+  subroutine and dimension exactly there):
 */
     double r[8][16][20],p[8][16][20];
     int ni,nj,nk,i,j,k,index_file,index_base,index_zone,index_flow,index_field;

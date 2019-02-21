@@ -32,9 +32,9 @@ int main()
   dimension statements (note that tri-dimensional arrays
   r and p must be dimensioned exactly as [N-1][17-1+2][21-1+2] (N>=9)
   for this particular case or else they will be written to
-  the CGNS file incorrectly!  Other options are to use
-  cg_field_general_write, use 1-D arrays, use dynamic memory, or
-  pass index values to a subroutine and dimension exactly there):
+  the CGNS file incorrectly!  Other options are to use 1-D
+  arrays, use dynamic memory, or pass index values to a
+  subroutine and dimension exactly there):
   Rind cells are stored in array locations [k][0][i], [k][17][i], [k][j][0], [k][j][21]
 */
     double r[8][18][22],p[8][18][22];

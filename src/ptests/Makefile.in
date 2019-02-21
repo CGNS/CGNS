@@ -23,7 +23,6 @@ CALL =	pcgns_ctest$(EXE) \
 	test_unstructured$(EXE) \
 	test_unstruc_quad$(EXE) \
 	test_zone$(EXE) \
-	test_general_readwrite$(EXE) \
 	thesis_benchmark$(EXE)
 
 FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) 
@@ -108,13 +107,6 @@ test_unstruc_quad$(EXE) : test_unstruc_quad.c $(CGNSLIB)
 
 test_zone$(EXE) : test_zone.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_zone.c $(LDLIBS) $(CLIBS)
-	$(STRIP) $@
-
-
-#----------
-
-test_general_readwrite$(EXE) : test_general_readwrite.c $(CGNSLIB)
-	$(CC) $(COPTS) $(CEOUT)$@ test_general_readwrite.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------

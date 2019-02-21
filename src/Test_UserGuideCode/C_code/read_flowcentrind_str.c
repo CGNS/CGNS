@@ -60,9 +60,9 @@ int main()
 /* read rind data */
     cg_rind_read(irinddata);
 /* lower range index */
-    irmin[0]=1-irinddata[0];
-    irmin[1]=1-irinddata[2];
-    irmin[2]=1-irinddata[4];
+    irmin[0]=1;
+    irmin[1]=1;
+    irmin[2]=1;
 /* upper range index - use cell dimensions */
 /* checking GridLocation first: */
     cg_sol_info(index_file,index_base,index_zone,index_flow,solname,&loc);
@@ -72,9 +72,9 @@ int main()
           GridLocationName[loc]);
       return 1;
     }
-    irmax[0]=isize[1][0]+irinddata[1];
-    irmax[1]=isize[1][1]+irinddata[3];
-    irmax[2]=isize[1][2]+irinddata[5];
+    irmax[0]=isize[1][0]+irinddata[0]+irinddata[1];
+    irmax[1]=isize[1][1]+irinddata[2]+irinddata[3];
+    irmax[2]=isize[1][2]+irinddata[4]+irinddata[5];
 /* read flow solution */
     cg_field_read(index_file,index_base,index_zone,index_flow,"Density",
                   CGNS_ENUMV(RealSingle),irmin,irmax,r[0][0]);

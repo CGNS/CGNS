@@ -36,7 +36,6 @@ set (examples
 	write_dimensional
 	write_flowcent_str
 	write_flowcentrind_str
-	write_discreteface_str
 	write_floweqn_str
 	write_flowvert_str
 	write_flowvert_unst
@@ -54,7 +53,6 @@ set (examples
 	read_dimensional
 	read_flowcent_str
 	read_flowcentrind_str
-	read_discreteface_str
 	read_floweqn_str
 	read_flowvert_str
 	read_flowvert_unst
@@ -96,7 +94,6 @@ endforeach (example ${examples})
 #	write_bc_str
 #	write_grid_str
 #	write_flowcentrind_str
-#	write_discreteface_str
 #	write_grid2zn_str
 #	write_con2zn_str
 #	write_grid2zn_str
