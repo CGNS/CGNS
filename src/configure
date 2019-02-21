@@ -5684,10 +5684,7 @@ $as_echo "${H5_VERS_MAJOR}.${H5_VERS_MINOR}.${H5_VERS_RELEASE}" >&6; }
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if HDF5 is 1.8 or greater" >&5
 $as_echo_n "checking if HDF5 is 1.8 or greater... " >&6; }
-  function version_gt {
-       test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" != "$1";
-  }
-  if version_gt ${H5_VERS_MAJOR}.${H5_VERS_MINOR} "1.7"; then
+  if test ${H5_VERS_MAJOR} -ge 1 && test ${H5_VERS_MINOR} -ge 8; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
   else

@@ -875,10 +875,7 @@ else
   AC_MSG_RESULT(${H5_VERS_MAJOR}.${H5_VERS_MINOR}.${H5_VERS_RELEASE})
 
   AC_MSG_CHECKING([if HDF5 is 1.8 or greater])
-  function version_gt {
-       test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" != "$1";
-  }
-  if version_gt ${H5_VERS_MAJOR}.${H5_VERS_MINOR} "1.7"; then
+  if test ${H5_VERS_MAJOR} -ge 1 && test ${H5_VERS_MINOR} -ge 8; then
     AC_MSG_RESULT(yes)
   else
     AC_MSG_ERROR(no)
