@@ -4886,7 +4886,6 @@ int        i ;
 
 
 *error_return = NO_ERROR ;
-*found = 0;
 
 if( (file_index == NULL) || (ID == NULL) || (found == NULL) ) {
    *error_return = NULL_POINTER ;
@@ -4898,6 +4897,7 @@ if( file_name == NULL ) {
    return ;
    } /* end if */
 
+*found = 0;
 for( i=0; i<maximum_files; i++ ) {
    if( ADF_file[i].in_use && ADF_file[i].file_name != NULL ) {
       if( strcmp( file_name, ADF_file[i].file_name ) == 0 ) {

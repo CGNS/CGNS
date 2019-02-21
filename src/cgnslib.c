@@ -55,9 +55,6 @@ freely, subject to the following restrictions:
 /* to determine default file type */
 #ifdef BUILD_HDF5
 # include "hdf5.h"
-# if H5_VERS_MAJOR < 2 && H5_VERS_MINOR < 8
-#  define HDF5_PRE_1_8
-# endif
 #endif
 
 /* fix for unresolved reference to __ftol2 when using VC7 with VC6 libs */
@@ -701,7 +698,7 @@ int cg_set_file_type(int file_type)
     if (file_type == CG_FILE_NONE) {
         char *type = getenv("CGNS_FILETYPE");
 	if (type == NULL || !*type) {
-#if defined(BUILD_HDF5) && !defined(HDF5_PRE_1_8)
+#if defined(BUILD_HDF5)
             cgns_filetype = CG_FILE_HDF5;
 #else
             cgns_filetype = CG_FILE_ADF;

@@ -46,9 +46,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-
+#include <stdint.h>
+#include <limits.h>
 #include "pcgnslib.h"
 #include "mpi.h"
+
+#if SIZE_MAX == UCHAR_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_CHAR
+#elif SIZE_MAX == USHRT_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_SHORT
+#elif SIZE_MAX == UINT_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED
+#elif SIZE_MAX == ULONG_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_LONG
+#elif SIZE_MAX == ULLONG_MAX
+   #define MPI_SIZE_T MPI_UNSIGNED_LONG_LONG
+#else
+   #error "size_t size not found"
+#endif
 
 #define false 0
 #define true 1
@@ -57,8 +72,10 @@ int comm_size;
 int comm_rank;
 MPI_Info info;
 
+
+int piomode = CGP_COLLECTIVE; /* DEFAULT */ 
 /* cgsize_t Nelem = 33554432; */
-cgsize_t Nelem = 65536;
+cgsize_t Nelem = 65536; /* DEFAULT */
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
@@ -114,17 +131,39 @@ double t0, t1, t2;
  */
 double xtiming[15], timing[15], timingMin[15], timingMax[15];
 
-int piomode[2] = {0, 1};
-int piomode_i;
+int read_inputs(int* argc, char*** argv) {
+  int k;
+
+  if(comm_rank==0) {
+    for(k=1;k<*argc;k++) {
+      if(strcmp((*argv)[k],"-nelem")==0) {
+        k++;
+        sscanf((*argv)[k],"%zu",&Nelem);
+      }
+      if(strcmp((*argv)[k],"-ind")==0) {
+        piomode = CGP_INDEPENDENT; 
+      }
+
+    }
+  }
+  MPI_Bcast(&Nelem, 1, MPI_SIZE_T, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&piomode, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  return 0;
+}
 
 int initialize(int* argc, char** argv[]) {
-	MPI_Init(argc,argv);
-	MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-	MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-	MPI_Info_create(&info);
-	MPI_Info_set(info, "striping_unit", "8388608");
-	/* or whatever your GPFS block size actually is*/
-	return 0;
+  MPI_Init(argc,argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+  MPI_Info_create(&info);
+  MPI_Info_set(info, "striping_unit", "8388608");
+  /* or whatever your GPFS block size actually is*/
+
+  if(*argc > 2) 
+    read_inputs(argc,argv);
+  
+  return 0;
 }
 
 int c_double_eq(double a, double b) {
@@ -150,14 +189,15 @@ int main(int argc, char* argv[]) {
 
   size_t Mb_coor, Mb_elem, Mb_field, Mb_array;
 
+  const char* PIOMODE[] = {"IND", "COLL"};
+
   /* parameters */
-  piomode_i = 1;
   debug = false;
 
   t0 = MPI_Wtime(); /* Timer */
 
   err = (int)cgp_mpi_info(info);
-  err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode_i);
+  err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode);
 
   Nnodes = Nelem*NodePerElem;
 
@@ -773,11 +813,12 @@ int main(int argc, char* argv[]) {
   MPI_Reduce(&xtiming, &timingMax, 15, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   if(comm_rank==0) {
-    sprintf(fname, "timing_%06d_%d.dat", comm_size, piomode_i+1);
+    sprintf(fname, "timing_%06d_%s.dat", comm_size, PIOMODE[piomode]);
     FILE *fid = fopen(fname, "w");
     if (fid == NULL) {
       printf("Error opening timing file!\n");
     } else {
+      fprintf(fid,"#nelem = %zu \n",Nelem);
       fprintf(fid,"#nprocs, total time, write: coord., elem., field, array, read: coord., elem., field, array, MB: coord, elem, field, array \n%d", comm_size);
 
       for ( k = 0; k < 15; k++) {

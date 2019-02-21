@@ -822,7 +822,7 @@ int cgi_read_zcoor(int in_link, double parent_id, int *nzcoor, cgns_zcoor **zcoo
                 }
                 if (strcmp(zcoor[0][g].coord[z].data_type,"R4") &&
                     strcmp(zcoor[0][g].coord[z].data_type,"R8")) {
-                    cgi_error("Datatype %d not supported for coordinates");
+                    cgi_error("Datatype %d not supported for coordinates",zcoor[0][g].coord[z].data_type);
                     return CG_ERROR;
                 }
             }
@@ -1534,7 +1534,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                     strcmp(sol[0][s].field[z].data_type,"I8") &&
                     strcmp(sol[0][s].field[z].data_type,"R4") &&
                     strcmp(sol[0][s].field[z].data_type,"R8")) {
-                    cgi_error("Datatype %d not supported for flow solutions");
+                    cgi_error("Datatype %d not supported for flow solutions",sol[0][s].field[z].data_type);
                     return CG_ERROR;
                 }
             }
@@ -4019,7 +4019,7 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                     strcmp(discrete[0][n].array[i].data_type,"I8") &&
                     strcmp(discrete[0][n].array[i].data_type,"R4") &&
                     strcmp(discrete[0][n].array[i].data_type,"R8")) {
-                    cgi_error("Datatype %d not supported for Discrete Data");
+                    cgi_error("Datatype %d not supported for Discrete Data",discrete[0][n].array[i].data_type);
                     return CG_ERROR;
                 }
             }
@@ -4264,7 +4264,7 @@ int cgi_read_amotion(int in_link, double parent_id, int *namotions,
                 }
                 if (strcmp(amotion[0][n].array[i].data_type,"R4") &&
                     strcmp(amotion[0][n].array[i].data_type,"R8") ) {
-                    cgi_error("Datatype %d not supported for ArbitraryGridMotion array");
+                    cgi_error("Datatype %d not supported for ArbitraryGridMotion array",amotion[0][n].array[i].data_type);
                     return CG_ERROR;
                 }
             }
@@ -6058,14 +6058,15 @@ int cgi_write_family(double parent_id, cgns_family *family)
                 fambc->link, &fambc->id)) return CG_ERROR;
         }
         else {
+	    int i;
             dim_vals = (cgsize_t)strlen(BCTypeName[fambc->type]);
             if (cgi_new_node(family->id, fambc->name, "FamilyBC_t",
                 &fambc->id, "C1", 1, &dim_vals, BCTypeName[fambc->type]))
                 return CG_ERROR;
              /* FamilyBCDataSet_t */
-            for (n=0; n < fambc->ndataset; n++)
+            for (i=0; i < fambc->ndataset; i++)
                 if (cgi_write_dataset(fambc->id, "FamilyBCDataSet_t",
-                    &fambc->dataset[n])) return CG_ERROR;
+                    &fambc->dataset[i])) return CG_ERROR;
         }
     }
 
@@ -7039,7 +7040,7 @@ int cgi_write_model(double parent_id, cgns_model *model)
     }
 
      /* xModel_t */
-    sprintf(label,"%s_t",model->name);
+    sprintf(label,"%.30s_t",model->name);
     dim_vals = (cgsize_t)strlen(ModelTypeName[model->type]);
 
     if (cgi_new_node(parent_id, model->name, label, &model->id,
