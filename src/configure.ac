@@ -950,7 +950,7 @@ AC_ARG_WITH([fnord],
     --with-xxx=DIR     - Specify only the directory which contains the
                          include/ and lib/ subdirectories
 
-  NOTE: CGNS will automatically search for zlib and szip used in
+  IMPORTANT NOTE: CGNS will automatically search for zlib and szip used in
         building HDF5 only if these options are not specified. 
 
   ])
