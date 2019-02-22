@@ -5712,7 +5712,7 @@ void main(void)
   return;
 }
 EOF
-  msg=`${CC} -c test.c ${HDF5DEF} &> /dev/null`
+  msg=`${CC} -c test.c ${HDF5DEF} 2> /dev/null`
   if test -f test.o; then
     HDF5_HAVE_MULTI_DATASETS=1
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -5806,23 +5806,25 @@ $as_echo_n "checking if HDF5 library has compression dependencies... " >&6; }
   LZLIB=""
   LSZIP=""
   LNUMLIBS=`echo $H5BLD_LIBS | awk '{print NF}'`
-  for i in `seq 1 $LNUMLIBS` ; do
-     LIBX=`echo $H5BLD_LIBS | cut -d' ' -f$i`
-     if test `echo $LIBX | grep "\-lz" &>/dev/null; echo $?` == 0; then
-       LZLIB="-lz"
-     fi
-     if test `echo $LIBX | grep "\-lsz" &>/dev/null; echo $?` == 0; then
-       LSZIP="-lsz"
-     else
-       if test `echo $LIBX | grep "\-lszip" &>/dev/null; echo $?` == 0; then
-         LSZIP="-lszip"
+  if test $LNUMLIBS -gt 0; then
+    for i in `seq 1 $LNUMLIBS` ; do
+       LIBX=`echo $H5BLD_LIBS | cut -d' ' -f$i`
+       if test `echo $LIBX | grep "\-lz" > /dev/null; echo $?` == 0; then
+         LZLIB="-lz"
        fi
-     fi
-  done
+       if test `echo $LIBX | grep "\-lsz" > /dev/null; echo $?` == 0; then
+         LSZIP="-lsz"
+       else
+         if test `echo $LIBX | grep "\-lszip" > /dev/null; echo $?` == 0; then
+           LSZIP="-lszip"
+         fi
+       fi
+    done
+  fi
 
   if test $shared = yes; then
      LDFLAGS="$LDFLAGS $H5BLD_LDFLAGS"
-     HDF5LIB_DEP="$LDFLAGS $H5BLD_LDFLAGS"
+     HDF5LIB_DEP="$LDFLAGS"
      LIBS="$LIBS $LZLIB $LSZIP"
      FLIBS="$FLIBS $LZLIB $LSZIP"
   else
@@ -5869,6 +5871,16 @@ $as_echo "no" >&6; }
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HDF5LIB_DEP" >&5
 $as_echo "$HDF5LIB_DEP" >&6; }
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking HDF5 library LIB dependencies" >&5
+$as_echo_n "checking HDF5 library LIB dependencies... " >&6; }
+  if test "x$LIBS" = "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
+$as_echo "none" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LIBS" >&5
+$as_echo "$LIBS" >&6; }
   fi
 
   else
@@ -6821,7 +6833,6 @@ ac_x_header_dirs='
 /usr/athena/include
 /usr/local/x11r5/include
 /usr/lpp/Xamples/include
-/opt/X11/include
 
 /usr/openwin/include
 /usr/openwin/share/include'

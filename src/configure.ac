@@ -896,7 +896,7 @@ void main(void)
   return;
 }
 EOF
-  msg=`${CC} -c test.c ${HDF5DEF} &> /dev/null`
+  msg=`${CC} -c test.c ${HDF5DEF} 2> /dev/null`
   if test -f test.o; then
     HDF5_HAVE_MULTI_DATASETS=1
     AC_MSG_RESULT(yes)
@@ -978,23 +978,25 @@ if test "$withhdf5" = "yes"; then
   LZLIB=""
   LSZIP=""
   LNUMLIBS=`echo $H5BLD_LIBS | awk '{print NF}'`
-  for i in `seq 1 $LNUMLIBS` ; do
-     LIBX=`echo $H5BLD_LIBS | cut -d' ' -f$i`  
-     if test `echo $LIBX | grep "\-lz" &>/dev/null; echo $?` == 0; then
-       LZLIB="-lz"
-     fi
-     if test `echo $LIBX | grep "\-lsz" &>/dev/null; echo $?` == 0; then 
-       LSZIP="-lsz"
-     else
-       if test `echo $LIBX | grep "\-lszip" &>/dev/null; echo $?` == 0; then
-         LSZIP="-lszip"
+  if test $LNUMLIBS -gt 0; then
+    for i in `seq 1 $LNUMLIBS` ; do
+       LIBX=`echo $H5BLD_LIBS | cut -d' ' -f$i`
+       if test `echo $LIBX | grep "\-lz" > /dev/null; echo $?` == 0; then
+         LZLIB="-lz"
+       fi 
+       if test `echo $LIBX | grep "\-lsz" > /dev/null; echo $?` == 0; then
+         LSZIP="-lsz"
+       else
+         if test `echo $LIBX | grep "\-lszip" > /dev/null; echo $?` == 0; then
+           LSZIP="-lszip"
+         fi
        fi
-     fi
-  done
+    done
+  fi
 
   if test $shared = yes; then
      LDFLAGS="$LDFLAGS $H5BLD_LDFLAGS"
-     HDF5LIB_DEP="$LDFLAGS $H5BLD_LDFLAGS"  
+     HDF5LIB_DEP="$LDFLAGS"  
      LIBS="$LIBS $LZLIB $LSZIP"
      FLIBS="$FLIBS $LZLIB $LSZIP"
   else
@@ -1039,7 +1041,14 @@ if test "$withhdf5" = "yes"; then
     AC_MSG_RESULT(no)
   else
     AC_MSG_RESULT($HDF5LIB_DEP)
-  fi    
+  fi
+
+  AC_MSG_CHECKING([HDF5 library LIB dependencies])
+  if test "x$LIBS" = "x"; then
+    AC_MSG_RESULT(none)
+  else
+    AC_MSG_RESULT($LIBS)
+  fi      
 
   else
 
