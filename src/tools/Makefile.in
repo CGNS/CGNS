@@ -57,7 +57,7 @@ cgnsdiff.$(O) : cgnsdiff.c getargs.h
 #----------
 
 cgnsnames$(EXE) : cgnsnames.$(O) cgnames.$(O)
-	$(CC) $(COPTS) $(CEOUT)$@ cgnsnames.$(O) cgnames.$(O) $(CLIBS)
+	$(CC) $(COPTS) $(CEOUT)$@ cgnsnames.$(O) cgnames.$(O) $(LDLIBS) $(CLIBS)
 cgnsnames.$(O) : cgnsnames.c cgnames.h
 	$(CC) $(COPTS) -c cgnsnames.c
 
