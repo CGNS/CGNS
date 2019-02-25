@@ -119,7 +119,7 @@
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	  call cg_base_read_f(cg, base, basename, CellDim, PhysDim, ier)
 	  if (ier .eq. ERROR) call cg_error_exit_f
-          write(6,300)'BaseName = "',basename,'"',                      &
+          write(6,300)'BaseName = "',TRIM(basename),'"',                      &
      &                'cell_dimension=',CellDim
 
 ! *** base attribute:  GOTO base node
@@ -131,8 +131,8 @@
           if (ier .eq. ERROR) call cg_error_exit_f
           if (ier.eq.ALL_OK) then
             write(6,400)'Base Descriptor_t Information:'
-            write(6,500)' DescriptorName="',name,'"',                   &
-     &                  ' DescriptorText="',text,'"'
+            write(6,500)' DescriptorName="',TRIM(name),'"',                   &
+     &                  ' DescriptorText="',TRIM(text),'"'
           endif
 
 ! ***     base attribute: flow equation set:
@@ -159,14 +159,14 @@
             call cg_descriptor_read_f(one, name,text,ier)
             if (ier .eq. ERROR) call cg_error_exit_f
             if (ier .eq. ALL_OK) write(6,500)                           &
-     &        ' DescriptorName="',name,'"',' DescriptorText="',text,'"'
+     &        ' DescriptorName="',TRIM(name),'"',' DescriptorText="',TRIM(text),'"'
 
 ! ***       flow equation set attribute: Gas Model Type
 	    if (GasModelFlag.eq.1) then
                 call cg_model_read_f('GasModel_t', type, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
                 if (ier .eq. ALL_OK) write(6,600)                       &
-     &            ' GasModelType="',ModelTypeName(type),'"'
+     &            ' GasModelType="',TRIM(ModelTypeName(type)),'"'
             endif
 
 ! ***       flow equation set attribute: ViscosityModel Type
@@ -174,7 +174,7 @@
               call cg_model_read_f('ViscosityModel_t', type, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
               if (ier .eq. ALL_OK) write(6,600)                         &
-     &          ' ViscosityModelType="',ModelTypeName(type),'"'
+     &          ' ViscosityModelType="',TRIM(ModelTypeName(type)),'"'
             endif
 
 ! ***       flow equation set attribute:  TypmlConductivityModel Type
@@ -184,7 +184,7 @@
               if (ier .eq. ERROR) call cg_error_exit_f
               if (ier .eq. ALL_OK) write(6,600)                         &
      &          ' ThermalConductivityModelType=',                       &
-     &            ModelTypeName(type),'"'
+     &            TRIM(ModelTypeName(type)),'"'
             endif
 
 ! ***   flow equation set attribute: TurbulenceClosureType
@@ -192,7 +192,7 @@
               call cg_model_read_f('TurbulenceClosure_t', type, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
               if (ier .eq. ALL_OK) write(6,600)                         &
-     &          ' TurbulenceClosureType="', ModelTypeName(type),'"'
+     &          ' TurbulenceClosureType="', TRIM(ModelTypeName(type)),'"'
             endif
 
 ! ***   flow equation set attribute: TurbulenceModelType
@@ -200,7 +200,7 @@
               call cg_model_read_f('TurbulenceModel_t', type, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
               if (ier .eq. ALL_OK) write(6,600)                         &
-     &          ' TurbulenceModelType="',ModelTypeName(type),'"'
+     &          ' TurbulenceModelType="',TRIM(ModelTypeName(type)),'"'
             endif
 
 ! ***   flow equation set attribute: Governing Equations Type
@@ -209,7 +209,7 @@
               if (ier .eq. ERROR) call cg_error_exit_f
               if (ier.eq.ALL_OK)                                        &
      &          write(6,600)' GoverningEquationsType="',                &
-     &                          GoverningEquationsTypeName(type),'"'
+     &                          TRIM(GoverningEquationsTypeName(type)),'"'
 
     	! *** Governing Equations attribute:  GOTO GoverningEquations_t node
               call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', one,     &
@@ -236,7 +236,7 @@
 	  do zone=1, nzones
 	    call cg_zone_read_f(cg, base, zone, zonename, size, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
-	    write(6,104)'Name of Zone',zone,' is "',zonename,'"'
+	    write(6,104)'Name of Zone',zone,' is "',TRIM(zonename),'"'
 
 	    call cg_zone_type_f(cg, base, zone, zonetype, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
@@ -271,7 +271,7 @@
 	    if (ier .eq. ALL_OK) then
               write(6,600)'Convergence History of ',zonename
               write(6,104) ' niterations=',niterations,                 &
-     &                     ' NormDefinitions="',NormDefinitions,'"'
+     &                     ' NormDefinitions="',TRIM(NormDefinitions),'"'
 
          ! ** ConvergenceHistory_t attributes:
               call cg_goto_f(cg, base, ier, 'Zone_t', zone,             &
@@ -288,8 +288,8 @@
      &                             nndim, dim_vals, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
-	        write(6,600) ' DataArrayName="',name,'"'
-	        write(6,600) ' DataType="',DataTypeName(datatype),'"'
+	        write(6,600) ' DataArrayName="',TRIM(name),'"'
+	        write(6,600) ' DataType="',TRIM(DataTypeName(datatype)),'"'
 	        write(6,200) ' DataNdim=',nndim
 	        write(6,200) ' DataDim=',dim_vals(1)
 
@@ -338,7 +338,7 @@
 	      call cg_integral_read_f(integral, name, ier)
 	      if (ier .eq. ERROR) call cg_error_exit_f
               write(6,104) 'IntegralData_t #',integral,                 &
-     &                             ' is named "', name,'"'
+     &                             ' is named "', TRIM(name),'"'
 
         ! *** IntegralData_t attribute:  GOTO IntegralData_t node
               call cg_goto_f(cg, base, ier, 'Zone_t', zone,             &
@@ -356,7 +356,7 @@
                 call cg_array_info_f(iarray, name, datatype,            &
      &                               nndim, dim_vals, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
-                write(6,600) ' DataArrayName="',name,'"'
+                write(6,600) ' DataArrayName="',TRIM(name),'"'
                 write(6,600) ' DataType=',DataTypeName(datatype)
                 write(6,108) ' DataNdim=',nndim,                        &
      &                       ', DataDim=',dim_vals(1)
@@ -452,7 +452,7 @@
                 call cg_array_info_f(iarray, name, datatype,            &
      &                               nndim, dim_vals, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
-                write(6,600)' DataArrayName="',name,'"'
+                write(6,600)' DataArrayName="',TRIM(name),'"'
                 write(6,600)' DataType=',DataTypeName(datatype)
                 write(6,104)' DataNdim=',nndim
 		do i=1,nndim
@@ -488,8 +488,8 @@
                 do idescr=1, ndescriptors
                   call cg_descriptor_read_f(idescr, name, text, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
-                  write(6,500) ' DescriptorName="',name,'"',            &
-     &                               ' DescriptorText="',text,'"'
+                  write(6,500) ' DescriptorName="',TRIM(name),'"',            &
+     &                               ' DescriptorText="',TRIM(text),'"'
                 enddo
 
 	      enddo	! loop through data arrays
@@ -513,7 +513,7 @@
                 if (ier .eq. ERROR) call cg_error_exit_f
                 write(6,112)'coord #',coord,                            &
      &            '   datatype=',DataTypeName(datatype),                &
-     &            '   name="',coordname,'"'
+     &            '   name="',TRIM(coordname),'"'
 
                 if (datatype .eq. RealSingle) then
                     call cg_coord_read_f(cg, base, zone, coordname,     &
@@ -571,7 +571,7 @@
      &                               nndim, dim_vals, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 	        write(6,114) '  DataArray #',iarray
-                write(6,600) '   Name="',name,'"'
+                write(6,600) '   Name="',TRIM(name),'"'
                 write(6,600) '   DataType=',DataTypeName(datatype)
                 write(6,103) '   DataNdim=',nndim
                 do i=1,nndim
@@ -620,7 +620,7 @@
      &                           location, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
               write(6,115)'sol #',sol,':',                              &
-     &           '   solname="',solname,'"',                            &
+     &           '   solname="',TRIM(solname),'"',                            &
      &           '   location=',GridLocationName(location)
 
         ! *** Compute the nr of data to be read
@@ -644,7 +644,7 @@
      &                               type, fieldname, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
                 write(6,115)'  field #',field,':',                      &
-     &                    '   fieldname="',fieldname,'"',               &
+     &                    '   fieldname="',TRIM(fieldname),'"',               &
      &                    '   datatype=',DataTypeName(type)
 
           ! *** read entire range of solution data and record in double precision
@@ -747,8 +747,8 @@
               do idescr=1, ndescriptors
                 call cg_descriptor_read_f(idescr, name, text, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
-                write(6,500) '     DescriptorName="',name,'"',          &
-     &                             '     DescriptorText="',text,'"'
+                write(6,500) '     DescriptorName="',TRIM(name),'"',          &
+     &                             '     DescriptorText="',TRIM(text),'"'
               enddo
 
 
@@ -762,7 +762,7 @@
      &             location, ptset_type, nptsets, npnts, ier)
 	        if (ier .eq. ERROR) call cg_error_exit_f
                 write(6,118)                                            &
-     &            '  hole #',hole,':', '   holename="',holename,'"',    &
+     &            '  hole #',hole,':', '   holename="',TRIM(holename),'"',    &
      &            '   data location=',GridLocationName(location),       &
      &            '   nptsets = ',nptsets,                              &
      &            ', total no. of points =',npnts
@@ -785,8 +785,8 @@
                 do idescr=1, ndescriptors
                   call cg_descriptor_read_f(idescr, name, text, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
-                  write(6,500) '     DescriptorName="',name,'"',        &
-     &                               '     DescriptorText="',text,'"'
+                  write(6,500) '     DescriptorName="',TRIM(name),'"',        &
+     &                               '     DescriptorText="',TRIM(text),'"'
                 enddo
 	      enddo	!hole loop
 
@@ -796,25 +796,23 @@
 	      call cg_nconns_f(cg, base, zone, nconns, ier)
               if (ier .eq. ERROR) call cg_error_exit_f
               write(6,107) nconns,' GridConnectivity_t found'
-
 	      do conn=1, nconns
                 call cg_conn_info_f(cg, base, zone, conn, connectname,  &
      &             location, type, ptset_type, npnts, donorname,        &
      &             nzonetype, ndonor_ptset_type, ndonor_data_type,      &
      &             npnts_donor, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
-                write(6, 101)                                           &
-!234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-     &            '  GridConnectivity #',conn,':',                      &
-     &            '   connect name=',connectname,                       &
-     &            '   Grid location=',GridLocationName(location),       &
-     &            '   Connect-type=',GridConnectivityTypeName(type),    &
-     &            '   ptset type="',PointSetTypeName(ptset_type),'"',   &
-     &            '   npnts=',npnts,'   donorname="',donorname,'"',     &
-     &            '   donor zonetype=',ZoneTypeName(nzonetype),         &
-     &            '   donor ptset type=',                               &
-     &                PointSetTypeName(ndonor_ptset_type),              &
-     &            '   npnts_donor=',npnts_donor
+
+                WRITE(6, 101) &
+                 '  GridConnectivity #',conn,':', &
+                 '   connect name ='//TRIM(connectname), &
+                 '   Grid location='//TRIM(GridLocationName(location)), &
+                 '   Connect-type ='//TRIM(GridConnectivityTypeName(TYPE)), &
+                 '   ptset type   ="'//TRIM(PointSetTypeName(ptset_type))//'"', &
+                 '   npnts=',npnts,'   donorname="'//TRIM(donorname)//'"',&
+                 '   donor zonetype='//TRIM(ZoneTypeName(nzonetype)),&
+                 '   donor ptset type='//TRIM(PointSetTypeName(ndonor_ptset_type)), &
+                 '   npnts_donor=',npnts_donor
 
                 call cg_conn_read_f(cg, base, zone, conn, pnts,         &
      &                            cg_get_type(donor_pnts(1)),           &
@@ -854,8 +852,8 @@
                 if (ier .eq. ERROR) call cg_error_exit_f
 
                 write(6,105) 'GridConnectivity1to1 #',one21
-                write(6,600) 'connectname="',connectname,'"'
-                write(6,600) 'donorname  ="',donorname,'"'
+                write(6,600) 'connectname="',TRIM(connectname),'"'
+                write(6,600) 'donorname  ="',TRIM(donorname),'"'
 
                 write(6,120) ' range: ',                                &
      &           '(',range(1,1),',',range(2,1),',',range(3,1),          &
@@ -887,9 +885,9 @@
                     do idescr=1, ndescriptors
                       call cg_descriptor_read_f(idescr, name, text, ier)
                       if (ier .eq. ERROR) call cg_error_exit_f
-                      write(6,500) '   DescriptorName="',name,'"',      &
+                      write(6,500) '   DescriptorName="',TRIM(name),'"',      &
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-     &                               '   DescriptorText="',text,'"'
+     &                               '   DescriptorText="',TRIM(text),'"'
                     enddo
 		endif
               enddo
@@ -1154,9 +1152,9 @@
 	  do i=1, n1to1_global
 	    write(6,600) ' '
 	    write(6,130) '*** interface #',i,' ***'
-	    write(6,600) 'G_connectname="',G_connectname(i),'"'
-	    write(6,600) 'G_zonename   ="',G_zonename(i),'"'
-	    write(6,600) 'G_donorname  ="',G_donorname(i),'"'
+	    write(6,600) 'G_connectname="',TRIM(G_connectname(i)),'"'
+	    write(6,600) 'G_zonename   ="',TRIM(G_zonename(i)),'"'
+	    write(6,600) 'G_donorname  ="',TRIM(G_donorname(i)),'"'
 
             write(6,131) 'G_range: ',                                   &
      &           '(',G_range(1,i),',',G_range(2,i),',',G_range(3,i),    &
@@ -1185,7 +1183,7 @@
  100    format(a/,'    Mass units: ',a/,'    Length units: ',a/,        &
      &    '    Temperature units: ',a/,'    Time units: ',a/,           &
      &    '    Angle units:',a)
- 101	format(a,i1,a,/2a,/2a,/2a,/3a,/a,i4,3a,/2a,/2a,/2a,/a,i4)
+ 101	FORMAT(A,I1,A,4(/A),/A,i4,A,/A,/A,/A,I4)
  102 	format(a,f5.3)
  103	format(a,6i2)
  104	format(a,i5,3a)
