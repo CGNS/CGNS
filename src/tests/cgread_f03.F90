@@ -5,7 +5,7 @@
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-
+        USE ISO_C_BINDING
 	USE CGNS
 	implicit none
 
