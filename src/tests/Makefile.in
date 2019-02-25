@@ -205,62 +205,62 @@ write_rind$(EXE) : write_rind.c $(CGNSLIB)
 
 #----------
 
-cgiof$(EXE) : cgiof.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ cgiof.F $(LDLIBS) $(FLIBS)
+cgiof$(EXE) : cgiof.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgiof.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
-cgiof_F03$(EXE) : cgiof_f03.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ cgiof_f03.F $(LDLIBS) $(FLIBS)
+cgiof_F03$(EXE) : cgiof_f03.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgiof_f03.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
-cgwrite$(EXE) : cgwrite.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ cgwrite.F $(LDLIBS) $(FLIBS)
+cgwrite$(EXE) : cgwrite.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgwrite.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
-cgwrite_F03$(EXE) : cgwrite_f03.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ cgwrite_f03.F $(LDLIBS) $(FLIBS)
+cgwrite_F03$(EXE) : cgwrite_f03.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgwrite_f03.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
-cgread$(EXE) : cgread.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ cgread.F $(LDLIBS) $(FLIBS)
+cgread$(EXE) : cgread.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgread.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
-cgread_F03$(EXE) : cgread_f03.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ cgread_f03.F $(LDLIBS) $(FLIBS)
+cgread_F03$(EXE) : cgread_f03.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgread_f03.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
-cgzconn$(EXE) : cgzconn.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ cgzconn.F $(LDLIBS) $(FLIBS)
+cgzconn$(EXE) : cgzconn.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgzconn.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
-cgzconn_F03$(EXE) : cgzconn_f03.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ cgzconn_f03.F $(LDLIBS) $(FLIBS)
+cgzconn_F03$(EXE) : cgzconn_f03.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgzconn_f03.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
-cgsubreg$(EXE) : cgsubreg.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ cgsubreg.F $(LDLIBS) $(FLIBS)
+cgsubreg$(EXE) : cgsubreg.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgsubreg.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
-cgsubreg_F03$(EXE) : cgsubreg_f03.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ cgsubreg_f03.F $(LDLIBS) $(FLIBS)
+cgsubreg_F03$(EXE) : cgsubreg_f03.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ cgsubreg_f03.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 #----------
 
@@ -272,18 +272,18 @@ test64c.$(O) : test64c.c utils.h
 
 #----------
 
-test64f$(EXE) : test64f.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ test64f.F $(LDLIBS) $(FLIBS)
+test64f$(EXE) : test64f.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test64f.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
-test64f_F03$(EXE) : test64f_f03.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ test64f_f03.F $(LDLIBS) $(FLIBS)
+test64f_F03$(EXE) : test64f_f03.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test64f_f03.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
 
-test_general_rindf$(EXE) : test_general_rindf.F $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ test_general_rindf.F $(LDLIBS) $(FLIBS)
+test_general_rindf$(EXE) : test_general_rindf.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_general_rindf.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
