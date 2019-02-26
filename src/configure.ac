@@ -1802,6 +1802,13 @@ if test "$withfortran" = "yes"; then
      if test X != "X$fc_vendor"; then
        FFLAGS="$FFLAGS -Wno-c-binding-type"
      fi
+#----------- Determine if the Fortran compiler NAG -------------------
+#   Add compiler flag for C API calls.
+#--------------------------------------------------------------------------
+     fc_vendor="`$FC -V 2>&1 |grep 'NAG'`"
+     if test X != "X$fc_vendor"; then
+       FFLAGS="$FFLAGS -mismatch_all"
+     fi
 fi
 #--------------------------------------------------------------------------
 # substitutions and write Makefile and make.defs
