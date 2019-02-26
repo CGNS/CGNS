@@ -4,7 +4,11 @@
 
 # Link all the executables to cgns and hdf5
 link_directories(.)
-link_libraries(cgns_static)
+if(CGNS_BUILD_SHARED)
+  link_libraries(cgns_shared)
+else(CGNS_BUILD_SHARED)
+  link_libraries(cgns_static)
+endif(CGNS_BUILD_SHARED)
 
 if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
   link_libraries(${HDF5_LIBRARY})
