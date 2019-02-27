@@ -50,7 +50,7 @@ int r_phys_dim = 0;
 cgsize_t nijk[3], sizes[3];
 cgsize_t size_1D[1];
 cgsize_t min, max;
-cgsize_t k, count;
+cgsize_t k, count, count_e;
 /* For writing and reading data*/
 double* Coor_x;
 double* Coor_y;
@@ -223,9 +223,8 @@ int main(int argc, char* argv[]) {
   /* ====================================== */
 
   start = 1;
-  end = nijk[1];
-
-  count = nijk[1];
+  count_e = nijk[1];
+  end = count_e;
 
   if( !(elements = malloc(count*NodePerElem*sizeof(cgsize_t)) )) {
     printf("*FAILED* allocation of elements \n");
