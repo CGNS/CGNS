@@ -37,10 +37,10 @@ environment:
   matrix:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
     HDF5_VER: *1_8
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
     HDF5_VER: *1_10
-  - build_opt: -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON  
-    HDF5_VER: *1_10
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
 
 # Operating system (build VM template)
 os: Visual Studio 2015
@@ -125,6 +125,4 @@ build_script:
   - cmd: cmake --build . --config "%configuration%"
 
 test_script:
-  - set PATH=C:\projects\CGNS_BUILD\src\%configuration%;%PATH%
-  - set PATH=C:\Program Files\HDF_Group\HDF5\%HDF5_VER%\bin;%PATH%
-  - ctest .
+  - cmd: ctest .
