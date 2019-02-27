@@ -60,7 +60,7 @@ double* Data_Fy;
 double* Data_Fz;
 double* Array_r;
 cgsize_t* Array_i;
-cgsize_t start, end, emin, emax;
+cgsize_t start, end, end_e, emin, emax;
 cgsize_t* elements;
 char name[33];
 int  debug;
@@ -224,7 +224,7 @@ int main(int argc, char* argv[]) {
 
   start = 1;
   count_e = nijk[1];
-  end = count_e;
+  end_e = count_e;
 
   if( !(elements = malloc(count*NodePerElem*sizeof(cgsize_t)) )) {
     printf("*FAILED* allocation of elements \n");
@@ -252,7 +252,7 @@ int main(int argc, char* argv[]) {
   }
 
   tic = clock();
-  if(cg_section_write(fn,B,Z,"Elements",CGNS_ENUMV(PENTA_6), start, end, 0, elements, &S) != CG_OK) {
+  if(cg_section_write(fn,B,Z,"Elements",CGNS_ENUMV(PENTA_6), start, end_e, 0, elements, &S) != CG_OK) {
     printf("*FAILED* cgp_section_write \n");
     cg_error_exit();
   }
