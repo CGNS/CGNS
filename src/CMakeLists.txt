@@ -538,16 +538,6 @@ endif (CGNS_ENABLE_FORTRAN)
 set(CGNS_BUILD_SHARED "ON" CACHE BOOL "Build a shared version of the library")
 option(CGNS_USE_SHARED "Link programs to the CGNS shared library" "ON")
 
-# Build a static version of the library
-if (CGNS_ENABLE_FORTRAN)
-    add_library(cgns_static STATIC ${cgns_FILES} $<TARGET_OBJECTS:cgns_f2c>)
-else (CGNS_ENABLE_FORTRAN)
-  add_library(cgns_static STATIC ${cgns_FILES})
-endif (CGNS_ENABLE_FORTRAN)
-# Needed to work around a CMake > 3.8 bug on Windows with MSVS and Intel Fortran
-set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
-
-
 # Build a shared version of the library
 if(CGNS_BUILD_SHARED)
   mark_as_advanced(CLEAR CGNS_USE_SHARED)
@@ -555,7 +545,8 @@ if(CGNS_BUILD_SHARED)
   # under windows we need to define BUILD_DLL
   # and link with the HDF5 libraries to build a dll
   if (WIN32 OR CYGWIN)
-    add_definitions(-DBUILD_DLL)
+    target_compile_definitions(cgns_shared PRIVATE -DBUILD_DLL)
+    target_compile_definitions(cgns_shared INTERFACE -DUSE_DLL)
   endif (WIN32 OR CYGWIN)
   if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
     target_link_libraries(cgns_shared ${HDF5_LIBRARY} ${CMAKE_DL_LIBS})
@@ -569,42 +560,35 @@ if(CGNS_BUILD_SHARED)
       target_link_libraries(cgns_shared ${MPI_LIBS})
     endif(HDF5_NEED_MPI AND MPI_LIBS)
   endif (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
-else(CGNS_BUILD_SHARED)
-  set(CGNS_USE_SHARED "OFF")
-  mark_as_advanced(FORCE CGNS_USE_SHARED)
-endif(CGNS_BUILD_SHARED)
-
-# Change the output name of the library to be libcgns
-set_target_properties(cgns_static PROPERTIES OUTPUT_NAME cgns)
-set_target_properties(cgns_static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-if(CGNS_BUILD_SHARED)
-  # for windows we need to change the name of the shared library
-  # for both static and shared version to exist
-  if (WIN32 OR CYGWIN)
-    set_target_properties(cgns_shared PROPERTIES OUTPUT_NAME cgnsdll)
-  else (WIN32 OR CYGWIN)
-    set_target_properties(cgns_shared PROPERTIES OUTPUT_NAME cgns)
-  endif (WIN32 OR CYGWIN)
+  # Change the output name of the library to be libcgns
+  set_target_properties(cgns_shared PROPERTIES OUTPUT_NAME cgns)
   set_target_properties(cgns_shared PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-endif(CGNS_BUILD_SHARED)
-
-# Set the version numbers
-set_target_properties(cgns_static PROPERTIES VERSION "${CGNS_VERSION}")
-set_target_properties(cgns_static PROPERTIES SOVERSION "${CGNS_VERSION}")
-
-if(CGNS_BUILD_SHARED)
+  # Set the version numbers
   set_target_properties(cgns_shared PROPERTIES VERSION "${CGNS_VERSION}")
   set_target_properties(cgns_shared PROPERTIES SOVERSION "${CGNS_VERSION}")
-endif(CGNS_BUILD_SHARED)
-
-# Set the install path of the static library
-install(TARGETS cgns_static ARCHIVE DESTINATION lib)
-# Set the install path of the shared library
-if(CGNS_BUILD_SHARED)
   # for windows, need to install both cgnsdll.dll and cgnsdll.lib
   install (TARGETS cgns_shared LIBRARY DESTINATION lib
                                ARCHIVE DESTINATION lib
                                RUNTIME DESTINATION bin)
+else(CGNS_BUILD_SHARED)
+  set(CGNS_USE_SHARED "OFF")
+  mark_as_advanced(FORCE CGNS_USE_SHARED)
+  # Build a static version of the library
+  if (CGNS_ENABLE_FORTRAN)
+      add_library(cgns_static STATIC ${cgns_FILES} $<TARGET_OBJECTS:cgns_f2c>)
+  else (CGNS_ENABLE_FORTRAN)
+    add_library(cgns_static STATIC ${cgns_FILES})
+  endif (CGNS_ENABLE_FORTRAN)
+  # Needed to work around a CMake > 3.8 bug on Windows with MSVS and Intel Fortran
+  set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
+  # Change the output name of the library to be libcgns
+  set_target_properties(cgns_static PROPERTIES OUTPUT_NAME cgns)
+  set_target_properties(cgns_static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+  # Set the version numbers
+  set_target_properties(cgns_static PROPERTIES VERSION "${CGNS_VERSION}")
+  set_target_properties(cgns_static PROPERTIES SOVERSION "${CGNS_VERSION}")
+  # Set the install path of the static library
+  install(TARGETS cgns_static ARCHIVE DESTINATION lib)
 endif(CGNS_BUILD_SHARED)
 
 # Set the install path of the header files
