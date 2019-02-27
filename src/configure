@@ -6703,7 +6703,6 @@ ac_x_header_dirs='
 /usr/athena/include
 /usr/local/x11r5/include
 /usr/lpp/Xamples/include
-/opt/X11/include
 
 /usr/openwin/include
 /usr/openwin/share/include'
@@ -7246,6 +7245,13 @@ if test "$withfortran" = "yes"; then
      fc_vendor="`$FC --version 2>&1 |grep -i 'gcc'`"
      if test X != "X$fc_vendor"; then
        FFLAGS="$FFLAGS -Wno-c-binding-type"
+     fi
+#----------- Determine if the Fortran compiler NAG -------------------
+#   Add compiler flag for C API calls.
+#--------------------------------------------------------------------------
+     fc_vendor="`$FC -V 2>&1 |grep 'NAG'`"
+     if test X != "X$fc_vendor"; then
+       FFLAGS="$FFLAGS -mismatch_all"
      fi
 fi
 #--------------------------------------------------------------------------
