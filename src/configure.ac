@@ -860,6 +860,25 @@ else
   fi
   HDF5DEF=-I$HDF5INC
 
+
+  # Checking version of HDF5 (req. minimum 1.8) 
+  ## --------------------------------------------------------------------
+  AC_MSG_CHECKING([HDF5 library version])
+  H5_VERS_MAJOR=`grep "#define H5_VERS_MAJOR" $HDF5INC/H5public.h | sed "s/H5_VERS_MAJOR//g" | sed "s/[^0-9]*//g"`
+  H5_VERS_MINOR=`grep "#define H5_VERS_MINOR" $HDF5INC/H5public.h | sed "s/H5_VERS_MINOR//g" | sed "s/[^0-9]*//g"`
+  H5_VERS_RELEASE=`grep "#define H5_VERS_RELEASE" $HDF5INC/H5public.h | sed "s/H5_VERS_RELEASE//g" | sed "s/[^0-9]*//g"`
+  AC_MSG_RESULT(${H5_VERS_MAJOR}.${H5_VERS_MINOR}.${H5_VERS_RELEASE})
+
+  AC_MSG_CHECKING([if HDF5 is 1.8 or greater])
+  function version_gt {
+       test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" != "$1";
+  }
+  if version_gt ${H5_VERS_MAJOR}.${H5_VERS_MINOR} "1.7"; then
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_ERROR(no)
+  fi
+
   # Check if HDF5 library has multi-dataset read and write APIs
   ## --------------------------------------------------------------------
 
@@ -1008,97 +1027,85 @@ if test "$withhdf5" = "yes"; then
     ;;
   esac
 	
+  AC_ARG_WITH([szip],
+               [AS_HELP_STRING([--with-szip=DIR],
+                              [Use szip library for external deflate I/O
+                               filter [default=no]])],,
+               [withval=no])
 
-#  AC_MSG_CHECKING([if using zlib])
-#  AC_ARG_WITH(zlib,
-#    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=no]],
-#    withzlib=$withval,withzlib="no")
-#  if test "$withzlib" = "no"; then
-#    AC_MSG_RESULT(no)
-#  else
-#    H5NEEDZLIB=1
-#    if test -z "$withzlib" || test "$withzlib" = "yes"; then
-#      zlibdir=""
-#      AC_MSG_RESULT(yes)
-#      AC_CHECK_HEADER(zlib.h,installed=yes,installed=no)
-#      if test "$installed" = "yes"; then
-#        ZLIBLIB=-lz
-#      else
-#        AC_MSG_CHECKING([for local zlib distribution])
-#        for d in \
-#          `ls -dr * 2>/dev/null` \
-#          `ls -dr ../* 2>/dev/null` \
-#          `ls -dr ../../* 2>/dev/null` \
-#          `ls -dr ../../../* 2>/dev/null` ; do
-#          if test -f "$d/zlib.h"; then
-#            zlibdir=`(cd $d; pwd)`
-#            AC_MSG_RESULT($zlibdir)
-#            break
-#          fi
-#        done
-#        test -z "$zlibdir" && AC_MSG_RESULT(not found)
-#      fi
-#    else
-#      if test -f "$withzlib/include/zlib.h"; then
-#        zlibdir=$withzlib
-#      else
-#        zlibdir=`dirname $withzlib`
-#      fi
-#      withzlib=yes
-#      AC_MSG_RESULT($zlibdir)
-#    fi
-#
-#    if test -z "$ZLIBLIB"; then
-#      test -z "$zlibdir" && \
-#        AC_MSG_ERROR(need specify the zlib directory with --with-zlib=DIR)
-#      if test -f "$zlibdir/include/zlib.h"; then
-#        for a in $exts ; do
-#          if test -f $zlibdir/lib/libz.$a; then
-#            ZLIBLIB=$zlibdir/lib/libz.$a
-#            break
-#          fi
-#        done
-#        test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/lib/libz.a
-#      else
-#        AC_MSG_ERROR($zlibdir/include directory does not contain zlib.h)
-#      fi
-#    fi
+  case $withval in
+    yes)
+      H5NEEDSZIP=1
+      HAVE_SZIP="yes"
+      AC_CHECK_HEADERS([szlib.h], [HAVE_SZIP_H="yes"], [unset HAVE_SZIP])
+      if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
+        AC_CHECK_LIB([sz], [SZ_BufftoBuffCompress],, [unset HAVE_SZIP])
+      fi
+      if test -z "$HAVE_SZIP"; then
+        AC_MSG_ERROR([couldn't find szip library: specify the szip directory with --with-szip=DIR])
+      fi
+      SZIPLIB=-lsz
+      ;;
+    no)
+      HAVE_SZIP="no"
+      AC_MSG_CHECKING([if using szip with HDF5])
+      AC_MSG_RESULT([no])
+      ;;
+    *)
+      H5NEEDSZIP=1
+      HAVE_SZIP="yes"
+ 
+      case "$withval" in
+        *,*)
+          szip_inc="`echo $withval | cut -f1 -d,`"
+          szip_lib="`echo $withval | cut -f2 -d, -s`"
+          ;;
+        *)
+          if test -n "$withval"; then
+            szip_inc="$withval/include"
+            szip_lib="$withval/lib"
+          fi
+          ;;
+      esac
 
-#  fi
+    if test -n "$szip_inc"; then
+      CPPFLAGS="$CPPFLAGS -I$szip_inc"
+    fi
 
-  AC_MSG_CHECKING([if using szip])
-  AC_ARG_WITH(szip,
-    [  --with-szip[=LIB]       use szip with HDF5 [default=no]],
-    sziplib=$withval,sziplib="no")
-  if test "x$sziplib" = "xno"; then
-    AC_MSG_RESULT(no)
-  else
-    H5NEEDSZIP=1
-    if test -z "$sziplib" || test "$sziplib" = "yes"; then
-      AC_MSG_RESULT(yes)
-      AC_CHECK_LIB(sz, SZ_BufftoBuffCompress, SZIPLIB=-lsz)
-      if test -z "$SZIPLIB"; then
-        AC_MSG_CHECKING([for local szip library])
-        for d in \
-          `ls -dr * 2>/dev/null` \
-          `ls -dr ../* 2>/dev/null` \
-          `ls -dr ../../* 2>/dev/null` \
-          `ls -dr ../../../* 2>/dev/null` ; do
-          for a in $exts ; do
-            if test -f "$d/libsz.$a"; then
-              SZIPLIB=`(cd $d; pwd)`/libsz.$a
-              AC_MSG_RESULT($SZIPLIB)
-              break
-            fi
-          done
-          test ! -z "$SZIPLIB" && break
+    AC_CHECK_HEADERS([szlib.h],
+                     [HAVE_SZIP_H="yes"],
+                     [CPPFLAGS="$saved_CPPFLAGS"] [unset HAVE_SZIP])
+
+
+    if test $shared = yes; then
+      SZIPLIB="-L$szip_lib"
+    else
+      if test -n "$szip_lib"; then
+        for a in $exts ; do
+          if test -f $szip_lib/libsz.$a; then
+            SZIPLIB=$szip_lib/libsz.$a
+            break
+          fi
         done
       fi
-    else
-      AC_MSG_RESULT($sziplib)
-      SZIPLIB=$sziplib
     fi
-  fi
+
+    if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
+      AC_CHECK_LIB([sz], [SZ_BufftoBuffCompress],,
+                   [unset HAVE_SZIP])
+    fi
+
+    if test -z "$HAVE_SZIP"; then
+      AC_MSG_ERROR([couldn't find szip library])
+    else
+      AC_CHECK_FUNC([SZ_BufftoBuffCompress], [HAVE_BufftoBuffCompress="yes"])
+    fi
+    AC_MSG_CHECKING([for szip library path])
+    AC_MSG_RESULT([$szip_lib])
+    AC_MSG_CHECKING([for szip include path])
+    AC_MSG_RESULT([$szip_inc])
+    ;;
+  esac
 fi
 
 #---------------------------------------------------------------------------
@@ -1417,6 +1424,10 @@ if test "$enableval" = "yes" ; then
         `ls -dr ../tk8* 2>/dev/null` \
         `ls -dr ../../tk8* 2>/dev/null` \
         `ls -dr ../../../tk8* 2>/dev/null` ; do
+        if test -f "$d/tkConfig.sh"; then
+          tkdir=`(cd $d; pwd)`
+          break
+        fi
         if test -f "$d/unix/tkConfig.sh"; then
           tkdir=`(cd $d; pwd)`
           break
@@ -1454,12 +1465,18 @@ if test "$enableval" = "yes" ; then
       AC_MSG_ERROR(Tcl directory $tcldir not found)
     fi
     tcldir=`(cd $tcldir; pwd)`
-    if test ! -f "$tcldir/unix/tclConfig.sh"; then
-      AC_MSG_ERROR(tclConfig.sh not found in $tcldir/unix)
+    if test ! -f "$tcldir/tclConfig.sh"; then
+      if test ! -f "$tcldir/unix/tclConfig.sh"; then
+        AC_MSG_ERROR(tclConfig.sh not found in $tcldir or $tcldir/unix)
+      fi
     fi
     if test -z "$tkdir"; then
       dir=`dirname $tcldir`
       for d in `ls -dr $dir/tk* 2>/dev/null` ; do
+        if test -f "$d/tkConfig.sh"; then
+          tkdir=$d
+          break
+        fi
         if test -f "$d/unix/tkConfig.sh"; then
           tkdir=$d
           break
@@ -1470,20 +1487,30 @@ if test "$enableval" = "yes" ; then
       fi
     fi
   fi
-
+  TKUNIX=""
+  TCLUNIX=""
   if test ! -z "$tkdir"; then
     if test ! -d "$tkdir"; then
       AC_MSG_ERROR(Tk directory $tkdir not found)
     fi
     tkdir=`(cd $tkdir; pwd)`
-    TKCONFIG="$tkdir/unix/tkConfig.sh"
+    TKCONFIG="$tkdir/tkConfig.sh"	
     if test ! -f "$TKCONFIG"; then
-      AC_MSG_ERROR(tkConfig.sh not found in $tkdir/unix)
+      TKUNIX="unix"
+      TKCONFIG="$tkdir/$TKUNIX/tkConfig.sh"
+      if test ! -f "$TKCONFIG"; then
+        AC_MSG_ERROR(tkConfig.sh not found in $tkdir or $tkdir/unix)
+      fi
     fi
     if test -z "$tcldir"; then
       dir=`dirname $tkdir`
       for d in `ls -dr $dir/tcl* 2>/dev/null` ; do
+        if test -f "$d/tclConfig.sh"; then
+          tcldir=$d
+          break
+        fi
         if test -f "$d/unix/tclConfig.sh"; then
+	  TCLUNIX="unix"
           tcldir=$d
           break
         fi
@@ -1493,8 +1520,8 @@ if test "$enableval" = "yes" ; then
       fi
     fi
     . $TKCONFIG
-    tcllib=`ls -d $tcldir/unix/libtcl8* 2>/dev/null`
-    tklib=`ls -d $tkdir/unix/libtk8* 2>/dev/null`
+    tcllib=`ls -d $tcldir/$TCLUNIX/libtcl8* 2>/dev/null`
+    tklib=`ls -d $tkdir/$TKUNIX/libtk8* 2>/dev/null`
     X11LIBS=""
     TKINCS="-I$tcldir/generic -I$tkdir/generic"
     if test "$ac_cv_cygwin" = "yes"; then
@@ -1503,7 +1530,7 @@ if test "$enableval" = "yes" ; then
     TKLIBS="$tcllib $tklib $TK_LIBS"
     TCL_LIBRARY="$tcldir/library"
     TK_LIBRARY="$tkdir/library"
-    LIBRARY_PATH="$tcldir/unix:$tkdir/unix"
+    LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
   fi
 
   if test -z "$TKCONFIG"; then
@@ -1666,6 +1693,13 @@ if test "$withfortran" = "yes"; then
      fc_vendor="`$FC --version 2>&1 |grep -i 'gcc'`"
      if test X != "X$fc_vendor"; then
        FFLAGS="$FFLAGS -Wno-c-binding-type"
+     fi
+#----------- Determine if the Fortran compiler NAG -------------------
+#   Add compiler flag for C API calls.
+#--------------------------------------------------------------------------
+     fc_vendor="`$FC -V 2>&1 |grep 'NAG'`"
+     if test X != "X$fc_vendor"; then
+       FFLAGS="$FFLAGS -mismatch_all"
      fi
 fi
 #--------------------------------------------------------------------------

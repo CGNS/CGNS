@@ -905,7 +905,7 @@ int read_zone_element (int nz)
             if (iparent) {
                 size = 4 * (eset->end - eset->start + 1);
                 eset->parent = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
-                if (NULL == eset->conn)
+                if (NULL == eset->parent)
                     FATAL ("read_zone_element","malloc failed for parent data");
             }
             eset->offsets = NULL;

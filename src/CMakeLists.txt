@@ -8,7 +8,7 @@ if (WIN32)
 endif (WIN32)
 
 # Include the local directory
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (CGNS_ENABLE_HDF5)
   add_definitions(-DBUILD_HDF5)
   if (WIN32)
@@ -116,8 +116,15 @@ if (BUILDFORTRAN)
 # The PGI compiler segfaults wehn va_start is called, so we need to add
 # a special compiler flag, see CGNS-40.
 #--------------------------------------------------------------------------
-IF (CMAKE_C_COMPILER_ID MATCHES "PGI")
+IF (CMAKE_Fortran_COMPILER_ID MATCHES "PGI")
  SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Mx,125,0x200")
+ENDIF()
+
+#----------- Determine if the Fortran compiler NAG ------------------------
+# The NAG compiler needs an additional flag for Fortran calls to C APIs.
+#--------------------------------------------------------------------------
+IF (CMAKE_Fortran_COMPILER_ID MATCHES "NAG")
+ SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mismatch_all")
 ENDIF()
 
 ENABLE_LANGUAGE(Fortran)
@@ -236,6 +243,11 @@ CHECK_FORTRAN_FEATURE(Fortran2008
            END FUNCTION bind2
          END INTERFACE
        END MODULE test
+
+       PROGRAM main
+         USE test
+         IMPLICIT NONE
+       END PROGRAM
   "
   CHECK_FORTRAN_2008
 )
@@ -479,7 +491,7 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 ###########
 # Library #
@@ -532,6 +544,8 @@ if (CGNS_ENABLE_FORTRAN)
 else (CGNS_ENABLE_FORTRAN)
   add_library(cgns_static STATIC ${cgns_FILES})
 endif (CGNS_ENABLE_FORTRAN)
+# Needed to work around a CMake > 3.8 bug on Windows with MSVS and Intel Fortran
+set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
 
 
 # Build a shared version of the library
@@ -605,8 +619,13 @@ set(headers
   ${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs)
 
 if (CGNS_ENABLE_FORTRAN)
-  list(APPEND headers
-    ${CMAKE_CURRENT_BINARY_DIR}/cgns.mod)
+  if(DEFINED CMAKE_Fortran_MODULE_DIRECTORY)
+    list(APPEND headers
+      ${CMAKE_Fortran_MODULE_DIRECTORY}/cgns.mod)
+  else()
+    list(APPEND headers
+      $<TARGET_FILE_DIR:cgns_static>/cgns.mod)
+  endif()
 endif (CGNS_ENABLE_FORTRAN)
 
 if (CGNS_ENABLE_PARALLEL)
@@ -642,6 +661,7 @@ if (CGNS_ENABLE_TESTS)
   add_subdirectory(Test_UserGuideCode/C_code)
   if (CGNS_ENABLE_PARALLEL)
     add_subdirectory(ptests)
+    add_subdirectory(Test_UserGuideCode/C_code_parallel)
   endif (CGNS_ENABLE_PARALLEL)
 endif (CGNS_ENABLE_TESTS)
 

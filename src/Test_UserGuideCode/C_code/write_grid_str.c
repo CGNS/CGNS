@@ -27,9 +27,10 @@ int main()
    dimension statements (note that tri-dimensional arrays
    x,y,z must be dimensioned exactly as [N][17][21] (N>=9)
    for this particular case or else they will be written to
-   the CGNS file incorrectly!  Other options are to use 1-D
-   arrays, use dynamic memory, or pass index values to a
-   subroutine and dimension exactly there):
+   the CGNS file incorrectly!  Other options are to use
+   cg_coord_general_write, 1-D arrays, use dynamic memory,
+   or pass index values to a subroutine and dimension exactly
+   there):
 */
    double x[9][17][21],y[9][17][21],z[9][17][21];
    cgsize_t isize[3][3];
