@@ -951,7 +951,8 @@ AC_ARG_WITH([fnord],
                          include/ and lib/ subdirectories
 
   IMPORTANT NOTE: CGNS will automatically search for zlib and szip used in
-        building HDF5 only if these options are not specified. 
+        building HDF5 only if options --with-zlib and --with-szip are not
+        specified. 
 
   ])
 
