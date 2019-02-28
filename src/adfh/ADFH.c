@@ -2065,12 +2065,12 @@ void ADFH_Database_Open(const char   *name,
       H5F_LIBVER_LATEST, H5F_LIBVER_LATEST); */
 
   H5Pset_libver_bounds(g_propfileopen,
-#if H5_VERSION_GE(1,10,0)
-                       H5F_LIBVER_V18, H5F_LIBVER_V18);
-#else
-                       H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
-#endif
 
+#if H5_VERSION_GE(1,10,3)
+		       H5F_LIBVER_V18, H5F_LIBVER_V18);
+#else
+		       H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+#endif
   /* open the file */
 
 #ifdef BUILD_PARALLEL
