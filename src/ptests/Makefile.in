@@ -48,6 +48,12 @@ test : $(TESTS)
 	   fi; \
 	 done; \
 	 echo "=== finished ==="; \
+         if test $$status == 1; then \
+           printf "$(ERROR_COLOR)"; \
+         else \
+           printf "$(OK_COLOR)"; \
+         fi; \
+         printf "$$status tests failed $(NO_COLOR) \n"; \
 	 exit $$status;
 
 #----------

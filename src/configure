@@ -672,6 +672,7 @@ MPIINC
 MPIDEF
 SZIPLIB
 ZLIBLIB
+HDF5LIB_DEP
 HDF5LIB
 HDF5INC
 HDF5DEF
@@ -1439,6 +1440,12 @@ Optional Packages:
                          library directory separated by a comma
     --with-xxx=DIR     - Specify only the directory which contains the
                          include/ and lib/ subdirectories
+
+  IMPORTANT NOTE: CGNS will automatically search for zlib and szip used in
+        building HDF5 only if options --with-zlib and --with-szip are not
+        specified.
+
+
 
   --with-zlib=DIR         Use zlib library for external deflate I/O filter
                           [default=no]
@@ -5572,6 +5579,7 @@ BUILDHDF5=0
 HDF5DEF=""
 HDF5INC=""
 HDF5LIB=""
+HDF5BIN=""
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using HDF5" >&5
 $as_echo_n "checking if using HDF5... " >&6; }
@@ -5659,7 +5667,11 @@ $as_echo "$hdf5dir" >&6; }
     fi
   fi
   HDF5DEF=-I$HDF5INC
+  HDF5BIN=$hdf5dir/bin
 
+  if test -z "$HDF5BIN"; then
+     as_fn_error $? "failed to find the HDF5 bin directory $HDF5BIN" "$LINENO" 5
+  fi
 
   # Checking version of HDF5 (req. minimum 1.8)
   ## --------------------------------------------------------------------
@@ -5673,10 +5685,7 @@ $as_echo "${H5_VERS_MAJOR}.${H5_VERS_MINOR}.${H5_VERS_RELEASE}" >&6; }
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if HDF5 is 1.8 or greater" >&5
 $as_echo_n "checking if HDF5 is 1.8 or greater... " >&6; }
-  function version_gt {
-       test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" != "$1";
-  }
-  if version_gt ${H5_VERS_MAJOR}.${H5_VERS_MINOR} "1.7"; then
+  if test ${H5_VERS_MAJOR} -ge 1 && test ${H5_VERS_MINOR} -ge 8; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
   else
@@ -5704,7 +5713,7 @@ void main(void)
   return;
 }
 EOF
-  msg=`${CC} -c test.c ${HDF5DEF} &> /dev/null`
+  msg=`${CC} -c test.c ${HDF5DEF} 2> /dev/null`
   if test -f test.o; then
     HDF5_HAVE_MULTI_DATASETS=1
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
@@ -5739,10 +5748,14 @@ fi
 # locate zlib and szip libraries
 #---------------------------------------------------------------------------
 
+# Automatically search for zlib and szip from HDF5 build specs, but
+# only do this if --with-zlib and --with-szip is not specified.
+
 H5NEEDZLIB=0
 ZLIBLIB=""
 H5NEEDSZIP=0
 SZIPLIB=""
+HDF5LIB_DEP=""
 
 ## ----------------------------------------------------------------------
 ## Fake --with-xxx option to allow us to create a help message for the
@@ -5757,6 +5770,121 @@ fi
 
 
 if test "$withhdf5" = "yes"; then
+
+
+# Check whether --with-zlib was given.
+if test "${with_zlib+set}" = set; then :
+  withval=$with_zlib; withval_zlib=yes
+else
+  withval_zlib=no
+fi
+
+
+# Check whether --with-szip was given.
+if test "${with_szip+set}" = set; then :
+  withval=$with_szip; withval_szip=yes
+else
+  withval_szip=no
+fi
+
+
+  if test $withval_zlib == "no" && test $withval_szip == "no"; then
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if HDF5 library has compression dependencies" >&5
+$as_echo_n "checking if HDF5 library has compression dependencies... " >&6; }
+
+  H5CC=$HDF5BIN/h5*cc
+  H5BLD_CPPFLAGS=`cat $H5CC | grep "H5BLD_CPPFLAGS=" | sed -e 's/.*H5BLD_CPPFLAGS="*\(.*\) ".*/\1/'`
+  H5BLD_LDFLAGS=`cat $H5CC | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS="*\(.*\) ".*/\1/'`
+  H5BLD_LIBS=`cat $H5CC | grep "H5BLD_LIBS=" | sed -e 's/.*H5BLD_LIBS="*\(.*\) ".*/\1/'`
+
+  LDFLAGS="$LDFLAGS $H5BLD_LDFLAGS"
+  CPPFLAGS="$CPPFLAGS $H5BLD_CPPFLAGS"
+
+# check if linking in szip or zlib
+# HDF5 does not add LDFLAGS for libraries in standard locations, so process the LIBS being
+# linked in.
+  LZLIB=""
+  LSZIP=""
+  LNUMLIBS=`echo $H5BLD_LIBS | awk '{print NF}'`
+  if test $LNUMLIBS -gt 0; then
+    for i in `seq 1 $LNUMLIBS` ; do
+       LIBX=`echo $H5BLD_LIBS | cut -d' ' -f$i`
+       if test `echo $LIBX | grep "\-lz" > /dev/null; echo $?` == 0; then
+         LZLIB="-lz"
+       fi
+       if test `echo $LIBX | grep "\-lsz" > /dev/null; echo $?` == 0; then
+         LSZIP="-lsz"
+       else
+         if test `echo $LIBX | grep "\-lszip" > /dev/null; echo $?` == 0; then
+           LSZIP="-lszip"
+         fi
+       fi
+    done
+  fi
+
+  if test $shared = yes; then
+     LDFLAGS="$LDFLAGS $H5BLD_LDFLAGS"
+     HDF5LIB_DEP="$LDFLAGS"
+     LIBS="$LIBS $LZLIB $LSZIP"
+     FLIBS="$FLIBS $LZLIB $LSZIP"
+  else
+     H5BLD_LDFLAGS_PATH=`echo $H5BLD_LDFLAGS | sed 's/-L//g'`
+     NUMLIBS=`echo $H5BLD_LDFLAGS_PATH | awk '{print NF}'`
+
+     HDF5LIB_DEP=""
+     FOUNDZLIB="false"
+     FOUNDSZIP="false"
+     for i in `seq 1 $NUMLIBS` ; do
+       LIB_PATH=`echo $H5BLD_LDFLAGS_PATH | cut -d' ' -f$i`
+       for a in $exts ; do
+          if test -f $LIB_PATH/libz.$a; then
+            HDF5LIB_DEP="$LIB_PATH/libz.$a $HDF5LIB_DEP"
+            FOUNDZLIB="true"
+            break
+          fi
+          if test -f $LIB_PATH/libsz.$a; then
+            HDF5LIB_DEP="$LIB_PATH/libsz.$a $HDF5LIB_DEP"
+            FOUNDSZIP="true"
+            break
+          fi
+          if test -f $LIB_PATH/libszip.$a; then
+            HDF5LIB_DEP="$LIB_PATH/libszip.$a $HDF5LIB_DEP"
+            FOUNDSZIP="true"
+            break
+          fi
+       done
+     done
+
+     if test "x$LSZIP" != "x" && test "$FOUNDSZIP" == "false";then
+       LIBS="$LIBS $LSZIP"
+       FLIBS="$FLIBS $LSZIP"
+     fi
+     if test "x$LZLIB" != "x" && test "$FOUNDZLIB" == "false";then
+       LIBS="$LIBS $LZLIB"
+       FLIBS="$FLIBS $LZLIB"
+     fi
+  fi
+
+  if test "x$HDF5LIB_DEP" = "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HDF5LIB_DEP" >&5
+$as_echo "$HDF5LIB_DEP" >&6; }
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking HDF5 library LIB dependencies" >&5
+$as_echo_n "checking HDF5 library LIB dependencies... " >&6; }
+  if test "x$LIBS" = "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
+$as_echo "none" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LIBS" >&5
+$as_echo "$LIBS" >&6; }
+  fi
+
+  else
 
 
 # Check whether --with-zlib was given.
@@ -6173,6 +6301,9 @@ $as_echo_n "checking for szip include path... " >&6; }
 $as_echo "$szip_inc" >&6; }
     ;;
   esac
+
+  fi
+
 fi
 
 #---------------------------------------------------------------------------
@@ -6703,6 +6834,7 @@ ac_x_header_dirs='
 /usr/athena/include
 /usr/local/x11r5/include
 /usr/lpp/Xamples/include
+/opt/X11/include
 
 /usr/openwin/include
 /usr/openwin/share/include'
@@ -7338,6 +7470,7 @@ else
 $as_echo "no" >&6; }
   SET_MAKE="MAKE=${MAKE-make}"
 fi
+
 
 
 
