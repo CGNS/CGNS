@@ -10,7 +10,7 @@ CGNSlibs = $(CGNSLIB) $(HDF5LIB)
 
 # Fortran compiler and options
 FOPTS = -I$(CGNSinclude) $(FFLAGS)
-LIBS  = $(CGNSlibs) -lm $(FLIBS) $(SZIPLIB) $(ZLIBLIB) $(HDF5LIB_DEP)
+LIBS  = $(CGNSlibs) $(SZIPLIB) $(ZLIBLIB) $(HDF5LIB_DEP) -lm $(FLIBS)
 
 # how to name output executable and extension
 FEOUT = -o
