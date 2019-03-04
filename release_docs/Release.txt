@@ -1,102 +1,119 @@
-CGNS 3.3.1
-============
+# CGNS version 3.4.0
 
-INTRODUCTION
-===============
+This document describes the difference between CGNS 3.3.1 and
+CGNS 3.4.0, and contains information on known problems in CGNS 3.4.0.
 
-This document describes the difference between CGNS 3.3.0 and
-CGNS 3.3.1, and contains information on known problems in CGNS 3.3.1.
+Links to the CGNS 3.4.0 source code can be found at:
 
-Links to the CGNS 3.3.1 source code can be found at:
-
-     http://cgns.org/download.html
+http://cgns.org/download.html
 
 User documentation for the current release can be found at:
 
-     http://cgns.org/CGNS_docs_current/midlevel/index.html
+http://cgns.org/CGNS_docs_current/midlevel/index.html
 
 For more information, see the CGNS home page:
 
-     http://cgns.org
+http://cgns.org
 
-
-CONTENTS
-============
-
-- New Features
-- Support for new platforms and languages
-- Bug Fixes since CGNS 3.3.0
-- Known Problems
+# CONTENTS
 
 New Features
-==============
-
-    Configuration:
-    ------------------
-     * Windows Parallel CGNS with Fortran enabled, PR-40.
-
-    Library:
-    ------------
-     - None
-
-    Parallel Library:
-    ---------------------
-     - None
-
-    Fortran Library:
-    --------------------
-     - None
-
-    Tools:
-    ----------
-     - None
-
-Bug Fixes since CGNS 3.3.0 Release
-==================================
-
-    Configuration:
-    ------------------
-    * Implement FortranCInterface_HEADER in cmake, CGNS-78.
-    * Cmake target link libraries need to be set on systems other than just WIN32 and CYGWIN, CGNS-64.
-    * Support Mac's dylib shared library suffix with CMake, CGNS-61.
-    * CMake needs to be updated to handle new fortran features, CGNS-10.
-    * Add missing dependency in cgns_to_plot3d (cmake build), CGNS-16.
-    * Add missing include path, fix hdf5, PR 18.
-    
-    Library:
-    ------------
-    * Hang in parallel read/write, CGNS-105.
-    * Header files contain functions not existing in code, CGNS-115.
-    * Fixes for CGNS-83: Large files fail on 64-bit windows.
-    * Remove incorrect semicolon, PR-13.
-    * Add missing close paren, PR-15.
-    * Fix incorrect structured field array access -- cut paste error, PR-17.
-    * Fix a few missing CGNS_ENUMV uses, PR-20.
-    * Fix to avoid hang due to collective requirement, PR-21.
-    * Freeing incorrect pointer, PR-23
-    * Initialize err, add missing return, PR-25.
-    * Handle case where wbuf or rbuf is NULL, PR-26.
-    * Tests can run with ENUM_SCOPING enabled, PR-34.
-    * Implementation and test for cgp_parent_data_write, PR-36.
-    * Add cmake support for memory debugging; fix memory debug routines, PR-39.
-    
-
-    Fortran:
-    ------------
-    * Missing C binding for cg_conversion_write_f
-    
-    Tools:
-    ----------
-    * cgnsconvert fails to process a file written by the parallel CGNS library, CGNS-77.
-
-
+Bug Fixes since CGNS 3.3.1
 Known Problems
-================
+Supported platforms
 
-   * When building with PGI and gcc compilers it might be necassary to set the
-     environment variables:
-            FLIBS="-Wl,--no-as-needed -ldl"
-            LIBS="-Wl,--no-as-needed -ldl"
+# New Features
+## Configuration:
+
+    Enforce the HDF5 version >= 1.8 is used in building HDF5. (CGNS-150).
+    Autotools: CGNS will find and link the compression libraries, szip and zlib, required by HDF5. This 
+    occurs automatically if neither --with-zlib or --with-szip are not specified (CGNS-156).
+
+## Library:
+
+    Changed default CGNS to 1.8 HDF5 file format.
+               -- only for HDF5 versions > 1.10.2.
+    CPEX 40 Rind Plane Indexing (CGNS-87)
+    CPEX 41 NGON modification proposal (CGNS-121)
+
+## Parallel Library:
+
+    None
+
+## Fortran Library:
+
+   Added support for NAG Fortran compilers (CGNS-107)
+
+## Tools:
+
+    None
+
+# Bug Fixes since CGNS 3.3.1 Release
+
+# Configuration:
+
+    * Order include directives to get correct includes, cmake (PR 109) 
+    * make clean does not remove executables in Test_UserGuideCode (CGNS-99)
+    * Windows builds: CGNS_ENABLE_LFS is ignored (CGNS-117)
+    * Sun's make implemenation fails to compile fortran (CGNS-28)
+    * Some systems need to explicitly link to libdl (CGNS-128)
+    * CGNS fails in fortran test with PGI 17 compiler (CGNS-127)
+    * CGNS fails to find the lib64 HDF5 library (CGNS-123)
+    * CGNS fails to compile on Windows with Fortran enabled (CGNS-148)
+    * Can't compile using MSVC & IVF on windows (MSVS 14) (CGNS-146)
+    * Fix szip linking (PR 97)
+    * RPATH handling for MacOSX (Darwin) (PR 88)
+    * fix tests failing when compiled for 64bit (PR 85)
+    * remove variable length array to be able to build pcgnslib.c with VC (CGNS-147)
+    * Build parallel CGNS on Windows (PR 69)
+    * Cmake fixups (PR 58)
+    * If check needs to link, then need library path (PR 52)
+    * Specify STATIC when adding cgns_static lib (PR 46)
+    * _stat32i64 is msvc-specific (PR 45)
+
+# Library:
+
+    * Eliminate potential integer overflow / undefined behavior (PR 106) 
+    * Partial write of unstructured MIXED element sets fails with CGNS > 3.3.1 (CGNS-151)
+    * If processor has no data, set end = start = 0 (CGNS-133)
+    * Large files fail on 64-bit windows (CGNS-83)
+    * mesh_dim may be exceed the limit of 32-bit integer (CGNS-131)
+    * RUNPARALLEL is defined but never used. (CGNS-96)
+    * typo in cgnscheck print_units cg_TemperatureUnitsName index (CGNS-126)
+    * cgp_mpi_comm return value unclear (CGNS-111)
+    * Changed ADFH_Read_Data and ADFH_Write_Data to honor the cgp_pio_mode (PR 98)
+    * Support for std C on linux (PR 96)
+    * Null check fix (PR 94)
+    * Eliminate dead / unreachable code (PR 93)
+    * Fix parallel write (PR 86)
+    * Add missing argument to cgi_error call (PR 84)
+    * Fix BC type string constant FamilySpecified_s (PR 83)
+    * Remove double condition test (PR 82)
+    * remove some gcc warnings (PR 78)
+    * remove variable length array to be able to build pcgnslib.c with VC (PR 76)
+    * Fix bad if test (PR 70)
+    * Eliminate memory leaks in cgi_read_ziter (PR 68)
+    * Improve error messages, fix error check (fixed) (PR 66)
+    * Drop obsolete matherr hack (PR 55)
+
+# Fortran:
+
+    * Add missing dll export symbols from Fortran module. (PR 59)
+
+# Tools:
+
+    * Update cgnsutil.c (PR 89)
+    * patch cgnscheck (PR 72)
+    * Fix cgnsview linking to HDF5 libs. (PR 56)
+
+## Known Problems
+
+When building with PGI and gcc compilers it might be necessary to set the
+environment variables:
+FLIBS="-Wl,--no-as-needed -ldl"
+LIBS="-Wl,--no-as-needed -ldl"
+
+Misc. issues can be found at: https://cgnsorg.atlassian.net
 
 Supported Platforms
 ======================
@@ -163,25 +180,23 @@ Tested Configuration Features Summary
           x   = not working in this release
           dna = does not apply
 
-Platform                             |  C        | F90/  |  F90     
-                                     |  parallel | F2003 |  parallel
--------------------------------------|-----------|-------|----------
-SunOS 5.11 32-bit                    |   n      |  y/y       n      
-SunOS 5.11 64-bit                    |   n      |  y/y    |  n      
-Windows 7                            |   n      |  n/n    |  n      
-Windows 7 x64                        |   n      |  n/n    |  n      
-Windows 7 Cygwin                     |   n      |  n/n    |  n      
-Windows 8.1                          |   n      |  n/n    |  n      
-Windows 8.1 x64                      |   n      |  n/n    |  n        
-Windows 10                           |   n      |  n/n    |  n      
-Windows 10  x64                      |   n      |  n/n    |  n      
-Mac OS X Mountain Lion 10.8.5 64-bit |   n      |  y/y    |  n      
-Mac OS X Mavericks 10.9.5 64-bit     |   n      |  y/y    |  n     
-Mac OS X Yosemeti 10.10.5 64-bit     |   n      |  y/y    |  n     
-AIX 6.1 32- and 64-bit               |   n      |  y/n    |  n    
-CentOS 6.7 Linux 2.6.32 x86_64 GNU   |   y      |  y/y    |  y    
-CentOS 6.7 Linux 2.6.32 x86_64 Intel |   n      |  y/y    |  n    
-CentOS 6.7 Linux 2.6.32 x86_64 PGI   |   n      |  y/y    |  n    
-CentOS 7.1 Linux 3.10.0 x86_64 GNU   |   y      |  y/y    |  y    
-CentOS 7.1 Linux 3.10.0 x86_64 Intel |   n      |  y/y    |  n    
-Linux 2.6.32-431.11.2.el6.ppc64      |   n      |  y/n    |  n
+Platform                             |  C        | Fortran |  Fortran     
+                                     |  parallel |         |  parallel
+-------------------------------------|-----------|---------|----------
+SunOS 5.11 32-bit                    |   n       |  y      |     n      
+SunOS 5.11 64-bit                    |   n       |  y      |     n
+Windows 7                            |   n       |  n      |     n
+Windows 7 x64                        |   n       |  n      |     n
+Windows 7 Cygwin                     |   n       |  n      |     n  
+Windows 8.1                          |   n       |  n      |     n
+Windows 8.1 x64                      |   n       |  n      |     n
+Windows 10                           |   n       |  n      |     n
+Windows 10  x64                      |   n       |  n      |     n
+Mac OS X Yosemeti 10.10.5 64-bit     |   n       |  y      |     n
+Mac OS X El Capitan 10.11.6 64-bit   |   n       |  y      |     n
+MacOS High Sierra 10.13.6 64-bit     |   n       |  y      |     n
+AIX 6.1 32- and 64-bit               |   n       |  y      |     n
+CentOS 7.1 Linux 3.10.0 x86_64 PGI   |   n       |  y      |     n  
+CentOS 7.1 Linux 3.10.0 x86_64 GNU   |   y       |  y      |     y
+CentOS 7.1 Linux 3.10.0 x86_64 Intel |   n       |  y      |     n  
+Linux 2.6.32-431.11.2.el6.ppc64      |   n       |  y      |     n
