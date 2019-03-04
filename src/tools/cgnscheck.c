@@ -60,6 +60,7 @@ typedef struct {
     int ib;
     cgsize_t nv, ns, ne, nn;
     cgsize_t *elements;
+    cgsize_t *offsets;
     cgsize_t *parent;
     int rind[2];
     int invalid;
@@ -591,7 +592,7 @@ static int element_dimension (CGNS_ENUMT(ElementType_t) elemtype)
 static int valid_face (ZONE *z, cgsize_t elem)
 {
     int ns, nn;
-    cgsize_t n, ne, *pe;
+    cgsize_t n, ne, *pe, *po;
     CGNS_ENUMT(ElementType_t) type;
 
     for (ns = 0; ns < z->nsets; ns++) {
@@ -599,13 +600,11 @@ static int valid_face (ZONE *z, cgsize_t elem)
         if (elem >= z->sets[ns].is && elem <= z->sets[ns].ie) {
             type = z->sets[ns].type;
             pe = z->sets[ns].elements;
+            po = z->sets[ns].offsets;
             ne = elem - z->sets[ns].is;
             if (type == CGNS_ENUMV(NGON_n)) {
-                for (n = 0; n < ne; n++) {
-                    nn = (int)*pe++;
-                    pe += nn;
-                }
-                return (*pe < 3 ? 0 : 1);
+                nn = (int)(po[ne+1] - po[ne]);
+                return (nn < 3 ? 0 : 1);
             }
             if (type == CGNS_ENUMV(MIXED)) {
                 for (n = 0; n < ne; n++) {
@@ -639,32 +638,26 @@ static int valid_face (ZONE *z, cgsize_t elem)
 
 static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
 {
-    int ns, nn;
-    cgsize_t ne, *nodes;
+    int ns, nn=0;
+    cgsize_t ne, *nodes, *offsets;
     CGNS_ENUMT(ElementType_t) type;
-
     for (ns = 0; ns < z->nsets; ns++) {
         if (z->sets[ns].invalid) continue;
         if (elem >= z->sets[ns].is && elem <= z->sets[ns].ie) {
             ne = elem - z->sets[ns].is;
             nodes = z->sets[ns].elements;
+            offsets = z->sets[ns].offsets;
             type = z->sets[ns].type;
             if (type == CGNS_ENUMV(NGON_n)) {
-                while (ne-- > 0) {
-                    nn = (int)*nodes++;
-                    nodes += nn;
-                }
+                *nnodes = (int)(offsets[ne+1] - offsets[ne]);
+                nodes += (offsets[ne] - offsets[0]);
                 *dim = 2;
-                *nnodes = (int)*nodes++;
                 return nodes;
             }
             if (type == CGNS_ENUMV(NFACE_n)) {
-                while (ne-- > 0) {
-                    nn = (int)*nodes++;
-                    nodes += nn;
-                }
+                *nnodes = offsets[ne+1] - offsets[ne];
+                nodes += (offsets[ne] - offsets[0]);
                 *dim = 3;
-                *nnodes = (int)*nodes++;
                 return nodes;
             }
             if (type == CGNS_ENUMV(MIXED)) {
@@ -1171,7 +1164,7 @@ static void read_zone (int nz)
     int i, j, n;
     cgsize_t size[9];
     int ns, nsets, hasparent;
-    cgsize_t ne, *pe;
+    cgsize_t ne, *pe, *po;
     cgsize_t se, nelem, k;
     int nn, nf, ip, ierr;
     cgsize_t *nodes, maxnode;
@@ -1263,8 +1256,20 @@ static void read_zone (int nz)
             if (NULL == es->parent)
                 fatal_error("malloc failed for elemset parent data\n");
         }
-        if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, es->elements,
-                es->parent)) error_exit ("cg_elements_read");
+        es->offsets = NULL;
+        if (es->type == CGNS_ENUMV(MIXED) ||
+            es->type == CGNS_ENUMV(NFACE_n) ||
+            es->type == CGNS_ENUMV(NGON_n)) {
+            es->offsets = (cgsize_t *) malloc ((size_t)((nelem+1) * sizeof(cgsize_t)));
+            if (NULL == es->offsets)
+                fatal_error("malloc failed for offsets\n");
+            if (cg_poly_elements_read (cgnsfn, cgnsbase, nz, ns, es->elements, es->offsets,
+                    es->parent)) error_exit ("cg_poly_elements_read");
+        }
+        else {
+            if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, es->elements,
+                    es->parent)) error_exit ("cg_elements_read");
+        }
 
         go_absolute ("Zone_t", nz, "Elements_t", ns, NULL);
         ierr = read_rind (es->rind);
@@ -1379,6 +1384,7 @@ static void read_zone (int nz)
         if (es->invalid || es->nv == 0) continue;
         nelem = es->ie - es->is + 1 - es->rind[1];
         pe = es->elements;
+        po = es->offsets;
         if (es->type == CGNS_ENUMV(MIXED)) {
             for (ne = 0; ne < nelem; ne++) {
                 type = (int)*pe++;
@@ -1403,7 +1409,7 @@ static void read_zone (int nz)
         }
         else if (es->type == CGNS_ENUMV(NGON_n)) {
             for (ne = 0; ne < nelem; ne++) {
-                nn = (int)*pe++;
+                nn = (int)(po[ne+1]-po[ne]);
                 if (ne >= es->rind[0]) {
                     for (i = 0; i < nn; i++) {
                         if (pe[i] < 1 || pe[i] > z->maxnode) {
@@ -1417,7 +1423,7 @@ static void read_zone (int nz)
         }
         else if (es->type == CGNS_ENUMV(NFACE_n)) {
             for (ne = 0; ne < nelem; ne++) {
-                nn = (int)*pe++;
+                nn = (int)(po[ne+1]-po[ne]);
                 if (ne >= es->rind[0]) {
                     for (i = 0; i < nn; i++) {
                         if (!valid_face (z, abs(pe[i]))) {
@@ -1467,6 +1473,7 @@ static void read_zone (int nz)
         nelem = es->ie - es->is + 1 - es->rind[1];
         type = es->type;
         pe = es->elements;
+        po = es->offsets;
         cg_npe (es->type, &nn);
 
         for (ne = 0; ne < nelem; ne++) {
@@ -1519,7 +1526,7 @@ static void read_zone (int nz)
                     nf = 6;
                     break;
                 case CGNS_ENUMV(NFACE_n):
-                    nf = (int)*pe++;
+                    nf = (int)(po[ne+1]-po[ne]);
                     nn = nf;
                     break;
                 default:
@@ -1786,7 +1793,7 @@ static void print_units (int *units, int indent)
         cg_MassUnitsName(units[0]),
         cg_LengthUnitsName(units[1]),
         cg_TimeUnitsName(units[2]),
-        cg_TemperatureUnitsName(units[4]),
+        cg_TemperatureUnitsName(units[3]),
         cg_AngleUnitsName(units[4]));
     if (units[8] > 5)
         printf (",%s,%s,%s",
@@ -2616,7 +2623,7 @@ static void check_elements (void)
 {
     int nn, ns, dim;
     int nf, np, nint, next;
-    cgsize_t is, ne, nelem, *pe;
+    cgsize_t is, ne, nelem, *pe, *po;
     ELEMSET *es;
     CGNS_ENUMT(ElementType_t) type;
     FACE *face, *pf;
@@ -2707,6 +2714,7 @@ static void check_elements (void)
         nelem = es->ie - es->is + 1 - es->rind[1];
         type = es->type;
         pe = es->elements;
+        po = es->offsets;
         nf = np = nint = next = 0;
         dim = element_dimension(es->type);
         for (ne = 0; ne < nelem; ne++) {
@@ -2722,7 +2730,7 @@ static void check_elements (void)
                 dim = element_dimension(type);
             }
             else if (es->type == CGNS_ENUMV(NGON_n)) {
-                nn = (int)*pe++;
+                nn = (int)(po[ne+1]-po[ne]);
             }
             else {
                 cg_npe (type, &nn);
@@ -5879,7 +5887,7 @@ static void check_base_iter (void)
 
 static void check_base (void)
 {
-    char basename[33], name[33], *desc;
+  char basename[33], name[33], *desc1, *desc2, *desc3;
     int n, nz, ierr, nd, nf, eqset[7];
     float point[3], vector[3];
     CGNS_ENUMT(SimulationType_t) simulation;
@@ -5967,11 +5975,11 @@ static void check_base (void)
     if (verbose > 1) {
         if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
         for (n = 1; n <= nd; n++) {
-            if (cg_descriptor_read (n, name, &desc))
+            if (cg_descriptor_read (n, name, &desc1))
                 error_exit("cg_descriptor_read");
-            if (desc != NULL) {
-                printf ("  Descriptor %s:\n%s\n", name, desc);
-                cg_free (desc);
+            if (desc1 != NULL) {
+                printf ("  Descriptor %s:\n%s\n", name, desc1);
+                cg_free (desc1);
             }
         }
     }
@@ -5995,14 +6003,14 @@ static void check_base (void)
 
     /*----- ReferenceState -----*/
 
-    ierr = cg_state_read (&desc);
+    ierr = cg_state_read (&desc2);
     if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_state_read");
     if (ierr == CG_OK) {
         puts ("checking reference state");
-        if (desc != NULL) {
+        if (desc2 != NULL) {
             if (verbose > 1)
-                printf ("  Descriptor:%s\n", desc);
-            cg_free (desc);
+                printf ("  Descriptor:%s\n", desc2);
+            cg_free (desc2);
         }
         fflush (stdout);
         go_absolute ("ReferenceState_t", 1, NULL);
@@ -6079,15 +6087,15 @@ static void check_base (void)
     /*----- ConvergenceHistory -----*/
 
     go_absolute (NULL);
-    ierr = cg_convergence_read (&nd, &desc);
+    ierr = cg_convergence_read (&nd, &desc3);
     if (ierr && ierr != CG_NODE_NOT_FOUND)
         error_exit("cg_convergence_read");
     if (ierr == CG_OK && nd) {
         puts ("checking global convergence history");
         fflush (stdout);
         go_absolute ("ConvergenceHistory_t", 1, NULL);
-        check_convergence (nd, desc, BaseClass, pBaseUnits, 2);
-        if (desc != NULL) cg_free (desc);
+        check_convergence (nd, desc3, BaseClass, pBaseUnits, 2);
+        cg_free (desc3);
     }
 
     /*=----- IntegralData -----*/

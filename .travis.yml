@@ -20,8 +20,8 @@ before_install:
       fi
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
-    - test $(uname) = "Darwin" && brew install gcc6 || true
-    - test $(uname) = "Darwin" && brew link --overwrite gcc || true
+    - test $(uname) = "Darwin" && brew install gcc@6 || true
+    - test $(uname) = "Darwin" && brew link --overwrite gcc@6 || true
 
 matrix:
    include:
@@ -30,26 +30,12 @@ matrix:
        install: export CC="gcc" export FC="gfortran" export F77="gfortran"
      - os: osx
        compiler: gcc
-       install: export CC="gcc" export FC="gfortran-7" export F77="gfortran-7"
+       install: export CC="gcc" export FC="gfortran-6" export F77="gfortran-6"
 
 before_script:
     - ./bin/install-hdf.sh
-    - ./bin/install-cgns.sh
+    - ./bin/config-cgns.sh
 
 script:
-    - cd src
-    - make
-    - make install
-    - cd tests
-    - make
-    - make test
-    - cd ../examples/fortran
-    - make
-    - make test
-    - cd ../../Test_UserGuideCode/Fortran_code
-    - make
-    - make test
-    - cd ../C_code
-    - make
-    - make test
+    - ./bin/build-cgns.sh
     

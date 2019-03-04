@@ -31,18 +31,6 @@ DIRS="Test1 \
 	Test_UD_BCData \
 	Test_UserDefinedData"
 
-#	-@for d in $(DIRS) ; do \
-#	  echo "********** testing $$d"; \
-#	  cd $$d && make; \
-#	  cd ..; \
-#	done; \
-
-for dir in $DIRS
-do
-    cd $dir
-    make
-    cd ..
-done
 return_val=0
 echo ""
 echo "=== running tests ==="; \
@@ -78,5 +66,10 @@ cd ..
 ###############################
 
 echo "=== finished ==="
-echo "$return_val tests failed"
+if test $return_val != 0; then
+  printf "$ERROR_COLOR"
+else
+  printf "$OK_COLOR"
+fi
+printf "$return_val tests failed $NO_COLOR \n"
 exit $return_val

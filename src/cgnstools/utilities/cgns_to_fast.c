@@ -195,7 +195,7 @@ static void count_elements ()
 {
     int ns, nsect, nn, ip;
     cgsize_t i, n, is, ie, ne;
-    cgsize_t size, *conn;
+    cgsize_t size, *conn, *conn_offset;
     CGNS_ENUMT(ElementType_t) elemtype, et;
     char name[33], errmsg[128];
 
@@ -215,8 +215,14 @@ static void count_elements ()
             conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
             if (conn == NULL)
                 err_exit (NULL, "malloc failed for element connectivity");
-           if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
-                err_exit ("cg_elements_read", NULL);
+
+            conn_offset = (cgsize_t *) malloc ((size_t)(ne+1) * sizeof(cgsize_t));
+            if (conn_offset == NULL)
+                err_exit (NULL, "malloc failed for element connectivity offset");
+
+            if (cg_poly_elements_read (cgFile, cgBase, cgZone, ns, conn, conn_offset, NULL))
+                err_exit ("cg_poly_elements_read", NULL);
+
             for (i = 0, n = 0; n < ne; n++) {
                 et = (CGNS_ENUMT(ElementType_t))conn[i++];
                 switch (et) {
@@ -246,6 +252,7 @@ static void count_elements ()
                 i += nn;
             }
             free (conn);
+            free (conn_offset);
         }
         else {
             switch (elemtype) {
@@ -354,6 +361,7 @@ static void boundary_elements ()
     int ns, nsect, nn, ip, nf;
     cgsize_t i, n, is, ie, ne;
     cgsize_t size, *conn;
+    cgsize_t *conn_offset;
     CGNS_ENUMT(ElementType_t) elemtype, et;
     char name[33];
     TRI tri, *pt;
@@ -380,9 +388,19 @@ static void boundary_elements ()
         conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
         if (conn == NULL)
             err_exit (NULL, "malloc failed for element connectivity");
-        if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
-            err_exit ("cg_elements_read", NULL);
 
+        conn_offset = NULL;
+        if (elemtype == CGNS_ENUMV(MIXED)) {
+            conn_offset = (cgsize_t *) malloc ((size_t)(ie-is+2) * sizeof(cgsize_t));
+            if (conn_offset == NULL)
+                err_exit (NULL, "malloc failed for element connectivity offset");
+            if (cg_poly_elements_read (cgFile, cgBase, cgZone, ns, conn, conn_offset, NULL))
+                err_exit ("cg_poly_elements_read", NULL);
+        }
+        else {
+            if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
+                err_exit ("cg_elements_read", NULL);
+        }
         ne = ie - is + 1;
         et = elemtype;
         for (i = 0, n = 0; n < ne; n++) {
@@ -415,6 +433,7 @@ static void boundary_elements ()
             i += nn;
         }
         free(conn);
+        if (conn_offset) free(conn_offset);
     }
 
 
@@ -431,8 +450,18 @@ static void boundary_elements ()
         conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
         if (conn == NULL)
             err_exit (NULL, "malloc failed for element connectivity");
-        if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
-            err_exit ("cg_elements_read", NULL);
+        conn_offset = NULL;
+        if (elemtype == CGNS_ENUMV(MIXED)) {
+            conn_offset = (cgsize_t *) malloc ((size_t)(ie-is+2) * sizeof(cgsize_t));
+            if (conn_offset == NULL)
+                err_exit (NULL, "malloc failed for element connectivity offset");
+            if (cg_poly_elements_read (cgFile, cgBase, cgZone, ns, conn, conn_offset, NULL))
+                err_exit ("cg_poly_elements_read", NULL);
+        }
+        else {
+            if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
+                err_exit ("cg_elements_read", NULL);
+        }
 
         ne = ie - is + 1;
         et = elemtype;
@@ -460,6 +489,7 @@ static void boundary_elements ()
             i += nn;
         }
         free(conn);
+        if (conn_offset) free(conn_offset);
     }
 
     nTris = HashSize(trihash);
@@ -694,7 +724,7 @@ static void write_tets (FILE *fp)
 {
     int ns, nsect, ip, tet[4];
     cgsize_t i, n, is, ie, ne;
-    cgsize_t size, *conn;
+    cgsize_t size, *conn, *conn_offset;
     CGNS_ENUMT(ElementType_t) elemtype, et;
     char name[33];
 
@@ -713,8 +743,18 @@ static void write_tets (FILE *fp)
             conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
             if (conn == NULL)
                 err_exit (NULL, "malloc failed for element connectivity");
-            if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
-                err_exit ("cg_elements_read", NULL);
+            conn_offset = NULL;
+            if (elemtype == CGNS_ENUMV(MIXED)) {
+                conn_offset = (cgsize_t *) malloc ((size_t)(ne+1) * sizeof(cgsize_t));
+                if (conn_offset == NULL)
+                    err_exit (NULL, "malloc failed for element connectivity");
+                if (cg_poly_elements_read (cgFile, cgBase, cgZone, ns, conn, conn_offset, NULL))
+                    err_exit ("cg_poly_elements_read", NULL);
+            }
+            else {
+                if (cg_elements_read (cgFile, cgBase, cgZone, ns, conn, NULL))
+                    err_exit ("cg_elements_read", NULL);
+            }
             if (elemtype == CGNS_ENUMV(MIXED)) {
                 for (i = 0, n = 0; n < ne; n++) {
                     et = (CGNS_ENUMT(ElementType_t))conn[i++];
@@ -738,6 +778,7 @@ static void write_tets (FILE *fp)
                 }
             }
             free (conn);
+            if (conn_offset) free(conn_offset);
         }
     }
 }

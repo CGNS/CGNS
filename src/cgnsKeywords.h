@@ -468,7 +468,7 @@ typedef enum {
 #define BCWallViscous_s                "BCWallViscous"
 #define BCWallViscousHeatFlux_s        "BCWallViscousHeatFlux"
 #define BCWallViscousIsothermal_s      "BCWallViscousIsothermal"
-#define FamilySpecified_s              "FamilySpecified_s"
+#define FamilySpecified_s              "FamilySpecified"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Data types:  Can not add data types and stay forward compatible  *

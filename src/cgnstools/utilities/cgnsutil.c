@@ -38,6 +38,20 @@
 # define CG_MODE_MODIFY MODE_MODIFY
 #endif
 
+#if CG_HAVE_STAT64_STRUCT
+#ifdef _WIN32
+#define stat _stat64
+#else
+#define stat stat64
+#endif
+#endif
+
+#define IS_FIXED_SIZE(type) ((type >= CGNS_ENUMV(NODE) && \
+                              type <= CGNS_ENUMV(HEXA_27)) || \
+                              type == CGNS_ENUMV(PYRA_13) || \
+                             (type >= CGNS_ENUMV(BAR_4) && \
+                              type <= CGNS_ENUMV(HEXA_125)))
+
 int nZones = 0;
 ZONE *Zones;
 
@@ -891,12 +905,25 @@ int read_zone_element (int nz)
             if (iparent) {
                 size = 4 * (eset->end - eset->start + 1);
                 eset->parent = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
-                if (NULL == eset->conn)
+                if (NULL == eset->parent)
                     FATAL ("read_zone_element","malloc failed for parent data");
             }
-            if (cg_elements_read (cgnsfn, cgnsbase, nz, ns,
-                    eset->conn, eset->parent))
-                FATAL ("read_zone_element", NULL);
+            eset->offsets = NULL;
+            if (eset->type == CGNS_ENUMV(MIXED) ||
+                eset->type == CGNS_ENUMV(NFACE_n) ||
+                eset->type == CGNS_ENUMV(NGON_n)) {
+                eset->offsets = (cgsize_t *) malloc ((size_t)((eset->end-eset->start+2) * sizeof(cgsize_t)));
+                if (NULL == eset->offsets)
+                    FATAL("read_zone_element", "malloc failed for offsets\n");
+                if (cg_poly_elements_read (cgnsfn, cgnsbase, nz, ns,
+                        eset->conn, eset->offsets, eset->parent))
+                    FATAL ("read_zone_element", NULL);
+            }
+            else {
+                if (cg_elements_read (cgnsfn, cgnsbase, nz, ns,
+                        eset->conn, eset->parent))
+                    FATAL ("read_zone_element", NULL);
+            }
         }
     }
     return z->nesets;
@@ -923,6 +950,7 @@ int structured_elements (int nz)
     eset->end = nelems;
     eset->nbndry = 0;
     eset->conn = (cgsize_t *) malloc ((size_t)(8 * nelems) * sizeof(cgsize_t));
+    eset->offsets = 0;
     if (NULL == eset->conn)
         FATAL ("structured_elements", "malloc failed for element connectivity");
     eset->parent = NULL;
@@ -1516,11 +1544,20 @@ void write_zone_element (int nz)
 
     for (ns = 1; ns <= z->nesets; ns++, eset++) {
         if (eset->id) {
-            if (cg_section_write (cgnsfn, cgnsbase, z->id,
-                    eset->name, (CGNS_ENUMT(ElementType_t))eset->type,
-                    eset->start, eset->end, eset->nbndry,
-                    eset->conn, &eset->id))
-                FATAL ("write_zone_element", NULL);
+            if (!IS_FIXED_SIZE(eset->type)) {
+                if (cg_poly_section_write (cgnsfn, cgnsbase, z->id,
+                        eset->name, (CGNS_ENUMT(ElementType_t))eset->type,
+                        eset->start, eset->end, eset->nbndry,
+                        eset->conn, eset->offsets, &eset->id))
+                    FATAL ("write_zone_element", NULL);
+            }
+            else {
+                if (cg_section_write (cgnsfn, cgnsbase, z->id,
+                        eset->name, (CGNS_ENUMT(ElementType_t))eset->type,
+                        eset->start, eset->end, eset->nbndry,
+                        eset->conn, &eset->id))
+                    FATAL ("write_zone_element", NULL);
+            }
             if (eset->parent != NULL &&
                 cg_parent_data_write (cgnsfn, cgnsbase, z->id,
                     eset->id, eset->parent))
