@@ -55,7 +55,7 @@ int main(int argc, const char* argv[])
        sprintf(zonename, "Zone %d", idxZone + 1);
 /* create zone */
        if (cg_zone_write(index_file, index_base,
-                         zonename, (cgsize_t*)zoneSize[idxZone], Structured,
+                         zonename, (cgsize_t*)zoneSize[idxZone], CGNS_ENUMV(Structured),
                          &index_zone)) cg_error_exit();
        if (cg_grid_write(index_file, index_base, index_zone,
                          "GridCoordinates", &index_grid)) cg_error_exit();

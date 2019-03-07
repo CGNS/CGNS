@@ -12,6 +12,11 @@
 ! The value of nnY is the number of nodes along the Y direction. 
 !
 */
+#ifndef __SUNPRO_C
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 500
+#endif
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,7 +50,7 @@ int r_phys_dim = 0;
 cgsize_t nijk[3], sizes[3];
 cgsize_t size_1D[1];
 cgsize_t min, max;
-cgsize_t k, count;
+cgsize_t k, count, count_e;
 /* For writing and reading data*/
 double* Coor_x;
 double* Coor_y;
@@ -55,7 +60,7 @@ double* Data_Fy;
 double* Data_Fz;
 double* Array_r;
 cgsize_t* Array_i;
-cgsize_t start, end, emin, emax;
+cgsize_t start, end, end_e, emin, emax;
 cgsize_t* elements;
 char name[33];
 int  debug;
@@ -218,9 +223,8 @@ int main(int argc, char* argv[]) {
   /* ====================================== */
 
   start = 1;
-  end = nijk[1];
-
-  count = nijk[1];
+  count_e = nijk[1];
+  end_e = count_e;
 
   if( !(elements = malloc(count*NodePerElem*sizeof(cgsize_t)) )) {
     printf("*FAILED* allocation of elements \n");
@@ -248,7 +252,7 @@ int main(int argc, char* argv[]) {
   }
 
   tic = clock();
-  if(cg_section_write(fn,B,Z,"Elements",CGNS_ENUMV(PENTA_6), start, end, 0, elements, &S) != CG_OK) {
+  if(cg_section_write(fn,B,Z,"Elements",CGNS_ENUMV(PENTA_6), start, end_e, 0, elements, &S) != CG_OK) {
     printf("*FAILED* cgp_section_write \n");
     cg_error_exit();
   }

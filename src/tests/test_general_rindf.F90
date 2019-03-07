@@ -7,15 +7,15 @@
       implicit none
 
       integer, parameter :: celldim = 3, physdim = 3
-      integer(cgsize_t), parameter :: size(3,3) =
+      integer(cgsize_t), parameter :: size(3,3) = &
      &  reshape((/5,5,5, 4,4,4, 0,0,0 /), (/3, 3/))
-      integer, parameter :: rind(2,3) =
+      integer, parameter :: rind(2,3) = &
      &  reshape((/2,2, 2,2, 1,1/), (/2, 3/))
-      integer(cgsize_t), parameter :: NUM_I =
+      integer(cgsize_t), parameter :: NUM_I = &
      &  size(1,1) + rind(1,1) + rind(2,1)
-      integer(cgsize_t), parameter :: NUM_J =
+      integer(cgsize_t), parameter :: NUM_J = &
      &  size(2,1) + rind(1,2) + rind(2,2)
-      integer(cgsize_t), parameter :: NUM_K =
+      integer(cgsize_t), parameter :: NUM_K = &
      &  size(3,1) + rind(1,3) + rind(2,3)
       integer(cgsize_t), parameter :: num_coord = NUM_I * NUM_J * NUM_K
 
@@ -49,27 +49,27 @@
         enddo
       enddo
 
-c     open
+!     open
 
       call cg_open_f('rindf.cgns', CG_MODE_WRITE, cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c---- structured grid with rind ----
+!---- structured grid with rind ----
 
       print *,'writing structured base with rind'
 
-c     write base and zone
+!     write base and zone
 
-      call cg_base_write_f(cgfile, 'Structured', celldim, physdim,
+      call cg_base_write_f(cgfile, 'Structured', celldim, physdim, &
      &                     cgbase, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_zone_write_f(cgfile, cgbase, 'Zone', size,             
+      call cg_zone_write_f(cgfile, cgbase, 'Zone', size,              &
      &                     Structured, cgzone, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c     use cg_coord_general_write to write coordinates with all rinds
-c     need to use cg_grid_write to create the node, cg_goto to set
-c     position at the node, then write rind */
+!     use cg_coord_general_write to write coordinates with all rinds
+!     need to use cg_grid_write to create the node, cg_goto to set
+!     position at the node, then write rind */
 
       dims(1) = NUM_I
       dims(2) = NUM_J
@@ -82,56 +82,56 @@ c     position at the node, then write rind */
         m_rmax(n) = get_m_rmax(n, rind(2,n))
       enddo
 
-c     write coordinates with rind
+!     write coordinates with rind
 
-      call cg_grid_write_f(cgfile, cgbase, cgzone, 'GridCoordinates',
+      call cg_grid_write_f(cgfile, cgbase, cgzone, 'GridCoordinates', &
      &                     cggrid, ierr)
-      call cg_goto_f(cgfile, cgbase, ierr, 'Zone_t', cgzone,
+      call cg_goto_f(cgfile, cgbase, ierr, 'Zone_t', cgzone, &
      &               'GridCoordinates_t', cggrid, 'end')
       call cg_rind_write_f(rind, ierr)
 
-      call cg_coord_general_write_f(cgfile, cgbase, cgzone,
-     &                              coordname(1), RealSingle,
-     &                              rmin, rmax, RealSingle,
-     &                              3, dims, m_rmin, m_rmax,
+      call cg_coord_general_write_f(cgfile, cgbase, cgzone, &
+     &                              coordname(1), RealSingle, &
+     &                              rmin, rmax, RealSingle, &
+     &                              3, dims, m_rmin, m_rmax, &
      &                              xcoord, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_general_write_f(cgfile, cgbase, cgzone,
-     &                              coordname(2), RealSingle,
-     &                              rmin, rmax, RealSingle,
-     &                              3, dims, m_rmin, m_rmax,
+      call cg_coord_general_write_f(cgfile, cgbase, cgzone, &
+     &                              coordname(2), RealSingle, &
+     &                              rmin, rmax, RealSingle, &
+     &                              3, dims, m_rmin, m_rmax, &
      &                              ycoord, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_general_write_f(cgfile, cgbase, cgzone,
-     &                              coordname(3), RealSingle,
-     &                              rmin, rmax, RealSingle,
-     &                              3, dims, m_rmin, m_rmax,
+      call cg_coord_general_write_f(cgfile, cgbase, cgzone, &
+     &                              coordname(3), RealSingle, &
+     &                              rmin, rmax, RealSingle, &
+     &                              3, dims, m_rmin, m_rmax, &
      &                              zcoord, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c     write solution with rind, and the solution dimensions come from the zone
-c     sizes
+!     write solution with rind, and the solution dimensions come from the zone
+!     sizes
 
-      call cg_sol_write_f(cgfile, cgbase, cgzone, 'VertexSolution',
+      call cg_sol_write_f(cgfile, cgbase, cgzone, 'VertexSolution', &
      &                    Vertex, cgsol, ierr)
-      call cg_goto_f(cgfile, cgbase, ierr, 'Zone_t', cgzone,
+      call cg_goto_f(cgfile, cgbase, ierr, 'Zone_t', cgzone, &
      &               'FlowSolution_t', cgsol, 'end')
       call cg_rind_write_f(rind, ierr)
-      call cg_field_general_write_f(cgfile, cgbase, cgzone, cgsol,
-     &                              fieldname, RealSingle,
-     &                              rmin, rmax, RealSingle,
-     &                              3, dims, m_rmin, m_rmax,
+      call cg_field_general_write_f(cgfile, cgbase, cgzone, cgsol, &
+     &                              fieldname, RealSingle, &
+     &                              rmin, rmax, RealSingle, &
+     &                              3, dims, m_rmin, m_rmax, &
      &                              solution, cgfld, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c     close the file and reopen in read mode
+!     close the file and reopen in read mode
 
       call cg_close_f(cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
       print *,'closing and reopening in read mode '     
 
-c     read file and check the data
+!     read file and check the data
 
       call cg_open_f('rindf.cgns', CG_MODE_READ, cgfile, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
@@ -144,8 +144,8 @@ c     read file and check the data
 
       nn = 0
 
-c     check coordinates
-c     Only load core coordinates without rind but inside memory with rind
+!     check coordinates
+!     Only load core coordinates without rind but inside memory with rind
 
       do n=1,3
         rmin(n)   = get_s_rmin(n, 0)
@@ -154,10 +154,10 @@ c     Only load core coordinates without rind but inside memory with rind
         m_rmax(n) = get_m_rmax(n, 0)
       enddo
 
-c     X
-      call cg_coord_general_read_f(cgfile, cgbase, cgzone,
-     &                             'CoordinateX',
-     &                             rmin, rmax, RealSingle,
+!     X
+      call cg_coord_general_read_f(cgfile, cgbase, cgzone, &
+     &                             'CoordinateX', &
+     &                             rmin, rmax, RealSingle, &
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
       np = 0
@@ -175,10 +175,10 @@ c     X
         print *,'differences in CoordinateX'
       endif
 
-c     Y
-      call cg_coord_general_read_f(cgfile, cgbase, cgzone,
-     &                             'CoordinateY',
-     &                             rmin, rmax, RealSingle,
+!     Y
+      call cg_coord_general_read_f(cgfile, cgbase, cgzone, &
+     &                             'CoordinateY', &
+     &                             rmin, rmax, RealSingle, &
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
       np = 0
@@ -196,10 +196,10 @@ c     Y
         print *,'differences in CoordinateY'
       endif
 
-c     Z
-      call cg_coord_general_read_f(cgfile, cgbase, cgzone,
-     &                             'CoordinateZ',
-     &                             rmin, rmax, RealSingle,
+!     Z
+      call cg_coord_general_read_f(cgfile, cgbase, cgzone, &
+     &                             'CoordinateZ', &
+     &                             rmin, rmax, RealSingle, &
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
       np = 0
@@ -217,7 +217,7 @@ c     Z
         print *,'differences in CoordinateZ'
       endif
 
-c     check field with only one rind layer
+!     check field with only one rind layer
 
       do n=1,3
         rmin(n)   = get_s_rmin(n, 1)
@@ -226,9 +226,9 @@ c     check field with only one rind layer
         m_rmax(n) = get_m_rmax(n, 1)
       enddo
 
-      call cg_field_general_read_f(cgfile, cgbase, cgzone, cgsol,
-     &                             'Density',
-     &                             rmin, rmax, RealSingle,
+      call cg_field_general_read_f(cgfile, cgbase, cgzone, cgsol, &
+     &                             'Density', &
+     &                             rmin, rmax, RealSingle, &
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
       np = 0
@@ -250,36 +250,36 @@ c     check field with only one rind layer
         print *,'no differences (part 1)'
       endif
 
-c===============================================================================
+!===============================================================================
 
-c-----We now go to modify mode and repeadtely test writing and reading of the
-c-----field
+!-----We now go to modify mode and repeadtely test writing and reading of the
+!-----field
 
-c     close the file and reopen in modify mode
+!     close the file and reopen in modify mode
       print *, 'closing and reopening in modify mode'
       call cg_close_f(cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_open_f('rindf.cgns', CG_MODE_MODIFY, cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c     delete the node
-      call cg_goto_f(cgfile, cgbase, ierr, 'Zone_t', cgzone,
+!     delete the node
+      call cg_goto_f(cgfile, cgbase, ierr, 'Zone_t', cgzone, &
      &     'FlowSolution_t', cgsol, 'end')
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_delete_node_f('Density', ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c     write the field using high-level routine
-      call cg_field_write_f(cgfile, cgbase, cgzone, cgsol, RealSingle,
+!     write the field using high-level routine
+      call cg_field_write_f(cgfile, cgbase, cgzone, cgsol, RealSingle, &
      &                      fieldname, solution, cgfld, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c     verify the written data
+!     verify the written data
       do n=1,3
         rmin(n) = get_s_rmin(n, -1)
         rmax(n) = get_s_rmax(n, -1)
       enddo
-      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname,
+      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
      &                     RealSingle, rmin, rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
@@ -297,14 +297,14 @@ c     verify the written data
         print *, np, ' differences in Field (T1)'
       endif
 
-c     if given ranges span the full dimensions, the read should succeed no
-c     matter what the range is (this behavior is for backwards compatbility and
-c     is not documented)
+!     if given ranges span the full dimensions, the read should succeed no
+!     matter what the range is (this behavior is for backwards compatbility and
+!     is not documented)
       do n=1,3
         rmin(n) = 1
         rmax(n) = dims(n)
       enddo
-      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname,
+      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
      &                     RealSingle, rmin, rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
@@ -322,12 +322,12 @@ c     is not documented)
         print *, np, ' differences in Field (T2)'
       endif
 
-c     try again with really weird dimensions
+!     try again with really weird dimensions
       do n=1,3
         rmin(n) = -100*n
         rmax(n) = rmin(n) + dims(n) - 1
       enddo
-      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname,
+      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
      &                     RealSingle, rmin, rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
@@ -345,14 +345,14 @@ c     try again with really weird dimensions
         print *, np, ' differences in Field (T3)'
       endif
 
-c     however, if given ranges do not span the full dimensions, ranges are
-c     checked
+!     however, if given ranges do not span the full dimensions, ranges are
+!     checked
       do n=1,3
         rmin(n) = 1
         rmax(n) = dims(n) - 1
       enddo
       write (*, '(" Next error is required: ")', advance='no')
-      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname,
+      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
      &                     RealSingle, rmin, rmax, fbuf, ierr)
       if (ierr == CG_OK) then
          print *, 'read failed to produce error (T4)'
@@ -360,16 +360,16 @@ c     checked
       endif
       call cg_error_print_f
 
-c     test old behavior where first rind plane is index 1 */
+!     test old behavior where first rind plane is index 1 */
       call cg_set_rind_zero_f(ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c     this is the proper range for old behavior
+!     this is the proper range for old behavior
       do n=1,3
         rmin(n) = 1
         rmax(n) = dims(n)
       enddo
-      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname,
+      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
      &                     RealSingle, rmin, rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
@@ -387,12 +387,12 @@ c     this is the proper range for old behavior
         print *, np, ' differences in Field (T5)'
       endif
 
-c     reading full range should still work for any dimension
+!     reading full range should still work for any dimension
       do n=1,3
         rmin(n) = -200*n
         rmax(n) = rmin(n) + dims(n) - 1
       enddo
-      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname,
+      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
      &                     RealSingle, rmin, rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
@@ -410,14 +410,14 @@ c     reading full range should still work for any dimension
         print *, np, ' differences in Field (T6)'
       endif
 
-c     ranges are checked if they do not span the full dimensions.  Now,
-c     rmin < 1 is a failure
+!     ranges are checked if they do not span the full dimensions.  Now,
+!     rmin < 1 is a failure
       do n=1,3
         rmin(n) = get_s_rmin(n, 1)
         rmax(n) = get_s_rmax(n, 1)
       enddo
       write (*, '(" Next error is required: ")', advance='no')
-      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname,
+      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
      &                     RealSingle, rmin, rmax, fbuf, ierr)
       if (ierr == CG_OK) then
          print *, 'read failed to produce error (T7)'
@@ -430,14 +430,14 @@ c     rmin < 1 is a failure
         print *,'no differences (part 2)'
       endif
 
-c===============================================================================
+!===============================================================================
 
-c     back to testing new behavior
+!     back to testing new behavior
       call cg_set_rind_core_f(ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-c     Tests in part 3 should not encounter anything different than C and are not
-c     repeated.  But put the file in the same state by doing tests T13 and T14.
+!     Tests in part 3 should not encounter anything different than C and are not
+!     repeated.  But put the file in the same state by doing tests T13 and T14.
       solution(idxmin(1, 1)  , idxmin(2, 0)  , idxmin(3, 0)) = 8888.5
       solution(idxmin(1, 1)+1, idxmin(2, 0)  , idxmin(3, 0)) = 8888.6
       solution(idxmin(1, 1)  , idxmin(2, 0)+1, idxmin(3, 0)) = 8888.7
@@ -454,18 +454,18 @@ c     repeated.  But put the file in the same state by doing tests T13 and T14.
       m_rmax(2) = get_m_rmin(2, 0) + 1
       m_rmin(3) = get_m_rmin(3, 0)
       m_rmax(3) = get_m_rmax(3, 0)
-      call cg_field_general_write_f(cgfile, cgbase, cgzone, cgsol,
-     &                              fieldname, RealSingle,
-     &                              rmin, rmax, RealSingle,
-     &                              3, dims, m_rmin, m_rmax,
+      call cg_field_general_write_f(cgfile, cgbase, cgzone, cgsol, &
+     &                              fieldname, RealSingle, &
+     &                              rmin, rmax, RealSingle, &
+     &                              3, dims, m_rmin, m_rmax, &
      &                              solution, cgfld, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-c     verify the written data
+!     verify the written data
       do n=1,3
         rmin(n) = get_s_rmin(n, -1)
         rmax(n) = get_s_rmax(n, -1)
       enddo
-      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname,
+      call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
      &                     RealSingle, rmin, rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
@@ -483,7 +483,7 @@ c     verify the written data
         print *, np, ' differences in Field (T13)'
       endif
 
-c     verify again by only reading the 4 locations
+!     verify again by only reading the 4 locations
       fbuf(idxmin(1, 1)  , idxmin(2, 0)  , idxmin(3, 0)) = 0.
       fbuf(idxmin(1, 1)+1, idxmin(2, 0)  , idxmin(3, 0)) = 0.
       fbuf(idxmin(1, 1)  , idxmin(2, 0)+1, idxmin(3, 0)) = 0.
@@ -494,9 +494,9 @@ c     verify again by only reading the 4 locations
       rmax(2) = get_s_rmin(2, 0) + 1
       rmin(3) = get_s_rmin(3, 0)
       rmax(3) = get_s_rmax(3, 0)
-      call cg_field_general_read_f(cgfile, cgbase, cgzone, cgsol,
-     &                             'Density',
-     &                             rmin, rmax, RealSingle,
+      call cg_field_general_read_f(cgfile, cgbase, cgzone, cgsol, &
+     &                             'Density', &
+     &                             rmin, rmax, RealSingle, &
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
@@ -526,9 +526,7 @@ c     verify again by only reading the 4 locations
         stop
       endif
 
-      return
-
-c- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
       contains
 
@@ -537,9 +535,9 @@ c- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       INDEX = ii + NUM_I*(jj + NUM_J*(kk))
       end function
 
-c     ranges for arrays sent to CGNS
-c     s_ is the range in file space.  Core cells start at 1 so rind planes are
-c     <= 0.
+!     ranges for arrays sent to CGNS
+!     s_ is the range in file space.  Core cells start at 1 so rind planes are
+!     <= 0.
       function get_s_rmin(n, nr)
       integer(cgsize_t) :: get_s_rmin
       integer :: n, nr
@@ -564,8 +562,8 @@ c     <= 0.
       get_s_rmax = int(size(n,1) + nrl, kind=cgsize_t)
       end function
 
-c     m_ is the range in memory.  The lowest index in each dimension is 1.  If
-c     there are rind planes, then he core cells start at a value > 1.
+!     m_ is the range in memory.  The lowest index in each dimension is 1.  If
+!     there are rind planes, then he core cells start at a value > 1.
       function get_m_rmin(n, nr)
       integer(cgsize_t) :: get_m_rmin
       integer :: n, nr
@@ -590,7 +588,7 @@ c     there are rind planes, then he core cells start at a value > 1.
       get_m_rmax = int(rind(1,n) + size(n,1) + nrl, kind=cgsize_t)
       end function
 
-c     ranges for accessing arrays
+!     ranges for accessing arrays
       function idxmin(n, nr)
       integer(cgsize_t) :: idxmin
       integer :: n, nr
@@ -603,7 +601,7 @@ c     ranges for accessing arrays
       idxmax = get_m_rmax(n, nr);
       end function
 
-c     initial data
+!     initial data
       subroutine compute_coord()
       xcoord(i, j, k) = i - 1 - rind(1,1)
       ycoord(i, j, k) = j - 1 - rind(1,2)
@@ -612,15 +610,15 @@ c     initial data
 
       subroutine compute_sol()
       integer :: sign
-      if ((i - 1 < rind(1,1)) .or. (i - 1 >= size(1,1) + rind(1,1)) .or.
-     &    (j - 1 < rind(1,2)) .or. (j - 1 >= size(2,1) + rind(1,2)) .or.
-     &    (k - 1 < rind(1,3)) .or. (k - 1 >= size(3,1) + rind(1,3)))
+      if ((i - 1 < rind(1,1)) .or. (i - 1 >= size(1,1) + rind(1,1)) .or. &
+     &    (j - 1 < rind(1,2)) .or. (j - 1 >= size(2,1) + rind(1,2)) .or. &
+     &    (k - 1 < rind(1,3)) .or. (k - 1 >= size(3,1) + rind(1,3))) &
      &  then
         sign = -1
       else
         sign = 1
       endif
-      solution(i, j, k) = sign*(1 + (k)*1100 +
+      solution(i, j, k) = sign*(1 + (k)*1100 + &
      &  INDEX(i - 1, j - 1, 0_cgsize_t))
       end subroutine
 

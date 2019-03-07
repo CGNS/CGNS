@@ -8,7 +8,7 @@ if (WIN32)
 endif (WIN32)
 
 # Include the local directory
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (CGNS_ENABLE_HDF5)
   add_definitions(-DBUILD_HDF5)
   if (WIN32)
@@ -116,8 +116,15 @@ if (BUILDFORTRAN)
 # The PGI compiler segfaults wehn va_start is called, so we need to add
 # a special compiler flag, see CGNS-40.
 #--------------------------------------------------------------------------
-IF (CMAKE_C_COMPILER_ID MATCHES "PGI")
+IF (CMAKE_Fortran_COMPILER_ID MATCHES "PGI")
  SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Mx,125,0x200")
+ENDIF()
+
+#----------- Determine if the Fortran compiler NAG ------------------------
+# The NAG compiler needs an additional flag for Fortran calls to C APIs.
+#--------------------------------------------------------------------------
+IF (CMAKE_Fortran_COMPILER_ID MATCHES "NAG")
+ SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mismatch_all")
 ENDIF()
 
 ENABLE_LANGUAGE(Fortran)
@@ -484,7 +491,7 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 ###########
 # Library #

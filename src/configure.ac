@@ -791,6 +791,7 @@ BUILDHDF5=0
 HDF5DEF=""
 HDF5INC=""
 HDF5LIB=""
+HDF5BIN=""
 
 AC_MSG_CHECKING([if using HDF5])
 AC_ARG_WITH(hdf5,
@@ -859,7 +860,11 @@ else
     fi
   fi
   HDF5DEF=-I$HDF5INC
+  HDF5BIN=$hdf5dir/bin
 
+  if test -z "$HDF5BIN"; then
+     AC_MSG_ERROR(failed to find the HDF5 bin directory $HDF5BIN)    
+  fi
 
   # Checking version of HDF5 (req. minimum 1.8) 
   ## --------------------------------------------------------------------
@@ -870,10 +875,7 @@ else
   AC_MSG_RESULT(${H5_VERS_MAJOR}.${H5_VERS_MINOR}.${H5_VERS_RELEASE})
 
   AC_MSG_CHECKING([if HDF5 is 1.8 or greater])
-  function version_gt {
-       test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" != "$1";
-  }
-  if version_gt ${H5_VERS_MAJOR}.${H5_VERS_MINOR} "1.7"; then
+  if test ${H5_VERS_MAJOR} -ge 1 && test ${H5_VERS_MINOR} -ge 8; then
     AC_MSG_RESULT(yes)
   else
     AC_MSG_ERROR(no)
@@ -894,7 +896,7 @@ void main(void)
   return;
 }
 EOF
-  msg=`${CC} -c test.c ${HDF5DEF} &> /dev/null`
+  msg=`${CC} -c test.c ${HDF5DEF} 2> /dev/null`
   if test -f test.o; then
     HDF5_HAVE_MULTI_DATASETS=1
     AC_MSG_RESULT(yes)
@@ -924,10 +926,14 @@ fi
 # locate zlib and szip libraries
 #---------------------------------------------------------------------------
 
+# Automatically search for zlib and szip from HDF5 build specs, but
+# only do this if --with-zlib and --with-szip is not specified.
+
 H5NEEDZLIB=0
 ZLIBLIB=""
 H5NEEDSZIP=0
 SZIPLIB=""
+HDF5LIB_DEP=""
 
 ## ----------------------------------------------------------------------
 ## Fake --with-xxx option to allow us to create a help message for the
@@ -943,9 +949,109 @@ AC_ARG_WITH([fnord],
                          library directory separated by a comma
     --with-xxx=DIR     - Specify only the directory which contains the
                          include/ and lib/ subdirectories
+
+  IMPORTANT NOTE: CGNS will automatically search for zlib and szip used in
+        building HDF5 only if options --with-zlib and --with-szip are not
+        specified. 
+
   ])
 
 if test "$withhdf5" = "yes"; then
+
+  AC_ARG_WITH([zlib],,[withval_zlib=yes],[withval_zlib=no])
+  AC_ARG_WITH([szip],,[withval_szip=yes],[withval_szip=no])
+
+  if test $withval_zlib == "no" && test $withval_szip == "no"; then
+
+  AC_MSG_CHECKING([if HDF5 library has compression dependencies])      
+
+  H5CC=$HDF5BIN/h5*cc
+  H5BLD_CPPFLAGS=`cat $H5CC | grep "H5BLD_CPPFLAGS=" | sed -e 's/.*H5BLD_CPPFLAGS="*\(.*\) ".*/\1/'` 
+  H5BLD_LDFLAGS=`cat $H5CC | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS="*\(.*\) ".*/\1/'` 
+  H5BLD_LIBS=`cat $H5CC | grep "H5BLD_LIBS=" | sed -e 's/.*H5BLD_LIBS="*\(.*\) ".*/\1/'`
+
+  LDFLAGS="$LDFLAGS $H5BLD_LDFLAGS"
+  CPPFLAGS="$CPPFLAGS $H5BLD_CPPFLAGS"
+
+# check if linking in szip or zlib
+# HDF5 does not add LDFLAGS for libraries in standard locations, so process the LIBS being
+# linked in.
+  LZLIB=""
+  LSZIP=""
+  LNUMLIBS=`echo $H5BLD_LIBS | awk '{print NF}'`
+  if test $LNUMLIBS -gt 0; then
+    for i in `seq 1 $LNUMLIBS` ; do
+       LIBX=`echo $H5BLD_LIBS | cut -d' ' -f$i`
+       if test `echo $LIBX | grep "\-lz" > /dev/null; echo $?` == 0; then
+         LZLIB="-lz"
+       fi 
+       if test `echo $LIBX | grep "\-lsz" > /dev/null; echo $?` == 0; then
+         LSZIP="-lsz"
+       else
+         if test `echo $LIBX | grep "\-lszip" > /dev/null; echo $?` == 0; then
+           LSZIP="-lszip"
+         fi
+       fi
+    done
+  fi
+
+  if test $shared = yes; then
+     LDFLAGS="$LDFLAGS $H5BLD_LDFLAGS"
+     HDF5LIB_DEP="$LDFLAGS"  
+     LIBS="$LIBS $LZLIB $LSZIP"
+     FLIBS="$FLIBS $LZLIB $LSZIP"
+  else
+     H5BLD_LDFLAGS_PATH=`echo $H5BLD_LDFLAGS | sed 's/-L//g'`       
+     NUMLIBS=`echo $H5BLD_LDFLAGS_PATH | awk '{print NF}'`
+
+     HDF5LIB_DEP=""
+     FOUNDZLIB="false"
+     FOUNDSZIP="false"
+     for i in `seq 1 $NUMLIBS` ; do
+       LIB_PATH=`echo $H5BLD_LDFLAGS_PATH | cut -d' ' -f$i`
+       for a in $exts ; do
+          if test -f $LIB_PATH/libz.$a; then
+            HDF5LIB_DEP="$LIB_PATH/libz.$a $HDF5LIB_DEP"
+            FOUNDZLIB="true"
+            break
+          fi
+          if test -f $LIB_PATH/libsz.$a; then
+            HDF5LIB_DEP="$LIB_PATH/libsz.$a $HDF5LIB_DEP"
+            FOUNDSZIP="true"
+            break
+          fi
+          if test -f $LIB_PATH/libszip.$a; then
+            HDF5LIB_DEP="$LIB_PATH/libszip.$a $HDF5LIB_DEP"
+            FOUNDSZIP="true"
+            break
+          fi
+       done
+     done
+
+     if test "x$LSZIP" != "x" && test "$FOUNDSZIP" == "false";then
+       LIBS="$LIBS $LSZIP"
+       FLIBS="$FLIBS $LSZIP"
+     fi
+     if test "x$LZLIB" != "x" && test "$FOUNDZLIB" == "false";then
+       LIBS="$LIBS $LZLIB"
+       FLIBS="$FLIBS $LZLIB"
+     fi
+  fi
+
+  if test "x$HDF5LIB_DEP" = "x"; then
+    AC_MSG_RESULT(no)
+  else
+    AC_MSG_RESULT($HDF5LIB_DEP)
+  fi
+
+  AC_MSG_CHECKING([HDF5 library LIB dependencies])
+  if test "x$LIBS" = "x"; then
+    AC_MSG_RESULT(none)
+  else
+    AC_MSG_RESULT($LIBS)
+  fi      
+
+  else
 
   AC_ARG_WITH([zlib],
                [AS_HELP_STRING([--with-zlib=DIR],
@@ -1027,97 +1133,88 @@ if test "$withhdf5" = "yes"; then
     ;;
   esac
 	
+  AC_ARG_WITH([szip],
+               [AS_HELP_STRING([--with-szip=DIR],
+                              [Use szip library for external deflate I/O
+                               filter [default=no]])],,
+               [withval=no])
 
-#  AC_MSG_CHECKING([if using zlib])
-#  AC_ARG_WITH(zlib,
-#    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=no]],
-#    withzlib=$withval,withzlib="no")
-#  if test "$withzlib" = "no"; then
-#    AC_MSG_RESULT(no)
-#  else
-#    H5NEEDZLIB=1
-#    if test -z "$withzlib" || test "$withzlib" = "yes"; then
-#      zlibdir=""
-#      AC_MSG_RESULT(yes)
-#      AC_CHECK_HEADER(zlib.h,installed=yes,installed=no)
-#      if test "$installed" = "yes"; then
-#        ZLIBLIB=-lz
-#      else
-#        AC_MSG_CHECKING([for local zlib distribution])
-#        for d in \
-#          `ls -dr * 2>/dev/null` \
-#          `ls -dr ../* 2>/dev/null` \
-#          `ls -dr ../../* 2>/dev/null` \
-#          `ls -dr ../../../* 2>/dev/null` ; do
-#          if test -f "$d/zlib.h"; then
-#            zlibdir=`(cd $d; pwd)`
-#            AC_MSG_RESULT($zlibdir)
-#            break
-#          fi
-#        done
-#        test -z "$zlibdir" && AC_MSG_RESULT(not found)
-#      fi
-#    else
-#      if test -f "$withzlib/include/zlib.h"; then
-#        zlibdir=$withzlib
-#      else
-#        zlibdir=`dirname $withzlib`
-#      fi
-#      withzlib=yes
-#      AC_MSG_RESULT($zlibdir)
-#    fi
-#
-#    if test -z "$ZLIBLIB"; then
-#      test -z "$zlibdir" && \
-#        AC_MSG_ERROR(need specify the zlib directory with --with-zlib=DIR)
-#      if test -f "$zlibdir/include/zlib.h"; then
-#        for a in $exts ; do
-#          if test -f $zlibdir/lib/libz.$a; then
-#            ZLIBLIB=$zlibdir/lib/libz.$a
-#            break
-#          fi
-#        done
-#        test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/lib/libz.a
-#      else
-#        AC_MSG_ERROR($zlibdir/include directory does not contain zlib.h)
-#      fi
-#    fi
+  case $withval in
+    yes)
+      H5NEEDSZIP=1
+      HAVE_SZIP="yes"
+      AC_CHECK_HEADERS([szlib.h], [HAVE_SZIP_H="yes"], [unset HAVE_SZIP])
+      if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
+        AC_CHECK_LIB([sz], [SZ_BufftoBuffCompress],, [unset HAVE_SZIP])
+      fi
+      if test -z "$HAVE_SZIP"; then
+        AC_MSG_ERROR([couldn't find szip library: specify the szip directory with --with-szip=DIR])
+      fi
+      SZIPLIB=-lsz
+      ;;
+    no)
+      HAVE_SZIP="no"
+      AC_MSG_CHECKING([if using szip with HDF5])
+      AC_MSG_RESULT([no])
+      ;;
+    *)
+      H5NEEDSZIP=1
+      HAVE_SZIP="yes"
+ 
+      case "$withval" in
+        *,*)
+          szip_inc="`echo $withval | cut -f1 -d,`"
+          szip_lib="`echo $withval | cut -f2 -d, -s`"
+          ;;
+        *)
+          if test -n "$withval"; then
+            szip_inc="$withval/include"
+            szip_lib="$withval/lib"
+          fi
+          ;;
+      esac
 
-#  fi
+    if test -n "$szip_inc"; then
+      CPPFLAGS="$CPPFLAGS -I$szip_inc"
+    fi
 
-  AC_MSG_CHECKING([if using szip])
-  AC_ARG_WITH(szip,
-    [  --with-szip[=LIB]       use szip with HDF5 [default=no]],
-    sziplib=$withval,sziplib="no")
-  if test "x$sziplib" = "xno"; then
-    AC_MSG_RESULT(no)
-  else
-    H5NEEDSZIP=1
-    if test -z "$sziplib" || test "$sziplib" = "yes"; then
-      AC_MSG_RESULT(yes)
-      AC_CHECK_LIB(sz, SZ_BufftoBuffCompress, SZIPLIB=-lsz)
-      if test -z "$SZIPLIB"; then
-        AC_MSG_CHECKING([for local szip library])
-        for d in \
-          `ls -dr * 2>/dev/null` \
-          `ls -dr ../* 2>/dev/null` \
-          `ls -dr ../../* 2>/dev/null` \
-          `ls -dr ../../../* 2>/dev/null` ; do
-          for a in $exts ; do
-            if test -f "$d/libsz.$a"; then
-              SZIPLIB=`(cd $d; pwd)`/libsz.$a
-              AC_MSG_RESULT($SZIPLIB)
-              break
-            fi
-          done
-          test ! -z "$SZIPLIB" && break
+    AC_CHECK_HEADERS([szlib.h],
+                     [HAVE_SZIP_H="yes"],
+                     [CPPFLAGS="$saved_CPPFLAGS"] [unset HAVE_SZIP])
+
+
+    if test $shared = yes; then
+      SZIPLIB="-L$szip_lib"
+    else
+      if test -n "$szip_lib"; then
+        for a in $exts ; do
+          if test -f $szip_lib/libsz.$a; then
+            SZIPLIB=$szip_lib/libsz.$a
+            break
+          fi
         done
       fi
-    else
-      AC_MSG_RESULT($sziplib)
-      SZIPLIB=$sziplib
     fi
+
+    if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
+      AC_CHECK_LIB([sz], [SZ_BufftoBuffCompress],,
+                   [unset HAVE_SZIP])
+    fi
+
+    if test -z "$HAVE_SZIP"; then
+      AC_MSG_ERROR([couldn't find szip library])
+    else
+      AC_CHECK_FUNC([SZ_BufftoBuffCompress], [HAVE_BufftoBuffCompress="yes"])
+    fi
+    AC_MSG_CHECKING([for szip library path])
+    AC_MSG_RESULT([$szip_lib])
+    AC_MSG_CHECKING([for szip include path])
+    AC_MSG_RESULT([$szip_inc])
+    ;;
+  esac
+
   fi
+
 fi
 
 #---------------------------------------------------------------------------
@@ -1706,6 +1803,13 @@ if test "$withfortran" = "yes"; then
      if test X != "X$fc_vendor"; then
        FFLAGS="$FFLAGS -Wno-c-binding-type"
      fi
+#----------- Determine if the Fortran compiler NAG -------------------
+#   Add compiler flag for C API calls.
+#--------------------------------------------------------------------------
+     fc_vendor="`$FC -V 2>&1 |grep 'NAG'`"
+     if test X != "X$fc_vendor"; then
+       FFLAGS="$FFLAGS -mismatch_all"
+     fi
 fi
 #--------------------------------------------------------------------------
 # substitutions and write Makefile and make.defs
@@ -1801,6 +1905,7 @@ AC_SUBST(H5NEEDZLIB)
 AC_SUBST(HDF5DEF)
 AC_SUBST(HDF5INC)
 AC_SUBST(HDF5LIB)
+AC_SUBST(HDF5LIB_DEP)
 AC_SUBST(ZLIBLIB)
 AC_SUBST(SZIPLIB)
 
