@@ -14,6 +14,7 @@ endif (CGNS_USE_SHARED)
 link_libraries(${TCL_LIBRARY} ${TK_LIBRARY})
 
 if (CGNS_ENABLE_HDF5)
+  link_libraries(${HDF5_LIBRARY})
   if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
     link_libraries(${ZLIB_LIBRARY})
   endif(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)

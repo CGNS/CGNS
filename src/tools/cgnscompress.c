@@ -7,6 +7,14 @@
 
 #include "cgns_io.h"
 
+#if CG_HAVE_STAT64_STRUCT
+#ifdef _WIN32
+#define stat _stat64
+#else
+#define stat stat64
+#endif
+#endif
+
 int main (int argc, char **argv)
 {
     char *inpfile, *outfile;

@@ -25,16 +25,16 @@ $(OUTDIR) :
 	-@$(MKDIR) $(OUTDIR)
 
 $(WRITE1) : ../write_grid_str.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_grid_str.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../write_grid_str.F90 $(LIBS)
 
 $(WRITE2) : ../write_timevert_str.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_timevert_str.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../write_timevert_str.F90 $(LIBS)
 
 $(READ1) : ../read_grid_str.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_grid_str.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../read_grid_str.F90 $(LIBS)
 
 $(READ2) : ../read_timevert_str.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_timevert_str.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../read_timevert_str.F90 $(LIBS)
 
 clean :
 	-$(RM) grid.cgns $(WRITE_PROGS) $(READ_PROGS)

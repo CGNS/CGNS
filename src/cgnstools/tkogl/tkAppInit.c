@@ -2,16 +2,6 @@
 #include <GL/gl.h>
 #include "tkogl.h"
 
-/*
- * The following variable is a special hack that is needed in order for
- * Sun shared libraries to be used for Tcl.
- */
-
-#ifdef NEED_MATHERR
-extern int matherr();
-int *tclDummyMathPtr = (int *) matherr;
-#endif
-
 int Tcl_AppInit(Tcl_Interp *interp) 	/* Interpreter for application. */
 {
    if (Tcl_Init(interp) == TCL_ERROR)  return TCL_ERROR;

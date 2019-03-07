@@ -506,7 +506,7 @@ void write_faces (int cgfile, int cgbase, int cgzone, cgsize_t *start)
 {
     int n, nn, nf, np;
     int cgsect, hasmarks = 0;
-    cgsize_t end, *faces;
+    cgsize_t end, *faces, *faces_offset;
 
     np = Faces[0].nnodes;
     for (nn = 0, nf = 1; nf < nFaces; nf++) {
@@ -522,6 +522,13 @@ void write_faces (int cgfile, int cgbase, int cgzone, cgsize_t *start)
         exit(1);
     }
 
+    faces_offset = (cgsize_t *)malloc((nFaces+1) * sizeof(cgsize_t));
+    if (faces_offset == NULL) {
+        fprintf(stderr, "malloc failed for face offset data\n");
+        exit(1);
+    }
+    faces_offset[0] = 0;
+
     if (hasmarks) {
         int is, ie, mark;
         char name[33];
@@ -532,20 +539,23 @@ void write_faces (int cgfile, int cgbase, int cgzone, cgsize_t *start)
             nn = 0;
             np = Faces[is].nnodes;
             faces[nn++] = np;
+            faces_offset[0] = 0;
             for (n = 0; n < np; n++)
                 faces[nn++] = Faces[is].nodes[n];
+            faces_offset[1] = faces_offset[0] + np;
             for (ie = is + 1; ie < nFaces; ie++) {
                 if (Faces[ie].mark != mark) break;
                 np = Faces[ie].nnodes;
                 faces[nn++] = np;
+                faces_offset[ie-is+1] = faces_offset[ie-is] + np;
                 for (n = 0; n < np; n++)
                     faces[nn++] = Faces[ie].nodes[n];
             }
             sprintf(name, "Face Group %d", mark);
             end = *start + ie - is;
-            if (cg_section_write (cgfile, cgbase, cgzone, name,
+            if (cg_poly_section_write (cgfile, cgbase, cgzone, name,
                     CGNS_ENUMV(NGON_n), *start, end-1,
-                    0, faces, &cgsect))
+                    0, faces, faces_offset, &cgsect))
                 cg_error_exit();
             *start = end;
             is = ie;
@@ -555,17 +565,19 @@ void write_faces (int cgfile, int cgbase, int cgzone, cgsize_t *start)
         for (nn = 0, nf = 0; nf < nFaces; nf++) {
             np = Faces[nf].nnodes;
             faces[nn++] = np;
+            faces_offset[nf+1] = faces_offset[nf] + np;
             for (n = 0; n < np; n++)
                 faces[nn++] = Faces[nf].nodes[n];
         }
         end = *start + nFaces;
-        if (cg_section_write (cgfile, cgbase, cgzone, "Polygons",
-                CGNS_ENUMV(NGON_n), *start, end-1, 0, faces, &cgsect))
+        if (cg_poly_section_write (cgfile, cgbase, cgzone, "Polygons",
+                CGNS_ENUMV(NGON_n), *start, end-1, 0, faces, NULL, &cgsect))
             cg_error_exit();
         *start = end;
     }
 
     free(faces);
+    free(faces_offset);
     for (nf = 0; nf < nFaces; nf++)
         free(Faces[nf].nodes);
     free(Faces);

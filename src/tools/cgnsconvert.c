@@ -14,6 +14,14 @@
 #include "cgns_io.h"
 #include "getargs.h"
 
+#if CG_HAVE_STAT64_STRUCT
+#ifdef _WIN32
+#define stat _stat64
+#else
+#define stat stat64
+#endif
+#endif
+
 static char options[] = "ahfl";
 static char *usgmsg[] = {
     "usage  : cgnsconvert [options] InputFile [OutputFile]",

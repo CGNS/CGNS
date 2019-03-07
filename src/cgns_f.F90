@@ -36,7 +36,7 @@
 !
 MODULE cgns
 
-  USE ISO_C_BINDING
+  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR
   IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
@@ -82,13 +82,53 @@ MODULE cgns
   INTEGER, PARAMETER, PRIVATE :: MAX_LEN = 32
 
   INTERFACE cgio_set_dimensions_f
-     MODULE PROCEDURE cgio_set_dimensions_f_0
-     MODULE PROCEDURE cgio_set_dimensions_f_1
+
+     SUBROUTINE cgio_set_dimensions_f_0(cgio_num, id, data_type, ndims, dims, ier) ! BIND(C, NAME="cgio_set_dimensions_f_0")
+       IMPORT :: CGSIZE_T, C_DOUBLE, C_CHAR
+       IMPLICIT NONE
+       INTEGER :: cgio_num
+       REAL(C_DOUBLE) :: id
+       CHARACTER(KIND=C_CHAR, LEN=*) :: data_type
+       INTEGER :: ndims
+       INTEGER(CGSIZE_T) :: dims
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cgio_set_dimensions_f_0
+
+     SUBROUTINE cgio_set_dimensions_f_1(cgio_num, id, data_type, ndims, dims, ier) ! BIND(C, NAME="cgio_set_dimensions_f_1")
+       IMPORT :: CGSIZE_T, C_DOUBLE, C_CHAR
+       IMPLICIT NONE
+       INTEGER :: cgio_num
+       REAL(C_DOUBLE) :: id
+       CHARACTER(KIND=C_CHAR, LEN=*) :: data_type
+       INTEGER :: ndims
+       INTEGER(CGSIZE_T), DIMENSION(*) :: dims
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cgio_set_dimensions_f_1
+
   END INTERFACE
 
   INTERFACE cgio_get_dimensions_f
-     MODULE PROCEDURE cgio_get_dimensions_f_0
-     MODULE PROCEDURE cgio_get_dimensions_f_1
+
+     SUBROUTINE cgio_get_dimensions_f_0(cgio_num, id, ndims, dims, ier) BIND(C, NAME="cgio_get_dimensions_f_0")
+       IMPORT :: C_DOUBLE, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER :: cgio_num
+       REAL(C_DOUBLE) :: id
+       INTEGER :: ndims
+       INTEGER(CGSIZE_T) :: dims
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cgio_get_dimensions_f_0
+
+     SUBROUTINE cgio_get_dimensions_f_1(cgio_num, id, ndims, dims, ier) BIND(C, NAME="cgio_get_dimensions_f_1")
+       IMPORT :: C_DOUBLE, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER :: cgio_num
+       REAL(C_DOUBLE) :: id
+       INTEGER :: ndims
+       INTEGER(CGSIZE_T), DIMENSION(*) :: dims
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cgio_get_dimensions_f_1
+
   END INTERFACE
 
   ! Fortran version of cgnslib.h
@@ -112,8 +152,6 @@ MODULE cgns
   INTEGER(C_INT), PARAMETER :: CGIO_FILE_ADF  = 1
   INTEGER(C_INT), PARAMETER :: CGIO_FILE_HDF5 = 2
   INTEGER(C_INT), PARAMETER :: CGIO_FILE_ADF2 = 3
-
-
 
   !* legacy code support
   INTEGER(C_INT) MODE_READ, MODE_WRITE, MODE_MODIFY
@@ -891,6 +929,20 @@ MODULE cgns
        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: pathname
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_add_path_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_set_rind_zero_f(ier) BIND(C, NAME="cg_set_rind_zero_f")
+       IMPLICIT NONE
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_set_rind_zero_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_set_rind_core_f(ier) BIND(C, NAME="cg_set_rind_core_f")
+       IMPLICIT NONE
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_set_rind_core_f
   END INTERFACE
 
   INTERFACE
@@ -4926,55 +4978,5 @@ CONTAINS
 !    ier = cg_open(TRIM(filename)//C_NULL_CHAR, mode, fn)
 !
 !  END SUBROUTINE cg_open_f
-
-  SUBROUTINE cgio_set_dimensions_f_0(cgio_num, id, data_type, ndims, dims, ier)
-    IMPLICIT NONE
-    INTEGER :: cgio_num
-    REAL(C_DOUBLE) :: id
-    CHARACTER(KIND=C_CHAR, LEN=*) :: data_type
-    INTEGER :: ndims
-    INTEGER(CGSIZE_T) :: dims
-    INTEGER, INTENT(OUT) :: ier
-
-    CALL cgio_set_dimensions_f_c(cgio_num, id, data_type, ndims, dims, ier)
-
-  END SUBROUTINE cgio_set_dimensions_f_0
-
-  SUBROUTINE cgio_set_dimensions_f_1(cgio_num, id, data_type, ndims, dims, ier)
-    IMPLICIT NONE
-    INTEGER :: cgio_num
-    REAL(C_DOUBLE) :: id
-    CHARACTER(KIND=C_CHAR, LEN=*) :: data_type
-    INTEGER :: ndims
-    INTEGER(CGSIZE_T), DIMENSION(*) :: dims
-    INTEGER, INTENT(OUT) :: ier
-
-    CALL cgio_set_dimensions_f_c(cgio_num, id, data_type, ndims, dims, ier)
-
-  END SUBROUTINE cgio_set_dimensions_f_1
-
-  SUBROUTINE cgio_get_dimensions_f_0(cgio_num, id, ndims, dims, ier)
-    IMPLICIT NONE
-    INTEGER :: cgio_num
-    REAL(C_DOUBLE) :: id
-    INTEGER :: ndims
-    INTEGER(CGSIZE_T) :: dims
-    INTEGER, INTENT(OUT) :: ier
-
-    CALL cgio_get_dimensions_f_c(cgio_num, id, ndims, dims, ier)
-
-  END SUBROUTINE cgio_get_dimensions_f_0
-
-  SUBROUTINE cgio_get_dimensions_f_1(cgio_num, id, ndims, dims, ier)
-    IMPLICIT NONE
-    INTEGER :: cgio_num
-    REAL(C_DOUBLE) :: id
-    INTEGER :: ndims
-    INTEGER(CGSIZE_T), DIMENSION(*) :: dims
-    INTEGER, INTENT(OUT) :: ier
-
-    CALL cgio_get_dimensions_f_c(cgio_num, id, ndims, dims, ier)
-
-  END SUBROUTINE cgio_get_dimensions_f_1
 
 END MODULE cgns
