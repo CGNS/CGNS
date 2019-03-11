@@ -125,8 +125,8 @@ int main (int argc, char *argv[])
         for (j = 0; j < dims_3d(1); j++) {
             for (i = 0; i < dims_3d(0); i++) {
                 compute_values(i, j, k, 0);
-                assert(fvalues_3d[k][j][i] = fvalues_1d[idx3d_1d(i,j,k)]);
-                assert(dvalues_3d[k][j][i] = dvalues_1d[idx3d_1d(i,j,k)]);
+                assert(fvalues_3d[k][j][i] == fvalues_1d[idx3d_1d(i,j,k)]);
+                assert(dvalues_3d[k][j][i] == dvalues_1d[idx3d_1d(i,j,k)]);
                 n = idx3d_1d(i, j, k);
                 idx1d_3d(n, &ii, &jj, &kk);
                 assert(i == ii && j == jj && k == kk);
@@ -135,8 +135,8 @@ int main (int argc, char *argv[])
     }
     for (j = 0; j < dims_2d(1); j++)
       for (i = 0; i < dims_2d(0); i++) {
-          assert(fvalues_2d[j][i] = fvalues_1d[idx2d_1d(i,j)]);
-          assert(dvalues_2d[j][i] = dvalues_1d[idx2d_1d(i,j)]);
+          assert(fvalues_2d[j][i] == fvalues_1d[idx2d_1d(i,j)]);
+          assert(dvalues_2d[j][i] == dvalues_1d[idx2d_1d(i,j)]);
       }
 
     /* open */
