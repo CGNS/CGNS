@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
 #endif
-#ifdef BUILD_PARALLEL
+#if CG_BUILD_PARALLEL
 #include "pcgnslib.h"
 #endif
 
@@ -3863,7 +3863,7 @@ CGNSDLL void cgio_get_dimensions_f_1(
     *ndims = (cgint_f)i_ndims;
 }
 
-#ifdef BUILD_PARALLEL
+#if CG_BUILD_PARALLEL
 
 /*======================================================================
  * parallel IO interface
@@ -4287,5 +4287,5 @@ CGNSDLL void FMNAME(cgp_array_multi_read_data_f, CGP_ARRAY_MULTI_READ_DATA_F) (
 
 }
 #endif /*HDF5_HAVE_MULTI_DATASETS*/
-#endif /*BUILD_PARALLEL*/
+#endif /*CG_BUILD_PARALLEL*/
 

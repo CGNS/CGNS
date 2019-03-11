@@ -29,10 +29,12 @@
 #ifndef CGNSTYPES_H
 #define CGNSTYPES_H
 
+#define CG_BUILD_HDF5   @BUILDHDF5@
 #define CG_BUILD_LEGACY @BUILDLEGACY@
 #define CG_BUILD_64BIT  @BUILD64BIT@
 #define CG_BUILD_SCOPE  @BUILDSCOPE@
 #define CG_BUILD_BASESCOPE @BUILDBASESCOPE@
+#define CG_BUILD_PARALLEL  @BUILDPARALLEL@
 
 #define CG_MAX_INT32 0x7FFFFFFF
 #ifdef _WIN32
@@ -46,7 +48,7 @@
 # define CG_LONG_T @CGLONGT@
 #endif
 
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
 
 /* ----------------------------------------------------------------
  * convert between HDF5 and ADF ids

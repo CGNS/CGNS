@@ -713,12 +713,10 @@ if "%hdf5inc%" == "" (
 ) else (
   set hdf5def=/I%hdf5inc%
   set libs=%libs HDF5
-  set build=%build% /DBUILD_HDF5
 )
 
 set mpidef=
 if not "%mpiinc%" == "" set mpidef=/I%mpiinc%
-if not "%parallel%" == "" set build=%build% /DBUILD_PARALLEL
 
 if "%f2c%" == "none" (
   set f2cobjs=
@@ -968,7 +966,9 @@ echo.>> cgnstypes.h
 echo #define CG_BUILD_LEGACY %dolegacy% >> cgnstypes.h
 echo #define CG_BUILD_64BIT  %do64bit% >> cgnstypes.h
 echo #define CG_BUILD_SCOPE  %doscope% >> cgnstypes.h
+echo #define CG_BUILD_HDF5   %buildhdf5% >> cgnstypes.h
 echo #define CG_BUILD_BASESCOPE  %dobasescope% >> cgnstypes.h
+echo #define CG_BUILD_PARALLEL   %doparallel% >> cgnstypes.h
 echo.>> cgnstypes.h
 echo #define CG_MAX_INT32 0x7FFFFFFF>> cgnstypes.h
 echo #ifdef _WIN32>> cgnstypes.h
@@ -1808,10 +1808,8 @@ echo #define CGNSCONFIG_H>> cgnsconfig.h
 echo.>> cgnsconfig.h
 echo #include "cgnstypes.h">> cgnsconfig.h
 echo.>> cgnsconfig.h
-echo #define CG_BUILD_HDF5     %buildhdf5% >> cgnsconfig.h
 echo #define CG_BUILD_DEBUG    %dodebug% >> cgnsconfig.h
 echo #define CG_BUILD_FORTRAN  %dofortran% >> cgnsconfig.h
-echo #define CG_BUILD_PARALLEL %doparallel% >> cgnsconfig.h
 echo.>> cgnsconfig.h
 echo #define HDF5_INCLUDE_PATH "%hdf5inc%">> cgnsconfig.h
 echo #define HDF5_LIBRARY      "%hdf5lib%">> cgnsconfig.h

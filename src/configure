@@ -7398,13 +7398,11 @@ INSTALLPCGNS=""
 PTESTS=""
 
 if test "$withhdf5" = "yes"; then
-  BUILDOPTS="$BUILDOPTS -DBUILD_HDF5"
   ADFOBJS="\$(OBJDIR)/ADFH.\$(O)"
   ADFINCS="adfh/ADFH.h"
 fi
 
 if test "$parallel" = "yes"; then
-  BUILDOPTS="$BUILDOPTS -DBUILD_PARALLEL"
   ADFOBJS="$ADFOBJS \$(OBJDIR)/pcgnslib.\$(O)"
   INSTALLPCGNS=install-pcgns
   PTESTS=runptests
