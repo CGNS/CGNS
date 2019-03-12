@@ -1888,6 +1888,129 @@ int cg_fambc_write(int file_number, int B, int F, const char * fambc_name,
     return CG_OK;
 }
 
+/* FamilyTree extension */ /* ** FAMILY TREE ** */
+
+/*----------------------------------------------------------------------*/
+int cg_node_fambc_read( int BC, char* fambc_name,
+        CGNS_ENUMT(BCType_t) *bocotype)
+{
+    cgns_family*  family  = 0;
+
+    CHECK_FILE_OPEN
+
+    /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+
+    /* check for valid posit */
+
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+
+    if (strcmp(posit->label,"Family_t")==0)
+        family = ((cgns_family *)posit->posit);
+
+    if( family==0 ) {
+        cgi_error( "cg_node_fambc_read not called at a Family_t position" );
+        return CG_ERROR;
+    }
+
+    if (BC<=0 || BC>family->nfambc) {
+        cgi_error("Invalid family b.c. number");
+        return CG_ERROR;
+    }
+    strcpy(fambc_name,family->fambc[BC-1].name);
+    *bocotype = family->fambc[BC-1].type;
+
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+int cg_node_fambc_write( const char* fambc_name,
+        CGNS_ENUMT(BCType_t) bocotype, int *BC )
+{
+    int index;
+    cgsize_t length;
+    cgns_family *family = 0;
+    cgns_fambc *fambc = NULL;
+//
+//     /* verify input */
+//    if (cgi_check_strlen(fambc_name)) return CG_ERROR;
+    if (INVALID_ENUM(bocotype,NofValidBCTypes)) {
+        cgi_error("Invalid BCType:  %d",bocotype);
+        return CG_ERROR;
+    }
+
+     CHECK_FILE_OPEN
+
+    /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    /* check for valid posit */
+
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+
+    if (strcmp(posit->label,"Family_t")==0)
+        family = ((cgns_family *)posit->posit);
+
+    if( family==0 ) {
+        cgi_error( "cg_node_fambc_read not called at a Family_t position" );
+        return CG_ERROR;
+    }
+
+
+    /* Overwrite a FamilyBC_t Node: */
+    for (index=0; index<family->nfambc; index++) {
+        if (strcmp(fambc_name, family->fambc[index].name)==0) {
+
+             /* in CG_MODE_WRITE, children names must be unique */
+            if (cg->mode==CG_MODE_WRITE) {
+                cgi_error("Duplicate child name found: %s",fambc_name);
+                return CG_ERROR;
+            }
+
+             /* overwrite an existing zone */
+             /* delete the existing fambc from file */
+            if (cgi_delete_node(family->id, family->fambc[index].id))
+                return CG_ERROR;
+             /* save the old in-memory address to overwrite */
+            fambc = &(family->fambc[index]);
+             /* free memory */
+            cgi_free_fambc(fambc);
+            break;
+        }
+    }
+    /* ... or add a FamilyBC_t Node: */
+    if (index==family->nfambc) {
+        if (family->nfambc == 0) {
+            family->fambc = CGNS_NEW(cgns_fambc, family->nfambc+1);
+        } else {
+            family->fambc = CGNS_RENEW(cgns_fambc, family->nfambc+1, family->fambc);
+        }
+        fambc = &(family->fambc[family->nfambc]);
+        family->nfambc++;
+    }
+
+    (*BC) = index+1;
+
+    memset(fambc, 0, sizeof(cgns_fambc));
+    strcpy(fambc->name, fambc_name);
+    fambc->type = bocotype;
+
+    /* save data in file */
+    length = (cgsize_t)strlen(BCTypeName[bocotype]);
+    if (cgi_new_node(family->id, fambc->name, "FamilyBC_t", &fambc->id,
+        "C1", 1, &length, BCTypeName[bocotype])) return CG_ERROR;
+
+    return CG_OK;
+}
+
+
 /*----------------------------------------------------------------------*/
 
 int cg_geo_read(int file_number, int B, int F, int G, char *geo_name,

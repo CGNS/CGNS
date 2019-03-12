@@ -899,18 +899,28 @@ CGNSDLL int cg_multifam_write(const char *name, const char *family);
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_fambc_read(int file_number, int B, int F, int BC,
-	char *fambc_name, CGNS_ENUMT(BCType_t) *bocotype);
+    char *fambc_name, CGNS_ENUMT(BCType_t) *bocotype);
 CGNSDLL int cg_fambc_write(int file_number, int B, int F,
-	const char * fambc_name, CGNS_ENUMT(BCType_t) bocotype, int *BC);
+    const char * fambc_name, CGNS_ENUMT(BCType_t) bocotype, int *BC);
+
+/* FamilyTree extension */ /* ** FAMILY TREE ** */
+
+CGNSDLL int cg_node_fambc_read( int BC, char* fambc_name,
+        CGNS_ENUMT(BCType_t) *bocotype);
+CGNSDLL int cg_node_fambc_write( const char* fambc_name,
+        CGNS_ENUMT(BCType_t) bocotype, int *BC );
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GeometryReference_t Nodes                         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_geo_read(int file_number, int B, int F, int G, char *geo_name,
-	char **geo_file, char *CAD_name, int *npart);
+    char **geo_file, char *CAD_name, int *npart);
 CGNSDLL int cg_geo_write(int file_number, int B, int F, const char * geo_name,
-	const char * filename, const char * CADname, int *G);
+    const char * filename, const char * CADname, int *G);
+
+/* FamilyTree extension */ /* ** FAMILY TREE ** */
+// TODO
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GeometryEntity_t Nodes                            *
@@ -920,6 +930,9 @@ CGNSDLL int cg_part_read(int file_number, int B, int F, int G, int P,
 	char *part_name);
 CGNSDLL int cg_part_write(int file_number, int B, int F, int G,
 	const char * part_name, int *P);
+
+/* FamilyTree extension */ /* ** FAMILY TREE ** */
+// TODO
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GridCoordinates_t Nodes                           *
