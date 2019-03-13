@@ -10,7 +10,6 @@ endif (WIN32)
 # Include the local directory
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (CGNS_ENABLE_HDF5)
-  add_definitions(-DBUILD_HDF5)
   if (WIN32)
     if (HDF5_LIBRARY)
      # file(STRINGS ${HDF5_LIBRARY} HDF5isDLL REGEX "__imp__H5close")
@@ -23,9 +22,6 @@ if (CGNS_ENABLE_HDF5)
   if(HDF5_NEED_MPI AND MPI_INC)
     include_directories(${MPI_INC})
   endif(HDF5_NEED_MPI AND MPI_INC)
-  if (CGNS_ENABLE_PARALLEL)
-    add_definitions(-DBUILD_PARALLEL)
-  endif (CGNS_ENABLE_PARALLEL)
 endif (CGNS_ENABLE_HDF5)
 
 ################################
