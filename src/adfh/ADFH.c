@@ -384,10 +384,8 @@ static track_id(hid_t refid, hid_t trackid)
   int fn,er;
   int sname;
   char oname[256];
-  H5O_info_t objinfo;
   size_t maxhid;
 
-  H5Oget_info(trackid,&objinfo);
   memset(oname,'\0',256);
   sname=H5Iget_name(trackid,oname,0);
   sname=H5Iget_name(trackid,oname,sname+1);
@@ -2621,13 +2619,10 @@ void ADFH_Put_Dimension_Information(const double   id,
                                     int           *err)
 {
   hid_t hid;
-  hid_t did, tid, sid, mid;
+  hid_t did, tid, sid;
   int i, swap = 0;
-  hsize_t old_size;
-  hsize_t old_dims[ADF_MAX_DIMENSIONS];
   hsize_t new_dims[ADF_MAX_DIMENSIONS];
   char new_type[3];
-  hid_t xfer_prp = H5P_DEFAULT;
 
   to_HDF_ID(id,hid);
 
@@ -2672,7 +2667,6 @@ void ADFH_Put_Dimension_Information(const double   id,
    * in these rare cases.
    */
 
-  old_size = 0;
   if(has_data(hid)) {
     ADFH_DEBUG(("ADFH_Put_Dimension_Information unlink [%d]",hid));
     H5Gunlink(hid, D_DATA);
