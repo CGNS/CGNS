@@ -624,7 +624,7 @@ void write_structured()
 
 void write_unstructured()
 {
-    int n, nelem, nc, cgconn, cgz, cghole;
+    int n, nc, cgconn, cgz, cghole;
     int iter[NUM_ZCONN];
     cgsize_t range[2], dims[2];
     char name[33], zcname[33], pointers[32*NUM_ZCONN+1];
@@ -633,6 +633,7 @@ void write_unstructured()
 #else
 # ifdef ABUTTING1TO1_FACES
     GridLocation_t location;
+    int nelem;
 # else
     int i, j;
 # endif
@@ -662,7 +663,6 @@ void write_unstructured()
         write_coords(n);
         write_elements(n);
     }
-    nelem = (NUM_SIDE - 1) * (NUM_SIDE - 1);
 
     /* write connectivities in multiple ZoneGridConnectivity_t nodes */
 
@@ -698,6 +698,8 @@ void write_unstructured()
 
 #else
 # ifdef ABUTTING1TO1_FACES
+
+        nelem = (NUM_SIDE - 1) * (NUM_SIDE - 1);
 
         /* zone 1 to zone 2 connectivity as Abutting1to1 with element range */
 
