@@ -3111,7 +3111,8 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
      /* size_of_patch */
     if (ptset->type == CGNS_ENUMV(PointList) ||
         ptset->type == CGNS_ENUMV(ElementList) ||
-        ptset->type == CGNS_ENUMV(PointListDonor)) {
+        ptset->type == CGNS_ENUMV(PointListDonor) ||
+        ptset->type == CGNS_ENUMV(CellListDonor)) {
         ptset->size_of_patch = ptset->npts;
     }
     else {
