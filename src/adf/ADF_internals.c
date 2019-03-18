@@ -7412,7 +7412,7 @@ for( iend=0; iend < string_length; iend++ ) {
       break ;
       } /* end if */
    } /* end for */
-   iend--;
+iend--;
 
 	/** Skip and trailing blanks **/
 for( ; iend>=0; iend-- ) {
