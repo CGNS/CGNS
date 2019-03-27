@@ -2272,6 +2272,7 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
     cgns_zone *zone;
     cgns_zcoor *zcoor;
     int n, m_numdim;
+    int status;
 
     HDF5storage_type = CG_CONTIGUOUS;
 
@@ -2313,10 +2314,14 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
         m_rmax[n] = m_dimvals[n];
     }
 
-    return cg_coord_general_write(file_number, B, Z, coordname,
+    status = cg_coord_general_write(file_number, B, Z, coordname,
                                   type, s_rmin, s_rmax,
                                   type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   coord_ptr, C);
+
+    HDF5storage_type = CG_COMPACT;
+    return status;
+
 }
 
 int cg_coord_partial_write(int file_number, int B, int Z,
@@ -2355,8 +2360,6 @@ int cg_coord_partial_write(int file_number, int B, int Z,
                                   type, s_rmin, s_rmax,
                                   type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   coord_ptr, C);
-
-    HDF5storage_type = CG_COMPACT;
     return status;
 }
 
