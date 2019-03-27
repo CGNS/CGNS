@@ -3753,7 +3753,7 @@ MODULE cgns
      END SUBROUTINE cg_exit_on_error_f
   END INTERFACE
 
-#ifdef BUILD_PARALLEL
+#if CG_BUILD_PARALLEL_F
 
   !======================================================================
   ! parallel IO interface

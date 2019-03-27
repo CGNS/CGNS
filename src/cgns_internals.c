@@ -33,7 +33,7 @@ freely, subject to the following restrictions:
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
 #endif
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
 #include "adfh/ADFH.h"
 #include "hdf5.h"
 #endif
@@ -1709,7 +1709,7 @@ int cgi_read_1to1(cgns_1to1 *one21)
         return CG_ERROR;
       }
     }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5) {
     /*
      * Convert the double id to a hid_t id and compare that to 0 instead of
@@ -1886,7 +1886,7 @@ int cgi_read_conn(cgns_conn *conn)
         return CG_ERROR;
       }
     }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(conn->ptset.id, hid);
@@ -3114,7 +3114,8 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
      /* size_of_patch */
     if (ptset->type == CGNS_ENUMV(PointList) ||
         ptset->type == CGNS_ENUMV(ElementList) ||
-        ptset->type == CGNS_ENUMV(PointListDonor)) {
+        ptset->type == CGNS_ENUMV(PointListDonor) ||
+        ptset->type == CGNS_ENUMV(CellListDonor)) {
         ptset->size_of_patch = ptset->npts;
     }
     else {

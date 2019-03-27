@@ -53,7 +53,7 @@ freely, subject to the following restrictions:
 #include "cgns_io.h"
 
 /* to determine default file type */
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
 # include "hdf5.h"
 #endif
 
@@ -701,13 +701,13 @@ int cg_set_file_type(int file_type)
     if (file_type == CG_FILE_NONE) {
         char *type = getenv("CGNS_FILETYPE");
 	if (type == NULL || !*type) {
-#if defined(BUILD_HDF5)
+#if CG_BUILD_HDF5
             cgns_filetype = CG_FILE_HDF5;
 #else
             cgns_filetype = CG_FILE_ADF;
 #endif
         }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
 	else if (*type == '2' || *type == 'h' || *type == 'H') {
             cgns_filetype = CG_FILE_HDF5;
         }
@@ -2415,7 +2415,7 @@ int cg_coord_general_write(int fn, int B, int Z, const char *coordname,
                              &zcoor->id, "MT", 0, 0, 0)) return CG_ERROR;
         }
     }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5) {
         hid_t hid;
         to_HDF_ID(zcoor->id, hid);
@@ -5826,7 +5826,7 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
 			 &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
       }
     }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(zconn->id, hid);
@@ -6250,7 +6250,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
 			 &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
       }
     }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(zconn->id, hid);
@@ -6639,7 +6639,7 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
 			 &zconn->id, "MT", 0, 0, 0)) return CG_ERROR;
       }
     }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(zconn->id, hid);
@@ -6946,7 +6946,7 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
 			 &zboco->id, "MT", 0, 0, 0)) return CG_ERROR;
       }
     }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(zboco->id, hid);
@@ -7949,7 +7949,7 @@ int cg_bc_wallfunction_write(int file_number, int B, int Z, int BC,
 			 &bprop->id, "MT", 0, 0, 0)) return CG_ERROR;
       }
     }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(bprop->id, hid);
@@ -8108,7 +8108,7 @@ int cg_bc_area_write(int file_number, int B, int Z, int BC,
 			 &bprop->id, "MT", 0, 0, 0)) return CG_ERROR;
       }
     }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(bprop->id, hid);
@@ -8264,7 +8264,7 @@ int cg_conn_periodic_write(int file_number, int B, int Z, int I,
 			"GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0)) return CG_ERROR;
      }
    }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
    else if (cg->filetype == CGIO_FILE_HDF5) {
      hid_t hid;
      to_HDF_ID(cprop->id, hid);
@@ -8375,7 +8375,7 @@ int cg_conn_average_write(int file_number, int B, int Z, int I,
 			 "GridConnectivityProperty_t", &cprop->id, "MT", 0, 0, 0)) return CG_ERROR;
       }
     }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(cprop->id, hid);
@@ -8529,7 +8529,7 @@ int cg_1to1_periodic_write(int file_number, int B, int Z, int I,
 	  return CG_ERROR;
       }
     }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(cprop->id, hid);
@@ -8647,7 +8647,7 @@ int cg_1to1_average_write(int file_number, int B, int Z, int I,
 	  return CG_ERROR;
       }
     }
-#ifdef BUILD_HDF5
+#if CG_BUILD_HDF5
     else if (cg->filetype == CGIO_FILE_HDF5) {
       hid_t hid;
       to_HDF_ID(cprop->id, hid);

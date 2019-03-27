@@ -633,6 +633,7 @@ void write_unstructured()
 #else
 # ifdef ABUTTING1TO1_FACES
     GridLocation_t location;
+    int nelem;
 # else
     int i, j;
 # endif
@@ -700,6 +701,8 @@ void write_unstructured()
 
 #else
 # ifdef ABUTTING1TO1_FACES
+
+        nelem = (NUM_SIDE - 1) * (NUM_SIDE - 1);
 
         /* zone 1 to zone 2 connectivity as Abutting1to1 with element range */
 
