@@ -379,8 +379,9 @@ int main (int argc, char *argv[])
     }
 
     free(xcoord);
-    MPI_Finalize();
-
-    if (global_nn != 0) return 1;
-    return 0;
+    MPI_Finalize();  
+    if (comm_rank == 0) {
+      if (global_nn != 0) return 1;
+      return 0;
+    }
 }
