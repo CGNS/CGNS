@@ -694,6 +694,7 @@ CGNSTOOLS
 BUILDBASESCOPE
 BUILDPARALLEL
 FC_D_PRE
+HDF5_HAVE_FILE_SPACE_STRATEGY
 HDF5_HAVE_COLL_METADATA
 HAVE_STAT64_STRUCT
 HDF5_HAVE_MULTI_DATASETS
@@ -5742,6 +5743,24 @@ $as_echo "no" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
   fi
+
+  # Check if HDF5 library has H5Pset_file_space_strategy HDF5 >= 1.10.1
+  ## --------------------------------------------------------------------
+
+  HDF5_HAVE_FILE_SPACE_STRATEGY=0
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if HDF5 library has H5Pset_file_space_strategy" >&5
+$as_echo_n "checking if HDF5 library has H5Pset_file_space_strategy... " >&6; }
+  chck_fs=`grep -i 'H5Pset_file_space_strategy' $HDF5INC/H5Ppublic.h`
+  if test "x$chck_fs" = "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  else
+    HDF5_HAVE_FILE_SPACE_STRATEGY=1
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  fi
+
+
 fi
 
 #---------------------------------------------------------------------------
@@ -7468,6 +7487,7 @@ else
 $as_echo "no" >&6; }
   SET_MAKE="MAKE=${MAKE-make}"
 fi
+
 
 
 

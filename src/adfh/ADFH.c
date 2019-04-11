@@ -2125,7 +2125,9 @@ void ADFH_Database_Open(const char   *name,
 
 #endif
 
+#if HDF5_HAVE_FILE_SPACE_STRATEGY
     H5Pset_file_space_strategy(g_propfilecreate, H5F_FSPACE_STRATEGY_FSM_AGGR, 1, (hsize_t)1);
+#endif
 
     /* add creation time for groups (used by iterators)
       (prop set to file creation )*/
