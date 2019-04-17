@@ -728,8 +728,11 @@ static int new_str_data(hid_t id, const char *name, const char *value,
   /* compact storage */
   if(size+1 < CGNS_64KB)
     H5Pset_layout(dcpl_id, H5D_COMPACT);
-  else
+  else {
     H5Pset_layout(dcpl_id, H5D_CONTIGUOUS);
+    H5Pset_alloc_time(dcpl_id, H5D_ALLOC_TIME_EARLY);
+    H5Pset_fill_time(dcpl_id, H5D_FILL_TIME_NEVER); 
+  }
 
   did = H5Dcreate2(id, name, H5T_NATIVE_CHAR, sid, H5P_DEFAULT, dcpl_id, H5P_DEFAULT);
   if (did < 0) {
@@ -1964,6 +1967,8 @@ void ADFH_Database_Open(const char   *name,
     H5Pset_link_creation_order(mta_root->g_propgroupcreate,
                                H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
     mta_root->g_propdataset=H5Pcreate(H5P_DATASET_CREATE);
+    H5Pset_alloc_time(mta_root->g_propdataset, H5D_ALLOC_TIME_EARLY);
+    H5Pset_fill_time(mta_root->g_propdataset, H5D_FILL_TIME_NEVER); 
   }
 
   if (name == NULL || stat == NULL || fmt == NULL) {
@@ -2735,8 +2740,11 @@ void ADFH_Put_Dimension_Information(const double   id,
   /* Compact storage has a dataset size limit of 64 KiB */
   if(HDF5storage_type == CGIO_COMPACT && dset_size*(hssize_t)dtype_size  < (hssize_t)CGNS_64KB)
     H5Pset_layout(mta_root->g_propdataset, H5D_COMPACT);
-  else
+  else{
     H5Pset_layout(mta_root->g_propdataset, H5D_CONTIGUOUS);
+    H5Pset_alloc_time(mta_root->g_propdataset, H5D_ALLOC_TIME_EARLY);
+    H5Pset_fill_time(mta_root->g_propdataset, H5D_FILL_TIME_NEVER); 
+  }
 
   ADFH_CHECK_HID(sid);
   did = H5Dcreate2(hid, D_DATA, tid, sid,
