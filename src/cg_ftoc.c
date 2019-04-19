@@ -665,6 +665,28 @@ CGNSDLL void FMNAME(cg_geo_read_f, CG_GEO_READ_F) (cgint_f *fn, cgint_f *B,
     string_2_F_string(c_CAD_name, STR_PTR(CAD_name), STR_LEN(CAD_name), ier);
 }
 
+CGNSDLL void FMNAME(cg_node_geo_read_f, CG_NODE_GEO_READ_F) (
+    cgint_f *G, STR_PSTR(geo_name), STR_PSTR(geo_file),
+    STR_PSTR(CAD_name), cgint_f *npart, cgint_f *ier STR_PLEN(geo_name)
+    STR_PLEN(geo_file) STR_PLEN(CAD_name))
+{
+    char c_geo_name[CGIO_MAX_NAME_LENGTH+1];
+    char c_CAD_name[CGIO_MAX_NAME_LENGTH+1];
+    char *c_geo_file;
+    int i_npart;
+
+    *ier = (cgint_f)cg_node_geo_read((int)*G, c_geo_name,
+               &c_geo_file, c_CAD_name, &i_npart);
+    if (*ier) return;
+    *npart = (cgint_f)i_npart;
+    string_2_F_string(c_geo_file, STR_PTR(geo_file), STR_LEN(geo_file), ier);
+    CGNS_FREE(c_geo_file);
+    if (*ier) return;
+    string_2_F_string(c_geo_name, STR_PTR(geo_name), STR_LEN(geo_name), ier);
+    if (*ier) return;
+    string_2_F_string(c_CAD_name, STR_PTR(CAD_name), STR_LEN(CAD_name), ier);
+}
+
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_geo_write_f, CG_GEO_WRITE_F) (cgint_f *fn, cgint_f *B,
@@ -697,6 +719,36 @@ CGNSDLL void FMNAME(cg_geo_write_f, CG_GEO_WRITE_F) (cgint_f *fn, cgint_f *B,
     CGNS_FREE(c_geo_file);
 }
 
+CGNSDLL void FMNAME(cg_node_geo_write_f, CG_NODE_GEO_WRITE_F) (
+    STR_PSTR(geo_name), STR_PSTR(geo_file), STR_PSTR(CAD_name),
+    cgint_f *G, cgint_f *ier STR_PLEN(geo_name) STR_PLEN(geo_file)
+    STR_PLEN(CAD_name))
+{
+    char c_geo_name[CGIO_MAX_NAME_LENGTH+1];
+    char c_CAD_name[CGIO_MAX_NAME_LENGTH+1];
+    char *c_geo_file;
+    int length, i_G;
+
+     /* convert Fortran-text-string to a C-string */
+    string_2_C_string(STR_PTR(geo_name), STR_LEN(geo_name),
+        c_geo_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    string_2_C_string(STR_PTR(CAD_name), STR_LEN(CAD_name),
+        c_CAD_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+
+    length = STR_LEN(geo_file);
+    c_geo_file = CGNS_NEW(char, length+1);
+    string_2_C_string(STR_PTR(geo_file), STR_LEN(geo_file),
+        c_geo_file, length, ier);
+    if (*ier == 0) {
+        *ier = (cgint_f)cg_node_geo_write(c_geo_name,
+                   c_geo_file, c_CAD_name, &i_G);
+        *G = (cgint_f)i_G;
+    }
+    CGNS_FREE(c_geo_file);
+}
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GeometryEntity_t Nodes                            *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -708,6 +760,17 @@ CGNSDLL void FMNAME(cg_part_read_f, CG_PART_READ_F) (cgint_f *fn, cgint_f *B,
     char c_part_name[CGIO_MAX_NAME_LENGTH+1];
 
     *ier = (cgint_f)cg_part_read((int)*fn, (int)*B, (int)*F, (int)*G, (int)*P, c_part_name);
+    if (*ier == 0)
+      string_2_F_string(c_part_name, STR_PTR(part_name), STR_LEN(part_name), ier);
+}
+
+CGNSDLL void FMNAME(cg_node_part_read_f, CG_NODE_PART_READ_F) (
+    cgint_f *G, cgint_f *P, STR_PSTR(part_name),
+    cgint_f *ier STR_PLEN(part_name))
+{
+    char c_part_name[CGIO_MAX_NAME_LENGTH+1];
+
+    *ier = (cgint_f)cg_node_part_read((int)*G, (int)*P, c_part_name);
     if (*ier == 0)
       string_2_F_string(c_part_name, STR_PTR(part_name), STR_LEN(part_name), ier);
 }
@@ -726,6 +789,21 @@ CGNSDLL void FMNAME(cg_part_write_f, CG_PART_WRITE_F) (cgint_f *fn, cgint_f *B,
         c_part_name, CGIO_MAX_NAME_LENGTH, ier);
     if (*ier) return;
     *ier = (cgint_f)cg_part_write((int)*fn, (int)*B, (int)*F, (int)*G, c_part_name, &i_P);
+    *P = (cgint_f)i_P;
+}
+
+CGNSDLL void FMNAME(cg_node_part_write_f, CG_NODE_PART_WRITE_F) (
+    cgint_f *G, STR_PSTR(part_name), cgint_f *P,
+    cgint_f *ier STR_PLEN(part_name))
+{
+    char c_part_name[CGIO_MAX_NAME_LENGTH+1];
+    int i_P;
+
+     /* convert Fortran-text-string to a C-string */
+    string_2_C_string(STR_PTR(part_name), STR_LEN(part_name),
+        c_part_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    *ier = (cgint_f)cg_node_part_write((int)*G, c_part_name, &i_P);
     *P = (cgint_f)i_P;
 }
 

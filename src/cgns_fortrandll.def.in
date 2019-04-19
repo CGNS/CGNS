@@ -43,8 +43,12 @@ CGNS_mp_cg_node_fambc_read
 CGNS_mp_cg_node_fambc_write
 CGNS_mp_cg_geo_read_f
 CGNS_mp_cg_geo_write_f
+CGNS_mp_cg_node_geo_read_f
+CGNS_mp_cg_node_geo_write_f
 CGNS_mp_cg_part_read_f
 CGNS_mp_cg_part_write_f
+CGNS_mp_cg_node_part_read_f
+CGNS_mp_cg_node_part_write_f
 CGNS_mp_cg_ndiscrete_f
 CGNS_mp_cg_discrete_read_f
 CGNS_mp_cg_discrete_write_f

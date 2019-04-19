@@ -1327,6 +1327,31 @@ MODULE cgns
      END SUBROUTINE cg_geo_write_f
   END INTERFACE
 
+  INTERFACE
+     SUBROUTINE cg_node_geo_read_f(G, geo_name, geo_file, CAD_name, npart, ier) !BIND(C, NAME="cg_node_geo_read_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: G
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_name
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_file
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: CAD_name
+       INTEGER :: npart
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_geo_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_geo_write_f(geo_name, geo_file, CAD_name, G, ier) !BIND(C, NAME="cg_node_geo_write_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_name
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_file
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: CAD_name
+       INTEGER :: G
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_geo_write_f
+  END INTERFACE
+
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write GeometryEntity_t Nodes                            *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -1358,7 +1383,29 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_part_write_f
   END INTERFACE
+  
+  INTERFACE
+     SUBROUTINE cg_node_part_read_f(G, P, part_name, ier) !BIND(C, NAME="cg_node_part_read_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: G
+       INTEGER :: P
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: part_name
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_part_read_f
+  END INTERFACE
 
+  INTERFACE
+     SUBROUTINE cg_node_part_write_f(G, part_name, P, ier) !BIND(C, NAME="cg_node_part_write_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: G
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: part_name
+       INTEGER :: P
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_part_write_f
+  END INTERFACE
+  
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write DiscreteData_t Nodes                              *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
