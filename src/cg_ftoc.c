@@ -424,6 +424,14 @@ CGNSDLL void cg_nfamilies_f(cgint_f *fn, cgint_f *B,
     *nfamilies = (cgint_f)i_nfamilies;
 }
 
+CGNSDLL void cg_node_nfamilies_f(cgint_f *nfamilies, cgint_f *ier)
+{
+    int i_nfamilies;
+
+    *ier = (cgint_f)cg_node_nfamilies(&i_nfamilies);
+    *nfamilies = (cgint_f)i_nfamilies;
+}
+
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_family_read_f, CG_FAMILY_READ_F) (cgint_f *fn, cgint_f *B,
@@ -434,6 +442,21 @@ CGNSDLL void FMNAME(cg_family_read_f, CG_FAMILY_READ_F) (cgint_f *fn, cgint_f *B
     int i_nboco, i_ngeos;
 
     *ier = (cgint_f)cg_family_read((int)*fn, (int)*B, (int)*F, c_name, &i_nboco, &i_ngeos);
+    if (*ier) return;
+    string_2_F_string(c_name, STR_PTR(family_name), STR_LEN(family_name), ier);
+
+    *nboco = (cgint_f)i_nboco;
+    *ngeos = (cgint_f)i_ngeos;
+}
+
+CGNSDLL void FMNAME(cg_node_family_read_f, CG_NODE_FAMILY_READ_F) (
+    cgint_f *F, STR_PSTR(family_name), cgint_f *nboco, cgint_f *ngeos,
+    cgint_f *ier STR_PLEN(family_name))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    int i_nboco, i_ngeos;
+
+    *ier = (cgint_f)cg_node_family_read((int)*F, c_name, &i_nboco, &i_ngeos);
     if (*ier) return;
     string_2_F_string(c_name, STR_PTR(family_name), STR_LEN(family_name), ier);
 
@@ -456,6 +479,19 @@ CGNSDLL void FMNAME(cg_family_write_f, CG_FAMILY_WRITE_F) (cgint_f *fn, cgint_f 
     *F = (cgint_f)i_F;
 }
 
+CGNSDLL void FMNAME(cg_node_family_write_f, CG_NODE_FAMILY_WRITE_F) (
+    STR_PSTR(family_name), cgint_f *F, cgint_f *ier STR_PLEN(family_name))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    int i_F;
+
+    string_2_C_string(STR_PTR(family_name), STR_LEN(family_name),
+              c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    *ier = (cgint_f)cg_node_family_write(c_name, &i_F);
+    *F = (cgint_f)i_F;
+}
+
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void cg_nfamily_names_f(cgint_f *fn,
@@ -467,6 +503,13 @@ CGNSDLL void cg_nfamily_names_f(cgint_f *fn,
     *nnames = (cgint_f)i_nnames;
 }
 
+CGNSDLL void cg_node_nfamily_names_f(cgint_f *nnames, cgint_f *ier)
+{
+    int i_nnames;
+
+    *ier = (cgint_f)cg_node_nfamily_names(&i_nnames);
+    *nnames = (cgint_f)i_nnames;
+}
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_family_name_read_f, CG_FAMILY_NAME_READ_F) (cgint_f *fn,
@@ -477,6 +520,20 @@ CGNSDLL void FMNAME(cg_family_name_read_f, CG_FAMILY_NAME_READ_F) (cgint_f *fn,
     char c_family[CGIO_MAX_NAME_LENGTH+1];
 
     *ier = (cgint_f)cg_family_name_read((int)*fn, (int)*B, (int)*F, (int)*N, c_name, c_family);
+    if (*ier) return;
+    string_2_F_string(c_name, STR_PTR(name), STR_LEN(name), ier);
+    if (*ier) return;
+    string_2_F_string(c_family, STR_PTR(family), STR_LEN(family), ier);
+}
+
+CGNSDLL void FMNAME(cg_node_family_name_read_f, CG_NODE_FAMILY_NAME_READ_F) (
+    cgint_f *N, STR_PSTR(name), STR_PSTR(family),
+    cgint_f *ier STR_PLEN(name) STR_PLEN(family))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    char c_family[CGIO_MAX_NAME_LENGTH+1];
+
+    *ier = (cgint_f)cg_node_family_name_read((int)*N, c_name, c_family);
     if (*ier) return;
     string_2_F_string(c_name, STR_PTR(name), STR_LEN(name), ier);
     if (*ier) return;
@@ -501,6 +558,22 @@ CGNSDLL void FMNAME(cg_family_name_write_f, CG_FAMILY_NAME_WRITE_F) (cgint_f *fn
     *ier = (cgint_f)cg_family_name_write((int)*fn, (int)*B, (int)*F, c_name, c_family);
 }
 
+CGNSDLL void FMNAME(cg_node_family_name_write_f, CG_NODE_FAMILY_NAME_WRITE_F) (
+    STR_PSTR(name), STR_PSTR(family),
+    cgint_f *ier STR_PLEN(name) STR_PLEN(family))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    char c_family[CGIO_MAX_NAME_LENGTH+1];
+
+    string_2_C_string(STR_PTR(name), STR_LEN(name),
+              c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    string_2_C_string(STR_PTR(family), STR_LEN(family),
+              c_family, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    *ier = (cgint_f)cg_node_family_name_write(c_name, c_family);
+}
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FamBC_t Nodes                                     *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -520,6 +593,20 @@ CGNSDLL void FMNAME(cg_fambc_read_f, CG_FAMBC_READ_F) (cgint_f *fn, cgint_f *B,
     *bocotype = (CGNS_ENUMT(BCType_t))i_bocotype;
 }
 
+CGNSDLL void FMNAME(cg_node_fambc_read_f, CG_NODE_FAMBC_READ_F) (
+    cgint_f *BC, STR_PSTR(fambc_name), CGNS_ENUMT(BCType_t) *bocotype,
+    cgint_f *ier STR_PLEN(fambc_name))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    CGNS_ENUMT(BCType_t) i_bocotype;
+
+    *ier = (cgint_f)cg_node_fambc_read((int)*BC, c_name, &i_bocotype);
+    if (*ier) return;
+    string_2_F_string(c_name, STR_PTR(fambc_name), STR_LEN(fambc_name), ier);
+
+    *bocotype = (CGNS_ENUMT(BCType_t))i_bocotype;
+}
+
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void FMNAME(cg_fambc_write_f, CG_FAMBC_WRITE_F) (cgint_f *fn,
@@ -533,6 +620,21 @@ CGNSDLL void FMNAME(cg_fambc_write_f, CG_FAMBC_WRITE_F) (cgint_f *fn,
 		      c_name, CGIO_MAX_NAME_LENGTH, ier);
     if (*ier) return;
     *ier = (cgint_f)cg_fambc_write((int)*fn, (int)*B, (int)*F, c_name,
+               (CGNS_ENUMT(BCType_t))*bocotype, &i_BC);
+    *BC = (cgint_f)i_BC;
+}
+
+CGNSDLL void FMNAME(cg_node_fambc_write_f, CG_NODE_FAMBC_WRITE_F) (
+    STR_PSTR(fambc_name), CGNS_ENUMT(BCType_t) *bocotype,
+    cgint_f *BC, cgint_f *ier STR_PLEN(fambc_name))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    int i_BC;
+
+    string_2_C_string(STR_PTR(fambc_name), STR_LEN(fambc_name),
+              c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    *ier = (cgint_f)cg_node_fambc_write(c_name,
                (CGNS_ENUMT(BCType_t))*bocotype, &i_BC);
     *BC = (cgint_f)i_BC;
 }
