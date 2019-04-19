@@ -1959,7 +1959,7 @@ int cg_node_fambc_write( const char* fambc_name,
         family = ((cgns_family *)posit->posit);
 
     if( family==0 ) {
-        cgi_error( "cg_node_fambc_read not called at a Family_t position" );
+        cgi_error( "cg_node_fambc_write not called at a Family_t position" );
         return CG_ERROR;
     }
 
@@ -2127,6 +2127,151 @@ int cg_geo_write(int file_number, int B, int F, const char * geo_name,
     return CG_OK;
 }
 
+/* FamilyTree extension */ /* ** FAMILY TREE ** */
+
+/*----------------------------------------------------------------------*/
+int cg_node_geo_read( int G, char *geo_name,
+        char **geo_file, char *CAD_name, int *npart )
+{
+    cgns_family*  family  = 0;
+
+    CHECK_FILE_OPEN
+
+    /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+
+    /* check for valid posit */
+
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+
+    if (strcmp(posit->label,"Family_t")==0)
+        family = ((cgns_family *)posit->posit);
+
+    if( family==0 ) {
+        cgi_error( "cg_node_geo_read not called at a Family_t position" );
+        return CG_ERROR;
+    }
+
+    if (G<=0 || G>family->ngeos) {
+        cgi_error("Invalid geometry reference number");
+        return CG_ERROR;
+    }
+    strcpy(geo_name,family->geo[G-1].name);
+    strcpy(CAD_name,family->geo[G-1].format);
+
+     /* This string is not limited to 32 characters and can't be pre-allocated
+    in the application */
+    geo_file[0]=CGNS_NEW(char,strlen(family->geo[G-1].file)+1);
+    strcpy(geo_file[0],family->geo[G-1].file);
+
+    *npart=family->geo[G-1].npart;
+
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+int cg_node_geo_write( const char *geo_name,
+        const char *filename, const char *CADname, int *G)
+{
+    int index;
+    cgsize_t length;
+    cgns_family *family = 0;
+    cgns_geo *geo = NULL;
+    double dummy_id;
+
+     /* verify input */
+    if (cgi_check_strlen(geo_name)) return CG_ERROR;
+    if (cgi_check_strlen(CADname)) return CG_ERROR;
+
+    CHECK_FILE_OPEN
+
+    /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    /* check for valid posit */
+
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+
+    if (strcmp(posit->label,"Family_t")==0)
+        family = ((cgns_family *)posit->posit);
+
+    if( family==0 ) {
+        cgi_error( "cg_node_geo_write not called at a Family_t position" );
+        return CG_ERROR;
+    }
+
+     /* Overwrite a GeometryReference_t Node: */
+    for (index=0; index<family->ngeos; index++) {
+        if (strcmp(geo_name, family->geo[index].name)==0) {
+
+             /* in CG_MODE_WRITE, children names must be unique */
+            if (cg->mode==CG_MODE_WRITE) {
+                cgi_error("Duplicate child name found: %s",geo_name);
+                return CG_ERROR;
+            }
+
+             /* overwrite an existing zone */
+             /* delete the existing geo from file */
+            if (cgi_delete_node(family->id, family->geo[index].id))
+                return CG_ERROR;
+             /* save the old in-memory address to overwrite */
+            geo = &(family->geo[index]);
+             /* free memory */
+            cgi_free_geo(geo);
+            break;
+        }
+    }
+     /* ... or add a GeometryReference_t Node: */
+    if (index==family->ngeos) {
+        if (family->ngeos == 0) {
+            family->geo = CGNS_NEW(cgns_geo, family->ngeos+1);
+        } else {
+            family->geo = CGNS_RENEW(cgns_geo, family->ngeos+1, family->geo);
+        }
+        geo = &(family->geo[family->ngeos]);
+        family->ngeos++;
+    }
+    (*G) = index+1;
+
+
+    memset(geo, 0, sizeof(cgns_geo));
+    strcpy(geo->name, geo_name);
+    strcpy(geo->format, CADname);
+
+    length = (int)strlen(filename);
+    if (length<=0) {
+        cgi_error("filename undefined for GeometryReference node!");
+        return CG_ERROR;
+    }
+    geo->file = (char *)malloc((size_t)((length+1)*sizeof(char)));
+    if (geo->file == NULL) {
+        cgi_error("Error allocation geo->file");
+        return CG_ERROR;
+    }
+    strcpy(geo->file, filename);
+
+     /* save data in file */
+    if (cgi_new_node(family->id, geo->name, "GeometryReference_t", &geo->id,
+        "MT", 0, 0, 0)) return CG_ERROR;
+    length = (cgsize_t)strlen(geo->file);
+    if (cgi_new_node(geo->id, "GeometryFile", "GeometryFile_t", &dummy_id,
+        "C1", 1, &length, geo->file)) return CG_ERROR;
+    length = (cgsize_t)strlen(geo->format);
+    if (cgi_new_node(geo->id, "GeometryFormat", "GeometryFormat_t", &dummy_id,
+        "C1", 1, &length, geo->format)) return CG_ERROR;
+
+    return CG_OK;
+}
+
+
+
 /*----------------------------------------------------------------------*/
 
 int cg_part_read(int file_number, int B, int F, int G, int P, char *part_name)
@@ -2168,6 +2313,121 @@ int cg_part_write(int file_number, int B, int F, int G, const char * part_name,
      /* get memory address for geo */
     family = cgi_get_family(cg, B, F);
     if (family==0) return CG_ERROR;
+    if (G > family->ngeos || G <=0) {
+        cgi_error("Invalid index for GeometryEntity_t node");
+        return CG_ERROR;
+    }
+    geo = &family->geo[G-1];
+
+     /* Overwrite a GeometryEntity_t Node: */
+    for (index=0; index<geo->npart; index++) {
+        if (strcmp(part_name, geo->part[index].name)==0) {
+
+             /* in CG_MODE_WRITE, children names must be unique */
+            if (cg->mode==CG_MODE_WRITE) {
+                cgi_error("Duplicate child name found: %s",part_name);
+                return CG_ERROR;
+            }
+
+             /* overwrite an existing zone */
+             /* delete the existing geo from file */
+            if (cgi_delete_node(geo->id, geo->part[index].id))
+                return CG_ERROR;
+             /* save the old in-memory address to overwrite */
+            part = &(geo->part[index]);
+             /* free memory */
+            cgi_free_part(part);
+            break;
+        }
+    }
+     /* ... or add a GeometryReference_t Node: */
+    if (index==geo->npart) {
+        if (geo->npart == 0) {
+            geo->part = CGNS_NEW(cgns_part, geo->npart+1);
+        } else {
+            geo->part = CGNS_RENEW(cgns_part, geo->npart+1, geo->part);
+        }
+        part = &(geo->part[geo->npart]);
+        geo->npart++;
+    }
+    (*P) = index+1;
+
+    memset(part, 0, sizeof(cgns_part));
+    strcpy(part->name, part_name);
+
+     /* save data in file */
+    if (cgi_new_node(geo->id, part->name, "GeometryEntity_t", &part->id,
+        "MT", 0, 0, 0)) return CG_ERROR;
+    return CG_OK;
+}
+
+/* FamilyTree extension */ /* ** FAMILY TREE ** */
+
+/*----------------------------------------------------------------------*/
+int cg_node_part_read(int G, int P, char *part_name)
+{
+    cgns_family*  family  = 0;
+
+    CHECK_FILE_OPEN
+
+    /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+
+    /* check for valid posit */
+
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+
+    if (strcmp(posit->label,"Family_t")==0)
+        family = ((cgns_family *)posit->posit);
+
+    if( family==0 ) {
+        cgi_error( "cg_node_part_read not called at a Family_t position" );
+        return CG_ERROR;
+    }
+
+    if (P<=0 || P>family->geo[G-1].npart) {
+        cgi_error("Invalid part number");
+        return CG_ERROR;
+    }
+    strcpy(part_name,family->geo[G-1].part[P-1].name);
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+int cg_node_part_write(int G, const char * part_name, int *P)
+{
+    int index;
+    cgns_geo *geo;
+    cgns_part *part = NULL;
+    cgns_family *family = 0;
+
+     /* verify input */
+    if (cgi_check_strlen(part_name)) return CG_ERROR;
+
+    CHECK_FILE_OPEN
+
+    /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    /* check for valid posit */
+
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+
+    if (strcmp(posit->label,"Family_t")==0)
+        family = ((cgns_family *)posit->posit);
+
+    if( family==0 ) {
+        cgi_error( "cg_node_part_write not called at a Family_t position" );
+        return CG_ERROR;
+    }
+
     if (G > family->ngeos || G <=0) {
         cgi_error("Invalid index for GeometryEntity_t node");
         return CG_ERROR;
