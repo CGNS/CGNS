@@ -237,8 +237,8 @@ fi
 if test -z $exec_prefix || test $exec_prefix = NONE; then
   exec_prefix=$prefix
 fi
-if test "$datadir" = "\${prefix}/share"; then
-  datadir=$datadir/cgnstools
+if test "$datarootdir" = "\${prefix}/share"; then
+  datadir=$datarootdir/cgnstools
 fi
 
 AC_MSG_CHECKING([where to install library])

@@ -4711,8 +4711,8 @@ fi
 if test -z $exec_prefix || test $exec_prefix = NONE; then
   exec_prefix=$prefix
 fi
-if test "$datadir" = "\${prefix}/share"; then
-  datadir=$datadir/cgnstools
+if test "$datarootdir" = "\${prefix}/share"; then
+  datadir=$datarootdir/cgnstools
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking where to install library" >&5
