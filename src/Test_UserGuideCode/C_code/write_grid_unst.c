@@ -116,7 +116,7 @@ relationships:
     nelem_end=ielem_no;
     if (nelem_end > maxelemi)
     {
-      printf("\nError, must increase maxelemi to at least %d\n",nelem_end);
+      printf("\nError, must increase maxelemi to at least %lu\n",(unsigned long)nelem_end);
       return 1;
     }
 /* unsorted boundary elements */
