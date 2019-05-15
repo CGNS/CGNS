@@ -98,6 +98,9 @@ int cgns_compress = 0;
 int cgns_filetype = CG_FILE_NONE;
 void* cgns_rindindex = CG_CONFIG_RIND_CORE;
 
+/* Flag for contiguous (0) or compact storage (1) */
+int HDF5storage_type = CG_COMPACT;
+
 extern void (*cgns_error_handler)(int, char *);
 
 /***********************************************************************
@@ -2269,7 +2272,16 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
     cgns_zone *zone;
     cgns_zcoor *zcoor;
     int n, m_numdim;
+    int status;
 
+    HDF5storage_type = CG_CONTIGUOUS;
+
+     /* verify input */
+    if (cgi_check_strlen(coordname)) return CG_ERROR;
+    if (type!=CGNS_ENUMV( RealSingle ) && type!=CGNS_ENUMV( RealDouble )) {
+        cgi_error("Invalid datatype for coord. array:  %d", type);
+        return CG_ERROR;
+    }
      /* get memory addresses */
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
@@ -2302,10 +2314,14 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
         m_rmax[n] = m_dimvals[n];
     }
 
-    return cg_coord_general_write(file_number, B, Z, coordname,
+    status = cg_coord_general_write(file_number, B, Z, coordname,
                                   type, s_rmin, s_rmax,
                                   type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   coord_ptr, C);
+
+    HDF5storage_type = CG_COMPACT;
+    return status;
+
 }
 
 int cg_coord_partial_write(int file_number, int B, int Z,
@@ -2316,6 +2332,7 @@ int cg_coord_partial_write(int file_number, int B, int Z,
 {
     cgns_zone *zone;
     int n, m_numdim;
+    int status;
 
      /* get memory addresses */
     cg = cgi_get_file(file_number);
@@ -2339,10 +2356,11 @@ int cg_coord_partial_write(int file_number, int B, int Z,
         m_dimvals[n] = m_rmax[n];
     }
 
-    return cg_coord_general_write(file_number, B, Z, coordname,
+    status = cg_coord_general_write(file_number, B, Z, coordname,
                                   type, s_rmin, s_rmax,
                                   type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   coord_ptr, C);
+    return status;
 }
 
 int cg_coord_general_write(int fn, int B, int Z, const char *coordname,
@@ -2357,6 +2375,9 @@ int cg_coord_general_write(int fn, int B, int Z, const char *coordname,
     cgns_zone *zone;
     cgns_zcoor *zcoor;
     int n, s_numdim;
+    int status;
+
+    HDF5storage_type = CG_CONTIGUOUS;
 
      /* verify input */
     if (cgi_check_strlen(coordname)) return CG_ERROR;
@@ -2411,12 +2432,14 @@ int cg_coord_general_write(int fn, int B, int Z, const char *coordname,
         return CG_ERROR;
     }
 
-    return cgi_array_general_write(zcoor->id, &(zcoor->ncoords),
+    status = cgi_array_general_write(zcoor->id, &(zcoor->ncoords),
                                    &(zcoor->coord), coordname,
                                    cgns_rindindex, zcoor->rind_planes,
                                    s_type, s_numdim, s_dimvals, s_rmin, s_rmax,
                                    m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                    coord_ptr, C);
+    HDF5storage_type = CG_COMPACT;
+    return status;
 }
 
 /*****************************************************************************\
@@ -4964,6 +4987,16 @@ int cg_field_write(int file_number, int B, int Z, int S,
     cgns_sol *sol;
     int n, m_numdim;
 
+    HDF5storage_type = CG_CONTIGUOUS;
+
+     /* verify input */
+    if (cgi_check_strlen(fieldname)) return CG_ERROR;
+    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble) &&
+        type != CGNS_ENUMV(Integer) && type != CGNS_ENUMV(LongInteger)) {
+        cgi_error("Invalid datatype for solution array %s: %d",fieldname, type);
+        return CG_ERROR;
+    }
+
      /* get memory addresses */
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
@@ -5017,6 +5050,7 @@ int cg_field_partial_write(int file_number, int B, int Z, int S,
     cgns_zone *zone;
     cgns_sol *sol;
     int n, m_numdim;
+    int status;
 
      /* get memory addresses */
     cg = cgi_get_file(file_number);
@@ -5050,10 +5084,14 @@ int cg_field_partial_write(int file_number, int B, int Z, int S,
         m_dimvals[n] = m_rmax[n];
     }
 
-    return cg_field_general_write(file_number, B, Z, S, fieldname,
+    status = cg_field_general_write(file_number, B, Z, S, fieldname,
                                   type, s_rmin, s_rmax,
                                   type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   field_ptr, F);
+
+    HDF5storage_type = CG_COMPACT;
+    return status;
+
 }
 
 int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
@@ -5068,6 +5106,9 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
     cgns_zone *zone;
     cgns_sol *sol;
     int s_numdim;
+    int status;
+
+    HDF5storage_type = CG_CONTIGUOUS;
 
      /* verify input */
     if (cgi_check_strlen(fieldname)) return CG_ERROR;
@@ -5108,12 +5149,15 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
         s_dimvals[0] = sol->ptset->size_of_patch;
     }
 
-    return cgi_array_general_write(sol->id, &(sol->nfields),
+    status= cgi_array_general_write(sol->id, &(sol->nfields),
                                    &(sol->field), fieldname,
                                    cgns_rindindex, sol->rind_planes,
                                    s_type, s_numdim, s_dimvals, s_rmin, s_rmax,
                                    m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                    field_ptr, F);
+    
+    HDF5storage_type = CG_COMPACT;
+    return status;
 }
 
 /*************************************************************************\
@@ -9969,6 +10013,8 @@ int cg_array_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
     int n, ier=0;
     double posit_id;
 
+    HDF5storage_type = CG_CONTIGUOUS;
+
     CHECK_FILE_OPEN
 
      /* verify input */
@@ -10018,7 +10064,7 @@ int cg_array_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
     if (cgi_posit_id(&posit_id)) return CG_ERROR;
     if (cgi_new_node(posit_id, array->name, "DataArray_t", &array->id,
         array->data_type, array->data_dim, array->dim_vals, Data)) return CG_ERROR;
-
+    HDF5storage_type = CG_COMPACT;
     return CG_OK;
 }
 

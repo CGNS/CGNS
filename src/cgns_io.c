@@ -67,6 +67,8 @@ MPI_Info pcg_mpi_info;
 #endif
 #endif
 
+/* Flag for contiguous or compact HDF5 storage */
+extern int HDF5storage_type;
 
 typedef struct {
     int type;
@@ -1108,7 +1110,7 @@ int cgio_create_node (int cgio_num, double pid,
 
 int cgio_new_node (int cgio_num, double pid, const char *name,
     const char *label, const char *data_type, int ndims,
-    const cgsize_t *dims, const void *data, double *id)
+                   const cgsize_t *dims, const void *data, double *id)
 {
     int ierr;
     cgns_io *cgio;
@@ -1122,7 +1124,7 @@ int cgio_new_node (int cgio_num, double pid, const char *name,
         ADF_Set_Label(*id, label, &ierr);
         if (ierr > 0) return set_error(ierr);
         if (data_type != NULL && strcmp(data_type, "MT")) {
-            ADF_Put_Dimension_Information(*id, data_type, ndims, dims, &ierr);
+          ADF_Put_Dimension_Information(*id, data_type, ndims, dims, &ierr);
             if (ierr > 0) return set_error(ierr);
             if (data != NULL) {
                 ADF_Write_All_Data(*id, (const char *)data, &ierr);
@@ -1132,18 +1134,18 @@ int cgio_new_node (int cgio_num, double pid, const char *name,
     }
 #if CG_BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
-        ADFH_Create(pid, name, id, &ierr);
+      ADFH_Create(pid, name, id, &ierr);
+      if (ierr > 0) return set_error(ierr);
+      ADFH_Set_Label(*id, label, &ierr);
+      if (ierr > 0) return set_error(ierr);
+      if (data_type != NULL && strcmp(data_type, "MT")) {
+        ADFH_Put_Dimension_Information(*id, data_type, ndims, dims, HDF5storage_type, &ierr);
         if (ierr > 0) return set_error(ierr);
-        ADFH_Set_Label(*id, label, &ierr);
-        if (ierr > 0) return set_error(ierr);
-        if (data_type != NULL && strcmp(data_type, "MT")) {
-            ADFH_Put_Dimension_Information(*id, data_type, ndims, dims, &ierr);
-            if (ierr > 0) return set_error(ierr);
-            if (data != NULL) {
-                ADFH_Write_All_Data(*id, NULL, (const char *)data, &ierr);
-                if (ierr > 0) return set_error(ierr);
-            }
+        if (data != NULL) {
+          ADFH_Write_All_Data(*id, NULL, (const char *)data, &ierr);
+          if (ierr > 0) return set_error(ierr);
         }
+      }
     }
 #endif
     else {
@@ -1297,7 +1299,7 @@ int cgio_copy_node (int cgio_num_inp, double id_inp,
         ADFH_Set_Label(id_out, label, &ierr);
         if (ierr <= 0) {
             ADFH_Put_Dimension_Information(id_out, data_type, ndims,
-                dims, &ierr);
+                                           dims, HDF5storage_type, &ierr);
             if (ierr <= 0 && data_size)
                 ADFH_Write_All_Data(id_out, NULL, (const char *)data, &ierr);
         }
@@ -1918,7 +1920,7 @@ int cgio_set_dimensions (int cgio_num, double id,
     }
 #if CG_BUILD_HDF5
     else if (cgio->type == CGIO_FILE_HDF5) {
-        ADFH_Put_Dimension_Information(id, data_type, num_dims, dims, &ierr);
+      ADFH_Put_Dimension_Information(id, data_type, num_dims, dims, HDF5storage_type, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
 #endif

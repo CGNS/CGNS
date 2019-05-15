@@ -40,6 +40,9 @@ freely, subject to the following restrictions:
 
 #define CGNS_NAN(x)  (!((x) < HUGE_VAL && (x) > -HUGE_VAL))
 
+/* Flag for contiguous (0) or compact storage (1) */
+extern int HDF5storage_type;
+
 /***********************************************************************
  * global variable definitions
  ***********************************************************************/
@@ -89,8 +92,8 @@ int cgi_read()
     double *id;
 
      /* get number of CGNSBase_t nodes and their ID */
-
     if (cgi_get_nodes(cg->rootid, "CGNSBase_t", &cg->nbases, &id)) return CG_ERROR;
+
     if (cg->nbases==0) return CG_OK;
     cg->base = CGNS_NEW(cgns_base,cg->nbases);
     for (b=0; b<cg->nbases; b++) cg->base[b].id = id[b];
@@ -6132,6 +6135,8 @@ int cgi_write_section(double parent_id, cgns_section *section)
     cgsize_t dim_vals;
     double dummy_id;
 
+    HDF5storage_type = CG_CONTIGUOUS;
+
     if (section->link) {
         return cgi_write_link(parent_id, section->name,
             section->link, &section->id);
@@ -6170,6 +6175,7 @@ int cgi_write_section(double parent_id, cgns_section *section)
     for (n=0; n<section->nuser_data; n++)
         if (cgi_write_user_data(section->id, &section->user_data[n])) return CG_ERROR;
 
+    HDF5storage_type = CG_COMPACT;
     return CG_OK;
 }
 
@@ -6350,6 +6356,8 @@ int cgi_write_conns(double parent_id, cgns_conn *conn)
     double dummy_id;
     cgns_ptset *ptset;
 
+    HDF5storage_type = CG_CONTIGUOUS;
+
     if (conn->link) {
         return cgi_write_link(parent_id, conn->name,
             conn->link, &conn->id);
@@ -6405,6 +6413,8 @@ int cgi_write_conns(double parent_id, cgns_conn *conn)
      /* UserDefinedData_t */
     for (n=0; n<conn->nuser_data; n++)
         if (cgi_write_user_data(conn->id, &conn->user_data[n])) return CG_ERROR;
+
+    HDF5storage_type = CG_COMPACT;
 
     return CG_OK;
 }
@@ -7511,6 +7521,8 @@ int cgi_write_array(double parent_id, cgns_array *array)
     cgsize_t dim_vals;
     double dummy_id;
 
+    HDF5storage_type = CG_CONTIGUOUS;
+
     if (array->link) {
         return cgi_write_link(parent_id, array->name,
             array->link, &array->id);
@@ -7550,6 +7562,8 @@ int cgi_write_array(double parent_id, cgns_array *array)
         if (cgi_new_node(array->id, "ArrayDataRange", "IndexRange_t",
                          &dummy_id, "I4", 1, &dim_vals, array->range))
             return CG_ERROR;
+
+    HDF5storage_type = CG_COMPACT;
 
     return CG_OK;
 }
@@ -11710,7 +11724,7 @@ int *cgi_rind_address(int local_mode, int *ier)
 {
     int *rind_planes=0, nnod;
     double parent_id=0, *id;
-    int error1=0, index_dim;
+    int error1, index_dim;
 
     /* check for valid posit */
     if (posit == 0) {
@@ -11750,6 +11764,7 @@ int *cgi_rind_address(int local_mode, int *ier)
     }
 
 /* Corrected on July 27 2001 by Diane Poirier
+    
     if (error1==1) {
         cgi_error("Rind_t already defined under %s",posit->label);
         (*ier) = CG_ERROR;

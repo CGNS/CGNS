@@ -664,8 +664,11 @@ void write_unstructured()
         write_elements(n);
     }
 
-    /* write connectivities in multiple ZoneGridConnectivity_t nodes */
+#ifdef ABUTTING1TO1_FACES
+    int nelem = (NUM_SIDE - 1) * (NUM_SIDE - 1);
+#endif
 
+    /* write connectivities in multiple ZoneGridConnectivity_t nodes */
     for (nc = 1; nc <= NUM_ZCONN; nc++) {
         /* create ZoneGridConnectivity_t node */
         sprintf(zcname, "%s%d", ZCONN_NAME, nc);

@@ -920,6 +920,21 @@ EOF
     HDF5_HAVE_COLL_METADATA=1
     AC_MSG_RESULT(yes)
   fi
+
+  # Check if HDF5 library has H5Pset_file_space_strategy HDF5 >= 1.10.1
+  ## --------------------------------------------------------------------
+
+  HDF5_HAVE_FILE_SPACE_STRATEGY=0
+  AC_MSG_CHECKING([if HDF5 library has H5Pset_file_space_strategy])
+  chck_fs=`grep -i 'H5Pset_file_space_strategy' $HDF5INC/H5Ppublic.h`
+  if test "x$chck_fs" = "x"; then
+    AC_MSG_RESULT(no)
+  else
+    HDF5_HAVE_FILE_SPACE_STRATEGY=1
+    AC_MSG_RESULT(yes)
+  fi      
+
+
 fi
 
 #---------------------------------------------------------------------------
@@ -1877,6 +1892,7 @@ AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
 AC_SUBST(HAVE_STAT64_STRUCT)
 AC_SUBST(HDF5_HAVE_COLL_METADATA)
+AC_SUBST(HDF5_HAVE_FILE_SPACE_STRATEGY)
 AC_SUBST(FC_D_PRE)
 AC_SUBST(BUILDPARALLEL)
 AC_SUBST(BUILDBASESCOPE)

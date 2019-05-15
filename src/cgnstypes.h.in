@@ -65,6 +65,10 @@
 
 #define HDF5_HAVE_COLL_METADATA @HDF5_HAVE_COLL_METADATA@
 
+/* Determine if hdf5 H5Pset_file_space_strategy */
+
+#define HDF5_HAVE_FILE_SPACE_STRATEGY @HDF5_HAVE_FILE_SPACE_STRATEGY@
+
 #endif
 
 #define  CG_HAVE_STAT64_STRUCT @HAVE_STAT64_STRUCT@

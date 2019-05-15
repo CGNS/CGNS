@@ -103,6 +103,7 @@ set(HAVE_FORTRAN_2008 0)
 set(HAVE_FORTRAN_2008TS 0)
 set(HDF5_HAVE_MULTI_DATASETS 0)
 set(HDF5_HAVE_COLL_METADATA 0)
+set(HDF5_HAVE_FILE_SPACE_STRATEGY 0)
 set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 set(HAVE_STAT64_STRUCT 0)
 
@@ -454,6 +455,24 @@ CHECK_HDF5_FEATURE(Collective_metadata
    set(HDF5_HAVE_COLL_METADATA 1)
  endif (CHECK_HDF5_HAVE_COLL_METADATA)
 
+ # Check if HDF5 library has H5Pset_file_space_strategy, HDF5 >= 1.10.1
+ # --------------------------------------------------------------------
+
+CHECK_HDF5_FEATURE(H5Pset_file_space_strategy
+  " 
+ #include \"hdf5.h\"
+ void main(void)
+ {
+   hid_t foo;
+   H5Pset_file_space_strategy(foo, H5F_FSPACE_STRATEGY_FSM_AGGR, 1, (hsize_t)1);
+   return;
+ }
+  "
+   CHECK_HDF5_HAVE_FILE_SPACE_STRATEGY
+ )
+ if (CHECK_HDF5_HAVE_FILE_SPACE_STRATEGY)
+   set(HDF5_HAVE_FILE_SPACE_STRATEGY 1)
+ endif (CHECK_HDF5_HAVE_FILE_SPACE_STRATEGY)
 
 endif (CGNS_ENABLE_HDF5)
 
