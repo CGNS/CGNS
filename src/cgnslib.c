@@ -1690,7 +1690,6 @@ int cg_node_family_name_write( const char* node_name, const char* family_name )
     int index;
     cgns_family*  family  = 0;
     cgns_famname* famname = 0;
-    double posit_id;
     cgsize_t dim;
     CHECK_FILE_OPEN
 
@@ -10486,9 +10485,9 @@ int cg_narrays(int *narrays)
         strcmp(posit->label,"TurbulenceClosure_t")==0 ||
         strcmp(posit->label,"ThermalRelaxationModel_t")==0 ||
         strcmp(posit->label,"ChemicalKineticsModel_t")==0 ||
-    strcmp(posit->label,"EMElectricFieldModel_t")==0 ||
-    strcmp(posit->label,"EMMagneticFieldModel_t")==0 ||
-    strcmp(posit->label,"EMConductivityModel_t")==0) {
+        strcmp(posit->label,"EMElectricFieldModel_t")==0 ||
+        strcmp(posit->label,"EMMagneticFieldModel_t")==0 ||
+        strcmp(posit->label,"EMConductivityModel_t")==0) {
         cgns_model *model = (cgns_model *)posit->posit;
         (*narrays) = model->narrays;
 

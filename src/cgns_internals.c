@@ -12737,7 +12737,7 @@ cgns_family *cgi_family_address(int local_mode, int given_no,
                                 char const *given_name, int *ier)
 {
     cgns_family *family=0;
-    int n, error1=0, error2=0;
+    int n, allow_dup=0, error1=0, error2=0;
     double parent_id=0;
 
     /* check for valid posit */
