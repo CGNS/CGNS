@@ -13178,9 +13178,9 @@ void cgi_free_family(cgns_family *family) /* ** FAMILY TREE ** */
 
     /* FAMILY TREE : Free Family_t nodes */
     if ( family->nfamilies ) {
-    	for( n = 0; n < family->nfamilies; n++ )
-    		cgi_free_family( &family->family[n] );
-    	CGNS_FREE( family->family );
+        for( n = 0; n < family->nfamilies; n++ )
+            cgi_free_family( &family->family[n] );
+        CGNS_FREE( family->family );
     }
 
     if (family->nuser_data) {

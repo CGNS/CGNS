@@ -298,11 +298,11 @@ void objlist_status(char *tag)
       }
       else
       {
-          H5Oget_info(idlist[n],&objinfo);
-          memset(oname,'\0',256);
-          sname=H5Iget_name(idlist[n],oname,0);
-          sname=H5Iget_name(idlist[n],oname,sname+1);
-          printf("{%s} track %d ALIVE (%s:%d)\n",tag,idlist[n],oname,objinfo.rc);
+        H5Oget_info(idlist[n],&objinfo);
+        memset(oname,'\0',256);
+        sname=H5Iget_name(idlist[n],oname,0);
+        sname=H5Iget_name(idlist[n],oname,sname+1);
+        printf("{%s} track %d ALIVE (%s:%d)\n",tag,idlist[n],oname,objinfo.rc);
       }
     }
   }
@@ -344,7 +344,7 @@ int cg_open(const char *filename, int mode, int *file_number)
 
 #ifdef __CG_MALLOC_H__
     fprintf(stderr, "CGNS MEM_DEBUG: before open:files %d/%d: memory %d/%d: calls %d/%d\n", n_open,
-        cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
+           cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
 #endif
 
     /* check file mode */
@@ -505,7 +505,7 @@ int cg_open(const char *filename, int mode, int *file_number)
 
 #ifdef __CG_MALLOC_H__
     fprintf(stderr, "CGNS MEM_DEBUG: after  open:files %d/%d: memory %d/%d: calls %d/%d\n", n_open,
-        cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
+           cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
 #endif
 
     return CG_OK;
@@ -537,7 +537,7 @@ int cg_version(int file_number, float *FileVersion)
         return CG_ERROR;
     } else {
         int vers, ndim, temp_version;
-    cgsize_t dim_vals[12];
+        cgsize_t dim_vals[12];
         char_33 node_name;
         char_33 data_type;
         void *data;
@@ -623,7 +623,7 @@ int cg_close(int file_number)
 
 #ifdef __CG_MALLOC_H__
     fprintf(stderr, "CGNS MEM_DEBUG: before close:files %d/%d: memory %d/%d: calls %d/%d\n", n_open,
-        cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
+           cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
 #endif
 
     if (cgns_compress && cg->mode == CG_MODE_MODIFY &&
@@ -658,7 +658,7 @@ int cg_close(int file_number)
 
 #ifdef __CG_MALLOC_H__
     fprintf(stderr, "CGNS MEM_DEBUG: after  close:files %d/%d: memory %d/%d: calls %d/%d\n", n_open,
-        cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
+           cgns_file_size, cgmemnow(), cgmemmax(), cgalloccalls(), cgfreecalls());
 #endif
 
 #ifdef DEBUG_HDF5_OBJECTS_CLOSE
@@ -720,7 +720,7 @@ int cg_set_file_type(int file_type)
 #else
             cgns_filetype = CG_FILE_ADF2;
 #endif
-    }
+        }
         else
             cgns_filetype = CG_FILE_ADF;
     }
@@ -1029,7 +1029,7 @@ int cg_cell_dim(int file_number, int B, int *cell_dim)
 }
 
 int cg_base_write(int file_number, const char * basename, int cell_dim,
-          int phys_dim, int *B)
+                 int phys_dim, int *B)
 {
     cgns_base *base = NULL;
     int index;

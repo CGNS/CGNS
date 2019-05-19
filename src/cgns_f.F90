@@ -1187,7 +1187,7 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_node_family_write_f
   END INTERFACE
-  
+
   INTERFACE
      SUBROUTINE cg_node_nfamilies_f(nfamilies, ier) BIND(C, NAME="cg_node_nfamilies_f")
        IMPLICIT NONE
@@ -1207,7 +1207,7 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_node_family_read_f
   END INTERFACE
-  
+
   INTERFACE
      SUBROUTINE cg_node_family_name_write_f(name, family, ier) !BIND(C, NAME="cg_node_family_name_write_f")
        IMPORT :: c_char
@@ -1216,8 +1216,8 @@ MODULE cgns
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_node_family_name_write_f
-  END INTERFACE  
-  
+  END INTERFACE
+
   INTERFACE
      SUBROUTINE cg_node_nfamily_names_f(nnames, ier) BIND(C, NAME="cg_node_nfamily_names_f")
        IMPLICIT NONE
@@ -1225,7 +1225,7 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_node_nfamily_names_f
   END INTERFACE
-    
+
   INTERFACE
      SUBROUTINE cg_node_family_name_read_f(N, name, family, ier) !BIND(C, NAME="cg_node_family_name_read_f")
        IMPORT :: c_char
@@ -1235,8 +1235,8 @@ MODULE cgns
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_node_family_name_read_f
-  END INTERFACE  
-  
+  END INTERFACE
+
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write FamBC_t Nodes                                     *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -1268,7 +1268,7 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_fambc_write_f
   END INTERFACE
-  
+
   INTERFACE
      SUBROUTINE cg_node_fambc_read_f(BC, fambc_name, bocotype, ier) !BIND(C, NAME="cg_node_fambc_read_f")
        IMPORT :: c_char, cgenum_t
@@ -1289,8 +1289,8 @@ MODULE cgns
        INTEGER :: BC
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_node_fambc_write_f
-  END INTERFACE  
-  
+  END INTERFACE
+
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write GeometryReference_t Nodes                         *
@@ -1383,7 +1383,7 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_part_write_f
   END INTERFACE
-  
+
   INTERFACE
      SUBROUTINE cg_node_part_read_f(G, P, part_name, ier) !BIND(C, NAME="cg_node_part_read_f")
        IMPORT :: c_char
@@ -1405,7 +1405,7 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_node_part_write_f
   END INTERFACE
-  
+
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write DiscreteData_t Nodes                              *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
