@@ -21,4 +21,4 @@ if [ ! -f configure ]; then
   ./autogen.sh
 fi
 
-./configure --disable-fortran --disable-hl --prefix=$HOME/hdf5 && make > result.txt 2>&1 && make install
+./configure --enable-parallel --disable-fortran --disable-hl --without-szip --without-zlib  --prefix=$HOME/hdf5 && make > result.txt 2>&1 && make install

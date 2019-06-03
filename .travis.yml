@@ -29,7 +29,7 @@ matrix:
    include:
      - os: linux
        compiler: gcc
-       install: export CC="gcc" export FC="gfortran" export F77="gfortran"
+       install: export CC="mpicc" export FC="mpif90" export F77="mpif90"
      - os: osx
        compiler: gcc
        install: export CC="gcc" export FC="gfortran-6" export F77="gfortran-6"

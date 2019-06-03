@@ -13,11 +13,11 @@ fi
 --prefix=$PWD/cgns_build \
 --with-hdf5=$HOME/hdf5 \
 --with-fortran \
+--enable-parallel \
 --enable-lfs \
 --enable-64bit \
 --disable-shared \
 --enable-debug \
---with-zlib \
 --disable-cgnstools \
 --enable-64bit
 
