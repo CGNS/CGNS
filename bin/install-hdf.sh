@@ -20,7 +20,6 @@ cd $HDF5_VER
 if [ ! -f configure ]; then
   whereis mpicc
   which mpicc
-  dpkg-query -L mpich
   export LIBTOOL=`which libtool`
   export LIBTOOLIZE=`which libtoolize`
   sudo ln -s $LIBTOOLIZE /libtoolize
