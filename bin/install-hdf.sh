@@ -18,6 +18,11 @@ git clone https://bitbucket.hdfgroup.org/scm/hdffv/hdf5.git --branch $HDF5_VER -
 cd $HDF5_VER
 
 if [ ! -f configure ]; then
+  whereis libtoolize
+  which libtool
+  which libtoolize
+  export LIBTOOL=`which libtool`
+  export LIBTOOLIZE=`which libtoolize`
   ./autogen.sh
 fi
 
