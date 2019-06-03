@@ -25,6 +25,7 @@ if [ ! -f configure ]; then
   sudo ln -s $LIBTOOLIZE /libtoolize
   ./autogen.sh
 fi
+
 OPTS=""
 if [ $TRAVIS_OS_NAME = "linux" ]; then
     OPTS="--enable-parallel"

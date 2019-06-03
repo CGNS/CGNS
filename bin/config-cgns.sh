@@ -4,14 +4,11 @@
 #
 set -e
 cd src
+OPTS=""
 if [ $TRAVIS_OS_NAME = "linux" ]; then
   export FLIBS="-Wl,--no-as-needed -ldl"
   export LIBS="-Wl,--no-as-needed -ldl"
-fi
-
-OPTS=""
-if [ $TRAVIS_OS_NAME = "linux" ]; then
-    OPTS="--enable-parallel"
+  OPTS="--enable-parallel"
 fi
 
 ./configure \
