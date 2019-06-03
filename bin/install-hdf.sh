@@ -23,7 +23,12 @@ if [ ! -f configure ]; then
   which libtoolize
   export LIBTOOL=`which libtool`
   export LIBTOOLIZE=`which libtoolize`
+  sudo ln -s $LIBTOOLIZE /libtoolize
   ./autogen.sh
 fi
+OPTS=""
+if [ $TRAVIS_OS_NAME = "linux" ]; then
+    OPTS="--enable-parallel"
+fi
 
-./configure --enable-parallel --disable-fortran --disable-hl --without-szip --without-zlib  --prefix=$HOME/hdf5 && make > result.txt 2>&1 && make install
+./configure $OPTS --disable-fortran --disable-hl --without-szip --without-zlib --prefix=$HOME/hdf5 && make > result.txt 2>&1 && make install

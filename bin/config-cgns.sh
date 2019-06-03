@@ -5,8 +5,8 @@
 set -e
 cd src
 if [ $TRAVIS_OS_NAME = "linux" ]; then
-  export FLIBS="-Wl,--no-as-needed -ldl -lz"
-  export LIBS="-Wl,--no-as-needed -ldl -lz"
+  export FLIBS="-Wl,--no-as-needed -ldl"
+  export LIBS="-Wl,--no-as-needed -ldl"
 fi
 
 ./configure \
