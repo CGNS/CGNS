@@ -9,11 +9,15 @@ if [ $TRAVIS_OS_NAME = "linux" ]; then
   export LIBS="-Wl,--no-as-needed -ldl"
 fi
 
+OPTS=""
+if [ $TRAVIS_OS_NAME = "linux" ]; then
+    OPTS="--enable-parallel"
+fi
+
 ./configure \
---prefix=$PWD/cgns_build \
+--prefix=$PWD/cgns_build $OPTS \
 --with-hdf5=$HOME/hdf5 \
 --with-fortran \
---enable-parallel \
 --enable-lfs \
 --enable-64bit \
 --disable-shared \
