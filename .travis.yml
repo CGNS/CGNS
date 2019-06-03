@@ -19,6 +19,7 @@ before_install:
          sudo apt-get update -qq;
          sudo apt-get install -qq gfortran;
          sudo apt-get install -qq mpich;
+         sudo apt-get install -qq sudo apt-get install libtool m4 automake;
       fi
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
