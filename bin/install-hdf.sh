@@ -18,9 +18,6 @@ git clone https://bitbucket.hdfgroup.org/scm/hdffv/hdf5.git --branch $HDF5_VER -
 cd $HDF5_VER
 
 if [ ! -f configure ]; then
-  whereis libtoolize
-  which libtool
-  which libtoolize
   export LIBTOOL=`which libtool`
   export LIBTOOLIZE=`which libtoolize`
   sudo ln -s $LIBTOOLIZE /libtoolize
@@ -32,3 +29,5 @@ if [ $TRAVIS_OS_NAME = "linux" ]; then
 fi
 
 ./configure $OPTS --disable-fortran --disable-hl --without-szip --without-zlib --prefix=$HOME/hdf5 && make > result.txt 2>&1 && make install
+
+cat config.log
