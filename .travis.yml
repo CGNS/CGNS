@@ -8,7 +8,7 @@ sudo: required
 # whitelist
 branches:
   only:
-    - develop
+   - develop
 
 notifications:
   email: false
@@ -18,10 +18,7 @@ before_install:
       if [ "$(uname)" = "Linux" ]; then
          sudo apt-get update -qq;
          sudo apt-get install -qq gfortran;
-         sudo apt-get install -qq libtool m4 automake;
-
-         sudo apt-get install -y mpich2 libmpich2-3 libmpich2-dev;
-
+         sudo apt-get install -qq mpich2 libmpich2-3 libmpich2-dev;
 #         sudo apt-get install -y hwloc ccache
 #         sudo /usr/sbin/update-ccache-symlinks
 #         export PATH="/usr/lib/ccache:$PATH"
@@ -32,7 +29,7 @@ before_install:
 #         make -j > /dev/null
 #         sudo make install > /dev/null
 #         ;;
-      fi
+#      fi
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
     - test $(uname) = "Darwin" && brew install gcc@6 || true
