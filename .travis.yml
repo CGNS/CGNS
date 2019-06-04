@@ -23,7 +23,7 @@ before_install:
          export PATH="/usr/lib/ccache:$PATH";
          wget http://www.mpich.org/static/downloads/3.3/mpich-3.3.tar.gz;
          tar -zxf mpich-3.3.tar.gz;
-         cd $mpich-3.3;
+         cd mpich-3.3;
          sh ./configure --prefix=$HOME/MPICH --enable-fc --enable-shared > /dev/null;
          make -j > /dev/null;
          sudo make install > /dev/null;
