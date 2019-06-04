@@ -18,18 +18,16 @@ before_install:
       if [ "$(uname)" = "Linux" ]; then
          sudo apt-get update -qq;
          sudo apt-get install -qq gfortran;
-         sudo apt-get install -y mpich2 libmpich2-3 libmpich2-dev;
+         sudo apt-get install -y hwloc ccache;
+         sudo /usr/sbin/update-ccache-symlinks;
+         export PATH="/usr/lib/ccache:$PATH";
+         wget http://www.mpich.org/static/downloads/3.3/mpich-3.3.tar.gz;
+         tar -zxf mpich-3.3.tar.gz;
+         cd $mpich-3.3;
+         sh ./configure --prefix=$HOME/MPICH --enable-fc --enable-shared > /dev/null;
+         make -j > /dev/null;
+         sudo make install > /dev/null;
       fi
-#         sudo apt-get install -y hwloc ccache
-#         sudo /usr/sbin/update-ccache-symlinks
-#         export PATH="/usr/lib/ccache:$PATH"
-#         wget http://www.mpich.org/static/downloads/3.3/mpich-3.3.tar.gz
-#         tar -zxf mpich-3.3.tar.gz
-#         cd $mpich-3.3
-#         sh ./configure --prefix=$HOME/MPICH --enable-fc --enable-shared > /dev/null
-#         make -j > /dev/null
-#         sudo make install > /dev/null
-#         ;;
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
     - test $(uname) = "Darwin" && brew install gcc@6 || true
