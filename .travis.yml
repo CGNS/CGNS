@@ -29,7 +29,7 @@ before_install:
 #         make -j > /dev/null
 #         sudo make install > /dev/null
 #         ;;
-#      fi
+      fi
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
     - test $(uname) = "Darwin" && brew install gcc@6 || true
