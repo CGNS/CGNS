@@ -23,9 +23,11 @@ before_install:
          tar -zxf mpich-3.3.tar.gz;
          cd mpich-3.3;
          sh ./configure --prefix=$HOME/MPICH --enable-fortran=fc --enable-shared > /dev/null;
-         make -j > /dev/null;
-         sudo make install > /dev/null;
+         make -j;
+         sudo make install;
          cd ..;
+         which mpicc;
+         whereis mpicc;
       fi
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
