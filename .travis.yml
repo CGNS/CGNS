@@ -22,7 +22,7 @@ before_install:
          wget http://www.mpich.org/static/downloads/3.3/mpich-3.3.tar.gz;
          tar -zxf mpich-3.3.tar.gz;
          cd mpich-3.3;
-         sh ./configure --prefix=$HOME/MPICH --enable-fortran=fc --enable-shared > /dev/null;
+         sh ./configure --prefix=$HOME/MPICH --enable-fortran=yes --enable-shared > /dev/null;
          make -j;
          sudo make install;
          cd ..;
