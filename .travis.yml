@@ -26,8 +26,6 @@ before_install:
          make -j;
          sudo make install;
          cd ..;
-         which mpicc;
-         whereis mpicc;
       fi
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
@@ -38,7 +36,7 @@ matrix:
    include:
      - os: linux
        compiler: gcc
-       install: export CC="/home/travis/MPICH/bin/mpicc" export FC="/home/travis/MPICH/bin/mpif90" export F77="/home/travis/MPICH/bin/mpif90"
+       install: export CC="$HOME/MPICH/bin/mpicc" export FC="$HOME/MPICH/bin/mpif90" export F77="$HOME/MPICH/bin/mpif90"
      - os: osx
        compiler: gcc
        install: export CC="gcc" export FC="gfortran-6" export F77="gfortran-6"
