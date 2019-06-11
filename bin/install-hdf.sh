@@ -18,8 +18,6 @@ git clone https://bitbucket.hdfgroup.org/scm/hdffv/hdf5.git --branch $HDF5_VER -
 cd $HDF5_VER
 
 if [ ! -f configure ]; then
-  whereis mpicc
-  which mpicc
   export LIBTOOL=`which libtool`
   export LIBTOOLIZE=`which libtoolize`
   sudo ln -s $LIBTOOLIZE /libtoolize

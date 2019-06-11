@@ -17,15 +17,7 @@ before_install:
     - |
       if [ "$(uname)" = "Linux" ]; then
          sudo apt-get update -qq;
-         sudo apt-get install -qq gfortran;
-         sudo apt-get install -y hwloc;
-         wget http://www.mpich.org/static/downloads/3.3/mpich-3.3.tar.gz;
-         tar -zxf mpich-3.3.tar.gz;
-         cd mpich-3.3;
-         sh ./configure --prefix=$HOME/MPICH --enable-fortran=yes --enable-shared > /dev/null;
-         make -j;
-         sudo make install;
-         cd ..;
+         sudo apt-get install gfortran mpich gcc-5
       fi
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
@@ -36,7 +28,7 @@ matrix:
    include:
      - os: linux
        compiler: gcc
-       install: export CC="$HOME/MPICH/bin/mpicc" export FC="$HOME/MPICH/bin/mpif90" export F77="$HOME/MPICH/bin/mpif90"
+       install: export CC="mpicc" export FC="mpif90" export F77="mpif90"
      - os: osx
        compiler: gcc
        install: export CC="gcc" export FC="gfortran-6" export F77="gfortran-6"
@@ -47,4 +39,14 @@ before_script:
 
 script:
     - ./bin/build-cgns.sh
-    
+
+#         sudo apt-get install -qq gfortran;
+#         sudo apt-get install -y hwloc;
+#         wget http://www.mpich.org/static/downloads/3.3/mpich-3.3.tar.gz;
+#         tar -zxf mpich-3.3.tar.gz;
+#         cd mpich-3.3;
+#         sh ./configure --prefix=$HOME/MPICH --enable-fortran=yes --enable-shared > /dev/null;
+#         make -j;
+#         sudo make install;
+#         cd ..;
+#install: export CC="$HOME/MPICH/bin/mpicc" export FC="$HOME/MPICH/bin/mpif90" export F77="$HOME/MPICH/bin/mpif90"
