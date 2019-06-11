@@ -31,4 +31,3 @@ fi
 
 ./configure $OPTS --disable-fortran --disable-hl --without-szip --without-zlib --prefix=$HOME/hdf5 && make > result.txt 2>&1 && make install
 
-cat config.log
