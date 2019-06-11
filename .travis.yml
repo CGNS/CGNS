@@ -41,4 +41,3 @@ before_script:
 
 script:
     - ./bin/build-cgns.sh
-
