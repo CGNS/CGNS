@@ -17,10 +17,11 @@ before_install:
     - |
       if [ "$(uname)" = "Linux" ]; then
          sudo apt-get update -qq;
-         sudo apt-get install gfortran mpich gcc-5
-         ls /usr/bin/mpi*
-         whereis mpif90
-         whereis mpicc
+         sudo apt-get install -qq gfortran;
+         sudo apt-get install libmpich-dev;
+         ls /usr/bin/mpi*;
+         whereis mpif90;
+         whereis mpicc;
       fi
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
