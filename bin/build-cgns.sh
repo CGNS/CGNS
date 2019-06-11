@@ -8,6 +8,9 @@ make install
 cd tests
 make
 make test
+cd ../ptests
+make
+make test
 cd ../examples/fortran
 make
 make test
@@ -15,8 +18,5 @@ cd ../../Test_UserGuideCode/Fortran_code
 make
 make test
 cd ../C_code
-make
-make test
-cd ../ptests
 make
 make test
