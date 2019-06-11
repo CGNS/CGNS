@@ -19,6 +19,7 @@ before_install:
          sudo apt-get update -qq;
          sudo apt-get install -qq gfortran;
          sudo apt-get install libmpich-dev;
+         sudo apt-get install mpich;
          ls /usr/bin/mpi*;
          whereis mpiexec;
          whereis mpirun;

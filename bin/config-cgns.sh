@@ -11,6 +11,8 @@ if [ $TRAVIS_OS_NAME = "linux" ]; then
   OPTS="--enable-parallel"
 fi
 
+echo "OPT $OPTS"
+
 ./configure \
 --prefix=$PWD/cgns_build $OPTS \
 --with-hdf5=$HOME/hdf5 \
@@ -21,6 +23,8 @@ fi
 --enable-debug \
 --disable-cgnstools \
 --enable-64bit
+
+cat config.log
 
 
 
