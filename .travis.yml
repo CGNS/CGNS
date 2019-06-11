@@ -45,13 +45,3 @@ before_script:
 script:
     - ./bin/build-cgns.sh
 
-#         sudo apt-get install -qq gfortran;
-#         sudo apt-get install -y hwloc;
-#         wget http://www.mpich.org/static/downloads/3.3/mpich-3.3.tar.gz;
-#         tar -zxf mpich-3.3.tar.gz;
-#         cd mpich-3.3;
-#         sh ./configure --prefix=$HOME/MPICH --enable-fortran=yes --enable-shared > /dev/null;
-#         make -j;
-#         sudo make install;
-#         cd ..;
-#install: export CC="$HOME/MPICH/bin/mpicc" export FC="$HOME/MPICH/bin/mpif90" export F77="$HOME/MPICH/bin/mpif90"

@@ -17,3 +17,6 @@ make test
 cd ../C_code
 make
 make test
+cd ../ptests
+make
+make test
