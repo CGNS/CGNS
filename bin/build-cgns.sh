@@ -8,6 +8,9 @@ make install
 cd tests
 make
 make test
+cd ../ptests
+make
+make test
 cd ../examples/fortran
 make
 make test
