@@ -30,5 +30,5 @@ if [ $TRAVIS_OS_NAME = "linux" ]; then
     OPTS="$OPTS --enable-parallel"
 fi
 
-./configure $OPTS --disable-fortran --disable-hl --without-szip --without-zlib --prefix=$HOME/hdf5 && make > result.txt 2>&1 && make install
+./configure $OPTS --disable-fortran --disable-hl --without-szlib --without-zlib --prefix=$HOME/hdf5 && make > result.txt 2>&1 && make install
 
