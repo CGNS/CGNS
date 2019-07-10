@@ -230,6 +230,11 @@ const char * RigidGridMotionTypeName[NofValidRigidGridMotionTypes] =
     {"Null", "UserDefined",
      "ConstantRate", "VariableRate"
     };
+const char * InterpolationTypeName[NofValidInterpolationTypes] =
+    {"Null", "UserDefined",
+     "ParametricLagrange", "ParametricMonomialsPascal",
+     "CartesianMonomialsPascal", "IsoParametric"
+    };
 const char * ArbitraryGridMotionTypeName[NofValidArbitraryGridMotionTypes] =
     {"Null", "UserDefined",
      "NonDeformingGrid", "DeformingGrid"
@@ -941,6 +946,10 @@ const char *cg_ZoneTypeName(CGNS_ENUMT( ZoneType_t )  type)
 const char *cg_RigidGridMotionTypeName(CGNS_ENUMT( RigidGridMotionType_t )  type)
 {
     return cg_get_name(NofValidRigidGridMotionTypes,RigidGridMotionTypeName,(int)type);
+}
+const char *cg_InterpolationTypeName(CGNS_ENUMT( InterpolationType_t )  type)
+{
+    return cg_get_name(NofValidInterpolationTypes,InterpolationTypeName,(int)type);
 }
 const char *cg_ArbitraryGridMotionTypeName(CGNS_ENUMT( ArbitraryGridMotionType_t )  type)
 {
@@ -4824,6 +4833,44 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
             return CG_ERROR;
     }
     return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+/* CPEX 045 */
+
+int cg_sol_interpolation_order_read(int fn, int B, int Z, int S, 
+                                            int *spatialOrder, int *temporalOrder)
+{
+    int dim = 0;
+    cgns_sol *sol;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol==0) return CG_ERROR;
+    
+    *spatialOrder  = sol->spatialOrder;
+    *temporalOrder = sol->temporalOrder;
+}
+
+int cg_sol_interpolation_order_write(int fn, int B, int Z, int S, 
+                                             int spatialOrder, int  temporalOrder)
+{
+    cgns_sol *sol;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol==0) return CG_ERROR;
+    
+    sol->spatialOrder = spatialOrder;
+    sol->temporalOrder= temporalOrder;
 }
 
 /*****************************************************************************\
@@ -9091,6 +9138,192 @@ int cg_multifam_write(const char *name, const char *family)
 
     return CG_OK;
 }
+
+/*----------------------------------------------------------------------*/
+/* CPEX 045 */
+
+int cg_element_interpolation_read(int fn, int bn, int fam, int en , 
+                                  CGNS_ENUMT(ElementType_t)* et, double *pu, 
+                                  double *pv, double *pw)
+{
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+
+    if (en >= family->nelementinterpolation) return CG_ERROR;
+    
+    cgns_elementInterpolation *ei = &family->elementinterpolations[en];
+    
+    /* Set Element Type */
+    *et = ei->type;
+    
+    /* Get lagrange Points array */
+    cgns_array *lpts = ei->lagrangePts;
+    
+    /* Check Dimensions */
+    int ndim = lpts->dim_vals[0];
+    
+    /* Get Element Node Count */
+    int npe = lpts->dim_vals[1];
+    
+    /* Copy data */
+    double *data = (double *)lpts->data;
+    if (pu && ndim > 0) memcpy(pu,&data[0    ],npe*sizeof(double));
+    if (pv && ndim > 1) memcpy(pv,&data[  npe],npe*sizeof(double));
+    if (pw && ndim > 2) memcpy(pw,&data[2*npe],npe*sizeof(double));
+    
+    return CG_OK;
+    
+}
+
+int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne)
+{
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    *ne = family->nelementinterpolation;
+    return CG_OK;
+}
+
+int cg_element_interpolation_write(int fn, int bn, int fam, int en , 
+                                   CGNS_ENUMT(ElementType_t) et, double *pu, double *pv, double *pw)
+{
+    /// \todo ....
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    
+    
+    return CG_ERROR;
+}
+
+/*----------------------------------------------------------------------*/
+/* CPEX 045 */
+
+int cg_solution_interpolation_type_read(int fn, int bn, int fam, int sn , 
+                                        CGNS_ENUMT(ElementType_t)* et, int *os, 
+                                        int *ot, CGNS_ENUMT(InterpolationType_t) *it)
+{
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    if (sn >= family->nsolutioninterpolation) return CG_ERROR;
+    
+    cgns_solutionInterpolation *es = &family->solutioninterpolations[sn];
+    
+    /* Get Element Type */
+    *et = es->type;
+    
+    /* Get Element Orders */
+    *os = es->spatialorder;
+    *ot = es->temporalorder;
+    
+    /* Get Interpolation Type Name */
+    *it = es->interpolationName;
+    
+    return CG_OK;
+}
+
+int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn , 
+                                          double *pu, double *pv, double *pw, double *pt)
+{
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    if (sn >= family->nsolutioninterpolation) return CG_ERROR;
+    
+    cgns_solutionInterpolation *es = &family->solutioninterpolations[sn];
+    
+    /* Get orders */
+    int so = es->spatialorder;
+    int to = es->temporalorder;
+    
+    /* Get lagrange Points array */
+    cgns_array *lpts = es->lagrangePts;
+    
+    /* Get Array dim */
+    int dim = lpts->dim_vals[0];
+    int pdim= dim;
+    if (to) pdim--;
+    
+    /* Get Element Node Count */
+    int npe = lpts->dim_vals[1];
+    
+    double *data = (double *)lpts->data;
+    if (pu && pdim > 0 ) memcpy(pu,&data[0],npe*sizeof(double));
+    if (pv && pdim > 1 ) memcpy(pv,&data[npe],npe*sizeof(double));
+    if (pw && pdim > 2 ) memcpy(pw,&data[2*npe],npe*sizeof(double));
+    
+    if (to && pt) memcpy(pt,&data[pdim*npe],npe*sizeof(double));
+    
+    return CG_OK;
+}
+
+int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns)
+{
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    *ns = family->nsolutioninterpolation;
+}
+
+int cg_solution_interpolation_type_write(int fn, int bn, int fam, int sn , 
+                                         CGNS_ENUMT(ElementType_t) et, int os, int ot, 
+                                         CGNS_ENUMT(InterpolationType_t) it)
+{
+    /// \todo ....
+  return CG_ERROR;
+}
+
+int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn , 
+                                                   double *pu, double *pv, double *pw, double *pt)
+{
+    /// \todo ....
+  return CG_ERROR;
+}
+
+
 
 /*----------------------------------------------------------------------*/
 

@@ -695,6 +695,23 @@ typedef enum {
 extern CGNSDLL const char * RigidGridMotionTypeName[NofValidRigidGridMotionTypes];
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Solution Interpolation types						 *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+typedef enum {
+  CGNS_ENUMV( InterpolationTypeNull ) =CG_Null,
+  CGNS_ENUMV( InterpolationTypeUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( ParametricLagrange ) =2,
+  CGNS_ENUMV( ParametricMonomialsPascal ) =3,
+  CGNS_ENUMV( CartesianMonomialsPascal ) =4,
+  CGNS_ENUMV( IsoParametric ) =5
+} CGNS_ENUMT( InterpolationType_t );
+
+#define NofValidInterpolationTypes 6
+
+extern CGNSDLL const char * InterpolationTypeName[NofValidInterpolationTypes];
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Arbitrary Grid Motion types                                      *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -818,6 +835,7 @@ CGNSDLL const char *cg_ModelTypeName(CGNS_ENUMT( ModelType_t ) type);
 CGNSDLL const char *cg_BCTypeName(CGNS_ENUMT( BCType_t ) type);
 CGNSDLL const char *cg_DataTypeName(CGNS_ENUMT( DataType_t ) type);
 CGNSDLL const char *cg_ElementTypeName(CGNS_ENUMT( ElementType_t ) type);
+CGNSDLL const char *cg_InterpolationTypeName(CGNS_ENUMT( InterpolationType_t ) type);
 CGNSDLL const char *cg_ZoneTypeName(CGNS_ENUMT( ZoneType_t ) type);
 CGNSDLL const char *cg_RigidGridMotionTypeName(CGNS_ENUMT( RigidGridMotionType_t ) type);
 CGNSDLL const char *cg_ArbitraryGridMotionTypeName(CGNS_ENUMT( ArbitraryGridMotionType_t ) type);
@@ -879,6 +897,34 @@ CGNSDLL int cg_famname_write(const char * family_name);
 CGNSDLL int cg_nmultifam(int *nfams);
 CGNSDLL int cg_multifam_read(int N, char *name, char *family);
 CGNSDLL int cg_multifam_write(const char *name, const char *family);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write ElementInterpolation_t Nodes                      *
+ *                     (CPEX 045)                                        *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_element_interpolation_read(int fn, int bn, int fam, int en , 
+                                          ElementType_t* et, double *pu, double *pv, double *pw);
+CGNSDLL int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne);
+
+CGNSDLL int cg_element_interpolation_write(int fn, int bn, int fam, int en , 
+                                           ElementType_t et, double *pu, double *pv, double *pw);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write SolutionInterpolation_t Nodes                     *
+ *                     (CPEX 045)                                        *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_solution_interpolation_type_read(int fn, int bn, int fam, int sn , 
+                                                ElementType_t* et, int *os, int *ot, InterpolationType_t *it);
+CGNSDLL int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn , 
+                                                  double *pu, double *pv, double *pw, double *pt);
+CGNSDLL int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns);
+
+CGNSDLL int cg_solution_interpolation_type_write(int fn, int bn, int fam, int sn , 
+                                                 ElementType_t et, int os, int ot, InterpolationType_t it);
+CGNSDLL int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn , 
+                                                   double *pu, double *pv, double *pw, double *pt);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FamilyBC_t Nodes                                  *
@@ -1012,6 +1058,13 @@ CGNSDLL int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
 	CGNS_ENUMT(GridLocation_t) location,
 	CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
 	const cgsize_t *pnts, int *S);
+
+
+/* (CPEX 045) */
+CGNSDLL int cg_sol_interpolation_order_read(int fn, int B, int Z, int S, 
+                                            int *spatialOrder, int *temporalOrder);
+CGNSDLL int cg_sol_interpolation_order_write(int fn, int B, int Z, int S, 
+                                             int spatialOrder, int  temporalOrder);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write solution DataArray_t Nodes                        *

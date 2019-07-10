@@ -687,6 +687,9 @@ typedef struct {            /* FlowSolution_t node          */
     cgns_units *units;      /* Dimensional Units                    */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
+    /* CPEX 045 */
+    int spatialOrder;       /* Spatial order of the solution        */
+    int temporalOrder;      /* temporal order of the solution       */
 } cgns_sol;
 
 typedef struct {            /* GridCoordinates_t node       */
@@ -875,6 +878,21 @@ typedef struct {            /* FamilyBC_t node          */
     cgns_dataset *dataset;  /* ptrs to in-mem. copy of BCDataSet    */
 } cgns_fambc;
 
+/* CPEX 045 */
+typedef struct {                    /* ElementInterpolation_t Node */
+    char_33 name;                   /* name of ADF node         */
+    CGNS_ENUMT(ElementType_t) type; /* type of the HO Element this interpolation refers to*/
+    cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
+} cgns_elementInterpolation;
+
+typedef struct {                    /* SolutionInterpolation_t Node */
+    CGNS_ENUMT(ElementType_t) type; /* type of the HO Element this interpolation refers to*/
+    int spatialorder;               /* Order of the spatial interpolation */
+    int temporalorder;              /* Order of the temporal interpolation */
+    CGNS_ENUMT(InterpolationType_t) interpolationName; /* Name of the interpolation */
+    cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
+} cgns_solutionInterpolation;
+
 typedef struct {            /* Family_t node            */
     char_33 name;           /* Family name & name of ADF node   */
     double id;              /* ADF ID number (address) of node      */
@@ -893,6 +911,12 @@ typedef struct {            /* Family_t node            */
 /* CPEX 0033 */
     int nfamname;
     cgns_famname *famname;
+/* CPEX 0045 */
+    int nelementinterpolation;
+    cgns_elementInterpolation *elementinterpolations;    
+/* CPEX 0045 */
+    int nsolutioninterpolation;
+    cgns_solutionInterpolation *solutioninterpolations;   
 } cgns_family;
 
 typedef struct {            /* CGNSBase_t Node          */
