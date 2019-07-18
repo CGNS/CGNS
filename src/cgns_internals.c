@@ -621,7 +621,61 @@ int cgi_read_family(cgns_family *family)
 
     /* RotatingCoordinates_t */
     if (cgi_read_rotating(in_link, family->id, &family->rotating)) return CG_ERROR;
-
+  
+    /* CPEX 045 */
+    /* ElementInterpolation_t*/
+    if (cgi_get_nodes(family->id, "ElementInterpolation_t", &family->nelementinterpolation, &id)) return CG_ERROR;
+    if (family->nelementinterpolation>0) {
+        int m;
+         /* read & save ElementInterpolation_t */
+        family->elementinterpolations = CGNS_NEW(cgns_elementInterpolation, family->nelementinterpolation);
+        for (n=0; n<family->nelementinterpolation; n++) {
+            family->elementinterpolations[n].id = id[n];
+            if (cgi_read_element_interpolation(&family->elementinterpolations[n])) return CG_ERROR;
+        }
+        CGNS_FREE(id);
+        /* Check Uniqueness of the ElementInterpolation_t nodes */
+        for (n=0; n<family->nelementinterpolation; n++) {
+            for (m=0; m<family->nelementinterpolation; m++) {
+              if (n != m) {
+                  if (family->elementinterpolations[n].type == family->elementinterpolations[m].type) {
+                      cgi_error("Only a single ElementInterpolation_t node per Element_t is allowed.");
+                      return CG_ERROR;
+                  }
+              }
+            }
+        }
+    }
+    /* CPEX 045 */
+    /* SolutionInterpolation_t*/
+    if (cgi_get_nodes(family->id, "SolutionInterpolation_t", &family->nsolutioninterpolation, &id)) return CG_ERROR;
+    if (family->nsolutioninterpolation>0) {
+        int m;
+         /* read & save ElementInterpolation_t */
+        family->solutioninterpolations = CGNS_NEW(cgns_solutionInterpolation, family->nsolutioninterpolation);
+        for (n=0; n<family->nsolutioninterpolation; n++) {
+            family->solutioninterpolations[n].id = id[n];
+            if (cgi_read_solution_interpolation(&family->solutioninterpolations[n])) return CG_ERROR;
+        }
+        CGNS_FREE(id);
+        /* Check Uniqueness of the SolutionInterpolation_t nodes */
+        for (n=0; n<family->nsolutioninterpolation; n++) {
+            for (m=0; m<family->nsolutioninterpolation; m++) {
+              if (n != m) {
+                  if (family->solutioninterpolations[n].type == family->solutioninterpolations[m].type
+                   && family->solutioninterpolations[n].spatialorder  == family->solutioninterpolations[m].spatialorder
+                   && family->solutioninterpolations[n].temporalorder == family->solutioninterpolations[m].temporalorder
+                  ) {
+                      cgi_error("Only a single SolutionInterpolation_t node per triplet (Element_t,spatialOrder,temporalOrder) is allowed.");
+                      return CG_ERROR;
+                  }
+              }
+            }
+        }
+        
+    }
+    
+    
     return CG_OK;
 }
 
@@ -1454,7 +1508,10 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
 {
     double *id, *idf;
-    int s, z, n, linked;
+    int s, z, n, linked, ndim;
+    cgsize_t dim_vals[12];
+    void *vdata;
+    int *edata;
     cgsize_t DataSize[3], DataCount = 0;
 
     if (cgi_get_nodes(parent_id, "FlowSolution_t", nsols, &id))
@@ -1552,6 +1609,38 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
      /* UserDefinedData_t */
         if (cgi_read_user_data(linked, sol[0][s].id, &sol[0][s].nuser_data,
             &sol[0][s].user_data)) return CG_ERROR;
+        
+     /* CPEX 045 */
+     /* spatial and temporal orders IndexArray_t */
+        int nIA;
+        if (cgi_get_nodes(sol[0][s].id, "IndexArray_t", &nIA, &idf)) return CG_ERROR;
+        if (nIA > 0)
+        {
+            char_33 temp_name,data_type;
+            for (n=0;n<nIA;n++) {
+                /// \todo ...
+                if (cgio_get_name(cg->cgio, idf[n], temp_name)) {
+                    cg_io_error("cgio_get_name");
+                    return CG_ERROR;
+                }
+          
+                if (cgi_read_node(idf[n],temp_name,data_type,&ndim,dim_vals,&vdata,READ_DATA)) return CG_ERROR;
+                /// \todo ....
+                if (strcmp(temp_name, "InterpolationOrders")==0) {
+                    
+                    if (strcmp(data_type,"I4")) return CG_ERROR;
+                    
+                    /* Check dimension */
+                    if (ndim != 1) return CG_ERROR;
+                    if (dim_vals[0] != 2) return CG_ERROR;
+                    
+                    edata = (int*)vdata;
+                    sol[0][s].spatialOrder  = edata[0];
+                    sol[0][s].temporalOrder = edata[1];
+                }
+            }
+            CGNS_FREE(idf);
+        }
     }
 
     CGNS_FREE(id);
@@ -3805,6 +3894,226 @@ int cgi_read_rotating(int in_link, double parent_id, cgns_rotating **rotating)
      /* UserDefinedData_t */
     if (cgi_read_user_data(linked, rotating[0]->id, &rotating[0]->nuser_data,
         &rotating[0]->user_data)) return CG_ERROR;
+
+    return CG_OK;
+}
+
+/* CPEX 045 */
+int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
+{
+    /// \todo ...
+    int i, nnod,ndim;
+    double *id;
+    cgsize_t *dim_vals;
+    void *vdata;
+    int *edata;
+    char_33 temp_name,data_type;
+
+    /* Name */
+    char_33 name;
+    if (cgio_get_name(cg->cgio, eltinterpolation->id, name)) {
+        cg_io_error("cgio_get_name");
+        return CG_ERROR;
+    }
+    
+     /* ElementType_t:
+     Required: ElementType_t
+      */
+    if (cgi_read_node(eltinterpolation->id, name, data_type,
+            &ndim, dim_vals, &vdata, READ_DATA)) {
+        cgi_error("Error reading ElementInterpolation_t node");
+        return CG_ERROR;
+    }
+
+     /* verify data and add in structure */
+    if (strcmp(data_type,"I4")!=0) {
+        cgi_error("Unsupported data type for ElementInterpolation_t node = %s",
+                data_type);
+        return CG_ERROR;
+    }
+    if (ndim!=1) {
+        cgi_error("Wrong number of dimension for ElementInterpolation_t node =%d != 1",
+            ndim);
+        return CG_ERROR;
+    }
+    if (dim_vals[0]!=1) {
+        cgi_error("Wrong dimension value for ElementInterpolation_t node.");
+        return CG_ERROR;
+    }
+    edata = (int *)vdata;
+    eltinterpolation->type = (CGNS_ENUMT(ElementType_t))edata[0];
+    CGNS_FREE(id);
+    
+     /* DataArray_t:
+     Required: none
+     Optional: LagrangeControlPoints
+      */
+    nnod = 0;
+    cgi_get_nodes(eltinterpolation->id, "DataArray_t", &nnod, &id);
+    if (nnod > 1) return CG_ERROR;
+    
+    if (nnod == 1) {
+        eltinterpolation->lagrangePts = CGNS_NEW(cgns_array, 1);
+        
+        if (cgio_get_name(cg->cgio, id[0], temp_name)) {
+            CGNS_FREE(eltinterpolation->lagrangePts);
+            cg_io_error("cgio_get_name");
+            return CG_ERROR;
+        }
+     /* LagrangeControlPoints */
+        if (strcmp(temp_name,"LagrangeControlPoints")==0) {
+
+            eltinterpolation->lagrangePts[0].id = id[0];
+            eltinterpolation->lagrangePts[0].link = cgi_read_link(id[0]);
+            eltinterpolation->lagrangePts[0].in_link = 0;
+            if (cgi_read_array(&eltinterpolation->lagrangePts[0],
+                "LagrangeControlPoints", eltinterpolation->id)) return CG_ERROR;
+
+             /* check data */
+            if (strcmp(eltinterpolation->lagrangePts[0].data_type,"R8")) {
+                cgi_error("Error: Datatype %s not supported for %s",
+                eltinterpolation->lagrangePts[0].data_type, temp_name);
+                return CG_ERROR;
+            }
+            /// \todo : check dimension
+            if (eltinterpolation->lagrangePts[0].data_dim != 2) {
+                cgi_error("Error: %s incorrectly dimensioned node 'LagrangeControlPoints'",temp_name);
+                return CG_ERROR;
+            }
+        }
+        else
+        {
+            CGNS_FREE(eltinterpolation->lagrangePts);
+            cgi_error("Only 'LagrangeControlPoints' node of type DataArray_t allowed for ElementInterpolation_t node.");
+            return CG_ERROR;
+        }
+    }   /* loop through DataArray_t */
+    if (nnod) CGNS_FREE(id);
+
+    return CG_OK;
+}
+int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation)
+{
+  /// \todo ...
+    int i, nnod,ndim;
+    double *id;
+    cgsize_t *dim_vals;
+    void *vdata;
+    int *edata;
+    char_33 temp_name,data_type;
+
+    /* Name */
+    char_33 name;
+    if (cgio_get_name(cg->cgio, sltinterpolation->id, name)) {
+        cg_io_error("cgio_get_name");
+        return CG_ERROR;
+    }
+    
+     /* Data:
+     Required: ElementType_t,spatialOrder,temporalOrder
+      */
+    if (cgi_read_node(sltinterpolation->id, name, data_type,
+            &ndim, dim_vals, &vdata, READ_DATA)) {
+        cgi_error("Error reading SolutionInterpolation_t node");
+        return CG_ERROR;
+    }
+
+     /* verify data and add in structure */
+    if (strcmp(data_type,"I4")!=0) {
+        cgi_error("Unsupported data type for SolutionInterpolation_t node = %s",
+                data_type);
+        return CG_ERROR;
+    }
+    if (ndim!=1) {
+        cgi_error("Wrong number of dimension for SolutionInterpolation_t node =%d != 1",
+            ndim);
+        return CG_ERROR;
+    }
+    if (dim_vals[0]!=3) {
+        cgi_error("Wrong dimension value for SolutionInterpolation_t node. requires 3 values");
+        return CG_ERROR;
+    }
+    edata = (int *)vdata;
+    sltinterpolation->type = (CGNS_ENUMT(ElementType_t))edata[0];
+    sltinterpolation->spatialorder = edata[1];
+    sltinterpolation->temporalorder = edata[2];
+    CGNS_FREE(id);
+    
+     /* InterpolationType_t:
+     Required: InterpolationType
+      */
+    nnod = 0;
+    cgi_get_nodes(sltinterpolation->id, "InterpolationType_t", &nnod, &id);
+    if (nnod != 1) {
+      cgi_error("InterpolationType_t node required in SolutionInterpolation_t node.");
+      return CG_ERROR;
+    }
+    else {
+        if (cgio_get_name(cg->cgio, id[0], temp_name)) {
+            cg_io_error("cgio_get_name");
+            return CG_ERROR;
+        }
+        if (strcmp(temp_name,"InterpolationType")==0) {
+          
+            if (cgi_read_node(id[0], "InterpolationType", data_type,
+                &ndim, dim_vals, &vdata, READ_DATA)) {
+                cgi_error("Error reading InterpolationType_t node");
+                return CG_ERROR;
+            }
+            edata = (int *)vdata;
+            sltinterpolation->interpolationName = (CGNS_ENUMT(InterpolationType_t))edata[0];
+        }
+        else {
+            cgi_error("Only 'InterpolationType' named node of type InterpolationType_t allowed for SolutionInterpolation_t node.");
+            return CG_ERROR;
+        }
+    }
+    CGNS_FREE(id);
+    
+     /* DataArray_t:
+     Required: none
+     Optional: LagrangeControlPoints
+      */
+    nnod = 0;
+    cgi_get_nodes(sltinterpolation->id, "DataArray_t", &nnod, &id);
+    if (nnod > 1) return CG_ERROR;
+    
+    if (nnod == 1) {
+        sltinterpolation->lagrangePts = CGNS_NEW(cgns_array, 1);
+        
+        if (cgio_get_name(cg->cgio, id[0], temp_name)) {
+            CGNS_FREE(sltinterpolation->lagrangePts);
+            cg_io_error("cgio_get_name");
+            return CG_ERROR;
+        }
+     /* LagrangeControlPoints */
+        if (strcmp(temp_name,"LagrangeControlPoints")==0) {
+
+            sltinterpolation->lagrangePts[0].id = id[0];
+            sltinterpolation->lagrangePts[0].link = cgi_read_link(id[0]);
+            sltinterpolation->lagrangePts[0].in_link = 0;
+            if (cgi_read_array(&sltinterpolation->lagrangePts[0],
+                "LagrangeControlPoints", sltinterpolation->id)) return CG_ERROR;
+
+             /* check data */
+            if (strcmp(sltinterpolation->lagrangePts[0].data_type,"R8")) {
+                cgi_error("Error: Datatype %s not supported for %s",
+                sltinterpolation->lagrangePts[0].data_type, temp_name);
+                return CG_ERROR;
+            }
+            if (sltinterpolation->lagrangePts[0].data_dim != 2) {
+                cgi_error("Error: %s incorrectly dimensioned node 'LagrangeControlPoints'",temp_name);
+                return CG_ERROR;
+            }
+        }
+        else
+        {
+            CGNS_FREE(sltinterpolation->lagrangePts);
+            cgi_error("Only 'LagrangeControlPoints' node of type DataArray_t allowed for SolutionInterpolation_t node.");
+            return CG_ERROR;
+        }
+    }   /* loop through DataArray_t */
+    if (nnod) CGNS_FREE(id);
 
     return CG_OK;
 }

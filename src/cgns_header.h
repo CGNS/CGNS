@@ -880,12 +880,13 @@ typedef struct {            /* FamilyBC_t node          */
 
 /* CPEX 045 */
 typedef struct {                    /* ElementInterpolation_t Node */
-    char_33 name;                   /* name of ADF node         */
+    double id;                      /* ADF ID number (address) of node      */
     CGNS_ENUMT(ElementType_t) type; /* type of the HO Element this interpolation refers to*/
     cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
 } cgns_elementInterpolation;
 
 typedef struct {                    /* SolutionInterpolation_t Node */
+    double id;                      /* ADF ID number (address) of node      */
     CGNS_ENUMT(ElementType_t) type; /* type of the HO Element this interpolation refers to*/
     int spatialorder;               /* Order of the spatial interpolation */
     int temporalorder;              /* Order of the temporal interpolation */
@@ -1146,6 +1147,9 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
 int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
                        cgns_subreg **subreg);
 cgns_link *cgi_read_link(double node_id);
+/* CPEX 045*/
+int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation);
+int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation);
 
 CGNSDLL int cgi_datasize(int Idim, cgsize_t *CurrentDim,
 			 CGNS_ENUMT(GridLocation_t) location,

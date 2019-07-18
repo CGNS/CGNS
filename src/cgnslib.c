@@ -9198,7 +9198,7 @@ int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne)
     return CG_OK;
 }
 
-int cg_element_interpolation_write(int fn, int bn, int fam, int en , 
+int cg_element_interpolation_write(int fn, int bn, int fam, int *en , 
                                    CGNS_ENUMT(ElementType_t) et, double *pu, double *pv, double *pw)
 {
     /// \todo ....
@@ -9308,7 +9308,7 @@ int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns)
     *ns = family->nsolutioninterpolation;
 }
 
-int cg_solution_interpolation_type_write(int fn, int bn, int fam, int sn , 
+int cg_solution_interpolation_type_write(int fn, int bn, int fam, int *sn , 
                                          CGNS_ENUMT(ElementType_t) et, int os, int ot, 
                                          CGNS_ENUMT(InterpolationType_t) it)
 {
@@ -9316,7 +9316,7 @@ int cg_solution_interpolation_type_write(int fn, int bn, int fam, int sn ,
   return CG_ERROR;
 }
 
-int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn , 
+int cg_solution_interpolation_points_write(int fn, int bn, int fam, int *sn , 
                                                    double *pu, double *pv, double *pw, double *pt)
 {
     /// \todo ....

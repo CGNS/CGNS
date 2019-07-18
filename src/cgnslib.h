@@ -907,7 +907,7 @@ CGNSDLL int cg_element_interpolation_read(int fn, int bn, int fam, int en ,
                                           ElementType_t* et, double *pu, double *pv, double *pw);
 CGNSDLL int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne);
 
-CGNSDLL int cg_element_interpolation_write(int fn, int bn, int fam, int en , 
+CGNSDLL int cg_element_interpolation_write(int fn, int bn, int fam, int *en , 
                                            ElementType_t et, double *pu, double *pv, double *pw);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -921,9 +921,9 @@ CGNSDLL int cg_solution_interpolation_points_read(int fn, int bn, int fam, int s
                                                   double *pu, double *pv, double *pw, double *pt);
 CGNSDLL int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns);
 
-CGNSDLL int cg_solution_interpolation_type_write(int fn, int bn, int fam, int sn , 
+CGNSDLL int cg_solution_interpolation_type_write(int fn, int bn, int fam, int *sn , 
                                                  ElementType_t et, int os, int ot, InterpolationType_t it);
-CGNSDLL int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn , 
+CGNSDLL int cg_solution_interpolation_points_write(int fn, int bn, int fam, int *sn , 
                                                    double *pu, double *pv, double *pw, double *pt);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
