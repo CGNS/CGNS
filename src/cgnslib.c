@@ -3150,7 +3150,7 @@ int cg_ElementPartialSize(int file_number, int B, int Z, int S,
 	cgsize_t start, cgsize_t end, cgsize_t *ElementDataSize)
 {
     cgns_section *section;
-    cgsize_t size, offset, *data, *offset_data;
+    cgsize_t size, *offset_data;
 
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
