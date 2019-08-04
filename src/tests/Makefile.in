@@ -30,7 +30,8 @@ CALL = \
 	write_bcdata$(EXE) \
 	write_test$(EXE) \
 	write_zones$(EXE) \
-	write_rind$(EXE)
+	write_rind$(EXE) \
+	test_bbox$(EXE)
 
 F_TESTS = \
 	cgiof_F03$(EXE) \
@@ -207,6 +208,12 @@ write_zones.$(O) : write_zones.c utils.h
 
 write_rind$(EXE) : write_rind.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ write_rind.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_bbox$(EXE) : test_bbox.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_bbox.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------

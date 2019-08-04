@@ -36,6 +36,7 @@ set(test_ver31_FILES test_ver31.c)
 set(test_multifam_FILES test_multifam.c)
 set(test_general_rind_FILES test_general_rind.c)
 set(test_general_reshape_FILES test_general_reshape.c)
+set(test_bbox_FILES test_bbox.c)
 set(write_array_FILES write_array.c utils.c)
 set(write_bcdata_FILES write_bcdata.c utils.c)
 set(write_links_FILES write_links.c utils.c)
@@ -73,6 +74,7 @@ add_executable( write_links          ${write_links_FILES}          )
 add_executable( write_rind           ${write_rind_FILES}           )
 add_executable( write_test           ${write_test_FILES}           )
 add_executable( write_zones          ${write_zones_FILES}          )
+add_executable( test_bbox            ${test_bbox_FILES}            )
 
 # Conditionally build the fortran tests
 if (CGNS_ENABLE_FORTRAN)
@@ -111,6 +113,7 @@ if (CGNS_ENABLE_TESTS)
   add_test( write_rind           write_rind           )
   add_test( write_test           write_test           )
   add_test( write_zones          write_zones          )
+  add_test( test_bbox            test_bbox            )
 
   # Conditionally add the fortran tests
   if (CGNS_ENABLE_FORTRAN)

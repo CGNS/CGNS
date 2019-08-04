@@ -2116,6 +2116,120 @@ int cg_grid_write(int file_number, int B, int Z, const char * zcoorname, int *G)
 }
 
 /*****************************************************************************\
+ *    Read and Write GridCoordinates_t bounding box
+\*****************************************************************************/
+
+int cg_grid_bounding_box_read(int file_number, int B, int Z, int G, CGNS_ENUMT(DataType_t) type, void* boundingbox)
+{
+    cgns_zcoor *zcoor;
+    cgns_base *base;
+    char_33 name;
+    char_33 data_type;
+    int ndim;
+    void * vdata;
+    cgsize_t dim_vals[12];
+    cgsize_t num;
+
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+     /* Get memory address for GridCoordinates_t node */
+    zcoor = cgi_get_zcoor(cg, B, Z, G);
+    if (zcoor==0) return CG_ERROR;
+
+    /* Read Bounding box from GridCoordinates node data */
+    if (cgi_read_node(zcoor->id, name, data_type, &ndim, dim_vals, &vdata, READ_DATA)){
+        cgi_error("Error reading node GridCoordinates_t");
+        return CG_ERROR;
+    }
+
+    /* check bounding box is not an empty array*/
+    if (strcmp(data_type,"MT")==0) {
+        cgi_warning("No bounding box read");
+        return CG_OK;
+    }
+
+    if (strcmp(data_type,"R4") &&
+        strcmp(data_type,"R8")) {
+        cgi_error("Datatype %s not supported for coordinates bounding box", data_type);
+        return CG_ERROR;
+    }
+
+    if (ndim != 2) {
+        cgi_error("Grid coordinates bounding box is %d dimensional. It should be 2.", ndim);
+        return CG_ERROR;
+    }
+
+    base = cgi_get_base(cg, B);
+    if (base==0) return CG_ERROR;
+    num = 2*base->phys_dim;
+
+    if (dim_vals[0]*dim_vals[1] != num){
+        cgi_error("Grid coordinates bounding box is not coherent with physical dimension.");
+        return CG_ERROR;
+    }
+
+     /* verify input */
+    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble)) {
+        cgi_error("Invalid data type for bounding box array: %d", type);
+        return CG_ERROR;
+    }
+
+    /* transfer small bounding box data to user with correct data type */
+    cgi_convert_data(num, cgi_datatype(data_type), vdata, type, boundingbox);
+    CGNS_FREE(vdata);
+
+    return CG_OK;
+}
+
+int cg_grid_bounding_box_write(int file_number, int B, int Z, int G, CGNS_ENUMT(DataType_t) type, void* boundingbox)
+{
+    cgns_base *base;
+    cgns_zcoor *zcoor;
+    cgsize_t dim_vals[2];
+
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    /* Get memory address for GridCoordinates_t node */
+    zcoor = cgi_get_zcoor(cg, B, Z, G);
+    if (zcoor==0) return CG_ERROR;
+
+    if (zcoor->id == 0){
+        cgi_error("Impossible to write coordinates bounding box to unwritten node");
+        return CG_ERROR;
+    }
+    base = cgi_get_base(cg, B);
+    if (base==0) return CG_ERROR;
+    dim_vals[0] = base->phys_dim;
+    dim_vals[1] = 2;
+
+    /* Check input */
+    if (boundingbox == NULL) return CG_OK;
+
+    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble)) {
+        cgi_error("Invalid data type for bounding box array: %d", type);
+        return CG_ERROR;
+    }
+
+    /* Write Bounding box into existing GridCoordinates_t node */
+    if (cgio_set_dimensions(cg->cgio, zcoor->id, cgi_adf_datatype(type), 2, dim_vals)) {
+       cg_io_error("cgio_set_dimensions");
+       return CG_ERROR;
+    }
+    if (cgio_write_all_data(cg->cgio, zcoor->id, boundingbox)){
+       cg_io_error("cgio_write_all_data");
+       return CG_ERROR;
+    }
+
+    return CG_OK;
+}
+
+/*****************************************************************************\
  *    Read and Write GridCoordinates_t/DataArray_t Nodes
 \*****************************************************************************/
 

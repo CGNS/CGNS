@@ -915,6 +915,10 @@ CGNSDLL int cg_ngrids(int file_number, int B, int Z, int *ngrids);
 CGNSDLL int cg_grid_read(int file_number, int B, int Z, int G, char *gridname);
 CGNSDLL int cg_grid_write(int file_number, int B, int Z,
 	const char * zcoorname, int *G);
+CGNSDLL int cg_grid_bounding_box_read(int file_number, int B, int Z, int G,
+        CGNS_ENUMT(DataType_t) type, void* boundingbox);
+CGNSDLL int cg_grid_bounding_box_write(int file_number, int B, int Z, int G,
+        CGNS_ENUMT(DataType_t) type, void* boundingbox);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GridCoordinates_t/DataArray_t Nodes               *
