@@ -630,6 +630,7 @@ int cgi_read_family(cgns_family *family)
          /* read & save ElementInterpolation_t */
         family->elementinterpolations = CGNS_NEW(cgns_elementInterpolation, family->nelementinterpolation);
         for (n=0; n<family->nelementinterpolation; n++) {
+            memset(family->elementinterpolations,sizeof(cgns_elementInterpolation),0);
             family->elementinterpolations[n].id = id[n];
             if (cgi_read_element_interpolation(&family->elementinterpolations[n])) return CG_ERROR;
         }
@@ -654,6 +655,7 @@ int cgi_read_family(cgns_family *family)
          /* read & save ElementInterpolation_t */
         family->solutioninterpolations = CGNS_NEW(cgns_solutionInterpolation, family->nsolutioninterpolation);
         for (n=0; n<family->nsolutioninterpolation; n++) {
+            memset(family->solutioninterpolations,sizeof(cgns_solutionInterpolation),0);
             family->solutioninterpolations[n].id = id[n];
             if (cgi_read_solution_interpolation(&family->solutioninterpolations[n])) return CG_ERROR;
         }
@@ -1635,11 +1637,19 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                     if (dim_vals[0] != 2) return CG_ERROR;
                     
                     edata = (int*)vdata;
+                    sol[0][s].isOrderDefined= 1;
                     sol[0][s].spatialOrder  = edata[0];
                     sol[0][s].temporalOrder = edata[1];
                 }
             }
             CGNS_FREE(idf);
+        }
+        else
+        {
+            // Set default values
+            sol[0][s].isOrderDefined= 0;
+            sol[0][s].spatialOrder  = 1;
+            sol[0][s].temporalOrder = 0;
         }
     }
 
@@ -3904,14 +3914,13 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
     /// \todo ...
     int i, nnod,ndim;
     double *id;
-    cgsize_t *dim_vals;
+    cgsize_t dim_vals[1];
     void *vdata;
     int *edata;
     char_33 temp_name,data_type;
 
     /* Name */
-    char_33 name;
-    if (cgio_get_name(cg->cgio, eltinterpolation->id, name)) {
+    if (cgio_get_name(cg->cgio, eltinterpolation->id, eltinterpolation->name)) {
         cg_io_error("cgio_get_name");
         return CG_ERROR;
     }
@@ -3919,8 +3928,8 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
      /* ElementType_t:
      Required: ElementType_t
       */
-    if (cgi_read_node(eltinterpolation->id, name, data_type,
-            &ndim, dim_vals, &vdata, READ_DATA)) {
+    if (cgi_read_node(eltinterpolation->id, eltinterpolation->name, data_type,
+            &ndim, &dim_vals[0], &vdata, READ_DATA)) {
         cgi_error("Error reading ElementInterpolation_t node");
         return CG_ERROR;
     }
@@ -3942,13 +3951,13 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
     }
     edata = (int *)vdata;
     eltinterpolation->type = (CGNS_ENUMT(ElementType_t))edata[0];
-    CGNS_FREE(id);
     
      /* DataArray_t:
      Required: none
      Optional: LagrangeControlPoints
       */
     nnod = 0;
+    eltinterpolation->lagrangePts = 0;
     cgi_get_nodes(eltinterpolation->id, "DataArray_t", &nnod, &id);
     if (nnod > 1) return CG_ERROR;
     
@@ -3997,14 +4006,13 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
   /// \todo ...
     int i, nnod,ndim;
     double *id;
-    cgsize_t *dim_vals;
+    cgsize_t dim_vals[1];
     void *vdata;
     int *edata;
     char_33 temp_name,data_type;
 
     /* Name */
-    char_33 name;
-    if (cgio_get_name(cg->cgio, sltinterpolation->id, name)) {
+    if (cgio_get_name(cg->cgio, sltinterpolation->id, sltinterpolation->name)) {
         cg_io_error("cgio_get_name");
         return CG_ERROR;
     }
@@ -4012,7 +4020,9 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
      /* Data:
      Required: ElementType_t,spatialOrder,temporalOrder
       */
-    if (cgi_read_node(sltinterpolation->id, name, data_type,
+    sltinterpolation->spatialorder  = 1;
+    sltinterpolation->temporalorder = 0;
+    if (cgi_read_node(sltinterpolation->id, sltinterpolation->name, data_type,
             &ndim, dim_vals, &vdata, READ_DATA)) {
         cgi_error("Error reading SolutionInterpolation_t node");
         return CG_ERROR;
@@ -4037,7 +4047,6 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
     sltinterpolation->type = (CGNS_ENUMT(ElementType_t))edata[0];
     sltinterpolation->spatialorder = edata[1];
     sltinterpolation->temporalorder = edata[2];
-    CGNS_FREE(id);
     
      /* InterpolationType_t:
      Required: InterpolationType
@@ -4055,7 +4064,7 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
         }
         if (strcmp(temp_name,"InterpolationType")==0) {
           
-            if (cgi_read_node(id[0], "InterpolationType", data_type,
+            if (cgi_read_node(id[0], temp_name, data_type,
                 &ndim, dim_vals, &vdata, READ_DATA)) {
                 cgi_error("Error reading InterpolationType_t node");
                 return CG_ERROR;
@@ -4068,13 +4077,14 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
             return CG_ERROR;
         }
     }
-    CGNS_FREE(id);
+    if(nnod) CGNS_FREE(id);
     
      /* DataArray_t:
      Required: none
      Optional: LagrangeControlPoints
       */
     nnod = 0;
+    sltinterpolation->lagrangePts = 0;
     cgi_get_nodes(sltinterpolation->id, "DataArray_t", &nnod, &id);
     if (nnod > 1) return CG_ERROR;
     
@@ -4089,19 +4099,19 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
      /* LagrangeControlPoints */
         if (strcmp(temp_name,"LagrangeControlPoints")==0) {
 
-            sltinterpolation->lagrangePts[0].id = id[0];
-            sltinterpolation->lagrangePts[0].link = cgi_read_link(id[0]);
-            sltinterpolation->lagrangePts[0].in_link = 0;
-            if (cgi_read_array(&sltinterpolation->lagrangePts[0],
+            sltinterpolation->lagrangePts->id = id[0];
+            sltinterpolation->lagrangePts->link = cgi_read_link(id[0]);
+            sltinterpolation->lagrangePts->in_link = 0;
+            if (cgi_read_array(sltinterpolation->lagrangePts,
                 "LagrangeControlPoints", sltinterpolation->id)) return CG_ERROR;
 
              /* check data */
-            if (strcmp(sltinterpolation->lagrangePts[0].data_type,"R8")) {
+            if (strcmp(sltinterpolation->lagrangePts->data_type,"R8")) {
                 cgi_error("Error: Datatype %s not supported for %s",
-                sltinterpolation->lagrangePts[0].data_type, temp_name);
+                sltinterpolation->lagrangePts->data_type, temp_name);
                 return CG_ERROR;
             }
-            if (sltinterpolation->lagrangePts[0].data_dim != 2) {
+            if (sltinterpolation->lagrangePts->data_dim != 2) {
                 cgi_error("Error: %s incorrectly dimensioned node 'LagrangeControlPoints'",temp_name);
                 return CG_ERROR;
             }

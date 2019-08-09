@@ -50,6 +50,10 @@ array set CGNSnodes {
   FamilyName                   {1 FamilyName_t C1 {} 0}
   FamilyNameReference          {0 FamilyName_t C1 {} 0}
   FamilyPointers               {1 DataArray_t C1 32 0}
+  ElementInterpolation         {0 ElementInterpolation_t I4 1 1}
+  SolutionInterpolation        {0 SolutionInterpolation_t I4 3 1}
+  LagrangeControlPoints        {1 DataArray_t R8 {} 0}
+  InterpolationType            {1 InterpolationType_t I4 1 0}
   FlowEquationSet              {1 FlowEquationSet_t MT {} 0}
   FlowSolution                 {0 FlowSolution_t MT {} 1}
   FlowSolutionPointers         {1 DataArray_t C1 32 0}
@@ -168,7 +172,10 @@ array set CGNSnodeChildren {
       DiscreteDataArray GridLocation Rind UserDefinedData}
   Elements_t {Descriptor ElementConnectivity ElementRange \
       ParentData Rind UserDefinedData}
-  Family_t {Descriptor FamilyBC GeometryReference Ordinal UserDefinedData}
+  Family_t {Descriptor FamilyBC GeometryReference Ordinal UserDefinedData \
+      ElementInterpolation SolutionInterpolation}
+  ElementInterpolation_t {LagrangeControlPoints}
+  SolutionInterpolation_t {InterpolationType LagrangeControlPoints}
   FamilyBCDataSet_t {DataClass Descriptor DimensionalUnits DirichletData \
       NeumannData ReferenceState UserDefinedData}
   FlowEquationSet_t {ChemicalKineticsModel DataClass Descriptor \
@@ -670,6 +677,19 @@ Constant or Frozen}}
   PointSet_t {{} PointSet_t {} C1 1 {length of string} \
       {one of: Null, UserDefined, PointList, PointListDonor, PointRange,\
       PointRangeDonor, ElementRange, ElementList, or CellListDonor}}
+  ElementInterpolation_t {{user defined} ElementInterpolation_t {0,N} I4 1 1 \
+      {ElementType}}
+  SolutionInterpolation_t {{user defined} SolutionInterpolation_t {0,N} I4 1 3 \
+      {ElementType, spatial order, temporal order} }
+  LagrangeControlPoints {LagrangeControlPoints DataArray_t 1 R8 2 {dimension,NumberOfPoints} 
+      {List of Control Points}}
+  InterpolationType_t {InterpolationType InterpolationType_t 1 I4 1 1 \
+      {InterpolationType_t
+      
+      types are: 0:Null, 1:UserDefined, 2:ParametricLagrange, 3:ParametricMonomialsPascal,\
+      4: CartesianMonomialsPascal, 5: IsoParametric}}
+  InterpolationOrders {InterpolationOrders IndexArray_t 1 I4 1 2 
+      {spatial order, temporal order}}
 }
 
 array set CGNSnodeRef {
@@ -1115,7 +1135,10 @@ element types are:
           InwardNormalList Ordinal PointList PointRange \
           ReferenceState UserDefinedData}
         Family_t {Descriptor FamilyBC FamilyNameReference GeometryReference \
-          Ordinal RotatingCoordinates UserDefinedData}
+          Ordinal RotatingCoordinates ElementInterpolation SolutionInterpolation \
+          UserDefinedData}
+        ElementInterpolation_t {LagrangeControlPoints}
+        SolutionInterpolation_t {InterpolationType LagrangeControlPoints}
         UserDefinedData_t {AdditionalFamilyName DataArray DataClass Descriptor \
           DimensionalUnits FamilyName GridLocation Ordinal PointList \
           PointRange UserDefinedData}

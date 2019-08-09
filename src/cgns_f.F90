@@ -574,6 +574,19 @@ MODULE cgns
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      Solution Interpolation types                                        *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+  CHARACTER(LEN=MAX_LEN) :: InterpolationTypeName(0:5)
+  ENUM, BIND(C)
+      ENUMERATOR :: CGNS_ENUMV(InterpolationTypeNull) = CG_Null
+      ENUMERATOR :: CGNS_ENUMV(InterpolationTypeUserDefined)
+      ENUMERATOR :: CGNS_ENUMV(ParametricLagrange)
+      ENUMERATOR :: CGNS_ENUMV(ParametricMonomialsPascal)
+      ENUMERATOR :: CGNS_ENUMV(CartesianMonomialsPascal)
+      ENUMERATOR :: CGNS_ENUMV(IsoParametric)
+  END ENUM
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Arbitrary Grid Motion types                                    *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   CHARACTER(LEN=MAX_LEN) :: ArbitraryGridMotionTypeName(0:3)
@@ -780,6 +793,14 @@ MODULE cgns
 
   DATA RigidGridMotionTypeName / 'Null','UserDefined', &
        'ConstantRate', 'VariableRate' /
+
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*      Solution Interpolation types                                   *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+
+  DATA InterpolationTypeName / 'Null','UserDefined', &
+       'ParametricLagrange', 'ParametricMonomialsPascal', &
+       'CartesianMonomialsPascal', 'IsoParametric' /
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Arbitrary Grid Motion types                                    *
@@ -1782,6 +1803,34 @@ MODULE cgns
        INTEGER :: S
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_sol_ptset_write_f
+  END INTERFACE
+  
+  INTERFACE
+     SUBROUTINE cg_sol_interpolation_order_read_f(fn, B, Z, S, os, ot , ier)
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: Z
+       INTEGER :: S
+       INTEGER :: os
+       INTEGER :: ot
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_sol_interpolation_order_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_sol_interpolation_order_write_f(fn, B, Z, S, os, ot , ier)
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: Z
+       INTEGER :: S
+       INTEGER :: os
+       INTEGER :: ot
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_sol_interpolation_order_write_f
   END INTERFACE
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -2840,7 +2889,211 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_arbitrary_motion_write_f
   END INTERFACE
+  
+  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+  !      Read and write ElementInterpolation_t Nodes                      *
+  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+  INTERFACE
+     SUBROUTINE cg_nelement_interpolation_read_f(fn, B, fam, ne, ier) BIND(C, NAME="cg_nelement_interpolation_read_f")
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: fam
+       INTEGER :: ne
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_nelement_interpolation_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_element_interpolation_read_f(fn, B, fam, en, name, TYPE, ier)
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: fam
+       INTEGER :: en
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name
+       INTEGER(cgenum_t) :: TYPE
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_element_interpolation_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_element_interpolation_points_read_f(fn, B, fam, en, pu, pv, pw, ier)
+       IMPORT :: c_double, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: fam
+       INTEGER :: en
+       REAL(C_DOUBLE), DIMENSION(*) :: pu
+       REAL(C_DOUBLE), DIMENSION(*) :: pv
+       REAL(C_DOUBLE), DIMENSION(*) :: pw
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_element_interpolation_points_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_element_lagrange_interpolation_count_f(fn, B, fam, TYPE, cnt, ier)
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: fam
+       INTEGER(cgenum_t) :: TYPE
+       INTEGER :: cnt
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_element_lagrange_interpolation_count_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_element_interpolation_write_f(fn, B, fam, name, TYPE, en, ier)
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: fam
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name
+       INTEGER(cgenum_t) :: TYPE
+       INTEGER :: en
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_element_interpolation_write_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_element_interpolation_points_write_f(fn, B, fam, en, pu, pv, pw, ier)
+       IMPORT :: c_double, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: fam
+       INTEGER :: en
+       REAL(C_DOUBLE), DIMENSION(*) :: pu
+       REAL(C_DOUBLE), DIMENSION(*) :: pv
+       REAL(C_DOUBLE), DIMENSION(*) :: pw
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_element_interpolation_points_write_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_element_lagrange_interpolation_size_f(TYPE, sz, ier)
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER(cgenum_t) :: TYPE
+       INTEGER :: sz
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_element_lagrange_interpolation_size_f
+  END INTERFACE
+  
+  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+  !      Read and write SolutionInterpolation_t Nodes                      *
+  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  INTERFACE
+     SUBROUTINE cg_nsolution_interpolation_read_f(fn, B, fam, sn, ier) BIND(C, NAME="cg_nsolution_interpolation_read_f")
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: fam
+       INTEGER :: sn
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_nsolution_interpolation_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_solution_interpolation_read_f(fn, B, fam, sn, name, TYPE, os, ot, it, ier)
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: fam
+       INTEGER :: sn
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name
+       INTEGER(cgenum_t) :: TYPE
+       INTEGER :: os
+       INTEGER :: ot
+       INTEGER(cgenum_t) :: it
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_solution_interpolation_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_solution_interpolation_points_read_f(fn, B, fam, sn, pu, pv, pw, pt, ier)
+       IMPORT :: c_double, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: fam
+       INTEGER :: sn
+       REAL(C_DOUBLE), DIMENSION(*) :: pu
+       REAL(C_DOUBLE), DIMENSION(*) :: pv
+       REAL(C_DOUBLE), DIMENSION(*) :: pw
+       REAL(C_DOUBLE), DIMENSION(*) :: pt
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_solution_interpolation_points_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_solution_lagrange_interpolation_count_f(fn, B, fam, TYPE, os, ot, cnt, ier)
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: fam
+       INTEGER(cgenum_t) :: TYPE
+       INTEGER :: os
+       INTEGER :: ot
+       INTEGER :: cnt
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_solution_lagrange_interpolation_count_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_solution_interpolation_write_f(fn, B, fam, name, TYPE, os, ot, it, sn, ier)
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: fam
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name
+       INTEGER(cgenum_t) :: TYPE
+       INTEGER :: os
+       INTEGER :: ot
+       INTEGER(cgenum_t) :: it
+       INTEGER :: sn
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_solution_interpolation_write_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_solution_interpolation_points_write_f(fn, B, fam, sn, pu, pv, pw, pt, ier)
+       IMPORT :: c_double, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: fam
+       INTEGER :: sn
+       REAL(C_DOUBLE), DIMENSION(*) :: pu
+       REAL(C_DOUBLE), DIMENSION(*) :: pv
+       REAL(C_DOUBLE), DIMENSION(*) :: pw
+       REAL(C_DOUBLE), DIMENSION(*) :: pt
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_solution_interpolation_points_write_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_solution_lagrange_interpolation_size_f(TYPE, os, ot, sz, ier)
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER(cgenum_t) :: TYPE
+       INTEGER :: os
+       INTEGER :: ot
+       INTEGER :: sz
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_solution_lagrange_interpolation_size_f
+  END INTERFACE
+  
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write GridCoordinates_t Nodes                           *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

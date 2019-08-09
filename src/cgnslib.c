@@ -4841,7 +4841,6 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
 int cg_sol_interpolation_order_read(int fn, int B, int Z, int S, 
                                             int *spatialOrder, int *temporalOrder)
 {
-    int dim = 0;
     cgns_sol *sol;
 
     cg = cgi_get_file(fn);
@@ -4852,14 +4851,33 @@ int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
     sol = cgi_get_sol(cg, B, Z, S);
     if (sol==0) return CG_ERROR;
     
-    *spatialOrder  = sol->spatialOrder;
+    // Defaults
+    *spatialOrder  = 1;
+    *temporalOrder = 0;
+    
+    if (sol->isOrderDefined == 0) return CG_NODE_NOT_FOUND;
+    
+    if (sol->location != CGNS_ENUMV( CellCenter ))
+    {
+        cgi_warning("solution interpolation order is supposed to be "
+                    "associated with CellCentered solution.");
+    }
+    
+    *spatialOrder  = sol->spatialOrder; 
     *temporalOrder = sol->temporalOrder;
+    return CG_OK;
 }
 
 int cg_sol_interpolation_order_write(int fn, int B, int Z, int S, 
                                              int spatialOrder, int  temporalOrder)
 {
+    int n,nnodes;
+    char_33 name;
     cgns_sol *sol;
+    cgsize_t dim_vals;
+    int array[2];
+    double dummy_id;
+    double *ids;
 
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
@@ -4869,8 +4887,52 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
     sol = cgi_get_sol(cg, B, Z, S);
     if (sol==0) return CG_ERROR;
     
+    if (sol->location != CGNS_ENUMV( CellCenter ))
+    {
+        cgi_warning("solution interpolation order is supposed to be "
+                    "associated with CellCentered solution.");
+    }
+    
+    // Check values
+    if (temporalOrder < 0 || spatialOrder < 0)
+    {
+        cgi_error("Negative values are not allowed for both spatial and Temporal order in solution interpolation node.");
+        return CG_ERROR;
+    }
+    
+    sol->isOrderDefined = 1;
     sol->spatialOrder = spatialOrder;
     sol->temporalOrder= temporalOrder;
+    
+    if (cgi_get_nodes(sol->id, "IndexArray_t", &nnodes, &ids)) 
+      return CG_ERROR;
+    if (nnodes)
+    {
+        for (n = 0; n < nnodes; n++)
+        {
+            /* Name */
+            if (cgio_get_name(cg->cgio, ids[n], name)) {
+                cg_io_error("cgio_get_name");
+                return CG_ERROR;
+            }
+            if (strcmp(name,"InterpolationOrders")==0)
+            {
+                // Delete Node ...
+                if (cgi_delete_node(sol->id,ids[n]))
+                  return CG_ERROR;
+            }
+        }
+        CGNS_FREE(ids);
+    }
+    
+    dim_vals = 2;
+    array[0] = spatialOrder;
+    array[1] = temporalOrder;
+    if (cgi_new_node(sol->id, "InterpolationOrders", "IndexArray_t",
+                         &dummy_id, "I4", 1, &dim_vals, &array[0]))
+            return CG_ERROR;
+    
+    return CG_OK;
 }
 
 /*****************************************************************************\
@@ -5197,6 +5259,67 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
                                    cgns_rindindex, sol->rind_planes,
                                    s_type, s_numdim, s_dimvals, s_rmin, s_rmax,
                                    m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
+                                   field_ptr, F);
+    
+    HDF5storage_type = CG_COMPACT;
+    return status;
+}
+
+int cg_field_high_order_write(int fn,int B,int Z,int S,
+                          CGNS_ENUMT(DataType_t) type, const char * fieldname,
+                            const int count, const void * field_ptr, int *F)
+{
+    
+     /* s_ prefix is file space, m_ prefix is memory space */
+    cgns_zone *zone;
+    cgns_sol *sol;
+    int s_numdim;
+    int status;
+    int n;
+
+    HDF5storage_type = CG_CONTIGUOUS;
+    
+    /* verify input */
+    if (cgi_check_strlen(fieldname)) return CG_ERROR;
+    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble) &&
+        type != CGNS_ENUMV(Integer) && type != CGNS_ENUMV(LongInteger)) {
+        cgi_error("Invalid file data type for solution array %s: %d",
+                  fieldname, type);
+        return CG_ERROR;
+    }
+    
+    /* get memory addresses */
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    zone = cgi_get_zone(cg, B, Z);
+    if (zone == 0) return CG_ERROR;
+
+     /* get memory address for solution */
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+    
+    /* file dimension is dependent on multidim or ptset */
+    cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
+    s_numdim = 1;
+    s_dimvals[0] = count;
+    
+    cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
+    cgsize_t m_rmin[CGIO_MAX_DIMENSIONS], m_rmax[CGIO_MAX_DIMENSIONS];
+    for (n = 0; n < s_numdim; n++) {   
+        s_rmin[n] = 1;
+        s_rmax[n] = s_rmin[n] + s_dimvals[n] - 1;
+        m_rmin[n] = 1;
+        m_rmax[n] = s_dimvals[n];
+    }
+    
+    status= cgi_array_general_write(sol->id, &(sol->nfields),
+                                   &(sol->field), fieldname,
+                                   cgns_rindindex, sol->rind_planes,
+                                   type, s_numdim, s_dimvals, s_rmin, s_rmax,
+                                   type, s_numdim, s_dimvals, m_rmin, m_rmax,
                                    field_ptr, F);
     
     HDF5storage_type = CG_COMPACT;
@@ -9142,9 +9265,8 @@ int cg_multifam_write(const char *name, const char *family)
 /*----------------------------------------------------------------------*/
 /* CPEX 045 */
 
-int cg_element_interpolation_read(int fn, int bn, int fam, int en , 
-                                  CGNS_ENUMT(ElementType_t)* et, double *pu, 
-                                  double *pv, double *pw)
+int cg_element_interpolation_read(int fn, int bn, int fam, int en , char * node_name,
+                                  CGNS_ENUMT(ElementType_t)* et)
 {
     cgns_family *family;
 
@@ -9156,15 +9278,48 @@ int cg_element_interpolation_read(int fn, int bn, int fam, int en ,
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
 
-    if (en >= family->nelementinterpolation) return CG_ERROR;
+    if (en > family->nelementinterpolation) return CG_ERROR;
+    en--;
     
     cgns_elementInterpolation *ei = &family->elementinterpolations[en];
+    
+    /* Set Name */
+    strcpy(node_name,ei->name);
     
     /* Set Element Type */
     *et = ei->type;
     
+    return CG_OK;
+}
+
+int cg_element_interpolation_points_read(int fn, int bn, int fam, int en , 
+                                  double *pu, double *pv, double *pw)
+{
+    int i, j, k;
+    cgns_family *family;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+
+    if (en > family->nelementinterpolation) return CG_ERROR;
+    en--;
+    
+    cgns_elementInterpolation *ei = &family->elementinterpolations[en];
+    
     /* Get lagrange Points array */
     cgns_array *lpts = ei->lagrangePts;
+    
+    /* has Lagrange Points ? */
+    if (!lpts) 
+    {
+        cgi_warning("ElementInterpolation Node does not have LagrangeControlPoints.");
+        return CG_NODE_NOT_FOUND;
+    }
     
     /* Check Dimensions */
     int ndim = lpts->dim_vals[0];
@@ -9172,11 +9327,32 @@ int cg_element_interpolation_read(int fn, int bn, int fam, int en ,
     /* Get Element Node Count */
     int npe = lpts->dim_vals[1];
     
+    // Sanity Check
+    int cdim,cnpe;
+    cg_npe(ei->type,&cnpe);
+    cg_element_dimension(ei->type,&cdim);
+    
+    if (cdim != ndim || cnpe != npe)
+    {
+        cgi_error("LagrangeControlPoints array dimension mismatch in "
+                  "ElementInterpolation \"%s\".\n"
+                  "dim (given,requested) : (%d,%d)\n"
+                  "node count (given,requested) : (%d,%d)\n",
+                  ei->name,ndim,cdim,npe,cnpe);
+        return CG_ERROR;
+    }
+    
     /* Copy data */
-    double *data = (double *)lpts->data;
-    if (pu && ndim > 0) memcpy(pu,&data[0    ],npe*sizeof(double));
-    if (pv && ndim > 1) memcpy(pv,&data[  npe],npe*sizeof(double));
-    if (pw && ndim > 2) memcpy(pw,&data[2*npe],npe*sizeof(double));
+    double *data = (double *)lpts->data;    
+    // Fortran Style !!
+    k = 0;
+    double *array[] = {pu,pv,pw};
+    for(i = 0; i < npe ; i++)
+      for(j = 0; j < ndim ; j++)
+      {
+        if (array[j]) array[j][i] = data[k];
+        k++;
+      }
     
     return CG_OK;
     
@@ -9198,12 +9374,166 @@ int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne)
     return CG_OK;
 }
 
-int cg_element_interpolation_write(int fn, int bn, int fam, int *en , 
-                                   CGNS_ENUMT(ElementType_t) et, double *pu, double *pv, double *pw)
+int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_name,
+                                   CGNS_ENUMT(ElementType_t) et, int *en)
 {
-    /// \todo ....
+    int n,nnodes;
+    double *ids;
+    double dummy_id;
+    int array[1];
+    cgsize_t dim_vals;
     cgns_family *family;
+    cgns_elementInterpolation *einterp, *tmpinterp;
+    
+    *en = -1;
+    
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+    
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    // Check Element Type
+    if (INVALID_ENUM(et,NofValidElementTypes) || et == CGNS_ENUMV( MIXED ) ) {
+        cgi_error("Invalid element type %s for writing Element interpolation %s",
+                  cg_ElementTypeName(et),node_name);
+        return CG_ERROR;
+    }
+    
+    // Already exists ?
+    einterp = 0;
+    for (n = 0 ; n<family->nelementinterpolation ; n++)
+    {
+        tmpinterp = &family->elementinterpolations[n];
+        if (tmpinterp->type == et)
+        {
+            cgi_delete_node(family->id,tmpinterp->id);
+        }
+    }
+    
+    // Create New ?
+    if (!einterp)
+    {
+        if (family->nelementinterpolation == 0) {
+            family->elementinterpolations = CGNS_NEW(cgns_elementInterpolation, family->nelementinterpolation+1);
+        } else {
+            family->elementinterpolations = CGNS_RENEW(cgns_elementInterpolation, family->nelementinterpolation+1, family->elementinterpolations);
+        }
+        einterp = &(family->elementinterpolations[family->nelementinterpolation]);
+        family->nelementinterpolation++;
+        *en = family->nelementinterpolation;
+    }
+    
+    memset(einterp,0,sizeof(cgns_elementInterpolation));
+    strcpy(einterp->name,node_name);
+    einterp->type = et;
+    
+    // Write node
+    dim_vals = 1;
+    array[0] = et;
+    if (cgi_new_node(family->id, einterp->name, "ElementInterpolation_t",
+                         &einterp->id, "I4", 1, &dim_vals, &array[0]))
+            return CG_ERROR;
+    
+    return CG_OK;
+}
 
+int cg_element_interpolation_points_write(int fn, int bn, int fam, int en , 
+                                           double *pu, double *pv, double *pw)
+{
+    int i, j, k;
+    int n,nnodes,edim;
+    double *ids, *data;
+    double dummy_id;
+    cgsize_t dim_vals;
+    cgns_family *family;
+    cgns_elementInterpolation *einterp;
+    
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+    
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    // Check
+    if (en > family->nelementinterpolation || en <= 0)
+    {
+        cgi_error("Want to access an inexistant element interpolation id");
+        return CG_ERROR;
+    }
+    en--;
+    
+    einterp = &family->elementinterpolations[en];
+    
+    // Nb points and dimension per Element_t
+    cg_npe(einterp->type,&nnodes);
+    cg_element_dimension(einterp->type,&edim);
+    
+    // Check 
+    if (edim > 0 && !pu) return CG_ERROR;
+    if (edim > 1 && !pv) return CG_ERROR;
+    if (edim > 2 && !pw) return CG_ERROR;
+    
+    // Allocate and fill memory structure
+    if (einterp->lagrangePts) 
+    {
+      cgi_delete_node(einterp->id,einterp->lagrangePts->id);
+      CGNS_FREE(einterp->lagrangePts);
+    }
+    
+    einterp->lagrangePts = CGNS_NEW(cgns_array, 1);
+    memset(einterp->lagrangePts, 0, sizeof(cgns_array));
+    
+    /* Save data */
+    strcpy(einterp->lagrangePts->name, "LagrangeControlPoints");
+    strcpy(einterp->lagrangePts->data_type, "R8");
+    einterp->lagrangePts->data_dim = 2;
+    einterp->lagrangePts->dim_vals[0] = edim;
+    einterp->lagrangePts->dim_vals[1] = nnodes;
+    
+     /* initialize other fields */
+    einterp->lagrangePts->link=0;
+    einterp->lagrangePts->ndescr=0;
+    einterp->lagrangePts->data_class=CGNS_ENUMV(DataClassNull);
+    einterp->lagrangePts->units=0;
+    einterp->lagrangePts->exponents=0;
+    einterp->lagrangePts->convert=0;
+    einterp->lagrangePts->data=0;
+    
+    einterp->lagrangePts->data = malloc( (size_t) ( nnodes * edim * sizeof(double) ) );
+    data = (double*)einterp->lagrangePts->data;
+    
+    // Fortran Style !!
+    k = 0;
+    double *array[] = {pu,pv,pw};
+    for(i = 0; i < nnodes ; i++)
+      for(j = 0; j < edim ; j++)
+      {
+        if (array[j]) data[k] = array[j][i];
+        k++;
+      }
+    
+     /* write to disk */
+    if (cgi_new_node(einterp->id, einterp->lagrangePts->name, "DataArray_t", &einterp->lagrangePts->id,
+        einterp->lagrangePts->data_type, einterp->lagrangePts->data_dim, einterp->lagrangePts->dim_vals, 
+        einterp->lagrangePts->data)) return CG_ERROR;
+    
+    return CG_OK;
+}
+
+int cg_element_lagrange_interpolation_count(int fn, int bn, int fam, CGNS_ENUMT(ElementType_t) t, int *cnt)
+{
+    int n;
+    cgns_family *family;
+    cgns_elementInterpolation *ei;
+    
+    // Default
+    *cnt = 0;
+    
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
@@ -9212,17 +9542,33 @@ int cg_element_interpolation_write(int fn, int bn, int fam, int *en ,
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
     
+    if (!family->nelementinterpolation) return CG_OK;
     
-    
-    return CG_ERROR;
+    for (n = 0 ; n < family->nelementinterpolation ; n++)
+    {
+        ei = &family->elementinterpolations[n];
+        
+        if (ei->type == t)
+        {
+            *cnt = 1;
+            return CG_OK;
+        }
+    }
+    return CG_OK;
+}
+
+int cg_element_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t, 
+                                           int *sz)
+{
+    return cg_npe(t,sz);
 }
 
 /*----------------------------------------------------------------------*/
 /* CPEX 045 */
 
-int cg_solution_interpolation_type_read(int fn, int bn, int fam, int sn , 
-                                        CGNS_ENUMT(ElementType_t)* et, int *os, 
-                                        int *ot, CGNS_ENUMT(InterpolationType_t) *it)
+int cg_solution_interpolation_read(int fn, int bn, int fam, int sn , char * node_name,
+                                   CGNS_ENUMT(ElementType_t)* et, int *os, int *ot, 
+                                   CGNS_ENUMT(InterpolationType_t) *it)
 {
     cgns_family *family;
 
@@ -9234,11 +9580,16 @@ int cg_solution_interpolation_type_read(int fn, int bn, int fam, int sn ,
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
     
-    if (sn >= family->nsolutioninterpolation) return CG_ERROR;
+    if (sn > family->nsolutioninterpolation || sn <= 0 ) return CG_ERROR;
+    sn--;
     
     cgns_solutionInterpolation *es = &family->solutioninterpolations[sn];
     
+    /* Get Name */
+    strcpy(node_name,es->name);
+    
     /* Get Element Type */
+    // cg_element_basic_element_type(es->type,et); // What to choose ??
     *et = es->type;
     
     /* Get Element Orders */
@@ -9248,12 +9599,14 @@ int cg_solution_interpolation_type_read(int fn, int bn, int fam, int sn ,
     /* Get Interpolation Type Name */
     *it = es->interpolationName;
     
+    
     return CG_OK;
 }
 
 int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn , 
                                           double *pu, double *pv, double *pw, double *pt)
 {
+    int i,j,k;
     cgns_family *family;
 
     cg = cgi_get_file(fn);
@@ -9264,7 +9617,8 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
     
-    if (sn >= family->nsolutioninterpolation) return CG_ERROR;
+    if (sn > family->nsolutioninterpolation || sn <= 0) return CG_ERROR;
+    sn--;
     
     cgns_solutionInterpolation *es = &family->solutioninterpolations[sn];
     
@@ -9275,20 +9629,49 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
     /* Get lagrange Points array */
     cgns_array *lpts = es->lagrangePts;
     
+    /* Has Node ? */
+    if (!lpts)
+    {
+        cgi_warning("No LagrangreInterpolation Points for this solution interpolation node.");
+        return CG_NODE_NOT_FOUND;
+    }
+    
     /* Get Array dim */
-    int dim = lpts->dim_vals[0];
-    int pdim= dim;
+    int pdim = lpts->dim_vals[0];
     if (to) pdim--;
     
     /* Get Element Node Count */
     int npe = lpts->dim_vals[1];
     
-    double *data = (double *)lpts->data;
-    if (pu && pdim > 0 ) memcpy(pu,&data[0],npe*sizeof(double));
-    if (pv && pdim > 1 ) memcpy(pv,&data[npe],npe*sizeof(double));
-    if (pw && pdim > 2 ) memcpy(pw,&data[2*npe],npe*sizeof(double));
+    /* Sanity Check */
+    int sz,dim;
+    cg_element_dimension(es->type,&dim);
+    cg_solution_lagrange_interpolation_size(es->type,so,to,&sz);
+    if (sz != npe)
+    {
+        cgi_error("dimension mismatch between LagrangreInterpolationPoints count and expected.\n"
+                  "SolutionInterpolation_t name = %s\n"
+                  "requested : %d  != given : %d",es->name,sz,npe);
+        return CG_ERROR;
+    }
+    if (dim != pdim)
+    {
+        cgi_error("dimension mismatch between LagrangreInterpolationPoints dimension and expected.\n"
+                  "SolutionInterpolation_t name = %s\n"
+                  "requested : %d  != given : %d",es->name,dim,pdim);
+        return CG_ERROR;
+    }
     
-    if (to && pt) memcpy(pt,&data[pdim*npe],npe*sizeof(double));
+    double *data = (double *)lpts->data;
+    // Fortran Style !!
+    k = 0;
+    double *array[] = {pu,pv,pw,pt};
+    for(i = 0; i < npe ; i++)
+      for(j = 0; j < lpts->dim_vals[0] ; j++)
+      {
+        if (array[j]) data[k] = array[j][i];
+        k++;
+      }
     
     return CG_OK;
 }
@@ -9306,24 +9689,228 @@ int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns)
     if (family==0) return CG_ERROR;
     
     *ns = family->nsolutioninterpolation;
+    return CG_OK;
 }
 
-int cg_solution_interpolation_type_write(int fn, int bn, int fam, int *sn , 
-                                         CGNS_ENUMT(ElementType_t) et, int os, int ot, 
-                                         CGNS_ENUMT(InterpolationType_t) it)
+int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_name,
+                                    CGNS_ENUMT(ElementType_t) et, int os, int ot, 
+                                    CGNS_ENUMT(InterpolationType_t) it, int *sn )
 {
-    /// \todo ....
-  return CG_ERROR;
+    int n,nnodes;
+    double *ids;
+    double dummy_id;
+    int array[3];
+    cgsize_t dim_vals;
+    cgns_family *family;
+    cgns_solutionInterpolation *sinterp, *tmpinterp;
+    CGNS_ENUMT(ElementType_t) type;
+    
+    *sn = -1;
+    
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+    
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    // Check Element Type
+    if (INVALID_ENUM(et,NofValidElementTypes) || et == CGNS_ENUMV( MIXED ) ) {
+        cgi_error("Invalid solution type for Element interpolation (%s)",cg_ElementTypeName(et));
+        return CG_ERROR;
+    }
+    // Check Interpolation Type
+    if (INVALID_ENUM(it,NofValidElementTypes)) {
+        cgi_error("Invalid solution Interpolation type.");
+        return CG_ERROR;
+    }
+    
+    // Get Basic type
+    cg_element_basic_element_type(et,&type);
+    
+    // Already exists ?
+    sinterp = 0;
+    for (n = 0 ; n<family->nsolutioninterpolation ; n++)
+    {
+        tmpinterp = &family->solutioninterpolations[n];
+        if (tmpinterp->type == type)
+        {
+            cgi_delete_node(family->id,tmpinterp->id);
+        }
+        
+    }
+    
+    // Create New ?
+    if (!sinterp)
+    {
+        if (family->nsolutioninterpolation == 0) {
+            family->solutioninterpolations = CGNS_NEW(cgns_solutionInterpolation, family->nsolutioninterpolation+1);
+        } else {
+            family->solutioninterpolations = CGNS_RENEW(cgns_solutionInterpolation, family->nsolutioninterpolation+1, family->solutioninterpolations);
+        }
+        sinterp = &(family->solutioninterpolations[family->nsolutioninterpolation]);
+        family->nsolutioninterpolation++;
+        *sn = family->nsolutioninterpolation;
+    }
+    
+    // Fill internal structure
+    memset(sinterp,0,sizeof(cgns_solutionInterpolation));
+    strcpy(sinterp->name,node_name);
+    sinterp->type = type;
+    sinterp->spatialorder = os;
+    sinterp->temporalorder= ot;
+    
+    // Write SolutionInterpolation_t node
+    dim_vals = 3;
+    array[0] = (int)type;
+    array[1] = os;
+    array[2] = ot;
+    if (cgi_new_node(family->id, sinterp->name, "SolutionInterpolation_t",
+                         &sinterp->id, "I4", 1, &dim_vals, &array[0]))
+            return CG_ERROR;
+    
+    // Write InterpolationType_t Node
+    dim_vals = 1;
+    array[0] = (int)it;
+    if (cgi_new_node(sinterp->id, "InterpolationType", "InterpolationType_t",
+                         &dummy_id, "I4", 1, &dim_vals, &array[0]))
+            return CG_ERROR;
+    
+    
+    
+    return CG_OK;
 }
 
-int cg_solution_interpolation_points_write(int fn, int bn, int fam, int *sn , 
-                                                   double *pu, double *pv, double *pw, double *pt)
+int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn , 
+                                           double *pu, double *pv, double *pw, 
+                                           double *pt)
 {
-    /// \todo ....
-  return CG_ERROR;
+    int i,j,k;
+    int ot,os,n,nnodes,edim;
+    double *ids, *data;
+    double dummy_id;
+    cgsize_t dim_vals;
+    cgns_family *family;
+    cgns_solutionInterpolation *sinterp;
+    
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+    
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    // Check
+    if (sn > family->nsolutioninterpolation || sn <= 0)
+    {
+        cgi_error("Want to access an inexistant solution interpolation id");
+        return CG_ERROR;
+    }
+    sn--;
+    
+    sinterp = &family->solutioninterpolations[sn];
+    ot = sinterp->temporalorder;
+    os = sinterp->spatialorder;
+    
+    // Nb points and dimension per Element_t
+    cg_solution_lagrange_interpolation_size(sinterp->type,os,ot,&nnodes);
+    cg_element_dimension(sinterp->type,&edim);
+    
+    // Check 
+    if (edim > 0 && !pu) return CG_ERROR;
+    if (edim > 1 && !pv) return CG_ERROR;
+    if (edim > 2 && !pw) return CG_ERROR;
+    if (ot       && !pt) return CG_ERROR;
+    
+    // Allocate and fill memory structure
+    if (sinterp->lagrangePts)
+    {
+        cgi_delete_node(sinterp->id,sinterp->lagrangePts->id);
+        CGNS_FREE(sinterp->lagrangePts);
+    }
+    
+    sinterp->lagrangePts = CGNS_NEW(cgns_array, 1);
+    memset(sinterp->lagrangePts, 0, sizeof(cgns_array));
+    
+    /* Save data */
+    strcpy(sinterp->lagrangePts->name, "LagrangeControlPoints");
+    strcpy(sinterp->lagrangePts->data_type, "R8");
+    sinterp->lagrangePts->data_dim = 2;
+    sinterp->lagrangePts->dim_vals[0] = edim + (ot ? 1 : 0);
+    sinterp->lagrangePts->dim_vals[1] = nnodes;
+    
+     /* initialize other fields */
+    sinterp->lagrangePts->link=0;
+    sinterp->lagrangePts->ndescr=0;
+    sinterp->lagrangePts->data_class=CGNS_ENUMV(DataClassNull);
+    sinterp->lagrangePts->units=0;
+    sinterp->lagrangePts->exponents=0;
+    sinterp->lagrangePts->convert=0;
+    sinterp->lagrangePts->data=0;
+    
+    sinterp->lagrangePts->data = malloc( (size_t) ( nnodes * (edim + (ot ? 1 : 0)) * sizeof(double) ) );
+    data = (double*)sinterp->lagrangePts->data;
+    
+    // Fortran Style !!
+    k = 0;
+    double *array[] = {pu,pv,pw,pt};
+    for(i = 0; i < nnodes ; i++)
+      for(j = 0; j < edim + (ot ? 1 : 0) ; j++)
+      {
+        if (array[j]) data[k] = array[j][i];
+        k++;
+      }
+    
+     /* write to disk */
+    if (cgi_new_node(sinterp->id, sinterp->lagrangePts->name, "DataArray_t", &sinterp->lagrangePts->id,
+                     sinterp->lagrangePts->data_type, sinterp->lagrangePts->data_dim, sinterp->lagrangePts->dim_vals, 
+                     sinterp->lagrangePts->data)) return CG_ERROR;
+    
+    return CG_OK;
 }
 
+int cg_solution_lagrange_interpolation_count(int fn, int bn, int fam, CGNS_ENUMT(ElementType_t) t, 
+                                             int os, int ot, int *cnt)
+{
+    int n;
+    cgns_family *family;
+    cgns_solutionInterpolation *es;
+    
+    // Default
+    *cnt = 0;
+    
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
 
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    family = cgi_get_family(cg, bn, fam);
+    if (family==0) return CG_ERROR;
+    
+    if (!family->nsolutioninterpolation) return CG_OK;
+    
+    for (n = 0 ; n < family->nsolutioninterpolation ; n++)
+    {
+        es = &family->solutioninterpolations[n];
+        
+        if (es->spatialorder == os && es->temporalorder == ot && es->type == t)
+        {
+            *cnt = 1;
+            return CG_OK;
+        }
+    }
+    return CG_OK;
+}
+
+int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t, 
+                                           int os, int ot, int *sz)
+{
+    int error = cg_npe_ho(t,os,sz);
+    *sz *= (ot+1);
+    return error;
+}
 
 /*----------------------------------------------------------------------*/
 
@@ -12245,6 +12832,170 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
 
     }
     (*npe) = el_size[type];
+    return CG_OK;
+}
+
+int cg_npe_ho( CGNS_ENUMT(ElementType_t) basicType, int order, int *npe)
+{
+    CGNS_ENUMT(ElementType_t) type = basicType;
+    
+    // Be sure to have a Basic Type
+    if (cg_element_basic_element_type(type,&basicType)) return CG_ERROR;
+    
+    if ( basicType == CGNS_ENUMV(BAR_2) )
+    {
+        if (order == 1) type = CGNS_ENUMV(BAR_2); 
+        if (order == 2) type = CGNS_ENUMV(BAR_3); 
+        if (order == 3) type = CGNS_ENUMV(BAR_4);
+        if (order == 4) type = CGNS_ENUMV(BAR_5);
+    }
+    if ( basicType == CGNS_ENUMV(TRI_3) )
+    {
+        if (order == 1) type = CGNS_ENUMV(TRI_3); 
+        if (order == 2) type = CGNS_ENUMV(TRI_6); 
+        if (order == 3) type = CGNS_ENUMV(TRI_10);
+        if (order == 4) type = CGNS_ENUMV(TRI_15);
+    }
+    if ( basicType == CGNS_ENUMV(QUAD_4) )
+    {
+        if (order == 1) type = CGNS_ENUMV(QUAD_4); 
+        if (order == 2) type = CGNS_ENUMV(QUAD_9); 
+        if (order == 3) type = CGNS_ENUMV(QUAD_16);
+        if (order == 4) type = CGNS_ENUMV(QUAD_25);
+    }
+    if ( basicType == CGNS_ENUMV(HEXA_8) )
+    {
+        if (order == 1) type = CGNS_ENUMV(HEXA_8); 
+        if (order == 2) type = CGNS_ENUMV(HEXA_27); 
+        if (order == 3) type = CGNS_ENUMV(HEXA_56);
+        if (order == 4) type = CGNS_ENUMV(HEXA_125);
+    }
+    if ( basicType == CGNS_ENUMV(TETRA_4) )
+    {
+        if (order == 1) type = CGNS_ENUMV(TETRA_4); 
+        if (order == 2) type = CGNS_ENUMV(TETRA_10); 
+        if (order == 3) type = CGNS_ENUMV(TETRA_20);
+        if (order == 4) type = CGNS_ENUMV(TETRA_35);
+    }
+    if ( basicType == CGNS_ENUMV(PENTA_6) )
+    {
+        if (order == 1) type = CGNS_ENUMV(PENTA_6); 
+        if (order == 2) type = CGNS_ENUMV(PENTA_18); 
+        if (order == 3) type = CGNS_ENUMV(PENTA_40);
+        if (order == 4) type = CGNS_ENUMV(PENTA_75);
+    }
+    if ( basicType == CGNS_ENUMV(PYRA_5) )
+    {
+        if (order == 1) type = CGNS_ENUMV(PYRA_5); 
+        if (order == 2) type = CGNS_ENUMV(PYRA_14); 
+        if (order == 3) type = CGNS_ENUMV(PYRA_30);
+        if (order == 4) type = CGNS_ENUMV(PYRA_55);
+    }
+    
+    // Get the corresponding node count
+    return cg_npe(type,npe);
+}
+
+int cg_element_dimension( CGNS_ENUMT(ElementType_t) type, int *dim)
+{
+    if (INVALID_ENUM(type,NofValidElementTypes) || 
+        type == CGNS_ENUMV(MIXED) ) {
+        *dim = -1;
+        cgi_error("Invalid element type");
+        return CG_ERROR;
+    }
+    
+    switch(type)
+    {
+      case CGNS_ENUMV( NODE   ): *dim = 0;break;
+      case CGNS_ENUMV( BAR_2  ):
+      case CGNS_ENUMV( BAR_3  ):
+      case CGNS_ENUMV( BAR_4  ):
+      case CGNS_ENUMV( BAR_5  ): *dim = 1;break;
+      case CGNS_ENUMV( TRI_3  ):
+      case CGNS_ENUMV( TRI_6  ):
+      case CGNS_ENUMV( TRI_9  ):
+      case CGNS_ENUMV( TRI_10 ):
+      case CGNS_ENUMV( TRI_12 ):
+      case CGNS_ENUMV( TRI_15 ):
+      case CGNS_ENUMV( QUAD_4 ):
+      case CGNS_ENUMV( QUAD_8 ):
+      case CGNS_ENUMV( QUAD_9 ):
+      case CGNS_ENUMV( QUAD_12 ):
+      case CGNS_ENUMV( QUAD_16 ):
+      case CGNS_ENUMV( QUAD_25 ):
+      case CGNS_ENUMV( QUAD_P4_16 ): *dim = 2;break;
+      default: *dim = 3;
+    }
+    
+    return CG_OK;
+}
+
+int cg_element_basic_element_type( CGNS_ENUMT(ElementType_t) type, CGNS_ENUMT(ElementType_t) *basic)
+{
+    *basic = type;
+    
+    if ( INVALID_ENUM(type,NofValidElementTypes) ) {
+        cgi_error("Invalid element type");
+        return CG_ERROR;
+    }
+    
+    switch(type)
+    {
+      case CGNS_ENUMV( NODE   ): *basic = type;break;
+      case CGNS_ENUMV( BAR_2  ):
+      case CGNS_ENUMV( BAR_3  ):
+      case CGNS_ENUMV( BAR_4  ):
+      case CGNS_ENUMV( BAR_5  ): *basic = CGNS_ENUMV( BAR_2  );break;
+      case CGNS_ENUMV( TRI_3  ):
+      case CGNS_ENUMV( TRI_6  ):
+      case CGNS_ENUMV( TRI_9  ):
+      case CGNS_ENUMV( TRI_10 ):
+      case CGNS_ENUMV( TRI_12 ):
+      case CGNS_ENUMV( TRI_15 ): *basic = CGNS_ENUMV( TRI_3  );break;
+      case CGNS_ENUMV( QUAD_4 ):
+      case CGNS_ENUMV( QUAD_8 ):
+      case CGNS_ENUMV( QUAD_9 ):
+      case CGNS_ENUMV( QUAD_12 ):
+      case CGNS_ENUMV( QUAD_16 ):
+      case CGNS_ENUMV( QUAD_25 ):
+      case CGNS_ENUMV( QUAD_P4_16 ): *basic = CGNS_ENUMV( QUAD_4 );break;
+      case CGNS_ENUMV( TETRA_4 ):
+      case CGNS_ENUMV( TETRA_10 ):
+      case CGNS_ENUMV( TETRA_16 ):
+      case CGNS_ENUMV( TETRA_20 ):
+      case CGNS_ENUMV( TETRA_22 ):
+      case CGNS_ENUMV( TETRA_34 ):
+      case CGNS_ENUMV( TETRA_35 ): *basic = CGNS_ENUMV( TETRA_4 );break;
+      case CGNS_ENUMV( PYRA_5 ):
+      case CGNS_ENUMV( PYRA_13 ):
+      case CGNS_ENUMV( PYRA_14 ):
+      case CGNS_ENUMV( PYRA_21 ):
+      case CGNS_ENUMV( PYRA_29 ):
+      case CGNS_ENUMV( PYRA_30 ):
+      case CGNS_ENUMV( PYRA_50 ):
+      case CGNS_ENUMV( PYRA_55 ):
+      case CGNS_ENUMV( PYRA_P4_29 ): *basic = CGNS_ENUMV( PYRA_5 );break;
+      case CGNS_ENUMV( PENTA_6 ):
+      case CGNS_ENUMV( PENTA_15 ):
+      case CGNS_ENUMV( PENTA_18 ):
+      case CGNS_ENUMV( PENTA_24 ):
+      case CGNS_ENUMV( PENTA_33 ):
+      case CGNS_ENUMV( PENTA_38 ):
+      case CGNS_ENUMV( PENTA_40 ):
+      case CGNS_ENUMV( PENTA_66 ):
+      case CGNS_ENUMV( PENTA_75 ): *basic = CGNS_ENUMV( PENTA_6 );break;
+      case CGNS_ENUMV( HEXA_8 ):
+      case CGNS_ENUMV( HEXA_20 ):
+      case CGNS_ENUMV( HEXA_27 ):
+      case CGNS_ENUMV( HEXA_32 ):
+      case CGNS_ENUMV( HEXA_44 ):
+      case CGNS_ENUMV( HEXA_56 ):
+      case CGNS_ENUMV( HEXA_64 ):
+      case CGNS_ENUMV( HEXA_98 ):
+      case CGNS_ENUMV( HEXA_125 ): *basic = CGNS_ENUMV( HEXA_8 );break;
+    }
+    
     return CG_OK;
 }
 

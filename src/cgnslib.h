@@ -903,28 +903,45 @@ CGNSDLL int cg_multifam_write(const char *name, const char *family);
  *                     (CPEX 045)                                        *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_element_interpolation_read(int fn, int bn, int fam, int en , 
-                                          ElementType_t* et, double *pu, double *pv, double *pw);
+CGNSDLL int cg_element_interpolation_read(int fn, int bn, int fam, int en , char * node_name,
+                                          CGNS_ENUMT(ElementType_t)* et);
+CGNSDLL int cg_element_interpolation_points_read(int fn, int bn, int fam, int en , 
+                                           double *pu, double *pv, double *pw);
+
 CGNSDLL int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne);
 
-CGNSDLL int cg_element_interpolation_write(int fn, int bn, int fam, int *en , 
-                                           ElementType_t et, double *pu, double *pv, double *pw);
+CGNSDLL int cg_element_lagrange_interpolation_count(int fn, int bn, int fam, 
+                                                    CGNS_ENUMT(ElementType_t) t, int *cnt);
+
+CGNSDLL int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_name,
+                                           CGNS_ENUMT(ElementType_t) et, int *en);
+
+CGNSDLL int cg_element_interpolation_points_write(int fn, int bn, int fam, int en , 
+                                           double *pu, double *pv, double *pw);
+
+CGNSDLL int cg_element_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t, int *sz);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write SolutionInterpolation_t Nodes                     *
  *                     (CPEX 045)                                        *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL int cg_solution_interpolation_type_read(int fn, int bn, int fam, int sn , 
-                                                ElementType_t* et, int *os, int *ot, InterpolationType_t *it);
+CGNSDLL int cg_solution_interpolation_read(int fn, int bn, int fam, int sn , char * node_name,
+                                          CGNS_ENUMT(ElementType_t)* et, int *os, int *ot, CGNS_ENUMT(InterpolationType_t) *it);
 CGNSDLL int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn , 
                                                   double *pu, double *pv, double *pw, double *pt);
 CGNSDLL int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns);
 
-CGNSDLL int cg_solution_interpolation_type_write(int fn, int bn, int fam, int *sn , 
-                                                 ElementType_t et, int os, int ot, InterpolationType_t it);
-CGNSDLL int cg_solution_interpolation_points_write(int fn, int bn, int fam, int *sn , 
+CGNSDLL int cg_solution_lagrange_interpolation_count(int fn, int bn, int fam, CGNS_ENUMT(ElementType_t) t, 
+                                                     int os, int ot, int *cnt);
+
+CGNSDLL int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_name,
+                                            CGNS_ENUMT(ElementType_t) et, int os, int ot, CGNS_ENUMT(InterpolationType_t) it, int *sn );
+CGNSDLL int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn, 
                                                    double *pu, double *pv, double *pw, double *pt);
+
+CGNSDLL int cg_solution_lagrange_interpolation_size(CGNS_ENUMT(ElementType_t) t, int os, int ot, int *sz);
+
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FamilyBC_t Nodes                                  *
@@ -1015,6 +1032,9 @@ CGNSDLL int cg_poly_section_write(int file_number, int B, int Z,
 CGNSDLL int cg_parent_data_write(int file_number, int B, int Z, int S,
 	const cgsize_t * parent_data);
 CGNSDLL int cg_npe( CGNS_ENUMT(ElementType_t) type, int *npe);
+CGNSDLL int cg_npe_ho( CGNS_ENUMT(ElementType_t) basicType, int order, int *npe);
+CGNSDLL int cg_element_dimension( CGNS_ENUMT(ElementType_t) type, int *dim);
+CGNSDLL int cg_element_basic_element_type( CGNS_ENUMT(ElementType_t) type, CGNS_ENUMT(ElementType_t) *basic);
 CGNSDLL int cg_ElementDataSize(int file_number, int B, int Z, int S,
 	cgsize_t *ElementDataSize);
 
@@ -1095,6 +1115,11 @@ CGNSDLL int cg_field_general_write(int fn, int B, int Z, int S,
         CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t *m_dims,
         const cgsize_t *m_rmin, const cgsize_t *m_rmax,
         const void *field_ptr, int *F);
+
+/* (CPEX 045) */
+CGNSDLL int cg_field_high_order_write(int fn,int B,int Z,int S,
+                          CGNS_ENUMT(DataType_t) type, const char * fieldname,
+                            const int count, const void * field_ptr, int *F);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write ZoneSubRegion_t Nodes                             *

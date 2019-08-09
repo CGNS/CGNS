@@ -688,6 +688,7 @@ typedef struct {            /* FlowSolution_t node          */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
     /* CPEX 045 */
+    int isOrderDefined;     /* Flag wich defines if spatialOrder or temporalOrder are defined*/
     int spatialOrder;       /* Spatial order of the solution        */
     int temporalOrder;      /* temporal order of the solution       */
 } cgns_sol;
@@ -880,12 +881,14 @@ typedef struct {            /* FamilyBC_t node          */
 
 /* CPEX 045 */
 typedef struct {                    /* ElementInterpolation_t Node */
+    char_33 name;                   /* name of ADF node         */
     double id;                      /* ADF ID number (address) of node      */
     CGNS_ENUMT(ElementType_t) type; /* type of the HO Element this interpolation refers to*/
     cgns_array *lagrangePts;        /* ptrs to in-mem. copy of lagrange points */
 } cgns_elementInterpolation;
 
 typedef struct {                    /* SolutionInterpolation_t Node */
+    char_33 name;                   /* name of ADF node         */
     double id;                      /* ADF ID number (address) of node      */
     CGNS_ENUMT(ElementType_t) type; /* type of the HO Element this interpolation refers to*/
     int spatialorder;               /* Order of the spatial interpolation */

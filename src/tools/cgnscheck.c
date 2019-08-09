@@ -4554,6 +4554,7 @@ static void check_solution (int ns)
     char name[33];
     int n, nf, id, ierr, rind[6];
     int ndim;
+    int os,ot;
     cgsize_t datasize, size, dims[12];
     int *punits, units[9], dataclass;
     CGNS_ENUMT(DataType_t) datatype;
@@ -4657,6 +4658,20 @@ static void check_solution (int ns)
     /* user data */
 
     check_user_data (dataclass, punits, 4);
+    
+    /* Interpolation Order */
+    ierr = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
+    if (ierr == CG_ERROR)
+    {
+        error_exit("cg_sol_interpolation_order_read");
+    }
+    if (ierr == CG_OK)
+    {
+        printf ("    checking solution Interpolation Order\n");
+        printf ("        Spatial  Order : %d\n",os);
+        printf ("        Temporal Order : %d\n",ot);
+    }
+    
 }
 
 /*-----------------------------------------------------------------------*/
@@ -5557,8 +5572,11 @@ static void check_family (int fam)
     char famname[33], name[33], cad[33], *filename;
     int ierr, i, n, nbc, ngeo, nparts;
     CGNS_ENUMT(BCType_t) bctype;
+    CGNS_ENUMT(ElementType_t) etype;
+    CGNS_ENUMT(InterpolationType_t) it;
     int nds, dirichlet, neumann;
     float point[3], vector[3];
+    int ninterp, os, ot;
 
     if (cg_family_read (cgnsfn, cgnsbase, fam, famname, &nbc, &ngeo))
         error_exit("cg_family_read");
@@ -5642,8 +5660,48 @@ static void check_family (int fam)
         fflush (stdout);
         check_rotating (point, vector, BaseClass, pBaseUnits, 4);
     }
-
+    
     check_user_data (BaseClass, pBaseUnits, 2);
+    
+    if (cg_nelement_interpolation_read (cgnsfn, cgnsbase, fam, &ninterp))
+        error_exit("cg_nelement_interpolation_read");
+    
+    if (verbose) printf ("  Number ElementInterpolation=%d\n", ninterp);
+    for (n = 1; n <= ninterp; n++) {
+        if (cg_element_interpolation_read (cgnsfn, cgnsbase, fam, n, name, &etype) )
+          error_exit("cg_element_interpolation_read");
+        if (verbose) {
+            printf ("    ElementInterpolation Name=\"%s\"\n", name);
+            printf ("    ElementInterpolation type=\"%s\"\n", cg_ElementTypeName(etype));
+        }
+        ierr = cg_element_interpolation_points_read(cgnsfn, cgnsbase, fam, n, NULL,NULL,NULL);
+        if (ierr == CG_OK && verbose) 
+            printf ("    ElementInterpolation Lagrange Points Defined \n");
+        else if (ierr == CG_ERROR)
+          error_exit("cg_element_interpolation_points_read");
+    }
+    
+    if (cg_nsolution_interpolation_read (cgnsfn, cgnsbase, fam, &ninterp))
+        error_exit("cg_nsolution_interpolation_read");
+    
+    if (verbose) printf ("  Number SolutionInterpolation=%d\n", ninterp);
+    for (n = 1; n <= ninterp; n++) {
+        if (cg_solution_interpolation_read (cgnsfn, cgnsbase, fam, n, name, &etype, &os, &ot,&it) )
+          error_exit("cg_solution_interpolation_read");
+        if (verbose) {
+            printf ("    SolutionInterpolation Name=\"%s\"\n", name);
+            printf ("    SolutionInterpolation type=\"%s\"\n", cg_ElementTypeName(etype));
+            printf ("    SolutionInterpolation spatialOrder=%d\n", os);
+            printf ("    SolutionInterpolation temporalOrder=%d\n", ot);
+            printf ("    SolutionInterpolation InterpolationType=\"%s\"\n", cg_InterpolationTypeName(it));
+        }
+        ierr = cg_solution_interpolation_points_read(cgnsfn, cgnsbase, fam, n, NULL,NULL,NULL,NULL);
+        if (ierr == CG_OK && verbose) 
+            printf ("    SolutionInterpolation Lagrange Points Defined \n");
+        else if (ierr == CG_ERROR)
+          error_exit("cg_solution_interpolation_points_read");
+    }
+
 }
 
 /*-----------------------------------------------------------------------*/
