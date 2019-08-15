@@ -52,7 +52,7 @@ char hdf5_access[64] = "NATIVE";
 #endif
 #if CG_BUILD_PARALLEL
 #include <mpi.h>
-MPI_Comm pcg_mpi_comm=MPI_COMM_WORLD;
+MPI_Comm pcg_mpi_comm=MPI_COMM_NULL;
 int pcg_mpi_comm_size;
 int pcg_mpi_comm_rank;
 int pcg_mpi_initialized;
