@@ -60,7 +60,7 @@ extern hid_t default_pio_mode;
 static int CompressData = -1;
 
 #if CG_BUILD_PARALLEL
-static MPI_Comm ParallelMPICommunicator = MPI_COMM_WORLD;
+static MPI_Comm ParallelMPICommunicator = MPI_COMM_NULL;
 #endif
 
 #define TO_UPPER( c ) ((islower(c))?(toupper(c)):(c))
