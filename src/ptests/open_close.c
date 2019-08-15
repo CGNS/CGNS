@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
 
         cgp_mpi_comm(MPI_COMM_WORLD);
 
-#if 1 //fails
+#if 0 //fails
 #ifdef DEBUG_MPI
         printf("[%d]cgp_open\n",comm_rank);
         fflush(stdout);
