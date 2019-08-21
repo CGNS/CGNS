@@ -58,15 +58,13 @@ int main(int argc, char* argv[]) {
         MPI_Barrier(MPI_COMM_WORLD);
 
         cgp_mpi_comm(MPI_COMM_SELF);
-        // fails with 3.4.0
-        if(comm_rank == 0) {
 
+        if(comm_rank == 0) {
           if (cgp_open("open_close.cgns", CG_MODE_READ, &fn))
             cg_error_exit();
 
           if (cgp_close(fn))
             cg_error_exit();
-
         }
 
         cgp_mpi_comm(MPI_COMM_WORLD);
@@ -74,7 +72,7 @@ int main(int argc, char* argv[]) {
 #ifdef DEBUG_MPI
         printf("[%d]cgp_open\n",comm_rank);
         fflush(stdout);
-	if (cgp_open("open_close.cgns", CG_MODE_MODIFY, &fn))
+	if (cgp_open("open_close_p.cgns", CG_MODE_WRITE, &fn))
 	    cgp_error_exit();
         printf("[%d]cgp_close\n",comm_rank);
         fflush(stdout);
@@ -82,7 +80,7 @@ int main(int argc, char* argv[]) {
 	    cgp_error_exit();
 #else
 
-	if (cgp_open("open_close.cgns", CG_MODE_MODIFY, &fn))
+	if (cgp_open("open_close_p.cgns", CG_MODE_WRITE, &fn))
 	    cgp_error_exit();
 	if (cgp_close(fn))
 	    cgp_error_exit();
