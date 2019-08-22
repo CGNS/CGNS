@@ -344,16 +344,12 @@ MACRO (CHECK_HDF5_FEATURE FUNCTION CODE VARIABLE)
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/test_HDF.c
         "${CODE}"
     )
-IF (HDF5_LIBRARIES)
-    SET (CHECK_FUNCTION_EXISTS_ADD_LIBRARIES "-DLINK_LIBRARIES:STRING=${HDF5_LIBRARIES}")
-ELSE (HDF5_LIBRARIES)
-    SET (CHECK_FUNCTION_EXISTS_ADD_LIBRARIES)
-ENDIF (HDF5_LIBRARIES)
 SET (CHECK_FUNCTION_EXISTS_ADD_INCLUDE "-DINCLUDE_DIRECTORIES:STRING=${HDF5_INCLUDE_DIR}")
     TRY_COMPILE (${VARIABLE}
         ${CMAKE_BINARY_DIR}
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/test_HDF.c
-        CMAKE_FLAGS "${CHECK_FUNCTION_EXISTS_ADD_INCLUDE}" "${CHECK_FUNCTION_EXISTS_ADD_LIBRARIES}"
+        LINK_LIBRARIES ${HDF5_LIBRARY}
+        CMAKE_FLAGS "${CHECK_FUNCTION_EXISTS_ADD_INCLUDE}"
         OUTPUT_VARIABLE OUTPUT
     )
 
@@ -562,11 +558,14 @@ endif (CGNS_ENABLE_FORTRAN)
 # Needed to work around a CMake > 3.8 bug on Windows with MSVS and Intel Fortran
 set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
 
-
 # Build a shared version of the library
 if(CGNS_BUILD_SHARED)
   mark_as_advanced(CLEAR CGNS_USE_SHARED)
-  add_library(cgns_shared SHARED ${cgns_FILES})
+  if (CGNS_ENABLE_FORTRAN)
+    add_library(cgns_shared SHARED ${cgns_FILES} cgns_f.F90)
+  else (CGNS_ENABLE_FORTRAN)
+    add_library(cgns_shared SHARED ${cgns_FILES})
+  endif (CGNS_ENABLE_FORTRAN)
   # under windows we need to define BUILD_DLL
   # and link with the HDF5 libraries to build a dll
   if (WIN32 OR CYGWIN)
