@@ -709,7 +709,7 @@ int cgio_open_file (const char *filename, int file_mode,
 {
     int n, ierr;
     int type;
-    char *fmode;
+    char *fmode, errorMsg[ADF_MAX_ERROR_STR_LENGTH+1];
     double rootid;
 
     *cgio_num = 0;

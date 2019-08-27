@@ -1598,7 +1598,8 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                     }
                     for (n=0; n<Idim; n++) {
                         if (sol[0][s].field[z].dim_vals[n]!=DataSize[n]) {
-                            cgi_error("Invalid field array dimension");
+                            cgi_error("Invalid field array size for dimension %d. Given %ld, requested %ld",
+                              n, sol[0][s].field[z].dim_vals[n], DataSize[n]);
                             return CG_ERROR;
                         }
                     }

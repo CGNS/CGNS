@@ -4685,6 +4685,13 @@ static void check_solution (int ns)
     if (ierr == CG_OK)
     {
         printf ("    checking solution Interpolation Order\n");
+        if (location != CGNS_ENUMV(ElementBased))
+        {
+            /* Should never happend due to protections in the cgi_read()->cgi_read_sol() */ 
+            /* It has to fail during the file opening process */
+            error( "solution Interpolation Order has to be attached to ElementBased Gridlocation." );
+        }
+        
         printf ("        Spatial  Order : %d\n",os);
         printf ("        Temporal Order : %d\n",ot);
     }
