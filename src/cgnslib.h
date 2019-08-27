@@ -277,10 +277,11 @@ typedef enum {
   CGNS_ENUMV( IFaceCenter ) =5,
   CGNS_ENUMV( JFaceCenter ) =6,
   CGNS_ENUMV( KFaceCenter ) =7,
-  CGNS_ENUMV( EdgeCenter ) =8
+  CGNS_ENUMV( EdgeCenter ) =8,
+  CGNS_ENUMV( ElementBased ) =9
 } CGNS_ENUMT( GridLocation_t );
 
-#define NofValidGridLocation 9
+#define NofValidGridLocation 10
 
 extern CGNSDLL const char * GridLocationName[NofValidGridLocation];
 
@@ -1115,11 +1116,6 @@ CGNSDLL int cg_field_general_write(int fn, int B, int Z, int S,
         CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t *m_dims,
         const cgsize_t *m_rmin, const cgsize_t *m_rmax,
         const void *field_ptr, int *F);
-
-/* (CPEX 045) */
-CGNSDLL int cg_field_high_order_write(int fn,int B,int Z,int S,
-                          CGNS_ENUMT(DataType_t) type, const char * fieldname,
-                            const int count, const void * field_ptr, int *F);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write ZoneSubRegion_t Nodes                             *

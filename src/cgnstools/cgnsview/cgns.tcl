@@ -300,7 +300,7 @@ array set CGNSdataValues {
       NSTurbulent NSLaminarIncompressible NSTurbulentIncompressible}
   GridConnectivityType_t {Null UserDefined Overset Abutting Abutting1to1}
   GridLocation_t {Null UserDefined Vertex CellCenter FaceCenter \
-      IFaceCenter JFaceCenter KFaceCenter EdgeCenter}
+      IFaceCenter JFaceCenter KFaceCenter EdgeCenter ElementBased}
   LengthUnits_t {Null UserDefined Meter Centimeter Millimeter Foot Inch}
   MassUnits_t {Null UserDefined Kilogram Gram Slug PoundMass}
   RigidGridMotion_t {Null UserDefined ConstantRate VariableRate}
@@ -520,7 +520,7 @@ Constant or Frozen}}
       C1 2 {32,NumberOfSteps} {pointers to GridCoordinates_t nodes}}
   GridLocation_t {GridLocation GridLocation_t {0,1} C1 1 {length of string} \
       {one of: Null, UserDefined, Vertex, CellCenter, FaceCenter,\
-      IFaceCenter, JFaceCenter, KFaceCenter or EdgeCenter}}
+      IFaceCenter, JFaceCenter, KFaceCenter or EdgeCenter ElementBased}}
   GridVelocity {{user defined} DataArray_t {0,N} {R4 or R8} 1 \
       NumberOfVertices {component of grid velocity. Data-name identifiers\
       are: GridVelocityX, GridVelocityY, GridVelocityZ, GridVelocityR,\

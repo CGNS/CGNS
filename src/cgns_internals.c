@@ -49,6 +49,7 @@ extern int HDF5storage_type;
 int Idim;           /* current IndexDimension          */
 int Cdim;           /* current CellDimension           */
 int Pdim;           /* current PhysicalDimension           */
+cgns_zone *CurrentZonePtr; /* current Zone structure pointer */
 cgsize_t CurrentDim[9]; /* current vertex, cell & bnd zone size*/
 CGNS_ENUMT( ZoneType_t ) CurrentZoneType;     /* current zone type               */
 int NumberOfSteps;      /* Number of steps             */
@@ -90,6 +91,9 @@ int cgi_read()
 {
     int b;
     double *id;
+    
+    /* initialize Global Pointers */
+    CurrentZonePtr = NULL;
 
      /* get number of CGNSBase_t nodes and their ID */
     if (cgi_get_nodes(cg->rootid, "CGNSBase_t", &cg->nbases, &id)) return CG_ERROR;
@@ -330,6 +334,7 @@ int cgi_read_zone(cgns_zone *zone)
      /* save Global Variables */
     for (n=0; n<Idim*3; n++) CurrentDim[n] = zone->nijk[n];
     CurrentZoneType = zone->type;
+    CurrentZonePtr  = zone;
 
      /* verify data */
     if (zone->type==CGNS_ENUMV(Structured)) {
@@ -1539,14 +1544,26 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
      /* GridLocation */
         if (cgi_read_location(sol[0][s].id, sol[0][s].name,
             &sol[0][s].location)) return CG_ERROR;
-
+        
+     /* CPEX 045 */
+     /* read spatial and temporal orders IndexArray_t */
+        if (cgi_read_solution_order(&sol[0][s])) return CG_ERROR;
+        
      /* Rind Planes */
         if (cgi_read_rind(sol[0][s].id, &sol[0][s].rind_planes)) return CG_ERROR;
-
-     /* Determine data size */
-        if (cgi_datasize(Idim, CurrentDim, sol[0][s].location,
-                sol[0][s].rind_planes, DataSize)) return CG_ERROR;
-
+        
+     /* CPEX 045 */
+     /* Determine data size (HO solution case) */
+        if ( sol[0][s].location == CGNS_ENUMV(ElementBased) ) {
+            if (cgi_ho_datasize(CurrentZonePtr,sol[0][s].spatialOrder,
+                                sol[0][s].temporalOrder, DataSize) ) return CG_ERROR;
+        }
+        else {
+     /* Determine data size (1st Order solution) */
+            if (cgi_datasize(Idim, CurrentDim, sol[0][s].location,
+                    sol[0][s].rind_planes, DataSize)) return CG_ERROR;     
+        }
+        
      /* check for PointList/PointRange */
         if (cgi_read_one_ptset(linked, sol[0][s].id,
                 &sol[0][s].ptset)) return CG_ERROR;
@@ -1612,49 +1629,61 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
         if (cgi_read_user_data(linked, sol[0][s].id, &sol[0][s].nuser_data,
             &sol[0][s].user_data)) return CG_ERROR;
         
-     /* CPEX 045 */
-     /* spatial and temporal orders IndexArray_t */
-        int nIA;
-        if (cgi_get_nodes(sol[0][s].id, "IndexArray_t", &nIA, &idf)) return CG_ERROR;
-        if (nIA > 0)
-        {
-            char_33 temp_name,data_type;
-            for (n=0;n<nIA;n++) {
-                /// \todo ...
-                if (cgio_get_name(cg->cgio, idf[n], temp_name)) {
-                    cg_io_error("cgio_get_name");
-                    return CG_ERROR;
-                }
-          
-                if (cgi_read_node(idf[n],temp_name,data_type,&ndim,dim_vals,&vdata,READ_DATA)) return CG_ERROR;
-                /// \todo ....
-                if (strcmp(temp_name, "InterpolationOrders")==0) {
-                    
-                    if (strcmp(data_type,"I4")) return CG_ERROR;
-                    
-                    /* Check dimension */
-                    if (ndim != 1) return CG_ERROR;
-                    if (dim_vals[0] != 2) return CG_ERROR;
-                    
-                    edata = (int*)vdata;
-                    sol[0][s].isOrderDefined= 1;
-                    sol[0][s].spatialOrder  = edata[0];
-                    sol[0][s].temporalOrder = edata[1];
-                }
-            }
-            CGNS_FREE(idf);
-        }
-        else
-        {
-            // Set default values
-            sol[0][s].isOrderDefined= 0;
-            sol[0][s].spatialOrder  = 1;
-            sol[0][s].temporalOrder = 0;
-        }
     }
 
     CGNS_FREE(id);
 
+    return CG_OK;
+}
+
+
+/* CPEX 045 */
+int cgi_read_solution_order(cgns_sol *sol)
+{
+    /// \todo ...
+    double *idf;
+    int n, nIA, ndim;
+    cgsize_t dim_vals[12];
+    void *vdata;
+    int *edata;
+    char_33 temp_name,data_type;
+    
+    /* spatial and temporal orders IndexArray_t */
+    if (cgi_get_nodes(sol->id, "IndexArray_t", &nIA, &idf)) return CG_ERROR;
+    
+    /* Check ZoneType and existance of Orders node */
+    if (nIA > 0 && ( CurrentZoneType ==  CGNS_ENUMV( Unstructured ) ) )
+    {
+        for (n=0;n<nIA;n++) {
+            if (cgio_get_name(cg->cgio, idf[n], temp_name)) {
+                cg_io_error("cgio_get_name");
+                return CG_ERROR;
+            }
+      
+            if (cgi_read_node(idf[n],temp_name,data_type,&ndim,dim_vals,&vdata,READ_DATA)) return CG_ERROR;
+            if (strcmp(temp_name, "InterpolationOrders")==0) {
+                
+                if (strcmp(data_type,"I4")) return CG_ERROR;
+                
+                /* Check dimension */
+                if (ndim != 1) return CG_ERROR;
+                if (dim_vals[0] != 2) return CG_ERROR;
+                
+                edata = (int*)vdata;
+                sol->isOrderDefined= 1;
+                sol->spatialOrder  = edata[0];
+                sol->temporalOrder = edata[1];
+            }
+        }
+        CGNS_FREE(idf);
+    }
+    else
+    {
+        // Set default values
+        sol->isOrderDefined= 0;
+        sol->spatialOrder  = 1;
+        sol->temporalOrder = 0;
+    }
     return CG_OK;
 }
 
@@ -5818,10 +5847,46 @@ int cgi_datasize(int Idim, cgsize_t *CurrentDim,
                 (location == CGNS_ENUMV( JFaceCenter ) && j!=1) ||
                 (location == CGNS_ENUMV( KFaceCenter ) && j!=2)) DataSize[j]--;
         }
-    } else {
+    } else if (location==CGNS_ENUMV(ElementBased)) {
+        cgi_error("Internal error --> should never call cgi_datasize with ElementBased solution");
+        return CG_ERROR;
+    }
+    else {
         cgi_error("Location not yet supported");
         return CG_ERROR;
     }
+    return CG_OK;
+}
+
+int cgi_ho_datasize(const cgns_zone *zone, int spatialOrder, int temporalOrder, cgsize_t *DataSize)
+{
+    /// \todo ...
+    int i,j,npe, ne;
+    
+    if (!zone) return CG_ERROR;
+    
+    if (!zone->nsections) return CG_ERROR;
+    
+    /* Check ZoneType */
+    if ( CurrentZoneType != CGNS_ENUMV( Unstructured) ) return CG_ERROR;
+    
+    for (i = 0 ; i < Idim ; i++) DataSize[i] = 0;
+    
+    // Loop over Sections
+    for (i = 0 ; i < zone->nsections ; i++)
+    {
+        cgns_section *section = &(zone->section[i]);
+        // Get ElementType_t
+        CGNS_ENUMT(ElementType_t) type = section->el_type;
+        // Get element count
+        ne = section->range[1] - section->range[0] + 1;
+        // Get number of nodes for this element type based solution
+        cg_npe_ho(type,spatialOrder,&npe);
+        
+        for (j = 0 ; j < Idim ; j++) DataSize[j] = DataSize[j] + ne*npe;
+    }
+    // Temporal Order
+    for (j = 0 ; j < Idim ; j++) DataSize[j] = DataSize[j] * (temporalOrder+1);
     return CG_OK;
 }
 
@@ -5847,7 +5912,7 @@ int cgi_check_dimensions(int ndim, cglong_t *dims)
 int cgi_check_location(int dim, CGNS_ENUMT(ZoneType_t) type,
 	CGNS_ENUMT(GridLocation_t) loc)
 {
-    if (loc == CGNS_ENUMV(Vertex) || loc == CGNS_ENUMV(CellCenter))
+    if (loc == CGNS_ENUMV(Vertex) || loc == CGNS_ENUMV(CellCenter) || loc == CGNS_ENUMV(ElementBased))
         return CG_OK;
     if (loc == CGNS_ENUMV(EdgeCenter)) {
         if (dim >= 2) return CG_OK;

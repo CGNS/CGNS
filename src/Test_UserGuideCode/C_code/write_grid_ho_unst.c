@@ -150,6 +150,11 @@ do HO QUAD elements (NOT following standard SIDS ordering)
         fprintf(stderr,"ERROR: an error occured during family writing !");
         return -1;
     }
+    
+/* set FamilyName for the Zone (not mandatory) */
+    cg_goto(index_file,index_base, "Zone_t", index_zone, NULL);
+    cg_famname_write ("family");
+    
 /* set ElementInterpolation Node: */
 /* ---------------------------------------------------------- */
     error = cg_element_interpolation_write(index_file,index_base,index_family,"QuadInterpolation",type,&index_interpolation);

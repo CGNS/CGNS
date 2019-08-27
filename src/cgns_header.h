@@ -1122,6 +1122,7 @@ int cgi_read_integral(int in_link, double parent_id, int *nintegrals,
 int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                       cgns_discrete **discrete);
 int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol);
+int cgi_read_solution_order(cgns_sol *sol);
 int cgi_read_zcoor(int in_link, double parent_id, int *nzcoor,
                    cgns_zcoor **zcoor);
 int cgi_read_zconn(int in_link, double parent_id, int *nzconn, cgns_zconn **zconn);
@@ -1157,6 +1158,10 @@ int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation
 CGNSDLL int cgi_datasize(int Idim, cgsize_t *CurrentDim,
 			 CGNS_ENUMT(GridLocation_t) location,
 			 int *rind_planes, cgsize_t *DataSize);
+
+/* CPEX 045 */
+int cgi_ho_datasize(const cgns_zone *zone, int spatialOrder, int temporalOrder, 
+                    cgsize_t *DataSize);
 
 int cgi_read_node(double node_id, char_33 name, char_33 data_type,
                   int *ndim, cgsize_t *dim_vals, void **data, int data_flag);

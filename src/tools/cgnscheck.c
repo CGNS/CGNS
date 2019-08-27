@@ -1679,6 +1679,28 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
 
 /*=======================================================================*/
 
+static cgsize_t get_ho_data_size (ZONE *z, int spatialOrder, int temporalOrder)
+{
+    int n, i;
+    cgsize_t datasize = 0;
+    
+    /// \todo ....
+    
+    for (i = 0 ; i < z->nsets ; i++)
+    {
+      ELEMSET *set = &z->sets[i];
+      
+      cg_npe_ho(set->type,spatialOrder,&n);
+      
+      datasize = datasize + set->ne * n;
+    }
+    datasize = datasize * (temporalOrder+1);
+    
+    return datasize;
+}
+
+/*=======================================================================*/
+
 static int read_dataclass (void)
 {
     int ierr;
@@ -3086,6 +3108,10 @@ static CGNS_ENUMT(GridLocation_t) check_location (ZONE *z, int is_boco,
                 warning (2, "use [IJK]FaceCenter location rather"
                     " than CellCenter");
             }
+        case CGNS_ENUMV(ElementBased):
+            if (z->type != CGNS_ENUMV(Unstructured)) {
+                error ("ElementBased location is compatible only with Unstructured grids");
+            }
             return location;
         default:
             error ("invalid grid location");
@@ -4266,7 +4292,7 @@ static void check_connectivity (int nzc)
 static void check_arbitrary_motion (int na)
 {
     char name[33];
-    int ierr, n, nd, id, rind[6];
+    int ierr, n, nd, ns, os, ot, id, rind[6];
     int ndim;
     cgsize_t datasize, size, dims[12];
     int *punits, units[9], dataclass;
@@ -4344,8 +4370,17 @@ static void check_arbitrary_motion (int na)
     if (punits == NULL) punits = z->punits;
 
     /* get grid data */
-
-    datasize = get_data_size (z, location, rind);
+    
+    /* get solution data size */
+    if (location == CGNS_ENUMV(ElementBased))
+    {
+      /* Interpolation Order */
+      ierr = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
+      if (ierr == CG_ERROR) error_exit("check_arbitrary_motion->cg_sol_interpolation_order_read");
+      datasize = get_ho_data_size(z,os,ot);
+    }
+    else
+      datasize = get_data_size (z, location, rind);
 
     if (cg_narrays (&nd)) error_exit("cg_narrays");
     if (nd == 0 && type != CGNS_ENUMV(DeformingGrid))
@@ -4451,7 +4486,7 @@ static void check_rigid_motion (int nr)
 static void check_discrete (int ndis)
 {
     char name[33];
-    int n, nd, id, ierr, rind[6];
+    int n, nd, ns, os, ot, id, ierr, rind[6];
     int ndim;
     cgsize_t datasize, size, dims[12];
     int *punits, units[9], dataclass;
@@ -4524,8 +4559,16 @@ static void check_discrete (int ndis)
     if (punits == NULL) punits = z->punits;
 
     /* get discrete data */
-
-    datasize = get_data_size (z, location, rind);
+/* get solution data size */
+    if (location == CGNS_ENUMV(ElementBased))
+    {
+      /* Interpolation Order */
+      ierr = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
+      if (ierr == CG_ERROR) error_exit("check_discrete->cg_sol_interpolation_order_read");
+      datasize = get_ho_data_size(z,os,ot);
+    }
+    else
+      datasize = get_data_size (z, location, rind);
 
     if (cg_narrays (&nd)) error_exit("cg_narrays");
     if (nd == 0)
@@ -4555,6 +4598,7 @@ static void check_solution (int ns)
     int n, nf, id, ierr, rind[6];
     int ndim;
     int os,ot;
+    cgsize_t ds[3];
     cgsize_t datasize, size, dims[12];
     int *punits, units[9], dataclass;
     CGNS_ENUMT(DataType_t) datatype;
@@ -4630,10 +4674,28 @@ static void check_solution (int ns)
     }
     if (dataclass < 0) dataclass = z->dataclass;
     if (punits == NULL) punits = z->punits;
-
+    
+    
+    /* Interpolation Order */
+    ierr = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
+    if (ierr == CG_ERROR)
+    {
+        error_exit("cg_sol_interpolation_order_read");
+    }
+    if (ierr == CG_OK)
+    {
+        printf ("    checking solution Interpolation Order\n");
+        printf ("        Spatial  Order : %d\n",os);
+        printf ("        Temporal Order : %d\n",ot);
+    }
+    
     /* get solution data size */
-
-    datasize = get_data_size (z, location, rind);
+    if (location == CGNS_ENUMV(ElementBased))
+    {
+      datasize = get_ho_data_size(z,os,ot);
+    }
+    else
+      datasize = get_data_size (z, location, rind);
 
     /* read solution data as arrays to get size */
 
@@ -4658,19 +4720,6 @@ static void check_solution (int ns)
     /* user data */
 
     check_user_data (dataclass, punits, 4);
-    
-    /* Interpolation Order */
-    ierr = cg_sol_interpolation_order_read(cgnsfn, cgnsbase, cgnszone, ns, &os, &ot);
-    if (ierr == CG_ERROR)
-    {
-        error_exit("cg_sol_interpolation_order_read");
-    }
-    if (ierr == CG_OK)
-    {
-        printf ("    checking solution Interpolation Order\n");
-        printf ("        Spatial  Order : %d\n",os);
-        printf ("        Temporal Order : %d\n",ot);
-    }
     
 }
 

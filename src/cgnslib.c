@@ -147,7 +147,7 @@ const char * DataClassName[NofValidDataClass] =
 const char * GridLocationName[NofValidGridLocation] =
     {"Null", "UserDefined",
      "Vertex", "CellCenter", "FaceCenter", "IFaceCenter",
-     "JFaceCenter", "KFaceCenter", "EdgeCenter"
+     "JFaceCenter", "KFaceCenter", "EdgeCenter", "ElementBased"
     };
 const char * BCDataTypeName[NofValidBCDataTypes] =
     {"Null", "UserDefined",
@@ -4619,7 +4619,8 @@ int cg_sol_write(int file_number, int B, int Z, const char * solname,
         location != CGNS_ENUMV(CellCenter) &&
         location != CGNS_ENUMV(IFaceCenter) &&
         location != CGNS_ENUMV(JFaceCenter) &&
-        location != CGNS_ENUMV(KFaceCenter)) {
+        location != CGNS_ENUMV(KFaceCenter) &&
+        location != CGNS_ENUMV(ElementBased)) {
         cgi_error("Given grid location not supported for FlowSolution_t");
         return CG_ERROR;
     }
@@ -4681,6 +4682,11 @@ int cg_sol_write(int file_number, int B, int Z, const char * solname,
     memset(sol, 0, sizeof(cgns_sol));
     strcpy(sol->name,solname);
     sol->location = location;
+    
+    /* initialize solution order */
+    sol->isOrderDefined = 0;
+    sol->spatialOrder  = 1;
+    sol->temporalOrder = 0;
 
     index_dim = zone->index_dim;
     sol->rind_planes = (int *)malloc(index_dim*2*sizeof(int));
@@ -4857,10 +4863,10 @@ int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
     
     if (sol->isOrderDefined == 0) return CG_NODE_NOT_FOUND;
     
-    if (sol->location != CGNS_ENUMV( CellCenter ))
+    if (sol->location != CGNS_ENUMV( ElementBased ))
     {
-        cgi_warning("solution interpolation order is supposed to be "
-                    "associated with CellCentered solution.");
+        cgi_error("solution interpolation order is supposed to be "
+                    "associated with ElementBased solution.");
     }
     
     *spatialOrder  = sol->spatialOrder; 
@@ -4887,10 +4893,11 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
     sol = cgi_get_sol(cg, B, Z, S);
     if (sol==0) return CG_ERROR;
     
-    if (sol->location != CGNS_ENUMV( CellCenter ))
+    if (sol->location != CGNS_ENUMV( ElementBased ))
     {
-        cgi_warning("solution interpolation order is supposed to be "
-                    "associated with CellCentered solution.");
+        cgi_error("solution interpolation order is supposed to be "
+                    "associated with ElementBased solution.");
+        return CG_ERROR;
     }
     
     // Check values
@@ -5117,8 +5124,20 @@ int cg_field_write(int file_number, int B, int Z, int S,
     cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
     if (sol->ptset == NULL) {
         m_numdim = zone->index_dim;
-        if (cgi_datasize(m_numdim, zone->nijk, sol->location,
-                         sol->rind_planes, m_dimvals)) return CG_ERROR;
+        
+        /* CPEX 045 */
+        /* Determine data size (HO solution case) */
+        if ( sol->location == CGNS_ENUMV(ElementBased) ) {
+            if (cgi_ho_datasize(zone,sol->spatialOrder,
+                                sol->temporalOrder, m_dimvals) ) return CG_ERROR;
+        }
+        else {
+        /* Determine data size (1st Order solution) */
+            if (cgi_datasize(m_numdim, zone->nijk, sol->location,
+                            sol->rind_planes, m_dimvals)) return CG_ERROR;
+        }
+          
+        
     }
     else {
         m_numdim = 1;
@@ -5246,9 +5265,20 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
      /* file dimension is dependent on multidim or ptset */
     cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
     if (sol->ptset == NULL) {
-        s_numdim = zone->index_dim;
-        if (cgi_datasize(s_numdim, zone->nijk, sol->location,
+        s_numdim = zone->index_dim;     
+        
+        /* CPEX 045 */
+        /* Determine data size (HO solution case) */
+        if ( sol->location == CGNS_ENUMV(ElementBased) ) {
+            if (cgi_ho_datasize(zone,sol->spatialOrder,
+                                sol->temporalOrder, s_dimvals) ) return CG_ERROR;
+        }
+        else {
+        /* Determine data size (1st Order solution) */
+            if (cgi_datasize(s_numdim, zone->nijk, sol->location,
                 sol->rind_planes, s_dimvals)) return CG_ERROR;
+        }
+        
     } else {
         s_numdim = 1;
         s_dimvals[0] = sol->ptset->size_of_patch;
@@ -5265,66 +5295,6 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
     return status;
 }
 
-int cg_field_high_order_write(int fn,int B,int Z,int S,
-                          CGNS_ENUMT(DataType_t) type, const char * fieldname,
-                            const int count, const void * field_ptr, int *F)
-{
-    
-     /* s_ prefix is file space, m_ prefix is memory space */
-    cgns_zone *zone;
-    cgns_sol *sol;
-    int s_numdim;
-    int status;
-    int n;
-
-    HDF5storage_type = CG_CONTIGUOUS;
-    
-    /* verify input */
-    if (cgi_check_strlen(fieldname)) return CG_ERROR;
-    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble) &&
-        type != CGNS_ENUMV(Integer) && type != CGNS_ENUMV(LongInteger)) {
-        cgi_error("Invalid file data type for solution array %s: %d",
-                  fieldname, type);
-        return CG_ERROR;
-    }
-    
-    /* get memory addresses */
-    cg = cgi_get_file(fn);
-    if (cg == 0) return CG_ERROR;
-
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
-
-    zone = cgi_get_zone(cg, B, Z);
-    if (zone == 0) return CG_ERROR;
-
-     /* get memory address for solution */
-    sol = cgi_get_sol(cg, B, Z, S);
-    if (sol == 0) return CG_ERROR;
-    
-    /* file dimension is dependent on multidim or ptset */
-    cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
-    s_numdim = 1;
-    s_dimvals[0] = count;
-    
-    cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
-    cgsize_t m_rmin[CGIO_MAX_DIMENSIONS], m_rmax[CGIO_MAX_DIMENSIONS];
-    for (n = 0; n < s_numdim; n++) {   
-        s_rmin[n] = 1;
-        s_rmax[n] = s_rmin[n] + s_dimvals[n] - 1;
-        m_rmin[n] = 1;
-        m_rmax[n] = s_dimvals[n];
-    }
-    
-    status= cgi_array_general_write(sol->id, &(sol->nfields),
-                                   &(sol->field), fieldname,
-                                   cgns_rindindex, sol->rind_planes,
-                                   type, s_numdim, s_dimvals, s_rmin, s_rmax,
-                                   type, s_numdim, s_dimvals, m_rmin, m_rmax,
-                                   field_ptr, F);
-    
-    HDF5storage_type = CG_COMPACT;
-    return status;
-}
 
 /*************************************************************************\
  *      Read and write ZoneSubRegion_t Nodes                             *
@@ -12837,63 +12807,46 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
 
 int cg_npe_ho( CGNS_ENUMT(ElementType_t) basicType, int order, int *npe)
 {
+    CGNS_ENUMT(ElementType_t) tmpType;
     CGNS_ENUMT(ElementType_t) type = basicType;
     
     // Be sure to have a Basic Type
-    if (cg_element_basic_element_type(type,&basicType)) return CG_ERROR;
+    if (cg_element_basic_element_type(type,&tmpType)) return CG_ERROR;
     
-    if ( basicType == CGNS_ENUMV(BAR_2) )
+    if ( tmpType == CGNS_ENUMV(BAR_2) )
     {
-        if (order == 1) type = CGNS_ENUMV(BAR_2); 
-        if (order == 2) type = CGNS_ENUMV(BAR_3); 
-        if (order == 3) type = CGNS_ENUMV(BAR_4);
-        if (order == 4) type = CGNS_ENUMV(BAR_5);
+        (*npe) = order+1;
     }
-    if ( basicType == CGNS_ENUMV(TRI_3) )
+    else if ( tmpType == CGNS_ENUMV(TRI_3) )
     {
-        if (order == 1) type = CGNS_ENUMV(TRI_3); 
-        if (order == 2) type = CGNS_ENUMV(TRI_6); 
-        if (order == 3) type = CGNS_ENUMV(TRI_10);
-        if (order == 4) type = CGNS_ENUMV(TRI_15);
+        (*npe) = (order+1)*(order+2)/2;
     }
-    if ( basicType == CGNS_ENUMV(QUAD_4) )
+    else if ( tmpType == CGNS_ENUMV(QUAD_4) )
     {
-        if (order == 1) type = CGNS_ENUMV(QUAD_4); 
-        if (order == 2) type = CGNS_ENUMV(QUAD_9); 
-        if (order == 3) type = CGNS_ENUMV(QUAD_16);
-        if (order == 4) type = CGNS_ENUMV(QUAD_25);
+        (*npe) = (order+1)*(order+1);
     }
-    if ( basicType == CGNS_ENUMV(HEXA_8) )
+    else if ( tmpType == CGNS_ENUMV(HEXA_8) )
     {
-        if (order == 1) type = CGNS_ENUMV(HEXA_8); 
-        if (order == 2) type = CGNS_ENUMV(HEXA_27); 
-        if (order == 3) type = CGNS_ENUMV(HEXA_56);
-        if (order == 4) type = CGNS_ENUMV(HEXA_125);
+        (*npe) = (order+1)*(order+1)*(order+1);
     }
-    if ( basicType == CGNS_ENUMV(TETRA_4) )
+    else if ( tmpType == CGNS_ENUMV(TETRA_4) )
     {
-        if (order == 1) type = CGNS_ENUMV(TETRA_4); 
-        if (order == 2) type = CGNS_ENUMV(TETRA_10); 
-        if (order == 3) type = CGNS_ENUMV(TETRA_20);
-        if (order == 4) type = CGNS_ENUMV(TETRA_35);
+        (*npe) = (order+1)*(order+2)*(order+3)/6;
     }
-    if ( basicType == CGNS_ENUMV(PENTA_6) )
+    else if ( tmpType == CGNS_ENUMV(PENTA_6) )
     {
-        if (order == 1) type = CGNS_ENUMV(PENTA_6); 
-        if (order == 2) type = CGNS_ENUMV(PENTA_18); 
-        if (order == 3) type = CGNS_ENUMV(PENTA_40);
-        if (order == 4) type = CGNS_ENUMV(PENTA_75);
+        (*npe) = (order+1)*(order+1)*(order+2)/2;
     }
-    if ( basicType == CGNS_ENUMV(PYRA_5) )
+    else if ( tmpType == CGNS_ENUMV(PYRA_5) )
     {
         if (order == 1) type = CGNS_ENUMV(PYRA_5); 
-        if (order == 2) type = CGNS_ENUMV(PYRA_14); 
-        if (order == 3) type = CGNS_ENUMV(PYRA_30);
-        if (order == 4) type = CGNS_ENUMV(PYRA_55);
+        else if (order == 2) type = CGNS_ENUMV(PYRA_14);
+        else if (order == 3) type = CGNS_ENUMV(PYRA_30);
+        else if (order == 4) type = CGNS_ENUMV(PYRA_55);
+        else return CG_ERROR;
+        return cg_npe(type,npe);
     }
-    
-    // Get the corresponding node count
-    return cg_npe(type,npe);
+    return CG_OK;
 }
 
 int cg_element_dimension( CGNS_ENUMT(ElementType_t) type, int *dim)
