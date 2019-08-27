@@ -1641,7 +1641,6 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
 /* CPEX 045 */
 int cgi_read_solution_order(cgns_sol *sol)
 {
-    /// \todo ...
     double *idf;
     int n, nIA, ndim;
     cgsize_t dim_vals[12];
@@ -3941,7 +3940,6 @@ int cgi_read_rotating(int in_link, double parent_id, cgns_rotating **rotating)
 /* CPEX 045 */
 int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
 {
-    /// \todo ...
     int i, nnod,ndim;
     double *id;
     cgsize_t dim_vals[1];
@@ -4014,7 +4012,7 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
                 eltinterpolation->lagrangePts[0].data_type, temp_name);
                 return CG_ERROR;
             }
-            /// \todo : check dimension
+            /* check dimension */
             if (eltinterpolation->lagrangePts[0].data_dim != 2) {
                 cgi_error("Error: %s incorrectly dimensioned node 'LagrangeControlPoints'",temp_name);
                 return CG_ERROR;
@@ -4033,7 +4031,6 @@ int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation)
 }
 int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation)
 {
-  /// \todo ...
     int i, nnod,ndim;
     double *id;
     cgsize_t dim_vals[1];
@@ -5861,7 +5858,6 @@ int cgi_datasize(int Idim, cgsize_t *CurrentDim,
 
 int cgi_ho_datasize(const cgns_zone *zone, int spatialOrder, int temporalOrder, cgsize_t *DataSize)
 {
-    /// \todo ...
     int i,j,npe, ne;
     
     if (!zone) return CG_ERROR;
