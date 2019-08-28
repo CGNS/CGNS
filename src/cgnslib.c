@@ -5128,6 +5128,13 @@ int cg_field_write(int file_number, int B, int Z, int S,
         /* CPEX 045 */
         /* Determine data size (HO solution case) */
         if ( sol->location == CGNS_ENUMV(ElementBased) ) {
+          
+            if (!sol->isOrderDefined)
+            {
+                cgi_error("FlowSolution: ElementBased solution field requires definition of interpolationOrders first");
+                return CG_ERROR;
+            }
+            
             if (cgi_ho_datasize(zone,sol->spatialOrder,
                                 sol->temporalOrder, m_dimvals) ) return CG_ERROR;
         }

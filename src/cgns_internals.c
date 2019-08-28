@@ -1555,6 +1555,13 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
      /* CPEX 045 */
      /* Determine data size (HO solution case) */
         if ( sol[0][s].location == CGNS_ENUMV(ElementBased) ) {
+            
+            if (!sol[0][s].isOrderDefined)
+            {
+                cgi_error("FlowSolution: ElementBased solution requires interpolationOrders");
+                return CG_ERROR;
+            }
+            
             if (cgi_ho_datasize(CurrentZonePtr,sol[0][s].spatialOrder,
                                 sol[0][s].temporalOrder, DataSize) ) return CG_ERROR;
         }
