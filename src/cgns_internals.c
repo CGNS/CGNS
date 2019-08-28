@@ -1515,7 +1515,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
 {
     double *id, *idf;
-    int s, z, n, linked, ndim;
+    int s, z, n, j, linked, ndim;
     cgsize_t dim_vals[12];
     void *vdata;
     int *edata;
@@ -1564,6 +1564,12 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
             
             if (cgi_ho_datasize(CurrentZonePtr,sol[0][s].spatialOrder,
                                 sol[0][s].temporalOrder, DataSize) ) return CG_ERROR;
+            
+            /* add rinds */
+            for (j=0; j<Idim; j++) DataSize[j] = DataSize[j] 
+                                               + sol[0][s].rind_planes[2*j] 
+                                               + sol[0][s].rind_planes[2*j+1];
+            
         }
         else {
      /* Determine data size (1st Order solution) */

@@ -4713,6 +4713,7 @@ int cg_sol_write(int file_number, int B, int Z, const char * solname,
 int cg_sol_size(int file_number, int B, int Z, int S,
                 int *data_dim, cgsize_t *dim_vals)
 {
+    int j;
     cgns_sol *sol;
 
     cg = cgi_get_file(file_number);
@@ -4726,8 +4727,30 @@ int cg_sol_size(int file_number, int B, int Z, int S,
     if (sol->ptset == NULL) {
         cgns_zone *zone = &cg->base[B-1].zone[Z-1];
         *data_dim = zone->index_dim;
-        if (cgi_datasize(zone->index_dim, zone->nijk, sol->location,
-                sol->rind_planes, dim_vals)) return CG_ERROR;
+        
+        /* CPEX 045 */
+        /* Determine data size (HO solution case) */
+        if ( sol->location == CGNS_ENUMV(ElementBased) ) {
+          
+            if (!sol->isOrderDefined)
+            {
+                cgi_error("FlowSolution: ElementBased solution requires definition of interpolationOrders");
+                return CG_ERROR;
+            }
+            
+            if (cgi_ho_datasize(zone,sol->spatialOrder,
+                                sol->temporalOrder, dim_vals) ) return CG_ERROR;
+            
+            /* add rinds */
+            for (j=0; j<zone->index_dim; j++) dim_vals[j] = dim_vals[j] 
+                                                    + sol->rind_planes[2*j] 
+                                                    + sol->rind_planes[2*j+1];
+            
+        }
+        else {
+            if (cgi_datasize(zone->index_dim, zone->nijk, sol->location,
+                    sol->rind_planes, dim_vals)) return CG_ERROR;
+        }
     } else {
         *data_dim = 1;
         dim_vals[0] = sol->ptset->size_of_patch;
@@ -5097,7 +5120,7 @@ int cg_field_write(int file_number, int B, int Z, int S,
 {
     cgns_zone *zone;
     cgns_sol *sol;
-    int n, m_numdim;
+    int n, j, m_numdim;
 
     HDF5storage_type = CG_CONTIGUOUS;
 
@@ -5137,6 +5160,12 @@ int cg_field_write(int file_number, int B, int Z, int S,
             
             if (cgi_ho_datasize(zone,sol->spatialOrder,
                                 sol->temporalOrder, m_dimvals) ) return CG_ERROR;
+            
+            /* add rinds */
+            for (j=0; j<m_numdim; j++) m_dimvals[j] = m_dimvals[j] 
+                                                    + sol->rind_planes[2*j] 
+                                                    + sol->rind_planes[2*j+1];
+            
         }
         else {
         /* Determine data size (1st Order solution) */
@@ -5238,6 +5267,7 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
     cgns_sol *sol;
     int s_numdim;
     int status;
+    int j;
 
     HDF5storage_type = CG_CONTIGUOUS;
 
@@ -5277,8 +5307,20 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
         /* CPEX 045 */
         /* Determine data size (HO solution case) */
         if ( sol->location == CGNS_ENUMV(ElementBased) ) {
+          
+            if (!sol->isOrderDefined)
+            {
+                cgi_error("FlowSolution: ElementBased solution field requires definition of interpolationOrders first");
+                return CG_ERROR;
+            }
+            
             if (cgi_ho_datasize(zone,sol->spatialOrder,
                                 sol->temporalOrder, s_dimvals) ) return CG_ERROR;
+            
+            /* add rinds */
+            for (j=0; j<s_numdim; j++) s_dimvals[j] = s_dimvals[j] 
+                                                    + sol->rind_planes[2*j] 
+                                                    + sol->rind_planes[2*j+1];
         }
         else {
         /* Determine data size (1st Order solution) */
