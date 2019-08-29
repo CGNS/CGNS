@@ -9427,9 +9427,27 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
     for (n = 0 ; n<family->nelementinterpolation ; n++)
     {
         tmpinterp = &family->elementinterpolations[n];
-        if (tmpinterp->type == et)
+        
+        if (tmpinterp->type == et )
         {
-            cgi_delete_node(family->id,tmpinterp->id);
+            if (cg->mode==CG_MODE_WRITE) 
+            {
+                cgi_error("ElementInterpolation_t already defined under Family_t.");
+                return CG_ERROR;
+            }
+            // Modify existing ?
+            else if ( cg->mode==CG_MODE_MODIFY )
+            {
+                if(cgi_delete_node(family->id,tmpinterp->id)) return CG_ERROR;
+                cgi_free_element_interpolation(tmpinterp);
+                memset(tmpinterp, 0, sizeof(cgns_elementInterpolation));
+              
+            }
+            else
+            {
+                cgi_error("Only one ElementInterpolation_t node allowed per ElementType_t !\n");
+                return CG_ERROR;
+            }
         }
     }
     
@@ -9754,9 +9772,27 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
     for (n = 0 ; n<family->nsolutioninterpolation ; n++)
     {
         tmpinterp = &family->solutioninterpolations[n];
-        if (tmpinterp->type == type)
+        if (tmpinterp->type == type && os == tmpinterp->spatialorder && 
+            ot == tmpinterp->temporalorder )
         {
-            cgi_delete_node(family->id,tmpinterp->id);
+            if (cg->mode==CG_MODE_WRITE) 
+            {
+                cgi_error("SolutionInterpolation_t already defined under Family_t.");
+                return CG_ERROR;
+            }
+            // Modify existing ?
+            else if ( cg->mode==CG_MODE_MODIFY )
+            {
+                cgi_delete_node(family->id,tmpinterp->id);
+                cgi_free_solution_interpolation(tmpinterp);
+                memset(tmpinterp, 0, sizeof(cgns_solutionInterpolation));
+              
+            }
+            else
+            {
+                cgi_error("Only one SolutionInterpolation_t node allowed per (ElementType_t,spatialOrder,temporalOrder) !\n");
+                return CG_ERROR;
+            }
         }
         
     }
@@ -13090,7 +13126,16 @@ int cg_delete_node(const char *node_name)
          strcmp(node_label,"DataArray_t")==0) ||
 
         (strcmp(posit->label,"AverageInterface_t")==0 &&
-         strcmp(node_label,"AverageInterfaceType_t")==0)
+         strcmp(node_label,"AverageInterfaceType_t")==0) ||
+
+        (strcmp(posit->label,"ElementInterpolation_t")==0 &&
+         strcmp(node_label,"ElementType_t")==0) ||
+
+        (strcmp(posit->label,"SolutionInterpolation_t")==0 &&
+         strcmp(node_label,"ElementType_t")==0) ||
+
+        (strcmp(posit->label,"SolutionInterpolation_t")==0 &&
+         strcmp(node_label,"InterpolationType_t")==0)
 
     ) {
         cgi_error("Node '%s' under '%s' can not be deleted",node_name,posit->label);
@@ -13268,6 +13313,8 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
         else if (strcmp(node_label,"DataArray_t")==0)
             CGNS_DELETE_SHIFT(nfields, field, cgi_free_array)
+        else if (strcmp(node_name,"InterpolationOrders")==0)
+            parent->isOrderDefined = 0;
         else if (strcmp(node_name,"PointList")==0 ||
                  strcmp(node_name,"PointRange")==0)
             CGNS_DELETE_CHILD(ptset, cgi_free_ptset)
@@ -13628,6 +13675,12 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_SHIFT(nfambc, fambc, cgi_free_fambc)
         else if (strcmp(node_label,"FamilyName_t")==0)
             CGNS_DELETE_SHIFT(nfamname, famname, cgi_free_famname)
+        else if (strcmp(node_label,"ElementInterpolation_t")==0)
+            CGNS_DELETE_SHIFT(nelementinterpolation, elementinterpolations, 
+                              cgi_free_element_interpolation)
+        else if (strcmp(node_label,"SolutionInterpolation_t")==0)
+            CGNS_DELETE_SHIFT(nsolutioninterpolation, solutioninterpolations, 
+                              cgi_free_solution_interpolation)
         else if (strcmp(node_name,"Ordinal")==0)
             parent->ordinal=0;
 	else if (strcmp(node_name,"RotatingCoordinates")==0)

@@ -1311,6 +1311,8 @@ void cgi_free_zone(cgns_zone *zone);
 void cgi_free_family(cgns_family *family);
 void cgi_free_fambc(cgns_fambc *fambc);
 void cgi_free_famname(cgns_famname *famname);
+void cgi_free_element_interpolation(cgns_elementInterpolation *einterp);
+void cgi_free_solution_interpolation(cgns_solutionInterpolation *sinterp);
 void cgi_free_geo(cgns_geo *geo);
 void cgi_free_part(cgns_part *part);
 void cgi_free_zcoor(cgns_zcoor *zcoor);

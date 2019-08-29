@@ -42,6 +42,7 @@ set(write_links_FILES write_links.c utils.c)
 set(write_rind_FILES write_rind.c)
 set(write_test_FILES write_test.c)
 set(write_zones_FILES write_zones.c utils.c)
+set(test_high_order_FILES test_high_order.c utils.c)
 #set(cgiof_FILES cgiof.F90)
 #set(cgwrite_FILES cgwrite.F90)
 #set(cgread_FILES cgread.F90)
@@ -73,6 +74,7 @@ add_executable( write_links          ${write_links_FILES}          )
 add_executable( write_rind           ${write_rind_FILES}           )
 add_executable( write_test           ${write_test_FILES}           )
 add_executable( write_zones          ${write_zones_FILES}          )
+add_executable( test_high_order      ${test_high_order_FILES}      )
 
 # Conditionally build the fortran tests
 if (CGNS_ENABLE_FORTRAN)
@@ -111,6 +113,7 @@ if (CGNS_ENABLE_TESTS)
   add_test( write_rind           write_rind           )
   add_test( write_test           write_test           )
   add_test( write_zones          write_zones          )
+  add_test( test_high_order      test_high_order      )
 
   # Conditionally add the fortran tests
   if (CGNS_ENABLE_FORTRAN)

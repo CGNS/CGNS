@@ -13495,6 +13495,16 @@ void cgi_free_family(cgns_family *family)
             cgi_free_famname(&family->famname[n]);
         CGNS_FREE(family->famname);
     }
+    if (family->nelementinterpolation) {
+        for (n = 0; n < family->nelementinterpolation; n++)
+            cgi_free_element_interpolation(&family->elementinterpolations[n]);
+        CGNS_FREE(family->elementinterpolations);
+    }
+    if (family->nsolutioninterpolation) {
+        for (n = 0; n < family->nsolutioninterpolation; n++)
+            cgi_free_solution_interpolation(&family->solutioninterpolations[n]);
+        CGNS_FREE(family->solutioninterpolations);
+    }
 }
 
 void cgi_free_fambc(cgns_fambc *fambc)
@@ -13513,6 +13523,20 @@ void cgi_free_famname(cgns_famname *famname)
 {
     famname->name[0] = 0;
     famname->family[0] = 0;
+}
+
+void cgi_free_element_interpolation(cgns_elementInterpolation *einterp)
+{
+    einterp->name[0] = 0;
+    if (einterp->lagrangePts) CGNS_FREE(einterp->lagrangePts);
+    einterp->lagrangePts = 0;
+}
+
+void cgi_free_solution_interpolation(cgns_solutionInterpolation *sinterp)
+{
+    sinterp->name[0] = 0;
+    if (sinterp->lagrangePts) CGNS_FREE(sinterp->lagrangePts);
+    sinterp->lagrangePts = 0;
 }
 
 void cgi_free_geo(cgns_geo *geo)
