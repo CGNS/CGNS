@@ -516,7 +516,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     printf("Adding New Nodes\n");
     /* adding new Node */
     error = cg_element_interpolation_write(cgfile, cgbase,cgfamily,"TriInterpolation",
-                                            TRI_9,&cgeinterp);
+                                            TRI_10,&cgeinterp);
     if (error)
     {
         fprintf(stderr,"ERROR CODE %d : Cannot add a new ElementInterpolation_t node for the same ElementType_t in MODIFY MODE !\n",error);
