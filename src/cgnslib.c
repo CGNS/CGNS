@@ -9385,7 +9385,7 @@ int cg_nelement_interpolation_read(int fn, int bn, int fam, int *ne)
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+    //if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
@@ -9440,7 +9440,9 @@ int cg_element_interpolation_write(int fn, int bn, int fam , const char * node_n
             {
                 if(cgi_delete_node(family->id,tmpinterp->id)) return CG_ERROR;
                 cgi_free_element_interpolation(tmpinterp);
-                memset(tmpinterp, 0, sizeof(cgns_elementInterpolation));
+                einterp = tmpinterp;
+                *en = n+1;
+                break;
               
             }
             else
@@ -9721,7 +9723,7 @@ int cg_nsolution_interpolation_read(int fn, int bn, int fam, int *ns)
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+    //if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
     family = cgi_get_family(cg, bn, fam);
     if (family==0) return CG_ERROR;
@@ -9785,8 +9787,9 @@ int cg_solution_interpolation_write(int fn, int bn, int fam, const char * node_n
             {
                 cgi_delete_node(family->id,tmpinterp->id);
                 cgi_free_solution_interpolation(tmpinterp);
-                memset(tmpinterp, 0, sizeof(cgns_solutionInterpolation));
-              
+                sinterp = tmpinterp;
+                *sn = n+1;
+                break;
             }
             else
             {
@@ -9861,7 +9864,8 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     // Check
     if (sn > family->nsolutioninterpolation || sn <= 0)
     {
-        cgi_error("Want to access an inexistant solution interpolation id");
+        cgi_error("Want to access an inexistant solution interpolation id (%d/%d)",sn,
+                   family->nsolutioninterpolation);
         return CG_ERROR;
     }
     sn--;
