@@ -4881,7 +4881,7 @@ int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
     if (sol==0) return CG_ERROR;
     
     // Defaults
-    *spatialOrder  = 1;
+    *spatialOrder  = 0;
     *temporalOrder = 0;
     
     if (sol->isOrderDefined == 0) return CG_NODE_NOT_FOUND;
@@ -4890,6 +4890,7 @@ int cg_sol_interpolation_order_read(int fn, int B, int Z, int S,
     {
         cgi_error("solution interpolation order is supposed to be "
                     "associated with ElementBased solution.");
+        return CG_ERROR;
     }
     
     *spatialOrder  = sol->spatialOrder; 
@@ -12888,12 +12889,7 @@ int cg_npe_ho( CGNS_ENUMT(ElementType_t) basicType, int order, int *npe)
     }
     else if ( tmpType == CGNS_ENUMV(PYRA_5) )
     {
-        if (order == 1) type = CGNS_ENUMV(PYRA_5); 
-        else if (order == 2) type = CGNS_ENUMV(PYRA_14);
-        else if (order == 3) type = CGNS_ENUMV(PYRA_30);
-        else if (order == 4) type = CGNS_ENUMV(PYRA_55);
-        else return CG_ERROR;
-        return cg_npe(type,npe);
+        (*npe) = (order+1)*(order+2)*(2*order+3)/6;
     }
     return CG_OK;
 }
