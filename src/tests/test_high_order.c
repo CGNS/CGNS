@@ -23,14 +23,15 @@ int main (int argc, char **argv)
     int error, i, j, ii, jj, n, ni, nj, ifirstnode, ielem_no, nbdyelem;
     double *x;
     double *y;
-    double *pu, *pv, *puu, *pvv;
+    double *pu, *pv, *puu, *pvv, *r;
     cgsize_t *ielem;
-    cgsize_t size[9],sizeread[9];
+    cgsize_t size[9],sizeread[9], dimvals[1];
     cgsize_t nelem_start,nelem_end;
     CGNS_ENUMT(ElementType_t) type, etyperead;
+    CGNS_ENUMT(InterpolationType_t) itype, ityperead;
     int cgfile, cgbase, cgzone, cgsection, cgfamily, cgsol, cgcoord, cgeinterp, cgsinterp;
     char einterpName[33],sinterpname[33],zonename[33],familyname[33],sectionname[33],solname[33];
-    int neinterp,nsinterp;
+    int os,ot,cntneinterp,neinterp,nsinterp,nbsolpts;
     
     
     int order = 2;
@@ -141,6 +142,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
             fprintf(stderr,"ERROR CODE %d : Should not be able to modify an existing ElementInterpolation_t node for the same ElementType_t in WRITE MODE !\n",error);
             cg_error_exit();
         }
+        fflush(stderr);fflush(stdout);
     }
     
     /* Test if possible to add another ElementInterpolation_t for the same Element Type --> HAS TO FAIL ! */
@@ -152,6 +154,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
             fprintf(stderr,"ERROR CODE %d : Should Not be able to write 2 ElementInterpolation_t node for the same ElementType_t. An error should occurs !\n",error);
             cg_error_exit();
         }
+        fflush(stderr);fflush(stdout);
     }
     
     printf ("Writing SolutionInterpolation_t node  ...\n");
@@ -190,6 +193,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
             fprintf(stderr,"Should Not be able to write 2 SolutionInterpolation_t node for the same ElementType_t. An error should occurs !");
             cg_error_exit();
         }
+        fflush(stderr);fflush(stdout);
     }
     
     /* Get Node Count */
@@ -207,9 +211,54 @@ do HO QUAD elements (NOT following standard SIDS ordering)
         fprintf(stderr,"       cg_nsolution_interpolation_read = %d, should be 1.\n",nsinterp);
         cg_error_exit();
     }
-    
-    
     free(pu); free(pv);
+    
+    
+    /* Creating Solution */
+    error = cg_sol_write(cgfile,cgbase,cgzone,"FlowSolution",CGNS_ENUMV(ElementBased),&cgsol);
+    
+    if (error)
+    {
+        fprintf(stderr,"ERROR: an error occured during Solution node writing !\n");
+        cg_error_exit();
+    }
+    
+    /* add Corresponding spatial and temporal order --> 3rd and 0th order */
+    error = cg_sol_interpolation_order_write(cgfile,cgbase,cgzone,cgsol,3,0);
+    
+    if (error)
+    {
+        fprintf(stderr,"ERROR: an error occured during solution order writing !\n");
+        cg_error_exit();
+    }
+    
+    /* Get number of pts required */
+    error = cg_solution_lagrange_interpolation_size(type,3,0,&nbsolpts);
+    
+    if (error)
+    {
+        fprintf(stderr,"ERROR: an error occured during Solution Lagrange interpolation size count !\n");
+        cg_error_exit();
+    }
+    
+    if (nbsolpts != 4*4)
+    {
+        fprintf(stderr,"ERROR: Wrong number of points given !\n");
+        cg_error_exit();
+    }
+    
+    /* add dummy solution field */
+    r = (double*) malloc( (size_t) (ncellI*ncellJ*nbsolpts) * sizeof(double));
+    
+    error = cg_field_write(cgfile,cgbase,cgzone,cgsol,CGNS_ENUMV(RealDouble),
+                   "Density",r,&n);
+    free(r);
+    
+    if (error)
+    {
+        fprintf(stderr,"ERROR: an error occured during Density Field writing !\n");
+        cg_error_exit();
+    }
     
     fflush (stdout);
     printf ("closing cgns file ...\n");
@@ -222,7 +271,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
      * ************************************************************************** */
     
     printf ("reading cgns file high_order.cgns in READ mode ...\n");
-    if (cg_open ("high_order.cgns", CG_MODE_MODIFY, &cgfile) ) cg_error_exit();
+    if (cg_open ("high_order.cgns", CG_MODE_READ, &cgfile) ) cg_error_exit();
     
     // Get Informations from Current Zone
     if (cg_zone_read(cgfile, cgbase,cgzone,zonename,sizeread) ) cg_error_exit();
@@ -251,9 +300,9 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     }
     
     /* Check Existency */
-    cg_element_lagrange_interpolation_count(cgfile, cgbase,cgfamily,type,&n);
+    error = cg_element_lagrange_interpolation_count(cgfile, cgbase,cgfamily,type,&n);
     
-    if (n != 1)
+    if (n != 1 || error)
     {
         fprintf(stderr,"ERROR: Wrong Number of ElementInterpolation_t node of type %s !\n",
                 cg_ElementTypeName(type));
@@ -319,7 +368,88 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     free(pu);
     free(pv);
     
+    /* Check SolutionInterpolation_t Existency */
+    error = cg_solution_lagrange_interpolation_count(cgfile, cgbase,cgfamily,CGNS_ENUMV(QUAD_4),
+                                                     4,0,&n);
     
+    if (n != 1 || error)
+    {
+        fprintf(stderr,"ERROR: Wrong Number of SolutionInterpolation_t node (%s,%d,%d) !\n",
+                cg_ElementTypeName(type),4,0);
+        cg_error_exit();
+    }
+    
+    /* Read Solution interpolation Node */
+    if (cg_solution_interpolation_read(cgfile, cgbase,cgfamily,cgsinterp,sinterpname,
+        &etyperead, &os,&ot,&ityperead)) 
+    {
+        fprintf(stderr,"ERROR: Cannot Read The SolutionInterpolation_t node !\n",error);
+        cg_error_exit();
+    }
+    
+    /* Check Solution interpolation Node */
+    if (strcmp(sinterpname,"4rdOrderQuadSolution"))
+    {
+        fprintf(stderr,"ERROR: Wrong Solution Interpolation Name !\n");
+        cg_error_exit();
+    }
+    
+    if (etyperead != CGNS_ENUMV(QUAD_4))
+    {
+        fprintf(stderr,"ERROR: Wrong Solution Interpolation ElementType_t !\n");
+        cg_error_exit();
+    }
+    
+    if (ityperead != CGNS_ENUMV(ParametricLagrange))
+    {
+        fprintf(stderr,"ERROR: Wrong Solution Interpolation Type !\n");
+        cg_error_exit();
+    }
+    
+    if (os != 4 || ot != 0)
+    {
+        fprintf(stderr,"ERROR: Wrong Solution Interpolation Orders !\n");
+        cg_error_exit();
+    }
+    
+    error = cg_solution_lagrange_interpolation_size(etyperead,os,ot,&n);
+    
+    if (n != (4+1)*(4+1))
+    {
+        fprintf(stderr,"ERROR: cg_solution_lagrange_interpolation_size returns wrong number !\n");
+        cg_error_exit();
+    }
+    
+    pu = (double*) malloc( (size_t) (n) * sizeof(double));
+    pv = (double*) malloc( (size_t) (n) * sizeof(double));
+    puu = (double*) malloc( (size_t) (n) * sizeof(double));
+    pvv = (double*) malloc( (size_t) (n) * sizeof(double));
+    
+    // Fill (U,V)
+    fillQuadLagrangePoints(4,pu,pv);
+    
+    /* Read Solution interpolation Points Node */
+    if (cg_solution_interpolation_points_read(cgfile, cgbase,cgfamily,cgsinterp,puu,pvv,NULL,NULL))
+    {
+        fprintf(stderr,"ERROR CODE %d : Cannot Read The Solution Interpolation points !\n",error);
+        cg_error_exit();
+    }
+    /* Check UV Points */
+    for(i = 0 ; i < n; i++)
+    {
+        if ( fabs(pu[i] - puu[i]) > 1.e-06 || fabs(pv[i] - pvv[i]) > 1.e-06 )
+        {
+            fprintf(stderr,"ERROR: Solution Interpolation points are not in tolerance !\n");
+            fprintf(stderr,"  given at indice i=%d : (%f,%f) --> required (%f,%f)\n",i,
+                    puu[i],pvv[i],pu[i],pv[i]);
+            fprintf(stderr,"errors : (%e,%e)\n",fabs(pu[i] - puu[i]),fabs(pv[i] - pvv[i]));
+            cg_error_exit();
+        }
+    }
+    free(puu);
+    free(pvv);
+    free(pu);
+    free(pv);
     
     
     fflush (stdout);

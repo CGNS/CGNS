@@ -1160,7 +1160,7 @@ CGNSDLL int cgi_datasize(int Idim, cgsize_t *CurrentDim,
 			 int *rind_planes, cgsize_t *DataSize);
 
 /* CPEX 045 */
-int cgi_ho_datasize(const cgns_zone *zone, int spatialOrder, int temporalOrder, 
+int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, int temporalOrder, 
                     cgsize_t *DataSize);
 
 int cgi_read_node(double node_id, char_33 name, char_33 data_type,

@@ -1562,7 +1562,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                 return CG_ERROR;
             }
             
-            if (cgi_ho_datasize(CurrentZonePtr,sol[0][s].spatialOrder,
+            if (cgi_ho_datasize(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
                                 sol[0][s].temporalOrder, DataSize) ) return CG_ERROR;
             
             /* add rinds */
@@ -5869,18 +5869,26 @@ int cgi_datasize(int Idim, cgsize_t *CurrentDim,
     return CG_OK;
 }
 
-int cgi_ho_datasize(const cgns_zone *zone, int spatialOrder, int temporalOrder, cgsize_t *DataSize)
+int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, int temporalOrder, cgsize_t *DataSize)
 {
     int i,j,npe, ne;
     
     if (!zone) return CG_ERROR;
     
-    if (!zone->nsections) return CG_ERROR;
+    if (!zone->nsections) 
+    {
+      cgi_error("Zone needs to have Element_t nodes !\n");
+      return CG_ERROR;
+    }
     
     /* Check ZoneType */
-    if ( CurrentZoneType != CGNS_ENUMV( Unstructured) ) return CG_ERROR;
+    if ( zone->type != CGNS_ENUMV( Unstructured) ) 
+    {
+      cgi_error("Zone needs to be Unstructured !\n");
+      return CG_ERROR;
+    }
     
-    for (i = 0 ; i < Idim ; i++) DataSize[i] = 0;
+    for (i = 0 ; i < id_dim ; i++) DataSize[i] = 0;
     
     // Loop over Sections
     for (i = 0 ; i < zone->nsections ; i++)
@@ -5893,10 +5901,10 @@ int cgi_ho_datasize(const cgns_zone *zone, int spatialOrder, int temporalOrder, 
         // Get number of nodes for this element type based solution
         cg_npe_ho(type,spatialOrder,&npe);
         
-        for (j = 0 ; j < Idim ; j++) DataSize[j] = DataSize[j] + ne*npe;
+        for (j = 0 ; j < id_dim ; j++) DataSize[j] = DataSize[j] + ne*npe;
     }
     // Temporal Order
-    for (j = 0 ; j < Idim ; j++) DataSize[j] = DataSize[j] * (temporalOrder+1);
+    for (j = 0 ; j < id_dim ; j++) DataSize[j] = DataSize[j] * (temporalOrder+1);
     return CG_OK;
 }
 
@@ -13681,6 +13689,7 @@ void cgi_free_sol(cgns_sol *sol)
         cgi_free_ptset(sol->ptset);
         CGNS_FREE(sol->ptset);
     }
+    sol->isOrderDefined = 0;
 }
 
 void cgi_free_1to1(cgns_1to1 *one21)

@@ -4738,7 +4738,7 @@ int cg_sol_size(int file_number, int B, int Z, int S,
                 return CG_ERROR;
             }
             
-            if (cgi_ho_datasize(zone,sol->spatialOrder,
+            if (cgi_ho_datasize(zone->index_dim,zone,sol->spatialOrder,
                                 sol->temporalOrder, dim_vals) ) return CG_ERROR;
             
             /* add rinds */
@@ -4912,7 +4912,7 @@ int cg_sol_interpolation_order_write(int fn, int B, int Z, int S,
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
 
     sol = cgi_get_sol(cg, B, Z, S);
     if (sol==0) return CG_ERROR;
@@ -5159,7 +5159,7 @@ int cg_field_write(int file_number, int B, int Z, int S,
                 return CG_ERROR;
             }
             
-            if (cgi_ho_datasize(zone,sol->spatialOrder,
+            if (cgi_ho_datasize(m_numdim,zone,sol->spatialOrder,
                                 sol->temporalOrder, m_dimvals) ) return CG_ERROR;
             
             /* add rinds */
@@ -5315,7 +5315,7 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
                 return CG_ERROR;
             }
             
-            if (cgi_ho_datasize(zone,sol->spatialOrder,
+            if (cgi_ho_datasize(s_numdim,zone,sol->spatialOrder,
                                 sol->temporalOrder, s_dimvals) ) return CG_ERROR;
             
             /* add rinds */
@@ -9709,7 +9709,7 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
     for(i = 0; i < npe ; i++)
       for(j = 0; j < lpts->dim_vals[0] ; j++)
       {
-        if (array[j]) data[k] = array[j][i];
+        if (array[j]) array[j][i] = data[k];
         k++;
       }
     
