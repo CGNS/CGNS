@@ -27,10 +27,12 @@ int main (int argc, char **argv)
     cgsize_t *ielem;
     cgsize_t size[9],sizeread[9], dimvals[1];
     cgsize_t nelem_start,nelem_end;
+    cgsize_t rmin[1],rmax[1];
+    CGNS_ENUMT(GridLocation_t) location;
     CGNS_ENUMT(ElementType_t) type, etyperead;
     CGNS_ENUMT(InterpolationType_t) itype, ityperead;
     int cgfile, cgbase, cgzone, cgsection, cgfamily, cgsol, cgcoord, cgeinterp, cgsinterp;
-    char einterpName[33],sinterpname[33],zonename[33],familyname[33],sectionname[33],solname[33];
+    char einterpName[33],sinterpname[33],fieldname[33],zonename[33],familyname[33],sectionname[33],solname[33];
     int os,ot,cntneinterp,neinterp,nsinterp,nbsolpts;
     
     
@@ -451,6 +453,53 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     free(pu);
     free(pv);
     
+    
+    /* Check Solution Field */
+    
+    if (cg_sol_info(cgfile,cgbase,cgzone,cgsol,solname,&location))
+    {
+        fprintf(stderr,"ERROR: Cannot Read The FlowSolution_t node !\n");
+        cg_error_exit();
+    }
+    
+    if (location != CGNS_ENUMV(ElementBased) ) 
+    {
+      fprintf(stderr,"ERROR: Wrong solution GridLocation_t !\n");
+        cg_error_exit();
+    }
+    
+    if (cg_nfields(cgfile,cgbase,cgzone,cgsol,&n))
+    {
+        fprintf(stderr,"ERROR: Cannot get number of fields !\n");
+        cg_error_exit();
+    }
+    
+    if (n != 1 ) 
+    {
+      fprintf(stderr,"ERROR: Wrong count of solution field !\n");
+        cg_error_exit();
+    }
+    
+    /* read dummy solution field */
+    int ddim;
+    error = cg_sol_size(cgfile,cgbase,cgzone,cgsol,&ddim,dimvals);
+    
+    if (error || ddim != 1 || dimvals[0] != ncellI*ncellJ*nbsolpts )
+    {
+        fprintf(stderr,"ERROR: An error occured during cg_sol_size  !\n");
+        cg_error_exit();
+    }
+    
+    r = (double*) malloc( (size_t) (dimvals[0]) * sizeof(double));
+    rmin[0] = 1;
+    rmax[0] = dimvals[0];  
+    if (cg_field_read(cgfile,cgbase,cgzone,cgsol,"Density",CGNS_ENUMV(RealDouble),
+      rmin,rmax,r))
+    {
+        fprintf(stderr,"ERROR: Cannot Read The SolutionField_t node !\n");
+        cg_error_exit();
+    }
+    free(r);
     
     fflush (stdout);
     printf ("closing cgns file ...\n");
