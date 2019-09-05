@@ -9337,7 +9337,7 @@ int cg_element_interpolation_points_read(int fn, int bn, int fam, int en ,
     /* has Lagrange Points ? */
     if (!lpts) 
     {
-        cgi_warning("ElementInterpolation Node does not have LagrangeControlPoints.");
+        //cgi_warning("ElementInterpolation Node does not have LagrangeControlPoints.");
         return CG_NODE_NOT_FOUND;
     }
     
@@ -9672,7 +9672,7 @@ int cg_solution_interpolation_points_read(int fn, int bn, int fam, int sn ,
     /* Has Node ? */
     if (!lpts)
     {
-        cgi_warning("No LagrangreInterpolation Points for this solution interpolation node.");
+        //cgi_warning("No LagrangreInterpolation Points for this solution interpolation node.");
         return CG_NODE_NOT_FOUND;
     }
     

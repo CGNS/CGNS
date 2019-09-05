@@ -20,7 +20,7 @@ void fillQuadLagrangePoints(int order, double *u, double *v)
 int main (int argc, char **argv)
 {
     double start, finish;
-    int error, i, j, ii, jj, n, ni, nj, ifirstnode, ielem_no, nbdyelem;
+    int error, i, j, iset, ii, jj, n, ni, nj, ifirstnode, ielem_no, nbdyelem;
     double *x;
     double *y;
     double *pu, *pv, *puu, *pvv, *r;
@@ -57,12 +57,24 @@ int main (int argc, char **argv)
     pv = (double*) malloc( (size_t) (order+1)*(order+1) * sizeof(double));
     ielem = (cgsize_t*) malloc( (order+1)*(order+1)*(ncellI*ncellJ)*sizeof(cgsize_t));
     
-    // Fill (U,V)
+    /* create 2nd order gridpoints for simple example: */
+    iset=0;
+    for (j=1; j <=nj; j++)
+    {
+      for (i=1; i <= ni; i++)
+      {
+        x[iset]=(double)i-1.;
+        y[iset]=(double)j-1.;
+        iset=iset+1;
+      }
+    }
+    
+    /* Fill (U,V) */
     fillQuadLagrangePoints(order,pu,pv);
     
     printf ("Writing cgns file high_order.cgns ...\n");
     if (cg_open ("high_order.cgns", CG_MODE_WRITE, &cgfile) ||
-        cg_base_write (cgfile, "Base", 3, 3, &cgbase) ||
+        cg_base_write (cgfile, "Base", 2, 2, &cgbase) ||
         cg_zone_write (cgfile, cgbase, "zone", size, CGNS_ENUMV(Unstructured), 
                        &cgzone)) 
       cg_error_exit();

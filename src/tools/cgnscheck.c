@@ -5623,16 +5623,95 @@ static void check_gravity (float *vector)
 
 /*-----------------------------------------------------------------------*/
 
+static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type, 
+                                        double *u, double *v, double *w)
+{
+    CGNS_ENUMT(ElementType_t) btype;
+    cg_element_basic_element_type(type,&btype);
+  
+    switch(btype)
+    {
+      case (CGNS_ENUMV(NODE)): return CG_OK;
+      case (CGNS_ENUMV(BAR_2)): if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 ) return CG_ERROR;
+      case (CGNS_ENUMV(TRI_3)): 
+      {
+          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || fabs(u[2]+1.0) > 1.e-06) return CG_ERROR;
+          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || fabs(v[2]-1.0) > 1.e-06) return CG_ERROR;
+      }
+      case (CGNS_ENUMV(QUAD_4)): 
+      {
+          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
+             fabs(u[2]-1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
+             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]-1.0) > 1.e-06 ) return CG_ERROR;
+      }
+      case (CGNS_ENUMV(TETRA_4)): 
+      {
+          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
+             fabs(u[2]+1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
+             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]+1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
+             fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]-1.0) > 1.e-06 ) return CG_ERROR;
+      }
+      case (CGNS_ENUMV(HEXA_8)): 
+      {
+          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
+             fabs(u[2]-1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ||
+             fabs(u[4]+1.0) > 1.e-06 || fabs(u[5]-1.0) > 1.e-06 ||
+             fabs(u[6]-1.0) > 1.e-06 || fabs(u[7]+1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
+             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]-1.0) > 1.e-06 ||
+             fabs(v[4]+1.0) > 1.e-06 || fabs(v[5]+1.0) > 1.e-06 ||
+             fabs(v[6]-1.0) > 1.e-06 || fabs(v[7]-1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
+             fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]+1.0) > 1.e-06 ||
+             fabs(w[4]-1.0) > 1.e-06 || fabs(w[5]-1.0) > 1.e-06 ||
+             fabs(w[6]-1.0) > 1.e-06 || fabs(w[7]-1.0) > 1.e-06 ) return CG_ERROR;
+      }
+      case (CGNS_ENUMV(PENTA_6)): 
+      {
+          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
+             fabs(u[2]+1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ||
+             fabs(u[4]-1.0) > 1.e-06 || fabs(u[5]+1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
+             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]+1.0) > 1.e-06 ||
+             fabs(v[4]+1.0) > 1.e-06 || fabs(v[5]-1.0) > 1.e-06 ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
+             fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]-1.0) > 1.e-06 ||
+             fabs(w[4]-1.0) > 1.e-06 || fabs(w[5]-1.0) > 1.e-06 ) return CG_ERROR;
+      }
+      case (CGNS_ENUMV(PYRA_5)): 
+      {
+          if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || 
+             fabs(u[2]-1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ||
+             fabs(u[4]) > 1.e-06 ) return CG_ERROR;
+          if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
+             fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]-1.0) > 1.e-06 ||
+             fabs(v[4]) > 1.e-06 ) return CG_ERROR;
+          if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
+             fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]+1.0) > 1.e-06 ||
+             fabs(w[4]-1.0) > 1.e-06 ) return CG_ERROR;
+      }
+      default: return CG_ERROR;
+    }
+    
+    
+    return CG_OK;
+}
+/*-----------------------------------------------------------------------*/
+
 static void check_family (int fam)
 {
     char famname[33], name[33], cad[33], *filename;
-    int ierr, i, n, nbc, ngeo, nparts;
+    int ierr, i, j, n, nbc, ngeo, nparts,npe;
     CGNS_ENUMT(BCType_t) bctype;
-    CGNS_ENUMT(ElementType_t) etype;
+    CGNS_ENUMT(ElementType_t) etype,btype;
     CGNS_ENUMT(InterpolationType_t) it;
     int nds, dirichlet, neumann;
     float point[3], vector[3];
     int ninterp, os, ot;
+    double *pu,*pv,*pw,*pt;
 
     if (cg_family_read (cgnsfn, cgnsbase, fam, famname, &nbc, &ngeo))
         error_exit("cg_family_read");
@@ -5730,11 +5809,27 @@ static void check_family (int fam)
             printf ("    ElementInterpolation Name=\"%s\"\n", name);
             printf ("    ElementInterpolation type=\"%s\"\n", cg_ElementTypeName(etype));
         }
-        ierr = cg_element_interpolation_points_read(cgnsfn, cgnsbase, fam, n, NULL,NULL,NULL);
+        
+        cg_element_lagrange_interpolation_size(etype,&i);
+        
+        pu = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pv = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pw = (double*) malloc((cgsize_t) i * sizeof(double) );
+        
+        ierr = cg_element_interpolation_points_read(cgnsfn, cgnsbase, fam, n, pu,pv,pw);
         if (ierr == CG_OK && verbose) 
+        {
             printf ("    ElementInterpolation Lagrange Points Defined \n");
+            
+            /* Checking 1st order points */
+            cg_element_basic_element_type(etype,&btype);
+            
+            if ( check_element_nodes_ordering(btype,pu,pv,pw) )
+              error("Nodes are not corectly ordered. 1st nodes have to correspond to 1st order element.");
+        }
         else if (ierr == CG_ERROR)
           error_exit("cg_element_interpolation_points_read");
+        free(pu);free(pv);free(pw);
     }
     
     if (cg_nsolution_interpolation_read (cgnsfn, cgnsbase, fam, &ninterp))
@@ -5751,11 +5846,28 @@ static void check_family (int fam)
             printf ("    SolutionInterpolation temporalOrder=%d\n", ot);
             printf ("    SolutionInterpolation InterpolationType=\"%s\"\n", cg_InterpolationTypeName(it));
         }
-        ierr = cg_solution_interpolation_points_read(cgnsfn, cgnsbase, fam, n, NULL,NULL,NULL,NULL);
+        cg_solution_lagrange_interpolation_size(etype,os,ot,&i);
+        
+        pu = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pv = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pw = (double*) malloc((cgsize_t) i * sizeof(double) );
+        pt = (double*) malloc((cgsize_t) i * sizeof(double) );
+        
+        
+        ierr = cg_solution_interpolation_points_read(cgnsfn, cgnsbase, fam, n, pu,pv,pw,pt);
         if (ierr == CG_OK && verbose) 
+        {
             printf ("    SolutionInterpolation Lagrange Points Defined \n");
+            
+            /* Checking 1st order points */
+            cg_element_basic_element_type(etype,&btype);
+            
+            if ( check_element_nodes_ordering(btype,pu,pv,pw) )
+              error("Nodes are not corectly ordered. 1st nodes have to correspond to 1st order element.");
+        }
         else if (ierr == CG_ERROR)
           error_exit("cg_solution_interpolation_points_read");
+        free(pu);free(pv);free(pw);free(pt);
     }
 
 }

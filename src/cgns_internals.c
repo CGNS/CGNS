@@ -464,6 +464,7 @@ int cgi_read_family(cgns_family *family)
     int n, linked, in_link = family->link ? 1 : family->in_link;
     double *id;
     char *boconame;
+    CGNS_ENUMT(ElementType_t) atype, btype;
 
      /* Family name */
     if (cgio_get_name(cg->cgio, family->id, family->name)) {
@@ -667,9 +668,11 @@ int cgi_read_family(cgns_family *family)
         CGNS_FREE(id);
         /* Check Uniqueness of the SolutionInterpolation_t nodes */
         for (n=0; n<family->nsolutioninterpolation; n++) {
+            cg_element_basic_element_type(family->solutioninterpolations[n].type,&atype);
             for (m=0; m<family->nsolutioninterpolation; m++) {
+              cg_element_basic_element_type(family->solutioninterpolations[m].type,&btype);
               if (n != m) {
-                  if (family->solutioninterpolations[n].type == family->solutioninterpolations[m].type
+                  if (atype == btype
                    && family->solutioninterpolations[n].spatialorder  == family->solutioninterpolations[m].spatialorder
                    && family->solutioninterpolations[n].temporalorder == family->solutioninterpolations[m].temporalorder
                   ) {
