@@ -72,7 +72,7 @@ int main()
     irmax[2]=isize[0][2];
 /* read BaseIterativeData */
     cg_biter_read(index_file,index_base,bitername,&nsteps);
-    printf("\number of time steps stored = %i\n",nsteps);
+    printf("\nnumber of time steps stored = %i\n",nsteps);
     if (nsteps != 3)
     {
       printf("\nError, expecting nsteps=3!\n");
