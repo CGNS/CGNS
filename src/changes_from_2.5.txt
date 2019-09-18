@@ -51,13 +51,13 @@ cg_is_cgns_f(filename, file_type, ier)
 
 7) removed from cgnslib:
 
-MODE_READ, MODE_WRITE, MODE_MODIFY, Null, UserDefined and Celcius defines
+MODE_READ, MODE_WRITE, MODE_MODIFY, Null, UserDefined and Celsius defines
 
 
 8) low-level file access should now be made through the cgio interface
    rather than ADF (or ADFH) directly. Include cgns_io.h for the function
    prototypes. The ADF and ADFH functions are still available by including
-   the appropiate ADF.h header file.
+   the appropriate ADF.h header file.
 
 These are some of the defines, the CGIO_MODE_xxx and CGIO_FILE_xxx are the
 same as the cgns counterparts. The CGIO_MAX_xxx defines are the same as

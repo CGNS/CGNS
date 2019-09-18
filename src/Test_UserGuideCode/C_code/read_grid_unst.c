@@ -55,7 +55,7 @@ int main()
                   CGNS_ENUMV(RealSingle),&irmin,&irmax,z);
 /* find out how many sections */
     cg_nsections(index_file,index_base,index_zone,&nsections);
-    printf("\nnumber of sections=%i\n",nsections);
+    printf("\number of sections=%i\n",nsections);
 /* read element connectivity */
     for (index_sect=1; index_sect <= nsections; index_sect++)
     {
