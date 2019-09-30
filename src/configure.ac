@@ -90,7 +90,7 @@ CC_BASENAME="`echo $CC | cut -f1 -d' ' | xargs basename 2>/dev/null`"
 
 if test "$ac_cv_prog_gcc" = "yes"; then
   test -z "$CFLAGS" && CFLAGS=-O2
-  # probably dont need this
+  # probably don't need this
   # CFLAGS="$CFLAGS -fwritable-strings -ffloat-store"
 fi
 
@@ -493,7 +493,7 @@ else
 
  ## In F2003 and F2008 optional parameters are not allowed for functions that have BIND(C).
  ## In Fortran 2003 it is constraint C530, in the latest Fortran 2008 draft it is C516:
- ## "The ALLOCATABLE, POINTER, or OPTIONAL attribute shall not be specifed
+ ## "The ALLOCATABLE, POINTER, or OPTIONAL attribute shall not be specified
  ## for a dummy argument of a procedure that has a proc-language-binding-spec."
 
  ## However this is being addressed in:
@@ -1803,7 +1803,7 @@ if test "$withfortran" = "yes"; then
       FC_D_PRE='-WF,' 
     fi
 #----------- Determine if the Fortran compiler pgi ------------------------
-# The PGI compiler segfaults wehn va_start is called, so we need to add
+# The PGI compiler segfaults when va_start is called, so we need to add
 # a special compiler flag, see CGNS-40. -Mx,125,0x200 is now called
 # -Mvarargs
 #--------------------------------------------------------------------------

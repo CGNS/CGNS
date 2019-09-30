@@ -1116,7 +1116,7 @@ to_HDF_ID
 to_ADF_ID
 \shape default
  from a type cast to a function which uses memcpy for the conversion.
- This is need to for the upcomming release of HDF5 1.10 where hid_t was changed
+ This is need to for the upcoming release of HDF5 1.10 where hid_t was changed
  from a 32 bit integer to a 64 bit integer.
 \end_layout
 

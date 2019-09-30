@@ -298,7 +298,7 @@
       endif
 
 !     if given ranges span the full dimensions, the read should succeed no
-!     matter what the range is (this behavior is for backwards compatbility and
+!     matter what the range is (this behavior is for backwards compatibility and
 !     is not documented)
       do n=1,3
         rmin(n) = 1
