@@ -235,7 +235,7 @@ proc config_init {} {
     }
   }
   # needed for tcl 8.5 to prevent tristate behavior
-  # when using "" as on/off value for chaeck/radio buttons
+  # when using "" as on/off value for check/radio buttons
   catch {
     option add *Checkbutton.tristateValue "-----"
     option add *Radiobutton.tristateValue "-----"

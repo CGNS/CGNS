@@ -2306,7 +2306,7 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
             s_rmin[n] = 1;
         }
         else {
-             /* new behavior consitent with SIDS */
+             /* new behavior consistent with SIDS */
             s_rmin[n] = 1 - zcoor->rind_planes[2*n];
         }
         s_rmax[n] = s_rmin[n] + m_dimvals[n] - 1;
@@ -3304,7 +3304,7 @@ int cg_elements_partial_read(int file_number, int B, int Z, int S,
                 nn = section->parelem->dim_vals[0] * 4;
                 data = (cgsize_t *)malloc((size_t)(nn * sizeof(cgsize_t)));
                 if (data == NULL) {
-                    cgi_error("malloc failed for tempory ParentData array");
+                    cgi_error("malloc failed for temporary ParentData array");
                     return CG_ERROR;
                 }
                 if (cgi_read_int_data(section->parelem->id,
@@ -3517,7 +3517,7 @@ int cg_poly_elements_partial_read(int file_number, int B, int Z, int S,
                 nn = section->parelem->dim_vals[0] * 4;
                 data = (cgsize_t *)malloc((size_t)(nn * sizeof(cgsize_t)));
                 if (data == NULL) {
-                    cgi_error("malloc failed for tempory ParentData array");
+                    cgi_error("malloc failed for temporary ParentData array");
                     return CG_ERROR;
                 }
                 if (cgi_read_int_data(section->parelem->id,
@@ -3821,7 +3821,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
 
         newelems = (cgsize_t *)malloc((size_t)(cnt * newsize * sizeof(cgsize_t)));
         if (NULL == newelems) {
-            cgi_error("Error alocating new ParentElements data");
+            cgi_error("Error allocating new ParentElements data");
             return CG_ERROR;
         }
         offset = start - section->range[0];
@@ -4235,7 +4235,7 @@ int cg_poly_elements_partial_write(int file_number, int B, int Z, int S,
 
         newelems = (cgsize_t *)malloc((size_t)(cnt * newsize * sizeof(cgsize_t)));
         if (NULL == newelems) {
-            cgi_error("Error alocating new ParentElements data");
+            cgi_error("Error allocating new ParentElements data");
             return CG_ERROR;
         }
         offset = start - section->range[0];
@@ -4445,7 +4445,7 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
         return CG_ERROR;
     }
     if (size != section->parelem->dim_vals[0]) {
-        cgi_error("internal errror - invalid ParentElements data size !!!");
+        cgi_error("internal error - invalid ParentElements data size !!!");
         return CG_ERROR;
     }
 
@@ -4467,7 +4467,7 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
             return CG_ERROR;
         }
         if (size != section->parface->dim_vals[0]) {
-            cgi_error("internal errror - invalid ParentElementsPosition data size !!!");
+            cgi_error("internal error - invalid ParentElementsPosition data size !!!");
             return CG_ERROR;
         }
     }
@@ -5024,7 +5024,7 @@ int cg_field_write(int file_number, int B, int Z, int S,
             s_rmin[n] = 1;
         }
         else {
-             /* new behavior consitent with SIDS */
+             /* new behavior consistent with SIDS */
             s_rmin[n] = 1 - sol->rind_planes[2*n];
         }
         s_rmax[n] = s_rmin[n] + m_dimvals[n] - 1;
@@ -5886,7 +5886,7 @@ int cg_nconns(int file_number, int B, int Z, int *nconns)
 }
 
 /* in cg_conn_info, donor_datatype is useless starting with version 1.27, because
-   it's always I4.  Howver this arg. is left for backward compatibility of API
+   it's always I4.  However this arg. is left for backward compatibility of API
    and to be able to read old files */
 int cg_conn_info(int file_number, int B, int Z, int I, char *connectname,
 		 CGNS_ENUMT(GridLocation_t) *location,
@@ -9282,7 +9282,7 @@ int cg_equationset_read(int *EquationDimension,
     else            (*TurbulenceModelFlag)=0;
 
     /* Version 2.1 chemistry extensions get their own read routine
-    ** for backward compatability.
+    ** for backward compatibility.
     */
     return CG_OK;
 }
@@ -10094,7 +10094,7 @@ int cg_array_general_write(const char *arrayname,
         return CG_ERROR;
     }
 
-     /*** verfication for dataset in file */
+     /*** verification for dataset in file */
      /* verify the rank and dimensions of the file-space array */
     if (s_numdim <= 0 || s_numdim > CGIO_MAX_DIMENSIONS) {
         cgi_error("Data arrays are limited to %d dimensions in file",
@@ -10265,7 +10265,7 @@ int cg_rind_write(const int * RindData)
         planes are still written but an error is returned */
     ier = cg_narrays(&narrays);
     if (ier == CG_OK && narrays > 0) {
-        cgi_error("Writing rind planes invalidates dimensions of exisitng "
+        cgi_error("Writing rind planes invalidates dimensions of existing "
                   "array(s).");
         return CG_ERROR;
     }
@@ -12126,7 +12126,7 @@ int cg_delete_node(const char *node_name)
     if (strcmp(posit->label,"CGNSBase_t")==0) {
         cgns_base *parent = (cgns_base *)posit->posit;
 
-     /* Case 1: node_label = can have multiple occurence:  */
+     /* Case 1: node_label = can have multiple occurrence:  */
         if (strcmp(node_label,"Zone_t")==0)
             CGNS_DELETE_SHIFT(nzones, zone, cgi_free_zone)
         else if (strcmp(node_label,"Family_t")==0)

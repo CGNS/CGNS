@@ -16,7 +16,7 @@ extern void (*vec_errhandler) ( /* user error handler */
 /*----- error codes -----*/
 
 enum VecErrors {
-    VECERR_NOERR=0, /* sucessfull evaluation */
+    VECERR_NOERR=0, /* successful evaluation */
     VECERR_SYMBOL,  /* unrecognized or invalid symbol */
     VECERR_BADEXPR, /* bad expression */
     VECERR_NOEXPR,  /* NULL or blank expression string argument */
@@ -30,7 +30,7 @@ enum VecErrors {
     VECERR_MISSING, /* missing operator */
     VECERR_POINTER, /* user function did not update pointer */
     VECERR_CALLS,   /* too many recursive calls */
-    VECERR_BADNUM,  /* single '.' not preceeded/followed by digit */
+    VECERR_BADNUM,  /* single '.' not preceded/followed by digit */
     VECERR_RECURSE, /* recursion in expression detected */
     VECERR_ARGS,    /* function argument list error */
     VECERR_MAXARGS, /* user function has too many arguments */
@@ -60,7 +60,7 @@ enum VecErrors {
 /*----- error messages -----*/
 
 static char *err_msg[] = {
-    "sucessfull evaluation",
+    "successful evaluation",
     "unrecognized or invalid symbol",
     "bad expression",
     "NULL or blank expression string argument",
@@ -74,7 +74,7 @@ static char *err_msg[] = {
     "missing operator",
     "user function did not update pointer",
     "too many recursive calls",
-    "single '.' not preceeded or followed by digit",
+    "single '.' not preceded or followed by digit",
     "recursion in expression detected",
     "function argument list error",
     "user function has too many arguments",

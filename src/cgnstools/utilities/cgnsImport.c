@@ -203,7 +203,7 @@ static cgnsNODE *GetNode (cgsize_t nodeid, cgsize_t *pos)
 
 /*---------- CompareNodes ----------------------------------------------
  * compare two nodes, returns 0 if nodes are the same within
- * the specifed tolerance, else 1
+ * the specified tolerance, else 1
  *----------------------------------------------------------------------*/
 
 static int CompareNodes (cgnsNODE *node1, cgnsNODE *node2)
@@ -1018,7 +1018,7 @@ cgsize_t cgnsImportCheck (int rel)
 }
 
 /*---------- cgnsImportMap ----------------------------------------------
- * map a node explictly to another
+ * map a node explicitly to another
  *-----------------------------------------------------------------------*/
 
 cgsize_t cgnsImportMap (cgsize_t nodeid, cgsize_t mapid)

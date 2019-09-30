@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# sh script to launch unit convertor
+# sh script to launch unit converter
 
 dir=`dirname $0`
 

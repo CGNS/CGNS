@@ -135,7 +135,7 @@
 #define CG_CHUNKED    2
 
 /* note: CG_CONFIG_RIND_ZERO is obsolete and considered a bug.  Users are given
- *       the option only for backwards compatibilty */
+ *       the option only for backwards compatibility */
 #define CG_CONFIG_RIND_ZERO (void*)0
 #define CG_CONFIG_RIND_CORE (void*)1
 
@@ -351,7 +351,7 @@ typedef enum {
 } CGNS_ENUMT( GoverningEquationsType_t );
 
 /* Any model type will accept both ModelTypeNull and ModelTypeUserDefined.
-** The following models will accept these values as vaild...
+** The following models will accept these values as valid...
 **
 ** GasModel_t: Ideal, VanderWaals, CaloricallyPerfect, ThermallyPerfect,
 **    ConstantDensity, RedlichKwong

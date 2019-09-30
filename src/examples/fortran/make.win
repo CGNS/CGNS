@@ -10,7 +10,7 @@ CGNSlibs    = $(CGNSdir)\lib\cgns.lib
 #CGNSlibs    = c:\cgnslib_3.1\src\WIN32\libcgns.lib
 
 # if you are using CGNS version 3.1 and have built as 64-bit,
-# then you wiil need to set this option to whatever your Fortran compiler
+# then you will need to set this option to whatever your Fortran compiler
 # uses to automatically promote integer values to integer*8
 #I8OPT =
 
