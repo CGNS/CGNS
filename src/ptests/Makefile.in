@@ -21,6 +21,7 @@ CALL =	pcgns_ctest$(EXE) \
         comm_test$(EXE) \
 	test_base$(EXE) \
 	test_unstructured$(EXE) \
+	test_lg_unstructured$(EXE) \
 	test_unstruc_quad$(EXE) \
 	test_zone$(EXE) \
 	test_general_readwrite$(EXE) \
@@ -102,6 +103,12 @@ test_base$(EXE) : test_base.c $(CGNSLIB)
 
 test_unstructured$(EXE) : test_unstructured.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_unstructured.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_lg_unstructured$(EXE) : test_lg_unstructured.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_lg_unstructured.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
