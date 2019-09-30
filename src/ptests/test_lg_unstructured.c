@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 void compareValuesDouble(double val1, double val2)
 {
@@ -72,7 +73,7 @@ int main(int argc, char** argv)
     bool useBufferedSectionWrite = false;
     bool useMixed = false;
     cgsize_t nbCellSide = 20;
-    int nbZones = 5;
+    int nbZones = 1;
     int iarg = 0;
     char fileName[] = "testFile.cgns";
     if (rank == 0) printf("Unstructured CGNS mesh write test with %d ranks\n",size);
@@ -269,7 +270,7 @@ int main(int argc, char** argv)
                     cgsize_t ipos = 0;
                     for (int i=0; i<nbWrite; i++)
                     {
-                        cellsWrite[ipos] = cgsize_t(HEXA_8);
+                      cellsWrite[ipos] = (cgsize_t)HEXA_8;
                         ipos++;
                         for (int j=0; j<8; j++)
                         {
