@@ -30,7 +30,7 @@ void compareValuesDouble(double val1, double val2)
     if (abs(val1 - val2) > 1e-10)
     {
         printf("ERROR - value comparison failed %f, %f\n",val1,val2);
-        MPI_Abort(MPI_COMM_WORLD,0);
+        MPI_Abort(MPI_COMM_WORLD,1);
     }
 }
 
@@ -39,7 +39,7 @@ void compareValuescgSize_t(cgsize_t val1, cgsize_t val2)
     if (val1 != val2)
     {
         printf("ERROR - value comparison failed %d, %d\n",val1,val2);
-        MPI_Abort(MPI_COMM_WORLD,0);
+        MPI_Abort(MPI_COMM_WORLD,1);
     }
 }
 
