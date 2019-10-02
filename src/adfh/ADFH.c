@@ -336,7 +336,7 @@ static herr_t walk_H5_error(hid_t estack, void *data)
 
 static hid_t get_file_id (hid_t id)
 {
-  int n, nobj;
+  ssize_t n, nobj;
   hid_t *objs, fid = -1;
   H5G_stat_t gstat, rstat;
 
@@ -1403,7 +1403,8 @@ void ADFH_Move_Child(const double  pid,
   hid_t hpid;
   hid_t hid;
   hid_t hnpid;
-  int len, namelen;
+  ssize_t len;
+  int namelen;
 #ifndef ADFH_NO_ORDER
   int old_order, new_order;
 #endif
@@ -2295,7 +2296,7 @@ void ADFH_Database_Close(const double  root,
 {
   int fn,idx;
   hid_t hid,fid;
-  int nobj,n;
+  ssize_t nobj,n;
 #ifdef ADFH_FORCE_ID_CLOSE
   hid_t *objs;
 #endif

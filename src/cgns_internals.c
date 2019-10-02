@@ -7967,7 +7967,8 @@ int cgi_array_general_verify_range(
     cgsize_t *numpt)                    /* [O] number of points accessed */
 {
     cgsize_t s_numpt = 1, m_numpt = 1;
-    int n, npt;
+    cgsize_t npt;
+    int n;
 
     int s_reset_range = 1;
     *s_access_full_range = 1;
