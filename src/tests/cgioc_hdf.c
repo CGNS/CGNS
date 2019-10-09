@@ -354,7 +354,7 @@ int main (int argc, char **argv)
      cg_error_exit();
    if(c1_dimensions_r[0] != 1)
      cg_error_exit();
-   if (strcmp(c1_r, c1) != 0)
+   if (strncmp(c1_r, c1, 1) != 0)
      cg_error_exit();
 
    if( cgio_close_file(cgio_num))
