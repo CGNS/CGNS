@@ -374,6 +374,15 @@ CGEXTERN int cgio_read_all_data_type (
     void *data
 );
 
+CGEXTERN int cgio_read_block_data_type (
+    int cgio_num,
+    double id,
+    cgsize_t b_start,
+    cgsize_t b_end,
+    const char *m_data_type,
+    void *data
+);
+
 CGEXTERN int cgio_read_block_data (
     int cgio_num,
     double id,

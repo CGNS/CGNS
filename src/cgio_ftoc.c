@@ -537,11 +537,32 @@ CGIODLL void FMNAME(cgio_read_all_data_f, CGIO_READ_ALL_DATA_F) (
 
 /*---------------------------------------------------------*/
 
+CGIODLL void FMNAME(cgio_read_all_data_type_f, CGIO_READ_ALL_DATA_TYPE_F) (
+    cgint_f *cgio_num, double *id, STR_PSTR(m_data_type), void *data, cgint_f *ier STR_PLEN(m_data_type))
+{
+    char c_dtype[CGIO_MAX_NAME_LENGTH+1];
+    to_c_string(STR_PTR(m_data_type), STR_LEN(m_data_type), c_dtype, CGIO_MAX_NAME_LENGTH);
+    *ier = (cgint_f)cgio_read_all_data_type((int)*cgio_num, *id, c_dtype, data);
+}
+
+/*---------------------------------------------------------*/
+
 CGIODLL void FMNAME(cgio_read_block_data_f, CGIO_READ_BLOCK_DATA_F) (
     cgint_f *cgio_num, double *id, cgsize_t *b_start, cgsize_t *b_end,
     void *data, cgint_f *ier)
 {
     *ier = (cgint_f)cgio_read_block_data((int)*cgio_num, *id, *b_start, *b_end, data);
+}
+
+/*---------------------------------------------------------*/
+
+CGIODLL void FMNAME(cgio_read_block_data_type_f, CGIO_READ_BLOCK_DATA_TYPE_F) (
+    cgint_f *cgio_num, double *id, cgsize_t *b_start, cgsize_t *b_end,
+    STR_PSTR(m_data_type), void *data, cgint_f *ier STR_PLEN(m_data_type))
+{
+    char c_dtype[CGIO_MAX_NAME_LENGTH+1];
+    to_c_string(STR_PTR(m_data_type), STR_LEN(m_data_type), c_dtype, CGIO_MAX_NAME_LENGTH);
+    *ier = (cgint_f)cgio_read_block_data_type((int)*cgio_num, *id, *b_start, *b_end, c_dtype, data);
 }
 
 /*---------------------------------------------------------*/
@@ -553,6 +574,19 @@ CGIODLL void FMNAME(cgio_read_data_f, CGIO_READ_DATA_F) (
 {
     *ier = (cgint_f)cgio_read_data((int)*cgio_num, *id, s_start, s_end, s_stride,
                (int)*m_ndims, m_dims, m_start, m_end, m_stride, data);
+}
+
+/*---------------------------------------------------------*/
+
+CGIODLL void FMNAME(cgio_read_data_type_f, CGIO_READ_DATA_TYPE_F) (
+    cgint_f *cgio_num, double *id, cgsize_t *s_start, cgsize_t *s_end,
+    cgsize_t *s_stride,  STR_PSTR(m_data_type), cgint_f *m_ndims, cgsize_t *m_dims, cgsize_t *m_start,
+    cgsize_t *m_end, cgsize_t *m_stride, void *data, cgint_f *ier STR_PLEN(m_data_type))
+{
+    char c_dtype[CGIO_MAX_NAME_LENGTH+1];
+    to_c_string(STR_PTR(m_data_type), STR_LEN(m_data_type), c_dtype, CGIO_MAX_NAME_LENGTH);
+    *ier = (cgint_f)cgio_read_data_type((int)*cgio_num, *id, s_start, s_end, s_stride, c_dtype,
+           (int)*m_ndims, m_dims, m_start, m_end, m_stride, data);
 }
 
 /*=========================================================
