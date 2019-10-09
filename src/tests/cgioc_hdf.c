@@ -221,7 +221,7 @@ int main (int argc, char **argv)
      /* Reading portion of test */
   
      for (j = 0; j < NFILES; j++) {
-   
+       printf("FILE = %s\n", files[j]);
        if( cgio_open_file(files[j],CGIO_MODE_READ,file_type,&cgio_num)) {
          printf("FAILED to open... %s\n", files[j]);
          cg_error_exit();
