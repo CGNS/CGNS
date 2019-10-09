@@ -20,8 +20,7 @@
 void print_child_list(int cgio_num,double node_id);
 
 #define DIM0 10
-#define NUMBER_OF_STRING DIM0
-#define MAX_STRING_SIZE 5
+#define NFILES 6
 
 int main (int argc, char **argv)
 {
@@ -77,6 +76,15 @@ int main (int argc, char **argv)
   double             r8_r[DIM0];
   unsigned char      b1_r[DIM0];
 
+  char files[NFILES][60] = {
+    "data/cgioc_HDF-1_10_5-INT32-BE.cgio",
+    "data/cgioc_HDF-1_10_5-INT64-BE.cgio",
+    "data/cgioc_HDF-1_12_0-INT32-BE.cgio",
+    "data/cgioc_HDF-1_12_0-INT64-BE.cgio",
+    "data/cgioc_HDF-1_8_7-INT32-BE.cgio",
+    "data/cgioc_HDF-1_8_7-INT64-BE.cgio"
+  };
+
 
   /* --- miscellaneous variables */
   int i, j, n;
@@ -93,10 +101,10 @@ int main (int argc, char **argv)
   }
 
   for (i = 0; i < DIM0; i++) {
-    i4[i] = (pow(2,31) - 1) - DIM0 + (int)i; 
-    u4[i] = (pow(2,32) - 1) - DIM0 + (unsigned int)i;
-    i8[i] = (pow(2,50) - 1) - DIM0 + (long long)(i); 
-    u8[i] = (pow(2,51) - 1) - DIM0 + (unsigned long long)(i);
+    i4[i] = (pow(2,10) - 1) - DIM0 + (int)i; 
+    u4[i] = (pow(2,11) - 1) - DIM0 + (unsigned int)i;
+    i8[i] = (pow(2,10) - 1) - DIM0 + (long long)(i); 
+    u8[i] = (pow(2,12) - 1) - DIM0 + (unsigned long long)(i);
     r4[i] = (float)(i)*0.1;
     r8[i] = (double)(i)*0.1;
     b1[i] = 0;
@@ -121,7 +129,7 @@ int main (int argc, char **argv)
 
    if(write_file) {
 
-     if( cgio_open_file("cgio_hdf.cgio",CGIO_MODE_WRITE,file_type,&cgio_num))
+     if( cgio_open_file("cgioc_hdf.cgio",CGIO_MODE_WRITE,file_type,&cgio_num))
        cg_error_exit();
 
      if( cgio_get_root_id(cgio_num,&root_id))
@@ -211,154 +219,177 @@ int main (int argc, char **argv)
    }
 
    /* Reading portion of test */
+  
+   for (j = 0; j < NFILES; j++) {
+   
+     if( cgio_open_file(files[j],CGIO_MODE_READ,file_type,&cgio_num)) {
+       printf("FAILED to open... %s\n", files[j]);
+       cg_error_exit();
+     }
 
-   if( cgio_open_file("cgio_hdf.cgio",CGIO_MODE_READ,file_type,&cgio_num)) {
-     printf("FAILED to open cgio_hdf.cgio \n");
-     cg_error_exit();
-   }
+     if( cgio_get_root_id(cgio_num,&root_id))
+       cg_error_exit();
 
-   if( cgio_get_root_id(cgio_num,&root_id))
-     cg_error_exit();
+     /* ------------- verify written data  --------------- */
+     if( cgio_get_node_id(cgio_num,root_id,"I4",&tmp_id) )
+       cg_error_exit();
+     if( cgio_get_label(cgio_num,tmp_id,label_r) )
+       cg_error_exit();
+     if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
+       cg_error_exit();
+     if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,i4_dimensions_r) )
+       cg_error_exit();
+     if(strcmp(label_r,"32-bit integer") != 0)
+       cg_error_exit();
+     if(strcmp(data_type_r,"I4") != 0)
+       cg_error_exit();
+     if(num_dims_r != 1)
+       cg_error_exit();
+     if(i4_dimensions_r[0] != DIM0)
+       cg_error_exit();
 
-  /* ------------- verify written data  --------------- */
-   if( cgio_get_node_id(cgio_num,root_id,"I4",&tmp_id) )
-     cg_error_exit();
-   if( cgio_get_label(cgio_num,tmp_id,label_r) )
-     cg_error_exit();
-   if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
-     cg_error_exit();
-   if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,i4_dimensions_r) )
-     cg_error_exit();
-   if( cgio_read_all_data_type(cgio_num,tmp_id,"I4",i4_r) )
-     cg_error_exit();
-   if(strcmp(label_r,"32-bit integer") != 0)
-     cg_error_exit();
-   if(strcmp(data_type_r,"I4") != 0)
-     cg_error_exit();
-   if(num_dims_r != 1)
-     cg_error_exit();
-   if(i4_dimensions_r[0] != DIM0)
-     cg_error_exit();
-   for (i=0; i< DIM0; i++) {
-     if (i4_r[i] != i4[i])
+     /* Read into a same memory space */
+     if( cgio_read_all_data_type(cgio_num,tmp_id,"I4",i4_r) )
+       cg_error_exit();
+     for (i=0; i< DIM0; i++) {
+       if (i4_r[i] != i4[i])
+         cg_error_exit();
+     }
+     
+     /* Read into a different memory space */
+     if( cgio_read_all_data_type(cgio_num,tmp_id,"I8",i8_r) )
+       cg_error_exit();
+     for (i=0; i< DIM0; i++) {
+       if (i8_r[i] != i4[i])
+         cg_error_exit();
+     }
+
+     if( cgio_get_node_id(cgio_num,root_id,"I8",&tmp_id) )
+       cg_error_exit();
+     if( cgio_get_label(cgio_num,tmp_id,label_r) )
+       cg_error_exit();
+     if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
+       cg_error_exit();
+     if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,i8_dimensions_r) )
+       cg_error_exit();
+     if(strcmp(label_r,"64-bit integer") != 0)
+       cg_error_exit();
+     if(strcmp(data_type_r,"I8") != 0)
+       cg_error_exit();
+     if(num_dims_r != 1)
+       cg_error_exit();
+     if(i8_dimensions_r[0] != DIM0)
+       cg_error_exit();
+
+     /* Read into a same memory space */
+     if( cgio_read_all_data_type(cgio_num,tmp_id,"I8",i8_r) )
+       cg_error_exit();
+     for (i=0; i< DIM0; i++) {
+       if (i8_r[i] != i8[i])
+         cg_error_exit();
+     }
+
+     /* Read into a different memory space */
+     if( cgio_read_all_data_type(cgio_num,tmp_id,"I4",i4_r) )
+       cg_error_exit();
+     for (i=0; i< DIM0; i++) {
+       if (i4_r[i] != i4[i])
+         cg_error_exit();
+     }
+
+     if( cgio_get_node_id(cgio_num,root_id,"U4",&tmp_id) )
+       cg_error_exit();
+     if( cgio_get_label(cgio_num,tmp_id,label_r) )
+       cg_error_exit();
+     if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
+       cg_error_exit();
+     if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,u4_dimensions_r) )
+       cg_error_exit();
+     if( cgio_read_all_data_type(cgio_num,tmp_id,"U4",u4_r) )
+       cg_error_exit();
+     if(strcmp(label_r,"32-bit unsigned integer") != 0)
+       cg_error_exit();
+     if(strcmp(data_type_r,"U4") != 0)
+       cg_error_exit();
+     if(num_dims_r != 1)
+       cg_error_exit();
+     if(u4_dimensions_r[0] != DIM0)
+       cg_error_exit();
+     for (i=0; i< DIM0; i++) {
+       if (u4_r[i] != u4[i])
+         cg_error_exit();
+     }
+
+     if( cgio_get_node_id(cgio_num,root_id,"U8",&tmp_id) )
+       cg_error_exit();
+     if( cgio_get_label(cgio_num,tmp_id,label_r) )
+       cg_error_exit();
+     if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
+       cg_error_exit();
+     if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,u8_dimensions_r) )
+       cg_error_exit();
+     if( cgio_read_all_data_type(cgio_num,tmp_id,"U8",u8_r) )
+       cg_error_exit();
+     if(strcmp(label_r,"64-bit unsigned integer") != 0)
+       cg_error_exit();
+     if(strcmp(data_type_r,"U8") != 0)
+       cg_error_exit();
+     if(num_dims_r != 1)
+       cg_error_exit();
+     if(u8_dimensions_r[0] != DIM0)
+       cg_error_exit();
+     for (i=0; i< DIM0; i++) {
+       if (u8_r[i] != u8[i])
+         cg_error_exit();
+     }
+
+     if( cgio_get_node_id(cgio_num,root_id,"B1",&tmp_id) )
+       cg_error_exit();
+     if( cgio_get_label(cgio_num,tmp_id,label_r) )
+       cg_error_exit();
+     if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
+       cg_error_exit();
+     if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,b1_dimensions_r) )
+       cg_error_exit();
+     if( cgio_read_all_data_type(cgio_num,tmp_id,"B1",b1_r) )
+       cg_error_exit();
+     if(strcmp(label_r,"Byte data") != 0)
+       cg_error_exit();
+     if(strcmp(data_type_r,"B1") != 0)
+       cg_error_exit();
+     if(num_dims_r != 1)
+       cg_error_exit();
+     if(b1_dimensions_r[0] != DIM0)
+       cg_error_exit();
+     for (i=0; i< DIM0; i++) {
+       if (b1_r[i] != b1[i])
+         cg_error_exit();
+     }
+
+     if( cgio_get_node_id(cgio_num,root_id,"C1",&tmp_id) )
+       cg_error_exit();
+     if( cgio_get_label(cgio_num,tmp_id,label_r) )
+       cg_error_exit();
+     if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
+       cg_error_exit();
+     if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,c1_dimensions_r) )
+       cg_error_exit();
+     if( cgio_read_all_data_type(cgio_num,tmp_id,"C1",c1_r) )
+       cg_error_exit();
+     if(strcmp(label_r,"character data") != 0)
+       cg_error_exit();
+     if(strcmp(data_type_r,"C1") != 0)
+       cg_error_exit();
+     if(num_dims_r != 1)
+       cg_error_exit();
+     if(c1_dimensions_r[0] != 1)
+       cg_error_exit();
+     if (strncmp(c1_r, c1, 1) != 0)
+       cg_error_exit();
+
+     if( cgio_close_file(cgio_num))
        cg_error_exit();
    }
-
-   if( cgio_get_node_id(cgio_num,root_id,"I8",&tmp_id) )
-     cg_error_exit();
-   if( cgio_get_label(cgio_num,tmp_id,label_r) )
-     cg_error_exit();
-   if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
-     cg_error_exit();
-   if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,i8_dimensions_r) )
-     cg_error_exit();
-   if( cgio_read_all_data_type(cgio_num,tmp_id,"I8",i8_r) )
-     cg_error_exit();
-   if(strcmp(label_r,"64-bit integer") != 0)
-     cg_error_exit();
-   if(strcmp(data_type_r,"I8") != 0)
-     cg_error_exit();
-   if(num_dims_r != 1)
-     cg_error_exit();
-   if(i8_dimensions_r[0] != DIM0)
-     cg_error_exit();
-   for (i=0; i< DIM0; i++) {
-     if (i8_r[i] != i8[i])
-       cg_error_exit();
-   }
-
-   if( cgio_get_node_id(cgio_num,root_id,"U4",&tmp_id) )
-     cg_error_exit();
-   if( cgio_get_label(cgio_num,tmp_id,label_r) )
-     cg_error_exit();
-   if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
-     cg_error_exit();
-   if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,u4_dimensions_r) )
-     cg_error_exit();
-   if( cgio_read_all_data_type(cgio_num,tmp_id,"U4",u4_r) )
-     cg_error_exit();
-   if(strcmp(label_r,"32-bit unsigned integer") != 0)
-     cg_error_exit();
-   if(strcmp(data_type_r,"U4") != 0)
-     cg_error_exit();
-   if(num_dims_r != 1)
-     cg_error_exit();
-   if(u4_dimensions_r[0] != DIM0)
-     cg_error_exit();
-   for (i=0; i< DIM0; i++) {
-     if (u4_r[i] != u4[i])
-       cg_error_exit();
-   }
-
-   if( cgio_get_node_id(cgio_num,root_id,"U8",&tmp_id) )
-     cg_error_exit();
-   if( cgio_get_label(cgio_num,tmp_id,label_r) )
-     cg_error_exit();
-   if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
-     cg_error_exit();
-   if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,u8_dimensions_r) )
-     cg_error_exit();
-   if( cgio_read_all_data_type(cgio_num,tmp_id,"U8",u8_r) )
-     cg_error_exit();
-   if(strcmp(label_r,"64-bit unsigned integer") != 0)
-     cg_error_exit();
-   if(strcmp(data_type_r,"U8") != 0)
-     cg_error_exit();
-   if(num_dims_r != 1)
-     cg_error_exit();
-   if(u8_dimensions_r[0] != DIM0)
-     cg_error_exit();
-   for (i=0; i< DIM0; i++) {
-     if (u8_r[i] != u8[i])
-       cg_error_exit();
-   }
-
-   if( cgio_get_node_id(cgio_num,root_id,"B1",&tmp_id) )
-     cg_error_exit();
-   if( cgio_get_label(cgio_num,tmp_id,label_r) )
-     cg_error_exit();
-   if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
-     cg_error_exit();
-   if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,b1_dimensions_r) )
-     cg_error_exit();
-   if( cgio_read_all_data_type(cgio_num,tmp_id,"B1",b1_r) )
-     cg_error_exit();
-   if(strcmp(label_r,"Byte data") != 0)
-     cg_error_exit();
-   if(strcmp(data_type_r,"B1") != 0)
-     cg_error_exit();
-   if(num_dims_r != 1)
-     cg_error_exit();
-   if(b1_dimensions_r[0] != DIM0)
-     cg_error_exit();
-   for (i=0; i< DIM0; i++) {
-     if (b1_r[i] != b1[i])
-       cg_error_exit();
-   }
-
-   if( cgio_get_node_id(cgio_num,root_id,"C1",&tmp_id) )
-     cg_error_exit();
-   if( cgio_get_label(cgio_num,tmp_id,label_r) )
-     cg_error_exit();
-   if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
-     cg_error_exit();
-   if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,c1_dimensions_r) )
-     cg_error_exit();
-   if( cgio_read_all_data_type(cgio_num,tmp_id,"C1",c1_r) )
-     cg_error_exit();
-   if(strcmp(label_r,"character data") != 0)
-     cg_error_exit();
-   if(strcmp(data_type_r,"C1") != 0)
-     cg_error_exit();
-   if(num_dims_r != 1)
-     cg_error_exit();
-   if(c1_dimensions_r[0] != 1)
-     cg_error_exit();
-   if (strncmp(c1_r, c1, 1) != 0)
-     cg_error_exit();
-
-   if( cgio_close_file(cgio_num))
-       cg_error_exit();
 
    return 0;
 }
