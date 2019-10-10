@@ -1,12 +1,17 @@
 /*
-   Sample CGIO test program to build files illustrated
-   in example database figure.
+ *  Sample CGIO test program to build testing files (with option -w) and
+ *  to test reading different version of CGNS files build with:
+ *     -- HDF versions 1.8, 1.10, and 1.12.
+ *     -- CGNS library built with/without --enable-64 and --enable-lfs
+ *  Tests reading different datatypes supported by CGNS.
+ *  Created data files are located in the 'data' directory.
 */
 
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 #ifdef _WIN32
 #include <io.h>
 #define unlink _unlink
@@ -17,10 +22,35 @@
 #include "cgns_io.h"
 #include "cgnslib.h"
 
-void print_child_list(int cgio_num,double node_id);
-
 #define DIM0 10
 #define NFILES 6
+
+/* -------------------------------------------------------------------------------
+ * Credit:
+ *  Sandia Engineering Analysis Code Access System (SEACAS)
+ */
+
+static int ulpsDistance(float a, float b)
+{
+  int ia, ib;
+  if (a == b)
+    return 0;
+
+  memcpy(&ia, &a, sizeof(a));
+  memcpy(&ib, &b, sizeof(b));
+
+  if ((ia < 0) != (ib < 0))
+    return INT_MAX;
+
+  int distance = ia - ib;
+  if (distance < 0)
+    distance = -distance;
+  return distance;
+}
+
+static int approx_equal(float f1, float f2) { return ulpsDistance(f1, f2) <= 2; }
+
+/* ------------------------------------------------------------------------------- */
 
 int main (int argc, char **argv)
 {
@@ -221,7 +251,7 @@ int main (int argc, char **argv)
      /* Reading portion of test */
   
      for (j = 0; j < NFILES; j++) {
-       printf("FILE = %s\n", files[j]);
+       /* printf("FILE = %s\n", files[j]); */
        if( cgio_open_file(files[j],CGIO_MODE_READ,file_type,&cgio_num)) {
          printf("FAILED to open... %s\n", files[j]);
          cg_error_exit();
@@ -231,6 +261,72 @@ int main (int argc, char **argv)
          cg_error_exit();
 
        /* ------------- verify written data  --------------- */
+
+       if( cgio_get_node_id(cgio_num,root_id,"R4",&tmp_id) )
+         cg_error_exit();
+       if( cgio_get_label(cgio_num,tmp_id,label_r) )
+         cg_error_exit();
+       if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
+         cg_error_exit();
+       if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,r4_dimensions_r) )
+         cg_error_exit();
+       if(strcmp(label_r,"32-bit real") != 0)
+         cg_error_exit();
+       if(strcmp(data_type_r,"R4") != 0)
+         cg_error_exit();
+       if(num_dims_r != 1)
+         cg_error_exit();
+       if(r4_dimensions_r[0] != DIM0)
+         cg_error_exit();
+
+       /* Read into a same memory space */
+       if( cgio_read_all_data_type(cgio_num,tmp_id,"R4",r4_r) )
+         cg_error_exit();
+       for (i=0; i< DIM0; i++) {
+         if (!approx_equal(r4_r[i], r4[i]))
+           cg_error_exit();
+       }
+     
+       /* Read into a different memory space */
+       if( cgio_read_all_data_type(cgio_num,tmp_id,"R8",r8_r) )
+         cg_error_exit();
+       for (i=0; i< DIM0; i++) {
+         if (!approx_equal((float)r8_r[i], r4[i]))
+           cg_error_exit();
+       }
+
+       if( cgio_get_node_id(cgio_num,root_id,"R8",&tmp_id) )
+         cg_error_exit();
+       if( cgio_get_label(cgio_num,tmp_id,label_r) )
+         cg_error_exit();
+       if( cgio_get_data_type(cgio_num,tmp_id,data_type_r) )
+         cg_error_exit();
+       if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,r8_dimensions_r) )
+         cg_error_exit();
+       if(strcmp(label_r,"64-bit real") != 0)
+         cg_error_exit();
+       if(strcmp(data_type_r,"R8") != 0)
+         cg_error_exit();
+       if(num_dims_r != 1)
+         cg_error_exit();
+       if(r8_dimensions_r[0] != DIM0)
+         cg_error_exit();
+
+       /* Read into a same memory space */
+       if( cgio_read_all_data_type(cgio_num,tmp_id,"R8",r8_r) )
+         cg_error_exit();
+       for (i=0; i< DIM0; i++) {
+         if (!approx_equal((float)r8_r[i], (float)r8[i]))
+           cg_error_exit();
+       }
+       /* Read into a different memory space */
+       if( cgio_read_all_data_type(cgio_num,tmp_id,"R4",r4_r) )
+         cg_error_exit();
+       for (i=0; i< DIM0; i++) {
+         if (!approx_equal(r4_r[i], (float)r8[i]))
+           cg_error_exit();
+       }
+
        if( cgio_get_node_id(cgio_num,root_id,"I4",&tmp_id) )
          cg_error_exit();
        if( cgio_get_label(cgio_num,tmp_id,label_r) )
@@ -293,7 +389,7 @@ int main (int argc, char **argv)
        if( cgio_read_all_data_type(cgio_num,tmp_id,"I4",i4_r) )
          cg_error_exit();
        for (i=0; i< DIM0; i++) {
-         if (i4_r[i] != i4[i])
+         if (i4_r[i] != i8[i])
            cg_error_exit();
        }
 
@@ -305,8 +401,6 @@ int main (int argc, char **argv)
          cg_error_exit();
        if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,u4_dimensions_r) )
          cg_error_exit();
-       if( cgio_read_all_data_type(cgio_num,tmp_id,"U4",u4_r) )
-         cg_error_exit();
        if(strcmp(label_r,"32-bit unsigned integer") != 0)
          cg_error_exit();
        if(strcmp(data_type_r,"U4") != 0)
@@ -315,8 +409,20 @@ int main (int argc, char **argv)
          cg_error_exit();
        if(u4_dimensions_r[0] != DIM0)
          cg_error_exit();
+
+       /* Read into a same memory space */
+       if( cgio_read_all_data_type(cgio_num,tmp_id,"U4",u4_r) )
+         cg_error_exit();
        for (i=0; i< DIM0; i++) {
          if (u4_r[i] != u4[i])
+           cg_error_exit();
+       }
+
+       /* Read into a different memory space */
+       if( cgio_read_all_data_type(cgio_num,tmp_id,"U8",u8_r) )
+         cg_error_exit();
+       for (i=0; i< DIM0; i++) {
+         if (u8_r[i] != u4[i])
            cg_error_exit();
        }
 
@@ -328,8 +434,6 @@ int main (int argc, char **argv)
          cg_error_exit();
        if( cgio_get_dimensions(cgio_num,tmp_id,&num_dims_r,u8_dimensions_r) )
          cg_error_exit();
-       if( cgio_read_all_data_type(cgio_num,tmp_id,"U8",u8_r) )
-         cg_error_exit();
        if(strcmp(label_r,"64-bit unsigned integer") != 0)
          cg_error_exit();
        if(strcmp(data_type_r,"U8") != 0)
@@ -338,8 +442,20 @@ int main (int argc, char **argv)
          cg_error_exit();
        if(u8_dimensions_r[0] != DIM0)
          cg_error_exit();
+
+       /* Read into a same memory space */
+       if( cgio_read_all_data_type(cgio_num,tmp_id,"U8",u8_r) )
+         cg_error_exit();
        for (i=0; i< DIM0; i++) {
          if (u8_r[i] != u8[i])
+           cg_error_exit();
+       }
+
+       /* Read into a different memory space */
+       if( cgio_read_all_data_type(cgio_num,tmp_id,"U4",u4_r) )
+         cg_error_exit();
+       for (i=0; i< DIM0; i++) {
+         if (u4_r[i] != u8[i])
            cg_error_exit();
        }
 
