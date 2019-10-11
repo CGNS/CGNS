@@ -8146,7 +8146,6 @@ int cgi_array_general_read(
     if (ier != CG_OK) return ier;
     const int access_full_range =
         (s_access_full_range == 1) && (m_access_full_range == 1);
-
     if (s_type == m_type) {
          /* quick transfer of data if same data types */
         if (access_full_range) {
@@ -8179,7 +8178,7 @@ int cgi_array_general_read(
             return CG_ERROR;
         }
         if (access_full_range) {
-            if (cgio_read_all_data_type(cg->cgio, array->id, cgi_adf_datatype(m_type), conv_data)) {
+            if (cgio_read_all_data_type(cg->cgio, array->id, array->data_type, conv_data)) {
                 free(conv_data);
                 cg_io_error("cgio_read_all_data_type");
                 return CG_ERROR;
@@ -8187,7 +8186,7 @@ int cgi_array_general_read(
         }
         else {
             if (cgio_read_data_type(cg->cgio, array->id, s_rmin, s_rmax, stride,
-                                    cgi_adf_datatype(m_type),
+                                    array->data_type,
                                     m_numdim, m_dimvals, m_rmin, m_rmax, stride, conv_data)) {
                 free(conv_data);
                 cg_io_error("cgio_read_data_type");
