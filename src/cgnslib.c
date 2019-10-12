@@ -1421,14 +1421,14 @@ int cg_family_write(int file_number, int B, const char * family_name, int *F)
                     }
                     /* Save the old in-memory address to overwrite */
                     family = &( (*family_p)[index] );
-                    // free memory
+                    /* free memory */
                     cgi_free_family(family);
                     break; /* quit "for" loop */
 
                 }
                 /* else, progressing in family tree path */
                 else {
-                    family = &( (*family_p)[index] ); // ??
+                    family = &( (*family_p)[index] ); /* ?? */
                     skip = 1; /* intermediate node exists and should not be created or overwritten */
                     break;
                 }
@@ -1436,7 +1436,7 @@ int cg_family_write(int file_number, int B, const char * family_name, int *F)
             }
         }
 
-        // ... or add a Family_t Node
+        /* ... or add a Family_t Node */
         if( index == *nfamilies_p ) {
             if( *nfamilies_p == 0 ) {
                 *family_p = CGNS_NEW( cgns_family, (*nfamilies_p)+1 );
@@ -1934,9 +1934,9 @@ int cg_node_fambc_write( const char* fambc_name,
     cgsize_t length;
     cgns_family *family = 0;
     cgns_fambc *fambc = NULL;
-//
-//     /* verify input */
-//    if (cgi_check_strlen(fambc_name)) return CG_ERROR;
+
+    /* verify input */
+/*  if (cgi_check_strlen(fambc_name)) return CG_ERROR; */
     if (INVALID_ENUM(bocotype,NofValidBCTypes)) {
         cgi_error("Invalid BCType:  %d",bocotype);
         return CG_ERROR;
@@ -4810,7 +4810,6 @@ int cg_poly_elements_partial_write(int file_number, int B, int Z, int S,
                 }
             }
         } else if (start > section->range[1]) {
-            cgsize_t ii;
             memcpy(newelems, oldelems, (size_t)(oldsize*sizeof(cgsize_t)));
             memcpy(newoffsets, section_offset, (size_t)((section->range[1]-section->range[0]+2)*sizeof(cgsize_t)));
             n += oldsize;
@@ -4832,7 +4831,6 @@ int cg_poly_elements_partial_write(int file_number, int B, int Z, int S,
                 j++;
             }
         } else {
-            cgsize_t ii;
             num = start - section->range[0];
             size = section_offset[num];
             memcpy(newelems, oldelems, (size_t)(size*sizeof(cgsize_t)));
@@ -6679,7 +6677,7 @@ int cg_conn_read(int file_number, int B, int Z, int I, cgsize_t *pnts,
      /* read donor points from ADF file - data_type may be I4, R4 or R8 */
     if (conn->dptset.npts > 0) {
         cgns_ptset dptset = conn->dptset;
-        int index_dim = 0;
+        index_dim = 0;
         for (n=0; n<cg->base[B-1].nzones; n++) {
             if (strcmp(cg->base[B-1].zone[n].name,conn->donor)==0) {
             index_dim = cg->base[B-1].zone[n].type == CGNS_ENUMV(Structured) ? cell_dim : 1;

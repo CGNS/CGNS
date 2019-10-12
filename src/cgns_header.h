@@ -1071,7 +1071,7 @@ int cgi_read_family(cgns_family *family);
 int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
                             cgns_dataset **dataset);
 int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
-                         char_md family_name); // ** FAMILY TREE **
+                         char_md family_name); /** FAMILY TREE **/
 int cgi_read_array(cgns_array *array, char *parent_label, double parent_id);
 int cgi_read_section(int in_link, double parent_id, int *nsections,
                      cgns_section **section);
