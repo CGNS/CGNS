@@ -228,7 +228,7 @@ c      CALL ADFRALL(TMPID,ID,IERR)
       PRINT *,'   DATA:'
       WRITE(*,200)(ID(I),I=1,6)
 C
-C     4.) N13 THROUTH L2
+C     4.) N13 THROUGH L2
 C
 c      CALL ADFGNID(RID,'N3/N11/L2',CID,IERR)
       call cgio_get_node_id_f(cgnum,rid,'N3/N11/L2',cid,ierr)

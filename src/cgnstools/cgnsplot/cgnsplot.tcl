@@ -511,7 +511,7 @@ proc display_message {msg} {
 frame .main -width $ProgData(winwidth) -height $ProgData(winheight)
 pack .main -side top -fill both -expand 1 -padx 5 -pady 2
 
-#--- window seperator
+#--- window separator
 
 frame .main.sep -width 4 -bd 2 -relief raised -cursor sb_h_double_arrow
 

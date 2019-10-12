@@ -309,7 +309,7 @@ static VECCALL usr_func;        /* pointer to user supplied function */
 static char *exp_start = NULL;  /* start of string being parsed */
 static char *exp_ptr;           /* location in string being parsed */
 static SIGHANDLER old_fpe_sig;  /* old SIGFPE handler */
-static jmp_buf env_ptr;         /* enviroment for return from longjmp() */
+static jmp_buf env_ptr;         /* environment for return from longjmp() */
 
 static int nest_level;          /* nesting count for if-then-else */
 static int vec_op;              /* doing operations on array lengths */

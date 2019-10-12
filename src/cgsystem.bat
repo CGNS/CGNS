@@ -31,7 +31,7 @@ echo %system%
 goto done
 
 :config
-echo modifying make.system to set SYSTEM=%systen%
+echo modifying make.system to set SYSTEM=%system%
 echo SYSTEM = %system%> make.system
 
 :done

@@ -206,7 +206,7 @@ static struct _ErrorList {
   {UNEQUAL_MEMORY_AND_DISK_DIMS,"Unequal dimensional specifications for disk and memory"},
   {NODE_IS_NOT_A_LINK,      "The node is not a link.  It was expected to be a link"},
   {LINK_TARGET_NOT_THERE,   "The linked-to node does not exist"},
-  {LINKED_TO_FILE_NOT_THERE,"The file of a linked-node is not accessable"},
+  {LINKED_TO_FILE_NOT_THERE,"The file of a linked-node is not accessible"},
   {INVALID_NODE_NAME,       "Node name contains invalid characters"},
   {FFLUSH_ERROR,            "H5Fflush:flush error"},
   {NULL_NODEID_POINTER,     "The node ID pointer is NULL"},
@@ -262,7 +262,7 @@ if (mta_root == NULL){set_error(ADFH_ERR_ROOTNULL, err);return;}
 #define ROOT_OR_DIE_ERR(err) \
 if (mta_root == NULL){set_error(ADFH_ERR_ROOTNULL, err);return 1;}
 
-/* usefull macros */
+/* useful macros */
 
 #define CMP_OSTAT(r,n) ((r)->objno[0]==(n)->objno[0] && \
                         (r)->objno[1]==(n)->objno[1] && \
@@ -336,7 +336,7 @@ static herr_t walk_H5_error(hid_t estack, void *data)
 
 static hid_t get_file_id (hid_t id)
 {
-  int n, nobj;
+  ssize_t n, nobj;
   hid_t *objs, fid = -1;
   H5G_stat_t gstat, rstat;
 
@@ -1403,7 +1403,8 @@ void ADFH_Move_Child(const double  pid,
   hid_t hpid;
   hid_t hid;
   hid_t hnpid;
-  int len, namelen;
+  ssize_t len;
+  int namelen;
 #ifndef ADFH_NO_ORDER
   int old_order, new_order;
 #endif
@@ -1958,7 +1959,7 @@ void ADFH_Database_Open(const char   *name,
     for (i = 0; i < ADFH_MAXIMUM_FILES; i++) mta_root->g_files[i] = 0;
     mta_root->g_init = 1;
 
-    /* create properties - these are persistent accross all open files.
+    /* create properties - these are persistent across all open files.
        When all files are closed, then delete properties */
     /* H5Pclose performed at file close time */
     mta_root->g_proplink=H5Pcreate(H5P_LINK_ACCESS);
@@ -2295,7 +2296,7 @@ void ADFH_Database_Close(const double  root,
 {
   int fn,idx;
   hid_t hid,fid;
-  int nobj,n;
+  ssize_t nobj,n;
 #ifdef ADFH_FORCE_ID_CLOSE
   hid_t *objs;
 #endif

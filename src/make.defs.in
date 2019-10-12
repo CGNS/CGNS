@@ -20,7 +20,7 @@ CLIBS   = @LIBS@
 
 #------------------------------------------------------------------------
 # SPACE  - used to force a space in the compiler executable output flag
-# O       - object file extension (typicaly o)
+# O       - object file extension (typically o)
 # A       - library file extension (typically a)
 # EXE     - executable extension (typically blank)
 # LIBCGNS - CGNS library name

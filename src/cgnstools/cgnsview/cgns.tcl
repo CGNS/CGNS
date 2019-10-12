@@ -267,7 +267,7 @@ array set CGNSdataValues {
       {Null UserDefined Kilogram Gram Slug PoundMass} \
       {Null UserDefined Meter Centimeter Millimeter Foot Inch} \
       {Null UserDefined Second} \
-      {Null UserDefined Kelvin Celcius Rankine Fahrenheit} \
+      {Null UserDefined Kelvin Celsius Rankine Fahrenheit} \
       {Null UserDefined Radian Degree}}
   EMConductivityModel_t {Null UserDefined Constant Frozen \
       Equilibrium_LinRessler Chemistry_LinRessler}
@@ -298,7 +298,7 @@ array set CGNSdataValues {
   MassUnits_t {Null UserDefined Kilogram Gram Slug PoundMass}
   RigidGridMotion_t {Null UserDefined ConstantRate VariableRate}
   SimulationType_t {Null UserDefined TimeAccurate NonTimeAccurate}
-  TemperatureUnits_t {Null UserDefined Kelvin Celcius Rankine Fahrenheit}
+  TemperatureUnits_t {Null UserDefined Kelvin Celsius Rankine Fahrenheit}
   ThermalConductivityModel_t {Null UserDefined PowerLaw SutherlandLaw \
       ConstantPrandtl}
   ThermalRelaxationModel_t {Null UserDefined Frozen ThermalEquilib \
@@ -542,7 +542,7 @@ Constant or Frozen}}
       {PhysicalDimension,number of items in the list} {physical-space\
       normal vectors at each point or element in the list}}
   IterationValues {IterationValues DataArray_t {0,1} I4 1 NumberOfSteps \
-      {array of interation values}}
+      {array of iteration values}}
   NeumannData {NeumannData BCData_t {0,1} MT {} {} {}}
   NormDefinitions {NormDefinitions Descriptor_t {0,1} C1 1 \
       {length of string} {description of convergence information}}

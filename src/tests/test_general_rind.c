@@ -340,7 +340,7 @@ int main (int argc, char *argv[])
     if (np) printf("%d differences in Field (T1)\n", np);
 
     /* if given ranges span the full dimensions, the read should succeed no
-     * matter what the range is (this behavior is for backwards compatbility and
+     * matter what the range is (this behavior is for backwards compatibility and
      * is not documented) */
     for (n=0; n<3; n++) {
         rmin[n] = 1;

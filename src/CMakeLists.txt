@@ -25,7 +25,7 @@ if (CGNS_ENABLE_HDF5)
 endif (CGNS_ENABLE_HDF5)
 
 ################################
-# create configed header files #
+# create configured header files #
 ################################
 
 if ("${SIZE_OF_LONG}" GREATER 4)
@@ -110,7 +110,7 @@ set(HAVE_STAT64_STRUCT 0)
 if (BUILDFORTRAN)
 
 #----------- Determine if the Fortran compiler pgi ------------------------
-# The PGI compiler segfaults wehn va_start is called, so we need to add
+# The PGI compiler segfaults when va_start is called, so we need to add
 # a special compiler flag, see CGNS-40.
 #--------------------------------------------------------------------------
 IF (CMAKE_Fortran_COMPILER_ID MATCHES "PGI")

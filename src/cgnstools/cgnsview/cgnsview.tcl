@@ -808,7 +808,7 @@ help_init
 frame .main -width $ProgData(winwidth) -height $ProgData(winheight)
 pack .main -side top -fill both -expand 1 -padx 5 -pady 5
 
-#--- window seperator
+#--- window separator
 
 frame .main.sep -width 6 -bd 2 -relief raised -cursor sb_h_double_arrow
 place .main.sep -relx $ProgData(seppos) -x -3 -rely 0 -relheight 1

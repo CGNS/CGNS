@@ -358,7 +358,7 @@ MODULE cgns
   END ENUM
 
 !** Any model type will accept both ModelTypeNull and ModelTypeUserDefined.
-!** The following models will accept these values as vaild...
+!** The following models will accept these values as valid...
 !**
 !** GasModel_t: Ideal, VanderWaals, CaloricallyPerfect, ThermallyPerfect,
 !**    ConstantDensity, RedlichKwong
