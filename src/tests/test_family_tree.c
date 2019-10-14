@@ -10,6 +10,9 @@
 #endif
 #include "cgnslib.h"
 
+/* from cgns_internal: so we can reset expected error messages */
+void cgi_error(const char *format, ...);
+
 #define NUM_SIDE 5
 
 #define TRACE(x)   printf("** TRACE [%d] %s\n", __LINE__, x )
@@ -191,6 +194,32 @@ int main ()
         error_exit( "write Family4.2.2");
     if( cg_family_write(cgfile, cgtree, "/FamilyTree/Family4/Family4.3", &cgfam ))
         error_exit( "write Family4.3");
+
+    /* Add failing Family */
+    if ( cg_family_write(cgfile, cgtree, "", &cgfam ) ==  CG_OK )
+	    error_exit( "writing empty Family did not failed");
+    cg_error_print();
+    cgi_error("no CGNS error reported");  /* reset */
+    if ( cg_family_write(cgfile, cgtree, "///", &cgfam ) ==  CG_OK )
+        error_exit( "writing Family of / only did not failed");
+    cg_error_print();
+    cgi_error("no CGNS error reported");  /* reset */
+    /* Family of size 33*CG_MAX_GOTO_DEPTH+1 should fail  */
+    char big_family_name[33*CG_MAX_GOTO_DEPTH+2];
+    for (n=0; n<33*CG_MAX_GOTO_DEPTH+2; n++){
+        big_family_name[n] = 'a';
+        if (n % 33 == 0)
+            big_family_name[n] = '/';
+    }
+    strncpy(big_family_name, "/FamilyTree/", 12);
+    big_family_name[33*CG_MAX_GOTO_DEPTH+1] = '\0';
+    if ( cg_family_write(cgfile, cgtree, big_family_name , &cgfam ) ==  CG_OK )
+        error_exit( "writing too long Family did not failed");
+    cg_error_print();
+    cgi_error("no CGNS error reported");  /* reset */
+    big_family_name[33*CG_MAX_GOTO_DEPTH] = '\0';
+    if ( cg_family_write(cgfile, cgtree, big_family_name , &cgfam ))
+        error_exit( "writing long Family failed");
 
     if (cg_goto(cgfile, cgtree,  NULL))
         error_exit("go to family tree base");

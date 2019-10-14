@@ -1342,9 +1342,12 @@ int cg_family_write(int file_number, int B, const char * family_name, int *F)
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
 
     /* Check family name validity */
-    if( strlen( family_name ) == 0 )
-    {
+    if ( strlen( family_name ) == 0 ){
         cgi_error( "Family name is empty" );
+        return CG_ERROR;
+    }
+    if ( strlen( family_name ) > 33*CG_MAX_GOTO_DEPTH ){
+        cgi_error( "Family name is too long" );
         return CG_ERROR;
     }
 
@@ -1579,7 +1582,7 @@ int cg_node_family_write( const char* family_name, int* F)
         cgi_error( "Path not allowed to create Family_t locally\n");
         return CG_ERROR;
     }
-    if( cgi_check_strlen( family_name )                        ) return CG_ERROR;
+    if( cgi_check_strlen( family_name ) ) return CG_ERROR;
 
     /* check for valid posit */
     if (posit == 0) {
