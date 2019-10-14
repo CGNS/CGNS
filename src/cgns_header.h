@@ -31,7 +31,7 @@ typedef char char_66[66]; /* 32 + '/' + 32 + '\0' */
 #else
 typedef char char_66[33]; /* 32 + '\0' (caller's malloc compat issues) */
 #endif
-typedef char char_md[CG_MAX_GOTO_DEPTH*33]; /* ** FAMILY TREE ** */
+typedef char char_md[CG_MAX_GOTO_DEPTH*33+1]; /* ('/'+ 32)*MAX_GOTO_DEPTH + '\0' (FAMILY TREE) */
 typedef char const cchar_33[33];
 typedef cgsize_t cgsize6_t[6];
 typedef int cgint3_t[3];

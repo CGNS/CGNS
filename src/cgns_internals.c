@@ -386,7 +386,7 @@ int cgi_read_zone(cgns_zone *zone)
         for (n = 0; n < zone->nfamname; n++) {
             zone->famname[n].id = id[n];
             if (cgi_read_string(id[n], zone->famname[n].name, &fam)) return CG_ERROR;
-            strncpy(zone->famname[n].family, fam, (20*33)-1);
+            strncpy(zone->famname[n].family, fam, (CG_MAX_GOTO_DEPTH*33));
             CGNS_FREE(fam);
         }
         CGNS_FREE(id);
@@ -475,7 +475,7 @@ int cgi_read_family(cgns_family *family) /* ** FAMILY TREE ** */
         for (n = 0; n < family->nfamname; n++) {
             family->famname[n].id = id[n];
             if (cgi_read_string(id[n], family->famname[n].name, &fam)) return CG_ERROR;
-            strncpy(family->famname[n].family, fam,(20*33)-1);
+            strncpy(family->famname[n].family, fam,(CG_MAX_GOTO_DEPTH*33));
             CGNS_FREE(fam);
         }
         CGNS_FREE(id);
@@ -756,7 +756,7 @@ int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
 
          /* FamilyName in data field of the ADF node */
             if (cgi_read_string(id[0], NodeName, &FamilyName)) return CG_ERROR;
-            if (strlen(FamilyName) > (20*33)-1) FamilyName[(20*33)-1]='\0'; /* ** FAMILY TREE ** */
+            if (strlen(FamilyName) > (CG_MAX_GOTO_DEPTH*33)) FamilyName[(CG_MAX_GOTO_DEPTH*33)]='\0'; /* ** FAMILY TREE ** */
             strcpy(family_name, FamilyName);
             if (FamilyName) CGNS_FREE(FamilyName);
 
@@ -2481,7 +2481,7 @@ int cgi_read_boco(cgns_boco *boco)
         for (n = 0; n < boco->nfamname; n++) {
             boco->famname[n].id = id[n];
             if (cgi_read_string(id[n], boco->famname[n].name, &fam)) return CG_ERROR;
-            strncpy(boco->famname[n].family, fam, (20*33)-1);
+            strncpy(boco->famname[n].family, fam, (CG_MAX_GOTO_DEPTH*33));
             CGNS_FREE(fam);
         }
         CGNS_FREE(id);
@@ -5110,7 +5110,7 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
                 user_data[0][n].famname[i].id = idi[i];
                 if (cgi_read_string(idi[i], user_data[0][n].famname[i].name,
                         &fam)) return CG_ERROR;
-                strncpy(user_data[0][n].famname[i].family, fam, (20*33)-1);
+                strncpy(user_data[0][n].famname[i].family, fam, (CG_MAX_GOTO_DEPTH*33));
                 CGNS_FREE(fam);
             }
             CGNS_FREE(idi);

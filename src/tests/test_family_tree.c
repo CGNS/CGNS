@@ -34,8 +34,8 @@ int main ()
     int cgfile, cgbase, cgtree, cgzone, cgfam, cgcoord, cgbc, cgsr;
     float exp[5];
     char outfile[33], name[33], tname[33];
-    char family_name[20*33];
-    char tfamily_name[20*33];
+    char family_name[CG_MAX_GOTO_DEPTH*33+1];
+    char tfamily_name[CG_MAX_GOTO_DEPTH*33+1];
 
     /* ================================================================ WRITING TESTS */
 

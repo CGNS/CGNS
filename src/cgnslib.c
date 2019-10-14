@@ -1331,7 +1331,7 @@ int cg_family_write(int file_number, int B, const char * family_name, int *F)
     cgns_base   *base;
     cgns_family *family = NULL;
 
-    char family_name_path[33*20];
+    char family_name_path[33*CG_MAX_GOTO_DEPTH+1];
     char *pch, *tok;
     int   skip = 0;
 
@@ -1517,10 +1517,9 @@ int cg_family_name_write(int file_number, int B, int F,
     cgns_famname *famname = 0;
 
      /* verify input */
-    if (cgi_check_strlen(name) /*||
-        cgi_check_strlen(family)*/) return CG_ERROR;
+    if (cgi_check_strlen(name)) return CG_ERROR;
 
-    if ( strlen(family) > 33*20 ) {
+    if ( strlen(family) > 33*CG_MAX_GOTO_DEPTH ) {
         cgi_error( "Family path too long (%s, size %ld)", family, strlen(family) );
         return CG_ERROR;
     }
@@ -1696,7 +1695,7 @@ int cg_node_family_name_write( const char* node_name, const char* family_name )
     /* verify input */
     if( cgi_check_strlen( node_name ))   return CG_ERROR;
 
-    if ( strlen(family_name) > 33*20 ) {
+    if ( strlen(family_name) > 33*CG_MAX_GOTO_DEPTH ) {
         cgi_error( "Family path too long (%s, size %ld)", family_name, strlen(family_name) );
         return CG_ERROR;
     }
