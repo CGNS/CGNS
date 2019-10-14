@@ -344,6 +344,11 @@ int main ()
             cgbase = n+1;
     }
 
+    if( cg_gopath( cgfile, "/FamilyTree") )
+        error_exit( "gopath /FamilyTree ");
+    if (cg_delete_node("aaaaaaaaaaaaaaaaaaaaa") )
+        error_exit("delete long tree");
+
     printf( "Structured %d, FamilyTree %d\n", cgbase, cgtree );
 
     if (cg_nfamilies(cgfile, cgtree, &nfam))
