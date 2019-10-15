@@ -469,11 +469,11 @@ CGNSDLL void FMNAME(cg_node_family_read_f, CG_NODE_FAMILY_READ_F) (
 CGNSDLL void FMNAME(cg_family_write_f, CG_FAMILY_WRITE_F) (cgint_f *fn, cgint_f *B,
 	STR_PSTR(family_name), cgint_f *F, cgint_f *ier STR_PLEN(family_name))
 {
-    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    char c_name[CGIO_MAX_NAME_LENGTH*CG_MAX_GOTO_DEPTH+1];
     int i_F;
 
     string_2_C_string(STR_PTR(family_name), STR_LEN(family_name),
-		      c_name, CGIO_MAX_NAME_LENGTH, ier);
+		      c_name, CGIO_MAX_NAME_LENGTH*CG_MAX_GOTO_DEPTH, ier);
     if (*ier) return;
     *ier = (cgint_f)cg_family_write((int)*fn, (int)*B, c_name, &i_F);
     *F = (cgint_f)i_F;
@@ -2995,7 +2995,7 @@ CGNSDLL void FMNAME(cg_gopath_f, CG_GOPATH_F) (cgint_f *fn,
 CGNSDLL void FMNAME(cg_famname_read_f, CG_FAMNAME_READ_F) (
 	STR_PSTR(famname), cgint_f *ier STR_PLEN(famname))
 {
-    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    char c_name[(CGIO_MAX_NAME_LENGTH+1)*CG_MAX_GOTO_DEPTH+1];
 
     *ier = (cgint_f)cg_famname_read(c_name);
     if (*ier == 0)
@@ -3019,7 +3019,7 @@ CGNSDLL void FMNAME(cg_multifam_read_f, CG_MULTIFAM_READ_F) (cgint_f *N,
 	cgint_f *ier STR_PLEN(name) STR_PLEN(family))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
-    char c_family[CGIO_MAX_NAME_LENGTH+1];
+    char c_family[(CGIO_MAX_NAME_LENGTH+1)*CG_MAX_GOTO_DEPTH+1];
 
     *ier = (cgint_f)cg_multifam_read((int)*N, c_name, c_family);
     if (*ier) return;
@@ -3562,11 +3562,11 @@ CGNSDLL void FMNAME(cg_user_data_read_f, CG_USER_DATA_READ_F) (cgint_f *index,
 CGNSDLL void FMNAME(cg_famname_write_f, CG_FAMNAME_WRITE_F) (
 	STR_PSTR(family_name), cgint_f *ier STR_PLEN(family_name))
 {
-    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    char c_name[(CGIO_MAX_NAME_LENGTH+1)*CG_MAX_GOTO_DEPTH+1];
 
      /* convert Fortran-text-string to a C-string */
     string_2_C_string(STR_PTR(family_name), STR_LEN(family_name),
-        c_name, CGIO_MAX_NAME_LENGTH, ier);
+        c_name, (CGIO_MAX_NAME_LENGTH+1)*CG_MAX_GOTO_DEPTH, ier);
     if (*ier == 0)
         *ier = (cgint_f)cg_famname_write(c_name);
 }
@@ -3578,13 +3578,13 @@ CGNSDLL void FMNAME(cg_multifam_write_f, CG_MULTIFAM_WRITE_F) (
 	cgint_f *ier STR_PLEN(name) STR_PLEN(family))
 {
     char c_name[CGIO_MAX_NAME_LENGTH+1];
-    char c_family[CGIO_MAX_NAME_LENGTH+1];
+    char c_family[(CGIO_MAX_NAME_LENGTH+1)*CG_MAX_GOTO_DEPTH+1];
 
     string_2_C_string(STR_PTR(name), STR_LEN(name),
         c_name, CGIO_MAX_NAME_LENGTH, ier);
     if (*ier) return;
     string_2_C_string(STR_PTR(family), STR_LEN(family),
-        c_family, CGIO_MAX_NAME_LENGTH, ier);
+        c_family, (CGIO_MAX_NAME_LENGTH+1)*CG_MAX_GOTO_DEPTH, ier);
     if (*ier) return;
     *ier = (cgint_f)cg_multifam_write(c_name, c_family);
 }
