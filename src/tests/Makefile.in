@@ -20,6 +20,7 @@ CALL = \
 	ser_benchmark_hdf5$(EXE) \
 	test_exts$(EXE) \
 	test_goto$(EXE) \
+	test_family_tree$(EXE) \
 	test_multifam$(EXE) \
 	test_partial$(EXE) \
 	test_general_reshape$(EXE) \
@@ -151,6 +152,12 @@ test_general_rind$(EXE) : test_general_rind.c $(CGNSLIB)
 
 test_goto$(EXE) : test_goto.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_goto.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_family_tree$(EXE) : test_family_tree.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_family_tree.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
