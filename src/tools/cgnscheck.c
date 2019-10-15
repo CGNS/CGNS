@@ -1017,10 +1017,10 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
 
     if (type == CGNS_ENUMV(NFACE_n)) {
         int dim;
-        cgsize_t *face = find_element (z, abs(nodes[fnum]), &dim, &n);
-        if (face == NULL || dim != 2)
+        cgsize_t *facenodes = find_element (z, abs(nodes[fnum]), &dim, &n);
+        if (facenodes == NULL || dim != 2)
             fatal_error("find_element returned invalid face\n");
-        return new_face (n, face);
+        return new_face (n, facenodes);
     }
     switch (type) {
         case CGNS_ENUMV(TETRA_4):
@@ -3375,7 +3375,7 @@ static void check_BC (int nb, int parclass, int *parunits)
         fatal_error("malloc failed for BC points\n");
     nrmllist = NULL;
     if (nrmlflag && LibraryVersion < 2200) {
-        int n = (datatype == CGNS_ENUMV(RealSingle) ? sizeof(float) : sizeof(double));
+        n = (datatype == CGNS_ENUMV(RealSingle) ? sizeof(float) : sizeof(double));
         nrmllist = (void *) malloc ((size_t)(nrmlflag * n));
         if (nrmllist == NULL)
             fatal_error("malloc failed for BC normals\n");
