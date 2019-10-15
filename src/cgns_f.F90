@@ -2882,6 +2882,34 @@ MODULE cgns
      END SUBROUTINE cg_grid_write_f
   END INTERFACE
 
+  INTERFACE
+     SUBROUTINE cg_grid_bounding_box_read_f(fn, B, Z, G, datatype, array, ier) ! BIND(C, NAME="cg_grid_bounding_box_read_f")
+       IMPORT :: cgenum_t, c_ptr
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: Z
+       INTEGER :: G
+       INTEGER(cgenum_t), INTENT(IN) :: datatype
+       TYPE(C_PTR), VALUE:: array
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_grid_bounding_box_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_grid_bounding_box_write_f(fn, B, Z, G, datatype, array, ier) !BIND(C, NAME="cg_grid_bounding_box_write_f")
+       IMPORT :: cgenum_t, c_ptr
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER :: Z
+       INTEGER :: G
+       INTEGER(cgenum_t), INTENT(IN) :: datatype
+       TYPE(C_PTR), VALUE:: array
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_grid_bounding_box_write_f
+  END INTERFACE
+
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write SimulationType_t Node                             *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

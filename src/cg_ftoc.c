@@ -2481,7 +2481,7 @@ CGNSDLL void FMNAME(cg_grid_write_f, CG_GRID_WRITE_F) (cgint_f *fn,
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_grid_bounding_box_write_f, CG_GRID_BOUNDING_BOX_WRITE_F) (
+CGNSDLL void cg_grid_bounding_box_write_f (
         cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *G,
         CGNS_ENUMT(DataType_t) *datatype, void *bbox_array,
         cgint_f *ier)
@@ -2493,7 +2493,7 @@ CGNSDLL void FMNAME(cg_grid_bounding_box_write_f, CG_GRID_BOUNDING_BOX_WRITE_F) 
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_grid_bounding_box_read_f, CG_GRID_BOUNDING_BOX_read_F) (
+CGNSDLL void cg_grid_bounding_box_read_f (
         cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *G,
         CGNS_ENUMT(DataType_t) *datatype, void *bbox_array,
         cgint_f *ier)
