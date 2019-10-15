@@ -62,7 +62,6 @@ int main (int argc, char **argv)
         cg_base_write (cgfile, "Base", 3, 3, &cgbase))
         error_exit ("write base");
 
-
     /* write zone */
 
     puts("writing zone");
@@ -81,7 +80,8 @@ int main (int argc, char **argv)
         cg_error_exit();
 
     puts ("closing and reopening in read mode");
-    cg_close (cgfile);
+    if (cg_close (cgfile))
+        cg_error_exit ();
 
     /* read file */
 
@@ -96,11 +96,14 @@ int main (int argc, char **argv)
     bbox[0][2] = 1.0;
     bbox[1][2] = -1.0;
     /* check bounding box is not modified */
-    cg_grid_bounding_box_read(cgfile, cgbase, cgzone, 1, CGNS_ENUMV(RealDouble), bbox);
+    if (cg_grid_bounding_box_read(cgfile, cgbase, cgzone, 1, CGNS_ENUMV(RealDouble), bbox)) {
+        cg_error_exit();
+    }
     CHECK("Unmodified bounding box data when missing data in GridCoordinates node", bbox[1][0] == -1.0);
     CHECK("Unmodified bounding box data when missing data in GridCoordinates node", bbox[0][0] == 1.0);
     puts ("closing and reopening in modify mode");
-    cg_close (cgfile);
+    if (cg_close (cgfile))
+        cg_error_exit ();
 
     if (cg_open (fname, CG_MODE_MODIFY, &cgfile))
         cg_error_exit ();
@@ -118,7 +121,9 @@ int main (int argc, char **argv)
     }
 
     puts ("closing and reopening in read mode");
-    cg_close (cgfile);
+    if (cg_close (cgfile)) {
+        cg_error_exit();
+    }
 
     if (cg_open (fname, CG_MODE_READ, &cgfile))
         cg_error_exit ();
@@ -138,7 +143,8 @@ int main (int argc, char **argv)
     CHECK("Read bouding box", bbox[1][0] == (double)(NUM_SIDE*NUM_SIDE*NUM_SIDE -1));
 
     puts ("closing and reopening to test limit cases");
-    cg_close (cgfile);
+    if (cg_close (cgfile))
+        cg_error_exit ();
 
     if (cg_open (fname, CG_MODE_MODIFY, &cgfile))
         cg_error_exit ();
@@ -160,7 +166,8 @@ int main (int argc, char **argv)
     }
 
     puts ("closing file");
-    cg_close (cgfile);
+    if (cg_close (cgfile))
+        cg_error_exit ();
 
     return 0;
 }
