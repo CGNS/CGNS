@@ -137,6 +137,28 @@ int main (int argc, char **argv)
     CHECK("Read bouding box", bbox[0][0] == 0.0);
     CHECK("Read bouding box", bbox[1][0] == (double)(NUM_SIDE*NUM_SIDE*NUM_SIDE -1));
 
+    puts ("closing and reopening to test limit cases");
+    cg_close (cgfile);
+
+    if (cg_open (fname, CG_MODE_MODIFY, &cgfile))
+        cg_error_exit ();
+    cgbase = cgzone = 1;
+
+    // writing integer type should fail
+    if (!cg_grid_bounding_box_write(cgfile, cgbase, cgzone, 1, CGNS_ENUMV(Integer), bbox)){
+        printf("writing Integer bounding box data failed to produce error\n");
+	exit(1);
+    }
+    cg_error_print();
+    cgi_error("no CGNS error reported");  /* reset */
+
+    // writing empty bbox should do nothing
+    if (cg_grid_bounding_box_write(cgfile, cgbase, cgzone, 1, CGNS_ENUMV(RealSingle), NULL)){
+        printf("writing NULL bounding box raised an unexpected error\n");
+        cg_error_print();
+	exit(1);
+    }
+
     puts ("closing file");
     cg_close (cgfile);
 
