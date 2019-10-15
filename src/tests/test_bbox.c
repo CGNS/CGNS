@@ -17,6 +17,9 @@
 # define CGNS_ENUMV(e) e
 #endif
 
+/* from cgns_internal: so we can reset expected error messages */
+void cgi_error(const char *format, ...);
+
 #define NUM_SIDE 5
 
 float coord[NUM_SIDE*NUM_SIDE*NUM_SIDE];
