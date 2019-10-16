@@ -603,7 +603,9 @@ int cgio_check_file (const char *filename, int *file_type)
 	}
 	return err;
       }
-    fread (buf, 1, sizeof(buf), fp);
+    if (sizeof(buf) != fread (buf, 1, sizeof(buf), fp)) {
+      buf[4] = 0;
+    }
     buf[sizeof(buf)-1] = 0;
     fclose (fp);
 

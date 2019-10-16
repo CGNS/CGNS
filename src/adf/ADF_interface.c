@@ -1019,7 +1019,11 @@ void	ADF_Database_Valid(
             *error_return = FILE_OPEN_ERROR;
         return;
     }
-    fread (header, sizeof(char), 32, fp);
+    if (32 != fread (header, sizeof(char), 32, fp)) {
+        *error_return = FREAD_ERROR;
+        fclose (fp);
+        return;
+    }
     fclose (fp);
     header[32] = 0;
     if (strncmp (&header[4], "ADF Database Version", 20))
