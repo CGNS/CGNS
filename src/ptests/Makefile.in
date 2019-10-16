@@ -54,18 +54,6 @@ test : $(TESTS)
 	       printf "$$x -nbCellSide 310 ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
 	       status=1; \
 	     fi; \
-	     if `$(MPIEXEC) ./$$x  -nbCellSide 311 -useMixedElements >/dev/null 2>&1` ; then \
-	       printf "$$x -nbCellSide 311 -useMixedElements ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
-	     else \
-	       printf "$$x -nbCellSide 311 -useMixedElements ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
-	       status=1; \
-	     fi; \
-	     if `$(MPIEXEC) ./$$x -nbCellSide 311 >/dev/null 2>&1` ; then \
-	       printf "$$x -nbCellSide 311 ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
-	     else \
-	       printf "$$x -nbCellSide 311 ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
-	       status=1; \
-	     fi; \
 	   else \
 	     if `$(MPIEXEC) ./$$x >/dev/null 2>&1` ; then \
 	       printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
@@ -83,7 +71,20 @@ test : $(TESTS)
          fi; \
          printf "$$status tests failed $(NO_COLOR) \n"; \
 	 exit $$status;
-
+#
+#	     if `$(MPIEXEC) ./$$x  -nbCellSide 311 -useMixedElements >/dev/null 2>&1` ; then \
+#	       printf "$$x -nbCellSide 311 -useMixedElements ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
+#	     else \
+#	       printf "$$x -nbCellSide 311 -useMixedElements ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
+#	       status=1; \
+#	     fi; \
+#	     if `$(MPIEXEC) ./$$x -nbCellSide 311 >/dev/null 2>&1` ; then \
+#	       printf "$$x -nbCellSide 311 ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
+#	     else \
+#	       printf "$$x -nbCellSide 311 ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
+#	       status=1; \
+#	     fi; \
+#
 #----------
 
 pcgns_ctest$(EXE) : pcgns_ctest.c $(CGNSLIB)
