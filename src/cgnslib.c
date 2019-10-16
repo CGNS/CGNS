@@ -2116,6 +2116,120 @@ int cg_grid_write(int file_number, int B, int Z, const char * zcoorname, int *G)
 }
 
 /*****************************************************************************\
+ *    Read and Write GridCoordinates_t bounding box
+\*****************************************************************************/
+
+int cg_grid_bounding_box_read(int file_number, int B, int Z, int G, CGNS_ENUMT(DataType_t) type, void* boundingbox)
+{
+    cgns_zcoor *zcoor;
+    cgns_base *base;
+    char_33 name;
+    char_33 data_type;
+    int ndim;
+    void * vdata;
+    cgsize_t dim_vals[12];
+    cgsize_t num;
+
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+     /* Get memory address for GridCoordinates_t node */
+    zcoor = cgi_get_zcoor(cg, B, Z, G);
+    if (zcoor==0) return CG_ERROR;
+
+    /* Read Bounding box from GridCoordinates node data */
+    if (cgi_read_node(zcoor->id, name, data_type, &ndim, dim_vals, &vdata, READ_DATA)){
+        cgi_error("Error reading node GridCoordinates_t");
+        return CG_ERROR;
+    }
+
+    /* check bounding box is not an empty array*/
+    if (strcmp(data_type,"MT")==0) {
+        cgi_warning("No bounding box read");
+        return CG_OK;
+    }
+
+    if (strcmp(data_type,"R4") &&
+        strcmp(data_type,"R8")) {
+        cgi_error("Datatype %s not supported for coordinates bounding box", data_type);
+        return CG_ERROR;
+    }
+
+    if (ndim != 2) {
+        cgi_error("Grid coordinates bounding box is %d dimensional. It should be 2.", ndim);
+        return CG_ERROR;
+    }
+
+    base = cgi_get_base(cg, B);
+    if (base==0) return CG_ERROR;
+    num = 2*base->phys_dim;
+
+    if (dim_vals[0]*dim_vals[1] != num){
+        cgi_error("Grid coordinates bounding box is not coherent with physical dimension.");
+        return CG_ERROR;
+    }
+
+     /* verify input */
+    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble)) {
+        cgi_error("Invalid data type for bounding box array: %d", type);
+        return CG_ERROR;
+    }
+
+    /* transfer small bounding box data to user with correct data type */
+    cgi_convert_data(num, cgi_datatype(data_type), vdata, type, boundingbox);
+    CGNS_FREE(vdata);
+
+    return CG_OK;
+}
+
+int cg_grid_bounding_box_write(int file_number, int B, int Z, int G, CGNS_ENUMT(DataType_t) type, void* boundingbox)
+{
+    cgns_base *base;
+    cgns_zcoor *zcoor;
+    cgsize_t dim_vals[2];
+
+    cg = cgi_get_file(file_number);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    /* Get memory address for GridCoordinates_t node */
+    zcoor = cgi_get_zcoor(cg, B, Z, G);
+    if (zcoor==0) return CG_ERROR;
+
+    if (zcoor->id == 0){
+        cgi_error("Impossible to write coordinates bounding box to unwritten node");
+        return CG_ERROR;
+    }
+    base = cgi_get_base(cg, B);
+    if (base==0) return CG_ERROR;
+    dim_vals[0] = base->phys_dim;
+    dim_vals[1] = 2;
+
+    /* Check input */
+    if (boundingbox == NULL) return CG_OK;
+
+    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble)) {
+        cgi_error("Invalid data type for bounding box array: %d", type);
+        return CG_ERROR;
+    }
+
+    /* Write Bounding box into existing GridCoordinates_t node */
+    if (cgio_set_dimensions(cg->cgio, zcoor->id, cgi_adf_datatype(type), 2, dim_vals)) {
+       cg_io_error("cgio_set_dimensions");
+       return CG_ERROR;
+    }
+    if (cgio_write_all_data(cg->cgio, zcoor->id, boundingbox)){
+       cg_io_error("cgio_write_all_data");
+       return CG_ERROR;
+    }
+
+    return CG_OK;
+}
+
+/*****************************************************************************\
  *    Read and Write GridCoordinates_t/DataArray_t Nodes
 \*****************************************************************************/
 
@@ -2306,7 +2420,7 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
             s_rmin[n] = 1;
         }
         else {
-             /* new behavior consitent with SIDS */
+             /* new behavior consistent with SIDS */
             s_rmin[n] = 1 - zcoor->rind_planes[2*n];
         }
         s_rmax[n] = s_rmin[n] + m_dimvals[n] - 1;
@@ -3036,7 +3150,7 @@ int cg_ElementPartialSize(int file_number, int B, int Z, int S,
 	cgsize_t start, cgsize_t end, cgsize_t *ElementDataSize)
 {
     cgns_section *section;
-    cgsize_t size, offset, *data, *offset_data;
+    cgsize_t size, *offset_data;
 
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
@@ -3304,7 +3418,7 @@ int cg_elements_partial_read(int file_number, int B, int Z, int S,
                 nn = section->parelem->dim_vals[0] * 4;
                 data = (cgsize_t *)malloc((size_t)(nn * sizeof(cgsize_t)));
                 if (data == NULL) {
-                    cgi_error("malloc failed for tempory ParentData array");
+                    cgi_error("malloc failed for temporary ParentData array");
                     return CG_ERROR;
                 }
                 if (cgi_read_int_data(section->parelem->id,
@@ -3517,7 +3631,7 @@ int cg_poly_elements_partial_read(int file_number, int B, int Z, int S,
                 nn = section->parelem->dim_vals[0] * 4;
                 data = (cgsize_t *)malloc((size_t)(nn * sizeof(cgsize_t)));
                 if (data == NULL) {
-                    cgi_error("malloc failed for tempory ParentData array");
+                    cgi_error("malloc failed for temporary ParentData array");
                     return CG_ERROR;
                 }
                 if (cgi_read_int_data(section->parelem->id,
@@ -3821,7 +3935,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
 
         newelems = (cgsize_t *)malloc((size_t)(cnt * newsize * sizeof(cgsize_t)));
         if (NULL == newelems) {
-            cgi_error("Error alocating new ParentElements data");
+            cgi_error("Error allocating new ParentElements data");
             return CG_ERROR;
         }
         offset = start - section->range[0];
@@ -4235,7 +4349,7 @@ int cg_poly_elements_partial_write(int file_number, int B, int Z, int S,
 
         newelems = (cgsize_t *)malloc((size_t)(cnt * newsize * sizeof(cgsize_t)));
         if (NULL == newelems) {
-            cgi_error("Error alocating new ParentElements data");
+            cgi_error("Error allocating new ParentElements data");
             return CG_ERROR;
         }
         offset = start - section->range[0];
@@ -4445,7 +4559,7 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
         return CG_ERROR;
     }
     if (size != section->parelem->dim_vals[0]) {
-        cgi_error("internal errror - invalid ParentElements data size !!!");
+        cgi_error("internal error - invalid ParentElements data size !!!");
         return CG_ERROR;
     }
 
@@ -4467,7 +4581,7 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
             return CG_ERROR;
         }
         if (size != section->parface->dim_vals[0]) {
-            cgi_error("internal errror - invalid ParentElementsPosition data size !!!");
+            cgi_error("internal error - invalid ParentElementsPosition data size !!!");
             return CG_ERROR;
         }
     }
@@ -5024,7 +5138,7 @@ int cg_field_write(int file_number, int B, int Z, int S,
             s_rmin[n] = 1;
         }
         else {
-             /* new behavior consitent with SIDS */
+             /* new behavior consistent with SIDS */
             s_rmin[n] = 1 - sol->rind_planes[2*n];
         }
         s_rmax[n] = s_rmin[n] + m_dimvals[n] - 1;
@@ -5886,7 +6000,7 @@ int cg_nconns(int file_number, int B, int Z, int *nconns)
 }
 
 /* in cg_conn_info, donor_datatype is useless starting with version 1.27, because
-   it's always I4.  Howver this arg. is left for backward compatibility of API
+   it's always I4.  However this arg. is left for backward compatibility of API
    and to be able to read old files */
 int cg_conn_info(int file_number, int B, int Z, int I, char *connectname,
 		 CGNS_ENUMT(GridLocation_t) *location,
@@ -9282,7 +9396,7 @@ int cg_equationset_read(int *EquationDimension,
     else            (*TurbulenceModelFlag)=0;
 
     /* Version 2.1 chemistry extensions get their own read routine
-    ** for backward compatability.
+    ** for backward compatibility.
     */
     return CG_OK;
 }
@@ -10094,7 +10208,7 @@ int cg_array_general_write(const char *arrayname,
         return CG_ERROR;
     }
 
-     /*** verfication for dataset in file */
+     /*** verification for dataset in file */
      /* verify the rank and dimensions of the file-space array */
     if (s_numdim <= 0 || s_numdim > CGIO_MAX_DIMENSIONS) {
         cgi_error("Data arrays are limited to %d dimensions in file",
@@ -10265,7 +10379,7 @@ int cg_rind_write(const int * RindData)
         planes are still written but an error is returned */
     ier = cg_narrays(&narrays);
     if (ier == CG_OK && narrays > 0) {
-        cgi_error("Writing rind planes invalidates dimensions of exisitng "
+        cgi_error("Writing rind planes invalidates dimensions of existing "
                   "array(s).");
         return CG_ERROR;
     }
@@ -12126,7 +12240,7 @@ int cg_delete_node(const char *node_name)
     if (strcmp(posit->label,"CGNSBase_t")==0) {
         cgns_base *parent = (cgns_base *)posit->posit;
 
-     /* Case 1: node_label = can have multiple occurence:  */
+     /* Case 1: node_label = can have multiple occurrence:  */
         if (strcmp(node_label,"Zone_t")==0)
             CGNS_DELETE_SHIFT(nzones, zone, cgi_free_zone)
         else if (strcmp(node_label,"Family_t")==0)

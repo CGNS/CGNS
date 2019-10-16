@@ -6,10 +6,12 @@ day=$(( $(date +%d) % 2 ))
 if [ $day -eq 0 ]; then #even day tests, HDF5 1.8 branch
 
 HDF5_VER="hdf5_1_8"
+OPTS=""
 
 else #odd day tests, HDF5 develop branch
 
 HDF5_VER="develop"
+OPTS="--disable-tools --disable-tests"
 
 fi
 
@@ -24,10 +26,9 @@ if [ ! -f configure ]; then
   ./autogen.sh
 fi
 
-OPTS=""
 if [ $TRAVIS_OS_NAME = "linux" ]; then
-    OPTS="--enable-parallel"
+    OPTS="$OPTS --enable-parallel"
 fi
 
-./configure $OPTS --disable-fortran --disable-hl --without-szip --without-zlib --prefix=$HOME/hdf5 && make > result.txt 2>&1 && make install
+./configure $OPTS --disable-fortran --disable-hl --without-szlib --without-zlib --prefix=$HOME/hdf5 && make > result.txt 2>&1 && make install
 

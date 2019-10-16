@@ -148,7 +148,7 @@ int doBandwidthAgg(const char* msg, double time) {
 	}
 
 int main(int argc, char* argv[]) {
-	/* Initialize varaibles */
+	/* Initialize variables */
 	initialize(&argc,&argv);
 
 	/* Time the creation of a file */

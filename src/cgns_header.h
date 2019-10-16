@@ -1242,7 +1242,7 @@ int cgi_AverageInterfaceType(char *Name, CGNS_ENUMT(AverageInterfaceType_t) *typ
 
 int cgi_zone_no(cgns_base *base, char *zonename, int *zone_no);
 
-/* miscelleneous */
+/* miscellaneous */
 int cgi_sort_names(int n, double *ids);
 int size_of(const char_33 adf_type);
 char *type_of(char_33 data_type);

@@ -329,7 +329,7 @@ static int sort_variables (const void *v1, const void *v2)
 }
 
 /*---------- get_variables --------------------------------------------
- * get the solution vaiables
+ * get the solution variables
  *---------------------------------------------------------------------*/
 
 static int get_variables (int nz, CGNS_ENUMT(ZoneType_t) zonetype, cgsize_t *sizes)

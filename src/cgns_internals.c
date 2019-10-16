@@ -7967,13 +7967,14 @@ int cgi_array_general_verify_range(
     cgsize_t *numpt)                    /* [O] number of points accessed */
 {
     cgsize_t s_numpt = 1, m_numpt = 1;
-    int n, npt;
+    cgsize_t npt;
+    int n;
 
     int s_reset_range = 1;
     *s_access_full_range = 1;
     *m_access_full_range = 1;
 
-     /*** verfication for dataset in file */
+     /*** verification for dataset in file */
      /* verify that range requested is not NULL */
     if (rmin == NULL || rmax == NULL) {
         cgi_error("NULL range value");
@@ -8011,7 +8012,7 @@ int cgi_array_general_verify_range(
                 }
             }
             else {
-                /* new behavior consitent with SIDS */
+                /* new behavior consistent with SIDS */
                 if (rmin[n] > rmax[n] ||
                     rmax[n] > (s_dimvals[n] - rind_planes[2*n]) ||
                     rmin[n] < (1 - rind_planes[2*n])) {
@@ -10544,7 +10545,7 @@ static int cgi_next_posit(char *label, int index, char *name)
     else if (0 == strcmp (posit->label, "FamilyBC_t")) {
         cgns_fambc *f = (cgns_fambc *)posit->posit;
         if (0 == strcmp (label, "FamilyBCDataSet_t") ||
-            /* backwards compatibily */
+            /* backwards compatibility */
             0 == strcmp (label, "BCDataSet_t")) {
             if (--index < 0) {
                 for (n = 0; n < f->ndataset; n++) {

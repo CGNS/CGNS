@@ -55,7 +55,7 @@ The currently defined system names are:
   LINUX		Linux
   LINUX64	64-bit Linux
   M88K		Motorola M88100 running Real/IX
-  MACOSX	Power Macintosh runing OSx
+  MACOSX	Power Macintosh running OSx
   NETBSD	NetBSD not defined elseware
   NEXT		NeXT
   OS2		OS/2

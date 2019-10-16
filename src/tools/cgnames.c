@@ -439,7 +439,7 @@ int cg_find_identifier (const char *pattern, int *nnames, char ***names)
     if (names != NULL) {
         pp = (char **) malloc (cnt * (33 + sizeof(char *)));
         if (pp == NULL) {
-            fprintf (stderr, "malloc failed for indentifier names\n");
+            fprintf (stderr, "malloc failed for identifier names\n");
             return 1;
         }
         p = (char *)(pp + cnt);
