@@ -1,18 +1,19 @@
-// 
-// 3/27/2019
-// david.gutzwiller@numeca.be
-//
-// launch with:
-// mpirun -np <#> CGNSMeshTest 
-//  -nbCellSide <N> 
-//  -useMixedElements 
-//  -nbZones <N>
-//
-// This test mimics the writing and reading of a large unstructured mesh 
-// using either MIXED or UNIFORM elements.  Multiple zones may be written
-// as cubes offset in X. 
-//
-//----------------------------------------------------------------------
+/* 
+ * 3/27/2019
+ * david.gutzwiller@numeca.be
+ *
+ * launch with:
+ * mpirun -np <#> CGNSMeshTest 
+ *  -nbCellSide <N> 
+ *  -useMixedElements 
+ *  -nbZones <N>
+ *
+ * This test mimics the writing and reading of a large unstructured mesh 
+ * using either MIXED or UNIFORM elements.  Multiple zones may be written
+ * as cubes offset in X. 
+ *
+ * ----------------------------------------------------------------------
+ */
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -50,25 +51,32 @@ void callCGNS(int error)
 
 int main(int argc, char** argv) 
 {
-    // set up MPI
+  /* set up MPI */
     MPI_Init(NULL, NULL);
     int size;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    // create parallel/serial read communicators
+    /* create parallel/serial read communicators */
     MPI_Comm parallelIOComm = MPI_COMM_WORLD;
     MPI_Comm serialIOComm   = MPI_COMM_SELF;
 
-    // various CGNS handles
+    /* various CGNS handles */
     int fileHandle    = 0;
     int baseHandle    = 0;
     int zoneHandle    = 0;
     int coordHandle   = 0;
     int elementHandle = 0;
 
-    // parse arguments
+    /* misc */
+    int iZone, i, j;
+    cgsize_t iNode;
+    cgsize_t iCell;
+    cgsize_t i_size_t;
+    int iProc;
+
+    /* parse arguments */
     bool useSerialIOComm = false;
     bool useBufferedSectionWrite = false;
     bool useMixed = false;
@@ -96,7 +104,7 @@ int main(int argc, char** argv)
         iarg++;
     }
     
-    // basic mesh information
+    /* basic mesh information */
     cgsize_t nbNodeSide  = nbCellSide+1;
     cgsize_t nbNodeSlice = nbNodeSide*nbNodeSide;
     cgsize_t nbNodeTotal = nbNodeSide*nbNodeSlice;
@@ -106,8 +114,8 @@ int main(int argc, char** argv)
     ElementType_t eType  = MIXED;
     if (!useMixed) eType = HEXA_8;
     
-    // distribute the elements and nodes hosted by each rank
-    // Internal numbering... CGNS offsets added later.
+    /* distribute the elements and nodes hosted by each rank */
+    /* Internal numbering... CGNS offsets added later. */
     cgsize_t nbNodeIdeal = (nbNodeTotal / size) + 1;
     cgsize_t nbCellIdeal = (nbCellTotal / size) + 1;
     cgsize_t cellOnProcStart = (rank  )*(nbCellIdeal); 
@@ -122,13 +130,13 @@ int main(int argc, char** argv)
     printf("rank %d hosts %d cells in range [%d,%d]\n",rank, nbCellWrite, cellOnProcStart, cellOnProcEnd);
     printf("rank %d hosts %d nodes in range [%d,%d]\n",rank, nbNodeWrite, nodeOnProcStart, nodeOnProcEnd);
 
-    // create a simple cube mesh
+    /* create a simple cube mesh */
     double* nodeX = (double*)malloc(sizeof(double)*nbNodeWrite);
     double* nodeY = (double*)malloc(sizeof(double)*nbNodeWrite);
     double* nodeZ = (double*)malloc(sizeof(double)*nbNodeWrite);
     double spacing = 1.0/(nbNodeSide-1);
     int count = 0;
-    for (cgsize_t iNode = nodeOnProcStart; iNode < nodeOnProcEnd; iNode++)
+    for (iNode = nodeOnProcStart; iNode < nodeOnProcEnd; iNode++)
     {
         cgsize_t i = floor(iNode / nbNodeSlice);
         cgsize_t j = floor((iNode - i*nbNodeSlice) / nbNodeSide);
@@ -141,7 +149,7 @@ int main(int argc, char** argv)
     
     cgsize_t* cells = (cgsize_t*)malloc(sizeof(cgsize_t)*nbCellWrite*8);
     count = 0;
-    for (cgsize_t iCell = cellOnProcStart; iCell < cellOnProcEnd; iCell++)
+    for (iCell = cellOnProcStart; iCell < cellOnProcEnd; iCell++)
     {
         cgsize_t i = floor(iCell / nbCellSlice);
         cgsize_t j = floor((iCell - i*nbCellSlice) / nbCellSide);
@@ -159,11 +167,11 @@ int main(int argc, char** argv)
     
     double writeTimerStart = MPI_Wtime();
 
-    // turn off compression, prepare for independent parallel access
+    /* turn off compression, prepare for independent parallel access */
     callCGNS(cgp_pio_mode(CGP_INDEPENDENT));
     callCGNS(cg_configure(CG_CONFIG_COMPRESS,0));
 
-    // rank 0 creates the file, creates the base node, writes a descriptor note.
+    /* rank 0 creates the file, creates the base node, writes a descriptor note. */
     if (rank == 0)
     {
         printf("creating the file\n");        
@@ -184,19 +192,19 @@ int main(int argc, char** argv)
     MPI_Bcast(&baseHandle,1,MPI_INT,0,parallelIOComm);
     
     if (rank == 0) printf("writing node data in parallel\n");
-    for (int iZone=0; iZone<nbZones; iZone++)
+    for (iZone=0; iZone<nbZones; iZone++)
     {
-        // offset the nodes for each zone
-        for (cgsize_t iNode = 0; iNode < nbNodeWrite; iNode++)
+        /* offset the nodes for each zone */
+        for (iNode = 0; iNode < nbNodeWrite; iNode++)
         {
             nodeX[iNode] = nodeX[iNode] + iZone*1.0;
         }
         
-        // re-open the file, this time in parallel
+        /* re-open the file, this time in parallel */
         callCGNS(cgp_mpi_comm(parallelIOComm));
         callCGNS(cgp_open(fileName, CG_MODE_MODIFY, &fileHandle));
         
-        // create the zone
+        /* create the zone
         char zoneName[10];
         sprintf(zoneName, "domain%d", iZone);
         cgsize_t zoneSize[9];
@@ -205,7 +213,7 @@ int main(int argc, char** argv)
         zoneSize[2] = 0;
         callCGNS(cg_zone_write(fileHandle,baseHandle, zoneName, zoneSize, Unstructured, &zoneHandle));
 
-        // write the nodes in parallel
+        /* write the nodes in parallel */
         DataType_t precision = CGNS_ENUMV(RealDouble);
         cgsize_t start = nodeOnProcStart+1;
         cgsize_t end   = nodeOnProcEnd;
@@ -216,33 +224,33 @@ int main(int argc, char** argv)
         callCGNS(cgp_coord_write(fileHandle,baseHandle,zoneHandle,precision,"CoordinateZ",&coordHandle));
         callCGNS(cg_coord_partial_write(fileHandle,baseHandle,zoneHandle,precision,"CoordinateZ",&start,&end,&nodeZ[0],&coordHandle));
         
-        // done writing the coordinates, close the file. 
+        /* done writing the coordinates, close the file.  */
         callCGNS(cgp_close(fileHandle));
     }    
     MPI_Barrier(MPI_COMM_WORLD);
 
-    // write elements, mixed
+    /* write elements, mixed */
     if (useMixed)
     {
-        // re-open the file in serial to write the MIXED element section from rank 0
+        /* re-open the file in serial to write the MIXED element section from rank 0 */
         if (rank == 0) printf("writing mixed element data in serial\n");
         if (rank == 0)
         {
-            for (int iZone=0; iZone<nbZones; iZone++)
+            for (iZone=0; iZone<nbZones; iZone++)
             {
-                // re-open the file, this time in serial
+                /* re-open the file, this time in serial */
                 callCGNS(cgp_mpi_comm(serialIOComm));
                 callCGNS(cgp_open(fileName, CG_MODE_MODIFY, &fileHandle));
                 zoneHandle = iZone+1;
 
-                // create element node
+                /* create element node */
                 cgsize_t start = 1;
                 cgsize_t end   = nbCellTotal;
                 callCGNS(cg_section_partial_write(fileHandle,baseHandle,zoneHandle,"Elements 3D",eType,start,end,0,&elementHandle));
 
-                // loop over all procs, perform partial writes for each chunk of the section. 
+                /* loop over all procs, perform partial writes for each chunk of the section.  */
                 cgsize_t globalOffset = 0;
-                for (int iProc=0; iProc<size; iProc++)
+                for (iProc=0; iProc<size; iProc++)
                 {
                     cgsize_t nbWrite;
                     cgsize_t start;
@@ -260,26 +268,26 @@ int main(int argc, char** argv)
                     {
                         nbWrite = nbCellWrite;
                         cellsTmp = (cgsize_t*)malloc(sizeof(cgsize_t)*nbWrite*8);
-                        for (cgsize_t i=0; i<nbWrite*8; i++) cellsTmp[i] = cells[i];
+                        for (i_size_t=0; i_size_t<nbWrite*8; i_size_t++) cellsTmp[i_size_t] = cells[i_size_t];
                         start   = cellOnProcStart+1;
                         end     = cellOnProcEnd;
                     }
                                     
-                    // insert the element type flags
+                    /* insert the element type flags */
                     cgsize_t* cellsWrite = (cgsize_t*)malloc(sizeof(cgsize_t)*nbWrite*9);
                     cgsize_t ipos = 0;
-                    for (int i=0; i<nbWrite; i++)
+                    for (i=0; i<nbWrite; i++)
                     {
                       cellsWrite[ipos] = (cgsize_t)HEXA_8;
                         ipos++;
-                        for (int j=0; j<8; j++)
+                        for (j=0; j<8; j++)
                         {
                             cellsWrite[ipos] = cellsTmp[i*8+j];
                             ipos++;
                         }
                     }
                     
-                    // build the offset buffer
+                    /* build the offset buffer */
                     cgsize_t localOffset = 0;
                     cgsize_t* offsetsWrite = (cgsize_t*)malloc(sizeof(cgsize_t)*(nbWrite+1));
                     ipos = 0;
@@ -292,7 +300,7 @@ int main(int argc, char** argv)
                     globalOffset += localOffset;
                     offsetsWrite[ipos] = globalOffset;
                                    
-                    // partial write of the current chunk
+                    /* partial write of the current chunk */
                     callCGNS(cg_poly_elements_partial_write(fileHandle,baseHandle,zoneHandle,elementHandle,start,end,cellsWrite,offsetsWrite));
                     
                     free(offsetsWrite);
@@ -300,13 +308,13 @@ int main(int argc, char** argv)
                     free(cellsTmp);
                 }
 
-                // done writing the element for the current zone, close the file. 
+                /* done writing the element for the current zone, close the file.  */
                 callCGNS(cgp_close(fileHandle));
             }
         }
         else
         {
-            for (int iZone=0; iZone<nbZones; iZone++)
+            for (iZone=0; iZone<nbZones; iZone++)
             {
                 cgsize_t nbWrite = nbCellWrite;
                 MPI_Send(&nbWrite, 1, MPI_LONG, 0, 1, MPI_COMM_WORLD);
@@ -319,28 +327,28 @@ int main(int argc, char** argv)
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
-    // write elements, uniform
+    /* write elements, uniform */
     else
     {
         if (rank == 0) printf("writing uniform element data in parallel\n");
-        for (int iZone=0; iZone<nbZones; iZone++)
+        for (iZone=0; iZone<nbZones; iZone++)
         {
-            // open file in parallel
+            /* open file in parallel */
             callCGNS(cgp_mpi_comm(parallelIOComm));
             callCGNS(cgp_open(fileName, CG_MODE_MODIFY, &fileHandle));
             zoneHandle = iZone+1;
 
-            // create element node
+            /* create element node */
             cgsize_t start = 1;
             cgsize_t end   = nbCellTotal;
             callCGNS(cg_section_partial_write(fileHandle,baseHandle,zoneHandle,"Elements 3D",eType,start,end,0,&elementHandle));
             
-            // write element data
+            /* write element data */
             start = cellOnProcStart+1;
             end   = cellOnProcEnd;
             callCGNS(cgp_elements_write_data(fileHandle,baseHandle,zoneHandle,elementHandle,start,end,cells));
 
-            // done writing for the current zone, close the file
+            /* done writing for the current zone, close the file */
             callCGNS(cgp_close(fileHandle));
         }
     }
@@ -349,23 +357,23 @@ int main(int argc, char** argv)
     double elapsedTime = MPI_Wtime() - writeTimerStart;
     if (rank == 0) printf("\ndone, write time = %f\n\n",elapsedTime);
 
-    // now read the data and compare it with the expected values
+    /* now read the data and compare it with the expected values */
     if (rank == 0) printf("reading node data in parallel\n");
-    for (int iZone=0; iZone<nbZones; iZone++)
+    for (iZone=0; iZone<nbZones; iZone++)
     {
-        // zero out the node coordinates
-        for (cgsize_t iNode = 0; iNode < nbNodeWrite; iNode++)
+        /* zero out the node coordinates */
+        for (iNode = 0; iNode < nbNodeWrite; iNode++)
         {
             nodeX[iNode] = 0.0;
             nodeY[iNode] = 0.0;
             nodeZ[iNode] = 0.0;
         }
         
-        // open the file in parallel 
+        /* open the file in parallel  */
         callCGNS(cgp_mpi_comm(parallelIOComm));
         callCGNS(cgp_open(fileName, CG_MODE_READ, &fileHandle));
         
-        // read the nodes and compare
+        /* read the nodes and compare */
         DataType_t precision = CGNS_ENUMV(RealDouble);
         cgsize_t start = nodeOnProcStart+1;
         cgsize_t end   = nodeOnProcEnd;
@@ -377,7 +385,7 @@ int main(int argc, char** argv)
         callCGNS(cgp_coord_read_data(fileHandle,baseHandle,zoneHandle,coordHandle,&start,&end,&nodeZ[0]));
         
         int ipos = 0;
-        for (cgsize_t iNode = nodeOnProcStart; iNode < nodeOnProcEnd; iNode++)
+        for (iNode = nodeOnProcStart; iNode < nodeOnProcEnd; iNode++)
         {
             cgsize_t i = floor(iNode / nbNodeSlice);
             cgsize_t j = floor((iNode - i*nbNodeSlice) / nbNodeSide);
@@ -392,14 +400,14 @@ int main(int argc, char** argv)
     free(nodeY);
     free(nodeZ);
     
-    for (int iZone=0; iZone<nbZones; iZone++)
+    for (iZone=0; iZone<nbZones; iZone++)
     {
-        // read the elements
+        /* read the elements */
         if (useMixed)
         {
             if (rank == 0) printf("reading mixed element data in serial\n");
             
-            // do the comparison on rank 0 only, read for all procs...
+            /* do the comparison on rank 0 only, read for all procs... */
             if (rank == 0)
             {
                 callCGNS(cgp_mpi_comm(serialIOComm));
@@ -409,7 +417,7 @@ int main(int argc, char** argv)
                 cgsize_t start  = cellOnProcStart+1;
                 cgsize_t end    = cellOnProcEnd;
                 cgsize_t nbRead = cellOnProcEnd - cellOnProcStart;
-                for (int iProc=0; iProc<size; iProc++)
+                for (iProc=0; iProc<size; iProc++)
                 {
                     if (iProc != rank)
                     {
@@ -424,7 +432,7 @@ int main(int argc, char** argv)
                     callCGNS(cg_poly_elements_partial_read(fileHandle,baseHandle,zoneHandle,elementHandle,start,end,cellsRead,offsetsRead,NULL));
                     
                     cgsize_t count = 0;
-                    for (cgsize_t iCell = (start-1); iCell < end; iCell++)
+                    for (iCell = (start-1); iCell < end; iCell++)
                     {
                         cgsize_t i = floor(iCell / nbCellSlice);
                         cgsize_t j = floor((iCell - i*nbCellSlice) / nbCellSide);
@@ -462,17 +470,17 @@ int main(int argc, char** argv)
             callCGNS(cgp_open(fileName, CG_MODE_READ, &fileHandle));
             zoneHandle = iZone+1;
             
-            // read element data
+            /* read element data */
             cgsize_t start = cellOnProcStart+1;
             cgsize_t end   = cellOnProcEnd;
             callCGNS(cgp_elements_read_data(fileHandle,baseHandle,zoneHandle,elementHandle,start,end,cells));
 
-            // done reading for the current zone, close the file
+            /* done reading for the current zone, close the file */
             callCGNS(cgp_close(fileHandle));
             
-            // compare values with expected
+            /* compare values with expected */
             count = 0;
-            for (cgsize_t iCell = cellOnProcStart; iCell < cellOnProcEnd; iCell++)
+            for (iCell = cellOnProcStart; iCell < cellOnProcEnd; iCell++)
             {
                 cgsize_t i = floor(iCell / nbCellSlice);
                 cgsize_t j = floor((iCell - i*nbCellSlice) / nbCellSide);
