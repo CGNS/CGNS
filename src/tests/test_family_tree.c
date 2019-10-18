@@ -39,6 +39,8 @@ int main ()
     char outfile[33], name[33], tname[33];
     char family_name[CG_MAX_GOTO_DEPTH*33+1];
     char tfamily_name[CG_MAX_GOTO_DEPTH*33+1];
+    /*  big Family name of size 33*CG_MAX_GOTO_DEPTH+1 that should fail  */
+    char big_family_name[33*CG_MAX_GOTO_DEPTH+2];
 
     /* ================================================================ WRITING TESTS */
 
@@ -205,13 +207,12 @@ int main ()
     cg_error_print();
     cgi_error("no CGNS error reported");  /* reset */
     /* Family of size 33*CG_MAX_GOTO_DEPTH+1 should fail  */
-    char big_family_name[33*CG_MAX_GOTO_DEPTH+2];
-    for (n=0; n<33*CG_MAX_GOTO_DEPTH+2; n++){
+    strcpy(big_family_name, "/FamilyTree/");
+    for (n=12; n<33*CG_MAX_GOTO_DEPTH+2; n++){
         big_family_name[n] = 'a';
         if (n % 33 == 0)
             big_family_name[n] = '/';
     }
-    strncpy(big_family_name, "/FamilyTree/", 12);
     big_family_name[33*CG_MAX_GOTO_DEPTH+1] = '\0';
     if ( cg_family_write(cgfile, cgtree, big_family_name , &cgfam ) ==  CG_OK )
         error_exit( "writing too long Family did not failed");
