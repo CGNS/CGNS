@@ -4030,6 +4030,7 @@ static int OGLcolor (ClientData data, Tcl_Interp *interp, int argc, char **argv)
     switch (i) {
         case 6:
             h = 0.0;
+            /* FALLTHRU */
         case 0:
             r = v;
             g = v * (1.0 - (s * (1.0 - h)));

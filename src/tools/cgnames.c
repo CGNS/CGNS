@@ -408,6 +408,7 @@ static int matches (char *p, char *s)
             case '\\':
                 if (!*++p)
                     return -1;
+                /* FALLTHRU */
             default:
                 if (*s++ != *p)
                     return 0;
