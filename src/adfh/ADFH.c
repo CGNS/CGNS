@@ -110,8 +110,8 @@ printf("#### DBG [%5d] ",__LINE__);fflush(stdout); \
 printf aaa ; printf("\n"); fflush(stdout);
 #define DROP( msg ) printf("XX " msg "\n");fflush(stdout);
 #else
-#define ADFH_DEBUG(a) ;
-#define DROP( msg ) ;
+#define ADFH_DEBUG(a) {;}
+#define DROP( msg ) {;}
 #endif
 
 /* ADF data types */
