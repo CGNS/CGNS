@@ -294,7 +294,7 @@ static IDENTIFIER Identifier[] = {
 {"VorticityZ",                       0, 5, { 0,  0, -1,  0,  0,  0,  0,  0}}
 };
 
-#define NUM_IDENTIFIER (sizeof(Identifier)/sizeof(IDENTIFIER))
+#define NUM_IDENTIFIER ((int)(sizeof(Identifier)/sizeof(IDENTIFIER)))
 
 /*-----------------------------------------------------------------------*/
 

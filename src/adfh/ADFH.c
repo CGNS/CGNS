@@ -256,7 +256,7 @@ static struct _ErrorList {
   {ADFH_ERR_SENTINEL,       "<None>"}
 };
 
-#define NUM_ERRORS (sizeof(ErrorList)/sizeof(struct _ErrorList))
+#define NUM_ERRORS ((int)(sizeof(ErrorList)/sizeof(struct _ErrorList)))
 #define ROOT_OR_DIE(err) \
 if (mta_root == NULL){set_error(ADFH_ERR_ROOTNULL, err);return;}
 #define ROOT_OR_DIE_ERR(err) \

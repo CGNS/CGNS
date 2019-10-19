@@ -263,7 +263,7 @@ int VersionList[] = {3210, 3200,
                      2550, 2540, 2530, 2520, 2510, 2500,
                      2460, 2420, 2400,
                      2300, 2200, 2100, 2000, 1270, 1200, 1100, 1050};
-#define nVersions (sizeof(VersionList)/sizeof(int))
+#define nVersions ((int)(sizeof(VersionList)/sizeof(int)))
 
 #ifdef DEBUG_HDF5_OBJECTS_CLOSE
 void objlist_status(char *tag)

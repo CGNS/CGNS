@@ -8625,7 +8625,8 @@ int cgi_check_strlen(char const *string)
 
 int cgi_check_strlen_x2(char const *string)
 {
-    int n1,n2,p;
+    int n1,n2;
+    size_t p;
 
     if (strlen(string) > 65) {
         cgi_error("Name exceeds 65 characters limit: %s",string);
