@@ -5893,7 +5893,7 @@ static void check_base_iter (void)
 
 static void check_base (void)
 {
-  char basename[33], name[33], *desc1, *desc2, *desc3;
+    char basename[33], name[33], *desc1, *desc2, *desc3;
     int n, nz, ierr, nd, nf, eqset[7];
     float point[3], vector[3];
     CGNS_ENUMT(SimulationType_t) simulation;
@@ -6093,6 +6093,7 @@ static void check_base (void)
     /*----- ConvergenceHistory -----*/
 
     go_absolute (NULL);
+    desc3 = NULL;
     ierr = cg_convergence_read (&nd, &desc3);
     if (ierr && ierr != CG_NODE_NOT_FOUND)
         error_exit("cg_convergence_read");
@@ -6101,8 +6102,8 @@ static void check_base (void)
         fflush (stdout);
         go_absolute ("ConvergenceHistory_t", 1, NULL);
         check_convergence (nd, desc3, BaseClass, pBaseUnits, 2);
-        cg_free (desc3);
     }
+    if (desc3) cg_free(desc3);
 
     /*=----- IntegralData -----*/
 
