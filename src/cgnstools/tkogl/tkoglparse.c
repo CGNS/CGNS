@@ -807,7 +807,7 @@ InitHashTables ()
    Tcl_InitHashTable (&funcDescHashTable, TCL_STRING_KEYS);
    Tcl_InitHashTable (&enumHashTable, TCL_STRING_KEYS);
 
-   for (i = 0; i < sizeof (enumTable)/sizeof(parseItem); i++) {
+   for (i = 0; i < (int)(sizeof (enumTable)/sizeof(parseItem)); i++) {
       enumEntry = Tcl_CreateHashEntry (&enumHashTable,
 				       enumTable [i].name, &newEntry);
       Tcl_SetHashValue (enumEntry, (ClientData)((size_t)(enumTable [i].code)));

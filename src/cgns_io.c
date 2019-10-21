@@ -101,7 +101,7 @@ static char *cgio_ErrorMessage[] = {
     "file has the wrong specified type",
     "not a HDF5 file - required for parallel"
 };
-#define CGIO_MAX_ERRORS (sizeof(cgio_ErrorMessage)/sizeof(char *))
+#define CGIO_MAX_ERRORS ((int)(sizeof(cgio_ErrorMessage)/sizeof(char *)))
 
 #define get_error()  last_err
 

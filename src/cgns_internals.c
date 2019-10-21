@@ -3032,6 +3032,7 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
             continue;
         if (ptset != NULL) {
             cgi_error("Multiple definitions of PointList/PointRange");
+            CGNS_FREE(ptset);
             return CG_ERROR;
         }
         ptset = CGNS_NEW(cgns_ptset, 1);
@@ -3042,7 +3043,10 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
         ptset->id=I_id[i];
         ptset->link=cgi_read_link(I_id[i]);
         ptset->in_link=linked;
-        if (cgi_read_ptset(I_id[i], ptset)) return CG_ERROR;
+        if (cgi_read_ptset(I_id[i], ptset)){
+            CGNS_FREE(ptset);
+            return CG_ERROR;
+        }
     }
     if (nI_t) CGNS_FREE(I_id);
 
@@ -3057,6 +3061,7 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
             continue;
         if (ptset != NULL) {
             cgi_error("Multiple definitions of PointList/PointRange");
+            CGNS_FREE(ptset);
             return CG_ERROR;
         }
         ptset = CGNS_NEW(cgns_ptset, 1);
@@ -3067,7 +3072,10 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
         ptset->id=I_id[i];
         ptset->link=cgi_read_link(I_id[i]);
         ptset->in_link=linked;
-        if (cgi_read_ptset(I_id[i], ptset)) return CG_ERROR;
+        if (cgi_read_ptset(I_id[i], ptset)){
+            CGNS_FREE(ptset);
+            return CG_ERROR;
+        }
     }
     if (nI_t) CGNS_FREE(I_id);
 
@@ -8625,7 +8633,8 @@ int cgi_check_strlen(char const *string)
 
 int cgi_check_strlen_x2(char const *string)
 {
-    int n1,n2,p;
+    int n1,n2;
+    size_t p;
 
     if (strlen(string) > 65) {
         cgi_error("Name exceeds 65 characters limit: %s",string);

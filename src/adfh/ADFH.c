@@ -110,8 +110,8 @@ printf("#### DBG [%5d] ",__LINE__);fflush(stdout); \
 printf aaa ; printf("\n"); fflush(stdout);
 #define DROP( msg ) printf("XX " msg "\n");fflush(stdout);
 #else
-#define ADFH_DEBUG(a) ;
-#define DROP( msg ) ;
+#define ADFH_DEBUG(a) {;}
+#define DROP( msg ) {;}
 #endif
 
 /* ADF data types */
@@ -256,7 +256,7 @@ static struct _ErrorList {
   {ADFH_ERR_SENTINEL,       "<None>"}
 };
 
-#define NUM_ERRORS (sizeof(ErrorList)/sizeof(struct _ErrorList))
+#define NUM_ERRORS ((int)(sizeof(ErrorList)/sizeof(struct _ErrorList)))
 #define ROOT_OR_DIE(err) \
 if (mta_root == NULL){set_error(ADFH_ERR_ROOTNULL, err);return;}
 #define ROOT_OR_DIE_ERR(err) \
@@ -2047,25 +2047,29 @@ void ADFH_Database_Open(const char   *name,
     return;
   }
 
-  // Patch from Manuel Gageik on IBM BLUEgene/Q systems for better cgp_open performance.
+  /* Patch from Manuel Gageik on IBM BLUEgene/Q systems for better cgp_open performance. */
 #ifdef JFC_PATCH_2015_2
 
-  // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
-  // default setting is 2048 bytes
-  H5Pset_meta_block_size(g_propfileopen, 4096);  // 1024*1024
+  /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
+   * default setting is 2048 bytes
+   */
+  H5Pset_meta_block_size(g_propfileopen, 4096);  /* 1024*1024 */
 
-  // http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
-  // attention: this can increase filesize dramatically if lots of small datasets
+  /* http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
+   * attention: this can increase filesize dramatically if lots of small datasets
+   */
   H5Pset_alignment(g_propfileopen, 4096, 4096);
 
-  // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
-  // 1 MByte is default of hdf5
+  /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
+   * 1 MByte is default of hdf5
+   */
   void *tconv; void *bkg;
   H5Pset_buffer(g_propfileopen, 10*1024*1024,tconv, bkg);
 
-  // http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
-  // '..  used by file drivers that are capable of using data sieving'
-  //  1 MByte is default of hdf5
+  /* http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
+   * '..  used by file drivers that are capable of using data sieving'
+   *  1 MByte is default of hdf5
+   */
   H5Pset_sieve_buf_size(g_propfileopen, 4*1024*1024);
 
 #endif
@@ -2111,27 +2115,31 @@ void ADFH_Database_Open(const char   *name,
 
 #ifdef JFC_PATCH_2015_2
 
-  // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
-  // default setting is 2048 bytes
+  /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
+   * default setting is 2048 bytes
+   */
   H5Pset_meta_block_size(g_propfilecreate, 4096);  // 1024*1024
 
-  // http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
-  // attention: this can increase filesize dramatically if lots of small datasets
+  /* http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
+   * attention: this can increase filesize dramatically if lots of small datasets
+   */
   H5Pset_alignment(g_propfilecreate, 4096, 4096);
 
-  // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
-  // 1 MByte is default of hdf5
+  /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
+   * 1 MByte is default of hdf5
+   */
   void *tconv; void *bkg;
   H5Pset_buffer(g_propfilecreate, 10*1024*1024,tconv, bkg);
 
-  // http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
-  // '..  used by file drivers that are capable of using data sieving'
-  //  1 MByte is default of hdf5
+  /* http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
+   * '..  used by file drivers that are capable of using data sieving'
+   * 1 MByte is default of hdf5
+   */
   H5Pset_sieve_buf_size(g_propfilecreate, 4*1024*1024);
 
 #endif
 
-#if 0 // MSB -- DISABLED as it is not compatible with HDF5 1.8 file format, need to resolve this CGNS-166
+#if 0 /* MSB -- DISABLED as it is not compatible with HDF5 1.8 file format, need to resolve this CGNS-166 */
 #if HDF5_HAVE_FILE_SPACE_STRATEGY
     H5Pset_file_space_strategy(g_propfilecreate, H5F_FSPACE_STRATEGY_FSM_AGGR, 1, (hsize_t)1);
 #endif

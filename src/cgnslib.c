@@ -263,7 +263,7 @@ int VersionList[] = {3210, 3200,
                      2550, 2540, 2530, 2520, 2510, 2500,
                      2460, 2420, 2400,
                      2300, 2200, 2100, 2000, 1270, 1200, 1100, 1050};
-#define nVersions (sizeof(VersionList)/sizeof(int))
+#define nVersions ((int)(sizeof(VersionList)/sizeof(int)))
 
 #ifdef DEBUG_HDF5_OBJECTS_CLOSE
 void objlist_status(char *tag)
@@ -4878,13 +4878,14 @@ int cg_poly_elements_partial_write(int file_number, int B, int Z, int S,
         /* create new element connectivity array and offsets*/
 
         newelems = (cgsize_t *) malloc ((size_t)(newsize * sizeof(cgsize_t)));
-        newoffsets = (cgsize_t *) malloc((size_t)((elemcount+1) * sizeof(cgsize_t)));
         if (NULL == newelems) {
             cgi_error("Error allocating new connectivity data");
             return CG_ERROR;
         }
+        newoffsets = (cgsize_t *) malloc((size_t)((elemcount+1) * sizeof(cgsize_t)));
         if (NULL == newoffsets) {
             cgi_error("Error allocating new connectivity offset data");
+            free(newelems);
             return CG_ERROR;
         }
 
@@ -4916,7 +4917,11 @@ int cg_poly_elements_partial_write(int file_number, int B, int Z, int S,
             } else if (end < section->range[1]) {
                 num = end - section->range[0] + 1;
                 offset = section_offset[end - section->range[0] + 1];
-                if (offset < 0) return CG_ERROR;
+                if (offset < 0) {
+                    free(newelems);
+                    free(newoffsets);
+                    return CG_ERROR;
+                }
                 size = section_offset[section->range[1]-section->range[0]+1] - section_offset[num];
                 memcpy(&newelems[n], &oldelems[offset], (size_t)(size*sizeof(cgsize_t)));
                 n += size;

@@ -153,7 +153,7 @@ int main (int argc, char **argv)
         cg_error_exit ();
     cgbase = cgzone = 1;
 
-    // writing integer type should fail
+    /* writing integer type should fail */
     if (!cg_grid_bounding_box_write(cgfile, cgbase, cgzone, 1, CGNS_ENUMV(Integer), bbox)){
         printf("writing Integer bounding box data failed to produce error\n");
 	exit(1);
@@ -161,7 +161,7 @@ int main (int argc, char **argv)
     cg_error_print();
     cgi_error("no CGNS error reported");  /* reset */
 
-    // writing empty bbox should do nothing
+    /* writing empty bbox should do nothing */
     if (cg_grid_bounding_box_write(cgfile, cgbase, cgzone, 1, CGNS_ENUMV(RealSingle), NULL)){
         printf("writing NULL bounding box raised an unexpected error\n");
         cg_error_print();

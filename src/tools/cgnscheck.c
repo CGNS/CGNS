@@ -27,6 +27,12 @@
 
 #define USE_MID_NODES
 
+#if CG_SIZEOF_SIZE == 32
+#define CG_ABS abs
+#else
+#define CG_ABS labs
+#endif
+
 static int FileVersion;
 static int LibraryVersion = CGNS_VERSION;
 
@@ -1017,7 +1023,7 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
 
     if (type == CGNS_ENUMV(NFACE_n)) {
         int dim;
-        cgsize_t *facenodes = find_element (z, abs(nodes[fnum]), &dim, &n);
+        cgsize_t *facenodes = find_element (z, CG_ABS(nodes[fnum]), &dim, &n);
         if (facenodes == NULL || dim != 2)
             fatal_error("find_element returned invalid face\n");
         return new_face (n, facenodes);
@@ -1426,7 +1432,7 @@ static void read_zone (int nz)
                 nn = (int)(po[ne+1]-po[ne]);
                 if (ne >= es->rind[0]) {
                     for (i = 0; i < nn; i++) {
-                        if (!valid_face (z, abs(pe[i]))) {
+                        if (!valid_face (z, CG_ABS(pe[i]))) {
                             ierr++;
                             (es->invalid)++;
                         }
@@ -5887,7 +5893,7 @@ static void check_base_iter (void)
 
 static void check_base (void)
 {
-  char basename[33], name[33], *desc1, *desc2, *desc3;
+    char basename[33], name[33], *desc1, *desc2, *desc3;
     int n, nz, ierr, nd, nf, eqset[7];
     float point[3], vector[3];
     CGNS_ENUMT(SimulationType_t) simulation;
@@ -6087,6 +6093,7 @@ static void check_base (void)
     /*----- ConvergenceHistory -----*/
 
     go_absolute (NULL);
+    desc3 = NULL;
     ierr = cg_convergence_read (&nd, &desc3);
     if (ierr && ierr != CG_NODE_NOT_FOUND)
         error_exit("cg_convergence_read");
@@ -6095,8 +6102,8 @@ static void check_base (void)
         fflush (stdout);
         go_absolute ("ConvergenceHistory_t", 1, NULL);
         check_convergence (nd, desc3, BaseClass, pBaseUnits, 2);
-        cg_free (desc3);
     }
+    if (desc3) cg_free(desc3);
 
     /*=----- IntegralData -----*/
 
