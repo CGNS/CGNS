@@ -27,6 +27,12 @@
 
 #define USE_MID_NODES
 
+#if CG_SIZEOF_SIZE == 32
+#define CG_ABS abs
+#else
+#define CG_ABS labs
+#endif
+
 static int FileVersion;
 static int LibraryVersion = CGNS_VERSION;
 
@@ -1017,7 +1023,7 @@ static FACE *element_face (ZONE *z, int fnum, CGNS_ENUMT(ElementType_t) type,
 
     if (type == CGNS_ENUMV(NFACE_n)) {
         int dim;
-        cgsize_t *facenodes = find_element (z, abs(nodes[fnum]), &dim, &n);
+        cgsize_t *facenodes = find_element (z, CG_ABS(nodes[fnum]), &dim, &n);
         if (facenodes == NULL || dim != 2)
             fatal_error("find_element returned invalid face\n");
         return new_face (n, facenodes);
@@ -1426,7 +1432,7 @@ static void read_zone (int nz)
                 nn = (int)(po[ne+1]-po[ne]);
                 if (ne >= es->rind[0]) {
                     for (i = 0; i < nn; i++) {
-                        if (!valid_face (z, abs(pe[i]))) {
+                        if (!valid_face (z, CG_ABS(pe[i]))) {
                             ierr++;
                             (es->invalid)++;
                         }
