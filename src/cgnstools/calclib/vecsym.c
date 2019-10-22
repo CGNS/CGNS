@@ -16,7 +16,7 @@ static VECSYM *hash_table[HASH_SIZE];/* user symbol hash table */
 static int num_symbols = 0;         /* number symbols in hash table */
 static int max_namelen = 0;         /* max length of user symbol name */
 
-/*----- error mesages -----*/
+/*----- error messages -----*/
 
 static char *errmsg[] = {
     "no error",
@@ -24,7 +24,7 @@ static char *errmsg[] = {
     "NULL or blank equation string",
     "failed to add new symbol to symbol table",
     "malloc failed - out of space",
-    "NULL funtion pointer",
+    "NULL function pointer",
     "user function has too many arguments",
     "0 length or NULL vector",
     "symbol name too long",

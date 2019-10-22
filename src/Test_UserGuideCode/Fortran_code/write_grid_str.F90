@@ -16,7 +16,7 @@
 !   (../../lib is the location where the compiled
 !   library libcgns.a is located)
 !
-!   The following is no longer supported; now superceded by "use cgns":
+!   The following is no longer supported; now superseded by "use cgns":
 !     include 'cgnslib_f.h'
 !
 !   dimension statements (note that tri-dimensional arrays

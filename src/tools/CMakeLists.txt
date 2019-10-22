@@ -3,7 +3,6 @@
 #########
 
 # Link all the executables to cgns and hdf5
-link_directories(.)
 if (CGNS_USE_SHARED)
   link_libraries(cgns_shared)
 else (CGNS_USE_SHARED)

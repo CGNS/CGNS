@@ -905,7 +905,7 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
     cgsize_t num = end == 0 ? 0 : end - start + 1;
     num = num < 0 ? 0 : num;
     MPI_Datatype mpi_type = sizeof(cgsize_t) == 32 ? MPI_INT : MPI_LONG_LONG_INT;
-    MPI_Allreduce(MPI_IN_PLACE, &num, 1, mpi_type, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &num, 1, mpi_type, MPI_SUM, pcg_mpi_comm);
 
     strcpy(section->parelem->data_type, CG_SIZE_DATATYPE);
     section->parelem->data_dim = 2;

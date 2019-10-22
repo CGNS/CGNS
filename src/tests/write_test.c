@@ -917,9 +917,10 @@ void write_unstructured()
 
 void write_mixed()
 {
-    int i, j, k, n, nelem, cgconn, cgbc;
+    int i, j, k, n, cgconn, cgbc;
     cgsize_t range[6];
 #ifdef ABUTTING1TO1_FACES
+    int nelem;
     GridLocation_t location;
 #endif
 
@@ -959,10 +960,9 @@ void write_mixed()
     write_zone_link(2, "Unstructured", "GridCoordinates");
     write_zone_link(2, "Unstructured", "Elements");
     write_zone_link(2, "Unstructured", "Faces");
-    nelem = (NUM_SIDE - 1) * (NUM_SIDE - 1);
 
 #ifdef ABUTTING1TO1_FACES
-
+    nelem = (NUM_SIDE - 1) * (NUM_SIDE - 1);
     /* zone 1 -> zone 2 connectivity as face range */
 
     for (n = 0; n < 3; n++) {
