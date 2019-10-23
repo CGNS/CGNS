@@ -3,7 +3,6 @@
 #########
 
 # Link all the executables to cgns and hdf5
-link_directories(.)
 link_libraries(cgns_static)
 
 if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)

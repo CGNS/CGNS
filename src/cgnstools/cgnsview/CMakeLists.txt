@@ -5,7 +5,6 @@
 include_directories(${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH} ${OPENGL_INCLUDE_DIR})
 include_directories(../common)
 include_directories(../..)
-link_directories(.)
 if (CGNS_USE_SHARED)
   link_libraries(cgns_shared)
 else (CGNS_USE_SHARED)

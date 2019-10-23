@@ -20,6 +20,7 @@ CALL = \
 	ser_benchmark_hdf5$(EXE) \
 	test_exts$(EXE) \
 	test_goto$(EXE) \
+	test_family_tree$(EXE) \
 	test_multifam$(EXE) \
 	test_partial$(EXE) \
 	test_general_reshape$(EXE) \
@@ -39,7 +40,8 @@ F_TESTS = \
 	cgread_F03$(EXE) \
 	cgzconn_F03$(EXE) \
 	cgsubreg_F03$(EXE) \
-	test_general_rindf$(EXE) \
+	test_general_rindf$(EXE)\
+	test_family_treef$(EXE) \
 	test_bboxf$(EXE)
 
 FALL = $(F_TESTS)
@@ -153,6 +155,12 @@ test_general_rind$(EXE) : test_general_rind.c $(CGNSLIB)
 
 test_goto$(EXE) : test_goto.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_goto.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_family_tree$(EXE) : test_family_tree.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_family_tree.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
@@ -298,6 +306,12 @@ test64f_F03$(EXE) : test64f_f03.F90 $(CGNSLIB)
 
 test_general_rindf$(EXE) : test_general_rindf.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ test_general_rindf.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_family_treef$(EXE) : test_family_treef.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_family_treef.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

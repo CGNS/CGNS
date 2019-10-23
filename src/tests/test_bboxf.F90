@@ -12,7 +12,7 @@
       real*4, dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: coord
       real*8, dimension(3, 2) :: bbox
 
-      integer :: n, i
+      integer :: n
       integer :: ierr
       integer :: cgfile, cgbase, cgzone, cgcoord
       integer(cgsize_t) :: size(9)
@@ -24,7 +24,6 @@
         coord(n) = n
       enddo
 
-      call unlink(fname)
       call cg_open_f (fname, CG_MODE_WRITE, cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_base_write_f (cgfile,"Base", celldim, physdim, cgbase, ierr)

@@ -32,7 +32,7 @@ library libcgns.a is located)
 
 int main()
 {
-    int index_file,index_base,index_zone,index_flow,index_grid,nfields,ncoords;
+    int index_file,index_base,index_zone,index_flow,nfields,ncoords;
     int iff,ic;
     float exponents[5];
     char fieldname[33],coordname[33];
@@ -53,8 +53,6 @@ int main()
     index_zone=1;
 /* we know there is only one FlowSolution_t (real working code would check!) */
     index_flow=1;
-/* we know there is only one GridCoordinates_t (real working code would check!) */
-    index_grid=1;
 /* read DataClass and DimensionalUnits under Base */
     cg_goto(index_file,index_base,"end");
     cg_dataclass_read(&id);
