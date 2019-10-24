@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #ifdef _WIN32
 # include <io.h>
 # define unlink _unlink
@@ -18,11 +19,44 @@ int main (int argc, char **argv)
     float *array, exps[5];
     double start, end;
     static char *fname = "array.cgns";
+    char *endptr;
+    long input_value;
 
     if (argc > 1) {
-        narrays = atoi (argv[1]);
-        if (argc > 2)
-            arraysize = atoi (argv[2]);
+        /* Get safely input values */
+        errno = 0;
+        input_value = strtol(argv[1], &endptr, 10);
+        if (errno == ERANGE){
+            fprintf (stderr, "overflow when converting narrays input to int\n");
+            exit(1);
+        }
+        if (endptr == argv[1]){
+            fprintf (stderr, "impossible to convert narrays input to int\n");
+            exit(1);
+        }
+        else {
+            narrays = (int) input_value;
+        }
+        if (argc > 2){
+            errno = 0;
+            input_value = strtol(argv[2], &endptr, 10);
+            if (errno == ERANGE){
+                fprintf (stderr, "overflow when converting array_size input to int\n");
+                exit(1);
+            }
+            if (endptr == argv[2]){
+                fprintf (stderr, "impossible to convert array_size input to int\n");
+                exit(1);
+            }
+            else {
+                arraysize = (cgsize_t) input_value;
+            }
+	}
+    }
+    /* validate input */
+    if (narrays < 1 || arraysize < 1){
+        fprintf (stderr, "Invalid array size\n");
+        exit(1);
     }
     printf ("writing %d arrays of size %d\n", narrays, (int)arraysize);
     array = (float *) malloc ((size_t)(arraysize * sizeof(float)));

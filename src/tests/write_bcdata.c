@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #ifdef _WIN32
 # include <io.h>
 # define unlink _unlink
@@ -38,11 +39,39 @@ int main (int argc, char **argv)
 {
     int i, j, nb = 5, nv = 5;
     float exps[5];
+    char *endptr;
+    long input_value;
 
     if (argc > 1) {
-        nb = atoi (argv[1]);
-        if (argc > 2)
-            nv = atoi (argv[2]);
+        /* Get safely input values */
+        errno = 0;
+        input_value = strtol(argv[1], &endptr, 10);
+        if (errno == ERANGE){
+            fprintf (stderr, "overflow when converting nb input to int\n");
+            exit(1);
+        }
+        if (endptr == argv[1]){
+            fprintf (stderr, "impossible to convert nb input to int\n");
+            exit(1);
+        }
+        else {
+            nb = (int) input_value;
+        }
+        if (argc > 2){
+            errno = 0;
+            input_value = strtol(argv[2], &endptr, 10);
+            if (errno == ERANGE){
+                fprintf (stderr, "overflow when converting nv input to int\n");
+                exit(1);
+            }
+            if (endptr == argv[2]){
+                fprintf (stderr, "impossible to convert nv input to int\n");
+                exit(1);
+            }
+            else {
+                nv = (int) input_value;
+            }
+	}
     }
     for (i = 0; i < 5; i++)
         exps[i] = (float)0.0;
