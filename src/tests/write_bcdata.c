@@ -40,10 +40,10 @@ int main (int argc, char **argv)
     int i, j, nb = 5, nv = 5;
     float exps[5];
     char *endptr;
-    long input_value;
 
     if (argc > 1) {
         /* Get safely input values */
+        long input_value;
         errno = 0;
         input_value = strtol(argv[1], &endptr, 10);
         if (errno == ERANGE){

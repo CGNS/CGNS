@@ -25,7 +25,6 @@ int main (int argc, char **argv)
     char fname[33], linkfile[33];
     int cgftop,cgfchild;
     char *endptr;
-    long input_value;
 
     for (n = 0; n < 3; n++) {
         size[n]   = NUM_SIDE;
@@ -34,6 +33,7 @@ int main (int argc, char **argv)
     }
     if (argc > 1) {
         /* Get safely input values */
+        long input_value;
         errno = 0;
         input_value = strtol(argv[1], &endptr, 10);
         if (errno == ERANGE){

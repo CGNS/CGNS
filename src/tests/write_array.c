@@ -20,10 +20,10 @@ int main (int argc, char **argv)
     double start, end;
     static char *fname = "array.cgns";
     char *endptr;
-    long input_value;
 
     if (argc > 1) {
         /* Get safely input values */
+        long input_value;
         errno = 0;
         input_value = strtol(argv[1], &endptr, 10);
         if (errno == ERANGE){
