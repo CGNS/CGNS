@@ -9514,6 +9514,7 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
     cg_element_dimension(einterp->type,&edim);
     
     // Check 
+    if (edim == 0) {cgi_warning("No element interpolation points for element type NODE");return CG_OK;}
     if (edim > 0 && !pu) return CG_ERROR;
     if (edim > 1 && !pv) return CG_ERROR;
     if (edim > 2 && !pw) return CG_ERROR;
