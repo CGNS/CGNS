@@ -4739,7 +4739,10 @@ int cg_sol_size(int file_number, int B, int Z, int S,
             }
             
             if (cgi_ho_datasize(zone->index_dim,zone,sol->spatialOrder,
-                                sol->temporalOrder, dim_vals) ) return CG_ERROR;
+                                sol->temporalOrder, dim_vals) ) {
+              cgi_warning("Unable to retrieve solution datasize for High Order solution");
+              return CG_ERROR;
+            }
             
             /* add rinds */
             for (j=0; j<zone->index_dim; j++) dim_vals[j] = dim_vals[j] 
@@ -4754,6 +4757,18 @@ int cg_sol_size(int file_number, int B, int Z, int S,
     } else {
         *data_dim = 1;
         dim_vals[0] = sol->ptset->size_of_patch;
+        /* CPEX 045 */
+        if ( sol->location == CGNS_ENUMV(ElementBased) ) {
+          cgns_zone *zone = &cg->base[B-1].zone[Z-1];
+          // Override based on range 
+          if (cgi_ho_datasize_range(zone->index_dim,zone,sol->spatialOrder,
+                            sol->temporalOrder, sol->ptset->range_min[0], 
+                            sol->ptset->range_max[0], &dim_vals[0]) ) {
+            cgi_warning("Unable to retrieve solution datasize for High Order solution");
+            return CG_ERROR;
+          }
+          
+        }
     }
 
     return CG_OK;
@@ -5179,6 +5194,14 @@ int cg_field_write(int file_number, int B, int Z, int S,
     else {
         m_numdim = 1;
         m_dimvals[0] = sol->ptset->size_of_patch;
+        /* CPEX 045 */
+        if ( sol->location == CGNS_ENUMV(ElementBased) ) {
+          // Override based on range 
+          if (cgi_ho_datasize_range(m_numdim,zone,sol->spatialOrder,
+                            sol->temporalOrder, sol->ptset->range_min[0], 
+                            sol->ptset->range_max[0], &m_dimvals[0]) ) return CG_ERROR;
+          
+        }
     }
 
     cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
@@ -5332,6 +5355,14 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
     } else {
         s_numdim = 1;
         s_dimvals[0] = sol->ptset->size_of_patch;
+        /* CPEX 045 */
+        if ( sol->location == CGNS_ENUMV(ElementBased) ) {
+          // Override based on range 
+          if (cgi_ho_datasize_range(s_numdim,zone,sol->spatialOrder,
+                            sol->temporalOrder, sol->ptset->range_min[0], 
+                            sol->ptset->range_max[0], &s_dimvals[0]) ) return CG_ERROR;
+          
+        }
     }
 
     status= cgi_array_general_write(sol->id, &(sol->nfields),

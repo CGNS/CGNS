@@ -1526,6 +1526,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
     void *vdata;
     int *edata;
     cgsize_t DataSize[3], DataCount = 0;
+    short checksize = 1;
 
     if (cgi_get_nodes(parent_id, "FlowSolution_t", nsols, &id))
         return CG_ERROR;
@@ -1568,8 +1569,11 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                 return CG_ERROR;
             }
             
-            if (cgi_ho_datasize(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
-                                sol[0][s].temporalOrder, DataSize) ) return CG_ERROR;
+            int ret = cgi_ho_datasize(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
+                                sol[0][s].temporalOrder, DataSize);
+            
+            if ( ret == CG_ERROR) return CG_ERROR;
+            if ( ret == CG_NODE_NOT_FOUND ) checksize = 0;
             
             /* add rinds */
             for (j=0; j<Idim; j++) DataSize[j] = DataSize[j] 
@@ -1596,11 +1600,14 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
             
             /* CPEX 045 */
             if ( sol[0][s].location == CGNS_ENUMV(ElementBased) ) {
-              // Override based on range 
-              if (cgi_ho_datasize_range(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
-                                sol[0][s].temporalOrder, sol[0][s].ptset->range_min[0], 
-                                sol[0][s].ptset->range_max[0], &DataCount) ) return CG_ERROR;
               
+              // Override based on range 
+              int ret = cgi_ho_datasize_range(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
+                                sol[0][s].temporalOrder, sol[0][s].ptset->range_min[0], 
+                                sol[0][s].ptset->range_max[0], &DataCount);
+              
+              if (ret == CG_ERROR) return CG_ERROR;
+              if (ret == CG_NODE_NOT_FOUND) checksize = 0;
             }
         }
 
@@ -1618,26 +1625,31 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                     sol[0][s].id)) return CG_ERROR;
 
              /* check data */
-                if (sol[0][s].ptset == NULL) {
-                    if (sol[0][s].field[z].data_dim != Idim) {
-                        cgi_error("Wrong number of dimension in DataArray %s",
-                            sol[0][s].field[z].name);
-                        return CG_ERROR;
-                    }
-                    for (n=0; n<Idim; n++) {
-                        if (sol[0][s].field[z].dim_vals[n]!=DataSize[n]) {
-                            cgi_error("Invalid field array size for dimension %d. Given %ld, requested %ld",
-                              n, sol[0][s].field[z].dim_vals[n], DataSize[n]);
+                if (checksize) {
+                    if (sol[0][s].ptset == NULL) {
+                        if (sol[0][s].field[z].data_dim != Idim) {
+                            cgi_error("Wrong number of dimension in DataArray %s",
+                                sol[0][s].field[z].name);
+                            return CG_ERROR;
+                        }
+                        for (n=0; n<Idim; n++) {
+                            if (sol[0][s].field[z].dim_vals[n]!=DataSize[n]) {
+                                cgi_error("Invalid field array size for dimension %d. Given %ld, requested %ld",
+                                  n, sol[0][s].field[z].dim_vals[n], DataSize[n]);
+                                return CG_ERROR;
+                            }
+                        }
+                    } else {
+                        if (sol[0][s].field[z].data_dim != 1 ||
+                            sol[0][s].field[z].dim_vals[0] != DataCount) {
+                            cgi_error("Invalid field array dimension for ptset solution");
                             return CG_ERROR;
                         }
                     }
-                } else {
-                    if (sol[0][s].field[z].data_dim != 1 ||
-                        sol[0][s].field[z].dim_vals[0] != DataCount) {
-                        cgi_error("Invalid field array dimension for ptset solution");
-                        return CG_ERROR;
-                    }
                 }
+                else
+                  cgi_warning("Data Size checking disabled for solution reading !");
+                  
                 if (strcmp(sol[0][s].field[z].data_type,"I4") &&
                     strcmp(sol[0][s].field[z].data_type,"I8") &&
                     strcmp(sol[0][s].field[z].data_type,"R4") &&
@@ -5903,8 +5915,8 @@ int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, i
     
     if (!zone->nsections) 
     {
-      cgi_error("Zone needs to have Element_t nodes !\n");
-      return CG_ERROR;
+      cgi_warning("Zone needs to have Element_t nodes for cgi_ho_datasize ! Unable to get DataSize for High Order CGNS.\n");
+      return CG_NODE_NOT_FOUND;
     }
     
     /* Check ZoneType */
@@ -5945,8 +5957,8 @@ int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spa
     
     if (!zone->nsections) 
     {
-      cgi_error("Zone needs to have Element_t nodes !\n");
-      return CG_ERROR;
+      cgi_warning("Zone needs to have Element_t nodes for cgi_ho_datasize_range !\n");
+      return CG_NODE_NOT_FOUND;
     }
     
     /* Check ZoneType */
