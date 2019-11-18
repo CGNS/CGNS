@@ -40,6 +40,9 @@ freely, subject to the following restrictions:
 
 #define CGNS_NAN(x)  (!((x) < HUGE_VAL && (x) > -HUGE_VAL))
 
+#define max(a,b) (a>=b?a:b)
+#define min(a,b) (a<=b?a:b)
+
 /* Flag for contiguous (0) or compact storage (1) */
 extern int HDF5storage_type;
 
@@ -1590,6 +1593,15 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                 return CG_ERROR;
             }
             DataCount = sol[0][s].ptset->size_of_patch;
+            
+            /* CPEX 045 */
+            if ( sol[0][s].location == CGNS_ENUMV(ElementBased) ) {
+              // Override based on range 
+              if (cgi_ho_datasize_range(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
+                                sol[0][s].temporalOrder, sol[0][s].ptset->range_min[0], 
+                                sol[0][s].ptset->range_max[0], &DataCount) ) return CG_ERROR;
+              
+            }
         }
 
      /* DataArray_t */
@@ -1664,6 +1676,12 @@ int cgi_read_solution_order(cgns_sol *sol)
     int *edata;
     char_33 temp_name,data_type;
     
+    
+    // Set default values
+    sol->isOrderDefined= 0;
+    sol->spatialOrder  = 1;
+    sol->temporalOrder = 0;
+    
     /* spatial and temporal orders IndexArray_t */
     if (cgi_get_nodes(sol->id, "IndexArray_t", &nIA, &idf)) return CG_ERROR;
     
@@ -1692,13 +1710,6 @@ int cgi_read_solution_order(cgns_sol *sol)
             }
         }
         CGNS_FREE(idf);
-    }
-    else
-    {
-        // Set default values
-        sol->isOrderDefined= 0;
-        sol->spatialOrder  = 1;
-        sol->temporalOrder = 0;
     }
     return CG_OK;
 }
@@ -3284,6 +3295,12 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
                 return CG_ERROR;
             }
 #endif
+            //Store ranges
+            for (i=0; i<Idim; i++) {
+              ptset->range_min[i] = pnts[i];
+              ptset->range_max[i] = pnts[i+Idim];
+            }
+            // Compute size
             for (i=0; i<Idim; i++) total *= (pnts[i+Idim]-pnts[i]+1);
             CGNS_FREE(pnts);
 #if CG_SIZEOF_SIZE == 32
@@ -3300,6 +3317,12 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
                 cg_io_error("cgio_read_all_data");
                 return CG_ERROR;
             }
+            //Store ranges
+            for (i=0; i<Idim; i++) {
+              ptset->range_min[i] = pnts[i];
+              ptset->range_max[i] = pnts[i+Idim];
+            }
+            // Compute size
             ptset->size_of_patch = 1;
             for (i=0; i<Idim; i++) ptset->size_of_patch *= (pnts[i+Idim]-pnts[i]+1);
             CGNS_FREE(pnts);
@@ -5901,6 +5924,54 @@ int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, i
         CGNS_ENUMT(ElementType_t) type = section->el_type;
         // Get element count
         ne = section->range[1] - section->range[0] + 1;
+        // Get number of nodes for this element type based solution
+        cg_npe_ho(type,spatialOrder,&npe);
+        
+        for (j = 0 ; j < id_dim ; j++) DataSize[j] = DataSize[j] + ne*npe;
+    }
+    // Temporal Order
+    for (j = 0 ; j < id_dim ; j++) DataSize[j] = DataSize[j] * (temporalOrder+1);
+    return CG_OK;
+}
+
+
+int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spatialOrder, 
+                          const int temporalOrder, const cgsize_t imin, const cgsize_t imax, 
+                          cgsize_t *DataSize)
+{
+    int i,j,npe, ne;
+    
+    if (!zone) return CG_ERROR;
+    
+    if (!zone->nsections) 
+    {
+      cgi_error("Zone needs to have Element_t nodes !\n");
+      return CG_ERROR;
+    }
+    
+    /* Check ZoneType */
+    if ( zone->type != CGNS_ENUMV( Unstructured) ) 
+    {
+      cgi_error("Zone needs to be Unstructured !\n");
+      return CG_ERROR;
+    }
+    
+    for (i = 0 ; i < id_dim ; i++) DataSize[i] = 0;
+    
+    // Loop over Sections
+    for (i = 0 ; i < zone->nsections ; i++)
+    {
+        cgns_section *section = &(zone->section[i]);
+        // Get ElementType_t
+        CGNS_ENUMT(ElementType_t) type = section->el_type;
+        
+        // Get element count bellonging to this element section range
+        int rmin = max(section->range[0],imin);
+        int rmax = min(section->range[1],imax);
+        if (rmin > rmax) continue;
+        
+        // Get element count
+        ne = rmax - rmin + 1;
         // Get number of nodes for this element type based solution
         cg_npe_ho(type,spatialOrder,&npe);
         

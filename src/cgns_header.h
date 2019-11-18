@@ -232,6 +232,8 @@ typedef struct {            /* IndexArray/Range_t Node      */
     CGNS_ENUMT(PointSetType_t) type;  /* PointList, PointRange, ...       */
     char_33 data_type;      /* type of data                         */
     cgsize_t npts;          /* number of points to define the patch */
+    cgsize_t range_min[12]; /* start of range if type is PointRange or ElementRange */
+    cgsize_t range_max[12]; /* end of range if type is PointRange or ElementRange */
     cgsize_t size_of_patch; /* nr of nodes or elements in patch     */
     void *data;             /* data (only loaded in MODE_MODIFY     */
 } cgns_ptset;               /*       when version mismatch)         */
@@ -1162,6 +1164,8 @@ CGNSDLL int cgi_datasize(int Idim, cgsize_t *CurrentDim,
 /* CPEX 045 */
 int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, int temporalOrder, 
                     cgsize_t *DataSize);
+int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spatialOrder, 
+                          const int temporalOrder, const cgsize_t imin, const cgsize_t imax, cgsize_t *DataSize);
 
 int cgi_read_node(double node_id, char_33 name, char_33 data_type,
                   int *ndim, cgsize_t *dim_vals, void **data, int data_flag);
