@@ -3239,20 +3239,29 @@ MODULE cgns
   !      Go - To Function                                                 *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-!!$     INTERFACE
-!!$           SUBROUTINE cg_goto_f, CG_GOTO_F)(cgint_f *fn, cgint_f *B, ier, ...)
-!!$cgint_f *fn, cgint_f *B, ier, ...)
-!!$
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
-!!$
-!!$     INTERFACE
-!!$           SUBROUTINE cg_gorel_f, CG_GOREL_F)(cgint_f *fn, ier, ...)
-!!$cgint_f *fn, ier, ...)
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$        END INTERFACE
+  INTERFACE
+     SUBROUTINE cg_goto_f1(fn, B, ier, &
+                     name1, index1)
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER, INTENT(OUT) :: ier
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name1
+       INTEGER :: index1
+     END SUBROUTINE
+  END INTERFACE
+  INTERFACE
+     SUBROUTINE cg_gorel_f1(fn, ier, &
+                     name1, index1)
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER, INTENT(OUT) :: ier
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name1
+       INTEGER :: index1
+     END SUBROUTINE
+  END INTERFACE
 
   INTERFACE
      SUBROUTINE cg_gopath_f(fn,path, ier) !BIND(C, NAME="cg_gopath_f")
@@ -5045,6 +5054,332 @@ MODULE cgns
 
 
 CONTAINS
+
+  SUBROUTINE cg_goto_f(fn, B, ier, &
+                  name1, index1,  &
+                  name2, index2,  &
+                  name3, index3,  &
+                  name4, index4,  &
+                  name5, index5,  &
+                  name6, index6,  &
+                  name7, index7,  &
+                  name8, index8,  &
+                  name9, index9,  &
+                  name10, index10,  &
+                  name11, index11,  &
+                  name12, index12,  &
+                  name13, index13,  &
+                  name14, index14,  &
+                  name15, index15,  &
+                  name16, index16,  &
+                  name17, index17,  &
+                  name18, index18,  &
+                  name19, index19,  &
+                  name20)
+     IMPLICIT NONE
+     INTEGER :: fn
+     INTEGER :: B
+     INTEGER, INTENT(OUT) :: ier
+     CHARACTER(*) :: name1
+     INTEGER, OPTIONAL :: index1
+     CHARACTER(*), OPTIONAL :: name2
+     INTEGER, OPTIONAL :: index2
+     CHARACTER(*), OPTIONAL :: name3
+     INTEGER, OPTIONAL :: index3
+     CHARACTER(*), OPTIONAL :: name4
+     INTEGER, OPTIONAL :: index4
+     CHARACTER(*), OPTIONAL :: name5
+     INTEGER, OPTIONAL :: index5
+     CHARACTER(*), OPTIONAL :: name6
+     INTEGER, OPTIONAL :: index6
+     CHARACTER(*), OPTIONAL :: name7
+     INTEGER, OPTIONAL :: index7
+     CHARACTER(*), OPTIONAL :: name8
+     INTEGER, OPTIONAL :: index8
+     CHARACTER(*), OPTIONAL :: name9
+     INTEGER, OPTIONAL :: index9
+     CHARACTER(*), OPTIONAL :: name10
+     INTEGER, OPTIONAL :: index10
+     CHARACTER(*), OPTIONAL :: name11
+     INTEGER, OPTIONAL :: index11
+     CHARACTER(*), OPTIONAL :: name12
+     INTEGER, OPTIONAL :: index12
+     CHARACTER(*), OPTIONAL :: name13
+     INTEGER, OPTIONAL :: index13
+     CHARACTER(*), OPTIONAL :: name14
+     INTEGER, OPTIONAL :: index14
+     CHARACTER(*), OPTIONAL :: name15
+     INTEGER, OPTIONAL :: index15
+     CHARACTER(*), OPTIONAL :: name16
+     INTEGER, OPTIONAL :: index16
+     CHARACTER(*), OPTIONAL :: name17
+     INTEGER, OPTIONAL :: index17
+     CHARACTER(*), OPTIONAL :: name18
+     INTEGER, OPTIONAL :: index18
+     CHARACTER(*), OPTIONAL :: name19
+     INTEGER, OPTIONAL :: index19
+     CHARACTER(*), OPTIONAL :: name20
+
+     IF (.NOT. PRESENT(index1)) THEN
+        CALL cg_goto_f1(fn, B, ier, name1, 0)
+        RETURN
+     ELSE
+        PRINT '(I3)', index1
+        CALL cg_goto_f1(fn, B, ier, name1, index1)
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index2))) THEN
+        CALL cg_gorel_f1(fn, ier, name2, index2)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index3))) THEN
+        CALL cg_gorel_f1(fn, ier, name3, index3)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index4))) THEN
+        CALL cg_gorel_f1(fn, ier, name4, index4)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index5))) THEN
+        CALL cg_gorel_f1(fn, ier, name5, index5)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index6))) THEN
+        CALL cg_gorel_f1(fn, ier, name6, index6)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index7))) THEN
+        CALL cg_gorel_f1(fn, ier, name7, index7)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index8))) THEN
+        CALL cg_gorel_f1(fn, ier, name8, index8)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index9))) THEN
+        CALL cg_gorel_f1(fn, ier, name9, index9)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index10))) THEN
+        CALL cg_gorel_f1(fn, ier, name10, index10)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index11))) THEN
+        CALL cg_gorel_f1(fn, ier, name11, index11)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index12))) THEN
+        CALL cg_gorel_f1(fn, ier, name12, index12)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index13))) THEN
+        CALL cg_gorel_f1(fn, ier, name13, index13)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index14))) THEN
+        CALL cg_gorel_f1(fn, ier, name14, index14)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index15))) THEN
+        CALL cg_gorel_f1(fn, ier, name15, index15)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index16))) THEN
+        CALL cg_gorel_f1(fn, ier, name16, index16)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index17))) THEN
+        CALL cg_gorel_f1(fn, ier, name17, index17)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index18))) THEN
+        CALL cg_gorel_f1(fn, ier, name18, index18)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index19))) THEN
+        CALL cg_gorel_f1(fn, ier, name19, index19)
+     ELSE
+        RETURN
+     END IF
+  END SUBROUTINE
+
+  SUBROUTINE cg_gorel_f(fn, ier, &
+                  name1, index1,  &
+                  name2, index2,  &
+                  name3, index3,  &
+                  name4, index4,  &
+                  name5, index5,  &
+                  name6, index6,  &
+                  name7, index7,  &
+                  name8, index8,  &
+                  name9, index9,  &
+                  name10, index10,  &
+                  name11, index11,  &
+                  name12, index12,  &
+                  name13, index13,  &
+                  name14, index14,  &
+                  name15, index15,  &
+                  name16, index16,  &
+                  name17, index17,  &
+                  name18, index18,  &
+                  name19, index19,  &
+                  name20)
+     IMPLICIT NONE
+     INTEGER :: fn
+     INTEGER, INTENT(OUT) :: ier
+     CHARACTER(*) :: name1
+     INTEGER, OPTIONAL :: index1
+     CHARACTER(*), OPTIONAL :: name2
+     INTEGER, OPTIONAL :: index2
+     CHARACTER(*), OPTIONAL :: name3
+     INTEGER, OPTIONAL :: index3
+     CHARACTER(*), OPTIONAL :: name4
+     INTEGER, OPTIONAL :: index4
+     CHARACTER(*), OPTIONAL :: name5
+     INTEGER, OPTIONAL :: index5
+     CHARACTER(*), OPTIONAL :: name6
+     INTEGER, OPTIONAL :: index6
+     CHARACTER(*), OPTIONAL :: name7
+     INTEGER, OPTIONAL :: index7
+     CHARACTER(*), OPTIONAL :: name8
+     INTEGER, OPTIONAL :: index8
+     CHARACTER(*), OPTIONAL :: name9
+     INTEGER, OPTIONAL :: index9
+     CHARACTER(*), OPTIONAL :: name10
+     INTEGER, OPTIONAL :: index10
+     CHARACTER(*), OPTIONAL :: name11
+     INTEGER, OPTIONAL :: index11
+     CHARACTER(*), OPTIONAL :: name12
+     INTEGER, OPTIONAL :: index12
+     CHARACTER(*), OPTIONAL :: name13
+     INTEGER, OPTIONAL :: index13
+     CHARACTER(*), OPTIONAL :: name14
+     INTEGER, OPTIONAL :: index14
+     CHARACTER(*), OPTIONAL :: name15
+     INTEGER, OPTIONAL :: index15
+     CHARACTER(*), OPTIONAL :: name16
+     INTEGER, OPTIONAL :: index16
+     CHARACTER(*), OPTIONAL :: name17
+     INTEGER, OPTIONAL :: index17
+     CHARACTER(*), OPTIONAL :: name18
+     INTEGER, OPTIONAL :: index18
+     CHARACTER(*), OPTIONAL :: name19
+     INTEGER, OPTIONAL :: index19
+     CHARACTER(*), OPTIONAL :: name20
+
+     IF (.NOT. PRESENT(index1)) THEN
+        CALL cg_gorel_f1(fn, ier, name1, 0)
+        RETURN
+     ELSE
+        CALL cg_gorel_f1(fn, ier, name1, index1)
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index2))) THEN
+        CALL cg_gorel_f1(fn, ier, name2, index2)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index3))) THEN
+        CALL cg_gorel_f1(fn, ier, name3, index3)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index4))) THEN
+        CALL cg_gorel_f1(fn, ier, name4, index4)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index5))) THEN
+        CALL cg_gorel_f1(fn, ier, name5, index5)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index6))) THEN
+        CALL cg_gorel_f1(fn, ier, name6, index6)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index7))) THEN
+        CALL cg_gorel_f1(fn, ier, name7, index7)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index8))) THEN
+        CALL cg_gorel_f1(fn, ier, name8, index8)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index9))) THEN
+        CALL cg_gorel_f1(fn, ier, name9, index9)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index10))) THEN
+        CALL cg_gorel_f1(fn, ier, name10, index10)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index11))) THEN
+        CALL cg_gorel_f1(fn, ier, name11, index11)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index12))) THEN
+        CALL cg_gorel_f1(fn, ier, name12, index12)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index13))) THEN
+        CALL cg_gorel_f1(fn, ier, name13, index13)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index14))) THEN
+        CALL cg_gorel_f1(fn, ier, name14, index14)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index15))) THEN
+        CALL cg_gorel_f1(fn, ier, name15, index15)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index16))) THEN
+        CALL cg_gorel_f1(fn, ier, name16, index16)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index17))) THEN
+        CALL cg_gorel_f1(fn, ier, name17, index17)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index18))) THEN
+        CALL cg_gorel_f1(fn, ier, name18, index18)
+     ELSE
+        RETURN
+     END IF
+     IF ((ier .EQ. 0) .AND. (PRESENT(index19))) THEN
+        CALL cg_gorel_f1(fn, ier, name19, index19)
+     ELSE
+        RETURN
+     END IF
+  END SUBROUTINE
 
   FUNCTION cg_get_type_c_int(a)
     USE ISO_C_BINDING
