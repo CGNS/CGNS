@@ -1166,6 +1166,9 @@ int cgi_ho_datasize(const int id_dim, const cgns_zone *zone, int spatialOrder, i
                     cgsize_t *DataSize);
 int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spatialOrder, 
                           const int temporalOrder, const cgsize_t imin, const cgsize_t imax, cgsize_t *DataSize);
+int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spatialOrder, 
+                         const int temporalOrder, const cgsize_t *list, const cgsize_t npts, 
+                         cgsize_t *DataSize);
 
 int cgi_read_node(double node_id, char_33 name, char_33 data_type,
                   int *ndim, cgsize_t *dim_vals, void **data, int data_flag);

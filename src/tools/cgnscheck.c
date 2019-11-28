@@ -27,6 +27,9 @@
 
 #define USE_MID_NODES
 
+#define min(A,B) A <= B ? A : B;
+#define max(A,B) A >= B ? A : B;
+
 static int FileVersion;
 static int LibraryVersion = CGNS_VERSION;
 
@@ -1684,15 +1687,78 @@ static cgsize_t get_ho_data_size (ZONE *z, int spatialOrder, int temporalOrder)
     int n, i;
     cgsize_t datasize = 0;
     
-    /// \todo ....
-    
     for (i = 0 ; i < z->nsets ; i++)
     {
       ELEMSET *set = &z->sets[i];
       
       cg_npe_ho(set->type,spatialOrder,&n);
       
-      datasize = datasize + set->ne * n;
+      datasize = datasize + (set->ie-set->is+1) * n;
+    }
+    datasize = datasize * (temporalOrder+1);
+    
+    return datasize;
+}
+
+/*=======================================================================*/
+
+static cgsize_t get_ho_data_size_range (ZONE *z, int spatialOrder, int temporalOrder, 
+                                        cgsize_t *range)
+{
+    int n, i, rmin, rmax,ne;
+    cgsize_t datasize = 0;
+    
+    for (i = 0 ; i < z->nsets ; i++)
+    {
+      ELEMSET *set = &z->sets[i];
+      
+      // Get element count bellonging to this element section range
+      rmin = max(set->is,range[0]);
+      rmax = min(set->ie,range[1]);
+      
+      if (rmin > rmax) continue;
+      
+      // Get element count
+      ne = rmax - rmin + 1;
+      
+      cg_npe_ho(set->type,spatialOrder,&n);
+      
+      datasize = datasize + ne * n;
+    }
+    datasize = datasize * (temporalOrder+1);
+    
+    return datasize;
+}
+
+/*=======================================================================*/
+
+static cgsize_t get_ho_data_size_list (ZONE *z, int spatialOrder, int temporalOrder, 
+                                        cgsize_t *list, int npts)
+{
+    int p, n, i, rmin, rmax,ne;
+    cgsize_t id, datasize = 0;
+    short done;
+    
+    // Loop over Points
+    for (p = 0 ; p < npts ; p++)
+    {
+      cgsize_t id = list[p];
+      done = 0;
+      
+      for (i = 0 ; i < z->nsets ; i++)
+      {
+        ELEMSET *set = &z->sets[i];
+        
+        if (id > set->ie || id < set->is ) continue;
+        
+        done = 1;
+        
+        cg_npe_ho(set->type,spatialOrder,&n);
+        
+        datasize = datasize + n;
+      }
+      
+      if (done == 0) error("Point %d from ptset PointList not found in Elements_t",id);
     }
     datasize = datasize * (temporalOrder+1);
     
@@ -4604,6 +4670,10 @@ static void check_solution (int ns)
     CGNS_ENUMT(DataType_t) datatype;
     CGNS_ENUMT(GridLocation_t) location;
     ZONE *z = &Zones[cgnszone-1];
+    /* Point Set */
+    cgsize_t npts;
+    PointSetType_t ptsettype;
+    cgsize_t *ptsetlist = NULL;
 
     if (cg_sol_info (cgnsfn, cgnsbase, cgnszone, ns, name, &location))
         error_exit("cg_sol_info");
@@ -4696,14 +4766,34 @@ static void check_solution (int ns)
         printf ("        Temporal Order : %d\n",ot);
     }
     
+    /* PointSet if exists */
+    ierr = cg_sol_ptset_info(cgnsfn, cgnsbase, cgnszone,ns,&ptsettype,&npts);
+    if (ierr != CG_NODE_NOT_FOUND) {
+      
+      if (ptsettype == CGNS_ENUMV(PointRange)) {
+        ptsetlist = (cgsize_t *)malloc( 2 * sizeof(cgsize_t));
+      }
+      else if (ptsettype == CGNS_ENUMV(PointList)) {
+        ptsetlist = (cgsize_t *)malloc( npts * sizeof(cgsize_t));
+      }
+      cg_sol_ptset_read(cgnsfn, cgnsbase, cgnszone, ns, ptsetlist);
+    }
+    
     /* get solution data size */
     if (location == CGNS_ENUMV(ElementBased))
     {
-      datasize = get_ho_data_size(z,os,ot);
+      if ( ptsetlist != NULL && ptsettype == CGNS_ENUMV(PointRange) )
+        datasize = get_ho_data_size_range(z,os,ot,ptsetlist);
+      else if ( ptsetlist != NULL && ptsettype == CGNS_ENUMV(PointList) )
+        datasize = get_ho_data_size_list(z,os,ot,ptsetlist,npts);
+      else
+        datasize = get_ho_data_size(z,os,ot);
     }
     else
       datasize = get_data_size (z, location, rind);
-
+    
+    if (ptsetlist) free(ptsetlist);
+    
     /* read solution data as arrays to get size */
 
     if (cg_nfields (cgnsfn, cgnsbase, cgnszone, ns, &nf))
@@ -4720,7 +4810,7 @@ static void check_solution (int ns)
             size *= dims[id];
         if (ndim != z->idim || size < 1 ||
             (datasize && size != datasize))
-            error ("bad dimension values");
+            error ("bad dimension values. required %ld, %ld given",datasize,size);
         check_quantity (n, name, dataclass, punits, 1, 6);
     }
 
@@ -5632,11 +5722,12 @@ static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type,
     switch(btype)
     {
       case (CGNS_ENUMV(NODE)): return CG_OK;
-      case (CGNS_ENUMV(BAR_2)): if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 ) return CG_ERROR;
+      case (CGNS_ENUMV(BAR_2)): if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 ) return CG_ERROR;break;
       case (CGNS_ENUMV(TRI_3)): 
       {
           if(fabs(u[0]+1.0) > 1.e-06 || fabs(u[1]-1.0) > 1.e-06 || fabs(u[2]+1.0) > 1.e-06) return CG_ERROR;
           if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || fabs(v[2]-1.0) > 1.e-06) return CG_ERROR;
+          break;
       }
       case (CGNS_ENUMV(QUAD_4)): 
       {
@@ -5644,6 +5735,7 @@ static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type,
              fabs(u[2]-1.0) > 1.e-06 || fabs(u[3]+1.0) > 1.e-06 ) return CG_ERROR;
           if(fabs(v[0]+1.0) > 1.e-06 || fabs(v[1]+1.0) > 1.e-06 || 
              fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]-1.0) > 1.e-06 ) return CG_ERROR;
+          break;
       }
       case (CGNS_ENUMV(TETRA_4)): 
       {
@@ -5653,6 +5745,7 @@ static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type,
              fabs(v[2]-1.0) > 1.e-06 || fabs(v[3]+1.0) > 1.e-06 ) return CG_ERROR;
           if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
              fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]-1.0) > 1.e-06 ) return CG_ERROR;
+          break;
       }
       case (CGNS_ENUMV(HEXA_8)): 
       {
@@ -5668,6 +5761,7 @@ static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type,
              fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]+1.0) > 1.e-06 ||
              fabs(w[4]-1.0) > 1.e-06 || fabs(w[5]-1.0) > 1.e-06 ||
              fabs(w[6]-1.0) > 1.e-06 || fabs(w[7]-1.0) > 1.e-06 ) return CG_ERROR;
+          break;
       }
       case (CGNS_ENUMV(PENTA_6)): 
       {
@@ -5680,6 +5774,7 @@ static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type,
           if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
              fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]-1.0) > 1.e-06 ||
              fabs(w[4]-1.0) > 1.e-06 || fabs(w[5]-1.0) > 1.e-06 ) return CG_ERROR;
+          break;
       }
       case (CGNS_ENUMV(PYRA_5)): 
       {
@@ -5692,6 +5787,7 @@ static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type,
           if(fabs(w[0]+1.0) > 1.e-06 || fabs(w[1]+1.0) > 1.e-06 || 
              fabs(w[2]+1.0) > 1.e-06 || fabs(w[3]+1.0) > 1.e-06 ||
              fabs(w[4]-1.0) > 1.e-06 ) return CG_ERROR;
+          break;
       }
       default: return CG_ERROR;
     }
@@ -5704,7 +5800,7 @@ static int check_element_nodes_ordering(CGNS_ENUMT(ElementType_t) type,
 static void check_family (int fam)
 {
     char famname[33], name[33], cad[33], *filename;
-    int ierr, i, j, n, nbc, ngeo, nparts,npe;
+    int ierr, i, j, n,ndim,npt, nbc, ngeo, nparts,npe;
     CGNS_ENUMT(BCType_t) bctype;
     CGNS_ENUMT(ElementType_t) etype,btype;
     CGNS_ENUMT(InterpolationType_t) it;
@@ -5824,6 +5920,26 @@ static void check_family (int fam)
             /* Checking 1st order points */
             cg_element_basic_element_type(etype,&btype);
             
+            cg_element_dimension(etype,&ndim);
+            printf("      Parametric Coordinates\n");
+            cg_npe(etype,&npt);
+            
+            if (ndim>0) {
+              printf("      u = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pu[j]);
+              printf("\n");
+            }
+            if (ndim>1) {
+              printf("      v = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pv[j]);
+              printf("\n");
+            }
+            if (ndim>2) {
+              printf("      w = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pw[j]);
+              printf("\n");
+            }
+            
             if ( check_element_nodes_ordering(btype,pu,pv,pw) )
               error("Nodes are not corectly ordered. 1st nodes have to correspond to 1st order element.");
         }
@@ -5862,7 +5978,27 @@ static void check_family (int fam)
             /* Checking 1st order points */
             cg_element_basic_element_type(etype,&btype);
             
-            if ( check_element_nodes_ordering(btype,pu,pv,pw) )
+            cg_element_dimension(etype,&ndim);
+            printf("      Parametric Coordinates\n");
+            cg_solution_lagrange_interpolation_size(btype,os,ot,&npt);
+            
+            if (ndim>0) {
+              printf("      u = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pu[j]);
+              printf("\n");
+            }
+            if (ndim>1) {
+              printf("      v = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pv[j]);
+              printf("\n");
+            }
+            if (ndim>2) {
+              printf("      w = ");
+              for(j = 0; j < npt ; j++) printf("%e ",pw[j]);
+              printf("\n");
+            }
+            
+            if ( check_element_nodes_ordering(btype,pu,pv,pw) != CG_OK)
               error("Nodes are not corectly ordered. 1st nodes have to correspond to 1st order element.");
         }
         else if (ierr == CG_ERROR)

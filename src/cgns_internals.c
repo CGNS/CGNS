@@ -1601,10 +1601,32 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
             /* CPEX 045 */
             if ( sol[0][s].location == CGNS_ENUMV(ElementBased) ) {
               
-              // Override based on range 
-              int ret = cgi_ho_datasize_range(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
-                                sol[0][s].temporalOrder, sol[0][s].ptset->range_min[0], 
-                                sol[0][s].ptset->range_max[0], &DataCount);
+              int ret;
+              
+              // Override based on range
+              if (sol[0][s].ptset->type == CGNS_ENUMV(PointRange)) {
+                ret = cgi_ho_datasize_range(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
+                                  sol[0][s].temporalOrder, sol[0][s].ptset->range_min[0], 
+                                  sol[0][s].ptset->range_max[0], &DataCount);
+              }
+              // Override based on list
+              else if (sol[0][s].ptset->type == CGNS_ENUMV(PointList)) {
+                cgsize_t *pnts = CGNS_NEW(cgsize_t,sol[0][s].ptset->npts);
+                
+                ret = cgi_read_int_data(sol[0][s].ptset->id, sol[0][s].ptset->data_type,
+                                        sol[0][s].ptset->npts * Idim, pnts);
+                
+                if (ret == CG_ERROR) {
+                  CGNS_FREE(pnts);
+                  return CG_ERROR;
+                }
+                
+                ret = cgi_ho_datasize_list(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
+                                  sol[0][s].temporalOrder, pnts,
+                                  sol[0][s].ptset->npts, &DataCount);
+                
+                CGNS_FREE(pnts);
+              }
               
               if (ret == CG_ERROR) return CG_ERROR;
               if (ret == CG_NODE_NOT_FOUND) checksize = 0;
@@ -5989,6 +6011,64 @@ int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spa
         
         for (j = 0 ; j < id_dim ; j++) DataSize[j] = DataSize[j] + ne*npe;
     }
+    // Temporal Order
+    for (j = 0 ; j < id_dim ; j++) DataSize[j] = DataSize[j] * (temporalOrder+1);
+    return CG_OK;
+}
+
+
+int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spatialOrder, 
+                         const int temporalOrder, const cgsize_t *list, const cgsize_t npts, 
+                         cgsize_t *DataSize)
+{
+    int p,i,j,npe, ne;
+    int done;
+    
+    if (!zone) return CG_ERROR;
+    
+    if (!zone->nsections) 
+    {
+      cgi_warning("Zone needs to have Element_t nodes for cgi_ho_datasize_list !\n");
+      return CG_NODE_NOT_FOUND;
+    }
+    
+    /* Check ZoneType */
+    if ( zone->type != CGNS_ENUMV( Unstructured) ) 
+    {
+      cgi_error("Zone needs to be Unstructured !\n");
+      return CG_ERROR;
+    }
+    
+    for (i = 0 ; i < id_dim ; i++) DataSize[i] = 0;
+    
+    // Loop over Points
+    for (p = 0 ; p < npts ; p++)
+    {
+      cgsize_t id = list[p];
+      done = 0;
+      
+      // Loop over Sections
+      for (i = 0 ; i < zone->nsections ; i++)
+      {
+          cgns_section *section = &(zone->section[i]);
+          
+          if (id > section->range[1] || id < section->range[0]) continue;
+          
+          done = 1;
+          
+          // Get ElementType_t
+          CGNS_ENUMT(ElementType_t) type = section->el_type;
+          
+          // Get number of nodes for this element type based solution
+          cg_npe_ho(type,spatialOrder,&npe);
+          
+          for (j = 0 ; j < id_dim ; j++) DataSize[j] = DataSize[j] + npe;
+      }
+      
+      if (done == 0) 
+        cgi_error("unable to find corresponding element in sections for id %d !\n",id);
+    }
+    
     // Temporal Order
     for (j = 0 ; j < id_dim ; j++) DataSize[j] = DataSize[j] * (temporalOrder+1);
     return CG_OK;
