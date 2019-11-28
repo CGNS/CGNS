@@ -1664,7 +1664,8 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                     } else {
                         if (sol[0][s].field[z].data_dim != 1 ||
                             sol[0][s].field[z].dim_vals[0] != DataCount) {
-                            cgi_error("Invalid field array dimension for ptset solution");
+                            cgi_error("Invalid field array dimension for ptset solution. Given %ld, requested %ld",
+                              sol[0][s].field[z].dim_vals[0],DataCount);
                             return CG_ERROR;
                         }
                     }
