@@ -5941,7 +5941,7 @@ static void check_family (int fam)
             }
             
             if ( check_element_nodes_ordering(btype,pu,pv,pw) )
-              error("Nodes are not corectly ordered. 1st nodes have to correspond to 1st order element.");
+              warning(4,"Nodes are not corectly ordered. 1st nodes have to correspond to 1st order element.");
         }
         else if (ierr == CG_ERROR)
           error_exit("cg_element_interpolation_points_read");
@@ -5999,7 +5999,7 @@ static void check_family (int fam)
             }
             
             if ( check_element_nodes_ordering(btype,pu,pv,pw) != CG_OK)
-              error("Nodes are not corectly ordered. 1st nodes have to correspond to 1st order element.");
+              warning(4,"Nodes are not corectly ordered. 1st nodes have to correspond to 1st order element.");
         }
         else if (ierr == CG_ERROR)
           error_exit("cg_solution_interpolation_points_read");
