@@ -4713,7 +4713,7 @@ int cg_sol_write(int file_number, int B, int Z, const char * solname,
 int cg_sol_size(int file_number, int B, int Z, int S,
                 int *data_dim, cgsize_t *dim_vals)
 {
-    int j;
+    int j,ret;
     cgns_sol *sol;
 
     cg = cgi_get_file(file_number);
@@ -4761,13 +4761,35 @@ int cg_sol_size(int file_number, int B, int Z, int S,
         if ( sol->location == CGNS_ENUMV(ElementBased) ) {
           cgns_zone *zone = &cg->base[B-1].zone[Z-1];
           // Override based on range 
-          if (cgi_ho_datasize_range(zone->index_dim,zone,sol->spatialOrder,
-                            sol->temporalOrder, sol->ptset->range_min[0], 
-                            sol->ptset->range_max[0], &dim_vals[0]) ) {
-            cgi_warning("Unable to retrieve solution datasize for High Order solution");
-            return CG_ERROR;
+          if (sol->ptset->type == CGNS_ENUMV(PointRange)) {
+            if (cgi_ho_datasize_range(zone->index_dim,zone,sol->spatialOrder,
+                              sol->temporalOrder, sol->ptset->range_min[0], 
+                              sol->ptset->range_max[0], &dim_vals[0]) ) {
+              cgi_warning("Unable to retrieve solution datasize for High Order solution from PointRange");
+              return CG_ERROR;
+            }
           }
-          
+          else if (sol->ptset->type == CGNS_ENUMV(PointList)) {
+            cgsize_t *pnts = CGNS_NEW(cgsize_t,sol->ptset->npts);
+            
+            ret = cgi_read_int_data(sol->ptset->id, sol->ptset->data_type,
+                                    sol->ptset->npts * zone->index_dim, pnts);
+            
+            if (ret == CG_ERROR) {
+              cgi_warning("Unable to read PointList for solution %s",sol->name);
+              CGNS_FREE(pnts);
+              return CG_ERROR;
+            }
+            
+            if (cgi_ho_datasize_list(zone->index_dim,zone,sol->spatialOrder,
+                                    sol->temporalOrder, pnts,
+                                    sol->ptset->npts, &dim_vals[0]) ) {
+              cgi_warning("Unable to retrieve solution datasize for High Order solution from PointList");
+              CGNS_FREE(pnts);
+              return CG_ERROR;
+            }
+            CGNS_FREE(pnts);
+          }
         }
     }
 
@@ -5195,12 +5217,19 @@ int cg_field_write(int file_number, int B, int Z, int S,
         m_numdim = 1;
         m_dimvals[0] = sol->ptset->size_of_patch;
         /* CPEX 045 */
+        /** \todo to remove and consider only cg_sol_size()*/
         if ( sol->location == CGNS_ENUMV(ElementBased) ) {
           // Override based on range 
           if (cgi_ho_datasize_range(m_numdim,zone,sol->spatialOrder,
                             sol->temporalOrder, sol->ptset->range_min[0], 
                             sol->ptset->range_max[0], &m_dimvals[0]) ) return CG_ERROR;
           
+        }
+        
+        if ( cg_sol_size(file_number, B, Z, S, &m_numdim, &m_dimvals[0]) ) {
+          cg_error_print();
+          cgi_error("FlowSolution: Unable to retrieve field size to write");
+          return CG_ERROR;
         }
     }
 
