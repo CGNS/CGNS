@@ -13703,14 +13703,20 @@ void cgi_free_famname(cgns_famname *famname)
 void cgi_free_element_interpolation(cgns_elementInterpolation *einterp)
 {
     einterp->name[0] = 0;
-    if (einterp->lagrangePts) CGNS_FREE(einterp->lagrangePts);
+    if (einterp->lagrangePts) {
+      if (einterp->lagrangePts->data) free(einterp->lagrangePts->data);
+      CGNS_FREE(einterp->lagrangePts);
+    }
     einterp->lagrangePts = 0;
 }
 
 void cgi_free_solution_interpolation(cgns_solutionInterpolation *sinterp)
 {
     sinterp->name[0] = 0;
-    if (sinterp->lagrangePts) CGNS_FREE(sinterp->lagrangePts);
+    if (sinterp->lagrangePts) {
+      if (sinterp->lagrangePts->data) free(sinterp->lagrangePts->data);
+      CGNS_FREE(sinterp->lagrangePts);
+    }
     sinterp->lagrangePts = 0;
     sinterp->type = CGNS_ENUMV(InterpolationTypeNull);
 }
