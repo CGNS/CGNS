@@ -24,13 +24,7 @@ https://cgnsorg.atlassian.net
 2. Unpack the tar ball containing the source code into some
   directory.
 4. Use cmake to initialize the build tree.
-
-   user@hostname:build_path$ cmake /path/to/cgns/sources/
-
 5. Use ccmake to edit the control variables as needed.
-
-   user@hostname:build_path$ ccmake .
-   
    (a)The path to the HDF5 library should be specified with CMAKE_PREFIX_PATH=$HDF_DIR for linking with a
       specific HDF5 version.
      - If HDF5 is built with parallel-IO support via MPI, the 'HDF5_NEEDS_MPI' flag must be set to true.
@@ -47,17 +41,23 @@ https://cgnsorg.atlassian.net
 
 1. Install HDF5 on your system.
 3. Create a new directory in which to build the library.
+  ```shell
+  user@hostname:build_path$ cmake /path/to/cgns/sources/
+  ```
+  ```shell
+  user@hostname:build_path$ ccmake .
+  ```
 6. Use make to build the library.
-
-   user@hostname:build_path$ make
-
    (a) A colorized review of the build process should follow.
 7. Installation of the library is accomplished with the 'install' target of the makefile.
-
-   user@hostname:build_path$ make install
-
    (a) You must have permissions to alter the directory where cgns will be installed.
 ### Installation Instructions using make
+  ```shell
+  user@hostname:build_path$ make
+  ```
+  ```shell
+  user@hostname:build_path$ make install
+  ```
 
 1. Install HDF5 on your system.
 
