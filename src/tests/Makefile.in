@@ -24,6 +24,7 @@ CALL = \
 	test_partial$(EXE) \
 	test_general_reshape$(EXE) \
 	test_general_rind$(EXE) \
+	test_high_order$(EXE) \
 	test_ver31$(EXE) \
 	write_array$(EXE) \
 	write_links$(EXE) \
@@ -193,6 +194,12 @@ write_bcdata.$(O) : write_bcdata.c utils.h
 
 write_test$(EXE) : write_test.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ write_test.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+
+#----------
+
+test_high_order$(EXE) : test_high_order.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_high_order.c $(LDLIBS) $(CLIBS) -lm
 	$(STRIP) $@
 
 #----------
