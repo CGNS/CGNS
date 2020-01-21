@@ -40,8 +40,8 @@ set (examples
 	write_floweqn_str
 	write_flowvert_str
 	write_flowvert_unst
-	write_flowvert_ho_unst
-	write_flowcent_ho_unst
+#	write_flowvert_ho_unst
+#	write_flowcent_ho_unst
 	write_grid2zn_str
 	write_grid_unst
 	write_grid_ho_unst
@@ -61,7 +61,7 @@ set (examples
 	read_floweqn_str
 	read_flowvert_str
 	read_flowvert_unst
-	read_flowvert_ho_unst
+#	read_flowvert_ho_unst
 	read_grid2zn_str
 	read_grid_str
 	read_grid_unst
