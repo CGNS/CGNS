@@ -5386,10 +5386,12 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
         s_dimvals[0] = sol->ptset->size_of_patch;
         /* CPEX 045 */
         if ( sol->location == CGNS_ENUMV(ElementBased) ) {
-          // Override based on range 
-          if (cgi_ho_datasize_range(s_numdim,zone,sol->spatialOrder,
-                            sol->temporalOrder, sol->ptset->range_min[0], 
-                            sol->ptset->range_max[0], &s_dimvals[0]) ) return CG_ERROR;
+          // Override based on range or list
+          if ( cg_sol_size(fn, B, Z, S, &s_numdim, &s_dimvals[0]) ) {
+            cg_error_print();
+            cgi_error("FlowSolution: Unable to retrieve field size to write");
+            return CG_ERROR;
+          }
           
         }
     }
