@@ -58,6 +58,9 @@ add_executable(test_general_readwrite ${test_general_readwrite_FILES})
 set(thesis_benchmark_FILES thesis_benchmark.c)
 add_executable(thesis_benchmark ${thesis_benchmark_FILES})
 
+set(para_high_order_FILES para_high_order.c)
+add_executable(para_high_order ${para_high_order_FILES})
+
 if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
   set(pcgns_ftest_FILES pcgns_ftest.F90)
   add_executable(pcgns_ftest ${pcgns_ftest_FILES})
@@ -93,6 +96,8 @@ if (CGNS_ENABLE_TESTS)
       ${MPIEXEC_PREFLAGS} ./test_general_readwrite ${MPIEXEC_POSTFLAGS})
   add_test(thesis_benchmark ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} ./thesis_benchmark ${MPIEXEC_POSTFLAGS})
+  add_test(para_high_order ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "4"
+      ${MPIEXEC_PREFLAGS} ./para_high_order ${MPIEXEC_POSTFLAGS})
   if (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
     add_test(pcgns_ftest ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
         ${MPIEXEC_PREFLAGS} ./pcgns_ftest ${MPIEXEC_POSTFLAGS})
