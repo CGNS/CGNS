@@ -13826,7 +13826,8 @@ void cgi_free_solution_interpolation(cgns_solutionInterpolation *sinterp)
       CGNS_FREE(sinterp->lagrangePts);
     }
     sinterp->lagrangePts = 0;
-    sinterp->type = CGNS_ENUMV(InterpolationTypeNull);
+    sinterp->type = CGNS_ENUMV(ElementTypeNull);
+    sinterp->interpolationName = CGNS_ENUMV(InterpolationTypeNull);
 }
 
 void cgi_free_geo(cgns_geo *geo)

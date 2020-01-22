@@ -43,7 +43,7 @@ int main (int argc, char **argv)
   
   double *pu, *pv;
   double xloc,yloc,r;
-  int i,j,k,e,n;
+  int i,j,k,e;
   
   
   // MPI Stuff
@@ -188,6 +188,7 @@ int main (int argc, char **argv)
   {
     cgsize_t *elements;
     double *field, *x, *y, *z;
+    int n;
     
     Z = comm_rank + 1;
     
@@ -232,7 +233,6 @@ int main (int argc, char **argv)
     
     // [3.2] Fill Element Section
     {
-      
       // [3.2.1] Fill Connectivities
       e = 0;
       for (j = 0; j < 3; j++)
