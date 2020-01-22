@@ -40,10 +40,9 @@ int main (int argc, char **argv)
   cgsize_t nijk[3];
   cgsize_t start, end, min, max, emin, emax;
   char ZoneName[33];
-  
+  int zn;
   double *pu, *pv;
   double xloc,yloc,r;
-  int i,j,k;
   
   
   // MPI Stuff
@@ -73,10 +72,10 @@ int main (int argc, char **argv)
     cgp_error_exit();
   
   // [1] Create the Nodes (all processes have to be part of it)
-  for (i = 1 ; i <= nzones ; i++)
+  for (zn = 1 ; zn <= nzones ; zn++)
   {
     // [1.1] Create the corresponding Zone
-    sprintf(ZoneName,"Zone %d",i);
+    sprintf(ZoneName,"Zone %d",zn);
     if (cg_zone_write(fn, B, ZoneName, nijk, CGNS_ENUMV(Unstructured), &Z))
       cgp_error_exit();
     
@@ -85,7 +84,7 @@ int main (int argc, char **argv)
       cgp_error_exit();
     
     // [1.3] Write the Ordinal of the zone (Optional)
-    if (cg_goto(fn, B, "Zone_t", Z, NULL) || cg_ordinal_write(i) )
+    if (cg_goto(fn, B, "Zone_t", Z, NULL) || cg_ordinal_write(zn) )
       cgp_error_exit();
     
     // [1.4] Create the coordinates nodes
@@ -163,6 +162,7 @@ int main (int argc, char **argv)
       
       // [2.3.2] Write LagrangeControlPoints (optional)
       {
+ 	int i;
         // [2.3.2.1] Allocate the control points
         pu = (double*)malloc(16*sizeof(double));
         pv = (double*)malloc(16*sizeof(double));
@@ -208,7 +208,7 @@ int main (int argc, char **argv)
     
     // [3.1] Fill Coordinates
     {
-      int iset = 0;
+      int i,j,iset = 0;
       // [3.1.1] Fill Coordinates (shift for each process)
       for (j=1; j <= 7; j++)
       {
@@ -233,6 +233,7 @@ int main (int argc, char **argv)
     
     // [3.2] Fill Element Section
     {
+      int i,j;
       // [3.2.1] Fill Connectivities
       e = 0;
       for (j = 0; j < 3; j++)
@@ -264,7 +265,7 @@ int main (int argc, char **argv)
     
     // [3.3] Fill Solution 
     {
-      
+      int i;
       // [3.3.1] Fill Solution field (dummy values)
       memset(field,0,9*16*sizeof(double));
       
