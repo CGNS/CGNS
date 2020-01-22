@@ -43,7 +43,7 @@ int main (int argc, char **argv)
   
   double *pu, *pv;
   double xloc,yloc,r;
-  int i,j,k,e;
+  int i,j,k;
   
   
   // MPI Stuff
@@ -188,7 +188,7 @@ int main (int argc, char **argv)
   {
     cgsize_t *elements;
     double *field, *x, *y, *z;
-    int n;
+    int e,n;
     
     Z = comm_rank + 1;
     
