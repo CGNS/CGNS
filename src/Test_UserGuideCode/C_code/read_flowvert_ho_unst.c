@@ -36,7 +36,7 @@ int main()
 
 /* READ FLOW SOLUTION FROM CGNS FILE */
 /* open CGNS file for read-only */
-    if (cg_open("grid_c.cgns",CG_MODE_READ,&index_file)) cg_error_exit();
+    if (cg_open("grid_ho_c.cgns",CG_MODE_READ,&index_file)) cg_error_exit();
 /* we know there is only one base (real working code would check!) */
     index_base=1;
 /* we know there is only one zone (real working code would check!) */
@@ -51,24 +51,24 @@ int main()
 /* checking GridLocation first (real working code would check */
 /* to make sure there are no Rind cells also!): */
     cg_sol_info(index_file,index_base,index_zone,index_flow,solname,&loc);
-    if (loc != CGNS_ENUMV(Vertex))
+    if (loc != CGNS_ENUMV(ElementBased))
     {
-      printf("\nError, GridLocation must be Vertex! Currently: %s\n",
+      printf("\nError, GridLocation must be ElementBased! Currently: %s\n",
           GridLocationName[loc]);
       return 1;
     }
 /* read flow solution spatial and temporal orders*/
     cg_sol_interpolation_order_read(index_file,index_base,index_zone,index_flow,&so,&to);
-    if (so != 2 || to != 1)
+    if (so != 3 || to != 0)
     {
-        fprintf( stderr, "ERROR: wrong values for solution interpolation orders. Needed (2,1) get(%d,%d)", so,to);
+        fprintf( stderr, "ERROR: wrong values for solution interpolation orders. Needed (3,0) get(%d,%d)", so,to);
         return -1;
     }
 /* close CGNS file */
     cg_close(index_file);
-    printf("\nSuccessfully read flow solution orders (spatial and temporal) from file grid_c.cgns\n");
-    printf("  spatial  Order = %d (should be 2)\n",so);
-    printf("  temporal Order = %d (should be 1)\n",to);
+    printf("\nSuccessfully read flow solution orders (spatial and temporal) from file grid_ho_c.cgns\n");
+    printf("  spatial  Order = %d (should be 3)\n",so);
+    printf("  temporal Order = %d (should be 0)\n",to);
     printf("\nProgram successful... ending now\n");
     return 0;
 }

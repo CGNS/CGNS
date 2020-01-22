@@ -89,7 +89,7 @@ int main()
 
 /* WRITE X, Y, Z GRID POINTS TO CGNS FILE */
 /* open CGNS file for write */
-    if (cg_open("grid_c.cgns",CG_MODE_WRITE,&index_file)) cg_error_exit();
+    if (cg_open("grid_ho_c.cgns",CG_MODE_WRITE,&index_file)) cg_error_exit();
 /* create base (user can give any name) */
     strcpy(basename,"Base");
     icelldim=2;
