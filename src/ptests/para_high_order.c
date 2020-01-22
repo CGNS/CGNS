@@ -22,7 +22,7 @@
 #include "pcgnslib.h"
 #include "mpi.h"
 
-#define cgp_doError {printf("Error at %s:%u\n",__FILE__, __LINE__); return 1;}
+#define cgp_doError {printf("Error at %s:%d\n",__FILE__, __LINE__); return 1;}
 
 double solutionField(double x, double y);
 
@@ -38,13 +38,12 @@ int main (int argc, char **argv)
   int nzones   = 4;
   int fn,B,Z,S,Sol,Fld,Cx,Cy,Cz,Fam,Ei,Si;
   cgsize_t nijk[3];
-  cgsize_t start, end, min, max, emin, emax, *elements;
+  cgsize_t start, end, min, max, emin, emax;
   char ZoneName[33];
   
-  double *pu, *pv, *field;
-  double *x, *y, *z;
+  double *pu, *pv;
   double xloc,yloc,r;
-  int i,j,k,e,n,iset;
+  int i,j,k,e,n;
   
   
   // MPI Stuff
@@ -187,8 +186,11 @@ int main (int argc, char **argv)
   
   // [3] Each MPI process will write its own datas
   {
+    cgsize_t *elements;
+    double *field, *x, *y, *z;
+    
     Z = comm_rank + 1;
-  
+    
     // [3.0] Allocate fields
     {
       // [3.0.1] Allocate Coordinates Array
@@ -205,9 +207,8 @@ int main (int argc, char **argv)
     
     // [3.1] Fill Coordinates
     {
-      
+      int iset = 0;
       // [3.1.1] Fill Coordinates (shift for each process)
-      iset = 0;
       for (j=1; j <= 7; j++)
       {
         for (i=1; i <= 7; i++)
@@ -233,7 +234,7 @@ int main (int argc, char **argv)
     {
       
       // [3.2.1] Fill Connectivities
-      e = 0; n = 0;
+      e = 0;
       for (j = 0; j < 3; j++)
       {
         n = j*7*2;
