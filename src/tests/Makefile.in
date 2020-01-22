@@ -20,6 +20,7 @@ CALL = \
 	ser_benchmark_hdf5$(EXE) \
 	test_exts$(EXE) \
 	test_goto$(EXE) \
+	test_family_tree$(EXE) \
 	test_multifam$(EXE) \
 	test_partial$(EXE) \
 	test_general_reshape$(EXE) \
@@ -31,7 +32,8 @@ CALL = \
 	write_bcdata$(EXE) \
 	write_test$(EXE) \
 	write_zones$(EXE) \
-	write_rind$(EXE)
+	write_rind$(EXE) \
+	test_bbox$(EXE)
 
 F_TESTS = \
 	cgiof_F03$(EXE) \
@@ -39,7 +41,9 @@ F_TESTS = \
 	cgread_F03$(EXE) \
 	cgzconn_F03$(EXE) \
 	cgsubreg_F03$(EXE) \
-	test_general_rindf$(EXE)
+	test_general_rindf$(EXE)\
+	test_family_treef$(EXE) \
+	test_bboxf$(EXE)
 
 FALL = $(F_TESTS)
 
@@ -156,6 +160,12 @@ test_goto$(EXE) : test_goto.c $(CGNSLIB)
 
 #----------
 
+test_family_tree$(EXE) : test_family_tree.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_family_tree.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
 test_multifam$(EXE) : test_multifam.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_multifam.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
@@ -214,6 +224,12 @@ write_zones.$(O) : write_zones.c utils.h
 
 write_rind$(EXE) : write_rind.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ write_rind.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_bbox$(EXE) : test_bbox.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_bbox.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
@@ -297,6 +313,18 @@ test64f_F03$(EXE) : test64f_f03.F90 $(CGNSLIB)
 
 test_general_rindf$(EXE) : test_general_rindf.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ test_general_rindf.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_family_treef$(EXE) : test_family_treef.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_family_treef.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_bboxf$(EXE) : test_bboxf.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_bboxf.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

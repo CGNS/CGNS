@@ -60,7 +60,7 @@ extern hid_t default_pio_mode;
 static int CompressData = -1;
 
 #if CG_BUILD_PARALLEL
-static MPI_Comm ParallelMPICommunicator = MPI_COMM_WORLD;
+static MPI_Comm ParallelMPICommunicator = MPI_COMM_NULL;
 #endif
 
 #define TO_UPPER( c ) ((islower(c))?(toupper(c)):(c))
@@ -110,8 +110,8 @@ printf("#### DBG [%5d] ",__LINE__);fflush(stdout); \
 printf aaa ; printf("\n"); fflush(stdout);
 #define DROP( msg ) printf("XX " msg "\n");fflush(stdout);
 #else
-#define ADFH_DEBUG(a) ;
-#define DROP( msg ) ;
+#define ADFH_DEBUG(a) {;}
+#define DROP( msg ) {;}
 #endif
 
 /* ADF data types */
@@ -206,7 +206,7 @@ static struct _ErrorList {
   {UNEQUAL_MEMORY_AND_DISK_DIMS,"Unequal dimensional specifications for disk and memory"},
   {NODE_IS_NOT_A_LINK,      "The node is not a link.  It was expected to be a link"},
   {LINK_TARGET_NOT_THERE,   "The linked-to node does not exist"},
-  {LINKED_TO_FILE_NOT_THERE,"The file of a linked-node is not accessable"},
+  {LINKED_TO_FILE_NOT_THERE,"The file of a linked-node is not accessible"},
   {INVALID_NODE_NAME,       "Node name contains invalid characters"},
   {FFLUSH_ERROR,            "H5Fflush:flush error"},
   {NULL_NODEID_POINTER,     "The node ID pointer is NULL"},
@@ -256,13 +256,13 @@ static struct _ErrorList {
   {ADFH_ERR_SENTINEL,       "<None>"}
 };
 
-#define NUM_ERRORS (sizeof(ErrorList)/sizeof(struct _ErrorList))
+#define NUM_ERRORS ((int)(sizeof(ErrorList)/sizeof(struct _ErrorList)))
 #define ROOT_OR_DIE(err) \
 if (mta_root == NULL){set_error(ADFH_ERR_ROOTNULL, err);return;}
 #define ROOT_OR_DIE_ERR(err) \
 if (mta_root == NULL){set_error(ADFH_ERR_ROOTNULL, err);return 1;}
 
-/* usefull macros */
+/* useful macros */
 
 #define CMP_OSTAT(r,n) ((r)->objno[0]==(n)->objno[0] && \
                         (r)->objno[1]==(n)->objno[1] && \
@@ -336,7 +336,7 @@ static herr_t walk_H5_error(hid_t estack, void *data)
 
 static hid_t get_file_id (hid_t id)
 {
-  int n, nobj;
+  ssize_t n, nobj;
   hid_t *objs, fid = -1;
   H5G_stat_t gstat, rstat;
 
@@ -1403,7 +1403,8 @@ void ADFH_Move_Child(const double  pid,
   hid_t hpid;
   hid_t hid;
   hid_t hnpid;
-  int len, namelen;
+  ssize_t len;
+  int namelen;
 #ifndef ADFH_NO_ORDER
   int old_order, new_order;
 #endif
@@ -1958,7 +1959,7 @@ void ADFH_Database_Open(const char   *name,
     for (i = 0; i < ADFH_MAXIMUM_FILES; i++) mta_root->g_files[i] = 0;
     mta_root->g_init = 1;
 
-    /* create properties - these are persistent accross all open files.
+    /* create properties - these are persistent across all open files.
        When all files are closed, then delete properties */
     /* H5Pclose performed at file close time */
     mta_root->g_proplink=H5Pcreate(H5P_LINK_ACCESS);
@@ -2046,25 +2047,29 @@ void ADFH_Database_Open(const char   *name,
     return;
   }
 
-  // Patch from Manuel Gageik on IBM BLUEgene/Q systems for better cgp_open performance.
+  /* Patch from Manuel Gageik on IBM BLUEgene/Q systems for better cgp_open performance. */
 #ifdef JFC_PATCH_2015_2
 
-  // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
-  // default setting is 2048 bytes
-  H5Pset_meta_block_size(g_propfileopen, 4096);  // 1024*1024
+  /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
+   * default setting is 2048 bytes
+   */
+  H5Pset_meta_block_size(g_propfileopen, 4096);  /* 1024*1024 */
 
-  // http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
-  // attention: this can increase filesize dramatically if lots of small datasets
+  /* http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
+   * attention: this can increase filesize dramatically if lots of small datasets
+   */
   H5Pset_alignment(g_propfileopen, 4096, 4096);
 
-  // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
-  // 1 MByte is default of hdf5
+  /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
+   * 1 MByte is default of hdf5
+   */
   void *tconv; void *bkg;
   H5Pset_buffer(g_propfileopen, 10*1024*1024,tconv, bkg);
 
-  // http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
-  // '..  used by file drivers that are capable of using data sieving'
-  //  1 MByte is default of hdf5
+  /* http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
+   * '..  used by file drivers that are capable of using data sieving'
+   *  1 MByte is default of hdf5
+   */
   H5Pset_sieve_buf_size(g_propfileopen, 4*1024*1024);
 
 #endif
@@ -2110,27 +2115,31 @@ void ADFH_Database_Open(const char   *name,
 
 #ifdef JFC_PATCH_2015_2
 
-  // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
-  // default setting is 2048 bytes
+  /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
+   * default setting is 2048 bytes
+   */
   H5Pset_meta_block_size(g_propfilecreate, 4096);  // 1024*1024
 
-  // http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
-  // attention: this can increase filesize dramatically if lots of small datasets
+  /* http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
+   * attention: this can increase filesize dramatically if lots of small datasets
+   */
   H5Pset_alignment(g_propfilecreate, 4096, 4096);
 
-  // http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
-  // 1 MByte is default of hdf5
+  /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
+   * 1 MByte is default of hdf5
+   */
   void *tconv; void *bkg;
   H5Pset_buffer(g_propfilecreate, 10*1024*1024,tconv, bkg);
 
-  // http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
-  // '..  used by file drivers that are capable of using data sieving'
-  //  1 MByte is default of hdf5
+  /* http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
+   * '..  used by file drivers that are capable of using data sieving'
+   * 1 MByte is default of hdf5
+   */
   H5Pset_sieve_buf_size(g_propfilecreate, 4*1024*1024);
 
 #endif
 
-#if 0 // MSB -- DISABLED as it is not compatible with HDF5 1.8 file format, need to resolve this CGNS-166
+#if 0 /* MSB -- DISABLED as it is not compatible with HDF5 1.8 file format, need to resolve this CGNS-166 */
 #if HDF5_HAVE_FILE_SPACE_STRATEGY
     H5Pset_file_space_strategy(g_propfilecreate, H5F_FSPACE_STRATEGY_FSM_AGGR, 1, (hsize_t)1);
 #endif
@@ -2295,7 +2304,7 @@ void ADFH_Database_Close(const double  root,
 {
   int fn,idx;
   hid_t hid,fid;
-  int nobj,n;
+  ssize_t nobj,n;
 #ifdef ADFH_FORCE_ID_CLOSE
   hid_t *objs;
 #endif

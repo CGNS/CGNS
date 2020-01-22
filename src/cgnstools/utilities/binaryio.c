@@ -152,7 +152,7 @@ void (*binaryio_error)(char *msg) = NULL;
 #ifdef NO_MEMCPY
 
 /*---------- memcpy ------------------------------------------------
- * copys memory buffers
+ * copies memory buffers
  *------------------------------------------------------------------*/
 
 char *memcpy (dest, s, cnt)

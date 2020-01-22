@@ -178,7 +178,7 @@ int cgi_read_base(cgns_base *base)
         }
     }
 
-     /* Family_t */
+     /* Family_t */ /* -- FAMILY TREE -- */
     if (cgi_get_nodes(base->id, "Family_t", &base->nfamilies, &id)) return CG_ERROR;
     if (base->nfamilies>0) {
          /* read & save families */
@@ -381,11 +381,11 @@ int cgi_read_zone(cgns_zone *zone)
         return CG_ERROR;
     }
 
-     /* FamilyName_t */
+     /* FamilyName_t */ /* -- FAMILY TREE -- */
     if (cgi_read_family_name(in_link, zone->id, zone->name, zone->family_name))
         return CG_ERROR;
 
-    /* CPEX 0034 */
+    /* CPEX 0034 */ /* -- FAMILY TREE -- */
     if (cgi_get_nodes(zone->id, "AdditionalFamilyName_t", &zone->nfamname, &id))
         return CG_ERROR;
     if (zone->nfamname > 0) {
@@ -394,7 +394,7 @@ int cgi_read_zone(cgns_zone *zone)
         for (n = 0; n < zone->nfamname; n++) {
             zone->famname[n].id = id[n];
             if (cgi_read_string(id[n], zone->famname[n].name, &fam)) return CG_ERROR;
-            strncpy(zone->famname[n].family, fam, 32);
+            strncpy(zone->famname[n].family, fam, (CG_MAX_GOTO_DEPTH*(CGIO_MAX_NAME_LENGTH+1)));
             CGNS_FREE(fam);
         }
         CGNS_FREE(id);
@@ -462,7 +462,7 @@ int cgi_read_zone(cgns_zone *zone)
     return CG_OK;
 }
 
-int cgi_read_family(cgns_family *family)
+int cgi_read_family(cgns_family *family) /* ** FAMILY TREE ** */
 {
     int n, linked, in_link = family->link ? 1 : family->in_link;
     double *id;
@@ -484,7 +484,7 @@ int cgi_read_family(cgns_family *family)
         for (n = 0; n < family->nfamname; n++) {
             family->famname[n].id = id[n];
             if (cgi_read_string(id[n], family->famname[n].name, &fam)) return CG_ERROR;
-            strncpy(family->famname[n].family, fam, 32);
+            strncpy(family->famname[n].family, fam,(CG_MAX_GOTO_DEPTH*(CGIO_MAX_NAME_LENGTH+1)));
             CGNS_FREE(fam);
         }
         CGNS_FREE(id);
@@ -621,7 +621,21 @@ int cgi_read_family(cgns_family *family)
         CGNS_FREE(id);
     }
 
-     /* Ordinal_t */
+    /* Family_t */ /* ** FAMILY TREE ** */
+    if (cgi_get_nodes(family->id, "Family_t", &family->nfamilies, &id)) return CG_ERROR;
+    if (family->nfamilies>0) {
+         /* read & save families */
+        family->family = CGNS_NEW(cgns_family, family->nfamilies);
+        for (n=0; n<family->nfamilies; n++) {
+            family->family[n].id = id[n];
+            family->family[n].link = cgi_read_link(id[n]);
+            family->family[n].in_link = 0;
+            if (cgi_read_family(&family->family[n])) return CG_ERROR;
+        }
+        CGNS_FREE(id);
+    }
+
+    /* Ordinal_t */
     if (cgi_read_ordinal(family->id, &family->ordinal)) return CG_ERROR;
 
      /* UserDefinedData_t */
@@ -792,8 +806,9 @@ int cgi_read_family_dataset(int in_link, double parent_id, int *ndataset,
     return CG_OK;
 }
 
+/* ** FAMILY TREE ** */
 int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
-                         char_33 family_name)
+                         char_md family_name)
 {
     int fam_flag;
     double *id;
@@ -808,7 +823,9 @@ int cgi_read_family_name(int in_link, double parent_id, char_33 parent_name,
 
          /* FamilyName in data field of the ADF node */
             if (cgi_read_string(id[0], NodeName, &FamilyName)) return CG_ERROR;
-            if (strlen(FamilyName) > 32) FamilyName[32]='\0';
+            if (strlen(FamilyName) > (CG_MAX_GOTO_DEPTH*(CGIO_MAX_NAME_LENGTH+1))) {
+                FamilyName[(CG_MAX_GOTO_DEPTH*(CGIO_MAX_NAME_LENGTH+1))]='\0'; /* ** FAMILY TREE ** */
+            }
             strcpy(family_name, FamilyName);
             if (FamilyName) CGNS_FREE(FamilyName);
 
@@ -2643,7 +2660,7 @@ int cgi_read_boco(cgns_boco *boco)
     }
 #endif
 
-     /* FamilyName_t */
+     /* FamilyName_t */ /* -- FAMILY TREE -- */
     if (cgi_read_family_name(linked, boco->id, boco->name, boco->family_name))
         return CG_ERROR;
 
@@ -2656,7 +2673,7 @@ int cgi_read_boco(cgns_boco *boco)
         for (n = 0; n < boco->nfamname; n++) {
             boco->famname[n].id = id[n];
             if (cgi_read_string(id[n], boco->famname[n].name, &fam)) return CG_ERROR;
-            strncpy(boco->famname[n].family, fam, 32);
+            strncpy(boco->famname[n].family, fam, (CG_MAX_GOTO_DEPTH*(CGIO_MAX_NAME_LENGTH+1)));
             CGNS_FREE(fam);
         }
         CGNS_FREE(id);
@@ -3205,6 +3222,7 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
             continue;
         if (ptset != NULL) {
             cgi_error("Multiple definitions of PointList/PointRange");
+            CGNS_FREE(ptset);
             return CG_ERROR;
         }
         ptset = CGNS_NEW(cgns_ptset, 1);
@@ -3215,7 +3233,10 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
         ptset->id=I_id[i];
         ptset->link=cgi_read_link(I_id[i]);
         ptset->in_link=linked;
-        if (cgi_read_ptset(I_id[i], ptset)) return CG_ERROR;
+        if (cgi_read_ptset(I_id[i], ptset)){
+            CGNS_FREE(ptset);
+            return CG_ERROR;
+        }
     }
     if (nI_t) CGNS_FREE(I_id);
 
@@ -3230,6 +3251,7 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
             continue;
         if (ptset != NULL) {
             cgi_error("Multiple definitions of PointList/PointRange");
+            CGNS_FREE(ptset);
             return CG_ERROR;
         }
         ptset = CGNS_NEW(cgns_ptset, 1);
@@ -3240,7 +3262,10 @@ int cgi_read_one_ptset(int linked, double parent_id, cgns_ptset **pptset)
         ptset->id=I_id[i];
         ptset->link=cgi_read_link(I_id[i]);
         ptset->in_link=linked;
-        if (cgi_read_ptset(I_id[i], ptset)) return CG_ERROR;
+        if (cgi_read_ptset(I_id[i], ptset)){
+            CGNS_FREE(ptset);
+            return CG_ERROR;
+        }
     }
     if (nI_t) CGNS_FREE(I_id);
 
@@ -5498,7 +5523,7 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
         if (cgi_read_location(user_data[0][n].id, user_data[0][n].name,
             &user_data[0][n].location)) return CG_ERROR;
 
-     /* FamilyName_t */
+     /* FamilyName_t */ /* -- FAMILY TREE -- */
         if (cgi_read_family_name(linked, user_data[0][n].id,
                                  user_data[0][n].name,
                                  user_data[0][n].family_name))
@@ -5515,7 +5540,7 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
                 user_data[0][n].famname[i].id = idi[i];
                 if (cgi_read_string(idi[i], user_data[0][n].famname[i].name,
                         &fam)) return CG_ERROR;
-                strncpy(user_data[0][n].famname[i].family, fam, 32);
+                strncpy(user_data[0][n].famname[i].family, fam, (CG_MAX_GOTO_DEPTH*33));
                 CGNS_FREE(fam);
             }
             CGNS_FREE(idi);
@@ -5723,7 +5748,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
         if (cgi_read_location(reg[n].id, reg[n].name,
             &reg[n].location)) return CG_ERROR;
 
-        /* FamilyName_t */
+        /* FamilyName_t */ /* -- FAMILY TREE -- */
         if (cgi_read_family_name(linked, reg[n].id,
                 reg[n].name, reg[n].family_name))
             return CG_ERROR;
@@ -5737,7 +5762,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
             for (i = 0; i < reg[n].nfamname; i++) {
                 reg[n].famname[i].id = idi[i];
                 if (cgi_read_string(idi[i], reg[n].famname[i].name, &fam)) return CG_ERROR;
-                strncpy(reg[n].famname[i].family, fam, 32);
+                strncpy(reg[n].famname[i].family, fam, (20*33)-1);
                 CGNS_FREE(fam);
             }
             CGNS_FREE(idi);
@@ -6597,7 +6622,7 @@ int cgi_write_zone(double parent_id, cgns_zone *zone)
     return CG_OK;
 }
 
-int cgi_write_family(double parent_id, cgns_family *family)
+int cgi_write_family(double parent_id, cgns_family *family) /* ** FAMILY TREE ** */
 {
     int n;
     cgsize_t dim_vals;
@@ -6694,6 +6719,11 @@ int cgi_write_family(double parent_id, cgns_family *family)
      /* RotatingCoordinates_t */
     if (family->rotating && cgi_write_rotating(family->id, family->rotating))
         return CG_ERROR;
+
+    /* ** FAMILY TREE ** */
+    for( n = 0; n < family->nfamilies; n++ ) {
+        if (cgi_write_family(family->id, &family->family[n])) return CG_ERROR;
+    }
 
     return CG_OK;
 }
@@ -8536,13 +8566,14 @@ int cgi_array_general_verify_range(
     cgsize_t *numpt)                    /* [O] number of points accessed */
 {
     cgsize_t s_numpt = 1, m_numpt = 1;
-    int n, npt;
+    cgsize_t npt;
+    int n;
 
     int s_reset_range = 1;
     *s_access_full_range = 1;
     *m_access_full_range = 1;
 
-     /*** verfication for dataset in file */
+     /*** verification for dataset in file */
      /* verify that range requested is not NULL */
     if (rmin == NULL || rmax == NULL) {
         cgi_error("NULL range value");
@@ -8580,7 +8611,7 @@ int cgi_array_general_verify_range(
                 }
             }
             else {
-                /* new behavior consitent with SIDS */
+                /* new behavior consistent with SIDS */
                 if (rmin[n] > rmax[n] ||
                     rmax[n] > (s_dimvals[n] - rind_planes[2*n]) ||
                     rmin[n] < (1 - rind_planes[2*n])) {
@@ -9171,7 +9202,8 @@ int cgi_check_strlen(char const *string)
 
 int cgi_check_strlen_x2(char const *string)
 {
-    int n1,n2,p;
+    int n1,n2;
+    size_t p;
 
     if (strlen(string) > 65) {
         cgi_error("Name exceeds 65 characters limit: %s",string);
@@ -11082,6 +11114,22 @@ static int cgi_next_posit(char *label, int index, char *name)
                            label, index + 1, f->user_data[index].id);
             }
         }
+        /* ** FAMILY TREE ** */
+        else if (0 == strcmp (label, "Family_t")) {
+            if (--index < 0) {
+                for (n = 0; n < f->nfamilies; n++) {
+                    if (0 == strcmp (f->family[n].name, name)) {
+                        index = n;
+                        break;
+                    }
+                }
+            }
+
+            if (index >= 0 && index < f->nfamilies) {
+                return cgi_add_posit((void *)&f->family[index],
+                           label, index + 1, f->family[index].id);
+            }
+        }
         else
             return CG_INCORRECT_PATH;
     }
@@ -11113,7 +11161,7 @@ static int cgi_next_posit(char *label, int index, char *name)
     else if (0 == strcmp (posit->label, "FamilyBC_t")) {
         cgns_fambc *f = (cgns_fambc *)posit->posit;
         if (0 == strcmp (label, "FamilyBCDataSet_t") ||
-            /* backwards compatibily */
+            /* backwards compatibility */
             0 == strcmp (label, "BCDataSet_t")) {
             if (--index < 0) {
                 for (n = 0; n < f->ndataset; n++) {
@@ -11862,7 +11910,7 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_state, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"DataArray_t")==0)
         ADDRESS4MULTIPLE(cgns_array, ndescr, descr, cgns_descr)
-    else if (strcmp(posit->label,"Family_t")==0)
+    else if (strcmp(posit->label,"Family_t")==0)/* -- FAMILY TREE -- */
         ADDRESS4MULTIPLE(cgns_family, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"GeometryReference_t")==0)
         ADDRESS4MULTIPLE(cgns_geo, ndescr, descr, cgns_descr)
@@ -11963,7 +12011,7 @@ char *cgi_famname_address(int local_mode, int *ier)
         return CG_OK;
     }
     if (cg->mode == CG_MODE_MODIFY && local_mode == CG_MODE_WRITE) {
-        if (cgi_get_nodes(parent_id, "FamilyName_t", &nnod, &id)) {
+        if (cgi_get_nodes(parent_id, "FamilyName_t", &nnod, &id)) {/* -- FAMILY TREE -- */
             *ier = CG_ERROR;
             return CG_OK;
         }
@@ -11998,6 +12046,8 @@ cgns_famname *cgi_multfam_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_subreg, nfamname, famname, cgns_famname)
     else if (0 == strcmp(posit->label, "UserDefinedData_t"))
         ADDRESS4MULTIPLE(cgns_user_data, nfamname, famname, cgns_famname)
+    else if (0 == strcmp(posit->label, "Family_t")) /* ** FAMILY TREE ** */
+        ADDRESS4MULTIPLE(cgns_family, nfamname, famname, cgns_famname)
     else {
         cgi_error("AdditionalFamilyName_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
@@ -13263,6 +13313,56 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
     return user_data;
 }
 
+/* ** FAMILY TREE ** */
+cgns_family *cgi_family_address(int local_mode, int given_no,
+                                char const *given_name, int *ier)
+{
+    cgns_family *family=0;
+    int n, allow_dup=0, error1=0, error2=0;
+    double parent_id=0;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        (*ier) = CG_ERROR;
+        return CG_OK;
+    }
+
+/* Possible parents of Family_t node:
+ *  Family_t, CGNSBase_t
+ */
+
+    if (strcmp(posit->label,"Family_t")==0)
+        ADDRESS4MULTIPLE(cgns_family, nfamilies, family, cgns_family)
+    else if (strcmp(posit->label,"CGNSBase_t")==0)
+        ADDRESS4MULTIPLE(cgns_base, nfamilies, family, cgns_family)
+    else {
+        cgi_error("Family_t node not supported under '%s' type node",posit->label);
+        (*ier) = CG_INCORRECT_PATH;
+        return CG_OK;
+    }
+    if (error1) {
+        cgi_error("Duplicate child name found (%s) found under %s",
+            given_name, posit->label);
+        (*ier) = CG_ERROR;
+        return CG_OK;
+    }
+    if (error2) {
+        cgi_error("UserDefinedData index number %d doesn't exist under %s",
+            given_no, posit->label);
+        (*ier) = CG_NODE_NOT_FOUND;
+        return CG_OK;
+    }
+    if (parent_id) {     /* parent_id!=0 only when overwriting */
+        if (cgi_delete_node (parent_id, family->id)) {
+            (*ier) = CG_ERROR;
+            return CG_OK;
+        }
+        cgi_free_family(family);
+    }
+    return family;
+}
+
 cgns_rotating *cgi_rotating_address(int local_mode, int *ier)
 {
     cgns_rotating *rotating=0;
@@ -13637,7 +13737,7 @@ void cgi_free_section(cgns_section *section)
     }
 }
 
-void cgi_free_family(cgns_family *family)
+void cgi_free_family(cgns_family *family) /* ** FAMILY TREE ** */
 {
     int n;
     if (family->link) CGNS_FREE(family->link);
@@ -13656,6 +13756,14 @@ void cgi_free_family(cgns_family *family)
             cgi_free_geo(&family->geo[n]);
         CGNS_FREE(family->geo);
     }
+
+    /* FAMILY TREE : Free Family_t nodes */
+    if ( family->nfamilies ) {
+        for( n = 0; n < family->nfamilies; n++ )
+            cgi_free_family( &family->family[n] );
+        CGNS_FREE( family->family );
+    }
+
     if (family->nuser_data) {
         for (n=0; n<family->nuser_data; n++)
             cgi_free_user_data(&family->user_data[n]);

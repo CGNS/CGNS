@@ -34,17 +34,53 @@ int main(int argc, char* argv[]) {
 	err = MPI_Info_create(&(info));
 	if(err!=MPI_SUCCESS) cgp_doError;
 
+        if(comm_rank == 0) {
+          if (cg_open("open_close.cgns", CG_MODE_WRITE, &fn))
+            cg_error_exit();
+
+          if (cg_close(fn))
+            cg_error_exit();
+        }
+
+        MPI_Barrier(MPI_COMM_WORLD);
+        if(cgp_open("open_close.cgns", CG_MODE_MODIFY, &fn))
+          cgp_error_exit();
+
+        if(cgp_close(fn))
+          cgp_error_exit();
+
+       if(cgp_open("open_close.cgns", CG_MODE_READ, &fn))
+          cgp_error_exit();
+
+        if(cgp_close(fn))
+          cgp_error_exit();
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        cgp_mpi_comm(MPI_COMM_SELF);
+
+        if(comm_rank == 0) {
+          if (cgp_open("open_close.cgns", CG_MODE_READ, &fn))
+            cg_error_exit();
+
+          if (cgp_close(fn))
+            cg_error_exit();
+        }
+
+        cgp_mpi_comm(MPI_COMM_WORLD);
+
 #ifdef DEBUG_MPI
         printf("[%d]cgp_open\n",comm_rank);
         fflush(stdout);
-	if (cgp_open("open_close.cgns", CG_MODE_WRITE, &fn))
+	if (cgp_open("open_close_p.cgns", CG_MODE_WRITE, &fn))
 	    cgp_error_exit();
         printf("[%d]cgp_close\n",comm_rank);
         fflush(stdout);
 	if (cgp_close(fn))
 	    cgp_error_exit();
 #else
-	if (cgp_open("open_close.cgns", CG_MODE_WRITE, &fn))
+
+	if (cgp_open("open_close_p.cgns", CG_MODE_WRITE, &fn))
 	    cgp_error_exit();
 	if (cgp_close(fn))
 	    cgp_error_exit();
@@ -53,3 +89,4 @@ int main(int argc, char* argv[]) {
 	if(err!=MPI_SUCCESS) cgp_doError;
 	return err;
 	}
+

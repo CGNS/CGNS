@@ -106,11 +106,11 @@ int main (int argc, char *argv[])
         exit(1);
     }
 
-    // 2d reshape b
+    /* 2d reshape b */
     float (*fvalues_2d)[dims_2d(0)]  = (float (*)[dims_2d(0)])fvalues_1d;
     double (*dvalues_2d)[dims_2d(0)] = (double (*)[dims_2d(0)])dvalues_1d;
 
-    // 3d reshape
+    /* 3d reshape */
     float (*fvalues_3d)[dims_3d(1)][dims_3d(0)] =
       (float (*)[dims_3d(1)][dims_3d(0)])fvalues_1d;
     float (*fbuf_3d)[dims_3d(1)][dims_3d(0)] =

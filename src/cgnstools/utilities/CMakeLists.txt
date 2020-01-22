@@ -7,7 +7,6 @@ include_directories(../calclib)
 include_directories(../common)
 
 # cgns_info
-link_directories(.)
 if (CGNS_USE_SHARED)
   link_libraries(cgns_shared)
 else (CGNS_USE_SHARED)

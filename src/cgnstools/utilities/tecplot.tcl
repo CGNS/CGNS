@@ -94,7 +94,7 @@ proc tecplot_export {w name exe} {
     -command tecplot_extension
   pack $opts.fmt -side top -anchor w
 
-  checkbutton $opts.sol -text "Grid Ouput Only (no solution)" \
+  checkbutton $opts.sol -text "Grid Output Only (no solution)" \
     -variable Export(solution) -onvalue 0 -offvalue 1
   pack $opts.sol -side top -anchor w
 

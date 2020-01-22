@@ -358,7 +358,7 @@ MODULE cgns
   END ENUM
 
 !** Any model type will accept both ModelTypeNull and ModelTypeUserDefined.
-!** The following models will accept these values as vaild...
+!** The following models will accept these values as valid...
 !**
 !** GasModel_t: Ideal, VanderWaals, CaloricallyPerfect, ThermallyPerfect,
 !**    ConstantDensity, RedlichKwong
@@ -1199,6 +1199,65 @@ MODULE cgns
      END SUBROUTINE cg_family_name_write_f
   END INTERFACE
 
+  INTERFACE
+     SUBROUTINE cg_node_family_write_f(family_name, F, ier) !BIND(C, NAME="cg_node_family_write_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family_name
+       INTEGER :: F
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_family_write_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_nfamilies_f(nfamilies, ier) BIND(C, NAME="cg_node_nfamilies_f")
+       IMPLICIT NONE
+       INTEGER :: nfamilies
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_nfamilies_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_family_read_f(F,family_name, nboco, ngeos, ier) !BIND(C, NAME="cg_node_family_read_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: F
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family_name
+       INTEGER :: nboco
+       INTEGER :: ngeos
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_family_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_family_name_write_f(name, family, ier) !BIND(C, NAME="cg_node_family_name_write_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_family_name_write_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_nfamily_names_f(nnames, ier) BIND(C, NAME="cg_node_nfamily_names_f")
+       IMPLICIT NONE
+       INTEGER :: nnames
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_nfamily_names_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_family_name_read_f(N, name, family, ier) !BIND(C, NAME="cg_node_family_name_read_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: N
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_family_name_read_f
+  END INTERFACE
+
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write FamBC_t Nodes                                     *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -1230,6 +1289,29 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_fambc_write_f
   END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_fambc_read_f(BC, fambc_name, bocotype, ier) !BIND(C, NAME="cg_node_fambc_read_f")
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: BC
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fambc_name
+       INTEGER(cgenum_t) :: bocotype
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_fambc_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_fambc_write_f(fambc_name, bocotype, BC, ier) !BIND(C, NAME="cg_node_fambc_write_f")
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fambc_name
+       INTEGER(cgenum_t) :: bocotype
+       INTEGER :: BC
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_fambc_write_f
+  END INTERFACE
+
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write GeometryReference_t Nodes                         *
@@ -1266,6 +1348,31 @@ MODULE cgns
      END SUBROUTINE cg_geo_write_f
   END INTERFACE
 
+  INTERFACE
+     SUBROUTINE cg_node_geo_read_f(G, geo_name, geo_file, CAD_name, npart, ier) !BIND(C, NAME="cg_node_geo_read_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: G
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_name
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_file
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: CAD_name
+       INTEGER :: npart
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_geo_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_geo_write_f(geo_name, geo_file, CAD_name, G, ier) !BIND(C, NAME="cg_node_geo_write_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_name
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_file
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: CAD_name
+       INTEGER :: G
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_geo_write_f
+  END INTERFACE
+
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write GeometryEntity_t Nodes                            *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -1296,6 +1403,28 @@ MODULE cgns
        INTEGER :: P
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_part_write_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_part_read_f(G, P, part_name, ier) !BIND(C, NAME="cg_node_part_read_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: G
+       INTEGER :: P
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: part_name
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_part_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_part_write_f(G, part_name, P, ier) !BIND(C, NAME="cg_node_part_write_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: G
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: part_name
+       INTEGER :: P
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_part_write_f
   END INTERFACE
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -3134,6 +3263,34 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_grid_write_f
   END INTERFACE
+
+!!$ INTERFACE
+!!$    SUBROUTINE cg_grid_bounding_box_read_f(fn, B, Z, G, datatype, array, ier) ! BIND(C, NAME="cg_grid_bounding_box_read_f")
+!!$      IMPORT :: cgenum_t
+!!$      IMPLICIT NONE
+!!$      INTEGER :: fn
+!!$      INTEGER :: B
+!!$      INTEGER :: Z
+!!$      INTEGER :: G
+!!$      INTEGER(cgenum_t), INTENT(IN) :: datatype
+!!$      TYPE(*), DIMENSION(*) :: array
+!!$      INTEGER, INTENT(OUT) :: ier
+!!$    END SUBROUTINE cg_grid_bounding_box_read_f
+!!$ END INTERFACE
+ 
+!!$  INTERFACE
+!!$     SUBROUTINE cg_grid_bounding_box_write_f(fn, B, Z, G, datatype, array, ier) !BIND(C, NAME="cg_grid_bounding_box_write_f")
+!!$       IMPORT :: cgenum_t, c_ptr
+!!$       IMPLICIT NONE
+!!$       INTEGER :: fn
+!!$       INTEGER :: B
+!!$       INTEGER :: Z
+!!$       INTEGER :: G
+!!$       INTEGER(cgenum_t), INTENT(IN) :: datatype
+!!$       void *array
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cg_grid_bounding_box_write_f
+!!$  END INTERFACE
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write SimulationType_t Node                             *

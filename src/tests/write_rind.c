@@ -136,7 +136,7 @@ int main (int argc, char *argv[])
         cg_array_write("CoordinateZ", CGNS_ENUMV( RealSingle ), 3, dims, zcoord))
         cg_error_exit();
 
-    /* a similiar technique is used for the solution with rind,
+    /* a similar technique is used for the solution with rind,
        but we use cg_field_write instead of cg_array_write
        and the solution dimensions come from the zone sizes */
 
