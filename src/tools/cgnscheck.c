@@ -27,8 +27,6 @@
 
 #define USE_MID_NODES
 
-#define min(A,B) A <= B ? A : B;
-#define max(A,B) A >= B ? A : B;
 #if CG_SIZEOF_SIZE == 32
 #define CG_ABS abs
 #else
@@ -1718,8 +1716,8 @@ static cgsize_t get_ho_data_size_range (ZONE *z, int spatialOrder, int temporalO
       ELEMSET *set = &z->sets[i];
       
       // Get element count bellonging to this element section range
-      rmin = max(set->is,range[0]);
-      rmax = min(set->ie,range[1]);
+      rmin = MAX(set->is,range[0]);
+      rmax = MIN(set->ie,range[1]);
       
       if (rmin > rmax) continue;
       

@@ -1,11 +1,6 @@
 /*
 ! @file para_high_order.c
-! @author Laurent Cadet <laurent.cadet@cenaero.fr>
-! @version 0.1
-!
-! @section LICENSE
-! BSD style license
-!
+
 ! @section DESCRIPTION
 ! Test program for pcgns library
 ! -- Create a CGNS file to exploit the high order implementation from CPEX045

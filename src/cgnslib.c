@@ -5537,7 +5537,7 @@ int cg_sol_size(int file_number, int B, int Z, int S,
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
 
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+    //if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
     sol = cgi_get_sol(cg, B, Z, S);
     if (sol==0) return CG_ERROR;
@@ -5580,9 +5580,13 @@ int cg_sol_size(int file_number, int B, int Z, int S,
           cgns_zone *zone = &cg->base[B-1].zone[Z-1];
           // Override based on range 
           if (sol->ptset->type == CGNS_ENUMV(PointRange)) {
+          
+            cgsize_t range_min[12], range_max[12];
+            
+            cgi_ptset_range(sol->ptset,range_min,range_max);
+            
             if (cgi_ho_datasize_range(zone->index_dim,zone,sol->spatialOrder,
-                              sol->temporalOrder, sol->ptset->range_min[0], 
-                              sol->ptset->range_max[0], &dim_vals[0]) ) {
+                              sol->temporalOrder, range_min[0], range_max[0], &dim_vals[0]) ) {
               cgi_warning("Unable to retrieve solution datasize for High Order solution from PointRange");
               return CG_ERROR;
             }
@@ -6001,54 +6005,12 @@ int cg_field_write(int file_number, int B, int Z, int S,
 
      /* dimension is dependent on multidim or ptset */
     cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
-    if (sol->ptset == NULL) {
-        m_numdim = zone->index_dim;
-        
-        /* CPEX 045 */
-        /* Determine data size (HO solution case) */
-        if ( sol->location == CGNS_ENUMV(ElementBased) ) {
-          
-            if (!sol->isOrderDefined)
-            {
-                cgi_error("FlowSolution: ElementBased solution field requires definition of interpolationOrders first");
-                return CG_ERROR;
-            }
-            
-            if (cgi_ho_datasize(m_numdim,zone,sol->spatialOrder,
-                                sol->temporalOrder, m_dimvals) ) return CG_ERROR;
-            
-            /* add rinds */
-            for (j=0; j<m_numdim; j++) m_dimvals[j] = m_dimvals[j] 
-                                                    + sol->rind_planes[2*j] 
-                                                    + sol->rind_planes[2*j+1];
-            
-        }
-        else {
-        /* Determine data size (1st Order solution) */
-            if (cgi_datasize(m_numdim, zone->nijk, sol->location,
-                            sol->rind_planes, m_dimvals)) return CG_ERROR;
-        }
-          
-        
-    }
-    else {
-        m_numdim = 1;
-        m_dimvals[0] = sol->ptset->size_of_patch;
-        /* CPEX 045 */
-        /** \todo to remove and consider only cg_sol_size()*/
-        if ( sol->location == CGNS_ENUMV(ElementBased) ) {
-          // Override based on range 
-          if (cgi_ho_datasize_range(m_numdim,zone,sol->spatialOrder,
-                            sol->temporalOrder, sol->ptset->range_min[0], 
-                            sol->ptset->range_max[0], &m_dimvals[0]) ) return CG_ERROR;
-          
-        }
-        
-        if ( cg_sol_size(file_number, B, Z, S, &m_numdim, &m_dimvals[0]) ) {
-          cg_error_print();
-          cgi_error("FlowSolution: Unable to retrieve field size to write");
-          return CG_ERROR;
-        }
+    
+    m_numdim = zone->index_dim;
+    if ( cg_sol_size(file_number, B, Z, S, &m_numdim, &m_dimvals[0]) ) {
+      cg_error_print();
+      cgi_error("FlowSolution: Unable to retrieve field size to write");
+      return CG_ERROR;
     }
 
     cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];

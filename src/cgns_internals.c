@@ -40,8 +40,6 @@ freely, subject to the following restrictions:
 
 #define CGNS_NAN(x)  (!((x) < HUGE_VAL && (x) > -HUGE_VAL))
 
-#define max(a,b) (a>=b?a:b)
-#define min(a,b) (a<=b?a:b)
 
 /* Flag for contiguous (0) or compact storage (1) */
 extern int HDF5storage_type;
@@ -1622,9 +1620,13 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
               
               // Override based on range
               if (sol[0][s].ptset->type == CGNS_ENUMV(PointRange)) {
+                cgsize_t range_min[12], range_max[12];
+                
+                cgi_ptset_range(sol[0][s].ptset,range_min,range_max);
+                
                 ret = cgi_ho_datasize_range(Idim,CurrentZonePtr,sol[0][s].spatialOrder,
-                                  sol[0][s].temporalOrder, sol[0][s].ptset->range_min[0], 
-                                  sol[0][s].ptset->range_max[0], &DataCount);
+                                  sol[0][s].temporalOrder, range_min[0], 
+                                  range_max[0], &DataCount);
               }
               // Override based on list
               else if (sol[0][s].ptset->type == CGNS_ENUMV(PointList)) {
@@ -3355,11 +3357,6 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
                 return CG_ERROR;
             }
 #endif
-            //Store ranges
-            for (i=0; i<Idim; i++) {
-              ptset->range_min[i] = pnts[i];
-              ptset->range_max[i] = pnts[i+Idim];
-            }
             // Compute size
             for (i=0; i<Idim; i++) total *= (pnts[i+Idim]-pnts[i]+1);
             CGNS_FREE(pnts);
@@ -3376,11 +3373,6 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
             if (cgio_read_all_data(cg->cgio, ptset->id, pnts)) {
                 cg_io_error("cgio_read_all_data");
                 return CG_ERROR;
-            }
-            //Store ranges
-            for (i=0; i<Idim; i++) {
-              ptset->range_min[i] = pnts[i];
-              ptset->range_max[i] = pnts[i+Idim];
             }
             // Compute size
             ptset->size_of_patch = 1;
@@ -6026,8 +6018,8 @@ int cgi_ho_datasize_range(const int id_dim, const cgns_zone *zone, const int spa
         CGNS_ENUMT(ElementType_t) type = section->el_type;
         
         // Get element count bellonging to this element section range
-        int rmin = max(section->range[0],imin);
-        int rmax = min(section->range[1],imax);
+        int rmin = MAX(section->range[0],imin);
+        int rmax = MIN(section->range[1],imax);
         if (rmin > rmax) continue;
         
         // Get element count
@@ -9371,6 +9363,39 @@ cgsize_t cgi_element_data_size(CGNS_ENUMT(ElementType_t) type,
     }
     return size;
 }
+
+/* Get the range for the given point set */
+int cgi_ptset_range(cgns_ptset *ptset, cgsize_t *range_min, cgsize_t *range_max)
+{
+  int i, ret;
+  cgsize_t *pnts;
+  
+  if (!ptset || !range_min || !range_max) return CG_ERROR;
+  
+  if (ptset->type != PointRange && ptset->type != ElementRange ) return CG_ERROR;
+  
+  if (!ptset->npts) return CG_ERROR;
+  
+  pnts = CGNS_NEW(cgsize_t,ptset->npts);
+  
+  ret = cgi_read_int_data(ptset->id, ptset->data_type,
+                          ptset->npts * Idim, pnts);
+  
+  if (ret == CG_ERROR) {
+    CGNS_FREE(pnts);
+    return CG_ERROR;
+  }
+  
+  for (i=0; i<Idim; i++) {
+    range_min[i] = pnts[i];
+    range_max[i] = pnts[i+Idim];
+  }
+  
+  CGNS_FREE(pnts);
+  
+  return CG_OK;
+}
+
 
 /***********************************************************************\
  *       Get the memory address of a data structure        *

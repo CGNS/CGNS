@@ -233,8 +233,6 @@ typedef struct {            /* IndexArray/Range_t Node      */
     CGNS_ENUMT(PointSetType_t) type;  /* PointList, PointRange, ...       */
     char_33 data_type;      /* type of data                         */
     cgsize_t npts;          /* number of points to define the patch */
-    cgsize_t range_min[12]; /* start of range if type is PointRange or ElementRange */
-    cgsize_t range_max[12]; /* end of range if type is PointRange or ElementRange */
     cgsize_t size_of_patch; /* nr of nodes or elements in patch     */
     void *data;             /* data (only loaded in MODE_MODIFY     */
 } cgns_ptset;               /*       when version mismatch)         */
@@ -1315,6 +1313,8 @@ void cgi_array_print(char *routine, cgns_array *array);
 
 cgsize_t cgi_element_data_size(CGNS_ENUMT(ElementType_t) type,
 			       cgsize_t nelems, const cgsize_t *connect, const cgsize_t *connect_offset);
+
+int cgi_ptset_range(cgns_ptset *ptset, cgsize_t *range_min, cgsize_t *range_max);
 
 /* free memory */
 void cgi_free_file(cgns_file *cg);
