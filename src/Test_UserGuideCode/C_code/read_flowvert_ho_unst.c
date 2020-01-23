@@ -27,8 +27,7 @@ library libcgns.a is located)
 
 int main()
 {
-    float r[9*17*21],p[9*17*21];
-    cgsize_t isize[3][1],irmin,irmax;
+    cgsize_t isize[3][1];
     int index_file,index_base,index_zone,index_flow;
     char zonename[33],solname[33];
     CGNS_ENUMT(GridLocation_t) loc;
@@ -45,8 +44,6 @@ int main()
     index_flow=1;
 /* get zone size (and name - although not needed here) */
     cg_zone_read(index_file,index_base,index_zone,zonename,isize[0]);
-/* lower range index */
-    irmin=1;
 /* upper range index - use vertex dimensions */
 /* checking GridLocation first (real working code would check */
 /* to make sure there are no Rind cells also!): */

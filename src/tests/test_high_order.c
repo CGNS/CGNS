@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include "utils.h"
 
@@ -326,7 +327,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     /* Read Element interpolation Node */
     if (cg_element_interpolation_read(cgfile, cgbase,cgfamily,cgeinterp,einterpName,&etyperead)) 
     {
-        fprintf(stderr,"ERROR: Cannot Read The ElementInterpolation_t node !\n",error);
+        fprintf(stderr,"ERROR: Cannot Read The ElementInterpolation_t node !\n");
         cg_error_exit();
     }
     
@@ -397,7 +398,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     if (cg_solution_interpolation_read(cgfile, cgbase,cgfamily,cgsinterp,sinterpname,
         &etyperead, &os,&ot,&ityperead)) 
     {
-        fprintf(stderr,"ERROR: Cannot Read The SolutionInterpolation_t node !\n",error);
+        fprintf(stderr,"ERROR: Cannot Read The SolutionInterpolation_t node !\n");
         cg_error_exit();
     }
     

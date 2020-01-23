@@ -13878,6 +13878,11 @@ int cg_element_basic_element_type( CGNS_ENUMT(ElementType_t) type, CGNS_ENUMT(El
       case CGNS_ENUMV( HEXA_64 ):
       case CGNS_ENUMV( HEXA_98 ):
       case CGNS_ENUMV( HEXA_125 ): *basic = CGNS_ENUMV( HEXA_8 );break;
+      default:
+      {
+        cgi_error("Invalid element type");
+        return CG_ERROR;
+      }
     }
     
     return CG_OK;
