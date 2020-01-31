@@ -592,7 +592,7 @@ static int element_dimension (CGNS_ENUMT(ElementType_t) elemtype)
 static int valid_face (ZONE *z, cgsize_t elem)
 {
     int ns, nn;
-    cgsize_t n, ne, *pe, *po;
+    cgsize_t n, ne, *pe;
     CGNS_ENUMT(ElementType_t) type;
 
     for (ns = 0; ns < z->nsets; ns++) {
@@ -600,11 +600,13 @@ static int valid_face (ZONE *z, cgsize_t elem)
         if (elem >= z->sets[ns].is && elem <= z->sets[ns].ie) {
             type = z->sets[ns].type;
             pe = z->sets[ns].elements;
-            po = z->sets[ns].offsets;
             ne = elem - z->sets[ns].is;
             if (type == CGNS_ENUMV(NGON_n)) {
-                nn = (int)(po[ne+1] - po[ne]);
-                return (nn < 3 ? 0 : 1);
+                for (n = 0; n < ne; n++) {
+                    nn = (int)*pe++;
+                    pe += nn;
+                }
+                return (*pe < 3 ? 0 : 1);
             }
             if (type == CGNS_ENUMV(MIXED)) {
                 for (n = 0; n < ne; n++) {
@@ -639,25 +641,31 @@ static int valid_face (ZONE *z, cgsize_t elem)
 static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
 {
     int ns, nn=0;
-    cgsize_t ne, *nodes, *offsets;
+    cgsize_t ne, *nodes;
     CGNS_ENUMT(ElementType_t) type;
+
     for (ns = 0; ns < z->nsets; ns++) {
         if (z->sets[ns].invalid) continue;
         if (elem >= z->sets[ns].is && elem <= z->sets[ns].ie) {
             ne = elem - z->sets[ns].is;
             nodes = z->sets[ns].elements;
-            offsets = z->sets[ns].offsets;
             type = z->sets[ns].type;
             if (type == CGNS_ENUMV(NGON_n)) {
-                *nnodes = (int)(offsets[ne+1] - offsets[ne]);
-                nodes += (offsets[ne] - offsets[0]);
+                while (ne-- > 0) {
+                    nn = (int)*nodes++;
+                    nodes += nn;
+                }
                 *dim = 2;
+                *nnodes = (int)*nodes++;
                 return nodes;
             }
             if (type == CGNS_ENUMV(NFACE_n)) {
-                *nnodes = offsets[ne+1] - offsets[ne];
-                nodes += (offsets[ne] - offsets[0]);
+                while (ne-- > 0) {
+                    nn = (int)*nodes++;
+                    nodes += nn;
+                }
                 *dim = 3;
+                *nnodes = (int)*nodes++;
                 return nodes;
             }
             if (type == CGNS_ENUMV(MIXED)) {
@@ -1164,7 +1172,7 @@ static void read_zone (int nz)
     int i, j, n;
     cgsize_t size[9];
     int ns, nsets, hasparent;
-    cgsize_t ne, *pe, *po;
+    cgsize_t ne, *pe;
     cgsize_t se, nelem, k;
     int nn, nf, ip, ierr;
     cgsize_t *nodes, maxnode;
@@ -1384,7 +1392,6 @@ static void read_zone (int nz)
         if (es->invalid || es->nv == 0) continue;
         nelem = es->ie - es->is + 1 - es->rind[1];
         pe = es->elements;
-        po = es->offsets;
         if (es->type == CGNS_ENUMV(MIXED)) {
             for (ne = 0; ne < nelem; ne++) {
                 type = (int)*pe++;
@@ -1409,7 +1416,7 @@ static void read_zone (int nz)
         }
         else if (es->type == CGNS_ENUMV(NGON_n)) {
             for (ne = 0; ne < nelem; ne++) {
-                nn = (int)(po[ne+1]-po[ne]);
+                nn = (int)*pe++;
                 if (ne >= es->rind[0]) {
                     for (i = 0; i < nn; i++) {
                         if (pe[i] < 1 || pe[i] > z->maxnode) {
@@ -1423,7 +1430,7 @@ static void read_zone (int nz)
         }
         else if (es->type == CGNS_ENUMV(NFACE_n)) {
             for (ne = 0; ne < nelem; ne++) {
-                nn = (int)(po[ne+1]-po[ne]);
+                nn = (int)*pe++;
                 if (ne >= es->rind[0]) {
                     for (i = 0; i < nn; i++) {
                         if (!valid_face (z, abs(pe[i]))) {
@@ -1473,7 +1480,6 @@ static void read_zone (int nz)
         nelem = es->ie - es->is + 1 - es->rind[1];
         type = es->type;
         pe = es->elements;
-        po = es->offsets;
         cg_npe (es->type, &nn);
 
         for (ne = 0; ne < nelem; ne++) {
@@ -1526,7 +1532,7 @@ static void read_zone (int nz)
                     nf = 6;
                     break;
                 case CGNS_ENUMV(NFACE_n):
-                    nf = (int)(po[ne+1]-po[ne]);
+                    nf = (int)*pe++;
                     nn = nf;
                     break;
                 default:
@@ -2623,7 +2629,7 @@ static void check_elements (void)
 {
     int nn, ns, dim;
     int nf, np, nint, next;
-    cgsize_t is, ne, nelem, *pe, *po;
+    cgsize_t is, ne, nelem, *pe;
     ELEMSET *es;
     CGNS_ENUMT(ElementType_t) type;
     FACE *face, *pf;
@@ -2714,7 +2720,6 @@ static void check_elements (void)
         nelem = es->ie - es->is + 1 - es->rind[1];
         type = es->type;
         pe = es->elements;
-        po = es->offsets;
         nf = np = nint = next = 0;
         dim = element_dimension(es->type);
         for (ne = 0; ne < nelem; ne++) {
@@ -2730,7 +2735,7 @@ static void check_elements (void)
                 dim = element_dimension(type);
             }
             else if (es->type == CGNS_ENUMV(NGON_n)) {
-                nn = (int)(po[ne+1]-po[ne]);
+                nn = (int)*pe++;
             }
             else {
                 cg_npe (type, &nn);
