@@ -552,7 +552,6 @@ typedef struct {            /* Elements_t node                      */
     cgsize_t range[2];      /* index of first and last element  */
     int *rind_planes;       /* No. of rind-elements                 */
     cgns_array *connect;    /* ElementConnectivity                  */
-    cgns_array *connect_offset; /* ElementStartOffset               */
     cgns_array *parelem;    /* ParentElements                       */
     cgns_array *parface;    /* ParentElementsPosition               */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
@@ -1266,7 +1265,7 @@ int cgi_add_czone(char_33 zonename, cgsize6_t range, cgsize6_t donor_range,
 void cgi_array_print(char *routine, cgns_array *array);
 
 cgsize_t cgi_element_data_size(CGNS_ENUMT(ElementType_t) type,
-			       cgsize_t nelems, const cgsize_t *connect, const cgsize_t *connect_offset);
+			       cgsize_t nelems, const cgsize_t *connect);
 
 /* free memory */
 void cgi_free_file(cgns_file *cg);

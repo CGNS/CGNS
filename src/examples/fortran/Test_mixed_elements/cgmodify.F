@@ -17,7 +17,6 @@
 	integer cg, base, zone, ier, index, ZoneType
         integer(cgsize_t) size(3)
 	integer i, j, k, n, pos, coord, element(22), section_no
-	integer connect_offsets(12)
 	character*32 ZoneName, coordname(3)
         double precision data_double(27)
 	integer grid_no, count
@@ -89,7 +88,6 @@
 
 	count = 0
 ! first element HEXA_8
-	connect_offsets(1) = 0
 	count = count + 1
 	element(count)=HEXA_8
 	do i=1,8
@@ -97,7 +95,6 @@
 	    element(count)=i
 	enddo
 ! second element TETRA_4
-	connect_offsets(2) = count
 	count = count + 1
 	element(count)=TETRA_4
 	do i=1,4
@@ -105,37 +102,31 @@
             element(count)=i
         enddo
 ! 3rd element NGON_7, so set ElementType to NGON_n+7
-	connect_offsets(3) = count
 	count = count + 1
 	element(count)=NGON_n+7
 	do i=1,7
             count = count + 1
             element(count)=i
         enddo
-	connect_offsets(4) = count
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 ! Write MIXED element section
-	call cg_poly_section_write_f(cg, base, zone, 'MixedElements', MIXED,
-     &                          1, 3, 0, element, connect_offsets,
-     &                          section_no, ier)
+	call cg_section_write_f(cg, base, zone, 'MixedElements', MIXED,
+     &                          1, 3, 0, element, section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Write section of 4 NGON_n of 3 nodes
         count = 0
 	do n=1,4
-	    !count = count + 1
-	    !element(count)=NGON_n+3
-            connect_offsets(n) = count
+	    count = count + 1
+	    element(count)=NGON_n+3
 	    do i=1,3
 		count = count + 1
 		element(count)=10*n+i
 	    enddo
 	enddo
-	connect_offsets(5) = count
-	call cg_poly_section_write_f(cg, base, zone, 'NGON_n(3)',
-     &                 NGON_n+3, 1, 4, 0, element,
-     &                 connect_offsets, section_no, ier)
+	call cg_section_write_f(cg, base, zone, 'NGON_n(3)',
+     &                 NGON_n+3, 1, 4, 0, element, section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Write & close CGNS file

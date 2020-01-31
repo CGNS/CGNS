@@ -60,7 +60,6 @@ typedef struct {
     int ib;
     cgsize_t nv, ns, ne, nn;
     cgsize_t *elements;
-    cgsize_t *offsets;
     cgsize_t *parent;
     int rind[2];
     int invalid;
@@ -1264,20 +1263,8 @@ static void read_zone (int nz)
             if (NULL == es->parent)
                 fatal_error("malloc failed for elemset parent data\n");
         }
-        es->offsets = NULL;
-        if (es->type == CGNS_ENUMV(MIXED) ||
-            es->type == CGNS_ENUMV(NFACE_n) ||
-            es->type == CGNS_ENUMV(NGON_n)) {
-            es->offsets = (cgsize_t *) malloc ((size_t)((nelem+1) * sizeof(cgsize_t)));
-            if (NULL == es->offsets)
-                fatal_error("malloc failed for offsets\n");
-            if (cg_poly_elements_read (cgnsfn, cgnsbase, nz, ns, es->elements, es->offsets,
-                    es->parent)) error_exit ("cg_poly_elements_read");
-        }
-        else {
-            if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, es->elements,
-                    es->parent)) error_exit ("cg_elements_read");
-        }
+        if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, es->elements,
+                es->parent)) error_exit ("cg_elements_read");
 
         go_absolute ("Zone_t", nz, "Elements_t", ns, NULL);
         ierr = read_rind (es->rind);

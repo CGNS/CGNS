@@ -30,7 +30,6 @@ cgsize_t *faces;
 cgsize_t *parent;
 cgsize_t *ptmp;
 cgsize_t *ibuf, *pbuf;
-cgsize_t *offsets;
 
 #define NODE_INDEX(I,J,K) ((I)+NUM_SIDE*(((J)-1)+NUM_SIDE*((K)-1)))
 #define CELL_INDEX(I,J,K) ((I)+(NUM_SIDE-1)*(((J)-1)+(NUM_SIDE-1)*((K)-1)))
@@ -72,7 +71,7 @@ int mixed_offset(int num, int nelems) {
 
 int main (int argc, char **argv)
 {
-    int n, i, j, k, l, nn, nf, np;
+    int n, i, j, k, nn, nf, np;
     int nnodes, nelems, nfaces;
     int cgfile, cgbase, cgzone, cgcoord, cgsol, cgfld;
     int cgsect, cgelems, cgfaces;
@@ -686,28 +685,19 @@ int main (int argc, char **argv)
     nn = (nelems << 3) + nelems + (nfaces << 2) + nfaces;
     ptmp = (cgsize_t *) malloc (2 * nn * sizeof(cgsize_t));
 
-    offsets = (cgsize_t *) malloc ((nelems+nfaces+1)* sizeof(cgsize_t));
-    offsets[0] = 0;
-
-    i = j = n = l = 0;
+    i = j = n = 0;
     for (nf = 0; nf < nelems; nf++) {
         ptmp[n++] = CGNS_ENUMV(QUAD_4);
         for (k = 0; k < 4; k++)
             ptmp[n++] = faces[j++];
-        offsets[l+1] = offsets[l] + 5;
-        l++;
         ptmp[n++] = CGNS_ENUMV(HEXA_8);
         for (k = 0; k < 8; k++)
             ptmp[n++] = elements[i++];
-        offsets[l+1] = offsets[l] + 9;
-        l++;
     }
     while (nf++ < nfaces) {
         ptmp[n++] = CGNS_ENUMV(QUAD_4);
         for (k = 0; k < 4; k++)
             ptmp[n++] = faces[j++];
-        offsets[l+1] = offsets[l] + 5;
-        l++;
     }
 
     free (elements);
@@ -746,8 +736,8 @@ int main (int argc, char **argv)
     get_parent((int)rmin, (int)rmax, 0, np);
 
     printf("mixed %d -> %d\n", (int)rmin, (int)rmax);
-    if (cg_poly_elements_partial_write(cgfile, cgbase, cgzone,
-            cgsect, rmin, rmax, &elements[n], &offsets[rmin-1]) ||
+    if (cg_elements_partial_write(cgfile, cgbase, cgzone,
+            cgsect, rmin, rmax, &elements[n]) ||
         cg_parent_data_partial_write(cgfile, cgbase, cgzone,
             cgsect, rmin, rmax, ptmp))
         cg_error_exit();
@@ -758,8 +748,8 @@ int main (int argc, char **argv)
         rmax = rmin + 1;
         n = mixed_offset((int)rmin, nelems);
         get_parent((int)rmin, (int)rmax, 0, np);
-        if (cg_poly_elements_partial_write(cgfile, cgbase, cgzone,
-                cgsect, rmin, rmax, &elements[n], &offsets[rmin-1]) ||
+        if (cg_elements_partial_write(cgfile, cgbase, cgzone,
+                cgsect, rmin, rmax, &elements[n]) ||
             cg_parent_data_partial_write(cgfile, cgbase, cgzone,
                 cgsect, rmin, rmax, ptmp))
             cg_error_exit();
@@ -782,8 +772,8 @@ int main (int argc, char **argv)
         n = mixed_offset((int)rmin, nelems);
         get_parent((int)rmin, (int)rmax, 0, np);
         printf("mixed %d -> %d\n", (int)rmin, (int)rmax);
-        if (cg_poly_elements_partial_write(cgfile, cgbase, cgzone,
-                cgsect, rmin, rmax, &elements[n], &offsets[rmin-1]) ||
+        if (cg_elements_partial_write(cgfile, cgbase, cgzone,
+                cgsect, rmin, rmax, &elements[n]) ||
             cg_parent_data_partial_write(cgfile, cgbase, cgzone,
                 cgsect, rmin, rmax, ptmp))
             cg_error_exit();
@@ -795,7 +785,7 @@ int main (int argc, char **argv)
 
     if (cg_section_read(cgfile, cgbase, cgzone, cgsect, name,
             &type, &is, &ie, &k, &n) ||
-        cg_poly_elements_read(cgfile, cgbase, cgzone, cgsect, ibuf, offsets, pbuf))
+        cg_elements_read(cgfile, cgbase, cgzone, cgsect, ibuf, pbuf))
         cg_error_exit();
     if (strcmp(name, "Mixed") || type != CGNS_ENUMV(MIXED) || is != 1 ||
         ie != np || k != 0 || n != 1) {
@@ -833,10 +823,10 @@ int main (int argc, char **argv)
         printf("mixed %d -> %d\n", (int)rmin, (int)rmax);
         if (cg_ElementPartialSize(cgfile, cgbase, cgzone, cgsect,
                 rmin, rmax, &nr) ||
-            cg_poly_elements_partial_read(cgfile, cgbase, cgzone, cgsect,
-                rmin, rmax, ibuf, offsets, pbuf))
+            cg_elements_partial_read(cgfile, cgbase, cgzone, cgsect,
+                rmin, rmax, ibuf, pbuf))
             cg_error_exit();
-        if (nr != nn) puts("difference in mixed data size");
+        if (nr != nn) puts("diference in mixed data size");
         for (nf = 0, i = 0; i < nn; i++) {
             if (ibuf[i] != elements[n+i]) nf++;
         }
