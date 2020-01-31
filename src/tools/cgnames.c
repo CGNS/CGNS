@@ -294,7 +294,7 @@ static IDENTIFIER Identifier[] = {
 {"VorticityZ",                       0, 5, { 0,  0, -1,  0,  0,  0,  0,  0}}
 };
 
-#define NUM_IDENTIFIER (sizeof(Identifier)/sizeof(IDENTIFIER))
+#define NUM_IDENTIFIER ((int)(sizeof(Identifier)/sizeof(IDENTIFIER)))
 
 /*-----------------------------------------------------------------------*/
 
@@ -408,6 +408,7 @@ static int matches (char *p, char *s)
             case '\\':
                 if (!*++p)
                     return -1;
+                /* FALLTHRU */
             default:
                 if (*s++ != *p)
                     return 0;

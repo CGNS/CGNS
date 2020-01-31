@@ -4,7 +4,7 @@
 
 include_directories(${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH} ${OPENGL_INCLUDE_DIR})
 include_directories(../common)
-link_directories(. ../tkogl)
+link_directories("${CMAKE_CURRENT_BINARY_DIR}/../tkogl")
 if (CGNS_USE_SHARED)
   link_libraries(cgns_shared)
 else (CGNS_USE_SHARED)

@@ -366,11 +366,22 @@ static int check_parallel(cgns_file *cgfile)
 
 int cgp_mpi_comm(MPI_Comm comm)
 {
-    pcg_mpi_comm=comm;
-    if( cgio_configure(CG_CONFIG_HDF5_MPI_COMM, &comm) != -1) {
-      return CG_ERROR;
+    /* check if we are actually running a parallel program */
+    /* Flag is true if MPI_Init or MPI_Init_thread has been called and false otherwise. */
+    pcg_mpi_initialized = 0;
+    MPI_Initialized(&pcg_mpi_initialized);
+
+    if (pcg_mpi_initialized) {
+      if( cgio_configure(CG_CONFIG_HDF5_MPI_COMM, &comm) != -1) {
+	return CG_ERROR;
+      }
+
+      pcg_mpi_comm=comm;
+      MPI_Comm_rank(pcg_mpi_comm, &pcg_mpi_comm_rank);
+      MPI_Comm_size(pcg_mpi_comm, &pcg_mpi_comm_size);
     }
-    return CG_OK;
+
+    return pcg_mpi_initialized ? CG_OK : CG_ERROR;
 }
 
 int cgp_mpi_info(MPI_Info info)
@@ -415,14 +426,11 @@ int cgp_open(const char *filename, int mode, int *fn)
 {
     int ierr, old_type = cgns_filetype;
 
-
-    MPI_Comm_rank(pcg_mpi_comm, &pcg_mpi_comm_rank);
-    MPI_Comm_size(pcg_mpi_comm, &pcg_mpi_comm_size);
-
-    /* Flag is true if MPI_Init or MPI_Init_thread has been called and false otherwise. */
-    pcg_mpi_initialized = 0;
-    /* check if we are actually running a parallel program */
-    MPI_Initialized(&pcg_mpi_initialized);
+    /* Initialize communicators if cgp_mpi_comm() was not called by
+       client */
+    if (pcg_mpi_comm == MPI_COMM_NULL) {
+      cgp_mpi_comm(MPI_COMM_WORLD);
+    }
 
     /* Flag this as a parallel access */
     strcpy(hdf5_access,"PARALLEL");	

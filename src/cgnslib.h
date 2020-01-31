@@ -869,6 +869,14 @@ CGNSDLL int cg_family_name_read(int file_number, int B, int F,
 CGNSDLL int cg_family_name_write(int file_number, int B, int F,
 	const char *name, const char *family);
 
+/* FamilyTree extension */ /* ** FAMILY TREE ** */
+CGNSDLL int cg_node_family_write( const char* family_name, int* F);
+CGNSDLL int cg_node_nfamilies( int* nfamilies );
+CGNSDLL int cg_node_family_read( int F, char* family_name, int* nFamBC, int *nGeo );
+CGNSDLL int cg_node_family_name_write( const char* node_name, const char* family_name );
+CGNSDLL int cg_node_nfamily_names( int* nnames );
+CGNSDLL int cg_node_family_name_read(int N, char* node_name, char* family_name );
+  
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FamilyName_t Nodes                                *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -885,18 +893,31 @@ CGNSDLL int cg_multifam_write(const char *name, const char *family);
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_fambc_read(int file_number, int B, int F, int BC,
-	char *fambc_name, CGNS_ENUMT(BCType_t) *bocotype);
+    char *fambc_name, CGNS_ENUMT(BCType_t) *bocotype);
 CGNSDLL int cg_fambc_write(int file_number, int B, int F,
-	const char * fambc_name, CGNS_ENUMT(BCType_t) bocotype, int *BC);
+    const char * fambc_name, CGNS_ENUMT(BCType_t) bocotype, int *BC);
+
+/* FamilyTree extension */ /* ** FAMILY TREE ** */
+
+CGNSDLL int cg_node_fambc_read( int BC, char* fambc_name,
+        CGNS_ENUMT(BCType_t) *bocotype);
+CGNSDLL int cg_node_fambc_write( const char* fambc_name,
+        CGNS_ENUMT(BCType_t) bocotype, int *BC );
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GeometryReference_t Nodes                         *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL int cg_geo_read(int file_number, int B, int F, int G, char *geo_name,
-	char **geo_file, char *CAD_name, int *npart);
+    char **geo_file, char *CAD_name, int *npart);
 CGNSDLL int cg_geo_write(int file_number, int B, int F, const char * geo_name,
-	const char * filename, const char * CADname, int *G);
+    const char * filename, const char * CADname, int *G);
+
+/* FamilyTree extension */ /* ** FAMILY TREE ** */
+CGNSDLL int cg_node_geo_read( int G, char *geo_name,
+        char **geo_file, char *CAD_name, int *npart );
+CGNSDLL int cg_node_geo_write( const char *geo_name,
+        const char *filename, const char *CADname, int *G);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GeometryEntity_t Nodes                            *
@@ -906,6 +927,10 @@ CGNSDLL int cg_part_read(int file_number, int B, int F, int G, int P,
 	char *part_name);
 CGNSDLL int cg_part_write(int file_number, int B, int F, int G,
 	const char * part_name, int *P);
+
+/* FamilyTree extension */ /* ** FAMILY TREE ** */
+CGNSDLL int cg_node_part_read(int G, int P, char *part_name);
+CGNSDLL int cg_node_part_write(int G, const char * part_name, int *P);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GridCoordinates_t Nodes                           *
