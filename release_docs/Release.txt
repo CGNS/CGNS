@@ -1,9 +1,9 @@
-# CGNS version 3.4.0
+# CGNS version 3.4.1
 
-This document describes the difference between CGNS 3.3.1 and
-CGNS 3.4.0, and contains information on known problems in CGNS 3.4.0.
+This document describes the difference between CGNS 3.4.0 and
+CGNS 3.4.1 (patch), and contains information on known problems in CGNS 3.4.1 (patch).
 
-Links to the CGNS 3.4.0 source code can be found at:
+Links to the CGNS 3.4.1 (patch) source code can be found at:
 
 http://cgns.org/download.html
 
@@ -18,93 +18,73 @@ http://cgns.org
 # CONTENTS
 
 New Features
-Bug Fixes since CGNS 3.3.1
+Bug Fixes since CGNS 3.4.0
 Known Problems
 Supported platforms
 
 # New Features
 ## Configuration:
 
-    Enforce the HDF5 version >= 1.8 is used in building HDF5. (CGNS-150).
-    Autotools: CGNS will find and link the compression libraries, szip and zlib, required by HDF5. This 
-    occurs automatically if neither --with-zlib or --with-szip are not specified (CGNS-156).
+   None
 
 ## Library:
 
-    Changed default CGNS to 1.8 HDF5 file format.
-               -- only for HDF5 versions > 1.10.2.
-    CPEX 40 Rind Plane Indexing (CGNS-87)
-    CPEX 41 NGON modification proposal (CGNS-121)
+   None
 
 ## Parallel Library:
 
-    None
+   None
 
 ## Fortran Library:
 
-   Added support for NAG Fortran compilers (CGNS-107)
+   None
 
 ## Tools:
 
-    None
+   None
 
 # Bug Fixes since CGNS 3.3.1 Release
 
 # Configuration:
 
-    * Order include directives to get correct includes, cmake (PR 109) 
-    * make clean does not remove executables in Test_UserGuideCode (CGNS-99)
-    * Windows builds: CGNS_ENABLE_LFS is ignored (CGNS-117)
-    * Sun's make implemenation fails to compile fortran (CGNS-28)
-    * Some systems need to explicitly link to libdl (CGNS-128)
-    * CGNS fails in fortran test with PGI 17 compiler (CGNS-127)
-    * CGNS fails to find the lib64 HDF5 library (CGNS-123)
-    * CGNS fails to compile on Windows with Fortran enabled (CGNS-148)
-    * Can't compile using MSVC & IVF on windows (MSVS 14) (CGNS-146)
-    * Fix szip linking (PR 97)
-    * RPATH handling for MacOSX (Darwin) (PR 88)
-    * fix tests failing when compiled for 64bit (PR 85)
-    * remove variable length array to be able to build pcgnslib.c with VC (CGNS-147)
-    * Build parallel CGNS on Windows (PR 69)
-    * Cmake fixups (PR 58)
-    * If check needs to link, then need library path (PR 52)
-    * Specify STATIC when adding cgns_static lib (PR 46)
-    * _stat32i64 is msvc-specific (PR 45)
+   None
 
 # Library:
+ 
+## ISSUE [1]
 
-    * Eliminate potential integer overflow / undefined behavior (PR 106) 
-    * Partial write of unstructured MIXED element sets fails with CGNS > 3.3.1 (CGNS-151)
-    * If processor has no data, set end = start = 0 (CGNS-133)
-    * Large files fail on 64-bit windows (CGNS-83)
-    * mesh_dim may be exceed the limit of 32-bit integer (CGNS-131)
-    * RUNPARALLEL is defined but never used. (CGNS-96)
-    * typo in cgnscheck print_units cg_TemperatureUnitsName index (CGNS-126)
-    * cgp_mpi_comm return value unclear (CGNS-111)
-    * Changed ADFH_Read_Data and ADFH_Write_Data to honor the cgp_pio_mode (PR 98)
-    * Support for std C on linux (PR 96)
-    * Null check fix (PR 94)
-    * Eliminate dead / unreachable code (PR 93)
-    * Fix parallel write (PR 86)
-    * Add missing argument to cgi_error call (PR 84)
-    * Fix BC type string constant FamilySpecified_s (PR 83)
-    * Remove double condition test (PR 82)
-    * remove some gcc warnings (PR 78)
-    * remove variable length array to be able to build pcgnslib.c with VC (PR 76)
-    * Fix bad if test (PR 70)
-    * Eliminate memory leaks in cgi_read_ziter (PR 68)
-    * Improve error messages, fix error check (fixed) (PR 66)
-    * Drop obsolete matherr hack (PR 55)
+     In the cgnslib code, forward compatibility is always ensured by cg_open function, which prevents major version incompatibilities and returns gracefully. This well-designed code provision does not hold for cgnslib v3.4.0, which has the same major version number, but significantly different NGON data structures. Thus, the library cannot protect the API users anymore and unexpected software behaviors might occur.
+     
+     So, if one upgrades to the new cgnslib 3.4.0, they will create CGNS files that will crash when read by other parties who are still using the previous v3.x libraries. This will lead to problems in the community whose aim is to maintain a general, portable and extensible standard that makes it easier to share files between sites and collaborators.
+
+### RESOLUTION
+     
+     Patch 3.4.0 by removing CPEX 41 NGON modification.
+
+     Reintroduce CPEX 41 in the 4.0.0 release.
+
+### ACTION
+    
+Removed CPEX 41 NGON modification proposal (CGNS-121); these commits were removed:
+
+* Revert "support new ngon layout"
+         This reverts commit 83fc242833d66dd6bb3b6b0f03dc5d71ae59c162.
+
+* Revert "fix uninitialized memory for offset."
+         This reverts commit 3fdc9d89ac1b452fc95abd6849f1b07535b500ba.
+  
+* Revert "fix cgnscheck due to new memory layout with ngon_n and nface_n"
+         This reverts commit 2c09bad0efc4b0042d1b69c3c59309a6f2ea74b9.
+
+[1] 1-28-2020 CGNS Steering Committee Minutes
 
 # Fortran:
 
-    * Add missing dll export symbols from Fortran module. (PR 59)
+  None
 
 # Tools:
 
-    * Update cgnsutil.c (PR 89)
-    * patch cgnscheck (PR 72)
-    * Fix cgnsview linking to HDF5 libs. (PR 56)
+  None
 
 ## Known Problems
 
