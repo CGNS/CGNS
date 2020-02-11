@@ -1,9 +1,9 @@
-# CGNS version 3.4.0
+# CGNS version 4.0.0
 
 This document describes the difference between CGNS 3.3.1 and
-CGNS 3.4.0, and contains information on known problems in CGNS 3.4.0.
+CGNS 4.0.0, and contains information on known problems in CGNS 4.0.0.
 
-Links to the CGNS 3.4.0 source code can be found at:
+Links to the CGNS 4.0.0 source code can be found at:
 
 http://cgns.org/download.html
 
@@ -35,6 +35,7 @@ Supported platforms
                -- only for HDF5 versions > 1.10.2.
     CPEX 40 Rind Plane Indexing (CGNS-87)
     CPEX 41 NGON modification proposal (CGNS-121)
+    This release solves issue with cgnslib 3.4.0 concerning forward compatibility (1-28-2020 CGNS Steering Committee Minutes).
 
 ## Parallel Library:
 
@@ -185,18 +186,15 @@ Platform                             |  C        | Fortran |  Fortran
 -------------------------------------|-----------|---------|----------
 SunOS 5.11 32-bit                    |   n       |  y      |     n      
 SunOS 5.11 64-bit                    |   n       |  y      |     n
-Windows 7                            |   n       |  n      |     n
-Windows 7 x64                        |   n       |  n      |     n
-Windows 7 Cygwin                     |   n       |  n      |     n  
-Windows 8.1                          |   n       |  n      |     n
-Windows 8.1 x64                      |   n       |  n      |     n
 Windows 10                           |   n       |  n      |     n
 Windows 10  x64                      |   n       |  n      |     n
 Mac OS X Yosemeti 10.10.5 64-bit     |   n       |  y      |     n
 Mac OS X El Capitan 10.11.6 64-bit   |   n       |  y      |     n
 MacOS High Sierra 10.13.6 64-bit     |   n       |  y      |     n
-AIX 6.1 32- and 64-bit               |   n       |  y      |     n
 CentOS 7.1 Linux 3.10.0 x86_64 PGI   |   n       |  y      |     n  
 CentOS 7.1 Linux 3.10.0 x86_64 GNU   |   y       |  y      |     y
 CentOS 7.1 Linux 3.10.0 x86_64 Intel |   n       |  y      |     n  
+CentOS 8.1 Linux 4.18.0 x86_64 PGI   |   n       |  n      |     n  
+CentOS 8.1 Linux 4.18.0 x86_64 GNU   |   n       |  n      |     n
+CentOS 8.1 Linux 4.18.0 x86_64 Intel |   n       |  n      |     n 
 Linux 2.6.32-431.11.2.el6.ppc64      |   n       |  y      |     n
