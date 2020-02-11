@@ -504,7 +504,7 @@ int is_file_old_version(char *inpfile)
 int update_cgns_version(double cgio_num, double root_id)
 {
     double node_id;
-    float cgns_version = 3.40;
+    float cgns_version = 4.00;
     cgsize_t dim_vals[12];
 
     if (0 == cgio_get_node_id (cgio_num, root_id, "CGNSLibraryVersion", &node_id)) {
