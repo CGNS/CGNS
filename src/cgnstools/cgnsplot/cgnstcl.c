@@ -96,6 +96,7 @@ typedef struct {
     CGNS_ENUMT(ElementType_t) elemtype;
     cgsize_t nelems;
     cgsize_t *elems;
+    cgsize_t *elem_offsets;
     int npoly;
     Face **poly;
     CutData cut;
@@ -299,6 +300,8 @@ static void free_all (void)
 #ifndef NO_CUTTING_PLANE
             if (zones[nz].regs[nr].nelems)
                 free (zones[nz].regs[nr].elems);
+            if (zones[nz].regs[nr].nelems && zones[nz].regs[nr].elem_offsets)
+                free (zones[nz].regs[nr].elem_offsets);
             if (zones[nz].regs[nr].npoly)
                 free (zones[nz].regs[nr].poly);
             if (zones[nz].regs[nr].cut.nelems)
@@ -1592,7 +1595,7 @@ static void edge_elements (Regn *r, cgsize_t *conn)
 
 /*-------------------------------------------------------------------*/
 
-static void face_elements (Regn *r, cgsize_t *conn)
+static void face_elements (Regn *r, cgsize_t *conn, cgsize_t *conn_offsets)
 {
     int i, ip;
     cgsize_t ne, nn, istart, nelems;
@@ -1631,7 +1634,7 @@ static void face_elements (Regn *r, cgsize_t *conn)
                 ip = 4;
                 break;
             case CGNS_ENUMV(NGON_n):
-                ip = (int)conn[nn++];
+                ip = (int)(conn_offsets[ne+1]-conn_offsets[ne]);
                 break;
             default:
                 if (type < CGNS_ENUMV(NODE) ||
@@ -1662,7 +1665,7 @@ static void face_elements (Regn *r, cgsize_t *conn)
 
 /*-------------------------------------------------------------------*/
 
-static void exterior_faces (Zone *z, Regn *r, cgsize_t *conn)
+static void exterior_faces (Zone *z, Regn *r, cgsize_t *conn, cgsize_t *conn_offsets)
 {
     int i, j, nf, ip, flag;
     cgsize_t ne, nn, istart, nelems;
@@ -1684,11 +1687,10 @@ static void exterior_faces (Zone *z, Regn *r, cgsize_t *conn)
         FATAL ("exterior_faces:face hash table creation failed");
 
     if (elemtype == CGNS_ENUMV(NFACE_n)) {
-        for (nn = 0, ne = 0; ne < nelems; ne++) {
+        for (ne = 0; ne < nelems; ne++) {
             flag = (ne < rind0 || ne >= rind1) ? 1 : 0;
-            nf = conn[nn++];
-            for (j = 0; j < nf; j++) {
-                face = find_face (z, abs(conn[nn + j]));
+            for (j = conn_offsets[ne]; j < conn_offsets[ne+1]; j++) {
+                face = find_face (z, abs(conn[j]));
                 if (face != NULL) {
                     pf = (Face *) HashFind (facehash, face);
                     if (NULL == pf) {
@@ -1706,7 +1708,6 @@ static void exterior_faces (Zone *z, Regn *r, cgsize_t *conn)
                     }
                 }
             }
-            nn += nf;
         }
     }
     else {
@@ -1810,7 +1811,7 @@ static void exterior_faces (Zone *z, Regn *r, cgsize_t *conn)
 
 /*-------------------------------------------------------------------*/
 
-static void polyhedral_faces (Zone *z, Regn *r, cgsize_t *conn)
+static void polyhedral_faces (Zone *z, Regn *r, cgsize_t *conn, cgsize_t *conn_offsets)
 {
     int j, nf, flag;
     cgsize_t ne, nn, istart, nelems, nfaces, id;
@@ -1833,9 +1834,8 @@ static void polyhedral_faces (Zone *z, Regn *r, cgsize_t *conn)
     nfaces = 0;
     for (nn = 0, ne = 0; ne < nelems; ne++) {
         flag = (ne < rind0 || ne >= rind1) ? 1 : 0;
-        nf = conn[nn++];
-        for (j = 0; j < nf; j++) {
-            id = conn[nn + j];
+        for (j = conn_offsets[ne]; j < conn_offsets[ne+1]; j++) {
+            id = conn[j];
             face = find_face (z, abs(id));
             poly.face = face;
             pf = (PolyFace *) HashFind (facehash, &poly);
@@ -1851,9 +1851,8 @@ static void polyhedral_faces (Zone *z, Regn *r, cgsize_t *conn)
                     pf->flags &= ~1;
                 pf->flags |= 2;
             }
-            conn[nn + j] = id < 0 ? -(pf->num) : pf->num;
+            conn[j] = id < 0 ? -(pf->num) : pf->num;
         }
-        nn += nf;
     }
 
     nfaces = (cgsize_t) HashSize (facehash);
@@ -1891,6 +1890,7 @@ static void polyhedral_faces (Zone *z, Regn *r, cgsize_t *conn)
     r->elemtype = CGNS_ENUMV(NFACE_n);
     r->nelems = nelems;
     r->elems = conn;
+    r->elem_offsets = conn_offsets;
 }
 
 /*-------------------------------------------------------------------*/
@@ -1998,7 +1998,7 @@ static int unstructured_zone (Tcl_Interp *interp)
     int nsect, nints, nconns, nholes, nbocos, nrmlindex[3];
     int transform[3], rind[2];
     cgsize_t is, ie, np, n, ne, nf;
-    cgsize_t nelem, elemsize, *conn;
+    cgsize_t nelem, elemsize, *conn, *conn_offsets;
     cgsize_t range[6], d_range[6];
     CGNS_ENUMT(GridLocation_t) location;
     CGNS_ENUMT(GridConnectivityType_t) type;
@@ -2064,10 +2064,25 @@ static int unstructured_zone (Tcl_Interp *interp)
 
         nelem = ie - is + 1;
         conn = (cgsize_t *) MALLOC (funcname, (size_t)elemsize * sizeof(cgsize_t));
-        if (cg_elements_read (cgnsfn, cgnsbase, cgnszone, ns, conn, 0)) {
-            free (conn);
-            Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
-            return 1;
+        conn_offsets = NULL;
+        if (elemtype == CGNS_ENUMV(MIXED) ||
+            elemtype == CGNS_ENUMV(NGON_n) ) {
+            conn_offsets = (cgsize_t *) MALLOC (funcname, (size_t) (nelem+1)*sizeof(cgsize_t));
+            if (cg_poly_elements_read (cgnsfn, cgnsbase, cgnszone, ns, conn, conn_offsets, 0)) {
+                free (conn);
+                if (conn_offsets) {
+                    free(conn_offsets);
+                }
+                Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
+                return 1;
+            }
+        }
+        else {
+            if (cg_elements_read (cgnsfn, cgnsbase, cgnszone, ns, conn, 0)) {
+                free (conn);
+                Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
+                return 1;
+            }
         }
 
         /* check element indices */
@@ -2097,16 +2112,15 @@ static int unstructured_zone (Tcl_Interp *interp)
         }
         else if (elemtype == CGNS_ENUMV(NGON_n)) {
             z->regs[nr].dim = 2;
-            for (n = 0, ne = 0; ne < nelem; ne++) {
-                ip = (int)conn[n++];
-                for (i = 0; i < ip; i++) {
+            for (ne = 0; ne < nelem; ne++) {
+                ip = (int) conn_offsets[ne+1];
+                for (n = conn_offsets[ne]; n < conn_offsets[ne+1]; n++) {
                     if (conn[n] < 1 || conn[n] > z->nnodes) {
                         strcpy(z->regs[nr].errmsg, "invalid element index");
                         break;
                     }
-                    n++;
                 }
-                if (i < ip) break;
+                if (n < ip) break;
             }
         }
         else {
@@ -2128,15 +2142,17 @@ static int unstructured_zone (Tcl_Interp *interp)
             if (z->regs[nr].dim == 1)
                 edge_elements(&z->regs[nr], conn);
             else if (z->regs[nr].dim == 2)
-                face_elements (&z->regs[nr], conn);
+                face_elements (&z->regs[nr], conn, conn_offsets);
             else
-                exterior_faces (z, &z->regs[nr], conn);
+                exterior_faces (z, &z->regs[nr], conn, conn_offsets);
 
 #ifndef NO_CUTTING_PLANE
             if (z->regs[nr].dim > 1) {
                 z->regs[nr].elemtype = elemtype;
                 z->regs[nr].nelems = nelem;
                 z->regs[nr].elems = conn;
+                z->regs[nr].elem_offsets = conn_offsets;
+
                 /* fix element indexing */
                 cg_npe (elemtype, &ip);
                 for (n = 0, ne = 0; ne < nelem; ne++) {
@@ -2145,7 +2161,7 @@ static int unstructured_zone (Tcl_Interp *interp)
                         cg_npe ((CGNS_ENUMT(ElementType_t))nb, &ip);
                     }
                     else if (elemtype == CGNS_ENUMT(NGON_n)) {
-                        ip = (int)conn[n++];
+                        ip = (int)(conn_offsets[ne+1] - conn_offsets[ne]);
                     }
                     for (i = 0; i < ip; i++) {
                         (conn[n])--;
@@ -2168,8 +2184,10 @@ static int unstructured_zone (Tcl_Interp *interp)
             nelem = z->regs[ns].data[2] - z->regs[ns].data[1] + 1;
             cg_ElementDataSize (cgnsfn, cgnsbase, cgnszone, ns+1, &elemsize);
             conn = (cgsize_t *) MALLOC (funcname, (size_t)elemsize * sizeof(cgsize_t));
-            if (cg_elements_read (cgnsfn, cgnsbase, cgnszone, ns+1, conn, 0)) {
+            conn_offsets = (cgsize_t *) MALLOC (funcname, (size_t) (nelem+1)*sizeof(cgsize_t));
+            if (cg_poly_elements_read (cgnsfn, cgnsbase, cgnszone, ns+1, conn, conn_offsets, 0)) {
                 free (conn);
+                free(conn_offsets);
                 Tcl_SetResult (interp, (char *)cg_get_error(), TCL_STATIC);
                 return 1;
             }
@@ -2177,21 +2195,21 @@ static int unstructured_zone (Tcl_Interp *interp)
             /* check element indices */
 
             for (n = 0, ne = 0; ne < nelem; ne++) {
-                ip = (int)conn[n++];
-                for (i = 0; i < ip; i++) {
-                    if (NULL == find_face(z, abs(conn[n++]))) {
-                        strcpy(z->regs[ns].errmsg, "invalid face index");
+                ip = (int) conn_offsets[ne+1];
+                for (n = conn_offsets[ne]; n < conn_offsets[ne+1]; n++) {
+                    if (NULL == find_face(z, abs(conn[n]))) {
+                        strcpy(z->regs[nr].errmsg, "invalid face index");
                         break;
                     }
                 }
-                if (i < ip) break;
+                if (n < ip) break;
             }
 
             if (ne == nelem) {
 #ifndef NO_CUTTING_PLANE
-                polyhedral_faces (z, &z->regs[ns], conn);
+                polyhedral_faces (z, &z->regs[ns], conn, conn_offsets);
 #else
-                exterior_faces (z, &z->regs[ns], conn);
+                exterior_faces (z, &z->regs[ns], conn, conn_offsets);
                 free (conn);
 #endif
             }
@@ -4154,7 +4172,7 @@ static cgsize_t find_elements ()
 
             if (type == CGNS_ENUMV(NGON_n)) {
                 for (n = 0, ne = 0; ne < r->nelems; ne++) {
-                    nn = r->elems[n++];
+                    nn = r->elem_offsets[ne+1] - r->elem_offsets[ne];
                     if (nn > 2 &&
                         classify_polygon(z, nn, &r->elems[n])) {
                         if (nelems >= maxelems) {
@@ -4162,14 +4180,14 @@ static cgsize_t find_elements ()
                             elems = (cgsize_t *) REALLOC ("find_elements",
                                 (size_t)maxelems * sizeof(cgsize_t), elems);
                         }
-                        elems[nelems++] = n - 1;
+                        elems[nelems++] = ne;
                     }
                     n += nn;
                 }
             }
             else if (type == CGNS_ENUMV(NFACE_n)) {
                 for (n = 0, ne = 0; ne < r->nelems; ne++) {
-                    nf = r->elems[n++];
+                    nf = r->elem_offsets[ne+1] - r->elem_offsets[ne];
                     for (nn = 0; nn < nf; nn++) {
                         f = r->poly[abs(r->elems[n+nn])-1];
                         if (f->nnodes > 2 &&
@@ -4179,7 +4197,7 @@ static cgsize_t find_elements ()
                                 elems = (cgsize_t *) REALLOC ("find_elements",
                                     (size_t)maxelems * sizeof(cgsize_t), elems);
                             }
-                            elems[nelems++] = n - 1;
+                            elems[nelems++] = ne;
                             break;
                         }
                     }
@@ -4917,13 +4935,13 @@ static cgsize_t find_intersects ()
             for (n = 0, ne = 0; ne < r->cut.nelems; ne++) {
                 n = r->cut.elems[ne];
                 if (r->elemtype == CGNS_ENUMV(NGON_n)) {
-                    nnodes = r->elems[n++];
-                    intersect_polygon(nz, nnodes, &r->elems[n], edgehash);
+                    nnodes = r->elem_offsets[n+1]-r->elem_offsets[n];
+                    intersect_polygon(nz, nnodes, &r->elems[r->elem_offsets[n]], edgehash);
                 }
                 else if (r->elemtype == CGNS_ENUMV(NFACE_n)) {
-                    nfaces = r->elems[n++];
+                    nfaces = r->elem_offsets[n+1]-r->elem_offsets[n];
                     for (nf = 0; nf < nfaces; nf++) {
-                        f = r->poly[abs(r->elems[n+nf])-1];
+                        f = r->poly[abs(r->elems[r->elem_offsets[n]+nf])-1];
                         intersect_polygon(nz, f->nnodes, f->nodes, edgehash);
                     }
                 }
@@ -5023,7 +5041,7 @@ static void draw_elements (int mode)
             if (type == CGNS_ENUMV(NGON_n)) {
                 for (ne = 0; ne < r->cut.nelems; ne++) {
                     nn = r->cut.elems[ne];
-                    nnodes = r->elems[nn++];
+                    nnodes = r->elem_offsets[nn+1]- r->elem_offsets[nn];
                     if (nnodes < 3) continue;
                     if (nnodes == 3)
                         glBegin(GL_TRIANGLES);
@@ -5031,18 +5049,18 @@ static void draw_elements (int mode)
                         glBegin(GL_QUADS);
                     else
                         glBegin(GL_POLYGON);
-                    glNormal3fv(face_normal(z, nnodes, &r->elems[nn]));
-                    for (i = 0; i < nnodes; i++)
-                        glVertex3fv(z->nodes[r->elems[nn++]]);
+                    glNormal3fv(face_normal(z, nnodes, &r->elems[r->elem_offsets[nn]]));
+                    for (i = r->elem_offsets[nn]; i < r->elem_offsets[nn+1]; i++)
+                        glVertex3fv(z->nodes[r->elems[i]]);
                     glEnd();
                 }
             }
             else if (type == CGNS_ENUMV(NFACE_n)) {
                 for (ne = 0; ne < r->cut.nelems; ne++) {
                     nn = r->cut.elems[ne];
-                    nf = r->elems[nn++];
-                    for (j = 0; j < nf; j++, nn++) {
-                        f = r->poly[abs(r->elems[nn])-1];
+                    nf = r->elem_offsets[nn+1]- r->elem_offsets[nn];
+                    for (j = 0; j < nf; j++) {
+                        f = r->poly[abs(r->elems[r->elem_offsets[nn]+j])-1];
                         if (f->nnodes < 3) continue;
                         if (f->nnodes == 3)
                             glBegin(GL_TRIANGLES);
@@ -5050,7 +5068,7 @@ static void draw_elements (int mode)
                             glBegin(GL_QUADS);
                         else
                             glBegin(GL_POLYGON);
-                        if (r->elems[nn] < 0) {
+                        if (r->elems[r->elem_offsets[nn]+j] < 0) {
                             for (i = 0; i < 3; i++)
                                 norm[i] = -f->normal[i];
                         }
