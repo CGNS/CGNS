@@ -43,7 +43,7 @@ Supported platforms
 
    None
 
-# Bug Fixes since CGNS 3.3.1 Release
+# Bug Fixes since CGNS 3.4.0 Release
 
 # Configuration:
 
@@ -53,7 +53,7 @@ Supported platforms
  
 ## ISSUE [1]
 
-     In the cgnslib code, forward compatibility is always ensured by cg_open function, which prevents major version incompatibilities and returns gracefully. This well-designed code provision does not hold for cgnslib v3.4.0, which has the same major version number, but significantly different NGON data structures. Thus, the library cannot protect the API users anymore and unexpected software behaviors might occur.
+     In the cgnslib code, forward compatibility is always ensured by cg_open function, which prevents major version incompatibilities and returns gracefully. This well-designed code provision does not hold for cgnslib v3.4.0, which has the same major version number, but significantly different NGON data structures. Thus, the library cannot protect the API users anymore, and unexpected software behaviors might occur.
      
      So, if one upgrades to the new cgnslib 3.4.0, they will create CGNS files that will crash when read by other parties who are still using the previous v3.x libraries. This will lead to problems in the community whose aim is to maintain a general, portable and extensible standard that makes it easier to share files between sites and collaborators.
 
