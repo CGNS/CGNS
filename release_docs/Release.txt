@@ -1,9 +1,9 @@
-# CGNS version 3.4.1
+# CGNS version 4.0.0
 
-This document describes the difference between CGNS 3.4.0 and
-CGNS 3.4.1 (patch), and contains information on known problems in CGNS 3.4.1 (patch).
+This document describes the difference between CGNS 3.x and
+CGNS 4.0.0, and contains information on known problems in CGNS 4.0.0.
 
-Links to the CGNS 3.4.1 (patch) source code can be found at:
+Links to the CGNS 4.0.0 source code can be found at:
 
 http://cgns.org/download.html
 
@@ -18,7 +18,7 @@ http://cgns.org
 # CONTENTS
 
 New Features
-Bug Fixes since CGNS 3.4.0
+Bug Fixes since CGNS 3.x
 Known Problems
 Supported platforms
 
@@ -29,7 +29,9 @@ Supported platforms
 
 ## Library:
 
-   None
+    CPEX 41 NGON modification proposal (CGNS-121)
+     This release solves issue with CPEX 41 in cgnslib 3.4.0 concerning forward compatibility 
+    (1-28-2020 CGNS Steering Committee Minutes).
 
 ## Parallel Library:
 
@@ -43,7 +45,7 @@ Supported platforms
 
    None
 
-# Bug Fixes since CGNS 3.4.0 Release
+# Bug Fixes since CGNS 3.x Release
 
 # Configuration:
 
@@ -52,31 +54,8 @@ Supported platforms
 # Library:
  
 ## ISSUE [1]
-
-     In the cgnslib code, forward compatibility is always ensured by cg_open function, which prevents major version incompatibilities and returns gracefully. This well-designed code provision does not hold for cgnslib v3.4.0, which has the same major version number, but significantly different NGON data structures. Thus, the library cannot protect the API users anymore, and unexpected software behaviors might occur.
-     
-     So, if one upgrades to the new cgnslib 3.4.0, they will create CGNS files that will crash when read by other parties who are still using the previous v3.x libraries. This will lead to problems in the community whose aim is to maintain a general, portable and extensible standard that makes it easier to share files between sites and collaborators.
-
-### RESOLUTION
-     
-     Patch 3.4.0 by removing CPEX 41 NGON modification.
-
-     Reintroduce CPEX 41 in the 4.0.0 release.
-
-### ACTION
-    
-Removed CPEX 41 NGON modification proposal (CGNS-121); these commits were removed:
-
-* Revert "support new ngon layout"
-         This reverts commit 83fc242833d66dd6bb3b6b0f03dc5d71ae59c162.
-
-* Revert "fix uninitialized memory for offset."
-         This reverts commit 3fdc9d89ac1b452fc95abd6849f1b07535b500ba.
   
-* Revert "fix cgnscheck due to new memory layout with ngon_n and nface_n"
-         This reverts commit 2c09bad0efc4b0042d1b69c3c59309a6f2ea74b9.
-
-[1] 1-28-2020 CGNS Steering Committee Minutes
+   None
 
 # Fortran:
 
@@ -165,18 +144,15 @@ Platform                             |  C        | Fortran |  Fortran
 -------------------------------------|-----------|---------|----------
 SunOS 5.11 32-bit                    |   n       |  y      |     n      
 SunOS 5.11 64-bit                    |   n       |  y      |     n
-Windows 7                            |   n       |  n      |     n
-Windows 7 x64                        |   n       |  n      |     n
-Windows 7 Cygwin                     |   n       |  n      |     n  
-Windows 8.1                          |   n       |  n      |     n
-Windows 8.1 x64                      |   n       |  n      |     n
 Windows 10                           |   n       |  n      |     n
 Windows 10  x64                      |   n       |  n      |     n
 Mac OS X Yosemeti 10.10.5 64-bit     |   n       |  y      |     n
 Mac OS X El Capitan 10.11.6 64-bit   |   n       |  y      |     n
 MacOS High Sierra 10.13.6 64-bit     |   n       |  y      |     n
-AIX 6.1 32- and 64-bit               |   n       |  y      |     n
 CentOS 7.1 Linux 3.10.0 x86_64 PGI   |   n       |  y      |     n  
 CentOS 7.1 Linux 3.10.0 x86_64 GNU   |   y       |  y      |     y
 CentOS 7.1 Linux 3.10.0 x86_64 Intel |   n       |  y      |     n  
+CentOS 8.1 Linux 4.18.0 x86_64 PGI   |   n       |  n      |     n  
+CentOS 8.1 Linux 4.18.0 x86_64 GNU   |   n       |  n      |     n
+CentOS 8.1 Linux 4.18.0 x86_64 Intel |   n       |  n      |     n 
 Linux 2.6.32-431.11.2.el6.ppc64      |   n       |  y      |     n
