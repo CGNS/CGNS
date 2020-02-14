@@ -9,7 +9,7 @@
 #---------------------------------#
 
 # version format
-version: 3.3.{build}
+version: 3.4.{build}
 
 # branches to build
 branches:

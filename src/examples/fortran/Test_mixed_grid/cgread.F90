@@ -50,7 +50,6 @@
 
 ! Replace with the following fixed size, but without understanding the problem
 	integer(cgsize_t) elements(8000), parent_data(4000)
-	integer(cgsize_t) connect_offsets(8000)
 	double precision NormalListDouble(3000)
 	real*4 NormalListSingle(3000)
 
@@ -504,15 +503,9 @@
 		    write(6,113)'Range= ',start,end
 		    if (nbndry .ne. 0) write(6,102)'Sorted elements'
 
-		    if (type .ge. MIXED) then
-		        call cg_poly_elements_read_f(cg, base, zone, sect, &
-		            elements, connect_offsets, parent_data, ier)
-		        if (ier.eq.ERROR)  call cg_error_exit_f
-		    else
-		        call cg_elements_read_f(cg, base, zone, sect, &
-	                    elements, parent_data, ier)
-		        if (ier.eq.ERROR)  call cg_error_exit_f
-		    endif
+		    call cg_elements_read_f(cg, base, zone, sect, &
+                       elements, parent_data, ier)
+		    if (ier.eq.ERROR)  call cg_error_exit_f
 
 		    nelem = end-start+1
 		    write(6,102)'Element Connectivity:'

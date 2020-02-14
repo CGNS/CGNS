@@ -518,7 +518,7 @@ static void write_volume_cells (FILE *fp, int nz)
     int elemcnt, elemsize;
     int *types, cell[9];
     cgsize_t is, ie, nelems, maxsize, maxelems;
-    cgsize_t size, *conn, *conn_offset;
+    cgsize_t size, *conn;
     CGNS_ENUMT(ElementType_t) elemtype, et;
     char name[33];
 
@@ -552,10 +552,7 @@ static void write_volume_cells (FILE *fp, int nz)
         if (elemtype < CGNS_ENUMV(TETRA_4) || elemtype > CGNS_ENUMV(MIXED)) continue;
         nelems = ie - is + 1;
         if (elemtype == CGNS_ENUMV(MIXED)) {
-            conn_offset = (cgsize_t *) malloc ((size_t)(nelems + 1) * sizeof(cgsize_t));
-            if (conn_offset == NULL)
-                FATAL ("malloc failed for element connectivity offset");
-            if (cg_poly_elements_read (cgnsfn, cgnsbase, nz, ns, conn, conn_offset, NULL))
+            if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL))
                 FATAL (NULL);
             for (i = 0, n = 0; n < nelems; n++) {
                 et = (int)conn[i++];
@@ -589,7 +586,6 @@ static void write_volume_cells (FILE *fp, int nz)
                     FATAL ("invalid element type in MIXED");
                 i += nn;
             }
-            free(conn_offset);
         }
         else {
             switch (elemtype) {
@@ -646,18 +642,8 @@ static void write_volume_cells (FILE *fp, int nz)
             FATAL (NULL);
         if (elemtype < CGNS_ENUMV(TETRA_4) || elemtype > CGNS_ENUMV(MIXED)) continue;
         nelems = ie - is + 1;
-        if (elemtype == CGNS_ENUMV(MIXED)) {
-            conn_offset = (cgsize_t *) malloc ((size_t)(nelems + 1) * sizeof(cgsize_t));
-            if (conn_offset == NULL)
-                FATAL ("malloc failed for element connectivity offset");
-            if (cg_poly_elements_read (cgnsfn, cgnsbase, nz, ns, conn, conn_offset, NULL))
-                FATAL (NULL);
-            free (conn_offset);
-        }
-        else {
-            if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL))
-                FATAL (NULL);
-        }
+        if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL))
+            FATAL (NULL);
         et = elemtype;
         for (i = 0, n = 0; n < nelems; n++) {
             if (elemtype == CGNS_ENUMV(MIXED)) et = (int)conn[i++];
@@ -719,7 +705,7 @@ static void write_element_sets (int nz, cgsize_t *sizes)
     int elemcnt, elemsize, cell[9];
     int *nodemap, *types;
     cgsize_t is, ie, nelems;
-    cgsize_t size, *conn, *conn_offset;
+    cgsize_t size, *conn;
     CGNS_ENUMT(ElementType_t) elemtype, et;
     char name[33], outfile[65], buff[33];
     FILE *fp;
@@ -743,19 +729,8 @@ static void write_element_sets (int nz, cgsize_t *sizes)
         conn = (cgsize_t *) malloc ((size_t)size * sizeof(cgsize_t));
         if (conn == NULL)
             FATAL ("malloc failed for element connectivity");
-
-        if (elemtype == CGNS_ENUMV(MIXED)) {
-            conn_offset = (cgsize_t *) malloc ((size_t)(nelems + 1) * sizeof(cgsize_t));
-            if (conn_offset == NULL)
-                FATAL ("malloc failed for element connectivity offset");
-            if (cg_poly_elements_read (cgnsfn, cgnsbase, nz, ns, conn, conn_offset, NULL))
-                FATAL (NULL);
-            free (conn_offset);
-        }
-        else {
-            if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL))
-                FATAL (NULL);
-        }
+        if (cg_elements_read (cgnsfn, cgnsbase, nz, ns, conn, NULL))
+            FATAL (NULL);
 
         for (n = 0; n < nnodes; n++)
             nodemap[n] = 0;
