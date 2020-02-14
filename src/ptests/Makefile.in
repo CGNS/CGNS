@@ -26,8 +26,6 @@ CALL =	pcgns_ctest$(EXE) \
 	test_general_readwrite$(EXE) \
 	thesis_benchmark$(EXE)
 
-#	test_lg_unstructured$(EXE) \
-#
 FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) 
 
 ALL   = $(CALL) @FALL@
