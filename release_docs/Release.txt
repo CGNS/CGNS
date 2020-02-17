@@ -29,9 +29,12 @@ Supported platforms
 
 ## Library:
 
-    CPEX 41 NGON modification proposal (CGNS-121)
-     This release solves issue with CPEX 41 in cgnslib 3.4.0 concerning forward compatibility 
-    (1-28-2020 CGNS Steering Committee Minutes).
+Implemented CPEX 41 NGON modification proposal (CGNS-121)
+
+v4.0.0 resolves the issue with CPEX 41 in cgnslib 3.4.0 concerning forward compatibility 
+(ref. 1-28-2020 CGNS Steering Committee Minutes).
+
+Note: v3.4.1 removed CPEX 41 to maintain compatibility in the 3.x releases, and 4.0.0 added back CPEX 41.
 
 ## Parallel Library:
 
