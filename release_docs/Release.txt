@@ -1,13 +1,13 @@
-CGNS version 4.1.0
+CGNS version 5.0.0
 =================================
 
 INTRODUCTION
 
 This document describes the difference between CGNS 4.0.0 and
-CGNS 4.1.0, and contains information on known problems in
-CGNS 4.1.0.
+CGNS 5.0.0, and contains information on known problems in
+CGNS 5.0.0.
 
-Links to the CGNS 4.1.0 source code can be found at:
+Links to the CGNS 5.0.0 source code can be found at:
 
 User documentation for the current release can be found at:
 
