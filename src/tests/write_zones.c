@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #ifdef _WIN32
 # include <io.h>
 # define unlink _unlink
@@ -24,16 +25,34 @@ int main (int argc, char **argv)
     char name[33], linkpath[65];
     static char *fname = "zones.cgns";
     static char *linkname = "zones_link.cgns";
+    char *endptr;
+    long input_value;
 
     for (n = 1; n < argc; n++) {
         i = 0;
         if (argv[n][i] == '-') i++;
-        if (argv[n][i] == 'a' || argv[n][i] == 'A')
+        if (argv[n][i] == 'a' || argv[n][i] == 'A'){
             type = CG_FILE_ADF;
-        else if (argv[n][i] == 'h' || argv[n][i] == 'H')
+	}
+        else if (argv[n][i] == 'h' || argv[n][i] == 'H'){
             type = CG_FILE_HDF5;
-        else
-            nzones = atoi (&argv[n][i]);
+	}
+        else {
+            /* Get safely input value */
+            errno = 0;
+            input_value = strtol(&argv[n][i], &endptr, 10);
+            if (errno == ERANGE){
+               fprintf (stderr, "overflow when converting nzones input to int\n");
+               exit(1);
+            }
+            if (endptr == &argv[n][i]){
+                fprintf (stderr, "impossible to convert nzones input to int\n");
+                exit(1);
+            }
+            else {
+                nzones = (int) input_value;
+            }
+	}
     }
     if (cg_set_file_type(type))
         cg_error_exit();

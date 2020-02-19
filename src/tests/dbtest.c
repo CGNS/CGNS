@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "utils.h"
 
 void int_to_a (int num, char *s, int len)
@@ -23,7 +24,9 @@ void int_to_a (int num, char *s, int len)
 int main (int argc, char **argv)
 {
     char *dbname = "dbtest.cgns";
+    char *endptr;
     char buf[30];
+    long input_value;
     int i, numzones, numvalues;
     cgsize_t isize[3][1];
     int index_file, index_base, index_zone, index_coord;
@@ -52,10 +55,42 @@ int main (int argc, char **argv)
         fputs ("usage: dbtest [a|h] numzones numvalues [CGNSfile]\n", stderr);
         exit (1);
     }
-    numzones = atoi(argv[i++]);
-    numvalues = atoi(argv[i++]);
+    /* Get safely input values */
+    errno = 0;
+    input_value = strtol(argv[i++], &endptr, 10);
+    if (errno == ERANGE){
+        fprintf (stderr, "overflow when converting numzones input to int\n");
+        exit(1);
+    }
+    if (endptr == argv[i-1]){
+        fprintf (stderr, "impossible to convert numzones input to int\n");
+        exit(1);
+    }
+    else {
+        numzones = (int) input_value;
+    }
+    errno = 0;
+    input_value = strtol(argv[i++], &endptr, 10);
+    if (errno == ERANGE){
+        fprintf (stderr, "overflow when converting numvalues input to int\n");
+        exit(1);
+    }
+    if (endptr == argv[i-1]){
+        fprintf (stderr, "impossible to convert numvalues input to int\n");
+        exit(1);
+    }
+    else {
+        numvalues = (int) input_value;
+    }
+
     if (i < argc)
         dbname = argv[i];
+
+    /* validate input */
+    if (numvalues < 1 || numzones < 1){
+        fprintf (stderr, "Provided input values should be positive\n");
+        exit(-1);
+    }
 
     values = (float *) malloc (numvalues * sizeof(float));
     if (values == NULL) {
