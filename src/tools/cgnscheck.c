@@ -1639,7 +1639,7 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
     }
 
     if (location == CGNS_ENUMV(IFaceCenter)) {
-        for (n = 0, i = 1; i < z->idim; i++) {
+        for (n = 0, i = 0; i < z->idim; i++) {
             if (i == 0)
                 datasize *= (z->dims[0][i] + rind[n] + rind[n+1]);
             else
@@ -1654,7 +1654,7 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
             error ("location is JFaceCenter but index dimension < 2");
             return 0;
         }
-        for (n = 0, i = 1; i < z->idim; i++) {
+        for (n = 0, i = 0; i < z->idim; i++) {
             if (i == 1)
                 datasize *= (z->dims[0][i] + rind[n] + rind[n+1]);
             else
@@ -1669,7 +1669,7 @@ static cgsize_t get_data_size (ZONE *z, CGNS_ENUMT(GridLocation_t) location,
             error ("location is KFaceCenter but index dimension < 3");
             return 0;
         }
-        for (n = 0, i = 1; i < z->idim; i++) {
+        for (n = 0, i = 0; i < z->idim; i++) {
             if (i == 2)
                 datasize *= (z->dims[0][i] + rind[n] + rind[n+1]);
             else
@@ -3233,7 +3233,7 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
         }
     }
     else {
-        if (hasp == CG_OK)
+        if (hasl == CG_OK)
             warning (1, "grid location should be used only with point set");
     }
 

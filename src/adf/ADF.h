@@ -58,6 +58,7 @@ File:	ADF.h
 	ADF core code.  These sizes are provided for reference only!
 ***********************************************************************/
 #define ADF_DATA_TYPE_LENGTH        32
+#define ADF_CGIO_DATA_TYPE_LENGTH    2
 #define ADF_DATE_LENGTH             32
 #define ADF_FILENAME_LENGTH       1024
 #define ADF_FORMAT_LENGTH           20

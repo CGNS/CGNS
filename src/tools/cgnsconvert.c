@@ -76,6 +76,10 @@ int main (int argc, char **argv)
         outfile = argv[argind];
     else
         outfile = inpfile;
+    if (strlen(outfile) > 1018) {
+        fprintf(stderr, "output file name is too long\n");
+        exit(1);
+    }
     sprintf(tempfile, "%s.temp", outfile);
     unlink(tempfile);
 
