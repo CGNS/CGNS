@@ -4885,7 +4885,7 @@ int cgi_read_exponents(int in_link, double parent_id, cgns_exponent **exponents)
                              &data, READ_DATA);
         CGNS_FREE(id);
         if (ierr) {
-            cgi_error("Error reading AdditionalExponents for 's'",
+            cgi_error("Error reading AdditionalExponents for '%s'",
                 exponents[0]->name);
             return CG_ERROR;
         }
@@ -9262,11 +9262,10 @@ int cgi_add_czone(char_33 zonename, cgsize6_t range, cgsize6_t donor_range,
 
      /* check if this interface was already found */
     for (k=0; k<(*ndouble); k++) {
-        differ=0;
         if (strcmp(Dzonename[0][k],zonename)) {
-            differ=1;
             continue;
         }
+        differ=0;
         for (j=0; j<index_dim; j++) {
             if (Drange[0][k][j]==Drange[0][k][j+index_dim]) continue;
             if (Drange[0][k][j]!=MIN(donor_range[j],donor_range[j+index_dim]) ||

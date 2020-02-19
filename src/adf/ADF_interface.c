@@ -1371,7 +1371,7 @@ ADFI_chase_link( ID, &LID, &file_index,  &block_offset, &node, error_return ) ;
 CHECK_ADF_ABORT( *error_return ) ;
 
 	/** Copy the blank-filled data-type into a C string **/
-ADFI_string_2_C_string( node.data_type, ADF_DATA_TYPE_LENGTH, data_type,
+ADFI_string_2_C_string( node.data_type, ADF_CGIO_DATA_TYPE_LENGTH, data_type,
 		error_return ) ;
 CHECK_ADF_ABORT( *error_return ) ;
 
