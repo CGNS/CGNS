@@ -1430,8 +1430,8 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
 		cgi_error("malloc failed for ParentData conversion array");
 		return CG_ERROR;
 	    }
-	    if (cgio_read_all_data(cg->cgio, section[0][n].parelem->id, pardata)) {
-                cg_io_error("cgio_read_all_data");
+	    if (cgio_read_all_data_type(cg->cgio, section[0][n].parelem->id, data_type, pardata)) {
+                cg_io_error("cgio_read_all_data_type");
 		return CG_ERROR;
 	    }
 	    if (cgi_delete_node(section[0][n].id, section[0][n].parelem->id))
@@ -3155,8 +3155,8 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
         if (0 == strcmp(ptset->data_type,"I8")) {
             cglong_t total = 1;
             cglong_t *pnts = CGNS_NEW(cglong_t, size);
-            if (cgio_read_all_data(cg->cgio, ptset->id, pnts)) {
-                cg_io_error("cgio_read_all_data");
+            if (cgio_read_all_data_type(cg->cgio, ptset->id, ptset->data_type, pnts)) {
+                cg_io_error("cgio_read_all_data_type");
                 return CG_ERROR;
             }
 #if CG_SIZEOF_SIZE == 32
@@ -3177,8 +3177,8 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
         }
         else if (0 == strcmp(ptset->data_type,"I4")) {
             int *pnts = CGNS_NEW(int, size);
-            if (cgio_read_all_data(cg->cgio, ptset->id, pnts)) {
-                cg_io_error("cgio_read_all_data");
+            if (cgio_read_all_data_type(cg->cgio, ptset->id, ptset->data_type, pnts)) {
+                cg_io_error("cgio_read_all_data_type");
                 return CG_ERROR;
             }
             ptset->size_of_patch = 1;
@@ -5460,8 +5460,8 @@ int cgi_read_node(double node_id, char_33 name, char_33 data_type,
     else if (strcmp(data_type,"C1")==0) data[0]=CGNS_NEW(char, size+1);
 
      /* read data */
-    if (cgio_read_all_data(cg->cgio, node_id, data[0])) {
-        cg_io_error("cgio_read_all_data");
+    if (cgio_read_all_data_type(cg->cgio, node_id, data_type, data[0])) {
+        cg_io_error("cgio_read_all_data_type");
         return CG_ERROR;
     }
     return CG_OK;
@@ -5584,8 +5584,8 @@ int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data
             cgi_error("Error allocating I4->I8 data array...");
             return CG_ERROR;
         }
-        if (cgio_read_all_data(cg->cgio, id, (void *)pnts)) {
-            cg_io_error("cgio_read_all_data");
+        if (cgio_read_all_data_type(cg->cgio, id, data_type,(void *)pnts)) {
+            cg_io_error("cgio_read_all_data_type");
             CGNS_FREE(pnts);
             return CG_ERROR;
         }
@@ -5600,8 +5600,8 @@ int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data
             cgi_error("Error allocating I8->I4 data array...");
             return CG_ERROR;
         }
-        if (cgio_read_all_data(cg->cgio, id, (void *)pnts)) {
-            cg_io_error("cgio_read_all_data");
+        if (cgio_read_all_data_type(cg->cgio, id, data_type, (void *)pnts)) {
+            cg_io_error("cgio_read_all_data_type");
             CGNS_FREE(pnts);
             return CG_ERROR;
         }
@@ -5611,8 +5611,8 @@ int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data
     }
 #endif
     else {
-        if (cgio_read_all_data(cg->cgio, id, (void *)data)) {
-            cg_io_error("cgio_read_all_data");
+        if (cgio_read_all_data_type(cg->cgio, id, data_type, (void *)data)) {
+            cg_io_error("cgio_read_all_data_type");
             return CG_ERROR;
         }
     }
@@ -8176,20 +8176,19 @@ int cgi_array_general_read(
     if (ier != CG_OK) return ier;
     const int access_full_range =
         (s_access_full_range == 1) && (m_access_full_range == 1);
-
     if (s_type == m_type) {
          /* quick transfer of data if same data types */
         if (access_full_range) {
-            if (cgio_read_all_data(cg->cgio, array->id, data)) {
-                cg_io_error("cgio_read_all_data");
+            if (cgio_read_all_data_type(cg->cgio, array->id, cgi_adf_datatype(m_type), data)) {
+                cg_io_error("cgio_read_all_data_type");
                 return CG_ERROR;
             }
         }
         else {
-            if (cgio_read_data(cg->cgio, array->id,
-                               s_rmin, s_rmax, stride, m_numdim, m_dimvals,
+            if (cgio_read_data_type(cg->cgio, array->id,
+                               s_rmin, s_rmax, stride, cgi_adf_datatype(m_type), m_numdim, m_dimvals,
                                m_rmin, m_rmax, stride, data)) {
-                cg_io_error("cgio_read_data");
+                cg_io_error("cgio_read_data_type");
                 return CG_ERROR;
             }
         }
@@ -8209,18 +8208,18 @@ int cgi_array_general_read(
             return CG_ERROR;
         }
         if (access_full_range) {
-            if (cgio_read_all_data(cg->cgio, array->id, conv_data)) {
+            if (cgio_read_all_data_type(cg->cgio, array->id, array->data_type, conv_data)) {
                 free(conv_data);
-                cg_io_error("cgio_read_all_data");
+                cg_io_error("cgio_read_all_data_type");
                 return CG_ERROR;
             }
         }
         else {
-            if (cgio_read_data(cg->cgio, array->id, s_rmin, s_rmax, stride,
-                               m_numdim, m_dimvals, m_rmin, m_rmax, stride,
-                               conv_data)) {
+            if (cgio_read_data_type(cg->cgio, array->id, s_rmin, s_rmax, stride,
+                                    array->data_type,
+                                    m_numdim, m_dimvals, m_rmin, m_rmax, stride, conv_data)) {
                 free(conv_data);
-                cg_io_error("cgio_read_data");
+                cg_io_error("cgio_read_data_type");
                return CG_ERROR;
             }
         }

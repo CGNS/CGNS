@@ -8,7 +8,7 @@ echoresults() {
     then
         printf "$ERROR_COLOR *** FAILED *** $NO_COLOR \n"
     else
-        printf "$OK_COLOR passed $NO_COLOR \n"
+        printf "$OK_COLOR PASSED $NO_COLOR \n"
     fi
 }
 
