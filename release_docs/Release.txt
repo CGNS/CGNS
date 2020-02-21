@@ -30,6 +30,9 @@ New Features
     Library:
     --------
 
+   - Implemented CPEX42 (Storing bounding box of a grid, CGNS-149)
+   - Implemented CPEX43 (Family hierarchy as a tree, CGNS-180)
+
     Parallel Library:
     -----------------
 

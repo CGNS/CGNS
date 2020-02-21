@@ -26,8 +26,6 @@ CALL =	pcgns_ctest$(EXE) \
 	test_general_readwrite$(EXE) \
 	thesis_benchmark$(EXE)
 
-#	test_lg_unstructured$(EXE) \
-#
 FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) 
 
 ALL   = $(CALL) @FALL@
@@ -41,28 +39,13 @@ test : $(TESTS)
 	@echo " "; \
 	status=0; \
 	echo "=== running parallel tests ==="; \
-	for x in $(TESTS) ; do \
-	   if echo "$$x" | grep -q "lg_unstructured"; then \
-	     if `$(MPIEXEC) ./$$x -nbCellSide 310 -useMixedElements >/dev/null 2>&1` ; then \
-	       printf "$$x -nbCellSide 310 -useMixedElements ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
-	     else \
-	       printf "$$x -nbCellSide 310 -useMixedElements ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
-	       status=1; \
-	     fi; \
-	     if `$(MPIEXEC) ./$$x  -nbCellSide 310 >/dev/null 2>&1` ; then \
-	       printf "$$x -nbCellSide 310 ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
-	     else \
-	       printf "$$x -nbCellSide 310 ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
-	       status=1; \
-	     fi; \
+	 for x in $(TESTS) ; do \
+	   if `$(MPIEXEC) ./$$x >/dev/null 2>&1` ; then \
+	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
 	   else \
-	     if `$(MPIEXEC) ./$$x >/dev/null 2>&1` ; then \
-	       printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
-	     else \
-	       printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
-	       status=1; \
-	     fi; \
-	   fi;\
+	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
+		status=1; \
+	   fi; \
 	 done; \
 	 echo "=== finished ==="; \
          if test $$status == 1; then \
@@ -72,20 +55,7 @@ test : $(TESTS)
          fi; \
          printf "$$status tests failed $(NO_COLOR) \n"; \
 	 exit $$status;
-#
-#	     if `$(MPIEXEC) ./$$x  -nbCellSide 311 -useMixedElements >/dev/null 2>&1` ; then \
-#	       printf "$$x -nbCellSide 311 -useMixedElements ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
-#	     else \
-#	       printf "$$x -nbCellSide 311 -useMixedElements ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
-#	       status=1; \
-#	     fi; \
-#	     if `$(MPIEXEC) ./$$x -nbCellSide 311 >/dev/null 2>&1` ; then \
-#	       printf "$$x -nbCellSide 311 ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
-#	     else \
-#	       printf "$$x -nbCellSide 311 ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
-#	       status=1; \
-#	     fi; \
-#
+
 #----------
 
 pcgns_ctest$(EXE) : pcgns_ctest.c $(CGNSLIB)
@@ -132,12 +102,6 @@ test_base$(EXE) : test_base.c $(CGNSLIB)
 
 test_unstructured$(EXE) : test_unstructured.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_unstructured.c $(LDLIBS) $(CLIBS)
-	$(STRIP) $@
-
-#----------
-
-test_lg_unstructured$(EXE) : test_lg_unstructured.c $(CGNSLIB)
-	$(CC) $(COPTS) $(CEOUT)$@ test_lg_unstructured.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
