@@ -40,7 +40,7 @@ int main ()
    int i, j;
    int error_state = 1;
    int num_dims, d[6];
-   cgsize_t dim_d, dims_b[2];
+   cgsize_t dim_d[12], dims_b[2];
    float b[3][4];
 
    for (i = 0; i < 3; i++) {
@@ -157,13 +157,13 @@ int main ()
    cgio_get_node_id(cgio_num,root_id,"/n3/n9/n13",&tmp_id);
    cgio_get_label(cgio_num,tmp_id,label);
    cgio_get_data_type(cgio_num,tmp_id,data_type);
-   cgio_get_dimensions(cgio_num,tmp_id,&num_dims,&dim_d);
+   cgio_get_dimensions(cgio_num,tmp_id,&num_dims,dim_d);
    cgio_read_all_data(cgio_num,tmp_id,d);
    printf (" node n13:\n");
    printf ("   label       = %s\n",label);
    printf ("   data_type   = %s\n",data_type);
    printf ("   num of dims = %5d\n",num_dims);
-   printf ("   dim val     = %5d\n",(int)dim_d);
+   printf ("   dim val     = %5d\n",(int)dim_d[0]);
    printf ("   data:\n");
    for (i=0; i<=5; i++)
      {

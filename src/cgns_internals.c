@@ -1171,7 +1171,7 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                         section[0][n].connect->data = (void *)elem_data;
                     }
                 }
-                if (cg->version < 3400) {
+                if (cg->version < 4000) {
                     cgsize_t size, *elem_data = 0;
                     if (section[0][n].el_type == CGNS_ENUMV(NGON_n) ||
                         section[0][n].el_type == CGNS_ENUMV(NFACE_n) ) {
@@ -4473,7 +4473,7 @@ int cgi_read_exponents(int in_link, double parent_id, cgns_exponent **exponents)
                              &data, READ_DATA);
         CGNS_FREE(id);
         if (ierr) {
-            cgi_error("Error reading AdditionalExponents for 's'",
+            cgi_error("Error reading AdditionalExponents for '%s'",
                 exponents[0]->name);
             return CG_ERROR;
         }
@@ -8701,11 +8701,10 @@ int cgi_add_czone(char_33 zonename, cgsize6_t range, cgsize6_t donor_range,
 
      /* check if this interface was already found */
     for (k=0; k<(*ndouble); k++) {
-        differ=0;
         if (strcmp(Dzonename[0][k],zonename)) {
-            differ=1;
             continue;
         }
+        differ=0;
         for (j=0; j<index_dim; j++) {
             if (Drange[0][k][j]==Drange[0][k][j+index_dim]) continue;
             if (Drange[0][k][j]!=MIN(donor_range[j],donor_range[j+index_dim]) ||
@@ -8780,7 +8779,7 @@ cgsize_t cgi_element_data_size(CGNS_ENUMT(ElementType_t) type,
         if (connect == 0) return CG_OK;
         /* Need to handle old version when opening old files */
         if (connect_offset == 0) {
-            if (cg->version < 3400) {
+            if (cg->version < 4000) {
                 for (ne = 0; ne < nelems; ne++) {
                     npe = (int)connect[size++];
                     size += npe;
