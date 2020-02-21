@@ -54,21 +54,14 @@ static int approx_equal(float f1, float f2) { return ulpsDistance(f1, f2) <= 2; 
 
 int main (int argc, char **argv)
 {
-  /* --- Node header character strings */
-  char label[CGIO_MAX_LABEL_LENGTH+1];
-  char label_r[CGIO_MAX_LABEL_LENGTH+1];
-  char data_type[CGIO_MAX_DATATYPE_LENGTH+1];
-  char data_type_r[CGIO_MAX_DATATYPE_LENGTH+1];
-
   /* --- Database identifier */
   int cgio_num;
 
   /* --- Node id variables */
-  double root_id,parent_id,child_id,tmp_id;
+  double root_id, tmp_id;
 
   /* --- Data to be stored in database */
   cgsize_t c1_dimensions = 1;
-  cgsize_t mt_dimensions[1] = {DIM0};
   cgsize_t i4_dimensions[1] = {DIM0};
   cgsize_t i8_dimensions[1] = {DIM0};
   cgsize_t u4_dimensions[1] = {DIM0};
@@ -86,41 +79,11 @@ int main (int argc, char **argv)
   double             r8[DIM0];
   unsigned char      b1[DIM0];
 
-  /* Read variables */
-  cgsize_t c1_dimensions_r[1];
-  cgsize_t mt_dimensions_r[1];
-  cgsize_t i4_dimensions_r[1];
-  cgsize_t i8_dimensions_r[1];
-  cgsize_t u4_dimensions_r[1];
-  cgsize_t u8_dimensions_r[1];
-  cgsize_t r4_dimensions_r[1];
-  cgsize_t r8_dimensions_r[1];
-  cgsize_t b1_dimensions_r[1];
-
-  char               c1_r[1];
-  int                i4_r[DIM0];
-  long long          i8_r[DIM0];
-  unsigned int       u4_r[DIM0];
-  unsigned long long u8_r[DIM0];
-  float              r4_r[DIM0];
-  double             r8_r[DIM0];
-  unsigned char      b1_r[DIM0];
-
-  char files[NFILES][60] = {
-    "data/cgioc_HDF-1_10_5-INT32-BE.cgio",
-    "data/cgioc_HDF-1_10_5-INT64-BE.cgio",
-    "data/cgioc_HDF-1_12_0-INT32-BE.cgio",
-    "data/cgioc_HDF-1_12_0-INT64-BE.cgio",
-    "data/cgioc_HDF-1_8_7-INT32-BE.cgio",
-    "data/cgioc_HDF-1_8_7-INT64-BE.cgio"
-  };
-
-
   /* --- miscellaneous variables */
-  int i, j, n;
+  int i, n;
   int error_state = 1;
-  int num_dims,num_dims_r;
-  int file_type, file_type_r;
+  int num_dims_r;
+  int file_type;
   int write_file = 0;
 
   for (n = 1; n < argc; n++) {
@@ -250,6 +213,36 @@ int main (int argc, char **argv)
 
      /* Reading portion of test */
   
+     /* Read variables */
+     char label_r[CGIO_MAX_LABEL_LENGTH+1];
+     char data_type_r[CGIO_MAX_DATATYPE_LENGTH+1];
+     cgsize_t c1_dimensions_r[1];
+     cgsize_t i4_dimensions_r[1];
+     cgsize_t i8_dimensions_r[1];
+     cgsize_t u4_dimensions_r[1];
+     cgsize_t u8_dimensions_r[1];
+     cgsize_t r4_dimensions_r[1];
+     cgsize_t r8_dimensions_r[1];
+     cgsize_t b1_dimensions_r[1];
+     char               c1_r[1];
+     int                i4_r[DIM0];
+     long long          i8_r[DIM0];
+     unsigned int       u4_r[DIM0];
+     unsigned long long u8_r[DIM0];
+     float              r4_r[DIM0];
+     double             r8_r[DIM0];
+     unsigned char      b1_r[DIM0];
+     int j;
+
+     char files[NFILES][60] = {
+       "data/cgioc_HDF-1_10_5-INT32-BE.cgio",
+       "data/cgioc_HDF-1_10_5-INT64-BE.cgio",
+       "data/cgioc_HDF-1_12_0-INT32-BE.cgio",
+       "data/cgioc_HDF-1_12_0-INT64-BE.cgio",
+       "data/cgioc_HDF-1_8_7-INT32-BE.cgio",
+       "data/cgioc_HDF-1_8_7-INT64-BE.cgio"
+     };
+
      for (j = 0; j < NFILES; j++) {
        /* printf("FILE = %s\n", files[j]); */
        if( cgio_open_file(files[j],CGIO_MODE_READ,file_type,&cgio_num)) {
