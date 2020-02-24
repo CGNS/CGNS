@@ -345,23 +345,25 @@ endif (CGNS_ENABLE_HDF5 AND HDF5_NEED_MPI)
 # RPATH Management #
 ####################
 
-# use, i.e. don't skip the full RPATH for the build tree
-set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+if (CGNS_USE_SHARED)
+  # use, i.e. don't skip the full RPATH for the build tree
+  set(CMAKE_SKIP_BUILD_RPATH  FALSE)
 
-# when building, don't use the install RPATH already
-# (but later on when installing)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+  # when building, don't use the install RPATH already
+  # (but later on when installing)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
-# the RPATH to be used when installing
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  # the RPATH to be used when installing
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
-# add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  # add the automatically determined parts of the RPATH
+  # which point to directories outside the build tree to the install RPATH
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-   set(CMAKE_MACOSX_RPATH TRUE)
-ENDIF()
+  IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+     set(CMAKE_MACOSX_RPATH TRUE)
+  ENDIF()
+endif(CGNS_USE_SHARED)
 
 #-----------------------------------------------------------------------------
 # Dashboard and Testing Settings
