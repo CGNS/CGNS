@@ -105,7 +105,7 @@ Bug Fixes since CGNS 4.0.0 release
         
       * Corrupted memory when reading int32 connectivity into an int64 dataspace, (CGNS-157)
     
-        Fixed by changing the cgio_read* calls internal to the MML to use the
+        Fixed by changing the cgio_read* calls internal to the MLL to use the
         cgio_read*_type APIs instead. Created a new cgio_read_block_data_type API with 
         an added data type parameter.
 
