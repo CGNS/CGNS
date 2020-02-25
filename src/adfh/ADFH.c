@@ -3054,7 +3054,8 @@ void ADFH_Get_Error_State(int *error_state,
 void ADFH_Read_Block_Data(const double ID,
                       const cgsize_t b_start,
                       const cgsize_t b_end,
-                      char *data,
+                      const char *m_data_type,
+                      void *data,
                       int *err )
 {
   hid_t hid, did, mid, tid, dspace;
@@ -3105,15 +3106,24 @@ void ADFH_Read_Block_Data(const double ID,
    * b_start and b_end, just read all the data into a
    * 1-d array and copy the range we want */
 
-  tid = H5Dget_type(did);
-  ADFH_CHECK_HID(tid);
-  mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
+  if (m_data_type) {
+    mid = to_HDF_data_type(m_data_type);
+  }
+  else {
+    /* This code should be replaced with the commented out code 
+       below when cgio_read_block_data is removed, CGNS-157 */
+    tid = H5Dget_type(did);
+    ADFH_CHECK_HID(tid);
+    mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
+    H5Tclose(tid);
+    /* set_error(INVALID_DATA_TYPE, err); */
+    /* return; */
+  }
   ADFH_CHECK_HID(mid);
   size = H5Tget_size(mid);
 
   if ((buff = (char *) malloc (size * count)) == NULL) {
     H5Tclose(mid);
-    H5Tclose(tid);
     H5Dclose(did);
     H5Gclose(hid);
     set_error(MEMORY_ALLOCATION_FAILED, err);
@@ -3146,7 +3156,6 @@ void ADFH_Read_Block_Data(const double ID,
   }
 #endif
   H5Tclose(mid);
-  H5Tclose(tid);
   H5Dclose(did);
   H5Gclose(hid);
 }
@@ -3157,12 +3166,12 @@ void ADFH_Read_Data(const double ID,
                     const cgsize_t s_start[],
                     const cgsize_t s_end[],
                     const cgsize_t s_stride[],
-                    const char *m_data_type,
                     const int m_num_dims,
                     const cgsize_t m_dims[],
                     const cgsize_t m_start[],
                     const cgsize_t m_end[],
                     const cgsize_t m_stride[],
+                    const char *m_data_type,
                     char *data,
                     int *err )
 {
@@ -3292,13 +3301,19 @@ void ADFH_Read_Data(const double ID,
 
   /* read the data */
 
-  tid = H5Dget_type(did);
-  ADFH_CHECK_HID(tid);
   if (m_data_type) {
     mid = to_HDF_data_type(m_data_type);
   }
   else {
+    /* This code should be replaced with the commented out code 
+       below when cgio_read_data is removed, CGNS-157 */
+    tid = H5Dget_type(did);
+    ADFH_CHECK_HID(tid);
     mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
+    H5Tclose(tid);
+
+    /* set_error(INVALID_DATA_TYPE, err); */
+    /* return; */
   }
   ADFH_CHECK_HID(mid);
 
@@ -3322,7 +3337,6 @@ void ADFH_Read_Data(const double ID,
   H5Sclose(mspace);
   H5Sclose(dspace);
   H5Tclose(mid);
-  H5Tclose(tid);
   H5Dclose(did);
   H5Gclose(hid);
 
@@ -3349,13 +3363,20 @@ void ADFH_Read_All_Data(const double  id,
   if (has_data(hid)) {
     did = H5Dopen2(hid, D_DATA, H5P_DEFAULT);
     ADFH_CHECK_HID(did);
-    tid = H5Dget_type(did);
-    ADFH_CHECK_HID(tid);
     if (m_data_type) {
       mid = to_HDF_data_type(m_data_type);
     }
     else {
+
+    /* This code should be replaced with the commented out code 
+       below when cgio_read_all_data is removed, CGNS-157 */
+      tid = H5Dget_type(did);
+      ADFH_CHECK_HID(tid);
       mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
+      H5Tclose(tid);
+
+      /* set_error(INVALID_DATA_TYPE, err); */
+      /* return; */
     }
     ADFH_CHECK_HID(mid);
 #if CG_BUILD_PARALLEL
@@ -3376,7 +3397,6 @@ void ADFH_Read_All_Data(const double  id,
     }
 #endif
     H5Tclose(mid);
-    H5Tclose(tid);
     H5Dclose(did);
   }
   else

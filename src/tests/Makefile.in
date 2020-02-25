@@ -16,6 +16,7 @@ LDLIBS = $(CGNSLIB) $(BUILDLIBS)
 
 CALL = \
 	cgioc$(EXE) \
+	cgioc_hdf$(EXE) \
 	elemtest$(EXE) \
 	ser_benchmark_hdf5$(EXE) \
 	test_exts$(EXE) \
@@ -98,6 +99,11 @@ test : $(TESTS)
 
 cgioc$(EXE) : cgioc.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ cgioc.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+#----------
+
+cgioc_hdf$(EXE) : cgioc_hdf.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ cgioc_hdf.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
