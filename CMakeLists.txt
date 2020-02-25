@@ -363,6 +363,8 @@ if (CGNS_USE_SHARED)
   IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
      set(CMAKE_MACOSX_RPATH TRUE)
   ENDIF()
+else(CGNS_USE_SHARED)
+set(CMAKE_SKIP_RPATH TRUE)
 endif(CGNS_USE_SHARED)
 
 #-----------------------------------------------------------------------------
@@ -387,4 +389,3 @@ endif (CGNS_BUILD_TESTING)
 
 # Include the src directory
 add_subdirectory(src)
-
