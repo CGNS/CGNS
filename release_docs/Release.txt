@@ -54,6 +54,23 @@ Bug Fixes since CGNS 4.0.0 release
 
     Library:
     -------
+
+      ****************** REMOVED APIS **************************
+
+      Removed the APIs:
+
+      cgio_read_all_data, cgio_read_data, cgio_read_block_data
+      cgio_read_all_data_f, cgio_read_data_f, cgio_read_block_data_f
+
+      These APIs should be used instead:
+
+      cgio_read_all_data_type, cgio_read_data_type, cgio_read_block_data_type
+      cgio_read_all_data_type_f, cgio_read_data_type_f, cgio_read_block_data_type_f
+
+      (CGNS-192)
+
+      ****************** REMOVED APIS **************************
+
       * Fixed tests for scoped enum use. (PR-123)
 
       * Unified similar defines. (PR-124)
@@ -131,6 +148,8 @@ Bug Fixes since CGNS 4.0.0 release
     Fortran:
     --------
       * Added missing BUILD_PARALLEL_F. (ref. PR-124)
+
+      * Fixed cgiof_f03.F90 test passing literal character instead of NULL character in CGIO_CREATE_LINK_F
 
     Configuration:
     -------------
