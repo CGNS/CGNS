@@ -104,7 +104,7 @@ Bug Fixes since CGNS 4.0.0 release
 
       * Use correct MPI communicator (PR-140)
     
-        The `MPI_Allreduce` call in `cgp_parent_data_write()` is using `MPI_COMM_WORLD`, butt would be more correct 
+        The `MPI_Allreduce` call in `cgp_parent_data_write()` is using `MPI_COMM_WORLD`, but would be more correct 
         to use the communicator stored in `cgp_mpi_comm` which is set by the client. If the client is not using 
         `MPI_COMM_WORLD` and calls this function, it will hang since not all ranks will be participating in the call.
     
