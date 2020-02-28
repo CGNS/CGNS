@@ -4991,43 +4991,6 @@ MODULE cgns
      END SUBROUTINE cgio_get_data_size_f
   END INTERFACE
 
-!*---------------------------------------------------------
-
-
-!*---------------------------------------------------------
-!!$  INTERFACE
-!!$     SUBROUTINE cgio_read_all_data_f(cgio_num, id, DATA, ier) BIND(C,NAME='')
-!!$       IMPORT :: c_double, cgsize_t
-!!$       IMPLICIT NONE
-!!$       INTEGER :: cgio_num
-!!$       REAL(C_DOUBLE) :: id
-!!$       TYPE(C_PTR) :: data
-!!$       INTEGER, INTENT(OUT) :: ier
-!!$     END SUBROUTINE cgio_read_all_data_f
-!!$  END INTERFACE
-
-!*---------------------------------------------------------
-!!$  INTERFACE
-!!$     SUBROUTINE cgio_read_block_data_f(cgio_num, id, b_start, b_end, DATA, ier) BIND(C,NAME='')
-!!$       IMPORT :: c_double, cgsize_t, C_PTR
-!!$       IMPLICIT NONE
-!!$       INTEGER :: cgio_num
-!!$       REAL(C_DOUBLE) :: id
-!!$       INTEGER(CGSIZE_T) :: b_start
-!!$       INTEGER(CGSIZE_T) :: b_end
-!!$       TYPE(C_PTR) :: data
-!!$       INTEGER, INTENT(OUT) :: ier
-!!$     END SUBROUTINE cgio_read_block_data_f
-!!$  END INTERFACE
-
-!*---------------------------------------------------------
-!!$  INTERFACE
-!!$     SUBROUTINE cgio_read_data_f(
-!!$    cgint_f *cgio_num, double *id, cgsize_t *s_start, cgsize_t *s_end,
-!!$    cgsize_t *s_stride, cgint_f *m_ndims, cgsize_t *m_dims, cgsize_t *m_start,
-!!$    cgsize_t *m_end, cgsize_t *m_stride, void *data, cgint_f *ier) BIND(C,NAME='')
-!!$    END INTERFACE
-
 !*=========================================================
 !* write nodes
 !*=========================================================

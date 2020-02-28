@@ -13,7 +13,6 @@ User documentation for the current release can be found at:
 
 For more information, see the CGNS home page:
 
-
 CONTENTS
 
 - New Features
@@ -30,14 +29,22 @@ New Features
     Library:
     --------
 
-   - Implemented CPEX42 (Storing bounding box of a grid, CGNS-149)
-   - Implemented CPEX43 (Family hierarchy as a tree, CGNS-180)
+    - Implemented CPEX42 (Storing bounding box of a grid, CGNS-149)
+    - Implemented CPEX43 (Family hierarchy as a tree, CGNS-180)
+    - Switch to using HDF5 Compact storage for smaller datasets
+    
+      Added HDF5 compact storage to CGNS to improve parallel IO performance. The default storage 
+      is compact storage unless the dataset does not meet the < 64KiB limit. Also, if the 
+      dataset can have partial IO, then it is contiguous storage. Also, removed 'tab' spacing. 
+      All changes should be transparent to the application code. (CGNS-160, PR-130)
 
     Parallel Library:
     -----------------
 
     Fortran Library:
     ----------------
+
+    - Introduced Fortran wrappers for CPEX42 and CPEX43
 
     Tools:
     ------
@@ -47,18 +54,116 @@ Bug Fixes since CGNS 4.0.0 release
 
     Library:
     -------
+
+      ****************** REMOVED APIS **************************
+
+      Removed the APIs:
+
+      cgio_read_all_data, cgio_read_data, cgio_read_block_data
+      cgio_read_all_data_f, cgio_read_data_f, cgio_read_block_data_f
+
+      These APIs should be used instead:
+
+      cgio_read_all_data_type, cgio_read_data_type, cgio_read_block_data_type
+      cgio_read_all_data_type_f, cgio_read_data_type_f, cgio_read_block_data_type_f
+
+      (CGNS-192)
+
+      ****************** REMOVED APIS **************************
+
+      * Fixed tests for scoped enum use. (PR-123)
+
+      * Unified similar defines. (PR-124)
+
+      * Fixed bad assert. (PR-125)
+
+      * Corrected print format. (CGNS-152, PR-126)
+
+      * (CGNS-158, PR #128)
+          Fixed heap buffer overflow in cgi_read_ptset
+          In cgi_read_ptset there is made a difference between point set of list and range type.
+          The 'CellListDonor' type was missing in the list of list types and this led to a heap buffer overflow.
+          Added 'CellListDonor' type to list of list types.
+
+      * (CGNS-159, PR #127)
+          Fixed global-buffer-overflow in ADFI_string_2_C_string.
+    
+          Added a search loop for an early NULL termination of the string passed to ADFI_string_2_C_string in 
+          order to prevent global-buffer-overflow when string literals are given as a parameter.
+      
+      * Fixed return stat after calling MPI_Finalize and  switched to using a MPI_AllReduce to get the same 
+        exit code on all the processes.
+
+      * Fixed typo, zc should be z3
+
+      * Fixed Problems linking Fortran code with 3.3.1 shared library (w/ CMake) (CGNS-118, PR-131)
+
       * Do not read elements when computing partial data size. (PR-137)
+
+      * Disabled the use of H5Pset_file_space_strategy as it is not compatible with HDF5 v1.8 (CGNS-166)
+
+      * Use correct MPI communicator (PR-140)
+    
+        The `MPI_Allreduce` call in `cgp_parent_data_write()` is using `MPI_COMM_WORLD`, but would be more correct 
+        to use the communicator stored in `cgp_mpi_comm` which is set by the client. If the client is not using 
+        `MPI_COMM_WORLD` and calls this function, it will hang since not all ranks will be participating in the call.
+    
+        Expanded open-close test to include mixed serial and parallel open and close
+    
+      * Fixed incorrect variable type (PR-143)
+    
+        Minor fix; only applicable if more than 2.1 billion intervals in a range, but does eliminate a 
+        compiler warning -- `npt` should be `cgsize_t`
+
+      * Fixed compiler warnings about the possible loss of data (PR-144)
+    
+        A few variables defined as `int` should be `ssize_t` to avoid potential loss of data on large models.
+
+        
+      * Corrupted memory when reading int32 connectivity into an int64 dataspace, (CGNS-157)
+    
+        Fixed by changing the cgio_read* calls internal to the MML to use the
+        cgio_read*_type APIs instead. Created a new cgio_read_block_data_type API with 
+        an added data type parameter.
+
+      * Removed non-standard unlink call
+
+      * Make static mpi-related variables consistent (PR-139)
+
+        Currently, it is possible for the `pcg_mpi_comm` to be inconsistent with 
+        `pcg_mpi_comm_rank` and `pcg_mpi_comm_size`. The latter two values are set during a 
+        call to `cgp_open,` and the first is set during a call to `cgp_mpi_comm.`  If the user 
+        is using both parallel and serial file access during the same run, they may call 
+        `cgp_mpi_comm` multiple times, and the values of `pcg_mpi_comm_rank` and `pcg_mpi_comm_size` 
+        will only be consistent with the communicator in `pcg_mpi_comm` if the user calls `cgp_open.`
+    
+        With this fix, all three values (and the `ParallelMPICommunicator`) will always be consistent.  
+        Also, if the user does not call `cgp_mpi_comm()` before calling `cgp_open(),` 
+        this will be detected, and everything will be consistent.
+
+        Initialize communicator to MPI_COMM_NULL
+
+      * miscellaneous code quality improvements and warning fixes.
 
     Fortran:
     --------
+      * Added missing BUILD_PARALLEL_F. (ref. PR-124)
+
+      * Fixed cgiof_f03.F90 test passing literal character instead of NULL character in CGIO_CREATE_LINK_F
 
     Configuration:
     -------------
       * Fixed HDF5 CMake feature detection for parallel Collective_metadata and
         H5Pset_file_space_strategy. (PR-138)
 
+      * Fixed HDF5 feature detection (PR-138)
+        
+
     Tools:
     ------
+
+       * Fix cgnstools install (PR-129)
+
 
 Known Problems
 ==============
@@ -70,37 +175,63 @@ Supported Platforms
 The following platforms are supported and have been tested for this release.
 They are built with the configure process unless specified otherwise.
 
-    Linux 2.6.32-573.3.1.el6      GNU C (gcc), Fortran (gfortran)   compilers:
-    #1 SMP x86_64 GNU/Linux          Version 4.4.7 20120313 
-    (platypus)                       Version 4.8.4, Version 5.2.0
-                                  PGI C, Fortran for 64-bit target on x86-64;
-                                      Version 15.7-0
+    Linux 2.6.32-696.16.1.el6.ppc64 gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-18)
+    #1 SMP ppc64 GNU/Linux        g++ (GCC) 4.4.7 20120313 (Red Hat 4.4.7-18)
+    (ostrich)                     GNU Fortran (GCC) 4.4.7 20120313 (Red Hat 4.4.7-18)
+                                  IBM XL C/C++ V13.1
+                                  IBM XL Fortran V15.1
+
+    Linux 3.10.0-327.10.1.el7   GNU C (gcc), Fortran (gfortran), C++ (g++)
+    #1 SMP x86_64 GNU/Linux       compilers:
+    (kituo/moohan)                Version 4.8.5 20150623 (Red Hat 4.8.5-4)
+                                    Version 4.9.3, 5.2.0, 7.1.0
                                   Intel(R) C (icc), C++ (icpc), Fortran (icc)
                                   compilers:
-                                     Version 15.0.3.187 Build 20150407
-                                  MPICH 3.1.4 compiled with GCC 4.9.3
+                                     Version 17.0.0.098 Build 20160721
+                                  MPICH 3.1.4
 
-    Linux 2.6.32-504.8.1.el6.ppc64 gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-11)
-    #1 SMP ppc64 GNU/Linux         GNU Fortran (GCC) 4.4.7 20120313 (Red Hat 4.4.7-11)
-    (ostrich)                      IBM XL C/C++ V13.1
-                                   IBM XL Fortran V15.1
-                                  
+    Linux-3.10.0-                 spectrum-mpi/rolling-release with cmake>3.10 and
+    862.14.4.1chaos.ch6.ppc64le   clang/3.9,8.0
+    #1 SMP ppc64le GNU/Linux      gcc/7.3
+    (ray)                         xl/2016,2019
 
-    Linux 3.10.0-229.14.1.el7   GNU C (gcc), Fortran (gfortran)
-    #1 SMP x86_64 GNU/Linux       compilers:
-    (kituo/moohan)                  Version 4.8.3 20140911 (Red Hat 4.8.3-9)
-                                    Version 5.2.0
-                                  Intel(R) C (icc), Fortran (icc)
-                                  compilers:
-                                     Version 15.0.3.187 Build 20150407
-                                  MPICH 3.1.4 compiled with GCC 4.9.3
+    Linux 3.10.0-                 openmpi/3.1,4.0 with cmake>3.10 and
+    957.12.2.1chaos.ch6.x86_64    clang 5.0
+    #1 SMP x86_64 GNU/Linux       gcc/7.3,8.2
+    (serrano)                     intel/17.0,18.0/19.0
+
+    Linux 3.10.0-                 openmpi/3.1/4.0 with cmake>3.10 and
+    1062.1.1.1chaos.ch6.x86_64    clang/3.9,5.0,8.0
+    #1 SMP x86_64 GNU/Linux       gcc/7.3,8.1,8.2
+    (chama,quartz)                intel/16.0,18.0,19.0
+
+    Linux 4.4.180-94.100-default  cray-mpich/7.7.6 with PrgEnv-*/6.0.5, cmake>3.10 and
+    #1 SMP x86_64 GNU/Linux       gcc/7.2.0,8.2.0
+    (mutrino)                     intel/17.0,18.0
+
+    Linux 4.14.0-                 spectrum-mpi/rolling-release with cmake>3.10 and
+    49.18.1.bl6.ppc64le           clang/6.0,8.0
+    #1 SMP ppc64le GNU/Linux      gcc/7.3
+    (lassen)                      xl/2019
 
     SunOS 5.11 32- and 64-bit     Sun C 5.12 SunOS_sparc
     (emu)                         Sun Fortran 95 8.6 SunOS_sparc
+                                  Sun C++ 5.12 SunOS_sparc
 
-    Mac OS X Yosemite 10.10.5     Apple clang/clang++ version 6.0 from Xcode 7.0.0
-    64-bit                        gfortran GNU Fortran (GCC) 4.9.2
-    (osx1010dev/osx1010test)      Intel icc/icpc/ifort version 15.0.3
+    Windows 7 x64                 Visual Studio 2015 w/ Intel C, Fortran 2018 (cmake)
+                                  Visual Studio 2015 w/ MSMPI 10 (cmake)
+
+    Windows 10 x64                Visual Studio 2015 w/ Intel Fortran 18 (cmake)
+                                  Visual Studio 2017 w/ Intel Fortran 19 (cmake)
+                                  Visual Studio 2019 w/ Intel Fortran 19 (cmake)
+
+    macOS 10.13.6 High Sierra     Apple LLVM version 10.0.0 (clang/clang++-1000.10.44.4)
+    64-bit                        gfortran GNU Fortran (GCC) 6.3.0
+    (bear)                        Intel icc/icpc/ifort version 19.0.4
+
+    macOS 10.14.6 Mohave          Apple LLVM version 10.0.1 (clang/clang++-1001.0.46.4)
+    64-bit                        gfortran GNU Fortran (GCC) 6.3.0
+    (bobcat)                      Intel icc/icpc/ifort version 19.0.4
 
 Tested Configuration Features Summary
 =====================================
@@ -114,23 +245,16 @@ Tested Configuration Features Summary
 |--------------------------------------|---|------|---------|------------|
 | SunOS 5.11 32-bit                    | y |  n   |   y     |    n       |
 | SunOS 5.11 64-bit                    | y |  n   |   y     |    n       |
-| Windows 7                            | n |  n   |   n     |    n       |
-| Windows 7 x64                        | n |  n   |   n     |    n       |
-| Windows 7 Cygwin                     | n |  n   |   x     |    n       |
-| Windows 8                            | n |  n   |   n     |    n       |
-| Windows 8 x64                        | n |  n   |   n     |    n       |
 | Windows 10                           | y |  n   |   n     |    n       |
 | Windows 10 x64                       | y |  n   |   n     |    n       |
 | Windows 10 Cygwin                    | n |  n   |   x     |    n       |
-| Mac OS X Mountain Lion 10.8.5 64-bit | y |  n   |   y     |    n       |
-| Mac OS X Mavericks 10.9.5 64-bit     | y |  n   |   y     |    n       |
-| Mac OS X Yosemeti 10.10.5 64-bit     | y |  n   |   y     |    n       |
-| AIX 6.1 32- and 64-bit               | y |  n   |   y     |    n       |
+| Mac OS X 10.13.6 64-bit              | y |  n   |   y     |    n       |
+| Mac OS X 10.14.6 64-bit              | y |  n   |   y     |    n       |
 | CentOS 6.7 Linux 2.6.32 x86_64 GNU   | y |  y   |   y     |    y       |
 | CentOS 6.7 Linux 2.6.32 x86_64 Intel | y |  y   |   y     |    y       |
 | CentOS 6.7 Linux 2.6.32 x86_64 PGI   | y |  n   |   y     |    n       |
-| CentOS 7.1 Linux 3.10.0 x86_64 GNU   | y |  y   |   y     |    y       |
-| CentOS 7.1 Linux 3.10.0 x86_64 Intel | y |  y   |   y     |    y       |
+| CentOS 7.2 Linux 3.10.0 x86_64 GNU   | y |  y   |   y     |    y       |
+| CentOS 7.2 Linux 3.10.0 x86_64 Intel | y |  y   |   y     |    y       |
 | Linux 2.6.32-431.11.2.el6.ppc64      | y |  n   |   y     |    n       |
 
 [1] Parallel

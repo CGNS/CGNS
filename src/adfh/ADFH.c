@@ -3058,7 +3058,7 @@ void ADFH_Read_Block_Data(const double ID,
                       void *data,
                       int *err )
 {
-  hid_t hid, did, mid, tid, dspace;
+  hid_t hid, did, mid, dspace;
   size_t size, count, offset;
   char *buff;
   hid_t xfer_prp = H5P_DEFAULT;
@@ -3110,14 +3110,8 @@ void ADFH_Read_Block_Data(const double ID,
     mid = to_HDF_data_type(m_data_type);
   }
   else {
-    /* This code should be replaced with the commented out code 
-       below when cgio_read_block_data is removed, CGNS-157 */
-    tid = H5Dget_type(did);
-    ADFH_CHECK_HID(tid);
-    mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
-    H5Tclose(tid);
-    /* set_error(INVALID_DATA_TYPE, err); */
-    /* return; */
+    set_error(INVALID_DATA_TYPE, err);
+    return;
   }
   ADFH_CHECK_HID(mid);
   size = H5Tget_size(mid);
@@ -3176,7 +3170,7 @@ void ADFH_Read_Data(const double ID,
                     int *err )
 {
   int n, ndim;
-  hid_t hid, did, mid, tid, dspace, mspace;
+  hid_t hid, did, mid, dspace, mspace;
   hsize_t dims[ADF_MAX_DIMENSIONS];
   hsize_t start[ADF_MAX_DIMENSIONS];
   hsize_t stride[ADF_MAX_DIMENSIONS];
@@ -3305,15 +3299,8 @@ void ADFH_Read_Data(const double ID,
     mid = to_HDF_data_type(m_data_type);
   }
   else {
-    /* This code should be replaced with the commented out code 
-       below when cgio_read_data is removed, CGNS-157 */
-    tid = H5Dget_type(did);
-    ADFH_CHECK_HID(tid);
-    mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
-    H5Tclose(tid);
-
-    /* set_error(INVALID_DATA_TYPE, err); */
-    /* return; */
+    set_error(INVALID_DATA_TYPE, err);
+    return;
   }
   ADFH_CHECK_HID(mid);
 
@@ -3353,7 +3340,7 @@ void ADFH_Read_All_Data(const double  id,
                         char         *data,
                         int          *err)
 {
-  hid_t hid, did, tid, mid;
+  hid_t hid, did, mid;
   hid_t xfer_prp = H5P_DEFAULT;
 
   ADFH_DEBUG(("ADFH_Read_All_Data"));
@@ -3367,16 +3354,8 @@ void ADFH_Read_All_Data(const double  id,
       mid = to_HDF_data_type(m_data_type);
     }
     else {
-
-    /* This code should be replaced with the commented out code 
-       below when cgio_read_all_data is removed, CGNS-157 */
-      tid = H5Dget_type(did);
-      ADFH_CHECK_HID(tid);
-      mid = H5Tget_native_type(tid, H5T_DIR_ASCEND);
-      H5Tclose(tid);
-
-      /* set_error(INVALID_DATA_TYPE, err); */
-      /* return; */
+      set_error(INVALID_DATA_TYPE, err);
+      return;
     }
     ADFH_CHECK_HID(mid);
 #if CG_BUILD_PARALLEL
