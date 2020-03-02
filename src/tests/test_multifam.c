@@ -26,7 +26,7 @@ void error_exit (char *where)
     exit (1);
 }
 
-int main (int argc, char *argv[])
+int main ()
 {
     int i, j, k, n, nfam, nnames;
     int cgfile, cgbase, cgzone, cgfam, cgcoord, cgbc, cgsr;

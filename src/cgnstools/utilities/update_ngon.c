@@ -481,7 +481,7 @@ int is_file_old_version(char *inpfile)
               "CGNSLibraryVersion",&node_id) &&
         0 == cgio_read_all_data (inpcg, node_id, &cgns_version)) {
         printf ("CGNS version  : %4.2f\n", cgns_version);
-        if (cgns_version < 3.4) {
+        if (cgns_version < 4.0) {
             status = 1;
         }
         else {

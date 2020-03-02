@@ -656,14 +656,14 @@ echo   -scope : enable enumeration scoping by prefixing CG_
 echo   -parallel : enable parallel IO
 echo   -cgnstools : build CGNStools
 echo   -basescope : enable base scope for family/zone ref-to
-echo   -dll : build DLL istead of static library
+echo   -dll : build DLL instead of static library
 echo   -ifort : use ifort Fortran compiler (implies -f2c UPPERCASE)
 echo   -absoft : use the absoft Fortran compiler (implies -f2c LOWERCASE)
 echo   -f2c [type] : set Fortran to C interface. "type" is one of LOWERCASE,
 echo        LOWERCASE_,LOWERCASE__,UPPERCASE,UPPERCASE_, or UPPERCASE__ If not
 echo        given, LOWERCASE_ is used. This option will also use Unix-like
 echo        argument passing, instead of Visual Fortran.
-echo        If you specify "type" as none, the Fortran interface is disbled.
+echo        If you specify "type" as none, the Fortran interface is disabled.
 echo   -hdf5 [hdf5dir] : build HDF5 interface. "hdf5dir" is the HDF5 toplevel
 echo        directory. If "hdf5dir" is not given, the current drive is searched.
 echo   -zlib [zliblib] : use zlib. "zliblib" is the pathname to the library.
@@ -713,12 +713,10 @@ if "%hdf5inc%" == "" (
 ) else (
   set hdf5def=/I%hdf5inc%
   set libs=%libs HDF5
-  set build=%build% /DBUILD_HDF5
 )
 
 set mpidef=
 if not "%mpiinc%" == "" set mpidef=/I%mpiinc%
-if not "%parallel%" == "" set build=%build% /DBUILD_PARALLEL
 
 if "%f2c%" == "none" (
   set f2cobjs=
@@ -968,7 +966,9 @@ echo.>> cgnstypes.h
 echo #define CG_BUILD_LEGACY %dolegacy% >> cgnstypes.h
 echo #define CG_BUILD_64BIT  %do64bit% >> cgnstypes.h
 echo #define CG_BUILD_SCOPE  %doscope% >> cgnstypes.h
+echo #define CG_BUILD_HDF5   %buildhdf5% >> cgnstypes.h
 echo #define CG_BUILD_BASESCOPE  %dobasescope% >> cgnstypes.h
+echo #define CG_BUILD_PARALLEL   %doparallel% >> cgnstypes.h
 echo.>> cgnstypes.h
 echo #define CG_MAX_INT32 0x7FFFFFFF>> cgnstypes.h
 echo #ifdef _WIN32>> cgnstypes.h
@@ -1276,7 +1276,7 @@ echo         parameter (NSLaminarIncompressible   = 6)>> cgnslib_f.h
 echo         parameter (NSTurbulentIncompressible = 7)>> cgnslib_f.h
 echo.>> cgnslib_f.h
 echo !** Any model type will accept both ModelTypeNull and ModelTypeUserDefined.>> cgnslib_f.h
-echo !** The following models will accept these values as vaild...>> cgnslib_f.h
+echo !** The following models will accept these values as valid...>> cgnslib_f.h
 echo !**>> cgnslib_f.h
 echo !** GasModel_t: Ideal, VanderWaals, CaloricallyPerfect, ThermallyPerfect,>> cgnslib_f.h
 echo !**    ConstantDensity, RedlichKwong>> cgnslib_f.h
@@ -1808,10 +1808,8 @@ echo #define CGNSCONFIG_H>> cgnsconfig.h
 echo.>> cgnsconfig.h
 echo #include "cgnstypes.h">> cgnsconfig.h
 echo.>> cgnsconfig.h
-echo #define CG_BUILD_HDF5     %buildhdf5% >> cgnsconfig.h
 echo #define CG_BUILD_DEBUG    %dodebug% >> cgnsconfig.h
 echo #define CG_BUILD_FORTRAN  %dofortran% >> cgnsconfig.h
-echo #define CG_BUILD_PARALLEL %doparallel% >> cgnsconfig.h
 echo.>> cgnsconfig.h
 echo #define HDF5_INCLUDE_PATH "%hdf5inc%">> cgnsconfig.h
 echo #define HDF5_LIBRARY      "%hdf5lib%">> cgnsconfig.h

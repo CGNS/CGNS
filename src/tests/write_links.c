@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #ifdef _WIN32
 # include <io.h>
 # define unlink _unlink
@@ -23,14 +24,30 @@ int main (int argc, char **argv)
     char name[33], linkpath[33];
     char fname[33], linkfile[33];
     int cgftop,cgfchild;
+    char *endptr;
 
     for (n = 0; n < 3; n++) {
         size[n]   = NUM_SIDE;
         size[n+3] = NUM_SIDE - 1;
         size[n+6] = 0;
     }
-    if (argc > 1)
-        nzones = atoi (argv[1]);
+    if (argc > 1) {
+        /* Get safely input values */
+        long input_value;
+        errno = 0;
+        input_value = strtol(argv[1], &endptr, 10);
+        if (errno == ERANGE){
+            fprintf (stderr, "overflow when converting nzones input to int\n");
+            exit(1);
+        }
+        if (endptr == argv[1]){
+            fprintf (stderr, "impossible to convert nzones input to int\n");
+            exit(1);
+        }
+        else {
+            nzones = (int) input_value;
+        }
+    }
     printf ("number of zones  = %d\n", nzones);
 
     for (nz = 1; nz <= nzones; nz++) {

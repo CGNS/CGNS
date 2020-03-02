@@ -9,7 +9,7 @@
 #---------------------------------#
 
 # version format
-version: 4.0.{build}
+version: 4.1.{build}
 
 # branches to build
 branches:
@@ -31,7 +31,7 @@ skip_tags: true
 environment:
   global:
     1_8: &1_8 1.8.21
-    1_10: &1_10 1.10.4
+    1_10: &1_10 1.10.5
     HDF5_1_8_VER: *1_8   
     HDF5_1_10_VER: *1_10
   matrix:

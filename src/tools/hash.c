@@ -260,7 +260,7 @@ void HashStats (HASH hash)
         (long)chain_avg, (long)minlen, (long)maxlen,
         (long)(deviation / tabp->size));
 #ifdef STATISTICS
-    printf ("Table searchs = %ld, found = %ld, percent = %.2f\n",
+    printf ("Table searches = %ld, found = %ld, percent = %.2f\n",
         (long)seeks, (long)hits,
         (seeks ? (double)hits / seeks * 100.0 : (double)0));
 #endif

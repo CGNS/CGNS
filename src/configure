@@ -694,6 +694,7 @@ CGNSTOOLS
 BUILDBASESCOPE
 BUILDPARALLEL
 FC_D_PRE
+HDF5_HAVE_FILE_SPACE_STRATEGY
 HDF5_HAVE_COLL_METADATA
 HAVE_STAT64_STRUCT
 HDF5_HAVE_MULTI_DATASETS
@@ -3518,7 +3519,7 @@ fi
 
 if test "$ac_cv_c_compiler_gnu" = "yes"; then
   test -z "$CFLAGS" && CFLAGS=-O2
-  # probably dont need this
+  # probably don't need this
   # CFLAGS="$CFLAGS -fwritable-strings -ffloat-store"
 fi
 
@@ -4711,8 +4712,8 @@ fi
 if test -z $exec_prefix || test $exec_prefix = NONE; then
   exec_prefix=$prefix
 fi
-if test "$datadir" = "\${prefix}/share"; then
-  datadir=$datadir/cgnstools
+if test "$datarootdir" = "\${prefix}/share"; then
+  datadir=$datarootdir/cgnstools
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking where to install library" >&5
@@ -5134,7 +5135,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
  ## In F2003 and F2008 optional parameters are not allowed for functions that have BIND(C).
  ## In Fortran 2003 it is constraint C530, in the latest Fortran 2008 draft it is C516:
- ## "The ALLOCATABLE, POINTER, or OPTIONAL attribute shall not be specifed
+ ## "The ALLOCATABLE, POINTER, or OPTIONAL attribute shall not be specified
  ## for a dummy argument of a procedure that has a proc-language-binding-spec."
 
  ## However this is being addressed in:
@@ -5742,6 +5743,24 @@ $as_echo "no" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
   fi
+
+  # Check if HDF5 library has H5Pset_file_space_strategy HDF5 >= 1.10.1
+  ## --------------------------------------------------------------------
+
+  HDF5_HAVE_FILE_SPACE_STRATEGY=0
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if HDF5 library has H5Pset_file_space_strategy" >&5
+$as_echo_n "checking if HDF5 library has H5Pset_file_space_strategy... " >&6; }
+  chck_fs=`grep -i 'H5Pset_file_space_strategy' $HDF5INC/H5Ppublic.h`
+  if test "x$chck_fs" = "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  else
+    HDF5_HAVE_FILE_SPACE_STRATEGY=1
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  fi
+
+
 fi
 
 #---------------------------------------------------------------------------
@@ -7363,7 +7382,7 @@ if test "$withfortran" = "yes"; then
       FC_D_PRE='-WF,'
     fi
 #----------- Determine if the Fortran compiler pgi ------------------------
-# The PGI compiler segfaults wehn va_start is called, so we need to add
+# The PGI compiler segfaults when va_start is called, so we need to add
 # a special compiler flag, see CGNS-40. -Mx,125,0x200 is now called
 # -Mvarargs
 #--------------------------------------------------------------------------
@@ -7398,13 +7417,11 @@ INSTALLPCGNS=""
 PTESTS=""
 
 if test "$withhdf5" = "yes"; then
-  BUILDOPTS="$BUILDOPTS -DBUILD_HDF5"
   ADFOBJS="\$(OBJDIR)/ADFH.\$(O)"
   ADFINCS="adfh/ADFH.h"
 fi
 
 if test "$parallel" = "yes"; then
-  BUILDOPTS="$BUILDOPTS -DBUILD_PARALLEL"
   ADFOBJS="$ADFOBJS \$(OBJDIR)/pcgnslib.\$(O)"
   INSTALLPCGNS=install-pcgns
   PTESTS=runptests
@@ -7470,6 +7487,7 @@ else
 $as_echo "no" >&6; }
   SET_MAKE="MAKE=${MAKE-make}"
 fi
+
 
 
 

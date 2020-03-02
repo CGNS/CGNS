@@ -210,7 +210,7 @@ int main (int argc, char *argv[])
     /* write solution with rind, and the solution dimensions come from the zone
      * sizes */
 
-    if (cg_sol_write(cgfile, cgbase, cgzone, "VertexSolution", Vertex,
+    if (cg_sol_write(cgfile, cgbase, cgzone, "VertexSolution", CGNS_ENUMV(Vertex),
                      &cgsol) ||
         cg_goto(cgfile, cgbase, "Zone_t", cgzone,
             "FlowSolution_t", cgsol, "end") ||
@@ -373,14 +373,13 @@ int main (int argc, char *argv[])
     }
 
     global_nn = 0; 
-    MPI_Reduce(&nn, &global_nn, 1, MPI_INT, MPI_SUM, 0, comm);
+    MPI_Allreduce(&nn, &global_nn, 1, MPI_INT, MPI_MAX, comm);
     if (comm_rank == 0) {
         if (global_nn == 0) puts("no differences");
     }
-
     free(xcoord);
-    MPI_Finalize();
 
-    if (global_nn != 0) return 1;
-    return 0;
+    MPI_Finalize();
+    /* cannot just return (global_nn) because exit code is limited to 1byte */
+    return(global_nn!=0);
 }

@@ -43,7 +43,7 @@ freely, subject to the following restrictions:
 #define CGNSLIB_KEYWORDS_H
 
 /*
-   THIS HEADER CAN BE READ BY ANY C LANGAGE PRE-PROCESSOR
+   THIS HEADER CAN BE READ BY ANY C LANGUAGE PRE-PROCESSOR
 
    ENUMERATES DEFINITIONS ARE DECLARED, IN THE CASE YOU DO NOT WANT
    THESE DEFINITIONS (e.g. you compile Fortran) THEN YOU HAVE TO UNSET
@@ -63,8 +63,8 @@ freely, subject to the following restrictions:
  *      VERSION NUMBER                                                   *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define CGNS_VERSION 4000
-#define CGNS_DOTVERS 4.00
+#define CGNS_VERSION 4100
+#define CGNS_DOTVERS 4.10
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
 
@@ -339,7 +339,7 @@ typedef enum {
 #define NSTurbulentIncompressible_s    "NSTurbulentIncompressible"
 
 /* Any model type will accept both ModelTypeNull and ModelTypeUserDefined.
-** The following models will accept these values as vaild...
+** The following models will accept these values as valid...
 **
 ** GasModel_t: Ideal, VanderWaals, CaloricallyPerfect, ThermallyPerfect,
 **    ConstantDensity, RedlichKwong

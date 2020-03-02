@@ -183,9 +183,6 @@ int main(int argc, char* argv[]) {
 
   char fname[32];
   char name[32];
-  int Cvec[3];
-  int Fvec[3];
-  int Avec[2];
 
   size_t Mb_coor, Mb_elem, Mb_field, Mb_array;
 
@@ -197,10 +194,17 @@ int main(int argc, char* argv[]) {
   t0 = MPI_Wtime(); /* Timer */
 
   err = (int)cgp_mpi_info(info);
+  if(err != CG_OK) {
+    printf("*FAILED* cgp_mpi_info \n");
+    cgp_error_exit();
+  }
   err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode);
+  if(err != CG_OK) {
+    printf("*FAILED* cgp_pio_mode \n");
+    cgp_error_exit();
+  }
 
   Nnodes = Nelem*NodePerElem;
-
 
   nijk[0] = Nnodes; /* Number of vertices */
   nijk[1] = Nelem; /* Number of cells */
@@ -284,6 +288,7 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
 #if HDF5_HAVE_MULTI_DATASETS
+  int Cvec[3];
   Cvec[0] = Cx;
   Cvec[1] = Cy;
   Cvec[2] = Cz;
@@ -399,7 +404,7 @@ int main(int argc, char* argv[]) {
 
 
 #if HDF5_HAVE_MULTI_DATASETS
-
+  int Fvec[3];
   Fvec[0] = Fx;
   Fvec[1] = Fy;
   Fvec[2] = Fz;
@@ -488,6 +493,7 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
 #if HDF5_HAVE_MULTI_DATASETS
+  int Avec[2];
   Avec[0] = Ai;
   Avec[1] = Ar;
   if(cgp_array_multi_write_data(fn, Avec,&min,&max, 2, Array_i, Array_r) != CG_OK) {

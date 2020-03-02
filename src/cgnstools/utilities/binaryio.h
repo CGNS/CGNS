@@ -24,7 +24,7 @@
 #define MACH_LINUX      0x000C  /* 32-bit Linux */
 #define MACH_BSIEEE     0x000D  /* 32-bit generic byteswapped IEEE */
 #define MACH_IEEE       0x000E  /* 32-bit generic IEEE */
-#define MACH_UNKNOWN    0x00FF  /* unkown machine */
+#define MACH_UNKNOWN    0x00FF  /* unknown machine */
 
 /*----- architectures -----*/
 

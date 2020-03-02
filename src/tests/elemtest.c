@@ -116,7 +116,7 @@ static cgsize_t hexa32[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
                             14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
                             25, 26, 27, 28, 29, 30, 31, 32};
 
-int main (int argc, char *argv[])
+int main ()
 {
     int j, n;
     cgsize_t ne;
@@ -500,7 +500,7 @@ int main (int argc, char *argv[])
         cg_gopath(fnum, "../CoordinateY") ||
         cg_exponents_write(CGNS_ENUMV(RealSingle), exp) ||
         cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble),
-            "CoordinateZ", zc, &cnum) ||
+            "CoordinateZ", z3, &cnum) ||
         cg_gopath(fnum, "../CoordinateZ") ||
         cg_exponents_write(CGNS_ENUMV(RealSingle), exp))
         cg_error_exit ();

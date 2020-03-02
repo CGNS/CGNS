@@ -78,7 +78,7 @@ TKOGLOPTS = @TKOGLOPTS@ $(X11INCS) $(TKINCS) $(OGLINCS)
 # compile options for calculator
 #    -DUSE_MATHERR - matherr used to trap math errors in calculator
 #    -DREAD_NODE   - allow direct reading of ADF nodes
-#    -DSIGNAL=int  - signal return is int istead of void
+#    -DSIGNAL=int  - signal return is int instead of void
 #-----------------------------------------------------------------------
 
 CALCOPTS = @CALCOPTS@

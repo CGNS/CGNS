@@ -632,7 +632,7 @@ char errmsg[ ADF_MAX_ERROR_STR_LENGTH + 1 ] ;
       printf( "Unrecoverable ADF error.  ADFRALL\n" ) ;
       printf( "Cannot determine data type, so cannot determine function\n" ) ;
       printf( "argument list (character arrays are different than other\n" ) ;
-      printf( "types in this environemnt), so cannot set error_return.\n" ) ;
+      printf( "types in this environment), so cannot set error_return.\n" ) ;
       abort () ;
       } /* end if */
 
@@ -689,7 +689,7 @@ char errmsg[ ADF_MAX_ERROR_STR_LENGTH + 1 ] ;
       fprintf(stderr,"Unrecoverable ADF error.  ADFRBLK\n" ) ;
       fprintf(stderr,"Cannot determine data type, so cannot determine function\n" ) ;
       fprintf(stderr,"argument list (character arrays are different than other\n" ) ;
-      fprintf(stderr,"types in this environemnt), so cannot set error_return.\n" ) ;
+      fprintf(stderr,"types in this environment), so cannot set error_return.\n" ) ;
       abort () ;
       } /* end if */
 
@@ -782,7 +782,7 @@ char errmsg[ ADF_MAX_ERROR_STR_LENGTH + 1 ] ;
       fprintf(stderr,"Unrecoverable ADF error.  ADFREAD\n" ) ;
       fprintf(stderr,"Cannot determine data type, so cannot determine function\n" ) ;
       fprintf(stderr,"argument list (character arrays are different than other\n" ) ;
-      fprintf(stderr,"types in this environemnt), so cannot set error_return.\n" ) ;
+      fprintf(stderr,"types in this environment), so cannot set error_return.\n" ) ;
       abort () ;
       } /* end if */
 
@@ -882,7 +882,7 @@ char errmsg[ ADF_MAX_ERROR_STR_LENGTH + 1 ] ;
       fprintf(stderr,"Unrecoverable ADF error.  ADFWALL\n" ) ;
       fprintf(stderr,"Cannot determine data type, so cannot determine function\n" ) ;
       fprintf(stderr,"argument list (character arrays are different than other\n" ) ;
-      fprintf(stderr,"types in this environemnt), so cannot set error_return.\n" ) ;
+      fprintf(stderr,"types in this environment), so cannot set error_return.\n" ) ;
       abort () ;
       } /* end if */
 
@@ -951,7 +951,7 @@ char errmsg[ ADF_MAX_ERROR_STR_LENGTH + 1 ] ;
       fprintf(stderr,"Unrecoverable ADF error.  ADFWBLK\n" ) ;
       fprintf(stderr,"Cannot determine data type, so cannot determine function\n" ) ;
       fprintf(stderr,"argument list (character arrays are different than other\n" ) ;
-      fprintf(stderr,"types in this environemnt), so cannot set error_return.\n" ) ;
+      fprintf(stderr,"types in this environment), so cannot set error_return.\n" ) ;
       abort () ;
       } /* end if */
 
@@ -1034,7 +1034,7 @@ char errmsg[ ADF_MAX_ERROR_STR_LENGTH + 1 ] ;
       fprintf(stderr,"Unrecoverable ADF error.  ADFWRIT\n" ) ;
       fprintf(stderr,"Cannot determine data type, so cannot determine function\n" ) ;
       fprintf(stderr,"argument list (character arrays are different than other\n" ) ;
-      fprintf(stderr,"types in this environemnt), so cannot set error_return.\n" ) ;
+      fprintf(stderr,"types in this environment), so cannot set error_return.\n" ) ;
       abort () ;
       } /* end if */
 

@@ -90,7 +90,7 @@ CC_BASENAME="`echo $CC | cut -f1 -d' ' | xargs basename 2>/dev/null`"
 
 if test "$ac_cv_prog_gcc" = "yes"; then
   test -z "$CFLAGS" && CFLAGS=-O2
-  # probably dont need this
+  # probably don't need this
   # CFLAGS="$CFLAGS -fwritable-strings -ffloat-store"
 fi
 
@@ -237,8 +237,8 @@ fi
 if test -z $exec_prefix || test $exec_prefix = NONE; then
   exec_prefix=$prefix
 fi
-if test "$datadir" = "\${prefix}/share"; then
-  datadir=$datadir/cgnstools
+if test "$datarootdir" = "\${prefix}/share"; then
+  datadir=$datarootdir/cgnstools
 fi
 
 AC_MSG_CHECKING([where to install library])
@@ -493,7 +493,7 @@ else
 
  ## In F2003 and F2008 optional parameters are not allowed for functions that have BIND(C).
  ## In Fortran 2003 it is constraint C530, in the latest Fortran 2008 draft it is C516:
- ## "The ALLOCATABLE, POINTER, or OPTIONAL attribute shall not be specifed
+ ## "The ALLOCATABLE, POINTER, or OPTIONAL attribute shall not be specified
  ## for a dummy argument of a procedure that has a proc-language-binding-spec."
 
  ## However this is being addressed in:
@@ -920,6 +920,21 @@ EOF
     HDF5_HAVE_COLL_METADATA=1
     AC_MSG_RESULT(yes)
   fi
+
+  # Check if HDF5 library has H5Pset_file_space_strategy HDF5 >= 1.10.1
+  ## --------------------------------------------------------------------
+
+  HDF5_HAVE_FILE_SPACE_STRATEGY=0
+  AC_MSG_CHECKING([if HDF5 library has H5Pset_file_space_strategy])
+  chck_fs=`grep -i 'H5Pset_file_space_strategy' $HDF5INC/H5Ppublic.h`
+  if test "x$chck_fs" = "x"; then
+    AC_MSG_RESULT(no)
+  else
+    HDF5_HAVE_FILE_SPACE_STRATEGY=1
+    AC_MSG_RESULT(yes)
+  fi      
+
+
 fi
 
 #---------------------------------------------------------------------------
@@ -1788,7 +1803,7 @@ if test "$withfortran" = "yes"; then
       FC_D_PRE='-WF,' 
     fi
 #----------- Determine if the Fortran compiler pgi ------------------------
-# The PGI compiler segfaults wehn va_start is called, so we need to add
+# The PGI compiler segfaults when va_start is called, so we need to add
 # a special compiler flag, see CGNS-40. -Mx,125,0x200 is now called
 # -Mvarargs
 #--------------------------------------------------------------------------
@@ -1823,13 +1838,11 @@ INSTALLPCGNS=""
 PTESTS=""
 
 if test "$withhdf5" = "yes"; then
-  BUILDOPTS="$BUILDOPTS -DBUILD_HDF5"
   ADFOBJS="\$(OBJDIR)/ADFH.\$(O)"
   ADFINCS="adfh/ADFH.h"
 fi
 
 if test "$parallel" = "yes"; then
-  BUILDOPTS="$BUILDOPTS -DBUILD_PARALLEL"
   ADFOBJS="$ADFOBJS \$(OBJDIR)/pcgnslib.\$(O)"
   INSTALLPCGNS=install-pcgns
   PTESTS=runptests
@@ -1879,6 +1892,7 @@ AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
 AC_SUBST(HAVE_STAT64_STRUCT)
 AC_SUBST(HDF5_HAVE_COLL_METADATA)
+AC_SUBST(HDF5_HAVE_FILE_SPACE_STRATEGY)
 AC_SUBST(FC_D_PRE)
 AC_SUBST(BUILDPARALLEL)
 AC_SUBST(BUILDBASESCOPE)

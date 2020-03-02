@@ -123,11 +123,11 @@ static void check_solution (void)
         if (nz > 1) {
             if (z->sols->nflds != Zones->sols->nflds)
                FATAL ("check_solution",
-                   "solution inconsistant between zones");
+                   "solution inconsistent between zones");
             for (nf = 0; nf < z->sols->nflds; nf++) {
                 if (strcmp (z->sols->flds[nf].name, Zones->sols->flds[nf].name))
                    FATAL ("check_solution",
-                       "solution inconsistant between zones");
+                       "solution inconsistent between zones");
             }
         }
     }
