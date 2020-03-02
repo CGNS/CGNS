@@ -2,18 +2,26 @@ CGNS version 4.1.0
 =================================
 
 INTRODUCTION
+------------
 
 This document describes the difference between CGNS 4.0.0 and
 CGNS 4.1.0, and contains information on known problems in
 CGNS 4.1.0.
 
-Links to the CGNS 4.1.0 source code can be found at:
+Links to the CGNS current released source code can be found at:
+
+http://cgns.org/download.html
 
 User documentation for the current release can be found at:
 
+http://cgns.org/CGNS_docs_current/midlevel/index.html
+
 For more information, see the CGNS home page:
 
+http://cgns.org
+
 CONTENTS
+--------
 
 - New Features
 - Support for new platforms and languages
@@ -240,8 +248,8 @@ Tested Configuration Features Summary
           y   = tested
           n   = not tested in this release
           x   = not working in this release
-                                              [1]                    [1]
-|               Platform               | C | C    | Fortran | Fortran    |
+
+|               Platform               | C | C[1] | Fortran | Fortran [1]|
 |--------------------------------------|---|------|---------|------------|
 | SunOS 5.11 32-bit                    | y |  n   |   y     |    n       |
 | SunOS 5.11 64-bit                    | y |  n   |   y     |    n       |

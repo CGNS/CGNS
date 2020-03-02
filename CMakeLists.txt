@@ -345,7 +345,7 @@ endif (CGNS_ENABLE_HDF5 AND HDF5_NEED_MPI)
 # RPATH Management #
 ####################
 
-if (CGNS_USE_SHARED)
+if (CGNS_BUILD_SHARED)
   # use, i.e. don't skip the full RPATH for the build tree
   set(CMAKE_SKIP_BUILD_RPATH  FALSE)
 
@@ -363,9 +363,9 @@ if (CGNS_USE_SHARED)
   IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
      set(CMAKE_MACOSX_RPATH TRUE)
   ENDIF()
-else(CGNS_USE_SHARED)
+else(CGNS_BUILD_SHARED)
 set(CMAKE_SKIP_RPATH TRUE)
-endif(CGNS_USE_SHARED)
+endif(CGNS_BUILD_SHARED)
 
 #-----------------------------------------------------------------------------
 # Dashboard and Testing Settings
