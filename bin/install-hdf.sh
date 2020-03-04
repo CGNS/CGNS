@@ -3,15 +3,15 @@
 # Set odd/even days of the week
 day=$(( $(date +%d) % 2 ))
 
+OPTS="--disable-tools --disable-tests"
+
 if [ $day -eq 0 ]; then #even day tests, HDF5 1.8 branch
 
 HDF5_VER="hdf5_1_8"
-OPTS=""
 
 else #odd day tests, HDF5 develop branch
 
 HDF5_VER="develop"
-OPTS="--disable-tools --disable-tests"
 
 fi
 
