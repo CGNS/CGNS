@@ -8,7 +8,9 @@ OPTS=""
 if [ $TRAVIS_OS_NAME = "linux" ]; then
   export FLIBS="-Wl,--no-as-needed -ldl"
   export LIBS="-Wl,--no-as-needed -ldl"
-  OPTS="--enable-parallel"
+  OPTS="--enable-parallel --enable-cgnstools --with-tcl=/usr/lib --with-tk=/usr/lib"
+else
+  OPTS="--disable-cgnstools"
 fi
 
 ./configure \
@@ -19,9 +21,7 @@ fi
 --enable-64bit \
 --disable-shared \
 --enable-debug \
---disable-cgnstools \
 --enable-64bit
-
 
 
 

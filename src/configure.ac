@@ -1589,8 +1589,10 @@ if test "$enableval" = "yes" ; then
       AC_MSG_ERROR(Tcl directory $tcldir not found)
     fi
     tcldir=`(cd $tcldir; pwd)`
-    if test ! -f "$tcldir/tclConfig.sh"; then
-      if test ! -f "$tcldir/unix/tclConfig.sh"; then
+    TCLCONFIG="$tcldir/tclConfig.sh"
+    if test ! -f "$TCLCONFIG"; then
+      TCLCONFIG="$tcldir/unix/tclConfig.sh"
+      if test ! -f "$TCLCONFIG"; then
         AC_MSG_ERROR(tclConfig.sh not found in $tcldir or $tcldir/unix)
       fi
     fi
@@ -1642,19 +1644,32 @@ if test "$enableval" = "yes" ; then
       if test -z "$tcldir"; then
         AC_MSG_ERROR(can't find a usable Tcl directory)
       fi
+      TCLCONFIG="$tcldir/$TCLUNIX/tclConfig.sh"
     fi
+    . $TCLCONFIG
     . $TKCONFIG
     tcllib=`ls -d $tcldir/$TCLUNIX/libtcl8* 2>/dev/null`
     tklib=`ls -d $tkdir/$TKUNIX/libtk8* 2>/dev/null`
     X11LIBS=""
-    TKINCS="-I$tcldir/generic -I$tkdir/generic"
+    if test -z "$TK_INCLUDE_SPEC" -a -z "$TCL_INCLUDE_SPEC"; then
+      TKINCS="-I$tcldir/generic -I$tkdir/generic"
+    else
+      TKINCS="$TK_INCLUDE_SPEC $TCL_INCLUDE_SPEC"
+    fi
     if test "$ac_cv_cygwin" = "yes"; then
       TKINCS="$TKINCS -I$tkdir/win -I$tkdir/xlib"
     fi
-    TKLIBS="$tcllib $tklib $TK_LIBS"
-    TCL_LIBRARY="$tcldir/library"
-    TK_LIBRARY="$tkdir/library"
-    LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
+    if test -z "$TK_LIB_SPEC" -a -z "$TCL_LIB_SPEC"; then 
+      TKLIBS="$tcllib $tklib $TK_LIBS"
+      TCL_LIBRARY="$tcldir/library"
+      TK_LIBRARY="$tkdir/library"
+      LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
+    else
+      TKLIBS="$TK_LIB_SPEC $TCL_LIB_SPEC $TK_LIBS"
+      TCL_LIBRARY="$tcldir/library"
+      TK_LIBRARY="$tkdir/library"
+      LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
+    fi
   fi
 
   if test -z "$TKCONFIG"; then

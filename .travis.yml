@@ -20,6 +20,7 @@ before_install:
          sudo apt-get install -qq gfortran;
          sudo apt-get install -qq libmpich-dev;
          sudo apt-get install -qq mpich;
+         sudo apt-get install -qq libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev;
       fi
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true

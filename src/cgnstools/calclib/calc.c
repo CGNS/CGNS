@@ -205,7 +205,7 @@ static VECDATA *read_node (char *nodename)
     if (NULL == values)
         cgnsCalcFatal ("malloc failed for node data");
 
-    if (cgio_read_all_data (cgio, nodeid, values)) {
+    if (cgio_read_all_data_type (cgio, nodeid, type, values)) {
         cgio_error_message (errmsg);
         cgnsCalcFatal (errmsg);
     }
