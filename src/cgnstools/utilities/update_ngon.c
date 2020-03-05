@@ -101,7 +101,7 @@ int convert_elements(int cgio_num, double elem_id)
             cgsize_t local_idx;
 
             connectivity = malloc((size_t)sizeof(int)*elem_size);
-            cgio_read_all_data(cgio_num, connect_id, (void *)connectivity);
+            cgio_read_all_data_type(cgio_num, connect_id, "I4", (void *)connectivity);
             /* first count number of elements */
             idx = 0;
             while (idx < elem_size) {
