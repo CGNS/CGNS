@@ -1459,7 +1459,7 @@ static int CGIOtype (ClientData data, Tcl_Interp *interp,
                     Tcl_AppendResult (interp, "malloc failed for data", NULL);
                     return TCL_ERROR;
                 }
-                if (cgio_read_all_data (cgioNum, node_id, olddata)) {
+                if (cgio_read_all_data_type (cgioNum, node_id, dtold->type, olddata)) {
                     free (olddata);
                     return (get_error (interp, "cgio_read_all_data"));
                 }
@@ -1653,9 +1653,9 @@ static int CGIOread (ClientData data, Tcl_Interp *interp,
         return TCL_ERROR;
     }
 
-    if (cgio_read_all_data (cgioNum, node_id, values)) {
+    if (cgio_read_all_data_type (cgioNum, node_id, dt, values)) {
         free (values);
-        return (get_error (interp, "cgio_read_all_data"));
+        return (get_error (interp, "cgio_read_all_data_type"));
     }
 
     if (dt->type == C1data) {
