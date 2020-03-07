@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
 #endif
 
 #if defined(_WIN32) && defined(BUILD_DLL)
-# define CGIODLL _declspec(dllexport)
+# define CGIODLL __declspec(dllexport)
 #else
 # define CGIODLL
 #endif
@@ -78,7 +78,7 @@ static char *new_c_string (char *str, int len, cgint_f *ier)
     if (len < 1 || str == NULL) {
       *ier = (cgint_f)CGIO_ERR_NULL_STRING;
         return NULL;
-    } else if ( len == 2 && strncmp(str, "\0", 2) == 92 ) {
+    } else if ( len == 2 && strncmp(str, "\0", 2) == 0 ) {
       *ier = (cgint_f)CGIO_ERR_NULL_STRING;
       return NULL;
     }
@@ -434,7 +434,7 @@ CGIODLL void cgio_children_ids_f(
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_children_names_f, cgio_children_names_f) (
+CGIODLL void FMNAME(cgio_children_names_f, CGIO_CHILDREN_NAMES_F) (
     cgint_f *cgio_num, double *pid, cgint_f *start, cgint_f *max_ret,
     cgint_f *name_len, cgint_f *num_ret, STR_PSTR(names),
     cgint_f *ier STR_PLEN(names))
@@ -529,42 +529,36 @@ CGIODLL void cgio_get_data_size_f(
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_get_dimensions_f_c, CGIO_GET_DIMENSIONS_F_C) (
-    cgint_f *cgio_num, double *id, cgint_f *ndims, cgsize_t *dims,
-    cgint_f *ier)
+CGIODLL void FMNAME(cgio_read_all_data_type_f, CGIO_READ_ALL_DATA_TYPE_F) (
+    cgint_f *cgio_num, double *id, STR_PSTR(m_data_type), void *data, cgint_f *ier STR_PLEN(m_data_type))
 {
-    int i_ndims;
-
-    *ier = (cgint_f)cgio_get_dimensions((int)*cgio_num, *id, &i_ndims, dims);
-    *ndims = (cgint_f)i_ndims;
+    char c_dtype[CGIO_MAX_DATATYPE_LENGTH+1];
+    to_c_string(STR_PTR(m_data_type), STR_LEN(m_data_type), c_dtype, CGIO_MAX_DATATYPE_LENGTH);
+    *ier = (cgint_f)cgio_read_all_data_type((int)*cgio_num, *id, c_dtype, data);
 }
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_read_all_data_f, CGIO_READ_ALL_DATA_F) (
-    cgint_f *cgio_num, double *id, void *data, cgint_f *ier)
-{
-    *ier = (cgint_f)cgio_read_all_data((int)*cgio_num, *id, data);
-}
-
-/*---------------------------------------------------------*/
-
-CGIODLL void FMNAME(cgio_read_block_data_f, CGIO_READ_BLOCK_DATA_F) (
+CGIODLL void FMNAME(cgio_read_block_data_type_f, CGIO_READ_BLOCK_DATA_TYPE_F) (
     cgint_f *cgio_num, double *id, cgsize_t *b_start, cgsize_t *b_end,
-    void *data, cgint_f *ier)
+    STR_PSTR(m_data_type), void *data, cgint_f *ier STR_PLEN(m_data_type))
 {
-    *ier = (cgint_f)cgio_read_block_data((int)*cgio_num, *id, *b_start, *b_end, data);
+    char c_dtype[CGIO_MAX_DATATYPE_LENGTH+1];
+    to_c_string(STR_PTR(m_data_type), STR_LEN(m_data_type), c_dtype, CGIO_MAX_DATATYPE_LENGTH);
+    *ier = (cgint_f)cgio_read_block_data_type((int)*cgio_num, *id, *b_start, *b_end, c_dtype, data);
 }
 
 /*---------------------------------------------------------*/
 
-CGIODLL void FMNAME(cgio_read_data_f, CGIO_READ_DATA_F) (
+CGIODLL void FMNAME(cgio_read_data_type_f, CGIO_READ_DATA_TYPE_F) (
     cgint_f *cgio_num, double *id, cgsize_t *s_start, cgsize_t *s_end,
-    cgsize_t *s_stride, cgint_f *m_ndims, cgsize_t *m_dims, cgsize_t *m_start,
-    cgsize_t *m_end, cgsize_t *m_stride, void *data, cgint_f *ier)
+    cgsize_t *s_stride,  STR_PSTR(m_data_type), cgint_f *m_ndims, cgsize_t *m_dims, cgsize_t *m_start,
+    cgsize_t *m_end, cgsize_t *m_stride, void *data, cgint_f *ier STR_PLEN(m_data_type))
 {
-    *ier = (cgint_f)cgio_read_data((int)*cgio_num, *id, s_start, s_end, s_stride,
-               (int)*m_ndims, m_dims, m_start, m_end, m_stride, data);
+    char c_dtype[CGIO_MAX_DATATYPE_LENGTH+1];
+    to_c_string(STR_PTR(m_data_type), STR_LEN(m_data_type), c_dtype, CGIO_MAX_DATATYPE_LENGTH);
+    *ier = (cgint_f)cgio_read_data_type((int)*cgio_num, *id, s_start, s_end, s_stride, c_dtype,
+           (int)*m_ndims, m_dims, m_start, m_end, m_stride, data);
 }
 
 /*=========================================================
@@ -591,19 +585,6 @@ CGIODLL void FMNAME(cgio_set_label_f, CGIO_SET_LABEL_F) (
 
     to_c_string(STR_PTR(label), STR_LEN(label), c_label, CGIO_MAX_LABEL_LENGTH);
     *ier = (cgint_f)cgio_set_label((int)*cgio_num, *id, c_label);
-}
-
-/*---------------------------------------------------------*/
-
-CGIODLL void FMNAME(cgio_set_dimensions_f_c, CGIO_SET_DIMENSIONS_F_C) (
-    cgint_f *cgio_num, double *id, STR_PSTR(data_type), cgint_f *ndims,
-    cgsize_t *dims, cgint_f *ier STR_PLEN(data_type))
-{
-    char c_type[CGIO_MAX_DATATYPE_LENGTH+1];
-
-    to_c_string(STR_PTR(data_type), STR_LEN(data_type),
-        c_type, CGIO_MAX_DATATYPE_LENGTH);
-    *ier = (cgint_f)cgio_set_dimensions((int)*cgio_num, *id, c_type, (int)*ndims, dims);
 }
 
 /*---------------------------------------------------------*/

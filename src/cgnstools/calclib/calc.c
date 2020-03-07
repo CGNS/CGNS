@@ -205,7 +205,7 @@ static VECDATA *read_node (char *nodename)
     if (NULL == values)
         cgnsCalcFatal ("malloc failed for node data");
 
-    if (cgio_read_all_data (cgio, nodeid, values)) {
+    if (cgio_read_all_data_type (cgio, nodeid, type, values)) {
         cgio_error_message (errmsg);
         cgnsCalcFatal (errmsg);
     }
@@ -419,7 +419,7 @@ static void read_reference (void)
 }
 
 /*---------- get_variable ----------------------------------------------
- * return variable data - read if neccessary
+ * return variable data - read if necessary
  *----------------------------------------------------------------------*/
 
 static VECDATA *get_variable (Variable *var)
@@ -440,7 +440,7 @@ static VECDATA *get_variable (Variable *var)
 }
 
 /*---------- get_coordinate --------------------------------------------
- * return coordinate data - read if neccessary
+ * return coordinate data - read if necessary
  *----------------------------------------------------------------------*/
 
 static VECDATA *get_coordinate (Variable *var)
@@ -862,7 +862,7 @@ int cgnsCalcBase (int base)
 
     read_reference ();
 
-    /* get number of zones and initilize */
+    /* get number of zones and initialize */
 
     if (cg_nzones (cgnsFile, cgnsBase, &NumZones))
         cgnsCalcFatal ((char *)cg_get_error());
@@ -980,7 +980,7 @@ int cgnsCalcZone (int zone)
         }
     }
 
-    /* get number of solutions and initilize */
+    /* get number of solutions and initialize */
 
     if (cg_nsols (cgnsFile, cgnsBase, cgnsZone, &NumSolns))
         cgnsCalcFatal ((char *)cg_get_error());

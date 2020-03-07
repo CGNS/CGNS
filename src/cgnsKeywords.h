@@ -43,7 +43,7 @@ freely, subject to the following restrictions:
 #define CGNSLIB_KEYWORDS_H
 
 /*
-   THIS HEADER CAN BE READ BY ANY C LANGAGE PRE-PROCESSOR
+   THIS HEADER CAN BE READ BY ANY C LANGUAGE PRE-PROCESSOR
 
    ENUMERATES DEFINITIONS ARE DECLARED, IN THE CASE YOU DO NOT WANT
    THESE DEFINITIONS (e.g. you compile Fortran) THEN YOU HAVE TO UNSET
@@ -63,8 +63,8 @@ freely, subject to the following restrictions:
  *      VERSION NUMBER                                                   *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define CGNS_VERSION 3130
-#define CGNS_DOTVERS 3.13
+#define CGNS_VERSION 4200
+#define CGNS_DOTVERS 4.20
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
 
@@ -339,7 +339,7 @@ typedef enum {
 #define NSTurbulentIncompressible_s    "NSTurbulentIncompressible"
 
 /* Any model type will accept both ModelTypeNull and ModelTypeUserDefined.
-** The following models will accept these values as vaild...
+** The following models will accept these values as valid...
 **
 ** GasModel_t: Ideal, VanderWaals, CaloricallyPerfect, ThermallyPerfect,
 **    ConstantDensity, RedlichKwong
@@ -468,7 +468,7 @@ typedef enum {
 #define BCWallViscous_s                "BCWallViscous"
 #define BCWallViscousHeatFlux_s        "BCWallViscousHeatFlux"
 #define BCWallViscousIsothermal_s      "BCWallViscousIsothermal"
-#define FamilySpecified_s              "FamilySpecified_s"
+#define FamilySpecified_s              "FamilySpecified"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Data types:  Can not add data types and stay forward compatible  *

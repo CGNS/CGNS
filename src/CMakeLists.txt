@@ -8,9 +8,8 @@ if (WIN32)
 endif (WIN32)
 
 # Include the local directory
-include_directories(.)
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (CGNS_ENABLE_HDF5)
-  add_definitions(-DBUILD_HDF5)
   if (WIN32)
     if (HDF5_LIBRARY)
      # file(STRINGS ${HDF5_LIBRARY} HDF5isDLL REGEX "__imp__H5close")
@@ -23,13 +22,10 @@ if (CGNS_ENABLE_HDF5)
   if(HDF5_NEED_MPI AND MPI_INC)
     include_directories(${MPI_INC})
   endif(HDF5_NEED_MPI AND MPI_INC)
-  if (CGNS_ENABLE_PARALLEL)
-    add_definitions(-DBUILD_PARALLEL)
-  endif (CGNS_ENABLE_PARALLEL)
 endif (CGNS_ENABLE_HDF5)
 
 ################################
-# create configed header files #
+# create configured header files #
 ################################
 
 if ("${SIZE_OF_LONG}" GREATER 4)
@@ -104,16 +100,25 @@ set(HAVE_FORTRAN_2008 0)
 set(HAVE_FORTRAN_2008TS 0)
 set(HDF5_HAVE_MULTI_DATASETS 0)
 set(HDF5_HAVE_COLL_METADATA 0)
+set(HDF5_HAVE_FILE_SPACE_STRATEGY 0)
 set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
+set(HAVE_STAT64_STRUCT 0)
 
 if (BUILDFORTRAN)
 
 #----------- Determine if the Fortran compiler pgi ------------------------
-# The PGI compiler segfaults wehn va_start is called, so we need to add
+# The PGI compiler segfaults when va_start is called, so we need to add
 # a special compiler flag, see CGNS-40.
 #--------------------------------------------------------------------------
-IF (CMAKE_C_COMPILER_ID MATCHES "PGI")
+IF (CMAKE_Fortran_COMPILER_ID MATCHES "PGI")
  SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Mx,125,0x200")
+ENDIF()
+
+#----------- Determine if the Fortran compiler NAG ------------------------
+# The NAG compiler needs an additional flag for Fortran calls to C APIs.
+#--------------------------------------------------------------------------
+IF (CMAKE_Fortran_COMPILER_ID MATCHES "NAG")
+ SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mismatch_all")
 ENDIF()
 
 ENABLE_LANGUAGE(Fortran)
@@ -232,6 +237,11 @@ CHECK_FORTRAN_FEATURE(Fortran2008
            END FUNCTION bind2
          END INTERFACE
        END MODULE test
+
+       PROGRAM main
+         USE test
+         IMPLICIT NONE
+       END PROGRAM
   "
   CHECK_FORTRAN_2008
 )
@@ -331,10 +341,11 @@ MACRO (CHECK_HDF5_FEATURE FUNCTION CODE VARIABLE)
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/test_HDF.c
         "${CODE}"
     )
-    SET (CHECK_FUNCTION_EXISTS_ADD_INCLUDE "-DINCLUDE_DIRECTORIES:STRING=${HDF5_INCLUDE_DIR}")
+SET (CHECK_FUNCTION_EXISTS_ADD_INCLUDE "-DINCLUDE_DIRECTORIES:STRING=${HDF5_INCLUDE_DIR}")
     TRY_COMPILE (${VARIABLE}
         ${CMAKE_BINARY_DIR}
         ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/test_HDF.c
+        LINK_LIBRARIES ${HDF5_LIBRARY}
         CMAKE_FLAGS "${CHECK_FUNCTION_EXISTS_ADD_INCLUDE}"
         OUTPUT_VARIABLE OUTPUT
     )
@@ -362,12 +373,13 @@ ENDMACRO (CHECK_HDF5_FEATURE)
 
 if (CGNS_ENABLE_HDF5)
   set(BUILDHDF5 1)
-#  if (HDF5_INCLUDE_PATH)
-#    native_paths(HDF5_INCLUDE_PATH HDF5INC)
-#  endif (HDF5_INCLUDE_PATH)
-#  if (HDF5_LIBRARY)
-#    native_paths(HDF5_LIBRARY HDF5LIB)
-#  endif (HDF5_LIBRARY)
+  if (HDF5_INCLUDE_PATH)
+    native_paths(HDF5_INCLUDE_PATH HDF5INC)
+	include_directories(${HDF5INC})
+  endif (HDF5_INCLUDE_PATH)
+  if (HDF5_LIBRARY)
+    native_paths(HDF5_LIBRARY HDF5LIB)
+  endif (HDF5_LIBRARY)
   if (HDF5_NEED_SZIP)
     set(H5NEEDSZIP 1)
     if (SZIP_LIBRARY)
@@ -377,7 +389,7 @@ if (CGNS_ENABLE_HDF5)
   if (HDF5_NEED_ZLIB)
     set(H5NEEDZLIB 1)
     if (ZLIB_LIBRARY)
-      native_paths(${ZLIB_LIBRARY} ZLIBLIB)
+      native_paths(ZLIB_LIBRARY ZLIBLIB)
     endif (ZLIB_LIBRARY)
   endif (HDF5_NEED_ZLIB)
   if (HDF5_NEED_MPI)
@@ -436,8 +448,43 @@ CHECK_HDF5_FEATURE(Collective_metadata
    set(HDF5_HAVE_COLL_METADATA 1)
  endif (CHECK_HDF5_HAVE_COLL_METADATA)
 
+ # Check if HDF5 library has H5Pset_file_space_strategy, HDF5 >= 1.10.1
+ # --------------------------------------------------------------------
+
+CHECK_HDF5_FEATURE(H5Pset_file_space_strategy
+  " 
+ #include \"hdf5.h\"
+ void main(void)
+ {
+   hid_t foo;
+   H5Pset_file_space_strategy(foo, H5F_FSPACE_STRATEGY_FSM_AGGR, 1, (hsize_t)1);
+   return;
+ }
+  "
+   CHECK_HDF5_HAVE_FILE_SPACE_STRATEGY
+ )
+ if (CHECK_HDF5_HAVE_FILE_SPACE_STRATEGY)
+   set(HDF5_HAVE_FILE_SPACE_STRATEGY 1)
+ endif (CHECK_HDF5_HAVE_FILE_SPACE_STRATEGY)
 
 endif (CGNS_ENABLE_HDF5)
+
+  # Check for stat64 struct
+  ## --------------------------------------------------------------------
+  #  stat64 is deprecated for OS X
+
+if (NOT APPLE)
+  include(CheckStructHasMember)
+  if ( WIN32 )
+    CHECK_STRUCT_HAS_MEMBER("struct _stat64" st_atime sys/stat.h  CHECK_HAVE_STAT64_STRUCT LANGUAGE C)
+  else ( WIN32 )
+    CHECK_STRUCT_HAS_MEMBER("struct stat64" st_atime sys/stat.h  CHECK_HAVE_STAT64_STRUCT LANGUAGE C)
+  endif( WIN32)
+
+  if (CHECK_HAVE_STAT64_STRUCT)
+    set(HAVE_STAT64_STRUCT 1)
+  endif (CHECK_HAVE_STAT64_STRUCT)
+endif(NOT APPLE)
 
 #create these in build directory so it doesn't mess up the
 #source directory, then add the path to them
@@ -452,7 +499,7 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 ###########
 # Library #
@@ -501,23 +548,28 @@ option(CGNS_USE_SHARED "Link programs to the CGNS shared library" "ON")
 
 # Build a static version of the library
 if (CGNS_ENABLE_FORTRAN)
-    add_library(cgns_static ${cgns_FILES} $<TARGET_OBJECTS:cgns_f2c>)
+    add_library(cgns_static STATIC ${cgns_FILES} $<TARGET_OBJECTS:cgns_f2c>)
 else (CGNS_ENABLE_FORTRAN)
-  add_library(cgns_static ${cgns_FILES})
+  add_library(cgns_static STATIC ${cgns_FILES})
 endif (CGNS_ENABLE_FORTRAN)
-
+# Needed to work around a CMake > 3.8 bug on Windows with MSVS and Intel Fortran
+set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
 
 # Build a shared version of the library
 if(CGNS_BUILD_SHARED)
   mark_as_advanced(CLEAR CGNS_USE_SHARED)
-  add_library(cgns_shared SHARED ${cgns_FILES})
+  if (CGNS_ENABLE_FORTRAN)
+    add_library(cgns_shared SHARED ${cgns_FILES} cgns_f.F90)
+  else (CGNS_ENABLE_FORTRAN)
+    add_library(cgns_shared SHARED ${cgns_FILES})
+  endif (CGNS_ENABLE_FORTRAN)
   # under windows we need to define BUILD_DLL
   # and link with the HDF5 libraries to build a dll
   if (WIN32 OR CYGWIN)
     add_definitions(-DBUILD_DLL)
   endif (WIN32 OR CYGWIN)
   if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
-    target_link_libraries(cgns_shared ${HDF5_LIBRARY})
+    target_link_libraries(cgns_shared ${HDF5_LIBRARY} ${CMAKE_DL_LIBS})
     if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
       target_link_libraries(cgns_shared ${ZLIB_LIBRARY})
     endif(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
@@ -561,42 +613,49 @@ install(TARGETS cgns_static ARCHIVE DESTINATION lib)
 # Set the install path of the shared library
 if(CGNS_BUILD_SHARED)
   # for windows, need to install both cgnsdll.dll and cgnsdll.lib
-  if (WIN32 OR CYGWIN)
-    install(TARGETS cgns_shared ARCHIVE DESTINATION lib)
-    install(TARGETS cgns_shared RUNTIME DESTINATION lib)
-  else (WIN32 OR CYGWIN)
-    install(TARGETS cgns_shared LIBRARY DESTINATION lib)
-  endif (WIN32 OR CYGWIN)
+  install (TARGETS cgns_shared LIBRARY DESTINATION lib
+                               ARCHIVE DESTINATION lib
+                               RUNTIME DESTINATION bin)
 endif(CGNS_BUILD_SHARED)
 
 # Set the install path of the header files
-install(FILES
-	cgnslib.h
-	cgns_io.h
-	cgnswin_f.h
-	${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h
-	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes.h
-	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h
-	${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f03.h
-	${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs
-	DESTINATION include)
+set(headers
+  cgnslib.h
+  cgns_io.h
+  cgnswin_f.h
+  ${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h
+  ${CMAKE_CURRENT_BINARY_DIR}/cgnstypes.h
+  ${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f.h
+  ${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f03.h
+  ${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs)
 
 if (CGNS_ENABLE_FORTRAN)
-  install(FILES
-          ${CMAKE_CURRENT_BINARY_DIR}/cgns.mod
-          DESTINATION include)
+  if(DEFINED CMAKE_Fortran_MODULE_DIRECTORY)
+    list(APPEND headers
+      ${CMAKE_Fortran_MODULE_DIRECTORY}/cgns.mod)
+  else()
+    list(APPEND headers
+      $<TARGET_FILE_DIR:cgns_static>/cgns.mod)
+  endif()
 endif (CGNS_ENABLE_FORTRAN)
 
 if (CGNS_ENABLE_PARALLEL)
-  install(FILES	pcgnslib.h DESTINATION include)
+  list(APPEND headers
+    pcgnslib.h)
 endif (CGNS_ENABLE_PARALLEL)
 
 if (CGNS_ENABLE_LEGACY)
-  install(FILES adf/ADF.h DESTINATION include/adf)
+  list(APPEND headers
+    adf/ADF.h)
   if (CGNS_ENABLE_HDF5)
-    install(FILES adfh/ADFH.h DESTINATION include/adfh)
+    list(APPEND headers
+      adfh/ADFH.h)
   endif (CGNS_ENABLE_HDF5)
 endif (CGNS_ENABLE_LEGACY)
+
+# Set the install path of the header files
+install(FILES ${headers}
+	DESTINATION include)
 
 #########
 # Tools #
@@ -613,6 +672,7 @@ if (CGNS_ENABLE_TESTS)
   add_subdirectory(Test_UserGuideCode/C_code)
   if (CGNS_ENABLE_PARALLEL)
     add_subdirectory(ptests)
+    add_subdirectory(Test_UserGuideCode/C_code_parallel)
   endif (CGNS_ENABLE_PARALLEL)
 endif (CGNS_ENABLE_TESTS)
 

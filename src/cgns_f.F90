@@ -36,7 +36,7 @@
 !
 MODULE cgns
 
-  USE ISO_C_BINDING
+  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR
   IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
@@ -82,13 +82,53 @@ MODULE cgns
   INTEGER, PARAMETER, PRIVATE :: MAX_LEN = 32
 
   INTERFACE cgio_set_dimensions_f
-     MODULE PROCEDURE cgio_set_dimensions_f_0
-     MODULE PROCEDURE cgio_set_dimensions_f_1
+
+     SUBROUTINE cgio_set_dimensions_f_0(cgio_num, id, data_type, ndims, dims, ier) ! BIND(C, NAME="cgio_set_dimensions_f_0")
+       IMPORT :: CGSIZE_T, C_DOUBLE, C_CHAR
+       IMPLICIT NONE
+       INTEGER :: cgio_num
+       REAL(C_DOUBLE) :: id
+       CHARACTER(KIND=C_CHAR, LEN=*) :: data_type
+       INTEGER :: ndims
+       INTEGER(CGSIZE_T) :: dims
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cgio_set_dimensions_f_0
+
+     SUBROUTINE cgio_set_dimensions_f_1(cgio_num, id, data_type, ndims, dims, ier) ! BIND(C, NAME="cgio_set_dimensions_f_1")
+       IMPORT :: CGSIZE_T, C_DOUBLE, C_CHAR
+       IMPLICIT NONE
+       INTEGER :: cgio_num
+       REAL(C_DOUBLE) :: id
+       CHARACTER(KIND=C_CHAR, LEN=*) :: data_type
+       INTEGER :: ndims
+       INTEGER(CGSIZE_T), DIMENSION(*) :: dims
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cgio_set_dimensions_f_1
+
   END INTERFACE
 
   INTERFACE cgio_get_dimensions_f
-     MODULE PROCEDURE cgio_get_dimensions_f_0
-     MODULE PROCEDURE cgio_get_dimensions_f_1
+
+     SUBROUTINE cgio_get_dimensions_f_0(cgio_num, id, ndims, dims, ier) BIND(C, NAME="cgio_get_dimensions_f_0")
+       IMPORT :: C_DOUBLE, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER :: cgio_num
+       REAL(C_DOUBLE) :: id
+       INTEGER :: ndims
+       INTEGER(CGSIZE_T) :: dims
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cgio_get_dimensions_f_0
+
+     SUBROUTINE cgio_get_dimensions_f_1(cgio_num, id, ndims, dims, ier) BIND(C, NAME="cgio_get_dimensions_f_1")
+       IMPORT :: C_DOUBLE, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER :: cgio_num
+       REAL(C_DOUBLE) :: id
+       INTEGER :: ndims
+       INTEGER(CGSIZE_T), DIMENSION(*) :: dims
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cgio_get_dimensions_f_1
+
   END INTERFACE
 
   ! Fortran version of cgnslib.h
@@ -112,8 +152,6 @@ MODULE cgns
   INTEGER(C_INT), PARAMETER :: CGIO_FILE_ADF  = 1
   INTEGER(C_INT), PARAMETER :: CGIO_FILE_HDF5 = 2
   INTEGER(C_INT), PARAMETER :: CGIO_FILE_ADF2 = 3
-
-
 
   !* legacy code support
   INTEGER(C_INT) MODE_READ, MODE_WRITE, MODE_MODIFY
@@ -320,7 +358,7 @@ MODULE cgns
   END ENUM
 
 !** Any model type will accept both ModelTypeNull and ModelTypeUserDefined.
-!** The following models will accept these values as vaild...
+!** The following models will accept these values as valid...
 !**
 !** GasModel_t: Ideal, VanderWaals, CaloricallyPerfect, ThermallyPerfect,
 !**    ConstantDensity, RedlichKwong
@@ -894,6 +932,20 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
+     SUBROUTINE cg_set_rind_zero_f(ier) BIND(C, NAME="cg_set_rind_zero_f")
+       IMPLICIT NONE
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_set_rind_zero_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_set_rind_core_f(ier) BIND(C, NAME="cg_set_rind_core_f")
+       IMPLICIT NONE
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_set_rind_core_f
+  END INTERFACE
+
+  INTERFACE
      SUBROUTINE cg_get_cgio_f(fn, cgio_num, ier) BIND(C, NAME="cg_get_cgio_f")
        IMPLICIT NONE
        INTEGER :: fn
@@ -1126,6 +1178,65 @@ MODULE cgns
      END SUBROUTINE cg_family_name_write_f
   END INTERFACE
 
+  INTERFACE
+     SUBROUTINE cg_node_family_write_f(family_name, F, ier) !BIND(C, NAME="cg_node_family_write_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family_name
+       INTEGER :: F
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_family_write_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_nfamilies_f(nfamilies, ier) BIND(C, NAME="cg_node_nfamilies_f")
+       IMPLICIT NONE
+       INTEGER :: nfamilies
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_nfamilies_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_family_read_f(F,family_name, nboco, ngeos, ier) !BIND(C, NAME="cg_node_family_read_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: F
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family_name
+       INTEGER :: nboco
+       INTEGER :: ngeos
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_family_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_family_name_write_f(name, family, ier) !BIND(C, NAME="cg_node_family_name_write_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_family_name_write_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_nfamily_names_f(nnames, ier) BIND(C, NAME="cg_node_nfamily_names_f")
+       IMPLICIT NONE
+       INTEGER :: nnames
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_nfamily_names_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_family_name_read_f(N, name, family, ier) !BIND(C, NAME="cg_node_family_name_read_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: N
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: family
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_family_name_read_f
+  END INTERFACE
+
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write FamBC_t Nodes                                     *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -1157,6 +1268,29 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_fambc_write_f
   END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_fambc_read_f(BC, fambc_name, bocotype, ier) !BIND(C, NAME="cg_node_fambc_read_f")
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       INTEGER :: BC
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fambc_name
+       INTEGER(cgenum_t) :: bocotype
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_fambc_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_fambc_write_f(fambc_name, bocotype, BC, ier) !BIND(C, NAME="cg_node_fambc_write_f")
+       IMPORT :: c_char, cgenum_t
+       IMPLICIT NONE
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fambc_name
+       INTEGER(cgenum_t) :: bocotype
+       INTEGER :: BC
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_fambc_write_f
+  END INTERFACE
+
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write GeometryReference_t Nodes                         *
@@ -1193,6 +1327,31 @@ MODULE cgns
      END SUBROUTINE cg_geo_write_f
   END INTERFACE
 
+  INTERFACE
+     SUBROUTINE cg_node_geo_read_f(G, geo_name, geo_file, CAD_name, npart, ier) !BIND(C, NAME="cg_node_geo_read_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: G
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_name
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_file
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: CAD_name
+       INTEGER :: npart
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_geo_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_geo_write_f(geo_name, geo_file, CAD_name, G, ier) !BIND(C, NAME="cg_node_geo_write_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_name
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: geo_file
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: CAD_name
+       INTEGER :: G
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_geo_write_f
+  END INTERFACE
+
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write GeometryEntity_t Nodes                            *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -1223,6 +1382,28 @@ MODULE cgns
        INTEGER :: P
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_part_write_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_part_read_f(G, P, part_name, ier) !BIND(C, NAME="cg_node_part_read_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: G
+       INTEGER :: P
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: part_name
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_part_read_f
+  END INTERFACE
+
+  INTERFACE
+     SUBROUTINE cg_node_part_write_f(G, part_name, P, ier) !BIND(C, NAME="cg_node_part_write_f")
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: G
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: part_name
+       INTEGER :: P
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_node_part_write_f
   END INTERFACE
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
@@ -2830,6 +3011,34 @@ MODULE cgns
      END SUBROUTINE cg_grid_write_f
   END INTERFACE
 
+!!$ INTERFACE
+!!$    SUBROUTINE cg_grid_bounding_box_read_f(fn, B, Z, G, datatype, array, ier) ! BIND(C, NAME="cg_grid_bounding_box_read_f")
+!!$      IMPORT :: cgenum_t
+!!$      IMPLICIT NONE
+!!$      INTEGER :: fn
+!!$      INTEGER :: B
+!!$      INTEGER :: Z
+!!$      INTEGER :: G
+!!$      INTEGER(cgenum_t), INTENT(IN) :: datatype
+!!$      TYPE(*), DIMENSION(*) :: array
+!!$      INTEGER, INTENT(OUT) :: ier
+!!$    END SUBROUTINE cg_grid_bounding_box_read_f
+!!$ END INTERFACE
+ 
+!!$  INTERFACE
+!!$     SUBROUTINE cg_grid_bounding_box_write_f(fn, B, Z, G, datatype, array, ier) !BIND(C, NAME="cg_grid_bounding_box_write_f")
+!!$       IMPORT :: cgenum_t, c_ptr
+!!$       IMPLICIT NONE
+!!$       INTEGER :: fn
+!!$       INTEGER :: B
+!!$       INTEGER :: Z
+!!$       INTEGER :: G
+!!$       INTEGER(cgenum_t), INTENT(IN) :: datatype
+!!$       void *array
+!!$       INTEGER, INTENT(OUT) :: ier
+!!$     END SUBROUTINE cg_grid_bounding_box_write_f
+!!$  END INTERFACE
+
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !      Read and write SimulationType_t Node                             *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -3701,7 +3910,7 @@ MODULE cgns
      END SUBROUTINE cg_exit_on_error_f
   END INTERFACE
 
-#ifdef BUILD_PARALLEL
+#if CG_BUILD_PARALLEL_F
 
   !======================================================================
   ! parallel IO interface
@@ -4705,7 +4914,7 @@ MODULE cgns
 
 !*---------------------------------------------------------
   INTERFACE
-     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier) ! BIND(C,NAME='cgio_children_names_f')
+     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier) !BIND(C,NAME='cgio_children_names_f')
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4781,43 +4990,6 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgio_get_data_size_f
   END INTERFACE
-
-!*---------------------------------------------------------
-
-
-!*---------------------------------------------------------
-!!$  INTERFACE
-!!$     SUBROUTINE cgio_read_all_data_f(cgio_num, id, DATA, ier) BIND(C,NAME='')
-!!$       IMPORT :: c_double, cgsize_t
-!!$       IMPLICIT NONE
-!!$       INTEGER :: cgio_num
-!!$       REAL(C_DOUBLE) :: id
-!!$       TYPE(C_PTR) :: data
-!!$       INTEGER, INTENT(OUT) :: ier
-!!$     END SUBROUTINE cgio_read_all_data_f
-!!$  END INTERFACE
-
-!*---------------------------------------------------------
-!!$  INTERFACE
-!!$     SUBROUTINE cgio_read_block_data_f(cgio_num, id, b_start, b_end, DATA, ier) BIND(C,NAME='')
-!!$       IMPORT :: c_double, cgsize_t, C_PTR
-!!$       IMPLICIT NONE
-!!$       INTEGER :: cgio_num
-!!$       REAL(C_DOUBLE) :: id
-!!$       INTEGER(CGSIZE_T) :: b_start
-!!$       INTEGER(CGSIZE_T) :: b_end
-!!$       TYPE(C_PTR) :: data
-!!$       INTEGER, INTENT(OUT) :: ier
-!!$     END SUBROUTINE cgio_read_block_data_f
-!!$  END INTERFACE
-
-!*---------------------------------------------------------
-!!$  INTERFACE
-!!$     SUBROUTINE cgio_read_data_f(
-!!$    cgint_f *cgio_num, double *id, cgsize_t *s_start, cgsize_t *s_end,
-!!$    cgsize_t *s_stride, cgint_f *m_ndims, cgsize_t *m_dims, cgsize_t *m_start,
-!!$    cgsize_t *m_end, cgsize_t *m_stride, void *data, cgint_f *ier) BIND(C,NAME='')
-!!$    END INTERFACE
 
 !*=========================================================
 !* write nodes
@@ -4926,55 +5098,5 @@ CONTAINS
 !    ier = cg_open(TRIM(filename)//C_NULL_CHAR, mode, fn)
 !
 !  END SUBROUTINE cg_open_f
-
-  SUBROUTINE cgio_set_dimensions_f_0(cgio_num, id, data_type, ndims, dims, ier)
-    IMPLICIT NONE
-    INTEGER :: cgio_num
-    REAL(C_DOUBLE) :: id
-    CHARACTER(KIND=C_CHAR, LEN=*) :: data_type
-    INTEGER :: ndims
-    INTEGER(CGSIZE_T) :: dims
-    INTEGER, INTENT(OUT) :: ier
-
-    CALL cgio_set_dimensions_f_c(cgio_num, id, data_type, ndims, dims, ier)
-
-  END SUBROUTINE cgio_set_dimensions_f_0
-
-  SUBROUTINE cgio_set_dimensions_f_1(cgio_num, id, data_type, ndims, dims, ier)
-    IMPLICIT NONE
-    INTEGER :: cgio_num
-    REAL(C_DOUBLE) :: id
-    CHARACTER(KIND=C_CHAR, LEN=*) :: data_type
-    INTEGER :: ndims
-    INTEGER(CGSIZE_T), DIMENSION(*) :: dims
-    INTEGER, INTENT(OUT) :: ier
-
-    CALL cgio_set_dimensions_f_c(cgio_num, id, data_type, ndims, dims, ier)
-
-  END SUBROUTINE cgio_set_dimensions_f_1
-
-  SUBROUTINE cgio_get_dimensions_f_0(cgio_num, id, ndims, dims, ier)
-    IMPLICIT NONE
-    INTEGER :: cgio_num
-    REAL(C_DOUBLE) :: id
-    INTEGER :: ndims
-    INTEGER(CGSIZE_T) :: dims
-    INTEGER, INTENT(OUT) :: ier
-
-    CALL cgio_get_dimensions_f_c(cgio_num, id, ndims, dims, ier)
-
-  END SUBROUTINE cgio_get_dimensions_f_0
-
-  SUBROUTINE cgio_get_dimensions_f_1(cgio_num, id, ndims, dims, ier)
-    IMPLICIT NONE
-    INTEGER :: cgio_num
-    REAL(C_DOUBLE) :: id
-    INTEGER :: ndims
-    INTEGER(CGSIZE_T), DIMENSION(*) :: dims
-    INTEGER, INTENT(OUT) :: ier
-
-    CALL cgio_get_dimensions_f_c(cgio_num, id, ndims, dims, ier)
-
-  END SUBROUTINE cgio_get_dimensions_f_1
 
 END MODULE cgns

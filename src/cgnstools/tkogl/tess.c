@@ -15,7 +15,7 @@ static Tcl_Interp * globalinterp;
 static int globalresult;
 
 static void TessError (GLenum errno) {
-   Tcl_AppendResult (globalinterp, "Tesselation error: ",
+   Tcl_AppendResult (globalinterp, "Tessellation error: ",
 		     gluErrorString(errno), " ", (char*) NULL);
    globalresult = TCL_ERROR;
 }
@@ -94,7 +94,7 @@ Tesselate (Tcl_Interp *interp, int argc, char* argv [])
       else {
 	 if (Tcl_GetDouble (interp, argv [iarg], &coord[icoord]) != TCL_OK) {
 	    Tcl_AppendResult (interp,
-	      "\nError parsing tesselation vertex coord", (char*) NULL);
+	      "\nError parsing tessellation vertex coord", (char*) NULL);
 	    result = TCL_ERROR;
 	    break;
 	 }

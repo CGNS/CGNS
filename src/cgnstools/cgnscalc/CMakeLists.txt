@@ -4,7 +4,7 @@
 
 include_directories(${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH})
 include_directories(../calclib)
-link_directories(.)
+
 if (CGNS_USE_SHARED)
   link_libraries(cgns_shared)
 else (CGNS_USE_SHARED)

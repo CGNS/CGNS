@@ -22,7 +22,7 @@
 !   (../../lib is the location where the compiled
 !   library libcgns.a is located)
 !
-!   The following is no longer supported; now superceded by "use cgns":
+!   The following is no longer supported; now superseded by "use cgns":
 !     include 'cgnslib_f.h'
 !   Note Windows machines need to include cgnswin_f.h
 !
@@ -57,9 +57,9 @@
 !  read rind data
       call cg_rind_read_f(irinddata,ier)
 !   lower range index
-      irmin(1)=1
-      irmin(2)=1
-      irmin(3)=1
+      irmin(1)=1-irinddata(1)
+      irmin(2)=1-irinddata(3)
+      irmin(3)=1-irinddata(5)
 !   upper range index - use cell dimensions and rind info
 !   checking GridLocation first:
       call cg_sol_info_f(index_file,index_base,index_zone,index_flow,          &
@@ -69,9 +69,9 @@
          ''  Currently:'',a32)') GridLocationName(loc)
         stop
       end if
-      irmax(1)=isize(1,2)+irinddata(1)+irinddata(2)
-      irmax(2)=isize(2,2)+irinddata(3)+irinddata(4)
-      irmax(3)=isize(3,2)+irinddata(5)+irinddata(6)
+      irmax(1)=isize(1,2)+irinddata(2)
+      irmax(2)=isize(2,2)+irinddata(4)
+      irmax(3)=isize(3,2)+irinddata(6)
 !   read flow solution
       call cg_field_read_f(index_file,index_base,index_zone,index_flow,        &
            'Density',RealSingle,irmin,irmax,r,ier)

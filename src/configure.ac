@@ -33,33 +33,17 @@ CGNSDIR=`/bin/pwd`
 ## The following variables are used to distinguish between building a
 ## serial and parallel library.
 ##
-##    HAVE_PARALLEL	-- defined in #scot# H5config.h if we are building
-##			   a parallel library even if configure wasn't
-##			   able to find some header file or library that
-##			   might be required. This is defined if the
-##			   compiler looks like a parallel compiler (e.g.,
-##			   mpicc or mpcc) or if the user explicitly states
-##			   that a parallel library is being built by supplying
-##			   the `--enable-parallel' configure switch.
 ##
 ##    PARALLEL		-- This variable is set to a non-null value if
 ##			   configure thinks we're compiling a parallel
 ##			   version of the library.
 ##
-##    RUNSERIAL	        -- This is a command which will be prepended to
-##			   the executable name to run the executable using
-##			   a single process. For serial versions of the
-##			   library this will normally be empty. For parallel
-##			   versions it might be something like `mpiexec -n 1'.
-##			   The value of this variable is substituted in *.in
-##			   files.
-##
-##    RUNPARALLEL	-- This is a command which will be prepended to
+##    MPIEXEC	        -- This is a command which will be prepended to
 ##			   the executable name to run the executable on
 ##			   multiple processors. For the serial library the
 ##			   value will normally be the empty string. For
 ##			   parallel library it should be something like
-##			   "mpiexec -n \$\${NPROCS:=6}" where NPROCS will
+##			   "mpiexec -n \$\${NPROCS:=4}" where NPROCS will
 ##			   eventually contain the number of processors on which
 ##			   to run the executable (the double dollarsigns are to
 ##			   protect the expansion until make executes the
@@ -67,9 +51,6 @@ CGNSDIR=`/bin/pwd`
 ##			   substituted in *.in files.
 ##
 AC_SUBST([PARALLEL])
-AC_SUBST([RUNSERIAL])
-AC_SUBST([RUNPARALLEL])
-AC_SUBST([TESTPARALLEL])
 
 #--------------------------------------------------------------------------
 # get the C compiler
@@ -109,7 +90,7 @@ CC_BASENAME="`echo $CC | cut -f1 -d' ' | xargs basename 2>/dev/null`"
 
 if test "$ac_cv_prog_gcc" = "yes"; then
   test -z "$CFLAGS" && CFLAGS=-O2
-  # probably dont need this
+  # probably don't need this
   # CFLAGS="$CFLAGS -fwritable-strings -ffloat-store"
 fi
 
@@ -256,8 +237,8 @@ fi
 if test -z $exec_prefix || test $exec_prefix = NONE; then
   exec_prefix=$prefix
 fi
-if test "$datadir" = "\${prefix}/share"; then
-  datadir=$datadir/cgnstools
+if test "$datarootdir" = "\${prefix}/share"; then
+  datadir=$datarootdir/cgnstools
 fi
 
 AC_MSG_CHECKING([where to install library])
@@ -512,7 +493,7 @@ else
 
  ## In F2003 and F2008 optional parameters are not allowed for functions that have BIND(C).
  ## In Fortran 2003 it is constraint C530, in the latest Fortran 2008 draft it is C516:
- ## "The ALLOCATABLE, POINTER, or OPTIONAL attribute shall not be specifed
+ ## "The ALLOCATABLE, POINTER, or OPTIONAL attribute shall not be specified
  ## for a dummy argument of a procedure that has a proc-language-binding-spec."
 
  ## However this is being addressed in:
@@ -810,6 +791,7 @@ BUILDHDF5=0
 HDF5DEF=""
 HDF5INC=""
 HDF5LIB=""
+HDF5BIN=""
 
 AC_MSG_CHECKING([if using HDF5])
 AC_ARG_WITH(hdf5,
@@ -852,12 +834,16 @@ else
     if test -f "$hdf5dir/include/hdf5.h"; then
       HDF5INC=$hdf5dir/include
       for a in $exts ; do
+	if test -f $hdf5dir/lib64/libhdf5.$a; then
+          HDF5LIB=$hdf5dir/lib64/libhdf5.$a
+          break
+        fi
         if test -f $hdf5dir/lib/libhdf5.$a; then
           HDF5LIB=$hdf5dir/lib/libhdf5.$a
           break
         fi
       done
-      test -z "$HDF5LIB" && HDF5LIB=$hdf5dir/lib/libhdf5.a
+      test -z "$HDF5LIB" && (HDF5LIB=$hdf5dir/lib/libhdf5.a || HDF5LIB=$hdf5dir/lib64/libhdf5.a)
     else
       if test -f "$hdf5dir/src/hdf5.h"; then
         HDF5INC=$hdf5dir/src
@@ -874,6 +860,26 @@ else
     fi
   fi
   HDF5DEF=-I$HDF5INC
+  HDF5BIN=$hdf5dir/bin
+
+  if test -z "$HDF5BIN"; then
+     AC_MSG_ERROR(failed to find the HDF5 bin directory $HDF5BIN)    
+  fi
+
+  # Checking version of HDF5 (req. minimum 1.8) 
+  ## --------------------------------------------------------------------
+  AC_MSG_CHECKING([HDF5 library version])
+  H5_VERS_MAJOR=`grep "#define H5_VERS_MAJOR" $HDF5INC/H5public.h | sed "s/H5_VERS_MAJOR//g" | sed "s/[^0-9]*//g"`
+  H5_VERS_MINOR=`grep "#define H5_VERS_MINOR" $HDF5INC/H5public.h | sed "s/H5_VERS_MINOR//g" | sed "s/[^0-9]*//g"`
+  H5_VERS_RELEASE=`grep "#define H5_VERS_RELEASE" $HDF5INC/H5public.h | sed "s/H5_VERS_RELEASE//g" | sed "s/[^0-9]*//g"`
+  AC_MSG_RESULT(${H5_VERS_MAJOR}.${H5_VERS_MINOR}.${H5_VERS_RELEASE})
+
+  AC_MSG_CHECKING([if HDF5 is 1.8 or greater])
+  if test ${H5_VERS_MAJOR} -ge 1 && test ${H5_VERS_MINOR} -ge 8; then
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_ERROR(no)
+  fi
 
   # Check if HDF5 library has multi-dataset read and write APIs
   ## --------------------------------------------------------------------
@@ -890,7 +896,7 @@ void main(void)
   return;
 }
 EOF
-  msg=`${CC} -c test.c ${HDF5DEF} &> /dev/null`
+  msg=`${CC} -c test.c ${HDF5DEF} 2> /dev/null`
   if test -f test.o; then
     HDF5_HAVE_MULTI_DATASETS=1
     AC_MSG_RESULT(yes)
@@ -905,41 +911,44 @@ EOF
   # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
   ## --------------------------------------------------------------------
 
-  AC_LANG_C
   HDF5_HAVE_COLL_METADATA=0
   AC_MSG_CHECKING([if HDF5 library has collective metadata APIs])
-
-  cat >> test.c << EOF
-#include "hdf5.h"
-void main(void)
-{
-  hid_t foo;
-  H5Pset_coll_metadata_write(foo, 1);
-  H5Pset_all_coll_metadata_ops(foo, 1);
-  return;
-}
-EOF
-  msg=`${CC} -c test.c ${HDF5DEF} &> /dev/null`
-  if test -f test.o; then
+  chck_coll=`grep -i '_coll_metadata_' $HDF5INC/H5Ppublic.h`
+  if test "x$chck_coll" = "x"; then
+    AC_MSG_RESULT(no)
+  else
     HDF5_HAVE_COLL_METADATA=1
     AC_MSG_RESULT(yes)
-    rm test.o
-  else
+  fi
+
+  # Check if HDF5 library has H5Pset_file_space_strategy HDF5 >= 1.10.1
+  ## --------------------------------------------------------------------
+
+  HDF5_HAVE_FILE_SPACE_STRATEGY=0
+  AC_MSG_CHECKING([if HDF5 library has H5Pset_file_space_strategy])
+  chck_fs=`grep -i 'H5Pset_file_space_strategy' $HDF5INC/H5Ppublic.h`
+  if test "x$chck_fs" = "x"; then
     AC_MSG_RESULT(no)
-  fi
-  if test -f test.c; then
-     rm test.c
-  fi
+  else
+    HDF5_HAVE_FILE_SPACE_STRATEGY=1
+    AC_MSG_RESULT(yes)
+  fi      
+
+
 fi
 
 #---------------------------------------------------------------------------
 # locate zlib and szip libraries
 #---------------------------------------------------------------------------
 
+# Automatically search for zlib and szip from HDF5 build specs, but
+# only do this if --with-zlib and --with-szip is not specified.
+
 H5NEEDZLIB=0
 ZLIBLIB=""
 H5NEEDSZIP=0
 SZIPLIB=""
+HDF5LIB_DEP=""
 
 ## ----------------------------------------------------------------------
 ## Fake --with-xxx option to allow us to create a help message for the
@@ -955,9 +964,109 @@ AC_ARG_WITH([fnord],
                          library directory separated by a comma
     --with-xxx=DIR     - Specify only the directory which contains the
                          include/ and lib/ subdirectories
+
+  IMPORTANT NOTE: CGNS will automatically search for zlib and szip used in
+        building HDF5 only if options --with-zlib and --with-szip are not
+        specified. 
+
   ])
 
 if test "$withhdf5" = "yes"; then
+
+  AC_ARG_WITH([zlib],,[withval_zlib=yes],[withval_zlib=no])
+  AC_ARG_WITH([szip],,[withval_szip=yes],[withval_szip=no])
+
+  if test $withval_zlib == "no" && test $withval_szip == "no"; then
+
+  AC_MSG_CHECKING([if HDF5 library has compression dependencies])      
+
+  H5CC=$HDF5BIN/h5*cc
+  H5BLD_CPPFLAGS=`cat $H5CC | grep "H5BLD_CPPFLAGS=" | sed -e 's/.*H5BLD_CPPFLAGS="*\(.*\) ".*/\1/'` 
+  H5BLD_LDFLAGS=`cat $H5CC | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS="*\(.*\) ".*/\1/'` 
+  H5BLD_LIBS=`cat $H5CC | grep "H5BLD_LIBS=" | sed -e 's/.*H5BLD_LIBS="*\(.*\) ".*/\1/'`
+
+  LDFLAGS="$LDFLAGS $H5BLD_LDFLAGS"
+  CPPFLAGS="$CPPFLAGS $H5BLD_CPPFLAGS"
+
+# check if linking in szip or zlib
+# HDF5 does not add LDFLAGS for libraries in standard locations, so process the LIBS being
+# linked in.
+  LZLIB=""
+  LSZIP=""
+  LNUMLIBS=`echo $H5BLD_LIBS | awk '{print NF}'`
+  if test $LNUMLIBS -gt 0; then
+    for i in `seq 1 $LNUMLIBS` ; do
+       LIBX=`echo $H5BLD_LIBS | cut -d' ' -f$i`
+       if test `echo $LIBX | grep "\-lz" > /dev/null; echo $?` == 0; then
+         LZLIB="-lz"
+       fi 
+       if test `echo $LIBX | grep "\-lsz" > /dev/null; echo $?` == 0; then
+         LSZIP="-lsz"
+       else
+         if test `echo $LIBX | grep "\-lszip" > /dev/null; echo $?` == 0; then
+           LSZIP="-lszip"
+         fi
+       fi
+    done
+  fi
+
+  if test $shared = yes; then
+     LDFLAGS="$LDFLAGS $H5BLD_LDFLAGS"
+     HDF5LIB_DEP="$LDFLAGS"  
+     LIBS="$LIBS $LZLIB $LSZIP"
+     FLIBS="$FLIBS $LZLIB $LSZIP"
+  else
+     H5BLD_LDFLAGS_PATH=`echo $H5BLD_LDFLAGS | sed 's/-L//g'`       
+     NUMLIBS=`echo $H5BLD_LDFLAGS_PATH | awk '{print NF}'`
+
+     HDF5LIB_DEP=""
+     FOUNDZLIB="false"
+     FOUNDSZIP="false"
+     for i in `seq 1 $NUMLIBS` ; do
+       LIB_PATH=`echo $H5BLD_LDFLAGS_PATH | cut -d' ' -f$i`
+       for a in $exts ; do
+          if test -f $LIB_PATH/libz.$a; then
+            HDF5LIB_DEP="$LIB_PATH/libz.$a $HDF5LIB_DEP"
+            FOUNDZLIB="true"
+            break
+          fi
+          if test -f $LIB_PATH/libsz.$a; then
+            HDF5LIB_DEP="$LIB_PATH/libsz.$a $HDF5LIB_DEP"
+            FOUNDSZIP="true"
+            break
+          fi
+          if test -f $LIB_PATH/libszip.$a; then
+            HDF5LIB_DEP="$LIB_PATH/libszip.$a $HDF5LIB_DEP"
+            FOUNDSZIP="true"
+            break
+          fi
+       done
+     done
+
+     if test "x$LSZIP" != "x" && test "$FOUNDSZIP" == "false";then
+       LIBS="$LIBS $LSZIP"
+       FLIBS="$FLIBS $LSZIP"
+     fi
+     if test "x$LZLIB" != "x" && test "$FOUNDZLIB" == "false";then
+       LIBS="$LIBS $LZLIB"
+       FLIBS="$FLIBS $LZLIB"
+     fi
+  fi
+
+  if test "x$HDF5LIB_DEP" = "x"; then
+    AC_MSG_RESULT(no)
+  else
+    AC_MSG_RESULT($HDF5LIB_DEP)
+  fi
+
+  AC_MSG_CHECKING([HDF5 library LIB dependencies])
+  if test "x$LIBS" = "x"; then
+    AC_MSG_RESULT(none)
+  else
+    AC_MSG_RESULT($LIBS)
+  fi      
+
+  else
 
   AC_ARG_WITH([zlib],
                [AS_HELP_STRING([--with-zlib=DIR],
@@ -1039,97 +1148,88 @@ if test "$withhdf5" = "yes"; then
     ;;
   esac
 	
+  AC_ARG_WITH([szip],
+               [AS_HELP_STRING([--with-szip=DIR],
+                              [Use szip library for external deflate I/O
+                               filter [default=no]])],,
+               [withval=no])
 
-#  AC_MSG_CHECKING([if using zlib])
-#  AC_ARG_WITH(zlib,
-#    [  --with-zlib[=DIR/LIB]   use zlib with HDF5 [default=no]],
-#    withzlib=$withval,withzlib="no")
-#  if test "$withzlib" = "no"; then
-#    AC_MSG_RESULT(no)
-#  else
-#    H5NEEDZLIB=1
-#    if test -z "$withzlib" || test "$withzlib" = "yes"; then
-#      zlibdir=""
-#      AC_MSG_RESULT(yes)
-#      AC_CHECK_HEADER(zlib.h,installed=yes,installed=no)
-#      if test "$installed" = "yes"; then
-#        ZLIBLIB=-lz
-#      else
-#        AC_MSG_CHECKING([for local zlib distribution])
-#        for d in \
-#          `ls -dr * 2>/dev/null` \
-#          `ls -dr ../* 2>/dev/null` \
-#          `ls -dr ../../* 2>/dev/null` \
-#          `ls -dr ../../../* 2>/dev/null` ; do
-#          if test -f "$d/zlib.h"; then
-#            zlibdir=`(cd $d; pwd)`
-#            AC_MSG_RESULT($zlibdir)
-#            break
-#          fi
-#        done
-#        test -z "$zlibdir" && AC_MSG_RESULT(not found)
-#      fi
-#    else
-#      if test -f "$withzlib/include/zlib.h"; then
-#        zlibdir=$withzlib
-#      else
-#        zlibdir=`dirname $withzlib`
-#      fi
-#      withzlib=yes
-#      AC_MSG_RESULT($zlibdir)
-#    fi
-#
-#    if test -z "$ZLIBLIB"; then
-#      test -z "$zlibdir" && \
-#        AC_MSG_ERROR(need specify the zlib directory with --with-zlib=DIR)
-#      if test -f "$zlibdir/include/zlib.h"; then
-#        for a in $exts ; do
-#          if test -f $zlibdir/lib/libz.$a; then
-#            ZLIBLIB=$zlibdir/lib/libz.$a
-#            break
-#          fi
-#        done
-#        test -z "$ZLIBLIB" && ZLIBLIB=$zlibdir/lib/libz.a
-#      else
-#        AC_MSG_ERROR($zlibdir/include directory does not contain zlib.h)
-#      fi
-#    fi
+  case $withval in
+    yes)
+      H5NEEDSZIP=1
+      HAVE_SZIP="yes"
+      AC_CHECK_HEADERS([szlib.h], [HAVE_SZIP_H="yes"], [unset HAVE_SZIP])
+      if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
+        AC_CHECK_LIB([sz], [SZ_BufftoBuffCompress],, [unset HAVE_SZIP])
+      fi
+      if test -z "$HAVE_SZIP"; then
+        AC_MSG_ERROR([couldn't find szip library: specify the szip directory with --with-szip=DIR])
+      fi
+      SZIPLIB=-lsz
+      ;;
+    no)
+      HAVE_SZIP="no"
+      AC_MSG_CHECKING([if using szip with HDF5])
+      AC_MSG_RESULT([no])
+      ;;
+    *)
+      H5NEEDSZIP=1
+      HAVE_SZIP="yes"
+ 
+      case "$withval" in
+        *,*)
+          szip_inc="`echo $withval | cut -f1 -d,`"
+          szip_lib="`echo $withval | cut -f2 -d, -s`"
+          ;;
+        *)
+          if test -n "$withval"; then
+            szip_inc="$withval/include"
+            szip_lib="$withval/lib"
+          fi
+          ;;
+      esac
 
-#  fi
+    if test -n "$szip_inc"; then
+      CPPFLAGS="$CPPFLAGS -I$szip_inc"
+    fi
 
-  AC_MSG_CHECKING([if using szip])
-  AC_ARG_WITH(szip,
-    [  --with-szip[=LIB]       use szip with HDF5 [default=no]],
-    sziplib=$withval,sziplib="no")
-  if test "x$sziplib" = "xno"; then
-    AC_MSG_RESULT(no)
-  else
-    H5NEEDSZIP=1
-    if test -z "$sziplib" || test "$sziplib" = "yes"; then
-      AC_MSG_RESULT(yes)
-      AC_CHECK_LIB(sz, SZ_BufftoBuffCompress, SZIPLIB=-lsz)
-      if test -z "$SZIPLIB"; then
-        AC_MSG_CHECKING([for local szip library])
-        for d in \
-          `ls -dr * 2>/dev/null` \
-          `ls -dr ../* 2>/dev/null` \
-          `ls -dr ../../* 2>/dev/null` \
-          `ls -dr ../../../* 2>/dev/null` ; do
-          for a in $exts ; do
-            if test -f "$d/libsz.$a"; then
-              SZIPLIB=`(cd $d; pwd)`/libsz.$a
-              AC_MSG_RESULT($SZIPLIB)
-              break
-            fi
-          done
-          test ! -z "$SZIPLIB" && break
+    AC_CHECK_HEADERS([szlib.h],
+                     [HAVE_SZIP_H="yes"],
+                     [CPPFLAGS="$saved_CPPFLAGS"] [unset HAVE_SZIP])
+
+
+    if test $shared = yes; then
+      SZIPLIB="-L$szip_lib"
+    else
+      if test -n "$szip_lib"; then
+        for a in $exts ; do
+          if test -f $szip_lib/libsz.$a; then
+            SZIPLIB=$szip_lib/libsz.$a
+            break
+          fi
         done
       fi
-    else
-      AC_MSG_RESULT($sziplib)
-      SZIPLIB=$sziplib
     fi
+
+    if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
+      AC_CHECK_LIB([sz], [SZ_BufftoBuffCompress],,
+                   [unset HAVE_SZIP])
+    fi
+
+    if test -z "$HAVE_SZIP"; then
+      AC_MSG_ERROR([couldn't find szip library])
+    else
+      AC_CHECK_FUNC([SZ_BufftoBuffCompress], [HAVE_BufftoBuffCompress="yes"])
+    fi
+    AC_MSG_CHECKING([for szip library path])
+    AC_MSG_RESULT([$szip_lib])
+    AC_MSG_CHECKING([for szip include path])
+    AC_MSG_RESULT([$szip_inc])
+    ;;
+  esac
+
   fi
+
 fi
 
 #---------------------------------------------------------------------------
@@ -1143,7 +1243,6 @@ MPIINC=""
 MPIOPTS=""
 MPILIBS=""
 MPICC=""
-MPIEXEC=""
 
 #if test "$withhdf5" = "yes"; then
 #  AC_MSG_CHECKING([if using MPI])
@@ -1238,14 +1337,33 @@ if test ! "x$enableval" = "xno" && enableval=yes; then
   BUILDPARALLEL=1
   parallel=$enableval
 
-  ## Set MPIEXEC to mpiexec if not set yet.
-  if test "X$parallel" = "Xyes" -a -z "$MPIEXEC"; then
-      MPIEXEC="mpiexec"
+  ## Set MPIEXEC if not set yet. Defaults to running on
+  ## four processes.
+  if test -z "$MPIEXEC"; then
+    MPIEXEC="mpiexec -n \$\${NPROCS:=4}"
   fi
 
+  ## There *must* be some way to run in parallel even if it's just the
+  ## word `none'.
+  if test -z "$MPIEXEC"; then
+    AC_MSG_ERROR([no way to run a parallel program])
+  fi
+
+  ## If MPIEXEC is the word `none' then replace it with
+  ## the empty string. This means that no launch commands were requested,
+  ## so we will not use any launch commands.
+  if test "X$MPIEXEC" = "Xnone"; then
+    MPIEXEC=""
+  fi
 
 fi
 AC_MSG_RESULT($parallel)
+
+if test "$parallel" = "yes"; then
+  ## Display what we found about running programs
+  AC_MSG_CHECKING([prefix for running in parallel])
+  AC_MSG_RESULT([$MPIEXEC])
+fi
 
 #--------------------------------------------------------------------------
 # check for libraries
@@ -1301,6 +1419,39 @@ EOF
   fi
   CFLAGS=$CFLAGS_SAVE
   test $has_lfs = yes && CFGFLAGS="$LFS $CFGFLAGS"
+fi
+
+  # Check for stat64 struct
+  ## --------------------------------------------------------------------
+  #  stat64 is deprecated for Mac OS X
+
+HAVE_STAT64_STRUCT=0
+
+if test ! "$SYSTEM" = "DARWIN"; then
+
+  AC_MSG_CHECKING([for stat64])
+
+  cat >> test.c << EOF
+#include <sys/types.h>
+#include <sys/stat.h>
+struct stat64 sb;
+int main()
+{
+  return 0;
+}
+EOF
+  msg=`${CC} -c test.c &> /dev/null`
+  if test -f test.o; then
+    HAVE_STAT64_STRUCT=1
+    AC_MSG_RESULT(yes)
+    rm test.o
+  else
+    AC_MSG_RESULT(no)
+  fi
+  if test -f test.c; then
+     rm test.c
+  fi
+
 fi
 
 #---------------------------------------------------------------------------
@@ -1397,6 +1548,10 @@ if test "$enableval" = "yes" ; then
         `ls -dr ../tk8* 2>/dev/null` \
         `ls -dr ../../tk8* 2>/dev/null` \
         `ls -dr ../../../tk8* 2>/dev/null` ; do
+        if test -f "$d/tkConfig.sh"; then
+          tkdir=`(cd $d; pwd)`
+          break
+        fi
         if test -f "$d/unix/tkConfig.sh"; then
           tkdir=`(cd $d; pwd)`
           break
@@ -1434,12 +1589,20 @@ if test "$enableval" = "yes" ; then
       AC_MSG_ERROR(Tcl directory $tcldir not found)
     fi
     tcldir=`(cd $tcldir; pwd)`
-    if test ! -f "$tcldir/unix/tclConfig.sh"; then
-      AC_MSG_ERROR(tclConfig.sh not found in $tcldir/unix)
+    TCLCONFIG="$tcldir/tclConfig.sh"
+    if test ! -f "$TCLCONFIG"; then
+      TCLCONFIG="$tcldir/unix/tclConfig.sh"
+      if test ! -f "$TCLCONFIG"; then
+        AC_MSG_ERROR(tclConfig.sh not found in $tcldir or $tcldir/unix)
+      fi
     fi
     if test -z "$tkdir"; then
       dir=`dirname $tcldir`
       for d in `ls -dr $dir/tk* 2>/dev/null` ; do
+        if test -f "$d/tkConfig.sh"; then
+          tkdir=$d
+          break
+        fi
         if test -f "$d/unix/tkConfig.sh"; then
           tkdir=$d
           break
@@ -1450,20 +1613,30 @@ if test "$enableval" = "yes" ; then
       fi
     fi
   fi
-
+  TKUNIX=""
+  TCLUNIX=""
   if test ! -z "$tkdir"; then
     if test ! -d "$tkdir"; then
       AC_MSG_ERROR(Tk directory $tkdir not found)
     fi
     tkdir=`(cd $tkdir; pwd)`
-    TKCONFIG="$tkdir/unix/tkConfig.sh"
+    TKCONFIG="$tkdir/tkConfig.sh"	
     if test ! -f "$TKCONFIG"; then
-      AC_MSG_ERROR(tkConfig.sh not found in $tkdir/unix)
+      TKUNIX="unix"
+      TKCONFIG="$tkdir/$TKUNIX/tkConfig.sh"
+      if test ! -f "$TKCONFIG"; then
+        AC_MSG_ERROR(tkConfig.sh not found in $tkdir or $tkdir/unix)
+      fi
     fi
     if test -z "$tcldir"; then
       dir=`dirname $tkdir`
       for d in `ls -dr $dir/tcl* 2>/dev/null` ; do
+        if test -f "$d/tclConfig.sh"; then
+          tcldir=$d
+          break
+        fi
         if test -f "$d/unix/tclConfig.sh"; then
+	  TCLUNIX="unix"
           tcldir=$d
           break
         fi
@@ -1471,19 +1644,32 @@ if test "$enableval" = "yes" ; then
       if test -z "$tcldir"; then
         AC_MSG_ERROR(can't find a usable Tcl directory)
       fi
+      TCLCONFIG="$tcldir/$TCLUNIX/tclConfig.sh"
     fi
+    . $TCLCONFIG
     . $TKCONFIG
-    tcllib=`ls -d $tcldir/unix/libtcl8* 2>/dev/null`
-    tklib=`ls -d $tkdir/unix/libtk8* 2>/dev/null`
+    tcllib=`ls -d $tcldir/$TCLUNIX/libtcl8* 2>/dev/null`
+    tklib=`ls -d $tkdir/$TKUNIX/libtk8* 2>/dev/null`
     X11LIBS=""
-    TKINCS="-I$tcldir/generic -I$tkdir/generic"
+    if test -z "$TK_INCLUDE_SPEC" -a -z "$TCL_INCLUDE_SPEC"; then
+      TKINCS="-I$tcldir/generic -I$tkdir/generic"
+    else
+      TKINCS="$TK_INCLUDE_SPEC $TCL_INCLUDE_SPEC"
+    fi
     if test "$ac_cv_cygwin" = "yes"; then
       TKINCS="$TKINCS -I$tkdir/win -I$tkdir/xlib"
     fi
-    TKLIBS="$tcllib $tklib $TK_LIBS"
-    TCL_LIBRARY="$tcldir/library"
-    TK_LIBRARY="$tkdir/library"
-    LIBRARY_PATH="$tcldir/unix:$tkdir/unix"
+    if test -z "$TK_LIB_SPEC" -a -z "$TCL_LIB_SPEC"; then 
+      TKLIBS="$tcllib $tklib $TK_LIBS"
+      TCL_LIBRARY="$tcldir/library"
+      TK_LIBRARY="$tkdir/library"
+      LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
+    else
+      TKLIBS="$TK_LIB_SPEC $TCL_LIB_SPEC $TK_LIBS"
+      TCL_LIBRARY="$tcldir/library"
+      TK_LIBRARY="$tkdir/library"
+      LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
+    fi
   fi
 
   if test -z "$TKCONFIG"; then
@@ -1632,10 +1818,11 @@ if test "$withfortran" = "yes"; then
       FC_D_PRE='-WF,' 
     fi
 #----------- Determine if the Fortran compiler pgi ------------------------
-# The PGI compiler segfaults wehn va_start is called, so we need to add
-# a special compiler flag, see CGNS-40.
+# The PGI compiler segfaults when va_start is called, so we need to add
+# a special compiler flag, see CGNS-40. -Mx,125,0x200 is now called
+# -Mvarargs
 #--------------------------------------------------------------------------
-    fc_vendor="`$FC --version 2>&1 |grep -i 'Portland Group'`"
+    fc_vendor="`$FC --version 2>&1 |grep 'PGI'`"
     if test X != "X$fc_vendor"; then
       FFLAGS="$FFLAGS -Mx,125,0x200" 
     fi
@@ -1645,6 +1832,13 @@ if test "$withfortran" = "yes"; then
      fc_vendor="`$FC --version 2>&1 |grep -i 'gcc'`"
      if test X != "X$fc_vendor"; then
        FFLAGS="$FFLAGS -Wno-c-binding-type"
+     fi
+#----------- Determine if the Fortran compiler NAG -------------------
+#   Add compiler flag for C API calls.
+#--------------------------------------------------------------------------
+     fc_vendor="`$FC -V 2>&1 |grep 'NAG'`"
+     if test X != "X$fc_vendor"; then
+       FFLAGS="$FFLAGS -mismatch_all"
      fi
 fi
 #--------------------------------------------------------------------------
@@ -1659,13 +1853,11 @@ INSTALLPCGNS=""
 PTESTS=""
 
 if test "$withhdf5" = "yes"; then
-  BUILDOPTS="$BUILDOPTS -DBUILD_HDF5"
   ADFOBJS="\$(OBJDIR)/ADFH.\$(O)"
   ADFINCS="adfh/ADFH.h"
 fi
 
 if test "$parallel" = "yes"; then
-  BUILDOPTS="$BUILDOPTS -DBUILD_PARALLEL"
   ADFOBJS="$ADFOBJS \$(OBJDIR)/pcgnslib.\$(O)"
   INSTALLPCGNS=install-pcgns
   PTESTS=runptests
@@ -1713,7 +1905,9 @@ AC_SUBST(HAVE_FORTRAN_2003)
 AC_SUBST(HAVE_FORTRAN_2008TS)
 AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
+AC_SUBST(HAVE_STAT64_STRUCT)
 AC_SUBST(HDF5_HAVE_COLL_METADATA)
+AC_SUBST(HDF5_HAVE_FILE_SPACE_STRATEGY)
 AC_SUBST(FC_D_PRE)
 AC_SUBST(BUILDPARALLEL)
 AC_SUBST(BUILDBASESCOPE)
@@ -1740,6 +1934,7 @@ AC_SUBST(H5NEEDZLIB)
 AC_SUBST(HDF5DEF)
 AC_SUBST(HDF5INC)
 AC_SUBST(HDF5LIB)
+AC_SUBST(HDF5LIB_DEP)
 AC_SUBST(ZLIBLIB)
 AC_SUBST(SZIPLIB)
 

@@ -12,6 +12,14 @@
 # define cgsize_t int
 #endif
 
+#if CG_HAVE_STAT64_STRUCT
+#ifdef _WIN32
+#define stat _stat64
+#else
+#define stat stat64
+#endif
+#endif
+
 #define MAX_LEADER 1024
 #define INDENT     2
 
@@ -207,7 +215,7 @@ int main (int argc, char *argv[])
             cgio_error_exit ("cgio_file_version");
         if (0 == cgio_get_node_id (cgio, root_id,
                      "CGNSLibraryVersion",&node_id) &&
-            0 == cgio_read_all_data (cgio, node_id, &cgns_version))
+            0 == cgio_read_all_data_type (cgio, node_id, "R4" ,&cgns_version))
             printf ("CGNS version  : %4.2f\n", cgns_version);
         else
             printf ("CGNS version  : not defined\n");

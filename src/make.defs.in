@@ -20,13 +20,13 @@ CLIBS   = @LIBS@
 
 #------------------------------------------------------------------------
 # SPACE  - used to force a space in the compiler executable output flag
-# O       - object file extension (typicaly o)
+# O       - object file extension (typically o)
 # A       - library file extension (typically a)
 # EXE     - executable extension (typically blank)
 # LIBCGNS - CGNS library name
 #------------------------------------------------------------------------
-
-SPACE   =
+EMPTY   :=
+SPACE   := $(EMPTY) $(EMPTY)
 O       = @OBJEXT@
 A       = @LIBEXT@
 EXE     = @EXEEXT@
@@ -91,14 +91,16 @@ RANLIB = @RANLIB@
 # these should only be set if building with HDF5
 # HDF5INC - path to HDF5 header files
 # HDF5LIB - HDF5 library
+# HDF5LIB_DEP - szip library (if needed), and zlib library (if needed)
 # SZIPLIB - szip library (if needed)
 # ZLIBLIB - zlib library (if needed)
 #------------------------------------------------------------------------
 
-HDF5INC = @HDF5DEF@
-HDF5LIB = @HDF5LIB@
-SZIPLIB = @SZIPLIB@
-ZLIBLIB = @ZLIBLIB@
+HDF5INC     = @HDF5DEF@
+HDF5LIB     = @HDF5LIB@
+HDF5LIB_DEP = @HDF5LIB_DEP@
+SZIPLIB     = @SZIPLIB@
+ZLIBLIB     = @ZLIBLIB@
 
 #------------------------------------------------------------------------
 # these should only be set if building with HDF5 and MPI
@@ -116,7 +118,7 @@ MPIEXEC = @MPIEXEC@
 #           with which a CGNS application needs to link
 #------------------------------------------------------------------------
 
-BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB) $(MPILIBS)
+BUILDLIBS = $(HDF5LIB) $(SZIPLIB) $(ZLIBLIB) $(HDF5LIB_DEP) $(MPILIBS)
 
 #------------------------------------------------------------------------
 # commands for removing files and creating/deleting directory

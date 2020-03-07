@@ -46,40 +46,40 @@ $(OUTDIR) :
 	-@$(MKDIR) $(OUTDIR)
 
 $(WRITE1) : ../write_grid_unst.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_grid_unst.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../write_grid_unst.F90 $(LIBS)
 
 $(WRITE2) : ../write_flowvert_unst.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_flowvert_unst.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../write_flowvert_unst.F90 $(LIBS)
 
 $(WRITE3) : ../write_dimensional.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_dimensional.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../write_dimensional.F90 $(LIBS)
 
 $(WRITE4) : ../write_descriptor.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_descriptor.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../write_descriptor.F90 $(LIBS)
 
 $(WRITE5) : ../write_convergence.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_convergence.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../write_convergence.F90 $(LIBS)
 
 $(WRITE6) : ../write_bcpnts_unst.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../write_bcpnts_unst.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../write_bcpnts_unst.F90 $(LIBS)
 
 $(READ1) : ../read_grid_unst.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_grid_unst.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../read_grid_unst.F90 $(LIBS)
 
 $(READ2) : ../read_flowvert_unst.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_flowvert_unst.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../read_flowvert_unst.F90 $(LIBS)
 
 $(READ3) : ../read_dimensional.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_dimensional.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../read_dimensional.F90 $(LIBS)
 
 $(READ4) : ../read_descriptor.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_descriptor.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../read_descriptor.F90 $(LIBS)
 
 $(READ5) : ../read_convergence.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_convergence.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../read_convergence.F90 $(LIBS)
 
 $(READ6) : ../read_bcpnts_unst.F90
-	$(F77) $(FOPTS) $(FEOUT)$@ ../read_bcpnts_unst.F90 $(LIBS)
+	$(F77) $(FOPTS) $(FEOUT) $@ ../read_bcpnts_unst.F90 $(LIBS)
 
 clean :
 	-$(RM) grid.cgns $(WRITE_PROGS) $(READ_PROGS)

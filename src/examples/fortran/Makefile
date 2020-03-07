@@ -22,7 +22,7 @@ DIRS = \
 
 all :
 	@status=0;for d in $(DIRS) ; do \
-	  cd $$d && make; \
+	  cd $$d && $(MAKE); \
 	  status=`expr $$status + $$?`; \
 	  cd ..; \
 	done;\
@@ -32,7 +32,7 @@ all :
 
 test : $(TESTS)
 	@status=0;for d in $(DIRS) ; do \
-	  cd $$d && make; \
+	  cd $$d && $(MAKE); \
 	  status=`expr $$status + $$?`; \
 	  cd ..; \
 	done;\
@@ -44,7 +44,7 @@ test : $(TESTS)
 
 clean : $(CLEAN)
 	-@for d in $(DIRS) ; do \
-	  cd $$d && make clean; \
+	  cd $$d && $(MAKE) clean; \
 	  cd ..; \
 	done;
 

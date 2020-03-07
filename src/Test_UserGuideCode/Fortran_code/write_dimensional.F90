@@ -24,7 +24,7 @@
 !   (../../lib is the location where the compiled
 !   library libcgns.a is located)
 !
-!   The following is no longer supported; now superceded by "use cgns":
+!   The following is no longer supported; now superseded by "use cgns":
 !     include 'cgnslib_f.h'
 !   Note Windows machines need to include cgnswin_f.h
 !

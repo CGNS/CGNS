@@ -35,6 +35,7 @@ typedef struct _ELEMSET {
     cgsize_t end;
     int nbndry;
     cgsize_t *conn;
+    cgsize_t *offsets;
     cgsize_t *parent;
 } ELEMSET;
 

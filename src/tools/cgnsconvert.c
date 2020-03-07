@@ -14,6 +14,14 @@
 #include "cgns_io.h"
 #include "getargs.h"
 
+#if CG_HAVE_STAT64_STRUCT
+#ifdef _WIN32
+#define stat _stat64
+#else
+#define stat stat64
+#endif
+#endif
+
 static char options[] = "ahfl";
 static char *usgmsg[] = {
     "usage  : cgnsconvert [options] InputFile [OutputFile]",
@@ -68,6 +76,10 @@ int main (int argc, char **argv)
         outfile = argv[argind];
     else
         outfile = inpfile;
+    if (strlen(outfile) > 1018) {
+        fprintf(stderr, "output file name is too long\n");
+        exit(1);
+    }
     sprintf(tempfile, "%s.temp", outfile);
     unlink(tempfile);
 
