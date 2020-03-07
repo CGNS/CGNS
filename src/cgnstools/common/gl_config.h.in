@@ -1,0 +1,9 @@
+#ifdef _WIN32
+#include <GL/gl.h>
+#include <GL/glu.h>
+#else
+#include "@OPENGL_INCLUDE_SUBDIR@/gl.h"
+#include "@OPENGL_INCLUDE_SUBDIR@/glu.h"
+#include "@OPENGL_INCLUDE_SUBDIR@/glx.h"
+#endif
+

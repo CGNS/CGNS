@@ -2,7 +2,7 @@
 
 include ../make.defs
 
-COPTS = $(CFLAGS) $(TKOGLOPTS)
+COPTS = $(CFLAGS) -I../common $(TKOGLOPTS)
 
 OBJS = \
 	tkogl.$(O) \

@@ -9,6 +9,7 @@ if [ $TRAVIS_OS_NAME = "linux" ]; then
   export FLIBS="-Wl,--no-as-needed -ldl"
   export LIBS="-Wl,--no-as-needed -ldl"
   OPTS="--enable-parallel --enable-cgnstools --with-tcl=/usr/lib --with-tk=/usr/lib"
+  autoconf
 else
   OPTS="--disable-cgnstools"
 fi

@@ -1475,6 +1475,7 @@ PROGLIST="cgnsview cgnscalc utilities"
 INSTLIST="install-cgnsview install-cgnscalc install-utilities"
 PLOTOPTS=""
 CALCOPTS=""
+OPENGL_INCLUDE_SUBDIR="GL"
 
 AC_MSG_CHECKING([if building CGNStools])
 AC_ARG_ENABLE(cgnstools,
@@ -1733,6 +1734,7 @@ if test "$enableval" = "yes" ; then
 #---------------------------------------------------------------------------
 
   AC_CHECK_HEADER(GL/gl.h)
+  OPENGL_INCLUDE_SUBDIR="GL"
   if test "$ac_cv_header_GL_gl_h" = "no"; then
     if test -f "$x_includes/GL/gl.h"; then
       PROGLIST="$PROGLIST cgnsplot"
@@ -2007,6 +2009,7 @@ AC_SUBST(X11LIBS)
 
 AC_SUBST(OGLINCS)
 AC_SUBST(OGLLIBS)
+AC_SUBST(OPENGL_INCLUDE_SUBDIR)
 
 AC_SUBST(PLOTOPTS)
 
@@ -2023,5 +2026,5 @@ AC_SUBST(LIBRARY_PATH_SPEC)
 
 AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h Makefile \
   make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile \
-  cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig)
+  cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig cgnstools/common/gl_config.h)
 

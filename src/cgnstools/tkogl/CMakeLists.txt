@@ -3,6 +3,7 @@
 #########
 
 include_directories(${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH})
+include_directories(../common)
 
 set(tkogl_FILES 
 	tkogl.c

@@ -95,3 +95,10 @@ CG_LIB_DIR=${CMAKE_INSTALL_PREFIX}/share/cgnstools; export CG_LIB_DIR
 	${CMAKE_CURRENT_BINARY_DIR}/cgconfig
 	DESTINATION bin)
 endif (WIN32)
+
+find_file(OPENGL_INCLUDE_SUBDIR
+	NAMES GL OpenGL
+	PATHS ${OPENGL_INCLUDE_DIR}
+	NO_DEFAULT_PATH)
+get_filename_component(OPEN_GL_INCLUDE_SUBDIR ${OPENGL_INCLUDE_SUBDIR} NAME)
+configure_file(${CMAKE_SOURCE_DIR}/src/cgnstools/common/gl_config.h.in ${CMAKE_SOURCE_DIR}/src/cgnstools/common/gl_config.h)

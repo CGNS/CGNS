@@ -630,6 +630,7 @@ CALCOPTS
 TKOGLOPTS
 TKOGLXLIB
 PLOTOPTS
+OPENGL_INCLUDE_SUBDIR
 OGLLIBS
 OGLINCS
 X11LIBS
@@ -6733,6 +6734,7 @@ PROGLIST="cgnsview cgnscalc utilities"
 INSTLIST="install-cgnsview install-cgnscalc install-utilities"
 PLOTOPTS=""
 CALCOPTS=""
+OPENGL_INCLUDE_SUBDIR="GL"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if building CGNStools" >&5
 $as_echo_n "checking if building CGNStools... " >&6; }
@@ -7220,6 +7222,7 @@ if test "x$ac_cv_header_GL_gl_h" = xyes; then :
 fi
 
 
+  OPENGL_INCLUDE_SUBDIR="GL"
   if test "$ac_cv_header_GL_gl_h" = "no"; then
     if test -f "$x_includes/GL/gl.h"; then
       PROGLIST="$PROGLIST cgnsplot"
@@ -7630,7 +7633,8 @@ fi
 
 
 
-ac_config_files="$ac_config_files cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h Makefile make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig"
+
+ac_config_files="$ac_config_files cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h Makefile make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig cgnstools/common/gl_config.h"
 
 
 
@@ -8267,6 +8271,7 @@ do
     "cgnstools/Makefile") CONFIG_FILES="$CONFIG_FILES cgnstools/Makefile" ;;
     "cgnstools/make.defs") CONFIG_FILES="$CONFIG_FILES cgnstools/make.defs" ;;
     "cgnstools/cgconfig") CONFIG_FILES="$CONFIG_FILES cgnstools/cgconfig" ;;
+    "cgnstools/common/gl_config.h") CONFIG_FILES="$CONFIG_FILES cgnstools/common/gl_config.h" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
