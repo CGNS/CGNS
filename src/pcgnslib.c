@@ -841,7 +841,7 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     if (cg_npe(section->el_type, &elemsize)) return CG_ERROR;
     rmin = (start - section->range[0]) * elemsize + 1;
     rmax = (end - section->range[0] + 1) * elemsize;
-    type = cgi_datatype(section->connect->data_type);
+    type = cgi_datatype(sizeof(cgsize_t) == 4 ? "I4" : "I8");
 
     to_HDF_ID(section->connect->id, hid);
     cg_rw_t Data;
