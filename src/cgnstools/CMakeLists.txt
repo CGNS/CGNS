@@ -5,7 +5,7 @@
 # get X11 in case it is not in a standard location
 if (NOT WIN32)
   include(FindX11)
-  find_package(X11 required)
+  find_package(X11 REQUIRED)
   # Xmu doesn't appear to be included in FindX11
   find_library(X11_Xmu_LIB Xmu)
   if (X11_Xmu_LIB)
