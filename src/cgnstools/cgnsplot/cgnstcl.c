@@ -7,7 +7,7 @@
 # define WIN32_LEAN_AND_MEAN
 # include <windows.h>
 #endif
-#include <GL/gl.h>
+#include "gl_config.h"
 
 #include "tk.h"
 #include "cgnslib.h"
