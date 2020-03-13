@@ -1,5 +1,4 @@
 #include <tk.h>
-#include <GL/gl.h>
 #include "tkogl.h"
 
 int Tcl_AppInit(Tcl_Interp *interp) 	/* Interpreter for application. */

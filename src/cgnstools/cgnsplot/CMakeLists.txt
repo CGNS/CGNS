@@ -3,15 +3,24 @@
 ############
 
 include_directories(${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH} ${OPENGL_INCLUDE_DIR})
+if (X11_FOUND)
+  include_directories(${X11_INCLUDE_DIR})
+endif(X11_FOUND)
 include_directories(../common)
+
 link_directories("${CMAKE_CURRENT_BINARY_DIR}/../tkogl")
 if (CGNS_USE_SHARED)
   link_libraries(cgns_shared)
 else (CGNS_USE_SHARED)
   link_libraries(cgns_static)
 endif (CGNS_USE_SHARED)
-link_libraries(tkogl ${TCL_LIBRARY} ${TK_LIBRARY}
+if (X11_FOUND)
+  link_libraries(tkogl ${TCL_LIBRARY} ${TK_LIBRARY}
+	  ${X11_GL_LIB} ${X11_GLU_LIB})
+else (X11_FOUND) 
+  link_libraries(tkogl ${TCL_LIBRARY} ${TK_LIBRARY}
 	${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
+endif(X11_FOUND)
 
 if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
   link_libraries(${HDF5_LIBRARY})

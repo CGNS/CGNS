@@ -4,7 +4,6 @@
 #   include <windows.h>
 #   undef WIN32_LEAN_AND_MEAN
 #endif
-#include <GL/gl.h>
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>

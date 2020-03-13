@@ -5,8 +5,6 @@
 #   undef WIN32_LEAN_AND_MEAN
 #endif
 #include <string.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
 #include "printstr.h"
 #include "tkogl.h"
 
