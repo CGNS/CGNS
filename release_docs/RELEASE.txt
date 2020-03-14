@@ -54,14 +54,14 @@ Bug Fixes since CGNS 4.1.0 release
     Library:
     -------
 
-      * Fixed the compilation of cgnstools, which still made 
-        use the Removed APIs in 4.1.0:
+      * (CGNS-196) Fixed the compilation of cgnstools, which still made 
+        use the Removed APIs in 4.1.0: 
 
         cgio_read_all_data, cgio_read_data, cgio_read_block_data
         cgio_read_all_data_f, cgio_read_data_f, cgio_read_block_data_f
 
       * Updated CMake's detection of tcl/tk and opengl
-      * Added CI testing cgnstools
+      * (CGNS-197) Added CI testing cgnstools
 
     Fortran:
     --------
