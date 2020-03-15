@@ -269,11 +269,11 @@ if (mta_root == NULL){set_error(ADFH_ERR_ROOTNULL, err);return 1;}
                         (r)->fileno[0]==(n)->fileno[0] && \
                         (r)->fileno[1]==(n)->fileno[1])
 
-static herr_t gfind_by_name(hid_t, const char *, void *);
+static herr_t gfind_by_name(hid_t, const char *, const H5L_info_t*, void *);
 static herr_t find_by_name(hid_t, const char *, const H5A_info_t*, void *);
 
-#define has_child(ID,NAME) H5Giterate(ID,".",NULL,gfind_by_name,(void *)NAME)
-#define has_data(ID)       H5Giterate(ID,".",NULL,gfind_by_name,(void *)D_DATA)
+#define has_child(ID,NAME) H5Literate_by_name(ID, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, gfind_by_name, (void *)NAME, H5P_DEFAULT)
+#define has_data(ID)       H5Literate_by_name(ID, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, gfind_by_name, (void *)D_DATA, H5P_DEFAULT)
 
 #define has_att(ID,NAME)   H5Aiterate2(ID,H5_INDEX_NAME,H5_ITER_NATIVE,NULL,find_by_name,(void *)NAME)
 
@@ -281,7 +281,7 @@ static herr_t find_by_name(hid_t, const char *, const H5A_info_t*, void *);
 static herr_t gprint_name(hid_t, const char *, void *);
 static herr_t print_name(hid_t, const char *, const H5A_info_t*, void *);
 
-#define show_grp(ID)       H5Giterate(ID,".",NULL,gprint_name,(void *)"GRP")
+#define show_grp(ID)       H5Literate_by_name(ID, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, gprint_name, (void *)"GRP", H5P_DEFAULT)
 #define show_att(ID,NAME)  H5Aiterate2(ID,H5_INDEX_NAME,H5_ITER_NATIVE,NULL,print_name,(void *)NAME)
 #endif
 
@@ -820,12 +820,12 @@ static int check_data_type(const char *tp, int *err)
 }
 
 /* =================================================================
- * callback routines for H5Giterate and H5Aiterate
+ * callback routines for H5Literate and H5Aiterate
  * ================================================================= */
 
 /* ----------------------------------------------------------------- */
 
-static herr_t gfind_by_name(hid_t id, const char *name, void *dsname)
+static herr_t gfind_by_name(hid_t id, const char *name, const H5L_info_t* linfo, void *dsname)
 {
     if (0 == strcmp (name, (char *)dsname)) return 1;
     return 0;
@@ -859,7 +859,7 @@ static herr_t print_name(hid_t id, const char *name, const H5A_info_t* ainfo, vo
 
 /* ----------------------------------------------------------------- */
 
-static herr_t count_children(hid_t id, const char *name, void *number)
+static herr_t count_children(hid_t id, const char *name, const H5L_info_t* linfo, void *number)
 {
   ADFH_CHECK_HID(id);
   ADFH_DEBUG(("count_children [%s][%d]",name,(*((int *)number))));
@@ -954,7 +954,7 @@ static herr_t children_ids(hid_t id, const char *name,
 
 #ifndef ADFH_NO_ORDER
 /* -----------------------------------------------------------------
-  called via H5Giterate in Move_Child & Delete functions.
+  called via H5Literate in Move_Child & Delete functions.
   removes gaps in _order index attributes */
 
 static herr_t fix_order(hid_t id, const char *name, void *data)
@@ -989,7 +989,7 @@ static herr_t fix_order(hid_t id, const char *name, void *data)
 
 /* ----------------------------------------------------------------- */
 
-static herr_t compare_children(hid_t id, const char *name, void *data)
+static herr_t compare_children(hid_t id, const char *name, const H5L_info_t *linfo, void *data)
 {
   H5G_stat_t stat, *pstat;
 
@@ -1176,7 +1176,7 @@ static void delete_node(hid_t pid, const char *name)
 
 /* ----------------------------------------------------------------- */
 
-static herr_t delete_children(hid_t id, const char *name, void *data)
+static herr_t delete_children(hid_t id, const char *name, const H5L_info_t* linfo, void *data)
 {
   if (*name == D_PREFIX)
   {
@@ -1194,7 +1194,7 @@ static herr_t delete_children(hid_t id, const char *name, void *data)
   }
   else {
     ADFH_DEBUG(("delete_children loop"));
-    if (! is_link(id)) H5Giterate(id, name, NULL, delete_children, data);
+    if (! is_link(id)) H5Literate_by_name(id, name, H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, delete_children, data, H5P_DEFAULT);
     delete_node(id, name);
   }
   return 0;
@@ -1342,7 +1342,7 @@ static void transpose_dimensions (hid_t hid, const char *name)
 
 /* ----------------------------------------------------------------- */
 
-static herr_t fix_dimensions(hid_t id, const char *name, void *data)
+static herr_t fix_dimensions(hid_t id, const char *name, const H5L_info_t* linfo, void *data)
 {
   hid_t gid;
   int err;
@@ -1350,7 +1350,7 @@ static herr_t fix_dimensions(hid_t id, const char *name, void *data)
 
   if (*name != D_PREFIX && (gid = H5Gopen2(id, name, H5P_DEFAULT)) >= 0 &&
      !get_str_att(gid, A_TYPE, type, &err) && strcmp(type, ADFH_LK)) {
-    H5Giterate(gid, ".", NULL, fix_dimensions, NULL);
+    H5Literate_by_name(gid, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, fix_dimensions, NULL, H5P_DEFAULT);
     transpose_dimensions(gid,name);
     H5Gclose(gid);
   }
@@ -1428,7 +1428,7 @@ void ADFH_Move_Child(const double  pid,
   /* check that node is actually child of the parent */
 
   if (H5Gget_objinfo(hid, ".", 0, &stat) < 0 ||
-    !H5Giterate(hpid, ".", NULL, compare_children, (void *)&stat)) {
+    !H5Literate_by_name(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, compare_children, (void *)&stat, H5P_DEFAULT)) {
     set_error(CHILD_NOT_OF_GIVEN_PARENT, err);
     return;
   }
@@ -1478,7 +1478,7 @@ void ADFH_Move_Child(const double  pid,
       set_int_att(hid, A_ORDER, new_order, err)) return;
 
   /*see if we need to decrement any node _orders under the old parent*/
-  *err = H5Giterate(hpid, ".", NULL, fix_order, (void *)&old_order);
+  *err = H5Literate_by_name(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, fix_order, (void *)&old_order, H5P_DEFAULT);
   if (!*err)
     set_error(NO_ERROR, err);
 #endif
@@ -1657,7 +1657,7 @@ void ADFH_Create(const double  pid,
         new_int_att(gid, A_FLAGS, mta_root->g_flags, err)) return;
 #else
     int order = 0;
-    H5Giterate(hpid, ".", NULL, count_children, (void *)&order);
+    H5Literate_by_name(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, count_children, (void *)&order, H5P_DEFAULT);
     if (new_str_att(gid, A_NAME, pname, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_LABEL, "", ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
@@ -1700,7 +1700,7 @@ void ADFH_Delete(const double  pid,
   /* check that node is actually child of the parent */
 
   if (H5Gget_objinfo(hid, ".", 0, &stat) < 0 ||
-    !H5Giterate(hpid, ".", NULL, compare_children, (void *)&stat)) {
+    !H5Literate_by_name(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, compare_children, (void *)&stat, H5P_DEFAULT)){
     set_error(CHILD_NOT_OF_GIVEN_PARENT, err);
     return;
   }
@@ -1718,7 +1718,7 @@ void ADFH_Delete(const double  pid,
 
   if (! is_link(hid))
   {
-    H5Giterate(hid, ".", NULL, delete_children, NULL);
+    H5Literate_by_name(hid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, delete_children, NULL, H5P_DEFAULT);
   }
 
   /* delete current node */
@@ -1729,7 +1729,7 @@ void ADFH_Delete(const double  pid,
   /* decrement node orders */
 
 #ifndef ADFH_NO_ORDER
-  *err = H5Giterate(hpid, ".", NULL, fix_order, (void *)&old_order);
+  *err = H5Literate_by_name(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, fix_order, (void *)&old_order, H5P_DEFAULT);
   if (!*err)
 #endif
     set_error(NO_ERROR, err);
@@ -1742,7 +1742,8 @@ void ADFH_Number_of_Children(const double  id,
                              int    *err)
 {
   hid_t hid;
-  int nn,gskip=0;
+  int nn;
+  hsize_t gskip=0;
 
   ADFH_DEBUG((">ADFH_Number_of_Children"));
 
@@ -1753,7 +1754,7 @@ void ADFH_Number_of_Children(const double  id,
 
   *number = 0;
   if ((hid = open_node(id, err)) >= 0) {
-    H5Giterate(hid, ".", &gskip, count_children, (void*)number);
+    H5Literate_by_name(hid, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, &gskip, count_children, (void *)number, H5P_DEFAULT);
     H5Gclose(hid);
   }
   nn=*number;
@@ -2194,7 +2195,7 @@ void ADFH_Database_Open(const char   *name,
     gid = H5Gopen2(fid, "/", H5P_DEFAULT);
 #ifdef ADFH_FORTRAN_INDEXING
     if (mode != ADFH_MODE_RDO && has_child(gid, D_OLDVERS)) {
-      H5Giterate(gid, ".", NULL, fix_dimensions, NULL);
+      H5Literate_by_name(gid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, fix_dimensions, NULL, H5P_DEFAULT);
       H5Gmove(gid, D_OLDVERS, D_VERSION);
     }
 #endif
