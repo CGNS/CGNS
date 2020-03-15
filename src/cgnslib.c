@@ -3851,7 +3851,9 @@ int cg_ElementPartialSize(int file_number, int B, int Z, int S,
     cgsize_t start, cgsize_t end, cgsize_t *ElementDataSize)
 {
     cgns_section *section;
-    cgsize_t size, *offset_data;
+    cgsize_t size, cnt, *offset_data;
+    cgsize_t s_start[1], s_end[1], s_stride[1];
+    cgsize_t m_start[1], m_end[1], m_stride[1], m_dim[1];
 
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
@@ -3879,11 +3881,77 @@ int cg_ElementPartialSize(int file_number, int B, int Z, int S,
         return CG_OK;
     }
 
-    if (read_offset_data(section)) return CG_ERROR;
-    offset_data = (cgsize_t *)section->connect_offset->data;
-    if (offset_data == 0) return CG_ERROR;
+    if (section->connect_offset->data == NULL) {
+        // Only read a slice of the ElementStartOffset array
+        cnt = end-start+2;
+        s_start[0] = start - section->range[0] + 1;
+        s_end[0]   = end - section->range[0] + 2;
+        s_stride[0]= 1;
+        m_start[0] = 1;
+        m_end[0]   = cnt;
+        m_stride[0]= 1;
+        m_dim[0]   = cnt;
+        // Handle different compilation configuration for cgsize_t
+#if CG_SIZEOF_SIZE == 64
+        if (0 == strcmp(section->connect_offset->data_type, "I4")) {
+            int *offsets = (int *)malloc((size_t)(cnt*sizeof(int)));
+            if (NULL == offsets) {
+                cgi_error("Error allocating I4->I8 data array...");
+                return CG_ERROR;
+            }
+ 
+            if (cgio_read_data_type(cg->cgio, section->connect_offset->id,
+                               s_start, s_end, s_stride, "I4", 1, m_dim,
+                               m_start, m_end, m_stride, offsets)) {
+                cg_io_error("cgio_read_data");
+                CGNS_FREE(offsets);
+                return CG_ERROR;
+            }
+            size = (cgsize_t)(offsets[cnt-1]-offsets[0]);
+            CGNS_FREE(offsets);
+        }
+#else
+        if (0 == strcmp(section->connect_offset->data_type, "I8")) {
+            cglong_t *offsets = (cglong_t *)malloc((size_t)(cnt*sizeof(cglong_t)));
+            if (NULL == offsets) {
+                cgi_error("Error allocating I8->I4 data array...");
+                return CG_ERROR;
+            }
 
-    size = offset_data[end-section->range[0]+1] - offset_data[start-section->range[0]];
+            if (cgio_read_data_type(cg->cgio, section->connect_offset->id,
+                               s_start, s_end, s_stride, "I8", 1, m_dim,
+                               m_start, m_end, m_stride, offsets)) {
+                cg_io_error("cgio_read_data");
+                CGNS_FREE(offsets);
+                return CG_ERROR;
+            }
+            size = (cgsize_t)(offsets[cnt-1]-offsets[0]);
+            CGNS_FREE(offsets);
+        }
+#endif
+        else {
+            cgsize_t *offsets = malloc(cnt * sizeof(cgsize_t));
+            if (NULL == offsets) {
+                cgi_error("Error allocating data array...");
+                return CG_ERROR;
+            }
+            if (cgio_read_data_type(cg->cgio, section->connect_offset->id,
+                               s_start, s_end, s_stride, CG_SIZE_DATATYPE, 1, m_dim,
+                               m_start, m_end, m_stride, offsets)) {
+                cg_io_error("cgio_read_data");
+                CGNS_FREE(offsets);
+                return CG_ERROR;
+            }
+            size = (cgsize_t)(offsets[cnt-1]-offsets[0]);
+            CGNS_FREE(offsets);
+        }
+    } else {
+        // if ElementStartOffset is already fully loaded
+        offset_data = (cgsize_t *)section->connect_offset->data;
+        if (offset_data == 0) return CG_ERROR;
+        size = offset_data[end-section->range[0]+1] - offset_data[start-section->range[0]];
+    }
+
     if (size < 0) return CG_ERROR;
     *ElementDataSize = size;
     return CG_OK;
