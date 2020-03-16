@@ -43,8 +43,6 @@ New Features
     Fortran Library:
     ----------------
 
-    - Introduced Fortran wrappers for CPEX42 and CPEX43
-
     Tools:
     ------
 
@@ -68,7 +66,6 @@ Bug Fixes since CGNS 4.1.0 release
 
     Configuration:
     -------------
-        
 
     Tools:
     ------
