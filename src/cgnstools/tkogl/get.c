@@ -5,7 +5,7 @@
 #   include <windows.h>
 #   undef WIN32_LEAN_AND_MEAN
 #endif
-#include <GL/gl.h>
+#include "gl_config.h"
 
 typedef enum {
    INTVAL,

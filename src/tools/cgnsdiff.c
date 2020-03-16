@@ -204,9 +204,9 @@ static void compare_data (char *name1, double id1, char *name2, double id2)
             exit (1);
         }
         if (cgio_read_all_data_type (cgio1, id1, type1, data1))
-            err_exit (name1, "cgio_read_all_data");
+            err_exit (name1, "cgio_read_all_data_type");
         if (cgio_read_all_data_type (cgio2, id2, type2, data2))
-            err_exit (name2, "cgio_read_all_data");
+            err_exit (name2, "cgio_read_all_data_type");
         if (tol > 0.0 && n) {
             if (n == 4)
                 err = compare_floats (bytes >> 2, data1, data2);
