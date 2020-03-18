@@ -200,6 +200,15 @@ if (CGNS_ENABLE_HDF5)
 
   #set (SEARCH_PACKAGE_NAME ${HDF5_PACKAGE_NAME})
   set (SEARCH_PACKAGE_NAME "hdf5")
+  
+  # If the first `find_package` below does not succeed, then the legacy `find_package`
+  # is tried (the `else` below).  The legacy find_package uses `HDF5_ROOT`.  But if 
+  # this is set, then CMake will issue warning and mistakenly say that `HDF5_ROOT` is
+  # not used even though it might be.  This can confuse user, so set policy to not
+  # issue that warning.
+  if (${CMAKE_VERSION} GREATER "3.13")
+     cmake_policy(SET CMP0074 NEW)
+  endif()
 
   find_package (HDF5 NAMES ${SEARCH_PACKAGE_NAME} COMPONENTS ${FIND_HDF_COMPONENTS})
   message (STATUS "HDF5 C libs:${HDF5_FOUND} static:${HDF5_static_C_FOUND} and shared:${HDF5_shared_C_FOUND}")
@@ -231,17 +240,12 @@ if (CGNS_ENABLE_HDF5)
     endif (NOT HDF5_static_C_FOUND AND NOT HDF5_shared_C_FOUND)
     set (HDF5_DUMP_EXECUTABLE $<TARGET_FILE:h5dump>)
 
-    set (HDF5_HAVE_H5PUBCONF_H 1)
-    set (HDF5_HAVE_HDF5 1)
-    set (HDF5_HDF5_HEADER "h5pubconf.h")
-    set (HDF5_INCLUDE_DIR_GEN ${HDF5_INCLUDE_DIR})
-    message (STATUS "HDF5-${HDF5_VERSION_STRING} found: INC=${HDF5_INCLUDE_DIR} TOOLS=${HDF5_TOOLS_DIR}")
   else (HDF5_FOUND)
     find_package (HDF5) # Legacy find
 #Legacy find_package does not set HDF5_TOOLS_DIR, so we set it here
-    set(HDF5_TOOLS_DIR ${HDF5_LIBRARY_DIRS}/../bin)
+    set(HDF5_TOOLS_DIR ${HDF5_LIBRARY}/../bin)
 #Legacy find_package does not set HDF5_BUILD_SHARED_LIBS, so we set it here
-    if (CGNS_BUILD_SHARED AND EXISTS "${HDF5_LIBRARY_DIRS}/libhdf5${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    if (CGNS_BUILD_SHARED AND EXISTS "${HDF5_LIBRARY}/libhdf5${CMAKE_SHARED_LIBRARY_SUFFIX}")
       set (HDF5_BUILD_SHARED_LIBS 1)
       add_definitions (-DH5_BUILT_AS_DYNAMIC_LIB)
     else ()
