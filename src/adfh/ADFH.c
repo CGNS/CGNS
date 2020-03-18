@@ -272,8 +272,13 @@ if (mta_root == NULL){set_error(ADFH_ERR_ROOTNULL, err);return 1;}
 static herr_t gfind_by_name(hid_t, const char *, const H5L_info_t*, void *);
 static herr_t find_by_name(hid_t, const char *, const H5A_info_t*, void *);
 
+#if H5_VERSION_GE(1,12,0)
+#define has_child(ID,NAME) H5Literate_by_name2(ID, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, gfind_by_name, (void *)NAME, H5P_DEFAULT)
+#define has_data(ID)       H5Literate_by_name2(ID, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, gfind_by_name, (void *)D_DATA, H5P_DEFAULT)
+#else
 #define has_child(ID,NAME) H5Literate_by_name(ID, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, gfind_by_name, (void *)NAME, H5P_DEFAULT)
 #define has_data(ID)       H5Literate_by_name(ID, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, gfind_by_name, (void *)D_DATA, H5P_DEFAULT)
+#endif
 
 #define has_att(ID,NAME)   H5Aiterate2(ID,H5_INDEX_NAME,H5_ITER_NATIVE,NULL,find_by_name,(void *)NAME)
 
@@ -1194,7 +1199,11 @@ static herr_t delete_children(hid_t id, const char *name, const H5L_info_t* linf
   }
   else {
     ADFH_DEBUG(("delete_children loop"));
+#if H5_VERSION_GE(1,12,0)
+    if (! is_link(id)) H5Literate_by_name2(id, name, H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, delete_children, data, H5P_DEFAULT);
+#else
     if (! is_link(id)) H5Literate_by_name(id, name, H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, delete_children, data, H5P_DEFAULT);
+#endif
     delete_node(id, name);
   }
   return 0;
@@ -1350,7 +1359,11 @@ static herr_t fix_dimensions(hid_t id, const char *name, const H5L_info_t* linfo
 
   if (*name != D_PREFIX && (gid = H5Gopen2(id, name, H5P_DEFAULT)) >= 0 &&
      !get_str_att(gid, A_TYPE, type, &err) && strcmp(type, ADFH_LK)) {
+#if H5_VERSION_GE(1,12,0)
+    H5Literate_by_name2(gid, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, fix_dimensions, NULL, H5P_DEFAULT);
+#else
     H5Literate_by_name(gid, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, fix_dimensions, NULL, H5P_DEFAULT);
+#endif
     transpose_dimensions(gid,name);
     H5Gclose(gid);
   }
@@ -1428,7 +1441,11 @@ void ADFH_Move_Child(const double  pid,
   /* check that node is actually child of the parent */
 
   if (H5Gget_objinfo(hid, ".", 0, &stat) < 0 ||
+#if H5_VERSION_GE(1,12,0)
+    !H5Literate_by_name2(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, compare_children, (void *)&stat, H5P_DEFAULT)) {
+#else
     !H5Literate_by_name(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, compare_children, (void *)&stat, H5P_DEFAULT)) {
+#endif
     set_error(CHILD_NOT_OF_GIVEN_PARENT, err);
     return;
   }
@@ -1478,7 +1495,11 @@ void ADFH_Move_Child(const double  pid,
       set_int_att(hid, A_ORDER, new_order, err)) return;
 
   /*see if we need to decrement any node _orders under the old parent*/
+#if H5_VERSION_GE(1,12,0)
+  *err = H5Literate_by_name2(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, fix_order, (void *)&old_order, H5P_DEFAULT);
+#else
   *err = H5Literate_by_name(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, fix_order, (void *)&old_order, H5P_DEFAULT);
+#endif
   if (!*err)
     set_error(NO_ERROR, err);
 #endif
@@ -1657,7 +1678,11 @@ void ADFH_Create(const double  pid,
         new_int_att(gid, A_FLAGS, mta_root->g_flags, err)) return;
 #else
     int order = 0;
+#if H5_VERSION_GE(1,12,0)
+    H5Literate_by_name2(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, count_children, (void *)&order, H5P_DEFAULT);
+#else
     H5Literate_by_name(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, count_children, (void *)&order, H5P_DEFAULT);
+#endif
     if (new_str_att(gid, A_NAME, pname, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_LABEL, "", ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
@@ -1700,7 +1725,11 @@ void ADFH_Delete(const double  pid,
   /* check that node is actually child of the parent */
 
   if (H5Gget_objinfo(hid, ".", 0, &stat) < 0 ||
+#if H5_VERSION_GE(1,12,0)
+    !H5Literate_by_name2(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, compare_children, (void *)&stat, H5P_DEFAULT)){
+#else
     !H5Literate_by_name(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, compare_children, (void *)&stat, H5P_DEFAULT)){
+#endif
     set_error(CHILD_NOT_OF_GIVEN_PARENT, err);
     return;
   }
@@ -1718,7 +1747,11 @@ void ADFH_Delete(const double  pid,
 
   if (! is_link(hid))
   {
+#if H5_VERSION_GE(1,12,0)
+    H5Literate_by_name2(hid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, delete_children, NULL, H5P_DEFAULT);
+#else
     H5Literate_by_name(hid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, delete_children, NULL, H5P_DEFAULT);
+#endif
   }
 
   /* delete current node */
@@ -1729,7 +1762,11 @@ void ADFH_Delete(const double  pid,
   /* decrement node orders */
 
 #ifndef ADFH_NO_ORDER
+#if H5_VERSION_GE(1,12,0)
+  *err = H5Literate_by_name2(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, fix_order, (void *)&old_order, H5P_DEFAULT);
+#else
   *err = H5Literate_by_name(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, fix_order, (void *)&old_order, H5P_DEFAULT);
+#endif
   if (!*err)
 #endif
     set_error(NO_ERROR, err);
@@ -1754,7 +1791,11 @@ void ADFH_Number_of_Children(const double  id,
 
   *number = 0;
   if ((hid = open_node(id, err)) >= 0) {
+#if H5_VERSION_GE(1,12,0)
+    H5Literate_by_name2(hid, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, &gskip, count_children, (void *)number, H5P_DEFAULT);
+#else
     H5Literate_by_name(hid, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, &gskip, count_children, (void *)number, H5P_DEFAULT);
+#endif
     H5Gclose(hid);
   }
   nn=*number;
@@ -1859,12 +1900,22 @@ void ADFH_Children_Names(const double pid,
   /*initialize names to null*/
   memset(names, 0, ilen*name_length);
   if ((hpid = open_node(pid, err)) >= 0) {
+#if H5_VERSION_GE(1,12,0)
+    H5Literate2(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
+               NULL,children_names,(void *)names);
+#else
     H5Literate(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
                NULL,children_names,(void *)names);
+#endif
     if (names[0]==0)
     {
+#if H5_VERSION_GE(1,12,0)
+      H5Literate2(hpid,H5_INDEX_NAME,H5_ITER_INC,
+                 NULL,children_names,(void *)names);
+#else
       H5Literate(hpid,H5_INDEX_NAME,H5_ITER_INC,
                  NULL,children_names,(void *)names);
+#endif
     }
     H5Gclose(hpid);
   }
@@ -1899,12 +1950,22 @@ void ADFH_Children_IDs(const double pid,
   mta_root->i_count = 0;
 #endif
   if ((hpid = open_node(pid, err)) >= 0) {
+#if H5_VERSION_GE(1,12,0)
+    H5Literate2(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
+               NULL,children_ids,(void *)IDs);
+#else
     H5Literate(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
                NULL,children_ids,(void *)IDs);
+#endif
     if (IDs[0]==-1)
     {
+#if H5_VERSION_GE(1,12,0)
+      H5Literate2(hpid,H5_INDEX_NAME,H5_ITER_INC,
+                 NULL,children_ids,(void *)IDs);
+#else
       H5Literate(hpid,H5_INDEX_NAME,H5_ITER_INC,
                  NULL,children_ids,(void *)IDs);
+#endif
     }
     H5Gclose(hpid);
   }
@@ -2195,7 +2256,11 @@ void ADFH_Database_Open(const char   *name,
     gid = H5Gopen2(fid, "/", H5P_DEFAULT);
 #ifdef ADFH_FORTRAN_INDEXING
     if (mode != ADFH_MODE_RDO && has_child(gid, D_OLDVERS)) {
+#if H5_VERSION_GE(1,12,0)
+      H5Literate_by_name2(gid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, fix_dimensions, NULL, H5P_DEFAULT);
+#else
       H5Literate_by_name(gid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, fix_dimensions, NULL, H5P_DEFAULT);
+#endif
       H5Gmove(gid, D_OLDVERS, D_VERSION);
     }
 #endif
