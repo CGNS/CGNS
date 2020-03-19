@@ -281,7 +281,7 @@ if (CGNS_ENABLE_HDF5)
     mark_as_advanced(FORCE ZLIB_LIBRARY)
   endif(HDF5_NEED_ZLIB)
 
-  set(HDF5_NEED_SZIP "OFF" CACHE BOOL "Does the HDF5 library require linking to zlib?")
+  set(HDF5_NEED_SZIP "OFF" CACHE BOOL "Does the HDF5 library require linking to szip?")
   if (HDF5_NEED_SZIP)
     find_library(SZIP_LIBRARY szip)
     mark_as_advanced(CLEAR SZIP_LIBRARY)
