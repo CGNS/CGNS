@@ -32,7 +32,7 @@
 ! ----  WRITING TESTS  ----
 
       outfile = "family_tree_f90.cgns"
-      call unlink( outfile )
+      ! call unlink( outfile )
       ! write(*, *) 'Create file'
       call cg_open_f(outfile, CG_MODE_WRITE, cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
