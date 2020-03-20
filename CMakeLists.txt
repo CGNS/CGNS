@@ -13,7 +13,6 @@ set(CMAKE_BUILD_TYPE "Release" CACHE STRING
 project("cgns" C)
 set(CGNS_VERSION "4.2")
 
-
 # Allow for building a package
 set(CPACK_PACKAGE_VERSION "${CGNS_VERSION}")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "cgns-${CGNS_VERSION}")
@@ -109,15 +108,12 @@ endif (NOT DEFINED FORTRAN_NAMING)
 
 # If we are using fortran, enable it and configure the C-Fortran interface
 # It would be nice to automatically detect this setting
-
 if(CGNS_ENABLE_FORTRAN)
+  enable_language("Fortran" OPTIONAL)
 
-    enable_language("Fortran" OPTIONAL)
-
-#-----------------------------------------------------------------------------
-# Detect name mangling convention used between Fortran and C
-#-----------------------------------------------------------------------------
-
+  #-----------------------------------------------------------------------------
+  # Detect name mangling convention used between Fortran and C
+  #-----------------------------------------------------------------------------
   set(F2CLIST  "LOWERCASE" "LOWERCASE_" "LOWERCASE__" "UPPERCASE" "UPPERCASE_" "UPPERCASE__")
   set(FORTRAN_NAMING_HELP
   "Configures how to link the Fortran components into the C library.
@@ -145,19 +141,19 @@ if(CGNS_ENABLE_FORTRAN)
   file(REMOVE ${CMAKE_BINARY_DIR}/FCMangle.h)
 
   if(CGNS_FC_FUNC MATCHES "^NAME(.*)")
-     set (FORTRAN_NAMING "UPPERCASE")
+    set (FORTRAN_NAMING "UPPERCASE")
   elseif(CGNS_FC_FUNC MATCHES "^name(.*)")
-     set (FORTRAN_NAMING "LOWERCASE")
+    set (FORTRAN_NAMING "LOWERCASE")
   endif()
   if(CGNS_FC_FUNC MATCHES "(.*)__$")
-     set (FORTRAN_NAMING "${FORTRAN_NAMING}__")
+    set (FORTRAN_NAMING "${FORTRAN_NAMING}__")
   elseif(CGNS_FC_FUNC MATCHES "(.*)_$")
-     set (FORTRAN_NAMING "${FORTRAN_NAMING}_")
+    set (FORTRAN_NAMING "${FORTRAN_NAMING}_")
   endif()
 
   message(STATUS "Fortran name mangling convention: ${FORTRAN_NAMING}")
 
-# check that FORTRAN_NAMING is valid
+  # check that FORTRAN_NAMING is valid
   if (FORTRAN_NAMING STREQUAL "UNKNOWN")
     if (WIN32)
       set(FORTRAN_NAMING "UPPERCASE" CACHE STRING ${FORTRAN_NAMING_HELP})
@@ -201,7 +197,6 @@ if (CGNS_ENABLE_HDF5)
   endif (CGNS_BUILD_SHARED)
   message (STATUS "HDF5 find comps: ${FIND_HDF_COMPONENTS}")
 
-  #set (SEARCH_PACKAGE_NAME ${HDF5_PACKAGE_NAME})
   set (SEARCH_PACKAGE_NAME "hdf5")
   
   # If the first `find_package` below does not succeed, then the legacy `find_package`
@@ -245,9 +240,11 @@ if (CGNS_ENABLE_HDF5)
 
   else (HDF5_FOUND)
     find_package (HDF5) # Legacy find
-#Legacy find_package does not set HDF5_TOOLS_DIR, so we set it here
+    
+    #Legacy find_package does not set HDF5_TOOLS_DIR, so we set it here
     set(HDF5_TOOLS_DIR ${HDF5_LIBRARY}/../bin)
-#Legacy find_package does not set HDF5_BUILD_SHARED_LIBS, so we set it here
+    
+    #Legacy find_package does not set HDF5_BUILD_SHARED_LIBS, so we set it here
     if (CGNS_BUILD_SHARED AND EXISTS "${HDF5_LIBRARY}/libhdf5${CMAKE_SHARED_LIBRARY_SUFFIX}")
       set (HDF5_BUILD_SHARED_LIBS 1)
       add_definitions (-DH5_BUILT_AS_DYNAMIC_LIB)
@@ -265,7 +262,7 @@ if (CGNS_ENABLE_HDF5)
 
   if (HDF5_FOUND)
     if (WIN32)
-       set (HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR})
+      set (HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR})
     endif()
     set (HDF5_HAVE_H5PUBCONF_H 1)
     set (HDF5_HAVE_HDF5 1)
@@ -335,7 +332,7 @@ else (CGNS_ENABLE_HDF5)
 endif (CGNS_ENABLE_HDF5)
 
 #################
-# parallel cgns #
+# Parallel CGNS #
 #################
 
 if (CGNS_ENABLE_HDF5 AND HDF5_NEED_MPI)
@@ -343,7 +340,7 @@ if (CGNS_ENABLE_HDF5 AND HDF5_NEED_MPI)
   mark_as_advanced(CLEAR CGNS_ENABLE_PARALLEL)
   # Check that HDF5 has parallel support
   if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
-      message(FATAL_ERROR "HDF5 has been found, but is missing parallel support.")
+    message(FATAL_ERROR "HDF5 has been found, but is missing parallel support.")
   endif()
 else (CGNS_ENABLE_HDF5 AND HDF5_NEED_MPI)
   set(CGNS_ENABLE_PARALLEL "OFF")
@@ -370,10 +367,10 @@ if (CGNS_BUILD_SHARED)
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
   IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-     set(CMAKE_MACOSX_RPATH TRUE)
+    set(CMAKE_MACOSX_RPATH TRUE)
   ENDIF()
 else(CGNS_BUILD_SHARED)
-set(CMAKE_SKIP_RPATH TRUE)
+  set(CMAKE_SKIP_RPATH TRUE)
 endif(CGNS_BUILD_SHARED)
 
 #-----------------------------------------------------------------------------
@@ -389,8 +386,6 @@ if (CGNS_BUILD_TESTING)
   include (CTest)
   include (${PROJECT_SOURCE_DIR}/CTestConfig.cmake)
 endif (CGNS_BUILD_TESTING)
-
-
 
 ########
 # CGNS #
