@@ -3,6 +3,10 @@ if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.10")
+  cmake_policy(SET CMP0015 NEW)
+endif()
+
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING
   "one of: Release, Debug, RelWithDebInfo or MinSizeRel")
 if (${CMAKE_MAJOR_VERSION} GREATER 2 OR ${CMAKE_MINOR_VERSION} GREATER 7)
@@ -11,6 +15,7 @@ endif (${CMAKE_MAJOR_VERSION} GREATER 2 OR ${CMAKE_MINOR_VERSION} GREATER 7)
 
 project("cgns" C)
 set(CGNS_VERSION "4.2")
+
 
 # Allow for building a package
 set(CPACK_PACKAGE_VERSION "${CGNS_VERSION}")
@@ -207,7 +212,7 @@ if (CGNS_ENABLE_HDF5)
   # this is set, then CMake will issue warning and mistakenly say that `HDF5_ROOT` is
   # not used even though it might be.  This can confuse user, so set policy to not
   # issue that warning.
-  if (${CMAKE_VERSION} GREATER "3.13")
+  if (${CMAKE_VERSION} VERSION_GREATER "3.13")
      cmake_policy(SET CMP0074 NEW)
   endif()
 
