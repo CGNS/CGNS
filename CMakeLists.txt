@@ -6,6 +6,9 @@ endif(COMMAND cmake_policy)
 if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.10")
   cmake_policy(SET CMP0015 NEW)
 endif()
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
+  cmake_policy(SET CMP0081 NEW)
+endif()
 
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING
   "one of: Release, Debug, RelWithDebInfo or MinSizeRel")
