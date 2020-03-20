@@ -488,7 +488,7 @@ static int new_str_att(hid_t id, const char *name, const char *value,
   /* [1] the attribute is set on the GROUP (id is a group id) */
   /* [2] all datatypes should be H5T_STRING and not H5T_NATIVE_CHAR
          which requires an array (see case below with a H5Screate_simple
-         and providse an array of chars)
+         and provides an array of chars)
   */
   sid = H5Screate(H5S_SCALAR);
   if (sid < 0) {

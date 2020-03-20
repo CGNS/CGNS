@@ -1221,7 +1221,7 @@ New Features
     ------------
     * Replaced the hid_t to double (and vice-versa) utilities to_HDF_ID and to_ADF_ID 
       from a type cast to a function which uses memcpy for the conversion. This is needed 
-      for the upcomming release of HDF5 1.10 where hid_t was changed from a 32 bit integer 
+      for the upcoming release of HDF5 1.10 where hid_t was changed from a 32 bit integer 
       to a 64 bit integer. Should be transparent to user.
 
     * Implemented CPEX0039 : To enable with CGNS_ENABLE_BASE_SCOPE
