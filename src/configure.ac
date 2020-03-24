@@ -136,16 +136,12 @@ else
     if test "$ac_cv_cygwin" = "yes"; then
       AC_CHECK_PROGS(F77, g77 f2c)
     else
-      if test $use_gcc = yes; then
-        AC_CHECK_PROGS(F77, g77 f77 f90 f95 f2c)
-      else
-        AC_CHECK_PROGS(F77, f77 f90 f95 g77 f2c)
-      fi
+      AC_CHECK_PROGS(F77, f90 f95 f2c)
     fi
   fi
   if test -z "$F77"; then
     has_f77=no
-    F77=f77
+    F77=f90
     AC_MSG_WARN(no Fortran compiler was found)
   else
     has_f77=yes
