@@ -1366,7 +1366,7 @@ int cg_family_write(int file_number, int B, const char * family_name, int *F)
             return CG_ERROR;
         }
 
-        /* Check that specified base's name matches begining of family tree path */
+        /* Check that specified base's name matches beginning of family tree path */
         pch = strstr( family_name, base->name );
         if( pch != family_name+1 ) {
             cgi_error( "Incompatible basename (%s) and family tree (%s)", base->name, family_name );
