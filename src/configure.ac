@@ -136,16 +136,12 @@ else
     if test "$ac_cv_cygwin" = "yes"; then
       AC_CHECK_PROGS(F77, g77 f2c)
     else
-      if test $use_gcc = yes; then
-        AC_CHECK_PROGS(F77, g77 f77 f90 f95 f2c)
-      else
-        AC_CHECK_PROGS(F77, f77 f90 f95 g77 f2c)
-      fi
+      AC_CHECK_PROGS(F77, f90 f95 f2c)
     fi
   fi
   if test -z "$F77"; then
     has_f77=no
-    F77=f77
+    F77=f90
     AC_MSG_WARN(no Fortran compiler was found)
   else
     has_f77=yes
@@ -285,20 +281,23 @@ if test -z "$withsys" || test "$withsys" = "no"; then
   AC_MSG_RESULT($SYSTEM)
   if test $do64bit = yes; then
     BUILD64BIT=1
-    is64bit=`echo $SYSTEM | grep 64`
-    test -z "$is64bit" && \
+    AC_CHECK_SIZEOF([void *])
+    if test $ac_cv_sizeof_void_p -lt 8; then
       AC_MSG_WARN(64bit support not found for your machine)
+      is64bit=no
+    else
+      is64bit=yes
+    fi
   fi
 else
   SYSTEM=$withsys
   AC_MSG_RESULT($SYSTEM)
-fi
-
-is64bit=`echo $SYSTEM | grep 64`
-if test -z "$is64bit"; then
-  is64bit=no
-else
-  is64bit=yes
+  is64bit=`echo $SYSTEM | grep 64`
+  if test -z "$is64bit"; then
+    is64bit=no
+  else
+    is64bit=yes
+  fi
 fi
 
 if test "$ac_cv_prog_gcc" = "no"; then
