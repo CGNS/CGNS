@@ -1662,6 +1662,7 @@ void ADFH_Create(const double  pid,
   hid_t hpid;
   hid_t gid;
   char *pname;
+  static const char empty_label[ADF_NAME_LENGTH+1] = "";
 #ifdef ADFH_DEBUG_ON
   H5L_info_t lkbuff;
 #endif
@@ -1699,7 +1700,7 @@ void ADFH_Create(const double  pid,
   else {
 #ifdef ADFH_NO_ORDER
     if (new_str_att(gid, A_NAME, pname, ADF_NAME_LENGTH, err) ||
-        new_str_att(gid, A_LABEL, "", ADF_NAME_LENGTH, err) ||
+        new_str_att(gid, A_LABEL, empty_label, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
         new_int_att(gid, A_FLAGS, mta_root->g_flags, err)) return;
 #else
@@ -1710,7 +1711,7 @@ void ADFH_Create(const double  pid,
     H5Literate_by_name(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, count_children, (void *)&order, H5P_DEFAULT);
 #endif
     if (new_str_att(gid, A_NAME, pname, ADF_NAME_LENGTH, err) ||
-        new_str_att(gid, A_LABEL, "", ADF_NAME_LENGTH, err) ||
+        new_str_att(gid, A_LABEL, empty_label, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
         new_int_att(gid, A_ORDER, order, err) ||
         new_int_att(gid, A_FLAGS, mta_root->g_flags, err)) return;
@@ -2021,6 +2022,8 @@ void ADFH_Database_Open(const char   *name,
 {
   hid_t fid, gid;
   char *format, buff[ADF_VERSION_LENGTH+1];
+  static const char root_name[ADF_NAME_LENGTH+1] = "HDF5 MotherNode";
+  static const char root_label[ADF_NAME_LENGTH+1] = "Root Node of HDF5 File";
   int i, pos, mode;
   hid_t g_propfileopen;
 
@@ -2249,8 +2252,8 @@ void ADFH_Database_Open(const char   *name,
     memset(buff, 0, ADF_VERSION_LENGTH+1);
     ADFH_Library_Version(buff, err);
     format = native_format();
-    if (new_str_att(gid, A_NAME, "HDF5 MotherNode", ADF_NAME_LENGTH, err) ||
-        new_str_att(gid, A_LABEL, "Root Node of HDF5 File", ADF_NAME_LENGTH, err) ||
+    if (new_str_att(gid, A_NAME, root_name, ADF_NAME_LENGTH, err) ||
+        new_str_att(gid, A_LABEL, root_label, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
         new_str_data(gid, D_FORMAT, format, (int)strlen(format), err) ||
         new_str_data(gid, D_VERSION, buff, ADF_VERSION_LENGTH, err)) {
