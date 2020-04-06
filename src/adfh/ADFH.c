@@ -1539,6 +1539,7 @@ void ADFH_Set_Label(const double  id,
                     int          *err)
 {
   hid_t hid;
+  char label_name[ADF_NAME_LENGTH+1];
 
   to_HDF_ID(id, hid);
 
@@ -1556,7 +1557,8 @@ void ADFH_Set_Label(const double  id,
     set_error(ADFH_ERR_LINK_DATA, err);
     return;
   }
-  set_str_att(hid, A_LABEL, label, err);
+  strcpy(label_name, label);
+  set_str_att(hid, A_LABEL, label_name, err);
 }
 
 /* ----------------------------------------------------------------- */
