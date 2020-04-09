@@ -257,7 +257,9 @@ const char * AverageInterfaceTypeName[NofValidAverageInterfaceTypes] =
 int n_open = 0;
 int cgns_file_size = 0;
 int file_number_offset = 0;
-int VersionList[] = {3210, 3200,
+int VersionList[] = {4200,
+                     4110, 4100, 4000,
+                     3210, 3200,
                      3140, 3130, 3110, 3100,
                      3080, 3000,
                      2550, 2540, 2530, 2520, 2510, 2500,
@@ -530,8 +532,8 @@ int cg_version(int file_number, float *FileVersion)
     if (cgi_get_nodes(cg->rootid, "CGNSLibraryVersion_t", &nnod, &id))
         return CG_ERROR;
     if (nnod==0) {
-        cg->version=1050;
-        *FileVersion= (float) 1.05;
+        cg->version=3200;
+        *FileVersion= (float) 3.20;
     } else if (nnod!=1) {
         cgi_error("More then one CGNSLibraryVersion_t node found under ROOT.");
         return CG_ERROR;
