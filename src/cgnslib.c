@@ -4800,8 +4800,8 @@ int cg_poly_elements_partial_write(int file_number, int B, int Z, int S,
             cgsize_t m_start, m_end, m_stride, m_dim;
             cgsize_t ii;
 
-            s_start  = section_offset[start - section->range[0]];
-            s_end    = section_offset[end - section->range[0] + 1] - 1;
+            s_start  = section_offset[start - section->range[0]]+1;
+            s_end    = section_offset[end - section->range[0] + 1];
             s_stride = 1;
             m_start  = 1;
             m_end    = m_conn_size;
