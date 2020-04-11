@@ -12305,7 +12305,8 @@ cgns_array *cgi_array_address(int local_mode, int allow_dup, int given_no,
     } else if (strcmp(posit->label,"Elements_t")==0) {
         cgns_section *section= (cgns_section *)posit->posit;
         if (local_mode==CG_MODE_WRITE) {
-            if (strcmp(given_name,"ElementConnectivity") &&
+            if (strcmp(given_name,"ElementStartOffset") &&
+                strcmp(given_name,"ElementConnectivity") &&
 		strcmp(given_name,"ParentElements") &&
 		strcmp(given_name,"ParentElementsPosition") &&
 		strcmp(given_name,"ParentData")) {

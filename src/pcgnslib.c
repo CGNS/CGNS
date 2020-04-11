@@ -44,6 +44,7 @@ extern int pcg_mpi_comm_rank;
 extern char hdf5_access[64];
 /* flag indicating if mpi_initialized was called */
 extern int pcg_mpi_initialized;
+extern int HDF5storage_type;
 
 hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
 
@@ -757,6 +758,149 @@ int cgp_section_write(int fn, int B, int Z, const char *sectionname,
                start, end, nbndry, S);
 }
 
+int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
+    CGNS_ENUMT(ElementType_t) type, cgsize_t start, cgsize_t end, cgsize_t maxoffset,
+    int nbndry, int *S)
+{
+  cgns_zone *zone;
+  cgns_section *section = NULL;
+  double dummy_id;
+  int index;
+  int data[2];
+  cgsize_t dim_vals;
+  cgsize_t num, ElementDataSize=0;
+  
+  cg = cgi_get_file(fn);
+  if (check_parallel(cg)) return CG_ERROR;
+  if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+    return CG_ERROR;
+  
+  if (IS_FIXED_SIZE(type)) {
+    cgi_error("element type must not be a fixed size for this parallel IO");
+    return CG_ERROR;
+  }
+  
+  /* verify input */
+  if (cgi_check_strlen(sectionname)) return CG_ERROR;
+  
+  if (INVALID_ENUM(type,NofValidElementTypes)) {
+    cgi_error("Invalid element type defined for section '%s'",sectionname);
+    return CG_ERROR;
+  }
+  
+  num = end - start + 1;
+  if (num <= 0) {
+    cgi_error("Invalid element range defined for section '%s'",sectionname);
+    return CG_ERROR;
+  }
+  if (nbndry > num) {
+    cgi_error("Invalid boundary element number for section '%s'",sectionname);
+    return CG_ERROR;
+  }
+  
+  if (maxoffset < num)
+  {
+    cgi_error("Invalid Max Offset for section '%s'",sectionname);
+    return CG_ERROR;
+  }
+  ElementDataSize = maxoffset;
+  
+  zone = cgi_get_zone(cg, B, Z);
+  if (zone==0) return CG_ERROR;
+  
+  for (index=0; index<zone->nsections; index++) {
+    if (strcmp(sectionname, zone->section[index].name)==0) {
+      /* in CG_MODE_WRITE, children names must be unique */
+      cgi_error("Duplicate child name found: %s",sectionname);
+      return CG_ERROR;
+    }
+  }
+  /* add a Elements_t Node: */
+  if (index==zone->nsections) {
+    if (zone->nsections == 0) {
+      zone->section = CGNS_NEW(cgns_section, zone->nsections+1);
+    } else {
+      zone->section = CGNS_RENEW(cgns_section, zone->nsections+1, zone->section);
+    }
+    section = &(zone->section[zone->nsections]);
+    zone->nsections++;
+  }
+  (*S) = index+1;
+  
+  /* initialize ... */
+  strcpy(section->name, sectionname);
+  section->el_type = type;
+  section->range[0] = start;
+  section->range[1] = end;
+  section->el_bound = nbndry;
+  
+  section->id=0;
+  section->link=0;
+  section->ndescr=0;
+  section->parelem = section->parface = NULL;
+  section->nuser_data=0;
+  section->rind_planes=0;
+  
+  section->connect = CGNS_NEW(cgns_array, 1);
+  section->connect->data = 0;
+  strcpy(section->connect->name,"ElementConnectivity");
+  strcpy(section->connect->data_type,CG_SIZE_DATATYPE);
+  section->connect->data_dim=1;
+  section->connect->dim_vals[0]=ElementDataSize;
+  
+  /* initialize other fields */
+  section->connect->id=0;
+  section->connect->link=0;
+  section->connect->ndescr=0;
+  section->connect->data_class=CGNS_ENUMV(DataClassNull);
+  section->connect->units=0;
+  section->connect->exponents=0;
+  section->connect->convert=0;
+  
+  
+  section->connect_offset = CGNS_NEW(cgns_array, 1);
+  section->connect_offset->data = 0;
+  strcpy(section->connect_offset->name,"ElementStartOffset");
+  strcpy(section->connect_offset->data_type,CG_SIZE_DATATYPE);
+  section->connect_offset->data_dim=1;
+  section->connect_offset->dim_vals[0]=(num+1);
+  
+  section->connect_offset->id=0;
+  section->connect_offset->link=0;
+  section->connect_offset->ndescr=0;
+  section->connect_offset->data_class=CGNS_ENUMV(DataClassNull);
+  section->connect_offset->units=0;
+  section->connect_offset->exponents=0;
+  section->connect_offset->convert=0;
+
+  HDF5storage_type = CG_CONTIGUOUS;
+  
+  /* Elements_t */
+  dim_vals = 2;
+  data[0]=section->el_type;
+  data[1]=section->el_bound;
+  if (cgi_new_node(zone->id, section->name, "Elements_t",
+    &section->id, "I4", 1, &dim_vals, data)) return CG_ERROR;
+  
+  /* ElementRange */
+  if (cgi_new_node(section->id, "ElementRange", "IndexRange_t", &dummy_id,
+    CG_SIZE_DATATYPE, 1, &dim_vals, section->range)) return CG_ERROR;
+  
+  /* ElementStartOffset */
+  if (cgi_new_node(section->id, section->connect_offset->name, "DataArray_t",
+      &section->connect_offset->id, section->connect_offset->data_type,
+      section->connect_offset->data_dim, section->connect_offset->dim_vals, NULL)) return CG_ERROR;
+  
+  /* ElementConnectivity */
+  if (cgi_new_node(section->id, section->connect->name, "DataArray_t",
+    &section->connect->id, section->connect->data_type,
+    section->connect->data_dim, section->connect->dim_vals, NULL)) return CG_ERROR;
+  
+  HDF5storage_type = CG_COMPACT;
+  
+  return CG_OK;
+}
+
 /*---------------------------------------------------------*/
 
 int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
@@ -803,6 +947,81 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     return readwrite_data_parallel(hid, type,
 			       1, &rmin, &rmax, &Data, CG_PAR_WRITE);
 }
+
+/*---------------------------------------------------------*/
+
+int cgp_poly_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
+                            cgsize_t end, const cgsize_t *elements, const cgsize_t *offsets)
+{
+  // Very experimental function
+  // is offset the local or global offset ?
+  // Should we had another argument global_offset in case offsets is local ?
+  // The serial partial writing get the global offset from the file
+  // so it is not necessary to provide it
+  hid_t hid, hid_elem;
+  cgns_section *section;
+  cgsize_t rmin, rmax;
+  cgsize_t rmin_elem, rmax_elem;
+  CGNS_ENUMT(DataType_t) type, elem_type;
+  cg_rw_t Data;
+  cg_rw_t DataElem;
+  int status;
+  
+  /* get file and check mode */
+  cg = cgi_get_file(fn);
+  if (check_parallel(cg)) return CG_ERROR;
+  
+  if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+    return CG_ERROR;
+  
+  section = cgi_get_section(cg, B, Z, S);
+  if (section == 0 || section->connect == 0) return CG_ERROR;
+  
+  if (offsets)
+  {
+    if (start > end ||
+        start < section->range[0] ||
+        end > section->range[1])
+    {
+        cgi_error("Error in requested element data range.");
+        return CG_ERROR;
+    }
+  }
+  
+  if (IS_FIXED_SIZE(section->el_type)) {
+    cgi_error("element must not be a fixed size for this parallel IO");
+    return CG_ERROR;
+  }
+    
+  rmin = start - section->range[0] + 1;
+  rmax = end - section->range[0] + 2;
+  
+  type = cgi_datatype(section->connect_offset->data_type);
+  elem_type = cgi_datatype(section->connect->data_type);
+  
+  to_HDF_ID(section->connect_offset->id, hid);
+  to_HDF_ID(section->connect->id, hid_elem);
+  
+  Data.u.wbuf = offsets;
+  DataElem.u.wbuf = elements;
+  
+  if (offsets){
+    rmin_elem = offsets[0] + 1;
+    rmax_elem = offsets[end-start+1];
+  }
+  else
+  {
+    rmin_elem = 1;
+    rmax_elem = 1;
+    DataElem.u.wbuf = NULL;
+  }
+  
+  status = readwrite_data_parallel(hid, type, 1, &rmin, &rmax, &Data, CG_PAR_WRITE);
+  if (status != CG_OK)
+    return status;
+  return readwrite_data_parallel(hid_elem, elem_type, 1, &rmin_elem, &rmax_elem, &DataElem, CG_PAR_WRITE);
+}
+
 
 /*---------------------------------------------------------*/
 
@@ -872,11 +1091,11 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
     /* check input range */
     if (parent_data) {
       if (start > end ||
-	  start < section->range[0] ||
-	  end > section->range[1]) {
-	cgi_error("Error in requested element data range.");
-	return CG_ERROR;
-      }    
+      start < section->range[0] ||
+      end > section->range[1]) {
+        cgi_error("Error in requested element data range.");
+        return CG_ERROR;
+      }  
     } else {
         start = end = 0;
     }

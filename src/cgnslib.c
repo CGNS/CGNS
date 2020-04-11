@@ -3326,7 +3326,7 @@ static void free_offset_data(cgns_section *section)
 static int read_offset_data(cgns_section *section)
 {
     if (section->connect_offset->data == NULL) {
-    cgsize_t cnt = section->connect_offset->dim_vals[0];
+        cgsize_t cnt = section->connect_offset->dim_vals[0];
 
         section->connect_offset->data = malloc(cnt * sizeof(cgsize_t));
         if (section->connect_offset->data == NULL) {
