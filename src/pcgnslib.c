@@ -106,10 +106,10 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
   /* Set the start position and size for the data write */
   /* fix dimensions due to Fortran indexing and ordering */
   if((rw_mode == CG_PAR_WRITE && data[0].u.wbuf) || (rw_mode == CG_PAR_READ && data[0].u.rbuf)) {
-      for (k = 0; k < ndims; k++) {
-	start[k] = rmin[ndims-k-1] - 1;
-	dims[k] = rmax[ndims-k-1] - start[k];
-      }
+    for (k = 0; k < ndims; k++) {
+      start[k] = rmin[ndims-k-1] - 1;
+      dims[k] = rmax[ndims-k-1] - start[k];
+    }
   }
   else { /* no data to read or write, but must still call H5Screate_simple */
       for (k = 0; k < ndims; k++) {
@@ -374,7 +374,7 @@ int cgp_mpi_comm(MPI_Comm comm)
 
     if (pcg_mpi_initialized) {
       if( cgio_configure(CG_CONFIG_HDF5_MPI_COMM, &comm) != -1) {
-	return CG_ERROR;
+        return CG_ERROR;
       }
 
       pcg_mpi_comm=comm;
@@ -434,7 +434,7 @@ int cgp_open(const char *filename, int mode, int *fn)
     }
 
     /* Flag this as a parallel access */
-    strcpy(hdf5_access,"PARALLEL");	
+    strcpy(hdf5_access,"PARALLEL");
 
     ierr = cg_set_file_type(CG_FILE_HDF5);
     if (ierr) return ierr;
@@ -497,12 +497,13 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
     for (n = 0; n < zone->index_dim; n++) {
         dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
                                   zcoor->rind_planes[2*n+1];
-	if(coords) {
-	  if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
-            cgi_error("Invalid index ranges.");
-            return CG_ERROR;
-	  }
-	}
+      if(coords) {
+        if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
+          printf("%d %d %d", rmin[n]> rmax[n], rmin[n] <1, rmax[n] >dims[n]);
+          cgi_error("Invalid index ranges. cgp_coord_write_data");
+          return CG_ERROR;
+        }
+      }
     }
     type = cgi_datatype(zcoor->coord[C-1].data_type);
 
@@ -633,14 +634,14 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
     }
 
     for (n = 0; n < zone->index_dim; n++) {
-        dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
-                                  zcoor->rind_planes[2*n+1];
-	if(coords) {
-	  if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
-            cgi_error("Invalid index ranges.");
-            return CG_ERROR;
-	  }
+      dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
+                                zcoor->rind_planes[2*n+1];
+      if(coords) {
+        if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
+          cgi_error("Invalid index ranges.");
+          return CG_ERROR;
 	}
+      }
     }
     type = cgi_datatype(zcoor->coord[C-1].data_type);
 
@@ -769,25 +770,25 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
   int data[2];
   cgsize_t dim_vals;
   cgsize_t num, ElementDataSize=0;
-  
+
   cg = cgi_get_file(fn);
   if (check_parallel(cg)) return CG_ERROR;
   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
     return CG_ERROR;
-  
+
   if (IS_FIXED_SIZE(type)) {
     cgi_error("element type must not be a fixed size for this parallel IO");
     return CG_ERROR;
   }
-  
+
   /* verify input */
   if (cgi_check_strlen(sectionname)) return CG_ERROR;
-  
+
   if (INVALID_ENUM(type,NofValidElementTypes)) {
     cgi_error("Invalid element type defined for section '%s'",sectionname);
     return CG_ERROR;
   }
-  
+
   num = end - start + 1;
   if (num <= 0) {
     cgi_error("Invalid element range defined for section '%s'",sectionname);
@@ -797,17 +798,17 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
     cgi_error("Invalid boundary element number for section '%s'",sectionname);
     return CG_ERROR;
   }
-  
+
   if (maxoffset < num)
   {
     cgi_error("Invalid Max Offset for section '%s'",sectionname);
     return CG_ERROR;
   }
   ElementDataSize = maxoffset;
-  
+
   zone = cgi_get_zone(cg, B, Z);
   if (zone==0) return CG_ERROR;
-  
+
   for (index=0; index<zone->nsections; index++) {
     if (strcmp(sectionname, zone->section[index].name)==0) {
       /* in CG_MODE_WRITE, children names must be unique */
@@ -826,28 +827,28 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
     zone->nsections++;
   }
   (*S) = index+1;
-  
+
   /* initialize ... */
   strcpy(section->name, sectionname);
   section->el_type = type;
   section->range[0] = start;
   section->range[1] = end;
   section->el_bound = nbndry;
-  
+
   section->id=0;
   section->link=0;
   section->ndescr=0;
   section->parelem = section->parface = NULL;
   section->nuser_data=0;
   section->rind_planes=0;
-  
+
   section->connect = CGNS_NEW(cgns_array, 1);
   section->connect->data = 0;
   strcpy(section->connect->name,"ElementConnectivity");
   strcpy(section->connect->data_type,CG_SIZE_DATATYPE);
   section->connect->data_dim=1;
   section->connect->dim_vals[0]=ElementDataSize;
-  
+
   /* initialize other fields */
   section->connect->id=0;
   section->connect->link=0;
@@ -856,15 +857,14 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
   section->connect->units=0;
   section->connect->exponents=0;
   section->connect->convert=0;
-  
-  
+
   section->connect_offset = CGNS_NEW(cgns_array, 1);
   section->connect_offset->data = 0;
   strcpy(section->connect_offset->name,"ElementStartOffset");
   strcpy(section->connect_offset->data_type,CG_SIZE_DATATYPE);
   section->connect_offset->data_dim=1;
   section->connect_offset->dim_vals[0]=(num+1);
-  
+
   section->connect_offset->id=0;
   section->connect_offset->link=0;
   section->connect_offset->ndescr=0;
@@ -874,30 +874,30 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
   section->connect_offset->convert=0;
 
   HDF5storage_type = CG_CONTIGUOUS;
-  
+
   /* Elements_t */
   dim_vals = 2;
   data[0]=section->el_type;
   data[1]=section->el_bound;
   if (cgi_new_node(zone->id, section->name, "Elements_t",
     &section->id, "I4", 1, &dim_vals, data)) return CG_ERROR;
-  
+
   /* ElementRange */
   if (cgi_new_node(section->id, "ElementRange", "IndexRange_t", &dummy_id,
     CG_SIZE_DATATYPE, 1, &dim_vals, section->range)) return CG_ERROR;
-  
+
   /* ElementStartOffset */
   if (cgi_new_node(section->id, section->connect_offset->name, "DataArray_t",
       &section->connect_offset->id, section->connect_offset->data_type,
       section->connect_offset->data_dim, section->connect_offset->dim_vals, NULL)) return CG_ERROR;
-  
+
   /* ElementConnectivity */
   if (cgi_new_node(section->id, section->connect->name, "DataArray_t",
     &section->connect->id, section->connect->data_type,
     section->connect->data_dim, section->connect->dim_vals, NULL)) return CG_ERROR;
-  
+
   HDF5storage_type = CG_COMPACT;
-  
+
   return CG_OK;
 }
 
@@ -923,12 +923,12 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     if (section == 0 || section->connect == 0) return CG_ERROR;
 
     if (elements) {
-    	if (start > end ||
-            start < section->range[0] ||
-            end > section->range[1]) {
-	    cgi_error("Error in requested element data range.");
-            return CG_ERROR;
-        }    
+      if (start > end ||
+          start < section->range[0] ||
+          end > section->range[1]) {
+        cgi_error("Error in requested element data range.");
+        return CG_ERROR;
+      }
     }
     if (!IS_FIXED_SIZE(section->el_type)) {
         cgi_error("element must be a fixed size for parallel IO");
@@ -966,17 +966,17 @@ int cgp_poly_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
   cg_rw_t Data;
   cg_rw_t DataElem;
   int status;
-  
+
   /* get file and check mode */
   cg = cgi_get_file(fn);
   if (check_parallel(cg)) return CG_ERROR;
-  
+
   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
     return CG_ERROR;
-  
+
   section = cgi_get_section(cg, B, Z, S);
   if (section == 0 || section->connect == 0) return CG_ERROR;
-  
+
   if (offsets)
   {
     if (start > end ||
@@ -987,24 +987,24 @@ int cgp_poly_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
         return CG_ERROR;
     }
   }
-  
+
   if (IS_FIXED_SIZE(section->el_type)) {
     cgi_error("element must not be a fixed size for this parallel IO");
     return CG_ERROR;
   }
-    
+
   rmin = start - section->range[0] + 1;
   rmax = end - section->range[0] + 2;
-  
+
   type = cgi_datatype(section->connect_offset->data_type);
   elem_type = cgi_datatype(section->connect->data_type);
-  
+
   to_HDF_ID(section->connect_offset->id, hid);
   to_HDF_ID(section->connect->id, hid_elem);
-  
+
   Data.u.wbuf = offsets;
   DataElem.u.wbuf = elements;
-  
+
   if (offsets){
     rmin_elem = offsets[0] + 1;
     rmax_elem = offsets[end-start+1];
@@ -1015,7 +1015,7 @@ int cgp_poly_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     rmax_elem = 1;
     DataElem.u.wbuf = NULL;
   }
-  
+
   status = readwrite_data_parallel(hid, type, 1, &rmin, &rmax, &Data, CG_PAR_WRITE);
   if (status != CG_OK)
     return status;
@@ -1045,12 +1045,12 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     if (section == 0 || section->connect == 0) return CG_ERROR;
 
     if (elements) { /* A processor may have nothing to read */
-    	if (start > end ||
-            start < section->range[0] ||
-            end > section->range[1]) {
-	   cgi_error("Error in requested element data range.");
-           return CG_ERROR;
-        }
+      if (start > end ||
+          start < section->range[0] ||
+          end > section->range[1]) {
+        cgi_error("Error in requested element data range.");
+        return CG_ERROR;
+      }
     }
     if (!IS_FIXED_SIZE(section->el_type)) {
         cgi_error("element must be a fixed size for parallel IO");
@@ -1095,7 +1095,7 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
       end > section->range[1]) {
         cgi_error("Error in requested element data range.");
         return CG_ERROR;
-      }  
+      }
     } else {
         start = end = 0;
     }
@@ -1219,8 +1219,8 @@ int cgp_field_write_data(int fn, int B, int Z, int S, int F,
         if (rmin[n] > rmax[n] ||
             rmax[n] > field->dim_vals[n] ||
             rmin[n] < 1) {
-	  cgi_error("Invalid range of data requested");
-	  return CG_ERROR;
+          cgi_error("Invalid range of data requested");
+          return CG_ERROR;
         }
       }
     }
