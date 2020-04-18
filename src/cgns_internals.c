@@ -23,6 +23,7 @@ freely, subject to the following restrictions:
 #include <string.h>
 #include <time.h>
 #include <sys/types.h>
+#include <complex.h>
 #if !defined(_WIN32) || defined(__NUTC__)
 #include <unistd.h>
 #endif
@@ -1553,7 +1554,9 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                 if (strcmp(sol[0][s].field[z].data_type,"I4") &&
                     strcmp(sol[0][s].field[z].data_type,"I8") &&
                     strcmp(sol[0][s].field[z].data_type,"R4") &&
-                    strcmp(sol[0][s].field[z].data_type,"R8")) {
+                    strcmp(sol[0][s].field[z].data_type,"R8") &&
+                    strcmp(sol[0][s].field[z].data_type,"X4") &&
+                    strcmp(sol[0][s].field[z].data_type,"X8")) {
                     cgi_error("Datatype %d not supported for flow solutions",sol[0][s].field[z].data_type);
                     return CG_ERROR;
                 }
@@ -5810,7 +5813,42 @@ int cgi_convert_data(cgsize_t cnt,
             ierr = 1;
         }
     }
-
+    else if (from_type == CGNS_ENUMV(ComplexSingle)) {
+      const float _Complex *src = (const float _Complex *)from_data;
+      /* X4 -> X4 */
+      if (to_type == CGNS_ENUMV(ComplexSingle)) {
+        float _Complex *dest = (float _Complex *)to_data;
+        for (n = 0; n < cnt; n++)
+          dest[n] = (float _Complex)src[n];
+      }
+      /* X4 -> X8 */
+      else if (to_type == CGNS_ENUMV(ComplexDouble)) {
+        double _Complex *dest = (double _Complex *)to_data;
+        for (n = 0; n < cnt; n++)
+          dest[n] = (_Complex double)((double)crealf(src[n]) + _Complex_I * (double)cimagf(src[n]));
+      }
+      else {
+        ierr = 1;
+      }
+    }
+    else if (from_type == CGNS_ENUMV(ComplexDouble)) {
+      const double _Complex *src = (const double _Complex *)from_data;
+      /* X8 -> X4 */
+      if (to_type == CGNS_ENUMV(ComplexSingle)) {
+        float _Complex *dest = (float _Complex *)to_data;
+        for (n = 0; n < cnt; n++)
+          dest[n] = (float _Complex)((float)creal(src[n]) + _Complex_I * (float)cimag(src[n]));
+      }
+      /* X8 -> X8 */
+      else if (to_type == CGNS_ENUMV(ComplexDouble)) {
+        double _Complex *dest = (double _Complex *)to_data;
+        for (n = 0; n < cnt; n++)
+          dest[n] = (_Complex double)src[n];
+      }
+      else {
+        ierr = 1;
+      }
+    }
     else {
         ierr = 1;
     }
@@ -8577,6 +8615,8 @@ int size_of(const char_33 data_type)
     if (strcmp(data_type, "R4") == 0) return sizeof(float);
     if (strcmp(data_type, "R8") == 0) return sizeof(double);
     if (strcmp(data_type, "C1") == 0) return sizeof(char);
+    if (strcmp(data_type, "X4") == 0) return 2*sizeof(float);
+    if (strcmp(data_type, "X8") == 0) return 2*sizeof(double);
 
     cgi_error("data_type '%s' not supported by function 'size_of'",data_type);
     return CG_OK;
@@ -8590,6 +8630,8 @@ const char *cgi_adf_datatype(CGNS_ENUMV(DataType_t) type)
     if (type == CGNS_ENUMV(RealSingle)) return "R4";
     if (type == CGNS_ENUMV(RealDouble)) return "R8";
     if (type == CGNS_ENUMV(Character))  return "C1";
+    if (type == CGNS_ENUMV(ComplexSingle)) return "X4";
+    if (type == CGNS_ENUMV(ComplexDouble)) return "X8";
     return "NULL";
 }
 
@@ -8600,6 +8642,8 @@ CGNS_ENUMT(DataType_t) cgi_datatype(cchar_33 adf_type)
     if (strcmp(adf_type, "R4") == 0) return CGNS_ENUMV(RealSingle);
     if (strcmp(adf_type, "R8") == 0) return CGNS_ENUMV(RealDouble);
     if (strcmp(adf_type, "C1") == 0) return CGNS_ENUMV(Character);
+    if (strcmp(adf_type, "X4") == 0) return CGNS_ENUMV(ComplexSingle);
+    if (strcmp(adf_type, "X8") == 0) return CGNS_ENUMV(ComplexDouble);
     return CGNS_ENUMV(DataTypeNull);
 }
 
@@ -9082,59 +9126,59 @@ cgns_zconn *cgi_get_zconn(cgns_file *cg, int B, int Z)
     return zone->zconn;
 }
 
-cgns_cprop *cgi_get_cprop(cgns_file *cg, int B, int Z, int I)
+cgns_cprop *cgi_get_cprop(cgns_file *cg, int B, int Z, int J)
 {
     cgns_conn *conn;
 
-    conn = cgi_get_conn(cg, B, Z, I);
+    conn = cgi_get_conn(cg, B, Z, J);
     if (conn==0) return CG_OK;
 
     if (conn->cprop == 0)
-        cgi_error("GridConnectivityProperty_t node doesn't exist under GridConnectivity_t %d",I);
+        cgi_error("GridConnectivityProperty_t node doesn't exist under GridConnectivity_t %d",J);
 
     return conn->cprop;
 }
 
-cgns_hole *cgi_get_hole(cgns_file *cg, int B, int Z, int I)
+cgns_hole *cgi_get_hole(cgns_file *cg, int B, int Z, int J)
 {
     cgns_zconn *zconn;
 
     zconn = cgi_get_zconn(cg, B, Z);
     if (zconn==0) return CG_OK;
 
-    if (I>zconn->nholes || I<=0) {
-        cgi_error("OversetHoles node number %d invalid",I);
+    if (J>zconn->nholes || J<=0) {
+        cgi_error("OversetHoles node number %d invalid",J);
         return CG_OK;
     }
-    return &(zconn->hole[I-1]);
+    return &(zconn->hole[J-1]);
 }
 
-cgns_conn *cgi_get_conn(cgns_file *cg, int B, int Z, int I)
+cgns_conn *cgi_get_conn(cgns_file *cg, int B, int Z, int J)
 {
     cgns_zconn *zconn;
 
     zconn = cgi_get_zconn(cg, B, Z);
     if (zconn==0) return CG_OK;
 
-    if (I>zconn->nconns || I<=0) {
+    if (J>zconn->nconns || J<=0) {
         cgi_error("GridConnectivity_t node number %d invalid",I);
         return CG_OK;
     }
-    return &(zconn->conn[I-1]);
+    return &(zconn->conn[J-1]);
 }
 
-cgns_1to1 *cgi_get_1to1(cgns_file *cg, int B, int Z, int I)
+cgns_1to1 *cgi_get_1to1(cgns_file *cg, int B, int Z, int J)
 {
     cgns_zconn *zconn;
 
     zconn = cgi_get_zconn(cg, B, Z);
     if (zconn==0) return CG_OK;
 
-    if (I>zconn->n1to1 || I<=0) {
-        cgi_error("GridConnectivity1to1_t node number %d invalid",I);
+    if (J>zconn->n1to1 || J<=0) {
+        cgi_error("GridConnectivity1to1_t node number %d invalid",J);
         return CG_OK;
     }
-    return &(zconn->one21[I-1]);
+    return &(zconn->one21[J-1]);
 }
 
 cgns_zboco *cgi_get_zboco(cgns_file *cg, int B, int Z)
@@ -14179,8 +14223,14 @@ void cgi_free_subreg(cgns_subreg *subreg)
         cgi_free_ptset(subreg->ptset);
         CGNS_FREE(subreg->ptset);
     }
-    if (subreg->bcname) cgi_free_descr(subreg->bcname);
-    if (subreg->gcname) cgi_free_descr(subreg->gcname);
+    if (subreg->bcname){
+      cgi_free_descr(subreg->bcname);
+      CGNS_FREE(subreg->bcname);
+    }
+    if (subreg->gcname){
+      cgi_free_descr(subreg->gcname);
+      CGNS_FREE(subreg->gcname);
+    }
     if (subreg->units) {
         cgi_free_units(subreg->units);
         CGNS_FREE(subreg->units);

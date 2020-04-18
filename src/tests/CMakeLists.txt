@@ -43,6 +43,7 @@ set(write_rind_FILES write_rind.c)
 set(write_test_FILES write_test.c)
 set(write_zones_FILES write_zones.c utils.c)
 set(test_family_tree_FILES test_family_tree.c)
+set(test_complex_FILES test_complex.c)
 #set(cgiof_FILES cgiof.F90)
 #set(cgwrite_FILES cgwrite.F90)
 #set(cgread_FILES cgread.F90)
@@ -78,6 +79,7 @@ add_executable( write_test           ${write_test_FILES}           )
 add_executable( write_zones          ${write_zones_FILES}          )
 add_executable( test_family_tree     ${test_family_tree_FILES}     )
 add_executable( test_bbox            ${test_bbox_FILES}            )
+add_executable( test_complex         ${test_complex_FILES}         )
 
 # Conditionally build the fortran tests
 if (CGNS_ENABLE_FORTRAN)
@@ -120,6 +122,7 @@ if (CGNS_ENABLE_TESTS)
   add_test( write_zones          write_zones          )
   add_test( test_family_tree     test_family_tree     )
   add_test( test_bbox            test_bbox            )
+  add_test( test_complex         test_complex         )
 
   # Conditionally add the fortran tests
   if (CGNS_ENABLE_FORTRAN)
