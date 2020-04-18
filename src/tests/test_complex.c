@@ -22,7 +22,6 @@
 /* from cgns_internal: so we can reset expected error messages */
 void cgi_error(const char *format, ...);
 
-
 int CellDim = 3, PhyDim = 3;
 
 int cgfile, cgbase, cgzone;
@@ -49,140 +48,140 @@ void release_data();
 
 void error_exit (char *where)
 {
-    fprintf (stderr, "ERROR:%s:%s\n", where, cg_get_error());
-    exit (1);
+  fprintf (stderr, "ERROR:%s:%s\n", where, cg_get_error());
+  exit (1);
 }
 
 int main (int argc, char *argv[])
 {
-    char outfile[32];
-    int nbases, nzones;
+  char outfile[32];
+  int nbases, nzones;
 
-    strcpy (outfile, "complex_data.cgns");
-    if (argc > 1) {
-        int type = 0;
-        int n = 0;
-        if (argv[1][n] == '-') n++;
-        if (argv[1][n] == 'a' || argv[1][n] == 'A' || argv[1][n] == '1') {
-            if (NULL != strchr(argv[1], '2'))
-                type = CG_FILE_ADF2;
-            else
-                type = CG_FILE_ADF;
-        }
-        else if (argv[1][n] == 'h' || argv[1][n] == 'H' || argv[1][n] == '2') {
-            type = CG_FILE_HDF5;
-        }
-        else if (argv[1][n] == '3') {
-            type = CG_FILE_ADF2;
-        }
-        else {
-            fprintf(stderr, "unknown option\n");
-            exit (1);
-        }
-        if (cg_set_file_type(type))
-            error_exit("cg_set_file_type");
-    }
+  strcpy (outfile, "complex_data.cgns");
+  if (argc > 1) {
+    int type = 0;
+    int n = 0;
+    if (argv[1][n] == '-') n++;
+    if (argv[1][n] == 'a' || argv[1][n] == 'A' || argv[1][n] == '1') {
+    if (NULL != strchr(argv[1], '2'))
+      type = CG_FILE_ADF2;
+    else
+      type = CG_FILE_ADF;
+  }
+  else if (argv[1][n] == 'h' || argv[1][n] == 'H' || argv[1][n] == '2') {
+    type = CG_FILE_HDF5;
+  }
+  else if (argv[1][n] == '3') {
+    type = CG_FILE_ADF2;
+  }
+  else {
+    fprintf(stderr, "unknown option\n");
+    exit (1);
+  }
+  if (cg_set_file_type(type))
+    error_exit("cg_set_file_type");
+  }
   
-    init_data();
-    unlink(outfile);
-    if (cg_open(outfile, CG_MODE_WRITE, &cgfile)) error_exit("cg_open");
-    write_structured();
-    if (cg_close(cgfile)) error_exit("cg_close");
+  init_data();
+  unlink(outfile);
+  if (cg_open(outfile, CG_MODE_WRITE, &cgfile)) error_exit("cg_open");
+  write_structured();
+  if (cg_close(cgfile)) error_exit("cg_close");
 
-    if (cg_open(outfile, CG_MODE_READ, &cgfile)) error_exit("cg_open");
-    if (cg_nbases(cgfile, &nbases)) error_exit("cg_nbases");
-    for (cgbase = 1; cgbase <= nbases; cgbase++) {
-        if (cg_nzones(cgfile, cgbase, &nzones)) error_exit("cg_nzones");
-        for (cgzone = 1; cgzone <= nzones; cgzone++) {
-            test_complex_solution();
-        }
+  if (cg_open(outfile, CG_MODE_READ, &cgfile)) error_exit("cg_open");
+  if (cg_nbases(cgfile, &nbases)) error_exit("cg_nbases");
+  for (cgbase = 1; cgbase <= nbases; cgbase++) {
+    if (cg_nzones(cgfile, cgbase, &nzones)) error_exit("cg_nzones");
+    for (cgzone = 1; cgzone <= nzones; cgzone++) {
+      test_complex_solution();
     }
-    if (cg_close(cgfile)) error_exit("cg_close");
+  }
+  if (cg_close(cgfile)) error_exit("cg_close");
 
-    return 0;
+  return 0;
 }
 
 void init_data()
 {
-    int n, i, j, k;
+  int n, i, j, k;
 
-    /* compute coordinates - make it twice as big for use with cylindrical */
+  /* compute coordinates - make it twice as big for use with cylindrical */
 
-    num_coord = NUM_SIDE * NUM_SIDE * NUM_SIDE;
-    xcoord = (float *) malloc (3 * num_coord * sizeof(float));
-    if (NULL == xcoord) {
-      fprintf(stderr, "malloc failed for coordinates\n");
-      exit(1);
-    }
-    ycoord = xcoord + num_coord;
-    zcoord = ycoord + num_coord;
-    for (n = 0, k = 0; k < NUM_SIDE; k++) {
-      for (j = 0; j < NUM_SIDE; j++) {
-        for (i = 0; i < NUM_SIDE; i++, n++) {
-          xcoord[n] = (float)i;
-          ycoord[n] = (float)j;
-          zcoord[n] = (float)k;
-        }
+  num_coord = NUM_SIDE * NUM_SIDE * NUM_SIDE;
+  xcoord = (float *) malloc (3 * num_coord * sizeof(float));
+  if (NULL == xcoord) {
+    fprintf(stderr, "malloc failed for coordinates\n");
+    exit(1);
+  }
+  ycoord = xcoord + num_coord;
+  zcoord = ycoord + num_coord;
+  for (n = 0, k = 0; k < NUM_SIDE; k++) {
+    for (j = 0; j < NUM_SIDE; j++) {
+      for (i = 0; i < NUM_SIDE; i++, n++) {
+        xcoord[n] = (float)i;
+        ycoord[n] = (float)j;
+        zcoord[n] = (float)k;
       }
     }
+  }
 
-    /* compute solution values */
-    var_fourier_1 = (float _Complex *) malloc(num_coord * sizeof(float _Complex));
-    if (NULL == var_fourier_1) {
-      fprintf(stderr, "malloc failed for solution data\n");
-      exit(1);
-    }
-    var_fourier_2 = (double _Complex *) malloc(num_coord * sizeof(double _Complex));
-    if (NULL == var_fourier_2) {
-      fprintf(stderr, "malloc failed for solution data\n");
-      exit(1);
-    }
+  /* compute solution values */
+  var_fourier_1 = (float _Complex *) malloc(num_coord * sizeof(float _Complex));
+  if (NULL == var_fourier_1) {
+    fprintf(stderr, "malloc failed for solution data\n");
+    exit(1);
+  }
+  var_fourier_2 = (double _Complex *) malloc(num_coord * sizeof(double _Complex));
+  if (NULL == var_fourier_2) {
+    fprintf(stderr, "malloc failed for solution data\n");
+    exit(1);
+  }
 
-    for (n = 0, k = 0; k < NUM_SIDE; k++) {
-      for (j = 0; j < NUM_SIDE; j++) {
-        for (i = 0; i < NUM_SIDE; i++, n++) {
-          var_fourier_1[n] = ((float)i) + I * ((float)j);
-          var_fourier_2[n] = ((double)j) + I * ((double) k);
-        }
+  for (n = 0, k = 0; k < NUM_SIDE; k++) {
+    for (j = 0; j < NUM_SIDE; j++) {
+      for (i = 0; i < NUM_SIDE; i++, n++) {
+        var_fourier_1[n] = ((float)i) + I * ((float)j);
+        var_fourier_2[n] = ((double)j) + I * ((double) k);
       }
     }
+  }
 }
 
 void release_data(){
   if (xcoord != NULL)
-      free(xcoord);
+    free(xcoord);
   if (var_fourier_1 != NULL)
-      free(var_fourier_1);
+    free(var_fourier_1);
   if (var_fourier_2 != NULL)
-      free(var_fourier_2);
+    free(var_fourier_2);
 }
 
 void write_coords(int nz)
 {
-    int k, nn, n, nij, koff, cgcoord;
+  int k, nn, n, nij, koff, cgcoord;
 
-    koff = nz == 1 ? 1 - NUM_SIDE : 0;
-    nij = NUM_SIDE * NUM_SIDE;
-    for (n = 0, k = 0; k < NUM_SIDE; k++) {
-        for (nn = 0; nn < nij; nn++)
-            zcoord[n++] = (float)(k + koff);
-    }
+  koff = nz == 1 ? 1 - NUM_SIDE : 0;
+  nij = NUM_SIDE * NUM_SIDE;
+  for (n = 0, k = 0; k < NUM_SIDE; k++) {
+    for (nn = 0; nn < nij; nn++)
+      zcoord[n++] = (float)(k + koff);
+  }
 
-    if (cg_coord_write(cgfile, cgbase, nz, CGNS_ENUMV(RealSingle),
-            "CoordinateX", xcoord, &cgcoord) ||
-        cg_coord_write(cgfile, cgbase, nz, CGNS_ENUMV(RealSingle),
-            "CoordinateY", ycoord, &cgcoord) ||
-        cg_coord_write(cgfile, cgbase, nz, CGNS_ENUMV(RealSingle),
-            "CoordinateZ", zcoord, &cgcoord)) {
-        sprintf (errmsg, "zone %d coordinates", nz);
-        error_exit(errmsg);
-    }
-    for (n = 1; n <= 3; n++) {
-        if (cg_goto(cgfile, cgbase, "Zone_t", nz, "GridCoordinates_t", 1,
-                "DataArray_t", n, NULL) ||
-            cg_exponents_write(CGNS_ENUMV(RealSingle), exponents))
-            error_exit("coordinate exponents");
-    }
+  if (cg_coord_write(cgfile, cgbase, nz, CGNS_ENUMV(RealSingle),
+      "CoordinateX", xcoord, &cgcoord) ||
+      cg_coord_write(cgfile, cgbase, nz, CGNS_ENUMV(RealSingle),
+      "CoordinateY", ycoord, &cgcoord) ||
+      cg_coord_write(cgfile, cgbase, nz, CGNS_ENUMV(RealSingle),
+      "CoordinateZ", zcoord, &cgcoord)) {
+    sprintf (errmsg, "zone %d coordinates", nz);
+    error_exit(errmsg);
+  }
+  for (n = 1; n <= 3; n++) {
+    if (cg_goto(cgfile, cgbase, "Zone_t", nz, "GridCoordinates_t", 1,
+        "DataArray_t", n, NULL) ||
+        cg_exponents_write(CGNS_ENUMV(RealSingle), exponents))
+      error_exit("coordinate exponents");
+  }
 }
 
 void write_solution(int nz)
@@ -202,7 +201,6 @@ void write_solution(int nz)
     sprintf (errmsg, "Complex array write failed in zone %d", nz);
     error_exit(errmsg);
   }
- 
 }
 
 /*------------------------------------------------------------------------
@@ -211,34 +209,33 @@ void write_solution(int nz)
 
 void write_structured()
 {
-    int n;
-    char name[33];
+  int n;
+  char name[33];
 
-    if (cg_base_write(cgfile, "Structured", CellDim, PhyDim, &cgbase) ||
-        cg_goto(cgfile, cgbase, "end") ||
-        cg_descriptor_write("Descriptor", "Multi-block Structured Grid") ||
-        cg_dataclass_write(CGNS_ENUMV(Dimensional)) ||
-        cg_units_write(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
-            CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian)))
-        error_exit("structured base");
+  if (cg_base_write(cgfile, "Structured", CellDim, PhyDim, &cgbase) ||
+      cg_goto(cgfile, cgbase, "end") ||
+      cg_descriptor_write("Descriptor", "Multi-block Structured Grid") ||
+      cg_dataclass_write(CGNS_ENUMV(Dimensional)) ||
+      cg_units_write(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter),
+      CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian)))
+    error_exit("structured base");
 
-    /* write zones */
-
-    for (n = 0; n < 3; n++) {
-        size[n]   = NUM_SIDE;
-        size[n+3] = NUM_SIDE - 1;
-        size[n+6] = 0;
+  /* write zones */
+  for (n = 0; n < 3; n++) {
+    size[n]   = NUM_SIDE;
+    size[n+3] = NUM_SIDE - 1;
+    size[n+6] = 0;
+  }
+  for (n = 1; n <= 2; n++) {
+    sprintf(name, "Zone%d", n);
+    if (cg_zone_write(cgfile, cgbase, name, size,
+        CGNS_ENUMV(Structured), &cgzone)) {
+      sprintf (errmsg, "structured zone %d", n);
+      error_exit(errmsg);
     }
-    for (n = 1; n <= 2; n++) {
-        sprintf(name, "Zone%d", n);
-        if (cg_zone_write(cgfile, cgbase, name, size,
-                CGNS_ENUMV(Structured), &cgzone)) {
-            sprintf (errmsg, "structured zone %d", n);
-            error_exit(errmsg);
-        }
-        write_coords(n);
-        write_solution(n);
-    }
+    write_coords(n);
+    write_solution(n);
+  }
 }
 
 void test_complex_solution()
@@ -380,7 +377,7 @@ void test_complex_solution()
   if (cg_gopath(cgfile, "/Structured/Zone1/Solution") ||
       cg_array_general_read(3, rmin, rmax, CGNS_ENUMV(ComplexDouble),
                             3, rmax, rmin, rmax, cdbuf))
-        error_exit("Read of complex array failed");
+    error_exit("Read of complex array failed");
 
   for (n = 0, k = 0; k < NUM_SIDE; k++) {
     for (j = 0; j < NUM_SIDE; j++) {

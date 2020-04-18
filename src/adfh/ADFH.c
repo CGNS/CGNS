@@ -126,7 +126,7 @@ printf aaa ; printf("\n"); fflush(stdout);
 #define ADFH_U8 "U8"
 #define ADFH_R4 "R4"
 #define ADFH_R8 "R8"
-/* these have experimental supported */
+/* these have experimental support */
 #define ADFH_X4 "X4"
 #define ADFH_X8 "X8"
 /* HDF5 Compound names used for complex value */
