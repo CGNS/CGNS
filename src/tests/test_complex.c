@@ -1,8 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <complex.h>
 #include <math.h>
+#include <complex.h>
+#undef I
+#if defined(_MSC_VER)
+#define cg_complex_float _Fcomplex
+#define cg_complex_double _Dcomplex
+#define __real__(c)  c._Val[0]
+#define __imag__(c)  c._Val[1]
+#else
+#define cg_complex_float float _Complex
+#define cg_complex_double double _Complex
+#endif
+
 #if defined(_WIN32) && !defined(__NUTC__)
 # include <io.h>
 # define unlink _unlink
@@ -34,8 +45,8 @@ cgsize_t size[9];
 int num_coord;
 float *xcoord, *ycoord, *zcoord;
 
-float _Complex  *var_fourier_1;
-double _Complex *var_fourier_2;
+cg_complex_float  *var_fourier_1;
+cg_complex_double *var_fourier_2;
 
 char errmsg[256];
 
@@ -126,12 +137,12 @@ void init_data()
   }
 
   /* compute solution values */
-  var_fourier_1 = (float _Complex *) malloc(num_coord * sizeof(float _Complex));
+  var_fourier_1 = (cg_complex_float *) malloc(num_coord * sizeof(cg_complex_float));
   if (NULL == var_fourier_1) {
     fprintf(stderr, "malloc failed for solution data\n");
     exit(1);
   }
-  var_fourier_2 = (double _Complex *) malloc(num_coord * sizeof(double _Complex));
+  var_fourier_2 = (cg_complex_double *) malloc(num_coord * sizeof(cg_complex_double));
   if (NULL == var_fourier_2) {
     fprintf(stderr, "malloc failed for solution data\n");
     exit(1);
@@ -140,8 +151,10 @@ void init_data()
   for (n = 0, k = 0; k < NUM_SIDE; k++) {
     for (j = 0; j < NUM_SIDE; j++) {
       for (i = 0; i < NUM_SIDE; i++, n++) {
-        var_fourier_1[n] = ((float)i) + I * ((float)j);
-        var_fourier_2[n] = ((double)j) + I * ((double) k);
+        __real__(var_fourier_1[n]) = ((float)i);
+        __imag__(var_fourier_1[n]) = ((float)j);
+        __real__(var_fourier_2[n]) = ((float)j);
+        __imag__(var_fourier_2[n]) = ((float)k);
       }
     }
   }
@@ -247,13 +260,11 @@ void test_complex_solution()
 
   float *fbuf;
   double *dbuf;
-  float _Complex *cfbuf;
-  double _Complex *cdbuf;
-  double _Complex tmpCD;
-  float _Complex tmpCF;
+  cg_complex_float *cfbuf;
+  cg_complex_double *cdbuf;
 
-  cfbuf = (float _Complex *) malloc(num_coord * sizeof(float _Complex));
-  cdbuf = (double _Complex *) malloc(num_coord * sizeof(double _Complex));
+  cfbuf = (cg_complex_float *) malloc(num_coord * sizeof(cg_complex_float));
+  cdbuf = (cg_complex_double *) malloc(num_coord * sizeof(cg_complex_double));
   fbuf = (float *) malloc(num_coord * 2 * sizeof(float));
   dbuf = (double *) malloc(num_coord * 2 * sizeof(double));
 
@@ -292,23 +303,22 @@ void test_complex_solution()
   for (n = 0, k = 0; k < NUM_SIDE; k++) {
     for (j = 0; j < NUM_SIDE; j++) {
       for (i = 0; i < NUM_SIDE; i++, n++) {
-        if (var_fourier_1[n] != cfbuf[n])
-        {
+        if ((crealf(var_fourier_1[n]) != crealf(cfbuf[n])) ||
+            (cimagf(var_fourier_1[n]) != cimagf(cfbuf[n]))) {
           printf("%f + %f I !=  %f + %f I", crealf(var_fourier_1[n]), cimagf(var_fourier_1[n]),
                                                 crealf(cfbuf[n]), cimagf(cfbuf[n]));
           error_exit("Read of complex single data failed\n");
         }
-        tmpCD = ((double)i) + I * ((double)j);
-        if (tmpCD != cdbuf[n])
-        {
-          printf("%lf + %lf I !=  %lf + %lf I", creal(tmpCD), cimag(tmpCD), creal(cdbuf[n]), cimag(cdbuf[n]));
+        if ((creal(cdbuf[n]) != (double)i) ||
+            (cimag(cdbuf[n]) != (double)j)) {
+          printf("%lf + %lf I !=  %lf + %lf I", (double)i, (double)j, creal(cdbuf[n]), cimag(cdbuf[n]));
           error_exit("Read of complex single to complex double data failed\n");
         }
-        if ((crealf(var_fourier_1[n]) != fbuf[2*n]) &&
+        if ((crealf(var_fourier_1[n]) != fbuf[2*n]) ||
             (cimagf(var_fourier_1[n]) != fbuf[2*n+1])) {
           error_exit("Read of complex single to aliased single array failed\n");
         }
-        if (((double)crealf(var_fourier_1[n]) != dbuf[2*n]) &&
+        if (((double)crealf(var_fourier_1[n]) != dbuf[2*n]) ||
             ((double)cimagf(var_fourier_1[n]) != dbuf[2*n+1])) {
           error_exit("Read of complex single to double array failed\n");
         }
@@ -350,23 +360,22 @@ void test_complex_solution()
   for (n = 0, k = 0; k < NUM_SIDE; k++) {
     for (j = 0; j < NUM_SIDE; j++) {
       for (i = 0; i < NUM_SIDE; i++, n++) {
-        if (var_fourier_2[n] != cdbuf[n])
-        {
+        if ((creal(var_fourier_2[n]) != creal(cdbuf[n])) ||
+            (cimag(var_fourier_2[n]) != cimag(cdbuf[n]))) {
           printf("%lf + %lf I !=  %lf + %lf I", creal(var_fourier_2[n]), cimag(var_fourier_2[n]),
                                             creal(cdbuf[n]), cimag(cdbuf[n]));
           error_exit("Read of complex double data failed\n");
         }
-        tmpCF = ((float)j) + I * ((float)k);
-        if (tmpCF != cfbuf[n])
-        {
-          printf("%f + %f I !=  %f + %f I", crealf(tmpCF), cimagf(tmpCF), crealf(cfbuf[n]), cimagf(cfbuf[n]));
+        if ((crealf(cfbuf[n]) != ((float)j)) ||
+            (cimagf(cfbuf[n]) != ((float)k))) {
+          printf("%f + %f I !=  %f + %f I", (float)j, (float)k, crealf(cfbuf[n]), cimagf(cfbuf[n]));
           error_exit("Read of complex double to complex single data failed\n");
         }
-        if ((creal(var_fourier_2[n]) != dbuf[2*n]) &&
+        if ((creal(var_fourier_2[n]) != dbuf[2*n]) ||
             (cimag(var_fourier_2[n]) != dbuf[2*n+1])) {
           error_exit("Read of complex double to aliased double array failed\n");
         }
-        if (((float)creal(var_fourier_2[n]) != fbuf[2*n]) &&
+        if (((float)creal(var_fourier_2[n]) != fbuf[2*n]) ||
             ((float)cimag(var_fourier_2[n]) != fbuf[2*n+1])) {
           error_exit("Read of complex double to single array failed\n");
         }
@@ -382,8 +391,8 @@ void test_complex_solution()
   for (n = 0, k = 0; k < NUM_SIDE; k++) {
     for (j = 0; j < NUM_SIDE; j++) {
       for (i = 0; i < NUM_SIDE; i++, n++) {
-        if (var_fourier_2[n] != cdbuf[n])
-        {
+        if ((creal(var_fourier_2[n]) != creal(cdbuf[n])) ||
+            (cimag(var_fourier_2[n]) != cimag(cdbuf[n]))) {
           printf("%lf + %lf I !=  %lf + %lf I", creal(var_fourier_2[n]), cimag(var_fourier_2[n]),
                                             creal(cdbuf[n]), cimag(cdbuf[n]));
           error_exit("Read of complex double data failed\n");

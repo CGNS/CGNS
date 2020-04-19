@@ -24,6 +24,17 @@ freely, subject to the following restrictions:
 #include <time.h>
 #include <sys/types.h>
 #include <complex.h>
+#undef I
+#if defined(_MSC_VER)
+#define cg_complex_float _Fcomplex
+#define cg_complex_double _Dcomplex
+#define __real__(c)  c._Val[0]
+#define __imag__(c)  c._Val[1]
+#else
+#define cg_complex_float float _Complex
+#define cg_complex_double double _Complex
+#endif
+
 #if !defined(_WIN32) || defined(__NUTC__)
 #include <unistd.h>
 #endif
@@ -5814,36 +5825,40 @@ int cgi_convert_data(cgsize_t cnt,
         }
     }
     else if (from_type == CGNS_ENUMV(ComplexSingle)) {
-      const float _Complex *src = (const float _Complex *)from_data;
+      const cg_complex_float *src = (const cg_complex_float *)from_data;
       /* X4 -> X4 */
       if (to_type == CGNS_ENUMV(ComplexSingle)) {
-        float _Complex *dest = (float _Complex *)to_data;
+        cg_complex_float *dest = (cg_complex_float *)to_data;
         for (n = 0; n < cnt; n++)
-          dest[n] = (float _Complex)src[n];
+          dest[n] = src[n];
       }
       /* X4 -> X8 */
       else if (to_type == CGNS_ENUMV(ComplexDouble)) {
-        double _Complex *dest = (double _Complex *)to_data;
-        for (n = 0; n < cnt; n++)
-          dest[n] = (_Complex double)((double)crealf(src[n]) + _Complex_I * (double)cimagf(src[n]));
+        cg_complex_double *dest = (cg_complex_double *)to_data;
+        for (n = 0; n < cnt; n++) {
+          __real__(dest[n]) = (double)crealf(src[n]);
+          __imag__(dest[n]) = (double)cimagf(src[n]);
+        }
       }
       else {
         ierr = 1;
       }
     }
     else if (from_type == CGNS_ENUMV(ComplexDouble)) {
-      const double _Complex *src = (const double _Complex *)from_data;
+      const cg_complex_double *src = (const cg_complex_double *)from_data;
       /* X8 -> X4 */
       if (to_type == CGNS_ENUMV(ComplexSingle)) {
-        float _Complex *dest = (float _Complex *)to_data;
-        for (n = 0; n < cnt; n++)
-          dest[n] = (float _Complex)((float)creal(src[n]) + _Complex_I * (float)cimag(src[n]));
+        cg_complex_float *dest = (cg_complex_float *)to_data;
+        for (n = 0; n < cnt; n++) {
+          __real__(dest[n]) = (float)creal(src[n]);
+          __imag__(dest[n]) = (float)cimag(src[n]);
+        }
       }
       /* X8 -> X8 */
       else if (to_type == CGNS_ENUMV(ComplexDouble)) {
-        double _Complex *dest = (double _Complex *)to_data;
+        cg_complex_double *dest = (cg_complex_double *)to_data;
         for (n = 0; n < cnt; n++)
-          dest[n] = (_Complex double)src[n];
+          dest[n] = src[n];
       }
       else {
         ierr = 1;
@@ -9161,7 +9176,7 @@ cgns_conn *cgi_get_conn(cgns_file *cg, int B, int Z, int J)
     if (zconn==0) return CG_OK;
 
     if (J>zconn->nconns || J<=0) {
-        cgi_error("GridConnectivity_t node number %d invalid",I);
+        cgi_error("GridConnectivity_t node number %d invalid",J);
         return CG_OK;
     }
     return &(zconn->conn[J-1]);
