@@ -17,8 +17,8 @@
       INTEGER(cgsize_t) npts
       INTEGER(cgenum_t) loc, type,  ptype, dztype, dptype, ddtype
       INTEGER(cgsize_t) dnpts
-      real*4 x(125), y(125), z(125), exp(5)
-      character*32 zname, dname, cname
+      real(kind=4) x(125), y(125), z(125), exp(5)
+      character(len=32) zname, dname, cname
 
 ! open and write base
       dim = 3

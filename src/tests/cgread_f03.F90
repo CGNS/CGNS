@@ -24,7 +24,7 @@ PROGRAM read_cgns_1
   INTEGER(cgenum_t) :: ndonor_ptset_type, ndonor_data_type
   INTEGER :: idataset, dirichletflag, neumannflag
   INTEGER IndexDim, CellDim, PhysDim
-  INTEGER	ier, n
+  INTEGER ier, n
   INTEGER(cgenum_t) :: zonetype
   INTEGER nbases, nzones
   INTEGER(cgsize_t) :: rmin(3), DataSize(Ndim)
@@ -37,14 +37,14 @@ PROGRAM read_cgns_1
   INTEGER(cgsize_t) :: npnts, pnts(100000), donor_pnts(100000)
   INTEGER(cgsize_t) :: npnts_donor
   INTEGER(cgenum_t) :: bocotype, datatype
-  CHARACTER*32 basename, zonename, solname, fieldname
-  CHARACTER*32 coordname, holename
+  CHARACTER(len=32) basename, zonename, solname, fieldname
+  CHARACTER(len=32) coordname, holename
 #ifndef CG_BASESCOPE
-  CHARACTER*32 connectname, donorname
+  CHARACTER(len=32) connectname, donorname
 #else
-  CHARACTER*65 connectname, donorname
+  CHARACTER(len=65) connectname, donorname
 #endif
-  CHARACTER*32 boconame
+  CHARACTER(len=32) boconame
   INTEGER cg, base, zone, coord, sol, field, discr
   INTEGER :: hole, conn, one21, boco
   INTEGER(cgsize_t) :: RANGE(Ndim, 2), donor_range(Ndim, 2)
@@ -52,14 +52,14 @@ PROGRAM read_cgns_1
   INTEGER(cgsize_t) :: G_range(Ndim*2, Nglobal)
   INTEGER(cgsize_t) :: G_donor_range(Ndim*2, Nglobal)
   INTEGER :: G_transform(Ndim, Nglobal)
-  CHARACTER*32 G_zonename(Nglobal)
+  CHARACTER(len=32) G_zonename(Nglobal)
 #ifndef CG_BASESCOPE
-  CHARACTER*32 G_connectname(Nglobal), G_donorname(Nglobal)
+  CHARACTER(len=32) G_connectname(Nglobal), G_donorname(Nglobal)
 #else
-  CHARACTER*65 G_connectname(Nglobal), G_donorname(Nglobal)
+  CHARACTER(len=65) G_connectname(Nglobal), G_donorname(Nglobal)
 #endif
-  CHARACTER*32 name, filename
-  CHARACTER*40 text, NormDefinitions, StateDescription
+  CHARACTER(len=32) name, filename
+  CHARACTER(len=40) text, NormDefinitions, StateDescription
   INTEGER :: equation_dimension, GoverningEquationsFlag
   INTEGER :: GasModelFlag, ViscosityModelFlag
   INTEGER :: ThermalConductivityModelFlag
@@ -72,9 +72,9 @@ PROGRAM read_cgns_1
   INTEGER(cgenum_t) :: mass, length, time, temp, deg
   INTEGER :: NormalIndex(3), ndataset
   INTEGER(cgsize_t) :: NormalListSize
-  REAL*4 data_single(100000)
+  REAL(kind=4) data_single(100000)
   DOUBLE PRECISION data_double(100000)
-  REAL*4 version
+  REAL(kind=4) version
 
   INTEGER one, is_cgns
   PARAMETER (one = 1)
@@ -384,9 +384,9 @@ PROGRAM read_cgns_1
                  WRITE(6,600)' Datatype for exponents is ', &
                       DataTypeName(datatype)
                  IF (datatype .EQ. RealSingle) THEN
-	            CALL cg_exponents_read_f(data_single, ier)
-		    IF (ier .EQ. ERROR) CALL cg_error_exit_f
-		    WRITE(6,110)' Exponents:',(data_single(n),n=1,5)
+                    CALL cg_exponents_read_f(data_single, ier)
+                    IF (ier .EQ. ERROR) CALL cg_error_exit_f
+                    WRITE(6,110)' Exponents:',(data_single(n),n=1,5)
                  ELSEIF (datatype .EQ. RealDouble) THEN
                     CALL cg_exponents_read_f(data_double, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
@@ -412,8 +412,8 @@ PROGRAM read_cgns_1
                  ENDIF
               ENDIF
 
-           ENDDO	! loop through DataArray_t
-        ENDDO	! loop through IntegralData_t
+           ENDDO ! loop through DataArray_t
+        ENDDO ! loop through IntegralData_t
 
         WRITE(6,400)'                             *     *     *'
 
@@ -490,7 +490,7 @@ PROGRAM read_cgns_1
                       ' DescriptorText="',TRIM(text),'"'
               ENDDO
 
-           ENDDO	! loop through data arrays
+           ENDDO ! loop through data arrays
 
            ! *** read coordinates using coordinate arrays' specific functions:
 
@@ -526,7 +526,7 @@ PROGRAM read_cgns_1
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
               ENDIF
            ENDDO
-        ENDIF 	! if GridCoordinates_t exists
+        ENDIF ! if GridCoordinates_t exists
 
         WRITE(6,400)'                             *     *     *'
 
@@ -888,7 +888,7 @@ PROGRAM read_cgns_1
                  ENDDO
               ENDIF
            ENDDO
-        ENDIF	! if ZoneGridConnectivity exists
+        ENDIF ! if ZoneGridConnectivity exists
 
         WRITE(6,400)'                             *     *     *'
 
@@ -953,7 +953,7 @@ PROGRAM read_cgns_1
                       TemperatureUnitsName(temp), TimeUnitsName(time), &
                       AngleUnitsName(deg)
               ENDIF
-           ENDIF	!if ReferenceState exists under ZoneBC_t
+           ENDIF  !if ReferenceState exists under ZoneBC_t
 
            CALL cg_nbocos_f(cg, base, zone, nbocos, ier)
            IF (ier .EQ. ERROR) CALL cg_error_exit_f
@@ -1047,14 +1047,14 @@ PROGRAM read_cgns_1
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
                     ! ** boundary condition data attributes: DataClass_t
-		    WRITE(6,401)'   Dirichlet DataSet:'
-		    CALL cg_dataclass_read_f(TYPE,ier)
-		    IF (ier .EQ. ERROR) CALL cg_error_exit_f
+                    WRITE(6,401)'   Dirichlet DataSet:'
+                    CALL cg_dataclass_read_f(TYPE,ier)
+                    IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,600)'    DataClass=', &
                          DataClassName(TYPE)
 
                     ! ** boundary condition data attributes: DataArray_t
-		    CALL cg_narrays_f(narrays, ier)
+                    CALL cg_narrays_f(narrays, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,127) '    DirichletData', &
                          ' contains ', narrays,' data arrays'
@@ -1081,7 +1081,7 @@ PROGRAM read_cgns_1
                           WRITE(6,106)&
                                (data_double(n),n=1,dim_vals(1))
                        ENDIF
-		    ENDDO
+                    ENDDO
                  ENDIF
 
                  IF (NeumannFlag.EQ.1) THEN
@@ -1170,7 +1170,7 @@ PROGRAM read_cgns_1
      ENDIF
 
 
-  ENDDO    				! loop through bases
+  ENDDO        ! loop through bases
 
   WRITE(6,400)'                             *     *     *'
 
