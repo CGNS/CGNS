@@ -995,6 +995,12 @@ CGNSDLL int cg_poly_section_write(int file_number, int B, int Z,
 	const char * SectionName, CGNS_ENUMT(ElementType_t) type,
 	cgsize_t start, cgsize_t end, int nbndry, const cgsize_t * elements,
 	const cgsize_t * connect_offset, int *S);
+CGNSDLL int cg_section_general_write(int file_number, int B, int Z,
+        const char * SectionName, const CGNS_ENUMT(ElementType_t) type,
+        const CGNS_ENUMT(DataType_t) elementDataType, cgsize_t start,
+        cgsize_t end, cgsize_t elementDataSize, int nbndry, int *S);
+CGNSDLL int cg_section_initialize(int file_number, int B, int Z, int S);
+
 CGNSDLL int cg_parent_data_write(int file_number, int B, int Z, int S,
 	const cgsize_t * parent_data);
 CGNSDLL int cg_npe( CGNS_ENUMT(ElementType_t) type, int *npe);
@@ -1007,8 +1013,15 @@ CGNSDLL int cg_section_partial_write(int file_number, int B, int Z,
 
 CGNSDLL int cg_elements_partial_write(int fn, int B, int Z, int S,
 	cgsize_t start, cgsize_t end, const cgsize_t *elements);
+CGNSDLL int cg_elements_general_write(int fn, int B, int Z, int S,
+	cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type,
+        const void *elements);
+
 CGNSDLL int cg_poly_elements_partial_write(int fn, int B, int Z, int S,
 	cgsize_t start, cgsize_t end, const cgsize_t *elements, const cgsize_t *connect_offset);
+CGNSDLL int cg_poly_elements_general_write(int fn, int B, int Z, int S,
+    cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type,
+    const void *elements, const void *connect_offset);
 
 CGNSDLL int cg_parent_data_partial_write(int fn, int B, int Z, int S,
 	cgsize_t start, cgsize_t end, const cgsize_t *ParentData);

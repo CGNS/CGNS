@@ -44,7 +44,6 @@ extern int pcg_mpi_comm_rank;
 extern char hdf5_access[64];
 /* flag indicating if mpi_initialized was called */
 extern int pcg_mpi_initialized;
-extern int HDF5storage_type;
 
 hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
 
@@ -781,124 +780,9 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
     return CG_ERROR;
   }
 
-  /* verify input */
-  if (cgi_check_strlen(sectionname)) return CG_ERROR;
+  return cg_section_general_write(fn, B, Z, sectionnamme, type
+                    cgi_adf_datatype(CG_SIZE_DATATYPE), maxoffset, nbndry, S);
 
-  if (INVALID_ENUM(type,NofValidElementTypes)) {
-    cgi_error("Invalid element type defined for section '%s'",sectionname);
-    return CG_ERROR;
-  }
-
-  num = end - start + 1;
-  if (num <= 0) {
-    cgi_error("Invalid element range defined for section '%s'",sectionname);
-    return CG_ERROR;
-  }
-  if (nbndry > num) {
-    cgi_error("Invalid boundary element number for section '%s'",sectionname);
-    return CG_ERROR;
-  }
-
-  if (maxoffset < num)
-  {
-    cgi_error("Invalid Max Offset for section '%s'",sectionname);
-    return CG_ERROR;
-  }
-  ElementDataSize = maxoffset;
-
-  zone = cgi_get_zone(cg, B, Z);
-  if (zone==0) return CG_ERROR;
-
-  for (index=0; index<zone->nsections; index++) {
-    if (strcmp(sectionname, zone->section[index].name)==0) {
-      /* in CG_MODE_WRITE, children names must be unique */
-      cgi_error("Duplicate child name found: %s",sectionname);
-      return CG_ERROR;
-    }
-  }
-  /* add a Elements_t Node: */
-  if (index==zone->nsections) {
-    if (zone->nsections == 0) {
-      zone->section = CGNS_NEW(cgns_section, zone->nsections+1);
-    } else {
-      zone->section = CGNS_RENEW(cgns_section, zone->nsections+1, zone->section);
-    }
-    section = &(zone->section[zone->nsections]);
-    zone->nsections++;
-  }
-  (*S) = index+1;
-
-  /* initialize ... */
-  strcpy(section->name, sectionname);
-  section->el_type = type;
-  section->range[0] = start;
-  section->range[1] = end;
-  section->el_bound = nbndry;
-
-  section->id=0;
-  section->link=0;
-  section->ndescr=0;
-  section->parelem = section->parface = NULL;
-  section->nuser_data=0;
-  section->rind_planes=0;
-
-  section->connect = CGNS_NEW(cgns_array, 1);
-  section->connect->data = 0;
-  strcpy(section->connect->name,"ElementConnectivity");
-  strcpy(section->connect->data_type,CG_SIZE_DATATYPE);
-  section->connect->data_dim=1;
-  section->connect->dim_vals[0]=ElementDataSize;
-
-  /* initialize other fields */
-  section->connect->id=0;
-  section->connect->link=0;
-  section->connect->ndescr=0;
-  section->connect->data_class=CGNS_ENUMV(DataClassNull);
-  section->connect->units=0;
-  section->connect->exponents=0;
-  section->connect->convert=0;
-
-  section->connect_offset = CGNS_NEW(cgns_array, 1);
-  section->connect_offset->data = 0;
-  strcpy(section->connect_offset->name,"ElementStartOffset");
-  strcpy(section->connect_offset->data_type,CG_SIZE_DATATYPE);
-  section->connect_offset->data_dim=1;
-  section->connect_offset->dim_vals[0]=(num+1);
-
-  section->connect_offset->id=0;
-  section->connect_offset->link=0;
-  section->connect_offset->ndescr=0;
-  section->connect_offset->data_class=CGNS_ENUMV(DataClassNull);
-  section->connect_offset->units=0;
-  section->connect_offset->exponents=0;
-  section->connect_offset->convert=0;
-
-  HDF5storage_type = CG_CONTIGUOUS;
-
-  /* Elements_t */
-  dim_vals = 2;
-  data[0]=section->el_type;
-  data[1]=section->el_bound;
-  if (cgi_new_node(zone->id, section->name, "Elements_t",
-    &section->id, "I4", 1, &dim_vals, data)) return CG_ERROR;
-
-  /* ElementRange */
-  if (cgi_new_node(section->id, "ElementRange", "IndexRange_t", &dummy_id,
-    CG_SIZE_DATATYPE, 1, &dim_vals, section->range)) return CG_ERROR;
-
-  /* ElementStartOffset */
-  if (cgi_new_node(section->id, section->connect_offset->name, "DataArray_t",
-      &section->connect_offset->id, section->connect_offset->data_type,
-      section->connect_offset->data_dim, section->connect_offset->dim_vals, NULL)) return CG_ERROR;
-
-  /* ElementConnectivity */
-  if (cgi_new_node(section->id, section->connect->name, "DataArray_t",
-    &section->connect->id, section->connect->data_type,
-    section->connect->data_dim, section->connect->dim_vals, NULL)) return CG_ERROR;
-
-  HDF5storage_type = CG_COMPACT;
-
-  return CG_OK;
 }
 
 /*---------------------------------------------------------*/
