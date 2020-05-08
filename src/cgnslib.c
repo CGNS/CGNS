@@ -4593,26 +4593,26 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
     } \
     }
 
-#define WRITE_1D_ALL_INT_DATA(ID, SIZE, S_TYPE, DATA) \
-    if (0 == strcmp(S_TYPE, CG_SIZE_DATATYPE)) { \
-    if (cgio_write_all_data(cg->cgio, ID, DATA)) { \
+#define WRITE_1D_ALL_INT_DATA(ARRAY, DATA) \
+    if (0 == strcmp(ARRAY->data_type, CG_SIZE_DATATYPE)) { \
+    if (cgio_write_all_data(cg->cgio, ARRAY->id, DATA)) { \
     cg_io_error("cgio_write_all_data"); \
     return CG_ERROR; \
     } \
     } \
     else if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2){ \
     void *conv_data=NULL; \
-    conv_data = malloc((size_t)((SIZE)*size_of(S_TYPE))); \
+    conv_data = malloc((size_t)((ARRAY->dim_vals[0])*size_of(ARRAY->data_type))); \
     if (conv_data == NULL) { \
     cgi_error("Error allocating conv_data"); \
     return CG_ERROR; \
     } \
-    if (cgi_convert_data(SIZE, cgi_datatype(CG_SIZE_DATATYPE), DATA, \
-    cgi_datatype(S_TYPE), conv_data)) { \
+    if (cgi_convert_data(ARRAY->dim_vals[0], cgi_datatype(CG_SIZE_DATATYPE), DATA, \
+    cgi_datatype(ARRAY->data_type), conv_data)) { \
     free(conv_data); \
     return CG_ERROR; \
     } \
-    if (cgio_write_all_data(cg->cgio, ID, conv_data)) { \
+    if (cgio_write_all_data(cg->cgio, ARRAY->id, conv_data)) { \
     free(conv_data); \
     cg_io_error("cgio_write_all_data"); \
     return CG_ERROR; \
@@ -4620,7 +4620,7 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
     free(conv_data); \
     } \
     else { \
-    if (cgio_write_all_data_type(cg->cgio, ID, CG_SIZE_DATATYPE, \
+    if (cgio_write_all_data_type(cg->cgio, ARRAY->id, CG_SIZE_DATATYPE, \
     DATA)) { \
     cg_io_error("cgio_write_all_data_type"); \
     return CG_ERROR; \
@@ -4752,8 +4752,7 @@ int cg_elements_general_write(int file_number, int B, int Z, int S,
     cgsize_t n, j, newsize, ElementDataSize;
     cgsize_t *oldelems, *newelems;
     CGNS_ENUMT(DataType_t) s_type;
-    char_33 range_type;
-    double id;
+    cgns_array tmp_range; /* temporary interface for section range */
     int ier = CG_OK;
 
     /* get file and check mode */
@@ -4937,16 +4936,18 @@ int cg_elements_general_write(int file_number, int B, int Z, int S,
         if (end   > section->range[1]) section->range[1] = end;
 
         /* update ElementRange */
-
-        if (cgio_get_node_id(cg->cgio, section->id, "ElementRange", &id)) {
+        cgns_array *sec_range = &tmp_range;
+        sec_range->data_dim = 1;
+        sec_range->dim_vals[0] = 2;
+        if (cgio_get_node_id(cg->cgio, section->id, "ElementRange", &(sec_range->id))) {
             cg_io_error("cgio_get_node_id");
             return CG_ERROR;
         }
-        if (cgio_get_data_type(cg->cgio, id, range_type)){
+        if (cgio_get_data_type(cg->cgio, sec_range->id, sec_range->data_type)){
             cg_io_error("cgio_get_data_type");
             return CG_ERROR;
         }
-        WRITE_1D_ALL_INT_DATA(id, 2, range_type, section->range)
+        WRITE_1D_ALL_INT_DATA(sec_range, section->range);
 
         /* update ElementConnectivity */
 
@@ -4956,7 +4957,7 @@ int cg_elements_general_write(int file_number, int B, int Z, int S,
             cg_io_error("cgio_set_dimensions");
             return CG_ERROR;
         }
-        WRITE_1D_ALL_INT_DATA(section->connect->id, newsize, section->connect->data_type, newelems)
+        WRITE_1D_ALL_INT_DATA(section->connect, newelems);
     }
 
     /* update the parent data array if it exists */
@@ -5063,8 +5064,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
     cgsize_t *oldelems, *newelems;
     cgsize_t * alloc_offset=0; /* handle offset datatype conversion */
     const cgsize_t *connect_offset; /* read only to a fake input mapping to alloc_offset or actual input */
-    double id;
-    char_33 range_type;
+    cgns_array tmp_range;
     cgsize_t s_conn_size, m_conn_size;
     cgsize_t *section_offset;
     int ier;
@@ -5198,7 +5198,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
             }
             if (alloc_offset) free(alloc_offset);
             /* write new offset, handle data conversion */
-            WRITE_1D_ALL_INT_DATA(section->connect_offset->id, num+1, section->connect_offset->data_type, section->connect_offset->data)
+            WRITE_1D_ALL_INT_DATA(section->connect_offset, section_offset);
             do_it_in_memory = 0;
         }
         else if ((section_offset[s_range_size]-section_offset[0]) + m_conn_size - s_conn_size <= section->connect->dim_vals[0]){
@@ -5315,7 +5315,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
             }
             if (alloc_offset) free(alloc_offset);
             /* handle writing of different file data type */
-            WRITE_1D_ALL_INT_DATA(section->connect_offset->id, num+1, section->connect_offset->data_type, section->connect_offset->data)
+            WRITE_1D_ALL_INT_DATA(section->connect_offset, section_offset);
             do_it_in_memory = 0;
         }
     }
@@ -5519,17 +5519,19 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
         if (end   > section->range[1]) section->range[1] = end;
 
         /* update ElementRange */
-
-        if (cgio_get_node_id(cg->cgio, section->id, "ElementRange", &id)) {
+        cgns_array *sec_range = &tmp_range;
+        sec_range->data_dim = 1;
+        sec_range->dim_vals[0] = 2;
+        sec_range->data = section->range;
+        if (cgio_get_node_id(cg->cgio, section->id, "ElementRange", &(sec_range->id))) {
             cg_io_error("cgio_get_node_id");
             return CG_ERROR;
         }
-        /* write range to different file data_type */
-        if (cgio_get_data_type(cg->cgio, id, range_type)){
+        if (cgio_get_data_type(cg->cgio, sec_range->id, sec_range->data_type)){
             cg_io_error("cgio_get_data_type");
             return CG_ERROR;
         }
-        WRITE_1D_ALL_INT_DATA(id, 2, range_type, section->range)
+        WRITE_1D_ALL_INT_DATA(sec_range, section->range);
 
         /* update Offsets */
         if (cgio_set_dimensions(cg->cgio, section->connect_offset->id,
@@ -5539,7 +5541,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
             return CG_ERROR;
         }
         /* take care of data conversion */
-        WRITE_1D_ALL_INT_DATA(section->connect_offset->id, elemcount+1, section->connect_offset->data_type, newoffsets)
+        WRITE_1D_ALL_INT_DATA(section->connect_offset, newoffsets);
 
         /* update ElementConnectivity */
 
@@ -5550,7 +5552,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
             return CG_ERROR;
         }
         /* take care of data conversion */
-        WRITE_1D_ALL_INT_DATA(section->connect->id, newsize, section->connect->data_type, newelems)
+        WRITE_1D_ALL_INT_DATA(section->connect, newelems);
     }
 
     /* update the parent element/face data array if it exists */
