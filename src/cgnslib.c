@@ -4593,40 +4593,6 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
     } \
     }
 
-#define WRITE_1D_ALL_INT_DATA(ARRAY, DATA) \
-    if (0 == strcmp(ARRAY->data_type, CG_SIZE_DATATYPE)) { \
-    if (cgio_write_all_data(cg->cgio, ARRAY->id, DATA)) { \
-    cg_io_error("cgio_write_all_data"); \
-    return CG_ERROR; \
-    } \
-    } \
-    else if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2){ \
-    void *conv_data=NULL; \
-    conv_data = malloc((size_t)((ARRAY->dim_vals[0])*size_of(ARRAY->data_type))); \
-    if (conv_data == NULL) { \
-    cgi_error("Error allocating conv_data"); \
-    return CG_ERROR; \
-    } \
-    if (cgi_convert_data(ARRAY->dim_vals[0], cgi_datatype(CG_SIZE_DATATYPE), DATA, \
-    cgi_datatype(ARRAY->data_type), conv_data)) { \
-    free(conv_data); \
-    return CG_ERROR; \
-    } \
-    if (cgio_write_all_data(cg->cgio, ARRAY->id, conv_data)) { \
-    free(conv_data); \
-    cg_io_error("cgio_write_all_data"); \
-    return CG_ERROR; \
-    } \
-    free(conv_data); \
-    } \
-    else { \
-    if (cgio_write_all_data_type(cg->cgio, ARRAY->id, CG_SIZE_DATATYPE, \
-    DATA)) { \
-    cg_io_error("cgio_write_all_data_type"); \
-    return CG_ERROR; \
-    } \
-    }
-
 #define WRITE_2D_INT_DATA(ARRAY, DATA) \
     if (0 == strcmp(ARRAY->data_type, CG_SIZE_DATATYPE)) { \
     if (cgio_write_data(cg->cgio, ARRAY->id, \
@@ -4668,7 +4634,8 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
     } \
     }
 
-#define WRITE_2D_ALL_INT_DATA(ARRAY, DATA) \
+#define WRITE_ALL_INT_DATA(S_DIM, ARRAY, DATA) \
+    if (ARRAY->data_dim != S_DIM) return CG_ERROR; \
     if (0 == strcmp(ARRAY->data_type, CG_SIZE_DATATYPE)) { \
     if (cgio_write_all_data(cg->cgio, ARRAY->id, DATA)) { \
     cg_io_error("cgio_write_data"); \
@@ -4677,13 +4644,15 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
     } \
     else if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2){ \
     void *conv_data; \
-    conv_data = malloc((size_t)(ARRAY->dim_vals[0]*ARRAY->dim_vals[1] \
+    cgsize_t conv_size=1; \
+    for (int ii=0; ii<S_DIM; ii++){ conv_size *= ARRAY->dim_vals[ii]; } \
+    conv_data = malloc((size_t)(conv_size \
     *size_of(ARRAY->data_type))); \
     if (conv_data == NULL) { \
     cgi_error("Error allocating conv_data"); \
     return CG_ERROR; \
     } \
-    if (cgi_convert_data(ARRAY->dim_vals[0]*ARRAY->dim_vals[1], \
+    if (cgi_convert_data(conv_size, \
     cgi_datatype(CG_SIZE_DATATYPE), DATA, \
     cgi_datatype(ARRAY->data_type), conv_data)) { \
     free(conv_data); \
@@ -4947,7 +4916,7 @@ int cg_elements_general_write(int file_number, int B, int Z, int S,
             cg_io_error("cgio_get_data_type");
             return CG_ERROR;
         }
-        WRITE_1D_ALL_INT_DATA(sec_range, section->range);
+        WRITE_ALL_INT_DATA(1, sec_range, section->range);
 
         /* update ElementConnectivity */
 
@@ -4957,7 +4926,7 @@ int cg_elements_general_write(int file_number, int B, int Z, int S,
             cg_io_error("cgio_set_dimensions");
             return CG_ERROR;
         }
-        WRITE_1D_ALL_INT_DATA(section->connect, newelems);
+        WRITE_ALL_INT_DATA(1, section->connect, newelems);
     }
 
     /* update the parent data array if it exists */
@@ -5006,7 +4975,7 @@ int cg_elements_general_write(int file_number, int B, int Z, int S,
             cg_io_error("cgio_set_dimensions");
             return CG_ERROR;
         }
-        WRITE_2D_ALL_INT_DATA(section->parelem, newelems)
+        WRITE_ALL_INT_DATA(2, section->parelem, newelems)
 
         for (n = 0; n < 2*newsize; n++)
             newelems[n] = 0;
@@ -5033,7 +5002,7 @@ int cg_elements_general_write(int file_number, int B, int Z, int S,
             cg_io_error("cgio_set_dimensions");
             return CG_ERROR;
         }
-        WRITE_2D_ALL_INT_DATA(section->parface, newelems)
+        WRITE_ALL_INT_DATA(2, section->parface, newelems)
                 free_parent_data(section);
     }
     return CG_OK;
@@ -5198,7 +5167,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
             }
             if (alloc_offset) free(alloc_offset);
             /* write new offset, handle data conversion */
-            WRITE_1D_ALL_INT_DATA(section->connect_offset, section_offset);
+            WRITE_ALL_INT_DATA(1, section->connect_offset, section_offset);
             do_it_in_memory = 0;
         }
         else if ((section_offset[s_range_size]-section_offset[0]) + m_conn_size - s_conn_size <= section->connect->dim_vals[0]){
@@ -5315,7 +5284,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
             }
             if (alloc_offset) free(alloc_offset);
             /* handle writing of different file data type */
-            WRITE_1D_ALL_INT_DATA(section->connect_offset, section_offset);
+            WRITE_ALL_INT_DATA(1, section->connect_offset, section_offset);
             do_it_in_memory = 0;
         }
     }
@@ -5531,7 +5500,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
             cg_io_error("cgio_get_data_type");
             return CG_ERROR;
         }
-        WRITE_1D_ALL_INT_DATA(sec_range, section->range);
+        WRITE_ALL_INT_DATA(1, sec_range, section->range);
 
         /* update Offsets */
         if (cgio_set_dimensions(cg->cgio, section->connect_offset->id,
@@ -5541,7 +5510,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
             return CG_ERROR;
         }
         /* take care of data conversion */
-        WRITE_1D_ALL_INT_DATA(section->connect_offset, newoffsets);
+        WRITE_ALL_INT_DATA(1, section->connect_offset, newoffsets);
 
         /* update ElementConnectivity */
 
@@ -5552,7 +5521,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
             return CG_ERROR;
         }
         /* take care of data conversion */
-        WRITE_1D_ALL_INT_DATA(section->connect, newelems);
+        WRITE_ALL_INT_DATA(1, section->connect, newelems);
     }
 
     /* update the parent element/face data array if it exists */
@@ -5601,7 +5570,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
             cg_io_error("cgio_set_dimensions");
             return CG_ERROR;
         }
-        WRITE_2D_ALL_INT_DATA(section->parelem, newelems)
+        WRITE_ALL_INT_DATA(2, section->parelem, newelems)
 
                 for (n = 0; n < 2*newsize; n++)
                 newelems[n] = 0;
@@ -5628,7 +5597,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
             cg_io_error("cgio_set_dimensions");
             return CG_ERROR;
         }
-        WRITE_2D_ALL_INT_DATA(section->parface, newelems)
+        WRITE_ALL_INT_DATA(2, section->parface, newelems)
         free_parent_data(section);
     }
 
@@ -5687,7 +5656,7 @@ int cg_parent_data_write(int file_number, int B, int Z, int S,
 
     if (cgi_write_array(section->id, section->parelem)) return CG_ERROR;
 
-    WRITE_2D_ALL_INT_DATA(section->parelem, parent_data)
+    WRITE_ALL_INT_DATA(2, section->parelem, parent_data)
 
     if (cg->filetype == CG_FILE_ADF2) {
         if (section->parface) {
@@ -5722,7 +5691,7 @@ int cg_parent_data_write(int file_number, int B, int Z, int S,
 
     if (cgi_write_array(section->id, section->parface)) return CG_ERROR;
 
-    WRITE_2D_ALL_INT_DATA(section->parface, &parent_data[num<<1])
+    WRITE_ALL_INT_DATA(2, section->parface, &parent_data[num<<1])
 
     return CG_OK;
 }
