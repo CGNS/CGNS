@@ -3408,7 +3408,7 @@ MODULE cgns
      END SUBROUTINE cg_array_info_f
   END INTERFACE
 
-!$ INTERFACE
+!!$ INTERFACE
 !!$    SUBROUTINE cg_array_read_f(A, DATA, ier) BIND(C, NAME="")
 !!$      INTEGER :: A,
 !!$      void *DATA,
