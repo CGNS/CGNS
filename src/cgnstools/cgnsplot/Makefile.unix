@@ -41,7 +41,8 @@ install-dirs :
 install-prog :
 	@echo "installing cgnsplot shell scripts to $(BIN_INSTALL_DIR)"
 	@$(INSTALL_PROG) cgnsplot.sh $(BIN_INSTALL_DIR)/cgnsplot
-	@chmod +x $(BIN_INSTALL_DIR)/cgnsplot
+	@$(INSTALL_PROG) cgnsplot.desktop $(BIN_INSTALL_DIR)/
+	@chmod +x $(BIN_INSTALL_DIR)/cgnsplot $(BIN_INSTALL_DIR)/cgnsplot.desktop
 	@if [ ! -f $(EXE_INSTALL_DIR)/cgconfig ] ; then \
 	  echo "installing configuration file to $(EXE_INSTALL_DIR)"; \
 	  $(INSTALL_DATA) ../cgconfig $(EXE_INSTALL_DIR)/cgconfig; \
