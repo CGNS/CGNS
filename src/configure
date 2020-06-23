@@ -777,6 +777,7 @@ with_system
 enable_64bit
 enable_legacy
 enable_scope
+enable_basescope
 with_fortran
 enable_shared
 with_hdf5
@@ -1431,7 +1432,7 @@ Optional Features:
   --enable-64bit          enable 64bit support (where applicable)
   --enable-legacy         build legacy code default=no
   --enable-scope          scope enumerations values default=no
-  --enable-scope          base scope for family/zone ref-to default=no
+  --enable-basescope      base scope for family/zone ref-to default=no
   --enable-shared=all   build a shared library default=no
   --enable-parallel       enable parallel IO support default=no
   --enable-lfs            enable large file support default=no
@@ -4986,9 +4987,9 @@ BUILDBASESCOPE=0
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if base scope for family/zone ref-to enabled" >&5
 $as_echo_n "checking if base scope for family/zone ref-to enabled... " >&6; }
-# Check whether --enable-scope was given.
-if test "${enable_scope+set}" = set; then :
-  enableval=$enable_scope;
+# Check whether --enable-basescope was given.
+if test "${enable_basescope+set}" = set; then :
+  enableval=$enable_basescope;
 else
   enableval=no
 fi

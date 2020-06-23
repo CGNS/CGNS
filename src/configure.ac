@@ -393,8 +393,8 @@ AC_MSG_RESULT($enableval)
 BUILDBASESCOPE=0
 
 AC_MSG_CHECKING([if base scope for family/zone ref-to enabled])
-AC_ARG_ENABLE(scope,
-  [  --enable-scope          base scope for family/zone ref-to [default=no]],,
+AC_ARG_ENABLE(basescope,
+  [  --enable-basescope          base scope for family/zone ref-to [default=no]],,
   enableval=no)
 if test ! "$enableval" = "no" ; then
   enableval=yes
