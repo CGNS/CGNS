@@ -661,7 +661,7 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
                 return nodes;
             }
             if (type == CGNS_ENUMV(NFACE_n)) {
-                *nnodes = offsets[ne+1] - offsets[ne];
+                *nnodes = (int)(offsets[ne+1] - offsets[ne]);
                 nodes += (offsets[ne] - offsets[0]);
                 *dim = 3;
                 return nodes;
