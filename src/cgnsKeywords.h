@@ -477,16 +477,18 @@ typedef enum {
 #ifdef __CGNS_ENUMS__
 typedef enum {
 	DataTypeNull, DataTypeUserDefined, Integer, RealSingle,
-	RealDouble, Character, LongInteger
+	RealDouble, Character, LongInteger, ComplexSingle, ComplexDouble
 } DataType_t;
 #endif
-#define NofValidDataTypes 7
+#define NofValidDataTypes 9
 
 #define Integer_s                      "Integer"
 #define RealSingle_s                   "RealSingle"
 #define RealDouble_s                   "RealDouble"
 #define Character_s                    "Character"
 #define LongInteger_s                  "LongInteger"
+#define ComplexSingle_s                "ComplexSingle"
+#define ComplexDouble_s                "ComplexDouble"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Element types                                                    *
