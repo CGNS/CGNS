@@ -126,9 +126,12 @@ printf aaa ; printf("\n"); fflush(stdout);
 #define ADFH_U8 "U8"
 #define ADFH_R4 "R4"
 #define ADFH_R8 "R8"
-/* these are not supported */
+/* these have experimental support */
 #define ADFH_X4 "X4"
 #define ADFH_X8 "X8"
+/* HDF5 Compound names used for complex value */
+#define CMPLX_REAL_NAME "r"
+#define CMPLX_IMAG_NAME "i"
 
 /* file open modes */
 
@@ -814,6 +817,24 @@ static hid_t to_HDF_data_type(const char *tp)
     H5Tset_precision(tid, 64);
     return tid;
   }
+  if (0 == strcmp(tp, ADFH_X4)) {
+    hid_t tid = H5Tcreate(H5T_COMPOUND, 8);
+    hid_t subid = H5Tcopy(H5T_NATIVE_FLOAT);
+    H5Tset_precision(subid, 32);
+    H5Tinsert(tid, CMPLX_REAL_NAME, 0, subid);
+    H5Tinsert(tid, CMPLX_IMAG_NAME, 4, subid);
+    H5Tclose(subid);
+    return tid;
+  }
+  if (0 == strcmp(tp, ADFH_X8)) {
+    hid_t tid = H5Tcreate(H5T_COMPOUND, 16);
+    hid_t subid = H5Tcopy(H5T_NATIVE_DOUBLE);
+    H5Tset_precision(subid, 64);
+    H5Tinsert(tid, CMPLX_REAL_NAME, 0, subid);
+    H5Tinsert(tid, CMPLX_IMAG_NAME, 8, subid);
+    H5Tclose(subid);
+    return tid;
+  }
   return 0;
 }
 
@@ -828,7 +849,9 @@ static int check_data_type(const char *tp, int *err)
       strcmp(tp, ADFH_U4) &&
       strcmp(tp, ADFH_U8) &&
       strcmp(tp, ADFH_R4) &&
-      strcmp(tp, ADFH_R8)) {
+      strcmp(tp, ADFH_R8) &&
+      strcmp(tp, ADFH_X4) &&
+      strcmp(tp, ADFH_X8)) {
     set_error(INVALID_DATA_TYPE, err);
     return 1;
   }
@@ -1539,6 +1562,7 @@ void ADFH_Set_Label(const double  id,
                     int          *err)
 {
   hid_t hid;
+  char label_name[ADF_NAME_LENGTH+1];
 
   to_HDF_ID(id, hid);
 
@@ -1556,7 +1580,8 @@ void ADFH_Set_Label(const double  id,
     set_error(ADFH_ERR_LINK_DATA, err);
     return;
   }
-  set_str_att(hid, A_LABEL, label, err);
+  strcpy(label_name, label);
+  set_str_att(hid, A_LABEL, label_name, err);
 }
 
 /* ----------------------------------------------------------------- */
@@ -1662,6 +1687,7 @@ void ADFH_Create(const double  pid,
   hid_t hpid;
   hid_t gid;
   char *pname;
+  static const char empty_label[ADF_NAME_LENGTH+1] = "";
 #ifdef ADFH_DEBUG_ON
   H5L_info_t lkbuff;
 #endif
@@ -1699,7 +1725,7 @@ void ADFH_Create(const double  pid,
   else {
 #ifdef ADFH_NO_ORDER
     if (new_str_att(gid, A_NAME, pname, ADF_NAME_LENGTH, err) ||
-        new_str_att(gid, A_LABEL, "", ADF_NAME_LENGTH, err) ||
+        new_str_att(gid, A_LABEL, empty_label, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
         new_int_att(gid, A_FLAGS, mta_root->g_flags, err)) return;
 #else
@@ -1710,7 +1736,7 @@ void ADFH_Create(const double  pid,
     H5Literate_by_name(hpid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, count_children, (void *)&order, H5P_DEFAULT);
 #endif
     if (new_str_att(gid, A_NAME, pname, ADF_NAME_LENGTH, err) ||
-        new_str_att(gid, A_LABEL, "", ADF_NAME_LENGTH, err) ||
+        new_str_att(gid, A_LABEL, empty_label, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
         new_int_att(gid, A_ORDER, order, err) ||
         new_int_att(gid, A_FLAGS, mta_root->g_flags, err)) return;
@@ -2021,6 +2047,8 @@ void ADFH_Database_Open(const char   *name,
 {
   hid_t fid, gid;
   char *format, buff[ADF_VERSION_LENGTH+1];
+  static const char root_name[ADF_NAME_LENGTH+1] = "HDF5 MotherNode";
+  static const char root_label[ADF_NAME_LENGTH+1] = "Root Node of HDF5 File";
   int i, pos, mode;
   hid_t g_propfileopen;
 
@@ -2249,8 +2277,8 @@ void ADFH_Database_Open(const char   *name,
     memset(buff, 0, ADF_VERSION_LENGTH+1);
     ADFH_Library_Version(buff, err);
     format = native_format();
-    if (new_str_att(gid, A_NAME, "HDF5 MotherNode", ADF_NAME_LENGTH, err) ||
-        new_str_att(gid, A_LABEL, "Root Node of HDF5 File", ADF_NAME_LENGTH, err) ||
+    if (new_str_att(gid, A_NAME, root_name, ADF_NAME_LENGTH, err) ||
+        new_str_att(gid, A_LABEL, root_label, ADF_NAME_LENGTH, err) ||
         new_str_att(gid, A_TYPE, ADFH_MT, 2, err) ||
         new_str_data(gid, D_FORMAT, format, (int)strlen(format), err) ||
         new_str_data(gid, D_VERSION, buff, ADF_VERSION_LENGTH, err)) {

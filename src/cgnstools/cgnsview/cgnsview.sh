@@ -4,6 +4,9 @@
 
 dir=`dirname $0`
 
+# To let other tools access the file while cgnsview is running
+export HDF5_USE_FILE_LOCKING="FALSE"
+
 # source the setup script
 
 for d in $dir $dir/cgnstools $dir/.. ; do
