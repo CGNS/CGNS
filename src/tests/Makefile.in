@@ -33,7 +33,8 @@ CALL = \
 	write_test$(EXE) \
 	write_zones$(EXE) \
 	write_rind$(EXE) \
-	test_bbox$(EXE)
+	test_bbox$(EXE) \
+	test_complex$(EXE)
 
 F_TESTS = \
 	cgiof_F03$(EXE) \
@@ -43,7 +44,8 @@ F_TESTS = \
 	cgsubreg_F03$(EXE) \
 	test_general_rindf$(EXE)\
 	test_family_treef$(EXE) \
-	test_bboxf$(EXE)
+	test_bboxf$(EXE) \
+	test_complexf$(EXE)
 
 FALL = $(F_TESTS)
 
@@ -233,6 +235,12 @@ test_bbox$(EXE) : test_bbox.c $(CGNSLIB)
 
 #----------
 
+test_complex$(EXE) : test_complex.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_complex.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
 cgiof$(EXE) : cgiof.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ cgiof.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
@@ -324,6 +332,12 @@ test_family_treef$(EXE) : test_family_treef.F90 $(CGNSLIB)
 
 test_bboxf$(EXE) : test_bboxf.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ test_bboxf.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_complexf$(EXE) : test_complexf.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_complexf.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

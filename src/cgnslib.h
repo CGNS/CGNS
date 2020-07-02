@@ -473,10 +473,12 @@ typedef enum {
   CGNS_ENUMV( RealSingle ) =3,
   CGNS_ENUMV( RealDouble ) =4,
   CGNS_ENUMV( Character ) =5,
-  CGNS_ENUMV( LongInteger ) =6
+  CGNS_ENUMV( LongInteger ) =6,
+  CGNS_ENUMV( ComplexSingle ) =7,
+  CGNS_ENUMV( ComplexDouble ) =8
 } CGNS_ENUMT( DataType_t );
 
-#define NofValidDataTypes 7
+#define NofValidDataTypes 9
 
 extern CGNSDLL const char * DataTypeName[NofValidDataTypes];
 
