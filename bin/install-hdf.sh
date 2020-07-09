@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Set odd/even days of the week
-day=$(( $(date +%d) % 2 ))
+day=$(( $(date +%e) % 2 ))
 
 OPTS="--disable-tools --disable-tests"
 
