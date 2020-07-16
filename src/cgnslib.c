@@ -197,7 +197,8 @@ const char * BCTypeName[NofValidBCTypes] =
      };
 const char * DataTypeName[NofValidDataTypes] =
     {"Null", "UserDefined",
-     "Integer", "RealSingle", "RealDouble", "Character", "LongInteger"
+     "Integer", "RealSingle", "RealDouble", "Character", "LongInteger",
+     "ComplexSingle", "ComplexDouble"
     };
 const char * ElementTypeName[NofValidElementTypes] =
     {"Null", "UserDefined",
@@ -257,7 +258,9 @@ const char * AverageInterfaceTypeName[NofValidAverageInterfaceTypes] =
 int n_open = 0;
 int cgns_file_size = 0;
 int file_number_offset = 0;
-int VersionList[] = {3210, 3200,
+int VersionList[] = {4200,
+                     4110, 4100, 4000,
+                     3210, 3200,
                      3140, 3130, 3110, 3100,
                      3080, 3000,
                      2550, 2540, 2530, 2520, 2510, 2500,
@@ -530,8 +533,8 @@ int cg_version(int file_number, float *FileVersion)
     if (cgi_get_nodes(cg->rootid, "CGNSLibraryVersion_t", &nnod, &id))
         return CG_ERROR;
     if (nnod==0) {
-        cg->version=1050;
-        *FileVersion= (float) 1.05;
+        cg->version=3200;
+        *FileVersion= (float) 3.20;
     } else if (nnod!=1) {
         cgi_error("More then one CGNSLibraryVersion_t node found under ROOT.");
         return CG_ERROR;
@@ -1366,7 +1369,7 @@ int cg_family_write(int file_number, int B, const char * family_name, int *F)
             return CG_ERROR;
         }
 
-        /* Check that specified base's name matches begining of family tree path */
+        /* Check that specified base's name matches beginning of family tree path */
         pch = strstr( family_name, base->name );
         if( pch != family_name+1 ) {
             cgi_error( "Incompatible basename (%s) and family tree (%s)", base->name, family_name );
@@ -5806,6 +5809,7 @@ int cg_field_write(int file_number, int B, int Z, int S,
      /* verify input */
     if (cgi_check_strlen(fieldname)) return CG_ERROR;
     if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble) &&
+        type != CGNS_ENUMV(ComplexSingle) && type != CGNS_ENUMV(ComplexDouble) &&
         type != CGNS_ENUMV(Integer) && type != CGNS_ENUMV(LongInteger)) {
         cgi_error("Invalid datatype for solution array %s: %d",fieldname, type);
         return CG_ERROR;
@@ -5927,12 +5931,14 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
      /* verify input */
     if (cgi_check_strlen(fieldname)) return CG_ERROR;
     if (s_type != CGNS_ENUMV(RealSingle) && s_type != CGNS_ENUMV(RealDouble) &&
+        s_type != CGNS_ENUMV(ComplexSingle) && s_type != CGNS_ENUMV(ComplexDouble) &&
         s_type != CGNS_ENUMV(Integer) && s_type != CGNS_ENUMV(LongInteger)) {
         cgi_error("Invalid file data type for solution array %s: %d",
                   fieldname, s_type);
         return CG_ERROR;
     }
     if (m_type != CGNS_ENUMV(RealSingle) && m_type != CGNS_ENUMV(RealDouble) &&
+        m_type != CGNS_ENUMV(ComplexSingle) && m_type != CGNS_ENUMV(ComplexDouble) &&
         m_type != CGNS_ENUMV(Integer) && m_type != CGNS_ENUMV(LongInteger)) {
         cgi_error("Invalid input data type for solution array %s: %d",
                   fieldname, m_type);
@@ -6438,7 +6444,7 @@ int cg_nholes(int file_number, int B, int Z, int *nholes)
     return CG_OK;
 }
 
-int cg_hole_info(int file_number, int B, int Z, int I, char *holename,
+int cg_hole_info(int file_number, int B, int Z, int J, char *holename,
          CGNS_ENUMT(GridLocation_t) *location,
                  CGNS_ENUMT(PointSetType_t) *ptset_type, int *nptsets,
                  cgsize_t *npnts)
@@ -6450,7 +6456,7 @@ int cg_hole_info(int file_number, int B, int Z, int I, char *holename,
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    hole = cgi_get_hole(cg, B, Z, I);
+    hole = cgi_get_hole(cg, B, Z, J);
     if (hole==0) return CG_ERROR;
 
     strcpy(holename, hole->name);
@@ -6463,7 +6469,7 @@ int cg_hole_info(int file_number, int B, int Z, int I, char *holename,
     return CG_OK;
 }
 
-int cg_hole_read(int file_number, int B, int Z, int I, cgsize_t *pnts)
+int cg_hole_read(int file_number, int B, int Z, int J, cgsize_t *pnts)
 {
     cgns_hole *hole;
     int set, index_dim;
@@ -6473,7 +6479,7 @@ int cg_hole_read(int file_number, int B, int Z, int I, cgsize_t *pnts)
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    hole = cgi_get_hole(cg, B, Z, I);
+    hole = cgi_get_hole(cg, B, Z, J);
     if (hole==0) return CG_ERROR;
 
     index_dim = cg->base[B-1].zone[Z-1].index_dim;
@@ -6487,7 +6493,7 @@ int cg_hole_read(int file_number, int B, int Z, int I, cgsize_t *pnts)
                         &pnts[2*index_dim*set])) return CG_ERROR;
             } else {
                 cgi_warning("Overset hole #%d set %d, of zone #%d, base #%d, contains no points",
-                    I, set, Z, B);
+                    J, set, Z, B);
             }
         }
     }
@@ -6498,18 +6504,18 @@ int cg_hole_read(int file_number, int B, int Z, int I, cgsize_t *pnts)
                     pnts)) return CG_ERROR;
         } else {
             cgi_warning("Overset hole #%d, of zone #%d, base #%d, contains no points",
-                I, Z, B);
+                J, Z, B);
         }
     }
     else {
         cgi_warning("Overset hole #%d, of zone #%d, base #%d, contains no data",
-            I, Z, B);
+            J, Z, B);
     }
 
     return CG_OK;
 }
 
-int cg_hole_id(int file_number, int B, int Z, int I, double *hole_id)
+int cg_hole_id(int file_number, int B, int Z, int J, double *hole_id)
 {
     cgns_hole *hole;
 
@@ -6518,7 +6524,7 @@ int cg_hole_id(int file_number, int B, int Z, int I, double *hole_id)
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    hole = cgi_get_hole(cg, B, Z, I);
+    hole = cgi_get_hole(cg, B, Z, J);
     if (hole==0) return CG_ERROR;
 
     *hole_id = hole->id;
@@ -6528,7 +6534,7 @@ int cg_hole_id(int file_number, int B, int Z, int I, double *hole_id)
 int cg_hole_write(int file_number, int B, int Z, const char * holename,
           CGNS_ENUMT(GridLocation_t) location,
           CGNS_ENUMT(PointSetType_t) ptset_type,
-          int nptsets, cgsize_t npnts, const cgsize_t * pnts, int *I)
+          int nptsets, cgsize_t npnts, const cgsize_t * pnts, int *J)
 {
     cgns_zone *zone;
     cgns_zconn *zconn;
@@ -6609,7 +6615,7 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
         hole = &(zconn->hole[zconn->nholes]);
         zconn->nholes++;
     }
-    (*I) = index+1;
+    (*J) = index+1;
 
      /* write hole info to internal memory */
     memset(hole, 0, sizeof(cgns_hole));
@@ -6706,7 +6712,7 @@ int cg_nconns(int file_number, int B, int Z, int *nconns)
 /* in cg_conn_info, donor_datatype is useless starting with version 1.27, because
    it's always I4.  However this arg. is left for backward compatibility of API
    and to be able to read old files */
-int cg_conn_info(int file_number, int B, int Z, int I, char *connectname,
+int cg_conn_info(int file_number, int B, int Z, int J, char *connectname,
          CGNS_ENUMT(GridLocation_t) *location,
                  CGNS_ENUMT(GridConnectivityType_t) *type,
          CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts,
@@ -6722,7 +6728,7 @@ int cg_conn_info(int file_number, int B, int Z, int I, char *connectname,
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    conn = cgi_get_conn(cg, B, Z, I);
+    conn = cgi_get_conn(cg, B, Z, J);
     if (conn==0) return CG_ERROR;
 
     strcpy(connectname, conn->name);
@@ -6756,7 +6762,7 @@ int cg_conn_info(int file_number, int B, int Z, int I, char *connectname,
 /* in cg_conn_read, donor_datatype is useless starting with version 1.27, because
    it's always I4.  However this arg. is left for backward compatibility of API
    and to be able to read old files */
-int cg_conn_read(int file_number, int B, int Z, int I, cgsize_t *pnts,
+int cg_conn_read(int file_number, int B, int Z, int J, cgsize_t *pnts,
                  CGNS_ENUMT(DataType_t) donor_datatype, cgsize_t *donor_data)
 {
     cgns_conn *conn;
@@ -6777,7 +6783,7 @@ int cg_conn_read(int file_number, int B, int Z, int I, cgsize_t *pnts,
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    conn = cgi_get_conn(cg, B, Z, I);
+    conn = cgi_get_conn(cg, B, Z, J);
     if (conn==0) return CG_ERROR;
 
     cell_dim = cg->base[B-1].cell_dim;
@@ -6790,7 +6796,7 @@ int cg_conn_read(int file_number, int B, int Z, int I, cgsize_t *pnts,
             return CG_ERROR;
     } else {
         cgi_warning("Interface receiver patch #%d of zone #%d, base #%d, contains no points",
-            I, Z, B);
+            J, Z, B);
     }
 
     if (donor_data == NULL) return CG_OK;
@@ -6814,18 +6820,18 @@ int cg_conn_read(int file_number, int B, int Z, int I, cgsize_t *pnts,
             return CG_ERROR;
     } else {
         cgi_warning("Interface donor patch #%d of zone #%d, base #%d, contains no points",
-            I, Z, B);
+            J, Z, B);
     }
 
     return CG_OK;
 }
 
-int cg_conn_read_short(int file_number, int B, int Z, int I, cgsize_t *pnts)
+int cg_conn_read_short(int file_number, int B, int Z, int J, cgsize_t *pnts)
 {
-    return cg_conn_read(file_number, B, Z, I, pnts, CGNS_ENUMV(DataTypeNull), NULL);
+    return cg_conn_read(file_number, B, Z, J, pnts, CGNS_ENUMV(DataTypeNull), NULL);
 }
 
-int cg_conn_id(int file_number, int B, int Z, int I, double *conn_id)
+int cg_conn_id(int file_number, int B, int Z, int J, double *conn_id)
 {
     cgns_conn *conn;
 
@@ -6834,7 +6840,7 @@ int cg_conn_id(int file_number, int B, int Z, int I, double *conn_id)
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    conn = cgi_get_conn(cg, B, Z, I);
+    conn = cgi_get_conn(cg, B, Z, J);
     if (conn==0) return CG_ERROR;
 
     *conn_id = conn->id;
@@ -6848,8 +6854,8 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
           cgsize_t npnts, const cgsize_t * pnts, const char * donorname,
           CGNS_ENUMT(ZoneType_t) donor_zonetype,
           CGNS_ENUMT(PointSetType_t) donor_ptset_type,
-                  CGNS_ENUMT(DataType_t) donor_datatype,
-          cgsize_t ndata_donor, const cgsize_t * donor_data, int *I)
+          CGNS_ENUMT(DataType_t) donor_datatype,
+          cgsize_t ndata_donor, const cgsize_t * donor_data, int *J)
 {
     cgns_zone *zone;
     cgns_zconn *zconn;
@@ -7034,7 +7040,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
         conn = &(zconn->conn[zconn->nconns]);
         zconn->nconns++;
     }
-    (*I) = index+1;
+    (*J) = index+1;
 
      /* write conn info to internal memory */
     memset(conn, 0, sizeof(cgns_conn));
@@ -7124,12 +7130,12 @@ int cg_conn_write_short(int file_number, int B, int Z,  const char * connectname
                         CGNS_ENUMT(GridConnectivityType_t) type,
                         CGNS_ENUMT(PointSetType_t) ptset_type,
                         cgsize_t npnts, const cgsize_t * pnts,
-                        const char * donorname, int *I)
+                        const char * donorname, int *J)
 {
     return cg_conn_write (file_number, B, Z,  connectname, location,
               type, ptset_type, npnts, pnts, donorname,
               CGNS_ENUMV(ZoneTypeNull), CGNS_ENUMV(PointSetTypeNull),
-                          CGNS_ENUMV(DataTypeNull), 0, NULL, I);
+                          CGNS_ENUMV(DataTypeNull), 0, NULL, J);
 }
 
 /*****************************************************************************\
@@ -7156,7 +7162,7 @@ int cg_n1to1_global(int file_number, int B, int *n1to1_global)
     cgns_base *base;
     cgns_zone *zone;
     cgns_zconn *zconn;
-    int Z, I, D;
+    int Z, J, D;
     cgint3_t transform;
     cgsize_t donor_range[6], range[6];
     char_33 connectname, donorname;
@@ -7182,8 +7188,8 @@ int cg_n1to1_global(int file_number, int B, int *n1to1_global)
         zconn = cgi_get_zconn(cg, B, Z);
         if (zconn==0) continue; /* if ZoneGridConnectivity_t is undefined */
         if (zconn->n1to1 ==0) continue;
-        for (I=1; I<=zconn->n1to1; I++) {
-            if (cg_1to1_read(file_number, B, Z, I, connectname, donorname,
+        for (J=1; J<=zconn->n1to1; J++) {
+            if (cg_1to1_read(file_number, B, Z, J, connectname, donorname,
                          range, donor_range, transform)) return CG_ERROR;
             if (cgi_zone_no(base, donorname, &D)) return CG_ERROR;
 
@@ -7207,7 +7213,7 @@ int cg_n1to1_global(int file_number, int B, int *n1to1_global)
     return CG_OK;
 }
 
-int cg_1to1_read(int file_number, int B, int Z, int I, char *connectname,
+int cg_1to1_read(int file_number, int B, int Z, int J, char *connectname,
                  char *donorname, cgsize_t *range, cgsize_t *donor_range,
                  int *transform)
 {
@@ -7224,7 +7230,7 @@ int cg_1to1_read(int file_number, int B, int Z, int I, char *connectname,
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    one21 = cgi_get_1to1(cg, B, Z, I);
+    one21 = cgi_get_1to1(cg, B, Z, J);
     if (one21==0) return CG_ERROR;
     index_dim = cg->base[B-1].zone[Z-1].index_dim;
 
@@ -7234,7 +7240,7 @@ int cg_1to1_read(int file_number, int B, int Z, int I, char *connectname,
             one21->ptset.npts * index_dim, range)) return CG_ERROR;
     } else {
         cgi_warning("1to1 interface %d (receiver side) for zone %d base % is undefined",
-            I,Z,B);
+            J,Z,B);
     }
 
      /* read donor pointset from ADF file */
@@ -7243,7 +7249,7 @@ int cg_1to1_read(int file_number, int B, int Z, int I, char *connectname,
             one21->dptset.npts * index_dim, donor_range)) return CG_ERROR;
     } else {
         cgi_warning("1to1 interface %d (donor side) for zone %d base % is undefined",
-            I,Z,B);
+            J,Z,B);
     }
 
      /* read transform from internal database */
@@ -7261,7 +7267,7 @@ int cg_1to1_read_global(int file_number, int B, char **connectname, char **zonen
     cgns_base *base;
     cgns_zone *zone;
     cgns_zconn *zconn;
-    int Z, I, D, n=0, j, index_dim;
+    int Z, J, D, n=0, k, index_dim;
     char connect[33], donor[33];
     cgsize_t rang[6], drang[6];
     int trans[3];
@@ -7288,8 +7294,8 @@ int cg_1to1_read_global(int file_number, int B, char **connectname, char **zonen
         zconn = cgi_get_zconn(cg, B, Z);
         if (zconn==0) continue; /* if ZoneGridConnectivity_t is undefined */
         if (zconn->n1to1 ==0) continue;
-        for (I=1; I<=zconn->n1to1; I++) {
-            if (cg_1to1_read(file_number, B, Z, I, connect, donor, rang,
+        for (J=1; J<=zconn->n1to1; J++) {
+            if (cg_1to1_read(file_number, B, Z, J, connect, donor, rang,
                 drang, trans)) return CG_ERROR;
             if (cgi_zone_no(base, donor, &D)) return CG_ERROR;
              /* count each interface only once */
@@ -7298,12 +7304,12 @@ int cg_1to1_read_global(int file_number, int B, char **connectname, char **zonen
                 strcpy(connectname[n], connect);
                 strcpy(zonename[n],zone->name);
                 strcpy(donorname[n], donor);
-                for (j=0; j<index_dim; j++) {
-                    range[n][j]= rang[j];
-                    range[n][j+index_dim]= rang[j+index_dim];
-                    donor_range[n][j]= drang[j];
-                    donor_range[n][j+index_dim]= drang[j+index_dim];
-                    transform[n][j] = trans[j];
+                for (k=0; k<index_dim; k++) {
+                    range[n][k]= rang[k];
+                    range[n][k+index_dim]= rang[k+index_dim];
+                    donor_range[n][k]= drang[k];
+                    donor_range[n][k+index_dim]= drang[k+index_dim];
+                    transform[n][k] = trans[k];
                 }
                 n++;
             }
@@ -7315,7 +7321,7 @@ int cg_1to1_read_global(int file_number, int B, char **connectname, char **zonen
     return CG_OK;
 }
 
-int cg_1to1_id(int file_number, int B, int Z, int I, double *one21_id)
+int cg_1to1_id(int file_number, int B, int Z, int J, double *one21_id)
 {
     cgns_1to1 *one21;
 
@@ -7324,7 +7330,7 @@ int cg_1to1_id(int file_number, int B, int Z, int I, double *one21_id)
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    one21 = cgi_get_1to1(cg, B, Z, I);
+    one21 = cgi_get_1to1(cg, B, Z, J);
     if (one21==0) return CG_ERROR;
 
     *one21_id = one21->id;
@@ -7333,7 +7339,7 @@ int cg_1to1_id(int file_number, int B, int Z, int I, double *one21_id)
 
 int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
           const char * donorname, const cgsize_t * range,
-          const cgsize_t * donor_range, const int * transform, int *I)
+          const cgsize_t * donor_range, const int * transform, int *J)
 {
     cgns_zone *zone;
     cgns_zconn *zconn;
@@ -7424,7 +7430,7 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
         one21 = &(zconn->one21[zconn->n1to1]);
         zconn->n1to1++;
     }
-    (*I) = index+1;
+    (*J) = index+1;
 
     memset(one21, 0, sizeof(cgns_1to1));
      /* allocate memory */
@@ -8958,7 +8964,7 @@ int cg_bc_area_write(int file_number, int B, int Z, int BC,
  *      read and write GridConnectivityProperty_t Node
 \*****************************************************************************/
 
-int cg_conn_periodic_read(int file_number, int B, int Z, int I,
+int cg_conn_periodic_read(int file_number, int B, int Z, int J,
         float *RotationCenter, float *RotationAngle, float *Translation)
 {
 
@@ -8978,11 +8984,11 @@ int cg_conn_periodic_read(int file_number, int B, int Z, int I,
     if (base==0) return CG_ERROR;
 
      /* get memory address for cprop */
-    cprop = cgi_get_cprop(cg, B, Z, I);
+    cprop = cgi_get_cprop(cg, B, Z, J);
     if (cprop==0) return CG_NODE_NOT_FOUND;
 
     if (cprop->cperio == 0) {
-        cgi_error("GridConnectivityProperty_t/Periodic_t node doesn't exist under GridConnectivity_t %d",I);
+        cgi_error("GridConnectivityProperty_t/Periodic_t node doesn't exist under GridConnectivity_t %d",J);
         return CG_NODE_NOT_FOUND;
     }
     cperio = cprop->cperio;
@@ -9000,7 +9006,7 @@ int cg_conn_periodic_read(int file_number, int B, int Z, int I,
     return CG_OK;
 }
 
-int cg_conn_periodic_write(int file_number, int B, int Z, int I,
+int cg_conn_periodic_write(int file_number, int B, int Z, int J,
     float const *RotationCenter, float const *RotationAngle,
     float const *Translation)
 {
@@ -9021,7 +9027,7 @@ int cg_conn_periodic_write(int file_number, int B, int Z, int I,
     if (base==0) return CG_ERROR;
 
      /* get memory address of GridConnectivity_t node */
-    conn = cgi_get_conn(cg, B, Z, I);
+    conn = cgi_get_conn(cg, B, Z, J);
     if (conn==0) return CG_ERROR;
 
      /* Allocate GridConnectivityProperty_t data struct. if not already created */
@@ -9106,7 +9112,7 @@ int cg_conn_periodic_write(int file_number, int B, int Z, int I,
 
 /*----------------------------------------------------------------------*/
 
-int cg_conn_average_read(int file_number, int B, int Z, int I,
+int cg_conn_average_read(int file_number, int B, int Z, int J,
              CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType)
 {
     cgns_cprop *cprop;
@@ -9118,11 +9124,11 @@ int cg_conn_average_read(int file_number, int B, int Z, int I,
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
      /* get memory address for cprop */
-    cprop = cgi_get_cprop(cg, B, Z, I);
+    cprop = cgi_get_cprop(cg, B, Z, J);
     if (cprop==0) return CG_NODE_NOT_FOUND;
 
     if (cprop->caverage == 0) {
-        cgi_error("GridConnectivityProperty_t/AverageInterface_t node doesn't exist under GridConnectivity_t %d",I);
+        cgi_error("GridConnectivityProperty_t/AverageInterface_t node doesn't exist under GridConnectivity_t %d",J);
         return CG_NODE_NOT_FOUND;
     }
     *AverageInterfaceType = cprop->caverage->type;
@@ -9130,7 +9136,7 @@ int cg_conn_average_read(int file_number, int B, int Z, int I,
     return CG_OK;
 }
 
-int cg_conn_average_write(int file_number, int B, int Z, int I,
+int cg_conn_average_write(int file_number, int B, int Z, int J,
               CGNS_ENUMT(AverageInterfaceType_t) AverageInterfaceType)
 {
     cgns_cprop *cprop;
@@ -9152,7 +9158,7 @@ int cg_conn_average_write(int file_number, int B, int Z, int I,
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
 
      /* get memory address of GridConnectivity_t node */
-    conn = cgi_get_conn(cg, B, Z, I);
+    conn = cgi_get_conn(cg, B, Z, J);
     if (conn==0) return CG_ERROR;
 
      /* Allocate GridConnectivityProperty_t data struct. if not already created */
@@ -9218,7 +9224,7 @@ int cg_conn_average_write(int file_number, int B, int Z, int I,
 
 /*----------------------------------------------------------------------*/
 
-int cg_1to1_periodic_read(int file_number, int B, int Z, int I,
+int cg_1to1_periodic_read(int file_number, int B, int Z, int J,
                           float *RotationCenter, float *RotationAngle,
                           float *Translation)
 {
@@ -9239,13 +9245,13 @@ int cg_1to1_periodic_read(int file_number, int B, int Z, int I,
     if (base==0) return CG_ERROR;
 
      /* get memory address for cprop from one21->cprop */
-    one21 = cgi_get_1to1(cg, B, Z, I);
+    one21 = cgi_get_1to1(cg, B, Z, J);
     if (one21==0) return CG_ERROR;
 
     cprop = one21->cprop;
 
     if (cprop == 0 || cprop->cperio == 0) {
-        cgi_error("GridConnectivityProperty_t/Periodic_t node doesn't exist under GridConnectivity1to1_t %d",I);
+        cgi_error("GridConnectivityProperty_t/Periodic_t node doesn't exist under GridConnectivity1to1_t %d",J);
         return CG_NODE_NOT_FOUND;
     }
     cperio = cprop->cperio;
@@ -9263,7 +9269,7 @@ int cg_1to1_periodic_read(int file_number, int B, int Z, int I,
     return CG_OK;
 }
 
-int cg_1to1_periodic_write(int file_number, int B, int Z, int I,
+int cg_1to1_periodic_write(int file_number, int B, int Z, int J,
                float const *RotationCenter,
                float const *RotationAngle,
                float const *Translation)
@@ -9285,7 +9291,7 @@ int cg_1to1_periodic_write(int file_number, int B, int Z, int I,
     if (base==0) return CG_ERROR;
 
      /* get memory address of GridConnectivity1to1_t node */
-    one21 = cgi_get_1to1(cg, B, Z, I);
+    one21 = cgi_get_1to1(cg, B, Z, J);
     if (one21 == 0) return CG_ERROR;
 
      /* Allocate GridConnectivityProperty_t data struct. if not already created */
@@ -9372,7 +9378,7 @@ int cg_1to1_periodic_write(int file_number, int B, int Z, int I,
 
 /*----------------------------------------------------------------------*/
 
-int cg_1to1_average_read(int file_number, int B, int Z, int I,
+int cg_1to1_average_read(int file_number, int B, int Z, int J,
              CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType)
 {
     cgns_cprop *cprop;
@@ -9385,13 +9391,13 @@ int cg_1to1_average_read(int file_number, int B, int Z, int I,
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
      /* get memory address for cprop from one21->cprop */
-    one21 = cgi_get_1to1(cg, B, Z, I);
+    one21 = cgi_get_1to1(cg, B, Z, J);
     if (one21==0) return CG_ERROR;
 
     cprop = one21->cprop;
 
     if (cprop == 0 || cprop->caverage == 0) {
-        cgi_error("GridConnectivityProperty_t/AverageInterface_t node doesn't exist under GridConnectivity1to1_t %d",I);
+        cgi_error("GridConnectivityProperty_t/AverageInterface_t node doesn't exist under GridConnectivity1to1_t %d",J);
         return CG_NODE_NOT_FOUND;
     }
     *AverageInterfaceType = cprop->caverage->type;
@@ -9399,7 +9405,7 @@ int cg_1to1_average_read(int file_number, int B, int Z, int I,
     return CG_OK;
 }
 
-int cg_1to1_average_write(int file_number, int B, int Z, int I,
+int cg_1to1_average_write(int file_number, int B, int Z, int J,
               CGNS_ENUMT(AverageInterfaceType_t) AverageInterfaceType)
 {
     cgns_cprop *cprop;
@@ -9421,7 +9427,7 @@ int cg_1to1_average_write(int file_number, int B, int Z, int I,
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
 
      /* get memory address of GridConnectivity_t node */
-    one21 = cgi_get_1to1(cg, B, Z, I);
+    one21 = cgi_get_1to1(cg, B, Z, J);
     if (one21 == 0) return CG_ERROR;
 
      /* Allocate GridConnectivityProperty_t data struct. if not already created */
@@ -10841,7 +10847,9 @@ int cg_array_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
         DataType != CGNS_ENUMV(RealDouble) &&
         DataType != CGNS_ENUMV(Integer) &&
         DataType != CGNS_ENUMV(LongInteger) &&
-        DataType != CGNS_ENUMV(Character)) {
+        DataType != CGNS_ENUMV(Character) &&
+        DataType != CGNS_ENUMV(ComplexSingle) &&
+        DataType != CGNS_ENUMV(ComplexDouble)) {
         cgi_error("Invalid datatype for data array:  %d", DataType);
         return CG_ERROR;
     }
@@ -10904,12 +10912,14 @@ int cg_array_general_write(const char *arrayname,
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
     if (s_type != CGNS_ENUMV(RealSingle) && s_type != CGNS_ENUMV(RealDouble) &&
         s_type != CGNS_ENUMV(Integer) && s_type != CGNS_ENUMV(LongInteger) &&
+        s_type != CGNS_ENUMV(ComplexSingle) && s_type != CGNS_ENUMV(ComplexDouble) &&
         s_type != CGNS_ENUMV(Character)) {
         cgi_error("Invalid file data type for data array: %d", s_type);
         return CG_ERROR;
     }
     if (m_type != CGNS_ENUMV(RealSingle) && m_type != CGNS_ENUMV(RealDouble) &&
         m_type != CGNS_ENUMV(Integer) && m_type != CGNS_ENUMV(LongInteger) &&
+        m_type != CGNS_ENUMV(ComplexSingle) && m_type != CGNS_ENUMV(ComplexDouble) &&
         m_type != CGNS_ENUMV(Character)) {
         cgi_error("Invalid input data type for data array: %d", m_type);
         return CG_ERROR;

@@ -1,13 +1,17 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.8)
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.10")
+  cmake_policy(SET CMP0015 NEW)
+endif()
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
+  cmake_policy(SET CMP0081 NEW)
+endif()
+
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING
   "one of: Release, Debug, RelWithDebInfo or MinSizeRel")
-if (${CMAKE_MAJOR_VERSION} GREATER 2 OR ${CMAKE_MINOR_VERSION} GREATER 7)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Release;Debug;RelWithDebInfo;MinSizeRel")
-endif (${CMAKE_MAJOR_VERSION} GREATER 2 OR ${CMAKE_MINOR_VERSION} GREATER 7)
 
 project("cgns" C)
 set(CGNS_VERSION "4.2")
@@ -107,15 +111,12 @@ endif (NOT DEFINED FORTRAN_NAMING)
 
 # If we are using fortran, enable it and configure the C-Fortran interface
 # It would be nice to automatically detect this setting
-
 if(CGNS_ENABLE_FORTRAN)
+  enable_language("Fortran" OPTIONAL)
 
-    enable_language("Fortran" OPTIONAL)
-
-#-----------------------------------------------------------------------------
-# Detect name mangling convention used between Fortran and C
-#-----------------------------------------------------------------------------
-
+  #-----------------------------------------------------------------------------
+  # Detect name mangling convention used between Fortran and C
+  #-----------------------------------------------------------------------------
   set(F2CLIST  "LOWERCASE" "LOWERCASE_" "LOWERCASE__" "UPPERCASE" "UPPERCASE_" "UPPERCASE__")
   set(FORTRAN_NAMING_HELP
   "Configures how to link the Fortran components into the C library.
@@ -143,19 +144,19 @@ if(CGNS_ENABLE_FORTRAN)
   file(REMOVE ${CMAKE_BINARY_DIR}/FCMangle.h)
 
   if(CGNS_FC_FUNC MATCHES "^NAME(.*)")
-     set (FORTRAN_NAMING "UPPERCASE")
+    set (FORTRAN_NAMING "UPPERCASE")
   elseif(CGNS_FC_FUNC MATCHES "^name(.*)")
-     set (FORTRAN_NAMING "LOWERCASE")
+    set (FORTRAN_NAMING "LOWERCASE")
   endif()
   if(CGNS_FC_FUNC MATCHES "(.*)__$")
-     set (FORTRAN_NAMING "${FORTRAN_NAMING}__")
+    set (FORTRAN_NAMING "${FORTRAN_NAMING}__")
   elseif(CGNS_FC_FUNC MATCHES "(.*)_$")
-     set (FORTRAN_NAMING "${FORTRAN_NAMING}_")
+    set (FORTRAN_NAMING "${FORTRAN_NAMING}_")
   endif()
 
   message(STATUS "Fortran name mangling convention: ${FORTRAN_NAMING}")
 
-# check that FORTRAN_NAMING is valid
+  # check that FORTRAN_NAMING is valid
   if (FORTRAN_NAMING STREQUAL "UNKNOWN")
     if (WIN32)
       set(FORTRAN_NAMING "UPPERCASE" CACHE STRING ${FORTRAN_NAMING_HELP})
@@ -195,11 +196,20 @@ if (CGNS_ENABLE_HDF5)
     set (FIND_HDF_COMPONENTS C shared)
   else (CGNS_BUILD_SHARED)
     set (FIND_HDF_COMPONENTS C static)
+    set(HDF5_USE_STATIC_LIBRARIES ON)
   endif (CGNS_BUILD_SHARED)
   message (STATUS "HDF5 find comps: ${FIND_HDF_COMPONENTS}")
 
-  #set (SEARCH_PACKAGE_NAME ${HDF5_PACKAGE_NAME})
   set (SEARCH_PACKAGE_NAME "hdf5")
+  
+  # If the first `find_package` below does not succeed, then the legacy `find_package`
+  # is tried (the `else` below).  The legacy find_package uses `HDF5_ROOT`.  But if 
+  # this is set, then CMake will issue warning and mistakenly say that `HDF5_ROOT` is
+  # not used even though it might be.  This can confuse user, so set policy to not
+  # issue that warning.
+  if (${CMAKE_VERSION} VERSION_GREATER "3.13")
+     cmake_policy(SET CMP0074 NEW)
+  endif()
 
   find_package (HDF5 NAMES ${SEARCH_PACKAGE_NAME} COMPONENTS ${FIND_HDF_COMPONENTS})
   message (STATUS "HDF5 C libs:${HDF5_FOUND} static:${HDF5_static_C_FOUND} and shared:${HDF5_shared_C_FOUND}")
@@ -231,17 +241,14 @@ if (CGNS_ENABLE_HDF5)
     endif (NOT HDF5_static_C_FOUND AND NOT HDF5_shared_C_FOUND)
     set (HDF5_DUMP_EXECUTABLE $<TARGET_FILE:h5dump>)
 
-    set (HDF5_HAVE_H5PUBCONF_H 1)
-    set (HDF5_HAVE_HDF5 1)
-    set (HDF5_HDF5_HEADER "h5pubconf.h")
-    set (HDF5_INCLUDE_DIR_GEN ${HDF5_INCLUDE_DIR})
-    message (STATUS "HDF5-${HDF5_VERSION_STRING} found: INC=${HDF5_INCLUDE_DIR} TOOLS=${HDF5_TOOLS_DIR}")
   else (HDF5_FOUND)
     find_package (HDF5) # Legacy find
-#Legacy find_package does not set HDF5_TOOLS_DIR, so we set it here
-    set(HDF5_TOOLS_DIR ${HDF5_LIBRARY_DIRS}/../bin)
-#Legacy find_package does not set HDF5_BUILD_SHARED_LIBS, so we set it here
-    if (CGNS_BUILD_SHARED AND EXISTS "${HDF5_LIBRARY_DIRS}/libhdf5${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    
+    #Legacy find_package does not set HDF5_TOOLS_DIR, so we set it here
+    set(HDF5_TOOLS_DIR ${HDF5_LIBRARY}/../bin)
+    
+    #Legacy find_package does not set HDF5_BUILD_SHARED_LIBS, so we set it here
+    if (CGNS_BUILD_SHARED AND EXISTS "${HDF5_LIBRARY}/libhdf5${CMAKE_SHARED_LIBRARY_SUFFIX}")
       set (HDF5_BUILD_SHARED_LIBS 1)
       add_definitions (-DH5_BUILT_AS_DYNAMIC_LIB)
     else ()
@@ -257,12 +264,14 @@ if (CGNS_ENABLE_HDF5)
   set (HDF5_PACKAGE_NAME ${SEARCH_PACKAGE_NAME})
 
   if (HDF5_FOUND)
+    if (NOT DEFINED HDF5_INCLUDE_DIRS)
+      set (HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR})
+    endif()
     set (HDF5_HAVE_H5PUBCONF_H 1)
     set (HDF5_HAVE_HDF5 1)
     set (HDF5_HDF5_HEADER "h5pubconf.h")
-    set (HDF5_INCLUDE_DIR_GEN ${HDF5_INCLUDE_DIR})
-    message (STATUS "HDF5-${HDF5_VERSION_STRING} found: INC=${HDF5_INCLUDE_DIR} TOOLS=${HDF5_TOOLS_DIR} HDF5_BUILD_SHARED_LIBS=${HDF5_BUILD_SHARED_LIBS}")
-    INCLUDE_DIRECTORIES (${HDF5_INCLUDE_DIR})
+    message (STATUS "HDF5-${HDF5_VERSION} found: INC=${HDF5_INCLUDE_DIRS} TOOLS=${HDF5_TOOLS_DIR} HDF5_BUILD_SHARED_LIBS=${HDF5_BUILD_SHARED_LIBS}")
+    INCLUDE_DIRECTORIES (${HDF5_INCLUDE_DIRS})
     set (HDF5_LIBRARY ${LINK_LIBS})
     message (STATUS "HDF5 link libs: ${LINK_LIBS}")
   else (HDF5_FOUND)
@@ -277,7 +286,7 @@ if (CGNS_ENABLE_HDF5)
     mark_as_advanced(FORCE ZLIB_LIBRARY)
   endif(HDF5_NEED_ZLIB)
 
-  set(HDF5_NEED_SZIP "OFF" CACHE BOOL "Does the HDF5 library require linking to zlib?")
+  set(HDF5_NEED_SZIP "OFF" CACHE BOOL "Does the HDF5 library require linking to szip?")
   if (HDF5_NEED_SZIP)
     find_library(SZIP_LIBRARY szip)
     mark_as_advanced(CLEAR SZIP_LIBRARY)
@@ -326,7 +335,7 @@ else (CGNS_ENABLE_HDF5)
 endif (CGNS_ENABLE_HDF5)
 
 #################
-# parallel cgns #
+# Parallel CGNS #
 #################
 
 if (CGNS_ENABLE_HDF5 AND HDF5_NEED_MPI)
@@ -334,7 +343,7 @@ if (CGNS_ENABLE_HDF5 AND HDF5_NEED_MPI)
   mark_as_advanced(CLEAR CGNS_ENABLE_PARALLEL)
   # Check that HDF5 has parallel support
   if (NOT (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL))
-      message(FATAL_ERROR "HDF5 has been found, but is missing parallel support.")
+    message(FATAL_ERROR "HDF5 has been found, but is missing parallel support.")
   endif()
 else (CGNS_ENABLE_HDF5 AND HDF5_NEED_MPI)
   set(CGNS_ENABLE_PARALLEL "OFF")
@@ -361,10 +370,10 @@ if (CGNS_BUILD_SHARED)
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
   IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-     set(CMAKE_MACOSX_RPATH TRUE)
+    set(CMAKE_MACOSX_RPATH TRUE)
   ENDIF()
 else(CGNS_BUILD_SHARED)
-set(CMAKE_SKIP_RPATH TRUE)
+  set(CMAKE_SKIP_RPATH TRUE)
 endif(CGNS_BUILD_SHARED)
 
 #-----------------------------------------------------------------------------
@@ -380,8 +389,6 @@ if (CGNS_BUILD_TESTING)
   include (CTest)
   include (${PROJECT_SOURCE_DIR}/CTestConfig.cmake)
 endif (CGNS_BUILD_TESTING)
-
-
 
 ########
 # CGNS #

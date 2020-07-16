@@ -1004,9 +1004,9 @@ CGNSDLL cgns_sol       *cgi_get_sol    (cgns_file *cg, int B, int Z, int S);
 CGNSDLL cgns_array     *cgi_get_field  (cgns_file *cg, int B, int Z, int S, int F);
 CGNSDLL cgns_zconn     *cgi_get_zconnZC(cgns_file *cg, int B, int Z, int C);
 CGNSDLL cgns_zconn     *cgi_get_zconn  (cgns_file *cg, int B, int Z);
-CGNSDLL cgns_hole      *cgi_get_hole   (cgns_file *cg, int B, int Z, int I);
-CGNSDLL cgns_conn      *cgi_get_conn   (cgns_file *cg, int B, int Z, int I);
-CGNSDLL cgns_1to1      *cgi_get_1to1   (cgns_file *cg, int B, int Z, int I);
+CGNSDLL cgns_hole      *cgi_get_hole   (cgns_file *cg, int B, int Z, int J);
+CGNSDLL cgns_conn      *cgi_get_conn   (cgns_file *cg, int B, int Z, int J);
+CGNSDLL cgns_1to1      *cgi_get_1to1   (cgns_file *cg, int B, int Z, int J);
 CGNSDLL cgns_zboco     *cgi_get_zboco  (cgns_file *cg, int B, int Z);
 CGNSDLL cgns_boco      *cgi_get_boco   (cgns_file *cg, int B, int Z, int BC);
 CGNSDLL cgns_dataset   *cgi_get_dataset(cgns_file *cg, int B, int Z, int BC, int DSet);
@@ -1023,7 +1023,7 @@ CGNSDLL cgns_rmotion   *cgi_get_rmotion  (cgns_file *cg, int B, int Z, int R);
 CGNSDLL cgns_amotion   *cgi_get_amotion  (cgns_file *cg, int B, int Z, int R);
 CGNSDLL cgns_rotating  *cgi_get_rotating (cgns_file *cg, int B, int Z);
 CGNSDLL cgns_bprop     *cgi_get_bprop    (cgns_file *cg, int B, int Z, int BC);
-CGNSDLL cgns_cprop     *cgi_get_cprop    (cgns_file *cg, int B, int Z, int I);
+CGNSDLL cgns_cprop     *cgi_get_cprop    (cgns_file *cg, int B, int Z, int J);
 CGNSDLL cgns_subreg    *cgi_get_subreg   (cgns_file *cg, int B, int Z, int S);
 
 /* find position lead by the goto function */

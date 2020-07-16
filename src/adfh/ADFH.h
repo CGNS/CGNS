@@ -126,7 +126,7 @@
 #define ADFH_ERR_NO_ATT		       71
 #define ADFH_ERR_AOPEN		       72
 #define ADFH_ERR_IGET_NAME	       73
-#define ADFH_ERR_GMOVE		       74
+#define ADFH_ERR_LMOVE		       74
 #define ADFH_ERR_GUNLINK	       75
 #define ADFH_ERR_GOPEN		       76
 #define ADFH_ERR_DGET_SPACE	       77

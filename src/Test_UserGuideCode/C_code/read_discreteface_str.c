@@ -47,7 +47,7 @@ int main()
 /* clear f since only partial read */
     for (n=0; n<(9+2)*(16+2)*(20+2); n++)
     {
-      f[0][0][n] = -0.123456f;
+      (&f[0][0][0])[n] = -0.123456f;
     }
 
 /* READ FLOW SOLUTION FROM CGNS FILE */

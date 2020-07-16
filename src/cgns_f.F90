@@ -463,7 +463,7 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Data types                                                     *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-  CHARACTER(LEN=MAX_LEN) :: DataTypeName(0:6)
+  CHARACTER(LEN=MAX_LEN) :: DataTypeName(0:8)
   ENUM, BIND(C)
       ENUMERATOR :: CGNS_ENUMV(DataTypeNull)
       ENUMERATOR :: CGNS_ENUMV(DataTypeUserDefined)
@@ -472,6 +472,8 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(RealDouble)
       ENUMERATOR :: CGNS_ENUMV(Character)
       ENUMERATOR :: CGNS_ENUMV(LongInteger)
+      ENUMERATOR :: CGNS_ENUMV(ComplexSingle)
+      ENUMERATOR :: CGNS_ENUMV(ComplexDouble)
   END ENUM
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -735,7 +737,7 @@ MODULE cgns
 
   DATA DataTypeName / 'Null','UserDefined', &
        'Integer','RealSingle','RealDouble','Character', &
-       'LongInteger' /
+       'LongInteger','ComplexSingle','ComplexDouble' /
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      BCData_t types                                                 *
@@ -3408,7 +3410,7 @@ MODULE cgns
      END SUBROUTINE cg_array_info_f
   END INTERFACE
 
-!$ INTERFACE
+!!$ INTERFACE
 !!$    SUBROUTINE cg_array_read_f(A, DATA, ier) BIND(C, NAME="")
 !!$      INTEGER :: A,
 !!$      void *DATA,
@@ -5073,6 +5075,20 @@ CONTAINS
     INTEGER(KIND(CGNS_ENUMV(RealDouble))) :: cg_get_type_c_double
     cg_get_type_c_double = CGNS_ENUMV(RealDouble)
   END FUNCTION cg_get_type_c_double
+
+  FUNCTION cg_get_type_c_complex_float(a)
+    USE ISO_C_BINDING
+    COMPLEX(C_FLOAT_COMPLEX) :: a
+    INTEGER(KIND(CGNS_ENUMV(ComplexSingle))) :: cg_get_type_c_complex_float
+    cg_get_type_c_complex_float = CGNS_ENUMV(ComplexSingle)
+  END FUNCTION cg_get_type_c_complex_float
+
+  FUNCTION cg_get_type_c_complex_double(a)
+    USE ISO_C_BINDING
+    COMPLEX(C_DOUBLE_COMPLEX) :: a
+    INTEGER(KIND(CGNS_ENUMV(ComplexDouble))) :: cg_get_type_c_complex_double
+    cg_get_type_c_complex_double = CGNS_ENUMV(ComplexDouble)
+  END FUNCTION cg_get_type_c_complex_double
 
 !  These have issues when using xlf and the calling
 !  program does not use the modules, CGNS-25
