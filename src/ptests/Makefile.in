@@ -48,7 +48,7 @@ test : $(TESTS)
 	   fi; \
 	 done; \
 	 echo "=== finished ==="; \
-         if test $$status > 0; then \
+         if test $$$status > 0; then \
            printf "$(ERROR_COLOR)"; \
 	   stat=1; \
          else \
