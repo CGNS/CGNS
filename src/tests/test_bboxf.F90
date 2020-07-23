@@ -5,12 +5,14 @@
 #endif
       USE CGNS
       implicit none
-
+      INTEGER, PARAMETER :: sp = KIND(1.0)
+      INTEGER, PARAMETER :: dp = KIND(1.d0)
+      
       integer, parameter :: celldim = 3, physdim = 3
       integer, parameter :: NUM_SIDE = 5
 
-      real(kind=4), dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: coord
-      real(kind=8), dimension(3, 2) :: bbox
+      real(kind=sp), dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: coord
+      real(kind=dp), dimension(3, 2) :: bbox
 
       integer :: n
       integer :: ierr

@@ -6,13 +6,15 @@
       USE CGNS
       IMPLICIT NONE
 
+      INTEGER, PARAMETER :: sp = KIND(1.0)
+
       integer ierr, cgfile, cgbase, cgzone, cgcoord
       integer dim, csub, nsub
       integer(cgsize_t) i, j, k, n, size(9)
       integer(cgsize_t) ptrange(6), ptlist(125), npts
       integer(cgenum_t) loc, ptype
       integer bclen, gclen
-      real(kind=4) x(125), y(125), z(125)
+      real(kind=sp) x(125), y(125), z(125)
       character(len=32) sname, cname
 
 ! open and write base

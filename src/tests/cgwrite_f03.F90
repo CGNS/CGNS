@@ -16,6 +16,7 @@
       parameter (Ndim = 3)
       INTEGER :: one
       parameter (one = 1)
+      INTEGER, PARAMETER :: sp = KIND(1.0)
 
       INTEGER :: index_dim, cell_dim, phys_dim
       integer :: base_no, zone_no, coord_no, sol_no, discr_no, conn_no
@@ -29,7 +30,7 @@
       INTEGER(CGSIZE_T) :: pnts(Ndim,120), donor_pnts(Ndim,120)
       integer transform(Ndim)
       INTEGER :: nptsets, nrmlistflag
-      real(kind=4) data(120), normals(360)
+      real(kind=sp) data(120), normals(360)
       double precision Dxyz(120), values(120)
       character(len=32) zonename, solname, fieldname
       character(len=32) coordname(Ndim)

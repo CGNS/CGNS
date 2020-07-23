@@ -6,6 +6,7 @@
       USE CGNS
       implicit none
 
+      INTEGER, PARAMETER :: sp = KIND(1.0)
       integer, parameter :: NUM_SIDE = 5
 
       integer(cgsize_t) :: sizes(9)
@@ -13,16 +14,16 @@
       integer(cgsize_t) :: npts
       integer :: celldim, physdim
 
-      real(kind=4), dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: xcoord
-      real(kind=4), dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: ycoord
-      real(kind=4), dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: zcoord
+      real(kind=sp), dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: xcoord
+      real(kind=sp), dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: ycoord
+      real(kind=sp), dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: zcoord
 
       integer :: ierr
       integer :: i, j, k, n, nfam, nb, ng, nnames
       integer :: cgfile, cgbase, cgtree, cgzone, cgfam, cgcoord
       integer :: cgbc, cgsr
 
-      real(kind=4), dimension(5) :: exponents
+      real(kind=sp), dimension(5) :: exponents
       character(len=32) outfile
       character(len=32) name
       character(len=32) tname

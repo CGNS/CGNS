@@ -9,15 +9,17 @@
 !
       INTEGER MAXCHR
       PARAMETER (MAXCHR=32)
-!
+
+      INTEGER, PARAMETER :: dp = KIND(1.d0)
+      INTEGER, PARAMETER :: i4 = SELECTED_INT_KIND(9) ! should map to INTEGER*4 on most modern processors
       CHARACTER(len=MAXCHR) TSTLBL,DTYPE
       CHARACTER(len=MAXCHR) FNAM,PATH
 !
-      REAL(kind=8) RID,PID,CID,TMPID,RIDF2
+      REAL(KIND=dp) RID,PID,CID,TMPID,RIDF2
       REAL A(4,3),B(4,3)
-      INTEGER(kind=4) IC(6),ID(6)
+      INTEGER(KIND=i4) IC(6),ID(6)
       INTEGER IERR,ICGIO,ICGIO2
-      INTEGER(CGSIZE_T) :: IDIM(2),IDIMA(2),IDIMC,IDIMD
+      INTEGER(KIND=CGSIZE_T) :: IDIM(2),IDIMA(2),IDIMC,IDIMD
 !
       DATA A /1.1,2.1,3.1,4.1,                                          &
      &      1.2,2.2,3.2,4.2,                                            &
@@ -217,7 +219,8 @@
 !
       PARAMETER (MAXCLD=10)
       PARAMETER (MAXCHR=32)
-      REAL(kind=8) PID
+      INTEGER, PARAMETER :: dp = KIND(1.d0)
+      REAL(KIND=dp) PID
       CHARACTER(len=MAXCHR) NODNAM,NDNMS(MAXCLD)
       CALL CGIO_GET_NAME_F(ICGIO,PID,NODNAM,IERR)
       CALL CGIO_NUMBER_CHILDREN_F(ICGIO,PID,NUMC,IERR)

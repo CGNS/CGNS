@@ -11,11 +11,12 @@ PROGRAM read_cgns_1
 
   ! This program reads a 3D mesh, structured or unstructured.
 
-
   INTEGER :: Ndim, Nglobal
   PARAMETER (Ndim = 3)
   PARAMETER (Nglobal = 500)
-
+  INTEGER, PARAMETER :: sp = KIND(1.0)
+  INTEGER, PARAMETER :: dp = KIND(1.d0)
+  
   INTEGER :: i, narrays, iarray
   INTEGER :: nintegrals, integral
   INTEGER :: ndescriptors, idescr
@@ -72,9 +73,9 @@ PROGRAM read_cgns_1
   INTEGER(cgenum_t) :: mass, length, time, temp, deg
   INTEGER :: NormalIndex(3), ndataset
   INTEGER(cgsize_t) :: NormalListSize
-  REAL(kind=4) data_single(100000)
-  DOUBLE PRECISION data_double(100000)
-  REAL(kind=4) version
+  REAL(KIND=sp) data_single(100000)
+  REAL(KIND=dp) data_double(100000)
+  REAL(KIND=sp) version
 
   INTEGER one, is_cgns
   PARAMETER (one = 1)

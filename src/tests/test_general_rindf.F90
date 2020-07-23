@@ -5,6 +5,8 @@
 #endif
       USE CGNS
       implicit none
+      
+      INTEGER, PARAMETER :: sp = KIND(1.0)
 
       integer, parameter :: celldim = 3, physdim = 3
       integer(cgsize_t), parameter :: size(3,3) = &
@@ -28,8 +30,8 @@
       integer(cgsize_t) :: rmin(3), rmax(3)
       integer(cgsize_t) :: m_rmin(3), m_rmax(3)
 
-      real(kind=4), dimension(NUM_I, NUM_J, NUM_K) :: xcoord, ycoord, zcoord
-      real(kind=4), dimension(NUM_I, NUM_J, NUM_K) :: solution, fbuf
+      real(kind=sp), dimension(NUM_I, NUM_J, NUM_K) :: xcoord, ycoord, zcoord
+      real(kind=sp), dimension(NUM_I, NUM_J, NUM_K) :: solution, fbuf
 
       character(len=32) coordname(3)
       character(len=32) fieldname
