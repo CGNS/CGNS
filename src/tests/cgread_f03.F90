@@ -81,8 +81,8 @@ PROGRAM read_cgns_1
   PARAMETER (one = 1)
 
   ! *** open file
-  !	write(6,*) 'Input filename'
-  !	read(5,600) filename
+  !     write(6,*) 'Input filename'
+  !     read(5,600) filename
   WRITE(filename,'(a)')'cgtest.cgns'
 
   ! *** check if the file is CGNS
@@ -222,7 +222,7 @@ PROGRAM read_cgns_1
            IF (ier.EQ.ALL_OK)WRITE(6,103)'   Diffusion model=', &
                 (diffusion_model(i), i=1,6)
         ENDIF       ! If Governing Equations are defined
-     ENDIF		! If FlowEquationSet_t exists under CGNSBase_t
+     ENDIF          ! If FlowEquationSet_t exists under CGNSBase_t
 
 
      WRITE(6,400)'                              *     *     *'
@@ -611,7 +611,7 @@ PROGRAM read_cgns_1
                       AngleUnitsName(deg)
               ENDIF
 
-           ENDDO	! loop through DataArray_t
+           ENDDO     ! loop through DataArray_t
            WRITE(6,103)' '
 
            ! *** Reading solution data with solution specific functions:
@@ -652,7 +652,7 @@ PROGRAM read_cgns_1
               IF (ier .EQ. ERROR) CALL cg_error_exit_f
            ENDDO                             ! field loop
 
-        ENDDO	! loop through FlowSolution_t
+        ENDDO     ! loop through FlowSolution_t
 
         WRITE(6,400)'                             *     *     *'
 
@@ -724,7 +724,7 @@ PROGRAM read_cgns_1
                       TemperatureUnitsName(temp), TimeUnitsName(time), &
                       AngleUnitsName(deg)
               ENDIF
-           ENDDO		! loop through DataArray_t
+           ENDDO          ! loop through DataArray_t
         ENDDO
 
         WRITE(6,400)'                             *     *     *'
@@ -787,7 +787,7 @@ PROGRAM read_cgns_1
                  WRITE(6,500) '     DescriptorName="',TRIM(name),'"', &
                       '     DescriptorText="',TRIM(text),'"'
               ENDDO
-           ENDDO	!hole loop
+           ENDDO     !hole loop
 
 
 
@@ -1126,12 +1126,12 @@ PROGRAM read_cgns_1
                                (data_double(n),n=1,num)
                        ENDIF
 
-                    ENDDO	! loop through DataArray
-                 ENDIF		! if Neumann
-              ENDDO		! loop through dataset
-           ENDDO		! loop through boco
-        ENDIF		        ! if ZoneBC_t exists
-     ENDDO			! zone loop
+                    ENDDO     ! loop through DataArray
+                 ENDIF          ! if Neumann
+              ENDDO          ! loop through dataset
+           ENDDO          ! loop through boco
+        ENDIF                  ! if ZoneBC_t exists
+     ENDDO               ! zone loop
 
      WRITE(6,400)'                             *     *     *'
 

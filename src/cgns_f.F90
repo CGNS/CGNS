@@ -5181,7 +5181,7 @@ CONTAINS
      ELSE
         RETURN
      END IF
-  END SUBROUTINE
+  END SUBROUTINE cg_goto_f
 
   SUBROUTINE cg_gorel_f(fn, ier, &
           UserDataName1, i1, UserDataName2, i2, &
@@ -5307,7 +5307,7 @@ CONTAINS
      ELSE
         RETURN
      END IF
-  END SUBROUTINE
+  END SUBROUTINE cg_gorel_f
 
   FUNCTION cg_get_type_c_int(a)
     USE ISO_C_BINDING
