@@ -5053,21 +5053,19 @@ MODULE cgns
 !!$
 !!$    END INTERFACE
 
-
-
 CONTAINS
   SUBROUTINE cg_goto_f(fn, B, ier, &
-          UserDataName1, i1, UserDataName2, i2, &
-          UserDataName3, i3, UserDataName4, i4, &
-          UserDataName5, i5, UserDataName6, i6, &
-          UserDataName7, i7, UserDataName8, i8, &
-          UserDataName9, i9, UserDataName10, i10, &
-          UserDataName11, i11, UserDataName12, i12, &
-          UserDataName13, i13, UserDataName14, i14, &
-          UserDataName15, i15, UserDataName16, i16, &
-          UserDataName17, i17, UserDataName18, i18, &
-          UserDataName19, i19, UserDataName20, i20, &
-          end)
+       UserDataName1, i1, UserDataName2, i2, &
+       UserDataName3, i3, UserDataName4, i4, &
+       UserDataName5, i5, UserDataName6, i6, &
+       UserDataName7, i7, UserDataName8, i8, &
+       UserDataName9, i9, UserDataName10, i10, &
+       UserDataName11, i11, UserDataName12, i12, &
+       UserDataName13, i13, UserDataName14, i14, &
+       UserDataName15, i15, UserDataName16, i16, &
+       UserDataName17, i17, UserDataName18, i18, &
+       UserDataName19, i19, UserDataName20, i20, &
+       end)
      IMPLICIT NONE
      INTEGER, INTENT(IN) :: fn
      INTEGER, INTENT(IN) :: B
@@ -5085,101 +5083,83 @@ CONTAINS
         RETURN
      ELSE
         CALL cg_goto_f1(fn, B, ier, UserDataName1, i1)
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i2))) THEN
+     IF (PRESENT(i2)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName2, i2)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i3))) THEN
+     IF (PRESENT(i3)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName3, i3)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i4))) THEN
+     IF (PRESENT(i4)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName4, i4)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i5))) THEN
+     IF (PRESENT(i5)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName5, i5)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i6))) THEN
+     IF (PRESENT(i6)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName6, i6)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i7))) THEN
+     IF (PRESENT(i7)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName7, i7)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i8))) THEN
+     IF (PRESENT(i8)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName8, i8)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i9))) THEN
+     IF (PRESENT(i9)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName9, i9)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i10))) THEN
+     IF (PRESENT(i10)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName10, i10)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i11))) THEN
+     IF (PRESENT(i11)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName11, i11)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i12))) THEN
+     IF (PRESENT(i12)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName12, i12)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i13))) THEN
+     IF (PRESENT(i13)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName13, i13)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i14))) THEN
+     IF (PRESENT(i14)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName14, i14)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i15))) THEN
+     IF (PRESENT(i15)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName15, i15)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i16))) THEN
+     IF (PRESENT(i16)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName16, i16)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i17))) THEN
+     IF (PRESENT(i17)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName17, i17)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i18))) THEN
+     IF (PRESENT(i18)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName18, i18)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i19))) THEN
+     IF (PRESENT(i19)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName19, i19)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i20))) THEN
+     IF (PRESENT(i20)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName20, i20)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
   END SUBROUTINE cg_goto_f
 
@@ -5212,100 +5192,81 @@ CONTAINS
         CALL cg_gorel_f1(fn, ier, UserDataName1, 0)
         RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i2))) THEN
+     IF (PRESENT(i2)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName2, i2)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i3))) THEN
+     IF (PRESENT(i3)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName3, i3)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i4))) THEN
+     IF (PRESENT(i4)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName4, i4)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i5))) THEN
+     IF (PRESENT(i5)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName5, i5)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i6))) THEN
+     IF (PRESENT(i6)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName6, i6)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i7))) THEN
+     IF (PRESENT(i7)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName7, i7)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i8))) THEN
+     IF (PRESENT(i8)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName8, i8)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i9))) THEN
+     IF (PRESENT(i9)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName9, i9)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i10))) THEN
+     IF (PRESENT(i10)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName10, i10)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i11))) THEN
+     IF (PRESENT(i11)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName11, i11)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i12))) THEN
+     IF (PRESENT(i12)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName12, i12)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i13))) THEN
+     IF (PRESENT(i13)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName13, i13)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i14))) THEN
+     IF (PRESENT(i14)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName14, i14)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i15))) THEN
+     IF (PRESENT(i15)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName15, i15)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i16))) THEN
+     IF (PRESENT(i16)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName16, i16)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i17))) THEN
+     IF (PRESENT(i17)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName17, i17)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i18))) THEN
+     IF (PRESENT(i18)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName18, i18)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i19))) THEN
+     IF (PRESENT(i19)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName19, i19)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
-     IF ((ier .EQ. 0) .AND. (PRESENT(i20))) THEN
+     IF (PRESENT(i20)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName20, i20)
-     ELSE
-        RETURN
+        IF(ier .NE. 0) RETURN
      END IF
   END SUBROUTINE cg_gorel_f
 
