@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Type=Application
+Name=CGNSview
+GenericName=CGNS file structure viewer
+Terminal=false
+Categories=Development;
+Exec="./cgnsview"
+Icon=../share/cgnstools/cgns.png
