@@ -83,6 +83,9 @@ else (WIN32)
 	cgnsplot.sh
 	DESTINATION bin
 	RENAME cgnsplot)
+  install(PROGRAMS
+	cgnsplot.desktop
+	DESTINATION bin)
   install(FILES
 	cgnsplot.tcl
 	cgnsplot.ico

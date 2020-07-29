@@ -60,9 +60,11 @@ install-dirs :
 install-prog : $(ALL)
 	@echo "installing shell scripts to $(BIN_INSTALL_DIR)"
 	@$(INSTALL_PROG) cgnsview.sh $(BIN_INSTALL_DIR)/cgnsview
-	@chmod +x $(BIN_INSTALL_DIR)/cgnsview
+	@$(INSTALL_PROG) cgnsview.desktop $(BIN_INSTALL_DIR)/
+	@chmod +x $(BIN_INSTALL_DIR)/cgnsview  $(BIN_INSTALL_DIR)/cgnsview.desktop
 	@$(INSTALL_PROG) cgnsnodes.sh $(BIN_INSTALL_DIR)/cgnsnodes
-	@chmod +x $(BIN_INSTALL_DIR)/cgnsnodes
+	@$(INSTALL_PROG) cgnsnodes.desktop $(BIN_INSTALL_DIR)/
+	@chmod +x $(BIN_INSTALL_DIR)/cgnsnodes $(BIN_INSTALL_DIR)/cgnsnodes.desktop
 	@if [ ! -f $(EXE_INSTALL_DIR)/cgconfig ] ; then \
 	  echo "installing configuration file to $(EXE_INSTALL_DIR)"; \
 	  $(INSTALL_DATA) ../cgconfig $(EXE_INSTALL_DIR)/cgconfig; \
