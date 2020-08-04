@@ -78,9 +78,15 @@ else (WIN32)
 	DESTINATION bin
 	RENAME cgnscalc)
   install(PROGRAMS
+	cgnscalc.desktop
+	DESTINATION bin)
+  install(PROGRAMS
 	unitconv.sh
 	DESTINATION bin
 	RENAME unitconv)
+  install(PROGRAMS
+	unitconv.desktop
+	DESTINATION bin)
   install(FILES
 	cgnscalc.tcl
 	unitconv.tcl

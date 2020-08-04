@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Type=Application
+Name=CGNScalc
+GenericName=CGNS calculator
+Terminal=false
+Categories=Development;
+Exec="./cgnscalc"
+Icon=../share/cgnstools/cgnscalc.png

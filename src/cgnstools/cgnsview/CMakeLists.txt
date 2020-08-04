@@ -76,9 +76,15 @@ else (WIN32)
 	DESTINATION bin
 	RENAME cgnsview)
   install(PROGRAMS
+	cgnsview.desktop
+	DESTINATION bin)
+  install(PROGRAMS
 	cgnsnodes.sh
 	DESTINATION bin
 	RENAME cgnsnodes)
+  install(PROGRAMS
+	cgnsnodes.desktop
+	DESTINATION bin)
   install(FILES
 	cgnsview.tcl
 	cgns.tcl
