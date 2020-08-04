@@ -126,9 +126,12 @@ printf aaa ; printf("\n"); fflush(stdout);
 #define ADFH_U8 "U8"
 #define ADFH_R4 "R4"
 #define ADFH_R8 "R8"
-/* these are not supported */
+/* these have experimental support */
 #define ADFH_X4 "X4"
 #define ADFH_X8 "X8"
+/* HDF5 Compound names used for complex value */
+#define CMPLX_REAL_NAME "r"
+#define CMPLX_IMAG_NAME "i"
 
 /* file open modes */
 
@@ -814,6 +817,24 @@ static hid_t to_HDF_data_type(const char *tp)
     H5Tset_precision(tid, 64);
     return tid;
   }
+  if (0 == strcmp(tp, ADFH_X4)) {
+    hid_t tid = H5Tcreate(H5T_COMPOUND, 8);
+    hid_t subid = H5Tcopy(H5T_NATIVE_FLOAT);
+    H5Tset_precision(subid, 32);
+    H5Tinsert(tid, CMPLX_REAL_NAME, 0, subid);
+    H5Tinsert(tid, CMPLX_IMAG_NAME, 4, subid);
+    H5Tclose(subid);
+    return tid;
+  }
+  if (0 == strcmp(tp, ADFH_X8)) {
+    hid_t tid = H5Tcreate(H5T_COMPOUND, 16);
+    hid_t subid = H5Tcopy(H5T_NATIVE_DOUBLE);
+    H5Tset_precision(subid, 64);
+    H5Tinsert(tid, CMPLX_REAL_NAME, 0, subid);
+    H5Tinsert(tid, CMPLX_IMAG_NAME, 8, subid);
+    H5Tclose(subid);
+    return tid;
+  }
   return 0;
 }
 
@@ -828,7 +849,9 @@ static int check_data_type(const char *tp, int *err)
       strcmp(tp, ADFH_U4) &&
       strcmp(tp, ADFH_U8) &&
       strcmp(tp, ADFH_R4) &&
-      strcmp(tp, ADFH_R8)) {
+      strcmp(tp, ADFH_R8) &&
+      strcmp(tp, ADFH_X4) &&
+      strcmp(tp, ADFH_X8)) {
     set_error(INVALID_DATA_TYPE, err);
     return 1;
   }
@@ -1120,7 +1143,11 @@ static hid_t open_link(hid_t id, int *err)
       }
   }
 #ifdef ADFH_DEBUG_ON
-  H5Oget_info(lid, &oinfo);
++#if H5_VERSION_GE(1,12,0)
++  H5Oget_info3(lid, &oinfo, H5O_INFO_BASIC);
++#else
+   H5Oget_info(lid, &oinfo);
++#endif
   ADFH_DEBUG(("<ADFH open_link [%d]->[%d]:%d",id,lid,oinfo.rc));
 #endif
   return lid;
