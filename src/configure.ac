@@ -229,9 +229,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     #include <complex.h>
     ]],[[
     #if !defined(_MSC_VER)
-    float _Complex a;
-    __real__(a) = (float) 1.0;
-    __imag__(a) = (float) 0.0;
+    float _Complex a[2];
+    __real__(a[1]) = (float) 1.0;
+    __imag__(a[1]) = (float) 0.0;
     #endif
 ]])],[ AC_MSG_RESULT([yes])
        HAVE_COMPLEX_C99_EXT=1],
