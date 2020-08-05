@@ -123,6 +123,7 @@ set(HDF5_HAVE_COLL_METADATA 0)
 set(HDF5_HAVE_FILE_SPACE_STRATEGY 0)
 set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 set(HAVE_STAT64_STRUCT 0)
+set(HAVE_COMPLEX_C99_EXT 0)
 
 include(CheckCSourceCompiles)
 check_c_source_compiles("
