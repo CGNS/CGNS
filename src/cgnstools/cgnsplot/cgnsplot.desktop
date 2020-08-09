@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Type=Application
+Name=CGNSplot
+GenericName=CGNS plot
+Terminal=false
+Categories=Development;
+Exec="./cgnsplot"
+Icon=../share/cgnstools/cgnsplot.png

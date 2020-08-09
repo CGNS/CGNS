@@ -3406,6 +3406,9 @@ static void check_BC (int nb, int parclass, int *parunits)
                 "BC Type is FamilySpecified but no family name is given");
     }
     else {
+        if (bctype != CGNS_ENUMV(FamilySpecified)) {
+            warning(2, "BC Type is not FamilySpecified but a family name is defined.\n");
+        }
         if (verbose) printf ("    Family=\"%s\"\n", name);
         for (n = 0; n < NumFamily; n++) {
             if (0 == strcmp (name, Family[n])) break;
