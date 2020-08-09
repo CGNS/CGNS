@@ -63,8 +63,10 @@ void error_exit (char *where)
   exit (1);
 }
 
+#if CG_BUILD_COMPLEX_C99_EXT
 int main (int argc, char *argv[])
 {
+
   char outfile[32];
   int nbases, nzones;
 
@@ -406,3 +408,9 @@ void test_complex_solution()
   free(cdbuf);
   free(cfbuf);
 }
+#else
+int main (int argc, char *argv[])
+{
+  return 0;
+}
+#endif
