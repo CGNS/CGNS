@@ -4,7 +4,7 @@
 #endif
       USE CGNS
       implicit none
-
+#if CG_BUILD_COMPLEX_C99_EXT
       integer, parameter :: celldim = 3, physdim = 3
       integer(cgsize_t), parameter :: size(3,3) = &
      &  reshape((/5,5,5, 4,4,4, 0,0,0 /), (/3, 3/))
@@ -176,5 +176,5 @@
       subroutine compute_sol()
       solution(i, j, k) = CMPLX(REAL(i,8), REAL(j,8), 8)
       end subroutine
-
+#endif
       end program

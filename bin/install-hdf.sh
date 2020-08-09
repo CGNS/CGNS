@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Set odd/even days of the week
-day=$(( $(date +%d) % 2 ))
+day=$(( $(date +%e) % 2 ))
 
 
 if [ $day -eq 0 ]; then #even day tests, HDF5 1.8 branch
