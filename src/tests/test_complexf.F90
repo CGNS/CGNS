@@ -4,9 +4,9 @@
 #endif
       USE CGNS
       IMPLICIT NONE
-
-      INTEGER, PARAMETER :: dp = KIND(1.d0) 
-
+#if CG_BUILD_COMPLEX_C99_EXT
+      INTEGER, PARAMETER :: dp = KIND(1.d0)
+      
       integer, parameter :: celldim = 3, physdim = 3
       integer(cgsize_t), parameter :: size(3,3) = &
      &  reshape((/5,5,5, 4,4,4, 0,0,0 /), (/3, 3/))
@@ -178,5 +178,5 @@
       subroutine compute_sol()
       solution(i, j, k) = CMPLX(REAL(i,KIND=dp), REAL(j,KIND=dp), KIND=dp)
       end subroutine
-
+#endif
       end program
