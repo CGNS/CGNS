@@ -36,6 +36,7 @@ fi
 
 cgnsplot=""
 for d in $CG_LIB_DIR $dir $dir/cgnstools $dir/cgnsplot \
+         $dir/../share/cgnstools \
          /usr/local/share /usr/local/share/cgnstools ; do
   if test -f $d/cgnsplot.tcl ; then
     cgnsplot=$d/cgnsplot.tcl
