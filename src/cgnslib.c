@@ -6971,11 +6971,20 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
     cell_dim=cg->base[B-1].cell_dim;
 
      /* verify input */
-    size_of_zone = 1;
-    for (i=0; i<index_dim; i++) size_of_zone*=zone->nijk[i];
-    if (npnts<0 || npnts>size_of_zone) {
-        cgi_error("Inconsistent number of points in point set");
-        return CG_ERROR;
+    if (location == CGNS_ENUMV( Vertex )) {
+        size_of_zone = 1;
+        for (i=0; i<index_dim; i++) size_of_zone*=zone->nijk[i];
+        if (npnts<0 || npnts>size_of_zone) {
+            cgi_error("Inconsistent number of points in point set");
+            return CG_ERROR;
+        }
+    } else if (location == CGNS_ENUMV( CellCenter )) {
+        size_of_zone = 1;
+        for (i=0; i<index_dim; i++) size_of_zone*=zone->nijk[i+index_dim];
+        if (npnts<0 || npnts>size_of_zone) {
+            cgi_error("Inconsistent number of cells in cell set");
+            return CG_ERROR;
+        }
     }
 #if 0   /* causes problems when grid is unstructured */
     if (ptset_type==CGNS_ENUMV( PointRange )) {
