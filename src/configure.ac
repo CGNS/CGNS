@@ -219,6 +219,25 @@ AC_TYPE_SIZE_T
 test "$ac_cv_type_size_t" = "no" && \
   CFGFLAGS="$CFGFLAGS -Dsize_t=unsigned"
 
+AC_PROG_CC_C99
+AS_IF([test "$ac_cv_prog_cc_c99" = "no"],
+      [AC_MSG_WARN([libcgns requires a C99-compliant compiler])
+       AC_MSG_ERROR([Cannot continue])])
+AC_MSG_CHECKING([for Complex Gnu Extension])
+AC_LANG_PUSH(C)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <complex.h>
+    ]],[[
+    #if !defined(_MSC_VER)
+    float _Complex a[2];
+    __real__(a[1]) = (float) 1.0;
+    __imag__(a[1]) = (float) 0.0;
+    #endif
+]])],[ AC_MSG_RESULT([yes])
+       HAVE_COMPLEX_C99_EXT=1],
+     [ AC_MSG_RESULT([no])
+       HAVE_COMPLEX_C99_EXT=0])
+
 #--------------------------------------------------------------------------
 # installation program and directory
 #--------------------------------------------------------------------------
@@ -1910,6 +1929,7 @@ AC_SUBST(HDF5_HAVE_FILE_SPACE_STRATEGY)
 AC_SUBST(FC_D_PRE)
 AC_SUBST(BUILDPARALLEL)
 AC_SUBST(BUILDBASESCOPE)
+AC_SUBST(HAVE_COMPLEX_C99_EXT)
 
 AC_SUBST(CGNSTOOLS)
 AC_SUBST(CGLONGT)

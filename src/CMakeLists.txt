@@ -72,15 +72,35 @@ else (WIN32)
   set(LIBS -lm)
 endif (WIN32)
 
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+include(CheckCCompilerFlag)
+macro(check_and_add_compiler_option _option)
+  message(STATUS "Checking C compiler flag ${_option}")
+  string(REPLACE "=" "-" _temp_option_variable ${_option})
+  string(REGEX REPLACE "^-" "" _option_variable ${_temp_option_variable})
+  check_c_compiler_flag("${_option}" ${_option_variable})
+  if(${${_option_variable}})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${_option}")
+  endif()
+endmacro()
+if (CMAKE_C_COMPILER_ID MATCHES "GNU")
+  check_and_add_compiler_option("-std=gnu99")
+elseif (CMAKE_C_COMPILER_ID MATCHES "XL")
+  check_and_add_compiler_option("-qlanglvl=extc99")
+elseif(CMAKE_C_COMPILER_ID MATCHES "Sun")
+  check_and_add_compiler_option("-xc99")
+endif()
+
 string(COMPARE EQUAL ${CMAKE_BUILD_TYPE} Debug IS_DEBUG)
 if (IS_DEBUG)
   set(BUILDDEBUG 1)
-  set(CFLAGS ${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG})
-  set(LDFLAGS ${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_DEBUG})
+  set(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
+  set(LDFLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
 else (IS_DEBUG)
   set(BUILDDEBUG 0)
-  set(CFLAGS ${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_RELEASE})
-  set(LDFLAGS ${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_RELEASE})
+  set(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_RELEASE}")
+  set(LDFLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 endif (IS_DEBUG)
 
 set(BUILDHDF5 0)
@@ -103,6 +123,22 @@ set(HDF5_HAVE_COLL_METADATA 0)
 set(HDF5_HAVE_FILE_SPACE_STRATEGY 0)
 set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 set(HAVE_STAT64_STRUCT 0)
+set(HAVE_COMPLEX_C99_EXT 0)
+
+include(CheckCSourceCompiles)
+check_c_source_compiles("
+#include <complex.h>
+int main(int argc, char *argv[]){
+#if !defined(_MSC_VER)
+float _Complex a[2];
+__real__(a[1]) = (float) 1.0;
+__imag__(a[1]) = (float) 0.0;
+#endif
+return 0;
+}
+"
+  HAVE_COMPLEX_C99_EXT
+)
 
 if (BUILDFORTRAN)
 

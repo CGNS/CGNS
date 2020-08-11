@@ -23,17 +23,6 @@ freely, subject to the following restrictions:
 #include <string.h>
 #include <time.h>
 #include <sys/types.h>
-#include <complex.h>
-#undef I
-#if defined(_MSC_VER)
-#define cg_complex_float _Fcomplex
-#define cg_complex_double _Dcomplex
-#define __real__(c)  c._Val[0]
-#define __imag__(c)  c._Val[1]
-#else
-#define cg_complex_float float _Complex
-#define cg_complex_double double _Complex
-#endif
 
 #if !defined(_WIN32) || defined(__NUTC__)
 #include <unistd.h>
@@ -48,6 +37,20 @@ freely, subject to the following restrictions:
 #if CG_BUILD_HDF5
 #include "adfh/ADFH.h"
 #include "hdf5.h"
+#endif
+
+#if CG_BUILD_COMPLEX_C99_EXT
+#include <complex.h>
+#undef I
+#if defined(_MSC_VER)
+#define cg_complex_float _Fcomplex
+#define cg_complex_double _Dcomplex
+#define __real__(c)  c._Val[0]
+#define __imag__(c)  c._Val[1]
+#else
+#define cg_complex_float float _Complex
+#define cg_complex_double double _Complex
+#endif
 #endif
 
 #define CGNS_NAN(x)  (!((x) < HUGE_VAL && (x) > -HUGE_VAL))
@@ -5824,6 +5827,7 @@ int cgi_convert_data(cgsize_t cnt,
             ierr = 1;
         }
     }
+#if CG_BUILD_COMPLEX_C99_EXT
     else if (from_type == CGNS_ENUMV(ComplexSingle)) {
       const cg_complex_float *src = (const cg_complex_float *)from_data;
       /* X4 -> X4 */
@@ -5846,24 +5850,25 @@ int cgi_convert_data(cgsize_t cnt,
     }
     else if (from_type == CGNS_ENUMV(ComplexDouble)) {
       const cg_complex_double *src = (const cg_complex_double *)from_data;
+      /* X8 -> X8 */
+      if (to_type == CGNS_ENUMV(ComplexDouble)) {
+        cg_complex_double *dest = (cg_complex_double *)to_data;
+        for (n = 0; n < cnt; n++)
+          dest[n] = src[n];
+      }
       /* X8 -> X4 */
-      if (to_type == CGNS_ENUMV(ComplexSingle)) {
+      else if (to_type == CGNS_ENUMV(ComplexSingle)) {
         cg_complex_float *dest = (cg_complex_float *)to_data;
         for (n = 0; n < cnt; n++) {
           __real__(dest[n]) = (float)creal(src[n]);
           __imag__(dest[n]) = (float)cimag(src[n]);
         }
       }
-      /* X8 -> X8 */
-      else if (to_type == CGNS_ENUMV(ComplexDouble)) {
-        cg_complex_double *dest = (cg_complex_double *)to_data;
-        for (n = 0; n < cnt; n++)
-          dest[n] = src[n];
-      }
       else {
         ierr = 1;
       }
     }
+#endif
     else {
         ierr = 1;
     }

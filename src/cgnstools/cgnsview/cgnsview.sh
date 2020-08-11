@@ -39,6 +39,7 @@ fi
 
 cgnsview=""
 for d in $CG_LIB_DIR $dir $dir/cgnstools $dir/cgnsview \
+         $dir/../share/cgnstools \
          /usr/local/share /usr/local/share/cgnstools ; do
   if test -f $d/cgnsview.tcl ; then
     cgnsview=$d/cgnsview.tcl

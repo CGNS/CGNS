@@ -969,6 +969,7 @@ echo #define CG_BUILD_SCOPE  %doscope% >> cgnstypes.h
 echo #define CG_BUILD_HDF5   %buildhdf5% >> cgnstypes.h
 echo #define CG_BUILD_BASESCOPE  %dobasescope% >> cgnstypes.h
 echo #define CG_BUILD_PARALLEL   %doparallel% >> cgnstypes.h
+echo #define CG_BUILD_COMPLEX_C99_EXT 1 >> cgnstypes.h
 echo.>> cgnstypes.h
 echo #define CG_MAX_INT32 0x7FFFFFFF>> cgnstypes.h
 echo #ifdef _WIN32>> cgnstypes.h
