@@ -46,9 +46,18 @@ environment:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
     HDF5_VER: *1_10
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
+  - build_opt: -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON
+    HDF5_VER: *1_10
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
     HDF5_VER: *1_12
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
+  - build_opt: -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON
+    HDF5_VER: *1_12
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
+
+
+
 
 # scripts that are called at very beginning, before repo cloning
 init:
@@ -72,8 +81,8 @@ install:
   - mkdir 1.8
   - cd 1.8
   - set HDF5_1_8_VER=%HDF5_1_8_VER%
-  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.21/bin/hdf5-%HDF5_1_8_VER%-Std-win10_64-vs15.zip
-  - ps: Expand-Archive hdf5-$($env:HDF5_1_8_VER)-Std-win10_64-vs15.zip -DestinationPath .
+  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.21/bin/hdf5-%HDF5_1_8_VER%-Std-win10_64-vs14.zip
+  - ps: Expand-Archive hdf5-$($env:HDF5_1_8_VER)-Std-win10_64-vs14.zip -DestinationPath .
   - cd hdf
   - msiexec /i HDF5-%HDF5_1_8_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
@@ -81,17 +90,17 @@ install:
   - mkdir 1.10
   - cd 1.10
   - set HDF5_1_10=%HDF5_1_10_VER%
-  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10.6/bin/hdf5-%HDF5_1_10_VER%-Std-win10_64-vs15.zip
-  - ps: Expand-Archive hdf5-$($env:HDF5_1_10_VER)-Std-win10_64-vs15.zip -DestinationPath .
-  - cd hdf
+  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.6/bin/hdf5-%HDF5_1_10_VER%-Std-win10_64-vs16.zip
+  - ps: Expand-Archive hdf5-$($env:HDF5_1_10_VER)-Std-win10_64-vs16.zip -DestinationPath .
+  - cd hdf5
   - msiexec /i HDF5-%HDF5_1_10_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
   - mkdir 1.12
   - cd 1.12
   - set HDF5_1_12=%HDF5_1_12_VER%
-  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12.0/bin/hdf5-%HDF5_1_12_VER%-Std-win10_64-vs15.zip
-  - ps: Expand-Archive hdf5-$($env:HDF5_1_12_VER)-Std-win10_64-vs15.zip -DestinationPath .
+  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.0/bin/hdf5-%HDF5_1_12_VER%-Std-win10_64-vs16.zip
+  - ps: Expand-Archive hdf5-$($env:HDF5_1_12_VER)-Std-win10_64-vs16.zip -DestinationPath .
   - cd hdf
   - msiexec /i HDF5-%HDF5_1_12_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
@@ -120,7 +129,7 @@ before_build:
   - cd c:\projects\CGNS_BUILD
   - cmake --version
   - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
-  - cmake -G "Visual Studio 15 Win64" ^
+  - cmake -G "Visual Studio 16 Win64" ^
      %build_opt% ^
      -D CMAKE_C_FLAGS:STRING="" ^
      -D CMAKE_BUILD_TYPE:STRING=Release ^
