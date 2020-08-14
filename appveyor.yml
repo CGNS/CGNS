@@ -148,4 +148,9 @@ build_script:
   - cmd: cmake --build . --config "%configuration%"
 
 test_script:
+  - cmd: set PATH=C:\projects\CGNS_BUILD\src\%configuration%;%PATH%
+  - cmd: set PATH=C:\Program Files\HDF_Group\HDF5\%HDF5_VER%\bin;%PATH%
   - cmd: ctest .
+
+after_test:
+  - cmd: cmake --install . --config "%configuration%"
