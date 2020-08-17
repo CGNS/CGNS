@@ -13,6 +13,7 @@ version: 4.2.{build}
 
 image:
   - Visual Studio 2019
+  - Visual Studio 2017
 
 # branches to build
 branches:
@@ -30,7 +31,6 @@ skip_tags: true
 #---------------------------------#
 #    environment configuration    #
 #---------------------------------#
-
 environment:
   global:
     1_8: &1_8 1.8.21
@@ -40,6 +40,10 @@ environment:
     HDF5_1_10_VER: *1_10
     HDF5_1_12_VER: *1_12
   matrix:
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+    VS_VER: "16 2019"
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    VS_VER: "15 2017"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
     HDF5_VER: *1_8
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
@@ -55,9 +59,6 @@ environment:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON
     HDF5_VER: *1_12
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
-
-
-
 
 # scripts that are called at very beginning, before repo cloning
 init:
@@ -129,7 +130,7 @@ before_build:
   - cd c:\projects\CGNS_BUILD
   - cmake --version
   - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
-  - cmake -G "Visual Studio 16 2019" ^
+  - cmake -G "Visual Studio %VS_VER%" ^
      %build_opt% ^
      -D CMAKE_C_FLAGS:STRING="" ^
      -D CMAKE_BUILD_TYPE:STRING=Release ^
