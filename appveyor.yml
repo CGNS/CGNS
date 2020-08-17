@@ -41,9 +41,9 @@ environment:
     HDF5_1_12_VER: *1_12
   matrix:
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-    VS_VER: "16 2019"
+    VS_VER: "Visual Studio 16 2019"
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-    VS_VER: "15 2017"
+    VS_VER: "Visual Studio 15 2017"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
     HDF5_VER: *1_8
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
@@ -130,7 +130,7 @@ before_build:
   - cd c:\projects\CGNS_BUILD
   - cmake --version
   - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
-  - cmake -G "Visual Studio %VS_VER%" ^
+  - cmake -G "%VS_VER%" ^
      %build_opt% ^
      -D CMAKE_C_FLAGS:STRING="" ^
      -D CMAKE_BUILD_TYPE:STRING=Release ^
