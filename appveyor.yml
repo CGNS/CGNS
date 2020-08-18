@@ -13,9 +13,9 @@
 version: 4.2.{build}
 
 image:
-  - Visual Studio 2019
   - Visual Studio 2017
-
+  - Visual Studio 2019
+  
 # branches to build
 branches:
   # whitelist
@@ -70,7 +70,7 @@ for:
     only:
       - image: Visual Studio 2017
   environment:
-      GENERATOR: "Visual Studio 15 2017 Win64"
+      GENERATOR: "Visual Studio 15 2017"
       ARCH: "x64"
 
 # scripts that are called at very beginning, before repo cloning
