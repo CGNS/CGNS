@@ -14,6 +14,7 @@ version: 4.2.{build}
 
 image:
   - Visual Studio 2019
+  - Visual Studio 2017
 
 # branches to build
 branches:
@@ -40,12 +41,6 @@ environment:
     HDF5_1_10_VER: *1_10
     HDF5_1_12_VER: *1_12
   matrix:
-  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-    GENERATOR: "Visual Studio 16 2019"
-    ARCH: "x64"
-##  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-##    GENERATOR: "Visual Studio 15 2017"
-##    ARCH: "x64"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
     HDF5_VER: *1_8
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
@@ -61,6 +56,20 @@ environment:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON
     HDF5_VER: *1_12
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
+
+for:
+  -
+  matrix:
+    only:
+      - image: Visual Studio 2019
+        GENERATOR: "Visual Studio 16 2019"
+        ARCH: "x64"
+  -
+  matrix:
+    only:
+      - image: Visual Studio 2017
+        GENERATOR: "Visual Studio 15 2017 Win64"
+        ARCH: "x64"
 
 # scripts that are called at very beginning, before repo cloning
 init:
