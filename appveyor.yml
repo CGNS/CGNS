@@ -58,16 +58,20 @@ environment:
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
 
 for:
-  - matrix:
+-
+  matrix:
     only:
       - image: Visual Studio 2019
-        GENERATOR: "Visual Studio 16 2019"
-        ARCH: "x64"
-  - matrix:
+  environment:
+      GENERATOR: "Visual Studio 16 2019"
+      ARCH: "x64"
+-
+  matrix:
     only:
       - image: Visual Studio 2017
-        GENERATOR: "Visual Studio 15 2017 Win64"
-        ARCH: "x64"
+  environment:
+      GENERATOR: "Visual Studio 15 2017 Win64"
+      ARCH: "x64"
 
 # scripts that are called at very beginning, before repo cloning
 init:
