@@ -1292,7 +1292,6 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                             CGNS_FREE(elem_offset);
                             elem_offset = 0;
                         }
-                        printf("Debug convert\n");
                     }
                 }
 
