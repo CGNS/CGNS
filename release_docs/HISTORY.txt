@@ -1,3 +1,85 @@
+CGNS version 4.1.2 (patch)
+=================================
+
+INTRODUCTION
+------------
+
+This document describes the difference between CGNS 4.1.2 and
+CGNS 4.1.2, and contains information on known problems in
+CGNS 4.1.2.
+
+Links to the CGNS current released source code can be found at:
+
+http://cgns.org/download.html
+
+User documentation for the current release can be found at:
+
+http://cgns.org/CGNS_docs_current/midlevel/index.html
+
+For more information, see the CGNS home page:
+
+http://cgns.org
+
+CONTENTS
+--------
+
+- New Features
+- Support for new platforms and languages
+- Bug Fixes since CGNS 4.1.1
+- Known Problems
+
+New Features
+============
+
+    Configuration:
+    -------------
+
+    Library:
+    --------
+
+    Parallel Library:
+    -----------------
+
+    Fortran Library:
+    ----------------
+
+    Tools:
+    ------
+
+Bug Fixes since CGNS 4.1.1 release
+==================================
+
+    Library:
+    -------
+
+      * (CGNS-214) Fixed the Compatibility issue between v3.4.0 and v4.1.1
+
+      * (CGNS-219) Change a wrong check in cg_poly_element_read to load
+                   older CGNS file section with CGNS 4.x API
+
+    Fortran:
+    --------
+
+    Configuration:
+    -------------
+
+    Tools:
+    ------
+
+Known Problems
+==============
+
+    ************ CGNSVIEW ************
+    
+    * cgnsview for OSX is not viewing properly, and cgnsview under Windows 
+    * may fail to compile due to tcl/tk incompatibility. 
+    
+    **********************************
+
+    * For other issues, See https://cgnsorg.atlassian.net
+
+
+
 CGNS version 4.1.1 (patch)
 =================================
 

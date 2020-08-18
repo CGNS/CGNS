@@ -1,12 +1,12 @@
-CGNS version 4.1.1 (patch)
+CGNS version 4.1.2 (patch)
 =================================
 
 INTRODUCTION
 ------------
 
-This document describes the difference between CGNS 4.1.1 and
-CGNS 4.1.1, and contains information on known problems in
-CGNS 4.1.1.
+This document describes the difference between CGNS 4.1.2 and
+CGNS 4.1.2, and contains information on known problems in
+CGNS 4.1.2.
 
 Links to the CGNS current released source code can be found at:
 
@@ -25,7 +25,7 @@ CONTENTS
 
 - New Features
 - Support for new platforms and languages
-- Bug Fixes since CGNS 4.1.0
+- Bug Fixes since CGNS 4.1.1
 - Known Problems
 
 New Features
@@ -46,20 +46,16 @@ New Features
     Tools:
     ------
 
-Bug Fixes since CGNS 4.1.0 release
+Bug Fixes since CGNS 4.1.1 release
 ==================================
 
     Library:
     -------
 
-      * (CGNS-196) Fixed the compilation of cgnstools, which still made 
-        use the Removed APIs in 4.1.0: 
+      * (CGNS-214) Fixed the Compatibility issue between v3.4.0 and v4.1.1
 
-        cgio_read_all_data, cgio_read_data, cgio_read_block_data
-        cgio_read_all_data_f, cgio_read_data_f, cgio_read_block_data_f
-
-      * Updated CMake's detection of tcl/tk and opengl
-      * (CGNS-197) Added CI testing cgnstools
+      * (CGNS-219) Change a wrong check in cg_poly_element_read to load
+                   older CGNS file section with CGNS 4.x API
 
     Fortran:
     --------
