@@ -2167,6 +2167,8 @@ void ADFH_Database_Open(const char   *name,
     set_error(TOO_MANY_ADF_FILES_OPENED, err);
     return;
   }
+	
+  g_propfileopen = H5Pcreate(H5P_FILE_ACCESS);
 
   /* Patch from Manuel Gageik on IBM BLUEgene/Q systems for better cgp_open performance. */
 #ifdef JFC_PATCH_2015_2
@@ -2195,7 +2197,6 @@ void ADFH_Database_Open(const char   *name,
 
 #endif
 
-  g_propfileopen = H5Pcreate(H5P_FILE_ACCESS);
 #ifdef ADFH_H5F_CLOSE_STRONG
   /* set access property to close all open accesses when file closed */
   H5Pset_fclose_degree(g_propfileopen, H5F_CLOSE_STRONG);
