@@ -281,6 +281,8 @@ static herr_t find_by_name(hid_t, const char *, const H5A_info_t*, void *);
 #define has_child(ID,NAME) H5Literate_by_name(ID, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, gfind_by_name, (void *)NAME, H5P_DEFAULT)
 #define has_data(ID)       H5Literate_by_name(ID, ".", H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, NULL, gfind_by_name, (void *)D_DATA, H5P_DEFAULT)
 #endif
+#define child_exists(ID,NAME) H5Lexists(ID, NAME, H5P_DEFAULT) 
+#define data_exists(ID) H5Lexists(ID, D_DATA, H5P_DEFAULT)
 
 #define has_att(ID,NAME)   H5Aiterate2(ID,H5_INDEX_NAME,H5_ITER_NATIVE,NULL,find_by_name,(void *)NAME)
 
@@ -1610,7 +1612,7 @@ void ADFH_Put_Name(const double  pid,
     set_error(ADFH_ERR_LINK_DATA, err);
     return;
   }
-  if (has_child(hpid, nname)) {
+  if (child_exists(hpid, nname)) {
     set_error(DUPLICATE_CHILD_NAME, err);
     return;
   }
@@ -1711,7 +1713,7 @@ void ADFH_Create(const double  pid,
     return;
   }
   */
-  if (has_child(hpid, pname)) {
+  if (child_exists(hpid, pname)) {
     set_error(DUPLICATE_CHILD_NAME, err);
     return;
   }
@@ -2319,7 +2321,7 @@ void ADFH_Database_Open(const char   *name,
     }
     gid = H5Gopen2(fid, "/", H5P_DEFAULT);
 #ifdef ADFH_FORTRAN_INDEXING
-    if (mode != ADFH_MODE_RDO && has_child(gid, D_OLDVERS)) {
+    if (mode != ADFH_MODE_RDO && child_exists(gid, D_OLDVERS)) {
 #if H5_VERSION_GE(1,12,0)
       H5Literate_by_name2(gid, ".", H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, fix_dimensions, NULL, H5P_DEFAULT);
 #else
@@ -2600,7 +2602,7 @@ void ADFH_Is_Link(const double  id,
     H5Dclose(did);
     *link_path_length = (int)size;
 
-    if (has_child(hid, D_FILE)) {
+    if (child_exists(hid, D_FILE)) {
       did = H5Dopen2(hid, D_FILE, H5P_DEFAULT);
       ADFH_CHECK_HID(did);
       sid = H5Dget_space(did);
@@ -2640,7 +2642,7 @@ void ADFH_Link_Size(const double  id,
     H5Dclose(did);
     *name_len = (int)size;
 
-    if (has_child(hid, D_FILE)) {
+    if (child_exists(hid, D_FILE)) {
       did = H5Dopen2(hid, D_FILE, H5P_DEFAULT);
       sid = H5Dget_space(did);
       size = H5Sget_simple_extent_npoints(sid);
@@ -2810,7 +2812,7 @@ void ADFH_Put_Dimension_Information(const double   id,
   new_type[2] = 0;
 
   if (0 == strcmp(new_type, ADFH_MT)) {
-    if (has_data(hid))
+    if (data_exists(hid))
       H5Ldelete(hid, D_DATA, H5P_DEFAULT);
     set_str_att(hid, A_TYPE, new_type, err);
     return;
@@ -2840,7 +2842,7 @@ void ADFH_Put_Dimension_Information(const double   id,
    * in these rare cases.
    */
 
-  if(has_data(hid)) {
+  if(data_exists(hid)) {
     ADFH_DEBUG(("ADFH_Put_Dimension_Information unlink [%d]",hid));
     H5Ldelete(hid, D_DATA, H5P_DEFAULT);
   }
@@ -2943,7 +2945,7 @@ void ADFH_Get_Link_Path(const double  id,
   H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, link_path);
   H5Dclose(did);
 
-  if (has_child(hid, D_FILE)) {
+  if (child_exists(hid, D_FILE)) {
     did = H5Dopen2(hid, D_FILE, H5P_DEFAULT);
     ADFH_CHECK_HID(did);
     H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, filename);
@@ -3217,7 +3219,7 @@ void ADFH_Read_Block_Data(const double ID,
   }
   if ((hid = open_node(ID, err)) < 0) return;
 
-  if (!has_data(hid)) {
+  if (!data_exists(hid)) {
     H5Gclose(hid);
     set_error(NO_DATA, err);
     return;
@@ -3320,7 +3322,7 @@ void ADFH_Read_Data(const double ID,
 
   if ((hid = open_node(ID, err)) < 0) return;
 
-  if (!has_data(hid)) {
+  if (!data_exists(hid)) {
     H5Gclose(hid);
     set_error(NO_DATA, err);
     return;
@@ -3485,7 +3487,7 @@ void ADFH_Read_All_Data(const double  id,
 
   if ((hid = open_node(id, err)) < 0) return;
 
-  if (has_data(hid)) {
+  if (data_exists(hid)) {
     did = H5Dopen2(hid, D_DATA, H5P_DEFAULT);
     ADFH_CHECK_HID(did);
     if (m_data_type) {
@@ -3554,7 +3556,7 @@ void ADFH_Write_Block_Data(const double ID,
     set_error(ADFH_ERR_LINK_DATA, err);
     return;
   }
-  if (!has_data(hid)) {
+  if (!data_exists(hid)) {
     set_error(NO_DATA, err);
     return;
   }
@@ -3661,7 +3663,7 @@ void ADFH_Write_Data(const double ID,
     set_error(ADFH_ERR_LINK_DATA, err);
     return;
   }
-  if (!has_data(hid)) {
+  if (!data_exists(hid)) {
     set_error(NO_DATA, err);
     return;
   }
@@ -3831,7 +3833,7 @@ void ADFH_Write_All_Data(const double  id,
     set_error(ADFH_ERR_LINK_DATA, err);
     return;
   }
-  if (has_data(hid)) {
+  if (data_exists(hid)) {
     ADFH_CHECK_HID(hid);
     did = H5Dopen2(hid, D_DATA, H5P_DEFAULT);
     ADFH_CHECK_HID(did);
