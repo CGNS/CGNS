@@ -216,7 +216,6 @@ if (CGNS_ENABLE_HDF5)
   find_package (HDF5 NAMES ${SEARCH_PACKAGE_NAME} COMPONENTS ${FIND_HDF_COMPONENTS})
   message (STATUS "HDF5 C libs:${HDF5_FOUND} static:${HDF5_static_C_FOUND} and shared:${HDF5_shared_C_FOUND}")
   if (HDF5_FOUND)
-    add_executable (h5dump IMPORTED)
     if (NOT HDF5_static_C_FOUND AND NOT HDF5_shared_C_FOUND)
       set (FIND_HDF_COMPONENTS C)
 
