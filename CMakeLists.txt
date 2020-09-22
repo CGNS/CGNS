@@ -217,7 +217,7 @@ if (CGNS_ENABLE_HDF5)
   message (STATUS "HDF5 C libs:${HDF5_FOUND} static:${HDF5_static_C_FOUND} and shared:${HDF5_shared_C_FOUND}")
   if (HDF5_FOUND)
     # If the HDF5 config file is found, then h5dump already defined...
-    if (NOT HDF5_CONFIG)
+    if (WIN32)
        add_executable (h5dump IMPORTED)
     endif()
 
