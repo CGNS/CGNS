@@ -3145,7 +3145,7 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
 
      /* verify dimension vector */
     if (!(ndim==2 && dim_vals[0]>0 && dim_vals[1]>0)) {
-        cgi_error("Invalid definition of point set:  ptset->type='%s', ndim=%d, dim_vals[0]=%d",
+        cgi_error("Invalid definition of point set:  ptset->type='%s', ndim=%d, dim_vals[0]=%ld",
             PointSetTypeName[ptset->type], ndim, dim_vals[0]);
         return CG_ERROR;
     }
@@ -8158,8 +8158,8 @@ int cgi_array_general_verify_range(
      /* both the file hyperslab and memory hyperslab must have same number of
       * points */
     if (s_numpt != m_numpt) {
-        cgi_error("Number of locations in range of memory array (%d) do not "
-                  "match number of locations requested in range of file (%d)",
+        cgi_error("Number of locations in range of memory array (%ld) do not "
+                  "match number of locations requested in range of file (%ld)",
                   m_numpt, s_numpt);
         return CG_ERROR;
     }
