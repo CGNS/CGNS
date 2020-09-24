@@ -24,8 +24,8 @@ before_install:
       fi
     - test $(uname) = "Darwin" && brew update || true
     - test $(uname) = "Darwin" && brew tap homebrew/versions || true
-    - test $(uname) = "Darwin" && brew install gcc@6 || true
-    - test $(uname) = "Darwin" && brew link --overwrite gcc@6 || true
+    - test $(uname) = "Darwin" && brew install gcc@8 || true
+    - test $(uname) = "Darwin" && brew link --overwrite gcc@8 || true
 
 matrix:
    include:
@@ -34,7 +34,7 @@ matrix:
        install: export CC="mpicc" export FC="mpif90" export F77="mpif90"
      - os: osx
        compiler: gcc
-       install: export CC="gcc" export FC="gfortran-6" export F77="gfortran-6"
+       install: export CC="gcc" export FC="gfortran-8" export F77="gfortran-8"
 
 before_script:
     - ./bin/install-hdf.sh
