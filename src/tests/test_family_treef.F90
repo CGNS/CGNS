@@ -6,6 +6,7 @@
       USE CGNS
       implicit none
 
+      INTEGER, PARAMETER :: sp = KIND(1.0)
       integer, parameter :: NUM_SIDE = 5
 
       integer(cgsize_t) :: sizes(9)
@@ -13,19 +14,19 @@
       integer(cgsize_t) :: npts
       integer :: celldim, physdim
 
-      real*4, dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: xcoord
-      real*4, dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: ycoord
-      real*4, dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: zcoord
+      real(kind=sp), dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: xcoord
+      real(kind=sp), dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: ycoord
+      real(kind=sp), dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: zcoord
 
       integer :: ierr
       integer :: i, j, k, n, nfam, nb, ng, nnames
       integer :: cgfile, cgbase, cgtree, cgzone, cgfam, cgcoord
       integer :: cgbc, cgsr
 
-      real*4, dimension(5) :: exponents
-      character*32 outfile
-      character*32 name
-      character*32 tname
+      real(kind=sp), dimension(5) :: exponents
+      character(len=32) outfile
+      character(len=32) name
+      character(len=32) tname
       character(len=20*33) :: family_name
       character(len=20*33) :: tfamily_name
 
@@ -91,6 +92,10 @@
       call cg_goto_f(cgfile, cgbase, ierr, "Zone_t", cgzone, &
      &       "GridCoordinates_t", 1, &
      &       "CoordinateX", 0, 'end')
+      if (ierr .ne. CG_OK) call cg_error_exit_f
+      call cg_gopath_f(cgfile,                                  &
+     &    "/Structured/Zone/GridCoordinates/CoordinateX", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_exponents_write_f(RealSingle, exponents, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_gopath_f(cgfile, "../CoordinateY", ierr)
@@ -149,12 +154,17 @@
 
 ! NODE BASED FAMILY NODE CREATION
 
-      call cg_goto_f( cgfile, cgtree, ierr, "Family2", 0, 'end')
+      call cg_gopath_f( cgfile, "/FamilyTree/Family2", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_node_family_write_f( "Family2.1", cgfam, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
+      call cg_goto_f( cgfile, cgtree, ierr, "Family2", 0, &
+     &               "Family2.1", 0, 'end')
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_gopath_f(cgfile, &
      &        "/FamilyTree/Family1/Family1.2/Family1.2.1", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_node_family_write_f( "Family1.2.1.1", cgfam, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
@@ -164,8 +174,8 @@
       call cg_node_nfamilies_f( nfam , ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       
-      call cg_goto_f( cgfile, cgtree, ierr, "Family2", 0, &
-     &               "Family2.1", 0, 'end')
+      call cg_gopath_f( cgfile, "/FamilyTree/Family2/Family2.1", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_node_family_write_f( "Family2.1.1", cgfam, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f      
 
@@ -186,14 +196,19 @@
      &                  "/FamilyTree/Family4/Family4.3", cgfam, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-
-      call cg_goto_f(cgfile, cgtree, ierr, 'end')
+      CALL cg_goto_f(cgfile, cgtree, ierr, 'end')
+      if (ierr .ne. CG_OK) call cg_error_exit_f
+      call cg_gopath_f(cgfile, "/FamilyTree", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_node_family_write_f( "FamilyN", cgfam, ierr) 
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
 !  FAMILY (TREE) NAME CREATION
 
       call cg_goto_f(cgfile, cgbase, ierr, "Zone", 0, 'end')
+      if (ierr .ne. CG_OK) call cg_error_exit_f
+      call cg_gopath_f(cgfile, "/Structured/Zone", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_famname_write_f("/FamilyTree/Family1", ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       do j=1,3
@@ -214,6 +229,9 @@
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_goto_f(cgfile, cgbase, ierr, "Zone", 0, "ZoneBC", 0, &
      &               "Inflow", 0,'end')
+      if (ierr .ne. CG_OK) call cg_error_exit_f
+      call cg_gopath_f(cgfile, "/Structured/Zone/ZoneBC/Inflow", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
 
       call cg_famname_write_f("/FamilyTree/Family2", ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
@@ -228,7 +246,11 @@
       call cg_subreg_bcname_write_f(cgfile, cgbase, cgzone, "SubRegion", &
      &       2, "Inflow", cgsr, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
+
       call cg_goto_f(cgfile, cgbase, ierr, "Zone", 0, "SubRegion", 0, 'end')
+      if (ierr .ne. CG_OK) call cg_error_exit_f
+      call cg_gopath_f(cgfile, "/Structured/Zone/SubRegion", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_famname_write_f("/FamilyTree/Family3", ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f     
       do j = 1,3
@@ -238,12 +260,14 @@
          if (ierr .ne. CG_OK) call cg_error_exit_f
       enddo
 
-      call cg_goto_f(cgfile, cgbase, ierr, "Zone", 0, 'end')
+      call cg_gopath_f(cgfile, "/Structured/Zone", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_user_data_write_f("UserData", ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_user_data_write_f("UserData2", ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_goto_f(cgfile, cgbase, ierr, "Zone", 0, "UserData", 0, 'end')
+      call cg_gopath_f(cgfile, "./UserData", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_famname_write_f("/FamilyTree/Family4", ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       do j = 1,3
@@ -300,9 +324,11 @@
 
 !  FAMILY NODE DELETION
 
-      call cg_goto_f(cgfile, cgtree, ierr, "Family1", 0, "Family1.2",0, "Family1.2.1",0, 'end')
+      call cg_gopath_f(cgfile,"/FamilyTree/Family1/Family1.2/Family1.2.1", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
 
       call cg_gopath_f(cgfile, "/FamilyTree/Family1/Family1.2/Family1.2.1", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
 
       call cg_delete_node_f("Family1.2.1.1", ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
@@ -312,6 +338,7 @@
       if (nfam .ne. 1) stop
 
       call cg_gopath_f(cgfile, "/FamilyTree/Family4", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_delete_node_f("Family4.2", ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
@@ -321,6 +348,7 @@
 
 !  FAMILY NODE OVERWRITING
       call cg_gopath_f( cgfile, "/FamilyTree/Family1/Family1.2/Family1.2.1", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_node_family_write_f( "Family1.2.1.2", cgfam, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f 
       call cg_node_nfamilies_f(nfam, ierr)
@@ -328,6 +356,7 @@
       if (nfam .ne. 1) stop 
 
       call cg_gopath_f( cgfile, "/FamilyTree/Family1/Family1.1", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_node_nfamilies_f( nfam, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       if (nfam .ne. 1) stop 
@@ -372,6 +401,7 @@
       enddo
  
       call cg_gopath_f( cgfile, "/Structured/Zone/UserData", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
 
       call cg_nmultifam_f( nnames, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
@@ -379,6 +409,7 @@
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
       call cg_gopath_f(cgfile, "/Structured/Zone/UserData2", ierr)
+      if (ierr .ne. CG_OK) call cg_error_exit_f
 
       call cg_nmultifam_f( nnames, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f

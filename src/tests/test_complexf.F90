@@ -3,8 +3,10 @@
       include 'cgnswin_f.h'
 #endif
       USE CGNS
-      implicit none
+      IMPLICIT NONE
 #if CG_BUILD_COMPLEX_C99_EXT
+      INTEGER, PARAMETER :: dp = KIND(1.d0)
+      
       integer, parameter :: celldim = 3, physdim = 3
       integer(cgsize_t), parameter :: size(3,3) = &
      &  reshape((/5,5,5, 4,4,4, 0,0,0 /), (/3, 3/))
@@ -25,8 +27,8 @@
       integer(cgsize_t) :: rmin(3), rmax(3)
       integer(cgsize_t) :: m_rmin(3), m_rmax(3)
 
-      real*8, dimension(NUM_I, NUM_J, NUM_K) :: xcoord, ycoord, zcoord
-      complex*16, dimension(NUM_I, NUM_J, NUM_K) :: solution, fbuf
+      REAL(KIND=dp), DIMENSION(NUM_I, NUM_J, NUM_K) :: xcoord, ycoord, zcoord
+      COMPLEX(KIND=dp), DIMENSION(NUM_I, NUM_J, NUM_K) :: solution, fbuf
 
       character*32 coordname(3)
       character*32 fieldname
@@ -174,7 +176,7 @@
       end subroutine
 
       subroutine compute_sol()
-      solution(i, j, k) = CMPLX(REAL(i,8), REAL(j,8), 8)
+      solution(i, j, k) = CMPLX(REAL(i,KIND=dp), REAL(j,KIND=dp), KIND=dp)
       end subroutine
 #endif
       end program
