@@ -857,7 +857,7 @@ int cgi_read_zcoor(int in_link, double parent_id, int *nzcoor, cgns_zcoor **zcoo
                 }
                 if (strcmp(zcoor[0][g].coord[z].data_type,"R4") &&
                     strcmp(zcoor[0][g].coord[z].data_type,"R8")) {
-                    cgi_error("Datatype %d not supported for coordinates",zcoor[0][g].coord[z].data_type);
+                    cgi_error("Datatype %s not supported for coordinates",zcoor[0][g].coord[z].data_type);
                     return CG_ERROR;
                 }
             }
@@ -1571,7 +1571,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                     strcmp(sol[0][s].field[z].data_type,"R8") &&
                     strcmp(sol[0][s].field[z].data_type,"X4") &&
                     strcmp(sol[0][s].field[z].data_type,"X8")) {
-                    cgi_error("Datatype %d not supported for flow solutions",sol[0][s].field[z].data_type);
+                    cgi_error("Datatype %s not supported for flow solutions",sol[0][s].field[z].data_type);
                     return CG_ERROR;
                 }
             }
@@ -4065,7 +4065,7 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                     strcmp(discrete[0][n].array[i].data_type,"I8") &&
                     strcmp(discrete[0][n].array[i].data_type,"R4") &&
                     strcmp(discrete[0][n].array[i].data_type,"R8")) {
-                    cgi_error("Datatype %d not supported for Discrete Data",discrete[0][n].array[i].data_type);
+                    cgi_error("Datatype %s not supported for Discrete Data",discrete[0][n].array[i].data_type);
                     return CG_ERROR;
                 }
             }
@@ -4310,7 +4310,7 @@ int cgi_read_amotion(int in_link, double parent_id, int *namotions,
                 }
                 if (strcmp(amotion[0][n].array[i].data_type,"R4") &&
                     strcmp(amotion[0][n].array[i].data_type,"R8") ) {
-                    cgi_error("Datatype %d not supported for ArbitraryGridMotion array",amotion[0][n].array[i].data_type);
+                    cgi_error("Datatype %s not supported for ArbitraryGridMotion array",amotion[0][n].array[i].data_type);
                     return CG_ERROR;
                 }
             }
