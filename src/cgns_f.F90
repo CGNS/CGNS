@@ -1377,7 +1377,8 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_discrete_ptset_read_f
 
-     SUBROUTINE cg_discrete_ptset_write_f( fn, B, Z, name, location, ptype, npnts, pnts, D, ier) !BIND(C, NAME="cg_discrete_ptset_write_f")
+     SUBROUTINE cg_discrete_ptset_write_f( fn, B, Z, name, location, ptype, &
+          npnts, pnts, D, ier) !BIND(C, NAME="cg_discrete_ptset_write_f")
        IMPORT :: CGSIZE_T, cgenum_t, c_char
        IMPLICIT NONE
        INTEGER :: fn
@@ -1518,7 +1519,8 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_nsections_f
 
-     SUBROUTINE cg_section_read_f(fn, B, Z, E, section_name, TYPE, start, END, nbndry, parent_flag, ier) !BIND(C, NAME="cg_section_read_f")
+     SUBROUTINE cg_section_read_f(fn, B, Z, E, section_name, TYPE, start, END, nbndry, &
+          parent_flag, ier) !BIND(C, NAME="cg_section_read_f")
        IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
@@ -1597,7 +1599,8 @@ MODULE cgns
 !!$       INTEGER, INTENT(OUT) :: ier
 !!$     END SUBROUTINE cg_parent_data_write_f
 !!$
-     SUBROUTINE cg_section_partial_write_f( fn, B, Z, section_name, TYPE, start, END, nbndry, S, ier) !BIND(C, NAME="cg_section_partial_write_f")
+     SUBROUTINE cg_section_partial_write_f( fn, B, Z, section_name, TYPE, start, END, &
+          nbndry, S, ier) !BIND(C, NAME="cg_section_partial_write_f")
        IMPORT :: c_char, CGSIZE_T, cgenum_t
        IMPLICIT NONE
        INTEGER :: fn
@@ -1896,7 +1899,8 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_subreg_gcname_read_f
 
-     SUBROUTINE cg_subreg_ptset_write_f(fn, B, Z, regname, DIMENSION, location, ptset_type, npnts, pnts, S, ier) !BIND(C, NAME="cg_subreg_ptset_write_f")
+     SUBROUTINE cg_subreg_ptset_write_f(fn, B, Z, regname, DIMENSION, location, ptset_type, npnts, &
+          pnts, S, ier) !BIND(C, NAME="cg_subreg_ptset_write_f")
        IMPORT :: cgenum_t, c_char, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
@@ -2041,7 +2045,8 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_hole_id_f
 
-     SUBROUTINE cg_hole_write_f(fn, B, Z, holename, location, ptset_type, nptsets, npnts, pnts, I, ier) !BIND(C, NAME="cg_hole_write_f")
+     SUBROUTINE cg_hole_write_f(fn, B, Z, holename, location, ptset_type, nptsets, npnts, &
+          pnts, I, ier) !BIND(C, NAME="cg_hole_write_f")
        IMPORT :: c_char, cgenum_t, CGSIZE_T
        IMPLICIT NONE
        INTEGER :: fn
@@ -2907,17 +2912,36 @@ MODULE cgns
   !      Go - To Function                                                 *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-!!$   !!$           SUBROUTINE cg_goto_f, CG_GOTO_F)(cgint_f *fn, cgint_f *B, ier, ...)
-!!$cgint_f *fn, cgint_f *B, ier, ...)
+     SUBROUTINE cg_goto_f1(fn, B, ier, name1, index1)
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER :: B
+       INTEGER, INTENT(OUT) :: ier
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name1
+       INTEGER :: index1
+     END SUBROUTINE
+
+     SUBROUTINE cg_gorel_f1(fn, ier, name1, index1)
+       IMPORT :: c_char
+       IMPLICIT NONE
+       INTEGER :: fn
+       INTEGER, INTENT(OUT) :: ier
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name1
+       INTEGER :: index1
+     END SUBROUTINE
+
+!!$  SUBROUTINE cg_goto_f, CG_GOTO_F)(cgint_f *fn, cgint_f *B, ier, ...)
+!!$    cgint_f *fn, cgint_f *B, ier, ...)
 !!$
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$      !!$
-!!$   !!$           SUBROUTINE cg_gorel_f, CG_GOREL_F)(cgint_f *fn, ier, ...)
-!!$cgint_f *fn, ier, ...)
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$      
+!!$    INTEGER, INTENT(OUT) :: ier
+!!$  END SUBROUTINE
+!!$
+!!$  SUBROUTINE cg_gorel_f, CG_GOREL_F)(cgint_f *fn, ier, ...)
+!!$    cgint_f *fn, ier, ...)
+!!$    INTEGER, INTENT(OUT) :: ier
+!!$  END SUBROUTINE
+!!$
      SUBROUTINE cg_gopath_f(fn,path, ier) !BIND(C, NAME="cg_gopath_f")
        IMPORT :: C_CHAR
        IMPLICIT NONE
@@ -2927,7 +2951,7 @@ MODULE cgns
      END SUBROUTINE cg_gopath_f
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-  !              Read Multiple path nodes                         *
+  !              Read Multiple path nodes                                 *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
      SUBROUTINE cg_famname_read_f(famname, ier) !BIND(C, NAME="cg_famname_read_f")
@@ -3405,7 +3429,7 @@ MODULE cgns
      END SUBROUTINE cg_user_data_write_f
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-  !      General Delete Function                      *
+  !      General Delete Function                                          *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
      SUBROUTINE cg_delete_node_f(node_name, ier) !BIND(C, NAME="cg_delete_node_f")
@@ -4290,7 +4314,8 @@ MODULE cgns
      END SUBROUTINE cgio_children_ids_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, num_ret, names, ier) !BIND(C,NAME='cgio_children_names_f')
+     SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, &
+          num_ret, names, ier) !BIND(C,NAME='cgio_children_names_f')
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4400,6 +4425,221 @@ MODULE cgns
   END INTERFACE
 
 CONTAINS
+  SUBROUTINE cg_goto_f(fn, B, ier, &
+       UserDataName1, i1, UserDataName2, i2, &
+       UserDataName3, i3, UserDataName4, i4, &
+       UserDataName5, i5, UserDataName6, i6, &
+       UserDataName7, i7, UserDataName8, i8, &
+       UserDataName9, i9, UserDataName10, i10, &
+       UserDataName11, i11, UserDataName12, i12, &
+       UserDataName13, i13, UserDataName14, i14, &
+       UserDataName15, i15, UserDataName16, i16, &
+       UserDataName17, i17, UserDataName18, i18, &
+       UserDataName19, i19, UserDataName20, i20, &
+       end)
+     IMPLICIT NONE
+     INTEGER, INTENT(IN) :: fn
+     INTEGER, INTENT(IN) :: B
+     INTEGER, INTENT(OUT) :: ier
+     CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
+          UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
+          UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
+          UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
+     INTEGER, INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
+          i17, i18, i19, i20
+     CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: end
+
+     IF (.NOT. PRESENT(i1)) THEN
+        CALL cg_goto_f1(fn, B, ier, UserDataName1, 0)
+        RETURN
+     ELSE
+        CALL cg_goto_f1(fn, B, ier, UserDataName1, i1)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i2)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName2, i2)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i3)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName3, i3)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i4)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName4, i4)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i5)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName5, i5)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i6)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName6, i6)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i7)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName7, i7)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i8)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName8, i8)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i9)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName9, i9)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i10)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName10, i10)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i11)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName11, i11)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i12)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName12, i12)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i13)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName13, i13)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i14)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName14, i14)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i15)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName15, i15)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i16)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName16, i16)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i17)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName17, i17)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i18)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName18, i18)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i19)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName19, i19)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i20)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName20, i20)
+        IF(ier .NE. 0) RETURN
+     END IF
+  END SUBROUTINE cg_goto_f
+
+  SUBROUTINE cg_gorel_f(fn, ier, &
+          UserDataName1, i1, UserDataName2, i2, &
+          UserDataName3, i3, UserDataName4, i4, &
+          UserDataName5, i5, UserDataName6, i6, &
+          UserDataName7, i7, UserDataName8, i8, &
+          UserDataName9, i9, UserDataName10, i10, &
+          UserDataName11, i11, UserDataName12, i12, &
+          UserDataName13, i13, UserDataName14, i14, &
+          UserDataName15, i15, UserDataName16, i16, &
+          UserDataName17, i17, UserDataName18, i18, &
+          UserDataName19, i19, UserDataName20, i20, &
+          end)
+     IMPLICIT NONE
+     INTEGER, INTENT(IN) :: fn
+     INTEGER, INTENT(OUT) :: ier
+     CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
+          UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
+          UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
+          UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
+     INTEGER, INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
+          i17, i18, i19, i20
+     CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: end
+  
+     IF (PRESENT(i1)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName1, i1)
+     ELSE
+        CALL cg_gorel_f1(fn, ier, UserDataName1, 0)
+        RETURN
+     END IF
+     IF (PRESENT(i2)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName2, i2)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i3)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName3, i3)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i4)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName4, i4)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i5)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName5, i5)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i6)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName6, i6)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i7)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName7, i7)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i8)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName8, i8)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i9)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName9, i9)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i10)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName10, i10)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i11)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName11, i11)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i12)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName12, i12)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i13)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName13, i13)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i14)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName14, i14)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i15)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName15, i15)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i16)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName16, i16)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i17)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName17, i17)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i18)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName18, i18)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i19)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName19, i19)
+        IF(ier .NE. 0) RETURN
+     END IF
+     IF (PRESENT(i20)) THEN
+        CALL cg_gorel_f1(fn, ier, UserDataName20, i20)
+        IF(ier .NE. 0) RETURN
+     END IF
+  END SUBROUTINE cg_gorel_f
 
   FUNCTION cg_get_type_c_int(a)
     USE ISO_C_BINDING

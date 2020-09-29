@@ -579,7 +579,6 @@ else (CGNS_ENABLE_FORTRAN)
   set(cgns_FILES ${cgns_C_FILES})
 endif (CGNS_ENABLE_FORTRAN)
 
-set(CGNS_BUILD_SHARED "ON" CACHE BOOL "Build a shared version of the library")
 option(CGNS_USE_SHARED "Link programs to the CGNS shared library" "ON")
 
 # Build a static version of the library
@@ -602,7 +601,8 @@ if(CGNS_BUILD_SHARED)
   # under windows we need to define BUILD_DLL
   # and link with the HDF5 libraries to build a dll
   if (WIN32 OR CYGWIN)
-    add_definitions(-DBUILD_DLL)
+    target_compile_definitions(cgns_shared PRIVATE -DBUILD_DLL)
+    target_compile_definitions(cgns_shared INTERFACE -DUSE_DLL)
   endif (WIN32 OR CYGWIN)
   if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
     target_link_libraries(cgns_shared ${HDF5_LIBRARY} ${CMAKE_DL_LIBS})

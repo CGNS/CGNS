@@ -11,6 +11,10 @@
 # version format
 version: 4.2.{build}
 
+image:
+  - Visual Studio 2017
+  - Visual Studio 2019
+  
 # branches to build
 branches:
   # whitelist
@@ -27,13 +31,14 @@ skip_tags: true
 #---------------------------------#
 #    environment configuration    #
 #---------------------------------#
-
 environment:
   global:
     1_8: &1_8 1.8.21
-    1_10: &1_10 1.10.5
+    1_10: &1_10 1.10.6
+    1_12: &1_12 1.12.0
     HDF5_1_8_VER: *1_8   
     HDF5_1_10_VER: *1_10
+    HDF5_1_12_VER: *1_12
   matrix:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
     HDF5_VER: *1_8
@@ -41,9 +46,31 @@ environment:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
     HDF5_VER: *1_10
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
+  - build_opt: -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON
+    HDF5_VER: *1_10
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
+  - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
+    HDF5_VER: *1_12
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
+  - build_opt: -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON
+    HDF5_VER: *1_12
+    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
 
-# Operating system (build VM template)
-os: Visual Studio 2015
+for:
+-
+  matrix:
+    only:
+      - image: Visual Studio 2019
+  environment:
+      GENERATOR: "Visual Studio 16 2019"
+      ARCH: "x64"
+-
+  matrix:
+    only:
+      - image: Visual Studio 2017
+  environment:
+      GENERATOR: "Visual Studio 15 2017"
+      ARCH: "x64"
 
 # scripts that are called at very beginning, before repo cloning
 init:
@@ -67,8 +94,8 @@ install:
   - mkdir 1.8
   - cd 1.8
   - set HDF5_1_8_VER=%HDF5_1_8_VER%
-  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/relbinaries/windows/hdf5-%HDF5_1_8_VER%-Std-win10_64-vs14.zip
-  - ps: Expand-Archive hdf5-$($env:HDF5_1_8_VER)-Std-win10_64-vs14.zip -DestinationPath .
+  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/relbinaries/windows/hdf5-%HDF5_1_8_VER%-Std-win10_64-vs16.zip
+  - ps: Expand-Archive hdf5-$($env:HDF5_1_8_VER)-Std-win10_64-vs16.zip -DestinationPath .
   - cd hdf
   - msiexec /i HDF5-%HDF5_1_8_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
@@ -76,10 +103,19 @@ install:
   - mkdir 1.10
   - cd 1.10
   - set HDF5_1_10=%HDF5_1_10_VER%
-  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf5110/relbinaries/windows/hdf5-%HDF5_1_10_VER%-Std-win10_64-vs14.zip
-  - ps: Expand-Archive hdf5-$($env:HDF5_1_10_VER)-Std-win10_64-vs14.zip -DestinationPath .
+  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.6/bin/hdf5-%HDF5_1_10_VER%-Std-win10_64-vs16.zip
+  - ps: Expand-Archive hdf5-$($env:HDF5_1_10_VER)-Std-win10_64-vs16.zip -DestinationPath .
   - cd hdf
   - msiexec /i HDF5-%HDF5_1_10_VER%-win64.msi /quiet /qn /norestart /log install.log
+  - type install.log
+  - cd ..\..
+  - mkdir 1.12
+  - cd 1.12
+  - set HDF5_1_12=%HDF5_1_12_VER%
+  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.0/bin/hdf5-%HDF5_1_12_VER%-Std-win10_64-vs16.zip
+  - ps: Expand-Archive hdf5-$($env:HDF5_1_12_VER)-Std-win10_64-vs16.zip -DestinationPath .
+  - cd hdf
+  - msiexec /i HDF5-%HDF5_1_12_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
 
@@ -106,7 +142,7 @@ before_build:
   - cd c:\projects\CGNS_BUILD
   - cmake --version
   - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
-  - cmake -G "Visual Studio 14 Win64" ^
+  - cmake -G "%GENERATOR%" -A "%ARCH%" ^
      %build_opt% ^
      -D CMAKE_C_FLAGS:STRING="" ^
      -D CMAKE_BUILD_TYPE:STRING=Release ^
@@ -125,4 +161,9 @@ build_script:
   - cmd: cmake --build . --config "%configuration%"
 
 test_script:
+  - cmd: set PATH=C:\projects\CGNS_BUILD\src\%configuration%;%PATH%
+  - cmd: set PATH=C:\Program Files\HDF_Group\HDF5\%HDF5_VER%\bin;%PATH%
   - cmd: ctest .
+
+after_test:
+  - cmd: cmake --install . --config "%configuration%"
