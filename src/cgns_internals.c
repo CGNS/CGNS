@@ -81,7 +81,7 @@ void *cgi_malloc(size_t cnt, size_t size)
 {
     void *buf = calloc(cnt, size);
     if (buf == NULL) {
-        cgi_error("calloc failed for %lu values of size %lu", (unsigned long)cnt, (unsigned long)size);
+        cgi_error("calloc failed for %zu values of size %zu", cnt, size);
         exit (1);
     }
     return buf;
@@ -91,7 +91,7 @@ void *cgi_realloc(void *oldbuf, size_t bytes)
 {
     void *buf = realloc(oldbuf, bytes);
     if (buf == NULL) {
-        cgi_error("realloc failed for %lu bytes", (unsigned long)bytes);
+        cgi_error("realloc failed for %zu bytes", bytes);
         exit (1);
     }
     return buf;
