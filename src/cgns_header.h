@@ -1128,7 +1128,7 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
                        cgns_subreg **subreg);
 cgns_link *cgi_read_link(double node_id);
 
-CGNSDLL int cgi_datasize(int Idim, cgsize_t *CurrentDim,
+CGNSDLL int cgi_datasize(int ndim, cgsize_t *dims,
 			 CGNS_ENUMT(GridLocation_t) location,
 			 int *rind_planes, cgsize_t *DataSize);
 
@@ -1152,7 +1152,7 @@ int cgi_write_boco(double parent_id, cgns_boco *boco);
 int cgi_write_dataset(double parent_id, const char *label,  cgns_dataset *dataset);
 int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata);
 int cgi_write_ptset(double id, char_33 name, cgns_ptset *ptset,
-            int Ndim, void *ptset_ptr);
+            int ndim, void *ptset_ptr);
 int cgi_write_equations(double parent_id, cgns_equations *equations);
 int cgi_write_model(double parent_id, cgns_model *model);
 int cgi_write_state(double parent_id, cgns_state *state);
