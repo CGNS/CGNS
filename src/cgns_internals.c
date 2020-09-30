@@ -81,7 +81,7 @@ void *cgi_malloc(size_t cnt, size_t size)
 {
     void *buf = calloc(cnt, size);
     if (buf == NULL) {
-        cgi_error("calloc failed for %d values of size %d", cnt, size);
+        cgi_error("calloc failed for %zu values of size %zu", cnt, size);
         exit (1);
     }
     return buf;
@@ -91,7 +91,7 @@ void *cgi_realloc(void *oldbuf, size_t bytes)
 {
     void *buf = realloc(oldbuf, bytes);
     if (buf == NULL) {
-        cgi_error("realloc failed for %d bytes", bytes);
+        cgi_error("realloc failed for %zu bytes", bytes);
         exit (1);
     }
     return buf;
@@ -857,7 +857,7 @@ int cgi_read_zcoor(int in_link, double parent_id, int *nzcoor, cgns_zcoor **zcoo
                 }
                 if (strcmp(zcoor[0][g].coord[z].data_type,"R4") &&
                     strcmp(zcoor[0][g].coord[z].data_type,"R8")) {
-                    cgi_error("Datatype %d not supported for coordinates",zcoor[0][g].coord[z].data_type);
+                    cgi_error("Datatype %s not supported for coordinates",zcoor[0][g].coord[z].data_type);
                     return CG_ERROR;
                 }
             }
@@ -1571,7 +1571,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                     strcmp(sol[0][s].field[z].data_type,"R8") &&
                     strcmp(sol[0][s].field[z].data_type,"X4") &&
                     strcmp(sol[0][s].field[z].data_type,"X8")) {
-                    cgi_error("Datatype %d not supported for flow solutions",sol[0][s].field[z].data_type);
+                    cgi_error("Datatype %s not supported for flow solutions",sol[0][s].field[z].data_type);
                     return CG_ERROR;
                 }
             }
@@ -3145,7 +3145,7 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
 
      /* verify dimension vector */
     if (!(ndim==2 && dim_vals[0]>0 && dim_vals[1]>0)) {
-        cgi_error("Invalid definition of point set:  ptset->type='%s', ndim=%d, dim_vals[0]=%d",
+        cgi_error("Invalid definition of point set:  ptset->type='%s', ndim=%d, dim_vals[0]=%ld",
             PointSetTypeName[ptset->type], ndim, dim_vals[0]);
         return CG_ERROR;
     }
@@ -4065,7 +4065,7 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                     strcmp(discrete[0][n].array[i].data_type,"I8") &&
                     strcmp(discrete[0][n].array[i].data_type,"R4") &&
                     strcmp(discrete[0][n].array[i].data_type,"R8")) {
-                    cgi_error("Datatype %d not supported for Discrete Data",discrete[0][n].array[i].data_type);
+                    cgi_error("Datatype %s not supported for Discrete Data",discrete[0][n].array[i].data_type);
                     return CG_ERROR;
                 }
             }
@@ -4310,7 +4310,7 @@ int cgi_read_amotion(int in_link, double parent_id, int *namotions,
                 }
                 if (strcmp(amotion[0][n].array[i].data_type,"R4") &&
                     strcmp(amotion[0][n].array[i].data_type,"R8") ) {
-                    cgi_error("Datatype %d not supported for ArbitraryGridMotion array",amotion[0][n].array[i].data_type);
+                    cgi_error("Datatype %s not supported for ArbitraryGridMotion array",amotion[0][n].array[i].data_type);
                     return CG_ERROR;
                 }
             }
@@ -8158,8 +8158,8 @@ int cgi_array_general_verify_range(
      /* both the file hyperslab and memory hyperslab must have same number of
       * points */
     if (s_numpt != m_numpt) {
-        cgi_error("Number of locations in range of memory array (%d) do not "
-                  "match number of locations requested in range of file (%d)",
+        cgi_error("Number of locations in range of memory array (%ld) do not "
+                  "match number of locations requested in range of file (%ld)",
                   m_numpt, s_numpt);
         return CG_ERROR;
     }
