@@ -20,8 +20,8 @@ fi
 --with-fortran \
 --enable-lfs \
 --disable-shared \
---enable-debug \
---enable-64bit
+--enable-debug
+
 
 
 
