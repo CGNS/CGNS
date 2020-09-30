@@ -46,7 +46,7 @@ CHECK_TYPE_SIZE(long SIZE_OF_LONG)
 CHECK_TYPE_SIZE(off_t SIZE_OF_OFF_T)
 
 if ("${SIZE_OF_OFF_T}" LESS 8)
-  option(CGNS_ENABLE_LFS "Enable or disable large file support" "ON")
+  option(CGNS_ENABLE_LFS "Enable or disable large file support" "OFF")
 endif ("${SIZE_OF_OFF_T}" LESS 8)
 
 if ("${CMAKE_SIZEOF_VOID_P}" GREATER 4)
