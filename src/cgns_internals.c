@@ -5516,27 +5516,27 @@ cgns_link *cgi_read_link (double node_id)
     return CG_OK;
 }
 
-int cgi_datasize(int Idim, cgsize_t *CurrentDim,
+int cgi_datasize(int ndim, cgsize_t *dims,
                  CGNS_ENUMV(GridLocation_t) location,
                  int *rind_planes, cgsize_t *DataSize)
 {
     int j;
 
     if (location==CGNS_ENUMV( Vertex )) {
-        for (j=0; j<Idim; j++)
-            DataSize[j] = CurrentDim[j] + rind_planes[2*j] + rind_planes[2*j+1];
+        for (j=0; j<ndim; j++)
+            DataSize[j] = dims[j] + rind_planes[2*j] + rind_planes[2*j+1];
 
     } else if (location==CGNS_ENUMV(CellCenter) ||
               (location==CGNS_ENUMV(FaceCenter) && Cdim==2) ||
               (location==CGNS_ENUMV(EdgeCenter) && Cdim==1)) {
-        for (j=0; j<Idim; j++)
-            DataSize[j] = CurrentDim[j+Idim] + rind_planes[2*j] + rind_planes[2*j+1];
+        for (j=0; j<ndim; j++)
+            DataSize[j] = dims[j+ndim] + rind_planes[2*j] + rind_planes[2*j+1];
 
     } else if (location == CGNS_ENUMV( IFaceCenter ) ||
                location == CGNS_ENUMV( JFaceCenter ) ||
                location == CGNS_ENUMV( KFaceCenter )) {
-        for (j=0; j<Idim; j++) {
-            DataSize[j] = CurrentDim[j] + rind_planes[2*j] + rind_planes[2*j+1];
+        for (j=0; j<ndim; j++) {
+            DataSize[j] = dims[j] + rind_planes[2*j] + rind_planes[2*j+1];
             if ((location == CGNS_ENUMV( IFaceCenter ) && j!=0) ||
                 (location == CGNS_ENUMV( JFaceCenter ) && j!=1) ||
                 (location == CGNS_ENUMV( KFaceCenter ) && j!=2)) DataSize[j]--;
@@ -6975,10 +6975,10 @@ int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata)
 }
 
 int cgi_write_ptset(double parent_id, char_33 name, cgns_ptset *ptset,
-                    int Idim, void *ptset_ptr)
+                    int ndim, void *ptset_ptr)
 {
     cgsize_t dim_vals[12];
-    int ndim;
+    int num_dim;
     char_33 label;
 
     if (ptset->link) {
@@ -6993,13 +6993,13 @@ int cgi_write_ptset(double parent_id, char_33 name, cgns_ptset *ptset,
     else strcpy(label,"IndexArray_t");
 
      /* Dimension vector */
-    dim_vals[0]=Idim;
+    dim_vals[0]=ndim;
     dim_vals[1]=ptset->npts;
-    ndim = 2;
+    num_dim = 2;
 
      /* Create the node */
     if (cgi_new_node(parent_id, name, label, &ptset->id,
-        ptset->data_type, ndim, dim_vals, ptset_ptr)) return CG_ERROR;
+        ptset->data_type, num_dim, dim_vals, ptset_ptr)) return CG_ERROR;
 
     return CG_OK;
 }
