@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include "pcgnslib.h"
 #include "mpi.h"
 
@@ -34,7 +35,7 @@ int read_inputs(int* argc, char*** argv) {
     for(k=1;k<*argc;k++) {
       if(strcmp((*argv)[k],"-nblocks")==0) {
         k++;
-        sscanf((*argv)[k],"%zu",&NBLOCKS);
+        sscanf((*argv)[k],"%u",&NBLOCKS);
       }
     }
   }
@@ -46,9 +47,9 @@ int initialize(int* argc, char** argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &num_mpi);
   MPI_Comm_rank(MPI_COMM_WORLD, &whoami);
 
-  if(*argc > 2) 
+  if(*argc > 2)
     read_inputs(argc,argv);
-  
+
   return 0;
 }
 
@@ -76,7 +77,7 @@ int main(int argc, char* argv[]) {
     MPI_Finalize();
     return exit;
   }
-  
+
   local_blocks = (int *)malloc(num_mpi*sizeof(int));
   for (int i = 0; i < num_mpi; ++i) {
     if (i == ROOT) {
@@ -101,14 +102,14 @@ int main(int argc, char* argv[]) {
   if (whoami == ROOT) {
   // ---- Open CGNS file -----------------------------------------------------------------
     // if (cgp_open(fname.c_str(), CG_MODE_WRITE, &index_file)) cg_error_exit();
-    
+
     //  char hdf5_access[10];
     //int old_type = cgns_filetype;
-     strcpy(hdf5_access,"DISKLESS");    
+     strcpy(hdf5_access,"DISKLESS");
     //   int ierr = cg_set_file_type(CG_FILE_HDF5);
     if (cg_open(fname, CG_MODE_WRITE, &index_file)) cg_error_exit();
     //cgns_filetype = old_type;
-  
+
   // ---- Create base  -------------------------------------------------------------------
     char *basename = "Base";
     int icelldim = 3;
@@ -149,27 +150,39 @@ int main(int argc, char* argv[]) {
     for (uint32_t b = 0; b < NBLOCKS; ++b) {
       if (cgp_coord_write(index_file, index_base, zone[b], CGNS_ENUMV(RealSingle), "CoordinateX",
                           &index_coordx))
-        cgp_error_exit();
+        cg_error_exit();
       if (cgp_coord_write(index_file, index_base, zone[b], CGNS_ENUMV(RealSingle), "CoordinateY",
                           &index_coordy))
-        cgp_error_exit();
+        cg_error_exit();
       if (cgp_coord_write(index_file, index_base, zone[b], CGNS_ENUMV(RealSingle), "CoordinateZ",
                           &index_coordz))
-        cgp_error_exit();
+        cg_error_exit();
     }
     t1 = MPI_Wtime();
     if (whoami == ROOT) {
       printf("cgp_coord_write: %lf s\n", (t1 - t0));
     }
+
+    t0 = MPI_Wtime();
     cg_close(index_file);
+    t1 = MPI_Wtime();
+    if (whoami == ROOT) {
+      printf("cg_close: %lf s\n", (t1 - t0));
+    }
   }
   strcpy(hdf5_access,"NATIVE");
 
   MPI_Barrier(MPI_COMM_WORLD);
 
+  t0 = MPI_Wtime();
   if(cgp_open(fname, CG_MODE_MODIFY, &index_file) != CG_OK) {
     printf("*FAILED* cgp_open \n");
     cgp_error_exit();
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+  t1 = MPI_Wtime();
+  if (whoami == ROOT) {
+    printf("cgp_open: %lf s\n", (t1 - t0));
   }
   index_base = 1;
   for (uint32_t b = 0; b < NBLOCKS; ++b) {
@@ -187,13 +200,13 @@ int main(int argc, char* argv[]) {
       cgp_error_exit();
     }
   }
-  
+
   cgp_close(index_file);
-  
+
   free(zone);
   free(local_blocks);
-  
+
   MPI_Finalize();
-  
+
   return exit;
 }
