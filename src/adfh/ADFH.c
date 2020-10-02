@@ -2231,6 +2231,13 @@ void ADFH_Database_Open(const char   *name,
     }
   }
 #endif
+  
+  if (0 == strcmp(fmt, "DISKLESS")) {
+    /* increment (bytes) allocated memory is increased each time more memory is required */
+    size_t increment = 4096; 
+    hbool_t backing_store = 1;  /* write the file contents to disk when the file is closed */
+    H5Pset_fapl_core(g_propfileopen, increment, backing_store);
+  }
 
   set_error(NO_ERROR, err);
 

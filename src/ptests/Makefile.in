@@ -24,6 +24,7 @@ CALL =	pcgns_ctest$(EXE) \
 	test_unstruc_quad$(EXE) \
 	test_zone$(EXE) \
 	test_general_readwrite$(EXE) \
+        Metadata_Stressing$(EXE) \
 	thesis_benchmark$(EXE)
 
 FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) 
@@ -153,6 +154,12 @@ fexample$(EXE) : fexample.F90 $(CGNSLIB)
 
 benchmark_hdf5_f90$(EXE) : benchmark_hdf5_f90.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ benchmark_hdf5_f90.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+Metadata_Stressing$(EXE) : Metadata_Stressing.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ Metadata_Stressing.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
