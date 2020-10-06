@@ -146,6 +146,7 @@ int main(int argc, char* argv[]) {
     if (whoami == ROOT) {
       printf("cg_grid_write: %lf s \n", (t1 - t0));
     }
+#if 0
     t0 = MPI_Wtime();
     for (uint32_t b = 0; b < NBLOCKS; ++b) {
       if (cgp_coord_write(index_file, index_base, zone[b], CGNS_ENUMV(RealSingle), "CoordinateX",
@@ -162,7 +163,7 @@ int main(int argc, char* argv[]) {
     if (whoami == ROOT) {
       printf("cgp_coord_write: %lf s\n", (t1 - t0));
     }
-
+#endif
     t0 = MPI_Wtime();
     cg_close(index_file);
     t1 = MPI_Wtime();
@@ -184,7 +185,26 @@ int main(int argc, char* argv[]) {
   if (whoami == ROOT) {
     printf("cgp_open: %lf s\n", (t1 - t0));
   }
+
   index_base = 1;
+
+  t0 = MPI_Wtime();
+  for (uint32_t b = 0; b < NBLOCKS; ++b) {
+    if (cgp_coord_write(index_file, index_base, b + 1, CGNS_ENUMV(RealSingle), "CoordinateX",
+                        &index_coordx))
+      cg_error_exit();
+    if (cgp_coord_write(index_file, index_base, b + 1, CGNS_ENUMV(RealSingle), "CoordinateY",
+                        &index_coordy))
+      cg_error_exit();
+    if (cgp_coord_write(index_file, index_base, b + 1, CGNS_ENUMV(RealSingle), "CoordinateZ",
+                        &index_coordz))
+      cg_error_exit();
+  }
+  t1 = MPI_Wtime();
+  if (whoami == ROOT) {
+    printf("cgp_coord_write: %lf s\n", (t1 - t0));
+  }
+
   for (uint32_t b = 0; b < NBLOCKS; ++b) {
     snprintf(zonename, 11, "Zone_%d", (b + 1) );
     if(cg_goto(index_file, index_base, zonename, 0, "end") != CG_OK) {
