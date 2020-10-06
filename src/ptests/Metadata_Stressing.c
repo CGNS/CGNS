@@ -107,7 +107,12 @@ int main(int argc, char* argv[]) {
     //int old_type = cgns_filetype;
      strcpy(hdf5_access,"DISKLESS");
     //   int ierr = cg_set_file_type(CG_FILE_HDF5);
+    t0 = MPI_Wtime();
     if (cg_open(fname, CG_MODE_WRITE, &index_file)) cg_error_exit();
+    t1 = MPI_Wtime();
+    if (whoami == ROOT) {
+      printf("cg_open: %lf s \n", (t1 - t0));
+    }
     //cgns_filetype = old_type;
 
   // ---- Create base  -------------------------------------------------------------------
@@ -171,7 +176,7 @@ int main(int argc, char* argv[]) {
       printf("cg_close: %lf s\n", (t1 - t0));
     }
   }
-  strcpy(hdf5_access,"NATIVE");
+  strcpy(hdf5_access,"PARALLEL");
 
   MPI_Barrier(MPI_COMM_WORLD);
 
