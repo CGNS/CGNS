@@ -200,6 +200,7 @@ int main(int argc, char* argv[]) {
                         &index_coordz))
       cg_error_exit();
   }
+  MPI_Barrier(MPI_COMM_WORLD);
   t1 = MPI_Wtime();
   if (whoami == ROOT) {
     printf("cgp_coord_write: %lf s\n", (t1 - t0));
@@ -221,7 +222,13 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  t0 = MPI_Wtime();
   cgp_close(index_file);
+  MPI_Barrier(MPI_COMM_WORLD);
+  t1 = MPI_Wtime();
+  if (whoami == ROOT) {
+    printf("cgp_close: %lf s\n", (t1 - t0));
+  }
 
   free(zone);
   free(local_blocks);
