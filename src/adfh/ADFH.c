@@ -2202,14 +2202,21 @@ void ADFH_Database_Open(const char   *name,
   H5Pset_fclose_degree(g_propfileopen, H5F_CLOSE_STRONG);
 #endif
 
-  /*  H5Pset_latest_format(fapl, 1); */
-  /* Performance patch applied by KSH on 2009.05.18 */
-  H5Pset_libver_bounds(g_propfileopen,
+  /* Patch to read file created with CGNS 3.3 and hdf5 > 1.8 */
+  if (mode == ADFH_MODE_RDO) {
+      H5Pset_libver_bounds(g_propfileopen,
+          H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+  }
+  else {
+    /* Compatibility with V1.8 */
+    H5Pset_libver_bounds(g_propfileopen,
 #if H5_VERSION_GE(1,10,3)
-		       H5F_LIBVER_V18, H5F_LIBVER_V18);
+          H5F_LIBVER_V18, H5F_LIBVER_V18);
 #else
-		       H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+          H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
 #endif
+  }
+
   /* open the file */
 
 #if CG_BUILD_PARALLEL
@@ -3869,4 +3876,3 @@ void ADFH_Write_All_Data(const double  id,
   else
     set_error(NO_DATA, err);
 }
-

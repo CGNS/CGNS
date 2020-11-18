@@ -5276,6 +5276,10 @@ static void check_zone (void)
             (FileVersion >= 1200 || strcmp(name, "ORPHAN")))
             warning (2, "zone family name \"%s\" not found", name);
     }
+    else if (ierr == CG_NODE_NOT_FOUND) {
+        warning(2, "No family name declared for zone \"%s\"."
+            "It is a recommended practice to associate one.", z->name);
+    }
 
     /*----- ReferenceState -----*/
 
