@@ -2202,7 +2202,7 @@ void ADFH_Database_Open(const char   *name,
   H5Pset_fclose_degree(g_propfileopen, H5F_CLOSE_STRONG);
 #endif
 
-  /* Patch to read file created with CGNS 3.3 and hdf5 1.10 */
+  /* Patch to read file created with CGNS 3.3 and hdf5 > 1.8 */
   if (mode == ADFH_MODE_RDO) {
       H5Pset_libver_bounds(g_propfileopen,
           H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
@@ -3876,4 +3876,3 @@ void ADFH_Write_All_Data(const double  id,
   else
     set_error(NO_DATA, err);
 }
-
