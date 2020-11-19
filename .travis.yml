@@ -1,4 +1,4 @@
-osx_image: xcode8.1
+osx_image: xcode9.4
 dist: xenial
 language: C
 sudo: required
@@ -22,10 +22,13 @@ before_install:
          sudo apt-get install -qq mpich;
          sudo apt-get install -qq libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev;
       fi
-    - test $(uname) = "Darwin" && brew update || true
-    - test $(uname) = "Darwin" && brew tap homebrew/versions || true
-    - test $(uname) = "Darwin" && brew install gcc@6 || true
-    - test $(uname) = "Darwin" && brew link --overwrite gcc@6 || true
+    - |
+      if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
+         brew update
+         brew tap homebrew/homebrew-core
+         brew install gcc@6
+         brew link --overwrite gcc@6
+      fi
 
 matrix:
    include:
