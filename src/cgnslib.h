@@ -1033,6 +1033,17 @@ CGNSDLL int cg_elements_partial_read(int file_number, int B, int Z, int S,
 CGNSDLL int cg_poly_elements_partial_read(int file_number, int B, int Z, int S,
 	cgsize_t start, cgsize_t end, cgsize_t *elements, cgsize_t *connect_offset, cgsize_t *parent_data);
 
+/* For reading with a datatype different from cgsize_t. Use at your own risk */
+CGNSDLL int cg_elements_general_read(int file_number, int B, int Z, int S,
+    cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type, void* elements);
+CGNSDLL int cg_poly_elements_general_read(int file_number, int B, int Z, int S,
+    cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type, void* elements, void* connect_offset);
+CGNSDLL int cg_parent_elements_general_read(int file_number, int B, int Z, int S,
+    cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type, void* parelem);
+CGNSDLL int cg_parent_elements_position_general_read(int file_number, int B, int Z, int S,
+    cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type, void* parface);
+
+
 CGNSDLL int cg_ElementPartialSize(int file_number, int B, int Z, int S,
 	cgsize_t start, cgsize_t end, cgsize_t *ElementDataSize);
 
