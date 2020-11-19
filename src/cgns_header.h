@@ -1261,7 +1261,7 @@ int cgi_check_location(int dim, CGNS_ENUMT(ZoneType_t) type,
 	CGNS_ENUMT(GridLocation_t) loc);
 
 CGNSDLL int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data);
-int cgi_read_offset_data_type(double id, char_33 data_type, cgsize_t start, cgsize_t end, const char_33 to_type, void *to_data);
+int cgi_read_offset_data_type(double id, char const *data_type, cgsize_t start, cgsize_t end, char const *to_type, void *to_data);
 int cgi_convert_data(cgsize_t cnt,
 	CGNS_ENUMT(DataType_t) from_type, const void *from_data,
         CGNS_ENUMT(DataType_t) to_type, void *to_data);

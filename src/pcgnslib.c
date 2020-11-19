@@ -780,8 +780,8 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
     return CG_ERROR;
   }
 
-  return cg_section_general_write(fn, B, Z, sectionnamme, type
-                    cgi_adf_datatype(CG_SIZE_DATATYPE), maxoffset, nbndry, S);
+  return cg_section_general_write(fn, B, Z, sectionname, type,
+      cgi_datatype(CG_SIZE_DATATYPE), start, end, maxoffset, nbndry, S);
 
 }
 

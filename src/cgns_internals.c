@@ -5636,7 +5636,7 @@ int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data
     return CG_OK;
 }
 
-int cgi_read_offset_data_type(double id, char_33 data_type, cgsize_t start, cgsize_t end, const char_33 m_type, void* data)
+int cgi_read_offset_data_type(double id, char const *data_type, cgsize_t start, cgsize_t end, char const *m_type, void* data)
 {
     cgsize_t cnt = end - start + 1;
     cgsize_t s_start[1], s_end[1], s_stride[1];

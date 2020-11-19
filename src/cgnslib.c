@@ -5138,15 +5138,15 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
     cgi_error("Error allocating conv_data"); \
     STATUS = CG_ERROR; \
     } \
-    if (STATUS && cgi_convert_data((m_end-m_start+1), \
+    if ((STATUS == CG_OK) && cgi_convert_data((m_end-m_start+1), \
     cgi_datatype(CG_SIZE_DATATYPE), DATA, \
     cgi_datatype(ARRAY->data_type), conv_data)) { \
     STATUS = CG_ERROR; \
     } \
-    if (STATUS && cgio_write_data(cg->cgio, ARRAY->id, \
+    if ((STATUS == CG_OK) && cgio_write_data(cg->cgio, ARRAY->id, \
     &s_start, &s_end, &s_stride, 1, &m_dim, \
     &m_start, &m_end, &m_stride, conv_data)) { \
-    if (STATUS==CG_OK) cg_io_error("cgio_write_data"); \
+    cg_io_error("cgio_write_data"); \
     STATUS = CG_ERROR; \
     } \
     if (conv_data) free(conv_data); \
@@ -5257,10 +5257,10 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
     cgi_error("Error allocating conv_data"); \
     STATUS = CG_ERROR; \
     } \
-    if (STATUS && cgi_convert_data(SIZE, M_TYPE, DATA, S_TYPE, conv_data)) { \
+    if ((STATUS == CG_OK) && cgi_convert_data(SIZE, M_TYPE, DATA, S_TYPE, conv_data)) { \
     STATUS = CG_ERROR; \
     } \
-    if (STATUS && cgio_write_data(cg->cgio, ID, \
+    if ((STATUS == CG_OK) && cgio_write_data(cg->cgio, ID, \
     &s_start, &s_end, &s_stride, 1, &m_dim, \
     &m_start, &m_end, &m_stride, conv_data)) { \
     if (STATUS == CG_OK) cg_io_error("cgio_write_data"); \
@@ -5782,14 +5782,14 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
                         cgi_error("Error allocating conv_data");
                         ier = CG_ERROR;
                     }
-                    if (ier && cgio_read_data_type(cg->cgio, section->connect->id,
+                    if ((ier == CG_OK) && cgio_read_data_type(cg->cgio, section->connect->id,
                                                    &s_start, &s_end, &s_stride, section->connect->data_type, 1, &m_dim,
                                                    &m_start, &m_end, &m_stride, conv_data)){
 
-                        if (ier == CG_OK) cg_io_error("cgio_read_data_type");
+                        cg_io_error("cgio_read_data_type");
                         ier = CG_ERROR;
                     }
-                    if (ier && cgi_convert_data(m_trail_size, cgi_datatype(section->connect->data_type), conv_data,
+                    if ((ier == CG_OK) && cgi_convert_data(m_trail_size, cgi_datatype(section->connect->data_type), conv_data,
                                                 cgi_datatype(CG_SIZE_DATATYPE), trail_elements)) {
                         ier = CG_ERROR;
                     }
@@ -5817,7 +5817,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
             m_stride = 1;
             /* handle different data_type in files */
             WRITE_PART_1D_DATA(section->connect->id, m_conn_size, m_type, s_type, elements, ier)
-                    if (ier){
+            if (ier){
                 if (alloc_offset) free(alloc_offset);
                 if (trail_elements) free(trail_elements);
                 return CG_ERROR;
