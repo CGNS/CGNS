@@ -4974,7 +4974,7 @@ int cg_poly_elements_partial_read(int file_number, int B, int Z, int S,
 /*----------------------------------------------------------------------*/
 int cg_poly_elements_general_read(int file_number, int B, int Z, int S,
            cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type,
-           cgsize_t* elements, cgsize_t* connect_offset)
+           void* elements, void* connect_offset)
 {
     cgns_section* section;
     cgsize_t size, n;
@@ -5033,7 +5033,7 @@ int cg_poly_elements_general_read(int file_number, int B, int Z, int S,
         m_dim[0] = (cgsize_t)size;
         for (n = 0; n < (end - start + 2); n++)
         {
-            connect_offset[n] -= offset;
+            tmp_connect_offset[n] -= offset;
         }
     }
     else if (m_type == CGNS_ENUMV(LongInteger)) {
@@ -5047,7 +5047,7 @@ int cg_poly_elements_general_read(int file_number, int B, int Z, int S,
         m_dim[0] = (cgsize_t)size;
         for (n = 0; n < (end - start + 2); n++)
         {
-            connect_offset[n] -= offset;
+            tmp_connect_offset[n] -= offset;
         }
     }
     s_stride[0] = 1;
