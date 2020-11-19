@@ -1220,11 +1220,11 @@ int cg_zone_write(int file_number, int B, const char *zonename, const cgsize_t *
 
     for (i=0; i<index_dim; i++) {
         if (nijk[i]<=0) {
-            cgi_error("Invalid input:  nijk[%d]=%d", i, nijk[i]);
+            cgi_error("Invalid input:  nijk[%d]=%ld", i, nijk[i]);
             return CG_ERROR;
         }
         if (type == CGNS_ENUMV( Structured ) && nijk[i]!=nijk[i+index_dim]+1) {
-            cgi_error("Invalid input:  VertexSize[%d]=%d and CellSize[%d]=%d",
+            cgi_error("Invalid input:  VertexSize[%d]=%ld and CellSize[%d]=%ld",
                    i, nijk[i], i, nijk[i+index_dim]);
             return CG_ERROR;
         }
@@ -7581,7 +7581,7 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
           npnts == 2*nptsets && nptsets > 0) &&
         !(ptset_type == CGNS_ENUMV(PointList) &&
           npnts >= 0 && nptsets == 1)) {
-        cgi_error("Invalid input:  nptsets=%d, npoint=%d, point set type=%s",
+        cgi_error("Invalid input:  nptsets=%d, npoint=%ld, point set type=%s",
                nptsets, npnts, PointSetTypeName[ptset_type]);
         return CG_ERROR;
     }
@@ -7918,7 +7918,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
     }
     if (!(ptset_type==CGNS_ENUMV(PointRange) && npnts==2) &&
         !(ptset_type==CGNS_ENUMV(PointList) && npnts>0)) {
-        cgi_error("Invalid input:  npoint=%d, point set type=%s",
+        cgi_error("Invalid input:  npoint=%ld, point set type=%s",
                npnts, PointSetTypeName[ptset_type]);
         return CG_ERROR;
     }
@@ -8409,11 +8409,11 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
     index_dim = zone->index_dim;
     for (i=0; i<index_dim; i++) {   /* can't check donorrange because it may not yet be written */
         if (range[i]<=0 || range[i+index_dim]>zone->nijk[i]) {
-            cgi_error("Invalid input range:  %d->%d",range[i], range[i+index_dim]);
+            cgi_error("Invalid input range:  %ld->%ld",range[i], range[i+index_dim]);
             return CG_ERROR;
         }
         if (abs(transform[i])<0 || abs(transform[i])>index_dim) {
-            cgi_error("Invalid transformation index: %d.  The indices must all be between 1 and %d",i, index_dim);
+            cgi_error("Invalid transformation index: %d.  The indices must all be between 1 and %ld",i, index_dim);
             return CG_ERROR;
         }
         if (abs(transform[i])>0) {
@@ -8422,7 +8422,7 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
         dr = range[i+index_dim] - range[i];
         ddr = donor_range[j+index_dim] - donor_range[j];
         if (dr != ddr && dr != -ddr) {
-                cgi_error("Invalid input:  range = %d->%d and donor_range = %d->%d",
+                cgi_error("Invalid input:  range = %ld->%ld and donor_range = %ld->%ld",
                 range[i], range[i+index_dim], donor_range[j], donor_range[j+index_dim]);
                 return CG_ERROR;
             }
@@ -8714,7 +8714,7 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
           ptype == CGNS_ENUMV(ElementList)) && npnts <= 0) ||
         ((ptype == CGNS_ENUMV(PointRange) ||
           ptype == CGNS_ENUMV(ElementRange)) && npnts != 2)) {
-        cgi_error("Invalid input:  npoint=%d, point set type=%s",
+        cgi_error("Invalid input:  npoint=%ld, point set type=%s",
                    npnts, PointSetTypeName[ptype]);
         return CG_ERROR;
     }
@@ -11889,7 +11889,7 @@ int cg_array_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
     }
     for (n=0; n<DataDimension; n++) {
         if (DimensionVector[n]<=0) {
-            cgi_error("Invalid array size: %d",DimensionVector[n]);
+            cgi_error("Invalid array size: %ld",DimensionVector[n]);
             return CG_ERROR;
         }
     }
@@ -11970,7 +11970,7 @@ int cg_array_general_write(const char *arrayname,
 
     for (n=0; n<s_numdim; n++) {
         if (s_dimvals[n] < 1) {
-            cgi_error("Invalid array dimension for file: %d", s_dimvals[n]);
+            cgi_error("Invalid array dimension for file: %ld", s_dimvals[n]);
             return CG_ERROR;
         }
     }
@@ -13503,20 +13503,20 @@ int cg_ptset_write(CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
 
      /* verify input */
     if(npnts == 0 || pnts == NULL) {
-    cgi_error("Invalid input:  npoint=%d, point set type=%s",
+    cgi_error("Invalid input:  npoint=%ld, point set type=%s",
                    npnts, PointSetTypeName[ptset_type]);
         return CG_ERROR;
     }
 
     if (ptset_type == CGNS_ENUMV(PointList)) {
         if (npnts <= 0) {
-            cgi_error("Invalid input:  npoint=%d, point set type=%s",
+            cgi_error("Invalid input:  npoint=%ld, point set type=%s",
                    npnts, PointSetTypeName[ptset_type]);
             return CG_ERROR;
         }
     } else if (ptset_type == CGNS_ENUMV(PointRange)) {
         if (npnts != 2) {
-            cgi_error("Invalid input:  npoint=%d, point set type=%s",
+            cgi_error("Invalid input:  npoint=%ld, point set type=%s",
                    npnts, PointSetTypeName[ptset_type]);
             return CG_ERROR;
         }

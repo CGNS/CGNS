@@ -1931,9 +1931,9 @@ static void check_arrays (int parclass, int *parunits, int isref,
         if (ndim < 1 || size < 1)
             error ("invalid dimensions");
         if (length < 0 && size != 1 && size != -length)
-            error ("array size not 1 or %d", -length);
+            error ("array size not 1 or %ld", -length);
         if (length > 0 && size != length)
-            error ("array size not %d", length);
+            error ("array size not %ld", length);
         check_quantity (na, name, dataclass, punits, isref, indent+2);
     }
 }
@@ -5203,7 +5203,7 @@ static void check_zone (void)
                 z->idim = 0;
             }
             if (z->dims[1][n] != z->dims[0][n] - 1) {
-                error ("number of cells in %c-direction is %d instead of %d",
+                error ("number of cells in %c-direction is %ld instead of %ld",
                     indexname[n], z->dims[1][n], z->dims[0][n] - 1);
                 z->dims[1][n] = z->dims[0][n] - 1;
             }
@@ -5275,6 +5275,10 @@ static void check_zone (void)
         if (n >= NumFamily &&
             (FileVersion >= 1200 || strcmp(name, "ORPHAN")))
             warning (2, "zone family name \"%s\" not found", name);
+    }
+    else if (ierr == CG_NODE_NOT_FOUND) {
+        warning(2, "No family name declared for zone \"%s\"."
+            "It is a recommended practice to associate one.", z->name);
     }
 
     /*----- ReferenceState -----*/

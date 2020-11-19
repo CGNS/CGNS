@@ -50,7 +50,7 @@ if ("${SIZE_OF_OFF_T}" LESS 8)
 endif ("${SIZE_OF_OFF_T}" LESS 8)
 
 if ("${CMAKE_SIZEOF_VOID_P}" GREATER 4)
-  option(CGNS_ENABLE_64BIT "Enable or disable 64-bit code building" "OFF")
+  option(CGNS_ENABLE_64BIT "Enable or disable 64-bit code building" "ON")
 else ("${CMAKE_SIZEOF_VOID_P}" GREATER 4)
   set(CGNS_ENABLE_64BIT "OFF")
 endif ("${CMAKE_SIZEOF_VOID_P}" GREATER 4)
