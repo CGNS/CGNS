@@ -25,7 +25,7 @@ before_install:
     - |
       if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
          brew update
-         brew tap homebrew/homebrew-core
+         #brew tap homebrew/homebrew-core
          brew install gcc@6
          brew link --overwrite gcc@6
       fi
