@@ -102,8 +102,8 @@ int main(int argc, char **argv) {
   cgsize_t offsetsTotalSize = 0;
   cgsize_t startOffset = 0;
   // MPI arrays
-  cgsize_t *offsets_sizes = NULL;
-  cgsize_t local_size = 0;
+  long *offsets_sizes = NULL;
+  long local_size = 0;
 
   ElementType_t eType = MIXED;
 
@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
     offsets[iCell - cellOnProcStart + 1] = count;
   }
 
-  offsets_sizes = (cgsize_t *)malloc(sizeof(cgsize_t) * comm_size);
+  offsets_sizes = (long *)malloc(sizeof(long) * comm_size);
   local_size = offsets[cellOnProcEnd - cellOnProcStart];
 
   MPI_Allgather(&local_size, 1, MPI_LONG, offsets_sizes, 1, MPI_LONG,
@@ -177,9 +177,9 @@ int main(int argc, char **argv) {
 
   for (int iProc = 0; iProc < comm_size; iProc++) {
     if (iProc < comm_rank) {
-      startOffset += offsets_sizes[iProc];
+      startOffset += (cgsize_t) offsets_sizes[iProc];
     }
-    offsetsTotalSize += offsets_sizes[iProc];
+    offsetsTotalSize += (cgsize_t) offsets_sizes[iProc];
   }
   free(offsets_sizes);
 
