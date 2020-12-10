@@ -1,4 +1,4 @@
-osx_image: xcode9.4
+osx_image: xcode12
 dist: xenial
 language: C
 sudo: required
@@ -24,10 +24,10 @@ before_install:
       fi
     - |
       if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-         #brew update
-         #brew tap homebrew/homebrew-core
-         brew install gcc@6
-         brew link --overwrite gcc@6
+         brew update
+         brew tap homebrew/homebrew-core
+         brew install gcc@9
+         brew link --overwrite gcc@9
       fi
 
 matrix:
@@ -37,7 +37,7 @@ matrix:
        install: export CC="mpicc" export FC="mpif90" export F77="mpif90"
      - os: osx
        compiler: gcc
-       install: export CC="gcc" export FC="gfortran-6" export F77="gfortran-6"
+       install: export CC="gcc" export FC="gfortran-9" export F77="gfortran-9"
 
 before_script:
     - ./bin/install-hdf.sh
