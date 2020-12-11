@@ -307,6 +307,7 @@ int main(int argc, char **argv) {
       compareValuesDouble(nodeZ[ipos], (k * spacing));
       ipos++;
     }
+    callCGNS(cgp_close(cgfile));
   }
   free(nodeX);
   free(nodeY);
@@ -323,9 +324,9 @@ int main(int argc, char **argv) {
       callCGNS(cgp_open(fileName, CG_MODE_READ, &cgfile));
       cgzone = iZone + 1;
       cgelem = 1;
-      cgsize_t start = cellOnProcStart + 1;
-      cgsize_t end = cellOnProcEnd;
-      cgsize_t nbRead = cellOnProcEnd - cellOnProcStart;
+      long start  = (long) (cellOnProcStart + 1);
+      long end    = (long) cellOnProcEnd;
+      long nbRead = (long) (cellOnProcEnd - cellOnProcStart);
       for (int iProc = 0; iProc < comm_size; iProc++) {
         if (iProc != comm_rank) {
           MPI_Recv(&nbRead, 1, MPI_LONG, iProc, 1, MPI_COMM_WORLD,
@@ -380,10 +381,11 @@ int main(int argc, char **argv) {
         free(cellsRead);
         free(offsetsRead);
       }
+      callCGNS(cgp_close(cgfile));
     } else {
-      cgsize_t start = cellOnProcStart + 1;
-      cgsize_t end = cellOnProcEnd;
-      cgsize_t nbRead = cellOnProcEnd - cellOnProcStart;
+      long start = (long)(cellOnProcStart + 1);
+      long end = (long) cellOnProcEnd;
+      long nbRead = (long)(cellOnProcEnd - cellOnProcStart);
       MPI_Send(&nbRead, 1, MPI_LONG, 0, 1, MPI_COMM_WORLD);
       MPI_Send(&start, 1, MPI_LONG, 0, 2, MPI_COMM_WORLD);
       MPI_Send(&end, 1, MPI_LONG, 0, 3, MPI_COMM_WORLD);
