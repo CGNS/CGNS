@@ -7618,11 +7618,30 @@ if test "$withfortran" = "yes"; then
     fi
 #----------- Determine if the Fortran compiler gfortran -------------------
 #   Turn off warnings for passing non-ANSI types to BIND().
+#   Allow for argument mismatch (gfortran >= 10)
 #--------------------------------------------------------------------------
-     fc_vendor="`$FC --version 2>&1 |grep -i 'gcc'`"
+     fc_vendor="`$FC --version 2>&1 | grep -i 'gnu'`"
      if test X != "X$fc_vendor"; then
        FFLAGS="$FFLAGS -Wno-c-binding-type"
-     fi
+
+       # Get the compiler version for GNU fortran
+       #
+       #   f9x_version:   Version number: x.x.x
+       #
+       f9x_version="`$FC -v 2>&1 | grep 'gcc version' | cut -d' ' -f3`"
+       if test X != "X$f9x_version"; then
+           # Get the compiler version numbers
+           f9x_vers_major=`echo $f9x_version | cut -f1 -d.`
+           f9x_vers_minor=`echo $f9x_version | cut -f2 -d.`
+           f9x_vers_patch=`echo $f9x_version | cut -f3 -d.`
+           test -n "$f9x_vers_major" || f9x_vers_major=0
+           test -n "$f9x_vers_minor" || f9x_vers_minor=0
+           test -n "$f9x_vers_patch" || f9x_vers_patch=0
+      fi
+      if test $f9x_vers_major -ge 10; then
+         FFLAGS="$FFLAGS -fallow-argument-mismatch"
+      fi
+    fi
 #----------- Determine if the Fortran compiler NAG -------------------
 #   Add compiler flag for C API calls.
 #--------------------------------------------------------------------------

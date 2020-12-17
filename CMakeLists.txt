@@ -180,6 +180,11 @@ if(CGNS_ENABLE_FORTRAN)
         UPPERRCASE__")
     endif (ListIndex LESS 0)
   endif (FORTRAN_NAMING STREQUAL "UNKNOWN")
+
+  if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU" AND CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 10.0)
+    list (APPEND CMAKE_Fortran_FLAGS "-fallow-argument-mismatch")
+  endif()
+
 endif (CGNS_ENABLE_FORTRAN)
 
 # this forces cmake to set up the required Fortran variables
