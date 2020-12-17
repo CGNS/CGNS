@@ -4944,7 +4944,7 @@ $as_echo_n "checking if 64bit support is requested... " >&6; }
 if test "${enable_64bit+set}" = set; then :
   enableval=$enable_64bit;
 else
-  enableval=no
+  enableval=yes
 fi
 
   test ! "$enableval" = "no" && enableval=yes

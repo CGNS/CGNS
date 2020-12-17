@@ -55,6 +55,9 @@ add_executable(test_zone ${test_zone_FILES})
 set(test_general_readwrite_FILES test_general_readwrite.c)
 add_executable(test_general_readwrite ${test_general_readwrite_FILES})
 
+set(test_poly_unstructured_FILES test_poly_unstructured.c)
+add_executable(test_poly_unstructured ${test_poly_unstructured_FILES})
+
 set(thesis_benchmark_FILES thesis_benchmark.c)
 add_executable(thesis_benchmark ${thesis_benchmark_FILES})
 
@@ -91,6 +94,8 @@ if (CGNS_ENABLE_TESTS)
       ${MPIEXEC_PREFLAGS} ./test_zone ${MPIEXEC_POSTFLAGS})
   add_test(test_general_readwrite ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} ./test_general_readwrite ${MPIEXEC_POSTFLAGS})
+  add_test(test_poly_unstructured ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+      ${MPIEXEC_PREFLAGS} ./test_poly_unstructured ${MPIEXEC_POSTFLAGS})
   add_test(thesis_benchmark ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} ./thesis_benchmark ${MPIEXEC_POSTFLAGS})
   if (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)

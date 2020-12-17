@@ -290,7 +290,7 @@ if test -z "$withsys" || test "$withsys" = "no"; then
   AC_MSG_CHECKING([if 64bit support is requested])
   AC_ARG_ENABLE(64bit,
     [  --enable-64bit          enable 64bit support (where applicable)],,
-    enableval=no)
+    enableval=yes)
   test ! "$enableval" = "no" && enableval=yes
   do64bit=$enableval
   AC_MSG_RESULT($do64bit)

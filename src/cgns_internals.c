@@ -81,7 +81,7 @@ void *cgi_malloc(size_t cnt, size_t size)
 {
     void *buf = calloc(cnt, size);
     if (buf == NULL) {
-        cgi_error("calloc failed for %d values of size %d", cnt, size);
+        cgi_error("calloc failed for %zu values of size %zu", cnt, size);
         exit (1);
     }
     return buf;
@@ -91,7 +91,7 @@ void *cgi_realloc(void *oldbuf, size_t bytes)
 {
     void *buf = realloc(oldbuf, bytes);
     if (buf == NULL) {
-        cgi_error("realloc failed for %d bytes", bytes);
+        cgi_error("realloc failed for %zu bytes", bytes);
         exit (1);
     }
     return buf;
@@ -857,7 +857,7 @@ int cgi_read_zcoor(int in_link, double parent_id, int *nzcoor, cgns_zcoor **zcoo
                 }
                 if (strcmp(zcoor[0][g].coord[z].data_type,"R4") &&
                     strcmp(zcoor[0][g].coord[z].data_type,"R8")) {
-                    cgi_error("Datatype %d not supported for coordinates",zcoor[0][g].coord[z].data_type);
+                    cgi_error("Datatype %s not supported for coordinates",zcoor[0][g].coord[z].data_type);
                     return CG_ERROR;
                 }
             }
@@ -1571,7 +1571,7 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
                     strcmp(sol[0][s].field[z].data_type,"R8") &&
                     strcmp(sol[0][s].field[z].data_type,"X4") &&
                     strcmp(sol[0][s].field[z].data_type,"X8")) {
-                    cgi_error("Datatype %d not supported for flow solutions",sol[0][s].field[z].data_type);
+                    cgi_error("Datatype %s not supported for flow solutions",sol[0][s].field[z].data_type);
                     return CG_ERROR;
                 }
             }
@@ -3145,7 +3145,7 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
 
      /* verify dimension vector */
     if (!(ndim==2 && dim_vals[0]>0 && dim_vals[1]>0)) {
-        cgi_error("Invalid definition of point set:  ptset->type='%s', ndim=%d, dim_vals[0]=%d",
+        cgi_error("Invalid definition of point set:  ptset->type='%s', ndim=%d, dim_vals[0]=%ld",
             PointSetTypeName[ptset->type], ndim, dim_vals[0]);
         return CG_ERROR;
     }
@@ -4065,7 +4065,7 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
                     strcmp(discrete[0][n].array[i].data_type,"I8") &&
                     strcmp(discrete[0][n].array[i].data_type,"R4") &&
                     strcmp(discrete[0][n].array[i].data_type,"R8")) {
-                    cgi_error("Datatype %d not supported for Discrete Data",discrete[0][n].array[i].data_type);
+                    cgi_error("Datatype %s not supported for Discrete Data",discrete[0][n].array[i].data_type);
                     return CG_ERROR;
                 }
             }
@@ -4310,7 +4310,7 @@ int cgi_read_amotion(int in_link, double parent_id, int *namotions,
                 }
                 if (strcmp(amotion[0][n].array[i].data_type,"R4") &&
                     strcmp(amotion[0][n].array[i].data_type,"R8") ) {
-                    cgi_error("Datatype %d not supported for ArbitraryGridMotion array",amotion[0][n].array[i].data_type);
+                    cgi_error("Datatype %s not supported for ArbitraryGridMotion array",amotion[0][n].array[i].data_type);
                     return CG_ERROR;
                 }
             }
@@ -5516,27 +5516,27 @@ cgns_link *cgi_read_link (double node_id)
     return CG_OK;
 }
 
-int cgi_datasize(int Idim, cgsize_t *CurrentDim,
+int cgi_datasize(int ndim, cgsize_t *dims,
                  CGNS_ENUMV(GridLocation_t) location,
                  int *rind_planes, cgsize_t *DataSize)
 {
     int j;
 
     if (location==CGNS_ENUMV( Vertex )) {
-        for (j=0; j<Idim; j++)
-            DataSize[j] = CurrentDim[j] + rind_planes[2*j] + rind_planes[2*j+1];
+        for (j=0; j<ndim; j++)
+            DataSize[j] = dims[j] + rind_planes[2*j] + rind_planes[2*j+1];
 
     } else if (location==CGNS_ENUMV(CellCenter) ||
               (location==CGNS_ENUMV(FaceCenter) && Cdim==2) ||
               (location==CGNS_ENUMV(EdgeCenter) && Cdim==1)) {
-        for (j=0; j<Idim; j++)
-            DataSize[j] = CurrentDim[j+Idim] + rind_planes[2*j] + rind_planes[2*j+1];
+        for (j=0; j<ndim; j++)
+            DataSize[j] = dims[j+ndim] + rind_planes[2*j] + rind_planes[2*j+1];
 
     } else if (location == CGNS_ENUMV( IFaceCenter ) ||
                location == CGNS_ENUMV( JFaceCenter ) ||
                location == CGNS_ENUMV( KFaceCenter )) {
-        for (j=0; j<Idim; j++) {
-            DataSize[j] = CurrentDim[j] + rind_planes[2*j] + rind_planes[2*j+1];
+        for (j=0; j<ndim; j++) {
+            DataSize[j] = dims[j] + rind_planes[2*j] + rind_planes[2*j+1];
             if ((location == CGNS_ENUMV( IFaceCenter ) && j!=0) ||
                 (location == CGNS_ENUMV( JFaceCenter ) && j!=1) ||
                 (location == CGNS_ENUMV( KFaceCenter ) && j!=2)) DataSize[j]--;
@@ -5631,6 +5631,71 @@ int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data
         if (cgio_read_all_data_type(cg->cgio, id, data_type, (void *)data)) {
             cg_io_error("cgio_read_all_data_type");
             return CG_ERROR;
+        }
+    }
+    return CG_OK;
+}
+
+int cgi_read_offset_data_type(double id, char const *data_type, cgsize_t start, cgsize_t end, char const *m_type, void* data)
+{
+    cgsize_t cnt = end - start + 1;
+    cgsize_t s_start[1], s_end[1], s_stride[1];
+    cgsize_t m_start[1], m_end[1], m_stride[1], m_dim[1];
+    int ier = CG_OK;
+    s_start[0] = start;
+    s_end[0] = end;
+    s_stride[0] = 1;
+    m_start[0] = 1;
+    m_end[0] = cnt;
+    m_stride[0] = 1;
+    m_dim[0] = cnt;
+
+    if (0 == strcmp(data_type, "I4") && 0 == strcmp(m_type, "I4")) {
+        if (cgio_read_data_type(cg->cgio, id,
+            s_start, s_end, s_stride, "I4", 1, m_dim,
+            m_start, m_end, m_stride, data)) {
+            cg_io_error("cgio_read_data");
+            return CG_ERROR;
+        }
+    }
+    else if (0 == strcmp(data_type, "I8") && 0 == strcmp(m_type, "I8")) {
+        if (cgio_read_data_type(cg->cgio, id,
+            s_start, s_end, s_stride, "I8", 1, m_dim,
+            m_start, m_end, m_stride, data)) {
+            cg_io_error("cgio_read_data");
+            return CG_ERROR;
+        }
+    }
+    else {
+        if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+            void* conv_data = NULL;
+            conv_data = malloc((size_t)(cnt * size_of(data_type)));
+            if (conv_data == NULL) {
+                cgi_error("Error allocating conv_data");
+                return CG_ERROR;
+            }
+            if (cgio_read_data_type(cg->cgio, id,
+                s_start, s_end, s_stride,
+                data_type,
+                1, m_dim, m_start, m_end, m_stride, conv_data)) {
+                free(conv_data);
+                cg_io_error("cgio_read_data_type");
+                return CG_ERROR;
+            }
+
+            ier = cgi_convert_data(cnt, cgi_datatype(data_type),
+                conv_data, cgi_datatype(m_type), data);
+            free(conv_data);
+            if (ier) return CG_ERROR;
+        }
+        else {
+            /* in situ conversion */
+            if (cgio_read_data_type(cg->cgio, id,
+                s_start, s_end, s_stride, m_type, 1, m_dim,
+                m_start, m_end, m_stride, data)) {
+                cg_io_error("cgio_read_data_type");
+                return CG_ERROR;
+            }
         }
     }
     return CG_OK;
@@ -6975,10 +7040,10 @@ int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata)
 }
 
 int cgi_write_ptset(double parent_id, char_33 name, cgns_ptset *ptset,
-                    int Idim, void *ptset_ptr)
+                    int ndim, void *ptset_ptr)
 {
     cgsize_t dim_vals[12];
-    int ndim;
+    int num_dim;
     char_33 label;
 
     if (ptset->link) {
@@ -6993,13 +7058,13 @@ int cgi_write_ptset(double parent_id, char_33 name, cgns_ptset *ptset,
     else strcpy(label,"IndexArray_t");
 
      /* Dimension vector */
-    dim_vals[0]=Idim;
+    dim_vals[0]=ndim;
     dim_vals[1]=ptset->npts;
-    ndim = 2;
+    num_dim = 2;
 
      /* Create the node */
     if (cgi_new_node(parent_id, name, label, &ptset->id,
-        ptset->data_type, ndim, dim_vals, ptset_ptr)) return CG_ERROR;
+        ptset->data_type, num_dim, dim_vals, ptset_ptr)) return CG_ERROR;
 
     return CG_OK;
 }
@@ -8158,8 +8223,8 @@ int cgi_array_general_verify_range(
      /* both the file hyperslab and memory hyperslab must have same number of
       * points */
     if (s_numpt != m_numpt) {
-        cgi_error("Number of locations in range of memory array (%d) do not "
-                  "match number of locations requested in range of file (%d)",
+        cgi_error("Number of locations in range of memory array (%ld) do not "
+                  "match number of locations requested in range of file (%ld)",
                   m_numpt, s_numpt);
         return CG_ERROR;
     }
@@ -12369,7 +12434,8 @@ cgns_array *cgi_array_address(int local_mode, int allow_dup, int given_no,
     } else if (strcmp(posit->label,"Elements_t")==0) {
         cgns_section *section= (cgns_section *)posit->posit;
         if (local_mode==CG_MODE_WRITE) {
-            if (strcmp(given_name,"ElementConnectivity") &&
+            if (strcmp(given_name,"ElementStartOffset") &&
+                strcmp(given_name,"ElementConnectivity") &&
 		strcmp(given_name,"ParentElements") &&
 		strcmp(given_name,"ParentElementsPosition") &&
 		strcmp(given_name,"ParentData")) {
