@@ -5026,7 +5026,7 @@ int cg_poly_elements_general_read(int file_number, int B, int Z, int S,
         int* tmp_connect_offset = (int*)connect_offset;
         int offset = tmp_connect_offset[0];
         size = tmp_connect_offset[end - start + 1] - offset;
-        if (size < 0) return CG_ERROR;
+        if (size < 1) return CG_ERROR;
         s_start[0] = (cgsize_t)(offset + 1);
         s_end[0] = (cgsize_t)(tmp_connect_offset[end - start + 1]);
         m_end[0] = (cgsize_t)size;
@@ -5039,12 +5039,13 @@ int cg_poly_elements_general_read(int file_number, int B, int Z, int S,
     else if (m_type == CGNS_ENUMV(LongInteger)) {
         cglong_t* tmp_connect_offset = (cglong_t*)connect_offset;
         cglong_t offset = tmp_connect_offset[0];
-        cglong_t size = tmp_connect_offset[end - start + 1] - offset;
-        if (size < 0) return CG_ERROR;
+        cglong_t size_long = tmp_connect_offset[end - start + 1] - offset;
+        if (size_long < 1) return CG_ERROR;
+        size = (cgsize_t)size_long;
         s_start[0] = (cgsize_t)(offset + 1);
         s_end[0] = (cgsize_t)(tmp_connect_offset[end - start + 1]);
-        m_end[0] = (cgsize_t)size;
-        m_dim[0] = (cgsize_t)size;
+        m_end[0] = size;
+        m_dim[0] = size;
         for (n = 0; n < (end - start + 2); n++)
         {
             tmp_connect_offset[n] -= offset;
