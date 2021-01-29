@@ -22,22 +22,12 @@ before_install:
          sudo apt-get install -qq mpich;
          sudo apt-get install -qq libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev;
       fi
-    - |
-      if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-         brew update
-         brew tap homebrew/homebrew-core
-         brew install gcc@9
-         brew link --overwrite gcc@9
-      fi
 
 matrix:
    include:
      - os: linux
        compiler: gcc
        install: export CC="mpicc" export FC="mpif90" export F77="mpif90"
-     - os: osx
-       compiler: gcc
-       install: export CC="gcc" export FC="gfortran-9" export F77="gfortran-9"
 
 before_script:
     - ./bin/install-hdf.sh
