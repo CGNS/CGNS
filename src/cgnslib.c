@@ -5085,12 +5085,12 @@ int cg_poly_elements_general_read(int file_number, int B, int Z, int S,
             s_start, s_end, s_stride,
             section->connect->data_type,
             1, m_dim, m_start, m_end, m_stride, conv_data)) {
-            if (conv_data) free(conv_data);
+            free(conv_data);
             cg_io_error("cgio_read_data_type");
             return CG_ERROR;
         }
         ier = cgi_convert_data(size, s_type, conv_data, m_type, elements);
-        if (conv_data) free(conv_data);
+        free(conv_data);
         if (ier) return CG_ERROR;
     }
     else {
