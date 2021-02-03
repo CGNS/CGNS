@@ -34,6 +34,7 @@ CALL = \
 	write_zones$(EXE) \
 	write_rind$(EXE) \
 	test_bbox$(EXE) \
+	test_convert_elem$(EXE) \
 	test_complex$(EXE)
 
 F_TESTS = \
@@ -237,6 +238,12 @@ test_bbox$(EXE) : test_bbox.c $(CGNSLIB)
 
 test_complex$(EXE) : test_complex.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_complex.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_convert_elem$(EXE) : test_convert_elem.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_convert_elem.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------

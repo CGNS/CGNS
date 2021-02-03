@@ -25,6 +25,7 @@ CALL =	pcgns_ctest$(EXE) \
 	test_zone$(EXE) \
 	test_general_readwrite$(EXE) \
         Metadata_Stressing$(EXE) \
+	test_poly_unstructured$(EXE) \
 	thesis_benchmark$(EXE)
 
 FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) 
@@ -125,6 +126,14 @@ test_zone$(EXE) : test_zone.c $(CGNSLIB)
 test_general_readwrite$(EXE) : test_general_readwrite.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_general_readwrite.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
+
+
+#----------
+
+test_poly_unstructured$(EXE) : test_poly_unstructured.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_poly_unstructured.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
 
 #----------
 

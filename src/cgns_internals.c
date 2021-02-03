@@ -5636,6 +5636,71 @@ int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data
     return CG_OK;
 }
 
+int cgi_read_offset_data_type(double id, char const *data_type, cgsize_t start, cgsize_t end, char const *m_type, void* data)
+{
+    cgsize_t cnt = end - start + 1;
+    cgsize_t s_start[1], s_end[1], s_stride[1];
+    cgsize_t m_start[1], m_end[1], m_stride[1], m_dim[1];
+    int ier = CG_OK;
+    s_start[0] = start;
+    s_end[0] = end;
+    s_stride[0] = 1;
+    m_start[0] = 1;
+    m_end[0] = cnt;
+    m_stride[0] = 1;
+    m_dim[0] = cnt;
+
+    if (0 == strcmp(data_type, "I4") && 0 == strcmp(m_type, "I4")) {
+        if (cgio_read_data_type(cg->cgio, id,
+            s_start, s_end, s_stride, "I4", 1, m_dim,
+            m_start, m_end, m_stride, data)) {
+            cg_io_error("cgio_read_data");
+            return CG_ERROR;
+        }
+    }
+    else if (0 == strcmp(data_type, "I8") && 0 == strcmp(m_type, "I8")) {
+        if (cgio_read_data_type(cg->cgio, id,
+            s_start, s_end, s_stride, "I8", 1, m_dim,
+            m_start, m_end, m_stride, data)) {
+            cg_io_error("cgio_read_data");
+            return CG_ERROR;
+        }
+    }
+    else {
+        if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+            void* conv_data = NULL;
+            conv_data = malloc((size_t)(cnt * size_of(data_type)));
+            if (conv_data == NULL) {
+                cgi_error("Error allocating conv_data");
+                return CG_ERROR;
+            }
+            if (cgio_read_data_type(cg->cgio, id,
+                s_start, s_end, s_stride,
+                data_type,
+                1, m_dim, m_start, m_end, m_stride, conv_data)) {
+                free(conv_data);
+                cg_io_error("cgio_read_data_type");
+                return CG_ERROR;
+            }
+
+            ier = cgi_convert_data(cnt, cgi_datatype(data_type),
+                conv_data, cgi_datatype(m_type), data);
+            free(conv_data);
+            if (ier) return CG_ERROR;
+        }
+        else {
+            /* in situ conversion */
+            if (cgio_read_data_type(cg->cgio, id,
+                s_start, s_end, s_stride, m_type, 1, m_dim,
+                m_start, m_end, m_stride, data)) {
+                cg_io_error("cgio_read_data_type");
+                return CG_ERROR;
+            }
+        }
+    }
+    return CG_OK;
+}
+
 int cgi_convert_data(cgsize_t cnt,
                      CGNS_ENUMT(DataType_t) from_type, const void *from_data,
                      CGNS_ENUMT(DataType_t) to_type, void *to_data)
@@ -12369,7 +12434,8 @@ cgns_array *cgi_array_address(int local_mode, int allow_dup, int given_no,
     } else if (strcmp(posit->label,"Elements_t")==0) {
         cgns_section *section= (cgns_section *)posit->posit;
         if (local_mode==CG_MODE_WRITE) {
-            if (strcmp(given_name,"ElementConnectivity") &&
+            if (strcmp(given_name,"ElementStartOffset") &&
+                strcmp(given_name,"ElementConnectivity") &&
 		strcmp(given_name,"ParentElements") &&
 		strcmp(given_name,"ParentElementsPosition") &&
 		strcmp(given_name,"ParentData")) {
