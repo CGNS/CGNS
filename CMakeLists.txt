@@ -377,8 +377,8 @@ endif(CGNS_BUILD_SHARED)
 #-----------------------------------------------------------------------------
 option (CGNS_BUILD_TESTING "Build CGNS Testing" OFF)
 if (CGNS_BUILD_TESTING)
-  set (DART_TESTING_TIMEOUT 1200
-      CACHE INTEGER
+  set (DART_TESTING_TIMEOUT "1200"
+      CACHE STRING
       "Timeout in seconds for each test (default 1200=20minutes)"
   )
   enable_testing ()
