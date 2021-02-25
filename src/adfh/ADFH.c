@@ -1143,11 +1143,11 @@ static hid_t open_link(hid_t id, int *err)
       }
   }
 #ifdef ADFH_DEBUG_ON
-+#if H5_VERSION_GE(1,12,0)
-+  H5Oget_info3(lid, &oinfo, H5O_INFO_BASIC);
-+#else
-   H5Oget_info(lid, &oinfo);
-+#endif
+#if H5_VERSION_GE(1,12,0)
+  H5Oget_info3(lid, &oinfo, H5O_INFO_BASIC);
+#else
+  H5Oget_info(lid, &oinfo);
+#endif
   ADFH_DEBUG(("<ADFH open_link [%d]->[%d]:%d",id,lid,oinfo.rc));
 #endif
   return lid;
