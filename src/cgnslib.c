@@ -51,6 +51,7 @@ freely, subject to the following restrictions:
 #include "cgnslib.h"
 #include "cgns_header.h"
 #include "cgns_io.h"
+#include "cg_hashmap.h"
 
 /* to determine default file type */
 #if CG_BUILD_HDF5
@@ -1231,41 +1232,58 @@ int cg_zone_write(int file_number, int B, const char *zonename, const cgsize_t *
     }
 
      /* Overwrite a Zone_t Node: */
-    for (index=0; index<base->nzones; index++) {
-        if (strcmp(zonename, base->zone[index].name)==0) {
-
-             /* in CG_MODE_WRITE, children names must be unique */
-            if (cg->mode==CG_MODE_WRITE) {
-                cgi_error("Duplicate child name found: %s",zonename);
+    if (base->zonemap == 0) {
+        base->zonemap = cgi_new_presized_hashmap(base->nzones);
+        if (base->zonemap == NULL) {
+            cgi_error("Could not allocate zonemap");
+            return CG_ERROR;
+        }
+        for (index = 0; index < base->nzones; index++) {
+            if (cgi_map_set_item(base->zonemap, base->zone[index].name, index) != 0) {
+                cgi_error("Can not set zone %s into hashmap", base->zone[index].name);
                 return CG_ERROR;
             }
-
-             /* overwrite an existing zone */
-             /* delete the existing zone from file */
-            if (cgi_delete_node(base->id, base->zone[index].id))
-                return CG_ERROR;
-             /* save the old in-memory address to overwrite */
-            zone = &(base->zone[index]);
-             /* free memory */
-            cgi_free_zone(zone);
-            break;
         }
     }
-     /* ... or add a Zone_t Node: */
-    if (index==base->nzones) {
+  
+    index = (int) cgi_map_get_item(base->zonemap, zonename);
+    /* */
+    if (index != -1) {
+        zone = &(base->zone[index]);
+        /* in CG_MODE_WRITE, children names must be unique */
+        if (cg->mode == CG_MODE_WRITE) {
+            cgi_error("Duplicate child name found: %s", zone->name);
+            return CG_ERROR;
+        }
+
+        /* overwrite an existing zone */
+        /* delete the existing zone from file */
+        if (cgi_delete_node(base->id, zone->id))
+            return CG_ERROR;
+        cgi_free_zone(zone);
+    } else {
+        /* ... or add a Zone_t Node: */
+        // This breaks everything
         if (base->nzones == 0) {
-            base->zone = CGNS_NEW(cgns_zone, base->nzones+1);
-        } else {
-            base->zone = CGNS_RENEW(cgns_zone, base->nzones+1, base->zone);
+            base->zone = CGNS_NEW(cgns_zone, base->nzones + 1);
+        }
+        else {
+            base->zone = CGNS_RENEW(cgns_zone, base->nzones + 1, base->zone);
         }
         zone = &(base->zone[base->nzones]);
+        index = base->nzones;
+        
+        if (cgi_map_set_item(base->zonemap, zonename, index) != 0) {
+            cgi_error("Error while adding zonename %s to zonemap hashtable", zonename);
+            return CG_ERROR;
+        }
         base->nzones++;
     }
-    (*Z) = index+1;
+    (*Z) = index + 1;
 
-     /* save data to zone */
+    /* save data to zone */
     memset(zone, 0, sizeof(cgns_zone));
-    strcpy(zone->name,zonename);
+    strcpy(zone->name, zonename);
     if ((zone->nijk = (cgsize_t *)malloc((size_t)(index_dim*3*sizeof(cgsize_t))))==NULL) {
         cgi_error("Error allocating zone->nijk");
         return CG_ERROR;
@@ -13989,8 +14007,15 @@ int cg_delete_node(const char *node_name)
         cgns_base *parent = (cgns_base *)posit->posit;
 
      /* Case 1: node_label = can have multiple occurrence:  */
-        if (strcmp(node_label,"Zone_t")==0)
+        if (strcmp(node_label, "Zone_t") == 0) {
             CGNS_DELETE_SHIFT(nzones, zone, cgi_free_zone)
+            if (parent->zonemap) {
+                /* It is costly since indexing is recomputed */
+                if (cgi_map_contains(parent->zonemap, node_name) == 1) {
+                    cgi_map_del_shift_item(parent->zonemap, node_name);
+                }
+            }
+        }
         else if (strcmp(node_label,"Family_t")==0)
             CGNS_DELETE_SHIFT(nfamilies, family, cgi_free_family)
         else if (strcmp(node_label,"IntegralData_t")==0)
