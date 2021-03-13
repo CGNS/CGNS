@@ -2059,7 +2059,14 @@ AC_SUBST(TCL_LIBRARY_SPEC)
 AC_SUBST(TK_LIBRARY_SPEC)
 AC_SUBST(LIBRARY_PATH_SPEC)
 
-AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h Makefile \
-  make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile \
-  cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig)
+SIZEOF_LONG="$ac_cv_sizeof_long"
+AC_CHECK_SIZEOF([void *])
+SIZEOF_VOID_P="$ac_cv_sizeof_void_p"
+AC_SUBST(SIZEOF_LONG)
+AC_SUBST(SIZEOF_VOID_P)
+
+AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h \
+  cg_hash_types.h Makefile make.defs cgnsBuild.defs tests/Makefile \
+  tools/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs \
+  cgnstools/cgconfig)
 

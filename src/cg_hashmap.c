@@ -93,10 +93,10 @@ cgi_hashmap_set_index(cgns_hashmap_keyobject *keys, map_ssize_t i, map_ssize_t i
     }
 }
 
-#if SIZEOF_USIZE_T == 4
+#if SIZEOF_MAP_USIZE_T == 4
 #define _fnvprefix 0x811c9dc5
 #define _fnvmult 0x01000193
-#elif SIZEOF_USIZE_T == 8
+#elif SIZEOF_MAP_USIZE_T == 8
 #define _fnvprefix 0xcbf29ce484222325
 #define _fnvmult 0x00000100000001B3
 #else
@@ -113,7 +113,7 @@ cgi_hash_cstr(char* a)
     map_ssize_t remainder, blocks;
     union {
         map_usize_t value;
-        unsigned char bytes[SIZEOF_USIZE_T];
+        unsigned char bytes[SIZEOF_MAP_USIZE_T];
     } block;
     
     len = (map_ssize_t) strlen(a);
@@ -121,17 +121,17 @@ cgi_hash_cstr(char* a)
         return 0;
     }
     
-    remainder = len % SIZEOF_USIZE_T;
+    remainder = len % SIZEOF_MAP_USIZE_T;
     if (remainder == 0) {
-        remainder = SIZEOF_USIZE_T;
+        remainder = SIZEOF_MAP_USIZE_T;
     }
-    blocks = (len - remainder) / SIZEOF_USIZE_T;
+    blocks = (len - remainder) / SIZEOF_MAP_USIZE_T;
     x = (map_usize_t) _fnvprefix;
     x ^= (map_usize_t) *p << 7;
     while (blocks--) {
-        memcpy(block.bytes, p, SIZEOF_USIZE_T);
+        memcpy(block.bytes, p, SIZEOF_MAP_USIZE_T);
         x = (_fnvmult * x) ^ block.value;
-        p += SIZEOF_USIZE_T;
+        p += SIZEOF_MAP_USIZE_T;
     }
     /* add remainder */
     for (; remainder > 0; remainder--)
