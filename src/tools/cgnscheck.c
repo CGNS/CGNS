@@ -6149,6 +6149,7 @@ void check_node_name_recursive(int cgio_num, double nodeid)
   int len;
   char_33 name;
   double *childids;
+  char *slash_ptr = NULL;
 
   if (cgio_get_name(cgio_num, nodeid, name) != CG_OK) {
     return;
@@ -6160,6 +6161,10 @@ void check_node_name_recursive(int cgio_num, double nodeid)
 
   if (name[0] == '.' || name[0] == '/') {
     error ("Invalid CGNS node name: node should not start with slash or dot");
+  }
+  slash_ptr = strchr(name, '/');
+  if (slash_ptr != NULL) {
+    error("Invalid CGNS node name: node should not have a slash");
   }
 
   cgio_number_children(cgio_num, nodeid, &nchildren);
