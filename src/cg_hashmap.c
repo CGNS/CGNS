@@ -478,7 +478,6 @@ static int
 cgi_insert_key(cgns_hashmap_object *mp, const char *key, map_ssize_t hash, map_ssize_t value)
 {
     map_ssize_t old_value = -1;
-    cgns_hashmap_entry *ep;
 
     map_ssize_t ix = cgi_name_lookup(mp, key, hash, &old_value);
     if (ix == MAPIX_ERROR)
@@ -493,6 +492,7 @@ cgi_insert_key(cgns_hashmap_object *mp, const char *key, map_ssize_t hash, map_s
                 return -1;
         }
         map_ssize_t hashpos = cgi_find_empty_slot(mp->ma_keys, hash);
+        cgns_hashmap_entry *ep;
         ep = &MAP_ENTRIES(mp->ma_keys)[mp->ma_keys->map_nentries];
         cgi_hashmap_set_index(mp->ma_keys, hashpos, mp->ma_keys->map_nentries);
         strcpy(ep->me_key, key);

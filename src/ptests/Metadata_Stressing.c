@@ -29,10 +29,9 @@ const cgsize_t zoneSize[3][3] = {{N + 1, N + 1, N + 1}, {N, N, N}, {0, 0, 0}};
 const int ROOT = 0;
 
 int read_inputs(int* argc, char*** argv) {
-  int k;
 
   if(whoami==0) {
-    for(k=1;k<*argc;k++) {
+    for(int k = 1; k < *argc; k++) {
       if(strcmp((*argv)[k],"-nblocks")==0) {
         k++;
         sscanf((*argv)[k],"%u",&NBLOCKS);
@@ -97,7 +96,7 @@ int main(int argc, char* argv[]) {
   // ---- Set MPI communicator for parallel operations  ----------------------------------
   //cgp_mpi_comm(MPI_COMM_WORLD);
 
-  snprintf(fname, 16, "grid_%d.cgns", NBLOCKS);
+  snprintf(fname, 16, "grid_%u.cgns", NBLOCKS);
 
   if (whoami == ROOT) {
   // ---- Open CGNS file -----------------------------------------------------------------
@@ -129,7 +128,7 @@ int main(int argc, char* argv[]) {
     zone = (int *)malloc(NBLOCKS*sizeof(int));
     for (uint32_t b = 0; b < NBLOCKS; ++b) {
       // Zone name
-      snprintf(zonename, 11, "Zone_%d", (b + 1) );
+      snprintf(zonename, 11, "Zone_%u", (b + 1) );
       // Create zone
       if (cg_zone_write(index_file, index_base, zonename, (cgsize_t *)zoneSize,
                         CGNS_ENUMV(Structured), &(zone[b])) != CG_OK)
@@ -220,7 +219,7 @@ int main(int argc, char* argv[]) {
   }
   for (uint32_t b = 0; b < NBLOCKS; ++b) {
     char path[100];
-    snprintf(path, 99, "/Base/Zone_%d/GridCoordinates/CoordinateX", (b + 1) );
+    snprintf(path, 99, "/Base/Zone_%u/GridCoordinates/CoordinateX", (b + 1) );
     if(cg_gopath(index_file, path) != CG_OK) {
       printf("*FAILED* cg_goto\n");
       cgp_error_exit();
