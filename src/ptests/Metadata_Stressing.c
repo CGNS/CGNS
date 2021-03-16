@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
   }
 
   for (uint32_t b = 0; b < NBLOCKS; ++b) {
-    snprintf(zonename, 11, "Zone_%d", (b + 1) );
+    snprintf(zonename, 11, "Zone_%u", (b + 1) );
     if(cg_goto(index_file, index_base, zonename, 0, "end") != CG_OK) {
       printf("*FAILED* cg_goto\n");
       cgp_error_exit();
