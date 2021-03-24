@@ -167,8 +167,12 @@
 
 /* configuration options */
 
-#define ADFH_CONFIG_COMPRESS 1
-#define ADFH_CONFIG_MPI_COMM 2
+#define ADFH_CONFIG_COMPRESS   1
+#define ADFH_CONFIG_MPI_COMM   2
+#define ADFH_CONFIG_CORE       3
+#define ADFH_CONFIG_CORE_INCR  4
+#define ADFH_CONFIG_CORE_WRITE 5
+
 
 /***********************************************************************
 	Prototypes for Interface Routines

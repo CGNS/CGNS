@@ -87,10 +87,10 @@
  *      modes for cgns file                                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define CG_MODE_READ	0
-#define CG_MODE_WRITE	1
-#define CG_MODE_MODIFY  2
-#define CG_MODE_CLOSED  3
+#define CG_MODE_READ	 0
+#define CG_MODE_WRITE	 1
+#define CG_MODE_MODIFY   2
+#define CG_MODE_CLOSED   3
 
 /* file types */
 
@@ -125,8 +125,11 @@
 #define CG_CONFIG_FILE_TYPE  5
 #define CG_CONFIG_RIND_INDEX 6
 
-#define CG_CONFIG_HDF5_COMPRESS   201
-#define CG_CONFIG_HDF5_MPI_COMM   202
+#define CG_CONFIG_HDF5_COMPRESS        201
+#define CG_CONFIG_HDF5_MPI_COMM        202
+#define CG_CONFIG_HDF5_DISKLESS        203
+#define CG_CONFIG_HDF5_DISKLESS_INCR   204
+#define CG_CONFIG_HDF5_DISKLESS_WRITE  205
 
 /* HDF5 dataset storage layout */
 

@@ -63,6 +63,16 @@ static int CompressData = -1;
 static MPI_Comm ParallelMPICommunicator = MPI_COMM_NULL;
 #endif
 
+/*** HDF5's CORE FILE DRIVER PARAMETERS ****/
+
+/* Enables using the core file driver */
+static int core_vfd = 0;
+/* specifies the increment by which allocated memory is
+ * to be increased each time more memory is required. */
+static size_t core_vfd_increment = 4096;
+/* write the file contents to disk when the file is closed */
+static hbool_t core_vfd_backing_store = 0;
+
 #define TO_UPPER( c ) ((islower(c))?(toupper(c)):(c))
 
 /* HDF5 compact storage limit */
@@ -1440,6 +1450,18 @@ void ADFH_Configure(const int option, const void *value, int *err)
             CompressData = compress;
         set_error(NO_ERROR, err);
     }
+    else if (option == ADFH_CONFIG_CORE) {
+        core_vfd = (int)((size_t)value);
+        set_error(NO_ERROR, err);
+    }
+    else if (option == ADFH_CONFIG_CORE_WRITE) {
+        core_vfd_backing_store = (hbool_t)value;
+        set_error(NO_ERROR, err);
+    }
+    else if (option == ADFH_CONFIG_CORE_INCR) {
+        core_vfd_increment = (size_t)value;
+        set_error(NO_ERROR, err);
+    }
 #if CG_BUILD_PARALLEL
     else if (option == ADFH_CONFIG_MPI_COMM) {
       MPI_Comm* comm = (MPI_Comm*)value;
@@ -2237,11 +2259,15 @@ void ADFH_Database_Open(const char   *name,
   }
 #endif
 
-  if (0 == strcmp(fmt, "DISKLESS")) {
-    /* increment (bytes) allocated memory is increased each time more memory is required */
-    size_t increment = 4096;
-    hbool_t backing_store = 1;  /* write the file contents to disk when the file is closed */
-    H5Pset_fapl_core(g_propfileopen, increment, backing_store);
+  /* check for an error if core file driver is set to write memory to file, 
+     but the CGNS file mode was set to read only */
+  if( (core_vfd_backing_store == 1) && (mode == ADFH_MODE_RDO) ) {
+    ADFH_DEBUG(("File mode read-only, but diskless option set to write"));
+    set_error(ADFH_ERR_INVALID_OPTION, err);
+    return;
+  }
+  if(core_vfd == 1) {
+    H5Pset_fapl_core(g_propfileopen, core_vfd_increment, core_vfd_backing_store);
   }
 
   set_error(NO_ERROR, err);
