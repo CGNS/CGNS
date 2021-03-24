@@ -773,10 +773,10 @@ int cg_configure(int what, void *value)
 {
     /* cgio options */
     if (what > 100) {
-        if (cgio_configure(what, value)) {
-            cg_io_error("cgio_configure");
-            return CG_ERROR;
-        }
+      if( cgio_configure(what, value) != -1) {
+        cg_io_error("cgio_configure");
+        return CG_ERROR;
+      }
     }
     /* error message handler */
     else if (what == CG_CONFIG_ERROR) {

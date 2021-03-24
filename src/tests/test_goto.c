@@ -69,7 +69,8 @@ int main (int argc, char **argv)
 
     /* errors and warnings go to error_exit */
 
-    cg_configure(CG_CONFIG_ERROR, (void *)error_exit);
+    if( cg_configure(CG_CONFIG_ERROR, (void *)error_exit))
+        cg_error_exit();
 
     if (argc > 1) {
         n = 0;
@@ -162,10 +163,12 @@ int main (int argc, char **argv)
     /* this should fail since ptset not allowed as child of
        user data, except below a zone_t node */
 
-    cg_configure(CG_CONFIG_ERROR, NULL);
+    if( cg_configure(CG_CONFIG_ERROR, NULL))
+            cg_error_exit();
     if (cg_ptset_write (CGNS_ENUMV(PointList), 1, ptlist) == CG_OK)
         printf ("WHAT!! - ptset should not work under base/userdata\n");
-    cg_configure(CG_CONFIG_ERROR, (void *)error_exit);
+    if( cg_configure(CG_CONFIG_ERROR, (void *)error_exit))
+            cg_error_exit();
 
     /* write zone */
 
@@ -297,7 +300,8 @@ int main (int argc, char **argv)
 
     /* read file and check values */
 
-    cg_configure(CG_CONFIG_ERROR, NULL);
+    if (cg_configure(CG_CONFIG_ERROR, NULL))
+            cg_error_exit();
 
     if (cg_open (fname, CG_MODE_READ, &cgfile))
         cg_error_exit ();
