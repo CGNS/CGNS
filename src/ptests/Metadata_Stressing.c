@@ -1,3 +1,9 @@
+/* This test is intended to monitor the 
+ * parallel performance of sizeable metadata 
+ * usage by a CGNS application. Its 
+ * main focus is not regression functionality
+ * testing of CGNS parallel APIs.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -63,7 +69,6 @@ int main(int argc, char* argv[]) {
   int index_grid;
   int index_coordx, index_coordy, index_coordz;
   double t0, t1;
-  extern char hdf5_access[64];
   char zonename[12];
 
   initialize(&argc,&argv);
@@ -100,12 +105,7 @@ int main(int argc, char* argv[]) {
 
   if (whoami == ROOT) {
   // ---- Open CGNS file -----------------------------------------------------------------
-    // if (cgp_open(fname.c_str(), CG_MODE_WRITE, &index_file)) cg_error_exit();
 
-    //  char hdf5_access[10];
-    //int old_type = cgns_filetype;
-    // strcpy(hdf5_access,"DISKLESS");
-    // int ierr = cg_set_file_type(CG_FILE_HDF5);
     t0 = MPI_Wtime();
     if (cg_open(fname, CG_MODE_WRITE, &index_file)) cg_error_exit();
     t1 = MPI_Wtime();
@@ -175,7 +175,6 @@ int main(int argc, char* argv[]) {
       printf("cg_close: %lf s\n", (t1 - t0));
     }
   }
-  strcpy(hdf5_access,"PARALLEL");
 
   MPI_Barrier(MPI_COMM_WORLD);
 
