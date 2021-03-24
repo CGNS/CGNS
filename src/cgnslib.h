@@ -87,10 +87,9 @@
  *      modes for cgns file                                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define CG_MODE_READ	 0
-#define CG_MODE_WRITE	 1
-#define CG_MODE_MODIFY   2
-#define CG_MODE_CLOSED   3
+#define CG_MODE_READ	0
+#define CG_MODE_WRITE	1
+#define CG_MODE_MODIFY  2
 
 /* file types */
 
