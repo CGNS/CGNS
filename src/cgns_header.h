@@ -136,6 +136,8 @@ typedef int cgint3_t[3];
 #define SKIP_DATA 0
 #define READ_DATA 1
 
+#define CG_MODE_CLOSED 99
+
 /* flag for parallel reading or parallel writing */
 typedef enum {
   CGI_Read,
