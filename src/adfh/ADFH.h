@@ -52,7 +52,7 @@
 #define ADF_STATUS_LENGTH	    32
 #define ADF_VERSION_LENGTH	    32
 
-#define NO_ERROR		       -1
+#define NO_ERROR		        0
 #define NUMBER_LESS_THAN_MINIMUM	1
 #define NUMBER_GREATER_THAN_MAXIMUM	2
 #define STRING_LENGTH_ZERO		3

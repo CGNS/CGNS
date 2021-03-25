@@ -13,7 +13,8 @@ int main (int argc, char **argv)
     }
     if (argc > 2) {
         mode = CG_MODE_MODIFY;
-        cg_configure (CG_CONFIG_COMPRESS, (void *)1);
+        if (cg_configure (CG_CONFIG_COMPRESS, (void *)1))
+          cg_error_exit();
     }
 
     printf ("opening cgns file <%s> ...", argv[argc-1]);
