@@ -372,7 +372,8 @@ int cgp_mpi_comm(MPI_Comm comm)
     MPI_Initialized(&pcg_mpi_initialized);
 
     if (pcg_mpi_initialized) {
-      if( cgio_configure(CG_CONFIG_HDF5_MPI_COMM, &comm) != -1) {
+      if( cgio_configure(CG_CONFIG_HDF5_MPI_COMM, &comm) != CG_OK) {
+        cgi_error("Invalid CG_CONFIG_HDF5_MPI_COMM configure parameter");
         return CG_ERROR;
       }
 

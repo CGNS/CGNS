@@ -773,7 +773,7 @@ int cg_configure(int what, void *value)
 {
     /* cgio options */
     if (what > 100) {
-      if( cgio_configure(what, value) != -1) {
+      if( cgio_configure(what, value) != CG_OK) {
         cg_io_error("cgio_configure");
         return CG_ERROR;
       }
