@@ -669,7 +669,17 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
             }
             if (type == CGNS_ENUMV(MIXED)) {
                 type = (CGNS_ENUMT(ElementType_t))*nodes++;
+                if (FileVersion < 3200 &&
+                   type >= CGNS_ENUMV(NGON_n)) {
+                   nn = (int)(type - CGNS_ENUMV(NGON_n));
+                }
+                else {
+                    if (cg_npe (type, &nn) || nn <= 0)
+                    return NULL;
+                }
                 while (ne-- > 0) {
+                    nodes += nn;
+                    type = (CGNS_ENUMT(ElementType_t))*nodes++;
                     if (FileVersion < 3200 &&
                         type >= CGNS_ENUMV(NGON_n)) {
                         nn = (int)(type - CGNS_ENUMV(NGON_n));
@@ -678,8 +688,6 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
                         if (cg_npe (type, &nn) || nn <= 0)
                             return NULL;
                     }
-                    nodes += nn;
-                    type = (CGNS_ENUMT(ElementType_t))*nodes++;
                 }
             }
             else {
