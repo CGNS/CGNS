@@ -174,6 +174,7 @@ int main(int argc, char* argv[]) {
     if (whoami == ROOT) {
       printf("cg_close: %lf s\n", (t1 - t0));
     }
+    free(zone);
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -233,7 +234,6 @@ int main(int argc, char* argv[]) {
     printf("cgp_close: %lf s\n", (t1 - t0));
   }
 
-  free(zone);
   free(local_blocks);
 
   MPI_Finalize();
