@@ -24,6 +24,7 @@ freely, subject to the following restrictions:
 #include <math.h>               /* included for definition of HUGE      */
 #include "cgnstypes.h"
 #include "cgns_io.h"
+#include "cg_hashmap.h"
 
 typedef char char_33[33];
 #ifdef CG_BUILD_BASESCOPE
@@ -134,6 +135,8 @@ typedef int cgint3_t[3];
 
 #define SKIP_DATA 0
 #define READ_DATA 1
+
+#define CG_MODE_CLOSED 99
 
 /* flag for parallel reading or parallel writing */
 typedef enum {
@@ -908,6 +911,7 @@ typedef struct {            /* CGNSBase_t Node          */
     cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
     int nzones;             /* number of zones in base              */
     cgns_zone *zone;        /* ptrs to in-memory copies of zones    */
+    cgns_hashmap_object *zonemap; /* hashmap to check for duplicate zone names */
     int nfamilies;          /* number of families           */
     cgns_family *family;    /* ptrs to in-memory copies of families */
     cgns_state *state;      /* ptrs to in-memory copies of Ref.state*/

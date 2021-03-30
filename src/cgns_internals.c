@@ -31,6 +31,7 @@ freely, subject to the following restrictions:
 #include "cgnslib.h"
 #include "cgns_header.h"
 #include "cgns_io.h"
+#include "cg_hashmap.h"
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
 #endif
@@ -13112,6 +13113,10 @@ void cgi_free_base(cgns_base *base)
         for (n=0; n<base->nzones; n++)
             cgi_free_zone(&base->zone[n]);
         CGNS_FREE(base->zone);
+    }
+    if (base->zonemap) {
+        cgi_hashmap_clear(base->zonemap);
+        CGNS_FREE(base->zonemap);
     }
     if (base->ndescr) {
         for (n=0; n<base->ndescr; n++)

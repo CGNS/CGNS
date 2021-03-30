@@ -28,11 +28,11 @@ endif (CGNS_ENABLE_HDF5)
 # create configured header files #
 ################################
 
-if ("${SIZE_OF_LONG}" GREATER 4)
+if ("${SIZEOF_LONG}" GREATER 4)
   set(CGLONGT long)
-else ("${SIZE_OF_LONG}" GREATER 4)
+else ("${SIZEOF_LONG}" GREATER 4)
   set(CGLONGT "long long")
-endif ("${SIZE_OF_LONG}" GREATER 4)
+endif ("${SIZEOF_LONG}" GREATER 4)
 
 set(BUILDLEGACY 0)
 set(BUILD64BIT 0)
@@ -124,6 +124,10 @@ set(HDF5_HAVE_FILE_SPACE_STRATEGY 0)
 set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 set(HAVE_STAT64_STRUCT 0)
 set(HAVE_COMPLEX_C99_EXT 0)
+
+#For cg_hash_types.h.in
+CHECK_INCLUDE_FILE(stdint.h HAVE_STDINT_H)
+set(SIZEOF_VOID_P ${CMAKE_SIZEOF_VOID_P})
 
 include(CheckCSourceCompiles)
 check_c_source_compiles("
@@ -534,6 +538,8 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cg_hash_types.h.in
+		${CMAKE_CURRENT_BINARY_DIR}/cg_hash_types.h )
 
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -547,6 +553,7 @@ set(cgns_C_FILES
 	cgns_internals.c
 	cgns_io.c
 	cgnslib.c
+	cg_hashmap.c
 	adf/ADF_interface.c
 	adf/ADF_internals.c)
 
@@ -583,7 +590,7 @@ option(CGNS_USE_SHARED "Link programs to the CGNS shared library" "ON")
 
 # Build a static version of the library
 if (CGNS_ENABLE_FORTRAN)
-    add_library(cgns_static STATIC ${cgns_FILES} $<TARGET_OBJECTS:cgns_f2c>)
+  add_library(cgns_static STATIC ${cgns_FILES} $<TARGET_OBJECTS:cgns_f2c>)
 else (CGNS_ENABLE_FORTRAN)
   add_library(cgns_static STATIC ${cgns_FILES})
 endif (CGNS_ENABLE_FORTRAN)
@@ -594,7 +601,7 @@ set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
 if(CGNS_BUILD_SHARED)
   mark_as_advanced(CLEAR CGNS_USE_SHARED)
   if (CGNS_ENABLE_FORTRAN)
-    add_library(cgns_shared SHARED ${cgns_FILES} cgns_f.F90)
+    add_library(cgns_shared SHARED ${cgns_FILES} $<TARGET_OBJECTS:cgns_f2c>)
   else (CGNS_ENABLE_FORTRAN)
     add_library(cgns_shared SHARED ${cgns_FILES})
   endif (CGNS_ENABLE_FORTRAN)

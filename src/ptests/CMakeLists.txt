@@ -34,6 +34,9 @@ add_executable(benchmark ${benchmark_FILES})
 set(benchmark_hdf5_FILES benchmark_hdf5.c)
 add_executable(benchmark_hdf5 ${benchmark_hdf5_FILES})
 
+set(Metadata_Stressing_FILES Metadata_Stressing.c)
+add_executable(Metadata_Stressing ${Metadata_Stressing_FILES})
+
 set(open_close_FILES open_close.c)
 add_executable(open_close ${open_close_FILES})
 
@@ -80,6 +83,8 @@ if (CGNS_ENABLE_TESTS)
       ${MPIEXEC_PREFLAGS} ./benchmark ${MPIEXEC_POSTFLAGS})
   add_test(benchmark_hdf5 ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} ./benchmark_hdf5 ${MPIEXEC_POSTFLAGS})
+  add_test(Metadata_Stressing ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+      ${MPIEXEC_PREFLAGS} ./Metadata_Stressing ${MPIEXEC_POSTFLAGS})
   add_test(open_close ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} ./open_close ${MPIEXEC_POSTFLAGS})
   add_test(comm_test ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"

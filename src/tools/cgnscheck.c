@@ -20,6 +20,7 @@
 #include "cgnslib.h"
 #include "cgns_header.h"
 #include "cgnames.h"
+#include "cgns_io.h"
 
 #if !defined(CGNS_VERSION) || CGNS_VERSION < 3100
 # error You need at least CGNS Version 3.1
@@ -668,7 +669,17 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
             }
             if (type == CGNS_ENUMV(MIXED)) {
                 type = (CGNS_ENUMT(ElementType_t))*nodes++;
+                if (FileVersion < 3200 &&
+                   type >= CGNS_ENUMV(NGON_n)) {
+                   nn = (int)(type - CGNS_ENUMV(NGON_n));
+                }
+                else {
+                    if (cg_npe (type, &nn) || nn <= 0)
+                    return NULL;
+                }
                 while (ne-- > 0) {
+                    nodes += nn;
+                    type = (CGNS_ENUMT(ElementType_t))*nodes++;
                     if (FileVersion < 3200 &&
                         type >= CGNS_ENUMV(NGON_n)) {
                         nn = (int)(type - CGNS_ENUMV(NGON_n));
@@ -677,8 +688,6 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
                         if (cg_npe (type, &nn) || nn <= 0)
                             return NULL;
                     }
-                    nodes += nn;
-                    type = (CGNS_ENUMT(ElementType_t))*nodes++;
                 }
             }
             else {
@@ -3565,10 +3574,16 @@ static void check_zoneBC (void)
     char name[33], *desc;
     int n, nb, ierr;
     int *punits, units[9], dataclass;
+    ZONE *z = &Zones[cgnszone-1];
 
     if (cg_nbocos (cgnsfn, cgnsbase, cgnszone, &nb))
         error_exit("cg_nbocos");
-    if (nb < 1) return;
+    if (nb < 1) {
+        if (z->ns > 0 && CellDim == 3) {
+          warning(2, "Surface elements exists in the 3D zone but no ZoneBC_t is declared. If the surface elements are meant to define boundaries ZoneBC_t is required.");
+        }
+        return;
+    }
     puts ("  checking boundary conditions");
     fflush (stdout);
     go_absolute ("Zone_t", cgnszone, "ZoneBC_t", 1, NULL);
@@ -6135,6 +6150,78 @@ static void check_base (void)
 
 /*=======================================================================*/
 
+void check_node_name_recursive(int cgio_num, double nodeid)
+{
+
+  int nchildren, child;
+  int len;
+  char_33 name;
+  double *childids;
+  char *slash_ptr = NULL;
+
+  if (cgio_get_name(cgio_num, nodeid, name) != CG_OK) {
+    return;
+  }
+
+  if (strlen(name) < 1) {
+    return;
+  }
+
+  if (name[0] == '.') {
+    error ("Invalid CGNS node name: node should not start with a dot");
+  }
+  slash_ptr = strchr(name, '/');
+  if (slash_ptr != NULL) {
+    error("Invalid CGNS node name: node should not have a slash");
+  }
+
+  cgio_number_children(cgio_num, nodeid, &nchildren);
+  if (nchildren == 0) {
+    return;
+  }
+
+  childids = (double *) malloc(nchildren*sizeof(double));
+  cgio_children_ids(cgio_num, nodeid, 1, nchildren, &len, childids);
+  if (len != nchildren) {
+    free(childids);
+    return;
+  }
+
+  for (child = 0; child < nchildren; child++) {
+    check_node_name_recursive(cgio_num, childids[child]);
+  }
+  free(childids);
+}
+
+void check_node_names(void)
+{
+  int cgio_num;
+  int nchildren, child, len;
+  double rootid;
+  double *childids;
+
+  printf ("\nchecking node names\n");
+
+  cg_get_cgio(cgnsfn, &cgio_num);
+  cg_root_id(cgnsfn, &rootid);
+
+  cgio_number_children(cgio_num, rootid, &nchildren);
+
+  childids = (double *) malloc(nchildren*sizeof(double));
+  cgio_children_ids(cgio_num, rootid, 1, nchildren, &len, childids);
+  if (len != nchildren) {
+    free(childids);
+    return;
+  }
+
+  for (child = 0; child < nchildren; child++) {
+    check_node_name_recursive(cgio_num, childids[child]);
+  }
+  free(childids);
+}
+
+/*=======================================================================*/
+
 int main (int argc, char *argv[])
 {
     char *cgnsfile;
@@ -6201,6 +6288,9 @@ int main (int argc, char *argv[])
     if (nbases < 1) warning (1, "no bases defined in CGNS file");
     for (cgnsbase = 1; cgnsbase <= nbases; cgnsbase++)
         check_base ();
+
+    /* check node name validity according to SIDS */
+    check_node_names();
 
     /* close CGNS file and exit */
 
