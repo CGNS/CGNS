@@ -25,7 +25,6 @@ CALL =	pcgns_ctest$(EXE) \
 	test_zone$(EXE) \
 	test_general_readwrite$(EXE) \
         Metadata_Stressing$(EXE) \
-        Metadata_Stressing_corevfd$(EXE) \
 	test_poly_unstructured$(EXE) \
 	thesis_benchmark$(EXE)
 
@@ -43,12 +42,25 @@ test : $(TESTS)
 	status=0; \
 	echo "=== running parallel tests ==="; \
 	 for x in $(TESTS) ; do \
-	   if `$(MPIEXEC) ./$$x >/dev/null 2>&1` ; then \
-	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
-	   else \
-	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
-             status=`expr $$status + 1`; \
-	   fi; \
+           args=""; \
+           if test "$$x" = "Metadata_Stressing$(EXE)" ; then \
+		for n in 1 2 ; do \
+	           if `$(MPIEXEC) ./$$x $$args >/dev/null 2>&1` ; then \
+	              printf "$$x $$args ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
+	           else \
+	              printf "$$x $$args ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
+                      status=`expr $$status + 1`; \
+	            fi; \
+	            args="-sec2"; \
+		done;\
+           else \
+	     if `$(MPIEXEC) ./$$x >/dev/null 2>&1` ; then \
+	       printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
+	     else \
+	       printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
+               status=`expr $$status + 1`; \
+	     fi; \
+           fi;\
 	 done; \
 	 echo "=== finished ==="; \
          if test $$$status > 0; then \

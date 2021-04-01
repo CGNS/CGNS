@@ -15,14 +15,12 @@
 #define N 32
 
 //Total number of blocks
-//uint32_t NBLOCKS = 8192;
-//uint32_t NBLOCKS = 16384;
-//uint32_t NBLOCKS = 32768;
-//uint32_t NBLOCKS = 4096;
 uint32_t NBLOCKS = 512;
 
 int whoami  = 0;
 int num_mpi = 0;
+int core = 1; // Use core VFD for file creation(-sec2 uses the SEC2 VFD in HDF5)
+int allranks = 0; // Use all ranks for file creation
 
 int main ( int argc, char *argv[] );
 
@@ -41,10 +39,27 @@ int read_inputs(int* argc, char*** argv) {
       if(strcmp((*argv)[k],"-nblocks")==0) {
         k++;
         sscanf((*argv)[k],"%u",&NBLOCKS);
+        continue;
       }
+      if(strcmp((*argv)[k],"-all")==0) {
+        allranks = 1;
+        continue;
+      }
+      if(strcmp((*argv)[k],"-sec2")==0) {
+        core = 0;
+        continue;
+      }
+      printf("ERROR: invalid argument option %s\n", (*argv)[k]);
+      MPI_Abort(MPI_COMM_WORLD,-1);
+    }
+    if (core == 1 && allranks == 1) {
+      printf("WARNING: diskless in parallel not supported, using -sec2 instead\n");
+      core = 0;
     }
   }
   MPI_Bcast(&NBLOCKS, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&allranks, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&core, 1, MPI_INT, 0, MPI_COMM_WORLD);
   return 0;
 }
 int initialize(int* argc, char** argv[]) {
@@ -52,7 +67,7 @@ int initialize(int* argc, char** argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &num_mpi);
   MPI_Comm_rank(MPI_COMM_WORLD, &whoami);
 
-  if(*argc > 2)
+  if(*argc > 1)
     read_inputs(argc,argv);
 
   return 0;
@@ -73,6 +88,17 @@ int main(int argc, char* argv[]) {
 
   initialize(&argc,&argv);
 
+  if (whoami == ROOT) {
+    printf("Number of blocks = %d\n", NBLOCKS);
+    if(core == 1)
+      printf("Diskless enabled = true\n");
+    else
+      printf("Diskless enabled = false\n");
+    if(allranks == 0)
+      printf("All ranks create file = false\n\n");
+    else
+      printf("All ranks create file = true\n\n");
+  }
   // ---- Partitioning -------------------------------------------------------------------
   if (num_mpi > NBLOCKS) {
     if (whoami == ROOT) {
@@ -99,32 +125,69 @@ int main(int argc, char* argv[]) {
   }
 
   // ---- Set MPI communicator for parallel operations  ----------------------------------
-  //cgp_mpi_comm(MPI_COMM_WORLD);
 
   snprintf(fname, 16, "grid_%u.cgns", NBLOCKS);
 
-  if (whoami == ROOT) {
-  // ---- Open CGNS file -----------------------------------------------------------------
+  // ---- Create CGNS file ---------------------------------------------------------------
 
-    t0 = MPI_Wtime();
-    if (cg_open(fname, CG_MODE_WRITE, &index_file)) cg_error_exit();
-    t1 = MPI_Wtime();
+  /* use the core file driver, diskless option */
+  if(core == 1) {
+    /* enable core file driver committing to disk */
+    if (cg_configure(CG_CONFIG_HDF5_DISKLESS, (void *)1))
+      cg_error_exit();
+    /* enable committing to disk */
+    if (cg_configure(CG_CONFIG_HDF5_DISKLESS_WRITE, (void *)1))
+      cg_error_exit();
+    /* set initial/increimental memory increases to 50 MiB */
+    if (cg_configure(CG_CONFIG_HDF5_DISKLESS_INCR, (void *)(50*1024*1024)))
+      cg_error_exit();
+  }
+  t0 = MPI_Wtime();
+  if(allranks == 0) {
     if (whoami == ROOT) {
-      printf("cg_open: %lf s \n", (t1 - t0));
+      if (cg_open(fname, CG_MODE_WRITE, &index_file)) cg_error_exit();
     }
-    //cgns_filetype = old_type;
+  } else {
+    cgp_mpi_comm(MPI_COMM_WORLD);
+    if (cgp_open(fname, CG_MODE_WRITE, &index_file)) cg_error_exit();
+  }
+  t1 = MPI_Wtime();
+  if (whoami == ROOT) {
+    printf("cg_open: %lf s \n", (t1 - t0));
+  }
 
   // ---- Create base  -------------------------------------------------------------------
-    char *basename = "Base";
-    int icelldim = 3;
-    int iphysdim = 3;
+  char *basename = "Base";
+  int icelldim = 3;
+  int iphysdim = 3; 
+  if(allranks == 0) {
+    if (whoami == ROOT) {
+      if(cg_base_write(index_file, basename, icelldim, iphysdim, &index_base) != CG_OK) {
+        printf("*FAILED* cg_base_write\n");
+        cg_error_exit();
+      };
+    }
+  } else {
     if(cg_base_write(index_file, basename, icelldim, iphysdim, &index_base) != CG_OK) {
       printf("*FAILED* cg_base_write\n");
       cg_error_exit();
     };
-
-  // ---- Create zones (done by all processes) -------------------------------------------
-    t0 = MPI_Wtime();
+  }
+  // ---- Create zones -------------------------------------------
+  t0 = MPI_Wtime();
+  if(allranks == 0) {
+    if (whoami == ROOT) {
+      zone = (int *)malloc(NBLOCKS*sizeof(int));
+      for (uint32_t b = 0; b < NBLOCKS; ++b) {
+        // Zone name
+        snprintf(zonename, 11, "Zone_%u", (b + 1) );
+        // Create zone
+        if (cg_zone_write(index_file, index_base, zonename, (cgsize_t *)zoneSize,
+                          CGNS_ENUMV(Structured), &(zone[b])) != CG_OK)
+          cg_error_exit();
+      }
+    }
+  } else {
     zone = (int *)malloc(NBLOCKS*sizeof(int));
     for (uint32_t b = 0; b < NBLOCKS; ++b) {
       // Zone name
@@ -134,24 +197,51 @@ int main(int argc, char* argv[]) {
                         CGNS_ENUMV(Structured), &(zone[b])) != CG_OK)
         cg_error_exit();
     }
-    t1 = MPI_Wtime();
+  }
+  t1 = MPI_Wtime();
+  if (whoami == ROOT) {
+    printf("cg_zone_write: %lf s\n", (t1 - t0));
+  }
+  
+  t0 = MPI_Wtime();
+  if(allranks == 0) {
     if (whoami == ROOT) {
-      printf("cg_zone_write: %lf s\n", (t1 - t0));
+      for (uint32_t b = 0; b < NBLOCKS; ++b) {
+        if (cg_grid_write(index_file, index_base, zone[b], "GridCoordinates", &index_grid) != CG_OK) {
+          printf("*FAILED* cg_grid_write \n");
+          cg_error_exit();
+        }
+      }
     }
-
-    t0 = MPI_Wtime();
+  } else {
     for (uint32_t b = 0; b < NBLOCKS; ++b) {
       if (cg_grid_write(index_file, index_base, zone[b], "GridCoordinates", &index_grid) != CG_OK) {
         printf("*FAILED* cg_grid_write \n");
         cg_error_exit();
       }
     }
-    t1 = MPI_Wtime();
+  }
+  t1 = MPI_Wtime();
+  if (whoami == ROOT) {
+    printf("cg_grid_write: %lf s \n", (t1 - t0));
+  }
+
+  t0 = MPI_Wtime();
+  if(allranks == 0) {
     if (whoami == ROOT) {
-      printf("cg_grid_write: %lf s \n", (t1 - t0));
+      for (uint32_t b = 0; b < NBLOCKS; ++b) {
+        if (cgp_coord_write(index_file, index_base, zone[b], CGNS_ENUMV(RealSingle), "CoordinateX",
+                            &index_coordx))
+          cg_error_exit();
+        if (cgp_coord_write(index_file, index_base, zone[b], CGNS_ENUMV(RealSingle), "CoordinateY",
+                            &index_coordy))
+          cg_error_exit();
+        if (cgp_coord_write(index_file, index_base, zone[b], CGNS_ENUMV(RealSingle), "CoordinateZ",
+                            &index_coordz))
+          cg_error_exit();
+      }
     }
-#if 0
-    t0 = MPI_Wtime();
+  } else {
     for (uint32_t b = 0; b < NBLOCKS; ++b) {
       if (cgp_coord_write(index_file, index_base, zone[b], CGNS_ENUMV(RealSingle), "CoordinateX",
                           &index_coordx))
@@ -163,20 +253,35 @@ int main(int argc, char* argv[]) {
                           &index_coordz))
         cg_error_exit();
     }
-    t1 = MPI_Wtime();
+  }
+
+  t1 = MPI_Wtime();
+  if (whoami == ROOT) {
+    printf("cgp_coord_write: %lf s\n", (t1 - t0));
+  }
+
+  t0 = MPI_Wtime();
+  if(allranks == 0) {
     if (whoami == ROOT) {
-      printf("cgp_coord_write: %lf s\n", (t1 - t0));
+      cg_close(index_file);
+      free(zone);
     }
-#endif
-    t0 = MPI_Wtime();
-    cg_close(index_file);
-    t1 = MPI_Wtime();
-    if (whoami == ROOT) {
-      printf("cg_close: %lf s\n", (t1 - t0));
-    }
+  } else {
+    cgp_close(index_file);
+    free(zone);
+  }
+  t1 = MPI_Wtime();
+  if (whoami == ROOT) {
+    printf("cg_close: %lf s\n", (t1 - t0));
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
+
+  /* disable core file driver */
+  if (cg_configure(CG_CONFIG_HDF5_DISKLESS, (void *)0))
+    cg_error_exit();
+
+  cgp_mpi_comm(MPI_COMM_WORLD);
 
   t0 = MPI_Wtime();
   if(cgp_open(fname, CG_MODE_MODIFY, &index_file) != CG_OK) {
@@ -190,24 +295,6 @@ int main(int argc, char* argv[]) {
   }
 
   index_base = 1;
-
-  t0 = MPI_Wtime();
-  for (uint32_t b = 0; b < NBLOCKS; ++b) {
-    if (cgp_coord_write(index_file, index_base, b + 1, CGNS_ENUMV(RealSingle), "CoordinateX",
-                        &index_coordx))
-      cg_error_exit();
-    if (cgp_coord_write(index_file, index_base, b + 1, CGNS_ENUMV(RealSingle), "CoordinateY",
-                        &index_coordy))
-      cg_error_exit();
-    if (cgp_coord_write(index_file, index_base, b + 1, CGNS_ENUMV(RealSingle), "CoordinateZ",
-                        &index_coordz))
-      cg_error_exit();
-  }
-  MPI_Barrier(MPI_COMM_WORLD);
-  t1 = MPI_Wtime();
-  if (whoami == ROOT) {
-    printf("cgp_coord_write: %lf s\n", (t1 - t0));
-  }
 
   for (uint32_t b = 0; b < NBLOCKS; ++b) {
     snprintf(zonename, 11, "Zone_%u", (b + 1) );
@@ -233,9 +320,7 @@ int main(int argc, char* argv[]) {
     printf("cgp_close: %lf s\n", (t1 - t0));
   }
 
-  free(zone);
   free(local_blocks);
-
   MPI_Finalize();
 
   return exit;
