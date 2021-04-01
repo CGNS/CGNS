@@ -8569,13 +8569,13 @@ int cgi_array_general_write(
 }
 
 /***********************************************************************\
- *            Alphanumerical sorting routine               *
+ *            Alphanumerical sorting routine                           *
+ * Warning: This is an insert sort that leads to performance issues    *
 \***********************************************************************/
 
 int cgi_sort_names(int nnam, double *ids)
 {
-    int i,j,k;
-    int leni, lenj;
+    int i,j;
     char_33 temp;
     double temp_id;
     char_33 *names;
@@ -8589,38 +8589,19 @@ int cgi_sort_names(int nnam, double *ids)
         }
     }
 
-    for (i=0; i<nnam; i++) {
-        leni=(int)strlen(names[i]);
+    for (i=1; i<nnam; i++) {
+        strcpy(temp, names[i]);
+        temp_id = ids[i];
+        j = i - 1;
 
-        for (j=i+1; j<nnam; j++) {
-            lenj=(int)strlen(names[j]);
-
-            for (k=0; k<leni && k<lenj; k++) {
-
-                if ((int)names[j][k] < (int)names[i][k]) {
-                    strcpy(temp, names[i]);
-                    strcpy(names[i], names[j]);
-                    strcpy(names[j], temp);
-                    leni=(int)strlen(names[i]);
-                    temp_id = ids[i];
-                    ids[i]=ids[j];
-                    ids[j]=temp_id;
-
-                    break;
-                } else if ((int)names[j][k]>(int)names[i][k]) {
-                    break;
-                }
-                if (k==(int)(strlen(names[j])-1)) {
-                    strcpy(temp, names[i]);
-                    strcpy(names[i], names[j]);
-                    strcpy(names[j], temp);
-                    leni=(int)strlen(names[i]);
-                    temp_id = ids[i];
-                    ids[i]=ids[j];
-                    ids[j]=temp_id;
-                }
-            }
+        while (j >= 0 && strcmp(names[j], temp) > 0)
+        {
+            strcpy(names[j+1], names[j]);
+            ids[j+1] = ids[j];
+            j = j - 1;
         }
+        strcpy(names[j + 1], temp);
+        ids[j + 1] = temp_id;
     }
 
     CGNS_FREE(names);
