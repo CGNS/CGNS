@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
   initialize(&argc,&argv);
 
   if (whoami == ROOT) {
-    printf("Number of blocks = %d\n", NBLOCKS);
+    printf("Number of blocks = %u\n", NBLOCKS);
     if(core == 1)
       printf("Diskless enabled = true\n");
     else

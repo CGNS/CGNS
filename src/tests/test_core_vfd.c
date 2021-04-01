@@ -14,7 +14,7 @@ int main (int argc, char **argv)
 {
 #if CG_BUILD_HDF5
     double start, finish;
-    int cgfile, mode = CG_MODE_READ;
+    int cgfile;
 
     int B;
     int cell_dim = 3;
