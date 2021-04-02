@@ -151,8 +151,8 @@ int main(int argc, char* argv[]) {
     /* enable committing to disk */
     if (cg_configure(CG_CONFIG_HDF5_DISKLESS_WRITE, (void *)1))
       cg_error_exit();
-    /* set initial/increimental memory increases to 50 MiB */
-    if (cg_configure(CG_CONFIG_HDF5_DISKLESS_INCR, (void *)(50*1024*1024)))
+    /* set initial/increimental memory increases to 150 MiB */
+    if (cg_configure(CG_CONFIG_HDF5_DISKLESS_INCR, (void *)(150*1024*1024)))
       cg_error_exit();
   }
   t0 = MPI_Wtime();
