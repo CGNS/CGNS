@@ -8590,17 +8590,18 @@ int cgi_sort_names(int nnam, double *ids)
     }
 
     for (i=1; i<nnam; i++) {
-        strcpy(temp, names[i]);
+        memcpy(temp, names[i], 33);
         temp_id = ids[i];
         j = i - 1;
 
         while (j >= 0 && strcmp(names[j], temp) > 0)
         {
-            strcpy(names[j+1], names[j]);
+            memcpy(names[j+1], names[j], 33);
             ids[j+1] = ids[j];
             j = j - 1;
         }
-        strcpy(names[j + 1], temp);
+        if (j + 1 == i) continue;
+        memcpy(names[j + 1], temp, 33);
         ids[j + 1] = temp_id;
     }
 
