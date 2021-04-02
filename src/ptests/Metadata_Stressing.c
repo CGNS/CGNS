@@ -21,6 +21,7 @@ int whoami  = 0;
 int num_mpi = 0;
 int core = 1; // Use core VFD for file creation(-sec2 uses the SEC2 VFD in HDF5)
 int allranks = 0; // Use all ranks for file creation
+int skipread = 0; // skip opening and reading the file parallel
 
 int main ( int argc, char *argv[] );
 
@@ -34,19 +35,25 @@ const int ROOT = 0;
 
 int read_inputs(int* argc, char*** argv) {
 
+  int bcast[4] = {NBLOCKS,allranks,core,skipread};
+
   if(whoami==0) {
     for(int k = 1; k < *argc; k++) {
       if(strcmp((*argv)[k],"-nblocks")==0) {
         k++;
-        sscanf((*argv)[k],"%u",&NBLOCKS);
+        sscanf((*argv)[k],"%u",&bcast[0]);
         continue;
       }
       if(strcmp((*argv)[k],"-all")==0) {
-        allranks = 1;
+        bcast[1] = 1;
         continue;
       }
       if(strcmp((*argv)[k],"-sec2")==0) {
-        core = 0;
+         bcast[2] = 0;
+        continue;
+      }
+      if(strcmp((*argv)[k],"-skipread")==0) {
+         bcast[3] = 1;
         continue;
       }
       printf("ERROR: invalid argument option %s\n", (*argv)[k]);
@@ -57,9 +64,11 @@ int read_inputs(int* argc, char*** argv) {
       core = 0;
     }
   }
-  MPI_Bcast(&NBLOCKS, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&allranks, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&core, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(bcast, 4, MPI_INT, 0, MPI_COMM_WORLD);
+  NBLOCKS  = bcast[0];
+  allranks = bcast[1];
+  core     = bcast[2];
+  skipread = bcast[3];
   return 0;
 }
 int initialize(int* argc, char** argv[]) {
@@ -94,6 +103,10 @@ int main(int argc, char* argv[]) {
       printf("Diskless enabled = true\n");
     else
       printf("Diskless enabled = false\n");
+    if(skipread == 0)
+      printf("Skip opening and reading the file = false\n");
+    else
+      printf("Skip opening and reading the file = true\n");
     if(allranks == 0)
       printf("All ranks create file = false\n\n");
     else
@@ -283,43 +296,44 @@ int main(int argc, char* argv[]) {
 
   cgp_mpi_comm(MPI_COMM_WORLD);
 
-  t0 = MPI_Wtime();
-  if(cgp_open(fname, CG_MODE_MODIFY, &index_file) != CG_OK) {
-    printf("*FAILED* cgp_open \n");
-    cgp_error_exit();
-  }
-  MPI_Barrier(MPI_COMM_WORLD);
-  t1 = MPI_Wtime();
-  if (whoami == ROOT) {
-    printf("cgp_open: %lf s\n", (t1 - t0));
-  }
-
-  index_base = 1;
-
-  for (uint32_t b = 0; b < NBLOCKS; ++b) {
-    snprintf(zonename, 11, "Zone_%u", (b + 1) );
-    if(cg_goto(index_file, index_base, zonename, 0, "end") != CG_OK) {
-      printf("*FAILED* cg_goto\n");
+  if( skipread == 0) {
+    t0 = MPI_Wtime();
+    if(cgp_open(fname, CG_MODE_MODIFY, &index_file) != CG_OK) {
+      printf("*FAILED* cgp_open \n");
       cgp_error_exit();
     }
-  }
-  for (uint32_t b = 0; b < NBLOCKS; ++b) {
-    char path[100];
-    snprintf(path, 99, "/Base/Zone_%u/GridCoordinates/CoordinateX", (b + 1) );
-    if(cg_gopath(index_file, path) != CG_OK) {
-      printf("*FAILED* cg_goto\n");
-      cgp_error_exit();
+    MPI_Barrier(MPI_COMM_WORLD);
+    t1 = MPI_Wtime();
+    if (whoami == ROOT) {
+      printf("cgp_open: %lf s\n", (t1 - t0));
+    }
+
+    index_base = 1;
+
+    for (uint32_t b = 0; b < NBLOCKS; ++b) {
+      snprintf(zonename, 11, "Zone_%u", (b + 1) );
+      if(cg_goto(index_file, index_base, zonename, 0, "end") != CG_OK) {
+        printf("*FAILED* cg_goto\n");
+        cgp_error_exit();
+      }
+    }
+    for (uint32_t b = 0; b < NBLOCKS; ++b) {
+      char path[100];
+      snprintf(path, 99, "/Base/Zone_%u/GridCoordinates/CoordinateX", (b + 1) );
+      if(cg_gopath(index_file, path) != CG_OK) {
+        printf("*FAILED* cg_goto\n");
+        cgp_error_exit();
+      }
+    }
+
+    t0 = MPI_Wtime();
+    cgp_close(index_file);
+    MPI_Barrier(MPI_COMM_WORLD);
+    t1 = MPI_Wtime();
+    if (whoami == ROOT) {
+      printf("cgp_close: %lf s\n", (t1 - t0));
     }
   }
-
-  t0 = MPI_Wtime();
-  cgp_close(index_file);
-  MPI_Barrier(MPI_COMM_WORLD);
-  t1 = MPI_Wtime();
-  if (whoami == ROOT) {
-    printf("cgp_close: %lf s\n", (t1 - t0));
-  }
-
   free(local_blocks);
   MPI_Finalize();
 
