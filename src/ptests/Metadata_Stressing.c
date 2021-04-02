@@ -41,7 +41,7 @@ int read_inputs(int* argc, char*** argv) {
     for(int k = 1; k < *argc; k++) {
       if(strcmp((*argv)[k],"-nblocks")==0) {
         k++;
-        sscanf((*argv)[k],"%u",&bcast[0]);
+        sscanf((*argv)[k],"%d",&bcast[0]);
         continue;
       }
       if(strcmp((*argv)[k],"-all")==0) {
@@ -65,7 +65,7 @@ int read_inputs(int* argc, char*** argv) {
     }
   }
   MPI_Bcast(bcast, 4, MPI_INT, 0, MPI_COMM_WORLD);
-  NBLOCKS  = bcast[0];
+  NBLOCKS  = (uint)bcast[0];
   allranks = bcast[1];
   core     = bcast[2];
   skipread = bcast[3];
