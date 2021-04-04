@@ -14,7 +14,11 @@ set(CMAKE_BUILD_TYPE "Release" CACHE STRING
   "one of: Release, Debug, RelWithDebInfo or MinSizeRel")
 
 project("cgns" C)
-set(CGNS_VERSION "4.2")
+
+# Determine CGNS_VERSION from src/cgnslib.h for 
+file (READ ${PROJECT_SOURCE_DIR}/src/cgnslib.h _cgnslib_h_contents)
+string (REGEX REPLACE ".*#define[ \t]+CGNS_DOTVERS[ \t]+([0-9]*)\\.([0-9])[0-9]*.*$"
+    "\\1.\\2" CGNS_VERSION ${_cgnslib_h_contents})
 
 # Allow for building a package
 set(CPACK_PACKAGE_VERSION "${CGNS_VERSION}")
