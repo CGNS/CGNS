@@ -15,7 +15,7 @@
 #define N 32
 
 //Total number of blocks
-uint32_t NBLOCKS = 512;
+uint32_t NBLOCKS = 256;
 
 int whoami  = 0;
 int num_mpi = 0;
@@ -151,8 +151,9 @@ int main(int argc, char* argv[]) {
     /* enable committing to disk */
     if (cg_configure(CG_CONFIG_HDF5_DISKLESS_WRITE, (void *)1))
       cg_error_exit();
-    /* set initial/increimental memory increases to 150 MiB */
-    if (cg_configure(CG_CONFIG_HDF5_DISKLESS_INCR, (void *)(150*1024*1024)))
+    /* set initial/increimental memory increases to 125 MiB */
+    size_t incr = 125L*1024L*1024L;
+    if (cg_configure(CG_CONFIG_HDF5_DISKLESS_INCR, (void *)(incr)))
       cg_error_exit();
   }
   t0 = MPI_Wtime();

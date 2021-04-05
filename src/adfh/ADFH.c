@@ -68,8 +68,8 @@ static MPI_Comm ParallelMPICommunicator = MPI_COMM_NULL;
 /* Enables using the core file driver */
 static int core_vfd = 0;
 /* specifies the increment by which allocated memory is
- * to be increased each time more memory is required. */
-static size_t core_vfd_increment = 10*1024*1024;
+ * to be increased each time more memory is required, 10MiB default. */
+static size_t core_vfd_increment = 10L*1024L*1024L;
 /* write the file contents to disk when the file is closed */
 static hbool_t core_vfd_backing_store = 0;
 
