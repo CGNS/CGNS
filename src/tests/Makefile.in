@@ -19,6 +19,7 @@ CALL = \
 	cgioc_hdf$(EXE) \
 	elemtest$(EXE) \
 	ser_benchmark_hdf5$(EXE) \
+	test_core_vfd$(EXE) \
 	test_exts$(EXE) \
 	test_goto$(EXE) \
 	test_family_tree$(EXE) \
@@ -134,6 +135,11 @@ open_cgns.$(O) : open_cgns.c utils.h
 
 ser_benchmark_hdf5$(EXE) : ser_benchmark_hdf5.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ ser_benchmark_hdf5.c $(LDLIBS) $(CLIBS) -lm
+	$(STRIP) $@
+#----------
+
+test_core_vfd$(EXE) : test_core_vfd.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_core_vfd.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------

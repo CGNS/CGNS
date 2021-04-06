@@ -8431,11 +8431,11 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
             cgi_error("Invalid input range:  %ld->%ld",range[i], range[i+index_dim]);
             return CG_ERROR;
         }
-        if (abs(transform[i])<0 || abs(transform[i])>index_dim) {
+        if (abs(transform[i])>index_dim) {
             cgi_error("Invalid transformation index: %d.  The indices must all be between 1 and %ld",i, index_dim);
             return CG_ERROR;
         }
-        if (abs(transform[i])>0) {
+        if (transform[i] != 0) {
         cgsize_t dr, ddr;
             j = abs(transform[i])-1;
         dr = range[i+index_dim] - range[i];
