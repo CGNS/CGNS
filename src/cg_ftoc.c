@@ -180,7 +180,8 @@ CGNSDLL void cg_set_file_type_f(cgint_f *ft, cgint_f *ier)
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cg_configure_f(cgint_f *what, void *value, cgint_f *ier)
+CGNSDLL void FMNAME(cg_configure_f, CG_CONFIGURE_F) (cgint_f *what,
+        void *value, cgint_f *ier)
 {
   size_t value_c;
   if( (int)*what != CG_CONFIG_ERROR &&
