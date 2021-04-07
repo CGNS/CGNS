@@ -184,6 +184,25 @@ MODULE cgns
   PARAMETER (NODE_NOT_FOUND = 2)
   PARAMETER (INCORRECT_PATH = 3)
 
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+!*     Configuration options (found in cgnslib.h)                      *
+!* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
+  INTEGER, PARAMETER :: CG_CONFIG_ERROR      = 1
+  INTEGER, PARAMETER :: CG_CONFIG_COMPRESS   = 2
+  INTEGER, PARAMETER :: CG_CONFIG_SET_PATH   = 3
+  INTEGER, PARAMETER :: CG_CONFIG_ADD_PATH   = 4
+  INTEGER, PARAMETER :: CG_CONFIG_FILE_TYPE  = 5
+  INTEGER, PARAMETER :: CG_CONFIG_RIND_INDEX = 6
+  
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_COMPRESS       = 201
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_MPI_COMM       = 202
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS       = 203
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS_INCR  = 204
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS_WRITE = 205
+
+  INTEGER, PARAMETER :: CG_CONFIG_RIND_ZERO = 0
+  INTEGER, PARAMETER :: CG_CONFIG_RIND_CORE = 1
+
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   !*      Parallel CGNS parameters                                       *
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -3633,9 +3652,18 @@ MODULE cgns
      SUBROUTINE cgp_mpi_info_f(pcg_mpi_info_f, ier) BIND(C,NAME='cgp_mpi_info_f')
        IMPORT :: C_INT
        IMPLICIT NONE
-       INTEGER(C_INT), INTENT(IN)  :: pcg_mpi_info_f
+       INTEGER(C_INT), INTENT(IN) :: pcg_mpi_info_f
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_mpi_info_f
+
+     SUBROUTINE cg_configure_f(what, value, ier) BIND(C,NAME='cg_configure_f')
+       IMPORT :: C_PTR
+       IMPLICIT NONE
+       INTEGER, INTENT(IN) :: what
+       TYPE(C_PTR), VALUE :: value
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_configure_f
+
 !!$
 !!$   !!$           SUBROUTINE cgp_coord_multi_read_data_f, CGP_COORD_MULTI_READ_DATA_F)(fn, B, Z, C,
 !!$     CGSIZE_T *rmin, CGSIZE_T *rmax,

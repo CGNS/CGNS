@@ -24,10 +24,15 @@
 
   3. This notice may not be removed or altered from any source distribution.
 
- * -------------------------------------------------------------------------
- * 
- *  DEVELOPER'S NOTE:
- *    When adding a defined constant to this file, also add the same defined 
+/*    _____ __  __ _____   ____  _____ _______       _   _ _______
+ *   |_   _|  \/  |  __ \ / __ \|  __ \__   __|/\   | \ | |__   __|
+ *     | | | \  / | |__) | |  | | |__) | | |  /  \  |  \| |  | |
+ *     | | | |\/| |  ___/| |  | |  _  /  | | / /\ \ | . ` |  | |
+ *    _| |_| |  | | |    | |__| | | \ \  | |/ ____ \| |\  |  | |
+ *   |_____|_|  |_|_|     \____/|_|  \_\ |_/_/    \_\_| \_|  |_|
+ *
+ * -------------------  DEVELOPER'S NOTES  ---------------------------
+ *    (1) When adding a defined constant to this file, also add the same defined 
  *    constant to cgns_f.F90
  *          
  * ------------------------------------------------------------------------- */
