@@ -36,7 +36,7 @@
 !
 MODULE cgns
 
-  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR
+  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR, C_FUNPTR
   IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
@@ -938,14 +938,21 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_set_rind_core_f
 
-     SUBROUTINE cg_configure_c(what, value, ier) BIND(C,NAME="cg_configure_c")
+     SUBROUTINE cg_configure_c_ptr(what, value, ier) BIND(C,NAME="cg_configure_c_ptr")
        IMPORT :: C_PTR
        IMPLICIT NONE
        INTEGER, INTENT(IN) :: what
-!DIR$ ATTRIBUTES NO_ARG_CHECK :: value
        TYPE(C_PTR), VALUE :: value
        INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_configure_c
+     END SUBROUTINE cg_configure_c_ptr
+
+     SUBROUTINE cg_configure_c_funptr(what, value, ier) BIND(C,NAME="cg_configure_c_funptr")
+       IMPORT :: C_FUNPTR
+       IMPLICIT NONE
+       INTEGER, INTENT(IN) :: what
+       TYPE(C_FUNPTR), VALUE :: value
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_configure_c_funptr
 
      SUBROUTINE cg_get_cgio_f(fn, cgio_num, ier) BIND(C, NAME="cg_get_cgio_f")
        IMPLICIT NONE
@@ -4751,7 +4758,8 @@ CONTAINS
     TYPE(C_PTR), VALUE :: value
     INTEGER, INTENT(OUT) :: ier
 
-    CALL cg_configure_c(what, value, ier)
+    PRINT*,"cg_configure_ptr"
+    CALL cg_configure_c_ptr(what, value, ier)
 
   END SUBROUTINE cg_configure_ptr
 
@@ -4762,7 +4770,8 @@ CONTAINS
     TYPE(C_FUNPTR), VALUE :: value
     INTEGER, INTENT(OUT) :: ier
 
-    CALL cg_configure_c(what, value, ier)
+    PRINT*,"cg_configure_funptr"
+    CALL cg_configure_c_funptr(what, value, ier)
 
   END SUBROUTINE cg_configure_funptr
 

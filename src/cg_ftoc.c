@@ -180,10 +180,8 @@ CGNSDLL void cg_set_file_type_f(cgint_f *ft, cgint_f *ier)
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cg_configure_c(cgint_f *what, void *value, cgint_f *ier)
+CGNSDLL void cg_configure_c_ptr(cgint_f *what, void *value, cgint_f *ier)
 {
-  size_t value_c;
-
   /* CHARACTERS */
   if( (int)*what == CG_CONFIG_SET_PATH ||
       (int)*what == CG_CONFIG_ADD_PATH) {
@@ -208,13 +206,21 @@ CGNSDLL void cg_configure_c(cgint_f *what, void *value, cgint_f *ier)
       return;
     }
 
-  /* FUNCTION POINTER */  
-  } else if( (int)*what == CG_CONFIG_ERROR ) {
-    *ier = (cgint_f)cg_configure((int)*what, value);
-
   /* EVERYTHING ELSE */
   } else {
     *ier = (cgint_f)cg_configure((int)*what, (void *)(*(size_t *)value));
+  }
+}
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void cg_configure_c_funptr(cgint_f *what, void *value, cgint_f *ier)
+{
+  /* FUNCTION POINTER */
+  printf("lkdjsflk");
+  if( (int)*what == CG_CONFIG_ERROR ) {
+    *ier = (cgint_f)cg_configure((int)*what, value);
+  } else {
+    *ier = (cgint_f)CG_ERROR;
   }
 }
 
