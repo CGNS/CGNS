@@ -64,7 +64,7 @@ PROGRAM write_cgns_1
   CHARACTER(LEN=32) coordname(Ndim)
   CHARACTER(LEN=32) donorname
 
-  INTEGER(CGSIZE_T), TARGET :: value_f
+  INTEGER, TARGET :: value_f
   CHARACTER(LEN=32), TARGET :: path
   TYPE(C_PTR) :: value
   TYPE(C_FUNPTR) :: func

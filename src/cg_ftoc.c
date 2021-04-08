@@ -188,7 +188,7 @@ CGNSDLL void FMNAME(cg_configure_f, CG_CONFIGURE_F) (cgint_f *what,
       (int)*what != CG_CONFIG_SET_PATH &&
       (int)*what != CG_CONFIG_ADD_PATH &&
       (int)*what != CG_CONFIG_HDF5_MPI_COMM) {
-    value_c = *(size_t *)value;
+    value_c = *((int *) *((size_t *)value));
     *ier = (cgint_f)cg_configure((int)*what, (void*)value_c);
 #if CG_BUILD_PARALLEL
   } else if( (int)*what == CG_CONFIG_HDF5_MPI_COMM ) {
@@ -197,7 +197,7 @@ CGNSDLL void FMNAME(cg_configure_f, CG_CONFIGURE_F) (cgint_f *what,
     *ier = (cgint_f)cg_configure((int)*what, &C_comm);
 #endif
   } else {
-    *ier = (cgint_f)cg_configure((int)*what, value);
+    *ier = (cgint_f)cg_configure((int)*what, (void *)(*(size_t *)value));
   }
 }
 
