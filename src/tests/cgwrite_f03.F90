@@ -65,6 +65,7 @@ PROGRAM write_cgns_1
   CHARACTER(LEN=32) donorname
 
   INTEGER, TARGET :: value_f
+  INTEGER(C_SIZE_T), TARGET :: value_size_t_f
   CHARACTER(LEN=32), TARGET :: path
   TYPE(C_PTR) :: value
   TYPE(C_FUNPTR) :: func
@@ -312,8 +313,8 @@ PROGRAM write_cgns_1
   CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS_WRITE, C_LOC(value_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
-  value_f = 20*1024*1024
-  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS_INCR, C_LOC(value_f), ier)
+  value_size_t_f = INT(20*1024*1024,C_SIZE_T)
+  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS_INCR, C_LOC(value_size_t_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   CALL cg_open_f('cgtest_core.cgns', CG_MODE_WRITE, cg, ier)
@@ -344,6 +345,7 @@ PROGRAM write_cgns_1
   CALL cg_configure_f(CG_CONFIG_COMPRESS, C_LOC(value_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
   value_f =  CG_CONFIG_RIND_ZERO
+
   CALL cg_configure_f(CG_CONFIG_RIND_INDEX, C_LOC(value_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
   value_f = CG_CONFIG_RIND_CORE
@@ -364,7 +366,6 @@ PROGRAM write_cgns_1
   value = C_LOC(path(1:1))
   CALL cg_configure_f(CG_CONFIG_SET_PATH, value, ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
-
   func = c_funloc(error_exit)
   CALL cg_configure_f(CG_CONFIG_ERROR, func, ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f

@@ -180,22 +180,40 @@ CGNSDLL void cg_set_file_type_f(cgint_f *ft, cgint_f *ier)
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cg_configure_f, CG_CONFIGURE_F) (cgint_f *what,
+CGNSDLL void cg_configure_f(cgint_f *what,
         void *value, cgint_f *ier)
 {
   size_t value_c;
-  if( (int)*what != CG_CONFIG_ERROR &&
-      (int)*what != CG_CONFIG_SET_PATH &&
-      (int)*what != CG_CONFIG_ADD_PATH &&
-      (int)*what != CG_CONFIG_HDF5_MPI_COMM) {
-    value_c = *((int *) *((size_t *)value));
-    *ier = (cgint_f)cg_configure((int)*what, (void*)value_c);
+
+  /* CHARACTERS */
+  if( (int)*what == CG_CONFIG_SET_PATH ||
+      (int)*what == CG_CONFIG_ADD_PATH) {
+    *ier = (cgint_f)cg_configure((int)*what, value);
+
+  /* MPI COMMUNICATOR */
 #if CG_BUILD_PARALLEL
   } else if( (int)*what == CG_CONFIG_HDF5_MPI_COMM ) {
     MPI_Fint F_comm = *(MPI_Fint *)value;
     MPI_Comm C_comm = MPI_Comm_f2c(F_comm);
     *ier = (cgint_f)cg_configure((int)*what, &C_comm);
 #endif
+
+  /* RIND */    
+  } else if( (int)*what == CG_CONFIG_RIND_INDEX) {
+    if(*(int*)value == 0) {
+      *ier = (cgint_f)cg_configure((int)*what, CG_CONFIG_RIND_ZERO);
+    } else if(*(int*)value == 1) {
+      *ier = (cgint_f)cg_configure((int)*what, CG_CONFIG_RIND_CORE);
+    } else {
+      *ier = (cgint_f)CG_ERROR;
+      return;
+    }
+
+  /* FUNCTION POINTER */  
+  } else if( (int)*what == CG_CONFIG_ERROR ) {
+    *ier = (cgint_f)cg_configure((int)*what, value);
+
+  /* EVERYTHING ELSE */
   } else {
     *ier = (cgint_f)cg_configure((int)*what, (void *)(*(size_t *)value));
   }
