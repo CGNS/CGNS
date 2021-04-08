@@ -938,14 +938,14 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_set_rind_core_f
 
-     SUBROUTINE cg_configure_f(what, value, ier) BIND(C,NAME="cg_configure_f")
+     SUBROUTINE cg_configure_c(what, value, ier) BIND(C,NAME="cg_configure_c")
        IMPORT :: C_PTR
        IMPLICIT NONE
        INTEGER, INTENT(IN) :: what
 !DIR$ ATTRIBUTES NO_ARG_CHECK :: value
        TYPE(C_PTR), VALUE :: value
        INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_configure_f
+     END SUBROUTINE cg_configure_c
 
      SUBROUTINE cg_get_cgio_f(fn, cgio_num, ier) BIND(C, NAME="cg_get_cgio_f")
        IMPLICIT NONE
@@ -4069,6 +4069,11 @@ MODULE cgns
      MODULE PROCEDURE cg_get_type_c_double
   END INTERFACE
 
+  INTERFACE cg_configure_f
+     MODULE PROCEDURE cg_configure_ptr
+     MODULE PROCEDURE cg_configure_funptr
+  END INTERFACE
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      INTERFACES FOR THE CGIO FORTRAN FUNCTIONS                      *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -4452,7 +4457,10 @@ MODULE cgns
 !!$  
   END INTERFACE
 
+  PRIVATE cg_configure_ptr, cg_configure_funptr
+
 CONTAINS
+
   SUBROUTINE cg_goto_f(fn, B, ier, &
        UserDataName1, i1, UserDataName2, i2, &
        UserDataName3, i3, UserDataName4, i4, &
@@ -4735,5 +4743,27 @@ CONTAINS
 !    ier = cg_open(TRIM(filename)//C_NULL_CHAR, mode, fn)
 !
 !  END SUBROUTINE cg_open_f
+
+  SUBROUTINE cg_configure_ptr(what, value, ier)
+    USE ISO_C_BINDING, ONLY : C_PTR
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: what
+    TYPE(C_PTR), VALUE :: value
+    INTEGER, INTENT(OUT) :: ier
+
+    CALL cg_configure_c(what, value, ier)
+
+  END SUBROUTINE cg_configure_ptr
+
+  SUBROUTINE cg_configure_funptr(what, value, ier)
+    USE ISO_C_BINDING, ONLY : C_FUNPTR
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: what
+    TYPE(C_FUNPTR), VALUE :: value
+    INTEGER, INTENT(OUT) :: ier
+
+    CALL cg_configure_c(what, value, ier)
+
+  END SUBROUTINE cg_configure_funptr
 
 END MODULE cgns
