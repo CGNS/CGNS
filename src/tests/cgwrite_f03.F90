@@ -305,10 +305,8 @@ PROGRAM write_cgns_1
   ! **************************
   value_f = 1
   value = C_LOC(value_f)
-  PRINT*,'lkdjsf'
   CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS, value, ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
-  PRINT*,'sdflkdjsf'
 
   ! enable committing memory to disk
   value_f = 1
