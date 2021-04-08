@@ -938,6 +938,15 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_set_rind_core_f
 
+     SUBROUTINE cg_configure_f(what, value, ier) BIND(C,NAME="cg_configure_f")
+       IMPORT :: C_PTR
+       IMPLICIT NONE
+       INTEGER, INTENT(IN) :: what
+!DIR$ ATTRIBUTES NO_ARG_CHECK :: value
+       TYPE(C_PTR), VALUE :: value
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cg_configure_f
+
      SUBROUTINE cg_get_cgio_f(fn, cgio_num, ier) BIND(C, NAME="cg_get_cgio_f")
        IMPLICIT NONE
        INTEGER :: fn
@@ -3655,14 +3664,6 @@ MODULE cgns
        INTEGER(C_INT), INTENT(IN) :: pcg_mpi_info_f
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_mpi_info_f
-
-     SUBROUTINE cg_configure_f(what, value, ier) BIND(C,NAME="cg_configure_f")
-       IMPORT :: C_PTR
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: what
-       TYPE(C_PTR), VALUE :: value
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_configure_f
 
 !!$
 !!$   !!$           SUBROUTINE cgp_coord_multi_read_data_f, CGP_COORD_MULTI_READ_DATA_F)(fn, B, Z, C,
