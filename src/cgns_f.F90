@@ -3649,14 +3649,14 @@ MODULE cgns
        IMPLICIT NONE
      END SUBROUTINE cgp_error_exit_f
 
-     SUBROUTINE cgp_mpi_info_f(pcg_mpi_info_f, ier) BIND(C,NAME='cgp_mpi_info_f')
+     SUBROUTINE cgp_mpi_info_f(pcg_mpi_info_f, ier) BIND(C,NAME="cgp_mpi_info_f")
        IMPORT :: C_INT
        IMPLICIT NONE
        INTEGER(C_INT), INTENT(IN) :: pcg_mpi_info_f
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_mpi_info_f
 
-     SUBROUTINE cg_configure_f(what, value, ier) BIND(C,NAME='cg_configure_f')
+     SUBROUTINE cg_configure_f(what, value, ier) BIND(C,NAME="cg_configure_f")
        IMPORT :: C_PTR
        IMPLICIT NONE
        INTEGER, INTENT(IN) :: what
@@ -3761,7 +3761,7 @@ MODULE cgns
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   !*      INTERFACES FOR THE C FUNCTIONS                                 *
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_open(filename, mode, fn) BIND(C, name='cgp_open')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_open(filename, mode, fn) BIND(C, name="cgp_open")
 !!$       IMPORT :: c_int, c_char
 !!$       IMPLICIT NONE
 !!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: filename
@@ -3769,12 +3769,12 @@ MODULE cgns
 !!$       INTEGER(C_INT), INTENT(OUT) :: fn
 !!$     END FUNCTION cgp_open
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_pio_mode(mode) BIND(C, name='cgp_pio_mode')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_pio_mode(mode) BIND(C, name="cgp_pio_mode")
 !!$       USE ISO_C_BINDING
 !!$       INTEGER(KIND(CGP_COLLECTIVE)), INTENT(IN), VALUE  :: mode
 !!$     END FUNCTION cgp_pio_mode
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cg_base_write(fn, basename, cell_dim, phys_dim, B) BIND(C, name='cg_base_write')
+!!$!!$     INTEGER(C_INT) FUNCTION cg_base_write(fn, basename, cell_dim, phys_dim, B) BIND(C, name="cg_base_write")
 !!$       USE ISO_C_BINDING
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
 !!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: basename
@@ -3783,7 +3783,7 @@ MODULE cgns
 !!$       INTEGER(C_INT)   , INTENT(OUT)  :: B
 !!$     END FUNCTION cg_base_write
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cg_zone_write(fn, B, zonename, nijk, itype, Z) BIND(C, name='cg_zone_write')
+!!$!!$     INTEGER(C_INT) FUNCTION cg_zone_write(fn, B, zonename, nijk, itype, Z) BIND(C, name="cg_zone_write")
 !!$       USE ISO_C_BINDING
 !!$       IMPORT :: CGSIZE_T
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
@@ -3794,7 +3794,7 @@ MODULE cgns
 !!$       INTEGER(C_INT)   , INTENT(OUT)  :: Z
 !!$     END FUNCTION cg_zone_write
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cg_base_read(fn, B, basename, cell_dim, phys_dim) BIND(C, name='cg_base_read')
+!!$!!$     INTEGER(C_INT) FUNCTION cg_base_read(fn, B, basename, cell_dim, phys_dim) BIND(C, name="cg_base_read")
 !!$       USE ISO_C_BINDING
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
@@ -3803,7 +3803,7 @@ MODULE cgns
 !!$       INTEGER(C_INT)   , INTENT(OUT)  :: phys_dim
 !!$     END FUNCTION cg_base_read
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cg_zone_read(fn, B, Z, zonename, nijk) !BIND(C, name='cg_zone_read')
+!!$!!$     INTEGER(C_INT) FUNCTION cg_zone_read(fn, B, Z, zonename, nijk) !BIND(C, name="cg_zone_read")
 !!$       USE ISO_C_BINDING
 !!$       IMPORT :: CGSIZE_T
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
@@ -3813,7 +3813,7 @@ MODULE cgns
 !!$       INTEGER(CGSIZE_T), DIMENSION(*), INTENT(OUT)  :: nijk
 !!$     END FUNCTION cg_zone_read
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_coord_write(fn, B, Z, itype, coordname, C) BIND(C, name='cgp_coord_write')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_coord_write(fn, B, Z, itype, coordname, C) BIND(C, name="cgp_coord_write")
 !!$       USE ISO_C_BINDING
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
@@ -3823,7 +3823,7 @@ MODULE cgns
 !!$       INTEGER(C_INT)   , INTENT(OUT)  :: C
 !!$     END FUNCTION cgp_coord_write
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_coord_write_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name='cgp_coord_write_data')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_coord_write_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name="cgp_coord_write_data")
 !!$       USE ISO_C_BINDING
 !!$       IMPORT :: CGSIZE_T
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
@@ -3835,7 +3835,7 @@ MODULE cgns
 !!$       TYPE(C_PTR), VALUE :: coords
 !!$     END FUNCTION cgp_coord_write_data
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_field_write(fn, B, Z, S, itype, fieldname, F) BIND(C, name='cgp_field_write')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_field_write(fn, B, Z, S, itype, fieldname, F) BIND(C, name="cgp_field_write")
 !!$       USE ISO_C_BINDING
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
@@ -3846,7 +3846,7 @@ MODULE cgns
 !!$       INTEGER(C_INT)   , INTENT(OUT)  :: F
 !!$     END FUNCTION cgp_field_write
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_field_write_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name='cgp_field_write_data')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_field_write_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name="cgp_field_write_data")
 !!$       USE ISO_C_BINDING
 !!$       IMPORT :: CGSIZE_T
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
@@ -3859,7 +3859,7 @@ MODULE cgns
 !!$       TYPE(C_PTR), VALUE :: data
 !!$     END FUNCTION cgp_field_write_data
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_field_read_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name='cgp_field_read_data')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_field_read_data(fn, B, Z, S, F, rmin, rmax, data) BIND(C, name="cgp_field_read_data")
 !!$       USE ISO_C_BINDING
 !!$       IMPORT :: CGSIZE_T
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
@@ -3872,7 +3872,7 @@ MODULE cgns
 !!$       TYPE(C_PTR), VALUE :: data
 !!$     END FUNCTION cgp_field_read_data
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_coord_read_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name='cgp_coord_read_data')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_coord_read_data(fn, B, Z, C, rmin, rmax, coords) BIND(C, name="cgp_coord_read_data")
 !!$       USE ISO_C_BINDING
 !!$       IMPORT :: CGSIZE_T
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
@@ -3884,7 +3884,7 @@ MODULE cgns
 !!$       TYPE(C_PTR), VALUE :: coords
 !!$     END FUNCTION cgp_coord_read_data
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_section_write(fn,B,Z,sectionname,itype,start,end,nbndry,S) BIND(C, name='cgp_section_write')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_section_write(fn,B,Z,sectionname,itype,start,end,nbndry,S) BIND(C, name="cgp_section_write")
 !!$       USE ISO_C_BINDING
 !!$       IMPORT :: CGSIZE_T
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
@@ -3898,7 +3898,7 @@ MODULE cgns
 !!$       INTEGER(C_INT)   , INTENT(OUT) :: S
 !!$     END FUNCTION cgp_section_write
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_array_write(arrayname,itype,DataDimension,DimensionVector,A) BIND(C, name='cgp_array_write')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_array_write(arrayname,itype,DataDimension,DimensionVector,A) BIND(C, name="cgp_array_write")
 !!$       USE ISO_C_BINDING
 !!$       IMPORT :: CGSIZE_T
 !!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN)  :: arrayname
@@ -3908,7 +3908,7 @@ MODULE cgns
 !!$       INTEGER(C_INT)   , INTENT(OUT) :: A
 !!$     END FUNCTION cgp_array_write
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_array_write_data(A, rmin, rmax, data) BIND(C, name='cgp_array_write_data')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_array_write_data(A, rmin, rmax, data) BIND(C, name="cgp_array_write_data")
 !!$       USE ISO_C_BINDING
 !!$       IMPORT :: CGSIZE_T
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: A
@@ -3917,7 +3917,7 @@ MODULE cgns
 !!$       TYPE(C_PTR), VALUE :: data
 !!$     END FUNCTION cgp_array_write_data
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_elements_write_data(fn,B,Z,S,emin,emax,elements) BIND(C, name='cgp_elements_write_data')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_elements_write_data(fn,B,Z,S,emin,emax,elements) BIND(C, name="cgp_elements_write_data")
 !!$       USE ISO_C_BINDING
 !!$       IMPORT :: CGSIZE_T
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
@@ -3929,7 +3929,7 @@ MODULE cgns
 !!$       TYPE(C_PTR), VALUE :: elements
 !!$     END FUNCTION cgp_elements_write_data
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_elements_read_data(fn,B,Z,S,start,end,elements) BIND(C, name='cgp_elements_read_data')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_elements_read_data(fn,B,Z,S,start,end,elements) BIND(C, name="cgp_elements_read_data")
 !!$       USE ISO_C_BINDING
 !!$       IMPORT :: CGSIZE_T
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
@@ -3941,7 +3941,7 @@ MODULE cgns
 !!$       TYPE(C_PTR), VALUE :: elements
 !!$     END FUNCTION cgp_elements_read_data
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_array_read_data(A, rmin, rmax, data) BIND(C, name='cgp_array_read_data')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_array_read_data(A, rmin, rmax, data) BIND(C, name="cgp_array_read_data")
 !!$       USE ISO_C_BINDING
 !!$       IMPORT :: CGSIZE_T
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: A
@@ -3950,7 +3950,7 @@ MODULE cgns
 !!$       TYPE(C_PTR), VALUE :: data
 !!$     END FUNCTION cgp_array_read_data
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cg_sol_write(fn,B,Z,solname,location,S) BIND(C, name='cg_sol_write')
+!!$!!$     INTEGER(C_INT) FUNCTION cg_sol_write(fn,B,Z,solname,location,S) BIND(C, name="cg_sol_write")
 !!$       USE ISO_C_BINDING
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: fn
 !!$       INTEGER(C_INT)   , INTENT(IN), VALUE :: B
@@ -3960,25 +3960,25 @@ MODULE cgns
 !!$       INTEGER(C_INT)   , INTENT(OUT) :: S
 !!$     END FUNCTION cg_sol_write
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_error_exit() BIND(C, name='cgp_error_exit')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_error_exit() BIND(C, name="cgp_error_exit")
 !!$       USE ISO_C_BINDING
 !!$     END FUNCTION cgp_error_exit
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_close(fn) BIND(C, name='cgp_close')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_close(fn) BIND(C, name="cgp_close")
 !!$       USE ISO_C_BINDING
 !!$       INTEGER(C_INT), INTENT(IN), VALUE :: fn
 !!$     END FUNCTION cgp_close
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_queue_set(use_queue) BIND(C, name='cgp_queue_set')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_queue_set(use_queue) BIND(C, name="cgp_queue_set")
 !!$       USE ISO_C_BINDING
 !!$       INTEGER(C_INT), INTENT(IN), VALUE :: use_queue
 !!$     END FUNCTION cgp_queue_set
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cgp_queue_flush() BIND(C, name='cgp_queue_flush')
+!!$!!$     INTEGER(C_INT) FUNCTION cgp_queue_flush() BIND(C, name="cgp_queue_flush")
 !!$       USE ISO_C_BINDING
 !!$     END FUNCTION cgp_queue_flush
 !!$!!$
-!!$!!$     INTEGER(C_INT) FUNCTION cg_user_data_write(UserDataName) BIND(C, name='cg_user_data_write')
+!!$!!$     INTEGER(C_INT) FUNCTION cg_user_data_write(UserDataName) BIND(C, name="cg_user_data_write")
 !!$       USE ISO_C_BINDING
 !!$       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN) :: UserDataName
 !!$     END FUNCTION cg_user_data_write
@@ -4000,7 +4000,7 @@ MODULE cgns
           UserDataName15, i15, UserDataName16, i16, &
           UserDataName17, i17, UserDataName18, i18, &
           UserDataName19, i19, UserDataName20, i20, &
-          end) BIND(C, name='cg_gorel_f08')
+          end) BIND(C, name="cg_gorel_f08")
 
        USE ISO_C_BINDING
        INTEGER(C_INT) , INTENT(IN), VALUE :: fn
@@ -4028,7 +4028,7 @@ MODULE cgns
           UserDataName15, i15, UserDataName16, i16, &
           UserDataName17, i17, UserDataName18, i18, &
           UserDataName19, i19, UserDataName20, i20, &
-          end) BIND(C, name='cg_goto_f08')
+          end) BIND(C, name="cg_goto_f08")
 
        USE ISO_C_BINDING
        INTEGER(C_INT) , INTENT(IN), VALUE :: fn
@@ -4077,7 +4077,7 @@ MODULE cgns
 !* paths for searching for linked-to files
 !*=========================================================
 
-     SUBROUTINE cgio_path_add_f(path, ier) ! BIND(C,NAME='cgio_path_add_f')
+     SUBROUTINE cgio_path_add_f(path, ier) ! BIND(C,NAME="cgio_path_add_f")
        IMPORT :: c_char
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: path
@@ -4085,7 +4085,7 @@ MODULE cgns
      END SUBROUTINE cgio_path_add_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_path_delete_f(path, ier) ! BIND(C,NAME='cgio_path_delete_f')
+     SUBROUTINE cgio_path_delete_f(path, ier) ! BIND(C,NAME="cgio_path_delete_f")
        IMPORT :: c_char
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: path
@@ -4095,7 +4095,7 @@ MODULE cgns
 !*=========================================================
 !* utility routines independent of open files
 !*=========================================================
-         SUBROUTINE cgio_is_supported_f(file_type, ier) BIND(C,NAME='cgio_is_supported_f')
+         SUBROUTINE cgio_is_supported_f(file_type, ier) BIND(C,NAME="cgio_is_supported_f")
          IMPORT :: CGSIZE_T
          IMPLICIT NONE
          INTEGER(CGSIZE_T) :: file_type
@@ -4103,7 +4103,7 @@ MODULE cgns
        END SUBROUTINE cgio_is_supported_f
   
 !*---------------------------------------------------------
-     SUBROUTINE cgio_check_file_f(filename, file_type, ier) !BIND(C,NAME='cgio_check_file_f')
+     SUBROUTINE cgio_check_file_f(filename, file_type, ier) !BIND(C,NAME="cgio_check_file_f")
        IMPORT :: c_char
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
@@ -4114,7 +4114,7 @@ MODULE cgns
 !*=========================================================
 !* file operations
 !*=========================================================
-     SUBROUTINE cgio_open_file_f(filename, file_mode, file_type, cgio_num, ier) ! BIND(C,NAME='cgio_open_file_f')
+     SUBROUTINE cgio_open_file_f(filename, file_mode, file_type, cgio_num, ier) ! BIND(C,NAME="cgio_open_file_f")
        IMPORT :: c_char
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
@@ -4125,14 +4125,14 @@ MODULE cgns
      END SUBROUTINE cgio_open_file_f
 
   !*---------------------------------------------------------
-     SUBROUTINE cgio_close_file_f(cgio_num, ier) BIND(C,NAME='cgio_close_file_f')
+     SUBROUTINE cgio_close_file_f(cgio_num, ier) BIND(C,NAME="cgio_close_file_f")
        IMPLICIT NONE
        INTEGER :: cgio_num
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgio_close_file_f
 
   !*---------------------------------------------------------
-     SUBROUTINE cgio_flush_to_disk_f(cgio_num, ier) BIND(C,NAME='cgio_flush_to_disk_f')
+     SUBROUTINE cgio_flush_to_disk_f(cgio_num, ier) BIND(C,NAME="cgio_flush_to_disk_f")
        IMPLICIT NONE
        INTEGER :: cgio_num
        INTEGER, INTENT(OUT) :: ier
@@ -4141,7 +4141,7 @@ MODULE cgns
 !*=========================================================
 !* file information
 !*=========================================================
-     SUBROUTINE cgio_library_version_f(cgio_num, version, ier) ! BIND(C,NAME='cgio_library_version_f')
+     SUBROUTINE cgio_library_version_f(cgio_num, version, ier) ! BIND(C,NAME="cgio_library_version_f")
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4150,7 +4150,7 @@ MODULE cgns
      END SUBROUTINE cgio_library_version_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_file_version_f(cgio_num, file_version, creation_date, modified_date, ier) ! BIND(C,NAME='cgio_file_version_f')
+     SUBROUTINE cgio_file_version_f(cgio_num, file_version, creation_date, modified_date, ier) ! BIND(C,NAME="cgio_file_version_f")
        IMPORT :: c_char
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4161,7 +4161,7 @@ MODULE cgns
      END SUBROUTINE
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_get_root_id_f(cgio_num, rootid, ier) BIND(C,NAME='cgio_get_root_id_f')
+     SUBROUTINE cgio_get_root_id_f(cgio_num, rootid, ier) BIND(C,NAME="cgio_get_root_id_f")
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4170,7 +4170,7 @@ MODULE cgns
      END SUBROUTINE cgio_get_root_id_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_get_file_type_f(cgio_num, file_type, ier) BIND(C,NAME='cgio_get_file_type_f')
+     SUBROUTINE cgio_get_file_type_f(cgio_num, file_type, ier) BIND(C,NAME="cgio_get_file_type_f")
        IMPLICIT NONE
        INTEGER :: cgio_num
        INTEGER :: file_type
@@ -4180,14 +4180,14 @@ MODULE cgns
 !*=========================================================
 !* error handling
 !*=========================================================
-     SUBROUTINE cgio_error_code_f(errcode, file_type) BIND(C,NAME='cgio_error_code_f')
+     SUBROUTINE cgio_error_code_f(errcode, file_type) BIND(C,NAME="cgio_error_code_f")
        IMPLICIT NONE
        INTEGER :: errcode
        INTEGER :: file_type
      END SUBROUTINE cgio_error_code_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_error_message_f(errmsg, ier) ! BIND(C,NAME='cgio_error_message_f')
+     SUBROUTINE cgio_error_message_f(errmsg, ier) ! BIND(C,NAME="cgio_error_message_f")
        IMPORT :: c_char
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: errmsg
@@ -4195,14 +4195,14 @@ MODULE cgns
      END SUBROUTINE cgio_error_message_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_error_exit_f(errmsg) ! BIND(C,NAME='cgio_error_exit_f')
+     SUBROUTINE cgio_error_exit_f(errmsg) ! BIND(C,NAME="cgio_error_exit_f")
        IMPORT :: c_char
        IMPLICIT NONE
        CHARACTER(KIND=C_CHAR), DIMENSION(*) :: errmsg
      END SUBROUTINE cgio_error_exit_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_error_abort_f(abort_flag) BIND(C,NAME='cgio_error_abort_f')
+     SUBROUTINE cgio_error_abort_f(abort_flag) BIND(C,NAME="cgio_error_abort_f")
        IMPLICIT NONE
        INTEGER :: abort_flag
      END SUBROUTINE cgio_error_abort_f
@@ -4210,7 +4210,7 @@ MODULE cgns
 !*=========================================================
 !* basic node operations
 !*=========================================================
-     SUBROUTINE cgio_create_node_f(cgio_num, pid, name, id, ier) ! BIND(C,NAME='cgio_create_node_f')
+     SUBROUTINE cgio_create_node_f(cgio_num, pid, name, id, ier) ! BIND(C,NAME="cgio_create_node_f")
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4221,7 +4221,7 @@ MODULE cgns
      END SUBROUTINE cgio_create_node_f
 
 !*---------------------------------------------------------
-!!$!!$     SUBROUTINE cgio_new_node_f(cgio_num, pid, name, label, data_type, ndims, dims, DATA, id, ier) BIND(C,NAME='')
+!!$!!$     SUBROUTINE cgio_new_node_f(cgio_num, pid, name, label, data_type, ndims, dims, DATA, id, ier) BIND(C,NAME="")
 !!$       IMPORT :: c_char, c_double
 !!$       IMPLICIT NONE
 !!$       INTEGER :: cgio_num
@@ -4237,7 +4237,7 @@ MODULE cgns
 !!$     END SUBROUTINE cgio_new_node_f
 !!$
 !*---------------------------------------------------------
-     SUBROUTINE cgio_delete_node_f(cgio_num, pid, id, ier) BIND(C,NAME='cgio_delete_node_f')
+     SUBROUTINE cgio_delete_node_f(cgio_num, pid, id, ier) BIND(C,NAME="cgio_delete_node_f")
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4247,7 +4247,7 @@ MODULE cgns
      END SUBROUTINE cgio_delete_node_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_move_node_f(cgio_num, pid, id, npid, ier) BIND(C,NAME='cgio_move_node_f')
+     SUBROUTINE cgio_move_node_f(cgio_num, pid, id, npid, ier) BIND(C,NAME="cgio_move_node_f")
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4258,7 +4258,7 @@ MODULE cgns
      END SUBROUTINE cgio_move_node_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_release_id_f(cgio_num, id, ier) BIND(C,NAME='cgio_release_id_f')
+     SUBROUTINE cgio_release_id_f(cgio_num, id, ier) BIND(C,NAME="cgio_release_id_f")
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4269,7 +4269,7 @@ MODULE cgns
 !*=========================================================
 !* links
 !*=========================================================
-     SUBROUTINE cgio_is_link_f(cgio_num, id, link_len, ier) BIND(C,NAME='cgio_is_link_f')
+     SUBROUTINE cgio_is_link_f(cgio_num, id, link_len, ier) BIND(C,NAME="cgio_is_link_f")
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4279,7 +4279,7 @@ MODULE cgns
      END SUBROUTINE cgio_is_link_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_link_size_f(cgio_num, id, file_len, name_len, ier) BIND(C,NAME='cgio_link_size_f')
+     SUBROUTINE cgio_link_size_f(cgio_num, id, file_len, name_len, ier) BIND(C,NAME="cgio_link_size_f")
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4290,7 +4290,7 @@ MODULE cgns
      END SUBROUTINE cgio_link_size_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_create_link_f(cgio_num, pid, name, filename, name_in_file, id, ier) ! BIND(C,NAME='cgio_create_link_f')
+     SUBROUTINE cgio_create_link_f(cgio_num, pid, name, filename, name_in_file, id, ier) ! BIND(C,NAME="cgio_create_link_f")
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4303,7 +4303,7 @@ MODULE cgns
      END SUBROUTINE cgio_create_link_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_get_link_f(cgio_num, id, filename, name_in_file, ier) ! BIND(C,NAME='cgio_get_link_f')
+     SUBROUTINE cgio_get_link_f(cgio_num, id, filename, name_in_file, ier) ! BIND(C,NAME="cgio_get_link_f")
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4317,7 +4317,7 @@ MODULE cgns
 !* node children
 !*=========================================================
      SUBROUTINE cgio_number_children_f(cgio_num, pid, num_children, ier) &
-                BIND(C,NAME='cgio_number_children_f')
+                BIND(C,NAME="cgio_number_children_f")
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4328,7 +4328,7 @@ MODULE cgns
 
 !*---------------------------------------------------------
      SUBROUTINE cgio_children_ids_f(cgio_num, pid, start, max_ret, num_ret, ids, ier) &
-                BIND(C,NAME='cgio_children_ids_f')
+                BIND(C,NAME="cgio_children_ids_f")
        IMPORT :: c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4342,7 +4342,7 @@ MODULE cgns
 
 !*---------------------------------------------------------
      SUBROUTINE cgio_children_names_f(cgio_num, pid, start, max_ret, name_len, &
-          num_ret, names, ier) !BIND(C,NAME='cgio_children_names_f')
+          num_ret, names, ier) !BIND(C,NAME="cgio_children_names_f")
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4358,7 +4358,7 @@ MODULE cgns
 !*=========================================================
 !* read nodes
 !*=========================================================
-     SUBROUTINE cgio_get_node_id_f(cgio_num, pid, name, id, ier) !BIND(C,NAME='cgio_get_node_id_f')
+     SUBROUTINE cgio_get_node_id_f(cgio_num, pid, name, id, ier) !BIND(C,NAME="cgio_get_node_id_f")
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4369,7 +4369,7 @@ MODULE cgns
      END SUBROUTINE cgio_get_node_id_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_get_name_f(cgio_num, id, name, ier) !BIND(C,NAME='cgio_get_name_f')
+     SUBROUTINE cgio_get_name_f(cgio_num, id, name, ier) !BIND(C,NAME="cgio_get_name_f")
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4379,7 +4379,7 @@ MODULE cgns
      END SUBROUTINE cgio_get_name_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_get_label_f(cgio_num, id, label, ier) !BIND(C,NAME='cgio_get_label_f')
+     SUBROUTINE cgio_get_label_f(cgio_num, id, label, ier) !BIND(C,NAME="cgio_get_label_f")
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4389,7 +4389,7 @@ MODULE cgns
      END SUBROUTINE cgio_get_label_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_get_data_type_f(cgio_num, id, data_type, ier) !BIND(C,NAME='cgio_get_data_type_f')
+     SUBROUTINE cgio_get_data_type_f(cgio_num, id, data_type, ier) !BIND(C,NAME="cgio_get_data_type_f")
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4399,7 +4399,7 @@ MODULE cgns
      END SUBROUTINE cgio_get_data_type_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_get_data_size_f(cgio_num, id, size, ier) BIND(C,NAME='cgio_get_data_size_f')
+     SUBROUTINE cgio_get_data_size_f(cgio_num, id, size, ier) BIND(C,NAME="cgio_get_data_size_f")
        IMPORT :: c_double, cgsize_t
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4411,7 +4411,7 @@ MODULE cgns
 !*=========================================================
 !* write nodes
 !*=========================================================
-     SUBROUTINE cgio_set_name_f(cgio_num, pid, id, name, ier) !BIND(C,NAME='cgio_set_name_f')
+     SUBROUTINE cgio_set_name_f(cgio_num, pid, id, name, ier) !BIND(C,NAME="cgio_set_name_f")
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4422,7 +4422,7 @@ MODULE cgns
      END SUBROUTINE cgio_set_name_f
 
 !*---------------------------------------------------------
-     SUBROUTINE cgio_set_label_f(cgio_num, id, label, ier) !BIND(C,NAME='cgio_set_label_f')
+     SUBROUTINE cgio_set_label_f(cgio_num, id, label, ier) !BIND(C,NAME="cgio_set_label_f")
        IMPORT :: c_char, c_double
        IMPLICIT NONE
        INTEGER :: cgio_num
@@ -4434,19 +4434,19 @@ MODULE cgns
 
 !*---------------------------------------------------------
 !!$!!$     SUBROUTINE cgio_write_all_data_f(
-!!$    cgint_f *cgio_num, double *id, void *data, cgint_f *ier) BIND(C,NAME='')
+!!$    cgint_f *cgio_num, double *id, void *data, cgint_f *ier) BIND(C,NAME="")
 !!$  
 !*---------------------------------------------------------
 !!$!!$     SUBROUTINE cgio_write_block_data_f(
 !!$    cgint_f *cgio_num, double *id, cgsize_t *b_start, cgsize_t *b_end,
-!!$    void *data, cgint_f *ier) BIND(C,NAME='')
+!!$    void *data, cgint_f *ier) BIND(C,NAME="")
 !!$
 !!$  
 !*---------------------------------------------------------
 !!$!!$     SUBROUTINE cgio_write_data_f(
 !!$    cgint_f *cgio_num, double *id, cgsize_t *s_start, cgsize_t *s_end,
 !!$    cgsize_t *s_stride, cgsize_t *m_ndims, cgsize_t *m_dims, cgsize_t *m_start,
-!!$    cgsize_t *m_end, cgsize_t *m_stride, void *data, cgint_f *ier) BIND(C,NAME='')
+!!$    cgsize_t *m_end, cgsize_t *m_stride, void *data, cgint_f *ier) BIND(C,NAME="")
 !!$
 !!$  
   END INTERFACE
@@ -4712,7 +4712,7 @@ CONTAINS
 
 !  These have issues when using xlf and the calling
 !  program does not use the modules, CGNS-25
-!  SUBROUTINE cg_is_cgns_f(filename, file_type, ier) BIND(C,NAME='')
+!  SUBROUTINE cg_is_cgns_f(filename, file_type, ier) BIND(C,NAME="")
 !    USE ISO_C_BINDING
 !    IMPLICIT NONE
 !    CHARACTER(KIND=C_CHAR, LEN=*), INTENT(IN) :: filename
@@ -4723,7 +4723,7 @@ CONTAINS
 !
 !  END SUBROUTINE cg_is_cgns_f
 !
-!  SUBROUTINE cg_open_f(filename, mode, fn, ier) BIND(C,NAME='')
+!  SUBROUTINE cg_open_f(filename, mode, fn, ier) BIND(C,NAME="")
 !    USE ISO_C_BINDING
 !    IMPLICIT NONE
 !    CHARACTER(KIND=C_CHAR, LEN=*), INTENT(IN) :: filename
