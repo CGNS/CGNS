@@ -24,7 +24,7 @@ int main (int argc, char **argv)
     int ier;
 
     printf ("**********************************\n");
-    printf ("* TEST CGNS WITH HDF5 CORE VFD   *\n");
+    printf ("* TEST CGNS WITH HDF5 CORE FD    *\n");
     printf ("**********************************\n");
     fflush (stdout);
 
