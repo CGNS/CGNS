@@ -4758,7 +4758,6 @@ CONTAINS
     TYPE(C_PTR), VALUE :: value
     INTEGER, INTENT(OUT) :: ier
 
-    PRINT*,"cg_configure_ptr"
     CALL cg_configure_c_ptr(what, value, ier)
 
   END SUBROUTINE cg_configure_ptr
@@ -4770,7 +4769,6 @@ CONTAINS
     TYPE(C_FUNPTR), VALUE :: value
     INTEGER, INTENT(OUT) :: ier
 
-    PRINT*,"cg_configure_funptr"
     CALL cg_configure_c_funptr(what, value, ier)
 
   END SUBROUTINE cg_configure_funptr

@@ -67,8 +67,6 @@ PROGRAM write_cgns_1
   INTEGER, TARGET :: value_f
   INTEGER(C_SIZE_T), TARGET :: value_size_t_f
   CHARACTER(LEN=32), TARGET :: path
-  TYPE(C_PTR) :: value
-  TYPE(C_FUNPTR) :: func
 
   coordname(1) = 'CoordinateX'
   coordname(2) = 'CoordinateY'
@@ -304,8 +302,7 @@ PROGRAM write_cgns_1
   ! Test cg_configure options
   ! **************************
   value_f = 1
-  value = C_LOC(value_f)
-  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS, value, ier)
+  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS, C_LOC(value_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   ! enable committing memory to disk
@@ -352,21 +349,16 @@ PROGRAM write_cgns_1
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   path = "/test/a/b"//C_NULL_CHAR
-  value = C_LOC(path(1:1))
-
-  CALL cg_configure_f(CG_CONFIG_SET_PATH, value, ier)
+  CALL cg_configure_f(CG_CONFIG_SET_PATH, C_LOC(path(1:1)), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   path = "/test/c/d"//C_NULL_CHAR
-  value = C_LOC(path(1:1))
-  CALL cg_configure_f(CG_CONFIG_ADD_PATH, value, ier)
+  CALL cg_configure_f(CG_CONFIG_ADD_PATH, C_LOC(path(1:1)), ier)
 
   path = C_NULL_CHAR
-  value = C_LOC(path(1:1))
-  CALL cg_configure_f(CG_CONFIG_SET_PATH, value, ier)
+  CALL cg_configure_f(CG_CONFIG_SET_PATH, C_LOC(path(1:1)), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
-  func = c_funloc(error_exit)
-  CALL cg_configure_f(CG_CONFIG_ERROR, func, ier)
+  CALL cg_configure_f(CG_CONFIG_ERROR, c_funloc(error_exit), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   value_f = 100 ! Trigger an error

@@ -216,7 +216,6 @@ CGNSDLL void cg_configure_c_ptr(cgint_f *what, void *value, cgint_f *ier)
 CGNSDLL void cg_configure_c_funptr(cgint_f *what, void *value, cgint_f *ier)
 {
   /* FUNCTION POINTER */
-  printf("lkdjsflk");
   if( (int)*what == CG_CONFIG_ERROR ) {
     *ier = (cgint_f)cg_configure((int)*what, value);
   } else {
