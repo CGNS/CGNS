@@ -247,6 +247,8 @@ PROGRAM pcgns_ftest
   CALL cgp_close_f(F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
+! Disable with gfortran, GCC Bugzilla - Bug 99982
+#ifndef __GFORTRAN__ 
   ! test cg_configure_f
   value = MPI_COMM_SELF
   CALL cg_configure_f(CG_CONFIG_HDF5_MPI_COMM, C_LOC(value), ierr)
@@ -258,7 +260,7 @@ PROGRAM pcgns_ftest
      CALL cgp_close_f(F,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   ENDIF
-
+#endif
   CALL MPI_FINALIZE(mpi_err)
 END PROGRAM pcgns_ftest
 

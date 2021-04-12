@@ -298,6 +298,8 @@ PROGRAM write_cgns_1
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
 #if CG_BUILD_HDF5
+! Disable with gfortran, GCC Bugzilla - Bug 99982
+#ifndef __GFORTRAN__
   ! **************************
   ! Test cg_configure options
   ! **************************
@@ -364,7 +366,7 @@ PROGRAM write_cgns_1
   value_f = 100 ! Trigger an error
   CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_f), ier)
   IF (ier .NE. ERROR) CALL cg_error_exit_f
-
+#endif
 #endif
 
 END PROGRAM write_cgns_1
