@@ -26,6 +26,8 @@ PROGRAM pcgns_ftest
   CHARACTER*11 piomode(2)
   INTEGER :: istat
   INTEGER :: precision
+  INTEGER, TARGET :: value
+  TYPE(C_PTR) :: value_f
 
   DATA piomode /'independent','collective'/
 
@@ -245,6 +247,19 @@ PROGRAM pcgns_ftest
 
   CALL cgp_close_f(F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+  ! test cg_configure_f
+  value = MPI_COMM_SELF
+  value_f = C_LOC(value)
+  CALL cg_configure_f(CG_CONFIG_HDF5_MPI_COMM, value_f, ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+  IF (commrank .EQ. 0) THEN
+     CALL cgp_open_f('pcgns_ftest.cgns',CG_MODE_READ,F,ierr)
+     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+     CALL cgp_close_f(F,ierr)
+     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+  ENDIF
 
   CALL MPI_FINALIZE(mpi_err)
 END PROGRAM pcgns_ftest

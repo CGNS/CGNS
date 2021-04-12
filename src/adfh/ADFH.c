@@ -1457,7 +1457,7 @@ void ADFH_Configure(const int option, const void *value, int *err)
         set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_CORE_WRITE) {
-        core_vfd_backing_store = (hbool_t)value;
+        core_vfd_backing_store = (hbool_t)((size_t)value);
         set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_CORE_INCR) {

@@ -180,6 +180,29 @@ CGNSDLL void cg_set_file_type_f(cgint_f *ft, cgint_f *ier)
 
 /*-----------------------------------------------------------------------*/
 
+CGNSDLL void FMNAME(cg_configure_f, CG_CONFIGURE_F) (cgint_f *what,
+        void *value, cgint_f *ier)
+{
+  size_t value_c;
+  if( (int)*what != CG_CONFIG_ERROR &&
+      (int)*what != CG_CONFIG_SET_PATH &&
+      (int)*what != CG_CONFIG_ADD_PATH &&
+      (int)*what != CG_CONFIG_HDF5_MPI_COMM) {
+    value_c = *(size_t *)value;
+    *ier = (cgint_f)cg_configure((int)*what, (void*)value_c);
+#if CG_BUILD_PARALLEL
+  } else if( (int)*what == CG_CONFIG_HDF5_MPI_COMM ) {
+    MPI_Fint F_comm = *(MPI_Fint *)value;
+    MPI_Comm C_comm = MPI_Comm_f2c(F_comm);
+    *ier = (cgint_f)cg_configure((int)*what, &C_comm);
+#endif
+  } else {
+    *ier = (cgint_f)cg_configure((int)*what, value);
+  }
+}
+
+/*-----------------------------------------------------------------------*/
+
 CGNSDLL void cg_get_file_type_f(cgint_f *fn, cgint_f *ft, cgint_f *ier)
 {
     int i_ft;

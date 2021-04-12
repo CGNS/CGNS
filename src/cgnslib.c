@@ -2922,10 +2922,20 @@ int cg_grid_bounding_box_write(int file_number, int B, int Z, int G, CGNS_ENUMT(
     zcoor = cgi_get_zcoor(cg, B, Z, G);
     if (zcoor==0) return CG_ERROR;
 
-    if (zcoor->id == 0){
-        cgi_error("Impossible to write coordinates bounding box to unwritten node");
-        return CG_ERROR;
+    if ((cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) && zcoor->id == 0) {
+       cgi_error("Impossible to write coordinates bounding box to unwritten node");
+       return CG_ERROR;
     }
+#if CG_BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5) {
+        hid_t hid;
+        to_HDF_ID(zcoor->id, hid);
+        if (hid == 0) {
+           cgi_error("Impossible to write coordinates bounding box to unwritten node HDF5");
+           return CG_ERROR;
+        }
+    }
+#endif
     base = cgi_get_base(cg, B);
     if (base==0) return CG_ERROR;
     dim_vals[0] = base->phys_dim;
