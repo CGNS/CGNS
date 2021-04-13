@@ -64,10 +64,9 @@ PROGRAM write_cgns_1
   CHARACTER(LEN=32) coordname(Ndim)
   CHARACTER(LEN=32) donorname
 
-  INTEGER(CGSIZE_T), TARGET :: value_f
+  INTEGER, TARGET :: value_f
+  INTEGER(C_SIZE_T), TARGET :: value_size_t_f
   CHARACTER(LEN=32), TARGET :: path
-  TYPE(C_PTR) :: value
-  TYPE(C_FUNPTR) :: func
 
   coordname(1) = 'CoordinateX'
   coordname(2) = 'CoordinateY'
@@ -299,21 +298,21 @@ PROGRAM write_cgns_1
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
 #if CG_BUILD_HDF5
+! Disable with gfortran, GCC Bugzilla - Bug 99982
+#ifndef __GFORTRAN__
   ! **************************
   ! Test cg_configure options
   ! **************************
   value_f = 1
-  value = C_LOC(value_f)
-  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS, value, ier)
+  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS, C_LOC(value_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   ! enable committing memory to disk
   value_f = 1
   CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS_WRITE, C_LOC(value_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
-
-  value_f = 20*1024*1024
-  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS_INCR, C_LOC(value_f), ier)
+  value_size_t_f = INT(20*1024*1024,C_SIZE_T)
+  CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS_INCR, C_LOC(value_size_t_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   CALL cg_open_f('cgtest_core.cgns', CG_MODE_WRITE, cg, ier)
@@ -344,6 +343,7 @@ PROGRAM write_cgns_1
   CALL cg_configure_f(CG_CONFIG_COMPRESS, C_LOC(value_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
   value_f =  CG_CONFIG_RIND_ZERO
+
   CALL cg_configure_f(CG_CONFIG_RIND_INDEX, C_LOC(value_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
   value_f = CG_CONFIG_RIND_CORE
@@ -351,28 +351,22 @@ PROGRAM write_cgns_1
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   path = "/test/a/b"//C_NULL_CHAR
-  value = C_LOC(path(1:1))
-
-  CALL cg_configure_f(CG_CONFIG_SET_PATH, value, ier)
+  CALL cg_configure_f(CG_CONFIG_SET_PATH, C_LOC(path(1:1)), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   path = "/test/c/d"//C_NULL_CHAR
-  value = C_LOC(path(1:1))
-  CALL cg_configure_f(CG_CONFIG_ADD_PATH, value, ier)
+  CALL cg_configure_f(CG_CONFIG_ADD_PATH, C_LOC(path(1:1)), ier)
 
   path = C_NULL_CHAR
-  value = C_LOC(path(1:1))
-  CALL cg_configure_f(CG_CONFIG_SET_PATH, value, ier)
+  CALL cg_configure_f(CG_CONFIG_SET_PATH, C_LOC(path(1:1)), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
-
-  func = c_funloc(error_exit)
-  CALL cg_configure_f(CG_CONFIG_ERROR, func, ier)
+  CALL cg_configure_f(CG_CONFIG_ERROR, c_funloc(error_exit), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   value_f = 100 ! Trigger an error
   CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_f), ier)
   IF (ier .NE. ERROR) CALL cg_error_exit_f
-
+#endif
 #endif
 
 END PROGRAM write_cgns_1
