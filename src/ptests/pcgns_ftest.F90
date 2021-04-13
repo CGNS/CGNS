@@ -27,7 +27,6 @@ PROGRAM pcgns_ftest
   INTEGER :: istat
   INTEGER :: precision
   INTEGER, TARGET :: value
-  TYPE(C_PTR) :: value_f
 
   DATA piomode /'independent','collective'/
 
@@ -248,10 +247,11 @@ PROGRAM pcgns_ftest
   CALL cgp_close_f(F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
+! Disable with gfortran, GCC Bugzilla - Bug 99982
+#ifndef __GFORTRAN__ 
   ! test cg_configure_f
   value = MPI_COMM_SELF
-  value_f = C_LOC(value)
-  CALL cg_configure_f(CG_CONFIG_HDF5_MPI_COMM, value_f, ierr)
+  CALL cg_configure_f(CG_CONFIG_HDF5_MPI_COMM, C_LOC(value), ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   IF (commrank .EQ. 0) THEN
@@ -260,7 +260,7 @@ PROGRAM pcgns_ftest
      CALL cgp_close_f(F,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   ENDIF
-
+#endif
   CALL MPI_FINALIZE(mpi_err)
 END PROGRAM pcgns_ftest
 
