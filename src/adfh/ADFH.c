@@ -2426,23 +2426,21 @@ void ADFH_Database_Get_Format(const double  rootid,
 #if CG_BUILD_PARALLEL
   hid_t fid = get_file_id(hid);
   hid_t fapl=H5Fget_access_plist(fid);
-  if (H5Pget_driver(fapl) == H5FD_MPIO) {
+  hid_t driver_id = H5Pget_driver(fapl);
+  H5Pclose(fapl); /* close the property list */
+  if (driver_id == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
   }
 #endif
-
   status = H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, format);
-
+  H5Dclose(did);
 #if CG_BUILD_PARALLEL
-  if (H5Pget_driver(fapl) == H5FD_MPIO) {
+  if (driver_id == H5FD_MPIO) {
     H5Pclose(xfer_prp);
   }
-  H5Pclose(fapl); /* close the property list */
 #endif
-  H5Dclose(did);
-
   if (status < 0)
     set_error(ADFH_ERR_DREAD, err);
 }
@@ -3147,17 +3145,19 @@ void ADFH_Database_Version(const double  root_id,
   }
 #if CG_BUILD_PARALLEL
   hid_t fid = get_file_id(hid);
-  hid_t fapl=H5Fget_access_plist(fid);
-  if (H5Pget_driver(fapl) == H5FD_MPIO) {
+  hid_t fapl = H5Fget_access_plist(fid);
+  hid_t driver_id = H5Pget_driver(fapl);
+  H5Pclose(fapl); /* close the property list */
+  if (driver_id == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
+    ADFH_CHECK_HID(xfer_prp);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
   }
 #endif
-  status = H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, buff);
+  H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, buff);
   H5Dclose(did);
 #if CG_BUILD_PARALLEL
-
-  if (H5Pget_driver(fapl) == H5FD_MPIO) {
+  if (driver_id == H5FD_MPIO) {
     H5Pclose(xfer_prp);
   }
 #endif
@@ -3306,13 +3306,14 @@ void ADFH_Read_Block_Data(const double ID,
 #if CG_BUILD_PARALLEL
   hid_t fid = get_file_id(hid);
   hid_t fapl=H5Fget_access_plist(fid);
-  if (H5Pget_driver(fapl) == H5FD_MPIO) {
+  hid_t driver_id = H5Pget_driver(fapl);
+  H5Pclose(fapl); /* close the property list */
+  if (driver_id == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
   }
 #endif
-
   if (H5Dread(did, mid, H5S_ALL, H5S_ALL, xfer_prp, buff) < 0)
     set_error(ADFH_ERR_DREAD, err);
   else {
@@ -3321,10 +3322,9 @@ void ADFH_Read_Block_Data(const double ID,
     memcpy(data, &buff[offset], count);
     set_error(NO_ERROR, err);
   }
-
   free (buff);
 #if CG_BUILD_PARALLEL
-  if (H5Pget_driver(fapl) == H5FD_MPIO) {
+  if (driver_id == H5FD_MPIO) {
     H5Pclose(xfer_prp);
   }
 #endif
@@ -3486,7 +3486,9 @@ void ADFH_Read_Data(const double ID,
 #if CG_BUILD_PARALLEL
   hid_t fid = get_file_id(hid);
   hid_t fapl=H5Fget_access_plist(fid);
-  if (H5Pget_driver(fapl) == H5FD_MPIO) {
+  hid_t driver_id = H5Pget_driver(fapl);
+  H5Pclose(fapl); /* close the property list */
+  if (driver_id == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
     H5Pset_dxpl_mpio(xfer_prp, default_pio_mode);
@@ -3494,16 +3496,16 @@ void ADFH_Read_Data(const double ID,
 #endif
 
   status = H5Dread(did, mid, mspace, dspace, xfer_prp, data);
+  H5Dclose(did);
 
 #if CG_BUILD_PARALLEL
-  if (H5Pget_driver(fapl) == H5FD_MPIO) {
+  if (driver_id == H5FD_MPIO) {
     H5Pclose(xfer_prp);
   }
 #endif
   H5Sclose(mspace);
   H5Sclose(dspace);
   H5Tclose(mid);
-  H5Dclose(did);
   H5Gclose(hid);
 
   if (status < 0)
@@ -3637,7 +3639,9 @@ void ADFH_Write_Block_Data(const double ID,
 #if CG_BUILD_PARALLEL
     hid_t fid = get_file_id(hid);
     hid_t fapl=H5Fget_access_plist(fid);
-    if (H5Pget_driver(fapl) == H5FD_MPIO) {
+    hid_t driver_id = H5Pget_driver(fapl);
+    H5Pclose(fapl); /* close the property list */
+    if (driver_id == H5FD_MPIO) {
       xfer_prp = H5Pcreate(H5P_DATASET_XFER);
       ADFH_CHECK_HID(xfer_prp);
       H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
@@ -3658,7 +3662,7 @@ void ADFH_Write_Block_Data(const double ID,
 
   free (buff);
 #if CG_BUILD_PARALLEL
-    if (H5Pget_driver(fapl) == H5FD_MPIO) {
+    if (driver_id == H5FD_MPIO) {
       H5Pclose(xfer_prp);
     }
 #endif
@@ -3823,7 +3827,10 @@ void ADFH_Write_Data(const double ID,
 #if CG_BUILD_PARALLEL
   hid_t fid = get_file_id(hid);
   hid_t fapl=H5Fget_access_plist(fid);
-  if (H5Pget_driver(fapl) == H5FD_MPIO) {
+  hid_t driver_id = H5Pget_driver(fapl);
+  H5Pclose(fapl); /* close the property list */
+  
+  if (driver_id == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
     H5Pset_dxpl_mpio(xfer_prp, default_pio_mode);
@@ -3833,7 +3840,7 @@ void ADFH_Write_Data(const double ID,
   status = H5Dwrite(did, mid, mspace, dspace, xfer_prp, data);
 
 #if CG_BUILD_PARALLEL
-  if (H5Pget_driver(fapl) == H5FD_MPIO) {
+  if (driver_id == H5FD_MPIO) {
     H5Pclose(xfer_prp);
   }
 #endif

@@ -11,7 +11,7 @@ PROGRAM pcgns_ftest
 
 
   INTEGER(cgsize_t), PARAMETER :: totcnt = 40320 * 10
-
+  INTEGER, PARAMETER :: NLOOPS = 5000
   INTEGER(cgsize_t) npp
   INTEGER(C_INT) commsize, commrank, mpi_err
   INTEGER i, nb, nz, nerrs
@@ -76,6 +76,15 @@ PROGRAM pcgns_ftest
 
 ! default is MPI_COMM_WORLD, but can set another communicator with this
 !     call cgp_mpi_comm_f(MPI_COMM_WORLD,ierr)
+
+  ! Check repeated opening and closing of a file to detect issues with 
+  ! missed closed HDF5 objects, CGNS-109.
+  DO n = 1, NLOOPS
+     CALL cgp_open_f('pcgns_ftest.cgns',CG_MODE_WRITE,F,ierr)
+     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+     CALL cgp_close_f(F,ierr)
+     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+  ENDDO
 
   CALL cgp_open_f('pcgns_ftest.cgns',CG_MODE_WRITE,F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
