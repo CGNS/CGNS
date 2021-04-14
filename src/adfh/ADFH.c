@@ -3154,7 +3154,7 @@ void ADFH_Database_Version(const double  root_id,
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
   }
 #endif
-  H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, buff);
+  status = H5Dread(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, buff);
   H5Dclose(did);
 #if CG_BUILD_PARALLEL
   if (driver_id == H5FD_MPIO) {
