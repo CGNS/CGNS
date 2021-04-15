@@ -1,4 +1,4 @@
-PROGRAM cgns_fail
+PROGRAM test_mixed_par_ser
 
   USE cgns
   use mpi
@@ -9,6 +9,7 @@ PROGRAM cgns_fail
   CHARACTER(LEN=11) :: FNAME1 = "fname1.cgns"
   CHARACTER(LEN=11) :: FNAME2 = "fname2.cgns"
   CHARACTER(LEN=11) :: FNAME3 = "fname3.cgns"
+  DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: Dxyz
 
   CALL MPI_INIT(ierr)
   CALL MPI_COMM_SIZE(MPI_COMM_WORLD,commsize,ierr)
@@ -50,10 +51,11 @@ PROGRAM cgns_fail
 
 CONTAINS
 
-  SUBROUTINE test_serial(fName)
+  SUBROUTINE test_serial(fname)
 
     IMPLICIT NONE
     CHARACTER*(*) :: fname
+    INTEGER(cgsize_t) ii,kk,jj, pos
 
     WRITE(*,"(3X,A)", ADVANCE="NO") "SERIAL CREATE....."
 
@@ -64,8 +66,42 @@ CONTAINS
     CALL cg_base_write_f(cg, "Base#1", 3, 3, base, ierr)
     IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
+    sizes = 0
+    sizes(1) = 10
+    sizes(2) = 10
+    sizes(3) = 10
+    sizes(4) = sizes(1) - 1
+    sizes(5) = sizes(2) - 1
+    sizes(6) = sizes(3) - 1
+
+    ALLOCATE(Dxyz(1:sizes(1)*sizes(2)*sizes(3)) )
+    DO kk=1, sizes(3)
+       DO jj=1, sizes(2)
+          DO ii=1, sizes(1)
+             pos = ii + (jj-1)*sizes(1) + (kk-1)*sizes(1)*sizes(2)
+             ! * make up some dummy coordinates just for the test:
+             Dxyz(pos) = i
+          ENDDO
+       ENDDO
+    ENDDO
+
+    CALL cg_zone_write_f(cg, base, "zone1", sizes, Structured, i, ierr)
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
+
+    CALL cg_coord_write_f(cg, base, i, RealDouble, "CoordinateX", Dxyz, iCoor, ierr)
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
+
+    CALL cg_coord_write_f(cg, base, i, RealDouble, "CoordinateY", Dxyz, iCoor, ierr)
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
+    
+    CALL cg_coord_write_f(cg, base, i, RealDouble, "CoordinateZ", Dxyz, iCoor, ierr)
+    IF (ierr == CG_ERROR) CALL cgp_error_exit_f
+
     CALL cg_close_f(cg, ierr)
     IF (ierr == CG_ERROR) CALL cgp_error_exit_f
+
+    DEALLOCATE(Dxyz)
+
     WRITE(*,"(A)") "PASS"
 
   END SUBROUTINE test_serial
@@ -77,44 +113,42 @@ CONTAINS
 
     IF( commrank.EQ.0) WRITE(*,"(3X,A)", ADVANCE="NO") "PARALLEL CREATE..."
 
-!      call cgp_mpi_comm_f(MPI_COMM_WORLD, ierr)
+    CALL cgp_mpi_comm_f(MPI_COMM_WORLD, ierr)
     IF (ierr == CG_ERROR) CALL cg_error_exit_f
 
-!      call cgp_pio_mode_f(CGP_COLLECTIVE, ierr)
+    CALL cgp_pio_mode_f(CGP_COLLECTIVE, ierr)
     IF (ierr == CG_ERROR) CALL cg_error_exit_f
 
     CALL cgp_open_f(fName, CG_MODE_WRITE, cg, ierr)
-    
     IF (ierr == CG_ERROR) CALL cg_error_exit_f
 
-      call cg_base_write_f(cg, "Base#1", 3, 3, base, ierr)
-      if (ierr == CG_ERROR) call cg_error_exit_f
+    CALL cg_base_write_f(cg, "Base#1", 3, 3, base, ierr)
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    
+    sizes = 0
+    sizes(1) = 10
+    sizes(2) = 10
+    sizes(3) = 10
+    sizes(4) = sizes(1) - 1
+    sizes(5) = sizes(2) - 1
+    sizes(6) = sizes(3) - 1
+    CALL cg_zone_write_f(cg, base, "zone1", sizes, Structured, i, ierr)
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f
 
-      sizes = 0
-      sizes(1) = 10
-      sizes(2) = 10
-      sizes(3) = 10
-      sizes(4) = sizes(1) - 1
-      sizes(5) = sizes(2) - 1
-      sizes(6) = sizes(3) - 1
-      call cg_zone_write_f(cg, base, "zone1", sizes, &
-           Structured, i, ierr)
-      if (ierr == CG_ERROR) call cg_error_exit_f
+    CALL cgp_coord_write_f(cg, base, i, RealDouble, "CoordinateX", iCoor, ierr)
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f
 
-      call cgp_coord_write_f(cg, base, i, RealDouble, "CoordinateX", iCoor, ierr)
-      if (ierr == CG_ERROR) call cg_error_exit_f
-
-      call cgp_coord_write_f(cg, base, i, RealDouble, "CoordinateY", iCoor, ierr)
-      if (ierr == CG_ERROR) call cg_error_exit_f
-
-      call cgp_coord_write_f(cg, base, i, RealDouble, "CoordinateZ", iCoor, ierr)
-      if (ierr == CG_ERROR) call cg_error_exit_f
-
-      call cgp_close_f(cg, ierr)
-      if (ierr == CG_ERROR) call cg_error_exit_f
-
-      IF( commrank.EQ.0) WRITE(*,"(A)") "PASS"
-
-    end subroutine test_parallel
-
-  end program cgns_fail
+    CALL cgp_coord_write_f(cg, base, i, RealDouble, "CoordinateY", iCoor, ierr)
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    
+    CALL cgp_coord_write_f(cg, base, i, RealDouble, "CoordinateZ", iCoor, ierr)
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    
+    CALL cgp_close_f(cg, ierr)
+    IF (ierr == CG_ERROR) CALL cg_error_exit_f
+    
+    IF( commrank.EQ.0) WRITE(*,"(A)") "PASS"
+    
+  END SUBROUTINE test_parallel
+  
+END PROGRAM test_mixed_par_ser
