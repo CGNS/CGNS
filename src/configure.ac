@@ -1092,6 +1092,16 @@ if test "$withhdf5" = "yes"; then
                                filter [default=no]])],,
                [withval=no])
 
+  if test "x$withval" != xno; then
+    # Was HDF5 built with zlib ?
+    AC_LANG_PUSH(C)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include "H5pubconf.h"],
+    [[#if !H5_HAVE_ZLIB_H
+    # error
+    #endif]
+    ])], [], [AC_MSG_WARN([zlib requested but hdf5 does not seems to be built with it.])])
+  fi
+
   case $withval in
     yes)
       H5NEEDZLIB=1
@@ -1127,42 +1137,36 @@ if test "$withhdf5" = "yes"; then
           ;;
       esac
 
-    if test -n "$zlib_inc"; then
-      CPPFLAGS="$CPPFLAGS -I$zlib_inc"
+    # Check if provided libdir exists
+    AC_MSG_CHECKING(for $zlib_lib)
+    if test -d "$zlib_lib"; then
+        AC_MSG_RESULT(yes)
+        HAVE_ZLIB="yes"
+    else
+        AC_MSG_RESULT(no)
+        unset HAVE_ZLIB
     fi
 
-    AC_CHECK_HEADERS([zlib.h],
-                     [HAVE_ZLIB_H="yes"],
-                     [CPPFLAGS="$saved_CPPFLAGS"] [unset HAVE_ZLIB])
-
-
     if test $shared = yes; then
-      ZLIBLIB="-L$zlib_lib"
+      ZLIBLIB="-L$zlib_lib -lz"
     else
       if test -n "$zlib_lib"; then
+        unset HAVE_ZLIB
         for a in $exts ; do
           if test -f $zlib_lib/libz.$a; then
             ZLIBLIB=$zlib_lib/libz.$a
+            HAVE_ZLIB="yes"
             break
           fi
         done
       fi
     fi
 
-    if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
-      AC_CHECK_LIB([z], [compress2],,
-                   [unset HAVE_ZLIB])
-    fi
-
     if test -z "$HAVE_ZLIB"; then
       AC_MSG_ERROR([couldn't find zlib library])
-    else
-      AC_CHECK_FUNC([compress2], [HAVE_COMPRESS2="yes"])
     fi
     AC_MSG_CHECKING([for zlib library path])	
     AC_MSG_RESULT([$zlib_lib])
-    AC_MSG_CHECKING([for zlib include path])	
-    AC_MSG_RESULT([$zlib_inc])
     ;;
   esac
 	
@@ -1207,42 +1211,36 @@ if test "$withhdf5" = "yes"; then
           ;;
       esac
 
-    if test -n "$szip_inc"; then
-      CPPFLAGS="$CPPFLAGS -I$szip_inc"
+    # Check if provided libdir exists
+    AC_MSG_CHECKING(for $szip_lib)
+    if test -d "$szip_lib"; then
+        AC_MSG_RESULT(yes)
+        HAVE_SZIP="yes"
+    else
+        AC_MSG_RESULT(no)
+        unset HAVE_SZIP
     fi
 
-    AC_CHECK_HEADERS([szlib.h],
-                     [HAVE_SZIP_H="yes"],
-                     [CPPFLAGS="$saved_CPPFLAGS"] [unset HAVE_SZIP])
-
-
     if test $shared = yes; then
-      SZIPLIB="-L$szip_lib"
+      SZIPLIB="-L$szip_lib -lsz"
     else
       if test -n "$szip_lib"; then
+        unset HAVE_SZIP
         for a in $exts ; do
           if test -f $szip_lib/libsz.$a; then
             SZIPLIB=$szip_lib/libsz.$a
+            HAVE_SZIP="yes"
             break
           fi
         done
       fi
     fi
 
-    if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
-      AC_CHECK_LIB([sz], [SZ_BufftoBuffCompress],,
-                   [unset HAVE_SZIP])
-    fi
-
     if test -z "$HAVE_SZIP"; then
       AC_MSG_ERROR([couldn't find szip library])
-    else
-      AC_CHECK_FUNC([SZ_BufftoBuffCompress], [HAVE_BufftoBuffCompress="yes"])
     fi
     AC_MSG_CHECKING([for szip library path])
     AC_MSG_RESULT([$szip_lib])
-    AC_MSG_CHECKING([for szip include path])
-    AC_MSG_RESULT([$szip_inc])
     ;;
   esac
 
