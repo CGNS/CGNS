@@ -1106,10 +1106,7 @@ if test "$withhdf5" = "yes"; then
     yes)
       H5NEEDZLIB=1
       HAVE_ZLIB="yes"
-      AC_CHECK_HEADERS([zlib.h], [HAVE_ZLIB_H="yes"], [unset HAVE_ZLIB])
-      if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
-        AC_CHECK_LIB([z], [compress2],, [unset HAVE_ZLIB])
-      fi
+      AC_CHECK_LIB([z], [compress2],, [unset HAVE_ZLIB])
       if test -z "$HAVE_ZLIB"; then
         AC_MSG_ERROR([couldn't find zlib library: specify the zlib directory with --with-zlib=DIR])
       fi
@@ -1180,10 +1177,7 @@ if test "$withhdf5" = "yes"; then
     yes)
       H5NEEDSZIP=1
       HAVE_SZIP="yes"
-      AC_CHECK_HEADERS([szlib.h], [HAVE_SZIP_H="yes"], [unset HAVE_SZIP])
-      if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
-        AC_CHECK_LIB([sz], [SZ_BufftoBuffCompress],, [unset HAVE_SZIP])
-      fi
+      AC_CHECK_LIB([sz], [SZ_BufftoBuffCompress],, [unset HAVE_SZIP])
       if test -z "$HAVE_SZIP"; then
         AC_MSG_ERROR([couldn't find szip library: specify the szip directory with --with-szip=DIR])
       fi
