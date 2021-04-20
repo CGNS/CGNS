@@ -42,6 +42,8 @@ freely, subject to the following restrictions:
 #include "hdf5.h"
 #include "cgns_io.h" /* for cgio_find_file */
 
+extern char hdf5_access[64];
+
 #if CG_BUILD_PARALLEL
 #include "mpi.h"
 extern int pcg_mpi_initialized;
@@ -775,7 +777,7 @@ static int new_str_data(hid_t id, const char *name, const char *value,
   }
 
 #if CG_BUILD_PARALLEL
-  if (pcg_mpi_initialized) {
+  if (pcg_mpi_initialized && strcmp(hdf5_access, "PARALLEL") == 0) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
   }
@@ -784,7 +786,7 @@ static int new_str_data(hid_t id, const char *name, const char *value,
   status = H5Dwrite(did, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, xfer_prp, value);
 
 #if CG_BUILD_PARALLEL
-  if (pcg_mpi_initialized) {
+  if (pcg_mpi_initialized && strcmp(hdf5_access, "PARALLEL") == 0) {
     H5Pclose(xfer_prp);
   }
 #endif
@@ -2970,7 +2972,7 @@ void ADFH_Get_Link_Path(const double  id,
   }
 
 #if CG_BUILD_PARALLEL
-  if (pcg_mpi_initialized) {
+  if (pcg_mpi_initialized && strcmp(hdf5_access, "PARALLEL") == 0) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
     H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
@@ -2994,7 +2996,7 @@ void ADFH_Get_Link_Path(const double  id,
   }
 
 #if CG_BUILD_PARALLEL
-  if (pcg_mpi_initialized) {
+  if (pcg_mpi_initialized && strcmp(hdf5_access, "PARALLEL") == 0) {
     H5Pclose(xfer_prp);
   }
 #endif
@@ -3540,7 +3542,7 @@ void ADFH_Read_All_Data(const double  id,
     }
     ADFH_CHECK_HID(mid);
 #if CG_BUILD_PARALLEL
-    if (pcg_mpi_initialized) {
+    if (pcg_mpi_initialized && strcmp(hdf5_access, "PARALLEL") == 0) {
       xfer_prp = H5Pcreate(H5P_DATASET_XFER);
       ADFH_CHECK_HID(xfer_prp);
       H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE);
@@ -3552,7 +3554,7 @@ void ADFH_Read_All_Data(const double  id,
       set_error(NO_ERROR, err);
 
 #if CG_BUILD_PARALLEL
-    if (pcg_mpi_initialized) {
+    if (pcg_mpi_initialized && strcmp(hdf5_access, "PARALLEL") == 0) {
       H5Pclose(xfer_prp);
     }
 #endif
@@ -3893,7 +3895,7 @@ void ADFH_Write_All_Data(const double  id,
     }
     ADFH_CHECK_HID(mid);
 #if CG_BUILD_PARALLEL
-    if (pcg_mpi_initialized) {
+    if (pcg_mpi_initialized && strcmp(hdf5_access, "PARALLEL") == 0) {
       xfer_prp = H5Pcreate(H5P_DATASET_XFER);
       ADFH_CHECK_HID(xfer_prp);
       if (H5Pset_dxpl_mpio(xfer_prp, H5FD_MPIO_COLLECTIVE) < 0)
@@ -3906,7 +3908,7 @@ void ADFH_Write_All_Data(const double  id,
     else
       set_error(NO_ERROR, err);
 #if CG_BUILD_PARALLEL
-    if (pcg_mpi_initialized) {
+    if (pcg_mpi_initialized && strcmp(hdf5_access, "PARALLEL") == 0) {
       H5Pclose(xfer_prp);
     }
 #endif

@@ -441,9 +441,6 @@ int cgp_open(const char *filename, int mode, int *fn)
     ierr = cg_open(filename, mode, fn);
     cgns_filetype = old_type;
 
-    /* reset parallel access */
-    strcpy(hdf5_access,"NATIVE");
-
     return ierr;
 }
 
@@ -451,6 +448,8 @@ int cgp_open(const char *filename, int mode, int *fn)
 
 int cgp_close(int fn)
 {
+    /* reset parallel access */
+    strcpy(hdf5_access,"NATIVE");
     return cg_close(fn);
 }
 
