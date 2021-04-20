@@ -35,15 +35,19 @@ freely, subject to the following restrictions:
                              (type >= CGNS_ENUMV(BAR_4) && \
                               type <= CGNS_ENUMV(HEXA_125)))
 
-/* MPI-2 info object */
-extern MPI_Info pcg_mpi_info;
-extern MPI_Comm pcg_mpi_comm;
-extern int pcg_mpi_comm_size;
-extern int pcg_mpi_comm_rank;
-/* Flag indicating if HDF5 file accesses is PARALLEL or NATIVE */
-extern char hdf5_access[64];
-/* flag indicating if mpi_initialized was called */
-extern int pcg_mpi_initialized;
+typedef struct _cgns_io_ctx_t {
+    /* Flag indicating if HDF5 file accesses is PARALLEL or NATIVE */
+    char hdf5_access[64];
+    /* MPI-2 info object */
+    MPI_Comm pcg_mpi_comm;
+    int pcg_mpi_comm_size;
+    int pcg_mpi_comm_rank;
+    /* flag indicating if mpi_initialized was called */
+    int pcg_mpi_initialized;
+    MPI_Info pcg_mpi_info;
+} cgns_io_ctx_t;
+
+extern cgns_io_ctx_t ctx_cgio;
 
 hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
 
@@ -434,7 +438,7 @@ int cgp_open(const char *filename, int mode, int *fn)
     }
 
     /* Flag this as a parallel access */
-    strcpy(hdf5_access,"PARALLEL");
+    strcpy(ctx_cgio.hdf5_access,"PARALLEL");
 
     ierr = cg_set_file_type(CG_FILE_HDF5);
     if (ierr) return ierr;
@@ -449,7 +453,7 @@ int cgp_open(const char *filename, int mode, int *fn)
 int cgp_close(int fn)
 {
     /* reset parallel access */
-    strcpy(hdf5_access,"NATIVE");
+    strcpy(ctx_cgio.hdf5_access,"NATIVE");
     return cg_close(fn);
 }
 
@@ -1008,7 +1012,7 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
     cgsize_t num = end == 0 ? 0 : end - start + 1;
     num = num < 0 ? 0 : num;
     MPI_Datatype mpi_type = sizeof(cgsize_t) == 32 ? MPI_INT : MPI_LONG_LONG_INT;
-    MPI_Allreduce(MPI_IN_PLACE, &num, 1, mpi_type, MPI_SUM, pcg_mpi_comm);
+    MPI_Allreduce(MPI_IN_PLACE, &num, 1, mpi_type, MPI_SUM, ctx_cgio.pcg_mpi_comm);
 
     strcpy(section->parelem->data_type, CG_SIZE_DATATYPE);
     section->parelem->data_dim = 2;
