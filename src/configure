@@ -7643,6 +7643,14 @@ if test "$withfortran" = "yes"; then
       if test $f9x_vers_major -ge 10; then
          FFLAGS="$FFLAGS -fallow-argument-mismatch"
       fi
+      # Warn about a gfortran 10.2.0 bug (GCC Bug 100149) which
+      # causes cg_goto_f to segfault, other versions are fine.
+      if test $f9x_vers_major = 10 && test $f9x_vers_minor = 2; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Fortran mapping (cg_goto_f) is broken for the specified gfortran version.
+                        !!! IT'S ADVISABLE TO AVOID VERSION 10.2 !!!" >&5
+$as_echo "$as_me: WARNING: Fortran mapping (cg_goto_f) is broken for the specified gfortran version.
+                        !!! IT'S ADVISABLE TO AVOID VERSION 10.2 !!!" >&2;}
+      fi
     fi
 #----------- Determine if the Fortran compiler NAG -------------------
 #   Add compiler flag for C API calls.
