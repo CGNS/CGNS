@@ -185,9 +185,9 @@ if(CGNS_ENABLE_FORTRAN)
     endif (ListIndex LESS 0)
   endif (FORTRAN_NAMING STREQUAL "UNKNOWN")
 
- # if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU" AND CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
- #   SET (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
- # endif()
+  if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU" AND CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER_EQUAL 10.0)
+    SET (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
+  endif()
 
   # Warn about a gfortran 10.2.0 bug (GCC Bug 100149) which
   # causes cg_goto_f to segfault, other versions are fine.
