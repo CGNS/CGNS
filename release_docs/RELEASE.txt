@@ -56,7 +56,7 @@ New Features
       CGNS-239
     * Mapping of X4/X8 was lost when moving from ADF to HDF5.
       This fix reintroduces it as an experimental feature.
-      It uses an H5T_COMPOUND and is compatible with teh standard C99 complex type.
+      It uses an H5T_COMPOUND and is compatible with the standard C99 complex type.
 
       Depending on the application, people can still store each part of a complex number 
       in separate arrays by prefixing with Re or Im the name of the array, CGNS-202
@@ -133,7 +133,7 @@ Known Problems
      (ref. CGNS-246, GNU BUG 100149)
 
     * A bug in gfortran (all versions) causes cg_configure_f to fail,
-      GNU BUG 9982. Other Fortran compilers are fine.
+      GNU BUG 99982. Other Fortran compilers are fine.
 
     ************ FORTRAN END ********
 
