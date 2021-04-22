@@ -189,6 +189,15 @@ if(CGNS_ENABLE_FORTRAN)
     SET (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
   endif()
 
+  # Warn about a gfortran 10.2.0 bug (GCC Bug 100149) which
+  # causes cg_goto_f to segfault, other versions are fine.
+   if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU" AND 
+       CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER "10.1" AND 
+       CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "10.3")
+    message (WARNING "Fortran mapping (cg_goto_f) is broken for the specified gfortran version.
+                           !!! IT'S ADVISABLE TO AVOID VERSION 10.2 !!!")
+  endif()
+
 endif (CGNS_ENABLE_FORTRAN)
 
 # this forces cmake to set up the required Fortran variables
