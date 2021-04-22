@@ -6128,136 +6128,41 @@ else
 fi
 
 
-  case $withval in
-    yes)
-      H5NEEDZLIB=1
-      HAVE_ZLIB="yes"
-      for ac_header in zlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ZLIB_H 1
-_ACEOF
- HAVE_ZLIB_H="yes"
-else
-  unset HAVE_ZLIB
-fi
+  if test "x$withval" != xno; then
+    # Was HDF5 built with zlib ?
+    ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-done
-
-      if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for compress2 in -lz" >&5
-$as_echo_n "checking for compress2 in -lz... " >&6; }
-if ${ac_cv_lib_z_compress2+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char compress2 ();
+#include "H5pubconf.h"
 int
 main ()
 {
-return compress2 ();
+#if !H5_HAVE_ZLIB_H
+    # error
+    #endif
+
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_z_compress2=yes
-else
-  ac_cv_lib_z_compress2=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_compress2" >&5
-$as_echo "$ac_cv_lib_z_compress2" >&6; }
-if test "x$ac_cv_lib_z_compress2" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBZ 1
-_ACEOF
-
-  LIBS="-lz $LIBS"
+if ac_fn_c_try_compile "$LINENO"; then :
 
 else
-  unset HAVE_ZLIB
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: zlib requested but hdf5 does not seems to be built with it." >&5
+$as_echo "$as_me: WARNING: zlib requested but hdf5 does not seems to be built with it." >&2;}
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  fi
 
-      fi
-      if test -z "$HAVE_ZLIB"; then
-        as_fn_error $? "couldn't find zlib library: specify the zlib directory with --with-zlib=DIR" "$LINENO" 5
-      fi
-      ZLIBLIB=-lz
-      ;;
-    no)
-      HAVE_ZLIB="no"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using zlib with HDF5" >&5
-$as_echo_n "checking if using zlib with HDF5... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-      ;;
-    *)
+  case $withval in
+    yes)
       H5NEEDZLIB=1
       HAVE_ZLIB="yes"
-
-      case "$withval" in
-        *,*)
-          zlib_inc="`echo $withval | cut -f1 -d,`"
-          zlib_lib="`echo $withval | cut -f2 -d, -s`"
-          ;;
-        *)
-          if test -n "$withval"; then
-            zlib_inc="$withval/include"
-            zlib_lib="$withval/lib"
-          fi
-          ;;
-      esac
-
-    if test -n "$zlib_inc"; then
-      CPPFLAGS="$CPPFLAGS -I$zlib_inc"
-    fi
-
-    for ac_header in zlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ZLIB_H 1
-_ACEOF
- HAVE_ZLIB_H="yes"
-else
-  CPPFLAGS="$saved_CPPFLAGS" unset HAVE_ZLIB
-fi
-
-done
-
-
-
-    if test $shared = yes; then
-      ZLIBLIB="-L$zlib_lib"
-    else
-      if test -n "$zlib_lib"; then
-        for a in $exts ; do
-          if test -f $zlib_lib/libz.$a; then
-            ZLIBLIB=$zlib_lib/libz.$a
-            break
-          fi
-        done
-      fi
-    fi
-
-    if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for compress2 in -lz" >&5
 $as_echo_n "checking for compress2 in -lz... " >&6; }
 if ${ac_cv_lib_z_compress2+:} false; then :
@@ -6305,25 +6210,70 @@ else
   unset HAVE_ZLIB
 fi
 
+      if test -z "$HAVE_ZLIB"; then
+        as_fn_error $? "couldn't find zlib library: specify the zlib directory with --with-zlib=DIR" "$LINENO" 5
+      fi
+      ZLIBLIB=-lz
+      ;;
+    no)
+      HAVE_ZLIB="no"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using zlib with HDF5" >&5
+$as_echo_n "checking if using zlib with HDF5... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      ;;
+    *)
+      H5NEEDZLIB=1
+      HAVE_ZLIB="yes"
+
+      case "$withval" in
+        *,*)
+          zlib_inc="`echo $withval | cut -f1 -d,`"
+          zlib_lib="`echo $withval | cut -f2 -d, -s`"
+          ;;
+        *)
+          if test -n "$withval"; then
+            zlib_inc="$withval/include"
+            zlib_lib="$withval/lib"
+          fi
+          ;;
+      esac
+
+    # Check if provided libdir exists
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $zlib_lib" >&5
+$as_echo_n "checking for $zlib_lib... " >&6; }
+    if test -d "$zlib_lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        HAVE_ZLIB="yes"
+    else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        unset HAVE_ZLIB
+    fi
+
+    if test $shared = yes; then
+      ZLIBLIB="-L$zlib_lib -lz"
+    else
+      if test -n "$zlib_lib"; then
+        unset HAVE_ZLIB
+        for a in $exts ; do
+          if test -f $zlib_lib/libz.$a; then
+            ZLIBLIB=$zlib_lib/libz.$a
+            HAVE_ZLIB="yes"
+            break
+          fi
+        done
+      fi
     fi
 
     if test -z "$HAVE_ZLIB"; then
       as_fn_error $? "couldn't find zlib library" "$LINENO" 5
-    else
-      ac_fn_c_check_func "$LINENO" "compress2" "ac_cv_func_compress2"
-if test "x$ac_cv_func_compress2" = xyes; then :
-  HAVE_COMPRESS2="yes"
-fi
-
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zlib library path" >&5
 $as_echo_n "checking for zlib library path... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $zlib_lib" >&5
 $as_echo "$zlib_lib" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zlib include path" >&5
-$as_echo_n "checking for zlib include path... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $zlib_inc" >&5
-$as_echo "$zlib_inc" >&6; }
     ;;
   esac
 
@@ -6340,132 +6290,6 @@ fi
     yes)
       H5NEEDSZIP=1
       HAVE_SZIP="yes"
-      for ac_header in szlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "szlib.h" "ac_cv_header_szlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_szlib_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SZLIB_H 1
-_ACEOF
- HAVE_SZIP_H="yes"
-else
-  unset HAVE_SZIP
-fi
-
-done
-
-      if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SZ_BufftoBuffCompress in -lsz" >&5
-$as_echo_n "checking for SZ_BufftoBuffCompress in -lsz... " >&6; }
-if ${ac_cv_lib_sz_SZ_BufftoBuffCompress+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lsz  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char SZ_BufftoBuffCompress ();
-int
-main ()
-{
-return SZ_BufftoBuffCompress ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_sz_SZ_BufftoBuffCompress=yes
-else
-  ac_cv_lib_sz_SZ_BufftoBuffCompress=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sz_SZ_BufftoBuffCompress" >&5
-$as_echo "$ac_cv_lib_sz_SZ_BufftoBuffCompress" >&6; }
-if test "x$ac_cv_lib_sz_SZ_BufftoBuffCompress" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBSZ 1
-_ACEOF
-
-  LIBS="-lsz $LIBS"
-
-else
-  unset HAVE_SZIP
-fi
-
-      fi
-      if test -z "$HAVE_SZIP"; then
-        as_fn_error $? "couldn't find szip library: specify the szip directory with --with-szip=DIR" "$LINENO" 5
-      fi
-      SZIPLIB=-lsz
-      ;;
-    no)
-      HAVE_SZIP="no"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using szip with HDF5" >&5
-$as_echo_n "checking if using szip with HDF5... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-      ;;
-    *)
-      H5NEEDSZIP=1
-      HAVE_SZIP="yes"
-
-      case "$withval" in
-        *,*)
-          szip_inc="`echo $withval | cut -f1 -d,`"
-          szip_lib="`echo $withval | cut -f2 -d, -s`"
-          ;;
-        *)
-          if test -n "$withval"; then
-            szip_inc="$withval/include"
-            szip_lib="$withval/lib"
-          fi
-          ;;
-      esac
-
-    if test -n "$szip_inc"; then
-      CPPFLAGS="$CPPFLAGS -I$szip_inc"
-    fi
-
-    for ac_header in szlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "szlib.h" "ac_cv_header_szlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_szlib_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SZLIB_H 1
-_ACEOF
- HAVE_SZIP_H="yes"
-else
-  CPPFLAGS="$saved_CPPFLAGS" unset HAVE_SZIP
-fi
-
-done
-
-
-
-    if test $shared = yes; then
-      SZIPLIB="-L$szip_lib"
-    else
-      if test -n "$szip_lib"; then
-        for a in $exts ; do
-          if test -f $szip_lib/libsz.$a; then
-            SZIPLIB=$szip_lib/libsz.$a
-            break
-          fi
-        done
-      fi
-    fi
-
-    if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SZ_BufftoBuffCompress in -lsz" >&5
 $as_echo_n "checking for SZ_BufftoBuffCompress in -lsz... " >&6; }
 if ${ac_cv_lib_sz_SZ_BufftoBuffCompress+:} false; then :
@@ -6513,25 +6337,70 @@ else
   unset HAVE_SZIP
 fi
 
+      if test -z "$HAVE_SZIP"; then
+        as_fn_error $? "couldn't find szip library: specify the szip directory with --with-szip=DIR" "$LINENO" 5
+      fi
+      SZIPLIB=-lsz
+      ;;
+    no)
+      HAVE_SZIP="no"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using szip with HDF5" >&5
+$as_echo_n "checking if using szip with HDF5... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      ;;
+    *)
+      H5NEEDSZIP=1
+      HAVE_SZIP="yes"
+
+      case "$withval" in
+        *,*)
+          szip_inc="`echo $withval | cut -f1 -d,`"
+          szip_lib="`echo $withval | cut -f2 -d, -s`"
+          ;;
+        *)
+          if test -n "$withval"; then
+            szip_inc="$withval/include"
+            szip_lib="$withval/lib"
+          fi
+          ;;
+      esac
+
+    # Check if provided libdir exists
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $szip_lib" >&5
+$as_echo_n "checking for $szip_lib... " >&6; }
+    if test -d "$szip_lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        HAVE_SZIP="yes"
+    else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        unset HAVE_SZIP
+    fi
+
+    if test $shared = yes; then
+      SZIPLIB="-L$szip_lib -lsz"
+    else
+      if test -n "$szip_lib"; then
+        unset HAVE_SZIP
+        for a in $exts ; do
+          if test -f $szip_lib/libsz.$a; then
+            SZIPLIB=$szip_lib/libsz.$a
+            HAVE_SZIP="yes"
+            break
+          fi
+        done
+      fi
     fi
 
     if test -z "$HAVE_SZIP"; then
       as_fn_error $? "couldn't find szip library" "$LINENO" 5
-    else
-      ac_fn_c_check_func "$LINENO" "SZ_BufftoBuffCompress" "ac_cv_func_SZ_BufftoBuffCompress"
-if test "x$ac_cv_func_SZ_BufftoBuffCompress" = xyes; then :
-  HAVE_BufftoBuffCompress="yes"
-fi
-
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for szip library path" >&5
 $as_echo_n "checking for szip library path... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $szip_lib" >&5
 $as_echo "$szip_lib" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for szip include path" >&5
-$as_echo_n "checking for szip include path... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $szip_inc" >&5
-$as_echo "$szip_inc" >&6; }
     ;;
   esac
 
