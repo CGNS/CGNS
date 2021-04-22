@@ -501,7 +501,7 @@ int is_file_old_version(char *inpfile)
 }
 
 
-void update_cgns_version(double cgio_num, double root_id)
+void update_cgns_version(int cgio_num, double root_id)
 {
     double node_id;
     float cgns_version = 4.00;
