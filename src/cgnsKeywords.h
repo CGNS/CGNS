@@ -63,8 +63,8 @@ freely, subject to the following restrictions:
  *      VERSION NUMBER                                                   *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define CGNS_VERSION 4100
-#define CGNS_DOTVERS 4.10
+#define CGNS_VERSION 4200
+#define CGNS_DOTVERS 4.20
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
 
@@ -79,7 +79,6 @@ freely, subject to the following restrictions:
 #define CG_MODE_READ	0
 #define CG_MODE_WRITE	1
 #define CG_MODE_MODIFY	2
-#define CG_MODE_CLOSED	3
 
 /* function return codes */
 
@@ -477,16 +476,18 @@ typedef enum {
 #ifdef __CGNS_ENUMS__
 typedef enum {
 	DataTypeNull, DataTypeUserDefined, Integer, RealSingle,
-	RealDouble, Character, LongInteger
+	RealDouble, Character, LongInteger, ComplexSingle, ComplexDouble
 } DataType_t;
 #endif
-#define NofValidDataTypes 7
+#define NofValidDataTypes 9
 
 #define Integer_s                      "Integer"
 #define RealSingle_s                   "RealSingle"
 #define RealDouble_s                   "RealDouble"
 #define Character_s                    "Character"
 #define LongInteger_s                  "LongInteger"
+#define ComplexSingle_s                "ComplexSingle"
+#define ComplexDouble_s                "ComplexDouble"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Element types                                                    *

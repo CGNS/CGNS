@@ -37,6 +37,7 @@ fi
 
 cgnsnodes=""
 for d in $CG_LIB_DIR $dir $dir/cgnstools $dir/cgnsview \
+         $dir/../share/cgnstools \
          /usr/local/share /usr/local/share/cgnstools ; do
   if test -f $d/cgnsnodes.tcl ; then
     cgnsnodes=$d/cgnsnodes.tcl

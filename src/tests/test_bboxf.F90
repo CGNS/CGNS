@@ -5,19 +5,21 @@
 #endif
       USE CGNS
       implicit none
-
+      INTEGER, PARAMETER :: sp = KIND(1.0)
+      INTEGER, PARAMETER :: dp = KIND(1.d0)
+      
       integer, parameter :: celldim = 3, physdim = 3
       integer, parameter :: NUM_SIDE = 5
 
-      real*4, dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: coord
-      real*8, dimension(3, 2) :: bbox
+      real(kind=sp), dimension(NUM_SIDE*NUM_SIDE*NUM_SIDE) :: coord
+      real(kind=dp), dimension(3, 2) :: bbox
 
       integer :: n
       integer :: ierr
       integer :: cgfile, cgbase, cgzone, cgcoord
       integer(cgsize_t) :: size(9)
       
-      character*32 fname
+      character(len=32) fname
       fname = 'boundingbox_f90.cgns'
 
       do n=1,NUM_SIDE*NUM_SIDE*NUM_SIDE

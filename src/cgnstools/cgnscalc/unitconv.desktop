@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Type=Application
+Name=CGNSunitconv
+GenericName=Unit conversions tool
+Terminal=false
+Categories=Development;
+Exec="./unitconv"
+Icon=../share/cgnstools/unitconv.png

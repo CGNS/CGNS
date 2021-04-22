@@ -19,10 +19,8 @@ fi
 --with-hdf5=$HOME/hdf5 \
 --with-fortran \
 --enable-lfs \
---enable-64bit \
 --disable-shared \
---enable-debug \
---enable-64bit
+--enable-debug
 
 
 

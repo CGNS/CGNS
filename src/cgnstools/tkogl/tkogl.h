@@ -1,12 +1,12 @@
 #ifndef _TK_OGL
 #define _TK_OGL
 
-#include <tk.h>
 #if defined(__WIN32__) || defined(_WIN32)
 #   define WIN32_LEAN_AND_MEAN
 #   include <windows.h>
 #   undef WIN32_LEAN_AND_MEAN
 #endif
+#include <tk.h>
 #include "gl_config.h"
 #include <assert.h>
 #if defined(__WIN32__) || defined(_WIN32)

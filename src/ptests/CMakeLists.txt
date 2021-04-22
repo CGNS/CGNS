@@ -34,6 +34,9 @@ add_executable(benchmark ${benchmark_FILES})
 set(benchmark_hdf5_FILES benchmark_hdf5.c)
 add_executable(benchmark_hdf5 ${benchmark_hdf5_FILES})
 
+set(Metadata_Stressing_FILES Metadata_Stressing.c)
+add_executable(Metadata_Stressing ${Metadata_Stressing_FILES})
+
 set(open_close_FILES open_close.c)
 add_executable(open_close ${open_close_FILES})
 
@@ -55,6 +58,9 @@ add_executable(test_zone ${test_zone_FILES})
 set(test_general_readwrite_FILES test_general_readwrite.c)
 add_executable(test_general_readwrite ${test_general_readwrite_FILES})
 
+set(test_poly_unstructured_FILES test_poly_unstructured.c)
+add_executable(test_poly_unstructured ${test_poly_unstructured_FILES})
+
 set(thesis_benchmark_FILES thesis_benchmark.c)
 add_executable(thesis_benchmark ${thesis_benchmark_FILES})
 
@@ -65,6 +71,8 @@ if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
   add_executable(fexample ${fexample_FILES})
   set(benchmark_hdf5_f90_FILES benchmark_hdf5_f90.F90)
   add_executable(benchmark_hdf5_f90 ${benchmark_hdf5_f90_FILES})
+  set(test_mixed_par_ser_FILES test_mixed_par_ser.F90)
+  add_executable(test_mixed_par_ser ${test_mixed_par_ser_FILES})
 endif (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
 
 # Add the tests so that cmake can find them
@@ -77,6 +85,8 @@ if (CGNS_ENABLE_TESTS)
       ${MPIEXEC_PREFLAGS} ./benchmark ${MPIEXEC_POSTFLAGS})
   add_test(benchmark_hdf5 ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} ./benchmark_hdf5 ${MPIEXEC_POSTFLAGS})
+  add_test(Metadata_Stressing ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+      ${MPIEXEC_PREFLAGS} ./Metadata_Stressing ${MPIEXEC_POSTFLAGS})
   add_test(open_close ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} ./open_close ${MPIEXEC_POSTFLAGS})
   add_test(comm_test ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
@@ -91,6 +101,8 @@ if (CGNS_ENABLE_TESTS)
       ${MPIEXEC_PREFLAGS} ./test_zone ${MPIEXEC_POSTFLAGS})
   add_test(test_general_readwrite ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} ./test_general_readwrite ${MPIEXEC_POSTFLAGS})
+  add_test(test_poly_unstructured ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+      ${MPIEXEC_PREFLAGS} ./test_poly_unstructured ${MPIEXEC_POSTFLAGS})
   add_test(thesis_benchmark ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
       ${MPIEXEC_PREFLAGS} ./thesis_benchmark ${MPIEXEC_POSTFLAGS})
   if (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
@@ -100,5 +112,7 @@ if (CGNS_ENABLE_TESTS)
         ${MPIEXEC_PREFLAGS} ./fexample ${MPIEXEC_POSTFLAGS})
     add_test(benchmark_hdf5_f90 ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
         ${MPIEXEC_PREFLAGS} ./benchmark_hdf5_f90 ${MPIEXEC_POSTFLAGS})
+    add_test(test_mixed_par_ser ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+        ${MPIEXEC_PREFLAGS} ./test_mixed_par_ser ${MPIEXEC_POSTFLAGS})
   endif (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
 endif (CGNS_ENABLE_TESTS)

@@ -23,6 +23,7 @@ int main(int argc, char* argv[]) {
 	int comm_size;
 	int comm_rank;
 	MPI_Info info;
+        MPI_Comm comm_self = MPI_COMM_SELF;
 	int fn;
 
 	err = MPI_Init(&argc,&argv);
@@ -57,7 +58,7 @@ int main(int argc, char* argv[]) {
 
         MPI_Barrier(MPI_COMM_WORLD);
 
-        cgp_mpi_comm(MPI_COMM_SELF);
+        cgp_mpi_comm(comm_self);
 
         if(comm_rank == 0) {
           if (cgp_open("open_close.cgns", CG_MODE_READ, &fn))
@@ -85,6 +86,20 @@ int main(int argc, char* argv[]) {
 	if (cgp_close(fn))
 	    cgp_error_exit();
 #endif
+
+        /* test setting COMM via configure API */
+        if (cg_configure(CG_CONFIG_HDF5_MPI_COMM, &comm_self))
+            cgp_error_exit();
+
+        if (comm_rank == 0) {
+           if (cgp_open("open_close.cgns", CG_MODE_READ, &fn))
+               cg_error_exit();
+           if (cgp_close(fn))
+               cg_error_exit();
+        }
+
+        cgp_mpi_comm(MPI_COMM_WORLD);
+
 	err = MPI_Finalize();
 	if(err!=MPI_SUCCESS) cgp_doError;
 	return err;

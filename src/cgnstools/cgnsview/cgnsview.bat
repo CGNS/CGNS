@@ -1,6 +1,7 @@
 @echo off
 setlocal
 
+set HDF5_USE_FILE_LOCKING="FALSE"
 set dir=%~dps0
 if exist "%dir%cgconfig.bat" (
   call %dir%cgconfig.bat
