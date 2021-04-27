@@ -1,12 +1,12 @@
-CGNS version 4.2.0
+CGNS version 4.3.0
 =================================
 
 INTRODUCTION
 ------------
 
-This document describes the difference between CGNS 4.1.1 and
-CGNS 4.2.0, and contains information on known problems in
-CGNS 4.2.0.
+This document describes the difference between CGNS 4.2.0 and
+CGNS 4.3.0, and contains information on known problems in
+CGNS 4.3.0.
 
 Links to the CGNS current released source code can be found at:
 
@@ -25,7 +25,7 @@ CONTENTS
 
 - New Features
 - Support for new platforms and languages
-- Bug Fixes since CGNS 4.1.1
+- Bug Fixes since CGNS 4.2.0
 - Known Problems
 
 New Features
@@ -46,7 +46,7 @@ New Features
     Tools:
     ------
 
-Bug Fixes since CGNS 4.1.1 release
+Bug Fixes since CGNS 4.2.0 release
 ==================================
 
     Library:
@@ -71,60 +71,42 @@ Supported Platforms
 The following platforms are supported and have been tested for this release.
 They are built with the configure process unless specified otherwise.
 
-    Linux 2.6.32-696.16.1.el6.ppc64 gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-18)
-    #1 SMP ppc64 GNU/Linux        g++ (GCC) 4.4.7 20120313 (Red Hat 4.4.7-18)
-    (ostrich)                     GNU Fortran (GCC) 4.4.7 20120313 (Red Hat 4.4.7-18)
-                                  IBM XL C/C++ V13.1
-                                  IBM XL Fortran V15.1
+    Linux 3.10.0-1127.10.1.el7    gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-39)
+    #1 SMP ppc64 GNU/Linux        g++ (GCC) 4.8.5 20150623 (Red Hat 4.8.5-39)
+    (echidna)                     GNU Fortran (GCC) 4.8.5 20150623 (Red Hat 4.8.5-39)
 
-    Linux 3.10.0-327.10.1.el7   GNU C (gcc), Fortran (gfortran), C++ (g++)
+    Linux 2.6.32-573.18.1.el6     IBM XL C/C++ V13.1
+    #1 SMP ppc64 GNU/Linux        IBM XL Fortran V15.1
+    (ostrich)                     
+
+    Linux 3.10.0-327.10.1.el7     GNU C (gcc), Fortran (gfortran), C++ (g++)
     #1 SMP x86_64 GNU/Linux       compilers:
-    (kituo/moohan)                Version 4.8.5 20150623 (Red Hat 4.8.5-4)
-                                    Version 4.9.3, 5.2.0, 7.1.0
+    (jelly/kituo/moohan)          Version 4.8.5 20150623 (Red Hat 4.8.5-39)
+                                     Versions 4.9.3, 5.3.0, 6.3.0, 7.2.0
+                                              8.3.0, 9.1.0, 10.1.0
                                   Intel(R) C (icc), C++ (icpc), Fortran (icc)
                                   compilers:
                                      Version 17.0.0.098 Build 20160721
-                                  MPICH 3.1.4
+                                  MPICH 3.3 compiled with GCC 7.2.0
+                                  OpenMPI 4.0.0 compiled with GCC 7.2.0
+                                  NAG Fortran Compiler Release 7.0(Yurakuchho) Build 7011
 
-    Linux-3.10.0-                 spectrum-mpi/rolling-release with cmake>3.10 and
-    862.14.4.1chaos.ch6.ppc64le   clang/3.9,8.0
-    #1 SMP ppc64le GNU/Linux      gcc/7.3
-    (ray)                         xl/2016,2019
-
-    Linux 3.10.0-                 openmpi/3.1,4.0 with cmake>3.10 and
-    957.12.2.1chaos.ch6.x86_64    clang 5.0
-    #1 SMP x86_64 GNU/Linux       gcc/7.3,8.2
-    (serrano)                     intel/17.0,18.0/19.0
-
-    Linux 3.10.0-                 openmpi/3.1/4.0 with cmake>3.10 and
-    1062.1.1.1chaos.ch6.x86_64    clang/3.9,5.0,8.0
-    #1 SMP x86_64 GNU/Linux       gcc/7.3,8.1,8.2
-    (chama,quartz)                intel/16.0,18.0,19.0
-
-    Linux 4.4.180-94.100-default  cray-mpich/7.7.6 with PrgEnv-*/6.0.5, cmake>3.10 and
-    #1 SMP x86_64 GNU/Linux       gcc/7.2.0,8.2.0
-    (mutrino)                     intel/17.0,18.0
-
-    Linux 4.14.0-                 spectrum-mpi/rolling-release with cmake>3.10 and
-    49.18.1.bl6.ppc64le           clang/6.0,8.0
-    #1 SMP ppc64le GNU/Linux      gcc/7.3
-    (lassen)                      xl/2019
-
-    SunOS 5.11 32- and 64-bit     Sun C 5.12 SunOS_sparc
-    (emu)                         Sun Fortran 95 8.6 SunOS_sparc
-                                  Sun C++ 5.12 SunOS_sparc
+    SunOS 5.11 11.4.5.12.5.0      Sun C 5.15 SunOS_sparc 2017/05/30
+    32- and 64-bit                Studio 12.6 Fortran 95 8.8 SunOS_sparc 2017/05/30
+    (hedgehog)                    Sun C++ 5.15 SunOS_sparc 2017/05/30
 
     Windows 10 x64                Visual Studio 2015 w/ Intel Fortran 18 (cmake)
                                   Visual Studio 2017 w/ Intel Fortran 19 (cmake)
                                   Visual Studio 2019 w/ Intel Fortran 19 (cmake)
+                                  Visual Studio 2019 w/ MSMPI 10.1 (cmake)
 
-    macOS 10.13.6 High Sierra     Apple LLVM version 10.0.0 (clang/clang++-1000.10.44.4)
+    macOS High Sierra 10.13.6     Apple LLVM version 10.0.0 (clang-1000.10.44.4)
     64-bit                        gfortran GNU Fortran (GCC) 6.3.0
-    (bear)                        Intel icc/icpc/ifort version 19.0.4
+    (bear)                        Intel icc/icpc/ifort version 19.0.4.233 20190416
 
-    macOS 10.14.6 Mohave          Apple LLVM version 10.0.1 (clang/clang++-1001.0.46.4)
+    macOS Mojave 10.14.6          Apple LLVM version 10.0.1 (clang-1001.0.46.4)
     64-bit                        gfortran GNU Fortran (GCC) 6.3.0
-    (bobcat)                      Intel icc/icpc/ifort version 19.0.4
+    (bobcat)                      Intel icc/icpc/ifort version 19.0.4.233 20190416
 
 Tested Configuration Features Summary
 =====================================
@@ -141,13 +123,13 @@ Tested Configuration Features Summary
 | Windows 10                           | y |  n   |   n     |    n       |
 | Windows 10 x64                       | y |  n   |   n     |    n       |
 | Windows 10 Cygwin                    | n |  n   |   x     |    n       |
-| Mac OS X 10.13.6 64-bit              | y |  n   |   y     |    n       |
-| Mac OS X 10.14.6 64-bit              | y |  n   |   y     |    n       |
-| CentOS 6.7 Linux 2.6.32 x86_64 GNU   | y |  y   |   y     |    y       |
-| CentOS 6.7 Linux 2.6.32 x86_64 Intel | y |  y   |   y     |    y       |
-| CentOS 6.7 Linux 2.6.32 x86_64 PGI   | y |  n   |   y     |    n       |
+| Mac OS X El Capitan 10.11.6 64-bit   | y |  n   |   y     |    n       |
+| Mac OS Sierra 10.12.6 64-bit         | y |  n   |   y     |    n       |
+| Mac OS X High Sierra 10.13.6 64-bit  | y |  n   |   y     |    n       |
+| Mac OS X Mojave 10.14.6 64-bit       | y |  n   |   y     |    n       |
+| CentOS 7.2 Linux 3.10.0 x86_64 PGI   | y |  n   |   y     |    n       |
 | CentOS 7.2 Linux 3.10.0 x86_64 GNU   | y |  y   |   y     |    y       |
 | CentOS 7.2 Linux 3.10.0 x86_64 Intel | y |  y   |   y     |    y       |
-| Linux 2.6.32-431.11.2.el6.ppc64      | y |  n   |   y     |    n       |
+| Linux 2.6.32-573.18.1.el6.ppc64      | y |  n   |   y     |    n       |
 
 [1] Parallel
