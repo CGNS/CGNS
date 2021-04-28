@@ -45,11 +45,10 @@ typedef struct _cgns_io_ctx_t {
     /* flag indicating if mpi_initialized was called */
     int pcg_mpi_initialized;
     MPI_Info pcg_mpi_info;
+    hid_t default_pio_mode;
 } cgns_io_ctx_t;
 
 extern cgns_io_ctx_t ctx_cgio;
-
-hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
 
 extern int cgns_filetype;
 extern void* cgns_rindindex;
@@ -166,7 +165,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
   }
 
   /* Set MPI-IO independent or collective communication */
-  herr = H5Pset_dxpl_mpio(plist_id, default_pio_mode);
+  herr = H5Pset_dxpl_mpio(plist_id, ctx_cgio.default_pio_mode);
   if (herr < 0) {
     H5Pclose(plist_id);
     H5Sclose(data_shape_id);
@@ -322,7 +321,7 @@ static int readwrite_shaped_data_parallel(
     }
 
     /* Set MPI-IO independent or collective communication */
-    herr = H5Pset_dxpl_mpio(plist_id, default_pio_mode);
+    herr = H5Pset_dxpl_mpio(plist_id, ctx_cgio.default_pio_mode);
     if (herr < 0) {
         cgi_error("H5Pset_dxpl_mpio() failed");
         goto error_4pl;
@@ -401,9 +400,9 @@ int cgp_mpi_info(MPI_Info info)
 int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
 {
     if (mode == CGP_INDEPENDENT)
-        default_pio_mode = H5FD_MPIO_INDEPENDENT;
+        ctx_cgio.default_pio_mode = H5FD_MPIO_INDEPENDENT;
     else if (mode == CGP_COLLECTIVE)
-        default_pio_mode = H5FD_MPIO_COLLECTIVE;
+        ctx_cgio.default_pio_mode = H5FD_MPIO_COLLECTIVE;
     else {
         cgi_error("unknown parallel IO mode");
         return CG_ERROR;
@@ -1697,7 +1696,7 @@ static int readwrite_multi_data_parallel(size_t count, H5D_rw_multi_t *multi_inf
     }
 
     /* Set MPI-IO independent or collective communication */
-    herr = H5Pset_dxpl_mpio(plist_id, default_pio_mode);
+    herr = H5Pset_dxpl_mpio(plist_id, ctx_cgio.default_pio_mode);
     if (herr < 0) {
         H5Pclose(plist_id);
         H5Sclose(data_shape_id);

@@ -44,7 +44,6 @@ freely, subject to the following restrictions:
 
 #if CG_BUILD_PARALLEL
 #include "mpi.h"
-extern hid_t default_pio_mode;
 #endif
 
 typedef struct _cgns_io_ctx_t {
@@ -55,6 +54,7 @@ typedef struct _cgns_io_ctx_t {
     int pcg_mpi_comm_rank;
     int pcg_mpi_initialized;
     MPI_Info pcg_mpi_info;
+    hid_t default_pio_mode;
 #endif
 } cgns_io_ctx_t;
 
@@ -3502,7 +3502,7 @@ void ADFH_Read_Data(const double ID,
   if (driver_id == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
-    H5Pset_dxpl_mpio(xfer_prp, default_pio_mode);
+    H5Pset_dxpl_mpio(xfer_prp, ctx_cgio.default_pio_mode);
   }
 #endif
 
@@ -3844,7 +3844,7 @@ void ADFH_Write_Data(const double ID,
   if (driver_id == H5FD_MPIO) {
     xfer_prp = H5Pcreate(H5P_DATASET_XFER);
     ADFH_CHECK_HID(xfer_prp);
-    H5Pset_dxpl_mpio(xfer_prp, default_pio_mode);
+    H5Pset_dxpl_mpio(xfer_prp, ctx_cgio.default_pio_mode);
   }
 #endif
 

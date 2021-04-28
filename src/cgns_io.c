@@ -51,6 +51,9 @@ freely, subject to the following restrictions:
 #endif
 
 #if CG_BUILD_HDF5
+#if CG_BUILD_PARALLEL
+#include "hdf5.h"
+#endif
 typedef struct _cgns_io_ctx_t {
     char hdf5_access[64];
 #if CG_BUILD_PARALLEL
@@ -59,6 +62,7 @@ typedef struct _cgns_io_ctx_t {
     int pcg_mpi_comm_rank;
     int pcg_mpi_initialized;
     MPI_Info pcg_mpi_info;
+    hid_t default_pio_mode;
 #endif
 } cgns_io_ctx_t;
 #endif
@@ -74,7 +78,8 @@ cgns_io_ctx_t ctx_cgio = { .hdf5_access = "NATIVE",
 .pcg_mpi_comm_size=1,
 .pcg_mpi_comm_rank=0,
 .pcg_mpi_initialized=0,
-.pcg_mpi_info=MPI_INFO_NULL
+.pcg_mpi_info=MPI_INFO_NULL,
+.default_pio_mode=H5FD_MPIO_COLLECTIVE
 #endif
 };
 #endif
