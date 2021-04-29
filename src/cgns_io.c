@@ -48,23 +48,10 @@ freely, subject to the following restrictions:
 #endif
 #if CG_BUILD_HDF5
 #include "adfh/ADFH.h"
-#endif
-
-#if CG_BUILD_HDF5
 #if CG_BUILD_PARALLEL
 #include "hdf5.h"
 #endif
-typedef struct _cgns_io_ctx_t {
-    char hdf5_access[64];
-#if CG_BUILD_PARALLEL
-    MPI_Comm pcg_mpi_comm;
-    int pcg_mpi_comm_size;
-    int pcg_mpi_comm_rank;
-    int pcg_mpi_initialized;
-    MPI_Info pcg_mpi_info;
-    hid_t default_pio_mode;
-#endif
-} cgns_io_ctx_t;
+#include "cgio_internal_type.h" /* for cgns_io_ctx_t */
 #endif
 
 #ifdef MEM_DEBUG
