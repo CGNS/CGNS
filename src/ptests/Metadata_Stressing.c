@@ -65,7 +65,7 @@ int read_inputs(int* argc, char*** argv) {
     }
   }
   MPI_Bcast(bcast, 4, MPI_INT, 0, MPI_COMM_WORLD);
-  NBLOCKS  = (uint)bcast[0];
+  NBLOCKS  = (uint32_t)bcast[0];
   allranks = bcast[1];
   core     = bcast[2];
   skipread = bcast[3];
