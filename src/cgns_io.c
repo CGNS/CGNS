@@ -637,7 +637,7 @@ int cgio_check_file (const char *filename, int *file_type)
     }
 #if CG_BUILD_PARALLEL
     }
-    if(pcg_mpi_initialized) {
+    if(ctx_cgio.pcg_mpi_initialized) {
       mpibuf[0] = err;
       mpibuf[1] = *file_type;
       MPI_Bcast(mpibuf, 2, MPI_INT, 0, ctx_cgio.pcg_mpi_comm);

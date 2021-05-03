@@ -359,26 +359,26 @@ int cgp_mpi_comm(MPI_Comm comm)
 {
     /* check if we are actually running a parallel program */
     /* Flag is true if MPI_Init or MPI_Init_thread has been called and false otherwise. */
-    pcg_mpi_initialized = 0;
-    MPI_Initialized(&pcg_mpi_initialized);
+    ctx_cgio.pcg_mpi_initialized = 0;
+    MPI_Initialized(&ctx_cgio.pcg_mpi_initialized);
 
-    if (pcg_mpi_initialized) {
+    if (ctx_cgio.pcg_mpi_initialized) {
       if( cgio_configure(CG_CONFIG_HDF5_MPI_COMM, &comm) != CG_OK) {
         cgi_error("Invalid CG_CONFIG_HDF5_MPI_COMM configure parameter");
         return CG_ERROR;
       }
 
-      pcg_mpi_comm=comm;
-      MPI_Comm_rank(pcg_mpi_comm, &pcg_mpi_comm_rank);
-      MPI_Comm_size(pcg_mpi_comm, &pcg_mpi_comm_size);
+      ctx_cgio.pcg_mpi_comm=comm;
+      MPI_Comm_rank(ctx_cgio.pcg_mpi_comm, &ctx_cgio.pcg_mpi_comm_rank);
+      MPI_Comm_size(ctx_cgio.pcg_mpi_comm, &ctx_cgio.pcg_mpi_comm_size);
     }
 
-    return pcg_mpi_initialized ? CG_OK : CG_ERROR;
+    return ctx_cgio.pcg_mpi_initialized ? CG_OK : CG_ERROR;
 }
 
 int cgp_mpi_info(MPI_Info info)
 {
-    pcg_mpi_info = info;
+    ctx_cgio.pcg_mpi_info = info;
 
     return CG_OK;
 }
@@ -420,7 +420,7 @@ int cgp_open(const char *filename, int mode, int *fn)
 
     /* Initialize communicators if cgp_mpi_comm() was not called by
        client */
-    if (pcg_mpi_comm == MPI_COMM_NULL) {
+    if (ctx_cgio.pcg_mpi_comm == MPI_COMM_NULL) {
       cgp_mpi_comm(MPI_COMM_WORLD);
     }
 
