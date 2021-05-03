@@ -24,9 +24,11 @@ CALL =	pcgns_ctest$(EXE) \
 	test_unstruc_quad$(EXE) \
 	test_zone$(EXE) \
 	test_general_readwrite$(EXE) \
+        Metadata_Stressing$(EXE) \
+	test_poly_unstructured$(EXE) \
 	thesis_benchmark$(EXE)
 
-FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) 
+FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) test_mixed_par_ser$(EXE)
 
 ALL   = $(CALL) @FALL@
 TESTS = $(ALL)
@@ -40,21 +42,36 @@ test : $(TESTS)
 	status=0; \
 	echo "=== running parallel tests ==="; \
 	 for x in $(TESTS) ; do \
-	   if `$(MPIEXEC) ./$$x >/dev/null 2>&1` ; then \
-	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
-	   else \
-	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
-		status=1; \
-	   fi; \
+           args=""; \
+           if test "$$x" = "Metadata_Stressing$(EXE)" ; then \
+		for n in 1 2 ; do \
+	           if `$(MPIEXEC) ./$$x $$args >/dev/null 2>&1` ; then \
+	              printf "$$x $$args ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
+	           else \
+	              printf "$$x $$args ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
+                      status=`expr $$status + 1`; \
+	            fi; \
+	            args="-sec2"; \
+		done;\
+           else \
+	     if `$(MPIEXEC) ./$$x >/dev/null 2>&1` ; then \
+	       printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
+	     else \
+	       printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
+               status=`expr $$status + 1`; \
+	     fi; \
+           fi;\
 	 done; \
 	 echo "=== finished ==="; \
-         if test $$status == 1; then \
+         if test $$$status > 0; then \
            printf "$(ERROR_COLOR)"; \
+	   stat=1; \
          else \
            printf "$(OK_COLOR)"; \
+	   stat=0; \
          fi; \
          printf "$$status tests failed $(NO_COLOR) \n"; \
-	 exit $$status;
+	 exit $$stat;
 
 #----------
 
@@ -123,6 +140,14 @@ test_general_readwrite$(EXE) : test_general_readwrite.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_general_readwrite.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
+
+#----------
+
+test_poly_unstructured$(EXE) : test_poly_unstructured.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_poly_unstructured.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+
 #----------
 
 thesis_benchmark$(EXE) : thesis_benchmark.c $(CGNSLIB)
@@ -133,6 +158,12 @@ thesis_benchmark$(EXE) : thesis_benchmark.c $(CGNSLIB)
 
 pcgns_ftest$(EXE) : pcgns_ftest.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ pcgns_ftest.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_mixed_par_ser$(EXE) : test_mixed_par_ser.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_mixed_par_ser.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
@@ -151,6 +182,12 @@ fexample$(EXE) : fexample.F90 $(CGNSLIB)
 
 benchmark_hdf5_f90$(EXE) : benchmark_hdf5_f90.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ benchmark_hdf5_f90.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+Metadata_Stressing$(EXE) : Metadata_Stressing.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ Metadata_Stressing.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------

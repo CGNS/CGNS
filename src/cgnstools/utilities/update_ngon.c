@@ -61,7 +61,7 @@ int convert_elements(int cgio_num, double elem_id)
     }
     data = malloc((size_t) size*sizeof(int));
     /* read elem type */
-    if (cgio_read_all_data(cgio_num, elem_id, data) != CG_OK) {
+    if (cgio_read_all_data_type(cgio_num, elem_id, "I4", data) != CG_OK) {
         free(data);
         return 1;
     }
@@ -101,7 +101,7 @@ int convert_elements(int cgio_num, double elem_id)
             cgsize_t local_idx;
 
             connectivity = malloc((size_t)sizeof(int)*elem_size);
-            cgio_read_all_data(cgio_num, connect_id, (void *)connectivity);
+            cgio_read_all_data_type(cgio_num, connect_id, datatype, (void *)connectivity);
             /* first count number of elements */
             idx = 0;
             while (idx < elem_size) {
@@ -151,7 +151,7 @@ int convert_elements(int cgio_num, double elem_id)
             cgsize_t cur_elem = 0;
             cgsize_t local_idx;
             connectivity = malloc((size_t)sizeof(cglong_t)*elem_size);
-            cgio_read_all_data(cgio_num, connect_id, (void *)connectivity);
+            cgio_read_all_data_type(cgio_num, connect_id, datatype, (void *)connectivity);
             /* first count number of elements */
             while (idx < elem_size) {
                 idx += connectivity[idx] +1;
@@ -234,7 +234,7 @@ int convert_elements(int cgio_num, double elem_id)
             cgsize_t cur_elem = 0;
 
             connectivity = malloc((size_t)sizeof(int)*elem_size);
-            cgio_read_all_data(cgio_num, connect_id, (void *)connectivity);
+            cgio_read_all_data_type(cgio_num, connect_id, datatype, (void *)connectivity);
             /* first count number of elements */
             while (idx < elem_size) {
                 int celltype = connectivity[idx];
@@ -276,7 +276,7 @@ int convert_elements(int cgio_num, double elem_id)
             int nparts_in_elem;
 
             connectivity = malloc((size_t)sizeof(cglong_t)*elem_size);
-            cgio_read_all_data(cgio_num, connect_id, (void *)connectivity);
+            cgio_read_all_data_type(cgio_num, connect_id, datatype, (void *)connectivity);
             /* first count number of elements */
             while (idx < elem_size) {
                 cglong_t celltype = connectivity[idx];
@@ -368,7 +368,7 @@ int convert_zone(int cgio_num, double zone_id)
             }
             data = malloc((size_t)sizeof(char)*(size + 1));
             /* read data zonetype */
-            if (cgio_read_all_data(cgio_num, childid, (void*)data) != CG_OK) {
+            if (cgio_read_all_data_type(cgio_num, childid, "C1", (void*)data) != CG_OK) {
                 data[0] = '\0';
             }
             else {
@@ -479,7 +479,7 @@ int is_file_old_version(char *inpfile)
 
     if (0 == cgio_get_node_id (inpcg, root_id,
               "CGNSLibraryVersion",&node_id) &&
-        0 == cgio_read_all_data (inpcg, node_id, &cgns_version)) {
+        0 == cgio_read_all_data_type(inpcg, node_id, "R4", &cgns_version)) {
         printf ("CGNS version  : %4.2f\n", cgns_version);
         if (cgns_version < 4.0) {
             status = 1;
@@ -501,7 +501,7 @@ int is_file_old_version(char *inpfile)
 }
 
 
-int update_cgns_version(double cgio_num, double root_id)
+void update_cgns_version(int cgio_num, double root_id)
 {
     double node_id;
     float cgns_version = 4.00;

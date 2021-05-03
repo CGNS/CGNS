@@ -1,0 +1,1733 @@
+CGNS version 4.2.0
+=================================
+
+INTRODUCTION
+------------
+
+This document describes the difference between CGNS 4.1.2 and
+CGNS 4.2.0 and contains information on known problems in
+CGNS 4.2.0.
+
+Links to the CGNS current released source code can be found at:
+
+http://cgns.org/download.html
+
+User documentation for the current release can be found at:
+
+http://cgns.org/CGNS_docs_current/midlevel/index.html
+
+For more information, see the CGNS home page:
+
+http://cgns.org
+
+CONTENTS
+--------
+
+- New Features
+- Support for new platforms and languages
+- Bug Fixes since CGNS 4.1.2
+- Known Problems
+
+New Features
+============
+
+    Configuration:
+    -------------
+    * The default was changed from 32-bit to 64-bit building of CGNS, PR#216
+    * The minimum CMake version was changed to 3.8.
+
+    Library:
+    --------
+    * New C and Fortran APIs that allows for reading/writing datatypes 
+      that are different from cgsize_t:
+            cg_section_general_write(_f)
+            cg_section_initialize(_f)
+            cg_parent_data_write(_f)
+            cg_elements_general_write(_f)
+            cg_poly_elements_general_write(_f)
+            cg_elements_general_read(_f)
+            cg_poly_elements_general_read(_f)
+            cg_parent_elements_general_read(_f)
+            cg_parent_elements_position_general_read(_f)
+      CGNS-212
+    * Added a diskless option for creating a CGNS file in memory 
+      (i.e. uses HDF5 "core" file driver), and then to optionally
+      persist the memory to disk. Enablable through cg_configure.
+      CGNS-239
+    * Mapping of X4/X8 was lost when moving from ADF to HDF5.
+      This fix reintroduces it as an experimental feature.
+      It uses an H5T_COMPOUND and is compatible with the standard C99 complex type.
+
+      Depending on the application, people can still store each part of a complex number 
+      in separate arrays by prefixing with Re or Im the name of the array, CGNS-202
+
+    Parallel Library:
+    -----------------
+    * Tuned the parallel library algorithms to improve metadata type operations, PR#238,#236
+
+    Fortran Library:
+    ----------------
+    * Add Fortran wrapper for cg_configure, CGNS-243
+
+    Tools:
+    ------
+    * Experimental support for conversion of FamilySpecified BC for AFLR3 file format, PR#247
+    * Added check on node names according to SIDS (check that dot and slash are not at 
+      the start of the name, see:https://cgns.github.io/CGNS_docs_current/hdf5/general.html) and 
+      added warning if ZoneBC_t is missing while zone surfaces are present in a 3D mesh.
+
+
+Bug Fixes since CGNS 4.1.2 release
+==================================
+
+    Library:
+    -------
+    * Fixed test_convert_elem failing with NAG 7.0 and gcc 10, CGNS-231
+    * Fixed cg_configure always reporting a false error 
+      when using adfh parameters, CGNS-241
+    * Made the parameter CG_MODE_CLOSED private since it only 
+      used internally, CGNS-240
+    * Fixed an issue with too many MPI communicators being created when
+      many CGNS files are open, CGNS-109
+    * Fixed issue of cg_open failing after calling cgp_open, CGNS-141
+    * Fixed MPI_Recv in test_poly_unstructured, PR#224
+    * Fixed MPI_Allgather in test_poly_unstructured #223
+    * VS 2019 issues: Fixed shared library builds on windows, 
+      Rearranged header files, fixed #if/#ifdef bug, PR#208
+    * Misc. compiler issues and added check C99 Complex support 
+      at compile time to enable it, PR#202 
+    * Fixed cgio_copy_node() failing with INVALID_DATA_TYPE error 
+      when HDF5 backend is employed, PR#198
+
+    Fortran:
+    --------
+    * Fixed test cgread_f03 failing for arch ppc64el, CGNS-179
+    * Fixed "Fortran types mismatch between actual argument" errors
+      with gfortran 10.x, CGNS-227
+
+    Configuration:
+    -------------
+    * Fixed configure issues with tcl, tk, CGNS-147
+    * Fixed build failures with HDF 1.10.3, CGNS-143
+    * Removed zlib and szip header checks when linking directory is provided
+      removed header checking for standard locations, CGNS-233
+    * Added warning about using gfortran 10.2 as a result of a compiler
+      bug, CGNS-246
+    
+
+    Tools:
+    ------
+    * Fixed issue with cgnstools not being able to read hdf5 files, CGNS-203
+    * Fixed cgnscheck's strange warning about non-boundary elements, CGNS-234
+    * Added cgnscheck a warning for BC that should be of type FamilySpecified, PR#206
+    * Added .desktop startup files for GUI cgnstools, PR#200
+    * Allow relocation of cgnstools dir, PR#199
+
+Known Problems
+==============
+
+    ************ FORTRAN ************
+    
+    * A gfortran bug in version 10.2 broke Fortran mapping and caused cg_goto_f 
+     to segfault. All other versions of gfortran are suitable.
+     (ref. CGNS-246, GNU BUG 100149)
+
+    * A bug in gfortran (all versions) causes cg_configure_f to fail,
+      GNU BUG 99982. Other Fortran compilers are fine.
+
+    ************ FORTRAN END ********
+
+    ************ CGNSVIEW ************
+    
+    * cgnsview for OSX is not viewing properly and cgnsview under Windows 
+      may fail to compile due to tcl/tk incompatibility. 
+    
+    ************ CGNSVIEW END ********
+
+    * For other issues, see https://cgnsorg.atlassian.net
+
+Supported Platforms
+===================
+The following platforms are supported and have been tested for this release.
+They are built with the configure process unless specified otherwise.
+
+    Linux 3.10.0-1127.10.1.el7    gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-39)
+    #1 SMP ppc64 GNU/Linux        g++ (GCC) 4.8.5 20150623 (Red Hat 4.8.5-39)
+    (echidna)                     GNU Fortran (GCC) 4.8.5 20150623 (Red Hat 4.8.5-39)
+
+    Linux 2.6.32-573.18.1.el6     IBM XL C/C++ V13.1
+    #1 SMP ppc64 GNU/Linux        IBM XL Fortran V15.1
+    (ostrich)                     
+
+    Linux 3.10.0-327.10.1.el7     GNU C (gcc), Fortran (gfortran), C++ (g++)
+    #1 SMP x86_64 GNU/Linux       compilers:
+    (jelly/kituo/moohan)          Version 4.8.5 20150623 (Red Hat 4.8.5-39)
+                                     Versions 4.9.3, 5.3.0, 6.3.0, 7.2.0
+                                              8.3.0, 9.1.0, 10.1.0
+                                  Intel(R) C (icc), C++ (icpc), Fortran (icc)
+                                  compilers:
+                                     Version 17.0.0.098 Build 20160721
+                                  MPICH 3.3 compiled with GCC 7.2.0
+                                  OpenMPI 4.0.0 compiled with GCC 7.2.0
+                                  NAG Fortran Compiler Release 7.0(Yurakuchho) Build 7011
+
+    SunOS 5.11 11.4.5.12.5.0      Sun C 5.15 SunOS_sparc 2017/05/30
+    32- and 64-bit                Studio 12.6 Fortran 95 8.8 SunOS_sparc 2017/05/30
+    (hedgehog)                    Sun C++ 5.15 SunOS_sparc 2017/05/30
+
+    Windows 10 x64                Visual Studio 2015 w/ Intel Fortran 18 (cmake)
+                                  Visual Studio 2017 w/ Intel Fortran 19 (cmake)
+                                  Visual Studio 2019 w/ Intel Fortran 19 (cmake)
+                                  Visual Studio 2019 w/ MSMPI 10.1 (cmake)
+
+    macOS High Sierra 10.13.6     Apple LLVM version 10.0.0 (clang-1000.10.44.4)
+    64-bit                        gfortran GNU Fortran (GCC) 6.3.0
+    (bear)                        Intel icc/icpc/ifort version 19.0.4.233 20190416
+
+    macOS Mojave 10.14.6          Apple LLVM version 10.0.1 (clang-1001.0.46.4)
+    64-bit                        gfortran GNU Fortran (GCC) 6.3.0
+    (bobcat)                      Intel icc/icpc/ifort version 19.0.4.233 20190416
+
+Tested Configuration Features Summary
+=====================================
+
+    In the table below
+          y   = tested
+          n   = not tested in this release
+          x   = not working in this release
+
+|               Platform               | C | C[1] | Fortran | Fortran [1]|
+|--------------------------------------|---|------|---------|------------|
+| SunOS 5.11 32-bit                    | y |  n   |   y     |    n       |
+| SunOS 5.11 64-bit                    | y |  n   |   y     |    n       |
+| Windows 10                           | y |  n   |   n     |    n       |
+| Windows 10 x64                       | y |  n   |   n     |    n       |
+| Windows 10 Cygwin                    | n |  n   |   x     |    n       |
+| Mac OS X El Capitan 10.11.6 64-bit   | y |  n   |   y     |    n       |
+| Mac OS Sierra 10.12.6 64-bit         | y |  n   |   y     |    n       |
+| Mac OS X High Sierra 10.13.6 64-bit  | y |  n   |   y     |    n       |
+| Mac OS X Mojave 10.14.6 64-bit       | y |  n   |   y     |    n       |
+| CentOS 7.2 Linux 3.10.0 x86_64 PGI   | y |  n   |   y     |    n       |
+| CentOS 7.2 Linux 3.10.0 x86_64 GNU   | y |  y   |   y     |    y       |
+| CentOS 7.2 Linux 3.10.0 x86_64 Intel | y |  y   |   y     |    y       |
+| Linux 2.6.32-573.18.1.el6.ppc64      | y |  n   |   y     |    n       |
+
+[1] Parallel
+
+CGNS version 4.1.2 (patch)
+=================================
+
+INTRODUCTION
+------------
+
+This document describes the difference between CGNS 4.1.2 and
+CGNS 4.1.2, and contains information on known problems in
+CGNS 4.1.2.
+
+Links to the CGNS current released source code can be found at:
+
+http://cgns.org/download.html
+
+User documentation for the current release can be found at:
+
+http://cgns.org/CGNS_docs_current/midlevel/index.html
+
+For more information, see the CGNS home page:
+
+http://cgns.org
+
+CONTENTS
+--------
+
+- New Features
+- Support for new platforms and languages
+- Bug Fixes since CGNS 4.1.1
+- Known Problems
+
+New Features
+============
+
+    Configuration:
+    -------------
+
+    Library:
+    --------
+
+    Parallel Library:
+    -----------------
+
+    Fortran Library:
+    ----------------
+
+    Tools:
+    ------
+
+Bug Fixes since CGNS 4.1.1 release
+==================================
+
+    Library:
+    -------
+
+      * (CGNS-214) Fixed the Compatibility issue between v3.4.0 and v4.1.1
+
+      * (CGNS-219) Change a wrong check in cg_poly_element_read to load
+                   older CGNS file section with CGNS 4.x API
+
+    Fortran:
+    --------
+
+    Configuration:
+    -------------
+
+    Tools:
+    ------
+
+Known Problems
+==============
+
+    ************ CGNSVIEW ************
+    
+    * cgnsview for OSX is not viewing properly, and cgnsview under Windows 
+    * may fail to compile due to tcl/tk incompatibility. 
+    
+    **********************************
+
+    * For other issues, See https://cgnsorg.atlassian.net
+
+
+
+CGNS version 4.1.1 (patch)
+=================================
+
+INTRODUCTION
+------------
+
+This document describes the difference between CGNS 4.1.1 and
+CGNS 4.1.1, and contains information on known problems in
+CGNS 4.1.1.
+
+Links to the CGNS current released source code can be found at:
+
+http://cgns.org/download.html
+
+User documentation for the current release can be found at:
+
+http://cgns.org/CGNS_docs_current/midlevel/index.html
+
+For more information, see the CGNS home page:
+
+http://cgns.org
+
+CONTENTS
+--------
+
+- New Features
+- Support for new platforms and languages
+- Bug Fixes since CGNS 4.1.0
+- Known Problems
+
+New Features
+============
+
+    Configuration:
+    -------------
+
+    Library:
+    --------
+
+    Parallel Library:
+    -----------------
+
+    Fortran Library:
+    ----------------
+
+    - Introduced Fortran wrappers for CPEX42 and CPEX43
+
+    Tools:
+    ------
+
+Bug Fixes since CGNS 4.1.0 release
+==================================
+
+    Library:
+    -------
+
+      * Fixed the compilation of cgnstools, which still made use 
+        the Removed APIs in 4.1.0:
+
+        cgio_read_all_data, cgio_read_data, cgio_read_block_data
+        cgio_read_all_data_f, cgio_read_data_f, cgio_read_block_data_f
+
+      * Updated CMake's detection of tcl/tk and opengl
+      * Added CI testing cgnstools
+
+    Fortran:
+    --------
+
+    Configuration:
+    -------------
+        
+
+    Tools:
+    ------
+
+
+Known Problems
+==============
+
+    ************ CGNSVIEW ************
+    
+    * cgnsview for OSX is not viewing properly, and cgnsview under Windows 
+    * may fail to compile due to tcl/tk incompatibility. 
+    
+    **********************************
+
+    * For other issues, See https://cgnsorg.atlassian.net
+
+
+
+CGNS version 4.1.0
+=================================
+
+INTRODUCTION
+------------
+
+This document describes the difference between CGNS 4.0.0 and
+CGNS 4.1.0, and contains information on known problems in
+CGNS 4.1.0.
+
+Links to the CGNS current released source code can be found at:
+
+http://cgns.org/download.html
+
+User documentation for the current release can be found at:
+
+http://cgns.org/CGNS_docs_current/midlevel/index.html
+
+For more information, see the CGNS home page:
+
+http://cgns.org
+
+CONTENTS
+--------
+
+- New Features
+- Support for new platforms and languages
+- Bug Fixes since CGNS 4.0.0
+- Known Problems
+
+New Features
+============
+
+    Configuration:
+    -------------
+
+    Library:
+    --------
+
+    - Implemented CPEX42 (Storing bounding box of a grid, CGNS-149)
+    - Implemented CPEX43 (Family hierarchy as a tree, CGNS-180)
+    - Switch to using HDF5 Compact storage for smaller datasets
+    
+      Added HDF5 compact storage to CGNS to improve parallel IO performance. The default storage 
+      is compact storage unless the dataset does not meet the < 64KiB limit. Also, if the 
+      dataset can have partial IO, then it is contiguous storage. Also, removed 'tab' spacing. 
+      All changes should be transparent to the application code. (CGNS-160, PR-130)
+
+    Parallel Library:
+    -----------------
+
+    Fortran Library:
+    ----------------
+
+    - Introduced Fortran wrappers for CPEX42 and CPEX43
+
+    Tools:
+    ------
+
+Bug Fixes since CGNS 4.0.0 release
+==================================
+
+    Library:
+    -------
+
+      ****************** REMOVED APIS **************************
+
+      Removed the APIs:
+
+      cgio_read_all_data, cgio_read_data, cgio_read_block_data
+      cgio_read_all_data_f, cgio_read_data_f, cgio_read_block_data_f
+
+      These APIs should be used instead:
+
+      cgio_read_all_data_type, cgio_read_data_type, cgio_read_block_data_type
+      cgio_read_all_data_type_f, cgio_read_data_type_f, cgio_read_block_data_type_f
+
+      (CGNS-192)
+
+      ****************** REMOVED APIS **************************
+
+      * Fixed tests for scoped enum use. (PR-123)
+
+      * Unified similar defines. (PR-124)
+
+      * Fixed bad assert. (PR-125)
+
+      * Corrected print format. (CGNS-152, PR-126)
+
+      * (CGNS-158, PR #128)
+          Fixed heap buffer overflow in cgi_read_ptset
+          In cgi_read_ptset there is made a difference between point set of list and range type.
+          The 'CellListDonor' type was missing in the list of list types and this led to a heap buffer overflow.
+          Added 'CellListDonor' type to list of list types.
+
+      * (CGNS-159, PR #127)
+          Fixed global-buffer-overflow in ADFI_string_2_C_string.
+    
+          Added a search loop for an early NULL termination of the string passed to ADFI_string_2_C_string in 
+          order to prevent global-buffer-overflow when string literals are given as a parameter.
+      
+      * Fixed return stat after calling MPI_Finalize and  switched to using a MPI_AllReduce to get the same 
+        exit code on all the processes.
+
+      * Fixed typo, zc should be z3
+
+      * Fixed Problems linking Fortran code with 3.3.1 shared library (w/ CMake) (CGNS-118, PR-131)
+
+      * Do not read elements when computing partial data size. (PR-137)
+
+      * Disabled the use of H5Pset_file_space_strategy as it is not compatible with HDF5 v1.8 (CGNS-166)
+
+      * Use correct MPI communicator (PR-140)
+    
+        The `MPI_Allreduce` call in `cgp_parent_data_write()` is using `MPI_COMM_WORLD`, but would be more correct 
+        to use the communicator stored in `cgp_mpi_comm` which is set by the client. If the client is not using 
+        `MPI_COMM_WORLD` and calls this function, it will hang since not all ranks will be participating in the call.
+    
+        Expanded open-close test to include mixed serial and parallel open and close
+    
+      * Fixed incorrect variable type (PR-143)
+    
+        Minor fix; only applicable if more than 2.1 billion intervals in a range, but does eliminate a 
+        compiler warning -- `npt` should be `cgsize_t`
+
+      * Fixed compiler warnings about the possible loss of data (PR-144)
+    
+        A few variables defined as `int` should be `ssize_t` to avoid potential loss of data on large models.
+
+        
+      * Corrupted memory when reading int32 connectivity into an int64 dataspace, (CGNS-157)
+    
+        Fixed by changing the cgio_read* calls internal to the MLL to use the
+        cgio_read*_type APIs instead. Created a new cgio_read_block_data_type API with 
+        an added data type parameter.
+
+      * Removed non-standard unlink call
+
+      * Make static mpi-related variables consistent (PR-139)
+
+        Currently, it is possible for the `pcg_mpi_comm` to be inconsistent with 
+        `pcg_mpi_comm_rank` and `pcg_mpi_comm_size`. The latter two values are set during a 
+        call to `cgp_open,` and the first is set during a call to `cgp_mpi_comm.`  If the user 
+        is using both parallel and serial file access during the same run, they may call 
+        `cgp_mpi_comm` multiple times, and the values of `pcg_mpi_comm_rank` and `pcg_mpi_comm_size` 
+        will only be consistent with the communicator in `pcg_mpi_comm` if the user calls `cgp_open.`
+    
+        With this fix, all three values (and the `ParallelMPICommunicator`) will always be consistent.  
+        Also, if the user does not call `cgp_mpi_comm()` before calling `cgp_open(),` 
+        this will be detected, and everything will be consistent.
+
+        Initialize communicator to MPI_COMM_NULL
+
+      * miscellaneous code quality improvements and warning fixes.
+
+    Fortran:
+    --------
+      * Added missing BUILD_PARALLEL_F. (ref. PR-124)
+
+      * Fixed cgiof_f03.F90 test passing literal character instead of NULL character in CGIO_CREATE_LINK_F
+
+    Configuration:
+    -------------
+      * Fixed HDF5 CMake feature detection for parallel Collective_metadata and
+        H5Pset_file_space_strategy. (PR-138)
+
+      * Fixed HDF5 feature detection (PR-138)
+        
+
+    Tools:
+    ------
+
+       * Fix cgnstools install (PR-129)
+
+
+Known Problems
+==============
+
+    * See https://cgnsorg.atlassian.net
+
+Supported Platforms
+===================
+The following platforms are supported and have been tested for this release.
+They are built with the configure process unless specified otherwise.
+
+    Linux 2.6.32-696.16.1.el6.ppc64 gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-18)
+    #1 SMP ppc64 GNU/Linux        g++ (GCC) 4.4.7 20120313 (Red Hat 4.4.7-18)
+    (ostrich)                     GNU Fortran (GCC) 4.4.7 20120313 (Red Hat 4.4.7-18)
+                                  IBM XL C/C++ V13.1
+                                  IBM XL Fortran V15.1
+
+    Linux 3.10.0-327.10.1.el7   GNU C (gcc), Fortran (gfortran), C++ (g++)
+    #1 SMP x86_64 GNU/Linux       compilers:
+    (kituo/moohan)                Version 4.8.5 20150623 (Red Hat 4.8.5-4)
+                                    Version 4.9.3, 5.2.0, 7.1.0
+                                  Intel(R) C (icc), C++ (icpc), Fortran (icc)
+                                  compilers:
+                                     Version 17.0.0.098 Build 20160721
+                                  MPICH 3.1.4
+
+    Linux-3.10.0-                 spectrum-mpi/rolling-release with cmake>3.10 and
+    862.14.4.1chaos.ch6.ppc64le   clang/3.9,8.0
+    #1 SMP ppc64le GNU/Linux      gcc/7.3
+    (ray)                         xl/2016,2019
+
+    Linux 3.10.0-                 openmpi/3.1,4.0 with cmake>3.10 and
+    957.12.2.1chaos.ch6.x86_64    clang 5.0
+    #1 SMP x86_64 GNU/Linux       gcc/7.3,8.2
+    (serrano)                     intel/17.0,18.0/19.0
+
+    Linux 3.10.0-                 openmpi/3.1/4.0 with cmake>3.10 and
+    1062.1.1.1chaos.ch6.x86_64    clang/3.9,5.0,8.0
+    #1 SMP x86_64 GNU/Linux       gcc/7.3,8.1,8.2
+    (chama,quartz)                intel/16.0,18.0,19.0
+
+    Linux 4.4.180-94.100-default  cray-mpich/7.7.6 with PrgEnv-*/6.0.5, cmake>3.10 and
+    #1 SMP x86_64 GNU/Linux       gcc/7.2.0,8.2.0
+    (mutrino)                     intel/17.0,18.0
+
+    Linux 4.14.0-                 spectrum-mpi/rolling-release with cmake>3.10 and
+    49.18.1.bl6.ppc64le           clang/6.0,8.0
+    #1 SMP ppc64le GNU/Linux      gcc/7.3
+    (lassen)                      xl/2019
+
+    SunOS 5.11 32- and 64-bit     Sun C 5.12 SunOS_sparc
+    (emu)                         Sun Fortran 95 8.6 SunOS_sparc
+                                  Sun C++ 5.12 SunOS_sparc
+
+    Windows 10 x64                Visual Studio 2015 w/ Intel Fortran 18 (cmake)
+                                  Visual Studio 2017 w/ Intel Fortran 19 (cmake)
+                                  Visual Studio 2019 w/ Intel Fortran 19 (cmake)
+
+    macOS 10.13.6 High Sierra     Apple LLVM version 10.0.0 (clang/clang++-1000.10.44.4)
+    64-bit                        gfortran GNU Fortran (GCC) 6.3.0
+    (bear)                        Intel icc/icpc/ifort version 19.0.4
+
+    macOS 10.14.6 Mohave          Apple LLVM version 10.0.1 (clang/clang++-1001.0.46.4)
+    64-bit                        gfortran GNU Fortran (GCC) 6.3.0
+    (bobcat)                      Intel icc/icpc/ifort version 19.0.4
+
+Tested Configuration Features Summary
+=====================================
+
+    In the table below
+          y   = tested
+          n   = not tested in this release
+          x   = not working in this release
+
+|               Platform               | C | C[1] | Fortran | Fortran [1]|
+|--------------------------------------|---|------|---------|------------|
+| SunOS 5.11 32-bit                    | y |  n   |   y     |    n       |
+| SunOS 5.11 64-bit                    | y |  n   |   y     |    n       |
+| Windows 10                           | y |  n   |   n     |    n       |
+| Windows 10 x64                       | y |  n   |   n     |    n       |
+| Windows 10 Cygwin                    | n |  n   |   x     |    n       |
+| Mac OS X 10.13.6 64-bit              | y |  n   |   y     |    n       |
+| Mac OS X 10.14.6 64-bit              | y |  n   |   y     |    n       |
+| CentOS 6.7 Linux 2.6.32 x86_64 GNU   | y |  y   |   y     |    y       |
+| CentOS 6.7 Linux 2.6.32 x86_64 Intel | y |  y   |   y     |    y       |
+| CentOS 6.7 Linux 2.6.32 x86_64 PGI   | y |  n   |   y     |    n       |
+| CentOS 7.2 Linux 3.10.0 x86_64 GNU   | y |  y   |   y     |    y       |
+| CentOS 7.2 Linux 3.10.0 x86_64 Intel | y |  y   |   y     |    y       |
+| Linux 2.6.32-431.11.2.el6.ppc64      | y |  n   |   y     |    n       |
+
+[1] Parallel
+
+# CGNS version 4.0.0
+
+This document describes the difference between CGNS 3.x and
+CGNS 4.0.0, and contains information on known problems in CGNS 4.0.0.
+
+Links to the CGNS 4.0.0 source code can be found at:
+
+http://cgns.org/download.html
+
+User documentation for the current release can be found at:
+
+http://cgns.org/CGNS_docs_current/midlevel/index.html
+
+For more information, see the CGNS home page:
+
+http://cgns.org
+
+# CONTENTS
+
+New Features
+Bug Fixes since CGNS 3.x
+Known Problems
+Supported platforms
+
+# New Features
+## Configuration:
+
+   None
+
+## Library:
+
+Implemented CPEX 41 NGON modification proposal (CGNS-121)
+
+v4.0.0 resolves the issue with CPEX 41 in cgnslib 3.4.0 concerning forward compatibility 
+(ref. 1-28-2020 CGNS Steering Committee Minutes).
+
+Note: v3.4.1 removed CPEX 41 to maintain compatibility in the 3.x releases, and 4.0.0 added back CPEX 41.
+
+## Parallel Library:
+
+   None
+
+## Fortran Library:
+
+   None
+
+## Tools:
+
+   None
+
+# Bug Fixes since CGNS 3.x Release
+
+# Configuration:
+
+   None
+
+# Library:
+ 
+## ISSUE [1]
+  
+   None
+
+# Fortran:
+
+  None
+
+# Tools:
+
+  None
+
+## Known Problems
+
+When building with PGI and gcc compilers it might be necessary to set the
+environment variables:
+FLIBS="-Wl,--no-as-needed -ldl"
+LIBS="-Wl,--no-as-needed -ldl"
+
+Misc. issues can be found at: https://cgnsorg.atlassian.net
+
+Supported Platforms
+======================
+The following platforms are supported and have been tested for this release.
+They are built with the configure process unless specified otherwise.
+
+
+    Linux 2.6.32-573.22.1.el6     GNU C (gcc), Fortran (gfortran), C++ (g++)
+    #1 SMP x86_64 GNU/Linux       compilers:
+                                 Version 4.4.7 20120313
+                                     Versions 4.9.3, 5.2.0, 6.2.0
+                                  PGI C, Fortran, C++ for 64-bit target on
+                                  x86-64;
+                                      Version 16.10-0
+                                  Intel(R) C (icc), C++ (icpc), Fortran (icc)
+                                  compilers:
+                                     Version 17.0.0.098 Build 20160721
+                                  MPICH 3.1.4 compiled with GCC 4.9.3
+                                  OpenMPI 2.0.1 compiled with GCC 4.9.3
+
+    Linux 2.6.32-573.18.1.el6     gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-16)
+    #1 SMP ppc64 GNU/Linux        g++ (GCC) 4.4.7 20120313 (Red Hat 4.4.7-16)
+                                  GNU Fortran (GCC) 4.4.7 20120313 (Red Hat 4.4.7-16)
+                                  IBM XL C/C++ V13.1
+                                  IBM XL Fortran V15.1
+
+    Linux 3.10.0-327.10.1.el7     GNU C (gcc), Fortran (gfortran), C++ (g++)
+    #1 SMP x86_64 GNU/Linux       compilers:
+                                   Version 4.8.5 20150623 (Red Hat 4.8.5-4)
+                                    Versions 4.9.3, 5.3.0, 6.2.0
+                                  Intel(R) C (icc), C++ (icpc), Fortran (icc)
+                                  compilers:
+                                     Version 17.0.4.196 Build 20170411
+                                  MPICH 3.1.4 compiled with GCC 4.9.3
+
+    SunOS 5.11 32- and 64-bit     Sun C 5.12 SunOS_sparc
+                                  Sun Fortran 95 8.6 SunOS_sparc
+                                  Sun C++ 5.12 SunOS_sparc
+
+    Windows 10 x64                Visual Studio 2015 w/ Intel Fortran 16 (cmake)
+
+    Mac OS X Mt. Lion 10.8.5      Apple LLVM version 5.1 (clang-503.0.40)
+    64-bit                        gfortran GNU Fortran (GCC) 4.8.2
+                               Intel icc/icpc/ifort version 15.0.3
+
+    Mac OS X Mavericks 10.9.5     Apple LLVM version 6.0 (clang-600.0.57)
+    64-bit                        gfortran GNU Fortran (GCC) 4.9.2
+                                   Intel icc/icpc/ifort version 15.0.3
+
+    Mac OS X Yosemite 10.10.5     Apple LLVM version 6.1 (clang-602.0.53)
+    64-bit                        gfortran GNU Fortran (GCC) 4.9.2
+                                  Intel icc/icpc/ifort version 15.0.3
+
+    Mac OS X El Capitan 10.11.4   Apple LLVM version 7.3.0 (clang-703.0.29)
+    64-bit                        gfortran GNU Fortran (GCC) 5.2.0
+                                  Intel icc/icpc/ifort version 16.0.2
+
+Tested Configuration Features Summary
+=====================================
+
+    In the table below
+          y   = tested
+          n   = not tested in this release
+          x   = not working in this release
+          dna = does not apply
+
+Platform                             |  C        | Fortran |  Fortran     
+                                     |  parallel |         |  parallel
+-------------------------------------|-----------|---------|----------
+SunOS 5.11 32-bit                    |   n       |  y      |     n      
+SunOS 5.11 64-bit                    |   n       |  y      |     n
+Windows 10                           |   n       |  n      |     n
+Windows 10  x64                      |   n       |  n      |     n
+Mac OS X Yosemeti 10.10.5 64-bit     |   n       |  y      |     n
+Mac OS X El Capitan 10.11.6 64-bit   |   n       |  y      |     n
+MacOS High Sierra 10.13.6 64-bit     |   n       |  y      |     n
+CentOS 7.1 Linux 3.10.0 x86_64 PGI   |   n       |  y      |     n  
+CentOS 7.1 Linux 3.10.0 x86_64 GNU   |   y       |  y      |     y
+CentOS 7.1 Linux 3.10.0 x86_64 Intel |   n       |  y      |     n  
+CentOS 8.1 Linux 4.18.0 x86_64 PGI   |   n       |  n      |     n  
+CentOS 8.1 Linux 4.18.0 x86_64 GNU   |   n       |  n      |     n
+CentOS 8.1 Linux 4.18.0 x86_64 Intel |   n       |  n      |     n 
+Linux 2.6.32-431.11.2.el6.ppc64      |   n       |  y      |     n
+
+# CGNS version 3.4.1
+
+This document describes the difference between CGNS 3.4.0 and
+CGNS 3.4.1 (patch), and contains information on known problems in CGNS 3.4.1 (patch).
+
+Links to the CGNS 3.4.1 (patch) source code can be found at:
+
+http://cgns.org/download.html
+
+User documentation for the current release can be found at:
+
+http://cgns.org/CGNS_docs_current/midlevel/index.html
+
+For more information, see the CGNS home page:
+
+http://cgns.org
+
+# CONTENTS
+
+New Features
+Bug Fixes since CGNS 3.4.0
+Known Problems
+Supported platforms
+
+# New Features
+## Configuration:
+
+   None
+
+## Library:
+
+   None
+
+## Parallel Library:
+
+   None
+
+## Fortran Library:
+
+   None
+
+## Tools:
+
+   None
+
+# Bug Fixes since CGNS 3.4.0 Release
+
+# Configuration:
+
+   None
+
+# Library:
+ 
+## ISSUE [1]
+
+     In the cgnslib code, forward compatibility is always ensured by cg_open function, which prevents major version incompatibilities and returns gracefully. This well-designed code provision does not hold for cgnslib v3.4.0, which has the same major version number, but significantly different NGON data structures. Thus, the library cannot protect the API users anymore, and unexpected software behaviors might occur.
+     
+     So, if one upgrades to the new cgnslib 3.4.0, they will create CGNS files that will crash when read by other parties who are still using the previous v3.x libraries. This will lead to problems in the community whose aim is to maintain a general, portable and extensible standard that makes it easier to share files between sites and collaborators.
+
+### RESOLUTION
+     
+     Patch 3.4.0 by removing CPEX 41 NGON modification.
+
+     Reintroduce CPEX 41 in the 4.0.0 release.
+
+### ACTION
+    
+Removed CPEX 41 NGON modification proposal (CGNS-121); these commits were removed:
+
+* Revert "support new ngon layout"
+         This reverts commit 83fc242833d66dd6bb3b6b0f03dc5d71ae59c162.
+
+* Revert "fix uninitialized memory for offset."
+         This reverts commit 3fdc9d89ac1b452fc95abd6849f1b07535b500ba.
+  
+* Revert "fix cgnscheck due to new memory layout with ngon_n and nface_n"
+         This reverts commit 2c09bad0efc4b0042d1b69c3c59309a6f2ea74b9.
+
+[1] 1-28-2020 CGNS Steering Committee Minutes
+
+# Fortran:
+
+  None
+
+# Tools:
+
+  None
+
+## Known Problems
+
+When building with PGI and gcc compilers it might be necessary to set the
+environment variables:
+FLIBS="-Wl,--no-as-needed -ldl"
+LIBS="-Wl,--no-as-needed -ldl"
+
+Misc. issues can be found at: https://cgnsorg.atlassian.net
+
+Supported Platforms
+======================
+The following platforms are supported and have been tested for this release.
+They are built with the configure process unless specified otherwise.
+
+
+    Linux 2.6.32-573.22.1.el6     GNU C (gcc), Fortran (gfortran), C++ (g++)
+    #1 SMP x86_64 GNU/Linux       compilers:
+                                 Version 4.4.7 20120313
+                                     Versions 4.9.3, 5.2.0, 6.2.0
+                                  PGI C, Fortran, C++ for 64-bit target on
+                                  x86-64;
+                                      Version 16.10-0
+                                  Intel(R) C (icc), C++ (icpc), Fortran (icc)
+                                  compilers:
+                                     Version 17.0.0.098 Build 20160721
+                                  MPICH 3.1.4 compiled with GCC 4.9.3
+                                  OpenMPI 2.0.1 compiled with GCC 4.9.3
+
+    Linux 2.6.32-573.18.1.el6     gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-16)
+    #1 SMP ppc64 GNU/Linux        g++ (GCC) 4.4.7 20120313 (Red Hat 4.4.7-16)
+                                  GNU Fortran (GCC) 4.4.7 20120313 (Red Hat 4.4.7-16)
+                                  IBM XL C/C++ V13.1
+                                  IBM XL Fortran V15.1
+
+    Linux 3.10.0-327.10.1.el7     GNU C (gcc), Fortran (gfortran), C++ (g++)
+    #1 SMP x86_64 GNU/Linux       compilers:
+                                   Version 4.8.5 20150623 (Red Hat 4.8.5-4)
+                                    Versions 4.9.3, 5.3.0, 6.2.0
+                                  Intel(R) C (icc), C++ (icpc), Fortran (icc)
+                                  compilers:
+                                     Version 17.0.4.196 Build 20170411
+                                  MPICH 3.1.4 compiled with GCC 4.9.3
+
+    SunOS 5.11 32- and 64-bit     Sun C 5.12 SunOS_sparc
+                                  Sun Fortran 95 8.6 SunOS_sparc
+                                  Sun C++ 5.12 SunOS_sparc
+
+    Windows 10 x64                Visual Studio 2015 w/ Intel Fortran 16 (cmake)
+
+    Mac OS X Mt. Lion 10.8.5      Apple LLVM version 5.1 (clang-503.0.40)
+    64-bit                        gfortran GNU Fortran (GCC) 4.8.2
+                               Intel icc/icpc/ifort version 15.0.3
+
+    Mac OS X Mavericks 10.9.5     Apple LLVM version 6.0 (clang-600.0.57)
+    64-bit                        gfortran GNU Fortran (GCC) 4.9.2
+                                   Intel icc/icpc/ifort version 15.0.3
+
+    Mac OS X Yosemite 10.10.5     Apple LLVM version 6.1 (clang-602.0.53)
+    64-bit                        gfortran GNU Fortran (GCC) 4.9.2
+                                  Intel icc/icpc/ifort version 15.0.3
+
+    Mac OS X El Capitan 10.11.4   Apple LLVM version 7.3.0 (clang-703.0.29)
+    64-bit                        gfortran GNU Fortran (GCC) 5.2.0
+                                  Intel icc/icpc/ifort version 16.0.2
+
+Tested Configuration Features Summary
+=====================================
+
+    In the table below
+          y   = tested
+          n   = not tested in this release
+          x   = not working in this release
+          dna = does not apply
+
+Platform                             |  C        | Fortran |  Fortran     
+                                     |  parallel |         |  parallel
+-------------------------------------|-----------|---------|----------
+SunOS 5.11 32-bit                    |   n       |  y      |     n      
+SunOS 5.11 64-bit                    |   n       |  y      |     n
+Windows 7                            |   n       |  n      |     n
+Windows 7 x64                        |   n       |  n      |     n
+Windows 7 Cygwin                     |   n       |  n      |     n  
+Windows 8.1                          |   n       |  n      |     n
+Windows 8.1 x64                      |   n       |  n      |     n
+Windows 10                           |   n       |  n      |     n
+Windows 10  x64                      |   n       |  n      |     n
+Mac OS X Yosemeti 10.10.5 64-bit     |   n       |  y      |     n
+Mac OS X El Capitan 10.11.6 64-bit   |   n       |  y      |     n
+MacOS High Sierra 10.13.6 64-bit     |   n       |  y      |     n
+AIX 6.1 32- and 64-bit               |   n       |  y      |     n
+CentOS 7.1 Linux 3.10.0 x86_64 PGI   |   n       |  y      |     n  
+CentOS 7.1 Linux 3.10.0 x86_64 GNU   |   y       |  y      |     y
+CentOS 7.1 Linux 3.10.0 x86_64 Intel |   n       |  y      |     n  
+Linux 2.6.32-431.11.2.el6.ppc64      |   n       |  y      |     n
+
+# CGNS version 3.4.0
+
+This document describes the difference between CGNS 3.3.1 and
+CGNS 3.4.0, and contains information on known problems in CGNS 3.4.0.
+
+Links to the CGNS 3.4.0 source code can be found at:
+
+http://cgns.org/download.html
+
+User documentation for the current release can be found at:
+
+http://cgns.org/CGNS_docs_current/midlevel/index.html
+
+For more information, see the CGNS home page:
+
+http://cgns.org
+
+# CONTENTS
+
+New Features
+Bug Fixes since CGNS 3.3.1
+Known Problems
+Supported platforms
+
+# New Features
+## Configuration:
+
+    Enforce the HDF5 version >= 1.8 is used in building HDF5. (CGNS-150).
+    Autotools: CGNS will find and link the compression libraries, szip and zlib, required by HDF5. This 
+    occurs automatically if neither --with-zlib or --with-szip are not specified (CGNS-156).
+
+## Library:
+
+    Changed default CGNS to 1.8 HDF5 file format.
+               -- only for HDF5 versions > 1.10.2.
+    CPEX 40 Rind Plane Indexing (CGNS-87)
+    CPEX 41 NGON modification proposal (CGNS-121)
+
+## Parallel Library:
+
+    None
+
+## Fortran Library:
+
+   Added support for NAG Fortran compilers (CGNS-107)
+
+## Tools:
+
+    None
+
+# Bug Fixes since CGNS 3.3.1 Release
+
+# Configuration:
+
+    * Order include directives to get correct includes, cmake (PR 109) 
+    * make clean does not remove executables in Test_UserGuideCode (CGNS-99)
+    * Windows builds: CGNS_ENABLE_LFS is ignored (CGNS-117)
+    * Sun's make implemenation fails to compile fortran (CGNS-28)
+    * Some systems need to explicitly link to libdl (CGNS-128)
+    * CGNS fails in fortran test with PGI 17 compiler (CGNS-127)
+    * CGNS fails to find the lib64 HDF5 library (CGNS-123)
+    * CGNS fails to compile on Windows with Fortran enabled (CGNS-148)
+    * Can't compile using MSVC & IVF on windows (MSVS 14) (CGNS-146)
+    * Fix szip linking (PR 97)
+    * RPATH handling for MacOSX (Darwin) (PR 88)
+    * fix tests failing when compiled for 64bit (PR 85)
+    * remove variable length array to be able to build pcgnslib.c with VC (CGNS-147)
+    * Build parallel CGNS on Windows (PR 69)
+    * Cmake fixups (PR 58)
+    * If check needs to link, then need library path (PR 52)
+    * Specify STATIC when adding cgns_static lib (PR 46)
+    * _stat32i64 is msvc-specific (PR 45)
+
+# Library:
+
+    * Eliminate potential integer overflow / undefined behavior (PR 106) 
+    * Partial write of unstructured MIXED element sets fails with CGNS > 3.3.1 (CGNS-151)
+    * If processor has no data, set end = start = 0 (CGNS-133)
+    * Large files fail on 64-bit windows (CGNS-83)
+    * mesh_dim may be exceed the limit of 32-bit integer (CGNS-131)
+    * RUNPARALLEL is defined but never used. (CGNS-96)
+    * typo in cgnscheck print_units cg_TemperatureUnitsName index (CGNS-126)
+    * cgp_mpi_comm return value unclear (CGNS-111)
+    * Changed ADFH_Read_Data and ADFH_Write_Data to honor the cgp_pio_mode (PR 98)
+    * Support for std C on linux (PR 96)
+    * Null check fix (PR 94)
+    * Eliminate dead / unreachable code (PR 93)
+    * Fix parallel write (PR 86)
+    * Add missing argument to cgi_error call (PR 84)
+    * Fix BC type string constant FamilySpecified_s (PR 83)
+    * Remove double condition test (PR 82)
+    * remove some gcc warnings (PR 78)
+    * remove variable length array to be able to build pcgnslib.c with VC (PR 76)
+    * Fix bad if test (PR 70)
+    * Eliminate memory leaks in cgi_read_ziter (PR 68)
+    * Improve error messages, fix error check (fixed) (PR 66)
+    * Drop obsolete matherr hack (PR 55)
+
+# Fortran:
+
+    * Add missing dll export symbols from Fortran module. (PR 59)
+
+# Tools:
+
+    * Update cgnsutil.c (PR 89)
+    * patch cgnscheck (PR 72)
+    * Fix cgnsview linking to HDF5 libs. (PR 56)
+
+## Known Problems
+
+When building with PGI and gcc compilers it might be necessary to set the
+environment variables:
+FLIBS="-Wl,--no-as-needed -ldl"
+LIBS="-Wl,--no-as-needed -ldl"
+
+Misc. issues can be found at: https://cgnsorg.atlassian.net
+
+Supported Platforms
+======================
+The following platforms are supported and have been tested for this release.
+They are built with the configure process unless specified otherwise.
+
+
+    Linux 2.6.32-573.22.1.el6     GNU C (gcc), Fortran (gfortran), C++ (g++)
+    #1 SMP x86_64 GNU/Linux       compilers:
+                                 Version 4.4.7 20120313
+                                     Versions 4.9.3, 5.2.0, 6.2.0
+                                  PGI C, Fortran, C++ for 64-bit target on
+                                  x86-64;
+                                      Version 16.10-0
+                                  Intel(R) C (icc), C++ (icpc), Fortran (icc)
+                                  compilers:
+                                     Version 17.0.0.098 Build 20160721
+                                  MPICH 3.1.4 compiled with GCC 4.9.3
+                                  OpenMPI 2.0.1 compiled with GCC 4.9.3
+
+    Linux 2.6.32-573.18.1.el6     gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-16)
+    #1 SMP ppc64 GNU/Linux        g++ (GCC) 4.4.7 20120313 (Red Hat 4.4.7-16)
+                                  GNU Fortran (GCC) 4.4.7 20120313 (Red Hat 4.4.7-16)
+                                  IBM XL C/C++ V13.1
+                                  IBM XL Fortran V15.1
+
+    Linux 3.10.0-327.10.1.el7     GNU C (gcc), Fortran (gfortran), C++ (g++)
+    #1 SMP x86_64 GNU/Linux       compilers:
+                                   Version 4.8.5 20150623 (Red Hat 4.8.5-4)
+                                    Versions 4.9.3, 5.3.0, 6.2.0
+                                  Intel(R) C (icc), C++ (icpc), Fortran (icc)
+                                  compilers:
+                                     Version 17.0.4.196 Build 20170411
+                                  MPICH 3.1.4 compiled with GCC 4.9.3
+
+    SunOS 5.11 32- and 64-bit     Sun C 5.12 SunOS_sparc
+                                  Sun Fortran 95 8.6 SunOS_sparc
+                                  Sun C++ 5.12 SunOS_sparc
+
+    Windows 10 x64                Visual Studio 2015 w/ Intel Fortran 16 (cmake)
+
+    Mac OS X Mt. Lion 10.8.5      Apple LLVM version 5.1 (clang-503.0.40)
+    64-bit                        gfortran GNU Fortran (GCC) 4.8.2
+                               Intel icc/icpc/ifort version 15.0.3
+
+    Mac OS X Mavericks 10.9.5     Apple LLVM version 6.0 (clang-600.0.57)
+    64-bit                        gfortran GNU Fortran (GCC) 4.9.2
+                                   Intel icc/icpc/ifort version 15.0.3
+
+    Mac OS X Yosemite 10.10.5     Apple LLVM version 6.1 (clang-602.0.53)
+    64-bit                        gfortran GNU Fortran (GCC) 4.9.2
+                                  Intel icc/icpc/ifort version 15.0.3
+
+    Mac OS X El Capitan 10.11.4   Apple LLVM version 7.3.0 (clang-703.0.29)
+    64-bit                        gfortran GNU Fortran (GCC) 5.2.0
+                                  Intel icc/icpc/ifort version 16.0.2
+
+Tested Configuration Features Summary
+=====================================
+
+    In the table below
+          y   = tested
+          n   = not tested in this release
+          x   = not working in this release
+          dna = does not apply
+
+Platform                             |  C        | Fortran |  Fortran     
+                                     |  parallel |         |  parallel
+-------------------------------------|-----------|---------|----------
+SunOS 5.11 32-bit                    |   n       |  y      |     n      
+SunOS 5.11 64-bit                    |   n       |  y      |     n
+Windows 7                            |   n       |  n      |     n
+Windows 7 x64                        |   n       |  n      |     n
+Windows 7 Cygwin                     |   n       |  n      |     n  
+Windows 8.1                          |   n       |  n      |     n
+Windows 8.1 x64                      |   n       |  n      |     n
+Windows 10                           |   n       |  n      |     n
+Windows 10  x64                      |   n       |  n      |     n
+Mac OS X Yosemeti 10.10.5 64-bit     |   n       |  y      |     n
+Mac OS X El Capitan 10.11.6 64-bit   |   n       |  y      |     n
+MacOS High Sierra 10.13.6 64-bit     |   n       |  y      |     n
+AIX 6.1 32- and 64-bit               |   n       |  y      |     n
+CentOS 7.1 Linux 3.10.0 x86_64 PGI   |   n       |  y      |     n  
+CentOS 7.1 Linux 3.10.0 x86_64 GNU   |   y       |  y      |     y
+CentOS 7.1 Linux 3.10.0 x86_64 Intel |   n       |  y      |     n  
+Linux 2.6.32-431.11.2.el6.ppc64      |   n       |  y      |     n
+
+CGNS 3.3.1
+============
+
+INTRODUCTION
+===============
+
+This document describes the difference between CGNS 3.3.0 and
+CGNS 3.3.1, and contains information on known problems in CGNS 3.3.1.
+
+Links to the CGNS 3.3.1 source code can be found at:
+
+     http://cgns.org/download.html
+
+User documentation for the current release can be found at:
+
+     http://cgns.org/CGNS_docs_current/midlevel/index.html
+
+For more information, see the CGNS home page:
+
+     http://cgns.org
+
+
+CONTENTS
+============
+
+- New Features
+- Support for new platforms and languages
+- Bug Fixes since CGNS 3.3.0
+- Known Problems
+
+New Features
+==============
+
+    Configuration:
+    ------------------
+     * Windows Parallel CGNS with Fortran enabled, PR-40.
+
+    Library:
+    ------------
+     - None
+
+    Parallel Library:
+    ---------------------
+     - None
+
+    Fortran Library:
+    --------------------
+     - None
+
+    Tools:
+    ----------
+     - None
+
+Bug Fixes since CGNS 3.3.0 Release
+==================================
+
+    Configuration:
+    ------------------
+    * Implement FortranCInterface_HEADER in cmake, CGNS-78.
+    * Cmake target link libraries need to be set on systems other than just WIN32 and CYGWIN, CGNS-64.
+    * Support Mac's dylib shared library suffix with CMake, CGNS-61.
+    * CMake needs to be updated to handle new fortran features, CGNS-10.
+    * Add missing dependency in cgns_to_plot3d (cmake build), CGNS-16.
+    * Add missing include path, fix hdf5, PR 18.
+    
+    Library:
+    ------------
+    * Hang in parallel read/write, CGNS-105.
+    * Header files contain functions not existing in code, CGNS-115.
+    * Fixes for CGNS-83: Large files fail on 64-bit windows.
+    * Remove incorrect semicolon, PR-13.
+    * Add missing close paren, PR-15.
+    * Fix incorrect structured field array access -- cut paste error, PR-17.
+    * Fix a few missing CGNS_ENUMV uses, PR-20.
+    * Fix to avoid hang due to collective requirement, PR-21.
+    * Freeing incorrect pointer, PR-23
+    * Initialize err, add missing return, PR-25.
+    * Handle case where wbuf or rbuf is NULL, PR-26.
+    * Tests can run with ENUM_SCOPING enabled, PR-34.
+    * Implementation and test for cgp_parent_data_write, PR-36.
+    * Add cmake support for memory debugging; fix memory debug routines, PR-39.
+    
+
+    Fortran:
+    ------------
+    * Missing C binding for cg_conversion_write_f
+    
+    Tools:
+    ----------
+    * cgnsconvert fails to process a file written by the parallel CGNS library, CGNS-77.
+
+
+Known Problems
+================
+
+   * When building with PGI and gcc compilers it might be necassary to set the
+     environment variables:
+            FLIBS="-Wl,--no-as-needed -ldl"
+            LIBS="-Wl,--no-as-needed -ldl"
+
+Supported Platforms
+======================
+The following platforms are supported and have been tested for this release.
+They are built with the configure process unless specified otherwise.
+
+
+    Linux 2.6.32-573.22.1.el6     GNU C (gcc), Fortran (gfortran), C++ (g++)
+    #1 SMP x86_64 GNU/Linux       compilers:
+                                 Version 4.4.7 20120313
+                                     Versions 4.9.3, 5.2.0, 6.2.0
+                                  PGI C, Fortran, C++ for 64-bit target on
+                                  x86-64;
+                                      Version 16.10-0
+                                  Intel(R) C (icc), C++ (icpc), Fortran (icc)
+                                  compilers:
+                                     Version 17.0.0.098 Build 20160721
+                                  MPICH 3.1.4 compiled with GCC 4.9.3
+                                  OpenMPI 2.0.1 compiled with GCC 4.9.3
+
+    Linux 2.6.32-573.18.1.el6     gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-16)
+    #1 SMP ppc64 GNU/Linux        g++ (GCC) 4.4.7 20120313 (Red Hat 4.4.7-16)
+                                  GNU Fortran (GCC) 4.4.7 20120313 (Red Hat 4.4.7-16)
+                                  IBM XL C/C++ V13.1
+                                  IBM XL Fortran V15.1
+
+    Linux 3.10.0-327.10.1.el7     GNU C (gcc), Fortran (gfortran), C++ (g++)
+    #1 SMP x86_64 GNU/Linux       compilers:
+                                   Version 4.8.5 20150623 (Red Hat 4.8.5-4)
+                                    Versions 4.9.3, 5.3.0, 6.2.0
+                                  Intel(R) C (icc), C++ (icpc), Fortran (icc)
+                                  compilers:
+                                     Version 17.0.4.196 Build 20170411
+                                  MPICH 3.1.4 compiled with GCC 4.9.3
+
+    SunOS 5.11 32- and 64-bit     Sun C 5.12 SunOS_sparc
+                                  Sun Fortran 95 8.6 SunOS_sparc
+                                  Sun C++ 5.12 SunOS_sparc
+
+    Windows 10 x64                Visual Studio 2015 w/ Intel Fortran 16 (cmake)
+
+    Mac OS X Mt. Lion 10.8.5      Apple LLVM version 5.1 (clang-503.0.40)
+    64-bit                        gfortran GNU Fortran (GCC) 4.8.2
+                               Intel icc/icpc/ifort version 15.0.3
+
+    Mac OS X Mavericks 10.9.5     Apple LLVM version 6.0 (clang-600.0.57)
+    64-bit                        gfortran GNU Fortran (GCC) 4.9.2
+                                   Intel icc/icpc/ifort version 15.0.3
+
+    Mac OS X Yosemite 10.10.5     Apple LLVM version 6.1 (clang-602.0.53)
+    64-bit                        gfortran GNU Fortran (GCC) 4.9.2
+                                  Intel icc/icpc/ifort version 15.0.3
+
+    Mac OS X El Capitan 10.11.4   Apple LLVM version 7.3.0 (clang-703.0.29)
+    64-bit                        gfortran GNU Fortran (GCC) 5.2.0
+                                  Intel icc/icpc/ifort version 16.0.2
+
+Tested Configuration Features Summary
+=====================================
+
+    In the table below
+          y   = tested
+          n   = not tested in this release
+          x   = not working in this release
+          dna = does not apply
+
+Platform                             |  C        | F90/  |  F90     
+                                     |  parallel | F2003 |  parallel
+-------------------------------------|-----------|-------|----------
+SunOS 5.11 32-bit                    |   n      |  y/y       n      
+SunOS 5.11 64-bit                    |   n      |  y/y    |  n      
+Windows 7                            |   n      |  n/n    |  n      
+Windows 7 x64                        |   n      |  n/n    |  n      
+Windows 7 Cygwin                     |   n      |  n/n    |  n      
+Windows 8.1                          |   n      |  n/n    |  n      
+Windows 8.1 x64                      |   n      |  n/n    |  n        
+Windows 10                           |   n      |  n/n    |  n      
+Windows 10  x64                      |   n      |  n/n    |  n      
+Mac OS X Mountain Lion 10.8.5 64-bit |   n      |  y/y    |  n      
+Mac OS X Mavericks 10.9.5 64-bit     |   n      |  y/y    |  n     
+Mac OS X Yosemeti 10.10.5 64-bit     |   n      |  y/y    |  n     
+AIX 6.1 32- and 64-bit               |   n      |  y/n    |  n    
+CentOS 6.7 Linux 2.6.32 x86_64 GNU   |   y      |  y/y    |  y    
+CentOS 6.7 Linux 2.6.32 x86_64 Intel |   n      |  y/y    |  n    
+CentOS 6.7 Linux 2.6.32 x86_64 PGI   |   n      |  y/y    |  n    
+CentOS 7.1 Linux 3.10.0 x86_64 GNU   |   y      |  y/y    |  y    
+CentOS 7.1 Linux 3.10.0 x86_64 Intel |   n      |  y/y    |  n    
+Linux 2.6.32-431.11.2.el6.ppc64      |   n      |  y/n    |  n
+
+CGNS 3.3.0
+============
+
+INTRODUCTION
+===============
+
+This document describes the difference between CGNS 3.2.1 and
+CGNS 3.3.0, and contains information on known problems in CGNS 3.3.0.
+
+Links to the CGNS 3.3.0 source code can be found at:
+
+     http://cgns.org/download.html
+
+User documentation for the current release can be found at:
+
+     http://cgns.org/CGNS_docs_current/midlevel/index.html
+
+For more information, see the CGNS home page:
+
+     http://cgns.org
+
+
+CONTENTS
+============
+
+- New Features
+- Support for new platforms and languages
+- Bug Fixes since CGNS 3.2.1
+- Known Problems
+
+New Features
+==============
+
+    Configuration:
+    ------------------
+    * Example build scripts for supercomputer systems can be found in src/SampleScripts 
+      of the CGNS source code. They include scripts for building zlib, 
+      hdf5 (assuming the user does not already have them installed system wide) 
+      and a script for building CGNS. All the scripts use autotools; cmake remains untested.
+
+    * The Fortran compiler environment variable can now be set with "FC", this is the preferred
+      method.
+
+    * The Fortran compiler flags can now be set with "FCFLAGS", this is the preferred method.
+      If both FFLAGS (which predates FCFLAGS) and FCFLAGS are set then FCFLAGS is ignored. (CGNS-23)
+
+    Library:
+    ------------
+    * Replaced the hid_t to double (and vice-versa) utilities to_HDF_ID and to_ADF_ID 
+      from a type cast to a function which uses memcpy for the conversion. This is needed 
+      for the upcoming release of HDF5 1.10 where hid_t was changed from a 32 bit integer 
+      to a 64 bit integer. Should be transparent to user.
+
+    * Implemented CPEX0039 : To enable with CGNS_ENABLE_BASE_SCOPE
+
+    * Implemented CPEX0038 : Quadratic Elements for High Order
+
+
+    Parallel Library:
+    ---------------------
+    * The default parallel input/output mode was changed from CGP_INDEPENDENT 
+      to CGP_COLLECTIVE.
+
+    * A new function was added for passing MPI info to the CGNS library:
+      cgp_mpi_info (cgp_mpi_info_f)
+
+    * A new parallel example benchmark program, benchmark_hdf5.c, was added 
+      to directory ptests.
+
+    * The cgp_*_read/write_dataset APIs now excepts non-allocated arrays, or NULL, 
+      as valid parameters for the datasets. Additionally, the dimensional arrays, 
+      rmin and rmax, can also be NULL. If the data array is NULL and the dimensional 
+      arrays are not NULL, then the validity of the dimensional arrays, rmin and rmax, 
+      is not checked. For collective parallel IO, this is used as a mechanism to 
+      indicated that processes with NULL API parameters will not write any data to the file.
+
+    * cgp_queue_set and cgp_queue_flush were depreciated in this release.
+
+    Fortran Library:
+    --------------------
+    * SUPPORT WAS DROPPED FOR NON-FORTRAN 2003 COMPLIANT COMPILERS.
+
+    * Configure was changed to check if the Fortran compiler is Fortran 2003 compliant.
+
+    * The predefined CGNS constant parameters data types were changed from 
+      INTEGER to ENUM, BIND(C) for better C interoperability. The users should use the 
+      predefined constants whenever possible and not the numerical value represented by 
+      the constants. A variable expecting an enum value returned from a Fortran API should be 
+      declared, INTEGER(cgenum_t).
+
+    * INCLUDE "cgslib_h" was changed in favor of using a module, USE CGNS.
+      - This allows defining a KIND type for integers instead of 
+        the current way of using the preprocessor dependent cgsize_t.
+
+    * The user should be sure to declare the arguments 
+      declared int in the C APIs as INTEGER in Fortran. The ONLY 
+      Fortran arguments declared as type cgsize_t should be the 
+      arguments which are also declared cgsize_t in the C APIs. This 
+      is very important when building with option --enable-64bit. The 
+      test programs were updated in order to conform to this convention.
+
+    * Assuming the rules in step [enu:int64] were followed, users 
+      should not need to use parameter CG_BUILD_64BIT since Fortran's 
+      cgsize_t is now guaranteed to match C's cgsize_t. 
+
+    * Fortran programs defining CGNS data types with a default 
+      INTEGER size of 8 bytes also then need to compile the CGNS 
+      library with the default INTEGER size of 8 bytes. This is 
+      independent of whether or not --enable-64bit is being used. For 
+      clarification, using --enable-64bit allows for data types (i.e. 
+      those declared as cgsize_t) to be able to store values which 
+      are too large to be stored as 4 byte integers (i.e. numbers 
+      greater than 2,147,483,647). It is not necessary, or advisable 
+      (since it waste memory), to have CGNS INTEGER types (types 
+      declared int in C) to be 8 bytes; the variables declared as 
+      cgsize_t will automatically handle data types that can not be 
+      stored as 4 byte integers when --enable-64bit is being used. If 
+      the CGNS library was not compiled with a default INTEGER of 8 
+      bytes, but the calling program was, then all integers passed to 
+      CGNS with C type int should be declared INTEGER(C_INT).   
+
+    * A new Fortran API was added for determining the CGNS data type of a 
+      variable which is interoperable with the C data type. 
+
+      Function cg_get_type(var)
+         type, INTENT(IN) :: var
+         INTEGER(KIND(enumvar)) :: cg_get_type
+
+      An example of using the new function to automatically specify the CGNS 
+      type corresponding to the Fortran data type is,
+
+         INTEGER, DIMENSION(1:10) :: Array_i
+         CALL cgp_array_write_f("ArrayI",cg_get_type(Array_i(1)),1,INT(nijk(1),cgsize_t),Ai, err)
+
+    * Removed all parallel flush/queue functions (CGNS-9)
+
+    * Removed support of "include cgns_f.h", all examples and tests were updated to reflect these changes (CGNS-34)
+
+    Tools:
+    ----------
+     - None
+
+Bug Fixes since CGNS 3.2.1 release
+==================================
+
+    Configuration:
+    ------------------
+    * Fixed issue with autotools putting a blank "-l" in "MPILIBS =" when compiling the library
+      using mpi.
+
+    * Added a new PGI fortran compiler flag fix issue when  passing to C varags (CGNS-40)
+
+    * CMake find_package was added for HDF5, users should use -D CMAKE_PREFIX_PATH=$HDF_DIR to
+      specify a specific version of HDF5.
+
+
+    Library:
+    ------------
+
+    * Generally improved the performance of cgp_open (cgp_open_f).
+
+    * Fixed elemtest.c to compile for SunOS 5.12 (CGNS-29)
+
+    * Fixed parallel issue when not all processors involved in reading/writing (CGNS-51)
+    
+    * Fixed argument being passed to H5Pget_driver in ADFH.c (CGNS-50)
+
+    * Fixed issue with writing/reading 4D and higher arrays in parallel (CGNS-19) 
+
+    Fortran:
+    ------------
+
+    * cgio_link_size_f -- file_len and name_len were changed from cgsize_t to integer to match the C API, CGNS-37.
+
+    * cgio_is_link_f -- cgio_num was changed from type cgsize_t to an integer to match the C API, CGNS-36.
+
+    * cgio_is_supported_f -- ier changed from cgsize_t to integer to match the C API, CGNS-35.
+
+    * Added PGI flag to fix cg_goto_f failing with the PGI compilers on x86_64 platforms, CGNS-40.
+
+
+    Tools:
+    ----------
+    * None
+
+Known Problems
+================
+
+   * Building CGNS with Fortran enabled is not working on Windows.
+   * When building with PGI and gcc compilers it might be necassary to set the
+     environment variables:
+            FLIBS="-Wl,--no-as-needed -ldl"
+            LIBS="-Wl,--no-as-needed -ldl"
+
+Supported Platforms
+======================
+The following platforms are supported and have been tested for this release.
+They are built with the configure process unless specified otherwise.
+
+    Linux 2.6.32-573.3.1.el6      GNU C (gcc), Fortran (gfortran)   compilers:
+    #1 SMP x86_64 GNU/Linux          Version 4.4.7 20120313 
+    (platypus)                       Version 4.8.4, Version 5.2.0
+                                  PGI C, Fortran for 64-bit target on x86-64;
+                                      Version 15.7-0
+                                  Intel(R) C (icc), C++ (icpc), Fortran (icc)
+                                  compilers:
+                                     Version 15.0.3.187 Build 20150407
+                                  MPICH 3.1.4 compiled with GCC 4.9.3
+
+    Linux 2.6.32-504.8.1.el6.ppc64 gcc (GCC) 4.4.7 20120313 (Red Hat 4.4.7-11)
+    #1 SMP ppc64 GNU/Linux         GNU Fortran (GCC) 4.4.7 20120313 (Red Hat 4.4.7-11)
+    (ostrich)                      IBM XL C/C++ V13.1
+                                   IBM XL Fortran V15.1
+                                  
+
+    Linux 3.10.0-229.14.1.el7   GNU C (gcc), Fortran (gfortran)
+    #1 SMP x86_64 GNU/Linux       compilers:
+    (kituo/moohan)                  Version 4.8.3 20140911 (Red Hat 4.8.3-9)
+                                    Version 5.2.0
+                                  Intel(R) C (icc), Fortran (icc)
+                                  compilers:
+                                     Version 15.0.3.187 Build 20150407
+                                  MPICH 3.1.4 compiled with GCC 4.9.3
+
+    SunOS 5.11 32- and 64-bit     Sun C 5.12 SunOS_sparc
+    (emu)                         Sun Fortran 95 8.6 SunOS_sparc
+
+    Mac OS X Yosemite 10.10.5     Apple clang/clang++ version 6.0 from Xcode 7.0.0
+    64-bit                        gfortran GNU Fortran (GCC) 4.9.2
+    (osx1010dev/osx1010test)      Intel icc/icpc/ifort version 15.0.3
+
+Tested Configuration Features Summary
+=====================================
+
+    In the table below
+          y   = tested
+          n   = not tested in this release
+          x   = not working in this release
+          dna = does not apply
+
+Platform                             |  C        | F90/  |  F90     
+                                     |  parallel | F2003 |  parallel
+-------------------------------------|-----------|-------|----------
+SunOS 5.11 32-bit                    |   n      |  y/y       n      
+SunOS 5.11 64-bit                    |   n      |  y/y    |  n      
+Windows 7                            |   n      |  x/x    |  n      
+Windows 7 x64                        |   n      |  x/x    |  n      
+Windows 7 Cygwin                     |   n      |   x/x   |  n      
+Windows 8.1                          |   n      |  x/x    |  n      
+Windows 8.1 x64                      |   n      |  x/x    |  n        
+Windows 10                           |   n      |  x/x    |  n      
+Windows 10  x64                      |   n      |  x/x    |  n      
+Mac OS X Mountain Lion 10.8.5 64-bit |   n      |  y/y    |  n      
+Mac OS X Mavericks 10.9.5 64-bit     |   n      |  y/y    |  n     
+Mac OS X Yosemeti 10.10.5 64-bit     |   n      |  y/y    |  n     
+AIX 6.1 32- and 64-bit               |   n      |  y/n    |  n    
+CentOS 6.7 Linux 2.6.32 x86_64 GNU   |   y      |  y/y    |  y    
+CentOS 6.7 Linux 2.6.32 x86_64 Intel |   n      |  y/y    |  n    
+CentOS 6.7 Linux 2.6.32 x86_64 PGI   |   n      |   y/y   |  n    
+CentOS 7.1 Linux 3.10.0 x86_64 GNU   |   y      |  y/y    |  y    
+CentOS 7.1 Linux 3.10.0 x86_64 Intel |   n      |  y/y    |  n    
+Linux 2.6.32-431.11.2.el6.ppc64      |   n      |  y/n    |  n
+
+== 3.2.1 ==
+- fixed problem with IS_FIXED_SIZE macro for cubic elements
+- added check for open file to routines that don't take
+  a file number (suggestion from Marc Poinet)
+- added HTMLHelp interface to cmake scripts
+- added AdditionalFamilyName to UserDefinedData
+- fixed compiler complaint about comparison between int and enum
+- added routines to set MPI communicator for parallel I/O
+- updated CMake scripts to work within other scripts (remove conflicts)
+- updates to some cgnstools utility conversion routines
+- fixes and updates to tests and cgnscheck
+- updates to support CG_FILE_ADF2 (2.5 compatibility)
+- fix for point set subregions
+
+== 3.2 ===
+- full integration of parallel I/O using HDF5 with MPI
+- implemented CPEX 0033 and 0034
+- compression (rewriting) of file to remove unused space is no
+  longer automatically done, since may interfere with parallel I/O.
+  Added cgnscompress program to tools to do this afterwards.
+- removed cgnsversion program from tools since support was getting
+  out of hand (N squared problem with versions).
+- added routines to convert to and from AFLR3, FAST, and TetGen
+- implemented cubic elements (CPEX 0036)
+- CGNStools documentation no longer included with source.
+  The NASA Glenn website (or local copy) is now used instead.
+
+== 3.1.4-2 ==
+- fixes to cmake scripts for Fortran
+- added check for open file to routines that don't take
+  a file number (suggestion from Marc Poinet)
+- CGNStools documentation no longer included with source.
+  The NASA Glenn website (or local copy) is now used instead.
+- save window size for cgnsview
+- fix to computing path lists in CMake script
+
+== 3.1.4 ==
+- added some const definitions to library
+- moved unlink of filename when using CG_MODE_WRITE on open to cgio
+- fixed goto for FamilyBCDataset for UserData, .etc
+- added cg_get_cgio_f and cg_root_id_f Fortran routines
+- fixed cmake and configure scripts to allow MPI with HDF5 and
+  fixed bugs in those scripts
+- updated CGNSplot to handle all element types and 1-d and 2-d cases
+- fixes to cgnscheck
+- cleaned up some compiler warnings
+- added cgnsBuild.defs Makefile include to installation
+- removed unneeded tools directory from cgnstools
+- cgnstools no longer built automatically - need to set configure flag
+- allow CellCenter for BCs
+- added cg_precision and cg_precision_f functions to get integer
+  size used to create the file (32 or 64)
+
+== 3.0.8 ==
+- Fix flag
+- Test for v3.0 release
+
+== 3.0.7 ==
+- Internal updates
+
+== 3.0.6 ==
+- Internal updates
+
+== 3.0.5 ==
+- Added install.txt and install.lyx
+- Added readme.txt and readme.lyx
+- Re-integrated the automake build system into the src directory
+  so that the old build system can be used by invoking ./configure
+  make, make install in the src directory.
+- Added license.txt
+
+== 3.0.4 ==
+- Fixed a compilation problem with gcc-4.1
+
+== 3.0.3
+- Internal debugging release
+
+== 3.0.2 ==
+- Fixed BUILD_HDF5 flag in CMakeLists.txt
+- Fixed file prop list scope problem in ADFH.c

@@ -5,6 +5,10 @@
 # Link all the executables to cgns and hdf5
 if (CGNS_USE_SHARED)
   link_libraries(cgns_shared)
+  if (WIN32 OR CYGWIN)
+    target_compile_definitions(cgns_shared PRIVATE -DBUILD_DLL)
+    target_compile_definitions(cgns_shared INTERFACE -DUSE_DLL)
+  endif (WIN32 OR CYGWIN)
 else (CGNS_USE_SHARED)
   link_libraries(cgns_static)
 endif (CGNS_USE_SHARED)

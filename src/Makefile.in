@@ -21,6 +21,7 @@ FOPTS_MOD=$(subst -D,$(D_PRE)-D,$(FOPTS))
 
 CGNSOBJS=\
 	$(OBJDIR)/cgns_error.$(O) \
+	$(OBJDIR)/cg_hashmap.$(O) \
 	$(OBJDIR)/cgns_internals.$(O) \
 	$(OBJDIR)/cgns_io.$(O) \
 	$(OBJDIR)/cgnslib.$(O)
@@ -205,16 +206,19 @@ uninstall :
 $(OBJDIR)/cgns_error.$(O) : cgns_error.c cgnslib.h cgns_header.h cgns_io.h
 	$(CC) $(COPTS) $(COOUT)$@ -c cgns_error.c
 
-$(OBJDIR)/cgns_internals.$(O) : cgns_internals.c cgnslib.h cgns_header.h \
+$(OBJDIR)/cg_hashmap.$(O) : cg_hashmap.c cg_hashmap.h cg_hash_types.h
+	$(CC) $(COPTS) $(HDF5INC) $(COOUT)$@ -c cg_hashmap.c
+
+$(OBJDIR)/cgns_internals.$(O) : cgns_internals.c cg_hashmap.h cgnslib.h cgns_header.h \
 	cgns_io.h
 	$(CC) $(COPTS) $(HDF5INC) $(COOUT)$@ -c cgns_internals.c
 
-$(OBJDIR)/cgnslib.$(O) : cgnslib.c cgnslib.h cgns_header.h cgns_io.h
+$(OBJDIR)/cgnslib.$(O) : cgnslib.c cgnslib.h cgns_header.h cgns_io.h cg_hashmap.h
 	$(CC) $(COPTS) $(HDF5INC) $(MPIINC) $(COOUT)$@ -c cgnslib.c
 
 $(OBJDIR)/cgns_io.$(O) : cgns_io.c cgnslib.h cgns_io.h \
 	adf/ADF.h @ADFINCS@
-	$(CC) $(COPTS) $(COOUT)$@ -c cgns_io.c
+	$(CC) $(COPTS) $(HDF5INC) $(COOUT)$@ -c cgns_io.c
 
 $(OBJDIR)/cg_ftoc.$(O) : cg_ftoc.c fortran_macros.h cgnslib.h \
 	cgns_header.h cgns_io.h

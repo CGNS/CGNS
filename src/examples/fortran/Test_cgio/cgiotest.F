@@ -179,7 +179,7 @@ c      CALL ADFGND(PID,NUMDIM,IERR)
 c      CALL ADFGDV(PID,IDIM,IERR)
       call cgio_get_dimensions_f(cgnum,pid,numdim,idim,ierr)
 c      CALL ADFRALL(PID,B,IERR)
-      call cgio_read_all_data_f(cgnum,pid,b,ierr)
+      call cgio_read_all_data_type_f(cgnum,pid,dtype,b,ierr)
       PRINT *,    ' NODE F3 THROUGH LINK L3:'
       PRINT *,    '   LABEL       = ',TSTLBL
       PRINT *,    '   DATA TYPE   = ',DTYPE
@@ -203,7 +203,7 @@ c      CALL ADFGND(PID,NUMDIM,IERR)
 c      CALL ADFGDV(PID,IDIMD,IERR)
       call cgio_get_dimensions_f(cgnum,pid,numdim,idimd,ierr)
 c      CALL ADFRALL(PID,ID,IERR)
-      call cgio_read_all_data_f(cgnum,pid,id,ierr)
+      call cgio_read_all_data_type_f(cgnum,pid,dtype,id,ierr)
       PRINT *,    ' '
       PRINT *,    ' NODE N13:'
       PRINT *,    '   LABEL       = ',TSTLBL
@@ -221,7 +221,7 @@ c      CALL ADFGNID(RID,'N3/N10/L1',TMPID,IERR)
 c      CALL ADFGLB(TMPID,TSTLBL,IERR)
       call cgio_get_label_f(cgnum,tmpid,tstlbl,ierr)
 c      CALL ADFRALL(TMPID,ID,IERR)
-      call cgio_read_all_data_f(cgnum,tmpid,id,ierr)
+      call cgio_read_all_data_type_f(cgnum,tmpid,dtype,id,ierr)
       PRINT *,' '
       PRINT *,' NODE N13 THROUGH LINK L1:'
       PRINT *,'   LABEL       = ',TSTLBL
@@ -235,7 +235,7 @@ c      CALL ADFGNID(RID,'N3/N11/L2',CID,IERR)
 c      CALL ADFGLB(CID,TSTLBL,IERR)
       call cgio_get_label_f(cgnum,cid,tstlbl,ierr)
 c      CALL ADFRALL(CID,ID,IERR)
-      call cgio_read_all_data_f(cgnum,cid,id,ierr)
+      call cgio_read_all_data_type_f(cgnum,cid,dtype,id,ierr)
       PRINT *,' '
       PRINT *,' NODE N13 THROUGH LINK L2:'
       PRINT *,'   LABEL       = ',TSTLBL

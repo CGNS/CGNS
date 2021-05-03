@@ -52,7 +52,7 @@
 #define ADF_STATUS_LENGTH	    32
 #define ADF_VERSION_LENGTH	    32
 
-#define NO_ERROR		       -1
+#define NO_ERROR		        0
 #define NUMBER_LESS_THAN_MINIMUM	1
 #define NUMBER_GREATER_THAN_MAXIMUM	2
 #define STRING_LENGTH_ZERO		3
@@ -126,7 +126,7 @@
 #define ADFH_ERR_NO_ATT		       71
 #define ADFH_ERR_AOPEN		       72
 #define ADFH_ERR_IGET_NAME	       73
-#define ADFH_ERR_GMOVE		       74
+#define ADFH_ERR_LMOVE		       74
 #define ADFH_ERR_GUNLINK	       75
 #define ADFH_ERR_GOPEN		       76
 #define ADFH_ERR_DGET_SPACE	       77
@@ -167,8 +167,12 @@
 
 /* configuration options */
 
-#define ADFH_CONFIG_COMPRESS 1
-#define ADFH_CONFIG_MPI_COMM 2
+#define ADFH_CONFIG_COMPRESS   1
+#define ADFH_CONFIG_MPI_COMM   2
+#define ADFH_CONFIG_CORE       3
+#define ADFH_CONFIG_CORE_INCR  4
+#define ADFH_CONFIG_CORE_WRITE 5
+
 
 /***********************************************************************
 	Prototypes for Interface Routines
@@ -369,7 +373,8 @@ EXTERN	void	ADFH_Read_Block_Data(
 			const double ID,
 			const cgsize_t b_start,
 			const cgsize_t b_end,
-			char *data,
+                        const char *m_data_type,
+			void *data,
 			int *error_return ) ;
 
 EXTERN	void	ADFH_Read_Data(
@@ -377,12 +382,12 @@ EXTERN	void	ADFH_Read_Data(
 			const cgsize_t s_start[],
 			const cgsize_t s_end[],
 			const cgsize_t s_stride[],
-                        const char *m_data_type,
 			const int m_num_dims,
 			const cgsize_t m_dims[],
 			const cgsize_t m_start[],
 			const cgsize_t m_end[],
 			const cgsize_t m_stride[],
+                        const char *m_data_type,
 			char *data,
 			int *error_return ) ;
 

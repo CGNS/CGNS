@@ -3,6 +3,10 @@
 #########
 
 include_directories(${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH})
+include_directories(../common)
+if (X11_FOUND)
+  include_directories(${X11_INCLUDE_DIR})
+endif(X11_FOUND)
 
 set(tkogl_FILES 
 	tkogl.c

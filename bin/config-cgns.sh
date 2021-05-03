@@ -8,7 +8,10 @@ OPTS=""
 if [ $TRAVIS_OS_NAME = "linux" ]; then
   export FLIBS="-Wl,--no-as-needed -ldl"
   export LIBS="-Wl,--no-as-needed -ldl"
-  OPTS="--enable-parallel"
+  OPTS="--enable-parallel --enable-cgnstools --with-tcl=/usr/lib --with-tk=/usr/lib"
+  autoconf
+else
+  OPTS="--disable-cgnstools"
 fi
 
 ./configure \
@@ -16,11 +19,8 @@ fi
 --with-hdf5=$HOME/hdf5 \
 --with-fortran \
 --enable-lfs \
---enable-64bit \
 --disable-shared \
---enable-debug \
---disable-cgnstools \
---enable-64bit
+--enable-debug
 
 
 

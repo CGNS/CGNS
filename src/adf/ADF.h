@@ -250,6 +250,7 @@ EXTERN	void	ADF_Put_Name(
 
 EXTERN	void	ADF_Read_All_Data(
 			const double ID,
+                        const char *m_data_type,
 			char *data,
 			int *error_return ) ;
 
@@ -270,6 +271,7 @@ EXTERN	void	ADF_Read_Data(
 			const cgsize_t m_start[],
 			const cgsize_t m_end[],
 			const cgsize_t m_stride[],
+                        const char *m_data_type,
 			char *data,
 			int *error_return ) ;
 

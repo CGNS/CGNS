@@ -1,11 +1,11 @@
-#include <string.h>
-#include <tk.h>
 #if defined(__WIN32__) || defined(_WIN32)
 #   define WIN32_LEAN_AND_MEAN
 #   include <windows.h>
 #   undef WIN32_LEAN_AND_MEAN
 #endif
-#include <GL/gl.h>
+#include <string.h>
+#include <tk.h>
+#include "gl_config.h"
 
 typedef enum {
    INTVAL,

@@ -621,6 +621,8 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+SIZEOF_VOID_P
+SIZEOF_LONG
 LIBRARY_PATH_SPEC
 TK_LIBRARY_SPEC
 TCL_LIBRARY_SPEC
@@ -691,6 +693,7 @@ CGNSVERS
 SYSTEM
 CGLONGT
 CGNSTOOLS
+HAVE_COMPLEX_C99_EXT
 BUILDBASESCOPE
 BUILDPARALLEL
 FC_D_PRE
@@ -776,6 +779,7 @@ with_system
 enable_64bit
 enable_legacy
 enable_scope
+enable_basescope
 with_fortran
 enable_shared
 with_hdf5
@@ -1419,7 +1423,7 @@ Optional Features:
   --enable-64bit          enable 64bit support (where applicable)
   --enable-legacy         build legacy code default=no
   --enable-scope          scope enumerations values default=no
-  --enable-scope          base scope for family/zone ref-to default=no
+  --enable-basescope          base scope for family/zone ref-to default=no
   --enable-shared=all   build a shared library default=no
   --enable-parallel       enable parallel IO support default=no
   --enable-lfs            enable large file support default=no
@@ -3630,8 +3634,7 @@ fi
 done
 
     else
-      if test $use_gcc = yes; then
-        for ac_prog in g77 f77 f90 f95 f2c
+      for ac_prog in f90 f95 f2c
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -3673,55 +3676,11 @@ fi
   test -n "$F77" && break
 done
 
-      else
-        for ac_prog in f77 f90 f95 g77 f2c
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_F77+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$F77"; then
-  ac_cv_prog_F77="$F77" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_F77="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-F77=$ac_cv_prog_F77
-if test -n "$F77"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $F77" >&5
-$as_echo "$F77" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$F77" && break
-done
-
-      fi
     fi
   fi
   if test -z "$F77"; then
     has_f77=no
-    F77=f77
+    F77=f90
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: no Fortran compiler was found" >&5
 $as_echo "$as_me: WARNING: no Fortran compiler was found" >&2;}
   else
@@ -4577,6 +4536,226 @@ fi
 test "$ac_cv_type_size_t" = "no" && \
   CFGFLAGS="$CFGFLAGS -Dsize_t=unsigned"
 
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $CC option to accept ISO C99" >&5
+$as_echo_n "checking for $CC option to accept ISO C99... " >&6; }
+if ${ac_cv_prog_cc_c99+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_cv_prog_cc_c99=no
+ac_save_CC=$CC
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <wchar.h>
+#include <stdio.h>
+
+// Check varargs macros.  These examples are taken from C99 6.10.3.5.
+#define debug(...) fprintf (stderr, __VA_ARGS__)
+#define showlist(...) puts (#__VA_ARGS__)
+#define report(test,...) ((test) ? puts (#test) : printf (__VA_ARGS__))
+static void
+test_varargs_macros (void)
+{
+  int x = 1234;
+  int y = 5678;
+  debug ("Flag");
+  debug ("X = %d\n", x);
+  showlist (The first, second, and third items.);
+  report (x>y, "x is %d but y is %d", x, y);
+}
+
+// Check long long types.
+#define BIG64 18446744073709551615ull
+#define BIG32 4294967295ul
+#define BIG_OK (BIG64 / BIG32 == 4294967297ull && BIG64 % BIG32 == 0)
+#if !BIG_OK
+  your preprocessor is broken;
+#endif
+#if BIG_OK
+#else
+  your preprocessor is broken;
+#endif
+static long long int bignum = -9223372036854775807LL;
+static unsigned long long int ubignum = BIG64;
+
+struct incomplete_array
+{
+  int datasize;
+  double data[];
+};
+
+struct named_init {
+  int number;
+  const wchar_t *name;
+  double average;
+};
+
+typedef const char *ccp;
+
+static inline int
+test_restrict (ccp restrict text)
+{
+  // See if C++-style comments work.
+  // Iterate through items via the restricted pointer.
+  // Also check for declarations in for loops.
+  for (unsigned int i = 0; *(text+i) != '\0'; ++i)
+    continue;
+  return 0;
+}
+
+// Check varargs and va_copy.
+static void
+test_varargs (const char *format, ...)
+{
+  va_list args;
+  va_start (args, format);
+  va_list args_copy;
+  va_copy (args_copy, args);
+
+  const char *str;
+  int number;
+  float fnumber;
+
+  while (*format)
+    {
+      switch (*format++)
+	{
+	case 's': // string
+	  str = va_arg (args_copy, const char *);
+	  break;
+	case 'd': // int
+	  number = va_arg (args_copy, int);
+	  break;
+	case 'f': // float
+	  fnumber = va_arg (args_copy, double);
+	  break;
+	default:
+	  break;
+	}
+    }
+  va_end (args_copy);
+  va_end (args);
+}
+
+int
+main ()
+{
+
+  // Check bool.
+  _Bool success = false;
+
+  // Check restrict.
+  if (test_restrict ("String literal") == 0)
+    success = true;
+  char *restrict newvar = "Another string";
+
+  // Check varargs.
+  test_varargs ("s, d' f .", "string", 65, 34.234);
+  test_varargs_macros ();
+
+  // Check flexible array members.
+  struct incomplete_array *ia =
+    malloc (sizeof (struct incomplete_array) + (sizeof (double) * 10));
+  ia->datasize = 10;
+  for (int i = 0; i < ia->datasize; ++i)
+    ia->data[i] = i * 1.234;
+
+  // Check named initializers.
+  struct named_init ni = {
+    .number = 34,
+    .name = L"Test wide string",
+    .average = 543.34343,
+  };
+
+  ni.number = 58;
+
+  int dynamic_array[ni.number];
+  dynamic_array[ni.number - 1] = 543;
+
+  // work around unused variable warnings
+  return (!success || bignum == 0LL || ubignum == 0uLL || newvar[0] == 'x'
+	  || dynamic_array[ni.number - 1] != 543);
+
+  ;
+  return 0;
+}
+_ACEOF
+for ac_arg in '' -std=gnu99 -std=c99 -c99 -AC99 -D_STDC_C99= -qlanglvl=extc99
+do
+  CC="$ac_save_CC $ac_arg"
+  if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_prog_cc_c99=$ac_arg
+fi
+rm -f core conftest.err conftest.$ac_objext
+  test "x$ac_cv_prog_cc_c99" != "xno" && break
+done
+rm -f conftest.$ac_ext
+CC=$ac_save_CC
+
+fi
+# AC_CACHE_VAL
+case "x$ac_cv_prog_cc_c99" in
+  x)
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: none needed" >&5
+$as_echo "none needed" >&6; } ;;
+  xno)
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: unsupported" >&5
+$as_echo "unsupported" >&6; } ;;
+  *)
+    CC="$CC $ac_cv_prog_cc_c99"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cc_c99" >&5
+$as_echo "$ac_cv_prog_cc_c99" >&6; } ;;
+esac
+if test "x$ac_cv_prog_cc_c99" != xno; then :
+
+fi
+
+
+if test "$ac_cv_prog_cc_c99" = "no"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libcgns requires a C99-compliant compiler" >&5
+$as_echo "$as_me: WARNING: libcgns requires a C99-compliant compiler" >&2;}
+       as_fn_error $? "Cannot continue" "$LINENO" 5
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Complex Gnu Extension" >&5
+$as_echo_n "checking for Complex Gnu Extension... " >&6; }
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <complex.h>
+
+int
+main ()
+{
+
+    #if !defined(_MSC_VER)
+    float _Complex a[2];
+    __real__(a[1]) = (float) 1.0;
+    __imag__(a[1]) = (float) 0.0;
+    #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+       HAVE_COMPLEX_C99_EXT=1
+else
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+       HAVE_COMPLEX_C99_EXT=0
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 #--------------------------------------------------------------------------
 # installation program and directory
 #--------------------------------------------------------------------------
@@ -4767,7 +4946,7 @@ $as_echo_n "checking if 64bit support is requested... " >&6; }
 if test "${enable_64bit+set}" = set; then :
   enableval=$enable_64bit;
 else
-  enableval=no
+  enableval=yes
 fi
 
   test ! "$enableval" = "no" && enableval=yes
@@ -4782,22 +4961,57 @@ $as_echo_n "checking cgsystem... " >&6; }
 $as_echo "$SYSTEM" >&6; }
   if test $do64bit = yes; then
     BUILD64BIT=1
-    is64bit=`echo $SYSTEM | grep 64`
-    test -z "$is64bit" && \
+    # The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of void *" >&5
+$as_echo_n "checking size of void *... " >&6; }
+if ${ac_cv_sizeof_void_p+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (void *))" "ac_cv_sizeof_void_p"        "$ac_includes_default"; then :
+
+else
+  if test "$ac_cv_type_void_p" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute sizeof (void *)
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_sizeof_void_p=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_void_p" >&5
+$as_echo "$ac_cv_sizeof_void_p" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_VOID_P $ac_cv_sizeof_void_p
+_ACEOF
+
+
+    if test $ac_cv_sizeof_void_p -lt 8; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: 64bit support not found for your machine" >&5
 $as_echo "$as_me: WARNING: 64bit support not found for your machine" >&2;}
+      is64bit=no
+    else
+      is64bit=yes
+    fi
   fi
 else
   SYSTEM=$withsys
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SYSTEM" >&5
 $as_echo "$SYSTEM" >&6; }
-fi
-
-is64bit=`echo $SYSTEM | grep 64`
-if test -z "$is64bit"; then
-  is64bit=no
-else
-  is64bit=yes
+  is64bit=`echo $SYSTEM | grep 64`
+  if test -z "$is64bit"; then
+    is64bit=no
+  else
+    is64bit=yes
+  fi
 fi
 
 if test "$ac_cv_c_compiler_gnu" = "no"; then
@@ -4939,9 +5153,9 @@ BUILDBASESCOPE=0
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if base scope for family/zone ref-to enabled" >&5
 $as_echo_n "checking if base scope for family/zone ref-to enabled... " >&6; }
-# Check whether --enable-scope was given.
-if test "${enable_scope+set}" = set; then :
-  enableval=$enable_scope;
+# Check whether --enable-basescope was given.
+if test "${enable_basescope+set}" = set; then :
+  enableval=$enable_basescope;
 else
   enableval=no
 fi
@@ -5914,136 +6128,41 @@ else
 fi
 
 
-  case $withval in
-    yes)
-      H5NEEDZLIB=1
-      HAVE_ZLIB="yes"
-      for ac_header in zlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ZLIB_H 1
-_ACEOF
- HAVE_ZLIB_H="yes"
-else
-  unset HAVE_ZLIB
-fi
+  if test "x$withval" != xno; then
+    # Was HDF5 built with zlib ?
+    ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-done
-
-      if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for compress2 in -lz" >&5
-$as_echo_n "checking for compress2 in -lz... " >&6; }
-if ${ac_cv_lib_z_compress2+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char compress2 ();
+#include "H5pubconf.h"
 int
 main ()
 {
-return compress2 ();
+#if !H5_HAVE_ZLIB_H
+    # error
+    #endif
+
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_z_compress2=yes
-else
-  ac_cv_lib_z_compress2=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_compress2" >&5
-$as_echo "$ac_cv_lib_z_compress2" >&6; }
-if test "x$ac_cv_lib_z_compress2" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBZ 1
-_ACEOF
-
-  LIBS="-lz $LIBS"
+if ac_fn_c_try_compile "$LINENO"; then :
 
 else
-  unset HAVE_ZLIB
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: zlib requested but hdf5 does not seems to be built with it." >&5
+$as_echo "$as_me: WARNING: zlib requested but hdf5 does not seems to be built with it." >&2;}
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  fi
 
-      fi
-      if test -z "$HAVE_ZLIB"; then
-        as_fn_error $? "couldn't find zlib library: specify the zlib directory with --with-zlib=DIR" "$LINENO" 5
-      fi
-      ZLIBLIB=-lz
-      ;;
-    no)
-      HAVE_ZLIB="no"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using zlib with HDF5" >&5
-$as_echo_n "checking if using zlib with HDF5... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-      ;;
-    *)
+  case $withval in
+    yes)
       H5NEEDZLIB=1
       HAVE_ZLIB="yes"
-
-      case "$withval" in
-        *,*)
-          zlib_inc="`echo $withval | cut -f1 -d,`"
-          zlib_lib="`echo $withval | cut -f2 -d, -s`"
-          ;;
-        *)
-          if test -n "$withval"; then
-            zlib_inc="$withval/include"
-            zlib_lib="$withval/lib"
-          fi
-          ;;
-      esac
-
-    if test -n "$zlib_inc"; then
-      CPPFLAGS="$CPPFLAGS -I$zlib_inc"
-    fi
-
-    for ac_header in zlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ZLIB_H 1
-_ACEOF
- HAVE_ZLIB_H="yes"
-else
-  CPPFLAGS="$saved_CPPFLAGS" unset HAVE_ZLIB
-fi
-
-done
-
-
-
-    if test $shared = yes; then
-      ZLIBLIB="-L$zlib_lib"
-    else
-      if test -n "$zlib_lib"; then
-        for a in $exts ; do
-          if test -f $zlib_lib/libz.$a; then
-            ZLIBLIB=$zlib_lib/libz.$a
-            break
-          fi
-        done
-      fi
-    fi
-
-    if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for compress2 in -lz" >&5
 $as_echo_n "checking for compress2 in -lz... " >&6; }
 if ${ac_cv_lib_z_compress2+:} false; then :
@@ -6091,25 +6210,70 @@ else
   unset HAVE_ZLIB
 fi
 
+      if test -z "$HAVE_ZLIB"; then
+        as_fn_error $? "couldn't find zlib library: specify the zlib directory with --with-zlib=DIR" "$LINENO" 5
+      fi
+      ZLIBLIB=-lz
+      ;;
+    no)
+      HAVE_ZLIB="no"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using zlib with HDF5" >&5
+$as_echo_n "checking if using zlib with HDF5... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      ;;
+    *)
+      H5NEEDZLIB=1
+      HAVE_ZLIB="yes"
+
+      case "$withval" in
+        *,*)
+          zlib_inc="`echo $withval | cut -f1 -d,`"
+          zlib_lib="`echo $withval | cut -f2 -d, -s`"
+          ;;
+        *)
+          if test -n "$withval"; then
+            zlib_inc="$withval/include"
+            zlib_lib="$withval/lib"
+          fi
+          ;;
+      esac
+
+    # Check if provided libdir exists
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $zlib_lib" >&5
+$as_echo_n "checking for $zlib_lib... " >&6; }
+    if test -d "$zlib_lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        HAVE_ZLIB="yes"
+    else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        unset HAVE_ZLIB
+    fi
+
+    if test $shared = yes; then
+      ZLIBLIB="-L$zlib_lib -lz"
+    else
+      if test -n "$zlib_lib"; then
+        unset HAVE_ZLIB
+        for a in $exts ; do
+          if test -f $zlib_lib/libz.$a; then
+            ZLIBLIB=$zlib_lib/libz.$a
+            HAVE_ZLIB="yes"
+            break
+          fi
+        done
+      fi
     fi
 
     if test -z "$HAVE_ZLIB"; then
       as_fn_error $? "couldn't find zlib library" "$LINENO" 5
-    else
-      ac_fn_c_check_func "$LINENO" "compress2" "ac_cv_func_compress2"
-if test "x$ac_cv_func_compress2" = xyes; then :
-  HAVE_COMPRESS2="yes"
-fi
-
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zlib library path" >&5
 $as_echo_n "checking for zlib library path... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $zlib_lib" >&5
 $as_echo "$zlib_lib" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zlib include path" >&5
-$as_echo_n "checking for zlib include path... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $zlib_inc" >&5
-$as_echo "$zlib_inc" >&6; }
     ;;
   esac
 
@@ -6126,132 +6290,6 @@ fi
     yes)
       H5NEEDSZIP=1
       HAVE_SZIP="yes"
-      for ac_header in szlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "szlib.h" "ac_cv_header_szlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_szlib_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SZLIB_H 1
-_ACEOF
- HAVE_SZIP_H="yes"
-else
-  unset HAVE_SZIP
-fi
-
-done
-
-      if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SZ_BufftoBuffCompress in -lsz" >&5
-$as_echo_n "checking for SZ_BufftoBuffCompress in -lsz... " >&6; }
-if ${ac_cv_lib_sz_SZ_BufftoBuffCompress+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lsz  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char SZ_BufftoBuffCompress ();
-int
-main ()
-{
-return SZ_BufftoBuffCompress ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_sz_SZ_BufftoBuffCompress=yes
-else
-  ac_cv_lib_sz_SZ_BufftoBuffCompress=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sz_SZ_BufftoBuffCompress" >&5
-$as_echo "$ac_cv_lib_sz_SZ_BufftoBuffCompress" >&6; }
-if test "x$ac_cv_lib_sz_SZ_BufftoBuffCompress" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBSZ 1
-_ACEOF
-
-  LIBS="-lsz $LIBS"
-
-else
-  unset HAVE_SZIP
-fi
-
-      fi
-      if test -z "$HAVE_SZIP"; then
-        as_fn_error $? "couldn't find szip library: specify the szip directory with --with-szip=DIR" "$LINENO" 5
-      fi
-      SZIPLIB=-lsz
-      ;;
-    no)
-      HAVE_SZIP="no"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using szip with HDF5" >&5
-$as_echo_n "checking if using szip with HDF5... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-      ;;
-    *)
-      H5NEEDSZIP=1
-      HAVE_SZIP="yes"
-
-      case "$withval" in
-        *,*)
-          szip_inc="`echo $withval | cut -f1 -d,`"
-          szip_lib="`echo $withval | cut -f2 -d, -s`"
-          ;;
-        *)
-          if test -n "$withval"; then
-            szip_inc="$withval/include"
-            szip_lib="$withval/lib"
-          fi
-          ;;
-      esac
-
-    if test -n "$szip_inc"; then
-      CPPFLAGS="$CPPFLAGS -I$szip_inc"
-    fi
-
-    for ac_header in szlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "szlib.h" "ac_cv_header_szlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_szlib_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SZLIB_H 1
-_ACEOF
- HAVE_SZIP_H="yes"
-else
-  CPPFLAGS="$saved_CPPFLAGS" unset HAVE_SZIP
-fi
-
-done
-
-
-
-    if test $shared = yes; then
-      SZIPLIB="-L$szip_lib"
-    else
-      if test -n "$szip_lib"; then
-        for a in $exts ; do
-          if test -f $szip_lib/libsz.$a; then
-            SZIPLIB=$szip_lib/libsz.$a
-            break
-          fi
-        done
-      fi
-    fi
-
-    if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SZ_BufftoBuffCompress in -lsz" >&5
 $as_echo_n "checking for SZ_BufftoBuffCompress in -lsz... " >&6; }
 if ${ac_cv_lib_sz_SZ_BufftoBuffCompress+:} false; then :
@@ -6299,25 +6337,70 @@ else
   unset HAVE_SZIP
 fi
 
+      if test -z "$HAVE_SZIP"; then
+        as_fn_error $? "couldn't find szip library: specify the szip directory with --with-szip=DIR" "$LINENO" 5
+      fi
+      SZIPLIB=-lsz
+      ;;
+    no)
+      HAVE_SZIP="no"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if using szip with HDF5" >&5
+$as_echo_n "checking if using szip with HDF5... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      ;;
+    *)
+      H5NEEDSZIP=1
+      HAVE_SZIP="yes"
+
+      case "$withval" in
+        *,*)
+          szip_inc="`echo $withval | cut -f1 -d,`"
+          szip_lib="`echo $withval | cut -f2 -d, -s`"
+          ;;
+        *)
+          if test -n "$withval"; then
+            szip_inc="$withval/include"
+            szip_lib="$withval/lib"
+          fi
+          ;;
+      esac
+
+    # Check if provided libdir exists
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $szip_lib" >&5
+$as_echo_n "checking for $szip_lib... " >&6; }
+    if test -d "$szip_lib"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        HAVE_SZIP="yes"
+    else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        unset HAVE_SZIP
+    fi
+
+    if test $shared = yes; then
+      SZIPLIB="-L$szip_lib -lsz"
+    else
+      if test -n "$szip_lib"; then
+        unset HAVE_SZIP
+        for a in $exts ; do
+          if test -f $szip_lib/libsz.$a; then
+            SZIPLIB=$szip_lib/libsz.$a
+            HAVE_SZIP="yes"
+            break
+          fi
+        done
+      fi
     fi
 
     if test -z "$HAVE_SZIP"; then
       as_fn_error $? "couldn't find szip library" "$LINENO" 5
-    else
-      ac_fn_c_check_func "$LINENO" "SZ_BufftoBuffCompress" "ac_cv_func_SZ_BufftoBuffCompress"
-if test "x$ac_cv_func_SZ_BufftoBuffCompress" = xyes; then :
-  HAVE_BufftoBuffCompress="yes"
-fi
-
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for szip library path" >&5
 $as_echo_n "checking for szip library path... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $szip_lib" >&5
 $as_echo "$szip_lib" >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for szip include path" >&5
-$as_echo_n "checking for szip include path... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $szip_inc" >&5
-$as_echo "$szip_inc" >&6; }
     ;;
   esac
 
@@ -6853,7 +6936,6 @@ ac_x_header_dirs='
 /usr/athena/include
 /usr/local/x11r5/include
 /usr/lpp/Xamples/include
-/opt/X11/include
 
 /usr/openwin/include
 /usr/openwin/share/include'
@@ -7068,8 +7150,10 @@ $as_echo "$tkdir" >&6; }
       as_fn_error $? "Tcl directory $tcldir not found" "$LINENO" 5
     fi
     tcldir=`(cd $tcldir; pwd)`
-    if test ! -f "$tcldir/tclConfig.sh"; then
-      if test ! -f "$tcldir/unix/tclConfig.sh"; then
+    TCLCONFIG="$tcldir/tclConfig.sh"
+    if test ! -f "$TCLCONFIG"; then
+      TCLCONFIG="$tcldir/unix/tclConfig.sh"
+      if test ! -f "$TCLCONFIG"; then
         as_fn_error $? "tclConfig.sh not found in $tcldir or $tcldir/unix" "$LINENO" 5
       fi
     fi
@@ -7121,19 +7205,32 @@ $as_echo "$tkdir" >&6; }
       if test -z "$tcldir"; then
         as_fn_error $? "can't find a usable Tcl directory" "$LINENO" 5
       fi
+      TCLCONFIG="$tcldir/$TCLUNIX/tclConfig.sh"
     fi
+    . $TCLCONFIG
     . $TKCONFIG
     tcllib=`ls -d $tcldir/$TCLUNIX/libtcl8* 2>/dev/null`
     tklib=`ls -d $tkdir/$TKUNIX/libtk8* 2>/dev/null`
     X11LIBS=""
-    TKINCS="-I$tcldir/generic -I$tkdir/generic"
+    if test -z "$TK_INCLUDE_SPEC" -a -z "$TCL_INCLUDE_SPEC"; then
+      TKINCS="-I$tcldir/generic -I$tkdir/generic"
+    else
+      TKINCS="$TK_INCLUDE_SPEC $TCL_INCLUDE_SPEC"
+    fi
     if test "$ac_cv_cygwin" = "yes"; then
       TKINCS="$TKINCS -I$tkdir/win -I$tkdir/xlib"
     fi
-    TKLIBS="$tcllib $tklib $TK_LIBS"
-    TCL_LIBRARY="$tcldir/library"
-    TK_LIBRARY="$tkdir/library"
-    LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
+    if test -z "$TK_LIB_SPEC" -a -z "$TCL_LIB_SPEC"; then
+      TKLIBS="$tcllib $tklib $TK_LIBS"
+      TCL_LIBRARY="$tcldir/library"
+      TK_LIBRARY="$tkdir/library"
+      LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
+    else
+      TKLIBS="$TK_LIB_SPEC $TCL_LIB_SPEC $TK_LIBS"
+      TCL_LIBRARY="$tcldir/library"
+      TK_LIBRARY="$tkdir/library"
+      LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
+    fi
   fi
 
   if test -z "$TKCONFIG"; then
@@ -7392,11 +7489,38 @@ if test "$withfortran" = "yes"; then
     fi
 #----------- Determine if the Fortran compiler gfortran -------------------
 #   Turn off warnings for passing non-ANSI types to BIND().
+#   Allow for argument mismatch (gfortran >= 10)
 #--------------------------------------------------------------------------
-     fc_vendor="`$FC --version 2>&1 |grep -i 'gcc'`"
+     fc_vendor="`$FC --version 2>&1 | grep -i 'gnu'`"
      if test X != "X$fc_vendor"; then
        FFLAGS="$FFLAGS -Wno-c-binding-type"
-     fi
+
+       # Get the compiler version for GNU fortran
+       #
+       #   f9x_version:   Version number: x.x.x
+       #
+       f9x_version="`$FC -v 2>&1 | grep 'gcc version' | cut -d' ' -f3`"
+       if test X != "X$f9x_version"; then
+           # Get the compiler version numbers
+           f9x_vers_major=`echo $f9x_version | cut -f1 -d.`
+           f9x_vers_minor=`echo $f9x_version | cut -f2 -d.`
+           f9x_vers_patch=`echo $f9x_version | cut -f3 -d.`
+           test -n "$f9x_vers_major" || f9x_vers_major=0
+           test -n "$f9x_vers_minor" || f9x_vers_minor=0
+           test -n "$f9x_vers_patch" || f9x_vers_patch=0
+      fi
+      if test $f9x_vers_major -ge 10; then
+         FFLAGS="$FFLAGS -fallow-argument-mismatch"
+      fi
+      # Warn about a gfortran 10.2.0 bug (GCC Bug 100149) which
+      # causes cg_goto_f to segfault, other versions are fine.
+      if test $f9x_vers_major = 10 && test $f9x_vers_minor = 2; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Fortran mapping (cg_goto_f) is broken for the specified gfortran version.
+                        !!! IT'S ADVISABLE TO AVOID VERSION 10.2 !!!" >&5
+$as_echo "$as_me: WARNING: Fortran mapping (cg_goto_f) is broken for the specified gfortran version.
+                        !!! IT'S ADVISABLE TO AVOID VERSION 10.2 !!!" >&2;}
+      fi
+    fi
 #----------- Determine if the Fortran compiler NAG -------------------
 #   Add compiler flag for C API calls.
 #--------------------------------------------------------------------------
@@ -7572,6 +7696,7 @@ fi
 
 
 
+
 BIN_INSTALL_DIR=$BINDIR
 EXE_INSTALL_DIR=$BINDIR/cgnstools
 
@@ -7615,7 +7740,45 @@ fi
 
 
 
-ac_config_files="$ac_config_files cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h Makefile make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig"
+SIZEOF_LONG="$ac_cv_sizeof_long"
+# The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of void *" >&5
+$as_echo_n "checking size of void *... " >&6; }
+if ${ac_cv_sizeof_void_p+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (void *))" "ac_cv_sizeof_void_p"        "$ac_includes_default"; then :
+
+else
+  if test "$ac_cv_type_void_p" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute sizeof (void *)
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_sizeof_void_p=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_void_p" >&5
+$as_echo "$ac_cv_sizeof_void_p" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_VOID_P $ac_cv_sizeof_void_p
+_ACEOF
+
+
+SIZEOF_VOID_P="$ac_cv_sizeof_void_p"
+
+
+
+ac_config_files="$ac_config_files cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h cg_hash_types.h Makefile make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig"
 
 
 
@@ -8243,6 +8406,7 @@ do
     "cgnstypes_f.h") CONFIG_FILES="$CONFIG_FILES cgnstypes_f.h" ;;
     "cgnstypes_f03.h") CONFIG_FILES="$CONFIG_FILES cgnstypes_f03.h" ;;
     "cgnsconfig.h") CONFIG_FILES="$CONFIG_FILES cgnsconfig.h" ;;
+    "cg_hash_types.h") CONFIG_FILES="$CONFIG_FILES cg_hash_types.h" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "make.defs") CONFIG_FILES="$CONFIG_FILES make.defs" ;;
     "cgnsBuild.defs") CONFIG_FILES="$CONFIG_FILES cgnsBuild.defs" ;;

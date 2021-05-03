@@ -137,7 +137,7 @@ int main ()
    cgio_get_label(cgio_num,tmp_id,label);
    cgio_get_data_type(cgio_num,tmp_id,data_type);
    cgio_get_dimensions(cgio_num,tmp_id,&num_dims,dims_b);
-   cgio_read_all_data(cgio_num,tmp_id,b);
+   cgio_read_all_data_type(cgio_num,tmp_id,data_type,b);
    printf (" node f3 through link l3:\n");
    printf ("   label       = %s\n",label);
    printf ("   data_type   = %s\n",data_type);
@@ -158,7 +158,11 @@ int main ()
    cgio_get_label(cgio_num,tmp_id,label);
    cgio_get_data_type(cgio_num,tmp_id,data_type);
    cgio_get_dimensions(cgio_num,tmp_id,&num_dims,dim_d);
+<<<<<<< HEAD
    cgio_read_all_data(cgio_num,tmp_id,d);
+=======
+   cgio_read_all_data_type(cgio_num,tmp_id,data_type,d);
+>>>>>>> develop
    printf (" node n13:\n");
    printf ("   label       = %s\n",label);
    printf ("   data_type   = %s\n",data_type);
@@ -174,7 +178,7 @@ int main ()
   /* access data in node n13 through l1 */
    cgio_get_node_id(cgio_num,root_id,"/n3/n10/l1",&tmp_id);
    cgio_get_label(cgio_num,tmp_id,label);
-   cgio_read_all_data(cgio_num,tmp_id,d);
+   cgio_read_all_data_type(cgio_num,tmp_id,data_type,d);
    printf (" node n13 through l1:\n");
    printf ("   label       = %s\n",label);
    printf ("   data:\n");
@@ -187,7 +191,7 @@ int main ()
   /* access data in node n13 through l2 */
    cgio_get_node_id(cgio_num,root_id,"/n3/n11/l2",&tmp_id);
    cgio_get_label(cgio_num,tmp_id,label);
-   cgio_read_all_data(cgio_num,tmp_id,d);
+   cgio_read_all_data_type(cgio_num,tmp_id,data_type,d);
    printf (" node n13 through l2:\n");
    printf ("   label       = %s\n",label);
    printf ("   data:\n");

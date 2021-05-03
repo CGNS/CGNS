@@ -11,11 +11,11 @@
  *
  */
 
-#include <tk.h>
-#include "tkWinInt.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
+#include <tk.h>
+#include "tkWinInt.h"
 #include <malloc.h>
 #include <locale.h>
 
