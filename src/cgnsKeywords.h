@@ -63,13 +63,8 @@ freely, subject to the following restrictions:
  *      VERSION NUMBER                                                   *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-<<<<<<< HEAD
-#define CGNS_VERSION 4100
-#define CGNS_DOTVERS 4.10
-=======
 #define CGNS_VERSION 4300
 #define CGNS_DOTVERS 4.30
->>>>>>> develop
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
 

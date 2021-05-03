@@ -158,11 +158,7 @@ int main ()
    cgio_get_label(cgio_num,tmp_id,label);
    cgio_get_data_type(cgio_num,tmp_id,data_type);
    cgio_get_dimensions(cgio_num,tmp_id,&num_dims,dim_d);
-<<<<<<< HEAD
-   cgio_read_all_data(cgio_num,tmp_id,d);
-=======
    cgio_read_all_data_type(cgio_num,tmp_id,data_type,d);
->>>>>>> develop
    printf (" node n13:\n");
    printf ("   label       = %s\n",label);
    printf ("   data_type   = %s\n",data_type);
