@@ -218,7 +218,7 @@ $(OBJDIR)/cgnslib.$(O) : cgnslib.c cgnslib.h cgns_header.h cgns_io.h cg_hashmap.
 
 $(OBJDIR)/cgns_io.$(O) : cgns_io.c cgnslib.h cgns_io.h \
 	adf/ADF.h @ADFINCS@
-	$(CC) $(COPTS) $(COOUT)$@ -c cgns_io.c
+	$(CC) $(COPTS) $(HDF5INC) $(COOUT)$@ -c cgns_io.c
 
 $(OBJDIR)/cg_ftoc.$(O) : cg_ftoc.c fortran_macros.h cgnslib.h \
 	cgns_header.h cgns_io.h
