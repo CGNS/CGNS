@@ -97,7 +97,7 @@ PROGRAM write_cgns_1
         num = num * size(i)             ! nr of nodes
      ENDDO
      CALL cg_zone_write_f(cg, base_no, zonename, size, &
-          Structured, zone_no, ier)
+          CGNS_ENUMV(Structured), zone_no, ier)
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
      ! *** coordinate
@@ -114,7 +114,7 @@ PROGRAM write_cgns_1
            ENDDO
         ENDDO
  
-        CALL cg_coord_write_f(cg, base_no, zone_no, RealDouble, &
+        CALL cg_coord_write_f(cg, base_no, zone_no, CGNS_ENUMV(RealDouble), &
              coordname(coord), Dxyz, coord_no, ier)
         IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
@@ -124,7 +124,7 @@ PROGRAM write_cgns_1
      DO sol=1, 2
         WRITE(solname,'(a5,i1,a5,i1)') 'Zone#',zone,' sol#',sol
         CALL cg_sol_write_f(cg, base_no, zone_no, solname, &
-             Vertex, sol_no, ier)
+             CGNS_ENUMV(Vertex), sol_no, ier)
         IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
         ! *** solution field
@@ -135,7 +135,7 @@ PROGRAM write_cgns_1
            ENDDO
            WRITE(fieldname,'(a6,i1)') 'Field#',field
            CALL cg_field_write_f(cg, base_no, zone_no, sol_no, &
-                RealDouble, fieldname, values, field_no, ier)
+                CGNS_ENUMV(RealDouble), fieldname, values, field_no, ier)
            IF (ier .EQ. ERROR) CALL cg_error_exit_f
            
         ENDDO                ! field loop
@@ -159,7 +159,7 @@ PROGRAM write_cgns_1
            ENDDO
         ENDDO
      ENDDO
-     CALL cg_array_write_f('arrayname', RealSingle, index_dim, &
+     CALL cg_array_write_f('arrayname', CGNS_ENUMV(RealSingle), index_dim, &
           size, DATA, ier)
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
@@ -168,8 +168,8 @@ PROGRAM write_cgns_1
           'DiscreteData_t', discr_no, 'DataArray_t', 1, 'end')
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
-     CALL cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-          Radian, ier)
+     CALL cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), &
+          CGNS_ENUMV(Kelvin), CGNS_ENUMV(Radian), ier)
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
      ! *** overset holes
@@ -185,8 +185,8 @@ PROGRAM write_cgns_1
      ! Hole defined with 2 point set type PointRange, so 4 points:
      nptsets = 2
      npnts = 4
-     CALL cg_hole_write_f(cg, base_no, zone_no, 'hole#1', Vertex,&
-          PointRange, nptsets, npnts, pnts, hole_no, ier)
+     CALL cg_hole_write_f(cg, base_no, zone_no, 'hole#1', CGNS_ENUMV(Vertex),&
+          CGNS_ENUMV(PointRange), nptsets, npnts, pnts, hole_no, ier)
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
 ! *** general connectivity
@@ -199,8 +199,9 @@ PROGRAM write_cgns_1
      ! create a point matching connectivity
      npnts = 5
      CALL cg_conn_write_f(cg, base_no, zone_no, 'Connect#1', &
-          Vertex, Abutting1to1, PointList, npnts, pnts, 'zone#2', &
-          Structured, PointListDonor, INTEGER, npnts, donor_pnts, conn_no, ier)
+          CGNS_ENUMV(Vertex), CGNS_ENUMV(Abutting1to1), CGNS_ENUMV(PointList), npnts, pnts, 'zone#2', &
+          CGNS_ENUMV(Structured), CGNS_ENUMV(PointListDonor), CGNS_ENUMV(integer), &
+          npnts, donor_pnts, conn_no, ier)
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
 ! *** connectivity 1to1
@@ -234,7 +235,7 @@ PROGRAM write_cgns_1
      ! *** bocos
      npnts = 2
      CALL cg_boco_write_f(cg, base_no, zone_no, 'boco#1', &
-          BCInflow, PointRange, npnts, pnts, boco_no, ier)
+          CGNS_ENUMV(BCInflow), CGNS_ENUMV(PointRange), npnts, pnts, boco_no, ier)
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
      ! *** boco normal
@@ -251,7 +252,7 @@ PROGRAM write_cgns_1
 
      nrmlistflag = 1
      CALL cg_boco_normal_write_f(cg, base_no, zone_no, boco_no, &
-          NormalIndex, nrmlistflag, RealSingle, normals, ier)
+          NormalIndex, nrmlistflag, CGNS_ENUMV(RealSingle), normals, ier)
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
      ! ** boundary condition attributes: GOTO BC_t node
@@ -260,35 +261,35 @@ PROGRAM write_cgns_1
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
      ! ** boundary condition attributes:  GridLocation_t
-     CALL cg_gridlocation_write_f(Vertex, ier)
+     CALL cg_gridlocation_write_f(CGNS_ENUMV(Vertex), ier)
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
      ! ** boundary condition dataset
      CALL cg_dataset_write_f(cg, base_no, zone, &
-          boco_no, 'DataSetName', BCInflow, dset_no, ier)
+          boco_no, 'DataSetName', CGNS_ENUMV(BCInflow), dset_no, ier)
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
      ! ** boundary condition data:
      CALL cg_bcdata_write_f(cg, base_no, zone, &
-          boco_no, dset_no, Neumann, ier)
+          boco_no, dset_no, CGNS_ENUMV(Neumann), ier)
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
 ! ** boundary condition data arrays: GOTO BCData_t node
      CALL cg_goto_f(cg, base_no, ier, 'Zone_t', zone_no, &
           'ZoneBC_t', one, 'BC_t', boco_no, 'BCDataSet_t', &
-          dset_no, 'BCData_t', Neumann, 'end')
+          dset_no, 'BCData_t', CGNS_ENUMV(Neumann), 'end')
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
      DO i=1, npnts
         DATA(i) = i
      ENDDO
      ndims = 1
-     CALL cg_array_write_f('dataset_arrayname', RealSingle, &
+     CALL cg_array_write_f('dataset_arrayname', CGNS_ENUMV(RealSingle), &
           ndims, [npnts], DATA, ier)
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
 ! ** boundary condition data attributes:
-     CALL cg_dataclass_write_f(NormalizedByDimensional, ier)
+     CALL cg_dataclass_write_f(CGNS_ENUMV(NormalizedByDimensional), ier)
      IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   ENDDO ! zone loop
