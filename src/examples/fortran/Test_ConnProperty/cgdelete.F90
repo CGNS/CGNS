@@ -12,7 +12,7 @@
 !       - children of AverageInterface_t: AverageInterfaceType_t, Descriptor_t, UserDef._t
 !       - children of Periodic_t: PeriodicType_t, RotationCenter, RotationAngle, Translation,
 !				  Descriptor_t, UserDef._t
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -69,7 +69,7 @@
             'GridConnectivityProperty_t', 1, 'Periodic_t', 1, &
       	    'DataArray_t', 1, 'end')
 
-        if (ier. eq. ALL_OK) then
+        if (ier .eq. ALL_OK) then
             call cg_delete_node_f('DataClass', ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -88,7 +88,7 @@
             'GridConnectivityProperty_t', 1, 'Periodic_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        if (ier. eq. ALL_OK) then
+        if (ier .eq. ALL_OK) then
 !           RotationCenter, RotationAngle, Translation can't be deleted,
 !           so we expect an error from the API
             call cg_delete_node_f('RotationCenter', ier)
@@ -123,7 +123,7 @@
             'GridConnectivityProperty_t', 1, 'AverageInterface_t', 1, &
       	    'end')
 
-        if (ier. eq. ALL_OK) then
+        if (ier .eq. ALL_OK) then
             call cg_delete_node_f('AverageInterfaceType', ier)
             if (ier .eq. ERROR) call cg_error_print_f
 
@@ -179,7 +179,7 @@
 ! Rewrite everything back
 
 ! *** write GridConnectivityProperty_t/AverageInterface_t node under conn#2
-        AverageInterfaceType = AverageCircumferential
+        AverageInterfaceType = CGNS_ENUMV(AverageCircumferential)
         call cg_conn_average_write_f(cg, base, zone, &
               conn, AverageInterfaceType, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
@@ -248,16 +248,16 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataClass & DimensionalUnits under Periodic
-        call cg_dataclass_write_f(Dimensional, ier)
+        call cg_dataclass_write_f(CGNS_ENUMV(Dimensional), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
-        call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                              Radian, ier)
+        call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+                              CGNS_ENUMV(Radian), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataArray under Periodic
         dim_vals(1)=3
         dim_vals(2)=2
-        call cg_array_write_f('arraysize', Integer, 2, dim_vals, &
+        call cg_array_write_f('arraysize', CGNS_ENUMV(Integer), 2, dim_vals, &
               size, ier)
         if (ier .ne. ERROR) write(6,'(a)') 'Error in API'
 
@@ -268,10 +268,10 @@
             'DataArray_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_dataclass_write_f(Dimensional, ier)
+        call cg_dataclass_write_f(CGNS_ENUMV(Dimensional), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
-        call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                              Radian, ier)
+        call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+                              CGNS_ENUMV(Radian), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012

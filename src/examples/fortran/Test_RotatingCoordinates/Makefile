@@ -19,8 +19,8 @@ $(OUTDIR) :
 $(WRITE) : cgwrite.F90
 	$(F77) $(FOPTS) $(FEOUT) $@ cgwrite.F90 $(LIBS)
 
-$(READ) : cgread.F9090
-	$(F77) $(FOPTS) $(FEOUT) $@ cgread.F9090 $(LIBS)
+$(READ) : cgread.F90
+	$(F77) $(FOPTS) $(FEOUT) $@ cgread.F90 $(LIBS)
 
 clean :
 	-$(RM) Test_V2 $(WRITE) $(READ)

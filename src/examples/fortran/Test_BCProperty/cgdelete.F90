@@ -11,7 +11,7 @@
 !       - children of BCProperty_t: WallFunction_t, Area_t, Descriptor_t, UserDef._t
 !       - children of WallFunction_t: WallFunctionType_t, Descriptor_t, UserDef._t
 !       - children of Area_t: AreaType_t, SurfaceArea, RegionName, Descriptor_t, UserDef._t
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -65,7 +65,7 @@
             'BC_t', boco, 'BCProperty_t', 1, 'Area_t', 1, 'DataArray_t', &
             1, 'end')
 
-        if (ier. eq. ALL_OK) then
+        if (ier .eq. ALL_OK) then
             call cg_delete_node_f('DataClass', ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -81,7 +81,7 @@
             'BC_t', boco, 'BCProperty_t', 1, 'Area_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        if (ier. eq. ALL_OK) then
+        if (ier .eq. ALL_OK) then
 !           AreaType, SurfaceArea, RegionName can't be deleted,
 !           so we expect an error from the API
             call cg_delete_node_f('AreaType', ier)
@@ -108,7 +108,7 @@
             'BC_t', boco, 'BCProperty_t', 1, 'WallFunction_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        if (ier. eq. ALL_OK) then
+        if (ier .eq. ALL_OK) then
             call cg_delete_node_f('WallFunctionType', ier)
             if (ier .eq. ERROR) call cg_error_print_f
 
@@ -160,7 +160,7 @@
 ! Rewrite everything back
 
 ! *** write BCProperty_t/WallFunction_t node under boco#2
-        WallFunctionType = Generic
+        WallFunctionType = CGNS_ENUMV(Generic)
         call cg_bc_wallfunction_write_f(cg, base, zone, &
               boco, WallFunctionType, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
@@ -168,7 +168,7 @@
         write(6,*)'WallFunction_t written'
 
 ! *** write BCProperty_t/Area_t node under boco#2
-        AreaType = BleedArea
+        AreaType = CGNS_ENUMV(BleedArea)
         SurfaceArea = 123.456
         RegionName32 = 'myRegion'
         call cg_bc_area_write_f(cg, base, zone, boco, AreaType, &
@@ -226,7 +226,7 @@
 
         dim_vals(1)=3
         dim_vals(2)=2
-        call cg_array_write_f('arraysize', Integer, 2, dim_vals, &
+        call cg_array_write_f('arraysize', CGNS_ENUMV(Integer), 2, dim_vals, &
               size, ier)
         if (ier .ne. ERROR) write(6,'(a)') 'Error in API'
 
@@ -235,10 +235,10 @@
             'BC_t', boco, 'BCProperty_t', 1, 'Area_t', 1, 'DataArray_t', &
             1, 'end')
 
-        call cg_dataclass_write_f(Dimensional, ier)
+        call cg_dataclass_write_f(CGNS_ENUMV(Dimensional), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
-        call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                              Radian, ier)
+        call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+                              CGNS_ENUMV(Radian), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012

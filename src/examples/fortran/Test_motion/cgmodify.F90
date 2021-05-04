@@ -4,7 +4,7 @@
 !       author: Diane Poirier (diane@icemcfd.com)
 !       last revised on November 2000
 !       This example test the API functions for grid motion and time accurate data.
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -67,7 +67,7 @@
 
 ! *** simulation type
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-	call cg_simulation_type_write_f(cg, base_no, TimeAccurate, ier)
+	call cg_simulation_type_write_f(cg, base_no, CGNS_ENUMV(TimeAccurate), ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 
 ! *** Base iterative data
@@ -89,36 +89,36 @@
 	    write(zone_ptrs(2,step),100) 'Null'
 	    if (step.eq.2) write(zone_ptrs(2,step),100) 'Zone#',2
 	enddo
-	!call cg_array_write_f('TimeValues', RealSingle, 1, nsteps,
-	call cg_array_write_f('TimeValues', RealDouble, 1, nsteps, &
+	!call cg_array_write_f('TimeValues', CGNS_ENUMV(RealSingle), 1, nsteps,
+	call cg_array_write_f('TimeValues', CGNS_ENUMV(RealDouble), 1, nsteps, &
                                time, ier)
         if (ier .ne. ALL_OK) call cg_error_exit_f
-	call cg_array_write_f('IterationValues', Integer, 1, nsteps, &
+	call cg_array_write_f('IterationValues', CGNS_ENUMV(Integer), 1, nsteps, &
                                iteration, ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
-	call cg_array_write_f('NumberOfZones', Integer, 1, nsteps, &
+	call cg_array_write_f('NumberOfZones', CGNS_ENUMV(Integer), 1, nsteps, &
                                nzones, ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 	dimval(1)=32
 	dimval(2)=2 		! *** MaxNumberOfZones in a step1
 	dimval(3)=nsteps
-        call cg_array_write_f('ZonePointers', Character, 3, dimval, &
+        call cg_array_write_f('ZonePointers', CGNS_ENUMV(Character), 3, dimval, &
                                zone_ptrs, ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 
 ! *** zone
-        write(zonename,100) 'Zone#',1 &
-      um = 1
+        write(zonename,100) 'Zone#',1
+        num = 1
 	do i=1,index_dim      		! zone#1: 3*4*5
             size(i) = i+2		! nr of nodes in i,j,k
 	    size(i+Ndim) = size(i)-1	! nr of elements in i,j,k
 	    size(i+2*Ndim) = 0		! nr of bnd nodes if ordered
        	    num = num * size(i)		! nr of nodes &
-      nddo &
-      all cg_zone_write_f(cg, base_no, zonename, size, &
-                             Structured, zone_no, ier) &
-      f (ier .ne. ALL_OK) call cg_error_exit_f
+         enddo
+         call cg_zone_write_f(cg, base_no, zonename, size, &
+                             CGNS_ENUMV(Structured), zone_no, ier)
+        if (ier .ne. ALL_OK) call cg_error_exit_f
 
 ! *** Zone iterative data
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
@@ -140,17 +140,17 @@
 	dimval(1)=32
 	dimval(2)=nsteps
 
-	call cg_array_write_f('GridCoordinatesPointers', Character, 2, &
+	call cg_array_write_f('GridCoordinatesPointers', CGNS_ENUMV(Character), 2, &
                                dimval, grid_ptrs, ier)
         if (ier .ne. ALL_OK) call cg_error_exit_f
-	call cg_array_write_f('FlowSolutionPointers', Character, 2, &
+	call cg_array_write_f('FlowSolutionPointers', CGNS_ENUMV(Character), 2, &
                                dimval, sol_ptrs, ier)
         if (ier .ne. ALL_OK) call cg_error_exit_f
-	call cg_array_write_f('RigidGridMotionPointers', Character, 2, &
+	call cg_array_write_f('RigidGridMotionPointers', CGNS_ENUMV(Character), 2, &
                                dimval, rmotion_ptrs, ier)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	if (ier .ne. ALL_OK) call cg_error_exit_f
-        call cg_array_write_f('ArbitraryGridMotionPointers', Character, &
+        call cg_array_write_f('ArbitraryGridMotionPointers', CGNS_ENUMV(Character), &
                                2, dimval, amotion_ptrs, ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 
@@ -168,7 +168,7 @@
  	    enddo
  	    enddo
 
-            call cg_coord_write_f(cg, base_no, zone_no, RealDouble, &
+            call cg_coord_write_f(cg, base_no, zone_no, CGNS_ENUMV(RealDouble), &
                                   coordname(coord), Dxyz, coord_no, ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
@@ -186,12 +186,12 @@
                            'GridCoordinates_t', grid_no, 'end')
             if (ier .ne. ALL_OK) call cg_error_exit_f
 	
-	    call cg_array_write_f('CoordinateX', RealDouble, 3, &
+	    call cg_array_write_f('CoordinateX', CGNS_ENUMV(RealDouble), 3, &
                                    size, Dxyz, ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
-            call cg_array_write_f('CoordinateY', RealDouble, 3, &
+            call cg_array_write_f('CoordinateY', CGNS_ENUMV(RealDouble), 3, &
                                    size, Dxyz, ier)
-            call cg_array_write_f('CoordinateZ', RealDouble, 3, &
+            call cg_array_write_f('CoordinateZ', CGNS_ENUMV(RealDouble), 3, &
                                    size, Dxyz, ier)
 
       ! *** Write DataClass_t under CoordinateX
@@ -199,15 +199,15 @@
               'GridCoordinates_t', grid_no, 'DataArray_t', 1, 'end')
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
-	    call cg_dataclass_write_f(Dimensional, ier)
+	    call cg_dataclass_write_f(CGNS_ENUMV(Dimensional), ier)
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
-	enddo &
+	enddo
 
 ! *** solution
       do sol=1, 2
  	    write(solname,100) 'Solution#',sol
  	    call cg_sol_write_f(cg, base_no, zone_no, solname, &
-                                Vertex, sol_no, ier)
+                                CGNS_ENUMV(Vertex), sol_no, ier)
  	    if (ier .ne. ALL_OK) call cg_error_exit_f
 
 ! *** solution field
@@ -218,7 +218,7 @@
  	    	enddo
  	    	write(fieldname,100) 'Field#',field
  	    	call cg_field_write_f(cg, base_no, zone_no, sol_no, &
-                    RealDouble, fieldname, values, field_no, ier)
+                    CGNS_ENUMV(RealDouble), fieldname, values, field_no, ier)
  	    	if (ier .ne. ALL_OK) call cg_error_exit_f
 
  	    enddo				! field loop
@@ -235,7 +235,7 @@
 		velocity(coord) = 7.0
 	    enddo
 	    call cg_rigid_motion_write_f(cg, base_no, zone_no, &
-            rmotionname, ConstantRate, rmotion_no, ier)
+            rmotionname, CGNS_ENUMV(ConstantRate), rmotion_no, ier)
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
 
 ! ** Goto RigidGridMotion_t node
@@ -251,18 +251,18 @@
 ! *** Add a DataArray_t under RigidGridMotion_t
 	    data_size(1)=phys_dim
 	    data_size(2)=2
-            !call cg_array_write_f('OriginLocation', RealSingle, 2,
-            call cg_array_write_f('OriginLocation', RealDouble, 2, &
+            !call cg_array_write_f('OriginLocation', CGNS_ENUMV(RealSingle), 2,
+            call cg_array_write_f('OriginLocation', CGNS_ENUMV(RealDouble), 2, &
                                    data_size, origin, ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
-            !call cg_array_write_f('RigidRotationAngle', RealSingle, 1,
-            call cg_array_write_f('RigidRotationAngle', RealDouble, 1, &
+            !call cg_array_write_f('RigidRotationAngle', CGNS_ENUMV(RealSingle), 1,
+            call cg_array_write_f('RigidRotationAngle', CGNS_ENUMV(RealDouble), 1, &
                                    phys_dim, angle, ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
-	    !call cg_array_write_f('RigidVelocity', RealSingle, 1,
-	    call cg_array_write_f('RigidVelocity', RealDouble, 1, &
+	    !call cg_array_write_f('RigidVelocity', CGNS_ENUMV(RealSingle), 1,
+	    call cg_array_write_f('RigidVelocity', CGNS_ENUMV(RealDouble), 1, &
                                    phys_dim, velocity, ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
@@ -272,8 +272,8 @@
                            'DataArray_t', 3, 'end')
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
 
-            call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                                  Radian, ier)
+            call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+                                  CGNS_ENUMV(Radian), ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
 	enddo
@@ -286,7 +286,7 @@
 ! *** Create the ArbitraryGridMotion_t node
             write(amotionname,100)'ArbitraryGridMotion#',amotion
 	    call cg_arbitrary_motion_write_f(cg, base_no, zone_no, &
-                 amotionname, DeformingGrid, amotion_no, ier)
+                 amotionname, CGNS_ENUMV(DeformingGrid), amotion_no, ier)
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
 
 ! *** Goto the ArbitraryGridMotion_t node
@@ -301,16 +301,18 @@
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
 ! *** make up some dummy GridVelocityX values just for the test:
-            do 13 k=1, size(3)
-            do 13 j=1, size(2)
-            do 13 i=1, size(1)
-                pos = i + (j-1)*size(1) + (k-1)*size(1)*size(2)
-		GridVelocity(pos) = pos
- 13	    continue
+            DO k=1, SIZE(3)
+               DO j=1, SIZE(2)
+                  DO i=1, SIZE(1)
+                     pos = i + (j-1)*SIZE(1) + (k-1)*SIZE(1)*SIZE(2)
+                     GridVelocity(pos) = pos
+                  ENDDO
+               ENDDO
+            ENDDO
 
 ! *** Add a DataArray_t 'GridVelocityX' under ArbitraryGridMotion_t
-            !call cg_array_write_f('GridVelocityX', RealSingle,
-            call cg_array_write_f('GridVelocityX', RealDouble, &
+            !call cg_array_write_f('GridVelocityX', CGNS_ENUMV(RealSingle),
+            call cg_array_write_f('GridVelocityX', CGNS_ENUMV(RealDouble), &
       		                  index_dim, size, GridVelocity, ier)
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
 
@@ -320,8 +322,8 @@
                           'DataArray_t', 1, 'end')
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
-            call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                                  Radian, ier)
+            call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+                                  CGNS_ENUMV(Radian), ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 	enddo
 

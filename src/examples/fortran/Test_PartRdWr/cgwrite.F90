@@ -1,6 +1,7 @@
 
         program write_partial_data
         USE CGNS
+        IMPLICIT NONE
 
 !	original author (of write_mixed_elements): Diane Poirier
 !       author: Ken Wall
@@ -9,9 +10,9 @@
 !       Original code came from the example write_mixed_elements.
 
 ! 	This example test the writing of and element section of
-!	type MIXED, which includes some NGON_x elements of different size
+!	type CGNS_ENUMV(MIXED), which includes some NGON_x elements of different size
 !	The model is not realistic, as all the data is dummy.
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -46,7 +47,7 @@
 
 !*******write only 1 unstructured zone
 	zone = 1
-	ZoneType=Unstructured
+	ZoneType=CGNS_ENUMV(Unstructured)
 	write(ZoneName,100) 'UnstructuredZone#1'
  100	format(a)
 	size(1) = 27		! no of nodes
@@ -80,7 +81,7 @@
                 if (coord.eq.3) data_double(pos) = i
  20         continue
 
-            call cg_coord_partial_write_f(cg, base, zone, RealDouble, &
+            call cg_coord_partial_write_f(cg, base, zone, CGNS_ENUMV(RealDouble), &
                         coordname(coord), rmin, rmax, data_double, C, &
                         ier)
             if (ier .eq. ERROR) call cg_error_exit_f
@@ -102,7 +103,7 @@
                 if (coord.eq.3) data_double(pos) = -i
  21          continue
 
-            call cg_coord_partial_write_f(cg, base, zone, RealDouble, &
+            call cg_coord_partial_write_f(cg, base, zone, CGNS_ENUMV(RealDouble), &
                         coordname(coord), rmin, rmax, data_double, C, &
                         ier)
             if (ier .eq. ERROR) call cg_error_exit_f
@@ -112,7 +113,7 @@
 ! create section with 3 elements
 
 	call cg_section_partial_write_f(cg, base, zone, 'MixedElements', &
-             MIXED, 1_cgsize_t, 3_cgsize_t, 0, section_no, ier)
+             CGNS_ENUMV(MIXED), 1_cgsize_t, 3_cgsize_t, 0, section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! Generate dummy elements
@@ -121,7 +122,7 @@
 	connect_offsets(1) = 0
 ! first element HEXA_8
 	count = count + 1
-	element(count)=HEXA_8
+	element(count)=CGNS_ENUMV(HEXA_8)
 	do i=1,8
 	    count = count + 1
 	    element(count)=i
@@ -129,7 +130,7 @@
 ! second element TETRA_4
 	connect_offsets(2) = count
 	count = count + 1
-	element(count)=TETRA_4
+	element(count)=CGNS_ENUMV(TETRA_4)
 	do i=1,4
 	    count = count + 1
             element(count)=i
@@ -145,7 +146,7 @@
 ! second element TETRA_4
 	connect_offsets(1) = 0
 	count = 1
-	element(count)=TETRA_4
+	element(count)=CGNS_ENUMV(TETRA_4)
 	do i=1,4
 	    count = count + 1
             element(count)= -i
@@ -154,7 +155,7 @@
 
 ! third element PYRA_5
         count = count + 1
-        element(count)=PYRA_5
+        element(count)=CGNS_ENUMV(PYRA_5)
         do i=1,5
             count = count + 1
             element(count)=i

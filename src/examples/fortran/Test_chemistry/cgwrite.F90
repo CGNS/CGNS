@@ -9,7 +9,7 @@
 
 ! Modified for Version 2.1 chemistry extensions.
 ! D. Leich, Intelligent Light 11-Jan-02
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -69,17 +69,17 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_model_write_f('ChemicalKineticsModel_t', &
-          ChemicalEquilibCurveFit,ier)
+          CGNS_ENUMV(ChemicalEquilibCurveFit),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** Create 'ThermalRelaxation' under 'FlowEquationSet'
         call cg_model_write_f('ThermalRelaxationModel_t', &
-          Frozen,ier)
+          CGNS_ENUMV(Frozen),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** Create 'GasModel' under 'FlowEquationSet'
         call cg_model_write_f('GasModel_t', &
-          ConstantDensity,ier)
+          CGNS_ENUMV(ConstantDensity),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** Create 'HeatOfFormationCO' under 'ChemicalKineticsModel'
@@ -87,7 +87,7 @@
           'FlowEquationSet_t',1,'ChemicalKineticsModel_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_array_write_f('HeatOfFormationCO',RealSingle,1, &
+        call cg_array_write_f('HeatOfFormationCO', CGNS_ENUMV(RealSingle),1, &
           1_cgsize_t,hofCO,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -96,7 +96,7 @@
           'DataArray_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_dataclass_write_f(Dimensional,ier)
+        call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_units_write_f(UserDefined,UserDefined,UserDefined, &
@@ -112,7 +112,7 @@
           'FlowEquationSet_t',1,'ChemicalKineticsModel_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_array_write_f('HeatOfFormationO2',RealSingle,1, &
+        call cg_array_write_f('HeatOfFormationO2',CGNS_ENUMV(RealSingle),1, &
           1_cgsize_t,hofO2,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -121,7 +121,7 @@
           'DataArray_t',2,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_dataclass_write_f(Dimensional,ier)
+        call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_units_write_f(UserDefined,UserDefined,UserDefined, &
@@ -137,7 +137,7 @@
           'FlowEquationSet_t',1,'ChemicalKineticsModel_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_array_write_f('HeatOfFormationCO2',RealSingle,1, &
+        call cg_array_write_f('HeatOfFormationCO2',CGNS_ENUMV(RealSingle),1, &
           1_cgsize_t,hofCO2,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -146,7 +146,7 @@
           'DataArray_t',3,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_dataclass_write_f(Dimensional,ier)
+        call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_units_write_f(UserDefined,UserDefined,UserDefined, &
@@ -162,7 +162,7 @@
           'FlowEquationSet_t',1,'ChemicalKineticsModel_t',1,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_array_write_f('ReferenceTemperatureHOF',RealSingle,1, &
+        call cg_array_write_f('ReferenceTemperatureHOF',CGNS_ENUMV(RealSingle),1, &
           1_cgsize_t,RThof,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -171,10 +171,10 @@
           'DataArray_t',4,'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-        call cg_dataclass_write_f(Dimensional,ier)
+        call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_units_write_f(Null,Null,Null,Kelvin,Null,ierr)
+	call cg_units_write_f(Null,Null,Null,CGNS_ENUMV(Kelvin),Null,ierr)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         units(1)=0
@@ -182,7 +182,7 @@
         units(3)=0
         units(4)=1
         units(5)=0
-        call cg_exponents_write_f(RealSingle,units,ier)
+        call cg_exponents_write_f(CGNS_ENUMV(RealSingle),units,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** Create 'ReactionEquation' under 'ChemicalKineticsModel'
@@ -205,7 +205,7 @@
        		num = num * size(i)		! nr of nodes
     	    enddo
     	    call cg_zone_write_f(cg, base_no, zonename, size, &
-                                 Structured, zone_no, ier)
+                                 CGNS_ENUMV(Structured), zone_no, ier)
     	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** coordinate
@@ -222,17 +222,17 @@
  		enddo
  		enddo
 
-         	call cg_coord_write_f(cg, base_no, zone_no, RealDouble, &
+         	call cg_coord_write_f(cg, base_no, zone_no, CGNS_ENUMV(RealDouble), &
                                   coordname(coord), Dxyz, coord_no, ier)
          	if (ier .eq. ERROR) call cg_error_exit_f
 
-          enddo &
+          enddo
 
 ! *** solution
           do sol=1, 2
  		write(solname,'(a5,i1,a5,i1)') 'Zone#',zone,' sol#',sol
  		call cg_sol_write_f(cg, base_no, zone_no, solname, &
-                                    Vertex, sol_no, ier)
+                                    CGNS_ENUMV(Vertex), sol_no, ier)
  		if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** solution field
@@ -243,7 +243,7 @@
  	    	    enddo
  	    	    write(fieldname,'(a6,i1)') 'Field#',field
  	    	    call cg_field_write_f(cg, base_no, zone_no, sol_no, &
-                        RealDouble, fieldname, values, field_no, ier)
+                        CGNS_ENUMV(RealDouble), fieldname, values, field_no, ier)
  	    	    if (ier .eq. ERROR) call cg_error_exit_f
 
  		enddo				! field loop
@@ -265,7 +265,7 @@
                 pos = i + (j-1)*size(1) + (k-1)*size(1)*size(2)
 	        data(pos) = pos	! * make up some dummy data
  123	    continue
-	    call cg_array_write_f('arrayname', RealSingle, index_dim, &
+	    call cg_array_write_f('arrayname', CGNS_ENUMV(RealSingle), index_dim, &
                                    size, data, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -274,23 +274,23 @@
       	            'DiscreteData_t', discr_no, 'DataArray_t', 1, 'end')
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
-	    call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                                  Radian, ier)
+	    call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+                                  CGNS_ENUMV(Radian), ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** overset holes
 	 !  create dummy data
 	    do i=1,3
-	      ! Define 2 separate PointRange, for 2 patches in the hole
+	      ! Define 2 separate CGNS_ENUMV(PointRange), for 2 patches in the hole
 		pnts(i,1)=1
 		pnts(i,2)=size(i)
 	      ! second PointRange of hole
 		pnts(i,3)=2
 		pnts(i,4)=size(i)
 	    enddo
-	  ! Hole defined with 2 point set type PointRange, so 4 points:
-	    call cg_hole_write_f(cg, base_no, zone_no, 'hole#1', Vertex, &
-                                 PointRange, 2, 4_cgsize_t, pnts, &
+	  ! Hole defined with 2 point set type CGNS_ENUMV(PointRange), so 4 points:
+	    call cg_hole_write_f(cg, base_no, zone_no, 'hole#1', CGNS_ENUMV(Vertex), &
+                                 CGNS_ENUMV(PointRange), 2, 4_cgsize_t, pnts, &
                                  hole_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -302,9 +302,9 @@
  100        continue
 	  ! create a point matching connectivity
 	    call cg_conn_write_f(cg, base_no, zone_no, 'Connect#1', &
-                Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts, &
+                CGNS_ENUMV(Vertex), CGNS_ENUMV(Abutting1to1), CGNS_ENUMV(PointList), 5_cgsize_t, pnts, &
                 'zone#2', &
-                Structured, PointListDonor, Integer, 5_cgsize_t, &
+                CGNS_ENUMV(Structured), CGNS_ENUMV(PointListDonor), CGNS_ENUMV(Integer), 5_cgsize_t, &
                 donor_pnts, conn_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -339,7 +339,7 @@
 
 ! *** bocos
 	    call cg_boco_write_f(cg, base_no, zone_no, 'boco#1', &
-                 BCInflow, PointRange, 2_cgsize_t, pnts, boco_no, ier)
+                 CGNS_ENUMV(BCInflow), CGNS_ENUMV(PointRange), 2_cgsize_t, pnts, boco_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** boco normal
@@ -355,7 +355,7 @@
 	    enddo
 
 	    call cg_boco_normal_write_f(cg, base_no, zone_no, boco_no, &
-               NormalIndex, 1, RealSingle, normals, ier)
+               NormalIndex, 1, CGNS_ENUMV(RealSingle), normals, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ** boundary condition attributes: GOTO BC_t node
@@ -364,29 +364,29 @@
             if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ** boundary condition attributes:  GridLocation_t
-            call cg_gridlocation_write_f(Vertex, ier)
+            call cg_gridlocation_write_f(CGNS_ENUMV(Vertex), ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ** boundary condition dataset
 	    call cg_dataset_write_f(cg, base_no, zone, &
-               boco_no, 'DataSetName', BCInflow, dset_no, ier)
+               boco_no, 'DataSetName', CGNS_ENUMV(BCInflow), dset_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ** boundary condition data:
 	    call cg_bcdata_write_f(cg, base_no, zone, &
-               boco_no, dset_no, Neumann, ier)
+               boco_no, dset_no, CGNS_ENUMV(Neumann), ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ** boundary condition data arrays: GOTO BCData_t node
 	    call cg_goto_f(cg, base_no, ier, 'Zone_t', zone_no, &
                 'ZoneBC_t', 1, 'BC_t', boco_no, 'BCDataSet_t', dset_no, &
-                'BCData_t', Neumann, 'end')
+                'BCData_t', CGNS_ENUMV(Neumann), 'end')
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 	    do i=1, npnts
 		data(i) = i
 	    enddo
-	    call cg_array_write_f('dataset_arrayname', RealSingle, &
+	    call cg_array_write_f('dataset_arrayname', CGNS_ENUMV(RealSingle), &
                  1, npnts, data, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 

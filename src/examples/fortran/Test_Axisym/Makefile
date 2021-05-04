@@ -23,8 +23,8 @@ $(OUTDIR) :
 $(WRITE) : cgwrite.F90
 	$(F77) $(FOPTS) $(FEOUT) $@ cgwrite.F90 $(LIBS)
 
-$(READ) : cgread.F9090
-	$(F77) $(FOPTS) $(FEOUT) $@ cgread.F9090 $(LIBS)
+$(READ) : cgread.F90
+	$(F77) $(FOPTS) $(FEOUT) $@ cgread.F90 $(LIBS)
 
 $(MODIFY) : cgmodify.F90
 	$(F77) $(FOPTS) $(FEOUT) $@ cgmodify.F90 $(LIBS)

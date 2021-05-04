@@ -1,16 +1,17 @@
 	program read_cgns_motion
 	USE CGNS
+        IMPLICIT NONE
 
 ! This program reads the CGNS file created with write_cgns_motion
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
-
+        INTEGER Ndim, Nglobal
 	parameter (Ndim = 3)
 	parameter (Nglobal = 500)
 	integer IndexDim, CellDim, PhysDim
-	integer ier, zonetype
+	INTEGER ier, i, zonetype
 	integer nbases, nzones
 	integer(cgsize_t) size(Ndim*3)
 	integer nsols, location
@@ -28,7 +29,7 @@
 ! Variable for GridMotion_t:
 	integer nrmotion, rmotion, rmotiontype
 	character*32 rmotionname, arrayname
-	integer narrays
+	INTEGER narrays, iarray
 	integer mass, length, time, temp, deg
 	integer ndescr, descr
 	character*32 descrname, descrtext
@@ -113,7 +114,7 @@
                 enddo
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 
-                if (datatype .eq. Character) then
+                if (datatype .eq. CGNS_ENUMV(Character)) then
                     call cg_array_read_f(iarray, data_char, ier)
                     if (ier .ne. ALL_OK) call cg_error_exit_f
 		    if (arrayname(1:12).eq.'ZonePointers') then
@@ -127,17 +128,17 @@
 		      enddo
 		    endif
 
-		else if (datatype .eq. RealSingle) then
+		else if (datatype .eq. CGNS_ENUMV(RealSingle)) then
 		    call cg_array_read_f(iarray, data_single, ier)
 		    if (ier .ne. ALL_OK) call cg_error_exit_f
 		    write(6,106)'       data=',(data_single(i),i=1,num)
 
-	        else if (datatype .eq. RealDouble) then
+	        else if (datatype .eq. CGNS_ENUMV(RealDouble)) then
                     call cg_array_read_f(iarray, data_double, ier)
                     if (ier .ne. ALL_OK) call cg_error_exit_f
                     write(6,106)'       data=',(data_double(i),i=1,num)
 
-		else if (datatype .eq. Integer) then
+		else if (datatype .eq. CGNS_ENUMV(Integer)) then
 		    call cg_array_read_f(iarray, data_int, ier)
 		    if (ier .ne. ALL_OK) call cg_error_exit_f
 		    write(6,128)'       data=',(data_int(i),i=1,num)
@@ -160,7 +161,7 @@
 	    if (ier .ne. ALL_OK) call cg_error_exit_f
 	    write(6,600)'  Zone type is ', ZoneTypeName(zonetype)
 
-	    if (zonetype.eq.Structured) then
+	    if (zonetype.eq.CGNS_ENUMV(Structured)) then
                  IndexDim=CellDim
 	    else
                  IndexDim=1
@@ -199,7 +200,7 @@
                 enddo
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 
-                if (datatype .eq. Character) then
+                if (datatype .eq. CGNS_ENUMV(Character) ) then
                     call cg_array_read_f(iarray, data_char, ier)
                     if (ier .ne. ALL_OK) call cg_error_exit_f
                     if (arrayname(1:23).eq.'GridCoordinatesPointers'.or. &
@@ -264,12 +265,12 @@
 		  num = num*dim_vals(i)
 		enddo
 
-                if (datatype .eq. RealSingle) then
+                if (datatype .eq. CGNS_ENUMV(RealSingle)) then
                   call cg_array_read_f(iarray, data_single, ier)
                   if (ier .ne. ALL_OK) call cg_error_exit_f
                   write(6,106) 'first pts:',(data_single(i),i=1,2)
                   write(6,106) 'last pts:',(data_single(i),i=num-1,num)
-                elseif (datatype .eq. RealDouble) then
+                elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
                   call cg_array_read_f(iarray, data_double, ier)
                   if (ier .ne. ALL_OK) call cg_error_exit_f
                   write(6,106) 'first pts:',(data_double(i),i=1,2)
@@ -330,11 +331,11 @@
                   write(6,111)'   DataDim(',i,')=',dim_vals(i)
                 enddo
 
-                if (datatype .eq. RealSingle) then
+                if (datatype .eq. CGNS_ENUMV(RealSingle)) then
                   call cg_array_read_f(iarray, data_single, ier)
                   if (ier .ne. ALL_OK) call cg_error_exit_f
                   write(6,106) '   first pts:',(data_single(i),i=1,2)
-                elseif (datatype .eq. RealDouble) then
+                elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
                   call cg_array_read_f(iarray, data_double, ier)
                   if (ier .ne. ALL_OK) call cg_error_exit_f
                   write(6,106) '   first pts:',(data_double(i),i=1,2)
@@ -407,12 +408,12 @@
                     enddo
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 
-                    if (datatype .eq. RealSingle) then
+                    if (datatype .eq. CGNS_ENUMV(RealSingle)) then
                         call cg_array_read_f(iarray, data_single, ier)
                         if (ier .ne. ALL_OK) call cg_error_exit_f
                   	write(6,106)'       first pts:', &
                                      (data_single(i),i=1,dim_vals(1))
-		    else if (datatype .eq. RealDouble) then
+		    else if (datatype .eq. CGNS_ENUMV(RealDouble)) then
 			call cg_array_read_f(iarray, data_double, ier)
 		  	if (ier .ne. ALL_OK) call cg_error_exit_f
 			write(6,106)'       first pts:', &
@@ -498,12 +499,12 @@
                     enddo
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 
-                    if (datatype .eq. RealSingle) then
+                    if (datatype .eq. CGNS_ENUMV(RealSingle)) then
                         call cg_array_read_f(iarray, data_single, ier)
                         if (ier .ne. ALL_OK) call cg_error_exit_f
                         write(6,106)'       first pts:', &
                                      (data_single(i),i=1,dim_vals(1))
-		    else if (datatype .eq. RealDouble) then
+		    else if (datatype .eq. CGNS_ENUMV(RealDouble)) then
                         call cg_array_read_f(iarray, data_double, ier)
                         if (ier .ne. ALL_OK) call cg_error_exit_f
                         write(6,106)'       first pts:', &

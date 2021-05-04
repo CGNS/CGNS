@@ -10,7 +10,7 @@
 !	one is a structured 3x3x3 block, and the 2nd is
 !	an unstructured 3x3x3 block composed of 8 hexa elements.
 ! 	The 2 zones interface (Abutting1to1) on one 9-nodes face.
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -70,7 +70,7 @@
 
 ! Structured zone:
 	    if (zone .eq. 1) then
-		ZoneType=Structured
+		ZoneType=CGNS_ENUMV(Structured)
 	        write(ZoneName,100) 'StructuredZone#1'
 		
 		index_dim = 3
@@ -82,7 +82,7 @@
 
 ! Unstructured zone:
 	    else if (zone .eq. 2) then
-		ZoneType=Unstructured
+		ZoneType=CGNS_ENUMV(Unstructured)
 		write(ZoneName,'(a)') 'UnstructuredZone#1'
 		index_dim = 1
 		size(1) = 27		! no of nodes
@@ -120,22 +120,24 @@
 
 ! create coordinate data
             do coord=1,phys_dim
-                do 20 k=1, 3
-                do 20 j=1, 3
-                do 20 i=1, 3
-                    pos = i + (j-1)*3 + (k-1)*9
-                    if (coord.eq.1) data_double(pos) = (i-1)*5 + &
-                        (zone-1)*10
-                    if (coord.eq.2) data_double(pos) = (j-1)*5
-                    if (coord.eq.3) data_double(pos) = (k-1)*5
- 20             continue
+               DO k=1, 3
+                  DO j=1, 3
+                     DO i=1, 3
+                        pos = i + (j-1)*3 + (k-1)*9
+                        IF (coord.EQ.1) data_double(pos) = (i-1)*5 + &
+                             (zone-1)*10
+                        IF (coord.EQ.2) data_double(pos) = (j-1)*5
+                        IF (coord.EQ.3) data_double(pos) = (k-1)*5
+                     ENDDO
+                  ENDDO
+               ENDDO
 
 ! GOTO GridCoordinatesNode & write DataArray
                 call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
                     'GridCoordinates_t', 1, 'end')
                 if (ier .eq. ERROR) call cg_error_exit_f
 
-                call cg_array_write_f(coordname(coord), RealDouble, &
+                call cg_array_write_f(coordname(coord), CGNS_ENUMV(RealDouble), &
                     index_dim, size, data_double, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 	    enddo	! coord. loop
@@ -145,10 +147,10 @@
 	    do n=1,8
 		data_double(n) = 1.0 + n/10.0
 	    enddo
-	    call cg_sol_write_f(cg, base, zone,'Solution1',CellCenter, &
+	    call cg_sol_write_f(cg, base, zone,'Solution1',CGNS_ENUMV(CellCenter), &
                sol_no,ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
-	    call cg_field_write_f(cg, base, zone, sol_no, RealDouble, &
+	    call cg_field_write_f(cg, base, zone, sol_no, CGNS_ENUMV(RealDouble), &
                 'DummySolution', data_double, field_no, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -170,9 +172,9 @@
                 pnts(3,2)=3
 
 	        call cg_conn_write_f(cg, base, zone, 'str_to_unstr', &
-       	            Vertex, Abutting1to1, PointRange, 2_cgsize_t, pnts, &
-                    'UnstructuredZone#1', Unstructured, &
-                    CellListDonor, Integer, 9_cgsize_t, uns_pnts, index, &
+       	            CGNS_ENUMV(Vertex), CGNS_ENUMV(Abutting1to1), CGNS_ENUMV(PointRange), 2_cgsize_t, pnts, &
+                    'UnstructuredZone#1', CGNS_ENUMV(Unstructured), &
+                    CGNS_ENUMV(CellListDonor), CGNS_ENUMV(Integer), 9_cgsize_t, uns_pnts, index, &
                     ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -191,7 +193,7 @@
 
 		dim_vals(1)=cell_dim
 		dim_vals(2)=9
-		call cg_array_write_f('InterpolantsDonor', RealDouble, &
+		call cg_array_write_f('InterpolantsDonor', CGNS_ENUMV(RealDouble), &
                     2, dim_vals, interpolants, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 		
@@ -214,9 +216,9 @@
 		enddo
 
 		call cg_conn_write_f(cg, base, zone, 'unstr_to_str', &
-                    Vertex, Abutting1to1, PointList,9_cgsize_t,uns_pnts, &
-                    'StructuredZone#1', Structured, PointListDonor, &
-      		    Integer, 9_cgsize_t, pnts, index, ier)
+                    CGNS_ENUMV(Vertex), CGNS_ENUMV(Abutting1to1), CGNS_ENUMV(PointList),9_cgsize_t,uns_pnts, &
+                    'StructuredZone#1', CGNS_ENUMV(Structured), CGNS_ENUMV(PointListDonor), &
+      		    CGNS_ENUMV(Integer), 9_cgsize_t, pnts, index, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
             endif
 
@@ -224,7 +226,7 @@
 	    if (zone.eq.1) then
 	      ! write a PointRange patch (3,1,1) to (3,3,3) for a structured zone
 	        call cg_boco_write_f(cg, base, zone, 'myboco', &
-                  UserDefined, PointRange, 2_cgsize_t, pnts, index, ier)
+                  UserDefined, CGNS_ENUMV(PointRange), 2_cgsize_t, pnts, index, ier)
 	        if (ier .eq. ERROR) call cg_error_exit_f
 
 	      ! Write Normal index and Normal vectors
@@ -238,14 +240,14 @@
 		enddo
 		
 		call cg_boco_normal_write_f(cg, base, zone, index, Nindex, &
-                      1, RealDouble, VertexNormals, ier)
+                      1, CGNS_ENUMV(RealDouble), VertexNormals, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
 
 	    else if (zone.eq.2) then
 	      ! BC patch defined using points and normals at the points:
 		call cg_boco_write_f(cg, base, zone, 'point_patch', &
-                  UserDefined, PointList, 9_cgsize_t, uns_pnts, index, &
+                  UserDefined, CGNS_ENUMV(PointList), 9_cgsize_t, uns_pnts, index, &
                   ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -254,7 +256,7 @@
 		    VertexNormals(1,n) = 1.0
 		enddo
 		call cg_boco_normal_write_f(cg, base, zone, index, Nindex, &
-                      1, RealDouble, VertexNormals, ier)
+                      1, CGNS_ENUMV(RealDouble), VertexNormals, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 	      ! BC patch defined using face elements & normals at the faces
@@ -265,7 +267,7 @@
 		  FaceNormals(3,n)=0
 		enddo
 		call cg_boco_write_f(cg, base, zone, 'shell_patch', &
-                  BCOutflow, PointList, 4_cgsize_t, elist, index, ier)
+                  CGNS_ENUMV(BCOutflow), CGNS_ENUMV(PointList), 4_cgsize_t, elist, index, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
 	     ! Specify that the GridLocation is FaceCenter
@@ -273,11 +275,11 @@
                    'ZoneBC_t', 1, 'BC_t', index, 'end')
                 if (ier .eq. ERROR) call cg_error_exit_f
 
-		call cg_gridlocation_write_f(FaceCenter, ier)
+		call cg_gridlocation_write_f(CGNS_ENUMV(FaceCenter), ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
                 call cg_boco_normal_write_f(cg, base, zone, index, &
-                      Nindex, 1, RealDouble, FaceNormals, ier)
+                      Nindex, 1, CGNS_ENUMV(RealDouble), FaceNormals, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 	      ! Define family name for BC patch
@@ -291,27 +293,29 @@
 
 ! ********** SPECIAL FOR UNSTRUCTURED ZONES ONLY **********
 
-	    if (ZoneType .eq. Unstructured) then
+	    if (ZoneType .eq. CGNS_ENUMV(Unstructured)) then
 
             ! Generate HEXA_8 Element Connectivity
                 n=0
-                do 30 k=1,2
-                do 30 j=1,2
-                do 30 i=1,2
-                    n=n+1
-                    pos = i + (j-1)*3 + (k-1)*9
-                    element(1,n) = pos
-                    element(2,n) = pos+1
-                    element(3,n) = pos+4
-                    element(4,n) = pos+3
-                    element(5,n) = pos+9
-                    element(6,n) = pos+10
-                    element(7,n) = pos+13
-                    element(8,n) = pos+12
- 30             continue
+                DO k=1,2
+                   DO j=1,2
+                      DO i=1,2
+                         n=n+1
+                         pos = i + (j-1)*3 + (k-1)*9
+                         element(1,n) = pos
+                         element(2,n) = pos+1
+                         element(3,n) = pos+4
+                         element(4,n) = pos+3
+                         element(5,n) = pos+9
+                         element(6,n) = pos+10
+                         element(7,n) = pos+13
+                         element(8,n) = pos+12
+                      ENDDO
+                   ENDDO
+                ENDDO
 
 		call cg_section_write_f(cg, base, zone, &
-                  'VolumeElements', HEXA_8, 1_cgsize_t, 8_cgsize_t, 0, &
+                  'VolumeElements', CGNS_ENUMV(HEXA_8), 1_cgsize_t, 8_cgsize_t, 0, &
                    element, hexa_section_no, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -329,7 +333,7 @@
                 enddo
 
 		call cg_section_write_f(cg, base, zone, 'outflow', &
-                  QUAD_4, 9_cgsize_t, 12_cgsize_t, 0, quads, &
+                  CGNS_ENUMV(QUAD_4), 9_cgsize_t, 12_cgsize_t, 0, quads, &
                   quad_section_no,ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -396,7 +400,7 @@
 	    do bc=1,2
 		write(fambcname,'(a,i1)')'FamBC#',bc
 	 	call cg_fambc_write_f(cg, base, fam, fambcname, &
-                  BCGeneral, index, ier)
+                  CGNS_ENUMV(BCGeneral), index, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 	    enddo
 
@@ -408,25 +412,25 @@
                            'FamilyBC_t', 1,'end')
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
-!           call cg_bcdataset_write_f('FamBCDataSet', BCWall,
-!    &                     0, ier)
-!	    if (ier .eq. ERROR) call cg_error_exit_f
+!           call cg_bcdataset_write_f('FamBCDataSet', CGNS_ENUMV(BCWall), &
+!                         0, ier)
+!	    if (ier .eq. ERROR)  call cg_error_exit_f
 
-            call cg_bcdataset_write_f('FamBCDataSet', BCWall, &
-                           Dirichlet, ier)
+            call cg_bcdataset_write_f('FamBCDataSet', CGNS_ENUMV(BCWall), &
+                           CGNS_ENUMV(Dirichlet), ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
-            call cg_bcdataset_write_f('FamBCDataSet', BCWall, &
-                           Neumann, ier)
+            call cg_bcdataset_write_f('FamBCDataSet', CGNS_ENUMV(BCWall), &
+                           CGNS_ENUMV(Neumann), ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
             call cg_goto_f(cg, base, ier, 'Family_t', fam, &
                            'FamilyBC_t', 1, 'BCDataSet_t', 1, &
-                           'BCData_t', Dirichlet, 'end')
+                           'BCData_t', CGNS_ENUMV(Dirichlet), 'end')
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
-            call cg_units_write_f(Kilogram, Meter, Second, Celsius, &
-                           Degree, ier)
+            call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Celsius), &
+                           CGNS_ENUMV(Degree), ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ** end KMW Family Functionality Extension

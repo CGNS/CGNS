@@ -18,7 +18,7 @@
 !       - links under BCProperty_t, WallFunction_t, Area_t
 !       - cg_goto to BCProperty_t, WallFunction_t, Area_t
 !       - Memory check with Insure
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -70,7 +70,7 @@
 	    num = num * size(i)             	! nr of nodes
 	enddo
 
-	call cg_zone_write_f(cg, base, 'Zone#1', size, Structured, &
+	call cg_zone_write_f(cg, base, 'Zone#1', size, CGNS_ENUMV(Structured), &
        	    zone, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -82,7 +82,7 @@
 	enddo
 	pnts(1,2) = 1
         call cg_boco_write_f(cg, base, zone, 'boco#1', &
-             BCInflow, PointRange, 2_cgsize_t, pnts, boco, ier)
+             CGNS_ENUMV(BCInflow), CGNS_ENUMV(PointRange), 2_cgsize_t, pnts, boco, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         ! imax face
@@ -92,12 +92,12 @@
         enddo
         pnts(1,1) = size(1)
 	call cg_boco_write_f(cg, base, zone, 'boco#2', &
-             BCOutflow, PointRange, 2_cgsize_t, pnts, boco, ier)
+             CGNS_ENUMV(BCOutflow), CGNS_ENUMV(PointRange), 2_cgsize_t, pnts, boco, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 	
 ! *** write BCProperty_t/WallFunction_t node under boco#2
-	WallFunctionType = Generic
+	WallFunctionType = CGNS_ENUMV(Generic)
 	call cg_bc_wallfunction_write_f(cg, base, zone, &
               boco, WallFunctionType, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
@@ -108,7 +108,7 @@
 !       if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** write BCProperty_t/Area_t node under boco#2
-	AreaType = BleedArea
+	AreaType = CGNS_ENUMV(BleedArea)
 	SurfaceArea = 123.456
 !	RegionName10 = 'myRegion'
  	RegionName100 = 'myRegion'
@@ -164,7 +164,7 @@
 
  	dim_vals(1)=3
  	dim_vals(2)=2
- 	call cg_array_write_f('arraysize', Integer, 2, dim_vals, &
+ 	call cg_array_write_f('arraysize', CGNS_ENUMV(Integer), 2, dim_vals, &
               size, ier)
  	if (ier .ne. ERROR) write(6,'(a)') 'Error in API'
 
@@ -173,10 +173,10 @@
             'BC_t', boco, 'BCProperty_t', 1, 'Area_t', 1, 'DataArray_t', &
       	    1, 'end')
 
-	call cg_dataclass_write_f(Dimensional, ier)
+	call cg_dataclass_write_f(CGNS_ENUMV(Dimensional), ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-      	    		      Radian, ier)
+	call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+      	    		      CGNS_ENUMV(Radian), ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012

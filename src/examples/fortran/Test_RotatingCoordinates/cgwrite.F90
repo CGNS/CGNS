@@ -6,7 +6,7 @@
 !       last revised on May 31 2002
 
 !       This example test the RotatingCoordinates_t data structure and its children
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -63,12 +63,12 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataClass
-        call cg_dataclass_write_f(Dimensional, ier)
+        call cg_dataclass_write_f(CGNS_ENUMV(Dimensional), ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DimensionalUnits
-	call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                              Radian, ier)
+	call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+                              CGNS_ENUMV(Radian), ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * UserDefinedData
@@ -89,8 +89,8 @@
 	if (ier .eq. ERROR) call cg_error_exit_f
 	
 ! * RotationCenter/DimensionalUnits
-	call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                              Radian, ier)
+	call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+                              CGNS_ENUMV(Radian), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * Write a zone
@@ -100,7 +100,7 @@
 	    size(i+2*Ndim) = 0		! nr of bnd nodes if ordered
 	enddo
 	call cg_zone_write_f(cg, base_no, 'MyZone', size, &
-                                 Structured, zone_no, ier)
+                                 CGNS_ENUMV(Structured), zone_no, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** write a descriptor under the zone
@@ -132,12 +132,12 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataClass
-        call cg_dataclass_write_f(Dimensional, ier)
+        call cg_dataclass_write_f(CGNS_ENUMV(Dimensional), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DimensionalUnits
-        call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                              Radian, ier)
+        call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+                              CGNS_ENUMV(Radian), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * UserDefinedData
@@ -158,8 +158,8 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * RotationCenter/DimensionalUnits
-        call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                              Radian, ier)
+        call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+                              CGNS_ENUMV(Radian), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** close CGNS file

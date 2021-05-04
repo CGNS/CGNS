@@ -4,7 +4,7 @@
 	implicit none
 
 ! This program reads a 3D mesh, structured or unstructured.
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -170,15 +170,15 @@
               if (ier .eq. ERROR) call cg_error_exit_f
               if (ier.eq.ALL_OK) &
                 write(6,600)' GoverningEquationsType="', &
-                                GoverningEquationsTypeName(type),'"' &
+                                GoverningEquationsTypeName(type),'"'
 
-       *** Governing Equations attribute:  GOTO GoverningEquations_t node
+       ! ! *** Governing Equations attribute:  GOTO GoverningEquations_t node
 	      call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1, &
                   'GoverningEquations_t',1,'end')
 	      if (ier .eq. ERROR) call cg_error_exit_f
 	
 
-        ! *** Governing Equations attribute:  Diffusion model
+        ! ! *** Governing Equations attribute:  Diffusion model
 	      call cg_diffusion_read_f(diffusion_model, ier)
 	      if (ier .eq. ERROR) call cg_error_exit_f
 	      if (ier.eq.ALL_OK)write(6,103)'   Diffusion model=', &
@@ -204,7 +204,7 @@
 	    write(6,600)'  Zone type is ', ZoneTypeName(zonetype)
 
 
-	    if (zonetype.eq.Structured) then
+	    if (zonetype.eq.CGNS_ENUMV(Structured)) then
 		IndexDim=CellDim
 	    else
 		IndexDim=1
@@ -255,11 +255,11 @@
 	        write(6,200) ' DataDim=',dim_vals(1)
 
 	        write(6,105) ' Data:'
-	        if (datatype .eq. RealSingle) then
+	        if (datatype .eq. CGNS_ENUMV(RealSingle)) then
 	          call cg_array_read_f(iarray, data_single, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
 	          write(6,106) (data_single(n),n=1,dim_vals(1))
-	        elseif (datatype .eq. RealDouble) then
+	        elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
 		  call cg_array_read_f(iarray, data_double, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
 	 	  write(6,106) (data_double(n),n=1,dim_vals(1))
@@ -322,11 +322,11 @@
                 write(6,108) ' DataNdim=',nndim, &
                              ', DataDim=',dim_vals(1)
 
-                if (datatype .eq. RealSingle) then
+                if (datatype .eq. CGNS_ENUMV(RealSingle)) then
                   call cg_array_read_f(iarray, data_single, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
                   write(6,109) ' integraldata=',data_single(1)
-                elseif (datatype .eq. RealDouble) then
+                elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
                   call cg_array_read_f(iarray, data_double, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
                   write(6,109) 'integraldata=',data_double(1)
@@ -346,11 +346,11 @@
 	        elseif (ier .eq. ALL_OK) then
 		  write(6,600)' Datatype for exponents is ', &
                      DataTypeName(datatype)
-                  if (datatype .eq. RealSingle) then
+                  if (datatype .eq. CGNS_ENUMV(RealSingle)) then
 	            call cg_exponents_read_f(data_single, ier)
 		    if (ier .eq. ERROR) call cg_error_exit_f
 		    write(6,110)' Exponents:',(data_single(n),n=1,5)
-                  elseif (datatype .eq. RealDouble) then
+                  elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
                     call cg_exponents_read_f(data_double, ier)
                     if (ier .eq. ERROR) call cg_error_exit_f
                     write(6,110)' Exponents:',(data_double(n),n=1,5)
@@ -364,11 +364,11 @@
                 elseif (ier .eq. ALL_OK) then
 		  write(6,600)' Datatype for conversion is ', &
                      DataTypeName(datatype)
-                  if (datatype .eq. RealSingle) then
+                  if (datatype .eq. CGNS_ENUMV(RealSingle)) then
                     call cg_conversion_read_f(data_single, ier)
                     if (ier .eq. ERROR) call cg_error_exit_f
                     write(6,110)' Conversion:',(data_single(n),n=1,2)
-                  elseif (datatype .eq. RealDouble) then
+                  elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
                     call cg_conversion_read_f(data_double, ier)
                     if (ier .eq. ERROR) call cg_error_exit_f
                     write(6,110)' Conversion:',(data_double(n),n=1,2)
@@ -426,12 +426,12 @@
 		  num = num*dim_vals(i)
 		enddo
 
-                if (datatype .eq. RealSingle) then
+                if (datatype .eq. CGNS_ENUMV(RealSingle)) then
                   call cg_array_read_f(iarray, data_single, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
                   write(6,106) (data_single(i),i=1,2)
                   write(6,106) (data_single(i),i=num-1,num)
-                elseif (datatype .eq. RealDouble) then
+                elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
                   call cg_array_read_f(iarray, data_double, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
                   write(6,106) (data_double(i),i=1,2)
@@ -476,14 +476,14 @@
                   '   datatype=',DataTypeName(datatype), &
                   '   name="',coordname,'"'
 
-                if (datatype .eq. RealSingle) then
+                if (datatype .eq. CGNS_ENUMV(RealSingle)) then
         	    call cg_coord_read_f(cg, base, zone, coordname, &
-                        RealSingle, rmin, DataSize, data_single, ier)
+                        CGNS_ENUMV(RealSingle), rmin, DataSize, data_single, ier)
         	    if (ier .eq. ERROR) call cg_error_exit_f
 
-                elseif (datatype .eq. RealDouble) then
+                elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
                     call cg_coord_read_f(cg, base, zone, coordname, &
-                        RealDouble, rmin, DataSize, data_double, ier)
+                        CGNS_ENUMV(RealDouble), rmin, DataSize, data_double, ier)
                     if (ier .eq. ERROR) call cg_error_exit_f
                 endif
 	      enddo
@@ -544,11 +544,11 @@
                 enddo
                 write(6,200) 'Nr of data in solution vector=',num
 
-                if (datatype .eq. RealSingle) then
+                if (datatype .eq. CGNS_ENUMV(RealSingle)) then
                   call cg_array_read_f(iarray, data_single, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
                   !write(6,106) (data_single(i),i=1,num)
-                elseif (datatype .eq. RealDouble) then
+                elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
                   call cg_array_read_f(iarray, data_double, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
                   !write(6,106) (data_double(i),i=1,num)
@@ -584,10 +584,10 @@
 
         ! *** Compute the nr of data to be read
 	
-              if (zonetype.eq.Structured) then
+              if (zonetype.eq.CGNS_ENUMV(Structured)) then
                 do i=1,3
                   DataSize(i)=size(i) + rind(2*i-1) + rind(2*i)
-                  if (location.eq.CellCenter) DataSize(i)=DataSize(i)-1
+                  if (location.eq.CGNS_ENUMV(CellCenter)) DataSize(i)=DataSize(i)-1
                 enddo
               else
                 DataSize(1)=size(2)
@@ -608,7 +608,7 @@
 
           ! *** read entire range of solution data and record in double precision
                 call cg_field_read_f(cg, base, zone, sol, fieldname, &
-                    RealDouble, rmin, DataSize, data_double, ier)
+                    CGNS_ENUMV(RealDouble), rmin, DataSize, data_double, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
               enddo                             ! field loop
 
@@ -660,11 +660,11 @@
 		  num=num*dim_vals(n)
 		enddo
 
-                if (datatype .eq. RealSingle) then
+                if (datatype .eq. CGNS_ENUMV(RealSingle)) then
                   call cg_array_read_f(iarray, data_single, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
                   !write(6,*) (data_single(n),n=1,num)
-                elseif (datatype .eq. RealDouble) then
+                elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
                   call cg_array_read_f(1, data_double, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
                   !write(6,*) (data_double(n),n=1,num)
@@ -777,7 +777,7 @@
                   '   npnts_donor=',npnts_donor
 
 
-                call cg_conn_read_f(cg, base, zone, conn, pnts, Integer, &
+                call cg_conn_read_f(cg, base, zone, conn, pnts, CGNS_ENUMV(Integer), &
                                   donor_pnts, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -895,11 +895,11 @@
                   write(6,600)'    Datatype=',DataTypeName(datatype)
 
 		  write(6,600)'    Data:'
-                  if (datatype .eq. RealSingle) then
+                  if (datatype .eq. CGNS_ENUMV(RealSingle)) then
                     call cg_array_read_f(iarray, data_single, ier)
                     if (ier .eq. ERROR) call cg_error_exit_f
                     write(6,124) data_single(1)
-                  elseif (datatype .eq. RealDouble) then
+                  elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
                     call cg_array_read_f(iarray, data_double, ier)
                     if (ier .eq. ERROR) call cg_error_exit_f
                     write(6,124) data_double(1)
@@ -943,11 +943,11 @@
                   DataTypeName(datatype)
 
 	       ! read patch points and InwardNormalList
-	        if (datatype.eq.RealSingle) then
+	        if (datatype.eq.CGNS_ENUMV(RealSingle)) then
 		   call cg_boco_read_f(cg, base, zone, boco, pnts, &
                     data_single, ier)
 		   if (ier .eq. ERROR) call cg_error_exit_f
-	        elseif (datatype.eq.RealDouble) then
+	        elseif (datatype.eq.CGNS_ENUMV(RealDouble)) then
 		   call cg_boco_read_f(cg, base, zone, boco, pnts, &
                     data_double, ier)
 		   if (ier .eq. ERROR) call cg_error_exit_f
@@ -959,14 +959,14 @@
                                      pnts(3*npnts)
 
 	 	if (NormalListFlag .ne. 0) then
-		  if (datatype.eq.RealSingle) &
+		  if (datatype.eq.CGNS_ENUMV(RealSingle)) &
                     write(6,126) '   Normals:', &
                  '    first point:', data_single(1),data_single(2), &
                                      data_single(3), &
                  '    last point :', data_single(3*npnts-2), &
                                      data_single(3*npnts-1), &
                                      data_single(3*npnts)
-		  if (datatype.eq.RealDouble) &
+		  if (datatype.eq.CGNS_ENUMV(RealDouble)) &
                     write(6,126) '   Normals:', &
                  '    first point:', data_double(1),data_double(2), &
                                      data_double(3), &
@@ -1008,7 +1008,7 @@
 		  if (DirichletFlag.eq.1) then
 		    call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
                       'ZoneBC_t', 1, 'BC_t', boco, 'BCDataSet_t', &
-                      idataset,'BCData_t',Dirichlet,'end')
+                      idataset,'BCData_t',CGNS_ENUMV(Dirichlet),'end')
 		      if (ier .eq. ERROR) call cg_error_exit_f
 
                ! ** boundary condition data attributes: DataClass_t
@@ -1034,13 +1034,13 @@
                         DataTypeName(datatype)
 
 		      write(6,105)'    Dirichlet Data:'
-                      if (datatype .eq. RealSingle) then
+                      if (datatype .eq. CGNS_ENUMV(RealSingle)) then
                         call cg_array_read_f(iarray, data_single, ier)
                         if (ier .eq. ERROR) call cg_error_exit_f
                         write(6,106) &
                             (data_single(n),n=1,dim_vals(1))
 
-                      elseif (datatype .eq. RealDouble) then
+                      elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
                         call cg_array_read_f(iarray, data_double, ier)
                         if (ier .eq. ERROR) call cg_error_exit_f
                         write(6,106) &
@@ -1052,7 +1052,7 @@
 		  if (NeumannFlag.eq.1) then
 		    call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
                         'ZoneBC_t', 1, 'BC_t', boco, 'BCDataSet_t', &
-                        idataset, 'BCData_t', Neumann,'end')
+                        idataset, 'BCData_t', CGNS_ENUMV(Neumann),'end')
                       if (ier .eq. ERROR) call cg_error_exit_f
 
                ! ** boundary condition data attributes: DataClass_t
@@ -1077,13 +1077,13 @@
                         DataTypeName(datatype)
 
                       write(6,400)'    Neumann Data:'
-                      if (datatype .eq. RealSingle) then
+                      if (datatype .eq. CGNS_ENUMV(RealSingle)) then
                         call cg_array_read_f(iarray, data_single, ier)
                         if (ier .eq. ERROR) call cg_error_exit_f
                         write(6,106) &
                             (data_single(n),n=1,dim_vals(1))
 
-                      elseif (datatype .eq. RealDouble) then
+                      elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
                         call cg_array_read_f(iarray, data_double, ier)
                         if (ier .eq. ERROR) call cg_error_exit_f
                         write(6,106) &

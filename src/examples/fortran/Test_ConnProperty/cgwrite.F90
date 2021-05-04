@@ -17,7 +17,7 @@
 !       - links under GridConnectivityProperty_t, AverageInterface_t, Periodic_t
 !       - cg_goto to GridConnectivityProperty_t, AverageInterface_t, Periodic_t
 !       - Memory check with Insure
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -69,11 +69,11 @@
 	    num = num * size(i)             	! nr of nodes
 	enddo
 
-	call cg_zone_write_f(cg, base, 'Zone#1', size, Structured, &
+	call cg_zone_write_f(cg, base, 'Zone#1', size, CGNS_ENUMV(Structured), &
        	    zone, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_zone_write_f(cg, base, 'Zone#2', size, Structured, &
+	call cg_zone_write_f(cg, base, 'Zone#2', size, CGNS_ENUMV(Structured), &
             zone, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -86,19 +86,19 @@
             donor_pnts(i,n)=i*2
  100    continue
         call cg_conn_write_f(cg, base, zone, 'Connect#1', &
-            Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts, 'Zone#2', &
-            Structured, PointListDonor, Integer, 5_cgsize_t, donor_pnts, &
+            CGNS_ENUMV(Vertex), CGNS_ENUMV(Abutting1to1), CGNS_ENUMV(PointList), 5_cgsize_t, pnts, 'Zone#2', &
+            CGNS_ENUMV(Structured), CGNS_ENUMV(PointListDonor), CGNS_ENUMV(Integer), 5_cgsize_t, donor_pnts, &
             conn, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_conn_write_f(cg, base, zone, 'Connect#2', &
-            Vertex, Abutting1to1, PointList, 5_cgsize_t, pnts, 'Zone#2', &
-            Structured, PointListDonor, Integer, 5_cgsize_t, donor_pnts, &
+            CGNS_ENUMV(Vertex), CGNS_ENUMV(Abutting1to1), CGNS_ENUMV(PointList), 5_cgsize_t, pnts, 'Zone#2', &
+            CGNS_ENUMV(Structured), CGNS_ENUMV(PointListDonor), CGNS_ENUMV(Integer), 5_cgsize_t, donor_pnts, &
             conn, ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 	
 ! *** write GridConnectivityProperty_t/AverageInterface_t node under conn#2
-	AverageInterfaceType = AverageCircumferential
+	AverageInterfaceType = CGNS_ENUMV(AverageCircumferential)
 	call cg_conn_average_write_f(cg, base, zone, &
               conn, AverageInterfaceType, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
@@ -176,16 +176,16 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataClass & DimensionalUnits under Periodic
-        call cg_dataclass_write_f(Dimensional, ier)
+        call cg_dataclass_write_f(CGNS_ENUMV(Dimensional), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
-        call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                              Radian, ier)
+        call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+                              CGNS_ENUMV(Radian), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataArray under Periodic
  	dim_vals(1)=3
  	dim_vals(2)=2
- 	call cg_array_write_f('arraysize', Integer, 2, dim_vals, &
+ 	call cg_array_write_f('arraysize', CGNS_ENUMV(Integer), 2, dim_vals, &
               size, ier)
  	if (ier .ne. ERROR) write(6,'(a)') 'Error in API'
 
@@ -197,10 +197,10 @@
             'DataArray_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_dataclass_write_f(Dimensional, ier)
+	call cg_dataclass_write_f(CGNS_ENUMV(Dimensional), ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-      	    		      Radian, ier)
+	call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+      	    		      CGNS_ENUMV(Radian), ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012

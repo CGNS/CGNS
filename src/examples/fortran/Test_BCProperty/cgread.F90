@@ -19,7 +19,7 @@
 !	- links under BCProperty_t, WallFunction_t, Area_t
 !	- cg_goto to BCProperty_t, WallFunction_t, Area_t
 ! 	- Memory check with Insure
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -102,7 +102,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
         write(6,600)'  Zone type is ', ZoneTypeName(zonetype)
 
-        if (zonetype.eq.Structured) then
+        if (zonetype.eq.CGNS_ENUMV(Structured)) then
             IndexDim=CellDim
         else
             IndexDim=1
@@ -139,11 +139,11 @@
 	    endif
 
            ! read patch points and InwardNormalList
-            if (datatype.eq.RealSingle .or. datatype.eq.Null) then
+            if (datatype.eq.CGNS_ENUMV(RealSingle) .or. datatype.eq.Null) then
                call cg_boco_read_f(cg, base, zone, boco, pnts, &
                 data_single, ier)
                if (ier .eq. ERROR) call cg_error_exit_f
-            elseif (datatype.eq.RealDouble) then
+            elseif (datatype.eq.CGNS_ENUMV(RealDouble)) then
                call cg_boco_read_f(cg, base, zone, boco, pnts, &
                 data_double, ier)
                if (ier .eq. ERROR) call cg_error_exit_f

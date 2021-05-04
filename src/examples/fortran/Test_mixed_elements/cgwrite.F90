@@ -6,9 +6,9 @@
 !	last revised on March 15 2000
 
 ! 	This example test the writing of and element section of
-!	type MIXED, which includes some NGON_x elements of different size
+!	type CGNS_ENUMV(MIXED), which includes some NGON_x elements of different size
 !	The model is not realistic, as all the data is dummy.
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -42,7 +42,7 @@
 
 !*******write only 1 unstructured zone
 	zone = 1
-	ZoneType=Unstructured
+	ZoneType=CGNS_ENUMV(Unstructured)
 	write(ZoneName,100) 'UnstructuredZone#1'
  100	format(a)
 	size(1) = 27		! no of nodes
@@ -81,7 +81,7 @@
                            'GridCoordinates_t', 1, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 
-            call cg_array_write_f(coordname(coord), RealDouble, &
+            call cg_array_write_f(coordname(coord), CGNS_ENUMV(RealDouble), &
                                   index_dim, size, data_double, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
 	enddo	! coord. loop
@@ -92,7 +92,7 @@
 	connect_offsets(1) = 0
 ! first element HEXA_8
         count = count + 1
-        element(count)=HEXA_8
+        element(count)=CGNS_ENUMV(HEXA_8)
         do i=1,8
           count = count + 1
           element(count)=i
@@ -100,7 +100,7 @@
 ! second element TETRA_4
         connect_offsets(2) = count
         count = count + 1
-        element(count)=TETRA_4
+        element(count)=CGNS_ENUMV(TETRA_4)
         do i=1,4
           count = count + 1
           element(count)=i
@@ -108,7 +108,7 @@
 ! third element PYRA_5
         connect_offsets(3) = count
         count = count + 1
-        element(count)=PYRA_5
+        element(count)=CGNS_ENUMV(PYRA_5)
         do i=1,5
           count = count + 1
           element(count)=i
@@ -118,12 +118,12 @@
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 ! Write MIXED element section
 	call cg_poly_section_write_f(cg, base, zone, 'MixedElements', &
-                                MIXED, 1_cgsize_t, 3_cgsize_t, 0, &
+                                CGNS_ENUMV(MIXED), 1_cgsize_t, 3_cgsize_t, 0, &
                                 element, connect_offsets, section_no, &
                                 ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-! Write section of 4 NGON_n of 3 nodes
+! Write section of 4  NGON_n of 3 nodes
         count = 0
 	do n=1,4
 	    !count = count + 1
@@ -135,8 +135,8 @@
 	    enddo
 	enddo
 	connect_offsets(5) = count
-	call cg_poly_section_write_f(cg, base, zone, 'NGON_n(3)', &
-                       NGON_n, 1_cgsize_t, 4_cgsize_t, 0, element, &
+	call cg_poly_section_write_f(cg, base, zone, ' NGON_n(3)', &
+                       CGNS_ENUMV(NGON_n), 1_cgsize_t, 4_cgsize_t, 0, element, &
                        connect_offsets, section_no, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 

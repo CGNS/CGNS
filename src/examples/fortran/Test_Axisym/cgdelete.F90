@@ -6,7 +6,7 @@
 !       last revised on June 7 2002
 
 !       This example tests the Axisymmetry_t data structure and its children
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -73,7 +73,7 @@
 ! * DataArray_t AxisymmetryAngle
 !	angle = 360
 !	dimval(1)=1
-!       call cg_array_write_f('AxisymmetryAngle', RealSingle, 1,
+!       call cg_array_write_f('AxisymmetryAngle', CGNS_ENUMV(RealSingle), 1,
 !    &       1, angle, ier)
 !	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -82,7 +82,7 @@
 !       dimval(2)=2
 !	write(CoordinateNames(1),'(a)')'CoordinateX'
 !	write(CoordinateNames(2),'(a)')'CoordinateZ'
-!	call cg_array_write_f('CoordinateNames', Character, 2,
+!	call cg_array_write_f('CoordinateNames', CGNS_ENUMV(Character), 2,
 !    &       dimval, CoordinateNames, ier)
 !	if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -92,12 +92,12 @@
 !       if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataClass
-!       call cg_dataclass_write_f(Dimensional, ier)
+!       call cg_dataclass_write_f(CGNS_ENUMV(Dimensional), ier)
 !	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DimensionalUnits
-!	call cg_units_write_f(Kilogram, Meter, Second, Kelvin,
-!    &                        Radian, ier)
+!	call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin),
+!    &                        CGNS_ENUMV(Radian), ier)
 !	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * UserDefinedData
@@ -122,8 +122,8 @@
 !	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataArray_t/DimensionalUnits
-!	    call cg_units_write_f(Kilogram, Meter, Second, Kelvin,
-!    &                            Degree, ier)
+!	    call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin),
+!    &                            CGNS_ENUMV(Degree), ier)
 !           if (ier .eq. ERROR) call cg_error_exit_f
 !	enddo
 

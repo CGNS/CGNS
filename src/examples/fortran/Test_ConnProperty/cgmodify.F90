@@ -6,7 +6,7 @@
 !       last revised on August 2002
 
 !       This example test modifying the GridConnectivityProperty_t data structure and its children
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -56,7 +56,7 @@
 	conn = 2
 
 ! *** write GridConnectivityProperty_t/AverageInterface_t node under conn#2
-	AverageInterfaceType = AverageCircumferential
+	AverageInterfaceType = CGNS_ENUMV(AverageCircumferential)
 	call cg_conn_average_write_f(cg, base, zone, &
               conn, AverageInterfaceType, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
@@ -130,16 +130,16 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataClass & DimensionalUnits under Periodic
-        call cg_dataclass_write_f(Dimensional, ier)
+        call cg_dataclass_write_f(CGNS_ENUMV(Dimensional), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
-        call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                              Radian, ier)
+        call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+                              CGNS_ENUMV(Radian), ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataArray under Periodic
  	dim_vals(1)=3
  	dim_vals(2)=2
- 	call cg_array_write_f('arraysize', Integer, 2, dim_vals, &
+ 	call cg_array_write_f('arraysize', CGNS_ENUMV(Integer), 2, dim_vals, &
               size, ier)
  	if (ier .ne. ERROR) write(6,'(a)') 'Error in API'
 
@@ -150,10 +150,10 @@
             'DataArray_t', 1, 'end')
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_dataclass_write_f(Dimensional, ier)
+	call cg_dataclass_write_f(CGNS_ENUMV(Dimensional), ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-      	    		      Radian, ier)
+	call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+      	    		      CGNS_ENUMV(Radian), ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** close CGNS file

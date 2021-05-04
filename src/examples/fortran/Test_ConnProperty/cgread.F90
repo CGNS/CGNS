@@ -19,7 +19,7 @@
 !	- links under GridConnectivityProperty_t, AverageInterface_t, Periodic_t
 !	- cg_goto to GridConnectivityProperty_t, AverageInterface_t, Periodic_t
 ! 	- Memory check with Insure
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -103,7 +103,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
         write(6,600)'  Zone type is ', ZoneTypeName(zonetype)
 	
-        if (zonetype.eq.Structured) then
+        if (zonetype.eq.CGNS_ENUMV(Structured)) then
             IndexDim=CellDim
         else
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012

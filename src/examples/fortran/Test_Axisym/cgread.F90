@@ -7,7 +7,7 @@
 !       last revised on June 7 2002
 
 !       This example test the Axisymmetry_t data structure and its children
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -143,14 +143,14 @@
                 num = num*dim_vals(i)
             enddo
 
-            if (datatype .eq. Character) then
+            if (datatype .eq. CGNS_ENUMV(Character)) then
                 call cg_array_read_f(iarray, CoordinateNames, ier)
                 if (ier .ne. ALL_OK) call cg_error_exit_f
 
 		write(6,600)'1st coord=',CoordinateNames(1)
 		write(6,600)'2nd coord=',CoordinateNames(2)
 
-            else if (datatype .eq. RealSingle) then
+            else if (datatype .eq. CGNS_ENUMV(RealSingle)) then
 	 	if (arrayname.eq.'AxisymmetryAngle') then
 		    call cg_array_read_f(iarray, angle, ier)
 		    if (ier .ne. ALL_OK) call cg_error_exit_f
