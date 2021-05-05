@@ -80,11 +80,12 @@
 	zone = 1
 
 ! *** write conns
-	do 100 n=1, 5
-        do 100 i=1,3
-            pnts(i,n)=i             ! * dummy data
-            donor_pnts(i,n)=i*2
- 100    continue
+        DO n=1, 5
+           DO i=1,3
+              pnts(i,n)=i             ! * dummy data
+              donor_pnts(i,n)=i*2
+           ENDDO
+        ENDDO
         call cg_conn_write_f(cg, base, zone, 'Connect#1', &
             CGNS_ENUMV(Vertex), CGNS_ENUMV(Abutting1to1), CGNS_ENUMV(PointList), 5_cgsize_t, pnts, 'Zone#2', &
             CGNS_ENUMV(Structured), CGNS_ENUMV(PointListDonor), CGNS_ENUMV(Integer), 5_cgsize_t, donor_pnts, &

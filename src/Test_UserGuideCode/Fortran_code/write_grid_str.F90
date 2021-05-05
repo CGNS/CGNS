@@ -1,6 +1,7 @@
       program write_grid_str
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Creates simple 3-D structured grid and writes it to a
 !   CGNS file.
@@ -79,13 +80,13 @@
       isize(3,3)=0
 !   create zone
       call cg_zone_write_f(index_file,index_base,zonename,isize,               &
-           Structured,index_zone,ier)
+           CGNS_ENUMV(Structured),index_zone,ier)
 !   write grid coordinates (user must use SIDS-standard names here)
-      call cg_coord_write_f(index_file,index_base,index_zone,RealDouble,       &
+      call cg_coord_write_f(index_file,index_base,index_zone,CGNS_ENUMV(RealDouble),       &
            'CoordinateX',x,index_coord,ier)
-      call cg_coord_write_f(index_file,index_base,index_zone,RealDouble,       &
+      call cg_coord_write_f(index_file,index_base,index_zone,CGNS_ENUMV(RealDouble),       &
            'CoordinateY',y,index_coord,ier)
-      call cg_coord_write_f(index_file,index_base,index_zone,RealDouble,       &
+      call cg_coord_write_f(index_file,index_base,index_zone,CGNS_ENUMV(RealDouble),       &
            'CoordinateZ',z,index_coord,ier)
 !   close CGNS file
       call cg_close_f(index_file,ier)

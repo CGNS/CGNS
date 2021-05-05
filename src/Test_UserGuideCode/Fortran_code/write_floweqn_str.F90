@@ -1,6 +1,7 @@
       program write_floweqn_str
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file and writes flow eqn info
 !
@@ -53,7 +54,7 @@
 !   Create 'GoverningEquations' node under 'FlowEquationSet'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'end')
-      call cg_governing_write_f(NSTurbulent,ier)
+      call cg_governing_write_f(CGNS_ENUMV(NSTurbulent),ier)
 !   Create 'DiffusionModel' node under 'GoverningEquations'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'GoverningEquations_t',1,'end')
@@ -69,35 +70,35 @@
 !   Create 'GasModel' under 'FlowEquationSet'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'end')
-      call cg_model_write_f('GasModel_t',Ideal,ier)
+      call cg_model_write_f('GasModel_t',CGNS_ENUMV(Ideal),ier)
 !   Create 'SpecificHeatRatio' under GasModel
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'GasModel_t',1,'end')
-      call cg_array_write_f('SpecificHeatRatio',RealSingle,1,nuse,gamma,ier)
+      call cg_array_write_f('SpecificHeatRatio',CGNS_ENUMV(RealSingle),1,nuse,gamma,ier)
 !   Create 'DataClass' under 'SpecificHeatRatio'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'GasModel_t',1,'DataArray_t',1,'end')
-      call cg_dataclass_write_f(NondimensionalParameter,ier)
+      call cg_dataclass_write_f(CGNS_ENUMV(NondimensionalParameter),ier)
 !
 !   Create 'TurbulenceClosure' under 'FlowEquationSet'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'end')
-      call cg_model_write_f('TurbulenceClosure_t',EddyViscosity,ier)
+      call cg_model_write_f('TurbulenceClosure_t',CGNS_ENUMV(EddyViscosity),ier)
 !   Create 'PrandtlTurbulent' under 'TurbulenceClosure'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'TurbulenceClosure_t',1,'end')
-      call cg_array_write_f('PrandtlTurbulent',RealSingle,1,nuse,prandtl,ier)
+      call cg_array_write_f('PrandtlTurbulent',CGNS_ENUMV(RealSingle),1,nuse,prandtl,ier)
 !   Create 'DataClass' under 'PrandtlTurbulent'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'TurbulenceClosure_t',1,                      &
            'DataArray_t',1,'end')
-      call cg_dataclass_write_f(NondimensionalParameter,ier)
+      call cg_dataclass_write_f(CGNS_ENUMV(NondimensionalParameter),ier)
 !
 !   Create 'TurbulenceModel' under 'FlowEquationSet'
       call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,            &
            'FlowEquationSet_t',1,'end')
       call cg_model_write_f('TurbulenceModel_t',                               &
-           OneEquation_SpalartAllmaras,ier)
+           CGNS_ENUMV(OneEquation_SpalartAllmaras),ier)
 !   close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully wrote equation set info to file'',             &

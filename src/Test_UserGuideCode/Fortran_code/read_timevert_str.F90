@@ -1,6 +1,7 @@
       program read_timevert_str
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   structured grid plus 3 different flow solutions (at VERTICES),
@@ -83,7 +84,7 @@
          '' be 1 and 3 in BaseIterativeData... read '',2i5)') id1,id2(1)
         stop
       end if
-      call cg_array_read_as_f(1,RealSingle,time,ier)
+      call cg_array_read_as_f(1,CGNS_ENUMV(RealSingle),time,ier)
       write(6,'('' Times stored are:'')')
       do n=1,nsteps
         write(6,'(f12.3)') time(n)
@@ -105,7 +106,7 @@
          idims(1)
         stop
       end if
-      call cg_array_read_as_f(1,Character,solname,ier)
+      call cg_array_read_as_f(1,CGNS_ENUMV(Character),solname,ier)
       write(6,'('' Flow solution names corresponding to each are:'')')
       do n=1,nsteps
         write(6,'(a32)') solname(n)
@@ -124,26 +125,26 @@
         write(6,'('' Error, soln names do not match'')')
         stop
       end if
-      if (loc .ne. Vertex) then
+      if (loc .ne. CGNS_ENUMV(Vertex)) then
         write(6,'('' Error, GridLocation must be Vertex!  Currently:'',        &
          a32)') GridLocationName(loc)
         stop
       end if
       if (n .eq. 1) then
       call cg_field_read_f(index_file,index_base,index_zone,n,                 &
-           'Density',RealSingle,irmin,irmax,r1,ier)
+           'Density',CGNS_ENUMV(RealSingle),irmin,irmax,r1,ier)
       call cg_field_read_f(index_file,index_base,index_zone,n,                 &
-           'Pressure',RealSingle,irmin,irmax,p1,ier)
+           'Pressure',CGNS_ENUMV(RealSingle),irmin,irmax,p1,ier)
       else if (n .eq. 2) then
       call cg_field_read_f(index_file,index_base,index_zone,n,                 &
-           'Density',RealSingle,irmin,irmax,r2,ier)
+           'Density',CGNS_ENUMV(RealSingle),irmin,irmax,r2,ier)
       call cg_field_read_f(index_file,index_base,index_zone,n,                 &
-           'Pressure',RealSingle,irmin,irmax,p2,ier)
+           'Pressure',CGNS_ENUMV(RealSingle),irmin,irmax,p2,ier)
       else
       call cg_field_read_f(index_file,index_base,index_zone,n,                 &
-           'Density',RealSingle,irmin,irmax,r3,ier)
+           'Density',CGNS_ENUMV(RealSingle),irmin,irmax,r3,ier)
       call cg_field_read_f(index_file,index_base,index_zone,n,                 &
-           'Pressure',RealSingle,irmin,irmax,p3,ier)
+           'Pressure',CGNS_ENUMV(RealSingle),irmin,irmax,p3,ier)
       end if
       enddo
 !   close CGNS file
