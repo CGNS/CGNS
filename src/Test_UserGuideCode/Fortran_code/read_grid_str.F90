@@ -1,6 +1,7 @@
       program read_grid_str
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Reads simple 3-D structured grid from CGNS file
 !   (companion program to write_grid_str.f)
@@ -54,11 +55,11 @@
       irmax(3)=isize(3,1)
 !   read grid coordinates
       call cg_coord_read_f(index_file,index_base,index_zone,                   &
-           'CoordinateX',RealSingle,irmin,irmax,x,ier)
+           'CoordinateX',CGNS_ENUMV(RealSingle),irmin,irmax,x,ier)
       call cg_coord_read_f(index_file,index_base,index_zone,                   &
-           'CoordinateY',RealSingle,irmin,irmax,y,ier)
+           'CoordinateY',CGNS_ENUMV(RealSingle),irmin,irmax,y,ier)
       call cg_coord_read_f(index_file,index_base,index_zone,                   &
-           'CoordinateZ',RealSingle,irmin,irmax,z,ier)
+           'CoordinateZ',CGNS_ENUMV(RealSingle),irmin,irmax,z,ier)
 !   close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully read grid from file grid.cgns'')')

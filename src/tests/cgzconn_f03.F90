@@ -1,5 +1,6 @@
       program cgzconn
 
+#include "cgnstypes_f03.h"
 #ifdef WINNT
       include 'cgnswin_f.h'
 #endif
@@ -78,35 +79,35 @@
         endif
 ! write zone
         call cg_zone_write_f(cgfile, cgbase, zname, size,               &
-     &                       Structured, cgzone, ierr)
+     &                       CGNS_ENUMV(Structured), cgzone, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
         call cg_goto_f(cgfile, cgbase, ierr, 'Zone_t', cgzone, 'end')
         if (ierr .ne. CG_OK) call cg_error_exit_f
-        call cg_dataclass_write_f(NormalizedByDimensional, ierr)
+        call cg_dataclass_write_f(CGNS_ENUMV(NormalizedByDimensional), ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
 ! write coordinates
-        call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,       &
+        call cg_coord_write_f(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),       &
      &                        'CoordinateX', x, cgcoord, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
         call cg_gopath_f(cgfile, 'GridCoordinates/CoordinateX', ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
-        call cg_exponents_write_f(RealSingle, exp, ierr)
+        call cg_exponents_write_f(CGNS_ENUMV(RealSingle), exp, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
 
-        call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,       &
+        call cg_coord_write_f(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),       &
      &                        'CoordinateY', y, cgcoord, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
         call cg_gopath_f(cgfile, '../CoordinateY', ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
-        call cg_exponents_write_f(RealSingle, exp, ierr)
+        call cg_exponents_write_f(CGNS_ENUMV(RealSingle), exp, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
 
-        call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,       &
+        call cg_coord_write_f(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle),       &
      &                        'CoordinateZ', z, cgcoord, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
         call cg_gopath_f(cgfile, '../CoordinateZ', ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
-        call cg_exponents_write_f(RealSingle, exp, ierr)
+        call cg_exponents_write_f(CGNS_ENUMV(RealSingle), exp, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
 ! write first ZoneGridConnectivity - will be active
         call cg_zconn_write_f(cgfile, cgbase, cgzone,                   &
@@ -120,10 +121,10 @@
 ! write general connectivity
         npts = 2
         dnpts = 25
-        call cg_conn_write_f(cgfile, cgbase, cgzone, 'conn', Vertex,    &
-     &                       Abutting1to1, PointRange, npts, ptrange,   &
-     &                       dname, Structured, PointListDonor,         &
-     &                       Integer, dnpts, ptlist, cgconn, ierr)
+        call cg_conn_write_f(cgfile, cgbase, cgzone, 'conn', CGNS_ENUMV(Vertex),    &
+     &                       CGNS_ENUMV(Abutting1to1), CGNS_ENUMV(PointRange), npts, ptrange,   &
+     &                       dname, CGNS_ENUMV(Structured), CGNS_ENUMV(PointListDonor),         &
+     &                       CGNS_ENUMV(Integer), dnpts, ptlist, cgconn, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
 ! set it back to previous ZoneGridConnectivity and write 1to1
         call cg_zconn_set_f(cgfile, cgbase, cgzone, cgz1, ierr)
@@ -170,10 +171,12 @@
      &                      loc, type, ptype, npts, dname, dztype,      &
      &                      dptype, ddtype, dnpts, ierr)
         if (ierr .ne. CG_OK) call cg_error_exit_f
-        if (cname .ne. 'conn' .or. loc .ne. Vertex .or.                 &
-     &      type .ne. Abutting1to1 .or. ptype .ne. PointRange .or.      &
-     &      npts .ne. 2 .or. dztype .ne. Structured .or.                &
-     &      dptype .ne. PointListDonor .or. dnpts .ne. 25) then
+        IF (cname .NE. 'conn' .OR. loc .NE. CGNS_ENUMV(Vertex) .OR.     &
+     &      TYPE .NE. CGNS_ENUMV(Abutting1to1) .OR.                     &
+     &      ptype .NE. CGNS_ENUMV(PointRange) .OR.                      &
+     &      npts .NE. 2 .OR. dztype .NE. CGNS_ENUMV(Structured) .OR.    &
+     &      dptype .NE. CGNS_ENUMV(PointListDonor) .OR.                 &
+     &      dnpts .NE. 25) THEN
           print *,'invalid conn data'
           stop
         endif

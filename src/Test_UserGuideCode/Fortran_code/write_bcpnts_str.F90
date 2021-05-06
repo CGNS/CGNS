@@ -1,6 +1,7 @@
       program write_bcpnts_str
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   structured grid, and adds BC definitions (defined
@@ -72,7 +73,7 @@
       end if
       icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Ilo',             &
-           BCTunnelInflow,PointList,icounts,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCTunnelInflow),CGNS_ENUMV(PointList),icounts,ipnts,index_bc,ier)
 !  write boundary conditions for ihi face, defining pointlist first
 !  (user can give any name)
       icount=0
@@ -91,7 +92,7 @@
       end if
       icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Ihi',             &
-           BCExtrapolate,PointList,icounts,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCExtrapolate),CGNS_ENUMV(PointList),icounts,ipnts,index_bc,ier)
 !  write boundary conditions for jlo face, defining pointlist first
 !  (user can give any name)
       icount=0
@@ -110,7 +111,7 @@
       end if
       icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Jlo',             &
-           BCWallInviscid,PointList,icounts,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCWallInviscid),CGNS_ENUMV(PointList),icounts,ipnts,index_bc,ier)
 !  write boundary conditions for jhi face, defining pointlist first
 !  (user can give any name)
       icount=0
@@ -129,7 +130,7 @@
       end if
       icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Jhi',             &
-           BCWallInviscid,PointList,icounts,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCWallInviscid),CGNS_ENUMV(PointList),icounts,ipnts,index_bc,ier)
 !  write boundary conditions for klo face, defining pointlist first
 !  (user can give any name)
       icount=0
@@ -148,7 +149,7 @@
       end if
       icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Klo',             &
-           BCWallInviscid,PointList,icounts,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCWallInviscid),CGNS_ENUMV(PointList),icounts,ipnts,index_bc,ier)
 !  write boundary conditions for khi face, defining pointlist first
 !  (user can give any name)
       icount=0
@@ -167,7 +168,7 @@
       end if
       icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Khi',             &
-           BCWallInviscid,PointList,icounts,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCWallInviscid),CGNS_ENUMV(PointList),icounts,ipnts,index_bc,ier)
 !  close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully added BCs (PointList) to file'',               &

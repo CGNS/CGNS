@@ -6,7 +6,7 @@
 !       last revised on May 31 2002
 
 !       This example test the RotatingCoordinates_t data structure and its children
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif

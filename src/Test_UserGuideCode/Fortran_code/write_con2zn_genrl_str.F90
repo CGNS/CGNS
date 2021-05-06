@@ -1,6 +1,7 @@
       program write_con2zn_genrl_str
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   structured grid (2 zones), and adds 1-to-1
@@ -120,8 +121,8 @@
 !   write integer connectivity info (user can give any name)
         icounts=icount
         call cg_conn_write_f(index_file,index_base,index_zone,                 &
-             'GenInterface',Vertex,Abutting1to1,PointList,icounts,ipnts,       &
-             donorname,Structured,PointListDonor,Integer,icounts,              &
+             'GenInterface',CGNS_ENUMV(Vertex),CGNS_ENUMV(Abutting1to1),CGNS_ENUMV(PointList),icounts,ipnts,       &
+             donorname,CGNS_ENUMV(Structured),CGNS_ENUMV(PointListDonor),CGNS_ENUMV(Integer),icounts,              &
              ipntsdonor,index_conn,ier)
       enddo
 !  close CGNS file

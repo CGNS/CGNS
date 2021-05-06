@@ -1,6 +1,7 @@
       program read_convergence
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Reads convergence history from an existing CGNS file.
 !
@@ -59,7 +60,7 @@
         stop
       end if
 !   read lift coefficient array
-      call cg_array_read_as_f(index_array,RealSingle,cl,ier)
+      call cg_array_read_as_f(index_array,CGNS_ENUMV(RealSingle),cl,ier)
 !   close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully read cl history from file grid.cgns'')')

@@ -1,6 +1,7 @@
       program write_timevert_str
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   structured grid, and adds 3 different flow solutions
@@ -89,24 +90,24 @@
       do n=1,3
 !   create flow solution node
       call cg_sol_write_f(index_file,index_base,index_zone,solname(n),         &
-           Vertex,index_flow,ier)
+           CGNS_ENUMV(Vertex),index_flow,ier)
       write(6,'('' ... writing solution number '',i5)') index_flow
 !   write flow solution (user must use SIDS-standard names here)
       if (n .eq. 1) then
       call cg_field_write_f(index_file,index_base,index_zone,index_flow,       &
-           RealDouble,'Density',r1,index_field,ier)
+           CGNS_ENUMV(RealDouble),'Density',r1,index_field,ier)
       call cg_field_write_f(index_file,index_base,index_zone,index_flow,       &
-           RealDouble,'Pressure',p1,index_field,ier)
+           CGNS_ENUMV(RealDouble),'Pressure',p1,index_field,ier)
       else if (n .eq. 2) then
       call cg_field_write_f(index_file,index_base,index_zone,index_flow,       &
-           RealDouble,'Density',r2,index_field,ier)
+           CGNS_ENUMV(RealDouble),'Density',r2,index_field,ier)
       call cg_field_write_f(index_file,index_base,index_zone,index_flow,       &
-           RealDouble,'Pressure',p2,index_field,ier)
+           CGNS_ENUMV(RealDouble),'Pressure',p2,index_field,ier)
       else
       call cg_field_write_f(index_file,index_base,index_zone,index_flow,       &
-           RealDouble,'Density',r3,index_field,ier)
+           CGNS_ENUMV(RealDouble),'Density',r3,index_field,ier)
       call cg_field_write_f(index_file,index_base,index_zone,index_flow,       &
-           RealDouble,'Pressure',p3,index_field,ier)
+           CGNS_ENUMV(RealDouble),'Pressure',p3,index_field,ier)
       end if
       enddo
 !   create BaseIterativeData
@@ -115,7 +116,7 @@
 !   go to BaseIterativeData level and write time values
       call cg_goto_f(index_file,index_base,ier,'BaseIterativeData_t',1,'end')
       nuse=3
-      call cg_array_write_f('TimeValues',RealDouble,1,nuse,time,ier)
+      call cg_array_write_f('TimeValues',CGNS_ENUMV(RealDouble),1,nuse,time,ier)
 !   create ZoneIterativeData
       call cg_ziter_write_f(index_file,index_base,index_zone,                  &
            'ZoneIterativeData',ier)
@@ -126,10 +127,10 @@
            index_zone,'ZoneIterativeData_t',1,'end')
       idata(1)=32
       idata(2)=3
-      call cg_array_write_f('FlowSolutionPointers',Character,2,idata,          &
+      call cg_array_write_f('FlowSolutionPointers',CGNS_ENUMV(Character),2,idata,          &
            solname,ier)
 !   add SimulationType
-      call cg_simulation_type_write_f(index_file,index_base,TimeAccurate,ier)
+      call cg_simulation_type_write_f(index_file,index_base,CGNS_ENUMV(TimeAccurate),ier)
 !   close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully added 3 times of flow solution data'',         &

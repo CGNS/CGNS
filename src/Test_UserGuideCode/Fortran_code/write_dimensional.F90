@@ -1,6 +1,7 @@
       program write_dimensional
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   grid plus a flow solution and adds its dimensionality
@@ -52,8 +53,8 @@
       index_grid=1
 !   put DataClass and DimensionalUnits under Base
       call cg_goto_f(index_file,index_base,ier,'end')
-      call cg_dataclass_write_f(Dimensional,ier)
-      call cg_units_write_f(Kilogram,Meter,Second,Kelvin,Degree,ier)
+      call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
+      call cg_units_write_f(CGNS_ENUMV(Kilogram),CGNS_ENUMV(Meter),CGNS_ENUMV(Second),CGNS_ENUMV(Kelvin),CGNS_ENUMV(Degree),ier)
 !   read fields
       call cg_nfields_f(index_file,index_base,index_zone,index_flow,           &
            nfields,ier)
@@ -84,7 +85,7 @@
 !   write DimensionalExponents
         call cg_goto_f(index_file,index_base,ier,'Zone_t',1,                   &
              'FlowSolution_t',1,'DataArray_t',iff,'end')
-        call cg_exponents_write_f(RealSingle,exponents,ier)
+        call cg_exponents_write_f(CGNS_ENUMV(RealSingle),exponents,ier)
       enddo
 !   read grid
       call cg_ncoords_f(index_file,index_base,index_zone,ncoords,ier)
@@ -97,7 +98,7 @@
 !   write DimensionalExponents
         call cg_goto_f(index_file,index_base,ier,'Zone_t',1,                   &
              'GridCoordinates_t',1,'DataArray_t',icc,'end')
-        call cg_exponents_write_f(RealSingle,exponents,ier)
+        call cg_exponents_write_f(CGNS_ENUMV(RealSingle),exponents,ier)
       enddo
 !   close CGNS file
       call cg_close_f(index_file,ier)

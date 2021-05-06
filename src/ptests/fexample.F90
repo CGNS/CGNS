@@ -6,6 +6,7 @@ PROGRAM fexample
   USE CGNS
   IMPLICIT NONE
 
+#include "cgnstypes_f03.h"
 #ifdef WINNT
   INCLUDE 'cgnswin_f.h'
 #endif
@@ -39,7 +40,7 @@ PROGRAM fexample
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cg_base_write_f(F, 'Base', 3, 3, B, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cg_zone_write_f(F, B, 'Zone', sizes, Unstructured, Z, ierr)
+  CALL cg_zone_write_f(F, B, 'CGNS_ENUMV(Zone)', sizes, CGNS_ENUMV(Unstructured), Z, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- print info
@@ -49,11 +50,11 @@ PROGRAM fexample
   ENDIF
 
 !---- create data nodes for coordinates
-  CALL cgp_coord_write_f(F, B, Z, RealSingle, 'CoordinateX', Cx, ierr)
+  CALL cgp_coord_write_f(F, B, Z, CGNS_ENUMV(RealSingle), 'CoordinateX', Cx, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_coord_write_f(F, B, Z, RealSingle, 'CoordinateY', Cy, ierr)
+  CALL cgp_coord_write_f(F, B, Z, CGNS_ENUMV(RealSingle), 'CoordinateY', Cy, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_coord_write_f(F, B, Z, RealSingle, 'CoordinateZ', Cz, ierr)
+  CALL cgp_coord_write_f(F, B, Z, CGNS_ENUMV(RealSingle), 'CoordinateZ', Cz, ierr)
 
 !---- number of nodes and range this process will write
   nnodes = (totnodes + commsize - 1) / commsize
@@ -87,7 +88,7 @@ PROGRAM fexample
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- create data node for elements
-  CALL cgp_section_write_f(F, B, Z, 'Hex', HEXA_8, start_1, totelems, 0, E, ierr)
+  CALL cgp_section_write_f(F, B, Z, 'Hex', CGNS_ENUMV(HEXA_8), start_1, totelems, 0, E, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- number of elements and range this process will write
@@ -125,9 +126,9 @@ PROGRAM fexample
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- create a centered solution
-  CALL cg_sol_write_f(F, B, Z, 'Solution', CellCenter, S, ierr)
+  CALL cg_sol_write_f(F, B, Z, 'Solution', CGNS_ENUMV(CellCenter), S, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_field_write_f(F, B, Z, S, RealSingle, 'CellIndex', Fs, ierr)
+  CALL cgp_field_write_f(F, B, Z, S, CGNS_ENUMV(RealSingle), 'CellIndex', Fs, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- create the field data for this process
@@ -144,13 +145,13 @@ PROGRAM fexample
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- create user data under the zone and duplicate solution data
-  CALL cg_goto_f(F, B, ierr, 'Zone_t', 1, 'end')
+  CALL cg_goto_f(F, B, ierr, 'CGNS_ENUMV(Zone)_t', 1, 'end')
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cg_user_data_write_f('User Data', ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cg_gorel_f(F, ierr, 'User Data', 0, 'end')
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cgp_array_write_f('CellIndex', RealSingle, 1, totelems, A, ierr)
+  CALL cgp_array_write_f('CellIndex', CGNS_ENUMV(RealSingle), 1, totelems, A, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- write the array data in parallel

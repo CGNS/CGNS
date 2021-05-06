@@ -1,6 +1,7 @@
       program read_flowvert_unst
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   unstructured grid plus a flow solution (at VERTICES),
@@ -53,7 +54,7 @@
 !   to make sure there are no Rind cells also!):
       call cg_sol_info_f(index_file,index_base,index_zone,index_flow,          &
            solname,loc,ier)
-      if (loc .ne. Vertex) then
+      if (loc .ne. CGNS_ENUMV(Vertex)) then
         write(6,'('' Error, GridLocation must be Vertex!  Currently:'',        &
          a32)') GridLocationName(loc)
         stop
@@ -61,9 +62,9 @@
       irmax=isize(1,1)
 !   read flow solution
       call cg_field_read_f(index_file,index_base,index_zone,index_flow,        &
-           'Density',RealSingle,irmin,irmax,r,ier)
+           'Density',CGNS_ENUMV(RealSingle),irmin,irmax,r,ier)
       call cg_field_read_f(index_file,index_base,index_zone,index_flow,        &
-           'Pressure',RealSingle,irmin,irmax,p,ier)
+           'Pressure',CGNS_ENUMV(RealSingle),irmin,irmax,p,ier)
 !   close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully read flow solution from file'',                &
