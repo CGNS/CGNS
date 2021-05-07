@@ -20,8 +20,8 @@ if [ $OS_NAME = "linux" ]; then
   export FCFLAGS="-D DISABLE_CGNS109"
 
   OPTS="$OPTS --enable-cgnstools --with-tcl=/usr/lib/x86_64-linux-gnu --with-tk=/usr/lib/x86_64-linux-gnu"
-
-  OPTS_CMAKE="-D CMAKE_Fortran_FLAGS:STRING=$FCFLAGS -D CMAKE_Fortran_COMPILER:PATH=$FC"
+  
+  OPTS_CMAKE="-D CMAKE_Fortran_FLAGS:STRING=$FCFLAGS -D CMAKE_Fortran_COMPILER:PATH=gfortran -D CMAKE_C_COMPILER:PATH=gcc"
   OPTS_CMAKE="$OPTS_CMAKE -D CGNS_ENABLE_HDF5:BOOL=OFF -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF -D CGNS_ENABLE_FORTRAN:BOOL=ON -D CGNS_ENABLE_LEGACY:BOOL=ON"
 else
   OPTS="$OPTS --disable-cgnstools"
