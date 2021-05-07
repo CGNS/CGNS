@@ -91,7 +91,7 @@ jobs:
 
     - name: configure CGNS
       run: |
-        sh ./github/workflows/config-cgns.sh "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
+        sh .github/workflows/config-cgns.sh "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
       shell: bash
 
 ##################################
