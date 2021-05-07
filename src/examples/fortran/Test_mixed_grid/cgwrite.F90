@@ -119,15 +119,17 @@
 
 ! create coordinate data
             do coord=1,phys_dim
-                do 20 k=1, 3
-                do 20 j=1, 3
-                do 20 i=1, 3
-                    pos = i + (j-1)*3 + (k-1)*9
-                    if (coord.eq.1) data_double(pos) = (i-1)*5 + &
-                        (zone-1)*10
-                    if (coord.eq.2) data_double(pos) = (j-1)*5
-                    if (coord.eq.3) data_double(pos) = (k-1)*5
- 20             continue
+               DO k=1, 3
+                  DO j=1, 3
+                     DO i=1, 3
+                        pos = i + (j-1)*3 + (k-1)*9
+                        IF (coord.EQ.1) data_double(pos) = (i-1)*5 + &
+                             (zone-1)*10
+                        IF (coord.EQ.2) data_double(pos) = (j-1)*5
+                        IF (coord.EQ.3) data_double(pos) = (k-1)*5
+                     ENDDO
+                  ENDDO
+               ENDDO
 
 ! GOTO GridCoordinatesNode & write DataArray
                 call cg_goto_f(cg, base, ier, 'Zone_t', zone, &
@@ -295,20 +297,22 @@
 
             ! Generate HEXA_8 Element Connectivity
                 n=0
-                do 30 k=1,2
-                do 30 j=1,2
-                do 30 i=1,2
-                    n=n+1
-                    pos = i + (j-1)*3 + (k-1)*9
-                    element(1,n) = pos
-                    element(2,n) = pos+1
-                    element(3,n) = pos+4
-                    element(4,n) = pos+3
-                    element(5,n) = pos+9
-                    element(6,n) = pos+10
-                    element(7,n) = pos+13
-                    element(8,n) = pos+12
- 30             continue
+                DO k=1,2
+                   DO j=1,2
+                      DO i=1,2
+                         n=n+1
+                         pos = i + (j-1)*3 + (k-1)*9
+                         element(1,n) = pos
+                         element(2,n) = pos+1
+                         element(3,n) = pos+4
+                         element(4,n) = pos+3
+                         element(5,n) = pos+9
+                         element(6,n) = pos+10
+                         element(7,n) = pos+13
+                         element(8,n) = pos+12
+                      ENDDO
+                   ENDDO
+                ENDDO
 
 		call cg_section_write_f(cg, base, zone, &
                   'VolumeElements', CGNS_ENUMV(HEXA_8), 1_cgsize_t, 8_cgsize_t, 0, &

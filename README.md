@@ -1,5 +1,5 @@
-# CGNS 
-[![Build Status](https://travis-ci.org/CGNS/CGNS.svg?branch=develop)](https://travis-ci.org/CGNS/CGNS) 
+# CGNS
+[![Actions Status](https://github.com/CGNS/CGNS/workflows/cgns/badge.svg)](https://github.com/CGNS/CGNS/actions)
 [![Build Status: Windows](https://ci.appveyor.com/api/projects/status/jux83kxj0r234oy6?svg=true)](https://ci.appveyor.com/project/brtnfld/cgns)
 
 <a href="https://scan.coverity.com/projects/cgns-cgns">

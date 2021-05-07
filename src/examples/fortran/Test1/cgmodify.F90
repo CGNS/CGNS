@@ -111,12 +111,15 @@
                            'DiscreteData_t', discr_no, 'end')
             if (ier .eq. ERROR) call cg_error_exit_f
 
-	    do 123 k=1, size(3)
-            do 123 j=1, size(2)
-            do 123 i=1, size(1)
-                pos = i + (j-1)*size(1) + (k-1)*size(1)*size(2)
-	        data(pos) = pos	! * make up some dummy data
- 123	    continue
+	    DO k=1, SIZE(3)
+               DO j=1, SIZE(2)
+                  DO i=1, SIZE(1)
+                     pos = i + (j-1)*SIZE(1) + (k-1)*SIZE(1)*SIZE(2)
+                     DATA(pos) = pos	! * make up some dummy data
+                  ENDDO
+               ENDDO
+            ENDDO
+
 	    call cg_array_write_f('arrayname', CGNS_ENUMV(RealSingle), index_dim, &
                                    size, data, ier)
             if (ier .eq. ERROR) call cg_error_exit_f
@@ -147,11 +150,12 @@
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! *** general connectivity
-	    do 100 n=1, 5
-	    do 100 i=1,3
-	        pnts(i,n)=i		! * dummy data
-		donor_pnts(i,n)=i*2
- 100        continue
+            DO n=1, 5
+               DO i=1,3
+                  pnts(i,n)=i		! * dummy data
+                  donor_pnts(i,n)=i*2
+               ENDDO
+            ENDDO
 	  ! create a point matching connectivity
 	    call cg_conn_write_f(cg, base_no, zone_no, 'Connect#1', &
                 CGNS_ENUMV(Vertex), CGNS_ENUMV(Abutting1to1), CGNS_ENUMV(PointList), 5_cgsize_t, pnts, &

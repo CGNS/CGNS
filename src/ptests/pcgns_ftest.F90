@@ -74,17 +74,22 @@ PROGRAM pcgns_ftest
      PRINT *,'total Mb for all data  =', dsize
   ENDIF
 
-! default is MPI_COMM_WORLD, but can set another communicator with this
-!     call cgp_mpi_comm_f(MPI_COMM_WORLD,ierr)
+  ! default is MPI_COMM_WORLD, but can set another communicator with this
+  ! call cgp_mpi_comm_f(MPI_COMM_WORLD,ierr)
 
   ! Check repeated opening and closing of a file to detect issues with 
   ! missed closed HDF5 objects, CGNS-109.
+
+  ! Note, this is extremely slow when used with Github Actions 
+  ! and Linux, so it is disabled in that case.
+#ifndef DISABLE_CGNS109
   DO n = 1, NLOOPS
      CALL cgp_open_f('pcgns_ftest.cgns',CG_MODE_WRITE,F,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
      CALL cgp_close_f(F,ierr)
      IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   ENDDO
+#endif
 
   CALL cgp_open_f('pcgns_ftest.cgns',CG_MODE_WRITE,F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
@@ -157,10 +162,8 @@ PROGRAM pcgns_ftest
         CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
         te = MPI_WTIME()
         tt = te - ts;
-        IF (commrank .EQ. 0) THEN
-           PRINT *,'write:',tt,' secs,', dsize/tt, ' Mb/sec (', &
-                piomode(nb),')'
-        ENDIF
+        IF (commrank .EQ. 0) &
+             PRINT *,'write:',tt,' secs,', dsize/tt, ' Mb/sec (', piomode(nb),')'
      ENDDO
   ENDDO
   CALL cgp_close_f(F,ierr)
@@ -169,7 +172,7 @@ PROGRAM pcgns_ftest
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   CALL cg_precision_f(F, PRECISION, ierr)
-  PRINT*,'PPP',PRECISION
+  IF (commrank .EQ. 0) PRINT*,'cg_precision_f PRECISION ',PRECISION
 
   Z = 1
   S = 1
