@@ -63,8 +63,6 @@
         coordname(2) = 'CoordinateY'
         coordname(3) = 'CoordinateZ'
 
-!234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-
 ! write coordinate data in 2 separate calls
 
 ! Set the ranges for the first partial write of the Coordinate data
@@ -74,12 +72,12 @@
 ! create coordinate data(10x10x10 box with 3x3x3 equidistant nodes)
         do coord=1,phys_dim
             pos = 0
-            do 20 i= rmin, rmax
-                pos = pos + 1
-                if (coord.eq.1) data_double(pos) = i
-                if (coord.eq.2) data_double(pos) = -i
-                if (coord.eq.3) data_double(pos) = i
- 20         continue
+            DO i= rmin, rmax
+               pos = pos + 1
+               IF (coord.EQ.1) data_double(pos) = i
+               IF (coord.EQ.2) data_double(pos) = -i
+               IF (coord.EQ.3) data_double(pos) = i
+            ENDDO
 
             call cg_coord_partial_write_f(cg, base, zone, CGNS_ENUMV(RealDouble), &
                         coordname(coord), rmin, rmax, data_double, C, &
@@ -96,12 +94,12 @@
 
         do coord=1,phys_dim
             pos = 0
-            do 21 i=rmin, rmax
-                pos = pos + 1
-                if (coord.eq.1) data_double(pos) = -i
-                if (coord.eq.2) data_double(pos) = i
-                if (coord.eq.3) data_double(pos) = -i
- 21          continue
+            DO i=rmin, rmax
+               pos = pos + 1
+               IF (coord.EQ.1) data_double(pos) = -i
+               IF (coord.EQ.2) data_double(pos) = i
+               IF (coord.EQ.3) data_double(pos) = -i
+            ENDDO
 
             call cg_coord_partial_write_f(cg, base, zone, CGNS_ENUMV(RealDouble), &
                         coordname(coord), rmin, rmax, data_double, C, &

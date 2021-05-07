@@ -40,7 +40,7 @@ PROGRAM fexample
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cg_base_write_f(F, 'Base', 3, 3, B, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-  CALL cg_zone_write_f(F, B, 'CGNS_ENUMV(Zone)', sizes, CGNS_ENUMV(Unstructured), Z, ierr)
+  CALL cg_zone_write_f(F, B, 'Zone', sizes, CGNS_ENUMV(Unstructured), Z, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- print info
@@ -145,7 +145,7 @@ PROGRAM fexample
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 !---- create user data under the zone and duplicate solution data
-  CALL cg_goto_f(F, B, ierr, 'CGNS_ENUMV(Zone)_t', 1, 'end')
+  CALL cg_goto_f(F, B, ierr, 'Zone_t', 1, 'end')
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   CALL cg_user_data_write_f('User Data', ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
