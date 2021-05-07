@@ -305,12 +305,14 @@
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
 ! *** make up some dummy GridVelocityX values just for the test:
-            do 13 k=1, size(3)
-            do 13 j=1, size(2)
-            do 13 i=1, size(1)
-                pos = i + (j-1)*size(1) + (k-1)*size(1)*size(2)
-		GridVelocity(pos) = pos
- 13	    continue
+            DO k=1, SIZE(3)
+              DO j=1, SIZE(2)
+                 DO  i=1, SIZE(1)
+                    pos = i + (j-1)*SIZE(1) + (k-1)*SIZE(1)*SIZE(2)
+                    GridVelocity(pos) = pos
+                 ENDDO
+              ENDDO
+           ENDDO
 
 ! *** Add a DataArray_t 'GridVelocityX' under ArbitraryGridMotion_t
             !call cg_array_write_f('GridVelocityX', CGNS_ENUMV(RealSingle),
