@@ -55,8 +55,8 @@ jobs:
         # Set env vars
         echo "OS_NAME=macOS" >> $GITHUB_ENV
         echo "CC=gcc" >> $GITHUB_ENV
-        # NOTE: brew gcc default is 10.2 (as of 5/7/2021) which is not capatable
-        # with CGNS. Specifying a different version does not created the gfortran
+        # NOTE: brew gcc default is 10.2 (as of 5/7/2021), which is not compatible
+        # with CGNS. Specifying a different version does not create the gfortran
         # link to the brew cellar. This code (and fortran) can be enabled when 
         # the default for gcc homebrew is > 10.2
         # brew update
@@ -91,7 +91,7 @@ jobs:
 
     - name: configure CGNS
       run: |
-        sh ./bin/config-cgns.sh "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
+        sh ./github/workflows/config-cgns.sh "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
       shell: bash
 
 ##################################
@@ -110,6 +110,7 @@ jobs:
 ##################################
 #
     - name: CMake test CGNS
+      if: matrix.os == 'ubuntu-latest'
       run: |
         cd build
         make -j 8
