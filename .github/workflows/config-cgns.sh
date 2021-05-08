@@ -88,6 +88,8 @@ cmake \
     -D CMAKE_EXE_LINKER_FLAGS:STRING="$CMAKE_EXE_LINKER_FLAGS" \
     ..
 
+echo $PWD
+
 make -j 8
 
 
