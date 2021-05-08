@@ -113,6 +113,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         cd build
+        cat src/cgnstypes.h
         make -j 8
         make check
       shell: bash
