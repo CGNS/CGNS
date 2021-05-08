@@ -112,6 +112,7 @@ jobs:
     - name: CMake test CGNS
       if: matrix.os == 'ubuntu-latest'
       run: |
+        echo $PWD
         cd build
         cat src/cgnstypes.h
         make -j 8
