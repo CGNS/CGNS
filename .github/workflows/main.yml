@@ -112,7 +112,7 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         echo "DIR $PWD"
-        cd src/build
+        cd build
         make -j 8
         make check
       shell: bash

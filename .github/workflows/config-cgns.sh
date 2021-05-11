@@ -88,7 +88,7 @@ cmake \
     -D CMAKE_EXE_LINKER_FLAGS:STRING="$CMAKE_EXE_LINKER_FLAGS" \
     ..
 
-echo $PWD
+echo "CMAKE DIR $PWD"
 
 make -j 8
 
