@@ -11,7 +11,6 @@ NOTE_COLOR="\033[36;01m"
 #
 set -e
 SRC_DIR=$PWD
-cd src
 
 BUILD=$1
 OPTS=$2
@@ -89,7 +88,7 @@ printf "%b" "$NOTE_COLOR" "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/_
 printf "%b\n" "$NO_COLOR"
 
 echo "AUTOTOOLS DIR $PWD"
-#cd src
+cd src
 
 ./configure \
 --prefix=$PWD/cgns_build $OPTS \

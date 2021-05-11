@@ -16,13 +16,13 @@ jobs:
   build:
     strategy:
       matrix:
-        name: ["macOS Latest Clang"]
+        name: ["Ubuntu Latest GCC", "macOS Latest Clang"]
         include:
-#          - name: "Ubuntu Latest GCC"
-#            artifact: "Linux.tar.xz"
-#            os: ubuntu-latest
-#            fortran: with
-#            parallel: enable
+          - name: "Ubuntu Latest GCC"
+            artifact: "Linux.tar.xz"
+            os: ubuntu-latest
+            fortran: with
+            parallel: enable
           - name: "macOS Latest Clang"
             artifact: "macOS.tar.xz"
             os: macos-latest
@@ -38,16 +38,16 @@ jobs:
     # Steps represent a sequence of tasks that will be executed 
     # as part of the job.
     steps:
-#    - name: Install Dependencies (Linux)
-#      if: matrix.os == 'ubuntu-latest'
-#      run: |
-#        sudo apt-get install -qq mpich
-#        sudo apt-get install -qq libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
-#        # Set env vars
-#        echo "OS_NAME=linux" >> $GITHUB_ENV
-#        echo "CC=mpicc" >> $GITHUB_ENV
-#        echo "FC=mpif90" >> $GITHUB_ENV
-#        echo "F77=mpif90" >> $GITHUB_ENV
+    - name: Install Dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get install -qq mpich
+        sudo apt-get install -qq libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
+        # Set env vars
+        echo "OS_NAME=linux" >> $GITHUB_ENV
+        echo "CC=mpicc" >> $GITHUB_ENV
+        echo "FC=mpif90" >> $GITHUB_ENV
+        echo "F77=mpif90" >> $GITHUB_ENV
 
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
@@ -87,7 +87,7 @@ jobs:
 
 ##################################
 # DO CMAKE FIRST SINCE AUTOTOOLS 
-# BUILDS IN PLACE, WHICH AFFECTS
+# BUILDS IN-PLACE, WHICH AFFECTS
 # THE CMAKE BUILD
 ##################################
 
