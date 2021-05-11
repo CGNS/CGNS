@@ -94,17 +94,6 @@ jobs:
       shell: bash
 
 ##################################
-# TEST CGNS
-##################################
-
-#    - name: test CGNS
-#      run: |
-#        cd src
-#        make -j 8
-#        make test
-#      shell: bash
-
-##################################
 # TEST CGNS (CMAKE)
 ##################################
 
@@ -114,3 +103,14 @@ jobs:
         make -j 8
         make test
       shell: bash
+
+##################################
+# TEST CGNS
+##################################
+
+#    - name: test CGNS
+#      run: |
+#        cd src
+#        make -j 8
+#        make test
+#      shell: bash

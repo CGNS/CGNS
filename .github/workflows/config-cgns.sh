@@ -27,24 +27,6 @@ else
   OPTS="$OPTS --disable-cgnstools"
   OPTS_CMAKE="-D CGNS_ENABLE_FORTRAN:BOOL=OFF -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF -D CGNS_ENABLE_HDF5:BOOL=OFF"
 fi
-##########################
-# AUTOTOOLS CONFIG
-##########################
-
-printf "%b" "$NOTE_COLOR" "       ___   __  ____________  __________  ____  __   _____\n"
-printf "%b" "$NOTE_COLOR" "      /   | / / / /_  __/ __ \/_  __/ __ \/ __ \/ /  / ___/\n"
-printf "%b" "$NOTE_COLOR" "     / /| |/ / / / / / / / / / / / / / / / / / / /   \__ \ \n"
-printf "%b" "$NOTE_COLOR" "    / ___ / /_/ / / / / /_/ / / / / /_/ / /_/ / /______/ / \n"
-printf "%b" "$NOTE_COLOR" "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/____/  \n\n"
-printf "%b\n" "$NO_COLOR"
-
-./configure \
---prefix=$PWD/cgns_build $OPTS \
---with-hdf5=$HOME/hdf5 \
---enable-lfs \
---enable-64bit \
---disable-shared \
---enable-debug
 
 ##########################
 # CMAKE CONFIG
@@ -88,5 +70,22 @@ cmake \
     -D CMAKE_EXE_LINKER_FLAGS:STRING="$CMAKE_EXE_LINKER_FLAGS" \
     ..
 
+##########################
+# AUTOTOOLS CONFIG
+##########################
 
+printf "%b" "$NOTE_COLOR" "       ___   __  ____________  __________  ____  __   _____\n"
+printf "%b" "$NOTE_COLOR" "      /   | / / / /_  __/ __ \/_  __/ __ \/ __ \/ /  / ___/\n"
+printf "%b" "$NOTE_COLOR" "     / /| |/ / / / / / / / / / / / / / / / / / / /   \__ \ \n"
+printf "%b" "$NOTE_COLOR" "    / ___ / /_/ / / / / /_/ / / / / /_/ / /_/ / /______/ / \n"
+printf "%b" "$NOTE_COLOR" "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/____/  \n\n"
+printf "%b\n" "$NO_COLOR"
+
+./configure \
+--prefix=$PWD/cgns_build $OPTS \
+--with-hdf5=$HOME/hdf5 \
+--enable-lfs \
+--enable-64bit \
+--disable-shared \
+--enable-debug
 
