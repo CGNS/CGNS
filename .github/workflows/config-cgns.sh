@@ -32,7 +32,7 @@ fi
 echo "(1) $BUILD"
 echo "(2) $OPTS"
 
-if [[ "$BUILD" == "cmake" ]]; then
+if [ $BUILD -eq "cmake" ]; then
 
 ##########################
 # CMAKE CONFIG
@@ -89,8 +89,8 @@ printf "%b" "$NOTE_COLOR" "    / ___ / /_/ / / / / /_/ / / / / /_/ / /_/ / /____
 printf "%b" "$NOTE_COLOR" "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/____/  \n\n"
 printf "%b\n" "$NO_COLOR"
 
-echo "AUTOTOOLS DIR $PWD"
 cd src
+echo "AUTOTOOLS DIR $PWD"
 
 ./configure \
 --prefix=$PWD/cgns_build $OPTS \
