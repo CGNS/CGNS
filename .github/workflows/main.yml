@@ -114,5 +114,5 @@ jobs:
         echo "DIR $PWD"
         cd build
         make -j 8
-        make check
+        make test
       shell: bash
