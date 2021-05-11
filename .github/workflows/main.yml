@@ -88,32 +88,32 @@ jobs:
 # CONFIGURE CGNS
 ##################################
 
-#    - name: configure CGNS
-#      run: |
-#        sh .github/workflows/config-cgns.sh "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
-#      shell: bash
+    - name: configure CGNS
+      run: |
+        sh .github/workflows/config-cgns.sh "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
+      shell: bash
 
 ##################################
 # TEST CGNS
 ##################################
 
-#    - name: test CGNS
-#      run: |
-#        cd src
-#        make -j 8
-#        make check
-#      shell: bash
+    - name: test CGNS
+      run: |
+        cd src
+        make -j 8
+        make check
+      shell: bash
 #
 ##################################
 # TEST CGNS (CMAKE)
 ##################################
 #
-    - name: CMake test CGNS
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        echo "DIR $PWD"
-        cd build
-        cat src/cgnstypes.h
-        make -j 8
-     #   make check
-      shell: bash
+#    - name: CMake test CGNS
+#      if: matrix.os == 'ubuntu-latest'
+#      run: |
+#        echo "DIR $PWD"
+#        cd build
+#        cat src/cgnstypes.h
+#        make -j 8
+#     #   make check
+#      shell: bash
