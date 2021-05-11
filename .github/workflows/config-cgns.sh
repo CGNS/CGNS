@@ -89,7 +89,7 @@ printf "%b" "$NOTE_COLOR" "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/_
 printf "%b\n" "$NO_COLOR"
 
 echo "AUTOTOOLS DIR $PWD"
-cd src
+#cd src
 
 ./configure \
 --prefix=$PWD/cgns_build $OPTS \
