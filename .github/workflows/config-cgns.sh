@@ -38,13 +38,13 @@ printf "%b" "$NOTE_COLOR" "    / ___ / /_/ / / / / /_/ / / / / /_/ / /_/ / /____
 printf "%b" "$NOTE_COLOR" "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/____/  \n\n"
 printf "%b\n" "$NO_COLOR"
 
-./configure \
---prefix=$PWD/cgns_build $OPTS \
---with-hdf5=$HOME/hdf5 \
---enable-lfs \
---enable-64bit \
---disable-shared \
---enable-debug
+#./configure \
+#--prefix=$PWD/cgns_build $OPTS \
+#--with-hdf5=$HOME/hdf5 \
+#--enable-lfs \
+#--enable-64bit \
+#--disable-shared \
+#--enable-debug
 
 ##########################
 # CMAKE CONFIG
