@@ -72,17 +72,17 @@ jobs:
 # INSTALL HDF5
 ##################################
                  
-#    - name: install HDF5
-#      run: |
-#        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5_1_10_7 --single-branch hdf5_1_10_7
-#        export HOME_DIR=$(echo ~)
-#        cd hdf5_1_10_7
-#        ./configure --without-zlib --without-szlib --disable-fortran --disable-hl \
-#        --disable-tests --disable-tools \
-#        --prefix=$HOME_DIR/hdf5 \
-#        --${{ matrix.parallel }}-parallel 
-#        make -j 8 install
-#      shell: bash
+    - name: install HDF5
+      run: |
+        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5_1_10_7 --single-branch hdf5_1_10_7
+        export HOME_DIR=$(echo ~)
+        cd hdf5_1_10_7
+        ./configure --without-zlib --without-szlib --disable-fortran --disable-hl \
+        --disable-tests --disable-tools \
+        --prefix=$HOME_DIR/hdf5 \
+        --${{ matrix.parallel }}-parallel 
+        make -j 8 install
+      shell: bash
 
 ##################################
 # CONFIGURE CGNS
@@ -97,22 +97,20 @@ jobs:
 # TEST CGNS
 ##################################
 
-#    - name: test CGNS
-#      run: |
-#        cd src
-#        make -j 8
-#        make check
-#      shell: bash
+    - name: test CGNS
+      run: |
+        cd src
+        make -j 8
+        make check
+      shell: bash
 
 ##################################
 # TEST CGNS (CMAKE)
 ##################################
 
     - name: CMake test CGNS
-      if: matrix.os == 'macos-latest'
       run: |
-        echo "DIR $PWD"
-        cd build
+        cd cbuild
         make -j 8
         make test
       shell: bash

@@ -59,8 +59,8 @@ printf "%b" "$NOTE_COLOR" "    \____/_/  /_/_/  |_/_/ |_/_____/   \n\n"
 printf "%b\n" "$NO_COLOR"
 
 cd $SRC_DIR
-mkdir build
-cd build
+mkdir cbuild
+cd cbuild
 
 echo "cmake \
     ${OPTS_CMAKE} \
@@ -88,8 +88,5 @@ cmake \
     -D CMAKE_EXE_LINKER_FLAGS:STRING="$CMAKE_EXE_LINKER_FLAGS" \
     ..
 
-echo "CMAKE DIR $PWD"
-
-make -j 8
 
 
