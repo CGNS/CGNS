@@ -85,11 +85,11 @@ printf "%b\n" "$NO_COLOR"
 
 cd src
 
-./configure \
---prefix=$PWD/cgns_build $OPTS \
---with-hdf5=$HOME/hdf5 \
---enable-lfs \
---enable-64bit \
---disable-shared \
---enable-debug
+#./configure \
+#--prefix=$PWD/cgns_build $OPTS \
+#--with-hdf5=$HOME/hdf5 \
+#--enable-lfs \
+#--enable-64bit \
+#--disable-shared \
+#--enable-debug
 
