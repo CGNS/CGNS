@@ -86,12 +86,18 @@ jobs:
       shell: bash
 
 ##################################
+# DO CMAKE FIRST SINCE AUTOTOOLS 
+# BUILDS IN PLACE, WHICH AFFECTS
+# THE CMAKE BUILD
+##################################
+
+##################################
 # CONFIGURE CGNS (CMake)
 ##################################
 
     - name: configure CGNS
       run: |
-        sh .github/workflows/config-cgns.sh "cmake --${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
+        sh .github/workflows/config-cgns.sh cmake "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
       shell: bash
 
 ##################################
@@ -111,7 +117,7 @@ jobs:
 
     - name: configure CGNS
       run: |
-        sh .github/workflows/config-cgns.sh "autotools --${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
+        sh .github/workflows/config-cgns.sh autotools "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
       shell: bash
 
 ##################################

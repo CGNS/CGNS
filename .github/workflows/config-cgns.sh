@@ -12,13 +12,16 @@ NOTE_COLOR="\033[36;01m"
 set -e
 SRC_DIR=$PWD
 cd src
-OPTS=$1
+
+BUILD=$1
+OPTS=$2
+
 if [ $OS_NAME = "linux" ]; then
   export FLIBS="-Wl,--no-as-needed -ldl"
   export LIBS="-Wl,--no-as-needed -ldl"
 # See note in src/ptests/pcgns_ftest.F90 concerning CGNS-109 and Github Actions
   export FCFLAGS="-D DISABLE_CGNS109"
-
+  
   OPTS="$OPTS --enable-cgnstools --with-tcl=/usr/lib/x86_64-linux-gnu --with-tk=/usr/lib/x86_64-linux-gnu"
   
   OPTS_CMAKE="-D CGNS_ENABLE_HDF5:BOOL=OFF -D CGNS_ENABLE_FORTRAN:BOOL=OFF -D CGNS_BUILD_CGNSTOOLS:BOOL=ON"
@@ -28,7 +31,7 @@ else
   OPTS_CMAKE="-D CGNS_ENABLE_FORTRAN:BOOL=OFF -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF -D CGNS_ENABLE_HDF5:BOOL=OFF"
 fi
 
-if [[ "$OPTS" == *"cmake"* ]]; then
+if [[ "$BUILD" == "cmake" ]]; then
 
 ##########################
 # CMAKE CONFIG
@@ -85,6 +88,7 @@ printf "%b" "$NOTE_COLOR" "    / ___ / /_/ / / / / /_/ / / / / /_/ / /_/ / /____
 printf "%b" "$NOTE_COLOR" "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/____/  \n\n"
 printf "%b\n" "$NO_COLOR"
 
+echo "AUTOTOOLS DIR $PWD"
 cd src
 
 ./configure \
