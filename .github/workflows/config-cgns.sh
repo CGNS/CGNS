@@ -70,6 +70,8 @@ cmake \
     -D CMAKE_EXE_LINKER_FLAGS:STRING="$CMAKE_EXE_LINKER_FLAGS" \
     ..
 
+cd ..
+
 ##########################
 # AUTOTOOLS CONFIG
 ##########################
@@ -80,6 +82,8 @@ printf "%b" "$NOTE_COLOR" "     / /| |/ / / / / / / / / / / / / / / / / / / /   
 printf "%b" "$NOTE_COLOR" "    / ___ / /_/ / / / / /_/ / / / / /_/ / /_/ / /______/ / \n"
 printf "%b" "$NOTE_COLOR" "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/____/  \n\n"
 printf "%b\n" "$NO_COLOR"
+
+cd src
 
 ./configure \
 --prefix=$PWD/cgns_build $OPTS \
