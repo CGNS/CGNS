@@ -28,6 +28,7 @@ jobs:
             os: macos-latest
             parallel: disable
             fortran: without
+            tools: with
 
     name: ${{ matrix.name }}
     # The type of runner that the job will run on.
@@ -85,12 +86,12 @@ jobs:
       shell: bash
 
 ##################################
-# CONFIGURE CGNS
+# CONFIGURE CGNS (CMake)
 ##################################
 
     - name: configure CGNS
       run: |
-        sh .github/workflows/config-cgns.sh "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
+        sh .github/workflows/config-cgns.sh "cmake --${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
       shell: bash
 
 ##################################
@@ -105,12 +106,21 @@ jobs:
       shell: bash
 
 ##################################
+# CONFIGURE CGNS (Autotools)
+##################################
+
+    - name: configure CGNS
+      run: |
+        sh .github/workflows/config-cgns.sh "autotools --${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
+      shell: bash
+
+##################################
 # TEST CGNS
 ##################################
 
-#    - name: test CGNS
-#      run: |
-#        cd src
-#        make -j 8
-#        make test
-#      shell: bash
+    - name: test CGNS
+      run: |
+        cd src
+        make -j 8
+        make test
+      shell: bash

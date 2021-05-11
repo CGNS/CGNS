@@ -28,6 +28,8 @@ else
   OPTS_CMAKE="-D CGNS_ENABLE_FORTRAN:BOOL=OFF -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF -D CGNS_ENABLE_HDF5:BOOL=OFF"
 fi
 
+if [[ "$OPTS" == *"cmake"* ]]; then
+
 ##########################
 # CMAKE CONFIG
 ##########################
@@ -70,7 +72,7 @@ cmake \
     -D CMAKE_EXE_LINKER_FLAGS:STRING="$CMAKE_EXE_LINKER_FLAGS" \
     ..
 
-cd ..
+else
 
 ##########################
 # AUTOTOOLS CONFIG
@@ -85,11 +87,12 @@ printf "%b\n" "$NO_COLOR"
 
 cd src
 
-#./configure \
-#--prefix=$PWD/cgns_build $OPTS \
-#--with-hdf5=$HOME/hdf5 \
-#--enable-lfs \
-#--enable-64bit \
-#--disable-shared \
-#--enable-debug
+./configure \
+--prefix=$PWD/cgns_build $OPTS \
+--with-hdf5=$HOME/hdf5 \
+--enable-lfs \
+--enable-64bit \
+--disable-shared \
+--enable-debug
 
+fi
