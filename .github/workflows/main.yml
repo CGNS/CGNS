@@ -101,7 +101,7 @@ jobs:
       run: |
         cd src
         make -j 8
-        make check
+        make test
       shell: bash
 
 ##################################
