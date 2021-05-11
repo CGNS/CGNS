@@ -97,12 +97,12 @@ jobs:
 # TEST CGNS
 ##################################
 
-    - name: test CGNS
-      run: |
-        cd src
-        make -j 8
-        make test
-      shell: bash
+#    - name: test CGNS
+#      run: |
+#        cd src
+#        make -j 8
+#        make test
+#      shell: bash
 
 ##################################
 # TEST CGNS (CMAKE)
