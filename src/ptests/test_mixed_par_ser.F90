@@ -36,7 +36,7 @@ PROGRAM test_mixed_par_ser
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
   CALL test_parallel(FNAME1)
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
-
+#if 0
   ! *******************************
   ! TEST P-S-P, all different files
   ! *******************************
@@ -52,7 +52,7 @@ PROGRAM test_mixed_par_ser
   CALL test_parallel(FNAME1)
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
   CALL test_parallel(FNAME1)
-
+#endif
   CALL mpi_finalize(ierr)
 
 CONTAINS
