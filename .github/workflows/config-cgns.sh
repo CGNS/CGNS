@@ -29,8 +29,6 @@ else
   OPTS="$OPTS --disable-cgnstools"
   OPTS_CMAKE="-D CGNS_ENABLE_FORTRAN:BOOL=OFF -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF -D CGNS_ENABLE_HDF5:BOOL=OFF"
 fi
-echo "(1) $BUILD"
-echo "(2) $OPTS"
 
 if [[ "$BUILD" == "cmake" ]]; then
 
