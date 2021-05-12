@@ -15,7 +15,7 @@ SRC_DIR=$PWD
 BUILD=$1
 OPTS=$2
 
-if [ $OS_NAME = "linux" ]; then
+if [[ "$OS_NAME" = "linux" ]]; then
   export FLIBS="-Wl,--no-as-needed -ldl"
   export LIBS="-Wl,--no-as-needed -ldl"
 # See note in src/ptests/pcgns_ftest.F90 concerning CGNS-109 and Github Actions

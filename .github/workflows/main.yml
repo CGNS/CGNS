@@ -97,7 +97,7 @@ jobs:
 
     - name: configure CGNS
       run: |
-        sh .github/workflows/config-cgns.sh cmake "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
+        bash .github/workflows/config-cgns.sh cmake "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
       shell: bash
 
 ##################################
@@ -117,7 +117,7 @@ jobs:
 
     - name: configure CGNS
       run: |
-        sh .github/workflows/config-cgns.sh autotools "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
+        bash .github/workflows/config-cgns.sh autotools "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
       shell: bash
 
 ##################################
