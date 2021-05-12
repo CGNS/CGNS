@@ -32,7 +32,7 @@ fi
 echo "(1) $BUILD"
 echo "(2) $OPTS"
 
-if [ $BUILD -eq "cmake" ]; then
+if [[ "$BUILD" == "cmake" ]]; then
 
 ##########################
 # CMAKE CONFIG
