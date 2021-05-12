@@ -2,7 +2,9 @@ name: cgns
 
 # Controls when the action will run. 
 #Triggers the workflow on push or pull requests.
-#on:
+#on: 
+#  push:
+#    branches: [ develop ]
 #  pull_request:
 #    branches: [ develop ]
 on: 
@@ -23,12 +25,16 @@ jobs:
             os: ubuntu-latest
             fortran: with
             parallel: enable
+            hdf5: with
+            tools: enable
           - name: "macOS Latest Clang"
             artifact: "macOS.tar.xz"
             os: macos-latest
             parallel: disable
             fortran: with
             tools: with
+            hdf5: without
+            tools: disable
 
     name: ${{ matrix.name }}
     # The type of runner that the job will run on.
@@ -55,18 +61,15 @@ jobs:
         # Set env vars
         echo "OS_NAME=macOS" >> $GITHUB_ENV
         echo "CC=gcc" >> $GITHUB_ENV
-        # NOTE: brew gcc default is 10.2 (as of 5/7/2021), which is not compatible
-        # with CGNS. Specifying a different version does not create the gfortran
-        # link to the brew cellar. This code (and fortran) can be enabled when 
-        # the default for gcc homebrew is > 10.2
-         brew update
-         brew upgrade gcc
-         brew install gcc
-         brew unlink gcc && brew link gcc
-         echo "FC=gfortran" >> $GITHUB_ENV
-         echo "F77=gfortran" >> $GITHUB_ENV
+        # Use the newest stable gcc compiler
+        brew update
+        brew upgrade gcc
+        brew install gcc
+        brew unlink gcc && brew link gcc
+        echo "FC=gfortran" >> $GITHUB_ENV
+        echo "F77=gfortran" >> $GITHUB_ENV
 
- # Checks-out your repository under $GITHUB_WORKSPACE so your job can access it.
+ # Checks-out the repository under $GITHUB_WORKSPACE so the job can access it.
     - name: Get Sources
       uses: actions/checkout@v2
 
@@ -98,7 +101,8 @@ jobs:
 
     - name: configure CGNS
       run: |
-        bash .github/workflows/config-cgns.sh cmake "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
+        bash .github/workflows/config-cgns.sh cmake \
+            "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran --${{ matrix.hdf5 }}-hdf5 --${{ matrix.tools }}-cgnstools"
       shell: bash
 
 ##################################
@@ -118,7 +122,8 @@ jobs:
 
     - name: configure CGNS
       run: |
-        bash .github/workflows/config-cgns.sh autotools "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran"
+        bash .github/workflows/config-cgns.sh autotools  \
+            "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran --${{ matrix.hdf5 }}-hdf5 --${{ matrix.tools }}-cgnstools"
       shell: bash
 
 ##################################

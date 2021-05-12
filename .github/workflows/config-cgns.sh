@@ -15,19 +15,33 @@ SRC_DIR=$PWD
 BUILD=$1
 OPTS=$2
 
+OPTS_CMAKE=""
+if [[ "$OPTS" == *"with-fortran"* ]]; then
+   OPTS_CMAKE="$OPTS_CMAKE -D CGNS_ENABLE_FORTRAN:BOOL=ON"
+else
+   OPTS_CMAKE="$OPTS_CMAKE -D CGNS_ENABLE_FORTRAN:BOOL=OFF"
+fi
+if [[ "$OPTS" == *"with-hdf5"* ]]; then
+   OPTS_CMAKE="$OPTS_CMAKE -D CGNS_ENABLE_HDF5:BOOL=ON"
+else
+   OPTS_CMAKE="$OPTS_CMAKE -D CGNS_ENABLE_HDF5:BOOL=OFF"
+fi
+if [[ "$OPTS" == *"enable-cgnstools"* ]]; then
+   OPTS="$OPTS --with-tcl=/usr/lib/x86_64-linux-gnu --with-tk=/usr/lib/x86_64-linux-gnu"
+   OPTS_CMAKE="$OPTS_CMAKE -D CGNS_BUILD_CGNSTOOLS:BOOL=ON"
+else
+   OPTS_CMAKE="$OPTS_CMAKE -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF"
+fi
+
+
 if [[ "$OS_NAME" = "linux" ]]; then
   export FLIBS="-Wl,--no-as-needed -ldl"
   export LIBS="-Wl,--no-as-needed -ldl"
 # See note in src/ptests/pcgns_ftest.F90 concerning CGNS-109 and Github Actions
   export FCFLAGS="-D DISABLE_CGNS109"
-  
-  OPTS="$OPTS --enable-cgnstools --with-tcl=/usr/lib/x86_64-linux-gnu --with-tk=/usr/lib/x86_64-linux-gnu"
-  
-  OPTS_CMAKE="-D CGNS_ENABLE_HDF5:BOOL=OFF -D CGNS_ENABLE_FORTRAN:BOOL=OFF -D CGNS_BUILD_CGNSTOOLS:BOOL=ON"
+
+# Do a different test set-up than the autotools build
   OPTS_CMAKE="$OPTS_CMAKE -D CGNS_ENABLE_LEGACY:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=OFF"
-else
-  OPTS="$OPTS --disable-cgnstools"
-  OPTS_CMAKE="-D CGNS_ENABLE_FORTRAN:BOOL=ON -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF -D CGNS_ENABLE_HDF5:BOOL=OFF"
 fi
 
 if [[ "$BUILD" == "cmake" ]]; then
@@ -47,18 +61,6 @@ printf "%b\n" "$NO_COLOR"
 cd $SRC_DIR
 mkdir cbuild
 cd cbuild
-
-echo "cmake \
-    ${OPTS_CMAKE} \
-    -D CMAKE_C_COMPILER:PATH=$CC \
-    -D CMAKE_C_FLAGS:STRING="$CFLAGS" \
-    -D CMAKE_BUILD_TYPE:STRING="Debug" \
-    -D CMAKE_STATIC_LINKER_FLAGS:STRING="" \
-    -D CGNS_ENABLE_TESTS:BOOL=ON \
-    -D CGNS_ENABLE_LFS:BOOL=ON \
-    -D CMAKE_INSTALL_PREFIX:PATH="./" \
-    -D CMAKE_EXE_LINKER_FLAGS:STRING="$CMAKE_EXE_LINKER_FLAGS" \
-    .."
 
 cmake \
     ${OPTS_CMAKE} \
@@ -90,8 +92,8 @@ printf "%b\n" "$NO_COLOR"
 cd src
 echo "AUTOTOOLS DIR $PWD"
 
-./configure \
---prefix=$PWD/cgns_build $OPTS \
+./configure $OPTS \
+--prefix=$PWD/cgns_build \
 --with-hdf5=$HOME/hdf5 \
 --enable-lfs \
 --enable-64bit \
