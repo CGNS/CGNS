@@ -36,7 +36,6 @@ PROGRAM test_mixed_par_ser
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
   CALL test_parallel(FNAME1)
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
-#if 0
   ! *******************************
   ! TEST P-S-P, all different files
   ! *******************************
@@ -44,7 +43,7 @@ PROGRAM test_mixed_par_ser
   CALL test_parallel(FNAME1)
   IF(commrank.EQ.0) CALL test_serial(FNAME2)
   CALL test_parallel(FNAME3)
-
+ #if 0
   ! *******************************
   ! TEST P-S-P, all same files
   ! *******************************
