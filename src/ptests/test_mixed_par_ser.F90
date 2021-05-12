@@ -26,18 +26,20 @@ PROGRAM test_mixed_par_ser
   ! *******************************
   IF(commrank.EQ.0) WRITE(*,"(A)") "TEST S-P-S, all different files"
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
   CALL test_parallel(FNAME2)
   IF(commrank.EQ.0) CALL test_serial(FNAME3)
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
 
   ! *******************************
   ! TEST S-P-S, all same files
   ! *******************************
   IF(commrank.EQ.0) WRITE(*,"(A)") "TEST S-P-S, all same files"
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
-  CALL MPI_Barrier(MPI_COMM_WORLD)
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
   CALL test_parallel(FNAME1)
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
-  CALL MPI_Barrier(MPI_COMM_WORLD)
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
 
   ! *******************************
   ! TEST P-S-P, all different files
@@ -45,7 +47,7 @@ PROGRAM test_mixed_par_ser
   IF(commrank.EQ.0) WRITE(*,"(A)") "TEST P-S-P, all different files"
   CALL test_parallel(FNAME1)
   IF(commrank.EQ.0) CALL test_serial(FNAME2)
-  CALL MPI_Barrier(MPI_COMM_WORLD)
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
   CALL test_parallel(FNAME3)
   
   ! *******************************
@@ -54,7 +56,7 @@ PROGRAM test_mixed_par_ser
   IF(commrank.EQ.0) WRITE(*,"(A)") "TEST P-S-P, all same files"
   CALL test_parallel(FNAME1)
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
-  CALL MPI_Barrier(MPI_COMM_WORLD)
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
   CALL test_parallel(FNAME1)
   CALL mpi_finalize(ierr)
 
