@@ -32,7 +32,6 @@ jobs:
             os: macos-latest
             parallel: disable
             fortran: with
-            tools: with
             hdf5: without
             tools: disable
 
