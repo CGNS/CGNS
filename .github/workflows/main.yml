@@ -60,6 +60,7 @@ jobs:
         # link to the brew cellar. This code (and fortran) can be enabled when 
         # the default for gcc homebrew is > 10.2
          brew update
+         brew upgrade
          brew install gcc
          brew unlink gcc && brew link gcc
          echo "FC=gfortran" >> $GITHUB_ENV
