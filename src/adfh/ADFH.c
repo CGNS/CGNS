@@ -73,6 +73,13 @@ static size_t core_vfd_increment = 10L*1024L*1024L;
 /* write the file contents to disk when the file is closed */
 static hbool_t core_vfd_backing_store = 0;
 
+/** MISC. HDF5 OPTIMIZATION TUNING PARAMETERS */
+static hsize_t h5pset_alignment_threshold = 0;
+static hsize_t h5pset_alignment_alignment = 0;
+static hsize_t h5pset_meta_block_size_size = 0;
+static hsize_t h5pset_buffer_size_size = 0;
+static hsize_t h5pset_sieve_buf_size_size = 0;
+
 #define TO_UPPER( c ) ((islower(c))?(toupper(c)):(c))
 
 /* HDF5 compact storage limit */
@@ -1464,6 +1471,24 @@ void ADFH_Configure(const int option, const void *value, int *err)
         core_vfd_increment = (size_t)value;
         set_error(NO_ERROR, err);
     }
+    else if (option == ADFH_CONFIG_ALIGNMENT) {
+      const size_t* val = (const size_t*)value; 
+      h5pset_alignment_threshold = (hsize_t)(val[0]);
+      h5pset_alignment_alignment = (hsize_t)(val[1]);
+      set_error(NO_ERROR, err);
+    }
+    else if (option == ADFH_CONFIG_MD_BLOCK_SIZE) {
+      h5pset_meta_block_size_size = (hsize_t)value;
+      set_error(NO_ERROR, err);
+    }
+    else if (option == ADFH_CONFIG_HDF5_BUFFER) {
+      h5pset_buffer_size_size = (hsize_t)value;
+      set_error(NO_ERROR, err);
+    }
+    else if (option == ADFH_CONFIG_HDF5_SIEVE_BUF_SIZE) {
+      h5pset_sieve_buf_size_size = (hsize_t)value;
+      set_error(NO_ERROR, err);
+    }
 #if CG_BUILD_PARALLEL
     else if (option == ADFH_CONFIG_MPI_COMM) {
       MPI_Comm* comm = (MPI_Comm*)value;
@@ -2195,31 +2220,38 @@ void ADFH_Database_Open(const char   *name,
   g_propfileopen = H5Pcreate(H5P_FILE_ACCESS);
 
   /* Patch from Manuel Gageik on IBM BLUEgene/Q systems for better cgp_open performance. */
-#ifdef JFC_PATCH_2015_2
 
   /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
    * default setting is 2048 bytes
    */
-  H5Pset_meta_block_size(g_propfileopen, 4096);  /* 1024*1024 */
-
+  if ( h5pset_meta_block_size_size != 0 ) {
+    H5Pset_meta_block_size(g_propfileopen, h5pset_meta_block_size_size);
+  }
   /* http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
    * attention: this can increase filesize dramatically if lots of small datasets
    */
-  H5Pset_alignment(g_propfileopen, 4096, 4096);
+  if ( h5pset_alignment_threshold != 0 &&
+       h5pset_alignment_alignment != 0 ) {
+    H5Pset_alignment(g_propfileopen,
+                     h5pset_alignment_threshold,
+                     h5pset_alignment_alignment);
+  }
 
   /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
    * 1 MByte is default of hdf5
    */
-  void *tconv; void *bkg;
-  H5Pset_buffer(g_propfileopen, 10*1024*1024,tconv, bkg);
+  if ( h5pset_buffer_size_size != 0) {
+    void *tconv; void *bkg;
+    H5Pset_buffer(g_propfileopen, h5pset_buffer_size_size, tconv, bkg);
+  }
 
   /* http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
    * '..  used by file drivers that are capable of using data sieving'
    *  1 MByte is default of hdf5
    */
-  H5Pset_sieve_buf_size(g_propfileopen, 4*1024*1024);
-
-#endif
+  if ( h5pset_sieve_buf_size_size != 0) {
+    H5Pset_sieve_buf_size(g_propfileopen, h5pset_sieve_buf_size_size);
+  }
 
 #ifdef ADFH_H5F_CLOSE_STRONG
   /* set access property to close all open accesses when file closed */
@@ -2276,31 +2308,38 @@ void ADFH_Database_Open(const char   *name,
   if (mode == ADFH_MODE_NEW) {
     hid_t g_propfilecreate = H5Pcreate(H5P_FILE_CREATE);
 
-#ifdef JFC_PATCH_2015_2
-
   /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
    * default setting is 2048 bytes
    */
-  H5Pset_meta_block_size(g_propfilecreate, 4096);  // 1024*1024
+  if ( h5pset_meta_block_size_size != 0 ) {
+    H5Pset_meta_block_size(g_propfileopen, h5pset_meta_block_size_size);
+  }
 
   /* http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
    * attention: this can increase filesize dramatically if lots of small datasets
    */
-  H5Pset_alignment(g_propfilecreate, 4096, 4096);
+  if ( h5pset_alignment_threshold != 0 &&
+       h5pset_alignment_alignment != 0 ) {
+    H5Pset_alignment(g_propfileopen,
+                     h5pset_alignment_threshold,
+                     h5pset_alignment_alignment);
+  }
 
   /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
    * 1 MByte is default of hdf5
    */
-  void *tconv; void *bkg;
-  H5Pset_buffer(g_propfilecreate, 10*1024*1024,tconv, bkg);
+  if ( h5pset_buffer_size_size != 0) {
+    void *tconv; void *bkg;
+    H5Pset_buffer(g_propfileopen, h5pset_buffer_size_size, tconv, bkg);
+  }
 
   /* http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
    * '..  used by file drivers that are capable of using data sieving'
    * 1 MByte is default of hdf5
    */
-  H5Pset_sieve_buf_size(g_propfilecreate, 4*1024*1024);
-
-#endif
+  if ( h5pset_sieve_buf_size_size != 0) {
+    H5Pset_sieve_buf_size(g_propfileopen, h5pset_sieve_buf_size_size);
+  }
 
 #if 0 /* MSB -- DISABLED as it is not compatible with HDF5 1.8 file format, need to resolve this CGNS-166 */
 #if HDF5_HAVE_FILE_SPACE_STRATEGY

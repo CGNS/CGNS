@@ -165,14 +165,17 @@
 
 #define ADFH_ERR_SENTINEL              999
 
-/* configuration options */
+/* configuration options, relates to CG_CONFIG_HDF5_* in cgnslib.h */
 
-#define ADFH_CONFIG_COMPRESS   1
-#define ADFH_CONFIG_MPI_COMM   2
-#define ADFH_CONFIG_CORE       3
-#define ADFH_CONFIG_CORE_INCR  4
-#define ADFH_CONFIG_CORE_WRITE 5
-
+#define ADFH_CONFIG_COMPRESS      1
+#define ADFH_CONFIG_MPI_COMM      2
+#define ADFH_CONFIG_CORE          3
+#define ADFH_CONFIG_CORE_INCR     4
+#define ADFH_CONFIG_CORE_WRITE    5
+#define ADFH_CONFIG_ALIGNMENT     6
+#define ADFH_CONFIG_MD_BLOCK_SIZE 7
+#define ADFH_CONFIG_HDF5_BUFFER   8
+#define ADFH_CONFIG_HDF5_SIEVE_BUF_SIZE  9
 
 /***********************************************************************
 	Prototypes for Interface Routines
