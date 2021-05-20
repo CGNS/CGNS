@@ -63,22 +63,24 @@ static int CompressData = -1;
 static MPI_Comm ParallelMPICommunicator = MPI_COMM_NULL;
 #endif
 
+#define ADFH_CONFIG_DEFAULT 0
+
 /*** HDF5's CORE FILE DRIVER PARAMETERS ****/
 
 /* Enables using the core file driver */
-static int core_vfd = 0;
+static int core_vfd = ADFH_CONFIG_DEFAULT;
 /* specifies the increment by which allocated memory is
  * to be increased each time more memory is required, 10MiB default. */
 static size_t core_vfd_increment = 10L*1024L*1024L;
 /* write the file contents to disk when the file is closed */
-static hbool_t core_vfd_backing_store = 0;
+static hbool_t core_vfd_backing_store = ADFH_CONFIG_DEFAULT;
 
 /** MISC. HDF5 OPTIMIZATION TUNING PARAMETERS */
-static hsize_t h5pset_alignment_threshold = 0;
-static hsize_t h5pset_alignment_alignment = 0;
-static hsize_t h5pset_meta_block_size_size = 0;
-static hsize_t h5pset_buffer_size_size = 0;
-static hsize_t h5pset_sieve_buf_size_size = 0;
+static hsize_t h5pset_alignment_threshold  = ADFH_CONFIG_DEFAULT;
+static hsize_t h5pset_alignment_alignment  = ADFH_CONFIG_DEFAULT;
+static hsize_t h5pset_meta_block_size_size = ADFH_CONFIG_DEFAULT;
+static hsize_t h5pset_buffer_size_size     = ADFH_CONFIG_DEFAULT;
+static hsize_t h5pset_sieve_buf_size_size  = ADFH_CONFIG_DEFAULT;
 
 #define TO_UPPER( c ) ((islower(c))?(toupper(c)):(c))
 
@@ -2224,13 +2226,13 @@ void ADFH_Database_Open(const char   *name,
   /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
    * default setting is 2048 bytes
    */
-  if ( h5pset_meta_block_size_size != 0 ) {
+  if ( h5pset_meta_block_size_size != ADFH_CONFIG_DEFAULT ) {
     H5Pset_meta_block_size(g_propfileopen, h5pset_meta_block_size_size);
   }
   /* http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
    * attention: this can increase filesize dramatically if lots of small datasets
    */
-  if ( h5pset_alignment_alignment != 0 ) {
+  if ( h5pset_alignment_alignment != ADFH_CONFIG_DEFAULT ) {
     H5Pset_alignment(g_propfileopen,
                      h5pset_alignment_threshold,
                      h5pset_alignment_alignment);
@@ -2239,7 +2241,7 @@ void ADFH_Database_Open(const char   *name,
   /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
    * 1 MByte is default of hdf5
    */
-  if ( h5pset_buffer_size_size != 0) {
+  if ( h5pset_buffer_size_size != ADFH_CONFIG_DEFAULT ) {
     void *tconv; void *bkg;
     H5Pset_buffer(g_propfileopen, h5pset_buffer_size_size, tconv, bkg);
   }
@@ -2248,7 +2250,7 @@ void ADFH_Database_Open(const char   *name,
    * '..  used by file drivers that are capable of using data sieving'
    *  1 MByte is default of hdf5
    */
-  if ( h5pset_sieve_buf_size_size != 0) {
+  if ( h5pset_sieve_buf_size_size != ADFH_CONFIG_DEFAULT ) {
     H5Pset_sieve_buf_size(g_propfileopen, h5pset_sieve_buf_size_size);
   }
 
@@ -2310,15 +2312,14 @@ void ADFH_Database_Open(const char   *name,
   /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
    * default setting is 2048 bytes
    */
-  if ( h5pset_meta_block_size_size != 0 ) {
+  if ( h5pset_meta_block_size_size != ADFH_CONFIG_DEFAULT ) {
     H5Pset_meta_block_size(g_propfileopen, h5pset_meta_block_size_size);
   }
 
   /* http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
    * attention: this can increase filesize dramatically if lots of small datasets
    */
-  if ( h5pset_alignment_threshold != 0 &&
-       h5pset_alignment_alignment != 0 ) {
+  if ( h5pset_alignment_alignment != ADFH_CONFIG_DEFAULT ) {
     H5Pset_alignment(g_propfileopen,
                      h5pset_alignment_threshold,
                      h5pset_alignment_alignment);
@@ -2327,7 +2328,7 @@ void ADFH_Database_Open(const char   *name,
   /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
    * 1 MByte is default of hdf5
    */
-  if ( h5pset_buffer_size_size != 0) {
+  if ( h5pset_buffer_size_size != ADFH_CONFIG_DEFAULT) {
     void *tconv; void *bkg;
     H5Pset_buffer(g_propfileopen, h5pset_buffer_size_size, tconv, bkg);
   }
@@ -2336,7 +2337,7 @@ void ADFH_Database_Open(const char   *name,
    * '..  used by file drivers that are capable of using data sieving'
    * 1 MByte is default of hdf5
    */
-  if ( h5pset_sieve_buf_size_size != 0) {
+  if ( h5pset_sieve_buf_size_size != ADFH_CONFIG_DEFAULT) {
     H5Pset_sieve_buf_size(g_propfileopen, h5pset_sieve_buf_size_size);
   }
 
