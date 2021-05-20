@@ -133,5 +133,8 @@ jobs:
       run: |
         cd src
         make -j 8
-        make test
+        cd ptest
+        make -j 8
+        mpiexec -n 4 open_close
+#        make test
       shell: bash
