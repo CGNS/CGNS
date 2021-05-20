@@ -101,8 +101,10 @@ int main(int argc, char* argv[]) {
 
         cgp_mpi_comm(MPI_COMM_WORLD);
 
+#if 0
         value[0] = 0; /* threshold for H5Pset_alignment */
         value[1] = 8*1024*1024; /* alignment for H5Pset_alignment */
+
         if (cg_configure(CG_CONFIG_HDF5_ALIGNMENT, value))
             cgp_error_exit();
         if (cg_configure(CG_CONFIG_HDF5_MD_BLOCK_SIZE, (void *)(8*1024)))
@@ -116,7 +118,7 @@ int main(int argc, char* argv[]) {
           cgp_error_exit();
         if (cgp_close(fn))
           cgp_error_exit();
-#if 0
+
         if (cg_configure(CG_CONFIG_RESET, (void *)CG_CONFIG_RESET_HDF5))
             cgp_error_exit();
 
