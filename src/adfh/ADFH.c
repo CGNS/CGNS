@@ -2230,8 +2230,7 @@ void ADFH_Database_Open(const char   *name,
   /* http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
    * attention: this can increase filesize dramatically if lots of small datasets
    */
-  if ( h5pset_alignment_threshold != 0 &&
-       h5pset_alignment_alignment != 0 ) {
+  if ( h5pset_alignment_alignment != 0 ) {
     H5Pset_alignment(g_propfileopen,
                      h5pset_alignment_threshold,
                      h5pset_alignment_alignment);
