@@ -117,15 +117,7 @@ int main(int argc, char* argv[]) {
         if (cgp_close(fn))
           cgp_error_exit();
 
-        value[0] = 1; /* reset to defaults */
-        value[1] = 1;
-        if (cg_configure(CG_CONFIG_HDF5_ALIGNMENT, value))
-            cgp_error_exit();
-        if (cg_configure(CG_CONFIG_HDF5_MD_BLOCK_SIZE, (void *)(2*1024)))
-            cgp_error_exit();
-        if (cg_configure(CG_CONFIG_HDF5_BUFFER, (void *)(1*1024*1024)))
-            cgp_error_exit();
-        if (cg_configure(CG_CONFIG_HDF5_SIEVE_BUF_SIZE, (void *)(1*1024*1024)))
+        if (cg_configure(CG_CONFIG_RESET, (void *)CG_CONFIG_RESET_HDF5))
             cgp_error_exit();
 
         if (cgp_open("test_cg_conf.cgns", CG_MODE_WRITE, &fn))

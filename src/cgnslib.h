@@ -139,6 +139,10 @@
 #define CG_CONFIG_HDF5_BUFFER          208
 #define CG_CONFIG_HDF5_SIEVE_BUF_SIZE  209
 
+#define CG_CONFIG_RESET 1000
+
+#define CG_CONFIG_RESET_HDF5 1
+
 /* HDF5 dataset storage layout */
 
 #define CG_CONTIGUOUS 0

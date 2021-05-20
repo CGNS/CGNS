@@ -177,6 +177,9 @@
 #define ADFH_CONFIG_HDF5_BUFFER   8
 #define ADFH_CONFIG_HDF5_SIEVE_BUF_SIZE  9
 
+#define ADFH_CONFIG_RESET 800
+#define ADFH_CONFIG_RESET_HDF5 1
+
 /***********************************************************************
 	Prototypes for Interface Routines
 ***********************************************************************/
