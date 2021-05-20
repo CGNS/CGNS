@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
           cgp_error_exit();
         if (cgp_close(fn))
           cgp_error_exit();
-
+#if 0
         if (cg_configure(CG_CONFIG_RESET, (void *)CG_CONFIG_RESET_HDF5))
             cgp_error_exit();
 
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
           cgp_error_exit();
         if (cgp_close(fn))
           cgp_error_exit();
-
+#endif
 	err = MPI_Finalize();
 	if(err!=MPI_SUCCESS) cgp_doError;
 	return err;
