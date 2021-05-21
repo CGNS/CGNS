@@ -129,14 +129,9 @@ jobs:
 # TEST CGNS
 ##################################
 
-    - name: test CGNS
-      if: matrix.os == 'ubuntu-latest'
+   - name: test CGNS
       run: |
         cd src
         make -j 8
-        cd ptests
-        make -j 8
-        ls -aolF
-        mpiexec -n 4 ./open_close
-#        make test
+        make test
       shell: bash
