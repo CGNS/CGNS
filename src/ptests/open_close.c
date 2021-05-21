@@ -103,14 +103,16 @@ int main(int argc, char* argv[]) {
 
         value[0] = 0; /* threshold for H5Pset_alignment */
         value[1] = 1*1024*1024; /* alignment for H5Pset_alignment */
-
+#if 0
         if (cg_configure(CG_CONFIG_HDF5_ALIGNMENT, value))
             cgp_error_exit();
-#if 0
+
         if (cg_configure(CG_CONFIG_HDF5_MD_BLOCK_SIZE, (void *)(8*1024)))
             cgp_error_exit();
         if (cg_configure(CG_CONFIG_HDF5_BUFFER, (void *)(4*1024*1024)))
             cgp_error_exit();
+#endif
+#if 1
         if (cg_configure(CG_CONFIG_HDF5_SIEVE_BUF_SIZE, (void *)(2*1024*1024)))
             cgp_error_exit();
 #endif
