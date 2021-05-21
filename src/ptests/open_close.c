@@ -112,7 +112,6 @@ int main(int argc, char* argv[]) {
 #endif
         if (cg_configure(CG_CONFIG_HDF5_BUFFER, (void *)(4*1024*1024)))
             cgp_error_exit();
-#endif
 #if 0
         if (cg_configure(CG_CONFIG_HDF5_SIEVE_BUF_SIZE, (void *)(2*1024*1024)))
             cgp_error_exit();
