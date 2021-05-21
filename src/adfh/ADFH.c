@@ -59,10 +59,6 @@ extern cgns_io_ctx_t ctx_cgio; /* located in cgns_io.c */
 
 static int CompressData = -1;
 
-#if CG_BUILD_PARALLEL
-static MPI_Comm ParallelMPICommunicator = MPI_COMM_NULL;
-#endif
-
 #define ADFH_CONFIG_DEFAULT 0
 
 /*** HDF5's CORE FILE DRIVER PARAMETERS ****/
@@ -1509,7 +1505,7 @@ void ADFH_Configure(const int option, const void *value, int *err)
         set_error(ADFH_ERR_INVALID_USER_DATA, err);
       }
       else {
-        ParallelMPICommunicator = (MPI_Comm)*comm;
+        ctx_cgio.pcg_mpi_comm = (MPI_Comm)*comm;
         set_error(NO_ERROR, err);
       }
     }
@@ -2300,7 +2296,7 @@ void ADFH_Database_Open(const char   *name,
       H5Pset_coll_metadata_write(g_propfileopen, 1);
 #endif /*HDF5_HAVE_COLL_METADATA*/
 
-      H5Pset_fapl_mpio(g_propfileopen, ParallelMPICommunicator, ctx_cgio.pcg_mpi_info);
+      H5Pset_fapl_mpio(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
     }
   }
 #endif
