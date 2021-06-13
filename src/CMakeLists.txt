@@ -633,12 +633,12 @@ set_target_properties(cgns_static PROPERTIES OUTPUT_NAME cgns)
 set_target_properties(cgns_static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 if(CGNS_BUILD_SHARED)
   # for windows we need to change the name of the shared library
-  # for both static and shared version to exist
-  if (WIN32 OR CYGWIN)
+  # for both static and shared version to coexist
+  if (CMAKE_STATIC_LIBRARY_SUFFIX STREQUAL CMAKE_IMPORT_LIBRARY_SUFFIX)
     set_target_properties(cgns_shared PROPERTIES OUTPUT_NAME cgnsdll)
-  else (WIN32 OR CYGWIN)
+  else ()
     set_target_properties(cgns_shared PROPERTIES OUTPUT_NAME cgns)
-  endif (WIN32 OR CYGWIN)
+  endif ()
   set_target_properties(cgns_shared PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 endif(CGNS_BUILD_SHARED)
 
