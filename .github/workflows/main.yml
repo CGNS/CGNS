@@ -46,8 +46,6 @@ jobs:
     - name: Install Dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        sudo apt-get -y update
-        sudo apt-get -y upgrade
         sudo apt-get install -qq mpich
         sudo apt-get install -qq libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
         # Set env vars
