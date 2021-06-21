@@ -138,6 +138,7 @@
 #define CG_CONFIG_HDF5_MD_BLOCK_SIZE   207
 #define CG_CONFIG_HDF5_BUFFER          208
 #define CG_CONFIG_HDF5_SIEVE_BUF_SIZE  209
+#define CG_CONFIG_HDF5_CHUNKED         210
 
 #define CG_CONFIG_RESET 1000
 
@@ -147,7 +148,7 @@
 
 #define CG_CONTIGUOUS 0
 #define CG_COMPACT    1
-#define CG_CHUNKED    2
+#define CG_CHUNKED    2 /* MSB REMOVE */
 
 /* note: CG_CONFIG_RIND_ZERO is obsolete and considered a bug.  Users are given
  *       the option only for backwards compatibility */

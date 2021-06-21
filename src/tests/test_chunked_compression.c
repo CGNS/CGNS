@@ -12,6 +12,11 @@
 ! The value of nnY is the number of nodes along the Y direction. 
 !
 */
+#ifndef __SUNPRO_C
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 500
+#endif
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,7 +50,7 @@ int r_phys_dim = 0;
 cgsize_t nijk[3], sizes[3];
 cgsize_t size_1D[1];
 cgsize_t min, max;
-cgsize_t k, count;
+cgsize_t k, count, count_e;
 /* For writing and reading data*/
 double* Coor_x;
 double* Coor_y;
@@ -71,8 +76,8 @@ int  debug;
  * timing(6) = Time to read connectivity table,          20,   21,    22
  * timing(7) = Time to read solution data (field data)   23,   24,    25
  * timing(8) = Time to read array data                   26,   27,    28
- * timing(9) = Time for cg_open, CG_MODE_WRITE          29,   30,    31
- * timing(10) = Time for cg_open, CG_MODE_READ          32,   33,    34
+ * timing(9) = Time for cgp_open, CG_MODE_WRITE          29,   30,    31
+ * timing(10) = Time for cgp_open, CG_MODE_READ          32,   33,    34
  * timing(11) = Time for cg_close, WRITE                 35,   36,    37
  * timing(12) = Time for cg_close, READ                  38,   39,    40
  * timing(13) = Time for cg_base_write, cg_zone_write    41,   42,    43
@@ -129,7 +134,7 @@ int main(int argc, char* argv[]) {
   /* ==    **WRITE THE CGNS FILE **      == */
   /* ====================================== */
 
-  sprintf(fname, "benchmark.cgns");
+  sprintf(fname, "chunkedcompress.cgns");
 
   tic = clock();
   if(cg_open(fname, CG_MODE_WRITE, &fn) != CG_OK) {
@@ -193,7 +198,15 @@ int main(int argc, char* argv[]) {
     Coor_z[i] = dy;
   }
 
-  tic = clock();
+  /* Enable chunked dataset */
+  size_t chunk_param[2];
+  chunk_param[0] = 1;
+  chunk_param[1] = count;
+  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+    cg_error_exit();
+  }
+
   if(cg_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateX", Coor_x,&Cx) != CG_OK) {
     printf("*FAILED* cg_coord_write (Coor_x) \n");
     cg_error_exit();
@@ -202,6 +215,14 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cg_coord_write (Coor_y) \n");
     cg_error_exit();
   }
+
+  /* Disable chunked dataset */
+  chunk_param[0] = 0;
+  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+    cg_error_exit();
+  }
+
   if(cg_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateZ", Coor_z,&Cz) != CG_OK) {
     printf("*FAILED* cg_coord_write (Coor_z) \n");
     cg_error_exit();
@@ -218,9 +239,7 @@ int main(int argc, char* argv[]) {
   /* ====================================== */
 
   start = 1;
-  end = nijk[1];
-
-  count = nijk[1];
+  count_e = nijk[1];
 
   if( !(elements = malloc(count*NodePerElem*sizeof(cgsize_t)) )) {
     printf("*FAILED* allocation of elements \n");
@@ -246,14 +265,24 @@ int main(int argc, char* argv[]) {
    elements[i++] = nnY*2 + 1 + k;
    elements[i++] = nnY*2 + 2 + k;
   }
-
-  tic = clock();
-  if(cg_section_write(fn,B,Z,"Elements",CGNS_ENUMV(PENTA_6), start, end, 0, elements, &S) != CG_OK) {
+#if 1
+  chunk_param[0] = 1;
+  chunk_param[1] = Nelem/2;
+  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+    cg_error_exit();
+  }
+#endif
+  if(cg_section_write(fn,B,Z,"Elements",CGNS_ENUMV(PENTA_6), start, count_e, 0, elements, &S) != CG_OK) {
     printf("*FAILED* cg_section_write \n");
     cg_error_exit();
   }
-  toc = clock();
-  xtiming[2] = (double)(toc - tic) / CLOCKS_PER_SEC;
+
+  chunk_param[0] = 0;
+  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+    cg_error_exit();
+  }
 
   free(elements);
 
@@ -290,22 +319,33 @@ int main(int argc, char* argv[]) {
     cg_error_exit();
   }
 
-  tic = clock();
-  if(cg_field_write(fn,B,Z,S,CGNS_ENUMV(RealDouble),"MomentumX",Data_Fx, &Fx) != CG_OK) {
-    printf("*FAILED* cg_field_write (MomentumX) \n");
-    cg_error_exit();
-  }
-  if(cg_field_write(fn,B,Z,S,CGNS_ENUMV(RealDouble),"MomentumY",Data_Fy, &Fy) != CG_OK) {
-    printf("*FAILED* cg_field_write (MomentumY) \n");
-    cg_error_exit();
-  }
-  if(cg_field_write(fn,B,Z,S,CGNS_ENUMV(RealDouble),"MomentumZ",Data_Fz, &Fz) != CG_OK) {
-    printf("*FAILED* cg_field_write (MomentumZ) \n");
+  chunk_param[0] = 1;
+  chunk_param[1] = count/2;
+  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
     cg_error_exit();
   }
 
-  toc = clock();
-  xtiming[3] = (double)(toc - tic) / CLOCKS_PER_SEC;
+  if(cg_field_write(fn,B,Z,S,CGNS_ENUMV(RealDouble),"MomentumX",Data_Fx, &Fx) != CG_OK) {
+    printf("*FAILED* cgp_field_write (MomentumX) \n");
+    cg_error_exit();
+  }
+
+  chunk_param[0] = 0;
+  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+    cg_error_exit();
+  }
+
+  if(cg_field_write(fn,B,Z,S,CGNS_ENUMV(RealDouble),"MomentumY",Data_Fy, &Fy) != CG_OK) {
+    printf("*FAILED* cgp_field_write (MomentumY) \n");
+    cg_error_exit();
+  }
+
+  if(cg_field_write(fn,B,Z,S,CGNS_ENUMV(RealDouble),"MomentumZ",Data_Fz, &Fz) != CG_OK) {
+    printf("*FAILED* cgp_field_write (MomentumZ) \n");
+    cg_error_exit();
+  }
 
   free(Data_Fx);
   free(Data_Fy);
@@ -350,26 +390,36 @@ int main(int argc, char* argv[]) {
 
   size_1D[0] = nijk[0];
 
-  tic = clock();
   if(cg_array_write("ArrayR",CGNS_ENUMV(RealDouble),1,size_1D, Array_r) != CG_OK) {
-    printf("*FAILED* cg_array_write (Array_Ar)\n");
+    printf("*FAILED* cgp_array_write (Array_Ar)\n");
+    cg_error_exit();
+  }
+
+
+  chunk_param[0] = 1;
+  chunk_param[1] = size_1D[0]/2;
+  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
     cg_error_exit();
   }
 
 #if CG_BUILD_64BIT
   if(cg_array_write("ArrayI",CGNS_ENUMV(LongInteger),1,size_1D, Array_i) != CG_OK) {
-    printf("*FAILED* cg_array_write (Array_Ai)\n");
+    printf("*FAILED* cgp_array_write (Array_Ai)\n");
     cg_error_exit();
   }
 #else
   if(cg_array_write("ArrayI",CGNS_ENUMV(Integer),1,size_1D, Array_i) != CG_OK) {
-    printf("*FAILED* cg_array_write (Array Ai)\n");
+    printf("*FAILED* cgp_array_write (Array Ai)\n");
     cg_error_exit();
   }
 #endif
 
-  toc = clock();
-  xtiming[4] = (double)(toc - tic) / CLOCKS_PER_SEC;
+  chunk_param[0] = 0;
+  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+    cg_error_exit();
+  }
 
   free(Array_r);
   free(Array_i);
@@ -615,15 +665,15 @@ int main(int argc, char* argv[]) {
   tic = clock();
 
   if (cg_field_read(fn,B,Z,S,"MomentumX",CGNS_ENUMV(RealDouble),&min,&max,Data_Fx) != CG_OK) {
-    printf("*FAILED* cg_field_read (Data_Fx) \n");
+    printf("*FAILED* cgp_field_read (Data_Fx) \n");
     cg_error_exit();
   }
   if (cg_field_read(fn,B,Z,S,"MomentumY",CGNS_ENUMV(RealDouble),&min,&max,Data_Fy) != CG_OK) {
-    printf("*FAILED* cg_field_read (Data_Fy) \n");
+    printf("*FAILED* cgp_field_read (Data_Fy) \n");
     cg_error_exit();
   }
   if (cg_field_read(fn,B,Z,S,"MomentumZ",CGNS_ENUMV(RealDouble),&min,&max,Data_Fz) != CG_OK) {
-    printf("*FAILED* cg_field_read (Data_Fz) \n");
+    printf("*FAILED* cgp_field_read (Data_Fz) \n");
     cg_error_exit();
   }
 

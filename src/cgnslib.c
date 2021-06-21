@@ -3753,8 +3753,6 @@ int cg_section_general_write(int file_number, int B, int Z, const char * Section
         section->connect_offset->convert=0;
     }
 
-    HDF5storage_type = CG_CONTIGUOUS;
-
     /* Elements_t */
     dim_vals = 2;
     data[0]=section->el_type;
@@ -3786,6 +3784,8 @@ int cg_section_general_write(int file_number, int B, int Z, const char * Section
         cgi_new_node(section->id, section->connect_offset->name, "DataArray_t",
               &section->connect_offset->id, section->connect_offset->data_type,
               section->connect_offset->data_dim, section->connect_offset->dim_vals, NULL)) return CG_ERROR;
+
+    HDF5storage_type = CG_CONTIGUOUS;
 
     /* ElementConnectivity */
     if (cgi_new_node(section->id, section->connect->name, "DataArray_t",
