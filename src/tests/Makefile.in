@@ -36,6 +36,7 @@ CALL = \
 	write_rind$(EXE) \
 	test_bbox$(EXE) \
 	test_convert_elem$(EXE) \
+	test_chunked_compression$(EXE) \
 	test_complex$(EXE)
 
 F_TESTS = \
@@ -250,6 +251,12 @@ test_complex$(EXE) : test_complex.c $(CGNSLIB)
 
 test_convert_elem$(EXE) : test_convert_elem.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_convert_elem.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_chunked_compression$(EXE) : test_chunked_compression.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_chunked_compression.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------

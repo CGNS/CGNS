@@ -71,12 +71,16 @@ static size_t core_vfd_increment = 10L*1024L*1024L;
 /* write the file contents to disk when the file is closed */
 static hbool_t core_vfd_backing_store = ADFH_CONFIG_DEFAULT;
 
-/** MISC. HDF5 OPTIMIZATION TUNING PARAMETERS */
+/* MISC. HDF5 OPTIMIZATION TUNING PARAMETERS */
 static hsize_t h5pset_alignment_threshold  = ADFH_CONFIG_DEFAULT;
 static hsize_t h5pset_alignment_alignment  = ADFH_CONFIG_DEFAULT;
 static hsize_t h5pset_meta_block_size_size = ADFH_CONFIG_DEFAULT;
 static hsize_t h5pset_buffer_size_size     = ADFH_CONFIG_DEFAULT;
 static hsize_t h5pset_sieve_buf_size_size  = ADFH_CONFIG_DEFAULT;
+
+/* HDF5 Chunked Dataset Parameters */
+int chunk_ndim = 0;
+hsize_t chunk_dim[ADF_MAX_DIMENSIONS];
 
 #define TO_UPPER( c ) ((islower(c))?(toupper(c)):(c))
 
@@ -1447,6 +1451,9 @@ static herr_t fix_dimensions(hid_t id, const char *name, const H5L_info_t* linfo
 
 void ADFH_Configure(const int option, const void *value, int *err)
 {
+
+    hsize_t i;
+  
     if (option == ADFH_CONFIG_RESET && (int)((size_t)value == ADFH_CONFIG_RESET_HDF5)) {
       core_vfd                    = ADFH_CONFIG_DEFAULT;
       h5pset_alignment_threshold  = ADFH_CONFIG_DEFAULT;
@@ -1454,10 +1461,10 @@ void ADFH_Configure(const int option, const void *value, int *err)
       h5pset_meta_block_size_size = ADFH_CONFIG_DEFAULT;
       h5pset_buffer_size_size     = ADFH_CONFIG_DEFAULT;
       h5pset_sieve_buf_size_size  = ADFH_CONFIG_DEFAULT;
+      chunk_ndim                  = 0;
       set_error(NO_ERROR, err);
       return;
     }
-
     if (option == ADFH_CONFIG_COMPRESS) {
         int compress = (int)((size_t)value);
         if (compress < 0)
@@ -1496,6 +1503,20 @@ void ADFH_Configure(const int option, const void *value, int *err)
     }
     else if (option == ADFH_CONFIG_HDF5_SIEVE_BUF_SIZE) {
       h5pset_sieve_buf_size_size = (hsize_t)value;
+      set_error(NO_ERROR, err);
+    }
+    else if (option == ADFH_CONFIG_HDF5_CHUNKED) {
+      const hsize_t* val = (const hsize_t*)value;
+      chunk_ndim = (int)(val[0]);
+      if( chunk_ndim > CGIO_MAX_DIMENSIONS ) {
+        set_error(ADFH_ERR_INVALID_USER_DATA, err);
+      }
+      for (i = 0; i < chunk_ndim; i++) {
+        chunk_dim[i] = (hsize_t)(val[i+1]);
+        if( chunk_dim[i-1] < 1 ) {
+          set_error(ADFH_ERR_INVALID_USER_DATA, err);
+        }
+      }
       set_error(NO_ERROR, err);
     }
 #if CG_BUILD_PARALLEL
@@ -2883,6 +2904,7 @@ void ADFH_Put_Dimension_Information(const double   id,
   int i, swap = 0;
   hsize_t new_dims[ADF_MAX_DIMENSIONS];
   char new_type[3];
+  herr_t ierr;
 
   to_HDF_ID(id,hid);
 
@@ -2953,12 +2975,14 @@ void ADFH_Put_Dimension_Information(const double   id,
   tid = to_HDF_data_type(new_type);
   ADFH_CHECK_HID(tid);
   sid = H5Screate_simple(dims, new_dims, NULL);
+
   /* better idea? how to guess the right size? */
+#if 0 // MSB
   if (CompressData >= 0)
   {
     H5Pset_deflate(mta_root->g_propdataset, CompressData);
   }
-#if 0
+
   this causes a problem with memory allocation. For example,
   writing an unstructured coordinate array of 5 billion values
   will result in the HDF5 library trying to allocation 20Gb
@@ -2971,13 +2995,16 @@ void ADFH_Put_Dimension_Information(const double   id,
   hssize_t dset_size = H5Sget_select_npoints(sid);
   size_t dtype_size = H5Tget_size(tid); 
 
-  /* Chunked datasets are currently not supported */
-
   /* Compact storage has a dataset size limit of 64 KiB */
   if(HDF5storage_type == CGIO_COMPACT && dset_size*(hssize_t)dtype_size  < (hssize_t)CGNS_64KB)
     H5Pset_layout(mta_root->g_propdataset, H5D_COMPACT);
   else{
-    H5Pset_layout(mta_root->g_propdataset, H5D_CONTIGUOUS);
+    if (chunk_ndim != 0 ) {
+      ierr = H5Pset_chunk(mta_root->g_propdataset, chunk_ndim, chunk_dim);
+    }
+    else 
+      H5Pset_layout(mta_root->g_propdataset, H5D_CONTIGUOUS);
+
     H5Pset_alloc_time(mta_root->g_propdataset, H5D_ALLOC_TIME_EARLY);
     H5Pset_fill_time(mta_root->g_propdataset, H5D_FILL_TIME_NEVER); 
   }
@@ -3744,7 +3771,6 @@ void ADFH_Write_Data(const double ID,
   hid_t xfer_prp = H5P_DEFAULT;
 
   ADFH_DEBUG(("ADFH_Write_Data"));
-
   if (data == NULL) {
     set_error(NULL_POINTER, err);
     return;
