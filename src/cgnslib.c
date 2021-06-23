@@ -317,13 +317,15 @@ void objlist_status(char *tag)
  * library functions
  ***********************************************************************/
 
+
 /**
+ * \ingroup CGNSFile
  *
  * \brief Check for a valid CGNS file.
  *
- * \param[in] filename Name of the CGNS file, including path name if necessary. There is no limit on the length of this character variable. 
- * \param[in] version  CGNS version number. 
- * \return ier Error status.
+ * \param[in] filename \FILE_filename
+ * \param[in] file_type \FILE_file_type
+ * \return \ier
  *
  * \details For existing files, the function /e cg_is_cgns may be used to determine if a file is a CGNS file or not, and
  *  the type of file (\p CG_FILE_ADF or \p CG_FILE_HDF5). If the file is a CGNS file, \e cg_is_cgns returns \p CG_OK,
@@ -346,19 +348,15 @@ int cg_is_cgns(const char *filename, int *file_type)
     return ierr ? CG_ERROR : CG_OK;
 }
 
-/***********************************************************************
- * cg_open(char *filename, int mode, int *file_number)
- *
- ***********************************************************************/
-
 /**
+ * \ingroup CGNSFile
  *
  * \brief Open a CGNS file.
  *
- * \param[in] filename Name of the CGNS file, including path name if necessary. There is no limit on the length of this character variable. 
- * \param[in] mode Mode used for opening the file. The modes currently supported are \p CG_MODE_READ, \p CG_MODE_WRITE, and \p CG_MODE_MODIFY.
- * \param[out] file_number CGNS file index number.
- * \return ier Error status.
+ * \param[in]  filename \FILE_filename
+ * \param[in]  mode \FILE_mode
+ * \param[out] fn \FILE_fn
+ * \return \ier
  *
  * \details The function \e cg_open must always be the first one called. It opens a CGNS file for reading and/or writing and returns an index number \e file_number. 
  * The index number serves to identify the CGNS file in subsequent function calls. Several CGNS files can be opened simultaneously. The current 
@@ -376,7 +374,7 @@ int cg_is_cgns(const char *filename, int *file_type)
  *
  */
 
-int cg_open(const char *filename, int mode, int *file_number)
+int cg_open(const char *filename, int mode, int *fn)
 {
     int cgio, filetype;
     cgsize_t dim_vals;
@@ -426,7 +424,7 @@ int cg_open(const char *filename, int mode, int *file_number)
     }
     cg = &(cgns_files[n_cgns_files]);
     n_cgns_files++;
-    (*file_number) = n_cgns_files + file_number_offset;
+    (*fn) = n_cgns_files + file_number_offset;
 
     if (cgio_get_file_type(cgio, &filetype)) {
         cg_io_error("cgio_get_file_type");
@@ -440,7 +438,7 @@ int cg_open(const char *filename, int mode, int *file_number)
     cg->filetype = filetype;
     cg->cgio = cgio;
     cgio_get_root_id(cgio, &cg->rootid);
-    cg->file_number = (*file_number);
+    cg->file_number = (*fn);
     cg->version = 0;
     cg->deleted = 0;
     cg->added = 0;
