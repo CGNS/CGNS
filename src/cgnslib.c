@@ -358,7 +358,8 @@ int cg_is_cgns(const char *filename, int *file_type)
  * \param[out] fn \FILE_fn
  * \return \ier
  *
- * \details The function \e cg_open must always be the first one called. It opens a CGNS file for reading and/or writing and returns an index number \e file_number. 
+ * \details The function \e cg_open must always be the first one called. It opens a CGNS file for reading and/or writing and returns 
+ * an index number \e file_number. 
  * The index number serves to identify the CGNS file in subsequent function calls. Several CGNS files can be opened simultaneously. The current 
  * limit on the number of files opened at once depends on the platform. On an SGI workstation, this limit is set at 100 (parameter FOPEN_MAX in stdio.h).
  * The file can be opened in one of the following modes:
@@ -371,6 +372,10 @@ int cg_is_cgns(const char *filename, int *file_type)
  *
  * When the file is opened, if no \e CGNSLibraryVersion_t node is found, a default value of 1.05 is assumed for the CGNS version number. Note that this 
  * corresponds to an old version of the CGNS standard, that doesn't include many data structures supported by the current standard.
+ *
+ * In order to reduce memory usage and improve execution speed, large arrays such as grid coordinates or flow solutions are not actually 
+ * stored in memory. Instead, only basic information about the node is kept, while reads and writes of the data is directly to and from 
+ * the application's memory. An attempt is also made to do the same with unstructured mesh element data. 
  *
  */
 
@@ -550,17 +555,30 @@ int cg_open(const char *filename, int mode, int *fn)
     return CG_OK;
 }
 
-int cg_version(int file_number, float *FileVersion)
+/**
+ * \ingroup CGNSFile
+ *
+ * \brief Get CGNS file version.
+ *
+ * \param[in]  fn \FILE_fn
+ * \param[out] version \FILE_version
+ * \return \ier
+ *
+ * \details The function \e cg_version returns the CGNS version number.
+ *
+ */
+
+int cg_version(int fn, float *version)
 {
     int nnod;
     double *id;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
 /* if open in CG_MODE_WRITE */
     if (cg->version) {
-        (*FileVersion)=(float)(cg->version)/1000;
+        (*version)=(float)(cg->version)/1000;
         return CG_OK;
     }
 
@@ -570,7 +588,7 @@ int cg_version(int file_number, float *FileVersion)
         return CG_ERROR;
     if (nnod==0) {
         cg->version=3200;
-        *FileVersion= (float) 3.20;
+        *version= (float) 3.20;
     } else if (nnod!=1) {
         cgi_error("More then one CGNSLibraryVersion_t node found under ROOT.");
         return CG_ERROR;
@@ -597,9 +615,9 @@ int cg_version(int file_number, float *FileVersion)
             return CG_ERROR;
         }
      /* save data */
-        *FileVersion = *((float *)data);
+        *version = *((float *)data);
         free(data);
-        cg->version = (int)(1000.0*(*FileVersion)+0.5);
+        cg->version = (int)(1000.0*(*version)+0.5);
 
      /* To prevent round off error in version number for file of older or current version */
         temp_version = cg->version;
@@ -619,20 +637,32 @@ int cg_version(int file_number, float *FileVersion)
         free(id);
     }
 #if DEBUG_VERSION
-    printf("FileVersion=%f\n",*FileVersion);
+    printf("version=%f\n",*version);
     printf("cg->version=%d\n",cg->version);
 #endif
 
     return CG_OK;
 }
+/**
+ * \ingroup CGNSFile
+ *
+ * \brief Get CGNS file precision.
+ *
+ * \param[in]  fn \FILE_fn
+ * \param[out] precision \FILE_precision
+ * \return \ier
+ *
+ * \details Precision used to write the CGNS file. The \e precision value will be one of 32 (32-bit), 64 (64-bit), or 0 if not known. 
+ *
+ */
 
-int cg_precision(int file_number, int *precision)
+int cg_precision(int fn, int *precision)
 {
     int nb, nz;
     char_33 data_type;
 
     *precision = 0;
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
 /* if open in CG_MODE_WRITE */
@@ -654,10 +684,24 @@ int cg_precision(int file_number, int *precision)
     return CG_OK;
 }
 
-int cg_close(int file_number)
+/**
+ * \ingroup CGNSFile
+ *
+ * \brief Close a CGNS file.
+ *
+ * \param[in]  fn \FILE_fn
+ * \return \ier
+ *
+ * \details The function \e cg_close must always be the last one called. It closes the CGNS file designated by the index number \e fn 
+ * and frees the memory where the CGNS data was kept. When a file is opened for writing, \e cg_close writes all the CGNS data in 
+ * memory onto disk prior to closing the file. Consequently, if is omitted, the CGNS file is not written properly.
+ *
+ */
+
+int cg_close(int fn)
 {
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
 #ifdef __CG_MALLOC_H__
@@ -706,12 +750,31 @@ int cg_close(int file_number)
     return CG_OK;
 }
 
-int cg_save_as(int file_number, const char *filename, int file_type,
+/**
+ * \ingroup CGNSFile
+ *
+ * \brief Save the open CGNS file.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] filename \FILE_filename
+ * \param[in] file_type \FILE_file_type
+ * \param[in] follow_links \FILE_follow_links
+ * \return \ier
+ *
+ * \details The CGNS file identified by \e fn may be saved to a different filename and type using cg_save_as(). 
+ * In order to save as an HDF5 file, the library must have been built with HDF5 support. ADF support is always built. 
+ * The function cg_set_file_type() sets the default file type for newly created CGNS files. The function
+ * cg_get_file_type() returns the file type for the CGNS file identified by \e fn. If the CGNS library is built 
+ * as 32-bit, the additional file type, \p CG_FILE_ADF2, is available. This allows creation of a 2.5 compatible CGNS file.  
+ *
+ */
+
+int cg_save_as(int fn, const char *filename, int file_type,
                int follow_links)
 {
     int output;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (file_type == CG_FILE_NONE)
@@ -734,6 +797,22 @@ int cg_save_as(int file_number, const char *filename, int file_type,
     }
     return CG_OK;
 }
+/**
+ * \ingroup CGNSFile
+ *
+ * \brief Set default file type.
+ *
+ * \param[in]  file_type \FILE_file_type
+ * \return \ier
+ *
+ * \details When a CGNS file is newly created using \p CG_MODE_WRITE, the default type of database manager used is determined 
+ * at compile time. If the CGNS library was built with HDF5 version 1.8 or later support, the file type will be \p CG_FILE_HDF5,
+ * otherwise \p CG_FILE_ADF is used. This may be changed either by setting an environment variable, \p CGNS_FILETYPE, to one
+ * of \e adf, \e hdf5, or \e adf2, or by calling the routine cg_set_file_type() prior to the cg_open() call. Calling
+ * cg_set_file_type() with the argument \p CG_FILE_NONE will reset the library to use the default file type. 
+ * \b Note: If the environment variable \p CGNS_FILETYPE is set, it takes precedence. 
+ *
+ */
 
 int cg_set_file_type(int file_type)
 {
@@ -773,9 +852,22 @@ int cg_set_file_type(int file_type)
     return CG_OK;
 }
 
-int cg_get_file_type(int file_number, int *file_type)
+/**
+ * \ingroup CGNSFile
+ *
+ * \brief Get file type for open CGNS file.
+ *
+ * \param[in]  fn \FILE_fn
+ * \param[out] file_type \FILE_file_type
+ * \return \ier
+ *
+ * \details The function \p cg_get_file_type gets the file type (\e adf, \e hdf5, or \e adf2) for an open CGNS file.
+ *
+ */
+
+int cg_get_file_type(int fn, int *file_type)
 {
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
     if (cgio_get_file_type(cg->cgio, file_type)) {
         cg_io_error("cgio_get_file_type");
@@ -784,9 +876,9 @@ int cg_get_file_type(int file_number, int *file_type)
     return CG_OK;
 }
 
-int cg_root_id(int file_number, double *root_id)
+int cg_root_id(int fn, double *root_id)
 {
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
     if (cgio_get_root_id(cg->cgio, root_id)) {
         cg_io_error("cgio_get_root_id");
@@ -795,9 +887,9 @@ int cg_root_id(int file_number, double *root_id)
     return CG_OK;
 }
 
-int cg_get_cgio(int file_number, int *cgio_num)
+int cg_get_cgio(int fn, int *cgio_num)
 {
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
     *cgio_num = cg->cgio;
     return CG_OK;
@@ -1006,10 +1098,10 @@ const char *cg_AverageInterfaceTypeName(CGNS_ENUMT( AverageInterfaceType_t )  ty
  *         Read and Write CGNSBase_t Nodes
 \*****************************************************************************/
 
-int cg_nbases(int file_number, int *nbases)
+int cg_nbases(int fn, int *nbases)
 {
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -1018,12 +1110,12 @@ int cg_nbases(int file_number, int *nbases)
     return CG_OK;
 }
 
-int cg_base_read(int file_number, int B, char *basename, int *cell_dim,
+int cg_base_read(int fn, int B, char *basename, int *cell_dim,
                  int *phys_dim)
 {
     cgns_base *base;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -1038,11 +1130,11 @@ int cg_base_read(int file_number, int B, char *basename, int *cell_dim,
     return CG_OK;
 }
 
-int cg_base_id(int file_number, int B, double *base_id)
+int cg_base_id(int fn, int B, double *base_id)
 {
     cgns_base *base;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -1054,11 +1146,11 @@ int cg_base_id(int file_number, int B, double *base_id)
     return CG_OK;
 }
 
-int cg_cell_dim(int file_number, int B, int *cell_dim)
+int cg_cell_dim(int fn, int B, int *cell_dim)
 {
     cgns_base *base;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
     base = cgi_get_base(cg, B);
     if (base==0) return CG_ERROR;
@@ -1067,7 +1159,7 @@ int cg_cell_dim(int file_number, int B, int *cell_dim)
     return CG_OK;
 }
 
-int cg_base_write(int file_number, const char * basename, int cell_dim,
+int cg_base_write(int fn, const char * basename, int cell_dim,
                  int phys_dim, int *B)
 {
     cgns_base *base = NULL;
@@ -1082,7 +1174,7 @@ int cg_base_write(int file_number, const char * basename, int cell_dim,
         return CG_ERROR;
     }
      /* get memory address for base */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -1140,11 +1232,11 @@ int cg_base_write(int file_number, const char * basename, int cell_dim,
  *            Read and Write Zone_t Nodes
 \*****************************************************************************/
 
-int cg_nzones(int file_number, int B, int *nzones)
+int cg_nzones(int fn, int B, int *nzones)
 {
     cgns_base *base;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -1156,11 +1248,11 @@ int cg_nzones(int file_number, int B, int *nzones)
     return CG_OK;
 }
 
-int cg_zone_type(int file_number, int B, int Z, CGNS_ENUMT(ZoneType_t) *type)
+int cg_zone_type(int fn, int B, int Z, CGNS_ENUMT(ZoneType_t) *type)
 {
     cgns_zone *zone;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -1172,12 +1264,12 @@ int cg_zone_type(int file_number, int B, int Z, CGNS_ENUMT(ZoneType_t) *type)
     return CG_OK;
 }
 
-int cg_zone_read(int file_number, int B, int Z, char *zonename, cgsize_t *nijk)
+int cg_zone_read(int fn, int B, int Z, char *zonename, cgsize_t *nijk)
 {
     cgns_zone *zone;
     int i;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -1192,11 +1284,11 @@ int cg_zone_read(int file_number, int B, int Z, char *zonename, cgsize_t *nijk)
     return CG_OK;
 }
 
-int cg_zone_id(int file_number, int B, int Z, double *zone_id)
+int cg_zone_id(int fn, int B, int Z, double *zone_id)
 {
     cgns_zone *zone;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -1208,11 +1300,11 @@ int cg_zone_id(int file_number, int B, int Z, double *zone_id)
     return CG_OK;
 }
 
-int cg_index_dim(int file_number, int B, int Z, int *index_dim)
+int cg_index_dim(int fn, int B, int Z, int *index_dim)
 {
     cgns_zone *zone;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
     zone = cgi_get_zone(cg, B, Z);
     if (zone==0) return CG_ERROR;
