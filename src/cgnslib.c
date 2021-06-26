@@ -23,6 +23,11 @@ freely, subject to the following restrictions:
  *
  ***********************************************************************/
 
+/**
+ * \defgroup CGNSFile File Operations
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
