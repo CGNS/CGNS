@@ -59,8 +59,6 @@ freely, subject to the following restrictions:
 /* Flag for contiguous (0) or compact storage (1) */
 extern int HDF5storage_type;
 
-/* mergesort definition */
-#include "mergesort.c"
 
 /***********************************************************************
  * global variable definitions
@@ -390,7 +388,7 @@ int cgi_read_base(cgns_base *base)
     if (cgi_read_all_base_children(base->id, &nchildren, &childlist)) return CG_ERROR;
     /* we now have all ids with label and name */
     /* sort them by label */
-    mergesort(childlist, nchildren, sizeof(_childnode_t), sort_base_children);
+    qsort(childlist, nchildren, sizeof(_childnode_t), sort_base_children);
     /* now consume the sorted childlist for each label */
 
     /* Family_t */ /* -- FAMILY TREE -- */
@@ -447,7 +445,7 @@ int cgi_read_base(cgns_base *base)
     cgi_get_nodes_with_label(childlist, nchildren, LabelZone_t, &base->nzones, &start);
     if (base->nzones>0) {
          /* Order zones alpha-numerically */
-        mergesort(&childlist[start], base->nzones, sizeof(_childnode_t), sort_zone_names);
+        qsort(&childlist[start], base->nzones, sizeof(_childnode_t), sort_zone_names);
          /* populate zones in sorted order */
         base->zone = CGNS_NEW(cgns_zone, base->nzones);
         for (n=0; n<base->nzones; n++) {
