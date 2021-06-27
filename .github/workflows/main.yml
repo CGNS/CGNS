@@ -1,0 +1,138 @@
+name: cgns
+
+# Controls when the action will run. 
+#Triggers the workflow on push or pull requests.
+on: 
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+#on: 
+#  push:
+#  pull_request:
+
+# A workflow run is made up of one or more jobs that
+# can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    strategy:
+      matrix:
+        name: ["Ubuntu Latest GCC", "macOS Latest Clang"]
+        include:
+          - name: "Ubuntu Latest GCC"
+            artifact: "Linux.tar.xz"
+            os: ubuntu-latest
+            fortran: with
+            parallel: enable
+            hdf5: with
+            tools: enable
+          - name: "macOS Latest Clang"
+            artifact: "macOS.tar.xz"
+            os: macos-latest
+            parallel: disable
+            fortran: with
+            hdf5: without
+            tools: disable
+
+    name: ${{ matrix.name }}
+    # The type of runner that the job will run on.
+    runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, 'skip-ci')"
+
+    # Steps represent a sequence of tasks that will be executed 
+    # as part of the job.
+    steps:
+    - name: Install Dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt update
+        sudo apt install mpich
+        sudo apt-get install -y libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
+        # Set env vars
+        echo "OS_NAME=linux" >> $GITHUB_ENV
+        echo "CC=mpicc" >> $GITHUB_ENV
+        echo "FC=mpif90" >> $GITHUB_ENV
+        echo "F77=mpif90" >> $GITHUB_ENV
+
+    - name: Install Dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        # Set env vars
+        echo "OS_NAME=macOS" >> $GITHUB_ENV
+        echo "CC=gcc" >> $GITHUB_ENV
+        # Use the newest stable gcc compiler
+        brew update
+        brew upgrade gcc
+        brew install gcc
+        brew unlink gcc && brew link gcc
+        echo "FC=gfortran" >> $GITHUB_ENV
+        echo "F77=gfortran" >> $GITHUB_ENV
+
+ # Checks-out the repository under $GITHUB_WORKSPACE so the job can access it.
+    - name: Get Sources
+      uses: actions/checkout@v2
+
+##################################
+# INSTALL HDF5
+##################################
+                 
+    - name: install HDF5
+      run: |
+        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5_1_10_7 --single-branch hdf5_1_10_7
+        export HOME_DIR=$(echo ~)
+        cd hdf5_1_10_7
+        ./configure --without-zlib --without-szlib --disable-fortran --disable-hl \
+        --disable-tests --disable-tools \
+        --prefix=$HOME_DIR/hdf5 \
+        --${{ matrix.parallel }}-parallel 
+        make -j 8 install
+      shell: bash
+
+##################################
+# DO CMAKE FIRST SINCE AUTOTOOLS 
+# BUILDS IN-PLACE, WHICH AFFECTS
+# THE CMAKE BUILD
+##################################
+
+##################################
+# CONFIGURE CGNS (CMake)
+##################################
+
+    - name: configure CGNS
+      run: |
+        bash .github/workflows/config-cgns.sh cmake \
+            "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran --${{ matrix.hdf5 }}-hdf5 --${{ matrix.tools }}-cgnstools"
+      shell: bash
+
+##################################
+# TEST CGNS (CMAKE)
+##################################
+
+    - name: CMake test CGNS
+      run: |
+        cd cbuild
+        make -j 8
+        make test
+      shell: bash
+
+##################################
+# CONFIGURE CGNS (Autotools)
+##################################
+
+    - name: configure CGNS
+      run: |
+        bash .github/workflows/config-cgns.sh autotools  \
+            "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran --${{ matrix.hdf5 }}-hdf5 --${{ matrix.tools }}-cgnstools"
+      shell: bash
+
+##################################
+# TEST CGNS
+##################################
+
+    - name: test CGNS
+      run: |
+        cd src
+        make -j 8
+        make test
+      shell: bash

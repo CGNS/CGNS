@@ -1,6 +1,7 @@
       program read_bc_str
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   structured grid + BCs (in PointRange format), and reads the BCs
@@ -48,7 +49,7 @@
         call cg_boco_info_f(index_file,index_base,index_zone,ib,               &
              boconame,ibocotype,iptset,npts,normalindex,normallistflag,        &
              normaldatatype,ndataset,ier)
-        if (iptset .ne. PointRange) then
+        if (iptset .ne.  CGNS_ENUMV(PointRange)) then
           write(6,'('' Error.  For this program, BCs must be set'',            &
            '' up as PointRange type'',a32)') PointSetTypeName(iptset)
           stop

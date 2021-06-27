@@ -5,7 +5,7 @@
 
 ! Demonstrate Version 2.1 chemistry extensions.
 ! D. Leich, Intelligent Light 11-Jan-02
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -163,12 +163,12 @@
                 write(6,600)' GoverningEquationsType="',&
                                 GoverningEquationsTypeName(type),'"'
 
-    	! *** Governing Equations attribute:  GOTO GoverningEquations_t node
+    	! ! *** Governing Equations attribute:  GOTO GoverningEquations_t node
 	      call cg_goto_f(cg,base,ier, 'FlowEquationSet_t', 1,&
                   'GoverningEquations_t',1,'end')
 	      if (ier .eq. ERROR) call cg_error_exit_f
 
-        ! *** Governing Equations attribute:  Diffusion model
+        ! ! *** Governing Equations attribute:  Diffusion model
 	      call cg_diffusion_read_f(diffusion_model, ier)
 	      if (ier .eq. ERROR) call cg_error_exit_f
 	      if (ier.eq.ALL_OK)write(6,103)'   Diffusion model=',&
@@ -232,11 +232,11 @@
 	        write(6,200) ' DataDim=',dim_vals(1)
 
 	        write(6,105) ' Data:'
-	        if (datatype .eq. RealSingle) then
+	        if (datatype .eq. CGNS_ENUMV(RealSingle)) then
 	          call cg_array_read_f(iarray, data_single, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
 	          write(6,106) (data_single(n),n=1,dim_vals(1))
-	        elseif (datatype .eq. RealDouble) then
+	        elseif (datatype .eq. CGNS_ENUMV(RealDouble)) then
 		  call cg_array_read_f(iarray, data_double, ier)
                   if (ier .eq. ERROR) call cg_error_exit_f
 	 	  write(6,106) (data_double(n),n=1,dim_vals(1))

@@ -1,5 +1,6 @@
       program testfamilytreef
 
+#include "cgnstypes_f03.h"
 #ifdef WINNT
       include 'cgnswin_f.h'
 #endif
@@ -38,16 +39,16 @@
       call cg_open_f(outfile, CG_MODE_WRITE, cgfile, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       ! write(*, *) 'Create Grid Base'
-      call cg_base_write_f( cgfile, 'Structured', 3, 3, cgbase, ierr)
+      CALL cg_base_write_f( cgfile, 'Structured', 3, 3, cgbase, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
-      call cg_gopath_f( cgfile, '/Structured', ierr)
+      CALL cg_gopath_f( cgfile, '/Structured', ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f     
-      call cg_dataclass_write_f( Dimensional, ierr)
+      call cg_dataclass_write_f( CGNS_ENUMV(Dimensional), ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f     
-      call cg_units_write_f(Kilogram, Meter, &
-     &                      Second, Kelvin, &
-     &                      Radian, ierr)
+      call cg_units_write_f(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), &
+     &                      CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), &
+     &                      CGNS_ENUMV(Radian), ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f     
 
 ! -- Create Family Tree Base
@@ -78,15 +79,15 @@
       enddo
       exponents(2) = 1.0
       call cg_zone_write_f(cgfile, cgbase, "Zone", sizes, &
-     &                    Structured, cgzone, ierr)
+     &                    CGNS_ENUMV(Structured), cgzone, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle, &
+      call cg_coord_write_f(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle), &
      &       "CoordinateX", xcoord, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle, &
+      call cg_coord_write_f(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle), &
      &       "CoordinateY", ycoord, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle, &
+      call cg_coord_write_f(cgfile, cgbase, cgzone, CGNS_ENUMV(RealSingle), &
      &       "CoordinateZ", zcoord, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_goto_f(cgfile, cgbase, ierr, "Zone_t", cgzone, &
@@ -96,15 +97,15 @@
       call cg_gopath_f(cgfile,                                  &
      &    "/Structured/Zone/GridCoordinates/CoordinateX", ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_exponents_write_f(RealSingle, exponents, ierr)
+      call cg_exponents_write_f(CGNS_ENUMV(RealSingle), exponents, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_gopath_f(cgfile, "../CoordinateY", ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_exponents_write_f(RealSingle, exponents, ierr)
+      call cg_exponents_write_f(CGNS_ENUMV(RealSingle), exponents, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_gopath_f(cgfile, "../CoordinateZ", ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_exponents_write_f(RealSingle, exponents, ierr)
+      call cg_exponents_write_f(CGNS_ENUMV(RealSingle), exponents, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
 ! -- Write Family Tree
@@ -224,8 +225,8 @@
       enddo
       ptrange(6) = 1
       npts = 2
-      call cg_boco_write_f(cgfile, cgbase, 1, "Inflow", BCInflow, &
-     &            PointRange, npts, ptrange, cgbc, ierr)
+      call cg_boco_write_f(cgfile, cgbase, 1, "Inflow", CGNS_ENUMV(BCInflow), &
+     &            CGNS_ENUMV(PointRange), npts, ptrange, cgbc, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_goto_f(cgfile, cgbase, ierr, "Zone", 0, "ZoneBC", 0, &
      &               "Inflow", 0,'end')

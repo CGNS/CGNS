@@ -1,6 +1,7 @@
       program write_bcpnts_unst
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   unstructured grid, and adds BC definitions (defined
@@ -66,7 +67,7 @@
 !  write boundary conditions for ilo face
       icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Ilo',             &
-           BCTunnelInflow,PointList,icounts,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCTunnelInflow),CGNS_ENUMV(PointList),icounts,ipnts,index_bc,ier)
 !  we know that for the unstructured zone, the following face elements
 !  have been defined as outflow (real working code would check!):
       nelem_start=2689
@@ -84,7 +85,7 @@
 !  write boundary conditions for ihi face
       icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Ihi',             &
-           BCExtrapolate,PointList,icounts,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCExtrapolate),CGNS_ENUMV(PointList),icounts,ipnts,index_bc,ier)
 !  we know that for the unstructured zone, the following face elements
 !  have been defined as walls (real working code would check!):
       nelem_start=2817
@@ -102,7 +103,7 @@
 !  write boundary conditions for wall faces
       icounts=icount
       call cg_boco_write_f(index_file,index_base,index_zone,'Walls',           &
-           BCWallInviscid,PointList,icounts,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCWallInviscid),CGNS_ENUMV(PointList),icounts,ipnts,index_bc,ier)
 !
 !  the above are all face-center locations for the BCs - must indicate this,
 !  otherwise Vertices will be assumed!
@@ -111,7 +112,7 @@
 !  is only one Zone_t and one ZoneBC_t - real working code would check!)
         call cg_goto_f(index_file,index_base,ier,'Zone_t',1,                   &
              'ZoneBC_t',1,'BC_t',ibc,'end')
-        call cg_gridlocation_write_f(FaceCenter,ier)
+        call cg_gridlocation_write_f(CGNS_ENUMV(FaceCenter),ier)
       enddo
 !  close CGNS file
       call cg_close_f(index_file,ier)

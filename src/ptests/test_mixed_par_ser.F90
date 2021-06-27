@@ -3,6 +3,12 @@ PROGRAM test_mixed_par_ser
   USE cgns
   use mpi
   IMPLICIT NONE
+
+#include "cgnstypes_f03.h"
+#ifdef WINNT
+  INCLUDE 'cgnswin_f.h'
+#endif
+
   INTEGER :: ierr, base, i, cg, iCoor
   INTEGER(cgsize_t) :: sizes(9)
   INTEGER :: commsize, commrank
@@ -20,16 +26,20 @@ PROGRAM test_mixed_par_ser
   ! *******************************
   IF(commrank.EQ.0) WRITE(*,"(A)") "TEST S-P-S, all different files"
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
   CALL test_parallel(FNAME2)
   IF(commrank.EQ.0) CALL test_serial(FNAME3)
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
 
   ! *******************************
   ! TEST S-P-S, all same files
   ! *******************************
   IF(commrank.EQ.0) WRITE(*,"(A)") "TEST S-P-S, all same files"
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
   CALL test_parallel(FNAME1)
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
 
   ! *******************************
   ! TEST P-S-P, all different files
@@ -37,16 +47,17 @@ PROGRAM test_mixed_par_ser
   IF(commrank.EQ.0) WRITE(*,"(A)") "TEST P-S-P, all different files"
   CALL test_parallel(FNAME1)
   IF(commrank.EQ.0) CALL test_serial(FNAME2)
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
   CALL test_parallel(FNAME3)
-
+  
   ! *******************************
   ! TEST P-S-P, all same files
   ! *******************************
   IF(commrank.EQ.0) WRITE(*,"(A)") "TEST P-S-P, all same files"
   CALL test_parallel(FNAME1)
   IF(commrank.EQ.0) CALL test_serial(FNAME1)
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
   CALL test_parallel(FNAME1)
-
   CALL mpi_finalize(ierr)
 
 CONTAINS
@@ -85,16 +96,16 @@ CONTAINS
        ENDDO
     ENDDO
 
-    CALL cg_zone_write_f(cg, base, "zone1", sizes, Structured, i, ierr)
+    CALL cg_zone_write_f(cg, base, "zone1", sizes, CGNS_ENUMV(Structured), i, ierr)
     IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
-    CALL cg_coord_write_f(cg, base, i, RealDouble, "CoordinateX", Dxyz, iCoor, ierr)
+    CALL cg_coord_write_f(cg, base, i, CGNS_ENUMV(RealDouble), "CoordinateX", Dxyz, iCoor, ierr)
     IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
-    CALL cg_coord_write_f(cg, base, i, RealDouble, "CoordinateY", Dxyz, iCoor, ierr)
+    CALL cg_coord_write_f(cg, base, i, CGNS_ENUMV(RealDouble), "CoordinateY", Dxyz, iCoor, ierr)
     IF (ierr == CG_ERROR) CALL cgp_error_exit_f
     
-    CALL cg_coord_write_f(cg, base, i, RealDouble, "CoordinateZ", Dxyz, iCoor, ierr)
+    CALL cg_coord_write_f(cg, base, i, CGNS_ENUMV(RealDouble), "CoordinateZ", Dxyz, iCoor, ierr)
     IF (ierr == CG_ERROR) CALL cgp_error_exit_f
 
     CALL cg_close_f(cg, ierr)
@@ -132,16 +143,16 @@ CONTAINS
     sizes(4) = sizes(1) - 1
     sizes(5) = sizes(2) - 1
     sizes(6) = sizes(3) - 1
-    CALL cg_zone_write_f(cg, base, "zone1", sizes, Structured, i, ierr)
+    CALL cg_zone_write_f(cg, base, "zone1", sizes, CGNS_ENUMV(Structured), i, ierr)
     IF (ierr == CG_ERROR) CALL cg_error_exit_f
 
-    CALL cgp_coord_write_f(cg, base, i, RealDouble, "CoordinateX", iCoor, ierr)
+    CALL cgp_coord_write_f(cg, base, i, CGNS_ENUMV(RealDouble), "CoordinateX", iCoor, ierr)
     IF (ierr == CG_ERROR) CALL cg_error_exit_f
 
-    CALL cgp_coord_write_f(cg, base, i, RealDouble, "CoordinateY", iCoor, ierr)
+    CALL cgp_coord_write_f(cg, base, i, CGNS_ENUMV(RealDouble), "CoordinateY", iCoor, ierr)
     IF (ierr == CG_ERROR) CALL cg_error_exit_f
     
-    CALL cgp_coord_write_f(cg, base, i, RealDouble, "CoordinateZ", iCoor, ierr)
+    CALL cgp_coord_write_f(cg, base, i, CGNS_ENUMV(RealDouble), "CoordinateZ", iCoor, ierr)
     IF (ierr == CG_ERROR) CALL cg_error_exit_f
     
     CALL cgp_close_f(cg, ierr)

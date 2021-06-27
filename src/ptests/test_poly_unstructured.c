@@ -33,7 +33,7 @@
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 void compareValuesDouble(double val1, double val2) {
-  if (abs(val1 - val2) > 1e-10) {
+  if (fabs(val1 - val2) > 1e-10) {
     printf("ERROR - value comparison failed %f, %f\n", val1, val2);
     MPI_Abort(MPI_COMM_WORLD, 2);
   }
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
   long *offsets_sizes = NULL;
   long local_size = 0;
 
-  ElementType_t eType = MIXED;
+  CGNS_ENUMT(ElementType_t) eType = CGNS_ENUMV(MIXED);
 
   // distribute the elements and nodes hosted by each rank
   cgsize_t nbNodeIdeal = (nbNodeTotal / comm_size) + 1;
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
     cgsize_t i = floor(iCell / nbCellSlice);
     cgsize_t j = floor((iCell - i * nbCellSlice) / nbCellSide);
     cgsize_t k = floor(iCell - i * nbCellSlice - j * nbCellSide);
-    cells[count + 0] = (cgsize_t)(HEXA_8);
+    cells[count + 0] = (cgsize_t)(CGNS_ENUMV(HEXA_8));
     cells[count + 1] =
         (i + 0) * nbNodeSlice + (j + 0) * nbNodeSide + (k + 0) + 1;
     cells[count + 2] =
@@ -216,11 +216,11 @@ int main(int argc, char **argv) {
     zoneSize[0] = nbNodeTotal;
     zoneSize[1] = nbCellTotal;
     zoneSize[2] = 0;
-    callCGNS(cg_zone_write(cgfile, cgbase, zoneName, zoneSize, Unstructured,
+    callCGNS(cg_zone_write(cgfile, cgbase, zoneName, zoneSize, CGNS_ENUMV(Unstructured),
                            &cgzone));
 
     // write the nodes in parallel
-    DataType_t precision = CGNS_ENUMV(RealDouble);
+    CGNS_ENUMT(DataType_t) precision = CGNS_ENUMV(RealDouble);
     cgsize_t start = nodeOnProcStart + 1;
     cgsize_t end = nodeOnProcEnd;
     callCGNS(cgp_coord_write(cgfile, cgbase, cgzone, precision, "CoordinateX",
@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
     callCGNS(cgp_open(fileName, CG_MODE_READ, &cgfile));
 
     // read the nodes and compare
-    DataType_t precision = CGNS_ENUMV(RealDouble);
+    CGNS_ENUMT(DataType_t) precision = CGNS_ENUMV(RealDouble);
     cgsize_t start = nodeOnProcStart + 1;
     cgsize_t end = nodeOnProcEnd;
     cgzone = iZone + 1;
@@ -351,7 +351,7 @@ int main(int argc, char **argv) {
           cgsize_t i = floor(iCell / nbCellSlice);
           cgsize_t j = floor((iCell - i * nbCellSlice) / nbCellSide);
           cgsize_t k = floor(iCell - i * nbCellSlice - j * nbCellSide);
-          compareValuescgSize_t(cellsRead[count + 0], (cgsize_t)(HEXA_8));
+          compareValuescgSize_t(cellsRead[count + 0], (cgsize_t)(CGNS_ENUMV(HEXA_8)));
           compareValuescgSize_t(cellsRead[count + 1], (i + 0) * nbNodeSlice +
                                                           (j + 0) * nbNodeSide +
                                                           (k + 0) + 1);

@@ -1,5 +1,6 @@
       program cgsubreg
 
+#include "cgnstypes_f03.h"
 #ifdef WINNT
       include 'cgnswin_f.h'
 #endif
@@ -60,17 +61,17 @@
 
 ! write zone
       call cg_zone_write_f(cgfile, cgbase, 'Zone', size,                &
-     &                     Structured, cgzone, ierr)
+     &                     CGNS_ENUMV(Structured), cgzone, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 ! write coordinates
-      call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,         &
-     &                      'CoordinateX', x, cgcoord, ierr)
+      call cg_coord_write_f(cgfile, cgbase, cgzone,                     &
+     &      CGNS_ENUMV(RealSingle), 'CoordinateX', x, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,         &
-     &                      'CoordinateY', y, cgcoord, ierr)
+      call cg_coord_write_f(cgfile, cgbase, cgzone,                     & 
+     &      CGNS_ENUMV(RealSingle), 'CoordinateY', y, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
-      call cg_coord_write_f(cgfile, cgbase, cgzone, RealSingle,         &
-     &                      'CoordinateZ', z, cgcoord, ierr)
+      call cg_coord_write_f(cgfile, cgbase, cgzone,                     &
+     &      CGNS_ENUMV(RealSingle), 'CoordinateZ', z, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
 ! write first ZoneSubRegion as BCRegionName
@@ -87,14 +88,15 @@
 ! write third ZoneSubRegion as PointRange
       npts = 2
       call cg_subreg_ptset_write_f(cgfile, cgbase, cgzone, 'reg3',      &
-     &                             dim, Vertex, PointRange, npts,       &
-     &                             ptrange, csub, ierr)
+     &     dim, CGNS_ENUMV(Vertex), CGNS_ENUMV(PointRange), npts,       &
+     &     ptrange, csub, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
 ! write fourth ZoneSubRegion as PointList
       npts = 25
       call cg_subreg_ptset_write_f(cgfile, cgbase, cgzone, 'reg4',      &
-     &                             dim, EdgeCenter, PointList, npts,    &
+     &                             dim, CGNS_ENUMV(EdgeCenter),         &
+     &                             CGNS_ENUMV(PointList), npts,         &
      &                             ptlist, csub, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
@@ -148,8 +150,8 @@
 
         elseif (sname .eq. 'reg3') then
           if (bclen .ne. 0 .or. gclen .ne. 0 .or.                       &
-     &        ptype .ne. PointRange .or. npts .ne. 2 .or.               &
-     &        loc .ne. Vertex) then
+     &        ptype .ne. CGNS_ENUMV(PointRange) .or. npts .ne. 2 .or.   &
+     &        loc .ne. CGNS_ENUMV(Vertex)) then
             print *,'bad info for',sname
             stop
           endif
@@ -158,8 +160,8 @@
           if (ierr .ne. CG_OK) call cg_error_exit_f
         elseif (sname .eq. 'reg4') then
           if (bclen .ne. 0 .or. gclen .ne. 0 .or.                       &
-     &        ptype .ne. PointList .or. npts .ne. 25 .or.               &
-     &        loc .ne. EdgeCenter) then
+     &        ptype .ne. CGNS_ENUMV(PointList) .or. npts .ne. 25 .or.   &
+     &        loc .ne. CGNS_ENUMV(EdgeCenter)) then
             print *,'bad info for',sname
             stop
           endif

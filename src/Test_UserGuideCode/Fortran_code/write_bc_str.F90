@@ -1,6 +1,7 @@
       program write_bc_str
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   structured grid, and adds BC definitions (defined
@@ -65,7 +66,7 @@
       ipnts(2,2)=jhi
       ipnts(3,2)=khi
       call cg_boco_write_f(index_file,index_base,index_zone,'Ilo',             &
-           BCTunnelInflow,PointRange,2_cgsize_t,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCTunnelInflow),CGNS_ENUMV(PointRange),2_cgsize_t,ipnts,index_bc,ier)
 !  write boundary conditions for ihi face, defining range first
 !  (user can give any name)
 !  lower point of range
@@ -77,7 +78,7 @@
       ipnts(2,2)=jhi
       ipnts(3,2)=khi
       call cg_boco_write_f(index_file,index_base,index_zone,'Ihi',             &
-           BCExtrapolate,PointRange,2_cgsize_t,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCExtrapolate),CGNS_ENUMV(PointRange),2_cgsize_t,ipnts,index_bc,ier)
 !  write boundary conditions for jlo face, defining range first
 !  (user can give any name)
 !  lower point of range
@@ -89,7 +90,7 @@
       ipnts(2,2)=jlo
       ipnts(3,2)=khi
       call cg_boco_write_f(index_file,index_base,index_zone,'Jlo',             &
-           BCWallInviscid,PointRange,2_cgsize_t,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCWallInviscid),CGNS_ENUMV(PointRange),2_cgsize_t,ipnts,index_bc,ier)
 !  write boundary conditions for jhi face, defining range first
 !  (user can give any name)
 !  lower point of range
@@ -101,7 +102,7 @@
       ipnts(2,2)=jhi
       ipnts(3,2)=khi
       call cg_boco_write_f(index_file,index_base,index_zone,'Jhi',             &
-           BCWallInviscid,PointRange,2_cgsize_t,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCWallInviscid),CGNS_ENUMV(PointRange),2_cgsize_t,ipnts,index_bc,ier)
 !  write boundary conditions for klo face, defining range first
 !  (user can give any name)
 !  lower point of range
@@ -113,7 +114,7 @@
       ipnts(2,2)=jhi
       ipnts(3,2)=klo
       call cg_boco_write_f(index_file,index_base,index_zone,'Klo',             &
-           BCWallInviscid,PointRange,2_cgsize_t,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCWallInviscid),CGNS_ENUMV(PointRange),2_cgsize_t,ipnts,index_bc,ier)
 !  write boundary conditions for khi face, defining range first
 !  (user can give any name)
 !  lower point of range
@@ -125,7 +126,7 @@
       ipnts(2,2)=jhi
       ipnts(3,2)=khi
       call cg_boco_write_f(index_file,index_base,index_zone,'Khi',             &
-           BCWallInviscid,PointRange,2_cgsize_t,ipnts,index_bc,ier)
+           CGNS_ENUMV(BCWallInviscid),CGNS_ENUMV(PointRange),2_cgsize_t,ipnts,index_bc,ier)
 !  close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully added BCs (PointRange) to file'',              &

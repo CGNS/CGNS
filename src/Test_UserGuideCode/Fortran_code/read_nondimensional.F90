@@ -1,6 +1,7 @@
       program read_nondimensional
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file and reads the DataClass and
 !   ReferenceState appropriate for a completely
@@ -57,7 +58,7 @@
           write(6,'(''    they are idim,idimvec='',2i5)')idim,idimvec(1)
           stop
         end if
-        call cg_array_read_as_f(n,RealDouble,data,ier)
+        call cg_array_read_as_f(n,CGNS_ENUMV(RealDouble),data,ier)
         write(6,'('' Variable='',a32)') arrayname
         write(6,'(''     data='',f18.8)') data
       enddo

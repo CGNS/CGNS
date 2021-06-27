@@ -1,6 +1,7 @@
       program write_grid_unst
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Creates simple 3-D unstructured grid and writes it to a
 !   CGNS file.
@@ -72,13 +73,13 @@
       isize(1,3)=0
 !   create zone
       call cg_zone_write_f(index_file,index_base,zonename,isize,               &
-           Unstructured,index_zone,ier)
+           CGNS_ENUMV(Unstructured),index_zone,ier)
 !   write grid coordinates (user must use SIDS-standard names here)
-      call cg_coord_write_f(index_file,index_base,index_zone,RealDouble,       &
+      call cg_coord_write_f(index_file,index_base,index_zone,CGNS_ENUMV(RealDouble),       &
            'CoordinateX',x,index_coord,ier)
-      call cg_coord_write_f(index_file,index_base,index_zone,RealDouble,       &
+      call cg_coord_write_f(index_file,index_base,index_zone,CGNS_ENUMV(RealDouble),       &
            'CoordinateY',y,index_coord,ier)
-      call cg_coord_write_f(index_file,index_base,index_zone,RealDouble,       &
+      call cg_coord_write_f(index_file,index_base,index_zone,CGNS_ENUMV(RealDouble),       &
            'CoordinateZ',z,index_coord,ier)
 !  set element connectivity:
 !  ----------------------------------------------------------
@@ -117,7 +118,7 @@
       nbdyelem=0
 !  write HEXA_8 element connectivity (user can give any name)
       call cg_section_write_f(index_file,index_base,index_zone,                &
-           'Elem',HEXA_8,nelem_start,nelem_end,nbdyelem,ielem,                 &
+           'Elem',CGNS_ENUMV(HEXA_8),nelem_start,nelem_end,nbdyelem,ielem,                 &
            index_section,ier)
 !  ----------------------------------------------------------
 !  do boundary (QUAD) elements (this part is optional,
@@ -148,7 +149,7 @@
       end if
 !  write QUAD element connectivity for inflow face (user can give any name)
       call cg_section_write_f(index_file,index_base,index_zone,                &
-           'InflowElem',QUAD_4,nelem_start,nelem_end,nbdyelem,                 &
+           'InflowElem',CGNS_ENUMV(QUAD_4),nelem_start,nelem_end,nbdyelem,                 &
            jelem,index_section,ier)
 !  OUTFLOW:
       ielem_no=0
@@ -174,7 +175,7 @@
       end if
 !  write QUAD element connectivity for outflow face (user can give any name)
       call cg_section_write_f(index_file,index_base,index_zone,                &
-           'OutflowElem',QUAD_4,nelem_start,nelem_end,nbdyelem,                &
+           'OutflowElem',CGNS_ENUMV(QUAD_4),nelem_start,nelem_end,nbdyelem,                &
            jelem,index_section,ier)
 !  SIDEWALLS:
       ielem_no=0
@@ -233,7 +234,7 @@
       end if
 !  write QUAD element connectivity for sidewall face (user can give any name)
       call cg_section_write_f(index_file,index_base,index_zone,                &
-           'SidewallElem',QUAD_4,nelem_start,nelem_end,nbdyelem,               &
+           'SidewallElem',CGNS_ENUMV(QUAD_4),nelem_start,nelem_end,nbdyelem,               &
            jelem,index_section,ier)
 !  ----------------------------------------------------------
 !   close CGNS file

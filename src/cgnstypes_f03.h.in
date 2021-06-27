@@ -52,18 +52,13 @@
 # endif
 #endif
 
-#ifdef NO_CONCATENATION
-# define IDENTITY(x)      x
-# define CONCATENATE(a,b) IDENTITY(a)b
+#ifdef __GFORTRAN__
+#define PASTE(a) a
+#define CONCATENATE(a,b) PASTE(a)b
 #else
-# define CONCATENATE(a,b) a##b
+#define PASTE(a,b) a ## b
+#define CONCATENATE(a,b) PASTE(a,b)
 #endif
-
-!#if  __STDC__
-!#define CONCATENATE(a,b) a##b
-!#else
-!#define CONCATENATE(a,b) a/**/b
-!#endif
 
 #ifdef CGNS_SCOPE_ENUMS
 ! set scope prefix (case does not matter in Fortran)
