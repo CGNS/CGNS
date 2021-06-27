@@ -401,45 +401,81 @@ int cgi_read_base(cgns_base *base)
             base->family[n].id = childlist[n+start].id;
             base->family[n].link = cgi_read_link(childlist[n + start].id);
             base->family[n].in_link = 0;
-            if (cgi_read_family(&base->family[n])) return CG_ERROR;
+            if (cgi_read_family(&base->family[n])) {
+                CGNS_FREE(childlist);
+                return CG_ERROR;
+            }
         }
     }
 
     /* ReferenceState_t */
-    if (cgi_read_state_from_list(0, childlist, nchildren, &base->state)) return CG_ERROR;
+    if (cgi_read_state_from_list(0, childlist, nchildren, &base->state)) {
+        CGNS_FREE(childlist);
+        return CG_ERROR;
+    }
 
      /* Gravity_t */
-    if (cgi_read_gravity_from_list(0, childlist, nchildren, &base->gravity)) return CG_ERROR;
+    if (cgi_read_gravity_from_list(0, childlist, nchildren, &base->gravity)) {
+        CGNS_FREE(childlist);
+        return CG_ERROR;
+    }
 
      /* Axisymmetry_t */
-    if (cgi_read_axisym_from_list(0, childlist, nchildren, &base->axisym)) return CG_ERROR;
+    if (cgi_read_axisym_from_list(0, childlist, nchildren, &base->axisym)) {
+        CGNS_FREE(childlist);
+        return CG_ERROR;
+    }
 
      /* RotatingCoordinates_t */
-    if (cgi_read_rotating_from_list(0, childlist, nchildren, &base->rotating)) return CG_ERROR;
+    if (cgi_read_rotating_from_list(0, childlist, nchildren, &base->rotating)) {
+        CGNS_FREE(childlist);
+        return CG_ERROR;
+    }
 
      /* ConvergenceHistory_t */
-    if (cgi_read_converg_from_list(0, childlist, nchildren, &base->converg)) return CG_ERROR;
+    if (cgi_read_converg_from_list(0, childlist, nchildren, &base->converg)) {
+        CGNS_FREE(childlist);
+        return CG_ERROR;
+    }
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
     if (cgi_read_DDD_from_list(0, childlist, nchildren, &base->ndescr, &base->descr,
-        &base->data_class, &base->units)) return CG_ERROR;
+        &base->data_class, &base->units)) {
+        CGNS_FREE(childlist);
+        return CG_ERROR;
+    }
 
      /* FlowEquationSet_t */
-    if (cgi_read_equations_from_list(0, childlist, nchildren, &base->equations)) return CG_ERROR;
+    if (cgi_read_equations_from_list(0, childlist, nchildren, &base->equations)) {
+        CGNS_FREE(childlist);
+        return CG_ERROR;
+    }
 
      /* IntegralData_t */
     if (cgi_read_integral_from_list(0, childlist, nchildren, &base->nintegrals,
-        &base->integral)) return CG_ERROR;
+        &base->integral)) {
+        CGNS_FREE(childlist);
+        return CG_ERROR;
+    }
 
      /* SimulationType_t */
-    if (cgi_read_simulation_from_list(childlist, nchildren, &base->type, &base->type_id)) return CG_ERROR;
+    if (cgi_read_simulation_from_list(childlist, nchildren, &base->type, &base->type_id)) {
+        CGNS_FREE(childlist);
+        return CG_ERROR;
+    }
 
      /* BaseIterativeData_t */
-    if (cgi_read_biter_from_list(0, childlist, nchildren, &base->biter)) return CG_ERROR;
+    if (cgi_read_biter_from_list(0, childlist, nchildren, &base->biter)) {
+        CGNS_FREE(childlist);
+        return CG_ERROR;
+    }
 
      /* UserDefinedData_t */
     if (cgi_read_user_data_from_list(0, childlist, nchildren, &base->nuser_data,
-        &base->user_data)) return CG_ERROR;
+        &base->user_data)) {
+        CGNS_FREE(childlist);
+        return CG_ERROR;
+    }
 
      /* Zone_t (depends on NumberOfSteps) */
     cgi_get_nodes_with_label(childlist, nchildren, LabelZone_t, &base->nzones, &start);
