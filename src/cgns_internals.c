@@ -313,7 +313,7 @@ int cgi_read_axisym_from_list(int in_link, _childnode_t* nodelist, int nnodes, c
 int cgi_read_rotating_from_list(int in_link, _childnode_t* nodelist, int nnodes, cgns_rotating** rotating);
 int cgi_read_converg_from_list(int in_link, _childnode_t* nodelist, int nnodes, cgns_converg** converg);
 int cgi_read_integral_from_list(int in_link, _childnode_t* nodelist, int nnodes, int* nintegrals, cgns_integral** integral);
-int cgi_read_DDD_from_list(int in_link, _childnode_t* nodelist, int nnodes, int* ndescr, cgns_descr** descr, CGNS_ENUMV(DataClass_t)* data_class, cgns_units** units);
+int cgi_read_DDD_from_list(int in_link, _childnode_t* nodebylabel[NofBaseLabel], int ndescr, int ndata_class, int ndimensional_units, cgns_descr** descr, CGNS_ENUMV(DataClass_t)* data_class, cgns_units** units);
 int cgi_read_simulation_from_list(_childnode_t* nodelist, int nnodes, CGNS_ENUMT(SimulationType_t)* type, double* type_id);
 int cgi_read_biter_from_list(int in_link, _childnode_t* nodelist, int nnodes, cgns_biter** biter);
 int cgi_read_user_data_from_list(int in_link, _childnode_t* nodelist, int nnodes, int* nuser_data, cgns_user_data** user_data);
@@ -484,31 +484,16 @@ int cgi_read_base(cgns_base *base)
     }
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
-    nchildren = nchildbylabel[LabelDescriptor_t] + nchildbylabel[LabelDimensionalUnits_t] + nchildbylabel[LabelDataClass_t];
-    childlist = CGNS_NEW(_childnode_t, nchildren);
-    n = 0;
-    for (m = 0; m < nchildbylabel[LabelDescriptor_t]; ++m) {
-        memcpy(&childlist[n], &childbylabel[LabelDescriptor_t][m], sizeof(_childnode_t));
-        n++;
-    }
-    for (m = 0; m < nchildbylabel[LabelDataClass_t]; ++m) {
-        memcpy(&childlist[n], &childbylabel[LabelDataClass_t][m], sizeof(_childnode_t));
-        n++;
-    }
-    for (m = 0; m < nchildbylabel[LabelDimensionalUnits_t]; ++m) {
-        memcpy(&childlist[n], &childbylabel[LabelDimensionalUnits_t][m], sizeof(_childnode_t));
-        n++;
-    }
-    if (cgi_read_DDD_from_list(0, childlist, nchildren, &base->ndescr, &base->descr,
+    base->ndescr = nchildbylabel[LabelDescriptor_t];
+    if (cgi_read_DDD_from_list(0, childbylabel, nchildbylabel[LabelDescriptor_t],
+        nchildbylabel[LabelDataClass_t], nchildbylabel[LabelDimensionalUnits_t],  &base->descr,
         &base->data_class, &base->units)) {
         for (m = 0; m < NofBaseLabel; m++) {
             if (childbylabel[m] == NULL) continue;
             CGNS_FREE(childbylabel[m])
         }
-        if (nchildren > 0) CGNS_FREE(childlist);
         return CG_ERROR;
     }
-    if (nchildren > 0) CGNS_FREE(childlist);
 
      /* FlowEquationSet_t */
     childlist = childbylabel[LabelFlowEquationSet_t];
@@ -5598,7 +5583,8 @@ int cgi_read_string(double id, char_33 name, char **string_data)
     return CG_OK;
 }
 
-int cgi_read_DDD_from_list(int in_link, _childnode_t* nodelist, int nnodes, int* ndescr,
+int cgi_read_DDD_from_list(int in_link, _childnode_t* nodebylabel[NofBaseLabel],
+    int ndescr, int ndata_class, int ndimensional_units,
     cgns_descr** descr, CGNS_ENUMV(DataClass_t)* data_class,
     cgns_units** units)
 {
@@ -5607,37 +5593,37 @@ int cgi_read_DDD_from_list(int in_link, _childnode_t* nodelist, int nnodes, int*
     int n, nnod;
     char_33 name;
     char* string_data;
+    _childnode_t *nodelist=NULL;
 
     /* Descriptor_t */
     descr[0] = 0;
-    cgi_get_nodes_with_label(nodelist, nnodes, LabelDescriptor_t, ndescr, &start);
-    if (*ndescr > 0) {
-        descr[0] = CGNS_NEW(cgns_descr, (*ndescr));
-        for (n = 0; n < (*ndescr); n++) {
-            descr[0][n].id = nodelist[start+n].id;
-            descr[0][n].link = cgi_read_link(nodelist[start+n].id);
+    nodelist = nodebylabel[LabelDescriptor_t];
+    if (ndescr > 0) {
+        descr[0] = CGNS_NEW(cgns_descr, ndescr);
+        for (n = 0; n < (ndescr); n++) {
+            descr[0][n].id = nodelist[n].id;
+            descr[0][n].link = cgi_read_link(nodelist[n].id);
             descr[0][n].in_link = in_link;
-            if (cgi_read_string(nodelist[start+n].id, descr[0][n].name,
+            if (cgi_read_string(nodelist[n].id, descr[0][n].name,
                 &descr[0][n].text)) return CG_ERROR;
         }
     }
 
     /* DataClass_t */
     *data_class = CGNS_ENUMV(DataClassNull);
-    cgi_get_nodes_with_label(&nodelist[start], nnodes - start, LabelDataClass_t, &nnod, &n);
-    if (nnod > 0) {
-        start += n;
-        if (cgi_read_string(nodelist[start].id, name, &string_data)) return CG_ERROR;
+    nodelist = nodebylabel[LabelDataClass_t];
+    if (ndata_class > 0) {
+        if (cgi_read_string(nodelist[0].id, name, &string_data)) return CG_ERROR;
         cgi_DataClass(string_data, data_class);
         CGNS_FREE(string_data);
     }
 
+
     /* DimensionalUnits_t */
-    cgi_get_nodes_with_label(&nodelist[start], nnodes - start, LabelDimensionalUnits_t, &nnod, &n);
-    if (nnod > 0) {
-        start += n;
+    nodelist = nodebylabel[LabelDimensionalUnits_t];
+    if (ndimensional_units > 0) {
         units[0] = CGNS_NEW(cgns_units, 1);
-        units[0]->id = nodelist[start].id;
+        units[0]->id = nodelist[0].id;
         units[0]->link = cgi_read_link(nodelist[start].id);
         units[0]->in_link = in_link;
         if (cgi_read_units_node(in_link, units)) return CG_ERROR;
