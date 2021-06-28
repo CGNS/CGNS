@@ -142,6 +142,8 @@ typedef enum {
     LabelZone_t
 } BaseLabel_t;
 
+#define NofBaseLabel 16
+
 static int get_base_label_type_as_enum(const char* nodelabel) {
     if (0 == strcmp(nodelabel, "Zone_t")) {
         return LabelZone_t;
@@ -322,11 +324,18 @@ int cgi_read_base(cgns_base *base)
     char_33 data_type;
     int ndim, *index;
     double *id;
-    int n;
+    int n, m;
     void *vdata;
     cgsize_t dim_vals[12];
     int nchildren;
     _childnode_t* childlist = NULL;
+    int nchildbylabel[NofBaseLabel];
+    _childnode_t* childbylabel[NofBaseLabel];
+
+    for (n = 0; n < NofBaseLabel; n++) {
+        childbylabel[n] = NULL;
+        nchildbylabel[n] = 0;
+    }
 
      /* Read CGNSBase_t Node */
     if (cgi_read_node(base->id, base->name, data_type, &ndim, dim_vals,
@@ -387,111 +396,196 @@ int cgi_read_base(cgns_base *base)
 
     if (cgi_read_all_base_children(base->id, &nchildren, &childlist)) return CG_ERROR;
     /* we now have all ids with label and name */
-    /* sort them by label */
-    qsort(childlist, nchildren, sizeof(_childnode_t), sort_base_children);
-    /* now consume the sorted childlist for each label */
+    /* store them by label */
+    for (n = 0; n < nchildren; n++) {
+        nchildbylabel[childlist[n].type]++;
+    }
+    for (n = 0; n < NofBaseLabel; n++) {
+        if (nchildbylabel == 0) continue;
+        childbylabel[n] = CGNS_NEW(_childnode_t, nchildbylabel[n]);
+        nchildbylabel[n] = 0;
+    }
+    for (n = 0; n < nchildren; n++) {
+        memcpy((void *)&(childbylabel[childlist[n].type][nchildbylabel[childlist[n].type]]),
+            ((void *)&childlist[n]), sizeof(_childnode_t));
+        nchildbylabel[childlist[n].type] ++;
+    }
+    CGNS_FREE(childlist);
+    /* now consume the stacked childlist for each label */
 
     /* Family_t */ /* -- FAMILY TREE -- */
     int start = 0;
-    cgi_get_nodes_with_label(childlist, nchildren, LabelFamily_t, &base->nfamilies, &start);
+    base->nfamilies = nchildbylabel[LabelFamily_t];
     if (base->nfamilies > 0) {
         /* read & save families */
         base->family = CGNS_NEW(cgns_family, base->nfamilies);
         for (n=0; n<base->nfamilies; n++) {
-            base->family[n].id = childlist[n+start].id;
-            base->family[n].link = cgi_read_link(childlist[n + start].id);
+            base->family[n].id = childbylabel[LabelFamily_t][n].id;
+            base->family[n].link = cgi_read_link(childbylabel[LabelFamily_t][n].id);
             base->family[n].in_link = 0;
             if (cgi_read_family(&base->family[n])) {
-                CGNS_FREE(childlist);
+                for (m = 0; m < NofBaseLabel; m++) {
+                    if (childbylabel[m] == NULL) continue;
+                    CGNS_FREE(childbylabel[m])
+                }
                 return CG_ERROR;
             }
         }
     }
 
     /* ReferenceState_t */
-    if (cgi_read_state_from_list(0, childlist, nchildren, &base->state)) {
-        CGNS_FREE(childlist);
+    if (cgi_read_state_from_list(0, childbylabel[LabelReferenceState_t],
+        nchildbylabel[LabelReferenceState_t], &base->state)) {
+        for (m = 0; m < NofBaseLabel; m++) {
+            if (childbylabel[m] == NULL) continue;
+            CGNS_FREE(childbylabel[m])
+        }
         return CG_ERROR;
     }
 
      /* Gravity_t */
-    if (cgi_read_gravity_from_list(0, childlist, nchildren, &base->gravity)) {
-        CGNS_FREE(childlist);
+    if (cgi_read_gravity_from_list(0, childbylabel[LabelGravity_t],
+        nchildbylabel[LabelGravity_t], &base->gravity)) {
+        for (m = 0; m < NofBaseLabel; m++) {
+            if (childbylabel[m] == NULL) continue;
+            CGNS_FREE(childbylabel[m])
+        }
         return CG_ERROR;
     }
 
      /* Axisymmetry_t */
-    if (cgi_read_axisym_from_list(0, childlist, nchildren, &base->axisym)) {
-        CGNS_FREE(childlist);
+    if (cgi_read_axisym_from_list(0, childbylabel[LabelAxisymmetry_t],
+        nchildbylabel[LabelAxisymmetry_t], &base->axisym)) {
+        for (m = 0; m < NofBaseLabel; m++) {
+            if (childbylabel[m] == NULL) continue;
+            CGNS_FREE(childbylabel[m])
+        }
         return CG_ERROR;
     }
 
      /* RotatingCoordinates_t */
-    if (cgi_read_rotating_from_list(0, childlist, nchildren, &base->rotating)) {
-        CGNS_FREE(childlist);
+    if (cgi_read_rotating_from_list(0, childbylabel[LabelRotatingCoordinates_t], 
+        nchildbylabel[LabelRotatingCoordinates_t], &base->rotating)) {
+        for (m = 0; m < NofBaseLabel; m++) {
+            if (childbylabel[m] == NULL) continue;
+            CGNS_FREE(childbylabel[m])
+        }
         return CG_ERROR;
     }
 
      /* ConvergenceHistory_t */
-    if (cgi_read_converg_from_list(0, childlist, nchildren, &base->converg)) {
-        CGNS_FREE(childlist);
+    if (cgi_read_converg_from_list(0, childbylabel[LabelConvergenceHistory_t],
+        nchildbylabel[LabelConvergenceHistory_t], &base->converg)) {
+        for (m = 0; m < NofBaseLabel; m++) {
+            if (childbylabel[m] == NULL) continue;
+            CGNS_FREE(childbylabel[m])
+        }
         return CG_ERROR;
     }
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
+    nchildren = nchildbylabel[LabelDescriptor_t] + nchildbylabel[LabelDimensionalUnits_t] + nchildbylabel[LabelDataClass_t];
+    childlist = CGNS_NEW(_childnode_t, nchildren);
+    n = 0;
+    for (m = 0; m < nchildbylabel[LabelDescriptor_t]; ++m) {
+        memcpy(&childlist[n], &childbylabel[LabelDescriptor_t][m], sizeof(_childnode_t));
+        n++;
+    }
+    for (m = 0; m < nchildbylabel[LabelDataClass_t]; ++m) {
+        memcpy(&childlist[n], &childbylabel[LabelDataClass_t][m], sizeof(_childnode_t));
+        n++;
+    }
+    for (m = 0; m < nchildbylabel[LabelDimensionalUnits_t]; ++m) {
+        memcpy(&childlist[n], &childbylabel[LabelDimensionalUnits_t][m], sizeof(_childnode_t));
+        n++;
+    }
     if (cgi_read_DDD_from_list(0, childlist, nchildren, &base->ndescr, &base->descr,
         &base->data_class, &base->units)) {
-        CGNS_FREE(childlist);
+        for (m = 0; m < NofBaseLabel; m++) {
+            if (childbylabel[m] == NULL) continue;
+            CGNS_FREE(childbylabel[m])
+        }
+        if (nchildren > 0) CGNS_FREE(childlist);
         return CG_ERROR;
     }
+    if (nchildren > 0) CGNS_FREE(childlist);
 
      /* FlowEquationSet_t */
+    childlist = childbylabel[LabelFlowEquationSet_t];
+    nchildren = nchildbylabel[LabelFlowEquationSet_t];
     if (cgi_read_equations_from_list(0, childlist, nchildren, &base->equations)) {
-        CGNS_FREE(childlist);
+        for (m = 0; m < NofBaseLabel; m++) {
+            if (childbylabel[m] == NULL) continue;
+            CGNS_FREE(childbylabel[m])
+        }
         return CG_ERROR;
     }
 
      /* IntegralData_t */
+    childlist = childbylabel[LabelIntegralData_t];
+    nchildren = nchildbylabel[LabelIntegralData_t];
     if (cgi_read_integral_from_list(0, childlist, nchildren, &base->nintegrals,
         &base->integral)) {
-        CGNS_FREE(childlist);
+        for (m = 0; m < NofBaseLabel; m++) {
+            if (childbylabel[m] == NULL) continue;
+            CGNS_FREE(childbylabel[m])
+        }
         return CG_ERROR;
     }
 
      /* SimulationType_t */
+    childlist = childbylabel[LabelSimulationType_t];
+    nchildren = nchildbylabel[LabelSimulationType_t];
     if (cgi_read_simulation_from_list(childlist, nchildren, &base->type, &base->type_id)) {
-        CGNS_FREE(childlist);
+        for (m = 0; m < NofBaseLabel; m++) {
+            if (childbylabel[m] == NULL) continue;
+            CGNS_FREE(childbylabel[m])
+        }
         return CG_ERROR;
     }
 
      /* BaseIterativeData_t */
+    childlist = childbylabel[LabelBaseIterativeData_t];
+    nchildren = nchildbylabel[LabelBaseIterativeData_t];
     if (cgi_read_biter_from_list(0, childlist, nchildren, &base->biter)) {
-        CGNS_FREE(childlist);
+        for (m = 0; m < NofBaseLabel; m++) {
+            if (childbylabel[m] == NULL) continue;
+            CGNS_FREE(childbylabel[m])
+        }
         return CG_ERROR;
     }
 
      /* UserDefinedData_t */
+    childlist = childbylabel[LabelUserDefinedData_t];
+    nchildren = nchildbylabel[LabelUserDefinedData_t];
     if (cgi_read_user_data_from_list(0, childlist, nchildren, &base->nuser_data,
         &base->user_data)) {
-        CGNS_FREE(childlist);
+        for (m = 0; m < NofBaseLabel; m++) {
+            if (childbylabel[m] == NULL) continue;
+            CGNS_FREE(childbylabel[m])
+        }
         return CG_ERROR;
     }
 
      /* Zone_t (depends on NumberOfSteps) */
-    cgi_get_nodes_with_label(childlist, nchildren, LabelZone_t, &base->nzones, &start);
+    childlist = childbylabel[LabelZone_t];
+    base->nzones = nchildbylabel[LabelZone_t];
     if (base->nzones>0) {
          /* Order zones alpha-numerically */
-        qsort(&childlist[start], base->nzones, sizeof(_childnode_t), sort_zone_names);
+        qsort(childlist, base->nzones, sizeof(_childnode_t), sort_zone_names);
          /* populate zones in sorted order */
         base->zone = CGNS_NEW(cgns_zone, base->nzones);
         for (n=0; n<base->nzones; n++) {
-            base->zone[n].id = childlist[n+start].id;
-            base->zone[n].link = cgi_read_link(childlist[n + start].id);
+            base->zone[n].id = childlist[n].id;
+            base->zone[n].link = cgi_read_link(childlist[n].id);
             base->zone[n].in_link = 0;
-            strcpy(base->zone[n].name, childlist[n + start].name);
+            strcpy(base->zone[n].name, childlist[n].name);
         }
     }
-    CGNS_FREE(childlist);
+    for (m = 0; m < NofBaseLabel; m++) {
+        if (childbylabel[m] == NULL) continue;
+        CGNS_FREE(childbylabel[m])
+    }
     /* read zones */
     for (n = 0; n < base->nzones; n++) {
         if (cgi_read_zone(&base->zone[n])) return CG_ERROR;
@@ -5536,7 +5630,6 @@ int cgi_read_DDD_from_list(int in_link, _childnode_t* nodelist, int nnodes, int*
         if (cgi_read_string(nodelist[start].id, name, &string_data)) return CG_ERROR;
         cgi_DataClass(string_data, data_class);
         CGNS_FREE(string_data);
-
     }
 
     /* DimensionalUnits_t */
