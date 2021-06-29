@@ -201,49 +201,12 @@ typedef struct _childnode {
     char_33 name;
 } _childnode_t;
 
-static int sort_base_children(const void* v1, const void* v2)
-{
-    _childnode_t* p1;
-    _childnode_t* p2;
-
-    p1 = (_childnode_t *) v1;
-    p2 = (_childnode_t *) v2;
-    return p1->type - p2->type;
-}
-
 static int sort_zone_names(const void* v1, const void* v2)
 {
-    _childnode_t* p1;
-    _childnode_t* p2;
+    _childnode_t* p1 = (_childnode_t*)v1;
+    _childnode_t* p2 = (_childnode_t*)v2;
 
-    p1 = (_childnode_t*)v1;
-    p2 = (_childnode_t*)v2;
     return (strcmp(p1->name, p2->name));
-}
-
-#ifdef _WIN32
-#define CG_INLINE __inline
-#else
-#define CG_INLINE static inline
-#endif
-
-CG_INLINE int cgi_get_nodes_with_label(const _childnode_t *childlist, const int nchildren, BaseLabel_t label, int *nnodes, int *startpos)
-{
-    int n;
-    int first = 1;
-    int start = nchildren;
-
-    for (n = 0; n < nchildren; n++) {
-        if (childlist[n].type != label && first) continue;
-        if (childlist[n].type != label) break;
-        if (first) {
-            start = n;
-            first = 0;
-        }
-    }
-    *nnodes = n - start;
-    *startpos = start;
-    return CG_OK;
 }
 
 int cgi_read_all_base_children(double base_id, int* nnodes, _childnode_t** childnodes) {
@@ -318,6 +281,14 @@ int cgi_read_simulation_from_list(_childnode_t* nodelist, int nnodes, CGNS_ENUMT
 int cgi_read_biter_from_list(int in_link, _childnode_t* nodelist, int nnodes, cgns_biter** biter);
 int cgi_read_user_data_from_list(int in_link, _childnode_t* nodelist, int nnodes, int* nuser_data, cgns_user_data** user_data);
 /* end of helpers */
+#define call_base_func(error) \
+    if (error) { \
+        for (m = 0; m < NofBaseLabel; m++) { \
+            if (childbylabel[m] == NULL) continue; \
+            CGNS_FREE(childbylabel[m]) \
+        } \
+        return CG_ERROR; \
+    }
 
 int cgi_read_base(cgns_base *base)
 {
@@ -411,7 +382,7 @@ int cgi_read_base(cgns_base *base)
         nchildbylabel[childlist[n].type] ++;
     }
     CGNS_FREE(childlist);
-    /* now consume the stacked childlist for each label */
+    /* now consume the childbylabel array for each label */
 
     /* Family_t */ /* -- FAMILY TREE -- */
     int start = 0;
@@ -423,134 +394,56 @@ int cgi_read_base(cgns_base *base)
             base->family[n].id = childbylabel[LabelFamily_t][n].id;
             base->family[n].link = cgi_read_link(childbylabel[LabelFamily_t][n].id);
             base->family[n].in_link = 0;
-            if (cgi_read_family(&base->family[n])) {
-                for (m = 0; m < NofBaseLabel; m++) {
-                    if (childbylabel[m] == NULL) continue;
-                    CGNS_FREE(childbylabel[m])
-                }
-                return CG_ERROR;
-            }
+            call_base_func(cgi_read_family(&base->family[n]))
         }
     }
 
     /* ReferenceState_t */
-    if (cgi_read_state_from_list(0, childbylabel[LabelReferenceState_t],
-        nchildbylabel[LabelReferenceState_t], &base->state)) {
-        for (m = 0; m < NofBaseLabel; m++) {
-            if (childbylabel[m] == NULL) continue;
-            CGNS_FREE(childbylabel[m])
-        }
-        return CG_ERROR;
-    }
+    call_base_func(cgi_read_state_from_list(0, childbylabel[LabelReferenceState_t],
+        nchildbylabel[LabelReferenceState_t], &base->state))
 
      /* Gravity_t */
-    if (cgi_read_gravity_from_list(0, childbylabel[LabelGravity_t],
-        nchildbylabel[LabelGravity_t], &base->gravity)) {
-        for (m = 0; m < NofBaseLabel; m++) {
-            if (childbylabel[m] == NULL) continue;
-            CGNS_FREE(childbylabel[m])
-        }
-        return CG_ERROR;
-    }
+    call_base_func(cgi_read_gravity_from_list(0, childbylabel[LabelGravity_t],
+        nchildbylabel[LabelGravity_t], &base->gravity))
 
      /* Axisymmetry_t */
-    if (cgi_read_axisym_from_list(0, childbylabel[LabelAxisymmetry_t],
-        nchildbylabel[LabelAxisymmetry_t], &base->axisym)) {
-        for (m = 0; m < NofBaseLabel; m++) {
-            if (childbylabel[m] == NULL) continue;
-            CGNS_FREE(childbylabel[m])
-        }
-        return CG_ERROR;
-    }
+    call_base_func(cgi_read_axisym_from_list(0, childbylabel[LabelAxisymmetry_t],
+        nchildbylabel[LabelAxisymmetry_t], &base->axisym))
 
      /* RotatingCoordinates_t */
-    if (cgi_read_rotating_from_list(0, childbylabel[LabelRotatingCoordinates_t], 
-        nchildbylabel[LabelRotatingCoordinates_t], &base->rotating)) {
-        for (m = 0; m < NofBaseLabel; m++) {
-            if (childbylabel[m] == NULL) continue;
-            CGNS_FREE(childbylabel[m])
-        }
-        return CG_ERROR;
-    }
+    call_base_func(cgi_read_rotating_from_list(0, childbylabel[LabelRotatingCoordinates_t], 
+        nchildbylabel[LabelRotatingCoordinates_t], &base->rotating))
 
      /* ConvergenceHistory_t */
-    if (cgi_read_converg_from_list(0, childbylabel[LabelConvergenceHistory_t],
-        nchildbylabel[LabelConvergenceHistory_t], &base->converg)) {
-        for (m = 0; m < NofBaseLabel; m++) {
-            if (childbylabel[m] == NULL) continue;
-            CGNS_FREE(childbylabel[m])
-        }
-        return CG_ERROR;
-    }
+    call_base_func(cgi_read_converg_from_list(0, childbylabel[LabelConvergenceHistory_t],
+        nchildbylabel[LabelConvergenceHistory_t], &base->converg))
 
      /* Descriptor_t, DataClass_t, DimensionalUnits_t */
     base->ndescr = nchildbylabel[LabelDescriptor_t];
-    if (cgi_read_DDD_from_list(0, childbylabel, nchildbylabel[LabelDescriptor_t],
+    call_base_func(cgi_read_DDD_from_list(0, childbylabel, nchildbylabel[LabelDescriptor_t],
         nchildbylabel[LabelDataClass_t], nchildbylabel[LabelDimensionalUnits_t],  &base->descr,
-        &base->data_class, &base->units)) {
-        for (m = 0; m < NofBaseLabel; m++) {
-            if (childbylabel[m] == NULL) continue;
-            CGNS_FREE(childbylabel[m])
-        }
-        return CG_ERROR;
-    }
+        &base->data_class, &base->units))
 
      /* FlowEquationSet_t */
-    childlist = childbylabel[LabelFlowEquationSet_t];
-    nchildren = nchildbylabel[LabelFlowEquationSet_t];
-    if (cgi_read_equations_from_list(0, childlist, nchildren, &base->equations)) {
-        for (m = 0; m < NofBaseLabel; m++) {
-            if (childbylabel[m] == NULL) continue;
-            CGNS_FREE(childbylabel[m])
-        }
-        return CG_ERROR;
-    }
+    call_base_func(cgi_read_equations_from_list(0, childbylabel[LabelFlowEquationSet_t],
+        nchildbylabel[LabelFlowEquationSet_t], &base->equations))
 
      /* IntegralData_t */
-    childlist = childbylabel[LabelIntegralData_t];
-    nchildren = nchildbylabel[LabelIntegralData_t];
-    if (cgi_read_integral_from_list(0, childlist, nchildren, &base->nintegrals,
-        &base->integral)) {
-        for (m = 0; m < NofBaseLabel; m++) {
-            if (childbylabel[m] == NULL) continue;
-            CGNS_FREE(childbylabel[m])
-        }
-        return CG_ERROR;
-    }
+    call_base_func(cgi_read_integral_from_list(0, childbylabel[LabelIntegralData_t],
+        nchildbylabel[LabelIntegralData_t], &base->nintegrals, &base->integral))
 
      /* SimulationType_t */
-    childlist = childbylabel[LabelSimulationType_t];
-    nchildren = nchildbylabel[LabelSimulationType_t];
-    if (cgi_read_simulation_from_list(childlist, nchildren, &base->type, &base->type_id)) {
-        for (m = 0; m < NofBaseLabel; m++) {
-            if (childbylabel[m] == NULL) continue;
-            CGNS_FREE(childbylabel[m])
-        }
-        return CG_ERROR;
-    }
+    call_base_func(cgi_read_simulation_from_list(childbylabel[LabelSimulationType_t],
+        nchildbylabel[LabelSimulationType_t], &base->type, &base->type_id))
 
      /* BaseIterativeData_t */
-    childlist = childbylabel[LabelBaseIterativeData_t];
-    nchildren = nchildbylabel[LabelBaseIterativeData_t];
-    if (cgi_read_biter_from_list(0, childlist, nchildren, &base->biter)) {
-        for (m = 0; m < NofBaseLabel; m++) {
-            if (childbylabel[m] == NULL) continue;
-            CGNS_FREE(childbylabel[m])
-        }
-        return CG_ERROR;
-    }
+    call_base_func(cgi_read_biter_from_list(0, childbylabel[LabelBaseIterativeData_t],
+        nchildbylabel[LabelBaseIterativeData_t], &base->biter))
 
      /* UserDefinedData_t */
-    childlist = childbylabel[LabelUserDefinedData_t];
-    nchildren = nchildbylabel[LabelUserDefinedData_t];
-    if (cgi_read_user_data_from_list(0, childlist, nchildren, &base->nuser_data,
-        &base->user_data)) {
-        for (m = 0; m < NofBaseLabel; m++) {
-            if (childbylabel[m] == NULL) continue;
-            CGNS_FREE(childbylabel[m])
-        }
-        return CG_ERROR;
-    }
+    call_base_func(cgi_read_user_data_from_list(0, childbylabel[LabelUserDefinedData_t],
+        nchildbylabel[LabelUserDefinedData_t], &base->nuser_data,
+        &base->user_data))
 
      /* Zone_t (depends on NumberOfSteps) */
     childlist = childbylabel[LabelZone_t];
@@ -3701,7 +3594,6 @@ int cgi_read_equations_from_list(int in_link, _childnode_t* nodelist, int nnodes
 
     nnod = nnodes;
     start = 0;
-    //cgi_get_nodes_with_label(nodelist, nnodes, LabelFlowEquationSet_t, &nnod, &start);
     if (nnod <= 0) {
         equations[0] = 0;
         return CG_OK;
@@ -3812,9 +3704,7 @@ int cgi_read_state_from_list(int in_link, const _childnode_t *nodelist, int nnod
     char* string_data;
     double* id;
     
-    nnod = nnodes;
-    //cgi_get_nodes_with_label(nodelist, nnodes, LabelReferenceState_t, &nnod, &start);
-    
+    nnod = nnodes;    
     if (nnod <= 0) {
         state[0] = 0;
         return CG_OK;
@@ -4031,20 +3921,19 @@ int cgi_read_gravity_from_list(int in_link, const _childnode_t *nodelist, const 
     char_33 temp_name;
     
     //Assume nodelist is full of LabelGravity_t
-    //cgi_get_nodes_with_label(nodelist, nnodes, LabelGravity_t, &nnod, &start);
     nnod = nnodes;
     if (nnod <= 0) {
         gravity[0] = 0;
         return CG_OK;
     }
     gravity[0] = CGNS_NEW(cgns_gravity, 1);
-    gravity[0]->id = nodelist[start].id;
-    gravity[0]->link = cgi_read_link(nodelist[start].id);
+    gravity[0]->id = nodelist[0].id;
+    gravity[0]->link = cgi_read_link(nodelist[0].id);
     gravity[0]->in_link = in_link;
     linked = gravity[0]->link ? 1 : in_link;
 
     /* Name */
-    strcpy(gravity[0]->name, nodelist[start].name);
+    strcpy(gravity[0]->name, nodelist[0].name);
 
     /* initialize dependents */
     gravity[0]->vector = 0;
@@ -4184,7 +4073,6 @@ int cgi_read_axisym_from_list(int in_link, _childnode_t* nodelist, int nnodes, c
     double* id;
     char_33 temp_name;
 
-    //cgi_get_nodes_with_label(nodelist, nnodes, LabelAxisymmetry_t, &nnod, &start);
     nnod = nnodes;
     if (nnod <= 0) {
         axisym[0] = 0;
@@ -4195,13 +4083,13 @@ int cgi_read_axisym_from_list(int in_link, _childnode_t* nodelist, int nnodes, c
         return CG_ERROR;
     }
     axisym[0] = CGNS_NEW(cgns_axisym, 1);
-    axisym[0]->id = nodelist[start].id;
-    axisym[0]->link = cgi_read_link(nodelist[start].id);
+    axisym[0]->id = nodelist[0].id;
+    axisym[0]->link = cgi_read_link(nodelist[0].id);
     axisym[0]->in_link = in_link;
     linked = axisym[0]->link ? 1 : in_link;
 
     /* Name */
-    strcpy(axisym[0]->name, nodelist[start].name);
+    strcpy(axisym[0]->name, nodelist[0].name);
     
     /* initialize dependents */
     axisym[0]->narrays = 0;
@@ -4444,24 +4332,22 @@ int cgi_read_axisym(int in_link, double parent_id, cgns_axisym **axisym)
 int cgi_read_rotating_from_list(int in_link, _childnode_t* nodelist, int nnodes, cgns_rotating** rotating)
 {
     int i, nnod, linked, rot_rate_flag = 0, rot_center_flag = 0;
-    int start = 0;
     double* id;
     char_33 temp_name;
 
     nnod = nnodes;
-    //cgi_get_nodes_with_label(nodelist, nnodes, LabelRotatingCoordinates_t, &nnod, &start);
     if (nnod <= 0) {
         rotating[0] = 0;
         return CG_OK;
     }
     rotating[0] = CGNS_NEW(cgns_rotating, 1);
-    rotating[0]->id = nodelist[start].id;
-    rotating[0]->link = cgi_read_link(nodelist[start].id);
+    rotating[0]->id = nodelist[0].id;
+    rotating[0]->link = cgi_read_link(nodelist[0].id);
     rotating[0]->in_link = in_link;
     linked = rotating[0]->link ? 1 : in_link;
 
     /* Name */
-    strcpy(rotating[0]->name, nodelist[start].name);
+    strcpy(rotating[0]->name, nodelist[0].name);
     
     /* initialize dependents */
     rotating[0]->narrays = 0;
@@ -4615,7 +4501,6 @@ int cgi_read_converg_from_list(int in_link, _childnode_t *nodelist, int nnodes, 
 {
     char_33 data_type, name;
     int ndim, n, nnod;
-    int start=0;
     double* id;
     char* string_data;
     void* iterations;
@@ -4623,14 +4508,13 @@ int cgi_read_converg_from_list(int in_link, _childnode_t *nodelist, int nnodes, 
     cgsize_t dim_vals[12];
 
     nnod = nnodes;
-    //cgi_get_nodes_with_label(nodelist, nnodes, LabelConvergenceHistory_t, &nnod, &start);
     if (nnod <= 0) {
         converg[0] = 0;
         return CG_OK;
     }
     converg[0] = CGNS_NEW(cgns_converg, 1);
-    converg[0]->id = nodelist[start].id;
-    converg[0]->link = cgi_read_link(nodelist[start].id);
+    converg[0]->id = nodelist[0].id;
+    converg[0]->link = cgi_read_link(nodelist[0].id);
     converg[0]->in_link = in_link;
     linked = converg[0]->link ? 1 : in_link;
 
@@ -4964,10 +4848,8 @@ int cgi_read_integral_from_list(int in_link, _childnode_t* nodelist, int nnodes,
 {
     double* id, * idi;
     int n, i, linked;
-    int start=0;
 
     *nintegrals = nnodes;
-    //cgi_get_nodes_with_label(nodelist, nnodes, LabelIntegralData_t, nintegrals, &start);
     if (*nintegrals <= 0) {
         integral[0] = 0;
         return CG_OK;
@@ -4975,8 +4857,8 @@ int cgi_read_integral_from_list(int in_link, _childnode_t* nodelist, int nnodes,
 
     integral[0] = CGNS_NEW(cgns_integral, (*nintegrals));
     for (n = 0; n < (*nintegrals); n++) {
-        integral[0][n].id = nodelist[start + n].id;
-        integral[0][n].link = cgi_read_link(nodelist[start + n].id);
+        integral[0][n].id = nodelist[n].id;
+        integral[0][n].link = cgi_read_link(nodelist[n].id);
         integral[0][n].in_link = in_link;
         linked = integral[0][n].link ? 1 : in_link;
 
@@ -5806,7 +5688,7 @@ int cgi_read_zonetype(double parent_id, char_33 parent_name,
 int cgi_read_simulation_from_list(_childnode_t* nodelist, int nnodes,
     CGNS_ENUMT(SimulationType_t)* type, double* type_id)
 {
-    int nchild, start=0;
+    int nchild;
     double* id;
     char* type_name;    /* allocated in cgi_read_node */
     char_33 name;
@@ -5816,15 +5698,14 @@ int cgi_read_simulation_from_list(_childnode_t* nodelist, int nnodes,
     *type_id = 0;
 
     /* get number of SimulationType_t nodes and their ID */
-    //cgi_get_nodes_with_label(nodelist, nnodes, LabelSimulationType_t, &nchild, &start);
     nchild = nnodes;
     if (nchild == 0) return CG_OK;
     if (nchild > 1) {
         cgi_error("File incorrect: multiple definition of SimulationType");
         return CG_ERROR;
     }
-    *type_id = nodelist[start].id;
-    if (cgi_read_string(nodelist[start].id, name, &type_name)) return CG_ERROR;
+    *type_id = nodelist[0].id;
+    if (cgi_read_string(nodelist[0].id, name, &type_name)) return CG_ERROR;
 
     if (cgi_SimulationType(type_name, type)) return CG_ERROR;
     CGNS_FREE(type_name);
@@ -5864,7 +5745,7 @@ int cgi_read_biter_from_list(int in_link, _childnode_t* nodelist, int nnodes, cg
     double* id;
     char_33 datatype;
     cgns_array* array;
-    int ndim, * data, nnod, start=0;
+    int ndim, * data, nnod;
     int i, linked;
     int nzones_max = 0, nfamilies_max = 0;
     void* vdata;
@@ -5872,7 +5753,6 @@ int cgi_read_biter_from_list(int in_link, _childnode_t* nodelist, int nnodes, cg
 
     /* get number of BaseIterativeData_t node */
     nnod = nnodes;
-    //cgi_get_nodes_with_label(nodelist, nnodes, LabelBaseIterativeData_t, &nnod, &start);
     if (nnod <= 0) {
         biter[0] = 0;
         return CG_OK;
@@ -5884,8 +5764,8 @@ int cgi_read_biter_from_list(int in_link, _childnode_t* nodelist, int nnodes, cg
 
     biter[0] = CGNS_NEW(cgns_biter, 1);
 
-    biter[0]->id = nodelist[start].id;
-    biter[0]->link = cgi_read_link(nodelist[start].id);
+    biter[0]->id = nodelist[0].id;
+    biter[0]->link = cgi_read_link(nodelist[0].id);
     biter[0]->in_link = in_link;
     linked = biter[0]->link ? 1 : in_link;
 
@@ -6250,13 +6130,12 @@ int cgi_read_ziter(int in_link, double parent_id, cgns_ziter **ziter)
 int cgi_read_user_data_from_list(int in_link, _childnode_t* nodelist, int nnodes, int* nuser_data,
     cgns_user_data** user_data) {
     double* id, * idi;
-    int n, i, linked, start=0;
+    int n, i, linked;
     double* IA_id, * IR_id;
     int nIA_t, nIR_t, nn;
     char_33 name;
 
     *nuser_data = nnodes;
-    //cgi_get_nodes_with_label(nodelist, nnodes, LabelUserDefinedData_t, nuser_data, &start);
     if (*nuser_data <= 0) {
         user_data[0] = 0;
         return CG_OK;
@@ -6264,8 +6143,8 @@ int cgi_read_user_data_from_list(int in_link, _childnode_t* nodelist, int nnodes
 
     user_data[0] = CGNS_NEW(cgns_user_data, (*nuser_data));
     for (n = 0; n < (*nuser_data); n++) {
-        user_data[0][n].id = nodelist[start+n].id;
-        user_data[0][n].link = cgi_read_link(nodelist[start + n].id);
+        user_data[0][n].id = nodelist[n].id;
+        user_data[0][n].link = cgi_read_link(nodelist[n].id);
         user_data[0][n].in_link = in_link;
         linked = user_data[0][n].link ? 1 : in_link;
 
