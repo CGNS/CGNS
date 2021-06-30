@@ -205,8 +205,8 @@ int main(int argc, char* argv[]) {
     cg_error_exit();
   }
 
-  struct CG_FILTER f;
-  struct CG_FILTER *filter;
+  cgns_filter f;
+  cgns_filter *filter;
   filter = &f;
 
   (*filter).filter_id = CG_FILTER_DEFLATE;

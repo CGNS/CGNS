@@ -107,11 +107,11 @@
 typedef CG_LONG_T cglong_t;
 typedef unsigned CG_LONG_T cgulong_t;
 
-struct CG_FILTER {
-  /* HDF5 Filter Parameters */
+/* HDF5 Filter Parameters */
+typedef struct {
   unsigned int filter_id;
   size_t nparams;
   unsigned int* params;
-};
+} cgns_filter;
 
 #endif

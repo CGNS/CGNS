@@ -833,7 +833,7 @@ int cg_get_compress(int *compress)
     return CG_OK;
 }
 
-int cg_set_filter(const struct CG_FILTER *filter)
+int cg_set_filter(const cgns_filter *filter)
 {
   if ( cg_configure(CG_CONFIG_HDF5_FILTER, (void *)filter) < 0 )
     return CG_ERROR;

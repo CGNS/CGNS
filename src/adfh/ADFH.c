@@ -1531,7 +1531,7 @@ void ADFH_Configure(const int option, const void *value, int *err)
         filter_id = ADFH_CONFIG_HDF5_FILTER_NONE;
       }
       else {
-        const struct CG_FILTER* val = (const struct CG_FILTER*)value;
+        const cgns_filter *val = (const cgns_filter *)value;
         filter_id = val->filter_id;
         filter_nparams = val->nparams;
         filter_params = val->params;
