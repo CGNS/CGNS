@@ -502,7 +502,6 @@ int main(int argc, char* argv[]) {
   xtiming[10] = (double)(toc - tic) / CLOCKS_PER_SEC;
 
   /* Read the base information */
-  tic = clock();
   if(cg_base_read(fn, B, name, &r_cell_dim, &r_phys_dim) != CG_OK) {
     printf("*FAILED* cg_base_read\n");
     cg_error_exit();

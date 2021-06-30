@@ -2922,7 +2922,6 @@ void ADFH_Put_Dimension_Information(const double   id,
   int i, swap = 0;
   hsize_t new_dims[ADF_MAX_DIMENSIONS];
   char new_type[3];
-  herr_t ierr;
   hid_t g_propdataset_bk;
   int filter_set;
 
@@ -3026,7 +3025,8 @@ void ADFH_Put_Dimension_Information(const double   id,
     H5Pset_fill_time(mta_root->g_propdataset, H5D_FILL_TIME_NEVER);
  
     if (chunk_ndim != 0 ) {
-      ierr = H5Pset_chunk(mta_root->g_propdataset, chunk_ndim, chunk_dim);
+      if( H5Pset_chunk(mta_root->g_propdataset, chunk_ndim, chunk_dim) < 0 )
+        set_error(ADFH_ERR_CHUNK, err);
 
       if( filter_id != ADFH_CONFIG_HDF5_FILTER_NONE ) {
         filter_set = 1;
@@ -3034,13 +3034,14 @@ void ADFH_Put_Dimension_Information(const double   id,
            using H5Z_FILTER_NONE */
         g_propdataset_bk = H5Pcopy(mta_root->g_propdataset);
 
-        ierr = H5Pset_filter(mta_root->g_propdataset, filter_id, 
+        if( H5Pset_filter(mta_root->g_propdataset, filter_id, 
 #if 0
-                             H5Z_FLAG_MANDATORY, 
+                          H5Z_FLAG_MANDATORY, 
 #else
-                             H5Z_FLAG_OPTIONAL,
+                          H5Z_FLAG_OPTIONAL,
 #endif
-                             filter_nparams, filter_params);
+                          filter_nparams, filter_params) < 0)
+          set_error(ADFH_ERR_FILTER, err);
 
       }
     }
@@ -3062,9 +3063,9 @@ void ADFH_Put_Dimension_Information(const double   id,
 
   if( filter_set == 1 ) {
      mta_root->g_propdataset = H5Pcopy(g_propdataset_bk);
-    ierr = H5Pclose(g_propdataset_bk);
+     H5Pclose(g_propdataset_bk);
      /* This should work, but it does not */
-     /* ierr = H5Pset_filter(mta_root->g_propdataset, H5Z_FILTER_NONE, H5Z_FLAG_OPTIONAL, (size_t)0, NULL); */
+     /* H5Pset_filter(mta_root->g_propdataset, H5Z_FILTER_NONE, H5Z_FLAG_OPTIONAL, (size_t)0, NULL); */
   }
 
   if (did < 0)

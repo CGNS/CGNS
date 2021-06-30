@@ -162,6 +162,8 @@
 #define ADFH_ERR_NEED_TRANSPOSE        107
 #define ADFH_ERR_INVALID_OPTION        108
 #define ADFH_ERR_INVALID_USER_DATA     109
+#define ADFH_ERR_CHUNK                 110
+#define ADFH_ERR_FILTER                111
 
 #define ADFH_ERR_SENTINEL              999
 

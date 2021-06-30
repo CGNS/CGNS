@@ -3787,13 +3787,14 @@ int cg_section_general_write(int file_number, int B, int Z, const char * Section
     if (cgi_new_node(section->id, "ElementRange", "IndexRange_t",
         &dummy_id, data_type, 1, &dim_vals, prange)) return CG_ERROR;
 
+    HDF5storage_type = CG_CONTIGUOUS;
+
     /* ElementStartOffset */
     if (section->connect_offset &&
         cgi_new_node(section->id, section->connect_offset->name, "DataArray_t",
               &section->connect_offset->id, section->connect_offset->data_type,
               section->connect_offset->data_dim, section->connect_offset->dim_vals, NULL)) return CG_ERROR;
 
-    HDF5storage_type = CG_CONTIGUOUS;
 
     /* ElementConnectivity */
     if (cgi_new_node(section->id, section->connect->name, "DataArray_t",
