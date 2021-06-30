@@ -881,6 +881,19 @@ int cg_get_file_type(int fn, int *file_type)
     return CG_OK;
 }
 
+/**
+ * \ingroup CGNSInterfaceCGIO
+ *
+ * \brief Get the CGIO root node identifier for the CGNS file.
+ *
+ * \param[in]  fn \FILE_fn
+ * \param[out] root_id Root node identifier for the CGNS file
+ * \return \ier
+ *
+ * \details The function \p cg_root_id allow the use of the low-level CGIO function
+ * in conjunction with the Mid Level Library. It returns the root node identifier for the CGNS file.
+ *
+ */
 int cg_root_id(int fn, double *root_id)
 {
     cg = cgi_get_file(fn);
@@ -892,6 +905,19 @@ int cg_root_id(int fn, double *root_id)
     return CG_OK;
 }
 
+/**
+ * \ingroup CGNSInterfaceCGIO
+ *
+ * \brief Get the CGIO database identifier for the specified CGNS file.
+ *
+ * \param[in]  fn \FILE_fn
+ * \param[out] cgio_num CGIO indentifier for the CGNS file
+ * \return \ier
+ *
+ * \details The function \p cg_get_cgio allow the use of the low-level CGIO function
+ * in conjunction with the Mid Level Library. It returns the CGIO database identifier for the CGNS file.
+ *
+ */
 int cg_get_cgio(int fn, int *cgio_num)
 {
     cg = cgi_get_file(fn);
