@@ -82,6 +82,12 @@ static hsize_t h5pset_sieve_buf_size_size  = ADFH_CONFIG_DEFAULT;
 int chunk_ndim = 0;
 hsize_t chunk_dim[ADF_MAX_DIMENSIONS];
 
+/* HDF5 Filter Parameters */
+unsigned int filter_id;
+size_t filter_nparams;
+unsigned int* filter_params;
+unsigned int filter_flags;
+
 #define TO_UPPER( c ) ((islower(c))?(toupper(c)):(c))
 
 /* HDF5 compact storage limit */
@@ -1519,6 +1525,18 @@ void ADFH_Configure(const int option, const void *value, int *err)
       }
       set_error(NO_ERROR, err);
     }
+    else if (option == ADFH_CONFIG_HDF5_FILTER) {
+      /* MSB TODO: add check for filter avail. */
+      if(value == NULL) {
+        filter_id = ADFH_CONFIG_HDF5_FILTER_NONE;
+      }
+      else {
+        const struct CG_FILTER* val = (const struct CG_FILTER*)value;
+        filter_id = val->filter_id;
+        filter_nparams = val->nparams;
+        filter_params = val->params;
+      }
+    }
 #if CG_BUILD_PARALLEL
     else if (option == ADFH_CONFIG_MPI_COMM) {
       MPI_Comm* comm = (MPI_Comm*)value;
@@ -2905,6 +2923,8 @@ void ADFH_Put_Dimension_Information(const double   id,
   hsize_t new_dims[ADF_MAX_DIMENSIONS];
   char new_type[3];
   herr_t ierr;
+  hid_t g_propdataset_bk;
+  int filter_set;
 
   to_HDF_ID(id,hid);
 
@@ -2995,18 +3015,38 @@ void ADFH_Put_Dimension_Information(const double   id,
   hssize_t dset_size = H5Sget_select_npoints(sid);
   size_t dtype_size = H5Tget_size(tid); 
 
+  filter_set = 0;
+
   /* Compact storage has a dataset size limit of 64 KiB */
   if(HDF5storage_type == CGIO_COMPACT && dset_size*(hssize_t)dtype_size  < (hssize_t)CGNS_64KB)
     H5Pset_layout(mta_root->g_propdataset, H5D_COMPACT);
   else{
+    
+    H5Pset_alloc_time(mta_root->g_propdataset, H5D_ALLOC_TIME_EARLY);
+    H5Pset_fill_time(mta_root->g_propdataset, H5D_FILL_TIME_NEVER);
+ 
     if (chunk_ndim != 0 ) {
       ierr = H5Pset_chunk(mta_root->g_propdataset, chunk_ndim, chunk_dim);
-    }
-    else 
-      H5Pset_layout(mta_root->g_propdataset, H5D_CONTIGUOUS);
 
-    H5Pset_alloc_time(mta_root->g_propdataset, H5D_ALLOC_TIME_EARLY);
-    H5Pset_fill_time(mta_root->g_propdataset, H5D_FILL_TIME_NEVER); 
+      if( filter_id != ADFH_CONFIG_HDF5_FILTER_NONE ) {
+        filter_set = 1;
+        /* copy the property because HDF5 does not cancel out filters when
+           using H5Z_FILTER_NONE */
+        g_propdataset_bk = H5Pcopy(mta_root->g_propdataset);
+
+        ierr = H5Pset_filter(mta_root->g_propdataset, filter_id, 
+#if 0
+                             H5Z_FLAG_MANDATORY, 
+#else
+                             H5Z_FLAG_OPTIONAL,
+#endif
+                             filter_nparams, filter_params);
+
+      }
+    }
+    else {
+      H5Pset_layout(mta_root->g_propdataset, H5D_CONTIGUOUS);
+    }
   }
 
   ADFH_CHECK_HID(sid);
@@ -3017,6 +3057,15 @@ void ADFH_Put_Dimension_Information(const double   id,
 
   H5Sclose(sid);
   H5Tclose(tid);
+
+  hid_t dset2;
+
+  if( filter_set == 1 ) {
+     mta_root->g_propdataset = H5Pcopy(g_propdataset_bk);
+    ierr = H5Pclose(g_propdataset_bk);
+     /* This should work, but it does not */
+     /* ierr = H5Pset_filter(mta_root->g_propdataset, H5Z_FILTER_NONE, H5Z_FLAG_OPTIONAL, (size_t)0, NULL); */
+  }
 
   if (did < 0)
     set_error(ADFH_ERR_DCREATE, err);

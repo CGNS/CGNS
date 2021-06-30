@@ -139,6 +139,7 @@
 #define CG_CONFIG_HDF5_BUFFER          208
 #define CG_CONFIG_HDF5_SIEVE_BUF_SIZE  209
 #define CG_CONFIG_HDF5_CHUNKED         210
+#define CG_CONFIG_HDF5_FILTER          211
 
 #define CG_CONFIG_RESET 1000
 
@@ -149,6 +150,37 @@
 #define CG_CONTIGUOUS 0
 #define CG_COMPACT    1
 #define CG_CHUNKED    2 /* MSB REMOVE */
+
+/* HDF5 filters */
+
+#define CG_FILTER_NONE NULL
+
+/* matches H5Zpublic.h */
+
+/**
+ * deflation like gzip
+ */
+#define CG_FILTER_DEFLATE 1
+/**
+ * shuffle the data
+ */
+#define CG_FILTER_SHUFFLE 2
+/**
+ * fletcher32 checksum of EDC
+ */
+#define CG_FILTER_FLETCHER32 3
+/**
+ * szip compression
+ */
+#define CG_FILTER_SZIP 4
+/**
+ * nbit compression
+ */
+#define CG_FILTER_NBIT 5
+/**
+ * scale+offset compression
+ */
+#define CG_FILTER_SCALEOFFSET 6
 
 /* note: CG_CONFIG_RIND_ZERO is obsolete and considered a bug.  Users are given
  *       the option only for backwards compatibility */
@@ -807,6 +839,7 @@ CGNSDLL int cg_configure(int what, void *value);
 CGNSDLL int cg_error_handler(void (*)(int, char *));
 CGNSDLL int cg_set_compress(int compress);
 CGNSDLL int cg_get_compress(int *compress);
+CGNSDLL int cg_set_filter(const struct CG_FILTER *filter);
 CGNSDLL int cg_set_path(const char *path);
 CGNSDLL int cg_add_path(const char *path);
 

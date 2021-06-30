@@ -833,6 +833,14 @@ int cg_get_compress(int *compress)
     return CG_OK;
 }
 
+int cg_set_filter(const struct CG_FILTER *filter)
+{
+  if ( cg_configure(CG_CONFIG_HDF5_FILTER, (void *)filter) < 0 )
+    return CG_ERROR;
+
+  return CG_OK;
+}
+
 int cg_set_path(const char *path)
 {
     cgio_path_delete(NULL);

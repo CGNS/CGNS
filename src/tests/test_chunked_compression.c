@@ -207,10 +207,31 @@ int main(int argc, char* argv[]) {
     cg_error_exit();
   }
 
+  struct CG_FILTER f;
+  struct CG_FILTER *filter;
+  filter = &f;
+
+  (*filter).filter_id = CG_FILTER_DEFLATE;
+  (*filter).nparams   = (size_t)1;
+  (*filter).params    = (unsigned int *)malloc((unsigned int)((*filter).nparams)*sizeof(unsigned int));
+  (*filter).params[0] = (unsigned int)6;
+
+  if(cg_set_filter(filter) != CG_OK) {
+    printf("*FAILED* cg_set_filter \n");
+    cg_error_exit();
+  }
+
   if(cg_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateX", Coor_x,&Cx) != CG_OK) {
     printf("*FAILED* cg_coord_write (Coor_x) \n");
     cg_error_exit();
   }
+
+  /* Disable filter */
+  if(cg_set_filter(CG_FILTER_NONE) != CG_OK) {
+    printf("*FAILED* cg_set_filter \n");
+    cg_error_exit();
+  }
+
   if(cg_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateY", Coor_y,&Cy) != CG_OK) {
     printf("*FAILED* cg_coord_write (Coor_y) \n");
     cg_error_exit();
@@ -234,6 +255,7 @@ int main(int argc, char* argv[]) {
   free(Coor_x);
   free(Coor_y);
   free(Coor_z);
+
   /* ====================================== */
   /* == (B) WRITE THE CONNECTIVITY TABLE == */
   /* ====================================== */
@@ -265,18 +287,25 @@ int main(int argc, char* argv[]) {
    elements[i++] = nnY*2 + 1 + k;
    elements[i++] = nnY*2 + 2 + k;
   }
-#if 1
+
   chunk_param[0] = 1;
   chunk_param[1] = Nelem/2;
   if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
     printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
     cg_error_exit();
   }
-#endif
+
+  if(cg_set_filter(filter) != CG_OK) {
+    printf("*FAILED* cg_set_filter \n");
+    cg_error_exit();
+  }
+
   if(cg_section_write(fn,B,Z,"Elements",CGNS_ENUMV(PENTA_6), start, count_e, 0, elements, &S) != CG_OK) {
     printf("*FAILED* cg_section_write \n");
     cg_error_exit();
   }
+
+  /* Disable Chunking */
 
   chunk_param[0] = 0;
   if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
@@ -319,10 +348,17 @@ int main(int argc, char* argv[]) {
     cg_error_exit();
   }
 
+  /* Enable chunking */
   chunk_param[0] = 1;
   chunk_param[1] = count/2;
   if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
     printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+    cg_error_exit();
+  }
+
+  /* Enable Filter */
+  if(cg_set_filter(filter) != CG_OK) {
+    printf("*FAILED* cg_set_filter \n");
     cg_error_exit();
   }
 
@@ -331,6 +367,7 @@ int main(int argc, char* argv[]) {
     cg_error_exit();
   }
 
+  /* Disable Chunking, this should also disable filters */
   chunk_param[0] = 0;
   if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
     printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
@@ -342,8 +379,23 @@ int main(int argc, char* argv[]) {
     cg_error_exit();
   }
 
+  /* Re-enable chunking, filter should still be set */
+  chunk_param[0] = 1;
+  chunk_param[1] = count/2;
+  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+    cg_error_exit();
+  }
+
   if(cg_field_write(fn,B,Z,S,CGNS_ENUMV(RealDouble),"MomentumZ",Data_Fz, &Fz) != CG_OK) {
     printf("*FAILED* cgp_field_write (MomentumZ) \n");
+    cg_error_exit();
+  }
+
+  /* Disable Chunking */
+  chunk_param[0] = 0;
+  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
     cg_error_exit();
   }
 
@@ -356,7 +408,6 @@ int main(int argc, char* argv[]) {
   /* ====================================== */
 
   count = nijk[0];
-
   if( !(Array_r = (double*) malloc(count*sizeof(double))) ) {
     printf("*FAILED* allocation of Array_r \n");
     cg_error_exit();
@@ -395,7 +446,12 @@ int main(int argc, char* argv[]) {
     cg_error_exit();
   }
 
-
+  /* Enable Filter */
+  if(cg_set_filter(filter) != CG_OK) {
+    printf("*FAILED* cg_set_filter \n");
+    cg_error_exit();
+  }
+  /* Enable Chunking */
   chunk_param[0] = 1;
   chunk_param[1] = size_1D[0]/2;
   if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
@@ -415,6 +471,7 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
+  /* Disable Chunking */
   chunk_param[0] = 0;
   if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
     printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
