@@ -1,5 +1,5 @@
 /*
-! @file benchmark_hdf5.F90
+! @file test_chunked_compression.c
 ! @author M. Scot Breitenfeld <brtnfld@hdfgroup.org>
 ! @version 0.1
 !
@@ -7,9 +7,7 @@
 ! BSD style license
 !
 ! @section DESCRIPTION
-! Benchmarking program for cgns library. The mesh is a single
-! element layer of wedge elements in the X- and Z-directions.
-! The value of nnY is the number of nodes along the Y direction. 
+! Tests chunked datasets and filtering (compression) using HDF5.
 !
 */
 #ifndef __SUNPRO_C
