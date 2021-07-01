@@ -372,7 +372,7 @@ int cgi_read_base(cgns_base *base)
         nchildbylabel[childlist[n].type]++;
     }
     for (n = 0; n < NofBaseLabel; n++) {
-        if (nchildbylabel == 0) continue;
+        if (nchildbylabel[n] == 0) continue;
         childbylabel[n] = CGNS_NEW(_childnode_t, nchildbylabel[n]);
         nchildbylabel[n] = 0;
     }
