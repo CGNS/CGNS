@@ -294,7 +294,6 @@ int cgi_read_base(cgns_base *base)
 {
     char_33 data_type;
     int ndim, *index;
-    double *id;
     int n, m;
     void *vdata;
     cgsize_t dim_vals[12];
@@ -385,7 +384,6 @@ int cgi_read_base(cgns_base *base)
     /* now consume the childbylabel array for each label */
 
     /* Family_t */ /* -- FAMILY TREE -- */
-    int start = 0;
     base->nfamilies = nchildbylabel[LabelFamily_t];
     if (base->nfamilies > 0) {
         /* read & save families */
@@ -3613,11 +3611,7 @@ int cgi_read_equations(int in_link, double parent_id,
                        cgns_equations **equations)
 {
     double *id;
-    int n, nnod, ndim, linked;
-    char *string_data;
-    char_33 name, data_type;
-    cgsize_t dim_vals[12];
-    void *vdata;
+    int nnod, linked;
 
     if (cgi_get_nodes(parent_id, "FlowEquationSet_t", &nnod, &id)) return CG_ERROR;
     if (nnod<=0) {
@@ -3916,7 +3910,6 @@ int cgi_read_state(int in_link, double parent_id, cgns_state **state)
 int cgi_read_gravity_from_list(int in_link, const _childnode_t *nodelist, const int nnodes, cgns_gravity** gravity)
 {
     int i, nnod, linked;
-    int start = 0;
     double* id;
     char_33 temp_name;
     
@@ -4069,7 +4062,6 @@ int cgi_read_gravity(int in_link, double parent_id, cgns_gravity **gravity)
 int cgi_read_axisym_from_list(int in_link, _childnode_t* nodelist, int nnodes, cgns_axisym** axisym)
 {
     int i, nnod, linked, ref_point_flag = 0, axis_flag = 0;
-    int start = 0;
     double* id;
     char_33 temp_name;
 
@@ -4846,7 +4838,7 @@ int cgi_read_discrete(int in_link, double parent_id, int *ndiscrete,
 int cgi_read_integral_from_list(int in_link, _childnode_t* nodelist, int nnodes, int* nintegrals,
     cgns_integral** integral)
 {
-    double* id, * idi;
+    double * idi;
     int n, i, linked;
 
     *nintegrals = nnodes;
@@ -5431,8 +5423,6 @@ int cgi_read_units_node(int in_link, cgns_units** units)
 
 int cgi_read_units(int in_link, double parent_id, cgns_units **units)
 {
-    char_33 unit_name;
-    char *string_data;
     double *id;
     int nnod;
 
@@ -5479,8 +5469,7 @@ int cgi_read_DDD_from_list(int in_link, _childnode_t* nodebylabel[NofBaseLabel],
     cgns_descr** descr, CGNS_ENUMV(DataClass_t)* data_class,
     cgns_units** units)
 {
-    double* id;
-    int n, nnod;
+    int n;
     char_33 name;
     char* string_data;
     _childnode_t *nodelist=NULL;
@@ -5689,7 +5678,6 @@ int cgi_read_simulation_from_list(_childnode_t* nodelist, int nnodes,
     CGNS_ENUMT(SimulationType_t)* type, double* type_id)
 {
     int nchild;
-    double* id;
     char* type_name;    /* allocated in cgi_read_node */
     char_33 name;
 
@@ -6129,7 +6117,7 @@ int cgi_read_ziter(int in_link, double parent_id, cgns_ziter **ziter)
 
 int cgi_read_user_data_from_list(int in_link, _childnode_t* nodelist, int nnodes, int* nuser_data,
     cgns_user_data** user_data) {
-    double* id, * idi;
+    double* idi;
     int n, i, linked;
     double* IA_id, * IR_id;
     int nIA_t, nIR_t, nn;
