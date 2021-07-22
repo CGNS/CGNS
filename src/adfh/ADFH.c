@@ -83,7 +83,7 @@ int chunk_ndim = 0;
 hsize_t chunk_dim[ADF_MAX_DIMENSIONS];
 
 /* HDF5 Filter Parameters */
-unsigned int filter_id;
+H5Z_filter_t filter_id;
 size_t filter_nparams;
 unsigned int* filter_params;
 unsigned int filter_flags;
@@ -1531,15 +1531,19 @@ void ADFH_Configure(const int option, const void *value, int *err)
       set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_HDF5_FILTER) {
-      /* MSB TODO: add check for filter avail. */
       if(value == NULL) {
         filter_id = ADFH_CONFIG_HDF5_FILTER_NONE;
       }
       else {
         const cgns_filter *val = (const cgns_filter *)value;
-        filter_id = val->filter_id;
+        filter_id = (H5Z_filter_t)val->filter_id;
         filter_nparams = val->nparams;
         filter_params = val->params;
+        /* Check if filter is available */
+        htri_t avail = H5Zfilter_avail(filter_id);
+        if (!avail) {
+          set_error(ADFH_ERR_FILTER_INVALID, err);
+        }
       }
     }
 #if CG_BUILD_PARALLEL
