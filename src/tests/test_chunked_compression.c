@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
   }
 
   /* Enable chunked dataset */
-  size_t chunk_param[2];
+  cgsize_t chunk_param[2];
   chunk_param[0] = 1;
   chunk_param[1] = count;
   if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {

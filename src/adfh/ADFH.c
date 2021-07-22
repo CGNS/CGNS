@@ -1512,11 +1512,11 @@ void ADFH_Configure(const int option, const void *value, int *err)
       set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_HDF5_CHUNK) {
-      const hsize_t* val = NULL;
+      const cgsize_t* val = NULL;
       if (value == NULL) {
         chunk_ndim = 0;
       } else {
-        val = (const hsize_t*)value;
+        val = (const cgsize_t*)value;
         chunk_ndim = (int)(val[0]);
       }
       if( chunk_ndim > CGIO_MAX_DIMENSIONS ) {

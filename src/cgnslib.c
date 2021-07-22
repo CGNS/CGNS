@@ -841,7 +841,7 @@ int cg_set_filter(const cgns_filter *filter)
   return CG_OK;
 }
 
-int cg_set_chunk(size_t *value)
+int cg_set_chunk(cgsize_t *value)
 {
   if ( cg_configure(CG_CONFIG_HDF5_CHUNK, (void *)value) < 0 )
     return CG_ERROR;

@@ -844,7 +844,7 @@ CGNSDLL int cg_error_handler(void (*)(int, char *));
 CGNSDLL int cg_set_compress(int compress);
 CGNSDLL int cg_get_compress(int *compress);
 CGNSDLL int cg_set_filter(const cgns_filter *filter);
-CGNSDLL int cg_set_chunk(size_t *value);
+CGNSDLL int cg_set_chunk(cgsize_t *value);
 CGNSDLL int cg_set_path(const char *path);
 CGNSDLL int cg_add_path(const char *path);
 
