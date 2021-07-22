@@ -138,7 +138,7 @@
 #define CG_CONFIG_HDF5_MD_BLOCK_SIZE   207
 #define CG_CONFIG_HDF5_BUFFER          208
 #define CG_CONFIG_HDF5_SIEVE_BUF_SIZE  209
-#define CG_CONFIG_HDF5_CHUNKED         210
+#define CG_CONFIG_HDF5_CHUNK           210
 #define CG_CONFIG_HDF5_FILTER          211
 
 #define CG_CONFIG_RESET 1000
@@ -154,6 +154,10 @@
 /* HDF5 filters */
 
 #define CG_FILTER_NONE NULL
+
+/* HDF5 chunking */
+
+#define CG_CHUNK_NONE NULL
 
 /* matches H5Zpublic.h */
 
@@ -840,6 +844,7 @@ CGNSDLL int cg_error_handler(void (*)(int, char *));
 CGNSDLL int cg_set_compress(int compress);
 CGNSDLL int cg_get_compress(int *compress);
 CGNSDLL int cg_set_filter(const cgns_filter *filter);
+CGNSDLL int cg_set_chunk(size_t *value);
 CGNSDLL int cg_set_path(const char *path);
 CGNSDLL int cg_add_path(const char *path);
 

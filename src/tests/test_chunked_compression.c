@@ -200,8 +200,8 @@ int main(int argc, char* argv[]) {
   size_t chunk_param[2];
   chunk_param[0] = 1;
   chunk_param[1] = count;
-  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
-    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+  if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
     cg_error_exit();
   }
 
@@ -237,8 +237,8 @@ int main(int argc, char* argv[]) {
 
   /* Disable chunked dataset */
   chunk_param[0] = 0;
-  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
-    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+  if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
     cg_error_exit();
   }
 
@@ -288,11 +288,12 @@ int main(int argc, char* argv[]) {
 
   chunk_param[0] = 1;
   chunk_param[1] = Nelem/2;
-  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
-    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+#if 1
+  if(cg_set_chunk(chunk_param) != CG_OK) {
+    printf("*FAILED* cg_set_chunk \n");
     cg_error_exit();
   }
-
+#endif
   if(cg_set_filter(filter) != CG_OK) {
     printf("*FAILED* cg_set_filter \n");
     cg_error_exit();
@@ -302,15 +303,13 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cg_section_write \n");
     cg_error_exit();
   }
-
+#if 1
   /* Disable Chunking */
-
-  chunk_param[0] = 0;
-  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
-    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+  if(cg_set_chunk(CG_CHUNK_NONE) != CG_OK) {
+    printf("*FAILED* cg_set_chunk \n");
     cg_error_exit();
   }
-
+#endif
   free(elements);
 
   /* ====================================== */
@@ -349,8 +348,8 @@ int main(int argc, char* argv[]) {
   /* Enable chunking */
   chunk_param[0] = 1;
   chunk_param[1] = count/2;
-  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
-    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+  if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
     cg_error_exit();
   }
 
@@ -367,8 +366,8 @@ int main(int argc, char* argv[]) {
 
   /* Disable Chunking, this should also disable filters */
   chunk_param[0] = 0;
-  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
-    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+  if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
     cg_error_exit();
   }
 
@@ -380,8 +379,8 @@ int main(int argc, char* argv[]) {
   /* Re-enable chunking, filter should still be set */
   chunk_param[0] = 1;
   chunk_param[1] = count/2;
-  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
-    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+  if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
     cg_error_exit();
   }
 
@@ -392,8 +391,8 @@ int main(int argc, char* argv[]) {
 
   /* Disable Chunking */
   chunk_param[0] = 0;
-  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
-    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+  if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
     cg_error_exit();
   }
 
@@ -452,8 +451,8 @@ int main(int argc, char* argv[]) {
   /* Enable Chunking */
   chunk_param[0] = 1;
   chunk_param[1] = size_1D[0]/2;
-  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
-    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+  if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
     cg_error_exit();
   }
 
@@ -471,8 +470,8 @@ int main(int argc, char* argv[]) {
 
   /* Disable Chunking */
   chunk_param[0] = 0;
-  if(cg_configure(CG_CONFIG_HDF5_CHUNKED, chunk_param) != CG_OK) {
-    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNKED \n");
+  if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
     cg_error_exit();
   }
 

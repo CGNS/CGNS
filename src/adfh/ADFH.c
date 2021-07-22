@@ -1511,9 +1511,14 @@ void ADFH_Configure(const int option, const void *value, int *err)
       h5pset_sieve_buf_size_size = (hsize_t)value;
       set_error(NO_ERROR, err);
     }
-    else if (option == ADFH_CONFIG_HDF5_CHUNKED) {
-      const hsize_t* val = (const hsize_t*)value;
-      chunk_ndim = (int)(val[0]);
+    else if (option == ADFH_CONFIG_HDF5_CHUNK) {
+      const hsize_t* val = NULL;
+      if (value == NULL) {
+        chunk_ndim = 0;
+      } else {
+        val = (const hsize_t*)value;
+        chunk_ndim = (int)(val[0]);
+      }
       if( chunk_ndim > CGIO_MAX_DIMENSIONS ) {
         set_error(ADFH_ERR_INVALID_USER_DATA, err);
       }
