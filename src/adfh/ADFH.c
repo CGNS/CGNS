@@ -1533,6 +1533,7 @@ void ADFH_Configure(const int option, const void *value, int *err)
     else if (option == ADFH_CONFIG_HDF5_FILTER) {
       if(value == NULL) {
         filter_id = ADFH_CONFIG_HDF5_FILTER_NONE;
+        set_error(NO_ERROR, err);
       }
       else {
         const cgns_filter *val = (const cgns_filter *)value;
@@ -1541,7 +1542,9 @@ void ADFH_Configure(const int option, const void *value, int *err)
         filter_params = val->params;
         /* Check if filter is available */
         htri_t avail = H5Zfilter_avail(filter_id);
-        if (!avail) {
+        if (avail) {
+          set_error(NO_ERROR, err);
+        } else {
           set_error(ADFH_ERR_FILTER_INVALID, err);
         }
       }

@@ -1017,12 +1017,15 @@ if test "$withhdf5" = "yes"; then
        LIBX=`echo $H5BLD_LIBS | cut -d' ' -f$i`
        if test `echo $LIBX | grep "\-lz" > /dev/null; echo $?` == 0; then
          LZLIB="-lz"
+         H5NEEDZLIB=1
        fi 
        if test `echo $LIBX | grep "\-lsz" > /dev/null; echo $?` == 0; then
          LSZIP="-lsz"
+         H5NEEDSZIP=1
        else
          if test `echo $LIBX | grep "\-lszip" > /dev/null; echo $?` == 0; then
            LSZIP="-lszip"
+           H5NEEDSZIP=1
          fi
        fi
     done

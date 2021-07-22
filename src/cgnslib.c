@@ -835,7 +835,7 @@ int cg_get_compress(int *compress)
 
 int cg_set_filter(const cgns_filter *filter)
 {
-  if ( cg_configure(CG_CONFIG_HDF5_FILTER, (void *)filter) < 0 )
+  if ( cg_configure(CG_CONFIG_HDF5_FILTER, (void *)filter) != CG_OK )
     return CG_ERROR;
 
   return CG_OK;
@@ -843,7 +843,7 @@ int cg_set_filter(const cgns_filter *filter)
 
 int cg_set_chunk(cgsize_t *value)
 {
-  if ( cg_configure(CG_CONFIG_HDF5_CHUNK, (void *)value) < 0 )
+  if ( cg_configure(CG_CONFIG_HDF5_CHUNK, (void *)value) != CG_OK)
     return CG_ERROR;
 
   return CG_OK;

@@ -23,6 +23,7 @@
 #include <time.h>
 
 #include "cgnslib.h"
+#include "cgnsconfig.h"
 
 #define false 0
 #define true 1
@@ -62,6 +63,8 @@ cgsize_t start, end, emin, emax;
 cgsize_t* elements;
 char name[33];
 int  debug;
+/* HDF5 built with zlib support */
+int hdf5_filters = HDF5_NEED_ZLIB;
 
 /*
  * Timing storage convention:                            avg.| min. | max.
@@ -81,6 +84,7 @@ int  debug;
  * timing(13) = Time for cg_base_write, cg_zone_write    41,   42,    43
  * timing(14) = Time for cg_read base, cg_zone_read      44,   45,    46
  */
+
 double xtiming[15], timing[15], timingMin[15], timingMax[15];
 
 int c_double_eq(double a, double b) {
@@ -106,6 +110,9 @@ int main(int argc, char* argv[]) {
   double dy;
   double dval;
   cgsize_t i;
+
+  cgns_filter f;
+  cgns_filter *filter;
  
   /* parameters */
   debug = true;
@@ -205,29 +212,35 @@ int main(int argc, char* argv[]) {
     cg_error_exit();
   }
 
-  cgns_filter f;
-  cgns_filter *filter;
-  filter = &f;
+  if(hdf5_filters) {
 
-  (*filter).filter_id = CG_FILTER_DEFLATE;
-  (*filter).nparams   = (size_t)1;
-  (*filter).params    = (unsigned int *)malloc((unsigned int)((*filter).nparams)*sizeof(unsigned int));
-  (*filter).params[0] = (unsigned int)6;
+    printf("Filters enabled: TRUE\n");
 
-  if(cg_set_filter(filter) != CG_OK) {
-    printf("*FAILED* cg_set_filter \n");
-    cg_error_exit();
+    filter = &f;
+    (*filter).filter_id = CG_FILTER_DEFLATE;
+    (*filter).nparams   = (size_t)1;
+    (*filter).params    = (unsigned int *)malloc((unsigned int)((*filter).nparams)*sizeof(unsigned int));
+    (*filter).params[0] = (unsigned int)6;
+    if(hdf5_filters == 1) {
+      if(cg_set_filter(filter) != CG_OK) {
+        printf("*FAILED* cg_set_filter \n");
+        cg_error_exit();
+      }
+    }
+  } else {
+    printf("Filters enabled: FALSE\n");
   }
 
   if(cg_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateX", Coor_x,&Cx) != CG_OK) {
     printf("*FAILED* cg_coord_write (Coor_x) \n");
     cg_error_exit();
   }
-
-  /* Disable filter */
-  if(cg_set_filter(CG_FILTER_NONE) != CG_OK) {
-    printf("*FAILED* cg_set_filter \n");
-    cg_error_exit();
+  if(hdf5_filters == 1) {
+    /* Disable filter */
+    if(cg_set_filter(CG_FILTER_NONE) != CG_OK) {
+      printf("*FAILED* cg_set_filter \n");
+      cg_error_exit();
+    }
   }
 
   if(cg_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateY", Coor_y,&Cy) != CG_OK) {
@@ -288,15 +301,17 @@ int main(int argc, char* argv[]) {
 
   chunk_param[0] = 1;
   chunk_param[1] = Nelem/2;
-#if 1
+
   if(cg_set_chunk(chunk_param) != CG_OK) {
     printf("*FAILED* cg_set_chunk \n");
     cg_error_exit();
   }
-#endif
-  if(cg_set_filter(filter) != CG_OK) {
-    printf("*FAILED* cg_set_filter \n");
-    cg_error_exit();
+
+  if(hdf5_filters == 1) {
+    if(cg_set_filter(filter) != CG_OK) {
+      printf("*FAILED* cg_set_filter \n");
+      cg_error_exit();
+    }
   }
 
   if(cg_section_write(fn,B,Z,"Elements",CGNS_ENUMV(PENTA_6), start, count_e, 0, elements, &S) != CG_OK) {
@@ -354,9 +369,11 @@ int main(int argc, char* argv[]) {
   }
 
   /* Enable Filter */
-  if(cg_set_filter(filter) != CG_OK) {
-    printf("*FAILED* cg_set_filter \n");
-    cg_error_exit();
+  if(hdf5_filters == 1) {
+    if(cg_set_filter(filter) != CG_OK) {
+      printf("*FAILED* cg_set_filter \n");
+      cg_error_exit();
+    }
   }
 
   if(cg_field_write(fn,B,Z,S,CGNS_ENUMV(RealDouble),"MomentumX",Data_Fx, &Fx) != CG_OK) {
@@ -444,9 +461,11 @@ int main(int argc, char* argv[]) {
   }
 
   /* Enable Filter */
-  if(cg_set_filter(filter) != CG_OK) {
-    printf("*FAILED* cg_set_filter \n");
-    cg_error_exit();
+  if(hdf5_filters == 1) {
+    if(cg_set_filter(filter) != CG_OK) {
+      printf("*FAILED* cg_set_filter \n");
+      cg_error_exit();
+    }
   }
   /* Enable Chunking */
   chunk_param[0] = 1;
