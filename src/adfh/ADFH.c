@@ -3042,6 +3042,30 @@ void ADFH_Put_Dimension_Information(const double   id,
 
       if( filter_id != ADFH_CONFIG_HDF5_FILTER_NONE ) {
         filter_set = 1;
+
+        /* For Parallel Compression, must be using collective IO */
+#if CG_BUILD_PARALLEL
+        hid_t fid = get_file_id(hid);
+        hid_t fapl = H5Fget_access_plist(fid);
+        hid_t driver_id = H5Pget_driver(fapl);
+
+        if (driver_id == H5FD_MPIO) {
+
+#if 0
+          hid_t dxpl;
+          H5FD_mpio_xfer_t xfer_mode;
+          //  H5Pget_dxpl_mpio(fapl, &xfer_mode);
+          H5Pget_dxpl_mpio(dxpl, &xfer_mode);
+          
+          printf("xfer_mode %d %lld\n",xfer_mode, dxpl );
+          if( xfer_mode == H5FD_MPIO_INDEPENDENT) {
+            set_error(ADFH_ERR_FILTER, err);
+            return;
+          }
+#endif
+        }
+        H5Pclose(fapl); /* close the property list */
+#endif
         /* copy the property because HDF5 does not cancel out filters when
            using H5Z_FILTER_NONE */
         g_propdataset_bk = H5Pcopy(mta_root->g_propdataset);
@@ -3052,8 +3076,10 @@ void ADFH_Put_Dimension_Information(const double   id,
 #else
                           H5Z_FLAG_OPTIONAL,
 #endif
-                          filter_nparams, filter_params) < 0)
+                          filter_nparams, filter_params) < 0) {
           set_error(ADFH_ERR_FILTER, err);
+          return;
+        }
 
       }
     }

@@ -32,8 +32,11 @@
  *   |_____|_|  |_|_|     \____/|_|  \_\ |_/_/    \_\_| \_|  |_|
  *
  * -------------------  DEVELOPER'S NOTES  ---------------------------
+ *
  *    (1) When adding a defined constant to this file, also add the same defined 
  *    constant to cgns_f.F90
+ *   
+ *    (2) Add new functions to cgns_fortrandll.def.in
  *          
  * ------------------------------------------------------------------------- */
 

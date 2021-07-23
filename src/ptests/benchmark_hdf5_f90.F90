@@ -48,6 +48,37 @@ CONTAINS
     c_long_long_eq = a-b .EQ. 0
   END FUNCTION c_long_long_eq
 
+  SUBROUTINE read_inputs(args)
+
+    IMPLICIT NONE
+
+    INTEGER, DIMENSION(:) :: args
+
+    INTEGER :: i, ii, imax
+    INTEGER :: istat
+    CHARACTER*80 :: arg
+
+    args = 0
+    ii = 0
+    imax = command_argument_count()
+    DO i = 1, imax
+       ii = ii + 1
+       CALL get_command_argument(ii, arg)
+       SELECT CASE (arg)
+       CASE ('-nelem')
+          ii = ii + 1
+          CALL get_command_argument(ii, arg)
+          READ(arg,*,iostat=istat) args(1)
+       CASE ('-filter')
+          args(2) = 1
+       CASE ('-ind')
+          args(3) = 1
+       CASE ('-chunk')
+          args(4) = 1
+       END SELECT
+    ENDDO
+  END SUBROUTINE read_inputs
+
 END MODULE testing_functions
 
 PROGRAM benchmark_hdf5_f90
@@ -65,7 +96,7 @@ PROGRAM benchmark_hdf5_f90
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
   ! Use powers of 2
-  INTEGER(CGSIZE_T), PARAMETER :: Nelem = 65536 ! 33554432 ! Use multiples of number of cores per node
+  INTEGER(CGSIZE_T) :: Nelem = 65536 ! 33554432 ! Use multiples of number of cores per node
   INTEGER(CGSIZE_T), PARAMETER :: NodePerElem = 6
 
   INTEGER(CGSIZE_T) :: Nnodes
@@ -125,9 +156,30 @@ PROGRAM benchmark_hdf5_f90
   INTEGER, DIMENSION(1:3) :: Cvec, Fvec
   INTEGER, DIMENSION(1:2) :: Avec
 
+  TYPE(cgns_filter_f) :: filter
+  INTEGER(C_INT), DIMENSION(1:1), TARGET :: f_param 
+  INTEGER(CGSIZE_T), DIMENSION(1:2) :: chunk_param
+  INTEGER, PARAMETER :: nargs = 4
+  INTEGER, DIMENSION(1:nargs) :: args
+  INTEGER :: SetFilter = 0
+  INTEGER :: SetChunk = 0
+  INTEGER :: piomode = CGP_COLLECTIVE
+  CHARACTER(LEN=3), DIMENSION(1:2) :: piomode_chr = (/"IND", "COL"/)
+
   CALL MPI_Init(mpi_err)
   CALL MPI_Comm_size(MPI_COMM_WORLD,comm_size,mpi_err)
   CALL MPI_Comm_rank(MPI_COMM_WORLD,comm_rank,mpi_err)
+
+  IF(comm_rank.EQ.0)THEN
+     CALL read_inputs(args)
+  ENDIF
+
+  CALL MPI_Bcast(args, nargs, MPI_INTEGER, 0, MPI_COMM_WORLD, mpi_err)
+
+  IF(args(1).NE.0) Nelem = args(1)
+  IF(args(2).NE.0) SetFilter = 1
+  IF(args(3).NE.0) piomode = CGP_INDEPENDENT
+  IF(args(4).NE.0) SetChunk = 1
 
   CALL MPI_Info_Create(comm_info,mpi_err)
   ! set this to what your GPFS block size actually is
@@ -142,7 +194,12 @@ PROGRAM benchmark_hdf5_f90
   t0 = MPI_Wtime()
 
   CALL cgp_mpi_info_f(comm_info, ierr)
-  CALL cgp_pio_mode_f(CGP_COLLECTIVE, ierr)
+  CALL cgp_pio_mode_f(piomode, ierr)
+
+  IF(comm_rank.EQ.0)THEN
+     WRITE(*,'(A,I0)') " Problem size: ", Nelem
+     WRITE(*,'(A,A)') " Parallel IO mode: ", piomode_chr(piomode+1)
+  ENDIF
 
   Nnodes = Nelem*NodePerElem
 
@@ -212,6 +269,31 @@ PROGRAM benchmark_hdf5_f90
      Coor_z(k) = Coor_y(k) + 0.1_dp
   ENDDO
 
+  IF(SetChunk.EQ.1)THEN
+     IF(comm_rank.EQ.0) PRINT*,"Chunking enabled: TRUE"
+     chunk_param(1) = 1;
+     chunk_param(2) = count;
+     CALL cg_set_chunk_f(chunk_param, err)
+  ELSE
+     IF(comm_rank.EQ.0) PRINT*,"Chunking enabled: FALSE"
+  ENDIF
+
+  IF(SetFilter.EQ.1)THEN
+     IF(comm_rank.EQ.0) PRINT*,"Filters enabled: TRUE"
+     f_param(1) = 6
+     filter%filter_id = CG_FILTER_DEFLATE
+     filter%nparams   = 1
+     filter%params    = C_LOC(f_param(1))
+
+     CALL cg_set_filter_f(filter, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cg_set_filter_f'
+        CALL cgp_error_exit_f()
+     ENDIF
+  ELSE
+     IF(comm_rank.EQ.0) PRINT*,"Filters enabled: FALSE"
+  ENDIF
+
   CALL cgp_coord_write_f(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateX",Cx,err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_write_f (Coor_X)'
@@ -257,6 +339,16 @@ PROGRAM benchmark_hdf5_f90
   xtiming(2) = t2-t1
 
   DEALLOCATE(Coor_x, Coor_y, Coor_z)
+  IF(SetChunk.EQ.1)THEN
+     CALL cg_set_chunk_f(CG_CHUNK_NONE, err)
+  ENDIF
+  IF(SetFilter.EQ.1)THEN
+     CALL cg_set_filter_f(CG_FILTER_NONE, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cg_set_filter_f'
+        CALL cgp_error_exit_f()
+     ENDIF
+  ENDIF
 
   ! ======================================
   ! == (B) WRITE THE CONNECTIVITY TABLE ==

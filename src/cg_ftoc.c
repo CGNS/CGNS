@@ -252,6 +252,25 @@ CGNSDLL void cg_get_compress_f(cgint_f *cmpr, cgint_f *ier)
 
 /*-----------------------------------------------------------------------*/
 
+CGNSDLL void cg_set_filter_f(cgns_filter *fltr, cgint_f *ier)
+{
+    if(fltr->filter_id == 0)
+      fltr = CG_FILTER_NONE;
+
+    *ier = (cgint_f)cg_set_filter(fltr);
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void cg_set_chunk_f(cgsize_t *chnk, cgint_f *ier)
+{
+    if(chnk[0] == 0)
+      chnk = CG_CHUNK_NONE;
+    *ier = (cgint_f)cg_set_chunk(chnk);
+}
+
+/*-----------------------------------------------------------------------*/
+
 CGNSDLL void FMNAME(cg_set_path_f, CG_SET_PATH_F) (STR_PSTR(pathname),
 	cgint_f *ier STR_PLEN(pathname))
 {
