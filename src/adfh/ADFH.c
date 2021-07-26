@@ -3050,19 +3050,10 @@ void ADFH_Put_Dimension_Information(const double   id,
         hid_t driver_id = H5Pget_driver(fapl);
 
         if (driver_id == H5FD_MPIO) {
-
-#if 0
-          hid_t dxpl;
-          H5FD_mpio_xfer_t xfer_mode;
-          //  H5Pget_dxpl_mpio(fapl, &xfer_mode);
-          H5Pget_dxpl_mpio(dxpl, &xfer_mode);
-          
-          printf("xfer_mode %d %lld\n",xfer_mode, dxpl );
-          if( xfer_mode == H5FD_MPIO_INDEPENDENT) {
+          if( ctx_cgio.default_pio_mode == H5FD_MPIO_INDEPENDENT) {
             set_error(ADFH_ERR_FILTER, err);
             return;
           }
-#endif
         }
         H5Pclose(fapl); /* close the property list */
 #endif
