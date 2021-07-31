@@ -222,22 +222,6 @@ set(update_ngon_FILES
 
 add_executable(update_ngon ${update_ngon_FILES})
 
-# vertex_to_cell
-set(vertex_to_cell_FILES
-	vertex_to_cell.c
-	cgnsutil.c
-	../common/getargs.c)
-
-add_executable(vertex_to_cell ${vertex_to_cell_FILES})
-
-# cell_to_vertex
-set(cell_to_vertex_FILES
-	cell_to_vertex.c
-	cgnsutil.c
-	../common/getargs.c)
-
-add_executable(cell_to_vertex ${cell_to_vertex_FILES})
-
 if (WIN32)
   install(TARGETS
         plot3d_to_cgns
