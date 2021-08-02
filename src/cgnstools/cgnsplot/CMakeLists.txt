@@ -46,7 +46,7 @@ if (WIN32)
   endif (HTML_HELP_INCLUDE_PATH AND HTML_HELP_LIBRARY)
 else (WIN32)
   include_directories(${X11_X11_INCLUDE_PATH})
-  link_libraries(${X11_X11_LIB} ${X11_Xmu_LIB} m uuid)
+  link_libraries(${X11_X11_LIB} ${X11_Xmu_LIB} ${X11_SM_LIB} m)
   set(cgnsplot_FILES
 	cgnstcl.c
 	plotwish.c
