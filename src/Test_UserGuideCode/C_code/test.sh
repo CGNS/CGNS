@@ -37,7 +37,7 @@ run_tests() {
         else
             "./${r_arr[$i-1]}" > build/output$i
         fi
-        diff <( sed '/Library/ d' build/output$i) <( sed '/Library/ d' ./OUTPUT$i) > "build/results$i.txt"
+        diff <( sed '/Library/ d' "build/output$i") <( sed '/Library/ d' "./OUTPUT$i") > "build/results$i.txt"
         status=$?
         echoresults
         return_val=`expr $status + $return_val`
