@@ -13,7 +13,7 @@ echoresults() {
     fi
 }
 
-TIMING_AVAIL=`/usr/bin/time -a -o CGNS_timing.txt -f "%e" pwd > /dev/null; echo $?`
+TIMING_AVAIL=$(/usr/bin/time -a -o CGNS_timing.txt -f "%e" pwd > /dev/null; echo $?)
 
 DIRS="Test1 \
 	Test_1to1ConnProp \
@@ -42,7 +42,7 @@ for dir in $DIRS;do
     printf "%-40s \n" "Testing $dir..."
     cd $dir
     printf "   Program: cgwrite "
-    if [ $TIMING_AVAIL = "0" ]; then
+    if [ "$TIMING_AVAIL" = "0" ]; then
         /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.cgwrite %e" ./cgwrite >/dev/null 2>&1
     else
         ./cgwrite >/dev/null 2>&1

@@ -13,7 +13,7 @@ echoresults() {
     fi
 }
 
-TIMING_AVAIL=`/usr/bin/time -a -o CGNS_timing.txt -f "%e" pwd > /dev/null; echo $?`
+TIMING_AVAIL=$(/usr/bin/time -a -o CGNS_timing.txt -f "%e" pwd > /dev/null; echo $?)
 
 run_tests() {
     printf "%-40s \n" "Testing $dir..."
@@ -22,20 +22,20 @@ run_tests() {
     size_arr=${#w_arr[@]} #Number of elements in the array
     for i in $(seq 1 $size_arr);do
         printf "   Program: ${w_arr[$i-1]} "
-        if [ $TIMING_AVAIL = "0" ]; then
-            /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.${w_arr[$i-1]} %e" ./${w_arr[$i-1]} >/dev/null 2>&1
+        if [ "$TIMING_AVAIL" = "0" ]; then
+            /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.${w_arr[$i-1]} %e" "./${w_arr[$i-1]}" >/dev/null 2>&1
         else
-            ./${w_arr[$i-1]} >/dev/null 2>&1
+            "./${w_arr[$i-1]}" >/dev/null 2>&1
         fi
         status=$?
         echoresults
         return_val=`expr $status + $return_val`
 
         printf "   Program: ${r_arr[$i-1]} "
-        if [ $TIMING_AVAIL = "0" ]; then
-            /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.${r_arr[$i-1]} %e" ./${r_arr[$i-1]} > build/output$i
+        if [ "$TIMING_AVAIL" = "0" ]; then
+            /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.${r_arr[$i-1]} %e" "./${r_arr[$i-1]}" > build/output$i
         else
-            ./${r_arr[$i-1]} > build/output$i
+            "./${r_arr[$i-1]}" > build/output$i
         fi
         diff <( sed '/Library/ d' build/output$i) <( sed '/Library/ d' ./OUTPUT$i) > build/results$i.txt
         status=$?

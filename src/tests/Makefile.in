@@ -366,7 +366,5 @@ clean :
 allclean : clean
 	-$(RM) $(ALL) $(FALL) $(ALL64)
 	-$(RM) *.cgns *.cgio
-ifeq ("$(TIMING_AVAIL)" , "0")
-        -$(RM) CGNS_timing.txt
-endif
+	-$(RM) CGNS_timing.txt
 
