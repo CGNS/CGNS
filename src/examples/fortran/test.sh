@@ -52,7 +52,7 @@ for dir in $DIRS;do
     return_val=`expr $status + $return_val`
 
     printf "   Program: cgread "
-    if [ $TIMING_AVAIL = "0" ]; then
+    if [ "$TIMING_AVAIL" = "0" ]; then
         /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.cgread %e" ./cgread > build/output
     else
         ./cgread > build/output
@@ -73,7 +73,7 @@ dir=Test_cgio
 printf "%-40s \n" "Testing $dir..."
 cd $dir
 printf "   Program: cgiotest "
-if [ $TIMING_AVAIL = "0" ]; then
+if [ "$TIMING_AVAIL" = "0" ]; then
     /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.cgiotest %e" ./cgiotest > build/output
 else
     ./cgiotest > build/output

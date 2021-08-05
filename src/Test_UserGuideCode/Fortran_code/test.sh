@@ -16,7 +16,7 @@ TIMING_AVAIL=$(/usr/bin/time -a -o CGNS_timing.txt -f "%e" pwd > /dev/null; echo
 
 run_tests() {
     printf "%-40s \n" "Testing $dir..."
-    cd $dir
+    cd "$dir"
     # loop through tests
     size_arr=${#w_arr[@]} #Number of elements in the array
     for i in $(seq 1 $size_arr);do
@@ -32,11 +32,11 @@ run_tests() {
 
         printf "   Program: ${r_arr[$i-1]} "
         if [ "$TIMING_AVAIL" = "0" ]; then
-            /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.${r_arr[$i-1]} %e" "./${r_arr[$i-1]}" > build/output$i
+            /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.${r_arr[$i-1]} %e" "./${r_arr[$i-1]}" > "build/output$i"
         else
             "./${r_arr[$i-1]}" > build/output$i
         fi
-        diff <( sed '/Library/ d' build/output$i) <( sed '/Library/ d' ./OUTPUT$i) > build/results$i.txt
+        diff <( sed '/Library/ d' build/output$i) <( sed '/Library/ d' ./OUTPUT$i) > "build/results$i.txt"
         status=$?
         echoresults
         return_val=`expr $status + $return_val`
