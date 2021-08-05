@@ -25,12 +25,10 @@ ALL = \
 	convert_dataclass.exe \
 	extract_subset.exe \
 	interpolate_cgns.exe \
+	cgns_info.exe \
 	update_ngon.exe
 
 OTHERS = \
-	cgns_info.exe \
-	fieldview_to_cgns.exe \
-	cgns_to_fieldview.exe \
 	vextex_to_cell.exe \
 	cell_to_vertex.exe
 
@@ -184,26 +182,6 @@ cgns_to_vtk.exe : cgns_to_vtk.obj getargs.obj
 	$(CGNSLIB) $(BUILDLIBS) $(CLIBS)
 
 cgns_to_vtk.obj : cgns_to_vtk.c
-
-#--------------------------------------------------
-
-fieldview_to_cgns : fieldview_to_cgns.exe
-
-fieldview_to_cgns.exe : fieldview_to_cgns.obj cgnsImport.obj getargs.obj hash.obj
-	$(LINK) $(LFLAGS) fieldview_to_cgns.obj cgnsImport.obj getargs.obj \
-	hash.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
-
-fieldview_to_cgns.obj : fieldview_to_cgns.c cgnsImport.h
-
-#--------------------------------------------------
-
-cgns_to_fieldview : cgns_to_fieldview.exe
-
-cgns_to_fieldview.exe : cgns_to_fieldview.obj cgnsutil.obj getargs.obj
-	$(LINK) $(LFLAGS) cgns_to_fieldview.obj cgnsutil.obj \
-	getargs.obj $(CGNSLIB) $(BUILDLIBS) $(CLIBS)
-
-cgns_to_fieldview.obj : cgns_to_fieldview.c cgnsutil.h
 
 #--------------------------------------------------
 
