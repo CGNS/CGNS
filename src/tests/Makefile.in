@@ -78,8 +78,10 @@ test : $(TESTS)
 	@echo " "; \
 	status=0; \
 	echo "=== running tests ==="; \
-        \rm ./CGNS_timing.txt 2> /dev/null;\
-	 for x in $(TESTS) ; do \
+	if test -f CGNS_timing.txt; then \
+	  $(RM) CGNS_timing.txt; \
+	fi; \
+	for x in $(TESTS) ; do \
 	   if `$(TIMING)` ; then \
 	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
 	   else \
@@ -364,4 +366,5 @@ clean :
 allclean : clean
 	-$(RM) $(ALL) $(FALL) $(ALL64)
 	-$(RM) *.cgns *.cgio
+	-$(RM) CGNS_timing.txt
 
