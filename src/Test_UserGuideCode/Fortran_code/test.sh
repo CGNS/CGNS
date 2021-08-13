@@ -4,12 +4,17 @@ OK_COLOR="\033[32;01m"
 ERROR_COLOR="\033[31;01m"
 
 echoresults() {
+    padlimit=40
+    pad=$(printf '%*s' "$padlimit")
+    pad=${pad// /.}
+    padlength=40
+    printf ' %*.*s' 0 $((padlength - ${#x} )) "$pad"
     if test $status -ne 0
     then
-        printf "$ERROR_COLOR *** FAILED *** $NO_COLOR \n"
+	printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"
         status=1
     else
-        printf "$OK_COLOR PASSED $NO_COLOR \n"
+	printf " [${OK_COLOR}PASSED${NO_COLOR}]\n"
     fi
 }
 TIMING_AVAIL=$(/usr/bin/time -a -o CGNS_timing.txt -f "%e" pwd > /dev/null; echo $?)
@@ -20,7 +25,8 @@ run_tests() {
     # loop through tests
     size_arr=${#w_arr[@]} #Number of elements in the array
     for i in $(seq 1 $size_arr);do
-        printf "   Program: ${w_arr[$i-1]} "
+        x="   Program: ${w_arr[$i-1]}"
+        printf "$x"
         if [ "$TIMING_AVAIL" = "0" ]; then
             /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.${w_arr[$i-1]} %e" "./${w_arr[$i-1]}" >/dev/null 2>&1
         else
@@ -30,7 +36,8 @@ run_tests() {
         echoresults
         return_val=`expr $status + $return_val`
 
-        printf "   Program: ${r_arr[$i-1]} "
+        x="   Program: ${r_arr[$i-1]}"
+        printf "$x"
         if [ "$TIMING_AVAIL" = "0" ]; then
             /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.${r_arr[$i-1]} %e" "./${r_arr[$i-1]}" > "build/output$i"
         else

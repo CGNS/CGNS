@@ -81,12 +81,18 @@ test : $(TESTS)
 	if test -f CGNS_timing.txt; then \
 	  $(RM) CGNS_timing.txt; \
 	fi; \
+	padlimit=40; \
+	pad=$$(printf '%*s' "$$padlimit"); \
+	pad=$${pad// /.}; \
+        padlength=32; \
 	for x in $(TESTS) ; do \
+	   printf "$$x"; \
+	   printf ' %*.*s' 0 $$((padlength - $${#x} )) "$$pad"; \
 	   if `$(TIMING)` ; then \
-	     printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
+	     printf " [$(OK_COLOR)PASSED$(NO_COLOR)]\n"; \
 	   else \
-	     printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
-		status=1; \
+	     printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
+	     status=1; \
 	   fi; \
 	 done; \
 	 echo "=== finished ==="; \

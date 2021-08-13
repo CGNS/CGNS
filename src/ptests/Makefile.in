@@ -53,23 +53,31 @@ test : $(TESTS)
 	if test -f CGNS_timing.txt; then \
 	  $(RM) CGNS_timing.txt; \
 	fi; \
+	padlimit=40; \
+	pad=$$(printf '%*s' "$$padlimit"); \
+	pad=$${pad// /.}; \
+        padlength=40; \
 	for x in $(TESTS) ; do \
            args=""; \
            if test "$$x" = "Metadata_Stressing$(EXE)" ; then \
 		for n in 1 2 ; do \
+	           printf "$$x"; \
+	           printf ' %*.*s' 0 $$((padlength - $${#x} )) "$$pad"; \
 	           if `$(TIMING_ARGS)` ; then \
-	              printf "$$x $$args ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
+		      printf " [$(OK_COLOR)PASSED$(NO_COLOR)]\n"; \
 	           else \
-	              printf "$$x $$args ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
+	              printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
                       status=`expr $$status + 1`; \
 	            fi; \
 	            args="-sec2"; \
 		done;\
            else \
+	     printf "$$x"; \
+	     printf ' %*.*s' 0 $$((padlength - $${#x} )) "$$pad"; \
 	     if `$(TIMING)` ; then \
-	       printf "$$x ... $(OK_COLOR) PASSED $(NO_COLOR) \n"; \
+	       printf " [$(OK_COLOR)PASSED$(NO_COLOR)]\n"; \
 	     else \
-	       printf "$$x ... $(ERROR_COLOR) *** FAILED *** $(NO_COLOR) \n"; \
+	       printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
                status=`expr $$status + 1`; \
 	     fi; \
            fi;\
