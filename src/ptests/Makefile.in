@@ -70,7 +70,7 @@ test : $(TESTS)
 	              printf " %+12s\n" "$$itime";\
 	           else \
 	              printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
-                      status=$(expr $$status + 1); \
+                      status=$(($$status + 1)); \
 	            fi; \
 	            args="-sec2"; \
 		done;\
@@ -83,7 +83,7 @@ test : $(TESTS)
 	       printf " %+12s\n" "$$itime";\
 	     else \
 	       printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
-               status=$(expr $$status + 1); \
+               status=$(($$status + 1)); \
 	     fi; \
            fi;\
 	 done; \
