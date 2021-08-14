@@ -15,7 +15,7 @@ echoresults() {
         status=1
     else
 	printf " [${OK_COLOR}PASSED${NO_COLOR}]"
-        printf "%+14s\n" "$itime"
+        printf "%+12s\n" "$itime"
     fi
 }
 
