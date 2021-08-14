@@ -72,7 +72,7 @@ for dir in $DIRS;do
 #   diff -I 'Library Version used for file creation*' -I 'DonorDatatype' -I 'datatype=' output ./OUTPUT > results.txt
     status=$?
     echoresults $status
-    return_val=$(($status + $return_val))
+    return_val=$((status + return_val))
     cd ..
 done
 
@@ -94,7 +94,7 @@ diff <( sed '/Library/ d' build/output) <( sed '/Library/ d' ./OUTPUT) > build/r
 #diff -I 'Library Version used for file creation*' output ./OUTPUT > results.txt
 status=$?
 echoresults $status
-return_val=$(($status + $return_val))
+return_val=$((status + return_val))
 cd ..
 
 ###############################

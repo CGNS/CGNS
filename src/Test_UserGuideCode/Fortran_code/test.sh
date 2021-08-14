@@ -37,7 +37,7 @@ run_tests() {
         fi
         status=$?
         echoresults
-        return_val=$(($status + $return_val))
+        return_val=$((status + return_val))
 
         x="   Program: ${r_arr[$i-1]}"
         printf "$x"
@@ -50,7 +50,7 @@ run_tests() {
         diff <( sed '/Library/ d' "build/output$i") <( sed '/Library/ d' "./OUTPUT$i") > "build/results$i.txt"
         status=$?
         echoresults
-        return_val=$(($status + $return_val))
+        return_val=$((status + return_val))
     done
     cd ..
 }
