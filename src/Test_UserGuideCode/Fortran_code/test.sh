@@ -31,26 +31,26 @@ run_tests() {
         printf "$x"
         if [ "$TIMING_AVAIL" = "0" ]; then
             /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.${w_arr[$i-1]} %e" "./${w_arr[$i-1]}" >/dev/null 2>&1
-            itime=`tail -n1 ../CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/'`
+            itime=$(tail -n1 ../CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/')
         else
             "./${w_arr[$i-1]}" >/dev/null 2>&1
         fi
         status=$?
         echoresults
-        return_val=`expr $status + $return_val`
+        return_val=$(expr $status + $return_val)
 
         x="   Program: ${r_arr[$i-1]}"
         printf "$x"
         if [ "$TIMING_AVAIL" = "0" ]; then
             /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.${r_arr[$i-1]} %e" "./${r_arr[$i-1]}" > "build/output$i"
-            itime=`tail -n1 ../CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/'`
+            itime=$(tail -n1 ../CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/')
         else
             "./${r_arr[$i-1]}" > "build/output$i"
         fi
         diff <( sed '/Library/ d' "build/output$i") <( sed '/Library/ d' "./OUTPUT$i") > "build/results$i.txt"
         status=$?
         echoresults
-        return_val=`expr $status + $return_val`
+        return_val=$(expr $status + $return_val)
     done
     cd ..
 }

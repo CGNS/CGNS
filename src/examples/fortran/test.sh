@@ -52,19 +52,19 @@ for dir in $DIRS;do
     itime=""
     if [ "$TIMING_AVAIL" = "0" ]; then
         /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.cgwrite %e" ./cgwrite >/dev/null 2>&1
-        itime=`tail -n1 ../CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/'`
+        itime=$(tail -n1 ../CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/')
     else
         ./cgwrite >/dev/null 2>&1
     fi
     status=$?
     echoresults
-    return_val=`expr $status + $return_val`
+    return_val=$(expr $status + $return_val)
 
     x="   Program: cgread"
     printf "$x"
     if [ "$TIMING_AVAIL" = "0" ]; then
         /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.cgread %e" ./cgread > build/output
-        itime=`tail -n1 ../CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/'`
+        itime=$(tail -n1 ../CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/')
     else
         ./cgread > build/output
     fi
@@ -72,7 +72,7 @@ for dir in $DIRS;do
 #   diff -I 'Library Version used for file creation*' -I 'DonorDatatype' -I 'datatype=' output ./OUTPUT > results.txt
     status=$?
     echoresults $status
-    return_val=`expr $status + $return_val`
+    return_val=$(expr $status + $return_val)
     cd ..
 done
 
@@ -94,7 +94,7 @@ diff <( sed '/Library/ d' build/output) <( sed '/Library/ d' ./OUTPUT) > build/r
 #diff -I 'Library Version used for file creation*' output ./OUTPUT > results.txt
 status=$?
 echoresults $status
-return_val=`expr $status + $return_val`
+return_val=$(expr $status + $return_val)
 cd ..
 
 ###############################
