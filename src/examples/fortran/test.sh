@@ -58,7 +58,7 @@ for dir in $DIRS;do
     fi
     status=$?
     echoresults
-    return_val=$(($status + $return_val))
+    return_val=$((status + return_val))
 
     x="   Program: cgread"
     printf "$x"
