@@ -14,7 +14,8 @@ echoresults() {
 	printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"
         status=1
     else
-	printf " [${OK_COLOR}PASSED${NO_COLOR}]\n"
+	printf " [${OK_COLOR}PASSED${NO_COLOR}]"
+        printf "%+14s\n" "$itime"
     fi
 }
 
@@ -25,11 +26,13 @@ run_tests() {
     cd "$dir"
     # loop through tests
     size_arr=${#w_arr[@]} #Number of elements in the array
+    itime=""
     for i in $(seq 1 $size_arr);do
         x="   Program: ${w_arr[$i-1]}"
         printf "$x"
         if [ "$TIMING_AVAIL" = "0" ]; then
             /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.${w_arr[$i-1]} %e" "./${w_arr[$i-1]}" >/dev/null 2>&1
+            itime=`tail -n1 CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/'`
         else
             "./${w_arr[$i-1]}" >/dev/null 2>&1
         fi
@@ -41,6 +44,7 @@ run_tests() {
         printf "$x"
         if [ "$TIMING_AVAIL" = "0" ]; then
             /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.${r_arr[$i-1]} %e" "./${r_arr[$i-1]}" > "build/output$i"
+            itime=`tail -n1 CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/'`
         else
             "./${r_arr[$i-1]}" > build/output$i
         fi

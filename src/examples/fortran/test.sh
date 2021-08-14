@@ -14,7 +14,8 @@ echoresults() {
 	printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"
         status = 1
     else
-	printf " [${OK_COLOR}PASSED${NO_COLOR}]\n"
+	printf " [${OK_COLOR}PASSED${NO_COLOR}]"
+        printf "%+12s\n" "$itime"
     fi
 }
 
@@ -48,8 +49,10 @@ for dir in $DIRS;do
     cd $dir
     x="   Program: cgwrite"
     printf "$x"
+    itime=""
     if [ "$TIMING_AVAIL" = "0" ]; then
         /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.cgwrite %e" ./cgwrite >/dev/null 2>&1
+        itime=`tail -n1 ../CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/'`
     else
         ./cgwrite >/dev/null 2>&1
     fi
@@ -61,6 +64,7 @@ for dir in $DIRS;do
     printf "$x"
     if [ "$TIMING_AVAIL" = "0" ]; then
         /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.cgread %e" ./cgread > build/output
+        itime=`tail -n1 ../CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/'`
     else
         ./cgread > build/output
     fi
