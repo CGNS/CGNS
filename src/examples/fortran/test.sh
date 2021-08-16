@@ -4,12 +4,18 @@ OK_COLOR="\033[32;01m"
 ERROR_COLOR="\033[31;01m"
 
 echoresults() {
+    padlimit=40
+    pad=$(printf '%*s' "$padlimit")
+    pad=${pad// /.}
+    padlength=40
+    printf ' %*.*s' 0 $((padlength - ${#x} )) "$pad"
     if test $status -ne 0
     then
-        printf "$ERROR_COLOR *** FAILED *** $NO_COLOR \n"
+	printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"
         status = 1
     else
-        printf "$OK_COLOR PASSED $NO_COLOR \n"
+	printf " [${OK_COLOR}PASSED${NO_COLOR}]"
+        printf "%+12s\n" "$itime"
     fi
 }
 
@@ -41,19 +47,24 @@ echo "=== running tests ==="; \
 for dir in $DIRS;do
     printf "%-40s \n" "Testing $dir..."
     cd $dir
-    printf "   Program: cgwrite "
+    x="   Program: cgwrite"
+    printf "$x"
+    itime=""
     if [ "$TIMING_AVAIL" = "0" ]; then
         /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.cgwrite %e" ./cgwrite >/dev/null 2>&1
+        itime=$(tail -n1 ../CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/')
     else
         ./cgwrite >/dev/null 2>&1
     fi
     status=$?
     echoresults
-    return_val=`expr $status + $return_val`
+    return_val=$((status + return_val))
 
-    printf "   Program: cgread "
+    x="   Program: cgread"
+    printf "$x"
     if [ "$TIMING_AVAIL" = "0" ]; then
         /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.cgread %e" ./cgread > build/output
+        itime=$(tail -n1 ../CGNS_timing.txt |  awk  '{print $2}' | sed -e 's/$/ sec/')
     else
         ./cgread > build/output
     fi
@@ -61,7 +72,7 @@ for dir in $DIRS;do
 #   diff -I 'Library Version used for file creation*' -I 'DonorDatatype' -I 'datatype=' output ./OUTPUT > results.txt
     status=$?
     echoresults $status
-    return_val=`expr $status + $return_val`
+    return_val=$((status + return_val))
     cd ..
 done
 
@@ -72,7 +83,8 @@ done
 dir=Test_cgio
 printf "%-40s \n" "Testing $dir..."
 cd $dir
-printf "   Program: cgiotest "
+x="   Program: cgiotest"
+printf "$x"
 if [ "$TIMING_AVAIL" = "0" ]; then
     /usr/bin/time -a -o ../CGNS_timing.txt -f "$dir.cgiotest %e" ./cgiotest > build/output
 else
@@ -82,7 +94,7 @@ diff <( sed '/Library/ d' build/output) <( sed '/Library/ d' ./OUTPUT) > build/r
 #diff -I 'Library Version used for file creation*' output ./OUTPUT > results.txt
 status=$?
 echoresults $status
-return_val=`expr $status + $return_val`
+return_val=$((status + return_val))
 cd ..
 
 ###############################
