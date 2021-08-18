@@ -265,7 +265,7 @@ test_convert_elem$(EXE) : test_convert_elem.c $(CGNSLIB)
 #----------
 
 test_chunked_compression$(EXE) : test_chunked_compression.c $(CGNSLIB)
-	$(CC) $(COPTS) $(CEOUT)$@ test_chunked_compression.c $(LDLIBS) $(CLIBS)
+	$(CC) $(COPTS) $(CEOUT)$@ test_chunked_compression.c $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------

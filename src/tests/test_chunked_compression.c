@@ -65,6 +65,12 @@ char name[33];
 int  debug;
 /* HDF5 built with zlib support */
 int hdf5_filters = HDF5_NEED_ZLIB;
+#ifdef H5Z_ZFP_USE_PLUGIN
+#include "H5Zzfp_plugin.h"
+#define CD_VALUES_MAX 10
+size_t cd_nelmts=CD_VALUES_MAX;
+unsigned int cd_values[CD_VALUES_MAX];
+#endif
 
 /*
  * Timing storage convention:                            avg.| min. | max.
@@ -89,7 +95,7 @@ double xtiming[15], timing[15], timingMin[15], timingMax[15];
 
 int c_double_eq(double a, double b) {
 
-  double eps = 1.e-8;
+  double eps = 1.e-6;
 
   if(fabs(a-b) < eps) {
     return true;
@@ -216,11 +222,63 @@ int main(int argc, char* argv[]) {
 
     printf("Filters enabled: TRUE\n");
 
+#ifdef H5Z_ZFP_USE_PLUGIN
+    filter = &f;
+    (*filter).filter_id = H5Z_FILTER_ZFP;
+
+    /* setup zfp filter via generic (cd_values) interface */
+    /*
+      cd_vals    0       1        2         3         4         5
+      ----------------------------------------------------------------
+      rate:      1    unused    rateA     rateB     unused    unused
+      precision: 2    unused    prec      unused    unused    unused
+      accuracy:  3    unused    accA      accB      unused    unused
+      expert:    4    unused    minbits   maxbits   maxprec   minexp
+      reversubke 5    unused    unused    unused    unused    unused
+    */
+
+  /* compression parameters (defaults taken from ZFP header) */
+    // int zfpmode = H5Z_ZFP_MODE_PRECISION;
+    int zfpmode = H5Z_ZFP_MODE_ACCURACY;
+    double rate = 4;
+    double acc = 1.e-6;
+    unsigned int prec = 11;
+    unsigned int minbits = 0;
+    unsigned int maxbits = 4171;
+    unsigned int maxprec = 64;
+    int minexp = -1074;
+
+    if (zfpmode == H5Z_ZFP_MODE_RATE) {
+      H5Pset_zfp_rate_cdata(rate, cd_nelmts, cd_values);
+    } else if (zfpmode == H5Z_ZFP_MODE_PRECISION) {
+      H5Pset_zfp_precision_cdata(prec, cd_nelmts, cd_values);
+    } else if (zfpmode == H5Z_ZFP_MODE_ACCURACY) {
+      H5Pset_zfp_accuracy_cdata(acc, cd_nelmts, cd_values);
+    } else if (zfpmode == H5Z_ZFP_MODE_EXPERT) {
+      H5Pset_zfp_expert_cdata(minbits, maxbits, maxprec, minexp, cd_nelmts, cd_values);
+    } else if (zfpmode == H5Z_ZFP_MODE_REVERSIBLE) {
+      H5Pset_zfp_reversible_cdata(cd_nelmts, cd_values);
+    } else {
+      cd_nelmts = 0; /* causes default behavior of ZFP library */
+    }
+    (*filter).nparams = cd_nelmts;
+    (*filter).params    = (unsigned int *)malloc((unsigned int)((*filter).nparams)*sizeof(unsigned int));
+    for (size_t i = 0; i < cd_nelmts; i++)
+      (*filter).params[i] =  cd_values[i];
+    
+    printf("%d cd_values= ",cd_nelmts);
+    for (int i = 0; i < cd_nelmts; i++)
+      printf("%u,", (*filter).params[i]);
+    printf("\n");
+
+#else
     filter = &f;
     (*filter).filter_id = CG_FILTER_DEFLATE;
-    (*filter).nparams   = (size_t)1;
+    (*filter).nparams   = (size_t)10;
     (*filter).params    = (unsigned int *)malloc((unsigned int)((*filter).nparams)*sizeof(unsigned int));
-    (*filter).params[0] = (unsigned int)6;
+    (*filter).params[0] = (unsigned int)0;
+#endif
+
     if(hdf5_filters == 1) {
       if(cg_set_filter(filter) != CG_OK) {
         printf("*FAILED* cg_set_filter \n");
@@ -235,28 +293,29 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cg_coord_write (Coor_x) \n");
     cg_error_exit();
   }
-  if(hdf5_filters == 1) {
-    /* Disable filter */
-    if(cg_set_filter(CG_FILTER_NONE) != CG_OK) {
-      printf("*FAILED* cg_set_filter \n");
-      cg_error_exit();
-    }
-  }
 
   if(cg_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateY", Coor_y,&Cy) != CG_OK) {
     printf("*FAILED* cg_coord_write (Coor_y) \n");
     cg_error_exit();
   }
 
+  if(cg_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateZ", Coor_z,&Cz) != CG_OK) {
+    printf("*FAILED* cg_coord_write (Coor_z) \n");
+    cg_error_exit();
+  }
+
+  /* Disable filter */
+  if(hdf5_filters == 1) {
+    if(cg_set_filter(CG_FILTER_NONE) != CG_OK) {
+      printf("*FAILED* cg_set_filter \n");
+      cg_error_exit();
+    }
+  }
+
   /* Disable chunked dataset */
   chunk_param[0] = 0;
   if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
     printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
-    cg_error_exit();
-  }
-
-  if(cg_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateZ", Coor_z,&Cz) != CG_OK) {
-    printf("*FAILED* cg_coord_write (Coor_z) \n");
     cg_error_exit();
   }
 
@@ -306,25 +365,10 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cg_set_chunk \n");
     cg_error_exit();
   }
-
-  if(hdf5_filters == 1) {
-    if(cg_set_filter(filter) != CG_OK) {
-      printf("*FAILED* cg_set_filter \n");
-      cg_error_exit();
-    }
-  }
-
   if(cg_section_write(fn,B,Z,"Elements",CGNS_ENUMV(PENTA_6), start, count_e, 0, elements, &S) != CG_OK) {
     printf("*FAILED* cg_section_write \n");
     cg_error_exit();
   }
-#if 1
-  /* Disable Chunking */
-  if(cg_set_chunk(CG_CHUNK_NONE) != CG_OK) {
-    printf("*FAILED* cg_set_chunk \n");
-    cg_error_exit();
-  }
-#endif
   free(elements);
 
   /* ====================================== */
@@ -406,13 +450,6 @@ int main(int argc, char* argv[]) {
     cg_error_exit();
   }
 
-  /* Disable Chunking */
-  chunk_param[0] = 0;
-  if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
-    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
-    cg_error_exit();
-  }
-
   free(Data_Fx);
   free(Data_Fy);
   free(Data_Fz);
@@ -455,11 +492,6 @@ int main(int argc, char* argv[]) {
 
   size_1D[0] = nijk[0];
 
-  if(cg_array_write("ArrayR",CGNS_ENUMV(RealDouble),1,size_1D, Array_r) != CG_OK) {
-    printf("*FAILED* cgp_array_write (Array_Ar)\n");
-    cg_error_exit();
-  }
-
   /* Enable Filter */
   if(hdf5_filters == 1) {
     if(cg_set_filter(filter) != CG_OK) {
@@ -475,6 +507,25 @@ int main(int argc, char* argv[]) {
     cg_error_exit();
   }
 
+  if(cg_array_write("ArrayR",CGNS_ENUMV(RealDouble),1,size_1D, Array_r) != CG_OK) {
+    printf("*FAILED* cgp_array_write (Array_Ar)\n");
+    cg_error_exit();
+  }
+
+  /* Disable Chunking */
+  chunk_param[0] = 0;
+  if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
+    cg_error_exit();
+  }
+  if(hdf5_filters == 1) {
+    /* Disable filter */
+    if(cg_set_filter(CG_FILTER_NONE) != CG_OK) {
+      printf("*FAILED* cg_set_filter \n");
+      cg_error_exit();
+    }
+  }
+
 #if CG_BUILD_64BIT
   if(cg_array_write("ArrayI",CGNS_ENUMV(LongInteger),1,size_1D, Array_i) != CG_OK) {
     printf("*FAILED* cgp_array_write (Array_Ai)\n");
@@ -487,12 +538,6 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  /* Disable Chunking */
-  chunk_param[0] = 0;
-  if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
-    printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
-    cg_error_exit();
-  }
 
   free(Array_r);
   free(Array_i);

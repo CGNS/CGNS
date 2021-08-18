@@ -3061,7 +3061,7 @@ void ADFH_Put_Dimension_Information(const double   id,
            using H5Z_FILTER_NONE */
         g_propdataset_bk = H5Pcopy(mta_root->g_propdataset);
 
-        if( H5Pset_filter(mta_root->g_propdataset, filter_id, 
+        if( H5Pset_filter(mta_root->g_propdataset, filter_id,
 #if 0
                           H5Z_FLAG_MANDATORY, 
 #else
