@@ -119,7 +119,7 @@ benchmark$(EXE) : benchmark.c $(CGNSLIB)
 #----------
 
 benchmark_hdf5$(EXE) : benchmark_hdf5.c $(CGNSLIB)
-	$(CC) $(COPTS) $(CEOUT)$@ benchmark_hdf5.c $(LDLIBS) $(CLIBS)
+	$(CC) $(COPTS) $(CEOUT)$@ benchmark_hdf5.c $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
