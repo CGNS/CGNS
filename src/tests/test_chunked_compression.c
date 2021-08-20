@@ -266,7 +266,7 @@ int main(int argc, char* argv[]) {
     for (size_t i = 0; i < cd_nelmts; i++)
       (*filter).params[i] =  cd_values[i];
     
-    printf("%d cd_values= ",cd_nelmts);
+    printf("%u cd_values= ",cd_nelmts);
     for (int i = 0; i < cd_nelmts; i++)
       printf("%u,", (*filter).params[i]);
     printf("\n");

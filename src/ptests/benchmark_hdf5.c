@@ -194,7 +194,7 @@ int read_inputs(int* argc, char*** argv) {
                 cd_values[icnt] = (unsigned int)strtoul(pch, NULL, 0);
                 /* pixels_per_block and must be even and not greater than 32 */
                 if(cd_values[icnt] % 2 != 0 || cd_values[icnt] > 32 || cd_values[icnt] < 2 ) {
-                  if(comm_rank == 0) fprintf(stderr, "szip pixels_per_block and must be even and not greater than 32: %d\n\n",cd_values[icnt]);
+                  if(comm_rank == 0) fprintf(stderr, "szip pixels_per_block and must be even and not greater than 32: %u\n\n",cd_values[icnt]);
                   MPI_Abort(MPI_COMM_WORLD, 1);
                 }
               }
