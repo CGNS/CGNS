@@ -119,6 +119,10 @@ int main(int argc, char* argv[]) {
 
   cgns_filter f;
   cgns_filter *filter;
+
+  /* Valid test only when HDF5 is enabled */
+
+#if CG_BUILD_HDF5
  
   /* parameters */
   debug = true;
@@ -884,7 +888,11 @@ int main(int argc, char* argv[]) {
     fclose(fid);
   }
   
+#endif
+
   return 0;
+
+
 }
 
 
