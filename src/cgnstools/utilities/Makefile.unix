@@ -28,10 +28,10 @@ ALL = \
 	convert_dataclass$(EXE) \
 	extract_subset$(EXE) \
 	interpolate_cgns$(EXE) \
+	cgns_info$(EXE) \
 	update_ngon$(EXE)
 
 OTHERS = \
-	cgns_info$(EXE) \
 	vertex_to_cell$(EXE) \
 	cell_to_vertex$(EXE)
 
@@ -176,25 +176,6 @@ cgns_to_fast$(EXE) : cgns_to_fast.$(O) getargs.$(O) hash.$(O)
 	$(STRIP) $@
 
 cgns_to_fast.$(O) : cgns_to_fast.c
-
-#--------------------------------------------------
-
-fieldview_to_cgns$(EXE) : fieldview_to_cgns.$(O) cgnsImport.$(O) getargs.$(O) \
-			  hash.$(O)
-	$(CC) $(LDFLAGS) -o $@ fieldview_to_cgns.$(O) cgnsImport.$(O) \
-	getargs.$(O) hash.$(O) $(LDLIST)
-	$(STRIP) $@
-
-fieldview_to_cgns.$(O) : fieldview_to_cgns.c cgnsImport.h
-
-#--------------------------------------------------
-
-cgns_to_fieldview$(EXE) : cgns_to_fieldview.$(O) cgnsutil.$(O) getargs.$(O)
-	$(CC) $(LDFLAGS) -o $@ cgns_to_fieldview.$(O) cgnsutil.$(O) \
-	getargs.$(O) $(LDLIST)
-	$(STRIP) $@
-
-cgns_to_fieldview.$(O) : cgns_to_fieldview.c cgnsutil.h
 
 #--------------------------------------------------
 

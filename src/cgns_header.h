@@ -1138,6 +1138,8 @@ CGNSDLL int cgi_datasize(int ndim, cgsize_t *dims,
 
 int cgi_read_node(double node_id, char_33 name, char_33 data_type,
                   int *ndim, cgsize_t *dim_vals, void **data, int data_flag);
+int cgi_read_node_data(double node_id, char_33 data_type,
+                  int* ndim, cgsize_t* dim_vals, void** data);
 CGNSDLL int cgi_get_nodes(double parent_id, char *label, int *nnodes, double **id);
 
 /* write ADF file from internal database */

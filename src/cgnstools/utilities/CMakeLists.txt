@@ -40,7 +40,7 @@ set(cgns_info_FILES
 	../common/getargs.c)
 
 add_executable(cgns_info ${cgns_info_FILES})
-add_dependencies(cgns_info cgns_static calclib)
+add_dependencies(cgns_info cgns_static)
 
 #----------
 
@@ -52,7 +52,7 @@ set(plot3d_to_cgns_FILES
 	../common/getargs.c)
 
 add_executable(plot3d_to_cgns ${plot3d_to_cgns_FILES})
-add_dependencies(plot3d_to_cgns cgns_static calclib)
+add_dependencies(plot3d_to_cgns cgns_static)
 
 # cgns_to_plot3d
 set(cgns_to_plot3d_FILES 
@@ -63,7 +63,7 @@ set(cgns_to_plot3d_FILES
 	p3dfout.c)
 
 add_executable(cgns_to_plot3d ${cgns_to_plot3d_FILES})
-add_dependencies(cgns_to_plot3d cgns_static calclib)
+add_dependencies(cgns_to_plot3d cgns_static)
 
 #----------
 
@@ -75,7 +75,7 @@ set(patran_to_cgns_FILES
 	../common/hash.c)
 
 add_executable(patran_to_cgns ${patran_to_cgns_FILES})
-add_dependencies(patran_to_cgns cgns_static calclib)
+add_dependencies(patran_to_cgns cgns_static)
 
 #----------
 
@@ -87,7 +87,7 @@ set(tecplot_to_cgns_FILES
 	../common/hash.c)
 
 add_executable(tecplot_to_cgns ${tecplot_to_cgns_FILES})
-add_dependencies(tecplot_to_cgns cgns_static calclib)
+add_dependencies(tecplot_to_cgns cgns_static)
 
 # cgns_to_tecplot
 set(cgns_to_tecplot_FILES
@@ -96,7 +96,7 @@ set(cgns_to_tecplot_FILES
 	../common/getargs.c)
 
 add_executable(cgns_to_tecplot ${cgns_to_tecplot_FILES})
-add_dependencies(cgns_to_tecplot cgns_static calclib)
+add_dependencies(cgns_to_tecplot cgns_static)
 
 #----------
 
@@ -105,7 +105,7 @@ set(tetgen_to_cgns_FILES
 	tetgen_to_cgns.c)
 
 add_executable(tetgen_to_cgns ${tetgen_to_cgns_FILES})
-add_dependencies(tetgen_to_cgns cgns_static calclib)
+add_dependencies(tetgen_to_cgns cgns_static)
 
 #----------
 
@@ -116,7 +116,7 @@ set(vgrid_to_cgns_FILES
 	../common/getargs.c)
 
 add_executable(vgrid_to_cgns ${vgrid_to_cgns_FILES})
-add_dependencies(vgrid_to_cgns cgns_static calclib)
+add_dependencies(vgrid_to_cgns cgns_static)
 
 #----------
 
@@ -127,7 +127,7 @@ set(aflr3_to_cgns_FILES
 	../common/getargs.c)
 
 add_executable(aflr3_to_cgns ${aflr3_to_cgns_FILES})
-add_dependencies(aflr3_to_cgns cgns_static calclib)
+add_dependencies(aflr3_to_cgns cgns_static)
 
 # cgns_to_aflr3
 set(cgns_to_aflr3_FILES
@@ -136,7 +136,7 @@ set(cgns_to_aflr3_FILES
 	../common/hash.c)
 
 add_executable(cgns_to_aflr3 ${cgns_to_aflr3_FILES})
-add_dependencies(cgns_to_aflr3 cgns_static calclib)
+add_dependencies(cgns_to_aflr3 cgns_static)
 
 #----------
 
@@ -147,7 +147,7 @@ set(fast_to_cgns_FILES
 	../common/getargs.c)
 
 add_executable(fast_to_cgns ${fast_to_cgns_FILES})
-add_dependencies(fast_to_cgns cgns_static calclib)
+add_dependencies(fast_to_cgns cgns_static)
 
 # cgns_to_fast
 set(cgns_to_fast_FILES
@@ -156,7 +156,7 @@ set(cgns_to_fast_FILES
 	../common/hash.c)
 
 add_executable(cgns_to_fast ${cgns_to_fast_FILES})
-add_dependencies(cgns_to_fast cgns_static calclib)
+add_dependencies(cgns_to_fast cgns_static)
 
 #----------
 
@@ -166,7 +166,7 @@ set(cgns_to_vtk_FILES
 	../common/getargs.c)
 
 add_executable(cgns_to_vtk ${cgns_to_vtk_FILES})
-add_dependencies(cgns_to_vtk cgns_static calclib)
+add_dependencies(cgns_to_vtk cgns_static)
 
 #----------
 
@@ -203,7 +203,7 @@ set(extract_subset_FILES
 	../common/getargs.c)
 
 add_executable(extract_subset ${extract_subset_FILES})
-add_dependencies(extract_subset cgns_static calclib)
+add_dependencies(extract_subset cgns_static)
 
 # interpolate_cgns
 set(interpolate_cgns_FILES
@@ -212,7 +212,7 @@ set(interpolate_cgns_FILES
 	../common/getargs.c)
 
 add_executable(interpolate_cgns ${interpolate_cgns_FILES})
-add_dependencies(interpolate_cgns cgns_static calclib)
+add_dependencies(interpolate_cgns cgns_static)
 
 # update_ngon
 set(update_ngon_FILES
@@ -242,6 +242,7 @@ if (WIN32)
 	extract_subset
 	interpolate_cgns
 	update_ngon
+        cgns_info
 	RUNTIME DESTINATION bin)
   install(FILES
 	conserved.cnv
@@ -279,6 +280,7 @@ else (WIN32)
 	extract_subset
 	interpolate_cgns
 	update_ngon
+        cgns_info
 	RUNTIME DESTINATION bin/cgnstools)
   install(FILES
 	conserved.cnv
