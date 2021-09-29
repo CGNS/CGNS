@@ -25,7 +25,15 @@ freely, subject to the following restrictions:
 
 /**
  * \defgroup CGNSFile File Operations
- *
+ * \defgroup CGNSInterfaceCGIO Interfacing with CGIO
+ * \defgroup CGNSInternals Configuring CGNS Internals
+ * \defgroup CGNSBaseInformation CGNS Base Information
+ * \defgroup CGNSZoneInformation CGNS Zone Information
+ * \defgroup CGNSSimulationType Simulation Type
+ * \defgroup CGNSFamilyDefinition Family Definition
+ * \defgroup CGNSFamilyHierarchyTreeDefinition Family Hierrarchy Tree
+ * \defgroup CGNSFamilyBoundaryDefinition Family Boundary Condition
+ * \defgroup CGNSGeometryReference Geometry Reference
  */
 
 #include <stdio.h>
@@ -887,18 +895,18 @@ int cg_get_file_type(int fn, int *file_type)
  * \brief Get the CGIO root node identifier for the CGNS file.
  *
  * \param[in]  fn \FILE_fn
- * \param[out] root_id Root node identifier for the CGNS file
+ * \param[out] rootid Root node identifier for the CGNS file
  * \return \ier
  *
  * \details The function \p cg_root_id allow the use of the low-level CGIO function
  * in conjunction with the Mid Level Library. It returns the root node identifier for the CGNS file.
  *
  */
-int cg_root_id(int fn, double *root_id)
+int cg_root_id(int fn, double *rootid)
 {
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
-    if (cgio_get_root_id(cg->cgio, root_id)) {
+    if (cgio_get_root_id(cg->cgio, rootid)) {
         cg_io_error("cgio_get_root_id");
         return CG_ERROR;
     }
@@ -927,38 +935,69 @@ int cg_get_cgio(int fn, int *cgio_num)
 }
 
 /* configure stuff */
-
-int cg_configure(int what, void *value)
+/**
+ * \ingroup CGNSInternals
+ *
+ * \brief Configure CGNS library internal options. 
+ *
+ * \param[in] option The option to configure, currently one of \p CG_CONFIG_ERROR, \p CG_CONFIG_COMPRESS, \p CG_CONFIG_SET_PATH, \p CG_CONFIG_ADD_PATH, \p CG_CONFIG_FILE_TYPE, \p CG_CONFIG_RIND_INDEX, \p CG_CONFIG_HDF5_DISKLESS, \p CG_CONFIG_HDF5_DISKLESS_INCR, \p CG_CONFIG_HDF5_DISKLESS_WRITE, \p CG_CONFIG_HDF5_COMPRESS, or \p CG_CONFIG_HDF5_MPI_COMM as defined in cgnslib.h. 
+ * \param[in] value The value to set, type cast as \e void * . In Fortran the type is \e TYPE(C_PTR).
+ * \return \ier
+ *
+ *
+ * \details The function \p cg_configure allows particular CGNS library internal options to be configured. The currently supported options and expected values are:
+ * 
+ *|   |   |
+ *|---|---|
+ *|__CG_CONFIG_ERROR__| This allows an error call-back function to be defined by the user. The value should be a pointer to a function to receive the error. The function is defined as `void err_callback(int is_error, char *errmsg)`, and will be called for errors and warnings. The first argument, is_error, will be 0 for warning messages, 1 for error messages, and −1 if the program is going to terminate (i.e., a call to `cg_error_exit()`). The second argument is the error or warning message. If this is defined, warning and error messages will go to the function, rather than the terminal. A value of `NULL` will remove the call-back function.
+ *|__CG_CONFIG_COMPRESS__| This is the rewrite-upon-close setting. Note: Prior versions of the library would automatically rewrite the CGNS file when it was closed after being opened in modify mode if there was unused space. This is no longer done, due to possible conflicts when using parallel I/O. The previous behavior may be recovered by setting value to a positive integer. In this case the file will be rewritten if the number of node deletions or modifications are equal to or exceed this number. Setting value to a negative number will force the rewrite when the file is closed. The default value is 0 (no rewrite).
+ *|__CG_CONFIG_SET_PATH__| Sets the search path for locating linked-to files. The argument value should be a character string containing one or more directories, formatted the same as for the `PATH` environment variable. This will replace any current settings. Setting value to `NULL` will remove all paths.
+ *|__CG_CONFIG_ADD_PATH__| Adds a directory, or list of directories, to the linked-to file search path. This is the same as `CG_CONFIG_SET_PATH`, but adds to the path instead of replacing it.
+ *|__CG_CONFIG_FILE_TYPE__| Sets the default file type for newly created CGNS files. The argument, value should be set to one of `CG_FILE_NONE`, `CG_FILE_ADF`, `CG_FILE_HDF5`, or `CG_FILE_ADF2`. See the discussion above for `cg_set_file_type`.
+ *|__CG_CONFIG_RIND_INDEX__| This option affects index bounds on structured arrays with rind planes. By default (`CG_CONFIG_RIND_CORE`), the core array locations always begin at index 1. Lower rind planes, if present, would have an index less than 1. For backward compatibility, `CG_CONFIG_RIND_ZERO` is provided and the index 1 will then locate the start of the array and not necessarily the start the core array. Note: Use of this option does not change the cgns file in any way; it only modifies the API to the library. The API changed for versions of the Mid-Level Library greater than 3.4. Before, it did not produce this behavior. Index 1 always represented the start of an array: in an array with no rind planes, the core location would have index 1; in an array with 1 rind plane, the core location would have index 2. In version 3.4 of the Mid-Level Library, the behavior of the API was fixed to match that specified in the SIDS: core array locations always begin at index 1. This option allows for configuring the library to pre-3.4 indexing behavior (set value to `CG_CONFIG_RIND_ZERO`) or the new default behavior (set value to `CG_CONFIG_RIND_CORE`). Note that using `CG_CONFIG_RIND_ZERO` is considered obsolete, but is provided for backwards compatability. Most users should not set this option and use the default. Values used for this option do not need to be explicitly cast as `void*`.
+ *|__CG_CONFIG_HDF5_COMPRESS__| Sets the compression level for data written from HDF5. The default is no compression. Setting value to -1, will use the default compression level of 6. The acceptable values are 0 to 9, corresponding to gzip compression levels.
+ *|__CG_CONFIG_HDF5_MPI_COMM__| Sets the MPI communicator for parallel I/O. The default is `MPI_COMM_WORLD`. The new communicator is given by typecasting it to a `void *`. This is generally used internally - see `cgp_mpi_comm` instead.
+ *|__CG_CONFIG_HDF5_DISKLESS_INCR__| Value specifies the increment by which allocated memory is to be increased each time more memory is required, in bytes. The default is 10MiB. Ideally, value should be set large enough to minimize repeated increases. The type of value is size_t in C and C_SIZE_T in Fortran. Due to a bug with gfortran, it is advisable to use C_LOC or C_FUNLOC in-line of the call instead of using a variable.
+ *|__CG_CONFIG_HDF5_DISKLESS_WRITE__| Value indicates whether to write (value=1) the memory contents to disk when the file is closed. Otherwise, value=0 does not persist the memory to disk.
+ *|__CG_CONFIG_HDF5_ALIGNMENT__| Configures HDF5's H5Pset_alignment and sets the alignment, value[1], properties of a file access property list so that any file object greater than or equal in size to a threshold, value[0], bytes will be aligned on an address which is a multiple of alignment.
+ *|__CG_CONFIG_HDF5_MD_BLOCK_SIZE__| Configures HDF5's H5Pset_meta_block_size and sets the minimum size, value (in bytes), of metadata block allocations.
+ *|__CG_CONFIG_HDF5_BUFFER__| Configures HDF5's H5Pset_buffer and sets the maximum size, value (in bytes), for the type conversion buffer and background buffer.
+ *|__CG_CONFIG_HDF5_SIEVE_BUF_SIZE__| Configures HDF5's H5Pset_sieve_buf_size and sets the maximum size, value (in bytes), of the data sieve buffer.
+ *|__CG_CONFIG_RESET__| Value indicates the configuration values to reset to their default values. Currently, only CG_CONFIG_RESET_HDF5 is a valid value and will reset all the CG_CONFIG_HDF5_* parameters, excluding CG_CONFIG_HDF5_MPI_COMM and CG_CONFIG_HDF5_DISKLESS, to their default values.
+ *
+ *
+ */
+int cg_configure(int option, void *value)
 {
     /* cgio options */
-    if (what > 100) {
-      if( cgio_configure(what, value) != CG_OK) {
+    if (option > 100) {
+      if( cgio_configure(option, value) != CG_OK) {
         cg_io_error("cgio_configure");
         return CG_ERROR;
       }
     }
     /* error message handler */
-    else if (what == CG_CONFIG_ERROR) {
+    else if (option == CG_CONFIG_ERROR) {
         cgns_error_handler = (void (*)(int, char *))value;
     }
     /* file compression */
-    else if (what == CG_CONFIG_COMPRESS) {
+    else if (option == CG_CONFIG_COMPRESS) {
         cgns_compress = (int)((size_t)value);
     }
     /* initialize link search path */
-    else if (what == CG_CONFIG_SET_PATH) {
+    else if (option == CG_CONFIG_SET_PATH) {
         return cg_set_path((const char *)value);
     }
     /* add to link search path */
-    else if (what == CG_CONFIG_ADD_PATH) {
+    else if (option == CG_CONFIG_ADD_PATH) {
         return cg_set_path((const char *)value);
     }
     /* default file type */
-    else if (what == CG_CONFIG_FILE_TYPE) {
+    else if (option == CG_CONFIG_FILE_TYPE) {
         return cg_set_file_type((int)((size_t)value));
     }
     /* allow pre v3.4 rind-plane indexing */
-    else if (what == CG_CONFIG_RIND_INDEX) {
+    else if (option == CG_CONFIG_RIND_INDEX) {
         if (value != CG_CONFIG_RIND_ZERO &&
             value != CG_CONFIG_RIND_CORE) {
             cgi_error("unknown config setting");
@@ -973,24 +1012,56 @@ int cg_configure(int what, void *value)
     return CG_OK;
 }
 
+/**
+ * \ingroup CGNSInternals
+ *
+ * \brief Set CGNS error handler 
+ *
+ * \param[in] func error handler function
+ * \return \ier
+ */
 int cg_error_handler(void (*func)(int, char *))
 {
     cgns_error_handler = func;
     return CG_OK;
 }
 
+/**
+ * \ingroup CGNSInternals
+ *
+ * \brief Set CGNS compression mode
+ *
+ * \param[in] compress  CGNS compress (rewrite) setting
+ * \return \ier
+ */
 int cg_set_compress(int compress)
 {
     cgns_compress = compress;
     return CG_OK;
 }
 
+/**
+ * \ingroup CGNSInternals
+ *
+ * \brief Get CGNS compression mode
+ *
+ * \param[out] compress  CGNS compress (rewrite) setting
+ * \return \ier
+ */
 int cg_get_compress(int *compress)
 {
     *compress = cgns_compress;
     return CG_OK;
 }
 
+/**
+ * \ingroup CGNSInternals
+ *
+ * \brief Set the CGNS link search path
+ *
+ * \param[in] path to search for linked to files when opening a file with external links.
+ * \return \ier
+ */
 int cg_set_path(const char *path)
 {
     cgio_path_delete(NULL);
@@ -1003,6 +1074,14 @@ int cg_set_path(const char *path)
     return CG_OK;
 }
 
+/**
+ * \ingroup CGNSInternals
+ *
+ * \brief Add to the CGNS link search path
+ *
+ * \param[in] path to search for linked to files when opening a file with external links.
+ * \return \ier
+ */
 int cg_add_path(const char *path)
 {
     if (cgio_path_add(path)) {
@@ -1128,7 +1207,16 @@ const char *cg_AverageInterfaceTypeName(CGNS_ENUMT( AverageInterfaceType_t )  ty
 /*****************************************************************************\
  *         Read and Write CGNSBase_t Nodes
 \*****************************************************************************/
-
+/**
+ * \ingroup CGNSBaseInformation
+ *
+ * \brief Get number of CGNS base nodes in file
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[out] nbases  Number of bases present in the CGNS file fn. 
+ * \return \ier
+ *
+ */
 int cg_nbases(int fn, int *nbases)
 {
 
@@ -1141,6 +1229,19 @@ int cg_nbases(int fn, int *nbases)
     return CG_OK;
 }
 
+/**
+ * \ingroup CGNSBaseInformation
+ *
+ * \brief Read CGNS base information
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B 	Base index number, where 1 ≤ B ≤ nbases.
+ * \param[out] basename  Name of the base
+ * \param[out] cell_dim  Dimension of the cells; 3 for volume cells, 2 for surface cells and 1 for line cells. 
+ * \param[out] phys_dim  Number of coordinates required to define a vector in the field. 
+ * \return \ier
+ *
+ */
 int cg_base_read(int fn, int B, char *basename, int *cell_dim,
                  int *phys_dim)
 {
@@ -1161,6 +1262,18 @@ int cg_base_read(int fn, int B, char *basename, int *cell_dim,
     return CG_OK;
 }
 
+
+/**
+ * \ingroup CGNSBaseInformation
+ *
+ * \brief Get the CGIO identifier of the CGNS base
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B 	Base index number, where 1 ≤ B ≤ nbases.
+ * \param[out] base_id  CGIO node identifier for the base
+ * \return \ier
+ *
+ */
 int cg_base_id(int fn, int B, double *base_id)
 {
     cgns_base *base;
@@ -1177,6 +1290,17 @@ int cg_base_id(int fn, int B, double *base_id)
     return CG_OK;
 }
 
+/**
+ * \ingroup CGNSBaseInformation
+ *
+ * \brief Get the cell dimension for the CGNS base
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B   Base index number, where 1 ≤ B ≤ nbases.
+ * \param[out] cell_dim Dimension of the cells; 3 for volume cells, 2 for surface cells and 1 for line cells. 
+ * \return \ier
+ *
+ */
 int cg_cell_dim(int fn, int B, int *cell_dim)
 {
     cgns_base *base;
@@ -1190,6 +1314,19 @@ int cg_cell_dim(int fn, int B, int *cell_dim)
     return CG_OK;
 }
 
+/**
+ * \ingroup CGNSBaseInformation
+ *
+ * \brief Create and/or write to a CGNS base node
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] basename Name of the base.
+ * \param[in] cell_dim Dimension of the cells; 3 for volume cells, 2 for surface cells and 1 for line cells. 
+ * \param[in] phys_dim Number of coordinates required to define a vector in the field. 
+ * \param[out] B   Base index number, where 1 ≤ B ≤ nbases.
+ * \return \ier
+ *
+ */
 int cg_base_write(int fn, const char * basename, int cell_dim,
                  int phys_dim, int *B)
 {
@@ -1263,6 +1400,17 @@ int cg_base_write(int fn, const char * basename, int cell_dim,
  *            Read and Write Zone_t Nodes
 \*****************************************************************************/
 
+/**
+ * \ingroup CGNSZoneInformation
+ *
+ * \brief Get number of zone in base
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B Base index number, where 1 ≤ B ≤ nbases.
+ * \param[out] nzones Number of zones present in base B.
+ * \return \ier
+ *
+ */
 int cg_nzones(int fn, int B, int *nzones)
 {
     cgns_base *base;
@@ -1279,7 +1427,19 @@ int cg_nzones(int fn, int B, int *nzones)
     return CG_OK;
 }
 
-int cg_zone_type(int fn, int B, int Z, CGNS_ENUMT(ZoneType_t) *type)
+/**
+ * \ingroup CGNSZoneInformation
+ *
+ * \brief Get type of zone (structured or unstructured)
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] zonetype Type of the zone. The admissible types are Structured and Unstructured.
+ * \return \ier
+ *
+ */
+int cg_zone_type(int fn, int B, int Z, CGNS_ENUMT(ZoneType_t) *zonetype)
 {
     cgns_zone *zone;
 
@@ -1291,11 +1451,38 @@ int cg_zone_type(int fn, int B, int Z, CGNS_ENUMT(ZoneType_t) *type)
     zone = cgi_get_zone(cg, B, Z);
     if (zone==0) return CG_ERROR;
 
-    *type = zone->type;
+    *zonetype = zone->type;
     return CG_OK;
 }
 
-int cg_zone_read(int fn, int B, int Z, char *zonename, cgsize_t *nijk)
+
+/**
+ * \ingroup CGNSZoneInformation
+ *
+ * \brief Read zone information 
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] zonename Name of the zone
+ * \param[out] size 	Number of vertices, cells, and boundary vertices in each (index)-dimension. For structured grids, the dimensions have unit stride in the array (e.g., `[NVertexI, NVertexJ, NVertexK, NCellI, NCellJ, NCellK, NBoundVertexI, NBoundVertexJ, NBoundVertexK]`).
+Note that for unstructured grids, the number of cells is the number of highest order elements. Thus, in three dimensions it's the number of 3-D cells, and in two dimensions it's the number of 2-D cells.
+Also for unstructured grids, if the nodes are sorted between internal nodes and boundary nodes, the optional parameter `NBoundVertex` must be set equal to the number of boundary nodes. By default, `NBoundVertex` equals zero, meaning that the nodes are unsorted.
+Note that a non-zero value for `NBoundVertex` only applies to unstructured grids. For structured grids, the `NBoundVertex` parameter always equals 0 in all directions.
+ *|Mesh Type      | Size|   
+ *|---------------|-----|
+ *| 3D structured | `NVertexI`, `NVertexJ`, `NVertexK`
+ *| ^             | `NCellI`, `NCellJ`, `NCellK`
+ *| ^             | `NBoundVertexI = 0`, `NBoundVertexJ = 0`, `NBoundVertexK = 0`
+ *| 2D structured | `NVertexI`, `NVertexJ`
+ *| ^             | `NCellI`, `NCellJ`
+ *| ^             | `NBoundVertexI = 0`, `NBoundVertexJ = 0`
+ *|3D unstructured| `NVertex`, `NCell3D`, `NBoundVertex`
+ *|2D unstructured| `NVertex`, `NCell2D`, `NBoundVertex`
+ * \return \ier
+ *
+ */
+int cg_zone_read(int fn, int B, int Z, char *zonename, cgsize_t *size)
 {
     cgns_zone *zone;
     int i;
@@ -1310,10 +1497,11 @@ int cg_zone_read(int fn, int B, int Z, char *zonename, cgsize_t *nijk)
 
     strcpy(zonename, zone->name);
 
-    for (i=0; i<3*(zone->index_dim); i++) nijk[i] = zone->nijk[i];
+    for (i=0; i<3*(zone->index_dim); i++) size[i] = zone->nijk[i];
 
     return CG_OK;
 }
+
 
 int cg_zone_id(int fn, int B, int Z, double *zone_id)
 {
@@ -1331,6 +1519,17 @@ int cg_zone_id(int fn, int B, int Z, double *zone_id)
     return CG_OK;
 }
 
+/**
+ * \ingroup CGNSZoneInformation
+ *
+ * \brief Get the index dimension of the CGNS zone 
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] index_dim Index dimension for the zone. For Structured zones, this will be the base cell dimension and for Unstructured zones it will be 1
+ * \return \ier
+ */
 int cg_index_dim(int fn, int B, int Z, int *index_dim)
 {
     cgns_zone *zone;
@@ -1344,8 +1543,34 @@ int cg_index_dim(int fn, int B, int Z, int *index_dim)
     return CG_OK;
 }
 
-int cg_zone_write(int file_number, int B, const char *zonename, const cgsize_t * nijk,
-          CGNS_ENUMT( ZoneType_t )  type, int *Z)
+/**
+ * \ingroup CGNSZoneInformation
+ *
+ * \brief Create and/or write to a CGNS zone 
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B   Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] zonename   Name of the zone.
+ * \param[in] size 	Number of vertices, cells, and boundary vertices in each (index)-dimension. For structured grids, the dimensions have unit stride in the array (e.g., [NVertexI, NVertexJ, NVertexK, NCellI, NCellJ, NCellK, NBoundVertexI, NBoundVertexJ, NBoundVertexK]).
+ *Note that for unstructured grids, the number of cells is the number of highest order elements. Thus, in three dimensions it's the number of 3-D cells, and in two dimensions it's the number of 2-D cells.
+ *Also for unstructured grids, if the nodes are sorted between internal nodes and boundary nodes, the optional parameter NBoundVertex must be set equal to the number of boundary nodes. By default, NBoundVertex equals zero, meaning that the nodes are unsorted.
+ *Note that a non-zero value for NBoundVertex only applies to unstructured grids. For structured grids, the NBoundVertex parameter always equals 0 in all directions.
+ *|Mesh Type      | Size|
+ *|---------------|-----|
+ *| 3D structured | NVertexI, NVertexJ, NVertexK
+ *|               | NCellI, NCellJ, NCellK
+ *|               | NBoundVertexI = 0, NBoundVertexJ = 0, NBoundVertexK = 0
+ *|2D structured  | NVertexI, NVertexJ
+ *|               | NCellI, NCellJ
+ *|               | NBoundVertexI = 0, NBoundVertexJ = 0
+ *|3D unstructured| NVertex, NCell3D, NBoundVertex
+ *|2D unstructured| NVertex, NCell2D, NBoundVertex
+ * \param[in] zonetype   Type of the zone. The admissible types are Structured and Unstructured.
+ * \param[out] Z         Zone index number, where 1 ≤ Z ≤ nzones.
+ * \return \ier
+ */
+int cg_zone_write(int fn, int B, const char *zonename, const cgsize_t * size,
+          CGNS_ENUMT( ZoneType_t )  zonetype, int *Z)
 {
     cgns_base *base;
     cgns_zone *zone = NULL;
@@ -1357,7 +1582,7 @@ int cg_zone_write(int file_number, int B, const char *zonename, const cgsize_t *
     if (cgi_check_strlen(zonename)) return CG_ERROR;
 
      /* get memory address file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
      /* verify input */
@@ -1368,9 +1593,9 @@ int cg_zone_write(int file_number, int B, const char *zonename, const cgsize_t *
     if (base==0) return CG_ERROR;
 
      /* Set index dimension */
-    if (type == CGNS_ENUMV( Structured ))
+    if (zonetype == CGNS_ENUMV( Structured ))
         index_dim = base->cell_dim;
-    else if (type == CGNS_ENUMV( Unstructured ))
+    else if (zonetype == CGNS_ENUMV( Unstructured ))
         index_dim = 1;
     else {
         cgi_error("Invalid zone type - not Structured or Unstructured");
@@ -1378,13 +1603,13 @@ int cg_zone_write(int file_number, int B, const char *zonename, const cgsize_t *
     }
 
     for (i=0; i<index_dim; i++) {
-        if (nijk[i]<=0) {
-            cgi_error("Invalid input:  nijk[%d]=%ld", i, nijk[i]);
+        if (size[i]<=0) {
+            cgi_error("Invalid input:  nijk[%d]=%ld", i, size[i]);
             return CG_ERROR;
         }
-        if (type == CGNS_ENUMV( Structured ) && nijk[i]!=nijk[i+index_dim]+1) {
+        if (zonetype == CGNS_ENUMV( Structured ) && size[i]!=size[i+index_dim]+1) {
             cgi_error("Invalid input:  VertexSize[%d]=%ld and CellSize[%d]=%ld",
-                   i, nijk[i], i, nijk[i+index_dim]);
+                   i, size[i], i, size[i+index_dim]);
             return CG_ERROR;
         }
     }
@@ -1446,9 +1671,9 @@ int cg_zone_write(int file_number, int B, const char *zonename, const cgsize_t *
         cgi_error("Error allocating zone->nijk");
         return CG_ERROR;
     }
-    for (i=0; i<3*index_dim; i++) zone->nijk[i] = nijk[i];
+    for (i=0; i<3*index_dim; i++) zone->nijk[i] = size[i];
     zone->index_dim = index_dim;
-    zone->type = type;
+    zone->type = zonetype;
 
      /* save data in file */
     dim_vals[0]=zone->index_dim;
@@ -1456,7 +1681,7 @@ int cg_zone_write(int file_number, int B, const char *zonename, const cgsize_t *
     if (cgi_new_node(base->id, zone->name, "Zone_t", &zone->id,
         CG_SIZE_DATATYPE, 2, dim_vals, (void *)zone->nijk)) return CG_ERROR;
 
-    dim_vals[0] = (cgsize_t)strlen(ZoneTypeName[type]);
+    dim_vals[0] = (cgsize_t)strlen(ZoneTypeName[zonetype]);
     if (cgi_new_node(zone->id, "ZoneType", "ZoneType_t", &dummy_id,
         "C1", 1, dim_vals, ZoneTypeName[type])) return CG_ERROR;
 
@@ -1467,11 +1692,22 @@ int cg_zone_write(int file_number, int B, const char *zonename, const cgsize_t *
  *    Read and Write Family_t Nodes
 \*****************************************************************************/
 
-int cg_nfamilies(int file_number, int B, int *nfamilies)
+/**
+ * \ingroup CGNSFamilyDefinition
+ *
+ * \brief Get number of Family_t node at CGNSBase_t level
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B Base index number, where 1 ≤ B ≤ nbases.
+ * \param[out] nfamilies Number of families in base B
+ * \return \ier
+ *
+ */
+int cg_nfamilies(int fn, int B, int *nfamilies)
 {
     cgns_base *base;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -1483,17 +1719,31 @@ int cg_nfamilies(int file_number, int B, int *nfamilies)
     return CG_OK;
 }
 
-int cg_family_read(int file_number, int B, int F, char *family_name,
+/**
+ * \ingroup CGNSFamilyDefinition
+ *
+ * \brief Read family information (CGNSBase_t level)
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B    Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \param[out] family_name Name of the family
+ * \param[out] nboco  Number of boundary conditions for this family. This should be either 0 or 1.
+ * \param[out] ngeos  Number of geometry references for this family.
+ * \return \ier
+ *
+ */
+int cg_family_read(int fn, int B, int Fam, char *family_name,
                int *nboco, int *ngeos)
 {
     cgns_family *family;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    family = cgi_get_family(cg, B, F);
+    family = cgi_get_family(cg, B, Fam);
     if (family==0) return CG_ERROR;
 
     strcpy(family_name, family->name);
@@ -1504,7 +1754,20 @@ int cg_family_read(int file_number, int B, int F, char *family_name,
 }
 
 /* ** FAMILY TREE ** */
-int cg_family_write(int file_number, int B, const char * family_name, int *F)
+
+/**
+ * \ingroup CGNSFamilyDefinition
+ *
+ * \brief Read family information (CGNSBase_t level)
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B    Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] family_name Name of the family
+ * \param[out] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \return \ier
+ *
+ */
+int cg_family_write(int fn, int B, const char * family_name, int *Fam)
 {
     int index;
     cgns_base   *base;
@@ -1515,7 +1778,7 @@ int cg_family_write(int file_number, int B, const char * family_name, int *F)
     int   skip = 0;
 
     /* Check file access */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -1629,7 +1892,7 @@ int cg_family_write(int file_number, int B, const char * family_name, int *F)
             (*nfamilies_p)++;
         }
 
-        (*F) = index+1;
+        (*Fam) = index+1;
 
         if( ! skip ) { /* If not an existing intermediate family node */
             memset( family, 0, sizeof(cgns_family) );
@@ -1653,45 +1916,86 @@ int cg_family_write(int file_number, int B, const char * family_name, int *F)
 
 /*----------------------------------------------------------------------*/
 
-int cg_nfamily_names(int file_number, int B, int F, int *nnames)
+/**
+ * \ingroup CGNSFamilyDefinition
+ *
+ * \brief Get number of family names under Family_t (CGNSBase_t level)
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B    Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \param[out] nnames Number of FamilyName_t nodes for this family.
+ * \return \ier
+ *
+ */
+int cg_nfamily_names(int fn, int B, int Fam, int *nnames)
 {
     cgns_family *fam;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    fam = cgi_get_family(cg, B, F);
+    fam = cgi_get_family(cg, B, Fam);
     if (fam == 0) return CG_ERROR;
 
     *nnames = fam->nfamname;
     return CG_OK;
 }
 
-int cg_family_name_read(int file_number, int B, int F, int N, char *name, char *family)
+/**
+ * \ingroup CGNSFamilyDefinition
+ *
+ * \brief Read multiple family names under Family_t (CGNSBase_t level)
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B    Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \param[in] N    Family name index number, where 1 ≤ N ≤ nNames. 
+ * \param[out] node_name    Name of the FamilyName_t node. FamilyParent is used to refer to the parent family of the Family_t node.
+ * \param[out] family_name  Name of the family
+ * \return \ier
+ *
+ */
+int cg_family_name_read(int fn, int B, int Fam, int N, char *node_name, char *family_name)
 {
     cgns_family *fam;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    fam = cgi_get_family(cg, B, F);
+    fam = cgi_get_family(cg, B, Fam);
     if (fam == 0) return CG_ERROR;
 
     if (N < 1 || N > fam->nfamname) {
         cgi_error("family name index out of range\n");
         return CG_ERROR;
     }
-    strcpy(name, fam->famname[N-1].name);
-    strcpy(family, fam->famname[N-1].family);
+    strcpy(node_name, fam->famname[N-1].name);
+    strcpy(family_name, fam->famname[N-1].family);
     return CG_OK;
 }
+
 /* ** FAMILY TREE ** */
-int cg_family_name_write(int file_number, int B, int F,
-                         const char *name, const char *family)
+
+/**
+ * \ingroup CGNSFamilyDefinition
+ *
+ * \brief  Write multiple family names under Family_t (CGNSBase_t level) 
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B    Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \param[out] node_name    Name of the FamilyName_t node. FamilyParent is used to refer to the parent family of the Family_t node.
+ * \param[out] family_name  Name of the family
+ * \return \ier
+ *
+ */
+int cg_family_name_write(int fn, int B, int Fam,
+                         const char *node_name, const char *family_name)
 {
     int index;
     cgsize_t dim;
@@ -1699,25 +2003,25 @@ int cg_family_name_write(int file_number, int B, int F,
     cgns_famname *famname = 0;
 
      /* verify input */
-    if (cgi_check_strlen(name)) return CG_ERROR;
+    if (cgi_check_strlen(node_name)) return CG_ERROR;
 
-    if ( strlen(family) > (CGIO_MAX_NAME_LENGTH+1)*CG_MAX_GOTO_DEPTH ) {
-        cgi_error( "Family path too long (%s, size %ld)", family, strlen(family) );
+    if ( strlen(family_name) > (CGIO_MAX_NAME_LENGTH+1)*CG_MAX_GOTO_DEPTH ) {
+        cgi_error( "Family path too long (%s, size %ld)", family_name, strlen(family_name) );
         return CG_ERROR;
     }
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
 
-    fam = cgi_get_family(cg, B, F);
+    fam = cgi_get_family(cg, B, Fam);
     if (fam == 0) return CG_ERROR;
 
     for (index = 0; index < fam->nfamname; index++) {
-        if (0 == strcmp(name, fam->famname[index].name)) {
+        if (0 == strcmp(node_name, fam->famname[index].name)) {
             if (cg->mode == CG_MODE_WRITE) {
-                cgi_error("Duplicate child name found: %s", name);
+                cgi_error("Duplicate child name found: %s", node_name);
                 return CG_ERROR;
             }
             if (cgi_delete_node(fam->id, fam->famname[index].id))
@@ -1736,8 +2040,8 @@ int cg_family_name_write(int file_number, int B, int F,
         fam->nfamname++;
     }
 
-    strcpy(famname->name, name);
-    strcpy(famname->family, family);
+    strcpy(famname->name, node_name);
+    strcpy(famname->family, family_name);
     dim = (cgsize_t)strlen(famname->family);
 
     if (cgi_new_node(fam->id, famname->name, "FamilyName_t", &famname->id,
@@ -1746,9 +2050,18 @@ int cg_family_name_write(int file_number, int B, int F,
     return CG_OK;
 }
 
-/* ** FAMILY TREE ** */
-/* FamilyTree extension */
-int cg_node_family_write( const char* family_name, int* F)
+
+/**
+ * \ingroup CGNSFamilyHierarchyTreeDefinition
+ *
+ * \brief  Create a Family_t node (Family_t level)
+ *
+ * \param[in] family_name  Name of the family
+ * \param[out] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \return \ier
+ *
+ */
+int cg_node_family_write( const char* family_name, int* Fam)
 {
     int ier=0, n, nfamilies;
     cgns_family* family;
@@ -1793,7 +2106,7 @@ int cg_node_family_write( const char* family_name, int* F)
     }
     else {
         cgi_error("Family_t node not supported under '%s' type node",posit->label);
-        (*F) = -1;
+        (*Fam) = -1;
         return CG_INCORRECT_PATH;
     }
 
@@ -1807,7 +2120,7 @@ int cg_node_family_write( const char* family_name, int* F)
             cgi_error( "Could not find Family_t node %s\n" , family_name );
             return CG_ERROR;
         }
-        *F = n + 1;
+        *Fam = n + 1;
     }
     else {
         cgi_error( "No Family_t container \n");
@@ -1817,7 +2130,15 @@ int cg_node_family_write( const char* family_name, int* F)
     return CG_OK;
 }
 
-/* ** FAMILY TREE ** */
+/**
+ * \ingroup CGNSFamilyHierarchyTreeDefinition
+ *
+ * \brief  Get number of families (Family_t level)
+ *
+ * \param[out] nfamilies  Number of families in current node (CGNSBase_t or Family_t).
+ * \return \ier
+ *
+ */
 int cg_node_nfamilies( int* nfamilies )
 {
     /* This is valid and used during write as well as read mode. */
@@ -1844,8 +2165,19 @@ int cg_node_nfamilies( int* nfamilies )
     return CG_OK;
 }
 
-/* ** FAMILY TREE ** */
-int cg_node_family_read( int F, char* family_name, int* nFamBC, int *nGeo )
+/**
+ * \ingroup CGNSFamilyHierarchyTreeDefinition
+ *
+ * \brief  Read family info (Family_t level)
+ *
+ * \param[in] Fam Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \param[out] family_name  Name of the family. 
+ * \param[out] nFamBC  Number of boundary conditions for this family. This should be either 0 or 1.
+ * \param[out] nGeo    Number of geometry references for this family.
+ * \return \ier
+ *
+ */
+int cg_node_family_read( int Fam, char* family_name, int* nFamBC, int *nGeo )
 {
     int ier = 0;
     cgns_family* family;
@@ -1855,7 +2187,7 @@ int cg_node_family_read( int F, char* family_name, int* nFamBC, int *nGeo )
     /* verify input */
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    family = cgi_family_address( CG_MODE_READ, F, "dummy", &ier );
+    family = cgi_family_address( CG_MODE_READ, Fam, "dummy", &ier );
     if( family == 0 ) return ier;
 
     strcpy( family_name, family->name );
@@ -1865,7 +2197,16 @@ int cg_node_family_read( int F, char* family_name, int* nFamBC, int *nGeo )
     return CG_OK;
 }
 
-/* ** FAMILY TREE ** */
+/**
+ * \ingroup CGNSFamilyHierarchyTreeDefinition
+ *
+ * \brief  Write multiple family names under Family_t (Family_t level) 
+ *
+ * \param[in] node_name Name of the FamilyName_t node. FamilyParent is used to refer to the parent family of the Family_t node. 
+ * \param[in] family_name  Name of the family. 
+ * \return \ier
+ *
+ */
 int cg_node_family_name_write( const char* node_name, const char* family_name )
 {
     int index;
@@ -1929,7 +2270,15 @@ int cg_node_family_name_write( const char* node_name, const char* family_name )
     return CG_OK;
 }
 
-/* ** FAMILY TREE ** */
+/**
+ * \ingroup CGNSFamilyHierarchyTreeDefinition
+ *
+ * \brief  Get number of family names under Family_t (Family_t level) 
+ *
+ * \param[out] nnames Number of FamilyName_t nodes for this family.
+ * \return \ier
+ *
+ */
 int cg_node_nfamily_names( int* nnames )
 {
     /* This is valid and used during write as well as read mode. */
@@ -1954,7 +2303,17 @@ int cg_node_nfamily_names( int* nnames )
    return CG_OK;
 }
 
-/* ** FAMILY TREE ** */
+/**
+ * \ingroup CGNSFamilyHierarchyTreeDefinition
+ *
+ * \brief  Read family info (Family_t level)
+ *
+ * \param[in] N Family name index number, where 1 ≤ N ≤ nNames.
+ * \param[out] node_name Name of the FamilyName_t node. FamilyParent is used to refer to the parent family of the Family_t node. 
+ * \param[out] family_name  Name of the family. 
+ * \return \ier
+ *
+ */
 int cg_node_family_name_read(int N, char* node_name, char* family_name )
 {
     cgns_famname *famname;
@@ -1977,17 +2336,31 @@ int cg_node_family_name_read(int N, char* node_name, char* family_name )
 
 /*----------------------------------------------------------------------*/
 
-int cg_fambc_read(int file_number, int B, int F, int BC,
+/**
+ * \ingroup CGNSFamilyBoundaryDefinition
+ *
+ * \brief  Read boundary condition type for a family
+ *
+ * \param[in] fn   \FILE_fn 
+ * \param[in] B    Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \param[in] BC   Family boundary condition index number. This must be equal to 1. 
+ * \param[out] fambc_name  Name of the FamilyBC_t node.
+ * \param[out] bocotype  Boundary condition type for the family. See the eligible types for BCType_t in the Typedefs section.
+ * \return \ier
+ */
+
+int cg_fambc_read(int fn, int B, int Fam, int BC,
               char *fambc_name, CGNS_ENUMT(BCType_t) *bocotype)
 {
     cgns_family *family;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    family = cgi_get_family(cg, B, F);
+    family = cgi_get_family(cg, B, Fam);
     if (family==0) return CG_ERROR;
 
     if (BC<=0 || BC>family->nfambc) {
@@ -2000,7 +2373,21 @@ int cg_fambc_read(int file_number, int B, int F, int BC,
     return CG_OK;
 }
 
-int cg_fambc_write(int file_number, int B, int F, const char * fambc_name,
+/**
+ * \ingroup CGNSFamilyBoundaryDefinition
+ *
+ * \brief  Write boundary condition type for a family
+ *
+ * \param[in] fn   \FILE_fn 
+ * \param[in] B    Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \param[in] fambc_name  Name of the FamilyBC_t node.
+ * \param[in] bocotype  Boundary condition type for the family. See the eligible types for BCType_t in the Typedefs section.
+ * \param[out] BC   Family boundary condition index number. This must be equal to 1. 
+ * \return \ier
+ *
+ */
+int cg_fambc_write(int fn, int B, int Fam, const char * fambc_name,
            CGNS_ENUMT( BCType_t )  bocotype, int *BC)
 {
     int index;
@@ -2015,13 +2402,13 @@ int cg_fambc_write(int file_number, int B, int F, const char * fambc_name,
         return CG_ERROR;
     }
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
 
      /* get memory address for family */
-    family = cgi_get_family(cg, B, F);
+    family = cgi_get_family(cg, B, Fam);
     if (family==0) return CG_ERROR;
 
      /* Overwrite a FamilyBC_t Node: */
@@ -2068,9 +2455,19 @@ int cg_fambc_write(int file_number, int B, int F, const char * fambc_name,
     return CG_OK;
 }
 
-/* FamilyTree extension */ /* ** FAMILY TREE ** */
 
 /*----------------------------------------------------------------------*/
+/**
+ * \ingroup CGNSFamilyBoundaryDefinition
+ *
+ * \brief  Read boundary condition information (Family_t level)
+ *
+ * \param[in] BC  Family boundary condition index number. This must be equal to 1. 
+ * \param[out] fambc_name  Name of the FamilyBC_t node.
+ * \param[out] bocotype  Boundary condition type for the family. See the eligible types for BCType_t in the Typedefs section.
+ * \return \ier
+ *
+ */
 int cg_node_fambc_read( int BC, char* fambc_name,
         CGNS_ENUMT(BCType_t) *bocotype)
 {
@@ -2108,6 +2505,17 @@ int cg_node_fambc_read( int BC, char* fambc_name,
 }
 
 /*----------------------------------------------------------------------*/
+/**
+ * \ingroup CGNSFamilyBoundaryDefinition
+ *
+ * \brief  Write boundary condition information (Family_t level)
+ *
+ * \param[in] fambc_name  Name of the FamilyBC_t node.
+ * \param[in] bocotype  Boundary condition type for the family. See the eligible types for BCType_t in the Typedefs section.
+ * \param[out] BC  Family boundary condition index number. This must be equal to 1. 
+ * \return \ier
+ *
+ */
 int cg_node_fambc_write( const char* fambc_name,
         CGNS_ENUMT(BCType_t) bocotype, int *BC )
 {
@@ -2192,18 +2600,33 @@ int cg_node_fambc_write( const char* fambc_name,
 
 
 /*----------------------------------------------------------------------*/
-
-int cg_geo_read(int file_number, int B, int F, int G, char *geo_name,
+/**
+ * \ingroup CGNSGeometryReference
+ *
+ * \brief  Read geometry reference information
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B    Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \param[in] G    Geometry reference index number, where 1 ≤ G ≤ nGeo. 
+ * \param[out] geo_name  Name of GeometryReference_t node.
+ * \param[out] geo_file  Name of geometry file
+ * \param[out] CAD_name  Geometry format
+ * \param[out] npart Number of geometry entities
+ * \return \ier
+ *
+ */
+int cg_geo_read(int fn, int B, int Fam, int G, char *geo_name,
             char **geo_file, char *CAD_name, int *npart)
 {
     cgns_family *family;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    family = cgi_get_family(cg, B, F);
+    family = cgi_get_family(cg, B, Fam);
     if (family==0) return CG_ERROR;
 
     if (G<=0 || G>family->ngeos) {
@@ -2223,8 +2646,23 @@ int cg_geo_read(int file_number, int B, int F, int G, char *geo_name,
     return CG_OK;
 }
 
-int cg_geo_write(int file_number, int B, int F, const char * geo_name,
-                 const char * filename, const char * CADname, int *G)
+/**
+ * \ingroup CGNSGeometryReference
+ *
+ * \brief  Create a GeometryReference_t node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B    Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \param[in] geo_name  Name of GeometryReference_t node.
+ * \param[in] geo_file  Name of geometry file
+ * \param[in] CAD_name  Geometry format
+ * \param[out] G   Geometry reference index number, where 1 ≤ G ≤ nGeo. 
+ * \return \ier
+ *
+ */
+int cg_geo_write(int fn, int B, int Fam, const char * geo_name,
+                 const char *geo_file, const char * CAD_name, int *G)
 {
     int index;
     cgsize_t length;
@@ -2234,15 +2672,15 @@ int cg_geo_write(int file_number, int B, int F, const char * geo_name,
 
      /* verify input */
     if (cgi_check_strlen(geo_name)) return CG_ERROR;
-    if (cgi_check_strlen(CADname)) return CG_ERROR;
+    if (cgi_check_strlen(CAD_name)) return CG_ERROR;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
 
      /* get memory address for family */
-    family = cgi_get_family(cg, B, F);
+    family = cgi_get_family(cg, B, Fam);
     if (family==0) return CG_ERROR;
 
      /* Overwrite a GeometryReference_t Node: */
@@ -2281,9 +2719,9 @@ int cg_geo_write(int file_number, int B, int F, const char * geo_name,
 
     memset(geo, 0, sizeof(cgns_geo));
     strcpy(geo->name, geo_name);
-    strcpy(geo->format, CADname);
+    strcpy(geo->format, CAD_name);
 
-    length = (int)strlen(filename);
+    length = (int)strlen(geo_file);
     if (length<=0) {
         cgi_error("filename undefined for GeometryReference node!");
         return CG_ERROR;
@@ -2293,7 +2731,7 @@ int cg_geo_write(int file_number, int B, int F, const char * geo_name,
         cgi_error("Error allocation geo->file");
         return CG_ERROR;
     }
-    strcpy(geo->file, filename);
+    strcpy(geo->file, geo_file);
 
      /* save data in file */
     if (cgi_new_node(family->id, geo->name, "GeometryReference_t", &geo->id,
@@ -2310,6 +2748,19 @@ int cg_geo_write(int file_number, int B, int F, const char * geo_name,
 /* FamilyTree extension */ /* ** FAMILY TREE ** */
 
 /*----------------------------------------------------------------------*/
+/**
+ * \ingroup CGNSGeometryReference
+ *
+ * \brief  Read geometry reference information (Family_t level)
+ *
+ * \param[in] G    Geometry reference index number, where 1 ≤ G ≤ nGeo. 
+ * \param[out] geo_name  Name of GeometryReference_t node.
+ * \param[out] geo_file  Name of geometry file
+ * \param[out] CAD_name  Geometry format
+ * \param[out] npart Number of geometry entities
+ * \return \ier
+ *
+ */
 int cg_node_geo_read( int G, char *geo_name,
         char **geo_file, char *CAD_name, int *npart )
 {
@@ -2354,8 +2805,21 @@ int cg_node_geo_read( int G, char *geo_name,
 }
 
 /*----------------------------------------------------------------------*/
+/**
+ * \ingroup CGNSGeometryReference
+ *
+ * \brief  Create GeometryReference_t node (Family_t level)
+ *
+ * \param[in] geo_name  Name of GeometryReference_t node.
+ * \param[in] geo_file  Name of geometry file
+ * \param[in] CAD_name  Geometry format
+ * \param[out] G  Geometry reference index number, where 1 ≤ G ≤ nGeo. 
+ *
+ * \return \ier
+ *
+ */
 int cg_node_geo_write( const char *geo_name,
-        const char *filename, const char *CADname, int *G)
+        const char *geo_file, const char *CAD_name, int *G)
 {
     int index;
     cgsize_t length;
@@ -2365,7 +2829,7 @@ int cg_node_geo_write( const char *geo_name,
 
      /* verify input */
     if (cgi_check_strlen(geo_name)) return CG_ERROR;
-    if (cgi_check_strlen(CADname)) return CG_ERROR;
+    if (cgi_check_strlen(CAD_name)) return CG_ERROR;
 
     CHECK_FILE_OPEN
 
@@ -2423,9 +2887,9 @@ int cg_node_geo_write( const char *geo_name,
 
     memset(geo, 0, sizeof(cgns_geo));
     strcpy(geo->name, geo_name);
-    strcpy(geo->format, CADname);
+    strcpy(geo->format, CAD_name);
 
-    length = (int)strlen(filename);
+    length = (int)strlen(geo_file);
     if (length<=0) {
         cgi_error("filename undefined for GeometryReference node!");
         return CG_ERROR;
@@ -2435,7 +2899,7 @@ int cg_node_geo_write( const char *geo_name,
         cgi_error("Error allocation geo->file");
         return CG_ERROR;
     }
-    strcpy(geo->file, filename);
+    strcpy(geo->file, geo_file);
 
      /* save data in file */
     if (cgi_new_node(family->id, geo->name, "GeometryReference_t", &geo->id,
@@ -2453,17 +2917,30 @@ int cg_node_geo_write( const char *geo_name,
 
 
 /*----------------------------------------------------------------------*/
-
-int cg_part_read(int file_number, int B, int F, int G, int P, char *part_name)
+/**
+ * \ingroup CGNSGeometryReference
+ *
+ * \brief  Get geometry entity name
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B    Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \param[in] G   Geometry reference index number, where 1 ≤ G ≤ nGeo.
+ * \param[in] P   Geometry entity index number, where 1 ≤ P ≤ nparts
+ * \param[out] part_name  Name of a geometry entity in the file FileName. 
+ * \return \ier
+ *
+ */
+int cg_part_read(int fn, int B, int Fam, int G, int P, char *part_name)
 {
     cgns_family *family;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
 
-    family = cgi_get_family(cg, B, F);
+    family = cgi_get_family(cg, B, Fam);
     if (family==0) return CG_ERROR;
 
     if (P<=0 || P>family->geo[G-1].npart) {
@@ -2474,7 +2951,21 @@ int cg_part_read(int file_number, int B, int F, int G, int P, char *part_name)
     return CG_OK;
 }
 
-int cg_part_write(int file_number, int B, int F, int G, const char * part_name,
+/**
+ * \ingroup CGNSGeometryReference
+ *
+ * \brief  Write geometry entity name
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B    Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
+ * \param[in] G   Geometry reference index number, where 1 ≤ G ≤ nGeo.
+ * \param[in] part_name  Name of a geometry entity in the file FileName.
+ * \param[out] P   Geometry entity index number, where 1 ≤ P ≤ nparts
+ * \return \ier
+ *
+ */
+int cg_part_write(int fn, int B, int Fam, int G, const char * part_name,
                   int *P)
 {
     int index;
@@ -2485,13 +2976,13 @@ int cg_part_write(int file_number, int B, int F, int G, const char * part_name,
      /* verify input */
     if (cgi_check_strlen(part_name)) return CG_ERROR;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
 
      /* get memory address for geo */
-    family = cgi_get_family(cg, B, F);
+    family = cgi_get_family(cg, B, Fam);
     if (family==0) return CG_ERROR;
     if (G > family->ngeos || G <=0) {
         cgi_error("Invalid index for GeometryEntity_t node");
@@ -2544,6 +3035,17 @@ int cg_part_write(int file_number, int B, int F, int G, const char * part_name,
 /* FamilyTree extension */ /* ** FAMILY TREE ** */
 
 /*----------------------------------------------------------------------*/
+/**
+ * \ingroup CGNSGeometryReference
+ *
+ * \brief  Get geometry entity name (Family_t level)
+ *
+ * \param[in] G   Geometry reference index number, where 1 ≤ G ≤ nGeo.
+ * \param[in] P   Geometry entity index number, where 1 ≤ P ≤ nparts
+ * \param[out] part_name  Name of a geometry entity in the file FileName. 
+ * \return \ier
+ *
+ */
 int cg_node_part_read(int G, int P, char *part_name)
 {
     cgns_family*  family  = 0;
@@ -2578,6 +3080,17 @@ int cg_node_part_read(int G, int P, char *part_name)
 }
 
 /*----------------------------------------------------------------------*/
+/**
+ * \ingroup CGNSGeometryReference
+ *
+ * \brief  Write geometry entity name (Family_t level)
+ *
+ * \param[in] G   Geometry reference index number, where 1 ≤ G ≤ nGeo.
+ * \param[in] part_name  Name of a geometry entity in the file FileName.
+ * \param[out] P   Geometry entity index number, where 1 ≤ P ≤ nparts
+ * \return \ier
+ *
+ */
 int cg_node_part_write(int G, const char * part_name, int *P)
 {
     int index;
