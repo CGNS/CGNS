@@ -36,6 +36,7 @@ freely, subject to the following restrictions:
  * \defgroup CGNSGeometryReference Geometry Reference
  * \defgroup ZoneGridCoordinates Zone Grid Coordinates
  * \defgroup DiscreteData Discrete Data
+ * \defgroup ElementConnectivity Element Connectivity
  */
 
 #include <stdio.h>
@@ -3324,12 +3325,12 @@ int cg_discrete_write(int fn, int B, int Z,  const char * discrete_name,
  * \return \ier
  *
  */
-int cg_discrete_size(int file_number, int B, int Z, int D,
+int cg_discrete_size(int fn, int B, int Z, int D,
                      int *data_dim, cgsize_t *dim_vals)
 {
     cgns_discrete *discrete;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -3433,10 +3434,10 @@ int cg_discrete_ptset_read(int fn, int B, int Z, int D, cgsize_t *pnts)
  * \param[in] fn   \FILE_fn
  * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
  * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
- * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
  * \param[in] discrete_name  Name of `DiscreteData_t` data structures.
  * \param[in] location  Grid location where the discrete data is recorded. The current admissible locations are Vertex, CellCenter, IFaceCenter, JFaceCenter, and KFaceCenter.
  * \param[in] ptset_type  Type of point set defining the interface for the discrete data; either PointRange or PointList.
+ * \param[in] npnts 	Number of points defining the interface for the discrete data. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the list.
  * \param[in] pnts  Array of points defining the interface for the discrete data.
  * \param[out] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
  * \return \ier
@@ -3881,6 +3882,7 @@ int cg_coord_info(int fn, int B, int Z, int C, CGNS_ENUMT(DataType_t)  *datatype
  * \param[in] fn   \FILE_fn
  * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
  * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
  * \param[in] mem_datatype  Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
  * \param[in] s_rmin  Lower range index in file (eg., imin, jmin, kmin).
  * \param[in] s_rmax  Upper range index in file (eg., imax, jmax, kmax).
@@ -4395,11 +4397,23 @@ static int read_parent_data(cgns_section *section)
 
 /*----------------------------------------------------------------------*/
 
-int cg_nsections(int file_number, int B, int Z, int *nsections)
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Get number of element sections
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] nsections Number of element sections.
+ * \return \ier
+ *
+ */
+int cg_nsections(int fn, int B, int Z, int *nsections)
 {
     cgns_zone *zone;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
      /* verify input */
@@ -4412,13 +4426,31 @@ int cg_nsections(int file_number, int B, int Z, int *nsections)
     return CG_OK;
 }
 
-int cg_section_read(int file_number, int B, int Z, int S, char *SectionName,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Get info for an element section
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
+ * \param[out] SectionName Name of the Elements_t node.
+ * \param[out] start  	Index of first element in the section.
+ * \param[out] end  Index of last element in the section. 
+ * \param[out] nbndry 	Index of last boundary element in the section. Set to zero if the elements are unsorted. 
+ * \param[out] parent_flag  Flag indicating if the parent data are defined. If the parent data exist, parent_flag is set to 1; otherwise it is set to 0.
+ * \return \ier
+ *
+ */
+int cg_section_read(int fn, int B, int Z, int S, char *SectionName,
                     CGNS_ENUMT(ElementType_t) *type, cgsize_t *start,
                     cgsize_t *end, int *nbndry, int *parent_flag)
 {
     cgns_section *section;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
      /* verify input */
@@ -4438,7 +4470,25 @@ int cg_section_read(int file_number, int B, int Z, int S, char *SectionName,
     return CG_OK;
 }
 
-int cg_section_write(int file_number, int B, int Z, const char * SectionName,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Write fixed size element data
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
+ * \param[in] SectionName Name of the Elements_t node.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section. 
+ * \param[in] nbndry 	Index of last boundary element in the section. Set to zero if the elements are unsorted. 
+ * \param[in] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions. 
+ * \param[out] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \return \ier
+ *
+ */
+int cg_section_write(int fn, int B, int Z, const char * SectionName,
                      CGNS_ENUMT(ElementType_t)type, cgsize_t start, cgsize_t end,
                      int nbndry, const cgsize_t * elements,
                      int *S)
@@ -4451,7 +4501,7 @@ int cg_section_write(int file_number, int B, int Z, const char * SectionName,
         return CG_ERROR;
     }
 
-    if (cg_section_general_write(file_number, B, Z, SectionName, type,
+    if (cg_section_general_write(fn, B, Z, SectionName, type,
                              cgi_datatype(CG_SIZE_DATATYPE), start,
                              end, 0, nbndry, S)){
         return CG_ERROR;
@@ -4470,7 +4520,26 @@ int cg_section_write(int file_number, int B, int Z, const char * SectionName,
     return CG_OK;
 }
 
-int cg_poly_section_write(int file_number, int B, int Z, const char * SectionName,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Write element data
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
+ * \param[in] SectionName Name of the Elements_t node.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section. 
+ * \param[in] nbndry 	Index of last boundary element in the section. Set to zero if the elements are unsorted. 
+ * \param[in] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
+ * \param[in] connect_offset 	Element connectivity offset data. This is required for NGON_n, NFACE_n and MIXED according to Elements_t Structure Definition. 
+ * \param[out] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \return \ier
+ *
+ */
+int cg_poly_section_write(int fn, int B, int Z, const char * SectionName,
                      CGNS_ENUMT(ElementType_t)type, cgsize_t start, cgsize_t end,
                      int nbndry, const cgsize_t * elements, const cgsize_t * connect_offset,
                      int *S)
@@ -4480,7 +4549,7 @@ int cg_poly_section_write(int file_number, int B, int Z, const char * SectionNam
     cgsize_t num, ElementDataSize=0;
 
      /* get file and check mode */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     num = end - start + 1;
@@ -4526,6 +4595,10 @@ int cg_poly_section_write(int file_number, int B, int Z, const char * SectionNam
 
     return CG_OK;
 }
+
+
+
+
 
 int cg_section_partial_write(int file_number, int B, int Z, const char * SectionName,
                  CGNS_ENUMT(ElementType_t) type, cgsize_t start,
