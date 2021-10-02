@@ -34,6 +34,8 @@ freely, subject to the following restrictions:
  * \defgroup CGNSFamilyHierarchyTreeDefinition Family Hierrarchy Tree
  * \defgroup CGNSFamilyBoundaryDefinition Family Boundary Condition
  * \defgroup CGNSGeometryReference Geometry Reference
+ * \defgroup ZoneGridCoordinates Zone Grid Coordinates
+ * \defgroup DiscreteData Discrete Data
  */
 
 #include <stdio.h>
@@ -3173,11 +3175,23 @@ int cg_node_part_write(int G, const char * part_name, int *P)
  *    Read and Write DiscreteData_t Nodes
 \*****************************************************************************/
 
-int cg_ndiscrete(int file_number, int B, int Z, int *ndiscrete)
+/**
+ * \ingroup DiscreteData
+ *
+ * \brief Get number of `DiscreteData_t` nodes
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] ndiscrete Number of `DiscreteData_t` data structures under zone Z.
+ * \return \ier
+ *
+ */
+int cg_ndiscrete(int fn, int B, int Z, int *ndiscrete)
 {
     cgns_zone *zone;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -3189,11 +3203,24 @@ int cg_ndiscrete(int file_number, int B, int Z, int *ndiscrete)
     return CG_OK;
 }
 
-int cg_discrete_read(int file_number, int B, int Z, int D, char *discrete_name)
+/**
+ * \ingroup DiscreteData
+ *
+ * \brief Get name of `DiscreteData_t` node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
+ * \param[out] discrete_name Name of `DiscreteData_t` data structures.
+ * \return \ier
+ *
+ */
+int cg_discrete_read(int fn, int B, int Z, int D, char *discrete_name)
 {
     cgns_discrete *discrete;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -3206,7 +3233,20 @@ int cg_discrete_read(int file_number, int B, int Z, int D, char *discrete_name)
     return CG_OK;
 }
 
-int cg_discrete_write(int file_number, int B, int Z,  const char * discrete_name,
+/**
+ * \ingroup DiscreteData
+ *
+ * \brief Create a `DiscreteData_t` node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] discrete_name Name of `DiscreteData_t` data structures.
+ * \param[out] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
+ * \return \ier
+ *
+ */
+int cg_discrete_write(int fn, int B, int Z,  const char * discrete_name,
                       int *D)
 {
     cgns_zone *zone;
@@ -3216,7 +3256,7 @@ int cg_discrete_write(int file_number, int B, int Z,  const char * discrete_name
      /* verify input */
     if (cgi_check_strlen(discrete_name)) return CG_ERROR;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -3268,6 +3308,22 @@ int cg_discrete_write(int file_number, int B, int Z,  const char * discrete_name
     return CG_OK;
 }
 
+
+
+/**
+ * \ingroup DiscreteData
+ *
+ * \brief Get the dimensions of `DiscreteData_t` node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
+ * \param[out] data_dim  Number of dimensions defining the discrete data. If a point set has been defined, this will be 1, otherwise this will be the current zone index dimension.
+ * \param[out] dim_vals  The array of data_dim dimensions for the discrete data.
+ * \return \ier
+ *
+ */
 int cg_discrete_size(int file_number, int B, int Z, int D,
                      int *data_dim, cgsize_t *dim_vals)
 {
@@ -3296,6 +3352,20 @@ int cg_discrete_size(int file_number, int B, int Z, int D,
 
 /*----------------------------------------------------------------------*/
 
+/**
+ * \ingroup DiscreteData
+ *
+ * \brief Get info about a point set `DiscreteData_t` node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
+ * \param[out] ptset_type Type of point set defining the interface for the discrete data; either PointRange or PointList.
+ * \param[out] npnts  Number of points defining the interface for the discrete data. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the list.
+ * \return \ier
+ *
+ */
 int cg_discrete_ptset_info(int fn, int B, int Z, int D,
     CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts)
 {
@@ -3319,6 +3389,19 @@ int cg_discrete_ptset_info(int fn, int B, int Z, int D,
     return CG_OK;
 }
 
+/**
+ * \ingroup DiscreteData
+ *
+ * \brief Read a point set `DiscreteData_t` node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
+ * \param[out] pnts  Array of points defining the interface for the discrete data. 
+ * \return \ier
+ *
+ */
 int cg_discrete_ptset_read(int fn, int B, int Z, int D, cgsize_t *pnts)
 {
     int dim = 0;
@@ -3342,6 +3425,23 @@ int cg_discrete_ptset_read(int fn, int B, int Z, int D, cgsize_t *pnts)
     return CG_OK;
 }
 
+/**
+ * \ingroup DiscreteData
+ *
+ * \brief Create a point set `DiscreteData_t` node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
+ * \param[in] discrete_name  Name of `DiscreteData_t` data structures.
+ * \param[in] location  Grid location where the discrete data is recorded. The current admissible locations are Vertex, CellCenter, IFaceCenter, JFaceCenter, and KFaceCenter.
+ * \param[in] ptset_type  Type of point set defining the interface for the discrete data; either PointRange or PointList.
+ * \param[in] pnts  Array of points defining the interface for the discrete data.
+ * \param[out] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
+ * \return \ier
+ *
+ */
 int cg_discrete_ptset_write(int fn, int B, int Z,
     const char *discrete_name, CGNS_ENUMT(GridLocation_t) location,
     CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
@@ -3403,11 +3503,23 @@ int cg_discrete_ptset_write(int fn, int B, int Z,
  *    Read and Write GridCoordinates_t Nodes
 \*****************************************************************************/
 
-int cg_ngrids(int file_number, int B, int Z, int *ngrids)
+/**
+ * \ingroup ZoneGridCoordinates
+ *
+ * \brief Get number of `GridCoordinates_t` nodes
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] ngrids 	Number of `GridCoordinates_t` nodes for zone Z.
+ * \return \ier
+ *
+ */
+int cg_ngrids(int fn, int B, int Z, int *ngrids)
 {
     cgns_zone *zone;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -3420,11 +3532,24 @@ int cg_ngrids(int file_number, int B, int Z, int *ngrids)
     return CG_OK;
 }
 
-int cg_grid_read(int file_number, int B, int Z, int G, char *gridname)
+/**
+ * \ingroup ZoneGridCoordinates
+ *
+ * \brief Get Name of a `GridCoordinates_t` node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] G  Grid index number, where 1 ≤ G ≤ ngrids.
+ * \param[out] grid_coord_name Name of the GridCoordinates_t node. Note that the name "GridCoordinates" is reserved for the original grid and must be the first GridCoordinates_t node to be defined.
+ * \return \ier
+ *
+ */
+int cg_grid_read(int fn, int B, int Z, int G, char *grid_coord_name)
 {
     cgns_zcoor *zcoor;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -3434,21 +3559,34 @@ int cg_grid_read(int file_number, int B, int Z, int G, char *gridname)
     if (zcoor==0) return CG_ERROR;
 
      /* Return ADF name for the GridCoordinates_t node */
-    strcpy(gridname,zcoor->name);
+    strcpy(grid_coord_name,zcoor->name);
     return CG_OK;
 }
 
-int cg_grid_write(int file_number, int B, int Z, const char * zcoorname, int *G)
+/**
+ * \ingroup ZoneGridCoordinates
+ *
+ * \brief Create a `GridCoordinates_t` nodes
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] grid_coord_name Name of the GridCoordinates_t node. Note that the name "GridCoordinates" is reserved for the original grid and must be the first GridCoordinates_t node to be defined.
+ * \param[out] G  Grid index number, where 1 ≤ G ≤ ngrids.
+ * \return \ier
+ *
+ */
+int cg_grid_write(int fn, int B, int Z, const char * grid_coord_name, int *G)
 {
     cgns_zone *zone;
     cgns_zcoor *zcoor = NULL;
     int index, n, index_dim;
 
      /* verify input */
-    if (cgi_check_strlen(zcoorname)) return CG_ERROR;
+    if (cgi_check_strlen(grid_coord_name)) return CG_ERROR;
 
      /* get memory address */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -3458,7 +3596,7 @@ int cg_grid_write(int file_number, int B, int Z, const char * zcoorname, int *G)
 
      /* Overwrite a GridCoordinates_t Node: */
     for (index=0; index<zone->nzcoor; index++) {
-        if (strcmp(zcoorname, zone->zcoor[index].name)==0) {
+        if (strcmp(grid_coord_name, zone->zcoor[index].name)==0) {
 
              /* in CG_MODE_WRITE, children names must be unique */
             if (cg->mode==CG_MODE_WRITE) {
@@ -3491,7 +3629,7 @@ int cg_grid_write(int file_number, int B, int Z, const char * zcoorname, int *G)
 
      /* save data in memory */
     memset(zcoor, 0, sizeof(cgns_zcoor));
-    strcpy(zcoor->name,zcoorname);
+    strcpy(zcoor->name,grid_coord_name);
 
     index_dim = zone->index_dim;
     zcoor->rind_planes = (int *)malloc(index_dim*2*sizeof(int));
@@ -3513,7 +3651,23 @@ int cg_grid_write(int file_number, int B, int Z, const char * zcoorname, int *G)
  *    Read and Write GridCoordinates_t bounding box
 \*****************************************************************************/
 
-int cg_grid_bounding_box_read(int file_number, int B, int Z, int G, CGNS_ENUMT(DataType_t) type, void* boundingbox)
+/**
+ * \ingroup ZoneGridCoordinates
+ *
+ * \brief Get bounding box associated with a `GridCoordinates_t` node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] G  Grid index number, where 1 ≤ G ≤ ngrids.
+ * \param[in] datatype 	Data type of the bounding box array written to the file or read. Admissible data types for a coordinate bounding box are RealSingle and RealDouble. 
+ * \param[out] boundingbox Data Array with bounding box values.
+ * \return \ier
+ *
+ * \details When reading a bounding box, if the information is missing from the file, the boundingbox array will remain untouched, and a warning is emitted. The CGNS MLL relies on the user to compute the bounding box and ensure that the bounding box being stored is coherent with the coordinates under GridCoordinates_t node.
+ *
+ */
+int cg_grid_bounding_box_read(int fn, int B, int Z, int G, CGNS_ENUMT(DataType_t) datatype, void* boundingbox)
 {
     cgns_zcoor *zcoor;
     cgns_base *base;
@@ -3524,7 +3678,7 @@ int cg_grid_bounding_box_read(int file_number, int B, int Z, int G, CGNS_ENUMT(D
     cgsize_t dim_vals[12];
     cgsize_t num;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -3572,19 +3726,35 @@ int cg_grid_bounding_box_read(int file_number, int B, int Z, int G, CGNS_ENUMT(D
     }
 
     /* transfer small bounding box data to user with correct data type */
-    cgi_convert_data(num, cgi_datatype(data_type), vdata, type, boundingbox);
+    cgi_convert_data(num, cgi_datatype(data_type), vdata, datatype, boundingbox);
     CGNS_FREE(vdata);
 
     return CG_OK;
 }
 
-int cg_grid_bounding_box_write(int file_number, int B, int Z, int G, CGNS_ENUMT(DataType_t) type, void* boundingbox)
+/**
+ * \ingroup ZoneGridCoordinates
+ *
+ * \brief Write bounding box associated with a `GridCoordinates_t` node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] G  Grid index number, where 1 ≤ G ≤ ngrids.
+ * \param[in] datatype 	Data type of the bounding box array written to the file or read. Admissible data types for a coordinate bounding box are RealSingle and RealDouble. 
+ * \param[in] boundingbox Data Array with bounding box values.
+ * \return \ier
+ *
+ * \details  The CGNS MLL relies on the user to compute the bounding box and ensure that the bounding box being stored is coherent with the coordinates under GridCoordinates_t node.
+ 
+ */
+int cg_grid_bounding_box_write(int fn, int B, int Z, int G, CGNS_ENUMT(DataType_t) datatype, void* boundingbox)
 {
     cgns_base *base;
     cgns_zcoor *zcoor;
     cgsize_t dim_vals[2];
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -3621,7 +3791,7 @@ int cg_grid_bounding_box_write(int file_number, int B, int Z, int G, CGNS_ENUMT(
     }
 
     /* Write Bounding box into existing GridCoordinates_t node */
-    if (cgio_set_dimensions(cg->cgio, zcoor->id, cgi_adf_datatype(type), 2, dim_vals)) {
+    if (cgio_set_dimensions(cg->cgio, zcoor->id, cgi_adf_datatype(datatype), 2, dim_vals)) {
        cg_io_error("cgio_set_dimensions");
        return CG_ERROR;
     }
@@ -3637,11 +3807,23 @@ int cg_grid_bounding_box_write(int file_number, int B, int Z, int G, CGNS_ENUMT(
  *    Read and Write GridCoordinates_t/DataArray_t Nodes
 \*****************************************************************************/
 
-int cg_ncoords(int file_number, int B, int Z, int *ncoords)
+/**
+ * \ingroup ZoneGridCoordinates
+ *
+ * \brief  Get number of coordinate arrays
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] ncoords  Grid index number, where 1 ≤ G ≤ ngrids.
+ * \return \ier
+ *
+ */
+int cg_ncoords(int fn, int B, int Z, int *ncoords)
 {
     cgns_zcoor *zcoor;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -3653,12 +3835,26 @@ int cg_ncoords(int file_number, int B, int Z, int *ncoords)
     return CG_OK;
 }
 
-int cg_coord_info(int file_number, int B, int Z, int C, CGNS_ENUMT(DataType_t)  *type,
+/**
+ * \ingroup ZoneGridCoordinates
+ *
+ * \brief  Get info about a coordinate array
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] C  Coordinate array index number, where 1 ≤ C ≤ ncoords. 
+ * \param[out] datatype   Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble. 
+ * \param[out] coordname   Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
+ * \return \ier
+ *
+ */
+int cg_coord_info(int fn, int B, int Z, int C, CGNS_ENUMT(DataType_t)  *datatype,
               char *coordname)
 {
     cgns_zcoor *zcoor;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -3671,21 +3867,36 @@ int cg_coord_info(int file_number, int B, int Z, int C, CGNS_ENUMT(DataType_t)  
         cgi_error("coord number %d invalid",C);
         return CG_ERROR;
     }
-    *type = cgi_datatype(zcoor->coord[C-1].data_type);
+    *datatype = cgi_datatype(zcoor->coord[C-1].data_type);
     strcpy(coordname, zcoor->coord[C-1].name);
 
     return CG_OK;
 }
 
-int cg_coord_read(int file_number, int B, int Z, const char *coordname,
-                  CGNS_ENUMT(DataType_t) type, const cgsize_t *s_rmin,
-                  const cgsize_t *s_rmax, void *coord_ptr)
+/**
+ * \ingroup ZoneGridCoordinates
+ *
+ * \brief  Read grid coordinate array
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] mem_datatype  Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
+ * \param[in] s_rmin  Lower range index in file (eg., imin, jmin, kmin).
+ * \param[in] s_rmax  Upper range index in file (eg., imax, jmax, kmax).
+ * \param[out] coord_array   Array of coordinate values.
+ * \return \ier
+ *
+ */
+int cg_coord_read(int fn, int B, int Z, const char *coordname,
+                  CGNS_ENUMT(DataType_t) mem_datatype, const cgsize_t *s_rmin,
+                  const cgsize_t *s_rmax, void *coord_array)
 {
     cgns_zone *zone;
     int n, m_numdim;
 
      /* get memory addresses */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -3708,11 +3919,31 @@ int cg_coord_read(int file_number, int B, int Z, const char *coordname,
     }
 
     return cg_coord_general_read(file_number, B, Z, coordname,
-                                 s_rmin, s_rmax, type,
+                                 s_rmin, s_rmax, mem_datatype,
                                  m_numdim, m_dimvals, m_rmin, m_rmax,
-                                 coord_ptr);
+                                 coord_array);
 }
 
+/**
+ * \ingroup ZoneGridCoordinates
+ *
+ * \brief  Read subset of grid coordinates to a shaped array
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
+ * \param[in] m_type   Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
+ * \param[in] s_rmin   Lower range index in file (eg., imin, jmin, kmin).
+ * \param[in] s_rmax   Upper range index in file (eg., imax, jmax, kmax).
+ * \param[in] m_numdim   Number of dimensions of array in memory. 
+ * \param[in] m_dimvals   Dimensions of array in memory.
+ * \param[in] m_rmin   Lower range index in memory (eg., imin, jmin, kmin). 
+ * \param[in] m_rmax   Upper range index in memory (eg., imax, jmax, kmax).
+ * \param[out] coord_ptr   Array of coordinate values.
+ * \return \ier
+ *
+ */
 int cg_coord_general_read(int fn, int B, int Z, const char *coordname,
                           const cgsize_t *s_rmin, const cgsize_t *s_rmax,
                           CGNS_ENUMT(DataType_t) m_type,
@@ -3784,7 +4015,22 @@ int cg_coord_id(int file_number, int B, int Z, int C, double *coord_id)
     return CG_OK;
 }
 
-int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
+/**
+ * \ingroup ZoneGridCoordinates
+ *
+ * \brief  Write grid coordinates
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] datatype Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble. 
+ * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
+ * \param[in] coord_ptr   Array of coordinate values.
+ * \param[out] C    Coordinate array index number, where 1 ≤ C ≤ ncoords. 
+ * \return \ier
+ *
+ */
+int cg_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) datatype,
                    const char *coordname, const void *coord_ptr, int *C)
 {
     cgns_zone *zone;
@@ -3796,12 +4042,12 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
 
      /* verify input */
     if (cgi_check_strlen(coordname)) return CG_ERROR;
-    if (type!=CGNS_ENUMV( RealSingle ) && type!=CGNS_ENUMV( RealDouble )) {
-        cgi_error("Invalid datatype for coord. array:  %d", type);
+    if (datatype!=CGNS_ENUMV( RealSingle ) && datatype!=CGNS_ENUMV( RealDouble )) {
+        cgi_error("Invalid datatype for coord. array:  %d", datatype);
         return CG_ERROR;
     }
      /* get memory addresses */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -3833,16 +4079,33 @@ int cg_coord_write(int file_number, int B, int Z, CGNS_ENUMT(DataType_t) type,
     }
 
     status = cg_coord_general_write(file_number, B, Z, coordname,
-                                  type, s_rmin, s_rmax,
-                                  type, m_numdim, m_dimvals, m_rmin, m_rmax,
+                                  datatype, s_rmin, s_rmax,
+                                  datatype, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   coord_ptr, C);
 
     HDF5storage_type = CG_COMPACT;
     return status;
 }
 
-int cg_coord_partial_write(int file_number, int B, int Z,
-                           CGNS_ENUMT(DataType_t) type,
+/**
+ * \ingroup ZoneGridCoordinates
+ *
+ * \brief  Write subset of grid coordinates
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] datatype Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble. 
+ * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
+ * \param[in] s_rmin   Lower range index in file (eg., imin, jmin, kmin).
+ * \param[in] s_rmax   Upper range index in file (eg., imax, jmax, kmax).
+ * \param[in] coord_ptr   Array of coordinate values.
+ * \param[out] C    Coordinate array index number, where 1 ≤ C ≤ ncoords. 
+ * \return \ier
+ *
+ */
+int cg_coord_partial_write(int fn, int B, int Z,
+                           CGNS_ENUMT(DataType_t) datatype,
                            const char *coordname, const cgsize_t *s_rmin,
                            const cgsize_t *s_rmax, const void *coord_ptr,
                            int *C)
@@ -3852,7 +4115,7 @@ int cg_coord_partial_write(int file_number, int B, int Z,
     int status;
 
      /* get memory addresses */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -3874,12 +4137,34 @@ int cg_coord_partial_write(int file_number, int B, int Z,
     }
 
     status = cg_coord_general_write(file_number, B, Z, coordname,
-                                  type, s_rmin, s_rmax,
-                                  type, m_numdim, m_dimvals, m_rmin, m_rmax,
+                                  datatype, s_rmin, s_rmax,
+                                  datatype, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   coord_ptr, C);
     return status;
 }
 
+/**
+ * \ingroup ZoneGridCoordinates
+ *
+ * \brief  Write shaped array to a subset of grid coordinates
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
+ * \param[in] s_type   Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble.
+ * \param[in] m_type   Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
+ * \param[in] s_rmin   Lower range index in file (eg., imin, jmin, kmin).
+ * \param[in] s_rmax   Upper range index in file (eg., imax, jmax, kmax).
+ * \param[in] m_numdim   Number of dimensions of array in memory. 
+ * \param[in] m_dimvals   Dimensions of array in memory.
+ * \param[in] m_rmin   Lower range index in memory (eg., imin, jmin, kmin). 
+ * \param[in] m_rmax   Upper range index in memory (eg., imax, jmax, kmax).
+ * \param[in] coord_ptr   Array of coordinate values.
+ * \param[out] C    Coordinate array index number, where 1 ≤ C ≤ ncoords. 
+ * \return \ier
+ *
+ */
 int cg_coord_general_write(int fn, int B, int Z, const char *coordname,
                            CGNS_ENUMT(DataType_t) s_type,
                            const cgsize_t *s_rmin, const cgsize_t *s_rmax,
