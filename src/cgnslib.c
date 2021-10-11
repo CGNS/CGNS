@@ -37,6 +37,8 @@ freely, subject to the following restrictions:
  * \defgroup ZoneGridCoordinates Zone Grid Coordinates
  * \defgroup DiscreteData Discrete Data
  * \defgroup ElementConnectivity Element Connectivity
+ * \defgroup FlowSolution Flow Solution
+ * \defgroup FlowSolutionData Flow Solution Data
  */
 
 #include <stdio.h>
@@ -4487,6 +4489,8 @@ int cg_section_read(int fn, int B, int Z, int S, char *SectionName,
  * \param[out] S  Element section index, where 1 ≤ S ≤ nsections. 
  * \return \ier
  *
+ * \details This writing function only works with fixed size elements.
+ *
  */
 int cg_section_write(int fn, int B, int Z, const char * SectionName,
                      CGNS_ENUMT(ElementType_t)type, cgsize_t start, cgsize_t end,
@@ -4596,11 +4600,24 @@ int cg_poly_section_write(int fn, int B, int Z, const char * SectionName,
     return CG_OK;
 }
 
-
-
-
-
-int cg_section_partial_write(int file_number, int B, int Z, const char * SectionName,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Write subset of element data
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
+ * \param[in] SectionName Name of the Elements_t node.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section. 
+ * \param[in] nbndry 	Index of last boundary element in the section. Set to zero if the elements are unsorted. 
+ * \param[out] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \return \ier
+ *
+ */
+int cg_section_partial_write(int fn, int B, int Z, const char * SectionName,
                  CGNS_ENUMT(ElementType_t) type, cgsize_t start,
                  cgsize_t end, int nbndry, int *S)
 {
@@ -4613,20 +4630,39 @@ int cg_section_partial_write(int file_number, int B, int Z, const char * Section
     ElementDataSize = num * elemsize;
 
     /* create empty section */
-    if (cg_section_general_write(file_number, B, Z, SectionName, type,
+    if (cg_section_general_write(fn, B, Z, SectionName, type,
                                  cgi_datatype(CG_SIZE_DATATYPE), start,
                                  end, ElementDataSize, nbndry, S)){
        return CG_ERROR;
     }
 
     /* if not fixed element size, need to create valid data for sizing */
-    if (cg_section_initialize(file_number, B, Z, *S)) {
+    if (cg_section_initialize(fn, B, Z, *S)) {
         return CG_ERROR;
     }
     return CG_OK;
 }
 
-int cg_section_general_write(int file_number, int B, int Z, const char * SectionName,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Write section data without element data
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
+ * \param[in] elementDataType Data type of an array. Admissible data types are Integer and LongInteger.
+ * \param[in] SectionName Name of the Elements_t node.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section.
+ * \param[in] elementDataSize 	Number of element connectivity data values.
+ * \param[in] nbndry 	Index of last boundary element in the section. Set to zero if the elements are unsorted. 
+ * \param[out] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \return \ier
+ *
+ */
+int cg_section_general_write(int fn, int B, int Z, const char * SectionName,
                  const CGNS_ENUMT(ElementType_t) type, const CGNS_ENUMT(DataType_t) elementDataType,
                  cgsize_t start, cgsize_t end, cgsize_t elementDataSize,
                  int nbndry, int *S)
@@ -4683,7 +4719,7 @@ int cg_section_general_write(int file_number, int B, int Z, const char * Section
     }
 
      /* get file and check mode */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
@@ -4826,11 +4862,22 @@ int cg_section_general_write(int file_number, int B, int Z, const char * Section
     return CG_OK;
 }
 
-/* This function is a kind of helper to be used after a cg_section_general_write
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Initialize element data for not fixed size elements
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \return \ier
+ *
+ * \details This function is a kind of helper to be used after a cg_section_general_write
  * cg_section_general_write reserve enough space while this function put
  * coherent init data. Then cg_poly_elements_partial_write would run safely.
  */
-int cg_section_initialize(int file_number, int B, int Z, int S)
+int cg_section_initialize(int fn, int B, int Z, int S)
 {
     cgsize_t nm, nn, num, val;
     cgsize_t s_start, s_end, s_stride;
@@ -4840,7 +4887,7 @@ int cg_section_initialize(int file_number, int B, int Z, int S)
     cgns_section *section = NULL;
 
      /* get file and check mode */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
      /* verify input */
@@ -5043,17 +5090,28 @@ int cg_section_initialize(int file_number, int B, int Z, int S)
     return CG_OK;
 }
 
-
 /*----------------------------------------------------------------------*/
-/* This function was created for revision 1.2 to return the size of the
- connectivity vector, which can't be known without it *when type=MIXED */
-
-int cg_ElementDataSize(int file_number, int B, int Z, int S,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Get size of element connectivity data array
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \param[out] ElementDataSize Number of element connectivity data values.
+ * \return \ier
+ *
+ * \details This function was created for revision 1.2 to return the size of the
+ *          connectivity vector, which can't be known without it *when type=MIXED*
+ */
+int cg_ElementDataSize(int fn, int B, int Z, int S,
                        cgsize_t *ElementDataSize)
 {
   cgns_section *section;
 
-  cg = cgi_get_file(file_number);
+  cg = cgi_get_file(fn);
   if (cg == 0) return CG_ERROR;
 
   /* verify input */
@@ -5066,13 +5124,30 @@ int cg_ElementDataSize(int file_number, int B, int Z, int S,
   return CG_OK;
 }
 
-int cg_ElementPartialSize(int file_number, int B, int Z, int S,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Get size of element connectivity data array for partial read
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section.
+ * \param[out] ElementDataSize Number of element connectivity data values.
+ * \return \ier
+ *
+ * \details This function was created for revision 1.2 to return the size of the
+ *          connectivity vector, which can't be known without it *when type=MIXED*
+ */
+int cg_ElementPartialSize(int fn, int B, int Z, int S,
                           cgsize_t start, cgsize_t end, cgsize_t *ElementDataSize)
 {
   cgns_section *section;
   cgsize_t size, cnt, *offset_data;
 
-  cg = cgi_get_file(file_number);
+  cg = cgi_get_file(fn);
   if (cg == 0) return CG_ERROR;
 
   /* verify input */
@@ -5164,14 +5239,27 @@ int cg_ElementPartialSize(int file_number, int B, int Z, int S,
 }
 
 /*----------------------------------------------------------------------*/
-
-int cg_elements_read(int file_number, int B, int Z, int S, cgsize_t *elements,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Read fixed size element data
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[out] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
+ * \param[out] parent_data  For boundary or interface elements, this array contains information on the cell(s) and cell face(s) sharing the element. If you do not need to read the ParentData when reading the ElementData, you may set the value to NULL.
+ * \return \ier
+ *
+ */
+int cg_elements_read(int fn, int B, int Z, int S, cgsize_t *elements,
                      cgsize_t *parent_data)
 {
     cgns_section *section;
     cgsize_t count, num, ElementDataSize=0;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     /* verify input */
@@ -5224,15 +5312,29 @@ int cg_elements_read(int file_number, int B, int Z, int S, cgsize_t *elements,
 }
 
 /*----------------------------------------------------------------------*/
-
-int cg_poly_elements_read(int file_number, int B, int Z, int S, cgsize_t *elements,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Read element data
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[out] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
+ * \param[out] connect_offset 	Element connectivity offset data. This is required for NGON_n, NFACE_n and MIXED according to Elements_t Structure Definition. 
+ * \param[out] parent_data  For boundary or interface elements, this array contains information on the cell(s) and cell face(s) sharing the element. If you do not need to read the ParentData when reading the ElementData, you may set the value to NULL.
+ * \return \ier
+ *
+ */
+int cg_poly_elements_read(int fn, int B, int Z, int S, cgsize_t *elements,
                      cgsize_t *connect_offset, cgsize_t *parent_data)
 {
     cgns_section *section;
     cgsize_t count, num, ElementDataSize=0, ConnectOffsetSize=0;
     cgsize_t *offset_data=0;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
      /* verify input */
@@ -5297,7 +5399,24 @@ int cg_poly_elements_read(int file_number, int B, int Z, int S, cgsize_t *elemen
 }
 
 /*----------------------------------------------------------------------*/
-int cg_elements_partial_read(int file_number, int B, int Z, int S,
+
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Read subset of fixed size element data
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section.
+ * \param[out] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
+ * \param[out] parent_data  For boundary or interface elements, this array contains information on the cell(s) and cell face(s) sharing the element. If you do not need to read the ParentData when reading the ElementData, you may set the value to NULL.
+ * \return \ier
+ *
+ */
+int cg_elements_partial_read(int fn, int B, int Z, int S,
                              cgsize_t start, cgsize_t end, cgsize_t *elements,
                              cgsize_t *parent_data)
 {
@@ -5307,7 +5426,7 @@ int cg_elements_partial_read(int file_number, int B, int Z, int S,
     cgsize_t s_start[2], s_end[2], s_stride[2];
     cgsize_t m_start[2], m_end[2], m_stride[2], m_dim[2];
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
      /* verify input */
@@ -5470,9 +5589,24 @@ int cg_elements_partial_read(int file_number, int B, int Z, int S,
     return CG_OK;
 }
 
-
 /*----------------------------------------------------------------------*/
-int cg_elements_general_read(int file_number, int B, int Z, int S,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Read subset of fixed size element data to a typed array
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section.
+ * \param[in] m_type Data type of an array in memory. Admissible data types are Integer and LongInteger. 
+ * \param[out] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
+ * \return \ier
+ *
+ */
+int cg_elements_general_read(int fn, int B, int Z, int S,
       cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type, void* elements)
 {
     cgns_section* section;
@@ -5482,7 +5616,7 @@ int cg_elements_general_read(int file_number, int B, int Z, int S,
     CGNS_ENUMT(DataType_t) s_type;
     int ier = CG_OK;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     /* verify input */
@@ -5596,8 +5730,24 @@ int cg_elements_general_read(int file_number, int B, int Z, int S,
 
 /*----------------------------------------------------------------------*/
 
-int cg_parent_elements_general_read(int file_number, int B, int Z, int S,
-      cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type, void* parelem)
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Read parent info for an element section
+ * 
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section.
+ * \param[in] m_type Data type of an array in memory. Admissible data types are Integer and LongInteger. 
+ * \param[out] ParentElement  For boundary or interface elements, this array contains information on the cell(s) sharing the element. 
+ * \return \ier
+ *
+ */
+int cg_parent_elements_general_read(int fn, int B, int Z, int S,
+      cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type, void* ParentElement)
 {
     cgns_section* section;
     cgsize_t s_start[2], s_end[2], s_stride[2];
@@ -5605,7 +5755,7 @@ int cg_parent_elements_general_read(int file_number, int B, int Z, int S,
     CGNS_ENUMT(DataType_t) s_type;
     int ier = CG_OK;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     /* verify input */
@@ -5629,7 +5779,7 @@ int cg_parent_elements_general_read(int file_number, int B, int Z, int S,
         return CG_ERROR;
     }
 
-    if (parelem == NULL || section->parelem == NULL) {
+    if (ParentElement == NULL || section->parelem == NULL) {
         cgi_error("Error reading ParentElementsPosition.");
         return CG_ERROR;
     }
@@ -5656,7 +5806,7 @@ int cg_parent_elements_general_read(int file_number, int B, int Z, int S,
         if (section->connect->dim_vals[0] == m_end[0] &&
             section->connect->dim_vals[1] == 2) {
             if (cgio_read_all_data_type(cg->cgio, section->parelem->id,
-                cgi_adf_datatype(m_type), parelem)) {
+                cgi_adf_datatype(m_type), ParentElement)) {
                 cg_io_error("cgio_read_all_data_type");
                 return CG_ERROR;
             }
@@ -5664,7 +5814,7 @@ int cg_parent_elements_general_read(int file_number, int B, int Z, int S,
         else {
             if (cgio_read_data_type(cg->cgio, section->parelem->id,
                 s_start, s_end, s_stride, cgi_adf_datatype(m_type), 2, m_dim,
-                m_start, m_end, m_stride, parelem)) {
+                m_start, m_end, m_stride, ParentElement)) {
                 cg_io_error("cgio_read_data_type");
                 return CG_ERROR;
             }
@@ -5696,7 +5846,7 @@ int cg_parent_elements_general_read(int file_number, int B, int Z, int S,
                 return CG_ERROR;
             }
         }
-        ier = cgi_convert_data(2*m_dim[0], s_type, conv_data, m_type, parelem);
+        ier = cgi_convert_data(2*m_dim[0], s_type, conv_data, m_type, ParentElement);
         free(conv_data);
         if (ier) return CG_ERROR;
     }
@@ -5705,7 +5855,7 @@ int cg_parent_elements_general_read(int file_number, int B, int Z, int S,
         if (section->parelem->dim_vals[0] == m_dim[0] &&
             section->parelem->dim_vals[1] == 2) {
             if (cgio_read_all_data_type(cg->cgio, section->parelem->id,
-                cgi_adf_datatype(m_type), parelem)) {
+                cgi_adf_datatype(m_type), ParentElement)) {
                 cg_io_error("cgio_read_all_data_type");
                 return CG_ERROR;
             }
@@ -5713,7 +5863,7 @@ int cg_parent_elements_general_read(int file_number, int B, int Z, int S,
         else {
             if (cgio_read_data_type(cg->cgio, section->parelem->id,
                 s_start, s_end, s_stride, cgi_adf_datatype(m_type), 2, m_dim,
-                m_start, m_end, m_stride, parelem)) {
+                m_start, m_end, m_stride, ParentElement)) {
                 cg_io_error("cgio_read_data_type");
                 return CG_ERROR;
             }
@@ -5723,8 +5873,25 @@ int cg_parent_elements_general_read(int file_number, int B, int Z, int S,
 }
 
 /*----------------------------------------------------------------------*/
-int cg_parent_elements_position_general_read(int file_number, int B, int Z, int S,
-        cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type, void* parface)
+
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Read parent position info for an element section
+ * 
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section.
+ * \param[in] m_type Data type of an array in memory. Admissible data types are Integer and LongInteger. 
+ * \param[out] ParentFace For boundary or interface elements, this array contains information on the cell face(s) sharing the element.  
+ * \return \ier
+ *
+ */
+int cg_parent_elements_position_general_read(int fn, int B, int Z, int S,
+        cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type, void* ParentFace)
 {
     cgns_section* section;
     cgsize_t s_start[2], s_end[2], s_stride[2];
@@ -5732,7 +5899,7 @@ int cg_parent_elements_position_general_read(int file_number, int B, int Z, int 
     CGNS_ENUMT(DataType_t) s_type;
     int ier = CG_OK;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     /* verify input */
@@ -5756,7 +5923,7 @@ int cg_parent_elements_position_general_read(int file_number, int B, int Z, int 
         return CG_ERROR;
     }
 
-    if (parface == NULL || section->parface == NULL) {
+    if (ParentFace == NULL || section->parface == NULL) {
         cgi_error("Error reading ParentElementsPosition.");
         return CG_ERROR;
     }
@@ -5783,7 +5950,7 @@ int cg_parent_elements_position_general_read(int file_number, int B, int Z, int 
         if (section->connect->dim_vals[0] == m_end[0] &&
             section->connect->dim_vals[1] == 2) {
             if (cgio_read_all_data_type(cg->cgio, section->parface->id,
-                cgi_adf_datatype(m_type), parface)) {
+                cgi_adf_datatype(m_type), ParentFace)) {
                 cg_io_error("cgio_read_all_data_type");
                 return CG_ERROR;
             }
@@ -5791,7 +5958,7 @@ int cg_parent_elements_position_general_read(int file_number, int B, int Z, int 
         else {
             if (cgio_read_data_type(cg->cgio, section->parface->id,
                 s_start, s_end, s_stride, cgi_adf_datatype(m_type), 2, m_dim,
-                m_start, m_end, m_stride, parface)) {
+                m_start, m_end, m_stride, ParentFace)) {
                 cg_io_error("cgio_read_data_type");
                 return CG_ERROR;
             }
@@ -5823,7 +5990,7 @@ int cg_parent_elements_position_general_read(int file_number, int B, int Z, int 
                 return CG_ERROR;
             }
         }
-        ier = cgi_convert_data(m_dim[0]*2, s_type, conv_data, m_type, parface);
+        ier = cgi_convert_data(m_dim[0]*2, s_type, conv_data, m_type, ParentFace);
         free(conv_data);
         if (ier) return CG_ERROR;
     }
@@ -5832,7 +5999,7 @@ int cg_parent_elements_position_general_read(int file_number, int B, int Z, int 
         if (section->connect->dim_vals[0] == m_dim[0] &&
             section->connect->dim_vals[1] == 2) {
             if (cgio_read_all_data_type(cg->cgio, section->parface->id,
-                cgi_adf_datatype(m_type), parface)) {
+                cgi_adf_datatype(m_type), ParentFace)) {
                 cg_io_error("cgio_read_all_data_type");
                 return CG_ERROR;
             }
@@ -5840,7 +6007,7 @@ int cg_parent_elements_position_general_read(int file_number, int B, int Z, int 
         else {
             if (cgio_read_data_type(cg->cgio, section->parface->id,
                 s_start, s_end, s_stride, cgi_adf_datatype(m_type), 2, m_dim,
-                m_start, m_end, m_stride, parface)) {
+                m_start, m_end, m_stride, ParentFace)) {
                 cg_io_error("cgio_read_data_type");
                 return CG_ERROR;
             }
@@ -5850,7 +6017,24 @@ int cg_parent_elements_position_general_read(int file_number, int B, int Z, int 
 }
 
 /*----------------------------------------------------------------------*/
-int cg_poly_elements_partial_read(int file_number, int B, int Z, int S,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Read subset of element data
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section.
+ * \param[out] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
+ * \param[out] connect_offset Element connectivity offset data. This is required for NGON_n, NFACE_n and MIXED according to Elements_t Structure Definition. 
+ * \param[out] parent_data For boundary or interface elements, this array contains information on the cell(s) and cell face(s) sharing the element. If you do not need to read the ParentData when reading the ElementData, you may set the value to NULL.
+ * \return \ier
+ *
+ */
+int cg_poly_elements_partial_read(int fn, int B, int Z, int S,
                              cgsize_t start, cgsize_t end, cgsize_t *elements,
                              cgsize_t *connect_offset, cgsize_t *parent_data)
 {
@@ -5860,7 +6044,7 @@ int cg_poly_elements_partial_read(int file_number, int B, int Z, int S,
     cgsize_t s_start[2], s_end[2], s_stride[2];
     cgsize_t m_start[2], m_end[2], m_stride[2], m_dim[2];
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
      /* verify input */
@@ -6029,7 +6213,24 @@ int cg_poly_elements_partial_read(int file_number, int B, int Z, int S,
 }
 
 /*----------------------------------------------------------------------*/
-int cg_poly_elements_general_read(int file_number, int B, int Z, int S,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Read subset of element data to typed arrays
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section.
+ * \param[in] m_type Data type of an array in memory. Admissible data types are Integer and LongInteger. 
+ * \param[out] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
+ * \param[out] connect_offset Element connectivity offset data. This is required for NGON_n, NFACE_n and MIXED according to Elements_t Structure Definition. 
+ * \return \ier
+ *
+ */
+int cg_poly_elements_general_read(int fn, int B, int Z, int S,
            cgsize_t start, cgsize_t end, CGNS_ENUMT(DataType_t) m_type,
            void* elements, void* connect_offset)
 {
@@ -6040,7 +6241,7 @@ int cg_poly_elements_general_read(int file_number, int B, int Z, int S,
     CGNS_ENUMT(DataType_t) s_type;
     int ier = CG_OK;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     /* verify input */
@@ -6163,12 +6364,26 @@ int cg_poly_elements_general_read(int file_number, int B, int Z, int S,
 }
 
 /*----------------------------------------------------------------------*/
-
-int cg_elements_partial_write(int file_number, int B, int Z, int S,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Write element data for a fixed size element section 
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section.
+ * \param[in] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
+ * \return \ier
+ *
+ */
+int cg_elements_partial_write(int fn, int B, int Z, int S,
                               cgsize_t start, cgsize_t end,
                               const cgsize_t *elements)
 {
-    if (cg_elements_general_write(file_number, B, Z, S,
+    if (cg_elements_general_write(fn, B, Z, S,
                                   start, end, cgi_datatype(CG_SIZE_DATATYPE), elements)) {
         return CG_ERROR;
     }
@@ -6335,7 +6550,23 @@ int cg_elements_partial_write(int file_number, int B, int Z, int S,
     } \
     }
 
-int cg_elements_general_write(int file_number, int B, int Z, int S,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Write element data for a fixed size element section
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section.
+ * \param[in] m_type Data type of an array in memory. Admissible data types are Integer and LongInteger. 
+ * \param[in] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
+ * \return \ier
+ *
+ */
+int cg_elements_general_write(int fn, int B, int Z, int S,
                               cgsize_t start, cgsize_t end, const CGNS_ENUMT(DataType_t) m_type,
                               const void *elements)
 {
@@ -6351,7 +6582,7 @@ int cg_elements_general_write(int file_number, int B, int Z, int S,
     int ier = CG_OK;
 
     /* get file and check mode */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
@@ -6634,11 +6865,27 @@ int cg_elements_general_write(int file_number, int B, int Z, int S,
     return CG_OK;
 }
 
-int cg_poly_elements_partial_write(int file_number, int B, int Z, int S,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Write element data for an element section
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] start  Index of first element in the section.
+ * \param[in] end  Index of last element in the section.
+ * \param[in] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
+ * \param[in] connect_offset Element connectivity offset data. This is required for NGON_n, NFACE_n and MIXED according to Elements_t Structure Definition.
+ * \return \ier
+ *
+ */
+int cg_poly_elements_partial_write(int fn, int B, int Z, int S,
                                    cgsize_t start, cgsize_t end,
                                    const cgsize_t *elements, const cgsize_t *connect_offset)
 {
-    if (cg_poly_elements_general_write(file_number, B, Z, S,
+    if (cg_poly_elements_general_write(fn, B, Z, S,
                                        start, end, cgi_datatype(CG_SIZE_DATATYPE),
                                        elements, connect_offset)) {
         return CG_ERROR;
@@ -6646,7 +6893,24 @@ int cg_poly_elements_partial_write(int file_number, int B, int Z, int S,
     return CG_OK;
 }
 
-int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Write element data for an element section
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] start  	Index of first element in the section.
+ * \param[in] end  Index of last element in the section.
+ * \param[in] m_type Data type of an array in memory. Admissible data types are Integer and LongInteger. 
+ * \param[in] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
+ * \param[in] input_connect_offset Element connectivity offset data. This is required for NGON_n, NFACE_n and MIXED according to Elements_t Structure Definition. 
+ * \return \ier
+ *
+ */
+int cg_poly_elements_general_write(int fn, int B, int Z, int S,
                                    cgsize_t start, cgsize_t end, const CGNS_ENUMT(DataType_t) m_type,
                                    const void *elements, const void *input_connect_offset)
 {
@@ -6667,7 +6931,7 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
     CGNS_ENUMT(DataType_t) s_type;
 
     /* get file and check mode */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
@@ -7231,15 +7495,27 @@ int cg_poly_elements_general_write(int file_number, int B, int Z, int S,
 }
 
 /*----------------------------------------------------------------------*/
-
-int cg_parent_data_write(int file_number, int B, int Z, int S,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Write parent info for an element section
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] parent_data  For boundary or interface elements, this array contains information on the cell(s) and cell face(s) sharing the element. If you do not need to read the ParentData when reading the ElementData, you may set the value to NULL. 
+ * \return \ier
+ *
+ */
+int cg_parent_data_write(int fn, int B, int Z, int S,
              const cgsize_t * parent_data)
 {
     cgns_section *section;
     cgsize_t num;
 
      /* get file and check mode */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
@@ -7322,9 +7598,22 @@ int cg_parent_data_write(int file_number, int B, int Z, int S,
     return CG_OK;
 }
 
-
-
-int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
+/**
+ * \ingroup ElementConnectivity
+ *
+ * \brief  Write subset of parent info for an element section
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] start Index of first element in the section.
+ * \param[in] end  Index of last element in the section. 
+ * \param[in] parent_data  For boundary or interface elements, this array contains information on the cell(s) and cell face(s) sharing the element. If you do not need to read the ParentData when reading the ElementData, you may set the value to NULL. 
+ * \return \ier
+ *
+ */
+int cg_parent_data_partial_write(int fn, int B, int Z, int S,
                                  cgsize_t start, cgsize_t end,
                                  const cgsize_t *parent_data)
 {
@@ -7332,7 +7621,7 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
     cgsize_t size;
 
      /* get file and check mode */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -7447,11 +7736,23 @@ int cg_parent_data_partial_write(int file_number, int B, int Z, int S,
  *    Read and Write FlowSolution_t Nodes
 \*****************************************************************************/
 
-int cg_nsols(int file_number, int B, int Z, int *nsols)
+/**
+ * \ingroup FlowSolution
+ *
+ * \brief  Get number of FlowSolution_t nodes 
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] nsols  Number of flow solutions for zone Z. 
+ * \return \ier
+ *
+ */
+int cg_nsols(int fn, int B, int Z, int *nsols)
 {
     cgns_zone *zone;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -7463,12 +7764,26 @@ int cg_nsols(int file_number, int B, int Z, int *nsols)
     return CG_OK;
 }
 
-int cg_sol_info(int file_number, int B, int Z, int S, char *solname,
+/**
+ * \ingroup FlowSolution
+ *
+ * \brief  Get information about a FlowSolution_t node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[out] solname  Name of the flow solution.
+ * \param[out] location  Grid location where the solution is recorded. The current admissible locations are Vertex, CellCenter, IFaceCenter, JFaceCenter, and KFaceCenter.
+ * \return \ier
+ *
+ */
+int cg_sol_info(int fn, int B, int Z, int S, char *solname,
             CGNS_ENUMT(GridLocation_t) *location)
 {
     cgns_sol *sol;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -7497,7 +7812,21 @@ int cg_sol_id(int file_number, int B, int Z, int S, double *sol_id)
     return CG_OK;
 }
 
-int cg_sol_write(int file_number, int B, int Z, const char * solname,
+/**
+ * \ingroup FlowSolution
+ *
+ * \brief  Create and/or write to a FlowSolution_t node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] solname  Name of the flow solution.
+ * \param[in] location  Grid location where the solution is recorded. The current admissible locations are Vertex, CellCenter, IFaceCenter, JFaceCenter, and KFaceCenter.
+ * \param[out] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \return \ier
+ *
+ */
+int cg_sol_write(int fn, int B, int Z, const char * solname,
          CGNS_ENUMT(GridLocation_t) location, int *S)
 {
     cgns_zone *zone;
@@ -7520,7 +7849,7 @@ int cg_sol_write(int file_number, int B, int Z, const char * solname,
     } */
 
      /* get memory address for FlowSolution node */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -7595,12 +7924,26 @@ int cg_sol_write(int file_number, int B, int Z, const char * solname,
     return CG_OK;
 }
 
-int cg_sol_size(int file_number, int B, int Z, int S,
+/**
+ * \ingroup FlowSolution
+ *
+ * \brief  Get the dimensions of a FlowSolution_t node 
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[out] data_dim  Number of dimensions defining the solution data. If a point set has been defined, this will be 1, otherwise this will be the current zone index dimension.
+ * \param[out] dim_vals The array of data_dim dimensions for the solution data. 
+ * \return \ier
+ *
+ */
+int cg_sol_size(int fn, int B, int Z, int S,
                 int *data_dim, cgsize_t *dim_vals)
 {
     cgns_sol *sol;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -7622,7 +7965,20 @@ int cg_sol_size(int file_number, int B, int Z, int S,
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup FlowSolution
+ *
+ * \brief  Get info about a point set FlowSolution_t node 
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[out] ptset_type Type of point set defining the interface in the current solution; either PointRange or PointList. 
+ * \param[out] npnts Number of points defining the interface in the current solution. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList. 
+ * \return \ier
+ *
+ */
 int cg_sol_ptset_info(int fn, int B, int Z, int S,
     CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts)
 {
@@ -7646,6 +8002,19 @@ int cg_sol_ptset_info(int fn, int B, int Z, int S,
     return CG_OK;
 }
 
+/**
+ * \ingroup FlowSolution
+ *
+ * \brief  Read a point set FlowSolution_t node 
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[out] pnts  Array of points defining the interface in the current solution.  
+ * \return \ier
+ *
+ */
 int cg_sol_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
 {
     int dim = 0;
@@ -7669,6 +8038,23 @@ int cg_sol_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
     return CG_OK;
 }
 
+/**
+ * \ingroup FlowSolution
+ *
+ * \brief  Create a point set FlowSolution_t node 
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] solname  Name of the flow solution.
+ * \param[in] location  Grid location where the solution is recorded. The current admissible locations are Vertex, CellCenter, IFaceCenter, JFaceCenter, and KFaceCenter.
+ * \param[in] ptset_type  Type of point set defining the interface in the current solution; either PointRange or PointList. 
+ * \param[in] npnts  Number of points defining the interface in the current solution. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList.
+ * \param[in] pnts  Array of points defining the interface in the current solution.
+ * \param[out] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \return \ier
+ *
+ */
 int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
     CGNS_ENUMT(GridLocation_t) location,
     CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
@@ -7729,12 +8115,24 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
 /*****************************************************************************\
  *    Read and Write flow field  DataArray_t Nodes
 \*****************************************************************************/
-
-int cg_nfields(int file_number, int B, int Z, int S, int *nfields)
+/**
+ * \ingroup FlowSolutionData
+ *
+ * \brief  Get number of flow solution arrays
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[out] nfields  Number of data arrays in flow solution S.
+ * \return \ier
+ *
+ */
+int cg_nfields(int fn, int B, int Z, int S, int *nfields)
 {
     cgns_sol *sol;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -7746,12 +8144,27 @@ int cg_nfields(int file_number, int B, int Z, int S, int *nfields)
     return CG_OK;
 }
 
-int cg_field_info(int file_number, int B, int Z, int S, int F,
-                  CGNS_ENUMT(DataType_t) *type, char *fieldname)
+/**
+ * \ingroup FlowSolutionData
+ *
+ * \brief  Get info about a flow solution array
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] F  Solution array index number, where 1 ≤ F ≤ nfields.
+ * \param[out] datatype  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble. 
+ * \param[out] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
+ * \return \ier
+ *
+ */
+int cg_field_info(int fn, int B, int Z, int S, int F,
+                  CGNS_ENUMT(DataType_t) *datatype, char *fieldname)
 {
     cgns_array *field;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -7760,20 +8173,37 @@ int cg_field_info(int file_number, int B, int Z, int S, int F,
     if (field==0) return CG_ERROR;
 
     strcpy(fieldname, field->name);
-    *type = cgi_datatype(field->data_type);
+    *datatype = cgi_datatype(field->data_type);
 
     return CG_OK;
 }
 
-int cg_field_read(int file_number, int B, int Z, int S, const char *fieldname,
-                  CGNS_ENUMT(DataType_t) type, const cgsize_t *s_rmin,
+/**
+ * \ingroup FlowSolutionData
+ *
+ * \brief  Read flow solution
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
+ * \param[in] mem_datatype  Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.  
+ * \param[in] s_rmin  Lower range index in file (eg., imin, jmin, kmin).
+ * \param[in] s_rmax  Upper range index in file (eg., imax, jmax, kmax). 
+ * \param[out] field_ptr  Array of solution values.
+ * \return \ier
+ *
+ */
+int cg_field_read(int fn, int B, int Z, int S, const char *fieldname,
+                  CGNS_ENUMT(DataType_t) mem_datatype, const cgsize_t *s_rmin,
                   const cgsize_t *s_rmax, void *field_ptr)
 {
     cgns_sol *sol;
     int n, m_numdim;
 
      /* get memory addresses */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
      /* get memory address for solution */
@@ -7801,11 +8231,32 @@ int cg_field_read(int file_number, int B, int Z, int S, const char *fieldname,
     }
 
     return cg_field_general_read(file_number, B, Z, S, fieldname,
-                                 s_rmin, s_rmax, type,
+                                 s_rmin, s_rmax, mem_datatype,
                                  m_numdim, m_dimvals, m_rmin, m_rmax,
                                  field_ptr);
 }
 
+/**
+ * \ingroup FlowSolutionData
+ *
+ * \brief  Read subset of flow solution to a shaped array
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
+ * \param[in] s_rmin  Lower range index in file (eg., imin, jmin, kmin).
+ * \param[in] s_rmax  Upper range index in file (eg., imax, jmax, kmax).
+ * \param[in] m_type  Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.  
+ * \param[in] m_numdim  Number of dimensions of array in memory.
+ * \param[in] m_dimvals Dimensions of array in memory.
+ * \param[in] m_rmin  Lower range index in memory (eg., imin, jmin, kmin). 
+ * \param[in] m_rmax  Upper range index in memory (eg., imax, jmax, kmax).
+ * \param[out] field_ptr  Array of solution values.
+ * \return \ier
+ *
+ */
 int cg_field_general_read(int fn, int B, int Z, int S, const char *fieldname,
                           const cgsize_t *s_rmin, const cgsize_t *s_rmax,
                           CGNS_ENUMT(DataType_t) m_type,
@@ -7875,7 +8326,23 @@ int cg_field_id(int file_number, int B, int Z, int S, int F, double *field_id)
     return CG_OK;
 }
 
-int cg_field_write(int file_number, int B, int Z, int S,
+/**
+ * \ingroup FlowSolutionData
+ *
+ * \brief  Write flow solution
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
+ * \param[in] type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble. 
+ * \param[in] field_ptr  Array of solution values.
+ * \param[out] F Solution array index number, where 1 ≤ F ≤ nfields.
+ * \return \ier
+ *
+ */
+int cg_field_write(int fn, int B, int Z, int S,
                    CGNS_ENUMT(DataType_t) type, const char *fieldname,
                    const void *field_ptr, int *F)
 {
@@ -7895,7 +8362,7 @@ int cg_field_write(int file_number, int B, int Z, int S,
     }
 
      /* get memory addresses */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -7933,13 +8400,31 @@ int cg_field_write(int file_number, int B, int Z, int S,
         m_rmax[n] = m_dimvals[n];
     }
 
-    return cg_field_general_write(file_number, B, Z, S, fieldname,
+    return cg_field_general_write(fn, B, Z, S, fieldname,
                                   type, s_rmin, s_rmax,
                                   type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   field_ptr, F);
 }
 
-int cg_field_partial_write(int file_number, int B, int Z, int S,
+/**
+ * \ingroup FlowSolutionData
+ *
+ * \brief  Write subset of flow solution
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
+ * \param[in] type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble. 
+ * \param[in] s_rmin  Lower range index in file (eg., imin, jmin, kmin).
+ * \param[in] s_rmax  Upper range index in file (eg., imax, jmax, kmax).
+ * \param[in] field_ptr  Array of solution values.
+ * \param[out] F Solution array index number, where 1 ≤ F ≤ nfields.
+ * \return \ier
+ *
+ */
+int cg_field_partial_write(int fn, int B, int Z, int S,
 			   CGNS_ENUMT( DataType_t ) type, const char *fieldname,
 			   const cgsize_t *s_rmin, const cgsize_t *s_rmax,
                            const void *field_ptr, int *F)
@@ -7950,7 +8435,7 @@ int cg_field_partial_write(int file_number, int B, int Z, int S,
     int status;
 
      /* get memory addresses */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     zone = cgi_get_zone(cg, B, Z);
@@ -7981,7 +8466,7 @@ int cg_field_partial_write(int file_number, int B, int Z, int S,
         m_dimvals[n] = m_rmax[n];
     }
 
-    status = cg_field_general_write(file_number, B, Z, S, fieldname,
+    status = cg_field_general_write(fn, B, Z, S, fieldname,
                                   type, s_rmin, s_rmax,
                                   type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   field_ptr, F);
@@ -7991,6 +8476,30 @@ int cg_field_partial_write(int file_number, int B, int Z, int S,
 
 }
 
+/**
+ * \ingroup FlowSolutionData
+ *
+ * \brief  Write shaped array to a subset of flow solution
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
+ * \param[in] s_type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble. 
+ * \param[in] s_rmin  Lower range index in file (eg., imin, jmin, kmin).
+ * \param[in] s_rmax  Upper range index in file (eg., imax, jmax, kmax).
+ *
+ * \param[in] m_type  Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.  
+ * \param[in] m_numdim  Number of dimensions of array in memory.
+ * \param[in] m_dimvals Dimensions of array in memory.
+ * \param[in] m_rmin  Lower range index in memory (eg., imin, jmin, kmin). 
+ * \param[in] m_rmax  Upper range index in memory (eg., imax, jmax, kmax).
+ * \param[in] field_ptr  Array of solution values.
+ * \param[out] F Solution array index number, where 1 ≤ F ≤ nfields.
+ * \return \ier
+ *
+ */
 int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
                            CGNS_ENUMT(DataType_t) s_type,
                            const cgsize_t *s_rmin, const cgsize_t *s_rmax,
