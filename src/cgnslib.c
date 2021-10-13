@@ -39,6 +39,8 @@ freely, subject to the following restrictions:
  * \defgroup ElementConnectivity Element Connectivity
  * \defgroup FlowSolution Flow Solution
  * \defgroup FlowSolutionData Flow Solution Data
+ * \defgroup ZoneSubregions Zone Subregions
+ * \defgroup ZoneGridConnectivity Zone Grid Connectivity
  */
 
 #include <stdio.h>
@@ -8572,7 +8574,19 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
  *      Read and write ZoneSubRegion_t Nodes                             *
 \*************************************************************************/
 
-int cg_nsubregs(int fn, int B, int Z, int *nsubreg)
+/**
+ * \ingroup ZoneSubregions
+ *
+ * \brief  Get number of ZoneSubRegion_t nodes
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] nsubregs  Number of ZoneSubRegion_t nodes under Zone Z.
+ * \return \ier
+ *
+ */
+int cg_nsubregs(int fn, int B, int Z, int *nsubregs)
 {
     cgns_zone *zone;
 
@@ -8584,7 +8598,7 @@ int cg_nsubregs(int fn, int B, int Z, int *nsubreg)
     zone = cgi_get_zone(cg, B, Z);
     if (zone==0) return CG_ERROR;
 
-    (*nsubreg) = zone->nsubreg;
+    (*nsubregs) = zone->nsubreg;
     return CG_OK;
 }
 
@@ -8598,7 +8612,26 @@ static cgns_subreg *cg_subreg_read(int fn, int B, int Z, int S)
     return cgi_get_subreg(cg, B, Z, S);
 }
 
-int cg_subreg_info(int fn, int B, int Z, int S, char *name, int *dimension,
+/**
+ * \ingroup ZoneSubregions
+ *
+ * \brief  Get info about a ZoneSubRegion_t node
+ *
+ * \param[in] fn   \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
+ * \param[out] regname  Name of the ZoneSubRegion_t node.
+ * \param[out] dimension  Dimensionality of the subregion, 1 for lines, 2 for faces, 3 for volumes.
+ * \param[out] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
+ * \param[out] ptset_type  Type of point set defining the interface for the subregion data; either PointRange or PointList.
+ * \param[out] npnts  Number of points defining the interface for the subregion data. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList.
+ * \param[out] bcname_len  String length of bcname.
+ * \param[out] gcname_len  String length of gcname.
+ * \return \ier
+ *
+ */
+int cg_subreg_info(int fn, int B, int Z, int S, char *regname, int *dimension,
                    CGNS_ENUMT(GridLocation_t) *location,
                    CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts,
                    int *bcname_len, int *gcname_len)
@@ -8607,7 +8640,7 @@ int cg_subreg_info(int fn, int B, int Z, int S, char *name, int *dimension,
 
     if (subreg == NULL) return CG_ERROR;
 
-    strcpy(name,subreg->name);
+    strcpy(regname,subreg->name);
     *dimension = subreg->reg_dim;
     *location = subreg->location;
     if (subreg->ptset) {
@@ -8630,6 +8663,19 @@ int cg_subreg_info(int fn, int B, int Z, int S, char *name, int *dimension,
     return CG_OK;
 }
 
+/**
+ * \ingroup ZoneSubregions
+ *
+ * \brief   Read point set data for a ZoneSubRegion_t node
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
+ * \param[out] pnts  Array of points defining the interface for the subregion data. 
+ * \return \ier
+ *
+ */
 int cg_subreg_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
 {
     int dim = 0;
@@ -8647,6 +8693,19 @@ int cg_subreg_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
     return CG_OK;
 }
 
+/**
+ * \ingroup ZoneSubregions
+ *
+ * \brief   Read the BC_t node name for a ZoneSubRegion_t node
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
+ * \param[out] bcname  The name of a BC_t node which defines the subregion. 
+ * \return \ier
+ *
+ */
 int cg_subreg_bcname_read(int fn, int B, int Z, int S, char *bcname)
 {
     cgns_subreg *subreg = cg_subreg_read(fn, B, Z, S);
@@ -8661,6 +8720,19 @@ int cg_subreg_bcname_read(int fn, int B, int Z, int S, char *bcname)
     return CG_OK;
 }
 
+/**
+ * \ingroup ZoneSubregions
+ *
+ * \brief   Read the GridConnectivity_t node name for a ZoneSubRegion_t node
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
+ * \param[out] gcname 	The name of a GridConnectivity_t or GridConnectivity1to1_t node which defines the subregion.
+ * \return \ier
+ *
+ */
 int cg_subreg_gcname_read(int fn, int B, int Z, int S, char *gcname)
 {
     cgns_subreg *subreg = cg_subreg_read(fn, B, Z, S);
@@ -8740,7 +8812,25 @@ static cgns_subreg *cg_subreg_write(int fn, int B, int Z, const char *name,
     return subreg;
 }
 
-int cg_subreg_ptset_write(int fn, int B, int Z, const char *name,
+/**
+ * \ingroup ZoneSubregions
+ *
+ * \brief Create a point set ZoneSubRegion_t node
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] regname  Name of the ZoneSubRegion_t node.
+ * \param[in] dimension  Dimensionality of the subregion, 1 for lines, 2 for faces, 3 for volumes.
+ * \param[in] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
+ * \param[in] ptset_type  Type of point set defining the interface for the subregion data; either PointRange or PointList.
+ * \param[in] npnts  Number of points defining the interface for the subregion data. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList.
+ * \param[in] pnts  Array of points defining the interface for the subregion data. 
+ * \param[out] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
+ * \return \ier
+ *
+ */
+int cg_subreg_ptset_write(int fn, int B, int Z, const char *regname,
                           int dimension, CGNS_ENUMT(GridLocation_t) location,
                           CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
                           const cgsize_t *pnts, int *S)
@@ -8763,7 +8853,7 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *name,
     if (cgi_check_location(dimension+1,
             cg->base[B-1].zone[Z-1].type, location)) return CG_ERROR;
 
-    subreg = cg_subreg_write(fn, B, Z, name, dimension, S);
+    subreg = cg_subreg_write(fn, B, Z, regname, dimension, S);
     if (subreg == NULL) return CG_ERROR;
 
     subreg->location = location;
@@ -8803,7 +8893,22 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *name,
     return CG_OK;
 }
 
-int cg_subreg_bcname_write(int fn, int B, int Z, const char *name, int dimension,
+/**
+ * \ingroup ZoneSubregions
+ *
+ * \brief   Create a ZoneSubRegion_t node that references a BC_t node
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] regname  Name of the ZoneSubRegion_t node.
+ * \param[in] dimension  Dimensionality of the subregion, 1 for lines, 2 for faces, 3 for volumes.
+ * \param[in]  bcname  The name of a BC_t node which defines the subregion.
+ * \param[out] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
+ * \return \ier
+ *
+ */
+int cg_subreg_bcname_write(int fn, int B, int Z, const char *regname, int dimension,
                            const char *bcname, int *S)
 {
     cgsize_t dim_vals = 1;
@@ -8815,7 +8920,7 @@ int cg_subreg_bcname_write(int fn, int B, int Z, const char *name, int dimension
         return CG_ERROR;
     }
 
-    subreg = cg_subreg_write(fn, B, Z, name, dimension, S);
+    subreg = cg_subreg_write(fn, B, Z, regname, dimension, S);
     if (subreg == NULL) return CG_ERROR;
 
     subreg->bcname = CGNS_NEW(cgns_descr, 1);
@@ -8838,7 +8943,22 @@ int cg_subreg_bcname_write(int fn, int B, int Z, const char *name, int dimension
     return CG_OK;
 }
 
-int cg_subreg_gcname_write(int fn, int B, int Z, const char *name, int dimension,
+/**
+ * \ingroup ZoneSubregions
+ *
+ * \brief   Create a ZoneSubRegion_t node that references a GridConnectivity_t node
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] regname  Name of the ZoneSubRegion_t node.
+ * \param[in] dimension  Dimensionality of the subregion, 1 for lines, 2 for faces, 3 for volumes.
+ * \param[in] gcname  The name of a GridConnectivity_t or GridConnectivity1to1_t node which defines the subregion.
+ * \param[out] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
+ * \return \ier
+ *
+ */
+int cg_subreg_gcname_write(int fn, int B, int Z, const char *regname, int dimension,
                            const char *gcname, int *S)
 {
     cgsize_t dim_vals = 1;
@@ -8850,7 +8970,7 @@ int cg_subreg_gcname_write(int fn, int B, int Z, const char *name, int dimension
         return CG_ERROR;
     }
 
-    subreg = cg_subreg_write(fn, B, Z, name, dimension, S);
+    subreg = cg_subreg_write(fn, B, Z, regname, dimension, S);
     if (subreg == NULL) return CG_ERROR;
 
     subreg->gcname = CGNS_NEW(cgns_descr, 1);
@@ -8877,6 +8997,18 @@ int cg_subreg_gcname_write(int fn, int B, int Z, const char *name, int dimension
  *      Read and write ZoneGridConnectivity_t Nodes               *
 \*************************************************************************/
 
+/**
+ * \ingroup ZoneGridConnectivity
+ *
+ * \brief   Get number of ZoneGridConnectivity_t nodes 
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] nzconns  Number of ZoneGridConnectivity_t nodes under Zone Z.
+ * \return \ier
+ *
+ */
 int cg_nzconns(int fn, int B, int Z, int *nzconns)
 {
     cgns_zone *zone;
@@ -8894,7 +9026,20 @@ int cg_nzconns(int fn, int B, int Z, int *nzconns)
     return CG_OK;
 }
 
-int cg_zconn_read(int fn, int B, int Z, int C, char *name)
+/**
+ * \ingroup ZoneGridConnectivity
+ *
+ * \brief   Read ZoneGridConnectivity_t node 
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] ZC Zone grid connectivity index number, where 1 ≤ ZC ≤ nzconns.
+ * \param[out] zcname Name of the ZoneGridConnectivity_t node
+ * \return \ier
+ *
+ */
+int cg_zconn_read(int fn, int B, int Z, int ZC, char *zcname)
 {
     cgns_zconn *zconn;
 
@@ -8905,22 +9050,35 @@ int cg_zconn_read(int fn, int B, int Z, int C, char *name)
 
     /* Get memory address for ZoneGridConnectivity_t node */
     /* cgi_get_zconnZC() also sets active ZoneGridConnectivity_t node */
-    zconn = cgi_get_zconnZC(cg, B, Z, C);
+    zconn = cgi_get_zconnZC(cg, B, Z, ZC);
     if (zconn==0) return CG_ERROR;
 
     /* Return name for the ZoneGridConnectivity_t node */
-    strcpy(name,zconn->name);
+    strcpy(zcname,zconn->name);
     return CG_OK;
 }
 
-int cg_zconn_write(int fn, int B, int Z, const char *name, int *C)
+/**
+ * \ingroup ZoneGridConnectivity
+ *
+ * \brief   Create ZoneGridConnectivity_t node 
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] zcname Name of the ZoneGridConnectivity_t node
+ * \param[out] ZC Zone grid connectivity index number, where 1 ≤ ZC ≤ nzconns.
+ * \return \ier
+ *
+ */
+int cg_zconn_write(int fn, int B, int Z, const char *zcname, int *ZC)
 {
     cgns_zone *zone;
     cgns_zconn *zconn = NULL;
     int index;
 
      /* verify input */
-    if (cgi_check_strlen(name)) return CG_ERROR;
+    if (cgi_check_strlen(zcname)) return CG_ERROR;
 
      /* get memory address */
     cg = cgi_get_file(fn);
@@ -8933,11 +9091,11 @@ int cg_zconn_write(int fn, int B, int Z, const char *name, int *C)
 
     /* Overwrite a ZoneGridConnectivity_t Node: */
     for (index = 0; index < zone->nzconn; index++) {
-        if (0 == strcmp(name, zone->zconn[index].name)) {
+        if (0 == strcmp(zcname, zone->zconn[index].name)) {
 
             /* in CG_MODE_WRITE, children names must be unique */
             if (cg->mode == CG_MODE_WRITE) {
-                cgi_error("Duplicate child name found: %s",name);
+                cgi_error("Duplicate child name found: %s",zcname);
                 return CG_ERROR;
             }
 
@@ -8963,11 +9121,11 @@ int cg_zconn_write(int fn, int B, int Z, const char *name, int *C)
         zconn = &(zone->zconn[zone->nzconn]);
         zone->nzconn++;
     }
-    (*C) = index+1;
-    zone->active_zconn = *C;
+    (*ZC) = index+1;
+    zone->active_zconn = *ZC;
 
     memset(zconn, 0, sizeof(cgns_zconn));
-    strcpy(zconn->name,name);
+    strcpy(zconn->name,zcname);
 
     /* save data in file */
     if (cgi_new_node(zone->id, zconn->name, "ZoneGridConnectivity_t",
@@ -8976,7 +9134,19 @@ int cg_zconn_write(int fn, int B, int Z, const char *name, int *C)
     return CG_OK;
 }
 
-int cg_zconn_get(int fn, int B, int Z, int *C)
+/**
+ * \ingroup ZoneGridConnectivity
+ *
+ * \brief   Get the current ZoneGridConnectivity_t node
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] ZC Zone grid connectivity index number, where 1 ≤ ZC ≤ nzconns.
+ * \return \ier
+ *
+ */
+int cg_zconn_get(int fn, int B, int Z, int *ZC)
 {
     cgns_zone *zone;
 
@@ -8988,18 +9158,30 @@ int cg_zconn_get(int fn, int B, int Z, int *C)
     if (zone==0) return CG_ERROR;
 
     if (zone->nzconn <= 0) {
-        *C = 0;
+        *ZC = 0;
         cgi_error("no ZoneGridConnectivity_t node found.");
         return CG_NODE_NOT_FOUND;
     }
 
     if (zone->active_zconn <= 0 || zone->active_zconn > zone->nzconn)
         zone->active_zconn = 1;
-    *C = zone->active_zconn;
+    *ZC = zone->active_zconn;
     return CG_OK;
 }
 
-int cg_zconn_set(int fn, int B, int Z, int C)
+/**
+ * \ingroup ZoneGridConnectivity
+ *
+ * \brief   Set the current ZoneGridConnectivity_t node 
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] ZC Zone grid connectivity index number, where 1 ≤ ZC ≤ nzconns.
+ * \return \ier
+ *
+ */
+int cg_zconn_set(int fn, int B, int Z, int ZC)
 {
     cgns_zconn *zconn;
 
@@ -9008,7 +9190,7 @@ int cg_zconn_set(int fn, int B, int Z, int C)
 
     /* Get memory address for ZoneGridConnectivity_t node */
     /* cgi_get_zconnZC() also sets active ZoneGridConnectivity_t node */
-    zconn = cgi_get_zconnZC(cg, B, Z, C);
+    zconn = cgi_get_zconnZC(cg, B, Z, ZC);
     if (zconn==0) return CG_ERROR;
     return CG_OK;
 }
