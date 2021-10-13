@@ -41,6 +41,10 @@ freely, subject to the following restrictions:
  * \defgroup FlowSolutionData Flow Solution Data
  * \defgroup ZoneSubregions Zone Subregions
  * \defgroup ZoneGridConnectivity Zone Grid Connectivity
+ * \defgroup OversetHoles Overset Holes
+ * \defgroup GeneralizedConnectivity Generalized Connectivity
+ * \defgroup OneToOneConnectivity One-to-One Connectivity
+ * \defgroup BoundaryConditionType Boundary Condition Type and Location
  */
 
 #include <stdio.h>
@@ -9199,6 +9203,18 @@ int cg_zconn_set(int fn, int B, int Z, int ZC)
  *         Read and Write OversetHoles_t Nodes
 \*****************************************************************************/
 
+/**
+ * \ingroup OversetHoles
+ *
+ * \brief  Get number of overset holes in a zone
+ *
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] nholes  Number of overset holes in zone Z.
+ * \return \ier
+ *
+ */
 int cg_nholes(int file_number, int B, int Z, int *nholes)
 {
     cgns_zconn *zconn;
@@ -9214,6 +9230,23 @@ int cg_nholes(int file_number, int B, int Z, int *nholes)
     return CG_OK;
 }
 
+/**
+ * \ingroup OversetHoles
+ *
+ * \brief  Get info about an overset hole
+ *
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] J  Overset hole index number, where 1 ≤ J ≤ nholes. 
+ * \param[out] holename  Name of the overset hole. 
+ * \param[out] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
+ * \param[out] ptset_type  The extent of the overset hole may be defined using a range of points or cells, or using a discrete list of all points or cells in the overset hole. If a range of points or cells is used, ptset_type is set to PointRange. When a discrete list of points or cells is used, ptset_type equals PointList.
+ * \param[out] nptsets  Number of point sets used to define the hole. If ptset_type is PointRange, several point sets may be used. If ptset_type is PointList, only one point set is allowed. 
+ * \param[out] npnts  	Number of points (or cells) in the point set. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points or cells in the PointList. 
+ * \return \ier
+ *
+ */
 int cg_hole_info(int file_number, int B, int Z, int J, char *holename,
          CGNS_ENUMT(GridLocation_t) *location,
                  CGNS_ENUMT(PointSetType_t) *ptset_type, int *nptsets,
@@ -9239,6 +9272,19 @@ int cg_hole_info(int file_number, int B, int Z, int J, char *holename,
     return CG_OK;
 }
 
+/**
+ * \ingroup OversetHoles
+ *
+ * \brief  Read overset hole data
+ *
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] J  Overset hole index number, where 1 ≤ J ≤ nholes. 
+ * \param[out] pnts Array of points or cells in the point set.
+ * \return \ier
+ *
+ */
 int cg_hole_read(int file_number, int B, int Z, int J, cgsize_t *pnts)
 {
     cgns_hole *hole;
@@ -9301,6 +9347,24 @@ int cg_hole_id(int file_number, int B, int Z, int J, double *hole_id)
     return CG_OK;
 }
 
+/**
+ * \ingroup OversetHoles
+ *
+ * \brief   Write overset hole data
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] holename  Name of the overset hole. 
+ * \param[in] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
+ * \param[in] ptset_type  The extent of the overset hole may be defined using a range of points or cells, or using a discrete list of all points or cells in the overset hole. If a range of points or cells is used, ptset_type is set to PointRange. When a discrete list of points or cells is used, ptset_type equals PointList.
+ * \param[in] nptsets  Number of point sets used to define the hole. If ptset_type is PointRange, several point sets may be used. If ptset_type is PointList, only one point set is allowed. 
+ * \param[in] npnts  	Number of points (or cells) in the point set. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points or cells in the PointList. 
+ * \param[in] pnts Array of points or cells in the point set.
+ * \param[out] J  Overset hole index number, where 1 ≤ J ≤ nholes. 
+ * \return \ier
+ *
+ */
 int cg_hole_write(int file_number, int B, int Z, const char * holename,
           CGNS_ENUMT(GridLocation_t) location,
           CGNS_ENUMT(PointSetType_t) ptset_type,
@@ -9464,6 +9528,18 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
  *         Read and Write GridConnectivity_t Nodes
 \*****************************************************************************/
 
+/**
+ * \ingroup GeneralizedConnectivity
+ *
+ * \brief  Get number of generalized connectivity interfaces in a zone
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] nconns  Number of interfaces for zone Z.
+ * \return \ier
+ *
+ */
 int cg_nconns(int file_number, int B, int Z, int *nconns)
 {
     cgns_zconn *zconn;
@@ -9479,12 +9555,35 @@ int cg_nconns(int file_number, int B, int Z, int *nconns)
     return CG_OK;
 }
 
-/* in cg_conn_info, donor_datatype is useless starting with version 1.27, because
-   it's always I4.  However this arg. is left for backward compatibility of API
-   and to be able to read old files */
+/**
+ * \ingroup GeneralizedConnectivity
+ *
+ * \brief  Get info about a generalized connectivity interface 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] J  Interface index number, where 1 ≤ J ≤ nconns.
+ * \param[out] connectname  Name of the interface.
+ * \param[out] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
+ * \param[out] connect_type  Type of interface being defined. The admissible types are Overset, Abutting, and Abutting1to1.
+ * \param[out] ptset_type  Type of point set defining the interface in the current zone; either PointRange or PointList.
+ * \param[out] npnts  Number of points defining the interface in the current zone. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList.
+ * \param[out] donorname  Name of the zone interfacing with the current zone. 
+ * \param[out] donor_zonetype  Type of the donor zone. The admissible types are Structured and Unstructured.
+ * \param[out] donor_ptset_type  Type of point set defining the interface in the donor zone; either PointListDonor or CellListDonor.
+ * \param[out] donor_datatype  Data type in which the donor points are stored in the file. As of Version 3.0, this value is ignored when writing, and on reading it will return either Integer or LongInteger depending on whether the file was written using 32 or 64-bit. The donor_datatype argument was left in these functions only for backward compatibility. The donor data is always read as cgsize_t.
+ * \param[out] ndata_donor  Number of points or cells in the current zone. These are paired with points, cells, or fractions thereof in the donor zone.
+ * \return \ier
+ *
+ * \details In cg_conn_info, donor_datatype is useless starting with version 1.27, because
+ *  it's always I4.  However this arg. is left for backward compatibility of API
+ *  and to be able to read old files
+ *
+ */
 int cg_conn_info(int file_number, int B, int Z, int J, char *connectname,
          CGNS_ENUMT(GridLocation_t) *location,
-                 CGNS_ENUMT(GridConnectivityType_t) *type,
+                 CGNS_ENUMT(GridConnectivityType_t) *connect_type,
          CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts,
                  char *donorname, CGNS_ENUMT(ZoneType_t) *donor_zonetype,
                  CGNS_ENUMT(PointSetType_t) *donor_ptset_type,
@@ -9502,7 +9601,7 @@ int cg_conn_info(int file_number, int B, int Z, int J, char *connectname,
     if (conn==0) return CG_ERROR;
 
     strcpy(connectname, conn->name);
-    *type = conn->type;
+    *connect_type = conn->type;
     *location = conn->location;
     *ptset_type = conn->ptset.type;
     *npnts = conn->ptset.npts;
@@ -9529,9 +9628,24 @@ int cg_conn_info(int file_number, int B, int Z, int J, char *connectname,
     return CG_OK;
 }
 
-/* in cg_conn_read, donor_datatype is useless starting with version 1.27, because
-   it's always I4.  However this arg. is left for backward compatibility of API
-   and to be able to read old files */
+/**
+ * \ingroup GeneralizedConnectivity
+ *
+ * \brief  Read generalized connectivity data
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] J  Interface index number, where 1 ≤ J ≤ nconns.
+ * \param[out] pnts   Array of points defining the interface in the current zone.
+ * \param[out] donor_datatype  Data type in which the donor points are stored in the file. As of Version 3.0, this value is ignored when writing, and on reading it will return either Integer or LongInteger depending on whether the file was written using 32 or 64-bit. The donor_datatype argument was left in these functions only for backward compatibility. The donor data is always read as cgsize_t.
+ * \param[out] donor_data  Array of donor points or cells corresponding to ndata_donor. Note that it is possible that the same donor point or cell may be used multiple times.
+ * \return \ier
+ *
+ * \details in cg_conn_read, donor_datatype is useless starting with version 1.27, because
+ *  it's always I4.  However this arg. is left for backward compatibility of API
+ *  and to be able to read old files
+ */
 int cg_conn_read(int file_number, int B, int Z, int J, cgsize_t *pnts,
                  CGNS_ENUMT(DataType_t) donor_datatype, cgsize_t *donor_data)
 {
@@ -9596,6 +9710,19 @@ int cg_conn_read(int file_number, int B, int Z, int J, cgsize_t *pnts,
     return CG_OK;
 }
 
+/**
+ * \ingroup GeneralizedConnectivity
+ *
+ * \brief  Read generalized connectivity data without donor information
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] J  Interface index number, where 1 ≤ J ≤ nconns.
+ * \param[out] pnts   Array of points defining the interface in the current zone.
+ * \return \ier
+ *
+ */
 int cg_conn_read_short(int file_number, int B, int Z, int J, cgsize_t *pnts)
 {
     return cg_conn_read(file_number, B, Z, J, pnts, CGNS_ENUMV(DataTypeNull), NULL);
@@ -9617,9 +9744,33 @@ int cg_conn_id(int file_number, int B, int Z, int J, double *conn_id)
     return CG_OK;
 }
 
+/**
+ * \ingroup GeneralizedConnectivity
+ *
+ * \brief  Write generalized connectivity data 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] connectname  Name of the interface.
+ * \param[in] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
+ * \param[in] connect_type  Type of interface being defined. The admissible types are Overset, Abutting, and Abutting1to1.
+ * \param[in] ptset_type  Type of point set defining the interface in the current zone; either PointRange or PointList.
+ * \param[in] npnts  Number of points defining the interface in the current zone. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList.
+ * \param[in] pnts   Array of points defining the interface in the current zone.
+ * \param[in] donorname  Name of the zone interfacing with the current zone. 
+ * \param[in] donor_zonetype  Type of the donor zone. The admissible types are Structured and Unstructured.
+ * \param[in] donor_ptset_type  Type of point set defining the interface in the donor zone; either PointListDonor or CellListDonor.
+ * \param[in] donor_datatype  Data type in which the donor points are stored in the file. As of Version 3.0, this value is ignored when writing, and on reading it will return either Integer or LongInteger depending on whether the file was written using 32 or 64-bit. The donor_datatype argument was left in these functions only for backward compatibility. The donor data is always read as cgsize_t.
+ * \param[in] ndata_donor  Number of points or cells in the current zone. These are paired with points, cells, or fractions thereof in the donor zone.
+ * \param[in] donor_data  Array of donor points or cells corresponding to ndata_donor. Note that it is possible that the same donor point or cell may be used multiple times.
+ * \param[out] J  Interface index number, where 1 ≤ J ≤ nconns.
+ * \return \ier
+ *
+ */
 int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
           CGNS_ENUMT(GridLocation_t) location,
-          CGNS_ENUMT(GridConnectivityType_t) type,
+          CGNS_ENUMT(GridConnectivityType_t) connect_type,
           CGNS_ENUMT(PointSetType_t) ptset_type,
           cgsize_t npnts, const cgsize_t * pnts, const char * donorname,
           CGNS_ENUMT(ZoneType_t) donor_zonetype,
@@ -9641,7 +9792,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
      /* verify input */
     if (cgi_check_strlen(connectname)) return CG_ERROR;
     if (cgi_check_strlen(donorname)) return CG_ERROR;
-    if (INVALID_ENUM(type,NofValidGridConnectivityTypes)) {
+    if (INVALID_ENUM(connect_type,NofValidGridConnectivityTypes)) {
         cgi_error("Invalid input:  GridConnectivityType=%d ?",type);
         return CG_ERROR;
     }
@@ -9824,7 +9975,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
      /* write conn info to internal memory */
     memset(conn, 0, sizeof(cgns_conn));
     strcpy(conn->name,connectname);
-    conn->type = type;
+    conn->type = connect_type;
     conn->location = location;
     conn->ptset.id = 0;
     conn->ptset.link = 0;
@@ -9904,15 +10055,34 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
     return CG_OK;
 }
 
+/**
+ * \ingroup GeneralizedConnectivity
+ *
+ * \brief  Write generalized connectivity data without donor information
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] connectname  Name of the interface.
+ * \param[in] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
+ * \param[in] connect_type  Type of interface being defined. The admissible types are Overset, Abutting, and Abutting1to1.
+ * \param[in] ptset_type  Type of point set defining the interface in the current zone; either PointRange or PointList.
+ * \param[in] npnts  Number of points defining the interface in the current zone. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList.
+ * \param[in] pnts   Array of points defining the interface in the current zone.
+ * \param[in] donorname  Name of the zone interfacing with the current zone. 
+ * \param[out] J  Interface index number, where 1 ≤ J ≤ nconns.
+ * \return \ier
+ *
+ */
 int cg_conn_write_short(int file_number, int B, int Z,  const char * connectname,
                         CGNS_ENUMT(GridLocation_t) location,
-                        CGNS_ENUMT(GridConnectivityType_t) type,
+                        CGNS_ENUMT(GridConnectivityType_t) connect_type,
                         CGNS_ENUMT(PointSetType_t) ptset_type,
                         cgsize_t npnts, const cgsize_t * pnts,
                         const char * donorname, int *J)
 {
     return cg_conn_write (file_number, B, Z,  connectname, location,
-              type, ptset_type, npnts, pnts, donorname,
+              connect_type, ptset_type, npnts, pnts, donorname,
               CGNS_ENUMV(ZoneTypeNull), CGNS_ENUMV(PointSetTypeNull),
                           CGNS_ENUMV(DataTypeNull), 0, NULL, J);
 }
@@ -9921,6 +10091,18 @@ int cg_conn_write_short(int file_number, int B, int Z,  const char * connectname
  *         Read and write GridConnectivity1to1_t Nodes
 \*****************************************************************************/
 
+/**
+ * \ingroup OneToOneConnectivity
+ *
+ * \brief  Get number of 1-to-1 interfaces in a zone
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] n1to1  Number of one-to-one interfaces in zone Z, stored under GridConnectivity1to1_t nodes. (I.e., this does not include one-to-one interfaces that may be stored under GridConnectivity_t nodes, used for generalized zone interfaces.)
+ * \return \ier
+ *
+ */
 int cg_n1to1(int file_number, int B, int Z, int *n1to1)
 {
     cgns_zconn *zconn;
@@ -9936,6 +10118,17 @@ int cg_n1to1(int file_number, int B, int Z, int *n1to1)
     return CG_OK;
 }
 
+/**
+ * \ingroup  OneToOneConnectivity
+ *
+ * \brief  Get total number of 1-to-1 interfaces in a database
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] n1to1_global  Total number of one-to-one interfaces in base B, stored under GridConnectivity1to1_t nodes. (I.e., this does not include one-to-one interfaces that may be stored under GridConnectivity_t nodes, used for generalized zone interfaces.) Note that the function cg_n1to1 (described below) may be used to get the number of one-to-one interfaces in a specific zone.
+ * \return \ier
+ *
+ */
 int cg_n1to1_global(int file_number, int B, int *n1to1_global)
 {
     cgns_base *base;
@@ -9992,6 +10185,23 @@ int cg_n1to1_global(int file_number, int B, int *n1to1_global)
     return CG_OK;
 }
 
+/**
+ * \ingroup OneToOneConnectivity
+ *
+ * \brief  Read 1-to-1 connectivity data for a zone 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] J  Interface index number, where 1 ≤ J ≤ n1to1.
+ * \param[out] connectname Name of the interface.
+ * \param[out] donorname  Name of the zone interfacing with the current zone.
+ * \param[out] range  Range of points for the current zone.
+ * \param[out] donor_range  Range of points for the donor zone.
+ * \param[out] transform  Short hand notation for the transformation matrix defining the relative orientation of the two zones.
+ * \return \ier
+ *
+ */
 int cg_1to1_read(int file_number, int B, int Z, int J, char *connectname,
                  char *donorname, cgsize_t *range, cgsize_t *donor_range,
                  int *transform)
@@ -10039,6 +10249,22 @@ int cg_1to1_read(int file_number, int B, int Z, int J, char *connectname,
     return CG_OK;
 }
 
+/**
+ * \ingroup OneToOneConnectivity
+ *
+ * \brief  Read data for all 1-to-1 interfaces in a database
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[out] connectname  Name of the interface.
+ * \param[out] zonename  Name of the first zone, for all one-to-one interfaces in base B.
+ * \param[out] donorname  Name of the second zone, for all one-to-one interfaces in base B.
+ * \param[out] range  Range of points for the first zone, for all one-to-one interfaces in base B.
+ * \param[out] donor_range  Range of points for the current zone, for all one-to-one interfaces in base B.
+ * \param[out] transform  Short hand notation for the transformation matrix defining the relative orientation of the two zones. This transformation is given for all one-to-one interfaces in base B.
+ * \return \ier
+ *
+ */
 int cg_1to1_read_global(int file_number, int B, char **connectname, char **zonename,
                         char **donorname, cgsize_t **range, cgsize_t **donor_range,
                         int **transform)
@@ -10116,6 +10342,23 @@ int cg_1to1_id(int file_number, int B, int Z, int J, double *one21_id)
     return CG_OK;
 }
 
+/**
+ * \ingroup OneToOneConnectivity
+ *
+ * \brief  Write 1-to-1 connectivity data for a zone
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] connectname  Name of the interface.
+ * \param[in] donorname  Name of the zone interfacing with the current zone. 
+ * \param[in] range  Range of points for the current zone. 
+ * \param[in] donor_range  Range of points for the donor zone.
+ * \param[in] transform  Short hand notation for the transformation matrix defining the relative orientation of the two zones. 
+ * \param[out] J  Interface index number, where 1 ≤ J ≤ n1to1. 
+ * \return \ier
+ *
+ */
 int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
           const char * donorname, const cgsize_t * range,
           const cgsize_t * donor_range, const int * transform, int *J)
@@ -10278,7 +10521,18 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
 /*****************************************************************************\
  *          Read and write BC_t Nodes
 \*****************************************************************************/
-
+/**
+ * \ingroup BoundaryConditionType
+ *
+ * \brief  Get number of boundary condition in zone
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] nbocos  Number of boundary conditions in zone Z.
+ * \return \ier
+ *
+ */
 int cg_nbocos(int file_number, int B, int Z, int *nbocos)
 {
     cgns_zboco *zboco;
