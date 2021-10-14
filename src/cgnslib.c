@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
  * \defgroup CGNSInternals Configuring CGNS Internals
  * \defgroup CGNSBaseInformation CGNS Base Information
  * \defgroup CGNSZoneInformation CGNS Zone Information
- * \defgroup CGNSSimulationType Simulation Type
+ * \defgroup SimulationType Simulation Type
  * \defgroup CGNSFamilyDefinition Family Definition
  * \defgroup CGNSFamilyHierarchyTreeDefinition Family Hierrarchy Tree
  * \defgroup CGNSFamilyBoundaryDefinition Family Boundary Condition
@@ -46,6 +46,7 @@ freely, subject to the following restrictions:
  * \defgroup OneToOneConnectivity One-to-One Connectivity
  * \defgroup BoundaryConditionType Boundary Condition Type and Location
  * \defgroup BCDataset Boundary Condition Datasets
+ * \defgroup BCData  Boundary Condition Data
  */
 
 #include <stdio.h>
@@ -11057,14 +11058,14 @@ int cg_boco_normal_write(int file_number, int B, int Z, int BC, const int * Norm
  * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
  * \param[in] DSet Dataset index number, where 1 ≤ Dset ≤ ndataset.
- * \param[in] name  Name of dataset.
- * \param[in] BCType  Simple boundary condition type for the dataset. The supported types are listed in the table of Simple Boundary Condition Types in the SIDS manual, but note that FamilySpecified does not apply here.
- * \param[in] DirichletFlag  Flag indicating if the dataset contains Dirichlet data.
- * \param[in] NeumannFlag  Flag indicating if the dataset contains Neumann data.
+ * \param[out] DatasetName  Name of dataset.
+ * \param[out] BCType  Simple boundary condition type for the dataset. The supported types are listed in the table of Simple Boundary Condition Types in the SIDS manual, but note that FamilySpecified does not apply here.
+ * \param[out] DirichletFlag  Flag indicating if the dataset contains Dirichlet data.
+ * \param[out] NeumannFlag  Flag indicating if the dataset contains Neumann data.
  * \return \ier
  *
  */
-int cg_dataset_read(int file_number, int B, int Z, int BC, int DSet, char *name,
+int cg_dataset_read(int file_number, int B, int Z, int BC, int DSet, char *DatasetName,
             CGNS_ENUMT(BCType_t) *BCType, int *DirichletFlag,
             int *NeumannFlag)
 {
@@ -11078,7 +11079,7 @@ int cg_dataset_read(int file_number, int B, int Z, int BC, int DSet, char *name,
     dataset = cgi_get_dataset(cg, B, Z, BC, DSet);
     if (dataset==0) return CG_ERROR;
 
-    strcpy(name, dataset->name);
+    strcpy(DatasetName, dataset->name);
     *BCType = dataset->type;
     if (dataset->dirichlet) *DirichletFlag=1;
     else                    *DirichletFlag=0;
@@ -11088,7 +11089,22 @@ int cg_dataset_read(int file_number, int B, int Z, int BC, int DSet, char *name,
     return CG_OK;
 }
 
-int cg_dataset_write(int file_number, int B, int Z, int BC, const char * name,
+/**
+ * \ingroup BCDataset
+ *
+ * \brief  Write boundary condition dataset info
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
+ * \param[in] DatasetName  Name of dataset.
+ * \param[in] BCType  Simple boundary condition type for the dataset. The supported types are listed in the table of Simple Boundary Condition Types in the SIDS manual, but note that FamilySpecified does not apply here.
+ * \param[out] Dset Dataset index number, where 1 ≤ Dset ≤ ndataset.
+ * \return \ier
+ *
+ */
+int cg_dataset_write(int file_number, int B, int Z, int BC, const char * DatasetName,
              CGNS_ENUMT( BCType_t )  BCType, int *Dset)
 {
     cgns_boco *boco;
@@ -11101,7 +11117,7 @@ int cg_dataset_write(int file_number, int B, int Z, int BC, const char * name,
         cgi_error("Invalid BCType:  %d",BCType);
         return CG_ERROR;
     }
-    if (cgi_check_strlen(name)) return CG_ERROR;
+    if (cgi_check_strlen(DatasetName)) return CG_ERROR;
 
      /* get memory address of file */
     cg = cgi_get_file(file_number);
@@ -11147,7 +11163,7 @@ int cg_dataset_write(int file_number, int B, int Z, int BC, const char * name,
      /* save data in memory */
     memset(dataset, 0, sizeof(cgns_dataset));
     dataset->type = BCType;
-    strcpy(dataset->name, name);
+    strcpy(dataset->name, DatasetName);
     dataset->location = CGNS_ENUMV(Vertex);
 
      /* save data in file */
@@ -11161,6 +11177,22 @@ int cg_dataset_write(int file_number, int B, int Z, int BC, const char * name,
  *         write BCdata_t Nodes
 \*****************************************************************************/
 
+/**
+ * \ingroup BCData
+ *
+ * \brief  Write boundary condition data  
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
+ * \param[in] Dset Dataset index number, where 1 ≤ Dset ≤ ndataset.
+ * \param[in] BCDataType Type of boundary condition in the dataset. Admissible boundary condition types are Dirichlet and Neumann. 
+ * \return \ier
+ *
+ * \details  To write the boundary condition data itself, after creating the BCData_t node using the function cg_bcdata_write, use cg_goto to access the node, then cg_array_write to write the data. Note that when using cg_goto to access a BCData_t node, the node index should be specified as either Dirichlet or Neumann, depending on the type of boundary condition. See the description of cg_goto for details.
+ *
+ */
 int cg_bcdata_write(int file_number, int B, int Z, int BC, int Dset,
             CGNS_ENUMT(BCDataType_t) BCDataType)
 {
@@ -11225,6 +11257,18 @@ int cg_bcdata_write(int file_number, int B, int Z, int BC, int Dset,
  *         Read and write RigidGridMotion_t Nodes
 \*****************************************************************************/
 
+/**
+ * \ingroup RigidGridMotion
+ *
+ * \brief  Get number of RigidGridMotion_t nodes
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] n_rigid_motions  Number of RigidGridMotion_t nodes under zone Z. 
+ * \return \ier
+ *
+ */
 int cg_n_rigid_motions(int file_number, int B, int Z, int *n_rigid_motions)
 {
     cgns_zone *zone;
@@ -11242,6 +11286,20 @@ int cg_n_rigid_motions(int file_number, int B, int Z, int *n_rigid_motions)
     return CG_OK;
 }
 
+/**
+ * \ingroup RigidGridMotion
+ *
+ * \brief  Read RigidGridMotion_t node
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] R  Rigid rotation index number, where 1 ≤ R ≤ n_rigid_motions. 
+ * \param[out] name  Name of the RigidGridMotion_t node.
+ * \param[out] type  Type of rigid grid motion. The admissible types are CG_Null, CG_UserDefined, ConstantRate, and VariableRate. 
+ * \return \ier
+ *
+ */
 int cg_rigid_motion_read(int file_number, int B, int Z, int R, char *name,
              CGNS_ENUMT(RigidGridMotionType_t) *type)
 {
@@ -11262,6 +11320,20 @@ int cg_rigid_motion_read(int file_number, int B, int Z, int R, char *name,
     return CG_OK;
 }
 
+/**
+ * \ingroup RigidGridMotion
+ *
+ * \brief  Create RigidGridMotion_t node
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] rmotionname  Name of the RigidGridMotion_t node.
+ * \param[in] type  Type of rigid grid motion. The admissible types are CG_Null, CG_UserDefined, ConstantRate, and VariableRate.
+ * \param[out] R  Rigid rotation index number, where 1 ≤ R ≤ n_rigid_motions. 
+ * \return \ier
+ *
+ */
 int cg_rigid_motion_write(int file_number, int B, int Z, const char * rmotionname,
               CGNS_ENUMT(RigidGridMotionType_t) type, int *R)
 {
@@ -11337,6 +11409,18 @@ int cg_rigid_motion_write(int file_number, int B, int Z, const char * rmotionnam
  *      Read and write ArbitraryGridMotion_t Nodes
 \*****************************************************************************/
 
+/**
+ * \ingroup ArbitraryGridMotion
+ *
+ * \brief  Get number of ArbitraryGridMotion_t nodes
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] n_arbitrary_motions  Number of ArbitraryGridMotion_t nodes under zone Z.
+ * \return \ier
+ *
+ */
 int cg_n_arbitrary_motions(int file_number, int B, int Z, int *n_arbitrary_motions)
 {
     cgns_zone *zone;
@@ -11354,6 +11438,20 @@ int cg_n_arbitrary_motions(int file_number, int B, int Z, int *n_arbitrary_motio
     return CG_OK;
 }
 
+/**
+ * \ingroup ArbitraryGridMotion
+ *
+ * \brief  Read ArbitraryGridMotion_t node 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] A  Arbitrary grid motion index number, where 1 ≤ A ≤ n_arbitrary_motions.
+ * \param[out] name  Name of the ArbitraryGridMotion_t node.
+ * \param[out] type  Type of arbitrary grid motion. The admissible types are CG_Null, CG_UserDefined, NonDeformingGrid, and DeformingGrid.
+ * \return \ier
+ *
+ */
 int cg_arbitrary_motion_read(int file_number, int B, int Z, int A, char *name,
                  CGNS_ENUMT(ArbitraryGridMotionType_t) *type)
 {
@@ -11374,6 +11472,20 @@ int cg_arbitrary_motion_read(int file_number, int B, int Z, int A, char *name,
     return CG_OK;
 }
 
+/**
+ * \ingroup ArbitraryGridMotion
+ *
+ * \brief  Write ArbitraryGridMotion_t node 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] amotionname  Name of the ArbitraryGridMotion_t node.
+ * \param[in] type  Type of arbitrary grid motion. The admissible types are CG_Null, CG_UserDefined, NonDeformingGrid, and DeformingGrid.
+ * \param[out] A  Arbitrary grid motion index number, where 1 ≤ A ≤ n_arbitrary_motions.
+ * \return \ier
+ *
+ */
 int cg_arbitrary_motion_write(int file_number, int B, int Z, const char * amotionname,
                   CGNS_ENUMT(ArbitraryGridMotionType_t) type, int *A)
 {
@@ -11449,7 +11561,18 @@ int cg_arbitrary_motion_write(int file_number, int B, int Z, const char * amotio
  *      Read and write SimulationType_t Node
 \*****************************************************************************/
 
-int cg_simulation_type_read(int file_number, int B, CGNS_ENUMT(SimulationType_t) *type)
+/**
+ * \ingroup SimulationType
+ *
+ * \brief  Read simulation type
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[out] SimulationType  Type of simulation. Valid types are CG_Null, CG_UserDefined, TimeAccurate, and NonTimeAccurate.
+ * \return \ier
+ *
+ */
+int cg_simulation_type_read(int file_number, int B, CGNS_ENUMT(SimulationType_t) *SimulationType)
 {
     cgns_base *base;
 
@@ -11461,19 +11584,30 @@ int cg_simulation_type_read(int file_number, int B, CGNS_ENUMT(SimulationType_t)
     base = cgi_get_base(cg, B);
     if (base==0) return CG_ERROR;
 
-    *type = base->type;
+    *SimulationType = base->type;
 
     return CG_OK;
 }
 
-int cg_simulation_type_write(int file_number, int B, CGNS_ENUMT(SimulationType_t) type)
+/**
+ * \ingroup SimulationType
+ *
+ * \brief  Write simulation type
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] SimulationType  Type of simulation. Valid types are CG_Null, CG_UserDefined, TimeAccurate, and NonTimeAccurate.
+ * \return \ier
+ *
+ */
+int cg_simulation_type_write(int file_number, int B, CGNS_ENUMT(SimulationType_t) SimulationType)
 {
     cgns_base *base;
     cgsize_t length;
 
      /* check input */
     if (INVALID_ENUM(type,NofValidSimulationTypes)) {
-        cgi_error("Invalid input:  SimulationType=%d ?",type);
+        cgi_error("Invalid input:  SimulationType=%d ?", SimulationType);
         return CG_ERROR;
     }
 
@@ -11497,13 +11631,13 @@ int cg_simulation_type_write(int file_number, int B, CGNS_ENUMT(SimulationType_t
         if (cgi_delete_node(base->id, base->type_id))
             return CG_ERROR;
     }
-    base->type = type;
+    base->type = SimulationType;
     base->type_id = 0;
 
      /* save data in file */
-    length = (cgsize_t)strlen(SimulationTypeName[type]);
+    length = (cgsize_t)strlen(SimulationTypeName[SimulationType]);
     if (cgi_new_node(base->id, "SimulationType", "SimulationType_t", &base->type_id,
-        "C1", 1, &length, (void *)SimulationTypeName[type])) return CG_ERROR;
+        "C1", 1, &length, (void *)SimulationTypeName[SimulationType])) return CG_ERROR;
 
     return CG_OK;
 }
@@ -11512,6 +11646,18 @@ int cg_simulation_type_write(int file_number, int B, CGNS_ENUMT(SimulationType_t
  *      read and write BaseIterativeData_t Node
 \*****************************************************************************/
 
+/**
+ * \ingroup BaseIterativeData
+ *
+ * \brief  Read BaseIterativeData_t node 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[out] bitername  Name of the BaseIterativeData_t node.
+ * \param[out] nsteps Number of time steps or iterations.
+ * \return \ier
+ *
+ */
 int cg_biter_read(int file_number, int B, char *bitername, int *nsteps)
 {
     cgns_biter *biter;
@@ -11530,6 +11676,18 @@ int cg_biter_read(int file_number, int B, char *bitername, int *nsteps)
     return CG_OK;
 }
 
+/**
+ * \ingroup BaseIterativeData
+ *
+ * \brief  Write BaseIterativeData_t node 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] bitername  Name of the BaseIterativeData_t node.
+ * \param[in] nsteps Number of time steps or iterations.
+ * \return \ier
+ *
+ */
 int cg_biter_write(int file_number, int B,  const char * bitername, int nsteps)
 {
     cgns_base *base;
@@ -11587,6 +11745,18 @@ int cg_biter_write(int file_number, int B,  const char * bitername, int nsteps)
  *      read and write ZoneIterativeData_t Node
 \*****************************************************************************/
 
+/**
+ * \ingroup ZoneIterativeData
+ *
+ * \brief  Read ZontIterativeData_t node 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] zitername  Name of the ZoneIterativeData_t node.
+ * \return \ier
+ *
+ */
 int cg_ziter_read(int file_number, int B, int Z, char *zitername)
 {
     cgns_ziter *ziter;
@@ -11604,6 +11774,18 @@ int cg_ziter_read(int file_number, int B, int Z, char *zitername)
     return CG_OK;
 }
 
+/**
+ * \ingroup ZoneIterativeData
+ *
+ * \brief  Write ZontIterativeData_t node 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] zitername  Name of the ZoneIterativeData_t node.
+ * \return \ier
+ *
+ */
 int cg_ziter_write(int file_number, int B, int Z, const char * zitername)
 {
     cgns_zone *zone;
@@ -11654,6 +11836,17 @@ int cg_ziter_write(int file_number, int B, int Z, const char * zitername)
  *      read and write Gravity_t Node
 \*****************************************************************************/
 
+/**
+ * \ingroup Gravity
+ *
+ * \brief  Read Gravity_t node 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] gravity_vector  Components of the gravity vector. The number of components must equal PhysicalDimension. (In Fortran, this is an array of Real*4 values.)
+ * \return \ier
+ *
+ */
 int cg_gravity_read(int file_number, int B, float *gravity_vector)
 {
     cgns_base *base;
@@ -11677,6 +11870,17 @@ int cg_gravity_read(int file_number, int B, float *gravity_vector)
     return CG_OK;
 }
 
+/**
+ * \ingroup Gravity
+ *
+ * \brief  Write Gravity_t node 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] gravity_vector  Components of the gravity vector. The number of components must equal PhysicalDimension. (In Fortran, this is an array of Real*4 values.)
+ * \return \ier
+ *
+ */
 int cg_gravity_write(int file_number, int B, float const *gravity_vector)
 {
     cgns_base *base;
@@ -15693,6 +15897,10 @@ int cg_ptset_write(CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
 /*****************************************************************************\
  *           Read and write FamilyBCDataSet_t nodes
 \*****************************************************************************/
+
+
+
+
 
 int cg_bcdataset_info(int *n_dataset)
 {
