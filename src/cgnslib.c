@@ -45,6 +45,7 @@ freely, subject to the following restrictions:
  * \defgroup GeneralizedConnectivity Generalized Connectivity
  * \defgroup OneToOneConnectivity One-to-One Connectivity
  * \defgroup BoundaryConditionType Boundary Condition Type and Location
+ * \defgroup BCDataset Boundary Condition Datasets
  */
 
 #include <stdio.h>
@@ -10548,6 +10549,26 @@ int cg_nbocos(int file_number, int B, int Z, int *nbocos)
     return CG_OK;
 }
 
+/**
+ * \ingroup BoundaryConditionType
+ *
+ * \brief  Get boundary condition info
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
+ * \param[out] boconame  Name of the boundary condition.
+ * \param[out] bocotype  Type of boundary condition defined. See the eligible types for BCType_t in the Typedefs section. Note that if bocotype is FamilySpecified the boundary condition type is being specified for the family to which the boundary belongs. The boundary condition type for the family may be read and written using cg_fambc_read and cg_fambc_write. 
+ * \param[out] ptset_type The extent of the boundary condition may be defined using a range of points or elements using PointRange, or using a discrete list of all points or elements at which the boundary condition is applied using PointList. When the boundary condition is to be applied anywhere other than points, then GridLocation_t under the BC_t node must be used to indicate this. The value of GridLocation_t may be read or written by cg_boco_gridlocation_read and cg_boco_gridlocation_write. As in previous versions of the library, this may also be done by first using cg_goto to access the BC_t node, then using cg_gridlocation_read or cg_gridlocation_write.
+ * \param[out] npnts  Number of points or elements defining the boundary condition region. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points or elements in the list. 
+ * \param[out] NormalIndex  Index vector indicating the computational coordinate direction of the boundary condition patch normal.
+ * \param[out] NormalListSize  If the normals are defined in NormalList, NormalListSize is the number of points in the patch times phys_dim, the number of coordinates required to define a vector in the field. If the normals are not defined in NormalList, NormalListSize is 0.
+ * \param[out] NormalDataType  	Data type used in the definition of the normals. Admissible data types for the normals are RealSingle and RealDouble.
+ * \param[out] ndataset  Number of boundary condition datasets for the current boundary condition.
+ * \return \ier
+ *
+ */
 int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
                  CGNS_ENUMT(BCType_t) *bocotype, CGNS_ENUMT(PointSetType_t) *ptset_type,
                  cgsize_t *npnts, int *NormalIndex, cgsize_t *NormalListSize,
@@ -10597,6 +10618,20 @@ int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
     return CG_OK;
 }
 
+/**
+ * \ingroup BoundaryConditionType
+ *
+ * \brief  Read boundary condition data and normals
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
+ * \param[out] pnts  Array of point or element indices defining the boundary condition region. There should be npnts values, each of dimension IndexDimension (i.e., 1 for unstructured grids, and 2 or 3 for structured grids with 2-D or 3-D elements, respectively).
+ * \param[out] NormalList List of vectors normal to the boundary condition patch pointing into the interior of the zone.
+ * \return \ier
+ *
+ */
 int cg_boco_read(int file_number, int B, int Z, int BC, cgsize_t *pnts, void *NormalList)
 {
     cgns_boco *boco;
@@ -10646,6 +10681,19 @@ int cg_boco_id(int file_number, int B, int Z, int BC, double *boco_id)
     return CG_OK;
 }
 
+/**
+ * \ingroup BoundaryConditionType
+ *
+ * \brief  Read boundary condition location
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
+ * \param[out] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex (the default if not given), and CellCenter. Interpretation of CellCenter, and additional allowable values of grid location depends on the base cell dimension. For CellDim=1, CellCenter refers to line elements. For CellDim=2, CellCenter refers to area elements, and the additional value EdgeCenter is allowed. For CellDim=3, CellCenter refers to volume elements, and in addition to EdgeCenter, the values of FaceCenter, IFaceCenter, JFaceCenter, and KFaceCenter may be used.
+ * \return \ier
+ *
+ */
 int cg_boco_gridlocation_read(int file_number, int B, int Z,
     int BC, CGNS_ENUMT(GridLocation_t) *location)
 {
@@ -10663,6 +10711,23 @@ int cg_boco_gridlocation_read(int file_number, int B, int Z,
     return CG_OK;
 }
 
+/**
+ * \ingroup BoundaryConditionType
+ *
+ * \brief   Write boundary condition type and data
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] boconame  Name of the boundary condition.
+ * \param[in] bocotype  Type of boundary condition defined. See the eligible types for BCType_t in the Typedefs section. Note that if bocotype is FamilySpecified the boundary condition type is being specified for the family to which the boundary belongs. The boundary condition type for the family may be read and written using cg_fambc_read and cg_fambc_write.
+ * \param[in] ptset_type The extent of the boundary condition may be defined using a range of points or elements using PointRange, or using a discrete list of all points or elements at which the boundary condition is applied using PointList. When the boundary condition is to be applied anywhere other than points, then GridLocation_t under the BC_t node must be used to indicate this. The value of GridLocation_t may be read or written by cg_boco_gridlocation_read and cg_boco_gridlocation_write. As in previous versions of the library, this may also be done by first using cg_goto to access the BC_t node, then using cg_gridlocation_read or cg_gridlocation_write.
+ * \param[in] npnts  Number of points or elements defining the boundary condition region. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points or elements in the list.
+ * \param[in] pnts Array of point or element indices defining the boundary condition region. There should be npnts values, each of dimension IndexDimension (i.e., 1 for unstructured grids, and 2 or 3 for structured grids with 2-D or 3-D elements, respectively).
+ * \param[out] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
+ * \return \ier
+ *
+ */
 int cg_boco_write(int file_number, int B, int Z, const char * boconame,
           CGNS_ENUMT(BCType_t) bocotype,
           CGNS_ENUMT(PointSetType_t) ptset_type,
@@ -10838,6 +10903,19 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
     return CG_OK;
 }
 
+/**
+ * \ingroup BoundaryConditionType
+ *
+ * \brief  Write boundary condition location
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
+ * \param[in] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex (the default if not given), and CellCenter. Interpretation of CellCenter, and additional allowable values of grid location depends on the base cell dimension. For CellDim=1, CellCenter refers to line elements. For CellDim=2, CellCenter refers to area elements, and the additional value EdgeCenter is allowed. For CellDim=3, CellCenter refers to volume elements, and in addition to EdgeCenter, the values of FaceCenter, IFaceCenter, JFaceCenter, and KFaceCenter may be used.
+ * \return \ier
+ *
+ */
 int cg_boco_gridlocation_write(int file_number, int B, int Z,
     int BC, CGNS_ENUMT(GridLocation_t) location)
 {
@@ -10870,6 +10948,22 @@ int cg_boco_gridlocation_write(int file_number, int B, int Z,
     return CG_OK;
 }
 
+/**
+ * \ingroup BoundaryConditionType
+ *
+ * \brief  Write boundary condition normals 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
+ * \param[in] NormalIndex  Index vector indicating the computational coordinate direction of the boundary condition patch normal.
+ * \param[in] NormalListFlag  Flag indicating if the normals are defined in NormalList and are to be written out; 1 if they are defined, 0 if they're not.
+ * \param[in] NormalDataType  Data type used in the definition of the normals. Admissible data types for the normals are RealSingle and RealDouble.
+ * \param[in] NormalList  List of vectors normal to the boundary condition patch pointing into the interior of the zone.
+ * \return \ier
+ *
+ */
 int cg_boco_normal_write(int file_number, int B, int Z, int BC, const int * NormalIndex,
              int NormalListFlag, CGNS_ENUMT(DataType_t) NormalDataType,
              const void * NormalList)
@@ -10953,6 +11047,23 @@ int cg_boco_normal_write(int file_number, int B, int Z, int BC, const int * Norm
  *          Read and write BCDataSet_t Nodes
 \*****************************************************************************/
 
+/**
+ * \ingroup BCDataset
+ *
+ * \brief  Read boundary condition dataset info 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
+ * \param[in] DSet Dataset index number, where 1 ≤ Dset ≤ ndataset.
+ * \param[in] name  Name of dataset.
+ * \param[in] BCType  Simple boundary condition type for the dataset. The supported types are listed in the table of Simple Boundary Condition Types in the SIDS manual, but note that FamilySpecified does not apply here.
+ * \param[in] DirichletFlag  Flag indicating if the dataset contains Dirichlet data.
+ * \param[in] NeumannFlag  Flag indicating if the dataset contains Neumann data.
+ * \return \ier
+ *
+ */
 int cg_dataset_read(int file_number, int B, int Z, int BC, int DSet, char *name,
             CGNS_ENUMT(BCType_t) *BCType, int *DirichletFlag,
             int *NeumannFlag)
