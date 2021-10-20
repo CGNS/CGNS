@@ -47,6 +47,12 @@ freely, subject to the following restrictions:
  * \defgroup BoundaryConditionType Boundary Condition Type and Location
  * \defgroup BCDataset Boundary Condition Datasets
  * \defgroup BCData  Boundary Condition Data
+ * \defgroup Axisymmetry Axisymmetry
+ * \defgroup SpecialBoundaryConditionProperty Special Boundary Condition Property
+ * \defgroup SpecialGridConnectivityProperty Special Grid Connectivity Property
+ * \defgroup FamilyName Family Name
+ * \defgroup AccessingANode Accessing a node
+ * \defgroup DeletingANode Deleting a node
  */
 
 #include <stdio.h>
@@ -11937,6 +11943,20 @@ int cg_gravity_write(int file_number, int B, float const *gravity_vector)
  *      read and write Axisymmetry_t Node
 \*****************************************************************************/
 
+/**
+ * \ingroup Axisymmetry
+ *
+ * \brief  Read Axisymmetry_t node 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[out] ref_point  Origin used for defining the axis of rotation. (In Fortran, this is an array of Real*4 values.)
+ * \param[out] axis Direction cosines of the axis of rotation, through the reference point. (In Fortran, this is an array of Real*4 values.)
+ * \return \ier
+ *
+ * \details  This node can only be used for a bi-dimensional model, i.e., PhysicalDimension must equal two.
+ *
+ */
 int cg_axisym_read(int file_number, int B, float *ref_point, float *axis)
 {
     int n;
@@ -11966,6 +11986,20 @@ int cg_axisym_read(int file_number, int B, float *ref_point, float *axis)
     return CG_OK;
 }
 
+/**
+ * \ingroup Axisymmetry
+ *
+ * \brief  Create axisymmetry data
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] ref_point  Origin used for defining the axis of rotation. (In Fortran, this is an array of Real*4 values.)
+ * \param[in] axis Direction cosines of the axis of rotation, through the reference point. (In Fortran, this is an array of Real*4 values.)
+ * \return \ier
+ *
+ * \details Axisymmetry_t node can only be used for a bi-dimensional model, i.e., PhysicalDimension must equal two.
+ *
+ */
 int cg_axisym_write(int file_number, int B, float const *ref_point, float const *axis)
 {
     int n;
@@ -12032,7 +12066,21 @@ int cg_axisym_write(int file_number, int B, float const *ref_point, float const 
 /*****************************************************************************\
  *      read and write BCProperty_t Node
 \*****************************************************************************/
-
+/**
+ * \ingroup SpecialBoundaryConditionProperty
+ *
+ * \brief  Read wall function data
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos. 
+ * \param[out] WallFunctionType  The wall function type. Valid types are CG_Null, CG_UserDefined, and Generic.
+ * \return \ier
+ *
+ * \details The "read" functions will return with ier = 2 = CG_NODE_NOT_FOUND if the requested boundary condition property, or the BCProperty_t node itself, doesn't exist.
+ *
+ */
 int cg_bc_wallfunction_read(int file_number, int B, int Z, int BC,
                 CGNS_ENUMT(WallFunctionType_t) *WallFunctionType)
 {
@@ -12057,6 +12105,21 @@ int cg_bc_wallfunction_read(int file_number, int B, int Z, int BC,
     return CG_OK;
 }
 
+/**
+ * \ingroup SpecialBoundaryConditionProperty
+ *
+ * \brief  Write wall function data
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos. 
+ * \param[in] WallFunctionType  The wall function type. Valid types are CG_Null, CG_UserDefined, and Generic.
+ * \return \ier
+ *
+ * \details The "write" functions will create the BCProperty_t node if it doesn't already exist, then add the appropriate boundary condition property. Multiple boundary condition properties may be recorded under the same BCProperty_t node.
+ *
+ */
 int cg_bc_wallfunction_write(int file_number, int B, int Z, int BC,
                  CGNS_ENUMT(WallFunctionType_t) WallFunctionType)
 {
@@ -12146,7 +12209,23 @@ int cg_bc_wallfunction_write(int file_number, int B, int Z, int BC,
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup SpecialBoundaryConditionProperty
+ *
+ * \brief  Read area related data
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos. 
+ * \param[out]  AreaType  The type of area. Valid types are CG_Null, CG_UserDefined, BleedArea, and CaptureArea. 
+ * \param[out]  SurfaceArea  The size of the area. (In Fortran, this is a Real*4 value.)
+ * \param[out]  RegionName  The name of the region, 32 characters max.
+ * \return \ier
+ *
+ * \details The "read" functions will return with ier = 2 = CG_NODE_NOT_FOUND if the requested boundary condition property, or the BCProperty_t node itself, doesn't exist.
+ *
+ */
 int cg_bc_area_read(int file_number, int B, int Z, int BC,
             CGNS_ENUMT(AreaType_t)  *AreaType, float *SurfaceArea,
             char *RegionName)
@@ -12181,6 +12260,23 @@ int cg_bc_area_read(int file_number, int B, int Z, int BC,
     return CG_OK;
 }
 
+/**
+ * \ingroup SpecialBoundaryConditionProperty
+ *
+ * \brief  Write area related data
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
+ * \param[in] AreaType  The type of area. Valid types are CG_Null, CG_UserDefined, BleedArea, and CaptureArea. 
+ * \param[in] SurfaceArea  The size of the area. (In Fortran, this is a Real*4 value.)
+ * \param[in] RegionName  The name of the region, 32 characters max.
+ * \return \ier
+ *
+ * \details The "write" functions will create the BCProperty_t node if it doesn't already exist, then add the appropriate boundary condition property. Multiple boundary condition properties may be recorded under the same BCProperty_t node.
+ *
+ */
 int cg_bc_area_write(int file_number, int B, int Z, int BC,
              CGNS_ENUMT( AreaType_t )  AreaType, float SurfaceArea,
              const char *RegionName)
@@ -12311,7 +12407,23 @@ int cg_bc_area_write(int file_number, int B, int Z, int BC,
 /*****************************************************************************\
  *      read and write GridConnectivityProperty_t Node
 \*****************************************************************************/
-
+/**
+ * \ingroup SpecialGridConnectivityProperty
+ *
+ * \brief  Read data for periodic interface
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
+ * \param[out] RotationCenter  An array of size phys_dim defining the coordinates of the origin for defining the rotation angle between the periodic interfaces. (phys_dim is the number of coordinates required to define a vector in the field.) (In Fortran, this is an array of Real*4 values.)
+ * \param[out] RotationAngle  An array of size phys_dim defining the rotation angle from the current interface to the connecting interface. If rotating about more than one axis, the rotation is performed first about the x-axis, then the y-axis, then the z-axis. (In Fortran, this is an array of Real*4 values.) 
+ * \param[out] Translation  An array of size phys_dim defining the translation from the current interface to the connecting interface. (In Fortran, this is an array of Real*4 values.) 
+ * \return \ier
+ *
+ * \details The "read" functions will return with ier = 2 = CG_NODE_NOT_FOUND if the requested connectivity property, or the GridConnectivityProperty_t node itself, doesn't exist.
+ *
+ */
 int cg_conn_periodic_read(int file_number, int B, int Z, int J,
         float *RotationCenter, float *RotationAngle, float *Translation)
 {
@@ -12354,6 +12466,23 @@ int cg_conn_periodic_read(int file_number, int B, int Z, int J,
     return CG_OK;
 }
 
+/**
+ * \ingroup SpecialGridConnectivityProperty
+ *
+ * \brief  Write data for periodic interface
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
+ * \param[in] RotationCenter  An array of size phys_dim defining the coordinates of the origin for defining the rotation angle between the periodic interfaces. (phys_dim is the number of coordinates required to define a vector in the field.) (In Fortran, this is an array of Real*4 values.)
+ * \param[in] RotationAngle  An array of size phys_dim defining the rotation angle from the current interface to the connecting interface. If rotating about more than one axis, the rotation is performed first about the x-axis, then the y-axis, then the z-axis. (In Fortran, this is an array of Real*4 values.) 
+ * \param[in] Translation  An array of size phys_dim defining the translation from the current interface to the connecting interface. (In Fortran, this is an array of Real*4 values.) 
+ * \return \ier
+ *
+ * \details  The "write" functions will create the GridConnectivityProperty_t node if it doesn't already exist, then add the appropriate connectivity property. Multiple grid connectivity properties may be recorded under the same GridConnectivityProperty_t node.
+ *
+ */
 int cg_conn_periodic_write(int file_number, int B, int Z, int J,
     float const *RotationCenter, float const *RotationAngle,
     float const *Translation)
@@ -12459,7 +12588,21 @@ int cg_conn_periodic_write(int file_number, int B, int Z, int J,
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup SpecialGridConnectivityProperty
+ *
+ * \brief  Read data for averaging interface
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
+ * \param[out] 	AverageInterfaceType  The type of averaging to be done. Valid types are CG_Null, CG_UserDefined, AverageAll, AverageCircumferential, AverageRadial, AverageI, AverageJ, and AverageK.
+ * \return \ier
+ *
+ * \details The "read" functions will return with ier = 2 = CG_NODE_NOT_FOUND if the requested connectivity property, or the GridConnectivityProperty_t node itself, doesn't exist.
+ *
+ */
 int cg_conn_average_read(int file_number, int B, int Z, int J,
              CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType)
 {
@@ -12484,6 +12627,21 @@ int cg_conn_average_read(int file_number, int B, int Z, int J,
     return CG_OK;
 }
 
+/**
+ * \ingroup SpecialGridConnectivityProperty
+ *
+ * \brief  Write data for averaging interface
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
+ * \param[in] 	AverageInterfaceType  The type of averaging to be done. Valid types are CG_Null, CG_UserDefined, AverageAll, AverageCircumferential, AverageRadial, AverageI, AverageJ, and AverageK.
+ * \return \ier
+ *
+ * \details  The "write" functions will create the GridConnectivityProperty_t node if it doesn't already exist, then add the appropriate connectivity property. Multiple grid connectivity properties may be recorded under the same GridConnectivityProperty_t node.
+ *
+ */
 int cg_conn_average_write(int file_number, int B, int Z, int J,
               CGNS_ENUMT(AverageInterfaceType_t) AverageInterfaceType)
 {
@@ -12571,7 +12729,23 @@ int cg_conn_average_write(int file_number, int B, int Z, int J,
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup SpecialGridConnectivityProperty
+ *
+ * \brief  Read data for periodic interface
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions.
+ * \param[out]  RotationCenter   An array of size phys_dim defining the coordinates of the origin for defining the rotation angle between the periodic interfaces. (phys_dim is the number of coordinates required to define a vector in the field.) (In Fortran, this is an array of Real*4 values.) 
+ * \param[out]  RotationAngle   An array of size phys_dim defining the rotation angle from the current interface to the connecting interface. If rotating about more than one axis, the rotation is performed first about the x-axis, then the y-axis, then the z-axis. (In Fortran, this is an array of Real*4 values.)
+ * \param[out]  Translation   An array of size phys_dim defining the translation from the current interface to the connecting interface. (In Fortran, this is an array of Real*4 values.)
+ * \return \ier
+ *
+ * \details The "read" functions will return with ier = 2 = CG_NODE_NOT_FOUND if the requested connectivity property, or the GridConnectivityProperty_t node itself, doesn't exist.
+ *
+ */
 int cg_1to1_periodic_read(int file_number, int B, int Z, int J,
                           float *RotationCenter, float *RotationAngle,
                           float *Translation)
@@ -12617,6 +12791,23 @@ int cg_1to1_periodic_read(int file_number, int B, int Z, int J,
     return CG_OK;
 }
 
+/**
+ * \ingroup SpecialGridConnectivityProperty
+ *
+ * \brief  Write data for periodic interface
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions.
+ * \param[in]  RotationCenter   An array of size phys_dim defining the coordinates of the origin for defining the rotation angle between the periodic interfaces. (phys_dim is the number of coordinates required to define a vector in the field.) (In Fortran, this is an array of Real*4 values.) 
+ * \param[in]  RotationAngle   An array of size phys_dim defining the rotation angle from the current interface to the connecting interface. If rotating about more than one axis, the rotation is performed first about the x-axis, then the y-axis, then the z-axis. (In Fortran, this is an array of Real*4 values.)
+ * \param[in]  Translation   An array of size phys_dim defining the translation from the current interface to the connecting interface. (In Fortran, this is an array of Real*4 values.)
+ * \return \ier
+ *
+ * \details  The "write" functions will create the GridConnectivityProperty_t node if it doesn't already exist, then add the appropriate connectivity property. Multiple grid connectivity properties may be recorded under the same GridConnectivityProperty_t node.
+ *
+ */
 int cg_1to1_periodic_write(int file_number, int B, int Z, int J,
                float const *RotationCenter,
                float const *RotationAngle,
@@ -12725,7 +12916,21 @@ int cg_1to1_periodic_write(int file_number, int B, int Z, int J,
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup SpecialGridConnectivityProperty
+ *
+ * \brief  Read data for averaging interface
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
+ * \param[out] 	AverageInterfaceType  The type of averaging to be done. Valid types are CG_Null, CG_UserDefined, AverageAll, AverageCircumferential, AverageRadial, AverageI, AverageJ, and AverageK.
+ * \return \ier
+ *
+ * \details The "read" functions will return with ier = 2 = CG_NODE_NOT_FOUND if the requested connectivity property, or the GridConnectivityProperty_t node itself, doesn't exist.
+ *
+ */
 int cg_1to1_average_read(int file_number, int B, int Z, int J,
              CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType)
 {
@@ -12753,6 +12958,21 @@ int cg_1to1_average_read(int file_number, int B, int Z, int J,
     return CG_OK;
 }
 
+/**
+ * \ingroup SpecialGridConnectivityProperty
+ *
+ * \brief  Write data for averaging interface
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
+ * \param[in] 	AverageInterfaceType  The type of averaging to be done. Valid types are CG_Null, CG_UserDefined, AverageAll, AverageCircumferential, AverageRadial, AverageI, AverageJ, and AverageK.
+ * \return \ier
+ *
+ * \details  The "write" functions will create the GridConnectivityProperty_t node if it doesn't already exist, then add the appropriate connectivity property. Multiple grid connectivity properties may be recorded under the same GridConnectivityProperty_t node.
+ *
+ */
 int cg_1to1_average_write(int file_number, int B, int Z, int J,
               CGNS_ENUMT(AverageInterfaceType_t) AverageInterfaceType)
 {
@@ -12871,6 +13091,32 @@ int vcg_goto(int file_number, int B, va_list ap)
     return cgi_set_posit(file_number, B, n, index, label);
 }
 
+/**
+ * \ingroup AccessingANode
+ *
+ * \brief  Access a node via label/name, index pairs
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] ...  Variable argument list used to specify the path to a node. It is composed of an unlimited list of pair-arguments identifying each node in the path. Nodes may be identified by their label or name. Thus, a pair-argument may be of the form
+
+   "CGNS_NodeLabel", NodeIndex
+
+where CGNS_NodeLabel is the node label and NodeIndex is the node index, or
+
+   "CGNS_NodeName", 0
+
+where CGNS_NodeName is the node name. The 0 in the second form is required, to indicate that a node name is being specified rather than a node label. In addition, a pair-argument may be specified as
+
+   "..", 0
+
+indicating the parent of the current node. The different pair-argument forms may be intermixed in the same function call.
+
+There is one exception to this rule. When accessing a BCData_t node, the index must be set to either Dirichlet or Neumann since only these two types are allowed. (Note that Dirichlet and Neumann are defined in the include files cgnslib.h and cgnslib_f.h). Since "Dirichlet" and "Neuman" are also the names for these nodes, you may also use the "Dirichlet", 0 or "Neuman", 0 to access the node. See the example below. 
+ * \return \ier
+ *
+ * \details   The character string "end" (or 'end' for the Fortran function) must be the last argument. It is used to indicate the end of the argument list. You may also use the empty string, "" ('' for Fortran), or the NULL string in C, to terminate the list.
+ */
 int cg_goto(int file_number, int B, ...)
 {
     va_list ap;
@@ -12948,6 +13194,31 @@ int vcg_gorel(int file_number, va_list ap)
     return cgi_update_posit(n, index, label);
 }
 
+/**
+ * \ingroup AccessingANode
+ *
+ * \brief  Access a node via relative path
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] ...  Variable argument list used to specify the path to a node. It is composed of an unlimited list of pair-arguments identifying each node in the path. Nodes may be identified by their label or name. Thus, a pair-argument may be of the form
+
+   "CGNS_NodeLabel", NodeIndex
+
+where CGNS_NodeLabel is the node label and NodeIndex is the node index, or
+
+   "CGNS_NodeName", 0
+
+where CGNS_NodeName is the node name. The 0 in the second form is required, to indicate that a node name is being specified rather than a node label. In addition, a pair-argument may be specified as
+
+   "..", 0
+
+indicating the parent of the current node. The different pair-argument forms may be intermixed in the same function call.
+
+There is one exception to this rule. When accessing a BCData_t node, the index must be set to either Dirichlet or Neumann since only these two types are allowed. (Note that Dirichlet and Neumann are defined in the include files cgnslib.h and cgnslib_f.h). Since "Dirichlet" and "Neuman" are also the names for these nodes, you may also use the "Dirichlet", 0 or "Neuman", 0 to access the node. See the example below. 
+ * \return \ier
+ *
+ * \details   The character string "end" (or 'end' for the Fortran function) must be the last argument. It is used to indicate the end of the argument list. You may also use the empty string, "" ('' for Fortran), or the NULL string in C, to terminate the list.
+ */
 int cg_gorel(int file_number, ...)
 {
     va_list ap;
@@ -12997,7 +13268,17 @@ int cg_gorel_f08(int file_number, ...)
 }
 
 /*-----------------------------------------------------------------------*/
+/**
+ * \ingroup AccessingANode
+ *
+ * \brief  Access a node via pathname 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] path  The pathname for the node to go to. If a position has been already set, this may be a relative path, otherwise it is an absolute path name, starting with "/Basename", where Basename is the base under which you wish to move.
 
+ * \return \ier
+ *
+ */
 int cg_gopath(int file_number, const char *path)
 {
     int n, len;
@@ -13097,7 +13378,19 @@ int cg_gopath(int file_number, const char *path)
 }
 
 /*-----------------------------------------------------------------------*/
-
+/**
+ * \ingroup AccessingANode
+ *
+ * \brief  Access a node via arrays of labels and indices 
+ * 
+ * \param[in] file_number  \FILE_fn
+ * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] depth  Depth of the path list. The maximum depth is defined in cgnslib.h by CG_MAX_GOTO_DEPTH, and is currently equal to 20.
+ * \param[in] label  Array of node labels for the path. This argument may be passed as NULL to cg_where(), otherwise it must be dimensioned by the calling program. The maximum size required is label[MAX_GO_TO_DEPTH][33]. You may call cg_where() with both label and index set to NULL in order to get the current depth, then dimension to that value.
+ * \param[in] index  Array of node indices for the path. This argument may be passed as NULL to cg_where(), otherwise it must be dimensioned by the calling program. The maximum size required is index[MAX_GO_TO_DEPTH]. You may call cg_where() with both label and index set to NULL in order to get the current depth, then dimension to that value.
+ * \return \ier
+ *
+ */
 int cg_golist(int file_number, int B, int depth, char **label, int *index)
 {
     if (depth >= CG_MAX_GOTO_DEPTH) {
@@ -13108,7 +13401,19 @@ int cg_golist(int file_number, int B, int depth, char **label, int *index)
 }
 
 /*-----------------------------------------------------------------------*/
-
+/**
+ * \ingroup AccessingANode
+ *
+ * \brief  Get path to current node 
+ * 
+ * \param[out] file_number  \FILE_fn
+ * \param[out] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[out] depth  Depth of the path list. The maximum depth is defined in cgnslib.h by CG_MAX_GOTO_DEPTH, and is currently equal to 20.
+ * \param[out] label  Array of node labels for the path. This argument may be passed as NULL to cg_where(), otherwise it must be dimensioned by the calling program. The maximum size required is label[MAX_GO_TO_DEPTH][33]. You may call cg_where() with both label and index set to NULL in order to get the current depth, then dimension to that value.
+ * \param[out] num  Array of node indices for the path. This argument may be passed as NULL to cg_where(), otherwise it must be dimensioned by the calling program. The maximum size required is index[MAX_GO_TO_DEPTH]. You may call cg_where() with both label and index set to NULL in order to get the current depth, then dimension to that value.
+ * \return \ier
+ *
+ */
 int cg_where(int *file_number, int *B, int *depth, char **label, int *num)
 {
     int n;
@@ -13136,6 +13441,15 @@ int cg_where(int *file_number, int *B, int *depth, char **label, int *num)
  *           Read and write Multiple path nodes
 \*****************************************************************************/
 
+/**
+ * \ingroup FamilyName
+ *
+ * \brief  Read family name
+ * 
+ * \param[out] family_name  Family name.
+ * \return \ier
+ *
+ */
 int cg_famname_read(char *family_name)
 {
     char *famname;
@@ -13154,6 +13468,15 @@ int cg_famname_read(char *family_name)
     return CG_OK;
 }
 
+/**
+ * \ingroup FamilyName
+ *
+ * \brief  Write family name
+ * 
+ * \param[in] family_name  Family name.
+ * \return \ier
+ *
+ */
 int cg_famname_write(const char * family_name)
 {
     char *famname;
@@ -16201,7 +16524,39 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
 /*****************************************************************************\
  *            General Delete Function
 \*****************************************************************************/
+/**
+ * \ingroup DeletingANode
+ *
+ * \brief  Delete a node
+ *
+ * \param[in] node_name  Name of the child to be deleted.
+ * \return \ier
+ *
+ * \details   The function cg_delete_node is used is conjunction with cg_goto. Once positioned at a parent node with cg_goto, a child of this node can be deleted with cg_delete_node. This function requires a single argument, NodeName, which is the name of the child to be deleted.
 
+Since the highest level that can be pointed to with cg_goto is a base node for a CGNS database (CGNSBase_t), the highest-level nodes that can be deleted are the children of a CGNSBase_t node. In other words, nodes located directly under the ADF (or HDF) root node (CGNSBase_t and CGNSLibraryVersion_t) can not be deleted with cg_delete.
+
+A few other nodes are not allowed to be deleted from the database because these are required nodes as defined by the SIDS, and deleting them would make the file non-CGNS compliant. These are:
+
+    Under Zone_t: ZoneType
+    Under GridConnectivity1to1_t: PointRange, PointRangeDonor, Transform
+    Under OversetHoles_t: PointList and any IndexRange_t
+    Under GridConnectivity_t: PointRange, PointList, CellListDonor, PointListDonor
+    Under BC_t: PointList, PointRange
+    Under GeometryReference_t: GeometryFile, GeometryFormat
+    Under Elements_t: ElementRange, ElementConnectivity
+    Under Gravity_t: GravityVector
+    Under Axisymmetry_t: AxisymmetryReferencePoint, AxisymmetryAxisVector
+    Under RotatingCoordinates_t: RotationCenter, RotationRateVector
+    Under Periodic_t: RotationCenter, RotationAngle, Translation
+    Under AverageInterface_t: AverageInterfaceType
+    Under WallFunction_t: WallFunctionType
+    Under Area_t: AreaType, SurfaceArea, RegionName 
+
+When a child node is deleted, both the database and the file on disk are updated to remove the node. One must be careful not to delete a node from within a loop of that node type. For example, if the number of zones below a CGNSBase_t node is nzones, a zone should never be deleted from within a zone loop! By deleting a zone, the total number of zones (nzones) changes, as well as the zone indexing. Suppose for example that nzones is 5, and that the third zone is deleted. After calling cg_delete_node, nzones is changed to 4, and the zones originally indexed 4 and 5 are now indexed 3 and 4.
+ *
+ *
+ */
 int cg_delete_node(const char *node_name)
 {
     int n, m, index_dim;
