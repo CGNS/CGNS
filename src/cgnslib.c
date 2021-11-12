@@ -1254,7 +1254,7 @@ int cg_nbases(int fn, int *nbases)
  * \brief Read CGNS base information
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B 	Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B 	\B_Base
  * \param[out] basename  Name of the base
  * \param[out] cell_dim  Dimension of the cells; 3 for volume cells, 2 for surface cells and 1 for line cells. 
  * \param[out] phys_dim  Number of coordinates required to define a vector in the field. 
@@ -1288,7 +1288,7 @@ int cg_base_read(int fn, int B, char *basename, int *cell_dim,
  * \brief Get the CGIO identifier of the CGNS base
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B 	Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B 	\B_Base
  * \param[out] base_id  CGIO node identifier for the base
  * \return \ier
  *
@@ -1315,7 +1315,7 @@ int cg_base_id(int fn, int B, double *base_id)
  * \brief Get the cell dimension for the CGNS base
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B   Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B   \B_Base
  * \param[out] cell_dim Dimension of the cells; 3 for volume cells, 2 for surface cells and 1 for line cells. 
  * \return \ier
  *
@@ -1342,7 +1342,7 @@ int cg_cell_dim(int fn, int B, int *cell_dim)
  * \param[in] basename Name of the base.
  * \param[in] cell_dim Dimension of the cells; 3 for volume cells, 2 for surface cells and 1 for line cells. 
  * \param[in] phys_dim Number of coordinates required to define a vector in the field. 
- * \param[out] B   Base index number, where 1 ≤ B ≤ nbases.
+ * \param[out] B   \B_Base
  * \return \ier
  *
  */
@@ -1425,7 +1425,7 @@ int cg_base_write(int fn, const char * basename, int cell_dim,
  * \brief Get number of zone in base
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B \B_Base
  * \param[out] nzones Number of zones present in base B.
  * \return \ier
  *
@@ -1452,8 +1452,8 @@ int cg_nzones(int fn, int B, int *nzones)
  * \brief Get type of zone (structured or unstructured)
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
  * \param[out] zonetype Type of the zone. The admissible types are Structured and Unstructured.
  * \return \ier
  *
@@ -1481,8 +1481,8 @@ int cg_zone_type(int fn, int B, int Z, CGNS_ENUMT(ZoneType_t) *zonetype)
  * \brief Read zone information 
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
  * \param[out] zonename Name of the zone
  * \param[out] size 	Number of vertices, cells, and boundary vertices in each (index)-dimension. For structured grids, the dimensions have unit stride in the array (e.g., `[NVertexI, NVertexJ, NVertexK, NCellI, NCellJ, NCellK, NBoundVertexI, NBoundVertexJ, NBoundVertexK]`).
 Note that for unstructured grids, the number of cells is the number of highest order elements. Thus, in three dimensions it's the number of 3-D cells, and in two dimensions it's the number of 2-D cells.
@@ -1544,8 +1544,8 @@ int cg_zone_id(int fn, int B, int Z, double *zone_id)
  * \brief Get the index dimension of the CGNS zone 
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
  * \param[out] index_dim Index dimension for the zone. For Structured zones, this will be the base cell dimension and for Unstructured zones it will be 1
  * \return \ier
  */
@@ -1568,7 +1568,7 @@ int cg_index_dim(int fn, int B, int Z, int *index_dim)
  * \brief Create and/or write to a CGNS zone 
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B   Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B   \B_Base
  * \param[in] zonename   Name of the zone.
  * \param[in] size 	Number of vertices, cells, and boundary vertices in each (index)-dimension. For structured grids, the dimensions have unit stride in the array (e.g., [NVertexI, NVertexJ, NVertexK, NCellI, NCellJ, NCellK, NBoundVertexI, NBoundVertexJ, NBoundVertexK]).
  *Note that for unstructured grids, the number of cells is the number of highest order elements. Thus, in three dimensions it's the number of 3-D cells, and in two dimensions it's the number of 2-D cells.
@@ -1585,7 +1585,7 @@ int cg_index_dim(int fn, int B, int Z, int *index_dim)
  *|3D unstructured| NVertex, NCell3D, NBoundVertex
  *|2D unstructured| NVertex, NCell2D, NBoundVertex
  * \param[in] zonetype   Type of the zone. The admissible types are Structured and Unstructured.
- * \param[out] Z         Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[out] Z         \Z_Zone
  * \return \ier
  */
 int cg_zone_write(int fn, int B, const char *zonename, const cgsize_t * size,
@@ -1717,7 +1717,7 @@ int cg_zone_write(int fn, int B, const char *zonename, const cgsize_t * size,
  * \brief Get number of Family_t node at CGNSBase_t level
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B \B_Base
  * \param[out] nfamilies Number of families in base B
  * \return \ier
  *
@@ -1744,7 +1744,7 @@ int cg_nfamilies(int fn, int B, int *nfamilies)
  * \brief Read family information (CGNSBase_t level)
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B    Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B    \B_Base
  * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
  * \param[out] family_name Name of the family
  * \param[out] nboco  Number of boundary conditions for this family. This should be either 0 or 1.
@@ -1780,7 +1780,7 @@ int cg_family_read(int fn, int B, int Fam, char *family_name,
  * \brief Read family information (CGNSBase_t level)
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B    Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B    \B_Base
  * \param[in] family_name Name of the family
  * \param[out] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
  * \return \ier
@@ -1941,7 +1941,7 @@ int cg_family_write(int fn, int B, const char * family_name, int *Fam)
  * \brief Get number of family names under Family_t (CGNSBase_t level)
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B    Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B    \B_Base
  * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
  * \param[out] nnames Number of FamilyName_t nodes for this family.
  * \return \ier
@@ -1969,7 +1969,7 @@ int cg_nfamily_names(int fn, int B, int Fam, int *nnames)
  * \brief Read multiple family names under Family_t (CGNSBase_t level)
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B    Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B    \B_Base
  * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
  * \param[in] N    Family name index number, where 1 ≤ N ≤ nNames. 
  * \param[out] node_name    Name of the FamilyName_t node. FamilyParent is used to refer to the parent family of the Family_t node.
@@ -2006,7 +2006,7 @@ int cg_family_name_read(int fn, int B, int Fam, int N, char *node_name, char *fa
  * \brief  Write multiple family names under Family_t (CGNSBase_t level) 
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B    Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B    \B_Base
  * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
  * \param[out] node_name    Name of the FamilyName_t node. FamilyParent is used to refer to the parent family of the Family_t node.
  * \param[out] family_name  Name of the family
@@ -2361,7 +2361,7 @@ int cg_node_family_name_read(int N, char* node_name, char* family_name )
  * \brief  Read boundary condition type for a family
  *
  * \param[in] fn   \FILE_fn 
- * \param[in] B    Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] B    \B_Base 
  * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
  * \param[in] BC   Family boundary condition index number. This must be equal to 1. 
  * \param[out] fambc_name  Name of the FamilyBC_t node.
@@ -2398,7 +2398,7 @@ int cg_fambc_read(int fn, int B, int Fam, int BC,
  * \brief  Write boundary condition type for a family
  *
  * \param[in] fn   \FILE_fn 
- * \param[in] B    Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] B    \B_Base 
  * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
  * \param[in] fambc_name  Name of the FamilyBC_t node.
  * \param[in] bocotype  Boundary condition type for the family. See the eligible types for BCType_t in the Typedefs section.
@@ -2625,7 +2625,7 @@ int cg_node_fambc_write( const char* fambc_name,
  * \brief  Read geometry reference information
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B    Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] B    \B_Base 
  * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
  * \param[in] G    Geometry reference index number, where 1 ≤ G ≤ nGeo. 
  * \param[out] geo_name  Name of GeometryReference_t node.
@@ -2671,7 +2671,7 @@ int cg_geo_read(int fn, int B, int Fam, int G, char *geo_name,
  * \brief  Create a GeometryReference_t node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B    Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] B    \B_Base 
  * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
  * \param[in] geo_name  Name of GeometryReference_t node.
  * \param[in] geo_file  Name of geometry file
@@ -2942,7 +2942,7 @@ int cg_node_geo_write( const char *geo_name,
  * \brief  Get geometry entity name
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B    Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] B    \B_Base 
  * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
  * \param[in] G   Geometry reference index number, where 1 ≤ G ≤ nGeo.
  * \param[in] P   Geometry entity index number, where 1 ≤ P ≤ nparts
@@ -2976,7 +2976,7 @@ int cg_part_read(int fn, int B, int Fam, int G, int P, char *part_name)
  * \brief  Write geometry entity name
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B    Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] B    \B_Base 
  * \param[in] Fam  Family index number, where 1 ≤ Fam ≤ nfamilies.
  * \param[in] G   Geometry reference index number, where 1 ≤ G ≤ nGeo.
  * \param[in] part_name  Name of a geometry entity in the file FileName.
@@ -3198,8 +3198,8 @@ int cg_node_part_write(int G, const char * part_name, int *P)
  * \brief Get number of `DiscreteData_t` nodes
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] ndiscrete Number of `DiscreteData_t` data structures under zone Z.
  * \return \ier
  *
@@ -3226,8 +3226,8 @@ int cg_ndiscrete(int fn, int B, int Z, int *ndiscrete)
  * \brief Get name of `DiscreteData_t` node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
  * \param[out] discrete_name Name of `DiscreteData_t` data structures.
  * \return \ier
@@ -3256,8 +3256,8 @@ int cg_discrete_read(int fn, int B, int Z, int D, char *discrete_name)
  * \brief Create a `DiscreteData_t` node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] discrete_name Name of `DiscreteData_t` data structures.
  * \param[out] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
  * \return \ier
@@ -3333,8 +3333,8 @@ int cg_discrete_write(int fn, int B, int Z,  const char * discrete_name,
  * \brief Get the dimensions of `DiscreteData_t` node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
  * \param[out] data_dim  Number of dimensions defining the discrete data. If a point set has been defined, this will be 1, otherwise this will be the current zone index dimension.
  * \param[out] dim_vals  The array of data_dim dimensions for the discrete data.
@@ -3375,8 +3375,8 @@ int cg_discrete_size(int fn, int B, int Z, int D,
  * \brief Get info about a point set `DiscreteData_t` node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
  * \param[out] ptset_type Type of point set defining the interface for the discrete data; either PointRange or PointList.
  * \param[out] npnts  Number of points defining the interface for the discrete data. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the list.
@@ -3412,8 +3412,8 @@ int cg_discrete_ptset_info(int fn, int B, int Z, int D,
  * \brief Read a point set `DiscreteData_t` node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
  * \param[out] pnts  Array of points defining the interface for the discrete data. 
  * \return \ier
@@ -3448,8 +3448,8 @@ int cg_discrete_ptset_read(int fn, int B, int Z, int D, cgsize_t *pnts)
  * \brief Create a point set `DiscreteData_t` node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] discrete_name  Name of `DiscreteData_t` data structures.
  * \param[in] location  Grid location where the discrete data is recorded. The current admissible locations are Vertex, CellCenter, IFaceCenter, JFaceCenter, and KFaceCenter.
  * \param[in] ptset_type  Type of point set defining the interface for the discrete data; either PointRange or PointList.
@@ -3526,8 +3526,8 @@ int cg_discrete_ptset_write(int fn, int B, int Z,
  * \brief Get number of `GridCoordinates_t` nodes
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] ngrids 	Number of `GridCoordinates_t` nodes for zone Z.
  * \return \ier
  *
@@ -3555,8 +3555,8 @@ int cg_ngrids(int fn, int B, int Z, int *ngrids)
  * \brief Get Name of a `GridCoordinates_t` node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] G  Grid index number, where 1 ≤ G ≤ ngrids.
  * \param[out] grid_coord_name Name of the GridCoordinates_t node. Note that the name "GridCoordinates" is reserved for the original grid and must be the first GridCoordinates_t node to be defined.
  * \return \ier
@@ -3586,8 +3586,8 @@ int cg_grid_read(int fn, int B, int Z, int G, char *grid_coord_name)
  * \brief Create a `GridCoordinates_t` nodes
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] grid_coord_name Name of the GridCoordinates_t node. Note that the name "GridCoordinates" is reserved for the original grid and must be the first GridCoordinates_t node to be defined.
  * \param[out] G  Grid index number, where 1 ≤ G ≤ ngrids.
  * \return \ier
@@ -3674,8 +3674,8 @@ int cg_grid_write(int fn, int B, int Z, const char * grid_coord_name, int *G)
  * \brief Get bounding box associated with a `GridCoordinates_t` node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] G  Grid index number, where 1 ≤ G ≤ ngrids.
  * \param[in] datatype 	Data type of the bounding box array written to the file or read. Admissible data types for a coordinate bounding box are RealSingle and RealDouble. 
  * \param[out] boundingbox Data Array with bounding box values.
@@ -3755,8 +3755,8 @@ int cg_grid_bounding_box_read(int fn, int B, int Z, int G, CGNS_ENUMT(DataType_t
  * \brief Write bounding box associated with a `GridCoordinates_t` node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] G  Grid index number, where 1 ≤ G ≤ ngrids.
  * \param[in] datatype 	Data type of the bounding box array written to the file or read. Admissible data types for a coordinate bounding box are RealSingle and RealDouble. 
  * \param[in] boundingbox Data Array with bounding box values.
@@ -3830,8 +3830,8 @@ int cg_grid_bounding_box_write(int fn, int B, int Z, int G, CGNS_ENUMT(DataType_
  * \brief  Get number of coordinate arrays
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] ncoords  Grid index number, where 1 ≤ G ≤ ngrids.
  * \return \ier
  *
@@ -3858,8 +3858,8 @@ int cg_ncoords(int fn, int B, int Z, int *ncoords)
  * \brief  Get info about a coordinate array
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] C  Coordinate array index number, where 1 ≤ C ≤ ncoords. 
  * \param[out] datatype   Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble. 
  * \param[out] coordname   Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
@@ -3896,8 +3896,8 @@ int cg_coord_info(int fn, int B, int Z, int C, CGNS_ENUMT(DataType_t)  *datatype
  * \brief  Read grid coordinate array
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
  * \param[in] mem_datatype  Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
  * \param[in] s_rmin  Lower range index in file (eg., imin, jmin, kmin).
@@ -3948,8 +3948,8 @@ int cg_coord_read(int fn, int B, int Z, const char *coordname,
  * \brief  Read subset of grid coordinates to a shaped array
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
  * \param[in] m_type   Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
  * \param[in] s_rmin   Lower range index in file (eg., imin, jmin, kmin).
@@ -4039,8 +4039,8 @@ int cg_coord_id(int file_number, int B, int Z, int C, double *coord_id)
  * \brief  Write grid coordinates
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] datatype Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble. 
  * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
  * \param[in] coord_ptr   Array of coordinate values.
@@ -4111,8 +4111,8 @@ int cg_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) datatype,
  * \brief  Write subset of grid coordinates
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] datatype Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble. 
  * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
  * \param[in] s_rmin   Lower range index in file (eg., imin, jmin, kmin).
@@ -4167,8 +4167,8 @@ int cg_coord_partial_write(int fn, int B, int Z,
  * \brief  Write shaped array to a subset of grid coordinates
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
  * \param[in] s_type   Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble.
  * \param[in] m_type   Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
@@ -4419,8 +4419,8 @@ static int read_parent_data(cgns_section *section)
  * \brief  Get number of element sections
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] nsections Number of element sections.
  * \return \ier
  *
@@ -4448,8 +4448,8 @@ int cg_nsections(int fn, int B, int Z, int *nsections)
  * \brief  Get info for an element section
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections. 
  * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
  * \param[out] SectionName Name of the Elements_t node.
@@ -4492,8 +4492,8 @@ int cg_section_read(int fn, int B, int Z, int S, char *SectionName,
  * \brief  Write fixed size element data
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
  * \param[in] SectionName Name of the Elements_t node.
  * \param[in] start  	Index of first element in the section.
@@ -4544,8 +4544,8 @@ int cg_section_write(int fn, int B, int Z, const char * SectionName,
  * \brief  Write element data
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
  * \param[in] SectionName Name of the Elements_t node.
  * \param[in] start  	Index of first element in the section.
@@ -4620,8 +4620,8 @@ int cg_poly_section_write(int fn, int B, int Z, const char * SectionName,
  * \brief  Write subset of element data
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
  * \param[in] SectionName Name of the Elements_t node.
  * \param[in] start  	Index of first element in the section.
@@ -4663,8 +4663,8 @@ int cg_section_partial_write(int fn, int B, int Z, const char * SectionName,
  * \brief  Write section data without element data
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
  * \param[in] elementDataType Data type of an array. Admissible data types are Integer and LongInteger.
  * \param[in] SectionName Name of the Elements_t node.
@@ -4882,8 +4882,8 @@ int cg_section_general_write(int fn, int B, int Z, const char * SectionName,
  * \brief  Initialize element data for not fixed size elements
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] S  Element section index, where 1 ≤ S ≤ nsections. 
  * \return \ier
  *
@@ -5111,8 +5111,8 @@ int cg_section_initialize(int fn, int B, int Z, int S)
  * \brief  Get size of element connectivity data array
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections. 
  * \param[out] ElementDataSize Number of element connectivity data values.
  * \return \ier
@@ -5144,8 +5144,8 @@ int cg_ElementDataSize(int fn, int B, int Z, int S,
  * \brief  Get size of element connectivity data array for partial read
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
@@ -5259,8 +5259,8 @@ int cg_ElementPartialSize(int fn, int B, int Z, int S,
  * \brief  Read fixed size element data
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[out] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
  * \param[out] parent_data  For boundary or interface elements, this array contains information on the cell(s) and cell face(s) sharing the element. If you do not need to read the ParentData when reading the ElementData, you may set the value to NULL.
@@ -5332,8 +5332,8 @@ int cg_elements_read(int fn, int B, int Z, int S, cgsize_t *elements,
  * \brief  Read element data
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[out] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
  * \param[out] connect_offset 	Element connectivity offset data. This is required for NGON_n, NFACE_n and MIXED according to Elements_t Structure Definition. 
@@ -5420,8 +5420,8 @@ int cg_poly_elements_read(int fn, int B, int Z, int S, cgsize_t *elements,
  * \brief  Read subset of fixed size element data
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
@@ -5610,8 +5610,8 @@ int cg_elements_partial_read(int fn, int B, int Z, int S,
  * \brief  Read subset of fixed size element data to a typed array
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
@@ -5750,8 +5750,8 @@ int cg_elements_general_read(int fn, int B, int Z, int S,
  * \brief  Read parent info for an element section
  * 
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
@@ -5894,8 +5894,8 @@ int cg_parent_elements_general_read(int fn, int B, int Z, int S,
  * \brief  Read parent position info for an element section
  * 
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
@@ -6037,8 +6037,8 @@ int cg_parent_elements_position_general_read(int fn, int B, int Z, int S,
  * \brief  Read subset of element data
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
@@ -6233,8 +6233,8 @@ int cg_poly_elements_partial_read(int fn, int B, int Z, int S,
  * \brief  Read subset of element data to typed arrays
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
@@ -6384,8 +6384,8 @@ int cg_poly_elements_general_read(int fn, int B, int Z, int S,
  * \brief  Write element data for a fixed size element section 
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
@@ -6570,8 +6570,8 @@ int cg_elements_partial_write(int fn, int B, int Z, int S,
  * \brief  Write element data for a fixed size element section
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
@@ -6885,8 +6885,8 @@ int cg_elements_general_write(int fn, int B, int Z, int S,
  * \brief  Write element data for an element section
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] start  Index of first element in the section.
  * \param[in] end  Index of last element in the section.
@@ -6913,8 +6913,8 @@ int cg_poly_elements_partial_write(int fn, int B, int Z, int S,
  * \brief  Write element data for an element section
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
@@ -7515,8 +7515,8 @@ int cg_poly_elements_general_write(int fn, int B, int Z, int S,
  * \brief  Write parent info for an element section
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] parent_data  For boundary or interface elements, this array contains information on the cell(s) and cell face(s) sharing the element. If you do not need to read the ParentData when reading the ElementData, you may set the value to NULL. 
  * \return \ier
@@ -7618,8 +7618,8 @@ int cg_parent_data_write(int fn, int B, int Z, int S,
  * \brief  Write subset of parent info for an element section
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
  * \param[in] start Index of first element in the section.
  * \param[in] end  Index of last element in the section. 
@@ -7756,8 +7756,8 @@ int cg_parent_data_partial_write(int fn, int B, int Z, int S,
  * \brief  Get number of FlowSolution_t nodes 
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] nsols  Number of flow solutions for zone Z. 
  * \return \ier
  *
@@ -7784,8 +7784,8 @@ int cg_nsols(int fn, int B, int Z, int *nsols)
  * \brief  Get information about a FlowSolution_t node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
  * \param[out] solname  Name of the flow solution.
  * \param[out] location  Grid location where the solution is recorded. The current admissible locations are Vertex, CellCenter, IFaceCenter, JFaceCenter, and KFaceCenter.
@@ -7832,8 +7832,8 @@ int cg_sol_id(int file_number, int B, int Z, int S, double *sol_id)
  * \brief  Create and/or write to a FlowSolution_t node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] solname  Name of the flow solution.
  * \param[in] location  Grid location where the solution is recorded. The current admissible locations are Vertex, CellCenter, IFaceCenter, JFaceCenter, and KFaceCenter.
  * \param[out] S  Flow solution index number, where 1 ≤ S ≤ nsols.
@@ -7944,8 +7944,8 @@ int cg_sol_write(int fn, int B, int Z, const char * solname,
  * \brief  Get the dimensions of a FlowSolution_t node 
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
  * \param[out] data_dim  Number of dimensions defining the solution data. If a point set has been defined, this will be 1, otherwise this will be the current zone index dimension.
  * \param[out] dim_vals The array of data_dim dimensions for the solution data. 
@@ -7985,8 +7985,8 @@ int cg_sol_size(int fn, int B, int Z, int S,
  * \brief  Get info about a point set FlowSolution_t node 
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
  * \param[out] ptset_type Type of point set defining the interface in the current solution; either PointRange or PointList. 
  * \param[out] npnts Number of points defining the interface in the current solution. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList. 
@@ -8022,8 +8022,8 @@ int cg_sol_ptset_info(int fn, int B, int Z, int S,
  * \brief  Read a point set FlowSolution_t node 
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
  * \param[out] pnts  Array of points defining the interface in the current solution.  
  * \return \ier
@@ -8058,8 +8058,8 @@ int cg_sol_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
  * \brief  Create a point set FlowSolution_t node 
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] solname  Name of the flow solution.
  * \param[in] location  Grid location where the solution is recorded. The current admissible locations are Vertex, CellCenter, IFaceCenter, JFaceCenter, and KFaceCenter.
  * \param[in] ptset_type  Type of point set defining the interface in the current solution; either PointRange or PointList. 
@@ -8135,8 +8135,8 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
  * \brief  Get number of flow solution arrays
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
  * \param[out] nfields  Number of data arrays in flow solution S.
  * \return \ier
@@ -8164,8 +8164,8 @@ int cg_nfields(int fn, int B, int Z, int S, int *nfields)
  * \brief  Get info about a flow solution array
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
  * \param[in] F  Solution array index number, where 1 ≤ F ≤ nfields.
  * \param[out] datatype  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble. 
@@ -8198,8 +8198,8 @@ int cg_field_info(int fn, int B, int Z, int S, int F,
  * \brief  Read flow solution
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
  * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
  * \param[in] mem_datatype  Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.  
@@ -8256,8 +8256,8 @@ int cg_field_read(int fn, int B, int Z, int S, const char *fieldname,
  * \brief  Read subset of flow solution to a shaped array
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
  * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
  * \param[in] s_rmin  Lower range index in file (eg., imin, jmin, kmin).
@@ -8346,8 +8346,8 @@ int cg_field_id(int file_number, int B, int Z, int S, int F, double *field_id)
  * \brief  Write flow solution
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
  * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
  * \param[in] type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble. 
@@ -8426,8 +8426,8 @@ int cg_field_write(int fn, int B, int Z, int S,
  * \brief  Write subset of flow solution
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
  * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
  * \param[in] type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble. 
@@ -8495,9 +8495,9 @@ int cg_field_partial_write(int fn, int B, int Z, int S,
  *
  * \brief  Write shaped array to a subset of flow solution
  *
- * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
  * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
  * \param[in] s_type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble. 
@@ -8592,8 +8592,8 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
  * \brief  Get number of ZoneSubRegion_t nodes
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] nsubregs  Number of ZoneSubRegion_t nodes under Zone Z.
  * \return \ier
  *
@@ -8630,8 +8630,8 @@ static cgns_subreg *cg_subreg_read(int fn, int B, int Z, int S)
  * \brief  Get info about a ZoneSubRegion_t node
  *
  * \param[in] fn   \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
  * \param[out] regname  Name of the ZoneSubRegion_t node.
  * \param[out] dimension  Dimensionality of the subregion, 1 for lines, 2 for faces, 3 for volumes.
@@ -8681,8 +8681,8 @@ int cg_subreg_info(int fn, int B, int Z, int S, char *regname, int *dimension,
  * \brief   Read point set data for a ZoneSubRegion_t node
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
  * \param[out] pnts  Array of points defining the interface for the subregion data. 
  * \return \ier
@@ -8711,8 +8711,8 @@ int cg_subreg_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
  * \brief   Read the BC_t node name for a ZoneSubRegion_t node
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
  * \param[out] bcname  The name of a BC_t node which defines the subregion. 
  * \return \ier
@@ -8738,8 +8738,8 @@ int cg_subreg_bcname_read(int fn, int B, int Z, int S, char *bcname)
  * \brief   Read the GridConnectivity_t node name for a ZoneSubRegion_t node
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
  * \param[out] gcname 	The name of a GridConnectivity_t or GridConnectivity1to1_t node which defines the subregion.
  * \return \ier
@@ -8830,8 +8830,8 @@ static cgns_subreg *cg_subreg_write(int fn, int B, int Z, const char *name,
  * \brief Create a point set ZoneSubRegion_t node
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] regname  Name of the ZoneSubRegion_t node.
  * \param[in] dimension  Dimensionality of the subregion, 1 for lines, 2 for faces, 3 for volumes.
  * \param[in] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
@@ -8911,8 +8911,8 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *regname,
  * \brief   Create a ZoneSubRegion_t node that references a BC_t node
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] regname  Name of the ZoneSubRegion_t node.
  * \param[in] dimension  Dimensionality of the subregion, 1 for lines, 2 for faces, 3 for volumes.
  * \param[in]  bcname  The name of a BC_t node which defines the subregion.
@@ -8961,8 +8961,8 @@ int cg_subreg_bcname_write(int fn, int B, int Z, const char *regname, int dimens
  * \brief   Create a ZoneSubRegion_t node that references a GridConnectivity_t node
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] regname  Name of the ZoneSubRegion_t node.
  * \param[in] dimension  Dimensionality of the subregion, 1 for lines, 2 for faces, 3 for volumes.
  * \param[in] gcname  The name of a GridConnectivity_t or GridConnectivity1to1_t node which defines the subregion.
@@ -9015,8 +9015,8 @@ int cg_subreg_gcname_write(int fn, int B, int Z, const char *regname, int dimens
  * \brief   Get number of ZoneGridConnectivity_t nodes 
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] nzconns  Number of ZoneGridConnectivity_t nodes under Zone Z.
  * \return \ier
  *
@@ -9044,8 +9044,8 @@ int cg_nzconns(int fn, int B, int Z, int *nzconns)
  * \brief   Read ZoneGridConnectivity_t node 
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] ZC Zone grid connectivity index number, where 1 ≤ ZC ≤ nzconns.
  * \param[out] zcname Name of the ZoneGridConnectivity_t node
  * \return \ier
@@ -9076,8 +9076,8 @@ int cg_zconn_read(int fn, int B, int Z, int ZC, char *zcname)
  * \brief   Create ZoneGridConnectivity_t node 
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] zcname Name of the ZoneGridConnectivity_t node
  * \param[out] ZC Zone grid connectivity index number, where 1 ≤ ZC ≤ nzconns.
  * \return \ier
@@ -9152,8 +9152,8 @@ int cg_zconn_write(int fn, int B, int Z, const char *zcname, int *ZC)
  * \brief   Get the current ZoneGridConnectivity_t node
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] ZC Zone grid connectivity index number, where 1 ≤ ZC ≤ nzconns.
  * \return \ier
  *
@@ -9187,8 +9187,8 @@ int cg_zconn_get(int fn, int B, int Z, int *ZC)
  * \brief   Set the current ZoneGridConnectivity_t node 
  *
  * \param[in] fn  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] ZC Zone grid connectivity index number, where 1 ≤ ZC ≤ nzconns.
  * \return \ier
  *
@@ -9217,8 +9217,8 @@ int cg_zconn_set(int fn, int B, int Z, int ZC)
  * \brief  Get number of overset holes in a zone
  *
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] nholes  Number of overset holes in zone Z.
  * \return \ier
  *
@@ -9244,8 +9244,8 @@ int cg_nholes(int file_number, int B, int Z, int *nholes)
  * \brief  Get info about an overset hole
  *
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] J  Overset hole index number, where 1 ≤ J ≤ nholes. 
  * \param[out] holename  Name of the overset hole. 
  * \param[out] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
@@ -9286,8 +9286,8 @@ int cg_hole_info(int file_number, int B, int Z, int J, char *holename,
  * \brief  Read overset hole data
  *
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] J  Overset hole index number, where 1 ≤ J ≤ nholes. 
  * \param[out] pnts Array of points or cells in the point set.
  * \return \ier
@@ -9361,8 +9361,8 @@ int cg_hole_id(int file_number, int B, int Z, int J, double *hole_id)
  * \brief   Write overset hole data
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] holename  Name of the overset hole. 
  * \param[in] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
  * \param[in] ptset_type  The extent of the overset hole may be defined using a range of points or cells, or using a discrete list of all points or cells in the overset hole. If a range of points or cells is used, ptset_type is set to PointRange. When a discrete list of points or cells is used, ptset_type equals PointList.
@@ -9542,8 +9542,8 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
  * \brief  Get number of generalized connectivity interfaces in a zone
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] nconns  Number of interfaces for zone Z.
  * \return \ier
  *
@@ -9569,8 +9569,8 @@ int cg_nconns(int file_number, int B, int Z, int *nconns)
  * \brief  Get info about a generalized connectivity interface 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] J  Interface index number, where 1 ≤ J ≤ nconns.
  * \param[out] connectname  Name of the interface.
  * \param[out] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
@@ -9642,8 +9642,8 @@ int cg_conn_info(int file_number, int B, int Z, int J, char *connectname,
  * \brief  Read generalized connectivity data
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] J  Interface index number, where 1 ≤ J ≤ nconns.
  * \param[out] pnts   Array of points defining the interface in the current zone.
  * \param[out] donor_datatype  Data type in which the donor points are stored in the file. As of Version 3.0, this value is ignored when writing, and on reading it will return either Integer or LongInteger depending on whether the file was written using 32 or 64-bit. The donor_datatype argument was left in these functions only for backward compatibility. The donor data is always read as cgsize_t.
@@ -9724,8 +9724,8 @@ int cg_conn_read(int file_number, int B, int Z, int J, cgsize_t *pnts,
  * \brief  Read generalized connectivity data without donor information
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] J  Interface index number, where 1 ≤ J ≤ nconns.
  * \param[out] pnts   Array of points defining the interface in the current zone.
  * \return \ier
@@ -9758,8 +9758,8 @@ int cg_conn_id(int file_number, int B, int Z, int J, double *conn_id)
  * \brief  Write generalized connectivity data 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] connectname  Name of the interface.
  * \param[in] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
  * \param[in] connect_type  Type of interface being defined. The admissible types are Overset, Abutting, and Abutting1to1.
@@ -10069,8 +10069,8 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
  * \brief  Write generalized connectivity data without donor information
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] connectname  Name of the interface.
  * \param[in] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex and CellCenter.
  * \param[in] connect_type  Type of interface being defined. The admissible types are Overset, Abutting, and Abutting1to1.
@@ -10105,8 +10105,8 @@ int cg_conn_write_short(int file_number, int B, int Z,  const char * connectname
  * \brief  Get number of 1-to-1 interfaces in a zone
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] n1to1  Number of one-to-one interfaces in zone Z, stored under GridConnectivity1to1_t nodes. (I.e., this does not include one-to-one interfaces that may be stored under GridConnectivity_t nodes, used for generalized zone interfaces.)
  * \return \ier
  *
@@ -10132,7 +10132,7 @@ int cg_n1to1(int file_number, int B, int Z, int *n1to1)
  * \brief  Get total number of 1-to-1 interfaces in a database
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] B  \B_Base 
  * \param[in] n1to1_global  Total number of one-to-one interfaces in base B, stored under GridConnectivity1to1_t nodes. (I.e., this does not include one-to-one interfaces that may be stored under GridConnectivity_t nodes, used for generalized zone interfaces.) Note that the function cg_n1to1 (described below) may be used to get the number of one-to-one interfaces in a specific zone.
  * \return \ier
  *
@@ -10199,8 +10199,8 @@ int cg_n1to1_global(int file_number, int B, int *n1to1_global)
  * \brief  Read 1-to-1 connectivity data for a zone 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] J  Interface index number, where 1 ≤ J ≤ n1to1.
  * \param[out] connectname Name of the interface.
  * \param[out] donorname  Name of the zone interfacing with the current zone.
@@ -10263,7 +10263,7 @@ int cg_1to1_read(int file_number, int B, int Z, int J, char *connectname,
  * \brief  Read data for all 1-to-1 interfaces in a database
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] B  \B_Base 
  * \param[out] connectname  Name of the interface.
  * \param[out] zonename  Name of the first zone, for all one-to-one interfaces in base B.
  * \param[out] donorname  Name of the second zone, for all one-to-one interfaces in base B.
@@ -10356,8 +10356,8 @@ int cg_1to1_id(int file_number, int B, int Z, int J, double *one21_id)
  * \brief  Write 1-to-1 connectivity data for a zone
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] connectname  Name of the interface.
  * \param[in] donorname  Name of the zone interfacing with the current zone. 
  * \param[in] range  Range of points for the current zone. 
@@ -10535,8 +10535,8 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
  * \brief  Get number of boundary condition in zone
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] nbocos  Number of boundary conditions in zone Z.
  * \return \ier
  *
@@ -10562,8 +10562,8 @@ int cg_nbocos(int file_number, int B, int Z, int *nbocos)
  * \brief  Get boundary condition info
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
  * \param[out] boconame  Name of the boundary condition.
  * \param[out] bocotype  Type of boundary condition defined. See the eligible types for BCType_t in the Typedefs section. Note that if bocotype is FamilySpecified the boundary condition type is being specified for the family to which the boundary belongs. The boundary condition type for the family may be read and written using cg_fambc_read and cg_fambc_write. 
@@ -10631,8 +10631,8 @@ int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
  * \brief  Read boundary condition data and normals
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
  * \param[out] pnts  Array of point or element indices defining the boundary condition region. There should be npnts values, each of dimension IndexDimension (i.e., 1 for unstructured grids, and 2 or 3 for structured grids with 2-D or 3-D elements, respectively).
  * \param[out] NormalList List of vectors normal to the boundary condition patch pointing into the interior of the zone.
@@ -10694,8 +10694,8 @@ int cg_boco_id(int file_number, int B, int Z, int BC, double *boco_id)
  * \brief  Read boundary condition location
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
  * \param[out] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex (the default if not given), and CellCenter. Interpretation of CellCenter, and additional allowable values of grid location depends on the base cell dimension. For CellDim=1, CellCenter refers to line elements. For CellDim=2, CellCenter refers to area elements, and the additional value EdgeCenter is allowed. For CellDim=3, CellCenter refers to volume elements, and in addition to EdgeCenter, the values of FaceCenter, IFaceCenter, JFaceCenter, and KFaceCenter may be used.
  * \return \ier
@@ -10724,8 +10724,8 @@ int cg_boco_gridlocation_read(int file_number, int B, int Z,
  * \brief   Write boundary condition type and data
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone
  * \param[in] boconame  Name of the boundary condition.
  * \param[in] bocotype  Type of boundary condition defined. See the eligible types for BCType_t in the Typedefs section. Note that if bocotype is FamilySpecified the boundary condition type is being specified for the family to which the boundary belongs. The boundary condition type for the family may be read and written using cg_fambc_read and cg_fambc_write.
  * \param[in] ptset_type The extent of the boundary condition may be defined using a range of points or elements using PointRange, or using a discrete list of all points or elements at which the boundary condition is applied using PointList. When the boundary condition is to be applied anywhere other than points, then GridLocation_t under the BC_t node must be used to indicate this. The value of GridLocation_t may be read or written by cg_boco_gridlocation_read and cg_boco_gridlocation_write. As in previous versions of the library, this may also be done by first using cg_goto to access the BC_t node, then using cg_gridlocation_read or cg_gridlocation_write.
@@ -10916,8 +10916,8 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
  * \brief  Write boundary condition location
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
  * \param[in] location  Grid location used in the definition of the point set. The currently admissible locations are Vertex (the default if not given), and CellCenter. Interpretation of CellCenter, and additional allowable values of grid location depends on the base cell dimension. For CellDim=1, CellCenter refers to line elements. For CellDim=2, CellCenter refers to area elements, and the additional value EdgeCenter is allowed. For CellDim=3, CellCenter refers to volume elements, and in addition to EdgeCenter, the values of FaceCenter, IFaceCenter, JFaceCenter, and KFaceCenter may be used.
  * \return \ier
@@ -10961,8 +10961,8 @@ int cg_boco_gridlocation_write(int file_number, int B, int Z,
  * \brief  Write boundary condition normals 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
  * \param[in] NormalIndex  Index vector indicating the computational coordinate direction of the boundary condition patch normal.
  * \param[in] NormalListFlag  Flag indicating if the normals are defined in NormalList and are to be written out; 1 if they are defined, 0 if they're not.
@@ -11060,8 +11060,8 @@ int cg_boco_normal_write(int file_number, int B, int Z, int BC, const int * Norm
  * \brief  Read boundary condition dataset info 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
  * \param[in] DSet Dataset index number, where 1 ≤ Dset ≤ ndataset.
  * \param[out] DatasetName  Name of dataset.
@@ -11101,8 +11101,8 @@ int cg_dataset_read(int file_number, int B, int Z, int BC, int DSet, char *Datas
  * \brief  Write boundary condition dataset info
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
  * \param[in] DatasetName  Name of dataset.
  * \param[in] BCType  Simple boundary condition type for the dataset. The supported types are listed in the table of Simple Boundary Condition Types in the SIDS manual, but note that FamilySpecified does not apply here.
@@ -11189,8 +11189,8 @@ int cg_dataset_write(int file_number, int B, int Z, int BC, const char * Dataset
  * \brief  Write boundary condition data  
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
  * \param[in] Dset Dataset index number, where 1 ≤ Dset ≤ ndataset.
  * \param[in] BCDataType Type of boundary condition in the dataset. Admissible boundary condition types are Dirichlet and Neumann. 
@@ -11269,8 +11269,8 @@ int cg_bcdata_write(int file_number, int B, int Z, int BC, int Dset,
  * \brief  Get number of RigidGridMotion_t nodes
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] n_rigid_motions  Number of RigidGridMotion_t nodes under zone Z. 
  * \return \ier
  *
@@ -11298,8 +11298,8 @@ int cg_n_rigid_motions(int file_number, int B, int Z, int *n_rigid_motions)
  * \brief  Read RigidGridMotion_t node
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] R  Rigid rotation index number, where 1 ≤ R ≤ n_rigid_motions. 
  * \param[out] name  Name of the RigidGridMotion_t node.
  * \param[out] type  Type of rigid grid motion. The admissible types are CG_Null, CG_UserDefined, ConstantRate, and VariableRate. 
@@ -11332,8 +11332,8 @@ int cg_rigid_motion_read(int file_number, int B, int Z, int R, char *name,
  * \brief  Create RigidGridMotion_t node
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] rmotionname  Name of the RigidGridMotion_t node.
  * \param[in] type  Type of rigid grid motion. The admissible types are CG_Null, CG_UserDefined, ConstantRate, and VariableRate.
  * \param[out] R  Rigid rotation index number, where 1 ≤ R ≤ n_rigid_motions. 
@@ -11421,8 +11421,8 @@ int cg_rigid_motion_write(int file_number, int B, int Z, const char * rmotionnam
  * \brief  Get number of ArbitraryGridMotion_t nodes
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[out] n_arbitrary_motions  Number of ArbitraryGridMotion_t nodes under zone Z.
  * \return \ier
  *
@@ -11450,8 +11450,8 @@ int cg_n_arbitrary_motions(int file_number, int B, int Z, int *n_arbitrary_motio
  * \brief  Read ArbitraryGridMotion_t node 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] A  Arbitrary grid motion index number, where 1 ≤ A ≤ n_arbitrary_motions.
  * \param[out] name  Name of the ArbitraryGridMotion_t node.
  * \param[out] type  Type of arbitrary grid motion. The admissible types are CG_Null, CG_UserDefined, NonDeformingGrid, and DeformingGrid.
@@ -11484,8 +11484,8 @@ int cg_arbitrary_motion_read(int file_number, int B, int Z, int A, char *name,
  * \brief  Write ArbitraryGridMotion_t node 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base 
+ * \param[in] Z  \Z_Zone
  * \param[in] amotionname  Name of the ArbitraryGridMotion_t node.
  * \param[in] type  Type of arbitrary grid motion. The admissible types are CG_Null, CG_UserDefined, NonDeformingGrid, and DeformingGrid.
  * \param[out] A  Arbitrary grid motion index number, where 1 ≤ A ≤ n_arbitrary_motions.
@@ -11573,7 +11573,7 @@ int cg_arbitrary_motion_write(int file_number, int B, int Z, const char * amotio
  * \brief  Read simulation type
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] B  \B_Base 
  * \param[out] SimulationType  Type of simulation. Valid types are CG_Null, CG_UserDefined, TimeAccurate, and NonTimeAccurate.
  * \return \ier
  *
@@ -11601,7 +11601,7 @@ int cg_simulation_type_read(int file_number, int B, CGNS_ENUMT(SimulationType_t)
  * \brief  Write simulation type
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] B  \B_Base 
  * \param[in] SimulationType  Type of simulation. Valid types are CG_Null, CG_UserDefined, TimeAccurate, and NonTimeAccurate.
  * \return \ier
  *
@@ -11658,7 +11658,7 @@ int cg_simulation_type_write(int file_number, int B, CGNS_ENUMT(SimulationType_t
  * \brief  Read BaseIterativeData_t node 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] B  \B_Base 
  * \param[out] bitername  Name of the BaseIterativeData_t node.
  * \param[out] nsteps Number of time steps or iterations.
  * \return \ier
@@ -11688,7 +11688,7 @@ int cg_biter_read(int file_number, int B, char *bitername, int *nsteps)
  * \brief  Write BaseIterativeData_t node 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases. 
+ * \param[in] B  \B_Base 
  * \param[in] bitername  Name of the BaseIterativeData_t node.
  * \param[in] nsteps Number of time steps or iterations.
  * \return \ier
@@ -11757,8 +11757,8 @@ int cg_biter_write(int file_number, int B,  const char * bitername, int nsteps)
  * \brief  Read ZontIterativeData_t node 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone
  * \param[out] zitername  Name of the ZoneIterativeData_t node.
  * \return \ier
  *
@@ -11786,8 +11786,8 @@ int cg_ziter_read(int file_number, int B, int Z, char *zitername)
  * \brief  Write ZontIterativeData_t node 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones.
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone
  * \param[in] zitername  Name of the ZoneIterativeData_t node.
  * \return \ier
  *
@@ -11848,7 +11848,7 @@ int cg_ziter_write(int file_number, int B, int Z, const char * zitername)
  * \brief  Read Gravity_t node 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B  \B_Base
  * \param[in] gravity_vector  Components of the gravity vector. The number of components must equal PhysicalDimension. (In Fortran, this is an array of Real*4 values.)
  * \return \ier
  *
@@ -11882,7 +11882,7 @@ int cg_gravity_read(int file_number, int B, float *gravity_vector)
  * \brief  Write Gravity_t node 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B  \B_Base
  * \param[in] gravity_vector  Components of the gravity vector. The number of components must equal PhysicalDimension. (In Fortran, this is an array of Real*4 values.)
  * \return \ier
  *
@@ -11949,7 +11949,7 @@ int cg_gravity_write(int file_number, int B, float const *gravity_vector)
  * \brief  Read Axisymmetry_t node 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B  \B_Base
  * \param[out] ref_point  Origin used for defining the axis of rotation. (In Fortran, this is an array of Real*4 values.)
  * \param[out] axis Direction cosines of the axis of rotation, through the reference point. (In Fortran, this is an array of Real*4 values.)
  * \return \ier
@@ -11992,7 +11992,7 @@ int cg_axisym_read(int file_number, int B, float *ref_point, float *axis)
  * \brief  Create axisymmetry data
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B  \B_Base
  * \param[in] ref_point  Origin used for defining the axis of rotation. (In Fortran, this is an array of Real*4 values.)
  * \param[in] axis Direction cosines of the axis of rotation, through the reference point. (In Fortran, this is an array of Real*4 values.)
  * \return \ier
@@ -12072,8 +12072,8 @@ int cg_axisym_write(int file_number, int B, float const *ref_point, float const 
  * \brief  Read wall function data
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone 
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos. 
  * \param[out] WallFunctionType  The wall function type. Valid types are CG_Null, CG_UserDefined, and Generic.
  * \return \ier
@@ -12111,8 +12111,8 @@ int cg_bc_wallfunction_read(int file_number, int B, int Z, int BC,
  * \brief  Write wall function data
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone 
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos. 
  * \param[in] WallFunctionType  The wall function type. Valid types are CG_Null, CG_UserDefined, and Generic.
  * \return \ier
@@ -12215,8 +12215,8 @@ int cg_bc_wallfunction_write(int file_number, int B, int Z, int BC,
  * \brief  Read area related data
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone 
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos. 
  * \param[out]  AreaType  The type of area. Valid types are CG_Null, CG_UserDefined, BleedArea, and CaptureArea. 
  * \param[out]  SurfaceArea  The size of the area. (In Fortran, this is a Real*4 value.)
@@ -12266,8 +12266,8 @@ int cg_bc_area_read(int file_number, int B, int Z, int BC,
  * \brief  Write area related data
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone 
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
  * \param[in] AreaType  The type of area. Valid types are CG_Null, CG_UserDefined, BleedArea, and CaptureArea. 
  * \param[in] SurfaceArea  The size of the area. (In Fortran, this is a Real*4 value.)
@@ -12413,8 +12413,8 @@ int cg_bc_area_write(int file_number, int B, int Z, int BC,
  * \brief  Read data for periodic interface
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
  * \param[out] RotationCenter  An array of size phys_dim defining the coordinates of the origin for defining the rotation angle between the periodic interfaces. (phys_dim is the number of coordinates required to define a vector in the field.) (In Fortran, this is an array of Real*4 values.)
  * \param[out] RotationAngle  An array of size phys_dim defining the rotation angle from the current interface to the connecting interface. If rotating about more than one axis, the rotation is performed first about the x-axis, then the y-axis, then the z-axis. (In Fortran, this is an array of Real*4 values.) 
@@ -12472,8 +12472,8 @@ int cg_conn_periodic_read(int file_number, int B, int Z, int J,
  * \brief  Write data for periodic interface
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
  * \param[in] RotationCenter  An array of size phys_dim defining the coordinates of the origin for defining the rotation angle between the periodic interfaces. (phys_dim is the number of coordinates required to define a vector in the field.) (In Fortran, this is an array of Real*4 values.)
  * \param[in] RotationAngle  An array of size phys_dim defining the rotation angle from the current interface to the connecting interface. If rotating about more than one axis, the rotation is performed first about the x-axis, then the y-axis, then the z-axis. (In Fortran, this is an array of Real*4 values.) 
@@ -12594,8 +12594,8 @@ int cg_conn_periodic_write(int file_number, int B, int Z, int J,
  * \brief  Read data for averaging interface
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
  * \param[out] 	AverageInterfaceType  The type of averaging to be done. Valid types are CG_Null, CG_UserDefined, AverageAll, AverageCircumferential, AverageRadial, AverageI, AverageJ, and AverageK.
  * \return \ier
@@ -12633,8 +12633,8 @@ int cg_conn_average_read(int file_number, int B, int Z, int J,
  * \brief  Write data for averaging interface
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
  * \param[in] 	AverageInterfaceType  The type of averaging to be done. Valid types are CG_Null, CG_UserDefined, AverageAll, AverageCircumferential, AverageRadial, AverageI, AverageJ, and AverageK.
  * \return \ier
@@ -12735,8 +12735,8 @@ int cg_conn_average_write(int file_number, int B, int Z, int J,
  * \brief  Read data for periodic interface
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions.
  * \param[out]  RotationCenter   An array of size phys_dim defining the coordinates of the origin for defining the rotation angle between the periodic interfaces. (phys_dim is the number of coordinates required to define a vector in the field.) (In Fortran, this is an array of Real*4 values.) 
  * \param[out]  RotationAngle   An array of size phys_dim defining the rotation angle from the current interface to the connecting interface. If rotating about more than one axis, the rotation is performed first about the x-axis, then the y-axis, then the z-axis. (In Fortran, this is an array of Real*4 values.)
@@ -12797,8 +12797,8 @@ int cg_1to1_periodic_read(int file_number, int B, int Z, int J,
  * \brief  Write data for periodic interface
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions.
  * \param[in]  RotationCenter   An array of size phys_dim defining the coordinates of the origin for defining the rotation angle between the periodic interfaces. (phys_dim is the number of coordinates required to define a vector in the field.) (In Fortran, this is an array of Real*4 values.) 
  * \param[in]  RotationAngle   An array of size phys_dim defining the rotation angle from the current interface to the connecting interface. If rotating about more than one axis, the rotation is performed first about the x-axis, then the y-axis, then the z-axis. (In Fortran, this is an array of Real*4 values.)
@@ -12922,8 +12922,8 @@ int cg_1to1_periodic_write(int file_number, int B, int Z, int J,
  * \brief  Read data for averaging interface
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
  * \param[out] 	AverageInterfaceType  The type of averaging to be done. Valid types are CG_Null, CG_UserDefined, AverageAll, AverageCircumferential, AverageRadial, AverageI, AverageJ, and AverageK.
  * \return \ier
@@ -12964,8 +12964,8 @@ int cg_1to1_average_read(int file_number, int B, int Z, int J,
  * \brief  Write data for averaging interface
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
- * \param[in] Z  Zone index number, where 1 ≤ Z ≤ nzones. 
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
  * \param[in] 	AverageInterfaceType  The type of averaging to be done. Valid types are CG_Null, CG_UserDefined, AverageAll, AverageCircumferential, AverageRadial, AverageI, AverageJ, and AverageK.
  * \return \ier
@@ -13097,7 +13097,7 @@ int vcg_goto(int file_number, int B, va_list ap)
  * \brief  Access a node via label/name, index pairs
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B  \B_Base
  * \param[in] ...  Variable argument list used to specify the path to a node. It is composed of an unlimited list of pair-arguments identifying each node in the path. Nodes may be identified by their label or name. Thus, a pair-argument may be of the form
 
    "CGNS_NodeLabel", NodeIndex
@@ -13384,7 +13384,7 @@ int cg_gopath(int file_number, const char *path)
  * \brief  Access a node via arrays of labels and indices 
  * 
  * \param[in] file_number  \FILE_fn
- * \param[in] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[in] B  \B_Base
  * \param[in] depth  Depth of the path list. The maximum depth is defined in cgnslib.h by CG_MAX_GOTO_DEPTH, and is currently equal to 20.
  * \param[in] label  Array of node labels for the path. This argument may be passed as NULL to cg_where(), otherwise it must be dimensioned by the calling program. The maximum size required is label[MAX_GO_TO_DEPTH][33]. You may call cg_where() with both label and index set to NULL in order to get the current depth, then dimension to that value.
  * \param[in] index  Array of node indices for the path. This argument may be passed as NULL to cg_where(), otherwise it must be dimensioned by the calling program. The maximum size required is index[MAX_GO_TO_DEPTH]. You may call cg_where() with both label and index set to NULL in order to get the current depth, then dimension to that value.
@@ -13407,7 +13407,7 @@ int cg_golist(int file_number, int B, int depth, char **label, int *index)
  * \brief  Get path to current node 
  * 
  * \param[out] file_number  \FILE_fn
- * \param[out] B  Base index number, where 1 ≤ B ≤ nbases.
+ * \param[out] B  \B_Base
  * \param[out] depth  Depth of the path list. The maximum depth is defined in cgnslib.h by CG_MAX_GOTO_DEPTH, and is currently equal to 20.
  * \param[out] label  Array of node labels for the path. This argument may be passed as NULL to cg_where(), otherwise it must be dimensioned by the calling program. The maximum size required is label[MAX_GO_TO_DEPTH][33]. You may call cg_where() with both label and index set to NULL in order to get the current depth, then dimension to that value.
  * \param[out] num  Array of node indices for the path. This argument may be passed as NULL to cg_where(), otherwise it must be dimensioned by the calling program. The maximum size required is index[MAX_GO_TO_DEPTH]. You may call cg_where() with both label and index set to NULL in order to get the current depth, then dimension to that value.
