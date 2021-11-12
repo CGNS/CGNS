@@ -8629,7 +8629,7 @@ static cgns_subreg *cg_subreg_read(int fn, int B, int Z, int S)
  *
  * \brief  Get info about a ZoneSubRegion_t node
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
@@ -8680,7 +8680,7 @@ int cg_subreg_info(int fn, int B, int Z, int S, char *regname, int *dimension,
  *
  * \brief   Read point set data for a ZoneSubRegion_t node
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
@@ -8710,7 +8710,7 @@ int cg_subreg_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
  *
  * \brief   Read the BC_t node name for a ZoneSubRegion_t node
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
@@ -8737,7 +8737,7 @@ int cg_subreg_bcname_read(int fn, int B, int Z, int S, char *bcname)
  *
  * \brief   Read the GridConnectivity_t node name for a ZoneSubRegion_t node
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  ZoneSubRegion index number, where 1 ≤ S ≤ nsubregs.
@@ -8829,7 +8829,7 @@ static cgns_subreg *cg_subreg_write(int fn, int B, int Z, const char *name,
  *
  * \brief Create a point set ZoneSubRegion_t node
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] regname  Name of the ZoneSubRegion_t node.
@@ -8910,7 +8910,7 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *regname,
  *
  * \brief   Create a ZoneSubRegion_t node that references a BC_t node
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] regname  Name of the ZoneSubRegion_t node.
@@ -8960,7 +8960,7 @@ int cg_subreg_bcname_write(int fn, int B, int Z, const char *regname, int dimens
  *
  * \brief   Create a ZoneSubRegion_t node that references a GridConnectivity_t node
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] regname  Name of the ZoneSubRegion_t node.
@@ -9014,7 +9014,7 @@ int cg_subreg_gcname_write(int fn, int B, int Z, const char *regname, int dimens
  *
  * \brief   Get number of ZoneGridConnectivity_t nodes 
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] nzconns  Number of ZoneGridConnectivity_t nodes under Zone Z.
@@ -9043,7 +9043,7 @@ int cg_nzconns(int fn, int B, int Z, int *nzconns)
  *
  * \brief   Read ZoneGridConnectivity_t node 
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] ZC Zone grid connectivity index number, where 1 ≤ ZC ≤ nzconns.
@@ -9075,7 +9075,7 @@ int cg_zconn_read(int fn, int B, int Z, int ZC, char *zcname)
  *
  * \brief   Create ZoneGridConnectivity_t node 
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] zcname Name of the ZoneGridConnectivity_t node
@@ -9151,7 +9151,7 @@ int cg_zconn_write(int fn, int B, int Z, const char *zcname, int *ZC)
  *
  * \brief   Get the current ZoneGridConnectivity_t node
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] ZC Zone grid connectivity index number, where 1 ≤ ZC ≤ nzconns.
@@ -9186,7 +9186,7 @@ int cg_zconn_get(int fn, int B, int Z, int *ZC)
  *
  * \brief   Set the current ZoneGridConnectivity_t node 
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] ZC Zone grid connectivity index number, where 1 ≤ ZC ≤ nzconns.
