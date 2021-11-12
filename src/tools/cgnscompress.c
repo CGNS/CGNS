@@ -9,18 +9,21 @@
 
 #if CG_HAVE_STAT64_STRUCT
 #ifdef _WIN32
-#define stat _stat64
+#define cgns_stat _stat64
 #else
-#define stat stat64
+#define cgns_stat stat64
 #endif
+#else
+#define cgns_stat stat
 #endif
+
 
 int main (int argc, char **argv)
 {
     char *inpfile, *outfile;
     int inpcg;
     size_t inpsize, outsize;
-    struct stat st;
+    struct cgns_stat st;
 
     if (argc < 2 || argc > 3) {
         fprintf(stderr, "usage: cgnscompress InputFile [OutputFile]\n");
@@ -29,7 +32,7 @@ int main (int argc, char **argv)
     inpfile = argv[1];
     outfile = argv[argc-1];
 
-    if (stat(inpfile, &st)) {
+    if (cgns_stat(inpfile, &st)) {
         fprintf (stderr, "can't stat %s\n", inpfile);
         exit (1);
     }
@@ -40,7 +43,7 @@ int main (int argc, char **argv)
     if (cgio_compress_file (inpcg, outfile))
         cgio_error_exit("cgio_compress_file");
 
-    if (stat(outfile, &st)) {
+    if (cgns_stat(outfile, &st)) {
         fprintf (stderr, "can't stat %s\n", outfile);
         exit (1);
     }
