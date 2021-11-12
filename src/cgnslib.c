@@ -3557,7 +3557,7 @@ int cg_ngrids(int fn, int B, int Z, int *ngrids)
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] G  Grid index number, where 1 ≤ G ≤ ngrids.
+ * \param[in] G  \G_Grid
  * \param[out] grid_coord_name Name of the GridCoordinates_t node. Note that the name "GridCoordinates" is reserved for the original grid and must be the first GridCoordinates_t node to be defined.
  * \return \ier
  *
@@ -3589,7 +3589,7 @@ int cg_grid_read(int fn, int B, int Z, int G, char *grid_coord_name)
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] grid_coord_name Name of the GridCoordinates_t node. Note that the name "GridCoordinates" is reserved for the original grid and must be the first GridCoordinates_t node to be defined.
- * \param[out] G  Grid index number, where 1 ≤ G ≤ ngrids.
+ * \param[out] G  \G_Grid
  * \return \ier
  *
  */
@@ -3676,7 +3676,7 @@ int cg_grid_write(int fn, int B, int Z, const char * grid_coord_name, int *G)
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] G  Grid index number, where 1 ≤ G ≤ ngrids.
+ * \param[in] G  \G_Grid
  * \param[in] datatype 	Data type of the bounding box array written to the file or read. Admissible data types for a coordinate bounding box are RealSingle and RealDouble. 
  * \param[out] boundingbox Data Array with bounding box values.
  * \return \ier
@@ -3757,7 +3757,7 @@ int cg_grid_bounding_box_read(int fn, int B, int Z, int G, CGNS_ENUMT(DataType_t
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] G  Grid index number, where 1 ≤ G ≤ ngrids.
+ * \param[in] G  \G_Grid
  * \param[in] datatype 	Data type of the bounding box array written to the file or read. Admissible data types for a coordinate bounding box are RealSingle and RealDouble. 
  * \param[in] boundingbox Data Array with bounding box values.
  * \return \ier
@@ -3832,7 +3832,7 @@ int cg_grid_bounding_box_write(int fn, int B, int Z, int G, CGNS_ENUMT(DataType_
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[out] ncoords  Grid index number, where 1 ≤ G ≤ ngrids.
+ * \param[out] ncoords Number of coordinate arrays for zone Z.
  * \return \ier
  *
  */
@@ -3860,7 +3860,7 @@ int cg_ncoords(int fn, int B, int Z, int *ncoords)
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] C  Coordinate array index number, where 1 ≤ C ≤ ncoords. 
+ * \param[in] C  \C_Coordinate 
  * \param[out] datatype   Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble. 
  * \param[out] coordname   Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
  * \return \ier
@@ -4044,7 +4044,7 @@ int cg_coord_id(int file_number, int B, int Z, int C, double *coord_id)
  * \param[in] datatype Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble. 
  * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
  * \param[in] coord_ptr   Array of coordinate values.
- * \param[out] C    Coordinate array index number, where 1 ≤ C ≤ ncoords. 
+ * \param[out] C    \C_Coordinate 
  * \return \ier
  *
  */
@@ -4118,7 +4118,7 @@ int cg_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) datatype,
  * \param[in] s_rmin   Lower range index in file (eg., imin, jmin, kmin).
  * \param[in] s_rmax   Upper range index in file (eg., imax, jmax, kmax).
  * \param[in] coord_ptr   Array of coordinate values.
- * \param[out] C    Coordinate array index number, where 1 ≤ C ≤ ncoords. 
+ * \param[out] C    \C_Coordinate 
  * \return \ier
  *
  */
@@ -4179,7 +4179,7 @@ int cg_coord_partial_write(int fn, int B, int Z,
  * \param[in] m_rmin   Lower range index in memory (eg., imin, jmin, kmin). 
  * \param[in] m_rmax   Upper range index in memory (eg., imax, jmax, kmax).
  * \param[in] coord_ptr   Array of coordinate values.
- * \param[out] C    Coordinate array index number, where 1 ≤ C ≤ ncoords. 
+ * \param[out] C    \C_Coordinate 
  * \return \ier
  *
  */
