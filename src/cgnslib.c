@@ -13507,7 +13507,15 @@ int cg_famname_write(const char * family_name)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup FamilyName
+ *
+ * \brief  Get Number of family names
+ *  
+ * \param[out] nfams  Number of additional family names. 
+ * \return \ier
+ *
+ */
 int cg_nmultifam(int *nfams)
 {
     CHECK_FILE_OPEN
@@ -13538,6 +13546,17 @@ int cg_nmultifam(int *nfams)
     return CG_OK;
 }
 
+/**
+ * \ingroup FamilyName
+ *
+ * \brief  Read multiple family names
+ *  
+ * \param[in] N Family name index number, where 1 ≤ N ≤ nNames.
+ * \param[out] name Node name.
+ * \param[out] family 	Family name
+ * \return \ier
+ *
+ */
 int cg_multifam_read(int N, char *name, char *family)
 {
     cgns_famname *famname;
@@ -13556,6 +13575,17 @@ int cg_multifam_read(int N, char *name, char *family)
     return CG_OK;
 }
 
+/**
+ * \ingroup FamilyName
+ *
+ * \brief  Write multiple family names
+ * 
+ * \param[in] name  Node name.
+ * \param[in] family  Family name
+ * \return \ier
+ *
+ * \details The additional family names written with cg_multifam_write are stored in AdditionalFamilyName_t nodes.
+ */
 int cg_multifam_write(const char *name, const char *family)
 {
     cgns_famname *famname;
@@ -13591,7 +13621,18 @@ int cg_multifam_write(const char *name, const char *family)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup ConvergenceHistory
+ *
+ * \brief  Read ConvergenceHistory_t node
+ * 
+ * \param[out] iterations  Number of iterations for which convergence information is recorded.
+ * \param[out] NormDefinitions Description of the convergence information recorded in the data arrays.
+ * \return \ier
+ *
+ * \details  The function cg_convergence_read reads a ConvergenceHistory_t node. If NormDefinitions is not defined in the CGNS database, this function returns a null string. If NormDefinitions exists, the library will allocate the space to store the description string, and return the description string to the application. It is the responsibility of the application to free this space when it is no longer needed by a call to cg_free(NormDefinitions).
+ *
+ */
 int cg_convergence_read(int *iterations, char **NormDefinitions)
 {
     cgns_converg *converg;
@@ -13618,6 +13659,18 @@ int cg_convergence_read(int *iterations, char **NormDefinitions)
     return CG_OK;
 }
 
+/**
+ * \ingroup ConvergenceHistory
+ *
+ * \brief  Write ConvergenceHistory_t node
+ * 
+ * \param[in] iterations  Number of iterations for which convergence information is recorded.
+ * \param[in] NormDefinitions Description of the convergence information recorded in the data arrays.
+ * \return \ier
+ *
+ * \details  The function cg_convergence_write creates a ConvergenceHistory_t node. It must be the first one called when recording convergence history data. The NormDefinitions may be left undefined (i.e., a blank string). After creation of this node, the descriptors, data arrays, data class, and dimensional units characterizing the ConvergenceHistory_t data structure may be added. 
+ *
+ */
 int cg_convergence_write(int iterations, const char * NormDefinitions)
 {
     cgns_converg *converg;
@@ -13668,7 +13721,17 @@ int cg_convergence_write(int iterations, const char * NormDefinitions)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup ReferenceState
+ *
+ * \brief  Read text description of reference state.
+ * 
+ * \param[in] StateDescription  Text description of reference state.
+ * \return \ier
+ *
+ * \details  The function cg_state_read reads the StateDescription of the local ReferenceState_t node. If StateDescription is undefined in the CGNS database, this function returns a null string. If StateDescription exists, the library will allocate the space to store the description string, and return the description string to the application. It is the responsibility of the application to free this space when it is no longer needed by a call to cg_free(StateDescription). 
+ *
+ */
 int cg_state_read(char **StateDescription)
 {
     cgns_state *state;
@@ -13694,6 +13757,17 @@ int cg_state_read(char **StateDescription)
     return CG_OK;
 }
 
+/**
+ * \ingroup ReferenceState
+ *
+ * \brief  Create ReferenceState_t node
+ * 
+ * \param[in] StateDescription  Text description of reference state.
+ * \return \ier
+ *
+ * \details   The function cg_state_write creates the ReferenceState_t node and must be called even if StateDescription is undefined (i.e., a blank string). The descriptors, data arrays, data class, and dimensional units characterizing the ReferenceState_t data structure may be added to this data structure after its creation.
+ *
+ */
 int cg_state_write(const char * StateDescription)
 {
     cgns_state *state;
