@@ -368,10 +368,6 @@ int cg_open(const char *filename, int mode, int *file_number)
             return CG_ERROR;
     }
 
-    /* set default file type if not done */
-    if (cgns_filetype == CG_FILE_NONE)
-        cg_set_file_type(CG_FILE_NONE);
-
     /* Open CGNS file */
     if (cgio_open_file(filename, mode, cgns_filetype, &cgio)) {
         cg_io_error("cgio_open_file");
