@@ -361,7 +361,9 @@ int cg_open(const char *filename, int mode, int *file_number)
             }
             break;
         case CG_MODE_WRITE:
-            /* unlink is now done in cgio_open_file */
+            /* set default file type if not done */
+            if (cgns_filetype == CG_FILE_NONE)
+                cg_set_file_type(CG_FILE_NONE);
             break;
         default:
             cgi_error("Unknown opening file mode: %d ??",mode);

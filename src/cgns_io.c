@@ -752,11 +752,6 @@ int cgio_open_file (const char *filename, int file_mode,
         case 'w':
         case 'W':
             UNLINK(filename);
-
-            /* set default file type if not done */
-            if (file_type == CG_FILE_NONE)
-                cg_set_file_type(CG_FILE_NONE);
-
             type = file_type = cgns_filetype;
             file_mode = CGIO_MODE_WRITE;
             fmode = "NEW";
