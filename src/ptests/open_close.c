@@ -42,6 +42,15 @@ int main(int argc, char* argv[]) {
 
           if (cg_close(fn))
             cg_error_exit();
+
+          cg_set_file_type = CG_FILE_NONE
+
+          if (cg_open("open_close.cgns", CG_MODE_WRITE, &fn))
+            cg_error_exit();
+
+          if (cg_close(fn))
+            cg_error_exit();
+
         }
 
         MPI_Barrier(MPI_COMM_WORLD);

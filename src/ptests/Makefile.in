@@ -206,7 +206,7 @@ fexample$(EXE) : fexample.F90 $(CGNSLIB)
 #----------
 
 benchmark_hdf5_f90$(EXE) : benchmark_hdf5_f90.F90 $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ benchmark_hdf5_f90.F90 $(LDLIBS) $(FLIBS)
+	$(F77) $(FOPTS) $(FEOUT)$@ benchmark_hdf5_f90.F90 $(CPPFLAGS) $(LDFLAGS) $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

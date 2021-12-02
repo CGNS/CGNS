@@ -9,6 +9,33 @@
 ! F90 benchmarking program for pcgns library
 
 MODULE testing_functions
+
+  USE ISO_C_BINDING
+
+#ifdef H5Z_ZFP_USE_PLUGIN
+
+  USE h5zzfp_props_f
+
+  ! Set HDF5_PLUGIN_PATH to the HDF ZFP plugin path 
+
+  ! compression parameters (defaults taken from ZFP header)
+  INTEGER(C_INT) :: zfpmode = H5Z_ZFP_MODE_ACCURACY
+  REAL(C_DOUBLE) :: rate = 4.0
+  REAL(C_DOUBLE) :: acc = 1.0e-6
+  INTEGER(C_INT) :: prec = 11
+  INTEGER(C_INT) :: minbits = 0
+  INTEGER(C_INT) :: maxbits = 4171
+  INTEGER(C_INT) :: maxprec = 64
+  INTEGER(C_INT) :: minexp = -1074
+
+  INTEGER(C_INT), DIMENSION(1:H5Z_ZFP_CD_NELMTS_MAX), TARGET :: f_param
+
+#else
+  
+  INTEGER(C_INT), DIMENSION(1:1), TARGET :: f_param 
+
+#endif
+
   !
   ! Contains functions to verify values
   !
@@ -157,7 +184,6 @@ PROGRAM benchmark_hdf5_f90
   INTEGER, DIMENSION(1:2) :: Avec
 
   TYPE(cgns_filter_f) :: filter
-  INTEGER(C_INT), DIMENSION(1:1), TARGET :: f_param 
   INTEGER(CGSIZE_T), DIMENSION(1:2) :: chunk_param
   INTEGER, PARAMETER :: nargs = 4
   INTEGER, DIMENSION(1:nargs) :: args
@@ -278,12 +304,35 @@ PROGRAM benchmark_hdf5_f90
      IF(comm_rank.EQ.0) PRINT*,"Chunking enabled: FALSE"
   ENDIF
 
+  f_param(:) = 0
   IF(SetFilter.EQ.1)THEN
      IF(comm_rank.EQ.0) PRINT*,"Filters enabled: TRUE"
+#ifdef H5Z_ZFP_USE_PLUGIN
+
+       filter%filter_id = H5Z_FILTER_ZFP
+       filter%nparams = H5Z_ZFP_CD_NELMTS_MAX
+
+       IF (zfpmode .EQ. H5Z_ZFP_MODE_RATE)THEN
+          H5Pset_zfp_rate_cdata(rate, filter%nparams, f_param)
+       ELSE IF (zfpmode .EQ. H5Z_ZFP_MODE_PRECISION) THEN
+          H5Pset_zfp_precision_cdata(prec, filter%nparams, f_param)
+       ELSE IF (zfpmode .EQ. H5Z_ZFP_MODE_ACCURACY) THEN
+          H5Pset_zfp_accuracy_cdata(acc, filter%nparams, f_param)
+       ELSE IF (zfpmode .EQ. H5Z_ZFP_MODE_EXPERT) THEN
+          H5Pset_zfp_expert_cdata(minbits, maxbits, maxprec, minexp, filter%nparams, f_param)
+       ELSE IF (zfpmode .EQ. H5Z_ZFP_MODE_REVERSIBLE) THEN
+          H5Pset_zfp_reversible_cdata(filter%nparams, f_param)
+       ELSE
+          filter%nparams = 0 ! causes default behavior of ZFP library
+       ENDIF
+
+       filter%params = C_LOC(f_param(1))
+#else
      f_param(1) = 6
      filter%filter_id = CG_FILTER_DEFLATE
      filter%nparams   = 1
      filter%params    = C_LOC(f_param(1))
+#endif
 
      CALL cg_set_filter_f(filter, err)
      IF(err.NE.CG_OK)THEN
@@ -392,6 +441,14 @@ PROGRAM benchmark_hdf5_f90
   ! ======================================
   ! == (C) WRITE THE FIELD DATA         ==
   ! ======================================
+
+  IF(SetFilter.EQ.1)THEN
+     CALL cg_set_filter_f(filter, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cg_set_filter_f'
+        CALL cgp_error_exit_f()
+     ENDIF
+  ENDIF
 
   count = nijk(1)/comm_size
 
@@ -515,6 +572,14 @@ PROGRAM benchmark_hdf5_f90
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_array_write_f (Array_Ar)'
      CALL cgp_error_exit_f()
+  ENDIF
+
+  IF(SetFilter.EQ.1)THEN
+     CALL cg_set_filter_f(CG_FILTER_NONE, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cg_set_filter_f'
+        CALL cgp_error_exit_f()
+     ENDIF
   ENDIF
 
   CALL cgp_array_write_f("ArrayI",cg_get_type(Array_i(1)),1,INT(nijk(1),cgsize_t),Ai, err)
