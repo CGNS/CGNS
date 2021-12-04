@@ -279,6 +279,9 @@ static int readwrite_shaped_data_parallel(
         herr = H5Sselect_hyperslab(mem_shape_id, H5S_SELECT_SET,
                                    start, stride, count, NULL);
     } else {  /* m_numdim should be valid and m_dimvals[:] should be 0 */
+        for (n = 0; n < m_numdim; n++) {
+            dimvals[n] = m_dimvals[n];
+        }
         mem_shape_id = H5Screate_simple(m_numdim, dimvals, NULL);
         if (mem_shape_id < 0) {
             cgi_error("H5Screate_simple() for null memory space failed");

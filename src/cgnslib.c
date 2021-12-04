@@ -355,10 +355,7 @@ int cg_open(const char *filename, int mode, int *file_number)
     switch(mode) {
         case CG_MODE_READ:
         case CG_MODE_MODIFY:
-            if (ACCESS(filename, F_OK)) {
-                cgi_error("Error opening file: '%s' not found!", filename);
-                return CG_ERROR;
-            }
+            /* ACCESS is now done in cgio_open_file which call cgio_check_file */
             break;
         case CG_MODE_WRITE:
             /* unlink is now done in cgio_open_file */
