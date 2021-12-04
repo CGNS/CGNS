@@ -13817,7 +13817,21 @@ int cg_state_write(const char * StateDescription)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup FlowEquationSet
+ * 
+ * \brief  Read Flow equation set info
+ * 
+ * \param[out]  EquationDimension  Dimensionality of the governing equations; it is the number of spatial variables describing the flow.
+ * \param[out]  GoverningEquationsFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of the governing equations; 0 if it doesn't, 1 if it does.
+ * \param[out]  GasModelFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a gas model; 0 if it doesn't, 1 if it does.
+ * \param[out]  ViscosityModelFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a viscosity model; 0 if it doesn't, 1 if it does.
+ * \param[out]  ThermalConductModelFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a thermal conductivity model; 0 if it doesn't, 1 if it does.
+ * \param[out]  TurbulenceClosureFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of the turbulence closure; 0 if it doesn't, 1 if it does.
+ * \param[out]  TurbulenceModelFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a turbulence model; 0 if it doesn't, 1 if it does.
+ * \return \ier
+ *
+ */
 int cg_equationset_read(int *EquationDimension,
                         int *GoverningEquationsFlag, int *GasModelFlag,
                         int *ViscosityModelFlag, int *ThermalConductivityModelFlag,
@@ -13859,6 +13873,16 @@ int cg_equationset_read(int *EquationDimension,
     return CG_OK;
 }
 
+/**
+ * \ingroup FlowEquationSet
+ * 
+ * \brief  Read chemistry equation set info
+ * 
+ * \param[out]  ThermalRelaxationFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a thermal relaxation model; 0 if it doesn't, 1 if it does.
+ * \param[out]  ChemicalKineticsFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a chemical kinetics model; 0 if it doesn't, 1 if it does.
+ * \return \ier
+ *
+ */
 int cg_equationset_chemistry_read(int *ThermalRelaxationFlag,
                                   int *ChemicalKineticsFlag)
 {
@@ -13882,6 +13906,17 @@ int cg_equationset_chemistry_read(int *ThermalRelaxationFlag,
     return CG_OK;
 }
 
+/**
+ * \ingroup FlowEquationSet
+ * 
+ * \brief  Read electromagnetic equation set info
+ *
+ * \param[out]  ElecFldModelFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of an electric field model for electromagnetic flows;; 0 if it doesn't, 1 if it does.
+ * \param[out]  MagnFldModelFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a magnetic field model for electromagnetic flows;; 0 if it doesn't, 1 if it does.
+ * \param[out]  ConductivityModelFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a conductivity model for electromagnetic flows; 0 if it doesn't, 1 if it does.
+ * \return \ier
+ *
+ */
 int cg_equationset_elecmagn_read(int *ElecFldModelFlag, int *MagnFldModelFlag,
                  int *ConductivityModelFlag)
 {
@@ -13908,6 +13943,15 @@ int cg_equationset_elecmagn_read(int *ElecFldModelFlag, int *MagnFldModelFlag,
     return CG_OK;
 }
 
+/**
+ * \ingroup FlowEquationSet
+ * 
+ * \brief  Write dimensionality of flow equations
+ *
+ * \param[in]  EquationDimension  Dimensionality of the governing equations; it is the number of spatial variables describing the flow.
+ * \return \ier
+ *
+ */
 int cg_equationset_write(int EquationDimension)
 {
     cgns_equations *equations;
@@ -13953,6 +13997,15 @@ int cg_equationset_write(int EquationDimension)
 
 /*----------------------------------------------------------------------*/
 
+/**
+ * \ingroup GoverningEquations
+ * 
+ * \brief  Read type of governing equation 
+ *
+ * \param[out]  EquationsType  Type of governing equations. The admissible types are CG_Null, CG_UserDefined, FullPotential, Euler, NSLaminar, NSTurbulent, NSLaminarIncompressible, and NSTurbulentIncompressible. 
+ * \return \ier
+ *
+ */
 int cg_governing_read(CGNS_ENUMT(GoverningEquationsType_t) *EquationsType)
 {
     cgns_governing *governing;
@@ -13970,6 +14023,16 @@ int cg_governing_read(CGNS_ENUMT(GoverningEquationsType_t) *EquationsType)
     return CG_OK;
 }
 
+
+/**
+ * \ingroup GoverningEquations
+ * 
+ * \brief  Write type of governing equation 
+ *
+ * \param[in]  EquationsType  Type of governing equations. The admissible types are CG_Null, CG_UserDefined, FullPotential, Euler, NSLaminar, NSTurbulent, NSLaminarIncompressible, and NSTurbulentIncompressible. 
+ * \return \ier
+ *
+ */
 int cg_governing_write(CGNS_ENUMT(GoverningEquationsType_t) Equationstype)
 {
     cgns_governing *governing;
@@ -14026,6 +14089,15 @@ int cg_governing_write(CGNS_ENUMT(GoverningEquationsType_t) Equationstype)
 
 /*----------------------------------------------------------------------*/
 
+/**
+ * \ingroup GoverningEquations
+ * 
+ * \brief  Read flags for diffusion terms 
+ *
+ * \param[out]  diffusion_model  Flags defining which diffusion terms are included in the governing equations. This is only applicable to the Navier-Stokes equations with structured grids. See the discussion in the SIDS manual for details.
+ * \return \ier
+ *
+ */
 int cg_diffusion_read(int *diffusion_model)
 {
     int n, ndata, ier=0;
@@ -14063,6 +14135,15 @@ int cg_diffusion_read(int *diffusion_model)
     return CG_OK;
 }
 
+/**
+ * \ingroup GoverningEquations
+ * 
+ * \brief  Write flags for diffusion terms 
+ *
+ * \param[in]  diffusion_model  Flags defining which diffusion terms are included in the governing equations. This is only applicable to the Navier-Stokes equations with structured grids. See the discussion in the SIDS manual for details.
+ * \return \ier
+ *
+ */
 int cg_diffusion_write(const int * diffusion_model)
 {
     int *diffusion;
@@ -14111,6 +14192,36 @@ int cg_diffusion_write(const int * diffusion_model)
 
 /*----------------------------------------------------------------------*/
 
+/**
+ * \ingroup AuxiliaryModel
+ * 
+ * \brief  Read auxiliary model types
+ *
+ * \param[out]  ModelLabel  The CGNS label for the model being defined. The models supported by CGNS are:
+ *   - GasModel_t
+ *   - ViscosityModel_t
+ *   - ThermalConductivityModel_t
+ *   - TurbulenceClosure_t
+ *   - TurbulenceModel_t
+ *   - ThermalRelaxationModel_t
+ *   - ChemicalKineticsModel_t
+ *   - EMElectricFieldModel_t
+ *   - EMMagneticFieldModel_t
+ *   - EMConductivityModel_t 
+ * \param[out] 	ModelType  One of the model types (listed below) allowed for the ModelLabel selected.
+ *   The types allowed for the various models are:
+ *   	GasModel_t	   	CG_Null, CG_UserDefined, Ideal, VanderWaals, CaloricallyPerfect, ThermallyPerfect, ConstantDensity, RedlichKwong
+ *	ViscosityModel_t		CG_Null, CG_UserDefined, Constant, PowerLaw, SutherlandLaw
+ *	ThermalConductivityModel_t		CG_Null, CG_UserDefined, PowerLaw, SutherlandLaw, ConstantPrandtl
+ *	TurbulenceModel_t		CG_Null, CG_UserDefined, Algebraic_BaldwinLomax, Algebraic_CebeciSmith, HalfEquation_JohnsonKing, OneEquation_BaldwinBarth, OneEquation_SpalartAllmaras, TwoEquation_JonesLaunder, TwoEquation_MenterSST, TwoEquation_Wilcox
+ *	TurbulenceClosure_t		CG_Null, CG_UserDefined, EddyViscosity, ReynoldsStress, ReynoldsStressAlgebraic
+ *	ThermalRelaxationModel_t		CG_Null, CG_UserDefined, Frozen, ThermalEquilib, ThermalNonequilib
+ *	ChemicalKineticsModel_t		CG_Null, CG_UserDefined, Frozen, ChemicalEquilibCurveFit, ChemicalEquilibMinimization, ChemicalNonequilib
+ *	EMElectricFieldModel_t		CG_Null, CG_UserDefined, Constant, Frozen, Interpolated, Voltage
+ *	EMMagneticFieldModel_t		CG_Null, CG_UserDefined, Constant, Frozen, Interpolated
+ *	EMConductivityModel_t		CG_Null, CG_UserDefined, Constant, Frozen, Equilibrium_LinRessler, Chemistry_LinRessler
+ * \return \ier
+ */
 int cg_model_read(const char *ModelLabel, CGNS_ENUMT(ModelType_t) *ModelType)
 {
     cgns_model *model;
@@ -14129,6 +14240,36 @@ int cg_model_read(const char *ModelLabel, CGNS_ENUMT(ModelType_t) *ModelType)
     return CG_OK;
 }
 
+/**
+ * \ingroup AuxiliaryModel
+ * 
+ * \brief  Write auxiliary model types
+ *
+ * \param[in]  ModelLabel  The CGNS label for the model being defined. The models supported by CGNS are:
+ *   - GasModel_t
+ *   - ViscosityModel_t
+ *   - ThermalConductivityModel_t
+ *   - TurbulenceClosure_t
+ *   - TurbulenceModel_t
+ *   - ThermalRelaxationModel_t
+ *   - ChemicalKineticsModel_t
+ *   - EMElectricFieldModel_t
+ *   - EMMagneticFieldModel_t
+ *   - EMConductivityModel_t 
+ * \param[in] 	ModelType  One of the model types (listed below) allowed for the ModelLabel selected.
+ *   The types allowed for the various models are:
+ *   	GasModel_t	   	CG_Null, CG_UserDefined, Ideal, VanderWaals, CaloricallyPerfect, ThermallyPerfect, ConstantDensity, RedlichKwong
+ *	ViscosityModel_t		CG_Null, CG_UserDefined, Constant, PowerLaw, SutherlandLaw
+ *	ThermalConductivityModel_t		CG_Null, CG_UserDefined, PowerLaw, SutherlandLaw, ConstantPrandtl
+ *	TurbulenceModel_t		CG_Null, CG_UserDefined, Algebraic_BaldwinLomax, Algebraic_CebeciSmith, HalfEquation_JohnsonKing, OneEquation_BaldwinBarth, OneEquation_SpalartAllmaras, TwoEquation_JonesLaunder, TwoEquation_MenterSST, TwoEquation_Wilcox
+ *	TurbulenceClosure_t		CG_Null, CG_UserDefined, EddyViscosity, ReynoldsStress, ReynoldsStressAlgebraic
+ *	ThermalRelaxationModel_t		CG_Null, CG_UserDefined, Frozen, ThermalEquilib, ThermalNonequilib
+ *	ChemicalKineticsModel_t		CG_Null, CG_UserDefined, Frozen, ChemicalEquilibCurveFit, ChemicalEquilibMinimization, ChemicalNonequilib
+ *	EMElectricFieldModel_t		CG_Null, CG_UserDefined, Constant, Frozen, Interpolated, Voltage
+ *	EMMagneticFieldModel_t		CG_Null, CG_UserDefined, Constant, Frozen, Interpolated
+ *	EMConductivityModel_t		CG_Null, CG_UserDefined, Constant, Frozen, Equilibrium_LinRessler, Chemistry_LinRessler
+ * \return \ier
+ */
 int cg_model_write(const char * ModelLabel, CGNS_ENUMT(ModelType_t) ModelType)
 {
     cgns_model *model;
@@ -14294,7 +14435,15 @@ int cg_model_write(const char * ModelLabel, CGNS_ENUMT(ModelType_t) ModelType)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup DataArrays
+ * 
+ * \brief  Get number of data arrays under current node
+ *
+ * \param[out]  narrays  Number of DataArray_t nodes under the current node.
+ *
+ * \return \ier
+ */
 int cg_narrays(int *narrays)
 {
 
@@ -14421,6 +14570,19 @@ int cg_narrays(int *narrays)
     return CG_OK;
 }
 
+/**
+ * \ingroup DataArrays
+ * 
+ * \brief  Get data array info
+ *
+ * \param[in]  A  Data array index, where 1 ≤ A ≤ narrays.
+ * \param[out]  ArrayName  Name of the DataArray_t node.
+ * \param[out] 	DataType  Type of data held in the DataArray_t node. The admissible types are Integer, LongInteger, RealSingle, RealDouble, and Character.
+ * \param[out]	DataDimension  Number of dimensions of array in file (max 12). See Node Management Routines in CGIO User's Guide.
+ * \param[out]  DimensionVector  Dimensions of array in file.
+ *
+ * \return \ier
+ */
 int cg_array_info(int A, char *ArrayName, CGNS_ENUMT(DataType_t) *DataType,
                   int *DataDimension, cgsize_t *DimensionVector)
 {
@@ -14444,6 +14606,16 @@ int cg_array_info(int A, char *ArrayName, CGNS_ENUMT(DataType_t) *DataType,
     return CG_OK;
 }
 
+/**
+ * \ingroup DataArrays
+ * 
+ * \brief  Read data array
+ *
+ * \param[in]  A  Data array index, where 1 ≤ A ≤ narrays.
+ * \param[out]  Data  The data array in memory.
+ *
+ * \return \ier
+ */
 int cg_array_read(int A, void *Data)
 {
     cgns_array *array;
@@ -14473,6 +14645,18 @@ int cg_array_read(int A, void *Data)
     return CG_OK;
 }
 
+
+/**
+ * \ingroup DataArrays
+ * 
+ * \brief  Read data array as a certain type
+ *
+ * \param[in]  A  Data array index, where 1 ≤ A ≤ narrays.
+ * \param[in]  type  Type of data held in the DataArray_t node. The admissible types are Integer, LongInteger, RealSingle, RealDouble, and Character. 
+ * \param[out]  Data  The data array in memory.
+ *
+ * \return \ier
+ */
 int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
 {
     cgns_array *array;
@@ -14533,6 +14717,27 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
     return ier ? CG_ERROR : CG_OK;
 }
 
+
+/**
+ * \ingroup DataArrays
+ * 
+ * \brief  Read subset of data array to a shaped memory
+ *
+ * \param[in]  A  Data array index, where 1 ≤ A ≤ narrays.
+ * \param[in]  s_rmin  	Lower range index in file (eg., imin, jmin, kmin).
+ * \param[in]  s_rmax   Upper range index in file (eg., imax, jmax, kmax).
+ * \param[in]  m_type   The type of data held in memory. The admissible types are Integer, LongInteger, RealSingle, RealDouble, and Character.
+ * \param[in]  m_numdim  Number of dimensions of array in memory (max 12). 
+ * \param[in]  m_dimvals  Dimensions of array in memory.
+ * \param[in]  m_rmin  	Lower range index in memory (eg., imin, jmin, kmin).
+ * \param[in]  m_rmax  	Upper range index in memory (eg., imax, jmax, kmax).
+ * \param[out]  data The data array in memory.
+ *
+ * \return \ier
+ *
+ * \details   The functions cg_array_general_read allow for type conversion when reading from the file.
+ *            When using cg_array_general_read, the lower core elements in the file have index 1 for defining range_min and range_max; whereas for the array in memory, defined by mem_rank and mem_dimensions, the lower array elements in memory have index 1 for defining mem_range_min and mem_range_max. The actual lower and upper bounds of the array in memory can be anything. For example, to fully read a two-dimensional 6 × 6 data array with 1 rind plane on each side in the file to an 8 × 8 array in memory (mem_rank = 2 and mem_dimensions = (8,8)), set range_min and range_max to (0,0) and (7,7), and set mem_range_min and mem_range_max to (1,1) and (8,8). 
+ */
 int cg_array_general_read(int A,
                           const cgsize_t *s_rmin, const cgsize_t *s_rmax,
                           CGNS_ENUMT(DataType_t) m_type,
@@ -14573,6 +14778,19 @@ int cg_array_general_read(int A,
                                   data);
 }
 
+/**
+ * \ingroup DataArrays
+ * 
+ * \brief  Write data array
+ *
+ * \param[in]  ArrayName  Name of the DataArray_t node.
+ * \param[in]  DataType  Type of data held in the DataArray_t node. The admissible types are Integer, LongInteger, RealSingle, RealDouble, and Character. 
+ * \param[in]  DataDimension  Number of dimensions of array in file (max 12). See Node Management Routines in CGIO User's Guide.
+ * \param[in]  DimensionVector  Dimensions of array in file.
+ * \param[in]  Data  The data array in memory.
+ *
+ * \return \ier
+ */
 int cg_array_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
                    int DataDimension, const cgsize_t * DimensionVector,
                    const void * Data)
@@ -14638,6 +14856,30 @@ int cg_array_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
     return CG_OK;
 }
 
+/**
+ * \ingroup DataArrays
+ * 
+ * \brief  Write shaped array to a subset of data array
+ *
+ * \param[in]  arrayname  Name of the DataArray_t node.
+ * \param[in]  s_type   Type of data held in the DataArray_t node. The admissible types are Integer, LongInteger, RealSingle, RealDouble, and Character.
+ * \param[in]  s_numdim   Number of dimensions of array in file (max 12). See Node Management Routines in CGIO User's Guide.
+ * \param[in]  s_dimvals   Dimensions of array in file.
+ * \param[in]  s_rmin  	Lower range index in file (eg., imin, jmin, kmin).
+ * \param[in]  s_rmax   Upper range index in file (eg., imax, jmax, kmax).
+ * \param[in]  m_type   The type of data held in memory. The admissible types are Integer, LongInteger, RealSingle, RealDouble, and Character.
+ * \param[in]  m_numdim  Number of dimensions of array in memory (max 12). 
+ * \param[in]  m_dimvals  Dimensions of array in memory.
+ * \param[in]  m_rmin  	Lower range index in memory (eg., imin, jmin, kmin).
+ * \param[in]  m_rmax  	Upper range index in memory (eg., imax, jmax, kmax).
+ * \param[in]  data The data array in memory.
+ *
+ * \return \ier
+ *
+ * \details   The function cg_array_general_write may be used to write from a subset of the array in memory to a subset of the array in the file. When using the partial write, any existing data from range_min to range_max will be overwritten by the new values. All other values will not be affected.
+ *            The functions cg_array_general_write allow for type conversion when reading to the file.
+ *            When using cg_array_general_write, the lower core elements in the file have index 1 for defining range_min and range_max; whereas for the array in memory, defined by mem_rank and mem_dimensions, the lower array elements in memory have index 1 for defining mem_range_min and mem_range_max. The actual lower and upper bounds of the array in memory can be anything. For example, to fully read a two-dimensional 6 × 6 data array with 1 rind plane on each side in the file to an 8 × 8 array in memory (mem_rank = 2 and mem_dimensions = (8,8)), set range_min and range_max to (0,0) and (7,7), and set mem_range_min and mem_range_max to (1,1) and (8,8). 
+ */
 int cg_array_general_write(const char *arrayname,
                            CGNS_ENUMT(DataType_t) s_type,
                            int s_numdim, const cgsize_t *s_dimvals,
@@ -14703,7 +14945,15 @@ int cg_array_general_write(const char *arrayname,
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup  IntegralData
+ * 
+ * \brief  Get number of IntegralData_t nodes
+ *
+ * \param[out]  nintegrals  Number of IntegralData_t nodes under current node.
+ *
+ * \return \ier
+ */
 int cg_nintegrals(int *nintegrals)
 {
     CHECK_FILE_OPEN
@@ -14733,6 +14983,16 @@ int cg_nintegrals(int *nintegrals)
     return CG_OK;
 }
 
+/**
+ * \ingroup  IntegralData
+ * 
+ * \brief  Get name of an IntegralData_t node
+ *
+ * \param[in]   IntegralDataIndex  Integral data index number, where 1 ≤ IntegralDataIndex ≤ nintegrals. 
+ * \param[out]  IntegralDataName  Name of the IntegralData_t data structure. 
+ *
+ * \return \ier
+ */
 int cg_integral_read(int IntegralDataIndex, char *IntegralDataName)
 {
     int ier=0;
@@ -14751,6 +15011,15 @@ int cg_integral_read(int IntegralDataIndex, char *IntegralDataName)
     return CG_OK;
 }
 
+/**
+ * \ingroup  IntegralData
+ * 
+ * \brief  Create IntegralData_t node
+ *
+ * \param[in]  IntegralDataName  Name of the IntegralData_t data structure. 
+ *
+ * \return \ier
+ */
 int cg_integral_write(const char * IntegralDataName)
 {
     cgns_integral *integral;
@@ -14785,7 +15054,15 @@ int cg_integral_write(const char * IntegralDataName)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup  RindLayers
+ * 
+ * \brief  Read number of rind layers
+ *
+ * \param[out] RindData  Number of rind layers for each computational direction (structured grid) or number of rind points or elements (unstructured grid). For structured grids, the low/high sides have unit stride in the array (e.g., [NRindLowI, NRindHighI, NRindLowJ, NRindHighJ, NRindLowK, NRindHighK]).
+ *
+ * \return \ier
+ */
 int cg_rind_read(int *RindData)
 {
     int n, ier=0;
@@ -14810,6 +15087,17 @@ int cg_rind_read(int *RindData)
     return CG_OK;
 }
 
+/**
+ * \ingroup  RindLayers
+ * 
+ * \brief  Write number of rind layers
+ *
+ * \param[in] RindData   Number of rind layers for each computational direction (structured grid) or number of rind points or elements (unstructured grid). For structured grids, the low/high sides have unit stride in the array (e.g., [NRindLowI, NRindHighI, NRindLowJ, NRindHighJ, NRindLowK, NRindHighK]).
+ *
+ * \return \ier
+ *
+ * \details  When writing rind data for elements, cg_section_write must be called first, followed by cg_goto to access the Elements_t node, and then cg_rind_write.
+ */
 int cg_rind_write(const int * RindData)
 {
     int n, ier=0;
@@ -14850,7 +15138,15 @@ int cg_rind_write(const int * RindData)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup  DescriptiveText
+ * 
+ * \brief  Get number of descriptors in file
+ *
+ * \param[out] ndescriptors Number of Descriptor_t nodes under the current node.
+ * \return \ier
+ *
+ */
 int cg_ndescriptors(int *ndescriptors)
 {
 
@@ -14977,6 +15273,20 @@ int cg_ndescriptors(int *ndescriptors)
     return CG_OK;
 }
 
+/**
+ * \ingroup  DescriptiveText
+ * 
+ * \brief  Read descriptive text
+ *
+ * \param[in] descr_no  Descriptor index number, where 1 ≤ descr_no ≤ ndescriptors.
+ * \param[out]  descr_name  Name of the Descriptor_t node.
+ * \param[out]  descr_text  Description held in the Descriptor_t node.
+ * \return \ier
+ *
+ *
+ * \details  Note that with cg_descriptor_read the memory for the descriptor character string, text, will be allocated by the Mid-Level Library. The application code is responsible for releasing this memory when it is no longer needed by calling cg_free(text).
+ *
+ */
 int cg_descriptor_read(int descr_no, char *descr_name, char **descr_text)
 {
     cgns_descr *descr;
@@ -14999,6 +15309,15 @@ int cg_descriptor_read(int descr_no, char *descr_name, char **descr_text)
     return CG_OK;
 }
 
+/**
+ * \ingroup  DescriptiveText
+ * 
+ * \brief  Write descriptive text
+ *
+ * \param[in]  descr_name  Name of the Descriptor_t node.
+ * \param[in]  descr_text  Description held in the Descriptor_t node.
+ * \return \ier
+ */
 int cg_descriptor_write(const char * descr_name, const char * descr_text)
 {
     cgns_descr *descr;
@@ -15033,7 +15352,14 @@ int cg_descriptor_write(const char * descr_name, const char * descr_text)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup  DimensionalUnits
+ * 
+ * \brief  Get number of dimensional units
+ *
+ * \param[out]  nunits  Number of units used in the file (i.e., either 5 or 8). 
+ * \return \ier
+ */
 int cg_nunits(int *nunits)
 {
     cgns_units *units;
