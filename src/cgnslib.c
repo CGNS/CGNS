@@ -15377,6 +15377,19 @@ int cg_nunits(int *nunits)
     return CG_OK;
 }
 
+/**
+ * \ingroup  DimensionalUnits
+ *
+ * \brief   Read first five dimensional units
+ *
+ * \param[out] mass  Mass units. Admissible values are CG_Null, CG_UserDefined, Kilogram, Gram, Slug, and PoundMass.
+ * \param[out] length  	Length units. Admissible values are CG_Null, CG_UserDefined, Meter, Centimeter, Millimeter, Foot, and Inch.
+ * \param[out] time  Time units. Admissible values are CG_Null, CG_UserDefined, and Second.
+ * \param[out] temperature  Temperature units. Admissible values are CG_Null, CG_UserDefined, Kelvin, Celsius, Rankine, and Fahrenheit.
+ * \param[out] angle  Angle units. Admissible values are CG_Null, CG_UserDefined, Degree, and Radian.
+ *
+ * \return \ier
+ */
 int cg_units_read(CGNS_ENUMT(MassUnits_t) *mass,
                   CGNS_ENUMT(LengthUnits_t) *length,
                   CGNS_ENUMT(TimeUnits_t) *time,
@@ -15402,6 +15415,19 @@ int cg_units_read(CGNS_ENUMT(MassUnits_t) *mass,
     return CG_OK;
 }
 
+/**
+ * \ingroup  DimensionalUnits
+ *
+ * \brief   Write first five dimensional units
+ *
+ * \param[in]  mass  Mass units. Admissible values are CG_Null, CG_UserDefined, Kilogram, Gram, Slug, and PoundMass.
+ * \param[in]  length  	Length units. Admissible values are CG_Null, CG_UserDefined, Meter, Centimeter, Millimeter, Foot, and Inch.
+ * \param[in]  time  Time units. Admissible values are CG_Null, CG_UserDefined, and Second.
+ * \param[in]  temperature  Temperature units. Admissible values are CG_Null, CG_UserDefined, Kelvin, Celsius, Rankine, and Fahrenheit.
+ * \param[in]  angle  Angle units. Admissible values are CG_Null, CG_UserDefined, Degree, and Radian.
+ *
+ * \return \ier
+ */
 int cg_units_write(CGNS_ENUMT(MassUnits_t) mass,
                    CGNS_ENUMT(LengthUnits_t) length,
                    CGNS_ENUMT(TimeUnits_t) time,
@@ -15460,6 +15486,21 @@ int cg_units_write(CGNS_ENUMT(MassUnits_t) mass,
     return CG_OK;
 }
 
+/**
+ *\ingroup  DimensionalUnits
+ *
+ * \brief   Read all eight dimensional units
+ *
+ * \param[out] mass  Mass units. Admissible values are CG_Null, CG_UserDefined, Kilogram, Gram, Slug, and PoundMass.
+ * \param[out] length  	Length units. Admissible values are CG_Null, CG_UserDefined, Meter, Centimeter, Millimeter, Foot, and Inch.
+ * \param[out] time  Time units. Admissible values are CG_Null, CG_UserDefined, and Second.
+ * \param[out] temperature  Temperature units. Admissible values are CG_Null, CG_UserDefined, Kelvin, Celsius, Rankine, and Fahrenheit.
+ * \param[out] angle  Angle units. Admissible values are CG_Null, CG_UserDefined, Degree, and Radian.
+ * \param[out] current  Electric current units. Admissible values are CG_Null, CG_UserDefined, Ampere, Abampere, Statampere, Edison, and auCurrent.
+ * \param[out] amount  Substance amount units. Admissible values are CG_Null, CG_UserDefined, Mole, Entities, StandardCubicFoot, and StandardCubicMeter.
+ * \param[out] intensity  Luminous intensity units. Admissible values are CG_Null, CG_UserDefined, Candela, Candle, Carcel, Hefner, and Violle.
+ * \return \ier
+ */
 int cg_unitsfull_read(CGNS_ENUMT(MassUnits_t) *mass,
                       CGNS_ENUMT(LengthUnits_t) *length,
               CGNS_ENUMT(TimeUnits_t) *time,
@@ -15491,6 +15532,22 @@ int cg_unitsfull_read(CGNS_ENUMT(MassUnits_t) *mass,
     return CG_OK;
 }
 
+/**
+ * \ingroup  DimensionalUnits
+ *
+ * \brief   Write all eight dimensional units
+ *
+ * \param[in] mass  Mass units. Admissible values are CG_Null, CG_UserDefined, Kilogram, Gram, Slug, and PoundMass.
+ * \param[in] length  	Length units. Admissible values are CG_Null, CG_UserDefined, Meter, Centimeter, Millimeter, Foot, and Inch.
+ * \param[in] time  Time units. Admissible values are CG_Null, CG_UserDefined, and Second.
+ * \param[in] temperature  Temperature units. Admissible values are CG_Null, CG_UserDefined, Kelvin, Celsius, Rankine, and Fahrenheit.
+ * \param[in] angle  Angle units. Admissible values are CG_Null, CG_UserDefined, Degree, and Radian.
+ * \param[in] current  Electric current units. Admissible values are CG_Null, CG_UserDefined, Ampere, Abampere, Statampere, Edison, and auCurrent.
+ * \param[in] amount  Substance amount units. Admissible values are CG_Null, CG_UserDefined, Mole, Entities, StandardCubicFoot, and StandardCubicMeter.
+ * \param[in] intensity  Luminous intensity units. Admissible values are CG_Null, CG_UserDefined, Candela, Candle, Carcel, Hefner, and Violle.
+ * 
+ *  \return \ier
+ */
 int cg_unitsfull_write(CGNS_ENUMT(MassUnits_t) mass,
                        CGNS_ENUMT(LengthUnits_t) length,
                CGNS_ENUMT(TimeUnits_t) time,
@@ -15569,6 +15626,13 @@ int cg_unitsfull_write(CGNS_ENUMT(MassUnits_t) mass,
 
 /*----------------------------------------------------------------------*/
 
+/**
+ * \ingroup  DimensionalExponents
+ *
+ * \brief  Get exponent data type
+ * \param[out] DataType  Data type in which the exponents are recorded. Admissible data types for the exponents are RealSingle and RealDouble.
+ * \return \ier
+ */
 int cg_exponents_info(CGNS_ENUMT(DataType_t) *DataType)
 {
     cgns_exponent *exponent;
@@ -15586,6 +15650,13 @@ int cg_exponents_info(CGNS_ENUMT(DataType_t) *DataType)
     return CG_OK;
 }
 
+/**
+ * \ingroup  DimensionalExponents
+ *
+ * \brief  Get number of dimensional exponents
+ * \param[out] numexp  Number of exponents used in the file (i.e., either 5 or 8).
+ * \return \ier
+ */
 int cg_nexponents(int *numexp)
 {
     cgns_exponent *exponent;
@@ -15603,6 +15674,15 @@ int cg_nexponents(int *numexp)
     return CG_OK;
 }
 
+/**
+ * \ingroup  DimensionalExponents
+ *
+ * \brief  Read first five dimensional exponents
+ * \param[out] exponents  Exponents for the dimensional units for mass, length, time, temperature, angle, electric current, substance amount, and luminous intensity, in that order.
+ * \return \ier
+ *
+ * \details  When reading exponent data, either cg_exponents_read or cg_expfull_read may be used, regardless of the number of exponents used in the file. If cg_exponents_read is used, but all eight exponents are used in the file, only the first five exponents are returned. If cg_expfull_read is used, but only five exponents are used in the file, the returned values of the exponents for electric current, substance amount, and luminous intensity will be zero.
+ */
 int cg_exponents_read(void *exponents)
 {
     cgns_exponent *exponent;
@@ -15633,6 +15713,15 @@ int cg_exponents_read(void *exponents)
     return CG_OK;
 }
 
+
+/**
+ * \ingroup  DimensionalExponents
+ *
+ * \brief  Write first five dimensional exponents
+ * \param[in] DataType   Data type in which the exponents are recorded. Admissible data types for the exponents are RealSingle and RealDouble.
+ * \param[in] exponents  Exponents for the dimensional units for mass, length, time, temperature, angle, electric current, substance amount, and luminous intensity, in that order.
+ * \return \ier
+ */
 int cg_exponents_write(CGNS_ENUMT(DataType_t) DataType, const void * exponents)
 {
     cgns_exponent *exponent;
@@ -15682,6 +15771,15 @@ int cg_exponents_write(CGNS_ENUMT(DataType_t) DataType, const void * exponents)
     return CG_OK;
 }
 
+/**
+ * \ingroup  DimensionalExponents
+ *
+ * \brief  Read all eight dimensional exponents
+ * \param[out] exponents  Exponents for the dimensional units for mass, length, time, temperature, angle, electric current, substance amount, and luminous intensity, in that order.
+ * \return \ier
+ *
+ * \details  When reading exponent data, either cg_exponents_read or cg_expfull_read may be used, regardless of the number of exponents used in the file. If cg_exponents_read is used, but all eight exponents are used in the file, only the first five exponents are returned. If cg_expfull_read is used, but only five exponents are used in the file, the returned values of the exponents for electric current, substance amount, and luminous intensity will be zero. 
+ */
 int cg_expfull_read(void *exponents)
 {
     cgns_exponent *exponent;
@@ -15739,6 +15837,14 @@ int cg_expfull_read(void *exponents)
     return CG_OK;
 }
 
+/**
+ * \ingroup  DimensionalExponents
+ *
+ * \brief  Write all eight dimensional exponents
+ * \param[in] DataType   Data type in which the exponents are recorded. Admissible data types for the exponents are RealSingle and RealDouble.
+ * \param[in] exponents  Exponents for the dimensional units for mass, length, time, temperature, angle, electric current, substance amount, and luminous intensity, in that order.
+ * \return \ier
+ */
 int cg_expfull_write(CGNS_ENUMT(DataType_t) DataType, const void * exponents)
 {
     cgns_exponent *exponent;
@@ -15795,7 +15901,13 @@ int cg_expfull_write(CGNS_ENUMT(DataType_t) DataType, const void * exponents)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup  DataConversionFactors
+ *
+ * \brief  Get conversion factors data type
+ * \param[out] DataType   Data type in which the conversion factors are recorded. Admissible data types for the exponents are RealSingle and RealDouble.
+ * \return \ier
+ */
 int cg_conversion_info(CGNS_ENUMT(DataType_t) *DataType)
 {
     cgns_conversion *conversion;
@@ -15813,6 +15925,20 @@ int cg_conversion_info(CGNS_ENUMT(DataType_t) *DataType)
     return CG_OK;
 }
 
+/**
+ * \ingroup  DataConversionFactors
+ *
+ * \brief Read conversion factors
+ * \param[out] ConversionFactors  Two-element array containing the scaling and offset factors. 
+ * \return \ier
+ *
+ * \details   The DataConversion_t data structure contains factors to convert the nondimensional data to "raw" dimensional data. The scaling and offset factors are contained in the two-element array ConversionFactors. In pseudo-Fortran, the conversion process is as follows:
+
+   ConversionScale  = ConversionFactors(1)
+   ConversionOffset = ConversionFactors(2)
+   Data(raw) = Data(nondimensional)*ConversionScale + ConversionOffset
+
+ */
 int cg_conversion_read(void *ConversionFactors)
 {
     cgns_conversion *conversion;
@@ -15837,6 +15963,14 @@ int cg_conversion_read(void *ConversionFactors)
     return CG_OK;
 }
 
+/**
+ * \ingroup  DataConversionFactors
+ *
+ * \brief  Write conversion factors
+ * \param[in] DataType   Data type in which the conversion factors are recorded. Admissible data types for the exponents are RealSingle and RealDouble.
+ * \param[in] ConversionFactors  Two-element array containing the scaling and offset factors. 
+ * \return \ier
+ */
 int cg_conversion_write(CGNS_ENUMT(DataType_t) DataType,
             const void * ConversionFactors)
 {
@@ -15884,7 +16018,23 @@ int cg_conversion_write(CGNS_ENUMT(DataType_t) DataType,
 }
 
 /*----------------------------------------------------------------------*/
+/**
+ * \ingroup  DataClass
+ *
+ * \brief  Read data class
+ * \param[out] dataclass  Data class for the nodes at this level. See below for the data classes currently supported in CGNS.
+ * \return \ier
+ *
+ * \details The data classes currently supported in CGNS are:
 
+    	Dimensional	   	Regular dimensional data.
+	NormalizedByDimensional		Nondimensional data that is normalized by dimensional reference quantities.
+	NormalizedByUnknownDimensional		All fields and reference data are nondimensional.
+	NondimensionalParameter		Nondimensional parameters such as Mach number and lift coefficient.
+	DimensionlessConstant		Constant such as π.
+
+These classes are declared within typedef DataClass_t in cgnslib.h, and as parameters in cgnslib_f.h. 
+ */
 int cg_dataclass_read(CGNS_ENUMT(DataClass_t) *dataclass)
 {
     CGNS_ENUMT(DataClass_t) *DataClass;
@@ -15903,6 +16053,23 @@ int cg_dataclass_read(CGNS_ENUMT(DataClass_t) *dataclass)
     return CG_OK;
 }
 
+/**
+ * \ingroup  DataClass
+ *
+ * \brief  Write data class
+ * \param[in] dataclass  Data class for the nodes at this level. See below for the data classes currently supported in CGNS.
+ * \return \ier
+ *
+ * \details The data classes currently supported in CGNS are:
+
+    	Dimensional	   	Regular dimensional data.
+	NormalizedByDimensional		Nondimensional data that is normalized by dimensional reference quantities.
+	NormalizedByUnknownDimensional		All fields and reference data are nondimensional.
+	NondimensionalParameter		Nondimensional parameters such as Mach number and lift coefficient.
+	DimensionlessConstant		Constant such as π.
+
+These classes are declared within typedef DataClass_t in cgnslib.h, and as parameters in cgnslib_f.h. 
+ */
 int cg_dataclass_write(CGNS_ENUMT(DataClass_t) dataclass)
 {
     CGNS_ENUMT(DataClass_t) *DataClass;
@@ -15926,7 +16093,14 @@ int cg_dataclass_write(CGNS_ENUMT(DataClass_t) dataclass)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup  GridLocation
+ *
+ * \brief  Read grid location
+ * \param[out] GridLocation  Location in the grid. The admissible locations are CG_Null, CG_UserDefined, Vertex, CellCenter, FaceCenter, IFaceCenter, JFaceCenter, KFaceCenter, and EdgeCenter.
+ * \return \ier
+ *
+ */
 int cg_gridlocation_read(CGNS_ENUMT(GridLocation_t) *GridLocation)
 {
     CGNS_ENUMT(GridLocation_t) *location;
@@ -15956,6 +16130,14 @@ int cg_gridlocation_read(CGNS_ENUMT(GridLocation_t) *GridLocation)
     return CG_OK;
 }
 
+/**
+ * \ingroup  GridLocation
+ *
+ * \brief  Write grid location
+ * \param[in] GridLocation  Location in the grid. The admissible locations are CG_Null, CG_UserDefined, Vertex, CellCenter, FaceCenter, IFaceCenter, JFaceCenter, KFaceCenter, and EdgeCenter.
+ * \return \ier
+ *
+ */
 int cg_gridlocation_write(CGNS_ENUMT(GridLocation_t) GridLocation)
 {
     CGNS_ENUMT(GridLocation_t) *location;
@@ -16039,6 +16221,14 @@ int cg_gridlocation_write(CGNS_ENUMT(GridLocation_t) GridLocation)
 
 /*----------------------------------------------------------------------*/
 
+/**
+ * \ingroup  OrdinalValue
+ *
+ * \brief  Read ordinal value
+ * \param[out] Ordinal  Any integer value. 
+ * \return \ier
+ *
+ */
 int cg_ordinal_read(int *Ordinal)
 {
     int *ordinal;
@@ -16056,6 +16246,14 @@ int cg_ordinal_read(int *Ordinal)
     return CG_OK;
 }
 
+/**
+ * \ingroup  OrdinalValue
+ *
+ * \brief  Write ordinal value
+ * \param[in] Ordinal  Any integer value. 
+ * \return \ier
+ *
+ */
 int cg_ordinal_write(int Ordinal)
 {
     int *ordinal;
@@ -16079,7 +16277,14 @@ int cg_ordinal_write(int Ordinal)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup  Links
+ *
+ * \brief  Test if a node is a link
+ * \param[out] path_length  Length of the path name of the linked node. The value 0 is returned if the node is not a link
+ * \return \ier
+ *
+ */
 int cg_is_link(int *path_length)
 {
     double posit_id;
@@ -16102,6 +16307,19 @@ int cg_is_link(int *path_length)
     return CG_OK;
 }
 
+/**
+ * \ingroup  Links
+ *
+ * \brief  Get path information for a link at the current location
+ * \param[out] filename  Name of the linked file, or empty string if the link is within the same file.
+ * \param[out] link_path  Path name of the node which the link points to.
+ *
+ * \return \ier
+ *
+ * \details  Use cg_goto(_f) to position to a location in the file prior to calling these routines.
+ *           Memory is allocated by the library for the return values of the C function cg_link_read. This memory should be freed by the user when no longer needed by calling cg_free(filename) and cg_free(link_path).
+ *
+ */
 int cg_link_read(char **filename, char **link_path)
 {
     int name_len, file_len;
@@ -16131,6 +16349,26 @@ int cg_link_read(char **filename, char **link_path)
     return CG_OK;
 }
 
+/**
+ * \ingroup  Links
+ *
+ * \brief   Create a link at the current location
+ * 
+ * \param[in] nodename  Name of the link node to create, e.g., GridCoordinates.
+ * \param[in] filename  Name of the linked file, or empty string if the link is within the same file.
+ * \param[in] name_in_file  Path name of the node which the link points to. This can be a simple or a compound name, e.g., Base/Zone 1/GridCoordinates.
+ *
+ * \return \ier
+ *
+ * \details  Use cg_goto(_f) to position to a location in the file prior to calling these routines.
+
+When using cg_link_write, the node being linked to does not have to exist when the link is created. However, when the link is used, an error will occur if the linked-to node does not exist.
+
+Only nodes that support child nodes will support links.
+
+It is assumed that the CGNS version for the file containing the link, as determined by the CGNSLibraryVersion_t node, is also applicable to filename, the file containing the linked node.
+ *
+ */
 int cg_link_write(const char * nodename, const char * filename, const char * name_in_file)
 {
     double posit_id, link_id;
