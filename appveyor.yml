@@ -126,9 +126,9 @@ before_build:
   - cmd: where icl
   - cmd: where icx
   - cmd: where ifort
-  - cmd: icl /help
-  - cmd: icx /help
-  - cmd: ifort /help
+#  - cmd: icl /help
+#  - cmd: icx /help
+#  - cmd: ifort /help
   - echo Running cmake...
   - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
