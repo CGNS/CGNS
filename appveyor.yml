@@ -36,9 +36,10 @@ environment:
     HDF5_1_13_VER: *1_13
     WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18195/w_BaseKit_p_2021.4.0.3421_offline.exe
     WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18247/w_HPCKit_p_2021.4.0.3340_offline.exe
-    WINDOWS_CPP_COMPONENTS: intel.oneapi.win.cpp-compiler
-    WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler
-    WINDOWS_DPCPP_COMPONENTS: intel.oneapi.win.dpcpp-compiler
+    WINDOWS_MKL_COMPONENTS: intel.oneapi.win.mkl.devel            # Intel® oneAPI Math Kernel Library
+    WINDOWS_MPI_COMPONENTS: intel.oneapi.win.mpi.devel            # Intel® MPI Library
+    WINDOWS_CPP_COMPONENTS: intel.oneapi.win.cpp-compiler         # Intel® oneAPI DPC++/C++ Compiler & Intel® C++ Compiler Classic
+    WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler   # Intel® Fortran Compiler (Beta) & Intel® Fortran Compiler Classic
     SAMPLES_TAG: 2021.4.0
 
   matrix:
@@ -68,8 +69,12 @@ clone_folder: c:\projects\CGNS
 
 # scripts that run after cloning repository
 install:
-
-  - scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%
+  - cmd: curl -L --output basekit.exe --url %WINDOWS_BASEKIT_URL%
+  - cmd: start /b /wait basekit.exe -s -x -f basekit-extracted --log extract-basekit.log
+  - cmd: basekit-extracted\bootstrapper.exe -s --action install --components=%WINDOWS_MKL_COMPONENTS% --eula=accept --continue-with-optional-error=yes -p=NEED_VS2017_INTEGRATION=0 -p=NEED_VS2019_INTEGRATION=1 --log-dir=.
+  - cmd: curl -L --output hpckit.exe --url %WINDOWS_HPCKIT_URL%
+  - cmd: start /b /wait hpckit.exe -s -x -f hpckit-extracted --log extract-hpckit.log
+  - cmd: hpckit-extracted\bootstrapper.exe -s --action install --components=%WINDOWS_CPP_COMPONENTS%:%WINDOWS_MPI_COMPONENTS%:%WINDOWS_FORTRAN_COMPONENTS% --eula=accept --continue-with-optional-error=yes -p=NEED_VS2017_INTEGRATION=0 -p=NEED_VS2019_INTEGRATION=1 --log-dir=.
   #cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%  
   # by default, all script lines are interpreted as batch
   #- echo This is batch
@@ -108,6 +113,7 @@ configuration:
 
 # scripts to run before build
 before_build:
+  - cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64 vs2019
   - echo Running cmake...
   - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
@@ -129,8 +135,16 @@ before_build:
      -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
 
 build_script:
-  - cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
-  - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%  
+  - cmd: where icl
+  - cmd: where icx
+  - cmd: where ifort
+  - cmd: where mpicxx
+  - cmd: where mpif90
+  - cmd: where mpifc
+  - cmd: icl /help
+  - cmd: icx /help
+  - cmd: ifort /help
+  - cmd: tree /A .
   - cmd: cmake --build . --config "%configuration%"
 
 test_script:
