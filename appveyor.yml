@@ -71,10 +71,10 @@ clone_folder: c:\projects\CGNS
 install:
   - cmd: curl -L --output basekit.exe --url %WINDOWS_BASEKIT_URL%
   - cmd: start /b /wait basekit.exe -s -x -f basekit-extracted --log extract-basekit.log
-  - cmd: basekit-extracted\bootstrapper.exe -s --action install --components=%WINDOWS_MKL_COMPONENTS% --eula=accept --continue-with-optional-error=yes -p=NEED_VS2017_INTEGRATION=0 -p=NEED_VS2019_INTEGRATION=1 --log-dir=.
+  - cmd: basekit-extracted\bootstrapper.exe -s --action install --components=%WINDOWS_MKL_COMPONENTS% --eula=accept -p=NEED_VS2017_INTEGRATION=0 -p=NEED_VS2019_INTEGRATION=1 --log-dir=.
   - cmd: curl -L --output hpckit.exe --url %WINDOWS_HPCKIT_URL%
   - cmd: start /b /wait hpckit.exe -s -x -f hpckit-extracted --log extract-hpckit.log
-  - cmd: hpckit-extracted\bootstrapper.exe -s --action install --components=%WINDOWS_CPP_COMPONENTS%:%WINDOWS_MPI_COMPONENTS%:%WINDOWS_FORTRAN_COMPONENTS% --eula=accept --continue-with-optional-error=yes -p=NEED_VS2017_INTEGRATION=0 -p=NEED_VS2019_INTEGRATION=1 --log-dir=.
+  - cmd: hpckit-extracted\bootstrapper.exe -s --action install --components=%WINDOWS_CPP_COMPONENTS%:%WINDOWS_MPI_COMPONENTS%:%WINDOWS_FORTRAN_COMPONENTS% --eula=accept -p=NEED_VS2017_INTEGRATION=0 -p=NEED_VS2019_INTEGRATION=1 --log-dir=.
   #cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%  
   # by default, all script lines are interpreted as batch
   #- echo This is batch
