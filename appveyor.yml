@@ -78,8 +78,8 @@ clone_folder: c:\projects\CGNS
 
 # scripts that run after cloning repository
 install:
-  cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%
-  cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%
+  - cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%
+  - cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%
   #- cmd: curl -L --output basekit.exe --url %WINDOWS_BASEKIT_URL%
   #- cmd: start /b /wait basekit.exe -s -x -f basekit-extracted --log extract-basekit.log
   #- cmd: curl -L --output hpckit.exe --url %WINDOWS_HPCKIT_URL%
@@ -144,8 +144,8 @@ before_build:
      -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
 
 build_script:
-      cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
-      cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%      
+      - cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
+      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%      
 #  - cmd: where icl
 #  - cmd: where icx
 #  - cmd: where ifort
