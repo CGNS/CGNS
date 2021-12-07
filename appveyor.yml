@@ -17,8 +17,8 @@ image:
 # branches to build
 branches:
   # whitelist
-  ##only:
-  ##  - develop
+  only:
+    - develop
 
   # blacklist
   # except:
