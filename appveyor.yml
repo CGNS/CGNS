@@ -98,7 +98,7 @@ install:
   - cd 1.13
   - set HDF5_1_13=%HDF5_1_13_VER%
   - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/bin/windows/hdf5-%HDF5_1_13_VER%-Std-win10_64-vs16-Intel.zip
-  - ps: Expand-Archive hdf5-$($env:HDF5_1_13_VER)-Std-win10_64-vs16.zip -DestinationPath .
+  - ps: Expand-Archive hdf5-$($env:HDF5_1_13_VER)-Std-win10_64-vs16-Intel.zip -DestinationPath .
   - cd hdf
   - msiexec /i HDF5-%HDF5_1_13_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
