@@ -123,8 +123,6 @@ configuration:
 # scripts to run before build
 before_build:
   - cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64 vs2019
-  - cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
-  - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%
   - cmd: where icl
   - cmd: where icx
   - cmd: where ifort
@@ -152,6 +150,8 @@ before_build:
      -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
 
 build_script:
+      - cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
+      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%
       - cmd: cmake --build . --config "%configuration%"
 
 test_script:
