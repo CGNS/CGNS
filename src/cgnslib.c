@@ -22,38 +22,64 @@ freely, subject to the following restrictions:
  * Revisions:
  *
  ***********************************************************************/
-
 /**
+ * \defgroup AccessingANode  Accessing a node
+ * \defgroup ArbitraryGridMotion Arbitrary Grid Motion
+ * \defgroup AuxiliaryModel Auxiliary Model
+ * \defgroup Axisymmetry   Axisymmetry
+ * \defgroup BCData  Boundary Condition Data
+ * \defgroup BCDataset  Boundary Condition Datasets
+ * \defgroup BaseIterativeData Base Iterative Data
+ * \defgroup BoundaryConditionDatasets Boundary Condition Datasets
+ * \defgroup BoundaryConditionType  Boundary Condition Type and Location
+ * \defgroup CGNSBaseInformation CGNS Base Information
+ * \defgroup CGNSFamilyBoundaryDefinition Family Boundary Condition
+ * \defgroup CGNSFamilyDefinition  Family Definition
+ * \defgroup CGNSFamilyHierarchyTreeDefinition Family Hierarchy Tree
  * \defgroup CGNSFile File Operations
+ * \defgroup CGNSGeometryReference Geometry Reference
  * \defgroup CGNSInterfaceCGIO Interfacing with CGIO
  * \defgroup CGNSInternals Configuring CGNS Internals
- * \defgroup CGNSBaseInformation CGNS Base Information
  * \defgroup CGNSZoneInformation CGNS Zone Information
- * \defgroup SimulationType Simulation Type
- * \defgroup CGNSFamilyDefinition Family Definition
- * \defgroup CGNSFamilyHierarchyTreeDefinition Family Hierrarchy Tree
- * \defgroup CGNSFamilyBoundaryDefinition Family Boundary Condition
- * \defgroup CGNSGeometryReference Geometry Reference
- * \defgroup ZoneGridCoordinates Zone Grid Coordinates
+ * \defgroup ConvergenceHistory Convergence History
+ * \defgroup DataArrays Data Arrays
+ * \defgroup DataClass Data Class
+ * \defgroup DataConversionFactors Data Conversion Factors
+ * \defgroup DeletingANode  Deleting a node
+ * \defgroup DescriptiveText Descriptive Text
+ * \defgroup DimensionalExponents Dimensional Exponents
+ * \defgroup DimensionalUnits Dimensional Units
  * \defgroup DiscreteData Discrete Data
- * \defgroup ElementConnectivity Element Connectivity
- * \defgroup FlowSolution Flow Solution
- * \defgroup FlowSolutionData Flow Solution Data
- * \defgroup ZoneSubregions Zone Subregions
- * \defgroup ZoneGridConnectivity Zone Grid Connectivity
- * \defgroup OversetHoles Overset Holes
- * \defgroup GeneralizedConnectivity Generalized Connectivity
- * \defgroup OneToOneConnectivity One-to-One Connectivity
- * \defgroup BoundaryConditionType Boundary Condition Type and Location
- * \defgroup BCDataset Boundary Condition Datasets
- * \defgroup BCData  Boundary Condition Data
- * \defgroup Axisymmetry Axisymmetry
- * \defgroup SpecialBoundaryConditionProperty Special Boundary Condition Property
- * \defgroup SpecialGridConnectivityProperty Special Grid Connectivity Property
- * \defgroup FamilyName Family Name
- * \defgroup AccessingANode Accessing a node
- * \defgroup DeletingANode Deleting a node
- */
+ * \defgroup ElementConnectivity  Element Connectivity
+ * \defgroup FamilyName  Family Name
+ * \defgroup FlowEquationSet Flow Equation Set
+ * \defgroup FlowSolution  Flow Solution
+ * \defgroup FlowSolutionData  Flow Solution Data
+ * \defgroup FreeingMemory Freeing Memory
+ * \defgroup GeneralizedConnectivity  Generalized Connectivity
+ * \defgroup GoverningEquations Governing Equations
+ * \defgroup Gravity Gravity
+ * \defgroup GridLocation Grid Location
+ * \defgroup IntegralData Integral Data
+ * \defgroup Links Links
+ * \defgroup OneToOneConnectivity  One-to-One Connectivity
+ * \defgroup OrdinalValue Ordinal Value
+ * \defgroup OversetHoles  Overset Holes
+ * \defgroup PointSets Point Sets
+ * \defgroup ReferenceState Reference State
+ * \defgroup RigidGridMotion Rigid Grid Motion
+ * \defgroup RindLayers Rind Layers
+ * \defgroup RotatingCoordinates Rotating Coordinates
+ * \defgroup SimulationType Simulation Type
+ * \defgroup SpecialBoundaryConditionProperty  Special Boundary Condition Property
+ * \defgroup SpecialGridConnectivityProperty  Special Grid Connectivity Property
+ * \defgroup UserDefinedData User Defined Data
+ * \defgroup ZoneGridConnectivity  Zone Grid Connectivity
+ * \defgroup ZoneGridCoordinates  Zone Grid Coordinates
+ * \defgroup ZoneIterativeData Zone Iterative Data
+ * \defgroup ZoneSubregions  Zone Subregions
+ *
+ **/ 
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13826,7 +13852,7 @@ int cg_state_write(const char * StateDescription)
  * \param[out]  GoverningEquationsFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of the governing equations; 0 if it doesn't, 1 if it does.
  * \param[out]  GasModelFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a gas model; 0 if it doesn't, 1 if it does.
  * \param[out]  ViscosityModelFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a viscosity model; 0 if it doesn't, 1 if it does.
- * \param[out]  ThermalConductModelFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a thermal conductivity model; 0 if it doesn't, 1 if it does.
+ * \param[out]  ThermalConductivityModelFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a thermal conductivity model; 0 if it doesn't, 1 if it does.
  * \param[out]  TurbulenceClosureFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of the turbulence closure; 0 if it doesn't, 1 if it does.
  * \param[out]  TurbulenceModelFlag  Flag indicating whether or not this FlowEquationSet_t node includes the definition of a turbulence model; 0 if it doesn't, 1 if it does.
  * \return \ier
@@ -14029,7 +14055,7 @@ int cg_governing_read(CGNS_ENUMT(GoverningEquationsType_t) *EquationsType)
  * 
  * \brief  Write type of governing equation 
  *
- * \param[in]  EquationsType  Type of governing equations. The admissible types are CG_Null, CG_UserDefined, FullPotential, Euler, NSLaminar, NSTurbulent, NSLaminarIncompressible, and NSTurbulentIncompressible. 
+ * \param[in]  Equationstype  Type of governing equations. The admissible types are CG_Null, CG_UserDefined, FullPotential, Euler, NSLaminar, NSTurbulent, NSLaminarIncompressible, and NSTurbulentIncompressible. 
  * \return \ier
  *
  */
@@ -15487,7 +15513,7 @@ int cg_units_write(CGNS_ENUMT(MassUnits_t) mass,
 }
 
 /**
- *\ingroup  DimensionalUnits
+ * \ingroup  DimensionalUnits
  *
  * \brief   Read all eight dimensional units
  *
@@ -16453,7 +16479,26 @@ int cg_link_write(const char * nodename, const char * filename, const char * nam
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup  UserDefinedData
+ *
+ *
+ * \brief  Get number of UserDefinedData_t nodes
+ * 
+ * \param[out] nuser_data  Number of UserDefinedData_t nodes under current node.
+ *
+ * \return \ier
+ *
+ * \details    After accessing a particular UserDefinedData_t node using cg_goto,
+ *             the Point Set functions may be used to read or write point set information for the node.
+ *             The function cg_gridlocation_write may also be used to specify the location of the data with respect to the grid (e.g., Vertex or FaceCenter).
+ *
+ *  Multiple levels of UserDefinedData_t nodes may be written and retrieved by positioning via cg_goto. E.g.,
+ *
+ *   ier = cg_goto(fn, B, "Zone_t", Z, "UserDefinedData_t", ud1, 
+ *                "UserDefinedData_t", ud2, "UserDefinedData_t", ud3, "end");
+ *
+ */
 int cg_nuser_data(int *nuser_data)
 {
 
@@ -16574,6 +16619,18 @@ int cg_nuser_data(int *nuser_data)
     return CG_OK;
 }
 
+/**
+ * \ingroup  UserDefinedData
+ *
+ *
+ * \brief  Get name of an UserDefinedData_t node
+ * 
+ * \param[in]  Index  	User-defined data index number, where 1 ≤ Index ≤ nuser_data.
+ * \param[out] UserDataName  Name of the UserDefinedData_t node. 
+ *
+ * \return \ier
+ *
+ */
 int cg_user_data_read(int Index, char *UserDataName)
 {
     int ier=0;
@@ -16592,6 +16649,17 @@ int cg_user_data_read(int Index, char *UserDataName)
     return CG_OK;
 }
 
+/**
+ * \ingroup  UserDefinedData
+ *
+ *
+ * \brief  Create UserDefinedData_t node
+ * 
+ * \param[in] UserDataName  Name of the UserDefinedData_t node. 
+ *
+ * \return \ier
+ *
+ */
 int cg_user_data_write(const char * UserDataName)
 {
     cgns_user_data *user_data;
@@ -16623,7 +16691,18 @@ int cg_user_data_write(const char * UserDataName)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup  RotatingCoordinates
+ *
+ *
+ * \brief  Read rotating coordinates data
+ * 
+ * \param[out] rot_rate   Components of the angular velocity of the grid about the center of rotation. (In Fortran, this is an array of Real*4 values.)
+ * \param[out] rot_center   Coordinates of the center of rotation. (In Fortran, this is an array of Real*4 values.)
+ *
+ * \return \ier
+ *
+ */
 int cg_rotating_read(float *rot_rate, float *rot_center)
 {
     cgns_rotating *rotating;
@@ -16654,6 +16733,18 @@ int cg_rotating_read(float *rot_rate, float *rot_center)
     return CG_OK;
 }
 
+/**
+ * \ingroup  RotatingCoordinates
+ *
+ *
+ * \brief Create rotating coordinates data
+ * 
+ * \param[in] rot_rate   Components of the angular velocity of the grid about the center of rotation. (In Fortran, this is an array of Real*4 values.)
+ * \param[in] rot_center   Coordinates of the center of rotation. (In Fortran, this is an array of Real*4 values.)
+ *
+ * \return \ier
+ *
+ */
 int cg_rotating_write(float const *rot_rate, float const *rot_center)
 {
     cgns_rotating *rotating;
@@ -16723,7 +16814,18 @@ int cg_rotating_write(float const *rot_rate, float const *rot_center)
 }
 
 /*----------------------------------------------------------------------*/
-
+/**
+ * \ingroup  PointSets
+ *
+ *
+ * \brief   Get point set information
+ * 
+ * \param[out] ptset_type   The point set type; either PointRange for a range of points or cells, or PointList for a list of discrete points or cells.
+ * \param[out] npnts  The number of points or cells in the point set. For a point set type of PointRange, npnts is always two. For a point set type of PointList, npnts is the number of points or cells in the list.
+ *
+ * \return \ier
+ *
+ */
 int cg_ptset_info(CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts)
 {
     cgns_ptset *ptset;
@@ -16744,6 +16846,17 @@ int cg_ptset_info(CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts)
     return CG_OK;
 }
 
+/**
+ * \ingroup  PointSets
+ *
+ *
+ * \brief  Read point set data
+ *  
+ * \param[out] pnts  The array of point or cell indices defining the point set. There should be npnts values, each of dimension IndexDimension (i.e., 1 for unstructured grids, and 2 or 3 for structured grids with 2-D or 3-D elements, respectively).
+ *
+ * \return \ier
+ *
+ */
 int cg_ptset_read(cgsize_t *pnts)
 {
     cgns_ptset *ptset;
@@ -16771,6 +16884,19 @@ int cg_ptset_read(cgsize_t *pnts)
     return CG_OK;
 }
 
+/**
+ * \ingroup  PointSets
+ *
+ *
+ * \brief   Write point set data
+ * 
+ * \param[in] ptset_type   The point set type; either PointRange for a range of points or cells, or PointList for a list of discrete points or cells.
+ * \param[in] npnts  The number of points or cells in the point set. For a point set type of PointRange, npnts is always two. For a point set type of PointList, npnts is the number of points or cells in the list.
+ * \param[in] pnts The array of point or cell indices defining the point set. There should be npnts values, each of dimension IndexDimension (i.e., 1 for unstructured grids, and 2 or 3 for structured grids with 2-D or 3-D elements, respectively).
+ *
+ * \return \ier
+ *
+ */
 int cg_ptset_write(CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
            const cgsize_t * pnts)
 {
@@ -16859,10 +16985,17 @@ int cg_ptset_write(CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
  *           Read and write FamilyBCDataSet_t nodes
 \*****************************************************************************/
 
-
-
-
-
+/**
+ * \ingroup  BoundaryConditionDatasets
+ *
+ *
+ * \brief   Get number of family boundary condition datasets
+ * 
+ * \param[out] n_dataset Number of BCDataSet nodes under the current FamilyBC_t node.
+ * \return \ier
+ *
+ * \details  The above functions are applicable to BCDataSet_t nodes that are used to define boundary conditions for a CFD family, and thus are children of a FamilyBC_t node. The FamilyBC_t node must first be accessed using cg_goto.
+ */
 int cg_bcdataset_info(int *n_dataset)
 {
     CHECK_FILE_OPEN
@@ -16886,6 +17019,22 @@ int cg_bcdataset_info(int *n_dataset)
     return CG_OK;
 }
 
+
+/**
+ * \ingroup  BoundaryConditionDatasets
+ *
+ *
+ * \brief  Read family boundary condition dataset info
+ * 
+ * \param[in] index  Dataset index number, where 1 ≤ index ≤ ndataset. 
+ * \param[out] name  Name of dataset.
+ * \param[out] BCType  Simple boundary condition type for the dataset. The supported types are listed in the table of Simple Boundary Condition Types in the SIDS manual, but note that FamilySpecified does not apply here. 
+ * \param[out] DirichletFlag  Flag indicating if the dataset contains Dirichlet data.
+ * \param[out] NeumannFlag   Flag indicating if the dataset contains Neumann data. 
+ * \return \ier
+ *
+ * \details The above functions are applicable to BCDataSet_t nodes that are used to define boundary conditions for a CFD family, and thus are children of a FamilyBC_t node. The FamilyBC_t node must first be accessed using cg_goto. 
+ */
 int cg_bcdataset_read(int index, char *name, CGNS_ENUMT(BCType_t) *BCType,
               int *DirichletFlag, int *NeumannFlag)
 {
@@ -16909,6 +17058,21 @@ int cg_bcdataset_read(int index, char *name, CGNS_ENUMT(BCType_t) *BCType,
     return CG_OK;
 }
 
+
+/**
+ * \ingroup  BoundaryConditionDatasets
+ *
+ *
+ * \brief  Write family boundary condition dataset info 
+ * 
+ * \param[in] name  Name of dataset.
+ * \param[in] BCType  Simple boundary condition type for the dataset. The supported types are listed in the table of Simple Boundary Condition Types in the SIDS manual, but note that FamilySpecified does not apply here.
+ * \param[in] BCDataType  Type of boundary condition in the dataset (i.e., for a BCData_t child node). Admissible types are Dirichlet and Neumann.
+ * \return \ier
+ *
+ * \details The above functions are applicable to BCDataSet_t nodes that are used to define boundary conditions for a CFD family, and thus are children of a FamilyBC_t node. The FamilyBC_t node must first be accessed using cg_goto. 
+ *  The first time cg_bcdataset_write is called with a particular DatasetName, BCType, and BCDataType, a new BCDataSet_t node is created, with a child BCData_t node. Subsequent calls with the same DatasetName and BCType may be made to add additional BCData_t nodes, of type BCDataType, to the existing BCDataSet_t node. 
+ */
 int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
                        CGNS_ENUMT(BCDataType_t) BCDataType)
 {
@@ -17029,9 +17193,20 @@ int cg_bcdataset_write(const char *name, CGNS_ENUMT(BCType_t) BCType,
 }
 
 /****************************************************************************/
-/* the index in this list IS the cgnslib.h/ElementType_t index */
+/**
+ * \ingroup  ElementConnectivity
+ *
+ *
+ * \brief Get number of nodes for an element type.
+ * 
+ * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
+ * \param[out] npe  Number of nodes for an element of type type. 
+ * \return \ier
+ *
+ */
 int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
 {
+/* the index in this list IS the cgnslib.h/ElementType_t index */
     static int el_size[NofValidElementTypes] = {
         0,  /* ElementTypeNull */
         0,  /* ElementTypeUserDefined */
@@ -18087,7 +18262,19 @@ int cg_delete_node(const char *node_name)
 /*****************************************************************************\
  *            Free library malloced memory
 \*****************************************************************************/
+/**
+ * \ingroup FreeingMemory
+ *
+ * \brief   Release library-allocated memory
+ *
+ * \param[in] data Data allocated by the Mid-Level Library.
+ * \return \ier
+ *
+ * \details   This function does not affect the structure of a CGNS file; it is provided as a convenience to free memory allocated by the Mid-Level Library. This isn't necessary in Fortran, and thus an equivalent Fortran function is not provided.
 
+The functions that are used to allocate memory for return values are cg_descriptor_read, cg_convergence_read, cg_geo_read, cg_link_read, and cg_state_read. Each of these may allocate space to contain the data returned to the application. It is the responsibility of the application to free this data when it is no longer needed. Calling cg_free is identical to calling the standard C function free, however it is probably safer in that the memory is freed in the same module in which it is created, particularly when the Mid-Level Library is a shared library or DLL. The routine checks for NULL data and will return CG_ERROR in this case, otherwise it returns CG_OK.
+ *
+ */
 int cg_free(void *data) {
     if (data != NULL) {
         CGNS_FREE (data);
