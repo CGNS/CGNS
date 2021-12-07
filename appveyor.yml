@@ -97,7 +97,7 @@ install:
   - mkdir 1.13
   - cd 1.13
   - set HDF5_1_13=%HDF5_1_13_VER%
-  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/bin/windows/hdf5-%HDF5_1_13_VER%-Std-win10_64-vs16.zip
+  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/bin/windows/hdf5-1.13.0-Std-win10_64-vs16-Intel.zip
   - ps: Expand-Archive hdf5-$($env:HDF5_1_13_VER)-Std-win10_64-vs16.zip -DestinationPath .
   - cd hdf
   - msiexec /i HDF5-%HDF5_1_13_VER%-win64.msi /quiet /qn /norestart /log install.log
@@ -123,6 +123,14 @@ configuration:
 # scripts to run before build
 before_build:
   - cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64 vs2019
+  - cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
+  #    - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%
+  - cmd: where icl
+  - cmd: where icx
+  - cmd: where ifort
+  - cmd: icl /help
+  - cmd: icx /help
+  - cmd: ifort /help
   - echo Running cmake...
   - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
@@ -144,14 +152,6 @@ before_build:
      -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
 
 build_script:
-      - cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
-      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%
-      - cmd: where icl
-      - cmd: where icx
-      - cmd: where ifort
-      - cmd: icl /help
-      - cmd: icx /help
-      - cmd: ifort /help
       - cmd: cmake --build . --config "%configuration%"
 
 test_script:
