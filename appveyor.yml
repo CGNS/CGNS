@@ -133,7 +133,7 @@ before_build:
   - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
   - cmake --version
-  - dir C:\Program Files\HDF_Group\HDF5\/%HDF5_VER%\cmake
+  - dir C:\Program Files\HDF_Group\HDF5\%HDF5_VER%\cmake
   - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
   - SET HDF5_ROOT=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
   - cmake -G "%GENERATOR%" -A "%ARCH%" ^
