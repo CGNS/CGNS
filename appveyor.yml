@@ -145,7 +145,13 @@ before_build:
 
 build_script:
       - cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
-      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG% 
+      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%
+      - cmd: where icl
+      - cmd: where icx
+      - cmd: where ifort
+      - cmd: icl /help
+      - cmd: icx /help
+      - cmd: ifort /help
       - cmd: cmake --build . --config "%configuration%"
 
 test_script:
