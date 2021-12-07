@@ -54,14 +54,6 @@ for:
   matrix:
     only:
       - image: Visual Studio 2019
-
-    install:
-      cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%
-      cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%  
-    build_script:
-      cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
-      cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%  
-
   environment:
       GENERATOR: "Visual Studio 16 2019"
       ARCH: "x64"
@@ -76,6 +68,9 @@ clone_folder: c:\projects\CGNS
 
 # scripts that run after cloning repository
 install:
+
+  - cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%
+  - cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%  
   # by default, all script lines are interpreted as batch
   #- echo This is batch
   # to run script as a PowerShell command prepend it with ps:
@@ -134,6 +129,8 @@ before_build:
      -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
 
 build_script:
+  - cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
+  - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%  
   - cmd: cmake --build . --config "%configuration%"
 
 test_script:
