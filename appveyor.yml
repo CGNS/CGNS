@@ -69,7 +69,7 @@ clone_folder: c:\projects\CGNS
 # scripts that run after cloning repository
 install:
 
-  cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%
+  - scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%
   #cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%  
   # by default, all script lines are interpreted as batch
   #- echo This is batch
