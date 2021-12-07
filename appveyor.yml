@@ -12,14 +12,13 @@
 version: 4.3.{build}
 
 image:
-  - Visual Studio 2017
   - Visual Studio 2019
   
 # branches to build
 branches:
   # whitelist
-  only:
-    - develop
+  ##only:
+  ##  - develop
 
   # blacklist
   # except:
@@ -33,27 +32,21 @@ skip_tags: true
 #---------------------------------#
 environment:
   global:
-    1_8: &1_8 1.8.21
-    1_10: &1_10 1.10.6
-    1_12: &1_12 1.12.0
-    HDF5_1_8_VER: *1_8   
-    HDF5_1_10_VER: *1_10
-    HDF5_1_12_VER: *1_12
+    1_13: &1_13 1.13.0
+    HDF5_1_13_VER: *1_13
+    WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18195/w_BaseKit_p_2021.4.0.3421_offline.exe
+    WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18247/w_HPCKit_p_2021.4.0.3340_offline.exe
+    WINDOWS_CPP_COMPONENTS: intel.oneapi.win.cpp-compiler
+    WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler
+    WINDOWS_DPCPP_COMPONENTS: intel.oneapi.win.dpcpp-compiler
+    SAMPLES_TAG: 2021.4.0
+
   matrix:
-  - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
-    HDF5_VER: *1_8
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
-    HDF5_VER: *1_10
+    HDF5_VER: *1_13
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON
-    HDF5_VER: *1_10
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
-  - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
-    HDF5_VER: *1_12
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
-  - build_opt: -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON
-    HDF5_VER: *1_12
+    HDF5_VER: *1_13
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
 
 for:
@@ -61,16 +54,18 @@ for:
   matrix:
     only:
       - image: Visual Studio 2019
+
+    install:
+      cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%
+      cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%  
+    build_script:
+      cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
+      cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%  
+
   environment:
       GENERATOR: "Visual Studio 16 2019"
       ARCH: "x64"
--
-  matrix:
-    only:
-      - image: Visual Studio 2017
-  environment:
-      GENERATOR: "Visual Studio 15 2017"
-      ARCH: "x64"
+
 
 # scripts that are called at very beginning, before repo cloning
 init:
@@ -90,32 +85,13 @@ install:
   #- cmd: set MY_VAR=12345
 
 # install hdf5
-  - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
-  - mkdir 1.8
-  - cd 1.8
-  - set HDF5_1_8_VER=%HDF5_1_8_VER%
-  - curl -O https://gamma.hdfgroup.org/ftp/pub/outgoing/QATEST/hdf518/relbinaries/windows/hdf5-%HDF5_1_8_VER%-Std-win10_64-vs16.zip
-  - ps: Expand-Archive hdf5-$($env:HDF5_1_8_VER)-Std-win10_64-vs16.zip -DestinationPath .
+  - mkdir 1.13
+  - cd 1.13
+  - set HDF5_1_13=%HDF5_1_13_VER%
+  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/bin/windows/hdf5-%HDF5_1_13_VER%-Std-win10_64-vs16.zip
+  - ps: Expand-Archive hdf5-$($env:HDF5_1_13_VER)-Std-win10_64-vs16.zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-%HDF5_1_8_VER%-win64.msi /quiet /qn /norestart /log install.log
-  - type install.log
-  - cd ..\..
-  - mkdir 1.10
-  - cd 1.10
-  - set HDF5_1_10=%HDF5_1_10_VER%
-  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.6/bin/hdf5-%HDF5_1_10_VER%-Std-win10_64-vs16.zip
-  - ps: Expand-Archive hdf5-$($env:HDF5_1_10_VER)-Std-win10_64-vs16.zip -DestinationPath .
-  - cd hdf
-  - msiexec /i HDF5-%HDF5_1_10_VER%-win64.msi /quiet /qn /norestart /log install.log
-  - type install.log
-  - cd ..\..
-  - mkdir 1.12
-  - cd 1.12
-  - set HDF5_1_12=%HDF5_1_12_VER%
-  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.0/bin/hdf5-%HDF5_1_12_VER%-Std-win10_64-vs16.zip
-  - ps: Expand-Archive hdf5-$($env:HDF5_1_12_VER)-Std-win10_64-vs16.zip -DestinationPath .
-  - cd hdf
-  - msiexec /i HDF5-%HDF5_1_12_VER%-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-%HDF5_1_13_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
 
@@ -153,7 +129,7 @@ before_build:
      -D CGNS_ENABLE_LFS:BOOL=OFF ^
      -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF ^
      -D CGNS_ENABLE_SCOPING:BOOL=OFF ^
-     -D CGNS_ENABLE_FORTRAN:BOOL=OFF ^
+     -D CGNS_ENABLE_FORTRAN:BOOL=ON ^
      -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
      -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
 
