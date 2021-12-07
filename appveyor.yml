@@ -133,6 +133,7 @@ before_build:
   - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
   - cmake --version
+  - dir C:\Program Files\HDF_Group\HDF5\/%HDF5_VER%\cmake
   - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
   - SET HDF5_ROOT=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
   - cmake -G "%GENERATOR%" -A "%ARCH%" ^
@@ -143,6 +144,7 @@ before_build:
      -D HDF5_NEED_ZLIB:BOOL=ON ^
      -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
      -D CGNS_ENABLE_HDF5:BOOL=ON ^
+     -D HDF5_DIR:PATH="C:\Program Files\HDF_Group\HDF5\/%HDF5_VER%\cmake" ^
      -D CMAKE_PREFIX_PATH:PATH="C:\Program Files\HDF_Group\HDF5\/%HDF5_VER%\cmake" ^
      -D CGNS_ENABLE_TESTS:BOOL=ON ^
      -D CGNS_ENABLE_LFS:BOOL=OFF ^
