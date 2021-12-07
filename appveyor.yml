@@ -125,7 +125,7 @@ before_build:
   - cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64 vs2019
   - cmd: where icl
   - cmd: where icx
-  - cmd: where ifort
+#  - cmd: where ifort
 #  - cmd: icl /help
 #  - cmd: icx /help
 #  - cmd: ifort /help
