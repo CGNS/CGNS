@@ -145,18 +145,8 @@ before_build:
 
 build_script:
       - cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
-      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%      
-#  - cmd: where icl
-#  - cmd: where icx
-#  - cmd: where ifort
-#  - cmd: where mpicxx
-#  - cmd: where mpif90
-#  - cmd: where mpifc
-#  - cmd: icl /help
-#  - cmd: icx /help
-#  - cmd: ifort /help
-#  - cmd: tree /A .
-   - cmd: cmake --build . --config "%configuration%"
+      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG% 
+      - cmd: cmake --build . --config "%configuration%"
 
 test_script:
   - cmd: set PATH=C:\projects\CGNS_BUILD\src\%configuration%;%PATH%
