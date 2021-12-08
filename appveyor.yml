@@ -134,7 +134,7 @@ before_build:
   - cd c:\projects\CGNS_BUILD
   - cmake --version
   - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
-  - SET HDF5_ROOT=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
+  - SET HDF5_ROOT=/Program Files/HDF_Group/HDF5/%HDF5_VER%
   - cmake -G "%GENERATOR%" -A "%ARCH%" ^
      %build_opt% ^
      -D CMAKE_C_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\intel64\icl.exe" ^
