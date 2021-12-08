@@ -127,6 +127,7 @@ before_build:
   - cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64 vs2019
   - cmd: where icl
   - cmd: where icx
+  - cmd: where ifx
 #  - cmd: where ifort
 #  - cmd: icl /help
 #  - cmd: icx /help
@@ -158,7 +159,8 @@ build_script:
       - cd c:\projects\CGNS
       - dir
 #      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%
-#      - cmd: cmake --debug-output --build . --config "%configuration%"
+      - cd c:\projects\CGNS_BUILD
+      - cmd: cmake --debug-output --build . --config "%configuration%"
 
 test_script:
   - cmd: set PATH=C:\projects\CGNS_BUILD\src\%configuration%;%PATH%
