@@ -122,6 +122,8 @@ configuration:
 
 # scripts to run before build
 before_build:
+  - mkdir c:\projects\CGNS_BUILD
+  - cd c:\projects\CGNS_BUILD
   - cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64 vs2019
   - cmd: where icl
   - cmd: where icx
@@ -130,7 +132,6 @@ before_build:
 #  - cmd: icx /help
 #  - cmd: ifort /help
   - echo Running cmake...
-  - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
   - cmake --version
   - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
