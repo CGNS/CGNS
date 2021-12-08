@@ -156,7 +156,7 @@ before_build:
 build_script:
 #      - cmd: scripts/build_windows.bat c++ "" %SAMPLES_TAG%
 #      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%
-      - cmd: cmake --build . --config "%configuration%"
+      - cmd: cmake --debug-output --build . --config "%configuration%"
 
 test_script:
   - cmd: set PATH=C:\projects\CGNS_BUILD\src\%configuration%;%PATH%
