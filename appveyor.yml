@@ -154,7 +154,7 @@ before_build:
      -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
 
 build_script:
-      - cmd: scripts/build_cgns.bat
+      - cmd:  call "C:\projects\CGNS\scripts\build_cgns.bat"
 #      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%
 #      - cmd: cmake --debug-output --build . --config "%configuration%"
 
