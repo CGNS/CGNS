@@ -136,8 +136,7 @@ before_build:
   - cmake --version
   - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
   - SET HDF5_ROOT=/Program Files/HDF_Group/HDF5/%HDF5_VER%
-  - cmake -G "%GENERATOR%" -A "%ARCH%" ^
-     -T "Intel C++ Compiler 2021" ^
+  - cmake -G"NMake Makefiles" ^
      %build_opt% ^
      -D CMAKE_C_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\intel64\icl.exe" ^
      -D CMAKE_C_FLAGS:STRING="" ^
