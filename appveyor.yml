@@ -169,7 +169,7 @@ before_build:
 build_script:
       - cd c:\projects\CGNS
       - dir
-      - cd  C:\Program Files\HDF_Group\HDF5\1.12.0\lib
+      - cd  C:\Program Files\HDF_Group\HDF5\1.12.0\bin
       - dir
 #      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%
       - cd c:\projects\CGNS_BUILD
@@ -178,7 +178,6 @@ build_script:
 test_script:
   - cmd: set PATH=C:\projects\CGNS_BUILD\src\%configuration%;%PATH%
   - cmd: set PATH=C:\Program Files\HDF_Group\HDF5\%HDF5_VER%\bin;%PATH%
-  - cmd: set PATH=C:\Program Files\HDF_Group\HDF5\%HDF5_VER%\lib;%PATH%
   - cmd: ctest . --output-on-failure
 
 after_test:
