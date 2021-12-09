@@ -4,7 +4,7 @@
 #include <math.h>
 #include <complex.h>
 #undef I
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !(defined(__INTEL_LLVM_COMPILER) || defined(__INTEL_COMPILER))
 #define cg_complex_float _Fcomplex
 #define cg_complex_double _Dcomplex
 #define __real__(c)  c._Val[0]
