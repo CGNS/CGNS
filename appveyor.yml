@@ -160,7 +160,7 @@ build_script:
       - dir
 #      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%
       - cd c:\projects\CGNS_BUILD
-      - cmd: cmake --build . --config "%configuration%" --debug-output
+      - cmd: cmake --build . --config "%configuration%"
 
 test_script:
   - cmd: set PATH=C:\projects\CGNS_BUILD\src\%configuration%;%PATH%
