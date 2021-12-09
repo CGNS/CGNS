@@ -34,6 +34,8 @@ environment:
   global:
     1_13: &1_13 1.13.0
     HDF5_1_13_VER: *1_13
+    1_12: &1_12 1.12.0
+    HDF5_1_12_VER: *1_12
     WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18195/w_BaseKit_p_2021.4.0.3421_offline.exe
     WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18247/w_HPCKit_p_2021.4.0.3340_offline.exe
     LINUX_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18236/l_BaseKit_p_2021.4.0.3422_offline.sh
@@ -94,13 +96,22 @@ install:
   #- cmd: echo This is batch again
   #- cmd: set MY_VAR=12345
 # install hdf5
-  - mkdir 1.13
-  - cd 1.13
-  - set HDF5_1_13=%HDF5_1_13_VER%
-  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/bin/windows/hdf5-%HDF5_1_13_VER%-Std-win10_64-vs16-Intel.zip
-  - ps: Expand-Archive hdf5-$($env:HDF5_1_13_VER)-Std-win10_64-vs16-Intel.zip -DestinationPath .
+  #- mkdir 1.13
+  #- cd 1.13
+  #- set HDF5_1_13=%HDF5_1_13_VER%
+  #- curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.0/bin/windows/hdf5-%HDF5_1_13_VER%-Std-win10_64-vs16-Intel.zip
+  #- ps: Expand-Archive hdf5-$($env:HDF5_1_13_VER)-Std-win10_64-vs16-Intel.zip -DestinationPath .
+  #- cd hdf
+  #- msiexec /i HDF5-%HDF5_1_13_VER%-win64.msi /quiet /qn /norestart /log install.log
+  #- type install.log
+  #- cd ..\..
+  - mkdir 1.12
+  - cd 1.12
+  - set HDF5_1_12=%HDF5_1_12_VER%
+  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.0/bin/hdf5-%HDF5_1_12_VER%-Std-win10_64-vs16-Intel.zip
+  - ps: Expand-Archive hdf5-$($env:HDF5_1_12_VER)-Std-win10_64-vs16-Intel.zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-%HDF5_1_13_VER%-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-%HDF5_1_12_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
 
@@ -145,7 +156,6 @@ before_build:
      -D HDF5_NEED_ZLIB:BOOL=ON ^
      -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
      -D CGNS_ENABLE_HDF5:BOOL=ON ^
-     -D HDF5_DIR:PATH="C:\Program Files\HDF_Group\HDF5\1.13.0\cmake" ^
      -D CMAKE_PREFIX_PATH:PATH="C:\Program Files\HDF_Group\HDF5\/%HDF5_VER%\cmake" ^
      -D CGNS_ENABLE_TESTS:BOOL=ON ^
      -D CGNS_ENABLE_LFS:BOOL=OFF ^
