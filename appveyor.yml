@@ -80,7 +80,7 @@ clone_folder: c:\projects\CGNS
 
 # scripts that run after cloning repository
 install:
-  - cmd: scripts/install_windows.bat %WINDOWS_FORTRAN_COMPONENTS% %WINDOWS_FORTRAN_COMPONENTS%
+  - cmd: scripts/install_windows.bat  %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%:%WINDOWS_FORTRAN_COMPONENTS%
   #- cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%
   #- cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%
   #- cmd: curl -L --output basekit.exe --url %WINDOWS_BASEKIT_URL%
