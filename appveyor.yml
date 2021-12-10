@@ -81,7 +81,7 @@ clone_folder: c:\projects\CGNS
 # scripts that run after cloning repository
 install:
   - cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%
-  #- cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%
+  - cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%
   #- cmd: curl -L --output basekit.exe --url %WINDOWS_BASEKIT_URL%
   #- cmd: start /b /wait basekit.exe -s -x -f basekit-extracted --log extract-basekit.log
   #- cmd: curl -L --output hpckit.exe --url %WINDOWS_HPCKIT_URL%
@@ -152,7 +152,8 @@ before_build:
      %build_opt% ^
      -D CMAKE_C_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\intel64\icl.exe" ^
      -D CMAKE_C_FLAGS:STRING="" ^
-     -D CMAKE_BUILD_TYPE:STRING=Release ^
+     -D CMAKE_Fortran_COMPILER="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\intel64\ifort.exe" ^
+     -D CMAKE_BUILD_TYPE:STRING=%configuration% ^
      -D HDF5_NEED_ZLIB:BOOL=ON ^
      -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
      -D CGNS_ENABLE_HDF5:BOOL=ON ^
@@ -162,7 +163,7 @@ before_build:
      -D CGNS_ENABLE_LFS:BOOL=OFF ^
      -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF ^
      -D CGNS_ENABLE_SCOPING:BOOL=OFF ^
-     -D CGNS_ENABLE_FORTRAN:BOOL=OFF ^
+     -D CGNS_ENABLE_FORTRAN:BOOL=ON ^
      -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
      -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
 
@@ -176,9 +177,10 @@ build_script:
       - cmd: cmake --build . --config "%configuration%"
 
 test_script:
+  - cmd: set PATH=C:\projects\CGNS_BUILD\src;%PATH%
   - cmd: set PATH=C:\projects\CGNS_BUILD\src\%configuration%;%PATH%
   - cmd: set PATH=C:\Program Files\HDF_Group\HDF5\%HDF5_VER%\bin;%PATH%
-  - cmd: ctest . --output-on-failure
+  - cmd: ctest .
 
 after_test:
   - cmd: cmake --install . --config "%configuration%"
