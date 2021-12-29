@@ -4809,7 +4809,7 @@ static cgsize_t subreg_size(int dim, int isBC, char *subname)
         if (0 == strcmp(p, name)) {
             if (ptype == CGNS_ENUMV(PointRange) && npnts == 2) {
                 cgsize_t *pnts;
-                pnts = (cgsize_t *)malloc(2 * nsets * dim * sizeof(cgsize_t));
+                pnts = (cgsize_t *)malloc(2 * (cgsize_t)nsets * (cgsize_t)dim * sizeof(cgsize_t));
                 if (pnts == NULL)
                     fatal_error("subreg_size:malloc failed for hole data\n");
                 if (cg_hole_read(cgnsfn, cgnsbase, cgnszone, n, pnts))
@@ -5806,7 +5806,7 @@ static void check_base_iter (void)
             ierr = 1;
         }
         if (NumSteps > 0 && nmax > 0 && !ierr) {
-            desc = (char *) malloc (32 * nmax * NumSteps * sizeof(char));
+            desc = (char *) malloc (32 * (cgsize_t)nmax * (cgsize_t)NumSteps * sizeof(char));
             if (NULL == desc)
                 fatal_error("malloc failed for family pointers\n");
             if (cg_array_read (nfp, desc)) error_exit("cg_array_read");
@@ -5882,7 +5882,7 @@ static void check_base_iter (void)
             ierr = 1;
         }
         if (NumSteps > 0 && nmax > 0 && !ierr) {
-            desc = (char *) malloc (32 * nmax * NumSteps * sizeof(char));
+            desc = (char *) malloc (32 * (cgsize_t)nmax * (cgsize_t)NumSteps * sizeof(char));
             if (NULL == desc)
                 fatal_error("malloc failed for zone pointers\n");
             if (cg_array_read (nzp, desc)) error_exit("cg_array_read");
