@@ -123,7 +123,7 @@ write_grid_str_paroverzone$(EXE) : write_grid_str_paroverzone.c $(CGNSLIB)
 #----------
 
 clean :
-	-$(RM) *.$(O) *.mod *.MOD
+	-$(RM) *.$(O)
 
 allclean : clean
 	-$(RM) $(ALL)
