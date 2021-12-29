@@ -12,14 +12,14 @@ LDLIBS = $(CGNSLIB) $(BUILDLIBS)
 
 #----------
 
-CALL =	read_flowcentrind_str_parinzone$(EXE) \
-	read_flowcentrind_str_paroverzone$(EXE) \
-	read_grid_str_parinzone$(EXE) \
-	read_grid_str_paroverzone$(EXE) \
+CALL =	write_grid_str_parinzone$(EXE) \
+	write_grid_str_paroverzone$(EXE) \
 	write_flowcentrind_str_parinzone$(EXE) \
 	write_flowcentrind_str_paroverzone$(EXE) \
-	write_grid_str_parinzone$(EXE) \
-	write_grid_str_paroverzone$(EXE)
+	read_grid_str_parinzone$(EXE) \
+	read_grid_str_paroverzone$(EXE) \
+	read_flowcentrind_str_parinzone$(EXE) \
+	read_flowcentrind_str_paroverzone$(EXE)
 
 ALL   = $(CALL)
 TESTS = $(ALL)
@@ -47,7 +47,7 @@ test : $(TESTS)
 	padlimit=40; \
 	pad=$$(printf '%*s' "$$padlimit"); \
 	pad=$${pad// /.}; \
-        padlength=32; \
+        padlength=36; \
 	time=""; \
 	for x in $(TESTS) ; do \
            args=""; \
