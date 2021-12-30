@@ -110,13 +110,15 @@ endif ()
 # Add the tests so that cmake can find them
 if (CGNS_ENABLE_TESTS)
   foreach(TEST_NAME ${C_PTESTS_LIST})
-    add_test(${TEST_NAME} ${MPIEXEC} ${MPIEXEC_NUMPROCFLAGS} "2"
-      ${MPIEXEC_PREFLAGS} ${TEST_NAME} ${MPIEXEC_POSTFLAGS})
+    add_test(NAME test-${TEST_NAME}
+             COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROCFLAGS} "2"
+	     ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
   endforeach()
   if (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
     foreach(TEST_NAME ${FORTRAN_PTESTS_LIST})
-      add_test(${TEST_NAME} ${MPIEXEC} ${MPIEXEC_NUMPROCFLAGS} "2"
-        ${MPIEXEC_PREFLAGS} ${TEST_NAME} ${MPIEXEC_POSTFLAGS})
+	    add_test(NAME test-${TEST_NAME}
+		     COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROCFLAGS} "2"
+                     ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
     endforeach()
   endif ()
 endif ()
