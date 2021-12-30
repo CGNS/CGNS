@@ -69,7 +69,7 @@ int main(int argc, const char* argv[])
        }
    }
 
-   int s_rmin[3], s_rmax[3], m_dimvals[3], m_rmin[3], m_rmax[3];
+   cgsize_t s_rmin[3], s_rmax[3], m_dimvals[3], m_rmin[3], m_rmax[3];
    double *r = NULL;
    double *p = NULL;
    int ni, nj, nk;

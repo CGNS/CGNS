@@ -6,33 +6,31 @@ include_directories(../..)
 include_directories(../calclib)
 include_directories(../common)
 
-# cgns_info
-if (CGNS_USE_SHARED)
-  link_libraries(cgns_shared)
-else (CGNS_USE_SHARED)
-  link_libraries(cgns_static)
-endif (CGNS_USE_SHARED)
-link_libraries(calclib)
-if (NOT WIN32)
-  link_libraries(m)
-endif (NOT WIN32)
+
+# Link all the executables to cgns and hdf5
+if(CGNS_USE_SHARED)
+  set(UTILITIES_LK_LIBS cgns_shared)
+else()
+  set(UTILITIES_LK_LIBS cgns_static)
+endif()
 
 if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
-  link_libraries(${HDF5_LIBRARY})
+  list(APPEND UTILITIES_LK_LIBS ${HDF5_LIBRARY})
   if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
-    link_libraries(${ZLIB_LIBRARY})
-  endif(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+    list(APPEND UTILITIES_LK_LIBS ${ZLIB_LIBRARY})
+  endif()
   if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
-    link_libraries(${SZIP_LIBRARY})
-  endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+    list(APPEND UTILITIES_LK_LIBS ${SZIP_LIBRARY})
+  endif()
   if(HDF5_NEED_MPI AND MPI_LIBS)
-    link_libraries(${MPI_LIBS})
-  endif(HDF5_NEED_MPI AND MPI_LIBS)
-endif (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
+    list(APPEND UTILITIES_LK_LIBS ${MPI_LIBS})
+  endif()
+endif ()
 
 if (NOT WIN32)
-  link_libraries(m)
-endif (NOT WIN32)
+  list(APPEND UTILITIES_LK_LIBS m)
+endif ()
+list(APPEND UTILITIES_LK_LIBS calclib)
 
 set(cgns_info_FILES
 	cgns_info.c
@@ -40,7 +38,7 @@ set(cgns_info_FILES
 	../common/getargs.c)
 
 add_executable(cgns_info ${cgns_info_FILES})
-add_dependencies(cgns_info cgns_static)
+target_link_libraries(cgns_info PRIVATE ${UTILITIES_LK_LIBS})
 
 #----------
 
@@ -52,7 +50,7 @@ set(plot3d_to_cgns_FILES
 	../common/getargs.c)
 
 add_executable(plot3d_to_cgns ${plot3d_to_cgns_FILES})
-add_dependencies(plot3d_to_cgns cgns_static)
+target_link_libraries(plot3d_to_cgns PRIVATE ${UTILITIES_LK_LIBS})
 
 # cgns_to_plot3d
 set(cgns_to_plot3d_FILES 
@@ -63,7 +61,7 @@ set(cgns_to_plot3d_FILES
 	p3dfout.c)
 
 add_executable(cgns_to_plot3d ${cgns_to_plot3d_FILES})
-add_dependencies(cgns_to_plot3d cgns_static)
+target_link_libraries(cgns_to_plot3d PRIVATE ${UTILITIES_LK_LIBS})
 
 #----------
 
@@ -75,7 +73,7 @@ set(patran_to_cgns_FILES
 	../common/hash.c)
 
 add_executable(patran_to_cgns ${patran_to_cgns_FILES})
-add_dependencies(patran_to_cgns cgns_static)
+target_link_libraries(patran_to_cgns PRIVATE ${UTILITIES_LK_LIBS})
 
 #----------
 
@@ -87,7 +85,7 @@ set(tecplot_to_cgns_FILES
 	../common/hash.c)
 
 add_executable(tecplot_to_cgns ${tecplot_to_cgns_FILES})
-add_dependencies(tecplot_to_cgns cgns_static)
+target_link_libraries(tecplot_to_cgns PRIVATE ${UTILITIES_LK_LIBS})
 
 # cgns_to_tecplot
 set(cgns_to_tecplot_FILES
@@ -96,7 +94,7 @@ set(cgns_to_tecplot_FILES
 	../common/getargs.c)
 
 add_executable(cgns_to_tecplot ${cgns_to_tecplot_FILES})
-add_dependencies(cgns_to_tecplot cgns_static)
+target_link_libraries(cgns_to_tecplot PRIVATE ${UTILITIES_LK_LIBS})
 
 #----------
 
@@ -105,7 +103,7 @@ set(tetgen_to_cgns_FILES
 	tetgen_to_cgns.c)
 
 add_executable(tetgen_to_cgns ${tetgen_to_cgns_FILES})
-add_dependencies(tetgen_to_cgns cgns_static)
+target_link_libraries(tetgen_to_cgns PRIVATE ${UTILITIES_LK_LIBS})
 
 #----------
 
@@ -116,7 +114,7 @@ set(vgrid_to_cgns_FILES
 	../common/getargs.c)
 
 add_executable(vgrid_to_cgns ${vgrid_to_cgns_FILES})
-add_dependencies(vgrid_to_cgns cgns_static)
+target_link_libraries(vgrid_to_cgns PRIVATE ${UTILITIES_LK_LIBS})
 
 #----------
 
@@ -127,7 +125,7 @@ set(aflr3_to_cgns_FILES
 	../common/getargs.c)
 
 add_executable(aflr3_to_cgns ${aflr3_to_cgns_FILES})
-add_dependencies(aflr3_to_cgns cgns_static)
+target_link_libraries(aflr3_to_cgns PRIVATE ${UTILITIES_LK_LIBS})
 
 # cgns_to_aflr3
 set(cgns_to_aflr3_FILES
@@ -136,7 +134,7 @@ set(cgns_to_aflr3_FILES
 	../common/hash.c)
 
 add_executable(cgns_to_aflr3 ${cgns_to_aflr3_FILES})
-add_dependencies(cgns_to_aflr3 cgns_static)
+target_link_libraries(cgns_to_aflr3 PRIVATE ${UTILITIES_LK_LIBS})
 
 #----------
 
@@ -147,7 +145,7 @@ set(fast_to_cgns_FILES
 	../common/getargs.c)
 
 add_executable(fast_to_cgns ${fast_to_cgns_FILES})
-add_dependencies(fast_to_cgns cgns_static)
+target_link_libraries(fast_to_cgns PRIVATE ${UTILITIES_LK_LIBS})
 
 # cgns_to_fast
 set(cgns_to_fast_FILES
@@ -156,7 +154,7 @@ set(cgns_to_fast_FILES
 	../common/hash.c)
 
 add_executable(cgns_to_fast ${cgns_to_fast_FILES})
-add_dependencies(cgns_to_fast cgns_static)
+target_link_libraries(cgns_to_fast PRIVATE ${UTILITIES_LK_LIBS})
 
 #----------
 
@@ -166,7 +164,7 @@ set(cgns_to_vtk_FILES
 	../common/getargs.c)
 
 add_executable(cgns_to_vtk ${cgns_to_vtk_FILES})
-add_dependencies(cgns_to_vtk cgns_static)
+target_link_libraries(cgns_to_vtk PRIVATE ${UTILITIES_LK_LIBS})
 
 #----------
 
@@ -177,6 +175,7 @@ set(convert_location_FILES
 	../common/getargs.c)
 
 add_executable(convert_location ${convert_location_FILES})
+target_link_libraries(convert_location PRIVATE ${UTILITIES_LK_LIBS})
 
 # convert_variables
 set(convert_variables_FILES
@@ -185,7 +184,7 @@ set(convert_variables_FILES
 	../common/getargs.c)
 
 add_executable(convert_variables ${convert_variables_FILES})
-add_dependencies(convert_variables cgns_static calclib)
+target_link_libraries(convert_variables PRIVATE ${UTILITIES_LK_LIBS})
 
 # convert_dataclass
 set(convert_dataclass_FILES
@@ -194,7 +193,7 @@ set(convert_dataclass_FILES
 	../common/getargs.c)
 
 add_executable(convert_dataclass ${convert_dataclass_FILES})
-add_dependencies(convert_dataclass cgns_static calclib)
+target_link_libraries(convert_dataclass PRIVATE ${UTILITIES_LK_LIBS})
 
 # extract_subset
 set(extract_subset_FILES
@@ -203,7 +202,7 @@ set(extract_subset_FILES
 	../common/getargs.c)
 
 add_executable(extract_subset ${extract_subset_FILES})
-add_dependencies(extract_subset cgns_static)
+target_link_libraries(extract_subset PRIVATE ${UTILITIES_LK_LIBS})
 
 # interpolate_cgns
 set(interpolate_cgns_FILES
@@ -212,7 +211,7 @@ set(interpolate_cgns_FILES
 	../common/getargs.c)
 
 add_executable(interpolate_cgns ${interpolate_cgns_FILES})
-add_dependencies(interpolate_cgns cgns_static)
+target_link_libraries(interpolate_cgns PRIVATE ${UTILITIES_LK_LIBS})
 
 # update_ngon
 set(update_ngon_FILES
@@ -221,6 +220,7 @@ set(update_ngon_FILES
 	../common/getargs.c)
 
 add_executable(update_ngon ${update_ngon_FILES})
+target_link_libraries(update_ngon PRIVATE ${UTILITIES_LK_LIBS})
 
 if (WIN32)
   install(TARGETS
@@ -260,7 +260,7 @@ if (WIN32)
 	utilities.mnu
 	vtk.tcl
 	DESTINATION share)
-else (WIN32)
+else ()
   install(TARGETS
         plot3d_to_cgns
 	cgns_to_plot3d
@@ -298,5 +298,5 @@ else (WIN32)
 	utilities.mnu
 	vtk.tcl
 	DESTINATION share/cgnstools)
-endif (WIN32)
+endif ()
 

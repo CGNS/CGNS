@@ -1,0 +1,133 @@
+NO_COLOR=\033[0m
+OK_COLOR=\033[32;01m
+ERROR_COLOR=\033[31;01m
+
+CGNSDIR = ../../
+include $(CGNSDIR)/make.defs
+
+CGNSLIB = $(CGNSDIR)/$(LIBCGNS)
+
+COPTS  = $(CFLAGS) -I$(CGNSDIR) $(MPIINC) @BUILDOPTS@
+LDLIBS = $(CGNSLIB) $(BUILDLIBS)
+
+#----------
+
+CALL =	write_grid_str_parinzone$(EXE) \
+	write_grid_str_paroverzone$(EXE) \
+	write_flowcentrind_str_parinzone$(EXE) \
+	write_flowcentrind_str_paroverzone$(EXE) \
+	read_grid_str_parinzone$(EXE) \
+	read_grid_str_paroverzone$(EXE) \
+	read_flowcentrind_str_parinzone$(EXE) \
+	read_flowcentrind_str_paroverzone$(EXE)
+
+ALL   = $(CALL)
+TESTS = $(ALL)
+
+TIMING_AVAIL:=$(shell /usr/bin/time -a -o CGNS_timing.txt -f "%e" pwd > /dev/null; echo $$?)
+ifeq ("$(TIMING_AVAIL)" , "0")
+  TIMING = /usr/bin/time -a -o CGNS_timing.txt -f "$$x %e" $(MPIEXEC) ./$$x >/dev/null 2>&1
+  TIMING_ARGS = /usr/bin/time -a -o CGNS_timing.txt -f "$$x %e" $(MPIEXEC) ./$$x $$args >/dev/null 2>&1
+else
+  TIMING = $(MPIEXEC) ./$$x >/dev/null 2>&1
+  TIMING_ARGS = $(MPIEXEC) ./$$x $$args >/dev/null 2>&1
+endif
+
+all : $(ALL)
+
+#----------
+
+test : $(TESTS)
+	@echo " "; \
+	status=0; \
+	echo "=== running user guide parallel tests ==="; \
+	if test -f CGNS_timing.txt; then \
+	  $(RM) CGNS_timing.txt; \
+	fi; \
+	padlimit=40; \
+	pad=$$(printf '%*s' "$$padlimit"); \
+	pad=$${pad// /.}; \
+        padlength=36; \
+	time=""; \
+	for x in $(TESTS) ; do \
+           args=""; \
+	     printf "$$x"; \
+	     printf ' %*.*s' 0 $$((padlength - $${#x} )) "$$pad"; \
+	     if `$(TIMING)` ; then \
+               itime=$$(tail -n1 CGNS_timing.txt |  awk  '{print $$2}' | sed -e 's/$$/ sec/'); \
+	       printf " [$(OK_COLOR)PASSED$(NO_COLOR)]"; \
+	       printf " %+12s\n" "$$itime";\
+	     else \
+	       printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
+               status=$(($$status + 1)); \
+	     fi; \
+	 done; \
+	 echo "=== finished ==="; \
+         if [ $$status -ne 0 ]; then \
+           printf "$(ERROR_COLOR)"; \
+	   stat=1; \
+         else \
+           printf "$(OK_COLOR)"; \
+	   stat=0; \
+         fi; \
+         printf "$$status tests failed $(NO_COLOR) \n"; \
+	 exit $$stat;
+
+#----------
+
+read_flowcentrind_str_parinzone$(EXE) : read_flowcentrind_str_parinzone.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ read_flowcentrind_str_parinzone.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+read_flowcentrind_str_paroverzone$(EXE) : read_flowcentrind_str_paroverzone.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ read_flowcentrind_str_paroverzone.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+read_grid_str_parinzone$(EXE) : read_grid_str_parinzone.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ read_grid_str_parinzone.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+read_grid_str_paroverzone$(EXE) : read_grid_str_paroverzone.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ read_grid_str_paroverzone.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+write_flowcentrind_str_parinzone$(EXE) : write_flowcentrind_str_parinzone.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ write_flowcentrind_str_parinzone.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+write_flowcentrind_str_paroverzone$(EXE) : write_flowcentrind_str_paroverzone.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ write_flowcentrind_str_paroverzone.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+#----------
+
+write_grid_str_parinzone$(EXE) : write_grid_str_parinzone.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ write_grid_str_parinzone.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+write_grid_str_paroverzone$(EXE) : write_grid_str_paroverzone.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ write_grid_str_paroverzone.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+clean :
+	-$(RM) *.$(O)
+
+allclean : clean
+	-$(RM) $(ALL)
+	-$(RM) *~ *.bak
+	-$(RM) *.cgns *.cg?
+	-$(RM) CGNS_timing.txt
+

@@ -4,28 +4,28 @@
 
 # Link all the executables to cgns and hdf5
 if(CGNS_BUILD_SHARED)
-  link_directories(.)
-  link_libraries(cgns_shared)
-else(CGNS_BUILD_SHARED)
-  link_libraries(cgns_static)
-endif(CGNS_BUILD_SHARED)
+  #link_directories(.)
+  set(C_PARA_EXAMPLE_LK_LIBS cgns_shared)
+else()
+  set(C_PARA_EXAMPLE_LK_LIBS cgns_static)
+endif()
 
 if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
-  link_libraries(${HDF5_LIBRARY})
+  list(APPEND C_PARA_EXAMPLE_LK_LIBS ${HDF5_LIBRARY})
   if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
-    link_libraries(${ZLIB_LIBRARY})
-  endif(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+    list(APPEND C_PARA_EXAMPLE_LK_LIBS ${ZLIB_LIBRARY})
+  endif()
   if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
-    link_libraries(${SZIP_LIBRARY})
-  endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+    list(APPEND C_PARA_EXAMPLE_LK_LIBS ${SZIP_LIBRARY})
+  endif()
   if(HDF5_NEED_MPI AND MPI_LIBS)
-    link_libraries(${MPI_LIBS})
-  endif(HDF5_NEED_MPI AND MPI_LIBS)
-endif (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
+    list(APPEND C_PARA_EXAMPLE_LK_LIBS ${MPI_LIBS})
+  endif()
+endif ()
 
 if (NOT WIN32)
-  link_libraries(m)
-endif (NOT WIN32)
+  list(APPEND C_PARA_EXAMPLE_LK_LIBS m)
+endif ()
 
 # Set the files needed by each test
 set (examples
@@ -42,4 +42,8 @@ set (examples
 # Build each test
 foreach (example ${examples})
   add_executable (${example} ${example}.c)
+  target_link_libraries(${example} PRIVATE ${C_PARA_EXAMPLE_LK_LIBS})
+  add_test(NAME test-${example}
+           COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+           ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${example}> ${MPIEXEC_POSTFLAGS})
 endforeach (example ${examples})

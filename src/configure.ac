@@ -2068,6 +2068,6 @@ AC_SUBST(SIZEOF_VOID_P)
 
 AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h \
   cg_hash_types.h Makefile make.defs cgnsBuild.defs tests/Makefile \
-  tools/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs \
+  tools/Makefile Test_UserGuideCode/C_code_parallel/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs \
   cgnstools/cgconfig)
 
