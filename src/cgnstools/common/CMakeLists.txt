@@ -25,7 +25,7 @@ if (WIN32)
 	cgns-icon.xbm
 	cgns-mask.xbm
 	DESTINATION share)
-else (WIN32)
+else ()
   install(FILES
 	balloon.tcl
 	color.tcl
@@ -48,5 +48,5 @@ else (WIN32)
 	cgns-icon.xbm
 	cgns-mask.xbm
 	DESTINATION share/cgnstools)
-endif (WIN32)
+endif ()
 
