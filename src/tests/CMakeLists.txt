@@ -4,27 +4,27 @@
 
 # Link all the executables to cgns and hdf5
 if(CGNS_BUILD_SHARED)
-  link_libraries(cgns_shared)
-else(CGNS_BUILD_SHARED)
-  link_libraries(cgns_static)
-endif(CGNS_BUILD_SHARED)
+  set(TESTS_LK_LIBS cgns_shared)
+else()
+  set(TESTS_LK_LIBS cgns_static)
+endif()
 
 if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
-  link_libraries(${HDF5_LIBRARY})
+  list(APPEND TESTS_LK_LIBS ${HDF5_LIBRARY})
   if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
-    link_libraries(${ZLIB_LIBRARY})
-  endif(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+    list(APPEND TESTS_LK_LIBS ${ZLIB_LIBRARY})
+  endif()
   if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
-    link_libraries(${SZIP_LIBRARY})
-  endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+    list(APPEND TESTS_LK_LIBS ${SZIP_LIBRARY})
+  endif()
   if(HDF5_NEED_MPI AND MPI_LIBS)
-    link_libraries(${MPI_LIBS})
-  endif(HDF5_NEED_MPI AND MPI_LIBS)
-endif (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
+    list(APPEND TESTS_LK_LIBS ${MPI_LIBS})
+  endif()
+endif ()
 
 if (NOT WIN32)
-  link_libraries(m)
-endif (NOT WIN32)
+  list(APPEND TESTS_LK_LIBS m)
+endif ()
 
 # Set the files needed by each test
 set(cgioc_FILES cgioc.c)
@@ -89,6 +89,38 @@ add_executable( test_family_tree     ${test_family_tree_FILES}     )
 add_executable( test_bbox            ${test_bbox_FILES}            )
 add_executable( test_complex         ${test_complex_FILES}         )
 add_executable( test_convert_elem    ${test_convert_elem_FILES}    )
+#
+set(C_TESTS_LIST
+	cgioc
+	dbtest
+	elemtest
+	open_cgns
+	ser_benchmark_hdf5
+	test_core_vfd        
+	test_exts            
+	test_goto            
+	test_partial         
+	test_ver31           
+	test_multifam        
+	test_general_rind    
+	test_general_reshape 
+	write_array          
+	write_bcdata         
+	write_links          
+	write_rind           
+	write_test           
+	write_zones          
+	test_family_tree     
+	test_bbox            
+	test_complex         
+	test_convert_elem)
+set(SKIP_TESTS
+	dbtest
+	open_cgns)
+# Modern Linking
+foreach(TGTNAME ${C_TESTS_LIST})
+  target_link_libraries(${TGTNAME} PRIVATE ${TESTS_LK_LIBS})
+endforeach()
 
 # Conditionally build the fortran tests
 if (CGNS_ENABLE_FORTRAN)
@@ -110,50 +142,35 @@ if (CGNS_ENABLE_FORTRAN)
 #	  add_executable( cgzconn      ${cgzconn_FILES}  )
 #	  add_executable( cgsubreg     ${cgsubreg_FILES}  )
 #	endif (NOT CGNS_ENABLE_64BIT)
-endif (CGNS_ENABLE_FORTRAN)
+	set(FORTRAN_TESTS_LIST
+	cgiof_f03          
+	cgwrite_f03        
+	cgread_f03         
+	cgzconn_f03        
+	cgsubreg_f03       
+	test_general_rindf 
+	test_family_treef  
+	test_bboxf         
+	test_complexf)
+	# Modern Linking
+	foreach(TGTNAME ${FORTRAN_TESTS_LIST})
+	  target_link_libraries(${TGTNAME} PRIVATE ${TESTS_LK_LIBS})
+	endforeach()
+endif ()
 
 # Add the tests so that ctest can find them
 if (CGNS_ENABLE_TESTS)
-  add_test( cgioc                cgioc                )
-  add_test( elemtest             elemtest             )
-  add_test( ser_benchmark_hdf5   ser_benchmark_hdf5   )
-  add_test( test_core_vfd        test_core_vfd        )
-  add_test( test_exts            test_exts            )
-  add_test( test_goto            test_goto            )
-  add_test( test_partial         test_partial         )
-  add_test( test_ver31           test_ver31           )
-  add_test( test_multifam        test_multifam        )
-  add_test( test_general_rind    test_general_rind    )
-  add_test( test_general_reshape test_general_reshape )
-  add_test( write_array          write_array          )
-  add_test( write_bcdata         write_bcdata         )
-  add_test( write_links          write_links          )
-  add_test( write_rind           write_rind           )
-  add_test( write_test           write_test           )
-  add_test( write_zones          write_zones          )
-  add_test( test_family_tree     test_family_tree     )
-  add_test( test_bbox            test_bbox            )
-  add_test( test_complex         test_complex         )
-  add_test( test_convert_elem    test_convert_elem    )
+  foreach(TARGETNAME ${C_TESTS_LIST})
+    if ( ${TARGETNAME} IN_LIST SKIP_TESTS )
+      continue()
+    endif()
+    add_test(NAME ${TARGETNAME} COMMAND ${TARGETNAME})
+  endforeach()
 
   # Conditionally add the fortran tests
   if (CGNS_ENABLE_FORTRAN)
-	#add_test( f2c_test f2c_test ) # This still needs a regex test
-	add_test( cgiof_f03          cgiof_f03          )
-	add_test( cgwrite_f03        cgwrite_f03        )
-	add_test( cgread_f03         cgread_f03         )
-	add_test( cgzconn_f03        cgzconn_f03        )
-	add_test( cgsubreg_f03       cgsubreg_f03       )
-	add_test( test_general_rindf test_general_rindf )
-	add_test( test_family_treef  test_family_treef  )
-	add_test( test_bboxf         test_bboxf         )
-	add_test( test_complexf      test_complexf      )
-#	if (NOT CGNS_ENABLE_64BIT)
-#	  add_test( cgiof cgiof)
-#	  add_test( cgwrite   cgwrite  )
-#	  add_test( cgread    cgread   )
-#	  add_test( cgzconn   cgzconn  )
-#	  add_test( cgsubreg  cgsubreg )
-#	endif (NOT CGNS_ENABLE_64BIT)
+    foreach(TARGETNAME ${FORTRAN_TESTS_LIST})
+      add_test(NAME ${TARGETNAME} COMMAND ${TARGETNAME})
+    endforeach()
   endif (CGNS_ENABLE_FORTRAN)
 endif (CGNS_ENABLE_TESTS)

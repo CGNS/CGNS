@@ -5,27 +5,30 @@
 # Link all the executables to cgns and hdf5
 if(CGNS_BUILD_SHARED)
   #link_directories(.)
-  set(C_EXAMPLE_LK_LIBS cgns_shared)
+  set(Fortran_EXAMPLE_LK_LIBS cgns_shared)
 else()
-  set(C_EXAMPLE_LK_LIBS cgns_static)
+  set(Fortran_EXAMPLE_LK_LIBS cgns_static)
 endif()
 
 if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
-  list(APPEND C_EXAMPLE_LK_LIBS ${HDF5_LIBRARY})
+  list(APPEND Fortran_EXAMPLE_LK_LIBS ${HDF5_LIBRARY})
   if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
-    list(APPEND C_EXAMPLE_LK_LIBS ${ZLIB_LIBRARY})
+    list(APPEND Fortran_EXAMPLE_LK_LIBS ${ZLIB_LIBRARY})
   endif()
   if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
-    list(APPEND C_EXAMPLE_LK_LIBS ${SZIP_LIBRARY})
+    list(APPEND Fortran_EXAMPLE_LK_LIBS ${SZIP_LIBRARY})
   endif()
   if(HDF5_NEED_MPI AND MPI_LIBS)
-    list(APPEND C_EXAMPLE_LK_LIBS ${MPI_LIBS})
+    list(APPEND Fortran_EXAMPLE_LK_LIBS ${MPI_LIBS})
   endif()
 endif ()
 
 if (NOT WIN32)
-  list(APPEND C_EXAMPLE_LK_LIBS m)
+  list(APPEND Fortran_EXAMPLE_LK_LIBS m)
 endif ()
+
+# Add a prefix to differentiate from C example's executables
+set(PREFIX "Fortran_")
 
 # Set the files needed by each test
 set (examples
@@ -40,7 +43,6 @@ set (examples
 	write_dimensional
 	write_flowcent_str
 	write_flowcentrind_str
-	write_discreteface_str
 	write_floweqn_str
 	write_flowvert_str
 	write_flowvert_unst
@@ -58,7 +60,6 @@ set (examples
 	read_dimensional
 	read_flowcent_str
 	read_flowcentrind_str
-	read_discreteface_str
 	read_floweqn_str
 	read_flowvert_str
 	read_flowvert_unst
@@ -71,9 +72,9 @@ set (examples
 
 # Build each test
 foreach (example ${examples})
-  add_executable (${example} ${example}.c)
-  target_link_libraries(${example} PRIVATE ${C_EXAMPLE_LK_LIBS})
-endforeach (example ${examples})
+  add_executable (${PREFIX}${example} ${example}.F90)
+  target_link_libraries(${PREFIX}${example} PRIVATE ${Fortran_EXAMPLE_LK_LIBS})
+endforeach ()
 
 # Add the tests so that ctest can find them
 #if (CGNS_ENABLE_TESTS)
