@@ -43,4 +43,7 @@ set (examples
 foreach (example ${examples})
   add_executable (${example} ${example}.c)
   target_link_libraries(${example} PRIVATE ${C_PARA_EXAMPLE_LK_LIBS})
+  add_test(NAME test-${example}
+           COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAGS} "2"
+           ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${example}> ${MPIEXEC_POSTFLAGS})
 endforeach (example ${examples})
