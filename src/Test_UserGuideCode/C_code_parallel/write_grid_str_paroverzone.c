@@ -100,7 +100,7 @@ int main(int argc, const char* argv[])
    for (idxLocalZone = 0; idxLocalZone < maxLocalZone; ++idxLocalZone)
      {
        const int idxGlobalZone = idxGlobalZoneBeg + idxLocalZone;
-       int s_rmin[3], s_rmax[3], m_dimvals[3], m_rmin[3], m_rmax[3];
+       cgsize_t s_rmin[3], s_rmax[3], m_dimvals[3], m_rmin[3], m_rmax[3];
        double *x = NULL;
        double *y = NULL;
        double *z = NULL;

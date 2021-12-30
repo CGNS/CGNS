@@ -582,6 +582,8 @@ if (CGNS_ENABLE_FORTRAN)
   endif (FORTRAN_NAMING)
   set(cgns_FILES ${cgns_C_FILES} ${cgns_F_FILES})
   add_library(cgns_f2c OBJECT cgns_f.F90)
+  # shared libraries need PIC
+  set_property(TARGET cgns_f2c PROPERTY POSITION_INDEPENDENT_CODE 1)
 else (CGNS_ENABLE_FORTRAN)
   set(cgns_FILES ${cgns_C_FILES})
 endif (CGNS_ENABLE_FORTRAN)
