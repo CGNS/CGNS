@@ -77,9 +77,9 @@ Tesselate (Tcl_Interp *interp, int argc, char* argv [])
 
    assert (vtx != NULL);
 
-   gluTessCallback(obj, GLU_BEGIN, glBegin);
-   gluTessCallback(obj, GLU_VERTEX, glVertex3fv);
-   gluTessCallback(obj, GLU_END, glEnd);
+   gluTessCallback(obj, GLU_BEGIN,  (GLvoid(APIENTRY*)()) &glBegin);
+   gluTessCallback(obj, GLU_VERTEX, (GLvoid(APIENTRY*)()) &glVertex3fv);
+   gluTessCallback(obj, GLU_END,    (GLvoid(APIENTRY*)()) &glEnd);
    gluTessCallback(obj, GLU_ERROR, (TessCallback) TessError);
    if (edgeflags) gluTessCallback (obj, GLU_EDGE_FLAG, (TessCallback) glEdgeFlag);
    if (dlist == -1) dlist = glGenLists (1);

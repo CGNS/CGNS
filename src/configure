@@ -7778,7 +7778,7 @@ SIZEOF_VOID_P="$ac_cv_sizeof_void_p"
 
 
 
-ac_config_files="$ac_config_files cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h cg_hash_types.h Makefile make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig"
+ac_config_files="$ac_config_files cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h cg_hash_types.h Makefile make.defs cgnsBuild.defs tests/Makefile tools/Makefile Test_UserGuideCode/C_code_parallel/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig"
 
 
 
@@ -8412,6 +8412,7 @@ do
     "cgnsBuild.defs") CONFIG_FILES="$CONFIG_FILES cgnsBuild.defs" ;;
     "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
     "tools/Makefile") CONFIG_FILES="$CONFIG_FILES tools/Makefile" ;;
+    "Test_UserGuideCode/C_code_parallel/Makefile") CONFIG_FILES="$CONFIG_FILES Test_UserGuideCode/C_code_parallel/Makefile" ;;
     "ptests/Makefile") CONFIG_FILES="$CONFIG_FILES ptests/Makefile" ;;
     "cgnstools/Makefile") CONFIG_FILES="$CONFIG_FILES cgnstools/Makefile" ;;
     "cgnstools/make.defs") CONFIG_FILES="$CONFIG_FILES cgnstools/make.defs" ;;

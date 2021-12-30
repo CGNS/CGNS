@@ -81,6 +81,7 @@ runtests : $(CGNSLIB)
 
 runptests : $(CGNSLIB)
 	cd ptests && $(MAKE) test
+	cd Test_UserGuideCode/C_code_parallel && $(MAKE) test
 
 #----------
 
