@@ -7791,7 +7791,7 @@ int cg_conn_info(int file_number, int B, int Z, int J, char *connectname,
     *ndata_donor = conn->dptset.npts;
     *donor_ptset_type = conn->dptset.type;
 
-    /* Split donorname in into BaseName + zoneName */
+    /* Split donorname into BaseName + zoneName */
     separator = strchr(donorname, '/');
     if (separator != NULL) {
         /* get ending zoneName */
