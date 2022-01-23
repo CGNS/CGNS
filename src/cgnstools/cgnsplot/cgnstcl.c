@@ -13,6 +13,12 @@
 #include "cgnslib.h"
 #include "hash.h"
 
+#ifdef CG_BUILD_BASESCOPE
+typedef char char_66[66]; /* 32 + '/' + 32 + '\0' */
+#else
+typedef char char_66[33]; /* 32 + '\0' (caller's malloc compat issues) */
+#endif
+
 /* define this to exclude structured mesh boundaries */
 /* imin, imax, jmin, jmax, kmin, kmax */
 
@@ -87,7 +93,7 @@ typedef struct {
     int type;
     int dim;
     cgsize_t data[10];
-    char d_name[33];
+    char_66 d_name;
     cgsize_t nedges;
     Edge *edges;
     cgsize_t nfaces;
@@ -849,7 +855,8 @@ static int structured_list (Regn *mesh, Regn *reg, cgsize_t *dim, cgsize_t npts,
 
 static int structured_zone (Tcl_Interp *interp, cgsize_t *dim)
 {
-    char name[33], d_name[33];
+    char name[33];
+    char_66 d_name;
     int nints, nconns, nbocos, nholes, ii, nn, nr, nsets;
     cgsize_t i, j, k, n, ni, nj, nk, nf, ne, fn;
     cgsize_t npts, *pts, ndpts;
@@ -2007,7 +2014,8 @@ static int unstructured_zone (Tcl_Interp *interp)
     CGNS_ENUMT(DataType_t) datatype;
     CGNS_ENUMT(BCType_t) bctype;
     CGNS_ENUMT(ElementType_t) elemtype;
-    char name[33], d_name[33];
+    char name[33];
+    char_66 d_name;
     Zone *z = &zones[cgnszone-1];
     static char *funcname = "unstructured_zone";
     static char *dspmsg = "finding exterior faces for";
