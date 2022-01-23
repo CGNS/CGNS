@@ -3634,7 +3634,8 @@ static void check_zoneBC (void)
 
 static void check_1to1 (int nzc, int nc)
 {
-    char name[33], dname[33], *desc;
+    char name[33], *desc;
+    char_66 dname;
     int ierr, n, nd, trans[3];
     cgsize_t range[6], drange[6];
     ZONE *z = &Zones[cgnszone-1], *dz;
@@ -3849,7 +3850,8 @@ static void check_1to1 (int nzc, int nc)
 
 static void check_conn (int nzc, int nc)
 {
-    char name[33], dname[33], *desc;
+    char name[33], *desc;
+    char_66 dname;
     int ierr, n, nd, ndim;
     cgsize_t npts, dnpts, dims[12];
     int interp;
@@ -3964,7 +3966,9 @@ static void check_conn (int nzc, int nc)
         error ("point set type is not PointList or PointRange");
         ierr++;
     }
-
+    /* Do not try checking when donor is in a remote base */
+    if (strchr(dname, '/') != NULL)
+        return;
     for (dz = NULL, n = 0; n < NumZones; n++) {
         if (0 == strcmp (dname, Zones[n].name)) {
             dz = &Zones[n];
@@ -4687,7 +4691,8 @@ static void check_solution (int ns)
 
 static cgsize_t subreg_size(int dim, int isBC, char *subname)
 {
-    char name[33], dname[33], *p;
+    char name[33], *p;
+    char_66 dname;
     int n, nbc, ni, nc, nzc, nn, ns, nsets, trans[3];
     cgsize_t npnts, dnpnts, nsize, range[6], drange[6];
     CGNS_ENUMT(BCType_t) bctype;
