@@ -98,11 +98,11 @@ test : $(TESTS)
              printf "\n";\
 	   else \
 	     printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
-	     status=1; \
+             status=`expr $$status + 1`; \
 	   fi; \
 	 done; \
 	 echo "=== finished ==="; \
-         if test $$status == 1; then \
+         if [ $$status -ne 0 ]; then \
            printf "$(ERROR_COLOR)"; \
          else \
            printf "$(OK_COLOR)"; \
