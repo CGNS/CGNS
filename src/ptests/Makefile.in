@@ -73,7 +73,7 @@ test : $(TESTS)
                      printf "\n";\
 	           else \
 	              printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
-                      status=`expr $$status + 1`; \
+                      status=$(shell echo $$(($(status)+1))); \
 	            fi; \
 	            args="-sec2"; \
 		done;\
@@ -89,7 +89,7 @@ test : $(TESTS)
                printf "\n";\
 	     else \
 	       printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
-               status=`expr $$status + 1`; \
+               status=$(shell echo $$(($(status)+1))); \
 	     fi; \
            fi;\
 	 done; \
