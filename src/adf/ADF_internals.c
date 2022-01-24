@@ -155,7 +155,7 @@ bytes   start   end   description      range / format
 
 
    Variable: min   32   Data-chunks
-(Minimum is 32 bytes, which cooresponds to the size required for a free-chunk)
+(Minimum is 32 bytes, which corresponds to the size required for a free-chunk)
 bytes   start   end   description      range / format
   4    0    3   "DaTa" boundary tag      Tag
  12    4   15   Pointer to End-of-Data-Tag
