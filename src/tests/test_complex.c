@@ -285,7 +285,7 @@ void test_complex_solution()
   cg_error_print();
   cgi_error("no CGNS error reported"); /* reset */
  
-  /* This aliasing should work to garantee that complex float matches float[2] */
+  /* This aliasing should work to guarantee that complex float matches float[2] */
   if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Pressure", CGNS_ENUMV(ComplexSingle), rmin, rmax, fbuf))
     error_exit("Error reading ComplexSingle data to real single data");
 
@@ -297,7 +297,7 @@ void test_complex_solution()
   cg_error_print();
   cgi_error("no CGNS error reported"); /* reset */
 
-  /* This aliasing should work to garantee that complex double matches double[2] */
+  /* This aliasing should work to guarantee that complex double matches double[2] */
   if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Pressure", CGNS_ENUMV(ComplexDouble), rmin, rmax, dbuf))
     error_exit("Error reading ComplexDouble data to real double data");
 
@@ -342,7 +342,7 @@ void test_complex_solution()
   cg_error_print();
   cgi_error("no CGNS error reported"); /* reset */
  
-  /* This aliasing should work to garantee that complex float matches float[2] */
+  /* This aliasing should work to guarantee that complex float matches float[2] */
   if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Velocity", CGNS_ENUMV(ComplexSingle), rmin, rmax, fbuf))
     error_exit("Error reading ComplexDouble data to real single data");
 
@@ -354,7 +354,7 @@ void test_complex_solution()
   cg_error_print();
   cgi_error("no CGNS error reported"); /* reset */
 
-  /* This aliasing should work to garantee that complex double matches double[2] */
+  /* This aliasing should work to guarantee that complex double matches double[2] */
   if (cg_field_read(cgfile, cgbase, cgzone, cgsol, "Velocity", CGNS_ENUMV(ComplexDouble), rmin, rmax, dbuf))
     error_exit("Error reading ComplexDouble data to real double data");
 

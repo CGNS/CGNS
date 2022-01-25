@@ -142,8 +142,8 @@ int main (int argc, char **argv)
     if (cg_grid_bounding_box_read(cgfile, cgbase, cgzone, 1, CGNS_ENUMV(RealDouble), bbox)){
         cg_error_exit ();
     }
-    CHECK("Read bouding box", bbox[0][0] == 0.0);
-    CHECK("Read bouding box", bbox[1][0] == (double)(NUM_SIDE*NUM_SIDE*NUM_SIDE -1));
+    CHECK("Read bounding box", bbox[0][0] == 0.0);
+    CHECK("Read bounding box", bbox[1][0] == (double)(NUM_SIDE*NUM_SIDE*NUM_SIDE -1));
 
     puts ("closing and reopening to test limit cases");
     if (cg_close (cgfile))

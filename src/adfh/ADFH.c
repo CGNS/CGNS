@@ -158,7 +158,7 @@ printf aaa ; printf("\n"); fflush(stdout);
 
 #define ADFH_MAXIMUM_FILES 128
 
-/* Start to prepare re-entrance into lib, gather statics in one global struct  */
+/* Start to prepare re-entrance into lib, gather static variables in one global struct  */
 /* Then, you'll just have to handle struct with something else but a static... */
 /* MTA stands for... Multi-Threads-Aware */
 typedef struct _ADFH_MTA {
