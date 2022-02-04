@@ -9,6 +9,4 @@
 #########################################################################################
 
 queries:
-- exclude: cpp/toctou-race-condition 
-- exclude: cpp/short-global-name
-
+- exclude: cpp/toctou-race-condition
