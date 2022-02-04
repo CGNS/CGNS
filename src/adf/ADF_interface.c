@@ -1596,7 +1596,7 @@ if ( lenfilename == 0 )  /** no filename **/
 {
    strcpy( name_in_file, &link_data[1] );
 }
-else if ( lenfilename > 0 && lenfilename == strlen( link_data ) )
+else if ( lenfilename == strlen( link_data ) )
 {
    strcpy( file, link_data) ;  /** no link ? **/
 }
@@ -1688,7 +1688,7 @@ if ( lenfilename == 0 )  /** no filename **/
 {
    *len_name = (int)strlen(link_data) - 1;
 }
-else if ( lenfilename > 0 && lenfilename == strlen( link_data ) )
+else if ( lenfilename == strlen( link_data ) )
 {
    *len_file = (int)lenfilename;
 }
