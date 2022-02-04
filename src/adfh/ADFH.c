@@ -2013,7 +2013,7 @@ void ADFH_Children_Names(const double pid,
 #endif
 
   /*initialize names to null*/
-  memset(names, 0, ilen*name_length);
+  memset(names, 0, (size_t)ilen*(size_t)name_length);
   if ((hpid = open_node(pid, err)) >= 0) {
 #if H5_VERSION_GE(1,12,0)
     H5Literate2(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
