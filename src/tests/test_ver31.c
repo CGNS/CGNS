@@ -689,7 +689,7 @@ void write_unstructured()
         transform = 1;
         if (cg_1to1_write(cgfile, cgbase, 1, name, "Zone2",
                 range, d_range, &transform, &cgconn)) {
-            sprintf(errmsg, "Zone1/%s/%s", name);
+            sprintf(errmsg, "Zone1/%s/%s", zcname, name);
             error_exit(errmsg);
         }
 
