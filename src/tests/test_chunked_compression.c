@@ -112,7 +112,6 @@ int main(int argc, char* argv[]) {
 
   size_t Mb_coor, Mb_elem, Mb_field, Mb_array;
 
-  double DimY = 10.0;
   double dy;
   double dval;
   cgsize_t i;
@@ -137,6 +136,7 @@ int main(int argc, char* argv[]) {
   nijk[1] = Nelem; /* Number of cells */
   nijk[2] = 0; /* Number of boundary vertices */
 
+  double DimY = 10.0;
   dy = DimY/nnY;
 
   /* Compute the size of the arrays */
@@ -270,7 +270,7 @@ int main(int argc, char* argv[]) {
     for (size_t i = 0; i < cd_nelmts; i++)
       (*filter).params[i] =  cd_values[i];
     
-    printf("%u cd_values= ",cd_nelmts);
+    printf("%zu cd_values= ",cd_nelmts);
     for (int i = 0; i < cd_nelmts; i++)
       printf("%u,", (*filter).params[i]);
     printf("\n");
