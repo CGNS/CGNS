@@ -7,7 +7,7 @@
 
 /*--------------------------------------------------------------------------
  *
- *  Main Procedure for generating tesselations
+ *  Main Procedure for generating tessellations
  *
  *--------------------------------------------------------------------------*/
 

@@ -807,7 +807,7 @@ MODULE cgns
   END ENUM
 
 ! For portability to Linux Absoft, all data statements were moved after the
-! variables and parametres declarations
+! variables and parameters declarations
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Dimensional Units                                              *

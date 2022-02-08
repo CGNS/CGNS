@@ -36,8 +36,10 @@ TESTS = $(ALL)
 TIMING_AVAIL:=$(shell /usr/bin/time -a -o CGNS_timing.txt -f "%e" pwd > /dev/null; echo $$?)
 ifeq ("$(TIMING_AVAIL)" , "0")
   TIMING = /usr/bin/time -a -o CGNS_timing.txt -f "$$x %e" $(MPIEXEC) ./$$x $$args >/dev/null 2>&1
+  TIMING_ARGS = /usr/bin/time -a -o CGNS_timing.txt -f "$$x %e" $(MPIEXEC) ./$$x $$args >/dev/null 2>&1
 else
   TIMING = $(MPIEXEC) ./$$x $$args >/dev/null 2>&1
+  TIMING_ARGS = $(MPIEXEC) ./$$x $$args >/dev/null 2>&1
 endif
 
 all : $(ALL)
@@ -66,10 +68,14 @@ test : $(TESTS)
 	           if `$(TIMING)` ; then \
                       itime=$$(tail -n1 CGNS_timing.txt |  awk  '{print $$2}' | sed -e 's/$$/ sec/'); \
 		      printf " [$(OK_COLOR)PASSED$(NO_COLOR)]"; \
-	              printf " %+12s\n" "$$itime";\
+                      if [ -f "CGNS_timing.txt" ]; then \
+                        itime=$$(tail -n1 CGNS_timing.txt |  awk  '{print $$2}' | sed -e 's/$$/ sec/'); \
+	                printf " %+12s" "$$itime";\
+                      fi; \
+                      printf "\n";\
 	           else \
 	              printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
-                      status=$(($$status + 1)); \
+                      status=`expr $$status + 1`; \
 	            fi; \
 	            args="-sec2"; \
 		done;\
@@ -78,12 +84,15 @@ test : $(TESTS)
 	     printf "$$xx"; \
 	     printf ' %*.*s' 0 $$((padlength - $${#xx} )) "$$pad"; \
 	     if `$(TIMING)` ; then \
-               itime=$$(tail -n1 CGNS_timing.txt |  awk  '{print $$2}' | sed -e 's/$$/ sec/'); \
 	       printf " [$(OK_COLOR)PASSED$(NO_COLOR)]"; \
-	       printf " %+12s\n" "$$itime";\
+               if [ -f "CGNS_timing.txt" ]; then \
+                 itime=$$(tail -n1 CGNS_timing.txt |  awk  '{print $$2}' | sed -e 's/$$/ sec/'); \
+	         printf " %+12s" "$$itime";\
+               fi; \
+               printf "\n";\
 	     else \
 	       printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
-               status=$(($$status + 1)); \
+               status=`expr $$status + 1`; \
 	     fi; \
            fi;\
 	 done; \

@@ -313,15 +313,15 @@ PROGRAM benchmark_hdf5_f90
        filter%nparams = H5Z_ZFP_CD_NELMTS_MAX
 
        IF (zfpmode .EQ. H5Z_ZFP_MODE_RATE)THEN
-          H5Pset_zfp_rate_cdata(rate, filter%nparams, f_param)
+          CALL H5Pset_zfp_rate_cdata(rate, filter%nparams, f_param)
        ELSE IF (zfpmode .EQ. H5Z_ZFP_MODE_PRECISION) THEN
-          H5Pset_zfp_precision_cdata(prec, filter%nparams, f_param)
+          CALL H5Pset_zfp_precision_cdata(prec, filter%nparams, f_param)
        ELSE IF (zfpmode .EQ. H5Z_ZFP_MODE_ACCURACY) THEN
-          H5Pset_zfp_accuracy_cdata(acc, filter%nparams, f_param)
+          CALL H5Pset_zfp_accuracy_cdata(acc, filter%nparams, f_param)
        ELSE IF (zfpmode .EQ. H5Z_ZFP_MODE_EXPERT) THEN
-          H5Pset_zfp_expert_cdata(minbits, maxbits, maxprec, minexp, filter%nparams, f_param)
+          CALL H5Pset_zfp_expert_cdata(minbits, maxbits, maxprec, minexp, filter%nparams, f_param)
        ELSE IF (zfpmode .EQ. H5Z_ZFP_MODE_REVERSIBLE) THEN
-          H5Pset_zfp_reversible_cdata(filter%nparams, f_param)
+          CALL H5Pset_zfp_reversible_cdata(filter%nparams, f_param)
        ELSE
           filter%nparams = 0 ! causes default behavior of ZFP library
        ENDIF

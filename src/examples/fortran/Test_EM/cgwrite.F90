@@ -88,7 +88,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_model_write_f('EMMagneticFieldModel_t', &
-          Interpolated,ier)
+          CGNS_ENUMV(Interpolated),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 ! end KMW Electromagnetics extension
