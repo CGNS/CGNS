@@ -63,9 +63,9 @@ void cgfree(void *freedata) {
     free_calls++;
 }
 
-size_t cgmemnow() {return mem_now;}
-size_t cgmemmax() {return mem_max;}
+size_t cgmemnow(void) {return mem_now;}
+size_t cgmemmax(void) {return mem_max;}
 
-size_t cgalloccalls() {return alloc_calls;}
-size_t cgfreecalls()  {return free_calls;}
+size_t cgalloccalls(void) {return alloc_calls;}
+size_t cgfreecalls(void)  {return free_calls;}
 
