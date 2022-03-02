@@ -1034,8 +1034,8 @@ CGNSDLL cgns_subreg    *cgi_get_subreg   (cgns_file *cg, int B, int Z, int S);
 CGNSDLL int cgi_update_posit(int cnt, int *index, char **label);
 CGNSDLL int cgi_set_posit(int fn, int B, int n, int *index, char **label);
 CGNSDLL int cgi_posit_id(double *posit_id);
-CGNSDLL cgns_posit *cgi_get_posit();
-CGNSDLL int cgi_posit_index_dim();
+CGNSDLL cgns_posit *cgi_get_posit(void);
+CGNSDLL int cgi_posit_index_dim(void);
 
 /* retrieve memory address of multiple patch children knowing their parent label
    (posit_label) and their parent memory address (posit) */
@@ -1067,7 +1067,7 @@ cgns_dataset * cgi_bcdataset_address(int local_mode, int given_no,
     char const *given_name, int *ier);
 
 /* read CGNS file into internal database */
-int cgi_read();
+int cgi_read(void);
 int cgi_read_base(cgns_base *base);
 int cgi_read_zone(cgns_zone *zone);
 int cgi_read_zonetype(double parent_id, char_33 parent_name, CGNS_ENUMT(ZoneType_t) *type);

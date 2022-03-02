@@ -11,9 +11,9 @@ extern void  *cgrealloc(void *,size_t);
 extern void  *cgcalloc(size_t,size_t);
 extern void   cgfree(void *);
 
-extern size_t cgmemnow();
-extern size_t cgmemmax();
-extern size_t cgalloccalls();
-extern size_t cgfreecalls();
+extern size_t cgmemnow(void);
+extern size_t cgmemmax(void);
+extern size_t cgalloccalls(void);
+extern size_t cgfreecalls(void);
 
 #endif
