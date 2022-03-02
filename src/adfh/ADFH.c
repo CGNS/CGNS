@@ -158,7 +158,7 @@ printf aaa ; printf("\n"); fflush(stdout);
 
 #define ADFH_MAXIMUM_FILES 128
 
-/* Start to prepare re-entrance into lib, gather statics in one global struct  */
+/* Start to prepare re-entrance into lib, gather static variables in one global struct  */
 /* Then, you'll just have to handle struct with something else but a static... */
 /* MTA stands for... Multi-Threads-Aware */
 typedef struct _ADFH_MTA {
@@ -1717,7 +1717,7 @@ void ADFH_Get_Label(const double  id,
 {
   hid_t hid;
   char bufflabel[ADF_LABEL_LENGTH+1] = "";
-  ADFH_DEBUG((">ADFH_Get_Label [%d]",id));
+  ADFH_DEBUG((">ADFH_Get_Label [%f]",id));
 
   if (label == NULL) {
     set_error(NULL_STRING_POINTER, err);
@@ -1928,8 +1928,6 @@ void ADFH_Get_Node_ID(const double  pid,
   hid_t sid, hpid;
   to_HDF_ID(pid,hpid);
 
-  ADFH_DEBUG((">ADFH_Get_Node_ID [%s][%d]",name,hpid));
-
   if (name == NULL) {
     set_error(NULL_STRING_POINTER, err);
     return;
@@ -1938,6 +1936,8 @@ void ADFH_Get_Node_ID(const double  pid,
     set_error(NULL_NODEID_POINTER, err);
     return;
   }
+
+  ADFH_DEBUG((">ADFH_Get_Node_ID [%s][%d]",name,hpid));
 
   *id = 0;
   set_error(NO_ERROR, err);
@@ -2013,7 +2013,7 @@ void ADFH_Children_Names(const double pid,
 #endif
 
   /*initialize names to null*/
-  memset(names, 0, ilen*name_length);
+  memset(names, 0, (size_t)ilen*(size_t)name_length);
   if ((hpid = open_node(pid, err)) >= 0) {
 #if H5_VERSION_GE(1,12,0)
     H5Literate2(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
@@ -2114,8 +2114,6 @@ void ADFH_Database_Open(const char   *name,
   int i, pos, mode;
   hid_t g_propfileopen;
 
-  ADFH_DEBUG(("ADFH_Database_Open [%s]",name));
-
   /* to be thread safe, should have critical section here */
   if (mta_root==NULL)
   {
@@ -2155,6 +2153,8 @@ void ADFH_Database_Open(const char   *name,
     set_error(NULL_STRING_POINTER, err);
     return;
   }
+
+  ADFH_DEBUG(("ADFH_Database_Open [%s]",name));
 
   /* get open mode */
 
@@ -2572,7 +2572,7 @@ void ADFH_Database_Close(const double  root,
 
     nobj = H5Fget_obj_count(fid, H5F_OBJ_DATATYPE|H5F_OBJ_LOCAL);
 #ifdef ADFH_DEBUG_ON
-    printf("%s close DataType [%d] HIDs\n",ADFH_PREFIX,nobj);
+    printf("%s close DataType [%zd] HIDs\n",ADFH_PREFIX,nobj);
 #endif
     if (nobj) {
       H5Fget_obj_ids(fid, H5F_OBJ_DATATYPE|H5F_OBJ_LOCAL, -1, objs);
@@ -2584,7 +2584,7 @@ void ADFH_Database_Close(const double  root,
 
     nobj = H5Fget_obj_count(fid, H5F_OBJ_DATASET|H5F_OBJ_LOCAL);
 #ifdef ADFH_DEBUG_ON
-    printf("%s close DataSet [%d] HIDs\n",ADFH_PREFIX,nobj);
+    printf("%s close DataSet [%zd] HIDs\n",ADFH_PREFIX,nobj);
 #endif
     if (nobj) {
       H5Fget_obj_ids(fid, H5F_OBJ_DATASET|H5F_OBJ_LOCAL, -1, objs);
@@ -2596,7 +2596,7 @@ void ADFH_Database_Close(const double  root,
 
     nobj = H5Fget_obj_count(fid, H5F_OBJ_ATTR|H5F_OBJ_LOCAL);
 #ifdef ADFH_DEBUG_ON
-    printf("%s close Attr [%d] HIDs\n",ADFH_PREFIX,nobj);
+    printf("%s close Attr [%zd] HIDs\n",ADFH_PREFIX,nobj);
 #endif
     if (nobj) {
       H5Fget_obj_ids(fid, H5F_OBJ_ATTR|H5F_OBJ_LOCAL, -1, objs);
@@ -2608,7 +2608,7 @@ void ADFH_Database_Close(const double  root,
 
     nobj = H5Fget_obj_count(fid, H5F_OBJ_GROUP|H5F_OBJ_LOCAL);
 #ifdef ADFH_DEBUG_ON
-    printf("%s close Group [%d] HIDs\n",ADFH_PREFIX,nobj);
+    printf("%s close Group [%zd] HIDs\n",ADFH_PREFIX,nobj);
 #endif
     if (nobj) {
       H5Fget_obj_ids(fid, H5F_OBJ_GROUP|H5F_OBJ_LOCAL, -1, objs);
@@ -3229,7 +3229,7 @@ void ADFH_Library_Version(char *version,
     return;
   }
   H5get_libversion(&maj, &min, &rel);
-  sprintf(version, "HDF5 Version %d.%d.%d", maj, min, rel);
+  sprintf(version, "HDF5 Version %u.%u.%u", maj, min, rel);
   set_error(NO_ERROR, err);
 }
 

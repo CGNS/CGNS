@@ -1376,6 +1376,26 @@ if test "$parallel" = "yes"; then
 fi
 
 #--------------------------------------------------------------------------
+# check if HDF5 supports parallel I/O if parallel is enabled in CGNS 
+#--------------------------------------------------------------------------
+
+if test "$withhdf5" = "yes"; then
+  AC_MSG_CHECKING([for parallel HDF5 support])
+  if (test "x$H5CC" != "x"); then dnl check if HDF5 was configured with parallel support
+      PARALLEL_HDF5_NO="`$H5CC -showconfig | grep -i 'Parallel HDF5: no'`"
+  fi
+  if (test "x$PARALLEL_HDF5_NO" != "x"); then
+      AC_MSG_RESULT(no)
+      if test "$parallel" = "yes"; then
+         AC_MSG_ERROR([HDF5 library does not include parallel support. Either disable CGNS parallel support or build HDF5 with parallel enabled.])
+      fi
+  else
+      AC_MSG_RESULT(yes)
+  fi
+
+fi
+
+#--------------------------------------------------------------------------
 # check for libraries
 #--------------------------------------------------------------------------
 
@@ -2065,6 +2085,6 @@ AC_SUBST(SIZEOF_VOID_P)
 
 AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h \
   cg_hash_types.h Makefile make.defs cgnsBuild.defs tests/Makefile \
-  tools/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs \
+  tools/Makefile Test_UserGuideCode/C_code_parallel/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs \
   cgnstools/cgconfig)
 

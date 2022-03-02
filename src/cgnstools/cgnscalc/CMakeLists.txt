@@ -2,53 +2,59 @@
 # cgnscalc #
 ############
 
-include_directories(${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH})
-include_directories(../calclib)
+# Define source files
+if (WIN32)
+  if (HTML_HELP_INCLUDE_PATH AND HTML_HELP_LIBRARY)
+    set(cgnscalc_FILES calctcl.c winmain.c ../common/winhtml.c)
+  else ()
+    set(cgnscalc_FILES calctcl.c winmain.c)
+  endif ()
+else ()
+  set(cgnscalc_FILES
+	calctcl.c
+	calcwish.c)
+endif ()
+
+add_executable(calcwish ${cgnscalc_FILES})
+
+target_include_directories(calcwish PRIVATE ${TCL_INCLUDE_PATH} ${TK_INCLUDE_PATH})
+target_include_directories(calcwish PRIVATE ../calclib)
 
 if (CGNS_USE_SHARED)
-  link_libraries(cgns_shared)
-else (CGNS_USE_SHARED)
-  link_libraries(cgns_static)
-endif (CGNS_USE_SHARED)
-link_libraries(calclib ${TCL_LIBRARY} ${TK_LIBRARY})
+  target_link_libraries(calcwish PRIVATE cgns_shared)
+else ()
+  target_link_libraries(calcwish PRIVATE cgns_static)
+endif ()
+target_link_libraries(calcwish PRIVATE calclib ${TCL_LIBRARY} ${TK_LIBRARY})
 
 if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
-  link_libraries(${HDF5_LIBRARY})
+  target_link_libraries(calcwish PRIVATE ${HDF5_LIBRARY})
   if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
-    link_libraries(${ZLIB_LIBRARY})
-  endif(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+    target_link_libraries(calcwish PRIVATE ${ZLIB_LIBRARY})
+  endif()
   if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
-    link_libraries(${SZIP_LIBRARY})
-  endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+    target_link_libraries(calcwish PRIVATE ${SZIP_LIBRARY})
+  endif()
   if(HDF5_NEED_MPI AND MPI_LIBS)
-    link_libraries(${MPI_LIBS})
-  endif(HDF5_NEED_MPI AND MPI_LIBS)
-endif (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
+    target_link_libraries(calcwish PRIVATE ${MPI_LIBS})
+  endif()
+endif ()
 
 if (WIN32)
   if (HTML_HELP_INCLUDE_PATH AND HTML_HELP_LIBRARY)
     add_definitions(-DUSE_HTMLHELP)
-    include_directories(${HTML_HELP_INCLUDE_PATH})
-    link_libraries(${HTML_HELP_LIBRARY})
-    set(cgnscalc_FILES calctcl.c winmain.c ../common/winhtml.c)
-  else (HTML_HELP_INCLUDE_PATH AND HTML_HELP_LIBRARY)
-    set(cgnscalc_FILES calctcl.c winmain.c)
-  endif (HTML_HELP_INCLUDE_PATH AND HTML_HELP_LIBRARY)
-else (WIN32)
-  include_directories(${X11_X11_INCLUDE_PATH})
-  link_libraries(${X11_X11_LIB} m)
-  set(cgnscalc_FILES
-	calctcl.c
-	calcwish.c)
-endif (WIN32)
-
-add_executable(calcwish ${cgnscalc_FILES})
-add_dependencies(calcwish calclib cgns_static)
+    target_include_directories(calcwish PRIVATE ${HTML_HELP_INCLUDE_PATH})
+    target_link_libraries(calcwish PRIVATE ${HTML_HELP_LIBRARY})
+  endif ()
+else ()
+  target_include_directories(calcwish PRIVATE ${X11_X11_INCLUDE_PATH})
+  target_link_libraries(calcwish PRIVATE ${X11_X11_LIB} m)
+endif ()
 
 if (WIN32)
   set_target_properties(calcwish PROPERTIES
   	LINK_FLAGS /subsystem:windows)
-endif (WIN32)
+endif ()
 
 if (WIN32)
   install(TARGETS
@@ -69,7 +75,7 @@ if (WIN32)
 	unitconv.png
 	unitconv.xbm
 	DESTINATION share)
-else (WIN32)
+else ()
   install(TARGETS
 	calcwish
 	RUNTIME DESTINATION bin/cgnstools)
@@ -98,5 +104,5 @@ else (WIN32)
 	unitconv.png
 	unitconv.xbm
 	DESTINATION share/cgnstools)
-endif (WIN32)
+endif ()
 
