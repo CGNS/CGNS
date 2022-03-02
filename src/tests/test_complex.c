@@ -52,10 +52,10 @@ char errmsg[256];
 
 static float exponents[5] = {0, 1, 0, 0, 0};
 
-void init_data();
-void write_structured();
-void test_complex_solution();
-void release_data();
+void init_data(void);
+void write_structured(void);
+void test_complex_solution(void);
+void release_data(void);
 
 void error_exit (char *where)
 {

@@ -61,9 +61,9 @@ float *interp;
 
 char errmsg[128];
 
-void init_data();
-void write_structured(), write_unstructured();
-void write_mixed(), write_mismatched();
+void init_data(void);
+void write_structured(void), write_unstructured(void);
+void write_mixed(void), write_mismatched(void);
 
 void error_exit (char *where)
 {
@@ -281,7 +281,7 @@ void init_data()
     }
 }
 
-void write_reference ()
+void write_reference (void)
 {
     int n, i, ierr;
     cgsize_t dim = 1;
@@ -336,7 +336,7 @@ void write_reference ()
     }
 }
 
-void write_equationset ()
+void write_equationset (void)
 {
     int n, diff[6];
     cgsize_t dim = 1;
