@@ -1449,6 +1449,20 @@ static void read_zone (int nz)
                 }
                 pe += nn;
             }
+            /* Find if duplicate indices with same sign are present */
+            pe = es->elements;
+            for (nn = 0; nn < po[nelem]-1; nn++) {
+                for (i = nn+1; i < po[nelem]; i++) {
+                    if (pe[nn] == pe[i]) {
+                        printf("  duplicate faces indices detected in NFace_n Elements connectivity\n");
+                        ierr++;
+                        break;
+                    }
+                }
+                if (i != po[nelem]){
+                    break;
+                }
+            }
         }
         else {
             if (cg_npe (es->type, &nn) || nn <= 0) {
