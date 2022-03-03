@@ -17,6 +17,11 @@ freely, subject to the following restrictions:
 
 3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------*/
+/**
+ * \defgroup ParallelMisc Parallel Miscellaneous Routines
+ * \defgroup ParallelFile Parallel File Operations
+ * \defgroup ParallelGridCoordinate Parallel Grid Coordinate Data
+ **/ 
 
 #include <stdio.h>
 #include <stdlib.h>
