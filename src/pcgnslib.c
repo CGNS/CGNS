@@ -409,7 +409,7 @@ int cgp_mpi_info(MPI_Info info)
  *
  * \brief Set the parallel IO mode.
  *
- * \param[in] mode Parallel input/ouput mode. 
+ * \param[in] mode Parallel input/output mode. 
  * \return \ier
  * \details Sets the mode for parallel data reads and writes. The default value is \p CGP_COLLECTIVE, which allows any number of processes to access the data. 
  *  When set to \p CGP_COLLECTIVE, all processes must access the data. 
@@ -509,11 +509,11 @@ int cgp_close(int fn)
  * \param[in] fn \FILE_fn
  * \param[in] B \B_Base
  * \param[in] Z \Z_Zone
- * \param[in] type Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble. 
- * \param[in] coordname Name of the coordinate array. It is strongly advised to use the ** MSB_TODO LINK ***SIDS nomenclature conventions **** when naming the coordinate arrays to insure file compatibility. 
- * \param[out] C \C_Coordinate
+ * \param[in] type \PGRID_datatype
+ * \param[in] coordname \PGRID_coordname
+ * \param[out] C \PGRID_Coordinate
  * \return \ier
- * \details To write the data in parallel, first call /e cgp_coord_write to create an empty data node. This call is indentical 
+ * \details To write the data in parallel, first call /e cgp_coord_write to create an empty data node. This call is identical 
  * to /e cg_coord_write with /p coord_array set to NULL (no data written). The actual data is then written to the node in parallel
  * using either /e cgp_coord_write_data or /e cgp_coord_general_write_data where /p range_min and /p range_max specify the subset of coordinate data to be written by a given process. 
  */
@@ -537,9 +537,9 @@ int cgp_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) type,
  * \param[in] B \B_Base
  * \param[in] Z \Z_Zone
  * \param[in] C \C_Coordinate
- * \param[in] rmin Lower range index in file (eg., imin, jmin, kmin). 
- * \param[in] rmax Upper range index in file (eg., imax, jmax, kmax). 
- * \param[in] coords Array of coordinate values for the range prescribed. 
+ * \param[in] rmin \PGRID_range_min
+ * \param[in] rmax \PGRID_range_max
+ * \param[in] coords \PGRID_coord_array
  * \return \ier
  * \details Writes the actual data to the node in parallel, where /p rmin and /p rmax specify the subset 
  *  of coordinate data to be written by a given process. It is the 
@@ -604,15 +604,15 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
  * \param[in] fn \FILE_fn
  * \param[in] B \B_Base
  * \param[in] Z \Z_Zone
- * \param[in] C \C_Coordinate
- * \param[in] rmin Lower range index in file (eg., imin, jmin, kmin). 
- * \param[in] rmax Upper range index in file (eg., imax, jmax, kmax).
- * \param[in] m_type Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.. 
- * \param[in] m_numdim Number of dimensions of array in memory.
- * \param[in] m_arg_dimvals Dimensions of array in memory. 
- * \param[in] m_rmin Lower range index in memory (eg., imin, jmin, kmin). 
- * \param[in] m_rmax mem_range_max Upper range index in memory (eg., imax, jmax, kmax). 
- * \param[output] coords Array of coordinate values for the range prescribed.
+ * \param[in] C \PGRID_Coordinate
+ * \param[in] rmin \PGRID_range_min
+ * \param[in] rmax \PGRID_range_max
+ * \param[in] m_type \PGRID_mem_datatype
+ * \param[in] m_numdim \PGRID_mem_rank
+ * \param[in] m_arg_dimvals \PGRID_mem_dimensions 
+ * \param[in] m_rmin \PGRID_mem_range_min
+ * \param[in] m_rmax \PGRID_mem_range_max
+ * \param[output] coords \PGRID_coord_array
  * \return \ier
  * \details The \e cgp_coord_general_write_data perform data conversions if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning 
  *  this processor writes no data, then only \e fn, \e B, \e Z, and \e C need be set.  In this case, \e Z and \e C are "representative"
@@ -713,9 +713,9 @@ int cgp_coord_general_write_data(int fn, int B, int Z, int C,
  * \param[in]  B \B_Base
  * \param[in]  Z \Z_Zone
  * \param[in]  C \C_Coordinate
- * \param[in]  rmin Lower range index in file (eg., imin, jmin, kmin). 
- * \param[in]  rmax Upper range index in file (eg., imax, jmax, kmax). 
- * \param[out] coords Array of coordinate values for the range prescribed. 
+ * \param[in]  rmin \PGRID_range_min
+ * \param[in]  rmax \PGRID_range_max
+ * \param[out] coords \PGRID_coord_array
  * \return \ier
  * \details Reads the actual data to the node in parallel, where /p rmin and /p rmax specify the subset 
  *  of coordinate data to be read by a given process. It is the 
@@ -781,14 +781,14 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
  * \param[in] B \B_Base
  * \param[in] Z \Z_Zone
  * \param[in] C \C_Coordinate
- * \param[in] rmin Lower range index in file (eg., imin, jmin, kmin). 
- * \param[in] rmax Upper range index in file (eg., imax, jmax, kmax).
- * \param[in] m_type Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.. 
- * \param[in] m_numdim Number of dimensions of array in memory.
- * \param[in] m_arg_dimvals Dimensions of array in memory. 
- * \param[in] m_rmin Lower range index in memory (eg., imin, jmin, kmin). 
- * \param[in] m_rmax mem_range_max Upper range index in memory (eg., imax, jmax, kmax). 
- * \param[output] coords Array of coordinate values for the range prescribed.
+ * \param[in] rmin \PGRID_range_min
+ * \param[in] rmax \PGRID_range_max
+ * \param[in] m_type \PGRID_mem_datatype
+ * \param[in] m_numdim \PGRID_mem_rank
+ * \param[in] m_arg_dimvals \PGRID_mem_dimensions
+ * \param[in] m_rmin \PGRID_mem_range_min
+ * \param[in] m_rmax \PGRID_mem_range_max
+ * \param[output] coords \PGRID_coord_array
  * \return \ier
  * \details The \e cgp_coord_general_read_data perform data conversions if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning 
  *  this processor reads no data, then only \e fn, \e B, \e Z, and \e C need be set.  In this case, \e Z and \e C are "representative"
