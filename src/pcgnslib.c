@@ -358,6 +358,15 @@ static int check_parallel(cgns_file *cgfile)
 /*== Begin Function Definitions ==*/
 /*================================*/
 
+/**
+ * \ingroup ParallelMisc
+ *
+ * \brief Set the MPI communicator.
+ *
+ * \param[in] comm The MPI communicator to be used by the CGNS library.
+ * \details Sets the MPI communicator for parallel operations by the CGNS library. The default value is MPI_COMM_WORLD. 
+ * \return \ier
+ */
 int cgp_mpi_comm(MPI_Comm comm)
 {
     /* check if we are actually running a parallel program */
@@ -378,7 +387,15 @@ int cgp_mpi_comm(MPI_Comm comm)
 
     return ctx_cgio.pcg_mpi_initialized ? CG_OK : CG_ERROR;
 }
-
+/**
+ * \ingroup ParallelMisc
+ *
+ * \brief Set the MPI info object.
+ *
+ * \param[in] info The MPI info object to be used by the CGNS library.
+ * \return \ier
+ * \details Passes the MPI info object for parallel operations to the CGNS library. Notes for Fortran: the data type for info is an INTEGER.
+ */
 int cgp_mpi_info(MPI_Info info)
 {
     ctx_cgio.pcg_mpi_info = info;
@@ -387,7 +404,16 @@ int cgp_mpi_info(MPI_Info info)
 }
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup ParallelMisc
+ *
+ * \brief Set the parallel IO mode.
+ *
+ * \param[in] mode Parallel input/ouput mode. 
+ * \return \ier
+ * \details Sets the mode for parallel data reads and writes. The default value is \p CGP_COLLECTIVE, which allows any number of processes to access the data. 
+ *  When set to \p CGP_COLLECTIVE, all processes must access the data. 
+ */
 int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
 {
     if (mode == CGP_INDEPENDENT)
@@ -404,6 +430,14 @@ int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
 
 
 /*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelMisc
+ *
+ * \brief Exit with error message.
+ *
+ * \details Is similar to \e cg_error_exit in that the process will exit with an error message. 
+ *  However, it will also print the process rank, and call \p MPI_Abort with an exit code of 1.
+ */
 
 void cgp_error_exit(void)
 {
@@ -416,6 +450,17 @@ void cgp_error_exit(void)
 }
 
 /*===== File IO Prototypes ================================*/
+/**
+ * \ingroup ParallelFile
+ *
+ * \brief Open a file for parallel IO.
+ *
+ * \param[in]  filename \FILE_filename
+ * \param[in]  mode \FILE_mode
+ * \param[out] fn \FILE_fn
+ * \return \ier
+ * \details Similar to \e cg_open and calls that routine. The differences is that \e cgp_open explicitly sets an internal CGNS flag to indicate parallel access. 
+ */
 
 int cgp_open(const char *filename, int mode, int *fn)
 {
@@ -439,7 +484,15 @@ int cgp_open(const char *filename, int mode, int *fn)
 }
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup ParallelFile
+ *
+ * \brief Close a CGNS file.
+ *
+ * \param[in] fn \FILE_fn
+ * \return \ier
+ * \details Similar to \e cg_close and calls that routine. 
+ */
 int cgp_close(int fn)
 {
     /* reset parallel access */
@@ -448,6 +501,22 @@ int cgp_close(int fn)
 }
 
 /*===== Grid IO Prototypes ================================*/
+/**
+ * \ingroup ParallelGridCoordinate
+ *
+ * \brief Create a coordinate data node by multiple processes in a parallel fashion.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] type Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble. 
+ * \param[in] coordname Name of the coordinate array. It is strongly advised to use the ** MSB_TODO LINK ***SIDS nomenclature conventions **** when naming the coordinate arrays to insure file compatibility. 
+ * \param[out] C \C_Coordinate
+ * \return \ier
+ * \details To write the data in parallel, first call /e cgp_coord_write to create an empty data node. This call is indentical 
+ * to /e cg_coord_write with /p coord_array set to NULL (no data written). The actual data is then written to the node in parallel
+ * using either /e cgp_coord_write_data or /e cgp_coord_general_write_data where /p range_min and /p range_max specify the subset of coordinate data to be written by a given process. 
+ */
 
 int cgp_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) type,
     const char *coordname, int *C)
@@ -459,6 +528,24 @@ int cgp_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) type,
 }
 
 /*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelGridCoordinate
+ *
+ * \brief Write coordinate data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] C \C_Coordinate
+ * \param[in] rmin Lower range index in file (eg., imin, jmin, kmin). 
+ * \param[in] rmax Upper range index in file (eg., imax, jmax, kmax). 
+ * \param[in] coords Array of coordinate values for the range prescribed. 
+ * \return \ier
+ * \details Writes the actual data to the node in parallel, where /p rmin and /p rmax specify the subset 
+ *  of coordinate data to be written by a given process. It is the 
+ *  responsibility of the application to ensure that the data type for the coordinate data 
+ *  matches that as defined in the file; no conversions are done.
+ */
 
 int cgp_coord_write_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *coords)
@@ -509,10 +596,29 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
 }
 
 /*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelGridCoordinate
+ *
+ * \brief Write shaped array to a subset of grid coordinates in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] C \C_Coordinate
+ * \param[in] rmin Lower range index in file (eg., imin, jmin, kmin). 
+ * \param[in] rmax Upper range index in file (eg., imax, jmax, kmax).
+ * \param[in] m_type Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.. 
+ * \param[in] m_numdim Number of dimensions of array in memory.
+ * \param[in] m_arg_dimvals Dimensions of array in memory. 
+ * \param[in] m_rmin Lower range index in memory (eg., imin, jmin, kmin). 
+ * \param[in] m_rmax mem_range_max Upper range index in memory (eg., imax, jmax, kmax). 
+ * \param[output] coords Array of coordinate values for the range prescribed.
+ * \return \ier
+ * \details The \e cgp_coord_general_write_data perform data conversions if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning 
+ *  this processor writes no data, then only \e fn, \e B, \e Z, and \e C need be set.  In this case, \e Z and \e C are "representative"
+ *  and can point to any valid zone.
+ */
 
-/* Note: if data == NULL, meaning this processor reads no data, then
-   only fn, B, Z, and C need be set.  In this case, Z and C are "representative"
-   and can point to any valid zone */
 int cgp_coord_general_write_data(int fn, int B, int Z, int C,
                                  const cgsize_t *rmin, const cgsize_t *rmax,
                                  CGNS_ENUMT(DataType_t) m_type,
@@ -598,6 +704,24 @@ int cgp_coord_general_write_data(int fn, int B, int Z, int C,
 }
 
 /*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelGridCoordinate
+ *
+ * \brief Read coordinate data in parallel.
+ *
+ * \param[in]  fn \FILE_fn
+ * \param[in]  B \B_Base
+ * \param[in]  Z \Z_Zone
+ * \param[in]  C \C_Coordinate
+ * \param[in]  rmin Lower range index in file (eg., imin, jmin, kmin). 
+ * \param[in]  rmax Upper range index in file (eg., imax, jmax, kmax). 
+ * \param[out] coords Array of coordinate values for the range prescribed. 
+ * \return \ier
+ * \details Reads the actual data to the node in parallel, where /p rmin and /p rmax specify the subset 
+ *  of coordinate data to be read by a given process. It is the 
+ *  responsibility of the application to ensure that the data type for the coordinate data 
+ *  matches that as defined in the file; no conversions are done.
+ */
 
 int cgp_coord_read_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coords)
@@ -648,9 +772,29 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
 
 /*---------------------------------------------------------*/
 
-/* Note: if data == NULL, meaning this processor reads no data, then
-   only fn, B, Z, and C need be set.  In this case, Z and C are "representative"
-   and can point to any valid zone */
+/**
+ * \ingroup ParallelGridCoordinate
+ *
+ * \brief Read shaped array to a subset of grid coordinates in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] C \C_Coordinate
+ * \param[in] rmin Lower range index in file (eg., imin, jmin, kmin). 
+ * \param[in] rmax Upper range index in file (eg., imax, jmax, kmax).
+ * \param[in] m_type Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.. 
+ * \param[in] m_numdim Number of dimensions of array in memory.
+ * \param[in] m_arg_dimvals Dimensions of array in memory. 
+ * \param[in] m_rmin Lower range index in memory (eg., imin, jmin, kmin). 
+ * \param[in] m_rmax mem_range_max Upper range index in memory (eg., imax, jmax, kmax). 
+ * \param[output] coords Array of coordinate values for the range prescribed.
+ * \return \ier
+ * \details The \e cgp_coord_general_read_data perform data conversions if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning 
+ *  this processor reads no data, then only \e fn, \e B, \e Z, and \e C need be set.  In this case, \e Z and \e C are "representative"
+ *  and can point to any valid zone.
+ */
+
 int cgp_coord_general_read_data(int fn, int B, int Z, int C,
                                 const cgsize_t *rmin, const cgsize_t *rmax,
                                 CGNS_ENUMT(DataType_t) m_type,
