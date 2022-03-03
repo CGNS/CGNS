@@ -612,7 +612,7 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
  * \param[in] m_arg_dimvals \PGRID_mem_dimensions 
  * \param[in] m_rmin \PGRID_mem_range_min
  * \param[in] m_rmax \PGRID_mem_range_max
- * \param[output] coords \PGRID_coord_array
+ * \param[out] coords \PGRID_coord_array
  * \return \ier
  * \details The \e cgp_coord_general_write_data perform data conversions if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning 
  *  this processor writes no data, then only \e fn, \e B, \e Z, and \e C need be set.  In this case, \e Z and \e C are "representative"
@@ -788,7 +788,7 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
  * \param[in] m_arg_dimvals \PGRID_mem_dimensions
  * \param[in] m_rmin \PGRID_mem_range_min
  * \param[in] m_rmax \PGRID_mem_range_max
- * \param[output] coords \PGRID_coord_array
+ * \param[out] coords \PGRID_coord_array
  * \return \ier
  * \details The \e cgp_coord_general_read_data perform data conversions if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning 
  *  this processor reads no data, then only \e fn, \e B, \e Z, and \e C need be set.  In this case, \e Z and \e C are "representative"
