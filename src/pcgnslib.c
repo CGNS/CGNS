@@ -21,6 +21,7 @@ freely, subject to the following restrictions:
  * \defgroup ParallelMisc Parallel Miscellaneous Routines
  * \defgroup ParallelFile Parallel File Operations
  * \defgroup ParallelGridCoordinate Parallel Grid Coordinate Data
+ * \defgroup ElementConnectivityData Parallel Element Connectivity Data
  **/ 
 
 #include <stdio.h>
@@ -776,7 +777,6 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
 }
 
 /*---------------------------------------------------------*/
-
 /**
  * \ingroup ParallelGridCoordinate
  *
@@ -885,6 +885,28 @@ int cgp_coord_general_read_data(int fn, int B, int Z, int C,
 }
 
 /*===== Elements IO Prototypes ============================*/
+/* TODO: ref. cg_section_write 
+   Add somewhere: (Note that for Fortran calls, all integer arguments are integer*4 in 32-bit mode and integer*8 in 64-bit mode. See 64-bit Fortran Portability and Issues.)
+*/
+/**
+ * \ingroup ElementConnectivityData
+ *
+ * \brief Create a section data node.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] sectionname  \PCONN_ElementSectionName
+ * \param[in] type \PCONN_type
+ * \param[in] start \PCONN_start
+ * \param[in] end \PCONN_end
+ * \param[in] nbndry \PCONN_nbndry
+ * \param[out] S \PCONN_S
+ * \return \ier
+ * \details \p cgp_section_write is used to write element connectivity data by multiple processes in a parallel fashion. To write the element data in parallel, first call \e cgp_section_write to create an empty data node. This call is identical to \e cg_section_write with \e Elements set to \e NULL (no data written). The actual element data is then written to the node in parallel using \p cgp_element_write_data where \e start and \e end specify the range of the elements to be written by a given process.
+ * NOTE (1): Routine only works for constant sized elements, since it is not possible to compute file offsets for variable sized elements without knowledge of the entire element connectivity data.
+ * NOTE (2): It is the responsibility of the application to ensure that \e cgsize_t in the application is the same size as that defined in the file; no conversions are done.
+ */
 
 int cgp_section_write(int fn, int B, int Z, const char *sectionname,
     CGNS_ENUMT(ElementType_t) type, cgsize_t start, cgsize_t end,
@@ -900,6 +922,26 @@ int cgp_section_write(int fn, int B, int Z, const char *sectionname,
     return cg_section_partial_write(fn, B, Z, sectionname, type,
                start, end, nbndry, S);
 }
+/**
+ * \ingroup ElementConnectivityData
+ *
+ * \brief Create a section data node.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] sectionname  \PCONN_ElementSectionName
+ * \param[in] type \PCONN_type
+ * \param[in] start \PCONN_start
+ * \param[in] end \PCONN_end
+ * \param[in] maxoffset \PCONN_MaxOffset
+ * \param[in] nbndry \PCONN_nbndry
+ * \param[out] S \PCONN_S
+ * \return \ier
+ * \details \p cgp_poly_section_write is used to write element connectivity data by multiple processes in a parallel fashion. To write the element data in parallel, first call \e cgp_section_write to create an empty data node. This call is identical to \e cg_section_write with \e Elements set to \e NULL (no data written). The actual element data is then written to the node in parallel using \p cgp_element_write_data where \e start and \e end specify the range of the elements to be written by a given process.
+ * NOTE (1): Routine only works for constant sized elements, since it is not possible to compute file offsets for variable sized elements without knowledge of the entire element connectivity data.
+ * NOTE (2): It is the responsibility of the application to ensure that \e cgsize_t in the application is the same size as that defined in the file; no conversions are done.
+ */
 
 int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
     CGNS_ENUMT(ElementType_t) type, cgsize_t start, cgsize_t end, cgsize_t maxoffset,
@@ -929,7 +971,23 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
 }
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup ElementConnectivityData
+ *
+ * \brief Write element data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \PCONN_S
+ * \param[in] start \PCONN_start
+ * \param[in] end \PCONN_end
+ * \param[in] elements \PCONN_Elements
+ * \return \ier
+ * \details \p cgp_elements_write_data is used to write element connectivity data by multiple processes in a parallel fashion. To write the element data in parallel, first call \e cgp_section_write to create an empty data node. This call is identical to \e cg_section_write with \e Elements set to \e NULL (no data written). The actual element data is then written to the node in parallel using \p cgp_element_write_data where \e start and \e end specify the range of the elements to be written by a given process.
+ * NOTE (1): Routine only works for constant sized elements, since it is not possible to compute file offsets for variable sized elements without knowledge of the entire element connectivity data.
+ * NOTE (2): It is the responsibility of the application to ensure that \e cgsize_t in the application is the same size as that defined in the file; no conversions are done.
+ */
 int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     cgsize_t end, const cgsize_t *elements)
 {
@@ -976,7 +1034,21 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
 }
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup ElementConnectivityData
+ *
+ * \brief Write element data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \PCONN_S
+ * \param[in] start \PCONN_start
+ * \param[in] end \PCONN_end
+ * \param[in] elements \PCONN_Elements
+ * \param[in] offsets \PCONN_Offsets
+ * \return \ier
+ */
 int cgp_poly_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
                             cgsize_t end, const cgsize_t *elements, const cgsize_t *offsets)
 {
@@ -1051,7 +1123,20 @@ int cgp_poly_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
 
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup ElementConnectivityData
+ *
+ * \brief Read element data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \PCONN_S
+ * \param[in] start \PCONN_start
+ * \param[in] end \PCONN_end
+ * \param[out] elements \PCONN_Elements
+ * \return \ier
+ */
 int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     cgsize_t end, cgsize_t *elements)
 {
