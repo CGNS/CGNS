@@ -2,6 +2,8 @@
 # cgnstools #
 #############
 
+add_definitions(-DCMAKE_BUILD)
+
 # get X11 in case it is not in a standard location
 if (NOT WIN32)
   include(FindX11)
@@ -22,6 +24,13 @@ if (NOT APPLE)
   include(FindOpenGL)
   if (OPENGL_FOUND)
     mark_as_advanced(FORCE OPENGL_INCLUDE_PATH OPENGL_gl_LIBRARY)
+    check_include_file(GL/gl.h HAVE_GL_GL_H)
+    check_include_file(OpenGL/gl.h HAVE_OPENGL_GL_H)
+    if(HAVE_GL_GL_H)
+      add_definitions(-DHAVE_GL_GL_H)
+    elseif(HAVE_OPENGL_GL_H)
+      add_definitions(-DHAVE_OPENGL_GL_H)
+    endif()
   else ()
     mark_as_advanced(CLEAR OPENGL_INCLUDE_PATH OPENGL_gl_LIBRARY)
     list(APPEND Missing "OPENGL_gl")
@@ -29,10 +38,27 @@ if (NOT APPLE)
 
   if (OPENGL_GLU_FOUND)
     mark_as_advanced(FORCE OPENGL_glu_LIBRARY)
+    check_include_file(GL/glu.h HAVE_GL_GLU_H)
+    check_include_file(OpenGL/glu.h HAVE_OPENGL_GLU_H)
+    if(HAVE_GL_GLU_H)
+      add_definitions(-DHAVE_GL_GLU_H)
+    elseif(HAVE_OPENGL_GLU_H)
+      add_definitions(-DHAVE_OPENGL_GLU_H)
+    endif()
   else ()
     mark_as_advanced(CLEAR OPENGL_glu_LIBRARY)
     list(APPEND Missing "OPENGL_glu")
   endif ()
+
+  check_include_file(GL/glx.h HAVE_GL_GLX_H)
+  check_include_file(OpenGL/glx.h HAVE_OPENGL_GLX_H)
+  if(HAVE_GL_GLU_H)
+      add_definitions(-DHAVE_GL_GLX_H)
+  elseif(HAVE_OPENGL_GLU_H)
+      add_definitions(-DHAVE_OPENGL_GLX_H)
+  endif()
+#  configure_file(common/CGNSconfig.h.in CGNSconfig.h)
+
 endif ()
 
 if (X11_FOUND)
