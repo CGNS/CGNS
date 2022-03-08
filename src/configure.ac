@@ -994,7 +994,7 @@ AC_ARG_WITH([xquartz-gl],
                             [ On the OSX platform, there are two possible OpenGL implementations.
                               One is the OpenGL that ships with OSX, the other comes with X11/XQuartz.
                               For the xquartz variant, use option --with-xquartz-gl=[path to xquartz root].
-                              By defaul, configuration will check "/opt/X11", which is the default X11 install
+                              By default, configuration will check "/opt/X11", which is the default X11 install
                               location on OSX. [default=no]])],,
               [withval=no])
 
