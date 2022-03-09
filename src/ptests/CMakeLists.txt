@@ -6,9 +6,13 @@ if (NOT MPIEXEC)
   message(SEND_ERROR "need to define MPIEXEC to run tests")
 endif ()
 
-link_directories(.)
-set(PTESTS_LK_LIBS
-	cgns_static
+if(CGNS_BUILD_SHARED)
+  set(PTESTS_LK_LIBS cgns_shared)
+else()
+  set(PTESTS_LK_LIBS cgns_static)
+endif()
+
+list( APPEND PTESTS_LK_LIBS
         ${HDF5_LIBRARY}
 	${MPI_LIBS})
 
