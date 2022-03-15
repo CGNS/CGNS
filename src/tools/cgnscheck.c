@@ -1450,19 +1450,58 @@ static void read_zone (int nz)
                 pe += nn;
             }
             /* Find if duplicate indices with same sign are present */
+            cgsize_t idx_max, idx_min;
+            cgsize_t arr_size;
+            unsigned char BTMSK_NONE  = 0;
+            unsigned char BTMSK_OWNER = 0x1;
+            unsigned char BTMSK_NEIGH = 0x1 << 1;
+            unsigned char BTMSK_REF_ERR = 0x1 << 2;
+            unsigned char * face_tags = NULL;
+
+            idx_min = z->maxnode;
+            idx_max = 0;
             pe = es->elements;
-            for (nn = 0; nn < po[nelem]-1; nn++) {
-                for (i = nn+1; i < po[nelem]; i++) {
-                    if (pe[nn] == pe[i]) {
-                        printf("  duplicate faces indices detected in NFace_n Elements connectivity\n");
-                        ierr++;
-                        break;
+            for (nn = 0; nn < po[nelem]; nn++) {
+                cgsize_t tmp = pe[nn] > 0 ? pe[nn] : -pe[nn];
+                if (tmp > idx_max) idx_max = tmp;
+                if (tmp < idx_min) idx_min = tmp;
+            }
+            arr_size = idx_max - idx_min + 1;
+            face_tags = (unsigned char *) malloc((size_t)(arr_size *sizeof(unsigned char)));
+            if (face_tags == NULL) {
+                fatal_error("malloc failed for face tags\n");
+	    }
+            for (nn=0; nn < arr_size; nn++) {
+                face_tags[nn] &= BTMSK_NONE;
+            }
+            for (nn=0; nn < po[nelem]; nn++) {
+                size_t face_id;
+                if (pe[nn] > 0) {
+                    face_id = (pe[nn] - idx_min) % arr_size; // compute a hash
+                    if (face_tags[face_id] & BTMSK_OWNER) {
+                        face_tags[face_id] |= BTMSK_REF_ERR;
+                        error("  duplicate positive faces indices detected in NFace_n Elements connectivity\n");
+                    }
+                    else {
+                        face_tags[face_id] |= BTMSK_OWNER;
                     }
                 }
-                if (i != po[nelem]){
+                else {
+                    face_id = (-pe[nn] - idx_min) % arr_size; // compute a hash
+                    if (face_tags[face_id] & BTMSK_NEIGH) {
+                        face_tags[face_id] |= BTMSK_REF_ERR;
+                        error("  duplicate negative faces indices detected in NFace_n Elements connectivity\n");
+                    }
+                    else{
+                        face_tags[face_id] |= BTMSK_NEIGH;
+                    }
+                }
+                if (face_tags[face_id]  & BTMSK_REF_ERR) {
+                    ierr++;
                     break;
                 }
             }
+            free(face_tags);
         }
         else {
             if (cg_npe (es->type, &nn) || nn <= 0) {
