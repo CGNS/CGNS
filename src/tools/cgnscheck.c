@@ -1469,7 +1469,7 @@ static void read_zone (int nz)
             arr_size = idx_max - idx_min + 1;
             face_tags = (unsigned char *) malloc((size_t)(arr_size *sizeof(unsigned char)));
             if (face_tags == NULL) {
-                fatal_error("malloc failed for offsets\n");
+                fatal_error("malloc failed for face tags\n");
 	    }
             for (nn=0; nn < arr_size; nn++) {
                 face_tags[nn] &= BTMSK_NONE;
