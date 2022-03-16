@@ -35,17 +35,8 @@ freely, subject to the following restrictions:
                              (type >= CGNS_ENUMV(BAR_4) && \
                               type <= CGNS_ENUMV(HEXA_125)))
 
-/* MPI-2 info object */
-extern MPI_Info pcg_mpi_info;
-extern MPI_Comm pcg_mpi_comm;
-extern int pcg_mpi_comm_size;
-extern int pcg_mpi_comm_rank;
-/* Flag indicating if HDF5 file accesses is PARALLEL or NATIVE */
-extern char hdf5_access[64];
-/* flag indicating if mpi_initialized was called */
-extern int pcg_mpi_initialized;
-
-hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
+#include "cgio_internal_type.h" /* for cgns_io_ctx_t */
+extern cgns_io_ctx_t ctx_cgio; /* located in cgns_io.c */
 
 extern int cgns_filetype;
 extern void* cgns_rindindex;
@@ -162,7 +153,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
   }
 
   /* Set MPI-IO independent or collective communication */
-  herr = H5Pset_dxpl_mpio(plist_id, default_pio_mode);
+  herr = H5Pset_dxpl_mpio(plist_id, ctx_cgio.default_pio_mode);
   if (herr < 0) {
     H5Pclose(plist_id);
     H5Sclose(data_shape_id);
@@ -288,6 +279,9 @@ static int readwrite_shaped_data_parallel(
         herr = H5Sselect_hyperslab(mem_shape_id, H5S_SELECT_SET,
                                    start, stride, count, NULL);
     } else {  /* m_numdim should be valid and m_dimvals[:] should be 0 */
+        for (n = 0; n < m_numdim; n++) {
+            dimvals[n] = m_dimvals[n];
+        }
         mem_shape_id = H5Screate_simple(m_numdim, dimvals, NULL);
         if (mem_shape_id < 0) {
             cgi_error("H5Screate_simple() for null memory space failed");
@@ -318,7 +312,7 @@ static int readwrite_shaped_data_parallel(
     }
 
     /* Set MPI-IO independent or collective communication */
-    herr = H5Pset_dxpl_mpio(plist_id, default_pio_mode);
+    herr = H5Pset_dxpl_mpio(plist_id, ctx_cgio.default_pio_mode);
     if (herr < 0) {
         cgi_error("H5Pset_dxpl_mpio() failed");
         goto error_4pl;
@@ -368,26 +362,26 @@ int cgp_mpi_comm(MPI_Comm comm)
 {
     /* check if we are actually running a parallel program */
     /* Flag is true if MPI_Init or MPI_Init_thread has been called and false otherwise. */
-    pcg_mpi_initialized = 0;
-    MPI_Initialized(&pcg_mpi_initialized);
+    ctx_cgio.pcg_mpi_initialized = 0;
+    MPI_Initialized(&ctx_cgio.pcg_mpi_initialized);
 
-    if (pcg_mpi_initialized) {
+    if (ctx_cgio.pcg_mpi_initialized) {
       if( cgio_configure(CG_CONFIG_HDF5_MPI_COMM, &comm) != CG_OK) {
         cgi_error("Invalid CG_CONFIG_HDF5_MPI_COMM configure parameter");
         return CG_ERROR;
       }
 
-      pcg_mpi_comm=comm;
-      MPI_Comm_rank(pcg_mpi_comm, &pcg_mpi_comm_rank);
-      MPI_Comm_size(pcg_mpi_comm, &pcg_mpi_comm_size);
+      ctx_cgio.pcg_mpi_comm=comm;
+      MPI_Comm_rank(ctx_cgio.pcg_mpi_comm, &ctx_cgio.pcg_mpi_comm_rank);
+      MPI_Comm_size(ctx_cgio.pcg_mpi_comm, &ctx_cgio.pcg_mpi_comm_size);
     }
 
-    return pcg_mpi_initialized ? CG_OK : CG_ERROR;
+    return ctx_cgio.pcg_mpi_initialized ? CG_OK : CG_ERROR;
 }
 
 int cgp_mpi_info(MPI_Info info)
 {
-    pcg_mpi_info = info;
+    ctx_cgio.pcg_mpi_info = info;
 
     return CG_OK;
 }
@@ -397,9 +391,9 @@ int cgp_mpi_info(MPI_Info info)
 int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
 {
     if (mode == CGP_INDEPENDENT)
-        default_pio_mode = H5FD_MPIO_INDEPENDENT;
+        ctx_cgio.default_pio_mode = H5FD_MPIO_INDEPENDENT;
     else if (mode == CGP_COLLECTIVE)
-        default_pio_mode = H5FD_MPIO_COLLECTIVE;
+        ctx_cgio.default_pio_mode = H5FD_MPIO_COLLECTIVE;
     else {
         cgi_error("unknown parallel IO mode");
         return CG_ERROR;
@@ -429,12 +423,12 @@ int cgp_open(const char *filename, int mode, int *fn)
 
     /* Initialize communicators if cgp_mpi_comm() was not called by
        client */
-    if (pcg_mpi_comm == MPI_COMM_NULL) {
+    if (ctx_cgio.pcg_mpi_comm == MPI_COMM_NULL) {
       cgp_mpi_comm(MPI_COMM_WORLD);
     }
 
     /* Flag this as a parallel access */
-    strcpy(hdf5_access,"PARALLEL");
+    strcpy(ctx_cgio.hdf5_access,"PARALLEL");
 
     ierr = cg_set_file_type(CG_FILE_HDF5);
     if (ierr) return ierr;
@@ -449,7 +443,7 @@ int cgp_open(const char *filename, int mode, int *fn)
 int cgp_close(int fn)
 {
     /* reset parallel access */
-    strcpy(hdf5_access,"NATIVE");
+    strcpy(ctx_cgio.hdf5_access,"NATIVE");
     return cg_close(fn);
 }
 
@@ -1008,7 +1002,7 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
     cgsize_t num = end == 0 ? 0 : end - start + 1;
     num = num < 0 ? 0 : num;
     MPI_Datatype mpi_type = sizeof(cgsize_t) == 32 ? MPI_INT : MPI_LONG_LONG_INT;
-    MPI_Allreduce(MPI_IN_PLACE, &num, 1, mpi_type, MPI_SUM, pcg_mpi_comm);
+    MPI_Allreduce(MPI_IN_PLACE, &num, 1, mpi_type, MPI_SUM, ctx_cgio.pcg_mpi_comm);
 
     strcpy(section->parelem->data_type, CG_SIZE_DATATYPE);
     section->parelem->data_dim = 2;
@@ -1693,7 +1687,7 @@ static int readwrite_multi_data_parallel(size_t count, H5D_rw_multi_t *multi_inf
     }
 
     /* Set MPI-IO independent or collective communication */
-    herr = H5Pset_dxpl_mpio(plist_id, default_pio_mode);
+    herr = H5Pset_dxpl_mpio(plist_id, ctx_cgio.default_pio_mode);
     if (herr < 0) {
         H5Pclose(plist_id);
         H5Sclose(data_shape_id);

@@ -15,8 +15,6 @@
 #include "getargs.h"
 #include "hash.h"
 
-#include "cgns_header.h"
-extern cgns_posit* posit;
 
 #ifndef CGNS_ENUMV
 # define CGNS_ENUMV(V) V
@@ -966,11 +964,9 @@ static void boundary_conditions ()
                     continue;
                 }
             }
-            if (cg_gorel(cgFile, "FamilyBC_t", 1, NULL) != CG_OK) {
+            if (cg_node_fambc_read(1, name, &Bocos[nb].type) != CG_OK) {
                 continue;
             }
-            cgns_fambc* f = (cgns_fambc*)posit->posit;
-            Bocos[nb].type = f->type;
         }
     }
 

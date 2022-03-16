@@ -79,6 +79,13 @@ MODULE cgns
   LOGICAL, PARAMETER :: CG_BUILD_64BIT = .FALSE.
 #endif
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: CGSIZE_T
+!DEC$ATTRIBUTES DLLEXPORT :: CGID_T
+!DEC$ATTRIBUTES DLLEXPORT :: CGLONG_T
+!DEC$ATTRIBUTES DLLEXPORT :: CG_BUILD_64BIT
+!DEC$endif
+
   INTEGER, PARAMETER, PRIVATE :: MAX_LEN = 32
 
   INTERFACE cgio_set_dimensions_f
@@ -158,6 +165,19 @@ MODULE cgns
   PARAMETER (MODE_WRITE  = 1)
   PARAMETER (MODE_MODIFY = 2)
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: CG_MODE_READ
+!DEC$ATTRIBUTES DLLEXPORT :: CG_MODE_WRITE
+!DEC$ATTRIBUTES DLLEXPORT :: CG_MODE_MODIFY
+!DEC$ATTRIBUTES DLLEXPORT :: CGIO_MODE_READ
+!DEC$ATTRIBUTES DLLEXPORT :: CGIO_MODE_WRITE
+!DEC$ATTRIBUTES DLLEXPORT :: CGIO_MODE_MODIFY
+!DEC$ATTRIBUTES DLLEXPORT :: CGIO_FILE_NONE
+!DEC$ATTRIBUTES DLLEXPORT :: CGIO_FILE_ADF
+!DEC$ATTRIBUTES DLLEXPORT :: CGIO_FILE_HDF5
+!DEC$ATTRIBUTES DLLEXPORT :: CGIO_FILE_ADF2
+!DEC$endif
+
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   !*      file types (found in cgnslib.h)                                *
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -166,6 +186,13 @@ MODULE cgns
   INTEGER(C_INT), PARAMETER :: CG_FILE_ADF   = 1
   INTEGER(C_INT), PARAMETER :: CG_FILE_HDF5  = 2
   INTEGER(C_INT), PARAMETER :: CG_FILE_ADF2  = 3
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: CG_FILE_NONE
+!DEC$ATTRIBUTES DLLEXPORT :: CG_FILE_ADF
+!DEC$ATTRIBUTES DLLEXPORT :: CG_FILE_HDF5
+!DEC$ATTRIBUTES DLLEXPORT :: CG_FILE_ADF2
+!DEC$endif
 
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   !*      some error code (found in cgnslib.h)                           *
@@ -184,6 +211,14 @@ MODULE cgns
   PARAMETER (NODE_NOT_FOUND = 2)
   PARAMETER (INCORRECT_PATH = 3)
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: CG_OK
+!DEC$ATTRIBUTES DLLEXPORT :: CG_ERROR
+!DEC$ATTRIBUTES DLLEXPORT :: CG_NODE_NOT_FOUND
+!DEC$ATTRIBUTES DLLEXPORT :: CG_INCORRECT_PATH
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CG_NO_INDEX_DIM
+!DEC$endif
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*     Configuration options (found in cgnslib.h)                      *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -199,9 +234,41 @@ MODULE cgns
   INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS       = 203
   INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS_INCR  = 204
   INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS_WRITE = 205
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_ALIGNMENT      = 206
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_MD_BLOCK_SIZE  = 207
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_BUFFER         = 208
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_SIEVE_BUF_SIZE = 209
+
+
+  INTEGER, PARAMETER :: CG_CONFIG_RESET = 1000
+  INTEGER, PARAMETER :: CG_CONFIG_RESET_HDF5 = 1
 
   INTEGER, PARAMETER :: CG_CONFIG_RIND_ZERO = 0
   INTEGER, PARAMETER :: CG_CONFIG_RIND_CORE = 1
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_ERROR
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_COMPRESS
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_SET_PATH
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_ADD_PATH
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_FILE_TYPE
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RIND_INDEX
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_COMPRESS
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_MPI_COMM      
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_DISKLESS      
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_DISKLESS_INCR 
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_DISKLESS_WRITE
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_ALIGNMENT     
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_MD_BLOCK_SIZE 
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_BUFFER        
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_SIEVE_BUF_SIZE
+
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RESET 
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RESET_HDF5
+
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RIND_ZERO
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RIND_CORE
+!DEC$endif
 
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
   !*      Parallel CGNS parameters                                       *
@@ -217,6 +284,11 @@ MODULE cgns
 
   INTEGER(C_INT), PARAMETER :: CG_Null = 0
   INTEGER(C_INT), PARAMETER :: CG_UserDefined = 1
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: CG_Null
+!DEC$ATTRIBUTES DLLEXPORT :: CG_UserDefined
+!DEC$endif
 
 !* legacy code support
   INTEGER(C_INT) Null, UserDefined
@@ -301,6 +373,17 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(Violle)                             = 6
   END ENUM
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: MassUnitsName
+!DEC$ATTRIBUTES DLLEXPORT :: LengthUnitsName
+!DEC$ATTRIBUTES DLLEXPORT :: TimeUnitsName
+!DEC$ATTRIBUTES DLLEXPORT :: TemperatureUnitsName
+!DEC$ATTRIBUTES DLLEXPORT :: AngleUnitsName
+!DEC$ATTRIBUTES DLLEXPORT :: ElectricCurrentUnitsName
+!DEC$ATTRIBUTES DLLEXPORT :: SubstanceAmountUnitsName
+!DEC$ATTRIBUTES DLLEXPORT :: LuminousIntensityUnitsName
+!DEC$endif
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Data Class (found in cgnslib.h                                 *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -315,6 +398,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(NondimensionalParameter)             = 5
       ENUMERATOR :: CGNS_ENUMV(DimensionlessConstant)               = 6
   END ENUM
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: DataClassName
+!DEC$endif
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Grid Location                                                  *
@@ -332,6 +419,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(EdgeCenter)              = 8
   END ENUM
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: GridLocationName
+!DEC$endif
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Grid Connectivity Types                                        *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -343,6 +434,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(Abutting)                        = 3
       ENUMERATOR :: CGNS_ENUMV(Abutting1to1)                    = 4
   END ENUM
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: GridConnectivityTypeName
+!DEC$endif
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Point Set Types                                                *
@@ -360,6 +455,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(CellListDonor)           = 8
   END ENUM
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: PointSetTypeName
+!DEC$endif
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Governing Equations and Physical Models Types                  *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -374,6 +473,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(NSLaminarIncompressible)       = 6
       ENUMERATOR :: CGNS_ENUMV(NSTurbulentIncompressible)     = 7
   END ENUM
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: GoverningEquationsTypeName
+!DEC$endif
 
 !** Any model type will accept both ModelTypeNull and ModelTypeUserDefined.
 !** The following models will accept these values as valid...
@@ -445,6 +548,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(Chemistry_LinRessler)        = 35
   END ENUM
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: ModelTypeName
+!DEC$endif
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Boundary Condition Types                                       *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -478,6 +585,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(FamilySpecified)         = 25
   END ENUM
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: BCTypeName
+!DEC$endif
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Data types                                                     *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -494,6 +605,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(ComplexDouble)
   END ENUM
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: DataTypeName
+!DEC$endif
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      BCData_t types                                                 *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -504,6 +619,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(Dirichlet)             = 2
       ENUMERATOR :: CGNS_ENUMV(Neumann)               = 3
   END ENUM
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: BCDataTypeName
+!DEC$endif
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Element types                                                  *
@@ -570,6 +689,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(HEXA_125)
   END ENUM
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: ElementTypeName
+!DEC$endif
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Zone types                                                     *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -582,6 +705,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(Unstructured)
   END ENUM
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: ZoneTypeName
+!DEC$endif
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Rigid Grid Motion types                                        *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -592,6 +719,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(ConstantRate)
       ENUMERATOR :: CGNS_ENUMV(VariableRate)
   END ENUM
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: RigidGridMotionTypeName
+!DEC$endif
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Arbitrary Grid Motion types                                    *
@@ -604,6 +735,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(DeformingGrid)
   END ENUM
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: ArbitraryGridMotionTypeName
+!DEC$endif
+
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Simulation type                                                *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -614,6 +749,10 @@ MODULE cgns
       ENUMERATOR :: CGNS_ENUMV(TimeAccurate)
       ENUMERATOR :: CGNS_ENUMV(NonTimeAccurate)
   END ENUM
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: SimulationTypeName
+!DEC$endif
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      BC Property types                                              *
@@ -651,7 +790,7 @@ MODULE cgns
   END ENUM
 
 ! For portability to Linux Absoft, all data statements were moved after the
-! variables and parametres declarations
+! variables and parameters declarations
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Dimensional Units                                              *
@@ -4468,6 +4607,9 @@ MODULE cgns
 
 CONTAINS
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_goto_f
+!DEC$endif
   SUBROUTINE cg_goto_f(fn, B, ier, &
        UserDataName1, i1, UserDataName2, i2, &
        UserDataName3, i3, UserDataName4, i4, &
@@ -4577,6 +4719,9 @@ CONTAINS
      END IF
   END SUBROUTINE cg_goto_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_gorel_f
+!DEC$endif
   SUBROUTINE cg_gorel_f(fn, ier, &
           UserDataName1, i1, UserDataName2, i2, &
           UserDataName3, i3, UserDataName4, i4, &
@@ -4684,6 +4829,9 @@ CONTAINS
      END IF
   END SUBROUTINE cg_gorel_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_int
+!DEC$endif
   FUNCTION cg_get_type_c_int(a)
     USE ISO_C_BINDING
     INTEGER(C_INT) :: a
@@ -4691,6 +4839,9 @@ CONTAINS
     cg_get_type_c_int = CGNS_ENUMV(Integer)
   END FUNCTION cg_get_type_c_int
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_long_long
+!DEC$endif
   FUNCTION cg_get_type_c_long_long(a)
     USE ISO_C_BINDING
     INTEGER(C_LONG_LONG) :: a
@@ -4698,6 +4849,9 @@ CONTAINS
     cg_get_type_c_long_long = CGNS_ENUMV(LongInteger)
   END FUNCTION cg_get_type_c_long_long
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_float
+!DEC$endif
   FUNCTION cg_get_type_c_float(a)
     USE ISO_C_BINDING
     REAL(C_FLOAT) :: a
@@ -4705,6 +4859,9 @@ CONTAINS
     cg_get_type_c_float = CGNS_ENUMV(RealSingle)
   END FUNCTION cg_get_type_c_float
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_double
+!DEC$endif
   FUNCTION cg_get_type_c_double(a)
     USE ISO_C_BINDING
     REAL(C_DOUBLE) :: a
@@ -4712,6 +4869,9 @@ CONTAINS
     cg_get_type_c_double = CGNS_ENUMV(RealDouble)
   END FUNCTION cg_get_type_c_double
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_complex_float
+!DEC$endif
   FUNCTION cg_get_type_c_complex_float(a)
     USE ISO_C_BINDING
     COMPLEX(C_FLOAT_COMPLEX) :: a
@@ -4719,6 +4879,9 @@ CONTAINS
     cg_get_type_c_complex_float = CGNS_ENUMV(ComplexSingle)
   END FUNCTION cg_get_type_c_complex_float
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_complex_double
+!DEC$endif
   FUNCTION cg_get_type_c_complex_double(a)
     USE ISO_C_BINDING
     COMPLEX(C_DOUBLE_COMPLEX) :: a
@@ -4751,6 +4914,9 @@ CONTAINS
 !
 !  END SUBROUTINE cg_open_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_configure_ptr
+!DEC$endif
   SUBROUTINE cg_configure_ptr(what, value, ier)
     USE ISO_C_BINDING, ONLY : C_PTR
     IMPLICIT NONE
@@ -4762,6 +4928,9 @@ CONTAINS
 
   END SUBROUTINE cg_configure_ptr
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_configure_funptr
+!DEC$endif
   SUBROUTINE cg_configure_funptr(what, value, ier)
     USE ISO_C_BINDING, ONLY : C_FUNPTR
     IMPLICIT NONE

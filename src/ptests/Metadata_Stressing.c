@@ -45,27 +45,31 @@ int read_inputs(int* argc, char*** argv) {
         continue;
       }
       if(strcmp((*argv)[k],"-all")==0) {
-        bcast[1] = 1;
+        allranks = 1;
+        bcast[1] = allranks;
         continue;
       }
       if(strcmp((*argv)[k],"-sec2")==0) {
-         bcast[2] = 0;
+        core = 0;
+        bcast[2] = core;
         continue;
       }
       if(strcmp((*argv)[k],"-skipread")==0) {
-         bcast[3] = 1;
+        skipread = 1;
+        bcast[3] = skipread;
         continue;
       }
       printf("ERROR: invalid argument option %s\n", (*argv)[k]);
       MPI_Abort(MPI_COMM_WORLD,-1);
     }
     if (core == 1 && allranks == 1) {
-      printf("WARNING: diskless in parallel not supported, using -sec2 instead\n");
+      printf("WARNING: diskless in parallel not supported, disabling diskless\n");
       core = 0;
+      bcast[2] = core;
     }
   }
   MPI_Bcast(bcast, 4, MPI_INT, 0, MPI_COMM_WORLD);
-  NBLOCKS  = (uint)bcast[0];
+  NBLOCKS  = (uint32_t)bcast[0];
   allranks = bcast[1];
   core     = bcast[2];
   skipread = bcast[3];
@@ -132,8 +136,11 @@ int main(int argc, char* argv[]) {
   }
 
   if (whoami == ROOT) {
-    for (int i = 0; i < num_mpi; ++i) {
-      printf("Process %d holds %d blocks\n", i, local_blocks[i]);
+    /* Only print for a reasonable number of ranks */
+    if ( num_mpi <= 1000) {
+      for (int i = 0; i < num_mpi; ++i) {
+        printf("Process %d holds %d blocks\n", i, local_blocks[i]);
+      }
     }
   }
 
@@ -167,7 +174,7 @@ int main(int argc, char* argv[]) {
   }
   t1 = MPI_Wtime();
   if (whoami == ROOT) {
-    printf("cg_open: %lf s \n", (t1 - t0));
+    printf("CREATE:cg_open: %lf s \n", (t1 - t0));
   }
 
   // ---- Create base  -------------------------------------------------------------------
@@ -214,7 +221,7 @@ int main(int argc, char* argv[]) {
   }
   t1 = MPI_Wtime();
   if (whoami == ROOT) {
-    printf("cg_zone_write: %lf s\n", (t1 - t0));
+    printf("CREATE:cg_zone_write: %lf s\n", (t1 - t0));
   }
   
   t0 = MPI_Wtime();
@@ -237,7 +244,7 @@ int main(int argc, char* argv[]) {
   }
   t1 = MPI_Wtime();
   if (whoami == ROOT) {
-    printf("cg_grid_write: %lf s \n", (t1 - t0));
+    printf("CREATE:cg_grid_write: %lf s \n", (t1 - t0));
   }
 
   t0 = MPI_Wtime();
@@ -271,7 +278,7 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
   if (whoami == ROOT) {
-    printf("cgp_coord_write: %lf s\n", (t1 - t0));
+    printf("CREATE:cgp_coord_write: %lf s\n", (t1 - t0));
   }
 
   t0 = MPI_Wtime();
@@ -286,7 +293,7 @@ int main(int argc, char* argv[]) {
   }
   t1 = MPI_Wtime();
   if (whoami == ROOT) {
-    printf("cg_close: %lf s\n", (t1 - t0));
+    printf("CREATE:cg_close: %lf s\n", (t1 - t0));
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -306,7 +313,7 @@ int main(int argc, char* argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
     t1 = MPI_Wtime();
     if (whoami == ROOT) {
-      printf("cgp_open: %lf s\n", (t1 - t0));
+      printf("OPEN:cgp_open: %lf s\n", (t1 - t0));
     }
 
     index_base = 1;
@@ -332,7 +339,7 @@ int main(int argc, char* argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
     t1 = MPI_Wtime();
     if (whoami == ROOT) {
-      printf("cgp_close: %lf s\n", (t1 - t0));
+      printf("OPEN:cgp_close: %lf s\n", (t1 - t0));
     }
   }
   free(local_blocks);

@@ -1,6 +1,7 @@
       program write_flowvert_unst
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   unstructured grid, and adds a flow solution (at VERTICES)
@@ -66,12 +67,12 @@
       solname = 'FlowSolution'
 !   create flow solution node
       call cg_sol_write_f(index_file,index_base,index_zone,solname,            &
-           Vertex,index_flow,ier)
+           CGNS_ENUMV(Vertex),index_flow,ier)
 !   write flow solution (user must use SIDS-standard names here)
       call cg_field_write_f(index_file,index_base,index_zone,index_flow,       &
-           RealDouble,'Density',r,index_field,ier)
+           CGNS_ENUMV(RealDouble),'Density',r,index_field,ier)
       call cg_field_write_f(index_file,index_base,index_zone,index_flow,       &
-           RealDouble,'Pressure',p,index_field,ier)
+           CGNS_ENUMV(RealDouble),'Pressure',p,index_field,ier)
 !   close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully added flow solution data to file'',            &

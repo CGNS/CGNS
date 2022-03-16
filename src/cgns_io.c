@@ -43,28 +43,42 @@ freely, subject to the following restrictions:
 #include "cgns_io.h"
 #include "cgnslib.h"
 #include "adf/ADF.h"
+#if CG_BUILD_PARALLEL
+#include <mpi.h>
+#endif
 #if CG_BUILD_HDF5
 #include "adfh/ADFH.h"
-char hdf5_access[64] = "NATIVE";
+#if CG_BUILD_PARALLEL
+#include "hdf5.h"
 #endif
+#include "cgio_internal_type.h" /* for cgns_io_ctx_t */
+#endif
+
 #ifdef MEM_DEBUG
 #include "cg_malloc.h"
 #endif
+
+#if CG_BUILD_HDF5
+cgns_io_ctx_t ctx_cgio = { .hdf5_access = "NATIVE",
 #if CG_BUILD_PARALLEL
-#include <mpi.h>
-MPI_Comm pcg_mpi_comm=MPI_COMM_NULL;
-int pcg_mpi_comm_size;
-int pcg_mpi_comm_rank;
-int pcg_mpi_initialized;
-MPI_Info pcg_mpi_info;
+.pcg_mpi_comm = MPI_COMM_NULL, 
+.pcg_mpi_comm_size=1,
+.pcg_mpi_comm_rank=0,
+.pcg_mpi_initialized=0,
+.pcg_mpi_info=MPI_INFO_NULL,
+.default_pio_mode=H5FD_MPIO_COLLECTIVE
+#endif
+};
 #endif
 
 #if CG_HAVE_STAT64_STRUCT
 #ifdef _WIN32
-#define stat _stat64
+#define cgns_stat _stat64
 #else
-#define stat stat64
+#define cgns_stat stat64
 #endif
+#else
+#define cgns_stat stat
 #endif
 
 /* Flag for contiguous or compact HDF5 storage */
@@ -216,7 +230,7 @@ static int rewrite_file (int cginp, const char *filename)
     cgns_io *input, *output;
     char *tmpfile, *linkfile = NULL;
 #ifdef S_IFLNK
-    struct stat st;
+    struct cgns_stat st;
 #endif
 
     input = get_cgnsio(cginp, 0);
@@ -577,11 +591,11 @@ int cgio_check_file (const char *filename, int *file_type)
     char buf[32];
     FILE *fp;
     static char *HDF5sig = "\211HDF\r\n\032\n";
-    struct stat st;
+    struct cgns_stat st;
 
     int mpibuf[2], err = CGIO_ERR_NONE;
 
-    if (ACCESS (filename, 0) || stat (filename, &st) ||
+    if (ACCESS (filename, 0) || cgns_stat (filename, &st) ||
         S_IFREG != (st.st_mode & S_IFREG)) {
         last_err = CGIO_ERR_NOT_FOUND;
         return last_err;
@@ -591,7 +605,7 @@ int cgio_check_file (const char *filename, int *file_type)
 
 #if CG_BUILD_PARALLEL
     /* don't overload the file system by having all the processors doing a read */
-    if(pcg_mpi_comm_rank == 0) {
+    if(ctx_cgio.pcg_mpi_comm_rank == 0) {
 #endif
 
       fp = fopen(filename, "rb");
@@ -625,10 +639,10 @@ int cgio_check_file (const char *filename, int *file_type)
     }
 #if CG_BUILD_PARALLEL
     }
-    if(pcg_mpi_initialized) {
+    if(ctx_cgio.pcg_mpi_initialized) {
       mpibuf[0] = err;
       mpibuf[1] = *file_type;
-      MPI_Bcast(mpibuf, 2, MPI_INT, 0, pcg_mpi_comm);
+      MPI_Bcast(mpibuf, 2, MPI_INT, 0, ctx_cgio.pcg_mpi_comm);
       err = mpibuf[0];
       *file_type = mpibuf[1];
     }
@@ -777,7 +791,7 @@ int cgio_open_file (const char *filename, int file_mode,
 #endif
 #if CG_BUILD_HDF5
     else if (file_type == CGIO_FILE_HDF5) {
-        ADFH_Database_Open(filename, fmode, hdf5_access, &rootid, &ierr);
+        ADFH_Database_Open(filename, fmode, ctx_cgio.hdf5_access, &rootid, &ierr);
         if (ierr > 0) return set_error(ierr);
     }
 #endif

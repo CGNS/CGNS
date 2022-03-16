@@ -355,22 +355,18 @@ int cg_open(const char *filename, int mode, int *file_number)
     switch(mode) {
         case CG_MODE_READ:
         case CG_MODE_MODIFY:
-            if (ACCESS(filename, F_OK)) {
-                cgi_error("Error opening file: '%s' not found!", filename);
-                return CG_ERROR;
-            }
+            /* ACCESS is now done in cgio_open_file which call cgio_check_file */
             break;
         case CG_MODE_WRITE:
             /* unlink is now done in cgio_open_file */
+            /* set default file type if not done */
+            if (cgns_filetype == CG_FILE_NONE)
+                cg_set_file_type(CG_FILE_NONE);
             break;
         default:
             cgi_error("Unknown opening file mode: %d ??",mode);
             return CG_ERROR;
     }
-
-    /* set default file type if not done */
-    if (cgns_filetype == CG_FILE_NONE)
-        cg_set_file_type(CG_FILE_NONE);
 
     /* Open CGNS file */
     if (cgio_open_file(filename, mode, cgns_filetype, &cgio)) {
@@ -7770,8 +7766,10 @@ int cg_conn_info(int file_number, int B, int Z, int J, char *connectname,
                  CGNS_ENUMT(PointSetType_t) *donor_ptset_type,
                  CGNS_ENUMT(DataType_t) *donor_datatype, cgsize_t *ndata_donor)
 {
-    int dZ;
+    int dZ, dB;
     cgns_conn *conn;
+    char_33 basedonorname, zonedonorname;
+    char *separator;
 
     cg = cgi_get_file(file_number);
     if (cg == 0) return CG_ERROR;
@@ -7793,12 +7791,34 @@ int cg_conn_info(int file_number, int B, int Z, int J, char *connectname,
     *ndata_donor = conn->dptset.npts;
     *donor_ptset_type = conn->dptset.type;
 
+    /* Split donorname into BaseName + zoneName */
+    separator = strchr(donorname, '/');
+    if (separator != NULL) {
+        /* get ending zoneName */
+        strcpy(zonedonorname, separator + sizeof(char));
+	/* get base but do not use path syntax */
+        memcpy(basedonorname, donorname, (separator - donorname)*sizeof(char));
+        basedonorname[separator - donorname] = '\0';
+        /* Find donor base index */
+        for (dB=0;dB<cg->nbases; dB++) {
+            if (strcmp(cg->base[dB].name,basedonorname)==0) {
+                break;
+            }
+        }
+    }
+    else {
+        /* zoneName is in current base */
+	strcpy(basedonorname, cg->base[B-1].name);
+        strcpy(zonedonorname, donorname);
+	dB = B-1;
+    }
+
      /* Find ZoneType_t of DonorZone given its name */
     *donor_zonetype = CGNS_ENUMV( ZoneTypeNull );
 
-    for (dZ=0; dZ<cg->base[B-1].nzones; dZ++) {
-        if (strcmp(cg->base[B-1].zone[dZ].name,donorname)==0) {
-            *donor_zonetype = cg->base[B-1].zone[dZ].type;
+    for (dZ=0; dZ<cg->base[dB].nzones; dZ++) {
+        if (strcmp(cg->base[dB].zone[dZ].name,zonedonorname)==0) {
+            *donor_zonetype = cg->base[dB].zone[dZ].type;
             break;
         }
     }

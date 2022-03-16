@@ -1449,6 +1449,59 @@ static void read_zone (int nz)
                 }
                 pe += nn;
             }
+            /* Find if duplicate indices with same sign are present */
+            cgsize_t idx_max, idx_min;
+            cgsize_t arr_size;
+            unsigned char BTMSK_NONE  = 0;
+            unsigned char BTMSK_OWNER = 0x1;
+            unsigned char BTMSK_NEIGH = 0x1 << 1;
+            unsigned char BTMSK_REF_ERR = 0x1 << 2;
+            unsigned char * face_tags = NULL;
+
+            idx_min = z->maxnode;
+            idx_max = 0;
+            pe = es->elements;
+            for (nn = 0; nn < po[nelem]; nn++) {
+                cgsize_t tmp = pe[nn] > 0 ? pe[nn] : -pe[nn];
+                if (tmp > idx_max) idx_max = tmp;
+                if (tmp < idx_min) idx_min = tmp;
+            }
+            arr_size = idx_max - idx_min + 1;
+            face_tags = (unsigned char *) malloc((size_t)(arr_size *sizeof(unsigned char)));
+            if (face_tags == NULL) {
+                fatal_error("malloc failed for face tags\n");
+	    }
+            for (nn=0; nn < arr_size; nn++) {
+                face_tags[nn] &= BTMSK_NONE;
+            }
+            for (nn=0; nn < po[nelem]; nn++) {
+                size_t face_id;
+                if (pe[nn] > 0) {
+                    face_id = (pe[nn] - idx_min) % arr_size; // compute a hash
+                    if (face_tags[face_id] & BTMSK_OWNER) {
+                        face_tags[face_id] |= BTMSK_REF_ERR;
+                        error("  duplicate positive faces indices detected in NFace_n Elements connectivity\n");
+                    }
+                    else {
+                        face_tags[face_id] |= BTMSK_OWNER;
+                    }
+                }
+                else {
+                    face_id = (-pe[nn] - idx_min) % arr_size; // compute a hash
+                    if (face_tags[face_id] & BTMSK_NEIGH) {
+                        face_tags[face_id] |= BTMSK_REF_ERR;
+                        error("  duplicate negative faces indices detected in NFace_n Elements connectivity\n");
+                    }
+                    else{
+                        face_tags[face_id] |= BTMSK_NEIGH;
+                    }
+                }
+                if (face_tags[face_id]  & BTMSK_REF_ERR) {
+                    ierr++;
+                    break;
+                }
+            }
+            free(face_tags);
         }
         else {
             if (cg_npe (es->type, &nn) || nn <= 0) {
@@ -3634,7 +3687,8 @@ static void check_zoneBC (void)
 
 static void check_1to1 (int nzc, int nc)
 {
-    char name[33], dname[33], *desc;
+    char name[33], *desc;
+    char_66 dname;
     int ierr, n, nd, trans[3];
     cgsize_t range[6], drange[6];
     ZONE *z = &Zones[cgnszone-1], *dz;
@@ -3849,7 +3903,8 @@ static void check_1to1 (int nzc, int nc)
 
 static void check_conn (int nzc, int nc)
 {
-    char name[33], dname[33], *desc;
+    char name[33], *desc;
+    char_66 dname;
     int ierr, n, nd, ndim;
     cgsize_t npts, dnpts, dims[12];
     int interp;
@@ -3964,7 +4019,9 @@ static void check_conn (int nzc, int nc)
         error ("point set type is not PointList or PointRange");
         ierr++;
     }
-
+    /* Do not try checking when donor is in a remote base */
+    if (strchr(dname, '/') != NULL)
+        return;
     for (dz = NULL, n = 0; n < NumZones; n++) {
         if (0 == strcmp (dname, Zones[n].name)) {
             dz = &Zones[n];
@@ -4687,7 +4744,8 @@ static void check_solution (int ns)
 
 static cgsize_t subreg_size(int dim, int isBC, char *subname)
 {
-    char name[33], dname[33], *p;
+    char name[33], *p;
+    char_66 dname;
     int n, nbc, ni, nc, nzc, nn, ns, nsets, trans[3];
     cgsize_t npnts, dnpnts, nsize, range[6], drange[6];
     CGNS_ENUMT(BCType_t) bctype;
@@ -4809,7 +4867,7 @@ static cgsize_t subreg_size(int dim, int isBC, char *subname)
         if (0 == strcmp(p, name)) {
             if (ptype == CGNS_ENUMV(PointRange) && npnts == 2) {
                 cgsize_t *pnts;
-                pnts = (cgsize_t *)malloc(2 * nsets * dim * sizeof(cgsize_t));
+                pnts = (cgsize_t *)malloc(2 * (cgsize_t)nsets * (cgsize_t)dim * sizeof(cgsize_t));
                 if (pnts == NULL)
                     fatal_error("subreg_size:malloc failed for hole data\n");
                 if (cg_hole_read(cgnsfn, cgnsbase, cgnszone, n, pnts))
@@ -5806,7 +5864,7 @@ static void check_base_iter (void)
             ierr = 1;
         }
         if (NumSteps > 0 && nmax > 0 && !ierr) {
-            desc = (char *) malloc (32 * nmax * NumSteps * sizeof(char));
+            desc = (char *) malloc (32 * (cgsize_t)nmax * (cgsize_t)NumSteps * sizeof(char));
             if (NULL == desc)
                 fatal_error("malloc failed for family pointers\n");
             if (cg_array_read (nfp, desc)) error_exit("cg_array_read");
@@ -5882,7 +5940,7 @@ static void check_base_iter (void)
             ierr = 1;
         }
         if (NumSteps > 0 && nmax > 0 && !ierr) {
-            desc = (char *) malloc (32 * nmax * NumSteps * sizeof(char));
+            desc = (char *) malloc (32 * (cgsize_t)nmax * (cgsize_t)NumSteps * sizeof(char));
             if (NULL == desc)
                 fatal_error("malloc failed for zone pointers\n");
             if (cg_array_read (nzp, desc)) error_exit("cg_array_read");

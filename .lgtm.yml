@@ -1,0 +1,14 @@
+##########################################################################################
+# Customize file classifications.                                                        #
+# Results from files under any classifier will be excluded from LGTM                     #
+# statistics.                                                                            #
+##########################################################################################
+
+#########################################################################################
+# Use the `queries` block to change the default display of query results.               #
+#########################################################################################
+
+queries:
+- exclude: cpp/toctou-race-condition 
+- exclude: cpp/short-global-name
+

@@ -1054,7 +1054,7 @@ Supported platforms
     * Order include directives to get correct includes, cmake (PR 109) 
     * make clean does not remove executables in Test_UserGuideCode (CGNS-99)
     * Windows builds: CGNS_ENABLE_LFS is ignored (CGNS-117)
-    * Sun's make implemenation fails to compile fortran (CGNS-28)
+    * Sun's make implementation fails to compile fortran (CGNS-28)
     * Some systems need to explicitly link to libdl (CGNS-128)
     * CGNS fails in fortran test with PGI 17 compiler (CGNS-127)
     * CGNS fails to find the lib64 HDF5 library (CGNS-123)

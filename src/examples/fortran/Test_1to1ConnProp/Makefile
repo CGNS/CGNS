@@ -16,11 +16,11 @@ test  : write read
 $(OUTDIR) :
 	-@$(MKDIR) $(OUTDIR)
 
-$(WRITE) : cgwrite.F
-	$(F77) $(FOPTS) $(FEOUT) $@ cgwrite.F $(LIBS)
+$(WRITE) : cgwrite.F90
+	$(F77) $(FOPTS) $(FEOUT) $@ cgwrite.F90 $(LIBS)
 
-$(READ) : cgread.F
-	$(F77) $(FOPTS) $(FEOUT) $@ cgread.F $(LIBS)
+$(READ) : cgread.F90
+	$(F77) $(FOPTS) $(FEOUT) $@ cgread.F90 $(LIBS)
 
 clean :
 	-$(RM) Test_V2 $(WRITE) $(READ)

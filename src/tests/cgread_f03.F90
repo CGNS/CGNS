@@ -1,7 +1,5 @@
-
 PROGRAM read_cgns_1
-
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
   INCLUDE 'cgnswin_f.h'
 #endif
@@ -242,7 +240,7 @@ PROGRAM read_cgns_1
         WRITE(6,600)'  Zone type is ', ZoneTypeName(zonetype)
 
 
-        IF (zonetype.EQ.Structured) THEN
+        IF (zonetype.EQ.CGNS_ENUMV(Structured)) THEN
            IndexDim=CellDim
         ELSE
            IndexDim=1
@@ -293,11 +291,11 @@ PROGRAM read_cgns_1
               WRITE(6,200) ' DataDim=',dim_vals(1)
 
               WRITE(6,105) ' Data:'
-              IF (datatype .EQ. RealSingle) THEN
+              IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_array_read_f(iarray, data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  WRITE(6,106) (data_single(n),n=1,dim_vals(1))
-              ELSEIF (datatype .EQ. RealDouble) THEN
+              ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_array_read_f(iarray, data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  WRITE(6,106) (data_double(n),n=1,dim_vals(1))
@@ -360,11 +358,11 @@ PROGRAM read_cgns_1
               WRITE(6,108) ' DataNdim=',nndim, &
                    ', DataDim=',dim_vals(1)
 
-              IF (datatype .EQ. RealSingle) THEN
+              IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_array_read_f(iarray, data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  WRITE(6,109) ' integraldata=',data_single(1)
-              ELSEIF (datatype .EQ. RealDouble) THEN
+              ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_array_read_f(iarray, data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  WRITE(6,109) 'integraldata=',data_double(1)
@@ -384,11 +382,11 @@ PROGRAM read_cgns_1
               ELSEIF (ier .EQ. ALL_OK) THEN
                  WRITE(6,600)' Datatype for exponents is ', &
                       DataTypeName(datatype)
-                 IF (datatype .EQ. RealSingle) THEN
+                 IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                     CALL cg_exponents_read_f(data_single, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,110)' Exponents:',(data_single(n),n=1,5)
-                 ELSEIF (datatype .EQ. RealDouble) THEN
+                 ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                     CALL cg_exponents_read_f(data_double, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,110)' Exponents:',(data_double(n),n=1,5)
@@ -402,11 +400,11 @@ PROGRAM read_cgns_1
               ELSEIF (ier .EQ. ALL_OK) THEN
                  WRITE(6,600)' Datatype for conversion is ', &
                       DataTypeName(datatype)
-                 IF (datatype .EQ. RealSingle) THEN
+                 IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                     CALL cg_conversion_read_f(data_single, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,110)' Conversion:',(data_single(n),n=1,2)
-                 ELSEIF (datatype .EQ. RealDouble) THEN
+                 ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                     CALL cg_conversion_read_f(data_double, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,110)' Conversion:',(data_double(n),n=1,2)
@@ -464,12 +462,12 @@ PROGRAM read_cgns_1
                  num = num*dim_vals(i)
               ENDDO
 
-              IF (datatype .EQ. RealSingle) THEN
+              IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_array_read_f(iarray, data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  WRITE(6,106) (data_single(i),i=1,2)
                  WRITE(6,106) (data_single(i),i=num-1,num)
-              ELSEIF (datatype .EQ. RealDouble) THEN
+              ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_array_read_f(iarray, data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  WRITE(6,106) (data_double(i),i=1,2)
@@ -514,13 +512,13 @@ PROGRAM read_cgns_1
                    '   datatype=',DataTypeName(datatype), &
                    '   name="',TRIM(coordname),'"'
 
-              IF (datatype .EQ. RealSingle) THEN
+              IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_coord_read_f(cg, base, zone, coordname, &
                       cg_get_type(data_single(1)), rmin, DataSize, &
                       data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
-              ELSEIF (datatype .EQ. RealDouble) THEN
+              ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_coord_read_f(cg, base, zone, coordname, &
                       cg_get_type(data_double(1)), rmin, DataSize, &
                       data_double, ier)
@@ -584,11 +582,11 @@ PROGRAM read_cgns_1
               ENDDO
               WRITE(6,200) 'Nr of data in solution vector=',num
 
-              IF (datatype .EQ. RealSingle) THEN
+              IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_array_read_f(iarray, data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  !write(6,106) (data_single(i),i=1,num)
-              ELSEIF (datatype .EQ. RealDouble) THEN
+              ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_array_read_f(iarray, data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  !write(6,106) (data_double(i),i=1,num)
@@ -624,10 +622,10 @@ PROGRAM read_cgns_1
 
            ! *** Compute the nr of data to be read
 
-           IF (zonetype.EQ.Structured) THEN
+           IF (zonetype.EQ.CGNS_ENUMV(Structured)) THEN
               DO i=1,3
                  DataSize(i)=SIZE(i) + rind(2*i-1) + rind(2*i)
-                 IF (location.EQ.CellCenter) DataSize(i)=DataSize(i)-1
+                 IF (location.EQ.CGNS_ENUMV(CellCenter)) DataSize(i)=DataSize(i)-1
               ENDDO
            ELSE
               DataSize(1)=SIZE(2)
@@ -648,7 +646,7 @@ PROGRAM read_cgns_1
 
               ! *** read entire range of solution data and record in double precision
               CALL cg_field_read_f(cg, base, zone, sol, fieldname, &
-                   RealDouble, rmin, DataSize, data_double, ier)
+                   CGNS_ENUMV(RealDouble), rmin, DataSize, data_double, ier)
               IF (ier .EQ. ERROR) CALL cg_error_exit_f
            ENDDO                             ! field loop
 
@@ -700,11 +698,11 @@ PROGRAM read_cgns_1
                  num=num*dim_vals(n)
               ENDDO
 
-              IF (datatype .EQ. RealSingle) THEN
+              IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_array_read_f(iarray, data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  !write(6,*) (data_single(n),n=1,num)
-              ELSEIF (datatype .EQ. RealDouble) THEN
+              ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_array_read_f(iarray, data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  !write(6,*) (data_double(n),n=1,num)
@@ -931,11 +929,11 @@ PROGRAM read_cgns_1
                  WRITE(6,600)'    Datatype=',DataTypeName(datatype)
 
                  WRITE(6,600)'    Data:'
-                 IF (datatype .EQ. RealSingle) THEN
+                 IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                     CALL cg_array_read_f(iarray, data_single, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,124) data_single(1)
-                 ELSEIF (datatype .EQ. RealDouble) THEN
+                 ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                     CALL cg_array_read_f(iarray, data_double, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,124) data_double(1)
@@ -979,11 +977,11 @@ PROGRAM read_cgns_1
                    DataTypeName(datatype)
 
               ! read patch points and InwardNormalList
-              IF (datatype.EQ.RealSingle) THEN
+              IF (datatype.EQ.CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_boco_read_f(cg, base, zone, boco, pnts, &
                       data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
-              ELSEIF (datatype.EQ.RealDouble) THEN
+              ELSEIF (datatype.EQ.CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_boco_read_f(cg, base, zone, boco, pnts, &
                       data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
@@ -995,14 +993,14 @@ PROGRAM read_cgns_1
                    pnts(3*npnts)
 
               IF (NormalListSize .NE. 0) THEN
-                 IF (datatype.EQ.RealSingle) &
+                 IF (datatype.EQ.CGNS_ENUMV(RealSingle)) &
                       WRITE(6,126) '   Normals:', &
                       '    first point:', data_single(1),data_single(2), &
                       data_single(3), &
                       '    last point :', data_single(3*npnts-2), &
                       data_single(3*npnts-1), &
                       data_single(3*npnts)
-                 IF (datatype.EQ.RealDouble) &
+                 IF (datatype.EQ.CGNS_ENUMV(RealDouble)) &
                       WRITE(6,126) '   Normals:', &
                       '    first point:', data_double(1),data_double(2), &
                       data_double(3), &
@@ -1044,7 +1042,7 @@ PROGRAM read_cgns_1
                  IF (DirichletFlag.EQ.1) THEN
                     CALL cg_goto_f(cg, base, ier, 'Zone_t', zone, &
                          'ZoneBC_t', one, 'BC_t', boco, 'BCDataSet_t', &
-                         idataset,'BCData_t',Dirichlet,'end')
+                         idataset,'BCData_t',CGNS_ENUMV(Dirichlet),'end')
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
                     ! ** boundary condition data attributes: DataClass_t
@@ -1070,13 +1068,13 @@ PROGRAM read_cgns_1
                             DataTypeName(datatype)
 
                        WRITE(6,105)'    Dirichlet Data:'
-                       IF (datatype .EQ. RealSingle) THEN
+                       IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                           CALL cg_array_read_f(iarray, data_single, ier)
                           IF (ier .EQ. ERROR) CALL cg_error_exit_f
                           WRITE(6,106)&
                                (data_single(n),n=1,dim_vals(1))
 
-                       ELSEIF (datatype .EQ. RealDouble) THEN
+                       ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                           CALL cg_array_read_f(iarray, data_double, ier)
                           IF (ier .EQ. ERROR) CALL cg_error_exit_f
                           WRITE(6,106)&
@@ -1088,7 +1086,7 @@ PROGRAM read_cgns_1
                  IF (NeumannFlag.EQ.1) THEN
                     CALL cg_goto_f(cg, base, ier, 'Zone_t', zone, &
                          'ZoneBC_t', one, 'BC_t', boco, 'BCDataSet_t', &
-                         idataset, 'BCData_t', Neumann,'end')
+                         idataset, 'BCData_t', CGNS_ENUMV(Neumann),'end')
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
                     ! ** boundary condition data attributes: DataClass_t
@@ -1113,13 +1111,13 @@ PROGRAM read_cgns_1
                             DataTypeName(datatype)
 
                        WRITE(6,400)'    Neumann Data:'
-                       IF (datatype .EQ. RealSingle) THEN
+                       IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                           CALL cg_array_read_f(iarray, data_single, ier)
                           IF (ier .EQ. ERROR) CALL cg_error_exit_f
                           WRITE(6,106)&
                                (data_single(n),n=1,dim_vals(1))
 
-                       ELSEIF (datatype .EQ. RealDouble) THEN
+                       ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                           CALL cg_array_read_f(iarray, data_double, ier)
                           IF (ier .EQ. ERROR) CALL cg_error_exit_f
                           WRITE(6,106)&

@@ -100,7 +100,7 @@ int main (int argc, char **argv)
             outtype = CGIO_FILE_ADF;
     }
     if (!force) {
-        if (((inptype == CGIO_FILE_ADF  || inptype == CGIO_FILE_ADF2)  && (outtype == CGIO_FILE_ADF  || outtype == CGIO_FILE_ADF2)) ||
+        if (((inptype == CGIO_FILE_ADF  || inptype == CGIO_FILE_ADF2)  && (outtype == CGIO_FILE_ADF)) ||
             ((inptype == CGIO_FILE_HDF5) && (outtype == CGIO_FILE_HDF5))) {
             cgio_close_file(inpcg);
             fputs("input and output formats the same: use -f to force write\n", stderr);

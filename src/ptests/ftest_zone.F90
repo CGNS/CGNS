@@ -5,6 +5,11 @@ PROGRAM ftest_zone
   USE mpi
   
   IMPLICIT NONE
+
+#include "cgnstypes_f03.h"
+#ifdef WINNT
+  INCLUDE 'cgnswin_f.h'
+#endif
       
   INTEGER ierr, mrank, msize, fid 
   INTEGER basenum, zonenum, blocknum
@@ -83,7 +88,7 @@ PROGRAM ftest_zone
         blocknum = i
         WRITE(zonename, "(A5,I6)") "block",blocknum
         CALL cg_zone_write_f(fid,basenum,zonename,sizes, &
-             Structured,zonenum,ierr)
+             CGNS_ENUMV(Structured),zonenum,ierr)
         IF(ierr .NE. CG_OK) THEN
            WRITE(*,*) 'cg_zone_write_f error'
            CALL cg_error_print_f()
@@ -145,7 +150,7 @@ PROGRAM ftest_zone
      CALL cg_goto_f(fid,basenum,ierr,'Zone_t',zonenum, &
           'UserDefinedData_t',solnum,'end')
      WRITE(fieldname, "(A5,I6)") "array",1
-     CALL cgp_array_write_f(fieldname,RealDouble,5,qsizes, &
+     CALL cgp_array_write_f(fieldname,CGNS_ENUMV(RealDouble),5,qsizes, &
           arraynum,ierr)
      IF(ierr .NE. CG_OK) THEN
         WRITE(*,*) 'cg_array_write_f error'

@@ -4,31 +4,31 @@
 
 # Link all the executables to cgns and hdf5
 if (CGNS_USE_SHARED)
-  link_libraries(cgns_shared)
-  if (WIN32 OR CYGWIN)
-    target_compile_definitions(cgns_shared PRIVATE -DBUILD_DLL)
-    target_compile_definitions(cgns_shared INTERFACE -DUSE_DLL)
-  endif (WIN32 OR CYGWIN)
-else (CGNS_USE_SHARED)
-  link_libraries(cgns_static)
-endif (CGNS_USE_SHARED)
+  set(TOOLS_LK_LIBS cgns_shared)
+  #if (WIN32 OR CYGWIN)
+  #  target_compile_definitions(cgns_shared PRIVATE -DBUILD_DLL)
+  #  target_compile_definitions(cgns_shared INTERFACE -DUSE_DLL)
+  #endif ()
+else ()
+  set(TOOLS_LK_LIBS cgns_static)
+endif ()
 
 if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
-  link_libraries(${HDF5_LIBRARY})
+  list(APPEND TOOLS_LK_LIBS ${HDF5_LIBRARY})
   if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
-    link_libraries(${ZLIB_LIBRARY})
-  endif(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
+    list(APPEND TOOLS_LK_LIBS ${ZLIB_LIBRARY})
+  endif()
   if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
-    link_libraries(${SZIP_LIBRARY})
-  endif(HDF5_NEED_SZIP AND SZIP_LIBRARY)
+    list(APPEND TOOLS_LK_LIBS ${SZIP_LIBRARY})
+  endif()
   if(HDF5_NEED_MPI AND MPI_LIBS)
-    link_libraries(${MPI_LIBS})
-  endif(HDF5_NEED_MPI AND MPI_LIBS)
-endif (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
+    list(APPEND TOOLS_LK_LIBS ${MPI_LIBS})
+  endif()
+endif ()
 
 if (NOT WIN32)
-  link_libraries(m)
-endif (NOT WIN32)
+  list(APPEND TOOLS_LK_LIBS m)
+endif ()
 
 # Set the files needed by each tool
 set(cgnsnames_FILES
@@ -59,6 +59,12 @@ add_executable( cgnsdiff     ${cgnsdiff_FILES}    )
 add_executable( cgnslist     ${cgnslist_FILES}    )
 add_executable( cgnscompress ${cgnscompress_FILES} )
 
+set(TOOLS_LIST cgnsnames cgnscheck cgnsconvert cgnsdiff cgnslist cgnscompress)
+# Tools linking
+foreach(EXENAME ${TOOLS_LIST})
+  target_link_libraries(${EXENAME} PRIVATE ${TOOLS_LK_LIBS})
+endforeach()
+
 install(TARGETS
 	cgnscheck
 	cgnsconvert
@@ -77,8 +83,8 @@ if (WIN32)
         adf2hdf.bat
         hdf2adf.bat
 	DESTINATION bin)
-  endif (CGNS_ENABLE_HDF5)
-else (WIN32)
+  endif ()
+else ()
   install(PROGRAMS
         cgnsupdate
 	DESTINATION bin)
@@ -87,6 +93,6 @@ else (WIN32)
         adf2hdf
         hdf2adf
 	DESTINATION bin)
-  endif (CGNS_ENABLE_HDF5)
-endif (WIN32)
+  endif ()
+endif ()
 

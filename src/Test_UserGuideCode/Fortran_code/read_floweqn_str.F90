@@ -1,6 +1,7 @@
       program read_floweqn_str
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file and reads flow equation info
 !
@@ -65,7 +66,7 @@
         write(6,'('' Gas model type = '',a32)') ModelTypeName(itype)
         call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,          &
              'FlowEquationSet_t',1,'GasModel_t',1,'end')
-        call cg_array_read_as_f(1,RealSingle,gamma,ier)
+        call cg_array_read_as_f(1,CGNS_ENUMV(RealSingle),gamma,ier)
         write(6,'(''    gamma='',f12.5)') gamma
       end if
 !   Read turbulence closure
@@ -77,7 +78,7 @@
           ModelTypeName(itype)
         call cg_goto_f(index_file,index_base,ier,'Zone_t',index_zone,          &
          'FlowEquationSet_t',1,'TurbulenceClosure_t',1,'end')
-        call cg_array_read_as_f(1,RealSingle,prandtl,ier)
+        call cg_array_read_as_f(1,CGNS_ENUMV(RealSingle),prandtl,ier)
         write(6,'(''    turb prandtl number = '',f12.5)') prandtl
       end if
       if (itm .eq. 1) then

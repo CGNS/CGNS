@@ -1,6 +1,7 @@
       program write_convergence
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Adds convergence history to an existing CGNS file.
 !
@@ -51,7 +52,7 @@
       call cg_goto_f(index_file,index_base,ier,'ConvergenceHistory_t',1,'end')
 !   write lift coefficient array (user must use SIDS-standard name here)
       nuse=ntt
-      call cg_array_write_f('CoefLift',RealDouble,1,nuse,cl,ier)
+      call cg_array_write_f('CoefLift',CGNS_ENUMV(RealDouble),1,nuse,cl,ier)
 !  close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully wrote cl history to file grid.cgns'')')
