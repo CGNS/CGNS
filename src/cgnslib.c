@@ -4472,7 +4472,7 @@ int cg_nsections(int fn, int B, int Z, int *nsections)
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \param[in] S  \CONN_S 
  * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
  * \param[out] SectionName Name of the Elements_t node.
  * \param[out] start  	Index of first element in the section.
@@ -4522,7 +4522,7 @@ int cg_section_read(int fn, int B, int Z, int S, char *SectionName,
  * \param[in] end  Index of last element in the section. 
  * \param[in] nbndry 	Index of last boundary element in the section. Set to zero if the elements are unsorted. 
  * \param[in] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions. 
- * \param[out] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \param[out] S  \CONN_S 
  * \return \ier
  *
  * \details This writing function only works with fixed size elements.
@@ -4575,7 +4575,7 @@ int cg_section_write(int fn, int B, int Z, const char * SectionName,
  * \param[in] nbndry 	Index of last boundary element in the section. Set to zero if the elements are unsorted. 
  * \param[in] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
  * \param[in] connect_offset 	Element connectivity offset data. This is required for NGON_n, NFACE_n and MIXED according to Elements_t Structure Definition. 
- * \param[out] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \param[out] S  \CONN_S 
  * \return \ier
  *
  */
@@ -4649,7 +4649,7 @@ int cg_poly_section_write(int fn, int B, int Z, const char * SectionName,
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section. 
  * \param[in] nbndry 	Index of last boundary element in the section. Set to zero if the elements are unsorted. 
- * \param[out] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \param[out] S  \CONN_S 
  * \return \ier
  *
  */
@@ -4694,7 +4694,7 @@ int cg_section_partial_write(int fn, int B, int Z, const char * SectionName,
  * \param[in] end  Index of last element in the section.
  * \param[in] elementDataSize 	Number of element connectivity data values.
  * \param[in] nbndry 	Index of last boundary element in the section. Set to zero if the elements are unsorted. 
- * \param[out] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \param[out] S  \CONN_S 
  * \return \ier
  *
  */
@@ -4906,7 +4906,7 @@ int cg_section_general_write(int fn, int B, int Z, const char * SectionName,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[out] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \param[out] S  \CONN_S 
  * \return \ier
  *
  * \details This function is a kind of helper to be used after a cg_section_general_write
@@ -5135,7 +5135,7 @@ int cg_section_initialize(int fn, int B, int Z, int S)
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections. 
+ * \param[in] S  \CONN_S 
  * \param[out] ElementDataSize Number of element connectivity data values.
  * \return \ier
  *
@@ -5168,7 +5168,7 @@ int cg_ElementDataSize(int fn, int B, int Z, int S,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
  * \param[out] ElementDataSize Number of element connectivity data values.
@@ -5283,7 +5283,7 @@ int cg_ElementPartialSize(int fn, int B, int Z, int S,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[out] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
  * \param[out] parent_data  For boundary or interface elements, this array contains information on the cell(s) and cell face(s) sharing the element. If you do not need to read the ParentData when reading the ElementData, you may set the value to NULL.
  * \return \ier
@@ -5356,7 +5356,7 @@ int cg_elements_read(int fn, int B, int Z, int S, cgsize_t *elements,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[out] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
  * \param[out] connect_offset 	Element connectivity offset data. This is required for NGON_n, NFACE_n and MIXED according to Elements_t Structure Definition. 
  * \param[out] parent_data  For boundary or interface elements, this array contains information on the cell(s) and cell face(s) sharing the element. If you do not need to read the ParentData when reading the ElementData, you may set the value to NULL.
@@ -5444,7 +5444,7 @@ int cg_poly_elements_read(int fn, int B, int Z, int S, cgsize_t *elements,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
  * \param[out] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
@@ -5634,7 +5634,7 @@ int cg_elements_partial_read(int fn, int B, int Z, int S,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
  * \param[in] m_type Data type of an array in memory. Admissible data types are Integer and LongInteger. 
@@ -5774,7 +5774,7 @@ int cg_elements_general_read(int fn, int B, int Z, int S,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
  * \param[in] m_type Data type of an array in memory. Admissible data types are Integer and LongInteger. 
@@ -5918,7 +5918,7 @@ int cg_parent_elements_general_read(int fn, int B, int Z, int S,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
  * \param[in] m_type Data type of an array in memory. Admissible data types are Integer and LongInteger. 
@@ -6061,7 +6061,7 @@ int cg_parent_elements_position_general_read(int fn, int B, int Z, int S,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
  * \param[out] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
@@ -6257,7 +6257,7 @@ int cg_poly_elements_partial_read(int fn, int B, int Z, int S,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
  * \param[in] m_type Data type of an array in memory. Admissible data types are Integer and LongInteger. 
@@ -6408,7 +6408,7 @@ int cg_poly_elements_general_read(int fn, int B, int Z, int S,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
  * \param[in] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
@@ -6594,7 +6594,7 @@ int cg_elements_partial_write(int fn, int B, int Z, int S,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
  * \param[in] m_type Data type of an array in memory. Admissible data types are Integer and LongInteger. 
@@ -6909,7 +6909,7 @@ int cg_elements_general_write(int fn, int B, int Z, int S,
  * \param[in] fn  \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] start  Index of first element in the section.
  * \param[in] end  Index of last element in the section.
  * \param[in] elements  Element connectivity data. The element connectivity order is given in Element Numbering Conventions.
@@ -6937,7 +6937,7 @@ int cg_poly_elements_partial_write(int fn, int B, int Z, int S,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] start  	Index of first element in the section.
  * \param[in] end  Index of last element in the section.
  * \param[in] m_type Data type of an array in memory. Admissible data types are Integer and LongInteger. 
@@ -7536,10 +7536,10 @@ int cg_poly_elements_general_write(int fn, int B, int Z, int S,
  *
  * \brief  Write parent info for an element section
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] parent_data  For boundary or interface elements, this array contains information on the cell(s) and cell face(s) sharing the element. If you do not need to read the ParentData when reading the ElementData, you may set the value to NULL. 
  * \return \ier
  *
@@ -7642,7 +7642,7 @@ int cg_parent_data_write(int fn, int B, int Z, int S,
  * \param[in] fn   \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Element section index, where 1 ≤ S ≤ nsections.
+ * \param[in] S  \CONN_S
  * \param[in] start Index of first element in the section.
  * \param[in] end  Index of last element in the section. 
  * \param[in] parent_data  For boundary or interface elements, this array contains information on the cell(s) and cell face(s) sharing the element. If you do not need to read the ParentData when reading the ElementData, you may set the value to NULL. 
