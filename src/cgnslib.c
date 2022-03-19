@@ -259,7 +259,7 @@ const char * AverageInterfaceTypeName[NofValidAverageInterfaceTypes] =
 int n_open = 0;
 int cgns_file_size = 0;
 int file_number_offset = 0;
-int VersionList[] = {4200,
+int VersionList[] = {4300, 4200,
                      4110, 4100, 4000,
                      3210, 3200,
                      3140, 3130, 3110, 3100,
