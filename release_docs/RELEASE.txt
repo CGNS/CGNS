@@ -1,12 +1,12 @@
-CGNS version 4.3.0
+CGNS version 4.4.0
 =================================
 
 INTRODUCTION
 ------------
 
-This document describes the difference between CGNS 4.2.0 and
-CGNS 4.3.0, and contains information on known problems in
-CGNS 4.3.0.
+This document describes the difference between CGNS 4.3.0 and
+CGNS 4.4.0, and contains information on known problems in
+CGNS 4.4.0.
 
 Links to the CGNS current released source code can be found at:
 
@@ -25,7 +25,7 @@ CONTENTS
 
 - New Features
 - Support for new platforms and languages
-- Bug Fixes since CGNS 4.2.0
+- Bug Fixes since CGNS 4.3.0
 - Known Problems
 
 New Features
