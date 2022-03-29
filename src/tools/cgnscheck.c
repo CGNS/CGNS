@@ -20,6 +20,7 @@
 #include "cgnslib.h"
 #include "cgns_header.h"
 #include "cgnames.h"
+#include "cgns_io.h"
 
 #if !defined(CGNS_VERSION) || CGNS_VERSION < 3100
 # error You need at least CGNS Version 3.1
@@ -661,14 +662,24 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
                 return nodes;
             }
             if (type == CGNS_ENUMV(NFACE_n)) {
-                *nnodes = offsets[ne+1] - offsets[ne];
+                *nnodes = (int)(offsets[ne+1] - offsets[ne]);
                 nodes += (offsets[ne] - offsets[0]);
                 *dim = 3;
                 return nodes;
             }
             if (type == CGNS_ENUMV(MIXED)) {
                 type = (CGNS_ENUMT(ElementType_t))*nodes++;
+                if (FileVersion < 3200 &&
+                   type >= CGNS_ENUMV(NGON_n)) {
+                   nn = (int)(type - CGNS_ENUMV(NGON_n));
+                }
+                else {
+                    if (cg_npe (type, &nn) || nn <= 0)
+                    return NULL;
+                }
                 while (ne-- > 0) {
+                    nodes += nn;
+                    type = (CGNS_ENUMT(ElementType_t))*nodes++;
                     if (FileVersion < 3200 &&
                         type >= CGNS_ENUMV(NGON_n)) {
                         nn = (int)(type - CGNS_ENUMV(NGON_n));
@@ -677,8 +688,6 @@ static cgsize_t *find_element (ZONE *z, cgsize_t elem, int *dim, int *nnodes)
                         if (cg_npe (type, &nn) || nn <= 0)
                             return NULL;
                     }
-                    nodes += nn;
-                    type = (CGNS_ENUMT(ElementType_t))*nodes++;
                 }
             }
             else {
@@ -1440,6 +1449,59 @@ static void read_zone (int nz)
                 }
                 pe += nn;
             }
+            /* Find if duplicate indices with same sign are present */
+            cgsize_t idx_max, idx_min;
+            cgsize_t arr_size;
+            unsigned char BTMSK_NONE  = 0;
+            unsigned char BTMSK_OWNER = 0x1;
+            unsigned char BTMSK_NEIGH = 0x1 << 1;
+            unsigned char BTMSK_REF_ERR = 0x1 << 2;
+            unsigned char * face_tags = NULL;
+
+            idx_min = z->maxnode;
+            idx_max = 0;
+            pe = es->elements;
+            for (nn = 0; nn < po[nelem]; nn++) {
+                cgsize_t tmp = pe[nn] > 0 ? pe[nn] : -pe[nn];
+                if (tmp > idx_max) idx_max = tmp;
+                if (tmp < idx_min) idx_min = tmp;
+            }
+            arr_size = idx_max - idx_min + 1;
+            face_tags = (unsigned char *) malloc((size_t)(arr_size *sizeof(unsigned char)));
+            if (face_tags == NULL) {
+                fatal_error("malloc failed for face tags\n");
+	    }
+            for (nn=0; nn < arr_size; nn++) {
+                face_tags[nn] &= BTMSK_NONE;
+            }
+            for (nn=0; nn < po[nelem]; nn++) {
+                size_t face_id;
+                if (pe[nn] > 0) {
+                    face_id = (pe[nn] - idx_min) % arr_size; // compute a hash
+                    if (face_tags[face_id] & BTMSK_OWNER) {
+                        face_tags[face_id] |= BTMSK_REF_ERR;
+                        error("  duplicate positive faces indices detected in NFace_n Elements connectivity\n");
+                    }
+                    else {
+                        face_tags[face_id] |= BTMSK_OWNER;
+                    }
+                }
+                else {
+                    face_id = (-pe[nn] - idx_min) % arr_size; // compute a hash
+                    if (face_tags[face_id] & BTMSK_NEIGH) {
+                        face_tags[face_id] |= BTMSK_REF_ERR;
+                        error("  duplicate negative faces indices detected in NFace_n Elements connectivity\n");
+                    }
+                    else{
+                        face_tags[face_id] |= BTMSK_NEIGH;
+                    }
+                }
+                if (face_tags[face_id]  & BTMSK_REF_ERR) {
+                    ierr++;
+                    break;
+                }
+            }
+            free(face_tags);
         }
         else {
             if (cg_npe (es->type, &nn) || nn <= 0) {
@@ -2016,9 +2078,9 @@ static void check_arrays (int parclass, int *parunits, int isref,
         if (ndim < 1 || size < 1)
             error ("invalid dimensions");
         if (length < 0 && size != 1 && size != -length)
-            error ("array size not 1 or %d", -length);
+            error ("array size not 1 or %ld", -length);
         if (length > 0 && size != length)
-            error ("array size not %d", length);
+            error ("array size not %ld", length);
         check_quantity (na, name, dataclass, punits, isref, indent+2);
     }
 }
@@ -3495,6 +3557,9 @@ static void check_BC (int nb, int parclass, int *parunits)
                 "BC Type is FamilySpecified but no family name is given");
     }
     else {
+        if (bctype != CGNS_ENUMV(FamilySpecified)) {
+            warning(2, "BC Type is not FamilySpecified but a family name is defined.\n");
+        }
         if (verbose) printf ("    Family=\"%s\"\n", name);
         for (n = 0; n < NumFamily; n++) {
             if (0 == strcmp (name, Family[n])) break;
@@ -3651,10 +3716,16 @@ static void check_zoneBC (void)
     char name[33], *desc;
     int n, nb, ierr;
     int *punits, units[9], dataclass;
+    ZONE *z = &Zones[cgnszone-1];
 
     if (cg_nbocos (cgnsfn, cgnsbase, cgnszone, &nb))
         error_exit("cg_nbocos");
-    if (nb < 1) return;
+    if (nb < 1) {
+        if (z->ns > 0 && CellDim == 3) {
+          warning(2, "Surface elements exists in the 3D zone but no ZoneBC_t is declared. If the surface elements are meant to define boundaries ZoneBC_t is required.");
+        }
+        return;
+    }
     puts ("  checking boundary conditions");
     fflush (stdout);
     go_absolute ("Zone_t", cgnszone, "ZoneBC_t", 1, NULL);
@@ -3705,7 +3776,8 @@ static void check_zoneBC (void)
 
 static void check_1to1 (int nzc, int nc)
 {
-    char name[33], dname[33], *desc;
+    char name[33], *desc;
+    char_66 dname;
     int ierr, n, nd, trans[3];
     cgsize_t range[6], drange[6];
     ZONE *z = &Zones[cgnszone-1], *dz;
@@ -3920,7 +3992,8 @@ static void check_1to1 (int nzc, int nc)
 
 static void check_conn (int nzc, int nc)
 {
-    char name[33], dname[33], *desc;
+    char name[33], *desc;
+    char_66 dname;
     int ierr, n, nd, ndim;
     cgsize_t npts, dnpts, dims[12];
     int interp;
@@ -4035,7 +4108,9 @@ static void check_conn (int nzc, int nc)
         error ("point set type is not PointList or PointRange");
         ierr++;
     }
-
+    /* Do not try checking when donor is in a remote base */
+    if (strchr(dname, '/') != NULL)
+        return;
     for (dz = NULL, n = 0; n < NumZones; n++) {
         if (0 == strcmp (dname, Zones[n].name)) {
             dz = &Zones[n];
@@ -4827,7 +4902,8 @@ static void check_solution (int ns)
 
 static cgsize_t subreg_size(int dim, int isBC, char *subname)
 {
-    char name[33], dname[33], *p;
+    char name[33], *p;
+    char_66 dname;
     int n, nbc, ni, nc, nzc, nn, ns, nsets, trans[3];
     cgsize_t npnts, dnpnts, nsize, range[6], drange[6];
     CGNS_ENUMT(BCType_t) bctype;
@@ -4949,7 +5025,7 @@ static cgsize_t subreg_size(int dim, int isBC, char *subname)
         if (0 == strcmp(p, name)) {
             if (ptype == CGNS_ENUMV(PointRange) && npnts == 2) {
                 cgsize_t *pnts;
-                pnts = (cgsize_t *)malloc(2 * nsets * dim * sizeof(cgsize_t));
+                pnts = (cgsize_t *)malloc(2 * (cgsize_t)nsets * (cgsize_t)dim * sizeof(cgsize_t));
                 if (pnts == NULL)
                     fatal_error("subreg_size:malloc failed for hole data\n");
                 if (cg_hole_read(cgnsfn, cgnsbase, cgnszone, n, pnts))
@@ -5358,7 +5434,7 @@ static void check_zone (void)
                 z->idim = 0;
             }
             if (z->dims[1][n] != z->dims[0][n] - 1) {
-                error ("number of cells in %c-direction is %d instead of %d",
+                error ("number of cells in %c-direction is %ld instead of %ld",
                     indexname[n], z->dims[1][n], z->dims[0][n] - 1);
                 z->dims[1][n] = z->dims[0][n] - 1;
             }
@@ -5430,6 +5506,10 @@ static void check_zone (void)
         if (n >= NumFamily &&
             (FileVersion >= 1200 || strcmp(name, "ORPHAN")))
             warning (2, "zone family name \"%s\" not found", name);
+    }
+    else if (ierr == CG_NODE_NOT_FOUND) {
+        warning(2, "No family name declared for zone \"%s\"."
+            "It is a recommended practice to associate one.", z->name);
     }
 
     /*----- ReferenceState -----*/
@@ -6143,7 +6223,7 @@ static void check_base_iter (void)
             ierr = 1;
         }
         if (NumSteps > 0 && nmax > 0 && !ierr) {
-            desc = (char *) malloc (32 * nmax * NumSteps * sizeof(char));
+            desc = (char *) malloc (32 * (cgsize_t)nmax * (cgsize_t)NumSteps * sizeof(char));
             if (NULL == desc)
                 fatal_error("malloc failed for family pointers\n");
             if (cg_array_read (nfp, desc)) error_exit("cg_array_read");
@@ -6219,7 +6299,7 @@ static void check_base_iter (void)
             ierr = 1;
         }
         if (NumSteps > 0 && nmax > 0 && !ierr) {
-            desc = (char *) malloc (32 * nmax * NumSteps * sizeof(char));
+            desc = (char *) malloc (32 * (cgsize_t)nmax * (cgsize_t)NumSteps * sizeof(char));
             if (NULL == desc)
                 fatal_error("malloc failed for zone pointers\n");
             if (cg_array_read (nzp, desc)) error_exit("cg_array_read");
@@ -6487,6 +6567,78 @@ static void check_base (void)
 
 /*=======================================================================*/
 
+void check_node_name_recursive(int cgio_num, double nodeid)
+{
+
+  int nchildren, child;
+  int len;
+  char_33 name;
+  double *childids;
+  char *slash_ptr = NULL;
+
+  if (cgio_get_name(cgio_num, nodeid, name) != CG_OK) {
+    return;
+  }
+
+  if (strlen(name) < 1) {
+    return;
+  }
+
+  if (name[0] == '.') {
+    error ("Invalid CGNS node name: node should not start with a dot");
+  }
+  slash_ptr = strchr(name, '/');
+  if (slash_ptr != NULL) {
+    error("Invalid CGNS node name: node should not have a slash");
+  }
+
+  cgio_number_children(cgio_num, nodeid, &nchildren);
+  if (nchildren == 0) {
+    return;
+  }
+
+  childids = (double *) malloc(nchildren*sizeof(double));
+  cgio_children_ids(cgio_num, nodeid, 1, nchildren, &len, childids);
+  if (len != nchildren) {
+    free(childids);
+    return;
+  }
+
+  for (child = 0; child < nchildren; child++) {
+    check_node_name_recursive(cgio_num, childids[child]);
+  }
+  free(childids);
+}
+
+void check_node_names(void)
+{
+  int cgio_num;
+  int nchildren, child, len;
+  double rootid;
+  double *childids;
+
+  printf ("\nchecking node names\n");
+
+  cg_get_cgio(cgnsfn, &cgio_num);
+  cg_root_id(cgnsfn, &rootid);
+
+  cgio_number_children(cgio_num, rootid, &nchildren);
+
+  childids = (double *) malloc(nchildren*sizeof(double));
+  cgio_children_ids(cgio_num, rootid, 1, nchildren, &len, childids);
+  if (len != nchildren) {
+    free(childids);
+    return;
+  }
+
+  for (child = 0; child < nchildren; child++) {
+    check_node_name_recursive(cgio_num, childids[child]);
+  }
+  free(childids);
+}
+
+/*=======================================================================*/
+
 int main (int argc, char *argv[])
 {
     char *cgnsfile;
@@ -6553,6 +6705,9 @@ int main (int argc, char *argv[])
     if (nbases < 1) warning (1, "no bases defined in CGNS file");
     for (cgnsbase = 1; cgnsbase <= nbases; cgnsbase++)
         check_base ();
+
+    /* check node name validity according to SIDS */
+    check_node_names();
 
     /* close CGNS file and exit */
 

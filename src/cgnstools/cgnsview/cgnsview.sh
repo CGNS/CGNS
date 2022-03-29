@@ -4,6 +4,9 @@
 
 dir=`dirname $0`
 
+# To let other tools access the file while cgnsview is running
+export HDF5_USE_FILE_LOCKING="FALSE"
+
 # source the setup script
 
 for d in $dir $dir/cgnstools $dir/.. ; do
@@ -36,6 +39,7 @@ fi
 
 cgnsview=""
 for d in $CG_LIB_DIR $dir $dir/cgnstools $dir/cgnsview \
+         $dir/../share/cgnstools \
          /usr/local/share /usr/local/share/cgnstools ; do
   if test -f $d/cgnsview.tcl ; then
     cgnsview=$d/cgnsview.tcl

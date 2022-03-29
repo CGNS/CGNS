@@ -37,6 +37,7 @@ fi
 
 unitconv=""
 for d in $CG_LIB_DIR $dir $dir/cgnstools $dir/cgnscalc \
+         $dir/../share/cgnstools \
          /usr/local/share /usr/local/share/cgnstools ; do
   if test -f $d/unitconv.tcl ; then
     unitconv=$d/unitconv.tcl

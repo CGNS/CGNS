@@ -46,9 +46,9 @@ char errmsg[256];
 
 static float exponents[5] = {0, 1, 0, 0, 0};
 
-void init_data();
-void write_structured(), write_unstructured();
-void test_zconn(), test_subreg();
+void init_data(void);
+void write_structured(void), write_unstructured(void);
+void test_zconn(void), test_subreg(void);
 
 void error_exit (char *where)
 {
@@ -689,7 +689,7 @@ void write_unstructured()
         transform = 1;
         if (cg_1to1_write(cgfile, cgbase, 1, name, "Zone2",
                 range, d_range, &transform, &cgconn)) {
-            sprintf(errmsg, "Zone1/%s/%s", name);
+            sprintf(errmsg, "Zone1/%s/%s", zcname, name);
             error_exit(errmsg);
         }
 

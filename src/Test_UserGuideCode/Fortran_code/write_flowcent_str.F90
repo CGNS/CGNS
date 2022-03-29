@@ -1,6 +1,7 @@
       program write_flowcent_str
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   structured grid, and adds a flow solution (at CELL CENTERS)
@@ -66,12 +67,12 @@
       solname = 'FlowSolution'
 !   create flow solution node (NOTE USE OF CellCenter HERE)
       call cg_sol_write_f(index_file,index_base,index_zone,solname,            &
-           CellCenter,index_flow,ier)
+           CGNS_ENUMV(CellCenter),index_flow,ier)
 !   write flow solution (user must use SIDS-standard names here)
       call cg_field_write_f(index_file,index_base,index_zone,index_flow,       &
-           RealDouble,'Density',r,index_field,ier)
+           CGNS_ENUMV(RealDouble),'Density',r,index_field,ier)
       call cg_field_write_f(index_file,index_base,index_zone,index_flow,       &
-           RealDouble,'Pressure',p,index_field,ier)
+           CGNS_ENUMV(RealDouble),'Pressure',p,index_field,ier)
 !   close CGNS file
       call cg_close_f(index_file,ier)
       write(6,'('' Successfully added CellCenter flow solution data'',         &

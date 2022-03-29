@@ -58,11 +58,10 @@ PROGRAM benchmark_hdf5_f90
   USE cgns
   IMPLICIT NONE
 
+#include "cgnstypes_f03.h"
 #ifdef WINNT
   INCLUDE 'cgnswin_f.h'
 #endif
-
-#include "cgnstypes_f03.h"
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
   ! Use powers of 2
@@ -174,7 +173,7 @@ PROGRAM benchmark_hdf5_f90
   xtiming(11) = t2-t1
 
   t1 = MPI_Wtime()
-  CALL cg_zone_write_f(fn, B, "Zone 1", nijk, Unstructured, Z, err)
+  CALL cg_zone_write_f(fn, B, "Zone 1", nijk, CGNS_ENUMV(Unstructured), Z, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_zone_write_f'
      CALL cgp_error_exit_f()
@@ -213,17 +212,17 @@ PROGRAM benchmark_hdf5_f90
      Coor_z(k) = Coor_y(k) + 0.1_dp
   ENDDO
 
-  CALL cgp_coord_write_f(fn,B,Z,RealDouble,"CoordinateX",Cx,err)
+  CALL cgp_coord_write_f(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateX",Cx,err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_write_f (Coor_X)'
      CALL cgp_error_exit_f()
   ENDIF
-  CALL cgp_coord_write_f(fn,B,Z,RealDouble,"CoordinateY",Cy,err)
+  CALL cgp_coord_write_f(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateY",Cy,err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_write_f (Coor_Y)'
      CALL cgp_error_exit_f()
   ENDIF
-  CALL cgp_coord_write_f(fn,B,Z,RealDouble,"CoordinateZ",Cz,err)
+  CALL cgp_coord_write_f(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateZ",Cz,err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_write_f (Coor_Z)'
      CALL cgp_error_exit_f()
@@ -265,7 +264,7 @@ PROGRAM benchmark_hdf5_f90
 
   start = 1
   iend = nijk(2)
-  CALL cgp_section_write_f(fn,B,Z,"Elements",PENTA_6,start,iend,0,S,err)
+  CALL cgp_section_write_f(fn,B,Z,"Elements",CGNS_ENUMV(PENTA_6),start,iend,0,S,err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_section_write_f'
      CALL cgp_error_exit_f()
@@ -326,23 +325,23 @@ PROGRAM benchmark_hdf5_f90
      Data_Fz(k) = REAL(comm_rank*count+k, KIND=dp) + .03_dp
   ENDDO
 
-  CALL cg_sol_write_f(fn, B, Z, "Solution", Vertex, S, err)
+  CALL cg_sol_write_f(fn, B, Z, "Solution", CGNS_ENUMV(Vertex), S, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cg_sol_write_f'
      CALL cgp_error_exit_f()
   ENDIF
 
-  CALL cgp_field_write_f(fn,B,Z,S,RealDouble,"MomentumX",Fx, err)
+  CALL cgp_field_write_f(fn,B,Z,S,CGNS_ENUMV(RealDouble),"MomentumX",Fx, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_write  (MomentumX)'
      CALL cgp_error_exit_f()
   ENDIF
-  CALL cgp_field_write_f(fn,B,Z,S,RealDouble,"MomentumY",Fy, err)
+  CALL cgp_field_write_f(fn,B,Z,S,CGNS_ENUMV(RealDouble),"MomentumY",Fy, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_write (MomentumY)'
      CALL cgp_error_exit_f()
   ENDIF
-  CALL cgp_field_write_f(fn,B,Z,S,RealDouble,"MomentumZ",Fz, err)
+  CALL cgp_field_write_f(fn,B,Z,S,CGNS_ENUMV(RealDouble),"MomentumZ",Fz, err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_field_write (MomentumZ)'
      CALL cgp_error_exit_f()

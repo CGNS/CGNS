@@ -1,7 +1,5 @@
-
 PROGRAM read_cgns_1
-
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
   INCLUDE 'cgnswin_f.h'
 #endif
@@ -11,11 +9,12 @@ PROGRAM read_cgns_1
 
   ! This program reads a 3D mesh, structured or unstructured.
 
-
   INTEGER :: Ndim, Nglobal
   PARAMETER (Ndim = 3)
   PARAMETER (Nglobal = 500)
-
+  INTEGER, PARAMETER :: sp = KIND(1.0)
+  INTEGER, PARAMETER :: dp = KIND(1.d0)
+  
   INTEGER :: i, narrays, iarray
   INTEGER :: nintegrals, integral
   INTEGER :: ndescriptors, idescr
@@ -24,7 +23,7 @@ PROGRAM read_cgns_1
   INTEGER(cgenum_t) :: ndonor_ptset_type, ndonor_data_type
   INTEGER :: idataset, dirichletflag, neumannflag
   INTEGER IndexDim, CellDim, PhysDim
-  INTEGER	ier, n
+  INTEGER ier, n
   INTEGER(cgenum_t) :: zonetype
   INTEGER nbases, nzones
   INTEGER(cgsize_t) :: rmin(3), DataSize(Ndim)
@@ -37,14 +36,14 @@ PROGRAM read_cgns_1
   INTEGER(cgsize_t) :: npnts, pnts(100000), donor_pnts(100000)
   INTEGER(cgsize_t) :: npnts_donor
   INTEGER(cgenum_t) :: bocotype, datatype
-  CHARACTER*32 basename, zonename, solname, fieldname
-  CHARACTER*32 coordname, holename
+  CHARACTER(len=32) basename, zonename, solname, fieldname
+  CHARACTER(len=32) coordname, holename
 #ifndef CG_BASESCOPE
-  CHARACTER*32 connectname, donorname
+  CHARACTER(len=32) connectname, donorname
 #else
-  CHARACTER*65 connectname, donorname
+  CHARACTER(len=65) connectname, donorname
 #endif
-  CHARACTER*32 boconame
+  CHARACTER(len=32) boconame
   INTEGER cg, base, zone, coord, sol, field, discr
   INTEGER :: hole, conn, one21, boco
   INTEGER(cgsize_t) :: RANGE(Ndim, 2), donor_range(Ndim, 2)
@@ -52,14 +51,14 @@ PROGRAM read_cgns_1
   INTEGER(cgsize_t) :: G_range(Ndim*2, Nglobal)
   INTEGER(cgsize_t) :: G_donor_range(Ndim*2, Nglobal)
   INTEGER :: G_transform(Ndim, Nglobal)
-  CHARACTER*32 G_zonename(Nglobal)
+  CHARACTER(len=32) G_zonename(Nglobal)
 #ifndef CG_BASESCOPE
-  CHARACTER*32 G_connectname(Nglobal), G_donorname(Nglobal)
+  CHARACTER(len=32) G_connectname(Nglobal), G_donorname(Nglobal)
 #else
-  CHARACTER*65 G_connectname(Nglobal), G_donorname(Nglobal)
+  CHARACTER(len=65) G_connectname(Nglobal), G_donorname(Nglobal)
 #endif
-  CHARACTER*32 name, filename
-  CHARACTER*40 text, NormDefinitions, StateDescription
+  CHARACTER(len=32) name, filename
+  CHARACTER(len=40) text, NormDefinitions, StateDescription
   INTEGER :: equation_dimension, GoverningEquationsFlag
   INTEGER :: GasModelFlag, ViscosityModelFlag
   INTEGER :: ThermalConductivityModelFlag
@@ -72,16 +71,16 @@ PROGRAM read_cgns_1
   INTEGER(cgenum_t) :: mass, length, time, temp, deg
   INTEGER :: NormalIndex(3), ndataset
   INTEGER(cgsize_t) :: NormalListSize
-  REAL*4 data_single(100000)
-  DOUBLE PRECISION data_double(100000)
-  REAL*4 version
+  REAL(KIND=sp) data_single(100000)
+  REAL(KIND=dp) data_double(100000)
+  REAL(KIND=sp) version
 
   INTEGER one, is_cgns
   PARAMETER (one = 1)
 
   ! *** open file
-  !	write(6,*) 'Input filename'
-  !	read(5,600) filename
+  !     write(6,*) 'Input filename'
+  !     read(5,600) filename
   WRITE(filename,'(a)')'cgtest.cgns'
 
   ! *** check if the file is CGNS
@@ -221,7 +220,7 @@ PROGRAM read_cgns_1
            IF (ier.EQ.ALL_OK)WRITE(6,103)'   Diffusion model=', &
                 (diffusion_model(i), i=1,6)
         ENDIF       ! If Governing Equations are defined
-     ENDIF		! If FlowEquationSet_t exists under CGNSBase_t
+     ENDIF          ! If FlowEquationSet_t exists under CGNSBase_t
 
 
      WRITE(6,400)'                              *     *     *'
@@ -241,7 +240,7 @@ PROGRAM read_cgns_1
         WRITE(6,600)'  Zone type is ', ZoneTypeName(zonetype)
 
 
-        IF (zonetype.EQ.Structured) THEN
+        IF (zonetype.EQ.CGNS_ENUMV(Structured)) THEN
            IndexDim=CellDim
         ELSE
            IndexDim=1
@@ -292,11 +291,11 @@ PROGRAM read_cgns_1
               WRITE(6,200) ' DataDim=',dim_vals(1)
 
               WRITE(6,105) ' Data:'
-              IF (datatype .EQ. RealSingle) THEN
+              IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_array_read_f(iarray, data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  WRITE(6,106) (data_single(n),n=1,dim_vals(1))
-              ELSEIF (datatype .EQ. RealDouble) THEN
+              ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_array_read_f(iarray, data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  WRITE(6,106) (data_double(n),n=1,dim_vals(1))
@@ -359,11 +358,11 @@ PROGRAM read_cgns_1
               WRITE(6,108) ' DataNdim=',nndim, &
                    ', DataDim=',dim_vals(1)
 
-              IF (datatype .EQ. RealSingle) THEN
+              IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_array_read_f(iarray, data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  WRITE(6,109) ' integraldata=',data_single(1)
-              ELSEIF (datatype .EQ. RealDouble) THEN
+              ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_array_read_f(iarray, data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  WRITE(6,109) 'integraldata=',data_double(1)
@@ -383,11 +382,11 @@ PROGRAM read_cgns_1
               ELSEIF (ier .EQ. ALL_OK) THEN
                  WRITE(6,600)' Datatype for exponents is ', &
                       DataTypeName(datatype)
-                 IF (datatype .EQ. RealSingle) THEN
-	            CALL cg_exponents_read_f(data_single, ier)
-		    IF (ier .EQ. ERROR) CALL cg_error_exit_f
-		    WRITE(6,110)' Exponents:',(data_single(n),n=1,5)
-                 ELSEIF (datatype .EQ. RealDouble) THEN
+                 IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
+                    CALL cg_exponents_read_f(data_single, ier)
+                    IF (ier .EQ. ERROR) CALL cg_error_exit_f
+                    WRITE(6,110)' Exponents:',(data_single(n),n=1,5)
+                 ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                     CALL cg_exponents_read_f(data_double, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,110)' Exponents:',(data_double(n),n=1,5)
@@ -401,19 +400,19 @@ PROGRAM read_cgns_1
               ELSEIF (ier .EQ. ALL_OK) THEN
                  WRITE(6,600)' Datatype for conversion is ', &
                       DataTypeName(datatype)
-                 IF (datatype .EQ. RealSingle) THEN
+                 IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                     CALL cg_conversion_read_f(data_single, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,110)' Conversion:',(data_single(n),n=1,2)
-                 ELSEIF (datatype .EQ. RealDouble) THEN
+                 ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                     CALL cg_conversion_read_f(data_double, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,110)' Conversion:',(data_double(n),n=1,2)
                  ENDIF
               ENDIF
 
-           ENDDO	! loop through DataArray_t
-        ENDDO	! loop through IntegralData_t
+           ENDDO ! loop through DataArray_t
+        ENDDO ! loop through IntegralData_t
 
         WRITE(6,400)'                             *     *     *'
 
@@ -463,12 +462,12 @@ PROGRAM read_cgns_1
                  num = num*dim_vals(i)
               ENDDO
 
-              IF (datatype .EQ. RealSingle) THEN
+              IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_array_read_f(iarray, data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  WRITE(6,106) (data_single(i),i=1,2)
                  WRITE(6,106) (data_single(i),i=num-1,num)
-              ELSEIF (datatype .EQ. RealDouble) THEN
+              ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_array_read_f(iarray, data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  WRITE(6,106) (data_double(i),i=1,2)
@@ -490,7 +489,7 @@ PROGRAM read_cgns_1
                       ' DescriptorText="',TRIM(text),'"'
               ENDDO
 
-           ENDDO	! loop through data arrays
+           ENDDO ! loop through data arrays
 
            ! *** read coordinates using coordinate arrays' specific functions:
 
@@ -513,20 +512,20 @@ PROGRAM read_cgns_1
                    '   datatype=',DataTypeName(datatype), &
                    '   name="',TRIM(coordname),'"'
 
-              IF (datatype .EQ. RealSingle) THEN
+              IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_coord_read_f(cg, base, zone, coordname, &
                       cg_get_type(data_single(1)), rmin, DataSize, &
                       data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
-              ELSEIF (datatype .EQ. RealDouble) THEN
+              ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_coord_read_f(cg, base, zone, coordname, &
                       cg_get_type(data_double(1)), rmin, DataSize, &
                       data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
               ENDIF
            ENDDO
-        ENDIF 	! if GridCoordinates_t exists
+        ENDIF ! if GridCoordinates_t exists
 
         WRITE(6,400)'                             *     *     *'
 
@@ -583,11 +582,11 @@ PROGRAM read_cgns_1
               ENDDO
               WRITE(6,200) 'Nr of data in solution vector=',num
 
-              IF (datatype .EQ. RealSingle) THEN
+              IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_array_read_f(iarray, data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  !write(6,106) (data_single(i),i=1,num)
-              ELSEIF (datatype .EQ. RealDouble) THEN
+              ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_array_read_f(iarray, data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  !write(6,106) (data_double(i),i=1,num)
@@ -610,7 +609,7 @@ PROGRAM read_cgns_1
                       AngleUnitsName(deg)
               ENDIF
 
-           ENDDO	! loop through DataArray_t
+           ENDDO     ! loop through DataArray_t
            WRITE(6,103)' '
 
            ! *** Reading solution data with solution specific functions:
@@ -623,10 +622,10 @@ PROGRAM read_cgns_1
 
            ! *** Compute the nr of data to be read
 
-           IF (zonetype.EQ.Structured) THEN
+           IF (zonetype.EQ.CGNS_ENUMV(Structured)) THEN
               DO i=1,3
                  DataSize(i)=SIZE(i) + rind(2*i-1) + rind(2*i)
-                 IF (location.EQ.CellCenter) DataSize(i)=DataSize(i)-1
+                 IF (location.EQ.CGNS_ENUMV(CellCenter)) DataSize(i)=DataSize(i)-1
               ENDDO
            ELSE
               DataSize(1)=SIZE(2)
@@ -647,11 +646,11 @@ PROGRAM read_cgns_1
 
               ! *** read entire range of solution data and record in double precision
               CALL cg_field_read_f(cg, base, zone, sol, fieldname, &
-                   RealDouble, rmin, DataSize, data_double, ier)
+                   CGNS_ENUMV(RealDouble), rmin, DataSize, data_double, ier)
               IF (ier .EQ. ERROR) CALL cg_error_exit_f
            ENDDO                             ! field loop
 
-        ENDDO	! loop through FlowSolution_t
+        ENDDO     ! loop through FlowSolution_t
 
         WRITE(6,400)'                             *     *     *'
 
@@ -699,11 +698,11 @@ PROGRAM read_cgns_1
                  num=num*dim_vals(n)
               ENDDO
 
-              IF (datatype .EQ. RealSingle) THEN
+              IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_array_read_f(iarray, data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  !write(6,*) (data_single(n),n=1,num)
-              ELSEIF (datatype .EQ. RealDouble) THEN
+              ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_array_read_f(iarray, data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
                  !write(6,*) (data_double(n),n=1,num)
@@ -723,7 +722,7 @@ PROGRAM read_cgns_1
                       TemperatureUnitsName(temp), TimeUnitsName(time), &
                       AngleUnitsName(deg)
               ENDIF
-           ENDDO		! loop through DataArray_t
+           ENDDO          ! loop through DataArray_t
         ENDDO
 
         WRITE(6,400)'                             *     *     *'
@@ -786,7 +785,7 @@ PROGRAM read_cgns_1
                  WRITE(6,500) '     DescriptorName="',TRIM(name),'"', &
                       '     DescriptorText="',TRIM(text),'"'
               ENDDO
-           ENDDO	!hole loop
+           ENDDO     !hole loop
 
 
 
@@ -888,7 +887,7 @@ PROGRAM read_cgns_1
                  ENDDO
               ENDIF
            ENDDO
-        ENDIF	! if ZoneGridConnectivity exists
+        ENDIF ! if ZoneGridConnectivity exists
 
         WRITE(6,400)'                             *     *     *'
 
@@ -930,11 +929,11 @@ PROGRAM read_cgns_1
                  WRITE(6,600)'    Datatype=',DataTypeName(datatype)
 
                  WRITE(6,600)'    Data:'
-                 IF (datatype .EQ. RealSingle) THEN
+                 IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                     CALL cg_array_read_f(iarray, data_single, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,124) data_single(1)
-                 ELSEIF (datatype .EQ. RealDouble) THEN
+                 ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                     CALL cg_array_read_f(iarray, data_double, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,124) data_double(1)
@@ -953,7 +952,7 @@ PROGRAM read_cgns_1
                       TemperatureUnitsName(temp), TimeUnitsName(time), &
                       AngleUnitsName(deg)
               ENDIF
-           ENDIF	!if ReferenceState exists under ZoneBC_t
+           ENDIF  !if ReferenceState exists under ZoneBC_t
 
            CALL cg_nbocos_f(cg, base, zone, nbocos, ier)
            IF (ier .EQ. ERROR) CALL cg_error_exit_f
@@ -978,11 +977,11 @@ PROGRAM read_cgns_1
                    DataTypeName(datatype)
 
               ! read patch points and InwardNormalList
-              IF (datatype.EQ.RealSingle) THEN
+              IF (datatype.EQ.CGNS_ENUMV(RealSingle)) THEN
                  CALL cg_boco_read_f(cg, base, zone, boco, pnts, &
                       data_single, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
-              ELSEIF (datatype.EQ.RealDouble) THEN
+              ELSEIF (datatype.EQ.CGNS_ENUMV(RealDouble)) THEN
                  CALL cg_boco_read_f(cg, base, zone, boco, pnts, &
                       data_double, ier)
                  IF (ier .EQ. ERROR) CALL cg_error_exit_f
@@ -994,14 +993,14 @@ PROGRAM read_cgns_1
                    pnts(3*npnts)
 
               IF (NormalListSize .NE. 0) THEN
-                 IF (datatype.EQ.RealSingle) &
+                 IF (datatype.EQ.CGNS_ENUMV(RealSingle)) &
                       WRITE(6,126) '   Normals:', &
                       '    first point:', data_single(1),data_single(2), &
                       data_single(3), &
                       '    last point :', data_single(3*npnts-2), &
                       data_single(3*npnts-1), &
                       data_single(3*npnts)
-                 IF (datatype.EQ.RealDouble) &
+                 IF (datatype.EQ.CGNS_ENUMV(RealDouble)) &
                       WRITE(6,126) '   Normals:', &
                       '    first point:', data_double(1),data_double(2), &
                       data_double(3), &
@@ -1043,18 +1042,18 @@ PROGRAM read_cgns_1
                  IF (DirichletFlag.EQ.1) THEN
                     CALL cg_goto_f(cg, base, ier, 'Zone_t', zone, &
                          'ZoneBC_t', one, 'BC_t', boco, 'BCDataSet_t', &
-                         idataset,'BCData_t',Dirichlet,'end')
+                         idataset,'BCData_t',CGNS_ENUMV(Dirichlet),'end')
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
                     ! ** boundary condition data attributes: DataClass_t
-		    WRITE(6,401)'   Dirichlet DataSet:'
-		    CALL cg_dataclass_read_f(TYPE,ier)
-		    IF (ier .EQ. ERROR) CALL cg_error_exit_f
+                    WRITE(6,401)'   Dirichlet DataSet:'
+                    CALL cg_dataclass_read_f(TYPE,ier)
+                    IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,600)'    DataClass=', &
                          DataClassName(TYPE)
 
                     ! ** boundary condition data attributes: DataArray_t
-		    CALL cg_narrays_f(narrays, ier)
+                    CALL cg_narrays_f(narrays, ier)
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
                     WRITE(6,127) '    DirichletData', &
                          ' contains ', narrays,' data arrays'
@@ -1069,25 +1068,25 @@ PROGRAM read_cgns_1
                             DataTypeName(datatype)
 
                        WRITE(6,105)'    Dirichlet Data:'
-                       IF (datatype .EQ. RealSingle) THEN
+                       IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                           CALL cg_array_read_f(iarray, data_single, ier)
                           IF (ier .EQ. ERROR) CALL cg_error_exit_f
                           WRITE(6,106)&
                                (data_single(n),n=1,dim_vals(1))
 
-                       ELSEIF (datatype .EQ. RealDouble) THEN
+                       ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                           CALL cg_array_read_f(iarray, data_double, ier)
                           IF (ier .EQ. ERROR) CALL cg_error_exit_f
                           WRITE(6,106)&
                                (data_double(n),n=1,dim_vals(1))
                        ENDIF
-		    ENDDO
+                    ENDDO
                  ENDIF
 
                  IF (NeumannFlag.EQ.1) THEN
                     CALL cg_goto_f(cg, base, ier, 'Zone_t', zone, &
                          'ZoneBC_t', one, 'BC_t', boco, 'BCDataSet_t', &
-                         idataset, 'BCData_t', Neumann,'end')
+                         idataset, 'BCData_t', CGNS_ENUMV(Neumann),'end')
                     IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
                     ! ** boundary condition data attributes: DataClass_t
@@ -1112,25 +1111,25 @@ PROGRAM read_cgns_1
                             DataTypeName(datatype)
 
                        WRITE(6,400)'    Neumann Data:'
-                       IF (datatype .EQ. RealSingle) THEN
+                       IF (datatype .EQ. CGNS_ENUMV(RealSingle)) THEN
                           CALL cg_array_read_f(iarray, data_single, ier)
                           IF (ier .EQ. ERROR) CALL cg_error_exit_f
                           WRITE(6,106)&
                                (data_single(n),n=1,dim_vals(1))
 
-                       ELSEIF (datatype .EQ. RealDouble) THEN
+                       ELSEIF (datatype .EQ. CGNS_ENUMV(RealDouble)) THEN
                           CALL cg_array_read_f(iarray, data_double, ier)
                           IF (ier .EQ. ERROR) CALL cg_error_exit_f
                           WRITE(6,106)&
                                (data_double(n),n=1,num)
                        ENDIF
 
-                    ENDDO	! loop through DataArray
-                 ENDIF		! if Neumann
-              ENDDO		! loop through dataset
-           ENDDO		! loop through boco
-        ENDIF		        ! if ZoneBC_t exists
-     ENDDO			! zone loop
+                    ENDDO     ! loop through DataArray
+                 ENDIF          ! if Neumann
+              ENDDO          ! loop through dataset
+           ENDDO          ! loop through boco
+        ENDIF                  ! if ZoneBC_t exists
+     ENDDO               ! zone loop
 
      WRITE(6,400)'                             *     *     *'
 
@@ -1170,7 +1169,7 @@ PROGRAM read_cgns_1
      ENDIF
 
 
-  ENDDO    				! loop through bases
+  ENDDO        ! loop through bases
 
   WRITE(6,400)'                             *     *     *'
 

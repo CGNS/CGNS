@@ -1,6 +1,7 @@
       program read_bcpnts_unst
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   unstructured grid + BCs (in PointList+GridLocation=FaceCenter
@@ -51,7 +52,7 @@
         call cg_goto_f(index_file,index_base,ier,'Zone_t',1,                   &
              'ZoneBC_t',1,'BC_t',ib,'end')
         call cg_gridlocation_read_f(igr,ier)
-        if (igr .eq. FaceCenter) then
+        if (igr .eq. CGNS_ENUMV(FaceCenter)) then
           write(6,'('' GridLocation=FaceCenter means BC data refers'',         &
             '' to elements, not nodes'')')
         end if
@@ -59,7 +60,7 @@
         call cg_boco_info_f(index_file,index_base,index_zone,ib,               &
              boconame,ibocotype,iptset,npts,normalindex,normallistflag,        &
              normaldatatype,ndataset,ier)
-        if (iptset .ne. PointList) then
+        if (iptset .ne. CGNS_ENUMV(PointList)) then
           write(6,'('' Error.  For this program, BCs must be set'',            &
            ''  up as PointList type'',a32)') PointSetTypeName(iptset)
           stop

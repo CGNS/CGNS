@@ -121,7 +121,7 @@ CGEXTERN int cgio_configure (
     void *value
 );
 
-CGEXTERN void cgio_cleanup ();
+CGEXTERN void cgio_cleanup (void);
 
 CGEXTERN int cgio_check_file (
     const char *filename,
@@ -361,12 +361,6 @@ CGEXTERN int cgio_get_dimensions (
     cgsize_t *dims
 );
 
-CGEXTERN int cgio_read_all_data (
-    int cgio_num,
-    double id,
-    void *data
-);
-
 CGEXTERN int cgio_read_all_data_type (
     int cgio_num,
     double id,
@@ -380,28 +374,6 @@ CGEXTERN int cgio_read_block_data_type (
     cgsize_t b_start,
     cgsize_t b_end,
     const char *m_data_type,
-    void *data
-);
-
-CGEXTERN int cgio_read_block_data (
-    int cgio_num,
-    double id,
-    cgsize_t b_start,
-    cgsize_t b_end,
-    void *data
-);
-
-CGEXTERN int cgio_read_data (
-    int cgio_num,
-    double id,
-    const cgsize_t *s_start,
-    const cgsize_t *s_end,
-    const cgsize_t *s_stride,
-    int m_num_dims,
-    const cgsize_t *m_dims,
-    const cgsize_t *m_start,
-    const cgsize_t *m_end,
-    const cgsize_t *m_stride,
     void *data
 );
 

@@ -36,6 +36,8 @@
 #define HAVE_FORTRAN_2008TS @HAVE_FORTRAN_2008TS@
 #define HDF5_HAVE_MULTI_DATASETS @HDF5_HAVE_MULTI_DATASETS@
 
+#define CG_BUILD_HDF5   @BUILDHDF5@
+
 #define CG_BUILD_SCOPE  @BUILDSCOPE@
 
 #define CGNS_BASESCOPE  @BUILDBASESCOPE@
@@ -50,18 +52,13 @@
 # endif
 #endif
 
-#ifdef NO_CONCATENATION
-# define IDENTITY(x)      x
-# define CONCATENATE(a,b) IDENTITY(a)b
+#ifdef __GFORTRAN__
+#define PASTE(a) a
+#define CONCATENATE(a,b) PASTE(a)b
 #else
-# define CONCATENATE(a,b) a##b
+#define PASTE(a,b) a ## b
+#define CONCATENATE(a,b) PASTE(a,b)
 #endif
-
-!#if  __STDC__
-!#define CONCATENATE(a,b) a##b
-!#else
-!#define CONCATENATE(a,b) a/**/b
-!#endif
 
 #ifdef CGNS_SCOPE_ENUMS
 ! set scope prefix (case does not matter in Fortran)

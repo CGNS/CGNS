@@ -1,6 +1,7 @@
       program write_con2zn_str
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Opens an existing CGNS file that contains a simple 3-D
 !   structured grid (2 zones), and adds 1-to-1

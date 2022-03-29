@@ -6,7 +6,7 @@
 !       last revised on April 19 2000
 
 ! 	This example reads an unstructured zone mixed element section
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -78,7 +78,7 @@
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 	Idim=Cdim
-	if (ZoneType .eq. Unstructured) Idim=1
+	if (ZoneType .eq. CGNS_ENUMV(Unstructured)) Idim=1
 
         write(6,100)'*** Zone_t node ***'
         write(6,103)'Name= ',nodename
@@ -104,7 +104,7 @@
         coordname(3) = 'CoordinateZ'
 	do i=1, Pdim
 	    call cg_coord_read_f(cg, base, zone, coordname(i), &
-                  RealDouble, range_min, range_max, data_double, ier)
+                  CGNS_ENUMV(RealDouble), range_min, range_max, data_double, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 	    write(6,103)coordname(i)
 	    write(6,109)'first point:',data_double(1)
@@ -128,7 +128,7 @@
                                       ElementDataSize, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 	
-	    if (type .ge. MIXED) then
+	    if (type .ge. CGNS_ENUMV(MIXED)) then
 	        call cg_poly_elements_read_f(cg, base, zone, sect, &
 	            elements, connect_offsets, parent_data, ier)
 	        if (ier.eq.ERROR)  call cg_error_exit_f
@@ -153,19 +153,19 @@
 
 	    nelem = end-start+1
 	    write(6,103)'Element Connectivity:'
-	    if (type .lt. MIXED) then
+	    if (type .lt. CGNS_ENUMV(MIXED)) then
 	        do i=1, nelem
 	            write(6,110)(elements((i-1)*npe+n),n=1,npe)
 	    	enddo
-	    elseif (type .eq. MIXED) then
+	    elseif (type .eq. CGNS_ENUMV(MIXED)) then
 		count = 0
 	        do i=1, nelem
 		    count = count + 1
 		    type = elements(count)
-		    if (type .gt. NGON_n) then
-			npe = type - NGON_n
+		    if (type .gt. CGNS_ENUMV(NGON_n)) then
+			npe = type - CGNS_ENUMV(NGON_n)
 			write(6,111) &
-                          'Element Type= NGON_n, npe =',npe
+                          'Element Type=  NGON_n, npe =',npe
 		    else
 			call cg_npe_f(type, npe, ier)
 			write(6,112)'Element Type= ', &

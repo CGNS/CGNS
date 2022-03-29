@@ -44,9 +44,11 @@ install-dirs :
 install-prog :
 	@echo "installing cgnscalc shell scripts to $(BIN_INSTALL_DIR)"
 	@$(INSTALL_PROG) cgnscalc.sh $(BIN_INSTALL_DIR)/cgnscalc
-	@chmod +x $(BIN_INSTALL_DIR)/cgnscalc
+	@$(INSTALL_PROG) cgnscalc.desktop $(BIN_INSTALL_DIR)/
+	@chmod +x $(BIN_INSTALL_DIR)/cgnscalc  $(BIN_INSTALL_DIR)/cgnscalc.desktop
 	@$(INSTALL_PROG) unitconv.sh $(BIN_INSTALL_DIR)/unitconv
-	@chmod +x $(BIN_INSTALL_DIR)/unitconv
+	@$(INSTALL_PROG) unitconv.desktop $(BIN_INSTALL_DIR)/
+	@chmod +x $(BIN_INSTALL_DIR)/unitconv  $(BIN_INSTALL_DIR)/unitconv.desktop
 	@if [ ! -f $(EXE_INSTALL_DIR)/cgconfig ] ; then \
 	  echo "installing configuration file to $(EXE_INSTALL_DIR)"; \
 	  $(INSTALL_DATA) ../cgconfig $(EXE_INSTALL_DIR)/cgconfig; \

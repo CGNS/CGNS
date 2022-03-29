@@ -5,13 +5,13 @@ PROGRAM pcgns_ftest
   USE CGNS
   IMPLICIT NONE
 
+#include "cgnstypes_f03.h"
 #ifdef WINNT
   INCLUDE 'cgnswin_f.h'
 #endif
 
-
   INTEGER(cgsize_t), PARAMETER :: totcnt = 40320 * 10
-
+  INTEGER, PARAMETER :: NLOOPS = 5000
   INTEGER(cgsize_t) npp
   INTEGER(C_INT) commsize, commrank, mpi_err
   INTEGER i, nb, nz, nerrs
@@ -26,6 +26,7 @@ PROGRAM pcgns_ftest
   CHARACTER*11 piomode(2)
   INTEGER :: istat
   INTEGER :: precision
+  INTEGER, TARGET :: value
 
   DATA piomode /'independent','collective'/
 
@@ -73,8 +74,22 @@ PROGRAM pcgns_ftest
      PRINT *,'total Mb for all data  =', dsize
   ENDIF
 
-! default is MPI_COMM_WORLD, but can set another communicator with this
-!     call cgp_mpi_comm_f(MPI_COMM_WORLD,ierr)
+  ! default is MPI_COMM_WORLD, but can set another communicator with this
+  ! call cgp_mpi_comm_f(MPI_COMM_WORLD,ierr)
+
+  ! Check repeated opening and closing of a file to detect issues with 
+  ! missed closed HDF5 objects, CGNS-109.
+
+  ! Note, this is extremely slow when used with Github Actions 
+  ! and Linux, so it is disabled in that case.
+#ifndef DISABLE_CGNS109
+  DO n = 1, NLOOPS
+     CALL cgp_open_f('pcgns_ftest.cgns',CG_MODE_WRITE,F,ierr)
+     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+     CALL cgp_close_f(F,ierr)
+     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+  ENDDO
+#endif
 
   CALL cgp_open_f('pcgns_ftest.cgns',CG_MODE_WRITE,F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
@@ -88,23 +103,23 @@ PROGRAM pcgns_ftest
 
      DO nz=1,2
         WRITE(name,'(a4,i2)') 'Zone',nz
-        CALL cg_zone_write_f(F,B,name,sizes,Unstructured,Z,ierr)
+        CALL cg_zone_write_f(F,B,name,sizes,CGNS_ENUMV(Unstructured),Z,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_coord_write_f(F,B,Z,RealDouble,'CoordinateX',Cx,ierr)
+        CALL cgp_coord_write_f(F,B,Z,CGNS_ENUMV(RealDouble),'CoordinateX',Cx,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_coord_write_f(F,B,Z,RealDouble,'CoordinateY',Cy,ierr)
+        CALL cgp_coord_write_f(F,B,Z,CGNS_ENUMV(RealDouble),'CoordinateY',Cy,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_coord_write_f(F,B,Z,RealDouble,'CoordinateZ',Cz,ierr)
+        CALL cgp_coord_write_f(F,B,Z,CGNS_ENUMV(RealDouble),'CoordinateZ',Cz,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_section_write_f(F,B,Z,'Tets',TETRA_4,start_1,totcnt,0,E,ierr)
+        CALL cgp_section_write_f(F,B,Z,'Tets',CGNS_ENUMV(TETRA_4),start_1,totcnt,0,E,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cg_sol_write_f(F,B,Z,'Solution',Vertex,S,ierr)
+        CALL cg_sol_write_f(F,B,Z,'Solution',CGNS_ENUMV(Vertex),S,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_field_write_f(F,B,Z,S,RealDouble,'MomentumX',Fx,ierr)
+        CALL cgp_field_write_f(F,B,Z,S,CGNS_ENUMV(RealDouble),'MomentumX',Fx,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_field_write_f(F,B,Z,S,RealDouble,'MomentumY',Fy,ierr)
+        CALL cgp_field_write_f(F,B,Z,S,CGNS_ENUMV(RealDouble),'MomentumY',Fy,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_field_write_f(F,B,Z,S,RealDouble,'MomentumZ',Fz,ierr)
+        CALL cgp_field_write_f(F,B,Z,S,CGNS_ENUMV(RealDouble),'MomentumZ',Fz,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cg_goto_f(F,B,ierr,name,0,'end')
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
@@ -112,11 +127,11 @@ PROGRAM pcgns_ftest
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL cg_gorel_f(F,ierr,'User Data',0,'end')
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_array_write_f('ArrayX',RealDouble,1,totcnt,Ax,ierr)
+        CALL cgp_array_write_f('ArrayX',CGNS_ENUMV(RealDouble),1,totcnt,Ax,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_array_write_f('ArrayY',RealDouble,1,totcnt,Ay,ierr)
+        CALL cgp_array_write_f('ArrayY',CGNS_ENUMV(RealDouble),1,totcnt,Ay,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
-        CALL cgp_array_write_f('ArrayZ',RealDouble,1,totcnt,Az,ierr)
+        CALL cgp_array_write_f('ArrayZ',CGNS_ENUMV(RealDouble),1,totcnt,Az,ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
         CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
         ts = MPI_WTIME()
@@ -147,10 +162,8 @@ PROGRAM pcgns_ftest
         CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
         te = MPI_WTIME()
         tt = te - ts;
-        IF (commrank .EQ. 0) THEN
-           PRINT *,'write:',tt,' secs,', dsize/tt, ' Mb/sec (', &
-                piomode(nb),')'
-        ENDIF
+        IF (commrank .EQ. 0) &
+             PRINT *,'write:',tt,' secs,', dsize/tt, ' Mb/sec (', piomode(nb),')'
      ENDDO
   ENDDO
   CALL cgp_close_f(F,ierr)
@@ -159,7 +172,7 @@ PROGRAM pcgns_ftest
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   CALL cg_precision_f(F, PRECISION, ierr)
-  PRINT*,'PPP',PRECISION
+  IF (commrank .EQ. 0) PRINT*,'cg_precision_f PRECISION ',PRECISION
 
   Z = 1
   S = 1
@@ -246,6 +259,20 @@ PROGRAM pcgns_ftest
   CALL cgp_close_f(F,ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
+! Disable with gfortran, GCC Bugzilla - Bug 99982
+#ifndef __GFORTRAN__ 
+  ! test cg_configure_f
+  value = MPI_COMM_SELF
+  CALL cg_configure_f(CG_CONFIG_HDF5_MPI_COMM, C_LOC(value), ierr)
+  IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+  IF (commrank .EQ. 0) THEN
+     CALL cgp_open_f('pcgns_ftest.cgns',CG_MODE_READ,F,ierr)
+     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+     CALL cgp_close_f(F,ierr)
+     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+  ENDIF
+#endif
   CALL MPI_FINALIZE(mpi_err)
 END PROGRAM pcgns_ftest
 

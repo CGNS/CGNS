@@ -1,6 +1,7 @@
       program write_descriptor
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Adds descriptor node to an existing CGNS file (under the
 !   CGNSBase_t node).

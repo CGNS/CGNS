@@ -1,6 +1,7 @@
       program read_grid_unst
       use cgns
       implicit none
+#include "cgnstypes_f03.h"
 !
 !   Reads simple 3-D unstructured grid from a CGNS file
 !   (created using write_grid_unst.f).
@@ -46,11 +47,11 @@
       irmax=isize(1,1)
 !   read grid coordinates
       call cg_coord_read_f(index_file,index_base,index_zone,                   &
-           'CoordinateX',RealSingle,irmin,irmax,x,ier)
+           'CoordinateX',CGNS_ENUMV(RealSingle),irmin,irmax,x,ier)
       call cg_coord_read_f(index_file,index_base,index_zone,                   &
-           'CoordinateY',RealSingle,irmin,irmax,y,ier)
+           'CoordinateY',CGNS_ENUMV(RealSingle),irmin,irmax,y,ier)
       call cg_coord_read_f(index_file,index_base,index_zone,                   &
-           'CoordinateZ',RealSingle,irmin,irmax,z,ier)
+           'CoordinateZ',CGNS_ENUMV(RealSingle),irmin,irmax,z,ier)
 !  find out how many sections
       call cg_nsections_f(index_file,index_base,index_zone,nsections,ier)
       write(6,'('' number of sections='',i7)') nsections

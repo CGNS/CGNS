@@ -136,16 +136,12 @@ else
     if test "$ac_cv_cygwin" = "yes"; then
       AC_CHECK_PROGS(F77, g77 f2c)
     else
-      if test $use_gcc = yes; then
-        AC_CHECK_PROGS(F77, g77 f77 f90 f95 f2c)
-      else
-        AC_CHECK_PROGS(F77, f77 f90 f95 g77 f2c)
-      fi
+      AC_CHECK_PROGS(F77, f90 f95 f2c)
     fi
   fi
   if test -z "$F77"; then
     has_f77=no
-    F77=f77
+    F77=f90
     AC_MSG_WARN(no Fortran compiler was found)
   else
     has_f77=yes
@@ -223,6 +219,25 @@ AC_TYPE_SIZE_T
 test "$ac_cv_type_size_t" = "no" && \
   CFGFLAGS="$CFGFLAGS -Dsize_t=unsigned"
 
+AC_PROG_CC_C99
+AS_IF([test "$ac_cv_prog_cc_c99" = "no"],
+      [AC_MSG_WARN([libcgns requires a C99-compliant compiler])
+       AC_MSG_ERROR([Cannot continue])])
+AC_MSG_CHECKING([for Complex Gnu Extension])
+AC_LANG_PUSH(C)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <complex.h>
+    ]],[[
+    #if !defined(_MSC_VER)
+    float _Complex a[2];
+    __real__(a[1]) = (float) 1.0;
+    __imag__(a[1]) = (float) 0.0;
+    #endif
+]])],[ AC_MSG_RESULT([yes])
+       HAVE_COMPLEX_C99_EXT=1],
+     [ AC_MSG_RESULT([no])
+       HAVE_COMPLEX_C99_EXT=0])
+
 #--------------------------------------------------------------------------
 # installation program and directory
 #--------------------------------------------------------------------------
@@ -275,7 +290,7 @@ if test -z "$withsys" || test "$withsys" = "no"; then
   AC_MSG_CHECKING([if 64bit support is requested])
   AC_ARG_ENABLE(64bit,
     [  --enable-64bit          enable 64bit support (where applicable)],,
-    enableval=no)
+    enableval=yes)
   test ! "$enableval" = "no" && enableval=yes
   do64bit=$enableval
   AC_MSG_RESULT($do64bit)
@@ -285,20 +300,23 @@ if test -z "$withsys" || test "$withsys" = "no"; then
   AC_MSG_RESULT($SYSTEM)
   if test $do64bit = yes; then
     BUILD64BIT=1
-    is64bit=`echo $SYSTEM | grep 64`
-    test -z "$is64bit" && \
+    AC_CHECK_SIZEOF([void *])
+    if test $ac_cv_sizeof_void_p -lt 8; then
       AC_MSG_WARN(64bit support not found for your machine)
+      is64bit=no
+    else
+      is64bit=yes
+    fi
   fi
 else
   SYSTEM=$withsys
   AC_MSG_RESULT($SYSTEM)
-fi
-
-is64bit=`echo $SYSTEM | grep 64`
-if test -z "$is64bit"; then
-  is64bit=no
-else
-  is64bit=yes
+  is64bit=`echo $SYSTEM | grep 64`
+  if test -z "$is64bit"; then
+    is64bit=no
+  else
+    is64bit=yes
+  fi
 fi
 
 if test "$ac_cv_prog_gcc" = "no"; then
@@ -394,8 +412,8 @@ AC_MSG_RESULT($enableval)
 BUILDBASESCOPE=0
 
 AC_MSG_CHECKING([if base scope for family/zone ref-to enabled])
-AC_ARG_ENABLE(scope,
-  [  --enable-scope          base scope for family/zone ref-to [default=no]],,
+AC_ARG_ENABLE(basescope,
+  [  --enable-basescope          base scope for family/zone ref-to [default=no]],,
   enableval=no)
 if test ! "$enableval" = "no" ; then
   enableval=yes
@@ -1074,14 +1092,21 @@ if test "$withhdf5" = "yes"; then
                                filter [default=no]])],,
                [withval=no])
 
+  if test "x$withval" != xno; then
+    # Was HDF5 built with zlib ?
+    AC_LANG_PUSH(C)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include "H5pubconf.h"],
+    [[#if !H5_HAVE_ZLIB_H
+    # error
+    #endif]
+    ])], [], [AC_MSG_WARN([zlib requested but hdf5 does not seems to be built with it.])])
+  fi
+
   case $withval in
     yes)
       H5NEEDZLIB=1
       HAVE_ZLIB="yes"
-      AC_CHECK_HEADERS([zlib.h], [HAVE_ZLIB_H="yes"], [unset HAVE_ZLIB])
-      if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
-        AC_CHECK_LIB([z], [compress2],, [unset HAVE_ZLIB])
-      fi
+      AC_CHECK_LIB([z], [compress2],, [unset HAVE_ZLIB])
       if test -z "$HAVE_ZLIB"; then
         AC_MSG_ERROR([couldn't find zlib library: specify the zlib directory with --with-zlib=DIR])
       fi
@@ -1109,42 +1134,36 @@ if test "$withhdf5" = "yes"; then
           ;;
       esac
 
-    if test -n "$zlib_inc"; then
-      CPPFLAGS="$CPPFLAGS -I$zlib_inc"
+    # Check if provided libdir exists
+    AC_MSG_CHECKING(for $zlib_lib)
+    if test -d "$zlib_lib"; then
+        AC_MSG_RESULT(yes)
+        HAVE_ZLIB="yes"
+    else
+        AC_MSG_RESULT(no)
+        unset HAVE_ZLIB
     fi
 
-    AC_CHECK_HEADERS([zlib.h],
-                     [HAVE_ZLIB_H="yes"],
-                     [CPPFLAGS="$saved_CPPFLAGS"] [unset HAVE_ZLIB])
-
-
     if test $shared = yes; then
-      ZLIBLIB="-L$zlib_lib"
+      ZLIBLIB="-L$zlib_lib -lz"
     else
       if test -n "$zlib_lib"; then
+        unset HAVE_ZLIB
         for a in $exts ; do
           if test -f $zlib_lib/libz.$a; then
             ZLIBLIB=$zlib_lib/libz.$a
+            HAVE_ZLIB="yes"
             break
           fi
         done
       fi
     fi
 
-    if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
-      AC_CHECK_LIB([z], [compress2],,
-                   [unset HAVE_ZLIB])
-    fi
-
     if test -z "$HAVE_ZLIB"; then
       AC_MSG_ERROR([couldn't find zlib library])
-    else
-      AC_CHECK_FUNC([compress2], [HAVE_COMPRESS2="yes"])
     fi
     AC_MSG_CHECKING([for zlib library path])	
     AC_MSG_RESULT([$zlib_lib])
-    AC_MSG_CHECKING([for zlib include path])	
-    AC_MSG_RESULT([$zlib_inc])
     ;;
   esac
 	
@@ -1158,10 +1177,7 @@ if test "$withhdf5" = "yes"; then
     yes)
       H5NEEDSZIP=1
       HAVE_SZIP="yes"
-      AC_CHECK_HEADERS([szlib.h], [HAVE_SZIP_H="yes"], [unset HAVE_SZIP])
-      if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
-        AC_CHECK_LIB([sz], [SZ_BufftoBuffCompress],, [unset HAVE_SZIP])
-      fi
+      AC_CHECK_LIB([sz], [SZ_BufftoBuffCompress],, [unset HAVE_SZIP])
       if test -z "$HAVE_SZIP"; then
         AC_MSG_ERROR([couldn't find szip library: specify the szip directory with --with-szip=DIR])
       fi
@@ -1189,42 +1205,36 @@ if test "$withhdf5" = "yes"; then
           ;;
       esac
 
-    if test -n "$szip_inc"; then
-      CPPFLAGS="$CPPFLAGS -I$szip_inc"
+    # Check if provided libdir exists
+    AC_MSG_CHECKING(for $szip_lib)
+    if test -d "$szip_lib"; then
+        AC_MSG_RESULT(yes)
+        HAVE_SZIP="yes"
+    else
+        AC_MSG_RESULT(no)
+        unset HAVE_SZIP
     fi
 
-    AC_CHECK_HEADERS([szlib.h],
-                     [HAVE_SZIP_H="yes"],
-                     [CPPFLAGS="$saved_CPPFLAGS"] [unset HAVE_SZIP])
-
-
     if test $shared = yes; then
-      SZIPLIB="-L$szip_lib"
+      SZIPLIB="-L$szip_lib -lsz"
     else
       if test -n "$szip_lib"; then
+        unset HAVE_SZIP
         for a in $exts ; do
           if test -f $szip_lib/libsz.$a; then
             SZIPLIB=$szip_lib/libsz.$a
+            HAVE_SZIP="yes"
             break
           fi
         done
       fi
     fi
 
-    if test "x$HAVE_SZIP" = "xyes" -a "x$HAVE_SZIP_H" = "xyes"; then
-      AC_CHECK_LIB([sz], [SZ_BufftoBuffCompress],,
-                   [unset HAVE_SZIP])
-    fi
-
     if test -z "$HAVE_SZIP"; then
       AC_MSG_ERROR([couldn't find szip library])
-    else
-      AC_CHECK_FUNC([SZ_BufftoBuffCompress], [HAVE_BufftoBuffCompress="yes"])
     fi
     AC_MSG_CHECKING([for szip library path])
     AC_MSG_RESULT([$szip_lib])
-    AC_MSG_CHECKING([for szip include path])
-    AC_MSG_RESULT([$szip_inc])
     ;;
   esac
 
@@ -1363,6 +1373,26 @@ if test "$parallel" = "yes"; then
   ## Display what we found about running programs
   AC_MSG_CHECKING([prefix for running in parallel])
   AC_MSG_RESULT([$MPIEXEC])
+fi
+
+#--------------------------------------------------------------------------
+# check if HDF5 supports parallel I/O if parallel is enabled in CGNS 
+#--------------------------------------------------------------------------
+
+if test "$withhdf5" = "yes"; then
+  AC_MSG_CHECKING([for parallel HDF5 support])
+  if (test "x$H5CC" != "x"); then dnl check if HDF5 was configured with parallel support
+      PARALLEL_HDF5_NO="`$H5CC -showconfig | grep -i 'Parallel HDF5: no'`"
+  fi
+  if (test "x$PARALLEL_HDF5_NO" != "x"); then
+      AC_MSG_RESULT(no)
+      if test "$parallel" = "yes"; then
+         AC_MSG_ERROR([HDF5 library does not include parallel support. Either disable CGNS parallel support or build HDF5 with parallel enabled.])
+      fi
+  else
+      AC_MSG_RESULT(yes)
+  fi
+
 fi
 
 #--------------------------------------------------------------------------
@@ -1589,8 +1619,10 @@ if test "$enableval" = "yes" ; then
       AC_MSG_ERROR(Tcl directory $tcldir not found)
     fi
     tcldir=`(cd $tcldir; pwd)`
-    if test ! -f "$tcldir/tclConfig.sh"; then
-      if test ! -f "$tcldir/unix/tclConfig.sh"; then
+    TCLCONFIG="$tcldir/tclConfig.sh"
+    if test ! -f "$TCLCONFIG"; then
+      TCLCONFIG="$tcldir/unix/tclConfig.sh"
+      if test ! -f "$TCLCONFIG"; then
         AC_MSG_ERROR(tclConfig.sh not found in $tcldir or $tcldir/unix)
       fi
     fi
@@ -1642,19 +1674,32 @@ if test "$enableval" = "yes" ; then
       if test -z "$tcldir"; then
         AC_MSG_ERROR(can't find a usable Tcl directory)
       fi
+      TCLCONFIG="$tcldir/$TCLUNIX/tclConfig.sh"
     fi
+    . $TCLCONFIG
     . $TKCONFIG
     tcllib=`ls -d $tcldir/$TCLUNIX/libtcl8* 2>/dev/null`
     tklib=`ls -d $tkdir/$TKUNIX/libtk8* 2>/dev/null`
     X11LIBS=""
-    TKINCS="-I$tcldir/generic -I$tkdir/generic"
+    if test -z "$TK_INCLUDE_SPEC" -a -z "$TCL_INCLUDE_SPEC"; then
+      TKINCS="-I$tcldir/generic -I$tkdir/generic"
+    else
+      TKINCS="$TK_INCLUDE_SPEC $TCL_INCLUDE_SPEC"
+    fi
     if test "$ac_cv_cygwin" = "yes"; then
       TKINCS="$TKINCS -I$tkdir/win -I$tkdir/xlib"
     fi
-    TKLIBS="$tcllib $tklib $TK_LIBS"
-    TCL_LIBRARY="$tcldir/library"
-    TK_LIBRARY="$tkdir/library"
-    LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
+    if test -z "$TK_LIB_SPEC" -a -z "$TCL_LIB_SPEC"; then 
+      TKLIBS="$tcllib $tklib $TK_LIBS"
+      TCL_LIBRARY="$tcldir/library"
+      TK_LIBRARY="$tkdir/library"
+      LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
+    else
+      TKLIBS="$TK_LIB_SPEC $TCL_LIB_SPEC $TK_LIBS"
+      TCL_LIBRARY="$tcldir/library"
+      TK_LIBRARY="$tkdir/library"
+      LIBRARY_PATH="$tcldir/$TCLUNIX:$tkdir/$TKUNIX"
+    fi
   fi
 
   if test -z "$TKCONFIG"; then
@@ -1813,11 +1858,36 @@ if test "$withfortran" = "yes"; then
     fi
 #----------- Determine if the Fortran compiler gfortran -------------------
 #   Turn off warnings for passing non-ANSI types to BIND().
+#   Allow for argument mismatch (gfortran >= 10)
 #--------------------------------------------------------------------------
-     fc_vendor="`$FC --version 2>&1 |grep -i 'gcc'`"
+     fc_vendor="`$FC --version 2>&1 | grep -i 'gnu'`"
      if test X != "X$fc_vendor"; then
        FFLAGS="$FFLAGS -Wno-c-binding-type"
-     fi
+   
+       # Get the compiler version for GNU fortran
+       #
+       #   f9x_version:   Version number: x.x.x
+       #
+       f9x_version="`$FC -v 2>&1 | grep 'gcc version' | cut -d' ' -f3`"
+       if test X != "X$f9x_version"; then 
+           # Get the compiler version numbers
+           f9x_vers_major=`echo $f9x_version | cut -f1 -d.`
+           f9x_vers_minor=`echo $f9x_version | cut -f2 -d.`
+           f9x_vers_patch=`echo $f9x_version | cut -f3 -d.`
+           test -n "$f9x_vers_major" || f9x_vers_major=0
+           test -n "$f9x_vers_minor" || f9x_vers_minor=0
+           test -n "$f9x_vers_patch" || f9x_vers_patch=0
+      fi
+      if test $f9x_vers_major -ge 10; then
+         FFLAGS="$FFLAGS -fallow-argument-mismatch"
+      fi
+      # Warn about a gfortran 10.2.0 bug (GCC Bug 100149) which
+      # causes cg_goto_f to segfault, other versions are fine.
+      if test $f9x_vers_major = 10 && test $f9x_vers_minor = 2; then
+         AC_MSG_WARN([Fortran mapping (cg_goto_f) is broken for the specified gfortran version.
+                        !!! IT'S ADVISABLE TO AVOID VERSION 10.2 !!!])
+      fi
+    fi
 #----------- Determine if the Fortran compiler NAG -------------------
 #   Add compiler flag for C API calls.
 #--------------------------------------------------------------------------
@@ -1896,6 +1966,7 @@ AC_SUBST(HDF5_HAVE_FILE_SPACE_STRATEGY)
 AC_SUBST(FC_D_PRE)
 AC_SUBST(BUILDPARALLEL)
 AC_SUBST(BUILDBASESCOPE)
+AC_SUBST(HAVE_COMPLEX_C99_EXT)
 
 AC_SUBST(CGNSTOOLS)
 AC_SUBST(CGLONGT)
@@ -2006,7 +2077,14 @@ AC_SUBST(TCL_LIBRARY_SPEC)
 AC_SUBST(TK_LIBRARY_SPEC)
 AC_SUBST(LIBRARY_PATH_SPEC)
 
-AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h Makefile \
-  make.defs cgnsBuild.defs tests/Makefile tools/Makefile ptests/Makefile \
-  cgnstools/Makefile cgnstools/make.defs cgnstools/cgconfig)
+SIZEOF_LONG="$ac_cv_sizeof_long"
+AC_CHECK_SIZEOF([void *])
+SIZEOF_VOID_P="$ac_cv_sizeof_void_p"
+AC_SUBST(SIZEOF_LONG)
+AC_SUBST(SIZEOF_VOID_P)
+
+AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h \
+  cg_hash_types.h Makefile make.defs cgnsBuild.defs tests/Makefile \
+  tools/Makefile Test_UserGuideCode/C_code_parallel/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs \
+  cgnstools/cgconfig)
 

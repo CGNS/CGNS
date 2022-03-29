@@ -24,6 +24,7 @@ freely, subject to the following restrictions:
 #include <math.h>               /* included for definition of HUGE      */
 #include "cgnstypes.h"
 #include "cgns_io.h"
+#include "cg_hashmap.h"
 
 typedef char char_33[33];
 #ifdef CG_BUILD_BASESCOPE
@@ -134,6 +135,8 @@ typedef int cgint3_t[3];
 
 #define SKIP_DATA 0
 #define READ_DATA 1
+
+#define CG_MODE_CLOSED 99
 
 /* flag for parallel reading or parallel writing */
 typedef enum {
@@ -936,6 +939,7 @@ typedef struct {            /* CGNSBase_t Node          */
     cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
     int nzones;             /* number of zones in base              */
     cgns_zone *zone;        /* ptrs to in-memory copies of zones    */
+    cgns_hashmap_object *zonemap; /* hashmap to check for duplicate zone names */
     int nfamilies;          /* number of families           */
     cgns_family *family;    /* ptrs to in-memory copies of families */
     cgns_state *state;      /* ptrs to in-memory copies of Ref.state*/
@@ -1032,9 +1036,9 @@ CGNSDLL cgns_sol       *cgi_get_sol    (cgns_file *cg, int B, int Z, int S);
 CGNSDLL cgns_array     *cgi_get_field  (cgns_file *cg, int B, int Z, int S, int F);
 CGNSDLL cgns_zconn     *cgi_get_zconnZC(cgns_file *cg, int B, int Z, int C);
 CGNSDLL cgns_zconn     *cgi_get_zconn  (cgns_file *cg, int B, int Z);
-CGNSDLL cgns_hole      *cgi_get_hole   (cgns_file *cg, int B, int Z, int I);
-CGNSDLL cgns_conn      *cgi_get_conn   (cgns_file *cg, int B, int Z, int I);
-CGNSDLL cgns_1to1      *cgi_get_1to1   (cgns_file *cg, int B, int Z, int I);
+CGNSDLL cgns_hole      *cgi_get_hole   (cgns_file *cg, int B, int Z, int J);
+CGNSDLL cgns_conn      *cgi_get_conn   (cgns_file *cg, int B, int Z, int J);
+CGNSDLL cgns_1to1      *cgi_get_1to1   (cgns_file *cg, int B, int Z, int J);
 CGNSDLL cgns_zboco     *cgi_get_zboco  (cgns_file *cg, int B, int Z);
 CGNSDLL cgns_boco      *cgi_get_boco   (cgns_file *cg, int B, int Z, int BC);
 CGNSDLL cgns_dataset   *cgi_get_dataset(cgns_file *cg, int B, int Z, int BC, int DSet);
@@ -1051,15 +1055,15 @@ CGNSDLL cgns_rmotion   *cgi_get_rmotion  (cgns_file *cg, int B, int Z, int R);
 CGNSDLL cgns_amotion   *cgi_get_amotion  (cgns_file *cg, int B, int Z, int R);
 CGNSDLL cgns_rotating  *cgi_get_rotating (cgns_file *cg, int B, int Z);
 CGNSDLL cgns_bprop     *cgi_get_bprop    (cgns_file *cg, int B, int Z, int BC);
-CGNSDLL cgns_cprop     *cgi_get_cprop    (cgns_file *cg, int B, int Z, int I);
+CGNSDLL cgns_cprop     *cgi_get_cprop    (cgns_file *cg, int B, int Z, int J);
 CGNSDLL cgns_subreg    *cgi_get_subreg   (cgns_file *cg, int B, int Z, int S);
 
 /* find position lead by the goto function */
 CGNSDLL int cgi_update_posit(int cnt, int *index, char **label);
 CGNSDLL int cgi_set_posit(int fn, int B, int n, int *index, char **label);
 CGNSDLL int cgi_posit_id(double *posit_id);
-CGNSDLL cgns_posit *cgi_get_posit();
-CGNSDLL int cgi_posit_index_dim();
+CGNSDLL cgns_posit *cgi_get_posit(void);
+CGNSDLL int cgi_posit_index_dim(void);
 
 /* retrieve memory address of multiple patch children knowing their parent label
    (posit_label) and their parent memory address (posit) */
@@ -1091,7 +1095,7 @@ cgns_dataset * cgi_bcdataset_address(int local_mode, int given_no,
     char const *given_name, int *ier);
 
 /* read CGNS file into internal database */
-int cgi_read();
+int cgi_read(void);
 int cgi_read_base(cgns_base *base);
 int cgi_read_zone(cgns_zone *zone);
 int cgi_read_zonetype(double parent_id, char_33 parent_name, CGNS_ENUMT(ZoneType_t) *type);
@@ -1160,7 +1164,7 @@ cgns_link *cgi_read_link(double node_id);
 int cgi_read_element_interpolation(cgns_elementInterpolation *eltinterpolation);
 int cgi_read_solution_interpolation(cgns_solutionInterpolation *sltinterpolation);
 
-CGNSDLL int cgi_datasize(int Idim, cgsize_t *CurrentDim,
+CGNSDLL int cgi_datasize(int ndim, cgsize_t *dims,
 			 CGNS_ENUMT(GridLocation_t) location,
 			 int *rind_planes, cgsize_t *DataSize);
 
@@ -1175,6 +1179,8 @@ int cgi_ho_datasize_list(const int id_dim, const cgns_zone *zone, const int spat
 
 int cgi_read_node(double node_id, char_33 name, char_33 data_type,
                   int *ndim, cgsize_t *dim_vals, void **data, int data_flag);
+int cgi_read_node_data(double node_id, char_33 data_type,
+                  int* ndim, cgsize_t* dim_vals, void** data);
 CGNSDLL int cgi_get_nodes(double parent_id, char *label, int *nnodes, double **id);
 
 /* write ADF file from internal database */
@@ -1193,7 +1199,7 @@ int cgi_write_boco(double parent_id, cgns_boco *boco);
 int cgi_write_dataset(double parent_id, const char *label,  cgns_dataset *dataset);
 int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata);
 int cgi_write_ptset(double id, char_33 name, cgns_ptset *ptset,
-            int Ndim, void *ptset_ptr);
+            int ndim, void *ptset_ptr);
 int cgi_write_equations(double parent_id, cgns_equations *equations);
 int cgi_write_model(double parent_id, cgns_model *model);
 int cgi_write_state(double parent_id, cgns_state *state);
@@ -1300,7 +1306,9 @@ CGNSDLL CGNS_ENUMT(DataType_t) cgi_datatype(cchar_33 adf_type);
 int cgi_check_dimensions(int ndims, cglong_t *dims);
 int cgi_check_location(int dim, CGNS_ENUMT(ZoneType_t) type,
 	CGNS_ENUMT(GridLocation_t) loc);
+
 CGNSDLL int cgi_read_int_data(double id, char_33 data_type, cgsize_t cnt, cgsize_t *data);
+int cgi_read_offset_data_type(double id, char const *data_type, cgsize_t start, cgsize_t end, char const *to_type, void *to_data);
 int cgi_convert_data(cgsize_t cnt,
 	CGNS_ENUMT(DataType_t) from_type, const void *from_data,
         CGNS_ENUMT(DataType_t) to_type, void *to_data);

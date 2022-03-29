@@ -1,10 +1,13 @@
       program testgeneralrindf
 
+#include "cgnstypes_f03.h"
 #ifdef WINNT
       include 'cgnswin_f.h'
 #endif
       USE CGNS
       implicit none
+      
+      INTEGER, PARAMETER :: sp = KIND(1.0)
 
       integer, parameter :: celldim = 3, physdim = 3
       integer(cgsize_t), parameter :: size(3,3) = &
@@ -28,11 +31,11 @@
       integer(cgsize_t) :: rmin(3), rmax(3)
       integer(cgsize_t) :: m_rmin(3), m_rmax(3)
 
-      real*4, dimension(NUM_I, NUM_J, NUM_K) :: xcoord, ycoord, zcoord
-      real*4, dimension(NUM_I, NUM_J, NUM_K) :: solution, fbuf
+      real(kind=sp), dimension(NUM_I, NUM_J, NUM_K) :: xcoord, ycoord, zcoord
+      real(kind=sp), dimension(NUM_I, NUM_J, NUM_K) :: solution, fbuf
 
-      character*32 coordname(3)
-      character*32 fieldname
+      character(len=32) coordname(3)
+      character(len=32) fieldname
 
       coordname(1) = 'CoordinateX'
       coordname(2) = 'CoordinateY'
@@ -64,7 +67,7 @@
      &                     cgbase, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_zone_write_f(cgfile, cgbase, 'Zone', size,              &
-     &                     Structured, cgzone, ierr)
+     &                     CGNS_ENUMV(Structured), cgzone, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
 !     use cg_coord_general_write to write coordinates with all rinds
@@ -91,20 +94,20 @@
       call cg_rind_write_f(rind, ierr)
 
       call cg_coord_general_write_f(cgfile, cgbase, cgzone, &
-     &                              coordname(1), RealSingle, &
-     &                              rmin, rmax, RealSingle, &
+     &                              coordname(1), CGNS_ENUMV(RealSingle), &
+     &                              rmin, rmax, CGNS_ENUMV(RealSingle), &
      &                              3, dims, m_rmin, m_rmax, &
      &                              xcoord, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_coord_general_write_f(cgfile, cgbase, cgzone, &
-     &                              coordname(2), RealSingle, &
-     &                              rmin, rmax, RealSingle, &
+     &                              coordname(2), CGNS_ENUMV(RealSingle), &
+     &                              rmin, rmax, CGNS_ENUMV(RealSingle), &
      &                              3, dims, m_rmin, m_rmax, &
      &                              ycoord, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       call cg_coord_general_write_f(cgfile, cgbase, cgzone, &
-     &                              coordname(3), RealSingle, &
-     &                              rmin, rmax, RealSingle, &
+     &                              coordname(3), CGNS_ENUMV(RealSingle), &
+     &                              rmin, rmax, CGNS_ENUMV(RealSingle), &
      &                              3, dims, m_rmin, m_rmax, &
      &                              zcoord, cgcoord, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
@@ -113,13 +116,13 @@
 !     sizes
 
       call cg_sol_write_f(cgfile, cgbase, cgzone, 'VertexSolution', &
-     &                    Vertex, cgsol, ierr)
+     &                    CGNS_ENUMV(Vertex), cgsol, ierr)
       call cg_goto_f(cgfile, cgbase, ierr, 'Zone_t', cgzone, &
      &               'FlowSolution_t', cgsol, 'end')
       call cg_rind_write_f(rind, ierr)
       call cg_field_general_write_f(cgfile, cgbase, cgzone, cgsol, &
-     &                              fieldname, RealSingle, &
-     &                              rmin, rmax, RealSingle, &
+     &                              fieldname, CGNS_ENUMV(RealSingle), &
+     &                              rmin, rmax, CGNS_ENUMV(RealSingle), &
      &                              3, dims, m_rmin, m_rmax, &
      &                              solution, cgfld, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
@@ -157,7 +160,7 @@
 !     X
       call cg_coord_general_read_f(cgfile, cgbase, cgzone, &
      &                             'CoordinateX', &
-     &                             rmin, rmax, RealSingle, &
+     &                             rmin, rmax, CGNS_ENUMV(RealSingle), &
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
       np = 0
@@ -178,7 +181,7 @@
 !     Y
       call cg_coord_general_read_f(cgfile, cgbase, cgzone, &
      &                             'CoordinateY', &
-     &                             rmin, rmax, RealSingle, &
+     &                             rmin, rmax, CGNS_ENUMV(RealSingle), &
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
       np = 0
@@ -199,7 +202,7 @@
 !     Z
       call cg_coord_general_read_f(cgfile, cgbase, cgzone, &
      &                             'CoordinateZ', &
-     &                             rmin, rmax, RealSingle, &
+     &                             rmin, rmax, CGNS_ENUMV(RealSingle), &
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
       np = 0
@@ -228,7 +231,7 @@
 
       call cg_field_general_read_f(cgfile, cgbase, cgzone, cgsol, &
      &                             'Density', &
-     &                             rmin, rmax, RealSingle, &
+     &                             rmin, rmax, CGNS_ENUMV(RealSingle), &
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .eq. ERROR) call cg_error_exit_f
       np = 0
@@ -270,7 +273,7 @@
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
 !     write the field using high-level routine
-      call cg_field_write_f(cgfile, cgbase, cgzone, cgsol, RealSingle, &
+      call cg_field_write_f(cgfile, cgbase, cgzone, cgsol, CGNS_ENUMV(RealSingle), &
      &                      fieldname, solution, cgfld, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
 
@@ -280,7 +283,7 @@
         rmax(n) = get_s_rmax(n, -1)
       enddo
       call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
-     &                     RealSingle, rmin, rmax, fbuf, ierr)
+     &                     CGNS_ENUMV(RealSingle), rmin, rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
       do k = idxmin(3,-1), idxmax(3,-1)
@@ -305,7 +308,7 @@
         rmax(n) = dims(n)
       enddo
       call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
-     &                     RealSingle, rmin, rmax, fbuf, ierr)
+     &                     CGNS_ENUMV(RealSingle), rmin, rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
       do k = idxmin(3,-1), idxmax(3,-1)
@@ -328,7 +331,7 @@
         rmax(n) = rmin(n) + dims(n) - 1
       enddo
       call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
-     &                     RealSingle, rmin, rmax, fbuf, ierr)
+     &                     CGNS_ENUMV(RealSingle), rmin, rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
       do k = idxmin(3,-1), idxmax(3,-1)
@@ -353,7 +356,7 @@
       enddo
       write (*, '(" Next error is required: ")', advance='no')
       call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
-     &                     RealSingle, rmin, rmax, fbuf, ierr)
+     &                     CGNS_ENUMV(RealSingle), rmin, rmax, fbuf, ierr)
       if (ierr == CG_OK) then
          print *, 'read failed to produce error (T4)'
          nn = nn + 1
@@ -370,7 +373,7 @@
         rmax(n) = dims(n)
       enddo
       call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
-     &                     RealSingle, rmin, rmax, fbuf, ierr)
+     &                     CGNS_ENUMV(RealSingle), rmin, rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
       do k = idxmin(3,-1), idxmax(3,-1)
@@ -393,7 +396,7 @@
         rmax(n) = rmin(n) + dims(n) - 1
       enddo
       call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
-     &                     RealSingle, rmin, rmax, fbuf, ierr)
+     &                     CGNS_ENUMV(RealSingle), rmin, rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
       do k = idxmin(3,-1), idxmax(3,-1)
@@ -418,7 +421,7 @@
       enddo
       write (*, '(" Next error is required: ")', advance='no')
       call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
-     &                     RealSingle, rmin, rmax, fbuf, ierr)
+     &                     CGNS_ENUMV(RealSingle), rmin, rmax, fbuf, ierr)
       if (ierr == CG_OK) then
          print *, 'read failed to produce error (T7)'
          nn = nn + 1
@@ -455,8 +458,8 @@
       m_rmin(3) = get_m_rmin(3, 0)
       m_rmax(3) = get_m_rmax(3, 0)
       call cg_field_general_write_f(cgfile, cgbase, cgzone, cgsol, &
-     &                              fieldname, RealSingle, &
-     &                              rmin, rmax, RealSingle, &
+     &                              fieldname, CGNS_ENUMV(RealSingle), &
+     &                              rmin, rmax, CGNS_ENUMV(RealSingle), &
      &                              3, dims, m_rmin, m_rmax, &
      &                              solution, cgfld, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
@@ -466,7 +469,7 @@
         rmax(n) = get_s_rmax(n, -1)
       enddo
       call cg_field_read_f(cgfile, cgbase, cgzone, cgsol, fieldname, &
-     &                     RealSingle, rmin, rmax, fbuf, ierr)
+     &                     CGNS_ENUMV(RealSingle), rmin, rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0
       do k = idxmin(3,-1), idxmax(3,-1)
@@ -496,7 +499,7 @@
       rmax(3) = get_s_rmax(3, 0)
       call cg_field_general_read_f(cgfile, cgbase, cgzone, cgsol, &
      &                             'Density', &
-     &                             rmin, rmax, RealSingle, &
+     &                             rmin, rmax, CGNS_ENUMV(RealSingle), &
      &                             3, dims, m_rmin, m_rmax, fbuf, ierr)
       if (ierr .ne. CG_OK) call cg_error_exit_f
       np = 0

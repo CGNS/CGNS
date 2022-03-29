@@ -35,17 +35,8 @@ freely, subject to the following restrictions:
                              (type >= CGNS_ENUMV(BAR_4) && \
                               type <= CGNS_ENUMV(HEXA_125)))
 
-/* MPI-2 info object */
-extern MPI_Info pcg_mpi_info;
-extern MPI_Comm pcg_mpi_comm;
-extern int pcg_mpi_comm_size;
-extern int pcg_mpi_comm_rank;
-/* Flag indicating if HDF5 file accesses is PARALLEL or NATIVE */
-extern char hdf5_access[64];
-/* flag indicating if mpi_initialized was called */
-extern int pcg_mpi_initialized;
-
-hid_t default_pio_mode = H5FD_MPIO_COLLECTIVE;
+#include "cgio_internal_type.h" /* for cgns_io_ctx_t */
+extern cgns_io_ctx_t ctx_cgio; /* located in cgns_io.c */
 
 extern int cgns_filetype;
 extern void* cgns_rindindex;
@@ -105,10 +96,10 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
   /* Set the start position and size for the data write */
   /* fix dimensions due to Fortran indexing and ordering */
   if((rw_mode == CG_PAR_WRITE && data[0].u.wbuf) || (rw_mode == CG_PAR_READ && data[0].u.rbuf)) {
-      for (k = 0; k < ndims; k++) {
-	start[k] = rmin[ndims-k-1] - 1;
-	dims[k] = rmax[ndims-k-1] - start[k];
-      }
+    for (k = 0; k < ndims; k++) {
+      start[k] = rmin[ndims-k-1] - 1;
+      dims[k] = rmax[ndims-k-1] - start[k];
+    }
   }
   else { /* no data to read or write, but must still call H5Screate_simple */
       for (k = 0; k < ndims; k++) {
@@ -162,7 +153,7 @@ static int readwrite_data_parallel(hid_t group_id, CGNS_ENUMT(DataType_t) type,
   }
 
   /* Set MPI-IO independent or collective communication */
-  herr = H5Pset_dxpl_mpio(plist_id, default_pio_mode);
+  herr = H5Pset_dxpl_mpio(plist_id, ctx_cgio.default_pio_mode);
   if (herr < 0) {
     H5Pclose(plist_id);
     H5Sclose(data_shape_id);
@@ -288,6 +279,9 @@ static int readwrite_shaped_data_parallel(
         herr = H5Sselect_hyperslab(mem_shape_id, H5S_SELECT_SET,
                                    start, stride, count, NULL);
     } else {  /* m_numdim should be valid and m_dimvals[:] should be 0 */
+        for (n = 0; n < m_numdim; n++) {
+            dimvals[n] = m_dimvals[n];
+        }
         mem_shape_id = H5Screate_simple(m_numdim, dimvals, NULL);
         if (mem_shape_id < 0) {
             cgi_error("H5Screate_simple() for null memory space failed");
@@ -318,7 +312,7 @@ static int readwrite_shaped_data_parallel(
     }
 
     /* Set MPI-IO independent or collective communication */
-    herr = H5Pset_dxpl_mpio(plist_id, default_pio_mode);
+    herr = H5Pset_dxpl_mpio(plist_id, ctx_cgio.default_pio_mode);
     if (herr < 0) {
         cgi_error("H5Pset_dxpl_mpio() failed");
         goto error_4pl;
@@ -368,25 +362,26 @@ int cgp_mpi_comm(MPI_Comm comm)
 {
     /* check if we are actually running a parallel program */
     /* Flag is true if MPI_Init or MPI_Init_thread has been called and false otherwise. */
-    pcg_mpi_initialized = 0;
-    MPI_Initialized(&pcg_mpi_initialized);
+    ctx_cgio.pcg_mpi_initialized = 0;
+    MPI_Initialized(&ctx_cgio.pcg_mpi_initialized);
 
-    if (pcg_mpi_initialized) {
-      if( cgio_configure(CG_CONFIG_HDF5_MPI_COMM, &comm) != -1) {
-	return CG_ERROR;
+    if (ctx_cgio.pcg_mpi_initialized) {
+      if( cgio_configure(CG_CONFIG_HDF5_MPI_COMM, &comm) != CG_OK) {
+        cgi_error("Invalid CG_CONFIG_HDF5_MPI_COMM configure parameter");
+        return CG_ERROR;
       }
 
-      pcg_mpi_comm=comm;
-      MPI_Comm_rank(pcg_mpi_comm, &pcg_mpi_comm_rank);
-      MPI_Comm_size(pcg_mpi_comm, &pcg_mpi_comm_size);
+      ctx_cgio.pcg_mpi_comm=comm;
+      MPI_Comm_rank(ctx_cgio.pcg_mpi_comm, &ctx_cgio.pcg_mpi_comm_rank);
+      MPI_Comm_size(ctx_cgio.pcg_mpi_comm, &ctx_cgio.pcg_mpi_comm_size);
     }
 
-    return pcg_mpi_initialized ? CG_OK : CG_ERROR;
+    return ctx_cgio.pcg_mpi_initialized ? CG_OK : CG_ERROR;
 }
 
 int cgp_mpi_info(MPI_Info info)
 {
-    pcg_mpi_info = info;
+    ctx_cgio.pcg_mpi_info = info;
 
     return CG_OK;
 }
@@ -396,9 +391,9 @@ int cgp_mpi_info(MPI_Info info)
 int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
 {
     if (mode == CGP_INDEPENDENT)
-        default_pio_mode = H5FD_MPIO_INDEPENDENT;
+        ctx_cgio.default_pio_mode = H5FD_MPIO_INDEPENDENT;
     else if (mode == CGP_COLLECTIVE)
-        default_pio_mode = H5FD_MPIO_COLLECTIVE;
+        ctx_cgio.default_pio_mode = H5FD_MPIO_COLLECTIVE;
     else {
         cgi_error("unknown parallel IO mode");
         return CG_ERROR;
@@ -428,20 +423,17 @@ int cgp_open(const char *filename, int mode, int *fn)
 
     /* Initialize communicators if cgp_mpi_comm() was not called by
        client */
-    if (pcg_mpi_comm == MPI_COMM_NULL) {
+    if (ctx_cgio.pcg_mpi_comm == MPI_COMM_NULL) {
       cgp_mpi_comm(MPI_COMM_WORLD);
     }
 
     /* Flag this as a parallel access */
-    strcpy(hdf5_access,"PARALLEL");	
+    strcpy(ctx_cgio.hdf5_access,"PARALLEL");
 
     ierr = cg_set_file_type(CG_FILE_HDF5);
     if (ierr) return ierr;
     ierr = cg_open(filename, mode, fn);
     cgns_filetype = old_type;
-
-    /* reset parallel access */
-    strcpy(hdf5_access,"NATIVE");
 
     return ierr;
 }
@@ -450,6 +442,8 @@ int cgp_open(const char *filename, int mode, int *fn)
 
 int cgp_close(int fn)
 {
+    /* reset parallel access */
+    strcpy(ctx_cgio.hdf5_access,"NATIVE");
     return cg_close(fn);
 }
 
@@ -496,12 +490,13 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
     for (n = 0; n < zone->index_dim; n++) {
         dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
                                   zcoor->rind_planes[2*n+1];
-	if(coords) {
-	  if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
-            cgi_error("Invalid index ranges.");
-            return CG_ERROR;
-	  }
-	}
+      if(coords) {
+        if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
+          printf("%d %d %d", rmin[n]> rmax[n], rmin[n] <1, rmax[n] >dims[n]);
+          cgi_error("Invalid index ranges. cgp_coord_write_data");
+          return CG_ERROR;
+        }
+      }
     }
     type = cgi_datatype(zcoor->coord[C-1].data_type);
 
@@ -632,14 +627,14 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
     }
 
     for (n = 0; n < zone->index_dim; n++) {
-        dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
-                                  zcoor->rind_planes[2*n+1];
-	if(coords) {
-	  if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
-            cgi_error("Invalid index ranges.");
-            return CG_ERROR;
-	  }
+      dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
+                                zcoor->rind_planes[2*n+1];
+      if(coords) {
+        if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
+          cgi_error("Invalid index ranges.");
+          return CG_ERROR;
 	}
+      }
     }
     type = cgi_datatype(zcoor->coord[C-1].data_type);
 
@@ -757,6 +752,33 @@ int cgp_section_write(int fn, int B, int Z, const char *sectionname,
                start, end, nbndry, S);
 }
 
+int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
+    CGNS_ENUMT(ElementType_t) type, cgsize_t start, cgsize_t end, cgsize_t maxoffset,
+    int nbndry, int *S)
+{
+  cgns_zone *zone;
+  cgns_section *section = NULL;
+  double dummy_id;
+  int index;
+  int data[2];
+  cgsize_t dim_vals;
+  cgsize_t num, ElementDataSize=0;
+
+  cg = cgi_get_file(fn);
+  if (check_parallel(cg)) return CG_ERROR;
+  if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+    return CG_ERROR;
+
+  if (IS_FIXED_SIZE(type)) {
+    cgi_error("element type must not be a fixed size for this parallel IO");
+    return CG_ERROR;
+  }
+
+  return cg_section_general_write(fn, B, Z, sectionname, type,
+      cgi_datatype(CG_SIZE_DATATYPE), start, end, maxoffset, nbndry, S);
+
+}
+
 /*---------------------------------------------------------*/
 
 int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
@@ -779,12 +801,12 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     if (section == 0 || section->connect == 0) return CG_ERROR;
 
     if (elements) {
-    	if (start > end ||
-            start < section->range[0] ||
-            end > section->range[1]) {
-	    cgi_error("Error in requested element data range.");
-            return CG_ERROR;
-        }    
+      if (start > end ||
+          start < section->range[0] ||
+          end > section->range[1]) {
+        cgi_error("Error in requested element data range.");
+        return CG_ERROR;
+      }
     }
     if (!IS_FIXED_SIZE(section->el_type)) {
         cgi_error("element must be a fixed size for parallel IO");
@@ -803,6 +825,81 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     return readwrite_data_parallel(hid, type,
 			       1, &rmin, &rmax, &Data, CG_PAR_WRITE);
 }
+
+/*---------------------------------------------------------*/
+
+int cgp_poly_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
+                            cgsize_t end, const cgsize_t *elements, const cgsize_t *offsets)
+{
+  // Very experimental function
+  // is offset the local or global offset ?
+  // Should we had another argument global_offset in case offsets is local ?
+  // The serial partial writing get the global offset from the file
+  // so it is not necessary to provide it
+  hid_t hid, hid_elem;
+  cgns_section *section;
+  cgsize_t rmin, rmax;
+  cgsize_t rmin_elem, rmax_elem;
+  CGNS_ENUMT(DataType_t) type, elem_type;
+  cg_rw_t Data;
+  cg_rw_t DataElem;
+  int status;
+
+  /* get file and check mode */
+  cg = cgi_get_file(fn);
+  if (check_parallel(cg)) return CG_ERROR;
+
+  if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+    return CG_ERROR;
+
+  section = cgi_get_section(cg, B, Z, S);
+  if (section == 0 || section->connect == 0) return CG_ERROR;
+
+  if (offsets)
+  {
+    if (start > end ||
+        start < section->range[0] ||
+        end > section->range[1])
+    {
+        cgi_error("Error in requested element data range.");
+        return CG_ERROR;
+    }
+  }
+
+  if (IS_FIXED_SIZE(section->el_type)) {
+    cgi_error("element must not be a fixed size for this parallel IO");
+    return CG_ERROR;
+  }
+
+  rmin = start - section->range[0] + 1;
+  rmax = end - section->range[0] + 2;
+
+  type = cgi_datatype(section->connect_offset->data_type);
+  elem_type = cgi_datatype(section->connect->data_type);
+
+  to_HDF_ID(section->connect_offset->id, hid);
+  to_HDF_ID(section->connect->id, hid_elem);
+
+  Data.u.wbuf = offsets;
+  DataElem.u.wbuf = elements;
+
+  if (offsets){
+    rmin_elem = offsets[0] + 1;
+    rmax_elem = offsets[end-start+1];
+  }
+  else
+  {
+    rmin_elem = 1;
+    rmax_elem = 1;
+    DataElem.u.wbuf = NULL;
+  }
+
+  status = readwrite_data_parallel(hid, type, 1, &rmin, &rmax, &Data, CG_PAR_WRITE);
+  if (status != CG_OK)
+    return status;
+  return readwrite_data_parallel(hid_elem, elem_type, 1, &rmin_elem, &rmax_elem, &DataElem, CG_PAR_WRITE);
+}
+
 
 /*---------------------------------------------------------*/
 
@@ -826,12 +923,12 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     if (section == 0 || section->connect == 0) return CG_ERROR;
 
     if (elements) { /* A processor may have nothing to read */
-    	if (start > end ||
-            start < section->range[0] ||
-            end > section->range[1]) {
-	   cgi_error("Error in requested element data range.");
-           return CG_ERROR;
-        }
+      if (start > end ||
+          start < section->range[0] ||
+          end > section->range[1]) {
+        cgi_error("Error in requested element data range.");
+        return CG_ERROR;
+      }
     }
     if (!IS_FIXED_SIZE(section->el_type)) {
         cgi_error("element must be a fixed size for parallel IO");
@@ -841,7 +938,7 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     if (cg_npe(section->el_type, &elemsize)) return CG_ERROR;
     rmin = (start - section->range[0]) * elemsize + 1;
     rmax = (end - section->range[0] + 1) * elemsize;
-    type = cgi_datatype(section->connect->data_type);
+    type = cgi_datatype(sizeof(cgsize_t) == 4 ? "I4" : "I8");
 
     to_HDF_ID(section->connect->id, hid);
     cg_rw_t Data;
@@ -872,11 +969,11 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
     /* check input range */
     if (parent_data) {
       if (start > end ||
-	  start < section->range[0] ||
-	  end > section->range[1]) {
-	cgi_error("Error in requested element data range.");
-	return CG_ERROR;
-      }    
+      start < section->range[0] ||
+      end > section->range[1]) {
+        cgi_error("Error in requested element data range.");
+        return CG_ERROR;
+      }
     } else {
         start = end = 0;
     }
@@ -905,7 +1002,7 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
     cgsize_t num = end == 0 ? 0 : end - start + 1;
     num = num < 0 ? 0 : num;
     MPI_Datatype mpi_type = sizeof(cgsize_t) == 32 ? MPI_INT : MPI_LONG_LONG_INT;
-    MPI_Allreduce(MPI_IN_PLACE, &num, 1, mpi_type, MPI_SUM, pcg_mpi_comm);
+    MPI_Allreduce(MPI_IN_PLACE, &num, 1, mpi_type, MPI_SUM, ctx_cgio.pcg_mpi_comm);
 
     strcpy(section->parelem->data_type, CG_SIZE_DATATYPE);
     section->parelem->data_dim = 2;
@@ -1000,8 +1097,8 @@ int cgp_field_write_data(int fn, int B, int Z, int S, int F,
         if (rmin[n] > rmax[n] ||
             rmax[n] > field->dim_vals[n] ||
             rmin[n] < 1) {
-	  cgi_error("Invalid range of data requested");
-	  return CG_ERROR;
+          cgi_error("Invalid range of data requested");
+          return CG_ERROR;
         }
       }
     }
@@ -1590,7 +1687,7 @@ static int readwrite_multi_data_parallel(size_t count, H5D_rw_multi_t *multi_inf
     }
 
     /* Set MPI-IO independent or collective communication */
-    herr = H5Pset_dxpl_mpio(plist_id, default_pio_mode);
+    herr = H5Pset_dxpl_mpio(plist_id, ctx_cgio.default_pio_mode);
     if (herr < 0) {
         H5Pclose(plist_id);
         H5Sclose(data_shape_id);

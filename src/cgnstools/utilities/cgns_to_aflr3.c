@@ -15,6 +15,7 @@
 #include "getargs.h"
 #include "hash.h"
 
+
 #ifndef CGNS_ENUMV
 # define CGNS_ENUMV(V) V
 # define CGNS_ENUMT(T) T
@@ -78,6 +79,7 @@ static FACE **Faces;
 typedef struct {
     CGNS_ENUMT(BCType_t) type;
     char name[33];
+    char family[CG_MAX_GOTO_DEPTH * 33 + 1];
 } BOCO;
 
 static int nBocos = 0;
@@ -926,6 +928,7 @@ static void boundary_conditions ()
                     &datatype, &ib))
                 err_exit("cg_boco_info", NULL);
             Bocos[nb-1].type = bctype;
+            Bocos[nb - 1].family[0] = '\0';
             strcpy(Bocos[nb-1].name, name);
             if (cg_boco_gridlocation_read(cgFile, cgBase, cgZone,
                     nb, &location))
@@ -935,12 +938,35 @@ static void boundary_conditions ()
                 err_exit(NULL, "malloc failed for boco ptset");
             if (cg_boco_read(cgFile, cgBase, cgZone, nb, ptset, 0))
                 err_exit("cg_boco_read", NULL);
-
+            if (bctype == CGNS_ENUMV(FamilySpecified)) {
+                cg_goto(cgFile, cgBase, "Zone_t", cgZone, "ZoneBC_t", 1 , "BC_t", nb, NULL);
+                cg_famname_read(Bocos[nb - 1].family);
+            }
             if (is_structured)
                 structured_boundary(nb, ptype, location, np, ptset);
             else
                 unstructured_boundary(nb, ptype, location, np, ptset);
             free(ptset);
+        }
+
+        /* correction for FamilySpecified */
+        for (nb = 0; nb < nBocos; nb++) {
+            if (Bocos[nb].type != CGNS_ENUMV(FamilySpecified)) {
+                continue;
+            }
+            if (strlen(Bocos[nb].family) > 0 && Bocos[nb].family[0] == '/') {
+                if (cg_gopath(cgFile, Bocos[nb].family) != CG_OK) {
+                    continue;
+                }
+            }
+            else {
+                if (cg_goto(cgFile, cgBase, Bocos[nb].family, 0, NULL) != CG_OK) {
+                    continue;
+                }
+            }
+            if (cg_node_fambc_read(1, name, &Bocos[nb].type) != CG_OK) {
+                continue;
+            }
         }
     }
 
@@ -1341,7 +1367,7 @@ int main (int argc, char *argv[])
     else
         unstructured_elements();
     boundary_conditions();
-
+    
     /* open output file */
 
     if (argind < argc - 1) {

@@ -7,7 +7,7 @@
 
 !       This example read a CGNS file composed of structured and/or
 !       unstructured zones.
-
+#include "cgnstypes_f03.h"
 #ifdef WINNT
 	include 'cgnswin_f.h'
 #endif
@@ -208,7 +208,7 @@
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 	    Idim=Cdim
-	    if (ZoneType .eq. Unstructured) Idim=1
+	    if (ZoneType .eq. CGNS_ENUMV(Unstructured)) Idim=1
 
             write(6,100)'*** Zone_t node ***'
             ilen=32
@@ -236,7 +236,7 @@
             coordname(3) = 'CoordinateZ'
 	    do i=1, Pdim
 	        call cg_coord_read_f(cg, base, zone, coordname(i),
-     &            RealDouble, range_min, range_max, data_double, ier)
+     &            CGNS_ENUMV(RealDouble), range_min, range_max, data_double, ier)
 	        if (ier .eq. ERROR) call cg_error_exit_f
 		write(6,114)coordname(i),'=',data_double(1)
 	    enddo
@@ -292,7 +292,7 @@
                 write(6,104)'ndata_donor=',ndata_donor
 
                 call cg_conn_read_f(cg, base, zone, n,
-     &              pnts, Integer, donor_data, ier)
+     &              pnts, CGNS_ENUMV(Integer), donor_data, ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 
 		write(6,102) 'pnts receiver:'
@@ -300,7 +300,7 @@
 		write(6,108)' to ',
      &               (pnts((npnts-1)*Idim+i),i=1,Idim)
 
-		if (donor_zonetype .eq. Unstructured) then
+		if (donor_zonetype .eq. CGNS_ENUMV(Unstructured)) then
 		    Idim_donor = 1
 		else
 		    Idim_donor = Cdim
@@ -312,7 +312,7 @@
      &			i=1,Idim_donor)
 		
 ! Look for interpolants
-	        if (donor_ptset_type .eq. CellListDonor) then
+	        if (donor_ptset_type .eq. CGNS_ENUMV(CellListDonor)) then
 		    call cg_goto_f(cg, base, ier, 'Zone_t', zone,
      &                  'ZoneGridConnectivity_t', 1,
      &                  'GridConnectivity_t', 1, 'end')
@@ -359,7 +359,7 @@
      &                             DataTypeName(datatype)
 		write(6,105)'ndataset=',ndataset
 
-		if (datatype.eq.RealSingle) then
+		if (datatype.eq.CGNS_ENUMV(RealSingle)) then
 	            call cg_boco_read_f(cg, base, zone, bc, pnts,
      &              	NormalListSingle, ier)
 	            if (ier .eq. ERROR) call cg_error_exit_f
@@ -375,11 +375,11 @@
      &               (pnts((npnts-1)*Idim+i),i=1,Idim)
 
               ! number of points or faces in bcpatch
-                if (ptset_type.eq.PointList .or.
-     &              ptset_type.eq.ElementList) then
+                if (ptset_type.eq. CGNS_ENUMV(PointList) .or.
+     &              ptset_type.eq. CGNS_ENUMV(ElementList)) then
                     size_of_patch = npnts
-                else if (ptset_type.eq.PointRange .or.
-     &                   ptset_type.eq.ElementRange) then
+                else if (ptset_type.eq. CGNS_ENUMV(PointRange) .or.
+     &                   ptset_type.eq. CGNS_ENUMV(ElementRange)) then
                     size_of_patch=1
                     do i=1,Idim
                         multiplier=pnts((npnts-1)*Idim+i) - pnts(i) + 1
@@ -390,7 +390,7 @@
 
 	      ! InwardNormalList
 		if (NormalListFlag.eq.1) then
-		    if (datatype.eq.RealSingle) then
+		    if (datatype.eq.CGNS_ENUMV(RealSingle)) then
 			write(6,102) '1st and last normal vector:'
 			write(6,118)(NormalListSingle(i),i=1,Pdim)
 			write(6,118)
@@ -423,7 +423,7 @@
 
 ! ********** SPECIAL FOR UNSTRUCTURED ZONES ONLY **********
 
-	    if (ZoneType .eq. Unstructured) then
+	    if (ZoneType .eq. CGNS_ENUMV(Unstructured)) then
 
 ! read element sections (Element_t) :
 		call cg_nsections_f(cg, base, zone, nsections, ier)
@@ -441,7 +441,7 @@
      &                  parent_flag, ier)
 		    if (ier .eq. ERROR) call cg_error_exit_f
 
-		    if (type .ne. MIXED) then
+		    if (type .ne. CGNS_ENUMV(MIXED)) then
 		       call cg_npe_f(type, npe, ier)
 		       if (ier .eq. ERROR) call cg_error_exit_f
   		       write(6,103)'npe=',npe
@@ -452,8 +452,8 @@
                     call no_blank(nodename, ilen)
                     write(6,102)'Name= "',nodename(1:ilen),'"'
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-		    if (type .gt. NGON_n) then
-                         write(6,100) 'Element Type= NGON_n'
+		    if (type .gt. CGNS_ENUMV(NGON_n)) then
+                         write(6,100) 'Element Type=  NGON_n'
                     else
 			write(6,102)'Element Type= ',
      &                                ElementTypeName(type)
