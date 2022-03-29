@@ -11432,7 +11432,7 @@ int cg_element_interpolation_points_write(int fn, int bn, int fam, int en ,
     // Check
     if (en > family->nelementinterpolation || en <= 0)
     {
-        cgi_error("Want to access an inexistant element interpolation id");
+        cgi_error("Want to access an inexistent element interpolation id");
         return CG_ERROR;
     }
     en--;
@@ -11795,7 +11795,7 @@ int cg_solution_interpolation_points_write(int fn, int bn, int fam, int sn ,
     // Check
     if (sn > family->nsolutioninterpolation || sn <= 0)
     {
-        cgi_error("Want to access an inexistant solution interpolation id (%d/%d)",sn,
+        cgi_error("Want to access an inexistent solution interpolation id (%d/%d)",sn,
                    family->nsolutioninterpolation);
         return CG_ERROR;
     }

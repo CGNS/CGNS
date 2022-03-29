@@ -1570,7 +1570,7 @@ echo         parameter (AverageJ = 6)>> cgnslib_f.h
 echo         parameter (AverageK = 7)>> cgnslib_f.h
 echo.>> cgnslib_f.h
 echo ! For portability to Linux Absoft, all data statements were moved after the>> cgnslib_f.h
-echo ! variables and parametres declarations>> cgnslib_f.h
+echo ! variables and parameters declarations>> cgnslib_f.h
 echo.>> cgnslib_f.h
 echo !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *>> cgnslib_f.h
 echo !*      Dimensional Units                                              *>> cgnslib_f.h

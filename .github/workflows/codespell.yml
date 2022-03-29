@@ -11,4 +11,4 @@ jobs:
       - uses: actions/checkout@v2
       - uses: codespell-project/actions-codespell@master
         with:
-          ignore_words_list: patchs,parm,fo,nnumber,nd,celcius,msdos,te,nin,childs,sav,tesselate,hist
+          ignore_words_list: patchs,parm,fo,nnumber,nd,celcius,msdos,te,ot,nin,childs,sav,tesselate,hist,pres

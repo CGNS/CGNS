@@ -692,7 +692,7 @@ typedef struct {            /* FlowSolution_t node          */
     int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
     /* CPEX 045 */
-    int isOrderDefined;     /* Flag wich defines if spatialOrder or temporalOrder are defined*/
+    int isOrderDefined;     /* Flag which defines if spatialOrder or temporalOrder are defined*/
     int spatialOrder;       /* Spatial order of the solution        */
     int temporalOrder;      /* temporal order of the solution       */
 } cgns_sol;

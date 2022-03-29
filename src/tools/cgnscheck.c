@@ -4835,7 +4835,7 @@ static void check_solution (int ns)
         printf ("    checking solution Interpolation Order\n");
         if (location != CGNS_ENUMV(ElementBased))
         {
-            /* Should never happend due to protections in the cgi_read()->cgi_read_sol() */ 
+            /* Should never happen due to protections in the cgi_read()->cgi_read_sol() */ 
             /* It has to fail during the file opening process */
             error( "solution Interpolation Order has to be attached to ElementBased Gridlocation." );
         }
@@ -6024,7 +6024,7 @@ static void check_family (int fam)
             }
             
             if ( check_element_nodes_ordering(btype,pu,pv,pw) )
-              warning(4,"Nodes are not corectly ordered. 1st nodes have to correspond to 1st order element.");
+              warning(4,"Nodes are not correctly ordered. 1st nodes have to correspond to 1st order element.");
         }
         else if (ierr == CG_ERROR)
           error_exit("cg_element_interpolation_points_read");
@@ -6082,7 +6082,7 @@ static void check_family (int fam)
             }
             
             if ( check_element_nodes_ordering(btype,pu,pv,pw) != CG_OK)
-              warning(4,"Nodes are not corectly ordered. 1st nodes have to correspond to 1st order element.");
+              warning(4,"Nodes are not correctly ordered. 1st nodes have to correspond to 1st order element.");
         }
         else if (ierr == CG_ERROR)
           error_exit("cg_solution_interpolation_points_read");

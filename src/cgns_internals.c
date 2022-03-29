@@ -1967,7 +1967,7 @@ int cgi_read_solution_order(cgns_sol *sol)
     /* spatial and temporal orders IndexArray_t */
     if (cgi_get_nodes(sol->id, "IndexArray_t", &nIA, &idf)) return CG_ERROR;
     
-    /* Check ZoneType and existance of Orders node */
+    /* Check ZoneType and existence of Orders node */
     if (nIA > 0 && ( CurrentZoneType ==  CGNS_ENUMV( Unstructured ) ) )
     {
         for (n=0;n<nIA;n++) {

@@ -118,7 +118,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
                              nelem_end,nbdyelem,ielem,&cgsection);
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during section writing !\n");
+        fprintf(stderr,"ERROR: an error occurred during section writing !\n");
         cg_error_exit();
     }
     
@@ -128,7 +128,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     error = cg_family_write(cgfile, cgbase,"family",&cgfamily);
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during family writing !\n");
+        fprintf(stderr,"ERROR: an error occurred during family writing !\n");
         cg_error_exit();
     }
     
@@ -138,13 +138,13 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     error = cg_element_interpolation_write(cgfile, cgbase,cgfamily,"QuadInterpolation",type,&cgeinterp);
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during Mesh element interpolation writing !\n");
+        fprintf(stderr,"ERROR: an error occurred during Mesh element interpolation writing !\n");
         cg_error_exit();
     }
     error = cg_element_interpolation_points_write(cgfile, cgbase,cgfamily,cgeinterp,pu,pv,NULL);
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during Mesh Lagrange points writing !\n");
+        fprintf(stderr,"ERROR: an error occurred during Mesh Lagrange points writing !\n");
         cg_error_exit();
     }
     
@@ -187,14 +187,14 @@ do HO QUAD elements (NOT following standard SIDS ordering)
                                             CGNS_ENUMV(QUAD_4),order,0,CGNS_ENUMV(ParametricLagrange),&cgsinterp);
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during Solution interpolation writing !\n");
+        fprintf(stderr,"ERROR: an error occurred during Solution interpolation writing !\n");
         cg_error_exit();
     }
     error = cg_solution_interpolation_points_write(cgfile, cgbase,cgfamily,cgsinterp,
                                                    pu,pv,NULL,NULL);
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during Solution Lagrange interpolation points writing !\n");
+        fprintf(stderr,"ERROR: an error occurred during Solution Lagrange interpolation points writing !\n");
         cg_error_exit();
     }
     
@@ -234,7 +234,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during Solution node writing !\n");
+        fprintf(stderr,"ERROR: an error occurred during Solution node writing !\n");
         cg_error_exit();
     }
     
@@ -243,7 +243,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during solution order writing !\n");
+        fprintf(stderr,"ERROR: an error occurred during solution order writing !\n");
         cg_error_exit();
     }
     
@@ -252,7 +252,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during Solution Lagrange interpolation size count !\n");
+        fprintf(stderr,"ERROR: an error occurred during Solution Lagrange interpolation size count !\n");
         cg_error_exit();
     }
     
@@ -271,7 +271,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during Density Field writing !\n");
+        fprintf(stderr,"ERROR: an error occurred during Density Field writing !\n");
         cg_error_exit();
     }
     
@@ -288,7 +288,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     printf ("reading cgns file high_order.cgns in READ mode ...\n");
     if (cg_open ("high_order.cgns", CG_MODE_READ, &cgfile) ) cg_error_exit();
     
-    // Get Informations from Current Zone
+    // Get Information from Current Zone
     if (cg_zone_read(cgfile, cgbase,cgzone,zonename,sizeread) ) cg_error_exit();
     
     /* Check Zone */
@@ -499,7 +499,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     
     if (error || ddim != 1 || dimvals[0] != ncellI*ncellJ*nbsolpts )
     {
-        fprintf(stderr,"ERROR: An error occured during cg_sol_size  !\n");
+        fprintf(stderr,"ERROR: An error occurred during cg_sol_size  !\n");
         cg_error_exit();
     }
     

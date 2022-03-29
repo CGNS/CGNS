@@ -103,7 +103,7 @@ int main (int argc, char **argv)
       cgp_error_exit();
     
     // Note : It is MANDATORY to set solution interpolation Order BEFORE creating and writing the 
-    //        field datas. CGNS will internally deduce the size of the array based on the 
+    //        field data. CGNS will internally deduce the size of the array based on the 
     //        interpolation orders.
     
     // [1.8] Write the solution Field 
@@ -179,7 +179,7 @@ int main (int argc, char **argv)
     
   }
   
-  // [3] Each MPI process will write its own datas
+  // [3] Each MPI process will write its own data
   {
     cgsize_t *elements;
     double *field, *x, *y, *z;

@@ -96,7 +96,7 @@ double *createField(size_t nbelements)
   error = cg_solution_lagrange_interpolation_size(QUAD_4,3,0,&sz);
   if (error)
   {
-      fprintf(stderr,"ERROR: an error occured during Solution Lagrange interpolation size count !\n");
+      fprintf(stderr,"ERROR: an error occurred during Solution Lagrange interpolation size count !\n");
       cg_error_exit();
   }
   f = (double*) malloc(nbelements*sz*sizeof(double));

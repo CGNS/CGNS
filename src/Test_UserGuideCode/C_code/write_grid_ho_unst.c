@@ -139,7 +139,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
                              nelem_end,nbdyelem,ielem,&index_section);
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during section writing !");
+        fprintf(stderr,"ERROR: an error occurred during section writing !");
         return -1;
     }
 /* set Family: */
@@ -147,7 +147,7 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     error = cg_family_write(index_file,index_base,"family",&index_family);
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during family writing !");
+        fprintf(stderr,"ERROR: an error occurred during family writing !");
         return -1;
     }
     
@@ -160,13 +160,13 @@ do HO QUAD elements (NOT following standard SIDS ordering)
     error = cg_element_interpolation_write(index_file,index_base,index_family,"QuadInterpolation",type,&index_interpolation);
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during Mesh element interpolation writing !");
+        fprintf(stderr,"ERROR: an error occurred during Mesh element interpolation writing !");
         return -1;
     }
     error = cg_element_interpolation_points_write(index_file,index_base,index_family,index_interpolation,pu,pv,NULL);
     if (error)
     {
-        fprintf(stderr,"ERROR: an error occured during Mesh Lagrange points writing !");
+        fprintf(stderr,"ERROR: an error occurred during Mesh Lagrange points writing !");
         return -1;
     }
 /* ---------------------------------------------------------- */
