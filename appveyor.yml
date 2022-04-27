@@ -184,12 +184,10 @@ test_script:
   - cmd: echo %PATH%
   - cmd: ctest -C %configuration%
 
-# Delete the following if you don't want to save install logs
-artifacts:
-  - name: TestLogs
-    path: |
-      "C:/projects/CGNS_BUILD/Testing/Temporary/LastTest.log"
-      install.log
+
+on_failure:
+  - appveyor PushArtifact "C:/projects/CGNS_BUILD/Testing/Temporary/LastTest.log"
+      
 
 after_test:
   - cmd: cmake --install . --config "%configuration%"
