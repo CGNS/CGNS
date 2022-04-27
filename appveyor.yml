@@ -37,7 +37,7 @@ environment:
     1_12: &1_12 1.12.0
     HDF5_1_12_VER: *1_12
     WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18599/w_BaseKit_p_2022.1.3.210_offline.exe
-    WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18578/w_HPCKit_p_2022.1.2.145_offline.exe
+    WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18578/w_HPCKit_p_2022.1.3.145_offline.exe
     LINUX_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18487/l_BaseKit_p_2022.1.2.146_offline.sh
     LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18479/l_HPCKit_p_2022.1.2.117_offline.sh
     MACOS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18341/m_HPCKit_p_2022.1.0.86_offline.dmg
