@@ -79,9 +79,9 @@ jobs:
                  
     - name: install HDF5
       run: |
-        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5_1_10_7 --single-branch hdf5_1_10_7
+        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5-1_10_8 --single-branch hdf5_1_10_8
         export HOME_DIR=$(echo ~)
-        cd hdf5_1_10_7
+        cd hdf5_1_10_8
         ./configure --without-zlib --without-szlib --disable-fortran --disable-hl \
         --disable-tests --disable-tools \
         --prefix=$HOME_DIR/hdf5 \
