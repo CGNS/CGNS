@@ -10,6 +10,8 @@ on:
 #on: 
 #  push:
 #  pull_request:
+env:
+  hdf5_vers: 1_10_8
 
 # A workflow run is made up of one or more jobs that
 # can run sequentially or in parallel
@@ -27,14 +29,12 @@ jobs:
             parallel: enable
             hdf5: with
             tools: enable
-            hdf5_version: 1_10_8
           - name: "macOS Latest Clang"
             artifact: "macOS.tar.xz"
             os: macos-latest
             parallel: disable
             fortran: with
             hdf5: without
-            hdf5_version: 1_10_8
             tools: disable
 
     name: ${{ matrix.name }}
@@ -81,9 +81,9 @@ jobs:
                  
     - name: install HDF5
       run: |
-        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5-${{ matrix.hdf5_version }} --single-branch hdf5_${{ matrix.hdf5_version }}
+        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5-${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
         export HOME_DIR=$(echo ~)
-        cd hdf5_${{ matrix.hdf5_version }}
+        cd hdf5_${{ env.hdf5_vers }}
         ./configure --without-zlib --without-szlib --disable-fortran --disable-hl \
         --disable-tests --disable-tools \
         --prefix=$HOME_DIR/hdf5 \
