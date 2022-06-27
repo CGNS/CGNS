@@ -291,8 +291,7 @@ MODULE cgns
 !DEC$endif
 
 !* legacy code support
-  INTEGER(C_INT) Null, UserDefined
-  PARAMETER (Null = 0)
+  INTEGER(C_INT) UserDefined
   PARAMETER (UserDefined = 1)
 
   CHARACTER(LEN=MAX_LEN) :: MassUnitsName(0:5)
