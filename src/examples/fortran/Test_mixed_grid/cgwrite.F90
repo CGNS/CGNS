@@ -226,7 +226,7 @@
 	    if (zone.eq.1) then
 	      ! write a PointRange patch (3,1,1) to (3,3,3) for a structured zone
 	        call cg_boco_write_f(cg, base, zone, 'myboco', &
-                  UserDefined, CGNS_ENUMV(PointRange), 2_cgsize_t, pnts, index, ier)
+                  CG_UserDefined, CGNS_ENUMV(PointRange), 2_cgsize_t, pnts, index, ier)
 	        if (ier .eq. ERROR) call cg_error_exit_f
 
 	      ! Write Normal index and Normal vectors
@@ -247,7 +247,7 @@
 	    else if (zone.eq.2) then
 	      ! BC patch defined using points and normals at the points:
 		call cg_boco_write_f(cg, base, zone, 'point_patch', &
-                  UserDefined, CGNS_ENUMV(PointList), 9_cgsize_t, uns_pnts, index, &
+                  CG_UserDefined, CGNS_ENUMV(PointList), 9_cgsize_t, uns_pnts, index, &
                   ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 

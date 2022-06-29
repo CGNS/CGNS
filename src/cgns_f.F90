@@ -290,11 +290,6 @@ MODULE cgns
 !DEC$ATTRIBUTES DLLEXPORT :: CG_UserDefined
 !DEC$endif
 
-!* legacy code support
-  INTEGER(C_INT) Null, UserDefined
-  PARAMETER (Null = 0)
-  PARAMETER (UserDefined = 1)
-
   CHARACTER(LEN=MAX_LEN) :: MassUnitsName(0:5)
   ENUM, BIND(C)
       ENUMERATOR :: CGNS_ENUMV(MassUnitsNull)        = CG_Null
