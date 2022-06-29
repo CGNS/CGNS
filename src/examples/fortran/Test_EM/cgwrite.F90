@@ -185,7 +185,7 @@
         call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_units_write_f(Null,Null,Null,CGNS_ENUMV(Kelvin),Null,ierr)
+	call cg_units_write_f(CG_Null,CG_Null,CG_Null,CGNS_ENUMV(Kelvin),CG_Null,ierr)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         units(1)=0
@@ -225,7 +225,7 @@
         call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_units_write_f(CGNS_ENUMV(Kilogram),CGNS_ENUMV(Meter),CGNS_ENUMV(Second),NULL,Null,ierr)
+	call cg_units_write_f(CGNS_ENUMV(Kilogram),CGNS_ENUMV(Meter),CGNS_ENUMV(Second),CG_NULL,CG_Null,ierr)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         units(1)=-1

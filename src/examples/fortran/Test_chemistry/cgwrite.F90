@@ -174,7 +174,7 @@
         call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_units_write_f(Null,Null,Null,CGNS_ENUMV(Kelvin),Null,ierr)
+	call cg_units_write_f(CG_Null,CG_Null,CG_Null,CGNS_ENUMV(Kelvin),CG_Null,ierr)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         units(1)=0
