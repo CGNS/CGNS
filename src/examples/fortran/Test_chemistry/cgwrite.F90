@@ -99,8 +99,8 @@
         call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_units_write_f(UserDefined,UserDefined,UserDefined, &
-            UserDefined,UserDefined,ier)
+	call cg_units_write_f(CG_UserDefined,CG_UserDefined,CG_UserDefined, &
+            CG_UserDefined,CG_UserDefined,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_descriptor_write_f('Units','kcal/mole',ier)
@@ -124,8 +124,8 @@
         call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_units_write_f(UserDefined,UserDefined,UserDefined, &
-            UserDefined,UserDefined,ier)
+	call cg_units_write_f(CG_UserDefined,CG_UserDefined,CG_UserDefined, &
+            CG_UserDefined,CG_UserDefined,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_descriptor_write_f('Units','kcal/mole',ier)
@@ -149,8 +149,8 @@
         call cg_dataclass_write_f(CGNS_ENUMV(Dimensional),ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
-	call cg_units_write_f(UserDefined,UserDefined,UserDefined, &
-            UserDefined,UserDefined,ier)
+	call cg_units_write_f(CG_UserDefined,CG_UserDefined,CG_UserDefined, &
+            CG_UserDefined,CG_UserDefined,ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
 	call cg_descriptor_write_f('Units','kcal/mole',ier)
