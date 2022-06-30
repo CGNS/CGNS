@@ -153,7 +153,20 @@ int read_inputs(int* argc, char*** argv) {
 }
 
 int initialize(int* argc, char** argv[]) {
-  MPI_Init(argc,argv);
+
+  char* SUBF = getenv("SUBF");
+  if(SUBF) {
+    int required = MPI_THREAD_MULTIPLE;
+    int provided = 0;
+    MPI_Init_thread(&argc, &argv, required, &provided);
+    if (provided < required) {
+      printf("MPI_THREAD_MULTIPLE not supported\n");
+      MPI_Abort(MPI_COMM_WORLD, -1);
+    }
+  } else {
+    MPI_Init(argc,argv);
+  }
+
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
   MPI_Info_create(&info);

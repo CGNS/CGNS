@@ -44,6 +44,13 @@ freely, subject to the following restrictions:
 
 #if CG_BUILD_PARALLEL
 #include "mpi.h"
+
+#define H5_HAVE_SUBFILING_VFD
+#ifdef H5_HAVE_SUBFILING_VFD
+#include "H5FDsubfiling.h" /* Private header for the subfiling VFD */
+#include "H5FDioc.h"
+#endif
+
 #endif
 
 #include "cgio_internal_type.h" /* for cgns_io_ctx_t */
@@ -2311,11 +2318,18 @@ void ADFH_Database_Open(const char   *name,
     if (0 == strcmp(fmt, "PARALLEL")) {
 
       if(!ctx_cgio.pcg_mpi_info) ctx_cgio.pcg_mpi_info = MPI_INFO_NULL;
+
+      char* SUBF = getenv("SUBF");
+      if(SUBF) {
+        H5Pset_mpi_params(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
+        H5Pset_fapl_subfiling(g_propfileopen, NULL);
+      } else {
 #if HDF5_HAVE_COLL_METADATA  
-      H5Pset_coll_metadata_write(g_propfileopen, 1);
+          H5Pset_coll_metadata_write(g_propfileopen, 1);
 #endif /*HDF5_HAVE_COLL_METADATA*/
 
-      H5Pset_fapl_mpio(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
+          H5Pset_fapl_mpio(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
+        }
     }
   }
 #endif
