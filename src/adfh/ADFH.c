@@ -45,8 +45,7 @@ freely, subject to the following restrictions:
 #if CG_BUILD_PARALLEL
 #include "mpi.h"
 
-#define H5_HAVE_SUBFILING_VFD
-#ifdef H5_HAVE_SUBFILING_VFD
+#if H5_HAVE_SUBFILING_VFD
 #include "H5FDsubfiling.h" /* Private header for the subfiling VFD */
 #include "H5FDioc.h"
 #endif
@@ -2310,26 +2309,27 @@ void ADFH_Database_Open(const char   *name,
   /* open the file */
 
 #if CG_BUILD_PARALLEL
+
   int flag = 0;
   /* check if we are actually running a parallel program */
   MPI_Initialized(&flag);
   if(flag) {
     /* Set the access property list to use MPI */
     if (0 == strcmp(fmt, "PARALLEL")) {
-
       if(!ctx_cgio.pcg_mpi_info) ctx_cgio.pcg_mpi_info = MPI_INFO_NULL;
 
+#if H5_HAVE_SUBFILING_VFD
       char* SUBF = getenv("SUBF");
       if(SUBF) {
         H5Pset_mpi_params(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
         H5Pset_fapl_subfiling(g_propfileopen, NULL);
-      } else {
-#if HDF5_HAVE_COLL_METADATA  
-          H5Pset_coll_metadata_write(g_propfileopen, 1);
+      } else
+#endif
+        H5Pset_fapl_mpio(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
+      
+#if HDF5_HAVE_COLL_METADATA
+      H5Pset_coll_metadata_write(g_propfileopen, 1);
 #endif /*HDF5_HAVE_COLL_METADATA*/
-
-          H5Pset_fapl_mpio(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
-        }
     }
   }
 #endif
