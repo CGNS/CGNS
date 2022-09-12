@@ -413,7 +413,7 @@ int main(int argc, char **argv) {
     printf("%d differences in Faces parent data\n", np);
 
   if (nn == 0)
-    puts("no diferences");
+    puts("no differences");
 
   free(xcoord);
 
