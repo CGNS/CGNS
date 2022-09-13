@@ -42,7 +42,6 @@ int main(int argc, char* argv[]) {
 
           if (cg_close(fn))
             cg_error_exit();
-
         }
 
         MPI_Barrier(MPI_COMM_WORLD);

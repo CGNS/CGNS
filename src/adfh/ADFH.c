@@ -86,8 +86,8 @@ hsize_t chunk_dim[ADF_MAX_DIMENSIONS];
 /* HDF5 Filter Parameters */
 H5Z_filter_t filter_id;
 size_t filter_nparams;
-unsigned int* filter_params;
-unsigned int filter_flags;
+unsigned int* filter_params = NULL;
+unsigned int filter_flags = 0;
 
 #define TO_UPPER( c ) ((islower(c))?(toupper(c)):(c))
 
