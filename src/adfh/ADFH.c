@@ -71,12 +71,13 @@ static size_t core_vfd_increment = 10L*1024L*1024L;
 /* write the file contents to disk when the file is closed */
 static hbool_t core_vfd_backing_store = ADFH_CONFIG_DEFAULT;
 
-/* MISC. HDF5 OPTIMIZATION TUNING PARAMETERS */
-static hsize_t h5pset_alignment_threshold  = ADFH_CONFIG_DEFAULT;
-static hsize_t h5pset_alignment_alignment  = ADFH_CONFIG_DEFAULT;
-static hsize_t h5pset_meta_block_size_size = ADFH_CONFIG_DEFAULT;
-static hsize_t h5pset_buffer_size_size     = ADFH_CONFIG_DEFAULT;
-static hsize_t h5pset_sieve_buf_size_size  = ADFH_CONFIG_DEFAULT;
+/** MISC. HDF5 OPTIMIZATION TUNING PARAMETERS */
+static hsize_t h5pset_alignment_threshold         = ADFH_CONFIG_DEFAULT;
+static hsize_t h5pset_alignment_alignment         = ADFH_CONFIG_DEFAULT;
+static hsize_t h5pset_meta_block_size_size        = ADFH_CONFIG_DEFAULT;
+static hsize_t h5pset_buffer_size_size            = ADFH_CONFIG_DEFAULT;
+static hsize_t h5pset_sieve_buf_size_size         = ADFH_CONFIG_DEFAULT;
+static unsigned h5pset_elink_file_cache_size_size = ADFH_CONFIG_DEFAULT;
 
 /* HDF5 Chunked Dataset Parameters */
 int chunk_ndim = 0;
@@ -1461,13 +1462,15 @@ void ADFH_Configure(const int option, const void *value, int *err)
     hsize_t i;
   
     if (option == ADFH_CONFIG_RESET && (int)((size_t)value == ADFH_CONFIG_RESET_HDF5)) {
-      core_vfd                    = ADFH_CONFIG_DEFAULT;
-      h5pset_alignment_threshold  = ADFH_CONFIG_DEFAULT;
-      h5pset_alignment_alignment  = ADFH_CONFIG_DEFAULT;
-      h5pset_meta_block_size_size = ADFH_CONFIG_DEFAULT;
-      h5pset_buffer_size_size     = ADFH_CONFIG_DEFAULT;
-      h5pset_sieve_buf_size_size  = ADFH_CONFIG_DEFAULT;
-      chunk_ndim                  = 0;
+      core_vfd                          = ADFH_CONFIG_DEFAULT;
+      h5pset_alignment_threshold        = ADFH_CONFIG_DEFAULT;
+      h5pset_alignment_alignment        = ADFH_CONFIG_DEFAULT;
+      h5pset_meta_block_size_size       = ADFH_CONFIG_DEFAULT;
+      h5pset_buffer_size_size           = ADFH_CONFIG_DEFAULT;
+      h5pset_sieve_buf_size_size        = ADFH_CONFIG_DEFAULT;
+      h5pset_elink_file_cache_size_size = ADFH_CONFIG_DEFAULT;
+      chunk_ndim                        = 0;
+
       set_error(NO_ERROR, err);
       return;
     }
@@ -1548,6 +1551,10 @@ void ADFH_Configure(const int option, const void *value, int *err)
           set_error(ADFH_ERR_FILTER_INVALID, err);
         }
       }
+    }
+    else if (option == ADFH_CONFIG_ELINK_FILE_CACHE_SIZE) {
+      h5pset_elink_file_cache_size_size = (unsigned)((size_t)value);
+      set_error(NO_ERROR, err);
     }
 #if CG_BUILD_PARALLEL
     else if (option == ADFH_CONFIG_MPI_COMM) {
@@ -2281,14 +2288,17 @@ void ADFH_Database_Open(const char   *name,
 
   /* HDF5 tuning parameters */
 
-  /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
-   * default setting is 2048 bytes
+  /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title72
+   * 'Sets the minimum metadata block size.'
+   * Default setting is 2048 bytes.
    */
   if ( h5pset_meta_block_size_size != ADFH_CONFIG_DEFAULT ) {
     H5Pset_meta_block_size(g_propfileopen, h5pset_meta_block_size_size);
   }
-  /* http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
-   * attention: this can increase filesize dramatically if lots of small datasets
+  /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title41
+   * 'Sets alignment properties of a file access property list.'
+   * Default is no alignment.
+   * ATTENTION: this can increase filesize dramatically if lots of small datasets
    */
   if ( h5pset_alignment_alignment != ADFH_CONFIG_DEFAULT ) {
     H5Pset_alignment(g_propfileopen,
@@ -2296,20 +2306,29 @@ void ADFH_Database_Open(const char   *name,
                      h5pset_alignment_alignment);
   }
 
-  /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
-   * 1 MByte is default of hdf5
+  /* https://docs.hdfgroup.org/hdf5/develop/group___d_x_p_l.html#title16
+   * 'Sets type conversion and background buffers. 
+   * 1 MByte is default.
    */
   if ( h5pset_buffer_size_size != ADFH_CONFIG_DEFAULT ) {
     void *tconv; void *bkg;
     H5Pset_buffer(g_propfileopen, h5pset_buffer_size_size, tconv, bkg);
   }
 
-  /* http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
-   * '..  used by file drivers that are capable of using data sieving'
-   *  1 MByte is default of hdf5
+  /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title78
+   * 'Used by file drivers that are capable of using data sieving.'
+   *  1 MByte is default.
    */
   if ( h5pset_sieve_buf_size_size != ADFH_CONFIG_DEFAULT ) {
     H5Pset_sieve_buf_size(g_propfileopen, h5pset_sieve_buf_size_size);
+  }
+
+  /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title48
+   * 'Sets the number of files that can be held open in an external link open file cache.'
+   *  0 size is default.
+   */
+  if ( h5pset_elink_file_cache_size_size != ADFH_CONFIG_DEFAULT ) {
+    H5Pset_elink_file_cache_size(g_propfileopen, h5pset_elink_file_cache_size_size);
   }
 
 #ifdef ADFH_H5F_CLOSE_STRONG
@@ -2369,15 +2388,17 @@ void ADFH_Database_Open(const char   *name,
 
   /* HDF5 tuning parameters */
 
-  /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_meta_block_size.htm
-   * default setting is 2048 bytes
+  /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title72
+   * 'Sets the minimum metadata block size.'
+   * Default setting is 2048 bytes.
    */
   if ( h5pset_meta_block_size_size != ADFH_CONFIG_DEFAULT ) {
     H5Pset_meta_block_size(g_propfileopen, h5pset_meta_block_size_size);
   }
-
-  /* http://hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm
-   * attention: this can increase filesize dramatically if lots of small datasets
+  /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title41
+   * 'Sets alignment properties of a file access property list.'
+   * Default is no alignment.
+   * ATTENTION: this can increase filesize dramatically if lots of small datasets
    */
   if ( h5pset_alignment_alignment != ADFH_CONFIG_DEFAULT ) {
     H5Pset_alignment(g_propfileopen,
@@ -2385,20 +2406,29 @@ void ADFH_Database_Open(const char   *name,
                      h5pset_alignment_alignment);
   }
 
-  /* http://www.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_buffer.htm
-   * 1 MByte is default of hdf5
+  /* https://docs.hdfgroup.org/hdf5/develop/group___d_x_p_l.html#title16
+   * 'Sets type conversion and background buffers. 
+   * 1 MByte is default.
    */
-  if ( h5pset_buffer_size_size != ADFH_CONFIG_DEFAULT) {
+  if ( h5pset_buffer_size_size != ADFH_CONFIG_DEFAULT ) {
     void *tconv; void *bkg;
     H5Pset_buffer(g_propfileopen, h5pset_buffer_size_size, tconv, bkg);
   }
 
-  /* http://hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSieveBufSize
-   * '..  used by file drivers that are capable of using data sieving'
-   * 1 MByte is default of hdf5
+  /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title78
+   * 'Used by file drivers that are capable of using data sieving.'
+   *  1 MByte is default.
    */
-  if ( h5pset_sieve_buf_size_size != ADFH_CONFIG_DEFAULT) {
+  if ( h5pset_sieve_buf_size_size != ADFH_CONFIG_DEFAULT ) {
     H5Pset_sieve_buf_size(g_propfileopen, h5pset_sieve_buf_size_size);
+  }
+
+  /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title48
+   * 'Sets the number of files that can be held open in an external link open file cache.'
+   *  0 size is default.
+   */
+  if ( h5pset_elink_file_cache_size_size != ADFH_CONFIG_DEFAULT ) {
+    H5Pset_elink_file_cache_size(g_propfileopen, h5pset_elink_file_cache_size_size);
   }
 
 #if 0 /* MSB -- DISABLED as it is not compatible with HDF5 1.8 file format, need to resolve this CGNS-166 */

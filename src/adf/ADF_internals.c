@@ -7187,7 +7187,7 @@ NULL_STRING_POINTER
 ADF_FILE_NOT_OPENED
 PRISTK_NOT_FOUND
    Note: errors are only important for GET mode since you must then go ahead
-   and read the data fom the file. The stack is only meant to speed things
+   and read the data from the file. The stack is only meant to speed things
    up, not stop the process !!!
 ***********************************************************************/
 int     ADFI_stack_control( const unsigned int file_index,
