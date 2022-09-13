@@ -1526,8 +1526,7 @@ void ADFH_Configure(const int option, const void *value, int *err)
         set_error(ADFH_ERR_INVALID_USER_DATA, err);
       }
       for (i = 0; i < chunk_ndim; i++) {
-        chunk_dim[i] = (hsize_t)(val[i+1]);
-        if( chunk_dim[i-1] < 1 ) {
+        if( ( chunk_dim[i] = (hsize_t)(val[i+1]) ) < 1 ) {
           set_error(ADFH_ERR_INVALID_USER_DATA, err);
         }
       }
@@ -2965,7 +2964,7 @@ void ADFH_Put_Dimension_Information(const double   id,
   hsize_t new_dims[ADF_MAX_DIMENSIONS];
   char new_type[3];
   hid_t g_propdataset_bk;
-  int filter_set;
+  int filter_set = 0;
 
   to_HDF_ID(id,hid);
 
@@ -3056,8 +3055,6 @@ void ADFH_Put_Dimension_Information(const double   id,
   hssize_t dset_size = H5Sget_select_npoints(sid);
   size_t dtype_size = H5Tget_size(tid); 
 
-  filter_set = 0;
-
   /* Compact storage has a dataset size limit of 64 KiB */
   if(HDF5storage_type == CGIO_COMPACT && dset_size*(hssize_t)dtype_size  < (hssize_t)CGNS_64KB)
     H5Pset_layout(mta_root->g_propdataset, H5D_COMPACT);
@@ -3092,11 +3089,7 @@ void ADFH_Put_Dimension_Information(const double   id,
         g_propdataset_bk = H5Pcopy(mta_root->g_propdataset);
 
         if( H5Pset_filter(mta_root->g_propdataset, filter_id,
-#if 0
-                          H5Z_FLAG_MANDATORY, 
-#else
                           H5Z_FLAG_OPTIONAL,
-#endif
                           filter_nparams, filter_params) < 0) {
           set_error(ADFH_ERR_FILTER, err);
           return;

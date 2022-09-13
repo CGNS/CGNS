@@ -103,6 +103,8 @@ HDF5LIB     = @HDF5LIB@
 HDF5LIB_DEP = @HDF5LIB_DEP@
 SZIPLIB     = @SZIPLIB@
 ZLIBLIB     = @ZLIBLIB@
+H5NEEDSZIP  = @H5NEEDSZIP@
+H5NEEDZLIB  = @H5NEEDZLIB@
 
 #------------------------------------------------------------------------
 # these should only be set if building with HDF5 and MPI
