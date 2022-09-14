@@ -550,7 +550,7 @@ int main (int argc, char **argv)
     nn += np;
     if (np) printf("%d differences in Field\n", np);
 
-    if (nn == 0) puts("no diferences");
+    if (nn == 0) puts("no differences");
 
 #if NUM_RANDOM > 0
 
@@ -609,7 +609,7 @@ int main (int argc, char **argv)
             cg_elements_partial_read(cgfile, cgbase, cgzone, 1,
                 rmin, rmax, ibuf, NULL))
             cg_error_exit();
-        if (nr != nn) puts("diference in element data size");
+        if (nr != nn) puts("difference in element data size");
         for (np = 0, i = 0; i < nn; i++) {
             if (ibuf[i] != elements[n+i]) np++;
         }
@@ -635,7 +635,7 @@ int main (int argc, char **argv)
             cg_elements_partial_read(cgfile, cgbase, cgzone, 2,
                 rmin, rmax, ibuf, pbuf))
             cg_error_exit();
-        if (nr != nn) puts("diference in face data size");
+        if (nr != nn) puts("difference in face data size");
         for (np = 0, i = 0; i < nn; i++) {
             if (ibuf[i] != faces[n+i]) np++;
         }
