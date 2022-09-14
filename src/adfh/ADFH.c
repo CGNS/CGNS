@@ -77,6 +77,15 @@ static size_t core_vfd_increment = 10L*1024L*1024L;
 /* write the file contents to disk when the file is closed */
 static hbool_t core_vfd_backing_store = ADFH_CONFIG_DEFAULT;
 
+/*** HDF5's SUBFILING FILE DRIVER PARAMETERS ****/
+
+#if H5_HAVE_SUBFILING_VFD
+/* Enables using the subfiling file driver */
+static int subfiling_vfd = ADFH_CONFIG_DEFAULT;
+/* TODO: Configuration structure for H5Pset_fapl_subfiling */
+/* static H5FD_subfiling_config_t cg_subfiling_config; */
+#endif
+
 /** MISC. HDF5 OPTIMIZATION TUNING PARAMETERS */
 static hsize_t h5pset_alignment_threshold         = ADFH_CONFIG_DEFAULT;
 static hsize_t h5pset_alignment_alignment         = ADFH_CONFIG_DEFAULT;
@@ -1455,6 +1464,7 @@ static herr_t fix_dimensions(hid_t id, const char *name, const H5L_info_t* linfo
 void ADFH_Configure(const int option, const void *value, int *err)
 {
     if (option == ADFH_CONFIG_RESET && (int)((size_t)value == ADFH_CONFIG_RESET_HDF5)) {
+      subfiling_vfd                     = ADFH_CONFIG_DEFAULT;
       core_vfd                          = ADFH_CONFIG_DEFAULT;
       h5pset_alignment_threshold        = ADFH_CONFIG_DEFAULT;
       h5pset_alignment_alignment        = ADFH_CONFIG_DEFAULT;
@@ -1479,6 +1489,10 @@ void ADFH_Configure(const int option, const void *value, int *err)
     }
     else if (option == ADFH_CONFIG_CORE) {
         core_vfd = (int)((size_t)value);
+        set_error(NO_ERROR, err);
+    }
+    else if (option == ADFH_CONFIG_SUBFILING) {
+        subfiling_vfd = (int)((size_t)value);
         set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_CORE_WRITE) {
@@ -2319,8 +2333,7 @@ void ADFH_Database_Open(const char   *name,
       if(!ctx_cgio.pcg_mpi_info) ctx_cgio.pcg_mpi_info = MPI_INFO_NULL;
 
 #if H5_HAVE_SUBFILING_VFD
-      char* SUBF = getenv("SUBF");
-      if(SUBF) {
+      if(subfiling_vfd == 1) {
         H5Pset_mpi_params(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
         H5Pset_fapl_subfiling(g_propfileopen, NULL);
       } else
