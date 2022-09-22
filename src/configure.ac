@@ -902,12 +902,10 @@ else
   # Check if HDF5 library has multi-dataset read and write APIs
   ## --------------------------------------------------------------------
 
-  AC_LANG_C
   HDF5_HAVE_MULTI_DATASETS=0
   AC_MSG_CHECKING([if HDF5 library has multi-dataset read/write APIs])
-
-  chck_fs=`grep -i 'H5Dwrite_multi' $HDF5INC/H5Dpublic.h`
-  if test "x$chck_fs" = "x"; then
+  chck_multi=`grep -i '_multi' $HDF5INC/H5Dpublic.h`
+  if test "x$chck_multi" = "x"; then
     AC_MSG_RESULT(no)
   else
     HDF5_HAVE_MULTI_DATASETS=1

@@ -5910,18 +5910,11 @@ $as_echo "yes" >&6; }
   # Check if HDF5 library has multi-dataset read and write APIs
   ## --------------------------------------------------------------------
 
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
   HDF5_HAVE_MULTI_DATASETS=0
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if HDF5 library has multi-dataset read/write APIs" >&5
 $as_echo_n "checking if HDF5 library has multi-dataset read/write APIs... " >&6; }
-
-  chck_fs=`grep -i 'H5Dwrite_multi' $HDF5INC/H5Dpublic.h`
-  if test "x$chck_fs" = "x"; then
+  chck_multi=`grep -i '_multi' $HDF5INC/H5Dpublic.h`
+  if test "x$chck_multi" = "x"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
   else

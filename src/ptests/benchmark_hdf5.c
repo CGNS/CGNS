@@ -208,10 +208,10 @@ int main(int argc, char* argv[]) {
   size_t Mb_coor, Mb_elem, Mb_field, Mb_array;
 
   const char* PIOMODE[] = {"IND", "COLL"};
-  void **buf;
-  int Cvec[3];
-  int Fvec[3];
-  int Avec[2];
+
+  /* parameters */
+  //debug = false;
+  debug = true;
 
   t0 = MPI_Wtime(); /* Timer */
 
