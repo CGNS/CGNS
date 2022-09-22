@@ -189,7 +189,8 @@ int main(int argc, char* argv[]) {
   const char* PIOMODE[] = {"IND", "COLL"};
 
   /* parameters */
-  debug = false;
+  //debug = false;
+  debug = true;
 
   t0 = MPI_Wtime(); /* Timer */
 
