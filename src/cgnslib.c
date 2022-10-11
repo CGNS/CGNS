@@ -40,12 +40,6 @@ freely, subject to the following restrictions:
 #  define X_OK    001 /* Test for eXecute permission */
 #  define F_OK    000 /* Test for existence of File */
 # endif
-# define ACCESS _access
-# define UNLINK _unlink
-#else
-# include <unistd.h>
-# define ACCESS access
-# define UNLINK unlink
 #endif
 
 #include "cgnslib.h"

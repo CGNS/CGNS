@@ -592,61 +592,70 @@ int cgio_check_file (const char *filename, int *file_type)
     FILE *fp;
     static char *HDF5sig = "\211HDF\r\n\032\n";
     struct cgns_stat st;
+    int err_fopen = CGIO_ERR_NONE;
+    int err = CGIO_ERR_NONE;
 
-    int mpibuf[2], err = CGIO_ERR_NONE;
-
-    if (ACCESS (filename, 0) || cgns_stat (filename, &st) ||
-        S_IFREG != (st.st_mode & S_IFREG)) {
-        last_err = CGIO_ERR_NOT_FOUND;
-        return last_err;
-    }
     *file_type = CGIO_FILE_NONE;
 
-
 #if CG_BUILD_PARALLEL
-    /* don't overload the file system by having all the processors doing a read */
+    int mpibuf[3];
+    /* Avoid overloading the file system by having all ranks do POSIX calls */
     if(ctx_cgio.pcg_mpi_comm_rank == 0) {
 #endif
+      if (ACCESS (filename, 0) || cgns_stat (filename, &st) ||
+          S_IFREG != (st.st_mode & S_IFREG)) {
+        err_fopen = CGIO_ERR_NOT_FOUND;
+      } else {
+        fp = fopen(filename, "rb");
+        if (NULL == fp) {
+          if (errno == EMFILE) {
+            err = -set_error(CGIO_ERR_TOO_MANY);
+          } else {
+            err = -set_error(CGIO_ERR_FILE_OPEN);
+          }
+        } else {
+          if (sizeof(buf) != fread (buf, 1, sizeof(buf), fp)) {
+            buf[4] = 0;
+          }
+          buf[sizeof(buf)-1] = 0;
+          fclose (fp);
 
-      fp = fopen(filename, "rb");
-      if (NULL == fp) {
-	if (errno == EMFILE) {
-	  err = set_error(CGIO_ERR_TOO_MANY);
-	} else {
-	  err = set_error(CGIO_ERR_FILE_OPEN);
-	}
-	return err;
+          /* check for ADF */
+          if (0 == strncmp (&buf[4], "ADF Database Version", 20)) {
+            *file_type = CGIO_FILE_ADF;
+            err = set_error(CGIO_ERR_NONE);
+          } else {
+            /* check for HDF5 */
+            for (n = 0; n < 8; n++) {
+              if (buf[n] != HDF5sig[n]) break;
+            }
+            if (n == 8) {
+              *file_type = CGIO_FILE_HDF5;
+              err = set_error(CGIO_ERR_NONE);
+            }
+          }
+        }
       }
-    if (sizeof(buf) != fread (buf, 1, sizeof(buf), fp)) {
-      buf[4] = 0;
-    }
-    buf[sizeof(buf)-1] = 0;
-    fclose (fp);
-
-    /* check for ADF */
-    if (0 == strncmp (&buf[4], "ADF Database Version", 20)) {
-      *file_type = CGIO_FILE_ADF;
-      err = set_error(CGIO_ERR_NONE);
-    } else {
-      /* check for HDF5 */
-      for (n = 0; n < 8; n++) {
-	if (buf[n] != HDF5sig[n]) break;
-      }
-      if (n == 8) {
-	*file_type = CGIO_FILE_HDF5;
-	err = set_error(CGIO_ERR_NONE);
-      }
-    }
 #if CG_BUILD_PARALLEL
     }
     if(ctx_cgio.pcg_mpi_initialized) {
-      mpibuf[0] = err;
-      mpibuf[1] = *file_type;
-      MPI_Bcast(mpibuf, 2, MPI_INT, 0, ctx_cgio.pcg_mpi_comm);
-      err = mpibuf[0];
-      *file_type = mpibuf[1];
+      mpibuf[0] = err_fopen;
+      mpibuf[1] = err;
+      mpibuf[2] = *file_type;
+      MPI_Bcast(mpibuf, 3, MPI_INT, 0, ctx_cgio.pcg_mpi_comm);
+      err_fopen = mpibuf[0];
+      err = mpibuf[1];
+      *file_type = mpibuf[2];
     }
 #endif
+
+    if(err_fopen != CGIO_ERR_NONE) {
+      last_err = CGIO_ERR_NOT_FOUND;
+      return last_err;
+    }
+
+    /* indicates an error with fopen */
+    if(err < 0 ) return -err;
 
     if(err == set_error(CGIO_ERR_NONE)) return err;
 
