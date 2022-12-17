@@ -26,7 +26,7 @@ jobs:
         language: [ cpp ]
 
     steps:
-     - name: Install Dependencies (Linux)
+      - name: Install Dependencies (Linux)
         run: |
           sudo apt update
           sudo apt install mpich
