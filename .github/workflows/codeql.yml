@@ -73,8 +73,12 @@ jobs:
           config-file: ./.github/codeql.yml
           queries: +security-and-quality
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
+      - name: Build
+        run: |
+          cd cbuild
+          cmake --build . --config Release
+          ctest -C Release
+        shell: bash
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
