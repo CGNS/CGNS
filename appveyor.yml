@@ -151,9 +151,9 @@ before_build:
   - SET HDF5_ROOT=/Program Files/HDF_Group/HDF5/%HDF5_VER%
   - cmake -G"NMake Makefiles" ^
      %build_opt% ^
-     -D CMAKE_C_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\intel64\icl.exe" ^
+     -D CMAKE_C_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\icx.exe" ^
      -D CMAKE_C_FLAGS:STRING="" ^
-     -D CMAKE_Fortran_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\intel64\ifort.exe" ^
+     -D CMAKE_Fortran_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\ifx.exe" ^
      -D CMAKE_BUILD_TYPE:STRING=%configuration% ^
      -D HDF5_NEED_ZLIB:BOOL=ON ^
      -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
