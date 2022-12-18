@@ -1,0 +1,86 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "develop", "master" ]
+  pull_request:
+    branches: [ "develop" ]
+  schedule:
+    - cron: "16 7 * * 0"
+
+env:
+  hdf5_vers: 1_10_8
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ cpp ]
+
+    steps:
+      - name: Install Dependencies (Linux)
+        run: |
+          sudo apt update
+          sudo apt install mpich
+          sudo apt-get install -y libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
+          # Set env vars
+          echo "OS_NAME=linux" >> $GITHUB_ENV
+          echo "CC=mpicc" >> $GITHUB_ENV
+          echo "FC=mpif90" >> $GITHUB_ENV
+          echo "F77=mpif90" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        
+##################################
+# INSTALL HDF5
+##################################
+                 
+      - name: install HDF5
+        run: |
+          git clone https://github.com/HDFGroup/hdf5.git --branch hdf5-${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
+          export HOME_DIR=$(echo ~)
+          cd hdf5_${{ env.hdf5_vers }}
+          ./configure --without-zlib --without-szlib --disable-fortran --disable-hl \
+          --disable-tests --disable-tools \
+          --prefix=$HOME_DIR/hdf5 \
+          --enable-parallel 
+          make -j 8 install
+        shell: bash
+
+##################################
+# CONFIGURE CGNS (CMake)
+##################################
+
+      - name: configure CGNS
+        run: |
+          bash .github/workflows/config-cgns.sh cmake \
+              "--enable-parallel --without-fortran --with-hdf5 --enable-cgnstools"
+        shell: bash
+        
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+          config-file: ./.github/codeql.yml
+          queries: +security-and-quality
+
+      - name: Build
+        run: |
+          cd cbuild
+          cmake --build . --config Release
+          ctest -C Release
+        shell: bash
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:${{ matrix.language }}"
