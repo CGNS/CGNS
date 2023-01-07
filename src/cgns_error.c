@@ -47,7 +47,7 @@ CGNSDLL void cgi_warning(const char *format, ...) {
     va_start(arg, format);
     if (cgns_error_handler) {
         char warning_msg[200];
-        vsprintf(warning_msg, format, arg);
+        vsnprintf(warning_msg, 200, format, arg);
         (*cgns_error_handler)(0, warning_msg);
     }
     else {

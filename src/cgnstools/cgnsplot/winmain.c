@@ -179,7 +179,7 @@ WishPanic TCL_VARARGS_DEF(char *,arg1)
     char *format;
 
     format = TCL_VARARGS_START(char *,arg1,argList);
-    vsprintf(buf, format, argList);
+    vsnprintf(buf, 1024, format, argList);
 
     MessageBeep(MB_ICONEXCLAMATION);
     MessageBox(NULL, buf, "Fatal Error in Wish",
