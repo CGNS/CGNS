@@ -1,4 +1,7 @@
 #include "cgnslib.h"
+#include <math.h>
+#include <string.h>
+
 
 #ifndef CGNSTYPES_H
 # define cgsize_t int
@@ -26,3 +29,49 @@
 
 double elapsed_time (void);
 double file_size (char *fname);
+
+int compareValuesDouble(double val1, double val2) {
+
+  int ret = 1;
+  if (fabs(val1 - val2) > 1e-10) {
+    ret = 0;
+    printf("ERROR - value comparison failed %f, %f\n", val1, val2);
+  }
+  return ret;
+}
+
+int compareValuesFloat(float val1, float val2) {
+
+  int ret = 1;
+  if (fabs((double)val1 - (double)val2) > 1e-7) {
+    ret = 0;
+    printf("ERROR - value comparison failed %f, %f\n", val1, val2);
+  }
+  return ret;
+}
+
+int compareValuesInt(int val1, int val2) {
+  int ret = 1;
+  if (val1 != val2) {
+    ret = 0;
+    printf("ERROR - value comparison failed %d, %d\n", val1, val2);
+  }
+  return ret;
+}
+
+int compareValuescgSize_t(cgsize_t val1, cgsize_t val2) {
+  int ret = 1;
+  if (val1 != val2) {
+    ret = 0;
+    printf("ERROR - value comparison failed %zu, %zu\n", val1, val2);
+  }
+  return ret;
+}
+
+int compareValuesChr(const char *val1, const char *val2) {
+  int ret = 1;
+  if (strcmp(val1, val2)) {
+    ret = 0;
+  }
+  return ret;
+}

@@ -46,7 +46,7 @@
 **/*.sw[abcdefghijklmnop]
 
 #CGNS test files
-*.cgns
+#*.cgns
 
 #cmake
 CMakeCache.txt
