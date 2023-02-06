@@ -28,6 +28,9 @@ jobs:
     steps:
       - name: Install Dependencies (Linux)
         run: |
+          sudo gem install apt-spy2
+          sudo apt-spy2 check
+          sudo apt-spy2 fix --commit
           sudo apt update
           sudo apt install mpich
           sudo apt-get install -y libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
