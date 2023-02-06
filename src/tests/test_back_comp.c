@@ -1,11 +1,12 @@
 /*
-  Testing  backward compatibility  of CGNS files created
-  using older versions of the   CGNS library.  The older
+  Testing  backward compatibility of CGNS files created
+  using older versions of the CGNS library.  The older
   file versions can be found in the directory prev_vers.
+  Ony checks HDF5 derived CGNS files, so HDF5 is required.
 */
 
 /*
-  Reads simple 3-D unstructured parameters from a CGNS file
+  Reads simple 3-D unstructured  parameters from a  CGNS file
   (created using testfiles/gen_file.c).
 */
 
@@ -23,6 +24,9 @@
 
 int main()
 {
+
+#if CG_BUILD_HDF5
+
   float x[21*17*9],y[21*17*9],z[21*17*9];
   cgsize_t isize[3][1],ielem[maxelemi][8],jelem[maxelemj][4];
   int index_base,index_zone,ielem_no;
@@ -628,5 +632,12 @@ int main()
 
   }
   return 0;
+
+#else
+
+  printf("\nTEST SKIPPED: Requires HDF5-enabled CGNS build\n");
+  return SKIP_RETURN_CODE; /* indicates skipped test */
+
+#endif
 
 }

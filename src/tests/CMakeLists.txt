@@ -163,11 +163,16 @@ endif ()
 
 # Add the tests so that ctest can find them
 if (CGNS_ENABLE_TESTS)
+
+  file(COPY testfiles DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
   foreach(TARGETNAME ${C_TESTS_LIST})
     if ( ${TARGETNAME} IN_LIST SKIP_TESTS )
       continue()
     endif()
     add_test(NAME ${TARGETNAME} COMMAND ${TARGETNAME})
+    set_property (TEST ${TARGETNAME} PROPERTY SKIP_RETURN_CODE 125)
+
   endforeach()
 
   # Conditionally add the fortran tests

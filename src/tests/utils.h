@@ -11,6 +11,9 @@
 # define CGNS_ENUMV(e) e
 #endif
 
+/* Return code indicating a skipped test */
+#define SKIP_RETURN_CODE 125
+
 #if defined(_WIN32) && !defined(__NUTC__)
 # include <io.h>     /* suggested by MTI */
 # ifndef F_OK
@@ -63,7 +66,10 @@ int compareValuescgSize_t(cgsize_t val1, cgsize_t val2) {
   int ret = 1;
   if (val1 != val2) {
     ret = 0;
-    printf("ERROR - value comparison failed %zu, %zu\n", val1, val2);
+    if (sizeof(cgsize_t) == 4)
+      printf("ERROR - value comparison failed %d, %d\n", val1, val2);
+    else
+      printf("ERROR - value comparison failed %zu, %zu\n", val1, val2);
   }
   return ret;
 }
