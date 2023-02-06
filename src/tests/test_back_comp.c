@@ -2,7 +2,7 @@
   Testing  backward compatibility of CGNS files created
   using older versions of the CGNS library.  The older
   file versions can be found in the directory prev_vers.
-  Ony checks HDF5 derived CGNS files, so HDF5 is required.
+  Only checks HDF5 derived CGNS files, so HDF5 is required.
 */
 
 /*
