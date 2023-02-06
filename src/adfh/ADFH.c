@@ -180,8 +180,6 @@ typedef struct _ADFH_MTA {
   int   g_flags;
   hid_t g_files[ADFH_MAXIMUM_FILES];
 
-  /* tracking and indexing settings for attribute creation order */
-  unsigned int attr_create_order;
   /* tracking and indexing settings for link creation order */
   unsigned int link_create_order;
 
@@ -2023,7 +2021,6 @@ void ADFH_Children_Names(const double pid,
 #ifdef ADFH_NO_ORDER
   mta_root->i_count = 0;
 #endif
-  printf("ADFH_Children_Names \n");
   /*initialize names to null*/
   memset(names, 0, (size_t)ilen*(size_t)name_length);
   if ((hpid = open_node(pid, err)) >= 0) {
@@ -2134,7 +2131,6 @@ void ADFH_Database_Open(const char   *name,
   mta_root->g_flags = 1;
 
   mta_root->link_create_order = H5_INDEX_CRT_ORDER;
-  mta_root->attr_create_order = H5_INDEX_CRT_ORDER;
 
 #ifndef ADFH_DEBUG_ON
   H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
