@@ -2084,18 +2084,11 @@ void ADFH_Children_IDs(const double pid,
     H5Literate(hpid,mta_root->link_create_order,H5_ITER_INC,
                NULL,children_ids,(void *)IDs);
 #endif
-    // FIXME: MSB CHECK IF STILL NEEDED
     if (IDs[0]==-1)
     {
-#if H5_VERSION_GE(1,12,0)
-      H5Literate2(hpid,H5_INDEX_NAME,H5_ITER_INC,
-                 NULL,children_ids,(void *)IDs);
-#else
-      H5Literate(hpid,H5_INDEX_NAME,H5_ITER_INC,
-                 NULL,children_ids,(void *)IDs);
-#endif
+      set_error(CHILDREN_IDS_NOT_FOUND, err);
+      return;
     }
-    // MSB
     H5Gclose(hpid);
   }
   *icount_ret = mta_root->n_names;
@@ -2447,23 +2440,12 @@ void ADFH_Database_Open(const char   *name,
       return;
     }
 
-    /* NOTE: Creation order was set by default in CGNS 3.1.3, so a CGNS
-       file created by earlier versions will not have this set. Therefore,
-       it should not be automatically assumed to be set in H5Literate. */
-
-    /* Obtain the file creation property list to check for attribute ordering. */
-    {
-      hid_t pid;
-      unsigned int crt_order_flags;
-      pid = H5Fget_create_plist(fid);
-      H5Pget_attr_creation_order(pid, &crt_order_flags);
-      if (crt_order_flags == 0) {
-        mta_root->attr_create_order = H5_INDEX_NAME;
-      } else {
-        mta_root->attr_create_order = H5_INDEX_CRT_ORDER;
-      }
-      H5Pclose(pid);
-    }
+    /*
+      NOTE: Creation  order was set by  default  in CGNS 3.1.3, so a
+      CGNS file created by earlier versions will not have  this set.
+      Therefore, it should not be automatically assumed to be set in
+      H5Literate.
+    */
 
     gid = H5Gopen2(fid, "/", H5P_DEFAULT);
 

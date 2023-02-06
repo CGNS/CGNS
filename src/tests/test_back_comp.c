@@ -1,13 +1,12 @@
 /*
-  Testing backward compatibility of CGNS files
-  created using older versions of the CGNS
-  library. The older file versions can be found in
-  the directory prev_vers.
+  Testing  backward compatibility  of CGNS files created
+  using older versions of the   CGNS library.  The older
+  file versions can be found in the directory prev_vers.
 */
 
 /*
-  Reads simple 3-D unstructured grid from a CGNS file
-  (created using gen_file.c).
+  Reads simple 3-D unstructured parameters from a CGNS file
+  (created using testfiles/gen_file.c).
 */
 
 #include <stdio.h>
@@ -18,7 +17,7 @@
 #define maxelemi 20*16*8
 #define maxelemj 1216
 #define maxlen 80
-#define numlibvers 9
+#define numlibvers 8
 #define ntt 20
 #define maxpnts 960
 
@@ -37,7 +36,7 @@ int main()
   int index_dim;
 
   int lv;
-  int libvers[numlibvers] = {3000, 3110, 3210, 3310, 3420, 4000, 4100, 4300, 4400};
+  int libvers[numlibvers] = {3000, 3110, 3210, 3310, 3420, 4000, 4100, 4400};
 
   int ni,nj,nk,i,j,k,iset;
   ni=21;
