@@ -242,9 +242,8 @@ int main()
     /* ---------------------------------- read_flowvert_unst */
 
     float r[9*17*21],p[9*17*21];
-    cgsize_t isize[3][1],irmin,irmax;
     int index_flow;
-    char zonename[33],solname[33];
+    char solname[maxlen];
     CGNS_ENUMT(GridLocation_t) loc;
 
     /* READ FLOW SOLUTION FROM CGNS FILE */
@@ -510,7 +509,7 @@ int main()
 
     float cl[ntt];
     int index_array,ndim;
-    CGNS_ENUMT(DataType_t) itype;
+    CGNS_ENUMT(DataType_t) itypeD;
     cgsize_t jdim;
 
     index_base=1;
@@ -532,7 +531,7 @@ int main()
       printf("\nError!  Expecting only one array, read %i\n",narrays);
       cg_error_exit();
     }
-    if(cg_array_info(index_array,arrayname,&itype,&ndim,&jdim))
+    if(cg_array_info(index_array,arrayname,&itypeD,&ndim,&jdim))
       cg_error_exit();
     if (jdim > ntt) {
       printf("\nError! must increase ntt to at least %i\n",(int)jdim);

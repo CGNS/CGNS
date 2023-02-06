@@ -1,3 +1,6 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #include "cgnslib.h"
 #include <math.h>
 #include <string.h>
@@ -79,3 +82,4 @@ int compareValuesChr(const char *val1, const char *val2) {
   }
   return ret;
 }
+#endif
