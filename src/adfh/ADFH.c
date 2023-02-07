@@ -2359,7 +2359,7 @@ void ADFH_Database_Open(const char   *name,
      * 1 MByte is default.
      */
     if ( h5pset_buffer_size_size != ADFH_CONFIG_DEFAULT ) {
-      void *tconv; void *bkg;
+      void *tconv=NULL; void *bkg=NULL;
       H5Pset_buffer(g_propfileopen, h5pset_buffer_size_size, tconv, bkg);
     }
 
