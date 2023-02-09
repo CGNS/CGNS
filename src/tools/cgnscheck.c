@@ -4302,7 +4302,7 @@ static void check_connectivity (int nzc)
     if (cg_zconn_read(cgnsfn, cgnsbase, cgnszone, nzc, zcname))
         error_exit("cg_zconn_set");
     strcpy (ZoneConn[nzc-1], zcname);
-    printf ("  checking zone grid connectivty \"%s\"\n", zcname);
+    printf ("  checking zone grid connectivity \"%s\"\n", zcname);
     fflush (stdout);
 
     ierr = cg_goto (cgnsfn, cgnsbase, "Zone_t", cgnszone,

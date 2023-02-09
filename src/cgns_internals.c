@@ -2126,7 +2126,7 @@ int cgi_read_conn(cgns_conn *conn)
      /* check */
     if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
       if (conn->ptset.id==0) {
-        cgi_error("Niether PointRange nor PointList defined for GridConnectivity_t '%s'",
+        cgi_error("Neither PointRange nor PointList defined for GridConnectivity_t '%s'",
 		  conn->name);
         return CG_ERROR;
       }
@@ -2136,7 +2136,7 @@ int cgi_read_conn(cgns_conn *conn)
       hid_t hid;
       to_HDF_ID(conn->ptset.id, hid);
       if (hid==0) {
-        cgi_error("Niether PointRange nor PointList defined for GridConnectivity_t '%s'",
+        cgi_error("Neither PointRange nor PointList defined for GridConnectivity_t '%s'",
 		  conn->name);
         return CG_ERROR;
       }
