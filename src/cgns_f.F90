@@ -3714,7 +3714,7 @@ MODULE cgns
        INTEGER(CGSIZE_T), INTENT(IN) :: start
        INTEGER(CGSIZE_T), INTENT(IN) :: END
        INTEGER, INTENT(IN) :: nbndry
-       INTEGER, INTENT(IN) :: S
+       INTEGER, INTENT(OUT) :: S
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_section_write_f
 
