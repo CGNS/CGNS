@@ -433,7 +433,11 @@ int cg_is_cgns(const char *filename, int *file_type)
  *
  * In order to reduce memory usage and improve execution speed, large arrays such as grid coordinates or flow solutions are not actually 
  * stored in memory. Instead, only basic information about the node is kept, while reads and writes of the data is directly to and from 
- * the application's memory. An attempt is also made to do the same with unstructured mesh element data. 
+ * the application's memory. An attempt is also made to do the same with unstructured mesh element data.
+ *
+ * \note CGNS maintains one-way forward compatibility insofar as any file open and modified by, for example, version major.minor.patch
+ *  will be readable with major.minor.patch< b>+< /b>. It can't be guaranteed the reverse major.minor.patch< b>-< /b>
+ *  compatibility for that file will be true.
  *
  */
 
