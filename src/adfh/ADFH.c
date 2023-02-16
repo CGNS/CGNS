@@ -180,6 +180,9 @@ typedef struct _ADFH_MTA {
   int   g_flags;
   hid_t g_files[ADFH_MAXIMUM_FILES];
 
+  /* tracking and indexing settings for link creation order */
+  unsigned int link_create_order;
+
 #ifndef ADFH_FORCE_ID_CLOSE
   /* object ids returned to API user that should be closed */
   hid_t *g_extids[ADFH_MAXIMUM_FILES];
@@ -1914,9 +1917,9 @@ void ADFH_Number_of_Children(const double  id,
   *number = 0;
   if ((hid = open_node(id, err)) >= 0) {
 #if H5_VERSION_GE(1,12,0)
-    H5Literate2(hid, H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, &gskip, count_children, (void *)number);
+    H5Literate2(hid, mta_root->link_create_order, H5_ITER_NATIVE, &gskip, count_children, (void *)number);
 #else
-    H5Literate(hid, H5_INDEX_CRT_ORDER, H5_ITER_NATIVE, &gskip, count_children, (void *)number);
+    H5Literate(hid, mta_root->link_create_order, H5_ITER_NATIVE, &gskip, count_children, (void *)number);
 #endif
     H5Gclose(hid);
   }
@@ -2018,7 +2021,6 @@ void ADFH_Children_Names(const double pid,
 #ifdef ADFH_NO_ORDER
   mta_root->i_count = 0;
 #endif
-
   /*initialize names to null*/
   memset(names, 0, (size_t)ilen*(size_t)name_length);
   if ((hpid = open_node(pid, err)) >= 0) {
@@ -2073,21 +2075,16 @@ void ADFH_Children_IDs(const double pid,
 #endif
   if ((hpid = open_node(pid, err)) >= 0) {
 #if H5_VERSION_GE(1,12,0)
-    H5Literate2(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
+    H5Literate2(hpid,mta_root->link_create_order,H5_ITER_INC,
                NULL,children_ids,(void *)IDs);
 #else
-    H5Literate(hpid,H5_INDEX_CRT_ORDER,H5_ITER_INC,
+    H5Literate(hpid,mta_root->link_create_order,H5_ITER_INC,
                NULL,children_ids,(void *)IDs);
 #endif
     if (IDs[0]==-1)
     {
-#if H5_VERSION_GE(1,12,0)
-      H5Literate2(hpid,H5_INDEX_NAME,H5_ITER_INC,
-                 NULL,children_ids,(void *)IDs);
-#else
-      H5Literate(hpid,H5_INDEX_NAME,H5_ITER_INC,
-                 NULL,children_ids,(void *)IDs);
-#endif
+      set_error(CHILDREN_IDS_NOT_FOUND, err);
+      return;
     }
     H5Gclose(hpid);
   }
@@ -2132,6 +2129,8 @@ void ADFH_Database_Open(const char   *name,
      it is found set to 1 in *all* MLL-based HDF5 files
   */
   mta_root->g_flags = 1;
+
+  mta_root->link_create_order = H5_INDEX_CRT_ORDER;
 
 #ifndef ADFH_DEBUG_ON
   H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
@@ -2260,7 +2259,7 @@ void ADFH_Database_Open(const char   *name,
    * 1 MByte is default.
    */
   if ( h5pset_buffer_size_size != ADFH_CONFIG_DEFAULT ) {
-    void *tconv; void *bkg;
+    void *tconv=NULL; void *bkg=NULL;
     H5Pset_buffer(g_propfileopen, h5pset_buffer_size_size, tconv, bkg);
   }
 
@@ -2335,50 +2334,50 @@ void ADFH_Database_Open(const char   *name,
   if (mode == ADFH_MODE_NEW) {
     hid_t g_propfilecreate = H5Pcreate(H5P_FILE_CREATE);
 
-  /* HDF5 tuning parameters */
+    /* HDF5 tuning parameters */
 
-  /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title72
-   * 'Sets the minimum metadata block size.'
-   * Default setting is 2048 bytes.
-   */
-  if ( h5pset_meta_block_size_size != ADFH_CONFIG_DEFAULT ) {
-    H5Pset_meta_block_size(g_propfileopen, h5pset_meta_block_size_size);
-  }
-  /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title41
-   * 'Sets alignment properties of a file access property list.'
-   * Default is no alignment.
-   * ATTENTION: this can increase filesize dramatically if lots of small datasets
-   */
-  if ( h5pset_alignment_alignment != ADFH_CONFIG_DEFAULT ) {
-    H5Pset_alignment(g_propfileopen,
-                     h5pset_alignment_threshold,
-                     h5pset_alignment_alignment);
-  }
+    /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title72
+     * 'Sets the minimum metadata block size.'
+     * Default setting is 2048 bytes.
+     */
+    if ( h5pset_meta_block_size_size != ADFH_CONFIG_DEFAULT ) {
+      H5Pset_meta_block_size(g_propfileopen, h5pset_meta_block_size_size);
+    }
+    /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title41
+     * 'Sets alignment properties of a file access property list.'
+     * Default is no alignment.
+     * ATTENTION: this can increase filesize dramatically if lots of small datasets
+     */
+    if ( h5pset_alignment_alignment != ADFH_CONFIG_DEFAULT ) {
+      H5Pset_alignment(g_propfileopen,
+                       h5pset_alignment_threshold,
+                       h5pset_alignment_alignment);
+    }
 
-  /* https://docs.hdfgroup.org/hdf5/develop/group___d_x_p_l.html#title16
-   * 'Sets type conversion and background buffers. 
-   * 1 MByte is default.
-   */
-  if ( h5pset_buffer_size_size != ADFH_CONFIG_DEFAULT ) {
-    void *tconv; void *bkg;
-    H5Pset_buffer(g_propfileopen, h5pset_buffer_size_size, tconv, bkg);
-  }
+    /* https://docs.hdfgroup.org/hdf5/develop/group___d_x_p_l.html#title16
+     * 'Sets type conversion and background buffers.
+     * 1 MByte is default.
+     */
+    if ( h5pset_buffer_size_size != ADFH_CONFIG_DEFAULT ) {
+      void *tconv=NULL; void *bkg=NULL;
+      H5Pset_buffer(g_propfileopen, h5pset_buffer_size_size, tconv, bkg);
+    }
 
-  /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title78
-   * 'Used by file drivers that are capable of using data sieving.'
-   *  1 MByte is default.
-   */
-  if ( h5pset_sieve_buf_size_size != ADFH_CONFIG_DEFAULT ) {
-    H5Pset_sieve_buf_size(g_propfileopen, h5pset_sieve_buf_size_size);
-  }
+    /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title78
+     * 'Used by file drivers that are capable of using data sieving.'
+     *  1 MByte is default.
+     */
+    if ( h5pset_sieve_buf_size_size != ADFH_CONFIG_DEFAULT ) {
+      H5Pset_sieve_buf_size(g_propfileopen, h5pset_sieve_buf_size_size);
+    }
 
-  /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title48
-   * 'Sets the number of files that can be held open in an external link open file cache.'
-   *  0 size is default.
-   */
-  if ( h5pset_elink_file_cache_size_size != ADFH_CONFIG_DEFAULT ) {
-    H5Pset_elink_file_cache_size(g_propfileopen, h5pset_elink_file_cache_size_size);
-  }
+    /* https://docs.hdfgroup.org/hdf5/develop/group___f_a_p_l.html#title48
+     * 'Sets the number of files that can be held open in an external link open file cache.'
+     *  0 size is default.
+     */
+    if ( h5pset_elink_file_cache_size_size != ADFH_CONFIG_DEFAULT ) {
+      H5Pset_elink_file_cache_size(g_propfileopen, h5pset_elink_file_cache_size_size);
+    }
 
 #if 0 /* MSB -- DISABLED as it is not compatible with HDF5 1.8 file format, need to resolve this CGNS-166 */
 #if HDF5_HAVE_FILE_SPACE_STRATEGY
@@ -2436,13 +2435,36 @@ void ADFH_Database_Open(const char   *name,
       set_error(FILE_OPEN_ERROR, err);
       return;
     }
+
+    /*
+      NOTE: Creation  order was set by  default  in CGNS 3.1.3, so a
+      CGNS file created by earlier versions will not have  this set.
+      Therefore, it should not be automatically assumed to be set in
+      H5Literate.
+    */
+
     gid = H5Gopen2(fid, "/", H5P_DEFAULT);
+
+    /* Obtain the group creation flags and check for link creation ordering. */
+    {
+      hid_t pid;
+      unsigned int crt_order_flags;
+      pid = H5Gget_create_plist(gid);
+      H5Pget_link_creation_order(pid, &crt_order_flags);
+      if (crt_order_flags == 0) {
+        mta_root->link_create_order = H5_INDEX_NAME;
+      } else {
+        mta_root->link_create_order = H5_INDEX_CRT_ORDER;
+      }
+      H5Pclose(pid);
+    }
+
 #ifdef ADFH_FORTRAN_INDEXING
     if (mode != ADFH_MODE_RDO && child_exists(gid, D_OLDVERS)) {
 #if H5_VERSION_GE(1,12,0)
-      H5Literate2(gid, H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, fix_dimensions, NULL);
+      H5Literate2(gid, mta_root->link_create_order, H5_ITER_INC, NULL, fix_dimensions, NULL);
 #else
-      H5Literate(gid, H5_INDEX_CRT_ORDER, H5_ITER_INC, NULL, fix_dimensions, NULL);
+      H5Literate(gid, mta_root->link_create_order, H5_ITER_INC, NULL, fix_dimensions, NULL);
 #endif
       H5Lmove(gid, D_OLDVERS, gid, D_VERSION, H5P_DEFAULT, H5P_DEFAULT);
     }
