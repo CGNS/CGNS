@@ -7,7 +7,7 @@
 
 /*
   Reads simple 3-D unstructured  parameters from a  CGNS file
-  (created using testfiles/gen_file.c).
+  (created using data/gen_file.c).
 */
 
 #include <stdio.h>
@@ -50,7 +50,7 @@ int main()
   for (lv = 0; lv < numlibvers; lv++) {
     printf("\nCHECKING CGNS, VERSION %d FILE\n", libvers[lv]);
 
-    snprintf(filename, maxlen, "%s%d%s", "testfiles/cgnslib_vers-", libvers[lv], ".cgns");
+    snprintf(filename, maxlen, "%s%d%s", "data/cgnslib_vers-", libvers[lv], ".cgns");
 
     /* READ X, Y, Z GRID POINTS FROM CGNS FILE */
     /* open CGNS file for read-only */
