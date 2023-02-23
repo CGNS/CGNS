@@ -164,7 +164,7 @@ endif ()
 # Add the tests so that ctest can find them
 if (CGNS_ENABLE_TESTS)
 
-  file(COPY testfiles DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   foreach(TARGETNAME ${C_TESTS_LIST})
     if ( ${TARGETNAME} IN_LIST SKIP_TESTS )
