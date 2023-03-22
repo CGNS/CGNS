@@ -36,7 +36,7 @@
 !
 MODULE cgns
 
-  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR, C_FUNPTR
+  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR
   IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
@@ -1082,14 +1082,6 @@ MODULE cgns
        TYPE(C_PTR), VALUE :: value
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_configure_c_ptr
-
-     SUBROUTINE cg_configure_c_funptr(what, value, ier) BIND(C,NAME="cg_configure_c_funptr")
-       IMPORT :: C_FUNPTR
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: what
-       TYPE(C_FUNPTR), VALUE :: value
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_configure_c_funptr
 
      SUBROUTINE cg_get_cgio_f(fn, cgio_num, ier) BIND(C, NAME="cg_get_cgio_f")
        IMPLICIT NONE
@@ -4215,7 +4207,6 @@ MODULE cgns
 
   INTERFACE cg_configure_f
      MODULE PROCEDURE cg_configure_ptr
-     MODULE PROCEDURE cg_configure_funptr
   END INTERFACE
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -4601,7 +4592,7 @@ MODULE cgns
 !!$  
   END INTERFACE
 
-  PRIVATE cg_configure_ptr, cg_configure_funptr
+  PRIVATE cg_configure_ptr
 
 CONTAINS
 
@@ -4925,19 +4916,5 @@ CONTAINS
     CALL cg_configure_c_ptr(what, value, ier)
 
   END SUBROUTINE cg_configure_ptr
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_configure_funptr
-!DEC$endif
-  SUBROUTINE cg_configure_funptr(what, value, ier)
-    USE ISO_C_BINDING, ONLY : C_FUNPTR
-    IMPLICIT NONE
-    INTEGER, INTENT(IN) :: what
-    TYPE(C_FUNPTR), VALUE :: value
-    INTEGER, INTENT(OUT) :: ier
-
-    CALL cg_configure_c_funptr(what, value, ier)
-
-  END SUBROUTINE cg_configure_funptr
 
 END MODULE cgns
