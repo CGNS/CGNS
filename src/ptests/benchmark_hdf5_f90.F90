@@ -125,7 +125,30 @@ PROGRAM benchmark_hdf5_f90
   INTEGER, DIMENSION(1:3) :: Cvec, Fvec
   INTEGER, DIMENSION(1:2) :: Avec
 
-  CALL MPI_Init(mpi_err)
+  INTEGER :: SUBFILING = 0
+  CHARACTER(LEN=180) :: env_value
+  INTEGER :: env_status
+  INTEGER :: required = MPI_THREAD_MULTIPLE, provided = 0
+  INTEGER, TARGET :: value
+  INTEGER(C_SIZE_T), DIMENSION(1:2), TARGET :: value_size_t
+  TYPE(C_PTR) :: f_ptr
+
+  CALL GET_ENVIRONMENT_VARIABLE(NAME="SUBFILING",VALUE=env_value, STATUS=env_status)
+  IF(env_status .EQ. 0)THEN
+     READ(env_value, *) SUBFILING
+     IF(SUBFILING .EQ. 1)THEN
+        CALL MPI_Init_thread(required, provided, mpi_err)
+        IF (provided .LT. required)THEN
+           PRINT*,"MPI_THREAD_MULTIPLE not supported"
+           CALL MPI_Abort(MPI_COMM_WORLD, -1, mpi_err)
+        ENDIF
+     ELSE
+        CALL MPI_Init(mpi_err)
+     ENDIF
+  ELSE
+     CALL MPI_Init(mpi_err)
+  ENDIF
+
   CALL MPI_Comm_size(MPI_COMM_WORLD,comm_size,mpi_err)
   CALL MPI_Comm_rank(MPI_COMM_WORLD,comm_rank,mpi_err)
 
@@ -143,6 +166,21 @@ PROGRAM benchmark_hdf5_f90
 
   CALL cgp_mpi_info_f(comm_info, ierr)
   CALL cgp_pio_mode_f(CGP_COLLECTIVE, ierr)
+
+  IF(SUBFILING .EQ. 1)THEN
+     value = 1
+     f_ptr = C_LOC(value)
+     CALL cg_configure_f(CG_CONFIG_HDF5_SUBFILING, f_ptr, ierr)
+     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+     CALL GET_ENVIRONMENT_VARIABLE(NAME="H5FD_SUBFILING_STRIPE_SIZE",VALUE=env_value, STATUS=env_status)
+     IF(env_status .EQ. 0)THEN
+        value_size_t(1) = 0 ! threshold for H5Pset_alignment
+        READ(env_value, *) value_size_t(2) !  alignment for H5Pset_alignment
+        CALL cg_configure_f(CG_CONFIG_HDF5_ALIGNMENT, C_LOC(value_size_t(1)), ierr)
+        IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+     ENDIF
+  ENDIF
 
   Nnodes = Nelem*NodePerElem
 

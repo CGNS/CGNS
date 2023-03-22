@@ -73,7 +73,12 @@ int comm_size;
 int comm_rank;
 MPI_Info info;
 
-char* SUBF;
+/* Enable the subfiling HDF5 feature.
+ * Requires HDF5 version 1.14 or greater.
+ * Set SUBFILING=1 in the environment to enable.
+*/
+int SUBFILING;
+
 int piomode = CGP_COLLECTIVE; /* DEFAULT */ 
 /* cgsize_t Nelem = 33554432; */
 cgsize_t Nelem = 65536; /* DEFAULT */
@@ -155,14 +160,19 @@ int read_inputs(int* argc, char*** argv) {
 
 int initialize(int* argc, char** argv[]) {
 
-  SUBF = getenv("SUBF");
-  if(SUBF) {
-    int required = MPI_THREAD_MULTIPLE;
-    int provided = 0;
-    MPI_Init_thread(&argc, &argv, required, &provided);
-    if (provided < required) {
-      printf("MPI_THREAD_MULTIPLE not supported\n");
-      MPI_Abort(MPI_COMM_WORLD, -1);
+  char *env_val = getenv("SUBFILING");
+  if(env_val) {
+    SUBFILING = atoi(env_val);
+    if(SUBFILING == 1) {
+      int required = MPI_THREAD_MULTIPLE;
+      int provided = 0;
+      MPI_Init_thread(argc, argv, required, &provided);
+      if (provided < required) {
+        printf("MPI_THREAD_MULTIPLE not supported\n");
+        MPI_Abort(MPI_COMM_WORLD, -1);
+      }
+    } else {
+      MPI_Init(argc,argv);
     }
   } else {
     MPI_Init(argc,argv);
@@ -205,7 +215,7 @@ int main(int argc, char* argv[]) {
   /* parameters */
   debug = false;
 
-  timer_tick(&t0, MPI_COMM_WORLD, 0);
+  timer_start(&t0, MPI_COMM_WORLD, t_nobarrier);
 
   err = (int)cgp_mpi_info(info);
   if(err != CG_OK) {
@@ -218,11 +228,12 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 
-  if(SUBF) {
+  if(SUBFILING == 1) {
     if (cg_configure(CG_CONFIG_HDF5_SUBFILING, (void *)1))
       cg_error_exit();
     
     char* H5FD_SUBFILING_STRIPE_SIZE = getenv("H5FD_SUBFILING_STRIPE_SIZE");
+    /* Sets the HDF5 alignment equal to the SUBFILING STRIPE SIZE */
     if(H5FD_SUBFILING_STRIPE_SIZE) {
       size_t value[2];
       value[0] = 0;                          /* threshold for H5Pset_alignment */
@@ -250,17 +261,17 @@ int main(int argc, char* argv[]) {
 
   sprintf(fname, "benchmark_%06d.cgns", comm_size);
 
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
 
   if(cgp_open(fname, CG_MODE_WRITE, &fn) != CG_OK) {
     printf("*FAILED* cgp_open \n");
     cgp_error_exit();
   }
 
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[9]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[9]);
 
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
   if(cg_base_write(fn, "Base 1", cell_dim, phys_dim, &B) != CG_OK) {
     printf("*FAILED* cg_base_write \n");
     cgp_error_exit();
@@ -269,8 +280,8 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cg_zone_write \n");
     cgp_error_exit();
   }
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[13]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[13]);
 
   /* ====================================== */
   /* == (A) WRITE THE NODAL COORDINATES  == */
@@ -315,7 +326,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
 #if HDF5_HAVE_MULTI_DATASETS
   int Cvec[3];
   Cvec[0] = Cx;
@@ -339,8 +350,8 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 #endif
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[1]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[1]);
   
   free(Coor_x);
   free(Coor_y);
@@ -372,13 +383,13 @@ int main(int argc, char* argv[]) {
   emin = count*comm_rank+1;
   emax = count*(comm_rank+1);
 
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
   if(cgp_elements_write_data(fn, B, Z, S, emin, emax, elements) != CG_OK) {
     printf("*FAILED* cgp_elements_write_data (elements) \n");
     cgp_error_exit();
   }
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[2]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[2]);
   
   free(elements);
 
@@ -428,7 +439,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
   
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
 
 #if HDF5_HAVE_MULTI_DATASETS
   int Fvec[3];
@@ -454,8 +465,8 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 #endif
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[3]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[3]);
   
   free(Data_Fx);
   free(Data_Fy);
@@ -517,7 +528,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 #endif
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
 #if HDF5_HAVE_MULTI_DATASETS
   int Avec[2];
   Avec[0] = Ai;
@@ -536,35 +547,35 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 #endif
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[4]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[4]);
 
   free(Array_r);
   free(Array_i);
 
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
   if(cgp_close(fn) != CG_OK) {
     printf("*FAILED* cgp_close \n");
     cgp_error_exit();
   };
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[11]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[11]);
 
   /* ====================================== */
   /* ==    **  READ THE CGNS FILE **     == */
   /* ====================================== */
   MPI_Barrier(MPI_COMM_WORLD);
 
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
   /* Open the cgns file for reading */
   if(cgp_open(fname, CG_MODE_MODIFY, &fn) != CG_OK) {
     printf("*FAILED* cgp_open \n");
     cgp_error_exit();
   }
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[10]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[10]);
 
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
   /* Read the base information */
   if(cg_base_read(fn, B, name, &r_cell_dim, &r_phys_dim) != CG_OK) {
     printf("*FAILED* cg_base_read\n");
@@ -585,8 +596,8 @@ int main(int argc, char* argv[]) {
     printf("*FAILED* cg_zoneread\n");
     cgp_error_exit();
   }
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[14]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[14]);
 
   /* Check the read zone information is correct */
   if(sizes[0] != Nnodes) {
@@ -631,7 +642,7 @@ int main(int argc, char* argv[]) {
   min = count*comm_rank+1;
   max = count*(comm_rank+1);
   
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
 #if HDF5_HAVE_MULTI_DATASETS
   Cvec[0] = Cx;
   Cvec[1] = Cy;
@@ -654,8 +665,8 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 #endif
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[5]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[5]);
 
   /* Check if read the data back correctly */
   if(debug) {
@@ -686,13 +697,13 @@ int main(int argc, char* argv[]) {
   emin = count*comm_rank+1;
   emax = count*(comm_rank+1);
   
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
   if( cgp_elements_read_data(fn, B, Z, S, emin, emax, elements) != CG_OK) {
     printf("*FAILED* cgp_elements_read_data ( Reading elements) \n");
     cgp_error_exit();
   }
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[6]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[6]);
 
   if(debug) {
     for ( k = 0; k < count; k++) {
@@ -724,7 +735,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
 
 #if HDF5_HAVE_MULTI_DATASETS
 
@@ -750,8 +761,8 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 #endif
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[7]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[7]);
   
   /* Check if read the data back correctly */
   if(debug) {
@@ -792,7 +803,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
 #if HDF5_HAVE_MULTI_DATASETS
 
   Avec[0] = Ar;
@@ -812,8 +823,8 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 #endif
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[8]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[8]);
 
   /* Check if read the data back correctly */
   if(debug) {
@@ -829,16 +840,16 @@ int main(int argc, char* argv[]) {
   free(Array_r);
   free(Array_i);
 
-  timer_tick(&t1, MPI_COMM_WORLD, 0);
+  timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
   if(cgp_close(fn) !=CG_OK) {
      printf("*FAILED* cgp_close\n");
      cgp_error_exit();
   }
-  timer_tock(&t1);
-  timer_collectstats(t1, MPI_COMM_WORLD, 0, &timing[12]);
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[12]);
 
-  timer_tock(&t0);
-  timer_collectstats(t0, MPI_COMM_WORLD, 0, &timing[0]);
+  timer_end(&t0, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t0, MPI_COMM_WORLD, 0, &timing[0]);
 
   if(comm_rank==0) {
     sprintf(fname, "timing_%06d_%s.dat", comm_size, PIOMODE[piomode]);
