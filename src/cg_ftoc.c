@@ -213,18 +213,6 @@ CGNSDLL void cg_configure_c_ptr(cgint_f *what, void *value, cgint_f *ier)
 }
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cg_configure_c_funptr(cgint_f *what, void *value, cgint_f *ier)
-{
-  /* FUNCTION POINTER */
-  if( (int)*what == CG_CONFIG_ERROR ) {
-    *ier = (cgint_f)cg_configure((int)*what, value);
-  } else {
-    *ier = (cgint_f)CG_ERROR;
-  }
-}
-
-/*-----------------------------------------------------------------------*/
-
 CGNSDLL void cg_get_file_type_f(cgint_f *fn, cgint_f *ft, cgint_f *ier)
 {
     int i_ft;
