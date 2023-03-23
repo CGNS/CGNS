@@ -195,7 +195,7 @@ CGNSDLL void cg_configure_c_ptr(cgint_f *what, void *value, cgint_f *ier)
     *ier = (cgint_f)cg_configure((int)*what, &C_comm);
 #endif
 
-  /* RIND */    
+  /* RIND */
   } else if( (int)*what == CG_CONFIG_RIND_INDEX) {
     if(*(int*)value == 0) {
       *ier = (cgint_f)cg_configure((int)*what, CG_CONFIG_RIND_ZERO);
@@ -205,6 +205,10 @@ CGNSDLL void cg_configure_c_ptr(cgint_f *what, void *value, cgint_f *ier)
       *ier = (cgint_f)CG_ERROR;
       return;
     }
+
+  /* PASSING ARRAY OF VALUES */
+  } else if( (int)*what == CG_CONFIG_HDF5_ALIGNMENT) {
+    *ier = (cgint_f)cg_configure((int)*what, value);
 
   /* EVERYTHING ELSE */
   } else {

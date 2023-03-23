@@ -1466,17 +1466,20 @@ static herr_t fix_dimensions(hid_t id, const char *name, const H5L_info_t* linfo
 
 void ADFH_Configure(const int option, const void *value, int *err)
 {
-    if (option == ADFH_CONFIG_RESET && (int)((size_t)value == ADFH_CONFIG_RESET_HDF5)) {
-      subfiling_vfd                     = ADFH_CONFIG_DEFAULT;
-      core_vfd                          = ADFH_CONFIG_DEFAULT;
-      h5pset_alignment_threshold        = ADFH_CONFIG_DEFAULT;
-      h5pset_alignment_alignment        = ADFH_CONFIG_DEFAULT;
-      h5pset_meta_block_size_size       = ADFH_CONFIG_DEFAULT;
-      h5pset_buffer_size_size           = ADFH_CONFIG_DEFAULT;
-      h5pset_sieve_buf_size_size        = ADFH_CONFIG_DEFAULT;
-      h5pset_elink_file_cache_size_size = ADFH_CONFIG_DEFAULT;
-
-      set_error(NO_ERROR, err);
+    if (option == ADFH_CONFIG_RESET) {
+      if ( (int)((size_t)value) == ADFH_CONFIG_RESET_HDF5 ) {
+        subfiling_vfd                     = ADFH_CONFIG_DEFAULT;
+        core_vfd                          = ADFH_CONFIG_DEFAULT;
+        h5pset_alignment_threshold        = ADFH_CONFIG_DEFAULT;
+        h5pset_alignment_alignment        = ADFH_CONFIG_DEFAULT;
+        h5pset_meta_block_size_size       = ADFH_CONFIG_DEFAULT;
+        h5pset_buffer_size_size           = ADFH_CONFIG_DEFAULT;
+        h5pset_sieve_buf_size_size        = ADFH_CONFIG_DEFAULT;
+        h5pset_elink_file_cache_size_size = ADFH_CONFIG_DEFAULT;
+        set_error(NO_ERROR, err);
+      } else {
+        set_error(ADFH_ERR_INVALID_OPTION, err);
+      }
       return;
     }
 

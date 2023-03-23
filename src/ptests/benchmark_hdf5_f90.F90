@@ -50,11 +50,100 @@ CONTAINS
 
 END MODULE testing_functions
 
+MODULE command_args
+
+  USE ISO_C_BINDING
+  USE CGNS
+  USE MPI
+
+  IMPLICIT NONE
+
+  TYPE t_option
+     INTEGER :: io_mode ! collective or independent
+     INTEGER(CGSIZE_T) :: nelem ! number of elements
+  END TYPE t_option
+
+  TYPE(t_option) :: options
+
+CONTAINS
+
+  SUBROUTINE parse_args()
+
+    USE MPI
+    IMPLICIT NONE
+
+    INTEGER :: argstype, blklens(2), dtypes(2)
+    INTEGER :: ierr
+    INTEGER(KIND=MPI_ADDRESS_KIND) :: address(2), base
+    INTEGER :: type_cgsize_t
+    INTEGER :: rank
+    INTEGER :: i, argc, kind_val
+    CHARACTER(LEN=32) :: arg
+
+    CALL MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr)
+
+    CALL MPI_GET_ADDRESS(options%io_mode, address(1), ierr)
+    CALL MPI_GET_ADDRESS(options%nelem, address(2), ierr)
+
+    base = address(1)
+    address(1) = address(1) - base
+    address(2) = address(2) - base
+
+    blklens(1) = 1
+    blklens(2) = 1
+
+    kind_val = KIND(1_CGSIZE_T)
+    CALL MPI_Type_create_f90_integer(kind_val,  type_cgsize_t, ierr)
+
+    dtypes(1) = MPI_INTEGER
+    dtypes(2) = type_cgsize_t
+
+    CALL MPI_TYPE_CREATE_STRUCT(2, blklens, address, dtypes, argstype, ierr)
+    call MPI_TYPE_COMMIT(argstype, ierr)
+
+    IF(rank.EQ.0)THEN
+
+       ! Defaults
+       options%nelem = 65536_CGSIZE_T
+       options%io_mode = CGP_COLLECTIVE
+
+       argc = command_argument_count()
+
+       i = 1
+       DO WHILE (i .LE. argc)
+          CALL get_command_argument(i, arg)
+          IF (arg(1:1) .EQ. "-" .AND. LEN_TRIM(arg) .GE. 2) THEN
+             SELECT CASE (TRIM(arg))
+             CASE ('-ind')
+                options%io_mode = CGP_INDEPENDENT
+             CASE ('-nelem')
+                i = i + 1
+                CALL get_command_argument(i, VALUE = arg)
+                READ(arg,*) options%nelem
+             case default
+                PRINT*, "-ind            Use independent IO"
+                PRINT*, "-nelem <nelem>  Number of elements"
+                CALL MPI_abort(MPI_COMM_WORLD,-1, ierr)
+             END SELECT
+          ENDIF
+          i = i + 1
+       ENDDO
+
+    ENDIF
+
+    CALL MPI_Bcast(options, 1, argstype, 0, MPI_COMM_WORLD, ierr)
+    CALL MPI_Type_free(argstype, ierr)
+
+  END SUBROUTINE parse_args
+
+END MODULE command_args
+
 PROGRAM benchmark_hdf5_f90
 
   USE mpi
   USE ISO_C_BINDING
   USE testing_functions
+  USE command_args
   USE cgns
   IMPLICIT NONE
 
@@ -65,7 +154,7 @@ PROGRAM benchmark_hdf5_f90
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
   ! Use powers of 2
-  INTEGER(CGSIZE_T), PARAMETER :: Nelem = 65536 ! 33554432 ! Use multiples of number of cores per node
+  INTEGER(CGSIZE_T) :: Nelem
   INTEGER(CGSIZE_T), PARAMETER :: NodePerElem = 6
 
   INTEGER(CGSIZE_T) :: Nnodes
@@ -155,8 +244,11 @@ PROGRAM benchmark_hdf5_f90
   CALL MPI_Info_Create(comm_info,mpi_err)
   ! set this to what your GPFS block size actually is
   CALL MPI_Info_set(comm_info, "striping_unit", "8388608",mpi_err)
-
   WRITE(ichr6,'(I6.6)') comm_size
+
+  CALL parse_args()
+
+  Nelem = options%nelem
 
   ! parameters
   queue = .FALSE.
@@ -165,7 +257,7 @@ PROGRAM benchmark_hdf5_f90
   t0 = MPI_Wtime()
 
   CALL cgp_mpi_info_f(comm_info, ierr)
-  CALL cgp_pio_mode_f(CGP_COLLECTIVE, ierr)
+  CALL cgp_pio_mode_f(options%io_mode, ierr)
 
   IF(SUBFILING .EQ. 1)THEN
      value = 1
@@ -177,7 +269,8 @@ PROGRAM benchmark_hdf5_f90
      IF(env_status .EQ. 0)THEN
         value_size_t(1) = 0 ! threshold for H5Pset_alignment
         READ(env_value, *) value_size_t(2) !  alignment for H5Pset_alignment
-        CALL cg_configure_f(CG_CONFIG_HDF5_ALIGNMENT, C_LOC(value_size_t(1)), ierr)
+        f_ptr = C_LOC(value_size_t(1))
+        CALL cg_configure_f(CG_CONFIG_HDF5_ALIGNMENT, f_ptr, ierr)
         IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
      ENDIF
   ENDIF
