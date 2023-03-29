@@ -136,7 +136,7 @@ configuration:
 before_build:
   - mkdir c:\projects\CGNS_BUILD
   - cd c:\projects\CGNS_BUILD
-  - cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64 vs2019
+  - cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
   - cmd: where icl
   - cmd: where icx
   - cmd: where ifx
