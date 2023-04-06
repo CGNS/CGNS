@@ -27,12 +27,16 @@ freely, subject to the following restrictions:
 
 void (*cgns_error_handler)(int, char *) = 0;
 
-char cgns_error_mess[200] = "no CGNS error reported";
+#define CGNS_ERR_MESS_BUFF_SIZE 200
+char cgns_error_mess[CGNS_ERR_MESS_BUFF_SIZE] = "no CGNS error reported";
 
 CGNSDLL void cgi_error(const char *format, ...) {
     va_list arg;
     va_start(arg, format);
-    vsnprintf(cgns_error_mess, 200, format, arg);
+    int mess_len = vsnprintf(cgns_error_mess, CGNS_ERR_MESS_BUFF_SIZE, format, arg);
+    if (mess_len >= CGNS_ERR_MESS_BUFF_SIZE) {
+        memcpy(&mess_len[CGNS_ERR_MESS_BUFF_SIZE] - 6, "[...]", 5);
+    }
     va_end(arg);
     if (cgns_error_handler)
         (*cgns_error_handler)(1, cgns_error_mess);

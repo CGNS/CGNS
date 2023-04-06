@@ -434,7 +434,7 @@ int cg_open(const char *filename, int mode, int *file_number)
         /* This code allows reading version newer than the lib,
                as long as the 1st digit of the versions are equal */
             if ((cg->version / 1000) > (CGNSLibVersion / 1000)) {
-                cgi_error("The file %s was written with a more recent version of the CGNS library.  You must update your CGNS library before trying to read this file.",filename);
+                cgi_error("The file was written with a more recent version of the CGNS library, you must update your CGNS library to read this file (%s).", filename);
                 return CG_ERROR;
             }
             /* warn only if different in second digit */
@@ -1241,7 +1241,7 @@ int cg_zone_write(int file_number, int B, const char *zonename, const cgsize_t *
             }
         }
     }
-  
+
     index = (int) cgi_map_get_item(base->zonemap, zonename);
     /* */
     if (index != -1) {
@@ -1268,7 +1268,7 @@ int cg_zone_write(int file_number, int B, const char *zonename, const cgsize_t *
         }
         zone = &(base->zone[base->nzones]);
         index = base->nzones;
-        
+
         if (cgi_map_set_item(base->zonemap, zonename, index) != 0) {
             cgi_error("Error while adding zonename %s to zonemap hashtable", zonename);
             return CG_ERROR;
