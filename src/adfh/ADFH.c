@@ -156,8 +156,7 @@ printf aaa ; printf("\n"); fflush(stdout);
 #define ADFH_MODE_RDO 3
 
 /* the following keeps track of open and mounted files */
-
-#define ADFH_MAXIMUM_FILES 128
+#define ADFH_MAXIMUM_FILES 1024
 
 /* Start to prepare re-entrance into lib, gather static variables in one global struct  */
 /* Then, you'll just have to handle struct with something else but a static... */
