@@ -135,6 +135,7 @@ int read_inputs(int* argc, char*** argv) {
   int k;
   int buffer[3];
 
+
   if(comm_rank==0) {
     buffer[0] = piomode;
     buffer[1] = enable_md;
@@ -208,10 +209,12 @@ int main(int argc, char* argv[]) {
   size_t Mb_coor, Mb_elem, Mb_field, Mb_array;
 
   const char* PIOMODE[] = {"IND", "COLL"};
-
-  /* parameters */
-  //debug = false;
-  debug = true;
+#if HDF5_HAVE_MULTI_DATASETS
+  void **buf;
+  int Cvec[3];
+  int Fvec[3];
+  int Avec[2];
+#endif
 
   t0 = MPI_Wtime(); /* Timer */
 
@@ -309,7 +312,9 @@ int main(int argc, char* argv[]) {
   }
 
   t1 = MPI_Wtime();
+#if HDF5_HAVE_MULTI_DATASETS
   if(enable_md) {
+    Cvec[3];
     Cvec[0] = Cx;
     Cvec[1] = Cy;
     Cvec[2] = Cz;
@@ -320,13 +325,14 @@ int main(int argc, char* argv[]) {
     buf[1] =&Coor_y[0];
     buf[2] =&Coor_z[0];
 
-    if(cgp_coord_multi_write_data(fn, B, Z, Cvec, &min,&max,3,(const void **)buf)!= CG_OK) {
+    if(cgp_coord_multi_write_data(fn, B, Z, Cvec, &min,&max,3,buf)!= CG_OK) {
       printf("*FAILED* cgp_coords_write_data \n");
       cgp_error_exit();
     }
 
     free(buf);
   } else
+#endif
     {
       if((cgp_coord_write_data(fn,B,Z,Cx,&min,&max,Coor_x)) != CG_OK) {
         printf("*FAILED* cgp_coord_write_data (Coor_x) \n");
@@ -433,6 +439,7 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
 
+#if HDF5_HAVE_MULTI_DATASETS
   if(enable_md) {
     Fvec[0] = Fx;
     Fvec[1] = Fy;
@@ -443,12 +450,13 @@ int main(int argc, char* argv[]) {
     buf[1] = &Data_Fy[0];
     buf[2] = &Data_Fz[0];
 
-    if(cgp_field_multi_write_data(fn,B,Z,S,Fvec,&min,&max,3,(const void **)buf) != CG_OK) {
+    if(cgp_field_multi_write_data(fn,B,Z,S,Fvec,&min,&max,3,buf) != CG_OK) {
       printf("*FAILED* cgp_field_multi_write_data \n");
       cgp_error_exit();
     }
     free(buf);
   } else
+#endif
     {
       if(cgp_field_write_data(fn,B,Z,S,Fx,&min,&max,Data_Fx) != CG_OK) {
         printf("*FAILED* cgp_field_write_data (Data_Fx) \n");
@@ -528,7 +536,9 @@ int main(int argc, char* argv[]) {
 #endif
 
   t1 = MPI_Wtime();
+#if HDF5_HAVE_MULTI_DATASETS
   if(enable_md) {
+    Avec[2];
     Avec[0] = Ai;
     Avec[1] = Ar;
 
@@ -536,12 +546,13 @@ int main(int argc, char* argv[]) {
     buf[0] = &Array_i[0];
     buf[1] = &Array_r[0];
 
-    if(cgp_array_multi_write_data(fn, Avec,&min,&max, 2, (const void **)buf) != CG_OK) {
+    if(cgp_array_multi_write_data(fn, Avec,&min,&max, 2, buf) != CG_OK) {
       printf("*FAILED* cgp_field_array_data (Array_Ai)\n");
       cgp_error_exit();
     }
     free(buf);
   } else
+#endif
     {
       if(cgp_array_write_data(Ai,&min,&max,Array_i) != CG_OK) {
         printf("*FAILED* cgp_array_write_data (Array_Ai)\n");
@@ -649,6 +660,7 @@ int main(int argc, char* argv[]) {
   max = count*(comm_rank+1);
 
   t1 = MPI_Wtime();
+#if HDF5_HAVE_MULTI_DATASETS
   if(enable_md) {
     Cvec[0] = Cx;
     Cvec[1] = Cy;
@@ -665,6 +677,7 @@ int main(int argc, char* argv[]) {
     }
     free(buf);
   } else
+#endif
     {
       if (cgp_coord_read_data(fn,B,Z,Cx,&min,&max,Coor_x) != CG_OK) {
         printf("*FAILED* cgp_coord_read_data ( Reading Coor_x) \n");
@@ -751,6 +764,7 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
 
+#if HDF5_HAVE_MULTI_DATASETS
   if(enable_md) {
 
     Fvec[0] = Fx;
@@ -768,11 +782,13 @@ int main(int argc, char* argv[]) {
     }
     free(buf);
   } else
+#endif
     {
       if (cgp_field_read_data(fn,B,Z,S,Fx,&min,&max,Data_Fx) != CG_OK) {
         printf("*FAILED* cgp_field_read_data (Data_Fx) \n");
         cgp_error_exit();
       }
+      free(buf);
       if (cgp_field_read_data(fn,B,Z,S,Fy,&min,&max,Data_Fy) != CG_OK) {
         printf("*FAILED* cgp_field_read_data (Data_Fy) \n");
         cgp_error_exit();
@@ -825,6 +841,7 @@ int main(int argc, char* argv[]) {
   }
 
   t1 = MPI_Wtime();
+#if HDF5_HAVE_MULTI_DATASETS
   if(enable_md) {
 
     Avec[0] = Ar;
@@ -840,6 +857,7 @@ int main(int argc, char* argv[]) {
     }
     free(buf);
   } else
+#endif
     {
       if( cgp_array_read_data(Ar, &min, &max, Array_r) != CG_OK) {
         printf("*FAILED* cgp_array_read_data (Array_r) \n");

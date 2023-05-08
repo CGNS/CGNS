@@ -81,7 +81,7 @@ CGNSDLL int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize
                                       int nsets, void **buf);
 
 CGNSDLL int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmin, const cgsize_t *rmax,
-                                       int nsets, const void **buf);
+                                       int nsets, void **buf);
 
 /*===== Unstructured Grid Prototypes =====*/
 
@@ -128,7 +128,7 @@ CGNSDLL int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
                                        const cgsize_t *rmin, const cgsize_t *rmax, int nsets, void **buf);
 
 CGNSDLL int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
-                                       const cgsize_t *rmin, const cgsize_t *rmax, int nsets, const void **buf);
+                                       const cgsize_t *rmin, const cgsize_t *rmax, int nsets, void **buf);
 
 /*===== Array IO Prototypes =====*/
 
@@ -151,7 +151,7 @@ CGNSDLL int cgp_array_general_read_data(int A,
     const cgsize_t *m_rmin, const cgsize_t *m_rmax, void *data);
 
 CGNSDLL int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
-                                       const cgsize_t *rmax, int nsets, const void **buf);
+                                       const cgsize_t *rmax, int nsets, void **buf);
 
 CGNSDLL int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
                                       const cgsize_t *rmax, int nsets, void **buf);

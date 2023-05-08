@@ -142,7 +142,6 @@ PROGRAM benchmark_hdf5_f90
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
   ! Use powers of 2
-  INTEGER(CGSIZE_T), PARAMETER :: Nelem = 128 !65536 ! 33554432 ! Use multiples of number of cores per node
   INTEGER(CGSIZE_T), PARAMETER :: NodePerElem = 6
 
   INTEGER(CGSIZE_T) :: Nnodes
@@ -165,19 +164,21 @@ PROGRAM benchmark_hdf5_f90
   REAL(KIND=dp), DIMENSION(:), ALLOCATABLE, TARGET :: Coor_x
   REAL(KIND=dp), DIMENSION(:), ALLOCATABLE, TARGET :: Coor_y
   REAL(KIND=dp), DIMENSION(:), ALLOCATABLE, TARGET :: Coor_z
-  REAL(KIND=dp), DIMENSION(:), ALLOCATABLE :: Data_Fx
-  REAL(KIND=dp), DIMENSION(:), ALLOCATABLE :: Data_Fy
-  REAL(KIND=dp), DIMENSION(:), ALLOCATABLE :: Data_Fz
-  REAL(KIND=dp), DIMENSION(:), ALLOCATABLE :: Array_r
-  INTEGER(CGSIZE_T), DIMENSION(:), ALLOCATABLE :: Array_i
+  REAL(KIND=dp), DIMENSION(:), ALLOCATABLE, TARGET :: Data_Fx
+  REAL(KIND=dp), DIMENSION(:), ALLOCATABLE, TARGET :: Data_Fy
+  REAL(KIND=dp), DIMENSION(:), ALLOCATABLE, TARGET :: Data_Fz
+  REAL(KIND=dp), DIMENSION(:), ALLOCATABLE, TARGET :: Array_r
+  INTEGER(CGSIZE_T), DIMENSION(:), ALLOCATABLE, TARGET :: Array_i
   INTEGER(CGSIZE_T) :: start, iend, emin, emax
   INTEGER(CGSIZE_T), DIMENSION(:), ALLOCATABLE :: elements
   CHARACTER(LEN=32) :: fname, name
   CHARACTER(LEN=180) :: bname, zname
   INTEGER :: indx_null
   REAL(KIND=dp) t0, t1, t2
+#if HDF5_HAVE_MULTI_DATASETS
   TYPE(C_PTR), DIMENSION(1:2) :: buf2
   TYPE(C_PTR), DIMENSION(1:3) :: buf3
+#endif
 
   ! Timing storage convention:
   ! timing(0) = Total program time
@@ -214,9 +215,7 @@ PROGRAM benchmark_hdf5_f90
 
   WRITE(ichr6,'(I6.6)') comm_size
 
-  ! parameters
-  queue = .FALSE.
-  debug = .TRUE.
+  CALL read_inputs(comm_rank)
 
   t0 = MPI_Wtime()
 
@@ -309,28 +308,36 @@ PROGRAM benchmark_hdf5_f90
 
   t1 = MPI_Wtime()
 #if HDF5_HAVE_MULTI_DATASETS
-  Cvec(1:3) = (/Cx,Cy,Cz/)
+  IF(enable_md)THEN
+     Cvec(1:3) = (/Cx,Cy,Cz/)
 
-  CALL cgp_coord_multi_write_data_f(fn,B,Z,Cvec,vmin(1),vmax(1),C_LOC(Coor_x),C_LOC(Coor_y),C_LOC(Coor_z), err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_coord_multi_write_data_f'
-     CALL cgp_error_exit_f()
-  ENDIF
-#else
-  CALL cgp_coord_write_data_f(fn,B,Z,Cx,vmin(1),vmax(1),Coor_x,err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_coord_write_data_f (Coor_x)'
-     CALL cgp_error_exit_f()
-  ENDIF
-  CALL cgp_coord_write_data_f(fn,B,Z,Cy,vmin(1),vmax(1),Coor_y,err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_coord_write_data_f (Coor_y)'
-     CALL cgp_error_exit_f()
-  ENDIF
-  CALL cgp_coord_write_data_f(fn,B,Z,Cz,vmin(1),vmax(1),Coor_z,err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_coord_write_data_f (Coor_z)'
-     CALL cgp_error_exit_f()
+     buf3(1) = C_LOC(Coor_x)
+     buf3(2) = C_LOC(Coor_y)
+     buf3(3) = C_LOC(Coor_z)
+
+     CALL cgp_coord_multi_write_data_f(fn,B,Z,Cvec,vmin(1),vmax(1),3,buf3,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_coord_multi_write_data_f'
+        CALL cgp_error_exit_f()
+     ENDIF
+  ELSE
+#endif
+     CALL cgp_coord_write_data_f(fn,B,Z,Cx,vmin(1),vmax(1),Coor_x,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_coord_write_data_f (Coor_x)'
+        CALL cgp_error_exit_f()
+     ENDIF
+     CALL cgp_coord_write_data_f(fn,B,Z,Cy,vmin(1),vmax(1),Coor_y,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_coord_write_data_f (Coor_y)'
+        CALL cgp_error_exit_f()
+     ENDIF
+     CALL cgp_coord_write_data_f(fn,B,Z,Cz,vmin(1),vmax(1),Coor_z,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_coord_write_data_f (Coor_z)'
+        CALL cgp_error_exit_f()
+     ENDIF
+#if HDF5_HAVE_MULTI_DATASETS
   ENDIF
 #endif
   t2 = MPI_Wtime()
@@ -428,29 +435,37 @@ PROGRAM benchmark_hdf5_f90
   ENDIF
 
   t1 = MPI_Wtime()
-#if 0
-!HDF5_HAVE_MULTI_DATASETS
-  Fvec(1:3) = (/Fx,Fy,Fz/)
-  CALL cgp_field_multi_write_data_f(fn,B,Z,S,Fvec,vmin,vmax,err,3,Data_Fx,Data_Fy,Data_Fz)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_field_multi_write_data_f'
-     CALL cgp_error_exit_f()
-  ENDIF
-#else
-  call cgp_field_write_data_f(fn,B,Z,S,Fx,vmin(1),vmax(1),Data_Fx, err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_field_write_data (Data_Fx)'
-     CALL cgp_error_exit_f()
-  ENDIF
-  CALL cgp_field_write_data_f(fn,B,Z,S,Fy,vmin(1),vmax(1),Data_Fy, err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_field_write_data (Data_Fy)'
-     CALL cgp_error_exit_f()
-  ENDIF
-  call cgp_field_write_data_f(fn,B,Z,S,Fz,vmin(1),vmax(1),Data_Fz, err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_field_write_data (Data_Fz)'
-     CALL cgp_error_exit_f()
+#if HDF5_HAVE_MULTI_DATASETS
+  IF(enable_md)THEN
+     Fvec(1:3) = (/Fx,Fy,Fz/)
+
+     buf3(1) = C_LOC(Data_Fx)
+     buf3(2) = C_LOC(Data_Fy)
+     buf3(3) = C_LOC(Data_Fz)
+
+     CALL cgp_field_multi_write_data_f(fn,B,Z,S,Fvec,vmin,vmax,3,buf3,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_field_multi_write_data_f'
+        CALL cgp_error_exit_f()
+     ENDIF
+  ELSE
+#endif
+     CALL cgp_field_write_data_f(fn,B,Z,S,Fx,vmin(1),vmax(1),Data_Fx, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_field_write_data (Data_Fx)'
+        CALL cgp_error_exit_f()
+     ENDIF
+     CALL cgp_field_write_data_f(fn,B,Z,S,Fy,vmin(1),vmax(1),Data_Fy, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_field_write_data (Data_Fy)'
+        CALL cgp_error_exit_f()
+     ENDIF
+     CALL cgp_field_write_data_f(fn,B,Z,S,Fz,vmin(1),vmax(1),Data_Fz, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_field_write_data (Data_Fz)'
+        CALL cgp_error_exit_f()
+     ENDIF
+#if HDF5_HAVE_MULTI_DATASETS
   ENDIF
 #endif
   t2 = MPI_Wtime()
@@ -514,24 +529,29 @@ PROGRAM benchmark_hdf5_f90
 
   t1 = MPI_Wtime()
 
-#if 0
-!HDF5_HAVE_MULTI_DATASETS
-  Avec = (/Ai,Ar/)
-  CALL cgp_array_multi_write_data_f(fn,Avec,vmin,vmax,err,2,Array_i,Array_r)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_multi_write_data_f'
-     CALL cgp_error_exit_f()
-  ENDIF
-#else
-  CALL cgp_array_write_data_f(Ai,vmin(1),vmax(1),Array_i, err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_write_data_f  (Array_Ai)'
-     CALL cgp_error_exit_f()
-  ENDIF
-  call cgp_array_write_data_f(Ar,vmin(1),vmax(1),Array_r, err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_write_data_f (Array_Ar)'
-     CALL cgp_error_exit_f()
+#if HDF5_HAVE_MULTI_DATASETS
+  IF(enable_md)THEN
+     Avec = (/Ai,Ar/)
+     buf2(1) = C_LOC(Array_i)
+     buf2(2) = C_LOC(Array_r)
+     CALL cgp_array_multi_write_data_f(fn,Avec,vmin,vmax,2,buf2,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_array_multi_write_data_f'
+        CALL cgp_error_exit_f()
+     ENDIF
+  ELSE
+#endif
+     CALL cgp_array_write_data_f(Ai,vmin(1),vmax(1),Array_i, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_array_write_data_f  (Array_Ai)'
+        CALL cgp_error_exit_f()
+     ENDIF
+     CALL cgp_array_write_data_f(Ar,vmin(1),vmax(1),Array_r, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_array_write_data_f (Array_Ar)'
+        CALL cgp_error_exit_f()
+     ENDIF
+#if HDF5_HAVE_MULTI_DATASETS
   ENDIF
 #endif
   t2 = MPI_Wtime()
@@ -634,27 +654,37 @@ PROGRAM benchmark_hdf5_f90
 
   t1 = MPI_Wtime()
 #if HDF5_HAVE_MULTI_DATASETS
-  Cvec(1:3) = (/Cx,Cy,Cz/)
-  CALL cgp_coord_multi_read_data_f(fn,B,Z,Cvec,vmin,vmax,C_LOC(Coor_x),C_LOC(Coor_y),C_LOC(Coor_z),err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_coord_multi_read_data_f'
-     CALL cgp_error_exit_f()
-  ENDIF
-#else
-  CALL cgp_coord_read_data_f(fn,B,Z,Cx,vmin(1),vmax(1),Coor_x,err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_coord_read_data_f (Reading Coor_x)'
-     CALL cgp_error_exit_f()
-  ENDIF
-  CALL cgp_coord_read_data_f(fn,B,Z,Cy,vmin(1),vmax(1),Coor_y,err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_coord_read_data_f (Reading Coor_y)'
-     CALL cgp_error_exit_f()
-  ENDIF
-  CALL cgp_coord_read_data_f(fn,B,Z,Cz,vmin(1),vmax(1),Coor_z,err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_coord_read_data_f (Reading Coor_z)'
-     CALL cgp_error_exit_f()
+  IF(enable_md)THEN
+     Cvec(1:3) = (/Cx,Cy,Cz/)
+
+     ! Point to the read buffer
+     buf3(1) = C_LOC(Coor_x)
+     buf3(2) = C_LOC(Coor_y)
+     buf3(3) = C_LOC(Coor_z)
+
+     CALL cgp_coord_multi_read_data_f(fn,B,Z,Cvec,vmin,vmax,3,buf3,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_coord_multi_read_data_f'
+        CALL cgp_error_exit_f()
+     ENDIF
+  ELSE
+#endif
+     CALL cgp_coord_read_data_f(fn,B,Z,Cx,vmin(1),vmax(1),Coor_x,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_coord_read_data_f (Reading Coor_x)'
+        CALL cgp_error_exit_f()
+     ENDIF
+     CALL cgp_coord_read_data_f(fn,B,Z,Cy,vmin(1),vmax(1),Coor_y,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_coord_read_data_f (Reading Coor_y)'
+        CALL cgp_error_exit_f()
+     ENDIF
+     CALL cgp_coord_read_data_f(fn,B,Z,Cz,vmin(1),vmax(1),Coor_z,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_coord_read_data_f (Reading Coor_z)'
+        CALL cgp_error_exit_f()
+     ENDIF
+#if HDF5_HAVE_MULTI_DATASETS
   ENDIF
 #endif
   t2 = MPI_Wtime()
@@ -732,29 +762,37 @@ PROGRAM benchmark_hdf5_f90
   vmax = count*(comm_rank+1)
 
   t1 = MPI_Wtime()
-#if 0
-!HDF5_HAVE_MULTI_DATASETS
-  Fvec(1:3) = (/Fx,Fy,Fz/)
-  CALL cgp_field_multi_read_data_f(fn,B,Z,S,Fvec,min,max,err,3,Data_Fx,Data_Fy,Data_Fz)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_field_multi_read_data_f'
-     CALL cgp_error_exit_f()
-  ENDIF
-#else
-  CALL cgp_field_read_data_f(fn,B,Z,S,Fx,vmin(1),vmax(1),Data_Fx,err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_field_read_data (Data_Fx)'
-     CALL cgp_error_exit_f()
-  ENDIF
-  CALL cgp_field_read_data_f(fn,B,Z,S,Fy,vmin(1),vmax(1),Data_Fy,err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_field_read_data (Data_Fy)'
-     CALL cgp_error_exit_f()
-  ENDIF
-  CALL cgp_field_read_data_f(fn,B,Z,S,Fz,vmin(1),vmax(1),Data_Fz,err)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_field_read_data (Data_Fz)'
-     CALL cgp_error_exit_f()
+#if HDF5_HAVE_MULTI_DATASETS
+  IF(enable_md)THEN
+     Fvec(1:3) = (/Fx,Fy,Fz/)
+
+     buf3(1) = C_LOC(Data_Fx)
+     buf3(2) = C_LOC(Data_Fy)
+     buf3(3) = C_LOC(Data_Fz)
+
+     CALL cgp_field_multi_read_data_f(fn,B,Z,S,Fvec,vmin(1),vmax(1),3,buf3,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_field_multi_read_data_f'
+        CALL cgp_error_exit_f()
+     ENDIF
+  ELSE
+#endif
+     CALL cgp_field_read_data_f(fn,B,Z,S,Fx,vmin(1),vmax(1),Data_Fx,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_field_read_data (Data_Fx)'
+        CALL cgp_error_exit_f()
+     ENDIF
+     CALL cgp_field_read_data_f(fn,B,Z,S,Fy,vmin(1),vmax(1),Data_Fy,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_field_read_data (Data_Fy)'
+        CALL cgp_error_exit_f()
+     ENDIF
+     CALL cgp_field_read_data_f(fn,B,Z,S,Fz,vmin(1),vmax(1),Data_Fz,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_field_read_data (Data_Fz)'
+        CALL cgp_error_exit_f()
+     ENDIF
+#if HDF5_HAVE_MULTI_DATASETS
   ENDIF
 #endif
   t2 = MPI_Wtime()
@@ -801,14 +839,33 @@ PROGRAM benchmark_hdf5_f90
   ENDIF
 
   t1 = MPI_Wtime()
-#if 0
-!HDF5_HAVE_MULTI_DATASETS
-  Avec = (/Ai,Ar/)
-  CALL cgp_array_multi_read_data_f(fn,Avec,min,max,err,2,Array_i,Array_r)
-  IF(err.NE.CG_OK)THEN
-     PRINT*,'*FAILED* cgp_array_multi_read_data_f'
-     CALL cgp_error_exit_f()
+#if HDF5_HAVE_MULTI_DATASETS
+  IF(enable_md)THEN
+     Avec = (/Ai,Ar/)
+
+     buf2(1) = C_LOC(Array_i)
+     buf2(2) = C_LOC(Array_r)
+
+     CALL cgp_array_multi_read_data_f(fn,Avec,min,max,2,buf2,err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_array_multi_read_data_f'
+        CALL cgp_error_exit_f()
+     ENDIF
+  ELSE
+#endif
+     CALL cgp_array_read_data_f(Ar, min, max, Array_r, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_field_read_data (Array_r)'
+        CALL cgp_error_exit_f()
+     ENDIF
+     CALL cgp_array_read_data_f(Ai, min, max, Array_i, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cgp_field_read_data (Array_i)'
+        CALL cgp_error_exit_f()
+     ENDIF
+#if HDF5_HAVE_MULTI_DATASETS
   ENDIF
+#endif
   t2 = MPI_Wtime()
   xtiming(9) = t2-t1
 

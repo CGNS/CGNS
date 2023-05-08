@@ -3764,8 +3764,8 @@ MODULE cgns
      END SUBROUTINE cgp_mpi_info_f
 
 #if HDF5_HAVE_MULTI_DATASETS
-     SUBROUTINE cgp_coord_multi_read_data_f(fn, B, Z, C, rmin, rmax, &
-          coordsX, coordsY, coordsZ, ier) BIND(C, NAME="cgp_coord_multi_read_data")
+     SUBROUTINE cgp_coord_multi_read_data_f(fn, B, Z, C, rmin, rmax, nsets, &
+          buf, ier) BIND(C, NAME="cgp_coord_multi_read_data")
        IMPORT :: C_INT, C_PTR, CGSIZE_T
        IMPLICIT NONE
        INTEGER(C_INT), VALUE :: fn
@@ -3774,12 +3774,13 @@ MODULE cgns
        INTEGER(C_INT), DIMENSION(*) :: C
        INTEGER(CGSIZE_T), DIMENSION(*) :: rmin
        INTEGER(CGSIZE_T), DIMENSION(*) :: rmax
-       TYPE(C_PTR), VALUE :: coordsX, coordsY, coordsZ
+       INTEGER(C_INT), VALUE :: nsets
+       TYPE(C_PTR), DIMENSION(*) :: buf
        INTEGER :: ier
      END SUBROUTINE cgp_coord_multi_read_data_f
 
-     SUBROUTINE cgp_coord_multi_write_data_f(fn, B, Z, C, rmin, rmax, &
-          coordsX, coordsY, coordsZ, ier) BIND(C, NAME="cgp_coord_multi_write_data")
+     SUBROUTINE cgp_coord_multi_write_data_f(fn, B, Z, C, rmin, rmax, nsets, &
+          buf, ier) BIND(C, NAME="cgp_coord_multi_write_data")
        IMPORT :: C_INT, C_PTR, CGSIZE_T
        IMPLICIT NONE
        INTEGER(C_INT), VALUE :: fn
@@ -3788,7 +3789,8 @@ MODULE cgns
        INTEGER(C_INT), DIMENSION(*) :: C
        INTEGER(CGSIZE_T), DIMENSION(*) :: rmin
        INTEGER(CGSIZE_T), DIMENSION(*) :: rmax
-       TYPE(C_PTR), VALUE :: coordsX, coordsY, coordsZ
+       INTEGER(C_INT), VALUE :: nsets
+       TYPE(C_PTR), DIMENSION(*) :: buf
        INTEGER :: ier
      END SUBROUTINE cgp_coord_multi_write_data_f
 #endif
