@@ -102,7 +102,7 @@ set(HAVE_FORTRAN_2003 0)
 set(HAVE_FORTRAN_2008 0)
 set(HAVE_FORTRAN_2008TS 0)
 set(HDF5_HAVE_MULTI_DATASETS 0)
-set(HDF5_HAVE_COLL_METADATA 0)
+set(HDF5_HAVE_SUBFILING_VFD 0)
 set(HDF5_HAVE_FILE_SPACE_STRATEGY 0)
 set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 set(HAVE_STAT64_STRUCT 0)
@@ -433,23 +433,51 @@ if (CGNS_ENABLE_HDF5)
     set(cgns_C_FILES ${cgns_C_FILES} pcgnslib.c)
   endif ()
 
+  set(CMAKE_REQUIRED_INCLUDES ${HDF5_INCLUDE_DIRS})
+
+  # Check if HDF5 library has the subfiling VFD, HDF5 >= 1.14.0
+  # --------------------------------------------------------------------
+  CHECK_INCLUDE_FILE("H5FDsubfiling.h" H5_HAVE_SUBFILING_VFD)
+
+  if (H5_HAVE_SUBFILING_VFD)
+    set(HDF5_HAVE_SUBFILING_VFD 1)
+    message (STATUS "Testing HDF5 Subfiling VFD - OK")
+  else ()
+    message (STATUS "Testing HDF5 Subfiling VFD - NOT FOUND")
+  endif ()
+  unset(CMAKE_REQUIRED_INCLUDES)
+
   # Check if HDF5 library has multi-dataset read/write APIs
   # --------------------------------------------------------------------
 
-CHECK_HDF5_FEATURE(Multi_Dataset
-  " 
- #include \"hdf5.h\"
- void main(void) 
-{
-  H5D_rw_multi_t *multi_info;
-  return;
-}
-  "
-   CHECK_HDF5_HAVE_MULTI_DATASETS
- )
- if (CHECK_HDF5_HAVE_MULTI_DATASETS)
-   set(HDF5_HAVE_MULTI_DATASETS 1)
- endif ()
+  #include(CheckSymbolExists)
+  #CHECK_SYMBOL_EXISTS(H5Dwrite_multi "H5Dpublic.h" HDF5_HAVE_MULTI_DATASETS)
+  #CHECK_INCLUDE_FILE("H5Apublic.h" H5_HAVE_SUBFILING_VFD)
+  #check_symbol_exists(H5Aiterate_by_name H5Apublic.h HH)
+  #check_symbol_exists(fopen "stdio.h" HH)
+  #set(HDF5_HAVE $CACHE{HH})
+  #unset(CMAKE_REQUIRED_INCLUDES)
+  #message (STATUS "XXX ${HDF5_HAVE} ")
+
+#CHECK_HDF5_FEATURE(Multi_Dataset
+#  "
+# #include \"hdf5.h\"
+# void main(void)
+#{
+#  hid_t fid;#
+#
+#  H5D_rw_multi_t *multi_info;
+#  return;
+#}
+#  "
+#   CHECK_HDF5_HAVE_MULTI_DATASETS
+# )
+ #if (HDF5_HAVE_MULTI_DATASETS)
+ #  set(HDF5_HAVE_MULTI_DATASETS 1)
+ #  message (STATUS "Testing HDF5 Multi-Dataset APIs - OK")
+ #else ()
+ #  message (STATUS "Testing HDF5 Multi-Dataset APIs - NOT FOUND")
+ #endif ()
 
   # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
   # --------------------------------------------------------------------

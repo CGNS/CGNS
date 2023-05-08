@@ -899,6 +899,18 @@ else
     AC_MSG_ERROR(no)
   fi
 
+  # Check if HDF5 library has the subfiling VFD, HDF5 >= 1.14.0
+  ## --------------------------------------------------------------------
+
+  HDF5_HAVE_SUBFILING_VFD=0
+  AC_CHECK_HEADER($HDF5INC/H5FDsubfiling.h, [HDF5_HAVE_SUBFILING_VFD=1],[],[])
+  AC_MSG_CHECKING([if HDF5 library has subfiling VFD])
+  if test "x$HDF5_HAVE_SUBFILING_VFD" = "x1"; then
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_ERROR(no)
+  fi
+
   # Check if HDF5 library has multi-dataset read and write APIs
   ## --------------------------------------------------------------------
 
@@ -906,25 +918,13 @@ else
   HDF5_HAVE_MULTI_DATASETS=0
   AC_MSG_CHECKING([if HDF5 library has multi-dataset read/write APIs])
 
-  cat >> test.c << EOF
-#include "hdf5.h"
-void main(void)
-{
-  H5D_rw_multi_t *multi_info;
-  return;
-}
-EOF
-  msg=`${CC} -c test.c ${HDF5DEF} 2> /dev/null`
-  if test -f test.o; then
+  chck_fs=`grep -i 'H5Dwrite_multi' $HDF5INC/H5Dpublic.h`
+  if test "x$chck_fs" = "x"; then
+    AC_MSG_RESULT(no)
+  else
     HDF5_HAVE_MULTI_DATASETS=1
     AC_MSG_RESULT(yes)
-    rm test.o
-  else
-    AC_MSG_RESULT(no)
-  fi
-  if test -f test.c; then
-     rm test.c
-  fi
+  fi      
 
   # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
   ## --------------------------------------------------------------------
@@ -1960,6 +1960,7 @@ AC_SUBST(HAVE_FORTRAN_2003)
 AC_SUBST(HAVE_FORTRAN_2008TS)
 AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
+AC_SUBST(HDF5_HAVE_SUBFILING_VFD)
 AC_SUBST(HAVE_STAT64_STRUCT)
 AC_SUBST(HDF5_HAVE_COLL_METADATA)
 AC_SUBST(HDF5_HAVE_FILE_SPACE_STRATEGY)
