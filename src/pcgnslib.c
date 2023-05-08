@@ -1713,93 +1713,32 @@ static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *me
 /*------------------- multi-dataset functions --------------------------------------*/
 
 int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin, const cgsize_t *rmax,
-			       void *coordsX,  void *coordsY,  void *coordsZ)
-{
-  int n;
-  hid_t hid;
-  cgns_zone *zone;
-  cgns_zcoor *zcoor;
-  cgsize_t dims[3];
-  cgsize_t index_dim;
-  CGNS_ENUMT(DataType_t) type[3];
-
-  hid_t dset_id[3];
-  hid_t mem_type_id[3];
-  hid_t mem_space_id[3];
-  hid_t file_space_id[3];
-  void  **buf;
-
-  cg = cgi_get_file(fn);
-  if (check_parallel(cg)) return CG_ERROR;
-
-  if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
-    return CG_ERROR;
-
-  zone = cgi_get_zone(cg, B, Z);
-  if (zone==0) return CG_ERROR;
-
-  zcoor = cgi_get_zcoorGC(cg, B, Z);
-  if (zcoor==0) return CG_ERROR;
-
-  for (n = 0;  n < 3; n++) {
-    if (C[n] > zcoor->ncoords || C[n] <= 0) {
-      cgi_error("coord number %d invalid",C[n]);
-      return CG_ERROR;
-    }
-  }
-
-  for (n = 0; n < zone->index_dim; n++) {
-    dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
-      zcoor->rind_planes[2*n+1];
-    if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
-      cgi_error("Invalid index ranges.");
-      return CG_ERROR;
-    }
-  }
-
-  for (n = 0; n < 3; n++) {
-    mem_type_id[n] = cgi_datatype(zcoor->coord[C[n]-1].data_type);
-    to_HDF_ID(zcoor->coord[C[n]-1].id, hid);
-    dset_id[n] = hid;
-  }
-
-  buf = malloc(sizeof(void*) * 3);
-
-  buf[0] = coordsX;
-  buf[1] = coordsY;
-  buf[2] = coordsZ;
-
-  return readwrite_multi_data_parallel(3, dset_id, mem_type_id, mem_space_id, file_space_id, buf,
-                                         zone->index_dim, rmin, rmax, CG_PAR_READ);
-
-  free(buf);
-}
-
-/*---------------------------------------------------------*/
-
-int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmin, const cgsize_t *rmax,
-			       const void *coordsX, const void *coordsY, const void *coordsZ)
+                              int nsets, void *buf[])
 {
     int n;
+    hid_t hid;
     cgns_zone *zone;
     cgns_zcoor *zcoor;
     cgsize_t dims[3];
     cgsize_t index_dim;
-    CGNS_ENUMT(DataType_t) type[3];
 
-    hid_t dset_id[3];
-    hid_t mem_type_id[3];
-    hid_t mem_space_id[3];
-    hid_t file_space_id[3];
-    const void  **buf;
+    hid_t *dset_id;
+    hid_t *mem_type_id;
+    hid_t *mem_space_id;
+    hid_t *file_space_id;
 
-    hid_t hid;
+    int status;
 
     cg = cgi_get_file(fn);
     if (check_parallel(cg)) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
-        return CG_ERROR;
+      return CG_ERROR;
+
+    dset_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    mem_type_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    mem_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    file_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
 
     zone = cgi_get_zone(cg, B, Z);
     if (zone==0) return CG_ERROR;
@@ -1807,7 +1746,83 @@ int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmi
     zcoor = cgi_get_zcoorGC(cg, B, Z);
     if (zcoor==0) return CG_ERROR;
 
-    for (n = 0;  n < 3; n++) {
+    for (n = 0;  n < nsets; n++) {
+      if (C[n] > zcoor->ncoords || C[n] <= 0) {
+        cgi_error("coord number %d invalid",C[n]);
+        return CG_ERROR;
+      }
+    }
+
+    for (n = 0; n < zone->index_dim; n++) {
+      dims[n] = zone->nijk[n] + zcoor->rind_planes[2*n] +
+        zcoor->rind_planes[2*n+1];
+      if (rmin[n] > rmax[n] || rmin[n] < 1 || rmax[n] > dims[n]) {
+        cgi_error("Invalid index ranges.");
+        return CG_ERROR;
+      }
+    }
+
+    for (n = 0; n < nsets; n++) {
+      mem_type_id[n] = cgi_datatype(zcoor->coord[C[n]-1].data_type);
+      to_HDF_ID(zcoor->coord[C[n]-1].id, hid);
+      dset_id[n] = hid;
+    }
+
+    status = readwrite_multi_data_parallel(nsets, dset_id, mem_type_id, mem_space_id, file_space_id, buf,
+                                         zone->index_dim, rmin, rmax, CG_PAR_READ);
+
+  return status;
+
+ error:
+  if(dset_id)
+    free(dset_id);
+  if(mem_type_id)
+    free(mem_type_id);
+  if(mem_space_id)
+    free(mem_space_id);
+  if(file_space_id)
+    free(file_space_id);
+
+  return CG_ERROR;
+}
+
+/*---------------------------------------------------------*/
+
+int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmin, const cgsize_t *rmax,
+                               int nsets, void *buf[])
+{
+    int n;
+    hid_t hid;
+    cgns_zone *zone;
+    cgns_zcoor *zcoor;
+    cgsize_t dims[3];
+    cgsize_t index_dim;
+
+    hid_t *dset_id;
+    hid_t *mem_type_id;
+    hid_t *mem_space_id;
+    hid_t *file_space_id;
+
+    int status;
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+        return CG_ERROR;
+
+    dset_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    mem_type_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    mem_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    file_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+
+    zone = cgi_get_zone(cg, B, Z);
+    if (zone==0) return CG_ERROR;
+
+    zcoor = cgi_get_zcoorGC(cg, B, Z);
+    if (zcoor==0) return CG_ERROR;
+
+    for (n = 0;  n < nsets; n++) {
       if (C[n] > zcoor->ncoords || C[n] <= 0) {
         cgi_error("coord number %d invalid",C[n]);
         return CG_ERROR;
@@ -1823,28 +1838,34 @@ int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmi
         }
     }
 
-    for (n = 0; n < 3; n++) {
+    for (n = 0; n < nsets; n++) {
       mem_type_id[n] = cgi_datatype(zcoor->coord[C[n]-1].data_type);
       to_HDF_ID(zcoor->coord[C[n]-1].id, hid);
       dset_id[n] = hid;
     }
 
-    buf = malloc(sizeof(void*) * 3);
+    status =  readwrite_multi_data_parallel(nsets, dset_id, mem_type_id, mem_space_id, file_space_id, buf,
+                                            zone->index_dim, rmin, rmax, CG_PAR_WRITE);
+    return status;
 
-    buf[0] = coordsX;
-    buf[1] = coordsY;
-    buf[2] = coordsZ;
+ error:
+    if(dset_id)
+      free(dset_id);
+    if(mem_type_id)
+      free(mem_type_id);
+    if(mem_space_id)
+      free(mem_space_id);
+    if(file_space_id)
+      free(file_space_id);
 
-    return readwrite_multi_data_parallel(3, dset_id, mem_type_id, mem_space_id, file_space_id, buf,
-                                         zone->index_dim, rmin, rmax, CG_PAR_WRITE);
-    free(buf);
+    return CG_ERROR;
 
 }
 
 /*---------------------------------------------------------*/
 
-int vcgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
-			       const cgsize_t *rmin, const cgsize_t *rmax, int nsets, va_list ap)
+int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
+                               const cgsize_t *rmin, const cgsize_t *rmax, int nsets, void *buf[])
 
 {
     int n, m;
@@ -1856,7 +1877,6 @@ int vcgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
     hid_t *mem_type_id;
     hid_t *mem_space_id;
     hid_t *file_space_id;
-    void  **buf;
 
     int status;
 
@@ -1870,7 +1890,6 @@ int vcgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
     mem_type_id = (hid_t *)malloc(nsets*sizeof(hid_t));
     mem_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
     file_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
-    buf = (void *)malloc(nsets*sizeof(void *));
 
     for (n = 0; n < nsets; n++) {
       field = cgi_get_field(cg, B, Z, S, F[n]);
@@ -1886,8 +1905,6 @@ int vcgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
         }
       }
 
-      buf[n] = va_arg(ap, void *);
-
       mem_type_id[n] = cgi_datatype(field->data_type);
       to_HDF_ID(field->id,hid);
       dset_id[n] = hid;
@@ -1900,7 +1917,6 @@ int vcgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
     free(mem_type_id);
     free(mem_space_id);
     free(file_space_id);
-    free(buf);
 
     return status;
 
@@ -1913,29 +1929,14 @@ int vcgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
       free(mem_space_id);
     if(file_space_id)
       free(file_space_id);
-    if(buf)
-      free(buf);
 
     return CG_ERROR;
 }
 
-int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
-				const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...)
-{
-  va_list ap;
-  int status;
-  va_start(ap, nsets);
-  status = vcgp_field_multi_write_data(fn, B, Z, S, F, rmin, rmax, nsets, ap);
-  va_end(ap);
-  return status;
-
-}
-
-
 /*---------------------------------------------------------*/
 
-int vcgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
-    const cgsize_t *rmin, const cgsize_t *rmax, int nsets, va_list ap)
+int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
+    const cgsize_t *rmin, const cgsize_t *rmax, int nsets, void *buf[])
 {
   int n, m;
   hid_t hid;
@@ -1946,7 +1947,6 @@ int vcgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
   hid_t *mem_type_id;
   hid_t *mem_space_id;
   hid_t *file_space_id;
-  void **buf;
 
   int status;
 
@@ -1960,7 +1960,6 @@ int vcgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
   mem_type_id = (hid_t *)malloc(nsets*sizeof(hid_t));
   mem_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
   file_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
-  buf = (void *)malloc(nsets*sizeof(void *));
 
   for (n = 0; n < nsets; n++) {
 
@@ -1976,7 +1975,6 @@ int vcgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
 	goto error;
       }
     }
-    buf[n] = va_arg(ap, void *);
 
     mem_type_id[n] = cgi_datatype(field->data_type);
     to_HDF_ID(field->id,hid);
@@ -1990,7 +1988,6 @@ int vcgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
   free(mem_type_id);
   free(mem_space_id);
   free(file_space_id);
-  free(buf);
 
   return status;
 
@@ -2003,28 +2000,14 @@ int vcgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
     free(mem_space_id);
   if(file_space_id)
       free(file_space_id);
-  if(buf)
-    free(buf);
 
   return CG_ERROR;
 }
 
-int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
-    const cgsize_t *rmin, const cgsize_t *rmax, int nsets, ...)
-{
-  va_list ap;
-  int status;
-  va_start(ap, nsets);
-  status = vcgp_field_multi_read_data(fn, B, Z, S, F, rmin, rmax, nsets, ap);
-  va_end(ap);
-  return status;
-
-}
-
 /*---------------------------------------------------------*/
 
-int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
-			       const cgsize_t *rmax, int nsets, va_list ap)
+int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
+                               const cgsize_t *rmax, int nsets, void *buf[])
 {
   int n, m, ierr = 0;
   hid_t hid;
@@ -2035,7 +2018,6 @@ int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
   hid_t *mem_type_id;
   hid_t *mem_space_id;
   hid_t *file_space_id;
-  void **buf;
 
   int status;
 
@@ -2046,7 +2028,6 @@ int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
   mem_type_id = (hid_t *)malloc(nsets*sizeof(hid_t));
   mem_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
   file_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
-  buf = (void *)malloc(nsets*sizeof(void *));
 
   for (n = 0; n < nsets; n++) {
 
@@ -2062,8 +2043,6 @@ int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
 	goto error;
       }
     }
-
-    buf[n] = va_arg(ap, void *);
 
     mem_type_id[n] = cgi_datatype(array->data_type);
     to_HDF_ID(array->id, hid);
@@ -2077,7 +2056,6 @@ int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
   free(mem_type_id);
   free(mem_space_id);
   free(file_space_id);
-  free(buf);
 
   return status;
 
@@ -2090,28 +2068,14 @@ int vcgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
     free(mem_space_id);
   if(file_space_id)
     free(file_space_id);
-  if(buf)
-    free(buf);
 
   return CG_ERROR;
 }
 
-int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
-			       const cgsize_t *rmax, int nsets, ...)
-{
-  va_list ap;
-  int status;
-  va_start(ap, nsets);
-  status = vcgp_array_multi_write_data(fn, A, rmin, rmax, nsets, ap);
-  va_end(ap);
-  return status;
-
-}
-
 /*---------------------------------------------------------*/
 
-int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
-			      const cgsize_t *rmax, int nsets, va_list ap)
+int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
+                              const cgsize_t *rmax, int nsets, void *buf[])
 {
   int n, m, ierr = 0;
   hid_t hid;
@@ -2122,7 +2086,6 @@ int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
   hid_t *mem_type_id;
   hid_t *mem_space_id;
   hid_t *file_space_id;
-  void **buf;
 
   int status;
 
@@ -2134,7 +2097,6 @@ int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
   mem_type_id = (hid_t *)malloc(nsets*sizeof(hid_t));
   mem_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
   file_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
-  buf = (void *)malloc(nsets*sizeof(void *));
 
   for (n = 0; n < nsets; n++) {
 
@@ -2150,7 +2112,6 @@ int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
 	goto error;
       }
     }
-    buf[n] = va_arg(ap, void *);
 
     mem_type_id[n] = cgi_datatype(array->data_type);
     to_HDF_ID(array->id, hid);
@@ -2163,7 +2124,6 @@ int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
   free(mem_type_id);
   free(mem_space_id);
   free(file_space_id);
-  free(buf);
 
   return status;
 
@@ -2176,22 +2136,8 @@ int vcgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
     free(mem_space_id);
   if(file_space_id)
     free(file_space_id);
-  if(buf)
-    free(buf);
 
   return CG_ERROR;
-}
-
-int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
-			      const cgsize_t *rmax, int nsets, ...)
-{
-  va_list ap;
-  int status;
-  va_start(ap, nsets);
-  status = vcgp_array_multi_read_data(fn, A, rmin, rmax, nsets, ap);
-  va_end(ap);
-  return status;
-
 }
 
 #endif
