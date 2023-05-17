@@ -1582,9 +1582,7 @@ int cgp_array_general_read_data(int A,
   Multidataset APIs
 *********************************/
 
-#if HDF5_HAVE_MULTI_DATASETS
-
-static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *mem_type_id, hid_t *mem_space_id, hid_t *file_space_id, void *buf,
+static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *mem_type_id, hid_t *mem_space_id, hid_t *file_space_id, void *buf[],
 					 int ndims, const cgsize_t *rmin, const cgsize_t *rmax, enum cg_par_rw rw_mode)
 {
   /*
@@ -1711,12 +1709,12 @@ static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *me
 #else
     for (k = 0; k < count; k++) {
       if (rw_mode == CG_PAR_READ) {
-        herr = H5Dread(dset_id[k], mem_type_id[k], mem_space_id[k], file_space_id[k], plist_id, data[0].u.rbuf[k]);
+        herr = H5Dread(dset_id[k], mem_type_id[k], mem_space_id[k], file_space_id[k], plist_id, buf[k]);
         if (herr < 0) {
           cgi_error("H5Dread_multi() -- pseudo -- failed");
         }
       } else {
-        herr = H5Dwrite(dset_id[k], mem_type_id[k], mem_space_id[k], file_space_id[k], plist_id, data[0].u.wbuf[k]);
+        herr = H5Dwrite(dset_id[k], mem_type_id[k], mem_space_id[k], file_space_id[k], plist_id, buf[k]);
         if (herr < 0) {
           cgi_error("H5Dwrite_multi() -- pseudo --  failed");
         }
@@ -2159,5 +2157,3 @@ int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
 
   return CG_ERROR;
 }
-
-#endif
