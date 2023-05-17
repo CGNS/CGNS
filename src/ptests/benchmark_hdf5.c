@@ -135,7 +135,6 @@ int read_inputs(int* argc, char*** argv) {
   int k;
   int buffer[3];
 
-
   if(comm_rank==0) {
     buffer[0] = piomode;
     buffer[1] = enable_md;
@@ -173,7 +172,7 @@ int initialize(int* argc, char** argv[]) {
   MPI_Info_set(info, "striping_unit", "8388608");
   /* or whatever your GPFS block size actually is*/
 
-  if(*argc > 2) 
+  if(*argc > 1)
     read_inputs(argc,argv);
 
   if(comm_rank==0) {
@@ -209,7 +208,7 @@ int main(int argc, char* argv[]) {
   size_t Mb_coor, Mb_elem, Mb_field, Mb_array;
 
   const char* PIOMODE[] = {"IND", "COLL"};
-#if HDF5_HAVE_MULTI_DATASETS
+#if 1 //HDF5_HAVE_MULTI_DATASETS
   void **buf;
   int Cvec[3];
   int Fvec[3];
@@ -312,7 +311,7 @@ int main(int argc, char* argv[]) {
   }
 
   t1 = MPI_Wtime();
-#if HDF5_HAVE_MULTI_DATASETS
+#if 1 //HDF5_HAVE_MULTI_DATASETS
   if(enable_md) {
     Cvec[3];
     Cvec[0] = Cx;
@@ -439,7 +438,7 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
 
-#if HDF5_HAVE_MULTI_DATASETS
+#if 1 //HDF5_HAVE_MULTI_DATASETS
   if(enable_md) {
     Fvec[0] = Fx;
     Fvec[1] = Fy;
@@ -536,7 +535,7 @@ int main(int argc, char* argv[]) {
 #endif
 
   t1 = MPI_Wtime();
-#if HDF5_HAVE_MULTI_DATASETS
+#if 1 //HDF5_HAVE_MULTI_DATASETS
   if(enable_md) {
     Avec[2];
     Avec[0] = Ai;
@@ -660,7 +659,7 @@ int main(int argc, char* argv[]) {
   max = count*(comm_rank+1);
 
   t1 = MPI_Wtime();
-#if HDF5_HAVE_MULTI_DATASETS
+#if 1 //HDF5_HAVE_MULTI_DATASETS
   if(enable_md) {
     Cvec[0] = Cx;
     Cvec[1] = Cy;
@@ -764,7 +763,7 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
 
-#if HDF5_HAVE_MULTI_DATASETS
+#if 1 // HDF5_HAVE_MULTI_DATASETS
   if(enable_md) {
 
     Fvec[0] = Fx;
@@ -788,7 +787,6 @@ int main(int argc, char* argv[]) {
         printf("*FAILED* cgp_field_read_data (Data_Fx) \n");
         cgp_error_exit();
       }
-      free(buf);
       if (cgp_field_read_data(fn,B,Z,S,Fy,&min,&max,Data_Fy) != CG_OK) {
         printf("*FAILED* cgp_field_read_data (Data_Fy) \n");
         cgp_error_exit();
@@ -841,7 +839,7 @@ int main(int argc, char* argv[]) {
   }
 
   t1 = MPI_Wtime();
-#if HDF5_HAVE_MULTI_DATASETS
+#if 1 //HDF5_HAVE_MULTI_DATASETS
   if(enable_md) {
 
     Avec[0] = Ar;
