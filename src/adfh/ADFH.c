@@ -2447,6 +2447,8 @@ void ADFH_Database_Open(const char   *name,
 
 #if ADFH_HDF5_HAVE_110_API
       if(low > H5F_LIBVER_V18) {
+        /* NOTE: HDF5 can not downgrade to a lower version bound (which can be done with h5repack), so
+           the best that can be done is not to use a version higher than the lower bound. */
         H5Fset_libver_bounds(fid, low, low);
       } else {
         H5Fset_libver_bounds(fid, H5F_LIBVER_V18, H5F_LIBVER_V18);
