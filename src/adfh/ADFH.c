@@ -2438,14 +2438,20 @@ void ADFH_Database_Open(const char   *name,
       fid = H5Fopen(name, H5F_ACC_RDONLY, g_propfileopen);
     }
     else {
+
+#if !ADFH_HDF5_HAVE_110_API
+      H5Pset_libver_bounds(g_propfileopen,
+                           H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+#endif
+
       fid = H5Fopen(name, H5F_ACC_RDWR, g_propfileopen);
 
+#if ADFH_HDF5_HAVE_110_API
       hid_t access_fapl = H5Fget_access_plist(fid);
 
       H5F_libver_t low, high; /* File format bounds */
       H5Pget_libver_bounds(access_fapl, &low, &high);
 
-#if ADFH_HDF5_HAVE_110_API
       if(low > H5F_LIBVER_V18) {
         /* NOTE: HDF5 can not downgrade to a lower version bound (which can be done with h5repack), so
            the best that can be done is not to use a version higher than the lower bound. */
@@ -2453,8 +2459,6 @@ void ADFH_Database_Open(const char   *name,
       } else {
         H5Fset_libver_bounds(fid, H5F_LIBVER_V18, H5F_LIBVER_V18);
       }
-#else
-      H5Fset_libver_bounds(fid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
 #endif
 
       H5Pclose(access_fapl);
