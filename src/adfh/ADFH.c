@@ -2459,9 +2459,9 @@ void ADFH_Database_Open(const char   *name,
       } else {
         H5Fset_libver_bounds(fid, H5F_LIBVER_V18, H5F_LIBVER_V18);
       }
-#endif
 
       H5Pclose(access_fapl);
+#endif
 
     }
     H5Pclose(g_propfileopen);
