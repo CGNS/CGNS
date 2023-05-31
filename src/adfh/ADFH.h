@@ -117,6 +117,7 @@
 #define NULL_NODEID_POINTER	       62
 #define MAX_FILE_SIZE_EXCEEDED         63
 #define MAX_INT32_SIZE_EXCEEDED        64
+#define CHILDREN_IDS_NOT_FOUND         65
 
 #endif  /* ADF_INCLUDE */
 
