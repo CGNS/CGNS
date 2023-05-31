@@ -433,24 +433,6 @@ if (CGNS_ENABLE_HDF5)
     set(cgns_C_FILES ${cgns_C_FILES} pcgnslib.c)
   endif ()
 
-  # Check if HDF5 library has multi-dataset read/write APIs
-  # --------------------------------------------------------------------
-
-CHECK_HDF5_FEATURE(Multi_Dataset
-  " 
- #include \"hdf5.h\"
- void main(void) 
-{
-  H5D_rw_multi_t *multi_info;
-  return;
-}
-  "
-   CHECK_HDF5_HAVE_MULTI_DATASETS
- )
- if (CHECK_HDF5_HAVE_MULTI_DATASETS)
-   set(HDF5_HAVE_MULTI_DATASETS 1)
- endif ()
-
   # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
   # --------------------------------------------------------------------
 
