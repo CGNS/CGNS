@@ -901,7 +901,7 @@ else
 
   # Check if HDF5 library has multi-dataset read and write APIs
   ## --------------------------------------------------------------------
-  # Disabled since incompatable with the HDF5 1.14.0 multidataset APIs.
+  # Disabled since incompatible with the HDF5 1.14.0 multidataset APIs.
   # Branch "multidataset" implements needed changes.
   #
   HDF5_HAVE_MULTI_DATASETS=0
