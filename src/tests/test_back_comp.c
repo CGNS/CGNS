@@ -1,7 +1,7 @@
 /*
   Testing  backward compatibility of CGNS files created
   using older versions of the CGNS library.  The older
-  file versions can be found in the directory prev_vers.
+  file versions can be found in the directory "data".
   Only checks HDF5 derived CGNS files, so HDF5 is required.
 */
 
@@ -630,6 +630,25 @@ int main()
     printf("\nSuccessfully read unstructured grid from file %s\n", filename);
 
   }
+
+  /* Check opening a CGNS file generated with an earlier CGNS version which set the HDF5 library bounds to
+     latest, and the HDF5 library version used was > HDF5 1.8 */
+
+  printf ("\nopening cgns file using HDF5 1.10 file format ...");
+  if (cg_open("data/cgnslib_vers-3110_hdf5-110.cgns", CG_MODE_MODIFY, &fd)) {
+    printf("Failed\n");
+    cg_error_exit();
+  } else {
+    printf("Passed\n");
+  }
+  printf ("closing cgns file using HDF5 1.10 file format ...");
+  if (cg_close(fd)) {
+    printf("Failed\n");
+    cg_error_exit();
+  } else {
+    printf("Passed\n");
+  }
+
   return 0;
 
 #else
