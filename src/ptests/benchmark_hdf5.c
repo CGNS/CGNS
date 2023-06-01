@@ -324,7 +324,7 @@ int main(int argc, char* argv[]) {
     buf[1] =&Coor_y[0];
     buf[2] =&Coor_z[0];
 
-    if(cgp_coord_multi_write_data(fn, B, Z, Cvec, &min,&max,3,buf)!= CG_OK) {
+    if(cgp_coord_multi_write_data(fn, B, Z, Cvec, &min,&max,3,(const void **)buf)!= CG_OK) {
       printf("*FAILED* cgp_coords_write_data \n");
       cgp_error_exit();
     }
@@ -449,7 +449,7 @@ int main(int argc, char* argv[]) {
     buf[1] = &Data_Fy[0];
     buf[2] = &Data_Fz[0];
 
-    if(cgp_field_multi_write_data(fn,B,Z,S,Fvec,&min,&max,3,buf) != CG_OK) {
+    if(cgp_field_multi_write_data(fn,B,Z,S,Fvec,&min,&max,3,(const void **)buf) != CG_OK) {
       printf("*FAILED* cgp_field_multi_write_data \n");
       cgp_error_exit();
     }
@@ -545,7 +545,7 @@ int main(int argc, char* argv[]) {
     buf[0] = &Array_i[0];
     buf[1] = &Array_r[0];
 
-    if(cgp_array_multi_write_data(fn, Avec,&min,&max, 2, buf) != CG_OK) {
+    if(cgp_array_multi_write_data(fn, Avec,&min,&max, 2, (const void **)buf) != CG_OK) {
       printf("*FAILED* cgp_field_array_data (Array_Ai)\n");
       cgp_error_exit();
     }

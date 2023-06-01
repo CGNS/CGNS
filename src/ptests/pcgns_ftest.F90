@@ -87,7 +87,7 @@ CONTAINS
     ENDDO
     WRITE(*,'("| |")')
 
-    WRITE(*,'(A)') title_centered
+    WRITE(*,'(A)') TRIM(title_centered)
 
     WRITE(*,'("| |")', ADVANCE="NO")
     DO i = 1, width-5
@@ -503,7 +503,7 @@ SUBROUTINE multisets()
   ! ==    **WRITE THE CGNS FILE **      ==
   ! ======================================
 
-  CALL cgp_open_f("benchmark_"//ichr6//".cgns", CG_MODE_WRITE, fn, err)
+  CALL cgp_open_f('pcgns_ftest_md.cgns', CG_MODE_WRITE, fn, err)
   IF(err.NE.CG_OK)THEN
      IF (commrank .EQ. 0) CALL write_test_status(failed, "cgp_open_f")
      CALL cgp_error_exit_f()
@@ -574,7 +574,7 @@ SUBROUTINE multisets()
   buf3(2) = C_LOC(Coor_y)
   buf3(3) = C_LOC(Coor_z)
 
-  CALL cgp_coord_multi_write_data_f(fn,B,Z,Cvec,vmin(1),vmax(1),3,buf3,err)
+  CALL cgp_coord_multi_write_data_f(fn,B,Z,Cvec,vmin,vmax,3,buf3,err)
   IF(err.NE.CG_OK)THEN
      IF (commrank .EQ. 0) CALL write_test_status(failed, "Test cgp_coord_multi_write_data_f")
      CALL cgp_error_exit_f()
@@ -767,7 +767,7 @@ SUBROUTINE multisets()
   CALL MPI_Barrier(MPI_COMM_WORLD, mpi_err)
 
   ! Open the cgns file for reading
-  CALL cgp_open_f("benchmark_"//ichr6//".cgns", CG_MODE_MODIFY, fn, err)
+  CALL cgp_open_f('pcgns_ftest_md.cgns', CG_MODE_MODIFY, fn, err)
   IF(err.NE.CG_OK)THEN
      IF (commrank .EQ. 0) CALL write_test_status(failed, "cgp_open_f")
      CALL cgp_error_exit_f()
@@ -840,14 +840,14 @@ SUBROUTINE multisets()
 
   Cvec(1:3) = (/Cx,Cy,Cz/)
 
-  ! Point to the read buffer
+  ! Point to the read buffers
   buf3(1) = C_LOC(Coor_x)
   buf3(2) = C_LOC(Coor_y)
   buf3(3) = C_LOC(Coor_z)
 
   CALL cgp_coord_multi_read_data_f(fn,B,Z,Cvec,vmin,vmax,3,buf3,err)
   IF(err.NE.CG_OK)THEN
-     IF (commrank .EQ. 0) CALL write_test_status(failed, " Test cgp_coord_multi_read_data_f")
+     IF (commrank .EQ. 0) CALL write_test_status(failed, "Test cgp_coord_multi_read_data_f")
      CALL cgp_error_exit_f()
   ELSE
      IF (commrank .EQ. 0) CALL write_test_status(passed, "Test cgp_coord_multi_read_data_f")
@@ -926,7 +926,7 @@ SUBROUTINE multisets()
   buf3(2) = C_LOC(Data_Fy)
   buf3(3) = C_LOC(Data_Fz)
 
-  CALL cgp_field_multi_read_data_f(fn,B,Z,S,Fvec,vmin(1),vmax(1),3,buf3,err)
+  CALL cgp_field_multi_read_data_f(fn,B,Z,S,Fvec,vmin,vmax,3,buf3,err)
   IF(err.NE.CG_OK)THEN
      IF (commrank .EQ. 0) CALL write_test_status(failed, "Test cgp_field_multi_read_data_f")
      CALL cgp_error_exit_f()
@@ -964,8 +964,8 @@ SUBROUTINE multisets()
      CALL cgp_error_exit_f()
   ENDIF
 
-  min = count*commrank+1
-  max = count*(commrank+1)
+  vmin = count*commrank+1
+  vmax = count*(commrank+1)
 
   CALL cg_goto_f(fn, B, err, "Zone_t",Z,"UserDefinedData_t",1,"end")
   IF(err.NE.CG_OK)THEN
@@ -978,7 +978,7 @@ SUBROUTINE multisets()
   buf2(1) = C_LOC(Array_i)
   buf2(2) = C_LOC(Array_r)
 
-  CALL cgp_array_multi_read_data_f(fn,Avec,min,max,2,buf2,err)
+  CALL cgp_array_multi_read_data_f(fn,Avec,vmin,vmax,2,buf2,err)
   IF(err.NE.CG_OK)THEN
      IF (commrank .EQ. 0) CALL write_test_status(failed, "Test cgp_array_multi_read_data_f","cgp_array_multi_read_data_f")
      CALL cgp_error_exit_f()
