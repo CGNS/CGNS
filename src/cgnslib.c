@@ -434,7 +434,7 @@ int cg_open(const char *filename, int mode, int *file_number)
         /* This code allows reading version newer than the lib,
                as long as the 1st digit of the versions are equal */
             if ((cg->version / 1000) > (CGNSLibVersion / 1000)) {
-                cgi_error("The file %s was written with a more recent version of the CGNS library.  You must update your CGNS library before trying to read this file.",filename);
+                cgi_error("A more recent version of the CGNS library created the file. Therefore, the CGNS library needs updating before reading the file '%s'.",filename);
                 return CG_ERROR;
             }
             /* warn only if different in second digit */
