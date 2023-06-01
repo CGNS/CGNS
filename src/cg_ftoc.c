@@ -2159,9 +2159,9 @@ CGNSDLL void FMNAME(cg_1to1_read_global_f, CG_1TO1_READ_GLOBAL_F) (cgint_f *fn,
     int cell_dim, phys_dim;     /* number of dimension for model    */
     int Ndim;           /* indexDimension           */
     int Nglobal;            /* number of 1to1 interface in base     */
-    char **c_connectname, **c_zonename, **c_donorname;
+    char **c_connectname = NULL, **c_zonename = NULL, **c_donorname = NULL;
     char basename[CGIO_MAX_NAME_LENGTH+1];
-    cgsize_t **c_range, **c_donor_range;
+    cgsize_t **c_range = NULL, **c_donor_range = NULL;
     int **c_transform;
 
      /* get number of dimension for model: Ndim */
@@ -3213,7 +3213,7 @@ CGNSDLL void FMNAME(cg_gopath_f, CG_GOPATH_F) (cgint_f *fn,
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *              Read Multiple path nodes                         *
+ *              Read Multiple path nodes                                 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL void FMNAME(cg_famname_read_f, CG_FAMNAME_READ_F) (
@@ -4482,8 +4482,6 @@ CGNSDLL void cgp_error_exit_f()
     cgp_error_exit();
 }
 
-#if HDF5_HAVE_MULTI_DATASETS
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *       cgp_coord_multi_read_data Function                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -4492,29 +4490,46 @@ CGNSDLL void cgp_error_exit_f()
                                           cgsize_t *rmin, cgsize_t *rmax,
                                           cgint_f *nsets, void *buf[], cgint_f *ier)
 {
-  *ier = (cgint_f)cgp_coord_multi_read_data((int)*fn, (int)*B, (int)*Z, (int*)C, rmin, rmax, (int)*nsets, buf);
+  int *C_c;
+  int n;
+
+  if(sizeof(cgsize_t)!=sizeof(int)) {
+    /* type cast C from cgsize_t to an int */
+    if ((C_c = (int *)malloc(*nsets*sizeof(int)))==NULL) {
+      cgi_error("Error allocating memory...");
+      *ier = 1;
+      return;
+    }
+    for (n = 0; n < *nsets; n++) {
+      C_c[n] = (int)C[n];
+    }
+    *ier = (cgint_f)cgp_coord_multi_read_data((int)*fn, (int)*B, (int)*Z, C_c, rmin, rmax, (int)*nsets, buf);
+    free(C_c);
+  } else {
+    *ier = (cgint_f)cgp_coord_multi_read_data((int)*fn, (int)*B, (int)*Z, C, rmin, rmax, (int)*nsets, buf);
+  }
 
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *       cgp_coord_multi_write_data Function                              *
+ *       cgp_coord_multi_write_data Function                             *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 CGNSDLL void cgp_coord_multi_write_data_f(cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *C,
                                           cgsize_t *rmin, cgsize_t *rmax,
-                                          cgint_f *nsets, void *buf[], cgint_f *ier)
+                                          cgint_f *nsets, const void *buf[], cgint_f *ier)
 {
   *ier = (cgint_f)cgp_coord_multi_write_data((int)*fn, (int)*B, (int)*Z, (int*)C, rmin, rmax, (int)*nsets, buf);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *       cgp_field_multi_write_data Function                              *
+ *       cgp_field_multi_write_data Function                             *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL void FMNAME(cgp_field_multi_write_data_f, CGP_FIELD_MULTI_WRITE_DATA_F) (
-	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
+CGNSDLL void cgp_field_multi_write_data_f(
+        cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
         cgint_f *F, cgsize_t *rmin, cgsize_t *rmax,
-        cgint_f *nsets, void *buf[], cgint_f *ier)
+        cgint_f *nsets, const void *buf[], cgint_f *ier)
 {
   int *F_c;
   int n;
@@ -4544,8 +4559,8 @@ CGNSDLL void FMNAME(cgp_field_multi_write_data_f, CGP_FIELD_MULTI_WRITE_DATA_F) 
  *       cgp_field_multi_read_data Function                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL void FMNAME(cgp_field_multi_read_data_f, CGP_FIELD_MULTI_READ_DATA_F) (
-	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
+CGNSDLL void cgp_field_multi_read_data_f(
+        cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S,
         cgint_f *F, cgsize_t *rmin, cgsize_t *rmax,
         cgint_f *nsets, void *buf[], cgint_f *ier)
 {
@@ -4564,6 +4579,7 @@ CGNSDLL void FMNAME(cgp_field_multi_read_data_f, CGP_FIELD_MULTI_READ_DATA_F) (
     }
     *ier = (cgint_f)cgp_field_multi_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
                                     F_c, rmin, rmax, (int)*nsets, buf);
+    free(F_c);
   } else {
     *ier = (cgint_f)cgp_field_multi_read_data((int)*fn, (int)*B, (int)*Z, (int)*S,
                                     F, rmin, rmax, (int)*nsets, buf);
@@ -4572,12 +4588,12 @@ CGNSDLL void FMNAME(cgp_field_multi_read_data_f, CGP_FIELD_MULTI_READ_DATA_F) (
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *        cgp_array_multi_write_data Function                              *
+ *        cgp_array_multi_write_data Function                            *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL void FMNAME(cgp_array_multi_write_data_f, CGP_ARRAY_MULTI_WRITE_DATA_F) (
+CGNSDLL void cgp_array_multi_write_data_f(
 	cgint_f *fn, cgint_f *A, cgsize_t *rmin, cgsize_t *rmax,
-        cgint_f *nsets, void *buf[], cgint_f *ier)
+        cgint_f *nsets, const void *buf[], cgint_f *ier)
 {
 
   int *A_c;
@@ -4600,10 +4616,10 @@ CGNSDLL void FMNAME(cgp_array_multi_write_data_f, CGP_ARRAY_MULTI_WRITE_DATA_F) 
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *        cgp_array_multi_read_data Function                              *
+ *        cgp_array_multi_read_data Function                             *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL void FMNAME(cgp_array_multi_read_data_f, CGP_ARRAY_MULTI_READ_DATA_F) (
+CGNSDLL void cgp_array_multi_read_data_f(
         cgint_f *fn, cgint_f *A, cgsize_t *rmin, cgsize_t *rmax,
         cgint_f *nsets, void *buf[], cgint_f *ier)
 {
@@ -4622,11 +4638,11 @@ CGNSDLL void FMNAME(cgp_array_multi_read_data_f, CGP_ARRAY_MULTI_READ_DATA_F) (
       A_c[n] = (int)A[n];
     }
     *ier = (cgint_f)cgp_array_multi_read_data((int)*fn, A_c, rmin, rmax, (int)*nsets, buf);
+    free(A_c);
   }else {
     *ier = (cgint_f)cgp_array_multi_read_data((int)*fn, A, rmin, rmax, (int)*nsets, buf);
   }
 
 }
-#endif /*HDF5_HAVE_MULTI_DATASETS*/
 #endif /*CG_BUILD_PARALLEL*/
 

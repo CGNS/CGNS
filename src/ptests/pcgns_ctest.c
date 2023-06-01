@@ -469,7 +469,7 @@ static int multisets()
   buf[1] =&Coor_y[0];
   buf[2] =&Coor_z[0];
 
-  if(cgp_coord_multi_write_data(fn, B, Z, Cvec, &min,&max,3,buf)!= CG_OK) {
+  if(cgp_coord_multi_write_data(fn, B, Z, Cvec, &min,&max,3,(const void **)buf)!= CG_OK) {
     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_coord_multi_write_data", NULL);
     cgp_error_exit();
   } else {
@@ -572,7 +572,7 @@ static int multisets()
   buf[1] = &Data_Fy[0];
   buf[2] = &Data_Fz[0];
 
-  if(cgp_field_multi_write_data(fn,B,Z,S,Fvec,&min,&max,3,buf) != CG_OK) {
+  if(cgp_field_multi_write_data(fn,B,Z,S,Fvec,&min,&max,3,(const void **)buf) != CG_OK) {
     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_field_multi_write_data (Momentum)", NULL);
     cgp_error_exit();
   } else {
@@ -648,7 +648,7 @@ static int multisets()
   buf[0] = &Array_i[0];
   buf[1] = &Array_r[0];
 
-  if(cgp_array_multi_write_data(fn, Avec,&min,&max, 2, buf) != CG_OK) {
+  if(cgp_array_multi_write_data(fn, Avec,&min,&max, 2, (const void **)buf) != CG_OK) {
     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_field_array_data (Array_A)", NULL);
     cgp_error_exit();
   } else {
@@ -809,12 +809,12 @@ static int multisets()
   }
 
   if( !(Data_Fy = (double*) malloc(count*sizeof(double))) ) {
-    printf("*FAILED* allocation of  Reading Data_Fy \n");
+    printf("*FAILED* allocation of Reading Data_Fy \n");
     cgp_error_exit();
   }
 
   if( !(Data_Fz = (double*) malloc(count*sizeof(double))) ) {
-    printf("*FAILED* allocation of  Reading Data_Fz \n");
+    printf("*FAILED* allocation of Reading Data_Fz \n");
     cgp_error_exit();
   }
 
