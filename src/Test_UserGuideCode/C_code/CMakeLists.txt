@@ -4,7 +4,6 @@
 
 # Link all the executables to cgns and hdf5
 if(CGNS_BUILD_SHARED)
-  #link_directories(.)
   set(C_EXAMPLE_LK_LIBS cgns_shared)
 else()
   set(C_EXAMPLE_LK_LIBS cgns_static)

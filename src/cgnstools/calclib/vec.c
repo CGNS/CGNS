@@ -2438,7 +2438,7 @@ FILE *fp;
             m++;
             vl = vl->prev;
         }
-        fprintf (fp, "%d Vectors in vector list\n");
+        fprintf (fp, "%d Vectors in vector list\n", m);
     }
 }
 

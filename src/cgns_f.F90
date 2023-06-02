@@ -36,7 +36,7 @@
 !
 MODULE cgns
 
-  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR, C_FUNPTR
+  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR
   IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
@@ -229,15 +229,17 @@ MODULE cgns
   INTEGER, PARAMETER :: CG_CONFIG_FILE_TYPE  = 5
   INTEGER, PARAMETER :: CG_CONFIG_RIND_INDEX = 6
   
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_COMPRESS       = 201
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_MPI_COMM       = 202
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS       = 203
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS_INCR  = 204
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS_WRITE = 205
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_ALIGNMENT      = 206
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_MD_BLOCK_SIZE  = 207
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_BUFFER         = 208
-  INTEGER, PARAMETER :: CG_CONFIG_HDF5_SIEVE_BUF_SIZE = 209
+! Fortran length of names for variables is limited to 31 characters
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_COMPRESS         = 201
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_MPI_COMM         = 202
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS         = 203
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS_INCR    = 204
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_DISKLESS_WRITE   = 205
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_ALIGNMENT        = 206
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_MD_BLOCK_SIZE    = 207
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_BUFFER           = 208
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_SIEVE_BUF_SIZE   = 209
+  INTEGER, PARAMETER :: CG_CONFIG_HDF5_ELINK_CACHE_SIZE = 210
 
 
   INTEGER, PARAMETER :: CG_CONFIG_RESET = 1000
@@ -262,6 +264,7 @@ MODULE cgns
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_MD_BLOCK_SIZE 
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_BUFFER        
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_SIEVE_BUF_SIZE
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_ELINK_CACHE_SIZE
 
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RESET 
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RESET_HDF5
@@ -289,11 +292,6 @@ MODULE cgns
 !DEC$ATTRIBUTES DLLEXPORT :: CG_Null
 !DEC$ATTRIBUTES DLLEXPORT :: CG_UserDefined
 !DEC$endif
-
-!* legacy code support
-  INTEGER(C_INT) Null, UserDefined
-  PARAMETER (Null = 0)
-  PARAMETER (UserDefined = 1)
 
   CHARACTER(LEN=MAX_LEN) :: MassUnitsName(0:5)
   ENUM, BIND(C)
@@ -790,7 +788,7 @@ MODULE cgns
   END ENUM
 
 ! For portability to Linux Absoft, all data statements were moved after the
-! variables and parametres declarations
+! variables and parameters declarations
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Dimensional Units                                              *
@@ -1084,14 +1082,6 @@ MODULE cgns
        TYPE(C_PTR), VALUE :: value
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_configure_c_ptr
-
-     SUBROUTINE cg_configure_c_funptr(what, value, ier) BIND(C,NAME="cg_configure_c_funptr")
-       IMPORT :: C_FUNPTR
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: what
-       TYPE(C_FUNPTR), VALUE :: value
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_configure_c_funptr
 
      SUBROUTINE cg_get_cgio_f(fn, cgio_num, ier) BIND(C, NAME="cg_get_cgio_f")
        IMPLICIT NONE
@@ -3716,7 +3706,7 @@ MODULE cgns
        INTEGER(CGSIZE_T), INTENT(IN) :: start
        INTEGER(CGSIZE_T), INTENT(IN) :: END
        INTEGER, INTENT(IN) :: nbndry
-       INTEGER, INTENT(IN) :: S
+       INTEGER, INTENT(OUT) :: S
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_section_write_f
 
@@ -4217,7 +4207,6 @@ MODULE cgns
 
   INTERFACE cg_configure_f
      MODULE PROCEDURE cg_configure_ptr
-     MODULE PROCEDURE cg_configure_funptr
   END INTERFACE
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -4603,7 +4592,7 @@ MODULE cgns
 !!$  
   END INTERFACE
 
-  PRIVATE cg_configure_ptr, cg_configure_funptr
+  PRIVATE cg_configure_ptr
 
 CONTAINS
 
@@ -4927,19 +4916,5 @@ CONTAINS
     CALL cg_configure_c_ptr(what, value, ier)
 
   END SUBROUTINE cg_configure_ptr
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_configure_funptr
-!DEC$endif
-  SUBROUTINE cg_configure_funptr(what, value, ier)
-    USE ISO_C_BINDING, ONLY : C_FUNPTR
-    IMPLICIT NONE
-    INTEGER, INTENT(IN) :: what
-    TYPE(C_FUNPTR), VALUE :: value
-    INTEGER, INTENT(OUT) :: ier
-
-    CALL cg_configure_c_funptr(what, value, ier)
-
-  END SUBROUTINE cg_configure_funptr
 
 END MODULE cgns

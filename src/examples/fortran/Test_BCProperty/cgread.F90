@@ -139,7 +139,7 @@
 	    endif
 
            ! read patch points and InwardNormalList
-            if (datatype.eq.CGNS_ENUMV(RealSingle) .or. datatype.eq.Null) then
+            if (datatype.eq.CGNS_ENUMV(RealSingle) .or. datatype.eq.CG_Null) then
                call cg_boco_read_f(cg, base, zone, boco, pnts, &
                 data_single, ier)
                if (ier .eq. ERROR) call cg_error_exit_f
