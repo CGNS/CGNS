@@ -433,16 +433,16 @@ if (CGNS_ENABLE_HDF5)
     set(cgns_C_FILES ${cgns_C_FILES} pcgnslib.c)
   endif ()
 
-  # Check if HDF5 library has multi-dataset read/write APIs
+  # Check if HDF5 library has multi-dataset read/write APIs, HDF5 >= 1.14.0
   # --------------------------------------------------------------------
 
 CHECK_HDF5_FEATURE(Multi_Dataset
   " 
  #include \"hdf5.h\"
- void main(void) 
+ int main(void)
 {
-  H5D_rw_multi_t *multi_info;
-  return;
+  H5Dwrite_multi(0, NULL, NULL, NULL, NULL, 0, NULL);
+  return 0;
 }
   "
    CHECK_HDF5_HAVE_MULTI_DATASETS
@@ -457,12 +457,12 @@ CHECK_HDF5_FEATURE(Multi_Dataset
 CHECK_HDF5_FEATURE(Collective_metadata
   " 
  #include \"hdf5.h\"
- void main(void)
+ int main(void)
  {
    hid_t foo;
    H5Pset_coll_metadata_write(foo, 1);
    H5Pset_all_coll_metadata_ops(foo, 1);
-   return;
+   return 0;
  }
   "
    CHECK_HDF5_HAVE_COLL_METADATA
@@ -477,11 +477,11 @@ CHECK_HDF5_FEATURE(Collective_metadata
 CHECK_HDF5_FEATURE(H5Pset_file_space_strategy
   " 
  #include \"hdf5.h\"
- void main(void)
+ int main(void)
  {
    hid_t foo;
    H5Pset_file_space_strategy(foo, H5F_FSPACE_STRATEGY_FSM_AGGR, 1, (hsize_t)1);
-   return;
+   return 0;
  }
   "
    CHECK_HDF5_HAVE_FILE_SPACE_STRATEGY
