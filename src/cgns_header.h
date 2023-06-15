@@ -1261,7 +1261,7 @@ int cgi_check_strlen(char const * string);
 int cgi_check_strlen_x2(char const *string);
 int cgi_check_mode(char const * filename, int file_mode, int mode_wanted);
 const char *cgi_adf_datatype(CGNS_ENUMT(DataType_t) type);
-CGNSDLL CGNS_ENUMT(DataType_t) cgi_datatype(cchar_33 adf_type);
+CGNSDLL CGNS_ENUMT(DataType_t) cgi_datatype(const char *adf_type);
 int cgi_check_dimensions(int ndims, cglong_t *dims);
 int cgi_check_location(int dim, CGNS_ENUMT(ZoneType_t) type,
 	CGNS_ENUMT(GridLocation_t) loc);

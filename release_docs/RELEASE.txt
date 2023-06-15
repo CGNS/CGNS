@@ -1,12 +1,12 @@
-CGNS version 4.3.0
+CGNS version 4.4.0
 =================================
 
 INTRODUCTION
 ------------
 
-This document describes the difference between CGNS 4.2.0 and
-CGNS 4.3.0 and contains information on known problems in
-CGNS 4.3.0.
+This document describes the difference between CGNS 4.3.0 and
+CGNS 4.4.0 and contains information on known problems in
+CGNS 4.4.0.
 
 Links to the CGNS current released source code can be found at:
 
@@ -24,7 +24,7 @@ CONTENTS
 --------
 
     * New Features
-    * Bug Fixes since CGNS 4.2.0
+    * Bug Fixes since CGNS 4.3.0
     * Known Problems
 
 New Features
@@ -40,7 +40,13 @@ New Features
 
     Parallel Library:
     -----------------
-    N/A
+    * Added new parallel APIs (C and Fortran: cgp_coord_multi_read_data, cgp_coord_multi_write_data,
+      cgp_field_multi_read_data, cgp_field_multi_write_data, cgp_array_multi_write_data
+      and cgp_array_multi_read_data) which use HDF5's multi-dataset read and write APIs.
+      The new HDF5 feature (version 1.14.0) allows access to multiple datasets with a
+      single I/O call. The use of these new CGNS routines can improve performance when
+      data is accessed across several datasets from all processes since the data can be
+      aggregated in the HDF5 or MPI-I/O library.
 
     Fortran Library:
     ----------------
@@ -50,49 +56,35 @@ New Features
     ------
     N/A
 
-Bug Fixes since CGNS 4.1.2 release
+Bug Fixes since CGNS 4.3.0 release
 ==================================
 
     Library:
     --------
-    * Add a context structure to handle cleanly cgio/hdf5 state, CGNS-247
-    * When opening a CGNS file with MLL the whole file is parsed. Moreover, the zone is sorted alphabetically. The new read pattern proposed relies on a qsort algorithm to sort the zone by name. It also adds a small "_children_t vector" to cache node data read during base node parsing. Thus, it should prevent multiple small reads and be more efficient PR #263
-    * Fix bad cast in parallel test, PR #264
-    * Add some missing macros PR #265
-    * Added Timing stats to make tests PR #293
-    * Fixed conflicts with struct stat that comes in sys/stat.h header with MSVC. Older compilers may have other things, but it is just not valid to do it without more sophisticated checks, PR #303
-    * CMake fortran compatibility issue CGNS-10 was addressed by adding add_library(cgns_f2c OBJECT cgns_f.F90), CGNS-10. PR #307
-    * Fix an uninitialized local array by copying m_dimvals to dimvals. Indeed, m_dimvals[:] should be 0. However, the argument passed to H5Screate_simple() is dimvals, which is an uninitialized local array. PR #310
-    * Set the default file_type in cg_open only when in write mode, PR #311 , CGNS-266
-    * Remove unneeded file access check in cgnslib layer, PR #312
-    * Use intel headers instead of msvc PR #314
-    * Added src/Test_UserGuideCode/C_code_parallel autotool's build and tests. Fixed issues with C examples,PR #318 CGNS-260
-    * Multiplication result converted to larger type fixes PR #319
-    * Misc. LGTM fixes PR #328
-    * Fixed misc. Codacy reported errors, PR #330
-    * Basic detection of duplicate face indices in NFaces (Thanks to BETA CAE) PR #331 and PR #335
-    * Fixed clang -Wstrict-prototypes warnings PR #332
+    * Removed possible overflow in cgi_error, #343 #701
+    * Increased maximum open file limit default
+    * Added control for HDF5 tuning routine "H5Pset_elink_file_cache_size," which is useful when many external links are used, #351
+    * Fixed backward compatibility issues #702:
+      (a) Older CGNS files may not have enabled creation ordering in HDF5, causing issues with the number of Bases returned.
+      (b) Fixed H5Fset_libver_bounds for 1.8 HDF5 when trying to read a CGNS file in 1.10 HDF5 file format and added a check which opens,
+          for modifying, a CGNS file that uses HDF5 1.10 format. It will maintain 1.10 format capability since downgrading the file format
+          to HDF5 1.8 requires repacking it (see h5repack from HDF5).
 
     Fortran:
     --------
 
-    * Fixed all the missing scope enumerations in the Fortran tests, which lead to getting rid of the fixed formatting, reworked CONCATENATE to work with gfortran (see cgnstypes_f03.h.in), CGNS-249, PR #267
-    * Fortran tests/examples clean-up, fixed typo and removed remaining numbered DO loops, CGNS-249, PR #268
-    * Fixed Base/Zone formatted donorname are not managed, CGNS-261, PR #322
+    * Removed "NULL" and "UserDefined" Fortran parameters #349
+
+    There is a "NULL" function in the Fortran Standard so it could conflict with this definition. Therefore, CG_NULL should be used instead. Older codes need to update to use CG_NULL instead.
+    Removed the "UserDefined" parameter. CG_UserDefined should be used instead. Older codes need to update to use CG_UserDefined.
 
     Configuration:
     --------------
+    N/A
 
-    * CMake fixes for CGNS-256, CGNS-257, CGNS-258 PR#292
-    * Remove the use of Relative paths in LINK_DIRECTORIES, CGNS-163
-    * Replaced #ifdef JFC_PATCH_2015_2 with cg_configure options, CGNS-244 PR #270
-    * Keep default library name on MinGW, PR #271
-    * Modernize CGNS cmake , PR #317
-    * Checks if HDF5 supports parallel I/O if parallel is enabled in CGNS #321, PR #321
-
-   Tools:
-   ------
-    * cgns_info was not installed fixed, CGNS-257
+    Tools:
+    ------
+    N/A
 
 Known Problems
 ==============

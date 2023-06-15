@@ -47,12 +47,14 @@
 
 #CGNS test files
 *.cgns
+!src/tests/testfiles/*.cgns
 
 #cmake
 CMakeCache.txt
 CMakeFiles
 CMakeScripts
 Makefile
+!src/tests/testfiles/Makefile
 cmake_install.cmake
 install_manifest.txt
 CTestTestfile.cmake

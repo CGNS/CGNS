@@ -1,4 +1,5 @@
 NO_COLOR=\033[0m
+SKIP_COLOR=\033[33;01m
 OK_COLOR=\033[32;01m
 ERROR_COLOR=\033[31;01m
 
@@ -36,6 +37,7 @@ CALL = \
 	write_rind$(EXE) \
 	test_bbox$(EXE) \
 	test_convert_elem$(EXE) \
+	test_back_comp$(EXE) \
 	test_complex$(EXE)
 
 F_TESTS = \
@@ -97,8 +99,13 @@ test : $(TESTS)
              fi; \
              printf "\n";\
 	   else \
-	     printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
-             status=`expr $$status + 1`; \
+	     err=$$?; \
+	     if [[ $$err -eq 125 ]]; then \
+		printf " [$(SKIP_COLOR) SKIP $(NO_COLOR)]\n"; \
+	     else \
+		printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"; \
+		status=`expr $$status + 1`; \
+	     fi; \
 	   fi; \
 	 done; \
 	 echo "=== finished ==="; \
@@ -262,6 +269,12 @@ test_complex$(EXE) : test_complex.c $(CGNSLIB)
 
 test_convert_elem$(EXE) : test_convert_elem.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_convert_elem.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_back_comp$(EXE) : test_back_comp.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_back_comp.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------

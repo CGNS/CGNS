@@ -1,0 +1,5 @@
+query-filters:
+  - exclude:
+      id: cpp/toctou-race-condition
+  - exclude:
+      id: cpp/short-global-name
