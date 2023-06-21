@@ -1889,7 +1889,7 @@ int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
                                const cgsize_t *rmin, const cgsize_t *rmax, int nsets, const void *buf[])
 
 {
-  int n, m;
+    int n, m;
     hid_t hid;
     cgns_array *field = NULL;
     
