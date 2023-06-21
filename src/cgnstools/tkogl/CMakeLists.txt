@@ -14,6 +14,19 @@ set(tkogl_FILES
 	feedback.c
 	tkoglparse.c)
 
+#======================================================
+# Find the OpenGL package
+find_package(OpenGL)
+
+# Check if the OpenGL package was found
+if(OpenGL_FOUND)
+	message(STATUS "OpenGL found: ${OPENGL_INCLUDE_DIRS}")
+#	message (STATUS "OpenGL C libs:${HDF5_FOUND} static:${HDF5_static_C_FOUND} and shared:${HDF5_shared_C_FOUND}")
+else()
+	message(FATAL_ERROR "OpenGL not found")
+endif()
+#======================================================
+
 add_library(tkogl STATIC ${tkogl_FILES})
 
 set_property(TARGET tkogl PROPERTY LINKER_LANGUAGE C)

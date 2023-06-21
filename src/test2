@@ -1,0 +1,80 @@
+"removing previous build"
+checking CGNS version... 4.30
+checking if gcc is requested... no
+checking for gcc... /usr/bin/gcc
+checking whether the C compiler works... yes
+checking for C compiler default output file name... a.out
+checking for suffix of executables... 
+checking whether we are cross compiling... no
+checking for suffix of object files... o
+checking whether we are using the GNU C compiler... yes
+checking whether /usr/bin/gcc accepts -g... yes
+checking for /usr/bin/gcc option to accept ISO C89... none needed
+checking if compiler supports prototyping... yes
+checking if debugging is enabled... no
+checking for ranlib... ranlib
+checking for strip... strip
+checking how to run the C preprocessor... /usr/bin/gcc -E
+checking for grep that handles long lines and -e... /usr/bin/grep
+checking for egrep... /usr/bin/grep -E
+checking for ANSI C header files... yes
+checking for an ANSI C-conforming const... yes
+checking for sys/types.h... yes
+checking for sys/stat.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for memory.h... yes
+checking for strings.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for unistd.h... yes
+checking for size_t... yes
+checking for /usr/bin/gcc option to accept ISO C99... none needed
+checking for Complex Gnu Extension... yes
+checking for a BSD-compatible install... /usr/bin/install -c
+checking where to install library... /usr/local/lib
+checking where to install headers... /usr/local/include
+checking where to install executables... /usr/local/bin
+checking where to install Tcl scripts... /usr/local/share/cgnstools
+checking if system was specified... no
+checking if 64bit support is requested... yes
+checking cgsystem... DARWIN
+checking size of void *... 8
+checking size of char *... 8
+checking if legacy build is enabled... no
+checking if scope enumeration values is enabled... no
+checking if base scope for family/zone ref-to enabled... no
+checking size of long... 8
+checking if Fortran interface is enabled... no
+checking if building a shared library... no
+checking if using HDF5... no
+checking if parallel IO support is requested... no
+checking if large file support is requested... no
+checking if building CGNStools... yes
+checking if Tcl directory was specified... /usr/local/lib/
+checking if Tk directory was specified... /usr/local/lib/
+checking GL/gl.h usability... yes
+checking GL/gl.h presence... yes
+checking for GL/gl.h... yes
+checking for matherr in -lm... yes
+checking return type of signal handlers... void
+checking if cutting plane is requested... yes
+checking if mesh boundaries is requested... yes
+checking whether make sets $(MAKE)... yes
+checking size of void *... (cached) 8
+configure: creating ./config.status
+config.status: creating cgnstypes.h
+config.status: creating cgnstypes_f.h
+config.status: creating cgnstypes_f03.h
+config.status: creating cgnsconfig.h
+config.status: creating cg_hash_types.h
+config.status: creating Makefile
+config.status: creating make.defs
+config.status: creating cgnsBuild.defs
+config.status: creating tests/Makefile
+config.status: creating tools/Makefile
+config.status: creating Test_UserGuideCode/C_code_parallel/Makefile
+config.status: creating ptests/Makefile
+config.status: creating cgnstools/Makefile
+config.status: creating cgnstools/make.defs
+config.status: creating cgnstools/cgconfig

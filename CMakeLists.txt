@@ -236,7 +236,7 @@ endif ()
 # HDF5 #
 ########
 
-option(CGNS_ENABLE_HDF5 "Enable or disable HDF5 interface" "ON")
+option(CGNS_ENABLE_HDF5 "Enable or disable HDF5 interface" "OFF")
 if (CGNS_ENABLE_HDF5)
 
   if (CGNS_BUILD_SHARED)
@@ -282,7 +282,6 @@ if (CGNS_ENABLE_HDF5)
     set(LINK_LIBS ${HDF5_C_${CG_HDF5_LINK_TYPE_UPPER}_LIBRARY})
   else ()
     find_package (HDF5) # Legacy find
-    
     #Legacy find_package does not set HDF5_TOOLS_DIR, so we set it here
     set(HDF5_TOOLS_DIR ${HDF5_LIBRARY}/../bin)
     
@@ -338,8 +337,8 @@ if (CGNS_ENABLE_HDF5)
   endif ()
 
   # Check if HDF5 version is 1.8 or greater
-  if (HDF5_VERSION VERSION_LESS "1.8.0")
-    message (FATAL_ERROR "HDF5 version must be greater than 1.8.0")
+  if (HDF5_VERSION_STRING VERSION_LESS "1.8.0")
+    message (FATAL_ERROR "HDF5 ${HDF5_VERSION_STRING}: version must be greater than 1.8.0")
   endif ()
 
   set(HDF5_NEED_MPI "OFF" CACHE BOOL "Does the HDF5 library require linking to mpi? (Only true if using parallel HDF5)")

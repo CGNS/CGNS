@@ -2,6 +2,19 @@
 # cgnsplot #
 ############
 
+#======================================================
+# Find the OpenGL package
+find_package(OpenGL)
+
+# Check if the OpenGL package was found
+if(OpenGL_FOUND)
+    message(STATUS "OpenGL found: ${OPENGL_INCLUDE_DIRS}")
+    #	message (STATUS "OpenGL C libs:${HDF5_FOUND} static:${HDF5_static_C_FOUND} and shared:${HDF5_shared_C_FOUND}")
+else()
+    message(FATAL_ERROR "OpenGL not found")
+endif()
+#======================================================
+
 # Define source files
 if (WIN32)
   if (HTML_HELP_INCLUDE_PATH AND HTML_HELP_LIBRARY)
