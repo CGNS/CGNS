@@ -31,6 +31,7 @@ skip_tags: true
 #---------------------------------#
 #    environment configuration    #
 #---------------------------------#
+# https://github.com/oneapi-src/oneapi-ci/blob/master/.appveyor.yml
 environment:
   global:
     1_8: &1_8 1.8.23
@@ -39,11 +40,11 @@ environment:
     HDF5_1_8_VER: *1_8   
     HDF5_1_10_VER: *1_10
     HDF5_1_14_VER: *1_14
-    WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18969/w_BaseKit_p_2022.3.1.19798_offline.exe
-    WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18976/w_HPCKit_p_2022.3.1.19755_offline.exe
-    LINUX_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18970/l_BaseKit_p_2022.3.1.17310_offline.sh
-    LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18975/l_HPCKit_p_2022.3.1.16997_offline.sh
-    MACOS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18977/m_HPCKit_p_2022.3.1.15344_offline.dmg
+    WINDOWS_BASEKIT_URL: https:/registrationcenter-download.intel.com/akdlm/IRC_NAS/c961e083-5685-4f0b-ada5-c6cf16f561dd/w_BaseKit_p_2023.1.0.47256_offline.exe
+    WINDOWS_HPCKIT_URL: https:/registrationcenter-download.intel.com/akdlm/IRC_NAS/2a13d966-fcc5-4a66-9fcc-50603820e0c9/w_HPCKit_p_2023.1.0.46357_offline.exe
+    LINUX_BASEKIT_URL: https:/registrationcenter-download.intel.com/akdlm/IRC_NAS/7deeaac4-f605-4bcf-a81b-ea7531577c61/l_BaseKit_p_2023.1.0.46401_offline.sh
+    LINUX_HPCKIT_URL: https:/registrationcenter-download.intel.com/akdlm/IRC_NAS/1ff1b38a-8218-4c53-9956-f0b264de35a4/l_HPCKit_p_2023.1.0.46346_offline.sh
+    MACOS_HPCKIT_URL: https:/registrationcenter-download.intel.com/akdlm/IRC_NAS/a99cb1c5-5af6-4824-9811-ae172d24e594/m_HPCKit_p_2023.1.0.44543_offline.dmg
     WINDOWS_CPP_COMPONENTS: intel.oneapi.win.cpp-compiler
     WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler
     WINDOWS_DPCPP_COMPONENTS: intel.oneapi.win.dpcpp-compiler
@@ -55,6 +56,8 @@ environment:
     LINUX_DPCPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler
     MACOS_CPP_COMPONENTS: intel.oneapi.mac.cpp-compiler
     MACOS_FORTRAN_COMPONENTS: intel.oneapi.mac.ifort-compiler
+    SAMPLES_TAG: 2023.1.0
+    VS_VER: vs2019
 
   matrix:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
