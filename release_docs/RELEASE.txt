@@ -10,11 +10,11 @@ CGNS 4.5.0.
 
 Links to the CGNS current released source code can be found at:
 
-https://cgns.org/download.html
+http://cgns.org/download.html
 
 User documentation for the current release can be found at:
 
-https://cgns.org/CGNS_docs_current/midlevel/index.html
+http://cgns.org/CGNS_docs_current/midlevel/index.html
 
 For more information, see the CGNS home page:
 
