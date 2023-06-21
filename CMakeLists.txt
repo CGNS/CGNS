@@ -41,7 +41,7 @@ endmacro ()
 SET_CGNS_BUILD_TYPE()
 
 project("cgns" C)
-
+include(GNUInstallDirs)
 # Determine CGNS_VERSION from src/cgnslib.h for 
 file (READ ${PROJECT_SOURCE_DIR}/src/cgnslib.h _cgnslib_h_contents)
 string (REGEX REPLACE ".*#define[ \t]+CGNS_DOTVERS[ \t]+([0-9]*)\\.([0-9])[0-9]*.*$"
@@ -448,6 +448,18 @@ if (CGNS_BUILD_TESTING)
   enable_testing ()
   include (CTest)
   include (${PROJECT_SOURCE_DIR}/CTestConfig.cmake)
+endif ()
+
+#########################
+# COMMANDLINE UTILITIES #
+#########################
+
+option(CGNS_ENABLE_UTILS "Enable or disable CGNS commandline utilities (without compiling tk-gui)" "OFF")
+if (CGNS_ENABLE_UTILS)
+  set(CGNS_UTILS_INSTALL ${CMAKE_INSTALL_FULL_BINDIR})
+  add_subdirectory(src/cgnstools/calclib)
+  add_subdirectory(src/cgnstools/common)
+  add_subdirectory(src/cgnstools/utilities)
 endif ()
 
 ########
