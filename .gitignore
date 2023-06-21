@@ -59,3 +59,11 @@ cmake_install.cmake
 install_manifest.txt
 CTestTestfile.cmake
 
+# specific files
+src/make.defs
+src/cgnstypes_f03.h
+src/cgnstypes_f.h
+src/cgnstypes.h
+src/cgnsconfig.h
+src/cgnsBuild.defs
+src/cg_hash_types.h
