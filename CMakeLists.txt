@@ -41,7 +41,7 @@ endmacro ()
 SET_CGNS_BUILD_TYPE()
 
 project("cgns" C)
-
+include(GNUInstallDirs)
 # Determine CGNS_VERSION from src/cgnslib.h for 
 file (READ ${PROJECT_SOURCE_DIR}/src/cgnslib.h _cgnslib_h_contents)
 string (REGEX REPLACE ".*#define[ \t]+CGNS_DOTVERS[ \t]+([0-9]*)\\.([0-9])[0-9]*.*$"
@@ -236,7 +236,7 @@ endif ()
 # HDF5 #
 ########
 
-option(CGNS_ENABLE_HDF5 "Enable or disable HDF5 interface" "ON")
+option(CGNS_ENABLE_HDF5 "Enable or disable HDF5 interface" "OFF")
 if (CGNS_ENABLE_HDF5)
 
   if (CGNS_BUILD_SHARED)
@@ -338,8 +338,8 @@ if (CGNS_ENABLE_HDF5)
   endif ()
 
   # Check if HDF5 version is 1.8 or greater
-  if (HDF5_VERSION VERSION_LESS "1.8.0")
-    message (FATAL_ERROR "HDF5 version must be greater than 1.8.0")
+  if (HDF5_VERSION_STRING VERSION_LESS "1.8.0")
+    message (FATAL_ERROR "HDF5 ${HDF5_VERSION_STRING}: version must be greater than 1.8.0")
   endif ()
 
   set(HDF5_NEED_MPI "OFF" CACHE BOOL "Does the HDF5 library require linking to mpi? (Only true if using parallel HDF5)")
@@ -449,6 +449,18 @@ if (CGNS_BUILD_TESTING)
   enable_testing ()
   include (CTest)
   include (${PROJECT_SOURCE_DIR}/CTestConfig.cmake)
+endif ()
+
+#########################
+# COMMANDLINE UTILITIES #
+#########################
+
+option(CGNS_ENABLE_UTILS "Enable or disable CGNS commandline utilities (without compiling tk-gui)" "OFF")
+if (CGNS_ENABLE_UTILS)
+  set(CGNS_UTILS_INSTALL ${CMAKE_INSTALL_FULL_BINDIR})
+  add_subdirectory(src/cgnstools/calclib)
+  add_subdirectory(src/cgnstools/common)
+  add_subdirectory(src/cgnstools/utilities)
 endif ()
 
 ########
