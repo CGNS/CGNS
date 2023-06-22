@@ -117,15 +117,51 @@ endif ()
 # Add the tests so that cmake can find them
 if (CGNS_ENABLE_TESTS)
   foreach(TEST_NAME ${C_PTESTS_LIST})
-    add_test(NAME test-${TEST_NAME}
-             COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-	     ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
+
+    if (${TEST_NAME} MATCHES "benchmark_hdf5")
+      set (ARGS -R)
+      add_test(NAME test-${TEST_NAME}-R
+        COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+        ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${ARGS} ${MPIEXEC_POSTFLAGS})
+      set (ARGS -R -md)
+      add_test(NAME test-${TEST_NAME}-R-md
+        COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+        ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${ARGS} ${MPIEXEC_POSTFLAGS})
+    else ()
+      add_test(NAME test-${TEST_NAME}
+        COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+        ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
+    endif ()
+
+    if (${TEST_NAME} MATCHES "Metadata_Stressing")
+      set (ARGS -sec2)
+      add_test(NAME test-${TEST_NAME}${ARGS}
+        COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+        ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${ARGS} ${MPIEXEC_POSTFLAGS})
+    endif ()
+
   endforeach()
-  if (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
+  if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
     foreach(TEST_NAME ${FORTRAN_PTESTS_LIST})
-	    add_test(NAME test-${TEST_NAME}
-		     COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-                     ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
+
+      if (${TEST_NAME} MATCHES "benchmark_hdf5_f90")
+        set (ARGS -R)
+        add_test(NAME test-${TEST_NAME}-R
+          COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+          ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${ARGS} ${MPIEXEC_POSTFLAGS})
+
+        set (ARGS -R -md)
+        add_test(NAME test-${TEST_NAME}-R-md
+          COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+          ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${ARGS} ${MPIEXEC_POSTFLAGS})
+
+      else ()
+
+        add_test(NAME test-${TEST_NAME}
+          COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+          ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
+
+    endif ()
     endforeach()
   endif ()
 endif ()

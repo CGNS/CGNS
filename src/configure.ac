@@ -924,7 +924,7 @@ else
   else
     HDF5_HAVE_MULTI_DATASETS=1
     AC_MSG_RESULT(yes)
-  fi      
+  fi
 
   # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
   ## --------------------------------------------------------------------

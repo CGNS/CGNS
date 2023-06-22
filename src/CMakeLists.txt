@@ -447,37 +447,23 @@ if (CGNS_ENABLE_HDF5)
   endif ()
   unset(CMAKE_REQUIRED_INCLUDES)
 
-  # Check if HDF5 library has multi-dataset read/write APIs
+  # Check if HDF5 library has multi-dataset read/write APIs, HDF5 >= 1.14.0
   # --------------------------------------------------------------------
 
-  #include(CheckSymbolExists)
-  #CHECK_SYMBOL_EXISTS(H5Dwrite_multi "H5Dpublic.h" HDF5_HAVE_MULTI_DATASETS)
-  #CHECK_INCLUDE_FILE("H5Apublic.h" H5_HAVE_SUBFILING_VFD)
-  #check_symbol_exists(H5Aiterate_by_name H5Apublic.h HH)
-  #check_symbol_exists(fopen "stdio.h" HH)
-  #set(HDF5_HAVE $CACHE{HH})
-  #unset(CMAKE_REQUIRED_INCLUDES)
-  #message (STATUS "XXX ${HDF5_HAVE} ")
-
-#CHECK_HDF5_FEATURE(Multi_Dataset
-#  "
-# #include \"hdf5.h\"
-# void main(void)
-#{
-#  hid_t fid;#
-#
-#  H5D_rw_multi_t *multi_info;
-#  return;
-#}
-#  "
-#   CHECK_HDF5_HAVE_MULTI_DATASETS
-# )
- #if (HDF5_HAVE_MULTI_DATASETS)
- #  set(HDF5_HAVE_MULTI_DATASETS 1)
- #  message (STATUS "Testing HDF5 Multi-Dataset APIs - OK")
- #else ()
- #  message (STATUS "Testing HDF5 Multi-Dataset APIs - NOT FOUND")
- #endif ()
+CHECK_HDF5_FEATURE(Multi_Dataset
+  " 
+ #include \"hdf5.h\"
+ int main(void)
+{
+  H5Dwrite_multi(0, NULL, NULL, NULL, NULL, 0, NULL);
+  return 0;
+}
+  "
+   CHECK_HDF5_HAVE_MULTI_DATASETS
+ )
+ if (CHECK_HDF5_HAVE_MULTI_DATASETS)
+   set(HDF5_HAVE_MULTI_DATASETS 1)
+ endif ()
 
   # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
   # --------------------------------------------------------------------
@@ -485,12 +471,12 @@ if (CGNS_ENABLE_HDF5)
 CHECK_HDF5_FEATURE(Collective_metadata
   " 
  #include \"hdf5.h\"
- void main(void)
+ int main(void)
  {
    hid_t foo;
    H5Pset_coll_metadata_write(foo, 1);
    H5Pset_all_coll_metadata_ops(foo, 1);
-   return;
+   return 0;
  }
   "
    CHECK_HDF5_HAVE_COLL_METADATA
@@ -505,11 +491,11 @@ CHECK_HDF5_FEATURE(Collective_metadata
 CHECK_HDF5_FEATURE(H5Pset_file_space_strategy
   " 
  #include \"hdf5.h\"
- void main(void)
+ int main(void)
  {
    hid_t foo;
    H5Pset_file_space_strategy(foo, H5F_FSPACE_STRATEGY_FSM_AGGR, 1, (hsize_t)1);
-   return;
+   return 0;
  }
   "
    CHECK_HDF5_HAVE_FILE_SPACE_STRATEGY
