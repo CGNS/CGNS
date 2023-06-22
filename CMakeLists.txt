@@ -248,7 +248,7 @@ endif ()
 # HDF5 #
 ########
 
-option(CGNS_ENABLE_HDF5 "Enable or disable HDF5 interface" "OFF")
+option(CGNS_ENABLE_HDF5 "Enable or disable HDF5 interface" "ON")
 if (CGNS_ENABLE_HDF5)
 
   if (CGNS_BUILD_SHARED)
