@@ -86,8 +86,6 @@ typedef struct {
 
 } cg_subfiling_config_t;
 
-static cg_subfiling_config_t cg_subfiling_config;
-
 #endif
 
 #endif
