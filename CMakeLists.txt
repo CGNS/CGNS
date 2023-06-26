@@ -467,7 +467,7 @@ endif ()
 # COMMANDLINE UTILITIES #
 #########################
 
-option(CGNS_ENABLE_UTILS "Enable or disable CGNS commandline utilities (without compiling tk-gui)" "OFF")
+option(CGNS_ENABLE_UTILS "Enable or disable CGNS commandline utilities (without compiling tk-gui)" "ON")
 if (CGNS_ENABLE_UTILS)
   set(CGNS_UTILS_INSTALL ${CMAKE_INSTALL_FULL_BINDIR})
   add_subdirectory(src/cgnstools/calclib)
