@@ -92,11 +92,15 @@ static hbool_t core_vfd_backing_store = ADFH_CONFIG_DEFAULT;
 /*** HDF5's SUBFILING FILE DRIVER PARAMETERS ****/
 
 #if H5_HAVE_SUBFILING_VFD
+
 /* Enables using the subfiling file driver */
 static int subfiling_vfd = ADFH_CONFIG_DEFAULT;
-static int subfiling_vfd_config = ADFH_CONFIG_DEFAULT;
+
 H5FD_subfiling_config_t subfiling_config;
 H5FD_ioc_config_t ioc_config;
+
+H5FD_subfiling_config_t *subf_ptr = NULL;
+H5FD_ioc_config_t *ioc_ptr = NULL;
 #endif
 
 /** MISC. HDF5 OPTIMIZATION TUNING PARAMETERS */
@@ -1481,7 +1485,6 @@ void ADFH_Configure(const int option, const void *value, int *err)
     if (option == ADFH_CONFIG_RESET) {
       if ( (int)((size_t)value) == ADFH_CONFIG_RESET_HDF5 ) {
         subfiling_vfd                     = ADFH_CONFIG_DEFAULT;
-        subfiling_vfd_config              = ADFH_CONFIG_DEFAULT;
         core_vfd                          = ADFH_CONFIG_DEFAULT;
         h5pset_alignment_threshold        = ADFH_CONFIG_DEFAULT;
         h5pset_alignment_alignment        = ADFH_CONFIG_DEFAULT;
@@ -1517,7 +1520,6 @@ void ADFH_Configure(const int option, const void *value, int *err)
     }
     else if (option == ADFH_CONFIG_SUBFILING_CONFIG) {
 
-        subfiling_vfd_config = 1; // CHECK MSB
         set_error(NO_ERROR, err);
 
         /* Get the default subfiling configuration parameters */
@@ -1526,9 +1528,9 @@ void ADFH_Configure(const int option, const void *value, int *err)
         fapl_id = H5Pcreate(H5P_FILE_ACCESS);
         H5Pget_fapl_subfiling(fapl_id, &subfiling_config);
         H5Pclose(fapl_id);
+        subf_ptr = &subfiling_config;
 
         cg_subfiling_config_t *subf_config = ((cg_subfiling_config_t *)((const void *)value));
-
         if( subf_config->stripe_size != subfiling_config.shared_cfg.stripe_size ) {
           subfiling_config.shared_cfg.stripe_size = subf_config->stripe_size;
         }
@@ -1545,6 +1547,7 @@ void ADFH_Configure(const int option, const void *value, int *err)
           H5Pclose(fapl_id);
 
           ioc_config.thread_pool_size = subf_config->thread_pool_size;
+          ioc_ptr = &ioc_config;
         }
         set_error(NO_ERROR, err);
     }
@@ -2371,47 +2374,10 @@ void ADFH_Database_Open(const char   *name,
       if(subfiling_vfd == 1) {
         H5Pset_mpi_params(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
 
-        //  H5FD_subfiling_config_t *subf_config = NULL;
-
-        H5FD_subfiling_config_t *subf_ptr=NULL;
-        H5FD_ioc_config_t *ioc_ptr=NULL;
-
-        if(subfiling_vfd_config == 1) {
-          subf_ptr = &subfiling_config;
-          ioc_ptr = &ioc_config;
-#if 0
-          H5FD_subfiling_config_t config_out;
-          H5Pget_fapl_subfiling(g_propfileopen, &config_out);
-
-          if( cg_subf_config.subfiling_stripe_size != subf_config.shared_cfg.stripe_size ) {
-            subf_config.shared_cfg.stripe_size = cg_subf_con.subfiling_strip_size; // long long
-          }
-          if( cg_subf_config.subfiling_ioc_per_node != subf_config.shared_cfg.stripe_count ) {
-            subf_config.shared_cfg.stripe_count = cg_subf.subfiling_ioc_per_node;
-          }
-          if( cg_subf_config.subfiling_ioc_selection_criteria != subf_config.shared_cfg.ioc_selection) {
-            subf_config.shared_cfg.ioc_selection = cg_subf_config.subfiling_ioc_selection_criteria;
-          }
-          //if( subfiling_subfile_prefix > 0) {
-          //   subf_config.H5FD_SUBFILING_SUBFILE_PREFIX=subfiling_subfile_prefix;
-          //}
-          if( subf_config.ioc_thread_pool_size != H5FD_IOC_DEFAULT_THREAD_POOL_SIZE) {
-            H5FD_ioc_config_t *ioc_config = NULL;
-            H5FD_ioc_config_t  config_out;
-            H5Pget_fapl_ioc(g_propfileopen, &ioc_config);
-            ioc_config.thread_pool_size=subf_config.ioc_thread_pool_size;
-            //  H5Pset_fapl_ioc(g_propfileopen, ioc_config);
-          }
-          //if( subfiling_config_file_prefix > 0) {
-          //  subf_config.H5FD_SUBFILING_CONFIG_FILE_PREFIX = subfiling_config_file_prefix;
-          //}
-          if( cg_subf_config.require_ioc != subf_config.require_loc) {
-            subf_config.require_loc = cg_subf_config.require_ioc;
-          }
-#endif
-        }
         H5Pset_fapl_subfiling(g_propfileopen, subf_ptr);
-        H5Pset_fapl_ioc(g_propfileopen, ioc_ptr);
+        if(ioc_ptr != NULL)
+          H5Pset_fapl_ioc(g_propfileopen, ioc_ptr);
+
       } else
 #endif
         H5Pset_fapl_mpio(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
