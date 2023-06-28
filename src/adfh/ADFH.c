@@ -1527,7 +1527,6 @@ void ADFH_Configure(const int option, const void *value, int *err)
 
         fapl_id = H5Pcreate(H5P_FILE_ACCESS);
         H5Pget_fapl_subfiling(fapl_id, &subfiling_config);
-        H5Pclose(fapl_id);
         subf_ptr = &subfiling_config;
 
         cg_subfiling_config_t *subf_config = ((cg_subfiling_config_t *)((const void *)value));
@@ -1542,13 +1541,12 @@ void ADFH_Configure(const int option, const void *value, int *err)
         }
         if( subf_config->thread_pool_size != H5FD_IOC_DEFAULT_THREAD_POOL_SIZE) {
 
-          fapl_id = H5Pcreate(H5P_FILE_ACCESS);
           H5Pget_fapl_ioc(fapl_id, &ioc_config);
-          H5Pclose(fapl_id);
 
           ioc_config.thread_pool_size = subf_config->thread_pool_size;
           ioc_ptr = &ioc_config;
         }
+        H5Pclose(fapl_id);
         set_error(NO_ERROR, err);
     }
 #endif
@@ -2374,9 +2372,10 @@ void ADFH_Database_Open(const char   *name,
       if(subfiling_vfd == 1) {
         H5Pset_mpi_params(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
 
-        H5Pset_fapl_subfiling(g_propfileopen, subf_ptr);
         if(ioc_ptr != NULL)
-          H5Pset_fapl_ioc(g_propfileopen, ioc_ptr);
+          H5Pset_fapl_ioc(subfiling_config.ioc_fapl_id, ioc_ptr);
+
+        H5Pset_fapl_subfiling(g_propfileopen, subf_ptr);
 
       } else
 #endif
