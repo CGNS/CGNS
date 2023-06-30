@@ -76,12 +76,14 @@
 typedef struct {
   int64_t stripe_size;   /* Size (in bytes) of data stripes in subfiles   */
   int32_t stripe_count;  /* Target number of subfiles to use              */
-  int     ioc_selection;  /*  SELECT_IOC_ONE_PER_NODE = 0,  [Default]
-                           *  SELECT_IOC_EVERY_NTH_RANK,    Starting at rank 0, select-next += N
-                           *  SELECT_IOC_WITH_CONFIG,       NOT IMPLEMENTED: Read-from-file
-                           *  SELECT_IOC_TOTAL,             Starting at rank 0, mpi_size / total
-                           *  ioc_selection_options         Sentinel value
-                           */
+
+  H5FD_subfiling_ioc_select_t ioc_selection;  /*  The method to use for selecting MPI ranks to be I/O concentrators:
+                                               *    SELECT_IOC_ONE_PER_NODE = 0,  [Default]
+                                               *    SELECT_IOC_EVERY_NTH_RANK,    Starting at rank 0, select-next += N
+                                               *    SELECT_IOC_WITH_CONFIG,       NOT IMPLEMENTED: Read-from-file
+                                               *    SELECT_IOC_TOTAL,             Starting at rank 0, mpi_size / total
+                                               *    ioc_selection_options         Sentinel value
+                                               */
   int32_t thread_pool_size; /* Number of I/O concentrator worker threads to use */
 
 } cg_subfiling_config_t;

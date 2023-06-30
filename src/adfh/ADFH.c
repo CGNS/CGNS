@@ -45,7 +45,7 @@ freely, subject to the following restrictions:
 #if CG_BUILD_PARALLEL
 #include "mpi.h"
 
-#if H5_HAVE_SUBFILING_VFD
+#ifdef H5_HAVE_SUBFILING_VFD
 #include "H5FDsubfiling.h" /* Private header for the subfiling VFD */
 #include "H5FDioc.h"
 #endif
@@ -91,7 +91,7 @@ static hbool_t core_vfd_backing_store = ADFH_CONFIG_DEFAULT;
 
 /*** HDF5's SUBFILING FILE DRIVER PARAMETERS ****/
 
-#if H5_HAVE_SUBFILING_VFD
+#ifdef H5_HAVE_SUBFILING_VFD
 
 /* Enables using the subfiling file driver */
 static int subfiling_vfd = ADFH_CONFIG_DEFAULT;
@@ -1513,7 +1513,7 @@ void ADFH_Configure(const int option, const void *value, int *err)
         core_vfd = (int)((size_t)value);
         set_error(NO_ERROR, err);
     }
-#if H5_HAVE_SUBFILING_VFD
+#ifdef H5_HAVE_SUBFILING_VFD
     else if (option == ADFH_CONFIG_SUBFILING) {
         subfiling_vfd = (int)((size_t)value);
         set_error(NO_ERROR, err);
@@ -2368,7 +2368,7 @@ void ADFH_Database_Open(const char   *name,
     if (0 == strcmp(fmt, "PARALLEL")) {
       if(!ctx_cgio.pcg_mpi_info) ctx_cgio.pcg_mpi_info = MPI_INFO_NULL;
 
-#if H5_HAVE_SUBFILING_VFD
+#ifdef H5_HAVE_SUBFILING_VFD
       if(subfiling_vfd == 1) {
         H5Pset_mpi_params(g_propfileopen, ctx_cgio.pcg_mpi_comm, ctx_cgio.pcg_mpi_info);
 
