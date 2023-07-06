@@ -101,8 +101,8 @@ int write_test_header(char *title_header, int len)
 
   width = TAB_SPACE+10;
 
-  char title_centered[4*width+1];
-  char str[2*width+2];
+  char *title_centered = (char*)malloc(4*width+1*sizeof(char));
+  char *str = (char*)malloc(2*width+2*sizeof(char));
 
   memcpy(str,title_header,len);
   str[len] = '\0';
@@ -141,6 +141,9 @@ int write_test_header(char *title_header, int len)
   for( i = 0; i < width-1; i++)
     printf("_");
   printf("|\n\n");
+
+  free(title_centered);
+  free(str);
 
   return 0;
 }
