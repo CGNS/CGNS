@@ -9945,15 +9945,15 @@ const char *cgi_adf_datatype(CGNS_ENUMV(DataType_t) type)
     return "NULL";
 }
 
-CGNS_ENUMT(DataType_t) cgi_datatype(cchar_33 adf_type)
+CGNS_ENUMT(DataType_t) cgi_datatype(char const *adf_type)
 {
-    if (strcmp(adf_type, "I4") == 0) return CGNS_ENUMV(Integer);
-    if (strcmp(adf_type, "I8") == 0) return CGNS_ENUMV(LongInteger);
-    if (strcmp(adf_type, "R4") == 0) return CGNS_ENUMV(RealSingle);
-    if (strcmp(adf_type, "R8") == 0) return CGNS_ENUMV(RealDouble);
-    if (strcmp(adf_type, "C1") == 0) return CGNS_ENUMV(Character);
-    if (strcmp(adf_type, "X4") == 0) return CGNS_ENUMV(ComplexSingle);
-    if (strcmp(adf_type, "X8") == 0) return CGNS_ENUMV(ComplexDouble);
+    if (strncmp(adf_type, "I4", 33) == 0) return CGNS_ENUMV(Integer);
+    if (strncmp(adf_type, "I8", 33) == 0) return CGNS_ENUMV(LongInteger);
+    if (strncmp(adf_type, "R4", 33) == 0) return CGNS_ENUMV(RealSingle);
+    if (strncmp(adf_type, "R8", 33) == 0) return CGNS_ENUMV(RealDouble);
+    if (strncmp(adf_type, "C1", 33) == 0) return CGNS_ENUMV(Character);
+    if (strncmp(adf_type, "X4", 33) == 0) return CGNS_ENUMV(ComplexSingle);
+    if (strncmp(adf_type, "X8", 33) == 0) return CGNS_ENUMV(ComplexDouble);
     return CGNS_ENUMV(DataTypeNull);
 }
 

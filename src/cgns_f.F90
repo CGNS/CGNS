@@ -36,7 +36,7 @@
 !
 MODULE cgns
 
-  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR, C_FUNPTR
+  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR
   IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
@@ -1082,14 +1082,6 @@ MODULE cgns
        TYPE(C_PTR), VALUE :: value
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_configure_c_ptr
-
-     SUBROUTINE cg_configure_c_funptr(what, value, ier) BIND(C,NAME="cg_configure_c_funptr")
-       IMPORT :: C_FUNPTR
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: what
-       TYPE(C_FUNPTR), VALUE :: value
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_configure_c_funptr
 
      SUBROUTINE cg_get_cgio_f(fn, cgio_num, ier) BIND(C, NAME="cg_get_cgio_f")
        IMPLICIT NONE
@@ -3714,7 +3706,7 @@ MODULE cgns
        INTEGER(CGSIZE_T), INTENT(IN) :: start
        INTEGER(CGSIZE_T), INTENT(IN) :: END
        INTEGER, INTENT(IN) :: nbndry
-       INTEGER, INTENT(IN) :: S
+       INTEGER, INTENT(OUT) :: S
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_section_write_f
 
@@ -3760,44 +3752,6 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_field_write_f
 
-!!$ INTERFACE
-!!$    SUBROUTINE cgp_field_read_data_f( fn, B, Z, S, F, rmin, rmax, void *field_ptr,
-!!$     ier) BIND(C, NAME="")
-!!$
-!!$     INTEGER :: fn
-!!$      INTEGER :: B
-!!$      INTEGER :: Z
-!!$      INTEGER :: S,
-!!$     INTEGER :: F, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, void *field_ptr
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$      
-!!$!!$     SUBROUTINE cgp_array_write_f(ArrayName, DataType, DataDimension, DimensionVector, A, ier) !BIND(C, NAME="cgp_array_write_f")
-!!$       IMPORT :: cgenum_t, cgsize_t, c_char
-!!$       IMPLICIT NONE
-!!$       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: ArrayName
-!!$       INTEGER(cgenum_t) :: DataType
-!!$       INTEGER :: DataDimension
-!!$       INTEGER(CGSIZE_T) :: DimensionVector
-!!$       INTEGER :: A
-!!$       INTEGER, INTENT(OUT) :: ier
-!!$     END SUBROUTINE cgp_array_write_f
-!!$
-!!$   !!$           SUBROUTINE cgp_array_write_data_f(
-!!$     A, CGSIZE_T *rmin, CGSIZE_T *rmax, void *data,
-!!$     ier) BIND(C, NAME="")
-!!$     INTEGER :: A, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, void *data,
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$      
-!!$   !!$           SUBROUTINE cgp_array_read_data_f(
-!!$     A, CGSIZE_T *rmin, CGSIZE_T *rmax, void *data,
-!!$     ier) BIND(C, NAME="")
-!!$     INTEGER :: A, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, void *data,
-!!$
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$      
      SUBROUTINE cgp_error_exit_f() BIND(C, NAME="cgp_error_exit_f")
        IMPLICIT NONE
      END SUBROUTINE cgp_error_exit_f
@@ -3809,98 +3763,94 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_mpi_info_f
 
-!!$
-!!$   !!$           SUBROUTINE cgp_coord_multi_read_data_f, CGP_COORD_MULTI_READ_DATA_F)(fn, B, Z, C,
-!!$     CGSIZE_T *rmin, CGSIZE_T *rmax,
-!!$     void *coordsX, void *coordsY, void *coordsZ, ier) BIND(C, NAME="")
-!!$INTEGER :: fn
-!!$      INTEGER :: B
-!!$      INTEGER :: Z
-!!$      INTEGER :: C,
-!!$     INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax,
-!!$     void *coordsX, void *coordsY, void *coordsZ,
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$      !!$
-!!$
-!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$!       cgp_coord_multi_write_data Function                              *
-!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$
-!!$   !!$           SUBROUTINE cgp_coord_multi_write_data_f, CGP_COORD_MULTI_WRITE_DATA_F)(fn, B, Z, C,
-!!$                                                 CGSIZE_T *rmin, CGSIZE_T *rmax,
-!!$                                                 void *coordsX, void *coordsY, void *coordsZ, ier) BIND(C, NAME="")
-!!$INTEGER :: fn
-!!$      INTEGER :: B
-!!$      INTEGER :: Z
-!!$      INTEGER :: C,
-!!$                                                 INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax,
-!!$                                                 void *coordsX, void *coordsY, void *coordsZ
-!!$
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$      !!$
-!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$!       cgp_field_multi_write_data Function                              *
-!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$   !!$           SUBROUTINE cgp_field_multi_write_data_f(
-!!$     fn, B, Z, S,
-!!$     F, CGSIZE_T *rmin, CGSIZE_T *rmax, ier, CGSIZE_T *nsets, ...)
-!!$     fn, B, Z, S,
-!!$     F, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, ier, INTEGER(CGSIZE_T) :: nsets, ...
-!!$
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$      !!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$!       cgp_field_multi_read_data Function                              *
-!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$   !!$           SUBROUTINE cgp_field_multi_read_data_f(
-!!$     INTEGER :: fn
-!!$      INTEGER :: B
-!!$      INTEGER :: Z
-!!$      INTEGER :: S,
-!!$     F, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, ier, nsets, ...)
-!!$
-!!$     INTEGER :: fn
-!!$      INTEGER :: B
-!!$      INTEGER :: Z
-!!$      INTEGER :: S,
-!!$     INTEGER :: F, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, ier
-!!$      INTEGER :: nsets, ...
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$      !!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$!        cgp_array_multi_write_data Function                              *
-!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$   !!$           SUBROUTINE cgp_array_multi_write_data_f(
-!!$     fn, A, CGSIZE_T *rmin, CGSIZE_T *rmax,
-!!$     ier, nsets, ...)
-!!$     INTEGER :: fn
-!!$      INTEGER :: A, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax,
-!!$     ier
-!!$      INTEGER :: nsets, ...
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$      !!$
-!!$
-!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
-!!$!        cgp_array_multi_read_data Function                              *
-!!$! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-!!$
-!!$   !!$           SUBROUTINE cgp_array_multi_read_data_f(
-!!$     fn, A, CGSIZE_T *rmin, CGSIZE_T *rmax,
-!!$     ier, nsets, ...)
-!!$
-!!$     INTEGER :: fn
-!!$      INTEGER :: A, INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax,
-!!$          INTEGER, INTENT(OUT) :: ier
-!!$           END SUBROUTINE
-!!$      !!$
-!!$#endif HDF5_HAVE_MULTI_DATASETS
+     SUBROUTINE cgp_coord_multi_read_data_f(fn, B, Z, C, rmin, rmax, nsets, &
+          buf, ier) BIND(C, NAME="cgp_coord_multi_read_data_f")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT) :: fn
+       INTEGER(C_INT) :: B
+       INTEGER(C_INT) :: Z
+       INTEGER(C_INT), DIMENSION(*) :: C
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmin
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmax
+       INTEGER(C_INT) :: nsets
+       TYPE(C_PTR), DIMENSION(*) :: buf
+       INTEGER :: ier
+     END SUBROUTINE cgp_coord_multi_read_data_f
+
+     SUBROUTINE cgp_coord_multi_write_data_f(fn, B, Z, C, rmin, rmax, nsets, &
+          buf, ier) BIND(C, NAME="cgp_coord_multi_write_data_f")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT) :: fn
+       INTEGER(C_INT) :: B
+       INTEGER(C_INT) :: Z
+       INTEGER(C_INT), DIMENSION(*) :: C
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmin
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmax
+       INTEGER(C_INT) :: nsets
+       TYPE(C_PTR), DIMENSION(*) :: buf
+       INTEGER :: ier
+     END SUBROUTINE cgp_coord_multi_write_data_f
+
+     SUBROUTINE cgp_field_multi_read_data_f(fn, B, Z, S, F, rmin, rmax, nsets, &
+          buf, ier) BIND(C, NAME="cgp_field_multi_read_data_f")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT) :: fn
+       INTEGER(C_INT) :: B
+       INTEGER(C_INT) :: Z
+       INTEGER(C_INT) :: S
+       INTEGER(C_INT), DIMENSION(*) :: F
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmin
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmax
+       INTEGER(C_INT) :: nsets
+       TYPE(C_PTR), DIMENSION(*) :: buf
+       INTEGER :: ier
+     END SUBROUTINE cgp_field_multi_read_data_f
+
+     SUBROUTINE cgp_field_multi_write_data_f(fn, B, Z, S, F, rmin, rmax, nsets, &
+          buf, ier) BIND(C, NAME="cgp_field_multi_write_data_f")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT) :: fn
+       INTEGER(C_INT) :: B
+       INTEGER(C_INT) :: Z
+       INTEGER(C_INT) :: S
+       INTEGER(C_INT), DIMENSION(*) :: F
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmin
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmax
+       INTEGER(C_INT) :: nsets
+       TYPE(C_PTR), DIMENSION(*) :: buf
+       INTEGER :: ier
+     END SUBROUTINE cgp_field_multi_write_data_f
+
+     SUBROUTINE cgp_array_multi_read_data_f(fn, A, rmin, rmax, nsets, &
+          buf, ier) BIND(C, NAME="cgp_array_multi_read_data_f")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT) :: fn
+       INTEGER(C_INT), DIMENSION(*) :: A
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmin
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmax
+       INTEGER(C_INT) :: nsets
+       TYPE(C_PTR), DIMENSION(*) :: buf
+       INTEGER :: ier
+     END SUBROUTINE cgp_array_multi_read_data_f
+
+     SUBROUTINE cgp_array_multi_write_data_f(fn, A, rmin, rmax, nsets, &
+          buf, ier) BIND(C, NAME="cgp_array_multi_write_data_f")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT) :: fn
+       INTEGER(C_INT), DIMENSION(*) :: A
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmin
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmax
+       INTEGER(C_INT) :: nsets
+       TYPE(C_PTR), DIMENSION(*) :: buf
+       INTEGER :: ier
+     END SUBROUTINE cgp_array_multi_write_data_f
+
 #endif
 
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -4216,7 +4166,6 @@ MODULE cgns
 
   INTERFACE cg_configure_f
      MODULE PROCEDURE cg_configure_ptr
-     MODULE PROCEDURE cg_configure_funptr
   END INTERFACE
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -4602,7 +4551,7 @@ MODULE cgns
 !!$  
   END INTERFACE
 
-  PRIVATE cg_configure_ptr, cg_configure_funptr
+  PRIVATE cg_configure_ptr
 
 CONTAINS
 
@@ -4926,19 +4875,5 @@ CONTAINS
     CALL cg_configure_c_ptr(what, value, ier)
 
   END SUBROUTINE cg_configure_ptr
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_configure_funptr
-!DEC$endif
-  SUBROUTINE cg_configure_funptr(what, value, ier)
-    USE ISO_C_BINDING, ONLY : C_FUNPTR
-    IMPLICIT NONE
-    INTEGER, INTENT(IN) :: what
-    TYPE(C_FUNPTR), VALUE :: value
-    INTEGER, INTENT(OUT) :: ier
-
-    CALL cg_configure_c_funptr(what, value, ier)
-
-  END SUBROUTINE cg_configure_funptr
 
 END MODULE cgns
