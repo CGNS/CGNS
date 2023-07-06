@@ -49,6 +49,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include "pcgnslib.h"
+#include "utils.h"
 #include "mpi.h"
 
 #if SIZE_MAX == UCHAR_MAX
@@ -185,16 +186,6 @@ int initialize(int* argc, char** argv[]) {
   }
 
   return 0;
-}
-
-int c_double_eq(double a, double b) {
-
-  double eps = 1.e-8;
-
-  if(fabs(a-b) < eps) {
-    return true;
-  }
-  return false;
 }
 
 int main(int argc, char* argv[]) {
@@ -685,9 +676,9 @@ int main(int argc, char* argv[]) {
   /* Check if read the data back correctly */
   if(checkRead) {
     for ( k = 0; k < count; k++) {
-      if( !c_double_eq(Coor_x[k], comm_rank*count + k + 1.1) ||
-	  !c_double_eq(Coor_y[k], Coor_x[k] + 0.1) ||
-	  !c_double_eq(Coor_z[k], Coor_y[k] + 0.1) ) {
+      if( !compareValuesDouble(Coor_x[k], comm_rank*count + k + 1.1) ||
+          !compareValuesDouble(Coor_y[k], Coor_x[k] + 0.1) ||
+          !compareValuesDouble(Coor_z[k], Coor_y[k] + 0.1) ) {
 	   printf("*FAILED* cgp_coord_read_data values are incorrect \n");
 	   cgp_error_exit();
       }
@@ -788,9 +779,9 @@ int main(int argc, char* argv[]) {
   /* Check if read the data back correctly */
   if(checkRead) {
     for ( k = 0; k < count; k++) {
-      if(!c_double_eq(Data_Fx[k], comm_rank*count + k + 1.01) ||
-	 !c_double_eq(Data_Fy[k], comm_rank*count + k + 1.02) ||
-	 !c_double_eq(Data_Fz[k], comm_rank*count + k + 1.03) ) {
+      if(!compareValuesDouble(Data_Fx[k], comm_rank*count + k + 1.01) ||
+         !compareValuesDouble(Data_Fy[k], comm_rank*count + k + 1.02) ||
+         !compareValuesDouble(Data_Fz[k], comm_rank*count + k + 1.03) ) {
 	printf("*FAILED* cgp_field_read_data values are incorrect \n");
 	cgp_error_exit();
       }
@@ -856,7 +847,7 @@ int main(int argc, char* argv[]) {
   /* Check if read the data back correctly */
   if(checkRead) {
     for ( k = 0; k < count; k++) {
-      if(!c_double_eq(Array_r[k], comm_rank*count + k + 1.001) ||
+      if(!compareValuesDouble(Array_r[k], comm_rank*count + k + 1.001) ||
 	 Array_i[k] != comm_rank*count + k +1) {
 	  printf("*FAILED* cgp_array_read_data values are incorrect \n");
 	  cgp_error_exit();

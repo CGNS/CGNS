@@ -33,6 +33,14 @@
 # define UNLINK unlink
 #endif
 
+#define false 0
+#define true 1
+#define TAB_SPACE 90
+
+#define SKIP  -1
+#define PASSED 0
+#define FAILED 1
+
 double elapsed_time (void);
 double file_size (char *fname);
 
@@ -82,4 +90,88 @@ int compareValuesChr(const char *val1, const char *val2) {
   }
   return ret;
 }
+
+int write_test_header(char *title_header, int len)
+{
+
+  /* Writes the test header */
+
+  int width;
+  int i;
+
+  width = TAB_SPACE+10;
+
+  char title_centered[4*width+1];
+  char str[2*width+2];
+
+  memcpy(str,title_header,len);
+  str[len] = '\0';
+  unsigned short lpad = (width-len)/2-3;
+  unsigned short rpad = width-5 - (lpad + len);
+  sprintf(title_centered,"%s%*s%s%*s%s", "| |",lpad, " ", str, rpad, " ","| |");
+
+  printf(" ");
+  for( i = 0; i < width-1; i++)
+    printf("_");
+  printf("\n");
+
+  printf("|  ");
+  for( i = 0; i < width-5; i++)
+    printf("_");
+  printf("  |\n");
+
+  printf("| |");
+  for( i = 0; i < width-5; i++)
+    printf(" ");
+  printf("| |\n");
+
+  printf("%s\n",title_centered);
+
+  printf("| |");
+  for( i = 0; i < width-5; i++)
+    printf(" ");
+  printf("| |\n");
+
+  printf("| |");
+  for( i = 0; i < width-5; i++)
+    printf("_");
+  printf("| |\n");
+
+  printf("|");
+  for( i = 0; i < width-1; i++)
+    printf("_");
+  printf("|\n\n");
+
+  return 0;
+}
+
+int write_test_status( int test_result, char *test_title, char *cause)
+{
+
+  /* Writes the results of the tests
+
+  test_result: negative,  --skip --
+               0       ,   passed
+               positive,   failed
+  */
+
+  char error_string[9];
+  char passed[] = " PASSED ";
+  char failed[] = "*FAILED*";
+  char skip[]   = "--SKIP--";
+
+  strcpy(error_string,failed);
+  if(test_result == PASSED) {
+    strcpy(error_string, passed);
+  } else if (test_result == SKIP) {
+    strcpy(error_string,skip);
+  }
+  printf("%s %*s\n",test_title,(int)(TAB_SPACE-strlen(test_title)),error_string);
+
+  if(cause)
+    printf("  FAILURE REPORTED -- %s\n", cause);
+
+  return 0;
+}
+
 #endif
