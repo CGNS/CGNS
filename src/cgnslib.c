@@ -1728,7 +1728,7 @@ int cg_zone_write(int fn, int B, const char *zonename, const cgsize_t * size,
 
     dim_vals[0] = (cgsize_t)strlen(ZoneTypeName[zonetype]);
     if (cgi_new_node(zone->id, "ZoneType", "ZoneType_t", &dummy_id,
-        "C1", 1, dim_vals, ZoneTypeName[type])) return CG_ERROR;
+        "C1", 1, dim_vals, ZoneTypeName[zonetype])) return CG_ERROR;
 
     return CG_OK;
 }
@@ -2124,7 +2124,7 @@ int cg_node_family_write( const char* family_name, int* Fam)
     /* check for valid posit */
     if (posit == 0) {
         cgi_error("No current position set by cg_goto\n");
-        (*F) = 0;
+        (*Fam) = 0;
         return CG_ERROR;
     }
 
@@ -3643,7 +3643,7 @@ int cg_grid_write(int fn, int B, int Z, const char * grid_coord_name, int *G)
 
              /* in CG_MODE_WRITE, children names must be unique */
             if (cg->mode==CG_MODE_WRITE) {
-                cgi_error("Duplicate child name found: %s",zcoorname);
+                cgi_error("Duplicate child name found: %s",grid_coord_name);
                 return CG_ERROR;
             }
 
@@ -3763,8 +3763,8 @@ int cg_grid_bounding_box_read(int fn, int B, int Z, int G, CGNS_ENUMT(DataType_t
     }
 
      /* verify input */
-    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble)) {
-        cgi_error("Invalid data type for bounding box array: %d", type);
+    if (datatype != CGNS_ENUMV(RealSingle) && datatype != CGNS_ENUMV(RealDouble)) {
+        cgi_error("Invalid data type for bounding box array: %d", datatype);
         return CG_ERROR;
     }
 
@@ -3828,8 +3828,8 @@ int cg_grid_bounding_box_write(int fn, int B, int Z, int G, CGNS_ENUMT(DataType_
     /* Check input */
     if (boundingbox == NULL) return CG_OK;
 
-    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble)) {
-        cgi_error("Invalid data type for bounding box array: %d", type);
+    if (datatype != CGNS_ENUMV(RealSingle) && datatype != CGNS_ENUMV(RealDouble)) {
+        cgi_error("Invalid data type for bounding box array: %d", datatype);
         return CG_ERROR;
     }
 
@@ -3962,7 +3962,7 @@ int cg_coord_read(int fn, int B, int Z, const char *coordname,
         m_dimvals[n] = m_rmax[n];
     }
 
-    return cg_coord_general_read(file_number, B, Z, coordname,
+    return cg_coord_general_read(fn, B, Z, coordname,
                                  s_rmin, s_rmax, mem_datatype,
                                  m_numdim, m_dimvals, m_rmin, m_rmax,
                                  coord_array);
@@ -4122,7 +4122,7 @@ int cg_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) datatype,
         m_rmax[n] = m_dimvals[n];
     }
 
-    status = cg_coord_general_write(file_number, B, Z, coordname,
+    status = cg_coord_general_write(fn, B, Z, coordname,
                                   datatype, s_rmin, s_rmax,
                                   datatype, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   coord_ptr, C);
@@ -4136,7 +4136,7 @@ int cg_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) datatype,
  *
  * \brief  Write subset of grid coordinates
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] datatype Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble. 
@@ -4180,7 +4180,7 @@ int cg_coord_partial_write(int fn, int B, int Z,
         m_dimvals[n] = m_rmax[n];
     }
 
-    status = cg_coord_general_write(file_number, B, Z, coordname,
+    status = cg_coord_general_write(fn, B, Z, coordname,
                                   datatype, s_rmin, s_rmax,
                                   datatype, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   coord_ptr, C);
@@ -4569,7 +4569,7 @@ int cg_section_write(int fn, int B, int Z, const char * SectionName,
  *
  * \brief  Write element data
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
@@ -4610,7 +4610,7 @@ int cg_poly_section_write(int fn, int B, int Z, const char * SectionName,
     if (ElementDataSize < 0) return CG_ERROR;
 
     /* Create empty section */
-    if (cg_section_general_write(file_number, B, Z, SectionName, type,
+    if (cg_section_general_write(fn, B, Z, SectionName, type,
                              cgi_datatype(CG_SIZE_DATATYPE), start,
                              end, ElementDataSize, nbndry, S)){
         return CG_ERROR;
@@ -8270,7 +8270,7 @@ int cg_field_read(int fn, int B, int Z, int S, const char *fieldname,
         m_dimvals[n] = m_rmax[n];
     }
 
-    return cg_field_general_read(file_number, B, Z, S, fieldname,
+    return cg_field_general_read(fn, B, Z, S, fieldname,
                                  s_rmin, s_rmax, mem_datatype,
                                  m_numdim, m_dimvals, m_rmin, m_rmax,
                                  field_ptr);
@@ -9851,7 +9851,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
     if (cgi_check_strlen(connectname)) return CG_ERROR;
     if (cgi_check_strlen(donorname)) return CG_ERROR;
     if (INVALID_ENUM(connect_type,NofValidGridConnectivityTypes)) {
-        cgi_error("Invalid input:  GridConnectivityType=%d ?",type);
+        cgi_error("Invalid input:  GridConnectivityType=%d ?",connect_type);
         return CG_ERROR;
     }
     if (location != CGNS_ENUMV(Vertex) &&
@@ -9863,7 +9863,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
         cgi_error("Invalid input:  GridLocation=%d ?",location);
         return CG_ERROR;
     }
-    if (type == CGNS_ENUMV(Overset) &&
+    if (connect_type == CGNS_ENUMV(Overset) &&
         location != CGNS_ENUMV(Vertex) &&
         location != CGNS_ENUMV(CellCenter)) {
         cgi_error("GridLocation must be Vertex or CellCenter for Overset");
@@ -9993,7 +9993,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
         }
     } else  PointListSize=npnts;
 
-    if (ndata_donor && type == CGNS_ENUMV(Abutting1to1) && PointListSize != ndata_donor) {
+    if (ndata_donor && connect_type == CGNS_ENUMV(Abutting1to1) && PointListSize != ndata_donor) {
         cgi_error("Invalid input for ndata_donor in cg_conn_write");
         return CG_ERROR;
     }
@@ -11186,11 +11186,11 @@ int cg_dataset_write(int file_number, int B, int Z, int BC, const char * Dataset
 
      /* Overwrite a BCDataSet_t node : */
     for (index=0; index<boco->ndataset; index++) {
-        if (strcmp(name, boco->dataset[index].name)==0) {
+        if (strcmp(DatasetName, boco->dataset[index].name)==0) {
 
              /* in CG_MODE_WRITE, children names must be unique */
             if (cg->mode==CG_MODE_WRITE) {
-                cgi_error("Duplicate child name found: %s",name);
+                cgi_error("Duplicate child name found: %s",DatasetName);
                 return CG_ERROR;
             }
 
@@ -11662,7 +11662,7 @@ int cg_simulation_type_write(int file_number, int B, CGNS_ENUMT(SimulationType_t
     cgsize_t length;
 
      /* check input */
-    if (INVALID_ENUM(type,NofValidSimulationTypes)) {
+    if (INVALID_ENUM(SimulationType,NofValidSimulationTypes)) {
         cgi_error("Invalid input:  SimulationType=%d ?", SimulationType);
         return CG_ERROR;
     }
