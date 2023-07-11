@@ -22,6 +22,8 @@
 #	        define EXPORT(a,b) a b
 #	    endif
 #   endif
+#elif defined(__APPLE__)
+#include <X11/Xatom.h>
 #else
 #   define EXPORT(a,b) a b
 #   include <X11/Xatom.h>		/* for XA_RGB_DEFAULT_MAP atom */
