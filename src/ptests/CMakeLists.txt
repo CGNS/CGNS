@@ -2,6 +2,8 @@
 # Tests #
 #########
 
+include_directories(${CMAKE_SOURCE_DIR}/src/tests)
+
 if (NOT MPIEXEC)
   message(SEND_ERROR "need to define MPIEXEC to run tests")
 endif ()

@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "pcgnslib.h"
+#include "utils.h"
 #include "mpi.h"
 
 #define MIN_COUNT 40320 /* 8! */
@@ -14,101 +15,10 @@
 # define DEBUG_PRINT(A)
 #endif
 
-#define false 0
-#define true 1
-#define TAB_SPACE 90
-
-#define SKIP  -1
-#define PASSED 0
-#define FAILED 1
-
 MPI_Comm comm = MPI_COMM_WORLD;
 int comm_size, comm_rank;
 /*    int scale_factor = 10; */
 int scale_factor = 400;
-
-static int write_test_header(char *title_header, int len)
-{
-
-  /* Writes the test header */
-
-  int width;
-  int i;
-
-  width = TAB_SPACE+10;
-
-  char title_centered[4*width+1];
-  char str[2*width+2];
-
-  memcpy(str,title_header,len);
-  str[len] = '\0';
-  unsigned short lpad = (width-len)/2-3;
-  unsigned short rpad = width-5 - (lpad + len);
-  sprintf(title_centered,"%s%*s%s%*s%s", "| |",lpad, " ", str, rpad, " ","| |");
-
-  printf(" ");
-  for( i = 0; i < width-1; i++)
-    printf("_");
-  printf("\n");
-
-  printf("|  ");
-  for( i = 0; i < width-5; i++)
-    printf("_");
-  printf("  |\n");
-
-  printf("| |");
-  for( i = 0; i < width-5; i++)
-    printf(" ");
-  printf("| |\n");
-
-  printf("%s\n",title_centered);
-
-  printf("| |");
-  for( i = 0; i < width-5; i++)
-    printf(" ");
-  printf("| |\n");
-
-  printf("| |");
-  for( i = 0; i < width-5; i++)
-    printf("_");
-  printf("| |\n");
-
-  printf("|");
-  for( i = 0; i < width-1; i++)
-    printf("_");
-  printf("|\n\n");
-
-  return 0;
-}
-
-static int write_test_status( int test_result, char *test_title, char *cause)
-{
-
-  /* Writes the results of the tests
-
-  test_result: negative,  --skip --
-               0       ,   passed
-               positive,   failed
-  */
-
-  char error_string[9];
-  char passed[] = " PASSED ";
-  char failed[] = "*FAILED*";
-  char skip[]   = "--SKIP--";
-
-  strcpy(error_string,failed);
-  if(test_result == PASSED) {
-    strcpy(error_string, passed);
-  } else if (test_result == SKIP) {
-    strcpy(error_string,skip);
-  }
-  printf("%s %*s\n",test_title,(int)(TAB_SPACE-strlen(test_title)),error_string);
-
-  if(cause)
-    printf("  FAILURE REPORTED -- %s\n", cause);
-
-  return 0;
-}
 
 static int pcgns_ctest()
 {
@@ -121,7 +31,6 @@ static int pcgns_ctest()
     double ts, tt, data_size;
     int total_count;
     static char *piomode[2] = {"independent", "collective"};
-
 
     total_count = scale_factor * MIN_COUNT;
     n_per_proc = total_count / comm_size;
@@ -330,16 +239,6 @@ static int pcgns_ctest()
 
     return 0;
 
-}
-
-int c_double_eq(double a, double b) {
-
-  double eps = 1.e-8;
-
-  if(fabs(a-b) < eps) {
-    return true;
-  }
-  return false;
 }
 
 static int multisets()
@@ -757,9 +656,9 @@ static int multisets()
 
   /* Check if read the data back correctly */
   for ( k = 0; k < count; k++) {
-    if( !c_double_eq(Coor_x[k], comm_rank*count + k + 1.1) ||
-        !c_double_eq(Coor_y[k], Coor_x[k] + 0.1) ||
-        !c_double_eq(Coor_z[k], Coor_y[k] + 0.1) ) {
+    if( !compareValuesDouble(Coor_x[k], comm_rank*count + k + 1.1) ||
+        !compareValuesDouble(Coor_y[k], Coor_x[k] + 0.1) ||
+        !compareValuesDouble(Coor_z[k], Coor_y[k] + 0.1) ) {
       if(comm_rank == 0) write_test_status(FAILED, "Check cgp_coords_mulit_read_data values", NULL);
       cgp_error_exit();
     }
@@ -837,9 +736,9 @@ static int multisets()
 
   /* Check if read the data back correctly */
   for ( k = 0; k < count; k++) {
-    if(!c_double_eq(Data_Fx[k], comm_rank*count + k + 1.01) ||
-       !c_double_eq(Data_Fy[k], comm_rank*count + k + 1.02) ||
-       !c_double_eq(Data_Fz[k], comm_rank*count + k + 1.03) ) {
+    if(!compareValuesDouble(Data_Fx[k], comm_rank*count + k + 1.01) ||
+       !compareValuesDouble(Data_Fy[k], comm_rank*count + k + 1.02) ||
+       !compareValuesDouble(Data_Fz[k], comm_rank*count + k + 1.03) ) {
       if(comm_rank == 0) write_test_status(FAILED, "Check cgp_field_multi_read_data values", NULL);
       cgp_error_exit();
     }
@@ -891,7 +790,7 @@ static int multisets()
 
   /* Check if read the data back correctly */
   for ( k = 0; k < count; k++) {
-    if(!c_double_eq(Array_r[k], comm_rank*count + k + 1.001) ||
+    if(!compareValuesDouble(Array_r[k], comm_rank*count + k + 1.001) ||
        Array_i[k] != comm_rank*count + k +1) {
       if(comm_rank == 0) write_test_status(FAILED, "Check cgp_array_multi_read_data values", NULL);
       cgp_error_exit();
