@@ -747,7 +747,7 @@ int cg_precision(int fn, int *precision)
  *
  * \brief Close a CGNS file.
  *
- * \param[in]  fn \FILE_fn
+ * \param[in] fn \FILE_fn
  * \return \ier
  *
  * \details The function \e cg_close must always be the last one called. It closes the CGNS file designated by the index number \e fn 
@@ -1279,7 +1279,7 @@ int cg_nbases(int fn, int *nbases)
  *
  * \brief Read CGNS base information
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B 	\B_Base
  * \param[out] basename  Name of the base
  * \param[out] cell_dim  Dimension of the cells; 3 for volume cells, 2 for surface cells and 1 for line cells. 
@@ -1313,7 +1313,7 @@ int cg_base_read(int fn, int B, char *basename, int *cell_dim,
  *
  * \brief Get the CGIO identifier of the CGNS base
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B 	\B_Base
  * \param[out] base_id  CGIO node identifier for the base
  * \return \ier
@@ -1340,7 +1340,7 @@ int cg_base_id(int fn, int B, double *base_id)
  *
  * \brief Get the cell dimension for the CGNS base
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B   \B_Base
  * \param[out] cell_dim Dimension of the cells; 3 for volume cells, 2 for surface cells and 1 for line cells. 
  * \return \ier
@@ -1364,7 +1364,7 @@ int cg_cell_dim(int fn, int B, int *cell_dim)
  *
  * \brief Create and/or write to a CGNS base node
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] basename Name of the base.
  * \param[in] cell_dim Dimension of the cells; 3 for volume cells, 2 for surface cells and 1 for line cells. 
  * \param[in] phys_dim Number of coordinates required to define a vector in the field. 
@@ -1450,7 +1450,7 @@ int cg_base_write(int fn, const char * basename, int cell_dim,
  *
  * \brief Get number of zone in base
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B \B_Base
  * \param[out] nzones Number of zones present in base B.
  * \return \ier
@@ -1477,7 +1477,7 @@ int cg_nzones(int fn, int B, int *nzones)
  *
  * \brief Get type of zone (structured or unstructured)
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B \B_Base
  * \param[in] Z \Z_Zone
  * \param[out] zonetype Type of the zone. The admissible types are Structured and Unstructured.
@@ -1506,7 +1506,7 @@ int cg_zone_type(int fn, int B, int Z, CGNS_ENUMT(ZoneType_t) *zonetype)
  *
  * \brief Read zone information 
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B \B_Base
  * \param[in] Z \Z_Zone
  * \param[out] zonename Name of the zone
@@ -1569,7 +1569,7 @@ int cg_zone_id(int fn, int B, int Z, double *zone_id)
  *
  * \brief Get the index dimension of the CGNS zone 
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B \B_Base
  * \param[in] Z \Z_Zone
  * \param[out] index_dim Index dimension for the zone. For Structured zones, this will be the base cell dimension and for Unstructured zones it will be 1
@@ -1593,7 +1593,7 @@ int cg_index_dim(int fn, int B, int Z, int *index_dim)
  *
  * \brief Create and/or write to a CGNS zone 
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B   \B_Base
  * \param[in] zonename   Name of the zone.
  * \param[in] size 	Number of vertices, cells, and boundary vertices in each (index)-dimension. For structured grids, the dimensions have unit stride in the array (e.g., [NVertexI, NVertexJ, NVertexK, NCellI, NCellJ, NCellK, NBoundVertexI, NBoundVertexJ, NBoundVertexK]).
@@ -1742,7 +1742,7 @@ int cg_zone_write(int fn, int B, const char *zonename, const cgsize_t * size,
  *
  * \brief Get number of Family_t node at CGNSBase_t level
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B \B_Base
  * \param[out] nfamilies Number of families in base B
  * \return \ier
@@ -3223,7 +3223,7 @@ int cg_node_part_write(int G, const char * part_name, int *P)
  *
  * \brief Get number of `DiscreteData_t` nodes
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] ndiscrete Number of `DiscreteData_t` data structures under zone Z.
@@ -3251,7 +3251,7 @@ int cg_ndiscrete(int fn, int B, int Z, int *ndiscrete)
  *
  * \brief Get name of `DiscreteData_t` node
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
@@ -3281,7 +3281,7 @@ int cg_discrete_read(int fn, int B, int Z, int D, char *discrete_name)
  *
  * \brief Create a `DiscreteData_t` node
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] discrete_name Name of `DiscreteData_t` data structures.
@@ -3358,7 +3358,7 @@ int cg_discrete_write(int fn, int B, int Z,  const char * discrete_name,
  *
  * \brief Get the dimensions of `DiscreteData_t` node
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
@@ -3400,7 +3400,7 @@ int cg_discrete_size(int fn, int B, int Z, int D,
  *
  * \brief Get info about a point set `DiscreteData_t` node
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
@@ -3437,7 +3437,7 @@ int cg_discrete_ptset_info(int fn, int B, int Z, int D,
  *
  * \brief Read a point set `DiscreteData_t` node
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] D  Discrete data index number, where 1 ≤ D ≤ ndiscrete.
@@ -3473,7 +3473,7 @@ int cg_discrete_ptset_read(int fn, int B, int Z, int D, cgsize_t *pnts)
  *
  * \brief Create a point set `DiscreteData_t` node
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] discrete_name  Name of `DiscreteData_t` data structures.
@@ -3551,7 +3551,7 @@ int cg_discrete_ptset_write(int fn, int B, int Z,
  *
  * \brief Get number of `GridCoordinates_t` nodes
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] ngrids 	Number of `GridCoordinates_t` nodes for zone Z.
@@ -3580,7 +3580,7 @@ int cg_ngrids(int fn, int B, int Z, int *ngrids)
  *
  * \brief Get Name of a `GridCoordinates_t` node
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] G  \G_Grid
@@ -3611,7 +3611,7 @@ int cg_grid_read(int fn, int B, int Z, int G, char *grid_coord_name)
  *
  * \brief Create a `GridCoordinates_t` nodes
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] grid_coord_name Name of the GridCoordinates_t node. Note that the name "GridCoordinates" is reserved for the original grid and must be the first GridCoordinates_t node to be defined.
@@ -3699,7 +3699,7 @@ int cg_grid_write(int fn, int B, int Z, const char * grid_coord_name, int *G)
  *
  * \brief Get bounding box associated with a `GridCoordinates_t` node
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] G  \G_Grid
@@ -3780,7 +3780,7 @@ int cg_grid_bounding_box_read(int fn, int B, int Z, int G, CGNS_ENUMT(DataType_t
  *
  * \brief Write bounding box associated with a `GridCoordinates_t` node
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] G  \G_Grid
@@ -3855,7 +3855,7 @@ int cg_grid_bounding_box_write(int fn, int B, int Z, int G, CGNS_ENUMT(DataType_
  *
  * \brief  Get number of coordinate arrays
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] ncoords Number of coordinate arrays for zone Z.
@@ -3883,7 +3883,7 @@ int cg_ncoords(int fn, int B, int Z, int *ncoords)
  *
  * \brief  Get info about a coordinate array
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] C  \C_Coordinate 
@@ -3921,7 +3921,7 @@ int cg_coord_info(int fn, int B, int Z, int C, CGNS_ENUMT(DataType_t)  *datatype
  *
  * \brief  Read grid coordinate array
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
@@ -3973,7 +3973,7 @@ int cg_coord_read(int fn, int B, int Z, const char *coordname,
  *
  * \brief  Read subset of grid coordinates to a shaped array
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
@@ -4037,11 +4037,11 @@ int cg_coord_general_read(int fn, int B, int Z, const char *coordname,
                                   coord_ptr);
 }
 
-int cg_coord_id(int file_number, int B, int Z, int C, double *coord_id)
+int cg_coord_id(int fn, int B, int Z, int C, double *coord_id)
 {
     cgns_zcoor *zcoor;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -4064,7 +4064,7 @@ int cg_coord_id(int file_number, int B, int Z, int C, double *coord_id)
  *
  * \brief  Write grid coordinates
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] datatype Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble. 
@@ -4192,7 +4192,7 @@ int cg_coord_partial_write(int fn, int B, int Z,
  *
  * \brief  Write shaped array to a subset of grid coordinates
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
@@ -4444,7 +4444,7 @@ static int read_parent_data(cgns_section *section)
  *
  * \brief  Get number of element sections
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] nsections Number of element sections.
@@ -4473,7 +4473,7 @@ int cg_nsections(int fn, int B, int Z, int *nsections)
  *
  * \brief  Get info for an element section
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S 
@@ -4517,7 +4517,7 @@ int cg_section_read(int fn, int B, int Z, int S, char *SectionName,
  *
  * \brief  Write fixed size element data
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
@@ -4645,7 +4645,7 @@ int cg_poly_section_write(int fn, int B, int Z, const char * SectionName,
  *
  * \brief  Write subset of element data
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
@@ -4688,7 +4688,7 @@ int cg_section_partial_write(int fn, int B, int Z, const char * SectionName,
  *
  * \brief  Write section data without element data
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] type  Type of element. See the eligible types for ElementType_t in the Typedefs section.
@@ -4907,7 +4907,7 @@ int cg_section_general_write(int fn, int B, int Z, const char * SectionName,
  *
  * \brief  Initialize element data for not fixed size elements
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] S  \CONN_S 
@@ -5136,7 +5136,7 @@ int cg_section_initialize(int fn, int B, int Z, int S)
  *
  * \brief  Get size of element connectivity data array
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S 
@@ -5169,7 +5169,7 @@ int cg_ElementDataSize(int fn, int B, int Z, int S,
  *
  * \brief  Get size of element connectivity data array for partial read
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -5284,7 +5284,7 @@ int cg_ElementPartialSize(int fn, int B, int Z, int S,
  *
  * \brief  Read fixed size element data
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -5357,7 +5357,7 @@ int cg_elements_read(int fn, int B, int Z, int S, cgsize_t *elements,
  *
  * \brief  Read element data
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -5445,7 +5445,7 @@ int cg_poly_elements_read(int fn, int B, int Z, int S, cgsize_t *elements,
  *
  * \brief  Read subset of fixed size element data
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -5635,7 +5635,7 @@ int cg_elements_partial_read(int fn, int B, int Z, int S,
  *
  * \brief  Read subset of fixed size element data to a typed array
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -5775,7 +5775,7 @@ int cg_elements_general_read(int fn, int B, int Z, int S,
  *
  * \brief  Read parent info for an element section
  * 
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -5919,7 +5919,7 @@ int cg_parent_elements_general_read(int fn, int B, int Z, int S,
  *
  * \brief  Read parent position info for an element section
  * 
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -6062,7 +6062,7 @@ int cg_parent_elements_position_general_read(int fn, int B, int Z, int S,
  *
  * \brief  Read subset of element data
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -6258,7 +6258,7 @@ int cg_poly_elements_partial_read(int fn, int B, int Z, int S,
  *
  * \brief  Read subset of element data to typed arrays
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -6409,7 +6409,7 @@ int cg_poly_elements_general_read(int fn, int B, int Z, int S,
  *
  * \brief  Write element data for a fixed size element section 
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -6595,7 +6595,7 @@ int cg_elements_partial_write(int fn, int B, int Z, int S,
  *
  * \brief  Write element data for a fixed size element section
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -6910,7 +6910,7 @@ int cg_elements_general_write(int fn, int B, int Z, int S,
  *
  * \brief  Write element data for an element section
  *
- * \param[in] fn  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -6938,7 +6938,7 @@ int cg_poly_elements_partial_write(int fn, int B, int Z, int S,
  *
  * \brief  Write element data for an element section
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -7643,7 +7643,7 @@ int cg_parent_data_write(int fn, int B, int Z, int S,
  *
  * \brief  Write subset of parent info for an element section
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] S  \CONN_S
@@ -7781,7 +7781,7 @@ int cg_parent_data_partial_write(int fn, int B, int Z, int S,
  *
  * \brief  Get number of FlowSolution_t nodes 
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] nsols  Number of flow solutions for zone Z. 
@@ -7809,10 +7809,10 @@ int cg_nsols(int fn, int B, int Z, int *nsols)
  *
  * \brief  Get information about a FlowSolution_t node
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] S  \SOL_S
  * \param[out] solname  Name of the flow solution.
  * \param[out] location  Grid location where the solution is recorded. The current admissible locations are Vertex, CellCenter, IFaceCenter, JFaceCenter, and KFaceCenter.
  * \return \ier
@@ -7836,11 +7836,11 @@ int cg_sol_info(int fn, int B, int Z, int S, char *solname,
     return CG_OK;
 }
 
-int cg_sol_id(int file_number, int B, int Z, int S, double *sol_id)
+int cg_sol_id(int fn, int B, int Z, int S, double *sol_id)
 {
     cgns_sol *sol;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -7857,12 +7857,12 @@ int cg_sol_id(int file_number, int B, int Z, int S, double *sol_id)
  *
  * \brief  Create and/or write to a FlowSolution_t node
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] solname  Name of the flow solution.
  * \param[in] location  Grid location where the solution is recorded. The current admissible locations are Vertex, CellCenter, IFaceCenter, JFaceCenter, and KFaceCenter.
- * \param[out] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[out] S  \SOL_S
  * \return \ier
  *
  */
@@ -7969,10 +7969,10 @@ int cg_sol_write(int fn, int B, int Z, const char * solname,
  *
  * \brief  Get the dimensions of a FlowSolution_t node 
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] S  \SOL_S
  * \param[out] data_dim  Number of dimensions defining the solution data. If a point set has been defined, this will be 1, otherwise this will be the current zone index dimension.
  * \param[out] dim_vals The array of data_dim dimensions for the solution data. 
  * \return \ier
@@ -8010,10 +8010,10 @@ int cg_sol_size(int fn, int B, int Z, int S,
  *
  * \brief  Get info about a point set FlowSolution_t node 
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] S  \SOL_S
  * \param[out] ptset_type Type of point set defining the interface in the current solution; either PointRange or PointList. 
  * \param[out] npnts Number of points defining the interface in the current solution. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList. 
  * \return \ier
@@ -8047,10 +8047,10 @@ int cg_sol_ptset_info(int fn, int B, int Z, int S,
  *
  * \brief  Read a point set FlowSolution_t node 
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] S  \SOL_S
  * \param[out] pnts  Array of points defining the interface in the current solution.  
  * \return \ier
  *
@@ -8083,7 +8083,7 @@ int cg_sol_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
  *
  * \brief  Create a point set FlowSolution_t node 
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] solname  Name of the flow solution.
@@ -8091,7 +8091,7 @@ int cg_sol_ptset_read(int fn, int B, int Z, int S, cgsize_t *pnts)
  * \param[in] ptset_type  Type of point set defining the interface in the current solution; either PointRange or PointList. 
  * \param[in] npnts  Number of points defining the interface in the current solution. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList.
  * \param[in] pnts  Array of points defining the interface in the current solution.
- * \param[out] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[out] S  \SOL_S
  * \return \ier
  *
  */
@@ -8160,10 +8160,10 @@ int cg_sol_ptset_write(int fn, int B, int Z, const char *solname,
  *
  * \brief  Get number of flow solution arrays
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] S  \SOL_S
  * \param[out] nfields  Number of data arrays in flow solution S.
  * \return \ier
  *
@@ -8189,10 +8189,10 @@ int cg_nfields(int fn, int B, int Z, int S, int *nfields)
  *
  * \brief  Get info about a flow solution array
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] S  \SOL_S
  * \param[in] F  Solution array index number, where 1 ≤ F ≤ nfields.
  * \param[out] datatype  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble. 
  * \param[out] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
@@ -8223,10 +8223,10 @@ int cg_field_info(int fn, int B, int Z, int S, int F,
  *
  * \brief  Read flow solution
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] S  \SOL_S
  * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
  * \param[in] mem_datatype  Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.  
  * \param[in] s_rmin  Lower range index in file (eg., imin, jmin, kmin).
@@ -8281,10 +8281,10 @@ int cg_field_read(int fn, int B, int Z, int S, const char *fieldname,
  *
  * \brief  Read subset of flow solution to a shaped array
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] S  \SOL_S
  * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
  * \param[in] s_rmin  Lower range index in file (eg., imin, jmin, kmin).
  * \param[in] s_rmax  Upper range index in file (eg., imax, jmax, kmax).
@@ -8350,11 +8350,11 @@ int cg_field_general_read(int fn, int B, int Z, int S, const char *fieldname,
                                   field_ptr);
 }
 
-int cg_field_id(int file_number, int B, int Z, int S, int F, double *field_id)
+int cg_field_id(int fn, int B, int Z, int S, int F, double *field_id)
 {
     cgns_array *field;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -8371,14 +8371,14 @@ int cg_field_id(int file_number, int B, int Z, int S, int F, double *field_id)
  *
  * \brief  Write flow solution
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] S  \SOL_S
  * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
  * \param[in] type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble. 
  * \param[in] field_ptr  Array of solution values.
- * \param[out] F Solution array index number, where 1 ≤ F ≤ nfields.
+ * \param[out] F \SOL_F
  * \return \ier
  *
  */
@@ -8451,16 +8451,16 @@ int cg_field_write(int fn, int B, int Z, int S,
  *
  * \brief  Write subset of flow solution
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] S  \SOL_S
  * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
  * \param[in] type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble. 
  * \param[in] s_rmin  Lower range index in file (eg., imin, jmin, kmin).
  * \param[in] s_rmax  Upper range index in file (eg., imax, jmax, kmax).
  * \param[in] field_ptr  Array of solution values.
- * \param[out] F Solution array index number, where 1 ≤ F ≤ nfields.
+ * \param[out] F \SOL_F
  * \return \ier
  *
  */
@@ -8524,7 +8524,7 @@ int cg_field_partial_write(int fn, int B, int Z, int S,
  * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
- * \param[in] S  Flow solution index number, where 1 ≤ S ≤ nsols.
+ * \param[in] S  \SOL_S
  * \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to insure file compatibility.
  * \param[in] s_type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble. 
  * \param[in] s_rmin  Lower range index in file (eg., imin, jmin, kmin).
@@ -8536,7 +8536,7 @@ int cg_field_partial_write(int fn, int B, int Z, int S,
  * \param[in] m_rmin  Lower range index in memory (eg., imin, jmin, kmin). 
  * \param[in] m_rmax  Upper range index in memory (eg., imax, jmax, kmax).
  * \param[in] field_ptr  Array of solution values.
- * \param[out] F Solution array index number, where 1 ≤ F ≤ nfields.
+ * \param[out] F \SOL_F
  * \return \ier
  *
  */
@@ -8617,7 +8617,7 @@ int cg_field_general_write(int fn, int B, int Z, int S, const char *fieldname,
  *
  * \brief  Get number of ZoneSubRegion_t nodes
  *
- * \param[in] fn   \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] nsubregs  Number of ZoneSubRegion_t nodes under Zone Z.
@@ -9242,18 +9242,18 @@ int cg_zconn_set(int fn, int B, int Z, int ZC)
  *
  * \brief  Get number of overset holes in a zone
  *
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] nholes  Number of overset holes in zone Z.
  * \return \ier
  *
  */
-int cg_nholes(int file_number, int B, int Z, int *nholes)
+int cg_nholes(int fn, int B, int Z, int *nholes)
 {
     cgns_zconn *zconn;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9269,7 +9269,7 @@ int cg_nholes(int file_number, int B, int Z, int *nholes)
  *
  * \brief  Get info about an overset hole
  *
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] J  Overset hole index number, where 1 ≤ J ≤ nholes. 
@@ -9281,14 +9281,14 @@ int cg_nholes(int file_number, int B, int Z, int *nholes)
  * \return \ier
  *
  */
-int cg_hole_info(int file_number, int B, int Z, int J, char *holename,
+int cg_hole_info(int fn, int B, int Z, int J, char *holename,
          CGNS_ENUMT(GridLocation_t) *location,
                  CGNS_ENUMT(PointSetType_t) *ptset_type, int *nptsets,
                  cgsize_t *npnts)
 {
     cgns_hole *hole;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9311,7 +9311,7 @@ int cg_hole_info(int file_number, int B, int Z, int J, char *holename,
  *
  * \brief  Read overset hole data
  *
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] J  Overset hole index number, where 1 ≤ J ≤ nholes. 
@@ -9319,12 +9319,12 @@ int cg_hole_info(int file_number, int B, int Z, int J, char *holename,
  * \return \ier
  *
  */
-int cg_hole_read(int file_number, int B, int Z, int J, cgsize_t *pnts)
+int cg_hole_read(int fn, int B, int Z, int J, cgsize_t *pnts)
 {
     cgns_hole *hole;
     int set, index_dim;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9365,11 +9365,11 @@ int cg_hole_read(int file_number, int B, int Z, int J, cgsize_t *pnts)
     return CG_OK;
 }
 
-int cg_hole_id(int file_number, int B, int Z, int J, double *hole_id)
+int cg_hole_id(int fn, int B, int Z, int J, double *hole_id)
 {
     cgns_hole *hole;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9386,7 +9386,7 @@ int cg_hole_id(int file_number, int B, int Z, int J, double *hole_id)
  *
  * \brief   Write overset hole data
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] holename  Name of the overset hole. 
@@ -9399,7 +9399,7 @@ int cg_hole_id(int file_number, int B, int Z, int J, double *hole_id)
  * \return \ier
  *
  */
-int cg_hole_write(int file_number, int B, int Z, const char * holename,
+int cg_hole_write(int fn, int B, int Z, const char * holename,
           CGNS_ENUMT(GridLocation_t) location,
           CGNS_ENUMT(PointSetType_t) ptset_type,
           int nptsets, cgsize_t npnts, const cgsize_t * pnts, int *J)
@@ -9433,7 +9433,7 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
         return CG_ERROR;
     }
      /* get memory address for file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -9567,18 +9567,18 @@ int cg_hole_write(int file_number, int B, int Z, const char * holename,
  *
  * \brief  Get number of generalized connectivity interfaces in a zone
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] nconns  Number of interfaces for zone Z.
  * \return \ier
  *
  */
-int cg_nconns(int file_number, int B, int Z, int *nconns)
+int cg_nconns(int fn, int B, int Z, int *nconns)
 {
     cgns_zconn *zconn;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9594,7 +9594,7 @@ int cg_nconns(int file_number, int B, int Z, int *nconns)
  *
  * \brief  Get info about a generalized connectivity interface 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] J  Interface index number, where 1 ≤ J ≤ nconns.
@@ -9615,7 +9615,7 @@ int cg_nconns(int file_number, int B, int Z, int *nconns)
  *  and to be able to read old files
  *
  */
-int cg_conn_info(int file_number, int B, int Z, int J, char *connectname,
+int cg_conn_info(int fn, int B, int Z, int J, char *connectname,
          CGNS_ENUMT(GridLocation_t) *location,
                  CGNS_ENUMT(GridConnectivityType_t) *connect_type,
          CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts,
@@ -9628,7 +9628,7 @@ int cg_conn_info(int file_number, int B, int Z, int J, char *connectname,
     char_33 basedonorname, zonedonorname;
     char *separator;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9691,7 +9691,7 @@ int cg_conn_info(int file_number, int B, int Z, int J, char *connectname,
  *
  * \brief  Read generalized connectivity data
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] J  Interface index number, where 1 ≤ J ≤ nconns.
@@ -9704,7 +9704,7 @@ int cg_conn_info(int file_number, int B, int Z, int J, char *connectname,
  *  it's always I4.  However this arg. is left for backward compatibility of API
  *  and to be able to read old files
  */
-int cg_conn_read(int file_number, int B, int Z, int J, cgsize_t *pnts,
+int cg_conn_read(int fn, int B, int Z, int J, cgsize_t *pnts,
                  CGNS_ENUMT(DataType_t) donor_datatype, cgsize_t *donor_data)
 {
     cgns_conn *conn;
@@ -9720,7 +9720,7 @@ int cg_conn_read(int file_number, int B, int Z, int J, cgsize_t *pnts,
 #endif
 
      /* Find address */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9773,7 +9773,7 @@ int cg_conn_read(int file_number, int B, int Z, int J, cgsize_t *pnts,
  *
  * \brief  Read generalized connectivity data without donor information
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] J  Interface index number, where 1 ≤ J ≤ nconns.
@@ -9781,16 +9781,16 @@ int cg_conn_read(int file_number, int B, int Z, int J, cgsize_t *pnts,
  * \return \ier
  *
  */
-int cg_conn_read_short(int file_number, int B, int Z, int J, cgsize_t *pnts)
+int cg_conn_read_short(int fn, int B, int Z, int J, cgsize_t *pnts)
 {
-    return cg_conn_read(file_number, B, Z, J, pnts, CGNS_ENUMV(DataTypeNull), NULL);
+    return cg_conn_read(fn, B, Z, J, pnts, CGNS_ENUMV(DataTypeNull), NULL);
 }
 
-int cg_conn_id(int file_number, int B, int Z, int J, double *conn_id)
+int cg_conn_id(int fn, int B, int Z, int J, double *conn_id)
 {
     cgns_conn *conn;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -9807,7 +9807,7 @@ int cg_conn_id(int file_number, int B, int Z, int J, double *conn_id)
  *
  * \brief  Write generalized connectivity data 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] connectname  Name of the interface.
@@ -9826,7 +9826,7 @@ int cg_conn_id(int file_number, int B, int Z, int J, double *conn_id)
  * \return \ier
  *
  */
-int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
+int cg_conn_write(int fn, int B, int Z,  const char * connectname,
           CGNS_ENUMT(GridLocation_t) location,
           CGNS_ENUMT(GridConnectivityType_t) connect_type,
           CGNS_ENUMT(PointSetType_t) ptset_type,
@@ -9919,7 +9919,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
     }
 
      /* get memory address of file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -10118,7 +10118,7 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
  *
  * \brief  Write generalized connectivity data without donor information
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] connectname  Name of the interface.
@@ -10132,14 +10132,14 @@ int cg_conn_write(int file_number, int B, int Z,  const char * connectname,
  * \return \ier
  *
  */
-int cg_conn_write_short(int file_number, int B, int Z,  const char * connectname,
+int cg_conn_write_short(int fn, int B, int Z,  const char * connectname,
                         CGNS_ENUMT(GridLocation_t) location,
                         CGNS_ENUMT(GridConnectivityType_t) connect_type,
                         CGNS_ENUMT(PointSetType_t) ptset_type,
                         cgsize_t npnts, const cgsize_t * pnts,
                         const char * donorname, int *J)
 {
-    return cg_conn_write (file_number, B, Z,  connectname, location,
+    return cg_conn_write (fn, B, Z,  connectname, location,
               connect_type, ptset_type, npnts, pnts, donorname,
               CGNS_ENUMV(ZoneTypeNull), CGNS_ENUMV(PointSetTypeNull),
                           CGNS_ENUMV(DataTypeNull), 0, NULL, J);
@@ -10154,18 +10154,18 @@ int cg_conn_write_short(int file_number, int B, int Z,  const char * connectname
  *
  * \brief  Get number of 1-to-1 interfaces in a zone
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] n1to1  Number of one-to-one interfaces in zone Z, stored under GridConnectivity1to1_t nodes. (I.e., this does not include one-to-one interfaces that may be stored under GridConnectivity_t nodes, used for generalized zone interfaces.)
  * \return \ier
  *
  */
-int cg_n1to1(int file_number, int B, int Z, int *n1to1)
+int cg_n1to1(int fn, int B, int Z, int *n1to1)
 {
     cgns_zconn *zconn;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -10181,13 +10181,13 @@ int cg_n1to1(int file_number, int B, int Z, int *n1to1)
  *
  * \brief  Get total number of 1-to-1 interfaces in a database
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] n1to1_global  Total number of one-to-one interfaces in base B, stored under GridConnectivity1to1_t nodes. (I.e., this does not include one-to-one interfaces that may be stored under GridConnectivity_t nodes, used for generalized zone interfaces.) Note that the function cg_n1to1 (described below) may be used to get the number of one-to-one interfaces in a specific zone.
  * \return \ier
  *
  */
-int cg_n1to1_global(int file_number, int B, int *n1to1_global)
+int cg_n1to1_global(int fn, int B, int *n1to1_global)
 {
     cgns_base *base;
     cgns_zone *zone;
@@ -10202,7 +10202,7 @@ int cg_n1to1_global(int file_number, int B, int *n1to1_global)
     cgsize6_t *Drange = 0, *Ddonor_range = 0;
     int index_dim;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -10219,7 +10219,7 @@ int cg_n1to1_global(int file_number, int B, int *n1to1_global)
         if (zconn==0) continue; /* if ZoneGridConnectivity_t is undefined */
         if (zconn->n1to1 ==0) continue;
         for (J=1; J<=zconn->n1to1; J++) {
-            if (cg_1to1_read(file_number, B, Z, J, connectname, donorname,
+            if (cg_1to1_read(fn, B, Z, J, connectname, donorname,
                          range, donor_range, transform)) return CG_ERROR;
             if (cgi_zone_no(base, donorname, &D)) return CG_ERROR;
 
@@ -10248,7 +10248,7 @@ int cg_n1to1_global(int file_number, int B, int *n1to1_global)
  *
  * \brief  Read 1-to-1 connectivity data for a zone 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] J  Interface index number, where 1 ≤ J ≤ n1to1.
@@ -10260,7 +10260,7 @@ int cg_n1to1_global(int file_number, int B, int *n1to1_global)
  * \return \ier
  *
  */
-int cg_1to1_read(int file_number, int B, int Z, int J, char *connectname,
+int cg_1to1_read(int fn, int B, int Z, int J, char *connectname,
                  char *donorname, cgsize_t *range, cgsize_t *donor_range,
                  int *transform)
 {
@@ -10272,7 +10272,7 @@ int cg_1to1_read(int file_number, int B, int Z, int J, char *connectname,
    in 3D, range[0], range[1], range[2] = imin, jmin, kmin
       range[3], range[4], range[5] = imax, jmax, kmax
  */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -10312,7 +10312,7 @@ int cg_1to1_read(int file_number, int B, int Z, int J, char *connectname,
  *
  * \brief  Read data for all 1-to-1 interfaces in a database
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[out] connectname  Name of the interface.
  * \param[out] zonename  Name of the first zone, for all one-to-one interfaces in base B.
@@ -10323,7 +10323,7 @@ int cg_1to1_read(int file_number, int B, int Z, int J, char *connectname,
  * \return \ier
  *
  */
-int cg_1to1_read_global(int file_number, int B, char **connectname, char **zonename,
+int cg_1to1_read_global(int fn, int B, char **connectname, char **zonename,
                         char **donorname, cgsize_t **range, cgsize_t **donor_range,
                         int **transform)
 {
@@ -10339,7 +10339,7 @@ int cg_1to1_read_global(int file_number, int B, char **connectname, char **zonen
     char_33 *Dzonename = 0;
     cgsize6_t *Drange = 0, *Ddonor_range = 0;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -10358,7 +10358,7 @@ int cg_1to1_read_global(int file_number, int B, char **connectname, char **zonen
         if (zconn==0) continue; /* if ZoneGridConnectivity_t is undefined */
         if (zconn->n1to1 ==0) continue;
         for (J=1; J<=zconn->n1to1; J++) {
-            if (cg_1to1_read(file_number, B, Z, J, connect, donor, rang,
+            if (cg_1to1_read(fn, B, Z, J, connect, donor, rang,
                 drang, trans)) return CG_ERROR;
             if (cgi_zone_no(base, donor, &D)) return CG_ERROR;
              /* count each interface only once */
@@ -10384,11 +10384,11 @@ int cg_1to1_read_global(int file_number, int B, char **connectname, char **zonen
     return CG_OK;
 }
 
-int cg_1to1_id(int file_number, int B, int Z, int J, double *one21_id)
+int cg_1to1_id(int fn, int B, int Z, int J, double *one21_id)
 {
     cgns_1to1 *one21;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -10405,7 +10405,7 @@ int cg_1to1_id(int file_number, int B, int Z, int J, double *one21_id)
  *
  * \brief  Write 1-to-1 connectivity data for a zone
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] connectname  Name of the interface.
@@ -10417,7 +10417,7 @@ int cg_1to1_id(int file_number, int B, int Z, int J, double *one21_id)
  * \return \ier
  *
  */
-int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
+int cg_1to1_write(int fn, int B, int Z, const char * connectname,
           const char * donorname, const cgsize_t * range,
           const cgsize_t * donor_range, const int * transform, int *J)
 {
@@ -10437,7 +10437,7 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
 #endif
 
      /* get memory address of file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -10584,18 +10584,18 @@ int cg_1to1_write(int file_number, int B, int Z, const char * connectname,
  *
  * \brief  Get number of boundary condition in zone
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] nbocos  Number of boundary conditions in zone Z.
  * \return \ier
  *
  */
-int cg_nbocos(int file_number, int B, int Z, int *nbocos)
+int cg_nbocos(int fn, int B, int Z, int *nbocos)
 {
     cgns_zboco *zboco;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -10611,7 +10611,7 @@ int cg_nbocos(int file_number, int B, int Z, int *nbocos)
  *
  * \brief  Get boundary condition info
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
@@ -10626,7 +10626,7 @@ int cg_nbocos(int file_number, int B, int Z, int *nbocos)
  * \return \ier
  *
  */
-int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
+int cg_boco_info(int fn, int B, int Z, int BC, char *boconame,
                  CGNS_ENUMT(BCType_t) *bocotype, CGNS_ENUMT(PointSetType_t) *ptset_type,
                  cgsize_t *npnts, int *NormalIndex, cgsize_t *NormalListSize,
                  CGNS_ENUMT(DataType_t) *NormalDataType, int *ndataset)
@@ -10634,7 +10634,7 @@ int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
     cgns_boco *boco;
     int n, index_dim;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -10680,7 +10680,7 @@ int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
  *
  * \brief  Read boundary condition data and normals
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
@@ -10689,12 +10689,12 @@ int cg_boco_info(int file_number, int B, int Z, int BC, char *boconame,
  * \return \ier
  *
  */
-int cg_boco_read(int file_number, int B, int Z, int BC, cgsize_t *pnts, void *NormalList)
+int cg_boco_read(int fn, int B, int Z, int BC, cgsize_t *pnts, void *NormalList)
 {
     cgns_boco *boco;
     int dim = 0;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -10704,7 +10704,7 @@ int cg_boco_read(int file_number, int B, int Z, int BC, cgsize_t *pnts, void *No
 
      /* Read point-set directly from ADF-file */
     if (boco->ptset && boco->ptset->npts > 0) {
-        cg_index_dim(file_number, B, Z, &dim);
+        cg_index_dim(fn, B, Z, &dim);
         if (cgi_read_int_data(boco->ptset->id, boco->ptset->data_type,
                 boco->ptset->npts * dim, pnts)) return CG_ERROR;
     } else {
@@ -10722,11 +10722,11 @@ int cg_boco_read(int file_number, int B, int Z, int BC, cgsize_t *pnts, void *No
     return CG_OK;
 }
 
-int cg_boco_id(int file_number, int B, int Z, int BC, double *boco_id)
+int cg_boco_id(int fn, int B, int Z, int BC, double *boco_id)
 {
     cgns_boco *boco;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -10743,7 +10743,7 @@ int cg_boco_id(int file_number, int B, int Z, int BC, double *boco_id)
  *
  * \brief  Read boundary condition location
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
@@ -10751,12 +10751,12 @@ int cg_boco_id(int file_number, int B, int Z, int BC, double *boco_id)
  * \return \ier
  *
  */
-int cg_boco_gridlocation_read(int file_number, int B, int Z,
+int cg_boco_gridlocation_read(int fn, int B, int Z,
     int BC, CGNS_ENUMT(GridLocation_t) *location)
 {
     cgns_boco *boco;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -10773,7 +10773,7 @@ int cg_boco_gridlocation_read(int file_number, int B, int Z,
  *
  * \brief   Write boundary condition type and data
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone
  * \param[in] boconame  Name of the boundary condition.
@@ -10785,7 +10785,7 @@ int cg_boco_gridlocation_read(int file_number, int B, int Z,
  * \return \ier
  *
  */
-int cg_boco_write(int file_number, int B, int Z, const char * boconame,
+int cg_boco_write(int fn, int B, int Z, const char * boconame,
           CGNS_ENUMT(BCType_t) bocotype,
           CGNS_ENUMT(PointSetType_t) ptset_type,
           cgsize_t npnts, const cgsize_t * pnts, int *BC)
@@ -10799,7 +10799,7 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
     cgsize_t length;
 
      /* get memory address of file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
@@ -10965,7 +10965,7 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
  *
  * \brief  Write boundary condition location
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
@@ -10973,14 +10973,14 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
  * \return \ier
  *
  */
-int cg_boco_gridlocation_write(int file_number, int B, int Z,
+int cg_boco_gridlocation_write(int fn, int B, int Z,
     int BC, CGNS_ENUMT(GridLocation_t) location)
 {
     cgns_boco *boco;
     cgsize_t dim_vals;
     double dummy_id;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -11010,7 +11010,7 @@ int cg_boco_gridlocation_write(int file_number, int B, int Z,
  *
  * \brief  Write boundary condition normals 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
@@ -11021,7 +11021,7 @@ int cg_boco_gridlocation_write(int file_number, int B, int Z,
  * \return \ier
  *
  */
-int cg_boco_normal_write(int file_number, int B, int Z, int BC, const int * NormalIndex,
+int cg_boco_normal_write(int fn, int B, int Z, int BC, const int * NormalIndex,
              int NormalListFlag, CGNS_ENUMT(DataType_t) NormalDataType,
              const void * NormalList)
 {
@@ -11030,7 +11030,7 @@ int cg_boco_normal_write(int file_number, int B, int Z, int BC, const int * Norm
     cgsize_t npnts, index_dim;
 
      /* get memory address of file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -11109,7 +11109,7 @@ int cg_boco_normal_write(int file_number, int B, int Z, int BC, const int * Norm
  *
  * \brief  Read boundary condition dataset info 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
@@ -11121,13 +11121,13 @@ int cg_boco_normal_write(int file_number, int B, int Z, int BC, const int * Norm
  * \return \ier
  *
  */
-int cg_dataset_read(int file_number, int B, int Z, int BC, int DSet, char *DatasetName,
+int cg_dataset_read(int fn, int B, int Z, int BC, int DSet, char *DatasetName,
             CGNS_ENUMT(BCType_t) *BCType, int *DirichletFlag,
             int *NeumannFlag)
 {
     cgns_dataset *dataset;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -11150,7 +11150,7 @@ int cg_dataset_read(int file_number, int B, int Z, int BC, int DSet, char *Datas
  *
  * \brief  Write boundary condition dataset info
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
@@ -11160,7 +11160,7 @@ int cg_dataset_read(int file_number, int B, int Z, int BC, int DSet, char *Datas
  * \return \ier
  *
  */
-int cg_dataset_write(int file_number, int B, int Z, int BC, const char * DatasetName,
+int cg_dataset_write(int fn, int B, int Z, int BC, const char * DatasetName,
              CGNS_ENUMT( BCType_t )  BCType, int *Dset)
 {
     cgns_boco *boco;
@@ -11176,7 +11176,7 @@ int cg_dataset_write(int file_number, int B, int Z, int BC, const char * Dataset
     if (cgi_check_strlen(DatasetName)) return CG_ERROR;
 
      /* get memory address of file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -11238,7 +11238,7 @@ int cg_dataset_write(int file_number, int B, int Z, int BC, const char * Dataset
  *
  * \brief  Write boundary condition data  
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
@@ -11249,7 +11249,7 @@ int cg_dataset_write(int file_number, int B, int Z, int BC, const char * Dataset
  * \details  To write the boundary condition data itself, after creating the BCData_t node using the function cg_bcdata_write, use cg_goto to access the node, then cg_array_write to write the data. Note that when using cg_goto to access a BCData_t node, the node index should be specified as either Dirichlet or Neumann, depending on the type of boundary condition. See the description of cg_goto for details.
  *
  */
-int cg_bcdata_write(int file_number, int B, int Z, int BC, int Dset,
+int cg_bcdata_write(int fn, int B, int Z, int BC, int Dset,
             CGNS_ENUMT(BCDataType_t) BCDataType)
 {
     cgns_dataset *dataset;
@@ -11262,7 +11262,7 @@ int cg_bcdata_write(int file_number, int B, int Z, int BC, int Dset,
     }
 
      /* get memory address of file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -11318,18 +11318,18 @@ int cg_bcdata_write(int file_number, int B, int Z, int BC, int Dset,
  *
  * \brief  Get number of RigidGridMotion_t nodes
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] n_rigid_motions  Number of RigidGridMotion_t nodes under zone Z. 
  * \return \ier
  *
  */
-int cg_n_rigid_motions(int file_number, int B, int Z, int *n_rigid_motions)
+int cg_n_rigid_motions(int fn, int B, int Z, int *n_rigid_motions)
 {
     cgns_zone *zone;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -11347,7 +11347,7 @@ int cg_n_rigid_motions(int file_number, int B, int Z, int *n_rigid_motions)
  *
  * \brief  Read RigidGridMotion_t node
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] R  Rigid rotation index number, where 1 ≤ R ≤ n_rigid_motions. 
@@ -11356,13 +11356,13 @@ int cg_n_rigid_motions(int file_number, int B, int Z, int *n_rigid_motions)
  * \return \ier
  *
  */
-int cg_rigid_motion_read(int file_number, int B, int Z, int R, char *name,
+int cg_rigid_motion_read(int fn, int B, int Z, int R, char *name,
              CGNS_ENUMT(RigidGridMotionType_t) *type)
 {
 
     cgns_rmotion *rmotion;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -11381,7 +11381,7 @@ int cg_rigid_motion_read(int file_number, int B, int Z, int R, char *name,
  *
  * \brief  Create RigidGridMotion_t node
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] rmotionname  Name of the RigidGridMotion_t node.
@@ -11390,7 +11390,7 @@ int cg_rigid_motion_read(int file_number, int B, int Z, int R, char *name,
  * \return \ier
  *
  */
-int cg_rigid_motion_write(int file_number, int B, int Z, const char * rmotionname,
+int cg_rigid_motion_write(int fn, int B, int Z, const char * rmotionname,
               CGNS_ENUMT(RigidGridMotionType_t) type, int *R)
 {
     cgns_zone *zone;
@@ -11407,7 +11407,7 @@ int cg_rigid_motion_write(int file_number, int B, int Z, const char * rmotionnam
     }
 
      /* get memory address for RigidGridMotion_t node */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -11470,18 +11470,18 @@ int cg_rigid_motion_write(int file_number, int B, int Z, const char * rmotionnam
  *
  * \brief  Get number of ArbitraryGridMotion_t nodes
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[out] n_arbitrary_motions  Number of ArbitraryGridMotion_t nodes under zone Z.
  * \return \ier
  *
  */
-int cg_n_arbitrary_motions(int file_number, int B, int Z, int *n_arbitrary_motions)
+int cg_n_arbitrary_motions(int fn, int B, int Z, int *n_arbitrary_motions)
 {
     cgns_zone *zone;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -11499,7 +11499,7 @@ int cg_n_arbitrary_motions(int file_number, int B, int Z, int *n_arbitrary_motio
  *
  * \brief  Read ArbitraryGridMotion_t node 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] A  Arbitrary grid motion index number, where 1 ≤ A ≤ n_arbitrary_motions.
@@ -11508,13 +11508,13 @@ int cg_n_arbitrary_motions(int file_number, int B, int Z, int *n_arbitrary_motio
  * \return \ier
  *
  */
-int cg_arbitrary_motion_read(int file_number, int B, int Z, int A, char *name,
+int cg_arbitrary_motion_read(int fn, int B, int Z, int A, char *name,
                  CGNS_ENUMT(ArbitraryGridMotionType_t) *type)
 {
 
     cgns_amotion *amotion;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -11533,7 +11533,7 @@ int cg_arbitrary_motion_read(int file_number, int B, int Z, int A, char *name,
  *
  * \brief  Write ArbitraryGridMotion_t node 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] Z  \Z_Zone
  * \param[in] amotionname  Name of the ArbitraryGridMotion_t node.
@@ -11542,7 +11542,7 @@ int cg_arbitrary_motion_read(int file_number, int B, int Z, int A, char *name,
  * \return \ier
  *
  */
-int cg_arbitrary_motion_write(int file_number, int B, int Z, const char * amotionname,
+int cg_arbitrary_motion_write(int fn, int B, int Z, const char * amotionname,
                   CGNS_ENUMT(ArbitraryGridMotionType_t) type, int *A)
 {
     cgns_zone *zone;
@@ -11559,7 +11559,7 @@ int cg_arbitrary_motion_write(int file_number, int B, int Z, const char * amotio
     }
 
      /* get memory address for ArbitraryGridMotion_t node */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -11622,17 +11622,17 @@ int cg_arbitrary_motion_write(int file_number, int B, int Z, const char * amotio
  *
  * \brief  Read simulation type
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[out] SimulationType  Type of simulation. Valid types are CG_Null, CG_UserDefined, TimeAccurate, and NonTimeAccurate.
  * \return \ier
  *
  */
-int cg_simulation_type_read(int file_number, int B, CGNS_ENUMT(SimulationType_t) *SimulationType)
+int cg_simulation_type_read(int fn, int B, CGNS_ENUMT(SimulationType_t) *SimulationType)
 {
     cgns_base *base;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -11650,13 +11650,13 @@ int cg_simulation_type_read(int file_number, int B, CGNS_ENUMT(SimulationType_t)
  *
  * \brief  Write simulation type
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] SimulationType  Type of simulation. Valid types are CG_Null, CG_UserDefined, TimeAccurate, and NonTimeAccurate.
  * \return \ier
  *
  */
-int cg_simulation_type_write(int file_number, int B, CGNS_ENUMT(SimulationType_t) SimulationType)
+int cg_simulation_type_write(int fn, int B, CGNS_ENUMT(SimulationType_t) SimulationType)
 {
     cgns_base *base;
     cgsize_t length;
@@ -11668,7 +11668,7 @@ int cg_simulation_type_write(int file_number, int B, CGNS_ENUMT(SimulationType_t
     }
 
      /* get memory address for file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -11707,18 +11707,18 @@ int cg_simulation_type_write(int file_number, int B, CGNS_ENUMT(SimulationType_t
  *
  * \brief  Read BaseIterativeData_t node 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[out] bitername  Name of the BaseIterativeData_t node.
  * \param[out] nsteps Number of time steps or iterations.
  * \return \ier
  *
  */
-int cg_biter_read(int file_number, int B, char *bitername, int *nsteps)
+int cg_biter_read(int fn, int B, char *bitername, int *nsteps)
 {
     cgns_biter *biter;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -11737,14 +11737,14 @@ int cg_biter_read(int file_number, int B, char *bitername, int *nsteps)
  *
  * \brief  Write BaseIterativeData_t node 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base 
  * \param[in] bitername  Name of the BaseIterativeData_t node.
  * \param[in] nsteps Number of time steps or iterations.
  * \return \ier
  *
  */
-int cg_biter_write(int file_number, int B,  const char * bitername, int nsteps)
+int cg_biter_write(int fn, int B,  const char * bitername, int nsteps)
 {
     cgns_base *base;
     cgns_biter *biter;
@@ -11757,7 +11757,7 @@ int cg_biter_write(int file_number, int B,  const char * bitername, int nsteps)
     }
 
      /* get memory address for BaseIterativeData_t node */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -11806,18 +11806,18 @@ int cg_biter_write(int file_number, int B,  const char * bitername, int nsteps)
  *
  * \brief  Read ZontIterativeData_t node 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone
  * \param[out] zitername  Name of the ZoneIterativeData_t node.
  * \return \ier
  *
  */
-int cg_ziter_read(int file_number, int B, int Z, char *zitername)
+int cg_ziter_read(int fn, int B, int Z, char *zitername)
 {
     cgns_ziter *ziter;
 
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -11835,14 +11835,14 @@ int cg_ziter_read(int file_number, int B, int Z, char *zitername)
  *
  * \brief  Write ZontIterativeData_t node 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone
  * \param[in] zitername  Name of the ZoneIterativeData_t node.
  * \return \ier
  *
  */
-int cg_ziter_write(int file_number, int B, int Z, const char * zitername)
+int cg_ziter_write(int fn, int B, int Z, const char * zitername)
 {
     cgns_zone *zone;
     cgns_ziter *ziter;
@@ -11851,7 +11851,7 @@ int cg_ziter_write(int file_number, int B, int Z, const char * zitername)
     if (cgi_check_strlen(zitername)) return CG_ERROR;
 
      /* get memory address for ZoneIterativeData_t node */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -11897,19 +11897,19 @@ int cg_ziter_write(int file_number, int B, int Z, const char * zitername)
  *
  * \brief  Read Gravity_t node 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] gravity_vector  Components of the gravity vector. The number of components must equal PhysicalDimension. (In Fortran, this is an array of Real*4 values.)
  * \return \ier
  *
  */
-int cg_gravity_read(int file_number, int B, float *gravity_vector)
+int cg_gravity_read(int fn, int B, float *gravity_vector)
 {
     cgns_base *base;
     cgns_gravity *gravity;
 
      /* get memory address for file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -11931,19 +11931,19 @@ int cg_gravity_read(int file_number, int B, float *gravity_vector)
  *
  * \brief  Write Gravity_t node 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] gravity_vector  Components of the gravity vector. The number of components must equal PhysicalDimension. (In Fortran, this is an array of Real*4 values.)
  * \return \ier
  *
  */
-int cg_gravity_write(int file_number, int B, float const *gravity_vector)
+int cg_gravity_write(int fn, int B, float const *gravity_vector)
 {
     cgns_base *base;
     cgns_gravity *gravity;
 
      /* get memory address for file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -11998,7 +11998,7 @@ int cg_gravity_write(int file_number, int B, float const *gravity_vector)
  *
  * \brief  Read Axisymmetry_t node 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[out] ref_point  Origin used for defining the axis of rotation. (In Fortran, this is an array of Real*4 values.)
  * \param[out] axis Direction cosines of the axis of rotation, through the reference point. (In Fortran, this is an array of Real*4 values.)
@@ -12007,14 +12007,14 @@ int cg_gravity_write(int file_number, int B, float const *gravity_vector)
  * \details  This node can only be used for a bi-dimensional model, i.e., PhysicalDimension must equal two.
  *
  */
-int cg_axisym_read(int file_number, int B, float *ref_point, float *axis)
+int cg_axisym_read(int fn, int B, float *ref_point, float *axis)
 {
     int n;
     cgns_base *base;
     cgns_axisym *axisym;
 
      /* get memory address for file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -12041,7 +12041,7 @@ int cg_axisym_read(int file_number, int B, float *ref_point, float *axis)
  *
  * \brief  Create axisymmetry data
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] ref_point  Origin used for defining the axis of rotation. (In Fortran, this is an array of Real*4 values.)
  * \param[in] axis Direction cosines of the axis of rotation, through the reference point. (In Fortran, this is an array of Real*4 values.)
@@ -12050,14 +12050,14 @@ int cg_axisym_read(int file_number, int B, float *ref_point, float *axis)
  * \details Axisymmetry_t node can only be used for a bi-dimensional model, i.e., PhysicalDimension must equal two.
  *
  */
-int cg_axisym_write(int file_number, int B, float const *ref_point, float const *axis)
+int cg_axisym_write(int fn, int B, float const *ref_point, float const *axis)
 {
     int n;
     cgns_base *base;
     cgns_axisym *axisym;
 
      /* get memory address for file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -12121,7 +12121,7 @@ int cg_axisym_write(int file_number, int B, float const *ref_point, float const 
  *
  * \brief  Read wall function data
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone 
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos. 
@@ -12131,13 +12131,13 @@ int cg_axisym_write(int file_number, int B, float const *ref_point, float const 
  * \details The "read" functions will return with ier = 2 = CG_NODE_NOT_FOUND if the requested boundary condition property, or the BCProperty_t node itself, doesn't exist.
  *
  */
-int cg_bc_wallfunction_read(int file_number, int B, int Z, int BC,
+int cg_bc_wallfunction_read(int fn, int B, int Z, int BC,
                 CGNS_ENUMT(WallFunctionType_t) *WallFunctionType)
 {
     cgns_bprop *bprop;
 
      /* get memory address for file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -12160,7 +12160,7 @@ int cg_bc_wallfunction_read(int file_number, int B, int Z, int BC,
  *
  * \brief  Write wall function data
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone 
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos. 
@@ -12170,7 +12170,7 @@ int cg_bc_wallfunction_read(int file_number, int B, int Z, int BC,
  * \details The "write" functions will create the BCProperty_t node if it doesn't already exist, then add the appropriate boundary condition property. Multiple boundary condition properties may be recorded under the same BCProperty_t node.
  *
  */
-int cg_bc_wallfunction_write(int file_number, int B, int Z, int BC,
+int cg_bc_wallfunction_write(int fn, int B, int Z, int BC,
                  CGNS_ENUMT(WallFunctionType_t) WallFunctionType)
 {
     cgns_bprop *bprop;
@@ -12186,7 +12186,7 @@ int cg_bc_wallfunction_write(int file_number, int B, int Z, int BC,
     }
 
      /* get memory address of file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -12264,7 +12264,7 @@ int cg_bc_wallfunction_write(int file_number, int B, int Z, int BC,
  *
  * \brief  Read area related data
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone 
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos. 
@@ -12276,7 +12276,7 @@ int cg_bc_wallfunction_write(int file_number, int B, int Z, int BC,
  * \details The "read" functions will return with ier = 2 = CG_NODE_NOT_FOUND if the requested boundary condition property, or the BCProperty_t node itself, doesn't exist.
  *
  */
-int cg_bc_area_read(int file_number, int B, int Z, int BC,
+int cg_bc_area_read(int fn, int B, int Z, int BC,
             CGNS_ENUMT(AreaType_t)  *AreaType, float *SurfaceArea,
             char *RegionName)
 {
@@ -12284,7 +12284,7 @@ int cg_bc_area_read(int file_number, int B, int Z, int BC,
     cgns_bprop *bprop;
 
      /* get memory address for file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -12315,7 +12315,7 @@ int cg_bc_area_read(int file_number, int B, int Z, int BC,
  *
  * \brief  Write area related data
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone 
  * \param[in] BC  Boundary condition index number, where 1 ≤ BC ≤ nbocos.
@@ -12327,7 +12327,7 @@ int cg_bc_area_read(int file_number, int B, int Z, int BC,
  * \details The "write" functions will create the BCProperty_t node if it doesn't already exist, then add the appropriate boundary condition property. Multiple boundary condition properties may be recorded under the same BCProperty_t node.
  *
  */
-int cg_bc_area_write(int file_number, int B, int Z, int BC,
+int cg_bc_area_write(int fn, int B, int Z, int BC,
              CGNS_ENUMT( AreaType_t )  AreaType, float SurfaceArea,
              const char *RegionName)
 {
@@ -12346,7 +12346,7 @@ int cg_bc_area_write(int file_number, int B, int Z, int BC,
     }
 
      /* get memory address of file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -12462,7 +12462,7 @@ int cg_bc_area_write(int file_number, int B, int Z, int BC,
  *
  * \brief  Read data for periodic interface
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
@@ -12474,7 +12474,7 @@ int cg_bc_area_write(int file_number, int B, int Z, int BC,
  * \details The "read" functions will return with ier = 2 = CG_NODE_NOT_FOUND if the requested connectivity property, or the GridConnectivityProperty_t node itself, doesn't exist.
  *
  */
-int cg_conn_periodic_read(int file_number, int B, int Z, int J,
+int cg_conn_periodic_read(int fn, int B, int Z, int J,
         float *RotationCenter, float *RotationAngle, float *Translation)
 {
 
@@ -12484,7 +12484,7 @@ int cg_conn_periodic_read(int file_number, int B, int Z, int J,
     cgns_cperio *cperio;
 
      /* get memory address for file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -12521,7 +12521,7 @@ int cg_conn_periodic_read(int file_number, int B, int Z, int J,
  *
  * \brief  Write data for periodic interface
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
@@ -12533,7 +12533,7 @@ int cg_conn_periodic_read(int file_number, int B, int Z, int J,
  * \details  The "write" functions will create the GridConnectivityProperty_t node if it doesn't already exist, then add the appropriate connectivity property. Multiple grid connectivity properties may be recorded under the same GridConnectivityProperty_t node.
  *
  */
-int cg_conn_periodic_write(int file_number, int B, int Z, int J,
+int cg_conn_periodic_write(int fn, int B, int Z, int J,
     float const *RotationCenter, float const *RotationAngle,
     float const *Translation)
 {
@@ -12544,7 +12544,7 @@ int cg_conn_periodic_write(int file_number, int B, int Z, int J,
     int n;
 
      /* get memory address of file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -12643,7 +12643,7 @@ int cg_conn_periodic_write(int file_number, int B, int Z, int J,
  *
  * \brief  Read data for averaging interface
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
@@ -12653,13 +12653,13 @@ int cg_conn_periodic_write(int file_number, int B, int Z, int J,
  * \details The "read" functions will return with ier = 2 = CG_NODE_NOT_FOUND if the requested connectivity property, or the GridConnectivityProperty_t node itself, doesn't exist.
  *
  */
-int cg_conn_average_read(int file_number, int B, int Z, int J,
+int cg_conn_average_read(int fn, int B, int Z, int J,
              CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType)
 {
     cgns_cprop *cprop;
 
      /* get memory address for file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -12682,7 +12682,7 @@ int cg_conn_average_read(int file_number, int B, int Z, int J,
  *
  * \brief  Write data for averaging interface
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
@@ -12692,7 +12692,7 @@ int cg_conn_average_read(int file_number, int B, int Z, int J,
  * \details  The "write" functions will create the GridConnectivityProperty_t node if it doesn't already exist, then add the appropriate connectivity property. Multiple grid connectivity properties may be recorded under the same GridConnectivityProperty_t node.
  *
  */
-int cg_conn_average_write(int file_number, int B, int Z, int J,
+int cg_conn_average_write(int fn, int B, int Z, int J,
               CGNS_ENUMT(AverageInterfaceType_t) AverageInterfaceType)
 {
     cgns_cprop *cprop;
@@ -12708,7 +12708,7 @@ int cg_conn_average_write(int file_number, int B, int Z, int J,
     }
 
      /* get memory address of file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -12784,7 +12784,7 @@ int cg_conn_average_write(int file_number, int B, int Z, int J,
  *
  * \brief  Read data for periodic interface
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions.
@@ -12796,7 +12796,7 @@ int cg_conn_average_write(int file_number, int B, int Z, int J,
  * \details The "read" functions will return with ier = 2 = CG_NODE_NOT_FOUND if the requested connectivity property, or the GridConnectivityProperty_t node itself, doesn't exist.
  *
  */
-int cg_1to1_periodic_read(int file_number, int B, int Z, int J,
+int cg_1to1_periodic_read(int fn, int B, int Z, int J,
                           float *RotationCenter, float *RotationAngle,
                           float *Translation)
 {
@@ -12807,7 +12807,7 @@ int cg_1to1_periodic_read(int file_number, int B, int Z, int J,
     cgns_1to1 *one21;
 
      /* get memory address for file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -12846,7 +12846,7 @@ int cg_1to1_periodic_read(int file_number, int B, int Z, int J,
  *
  * \brief  Write data for periodic interface
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions.
@@ -12858,7 +12858,7 @@ int cg_1to1_periodic_read(int file_number, int B, int Z, int J,
  * \details  The "write" functions will create the GridConnectivityProperty_t node if it doesn't already exist, then add the appropriate connectivity property. Multiple grid connectivity properties may be recorded under the same GridConnectivityProperty_t node.
  *
  */
-int cg_1to1_periodic_write(int file_number, int B, int Z, int J,
+int cg_1to1_periodic_write(int fn, int B, int Z, int J,
                float const *RotationCenter,
                float const *RotationAngle,
                float const *Translation)
@@ -12870,7 +12870,7 @@ int cg_1to1_periodic_write(int file_number, int B, int Z, int J,
     int n;
 
      /* get memory address of file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -12971,7 +12971,7 @@ int cg_1to1_periodic_write(int file_number, int B, int Z, int J,
  *
  * \brief  Read data for averaging interface
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
@@ -12981,14 +12981,14 @@ int cg_1to1_periodic_write(int file_number, int B, int Z, int J,
  * \details The "read" functions will return with ier = 2 = CG_NODE_NOT_FOUND if the requested connectivity property, or the GridConnectivityProperty_t node itself, doesn't exist.
  *
  */
-int cg_1to1_average_read(int file_number, int B, int Z, int J,
+int cg_1to1_average_read(int fn, int B, int Z, int J,
              CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType)
 {
     cgns_cprop *cprop;
     cgns_1to1 *one21;
 
      /* get memory address for file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -13013,7 +13013,7 @@ int cg_1to1_average_read(int file_number, int B, int Z, int J,
  *
  * \brief  Write data for averaging interface
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] Z  \Z_Zone 
  * \param[in] J  Grid connectivity index number, where 1 ≤ J ≤ nconns for the "cg_conn" functions, and 1 ≤ J ≤ n1to1 for the "cg_1to1" functions. 
@@ -13023,7 +13023,7 @@ int cg_1to1_average_read(int file_number, int B, int Z, int J,
  * \details  The "write" functions will create the GridConnectivityProperty_t node if it doesn't already exist, then add the appropriate connectivity property. Multiple grid connectivity properties may be recorded under the same GridConnectivityProperty_t node.
  *
  */
-int cg_1to1_average_write(int file_number, int B, int Z, int J,
+int cg_1to1_average_write(int fn, int B, int Z, int J,
               CGNS_ENUMT(AverageInterfaceType_t) AverageInterfaceType)
 {
     cgns_cprop *cprop;
@@ -13039,7 +13039,7 @@ int cg_1to1_average_write(int file_number, int B, int Z, int J,
     }
 
      /* get memory address of file */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
@@ -13118,7 +13118,7 @@ int cg_1to1_average_write(int file_number, int B, int Z, int J,
  *           Go - To Function
 \*****************************************************************************/
 
-int vcg_goto(int file_number, int B, va_list ap)
+int vcg_goto(int fn, int B, va_list ap)
 {
     int n;
     int index[CG_MAX_GOTO_DEPTH];
@@ -13128,7 +13128,7 @@ int vcg_goto(int file_number, int B, va_list ap)
     posit = 0;
 
      /* set global variable cg */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
      /* read variable argument list */
@@ -13138,7 +13138,7 @@ int vcg_goto(int file_number, int B, va_list ap)
         if (strcmp("end",label[n])==0 || strcmp("END",label[n])==0) break;
         index[n] = va_arg(ap, int);
     }
-    return cgi_set_posit(file_number, B, n, index, label);
+    return cgi_set_posit(fn, B, n, index, label);
 }
 
 /**
@@ -13146,7 +13146,7 @@ int vcg_goto(int file_number, int B, va_list ap)
  *
  * \brief  Access a node via label/name, index pairs
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] ...  Variable argument list used to specify the path to a node. It is composed of an unlimited list of pair-arguments identifying each node in the path. Nodes may be identified by their label or name. Thus, a pair-argument may be of the form
 
@@ -13167,12 +13167,12 @@ There is one exception to this rule. When accessing a BCData_t node, the index m
  *
  * \details   The character string "end" (or 'end' for the Fortran function) must be the last argument. It is used to indicate the end of the argument list. You may also use the empty string, "" ('' for Fortran), or the NULL string in C, to terminate the list.
  */
-int cg_goto(int file_number, int B, ...)
+int cg_goto(int fn, int B, ...)
 {
     va_list ap;
     int status;
     va_start(ap, B);
-    status = vcg_goto(file_number, B, ap);
+    status = vcg_goto(fn, B, ap);
     va_end(ap);
     return status;
 }
@@ -13188,7 +13188,7 @@ int cg_goto(int file_number, int B, ...)
  *
  */
 
-int cg_goto_f08(int file_number, int B, ...)
+int cg_goto_f08(int fn, int B, ...)
 {
 
     int n;
@@ -13200,7 +13200,7 @@ int cg_goto_f08(int file_number, int B, ...)
     posit = 0;
 
      /* set global variable cg */
-    cg = cgi_get_file(file_number);
+    cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;
 
     va_start(ap, B);
@@ -13214,12 +13214,12 @@ int cg_goto_f08(int file_number, int B, ...)
     }
     va_end(ap);
 
-    return cgi_set_posit(file_number, B, n, index, label);
+    return cgi_set_posit(fn, B, n, index, label);
 }
 
 /*-----------------------------------------------------------------------*/
 
-int vcg_gorel(int file_number, va_list ap)
+int vcg_gorel(int fn, va_list ap)
 {
     int n = 0;
     int index[CG_MAX_GOTO_DEPTH];
@@ -13229,7 +13229,7 @@ int vcg_gorel(int file_number, va_list ap)
         cgi_error ("position not set with cg_goto");
         return CG_ERROR;
     }
-    if (file_number != posit_file) {
+    if (fn != posit_file) {
         cgi_error("current position is in the wrong file");
         return CG_ERROR;
     }
@@ -13249,7 +13249,7 @@ int vcg_gorel(int file_number, va_list ap)
  *
  * \brief  Access a node via relative path
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] ...  Variable argument list used to specify the path to a node. It is composed of an unlimited list of pair-arguments identifying each node in the path. Nodes may be identified by their label or name. Thus, a pair-argument may be of the form
 
    "CGNS_NodeLabel", NodeIndex
@@ -13269,12 +13269,12 @@ There is one exception to this rule. When accessing a BCData_t node, the index m
  *
  * \details   The character string "end" (or 'end' for the Fortran function) must be the last argument. It is used to indicate the end of the argument list. You may also use the empty string, "" ('' for Fortran), or the NULL string in C, to terminate the list.
  */
-int cg_gorel(int file_number, ...)
+int cg_gorel(int fn, ...)
 {
     va_list ap;
     int status;
-    va_start (ap, file_number);
-    status = vcg_gorel(file_number, ap);
+    va_start (ap, fn);
+    status = vcg_gorel(fn, ap);
     va_end(ap);
     return status;
 }
@@ -13289,7 +13289,7 @@ int cg_gorel(int file_number, ...)
  *      directly callable from FORTRAN.
  *
  */
-int cg_gorel_f08(int file_number, ...)
+int cg_gorel_f08(int fn, ...)
 {
     int n = 0;
     int index[CG_MAX_GOTO_DEPTH];
@@ -13300,12 +13300,12 @@ int cg_gorel_f08(int file_number, ...)
         cgi_error ("position not set with cg_goto");
         return CG_ERROR;
     }
-    if (file_number != posit_file) {
+    if (fn != posit_file) {
         cgi_error("current position is in the wrong file");
         return CG_ERROR;
     }
 
-    va_start (ap, file_number);
+    va_start (ap, fn);
     for (n = 0; n < CG_MAX_GOTO_DEPTH; n++) {
         label[n] = va_arg(ap, char *);
         if (label[n] == NULL || label[n][0] == 0) break;
@@ -13323,13 +13323,13 @@ int cg_gorel_f08(int file_number, ...)
  *
  * \brief  Access a node via pathname 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] path  The pathname for the node to go to. If a position has been already set, this may be a relative path, otherwise it is an absolute path name, starting with "/Basename", where Basename is the base under which you wish to move.
 
  * \return \ier
  *
  */
-int cg_gopath(int file_number, const char *path)
+int cg_gopath(int fn, const char *path)
 {
     int n, len;
     const char *p = path, *s;
@@ -13366,7 +13366,7 @@ int cg_gopath(int file_number, const char *path)
         strncpy(label[0], p, len);
         label[0][len] = 0;
 
-        cg = cgi_get_file(file_number);
+        cg = cgi_get_file(fn);
         if (cg == 0) return CG_ERROR;
 
         for (n = 0; n < cg->nbases; n++) {
@@ -13379,7 +13379,7 @@ int cg_gopath(int file_number, const char *path)
             cgi_error("base '%s' not found", label[0]);
             return CG_ERROR;
         }
-        ierr = cgi_set_posit(file_number, B, 0, index, lab);
+        ierr = cgi_set_posit(fn, B, 0, index, lab);
         if (ierr != CG_OK) return ierr;
         if (s == 0) return CG_OK;
         p = s;
@@ -13392,7 +13392,7 @@ int cg_gopath(int file_number, const char *path)
             cgi_error("position not set with cg_goto");
             return CG_ERROR;
         }
-        if (file_number != posit_file) {
+        if (fn != posit_file) {
             cgi_error("current position is in the wrong file");
             return CG_ERROR;
         }
@@ -13433,7 +13433,7 @@ int cg_gopath(int file_number, const char *path)
  *
  * \brief  Access a node via arrays of labels and indices 
  * 
- * \param[in] file_number  \FILE_fn
+ * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] depth  Depth of the path list. The maximum depth is defined in cgnslib.h by CG_MAX_GOTO_DEPTH, and is currently equal to 20.
  * \param[in] label  Array of node labels for the path. This argument may be passed as NULL to cg_where(), otherwise it must be dimensioned by the calling program. The maximum size required is label[MAX_GO_TO_DEPTH][33]. You may call cg_where() with both label and index set to NULL in order to get the current depth, then dimension to that value.
@@ -13441,13 +13441,13 @@ int cg_gopath(int file_number, const char *path)
  * \return \ier
  *
  */
-int cg_golist(int file_number, int B, int depth, char **label, int *index)
+int cg_golist(int fn, int B, int depth, char **label, int *index)
 {
     if (depth >= CG_MAX_GOTO_DEPTH) {
         cgi_error("path is too deep");
         return CG_ERROR;
     }
-    return cgi_set_posit(file_number, B, depth, index, label);
+    return cgi_set_posit(fn, B, depth, index, label);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -13456,7 +13456,7 @@ int cg_golist(int file_number, int B, int depth, char **label, int *index)
  *
  * \brief  Get path to current node 
  * 
- * \param[out] file_number  \FILE_fn
+ * \param[out] fn \FILE_fn
  * \param[out] B  \B_Base
  * \param[out] depth  Depth of the path list. The maximum depth is defined in cgnslib.h by CG_MAX_GOTO_DEPTH, and is currently equal to 20.
  * \param[out] label  Array of node labels for the path. This argument may be passed as NULL to cg_where(), otherwise it must be dimensioned by the calling program. The maximum size required is label[MAX_GO_TO_DEPTH][33]. You may call cg_where() with both label and index set to NULL in order to get the current depth, then dimension to that value.
@@ -13464,7 +13464,7 @@ int cg_golist(int file_number, int B, int depth, char **label, int *index)
  * \return \ier
  *
  */
-int cg_where(int *file_number, int *B, int *depth, char **label, int *num)
+int cg_where(int *fn, int *B, int *depth, char **label, int *num)
 {
     int n;
 
@@ -13472,7 +13472,7 @@ int cg_where(int *file_number, int *B, int *depth, char **label, int *num)
         cgi_error ("position not set with cg_goto");
         return CG_ERROR;
     }
-    *file_number = posit_file;
+    *fn = posit_file;
     *B = posit_base;
     /* first entry is base */
     *depth = posit_depth > 1 ? posit_depth - 1 : 0;
