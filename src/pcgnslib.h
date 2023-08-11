@@ -156,6 +156,15 @@ CGNSDLL int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
 CGNSDLL int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
                                       const cgsize_t *rmax, int nsets, void **buf);
 
+
+/*===== Boundary Condition Prototypes =====*/
+CGNSDLL int cgp_boco_write(int file_number, int B, int Z, const char * boconame,
+          CGNS_ENUMT(BCType_t) bocotype,
+          CGNS_ENUMT(PointSetType_t) ptset_type,
+          cgsize_t npnts, int *BC);
+CGNSDLL int cgp_boco_write_data(int file_number, int B, int Z, int bcID, cgsize_t start,
+    cgsize_t end, const cgsize_t *points);
+
 /*===== exit with error and call MPI_Abort =====*/
 
 CGNSDLL void cgp_error_exit(void);
