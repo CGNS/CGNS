@@ -44,15 +44,19 @@ int main(int argc, char* argv[]) {
   int B;
   int Z;
   int S;
+  int BC;
   int Cx,Cy,Cz;
   int cell_dim = 3;
   int phys_dim = 3;
   cgsize_t nijk[3], min, max;
-  int k, vert_proc;
+  int k, vert_proc, i;
   double *x, *y, *z;
   int nelem, nvert;
   cgsize_t start, end, emin, emax, *elements;
   cgsize_t *el_ptr = NULL;
+  cgsize_t n_boco_elems;
+  cgsize_t *point_list;
+  cgsize_t start_local, end_local;
 
   err = MPI_Init(&argc,&argv);
   if(err!=MPI_SUCCESS) cgp_doError;
@@ -151,6 +155,23 @@ int main(int argc, char* argv[]) {
   if (cgp_elements_write_data(fn,B,Z,S,emin,emax,elements))
     cgp_error_exit();
 
+  n_boco_elems = end - start + 1;
+  if (cgp_boco_write(fn, B, Z, "Bottom BC", CGNS_ENUMV(BCTypeUserDefined), CGNS_ENUMV(PointList), n_boco_elems, &BC))
+    cgp_error_exit();
+
+  for(i=0, k=emin; k <= emax; k++, i++) {
+    elements[i] = k;
+  }
+
+  start_local = comm_rank * 3 + 1;
+  end_local = start_local + 2;
+  printf("%d: %d %d\n", comm_rank, (int)start_local, (int)end_local);
+  if (cgp_boco_write_data(fn, B, Z, BC, start_local, end_local, elements))
+    cgp_error_exit();
+
+  if (cg_boco_gridlocation_write(fn, B, Z, BC, CGNS_ENUMV(EdgeCenter)))
+    cgp_error_exit();
+
   /* Left BC */
   start = end + 1;
   end   = start;
@@ -183,6 +204,29 @@ int main(int argc, char* argv[]) {
     elements[1] = 2;
   }
   if (cgp_elements_write_data(fn,B,Z,S,emin,emax,el_ptr))
+    cgp_error_exit();
+
+  n_boco_elems = 1;
+  if (cgp_boco_write(fn, B, Z, "Left BC", CGNS_ENUMV(BCTypeUserDefined), CGNS_ENUMV(PointList), n_boco_elems, &BC))
+    cgp_error_exit();
+
+  if (comm_rank == 0) {
+    start_local = 1;
+    end_local   = 1;
+
+    elements[0] = start;
+    el_ptr      = elements;
+  } else {
+    start_local = 0;
+    end_local   = 0;
+
+    el_ptr = NULL;
+  }
+
+  printf("%d: %d %d\n", comm_rank, (int)start_local, (int)end_local);
+  if (cgp_boco_write_data(fn, B, Z, BC, start_local, end_local, el_ptr))
+    cgp_error_exit();
+  if (cg_boco_gridlocation_write(fn, B, Z, BC, CGNS_ENUMV(EdgeCenter)))
     cgp_error_exit();
 
   if (cgp_close(fn)) cgp_error_exit();
