@@ -2173,14 +2173,6 @@ int cgp_boco_write(int file_number, int B, int Z, const char * boconame,
           CGNS_ENUMT(PointSetType_t) ptset_type,
           cgsize_t npnts, int *BC)
 {
-    cgns_zone *zone;
-    cgns_zboco *zboco;
-    cgns_boco *boco = NULL;
-    int index, i, index_dim;
-    CGNS_ENUMT(PointSetType_t) ptype;
-    CGNS_ENUMT(GridLocation_t) location;
-    cgsize_t length;
-
      /* get memory address of file */
     cg = cgi_get_file(file_number);
     if (check_parallel(cg)) return CG_ERROR;
@@ -2194,10 +2186,7 @@ int cgp_boco_write(int file_number, int B, int Z, const char * boconame,
 int cgp_boco_write_data(int file_number, int B, int Z, int bcID, cgsize_t start,
     cgsize_t end, const cgsize_t *points)
 {
-  int elemsize;
   hid_t hid;
-  cgns_zone *zone;
-  cgns_zboco *zboco;
   cgns_boco *boco = NULL;
   cgsize_t rmin, rmax;
   CGNS_ENUMT(DataType_t) type;
