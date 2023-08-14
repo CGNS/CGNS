@@ -2188,7 +2188,7 @@ int cgp_boco_write_data(int file_number, int B, int Z, int bcID, cgsize_t start,
 {
   hid_t hid;
   cgns_boco *boco = NULL;
-  cgsize_t rmin, rmax;
+  cgsize_t rmin[2], rmax[2];
   CGNS_ENUMT(DataType_t) type;
 
     /* get memory address of file */
@@ -2205,13 +2205,15 @@ int cgp_boco_write_data(int file_number, int B, int Z, int bcID, cgsize_t start,
     if (start > end ||
         start < 1 ||
         end > boco->ptset->npts) {
-      cgi_error("Error in requested element data range.");
+      cgi_error("Error in requested point set range.");
       return CG_ERROR;
     }
   }
 
-  rmin = start;
-  rmax = end;
+  rmin[0] = 1;
+  rmax[0] = 1;
+  rmin[1] = start;
+  rmax[1] = end;
   type = cgi_datatype(boco->ptset->data_type);
 
   to_HDF_ID(boco->ptset->id, hid);
@@ -2219,7 +2221,7 @@ int cgp_boco_write_data(int file_number, int B, int Z, int bcID, cgsize_t start,
   cg_rw_t Data;
   Data.u.wbuf = points;
   return readwrite_data_parallel(hid, type,
-            1, &rmin, &rmax, &Data, CG_PAR_WRITE);
+            2, rmin, rmax, &Data, CG_PAR_WRITE);
 }
 
 /*---------------------------------------------------------*/
