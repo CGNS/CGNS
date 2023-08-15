@@ -166,7 +166,8 @@ int main(int argc, char* argv[]) {
   start_local = comm_rank * 3 + 1;
   end_local = start_local + 2;
   printf("%d: %d %d\n", comm_rank, (int)start_local, (int)end_local);
-  if (cgp_boco_write_data(fn, B, Z, BC, start_local, end_local, elements))
+  cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BC, "PointList", 0, NULL);
+  if (cgp_ptlist_write_data(fn, start_local, end_local, elements))
     cgp_error_exit();
 
   if (cg_boco_gridlocation_write(fn, B, Z, BC, CGNS_ENUMV(EdgeCenter)))
@@ -224,7 +225,8 @@ int main(int argc, char* argv[]) {
   }
 
   printf("%d: %d %d\n", comm_rank, (int)start_local, (int)end_local);
-  if (cgp_boco_write_data(fn, B, Z, BC, start_local, end_local, el_ptr))
+  cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BC, "PointList", 0, NULL);
+  if (cgp_ptlist_write_data(fn, start_local, end_local, el_ptr))
     cgp_error_exit();
   if (cg_boco_gridlocation_write(fn, B, Z, BC, CGNS_ENUMV(EdgeCenter)))
     cgp_error_exit();

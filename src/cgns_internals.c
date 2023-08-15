@@ -8282,7 +8282,7 @@ int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata)
     return CG_OK;
 }
 
-int cgi_write_ptset(double parent_id, char_33 name, cgns_ptset *ptset,
+int cgi_write_ptset(double parent_id, char *name, cgns_ptset *ptset,
                     int ndim, void *ptset_ptr)
 {
     cgsize_t dim_vals[12];
@@ -11419,6 +11419,13 @@ static int cgi_next_posit(char *label, int index, char *name)
             if (index >= 0 && index < b->nuser_data) {
                 return cgi_add_posit((void *)&b->user_data[index],
                            label, index + 1, b->user_data[index].id);
+            }
+        }
+        else if (0 == strcmp (label, "IndexArray_t")) {
+            if (b->ptset &&
+                (index == 1 || 0 == strcmp (b->ptset->name, name))) {
+                return cgi_add_posit((void *)b->ptset,
+                           label, 1, b->ptset->id);
             }
         }
         else

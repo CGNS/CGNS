@@ -162,7 +162,7 @@ CGNSDLL int cgp_boco_write(int file_number, int B, int Z, const char * boconame,
           CGNS_ENUMT(BCType_t) bocotype,
           CGNS_ENUMT(PointSetType_t) ptset_type,
           cgsize_t npnts, int *BC);
-CGNSDLL int cgp_boco_write_data(int file_number, int B, int Z, int bcID, cgsize_t start,
+CGNSDLL int cgp_ptlist_write_data(int file_number, cgsize_t start,
     cgsize_t end, const cgsize_t *points);
 
 /*===== exit with error and call MPI_Abort =====*/

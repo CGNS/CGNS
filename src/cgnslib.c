@@ -8828,6 +8828,7 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
     boco->location = location;
     boco->ptset = CGNS_NEW(cgns_ptset,1);
     boco->ptset->type = ptype;
+    strcpy(boco->ptset->name, PointSetTypeName[boco->ptset->type]);
     strcpy(boco->ptset->data_type,CG_SIZE_DATATYPE);
     boco->ptset->npts = npnts;
 
@@ -8869,9 +8870,7 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
      /* Save Point-Set on Disk */
     if (npnts > 0) {
         HDF5storage_type = CG_CONTIGUOUS;
-        char_33 PointSetName;
-        strcpy(PointSetName, PointSetTypeName[boco->ptset->type]);
-        if (cgi_write_ptset(boco->id, PointSetName, boco->ptset, index_dim,
+        if (cgi_write_ptset(boco->id, boco->ptset->name, boco->ptset, index_dim,
             (void *)pnts)) return CG_ERROR;
         HDF5storage_type = CG_COMPACT;
     }

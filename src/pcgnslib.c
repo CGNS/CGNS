@@ -2183,11 +2183,11 @@ int cgp_boco_write(int file_number, int B, int Z, const char * boconame,
   return cg_boco_write(file_number, B, Z, boconame, bocotype, ptset_type, npnts, NULL, BC);
 }
 
-int cgp_boco_write_data(int file_number, int B, int Z, int bcID, cgsize_t start,
+int cgp_ptlist_write_data(int file_number, cgsize_t start,
     cgsize_t end, const cgsize_t *points)
 {
   hid_t hid;
-  cgns_boco *boco = NULL;
+  cgns_ptset *ptset;
   cgsize_t rmin[2], rmax[2];
   CGNS_ENUMT(DataType_t) type;
 
@@ -2198,13 +2198,21 @@ int cgp_boco_write_data(int file_number, int B, int Z, int bcID, cgsize_t start,
   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
       return CG_ERROR;
 
-  boco = cgi_get_boco(cg, B, Z, bcID);
-  if (boco == 0) return CG_ERROR;
+  if (posit == 0) {
+    cgi_error("No current position set by cg_goto\n");
+    return CG_ERROR;
+  }
+  else if (strcmp(posit->label, "IndexList_t")) {
+    ptset = (cgns_ptset *) posit->posit;
+  } else {
+    cgi_error("Goto not pointing to IndexArray_t, but %s\n", posit->label);
+    return CG_ERROR;
+  }
 
   if (points) {
     if (start > end ||
         start < 1 ||
-        end > boco->ptset->npts) {
+        end > ptset->npts) {
       cgi_error("Error in requested point set range.");
       return CG_ERROR;
     }
@@ -2214,9 +2222,9 @@ int cgp_boco_write_data(int file_number, int B, int Z, int bcID, cgsize_t start,
   rmax[0] = 1;
   rmin[1] = start;
   rmax[1] = end;
-  type = cgi_datatype(boco->ptset->data_type);
+  type = cgi_datatype(ptset->data_type);
 
-  to_HDF_ID(boco->ptset->id, hid);
+  to_HDF_ID(ptset->id, hid);
 
   cg_rw_t Data;
   Data.u.wbuf = points;
