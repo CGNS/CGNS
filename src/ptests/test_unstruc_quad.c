@@ -29,6 +29,7 @@ The BC "Left"   is on the left (x=0) edge of the mesh.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "pcgnslib.h"
 #include "mpi.h"
@@ -55,7 +56,6 @@ int main(int argc, char* argv[]) {
   cgsize_t start, end, emin, emax, *elements;
   cgsize_t *el_ptr = NULL;
   cgsize_t n_boco_elems;
-  cgsize_t *point_list;
   cgsize_t start_local, end_local;
 
   err = MPI_Init(&argc,&argv);
@@ -242,6 +242,33 @@ int main(int argc, char* argv[]) {
   if (cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", 1, "PointList", 0, NULL)) cgp_error_exit();
   if (cgp_ptlist_read_data(fn, start_local, end_local, elements)) cgp_error_exit();
   printf("%d: %d, %d, %d\n", comm_rank, (int)elements[0], (int)elements[1], (int)elements[2]);
+
+  { // Test read values
+    bool found_point;
+    cgsize_t *point_list;
+    int global_num_quads = nelem * comm_size;
+
+    point_list = (cgsize_t *)malloc(global_num_quads*sizeof(cgsize_t));
+    for (int i = 0; i < global_num_quads; i++) {
+      point_list[i] = global_num_quads + i + 1;
+    }
+
+    for (int i = 0; i < 3; i++) {
+      found_point = false;
+      for (int j = 0; j < global_num_quads; j++) {
+        if (elements[i] == point_list[j]) {
+          found_point = true;
+          break;
+        }
+      }
+      if (!found_point) {
+        printf("Error at %s:%u\n",__FILE__, __LINE__);
+        printf("Could not find point %d in boundary list [%d,..., %d]\n", (int)elements[i], (int)point_list[0], (int)point_list[global_num_quads-1]);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+      }
+    }
+    free(point_list);
+  }
 
   if (cgp_close(fn)) cgp_error_exit();
 
