@@ -160,6 +160,7 @@ CGNSDLL int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
 /*===== PointList Prototypes =====*/
 CGNSDLL int cgp_ptlist_write_data(int file_number, cgsize_t start,
     cgsize_t end, const cgsize_t *points);
+CGNSDLL int cgp_ptlist_read_data(int file_number, cgsize_t start, cgsize_t end, cgsize_t *points);
 
 /*===== exit with error and call MPI_Abort =====*/
 

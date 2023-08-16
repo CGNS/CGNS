@@ -233,7 +233,20 @@ int main(int argc, char* argv[]) {
 
   if (cgp_close(fn)) cgp_error_exit();
 
+  // Test file reading
+  if (cgp_open("test_unstruc_quad.cgns", CG_MODE_READ, &fn)) cgp_error_exit();
+
+  for (int i = 0; i < nelem*4; i++) elements[i] = 0;
+  start_local = comm_rank * 3 + 1;
+  end_local = start_local + 2;
+  if (cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", 1, "PointList", 0, NULL)) cgp_error_exit();
+  if (cgp_ptlist_read_data(fn, start_local, end_local, elements)) cgp_error_exit();
+  printf("%d: %d, %d, %d\n", comm_rank, (int)elements[0], (int)elements[1], (int)elements[2]);
+
+  if (cgp_close(fn)) cgp_error_exit();
+
   err = MPI_Finalize();
   if(err!=MPI_SUCCESS) cgp_doError;
+  free(elements);
   return 0;
 }
