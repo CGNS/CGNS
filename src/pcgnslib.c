@@ -2176,17 +2176,17 @@ int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
  * \details Must use functions in @ref AccessingANode to point to a PointSet to read from
  *
  * \param[in] file_number \FILE_fn
- * \param[in] start Index of first point in local array (base 1)
- * \param[in] end Index of last point in local array (base 1)
+ * \param[in] rmin Lower range index in file
+ * \param[in] rmax Upper range index in file
  * \param[in] points Array of points
  * \return \ier
  */
-int cgp_ptlist_write_data(int file_number, cgsize_t start,
+int cgp_ptlist_write_data(int file_number, cgsize_t rmin,
     cgsize_t end, const cgsize_t *points)
 {
   hid_t hid;
   cgns_ptset *ptset;
-  cgsize_t rmin[2], rmax[2];
+  cgsize_t range_min[2], range_max[2];
   CGNS_ENUMT(DataType_t) type;
 
     /* get memory address of file */
@@ -2208,18 +2208,18 @@ int cgp_ptlist_write_data(int file_number, cgsize_t start,
   }
 
   if (points) {
-    if (start > end ||
-        start < 1 ||
+    if (rmin > end ||
+        rmin < 1 ||
         end > ptset->npts) {
       cgi_error("Error in requested point set range.");
       return CG_ERROR;
     }
   }
 
-  rmin[0] = 1;
-  rmax[0] = 1;
-  rmin[1] = start;
-  rmax[1] = end;
+  range_min[0] = 1;
+  range_max[0] = 1;
+  range_min[1] = rmin;
+  range_max[1] = end;
   type = cgi_datatype(ptset->data_type);
 
   to_HDF_ID(ptset->id, hid);
@@ -2227,7 +2227,7 @@ int cgp_ptlist_write_data(int file_number, cgsize_t start,
   cg_rw_t Data;
   Data.u.wbuf = points;
   return readwrite_data_parallel(hid, type,
-            2, rmin, rmax, &Data, CG_PAR_WRITE);
+            2, range_min, range_max, &Data, CG_PAR_WRITE);
 }
 
 /**
@@ -2238,16 +2238,16 @@ int cgp_ptlist_write_data(int file_number, cgsize_t start,
  * \details Must use functions in @ref AccessingANode to point to a PointSet to read from
  *
  * \param[in] file_number \FILE_fn
- * \param[in] start Index of first point in local array (base 1)
- * \param[in] end Index of last point in local array (base 1)
+ * \param[in] rmin Lower range index in file
+ * \param[in] rmax Upper range index in file
  * \param[in] points Array of points
  * \return \ier
  */
-int cgp_ptlist_read_data(int file_number, cgsize_t start, cgsize_t end, cgsize_t *points)
+int cgp_ptlist_read_data(int file_number, cgsize_t rmin, cgsize_t rmax, cgsize_t *points)
 {
   hid_t hid;
   cgns_ptset *ptset;
-  cgsize_t rmin[2], rmax[2];
+  cgsize_t range_min[2], range_max[2];
   CGNS_ENUMT(DataType_t) type;
 
     /* get memory address of file */
@@ -2269,18 +2269,18 @@ int cgp_ptlist_read_data(int file_number, cgsize_t start, cgsize_t end, cgsize_t
   }
 
   if (points) {
-    if (start > end ||
-        start < 1 ||
-        end > ptset->npts) {
+    if (rmin > rmax ||
+        rmin < 1 ||
+        rmax > ptset->npts) {
       cgi_error("Error in requested point set range.");
       return CG_ERROR;
     }
   }
 
-  rmin[0] = 1;
-  rmax[0] = 1;
-  rmin[1] = start;
-  rmax[1] = end;
+  range_min[0] = 1;
+  range_max[0] = 1;
+  range_min[1] = rmin;
+  range_max[1] = rmax;
   type = cgi_datatype(ptset->data_type);
 
   to_HDF_ID(ptset->id, hid);
@@ -2288,6 +2288,6 @@ int cgp_ptlist_read_data(int file_number, cgsize_t start, cgsize_t end, cgsize_t
   cg_rw_t Data;
   Data.u.rbuf = points;
   return readwrite_data_parallel(hid, type,
-            2, rmin, rmax, &Data, CG_PAR_READ);
+            2, range_min, range_max, &Data, CG_PAR_READ);
 }
 /*---------------------------------------------------------*/

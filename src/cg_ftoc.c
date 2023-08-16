@@ -4478,17 +4478,17 @@ CGNSDLL void FMNAME(cgp_array_read_data_f, CGP_ARRAY_READ_DATA_F) (
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void cgp_ptlist_write_data_f(
-	cgint_f *fn, cgsize_t *start, cgsize_t *end, cgsize_t *points, cgint_f *ier)
+	cgint_f *fn, cgsize_t *rmin, cgsize_t *rmax, cgsize_t *points, cgint_f *ier)
 {
-    *ier = (cgint_f)cgp_ptlist_write_data((int)*fn, *start, *end, points);
+    *ier = (cgint_f)cgp_ptlist_write_data((int)*fn, *rmin, *rmax, points);
 }
 
 /*-----------------------------------------------------------------------*/
 
 CGNSDLL void cgp_ptlist_read_data_f(
-	cgint_f *fn, cgsize_t *start, cgsize_t *end, cgsize_t *points, cgint_f *ier)
+	cgint_f *fn, cgsize_t *rmin, cgsize_t *rmax, cgsize_t *points, cgint_f *ier)
 {
-    *ier = (cgint_f)cgp_ptlist_read_data((int)*fn, *start, *end, points);
+    *ier = (cgint_f)cgp_ptlist_read_data((int)*fn, *rmin, *rmax, points);
 }
 
 /*-----------------------------------------------------------------------*/
