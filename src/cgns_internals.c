@@ -8288,6 +8288,7 @@ int cgi_write_ptset(double parent_id, char *name, cgns_ptset *ptset,
     cgsize_t dim_vals[12];
     int num_dim;
     char_33 label;
+    int HDF5storage_type_original = HDF5storage_type;
 
     if (ptset->link) {
         return cgi_write_link(parent_id, name, ptset->link, &ptset->id);
@@ -8305,10 +8306,19 @@ int cgi_write_ptset(double parent_id, char *name, cgns_ptset *ptset,
     dim_vals[1]=ptset->npts;
     num_dim = 2;
 
+    // PointLists should be contiguous for parallel reading/writing
+    if (ptset->type == CGNS_ENUMV(PointList) ||
+        ptset->type == CGNS_ENUMV(PointListDonor) ||
+        ptset->type == CGNS_ENUMV(ElementList) ||
+        ptset->type == CGNS_ENUMV(CellListDonor)) {
+        HDF5storage_type = CG_CONTIGUOUS;
+    }
+
      /* Create the node */
     if (cgi_new_node(parent_id, name, label, &ptset->id,
         ptset->data_type, num_dim, dim_vals, ptset_ptr)) return CG_ERROR;
 
+    HDF5storage_type = HDF5storage_type_original;
     return CG_OK;
 }
 

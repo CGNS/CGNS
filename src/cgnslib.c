@@ -8869,10 +8869,8 @@ int cg_boco_write(int file_number, int B, int Z, const char * boconame,
 
      /* Save Point-Set on Disk */
     if (npnts > 0) {
-        HDF5storage_type = CG_CONTIGUOUS;
         if (cgi_write_ptset(boco->id, boco->ptset->name, boco->ptset, index_dim,
             (void *)pnts)) return CG_ERROR;
-        HDF5storage_type = CG_COMPACT;
     }
     if (boco->location != CGNS_ENUMV(Vertex)) {
         double dummy_id;
