@@ -3851,6 +3851,26 @@ MODULE cgns
        INTEGER :: ier
      END SUBROUTINE cgp_array_multi_write_data_f
 
+     SUBROUTINE cgp_ptlist_write_data_f(file_number, start, end, points, ier) BIND(C, NAME="cgp_ptlist_write_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT) :: file_number
+       INTEGER(CGSIZE_T), DIMENSION(*) :: start
+       INTEGER(CGSIZE_T), DIMENSION(*) :: end
+       INTEGER(CGSIZE_T), DIMENSION(*) :: points
+       INTEGER :: ier
+     END SUBROUTINE cgp_ptlist_write_data_f
+
+     SUBROUTINE cgp_ptlist_read_data_f(file_number, start, end, points, ier) BIND(C, NAME="cgp_ptlist_read_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT) :: file_number
+       INTEGER(CGSIZE_T), DIMENSION(*) :: start
+       INTEGER(CGSIZE_T), DIMENSION(*) :: end
+       INTEGER(CGSIZE_T), DIMENSION(*) :: points
+       INTEGER :: ier
+     END SUBROUTINE cgp_ptlist_read_data_f
+
 #endif
 
   !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
