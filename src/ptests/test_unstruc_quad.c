@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
 
   n_boco_elems = end - start + 1;
-  if (cgp_boco_write(fn, B, Z, "Bottom BC", CGNS_ENUMV(BCTypeUserDefined), CGNS_ENUMV(PointList), n_boco_elems, &BC))
+  if (cg_boco_write(fn, B, Z, "Bottom BC", CGNS_ENUMV(BCTypeUserDefined), CGNS_ENUMV(PointList), n_boco_elems, NULL, &BC))
     cgp_error_exit();
 
   for(i=0, k=emin; k <= emax; k++, i++) {
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
 
   n_boco_elems = 1;
-  if (cgp_boco_write(fn, B, Z, "Left BC", CGNS_ENUMV(BCTypeUserDefined), CGNS_ENUMV(PointList), n_boco_elems, &BC))
+  if (cg_boco_write(fn, B, Z, "Left BC", CGNS_ENUMV(BCTypeUserDefined), CGNS_ENUMV(PointList), n_boco_elems, NULL, &BC))
     cgp_error_exit();
 
   if (comm_rank == 0) {

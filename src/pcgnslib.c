@@ -2166,22 +2166,7 @@ int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
   return CG_ERROR;
 }
 
-/*===== Boundary Condition Functions =============================*/
-
-int cgp_boco_write(int file_number, int B, int Z, const char * boconame,
-          CGNS_ENUMT(BCType_t) bocotype,
-          CGNS_ENUMT(PointSetType_t) ptset_type,
-          cgsize_t npnts, int *BC)
-{
-     /* get memory address of file */
-    cg = cgi_get_file(file_number);
-    if (check_parallel(cg)) return CG_ERROR;
-
-    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
-        return CG_ERROR;
-
-  return cg_boco_write(file_number, B, Z, boconame, bocotype, ptset_type, npnts, NULL, BC);
-}
+/*===== PointList Functions =============================*/
 
 int cgp_ptlist_write_data(int file_number, cgsize_t start,
     cgsize_t end, const cgsize_t *points)
