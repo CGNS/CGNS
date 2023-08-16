@@ -2168,6 +2168,19 @@ int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
 
 /*===== PointList Functions =============================*/
 
+/**
+ * \ingroup PointListData
+ *
+ * \brief Write index array to PointList in parallel.
+ *
+ * \details Must use functions in @ref AccessingANode to point to a PointSet to read from
+ *
+ * \param[in] file_number \FILE_fn
+ * \param[in] start Index of first point in local array (base 1)
+ * \param[in] end Index of last point in local array (base 1)
+ * \param[in] points Array of points
+ * \return \ier
+ */
 int cgp_ptlist_write_data(int file_number, cgsize_t start,
     cgsize_t end, const cgsize_t *points)
 {
@@ -2217,6 +2230,19 @@ int cgp_ptlist_write_data(int file_number, cgsize_t start,
             2, rmin, rmax, &Data, CG_PAR_WRITE);
 }
 
+/**
+ * \ingroup PointListData
+ *
+ * \brief Read index array to PointList in parallel.
+ *
+ * \details Must use functions in @ref AccessingANode to point to a PointSet to read from
+ *
+ * \param[in] file_number \FILE_fn
+ * \param[in] start Index of first point in local array (base 1)
+ * \param[in] end Index of last point in local array (base 1)
+ * \param[in] points Array of points
+ * \return \ier
+ */
 int cgp_ptlist_read_data(int file_number, cgsize_t start, cgsize_t end, cgsize_t *points)
 {
   hid_t hid;
