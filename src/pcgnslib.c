@@ -2187,7 +2187,7 @@ int cgp_ptlist_write_data(int file_number, cgsize_t start,
     cgi_error("No current position set by cg_goto\n");
     return CG_ERROR;
   }
-  else if (strcmp(posit->label, "IndexList_t")) {
+  else if (strcmp(posit->label, "IndexArray_t") == 0) {
     ptset = (cgns_ptset *) posit->posit;
   } else {
     cgi_error("Goto not pointing to IndexArray_t, but %s\n", posit->label);
@@ -2235,7 +2235,7 @@ int cgp_ptlist_read_data(int file_number, cgsize_t start, cgsize_t end, cgsize_t
     cgi_error("No current position set by cg_goto\n");
     return CG_ERROR;
   }
-  else if (strcmp(posit->label, "IndexList_t")) {
+  else if (strcmp(posit->label, "IndexArray_t") == 0) {
     ptset = (cgns_ptset *) posit->posit;
   } else {
     cgi_error("Goto not pointing to IndexArray_t, but %s\n", posit->label);
