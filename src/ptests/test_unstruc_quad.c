@@ -34,7 +34,7 @@ The BC "Left"   is on the left (x=0) edge of the mesh.
 #include "pcgnslib.h"
 #include "mpi.h"
 
-#define cgp_doError {printf("Error at %s:%u\n",__FILE__, __LINE__); return 1;}
+#define cgp_doError {printf("Error at %s:%d\n",__FILE__, __LINE__); return 1;}
 
 int main(int argc, char* argv[]) {
   int err;
@@ -262,7 +262,7 @@ int main(int argc, char* argv[]) {
         }
       }
       if (!found_point) {
-        printf("Error at %s:%u\n",__FILE__, __LINE__);
+        printf("Error at %s:%d\n",__FILE__, __LINE__);
         printf("Could not find point %d in boundary list [%d,..., %d]\n", (int)elements[i], (int)point_list[0], (int)point_list[global_num_quads-1]);
         MPI_Abort(MPI_COMM_WORLD, 1);
       }
