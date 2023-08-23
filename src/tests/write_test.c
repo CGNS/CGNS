@@ -1178,7 +1178,7 @@ void write_mismatched()
     }
     if (cg_zone_write(cgfile, cgbase, "CartesianZone", size,
             CGNS_ENUMV(Structured), &cgzone))
-        error_exit("cartesion zone");
+        error_exit("cartesian zone");
     write_coords(1);
 
     /* zone 2 is cylindrical */
