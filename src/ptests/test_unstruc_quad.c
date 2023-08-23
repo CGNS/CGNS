@@ -164,9 +164,14 @@ int main(int argc, char* argv[]) {
   }
 
   start_local = comm_rank * 3 + 1;
-  end_local = start_local + 2;
+  end_local   = start_local + 2;
   printf("%d: %d %d\n", comm_rank, (int)start_local, (int)end_local);
-  cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BC, "PointList", 0, NULL);
+  {
+    const int depth    = 4;
+    char *labels[]     = {"Zone_t", "ZoneBC_t", "BC_t", "PointList"};
+    int indices[] = {Z, 1, BC, 0};
+    if (cg_golist(fn, B, depth, labels, indices)) cgp_error_exit();
+  }
   if (cgp_ptlist_write_data(fn, start_local, end_local, elements))
     cgp_error_exit();
 
@@ -225,7 +230,12 @@ int main(int argc, char* argv[]) {
   }
 
   printf("%d: %d %d\n", comm_rank, (int)start_local, (int)end_local);
-  cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BC, "PointList", 0, NULL);
+  {
+    const int depth    = 4;
+    char *labels[]     = {"Zone_t", "ZoneBC_t", "BC_t", "PointList"};
+    int indices[] = {Z, 1, BC, 0};
+    if (cg_golist(fn, B, depth, labels, indices)) cgp_error_exit();
+  }
   if (cgp_ptlist_write_data(fn, start_local, end_local, el_ptr))
     cgp_error_exit();
   if (cg_boco_gridlocation_write(fn, B, Z, BC, CGNS_ENUMV(EdgeCenter)))
@@ -239,7 +249,12 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < nelem*4; i++) elements[i] = 0;
   start_local = comm_rank * 3 + 1;
   end_local = start_local + 2;
-  if (cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", 1, "PointList", 0, NULL)) cgp_error_exit();
+  {
+    const int depth    = 4;
+    char *labels[]     = {"Zone_t", "ZoneBC_t", "BC_t", "PointList"};
+    int indices[] = {Z, 1, 1, 0};
+    if (cg_golist(fn, B, depth, labels, indices)) cgp_error_exit();
+  }
   if (cgp_ptlist_read_data(fn, start_local, end_local, elements)) cgp_error_exit();
   printf("%d: %d, %d, %d\n", comm_rank, (int)elements[0], (int)elements[1], (int)elements[2]);
 
