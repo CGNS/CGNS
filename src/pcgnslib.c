@@ -17,6 +17,14 @@ freely, subject to the following restrictions:
 
 3. This notice may not be removed or altered from any source distribution.
 -------------------------------------------------------------------------*/
+/**
+ * \defgroup ParallelMisc Parallel Miscellaneous Routines
+ * \defgroup ParallelFile Parallel File Operations
+ * \defgroup ParallelGridCoordinate Parallel Grid Coordinate Data
+ * \defgroup ElementConnectivityData Parallel Element Connectivity Data
+ * \defgroup SolutionData Parallel Solution Data
+ * \defgroup ArrayData Parallel Array Data
+ **/ 
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -365,6 +373,15 @@ static int check_parallel(cgns_file *cgfile)
 /*== Begin Function Definitions ==*/
 /*================================*/
 
+/**
+ * \ingroup ParallelMisc
+ *
+ * \brief Set the MPI communicator.
+ *
+ * \param[in] comm The MPI communicator to be used by the CGNS library.
+ * \details Sets the MPI communicator for parallel operations by the CGNS library. The default value is MPI_COMM_WORLD. 
+ * \return \ier
+ */
 int cgp_mpi_comm(MPI_Comm comm)
 {
     /* check if we are actually running a parallel program */
@@ -385,7 +402,15 @@ int cgp_mpi_comm(MPI_Comm comm)
 
     return ctx_cgio.pcg_mpi_initialized ? CG_OK : CG_ERROR;
 }
-
+/**
+ * \ingroup ParallelMisc
+ *
+ * \brief Set the MPI info object.
+ *
+ * \param[in] info The MPI info object to be used by the CGNS library.
+ * \return \ier
+ * \details Passes the MPI info object for parallel operations to the CGNS library. Notes for Fortran: the data type for info is an INTEGER.
+ */
 int cgp_mpi_info(MPI_Info info)
 {
     ctx_cgio.pcg_mpi_info = info;
@@ -394,7 +419,16 @@ int cgp_mpi_info(MPI_Info info)
 }
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup ParallelMisc
+ *
+ * \brief Set the parallel IO mode.
+ *
+ * \param[in] mode Parallel input/output mode. 
+ * \return \ier
+ * \details Sets the mode for parallel data reads and writes. The default value is \p CGP_COLLECTIVE, which allows any number of processes to access the data. 
+ *  When set to \p CGP_COLLECTIVE, all processes must access the data. 
+ */
 int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
 {
     if (mode == CGP_INDEPENDENT)
@@ -411,6 +445,14 @@ int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
 
 
 /*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelMisc
+ *
+ * \brief Exit with error message.
+ *
+ * \details Is similar to \e cg_error_exit in that the process will exit with an error message. 
+ *  However, it will also print the process rank, and call \p MPI_Abort with an exit code of 1.
+ */
 
 void cgp_error_exit(void)
 {
@@ -423,6 +465,17 @@ void cgp_error_exit(void)
 }
 
 /*===== File IO Prototypes ================================*/
+/**
+ * \ingroup ParallelFile
+ *
+ * \brief Open a file for parallel IO.
+ *
+ * \param[in]  filename \FILE_filename
+ * \param[in]  mode \FILE_mode
+ * \param[out] fn \FILE_fn
+ * \return \ier
+ * \details Similar to \e cg_open and calls that routine. The differences is that \e cgp_open explicitly sets an internal CGNS flag to indicate parallel access. 
+ */
 
 int cgp_open(const char *filename, int mode, int *fn)
 {
@@ -446,7 +499,15 @@ int cgp_open(const char *filename, int mode, int *fn)
 }
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup ParallelFile
+ *
+ * \brief Close a CGNS file.
+ *
+ * \param[in] fn \FILE_fn
+ * \return \ier
+ * \details Similar to \e cg_close and calls that routine. 
+ */
 int cgp_close(int fn)
 {
     /* reset parallel access */
@@ -455,6 +516,22 @@ int cgp_close(int fn)
 }
 
 /*===== Grid IO Prototypes ================================*/
+/**
+ * \ingroup ParallelGridCoordinate
+ *
+ * \brief Create a coordinate data node by multiple processes in a parallel fashion.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] type \PGRID_datatype
+ * \param[in] coordname \PGRID_coordname
+ * \param[out] C \PGRID_Coordinate
+ * \return \ier
+ * \details To write the data in parallel, first call /e cgp_coord_write to create an empty data node. This call is identical 
+ * to /e cg_coord_write with /p coord_array set to NULL (no data written). The actual data is then written to the node in parallel
+ * using either /e cgp_coord_write_data or /e cgp_coord_general_write_data where /p range_min and /p range_max specify the subset of coordinate data to be written by a given process. 
+ */
 
 int cgp_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) type,
     const char *coordname, int *C)
@@ -466,6 +543,24 @@ int cgp_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) type,
 }
 
 /*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelGridCoordinate
+ *
+ * \brief Write coordinate data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] C \C_Coordinate
+ * \param[in] rmin \PGRID_range_min
+ * \param[in] rmax \PGRID_range_max
+ * \param[in] coords \PGRID_coord_array
+ * \return \ier
+ * \details Writes the actual data to the node in parallel, where /p rmin and /p rmax specify the subset 
+ *  of coordinate data to be written by a given process. It is the 
+ *  responsibility of the application to ensure that the data type for the coordinate data 
+ *  matches that as defined in the file; no conversions are done.
+ */
 
 int cgp_coord_write_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *coords)
@@ -516,10 +611,29 @@ int cgp_coord_write_data(int fn, int B, int Z, int C,
 }
 
 /*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelGridCoordinate
+ *
+ * \brief Write shaped array to a subset of grid coordinates in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] C \PGRID_Coordinate
+ * \param[in] rmin \PGRID_range_min
+ * \param[in] rmax \PGRID_range_max
+ * \param[in] m_type \PGRID_mem_datatype
+ * \param[in] m_numdim \PGRID_mem_rank
+ * \param[in] m_arg_dimvals \PGRID_mem_dimensions 
+ * \param[in] m_rmin \PGRID_mem_range_min
+ * \param[in] m_rmax \PGRID_mem_range_max
+ * \param[out] coords \PGRID_coord_array
+ * \return \ier
+ * \details The \e cgp_coord_general_write_data perform data conversions if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning 
+ *  this processor writes no data, then only \e fn, \e B, \e Z, and \e C need be set.  In this case, \e Z and \e C are "representative"
+ *  and can point to any valid zone.
+ */
 
-/* Note: if data == NULL, meaning this processor reads no data, then
-   only fn, B, Z, and C need be set.  In this case, Z and C are "representative"
-   and can point to any valid zone */
 int cgp_coord_general_write_data(int fn, int B, int Z, int C,
                                  const cgsize_t *rmin, const cgsize_t *rmax,
                                  CGNS_ENUMT(DataType_t) m_type,
@@ -605,6 +719,24 @@ int cgp_coord_general_write_data(int fn, int B, int Z, int C,
 }
 
 /*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelGridCoordinate
+ *
+ * \brief Read coordinate data in parallel.
+ *
+ * \param[in]  fn \FILE_fn
+ * \param[in]  B \B_Base
+ * \param[in]  Z \Z_Zone
+ * \param[in]  C \C_Coordinate
+ * \param[in]  rmin \PGRID_range_min
+ * \param[in]  rmax \PGRID_range_max
+ * \param[out] coords \PGRID_coord_array
+ * \return \ier
+ * \details Reads the actual data to the node in parallel, where /p rmin and /p rmax specify the subset 
+ *  of coordinate data to be read by a given process. It is the 
+ *  responsibility of the application to ensure that the data type for the coordinate data 
+ *  matches that as defined in the file; no conversions are done.
+ */
 
 int cgp_coord_read_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coords)
@@ -654,10 +786,29 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
 }
 
 /*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelGridCoordinate
+ *
+ * \brief Read shaped array to a subset of grid coordinates in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] C \C_Coordinate
+ * \param[in] rmin \PGRID_range_min
+ * \param[in] rmax \PGRID_range_max
+ * \param[in] m_type \PGRID_mem_datatype
+ * \param[in] m_numdim \PGRID_mem_rank
+ * \param[in] m_arg_dimvals \PGRID_mem_dimensions
+ * \param[in] m_rmin \PGRID_mem_range_min
+ * \param[in] m_rmax \PGRID_mem_range_max
+ * \param[out] coords \PGRID_coord_array
+ * \return \ier
+ * \details The \e cgp_coord_general_read_data perform data conversions if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning 
+ *  this processor reads no data, then only \e fn, \e B, \e Z, and \e C need be set.  In this case, \e Z and \e C are "representative"
+ *  and can point to any valid zone.
+ */
 
-/* Note: if data == NULL, meaning this processor reads no data, then
-   only fn, B, Z, and C need be set.  In this case, Z and C are "representative"
-   and can point to any valid zone */
 int cgp_coord_general_read_data(int fn, int B, int Z, int C,
                                 const cgsize_t *rmin, const cgsize_t *rmax,
                                 CGNS_ENUMT(DataType_t) m_type,
@@ -743,6 +894,28 @@ int cgp_coord_general_read_data(int fn, int B, int Z, int C,
 }
 
 /*===== Elements IO Prototypes ============================*/
+/* TODO: ref. cg_section_write 
+   Add somewhere: (Note that for Fortran calls, all integer arguments are integer*4 in 32-bit mode and integer*8 in 64-bit mode. See 64-bit Fortran Portability and Issues.)
+*/
+/**
+ * \ingroup ElementConnectivityData
+ *
+ * \brief Create a section data node.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] sectionname  \PCONN_ElementSectionName
+ * \param[in] type \PCONN_type
+ * \param[in] start \PCONN_start
+ * \param[in] end \PCONN_end
+ * \param[in] nbndry \PCONN_nbndry
+ * \param[out] S \CONN_S
+ * \return \ier
+ * \details \p cgp_section_write is used to write element connectivity data by multiple processes in a parallel fashion. To write the element data in parallel, first call \e cgp_section_write to create an empty data node. This call is identical to \e cg_section_write with \e Elements set to \e NULL (no data written). The actual element data is then written to the node in parallel using \p cgp_element_write_data where \e start and \e end specify the range of the elements to be written by a given process.
+ * NOTE (1): Routine only works for constant sized elements, since it is not possible to compute file offsets for variable sized elements without knowledge of the entire element connectivity data.
+ * NOTE (2): It is the responsibility of the application to ensure that \e cgsize_t in the application is the same size as that defined in the file; no conversions are done.
+ */
 
 int cgp_section_write(int fn, int B, int Z, const char *sectionname,
     CGNS_ENUMT(ElementType_t) type, cgsize_t start, cgsize_t end,
@@ -758,6 +931,26 @@ int cgp_section_write(int fn, int B, int Z, const char *sectionname,
     return cg_section_partial_write(fn, B, Z, sectionname, type,
                start, end, nbndry, S);
 }
+/**
+ * \ingroup ElementConnectivityData
+ *
+ * \brief Create a section data node.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] sectionname  \PCONN_ElementSectionName
+ * \param[in] type \PCONN_type
+ * \param[in] start \PCONN_start
+ * \param[in] end \PCONN_end
+ * \param[in] maxoffset \PCONN_MaxOffset
+ * \param[in] nbndry \PCONN_nbndry
+ * \param[out] S \CONN_S
+ * \return \ier
+ * \details \p cgp_poly_section_write is used to write element connectivity data by multiple processes in a parallel fashion. To write the element data in parallel, first call \e cgp_section_write to create an empty data node. This call is identical to \e cg_section_write with \e Elements set to \e NULL (no data written). The actual element data is then written to the node in parallel using \p cgp_element_write_data where \e start and \e end specify the range of the elements to be written by a given process.
+ * NOTE (1): Routine only works for constant sized elements, since it is not possible to compute file offsets for variable sized elements without knowledge of the entire element connectivity data.
+ * NOTE (2): It is the responsibility of the application to ensure that \e cgsize_t in the application is the same size as that defined in the file; no conversions are done.
+ */
 
 int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
     CGNS_ENUMT(ElementType_t) type, cgsize_t start, cgsize_t end, cgsize_t maxoffset,
@@ -779,7 +972,23 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
 }
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup ElementConnectivityData
+ *
+ * \brief Write element data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \CONN_S
+ * \param[in] start \PCONN_start
+ * \param[in] end \PCONN_end
+ * \param[in] elements \PCONN_Elements
+ * \return \ier
+ * \details \p cgp_elements_write_data is used to write element connectivity data by multiple processes in a parallel fashion. To write the element data in parallel, first call \e cgp_section_write to create an empty data node. This call is identical to \e cg_section_write with \e Elements set to \e NULL (no data written). The actual element data is then written to the node in parallel using \p cgp_element_write_data where \e start and \e end specify the range of the elements to be written by a given process.
+ * NOTE (1): Routine only works for constant sized elements, since it is not possible to compute file offsets for variable sized elements without knowledge of the entire element connectivity data.
+ * NOTE (2): It is the responsibility of the application to ensure that \e cgsize_t in the application is the same size as that defined in the file; no conversions are done.
+ */
 int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
     cgsize_t end, const cgsize_t *elements)
 {
@@ -826,7 +1035,21 @@ int cgp_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
 }
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup ElementConnectivityData
+ *
+ * \brief Write element data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \CONN_S
+ * \param[in] start \PCONN_start
+ * \param[in] end \PCONN_end
+ * \param[in] elements \PCONN_Elements
+ * \param[in] offsets \PCONN_Offsets
+ * \return \ier
+ */
 int cgp_poly_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
                             cgsize_t end, const cgsize_t *elements, const cgsize_t *offsets)
 {
@@ -901,7 +1124,20 @@ int cgp_poly_elements_write_data(int fn, int B, int Z, int S, cgsize_t start,
 
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup ElementConnectivityData
+ *
+ * \brief Read element data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \CONN_S
+ * \param[in] start \PCONN_start
+ * \param[in] end \PCONN_end
+ * \param[out] elements \PCONN_Elements
+ * \return \ier
+ */
 int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     cgsize_t end, cgsize_t *elements)
 {
@@ -945,7 +1181,20 @@ int cgp_elements_read_data(int fn, int B, int Z, int S, cgsize_t start,
     return readwrite_data_parallel(hid, type,
 			      1, &rmin, &rmax, &Data, CG_PAR_READ);
 }
-
+/**
+ * \ingroup ElementConnectivityData
+ *
+ * \brief Write parent info for an element section data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \CONN_S
+ * \param[in] start \PCONN_start
+ * \param[in] end \PCONN_end
+ * \param[in] parent_data \PCONN_Elements
+ * \return \ier
+ */
 int cgp_parent_data_write(int fn, int B, int Z, int S,
 			  cgsize_t start, cgsize_t end,
 			  const cgsize_t *parent_data)
@@ -1061,7 +1310,20 @@ int cgp_parent_data_write(int fn, int B, int Z, int S,
 }
 
 /*===== Solution IO Prototypes ============================*/
-
+/**
+ * \ingroup SolutionData
+ *
+ * \brief Create a solution field data node in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \PSOL_S
+ * \param[in] DataType \PSOL_datatype
+ * \param[in] fieldname \PSOL_fieldname
+ * \param[in] F \PSOL_F
+ * \return \ier
+ */
 int cgp_field_write(int fn, int B, int Z, int S,
     CGNS_ENUMT(DataType_t) DataType, const char *fieldname, int *F)
 {
@@ -1072,7 +1334,21 @@ int cgp_field_write(int fn, int B, int Z, int S,
 }
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup SolutionData
+ *
+ * \brief Write field data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \PSOL_S
+ * \param[in] F \PSOL_F
+ * \param[in] rmin \PSOL_range_min
+ * \param[in] rmax \PSOL_range_max
+ * \param[in] data \PSOL_solution_array
+ * \return \ier
+ */
 int cgp_field_write_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *data)
 {
@@ -1113,9 +1389,29 @@ int cgp_field_write_data(int fn, int B, int Z, int S, int F,
 
 /*---------------------------------------------------------*/
 
-/* Note: if data == NULL, meaning this processor reads no data, then
-   only fn, B, Z, S, and F need be set.  In this case, Z, S, and F are
-   "representative" and can point to any valid zone */
+/**
+ * \ingroup SolutionData
+ *
+ * \brief Write shaped array to a subset of flow solution field in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \PSOL_S
+ * \param[in] F \PSOL_F
+ * \param[in] rmin \PSOL_range_min
+ * \param[in] rmax \PSOL_range_max
+ * \param[in] m_type \PSOL_mem_datatype
+ * \param[in] m_numdim \PSOL_mem_rank
+ * \param[in] m_arg_dimvals \PSOL_mem_dimensions
+ * \param[in] m_rmin \PSOL_mem_range_min
+ * \param[in] m_rmax \PSOL_mem_range_max
+ * \param[in] data \PSOL_solution_array
+ * \return \ier
+ * \details If \e data == NULL, meaning this processor reads no data, then
+ *  only \e fn,\e  B, \e Z, \e S, and \e F need be set.  In this case, \e Z, \e S, and \e F are
+ *  "representative" and can point to any valid zone.
+ */
 int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
                                  const cgsize_t *rmin, const cgsize_t *rmax,
                                  CGNS_ENUMT(DataType_t) m_type,
@@ -1197,7 +1493,21 @@ int cgp_field_general_write_data(int fn, int B, int Z, int S, int F,
 }
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup SolutionData
+ *
+ * \brief Read field data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \PSOL_S
+ * \param[in] F \PSOL_F
+ * \param[in] rmin \PSOL_range_min
+ * \param[in] rmax \PSOL_range_max
+ * \param[in] data \PSOL_solution_array
+ * \return \ier
+ */
 int cgp_field_read_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, void *data)
 {
@@ -1237,9 +1547,29 @@ int cgp_field_read_data(int fn, int B, int Z, int S, int F,
 
 /*---------------------------------------------------------*/
 
-/* Note: if data == NULL, meaning this processor reads no data, then
-   only fn, B, Z, S, and F need be set.  In this case, Z, S, and F are
-   "representative" and can point to any valid zone */
+/**
+ * \ingroup SolutionData
+ *
+ * \brief Read subset of flow solution field to a shaped array in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \PSOL_S
+ * \param[in] F \PSOL_F
+ * \param[in] rmin \PSOL_range_min
+ * \param[in] rmax \PSOL_range_max
+ * \param[in] m_type \PSOL_mem_datatype
+ * \param[in] m_numdim \PSOL_mem_rank
+ * \param[in] m_arg_dimvals \PSOL_mem_dimensions
+ * \param[in] m_rmin \PSOL_mem_range_min
+ * \param[in] m_rmax \PSOL_mem_range_max
+ * \param[out] data \PSOL_solution_array
+ * \return \ier
+ * \details If \e data == NULL, meaning this processor reads no data, then
+ *  only \e fn, \e B, \e Z, \e S, and \e F need be set.  In this case, \e Z, \e S, and \e F are
+ *  "representative" and can point to any valid zone.
+ */
 int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
                                 const cgsize_t *rmin, const cgsize_t *rmax,
                                 CGNS_ENUMT(DataType_t) m_type,
@@ -1320,7 +1650,18 @@ int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
 }
 
 /*===== Array IO Prototypes ===============================*/
-
+/**
+ * \ingroup ArrayData
+ *
+ * \brief Create an array data node.
+ *
+ * \param[in] ArrayName \PARR_arrayname
+ * \param[in] DataType \PARR_datatype
+ * \param[in] DataDimension \PARR_rank
+ * \param[in] DimensionVector \PARR_dimensions
+ * \param[in] A  \PARR_A
+ * \return \ier
+ */
 int cgp_array_write(const char *ArrayName, CGNS_ENUMT(DataType_t) DataType,
     int DataDimension, const cgsize_t *DimensionVector, int *A)
 {
@@ -1354,7 +1695,17 @@ int cgp_array_write(const char *ArrayName, CGNS_ENUMT(DataType_t) DataType,
 }
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup ArrayData
+ *
+ * \brief Write array data in parallel.
+ *
+ * \param[in] A \PARR_A
+ * \param[in] rmin \PARR_range_min
+ * \param[in] rmax \PARR_range_max
+ * \param[in] data \PARR_data
+ * \return \ier
+ */
 int cgp_array_write_data(int A, const cgsize_t *rmin,
     const cgsize_t *rmax, const void *data)
 {
@@ -1389,9 +1740,26 @@ int cgp_array_write_data(int A, const cgsize_t *rmin,
 
 /*---------------------------------------------------------*/
 
-/* Note: if data == NULL, meaning this processor reads no data, then
-   only A need be set.  In this case, A is "representative" and can point to
-   any valid array being written by another processor */
+/**
+ * \ingroup ArrayData
+ *
+ * \brief Write shaped array to a subset of data array in parallel.
+ *
+ * \param[in] A \PARR_A
+ * \param[in] rmin \PARR_range_min
+ * \param[in] rmax \PARR_range_max
+ * \param[in] m_type \PARR_mem_datatype
+ * \param[in] m_numdim \PARR_mem_rank
+ * \param[in] m_arg_dimvals \PARR_mem_dimensions
+ * \param[in] m_rmin \PARR_mem_range_min
+ * \param[in] m_rmax \PARR_mem_range_max
+ * \param[out] data \PARR_data
+ * \return \ier
+ * \details If \e data == NULL, meaning this processor reads no data, then
+ *  only \e A need be set.  In this case, \e A is "representative" and can point to
+ *  any valid array being written by another processor
+ * 
+ */
 int cgp_array_general_write_data(int A,
                                  const cgsize_t *rmin, const cgsize_t *rmax,
                                  CGNS_ENUMT(DataType_t) m_type,
@@ -1467,7 +1835,17 @@ int cgp_array_general_write_data(int A,
 }
 
 /*---------------------------------------------------------*/
-
+/**
+ * \ingroup ArrayData
+ *
+ * \brief Read array data in parallel.
+ *
+ * \param[in] A \PARR_A
+ * \param[in] rmin \PARR_range_min
+ * \param[in] rmax \PARR_range_max
+ * \param[in] data \PARR_data
+ * \return \ier
+ */
 int cgp_array_read_data(int A, const cgsize_t *rmin,
     const cgsize_t *rmax, void *data)
 {
@@ -1501,9 +1879,25 @@ int cgp_array_read_data(int A, const cgsize_t *rmin,
 
 /*---------------------------------------------------------*/
 
-/* Note: if data == NULL, meaning this processor reads no data, then
-   only A need be set.  In this case, A is "representative" and can point to
-   any valid array being written by another processor */
+/**
+ * \ingroup ArrayData
+ *
+ * \brief Read subset of data array to a shaped array in parallel.
+ *
+ * \param[in] A \PARR_A
+ * \param[in] rmin \PARR_range_min
+ * \param[in] rmax \PARR_range_max
+ * \param[in] m_type \PARR_mem_datatype
+ * \param[in] m_numdim \PARR_mem_rank
+ * \param[in] m_arg_dimvals \PARR_mem_dimensions
+ * \param[in] m_rmin \PARR_mem_range_min
+ * \param[in] m_rmax \PARR_mem_range_max
+ * \param[out] data \PARR_data
+ * \return \ier
+ * \details If \e data == NULL, meaning this processor reads no data, then
+   only \e A need be set.  In this case, \e A is "representative" and can point to
+   any valid array being written by another processor.
+ */
 int cgp_array_general_read_data(int A,
                                 const cgsize_t *rmin, const cgsize_t *rmax,
                                 CGNS_ENUMT(DataType_t) m_type,
