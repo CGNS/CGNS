@@ -996,7 +996,7 @@ MODULE cgns
        INTEGER(C_INT), INTENT(IN), VALUE  :: mode
        INTEGER, INTENT(OUT) :: fn
      END FUNCTION cg_open
-
+!> @ingroup CGNSFile
      SUBROUTINE cg_version_f(fn,FileVersion, ier) BIND(C,NAME="cg_version_f")
        USE ISO_C_BINDING
        IMPLICIT NONE
@@ -1004,20 +1004,20 @@ MODULE cgns
        REAL(C_FLOAT)    :: FileVersion
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_version_f
-
+!> @ingroup CGNSFile
      SUBROUTINE cg_precision_f(fn, PRECISION, ier) BIND(C,NAME="cg_precision_f")
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER :: PRECISION
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_precision_f
-
+!> @ingroup CGNSFile
      SUBROUTINE cg_close_f(fn, ier) BIND(C,NAME="cg_close_f")
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_close_f
-
+!> @ingroup CGNSFile
      SUBROUTINE cg_save_as_f(fn, filename, file_type, follow_links, ier) ! BIND(C,NAME="cg_save_as_f")
        USE ISO_C_BINDING
        IMPLICIT NONE
@@ -1027,13 +1027,13 @@ MODULE cgns
        INTEGER :: follow_links
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_save_as_f
-
+!> @ingroup CGNSFile
      SUBROUTINE cg_set_file_type_f(ft, ier) BIND(C,NAME="cg_set_file_type_f")
        IMPLICIT NONE
        INTEGER :: ft
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_set_file_type_f
-
+!> @ingroup CGNSFile
      SUBROUTINE cg_get_file_type_f(fn, ft, ier) BIND(C,NAME="cg_get_file_type_f")
        IMPLICIT NONE
        INTEGER :: fn
@@ -4138,7 +4138,7 @@ MODULE cgns
        CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end
      END FUNCTION cg_goto
 #endif
-
+!> @ingroup CGNSFile
      SUBROUTINE cg_open_f(filename, mode, fn, ier)
        IMPORT :: C_CHAR, C_INT
        IMPLICIT NONE
@@ -4148,6 +4148,7 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_open_f
 
+!> @ingroup CGNSFile
      SUBROUTINE cg_is_cgns_f(filename, file_type, ier)
         IMPORT :: C_CHAR
         IMPLICIT NONE
