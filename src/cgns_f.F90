@@ -3851,7 +3851,7 @@ MODULE cgns
        INTEGER :: ier
      END SUBROUTINE cgp_array_multi_write_data_f
 
-     SUBROUTINE cgp_ptlist_write_data_f(file_number, rmin, rmax, points, ier) BIND(C, NAME="cgp_ptlist_write_data")
+     SUBROUTINE cgp_ptlist_write_data_f(file_number, rmin, rmax, points, ier) BIND(C, NAME="cgp_ptlist_write_data_f")
        IMPORT :: C_INT, C_PTR, CGSIZE_T
        IMPLICIT NONE
        INTEGER(C_INT) :: file_number
@@ -3861,7 +3861,7 @@ MODULE cgns
        INTEGER :: ier
      END SUBROUTINE cgp_ptlist_write_data_f
 
-     SUBROUTINE cgp_ptlist_read_data_f(file_number, rmin, rmax, points, ier) BIND(C, NAME="cgp_ptlist_read_data")
+     SUBROUTINE cgp_ptlist_read_data_f(file_number, rmin, rmax, points, ier) BIND(C, NAME="cgp_ptlist_read_data_f")
        IMPORT :: C_INT, C_PTR, CGSIZE_T
        IMPLICIT NONE
        INTEGER(C_INT) :: file_number
@@ -3870,6 +3870,19 @@ MODULE cgns
        INTEGER(CGSIZE_T), DIMENSION(*) :: points
        INTEGER :: ier
      END SUBROUTINE cgp_ptlist_read_data_f
+
+     SUBROUTINE cgp_parent_data_write_f(file_number, B, Z, S, rmin, rmax, parents, ier) BIND(C, NAME="cgp_parent_data_write_f")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT) :: file_number
+       INTEGER(C_INT) :: B
+       INTEGER(C_INT) :: Z
+       INTEGER(C_INT) :: S
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmin
+       INTEGER(CGSIZE_T), DIMENSION(*) :: rmax
+       INTEGER(CGSIZE_T), DIMENSION(*) :: parents
+       INTEGER :: ier
+     END SUBROUTINE cgp_parent_data_write_f
 
 #endif
 
@@ -4156,6 +4169,18 @@ MODULE cgns
             i17, i18, i19, i20
        CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end
      END FUNCTION cg_goto
+
+
+     INTEGER(C_INT) FUNCTION cg_golist(fn, B, depth, label, num) BIND(C, name="cg_golist")
+
+       USE ISO_C_BINDING
+       INTEGER(C_INT) , INTENT(IN), VALUE :: fn
+       INTEGER(C_INT) , INTENT(IN), VALUE :: B
+       INTEGER(C_INT) , INTENT(IN), VALUE :: depth
+       TYPE(C_PTR), DIMENSION(*), INTENT(IN) :: label
+       INTEGER(C_INT), DIMENSION(*), INTENT(IN) :: num
+     END FUNCTION cg_golist
+
 #endif
 
      SUBROUTINE cg_open_f(filename, mode, fn, ier)
