@@ -63,13 +63,20 @@ PROGRAM test_unstruc_quad_f
   REAL(dp), allocatable ::  fx(:), fy(:), fz(:) 
   INTEGER(cgsize_t), allocatable, target :: elements(:)
   INTEGER(cgsize_t), allocatable :: point_list(:)
-  integer(cgsize_t), dimension(:), pointer :: el_ptr => null()
-  integer(cgsize_t), dimension(:), pointer :: null_ptr => null()
+  INTEGER(cgsize_t), dimension(:), pointer :: el_ptr => null()
+  INTEGER(cgsize_t), dimension(:), pointer :: null_ptr => null()
   LOGICAL found_point
 
 
   CHARACTER(len=10, kind=C_CHAR), allocatable, target :: labels(:)
   TYPE(C_PTR), dimension(:), allocatable :: pt_labels
+!
+!---- initialize MPI
+  CALL MPI_INIT(mpi_err)
+  CALL MPI_COMM_SIZE(MPI_COMM_WORLD, comm_size, mpi_err)
+  CALL MPI_COMM_RANK(MPI_COMM_WORLD, comm_rank, mpi_err)
+  CALL MPI_INFO_CREATE(info, mpi_err)
+
 ! First define the label array on fortran side 
   allocate(labels(4))
   labels(1) = "Zone_t"//C_NULL_CHAR
@@ -82,14 +89,6 @@ PROGRAM test_unstruc_quad_f
   pt_labels(2) = C_LOC(labels(2))
   pt_labels(3) = C_LOC(labels(3))
   pt_labels(4) = C_LOC(labels(4))
-
-!
-!---- initialize MPI
-  CALL MPI_INIT(mpi_err)
-  CALL MPI_COMM_SIZE(MPI_COMM_WORLD, comm_size, mpi_err)
-  CALL MPI_COMM_RANK(MPI_COMM_WORLD, comm_rank, mpi_err)
-  CALL MPI_INFO_CREATE(info, mpi_err)
-
 
 !---- open file and create base and zone
   nelem = 3*comm_size
