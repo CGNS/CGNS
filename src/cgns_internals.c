@@ -8282,12 +8282,13 @@ int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata)
     return CG_OK;
 }
 
-int cgi_write_ptset(double parent_id, char_33 name, cgns_ptset *ptset,
+int cgi_write_ptset(double parent_id, char *name, cgns_ptset *ptset,
                     int ndim, void *ptset_ptr)
 {
     cgsize_t dim_vals[12];
     int num_dim;
     char_33 label;
+    int HDF5storage_type_original = HDF5storage_type;
 
     if (ptset->link) {
         return cgi_write_link(parent_id, name, ptset->link, &ptset->id);
@@ -8305,10 +8306,19 @@ int cgi_write_ptset(double parent_id, char_33 name, cgns_ptset *ptset,
     dim_vals[1]=ptset->npts;
     num_dim = 2;
 
+    // PointLists should be contiguous for parallel reading/writing
+    if (ptset->type == CGNS_ENUMV(PointList) ||
+        ptset->type == CGNS_ENUMV(PointListDonor) ||
+        ptset->type == CGNS_ENUMV(ElementList) ||
+        ptset->type == CGNS_ENUMV(CellListDonor)) {
+        HDF5storage_type = CG_CONTIGUOUS;
+    }
+
      /* Create the node */
     if (cgi_new_node(parent_id, name, label, &ptset->id,
         ptset->data_type, num_dim, dim_vals, ptset_ptr)) return CG_ERROR;
 
+    HDF5storage_type = HDF5storage_type_original;
     return CG_OK;
 }
 
@@ -11419,6 +11429,13 @@ static int cgi_next_posit(char *label, int index, char *name)
             if (index >= 0 && index < b->nuser_data) {
                 return cgi_add_posit((void *)&b->user_data[index],
                            label, index + 1, b->user_data[index].id);
+            }
+        }
+        else if (0 == strcmp (label, "IndexArray_t")) {
+            if (b->ptset &&
+                (index == 1 || 0 == strcmp (b->ptset->name, name))) {
+                return cgi_add_posit((void *)b->ptset,
+                           label, 1, b->ptset->id);
             }
         }
         else
