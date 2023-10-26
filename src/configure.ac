@@ -1884,8 +1884,7 @@ if test "$withfortran" = "yes"; then
        FFLAGS="$FFLAGS -mismatch_all"
        if test $BUILDHDF5 -eq 1 &&
           test $H5_VERS_MAJOR -ge 1 &&
-          test $H5_VERS_MINOR -ge 14 &&
-          test $H5_VERS_RELEASE -ge 3; then
+          test $H5_VERS_MINOR -ge 14; then
               FFLAGS="$FFLAGS -ieee=full"
        fi
      fi
