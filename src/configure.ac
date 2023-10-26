@@ -1881,7 +1881,7 @@ if test "$withfortran" = "yes"; then
 #--------------------------------------------------------------------------
      fc_vendor="`$FC -V 2>&1 |grep 'NAG'`"
      if test X != "X$fc_vendor"; then
-       FFLAGS="$FFLAGS -mismatch_all"
+       FFLAGS="$FFLAGS -mismatch_all -ieee=full"
      fi
 fi
 #--------------------------------------------------------------------------
