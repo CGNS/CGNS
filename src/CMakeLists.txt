@@ -143,6 +143,9 @@ endif()
 #--------------------------------------------------------------------------
 if(CMAKE_Fortran_COMPILER_ID MATCHES "NAG")
  SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mismatch_all")
+ if ("${HDF5_VERSION}" VERSION_GREATER_EQUAL "1.14.3")
+    SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ieee=full")
+ endif()
 endif()
 
 ENABLE_LANGUAGE(Fortran)

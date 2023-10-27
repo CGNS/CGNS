@@ -1882,6 +1882,11 @@ if test "$withfortran" = "yes"; then
      fc_vendor="`$FC -V 2>&1 |grep 'NAG'`"
      if test X != "X$fc_vendor"; then
        FFLAGS="$FFLAGS -mismatch_all"
+       if test $BUILDHDF5 -eq 1 &&
+          test $H5_VERS_MAJOR -ge 1 &&
+          test $H5_VERS_MINOR -ge 14; then
+              FFLAGS="$FFLAGS -ieee=full"
+       fi
      fi
 fi
 #--------------------------------------------------------------------------
