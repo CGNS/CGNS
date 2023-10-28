@@ -222,81 +222,51 @@ set(update_ngon_FILES
 add_executable(update_ngon ${update_ngon_FILES})
 target_link_libraries(update_ngon PRIVATE ${UTILITIES_LK_LIBS})
 
+set(exec_list
+		plot3d_to_cgns
+		cgns_to_plot3d
+		patran_to_cgns
+		tecplot_to_cgns
+		cgns_to_tecplot
+		tetgen_to_cgns
+		vgrid_to_cgns
+		aflr3_to_cgns
+		cgns_to_aflr3
+		fast_to_cgns
+		cgns_to_fast
+		cgns_to_vtk
+		convert_location
+		convert_variables
+		convert_dataclass
+		extract_subset
+		interpolate_cgns
+		update_ngon
+		cgns_info)
+
+set(tcl_list
+		conserved.cnv
+		convert.tcl
+		dimensional.cnv
+		patran.tcl
+		plot3d.tcl
+		primitive.cnv
+		tecplot.tcl
+		tetgen.tcl
+		vgrid.tcl
+		aflr3.tcl
+		fast.tcl
+		util.tcl
+		utilities.mnu
+		vtk.tcl)
+
 if (WIN32)
-  install(TARGETS
-        plot3d_to_cgns
-	cgns_to_plot3d
-	patran_to_cgns
-	tecplot_to_cgns
-	cgns_to_tecplot
-	tetgen_to_cgns
-	vgrid_to_cgns
-	aflr3_to_cgns
-	cgns_to_aflr3
-	fast_to_cgns
-	cgns_to_fast
-	cgns_to_vtk
-	convert_location
-	convert_variables
-	convert_dataclass
-	extract_subset
-	interpolate_cgns
-	update_ngon
-        cgns_info
-	RUNTIME DESTINATION bin)
-  install(FILES
-	conserved.cnv
-	convert.tcl
-	dimensional.cnv
-	patran.tcl
-	plot3d.tcl
-	primitive.cnv
-	tecplot.tcl
-	tetgen.tcl
-	vgrid.tcl
-	aflr3.tcl
-	fast.tcl
-	util.tcl
-	utilities.mnu
-	vtk.tcl
-	DESTINATION share)
+	install(TARGETS ${exec_list} RUNTIME DESTINATION bin)
+	install(FILES ${tcl_list} DESTINATION share)
+elseif(UNIX)
+	install(TARGETS ${exec_list} RUNTIME DESTINATION ${CGNS_UTILS_INSTALL})
+	install(FILES ${tcl_list} DESTINATION share)
 else ()
-  install(TARGETS
-        plot3d_to_cgns
-	cgns_to_plot3d
-	patran_to_cgns
-	tecplot_to_cgns
-	cgns_to_tecplot
-	tetgen_to_cgns
-	vgrid_to_cgns
-	aflr3_to_cgns
-	cgns_to_aflr3
-	fast_to_cgns
-	cgns_to_fast
-	cgns_to_vtk
-	convert_location
-	convert_variables
-	convert_dataclass
-	extract_subset
-	interpolate_cgns
-	update_ngon
-        cgns_info
-	RUNTIME DESTINATION bin/cgnstools)
-  install(FILES
-	conserved.cnv
-	convert.tcl
-	dimensional.cnv
-	patran.tcl
-	plot3d.tcl
-	primitive.cnv
-	tecplot.tcl
-	tetgen.tcl
-	vgrid.tcl
-	aflr3.tcl
-	fast.tcl
-	util.tcl
-	utilities.mnu
-	vtk.tcl
-	DESTINATION share/cgnstools)
+	install(TARGETS ${exec_list} RUNTIME DESTINATION bin/cgnstools)
+	install(FILES ${tcl_list} DESTINATION share/cgnstools)
 endif ()
 

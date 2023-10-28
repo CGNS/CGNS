@@ -41,7 +41,19 @@ endmacro ()
 SET_CGNS_BUILD_TYPE()
 
 project("cgns" C)
-
+if(UNIX)
+  include(GNUInstallDirs)
+else()
+  if (WIN32)
+    set(${CMAKE_INSTALL_LIBDIR} "lib")
+    set(${CMAKE_INSTALL_DATADIR} "share")
+    set(${CMAKE_INSTALL_INCLUDEDIR} "include")
+    set(${CMAKE_INSTALL_BINDIR} "bin")
+    message(STATUS "Setting installation destination on Windows to: ${CMAKE_INSTALL_PREFIX}")
+  else()
+    message(FATAL_ERROR "System not UNIX nor WIN32 - not implemented yet")
+  endif()
+endif()
 # Determine CGNS_VERSION from src/cgnslib.h for 
 file (READ ${PROJECT_SOURCE_DIR}/src/cgnslib.h _cgnslib_h_contents)
 string (REGEX REPLACE ".*#define[ \t]+CGNS_DOTVERS[ \t]+([0-9]*)\\.([0-9])[0-9]*.*$"
@@ -339,7 +351,7 @@ if (CGNS_ENABLE_HDF5)
 
   # Check if HDF5 version is 1.8 or greater
   if (HDF5_VERSION VERSION_LESS "1.8.0")
-    message (FATAL_ERROR "HDF5 version must be greater than 1.8.0")
+    message (FATAL_ERROR "HDF5 ${HDF5_VERSION}: version must be greater than 1.8.0")
   endif ()
 
   set(HDF5_NEED_MPI "OFF" CACHE BOOL "Does the HDF5 library require linking to mpi? (Only true if using parallel HDF5)")
@@ -449,6 +461,18 @@ if (CGNS_BUILD_TESTING)
   enable_testing ()
   include (CTest)
   include (${PROJECT_SOURCE_DIR}/CTestConfig.cmake)
+endif ()
+
+#########################
+# COMMANDLINE UTILITIES #
+#########################
+
+option(CGNS_ENABLE_UTILS "Enable or disable CGNS commandline utilities (without compiling tk-gui)" "ON")
+if (CGNS_ENABLE_UTILS)
+  set(CGNS_UTILS_INSTALL ${CMAKE_INSTALL_FULL_BINDIR})
+  add_subdirectory(src/cgnstools/calclib)
+  add_subdirectory(src/cgnstools/common)
+  add_subdirectory(src/cgnstools/utilities)
 endif ()
 
 ########
