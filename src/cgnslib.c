@@ -298,6 +298,10 @@ const char * ElementTypeName[NofValidElementTypes] =
      "PENTA_33", "PENTA_66", "PENTA_75",
      "HEXA_44", "HEXA_98", "HEXA_125"
     };
+const char * ElementSpaceName[NofValidElementSpaceTypes] =
+    {"Null", "UserDefined",
+     "Parametric", "Barycentric"
+    };
 const char * ZoneTypeName[NofValidZoneTypes] =
     {"Null", "UserDefined",
      "Structured", "Unstructured"
@@ -1242,6 +1246,10 @@ const char *cg_DataTypeName(CGNS_ENUMT( DataType_t )  type)
 const char *cg_ElementTypeName(CGNS_ENUMT( ElementType_t )  type)
 {
     return cg_get_name(NofValidElementTypes,ElementTypeName,(int)type);
+}
+const char *cg_ElementSpaceType(CGNS_ENUMT( ElementSpace_t )  type)
+{
+    return cg_get_name(NofValidElementSpaceTypes,ElementSpaceName,(int)type);  
 }
 const char *cg_ZoneTypeName(CGNS_ENUMT( ZoneType_t )  type)
 {
@@ -15864,6 +15872,12 @@ int cg_ndescriptors(int *ndescriptors)
         NDESCRIPTOR(cgns_caverage)
     else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
         NDESCRIPTOR(cgns_subreg)
+    else if (strcmp(posit->label,"RulesCollection_t")==0)
+        NDESCRIPTOR(cgns_rules_collection)
+    else if (strcmp(posit->label,"IntegrationRule_t")==0)
+        NDESCRIPTOR(cgns_integration_rule)
+    else if (strcmp(posit->label,"ElementAssociation_t")==0)
+        NDESCRIPTOR(cgns_element_association)
     else {
         cgi_error("Descriptor_t node not supported under '%s' type node",posit->label);
         (*ndescriptors)=0;
@@ -16884,6 +16898,2433 @@ int cg_gridlocation_write(CGNS_ENUMT(GridLocation_t) GridLocation)
 /*----------------------------------------------------------------------*/
 
 /**
+ * \ingroup IntegrationRules
+ *
+ * \brief Get the Reference Element Space
+ *
+ * \param[out] reference_space
+ * \return \ier
+ *
+ * \details   use of cg_goto
+ *
+ */
+int cg_reference_space_read(CGNS_ENUMT(ElementSpace_t) * reference_space)
+{
+    CHECK_FILE_OPEN
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+
+    if (strcmp(posit->label, "IntegrationRule_t")==0) {
+        cgns_integration_rule *parent = (cgns_integration_rule *)posit->posit;
+        *reference_space = parent->el_space;
+    } else
+        cgi_error("ElementSpace_t node not supported under '%s' type node", posit->label);
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup IntegrationRules
+ *
+ * \brief ...
+ *
+ * \param[out] rulename
+ * \param[out] etype
+ * \param[out] espace
+ * \param[out] num_itg_pts
+ * \param[out] num_val
+ * \param[out] datatype
+ * \return \ier
+ *
+ *
+ */
+int cg_integration_info(char *rulename, CGNS_ENUMT(ElementType_t) * etype,
+                        CGNS_ENUMT(ElementSpace_t) * espace, int *num_itg_pts,
+                        int *num_val, CGNS_ENUMT(DataType_t) * datatype)
+{
+
+    CHECK_FILE_OPEN
+
+    /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+
+    if (strcmp(posit->label, "IntegrationRule_t")==0) {
+        cgns_integration_rule *rule = ((cgns_integration_rule *)posit->posit);
+        strcpy(rulename, rule->name);
+        *etype = rule->el_type;
+        *espace = rule->el_space;
+        *num_itg_pts = rule->npoints;
+        if (rule->el_space == CGNS_ENUMV(ElementSpaceNull)) {
+            *num_val = 0;
+        } else if (rule->el_space == CGNS_ENUMV(Barycentric)) {
+            *num_val = rule->num_vertices;
+        } else {
+            *num_val = rule->parametric_dim;
+        }
+        if (rule->weights) {
+            *datatype = cgi_datatype(rule->weights->data_type);
+        } else {
+            *datatype = CGNS_ENUMV(DataTypeNull);
+        }
+    } else {
+        return CG_ERROR;
+    }
+    return CG_OK;
+}
+
+/**
+ * \ingroup IntegrationRules
+ *
+ * \brief ...
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base
+ * \param[in] C  Collection rule index
+ * \param[in] R
+ * \param[out] rulename
+ * \param[out] etype
+ * \param[out] itg_space
+ * \param[out] num_itg_pts
+ * \param[out] num_val
+ * \param[out] datatype
+ * \return \ier
+ *
+ *
+ */
+int cg_itg_rule_info(int fn, int B, int C, int R, char *rulename,
+                     CGNS_ENUMT(ElementType_t) * etype,
+                     CGNS_ENUMT(ElementSpace_t) * itg_space, int *num_itg_pts,
+                     int *num_val, CGNS_ENUMT(DataType_t) * datatype)
+{
+    cgns_rules_collection *collection;
+    cgns_integration_rule *rule;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    collection = cgi_get_rules_collection(cg, B, C);
+    if (collection == 0) return CG_ERROR;
+
+    if (R>collection->nitems || R<0) {
+        cgi_error("IntegrationRule_t node number %d invalid", R);
+        return CG_OK;
+    }
+    rule = &(collection->items[R-1]);
+
+    strcpy(rulename, rule->name);
+    *etype = rule->el_type;
+    *itg_space = rule->el_space;
+    *num_itg_pts = rule->npoints;
+    if (rule->el_space == CGNS_ENUMV(ElementSpaceNull)) {
+        *num_val = 0;
+    } else if (rule->el_space == CGNS_ENUMV(Barycentric)) {
+        *num_val = rule->num_vertices;
+    } else {
+        *num_val = rule->parametric_dim;
+    }
+    if (rule->weights) {
+        *datatype = cgi_datatype(rule->weights->data_type);
+    } else {
+        *datatype = CGNS_ENUMV(DataTypeNull);
+    }
+    return CG_OK;
+}
+
+/* Internal function for now...
+ */
+int cg_itg_rule_write(int fn, int B, int C, const char *rulename,
+                      CGNS_ENUMV(ElementSpace_t) refspace,
+                      CGNS_ENUMT(ElementType_t) etype, int num_itg_pts, int num_val,
+                      CGNS_ENUMT(DataType_t) datatype, void *locations, void *weights,
+                      int *R)
+{
+    cgns_rules_collection *collection;
+    cgns_integration_rule *rule = 0;
+    cgns_array *weights_arr = 0, *points_arr = 0;
+    cgsize_t dim_vals;
+    int index;
+    int rule_data[3];
+    double dummy_id;
+    const char *ItgPointName[2] = {"ParametricPoints", "BarycentricPoints"};
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    collection = cgi_get_rules_collection(cg, B, C);
+    if (collection == 0) return CG_ERROR;
+
+    for (index = 0;
+         index < collection->nitems && strcmp(rulename, collection->items[index].name);
+         index++)
+        ;
+
+    if (index == collection->nitems) {
+        if (collection->nitems == 0) {
+            collection->items = CGNS_NEW(cgns_integration_rule, collection->nitems+1);
+        } else {
+            collection->items = CGNS_RENEW(cgns_integration_rule, collection->nitems+1,
+                                           collection->items);
+        }
+        rule = &(collection->items[collection->nitems]);
+        collection->nitems++;
+    } else {
+        /* in CG_MODE_WRITE, children names must be unique */
+        if (cg->mode == CG_MODE_WRITE) {
+            cgi_error("Duplicate child name found: %s", rulename);
+            return CG_ERROR;
+        }
+        /* overwrite an existing rule */
+        /* delete the existing rule from file */
+        if (cgi_delete_node(collection->id, collection->items[index].id)) return CG_ERROR;
+        /* save the old in-memory address to overwrite */
+        rule = &(collection->items[index]);
+        /* free memory */
+        cgi_free_integration_rule(rule);
+    }
+    (*R) = index + 1;
+
+    /* save data in memory */
+    memset(rule, 0, sizeof(cgns_integration_rule));
+    strcpy(rule->name, rulename);
+    rule->id = 0;
+    rule->el_space = refspace;
+    rule->el_type = etype;
+    rule->npoints = num_itg_pts;
+    rule->parametric_dim = 0;
+    rule->num_vertices = 0;
+    rule->weights = 0;
+    rule->points = 0;
+
+    if (refspace != CGNS_ENUMV(Barycentric)) {
+        rule->parametric_dim = num_val;
+    } else {
+        rule->num_vertices = num_val;
+    }
+
+    /* take care of weights */
+    rule->weights = CGNS_NEW(cgns_array, 1);
+
+    weights_arr = rule->weights;
+    strcpy(weights_arr->data_type, cgi_adf_datatype(datatype));
+    strcpy(weights_arr->name, "Weights");
+    weights_arr->data_dim = 1;
+    weights_arr->dim_vals[0] = num_itg_pts;
+    /* initialize other fields */
+    weights_arr->link = 0;
+    weights_arr->ndescr = 0;
+    weights_arr->data_class = CGNS_ENUMV(DataClassNull);
+    weights_arr->units = 0;
+    weights_arr->exponents = 0;
+    weights_arr->convert = 0;
+    weights_arr->data = 0;
+
+    /* take care of points */
+    rule->points = CGNS_NEW(cgns_array, 1);
+
+    points_arr = rule->points;
+    strcpy(points_arr->data_type, cgi_adf_datatype(datatype));
+    if (refspace != CGNS_ENUMV(Barycentric)) {
+        strcpy(points_arr->name, ItgPointName[0]);
+    } else {
+        strcpy(points_arr->name, ItgPointName[1]);
+    }
+    points_arr->data_dim = 2;
+    points_arr->dim_vals[0] = num_val;
+    points_arr->dim_vals[1] = num_itg_pts;
+    /* initialize other fields */
+    points_arr->link = 0;
+    points_arr->ndescr = 0;
+    points_arr->data_class = CGNS_ENUMV(DataClassNull);
+    points_arr->units = 0;
+    points_arr->exponents = 0;
+    points_arr->convert = 0;
+    points_arr->data = 0;
+
+    /* save data to disk */
+    dim_vals = 3;
+    rule_data[0] = rule->el_type;
+    rule_data[1] = rule->npoints;
+    rule_data[2] = rule->parametric_dim;
+
+    /* Specific case of NGON_n and NFACE_n */
+    if (rule->el_space == CGNS_ENUMV(Barycentric)) {
+        rule_data[2] = rule->num_vertices;
+    }
+
+    if (cgi_new_node(collection->id, rule->name, "IntegrationRule_t", &rule->id, "I4", 1,
+                     &dim_vals, rule_data))
+        return CG_ERROR;
+
+    if (rule->el_space != CGNS_ENUMV(Parametric)) {
+        dim_vals = (cgsize_t)strlen(ElementSpaceName[rule->el_space]);
+        if (cgi_new_node(rule->id, "ReferenceSpace", "ElementSpace_t", &dummy_id, "C1", 1,
+                         &dim_vals, (void *)ElementSpaceName[rule->el_space]))
+            return CG_ERROR;
+    }
+
+    HDF5storage_type = CG_CONTIGUOUS;
+    if (cgi_new_node(rule->id, weights_arr->name, "DataArray_t", &weights_arr->id,
+                     weights_arr->data_type, weights_arr->data_dim, weights_arr->dim_vals,
+                     weights))
+        return CG_ERROR;
+
+    if (cgi_new_node(rule->id, points_arr->name, "DataArray_t", &points_arr->id,
+                     points_arr->data_type, points_arr->data_dim, points_arr->dim_vals,
+                     locations))
+        return CG_ERROR;
+    HDF5storage_type = CG_COMPACT;
+
+    return CG_OK;
+}
+/**
+ * \ingroup ElementIntegrationRule
+ *
+ * \brief ...
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] C \C_IntegrationRuleCollection
+ * \param[in] rulename Name of the rule node
+ * \param[in] etype Element type
+ * \param[in] num_itg_pts Number of integration points
+ * \param[in] num_param Number of parameter (equals to the reference space dimension)
+ * \param[in] datatype
+ * \param[in] parameters
+ * \param[in] weights
+ * \param[out] R
+ * \return \ier
+ *
+ * \details    After accessing a particular UserDefinedData_t node using cg_goto,
+ *             the Point Set functions may be used to read or write point set information for the node.
+ *             The function cg_gridlocation_write may also be used to specify the location of the data with respect to the grid (e.g., Vertex or FaceCenter).
+ *
+ */
+int cg_itg_rule_parametric_write(int fn, int B, int C, const char *rulename,
+                                 CGNS_ENUMT(ElementType_t) etype, int num_itg_pts,
+                                 int num_param, CGNS_ENUMT(DataType_t) datatype,
+                                 void *parameters, void *weights, int *R)
+{
+
+    return cg_itg_rule_write(fn, B, C, rulename, CGNS_ENUMV(Parametric), etype,
+                             num_itg_pts, num_param, datatype, parameters, weights, R);
+}
+
+/**
+ * \ingroup ElementIntegrationRule
+ *
+ * \brief ...
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] C \C_IntegrationRuleCollection
+ * \param[in] rulename Name of the rule node
+ * \param[in] etype Element type
+ * \param[in] num_itg_pts Number of integration points
+ * \param[in] num_pts
+ * \param[in] datatype
+ * \param[in] location_weights
+ * \param[in] weights
+ * \param[out] R
+ * \return \ier
+ *
+ * \details    After
+ *
+ */
+int cg_itg_rule_barycentric_write(int fn, int B, int C, const char *rulename,
+                                  CGNS_ENUMT(ElementType_t) etype, int num_itg_pts,
+                                  int num_pts, CGNS_ENUMT(DataType_t) datatype,
+                                  void *location_weights, void *weights, int *R)
+{
+    return cg_itg_rule_write(fn, B, C, rulename, CGNS_ENUMV(Barycentric), etype,
+                             num_itg_pts, num_pts, datatype, location_weights, weights,
+                             R);
+}
+
+/**
+ * \ingroup RulesCollection
+ *
+ * \brief get the number of rules collection under a base
+ *
+ * \param[in]  fn \FILE_fn
+ * \param[in]  B  \B_Base
+ * \param[out] C  number of integration rules collections
+ * \return \ier
+ *
+ * \details    After
+ *
+ */
+int cg_nrcollections(int fn, int B, int *C)
+{
+    cgns_base *base;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    base = cgi_get_base(cg, B);
+    if (base==0) return CG_ERROR;
+
+    *C = base->nitgrulescolls;
+    return CG_OK;
+}
+
+/**
+ * \ingroup RulesCollection
+ *
+ * \brief  write a RuleCollection_t node
+ *
+ * \param[in] fn  \FILE_fn
+ * \param[in] B   \B_Base
+ * \param[in] collectionname name of the RuleCollection_t node
+ * \param[out] C  index of the collection
+ * \return \ier
+ *
+ *
+ */
+int cg_rcollection_write(int fn, int B, const char *collectionname, int *C)
+{
+    cgns_base *base;
+    cgns_rules_collection *collection = NULL;
+    int index;
+
+    /* verify input */
+    if (cgi_check_strlen(collectionname)) return CG_ERROR;
+
+    /* get memory address file */
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    /* get memory address for base */
+    base = cgi_get_base(cg, B);
+    if (base == 0) return CG_ERROR;
+
+    /* Overwrite a Collection_t Node: */
+    for (index=0; index<base->nitgrulescolls; index++) {
+        if (strcmp(collectionname, base->itgrulescolls[index].name) == 0) {
+
+            /* in CG_MODE_WRITE, children names must be unique */
+            if (cg->mode == CG_MODE_WRITE) {
+                cgi_error("Duplicate child name found: %s", collectionname);
+                return CG_ERROR;
+            }
+
+            /* overwrite an existing solution */
+            /* delete the existing solution from file */
+            if (cgi_delete_node(base->id, base->itgrulescolls[index].id)) return CG_ERROR;
+            /* save the old in-memory address to overwrite */
+            collection = &(base->itgrulescolls[index]);
+            /* free memory */
+            cgi_free_rules_collection(collection);
+            break;
+        }
+    }
+    /* ... or add a RulesCollection_t Node: */
+    if (index == base->nitgrulescolls) {
+        if (base->nitgrulescolls == 0) {
+            base->itgrulescolls =
+                CGNS_NEW(cgns_rules_collection, base->nitgrulescolls + 1);
+        } else {
+            base->itgrulescolls = CGNS_RENEW(
+                cgns_rules_collection, base->nitgrulescolls + 1, base->itgrulescolls);
+        }
+        collection = &(base->itgrulescolls[base->nitgrulescolls]);
+        base->nitgrulescolls++;
+    }
+    (*C) = index + 1;
+
+    /* save data in memory */
+    memset(collection, 0, sizeof(cgns_rules_collection));
+    strcpy(collection->name, collectionname);
+    collection->nitems = 0;
+
+    /* save data in file */
+    if (cgi_new_node(base->id, collection->name, "RulesCollection_t", &collection->id,
+                     "MT", 0, 0, 0))
+        return CG_ERROR;
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup RulesCollection
+ *
+ * \brief read a rules
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] C index of collection to read
+ * \param[out] collectionname
+ * \return \ier
+ *
+ *
+ */
+int cg_rcollection_read(int fn, int B, int C, char *collectionname)
+{
+    cgns_rules_collection *collection;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    collection = cgi_get_rules_collection(cg, B, C);
+    if (collection==0) return CG_ERROR;
+
+    strcpy(collectionname, collection->name);
+    return CG_OK;
+}
+
+/**
+ * \ingroup RulesCollection
+ *
+ * \brief get the number of ids pointing to IntegrationRule_t nodes in the collection
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] C index of the collection considered
+ * \param[out] num_ids number of ids stored in the collection
+ * \return \ier
+ *
+ *
+ */
+int cg_rcollection_nindexed_rules(int fn, int B, int C, int *num_ids)
+{
+    cgns_rules_collection *collection;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    collection = cgi_get_rules_collection(cg, B, C);
+    if (collection == 0) return CG_ERROR;
+
+    *num_ids = 0;
+    if (collection->id_to_qualifier) {
+        *num_ids = collection->id_to_qualifier->nids;
+    }
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup RulesCollection
+ *
+ * \brief read the mapping ids and names of a collection
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] C index of the collection
+ * \param[out] rule_ids  array of ids used to point to associate rule names
+ * \param[out] rulenames node names of mapped IntegrationRule_t nodes
+ * \return \ier
+ *
+ *
+ */
+int cg_rcollection_idtoqualifier_read(int fn, int B, int C, int *rule_ids,
+                                      char *rulenames)
+{
+    int n;
+    cgns_rules_collection *collection;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    collection = cgi_get_rules_collection(cg, B, C);
+    if (collection == 0) return CG_ERROR;
+
+    for (n = 0; n < collection->id_to_qualifier->nids; n++) {
+        rule_ids[n] = collection->id_to_qualifier->ids[n];
+    }
+    for (n = 0; n < collection->id_to_qualifier->nids; n++) {
+        strcpy(rulenames + 33 * n, collection->id_to_qualifier->names[n]);
+    }
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup RulesCollection
+ *
+ * \brief write a RulesCollection_t node mapping
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] C
+ * \param[in] num_ids
+ * \param[in] rule_ids
+ * \param[in] rulenames
+ * \return \ier
+ *
+ *
+ */
+int cg_rcollection_idtoqualifier_write(int fn, int B, int C, int num_ids, int *rule_ids,
+                                       const char *rulenames)
+{
+    cgns_rules_collection *collection;
+    cgns_map_names *idtoqualifier;
+    int n;
+    cgsize_t dim_vals;
+    cgsize_t dim_names[2];
+    double dummy_id;
+    char *names_data;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    collection = cgi_get_rules_collection(cg, B, C);
+    if (collection == 0) return CG_ERROR;
+
+    /* Overwrite existing IdToQualifier MapName_t node */
+    if (collection->id_to_qualifier) {
+        /* in CG_MODE_WRITE, children names must be unique */
+        if (cg->mode == CG_MODE_WRITE) {
+            cgi_error("Duplicate child name found: IdToQualifier");
+            return CG_ERROR;
+        }
+        /* overwrite an existing MapName_t */
+        /* delete the existing IdToQualifier from file */
+        if (cgi_delete_node(collection->id, collection->id_to_qualifier->id))
+            return CG_ERROR;
+
+        /* save the old in-memory address to overwrite */
+        idtoqualifier = collection->id_to_qualifier;
+        /* free memory */
+        cgi_free_map_names(idtoqualifier);
+    } else {
+        /* ... or add a MapName_t Node: */
+        collection->id_to_qualifier = CGNS_NEW(cgns_map_names, 1);
+        idtoqualifier = collection->id_to_qualifier;
+    }
+    memset(idtoqualifier, 0, sizeof(cgns_map_names));
+    idtoqualifier->nids = num_ids;
+    dim_vals = (cgsize_t)num_ids;
+    dim_names[0] = 32;
+    dim_names[1] = (cgsize_t)num_ids;
+    /* Assume rulenames is char_33[num_ids]
+     * so build the destination string array...
+     */
+    names_data = CGNS_NEW(char, (32 * num_ids + 1));
+    for (n=0; n<num_ids; n++) {
+        strncpy(&names_data[32*n], &rulenames[33*n], 32);
+    }
+    names_data[32 * num_ids] = '\0';
+
+    if (cg->mode != CG_MODE_WRITE) {
+        idtoqualifier->ids = CGNS_NEW(int, num_ids);
+        for (n = 0; n < num_ids; n++) {
+            idtoqualifier->ids[n] = rule_ids[n];
+        }
+        idtoqualifier->names = CGNS_NEW(char_33, num_ids);
+        for (n = 0; n < num_ids; n++) {
+            strncpy(idtoqualifier->names[n], &rulenames[33*n], 32);
+            idtoqualifier->names[n][32] = '\0';
+        }
+    }
+    /* save data in file */
+    HDF5storage_type = CG_CONTIGUOUS;
+    if (cgi_new_node(collection->id, "IdToQualifier", "MapName_t", &idtoqualifier->id,
+                     "I4", 1, &dim_vals, (void *)rule_ids))
+        return CG_ERROR;
+    if (cgi_new_node(idtoqualifier->id, "Names", "DataArray_t", &dummy_id, "C1", 2,
+                     dim_names, (void *)names_data))
+        return CG_ERROR;
+    HDF5storage_type = CG_COMPACT;
+    CGNS_FREE(names_data);
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup RulesCollection
+ *
+ * \brief get the number of IntegrationRule_t node stored in a collection
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] C Collection of rules index
+ * \param[out] nrules number of IntegrationRule_t items
+ * \return \ier
+ *
+ *
+ */
+int cg_nrules(int fn, int B, int C, int *nrules)
+{
+    cgns_rules_collection *collection;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    collection = cgi_get_rules_collection(cg, B, C);
+    if (collection==0) return CG_ERROR;
+
+    *nrules = collection->nitems;
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup IntegrationRules
+ *
+ * \brief ...
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] C  index of collection
+ * \param[in] R  index of rule
+ * \param[in] type  datatype in memory for weights and location
+ * \param[out] weights array of weights
+ * \param[out] location array of location
+ * \return \ier
+ *
+ * \details    TODO: consider if location or weigths is the null pointer
+ *
+ */
+int cg_itg_rule_read_data(int fn, int B, int C, int R, CGNS_ENUMT(DataType_t) type,
+                          void *weights, void *location)
+{
+    int n, ier = CG_OK;
+    cgsize_t num = 1;
+    cgns_rules_collection *collection;
+    cgns_integration_rule *rule;
+    cgns_array *array;
+    void *array_data;
+
+    /* verify input */
+    if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble)) {
+        cgi_error("Invalid data type for weights and location arrays: %d", type);
+        return CG_ERROR;
+    }
+
+    /* find address */
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    collection = cgi_get_rules_collection(cg, B, C);
+    if (collection == 0) return CG_ERROR;
+
+    if (R > collection->nitems || R < 0) {
+        cgi_error("IntegrationRule_t node number %d invalid", R);
+        return CG_OK;
+    }
+    rule = &(collection->items[R - 1]);
+
+    /* load weights */
+    array = rule->weights;
+    num = 1;
+    for (n = 0; n < array->data_dim; n++)
+        num *= array->dim_vals[n];
+    if (array->data) {
+        array_data = array->data;
+    } else {
+        array_data = malloc((size_t)(num * size_of(array->data_type)));
+
+        if (array_data == NULL) {
+            cgi_error("Error allocating array_data");
+            return CG_ERROR;
+        }
+        if (cgio_read_all_data_type(cg->cgio, array->id, array->data_type, array_data)) {
+            cg_io_error("cgio_read_all_data_type");
+            return CG_ERROR;
+        }
+    }
+    ier =
+        cgi_convert_data(num, cgi_datatype(array->data_type), array_data, type, weights);
+    if (array_data != array->data) free(array_data);
+    if (ier) return CG_ERROR;
+
+    /* load locations */
+    array = rule->points;
+    array_data = 0;
+    num = 1;
+    for (n=0; n<array->data_dim; n++)
+        num *= array->dim_vals[n];
+    if (array->data) {
+        array_data = array->data;
+    } else {
+        array_data = malloc((size_t)(num*size_of(array->data_type)));
+        if (array_data == NULL) {
+            cgi_error("Error allocating array_data");
+            return CG_ERROR;
+        }
+        if (cgio_read_all_data_type(cg->cgio, array->id, array->data_type, array_data)) {
+            cg_io_error("cgio_read_all_data_type");
+            return CG_ERROR;
+        }
+    }
+    ier =
+        cgi_convert_data(num, cgi_datatype(array->data_type), array_data, type, location);
+    if (array_data != array->data) free(array_data);
+
+    return ier ? CG_ERROR : CG_OK;
+}
+
+/**
+ * \ingroup IntegrationRules
+ *
+ * \brief write the definition of an integration scheme
+ *
+ * \param[in] integration_name structure of integration name
+ * \return \ier
+ *
+ */
+int cg_integration_name_struct_write(IntegrationName_t *integration_name)
+{
+
+    cgns_integration_rule *rule = 0;
+    IntegrationName_t *name = 0;
+    char *string_data;
+
+    CHECK_FILE_OPEN
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+    if (strcmp(posit->label, "IntegrationRule_t") == 0) {
+        rule = (cgns_integration_rule *)posit->posit;
+    } else {
+        cgi_error("IntegrationName_t node not supported under '%s' type node",
+                  posit->label);
+        return CG_INCORRECT_PATH;
+    }
+
+    if (rule->integration_names) {
+        if (cg->mode == CG_MODE_WRITE) {
+            cgi_error("Duplicate child name found: IntegrationNames");
+            return CG_ERROR;
+        }
+        /* overwrite an existing IntegrationName */
+        /* delete the existing node from file */
+        int nchild, i = 0;
+        double *ida;
+        cgi_get_nodes(rule->id, "DataArray_t", &nchild, &ida);
+        for (i = 0; i < nchild; i++) {
+            char_33 temp_name;
+            if (cgio_get_name(cg->cgio, ida[i], temp_name)) {
+                cg_io_error("cgio_get_name");
+                return CG_ERROR;
+            }
+            if (strcmp(temp_name, "IntegrationName") == 0) {
+                break;
+            }
+        }
+        if (i != nchild) {
+            if (cgi_delete_node(rule->id, ida[i])) return CG_ERROR;
+        }
+        CGNS_FREE(ida);
+        cgi_free_integration_names(rule->integration_names);
+    } else {
+        rule->integration_names = CGNS_NEW(IntegrationName_t, 1);
+    }
+
+    name = rule->integration_names;
+
+    name->CombineStatus = integration_name->CombineStatus;
+    name->ParametricDimension = integration_name->ParametricDimension;
+    if (integration_name->IntegrationNameParam1) {
+        int length = strlen(integration_name->IntegrationNameParam1) + 1;
+        name->IntegrationNameParam1 = CGNS_NEW(char, length);
+        strcpy(name->IntegrationNameParam1, integration_name->IntegrationNameParam1);
+    }
+    if (integration_name->IntegrationNameParam2) {
+        int length = strlen(integration_name->IntegrationNameParam2) + 1;
+        name->IntegrationNameParam2 = CGNS_NEW(char, length);
+        strcpy(name->IntegrationNameParam2, integration_name->IntegrationNameParam2);
+    }
+    if (integration_name->IntegrationNameParam3) {
+        int length = strlen(integration_name->IntegrationNameParam3) + 1;
+        name->IntegrationNameParam3 = CGNS_NEW(char, length);
+        strcpy(name->IntegrationNameParam3, integration_name->IntegrationNameParam3);
+    }
+
+    /* now save to file */
+    int length = 0;
+    length += 10; /* 9 char + 'x' */
+
+    if (name->IntegrationNameParam1) {
+        length += strlen(name->IntegrationNameParam1) + 1;
+    }
+    if (name->IntegrationNameParam2 && name->ParametricDimension > 1) {
+        length += strlen(name->IntegrationNameParam2) + 1;
+    }
+    if (name->IntegrationNameParam3 && name->ParametricDimension > 2) {
+        length += strlen(name->IntegrationNameParam3) + 1;
+    }
+    string_data = CGNS_NEW(char, length);
+    string_data[0] = '\0';
+
+    if (name->CombineStatus == CGNS_ENUMV(CombineNo)) {
+        strcat(string_data, "CombineNo");
+    } else if (name->CombineStatus == CGNS_ENUMV(Combine12)) {
+        strcat(string_data, "Combine12");
+    } else if (name->CombineStatus == CGNS_ENUMV(Combine23)) {
+        strcat(string_data, "Combine23");
+    } else if (name->CombineStatus == CGNS_ENUMV(Combine31)) {
+        strcat(string_data, "Combine31");
+    } else {
+        cgi_error("wrong combination stored");
+        return CG_ERROR;
+    }
+    if (name->IntegrationNameParam1) {
+        strcat(string_data, "x");
+        strcat(string_data, name->IntegrationNameParam1);
+    }
+    if (name->IntegrationNameParam2 && name->ParametricDimension > 1) {
+        strcat(string_data, "x");
+        strcat(string_data, name->IntegrationNameParam2);
+    }
+    if (name->IntegrationNameParam3 && name->ParametricDimension > 2) {
+        strcat(string_data, "x");
+        strcat(string_data, name->IntegrationNameParam3);
+    }
+    double id;
+    cgsize_t len;
+    len = length - 1;
+    if (cgi_new_node(rule->id, "IntegrationName", "DataArray_t", &id, "C1", 1, &len,
+                     (void *)string_data))
+        return CG_ERROR;
+
+    CGNS_FREE(string_data);
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup IntegrationRules
+ *
+ * \brief ...
+ *
+ * \param[in] integration_name_definition
+ * \return \ier
+ *
+ * \details    see the SIDS to understand the expected pattern
+ */
+int cg_integration_name_write(char *integration_name_definition)
+{
+    cgns_integration_rule *rule = 0;
+    IntegrationName_t *name = 0;
+    cgsize_t len;
+
+    CHECK_FILE_OPEN
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+    if (strcmp(posit->label, "IntegrationRule_t") == 0) {
+        rule = (cgns_integration_rule *)posit->posit;
+    } else {
+        cgi_error("IntegrationName_t node not supported under '%s' type node",
+                  posit->label);
+        return CG_INCORRECT_PATH;
+    }
+
+    if (rule->integration_names) {
+        if (cg->mode == CG_MODE_WRITE) {
+            cgi_error("Duplicate child name found: IntegrationNames");
+            return CG_ERROR;
+        }
+        /* overwrite an existing IntegrationName */
+        /* delete the existing node from file */
+        int nchild, i = 0;
+        double *ida;
+        cgi_get_nodes(rule->id, "DataArray_t", &nchild, &ida);
+        for (i=0; i<nchild; i++) {
+            char_33 temp_name;
+            if (cgio_get_name(cg->cgio, ida[i], temp_name)) {
+                cg_io_error("cgio_get_name");
+                return CG_ERROR;
+            }
+            if (strcmp(temp_name, "IntegrationName") == 0) {
+                break;
+            }
+        }
+        if (i != nchild) {
+            if (cgi_delete_node(rule->id, ida[i])) return CG_ERROR;
+        }
+        CGNS_FREE(ida);
+        cgi_free_integration_names(rule->integration_names);
+    } else {
+        rule->integration_names = CGNS_NEW(IntegrationName_t, 1);
+    }
+
+    name = rule->integration_names;
+    int length = strlen(integration_name_definition);
+    char *pch, *tok;
+    char *integration_names_str = CGNS_NEW(char, length + 1);
+    strcpy(integration_names_str, integration_name_definition);
+
+    int pos = 0;
+    /* check if 'x' separator present in formula */
+    pch = strchr(integration_names_str, 'x');
+    name->ParametricDimension = 0;
+    if (pch != NULL) {
+        /* tokenize formula */
+        pch = strtok(integration_names_str, "x");
+        while (pch != NULL) {
+            tok = pch;
+            length = strlen((const char *)tok);
+            if (pos == 0) {
+                if (strcmp(tok, "CombineNo") == 0) {
+                    name->CombineStatus = CGNS_ENUMV(CombineNo);
+                } else if (strcmp(tok, "CombineUserDefined") == 0) {
+                    name->CombineStatus = CGNS_ENUMV(CombineUserDefined);
+                } else if (strcmp(tok, "Combine12") == 0) {
+                    name->CombineStatus = CGNS_ENUMV(Combine12);
+                } else if (strcmp(tok, "Combine23") == 0) {
+                    name->CombineStatus = CGNS_ENUMV(Combine23);
+                } else if (strcmp(tok, "Combine31") == 0) {
+                    name->CombineStatus = CGNS_ENUMV(Combine31);
+                } else {
+                    cgi_error("Unknown Combine token in IntegrationName");
+                    return CG_ERROR;
+                }
+            } else if (pos == 1) {
+              name->IntegrationNameParam1 = (char *)malloc(sizeof(char)* (length+1));
+              strcpy(name->IntegrationNameParam1, tok);
+              name->ParametricDimension = 1;
+            } else if (pos == 2) {
+              name->IntegrationNameParam2 = (char *)malloc(sizeof(char)* (length+1));
+              strcpy(name->IntegrationNameParam2, tok);
+              name->ParametricDimension = 2;
+            } else if (pos == 3) {
+              name->IntegrationNameParam3 = (char *)malloc(sizeof(char)* (length+1));
+              strcpy(name->IntegrationNameParam3, tok);
+              name->ParametricDimension = 3;
+            }
+            pos += 1;
+            pch = strtok(NULL, "x"); // Next token
+        }
+    } else {
+        /* if no 'x' present assume homogenous naming */
+        name->CombineStatus = CGNS_ENUMV(CombineNo);
+        name->IntegrationNameParam1 = (char *)malloc(sizeof(char) * (length+1));
+        strcpy(name->IntegrationNameParam1, pch);
+        if (rule->parametric_dim > 1) {
+            name->IntegrationNameParam2 = (char *)malloc(sizeof(char) * (length+1));
+            strcpy(name->IntegrationNameParam2, pch);
+        }
+        if (rule->parametric_dim > 2) {
+            name->IntegrationNameParam3 = (char *)malloc(sizeof(char) * (length + 1));
+            strcpy(name->IntegrationNameParam3, pch);
+        }
+        name->ParametricDimension = rule->parametric_dim;
+    }
+    CGNS_FREE(integration_names_str);
+    double id;
+    len = length - 1;
+    if (cgi_new_node(rule->id, "IntegrationName", "DataArray_t", &id, "C1", 1, &len,
+                     (void *)integration_name_definition))
+        return CG_ERROR;
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup IntegrationRules
+ *
+ * \brief ...
+ *
+ * \param[out] integration_name_definition
+ * \return \ier
+ *
+ * \details  The pointed structure provided structure should be initialized empty.
+ *
+ */
+int cg_integration_name_struct_read(IntegrationName_t *integration_name_definition)
+{
+    cgns_integration_rule *rule = 0;
+    IntegrationName_t *name;
+
+    CHECK_FILE_OPEN
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+    if (strcmp(posit->label, "IntegrationRule_t") == 0) {
+        rule = (cgns_integration_rule *)posit->posit;
+    } else {
+        cgi_error("IntegrationName_t node not supported under '%s' type node",
+                  posit->label);
+        return CG_INCORRECT_PATH;
+    }
+
+    if (rule->integration_names == 0) return CG_ERROR;
+    name = rule->integration_names;
+
+    integration_name_definition->CombineStatus = name->CombineStatus;
+    integration_name_definition->ParametricDimension = name->ParametricDimension;
+    if (name->IntegrationNameParam1) {
+        int length = strlen(name->IntegrationNameParam1) + 1;
+        integration_name_definition->IntegrationNameParam1 = CGNS_NEW(char, length);
+        strcpy(integration_name_definition->IntegrationNameParam1,
+               name->IntegrationNameParam1);
+    }
+    if (name->IntegrationNameParam2) {
+        int length = strlen(name->IntegrationNameParam2) + 1;
+        integration_name_definition->IntegrationNameParam2 = CGNS_NEW(char, length);
+        strcpy(integration_name_definition->IntegrationNameParam2,
+               name->IntegrationNameParam2);
+    }
+    if (name->IntegrationNameParam3) {
+        int length = strlen(name->IntegrationNameParam3) + 1;
+        integration_name_definition->IntegrationNameParam3 = CGNS_NEW(char, length);
+        strcpy(integration_name_definition->IntegrationNameParam3,
+               name->IntegrationNameParam3);
+    }
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup IntegrationRules
+ *
+ * \brief ...
+ *
+ * \param[out] integration_name_definition address of a char pointer 
+ * \return \ier
+ *
+ * \details    integration_name_definition will be allocated by the function. 
+ *             Thus it is necessary to release the memory afterwards to prevent memory leakage.
+ *
+ */
+int cg_integration_name_read(char **integration_name_definition)
+{
+    cgns_integration_rule *rule = 0;
+    IntegrationName_t *name;
+
+    CHECK_FILE_OPEN
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+    if (strcmp(posit->label, "IntegrationRule_t") == 0) {
+        rule = (cgns_integration_rule *)posit->posit;
+    } else {
+        cgi_error("IntegrationName_t node not supported under '%s' type node",
+                  posit->label);
+        return CG_INCORRECT_PATH;
+    }
+
+    if (rule->integration_names == 0) return CG_ERROR;
+    name = rule->integration_names;
+
+    int length = 0;
+    length += 10; /* 9 char + 'x' */
+
+    if (name->IntegrationNameParam1) {
+        length += strlen(name->IntegrationNameParam1) + 1;
+    }
+    if (name->IntegrationNameParam2 && name->ParametricDimension > 1) {
+        length += strlen(name->IntegrationNameParam2) + 1;
+    }
+    if (name->IntegrationNameParam3 && name->ParametricDimension > 2) {
+        length += strlen(name->IntegrationNameParam3) + 1;
+    }
+    integration_name_definition[0] = CGNS_NEW(char, length);
+    integration_name_definition[0][0] = '\0';
+
+    if (name->CombineStatus == CGNS_ENUMV(CombineNo)) {
+        strcat(integration_name_definition[0], "CombineNo");
+    } else if (name->CombineStatus == CGNS_ENUMV(Combine12)) {
+        strcat(integration_name_definition[0], "Combine12");
+    } else if (name->CombineStatus == CGNS_ENUMV(Combine23)) {
+        strcat(integration_name_definition[0], "Combine23");
+    } else if (name->CombineStatus == CGNS_ENUMV(Combine31)) {
+        strcat(integration_name_definition[0], "Combine31");
+    } else {
+        cgi_error("wrong combination stored");
+        return CG_ERROR;
+    }
+    if (name->IntegrationNameParam1) {
+        strcat(integration_name_definition[0], "x");
+        strcat(integration_name_definition[0], name->IntegrationNameParam1);
+    }
+    if (name->IntegrationNameParam2 && name->ParametricDimension > 1) {
+        strcat(integration_name_definition[0], "x");
+        strcat(integration_name_definition[0], name->IntegrationNameParam2);
+    }
+    if (name->IntegrationNameParam3 && name->ParametricDimension > 2) {
+        strcat(integration_name_definition[0], "x");
+        strcat(integration_name_definition[0], name->IntegrationNameParam3);
+    }
+
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+
+/**
+ * \ingroup ElementCollectionAssociation
+ *
+ * \brief Get the number of property association
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \CONN_S
+ * \param[in] nprops
+ * \return \ier
+ *
+ *
+ */
+int cg_nelement_associations(int fn, int B, int Z, int S, int *nprops)
+{
+    cgns_section *section;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    section = cgi_get_section(cg, B, Z, S);
+    if (section == 0) return CG_ERROR;
+
+    *nprops = section->nprops;
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementCollectionAssociation
+ *
+ * \brief  Read a property association information
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \CONN_S
+ * \param[in] P
+ * \param[out] association_name
+ * \param[out] path
+ * \param[out] num_ids
+ * \return \ier
+ *
+ *
+ */
+int cg_element_association_info(int fn, int B, int Z, int S, int P,
+                                char *association_name, char **path, cgsize_t *num_ids)
+{
+    cgns_section *section;
+    cgns_element_association *asso;
+    int length;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    section = cgi_get_section(cg, B, Z, S);
+    if (section == 0) return CG_ERROR;
+
+    if (P>section->nprops || P<=0) {
+        cgi_error("ElementAssociation_t node number %d invalid", P);
+        return CG_ERROR;
+    }
+
+    asso = &(section->properties[P - 1]);
+    strcpy(association_name, asso->name);
+    length = strlen(asso->path) + 1;
+    path[0] = CGNS_NEW(char, length);
+    strcpy(path[0], asso->path);
+    if (asso->ids == 0) {
+        cgi_error("Ids not found under ElementAssociation_t node");
+        return CG_ERROR;
+    }
+    *num_ids = asso->ids->dim_vals[0];
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementCollectionAssociation
+ *
+ * \brief  Read a property association Ids
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] Z \Z_Zone
+ * \param[in] S \CONN_S
+ * \param[in] P
+ * \param[out] data
+ * \return \ier
+ *
+ * \details Ids data are necessary int. They are used to refer to RulesCollection_t node ids.
+ *
+ */
+int cg_element_association_read(int fn, int B, int Z, int S, int P, int *data)
+{
+    cgns_section *section;
+    cgns_element_association *asso;
+    cgns_array *array;
+    cgsize_t num = 1;
+    int *array_data;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    section = cgi_get_section(cg, B, Z, S);
+    if (section == 0) return CG_ERROR;
+
+    if (P > section->nprops || P <= 0) {
+        cgi_error("ElementAssociation_t node number %d invalid", P);
+        return CG_ERROR;
+    }
+    asso = &(section->properties[P-1]);
+    array = asso->ids;
+    if (array == 0) return CG_ERROR;
+
+    num = array->dim_vals[0];
+
+    if (array->data)
+        array_data = array->data;
+    else {
+        array_data = (int *)malloc((size_t)(num*size_of(array->data_type)));
+        if (array_data == NULL) {
+            cgi_error("Error allocating array_data Ids");
+            return CG_ERROR;
+        }
+        if (cgio_read_all_data_type(cg->cgio, array->id, array->data_type, array_data)) {
+            cg_io_error("cgio_read_all_data_type");
+            return CG_ERROR;
+        }
+    }
+    /* transfer data */
+    memcpy(data, array_data, (size_t)(num * size_of(array->data_type)));
+
+    if (array_data != array->data) free(array_data);
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementCollectionAssociation
+ *
+ * \brief  Get the number of collections
+ *
+ * \param[out] nprops
+ * \return \ier
+ *
+ */
+int cg_nassociations(int *nprops)
+{
+
+    CHECK_FILE_OPEN
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    *nprops = 0;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+
+    if (strcmp(posit->label, "FlowSolution_t") == 0) {
+        cgns_sol *sol = (cgns_sol *)posit->posit;
+        if (sol->itgrules) {
+            *nprops = 1;
+        }
+    } else if (strcmp(posit->label, "Elements_t") == 0) {
+        cgns_section *elmt = (cgns_section *)posit->posit;
+        if (elmt->nprops) {
+            *nprops = elmt->nprops;
+        }
+    } else if (strcmp(posit->label, "ZoneSubRegion_t") == 0) {
+        cgns_subreg *subreg = (cgns_subreg *)posit->posit;
+        if (subreg->itgrules) {
+            *nprops = 1;
+        }
+    } else if (strcmp(posit->label, "BC_t") == 0) {
+        cgns_boco *boco = (cgns_boco *)posit->posit;
+        if (boco->itgrules) {
+            *nprops = 1;
+        }
+    } else if (strcmp(posit->label, "BCDataSet_t") == 0) {
+        cgns_dataset *dataset = (cgns_dataset *)posit->posit;
+        if (dataset->itgrules) {
+            *nprops = 1;
+        }
+    } else {
+        cgi_error("ElementAssociation_t node not supported under '%s' type node",
+                  posit->label);
+        (*nprops) = 0;
+        return CG_INCORRECT_PATH;
+    }
+
+    return CG_OK;
+}
+
+
+/**
+ * \ingroup ElementCollectionAssociation
+ *
+ * \brief  Get collection information
+ *
+ * \param[in] P
+ * \param[out] association_name
+ * \param[out] path
+ * \param[out] num_ids
+ * \return \ier
+ *
+ * \details path is allocated by the MLL. Thus don't forget to free it.
+ *
+ */
+int cg_association_info(int P, char *association_name, char **path, cgsize_t *num_ids)
+{
+    cgns_element_association *asso = 0;
+    int length;
+
+    CHECK_FILE_OPEN
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+
+    if (strcmp(posit->label, "FlowSolution_t") == 0) {
+        cgns_sol *sol = (cgns_sol *)posit->posit;
+        if (P != 1) return CG_ERROR;
+        asso = sol->itgrules;
+    } else if (strcmp(posit->label, "Elements_t") == 0) {
+        cgns_section *elmt = (cgns_section *)posit->posit;
+        if (P > elmt->nprops || P <= 0) {
+            return CG_ERROR;
+        }
+        asso = &(elmt->properties[P - 1]);
+    } else if (strcmp(posit->label, "ZoneSubRegion_t") == 0) {
+        cgns_subreg *subreg = (cgns_subreg *)posit->posit;
+        if (P != 1) return CG_ERROR;
+        asso = subreg->itgrules;
+    } else if (strcmp(posit->label, "BC_t") == 0) {
+        cgns_boco *boco = (cgns_boco *)posit->posit;
+        if (P != 1) return CG_ERROR;
+        asso = boco->itgrules;
+    } else if (strcmp(posit->label, "BCDataSet_t") == 0) {
+        cgns_dataset *dataset = (cgns_dataset *)posit->posit;
+        if (P != 1) return CG_ERROR;
+        asso = dataset->itgrules;
+    } else {
+        cgi_error("ElementAssociation_t node not supported under '%s' type node",
+                  posit->label);
+        return CG_INCORRECT_PATH;
+    }
+
+    if (asso == 0) return CG_ERROR;
+
+    strcpy(association_name, asso->name);
+    length = strlen(asso->path) + 1;
+    path[0] = CGNS_NEW(char, length);
+    strcpy(path[0], asso->path);
+    if (asso->ids == 0) {
+        cgi_error("Ids not found under ElementAssociation_t node");
+        return CG_ERROR;
+    }
+    *num_ids = asso->ids->dim_vals[0];
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementCollectionAssociation
+ *
+ * \brief  Write a collection association node
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone
+ * \param[in] S  \CONN_S
+ * \param[in] association_name
+ * \param[in] path
+ * \param[in] num_ids
+ * \param[in] data_ids
+ * \param[out] P
+ * \return \ier
+ *
+ *
+ */
+int cg_element_association_write(int fn, int B, int Z, int S,
+                                 const char *association_name, const char *path,
+                                 cgsize_t num_ids, int *data_ids, int *P)
+{
+    int index;
+    double parent_id;
+    cgns_section *section;
+    cgns_element_association *asso;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    section = cgi_get_section(cg, B, Z, S);
+    if (section == 0) return CG_ERROR;
+
+    for (index=0; index<section->nprops &&
+                  strcmp(association_name, section->properties[index].name);
+         index++)
+        ;
+
+    if (index == section->nprops) {
+        if (section->nprops == 0) {
+            section->properties = CGNS_NEW(cgns_element_association, section->nprops + 1);
+        } else {
+            section->properties = CGNS_RENEW(cgns_element_association,
+                                             section->nprops + 1, section->properties);
+        }
+        asso = &(section->properties[section->nprops]);
+        section->nprops++;
+    } else {
+        /* in CG_MODE_WRITE, children names must be unique */
+        if (cg->mode == CG_MODE_WRITE) {
+            cgi_error("Duplicate child name found: %s", association_name);
+            return CG_ERROR;
+        }
+        /* overwrite an existing association */
+        /* delete the existing association from file */
+        if (cgi_delete_node(section->id, section->properties[index].id)) return CG_ERROR;
+        /* save the old in-memory address to overwrite */
+        asso = &(section->properties[index]);
+        /* free memory */
+        cgi_free_element_association(asso);
+    }
+    (*P) = index + 1;
+    /* save data in memory */
+    memset(asso, 0, sizeof(cgns_element_association));
+    strcpy(asso->name, association_name);
+    asso->id = 0;
+    strcpy(asso->path, path);
+    asso->path_array = CGNS_NEW(cgns_array, 1);
+    asso->path_array->id = 0;
+    strcpy(asso->path_array->name, "Path");
+    strcpy(asso->path_array->data_type, "C1");
+    asso->path_array->data_dim = 1;
+    asso->path_array->dim_vals[0] = strlen(asso->path);
+    asso->path_array->data = 0;
+    asso->ids = CGNS_NEW(cgns_array, 1);
+    asso->ids->data_dim = 1;
+    asso->ids->dim_vals[0] = num_ids;
+    strcpy(asso->ids->name, "Ids");
+    strcpy(asso->ids->data_type, "I4");
+    parent_id = section->id;
+
+    /* save data to disk */
+    if (cgi_new_node(parent_id, asso->name, "ElementAssociation_t", &asso->id, "MT", 0, 0,
+                     0))
+        return CG_ERROR;
+
+    if (cgi_new_node(asso->id, "Path", "DataArray_t", &(asso->path_array->id), "C1",
+                     asso->path_array->data_dim, asso->path_array->dim_vals, asso->path))
+        return CG_ERROR;
+
+    if (cgi_new_node(asso->id, "Ids", "DataArray_t", &(asso->ids->id), "I4",
+                     asso->ids->data_dim, asso->ids->dim_vals, data_ids))
+        return CG_ERROR;
+
+    return CG_OK;
+}
+
+
+int cg_association_write(const char *association_name, const char *path, cgsize_t num_ids,
+                         int *data_ids)
+{
+
+    cgns_element_association *asso = 0;
+    double parent_id;
+    int ier;
+
+    CHECK_FILE_OPEN
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        return CG_ERROR;
+    }
+
+    asso = cgi_element_association_address(CG_MODE_READ, "ItgRules", &ier);
+    if (asso == 0) return ier;
+
+    /* save data in memory */
+    memset(asso, 0, sizeof(cgns_element_association));
+    strcpy(asso->name, association_name);
+    asso->id = 0;
+    strcpy(asso->path, path);
+    asso->path_array = CGNS_NEW(cgns_array, 1);
+    asso->path_array->id = 0;
+    strcpy(asso->path_array->name, "Path");
+    strcpy(asso->path_array->data_type, "C1");
+    asso->path_array->data_dim = 1;
+    asso->path_array->dim_vals[0] = strlen(asso->path);
+    asso->path_array->data = 0;
+    asso->ids = CGNS_NEW(cgns_array, 1);
+    asso->ids->data_dim = 1;
+    asso->ids->dim_vals[0] = num_ids;
+    strcpy(asso->ids->name, "Ids");
+    strcpy(asso->ids->data_type, "I4");
+
+    /* save data to disk */
+    cgi_posit_id(&parent_id);
+    if (cgi_new_node(parent_id, asso->name, "ElementAssociation_t", &asso->id, "MT", 0, 0,
+                     0))
+        return CG_ERROR;
+
+    if (cgi_new_node(asso->id, "Path", "DataArray_t", &(asso->path_array->id), "C1",
+                     asso->path_array->data_dim, asso->path_array->dim_vals, asso->path))
+        return CG_ERROR;
+
+    if (cgi_new_node(asso->id, "Ids", "DataArray_t", &(asso->ids->id), "I4",
+                     asso->ids->data_dim, asso->ids->dim_vals, data_ids))
+        return CG_ERROR;
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup ElementCollectionAssociation
+ *
+ * \brief  Read a integration rule collection association node
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone
+ * \param[in] S  \SOL_S
+ * \param[out] path
+ * \param[out] num_ids
+ * \return \ier
+ *
+ */
+int cg_sol_itg_rule_info(int fn, int B, int Z, int S, char **path, cgsize_t *num_ids)
+{
+
+    cgns_element_association *asso;
+    cgns_sol *sol;
+    int length;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    asso = sol->itgrules;
+    if (asso == 0) {
+        *num_ids = 0;
+        path[0] = NULL;
+        return CG_ERROR;
+    }
+
+    length = strlen(asso->path) + 1;
+    path[0] = CGNS_NEW(char, length);
+    strcpy(path[0], asso->path);
+    if (asso->ids == 0) {
+        cgi_error("Ids not found under ElementAssociation_t node");
+        return CG_ERROR;
+    }
+    *num_ids = asso->ids->dim_vals[0];
+
+    return CG_OK;
+}
+
+
+/**
+ * \ingroup ElementCollectionAssociation
+ *
+ * \brief  Read a integration rule collection association node
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone
+ * \param[in] S  \SOL_S
+ * \param[out] data
+ * \return \ier
+ *
+ */
+int cg_sol_itg_rule_read(int fn, int B, int Z, int S, int *data)
+{
+
+    cgns_sol *sol;
+    cgns_array *array;
+    cgns_element_association *asso;
+    cgsize_t num = 0;
+    int *array_data;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    asso = sol->itgrules;
+    if (asso == 0) return CG_ERROR;
+    array = asso->ids;
+    if (array == 0) return CG_ERROR;
+
+    num = array->dim_vals[0];
+
+    if (array->data)
+        array_data = array->data;
+    else {
+        array_data = (int *)malloc((size_t)(num * size_of(array->data_type)));
+        if (array_data == NULL) {
+            cgi_error("Error allocating array_data Ids");
+            return CG_ERROR;
+        }
+        if (cgio_read_all_data_type(cg->cgio, array->id, array->data_type, array_data)) {
+            cg_io_error("cgio_read_all_data_type");
+            return CG_ERROR;
+        }
+    }
+    /* transfer data */
+    memcpy(data, array_data, (size_t)(num * size_of(array->data_type)));
+
+    if (array_data != array->data) free(array_data);
+
+    return CG_OK;
+}
+
+
+/**
+ * \ingroup ElementCollectionAssociation
+ *
+ * \brief  Read a integration rule collection association node
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone
+ * \param[in] S  \SOL_S
+ * \param[in] path
+ * \param[in] num_ids
+ * \param[in] data_ids
+ * \return \ier
+ *
+ */
+int cg_sol_itg_rule_write(int fn, int B, int Z, int S, const char *path, cgsize_t num_ids,
+                          int *data_ids)
+{
+
+    double parent_id;
+    cgns_sol *sol;
+    cgns_element_association *asso;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    if (sol->itgrules == 0) {
+        sol->itgrules = CGNS_NEW(cgns_element_association, 1);
+        asso = sol->itgrules;
+    } else {
+        /* in CG_MODE_WRITE, children names must be unique */
+        if (cg->mode == CG_MODE_WRITE) {
+            cgi_error("Duplicate child name found: ItgRules");
+            return CG_ERROR;
+        }
+        /* overwrite an existing association */
+        /* delete the existing association from file */
+        if (cgi_delete_node(sol->id, sol->itgrules->id)) return CG_ERROR;
+        /* save the old in-memory address to overwrite */
+        asso = sol->itgrules;
+        /* free memory */
+        cgi_free_element_association(asso);
+    }
+
+    /* save data in memory */
+    memset(asso, 0, sizeof(cgns_element_association));
+    strcpy(asso->name, "ItgRules");
+    asso->id = 0;
+    strcpy(asso->path, path);
+    asso->path_array = CGNS_NEW(cgns_array, 1);
+    asso->path_array->id = 0;
+    strcpy(asso->path_array->name, "Path");
+    strcpy(asso->path_array->data_type, "C1");
+    asso->path_array->data_dim = 1;
+    asso->path_array->dim_vals[0] = strlen(asso->path);
+    asso->path_array->data = 0;
+    asso->ids = CGNS_NEW(cgns_array, 1);
+    asso->ids->data_dim = 1;
+    asso->ids->dim_vals[0] = num_ids;
+    strcpy(asso->ids->name, "Ids");
+    strcpy(asso->ids->data_type, "I4");
+    parent_id = sol->id;
+
+    /* save data to disk */
+    if (cgi_new_node(parent_id, asso->name, "ElementAssociation_t", &asso->id, "MT", 0, 0,
+                     0))
+        return CG_ERROR;
+
+    if (cgi_new_node(asso->id, "Path", "DataArray_t", &(asso->path_array->id), "C1",
+                     asso->path_array->data_dim, asso->path_array->dim_vals, asso->path))
+        return CG_ERROR;
+
+    if (cgi_new_node(asso->id, "Ids", "DataArray_t", &(asso->ids->id), "I4",
+                     asso->ids->data_dim, asso->ids->dim_vals, data_ids))
+        return CG_ERROR;
+
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+/**
+ * \ingroup Offsets
+ *
+ * \brief  Read an integration rule offset data array information
+ *
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone
+ * \param[in] S  \SOL_S
+ * \param[out] offset_type The data array type. (Integer or LongInteger)
+ * \param[out] offset_size
+ * \return \ier
+ *
+ */
+int cg_sol_itg_offset_info(int fn, int B, int Z, int S,
+                           CGNS_ENUMT(DataType_t) * offset_type, cgsize_t *offset_size)
+{
+    cgns_sol *sol;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+
+    if (sol->pt_start_offset == 0) return CG_ERROR;
+
+    *offset_type = cgi_datatype(sol->pt_start_offset->data_type);
+    *offset_size = sol->pt_start_offset->data_size;
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup Offsets
+ *
+ * \brief  Read an integration rule offset data array
+ *
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone
+ * \param[in] S  \SOL_S
+ * \param[in] type  The data array type in memory. (Integer or LongInteger)
+ * \param[out] data
+ * \return \ier
+ *
+ */
+int cg_sol_itg_offset_read(int fn, int B, int Z, int S, CGNS_ENUMT(DataType_t) type,
+                           void *data)
+{
+    cgns_sol *sol;
+    cgns_offset *offset;
+    int ier = 0;
+    void *offset_data;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+    if (sol->pt_start_offset == 0) return CG_ERROR;
+    offset = sol->pt_start_offset;
+
+    if (offset->data) {
+        offset_data = offset->data;
+    } else {
+        offset_data = malloc((size_t)(offset->data_size * size_of(offset->data_type)));
+        if (offset_data == NULL) {
+            cgi_error("Error allocating offset_data");
+            return CG_ERROR;
+        }
+        if (cgio_read_all_data_type(cg->cgio, offset->id, offset->data_type,
+                                    offset_data)) {
+            cg_io_error("cgio_read_all_data_type");
+            return CG_ERROR;
+        }
+    }
+
+    ier = cgi_convert_data(offset->data_size, cgi_datatype(offset->data_type),
+                           offset_data, type, data);
+    if (offset_data != offset->data) free(offset_data);
+
+    return ier ? CG_ERROR : CG_OK;
+}
+
+/**
+ * \ingroup Offsets
+ *
+ * \brief  Write an integration rule offset data array
+ *
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base
+ * \param[in] Z  \Z_Zone
+ * \param[in] S  \SOL_S
+ * \param[in] offset_type  The data array type in memory. (Integer or LongInteger)
+ * \param[in] offset_size
+ * \param[in] data
+ * \return \ier
+ *
+ */
+int cg_sol_itg_offset_write(int fn, int B, int Z, int S,
+                            CGNS_ENUMT(DataType_t) offset_type, cgsize_t offset_size,
+                            void *data)
+{
+    cgns_sol *sol;
+    cgns_offset *offset = 0;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+    if (offset_type != CGNS_ENUMV(Integer) && offset_type != CGNS_ENUMV(LongInteger)) {
+        cgi_error("Invalid datatype for data array:  %d", offset_type);
+        return CG_ERROR;
+    }
+    if (offset_size <= 0) {
+        cgi_error("Invalid array size: %ld", offset_size);
+        return CG_ERROR;
+    }
+
+    sol = cgi_get_sol(cg, B, Z, S);
+    if (sol == 0) return CG_ERROR;
+    if (sol->pt_start_offset) {
+        /* in CG_MODE_WRITE, children names must be unique */
+        if (cg->mode == CG_MODE_WRITE) {
+            cgi_error("Duplicate Offset_t found");
+            return CG_ERROR;
+        }
+        /* overwrite an existing offset */
+        /* delete the existing offset from file */
+        if (cgi_delete_node(sol->id, sol->pt_start_offset->id)) return CG_ERROR;
+        /* save the old in-memory address to overwrite */
+        offset = sol->pt_start_offset;
+        cgi_free_offset(offset);
+    } else {
+        sol->pt_start_offset = CGNS_NEW(cgns_offset, 1);
+        offset = sol->pt_start_offset;
+    }
+    /* save data in memory */
+    memset(offset, 0, sizeof(cgns_offset));
+    strcpy(offset->name, "ItgRules");
+    offset->id = 0;
+    offset->link = 0;
+    offset->data = 0;
+    strcpy(offset->data_type, cgi_adf_datatype(offset_type));
+    offset->data_size = offset_size;
+
+    /* save data to disk */
+    HDF5storage_type = CG_CONTIGUOUS;
+    if (cgi_new_node(sol->id, offset->name, "Offset_t", &offset->id, offset->data_type, 1,
+                     &(offset->data_size), data))
+        return CG_ERROR;
+
+    HDF5storage_type = CG_COMPACT;
+    return CG_OK;
+}
+
+/**
+ * \ingroup Offsets
+ *
+ * \brief  Read an offset data array information
+ *
+ * \param[out] OffsetName
+ * \param[out] OffsetDataType
+ * \param[out] OffetSize
+ * \return \ier
+ *
+ * \details  Require to use cg_goto before calling.
+ */
+int cg_offset_info(char *OffsetName, CGNS_ENUMT(DataType_t) * OffsetDataType,
+                   cgsize_t *OffsetSize)
+{
+    cgns_offset *offset;
+    int ier = 0;
+    int have_dup = 0;
+
+    CHECK_FILE_OPEN
+
+    /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    offset = cgi_offset_address(CG_MODE_READ, 0, "dummy", &have_dup, &ier);
+    if (offset == 0) return ier;
+
+    strcpy(OffsetName, offset->name);
+    (*OffsetDataType) = cgi_datatype(offset->data_type);
+    (*OffsetSize) = offset->data_size;
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup Offsets
+ *
+ * \brief  Read an offset data array
+ *
+ * \param[in] type
+ * \param[out] data
+ * \return \ier
+ *
+ * \details  Require to use cg_goto before calling.
+ *
+ */
+int cg_offset_read_as(CGNS_ENUMT(DataType_t) type, void *data)
+{
+    cgns_offset *offset;
+    int ier = 0;
+    int have_dup = 0;
+    void *offset_data;
+
+    CHECK_FILE_OPEN
+
+    /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    if (type != CGNS_ENUMV(Integer) || type != CGNS_ENUMV(LongInteger)) {
+        cgi_error("Invalid datatype provided for Offset_t node");
+        return CG_ERROR;
+    }
+
+    offset = cgi_offset_address(CG_MODE_READ, 0, "dummy", &have_dup, &ier);
+    if (offset == 0) return ier;
+
+    if (offset->data) {
+        offset_data = offset->data;
+    } else {
+        offset_data = malloc((size_t)(offset->data_size * size_of(offset->data_type)));
+        if (offset_data == NULL) {
+            cgi_error("Error allocating offset_data");
+            return CG_ERROR;
+        }
+        if (cgio_read_all_data_type(cg->cgio, offset->id, offset->data_type,
+                                    offset_data)) {
+            cg_io_error("cgio_read_all_data_type");
+            return CG_ERROR;
+        }
+    }
+
+    ier = cgi_convert_data(offset->data_size, cgi_datatype(offset->data_type),
+                           offset_data, type, data);
+    if (offset_data != offset->data) free(offset_data);
+
+    return ier ? CG_ERROR : CG_OK;
+}
+
+/**
+ * \ingroup Offsets
+ *
+ * \brief  Generic read for an offset data array.
+ *
+ * \param[in] s_rmin
+ * \param[in] s_rmax
+ * \param[in] m_type
+ * \param[in] m_dimval
+ * \param[in] m_rmin
+ * \param[in] m_rmax
+ * \param[out] data
+ * \return \ier
+ *
+ * \details  Require to use cg_goto before calling. Useful for partial read.
+ *
+ */
+int cg_offset_general_read(const cgsize_t s_rmin, const cgsize_t s_rmax,
+                           CGNS_ENUMT(DataType_t) m_type, const cgsize_t m_dimval,
+                           const cgsize_t m_rmin, const cgsize_t m_rmax, void *data)
+{
+
+    cgns_offset *offset;
+    int have_dup = 0, ier = 0;
+    int s_access_full_range = 1;
+    int m_access_full_range = 1;
+
+    cgsize_t numpt;
+    cgsize_t rmin[CGIO_MAX_DIMENSIONS], rmax[CGIO_MAX_DIMENSIONS];
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
+
+    CHECK_FILE_OPEN
+
+    /* verify input*/
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    if (m_type != CGNS_ENUMV(Integer) || m_type != CGNS_ENUMV(LongInteger)) {
+        cgi_error("Invalid datatype provided for Offset_t node");
+        return CG_ERROR;
+    }
+
+    offset = cgi_offset_address(CG_MODE_READ, 0, "dummy", &have_dup, &ier);
+    if (offset == 0) return ier;
+
+    cgsize_t *s_dimvals = &offset->data_size;
+    CGNS_ENUMT(DataType_t) s_type = cgi_datatype(offset->data_type);
+
+    ier = cgi_array_general_verify_range(
+        CGI_Read, (void *)CG_CONFIG_RIND_ZERO, NULL, 1, s_dimvals, &s_rmin, &s_rmax, 1,
+        &m_dimval, &m_rmin, &m_rmax, rmin, rmax, stride, &s_access_full_range,
+        &m_access_full_range, &numpt);
+    if (ier != CG_OK) return ier;
+    const int access_full_range =
+        (s_access_full_range == 1) && (m_access_full_range == 1);
+
+    if (s_type == m_type) {
+        if (access_full_range) {
+            if (cgio_read_all_data_type(cg->cgio, offset->id, cgi_adf_datatype(m_type),
+                                        data)) {
+                cg_io_error("cgio_read_all_data_type");
+                return CG_ERROR;
+            }
+        } else {
+            if (cgio_read_data_type(cg->cgio, offset->id, rmin, rmax, stride,
+                                    cgi_adf_datatype(m_type), 1, &m_dimval, &m_rmin,
+                                    &m_rmax, stride, data)) {
+                cg_io_error("cgio_read_data_type");
+                return CG_ERROR;
+            }
+        }
+    } else if (cg->filetype == CGIO_FILE_ADF2 || cg->filetype == CGIO_FILE_ADF) {
+        /* need to read into temp array to convert data */
+        /* only able to convert for full range in memory */
+        if (!m_access_full_range) {
+            cgi_error("Reading to partial range in memory with data conversion "
+                      "is not supported in ADF file format");
+            return CG_ERROR;
+        }
+        void *conv_data;
+        conv_data = malloc((size_t)(numpt * size_of(offset->data_type)));
+        if (conv_data == NULL) {
+            cgi_error("Error allocating conv_data");
+            return CG_ERROR;
+        }
+        if (access_full_range) {
+            if (cgio_read_all_data_type(cg->cgio, offset->id, offset->data_type,
+                                        conv_data)) {
+                free(conv_data);
+                cg_io_error("cgio_read_all_data_type");
+                return CG_ERROR;
+            }
+        } else {
+            if (cgio_read_data_type(cg->cgio, offset->id, rmin, rmax, stride,
+                                    offset->data_type, 1, &m_dimval, &m_rmin, &m_rmax,
+                                    stride, conv_data)) {
+                free(conv_data);
+                cg_io_error("cgio_read_data_type");
+                return CG_ERROR;
+            }
+        }
+        ier = cgi_convert_data(numpt, s_type, conv_data, m_type, data);
+        free(conv_data);
+        if (ier) return CG_ERROR;
+    } else {
+        /* in-situ conversion */
+        if (access_full_range) {
+            if (cgio_read_all_data_type(cg->cgio, offset->id, cgi_adf_datatype(m_type),
+                                        data)) {
+                cg_io_error("cgio_read_all_data_type");
+                return CG_ERROR;
+            }
+        } else {
+            if (cgio_read_data_type(cg->cgio, offset->id, rmin, rmax, stride,
+                                    cgi_adf_datatype(m_type), 1, &m_dimval, &m_rmin,
+                                    &m_rmax, stride, data)) {
+                cg_io_error("cgio_read_data_type");
+                return CG_ERROR;
+            }
+        }
+    }
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup Offsets
+ *
+ * \brief  Generic read for an offset data array.
+ *
+ * \param[in] offset_name
+ * \param[in] offset_type
+ * \param[in] offset_size
+ * \param[in] offset_data
+ * \return \ier
+ *
+ * \details  Require to use cg_goto before calling. Useful for partial read.
+ *
+ */
+int cg_offset_write(const char *offset_name, CGNS_ENUMT(DataType_t) offset_type,
+                    cgsize_t offset_size, void *offset_data)
+{
+    cgns_offset *offset = 0;
+    int ier = 0;
+    double posit_id;
+
+    HDF5storage_type = CG_CONTIGUOUS;
+
+    CHECK_FILE_OPEN
+    /* verify input */
+    if (cgi_check_strlen(offset_name)) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+    if (offset_type != CGNS_ENUMV(Integer) && offset_type != CGNS_ENUMV(LongInteger)) {
+        cgi_error("Invalid datatype for data array:  %d", offset_type);
+        return CG_ERROR;
+    }
+    if (offset_size <= 0) {
+        cgi_error("Invalid array size: %ld", offset_size);
+        return CG_ERROR;
+    }
+
+    /* get address */
+    int have_dup = 0;
+    offset = cgi_offset_address(CG_MODE_WRITE, 0, offset_name, &have_dup, &ier);
+    if (offset == 0) return ier;
+
+    /* Save data */
+    strcpy(offset->name, offset_name);
+    strcpy(offset->data_type, cgi_adf_datatype(offset_type));
+    offset->data_size = offset_size;
+
+    /* initialize other fields */
+    offset->link = 0;
+    offset->data = 0;
+
+    /* write to disk */
+    if (cgi_posit_id(&posit_id)) return CG_ERROR;
+    if (cgi_new_node(posit_id, offset->name, "Offset_t", &offset->id, offset->data_type,
+                     1, &(offset->data_size), offset_data))
+        return CG_ERROR;
+
+    HDF5storage_type = CG_COMPACT;
+    return CG_OK;
+}
+
+/**
+ * \ingroup Offsets
+ *
+ * \brief  Generic read for an offset data array.
+ *
+ * \param[in] offset_name
+ * \param[in] s_type
+ * \param[in] s_dimval
+ * \param[in] s_rmin
+ * \param[in] s_rmax
+ * \param[in] m_type
+ * \param[in] m_dimval
+ * \param[in] m_rmin
+ * \param[in] m_rmax
+ * \param[in] data
+ * \return \ier
+ *
+ * \details  Require to use cg_goto before calling. Useful for partial read.
+ *
+ */
+int cg_offset_general_write(const char *offset_name, CGNS_ENUMT(DataType_t) s_type,
+                            const cgsize_t s_dimval, const cgsize_t s_rmin,
+                            const cgsize_t s_rmax, CGNS_ENUMT(DataType_t) m_type,
+                            const cgsize_t m_dimval, const cgsize_t m_rmin,
+                            const cgsize_t m_rmax, const void *data)
+{
+    cgns_offset *offset = 0;
+    /* s_ prefix is file space, m_ prefix is memory space */
+    int ier = CG_OK;
+    int s_access_full_range = 1;
+    int m_access_full_range = 1;
+
+    cgsize_t numpt;
+    cgsize_t rmin[CGIO_MAX_DIMENSIONS], rmax[CGIO_MAX_DIMENSIONS];
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
+
+    CHECK_FILE_OPEN
+
+    /* verify input */
+    if (cgi_check_strlen(offset_name)) return CG_ERROR;
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+    if (s_type != CGNS_ENUMV(Integer) && s_type != CGNS_ENUMV(LongInteger)) {
+        cgi_error("Invalid file data type for offset: %d", s_type);
+        return CG_ERROR;
+    }
+    if (m_type != CGNS_ENUMV(Integer) && m_type != CGNS_ENUMV(LongInteger)) {
+        cgi_error("Invalid file data type for offset: %d", s_type);
+        return CG_ERROR;
+    }
+    if (s_dimval < 1) {
+        cgi_error("Invalid array dimension for file: %ld", s_dimval);
+        return CG_ERROR;
+    }
+
+    ier = cgi_array_general_verify_range(
+        CGI_Read, (void *)CG_CONFIG_RIND_ZERO, NULL, 1, &s_dimval, &s_rmin, &s_rmax, 1,
+        &m_dimval, &m_rmin, &m_rmax, rmin, rmax, stride, &s_access_full_range,
+        &m_access_full_range, &numpt);
+    if (ier != CG_OK) return ier;
+    const int access_full_range =
+        (s_access_full_range == 1) && (m_access_full_range == 1);
+
+    int have_dup = 0;
+    double p_id;
+    offset = cgi_offset_address(CG_MODE_WRITE, 1, offset_name, &have_dup, &ier);
+    if (offset == 0) return ier;
+    if (cgi_posit_id(&p_id)) return CG_ERROR;
+    if (have_dup) {
+        /* array dimensions in file must agree */
+        if (offset->data_size != s_dimval) {
+            cgi_error("Mismatch in array dimension");
+            return CG_ERROR;
+        }
+        /* data type in file must agree */
+        if (strcmp(offset->data_type, cgi_adf_datatype(s_type))) {
+            cgi_error("Mismatch in data types");
+            return CG_ERROR;
+        }
+    } else {
+        /* save array information in memory */
+        memset(offset, 0, sizeof(cgns_offset));
+        strcpy(offset->data_type, cgi_adf_datatype(m_type));
+        strcpy(offset->name, offset_name);
+        offset->data_size = s_dimval;
+        /* save DataArray_t node on disk: */
+        if (cgi_new_node_partial(p_id, offset->name, "Offset_t", &offset->id,
+                                 offset->data_type, 1, &s_dimval, rmin, rmax, 1,
+                                 &m_dimval, &m_rmin, &m_rmax, NULL)) {
+            return CG_ERROR;
+        }
+    }
+    /* Do not write the data if NULL pointer.  This is often used in parallel
+     * cgns where only the metadata is being written in serial */
+    if (data == NULL) return CG_OK;
+
+    if (s_type == m_type) {
+        /* quick transfer of data if same data types */
+        if (access_full_range) {
+            if (cgio_write_all_data(cg->cgio, offset->id, data)) {
+                cg_io_error("cgio_write_all_data");
+                return CG_ERROR;
+            }
+        } else {
+            if (cgio_write_data(cg->cgio, offset->id, rmin, rmax, stride, 1, &m_dimval,
+                                &m_rmin, &m_rmax, stride, data)) {
+                cg_io_error("cgio_write_data");
+                return CG_ERROR;
+            }
+        }
+    } else if (cg->filetype == CGIO_FILE_ADF2 || cg->filetype == CGIO_FILE_ADF) {
+        /* need to write into temp array to convert data */
+        /* only able to convert for full range in memory */
+        if (!m_access_full_range) {
+            cgi_error("Writing from partial range in memory with data "
+                      "conversion is not supported in ADF file format");
+            return CG_ERROR;
+        }
+        void *conv_data;
+        conv_data = malloc((size_t)(numpt * size_of(offset->data_type)));
+        if (conv_data == NULL) {
+            cgi_error("Error allocating conv_data");
+            return CG_ERROR;
+        }
+        if (cgi_convert_data(numpt, m_type, data, s_type, conv_data)) {
+            free(conv_data);
+            return CG_ERROR;
+        }
+        if (access_full_range) {
+            if (cgio_write_all_data(cg->cgio, offset->id, conv_data)) {
+                free(conv_data);
+                cg_io_error("cgio_write_all_data");
+                return CG_ERROR;
+            }
+        } else {
+            if (cgio_write_data(cg->cgio, offset->id, rmin, rmax, stride, 1, &m_dimval,
+                                &m_rmin, &m_rmax, stride, conv_data)) {
+                free(conv_data);
+                cg_io_error("cgio_write_data");
+                return CG_ERROR;
+            }
+        }
+        free(conv_data);
+    } else {
+        /* in-situ conversion */
+        if (access_full_range) {
+            if (cgio_write_all_data_type(cg->cgio, offset->id, cgi_adf_datatype(m_type),
+                                         data)) {
+                cg_io_error("cgio_write_all_data_type");
+                return CG_ERROR;
+            }
+        } else {
+            if (cgio_write_data_type(cg->cgio, offset->id, rmin, rmax, stride,
+                                     cgi_adf_datatype(m_type), 1, &m_dimval, &m_rmin,
+                                     &m_rmax, stride, data)) {
+                cg_io_error("cgio_write_data_type");
+                return CG_ERROR;
+            }
+        }
+    }
+
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+
+/**
  * \ingroup  OrdinalValue
  *
  * \brief Read ordinal value
@@ -17243,22 +19684,27 @@ int cg_nuser_data(int *nuser_data)
     else if (strcmp(posit->label,"RotatingCoordinates_t")==0)
         (*nuser_data) = ((cgns_rotating *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"BCProperty_t")==0)
-         (*nuser_data) = ((cgns_bprop *)posit->posit)->nuser_data;
+        (*nuser_data) = ((cgns_bprop *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"WallFunction_t")==0)
-         (*nuser_data) = ((cgns_bcwall *)posit->posit)->nuser_data;
+        (*nuser_data) = ((cgns_bcwall *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"Area_t")==0)
-         (*nuser_data) = ((cgns_bcarea *)posit->posit)->nuser_data;
+        (*nuser_data) = ((cgns_bcarea *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"UserDefinedData_t")==0)
-         (*nuser_data) = ((cgns_user_data *)posit->posit)->nuser_data;
+        (*nuser_data) = ((cgns_user_data *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"GridConnectivityProperty_t")==0)
-         (*nuser_data) = ((cgns_cprop *)posit->posit)->nuser_data;
+        (*nuser_data) = ((cgns_cprop *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"Periodic_t")==0)
-         (*nuser_data) = ((cgns_cperio *)posit->posit)->nuser_data;
+        (*nuser_data) = ((cgns_cperio *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"AverageInterface_t")==0)
-         (*nuser_data) = ((cgns_caverage *)posit->posit)->nuser_data;
+        (*nuser_data) = ((cgns_caverage *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
-         (*nuser_data) = ((cgns_subreg *)posit->posit)->nuser_data;
-
+        (*nuser_data) = ((cgns_subreg *)posit->posit)->nuser_data;
+    else if (strcmp(posit->label,"RulesCollection_t")==0)
+        (*nuser_data) = ((cgns_rules_collection *)posit->posit)->nuser_data;
+    else if (strcmp(posit->label,"IntegrationRule_t")==0)
+        (*nuser_data) = ((cgns_integration_rule *)posit->posit)->nuser_data;
+    else if (strcmp(posit->label,"ElementAssociation_t")==0)
+        (*nuser_data) = ((cgns_element_association *)posit->posit)->nuser_data;
     else {
         cgi_error("UserDefinedData_t node not supported under '%s' type node",posit->label);
         (*nuser_data) = 0;

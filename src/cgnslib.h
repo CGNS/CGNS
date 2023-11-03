@@ -45,8 +45,8 @@
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
 
-#define CGNS_VERSION 4500
-#define CGNS_DOTVERS 4.50
+#define CGNS_VERSION 5000
+#define CGNS_DOTVERS 5.00
 
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
@@ -442,10 +442,11 @@ typedef enum {
   CGNS_ENUMV( IFaceCenter ) =5,
   CGNS_ENUMV( JFaceCenter ) =6,
   CGNS_ENUMV( KFaceCenter ) =7,
-  CGNS_ENUMV( EdgeCenter ) =8
+  CGNS_ENUMV( EdgeCenter ) =8,
+  CGNS_ENUMV( IntegrationPoint ) =9
 } CGNS_ENUMT( GridLocation_t );
 
-#define NofValidGridLocation 9
+#define NofValidGridLocation 10
 
 extern CGNSDLL const char * GridLocationName[NofValidGridLocation];
 
@@ -832,6 +833,22 @@ extern CGNSDLL const char * ElementTypeName[NofValidElementTypes];
 #endif
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Element Space                                                    *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+typedef enum {
+  CGNS_ENUMV( ElementSpaceNull ) =CG_Null,
+  CGNS_ENUMV( ElementSpaceUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( Parametric ) =2,
+  CGNS_ENUMV( Barycentric ) =3
+} CGNS_ENUMT( ElementSpace_t );
+
+#define NofValidElementSpaceTypes 4
+
+extern CGNSDLL const char * ElementSpaceName[NofValidElementSpaceTypes];
+
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Zone types                                                       *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 typedef enum {
@@ -984,6 +1001,7 @@ CGNSDLL const char *cg_ModelTypeName(CGNS_ENUMT( ModelType_t ) type);
 CGNSDLL const char *cg_BCTypeName(CGNS_ENUMT( BCType_t ) type);
 CGNSDLL const char *cg_DataTypeName(CGNS_ENUMT( DataType_t ) type);
 CGNSDLL const char *cg_ElementTypeName(CGNS_ENUMT( ElementType_t ) type);
+CGNSDLL const char *cg_ElementSpaceName(CGNS_ENUMT( ElementSpace_t ) type);
 CGNSDLL const char *cg_ZoneTypeName(CGNS_ENUMT( ZoneType_t ) type);
 CGNSDLL const char *cg_RigidGridMotionTypeName(CGNS_ENUMT( RigidGridMotionType_t ) type);
 CGNSDLL const char *cg_ArbitraryGridMotionTypeName(CGNS_ENUMT( ArbitraryGridMotionType_t ) type);
@@ -1042,7 +1060,7 @@ CGNSDLL int cg_node_family_read( int F, char* family_name, int* nFamBC, int *nGe
 CGNSDLL int cg_node_family_name_write( const char* node_name, const char* family_name );
 CGNSDLL int cg_node_nfamily_names( int* nnames );
 CGNSDLL int cg_node_family_name_read(int N, char* node_name, char* family_name );
-  
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write FamilyName_t Nodes                                *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -1756,6 +1774,122 @@ CGNSDLL int cg_ptset_info(CGNS_ENUMT(PointSetType_t) *ptset_type,
 CGNSDLL int cg_ptset_write(CGNS_ENUMT(PointSetType_t) ptset_type,
 	cgsize_t npnts, const cgsize_t *pnts);
 CGNSDLL int cg_ptset_read(cgsize_t *pnts);
+
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write RulesCollection_t and IntegrationRule_t Nodes     *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/* TODO improve API --*/
+typedef enum {
+    CGNS_ENUMV(CombineNo)          = CG_Null,
+    CGNS_ENUMV(CombineUserDefined) = CG_UserDefined,
+    CGNS_ENUMV(Combine12)          = 2,
+    CGNS_ENUMV(Combine23)          = 3,
+    CGNS_ENUMV(Combine31)          = 4
+} CGNS_ENUMT(IntegrationCombine_t);
+
+typedef struct {
+    CGNS_ENUMT(IntegrationCombine_t) CombineStatus;
+    int ParametricDimension;
+    char *IntegrationNameParam1;
+    char *IntegrationNameParam2;
+    char *IntegrationNameParam3;
+} IntegrationName_t;
+
+CGNSDLL int cg_nrcollections(int file_number, int B, int *C);
+CGNSDLL int cg_rcollection_read(int file_number, int B, int C, char *collectionname);
+CGNSDLL int cg_rcollection_write(int file_number, int B, const char *collectionname, int *C);
+
+CGNSDLL int cg_rcollection_nindexed_rules(int file_number, int B, int C, int* num_ids);
+CGNSDLL int cg_rcollection_idtoqualifier_read(int file_number, int B, int C,
+                                                   int *rule_ids, char *rulenames);
+CGNSDLL int cg_rcollection_idtoqualifier_write(int file_number, int B, int C,
+                                             int num_ids, int *rule_ids, const char *rulenames);
+
+
+CGNSDLL int cg_nrules(int file_number, int B, int C, int* nrules);
+
+CGNSDLL int cg_reference_space_read(CGNS_ENUMT(ElementSpace_t) *reference_space);
+
+CGNSDLL int cg_itg_rule_info(int file_number, int B, int C, int R, char* rulename,
+                        CGNS_ENUMT(ElementType_t) *etype, CGNS_ENUMT(ElementSpace_t) *RefSpace,
+                        int *nitg_pts, int *num_val, CGNS_ENUMT(DataType_t) *datatype);
+
+CGNSDLL int cg_itg_rule_read_data(int file_number, int B, int C, int R,
+                                  CGNS_ENUMT(DataType_t) type,
+                                  void* weights, void* location);
+
+CGNSDLL int cg_itg_rule_parametric_write(int file_number, int B, int C,
+                                         const char *rulename,
+                                         CGNS_ENUMT(ElementType_t) etype, int num_itg_pts,
+                                         int num_param, CGNS_ENUMT(DataType_t) datatype,
+                                         void *parameters, void *weights, int *R);
+
+CGNSDLL int cg_itg_rule_barycentric_write(int file_number, int B, int C,
+                                          const char *rulename,
+                                          CGNS_ENUMT(ElementType_t) etype,
+                                          int num_itg_pts, int num_pts,
+                                          CGNS_ENUMT(DataType_t) datatype,
+                                          void *location_weights, void *weights, int *R);
+
+CGNSDLL int cg_integration_info(char *rulename, CGNS_ENUMT(ElementType_t) * etype,
+                                CGNS_ENUMT(ElementSpace_t) * RefSpace, int *num_itg_pts,
+                                int *num_val, CGNS_ENUMT(DataType_t) * datatype);
+
+CGNSDLL int cg_integration_name_struct_read(IntegrationName_t *integration_name_definition);
+CGNSDLL int cg_integration_name_read(char **integration_name_definition);
+CGNSDLL int cg_integration_name_struct_write(IntegrationName_t *integration_name_definition);
+CGNSDLL int cg_integration_name_write(char *integration_name_definition);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write ElementAssociation nodes                          *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_nelement_associations(int file_number, int B, int Z, int S, int *nprops);
+CGNSDLL int cg_element_association_info(int file_number, int B, int Z, int S, int P,
+                                char* association_name, char **path, cgsize_t *num_ids);
+CGNSDLL int cg_element_association_read(int fn, int B, int Z, int S, int P, int* data);
+
+CGNSDLL int cg_nassociations(int *nprops);
+CGNSDLL int cg_association_info(int P, char *association_name, char **path, cgsize_t *num_ids);
+CGNSDLL int cg_element_association_write(int fn, int B, int Z, int S,
+                                         const char *association_name, const char *path,
+                                         cgsize_t num_ids, int *data_ids, int *P);
+CGNSDLL int cg_association_write(const char *association_name, const char *path,
+                                 cgsize_t num_ids, int *data_ids);
+
+CGNSDLL int cg_sol_itg_rule_info(int file_number, int B, int Z, int S, char **path, cgsize_t *num_ids);
+CGNSDLL int cg_sol_itg_rule_read(int file_number, int B, int Z, int S, int *data);
+CGNSDLL int cg_sol_itg_rule_write(int file_number, int B, int Z, int S, const char *path,
+                                  cgsize_t num_ids, int *data_ids);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write Offset_t nodes                                    *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_sol_itg_offset_info(int file_number, int B, int Z, int S,
+                                   CGNS_ENUMT(DataType_t) * offset_type,
+                                   cgsize_t *offset_size);
+CGNSDLL int cg_sol_itg_offset_read(int file_number, int B, int Z, int S,
+                                   CGNS_ENUMT(DataType_t) type, void *offset_data);
+CGNSDLL int cg_sol_itg_offset_write(int file_number, int B, int Z, int S,
+                                    CGNS_ENUMT(DataType_t) offset_type,
+                                    cgsize_t offset_size, void *offset_data);
+
+CGNSDLL int cg_offset_info(char *OffsetName, CGNS_ENUMT(DataType_t) * offset_type,
+                           cgsize_t *offset_size);
+CGNSDLL int cg_offset_read_as(CGNS_ENUMT(DataType_t) type, void *offset_data);
+CGNSDLL int cg_offset_general_read(const cgsize_t s_rmin, const cgsize_t s_rmax,
+                                   CGNS_ENUMT(DataType_t) m_type, const cgsize_t m_dimval,
+                                   const cgsize_t m_rmin, const cgsize_t m_rmax, void *data);
+CGNSDLL int cg_offset_write(const char *offset_name, CGNS_ENUMT(DataType_t) offset_type,
+                            cgsize_t offset_size, void *offset_data);
+CGNSDLL int cg_offset_general_write(const char *arrayname, CGNS_ENUMT(DataType_t) s_type,
+                                    const cgsize_t s_dimval, const cgsize_t s_rmin,
+                                    const cgsize_t s_rmax, CGNS_ENUMT(DataType_t) m_type,
+                                    const cgsize_t m_dimval, const cgsize_t m_rmin,
+                                    const cgsize_t m_rmax, const void *data);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Link Handling Functions - new in version 2.1                     *
