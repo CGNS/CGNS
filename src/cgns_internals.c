@@ -139,10 +139,11 @@ typedef enum {
     LabelSimulationType_t,
     LabelBaseIterativeData_t,
     LabelUserDefinedData_t,
+    LabelRulesCollection_t,
     LabelZone_t
 } BaseLabel_t;
 
-#define NofBaseLabel 16
+#define NofBaseLabel 17
 
 static int get_base_label_type_as_enum(const char* nodelabel) {
     if (0 == strcmp(nodelabel, "Zone_t")) {
@@ -189,6 +190,9 @@ static int get_base_label_type_as_enum(const char* nodelabel) {
     }
     else if (0 == strcmp(nodelabel, "UserDefinedData_t")) {
         return LabelUserDefinedData_t;
+    }
+    else if (0 == strcmp(nodelabel, "RulesCollection_t")) {
+        return LabelRulesCollection_t;
     }
     else {
         return LabelNull_t;
@@ -280,6 +284,7 @@ int cgi_read_DDD_from_list(int in_link, _childnode_t* nodebylabel[NofBaseLabel],
 int cgi_read_simulation_from_list(_childnode_t* nodelist, int nnodes, CGNS_ENUMT(SimulationType_t)* type, double* type_id);
 int cgi_read_biter_from_list(int in_link, _childnode_t* nodelist, int nnodes, cgns_biter** biter);
 int cgi_read_user_data_from_list(int in_link, _childnode_t* nodelist, int nnodes, int* nuser_data, cgns_user_data** user_data);
+int cgi_read_rules_collection_from_list(int in_link, _childnode_t* nodelist, int nnodes, int* ncollections, cgns_rules_collection** collections);
 /* end of helpers */
 #define call_base_func(error) \
     if (error) { \
@@ -442,6 +447,11 @@ int cgi_read_base(cgns_base *base)
     call_base_func(cgi_read_user_data_from_list(0, childbylabel[LabelUserDefinedData_t],
         nchildbylabel[LabelUserDefinedData_t], &base->nuser_data,
         &base->user_data))
+
+    /* Rules_Collection */
+    call_base_func(cgi_read_rules_collection_from_list(0, childbylabel[LabelRulesCollection_t],
+           nchildbylabel[LabelRulesCollection_t], &base->nitgrulescolls,
+           &base->itgrulescolls))
 
      /* Zone_t (depends on NumberOfSteps) */
     childlist = childbylabel[LabelZone_t];
@@ -1633,7 +1643,13 @@ int cgi_read_section(int in_link, double parent_id, int *nsections,
                 section[0][n].name);
             return CG_ERROR;
         }
-
+        section[0][n].nprops = 0;
+        section[0][n].properties = 0;
+     /* ElementAssociation_t */
+        if (cgi_read_element_association(linked, section[0][n].id,
+            &section[0][n].nprops , &section[0][n].properties)){
+          return CG_ERROR;
+        }
      /* UserDefinedData_t */
         if (cgi_read_user_data(linked, section[0][n].id,
             &section[0][n].nuser_data, &section[0][n].user_data)) return CG_ERROR;
@@ -1797,6 +1813,32 @@ int cgi_read_sol(int in_link, double parent_id, int *nsols, cgns_sol **sol)
      /* UserDefinedData_t */
         if (cgi_read_user_data(linked, sol[0][s].id, &sol[0][s].nuser_data,
             &sol[0][s].user_data)) return CG_ERROR;
+
+     /* Handle IntegrationPoint options */
+        if (sol[0][s].location == CGNS_ENUMV(IntegrationPoint)) {
+          /* Optional Integral rule association */
+            cgns_element_association *asso = NULL;
+            int nasso;
+            if (cgi_read_element_association(linked, sol[0][s].id, &nasso, &asso)) {
+                return CG_ERROR;
+            }
+            if (nasso == 1) {
+                if (strcmp(asso[0].name, "ItgRules") == 0) {
+                    sol[0][s].itgrules = &(asso[0]);
+                    asso = NULL;
+                }
+            }
+            if (nasso > 0 && asso) {
+                CGNS_FREE(asso);
+            }
+
+          /* Optional Offset for partial reading of IntegralPoint location solution */
+            if (cgi_read_offset_from_name(linked, sol[0][s].id, "Solution_t",
+                                          "ItgPointStartOffset",
+                                          &(sol[0][s].pt_start_offset))) {
+                return CG_ERROR;
+            }
+        }
     }
 
     CGNS_FREE(id);
@@ -2784,6 +2826,16 @@ int cgi_read_boco(cgns_boco *boco)
     }
     if (nIA_t) CGNS_FREE(IA_id);
 
+    /* CPEX 0047 IntegrationPoint */
+    if (boco->location == CGNS_ENUMV(IntegrationPoint)){
+      if (cgi_read_offset_from_name(linked, boco->id, "BC_t",
+         "ItgPointStartOffset", &boco->pt_start_offset))
+        return CG_ERROR;
+      if (cgi_read_element_association_from_name(linked, boco->id,
+         "ItgRules", &boco->itgrules))
+        return CG_ERROR;
+    }
+
      /* BCDataSet_t */
     if (cgi_read_dataset(linked, boco->id, &boco->ndataset, &boco->dataset))
         return CG_ERROR;
@@ -3204,6 +3256,15 @@ int cgi_read_dataset(int in_link, double parent_id, int *ndataset,
         }
 
         if (nIA_t) CGNS_FREE(IA_id);
+
+        if (dataset[0][n].location == CGNS_ENUMV(IntegrationPoint)){
+          if (cgi_read_offset_from_name(linked, dataset[0][n].id, "BCDataSet_t",
+             "ItgPointStartOffset", &dataset[0][n].pt_start_offset))
+            return CG_ERROR;
+          if (cgi_read_element_association_from_name(linked, dataset[0][n].id,
+             "ItgRules", &dataset[0][n].itgrules))
+            return CG_ERROR;
+        }
 
     }
     CGNS_FREE(id);
@@ -5150,7 +5211,8 @@ int cgi_read_array(cgns_array *array, char *parent_label, double parent_id)
         strcmp(parent_label,"Elements_t")==0 ||
         strcmp(parent_label,"ZoneSubRegion_t")==0 ||
         strcmp(parent_label,"DiscreteData_t")==0 ||
-	strcmp(parent_label,"UserDefinedData_t")==0) {
+        strcmp(parent_label,"ElementAssociation_t")==0 ||
+        strcmp(parent_label,"UserDefinedData_t")==0) {
         data_flag=SKIP_DATA;
         array->data=0;
     }
@@ -5183,7 +5245,7 @@ int cgi_read_array(cgns_array *array, char *parent_label, double parent_id)
 
         if (nchild) CGNS_FREE(idi);
 
-     /* verify that the name matches the type intended */
+        /* verify that the name matches the type intended */
         if (strcmp(temp_name,"ArrayDataRange")) {
             cgi_error("Invalid point set type: '%s'",temp_name);
             return CG_ERROR;
@@ -5219,6 +5281,62 @@ int cgi_read_array(cgns_array *array, char *parent_label, double parent_id)
         CGNS_FREE(vdata);
     }
 
+    return CG_OK;
+}
+
+int cgi_read_offset(cgns_offset *array, char *parent_label)
+{
+    int data_flag=1;
+    int data_dim;
+    cgsize_t dim_vals[12];
+    
+    /* Offset_t arrays are not loaded in memory, just their addresses */
+    data_flag=SKIP_DATA;
+    array->data = 0;
+    if (cgi_read_node(array->id, array->name, array->data_type,
+        &data_dim, dim_vals, &array->data, data_flag)) {
+        cgi_error("Error reading offset under %s",parent_label);
+        return CG_ERROR;
+    }
+    if (data_dim != 1) {
+        cgi_error("Error wrong dimension for Offset_t under %s",parent_label);
+        return CG_ERROR;
+    }
+    array->data_size = dim_vals[0];
+    if (strcmp(array->data_type,"I4") && strcmp(array->data_type,"I8")) {
+        cgi_error("Data type %s not supported for Offset_t node", array->data_type);
+        return CG_ERROR;
+    }
+    return CG_OK;
+}
+
+int cgi_read_offset_from_name(int in_link, double parent_id, char* parent_label,
+                         char* offsetname, cgns_offset** array){
+    int n, noffsets;
+    double *ids;
+    char_33 tmp_name;
+
+    if (cgi_get_nodes(parent_id, "Offset_t", &noffsets, &ids))
+        return CG_ERROR;
+    if (noffsets<=0) {
+        noffsets = 0;
+        return CG_OK;
+    }
+    for (n=0; n<noffsets; n++){
+        if (cgio_get_name(cg->cgio, ids[n], tmp_name)) {
+            return CG_ERROR;
+        }
+        if (strcmp(tmp_name, offsetname)==0){
+            array[0] = CGNS_NEW(cgns_offset, 1);
+            strcpy(array[0]->name, tmp_name);
+            array[0]->id = ids[n];
+            array[0]->link = cgi_read_link(ids[n]);
+            array[0]->in_link = in_link;
+            if (cgi_read_offset(array[0], parent_label)) return CG_ERROR;
+            break;
+        }
+    }
+    CGNS_FREE(ids);
     return CG_OK;
 }
 
@@ -6422,6 +6540,731 @@ int cgi_read_user_data(int in_link, double parent_id, int *nuser_data,
     return CG_OK;
 }
 
+int cgi_read_rules_collection_from_list(int in_link, _childnode_t *nodelist, int nnodes,
+                                        int *ncollections,
+                                        cgns_rules_collection **collections)
+{
+    double *idd;
+    int n, linked;
+
+    *ncollections = nnodes;
+    if (*ncollections <= 0) {
+        ncollections[0] = 0;
+        return CG_OK;
+    }
+
+    collections[0] = CGNS_NEW(cgns_rules_collection, (*ncollections));
+    for (n = 0; n < (*ncollections); n++) {
+        collections[0][n].id = nodelist[n].id;
+        collections[0][n].link = cgi_read_link(nodelist[n].id);
+        collections[0][n].in_link = in_link;
+        linked = collections[0][n].link ? 1 : in_link;
+
+        /* RulesCollection_t Name */
+        if (cgio_get_name(cg->cgio, collections[0][n].id, collections[0][n].name)) {
+            cg_io_error("cgio_get_name");
+            return CG_ERROR;
+        }
+
+        /* Descriptor_t */
+        if (cgi_get_nodes(collections[0][n].id, "Descriptor_t", &collections[0][n].ndescr,
+                          &idd))
+            return CG_ERROR;
+        if (collections[0][n].ndescr > 0) {
+            collections[0][n].descr = CGNS_NEW(cgns_descr, (collections[0][n].ndescr));
+            for (n = 0; n < collections[0][n].ndescr; n++) {
+                collections[0][n].descr[n].id = idd[n];
+                collections[0][n].descr[n].link = cgi_read_link(idd[n]);
+                collections[0][n].descr[n].in_link = in_link;
+                if (cgi_read_string(idd[n], collections[0][n].descr[n].name,
+                                    &collections[0][n].descr[n].text))
+                    return CG_ERROR;
+            }
+            CGNS_FREE(idd);
+        }
+
+        /* UserDefinedData_t */
+        if (cgi_read_user_data(linked, collections[0][n].id,
+                               &collections[0][n].nuser_data,
+                               &collections[0][n].user_data))
+            return CG_ERROR;
+
+        /* map names */
+        cgi_read_map_name(linked, collections[0][n].id,
+                          &collections[0][n].id_to_qualifier);
+
+        /* integration rules */
+        cgi_read_integration_rules(linked, collections[0][n].id,
+                                   &collections[0][n].nitems, &collections[0][n].items);
+    }
+
+    return CG_OK;
+}
+
+int cgi_read_rules_collection(int in_link, double parent_id, int *ncollections,
+                              cgns_rules_collection **collections)
+{
+    double *id, *idd;
+    int n, linked;
+
+    if (cgi_get_nodes(parent_id, "RulesCollection_t", ncollections, &id)) return CG_ERROR;
+    if (*ncollections <= 0) {
+        ncollections[0] = 0;
+        return CG_OK;
+    }
+
+    collections[0] = CGNS_NEW(cgns_rules_collection, (*ncollections));
+    for (n = 0; n < (*ncollections); n++) {
+        collections[0][n].id = id[n];
+        collections[0][n].link = cgi_read_link(id[n]);
+        collections[0][n].in_link = in_link;
+        linked = collections[0][n].link ? 1 : in_link;
+
+        /* RulesCollection_t Name */
+        if (cgio_get_name(cg->cgio, collections[0][n].id, collections[0][n].name)) {
+            cg_io_error("cgio_get_name");
+            return CG_ERROR;
+        }
+
+        /* Descriptor_t */
+        if (cgi_get_nodes(collections[0][n].id, "Descriptor_t", &collections[0][n].ndescr,
+                          &idd))
+            return CG_ERROR;
+        if (collections[0][n].ndescr > 0) {
+            collections[0][n].descr = CGNS_NEW(cgns_descr, (collections[0][n].ndescr));
+            for (n = 0; n < collections[0][n].ndescr; n++) {
+                collections[0][n].descr[n].id = idd[n];
+                collections[0][n].descr[n].link = cgi_read_link(idd[n]);
+                collections[0][n].descr[n].in_link = in_link;
+                if (cgi_read_string(idd[n], collections[0][n].descr[n].name,
+                                    &collections[0][n].descr[n].text))
+                    return CG_ERROR;
+            }
+            CGNS_FREE(idd);
+        }
+
+        /* UserDefinedData_t */
+        if (cgi_read_user_data(linked, collections[0][n].id,
+                               &collections[0][n].nuser_data,
+                               &collections[0][n].user_data))
+            return CG_ERROR;
+
+        /* map names */
+        cgi_read_map_name(linked, collections[0][n].id,
+                          &collections[0][n].id_to_qualifier);
+
+        /* integration rules */
+        cgi_read_integration_rules(linked, collections[0][n].id,
+                                   &collections[0][n].nitems, &collections[0][n].items);
+    }
+    CGNS_FREE(id);
+    return CG_OK;
+}
+
+int cgi_read_map_name(int in_link, double parent_id, cgns_map_names **map)
+{
+    char_33 name;
+    double *id, *idarr;
+    int map_flag;
+    int ndim, n, narr;
+    char_33 data_type;
+    void *vdata;
+    cgsize_t dim_vals[12];
+
+    /* map names */
+    if (cgi_get_nodes(parent_id, "MapName_t", &map_flag, &id)) return CG_ERROR;
+
+    if (map_flag == 1) {
+        if (cgio_get_name(cg->cgio, id[0], name)) {
+            cg_io_error("cgio_get_name");
+            return CG_ERROR;
+        }
+        if (strcmp(name, "IdToQualifier")) {
+            cgi_error("Invalid name for MapName_t");
+            return CG_ERROR;
+        }
+        map[0] = CGNS_NEW(cgns_map_names, 1);
+        memset(map[0], 0, sizeof(cgns_map_names));
+        map[0]->nids = 0;
+        map[0]->id = *id;
+        if (cgi_read_node_data(id[0], data_type, &ndim, dim_vals, &vdata)) {
+            cgi_error("Error reading node MapName_t");
+            return CG_ERROR;
+        }
+        if (ndim != 1) {
+            cgi_error("Wrong number of dimension for a MapName_t node");
+            return CG_ERROR;
+        }
+        if (0 == strcmp(data_type, "I4")) {
+            map[0]->nids = dim_vals[0];
+            map[0]->ids = (int *)vdata;
+        } else {
+            cgi_error("Unsupported data type for MapName_t node %s= %s", name, data_type);
+            return CG_ERROR;
+        }
+        if (map[0]->nids > 0) {
+            map[0]->names = CGNS_NEW(char_33, map[0]->nids);
+            for (n = 0; n < map[0]->nids; ++n) {
+                map[0]->names[n][0] = '\0';
+            }
+            if (cgi_get_nodes(*id, "DataArray_t", &narr, &idarr)) return CG_ERROR;
+            if (narr != 1) {
+                cgi_error("Only one 'Names' array expected under a MapName_t node");
+                return CG_ERROR;
+            }
+            cgns_array *tmp = CGNS_NEW(cgns_array, 1);
+            tmp->id = idarr[0];
+            tmp->link = cgi_read_link(idarr[0]);
+            tmp->in_link = in_link;
+            CGNS_FREE(idarr);
+            if (cgi_read_array(tmp, "MapName_t", *id)) {
+                CGNS_FREE(tmp);
+                return CG_ERROR;
+            }
+            if (!strcmp(tmp->data_type, "C1")) {
+                cgi_error("Invalid DataArray_t 'Names' type");
+                CGNS_FREE(tmp);
+                return CG_ERROR;
+            }
+            if (tmp->data_dim != 2 || tmp->dim_vals[0] != 32 ||
+                map[0]->nids != tmp->dim_vals[1]) {
+                cgi_error("Array 'Names' incorrectly sized");
+                CGNS_FREE(tmp);
+                return CG_ERROR;
+            }
+            for (n = 0; n < map[0]->nids; ++n) {
+                strncpy(map[0]->names[n], ((char *)tmp->data + 32 * n), 32);
+                map[0]->names[n][32] = '\0';
+            }
+            CGNS_FREE(tmp);
+        }
+    } else if (map_flag < 1) {
+        cgi_error("Expected MapName_t node not found");
+        return CG_ERROR;
+    } else {
+        CGNS_FREE(id);
+        cgi_error("Multiple MapName_t nodes found");
+        return CG_ERROR;
+    }
+    CGNS_FREE(id);
+    return CG_OK;
+}
+
+int cgi_ElementSpace(char *Name, CGNS_ENUMT(ElementSpace_t) * type)
+{
+    int i;
+    for (i = 0; i < NofValidElementSpaceTypes; i++) {
+        if (strcmp(Name, ElementSpaceName[i]) == 0) {
+            (*type) = (CGNS_ENUMV(ElementSpace_t))i;
+            return CG_OK;
+        }
+    }
+    cgi_error("Unrecognized Element Space: %s", Name);
+    return CG_ERROR;
+}
+
+int cgi_read_element_space(double parent_id, char_33 parent_name,
+                           CGNS_ENUMT(ElementSpace_t) * type)
+{
+    int nchild;
+    double *id;
+    char *element_space; /* allocated in cgi_read_node */
+    char_33 name;
+
+    /* get number of ZoneType_t nodes and their ID */
+    if (cgi_get_nodes(parent_id, "ElementSpace_t", &nchild, &id)) return CG_ERROR;
+    if (nchild==0) {
+        /* set default */
+        *type = CGNS_ENUMV(Parametric);
+        return CG_OK;
+    }
+
+    if (nchild>1) {
+        cgi_error("Invalid definition of ElementSpace for %s", parent_name);
+        return CG_ERROR;
+    }
+
+    if (cgi_read_string(id[0], name, &element_space)) return CG_ERROR;
+    CGNS_FREE(id);
+
+    if (cgi_ElementSpace(element_space, type)) return CG_ERROR;
+
+    CGNS_FREE(element_space);
+    return CG_OK;
+}
+
+int cgi_read_integration_arrays(int in_link, cgns_integration_rule *item)
+{
+    double *ida;
+    int nchild, i;
+    char_33 temp_name;
+
+    if (cgi_get_nodes(item->id, "DataArray_t", &nchild, &ida)) return CG_ERROR;
+    for (i = 0; i < nchild; i++) {
+        if (cgio_get_name(cg->cgio, ida[i], temp_name)) {
+            cg_io_error("cgio_get_name");
+            CGNS_FREE(ida);
+            return CG_ERROR;
+        }
+        if (strcmp(temp_name, "Weights") == 0) {
+            if (item->weights) {
+                cgi_error("Error: IntegrationRule weights defined more than once");
+                CGNS_FREE(ida);
+                return CG_ERROR;
+            }
+            item->weights = CGNS_NEW(cgns_array, 1);
+            item->weights->id = ida[i];
+            item->weights->link = cgi_read_link(ida[i]);
+            item->weights->in_link = in_link;
+            if (cgi_read_array(item->weights, "IntegrationRule_t", item->id)) {
+                CGNS_FREE(ida);
+                return CG_ERROR;
+            }
+        } else if (strcmp(temp_name, "ParametricPoints") == 0 &&
+                   item->el_space == CGNS_ENUMV(Parametric)) {
+            item->points = CGNS_NEW(cgns_array, 1);
+            item->points->id = ida[i];
+            item->points->link = cgi_read_link(ida[i]);
+            item->points->in_link = in_link;
+            if (cgi_read_array(item->points, "IntegrationRule_t", item->id)) {
+                CGNS_FREE(ida);
+                return CG_ERROR;
+            }
+            /* verify input data */
+            if (item->points->data_dim != 2) {
+                CGNS_FREE(ida);
+                return CG_ERROR;
+            }
+            if (item->points->dim_vals[0] != item->parametric_dim ||
+                item->points->dim_vals[1] != item->npoints) {
+                CGNS_FREE(ida);
+                return CG_ERROR;
+            }
+        } else if (strcmp(temp_name, "BarycentricPoints") == 0 &&
+                   item->el_space != CGNS_ENUMV(Parametric)) {
+            item->points = CGNS_NEW(cgns_array, 1);
+            item->points->id = ida[i];
+            item->points->link = cgi_read_link(ida[i]);
+            item->points->in_link = in_link;
+            if (cgi_read_array(item->points, "IntegrationRule_t", item->id)) {
+                CGNS_FREE(ida);
+                return CG_ERROR;
+            }
+            /* verify input data */
+            if (item->points->data_dim != 2) {
+                CGNS_FREE(ida);
+                return CG_ERROR;
+            }
+            if (item->points->dim_vals[1] != item->npoints) {
+                CGNS_FREE(ida);
+                return CG_ERROR;
+            }
+        } else if (strcmp(temp_name, "IntegrationName") == 0) {
+
+            item->integration_names = CGNS_NEW(IntegrationName_t, 1);
+
+            cgns_array *tmp = CGNS_NEW(cgns_array, 1);
+            tmp->id = ida[i];
+            tmp->link = cgi_read_link(ida[i]);
+            tmp->in_link = in_link;
+            if (cgi_read_array(tmp, "IntegrationRule_t", item->id)) {
+                CGNS_FREE(tmp);
+                CGNS_FREE(ida);
+                return CG_ERROR;
+            }
+            /* */
+            if (strcmp(tmp->data_type, "C1")) {
+                cgi_error("Incorrect data type for %s under %s", tmp->name, item->name);
+                CGNS_FREE(tmp);
+                CGNS_FREE(ida);
+                return CG_ERROR;
+            }
+            if (tmp->data_dim != 1) {
+                cgi_error("Incorrect data dimension for %s under %s", tmp->name,
+                          item->name);
+                CGNS_FREE(tmp);
+                CGNS_FREE(ida);
+                return CG_ERROR;
+            }
+            char *pch, *tok;
+            char *integration_names_str = NULL;
+
+            integration_names_str = (char *)tmp->data;
+            if (strlen(integration_names_str) == 0) {
+                cgi_error("Integration names definition is empty");
+                CGNS_FREE(tmp);
+                CGNS_FREE(ida);
+                return CG_ERROR;
+            }
+
+            int length = strlen(integration_names_str);
+            int pos = 0;
+            /* check if 'x' separator present in formula */
+            pch = strchr(integration_names_str, 'x');
+            item->integration_names->ParametricDimension = 0;
+            if (pch != NULL) {
+                /* tokenize formula */
+                pch = strtok(integration_names_str, "x");
+                while (pch != NULL) {
+                    tok = pch;
+                    length = strlen((const char *)tok);
+                    if (pos == 0) {
+                        if (strcmp(tok, "CombineNo") == 0) {
+                            item->integration_names->CombineStatus = CGNS_ENUMV(CombineNo);
+                        } else if (strcmp(tok, "CombineUserDefined") == 0) {
+                            item->integration_names->CombineStatus = CGNS_ENUMV(CombineUserDefined);
+                        } else if (strcmp(tok, "Combine12") == 0) {
+                            item->integration_names->CombineStatus = CGNS_ENUMV(Combine12);
+                        } else if (strcmp(tok, "Combine23") == 0) {
+                            item->integration_names->CombineStatus = CGNS_ENUMV(Combine23);
+                        } else if (strcmp(tok, "Combine31") == 0) {
+                            item->integration_names->CombineStatus = CGNS_ENUMV(Combine31);
+                        } else {
+                            cgi_error("Unknown Combine token in IntegrationName");
+                            return CG_ERROR;
+                        }
+                    } else if (pos == 1) {
+                        item->integration_names->IntegrationNameParam1 = (char *)malloc(sizeof(char) * (length + 1));
+                        strcpy(item->integration_names->IntegrationNameParam1, tok);
+                        item->integration_names->ParametricDimension = 1;
+                    } else if (pos == 2) {
+                        item->integration_names->IntegrationNameParam2 = (char *)malloc(sizeof(char) * (length + 1));
+                        strcpy(item->integration_names->IntegrationNameParam2, tok);
+                        item->integration_names->ParametricDimension = 2;
+                    } else if (pos == 3) {
+                        item->integration_names->IntegrationNameParam3 = (char *)malloc(sizeof(char) * (length + 1));
+                        strcpy(item->integration_names->IntegrationNameParam3, tok);
+                        item->integration_names->ParametricDimension = 3;
+                    }
+                    pos += 1;
+                    pch = strtok(NULL, "x"); // Next token
+                }
+            } else {
+                /* if no 'x' present assume homogenous naming */
+                item->integration_names->CombineStatus = CGNS_ENUMV(CombineNo);
+                item->integration_names->IntegrationNameParam1 =
+                    (char *)malloc(sizeof(char) * (length + 1));
+                strcpy(item->integration_names->IntegrationNameParam1, pch);
+                if (item->parametric_dim > 1) {
+                    item->integration_names->IntegrationNameParam2 =
+                        (char *)malloc(sizeof(char) * (length + 1));
+                    strcpy(item->integration_names->IntegrationNameParam2, pch);
+                }
+                if (item->parametric_dim > 2) {
+                    item->integration_names->IntegrationNameParam3 =
+                        (char *)malloc(sizeof(char) * (length + 1));
+                    strcpy(item->integration_names->IntegrationNameParam3, pch);
+                }
+                item->integration_names->ParametricDimension = item->parametric_dim;
+            }
+            CGNS_FREE(tmp);
+        }
+    }
+    CGNS_FREE(ida);
+    return CG_OK;
+}
+
+int cgi_read_integration_rules(int in_link, double parent_id, int *nitems,
+                               cgns_integration_rule **items)
+{
+    double *items_ids, *idd;
+    int n, j, linked;
+    char_33 data_type;
+    void *vdata;
+    int *edata;
+    int ndim;
+    CGNS_ENUMT(ElementType_t) el_type;
+    int n_integration_points, param_dim;
+    int npe;
+    cgsize_t dim_vals[12];
+
+    if (cgi_get_nodes(parent_id, "IntegrationRule_t", nitems, &items_ids))
+        return CG_ERROR;
+    if (*nitems < 0) {
+        items[0] = 0;
+        return CG_OK;
+    }
+
+    items[0] = CGNS_NEW(cgns_integration_rule, *nitems);
+    for (n = 0; n < *nitems; ++n) {
+        items[0][n].id = items_ids[n];
+        items[0][n].link = cgi_read_link(items_ids[n]);
+        items[0][n].in_link = in_link;
+        items[0][n].npoints = 0;
+        items[0][n].el_type = 0;
+        items[0][n].parametric_dim = 0;
+        items[0][n].num_vertices = 0;
+        linked = items[0][n].link ? 1 : in_link;
+
+      /* IntegrationRule_t */
+        if (cgi_read_node(items[0][n].id, items[0][n].name, data_type, &ndim, dim_vals,
+                          &vdata, READ_DATA)) {
+            cgi_error("Error reading IntegrationRule_t data");
+            return CG_ERROR;
+        }
+
+      /* verify data read */
+        if (strcmp(data_type, "I4") != 0) {
+            cgi_error("Unsupported data type for IntegrationRule_t node %s= %s",
+                      items[0][n].name, data_type);
+            return CG_ERROR;
+        }
+        if (ndim != 1) {
+            cgi_error("Wrong number of dimension for IntegrationRule_t node '%s'.",
+                      items[0][n].name);
+            return CG_ERROR;
+        }
+        if (dim_vals[0] != 3) {
+            cgi_error("Wrong dimension value for IntegrationRule_t node '%s'.",
+                      items[0][n].name);
+            return CG_ERROR;
+        }
+
+        edata = (int *)vdata;
+        el_type = (CGNS_ENUMT(ElementType_t))edata[0];
+        n_integration_points = edata[1];
+        param_dim = edata[2];
+        items[0][n].el_type = el_type;
+        CGNS_FREE(vdata);
+        /* verify element type */
+        if (INVALID_ENUM(el_type, NofValidElementTypes)) {
+            cgi_error("Invalid Element Type for IntegrationRule_t :'%s'",
+                      items[0][n].name);
+            return CG_ERROR;
+        }
+        /* check integration points exist */
+        if (n_integration_points < 1) {
+            cgi_error("Invalid number of integration points");
+            return CG_ERROR;
+        }
+        items[0][n].npoints = n_integration_points;
+
+      /* reference element space setup */
+        if (cgi_read_element_space(items[0][n].id, items[0][n].name,
+                                   &items[0][n].el_space))
+            return CG_ERROR;
+        if ((items[0][n].el_type == CGNS_ENUMV(NGON_n) ||
+             items[0][n].el_type == CGNS_ENUMV(NFACE_n)) &&
+            items[0][n].el_space == CGNS_ENUMV(Parametric)) {
+            cgi_error("Invalid Element Space for NGON_n or NFACE_n :'%s'",
+                      items[0][n].el_space);
+            return CG_ERROR;
+        }
+        if (items[0][n].el_space == CGNS_ENUMV(Parametric) ||
+            items[0][n].el_space == CGNS_ENUMV(ElementSpaceUserDefined)) {
+            items[0][n].parametric_dim = param_dim;
+        }
+        if (items[0][n].el_space == CGNS_ENUMV(Barycentric)) {
+            cg_npe(items[0][n].el_type, &npe);
+            if (npe > 0) {
+                items[0][n].num_vertices = npe;
+            } else {
+                if (items[0][n].el_type == CGNS_ENUMV(NGON_n) ||
+                    items[0][n].el_type == CGNS_ENUMV(NFACE_n)) {
+                    // for polyhedron and polygons the information of number of vertices
+                    // can not be guessed so it is necessary to store it
+                    // in place of the parametric_dimension data.
+                    items[0][n].num_vertices = param_dim;
+                }
+            }
+        }
+      /* Weights and Points information*/
+        if (cgi_read_integration_arrays(linked, &(items[0][n]))) return CG_ERROR;
+
+      /* Descriptor_t */
+        items[0][n].descr = 0;
+        if (cgi_get_nodes(parent_id, "Descriptor_t", &(items[0][n].ndescr), &idd))
+            return CG_ERROR;
+        if (items[0][n].ndescr > 0) {
+            items[0][n].descr = CGNS_NEW(cgns_descr, items[0][n].ndescr);
+            for (j = 0; j < items[0][n].ndescr; j++) {
+                items[0][n].descr[j].id = idd[j];
+                items[0][n].descr[j].link = cgi_read_link(idd[j]);
+                items[0][n].descr[j].in_link = in_link;
+                if (cgi_read_string(idd[j], items[0][n].descr[j].name,
+                                    &items[0][n].descr[j].text))
+                    return CG_ERROR;
+            }
+            CGNS_FREE(idd);
+        }
+
+        /* UserDefinedData_t */
+        if (cgi_read_user_data(linked, items[0][n].id, &items[0][n].nuser_data,
+                               &items[0][n].user_data))
+            return CG_ERROR;
+    }
+    CGNS_FREE(items_ids);
+    return CG_OK;
+}
+
+int cgi_read_one_element_association(int in_link, double id,
+                                     cgns_element_association *property)
+{
+    double *idi, *idd;
+    int narrays, i;
+    int linked;
+    char_33 name;
+
+    property->id = id;
+    property->link = cgi_read_link(id);
+    property->in_link = in_link;
+    linked = property->link ? 1 : in_link;
+
+    /* ElementAssociation_t Name */
+    if (cgio_get_name(cg->cgio, property->id, property->name)) {
+        cg_io_error("cgio_get_name");
+        return CG_ERROR;
+    }
+
+    /* DataArray_t */
+    if (cgi_get_nodes(id, "DataArray_t", &narrays, &idi)) return CG_ERROR;
+    if (narrays > 0) {
+        for (i = 0; i < narrays; i++) {
+            if (cgio_get_name(cg->cgio, idi[i], name)) {
+                cg_io_error("cgio_get_name");
+                CGNS_FREE(idi);
+                return CG_ERROR;
+            }
+            if (strcmp(name, "Path") == 0) {
+                char *nodepath;
+                int n, ndim;
+                cgsize_t *length, len = 1;
+                /* Read in a cgns_array structure for easier read/write
+                 *  but only expose the char_md path interface to user */
+                property->path_array = CGNS_NEW(cgns_array, 1);
+                property->path_array->id = idi[i];
+                property->path_array->link = cgi_read_link(idi[i]);
+                property->path_array->in_link = linked;
+                /* We can not use cgi_read_array since we do no want to read all 'Ids'
+                 * so the ElementAssociation_t DataArrays are skept by cgns internal read
+                 */
+                if (cgi_read_node(
+                        property->path_array->id, property->path_array->name,
+                        property->path_array->data_type, &property->path_array->data_dim,
+                        property->path_array->dim_vals, &property->path_array->data, 1)) {
+                    cgi_error("Error reading array under ElementAssociation_t");
+                    return CG_ERROR;
+                }
+                /* verify dimensions */
+                if (strcmp(property->path_array->data_type, "C1") != 0) {
+                    cgi_error("Invalid datatype for character data: %s",
+                              property->path_array->data_type);
+                    return CG_ERROR;
+                }
+                /* add the string terminator */
+                nodepath = (char *)property->path_array->data;
+                ndim = property->path_array->data_dim;
+                length = property->path_array->dim_vals;
+                for (n = 0; n < ndim; n++)
+                    len *= length[n];
+                len = len > (CG_MAX_GOTO_DEPTH * 33) - 1 ? (CG_MAX_GOTO_DEPTH * 33) - 1
+                                                         : len;
+                /* finish preparation for user exposal */
+                strncpy(property->path, nodepath, len);
+                property->path[len] = '\0';
+                /* do not keep in-memory a duplicate of the path data */
+                CGNS_FREE(property->path_array->data);
+                property->path_array->data = 0;
+            } else if (strcmp(name, "Ids") == 0) {
+                property->ids = CGNS_NEW(cgns_array, 1);
+                property->ids->id = idi[i];
+                property->ids->link = cgi_read_link(idi[i]);
+                property->ids->in_link = linked;
+                if (cgi_read_array(property->ids, "ElementAssociation_t", property->id))
+                    return CG_ERROR;
+                /* verify data type */
+                if (strcmp(property->ids->data_type, "I4")) {
+                    cgi_error("Data type %s not supported for Ids",
+                              property->ids->data_type);
+                    return CG_ERROR;
+                }
+                if (property->ids->data_dim != 1) {
+                    return CG_ERROR;
+                }
+                /* if only one value load it to prevent small read later */
+                if (property->ids->dim_vals[0] == 1) {
+                    property->ids->data = CGNS_NEW(int, 1);
+                    if (cgio_read_all_data_type(cg->cgio, property->ids->id,
+                                                property->ids->data_type,
+                                                property->ids->data)) {
+                        cg_io_error("cgio_real_all_data_type");
+                        return CG_ERROR;
+                    }
+                }
+            }
+        }
+        CGNS_FREE(idi);
+    }
+    /* Descriptor_t */
+    property->descr = 0;
+    if (cgi_get_nodes(property->id, "Descriptor_t", &property->ndescr, &idd))
+        return CG_ERROR;
+    if (property->ndescr > 0) {
+        property->descr = CGNS_NEW(cgns_descr, &property->ndescr);
+        for (i = 0; i < property->ndescr; i++) {
+            property->descr[i].id = idd[i];
+            property->descr[i].link = cgi_read_link(idd[i]);
+            property->descr[i].in_link = in_link;
+            if (cgi_read_string(idd[i], property->descr[i].name,
+                                &property->descr[i].text))
+                return CG_ERROR;
+        }
+        CGNS_FREE(idd);
+    }
+    /* UserDefinedData_t */
+    if (cgi_read_user_data(linked, property->id, &property->nuser_data,
+                           &property->user_data))
+        return CG_ERROR;
+
+    return CG_OK;
+}
+
+int cgi_read_element_association(int in_link, double parent_id, int *nprops,
+                                 cgns_element_association **properties)
+{
+    double *id;
+    int n;
+    if (cgi_get_nodes(parent_id, "ElementAssociation_t", nprops, &id)) return CG_ERROR;
+    if (*nprops <= 0) {
+        properties[0] = 0;
+        return CG_OK;
+    }
+    properties[0] = CGNS_NEW(cgns_element_association, (*nprops));
+    for (n = 0; n < (*nprops); n++) {
+        if (cgi_read_one_element_association(in_link, id[n], &(properties[0][n])))
+            return CG_ERROR;
+    }
+    CGNS_FREE(id);
+    return CG_OK;
+}
+
+int cgi_read_element_association_from_name(int in_link, double parent_id, char *name,
+                                           cgns_element_association **property)
+{
+    /* Optional Integral rule association */
+    int n, nprops;
+    double *id;
+    char_33 tmp_name;
+
+    if (cgi_get_nodes(parent_id, "ElementAssociation_t", &nprops, &id)) return CG_ERROR;
+    if (nprops <= 0) {
+        return CG_OK;
+    }
+    for (n = 0; n < nprops; n++) {
+        if (cgio_get_name(cg->cgio, id[n], tmp_name)) {
+            cg_io_error("cgio_get_name");
+            return CG_ERROR;
+        }
+        if (strcmp(tmp_name, name) == 0) {
+            property[0] = CGNS_NEW(cgns_element_association, 1);
+            cgi_read_one_element_association(in_link, id[n], property[0]);
+            break;
+        }
+    }
+    CGNS_FREE(id);
+    return CG_OK;
+}
+
 int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
                        cgns_subreg **subreg)
 {
@@ -6627,6 +7470,14 @@ int cgi_read_subregion(int in_link, double parent_id, int *nsubreg,
         /* UserDefinedData_t */
         if (cgi_read_user_data(linked, reg[n].id,
             &reg[n].nuser_data, &reg[n].user_data)) return CG_ERROR;
+
+        /* Handle IntegrationPoint optional nodes */
+        if (cgi_read_element_association_from_name(linked, reg[n].id, "ItgRules",
+                                                   &(reg[n].itgrules)))
+            return CG_ERROR;
+        if (cgi_read_offset_from_name(linked, reg[n].id, "ZoneSubRegion_t",
+                                      "ItgPointStartOffset", &(reg[n].pt_start_offset)))
+            return CG_ERROR;
     }
     CGNS_FREE(id);
 
@@ -8974,6 +9825,24 @@ int cgi_write_array(double parent_id, cgns_array *array)
     return CG_OK;
 }
 
+int cgi_write_offset(double parent_id, cgns_offset *array)
+{
+    HDF5storage_type = CG_CONTIGUOUS;
+
+    if (array->link) {
+        return cgi_write_link(parent_id, array->name,
+            array->link, &array->id);
+    }
+
+    if (cgi_new_node(parent_id, array->name, "Offset_t", &array->id,
+        array->data_type, 1, &(array->data_size), array->data))
+        return CG_ERROR;
+
+    HDF5storage_type = CG_COMPACT;
+
+    return CG_OK;
+}
+
 int cgi_write_rind(double parent_id, int *rind_planes, int index_dim)
 {
     int n;
@@ -9820,6 +10689,7 @@ int cgi_array_general_write(
     return CG_OK;
 }
 
+
 /***********************************************************************\
  *            Alphanumerical sorting routine                           *
  * Warning: This is an insert sort that leads to performance issues    *
@@ -10219,6 +11089,20 @@ cgns_family *cgi_get_family(cgns_file *cg, int B, int F)
         return CG_OK;
     }
     return &base->family[F-1];
+}
+
+cgns_rules_collection *cgi_get_rules_collection(cgns_file *cg, int B, int C)
+{
+    cgns_base *base;
+
+    base = cgi_get_base(cg, B);
+    if (base==0) return CG_OK;
+
+    if (C>base->nitgrulescolls || C<=0) {
+        cgi_error("RulesCollection_t node number %d invalid", C);
+        return CG_OK;
+    }
+    return &base->itgrulescolls[C-1];
 }
 
 cgns_biter *cgi_get_biter(cgns_file *cg, int B)
@@ -10932,6 +11816,20 @@ static int cgi_next_posit(char *label, int index, char *name)
                            label, 1, b->rotating->id);
             }
         }
+        else if (0 == strcmp (label, "RulesCollection_t")) {
+          if (--index < 0) {
+              for (n = 0; n < b->nitgrulescolls; n++) {
+                  if (0 == strcmp (b->itgrulescolls[n].name, name)) {
+                      index = n;
+                      break;
+                  }
+              }
+          }
+          if (index >= 0 && index < b->nitgrulescolls) {
+              return cgi_add_posit((void *)&b->itgrulescolls[index],
+                         label, index + 1, b->itgrulescolls[index].id);
+          }
+        }
         else
             return CG_INCORRECT_PATH;
     }
@@ -11194,6 +12092,13 @@ static int cgi_next_posit(char *label, int index, char *name)
                            label, index + 1, s->user_data[index].id);
             }
         }
+        else if (0 == strcmp (label, "ElementAssociation_t")) {
+            if (s->itgrules &&
+                (index == 1 || 0 == strcmp(s->itgrules->name, name))){
+                return cgi_add_posit((void *)s->itgrules,
+                           label, 1, s->itgrules->id);
+            }
+        }
         else
             return CG_INCORRECT_PATH;
     }
@@ -11437,6 +12342,13 @@ static int cgi_next_posit(char *label, int index, char *name)
                 return cgi_add_posit((void *)b->ptset,
                            label, 1, b->ptset->id);
             }
+        }
+        else if (0 == strcmp (label, "ElementAssociation_t")) {
+            if (b->itgrules &&
+               (index == 1 || 0 == strcmp(b->itgrules->name, name))) {
+               return cgi_add_posit((void *)b->itgrules,
+                          label, 1, b->itgrules->id);
+          }
         }
         else
             return CG_INCORRECT_PATH;
@@ -11856,8 +12768,20 @@ static int cgi_next_posit(char *label, int index, char *name)
                 return cgi_add_posit((void *)&s->user_data[index],
                            label, index + 1, s->user_data[index].id);
             }
-        }
-        else
+        } else if (0 == strcmp (label, "ElementAssociation_t")){
+            if (--index < 0) {
+                for (n = 0; n < s->nprops; n++) {
+                    if (0 == strcmp (s->properties[n].name, name)) {
+                        index = n;
+                        break;
+                    }
+                }
+            }
+            if (index >= 0 && index < s->nprops) {
+                return cgi_add_posit((void *)&s->properties[index],
+                           label, index + 1, s->properties[index].id);
+            }
+        } else
             return CG_INCORRECT_PATH;
     }
 
@@ -12489,6 +13413,56 @@ static int cgi_next_posit(char *label, int index, char *name)
                            label, index + 1, r->user_data[index].id);
             }
         }
+        else if (0 == strcmp (label, "ElementAssociation_t")) {
+            if (r->itgrules &&
+                (index == 1 || 0 == strcmp(r->itgrules->name, name))){
+                return cgi_add_posit((void *)r->itgrules,
+                           label, 1, r->itgrules->id);
+            }
+        }
+        else
+            return CG_INCORRECT_PATH;
+    }
+
+    /* RulesCollection_t */
+
+    else if (0 == strcmp (posit->label, "RulesCollection_t")) {
+        cgns_rules_collection *coll = (cgns_rules_collection *)posit->posit;
+        if (0 == strcmp (label, "UserDefinedData_t")) {
+            if (--index < 0) {
+                for (n = 0; n < coll->nuser_data; n++) {
+                    if (0 == strcmp (coll->user_data[n].name, name)) {
+                        index = n;
+                        break;
+                    }
+                }
+            }
+            if (index >= 0 && index < coll->nuser_data) {
+                return cgi_add_posit((void *)&coll->user_data[index],
+                           label, index + 1, coll->user_data[index].id);
+            }
+        }
+        else if (0 == strcmp (label, "IntegrationRule_t")) {
+            if (--index < 0) {
+                for (n = 0; n < coll->nitems; n++) {
+                    if (0 == strcmp (coll->items[n].name, name)) {
+                        index = n;
+                        break;
+                    }
+                }
+            }
+            if (index >= 0 && index < coll->nitems) {
+                return cgi_add_posit((void *)&coll->items[index],
+                           label, index + 1, coll->items[index].id);
+            }
+        }
+        else if (0 == strcmp (label, "MapName_t")) {
+            if (coll->id_to_qualifier &&
+                (index == 1 || 0 == strcmp("IdToQualifier", name))){
+                return cgi_add_posit((void *)coll->id_to_qualifier,
+                           label, 1, coll->id_to_qualifier->id);
+            }
+        }
         else
             return CG_INCORRECT_PATH;
     }
@@ -12654,8 +13628,8 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
  *  ArbitraryGridMotion_t, BaseIterativeData_t, ZoneIterativeData_t,
  *  UserDefinedData_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t,
  *  BCProperty_t, WallFunction_t, Area_t,
- *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t
- *  FamilyBCDataSet_t
+ *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t,
+ *  FamilyBCDataSet_t, RulesCollection_t, Integration_t, ElementAssociation_t
  */
 
     if (strcmp(posit->label,"CGNSBase_t")==0)
@@ -12744,6 +13718,12 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_caverage, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
         ADDRESS4MULTIPLE(cgns_subreg, ndescr, descr, cgns_descr)
+    else if (strcmp(posit->label,"RulesCollection_t")==0)
+        ADDRESS4MULTIPLE(cgns_rules_collection, ndescr, descr, cgns_descr)
+    else if (strcmp(posit->label,"IntegrationRule_t")==0)
+        ADDRESS4MULTIPLE(cgns_integration_rule, ndescr, descr, cgns_descr)
+    else if (strcmp(posit->label,"ElementAssociation_t")==0)
+        ADDRESS4MULTIPLE(cgns_element_association, ndescr, descr, cgns_descr)
     else {
         cgi_error("Descriptor_t node not supported under '%s' type node (cgi_descr_address)",
             posit->label);
@@ -13678,9 +14658,9 @@ cgns_array *cgi_array_address(int local_mode, int allow_dup, int given_no,
         if (local_mode==CG_MODE_WRITE) {
             if (strcmp(given_name,"ElementStartOffset") &&
                 strcmp(given_name,"ElementConnectivity") &&
-		strcmp(given_name,"ParentElements") &&
-		strcmp(given_name,"ParentElementsPosition") &&
-		strcmp(given_name,"ParentData")) {
+                strcmp(given_name,"ParentElements") &&
+                strcmp(given_name,"ParentElementsPosition") &&
+                strcmp(given_name,"ParentData")) {
                 cgi_error("User defined DataArray_t node not supported under '%s' type node",posit->label);
                 (*ier) = CG_ERROR;
                 return CG_OK;
@@ -13851,6 +14831,40 @@ cgns_array *cgi_array_address(int local_mode, int allow_dup, int given_no,
     } else if (strcmp(posit->label, "ZoneSubRegion_t")==0) {
         ADDRESS4MULTIPLE(cgns_subreg, narrays, array, cgns_array)
 
+     /* 2 DataArray_t under ElementAssociation_t: Path, Ids */
+    } else if (strcmp(posit->label, "ElementAssociation_t")==0) {
+        cgns_element_association *asso = (cgns_element_association *)posit->posit;
+        if (local_mode==CG_MODE_WRITE) {
+            if (strcmp(given_name, "Ids") && strcmp(given_name, "Path")) {
+                cgi_error(
+                    "User defined DataArray_t node not supported under '%s' type node",
+                    posit->label);
+                (*ier) = CG_ERROR;
+                return CG_OK;
+            }
+            if (asso->ids==0 && strcmp(given_name,"Ids")==0) {
+                asso->ids = CGNS_NEW(cgns_array, 1);
+                array = asso->ids;
+            } else if (asso->path_array==0 && (strcmp(given_name, "Path")==0)) {
+                asso->path_array = CGNS_NEW(cgns_array, 1);
+                array = asso->path_array;
+            } else {
+                if (cg->mode == CG_MODE_WRITE)
+                    error1 = 1;
+                else {
+                    parent_id = asso->id;
+                    if (asso->ids && strcmp(given_name, "Ids") == 0)
+                        array = asso->ids;
+                    else if (asso->path_array && strcmp(given_name, "Path") == 0)
+                        array = asso->path_array;
+                }
+            }
+        } else if (local_mode == CG_MODE_READ) {
+            if (asso->ids && strcmp(given_name, "Ids")==0)
+                array = asso->ids;
+            else if (asso->path_array && strcmp(given_name, "Path")==0)
+                array = asso->path_array;
+        }
     } else {
         cgi_error("DataArray_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
@@ -13879,6 +14893,137 @@ cgns_array *cgi_array_address(int local_mode, int allow_dup, int given_no,
         cgi_free_array(array);
     }
     return array;
+}
+
+cgns_offset *cgi_offset_address(int local_mode, int allow_dup, char const *given_name,
+                                int *have_dup, int *ier)
+{
+    cgns_offset *offset=0;
+    double parent_id=0;
+    int error1=0;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        (*ier) = CG_ERROR;
+        return CG_OK;
+    }
+
+    if (strcmp(posit->label, "FlowSolution_t") == 0) {
+        cgns_offset *pt_start_offset;
+        ADDRESS4SINGLE(cgns_sol, pt_start_offset, cgns_offset, 1)
+        offset = pt_start_offset;
+    } else if (strcmp(posit->label, "ZoneSubRegion_t") == 0) {
+        cgns_offset *pt_start_offset;
+        ADDRESS4SINGLE(cgns_subreg, pt_start_offset, cgns_offset, 1)
+        offset = pt_start_offset;
+    } else if (strcmp(posit->label, "BC_t") == 0) {
+        cgns_offset *pt_start_offset;
+        ADDRESS4SINGLE(cgns_boco, pt_start_offset, cgns_offset, 1)
+        offset = pt_start_offset;
+    } else if (strcmp(posit->label, "BCDataSet_t") == 0) {
+        cgns_offset *pt_start_offset;
+        ADDRESS4SINGLE(cgns_dataset, pt_start_offset, cgns_offset, 1)
+        offset = pt_start_offset;
+    }
+    // else if (strcmp(posit->label, "Elements_t")==0) {
+    //   cgns_offset *connect_offset;
+    //   ADDRESS4SINGLE(cgns_section, connect_offset, cgns_offset, 1)
+    //   offset = connect_offset;
+    // }
+    else {
+        cgi_error("Offset_t node not supported under '%s' type node", posit->label);
+        (*ier) = CG_INCORRECT_PATH;
+        return CG_OK;
+    }
+    if (!offset && local_mode == CG_MODE_READ) {
+        cgi_error("%s node doesn't exist under %s", given_name, posit->label);
+        (*ier) = CG_NODE_NOT_FOUND;
+        return CG_OK;
+    }
+    if (error1) {
+        *have_dup = 1;
+        if (!allow_dup) {
+            cgi_error("%s node already defined under %s", given_name, posit->label);
+            (*ier) = CG_ERROR;
+            return CG_OK;
+        }
+    }
+    if (parent_id) {
+        if (cgi_delete_node(parent_id, offset->id)) {
+            (*ier) = CG_ERROR;
+            return CG_OK;
+        }
+        cgi_free_offset(offset);
+    }
+    return offset;
+}
+
+cgns_element_association *
+cgi_element_association_address(int local_mode, char const *given_name, int *ier)
+{
+    cgns_element_association *asso = 0;
+    double parent_id = 0;
+    int n, error1 = 0, error2 = 0;
+
+    /* check for valid posit */
+    if (posit == 0) {
+        cgi_error("No current position set by cg_goto\n");
+        (*ier) = CG_ERROR;
+        return CG_OK;
+    }
+
+    if (strcmp(posit->label, "FlowSolution_t") == 0) {
+        cgns_element_association *itgrules;
+        ADDRESS4SINGLE(cgns_sol, itgrules, cgns_element_association, 1)
+        asso = itgrules;
+    } else if (strcmp(posit->label, "ZoneSubRegion_t") == 0) {
+        cgns_element_association *itgrules;
+        ADDRESS4SINGLE(cgns_subreg, itgrules, cgns_element_association, 1)
+        asso = itgrules;
+    } else if (strcmp(posit->label, "BC_t") == 0) {
+        cgns_element_association *itgrules;
+        ADDRESS4SINGLE(cgns_boco, itgrules, cgns_element_association, 1)
+        asso = itgrules;
+    } else if (strcmp(posit->label, "BCDataSet_t") == 0) {
+        cgns_element_association *itgrules;
+        ADDRESS4SINGLE(cgns_dataset, itgrules, cgns_element_association, 1)
+        asso = itgrules;
+    } else if (strcmp(posit->label, "Elements_t") == 0) {
+        cgns_element_association *properties;
+        int allow_dup = 0;
+        int given_no = 1;
+        ADDRESS4MULTIPLE(cgns_section, nprops, properties, cgns_element_association)
+        asso = properties;
+    } else {
+        cgi_error("ElementAssociation_t node not supported under '%s' type node",
+                  posit->label);
+        (*ier) = CG_INCORRECT_PATH;
+        return CG_OK;
+    }
+    if (!asso && local_mode == CG_MODE_READ) {
+        cgi_error("%s node doesn't exist under %s", given_name, posit->label);
+        (*ier) = CG_NODE_NOT_FOUND;
+        return CG_OK;
+    }
+    if (error1) {
+        cgi_error("%s node already defined under %s", given_name, posit->label);
+        (*ier) = CG_ERROR;
+        return CG_OK;
+    }
+    if (error2) {
+        cgi_error("Unexpected error while retrieving address under %s", posit->label);
+        (*ier) = CG_ERROR;
+        return CG_OK;
+    }
+    if (parent_id) {
+        if (cgi_delete_node(parent_id, asso->id)) {
+            (*ier) = CG_ERROR;
+            return CG_OK;
+        }
+        cgi_free_element_association(asso);
+    }
+    return asso;
 }
 
 cgns_model *cgi_model_address(int local_mode, char const *ModelLabel, int *ier)
@@ -14002,6 +15147,7 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
  *  BCProperty_t, WallFunction_t, Area_t,
  *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t,
  *  UserDefinedData_t, ZoneSubRegion_t, FamilyBCDataSet_t
+ *  RulesCollection_t, IntegrationRule_t, ElementAssociation_t
  */
     if (strcmp(posit->label,"IntegralData_t")==0)
         ADDRESS4MULTIPLE(cgns_integral, nuser_data, user_data, cgns_user_data)
@@ -14087,6 +15233,12 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_user_data, nuser_data, user_data, cgns_user_data)
     else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
         ADDRESS4MULTIPLE(cgns_subreg, nuser_data, user_data, cgns_user_data)
+    else if (strcmp(posit->label,"RulesCollection_t")==0)
+        ADDRESS4MULTIPLE(cgns_rules_collection, nuser_data, user_data, cgns_user_data)
+    else if (strcmp(posit->label,"IntegrationRule_t")==0)
+        ADDRESS4MULTIPLE(cgns_integration_rule, nuser_data, user_data, cgns_user_data)
+    else if (strcmp(posit->label,"ElementAssociation_t")==0)
+        ADDRESS4MULTIPLE(cgns_element_association, nuser_data, user_data, cgns_user_data)
     else {
         cgi_error("UserDefinedData_t node not supported under '%s' type node",posit->label);
         (*ier) = CG_INCORRECT_PATH;
@@ -14411,6 +15563,11 @@ void cgi_free_base(cgns_base *base)
         cgi_free_rotating(base->rotating);
         CGNS_FREE(base->rotating);
     }
+    if (base->nitgrulescolls) {
+        for (n=0; n<base->nitgrulescolls; n++)
+            cgi_free_rules_collection(&base->itgrulescolls[n]);
+        CGNS_FREE(base->itgrulescolls);
+    }
 }
 
 void cgi_free_zone(cgns_zone *zone)
@@ -14539,6 +15696,11 @@ void cgi_free_section(cgns_section *section)
         for (n=0; n<section->nuser_data; n++)
             cgi_free_user_data(&section->user_data[n]);
         CGNS_FREE(section->user_data);
+    }
+    if (section->nprops){
+        for (n=0; n<section->nprops; n++)
+            cgi_free_element_association(&section->properties[n]);
+        CGNS_FREE(section->properties);
     }
 }
 
@@ -14744,6 +15906,14 @@ void cgi_free_sol(cgns_sol *sol)
         cgi_free_ptset(sol->ptset);
         CGNS_FREE(sol->ptset);
     }
+    if (sol->itgrules) {
+        cgi_free_element_association(sol->itgrules);
+        CGNS_FREE(sol->itgrules);
+    }
+    if (sol->pt_start_offset) {
+        cgi_free_offset(sol->pt_start_offset);
+        CGNS_FREE(sol->pt_start_offset);
+    }
 }
 
 void cgi_free_1to1(cgns_1to1 *one21)
@@ -14865,6 +16035,14 @@ void cgi_free_boco(cgns_boco *boco)
             cgi_free_famname(&boco->famname[n]);
         CGNS_FREE(boco->famname);
     }
+    if (boco->itgrules) {
+        cgi_free_element_association(boco->itgrules);
+        CGNS_FREE(boco->itgrules);
+    }
+    if (boco->pt_start_offset) {
+        cgi_free_offset(boco->pt_start_offset);
+        CGNS_FREE(boco->pt_start_offset);
+    }
 }
 
 void cgi_free_dataset(cgns_dataset *dataset)
@@ -14900,6 +16078,14 @@ void cgi_free_dataset(cgns_dataset *dataset)
     if (dataset->ptset) {
         cgi_free_ptset(dataset->ptset);
         CGNS_FREE(dataset->ptset);
+    }
+    if (dataset->itgrules) {
+        cgi_free_element_association(dataset->itgrules);
+        CGNS_FREE(dataset->itgrules);
+    }
+    if (dataset->pt_start_offset) {
+        cgi_free_offset(dataset->pt_start_offset);
+        CGNS_FREE(dataset->pt_start_offset);
     }
 }
 
@@ -15578,6 +16764,114 @@ void cgi_free_subreg(cgns_subreg *subreg)
             cgi_free_famname(&subreg->famname[n]);
         CGNS_FREE(subreg->famname);
     }
+    if (subreg->itgrules) {
+        cgi_free_element_association(subreg->itgrules);
+        CGNS_FREE(subreg->itgrules);
+    }
+    if (subreg->pt_start_offset) {
+        cgi_free_offset(subreg->pt_start_offset);
+        CGNS_FREE(subreg->pt_start_offset);
+    }
+}
+
+void cgi_free_map_names(cgns_map_names *map)
+{
+    if (map->nids) {
+        CGNS_FREE(map->ids);
+        CGNS_FREE(map->names);
+    }
+}
+
+void cgi_free_integration_names(IntegrationName_t *data)
+{
+    if (data->IntegrationNameParam3) {
+        CGNS_FREE(data->IntegrationNameParam3);
+    }
+    if (data->IntegrationNameParam2) {
+        CGNS_FREE(data->IntegrationNameParam2);
+    }
+    if (data->IntegrationNameParam1) {
+        CGNS_FREE(data->IntegrationNameParam1);
+    }
+}
+
+void cgi_free_integration_rule(cgns_integration_rule *rule)
+{
+    int n;
+    if (rule->link) CGNS_FREE(rule->link);
+    if (rule->ndescr) {
+        for (n=0; n<rule->ndescr; n++)
+            cgi_free_descr(&rule->descr[n]);
+        CGNS_FREE(rule->descr);
+    }
+    if (rule->integration_names) {
+        cgi_free_integration_names(rule->integration_names);
+        CGNS_FREE(rule->integration_names);
+    }
+    if (rule->weights) {
+        cgi_free_array(rule->weights);
+        CGNS_FREE(rule->weights);
+    }
+    if (rule->points) {
+        cgi_free_array(rule->points);
+        CGNS_FREE(rule->points);
+    }
+    if (rule->nuser_data) {
+        for (n = 0; n < rule->nuser_data; n++)
+            cgi_free_user_data(&rule->user_data[n]);
+        CGNS_FREE(rule->user_data);
+    }
+}
+
+void cgi_free_rules_collection(cgns_rules_collection *col)
+{
+    int n;
+    if (col->link) CGNS_FREE(col->link);
+    if (col->ndescr) {
+        for (n=0; n<col->ndescr; n++)
+            cgi_free_descr(&col->descr[n]);
+        CGNS_FREE(col->descr);
+    }
+    if (col->nitems) {
+        for (n=0; n<col->nitems; n++)
+            cgi_free_integration_rule(&col->items[n]);
+        CGNS_FREE(col->items);
+    }
+    cgi_free_map_names(col->id_to_qualifier);
+    CGNS_FREE(col->id_to_qualifier);
+    if (col->nuser_data) {
+        for (n=0; n<col->nuser_data; n++)
+            cgi_free_user_data(&col->user_data[n]);
+        CGNS_FREE(col->user_data);
+    }
+}
+
+void cgi_free_element_association(cgns_element_association *connector)
+{
+    int n;
+    if (connector->link) CGNS_FREE(connector->link);
+    if (connector->path_array) {
+        cgi_free_array(connector->path_array);
+    }
+    if (connector->ids) {
+        cgi_free_array(connector->ids);
+    }
+    if (connector->ndescr) {
+        for (n=0; n<connector->ndescr; n++)
+            cgi_free_descr(&connector->descr[n]);
+        CGNS_FREE(connector->descr);
+    }
+    if (connector->nuser_data) {
+        for (n = 0; n < connector->nuser_data; n++)
+            cgi_free_user_data(&connector->user_data[n]);
+        CGNS_FREE(connector->user_data);
+    }
+}
+
+void cgi_free_offset(cgns_offset *offset)
+{
+    if (offset->link) CGNS_FREE(offset->link);
+    if (offset->data) CGNS_FREE(offset->data);
 }
 
 /***********************************************************************\
