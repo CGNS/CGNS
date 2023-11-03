@@ -63,8 +63,8 @@ freely, subject to the following restrictions:
  *      VERSION NUMBER                                                   *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define CGNS_VERSION 4500
-#define CGNS_DOTVERS 4.50
+#define CGNS_VERSION 5000
+#define CGNS_DOTVERS 5.00
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
 
@@ -250,10 +250,11 @@ typedef enum {
 typedef enum {
 	GridLocationNull, GridLocationUserDefined,
         Vertex, CellCenter, FaceCenter,
-        IFaceCenter, JFaceCenter, KFaceCenter, EdgeCenter
+        IFaceCenter, JFaceCenter, KFaceCenter,
+        EdgeCenter, IntegrationPoint
 } GridLocation_t;
 #endif
-#define NofValidGridLocation 9
+#define NofValidGridLocation 10
 
 #define Vertex_s                       "Vertex"
 #define CellCenter_s                   "CellCenter"
@@ -262,6 +263,7 @@ typedef enum {
 #define JFaceCenter_s                  "JFaceCenter"
 #define KFaceCenter_s                  "KFaceCenter"
 #define EdgeCenter_s                   "EdgeCenter"
+#define IntegrationPoint_s             "IntegrationPoint"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      BCData Types                                                     *
@@ -279,7 +281,7 @@ typedef enum {
 #define Neumann_s                      "Neumann"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *	Grid Connectivity Types 					 *
+ *  Grid Connectivity Types                                              *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifdef __CGNS_ENUMS__
@@ -617,7 +619,7 @@ typedef enum {
 #define CaptureArea_s                  "CaptureArea"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
- *      Grid Connectivity Property types				 *
+ *      Grid Connectivity Property types			                         	 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifdef __CGNS_ENUMS__
@@ -657,8 +659,80 @@ typedef enum {
 #define CoordinateZeta_s               "CoordinateZeta"
 #define CoordinateTransform_s          "CoordinateTransform"
 #define InterpolantsDonor_s            "InterpolantsDonor"
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Elements related keywords                                        *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
 #define ElementConnectivity_s          "ElementConnectivity"
+#define ElementStartOffset_s           "ElementStartOffset"
 #define ParentData_s                   "ParentData"
+#define Offset_s                       "Offset"
+#define ElementOffset_s                "ElementOffset"
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Integration Rules related keywords                               *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+#define IntegrationPoint_s             "IntegrationPoint"
+#define IntegrationStartOffset_s       "ItgPointsStartOffset"
+#define IntegrationRules_s             "ItgRules"
+#define RulesCollection_s              "RulesCollection"
+#define RulesCollection_ts             "RulesCollection_t"
+#define IdToQualifier_s                "IdToQualifier"
+#define MapName_ts                     "MapName_t"
+#define IntegrationRule_s              "IntegrationRule"
+#define IntegrationRule_ts             "IntegrationRule_t"
+#define ParametricPoints_s             "ParametricPoints"
+#define BarycentricPoints_s            "BarycentricPoints"
+#define Weights_s                      "Weights"
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ * Integration Names                                                     *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+#define GaussLaguerre_s                "GaussLaguerre"
+#define GaussLegendre_s                "GaussLegendre"
+#define GaussLobato_s                  "GaussLobato"
+#define GaussChebychev_s               "GaussChebychev"
+#define GaussHermite_s                 "GaussHermite"
+#define Hammer_s                       "Hammer"
+#define Simpsons_s                     "Simpsons"
+#define NewtonCotes_s                  "Newton-Cotes"
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ * Element Association related Keywords                                  *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+#define ElementAssociation_s   "ElementAssociation"
+#define ElementAssociation_ts  "ElementAssociation_t"
+#define Path_s   "Path"
+#define Ids_s    "Ids"
+#define Names_s  "Names"
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *  Element Space related keywords                                       *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+#ifdef __CGNS_ENUMS__
+typedef enum {
+	Null, UserDefined,
+	Parametric, Barycentric
+} ElementSpace_t;
+#endif
+#define NofValidElemenSpaceTypes 4
+
+#define ReferenceSpace_s  "ReferenceSpace"
+#define ElementSpace_ts   "ElementSpace_t"
+#define Barycentric_s     "Barycentric"
+#define Parametric_s      "Parametric"
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ * Coordinates                                                            *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+#define Cartesian_s    "Cartesian"
+#define ParametricR_s  "ParametricR"
+#define ParametricS_s  "ParametricS"
+#define ParametricT_s  "ParametricT"
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      FlowSolution Quantities                                          *
@@ -960,6 +1034,7 @@ typedef enum {
 #define IndexRange_ts                  "IndexRange_t"
 #define IntegralData_ts                "IntegralData_t"
 #define InwardNormalList_ts            "InwardNormalList_t"
+#define Offset_ts                      "Offset_t"
 #define Ordinal_ts                     "Ordinal_t"
 #define OversetHoles_ts                "OversetHoles_t"
 #define Periodic_ts                    "Periodic_t"
