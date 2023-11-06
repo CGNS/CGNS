@@ -3707,7 +3707,7 @@ int cg_grid_write(int fn, int B, int Z, const char * grid_coord_name, int *G)
  * \param[out] boundingbox Data Array with bounding box values.
  * \return \ier
  *
- * \details When reading a bounding box, if the information is missing from the file, the boundingbox array will remain untouched, and a warning is emitted. The CGNS MLL relies on the user to compute the bounding box and ensure that the bounding box being stored is coherent with the coordinates under GridCoordinates_t node.
+ * \details When reading a bounding box, if the information is missing from the file, the boundingbox array will remain untouched, and the CG_NODE_NOT_FOUND status is returned. The CGNS MLL relies on the user to compute the bounding box and ensure that the bounding box being stored is coherent with the coordinates under GridCoordinates_t node.
  *
  */
 int cg_grid_bounding_box_read(int fn, int B, int Z, int G, CGNS_ENUMT(DataType_t) datatype, void* boundingbox)
@@ -3738,8 +3738,8 @@ int cg_grid_bounding_box_read(int fn, int B, int Z, int G, CGNS_ENUMT(DataType_t
 
     /* check bounding box is not an empty array*/
     if (strcmp(data_type,"MT")==0) {
-        cgi_warning("No bounding box read");
-        return CG_OK;
+        cgi_error("No bounding box found for reading");
+        return CG_NODE_NOT_FOUND;
     }
 
     if (strcmp(data_type,"R4") &&
