@@ -23,6 +23,7 @@ CALL =	pcgns_ctest$(EXE) \
 	test_unstructured$(EXE) \
 	test_unstruc_quad$(EXE) \
 	test_zone$(EXE) \
+	test_subfiling$(EXE) \
 	test_general_readwrite$(EXE) \
         Metadata_Stressing$(EXE) \
 	test_poly_unstructured$(EXE) \
@@ -52,6 +53,9 @@ test : $(TESTS)
 	echo "=== running parallel tests ==="; \
 	if test -f CGNS_timing.txt; then \
 	  $(RM) CGNS_timing.txt; \
+	fi; \
+	if test -f $(HDF5BIN)/h5fuse; then \
+	   cp $(HDF5BIN)/h5fuse . ; \
 	fi; \
 	padlimit=40; \
 	pad=$$(printf '%*s' "$$padlimit"); \
@@ -185,6 +189,12 @@ test_unstruc_quad$(EXE) : test_unstruc_quad.c $(CGNSLIB)
 
 test_zone$(EXE) : test_zone.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_zone.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_subfiling$(EXE) : test_subfiling.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_subfiling.c $(HDF5INC) $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 

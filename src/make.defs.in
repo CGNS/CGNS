@@ -91,12 +91,14 @@ RANLIB = @RANLIB@
 # these should only be set if building with HDF5
 # HDF5INC - path to HDF5 header files
 # HDF5LIB - HDF5 library
+# HDF5BIN - HDF5 library's bin directory
 # HDF5LIB_DEP - szip library (if needed), and zlib library (if needed)
 # SZIPLIB - szip library (if needed)
 # ZLIBLIB - zlib library (if needed)
 #------------------------------------------------------------------------
 
 HDF5INC     = @HDF5DEF@
+HDF5BIN     = @HDF5BIN@
 HDF5LIB     = @HDF5LIB@
 HDF5LIB_DEP = @HDF5LIB_DEP@
 SZIPLIB     = @SZIPLIB@

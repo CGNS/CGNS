@@ -42,7 +42,8 @@ set(C_PTESTS_LIST
 	test_unstruc_quad
 	test_zone
 	test_general_readwrite
-	test_poly_unstructured
+        test_poly_unstructured
+        test_subfiling
 	thesis_benchmark)
 
 set(pcgns_ctest_FILES pcgns_ctest.c)
@@ -84,6 +85,9 @@ add_executable(test_general_readwrite ${test_general_readwrite_FILES})
 set(test_poly_unstructured_FILES test_poly_unstructured.c)
 add_executable(test_poly_unstructured ${test_poly_unstructured_FILES})
 
+set(test_subfiling_FILES test_subfiling.c)
+add_executable(test_subfiling ${test_subfiling_FILES})
+
 set(thesis_benchmark_FILES thesis_benchmark.c)
 add_executable(thesis_benchmark ${thesis_benchmark_FILES})
 
@@ -118,7 +122,13 @@ endif ()
 
 # Add the tests so that cmake can find them
 if (CGNS_ENABLE_TESTS)
+
+  if (EXISTS "${HDF5_INCLUDE_DIR}/../bin/h5fuse")
+    file(COPY ${HDF5_INCLUDE_DIR}/../bin/h5fuse DESTINATION .)
+  endif ()
+
   foreach(TEST_NAME ${C_PTESTS_LIST})
+
 
     if (${TEST_NAME} MATCHES "benchmark_hdf5")
       set (ARGS -R)
@@ -141,6 +151,7 @@ if (CGNS_ENABLE_TESTS)
         COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
         ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${ARGS} ${MPIEXEC_POSTFLAGS})
     endif ()
+
 
   endforeach()
   if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
