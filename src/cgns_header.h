@@ -1157,7 +1157,7 @@ int cgi_write_zboco(double parent_id, cgns_zboco *zboco);
 int cgi_write_boco(double parent_id, cgns_boco *boco);
 int cgi_write_dataset(double parent_id, const char *label,  cgns_dataset *dataset);
 int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata);
-int cgi_write_ptset(double id, char_33 name, cgns_ptset *ptset,
+int cgi_write_ptset(double id, char *name, cgns_ptset *ptset,
             int ndim, void *ptset_ptr);
 int cgi_write_equations(double parent_id, cgns_equations *equations);
 int cgi_write_model(double parent_id, cgns_model *model);

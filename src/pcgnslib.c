@@ -2559,3 +2559,129 @@ int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
 
   return CG_ERROR;
 }
+
+/*===== PointList Functions =============================*/
+
+/**
+ * \ingroup PointListData
+ *
+ * \brief Write index array to PointList in parallel.
+ *
+ * \details Must use functions in @ref AccessingANode to point to a PointSet to read from
+ *
+ * \param[in] file_number \FILE_fn
+ * \param[in] rmin Lower range index in file
+ * \param[in] rmax Upper range index in file
+ * \param[in] points Array of points
+ * \return \ier
+ */
+int cgp_ptlist_write_data(int file_number, cgsize_t rmin,
+    cgsize_t end, const cgsize_t *points)
+{
+  hid_t hid;
+  cgns_ptset *ptset;
+  cgsize_t range_min[2], range_max[2];
+  CGNS_ENUMT(DataType_t) type;
+
+    /* get memory address of file */
+  cg = cgi_get_file(file_number);
+  if (check_parallel(cg)) return CG_ERROR;
+
+  if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+      return CG_ERROR;
+
+  if (posit == 0) {
+    cgi_error("No current position set by cg_goto\n");
+    return CG_ERROR;
+  }
+  else if (strcmp(posit->label, "IndexArray_t") == 0) {
+    ptset = (cgns_ptset *) posit->posit;
+  } else {
+    cgi_error("Goto not pointing to IndexArray_t, but %s\n", posit->label);
+    return CG_ERROR;
+  }
+
+  if (points) {
+    if (rmin > end ||
+        rmin < 1 ||
+        end > ptset->npts) {
+      cgi_error("Error in requested point set range.");
+      return CG_ERROR;
+    }
+  }
+
+  range_min[0] = 1;
+  range_max[0] = 1;
+  range_min[1] = rmin;
+  range_max[1] = end;
+  type = cgi_datatype(ptset->data_type);
+
+  to_HDF_ID(ptset->id, hid);
+
+  cg_rw_t Data;
+  Data.u.wbuf = points;
+  return readwrite_data_parallel(hid, type,
+            2, range_min, range_max, &Data, CG_PAR_WRITE);
+}
+
+/**
+ * \ingroup PointListData
+ *
+ * \brief Read index array to PointList in parallel.
+ *
+ * \details Must use functions in @ref AccessingANode to point to a PointSet to read from
+ *
+ * \param[in] file_number \FILE_fn
+ * \param[in] rmin Lower range index in file
+ * \param[in] rmax Upper range index in file
+ * \param[in] points Array of points
+ * \return \ier
+ */
+int cgp_ptlist_read_data(int file_number, cgsize_t rmin, cgsize_t rmax, cgsize_t *points)
+{
+  hid_t hid;
+  cgns_ptset *ptset;
+  cgsize_t range_min[2], range_max[2];
+  CGNS_ENUMT(DataType_t) type;
+
+    /* get memory address of file */
+  cg = cgi_get_file(file_number);
+  if (check_parallel(cg)) return CG_ERROR;
+
+  if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
+      return CG_ERROR;
+
+  if (posit == 0) {
+    cgi_error("No current position set by cg_goto\n");
+    return CG_ERROR;
+  }
+  else if (strcmp(posit->label, "IndexArray_t") == 0) {
+    ptset = (cgns_ptset *) posit->posit;
+  } else {
+    cgi_error("Goto not pointing to IndexArray_t, but %s\n", posit->label);
+    return CG_ERROR;
+  }
+
+  if (points) {
+    if (rmin > rmax ||
+        rmin < 1 ||
+        rmax > ptset->npts) {
+      cgi_error("Error in requested point set range.");
+      return CG_ERROR;
+    }
+  }
+
+  range_min[0] = 1;
+  range_max[0] = 1;
+  range_min[1] = rmin;
+  range_max[1] = rmax;
+  type = cgi_datatype(ptset->data_type);
+
+  to_HDF_ID(ptset->id, hid);
+
+  cg_rw_t Data;
+  Data.u.rbuf = points;
+  return readwrite_data_parallel(hid, type,
+            2, range_min, range_max, &Data, CG_PAR_READ);
+}
+/*---------------------------------------------------------*/

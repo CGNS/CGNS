@@ -29,7 +29,7 @@ CALL =	pcgns_ctest$(EXE) \
 	test_poly_unstructured$(EXE) \
 	thesis_benchmark$(EXE)
 
-FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) test_mixed_par_ser$(EXE) fopen_close$(EXE)
+FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) test_mixed_par_ser$(EXE) fopen_close$(EXE) test_unstruc_quad_f90$(EXE)
 
 ALL   = $(CALL) @FALL@
 TESTS = $(ALL)
@@ -252,6 +252,12 @@ benchmark_hdf5_f90$(EXE) : benchmark_hdf5_f90.F90 $(CGNSLIB)
 
 fopen_close$(EXE) : fopen_close.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ fopen_close.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_unstruc_quad_f90$(EXE) : test_unstruc_quad_f90.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_unstruc_quad_f90.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
