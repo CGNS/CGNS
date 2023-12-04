@@ -4858,8 +4858,6 @@ int cg_section_general_write(int fn, int B, int Z, const char * SectionName,
         section->connect_offset->convert=0;
     }
 
-    HDF5storage_type = CG_CONTIGUOUS;
-
     /* Elements_t */
     dim_vals = 2;
     data[0]=section->el_type;
@@ -4882,6 +4880,7 @@ int cg_section_general_write(int fn, int B, int Z, const char * SectionName,
       /* Do not write I8 in library that is not 64bit */
       return CG_ERROR;
     }
+    HDF5storage_type = CG_CONTIGUOUS;
     /* ElementRange */
     if (cgi_new_node(section->id, "ElementRange", "IndexRange_t",
         &dummy_id, data_type, 1, &dim_vals, prange)) return CG_ERROR;
