@@ -42,6 +42,16 @@ SET_CGNS_BUILD_TYPE()
 
 project("cgns" C)
 
+if (WIN32)
+  set(${CMAKE_INSTALL_LIBDIR} "lib")
+  set(${CMAKE_INSTALL_DATADIR} "share")
+  set(${CMAKE_INSTALL_INCLUDEDIR} "include")
+  set(${CMAKE_INSTALL_BINDIR} "bin")
+  message(STATUS "Setting installation destination on Windows to: ${CMAKE_INSTALL_PREFIX}")
+else()
+  include(GNUInstallDirs)
+endif()
+
 # Determine CGNS_VERSION from src/cgnslib.h for 
 file (READ ${PROJECT_SOURCE_DIR}/src/cgnslib.h _cgnslib_h_contents)
 string (REGEX REPLACE ".*#define[ \t]+CGNS_DOTVERS[ \t]+([0-9]*)\\.([0-9])[0-9]*.*$"
@@ -339,7 +349,7 @@ if (CGNS_ENABLE_HDF5)
 
   # Check if HDF5 version is 1.8 or greater
   if (HDF5_VERSION VERSION_LESS "1.8.0")
-    message (FATAL_ERROR "HDF5 version must be greater than 1.8.0")
+    message (FATAL_ERROR "HDF5 ${HDF5_VERSION}: version must be greater than 1.8.0")
   endif ()
 
   set(HDF5_NEED_MPI "OFF" CACHE BOOL "Does the HDF5 library require linking to mpi? (Only true if using parallel HDF5)")
@@ -372,19 +382,19 @@ if (CGNS_ENABLE_HDF5)
   mark_as_advanced(CLEAR HDF5_NEED_ZLIB HDF5_NEED_SZIP HDF5_NEED_MPI)
 
   #Modern Target Library import if not defined
-  if (NOT TARGET hdf5::hdf5-${CG_HDF5_LINK_TYPE})
-    add_library(hdf5::hdf5-${CG_HDF5_LINK_TYPE} INTERFACE IMPORTED)
+  if (NOT TARGET hdf5-${CG_HDF5_LINK_TYPE})
+    add_library(hdf5-${CG_HDF5_LINK_TYPE} INTERFACE IMPORTED)
     string(REPLACE "-D" "" _hdf5_definitions "${HDF5_DEFINITIONS}")
-    set_target_properties(hdf5::hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
+    set_target_properties(hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
                           INTERFACE_LINK_LIBRARIES "${HDF5_LIBRARY}"
                           INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}"
                           INTERFACE_COMPILE_DEFINITIONS "${_hdf5_definitions}")
     if (CG_HDF5_LINK_TYPE STREQUAL "shared")
-      set_target_properties(hdf5::hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
+      set_target_properties(hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
                             INTERFACE_COMPILE_DEFINITIONS H5_BUILT_AS_DYNAMIC_LIB)
 
     else()
-      set_target_properties(hdf5::hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
+      set_target_properties(hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
 			    INTERFACE_COMPILE_DEFINITIONS H5_BUILT_AS_STATIC_LIB)
     endif()
   endif ()
@@ -424,7 +434,7 @@ if (CGNS_BUILD_SHARED)
   set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
   # the RPATH to be used when installing
-  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}; ${CMAKE_INSTALL_PREFIX}/lib")
 
   # add the automatically determined parts of the RPATH
   # which point to directories outside the build tree to the install RPATH

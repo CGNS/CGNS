@@ -1209,7 +1209,7 @@ else {  /** this node is NOT a link **/
    CHECK_ADF_ABORT( *error_return ) ;
 
    for( i=0; i<num_ids; i++ ) {
-      ADF_Delete( ID, ids[i], error_return ) ;  /* resursion */
+      ADF_Delete( ID, ids[i], error_return ) ;  /* recursion */
       CHECK_ADF_ABORT( *error_return ) ;
       } /* end for */
 
