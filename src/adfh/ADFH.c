@@ -91,11 +91,10 @@ static hbool_t core_vfd_backing_store = ADFH_CONFIG_DEFAULT;
 
 /*** HDF5's SUBFILING FILE DRIVER PARAMETERS ****/
 
-#ifdef H5_HAVE_SUBFILING_VFD
-
 /* Enables using the subfiling file driver */
 static int subfiling_vfd = ADFH_CONFIG_DEFAULT;
 
+#ifdef H5_HAVE_SUBFILING_VFD
 H5FD_subfiling_config_t subfiling_config;
 H5FD_ioc_config_t ioc_config;
 
