@@ -908,7 +908,7 @@ else
   if test "x$HDF5_HAVE_SUBFILING_VFD" = "x1"; then
     AC_MSG_RESULT(yes)
   else
-    AC_MSG_ERROR(no)
+    AC_MSG_RESULT(no)
   fi
 
   # Check if HDF5 library has multi-dataset read and write APIs
