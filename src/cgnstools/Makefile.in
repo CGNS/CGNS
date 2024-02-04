@@ -23,6 +23,7 @@ clean :
 allclean : distclean
 
 distclean : clean
+	-@$(RM) common/CGNSconfig.*
 	-@$(RM) config.*
 	-@$(RM) make.defs Makefile cgconfig
 

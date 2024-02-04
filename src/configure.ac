@@ -1,4 +1,3 @@
-
 AC_PREREQ(2.69)
 
 #--------------------------------------------------------------------------
@@ -977,6 +976,16 @@ AC_ARG_WITH([fnord],
 
   ])
 
+
+AC_ARG_WITH([xquartz-gl],
+             [AS_HELP_STRING([--with-xquartz-gl=DIR],
+                            [ On the OSX platform, there are two possible OpenGL implementations.
+                              One is the OpenGL that ships with OSX, the other comes with X11/XQuartz.
+                              For the xquartz variant, use option --with-xquartz-gl=[path to xquartz root].
+                              By default, configuration will check "/opt/X11", which is the default X11 install
+                              location on OSX. [default=no]])],,
+              [withval=no])
+
 if test "$withhdf5" = "yes"; then
 
   AC_ARG_WITH([zlib],,[withval_zlib=yes],[withval_zlib=no])
@@ -1154,7 +1163,7 @@ if test "$withhdf5" = "yes"; then
     AC_MSG_RESULT([$zlib_lib])
     ;;
   esac
-	
+
   AC_ARG_WITH([szip],
                [AS_HELP_STRING([--with-szip=DIR],
                               [Use szip library for external deflate I/O
@@ -1509,7 +1518,7 @@ if test "$enableval" = "yes" ; then
 # get path to X11 headers and libraries
 #---------------------------------------------------------------------------
 
-  if test "$ac_cv_cygwin" = "no"; then
+  if ! test "$ac_cv_cygwin" = "yes"; then
     AC_PATH_X
     if ! test "$x_includes" = ""; then
       X11INCS=-I$x_includes
@@ -1597,7 +1606,7 @@ if test "$enableval" = "yes" ; then
         TK_LIB_FLAG=-ltk
       fi
       tcllib=`echo $TK_LIB_FLAG | sed 's/tk/tcl/'`
-      X11LIBS=""
+      #X11LIBS=""
       TKLIBS="$tcllib $TK_LIB_FLAG $TK_LIBS"
     fi
   fi
@@ -1668,7 +1677,7 @@ if test "$enableval" = "yes" ; then
     . $TKCONFIG
     tcllib=`ls -d $tcldir/$TCLUNIX/libtcl8* 2>/dev/null`
     tklib=`ls -d $tkdir/$TKUNIX/libtk8* 2>/dev/null`
-    X11LIBS=""
+    #X11LIBS=""
     if test -z "$TK_INCLUDE_SPEC" -a -z "$TCL_INCLUDE_SPEC"; then
       TKINCS="-I$tcldir/generic -I$tkdir/generic"
     else
@@ -1747,27 +1756,39 @@ if test "$enableval" = "yes" ; then
 
 #---------------------------------------------------------------------------
 # try to find OpenGL headers and libraries
-# should probably check for Mesa
 #---------------------------------------------------------------------------
 
-  AC_CHECK_HEADER(GL/gl.h)
-  if test "$ac_cv_header_GL_gl_h" = "no"; then
-    if test -f "$x_includes/GL/gl.h"; then
-      PROGLIST="$PROGLIST cgnsplot"
-      INSTLIST="$INSTLIST install-cgnsplot"
-    else
-      AC_MSG_WARN([couldn't find OpenGL])
-      AC_MSG_WARN([edit make.defs to set OGLINCS and OGLLIBS])
-    fi
-  else
+  AC_CONFIG_HEADERS([cgnstools/common/CGNSconfig.h])
+
+  m4_include(m4/ax_check_gl.m4)
+  m4_include(m4/ax_check_glu.m4)
+  m4_include(m4/ax_check_glx.m4)
+  m4_include(m4/ax_restore_flags_with_prefix.m4)
+  m4_include(m4/ax_save_flags_with_prefix.m4)
+ 
+  AX_CHECK_GL(
+   [OGLINCS="$GL_CFLAGS $OGLINCS"
+    OGLLIBS="$GL_LIBS $OGLLIBS"]
+  )
+  AX_CHECK_GLU(
+   [OGLINCS="$GLU_CFLAGS $OGLINCS"
+    OGLLIBS="$GLU_LIBS $OGLLIBS"]
+  )
+  AX_CHECK_GLX(
+   [OGLINCS="$GLX_CFLAGS $OGLINCS"
+    OGLLIBS="$GLX_LIBS $OGLLIBS"]
+  )
+  
+  if test "x$no_gl" != "xyes"; then
     PROGLIST="$PROGLIST cgnsplot"
     INSTLIST="$INSTLIST install-cgnsplot"
+  else
+    AC_MSG_WARN([couldn't find OpenGL, cgnsplot can't be built])
+    AC_MSG_WARN([edit make.defs to set OGLINCS and OGLLIBS])
   fi
 
   if test "$ac_cv_cygwin" = "yes"; then
     OGLLIBS="-L/lib/win32api -lgdi32 -lopengl32 -lglu32"
-  else
-    OGLLIBS="-lGL -lGLU"
   fi
 
 #---------------------------------------------------------------------------
