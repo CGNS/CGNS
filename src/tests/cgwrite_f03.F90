@@ -1,28 +1,3 @@
-MODULE callback
-
-CONTAINS
-
-  SUBROUTINE error_exit(iserr, msg) bind(C)
-
-    USE ISO_C_BINDING
-    IMPLICIT NONE
-    INTEGER, PARAMETER :: MSG_SIZE = 34
-    CHARACTER(LEN=MSG_SIZE), PARAMETER :: msg_correct = "file type unknown or not supported"
-    INTEGER(C_INT), VALUE :: iserr
-    CHARACTER(LEN=1), DIMENSION(*) :: msg
-    CHARACTER(LEN=MSG_SIZE) :: msg_check
-    INTEGER i
-
-    DO i=1, 34
-       msg_check(i:i) = msg(i)
-    ENDDO
-    IF(msg_check .NE. msg_correct)THEN
-       PRINT*,"ERROR:  cg_configure_f failed for CG_CONFIG_ERROR"
-       STOP
-    ENDIF
-
-  END SUBROUTINE error_exit
-END MODULE callback
 
 PROGRAM write_cgns_1
 #include "cgnstypes_f03.h"
@@ -31,7 +6,6 @@ PROGRAM write_cgns_1
 #endif
   USE CGNS
   USE ISO_C_BINDING
-  USE callback
   IMPLICIT NONE
 
   ! author: Diane Poirier (diane@icemcfd.com)
@@ -299,8 +273,6 @@ PROGRAM write_cgns_1
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
 #if CG_BUILD_HDF5
-! Disable with gfortran, GCC Bugzilla - Bug 99982
-#ifndef __GFORTRAN__
   ! **************************
   ! Test cg_configure options
   ! **************************
@@ -361,13 +333,10 @@ PROGRAM write_cgns_1
   path = C_NULL_CHAR
   CALL cg_configure_f(CG_CONFIG_SET_PATH, C_LOC(path(1:1)), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
-  CALL cg_configure_f(CG_CONFIG_ERROR, c_funloc(error_exit), ier)
-  IF (ier .EQ. ERROR) CALL cg_error_exit_f
 
   value_f = 100 ! Trigger an error
   CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_f), ier)
   IF (ier .NE. ERROR) CALL cg_error_exit_f
-#endif
 #endif
 
 END PROGRAM write_cgns_1

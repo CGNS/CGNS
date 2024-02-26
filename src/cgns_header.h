@@ -1157,7 +1157,7 @@ int cgi_write_zboco(double parent_id, cgns_zboco *zboco);
 int cgi_write_boco(double parent_id, cgns_boco *boco);
 int cgi_write_dataset(double parent_id, const char *label,  cgns_dataset *dataset);
 int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata);
-int cgi_write_ptset(double id, char_33 name, cgns_ptset *ptset,
+int cgi_write_ptset(double id, char *name, cgns_ptset *ptset,
             int ndim, void *ptset_ptr);
 int cgi_write_equations(double parent_id, cgns_equations *equations);
 int cgi_write_model(double parent_id, cgns_model *model);
@@ -1261,7 +1261,7 @@ int cgi_check_strlen(char const * string);
 int cgi_check_strlen_x2(char const *string);
 int cgi_check_mode(char const * filename, int file_mode, int mode_wanted);
 const char *cgi_adf_datatype(CGNS_ENUMT(DataType_t) type);
-CGNSDLL CGNS_ENUMT(DataType_t) cgi_datatype(cchar_33 adf_type);
+CGNSDLL CGNS_ENUMT(DataType_t) cgi_datatype(const char *adf_type);
 int cgi_check_dimensions(int ndims, cglong_t *dims);
 int cgi_check_location(int dim, CGNS_ENUMT(ZoneType_t) type,
 	CGNS_ENUMT(GridLocation_t) loc);

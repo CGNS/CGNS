@@ -61,10 +61,12 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         # Set env vars
+        unset HOMEBREW_NO_INSTALL_FROM_API
+        unset HOMEBREW_NO_AUTO_UPDATE
         echo "OS_NAME=macOS" >> $GITHUB_ENV
         echo "CC=gcc" >> $GITHUB_ENV
         # Use the newest stable gcc compiler
-        brew update
+        brew update-reset
         brew upgrade gcc
         brew install gcc
         brew unlink gcc && brew link gcc
@@ -73,7 +75,7 @@ jobs:
 
  # Checks-out the repository under $GITHUB_WORKSPACE so the job can access it.
     - name: Get Sources
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
 ##################################
 # INSTALL HDF5

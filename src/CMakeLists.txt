@@ -143,6 +143,9 @@ endif()
 #--------------------------------------------------------------------------
 if(CMAKE_Fortran_COMPILER_ID MATCHES "NAG")
  SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mismatch_all")
+ if ("${HDF5_VERSION}" VERSION_GREATER_EQUAL "1.14.3")
+    SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ieee=full")
+ endif()
 endif()
 
 ENABLE_LANGUAGE(Fortran)
@@ -433,16 +436,16 @@ if (CGNS_ENABLE_HDF5)
     set(cgns_C_FILES ${cgns_C_FILES} pcgnslib.c)
   endif ()
 
-  # Check if HDF5 library has multi-dataset read/write APIs
+  # Check if HDF5 library has multi-dataset read/write APIs, HDF5 >= 1.14.0
   # --------------------------------------------------------------------
 
 CHECK_HDF5_FEATURE(Multi_Dataset
   " 
  #include \"hdf5.h\"
- void main(void) 
+ int main(void)
 {
-  H5D_rw_multi_t *multi_info;
-  return;
+  H5Dwrite_multi(0, NULL, NULL, NULL, NULL, 0, NULL);
+  return 0;
 }
   "
    CHECK_HDF5_HAVE_MULTI_DATASETS
@@ -457,12 +460,12 @@ CHECK_HDF5_FEATURE(Multi_Dataset
 CHECK_HDF5_FEATURE(Collective_metadata
   " 
  #include \"hdf5.h\"
- void main(void)
+ int main(void)
  {
    hid_t foo;
    H5Pset_coll_metadata_write(foo, 1);
    H5Pset_all_coll_metadata_ops(foo, 1);
-   return;
+   return 0;
  }
   "
    CHECK_HDF5_HAVE_COLL_METADATA
@@ -477,11 +480,11 @@ CHECK_HDF5_FEATURE(Collective_metadata
 CHECK_HDF5_FEATURE(H5Pset_file_space_strategy
   " 
  #include \"hdf5.h\"
- void main(void)
+ int main(void)
  {
    hid_t foo;
    H5Pset_file_space_strategy(foo, H5F_FSPACE_STRATEGY_FSM_AGGR, 1, (hsize_t)1);
-   return;
+   return 0;
  }
   "
    CHECK_HDF5_HAVE_FILE_SPACE_STRATEGY
@@ -577,7 +580,7 @@ add_library(cgns_static STATIC ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<
 add_library(CGNS::cgns-static ALIAS cgns_static)
 # Needed to work around a CMake > 3.8 bug on Windows with MSVS and Intel Fortran
 set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
-target_link_libraries(cgns_static PRIVATE $<$<BOOL:${CGNS_ENABLE_HDF5}>:hdf5::hdf5-${CG_HDF5_LINK_TYPE}>)
+target_link_libraries(cgns_static PRIVATE $<$<BOOL:${CGNS_ENABLE_HDF5}>:hdf5-${CG_HDF5_LINK_TYPE}>)
 
 # Build a shared version of the library
 if(CGNS_BUILD_SHARED)
@@ -594,7 +597,7 @@ if(CGNS_BUILD_SHARED)
     target_compile_definitions(cgns_shared INTERFACE -DUSE_DLL)
   endif ()
   if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
-    target_link_libraries(cgns_shared PUBLIC hdf5::hdf5-${CG_HDF5_LINK_TYPE} $<$<NOT:$<PLATFORM_ID:Windows>>:${CMAKE_DL_LIBS}>)
+    target_link_libraries(cgns_shared PUBLIC hdf5-${CG_HDF5_LINK_TYPE} $<$<NOT:$<PLATFORM_ID:Windows>>:${CMAKE_DL_LIBS}>)
     if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
       target_link_libraries(cgns_shared PUBLIC ${ZLIB_LIBRARY})
     endif()
@@ -728,6 +731,18 @@ install(FILES ${headers}
 	DESTINATION include)
 
 #if (NOT CGNS_EXTERNALLY_CONFIGURE)
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/cgns-config-version.cmake
+  VERSION ${CGNS_VERSION}
+  COMPATIBILITY SameMajorVersion )
+configure_package_config_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cgns-config.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/cgns-config.cmake
+  INSTALL_DESTINATION lib/cmake/cgns )
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cgns-config-version.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/cgns-config.cmake
+	DESTINATION lib/cmake/cgns)
 install(EXPORT cgns-targets
 	FILE cgns-targets.cmake
 	NAMESPACE CGNS::

@@ -906,24 +906,12 @@ else
   HDF5_HAVE_MULTI_DATASETS=0
   AC_MSG_CHECKING([if HDF5 library has multi-dataset read/write APIs])
 
-  cat >> test.c << EOF
-#include "hdf5.h"
-void main(void)
-{
-  H5D_rw_multi_t *multi_info;
-  return;
-}
-EOF
-  msg=`${CC} -c test.c ${HDF5DEF} 2> /dev/null`
-  if test -f test.o; then
+  chck_fs=`grep -i 'H5Dwrite_multi' $HDF5INC/H5Dpublic.h`
+  if test "x$chck_fs" = "x"; then
+    AC_MSG_RESULT(no)
+  else
     HDF5_HAVE_MULTI_DATASETS=1
     AC_MSG_RESULT(yes)
-    rm test.o
-  else
-    AC_MSG_RESULT(no)
-  fi
-  if test -f test.c; then
-     rm test.c
   fi
 
   # Check if HDF5 library has collective metadata APIs, HDF5 >= 1.10.0
@@ -1894,6 +1882,11 @@ if test "$withfortran" = "yes"; then
      fc_vendor="`$FC -V 2>&1 |grep 'NAG'`"
      if test X != "X$fc_vendor"; then
        FFLAGS="$FFLAGS -mismatch_all"
+       if test $BUILDHDF5 -eq 1 &&
+          test $H5_VERS_MAJOR -ge 1 &&
+          test $H5_VERS_MINOR -ge 14; then
+              FFLAGS="$FFLAGS -ieee=full"
+       fi
      fi
 fi
 #--------------------------------------------------------------------------
