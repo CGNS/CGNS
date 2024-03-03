@@ -425,16 +425,23 @@ AC_MSG_RESULT($enableval)
 # get a usable 64-bit type
 #--------------------------------------------------------------------------
 
-CGLONGT=long
+CGLONGT=int64_t
+CGULONGT=uint64_t
 CFLAGS_SAVE=$CFLAGS
 CFLAGS="$CFLAGS $SYSCFLAGS"
 AC_CHECK_SIZEOF(long, 0)
-if test $ac_cv_sizeof_long -lt 8 ; then
-  AC_CHECK_SIZEOF(long long, 0)
-  if test $ac_cv_sizeof_long_long -lt 8 ; then
-    AC_MSG_WARN(can't find a 64-bit integer type - assuming long)
-  else
-    CGLONGT="long long"
+AC_CHECK_SIZEOF(int64_t, 0)
+if test $ac_cv_sizeof_int64_t -lt 8 ; then
+  CGLONGT=long
+  CGULONGT="unsigned long"
+  if test $ac_cv_sizeof_long -lt 8 ; then
+    AC_CHECK_SIZEOF(long long, 0)
+    if test $ac_cv_sizeof_long_long -lt 8 ; then
+      AC_MSG_WARN(can't find a 64-bit integer type - assuming long)
+    else
+      CGLONGT="long long"
+      CGULONGT="unsigned long long"
+    fi
   fi
 fi
 CFLAGS=$CFLAGS_SAVE
@@ -1963,6 +1970,7 @@ AC_SUBST(HAVE_COMPLEX_C99_EXT)
 
 AC_SUBST(CGNSTOOLS)
 AC_SUBST(CGLONGT)
+AC_SUBST(CGULONGT)
 
 AC_SUBST(SYSTEM)
 AC_SUBST(CGNSVERS)

@@ -10,12 +10,26 @@ endif (WIN32)
 ################################
 # create configured header files #
 ################################
-
-if ("${SIZEOF_LONG}" GREATER 4)
-  set(CGLONGT long)
-else ()
-  set(CGLONGT "long long")
+check_include_file(stdint.h HAVE_STDINT_H)
+if (NOT HAVE_STDINT_H)
+  message(FATAL_ERROR "stdint.h is not found")
 endif ()
+CHECK_TYPE_SIZE("int64_t" SIZEOF_INT64_T)
+CHECK_TYPE_SIZE("long long" SIZEOF_LONG_LONG)
+
+if("${SIZEOF_INT64_T}" EQUAL "8")
+  set(CGLONGT "int64_t")
+  set(CGULONGT "uint64_t")
+elseif("${SIZEOF_LONG}" EQUAL "8")
+  set(CGLONGT "long")
+  set(CGULONGT "unsigned long")
+elseif("${SIZEOF_LONG_LONG}" EQUAL "8")
+  set(CGLONGT "long long")
+  set(CGULONGT "unsigned long long")
+else()
+  message(FATAL_ERROR "Can't find suitable int64_t")
+endif()
+message(STATUS "Found int64_t: ${CGLONGT}")
 
 set(BUILDLEGACY 0)
 set(BUILD64BIT 0)

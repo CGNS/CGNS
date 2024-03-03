@@ -3356,7 +3356,7 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
 
      /* verify dimension vector */
     if (!(ndim==2 && dim_vals[0]>0 && dim_vals[1]>0)) {
-        cgi_error("Invalid definition of point set:  ptset->type='%s', ndim=%d, dim_vals[0]=%ld",
+        cgi_error("Invalid definition of point set:  ptset->type='%s', ndim=%d, dim_vals[0]=%" PRIdCGSIZE ,
             PointSetTypeName[ptset->type], ndim, dim_vals[0]);
         return CG_ERROR;
     }
@@ -9476,8 +9476,8 @@ int cgi_array_general_verify_range(
      /* both the file hyperslab and memory hyperslab must have same number of
       * points */
     if (s_numpt != m_numpt) {
-        cgi_error("Number of locations in range of memory array (%ld) do not "
-                  "match number of locations requested in range of file (%ld)",
+        cgi_error("Number of locations in range of memory array (%" PRIdCGSIZE ") do not "
+                  "match number of locations requested in range of file (%" PRIdCGSIZE ")",
                   m_numpt, s_numpt);
         return CG_ERROR;
     }
@@ -16032,7 +16032,7 @@ void cgi_array_print(char *routine, cgns_array *array)
     printf("\t array->name='%s'\n",array->name);
     printf("\t array->dim_vals=");
     for (n=0; n<array->data_dim; n++)
-        printf("%ld ",(long)array->dim_vals[n]);
+        printf("%" PRIdCGSIZE " ",array->dim_vals[n]);
     printf("\n");
     printf("\t array->data_type='%s'\n",DataTypeName[cgi_datatype(array->data_type)]);
     printf("\t array->id=%13.6e\n",array->id);
