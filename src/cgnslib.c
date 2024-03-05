@@ -1102,6 +1102,39 @@ int cg_get_compress(int *compress)
 /**
  * \ingroup CGNSInternals
  *
+ * \brief Set the CGNS filter
+ *
+ * \param[in] filter to use in HDF5.
+ * \return \ier
+ */
+int cg_set_filter(const cgns_filter *filter)
+{
+  if ( cg_configure(CG_CONFIG_HDF5_FILTER, (void *)filter) != CG_OK )
+    return CG_ERROR;
+
+  return CG_OK;
+}
+
+
+/**
+ * \ingroup CGNSInternals
+ *
+ * \brief Set the CGNS chunk size
+ *
+ * \param[in] value to use in HDF5 for chunking.
+ * \return \ier
+ */
+int cg_set_chunk(cgsize_t *value)
+{
+  if (cg_configure(CG_CONFIG_HDF5_CHUNK, (void *)value) != CG_OK)
+    return CG_ERROR;
+
+  return CG_OK;
+}
+
+/**
+ * \ingroup CGNSInternals
+ *
  * \brief Set the CGNS link search path
  *
  * \param[in] path to search for linked to files when opening a file with external links.
@@ -4880,16 +4913,19 @@ int cg_section_general_write(int fn, int B, int Z, const char * SectionName,
       /* Do not write I8 in library that is not 64bit */
       return CG_ERROR;
     }
-    HDF5storage_type = CG_CONTIGUOUS;
+
     /* ElementRange */
     if (cgi_new_node(section->id, "ElementRange", "IndexRange_t",
         &dummy_id, data_type, 1, &dim_vals, prange)) return CG_ERROR;
+
+    HDF5storage_type = CG_CONTIGUOUS;
 
     /* ElementStartOffset */
     if (section->connect_offset &&
         cgi_new_node(section->id, section->connect_offset->name, "DataArray_t",
               &section->connect_offset->id, section->connect_offset->data_type,
               section->connect_offset->data_dim, section->connect_offset->dim_vals, NULL)) return CG_ERROR;
+
 
     /* ElementConnectivity */
     if (cgi_new_node(section->id, section->connect->name, "DataArray_t",

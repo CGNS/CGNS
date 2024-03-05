@@ -18,7 +18,33 @@ MODULE testing_functions
   INTEGER :: piomode = CGP_COLLECTIVE
   LOGICAL :: enable_md = .FALSE.
   LOGICAL :: checkRead = .FALSE.
+  INTEGER :: SetFilter = 0
+  INTEGER :: SetChunk = 0
   INTEGER(cgsize_t) :: nelem = 65536
+
+#ifdef H5Z_ZFP_USE_PLUGIN
+
+  USE h5zzfp_props_f
+
+  ! Set HDF5_PLUGIN_PATH to the HDF ZFP plugin path 
+
+  ! compression parameters (defaults taken from ZFP header)
+  INTEGER(C_INT) :: zfpmode = H5Z_ZFP_MODE_ACCURACY
+  REAL(C_DOUBLE) :: rate = 4.0
+  REAL(C_DOUBLE) :: acc = 1.0e-6
+  INTEGER(C_INT) :: prec = 11
+  INTEGER(C_INT) :: minbits = 0
+  INTEGER(C_INT) :: maxbits = 4171
+  INTEGER(C_INT) :: maxprec = 64
+  INTEGER(C_INT) :: minexp = -1074
+
+  INTEGER(C_INT), DIMENSION(1:H5Z_ZFP_CD_NELMTS_MAX), TARGET :: f_param
+
+#else
+  
+  INTEGER(C_INT), DIMENSION(1:1), TARGET :: f_param 
+
+#endif
 
   !
   ! Contains functions to verify values
@@ -35,9 +61,9 @@ CONTAINS
     INTEGER(C_INT) :: comm_rank
 
 
-    CHARACTER(len=64) :: arg
+    CHARACTER(len=128) :: arg
     INTEGER :: i, icnt
-    LOGICAL, DIMENSION(1:3) :: buffer
+    LOGICAL, DIMENSION(1:5) :: buffer
 
     INTEGER :: err
     CHARACTER(LEN=5), DIMENSION(0:1), PARAMETER :: state= (/ "FALSE", "TRUE "/)
@@ -47,6 +73,8 @@ CONTAINS
        buffer(1) = .FALSE.
        buffer(2) = enable_md
        buffer(3) = checkRead
+       buffer(4) = .FALSE.
+       buffer(5) = .FALSE.
 
        icnt = 1
        DO i = 1, command_argument_count()
@@ -63,6 +91,10 @@ CONTAINS
              icnt = icnt + 1
              CALL get_command_argument(icnt, arg)
              READ(arg,*) nelem
+          CASE ('-filter')
+             buffer(4) = .TRUE.
+          CASE ('-chunk')
+             buffer(5) = .TRUE.
           END SELECT
           icnt = icnt + 1
        END DO
@@ -71,7 +103,7 @@ CONTAINS
    ! IF(
 
     CALL MPI_Bcast(nelem, 1, MPI_INTEGER8, 0, MPI_COMM_WORLD, err)
-    CALL MPI_Bcast(buffer, 3, MPI_LOGICAL, 0, MPI_COMM_WORLD, err)
+    CALL MPI_Bcast(buffer, 5, MPI_LOGICAL, 0, MPI_COMM_WORLD, err)
 
     IF(buffer(1) .EQV. .FALSE.)THEN
        piomode = CGP_COLLECTIVE
@@ -80,6 +112,12 @@ CONTAINS
     ENDIF
     enable_md = buffer(2)
     checkRead = buffer(3)
+    IF(buffer(4) .EQV. .TRUE.)THEN
+       SetFilter = 1
+    ENDIF
+    IF(buffer(5) .EQV. .TRUE.)THEN
+       SetChunk  = 1
+    ENDIF
 
     IF(comm_rank.EQ.0)THEN
        WRITE(*,'(A)') REPEAT("-",32)
@@ -141,7 +179,6 @@ PROGRAM benchmark_hdf5_f90
 #endif
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
-  ! Use powers of 2
   INTEGER(CGSIZE_T), PARAMETER :: NodePerElem = 6
 
   INTEGER(CGSIZE_T) :: Nnodes
@@ -203,9 +240,13 @@ PROGRAM benchmark_hdf5_f90
   INTEGER, DIMENSION(1:3) :: Cvec, Fvec
   INTEGER, DIMENSION(1:2) :: Avec
 
+  TYPE(cgns_filter_f) :: filter
+  INTEGER(CGSIZE_T), DIMENSION(1:2) :: chunk_param
+
   CALL MPI_Init(mpi_err)
   CALL MPI_Comm_size(MPI_COMM_WORLD,comm_size,mpi_err)
   CALL MPI_Comm_rank(MPI_COMM_WORLD,comm_rank,mpi_err)
+
 
   CALL MPI_Info_Create(comm_info,mpi_err)
   ! set this to what your GPFS block size actually is
@@ -214,6 +255,7 @@ PROGRAM benchmark_hdf5_f90
   WRITE(ichr6,'(I6.6)') comm_size
 
   CALL read_inputs(comm_rank)
+
 
   t0 = MPI_Wtime()
 
@@ -288,6 +330,54 @@ PROGRAM benchmark_hdf5_f90
      Coor_z(k) = Coor_y(k) + 0.1_dp
   ENDDO
 
+  IF(SetChunk.EQ.1)THEN
+     IF(comm_rank.EQ.0) PRINT*,"Chunking enabled: TRUE"
+     chunk_param(1) = 1;
+     chunk_param(2) = count;
+     CALL cg_set_chunk_f(chunk_param, err)
+  ELSE
+     IF(comm_rank.EQ.0) PRINT*,"Chunking enabled: FALSE"
+  ENDIF
+
+  f_param(:) = 0
+  IF(SetFilter.EQ.1)THEN
+     IF(comm_rank.EQ.0) PRINT*,"Filters enabled: TRUE"
+#ifdef H5Z_ZFP_USE_PLUGIN
+
+       filter%filter_id = H5Z_FILTER_ZFP
+       filter%nparams = H5Z_ZFP_CD_NELMTS_MAX
+
+       IF (zfpmode .EQ. H5Z_ZFP_MODE_RATE)THEN
+          CALL H5Pset_zfp_rate_cdata(rate, filter%nparams, f_param)
+       ELSE IF (zfpmode .EQ. H5Z_ZFP_MODE_PRECISION) THEN
+          CALL H5Pset_zfp_precision_cdata(prec, filter%nparams, f_param)
+       ELSE IF (zfpmode .EQ. H5Z_ZFP_MODE_ACCURACY) THEN
+          CALL H5Pset_zfp_accuracy_cdata(acc, filter%nparams, f_param)
+       ELSE IF (zfpmode .EQ. H5Z_ZFP_MODE_EXPERT) THEN
+          CALL H5Pset_zfp_expert_cdata(minbits, maxbits, maxprec, minexp, filter%nparams, f_param)
+       ELSE IF (zfpmode .EQ. H5Z_ZFP_MODE_REVERSIBLE) THEN
+          CALL H5Pset_zfp_reversible_cdata(filter%nparams, f_param)
+       ELSE
+          filter%nparams = 0 ! causes default behavior of ZFP library
+       ENDIF
+
+       filter%params = C_LOC(f_param(1))
+#else
+     f_param(1) = 6
+     filter%filter_id = CG_FILTER_DEFLATE
+     filter%nparams   = 1
+     filter%params    = C_LOC(f_param(1))
+#endif
+
+     CALL cg_set_filter_f(filter, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cg_set_filter_f'
+        CALL cgp_error_exit_f()
+     ENDIF
+  ELSE
+     IF(comm_rank.EQ.0) PRINT*,"Filters enabled: FALSE"
+  ENDIF
+
   CALL cgp_coord_write_f(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateX",Cx,err)
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_coord_write_f (Coor_X)'
@@ -338,6 +428,16 @@ PROGRAM benchmark_hdf5_f90
   xtiming(2) = t2-t1
 
   DEALLOCATE(Coor_x, Coor_y, Coor_z)
+  IF(SetChunk.EQ.1)THEN
+     CALL cg_set_chunk_f(CG_CHUNK_NONE, err)
+  ENDIF
+  IF(SetFilter.EQ.1)THEN
+     CALL cg_set_filter_f(CG_FILTER_NONE, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cg_set_filter_f'
+        CALL cgp_error_exit_f()
+     ENDIF
+  ENDIF
 
   ! ======================================
   ! == (B) WRITE THE CONNECTIVITY TABLE ==
@@ -381,6 +481,14 @@ PROGRAM benchmark_hdf5_f90
   ! ======================================
   ! == (C) WRITE THE FIELD DATA         ==
   ! ======================================
+
+  IF(SetFilter.EQ.1)THEN
+     CALL cg_set_filter_f(filter, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cg_set_filter_f'
+        CALL cgp_error_exit_f()
+     ENDIF
+  ENDIF
 
   count = nijk(1)/comm_size
 
@@ -510,6 +618,14 @@ PROGRAM benchmark_hdf5_f90
   IF(err.NE.CG_OK)THEN
      PRINT*,'*FAILED* cgp_array_write_f (Array_Ar)'
      CALL cgp_error_exit_f()
+  ENDIF
+
+  IF(SetFilter.EQ.1)THEN
+     CALL cg_set_filter_f(CG_FILTER_NONE, err)
+     IF(err.NE.CG_OK)THEN
+        PRINT*,'*FAILED* cg_set_filter_f'
+        CALL cgp_error_exit_f()
+     ENDIF
   ENDIF
 
   CALL cgp_array_write_f("ArrayI",cg_get_type(Array_i(1)),1,INT(nijk(1),cgsize_t),Ai, err)

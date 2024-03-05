@@ -163,24 +163,31 @@
 #define ADFH_ERR_NEED_TRANSPOSE        107
 #define ADFH_ERR_INVALID_OPTION        108
 #define ADFH_ERR_INVALID_USER_DATA     109
+#define ADFH_ERR_CHUNK                 110
+#define ADFH_ERR_FILTER                111
+#define ADFH_ERR_FILTER_INVALID        112
 
 #define ADFH_ERR_SENTINEL              999
 
 /* configuration options, relates to CG_CONFIG_HDF5_* in cgnslib.h */
 
-#define ADFH_CONFIG_COMPRESS      1
-#define ADFH_CONFIG_MPI_COMM      2
-#define ADFH_CONFIG_CORE          3
-#define ADFH_CONFIG_CORE_INCR     4
-#define ADFH_CONFIG_CORE_WRITE    5
-#define ADFH_CONFIG_ALIGNMENT     6
-#define ADFH_CONFIG_MD_BLOCK_SIZE 7
-#define ADFH_CONFIG_HDF5_BUFFER   8
+#define ADFH_CONFIG_COMPRESS               1
+#define ADFH_CONFIG_MPI_COMM               2
+#define ADFH_CONFIG_CORE                   3
+#define ADFH_CONFIG_CORE_INCR              4
+#define ADFH_CONFIG_CORE_WRITE             5
+#define ADFH_CONFIG_ALIGNMENT              6
+#define ADFH_CONFIG_MD_BLOCK_SIZE          7
+#define ADFH_CONFIG_HDF5_BUFFER            8
 #define ADFH_CONFIG_HDF5_SIEVE_BUF_SIZE    9
 #define ADFH_CONFIG_ELINK_FILE_CACHE_SIZE 10
+#define ADFH_CONFIG_HDF5_CHUNK            11
+#define ADFH_CONFIG_HDF5_FILTER           12
 
 #define ADFH_CONFIG_RESET 800
 #define ADFH_CONFIG_RESET_HDF5 1
+
+#define ADFH_CONFIG_HDF5_FILTER_NONE     0
 
 /***********************************************************************
 	Prototypes for Interface Routines
