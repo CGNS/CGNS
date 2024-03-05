@@ -11,11 +11,19 @@ endif (WIN32)
 # create configured header files #
 ################################
 
-if ("${SIZEOF_LONG}" GREATER 4)
-  set(CGLONGT long)
-else ()
+if("${SIZEOF_INT64_T}" EQUAL "8")
+  set(CGLONGT "int64_t")
+  set(CGULONGT "uint64_t")
+elseif("${SIZEOF_LONG}" EQUAL "8")
+  set(CGLONGT "long")
+  set(CGULONGT "unsigned long")
+elseif("${SIZEOF_LONG_LONG}" EQUAL "8")
   set(CGLONGT "long long")
-endif ()
+  set(CGULONGT "unsigned long long")
+else()
+  message(FATAL_ERROR "Can't find suitable int64_t")
+endif()
+message(STATUS "Found int64_t: ${CGLONGT}")
 
 set(BUILDLEGACY 0)
 set(BUILD64BIT 0)
@@ -108,7 +116,6 @@ set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 set(HAVE_STAT64_STRUCT 0)
 set(HAVE_COMPLEX_C99_EXT 0)
 
-include(CheckIncludeFile)
 #For cg_hash_types.h.in
 CHECK_INCLUDE_FILE(stdint.h HAVE_STDINT_H)
 set(SIZEOF_VOID_P ${CMAKE_SIZEOF_VOID_P})
