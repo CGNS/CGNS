@@ -81,10 +81,18 @@ endif ()
 # build mode #
 ##############
 
+include(CheckIncludeFile)
+check_include_file(stdint.h HAVE_STDINT_H)
+if (NOT HAVE_STDINT_H)
+  message(FATAL_ERROR "stdint.h is not found")
+endif ()
+
 # get some type sizes
 include(CheckTypeSize)
 CHECK_TYPE_SIZE(long SIZEOF_LONG)
 CHECK_TYPE_SIZE(off_t SIZEOF_OFF_T)
+CHECK_TYPE_SIZE("int64_t" SIZEOF_INT64_T)
+CHECK_TYPE_SIZE("long long" SIZEOF_LONG_LONG)
 
 if ("${SIZEOF_OFF_T}" LESS 8)
   option(CGNS_ENABLE_LFS "Enable or disable large file support" "OFF")

@@ -10,12 +10,6 @@ endif (WIN32)
 ################################
 # create configured header files #
 ################################
-check_include_file(stdint.h HAVE_STDINT_H)
-if (NOT HAVE_STDINT_H)
-  message(FATAL_ERROR "stdint.h is not found")
-endif ()
-CHECK_TYPE_SIZE("int64_t" SIZEOF_INT64_T)
-CHECK_TYPE_SIZE("long long" SIZEOF_LONG_LONG)
 
 if("${SIZEOF_INT64_T}" EQUAL "8")
   set(CGLONGT "int64_t")
@@ -122,7 +116,6 @@ set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 set(HAVE_STAT64_STRUCT 0)
 set(HAVE_COMPLEX_C99_EXT 0)
 
-include(CheckIncludeFile)
 #For cg_hash_types.h.in
 CHECK_INCLUDE_FILE(stdint.h HAVE_STDINT_H)
 set(SIZEOF_VOID_P ${CMAKE_SIZEOF_VOID_P})
