@@ -4628,10 +4628,19 @@ CONTAINS
      CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: end
 
      IF (.NOT. PRESENT(i1)) THEN
+#if HAVE_FORTRAN_2008TS
+        ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1(1))//CHAR(0), 0_C_INT))
+        ier = cg_goto(fn, B, UserDataName1, 0)
+#else
         CALL cg_goto_f1(fn, B, ier, UserDataName1, 0)
+#endif
         RETURN
      ELSE
+#if HAVE_FORTRAN_2008TS
+        ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1(1))//CHAR(0), INT(i1,C_INT)))
+#else
         CALL cg_goto_f1(fn, B, ier, UserDataName1, i1)
+#endif
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i2)) THEN
