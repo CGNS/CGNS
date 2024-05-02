@@ -121,7 +121,7 @@ jobs:
       run: |
         cd cbuild
         cmake --build . --config "Debug" --parallel 8
-        ctest -C "Debug" --verbose --output-on-failure
+        ctest -C "Debug" -VV --output-on-failure
       shell: bash
 
 ##################################
