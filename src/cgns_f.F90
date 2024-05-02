@@ -3570,7 +3570,7 @@ END ENUM
        INTEGER :: fn
        INTEGER :: B
        INTEGER, INTENT(OUT) :: ier
-       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name1
+       CHARACTER(KIND=C_CHAR), DIMENSION(1) :: name1
        INTEGER :: index1
      END SUBROUTINE
 
@@ -3579,7 +3579,7 @@ END ENUM
        IMPLICIT NONE
        INTEGER :: fn
        INTEGER, INTENT(OUT) :: ier
-       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name1
+       CHARACTER(KIND=C_CHAR), DIMENSION(1) :: name1
        INTEGER :: index1
      END SUBROUTINE
 
@@ -4755,14 +4755,14 @@ END ENUM
 
        USE ISO_C_BINDING
        INTEGER(C_INT) , INTENT(IN), VALUE :: fn
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
+       CHARACTER(C_CHAR), DIMENSION(1), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
             UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
             UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
             UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
 
        INTEGER(C_INT), INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
             i17, i18, i19, i20
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end
+       CHARACTER(C_CHAR), DIMENSION(1), INTENT(IN), OPTIONAL :: end
      END FUNCTION cg_gorel
 
   ! The number of optional parameters should be set to
@@ -4784,13 +4784,13 @@ END ENUM
        USE ISO_C_BINDING
        INTEGER(C_INT) , INTENT(IN), VALUE :: fn
        INTEGER(C_INT) , INTENT(IN), VALUE :: B
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
+       CHARACTER(C_CHAR), DIMENSION(1), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
             UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
             UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
             UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
        INTEGER(C_INT), INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
             i17, i18, i19, i20
-       CHARACTER(C_CHAR), DIMENSION(*), INTENT(IN), OPTIONAL :: end
+       CHARACTER(C_CHAR), DIMENSION(1), INTENT(IN), OPTIONAL :: end
      END FUNCTION cg_goto
 
 
