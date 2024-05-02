@@ -5332,13 +5332,21 @@ CONTAINS
      INTEGER, INTENT(IN) :: fn
      INTEGER, INTENT(IN) :: B
      INTEGER, INTENT(OUT) :: ier
+#if 0
      CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
           UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
           UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
           UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
+#endif
+     CHARACTER(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
+          UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
+          UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
+          UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
+
      INTEGER, INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
           i17, i18, i19, i20
-     CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: end
+     !CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: end
+     CHARACTER(*), INTENT(IN), OPTIONAL :: end
 
      IF (.NOT. PRESENT(i1)) THEN
 #if HAVE_FORTRAN_2008TS
@@ -5452,14 +5460,21 @@ CONTAINS
      IMPLICIT NONE
      INTEGER, INTENT(IN) :: fn
      INTEGER, INTENT(OUT) :: ier
+     CHARACTER(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
+          UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
+          UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
+          UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
+#if 0
      CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
           UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
           UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
           UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
+#endif
      INTEGER, INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
           i17, i18, i19, i20
-     CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: end
-
+     !CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: end
+     CHARACTER(*), INTENT(IN), OPTIONAL :: end
+  
      IF (PRESENT(i1)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName1, i1)
      ELSE
