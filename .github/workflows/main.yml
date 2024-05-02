@@ -87,7 +87,7 @@ jobs:
                  
     - name: install HDF5
       run: |
-        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5-${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
+        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
         export HOME_DIR=$(echo ~)
         cd hdf5_${{ env.hdf5_vers }}
         ./configure --without-zlib --without-szlib --disable-fortran --disable-hl \
