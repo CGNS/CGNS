@@ -1,4 +1,4 @@
-        program write_mixed_grid
+        PROGRAM write_mixed_grid
 	USE CGNS
 
 !	author: Diane Poirier
@@ -478,5 +478,5 @@
  100	format(a)
  200	format(a,i1,a,i1)
 
-	end
+        END PROGRAM write_mixed_grid
 

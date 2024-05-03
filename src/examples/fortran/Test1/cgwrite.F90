@@ -1,4 +1,4 @@
-	program write_cgns_1
+        PROGRAM write_cgns_1
 	USE CGNS
 	implicit none
 
@@ -259,5 +259,5 @@
 	call cg_close_f(cg, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-	end
+        END PROGRAM write_cgns_1
 

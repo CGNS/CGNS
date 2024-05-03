@@ -1,4 +1,4 @@
-	program write_cprop
+        PROGRAM write_cprop
 	USE CGNS
 	implicit none
 
@@ -210,5 +210,5 @@
 	call cg_close_f(cg, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-	end
+        END PROGRAM write_cprop
 

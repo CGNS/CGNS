@@ -1,4 +1,4 @@
-	program write_cgns_motion
+        PROGRAM write_cgns_motion
 	USE CGNS
         implicit none
 
@@ -336,5 +336,5 @@
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 
  100	format(a,i1)
-	end
+        END PROGRAM write_cgns_motion
 
