@@ -5351,7 +5351,6 @@ CONTAINS
      IF (.NOT. PRESENT(i1)) THEN
 #if HAVE_FORTRAN_2008TS
         ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1(1))//CHAR(0), 0_C_INT))
-        ier = cg_goto(fn, B, UserDataName1, 0)
 #else
         CALL cg_goto_f1(fn, B, ier, UserDataName1, 0)
 #endif
