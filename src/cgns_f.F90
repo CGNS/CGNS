@@ -4782,15 +4782,13 @@ END ENUM
           end) BIND(C, name="cg_goto_f08")
 
        USE ISO_C_BINDING
-       INTEGER(C_INT) , INTENT(IN), VALUE :: fn
-       INTEGER(C_INT) , INTENT(IN), VALUE :: B
-       CHARACTER(C_CHAR), DIMENSION(1), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       CHARACTER(C_CHAR), DIMENSION(*), OPTIONAL :: UserDataName1,UserDataName2, &
             UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
             UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
-            UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
-       INTEGER(C_INT), INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
-            i17, i18, i19, i20
-       CHARACTER(C_CHAR), DIMENSION(1), INTENT(IN), OPTIONAL :: end
+            UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20, end
+       INTEGER(C_INT), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16,i17,i18,i19,i20
      END FUNCTION cg_goto
 
 
@@ -5338,26 +5336,22 @@ CONTAINS
           UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
           UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
 #endif
-     CHARACTER(*), DIMENSION(1), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
+     CHARACTER(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
           UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
           UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
-          UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
-
-     INTEGER, INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
-          i17, i18, i19, i20
-     !CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: end
-     CHARACTER(*), DIMENSION(1), INTENT(IN), OPTIONAL :: end
+          UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20,end
+     INTEGER, INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16,i17,i18,i19,i20
 
      IF (.NOT. PRESENT(i1)) THEN
 #if HAVE_FORTRAN_2008TS
-        ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1(1))//CHAR(0), 0_C_INT))
+        ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1)//CHAR(0), 0_C_INT))
 #else
         CALL cg_goto_f1(fn, B, ier, UserDataName1, 0)
 #endif
         RETURN
      ELSE
 #if HAVE_FORTRAN_2008TS
-        ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1(1))//CHAR(0), INT(i1,C_INT)))
+        ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1)//CHAR(0), INT(i1,C_INT)))
 #else
         CALL cg_goto_f1(fn, B, ier, UserDataName1, i1)
 #endif
@@ -5462,17 +5456,14 @@ CONTAINS
      CHARACTER(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
           UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
           UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
-          UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
+          UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20,end
 #if 0
      CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: UserDataName1,UserDataName2, &
           UserDataName3,UserDataName4,UserDataName5,UserDataName6,UserDataName7,UserDataName8, &
           UserDataName9,UserDataName10,UserDataName11,UserDataName12,UserDataName13,UserDataName14, &
           UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
 #endif
-     INTEGER, INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
-          i17, i18, i19, i20
-     !CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: end
-     CHARACTER(*), INTENT(IN), OPTIONAL :: end
+     INTEGER, INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16,i17,i18,i19,i20
   
      IF (PRESENT(i1)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName1, i1)
