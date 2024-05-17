@@ -52,6 +52,7 @@
 #include "utils.h"
 #include "mpi.h"
 #include "timer.h"
+#include <sys/wait.h>
 
 #if SIZE_MAX == UCHAR_MAX
    #define MPI_SIZE_T MPI_UNSIGNED_CHAR
@@ -78,13 +79,15 @@ MPI_Info info;
  * Requires HDF5 version 1.14 or greater.
  * Set SUBFILING=1 in the environment to enable.
  */
-int SUBFILING;
+int enable_subfiling;
 
 int piomode = CGP_COLLECTIVE; /* DEFAULT */ 
 /* cgsize_t Nelem = 33554432; */
 cgsize_t Nelem = 65536; /* DEFAULT */
 int enable_md = false; /* enable multidataset APIs */
-int checkRead = false; /* check read after read*/
+int enable_read = false; /* enable reading*/
+int check_read = false; /* check read after read*/
+int enable_fuse = false; /* fuse the cgns subfiles */
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
@@ -141,12 +144,14 @@ struct timer_statinfo timing[15];
 
 int read_inputs(int* argc, char*** argv) {
   int k;
-  int buffer[3];
+  int buffer[5];
 
   if(comm_rank==0) {
     buffer[0] = piomode;
-    buffer[1] = enable_md;
-    buffer[2] = checkRead;
+    buffer[1] = enable_read;
+    buffer[2] = enable_md;
+    buffer[3] = check_read;
+    buffer[4] = enable_fuse;
     for(k=1;k<*argc;k++) {
       if(strcmp((*argv)[k],"-nelem")==0) {
         k++;
@@ -158,17 +163,26 @@ int read_inputs(int* argc, char*** argv) {
       if(strcmp((*argv)[k],"-md")==0) {
         buffer[1] = true;
       }
-      if(strcmp((*argv)[k],"-R")==0) {
-        buffer[2]= true;
+      if(strcmp((*argv)[k],"-read")==0) {
+        buffer[2] = true;
+      }
+      if(strcmp((*argv)[k],"-check")==0) {
+        buffer[3]= true;
+      }
+      if(strcmp((*argv)[k],"-fuse")==0) {
+        buffer[4]= true;
       }
     }
   }
   MPI_Bcast(&Nelem, 1, MPI_SIZE_T, 0, MPI_COMM_WORLD);
-  MPI_Bcast(buffer, 3, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(buffer, 5, MPI_INT, 0, MPI_COMM_WORLD);
 
   piomode = buffer[0];
   enable_md = buffer[1];
-  checkRead = buffer[2];
+  enable_read = buffer[2];
+  check_read = buffer[3];
+  enable_fuse = buffer[4];
+
   return 0;
 }
 
@@ -176,8 +190,8 @@ int initialize(int* argc, char** argv[]) {
 
   char *env_val = getenv("SUBFILING");
   if(env_val) {
-    SUBFILING = atoi(env_val);
-    if(SUBFILING == 1) {
+    enable_subfiling = atoi(env_val);
+    if(enable_subfiling == 1) {
       int required = MPI_THREAD_MULTIPLE;
       int provided = 0;
       MPI_Init_thread(argc, argv, required, &provided);
@@ -205,9 +219,11 @@ int initialize(int* argc, char** argv[]) {
     printf("--------------------------------\nSummary\n--------------------------------\n");
     printf("I/O mode: %s\n", piomode ? "CGP_COLLECTIVE" : "CGP_INDEPENDENT");
     printf("Enable multidataset APIs: %s\n", enable_md ? "True" : "False");
-    printf("Check read values: %s\n", checkRead ? "True" : "False");
+    printf("Enable reading: %s\n", enable_read ? "True" : "False");
+    printf("Check read values: %s\n", check_read ? "True" : "False");
     printf("Number of elements: %zu\n", Nelem );
-    printf("Subfiling enabled: %s\n", SUBFILING ? "True" : "False");
+    printf("Subfiling enabled: %s\n", enable_subfiling ? "True" : "False");
+    printf("Fusing the subfiles: %s\n", enable_fuse ? "True" : "False");
     printf("--------------------------------\n");
   }
 
@@ -243,7 +259,7 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 
-  if(SUBFILING == 1) {
+  if(enable_subfiling == 1) {
     if (cg_configure(CG_CONFIG_HDF5_SUBFILING, (void *)1))
       cg_error_exit();
     
@@ -601,10 +617,75 @@ int main(int argc, char* argv[]) {
   timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
   timer_stats(t1, MPI_COMM_WORLD, 0, &timing[11]);
 
-  /* ====================================== */
-  /* ==    **  READ THE CGNS FILE **     == */
-  /* ====================================== */
   MPI_Barrier(MPI_COMM_WORLD);
+
+  /* ================================================= */
+  /* ==  FUSE THE SUBFILES INTO A SINGLE CGNS FILE  == */
+  /* ================================================= */
+
+  int skip_test = 0;
+
+  if(enable_fuse && enable_subfiling) {
+    FILE *h5fuse_script = fopen("h5fuse", "r");
+    if (h5fuse_script)
+      fclose(h5fuse_script);
+    else
+      skip_test = 1;
+  } else {
+    skip_test = 1;
+  }
+
+  if ( (enable_fuse && enable_subfiling) && skip_test == 0) {
+
+    if(comm_rank == 0) {
+
+      pid_t pid = 0;
+      int   status;
+
+      pid = fork();
+
+      if (pid == 0) {
+        char *args[6];
+
+        args[0] = strdup("env");
+        args[1] = strdup("sh");
+        args[2] = strdup("h5fuse");
+        args[3] = strdup("-q");
+        args[4] = strdup("-r");
+        //        args[5] = strdup("-f");
+        //        args[6] = config_filename;
+        args[5] = NULL;
+
+        /* Call h5fuse script from MPI rank 0 */
+        execvp("env", args);
+      }
+      else {
+        waitpid(pid, &status, 0);
+
+        if (WIFEXITED(status)) {
+          int ret;
+
+          if ((ret = WEXITSTATUS(status)) != 0) {
+            printf("h5fuse process exited with error code %d\n", ret);
+            fflush(stdout);
+            MPI_Abort(MPI_COMM_WORLD, -1);
+          }
+        }
+        else {
+          printf("h5fuse process terminated abnormally\n");
+          fflush(stdout);
+          MPI_Abort(MPI_COMM_WORLD, -1);
+        }
+      }
+    }
+
+    /* Disable subfiling to read in the h5fused CGNS file */
+    if (cg_configure(CG_CONFIG_HDF5_SUBFILING, (void *)0))
+      cg_error_exit();
+
+  }
+
+  if(enable_read) {
 
   timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
   /* Open the cgns file for reading */
@@ -717,7 +798,7 @@ int main(int argc, char* argv[]) {
   timer_stats(t1, MPI_COMM_WORLD, 0, &timing[5]);
 
   /* Check if read the data back correctly */
-  if(checkRead) {
+  if(check_read) {
     for ( k = 0; k < count; k++) {
       if( !compareValuesDouble(Coor_x[k], comm_rank*count + k + 1.1) ||
           !compareValuesDouble(Coor_y[k], Coor_x[k] + 0.1) ||
@@ -753,7 +834,7 @@ int main(int argc, char* argv[]) {
   timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
   timer_stats(t1, MPI_COMM_WORLD, 0, &timing[6]);
 
-  if(checkRead) {
+  if(check_read) {
     for ( k = 0; k < count; k++) {
       if(elements[k] != comm_rank*count*NodePerElem + k + 1) {
 	printf("*FAILED* cgp_elements_read_data values are incorrect\n");
@@ -820,7 +901,7 @@ int main(int argc, char* argv[]) {
   timer_stats(t1, MPI_COMM_WORLD, 0, &timing[7]);
 
   /* Check if read the data back correctly */
-  if(checkRead) {
+  if(check_read) {
     for ( k = 0; k < count; k++) {
       if(!compareValuesDouble(Data_Fx[k], comm_rank*count + k + 1.01) ||
          !compareValuesDouble(Data_Fy[k], comm_rank*count + k + 1.02) ||
@@ -888,7 +969,7 @@ int main(int argc, char* argv[]) {
   timer_stats(t1, MPI_COMM_WORLD, 0, &timing[8]);
 
   /* Check if read the data back correctly */
-  if(checkRead) {
+  if(check_read) {
     for ( k = 0; k < count; k++) {
       if(!compareValuesDouble(Array_r[k], comm_rank*count + k + 1.001) ||
 	 Array_i[k] != comm_rank*count + k +1) {
@@ -908,6 +989,7 @@ int main(int argc, char* argv[]) {
   }
   timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
   timer_stats(t1, MPI_COMM_WORLD, 0, &timing[12]);
+  }
 
   timer_end(&t0, MPI_COMM_WORLD, t_nobarrier);
   timer_stats(t0, MPI_COMM_WORLD, 0, &timing[0]);
