@@ -22,6 +22,12 @@
 #include "printstr.h"
 #include "feedback.h"
 
+#if ! defined(__WIN32__) && ! defined(_WIN32)
+/* For TkWmAddToColormapWindows. */
+#define _TKPORT /* Typical installations cannot find tkPort.h. */
+#include <tk-private/generic/tkInt.h>
+#endif
+
 #ifndef CONST
 # define CONST
 #endif
@@ -599,7 +605,7 @@ OGLwinCmd(clientData, interp, argc, argv)
 
     if ((Tk_Parent(tkwin) != NULL) &&
 	(Tk_Colormap(tkwin) != Tk_Colormap (Tk_Parent(tkwin)))) {
-       TkWmAddToColormapWindows(tkwin);
+       TkWmAddToColormapWindows((TkWindow *)tkwin);
     }
 
     /* See if this window will share display lists with another */
