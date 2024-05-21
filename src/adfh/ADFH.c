@@ -343,6 +343,13 @@ static herr_t print_name(hid_t, const char *, const H5A_info_t*, void *);
 #define show_att(ID,NAME)  H5Aiterate2(ID,H5_INDEX_NAME,H5_ITER_NATIVE,NULL,print_name,(void *)NAME)
 #endif
 
+static char* appendstr( char* dest, char* src )
+{
+    while (*dest) dest++;
+    while (*dest++ = *src++);
+    return --dest;
+}
+
 /* ----------------------------------------------------------------
  * set error and terminate if error state set
  * ---------------------------------------------------------------- */
@@ -2678,6 +2685,97 @@ void ADFH_Database_Delete(const char *name,
     set_error(ADFH_ERR_FILE_DELETE, err);
   else
     set_error(NO_ERROR, err);
+}
+
+/* ----------------------------------------------------------------- */
+void ADFH_subfiling_fuse(const double root, int nfork, int *status)
+{
+  int fn;
+  hid_t hid, fid;
+  to_HDF_ID(root,hid);
+  if ((fn = get_file_number(hid, status)) < 0) return;
+  fid = mta_root->g_files[fn];
+
+  nfork = 0;
+  status = 0;
+#if CG_BUILD_PARALLEL
+  MPI_Comm shmcomm;
+  MPI_Comm_split_type( MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0,
+                       MPI_INFO_NULL, &shmcomm );
+  int shmrank;
+  MPI_Comm_rank( shmcomm, &shmrank );
+
+  char *env_val = getenv("H5FD_SUBFILING_SUBFILE_PREFIX");
+
+  if ( shmrank == 0 ) {
+
+    pid_t pid = 0;
+
+    pid = fork();
+    nfork++;
+
+    if (pid == 0) {
+      char *args[8];
+
+      args[0] = strdup("env");
+      args[1] = strdup("sh");
+      args[2] = strdup("h5fuse");
+      args[3] = strdup("-q");
+      args[4] = strdup("-r");
+
+      size_t len = 0;
+
+      if(env_val){
+        args[5] = NULL;
+      } else {
+        char **filenames = NULL;
+        herr_t err;
+        err=H5FDsubfiling_get_file_mapping(fid, &filenames, &len);
+        //printf("AFTER H5FDsubfiling_get_file_mapping %d %d\n", err, len);
+        //printf("asdf %d %d %s \n", fid, filenames[0], len);
+
+        // Allocate sufficient space for the concatenated string
+        size_t total_length = 0;
+        for (size_t i = 0; i < len; i++) {
+          total_length += strlen(filenames[i]) + 1; // Add 1 for commas
+        }
+
+        char *subf_list = (char*)malloc(total_length*sizeof(char));
+        subf_list[0] = '\0';
+
+        // Concatenate the strings with commas
+        for (size_t i = 0; i < len; i++) {
+          subf_list = strcat(subf_list,filenames[i]);
+          if(i < len - 1) {
+            subf_list = strcat(subf_list,",");
+          }
+        }
+
+        //  printf("asdf %d %s %d \n", fid, subf_list, len);
+
+        if (len > 0) {
+          for (size_t i = 0; i < len; i++) {
+            H5free_memory(filenames[i]);
+          }
+          H5free_memory(filenames);
+        }
+
+        args[5] = strdup("-l");
+        args[6] = strdup(subf_list);
+        args[7] = NULL;
+
+        /* Call h5fuse script from MPI rank */
+        execvp("env", args);
+
+        free(subf_list);
+
+      }
+    }
+  }
+  printf("ADFH %d\n",nfork);
+  MPI_Comm_free( &shmcomm );
+
+#endif
 }
 
 /* ----------------------------------------------------------------- */

@@ -800,7 +800,8 @@ CGNSDLL int cg_version(int fn, float *FileVersion);
 CGNSDLL int cg_precision(int fn, int *precision);
 CGNSDLL int cg_close(int fn);
 CGNSDLL int cg_save_as(int fn, const char *filename, int file_type,
-	int follow_links);
+        int follow_links);
+CGNSDLL int cg_subfiling_fuse(int fn, int nfork);
 
 CGNSDLL int cg_set_file_type(int file_type);
 CGNSDLL int cg_get_file_type(int fn, int *file_type);

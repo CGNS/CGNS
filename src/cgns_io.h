@@ -465,6 +465,11 @@ CGEXTERN int cgio_write_data_type (
     const void *data
 );
 
+CGEXTERN int cgio_subfiling_fuse (
+    int cgio_num,
+    int nfork
+);
+
 #ifdef __cplusplus
 }
 #endif

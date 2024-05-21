@@ -142,6 +142,13 @@ double t0, t1, t2;
  */
 struct timer_statinfo timing[15];
 
+char* appendstr( char* dest, char* src )
+{
+    while (*dest) dest++;
+    while (*dest++ = *src++);
+    return --dest;
+}
+
 int read_inputs(int* argc, char*** argv) {
   int k;
   int buffer[5];
@@ -610,14 +617,6 @@ int main(int argc, char* argv[]) {
   free(Array_i);
 
   timer_start(&t1, MPI_COMM_WORLD, t_nobarrier);
-  if(cgp_close(fn) != CG_OK) {
-    printf("*FAILED* cgp_close \n");
-    cgp_error_exit();
-  };
-  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
-  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[11]);
-
-  MPI_Barrier(MPI_COMM_WORLD);
 
   /* ================================================= */
   /* ==  FUSE THE SUBFILES INTO A SINGLE CGNS FILE  == */
@@ -635,55 +634,25 @@ int main(int argc, char* argv[]) {
     skip_test = 1;
   }
 
+  int nfork = 0;
+  int status;
+
   if ( (enable_fuse && enable_subfiling) && skip_test == 0) {
-
-    if(comm_rank == 0) {
-
-      pid_t pid = 0;
-      int   status;
-
-      pid = fork();
-
-      if (pid == 0) {
-        char *args[6];
-
-        args[0] = strdup("env");
-        args[1] = strdup("sh");
-        args[2] = strdup("h5fuse");
-        args[3] = strdup("-q");
-        args[4] = strdup("-r");
-        //        args[5] = strdup("-f");
-        //        args[6] = config_filename;
-        args[5] = NULL;
-
-        /* Call h5fuse script from MPI rank 0 */
-        execvp("env", args);
-      }
-      else {
-        waitpid(pid, &status, 0);
-
-        if (WIFEXITED(status)) {
-          int ret;
-
-          if ((ret = WEXITSTATUS(status)) != 0) {
-            printf("h5fuse process exited with error code %d\n", ret);
-            fflush(stdout);
-            MPI_Abort(MPI_COMM_WORLD, -1);
-          }
-        }
-        else {
-          printf("h5fuse process terminated abnormally\n");
-          fflush(stdout);
-          MPI_Abort(MPI_COMM_WORLD, -1);
-        }
-      }
-    }
-
-    /* Disable subfiling to read in the h5fused CGNS file */
-    if (cg_configure(CG_CONFIG_HDF5_SUBFILING, (void *)0))
-      cg_error_exit();
-
+    cg_subfiling_fuse(fn, nfork);
   }
+
+  printf("NFORK %d\n",nfork);
+
+  if(cgp_close(fn) != CG_OK) {
+    printf("*FAILED* cgp_close \n");
+    cgp_error_exit();
+  };
+
+  timer_end(&t1, MPI_COMM_WORLD, t_nobarrier);
+  timer_stats(t1, MPI_COMM_WORLD, 0, &timing[11]);
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
 
   if(enable_read) {
 
@@ -1008,6 +977,25 @@ int main(int argc, char* argv[]) {
       }
       fprintf(fid," %zu %zu %zu %zu \n", Mb_coor, Mb_elem, Mb_field, Mb_array);
       fclose(fid);
+    }
+  }
+
+  if ( (enable_fuse && enable_subfiling) && skip_test == 0) {
+    // Wait for all the h5fuse processes to complete
+    for ( int i = 0; i < nfork; i++ ) {
+      waitpid( -1, &status, 0 );
+      if ( WIFEXITED( status ) ) {
+        int ret;
+        if ( ( ret = WEXITSTATUS( status ) ) != 0 ) {
+          printf( "h5fuse process exited with error code %d\n", ret );
+          fflush( stdout );
+          MPI_Abort( MPI_COMM_WORLD, -1 );
+        }
+      } else {
+        printf( "h5fuse process terminated abnormally\n" );
+        fflush( stdout );
+        MPI_Abort( MPI_COMM_WORLD, -1 );
+      }
     }
   }
 

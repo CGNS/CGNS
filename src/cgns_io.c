@@ -1027,6 +1027,24 @@ int cgio_get_file_type (int cgio_num, int *file_type)
     return CGIO_ERR_NONE;
 }
 
+int cgio_subfiling_fuse(int cgio_num, int nfork)
+{
+#if CG_BUILD_HDF5
+    int ierr = 0;
+    cgns_io *cgio;
+
+    if ((cgio = get_cgnsio(cgio_num, 0)) == NULL)
+      return get_error();
+    if (cgio->type == CGIO_FILE_HDF5)
+      ADFH_subfiling_fuse(cgio->rootid, nfork, &ierr);
+    printf("_IO %d\n",nfork);
+    if (ierr > 0) return set_error(ierr);
+
+    return CGIO_ERR_NONE;
+
+#endif
+}
+
 /*=========================================================
  * error handling
  *=========================================================*/

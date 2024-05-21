@@ -934,6 +934,17 @@ int cg_get_file_type(int fn, int *file_type)
     return CG_OK;
 }
 
+int cg_subfiling_fuse(int fn, int nfork)
+{
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+    if (cgio_subfiling_fuse(cg->cgio, nfork)) {
+        cg_io_error("cgio_subfiling_fuse");
+        return CG_ERROR;
+    }
+    return CG_OK;
+}
+
 /**
  * \ingroup CGNSInterfaceCGIO
  *
