@@ -634,14 +634,12 @@ int main(int argc, char* argv[]) {
     skip_test = 1;
   }
 
-  int nfork = 0;
+  int nfork = -99;
   int status;
 
   if ( (enable_fuse && enable_subfiling) && skip_test == 0) {
-    cg_subfiling_fuse(fn, nfork);
+    cg_subfiling_fuse(fn, &nfork);
   }
-
-  printf("NFORK %d\n",nfork);
 
   if(cgp_close(fn) != CG_OK) {
     printf("*FAILED* cgp_close \n");

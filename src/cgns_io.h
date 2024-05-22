@@ -467,7 +467,7 @@ CGEXTERN int cgio_write_data_type (
 
 CGEXTERN int cgio_subfiling_fuse (
     int cgio_num,
-    int nfork
+    int *nfork
 );
 
 #ifdef __cplusplus

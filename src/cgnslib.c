@@ -934,7 +934,7 @@ int cg_get_file_type(int fn, int *file_type)
     return CG_OK;
 }
 
-int cg_subfiling_fuse(int fn, int nfork)
+int cg_subfiling_fuse(int fn, int *nfork)
 {
     cg = cgi_get_file(fn);
     if (cg == 0) return CG_ERROR;

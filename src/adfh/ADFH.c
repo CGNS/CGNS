@@ -2688,15 +2688,16 @@ void ADFH_Database_Delete(const char *name,
 }
 
 /* ----------------------------------------------------------------- */
-void ADFH_subfiling_fuse(const double root, int nfork, int *status)
+void ADFH_subfiling_fuse(const double root, int *nfork, int *status)
 {
   int fn;
+  int nnfork;
   hid_t hid, fid;
   to_HDF_ID(root,hid);
   if ((fn = get_file_number(hid, status)) < 0) return;
   fid = mta_root->g_files[fn];
 
-  nfork = 0;
+  nnfork = 0;
   status = 0;
 #if CG_BUILD_PARALLEL
   MPI_Comm shmcomm;
@@ -2712,7 +2713,7 @@ void ADFH_subfiling_fuse(const double root, int nfork, int *status)
     pid_t pid = 0;
 
     pid = fork();
-    nfork++;
+    nnfork++;
 
     if (pid == 0) {
       char *args[8];
@@ -2772,7 +2773,7 @@ void ADFH_subfiling_fuse(const double root, int nfork, int *status)
       }
     }
   }
-  printf("ADFH %d\n",nfork);
+  *nfork = nnfork;
   MPI_Comm_free( &shmcomm );
 
 #endif

@@ -439,7 +439,7 @@ EXTERN	void	ADFH_Write_Data(
 
 EXTERN void ADFH_subfiling_fuse(
                         const double root,
-                        int nfork,
+                        int *nfork,
                         int *status) ;
 
 #define HAS_ADF_RELEASE_ID
