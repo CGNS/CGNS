@@ -119,8 +119,8 @@ jobs:
     - name: CMake test CGNS
       run: |
         cd cbuild
-        make -j 8
-        make test
+        cmake --build . --config "Debug" --parallel 8
+        ctest -C "Debug" --verbose --output-on-failure
       shell: bash
 
 ##################################
