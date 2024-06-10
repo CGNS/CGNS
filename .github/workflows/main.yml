@@ -11,7 +11,7 @@ on:
 #  push:
 #  pull_request:
 env:
-  hdf5_vers: 1_10_8
+  hdf5_vers: 1_10_10
 
 # A workflow run is made up of one or more jobs that
 # can run sequentially or in parallel
@@ -20,7 +20,7 @@ jobs:
   build:
     strategy:
       matrix:
-        name: ["Ubuntu Latest GCC", "macOS Latest Clang"]
+        name: ["Ubuntu Latest GCC", "macOS Latest"]
         include:
           - name: "Ubuntu Latest GCC"
             artifact: "Linux.tar.xz"
@@ -29,7 +29,7 @@ jobs:
             parallel: enable
             hdf5: with
             tools: enable
-          - name: "macOS Latest Clang"
+          - name: "macOS Latest"
             artifact: "macOS.tar.xz"
             os: macos-latest
             parallel: disable
@@ -64,14 +64,17 @@ jobs:
         unset HOMEBREW_NO_INSTALL_FROM_API
         unset HOMEBREW_NO_AUTO_UPDATE
         echo "OS_NAME=macOS" >> $GITHUB_ENV
-        echo "CC=gcc" >> $GITHUB_ENV
         # Use the newest stable gcc compiler
         brew update-reset
-        brew upgrade gcc
+        brew cleanup
+        #brew upgrade gcc
         brew install gcc
         brew unlink gcc && brew link gcc
         echo "FC=gfortran" >> $GITHUB_ENV
         echo "F77=gfortran" >> $GITHUB_ENV
+        # Set CC version to latest gcc based on gfortran main version
+        gfortranversion=$( echo "__GNUC__" | gfortran -E -P - | sed 's/ //g' )
+        echo "CC=gcc-$gfortranversion" >> $GITHUB_ENV
 
  # Checks-out the repository under $GITHUB_WORKSPACE so the job can access it.
     - name: Get Sources
