@@ -42,7 +42,7 @@ if [[ "$OS_NAME" = "linux" ]]; then
 # Do a different test set-up than the autotools build
   OPTS_CMAKE="$OPTS_CMAKE -D CGNS_ENABLE_LEGACY:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=OFF"
 else
-  OPTS_CMAKE="$OPTS_CMAKE -D CMAKE_OSX_ARCHITECTURES:STRING='arm64;x86_64'"
+  OPTS_CMAKE="$OPTS_CMAKE -D CMAKE_OSX_ARCHITECTURES:STRING=arm64"
 fi
 
 if [[ "$BUILD" == "cmake" ]]; then
