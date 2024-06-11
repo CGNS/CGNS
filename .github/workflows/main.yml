@@ -33,7 +33,7 @@ jobs:
             artifact: "macOS.tar.xz"
             os: macos-latest
             parallel: disable
-            fortran: with
+            fortran: without
             hdf5: without
             tools: disable
 
