@@ -90,6 +90,10 @@ typedef struct {
 
 #endif
 
+/* Determine if hdf5subfiling supports H5FDsubfiling_get_file_mapping  */
+
+#define HDF5_HAVE_SUBFILING_FILE_MAPPING @HDF5_HAVE_SUBFILING_FILE_MAPPING@
+
 #define  CG_HAVE_STAT64_STRUCT @HAVE_STAT64_STRUCT@
 
 #if CG_BUILD_LEGACY

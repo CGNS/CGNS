@@ -918,6 +918,23 @@ else
     AC_MSG_RESULT(no)
   fi
 
+  # Check if HDF5 library has the subfiling mapping API
+  ## --------------------------------------------------------------------
+
+  HDF5_HAVE_SUBFILING_FILE_MAPPING=0
+  if test "x$HDF5_HAVE_SUBFILING_VFD" = "x1"; then
+
+    AC_MSG_CHECKING([if HDF5 library has H5FDsubfiling_get_file_mapping])
+
+    chck_fs=`grep -i 'H5FDsubfiling_get_file_mapping' $HDF5INC/H5FDsubfiling.h`
+    if test "x$chck_fs" = "x"; then
+      AC_MSG_RESULT(no)
+    else
+      HDF5_HAVE_SUBFILING_FILE_MAPPING=1
+      AC_MSG_RESULT(yes)
+    fi
+  fi
+
   # Check if HDF5 library has multi-dataset read and write APIs
   ## --------------------------------------------------------------------
 
@@ -1972,6 +1989,7 @@ AC_SUBST(HAVE_FORTRAN_2003)
 AC_SUBST(HAVE_FORTRAN_2008TS)
 AC_SUBST(FORTRAN_DEFAULT_INTEGER_C_INT64_T)
 AC_SUBST(HDF5_HAVE_MULTI_DATASETS)
+AC_SUBST(HDF5_HAVE_SUBFILING_FILE_MAPPING)
 AC_SUBST(HDF5_HAVE_SUBFILING_VFD)
 AC_SUBST(HAVE_STAT64_STRUCT)
 AC_SUBST(HDF5_HAVE_COLL_METADATA)

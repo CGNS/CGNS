@@ -703,6 +703,7 @@ HDF5_HAVE_FILE_SPACE_STRATEGY
 HDF5_HAVE_COLL_METADATA
 HAVE_STAT64_STRUCT
 HDF5_HAVE_SUBFILING_VFD
+HDF5_HAVE_SUBFILING_FILE_MAPPING
 HDF5_HAVE_MULTI_DATASETS
 FORTRAN_DEFAULT_INTEGER_C_INT64_T
 HAVE_FORTRAN_2008TS
@@ -5970,6 +5971,26 @@ $as_echo "yes" >&6; }
 $as_echo "no" >&6; }
   fi
 
+  # Check if HDF5 library has the subfiling mapping API
+  ## --------------------------------------------------------------------
+
+  HDF5_HAVE_SUBFILING_FILE_MAPPING=0
+  if test "x$HDF5_HAVE_SUBFILING_VFD" = "x1"; then
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if HDF5 library has H5FDsubfiling_get_file_mapping" >&5
+$as_echo_n "checking if HDF5 library has H5FDsubfiling_get_file_mapping... " >&6; }
+
+    chck_fs=`grep -i 'H5FDsubfiling_get_file_mapping' $HDF5INC/H5FDsubfiling.h`
+    if test "x$chck_fs" = "x"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    else
+      HDF5_HAVE_SUBFILING_FILE_MAPPING=1
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    fi
+  fi
+
   # Check if HDF5 library has multi-dataset read and write APIs
   ## --------------------------------------------------------------------
 
@@ -7689,6 +7710,7 @@ else
 $as_echo "no" >&6; }
   SET_MAKE="MAKE=${MAKE-make}"
 fi
+
 
 
 

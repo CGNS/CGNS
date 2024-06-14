@@ -437,10 +437,12 @@ EXTERN	void	ADFH_Write_Data(
                         const char *data,
                         int *error_return ) ;
 
+#if HDF5_HAVE_SUBFILING_FILE_MAPPING
 EXTERN void ADFH_subfiling_fuse(
                         const double root,
                         int *nfork,
                         int *status) ;
+#endif
 
 #define HAS_ADF_RELEASE_ID
 

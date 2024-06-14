@@ -346,7 +346,7 @@ static herr_t print_name(hid_t, const char *, const H5A_info_t*, void *);
 static char* appendstr( char* dest, char* src )
 {
     while (*dest) dest++;
-    while (*dest++ = *src++);
+    while ((*dest++ = *src++));
     return --dest;
 }
 
@@ -2687,6 +2687,7 @@ void ADFH_Database_Delete(const char *name,
     set_error(NO_ERROR, err);
 }
 
+#if HDF5_HAVE_SUBFILING_FILE_MAPPING
 /* ----------------------------------------------------------------- */
 void ADFH_subfiling_fuse(const double root, int *nfork, int *status)
 {
@@ -2778,7 +2779,7 @@ void ADFH_subfiling_fuse(const double root, int *nfork, int *status)
 
 #endif
 }
-
+#endif
 /* ----------------------------------------------------------------- */
 
 void ADFH_Database_Close(const double  root,

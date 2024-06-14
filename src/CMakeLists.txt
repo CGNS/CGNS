@@ -113,6 +113,7 @@ set(HDF5_HAVE_MULTI_DATASETS 0)
 set(HDF5_HAVE_COLL_METADATA 0)
 set(HDF5_HAVE_SUBFILING_VFD 0)
 set(HDF5_HAVE_FILE_SPACE_STRATEGY 0)
+set(HDF5_HAVE_SUBFILING_FILE_MAPPING 0)
 set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 set(HAVE_STAT64_STRUCT 0)
 set(HAVE_COMPLEX_C99_EXT 0)
@@ -453,10 +454,18 @@ if (CGNS_ENABLE_HDF5)
   if (H5_HAVE_SUBFILING_VFD)
     set(HDF5_HAVE_SUBFILING_VFD 1)
     message (STATUS "Testing HDF5 Subfiling VFD - OK")
+
+    set(CMAKE_REQUIRED_LIBRARIES HDF5::HDF5)
+    include(CheckSymbolExists)
+    check_symbol_exists(H5FDsubfiling_get_file_mapping "hdf5.h" CHECK_HDF5_HAVE_SUBFILING_FILE_MAPPING)
+    if(CHECK_HDF5_HAVE_SUBFILING_FILE_MAPPING)
+      set(HDF5_HAVE_SUBFILING_FILE_MAPPING 1)
+    endif ()
   else ()
     message (STATUS "Testing HDF5 Subfiling VFD - NOT FOUND")
   endif ()
   unset(CMAKE_REQUIRED_INCLUDES)
+
 
   # Check if HDF5 library has multi-dataset read/write APIs, HDF5 >= 1.14.0
   # --------------------------------------------------------------------

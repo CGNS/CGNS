@@ -1029,7 +1029,7 @@ int cgio_get_file_type (int cgio_num, int *file_type)
 
 int cgio_subfiling_fuse(int cgio_num, int *nfork)
 {
-#if CG_BUILD_HDF5
+#if CG_BUILD_HDF5 && HDF5_HAVE_SUBFILING_FILE_MAPPING // FIXME: should not be available at compile time
     int ierr = 0;
     cgns_io *cgio;
 
