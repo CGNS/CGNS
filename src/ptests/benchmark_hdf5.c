@@ -145,7 +145,7 @@ struct timer_statinfo timing[15];
 char* appendstr( char* dest, char* src )
 {
     while (*dest) dest++;
-    while (*dest++ = *src++);
+    while ((*dest++ = *src++));
     return --dest;
 }
 
