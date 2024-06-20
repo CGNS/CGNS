@@ -1040,6 +1040,8 @@ int cgio_subfiling_fuse(int cgio_num, int *nfork)
     if (ierr > 0) return set_error(ierr);
 
     return CGIO_ERR_NONE;
+#else
+    return set_error(CGIO_ERR_BAD_CGIO);
 
 #endif
 }
