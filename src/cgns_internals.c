@@ -9767,7 +9767,7 @@ int cgi_write_particle(double parent_id, cgns_pzone *pzone)
      /* Create the ParticleZone_t nodes */
     dim_vals[0]= 1;
     if (cgi_new_node(parent_id, pzone->name, "ParticleZone_t", &pzone->id,
-        CG_SIZE_DATATYPE, 1, dim_vals, (void *)pzone->nparticles)) return CG_ERROR;
+        CG_SIZE_DATATYPE, 1, dim_vals, &pzone->nparticles)) return CG_ERROR;
 
      /* ParticleCoordinates_t */
     for (n=0; n<pzone->npcoor; n++)
@@ -14002,7 +14002,7 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
         ADDRESS4MULTIPLE(cgns_section, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"FlowSolution_t")==0)
         ADDRESS4MULTIPLE(cgns_sol, ndescr, descr, cgns_descr)
-    else if (strcmp(posit->label,"ParticleSolution_t"))
+    else if (strcmp(posit->label,"ParticleSolution_t")==0)
         ADDRESS4MULTIPLE(cgns_psol, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"DiscreteData_t")==0)
         ADDRESS4MULTIPLE(cgns_discrete, ndescr, descr, cgns_descr)
@@ -14067,7 +14067,7 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
     else if (strcmp(posit->label,"BaseIterativeData_t")==0)
         ADDRESS4MULTIPLE(cgns_biter, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"ZoneIterativeData_t")==0 ||
-             strcmp(posit->label,"ParticleIterativeData_t"))
+             strcmp(posit->label,"ParticleIterativeData_t")==0)
         ADDRESS4MULTIPLE(cgns_ziter, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"UserDefinedData_t")==0)
         ADDRESS4MULTIPLE(cgns_user_data, ndescr, descr, cgns_descr)
