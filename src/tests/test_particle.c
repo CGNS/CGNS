@@ -83,11 +83,10 @@ static void print_error(int error_code, char *error_msg)
       printf("Fatal Error: %s\n", error_msg);
       cgio_cleanup();
       exit(1);
-      break;
    }
    default: // Shouldn't be possible as -1, 0, and 1 are the only error codes at the moment
    {
-      printf("Unkown error code %d encountered. Aborting...\n", error_code);
+      printf("Unknown error code %d encountered. Aborting...\n", error_code);
       cgio_cleanup();
       exit(1);
    }
@@ -155,7 +154,7 @@ int main ()
     cg_particle_write(fnum, bnum, "Oil", 0, &pnum);  // 0 Oil particles
     cg_particle_write(fnum, bnum, "Water", 2, &pnum); // 2 Water particles
 
-    /* Write co-ordinates for the water particle */
+    /* Write coordinates for the water particle */
     double water_xc[2] = {0., 0.01};
     double water_yc[2] = {0., 0.02};
     double water_zc[2] = {0., 0.01};
@@ -168,11 +167,10 @@ int main ()
     cg_dataclass_write(CGNS_ENUMV(Dimensional));
     cg_units_write(CGNS_ENUMV(Kilogram), CGNS_ENUMV(Meter), CGNS_ENUMV(Second), CGNS_ENUMV(Kelvin), CGNS_ENUMV(Degree));
 
-    float exponents[5] = {0,1,0,0,0};
     for(int ii = 1; ii <= 3; ++ii)
     {
        cg_goto(fnum, bnum, "ParticleZone_t", 3, "ParticleCoordinates_t", 1, "DataArray_t", ii, "end");
-       cg_exponents_write(CGNS_ENUMV(RealSingle), exponents);
+       cg_exponents_write(CGNS_ENUMV(RealSingle), exp);
     }
 
     /* Write particle solution */
@@ -188,7 +186,7 @@ int main ()
 
     cg_close(fnum);
 
-    /* Reopen file and verify that the particle data matches what we wrote in */
+    /* Reopen the file and verify that the particle data matches what we wrote in */
 
     cg_open (outfile, CG_MODE_READ, &fnum);
 
@@ -219,7 +217,7 @@ int main ()
 
        if(size != particle_sizes[iparticle-1])
        {
-          printf("Expected %ld as the ParticleZone_t node size but found %ld instead\n", particle_sizes[iparticle-1], size);
+          printf("Expected %d as the ParticleZone_t node size but found %d instead\n", (int)particle_sizes[iparticle-1], (int)size);
           cgio_cleanup();
           exit(1);
        }
@@ -230,11 +228,14 @@ int main ()
        if(ncoords != 3)
           continue;
 
-       /* Since we wrote out co-ordinates for water alone, verify that they match */
+       /* Since we wrote out coordinates for water alone, verify that they match */
        for(int jj = 0; jj <= ncoords; ++jj)
        {
           cgsize_t rmin = 1, rmax = size;
-          double coord_x[size], coord_y[size], coord_z[size];
+          double* coord_x = (double*)malloc(size*sizeof(double));
+          double* coord_y = (double*)malloc(size*sizeof(double));
+          double* coord_z = (double*)malloc(size*sizeof(double));
+
           cg_particle_coord_read(fnum, bnum, iparticle, "CoordinateX", RealDouble, &rmin, &rmax, coord_x);
           cg_particle_coord_read(fnum, bnum, iparticle, "CoordinateY", RealDouble, &rmin, &rmax, coord_y);
           cg_particle_coord_read(fnum, bnum, iparticle, "CoordinateZ", RealDouble, &rmin, &rmax, coord_z);
@@ -243,11 +244,15 @@ int main ()
           {
              if(coord_x[kk] != water_xc[kk] || coord_y[kk] != water_yc[kk] || coord_z[kk] != water_zc[kk])
              {
-                printf("Invalid particle coordinate data - written value doesn't match with the read value\n");
+                printf("Invalid particle coordinate data - written value doesn't match the read value\n");
                 cgio_cleanup();
                 exit(1);
              }
           }
+
+          free(coord_x);
+          free(coord_y);
+          free(coord_z);
        }
 
        /* Read solution data */
