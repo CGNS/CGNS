@@ -112,6 +112,10 @@ jobs:
             "--${{ matrix.parallel }}-parallel --${{ matrix.fortran }}-fortran --${{ matrix.hdf5 }}-hdf5 --${{ matrix.tools }}-cgnstools"
       shell: bash
 
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      if: matrix.os == 'macos-latest'
+
 ##################################
 # TEST CGNS (CMAKE)
 ##################################
