@@ -20,7 +20,7 @@ jobs:
   build:
     strategy:
       matrix:
-        name: ["Ubuntu Latest GCC", "macOS Latest"]
+        name: ["Ubuntu Latest GCC", "macOS Latest Clang"]
         include:
           - name: "Ubuntu Latest GCC"
             artifact: "Linux.tar.xz"
@@ -29,7 +29,7 @@ jobs:
             parallel: enable
             hdf5: with
             tools: enable
-          - name: "macOS Latest"
+          - name: "macOS Latest Clang"
             artifact: "macOS.tar.xz"
             os: macos-latest
             parallel: disable
@@ -73,8 +73,9 @@ jobs:
         echo "FC=gfortran" >> $GITHUB_ENV
         echo "F77=gfortran" >> $GITHUB_ENV
         # Set CC version to latest gcc based on gfortran main version
-        gfortranversion=$( echo "__GNUC__" | gfortran -E -P - | sed 's/ //g' )
-        echo "CC=gcc-$gfortranversion" >> $GITHUB_ENV
+        #gfortranversion=$( echo "__GNUC__" | gfortran -E -P - | sed 's/ //g' )
+        #echo "CC=gcc-$gfortranversion" >> $GITHUB_ENV
+        echo "CC=gcc" >> $GITHUB_ENV
 
  # Checks-out the repository under $GITHUB_WORKSPACE so the job can access it.
     - name: Get Sources
