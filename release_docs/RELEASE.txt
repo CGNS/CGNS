@@ -1,12 +1,12 @@
-CGNS version 4.4.0
+CGNS version 4.5.0
 =================================
 
 INTRODUCTION
 ------------
 
-This document describes the difference between CGNS 4.3.0 and
-CGNS 4.4.0, and contains information on known problems in
-CGNS 4.4.0.
+This document describes the difference between CGNS 4.4.0 and
+CGNS 4.5.0, and contains information on known problems in
+CGNS 4.5.0.
 
 Links to the CGNS current released source code can be found at:
 
@@ -25,7 +25,7 @@ CONTENTS
 
 - New Features
 - Support for new platforms and languages
-- Bug Fixes since CGNS 4.3.0
+- Bug Fixes since CGNS 4.4.0
 - Known Problems
 
 New Features
@@ -46,7 +46,7 @@ New Features
     Tools:
     ------
 
-Bug Fixes since CGNS 4.2.0 release
+Bug Fixes since CGNS 4.4.0 release
 ==================================
 
     Library:
@@ -64,7 +64,7 @@ Bug Fixes since CGNS 4.2.0 release
 Known Problems
 ==============
 
-    * See https://cgnsorg.atlassian.net
+    * See https://github.com/CGNS/CGNS/issues
 
 Supported Platforms
 ===================

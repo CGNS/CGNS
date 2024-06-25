@@ -41,7 +41,7 @@ void compareValuesDouble(double val1, double val2) {
 
 void compareValuescgSize_t(cgsize_t val1, cgsize_t val2) {
   if (val1 != val2) {
-    printf("ERROR - value comparison failed %d, %d\n", val1, val2);
+    printf("ERROR - value comparison failed %zu, %zu\n", val1, val2);
     MPI_Abort(MPI_COMM_WORLD, 2);
   }
 }
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
 
   if (comm_rank == 0) {
     printf("Unstructured CGNS mesh write test with %d ranks\n", comm_size);
-    printf("nbCellSide %d\n", nbCellSide);
+    printf("nbCellSide %zu\n", nbCellSide);
     printf("nbZones %d\n", nb_zones);
   }
 
@@ -119,9 +119,9 @@ int main(int argc, char **argv) {
   cgsize_t nbCellWrite = cellOnProcEnd - cellOnProcStart;
   cgsize_t nbNodeWrite = nodeOnProcEnd - nodeOnProcStart;
 
-  printf("rank %d hosts %d cells in range [%d,%d]\n", comm_rank, nbCellWrite,
+  printf("rank %d hosts %zu cells in range [%zu,%zu]\n", comm_rank, nbCellWrite,
          cellOnProcStart, cellOnProcEnd);
-  printf("rank %d hosts %d nodes in range [%d,%d]\n", comm_rank, nbNodeWrite,
+  printf("rank %d hosts %zu nodes in range [%zu,%zu]\n", comm_rank, nbNodeWrite,
          nodeOnProcStart, nodeOnProcEnd);
 
   // create a simple cube mesh

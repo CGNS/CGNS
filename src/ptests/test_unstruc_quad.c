@@ -29,11 +29,12 @@ The BC "Left"   is on the left (x=0) edge of the mesh.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "pcgnslib.h"
 #include "mpi.h"
 
-#define cgp_doError {printf("Error at %s:%u\n",__FILE__, __LINE__); return 1;}
+#define cgp_doError {printf("Error at %s:%d\n",__FILE__, __LINE__); return 1;}
 
 int main(int argc, char* argv[]) {
   int err;
@@ -44,15 +45,18 @@ int main(int argc, char* argv[]) {
   int B;
   int Z;
   int S;
+  int BC;
   int Cx,Cy,Cz;
   int cell_dim = 3;
   int phys_dim = 3;
   cgsize_t nijk[3], min, max;
-  int k, vert_proc;
+  int k, vert_proc, i;
   double *x, *y, *z;
   int nelem, nvert;
   cgsize_t start, end, emin, emax, *elements;
   cgsize_t *el_ptr = NULL;
+  cgsize_t n_boco_elems;
+  cgsize_t start_local, end_local;
 
   err = MPI_Init(&argc,&argv);
   if(err!=MPI_SUCCESS) cgp_doError;
@@ -151,6 +155,29 @@ int main(int argc, char* argv[]) {
   if (cgp_elements_write_data(fn,B,Z,S,emin,emax,elements))
     cgp_error_exit();
 
+  n_boco_elems = end - start + 1;
+  if (cg_boco_write(fn, B, Z, "Bottom BC", CGNS_ENUMV(BCTypeUserDefined), CGNS_ENUMV(PointList), n_boco_elems, NULL, &BC))
+    cgp_error_exit();
+
+  for(i=0, k=emin; k <= emax; k++, i++) {
+    elements[i] = k;
+  }
+
+  start_local = comm_rank * 3 + 1;
+  end_local   = start_local + 2;
+  printf("%d: %d %d\n", comm_rank, (int)start_local, (int)end_local);
+  {
+    const int depth    = 4;
+    char *labels[]     = {"Zone_t", "ZoneBC_t", "BC_t", "PointList"};
+    int indices[] = {Z, 1, BC, 0};
+    if (cg_golist(fn, B, depth, labels, indices)) cgp_error_exit();
+  }
+  if (cgp_ptlist_write_data(fn, start_local, end_local, elements))
+    cgp_error_exit();
+
+  if (cg_boco_gridlocation_write(fn, B, Z, BC, CGNS_ENUMV(EdgeCenter)))
+    cgp_error_exit();
+
   /* Left BC */
   start = end + 1;
   end   = start;
@@ -185,9 +212,83 @@ int main(int argc, char* argv[]) {
   if (cgp_elements_write_data(fn,B,Z,S,emin,emax,el_ptr))
     cgp_error_exit();
 
+  n_boco_elems = 1;
+  if (cg_boco_write(fn, B, Z, "Left BC", CGNS_ENUMV(BCTypeUserDefined), CGNS_ENUMV(PointList), n_boco_elems, NULL, &BC))
+    cgp_error_exit();
+
+  if (comm_rank == 0) {
+    start_local = 1;
+    end_local   = 1;
+
+    elements[0] = start;
+    el_ptr      = elements;
+  } else {
+    start_local = 0;
+    end_local   = 0;
+
+    el_ptr = NULL;
+  }
+
+  printf("%d: %d %d\n", comm_rank, (int)start_local, (int)end_local);
+  {
+    const int depth    = 4;
+    char *labels[]     = {"Zone_t", "ZoneBC_t", "BC_t", "PointList"};
+    int indices[] = {Z, 1, BC, 0};
+    if (cg_golist(fn, B, depth, labels, indices)) cgp_error_exit();
+  }
+  if (cgp_ptlist_write_data(fn, start_local, end_local, el_ptr))
+    cgp_error_exit();
+  if (cg_boco_gridlocation_write(fn, B, Z, BC, CGNS_ENUMV(EdgeCenter)))
+    cgp_error_exit();
+
+  if (cgp_close(fn)) cgp_error_exit();
+
+  // Test file reading
+  if (cgp_open("test_unstruc_quad.cgns", CG_MODE_READ, &fn)) cgp_error_exit();
+
+  for (int i = 0; i < nelem*4; i++) elements[i] = 0;
+  start_local = comm_rank * 3 + 1;
+  end_local = start_local + 2;
+  {
+    const int depth    = 4;
+    char *labels[]     = {"Zone_t", "ZoneBC_t", "BC_t", "PointList"};
+    int indices[] = {Z, 1, 1, 0};
+    if (cg_golist(fn, B, depth, labels, indices)) cgp_error_exit();
+  }
+  if (cgp_ptlist_read_data(fn, start_local, end_local, elements)) cgp_error_exit();
+  printf("%d: %d, %d, %d\n", comm_rank, (int)elements[0], (int)elements[1], (int)elements[2]);
+
+  { // Test read values
+    bool found_point;
+    cgsize_t *point_list;
+    int global_num_quads = nelem * comm_size;
+
+    point_list = (cgsize_t *)malloc(global_num_quads*sizeof(cgsize_t));
+    for (int i = 0; i < global_num_quads; i++) {
+      point_list[i] = global_num_quads + i + 1;
+    }
+
+    for (int i = 0; i < 3; i++) {
+      found_point = false;
+      for (int j = 0; j < global_num_quads; j++) {
+        if (elements[i] == point_list[j]) {
+          found_point = true;
+          break;
+        }
+      }
+      if (!found_point) {
+        printf("Error at %s:%d\n",__FILE__, __LINE__);
+        printf("Could not find point %d in boundary list [%d,..., %d]\n", (int)elements[i], (int)point_list[0], (int)point_list[global_num_quads-1]);
+        MPI_Abort(MPI_COMM_WORLD, 1);
+      }
+    }
+    free(point_list);
+  }
+
   if (cgp_close(fn)) cgp_error_exit();
 
   err = MPI_Finalize();
   if(err!=MPI_SUCCESS) cgp_doError;
+  free(elements);
   return 0;
 }

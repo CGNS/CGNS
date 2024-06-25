@@ -7,7 +7,7 @@ include $(CGNSDIR)/make.defs
 
 CGNSLIB = $(CGNSDIR)/$(LIBCGNS)
 
-COPTS  = $(CFLAGS) -I$(CGNSDIR) $(MPIINC) @BUILDOPTS@
+COPTS  = $(CFLAGS) -I$(CGNSDIR) -I$(CGNSDIR)/tests $(MPIINC) @BUILDOPTS@
 FOPTS  = $(FFLAGS) -I$(CGNSDIR) $(MPIINC)
 LDLIBS = $(CGNSLIB) $(BUILDLIBS)
 
@@ -28,7 +28,7 @@ CALL =	pcgns_ctest$(EXE) \
 	test_poly_unstructured$(EXE) \
 	thesis_benchmark$(EXE)
 
-FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) test_mixed_par_ser$(EXE)
+FALL =	pcgns_ftest$(EXE) ftest_zone$(EXE) fexample$(EXE) benchmark_hdf5_f90$(EXE) test_mixed_par_ser$(EXE) test_unstruc_quad_f90$(EXE)
 
 ALL   = $(CALL) @FALL@
 TESTS = $(ALL)
@@ -213,6 +213,12 @@ fexample$(EXE) : fexample.F90 $(CGNSLIB)
 
 benchmark_hdf5_f90$(EXE) : benchmark_hdf5_f90.F90 $(CGNSLIB)
 	$(F77) $(FOPTS) $(FEOUT)$@ benchmark_hdf5_f90.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_unstruc_quad_f90$(EXE) : test_unstruc_quad_f90.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_unstruc_quad_f90.F90 $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

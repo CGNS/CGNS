@@ -3356,7 +3356,7 @@ int cgi_read_ptset(double parent_id, cgns_ptset *ptset)
 
      /* verify dimension vector */
     if (!(ndim==2 && dim_vals[0]>0 && dim_vals[1]>0)) {
-        cgi_error("Invalid definition of point set:  ptset->type='%s', ndim=%d, dim_vals[0]=%ld",
+        cgi_error("Invalid definition of point set:  ptset->type='%s', ndim=%d, dim_vals[0]=%" PRIdCGSIZE ,
             PointSetTypeName[ptset->type], ndim, dim_vals[0]);
         return CG_ERROR;
     }
@@ -8282,12 +8282,13 @@ int cgi_write_bcdata(double bcdata_id, cgns_bcdata *bcdata)
     return CG_OK;
 }
 
-int cgi_write_ptset(double parent_id, char_33 name, cgns_ptset *ptset,
+int cgi_write_ptset(double parent_id, char *name, cgns_ptset *ptset,
                     int ndim, void *ptset_ptr)
 {
     cgsize_t dim_vals[12];
     int num_dim;
     char_33 label;
+    int HDF5storage_type_original = HDF5storage_type;
 
     if (ptset->link) {
         return cgi_write_link(parent_id, name, ptset->link, &ptset->id);
@@ -8305,10 +8306,19 @@ int cgi_write_ptset(double parent_id, char_33 name, cgns_ptset *ptset,
     dim_vals[1]=ptset->npts;
     num_dim = 2;
 
+    // PointLists should be contiguous for parallel reading/writing
+    if (ptset->type == CGNS_ENUMV(PointList) ||
+        ptset->type == CGNS_ENUMV(PointListDonor) ||
+        ptset->type == CGNS_ENUMV(ElementList) ||
+        ptset->type == CGNS_ENUMV(CellListDonor)) {
+        HDF5storage_type = CG_CONTIGUOUS;
+    }
+
      /* Create the node */
     if (cgi_new_node(parent_id, name, label, &ptset->id,
         ptset->data_type, num_dim, dim_vals, ptset_ptr)) return CG_ERROR;
 
+    HDF5storage_type = HDF5storage_type_original;
     return CG_OK;
 }
 
@@ -9466,8 +9476,8 @@ int cgi_array_general_verify_range(
      /* both the file hyperslab and memory hyperslab must have same number of
       * points */
     if (s_numpt != m_numpt) {
-        cgi_error("Number of locations in range of memory array (%ld) do not "
-                  "match number of locations requested in range of file (%ld)",
+        cgi_error("Number of locations in range of memory array (%" PRIdCGSIZE ") do not "
+                  "match number of locations requested in range of file (%" PRIdCGSIZE ")",
                   m_numpt, s_numpt);
         return CG_ERROR;
     }
@@ -11419,6 +11429,13 @@ static int cgi_next_posit(char *label, int index, char *name)
             if (index >= 0 && index < b->nuser_data) {
                 return cgi_add_posit((void *)&b->user_data[index],
                            label, index + 1, b->user_data[index].id);
+            }
+        }
+        else if (0 == strcmp (label, "IndexArray_t")) {
+            if (b->ptset &&
+                (index == 1 || 0 == strcmp (b->ptset->name, name))) {
+                return cgi_add_posit((void *)b->ptset,
+                           label, 1, b->ptset->id);
             }
         }
         else
@@ -16015,7 +16032,7 @@ void cgi_array_print(char *routine, cgns_array *array)
     printf("\t array->name='%s'\n",array->name);
     printf("\t array->dim_vals=");
     for (n=0; n<array->data_dim; n++)
-        printf("%ld ",(long)array->dim_vals[n]);
+        printf("%" PRIdCGSIZE " ",array->dim_vals[n]);
     printf("\n");
     printf("\t array->data_type='%s'\n",DataTypeName[cgi_datatype(array->data_type)]);
     printf("\t array->id=%13.6e\n",array->id);

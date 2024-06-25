@@ -1993,9 +1993,9 @@ static void check_arrays (int parclass, int *parunits, int isref,
         if (ndim < 1 || size < 1)
             error ("invalid dimensions");
         if (length < 0 && size != 1 && size != -length)
-            error ("array size not 1 or %ld", -length);
+            error ("array size not 1 or %" PRIdCGSIZE, -length);
         if (length > 0 && size != length)
-            error ("array size not %ld", length);
+            error ("array size not %" PRIdCGSIZE, length);
         check_quantity (na, name, dataclass, punits, isref, indent+2);
     }
 }
@@ -2057,7 +2057,7 @@ static void check_user_data (int parclass, int *parunits, int indent)
                 print_indent (indent+2);
                 printf ("Point Set Type=%s\n", cg_PointSetTypeName(ptype));
                 print_indent (indent+2);
-                printf ("Number Points=%ld\n", (long)npnts);
+                printf ("Number Points=%" PRIdCGSIZE "\n", npnts);
             }
         }
         if (hasf == CG_OK) {
@@ -2622,7 +2622,7 @@ static void check_coordinates (int ng)
         np *= rmax[n];
     }
     if (NULL == (coord = (float *) malloc ((size_t)(np * sizeof(float)))))
-        fatal_error("malloc failed for %ld coordinate values\n", (long)np);
+        fatal_error("malloc failed for %" PRIdCGSIZE " coordinate values\n", np);
     if (z->maxnode < np) z->maxnode = np;
 
     if (cg_ncoords (cgnsfn, cgnsbase, cgnszone, &ncoords))
@@ -2700,10 +2700,10 @@ static void check_elements (void)
     puts ("  checking elements");
     if (verbose) {
         printf ("    Number Element Sets=%d\n", z->nsets);
-        printf ("    [0D,1D,2D,3D] Elements=[%ld,%ld,%ld,%ld]\n",
-            (long)z->nn, (long)z->ne, (long)z->ns, (long)z->nv);
+        printf ("    [0D,1D,2D,3D] Elements=[%" PRIdCGSIZE ",%" PRIdCGSIZE ",%" PRIdCGSIZE ",%" PRIdCGSIZE "]\n",
+            z->nn, z->ne, z->ns, z->nv);
         if (z->faces)
-            printf ("    Number Volume Faces=%ld\n", (long)HashSize(z->faces));
+            printf ("    Number Volume Faces=%" PRIdCGSIZE "\n", (cgsize_t)HashSize(z->faces));
     }
     fflush (stdout);
 
@@ -2733,12 +2733,12 @@ static void check_elements (void)
         if (verbose) {
             printf ("    Element Set Type=%s\n",
                 cg_ElementTypeName(es->type));
-            printf ("    Element Range=[%ld,%ld]\n", (long)es->is, (long)es->ie);
+            printf ("    Element Range=[%" PRIdCGSIZE ",%" PRIdCGSIZE "]\n", es->is, es->ie);
             if (es->rind[0] || es->rind[1])
                 printf ("    Rind Elements=[%d,%d]\n",
                     es->rind[0], es->rind[1]);
-            printf ("    [0D,1D,2D,3D] Elements=[%ld,%ld,%ld,%ld]\n",
-                (long)es->nn, (long)es->ne, (long)es->ns, (long)es->nv);
+            printf ("    [0D,1D,2D,3D] Elements=[%" PRIdCGSIZE ",%" PRIdCGSIZE ",%" PRIdCGSIZE ",%" PRIdCGSIZE "]\n",
+                es->nn, es->ne, es->ns, es->nv);
         }
         if (ns && z->sets[ns].is != is)
             warning (1, "element numbers are not consecutative with \"%s\"",
@@ -3212,7 +3212,7 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
             print_indent (indent);
             printf ("Point Set Type=%s\n", cg_PointSetTypeName(ptype));
             print_indent (indent);
-            printf ("Number Points=%ld\n", (long)npnts);
+            printf ("Number Points=%" PRIdCGSIZE "\n", npnts);
         }
         if (verbose > 1) {
             if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
@@ -3363,7 +3363,7 @@ static void check_BC (int nb, int parclass, int *parunits)
     if (verbose) {
         printf ("    BC Type=%s\n", cg_BCTypeName(bctype));
         printf ("    Point Set Type=%s\n", cg_PointSetTypeName(ptype));
-        printf ("    Number Points=%ld\n", (long)npts);
+        printf ("    Number Points=%" PRIdCGSIZE "\n", npts);
     }
     fflush (stdout);
 
@@ -3421,7 +3421,7 @@ static void check_BC (int nb, int parclass, int *parunits)
         }
         if (nrmlflag) {
             puts ("    Normals Defined=yes");
-            printf ("    Number Normals=%ld\n", (long)(nrmlflag / PhyDim));
+            printf ("    Number Normals=%" PRIdCGSIZE "\n", (cgsize_t)(nrmlflag / PhyDim));
         }
         else
             puts ("    Normals Defined=no");
@@ -3454,9 +3454,9 @@ static void check_BC (int nb, int parclass, int *parunits)
 
     if (verbose && (ptype == CGNS_ENUMV(PointRange) ||
                     ptype == CGNS_ENUMV(ElementRange))) {
-        printf ("    Range=[%ld:%ld", (long)pts[0], (long)pts[z->idim]);
+        printf ("    Range=[%" PRIdCGSIZE ":%" PRIdCGSIZE, pts[0], pts[z->idim]);
         for (n = 1; n < z->idim; n++)
-            printf (",%ld:%ld", (long)pts[n], (long)pts[n+z->idim]);
+            printf (",%" PRIdCGSIZE ":%" PRIdCGSIZE, pts[n], pts[n+z->idim]);
         puts ("]");
     }
 
@@ -3702,9 +3702,9 @@ static void check_1to1 (int nzc, int nc)
         dname, range, drange, trans)) error_exit("cg_1to1_read");
     printf ("  checking 1to1 connectivity \"%s\"\n", name);
     if (verbose) {
-        printf ("    Range=[%ld:%ld", (long)range[0], (long)range[z->idim]);
+        printf ("    Range=[%" PRIdCGSIZE ":%" PRIdCGSIZE, range[0], range[z->idim]);
         for (n = 1; n < z->idim; n++)
-            printf (",%ld:%ld", (long)range[n], (long)range[n+z->idim]);
+            printf (",%" PRIdCGSIZE ":%" PRIdCGSIZE, range[n], range[n+z->idim]);
         puts ("]");
     }
 
@@ -3733,9 +3733,9 @@ static void check_1to1 (int nzc, int nc)
     }
     else {
         if (verbose) {
-            printf ("    Donor Range=[%ld:%ld", (long)drange[0], (long)drange[dz->idim]);
+            printf ("    Donor Range=[%" PRIdCGSIZE ":%" PRIdCGSIZE, drange[0], drange[dz->idim]);
             for (n = 1; n < dz->idim; n++)
-                printf (",%ld:%ld", (long)drange[n], (long)drange[n+dz->idim]);
+                printf (",%" PRIdCGSIZE ":%" PRIdCGSIZE, drange[n], drange[n+dz->idim]);
             puts ("]");
         }
         puts ("    checking donor interface");
@@ -3930,12 +3930,12 @@ static void check_conn (int nzc, int nc)
             cg_GridLocationName(location));
         printf ("    Point Set Type=%s\n",
             cg_PointSetTypeName(ptype));
-        printf ("    Number Points=%ld\n", (long)npts);
+        printf ("    Number Points=%" PRIdCGSIZE "\n", npts);
         printf ("    Donor Zone=\"%s\"\n", dname);
         printf ("    Donor Zone Type=%s\n", cg_ZoneTypeName(dztype));
         printf ("    Donor Point Set Type=%s\n",
             cg_PointSetTypeName(dptype));
-        printf ("    Donor Number Points=%ld\n", (long)dnpts);
+        printf ("    Donor Number Points=%" PRIdCGSIZE "\n", dnpts);
     }
     fflush (stdout);
 
@@ -4991,7 +4991,7 @@ static void check_subreg (int ns)
              ptype == CGNS_ENUMV(PointList)) {
         if (verbose) {
             printf ("    Point Set Type=%s\n", cg_PointSetTypeName(ptype));
-            printf ("    Number Points=%ld\n", (long)npnts);
+            printf ("    Number Points=%" PRIdCGSIZE "\n", npnts);
         }
         if (bclen || gclen)
             error("both PointSetType and BCRegionName or GridConnectivityName specified");
@@ -5015,9 +5015,9 @@ static void check_subreg (int ns)
             if (cg_subreg_ptset_read(cgnsfn, cgnsbase, cgnszone, ns, pnts))
                 error_exit("cg_subreg_ptset_read");
             if (verbose && ptype == CGNS_ENUMV(PointRange)) {
-                printf ("    Range=[%ld:%ld", (long)pnts[0], (long)pnts[z->idim]);
+                printf ("    Range=[%" PRIdCGSIZE ":%" PRIdCGSIZE, pnts[0], pnts[z->idim]);
                 for (n = 1; n < z->idim; n++)
-                    printf (",%ld:%ld", (long)pnts[n], (long)pnts[n+z->idim]);
+                    printf (",%" PRIdCGSIZE ":%" PRIdCGSIZE, pnts[n], pnts[n+z->idim]);
                 puts ("]");
             }
             datasize = check_interface (z, ptype, location, npnts, pnts, 0);
@@ -5094,7 +5094,7 @@ static void check_subreg (int ns)
     /* check data arrays */
 
     if (datasize) {
-        if (verbose) printf("    Data Size=%ld\n", (long)datasize);
+        if (verbose) printf("    Data Size=%" PRIdCGSIZE "\n", datasize);
         if (cg_narrays (&nd)) error_exit("cg_narrays");
         if (nd) check_arrays (dataclass, punits, 0, datasize, 4);
     }
@@ -5276,7 +5276,7 @@ static void check_zone (void)
                 z->idim = 0;
             }
             if (z->dims[1][n] != z->dims[0][n] - 1) {
-                error ("number of cells in %c-direction is %ld instead of %ld",
+                error ("number of cells in %c-direction is %" PRIdCGSIZE " instead of %" PRIdCGSIZE,
                     indexname[n], z->dims[1][n], z->dims[0][n] - 1);
                 z->dims[1][n] = z->dims[0][n] - 1;
             }
@@ -5322,13 +5322,13 @@ static void check_zone (void)
     z->punits = read_units (z->units);
     if (verbose) {
         printf ("  Zone Type=%s\n", cg_ZoneTypeName(z->type));
-        printf ("  Vertex Size=[%ld", (long)z->dims[0][0]);
+        printf ("  Vertex Size=[%" PRIdCGSIZE, z->dims[0][0]);
         for (n = 1; n < z->idim; n++)
-            printf (",%ld", (long)z->dims[0][n]);
+            printf (",%" PRIdCGSIZE, z->dims[0][n]);
         puts ("]");
-        printf ("  Cell Size=[%ld", (long)z->dims[1][0]);
+        printf ("  Cell Size=[%" PRIdCGSIZE, z->dims[1][0]);
         for (n = 1; n < z->idim; n++)
-            printf (",%ld", (long)z->dims[1][n]);
+            printf (",%" PRIdCGSIZE, z->dims[1][n]);
         puts ("]");
         if (z->dataclass >= 0) print_dataclass (z->dataclass, 2);
         if (z->punits) print_units (z->punits, 2);

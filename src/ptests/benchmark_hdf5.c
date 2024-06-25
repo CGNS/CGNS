@@ -49,6 +49,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include "pcgnslib.h"
+#include "utils.h"
 #include "mpi.h"
 
 #if SIZE_MAX == UCHAR_MAX
@@ -72,10 +73,11 @@ int comm_size;
 int comm_rank;
 MPI_Info info;
 
-
 int piomode = CGP_COLLECTIVE; /* DEFAULT */ 
 /* cgsize_t Nelem = 33554432; */
 cgsize_t Nelem = 65536; /* DEFAULT */
+int enable_md = false; /* enable multidataset APIs */
+int checkRead = false; /* check read after read*/
 cgsize_t NodePerElem = 6;
 
 cgsize_t Nnodes;
@@ -108,7 +110,6 @@ cgsize_t* Array_i;
 cgsize_t start, end, emin, emax;
 cgsize_t* elements;
 char name[33];
-int  debug;
 double t0, t1, t2;
 
 /*
@@ -133,22 +134,34 @@ double xtiming[15], timing[15], timingMin[15], timingMax[15];
 
 int read_inputs(int* argc, char*** argv) {
   int k;
+  int buffer[3];
 
   if(comm_rank==0) {
+    buffer[0] = piomode;
+    buffer[1] = enable_md;
+    buffer[2] = checkRead;
     for(k=1;k<*argc;k++) {
       if(strcmp((*argv)[k],"-nelem")==0) {
         k++;
         sscanf((*argv)[k],"%zu",&Nelem);
       }
       if(strcmp((*argv)[k],"-ind")==0) {
-        piomode = CGP_INDEPENDENT; 
+        buffer[0] = CGP_INDEPENDENT;
       }
-
+      if(strcmp((*argv)[k],"-md")==0) {
+        buffer[1] = true;
+      }
+      if(strcmp((*argv)[k],"-R")==0) {
+        buffer[2]= true;
+      }
     }
   }
   MPI_Bcast(&Nelem, 1, MPI_SIZE_T, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&piomode, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(buffer, 3, MPI_INT, 0, MPI_COMM_WORLD);
 
+  piomode = buffer[0];
+  enable_md = buffer[1];
+  checkRead = buffer[2];
   return 0;
 }
 
@@ -160,20 +173,19 @@ int initialize(int* argc, char** argv[]) {
   MPI_Info_set(info, "striping_unit", "8388608");
   /* or whatever your GPFS block size actually is*/
 
-  if(*argc > 2) 
+  if(*argc > 1)
     read_inputs(argc,argv);
-  
-  return 0;
-}
 
-int c_double_eq(double a, double b) {
-
-  double eps = 1.e-8;
-
-  if(fabs(a-b) < eps) {
-    return true;
+  if(comm_rank==0) {
+    printf("--------------------------------\nSummary\n--------------------------------\n");
+    printf("I/O mode: %s\n", piomode ? "CGP_COLLECTIVE" : "CGP_INDEPENDENT");
+    printf("Enable multidataset APIs: %s\n", enable_md ? "True" : "False");
+    printf("Check read after read: %s\n", checkRead ? "True" : "False");
+    printf("Number of elements: %zu\n", Nelem );
+    printf("--------------------------------\n");
   }
-  return false;
+
+  return 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -187,9 +199,10 @@ int main(int argc, char* argv[]) {
   size_t Mb_coor, Mb_elem, Mb_field, Mb_array;
 
   const char* PIOMODE[] = {"IND", "COLL"};
-
-  /* parameters */
-  debug = false;
+  void **buf;
+  int Cvec[3];
+  int Fvec[3];
+  int Avec[2];
 
   t0 = MPI_Wtime(); /* Timer */
 
@@ -287,29 +300,39 @@ int main(int argc, char* argv[]) {
   }
 
   t1 = MPI_Wtime();
-#if HDF5_HAVE_MULTI_DATASETS
-  int Cvec[3];
-  Cvec[0] = Cx;
-  Cvec[1] = Cy;
-  Cvec[2] = Cz;
-  if(cgp_coord_multi_write_data(fn, B, Z, Cvec, &min,&max, Coor_x, Coor_y, Coor_z)!= CG_OK) {
-    printf("*FAILED* cgp_coords_write_data \n");
-    cgp_error_exit();
-  }
-#else
-  if((cgp_coord_write_data(fn,B,Z,Cx,&min,&max,Coor_x)) != CG_OK) {
-    printf("*FAILED* cgp_coord_write_data (Coor_x) \n");
-    cgp_error_exit();
-  }
-  if((cgp_coord_write_data(fn,B,Z,Cy,&min,&max,Coor_y)) != CG_OK) {
-    printf("*FAILED* cgp_coord_write_data (Coor_y) \n");
-    cgp_error_exit();
-  }
-  if((cgp_coord_write_data(fn,B,Z,Cz,&min,&max,Coor_z)) != CG_OK) {
-    printf("*FAILED* cgp_coord_write_data (Coor_z) \n");
-    cgp_error_exit();
-  }
-#endif
+  if(enable_md) {
+    Cvec[0] = Cx;
+    Cvec[1] = Cy;
+    Cvec[2] = Cz;
+
+    buf = (void *)malloc(3*sizeof(void *));
+
+    buf[0] =&Coor_x[0];
+    buf[1] =&Coor_y[0];
+    buf[2] =&Coor_z[0];
+
+    if(cgp_coord_multi_write_data(fn, B, Z, Cvec, &min,&max,3,(const void **)buf)!= CG_OK) {
+      printf("*FAILED* cgp_coords_write_data \n");
+      cgp_error_exit();
+    }
+
+    free(buf);
+  } else
+    {
+      if((cgp_coord_write_data(fn,B,Z,Cx,&min,&max,Coor_x)) != CG_OK) {
+        printf("*FAILED* cgp_coord_write_data (Coor_x) \n");
+        cgp_error_exit();
+      }
+      if((cgp_coord_write_data(fn,B,Z,Cy,&min,&max,Coor_y)) != CG_OK) {
+        printf("*FAILED* cgp_coord_write_data (Coor_y) \n");
+        cgp_error_exit();
+      }
+
+      if((cgp_coord_write_data(fn,B,Z,Cz,&min,&max,Coor_z)) != CG_OK) {
+        printf("*FAILED* cgp_coord_write_data (Coor_z) \n");
+        cgp_error_exit();
+      }
+    }
   t2 = MPI_Wtime();
   xtiming[1] = t2-t1;
 
@@ -353,7 +376,6 @@ int main(int argc, char* argv[]) {
   xtiming[2] = t2-t1;
 
   free(elements);
-
 
   /* ====================================== */
   /* == (C) WRITE THE FIELD DATA         == */
@@ -402,31 +424,36 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
 
+  if(enable_md) {
+    Fvec[0] = Fx;
+    Fvec[1] = Fy;
+    Fvec[2] = Fz;
 
-#if HDF5_HAVE_MULTI_DATASETS
-  int Fvec[3];
-  Fvec[0] = Fx;
-  Fvec[1] = Fy;
-  Fvec[2] = Fz;
+    buf = (void *)malloc(3*sizeof(void *));
+    buf[0] = &Data_Fx[0];
+    buf[1] = &Data_Fy[0];
+    buf[2] = &Data_Fz[0];
 
-  if(cgp_field_multi_write_data(fn,B,Z,S,Fvec,&min,&max,3,Data_Fx,Data_Fy,Data_Fz) != CG_OK) {
-    printf("*FAILED* cgp_field_multi_write_data \n");
-    cgp_error_exit();
-  }
-#else
-  if(cgp_field_write_data(fn,B,Z,S,Fx,&min,&max,Data_Fx) != CG_OK) {
-    printf("*FAILED* cgp_field_write_data (Data_Fx) \n");
-    cgp_error_exit();
-  }
-  if(cgp_field_write_data(fn,B,Z,S,Fy,&min,&max,Data_Fy) != CG_OK) {
-    printf("*FAILED* cgp_field_write_data (Data_Fy)\n");
-    cgp_error_exit();
-  }
-  if(cgp_field_write_data(fn,B,Z,S,Fz,&min,&max,Data_Fz) != CG_OK) {
-    printf("*FAILED* cgp_field_write_data (Data_Fz)\n");
-    cgp_error_exit();
-  }
-#endif
+    if(cgp_field_multi_write_data(fn,B,Z,S,Fvec,&min,&max,3,(const void **)buf) != CG_OK) {
+      printf("*FAILED* cgp_field_multi_write_data \n");
+      cgp_error_exit();
+    }
+    free(buf);
+  } else
+    {
+      if(cgp_field_write_data(fn,B,Z,S,Fx,&min,&max,Data_Fx) != CG_OK) {
+        printf("*FAILED* cgp_field_write_data (Data_Fx) \n");
+        cgp_error_exit();
+      }
+      if(cgp_field_write_data(fn,B,Z,S,Fy,&min,&max,Data_Fy) != CG_OK) {
+        printf("*FAILED* cgp_field_write_data (Data_Fy)\n");
+        cgp_error_exit();
+      }
+      if(cgp_field_write_data(fn,B,Z,S,Fz,&min,&max,Data_Fz) != CG_OK) {
+        printf("*FAILED* cgp_field_write_data (Data_Fz)\n");
+        cgp_error_exit();
+      }
+    }
   t2 = MPI_Wtime();
   xtiming[3] = t2-t1;
 
@@ -492,24 +519,30 @@ int main(int argc, char* argv[]) {
 #endif
 
   t1 = MPI_Wtime();
-#if HDF5_HAVE_MULTI_DATASETS
-  int Avec[2];
-  Avec[0] = Ai;
-  Avec[1] = Ar;
-  if(cgp_array_multi_write_data(fn, Avec,&min,&max, 2, Array_i, Array_r) != CG_OK) {
-    printf("*FAILED* cgp_field_array_data (Array_Ai)\n");
-    cgp_error_exit();
-  }
-#else
-  if(cgp_array_write_data(Ai,&min,&max,Array_i) != CG_OK) {
-    printf("*FAILED* cgp_array_write_data (Array_Ai)\n");
-    cgp_error_exit();
-  }
-  if(cgp_array_write_data(Ar,&min,&max,Array_r) != CG_OK) {
-    printf("*FAILED* cgp_array_write_data (Array_Ar)\n");
-    cgp_error_exit();
-  }
-#endif
+  if(enable_md) {
+    Avec[0] = Ai;
+    Avec[1] = Ar;
+
+    buf = (void *)malloc(2*sizeof(void *));
+    buf[0] = &Array_i[0];
+    buf[1] = &Array_r[0];
+
+    if(cgp_array_multi_write_data(fn, Avec,&min,&max, 2, (const void **)buf) != CG_OK) {
+      printf("*FAILED* cgp_field_array_data (Array_Ai)\n");
+      cgp_error_exit();
+    }
+    free(buf);
+  } else
+    {
+      if(cgp_array_write_data(Ai,&min,&max,Array_i) != CG_OK) {
+        printf("*FAILED* cgp_array_write_data (Array_Ai)\n");
+        cgp_error_exit();
+      }
+      if(cgp_array_write_data(Ar,&min,&max,Array_r) != CG_OK) {
+        printf("*FAILED* cgp_array_write_data (Array_Ar)\n");
+        cgp_error_exit();
+      }
+    }
   t2 = MPI_Wtime();
   xtiming[4] = t2-t1;
 
@@ -607,37 +640,45 @@ int main(int argc, char* argv[]) {
   max = count*(comm_rank+1);
 
   t1 = MPI_Wtime();
-#if HDF5_HAVE_MULTI_DATASETS
-  Cvec[0] = Cx;
-  Cvec[1] = Cy;
-  Cvec[2] = Cz;
-  if (cgp_coord_multi_read_data(fn, B, Z, Cvec, &min,&max, Coor_x, Coor_y, Coor_z)!= CG_OK) {
-    printf("*FAILED* cgp_coords_mulit_read_data \n");
-    cgp_error_exit();
-  }
-#else
-  if (cgp_coord_read_data(fn,B,Z,Cx,&min,&max,Coor_x) != CG_OK) {
-    printf("*FAILED* cgp_coord_read_data ( Reading Coor_x) \n");
-    cgp_error_exit();
-  }
-  if (cgp_coord_read_data(fn,B,Z,Cy,&min,&max,Coor_y) != CG_OK) {
-    printf("*FAILED* cgp_coord_read_data (Reading Coor_y) \n");
-    cgp_error_exit();
-  }
-  if (cgp_coord_read_data(fn,B,Z,Cz,&min,&max,Coor_z) != CG_OK) {
-    printf("*FAILED* cgp_coord_read_data (Reading Coor_z) \n");
-    cgp_error_exit();
-  }
-#endif
+  if(enable_md) {
+    Cvec[0] = Cx;
+    Cvec[1] = Cy;
+    Cvec[2] = Cz;
+
+    buf = (void *)malloc(3*sizeof(void *));
+    buf[0] = &Coor_x[0];
+    buf[1] = &Coor_y[0];
+    buf[2] = &Coor_z[0];
+
+    if (cgp_coord_multi_read_data(fn, B, Z, Cvec, &min,&max, 3, buf)!= CG_OK) {
+      printf("*FAILED* cgp_coords_mulit_read_data \n");
+      cgp_error_exit();
+    }
+    free(buf);
+  } else
+    {
+      if (cgp_coord_read_data(fn,B,Z,Cx,&min,&max,Coor_x) != CG_OK) {
+        printf("*FAILED* cgp_coord_read_data ( Reading Coor_x) \n");
+        cgp_error_exit();
+      }
+      if (cgp_coord_read_data(fn,B,Z,Cy,&min,&max,Coor_y) != CG_OK) {
+        printf("*FAILED* cgp_coord_read_data (Reading Coor_y) \n");
+        cgp_error_exit();
+      }
+      if (cgp_coord_read_data(fn,B,Z,Cz,&min,&max,Coor_z) != CG_OK) {
+        printf("*FAILED* cgp_coord_read_data (Reading Coor_z) \n");
+        cgp_error_exit();
+      }
+    }
   t2 = MPI_Wtime();
   xtiming[5] = t2-t1;
 
   /* Check if read the data back correctly */
-  if(debug) {
+  if(checkRead) {
     for ( k = 0; k < count; k++) {
-      if( !c_double_eq(Coor_x[k], comm_rank*count + k + 1.1) ||
-	  !c_double_eq(Coor_y[k], Coor_x[k] + 0.1) ||
-	  !c_double_eq(Coor_z[k], Coor_y[k] + 0.1) ) {
+      if( !compareValuesDouble(Coor_x[k], comm_rank*count + k + 1.1) ||
+          !compareValuesDouble(Coor_y[k], Coor_x[k] + 0.1) ||
+          !compareValuesDouble(Coor_z[k], Coor_y[k] + 0.1) ) {
 	   printf("*FAILED* cgp_coord_read_data values are incorrect \n");
 	   cgp_error_exit();
       }
@@ -669,7 +710,7 @@ int main(int argc, char* argv[]) {
   t2 = MPI_Wtime();
   xtiming[6] = t2-t1;
 
-  if(debug) {
+  if(checkRead) {
     for ( k = 0; k < count; k++) {
       if(elements[k] != comm_rank*count*NodePerElem + k + 1) {
 	printf("*FAILED* cgp_elements_read_data values are incorrect\n");
@@ -701,39 +742,46 @@ int main(int argc, char* argv[]) {
 
   t1 = MPI_Wtime();
 
-#if HDF5_HAVE_MULTI_DATASETS
+  if(enable_md) {
 
-  Fvec[0] = Fx;
-  Fvec[1] = Fy;
-  Fvec[2] = Fz;
+    Fvec[0] = Fx;
+    Fvec[1] = Fy;
+    Fvec[2] = Fz;
 
-  if(cgp_field_multi_read_data(fn,B,Z,S,Fvec,&min,&max,3,Data_Fx,Data_Fy,Data_Fz) != CG_OK) {
-    printf("*FAILED* cgp_field_multi_read_data \n");
-    cgp_error_exit();
-  }
-#else
-  if (cgp_field_read_data(fn,B,Z,S,Fx,&min,&max,Data_Fx) != CG_OK) {
-    printf("*FAILED* cgp_field_read_data (Data_Fx) \n");
-    cgp_error_exit();
-  }
-  if (cgp_field_read_data(fn,B,Z,S,Fy,&min,&max,Data_Fy) != CG_OK) {
-    printf("*FAILED* cgp_field_read_data (Data_Fy) \n");
-    cgp_error_exit();
-  }
-  if (cgp_field_read_data(fn,B,Z,S,Fz,&min,&max,Data_Fz) != CG_OK) {
-    printf("*FAILED* cgp_field_read_data (Data_Fz) \n");
-    cgp_error_exit();
-  }
-#endif
+    buf = (void *)malloc(3*sizeof(void *));
+    buf[0] = &Data_Fx[0];
+    buf[1] = &Data_Fy[0];
+    buf[2] = &Data_Fz[0];
+
+    if(cgp_field_multi_read_data(fn,B,Z,S,Fvec,&min,&max,3,buf) != CG_OK) {
+      printf("*FAILED* cgp_field_multi_read_data \n");
+      cgp_error_exit();
+    }
+    free(buf);
+  } else
+    {
+      if (cgp_field_read_data(fn,B,Z,S,Fx,&min,&max,Data_Fx) != CG_OK) {
+        printf("*FAILED* cgp_field_read_data (Data_Fx) \n");
+        cgp_error_exit();
+      }
+      if (cgp_field_read_data(fn,B,Z,S,Fy,&min,&max,Data_Fy) != CG_OK) {
+        printf("*FAILED* cgp_field_read_data (Data_Fy) \n");
+        cgp_error_exit();
+      }
+      if (cgp_field_read_data(fn,B,Z,S,Fz,&min,&max,Data_Fz) != CG_OK) {
+        printf("*FAILED* cgp_field_read_data (Data_Fz) \n");
+        cgp_error_exit();
+      }
+    }
   t2 = MPI_Wtime();
   xtiming[7] = t2-t1;
 
   /* Check if read the data back correctly */
-  if(debug) {
+  if(checkRead) {
     for ( k = 0; k < count; k++) {
-      if(!c_double_eq(Data_Fx[k], comm_rank*count + k + 1.01) ||
-	 !c_double_eq(Data_Fy[k], comm_rank*count + k + 1.02) ||
-	 !c_double_eq(Data_Fz[k], comm_rank*count + k + 1.03) ) {
+      if(!compareValuesDouble(Data_Fx[k], comm_rank*count + k + 1.01) ||
+         !compareValuesDouble(Data_Fy[k], comm_rank*count + k + 1.02) ||
+         !compareValuesDouble(Data_Fz[k], comm_rank*count + k + 1.03) ) {
 	printf("*FAILED* cgp_field_read_data values are incorrect \n");
 	cgp_error_exit();
       }
@@ -768,32 +816,38 @@ int main(int argc, char* argv[]) {
   }
 
   t1 = MPI_Wtime();
-#if HDF5_HAVE_MULTI_DATASETS
+  if(enable_md) {
 
-  Avec[0] = Ar;
-  Avec[1] = Ai;
+    Avec[0] = Ar;
+    Avec[1] = Ai;
 
-  if( cgp_array_multi_read_data(fn, Avec, &min, &max, 2, Array_r, Array_i) != CG_OK) {
-    printf("*FAILED* cgp_array_multi_read_data  \n");
-    cgp_error_exit();
-  }
-#else
-  if( cgp_array_read_data(Ar, &min, &max, Array_r) != CG_OK) {
-    printf("*FAILED* cgp_array_read_data (Array_r) \n");
-    cgp_error_exit();
-  }
-  if( cgp_array_read_data(Ai, &min, &max, Array_i) != CG_OK) {
-    printf("*FAILED* cgp_array_read_data (Array_i) \n");
-    cgp_error_exit();
-  }
-#endif
+    buf = (void *)malloc(3*sizeof(void *));
+    buf[0] = &Array_r[0];
+    buf[1] = &Array_i[0];
+
+    if( cgp_array_multi_read_data(fn, Avec, &min, &max, 2, buf) != CG_OK) {
+      printf("*FAILED* cgp_array_multi_read_data  \n");
+      cgp_error_exit();
+    }
+    free(buf);
+  } else
+    {
+      if( cgp_array_read_data(Ar, &min, &max, Array_r) != CG_OK) {
+        printf("*FAILED* cgp_array_read_data (Array_r) \n");
+        cgp_error_exit();
+      }
+      if( cgp_array_read_data(Ai, &min, &max, Array_i) != CG_OK) {
+        printf("*FAILED* cgp_array_read_data (Array_i) \n");
+        cgp_error_exit();
+      }
+    }
   t2 = MPI_Wtime();
   xtiming[8] = t2-t1;
 
   /* Check if read the data back correctly */
-  if(debug) {
+  if(checkRead) {
     for ( k = 0; k < count; k++) {
-      if(!c_double_eq(Array_r[k], comm_rank*count + k + 1.001) ||
+      if(!compareValuesDouble(Array_r[k], comm_rank*count + k + 1.001) ||
 	 Array_i[k] != comm_rank*count + k +1) {
 	  printf("*FAILED* cgp_array_read_data values are incorrect \n");
 	  cgp_error_exit();
