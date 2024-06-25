@@ -35,10 +35,10 @@ environment:
   global:
     1_8: &1_8 1.8.23
     1_10: &1_10 1.10.10
-    1_12: &1_12 1.12.3
+    1_12: &1_14 1.14.3
     HDF5_1_8_VER: *1_8   
     HDF5_1_10_VER: *1_10
-    HDF5_1_12_VER: *1_12
+    HDF5_1_14_VER: *1_14
   matrix:
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
     HDF5_VER: *1_8
@@ -50,10 +50,10 @@ environment:
     HDF5_VER: *1_10
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
-    HDF5_VER: *1_12
+    HDF5_VER: *1_14
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON
-    HDF5_VER: *1_12
+    HDF5_VER: *1_14
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
 
 for:
@@ -119,13 +119,13 @@ install:
   - msiexec /i HDF5-%HDF5_1_10_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
-  - mkdir 1.12
-  - cd 1.12
-  - set HDF5_1_12=%HDF5_1_12_VER%
-  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.3/bin/windows/hdf5-%HDF5_1_12_VER%-Std-win10_64-%SHORTGEN%.zip
-  - ps: Expand-Archive hdf5-$($env:HDF5_1_12_VER)-Std-win10_64-$($env:SHORTGEN).zip -DestinationPath .
+  - mkdir 1.14
+  - cd 1.14
+  - set HDF5_1_14=%HDF5_1_14_VER%
+  - curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/bin/windows/hdf5-%HDF5_1_14_VER%-Std-win10_64-%SHORTGEN%.zip
+  - ps: Expand-Archive hdf5-$($env:HDF5_1_14_VER)-Std-win10_64-$($env:SHORTGEN).zip -DestinationPath .
   - cd hdf
-  - msiexec /i HDF5-%HDF5_1_12_VER%-win64.msi /quiet /qn /norestart /log install.log
+  - msiexec /i HDF5-%HDF5_1_14_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
 
