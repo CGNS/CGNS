@@ -12,12 +12,12 @@ on:
     branches: [ develop, master ]
 
 env:
-  1_8: &1_8 1.8.23
-  1_10: &1_10 1.10.10
-  1_14: &1_14 1.14.3
-  HDF5_1_8_VER: *1_8   
-  HDF5_1_10_VER: *1_10
-  HDF5_1_14_VER: *1_14
+#  1_8: &1_8 1.8.23
+#  1_10: &1_10 1.10.10
+#  1_14: &1_14 1.14.3
+#  HDF5_1_8_VER: *1_8   
+#  HDF5_1_10_VER: *1_10
+#  HDF5_1_14_VER: *1_14
   WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/e83a8e64-04fc-45df-85c6-c2208d03bdb5/w_BaseKit_p_2024.2.0.635_offline.exe
   WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0d500705-397e-41b3-8b2b-2a3da1753fc2/w_HPCKit_p_2024.2.0.633_offline.exe
   LINUX_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/9a98af19-1c68-46ce-9fdd-e249240c7c42/l_BaseKit_p_2024.2.0.634_offline.sh
@@ -64,17 +64,17 @@ jobs:
     - name: install fortran
       if: steps.cache-install.outputs.cache-hit != 'true'
       run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_FORTRAN_COMPONENTS
-    - name: install HDF5
-      run: |
-        mkdir 1.14
-        cd 1.14
-        set HDF5_1_14=%HDF5_1_14_VER%
-        curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/bin/windows/hdf5-%HDF5_1_14_VER%-Std-win10_64-%SHORTGEN%.zip
-        ps: Expand-Archive hdf5-$($env:HDF5_1_14_VER)-Std-win10_64-$($env:SHORTGEN).zip -DestinationPath .
-        cd hdf
-        msiexec /i HDF5-%HDF5_1_14_VER%-win64.msi /quiet /qn /norestart /log install.log
-        type install.log
-        cd ..\..
+#    - name: install HDF5
+#      run: |
+#        mkdir 1.14
+#        cd 1.14
+#        set HDF5_1_14=%HDF5_1_14_VER%
+#        curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/bin/windows/hdf5-%HDF5_1_14_VER%-Std-win10_64-%SHORTGEN%.zip
+#        ps: Expand-Archive hdf5-$($env:HDF5_1_14_VER)-Std-win10_64-$($env:SHORTGEN).zip -DestinationPath .
+#        cd hdf
+#        msiexec /i HDF5-%HDF5_1_14_VER%-win64.msi /quiet /qn /norestart /log install.log
+#        type install.log
+#        cd ..\..
     - name: build CGNS
       run: |
         mkdir c:\projects\CGNS_BUILD
