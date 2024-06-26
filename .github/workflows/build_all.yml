@@ -78,8 +78,8 @@ jobs:
         cd ..\..
     - name: build CGNS
       run: |
-        mkdir 'C:\projects\CGNS_BUILD'
-        cd 'C:\projects\CGNS_BUILD'
+        mkdir C:\projects\CGNS_BUILD
+        cd C:\projects\CGNS_BUILD
         #cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
         #cmd: where icl
         #cmd: where icx
