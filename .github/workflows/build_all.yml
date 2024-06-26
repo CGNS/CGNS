@@ -54,12 +54,12 @@ jobs:
         key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/scripts/cache_exclude_windows.sh') }}
     - name: install
       if: steps.cache-install.outputs.cache-hit != 'true'
-      run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS
+      run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS,$WINDOWS_FORTRAN_COMPONENTS
     - name: build
       run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
-    - name: install fortran
-      if: steps.cache-install.outputs.cache-hit != 'true'
-      run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_FORTRAN_COMPONENTS
+#    - name: install fortran
+#      if: steps.cache-install.outputs.cache-hit != 'true'
+#      run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_FORTRAN_COMPONENTS
     - name: build fortran
       run: scripts/build_windows.bat fortran $VS_VER $SAMPLES_TAG
     - name: exclude unused files from cache
@@ -85,12 +85,12 @@ jobs:
 
     - name: install
       if: steps.cache-install.outputs.cache-hit != 'true'
-      run: scripts/install_linux.sh $LINUX_HPCKIT_URL $LINUX_CPP_COMPONENTS_WEB
+      run: scripts/install_linux.sh $LINUX_HPCKIT_URL $LINUX_CPP_COMPONENTS_WEB,$LINUX_FORTRAN_COMPONENTS_WEB
     - name: build
       run: scripts/build_linux.sh c++ $SAMPLES_TAG
-    - name: install fortran
-      if: steps.cache-install.outputs.cache-hit != 'true'
-      run: scripts/install_linux.sh $LINUX_HPCKIT_URL $LINUX_FORTRAN_COMPONENTS_WEB
+#    - name: install fortran
+#      if: steps.cache-install.outputs.cache-hit != 'true'
+#      run: scripts/install_linux.sh $LINUX_HPCKIT_URL $LINUX_FORTRAN_COMPONENTS_WEB
     - name: build fortran
       run: scripts/build_linux.sh fortran $SAMPLES_TAG
 
