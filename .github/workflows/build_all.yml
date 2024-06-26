@@ -86,8 +86,8 @@ jobs:
         #cmd: where ifx
         #cmd: where ifort
         cmake --version
-        set HDF5_DIR=/Program Files/HDF_Group/HDF5/$HDF5_VER/cmake
-        set HDF5_ROOT=/Program Files/HDF_Group/HDF5/$HDF5_VER
+        set HDF5_DIR=/Program Files/HDF_Group/HDF5/1.14.3/cmake
+        set HDF5_ROOT=/Program Files/HDF_Group/HDF5/1.14.3
         cmake -G "Visual Studio 16 2019" ^
          -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON ^
          -D CMAKE_C_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\icx.exe" ^
@@ -97,8 +97,8 @@ jobs:
          -D HDF5_NEED_ZLIB:BOOL=ON ^
          -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
          -D CGNS_ENABLE_HDF5:BOOL=ON ^
-         -D HDF5_DIR:PATH="C:\Program Files\HDF_Group\HDF5\1.14.0\cmake" ^
-         -D CMAKE_PREFIX_PATH:PATH="C:\Program Files\HDF_Group\HDF5\/$HDF5_VER\cmake" ^
+         -D HDF5_DIR:PATH="C:\Program Files\HDF_Group\HDF5\1.14.3\cmake" ^
+         -D CMAKE_PREFIX_PATH:PATH="C:\Program Files\HDF_Group\HDF5\1.14.3\cmake" ^
          -D CGNS_ENABLE_TESTS:BOOL=ON ^
          -D CGNS_ENABLE_LFS:BOOL=OFF ^
          -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF ^
