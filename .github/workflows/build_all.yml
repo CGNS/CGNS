@@ -5,7 +5,11 @@
 name: build_all
 permissions: read-all
 
-on: push
+on: 
+  push:
+    branches: [ develop, master ]
+  pull_request:
+    branches: [ develop, master ]
 
 env:
   WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/e83a8e64-04fc-45df-85c6-c2208d03bdb5/w_BaseKit_p_2024.2.0.635_offline.exe
