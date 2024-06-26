@@ -1,0 +1,183 @@
+# SPDX-FileCopyrightText: 2022 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
+environment:
+  global:
+    WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/e83a8e64-04fc-45df-85c6-c2208d03bdb5/w_BaseKit_p_2024.2.0.635_offline.exe
+    WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0d500705-397e-41b3-8b2b-2a3da1753fc2/w_HPCKit_p_2024.2.0.633_offline.exe
+    LINUX_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/9a98af19-1c68-46ce-9fdd-e249240c7c42/l_BaseKit_p_2024.2.0.634_offline.sh
+    LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/d4e49548-1492-45c9-b678-8268cb0f1b05/l_HPCKit_p_2024.2.0.635_offline.sh
+    WINDOWS_CPP_COMPONENTS: intel.oneapi.win.cpp-dpcpp-common
+    WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler
+    WINDOWS_DPCPP_COMPONENTS: intel.oneapi.win.cpp-dpcpp-common
+    LINUX_CPP_COMPONENTS: intel-oneapi-dpcpp-cpp-compiler
+    LINUX_FORTRAN_COMPONENTS: intel-oneapi-compiler-fortran
+    LINUX_DPCPP_COMPONENTS: intel-oneapi-compiler-dpcpp-cpp
+    LINUX_CPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler
+    LINUX_FORTRAN_COMPONENTS_WEB: intel.oneapi.lin.ifort-compiler
+    LINUX_DPCPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler
+    SAMPLES_TAG: 2024.2.0
+    VS_VER: vs2019
+
+  matrix:
+    - job_name: build_windows_cpp
+      appveyor_build_worker_image: Visual Studio 2019
+
+    - job_name: build_windows_fortran
+      appveyor_build_worker_image: Visual Studio 2019
+
+    - job_name: build_windows_dpcpp
+      appveyor_build_worker_image: Visual Studio 2019
+
+    - job_name: build_linux_cpp
+      appveyor_build_worker_image: ubuntu2004
+
+    - job_name: build_linux_fortran
+      appveyor_build_worker_image: ubuntu2004
+
+    - job_name: build_linux_dpcpp
+      appveyor_build_worker_image: ubuntu2004
+
+    - job_name: build_linux_apt_cpp
+      appveyor_build_worker_image: ubuntu2004
+
+    - job_name: build_linux_apt_fortran
+      appveyor_build_worker_image: ubuntu2004
+
+    - job_name: build_linux_apt_dpcpp
+      appveyor_build_worker_image: ubuntu2004
+
+for:
+  -
+    matrix:
+      only:
+        - job_name: build_windows_cpp
+    install:
+      cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%
+    build_script:
+      cmd: scripts/build_windows.bat c++ %VS_VER% %SAMPLES_TAG%
+
+    # Delete the following if you don't want to save install logs
+    artifacts:
+      - name: InstallLogs
+        path: |
+          extract.log
+          bootstrapper*
+          installer*
+  -
+    matrix:
+      only:
+        - job_name: build_windows_fortran
+    install:
+      cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%
+    build_script:
+      cmd: scripts/build_windows.bat fortran %VS_VER% %SAMPLES_TAG%
+
+    # Delete the following if you don't want to save install logs
+    artifacts:
+      - name: InstallLogs
+        path: |
+          extract.log
+          bootstrapper*
+          installer*
+  -
+    matrix:
+      only:
+        - job_name: build_windows_dpcpp
+    install:
+      cmd: scripts/install_windows.bat %WINDOWS_BASEKIT_URL% %WINDOWS_DPCPP_COMPONENTS%
+    build_script:
+      cmd: scripts/build_windows.bat dpc++ %VS_VER% %SAMPLES_TAG%
+
+    # Delete the following if you don't want to save install logs
+    artifacts:
+      - name: InstallLogs
+        path: |
+          extract.log
+          bootstrapper*
+          installer*
+  -
+    matrix:
+      only:
+        - job_name: build_linux_cpp
+    install:
+      sh: |
+        scripts/install_linux.sh $LINUX_HPCKIT_URL $LINUX_CPP_COMPONENTS_WEB
+    build_script:
+      sh: scripts/build_linux.sh c++ $SAMPLES_TAG
+
+    # Delete the following if you don't want to save install logs
+    artifacts:
+      - name: InstallLogs
+        path: |
+          extract.log
+          bootstrapper*
+          installer*
+
+  -
+    matrix:
+      only:
+        - job_name: build_linux_fortran
+    install:
+      sh: |
+        scripts/install_linux.sh $LINUX_HPCKIT_URL $LINUX_FORTRAN_COMPONENTS_WEB
+    build_script:
+      sh: scripts/build_linux.sh fortran $SAMPLES_TAG
+
+    # Delete the following if you don't want to save install logs
+    artifacts:
+      - name: InstallLogs
+        path: |
+          extract.log
+          bootstrapper*
+          installer*
+
+  -
+    matrix:
+      only:
+        - job_name: build_linux_dpcpp
+    install:
+      sh: |
+        scripts/install_linux.sh $LINUX_BASEKIT_URL $LINUX_DPCPP_COMPONENTS_WEB
+    build_script:
+      sh: scripts/build_linux.sh dpc++ $SAMPLES_TAG
+
+    # Delete the following if you don't want to save install logs
+    artifacts:
+      - name: InstallLogs
+        path: |
+          extract.log
+          bootstrapper*
+          installer*
+
+  -
+    matrix:
+      only:
+        - job_name: build_linux_apt_cpp
+    install:
+      sh: |
+        scripts/setup_apt_repo_linux.sh
+        scripts/install_linux_apt.sh $LINUX_CPP_COMPONENTS
+    build_script:
+      sh: scripts/build_linux.sh c++ $SAMPLES_TAG
+  -
+    matrix:
+      only:
+        - job_name: build_linux_apt_fortran
+    install:
+      sh: |
+        scripts/setup_apt_repo_linux.sh
+        scripts/install_linux_apt.sh $LINUX_FORTRAN_COMPONENTS
+    build_script:
+      sh: scripts/build_linux.sh fortran $SAMPLES_TAG
+  -
+    matrix:
+      only:
+        - job_name: build_linux_apt_dpcpp
+    install:
+      sh: |
+        scripts/setup_apt_repo_linux.sh
+        scripts/install_linux_apt.sh $LINUX_DPCPP_COMPONENTS
+    build_script:
+      sh: scripts/build_linux.sh dpc++ $SAMPLES_TAG
