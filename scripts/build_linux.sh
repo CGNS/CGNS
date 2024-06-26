@@ -28,7 +28,8 @@ dpc++)
   LATEST_VERSION=$(ls -1 /opt/intel/oneapi/tbb/ | grep -v latest | sort | tail -1)
 # shellcheck source=/dev/null
   source /opt/intel/oneapi/tbb/"$LATEST_VERSION"/env/vars.sh
-  cd oneAPI-samples/DirectProgramming/DPC++/DenseLinearAlgebra/vector-add
-  make all && make run
+  cd oneAPI-samples/DirectProgramming/C++SYCL/DenseLinearAlgebra/vector-add
+  export SYCL_DEVICE_TYPE=CPU
+  mkdir build && cd build && cmake .. && make cpu-gpu && ./vector-add-buffers
   ;;
 esac

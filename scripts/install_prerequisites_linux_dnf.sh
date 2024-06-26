@@ -4,4 +4,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-sudo dnf -y install git make gcc g++ findutils
+sudo dnf -y install git make gcc g++ findutils procps cmake
