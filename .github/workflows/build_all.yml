@@ -174,30 +174,3 @@ jobs:
           bootstrapper*
           installer*
         retention-days: 7
-
-  build_linux_apt_fortran:
-    runs-on: ubuntu-20.04
-    defaults:
-      run:
-        shell: bash
-    steps:
-    - uses: actions/checkout@v2
-    - name: setup apt repo
-      run: scripts/setup_apt_repo_linux.sh
-    - name: collect versioned dependencies of apt packages
-      run: scripts/apt_depends.sh $LINUX_FORTRAN_COMPONENTS | tee depends.txt
-    - name: cache install
-      id: cache-install
-      uses: actions/cache@v2
-      with:
-        path: |
-          /opt/intel/oneapi/compiler
-        key: install-${{ env.LINUX_FORTRAN_COMPONENTS }}-${{ hashFiles('**/depends.txt') }}-compiler-${{ hashFiles('**/scripts/cache_exclude_linux.sh') }}
-    - name: install
-      if: steps.cache-install.outputs.cache-hit != 'true'
-      run: scripts/install_linux_apt.sh $LINUX_FORTRAN_COMPONENTS
-    - name: build
-      run: scripts/build_linux.sh fortran $SAMPLES_TAG
-    - name: exclude unused files from cache
-      if: steps.cache-install.outputs.cache-hit != 'true'
-      run: scripts/cache_exclude_linux.sh

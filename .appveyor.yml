@@ -33,12 +33,6 @@ environment:
     - job_name: build_linux_fortran
       appveyor_build_worker_image: ubuntu2004
 
-    - job_name: build_linux_apt_cpp
-      appveyor_build_worker_image: ubuntu2004
-
-    - job_name: build_linux_apt_fortran
-      appveyor_build_worker_image: ubuntu2004
-
 
 for:
   -
@@ -65,22 +59,6 @@ for:
       cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%
     build_script:
       cmd: scripts/build_windows.bat fortran %VS_VER% %SAMPLES_TAG%
-
-    # Delete the following if you don't want to save install logs
-    artifacts:
-      - name: InstallLogs
-        path: |
-          extract.log
-          bootstrapper*
-          installer*
-  -
-    matrix:
-      only:
-        - job_name: build_windows_dpcpp
-    install:
-      cmd: scripts/install_windows.bat %WINDOWS_BASEKIT_URL% %WINDOWS_DPCPP_COMPONENTS%
-    build_script:
-      cmd: scripts/build_windows.bat dpc++ %VS_VER% %SAMPLES_TAG%
 
     # Delete the following if you don't want to save install logs
     artifacts:
@@ -124,23 +102,3 @@ for:
           extract.log
           bootstrapper*
           installer*
-  -
-    matrix:
-      only:
-        - job_name: build_linux_apt_cpp
-    install:
-      sh: |
-        scripts/setup_apt_repo_linux.sh
-        scripts/install_linux_apt.sh $LINUX_CPP_COMPONENTS
-    build_script:
-      sh: scripts/build_linux.sh c++ $SAMPLES_TAG
-  -
-    matrix:
-      only:
-        - job_name: build_linux_apt_fortran
-    install:
-      sh: |
-        scripts/setup_apt_repo_linux.sh
-        scripts/install_linux_apt.sh $LINUX_FORTRAN_COMPONENTS
-    build_script:
-      sh: scripts/build_linux.sh fortran $SAMPLES_TAG
