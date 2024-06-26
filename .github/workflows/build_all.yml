@@ -51,58 +51,22 @@ jobs:
         path: |
             C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
             C:\Program Files (x86)\Intel\oneAPI\compiler
-        key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-compiler-${{ hashFiles('**/scripts/cache_exclude_windows.sh') }}
+        key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/scripts/cache_exclude_windows.sh') }}
     - name: install
       if: steps.cache-install.outputs.cache-hit != 'true'
       run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS
     - name: build
       run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
-    - name: exclude unused files from cache
-      if: steps.cache-install.outputs.cache-hit != 'true'
-      shell: bash
-      run: scripts/cache_exclude_windows.sh
-
-    # Delete the following if you don't want to save install logs
-    #- name: Saving install logs
-    #  if: steps.cache-install.outputs.cache-hit != 'true'
-    #  uses: actions/upload-artifact@v2
-    #  with:
-    #    name: InstallLogs_${{ github.job }}
-    #    path: |
-    #      extract.log
-    #      bootstrapper*
-    #      installer*
-    #    retention-days: 7
-
-    - name: cache install fortran
-      id: cache-install
-      uses: actions/cache@v2
-      with:
-        path: |
-            C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
-            C:\Program Files (x86)\Intel\oneAPI\compiler
-        key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/scripts/cache_exclude_windows.sh') }}
     - name: install fortran
       if: steps.cache-install.outputs.cache-hit != 'true'
       run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_FORTRAN_COMPONENTS
     - name: build fortran
       run: scripts/build_windows.bat fortran $VS_VER $SAMPLES_TAG
-    - name: exclude unused files from cache fortran
+    - name: exclude unused files from cache
       if: steps.cache-install.outputs.cache-hit != 'true'
       shell: bash
       run: scripts/cache_exclude_windows.sh
 
-    # Delete the following if you don't want to save install logs
-    #- name: Saving install logs
-    #  if: steps.cache-install.outputs.cache-hit != 'true'
-    #  uses: actions/upload-artifact@v2
-    #  with:
-    #    name: InstallLogs_${{ github.job }}
-    #    path: |
-    #      extract.log
-    #      bootstrapper*
-    #      installer*
-    #    retention-days: 7
 
   build_linux_cpp_fortran:
     runs-on: ubuntu-20.04
@@ -117,50 +81,19 @@ jobs:
       with:
         path: |
           /opt/intel/oneapi/compiler
-        key: install-${{ env.CACHE_NUMBER }}-${{ env.LINUX_HPCKIT_URL }}-${{ env.LINUX_CPP_COMPONENTS_WEB }}-compiler-${{ hashFiles('**/scripts/cache_exclude_linux.sh') }}
+        key: install-${{ env.CACHE_NUMBER }}-${{ env.LINUX_HPCKIT_URL }}-${{ env.LINUX_CPP_COMPONENTS_WEB }}-${{ env.LINUX_FORTRAN_COMPONENTS_WEB }}-compiler-${{ hashFiles('**/scripts/cache_exclude_linux.sh') }}
+
     - name: install
       if: steps.cache-install.outputs.cache-hit != 'true'
       run: scripts/install_linux.sh $LINUX_HPCKIT_URL $LINUX_CPP_COMPONENTS_WEB
     - name: build
       run: scripts/build_linux.sh c++ $SAMPLES_TAG
-    - name: exclude unused files from cache
-      if: steps.cache-install.outputs.cache-hit != 'true'
-      run: scripts/cache_exclude_linux.sh
-
-    # Delete the following if you don't want to save install logs
-    #- name: Saving install logs
-    #  if: steps.cache-install.outputs.cache-hit != 'true'
-    #  uses: actions/upload-artifact@v2
-    #  with:
-    #    name: InstallLogs_${{ github.job }}
-    #    path: |
-    #      bootstrapper*
-    #      installer*
-    #    retention-days: 7
-
-    - name: cache install fortran
-      id: cache-install
-      uses: actions/cache@v2
-      with:
-        path: |
-          /opt/intel/oneapi/compiler
-        key: install-${{ env.CACHE_NUMBER }}-${{ env.LINUX_HPCKIT_URL }}-${{ env.LINUX_FORTRAN_COMPONENTS_WEB }}-compiler-${{ hashFiles('**/scripts/cache_exclude_linux.sh') }}
     - name: install fortran
       if: steps.cache-install.outputs.cache-hit != 'true'
       run: scripts/install_linux.sh $LINUX_HPCKIT_URL $LINUX_FORTRAN_COMPONENTS_WEB
     - name: build fortran
       run: scripts/build_linux.sh fortran $SAMPLES_TAG
-    - name: exclude unused files from cache fortran
+
+    - name: exclude unused files from cache
       if: steps.cache-install.outputs.cache-hit != 'true'
       run: scripts/cache_exclude_linux.sh
-
-    # Delete the following if you don't want to save install logs
-    #- name: Saving install logs
-    #  if: steps.cache-install.outputs.cache-hit != 'true'
-    #  uses: actions/upload-artifact@v2
-    #  with:
-    #    name: InstallLogs_${{ github.job }}
-    #    path: |
-    #      bootstrapper*
-    #      installer*
-    #    retention-days: 7
