@@ -64,8 +64,8 @@ jobs:
     - name: install fortran
       if: steps.cache-install.outputs.cache-hit != 'true'
       run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_FORTRAN_COMPONENTS
-    -name: install HDF5
-     run: |
+    - name: install HDF5
+      run: |
         mkdir 1.14
         cd 1.14
         set HDF5_1_14=%HDF5_1_14_VER%
@@ -75,8 +75,8 @@ jobs:
         msiexec /i HDF5-%HDF5_1_14_VER%-win64.msi /quiet /qn /norestart /log install.log
         type install.log
         cd ..\..
-    -name: build CGNS
-     run: |
+    - name: build CGNS
+      run: |
         mkdir c:\projects\CGNS_BUILD
         cd c:\projects\CGNS_BUILD
         #cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
