@@ -74,7 +74,7 @@ jobs:
         Expand-Archive hdf5-1.14.3-Std-win10_64-vs17.zip .
         cd hdf
         msiexec /i HDF5-$HDF5_1_14_VER-win64.msi /quiet /qn /norestart /log install.log
-        type install.log
+        #type install.log
         cd ..\..
     - name: build CGNS
       run: |
