@@ -78,8 +78,8 @@ jobs:
         cd ..\..
     - name: build CGNS
       run: |
-        mkdir "C:\projects\CGNS_BUILD"
-        cd "C:\projects\CGNS_BUILD"
+        mkdir 'C:\projects\CGNS_BUILD'
+        cd 'C:\projects\CGNS_BUILD'
         #cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
         #cmd: where icl
         #cmd: where icx
@@ -107,7 +107,7 @@ jobs:
          -D CGNS_ENABLE_FORTRAN:BOOL=ON ^
          -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
          -D CMAKE_INSTALL_PREFIX:PATH="." ^
-         "C:\projects\CGNS"
+         'C:\projects\CGNS'
     #- name: build
     #  run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
     #- name: build fortran
