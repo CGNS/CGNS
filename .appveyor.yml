@@ -27,16 +27,10 @@ environment:
     - job_name: build_windows_fortran
       appveyor_build_worker_image: Visual Studio 2019
 
-    - job_name: build_windows_dpcpp
-      appveyor_build_worker_image: Visual Studio 2019
-
     - job_name: build_linux_cpp
       appveyor_build_worker_image: ubuntu2004
 
     - job_name: build_linux_fortran
-      appveyor_build_worker_image: ubuntu2004
-
-    - job_name: build_linux_dpcpp
       appveyor_build_worker_image: ubuntu2004
 
     - job_name: build_linux_apt_cpp
@@ -45,8 +39,6 @@ environment:
     - job_name: build_linux_apt_fortran
       appveyor_build_worker_image: ubuntu2004
 
-    - job_name: build_linux_apt_dpcpp
-      appveyor_build_worker_image: ubuntu2004
 
 for:
   -
@@ -132,25 +124,6 @@ for:
           extract.log
           bootstrapper*
           installer*
-
-  -
-    matrix:
-      only:
-        - job_name: build_linux_dpcpp
-    install:
-      sh: |
-        scripts/install_linux.sh $LINUX_BASEKIT_URL $LINUX_DPCPP_COMPONENTS_WEB
-    build_script:
-      sh: scripts/build_linux.sh dpc++ $SAMPLES_TAG
-
-    # Delete the following if you don't want to save install logs
-    artifacts:
-      - name: InstallLogs
-        path: |
-          extract.log
-          bootstrapper*
-          installer*
-
   -
     matrix:
       only:
@@ -171,13 +144,3 @@ for:
         scripts/install_linux_apt.sh $LINUX_FORTRAN_COMPONENTS
     build_script:
       sh: scripts/build_linux.sh fortran $SAMPLES_TAG
-  -
-    matrix:
-      only:
-        - job_name: build_linux_apt_dpcpp
-    install:
-      sh: |
-        scripts/setup_apt_repo_linux.sh
-        scripts/install_linux_apt.sh $LINUX_DPCPP_COMPONENTS
-    build_script:
-      sh: scripts/build_linux.sh dpc++ $SAMPLES_TAG
