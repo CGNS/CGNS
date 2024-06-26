@@ -63,6 +63,7 @@ jobs:
       if: steps.cache-install.outputs.cache-hit != 'true'
       run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_FORTRAN_COMPONENTS
     - name: install HDF5
+      shell: pwsh
       run: |
         mkdir 1.14
         cd 1.14
