@@ -54,7 +54,7 @@ jobs:
         key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/scripts/cache_exclude_windows.sh') }}
     - name: install
       if: steps.cache-install.outputs.cache-hit != 'true'
-      run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS
+      run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL
     - name: build
       run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
 #    - name: install fortran
