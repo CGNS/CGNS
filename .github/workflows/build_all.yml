@@ -72,10 +72,10 @@ jobs:
         curl -O  https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/bin/windows/hdf5-1.14.3-Std-win10_64-vs17.zip
         #Expand-Archive hdf5-$HDF5_1_14_VER-Std-win10_64-$SHORTGEN.zip -DestinationPath .
         Expand-Archive hdf5-1.14.3-Std-win10_64-vs17.zip .
-        #cd hdf
-        #msiexec /i HDF5-$HDF5_1_14_VER-win64.msi /quiet /qn /norestart /log install.log
-        #type install.log
-        #cd ..\..
+        cd hdf
+        msiexec /i HDF5-$HDF5_1_14_VER-win64.msi /quiet /qn /norestart /log install.log
+        type install.log
+        cd ..\..
     - name: build CGNS
       run: |
         mkdir c:\projects\CGNS_BUILD
@@ -88,7 +88,7 @@ jobs:
         cmake --version
         set HDF5_DIR=/Program Files/HDF_Group/HDF5/$HDF5_VER/cmake
         set HDF5_ROOT=/Program Files/HDF_Group/HDF5/$HDF5_VER
-        cmake -G "Visual Studio 16 2022" ^
+        cmake -G "Visual Studio 16 2019" ^
          -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON ^
          -D CMAKE_C_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\icx.exe" ^
          -D CMAKE_C_FLAGS:STRING="" ^
