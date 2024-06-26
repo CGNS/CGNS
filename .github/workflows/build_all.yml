@@ -12,6 +12,12 @@ on:
     branches: [ develop, master ]
 
 env:
+  1_8: &1_8 1.8.23
+  1_10: &1_10 1.10.10
+  1_14: &1_14 1.14.3
+  HDF5_1_8_VER: *1_8   
+  HDF5_1_10_VER: *1_10
+  HDF5_1_14_VER: *1_14
   WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/e83a8e64-04fc-45df-85c6-c2208d03bdb5/w_BaseKit_p_2024.2.0.635_offline.exe
   WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0d500705-397e-41b3-8b2b-2a3da1753fc2/w_HPCKit_p_2024.2.0.633_offline.exe
   LINUX_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/9a98af19-1c68-46ce-9fdd-e249240c7c42/l_BaseKit_p_2024.2.0.634_offline.sh
@@ -58,18 +64,58 @@ jobs:
     - name: install fortran
       if: steps.cache-install.outputs.cache-hit != 'true'
       run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_FORTRAN_COMPONENTS
-    - name: build
-      run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
-#    - name: install fortran
-#      if: steps.cache-install.outputs.cache-hit != 'true'
-#      run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_FORTRAN_COMPONENTS
-    - name: build fortran
-      run: scripts/build_windows.bat fortran $VS_VER $SAMPLES_TAG
+    
+    -name: install HDF5
+      run: |
+        mkdir 1.14
+        cd 1.14
+        set HDF5_1_14=%HDF5_1_14_VER%
+        curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/bin/windows/hdf5-%HDF5_1_14_VER%-Std-win10_64-%SHORTGEN%.zip
+        ps: Expand-Archive hdf5-$($env:HDF5_1_14_VER)-Std-win10_64-$($env:SHORTGEN).zip -DestinationPath .
+        cd hdf
+        msiexec /i HDF5-%HDF5_1_14_VER%-win64.msi /quiet /qn /norestart /log install.log
+        type install.log
+        cd ..\..
+
+    -name: build CGNS
+      run: |
+        mkdir c:\projects\CGNS_BUILD
+        cd c:\projects\CGNS_BUILD
+        #cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
+        #cmd: where icl
+        #cmd: where icx
+        #cmd: where ifx
+        #cmd: where ifort
+        cmake --version
+        SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
+        SET HDF5_ROOT=/Program Files/HDF_Group/HDF5/%HDF5_VER%
+        cmake -G "Visual Studio 16 2022" ^
+         -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON ^
+         -D CMAKE_C_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\icx.exe" ^
+         -D CMAKE_C_FLAGS:STRING="" ^
+         -D CMAKE_Fortran_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\ifx.exe" ^
+         -D CMAKE_BUILD_TYPE:STRING=%configuration% ^
+         -D HDF5_NEED_ZLIB:BOOL=ON ^
+         -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
+         -D CGNS_ENABLE_HDF5:BOOL=ON ^
+         -D HDF5_DIR:PATH="C:\Program Files\HDF_Group\HDF5\1.14.0\cmake" ^
+         -D CMAKE_PREFIX_PATH:PATH="C:\Program Files\HDF_Group\HDF5\/%HDF5_VER%\cmake" ^
+         -D CGNS_ENABLE_TESTS:BOOL=ON ^
+         -D CGNS_ENABLE_LFS:BOOL=OFF ^
+         -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF ^
+         -D CGNS_ENABLE_SCOPING:BOOL=OFF ^
+         -D CGNS_ENABLE_FORTRAN:BOOL=ON ^
+         -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
+         -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
+
+    #- name: build
+    #  run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
+    #- name: build fortran
+    #  run: scripts/build_windows.bat fortran $VS_VER $SAMPLES_TAG
     - name: exclude unused files from cache
       if: steps.cache-install.outputs.cache-hit != 'true'
       shell: bash
       run: scripts/cache_exclude_windows.sh
-
 
   build_linux_cpp_fortran:
     runs-on: ubuntu-20.04
@@ -88,13 +134,9 @@ jobs:
 
     - name: install
       if: steps.cache-install.outputs.cache-hit != 'true'
-#      run: scripts/install_linux.sh $LINUX_HPCKIT_URL $LINUX_CPP_COMPONENTS_WEB
       run: scripts/install_linux.sh $LINUX_HPCKIT_URL
     - name: build
       run: scripts/build_linux.sh c++ $SAMPLES_TAG
-#    - name: install fortran
-#      if: steps.cache-install.outputs.cache-hit != 'true'
-#      run: scripts/install_linux.sh $LINUX_HPCKIT_URL $LINUX_FORTRAN_COMPONENTS_WEB
     - name: build fortran
       run: scripts/build_linux.sh fortran $SAMPLES_TAG
 
