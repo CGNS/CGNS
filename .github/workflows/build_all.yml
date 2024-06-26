@@ -107,7 +107,7 @@ jobs:
          -D CGNS_ENABLE_FORTRAN:BOOL=ON ^
          -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
          -D CMAKE_INSTALL_PREFIX:PATH="." ^
-         C:\\projects\\CGNS
+         C:projects/CGNS
     #- name: build
     #  run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
     #- name: build fortran
