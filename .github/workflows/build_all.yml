@@ -78,15 +78,15 @@ jobs:
         cd ..\..
     - name: build CGNS
       run: |
-        mkdir c:\\projects\\CGNS_BUILD
-        cd c:\\projects\\CGNS_BUILD
+        mkdir "C:\projects\CGNS_BUILD"
+        cd "C:\projects\CGNS_BUILD"
         #cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
         #cmd: where icl
         #cmd: where icx
         #cmd: where ifx
         #cmd: where ifort
         cmake --version
-        dir c:\\projects\\CGNS
+        dir "C:\projects\CGNS"
         set HDF5_DIR=/Program Files/HDF_Group/HDF5/1.14.3/cmake
         set HDF5_ROOT=/Program Files/HDF_Group/HDF5/1.14.3
         cmake -G "Visual Studio 16 2019" ^
@@ -107,7 +107,7 @@ jobs:
          -D CGNS_ENABLE_FORTRAN:BOOL=ON ^
          -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
          -D CMAKE_INSTALL_PREFIX:PATH="." ^
-         c:\\projects\\CGNS
+         "C:\projects\CGNS"
     #- name: build
     #  run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
     #- name: build fortran
