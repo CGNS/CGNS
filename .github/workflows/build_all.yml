@@ -86,6 +86,7 @@ jobs:
         #cmd: where ifx
         #cmd: where ifort
         cmake --version
+        dir c:\projects\CGNS
         set HDF5_DIR=/Program Files/HDF_Group/HDF5/1.14.3/cmake
         set HDF5_ROOT=/Program Files/HDF_Group/HDF5/1.14.3
         cmake -G "Visual Studio 16 2019" ^
@@ -105,7 +106,8 @@ jobs:
          -D CGNS_ENABLE_SCOPING:BOOL=OFF ^
          -D CGNS_ENABLE_FORTRAN:BOOL=ON ^
          -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
-         -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
+         -D CMAKE_INSTALL_PREFIX:PATH="." ^
+         c:\projects\CGNS
     #- name: build
     #  run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
     #- name: build fortran
