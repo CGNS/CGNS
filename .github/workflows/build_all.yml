@@ -90,12 +90,14 @@ jobs:
         dir $CGNS_SRC
         set HDF5_DIR=/Program Files/HDF_Group/HDF5/1.14.3/cmake
         set HDF5_ROOT=/Program Files/HDF_Group/HDF5/1.14.3
-        set CC=icx
-        set FC=ifx
+        set CC=icx.exe
+        set FC=ifx.exe
         cmake -G "Visual Studio 17 2022" \
          -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON \
          -D CMAKE_C_FLAGS:STRING="" \
          -D CMAKE_BUILD_TYPE:STRING=Debug \
+         -D CMAKE_C_COMPILER=icx \
+         -D CMAKE_FORTRAN_COMPILER=ifx \
          -D HDF5_NEED_ZLIB:BOOL=ON \
          -D CMAKE_STATIC_LINKER_FLAGS:STRING="" \
          -D CGNS_ENABLE_HDF5:BOOL=ON \
