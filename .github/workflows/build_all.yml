@@ -81,6 +81,8 @@ jobs:
         export CGNS_SRC=`pwd`
         mkdir ../CGNS_BUILD
         cd ../CGNS_BUILD
+        "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+        "C:\Program Files (x86)\Intel\oneAPI\compiler\latest\env\vars.bat"
         #cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
         #cmd: where icl
         #cmd: where icx
@@ -92,9 +94,10 @@ jobs:
         set HDF5_ROOT=/Program Files/HDF_Group/HDF5/1.14.3
         set CC=icx
         set FC=ifx
+        #.github/workflows/build_windows.bat fortran $VS_VER $SAMPLES_TAG
         echo END > f.F90
         ifx f.F90
-        dir C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\
+        #dir C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\
         cmake -G "Visual Studio 17 2022" \
          -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON \
          -D CMAKE_C_FLAGS:STRING="" \
