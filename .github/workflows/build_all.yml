@@ -77,8 +77,8 @@ jobs:
         #type install.log
         cd ..\..
     - name: Setup Intel Compiler
-        shell: cmd
-        run: |
+      shell: cmd
+      run: |
           "C:\Program Files (x86)\Intel\oneAPI\compiler\latest\env\vars.bat"
           "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" 
     - name: build CGNS
