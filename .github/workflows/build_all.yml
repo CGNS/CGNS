@@ -79,8 +79,8 @@ jobs:
     - name: build CGNS
       run: |
         export CGNS_SRC=`pwd`
-        mkdir CGNS_BUILD
-        cd CGNS_BUILD
+        mkdir ../CGNS_BUILD
+        cd ../CGNS_BUILD
         #cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
         #cmd: where icl
         #cmd: where icx
