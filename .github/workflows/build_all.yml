@@ -80,7 +80,7 @@ jobs:
       shell: cmd
       run: |
           "C:\Program Files (x86)\Intel\oneAPI\compiler\latest\env\vars.bat"
-          "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" 
+       #   "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" 
     - name: build CGNS
       run: |
         export CGNS_SRC=`pwd`
