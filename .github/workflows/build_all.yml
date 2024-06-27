@@ -81,8 +81,10 @@ jobs:
         export CGNS_SRC=`pwd`
         mkdir ../CGNS_BUILD
         cd ../CGNS_BUILD
-        cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
-        cmd: call "C:\Program Files (x86)\Intel\oneAPI\compiler\latest\env\vars.bat"
+        #cmd /c 'C:\Program Files (x86)\Intel\oneAPI\compiler\2023.2.0\env\vars.bat'
+        cmd /c 'C:\Program Files (x86)\Intel\oneAPI\setvars.bat'        
+        # "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
+        #call "C:\Program Files (x86)\Intel\oneAPI\compiler\latest\env\vars.bat"
         #cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
         #cmd: where icl
         #cmd: where icx
