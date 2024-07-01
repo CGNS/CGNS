@@ -6613,21 +6613,6 @@ static void check_base (void)
         read_zone (nz);
     cgnszone = 0;
 
-    /*----- read particle zones -----*/
-    if (cg_nparticle_zones(cgnsfn, cgnsbase, &NumParticleZone)) error_exit("cg_nparticle_zones");
-    if (NumParticleZone > MaxParticleZone) {
-        if (MaxParticleZone)
-            ParticleZone = (PARTICLE_ZONE *) realloc (ParticleZone, NumParticleZone * sizeof(PARTICLE_ZONE));
-        else
-            ParticleZone = (PARTICLE_ZONE *) malloc (NumParticleZone * sizeof(PARTICLE_ZONE));
-        if (NULL == ParticleZone)
-            fatal_error("malloc failed for particle zones\n");
-        MaxParticleZone = NumParticleZone;
-    }
-
-    for (nz = 0; nz < NumParticleZone; nz++)
-        read_particle(nz);
-    cgnsparticle = 0;
     /*----- read families -----*/
 
     if (cg_nfamilies (cgnsfn, cgnsbase, &NumFamily))
@@ -6959,3 +6944,4 @@ int main (int argc, char *argv[])
     if (nerr) printf ("%d errors\n", nerr);
     return 0;
 }
+
