@@ -6251,7 +6251,7 @@ static void check_particle_solution (int ns)
     char name[33];
     int n, nf;
     int ndim;
-    cgsize_t datasize, size, dims[12];
+    cgsize_t datasize, size;
     int *punits, units[9], dataclass;
     CGNS_ENUMT(DataType_t) datatype;
     PARTICLE_ZONE *p= &ParticleZone[cgnsparticle-1];

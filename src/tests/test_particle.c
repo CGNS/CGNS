@@ -9,6 +9,7 @@
 #endif
 #include "cgnslib.h"
 #include "cgns_io.h"
+#include "utils.h"
 
 static double xc[42] = {
     0.0, 2.0, 2.0, 0.0, 0.0, 2.0, 2.0, 0.0, 1.0, 1.0, 1.0,
@@ -112,12 +113,12 @@ int main ()
         exp[n] = (float)0.0;
     exp[1] = (float)1.0;
 
-    cgsize_t size[3];
-    size[0] = 11;
-    size[1] = 4;
-    size[2] = 0;
+    cgsize_t zone_size[3];
+    zone_size[0] = 11;
+    zone_size[1] = 4;
+    zone_size[2] = 0;
 
-    cg_zone_write (fnum, bnum, "Cells", size, Unstructured, &znum);
+    cg_zone_write (fnum, bnum, "Cells", zone_size, Unstructured, &znum);
     cg_coord_write (fnum, bnum, znum, RealDouble, "CoordinateX", xc, &cnum);
     cg_goto(fnum, bnum, "Zone_t", znum, "GridCoordinates", 0, "CoordinateX", 0, NULL);
     cg_exponents_write(CGNS_ENUMV(RealSingle), exp);
@@ -204,13 +205,13 @@ int main ()
 
     for(int iparticle = 1; iparticle <= nparticles; ++iparticle)
     {
-       char name[32];
+       char pname[32];
        cgsize_t size;
-       cg_particle_read(fnum, bnum, iparticle, name, &size);
+       cg_particle_read(fnum, bnum, iparticle, pname, &size);
 
-       if(strcmp(particle_names[iparticle - 1], name) != 0)
+       if(strcmp(particle_names[iparticle - 1], pname) != 0)
        {
-          printf("Expected %s as the ParticleZone_t node name but found %s instead\n", particle_names[iparticle-1], name);
+          printf("Expected %s as the ParticleZone_t node name but found %s instead\n", particle_names[iparticle-1], pname);
           cgio_cleanup();
           exit(1);
        }
@@ -236,13 +237,15 @@ int main ()
           double* coord_y = (double*)malloc(size*sizeof(double));
           double* coord_z = (double*)malloc(size*sizeof(double));
 
-          cg_particle_coord_read(fnum, bnum, iparticle, "CoordinateX", RealDouble, &rmin, &rmax, coord_x);
-          cg_particle_coord_read(fnum, bnum, iparticle, "CoordinateY", RealDouble, &rmin, &rmax, coord_y);
-          cg_particle_coord_read(fnum, bnum, iparticle, "CoordinateZ", RealDouble, &rmin, &rmax, coord_z);
+          cg_particle_coord_read(fnum, bnum, iparticle, "CoordinateX", CGNS_ENUMV(RealDouble), &rmin, &rmax, coord_x);
+          cg_particle_coord_read(fnum, bnum, iparticle, "CoordinateY", CGNS_ENUMV(RealDouble), &rmin, &rmax, coord_y);
+          cg_particle_coord_read(fnum, bnum, iparticle, "CoordinateZ", CGNS_ENUMV(RealDouble), &rmin, &rmax, coord_z);
 
           for(int kk = 0; kk < size; ++kk)
           {
-             if(coord_x[kk] != water_xc[kk] || coord_y[kk] != water_yc[kk] || coord_z[kk] != water_zc[kk])
+             if(compareValuesFloat(coord_x[kk], water_xc[kk]) == 0 ||
+                compareValuesFloat(coord_y[kk], water_yc[kk]) == 0 ||
+                compareValuesFloat(coord_z[kk], water_zc[kk]) == 0)
              {
                 printf("Invalid particle coordinate data - written value doesn't match the read value\n");
                 cgio_cleanup();
@@ -279,11 +282,11 @@ int main ()
           for(int ifield = 1; ifield <= nfields; ++ifield)
           {
              CGNS_ENUMT(DataType_t) type;
-             char name[32];
-             cg_particle_field_info(fnum, bnum, iparticle, isol, ifield, &type, name);
+             char fname[32];
+             cg_particle_field_info(fnum, bnum, iparticle, isol, ifield, &type, fname);
              cgsize_t rmin = 1, rmax = size;
              int field;
-             cg_particle_field_read(fnum, bnum, iparticle, isol, name, type, &rmin, &rmax, &field);
+             cg_particle_field_read(fnum, bnum, iparticle, isol, fname, type, &rmin, &rmax, &field);
           }
        }
     }
