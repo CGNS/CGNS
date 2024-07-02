@@ -6557,7 +6557,7 @@ static void check_particle (void)
 static void check_base (void)
 {
     char basename[33], name[33], *desc1, *desc2, *desc3;
-    int n, nz, ierr, nd, nf, eqset[7];
+    int n, nz, np, ierr, nd, nf, eqset[7], particle_eqset[7];
     float point[3], vector[3];
     CGNS_ENUMT(SimulationType_t) simulation;
 
@@ -6616,6 +6616,8 @@ static void check_base (void)
 
     /*----- read particle zones -----*/
     if (cg_nparticle_zones(cgnsfn, cgnsbase, &NumParticleZone)) error_exit("cg_nparticle_zones");
+
+
     if (NumParticleZone > MaxParticleZone) {
         if (MaxParticleZone)
             ParticleZone = (PARTICLE_ZONE *) realloc (ParticleZone, NumParticleZone * sizeof(PARTICLE_ZONE));
@@ -6626,9 +6628,10 @@ static void check_base (void)
         MaxParticleZone = NumParticleZone;
     }
 
-    for (nz = 0; nz < NumParticleZone; nz++)
-        read_particle(nz);
+    for (np = 0; np < NumParticleZone; np++)
+        read_particle(np);
     cgnsparticle = 0;
+
     /*----- read families -----*/
 
     if (cg_nfamilies (cgnsfn, cgnsbase, &NumFamily))
@@ -6711,6 +6714,18 @@ static void check_base (void)
         puts ("checking equation set");
         fflush (stdout);
         check_equation_set (eqset, BaseClass, pBaseUnits, 2);
+    }
+
+    /*----- ParticleEquationSet -----*/
+
+    go_absolute (NULL);
+    ierr = cg_particle_equationset_read (&particle_eqset[0], &particle_eqset[1], &particle_eqset[2],
+        &particle_eqset[3], &particle_eqset[4], &particle_eqset[5], &particle_eqset[6]);
+    if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_particle_equationset_read");
+    if (ierr == CG_OK) {
+        puts ("checking particle equation set");
+        fflush (stdout);
+        check_particle_equation_set (particle_eqset, BaseClass, pBaseUnits, 2);
     }
 
     /*----- Families -----*/

@@ -2816,7 +2816,7 @@ END ENUM
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cg_nparticle_zones_f
 
-     SUBROUTINE?cg_particl cg_particle_read_f(fn, B, P, particlename, dims, ier) !BIND(C, NAME="cg_particle_read_f")
+     SUBROUTINE cg_particle_read_f(fn, B, P, particlename, dims, ier) !BIND(C, NAME="cg_particle_read_f")
        IMPORT :: CGSIZE_T, c_char
        IMPLICIT NONE
        INTEGER :: fn
