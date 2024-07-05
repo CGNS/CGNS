@@ -195,7 +195,7 @@ CGNSDLL void cg_configure_c_ptr(cgint_f *what, void *value, cgint_f *ier)
     *ier = (cgint_f)cg_configure((int)*what, &C_comm);
 #endif
 
-  /* RIND */    
+  /* RIND */
   } else if( (int)*what == CG_CONFIG_RIND_INDEX) {
     if(*(int*)value == 0) {
       *ier = (cgint_f)cg_configure((int)*what, CG_CONFIG_RIND_ZERO);
@@ -3482,7 +3482,7 @@ CGNSDLL void __stdcall cg_array_read_as_f(cgint_f *A, CGNS_ENUMT(DataType_t) *ty
 
 CGNSDLL void FMNAME(cg_array_general_read_f, CG_ARRAY_GENERAL_READ_F) (
         cgint_f *A,
-        cgsize_t *s_rmin, cgsize_t *s_rmax, CGNS_ENUMT(DataType_t) *m_type, 
+        cgsize_t *s_rmin, cgsize_t *s_rmax, CGNS_ENUMT(DataType_t) *m_type,
         cgint_f *m_numdim, cgsize_t *m_dimvals,
         cgsize_t *m_rmin, cgsize_t *m_rmax, void *data,
         cgint_f *ier)
@@ -4378,6 +4378,25 @@ CGNSDLL void FMNAME(cgp_section_write_f, CGP_SECTION_WRITE_F) (
     if (*ier) return;
     *ier = (cgint_f)cgp_section_write((int)*fn, (int)*B, (int)*Z, c_name,
                *type, *start, *end, (int)*nbndry, &i_S);
+    *S = (cgint_f)i_S;
+}
+
+/*-----------------------------------------------------------------------*/
+
+CGNSDLL void FMNAME(cgp_poly_section_write_f, CGP_POLY_SECTION_WRITE_F) (
+    cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(sectionname),
+	CGNS_ENUMT(ElementType_t) *type, cgsize_t *start, cgsize_t *end, cgsize_t *maxoffset,
+	cgint_f *nbndry, cgint_f *S, cgint_f *ier STR_PLEN(sectionname))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+    int i_S;
+
+    string_2_C_string(STR_PTR(sectionname), STR_LEN(sectionname),
+		      c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier) return;
+    *ier = (cgint_f) cgp_poly_section_write((int)*fn, (int)*B, (int)*Z, c_name, (CGNS_ENUMT(ElementType_t))*type,
+					    *start, *end, *maxoffset,
+					    (int)*nbndry, &i_S);
     *S = (cgint_f)i_S;
 }
 

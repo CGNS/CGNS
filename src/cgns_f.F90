@@ -228,7 +228,7 @@ MODULE cgns
   INTEGER, PARAMETER :: CG_CONFIG_ADD_PATH   = 4
   INTEGER, PARAMETER :: CG_CONFIG_FILE_TYPE  = 5
   INTEGER, PARAMETER :: CG_CONFIG_RIND_INDEX = 6
-  
+
 ! Fortran length of names for variables is limited to 31 characters
   INTEGER, PARAMETER :: CG_CONFIG_HDF5_COMPRESS         = 201
   INTEGER, PARAMETER :: CG_CONFIG_HDF5_MPI_COMM         = 202
@@ -256,17 +256,17 @@ MODULE cgns
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_FILE_TYPE
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RIND_INDEX
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_COMPRESS
-!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_MPI_COMM      
-!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_DISKLESS      
-!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_DISKLESS_INCR 
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_MPI_COMM
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_DISKLESS
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_DISKLESS_INCR
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_DISKLESS_WRITE
-!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_ALIGNMENT     
-!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_MD_BLOCK_SIZE 
-!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_BUFFER        
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_ALIGNMENT
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_MD_BLOCK_SIZE
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_BUFFER
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_SIEVE_BUF_SIZE
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_HDF5_ELINK_CACHE_SIZE
 
-!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RESET 
+!DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RESET
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RESET_HDF5
 
 !DEC$ATTRIBUTES DLLEXPORT :: CG_CONFIG_RIND_ZERO
@@ -793,7 +793,7 @@ MODULE cgns
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
 !*      Dimensional Units                                              *
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
-  DATA MassUnitsName /'Null','UserDefined','Kilogram','Gram', & 
+  DATA MassUnitsName /'Null','UserDefined','Kilogram','Gram', &
        'Slug','PoundMass'/
   DATA LengthUnitsName / 'Null', 'UserDefined', &
        'Meter','Centimeter','Millimeter','Foot','Inch'/
@@ -2892,7 +2892,7 @@ MODULE cgns
 !!$      TYPE(*), DIMENSION(*) :: array
 !!$      INTEGER, INTENT(OUT) :: ier
 !!$    END SUBROUTINE cg_grid_bounding_box_read_f
- 
+
 !!$!!$     SUBROUTINE cg_grid_bounding_box_write_f(fn, B, Z, G, datatype, array, ier) !BIND(C, NAME="cg_grid_bounding_box_write_f")
 !!$       IMPORT :: cgenum_t, c_ptr
 !!$       IMPLICIT NONE
@@ -3693,7 +3693,7 @@ MODULE cgns
 !!$     INTEGER(CGSIZE_T) :: rmin, INTEGER(CGSIZE_T) :: rmax, void *data,
 !!$          INTEGER, INTENT(OUT) :: ier
 !!$           END SUBROUTINE
-!!$      
+!!$
      SUBROUTINE cgp_section_write_f( fn, B, Z, section_name, &
           TYPE,start,END, nbndry, S, ier) !BIND(C, NAME="cgp_section_write_f")
        IMPORT :: cgenum_t, cgsize_t, c_char
@@ -3725,6 +3725,22 @@ MODULE cgns
 !!$       INTEGER, INTENT(OUT) :: ier
 !!$     END SUBROUTINE cgp_elements_write_data_f
 !!$
+     SUBROUTINE cgp_poly_section_write_f(fn, B , Z, sectionname, type, start, end, maxoffset, nbndry, S, ier) !BIND(C, name="cgp_poly_section_write_f")
+       IMPORT :: c_char, cgsize_t, cgenum_t
+       IMPLICIT NONE
+       INTEGER, INTENT(IN) :: fn
+       INTEGER, INTENT(IN) :: B
+       INTEGER, INTENT(IN) :: Z
+       CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: sectionname
+       INTEGER(cgenum_t), INTENT(IN) :: type
+       INTEGER(cgsize_t), INTENT(IN) :: start
+       INTEGER(cgsize_t), INTENT(IN) :: end
+       INTEGER(cgsize_t), INTENT(IN) :: maxoffset
+       INTEGER, INTENT(IN) :: nbndry
+       INTEGER, INTENT(OUT) :: S
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cgp_poly_section_write_f
+!!$
 !!$!!$     SUBROUTINE cgp_elements_read_data_f(fn, B, Z, S, start, &
 !!$          end, elements, ier) BIND(C, NAME="cgp_elements_read_data_f")
 !!$       IMPORT :: cgsize_t
@@ -3751,6 +3767,17 @@ MODULE cgns
        INTEGER :: F
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_field_write_f
+
+     SUBROUTINE cgp_array_write_f(arrayname, type, rank, dim, A, ier)! BIND(C, NAME="cgp_array_write_f")
+       IMPORT :: cgenum_t, c_char, cgsize_t
+       IMPLICIT NONE
+       INTEGER(cgenum_t) :: type
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: arrayname
+       INTEGER, INTENT(IN) :: rank
+       INTEGER(CGSIZE_T), DIMENSION(*) :: dim
+       INTEGER :: A
+       INTEGER, INTENT(OUT) :: ier
+     END SUBROUTINE cgp_array_write_f
 
      SUBROUTINE cgp_error_exit_f() BIND(C, NAME="cgp_error_exit_f")
        IMPLICIT NONE
@@ -4236,7 +4263,7 @@ MODULE cgns
        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: path
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgio_path_delete_f
-  
+
 !*=========================================================
 !* utility routines independent of open files
 !*=========================================================
@@ -4246,7 +4273,7 @@ MODULE cgns
          INTEGER(CGSIZE_T) :: file_type
          INTEGER, INTENT(OUT) :: ier
        END SUBROUTINE cgio_is_supported_f
-  
+
 !*---------------------------------------------------------
      SUBROUTINE cgio_check_file_f(filename, file_type, ier) !BIND(C,NAME="cgio_check_file_f")
        IMPORT :: c_char
@@ -4580,20 +4607,20 @@ MODULE cgns
 !*---------------------------------------------------------
 !!$!!$     SUBROUTINE cgio_write_all_data_f(
 !!$    cgint_f *cgio_num, double *id, void *data, cgint_f *ier) BIND(C,NAME="")
-!!$  
+!!$
 !*---------------------------------------------------------
 !!$!!$     SUBROUTINE cgio_write_block_data_f(
 !!$    cgint_f *cgio_num, double *id, cgsize_t *b_start, cgsize_t *b_end,
 !!$    void *data, cgint_f *ier) BIND(C,NAME="")
 !!$
-!!$  
+!!$
 !*---------------------------------------------------------
 !!$!!$     SUBROUTINE cgio_write_data_f(
 !!$    cgint_f *cgio_num, double *id, cgsize_t *s_start, cgsize_t *s_end,
 !!$    cgsize_t *s_stride, cgsize_t *m_ndims, cgsize_t *m_dims, cgsize_t *m_start,
 !!$    cgsize_t *m_end, cgsize_t *m_stride, void *data, cgint_f *ier) BIND(C,NAME="")
 !!$
-!!$  
+!!$
   END INTERFACE
 
   PRIVATE cg_configure_ptr
@@ -4737,7 +4764,7 @@ CONTAINS
      INTEGER, INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16, &
           i17, i18, i19, i20
      CHARACTER(*), DIMENSION(*), INTENT(IN), OPTIONAL :: end
-  
+
      IF (PRESENT(i1)) THEN
         CALL cg_gorel_f1(fn, ier, UserDataName1, i1)
      ELSE
