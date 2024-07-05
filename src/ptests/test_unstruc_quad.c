@@ -244,7 +244,64 @@ int main(int argc, char* argv[]) {
   if (cgp_close(fn)) cgp_error_exit();
 
   // Test file reading
-  if (cgp_open("test_unstruc_quad.cgns", CG_MODE_READ, &fn)) cgp_error_exit();
+  if (cgp_open("test_unstruc_quad.cgns", CG_MODE_MODIFY, &fn)) cgp_error_exit();
+
+  /* Left BC */
+  start = 6*comm_size + 1;
+  end   = start;
+
+  if (comm_rank == 0) {
+    emin = start;
+    emax = end;
+  }
+  else {
+    emin = 0;
+    emax = 0;
+  }
+
+  if (cgp_parentelements_read_data(fn,1,1,3,emin,emax,el_ptr))
+    cgp_error_exit();
+
+  if (comm_rank == 0) {
+    if (el_ptr[0] != 1 || el_ptr[1] != 0) {
+      printf("Could not read parent_element\n");
+      MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+  }
+
+  if (cg_goto(fn,1,"Zone_t",1,"Elements_t",3,"end"))
+    cgp_error_exit();
+
+  if (cg_delete_node("ParentElements"))
+    cgp_error_exit();
+
+  if (comm_rank == 0) {
+    emin = start;
+    emax = end;
+
+    /* Parent Element/Side data */
+    elements[0] = 1; /* Element */
+    elements[1] = 0;
+    el_ptr = elements;
+  }
+  else {
+    emin = 0;
+    emax = 0;
+    el_ptr = NULL;
+  }
+
+  if (cgp_parentelements_write_data(fn,1,1,3,emin,emax,el_ptr))
+    cgp_error_exit();
+
+  if (cgp_parentelements_read_data(fn,1,1,3,emin,emax,el_ptr))
+    cgp_error_exit();
+
+  if (comm_rank == 0) {
+    if (el_ptr[0] != 1 || el_ptr[1] != 0) {
+      printf("Could not read parent_element\n");
+      MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+  }
 
   for (int i = 0; i < nelem*4; i++) elements[i] = 0;
   start_local = comm_rank * 3 + 1;
