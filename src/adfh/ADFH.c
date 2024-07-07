@@ -91,6 +91,16 @@ static hsize_t h5pset_buffer_size_size            = ADFH_CONFIG_DEFAULT;
 static hsize_t h5pset_sieve_buf_size_size         = ADFH_CONFIG_DEFAULT;
 static unsigned h5pset_elink_file_cache_size_size = ADFH_CONFIG_DEFAULT;
 
+/* HDF5 Chunked Dataset Parameters */
+int chunk_ndim = 0;
+hsize_t chunk_dim[ADF_MAX_DIMENSIONS];
+
+/* HDF5 Filter Parameters */
+H5Z_filter_t filter_id;
+size_t filter_nparams;
+unsigned int* filter_params = NULL;
+unsigned int filter_flags = 0;
+
 #define TO_UPPER( c ) ((islower(c))?(toupper(c)):(c))
 
 /* HDF5 compact storage limit */
@@ -1462,6 +1472,9 @@ static herr_t fix_dimensions(hid_t id, const char *name, const H5L_info_t* linfo
 
 void ADFH_Configure(const int option, const void *value, int *err)
 {
+
+    hsize_t i;
+  
     if (option == ADFH_CONFIG_RESET && (int)((size_t)value == ADFH_CONFIG_RESET_HDF5)) {
       core_vfd                          = ADFH_CONFIG_DEFAULT;
       h5pset_alignment_threshold        = ADFH_CONFIG_DEFAULT;
@@ -1470,11 +1483,11 @@ void ADFH_Configure(const int option, const void *value, int *err)
       h5pset_buffer_size_size           = ADFH_CONFIG_DEFAULT;
       h5pset_sieve_buf_size_size        = ADFH_CONFIG_DEFAULT;
       h5pset_elink_file_cache_size_size = ADFH_CONFIG_DEFAULT;
+      chunk_ndim                        = 0;
 
       set_error(NO_ERROR, err);
       return;
     }
-
     if (option == ADFH_CONFIG_COMPRESS) {
         int compress = (int)((size_t)value);
         if (compress < 0)
@@ -1514,6 +1527,43 @@ void ADFH_Configure(const int option, const void *value, int *err)
     else if (option == ADFH_CONFIG_HDF5_SIEVE_BUF_SIZE) {
       h5pset_sieve_buf_size_size = (hsize_t)value;
       set_error(NO_ERROR, err);
+    }
+    else if (option == ADFH_CONFIG_HDF5_CHUNK) {
+      const cgsize_t* val = NULL;
+      if (value == NULL) {
+        chunk_ndim = 0;
+      } else {
+        val = (const cgsize_t*)value;
+        chunk_ndim = (int)(val[0]);
+      }
+      if( chunk_ndim > CGIO_MAX_DIMENSIONS ) {
+        set_error(ADFH_ERR_INVALID_USER_DATA, err);
+      }
+      for (i = 0; i < chunk_ndim; i++) {
+        if( ( chunk_dim[i] = (hsize_t)(val[i+1]) ) < 1 ) {
+          set_error(ADFH_ERR_INVALID_USER_DATA, err);
+        }
+      }
+      set_error(NO_ERROR, err);
+    }
+    else if (option == ADFH_CONFIG_HDF5_FILTER) {
+      if(value == NULL) {
+        filter_id = ADFH_CONFIG_HDF5_FILTER_NONE;
+        set_error(NO_ERROR, err);
+      }
+      else {
+        const cgns_filter *val = (const cgns_filter *)value;
+        filter_id = (H5Z_filter_t)val->filter_id;
+        filter_nparams = val->nparams;
+        filter_params = val->params;
+        /* Check if filter is available */
+        htri_t avail = H5Zfilter_avail(filter_id);
+        if (avail) {
+          set_error(NO_ERROR, err);
+        } else {
+          set_error(ADFH_ERR_FILTER_INVALID, err);
+        }
+      }
     }
     else if (option == ADFH_CONFIG_ELINK_FILE_CACHE_SIZE) {
       h5pset_elink_file_cache_size_size = (unsigned)((size_t)value);
@@ -2969,6 +3019,8 @@ void ADFH_Put_Dimension_Information(const double   id,
   int i, swap = 0;
   hsize_t new_dims[ADF_MAX_DIMENSIONS];
   char new_type[3];
+  hid_t g_propdataset_bk;
+  int filter_set = 0;
 
   to_HDF_ID(id,hid);
 
@@ -3039,12 +3091,14 @@ void ADFH_Put_Dimension_Information(const double   id,
   tid = to_HDF_data_type(new_type);
   ADFH_CHECK_HID(tid);
   sid = H5Screate_simple(dims, new_dims, NULL);
+
   /* better idea? how to guess the right size? */
+#if 0 // MSB
   if (CompressData >= 0)
   {
     H5Pset_deflate(mta_root->g_propdataset, CompressData);
   }
-#if 0
+
   this causes a problem with memory allocation. For example,
   writing an unstructured coordinate array of 5 billion values
   will result in the HDF5 library trying to allocation 20Gb
@@ -3057,15 +3111,51 @@ void ADFH_Put_Dimension_Information(const double   id,
   hssize_t dset_size = H5Sget_select_npoints(sid);
   size_t dtype_size = H5Tget_size(tid); 
 
-  /* Chunked datasets are currently not supported */
-
   /* Compact storage has a dataset size limit of 64 KiB */
   if(HDF5storage_type == CGIO_COMPACT && dset_size*(hssize_t)dtype_size  < (hssize_t)CGNS_64KB)
     H5Pset_layout(mta_root->g_propdataset, H5D_COMPACT);
   else{
-    H5Pset_layout(mta_root->g_propdataset, H5D_CONTIGUOUS);
+    
     H5Pset_alloc_time(mta_root->g_propdataset, H5D_ALLOC_TIME_EARLY);
-    H5Pset_fill_time(mta_root->g_propdataset, H5D_FILL_TIME_NEVER); 
+    H5Pset_fill_time(mta_root->g_propdataset, H5D_FILL_TIME_NEVER);
+ 
+    if (chunk_ndim != 0 ) {
+      if( H5Pset_chunk(mta_root->g_propdataset, chunk_ndim, chunk_dim) < 0 )
+        set_error(ADFH_ERR_CHUNK, err);
+
+      if( filter_id != ADFH_CONFIG_HDF5_FILTER_NONE ) {
+        filter_set = 1;
+
+        /* For Parallel Compression, must be using collective IO */
+#if CG_BUILD_PARALLEL
+        hid_t fid = get_file_id(hid);
+        hid_t fapl = H5Fget_access_plist(fid);
+        hid_t driver_id = H5Pget_driver(fapl);
+
+        if (driver_id == H5FD_MPIO) {
+          if( ctx_cgio.default_pio_mode == H5FD_MPIO_INDEPENDENT) {
+            set_error(ADFH_ERR_FILTER, err);
+            return;
+          }
+        }
+        H5Pclose(fapl); /* close the property list */
+#endif
+        /* copy the property because HDF5 does not cancel out filters when
+           using H5Z_FILTER_NONE */
+        g_propdataset_bk = H5Pcopy(mta_root->g_propdataset);
+
+        if( H5Pset_filter(mta_root->g_propdataset, filter_id,
+                          H5Z_FLAG_OPTIONAL,
+                          filter_nparams, filter_params) < 0) {
+          set_error(ADFH_ERR_FILTER, err);
+          return;
+        }
+
+      }
+    }
+    else {
+      H5Pset_layout(mta_root->g_propdataset, H5D_CONTIGUOUS);
+    }
   }
 
   ADFH_CHECK_HID(sid);
@@ -3076,6 +3166,15 @@ void ADFH_Put_Dimension_Information(const double   id,
 
   H5Sclose(sid);
   H5Tclose(tid);
+
+  hid_t dset2;
+
+  if( filter_set == 1 ) {
+     mta_root->g_propdataset = H5Pcopy(g_propdataset_bk);
+     H5Pclose(g_propdataset_bk);
+     /* This should work, but it does not */
+     /* H5Pset_filter(mta_root->g_propdataset, H5Z_FILTER_NONE, H5Z_FLAG_OPTIONAL, (size_t)0, NULL); */
+  }
 
   if (did < 0)
     set_error(ADFH_ERR_DCREATE, err);
@@ -3830,7 +3929,6 @@ void ADFH_Write_Data(const double ID,
   hid_t xfer_prp = H5P_DEFAULT;
 
   ADFH_DEBUG(("ADFH_Write_Data"));
-
   if (data == NULL) {
     set_error(NULL_POINTER, err);
     return;

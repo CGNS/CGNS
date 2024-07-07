@@ -69,6 +69,9 @@
 #define false 0
 #define true 1
 
+#define STR_MAX  128
+char hdf5_compress[STR_MAX];
+
 int comm_size;
 int comm_rank;
 MPI_Info info;
@@ -111,6 +114,11 @@ cgsize_t start, end, emin, emax;
 cgsize_t* elements;
 char name[33];
 double t0, t1, t2;
+//cgsize_t *cg_chunk=NULL;
+int cg_chunk;
+cgns_filter f;
+cgns_filter *filter = NULL;
+int hdf5_filters = 0;
 
 /*
  * Timing storage convention:                            avg.| min. | max.
@@ -132,8 +140,18 @@ double t0, t1, t2;
  */
 double xtiming[15], timing[15], timingMin[15], timingMax[15];
 
+#define CD_VALUES_MAX 10
+size_t cd_nelmts=CD_VALUES_MAX;
+unsigned int cd_values[CD_VALUES_MAX];
+//hdf5_compress[0] = '\0';
+
+#ifdef H5Z_ZFP_USE_PLUGIN
+#include "H5Zzfp_plugin.h"
+#endif
+
 int read_inputs(int* argc, char*** argv) {
   int k;
+  int filter_id;
   int buffer[3];
 
   if(comm_rank==0) {
@@ -154,14 +172,147 @@ int read_inputs(int* argc, char*** argv) {
       if(strcmp((*argv)[k],"-R")==0) {
         buffer[2]= true;
       }
+      if(strcmp((*argv)[k],"-cg_chunk")==0) {
+        cg_chunk = 1;
+        printf("chunking enabled\n");
+        //  cg_chunk = malloc(1 * sizeof(cgsize_t));
+        //  cg_chunk[0] = (cgsize_t)strtoul((*argv)[++k], NULL, 0);
+      }
+      if(strcmp((*argv)[k],"-cg_filter")==0) {
+        printf("filter enabled\n");
+        hdf5_filters = 1;
+        k++;
+        char tmp[STR_MAX];
+        strncpy(tmp, (*argv)[k], STR_MAX-1);
+        char * pch;
+        pch = strtok (tmp, " ,");
+        strncpy( hdf5_compress, pch, strlen(pch) + 1 );
+          pch = strtok (NULL, " ,");
+          if ( strcmp(hdf5_compress,"szip") == 0 ) {
+            filter_id = CG_FILTER_SZIP;
+            int icnt = 0;
+            cd_nelmts = 2;
+            while (pch != NULL) {
+              if(icnt == 0) {
+                if ( strcmp(pch,"H5_SZIP_EC_OPTION_MASK") == 0 ) {
+                  cd_values[icnt] = 4; /*H5_SZIP_EC_OPTION_MASK*/
+                } else if ( strcmp(pch,"H5_SZIP_NN_OPTION_MASK") == 0 ) {
+                  cd_values[icnt] = 32; /*H5_SZIP_NN_OPTION_MASK*/
+                } else {
+                  if(comm_rank == 0) fprintf(stderr, "szip option not recognized: %s\n\n",pch);
+                  MPI_Abort(MPI_COMM_WORLD, 1);
+                }
+              } else if(icnt == 1) {
+                cd_values[icnt] = (unsigned int)strtoul(pch, NULL, 0);
+                /* pixels_per_block and must be even and not greater than 32 */
+                if(cd_values[icnt] % 2 != 0 || cd_values[icnt] > 32 || cd_values[icnt] < 2 ) {
+                  if(comm_rank == 0) fprintf(stderr, "szip pixels_per_block and must be even and not greater than 32: %u\n\n",cd_values[icnt]);
+                  MPI_Abort(MPI_COMM_WORLD, 1);
+                }
+              }
+              pch = strtok (NULL, " ,");
+              icnt++;
+            }
+          } else if ( strcmp(hdf5_compress,"gzip") == 0 ) {
+            filter_id = CG_FILTER_DEFLATE;
+            cd_values[0] = (unsigned int)strtoul(pch, NULL, 0);
+            cd_nelmts = 1;
+          }
+#ifdef H5Z_ZFP_USE_PLUGIN
+          else if ( strcmp(hdf5_compress,"zfp") == 0 ) {
+
+            /* set env variable HDF5_PLUGIN_PATH to H5Z-ZFP plugin path */
+
+            /* setup zfp filter via generic (cd_values) interface */
+            /*
+              cd_vals    0       1        2         3         4         5
+              ----------------------------------------------------------------
+              rate:      1    unused    rateA     rateB     unused    unused
+              precision: 2    unused    prec      unused    unused    unused
+              accuracy:  3    unused    accA      accB      unused    unused
+              expert:    4    unused    minbits   maxbits   maxprec   minexp
+              reversubke 5    unused    unused    unused    unused    unused
+            */
+
+            filter_id = H5Z_FILTER_ZFP; 
+
+            int zfpmode=0;
+
+            if (strcmp(pch,"H5Z_ZFP_MODE_RATE") == 0 ) {
+              zfpmode = 1;
+            } else if (strcmp(pch,"H5Z_ZFP_MODE_PRECISION") == 0 ) {
+              zfpmode = 2;
+            } else if (strcmp(pch,"H5Z_ZFP_MODE_ACCURACY") == 0 ) {
+              zfpmode = 3;
+            } else if (strcmp(pch,"H5Z_ZFP_MODE_EXPERT") == 0 ) {
+              zfpmode = 4;
+            } else if (strcmp(pch,"H5Z_ZFP_MODE_REVERSIBLE") == 0 ) {
+              zfpmode = 5;
+            }
+
+            pch = strtok (NULL, " ,");
+
+            if (zfpmode == H5Z_ZFP_MODE_RATE) {
+              double rate = (double)strtoul(pch, NULL, 0);
+              H5Pset_zfp_rate_cdata(rate, cd_nelmts, cd_values);
+            } else if (zfpmode == H5Z_ZFP_MODE_PRECISION) {
+              uint prec = (uint)strtoul(pch, NULL, 0);
+              H5Pset_zfp_precision_cdata(prec, cd_nelmts, cd_values);
+            } else if (zfpmode == H5Z_ZFP_MODE_ACCURACY) {
+              double acc = (double)strtoul(pch, NULL, 0);
+              H5Pset_zfp_accuracy_cdata(acc, cd_nelmts, cd_values);
+            } else if (zfpmode == H5Z_ZFP_MODE_EXPERT) {
+              uint minbits = (uint)strtoul(pch, NULL, 0);
+              pch = strtok (NULL, " ,");
+              uint maxbits = (uint)strtoul(pch, NULL, 0);
+              pch = strtok (NULL, " ,");
+              uint maxprec = (uint)strtoul(pch, NULL, 0);
+              pch = strtok (NULL, " ,");
+              int minexp = (int)strtoul(pch, NULL, 0);
+              H5Pset_zfp_expert_cdata(minbits, maxbits, maxprec, minexp, cd_nelmts, cd_values);
+            } else if (zfpmode == H5Z_ZFP_MODE_REVERSIBLE) {
+              H5Pset_zfp_reversible_cdata(cd_nelmts, cd_values);
+            } else {
+              cd_nelmts = 0; /* causes default behavior of ZFP library */
+            }
+
+          }
+#endif
+      }
     }
   }
   MPI_Bcast(&Nelem, 1, MPI_SIZE_T, 0, MPI_COMM_WORLD);
   MPI_Bcast(buffer, 3, MPI_INT, 0, MPI_COMM_WORLD);
 
+  MPI_Bcast(&cg_chunk, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&hdf5_filters, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
   piomode = buffer[0];
   enable_md = buffer[1];
   checkRead = buffer[2];
+
+
+  if(hdf5_filters) {
+    MPI_Bcast(&filter_id, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&cd_nelmts, 1, MPI_SIZE_T, 0, MPI_COMM_WORLD);
+    MPI_Bcast(cd_values, cd_nelmts, MPI_INT, 0, MPI_COMM_WORLD);
+
+    filter = &f;
+    (*filter).filter_id = filter_id;
+    (*filter).nparams   = cd_nelmts;
+    (*filter).params    = (unsigned int *)malloc((unsigned int)((*filter).nparams)*sizeof(unsigned int));
+  
+    for (int i=0; i < (*filter).nparams; i++) {
+      (*filter).params[i] = (unsigned int)cd_values[i];
+    }
+#if 0
+    printf("%ld %ld cd_values= ",cd_nelmts,(*filter).nparams);
+    for (int i = 0; i < (*filter).nparams; i++) 
+      printf("%u,", (*filter).params[i]);
+    printf("\n");
+#endif
+  }
+
   return 0;
 }
 
@@ -203,6 +354,8 @@ int main(int argc, char* argv[]) {
   int Cvec[3];
   int Fvec[3];
   int Avec[2];
+
+  cgsize_t chunk_param[2];
 
   t0 = MPI_Wtime(); /* Timer */
 
@@ -286,6 +439,24 @@ int main(int argc, char* argv[]) {
     Coor_z[k] = Coor_y[k] + 0.1;
   }
 
+  /* Enable chunked dataset */
+  if(cg_chunk) {
+    chunk_param[0] = 1;
+    chunk_param[1] = count;
+    if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+      printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
+      cgp_error_exit();
+    }
+  }
+
+  /* Enable Filter */
+  if(hdf5_filters == 1) {
+    if(cg_set_filter(filter) != CG_OK) {
+      printf("*FAILED* cg_set_filter \n");
+      cgp_error_exit();
+    }
+  }
+
   if(cgp_coord_write(fn,B,Z,CGNS_ENUMV(RealDouble),"CoordinateX",&Cx) != CG_OK) {
     printf("*FAILED* cgp_coord_write (Coor_x) \n");
     cgp_error_exit();
@@ -339,6 +510,24 @@ int main(int argc, char* argv[]) {
   free(Coor_x);
   free(Coor_y);
   free(Coor_z);
+
+  /* Disable chunked dataset */
+  if(cg_chunk) {
+    chunk_param[0] = 0;
+    if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+      printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
+      cgp_error_exit();
+    }
+  }
+
+  /* Disable filter */
+  if(hdf5_filters == 1) {
+    if(cg_set_filter(CG_FILTER_NONE) != CG_OK) {
+      printf("*FAILED* cg_set_filter \n");
+      cgp_error_exit();
+    }
+  }
+
   /* ====================================== */
   /* == (B) WRITE THE CONNECTIVITY TABLE == */
   /* ====================================== */
@@ -409,6 +598,24 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 
+  /* Enable chunked dataset */
+  if(cg_chunk) {
+    chunk_param[0] = 1;
+    chunk_param[1] = count;
+    if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+      printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
+      cgp_error_exit();
+    }
+  }  
+  
+  /* Enable Filter */
+  if(hdf5_filters == 1) {
+    if(cg_set_filter(filter) != CG_OK) {
+      printf("*FAILED* cg_set_filter \n");
+      cgp_error_exit();
+    }
+  }
+
   if(cgp_field_write(fn,B,Z,S,CGNS_ENUMV(RealDouble),"MomentumX",&Fx) != CG_OK) {
     printf("*FAILED* cgp_field_write (MomentumX) \n");
     cgp_error_exit();
@@ -461,6 +668,23 @@ int main(int argc, char* argv[]) {
   free(Data_Fy);
   free(Data_Fz);
 
+  /* Disable chunked dataset */
+  if(cg_chunk) {
+    chunk_param[0] = 0;
+    if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+      printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
+      cgp_error_exit();
+    }
+  }
+
+  /* Disable filter */
+  if(hdf5_filters == 1) {
+    if(cg_set_filter(CG_FILTER_NONE) != CG_OK) {
+      printf("*FAILED* cg_set_filter \n");
+      cgp_error_exit();
+    }
+  }
+
   /* ====================================== */
   /* == (D) WRITE THE ARRAY DATA         == */
   /* ====================================== */
@@ -500,10 +724,46 @@ int main(int argc, char* argv[]) {
     cgp_error_exit();
   }
 
-   size_1D[0] = nijk[0];
+  size_1D[0] = nijk[0];
+
+  /* Enable chunked dataset */
+  if(cg_chunk) {
+    chunk_param[0] = 1;
+    chunk_param[1] = size_1D[0];
+    if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+      printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
+      cgp_error_exit();
+    }
+  }
+
+  /* Enable Filter */
+  if(hdf5_filters == 1) {
+    if(cg_set_filter(filter) != CG_OK) {
+      printf("*FAILED* cg_set_filter \n");
+      cgp_error_exit();
+    }
+  }
+
   if(cgp_array_write("ArrayR",CGNS_ENUMV(RealDouble),1,size_1D,&Ar) != CG_OK) {
     printf("*FAILED* cgp_array_write (Array_Ar)\n");
     cgp_error_exit();
+  }
+
+  /* Disable chunked dataset */
+  if(cg_chunk) {
+    chunk_param[0] = 0;
+    if(cg_configure(CG_CONFIG_HDF5_CHUNK, chunk_param) != CG_OK) {
+      printf("*FAILED* cg_configure:CG_CONFIG_HDF5_CHUNK \n");
+      cgp_error_exit();
+    }
+  }
+
+  /* Disable filter */
+  if(hdf5_filters == 1) {
+    if(cg_set_filter(CG_FILTER_NONE) != CG_OK) {
+      printf("*FAILED* cg_set_filter \n");
+      cgp_error_exit();
+    }
   }
 
 #if CG_BUILD_64BIT
@@ -572,7 +832,6 @@ int main(int argc, char* argv[]) {
   xtiming[10] = t2-t1;
 
   /* Read the base information */
-  t1 = MPI_Wtime();
   if(cg_base_read(fn, B, name, &r_cell_dim, &r_phys_dim) != CG_OK) {
     printf("*FAILED* cg_base_read\n");
     cgp_error_exit();

@@ -7,6 +7,7 @@ SHELL = @SHELL@
 # CFLAGS  - compiler flags
 # COOUT   - flag to name the object output (typically -o).
 # CEOUT   - flag to name the output executable (typically -o).
+# CPPFLAGS- C/C++ preprocessor flags
 # LDFLAGS - any additional linking flags
 # CLIBS   - any additional libraries needed to link a CGNS application
 #------------------------------------------------------------------------
@@ -16,6 +17,7 @@ CFLAGS  = @CFLAGS@ @SYSCFLAGS@
 COOUT   = @COOUT@
 CEOUT   = @CEOUT@
 LDFLAGS = @LDFLAGS@
+CPPFLAGS= @CPPFLAGS@
 CLIBS   = @LIBS@
 
 #------------------------------------------------------------------------
@@ -101,6 +103,8 @@ HDF5LIB     = @HDF5LIB@
 HDF5LIB_DEP = @HDF5LIB_DEP@
 SZIPLIB     = @SZIPLIB@
 ZLIBLIB     = @ZLIBLIB@
+H5NEEDSZIP  = @H5NEEDSZIP@
+H5NEEDZLIB  = @H5NEEDZLIB@
 
 #------------------------------------------------------------------------
 # these should only be set if building with HDF5 and MPI

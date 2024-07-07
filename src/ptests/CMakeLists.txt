@@ -20,6 +20,7 @@ list( APPEND PTESTS_LK_LIBS
 
 if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
   list(APPEND PTESTS_LK_LIBS ${ZLIB_LIBRARY})
+  set(GZIP "-cg_filter gzip,9")
 endif()
 if(HDF5_NEED_SZIP AND SZIP_LIBRARY)
   list(APPEND PTESTS_LK_LIBS ${SZIP_LIBRARY})
@@ -119,9 +120,20 @@ endif ()
 # Add the tests so that cmake can find them
 if (CGNS_ENABLE_TESTS)
   foreach(TEST_NAME ${C_PTESTS_LIST})
-    add_test(NAME test-${TEST_NAME}
-             COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
-	     ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
+    if ( ${TEST_NAME} STREQUAL "benchmark_hdf5" )
+      add_test(NAME test-${TEST_NAME}
+        COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+	${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
+
+      add_test(NAME test-${TEST_NAME}-compression
+        COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+	${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS} ${GZIP})
+
+    else ()
+      add_test(NAME test-${TEST_NAME}
+        COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} "2"
+	${MPIEXEC_PREFLAGS} $<TARGET_FILE:${TEST_NAME}> ${MPIEXEC_POSTFLAGS})
+    endif ()
   endforeach()
   if (CGNS_ENABLE_FORTRAN  AND HAVE_FORTRAN_2003)
     foreach(TEST_NAME ${FORTRAN_PTESTS_LIST})
