@@ -79,7 +79,8 @@ jobs:
     - name: Setup Intel Compiler
       shell: cmd
       run: |
-          "C:\Program Files (x86)\Intel\oneAPI\compiler\latest\env\vars.bat"
+          for /f "tokens=* usebackq" %%f in (`dir /b "C:\Program Files (x86)\Intel\oneAPI\compiler\" ^| findstr /V latest ^| sort`) do @set "INTEL_LATEST_VERSION=%%f"
+          "C:\Program Files (x86)\Intel\oneAPI\compiler\%INTEL_LATEST_VERSION%\env\vars.bat"
        #   "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" 
     - name: build CGNS
       run: |
