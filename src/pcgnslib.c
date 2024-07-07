@@ -1154,13 +1154,14 @@ int cgp_poly_elements_read_data_offsets(int fn, int B, int Z, int S, cgsize_t st
 	  return CG_ERROR;
 
   section = cgi_get_section(cg, B, Z, S);
+  if (section == 0) return CG_ERROR;
 
   if (IS_FIXED_SIZE(section->el_type)) {
     cgi_error("element must not be a fixed size for this parallel IO");
     return CG_ERROR;
   }
 
-  if (section == 0 || section->connect == 0 || section->connect_offset == 0) return CG_ERROR;
+  if (section->connect == 0 || section->connect_offset == 0) return CG_ERROR;
 
   rmin = start - section->range[0] + 1;
   rmax = end - section->range[0] + 2;
@@ -1212,13 +1213,14 @@ int cgp_poly_elements_read_data_elements(int fn, int B, int Z, int S, cgsize_t s
     return CG_ERROR;
 
   section = cgi_get_section(cg, B, Z, S);
+  if (section == 0) return CG_ERROR;
 
   if (IS_FIXED_SIZE(section->el_type)) {
     cgi_error("element must not be a fixed size for this parallel IO");
     return CG_ERROR;
   }
 
-  if (section == 0 || section->connect == 0 || section->connect_offset == 0) return CG_ERROR;
+  if (section->connect == 0 || section->connect_offset == 0) return CG_ERROR;
 
   elem_type = cgi_datatype(section->connect->data_type);
 

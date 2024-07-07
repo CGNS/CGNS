@@ -3768,17 +3768,6 @@ MODULE cgns
        INTEGER, INTENT(OUT) :: ier
      END SUBROUTINE cgp_field_write_f
 
-     SUBROUTINE cgp_array_write_f(arrayname, type, rank, dim, A, ier)! BIND(C, NAME="cgp_array_write_f")
-       IMPORT :: cgenum_t, c_char, cgsize_t
-       IMPLICIT NONE
-       INTEGER(cgenum_t) :: type
-       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: arrayname
-       INTEGER, INTENT(IN) :: rank
-       INTEGER(CGSIZE_T), DIMENSION(*) :: dim
-       INTEGER :: A
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cgp_array_write_f
-
      SUBROUTINE cgp_error_exit_f() BIND(C, NAME="cgp_error_exit_f")
        IMPLICIT NONE
      END SUBROUTINE cgp_error_exit_f
