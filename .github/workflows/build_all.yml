@@ -78,6 +78,8 @@ jobs:
       run: |
           for /f "tokens=* usebackq" %%f in (`dir /b "C:\Program Files (x86)\Intel\oneAPI\compiler\" ^| findstr /V latest ^| sort`) do @set "INTEL_LATEST_VERSION=%%f"
           "C:\Program Files (x86)\Intel\oneAPI\compiler\%INTEL_LATEST_VERSION%\env\vars.bat"
+          where icx
+          where ifx
        #   "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" 
     - name: build CGNS
       run: |
