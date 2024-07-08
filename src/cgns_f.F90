@@ -36,7 +36,7 @@
 !
 MODULE cgns
 
-  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR
+  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR, C_NULL_CHAR
   IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
@@ -3725,21 +3725,6 @@ MODULE cgns
 !!$       INTEGER, INTENT(OUT) :: ier
 !!$     END SUBROUTINE cgp_elements_write_data_f
 !!$
-     SUBROUTINE cgp_poly_section_write_f(fn, B , Z, sectionname, type, start, end, maxoffset, nbndry, S, ier) !BIND(C, name="cgp_poly_section_write_f")
-       IMPORT :: c_char, cgsize_t, cgenum_t
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: Z
-       CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: sectionname
-       INTEGER(cgenum_t), INTENT(IN) :: type
-       INTEGER(cgsize_t), INTENT(IN) :: start
-       INTEGER(cgsize_t), INTENT(IN) :: end
-       INTEGER(cgsize_t), INTENT(IN) :: maxoffset
-       INTEGER, INTENT(IN) :: nbndry
-       INTEGER, INTENT(OUT) :: S
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cgp_poly_section_write_f
 !!$
 !!$!!$     SUBROUTINE cgp_elements_read_data_f(fn, B, Z, S, start, &
 !!$          end, elements, ier) BIND(C, NAME="cgp_elements_read_data_f")
@@ -4615,6 +4600,50 @@ MODULE cgns
   PRIVATE cg_configure_ptr
 
 CONTAINS
+
+#if CG_BUILD_PARALLEL_F
+
+  SUBROUTINE cgp_poly_section_write_f(fn, B , Z, sectionname, type, start, end, maxoffset, nbndry, S, ier)
+    IMPORT :: cgsize_t, cgenum_t
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn
+    INTEGER, INTENT(IN) :: B
+    INTEGER, INTENT(IN) :: Z
+    CHARACTER(LEN=*), INTENT(IN) :: sectionname
+    INTEGER(cgenum_t), INTENT(IN) :: type
+    INTEGER(cgsize_t), INTENT(IN) :: start
+    INTEGER(cgsize_t), INTENT(IN) :: end
+    INTEGER(cgsize_t), INTENT(IN) :: maxoffset
+    INTEGER, INTENT(IN) :: nbndry
+    INTEGER, INTENT(OUT) :: S
+    INTEGER, INTENT(OUT) :: ier
+
+    CHARACTER(LEN=LEN_TRIM(sectionname)+1,KIND=C_CHAR) :: c_name
+
+    INTERFACE
+      INTEGER FUNCTION cgp_poly_section_write(fn, B , Z, sectionname, type, start, end, maxoffset, nbndry, S) &
+      BIND(C, name="cgp_poly_section_write")
+      IMPORT :: c_int, c_char, cgsize_t, cgenum_t
+      IMPLICIT NONE
+      INTEGER(c_int) :: fn
+      INTEGER(c_int) :: B
+      INTEGER(c_int) :: Z
+      CHARACTER(KIND=C_CHAR), DIMENSION(*) :: sectionname
+      INTEGER(cgenum_t) :: type
+      INTEGER(cgsize_t) :: start
+      INTEGER(cgsize_t) :: end
+      INTEGER(cgsize_t) :: maxoffset
+      INTEGER(c_int) :: nbndry
+      INTEGER(c_int) :: S
+      END FUNCTION cgp_poly_section_write
+    END INTERFACE
+
+    c_name = TRIM(sectionname)//C_NULL_CHAR
+    ier = cgp_poly_section_write(fn, B, Z, c_name, type, start, end, maxoffset, nbndry, S)
+
+  END SUBROUTINE cgp_poly_section_write_f
+
+#endif
 
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_goto_f
