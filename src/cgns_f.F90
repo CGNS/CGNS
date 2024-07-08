@@ -4618,12 +4618,7 @@ CONTAINS
     INTEGER, INTENT(OUT) :: ier
 
     CHARACTER(LEN=LEN_TRIM(sectionname)+1,KIND=C_CHAR) :: c_name
-    INTEGER(c_int) :: c_fn
-    INTEGER(c_int) :: c_B
-    INTEGER(c_int) :: c_Z
-    INTEGER(c_int) :: c_nbndry
     INTEGER(c_int) :: c_S
-    INTEGER(c_int) :: c_ier
 
     INTERFACE
       INTEGER(c_int) FUNCTION cgp_poly_section_write(fn, B , Z, sectionname, type, start, end, maxoffset, nbndry, S) &
@@ -4644,15 +4639,11 @@ CONTAINS
     END INTERFACE
 
     c_name = TRIM(sectionname)//C_NULL_CHAR
-    c_fn = INT(fn, c_int)
-    c_B = INT(B, c_int)
-    c_Z = INT(Z, c_int)
-    c_nbndry = INT(nbndry, c_int)
 
-    c_ier = cgp_poly_section_write(c_fn, c_B, c_Z, c_name, type, start, end, maxoffset, c_nbndry, c_S)
+    ier = INT(cgp_poly_section_write(INT(fn, c_int), INT(B, c_int), INT(Z, c_int), c_name, type, start, end, maxoffset, &
+                INT(nbndry, c_int), c_S))
 
     S = INT(c_S)
-    ier = INT(c_ier)
 
   END SUBROUTINE cgp_poly_section_write_f
 
