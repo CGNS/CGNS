@@ -4604,7 +4604,6 @@ CONTAINS
 #if CG_BUILD_PARALLEL_F
 
   SUBROUTINE cgp_poly_section_write_f(fn, B , Z, sectionname, type, start, end, maxoffset, nbndry, S, ier)
-    IMPORT :: cgsize_t, cgenum_t
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
     INTEGER, INTENT(IN) :: B
