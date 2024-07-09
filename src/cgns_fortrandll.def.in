@@ -242,3 +242,4 @@ CGNS_mp_cgp_field_multi_read_data_f
 CGNS_mp_cgp_field_multi_write_data_f
 CGNS_mp_cgp_array_multi_read_data_f
 CGNS_mp_cgp_array_multi_write_data_f
+CGNS_cgp_poly_section_write_f
