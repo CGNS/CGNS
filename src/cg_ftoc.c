@@ -4383,25 +4383,6 @@ CGNSDLL void FMNAME(cgp_section_write_f, CGP_SECTION_WRITE_F) (
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void FMNAME(cgp_poly_section_write_f, CGP_POLY_SECTION_WRITE_F) (
-    cgint_f *fn, cgint_f *B, cgint_f *Z, STR_PSTR(sectionname),
-	CGNS_ENUMT(ElementType_t) *type, cgsize_t *start, cgsize_t *end, cgsize_t *maxoffset,
-	cgint_f *nbndry, cgint_f *S, cgint_f *ier STR_PLEN(sectionname))
-{
-    char c_name[CGIO_MAX_NAME_LENGTH+1];
-    int i_S;
-
-    string_2_C_string(STR_PTR(sectionname), STR_LEN(sectionname),
-		      c_name, CGIO_MAX_NAME_LENGTH, ier);
-    if (*ier) return;
-    *ier = (cgint_f) cgp_poly_section_write((int)*fn, (int)*B, (int)*Z, c_name, (CGNS_ENUMT(ElementType_t))*type,
-					    *start, *end, *maxoffset,
-					    (int)*nbndry, &i_S);
-    *S = (cgint_f)i_S;
-}
-
-/*-----------------------------------------------------------------------*/
-
 CGNSDLL void FMNAME(cgp_elements_write_data_f,CGP_ELEMENTS_WRITE_DATA_F)(
 	cgint_f *fn, cgint_f *B, cgint_f *Z, cgint_f *S, cgsize_t *start,
 	cgsize_t *end, cgsize_t *elements, cgint_f *ier)
