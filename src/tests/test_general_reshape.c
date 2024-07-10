@@ -256,7 +256,8 @@ int main (int argc, char *argv[])
                               3, m_dims, m_rmin, m_rmax, ibuf_1d))
         cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
-        if (ibuf_1d[i] != (int)fvalues_1d[i]) ++np;
+        int tmp_cmp = (int)round(fvalues_1d[i]);
+        if (ibuf_1d[i] != tmp_cmp) ++np;
     }
     nn += np;
     if (np) printf("%d differences in values (T2)\n", np);
@@ -463,7 +464,8 @@ int main (int argc, char *argv[])
                               1, m_dims, m_rmin, m_rmax, ibuf_1d))
       cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
-        if (ibuf_1d[i] != (int)fvalues_1d[i]) ++np;
+        int tmp_cmp = (int)round(fvalues_1d[i]);
+        if (ibuf_1d[i] != tmp_cmp) ++np;
     }
     /* read the second in 3d */
     for (n=0; n<3; n++) {
@@ -482,7 +484,8 @@ int main (int argc, char *argv[])
                               3, m_dims, m_rmin, m_rmax, ibuf_1d))
       cg_error_exit();
     for (i = 0; i < dims_1d(0); i++) {
-        if (ibuf_1d[i] != (int)dvalues_1d[i]) ++np;
+        int tmp_cmp = (int)lround(dvalues_1d[i]);
+        if (ibuf_1d[i] != tmp_cmp) ++np;
     }
     nn += np;
     if (np) printf("%d differences in values (T5)\n", np);
