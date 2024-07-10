@@ -307,16 +307,6 @@ CGNSDLL void cg_root_id_f(cgint_f *fn, double *rootid, cgint_f *ier)
  *      Read and write CGNSBase_t Nodes                                  *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL void cg_nbases_f(cgint_f *fn, cgint_f *nbases, cgint_f *ier)
-{
-    int i_nbases;
-
-    *ier = (cgint_f)cg_nbases((int)*fn, &i_nbases);
-    *nbases = (cgint_f)i_nbases;
-}
-
-/*-----------------------------------------------------------------------*/
-
 CGNSDLL void FMNAME(cg_base_read_f, CG_BASE_READ_F) (cgint_f *fn, cgint_f *B,
 	STR_PSTR(basename), cgint_f *cell_dim, cgint_f *phys_dim,
 	cgint_f *ier STR_PLEN(basename))
