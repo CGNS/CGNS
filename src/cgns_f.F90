@@ -36,7 +36,7 @@
 !
 MODULE cgns
 
-  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR, C_NULL_CHAR
+  USE ISO_C_BINDING, ONLY : C_INT, C_FLOAT, C_DOUBLE, C_LONG_LONG, C_CHAR, C_PTR, C_NULL_CHAR, C_NULL_PTR, C_LOC
   IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
@@ -4625,15 +4625,15 @@ CONTAINS
       BIND(C, name="cgp_poly_section_write")
       IMPORT :: c_int, c_char, cgsize_t, cgenum_t
       IMPLICIT NONE
-      INTEGER(c_int) :: fn
-      INTEGER(c_int) :: B
-      INTEGER(c_int) :: Z
+      INTEGER(c_int), VALUE :: fn
+      INTEGER(c_int), VALUE :: B
+      INTEGER(c_int), VALUE :: Z
       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: sectionname
-      INTEGER(cgenum_t) :: type
-      INTEGER(cgsize_t) :: start
-      INTEGER(cgsize_t) :: end
-      INTEGER(cgsize_t) :: maxoffset
-      INTEGER(c_int) :: nbndry
+      INTEGER(cgenum_t), VALUE :: type
+      INTEGER(cgsize_t), VALUE :: start
+      INTEGER(cgsize_t), VALUE :: end
+      INTEGER(cgsize_t), VALUE :: maxoffset
+      INTEGER(c_int), VALUE :: nbndry
       INTEGER(c_int) :: S
       END FUNCTION cgp_poly_section_write
     END INTERFACE
@@ -4646,6 +4646,48 @@ CONTAINS
     S = INT(c_S)
 
   END SUBROUTINE cgp_poly_section_write_f
+
+  SUBROUTINE cgp_poly_elements_write_data_f(fn, B , Z, S, start, end, elements, offsets, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: fn
+    INTEGER, INTENT(IN) :: B
+    INTEGER, INTENT(IN) :: Z
+    INTEGER, INTENT(IN) :: S
+    INTEGER(cgsize_t), INTENT(IN) :: start
+    INTEGER(cgsize_t), INTENT(IN) :: end
+    INTEGER(cgsize_t), INTENT(IN), TARGET :: elements(:)
+    INTEGER(cgsize_t), INTENT(IN), TARGET :: offsets(:)
+    INTEGER, INTENT(OUT) :: ier
+
+    TYPE(c_ptr) :: c_elements
+    TYPE(c_ptr) :: c_offsets
+
+    INTERFACE
+      INTEGER(c_int) FUNCTION cgp_poly_elements_write_data(fn, B , Z, S, start, end, elements, offsets) &
+      BIND(C, name="cgp_poly_elements_write_data")
+      IMPORT :: c_int, c_ptr, cgsize_t
+      IMPLICIT NONE
+      INTEGER(c_int), VALUE :: fn
+      INTEGER(c_int), VALUE :: B
+      INTEGER(c_int), VALUE :: Z
+      INTEGER(c_int), VALUE :: S
+      INTEGER(cgsize_t), VALUE :: start
+      INTEGER(cgsize_t), VALUE :: end
+      TYPE(c_ptr), VALUE :: elements
+      TYPE(c_ptr), VALUE :: offsets
+      END FUNCTION cgp_poly_elements_write_data
+    END INTERFACE
+
+    c_elements = C_NULL_PTR
+    c_offsets  = C_NULL_PTR
+    IF (end >= start) THEN
+      c_elements = C_LOC(elements)
+      c_offsets  = C_LOC(offsets)
+    END IF
+    ier = INT(cgp_poly_elements_write_data(INT(fn, c_int), INT(B, c_int), INT(Z, c_int), INT(S, c_int), start, end, &
+                c_elements, c_offsets))
+
+  END SUBROUTINE cgp_poly_elements_write_data_f
 
 #endif
 
