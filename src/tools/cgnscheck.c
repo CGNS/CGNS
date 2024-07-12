@@ -2580,8 +2580,8 @@ static void check_coordinates (int ng)
 {
     char name[33];
     int ierr, n, rind[6];
-    cgsize_t np, rmin[3], rmax[3];
-    int nc, ncoords, mask, coordset[4];
+    cgsize_t np, dimensions, rmin[3], rmax[3];
+    int nc, ncoords, mask, rank, coordset[4];
     int *punits, units[9], dataclass;
     float *coord, cmin, cmax;
     CGNS_ENUMT(DataType_t) datatype;
@@ -2644,19 +2644,20 @@ static void check_coordinates (int ng)
         fatal_error("malloc failed for %" PRIdCGSIZE " coordinate values\n", np);
     if (z->maxnode < np) z->maxnode = np;
 
-    if (cg_ncoords (cgnsfn, cgnsbase, cgnszone, &ncoords))
-        error_exit("cg_ncoords");
+    go_absolute ("Zone_t", cgnszone, "GridCoordinates_t", ng, NULL);
+
+    if (cg_narrays (&ncoords))
+        error_exit("cg_narrays");
     if (ncoords < PhyDim)
         error ("number coordinates < physical dimensions");
     for (n = 0; n < 4; n++)
         coordset[n] = 0;
 
     for (nc = 1; nc <= ncoords; nc++) {
-        if (cg_coord_info (cgnsfn, cgnsbase, cgnszone, nc, &datatype, name))
-            error_exit("cg_coord_info");
-        if (cg_coord_read (cgnsfn, cgnsbase, cgnszone, name, CGNS_ENUMV(RealSingle),
-                rmin, rmax, coord))
-            error_exit("cg_coord_read");
+        if (cg_array_info (nc, name, &datatype, &rank, &dimensions))
+            error_exit("cg_array_info");
+        if (cg_array_read_as (nc, CGNS_ENUMV(RealSingle), coord))
+            error_exit("cg_array_read");
         printf ("    checking coordinate \"%s\"\n", name);
         fflush (stdout);
         cmin = cmax = coord[0];
@@ -5187,7 +5188,7 @@ static void check_zone_iter (void)
                         for (nn = 0; nn < NumArbitraryGrid; nn++) {
                             if (0 == strcmp (buff, ArbitraryGrid[nn])) break;
                         }
-                        if (nn == NumArbitraryGrid) ierr++;
+                        if ((nn == NumArbitraryGrid) && (0 != strcmp (buff, "Null"))) ierr++;
                     }
                 }
                 else if (0 == strcmp (name, "FlowSolutionPointers")) {
@@ -5201,7 +5202,7 @@ static void check_zone_iter (void)
                         for (nn = 0; nn < NumFlowSolution; nn++) {
                             if (0 == strcmp (buff, FlowSolution[nn])) break;
                         }
-                        if (nn == NumFlowSolution) ierr++;
+                        if ((nn == NumFlowSolution) && (0 != strcmp (buff, "Null"))) ierr++;
                     }
                 }
                 else if (0 == strcmp (name, "GridCoordinatesPointers")) {
@@ -5215,7 +5216,7 @@ static void check_zone_iter (void)
                         for (nn = 0; nn < NumGridCoordinate; nn++) {
                             if (0 == strcmp (buff, GridCoordinate[nn])) break;
                         }
-                        if (nn == NumGridCoordinate) ierr++;
+                        if ((nn == NumGridCoordinate) && (0 != strcmp (buff, "Null"))) ierr++;
                     }
                 }
                 else if (0 == strcmp (name, "RigidGridMotionPointers")) {
@@ -5229,7 +5230,7 @@ static void check_zone_iter (void)
                         for (nn = 0; nn < NumRigidGrid; nn++) {
                             if (0 == strcmp (buff, RigidGrid[nn])) break;
                         }
-                        if (nn == NumRigidGrid) ierr++;
+                        if ((nn == NumRigidGrid) && (0 != strcmp (buff, "Null"))) ierr++;
                     }
                 }
                 else if (0 == strcmp (name, "ZoneGridConnectivityPointers")) {
@@ -5243,7 +5244,7 @@ static void check_zone_iter (void)
                         for (nn = 0; nn < NumZoneConn; nn++) {
                             if (0 == strcmp (buff, ZoneConn[nn])) break;
                         }
-                        if (nn == NumZoneConn) ierr++;
+                        if ((nn == NumZoneConn) && (0 != strcmp (buff, "Null"))) ierr++;
                     }
                 }
                 else {
@@ -5257,7 +5258,7 @@ static void check_zone_iter (void)
                         for (nn = 0; nn < NumZoneSubReg; nn++) {
                             if (0 == strcmp (buff, ZoneSubReg[nn])) break;
                         }
-                        if (nn == NumZoneSubReg) ierr++;
+                        if ((nn == NumZoneSubReg) && (0 != strcmp (buff, "Null"))) ierr++;
                     }
                 }
                 free (desc);
