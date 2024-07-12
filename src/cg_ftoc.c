@@ -4482,6 +4482,8 @@ CGNSDLL void FMNAME(cg_particle_model_write_f, CG_PARTICLE_MODEL_WRITE_F) (STR_P
         *ier = (cgint_f)cg_particle_model_write(c_name, *ModelType);
 }
 
+/*-----------------------------------------------------------------------*/
+
 #ifdef WIN32_FORTRAN
 CGNSDLL void __stdcall cg_array_write_f(STR_PSTR(ArrayName),
 	CGNS_ENUMT(DataType_t) *DataType, cgint_f *DataDimension,
@@ -4511,8 +4513,6 @@ CGNSDLL void FMNAME(cg_array_write_f, CG_ARRAY_WRITE_F) (STR_PSTR(ArrayName),
         *ier = (cgint_f)cg_array_write(c_name, *DataType,
                               (int)*DataDimension, DimensionVector, Data);
 }
-
-/*-----------------------------------------------------------------------*/
 
 /* CGNSDLL void cg_array_write_f03 (ArrayName, */
 /* 	CGNS_ENUMT(DataType_t) *DataType, cgint_f *DataDimension, cgsize_t *DimensionVector, */
