@@ -223,6 +223,12 @@ test_unstruc_quad_f90$(EXE) : test_unstruc_quad_f90.F90 $(CGNSLIB)
 
 #----------
 
+test_poly_unstructured_f90$(EXE) : test_poly_unstructured_f90.F90 $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_poly_unstructured_f90.F90 $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
 Metadata_Stressing$(EXE) : Metadata_Stressing.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ Metadata_Stressing.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
