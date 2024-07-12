@@ -6139,13 +6139,14 @@ static void check_particle_coordinates (int npc)
 {
     char name[33];
     int n;
-    cgsize_t np, rmin, rmax;
-    int nc, ncoords, mask, coordset[4];
+    cgsize_t np, dimensions, rmin, rmax;
+    int nc, ncoords, mask, rank, coordset[4];
     int *punits, units[9], dataclass;
     float *coord, cmin, cmax;
     CGNS_ENUMT(DataType_t) datatype;
     PARTICLE_ZONE *p = &ParticleZone[cgnsparticle-1];
 
+    /* Get number of coordinate nodes */
     if (cg_particle_coord_node_read (cgnsfn, cgnsbase, cgnsparticle, npc, name))
         error_exit("cg_particle_coord_node_read");
     strcpy (ParticleCoordinate[npc-1], name);
@@ -6154,6 +6155,7 @@ static void check_particle_coordinates (int npc)
 
     go_absolute ("ParticleZone_t", cgnsparticle, "ParticleCoordinates_t", npc, NULL);
 
+    /* Check Descriptor_t nodes if any */
     if (verbose > 1) {
         int nd;
         char *desc;
@@ -6184,19 +6186,21 @@ static void check_particle_coordinates (int npc)
     if (NULL == (coord = (float *) malloc ((size_t)(np * sizeof(float)))))
         fatal_error("malloc failed for %" PRIdCGSIZE " coordinate values\n", np);
 
-    if (cg_particle_ncoords (cgnsfn, cgnsbase, cgnsparticle, &ncoords))
-        error_exit("cg_particle_ncoords");
+    go_absolute ("ParticleZone_t", cgnsparticle, "ParticleCoordinates_t", npc, NULL);
+
+    if (cg_narrays (&ncoords))
+        error_exit("cg_narrays");
     if (ncoords < PhyDim)
         error ("number coordinates < physical dimensions");
     for (n = 0; n < 4; n++)
         coordset[n] = 0;
 
+    /* Check each particle coordinate node */
     for (nc = 1; nc <= ncoords; nc++) {
-        if (cg_particle_coord_info (cgnsfn, cgnsbase, cgnsparticle, nc, &datatype, name))
-            error_exit("cg_particle_coord_info");
-        if (cg_particle_coord_read (cgnsfn, cgnsbase, cgnsparticle, name, CGNS_ENUMV(RealSingle),
-                &rmin, &rmax, coord))
-            error_exit("cg_particle_coord_read");
+       if (cg_array_info (nc, name, &datatype, &rank, &dimensions))
+           error_exit("cg_array_info");
+       if (cg_array_read_as (nc, CGNS_ENUMV(RealSingle), coord))
+           error_exit("cg_array_read");
         printf ("    checking particle coordinate \"%s\"\n", name);
         fflush (stdout);
         cmin = cmax = coord[0];
@@ -6380,7 +6384,7 @@ static void check_particle_iter (void)
     for (n = 1; n <= na; n++) {
         if (cg_array_info (n, name, &datatype, &ndim, dims))
             error_exit("cg_array_info");
-        printf ("    checking zone iterative data \"%s\"\n", name);
+        printf ("    checking particle zone iterative data \"%s\"\n", name);
         fflush (stdout);
         for (size = 1, nd = 0; nd < ndim; nd++)
             size *= dims[nd];
@@ -6405,7 +6409,7 @@ static void check_particle_iter (void)
                         for (nn = 0; nn < NumParticleSolution; nn++) {
                             if (0 == strcmp (buff, ParticleSolution[nn])) break;
                         }
-                        if (nn == NumParticleSolution) ierr++;
+                        if ((nn == NumParticleSolution) && 0 != strcmp (buff, "Null")) ierr++;
                     }
                 }
 

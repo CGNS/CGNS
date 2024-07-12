@@ -13646,6 +13646,17 @@ int cg_1to1_average_write(int fn, int B, int Z, int J,
 /*****************************************************************************\
  *           Particle Functions
 \*****************************************************************************/
+/**
+ * \ingroup CGNSParticleZoneInformation
+ *
+ * \brief Get number of a particle zone in base
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[out] nparticlezones Number of particle zones present in base B.
+ * \return \ier
+ *
+ */
 int cg_nparticle_zones(int file_number, int B, int *nparticlezones)
 {
    cgns_base *base;
@@ -13678,6 +13689,18 @@ int cg_particle_id(int file_number, int B, int P, double *particle_id)
    return CG_OK;
 }
 
+/**
+ * \ingroup CGNSParticleZoneInformation
+ *
+ * \brief Read particle zone information
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[out] zonename Name of the zone
+ * \param[out] size Number of particles in this ParticleZone (i.e. ParticleSize)
+ * \return \ier
+ */
 int cg_particle_read(int fn, int B, int P, char *particlename, cgsize_t *size)
 {
     cgns_pzone *pzone;
@@ -13697,6 +13720,18 @@ int cg_particle_read(int fn, int B, int P, char *particlename, cgsize_t *size)
     return CG_OK;
 }
 
+/**
+ * \ingroup CGNSParticleZoneInformation
+ *
+ * \brief Create and/or write to a CGNS particle zone
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B   \B_Base
+ * \param[in] particlename   Name of the particle zone.
+ * \param[in] size  Number of particles in this particle zone
+ * \param[out] P  \P_ParticleZone
+ * \return \ier
+ */
 int cg_particle_write(int fn, int B, const char *particlename, const cgsize_t size, int *P)
 {
    cgns_base *base;
