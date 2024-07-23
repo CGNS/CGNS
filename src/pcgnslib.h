@@ -99,10 +99,17 @@ CGNSDLL int cgp_poly_section_write(int fn, int B, int Z,
     int nbndry, int *S);
 CGNSDLL int cgp_poly_elements_write_data(int fn, int B, int Z, int S,
     cgsize_t start, cgsize_t end, const cgsize_t *elements, const cgsize_t *offsets);
-
+CGNSDLL int cgp_poly_elements_read_data_offsets(int fn, int B, int Z, int S,
+    cgsize_t start, cgsize_t end, cgsize_t *offsets);
+CGNSDLL int cgp_poly_elements_read_data_elements(int fn, int B, int Z, int S,
+    cgsize_t start, cgsize_t end, const cgsize_t *offsets, cgsize_t *elements);
 CGNSDLL int cgp_parent_data_write(int fn, int B, int Z, int S,
 				  cgsize_t start, cgsize_t end,
 				  const cgsize_t *parent_data);
+CGNSDLL int cgp_parentelements_read_data(int fn, int B, int Z, int S, cgsize_t start,
+    cgsize_t end, cgsize_t *parentelements);
+CGNSDLL int cgp_parentelements_write_data(int fn, int B, int Z, int S, cgsize_t start,
+    cgsize_t end, cgsize_t *parentelements);
 
 /*===== Solution IO Prototypes =====*/
 
@@ -119,7 +126,7 @@ CGNSDLL int cgp_field_read_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax, void *data);
 CGNSDLL int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
     const cgsize_t *rmin, const cgsize_t *rmax,
-    CGNS_ENUMT(DataType_t) m_type, 
+    CGNS_ENUMT(DataType_t) m_type,
     int m_numdim, const cgsize_t *m_arg_dimvals,
     const cgsize_t *m_rmin, const cgsize_t *m_rmax, void *data);
 
