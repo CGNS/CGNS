@@ -154,8 +154,13 @@ PROGRAM test_poly_unstructured_f
   ALLOCATE(offsets_sizes(comm_size))
   local_size(1) = offsets(nbCellWrite+1)
 
-  CALL MPI_Allgather(local_size, 1, MPI_LONG, offsets_sizes, 1, MPI_LONG, &
+#if CG_BUILD_64BIT_F
+  CALL MPI_Allgather(local_size, 1, MPI_LONG_LONG, offsets_sizes, 1, MPI_LONG_LONG, &
                       MPI_COMM_WORLD, ierr)
+#else
+  CALL MPI_Allgather(local_size, 1, MPI_INTEGER, offsets_sizes, 1, MPI_INTEGER, &
+                      MPI_COMM_WORLD, ierr)
+#endif
 
   DO iProc = 1, comm_size
     IF (iProc-1 < comm_rank) THEN
