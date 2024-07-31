@@ -2968,99 +2968,75 @@ CGNSDLL void FMNAME(cg_ptset_write_f, CG_PTSET_WRITE_F) (
  *      Go - To Function                                                 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-CGNSDLL void FMNAME(cg_goto_f1, CG_GOTO_F1)(cgint_f *fn, cgint_f *B, cgint_f *ier, STR_PSTR(name), cgint_f *index STR_PLEN(name))
+CGNSDLL int cg_goto_fc1(cgint_f fn, cgint_f B, char *c_name, cgint_f index)
 {
-    int length;
     char *c_label[2];
     int c_index[2], n;
+    cgint_f ier = 0;
 
-    if (*index < 0) {
+    if (index < 0) {
         cgi_error("Incorrect input to function cg_goto_f");
-        *ier = 1;
-        return;
+        ier = 1;
+        return ier;
     }
 
-    length = (int) STR_LEN(name);
-    c_label[0] = CGNS_NEW(char, length+1);
+    c_label[0] = c_name;
     c_label[1] = "end";
-    c_index[0] = (int)*index;
+    c_index[0] = (int)index;
     c_index[1] = 0;
 
-    string_2_C_string(STR_PTR(name), STR_LEN(name), c_label[0], length, ier);
-
-    if (*ier == 0) {
+    if (ier == 0) {
       if (c_label[0][0] == ' ' || 0 == strncmp(c_label[0],"end",3) ||
           0 == strncmp(c_label[0],"END",3)) {
         n=0;
       } else {
         n=1;
       }
-      *ier = (cgint_f)cgi_set_posit((int)*fn, (int)*B, n, c_index, c_label);
+      ier = (cgint_f)cgi_set_posit((int)fn, (int)B, n, c_index, c_label);
     }
-
-    CGNS_FREE(c_label[0]);
+    return ier;
 }
 
-CGNSDLL void FMNAME(cg_gorel_f1, CG_GOREL_F1)(cgint_f *fn, cgint_f *ier, STR_PSTR(name), cgint_f *index STR_PLEN(name))
+CGNSDLL int cg_gorel_fc1(cgint_f fn, char* c_name, cgint_f index)
 {
     int length;
     char *c_label[2];
     int c_index[2], n;
+    cgint_f ier = 0;
 
     if (posit == 0) {
         cgi_error ("position not set with cg_goto");
-        *ier = (cgint_f)CG_ERROR;
-        return;
+        ier = (cgint_f)CG_ERROR;
+        return ier;
     }
-    if ((int)*fn != posit_file) {
+    if ((int)fn != posit_file) {
         cgi_error("current position is in the wrong file");
-        *ier = (cgint_f)CG_ERROR;
-        return;
+        ier = (cgint_f)CG_ERROR;
+        return ier;
     }
-    if (*index < 0) {
+    if (index < 0) {
         cgi_error("Incorrect input to function cg_gorel_f1");
-        *ier = 1;
-        return;
+        ier = 1;
+        return ier;
     }
 
-    length = (int) STR_LEN(name);
-    c_label[0] = CGNS_NEW(char, length+1);
+    c_label[0] = c_name;
     c_label[1] = "end";
-    c_index[0] = (int)*index;
+    c_index[0] = (int)index;
     c_index[1] = 0;
 
-    string_2_C_string(STR_PTR(name), STR_LEN(name), c_label[0], length, ier);
-
-    if (*ier == 0) {
+    if (ier == 0) {
       if (c_label[0][0] == ' ' || 0 == strncmp(c_label[0],"end",3) ||
           0 == strncmp(c_label[0],"END",3)) {
         n=0;
       } else {
         n=1;
       }
-      *ier = (cgint_f)cgi_update_posit(n, c_index, c_label);
+      ier = (cgint_f)cgi_update_posit(n, c_index, c_label);
     }
 
-    CGNS_FREE(c_label[0]);
+    return ier;
 }
-
-/*-----------------------------------------------------------------------*/
-
-CGNSDLL void FMNAME(cg_gopath_f, CG_GOPATH_F) (cgint_f *fn,
-	STR_PSTR(path), cgint_f *ier STR_PLEN(path))
-{
-    int length;
-    char *c_path;
-
-    length = (int) STR_LEN(path);
-    c_path = CGNS_NEW(char, length+1);
-
-    string_2_C_string(STR_PTR(path), STR_LEN(path), c_path, length, ier);
-    if (*ier == 0)
-        *ier = (cgint_f)cg_gopath((int)*fn, c_path);
-    CGNS_FREE(c_path);
-}
-
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *              Read Multiple path nodes                                 *
