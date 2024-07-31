@@ -104,6 +104,7 @@ if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
     test_mixed_par_ser
     fopen_close
     test_unstruc_quad_f90
+    test_poly_unstructured_f90
   )
   set(pcgns_ftest_FILES pcgns_ftest.F90)
   add_executable(pcgns_ftest ${pcgns_ftest_FILES})
@@ -117,6 +118,8 @@ if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
   add_executable(fopen_close ${fopen_close_FILES})
   set(test_unstruc_quad_f90_FILES test_unstruc_quad_f90.F90)
   add_executable(test_unstruc_quad_f90 ${test_unstruc_quad_f90_FILES})
+  set(test_poly_unstructured_f90_FILES test_poly_unstructured_f90.F90)
+  add_executable(test_poly_unstructured_f90 ${test_poly_unstructured_f90_FILES})
   # Linking
   foreach(TGTNAME ${FORTRAN_PTESTS_LIST})
     target_link_libraries(${TGTNAME} PRIVATE ${PTESTS_LK_LIBS})

@@ -3486,7 +3486,7 @@ CGNSDLL void __stdcall cg_array_read_as_f(cgint_f *A, CGNS_ENUMT(DataType_t) *ty
 
 CGNSDLL void FMNAME(cg_array_general_read_f, CG_ARRAY_GENERAL_READ_F) (
         cgint_f *A,
-        cgsize_t *s_rmin, cgsize_t *s_rmax, CGNS_ENUMT(DataType_t) *m_type, 
+        cgsize_t *s_rmin, cgsize_t *s_rmax, CGNS_ENUMT(DataType_t) *m_type,
         cgint_f *m_numdim, cgsize_t *m_dimvals,
         cgsize_t *m_rmin, cgsize_t *m_rmax, void *data,
         cgint_f *ier)

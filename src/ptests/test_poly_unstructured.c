@@ -28,6 +28,7 @@
 
 #include "mpi.h"
 #include "pcgnslib.h"
+#include "cgnstypes.h"
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
@@ -172,8 +173,13 @@ int main(int argc, char **argv) {
   offsets_sizes = (long *)malloc(sizeof(long) * comm_size);
   local_size = offsets[cellOnProcEnd - cellOnProcStart];
 
-  MPI_Allgather(&local_size, 1, MPI_LONG, offsets_sizes, 1, MPI_LONG,
+#if CG_BUILD_64BIT
+  MPI_Allgather(&local_size, 1, MPI_INT64_T, offsets_sizes, 1, MPI_INT64_T,
                 comm_parallel);
+#else
+  MPI_Allgather(&local_size, 1, MPI_INT32_T, offsets_sizes, 1, MPI_INT32_T,
+                comm_parallel);
+#endif
 
   for (int iProc = 0; iProc < comm_size; iProc++) {
     if (iProc < comm_rank) {
@@ -391,6 +397,68 @@ int main(int argc, char **argv) {
       MPI_Send(&end, 1, MPI_LONG, 0, 3, MPI_COMM_WORLD);
     }
   }
+
+  for (int iZone = 0; iZone < nb_zones; iZone++) {
+    // read the elements
+    if (comm_rank == 0)
+      printf("reading mixed element data in parallel\n");
+
+    // open the file in parallel
+    callCGNS(cgp_mpi_comm(comm_parallel));
+    callCGNS(cgp_open(fileName, CG_MODE_READ, &cgfile));
+
+    cgsize_t start = cellOnProcStart + 1;
+    cgsize_t end = cellOnProcEnd;
+    cgsize_t nbRead = cellOnProcEnd - cellOnProcStart;
+    cgzone = iZone + 1;
+    cgelem = 1;
+
+    cgsize_t *offsetsRead =
+        (cgsize_t *)malloc(sizeof(cgsize_t) * (nbRead + 1));
+    callCGNS(cgp_poly_elements_read_data_offsets(cgfile, cgbase, cgzone, cgelem, start,
+                                          end, offsetsRead));
+    cgsize_t sizeRead = offsetsRead[nbRead];
+    cgsize_t *cellsRead = (cgsize_t *)malloc(sizeof(cgsize_t) * sizeRead);
+    callCGNS(cgp_poly_elements_read_data_elements(cgfile, cgbase, cgzone, cgelem, start,
+                                          end, offsetsRead, cellsRead));
+
+    cgsize_t count = 0;
+    for (cgsize_t iCell = (start - 1); iCell < end; iCell++) {
+      cgsize_t i = floor(iCell / nbCellSlice);
+      cgsize_t j = floor((iCell - i * nbCellSlice) / nbCellSide);
+      cgsize_t k = floor(iCell - i * nbCellSlice - j * nbCellSide);
+      compareValuescgSize_t(cellsRead[count + 0], (cgsize_t)(CGNS_ENUMV(HEXA_8)));
+      compareValuescgSize_t(cellsRead[count + 1], (i + 0) * nbNodeSlice +
+                                                      (j + 0) * nbNodeSide +
+                                                      (k + 0) + 1);
+      compareValuescgSize_t(cellsRead[count + 2], (i + 1) * nbNodeSlice +
+                                                      (j + 0) * nbNodeSide +
+                                                      (k + 0) + 1);
+      compareValuescgSize_t(cellsRead[count + 3], (i + 1) * nbNodeSlice +
+                                                      (j + 1) * nbNodeSide +
+                                                      (k + 0) + 1);
+      compareValuescgSize_t(cellsRead[count + 4], (i + 0) * nbNodeSlice +
+                                                      (j + 1) * nbNodeSide +
+                                                      (k + 0) + 1);
+      compareValuescgSize_t(cellsRead[count + 5], (i + 0) * nbNodeSlice +
+                                                      (j + 0) * nbNodeSide +
+                                                      (k + 1) + 1);
+      compareValuescgSize_t(cellsRead[count + 6], (i + 1) * nbNodeSlice +
+                                                      (j + 0) * nbNodeSide +
+                                                      (k + 1) + 1);
+      compareValuescgSize_t(cellsRead[count + 7], (i + 1) * nbNodeSlice +
+                                                      (j + 1) * nbNodeSide +
+                                                      (k + 1) + 1);
+      compareValuescgSize_t(cellsRead[count + 8], (i + 0) * nbNodeSlice +
+                                                      (j + 1) * nbNodeSide +
+                                                      (k + 1) + 1);
+      count = count + 9;
+    }
+    free(cellsRead);
+    free(offsetsRead);
+    callCGNS(cgp_close(cgfile));
+  }
+
   free(cells);
   free(offsets);
 
