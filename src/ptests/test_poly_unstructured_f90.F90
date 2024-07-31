@@ -155,10 +155,10 @@ PROGRAM test_poly_unstructured_f
   local_size(1) = offsets(nbCellWrite+1)
 
 #if CG_BUILD_64BIT_F
-  CALL MPI_Allgather(local_size, 1, MPI_LONG_LONG, offsets_sizes, 1, MPI_LONG_LONG, &
+  CALL MPI_Allgather(local_size, 1, MPI_INT64_T, offsets_sizes, 1, MPI_INT64_T, &
                       MPI_COMM_WORLD, ierr)
 #else
-  CALL MPI_Allgather(local_size, 1, MPI_INTEGER, offsets_sizes, 1, MPI_INTEGER, &
+  CALL MPI_Allgather(local_size, 1, MPI_INT32_T, offsets_sizes, 1, MPI_INT32_T, &
                       MPI_COMM_WORLD, ierr)
 #endif
 

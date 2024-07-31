@@ -28,6 +28,7 @@
 
 #include "mpi.h"
 #include "pcgnslib.h"
+#include "cgnstypes.h"
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
@@ -172,8 +173,13 @@ int main(int argc, char **argv) {
   offsets_sizes = (long *)malloc(sizeof(long) * comm_size);
   local_size = offsets[cellOnProcEnd - cellOnProcStart];
 
-  MPI_Allgather(&local_size, 1, MPI_LONG, offsets_sizes, 1, MPI_LONG,
+#if CG_BUILD_64BIT
+  MPI_Allgather(&local_size, 1, MPI_INT64_T, offsets_sizes, 1, MPI_INT64_T,
                 comm_parallel);
+#else
+  MPI_Allgather(&local_size, 1, MPI_INT32_T, offsets_sizes, 1, MPI_INT32_T,
+                comm_parallel);
+#endif
 
   for (int iProc = 0; iProc < comm_size; iProc++) {
     if (iProc < comm_rank) {
