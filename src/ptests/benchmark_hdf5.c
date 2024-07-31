@@ -232,6 +232,7 @@ int initialize(int* argc, char** argv[]) {
     printf("Subfiling enabled: %s\n", enable_subfiling ? "True" : "False");
     printf("Fusing the subfiles: %s\n", enable_fuse ? "True" : "False");
     printf("--------------------------------\n");
+    fflush(stdout);
   }
 
   return 0;
