@@ -66,6 +66,7 @@ static IDENTIFIER Identifier[] = {
 {"CurrentDensityZ",                  0, 8, { 0, -2,  0,  0,  0,  1,  0,  0}},
 {"Density",                          0, 5, { 1, -3,  0,  0,  0,  0,  0,  0}},
 {"DensityStagnation",                0, 5, { 1, -3,  0,  0,  0,  0,  0,  0}},
+{"Diameter",                         0, 5, { 0,  1,  0,  0,  0,  0,  0,  0}},
 {"Drag",                             0, 5, { 1,  1, -2,  0,  0,  0,  0,  0}},
 {"ElectricConductivity",             0, 8, { 1,  1, -3,  0,  0, -2,  0,  0}},
 /* electric field (volts/meter) */
@@ -125,6 +126,7 @@ static IDENTIFIER Identifier[] = {
 {"MagneticFieldX",                   0, 8, { 0, -1,  0,  0,  0,  1,  0,  0}},
 {"MagneticFieldY",                   0, 8, { 0, -1,  0,  0,  0,  1,  0,  0}},
 {"MagneticFieldZ",                   0, 8, { 0, -1,  0,  0,  0,  1,  0,  0}},
+{"Mass",                             0, 5, { 1,  0,  0,  0,  0,  0,  0,  0}},
 {"MassFlow",                         0, 5, { 1, -2, -1,  0,  0,  0,  0,  0}},
 {"MassFraction",                     1, 0, { 0,  0,  0,  0,  0,  0,  0,  0}},
 {"MoleFraction",                     1, 0, { 0,  0,  0,  0,  0,  0,  0,  0}},
@@ -169,6 +171,7 @@ static IDENTIFIER Identifier[] = {
 {"Pressure",                         0, 5, { 1, -1, -2,  0,  0,  0,  0,  0}},
 {"PressureDynamic",                  0, 5, { 1, -1, -2,  0,  0,  0,  0,  0}},
 {"PressureStagnation",               0, 5, { 1, -1, -2,  0,  0,  0,  0,  0}},
+{"Radius",                           0, 5, { 0,  1,  0,  0,  0,  0,  0,  0}},
 {"ReferenceTemperatureHOF",          0, 5, { 0,  0,  0,  1,  0,  0,  0,  0}},
 {"Reynolds",                         0, 0, { 0,  0,  0,  0,  0,  0,  0,  0}},
 {"ReynoldsStressXX",                 0, 5, { 1, -1, -2,  0,  0,  0,  0,  0}},
@@ -291,7 +294,12 @@ static IDENTIFIER Identifier[] = {
 {"VorticityTheta",                   0, 5, { 0,  0, -1,  0,  0,  0,  0,  0}},
 {"VorticityX",                       0, 5, { 0,  0, -1,  0,  0,  0,  0,  0}},
 {"VorticityY",                       0, 5, { 0,  0, -1,  0,  0,  0,  0,  0}},
-{"VorticityZ",                       0, 5, { 0,  0, -1,  0,  0,  0,  0,  0}}
+{"VorticityZ",                       0, 5, { 0,  0, -1,  0,  0,  0,  0,  0}},
+{"Weber",                            0, 0, { 0,  0,  0,  0,  0,  0,  0,  0}},
+{"WeberDensity",                     0, 5, { 1, -3,  0,  0,  0,  0,  0,  0}},
+{"WeberVelocity",                    0, 5, { 0,  1, -1,  0,  0,  0,  0,  0}},
+{"WeberLength",                      0, 5, { 0,  1,  0,  0,  0,  0,  0,  0}},
+{"WeberSurfaceTension",              0, 5, { 1,  0, -2,  0,  0,  0,  0,  0}}
 };
 
 #define NUM_IDENTIFIER ((int)(sizeof(Identifier)/sizeof(IDENTIFIER)))
