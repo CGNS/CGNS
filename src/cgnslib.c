@@ -9884,7 +9884,7 @@ int cg_conn_info(int fn, int B, int Z, int J, char *connectname,
     if (separator != NULL) {
         /* get ending zoneName */
         strcpy(zonedonorname, separator + sizeof(char));
-    /* get base but do not use path syntax */
+        /* get base but do not use path syntax */
         memcpy(basedonorname, donorname, (separator - donorname)*sizeof(char));
         basedonorname[separator - donorname] = '\0';
         /* Find donor base index */
@@ -9896,9 +9896,9 @@ int cg_conn_info(int fn, int B, int Z, int J, char *connectname,
     }
     else {
         /* zoneName is in current base */
-    strcpy(basedonorname, cg->base[B-1].name);
+        strcpy(basedonorname, cg->base[B-1].name);
         strcpy(zonedonorname, donorname);
-    dB = B-1;
+        dB = B-1;
     }
 
      /* Find ZoneType_t of DonorZone given its name */
