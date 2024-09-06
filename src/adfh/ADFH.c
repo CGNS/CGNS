@@ -2189,24 +2189,12 @@ void ADFH_Database_Open(const char   *name,
       mode = ADFH_MODE_OLD;
   }
   else if (0 == strcmp(buff, "NEW")) {
-    if (!ACCESS(name, 0)) {
-      set_error(REQUESTED_NEW_FILE_EXISTS, err);
-      return;
-    }
     mode = ADFH_MODE_NEW;
   }
   else if (0 == strcmp(buff, "READ_ONLY")) {
-    if (ACCESS(name, 0)) {
-      set_error(REQUESTED_OLD_FILE_NOT_FOUND, err);
-      return;
-    }
     mode = ADFH_MODE_RDO;
   }
   else if (0 == strcmp(buff, "OLD")) {
-    if (ACCESS(name, 0)) {
-      set_error(REQUESTED_OLD_FILE_NOT_FOUND, err);
-      return;
-    }
     mode = ADFH_MODE_OLD;
   }
   else {
