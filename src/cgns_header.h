@@ -956,13 +956,6 @@ typedef struct {
     double id;
 } cgns_posit;
 
-/* need some of these routines exported for CGNStools */
-
-#if defined(_WIN32) && defined(BUILD_DLL)
-# define CGNSDLL __declspec(dllexport)
-#else
-# define CGNSDLL
-#endif
 
 #ifdef __cplusplus
 extern "C" {
