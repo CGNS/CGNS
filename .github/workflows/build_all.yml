@@ -86,19 +86,13 @@ jobs:
         export CGNS_SRC=`pwd`
         mkdir ../CGNS_BUILD
         cd ../CGNS_BUILD
-        #cmd: where icl
-        #cmd: where icx
-        #cmd: where ifx
-        #cmd: where ifort
         cmake --version
-        dir $CGNS_SRC
         set HDF5_DIR=/Program Files/HDF_Group/HDF5/1.14.3/cmake
         set HDF5_ROOT=/Program Files/HDF_Group/HDF5/1.14.3
         set CC=icx
         set FC=ifx
         #.github/workflows/build_windows.bat fortran $VS_VER $SAMPLES_TAG
-        #dir C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\
-        cmake -G "Visual Studio 17 2022" \
+        cmake -G "Ninja" \
          -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON \
          -D CMAKE_C_FLAGS:STRING="" \
          -D CMAKE_BUILD_TYPE:STRING=Debug \
@@ -117,8 +111,6 @@ jobs:
          -D CGNS_ENABLE_PARALLEL:BOOL=OFF \
          -D CMAKE_INSTALL_PREFIX:PATH='.' \
          $CGNS_SRC
-#  -D CMAKE_C_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\icx.exe" \
-#  -D CMAKE_Fortran_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\ifx.exe" \
     #- name: build
     #  run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
     #- name: build fortran
