@@ -5848,7 +5848,7 @@ int cg_elements_general_read(int fn, int B, int Z, int S,
     }
     else if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
         void* conv_data = NULL;
-        conv_data = malloc((size_t)(size * size_of(cgi_adf_datatype(s_type))));
+        conv_data = malloc(((size_t)size) * size_of(cgi_adf_datatype(s_type)));
         if (conv_data == NULL) {
             cgi_error("Error allocating conv_data");
             return CG_ERROR;
@@ -5992,7 +5992,7 @@ int cg_parent_elements_general_read(int fn, int B, int Z, int S,
     }
     else if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
         void* conv_data = NULL;
-        conv_data = malloc((size_t)(m_dim[0] * 2 * size_of(cgi_adf_datatype(s_type))));
+        conv_data = malloc(((size_t)(m_dim[0] * 2)) * size_of(cgi_adf_datatype(s_type)));
         if (conv_data == NULL) {
             cgi_error("Error allocating conv_data");
             return CG_ERROR;
@@ -6138,7 +6138,7 @@ int cg_parent_elements_position_general_read(int fn, int B, int Z, int S,
     }
     else if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
         void* conv_data = NULL;
-        conv_data = malloc((size_t)(m_dim[0] * 2 * size_of(cgi_adf_datatype(s_type))));
+        conv_data = malloc(((size_t)(m_dim[0] * 2)) * size_of(cgi_adf_datatype(s_type)));
         if (conv_data == NULL) {
             cgi_error("Error allocating conv_data");
             return CG_ERROR;
@@ -6513,7 +6513,7 @@ int cg_poly_elements_general_read(int fn, int B, int Z, int S,
     }
     else if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
         void* conv_data = NULL;
-        conv_data = malloc((size_t)(size * size_of(cgi_adf_datatype(s_type))));
+        conv_data = malloc(((size_t)size) * size_of(cgi_adf_datatype(s_type)));
         if (conv_data == NULL) {
             cgi_error("Error allocating conv_data");
             return CG_ERROR;
@@ -6585,8 +6585,8 @@ int cg_elements_partial_write(int fn, int B, int Z, int S,
     } \
     else if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2){ \
     void *conv_data=NULL; \
-    conv_data = malloc((size_t)((m_end-m_start+1) \
-    *size_of(ARRAY->data_type))); \
+    conv_data = malloc(((size_t)(m_end-m_start+1)) \
+    *size_of(ARRAY->data_type)); \
     if (conv_data == NULL) { \
     cgi_error("Error allocating conv_data"); \
     STATUS = CG_ERROR; \
@@ -6625,8 +6625,8 @@ int cg_elements_partial_write(int fn, int B, int Z, int S,
     } \
     else if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2){ \
     void *conv_data; \
-    conv_data = malloc((size_t)((m_end[0]-m_start[0]+1)*(m_end[1]-m_start[1]+1) \
-    *size_of(ARRAY->data_type))); \
+    conv_data = malloc((size_t)((m_end[0]-m_start[0]+1)*(m_end[1]-m_start[1]+1)) \
+    *size_of(ARRAY->data_type)); \
     if (conv_data == NULL) { \
     cgi_error("Error allocating conv_data"); \
     return CG_ERROR; \
@@ -6667,8 +6667,8 @@ int cg_elements_partial_write(int fn, int B, int Z, int S,
     void *conv_data; \
     cgsize_t conv_size=1; \
     for (int ii=0; ii<S_DIM; ii++){ conv_size *= ARRAY->dim_vals[ii]; } \
-    conv_data = malloc((size_t)(conv_size \
-    *size_of(ARRAY->data_type))); \
+    conv_data = malloc(((size_t)conv_size) \
+    *size_of(ARRAY->data_type)); \
     if (conv_data == NULL) { \
     cgi_error("Error allocating conv_data"); \
     return CG_ERROR; \
@@ -6705,7 +6705,7 @@ int cg_elements_partial_write(int fn, int B, int Z, int S,
     } \
     } else if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) { \
     void *conv_data = NULL; \
-    conv_data = malloc((size_t)(SIZE*size_of(cgi_adf_datatype(S_TYPE)))); \
+    conv_data = malloc(((size_t)SIZE)*size_of(cgi_adf_datatype(S_TYPE))); \
     if (conv_data==NULL){ \
     cgi_error("Error allocating conv_data"); \
     STATUS = CG_ERROR; \
@@ -7286,7 +7286,7 @@ int cg_poly_elements_general_write(int fn, int B, int Z, int S,
                     }
                 } else if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
                     void *conv_data = NULL;
-                    conv_data = malloc((size_t)(m_trail_size*size_of(section->connect->data_type)));
+                    conv_data = malloc(((size_t)m_trail_size)*size_of(section->connect->data_type));
                     if (conv_data == NULL) {
                         cgi_error("Error allocating conv_data");
                         ier = CG_ERROR;
@@ -11004,7 +11004,7 @@ int cg_boco_read(int fn, int B, int Z, int BC, cgsize_t *pnts, void *NormalList)
     dim = cg->base[B-1].phys_dim;
     if (NormalList && boco->normal && boco->ptset && boco->ptset->npts>0) {
         memcpy(NormalList, boco->normal->data,
-        (size_t)(boco->ptset->size_of_patch*dim*size_of(boco->normal->data_type)));
+        ((size_t)(boco->ptset->size_of_patch*dim))*size_of(boco->normal->data_type));
     }
 
     return CG_OK;
@@ -11382,12 +11382,12 @@ int cg_boco_normal_write(int fn, int B, int Z, int BC, const int * NormalIndex,
         normal = boco->normal;
 
         strcpy(normal->data_type, cgi_adf_datatype(NormalDataType));
-        normal->data = (void *)malloc((size_t)(npnts*phys_dim*size_of(normal->data_type)));
+        normal->data = (void *)malloc(((size_t)(npnts*phys_dim))*size_of(normal->data_type));
         if (normal->data == NULL) {
             cgi_error("Error allocating normal->data");
             return CG_ERROR;
         }
-        memcpy(normal->data, NormalList, (size_t)(npnts*phys_dim*size_of(normal->data_type)));
+        memcpy(normal->data, NormalList, ((size_t)(npnts*phys_dim))*size_of(normal->data_type));
         strcpy(normal->name, "InwardNormalList");
         normal->data_dim =2;
         normal->dim_vals[0]=phys_dim;
@@ -15204,7 +15204,7 @@ int cg_array_read(int A, void *Data)
     for (n=0; n<array->data_dim; n++) num *= array->dim_vals[n];
 
     if (array->data)
-        memcpy(Data, array->data, (size_t)(num*size_of(array->data_type)));
+        memcpy(Data, array->data, ((size_t)num)*size_of(array->data_type));
     else {
         if (cgio_read_all_data_type(cg->cgio, array->id, array->data_type, Data)) {
             cg_io_error("cgio_read_all_data_type");
@@ -15256,7 +15256,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
     }
     if (type==CGNS_ENUMV(Character)) {
         if (array->data)
-            memcpy(Data, array->data, (size_t)(num*size_of(array->data_type)));
+            memcpy(Data, array->data, ((size_t)num)*size_of(array->data_type));
         else {
             if (cgio_read_all_data_type(cg->cgio, array->id, array->data_type, Data)) {
                 cg_io_error("cgio_read_all_data_type");
@@ -15270,7 +15270,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
     if (array->data)
         array_data = array->data;
     else {
-        array_data = malloc((size_t)(num*size_of(array->data_type)));
+        array_data = malloc(((size_t)num)*size_of(array->data_type));
         if (array_data == NULL) {
             cgi_error("Error allocating array_data");
             return CG_ERROR;

@@ -6912,7 +6912,7 @@ int cgi_read_offset_data_type(double id, char const *data_type, cgsize_t start, 
     else {
         if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
             void* conv_data = NULL;
-            conv_data = malloc((size_t)(cnt * size_of(data_type)));
+            conv_data = malloc(((size_t)cnt) * size_of(data_type));
             if (conv_data == NULL) {
                 cgi_error("Error allocating conv_data");
                 return CG_ERROR;
@@ -9578,7 +9578,7 @@ int cgi_array_general_read(
             return CG_ERROR;
         }
         void *conv_data;
-        conv_data = malloc((size_t)(numpt*size_of(array->data_type)));
+        conv_data = malloc(((size_t)numpt)*size_of(array->data_type));
         if (conv_data == NULL) {
             cgi_error("Error allocating conv_data");
             return CG_ERROR;
@@ -9768,7 +9768,7 @@ int cgi_array_general_write(
             return CG_ERROR;
         }
         void *conv_data;
-        conv_data = malloc((size_t)(numpt*size_of(array->data_type)));
+        conv_data = malloc(((size_t)numpt)*size_of(array->data_type));
         if (conv_data == NULL) {
             cgi_error("Error allocating conv_data");
             return CG_ERROR;
@@ -9928,7 +9928,7 @@ char *type_of(char_33 data_type)
     }
 }
 
-int size_of(const char_33 data_type)
+size_t size_of(const char_33 data_type)
 {
     if (strcmp(data_type, "I4") == 0) return sizeof(int);
     if (strcmp(data_type, "I8") == 0) return sizeof(cglong_t);

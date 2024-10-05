@@ -1262,12 +1262,12 @@ static void read_zone (int nz)
         if (cg_ElementDataSize (cgnsfn, cgnsbase, nz, ns, &se))
             error_exit ("cg_ElementDataSize");
         if (se == 0) continue;
-        es->elements = (cgsize_t *) malloc ((size_t)(se * sizeof(cgsize_t)));
+        es->elements = (cgsize_t *) malloc (((size_t)se) * sizeof(cgsize_t));
         if (NULL == es->elements)
             fatal_error("malloc failed for elements\n");
         es->parent = NULL;
         if (hasparent) {
-            es->parent = (cgsize_t *) malloc ((size_t)(4 * nelem * sizeof(cgsize_t)));
+            es->parent = (cgsize_t *) malloc (((size_t)(4 * nelem)) * sizeof(cgsize_t));
             if (NULL == es->parent)
                 fatal_error("malloc failed for elemset parent data\n");
         }
@@ -1275,7 +1275,7 @@ static void read_zone (int nz)
         if (es->type == CGNS_ENUMV(MIXED) ||
             es->type == CGNS_ENUMV(NFACE_n) ||
             es->type == CGNS_ENUMV(NGON_n)) {
-            es->offsets = (cgsize_t *) malloc ((size_t)((nelem+1) * sizeof(cgsize_t)));
+            es->offsets = (cgsize_t *) malloc (((size_t)(nelem+1)) * sizeof(cgsize_t));
             if (NULL == es->offsets)
                 fatal_error("malloc failed for offsets\n");
             if (cg_poly_elements_read (cgnsfn, cgnsbase, nz, ns, es->elements, es->offsets,
@@ -1467,7 +1467,7 @@ static void read_zone (int nz)
                 if (tmp < idx_min) idx_min = tmp;
             }
             arr_size = idx_max - idx_min + 1;
-            face_tags = (unsigned char *) malloc((size_t)(arr_size *sizeof(unsigned char)));
+            face_tags = (unsigned char *) malloc(((size_t)arr_size) *sizeof(unsigned char));
             if (face_tags == NULL) {
                 fatal_error("malloc failed for face tags\n");
 	    }
@@ -1640,7 +1640,7 @@ static void read_zone (int nz)
         if (nodes[k]) ne++;
     }
     z->nextnodes = ne;
-    z->extnodes = (cgsize_t *) malloc ((size_t)(ne * sizeof(cgsize_t)));
+    z->extnodes = (cgsize_t *) malloc (((size_t)ne) * sizeof(cgsize_t));
     if (z->extnodes == NULL)
         fatal_error("malloc failed for zone exterior nodes\n");
     for (ne = 0, k = 0; k < maxnode; k++) {
@@ -2621,7 +2621,7 @@ static void check_coordinates (int ng)
         rmax[n] = z->dims[0][n] + rind[2*n] + rind[2*n+1];
         np *= rmax[n];
     }
-    if (NULL == (coord = (float *) malloc ((size_t)(np * sizeof(float)))))
+    if (NULL == (coord = (float *) malloc (((size_t)np) * sizeof(float))))
         fatal_error("malloc failed for %" PRIdCGSIZE " coordinate values\n", np);
     if (z->maxnode < np) z->maxnode = np;
 
@@ -3053,7 +3053,7 @@ static cgsize_t check_interface (ZONE *z, CGNS_ENUMT(PointSetType_t) ptype,
             }
             np *= (pmax[n] - pmin[n] + 1);
         }
-        p = (cgsize_t *) malloc ((size_t)(np * z->idim * sizeof(cgsize_t)));
+        p = (cgsize_t *) malloc (((size_t)(np * z->idim)) * sizeof(cgsize_t));
         if (p == NULL)
             fatal_error("malloc failed for point/element list\n");
         n = 0;
@@ -3277,7 +3277,7 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
             size = 0;
         }
         else {
-            pts = (cgsize_t *) malloc ((size_t)(z->idim * npnts * sizeof(cgsize_t)));
+            pts = (cgsize_t *) malloc (((size_t)(z->idim * npnts)) * sizeof(cgsize_t));
             if (NULL == pts)
                 fatal_error("malloc failed for BCDataSet points\n");
             if (cg_ptset_read (pts)) error_exit("cg_ptset_read");
@@ -3439,7 +3439,7 @@ static void check_BC (int nb, int parclass, int *parunits)
         }
     }
 
-    pts = (cgsize_t *) malloc ((size_t)(z->idim * npts * sizeof(cgsize_t)));
+    pts = (cgsize_t *) malloc (((size_t)(z->idim * npts)) * sizeof(cgsize_t));
     if (NULL == pts)
         fatal_error("malloc failed for BC points\n");
     nrmllist = NULL;
@@ -4087,14 +4087,14 @@ static void check_conn (int nzc, int nc)
     check_user_data (z->dataclass, z->punits, 4);
 
     if (npts && dnpts) {
-        pts = (cgsize_t *) malloc ((size_t)(npts * z->idim * sizeof(cgsize_t)));
+        pts = (cgsize_t *) malloc (((size_t)(npts * z->idim)) * sizeof(cgsize_t));
         if (LibraryVersion < 2200) {
             /* a bug in version prior to 2.2 causes the base cell dimension */
             /* to be used here, instead of the donor zone index dimension */
-            dpts = (cgsize_t *) malloc ((size_t)(dnpts * CellDim * sizeof(cgsize_t)));
+            dpts = (cgsize_t *) malloc (((size_t)(dnpts * CellDim)) * sizeof(cgsize_t));
         }
         else
-            dpts = (cgsize_t *) malloc ((size_t)(dnpts * dz->idim * sizeof(cgsize_t)));
+            dpts = (cgsize_t *) malloc (((size_t)(dnpts * dz->idim)) * sizeof(cgsize_t));
         if (NULL == pts || NULL == dpts)
             fatal_error("malloc failed for connectivity points\n");
         if (cg_conn_read (cgnsfn, cgnsbase, cgnszone, nc, pts,
@@ -4256,7 +4256,7 @@ static void check_hole (int nzc, int nh)
     }
 
     if (!ierr && np > 0) {
-        cgsize_t *pnts = (cgsize_t *) malloc ((size_t)(np * z->idim * sizeof(cgsize_t)));
+        cgsize_t *pnts = (cgsize_t *) malloc (((size_t)(np * z->idim)) * sizeof(cgsize_t));
         if (pnts == NULL)
             fatal_error("malloc failed for hole data\n");
         if (cg_hole_read (cgnsfn, cgnsbase, cgnszone, nh, pnts))
@@ -5010,7 +5010,7 @@ static void check_subreg (int ns)
             }
         }
         if (!ierr) {
-            cgsize_t *pnts = (cgsize_t *)malloc(npnts * z->idim * sizeof(cgsize_t));
+            cgsize_t *pnts = (cgsize_t *)malloc(((size_t)(npnts * z->idim)) * sizeof(cgsize_t));
             if (pnts == NULL)
                 fatal_error("check_subreg:malloc failed for points\n");
             if (cg_subreg_ptset_read(cgnsfn, cgnsbase, cgnszone, ns, pnts))
