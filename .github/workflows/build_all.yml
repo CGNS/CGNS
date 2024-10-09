@@ -48,6 +48,10 @@ jobs:
         shell: bash
     steps:
     - uses: actions/checkout@v3
+    - name: Install Core Dependencies
+      run: |
+        choco install -y make
+        choco install -y ninja
     - name: cache install
       id: cache-install
       uses: actions/cache@v4
@@ -56,7 +60,7 @@ jobs:
             C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
             C:\Program Files (x86)\Intel\oneAPI\compiler
         key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/scripts/cache_exclude_windows.sh') }}
-    - name: install
+    - name: install Intel Kit
       if: steps.cache-install.outputs.cache-hit != 'true'
       run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS
     - name: install HDF5
@@ -73,44 +77,45 @@ jobs:
         msiexec /i HDF5-1.14.3-win64.msi /quiet /qn /norestart /log install.log
         #type install.log
         cd ..\..
-    - name: Setup Intel Compiler
-      shell: cmd
+    - name: Configure with Intel Compiler
+      shell: pwsh
       run: |
-          for /f "tokens=* usebackq" %%f in (`dir /b "C:\Program Files (x86)\Intel\oneAPI\compiler\" ^| findstr /V latest ^| sort`) do @set "INTEL_LATEST_VERSION=%%f"
-          "C:\Program Files (x86)\Intel\oneAPI\compiler\%INTEL_LATEST_VERSION%\env\vars.bat"
-          where icx
-          where ifx
-       #   "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" 
-    - name: build CGNS
-      run: |
-        export CGNS_SRC=`pwd`
-        mkdir ../CGNS_BUILD
-        cd ../CGNS_BUILD
-        cmake --version
-        set HDF5_DIR=/Program Files/HDF_Group/HDF5/1.14.3/cmake
-        set HDF5_ROOT=/Program Files/HDF_Group/HDF5/1.14.3
-        set CC=icx
-        set FC=ifx
-        #.github/workflows/build_windows.bat fortran $VS_VER $SAMPLES_TAG
-        cmake -G "Ninja" \
-         -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON \
-         -D CMAKE_C_FLAGS:STRING="" \
-         -D CMAKE_BUILD_TYPE:STRING=Debug \
-         -D CMAKE_C_COMPILER=icx \
-         -D CMAKE_FORTRAN_COMPILER=ifx \
-         -D HDF5_NEED_ZLIB:BOOL=ON \
-         -D CMAKE_STATIC_LINKER_FLAGS:STRING="" \
-         -D CGNS_ENABLE_HDF5:BOOL=ON \
-         -D HDF5_DIR:PATH="C:\Program Files\HDF_Group\HDF5\1.14.3\cmake" \
-         -D CMAKE_PREFIX_PATH:PATH="C:\Program Files\HDF_Group\HDF5\1.14.3\cmake" \
-         -D CGNS_ENABLE_TESTS:BOOL=ON \
-         -D CGNS_ENABLE_LFS:BOOL=OFF \
-         -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF \
-         -D CGNS_ENABLE_SCOPING:BOOL=OFF \
-         -D CGNS_ENABLE_FORTRAN:BOOL=ON \
-         -D CGNS_ENABLE_PARALLEL:BOOL=OFF \
-         -D CMAKE_INSTALL_PREFIX:PATH='.' \
-         $CGNS_SRC
+          $intelPath = "C:\Program Files (x86)\Intel\oneAPI\compiler\"
+          $latestVersions = Get-ChildItem -Path $intelPath -Name | Where-Object { $_ -notmatch 'latest' } | Sort-Object
+          $INTEL_LATEST_VERSION = $latestVersions
+          $Env:INTEL_VARS_BAT="C:\Program Files (x86)\Intel\oneAPI\compiler\${INTEL_LATEST_VERSION}\env\vars.bat"
+          if(!(Test-Path "$Env:INTEL_VARS_BAT" -PathType Leaf)) { Write-Host "Intel env vars.bat doesn't exist in expected locations." }
+          & $Env:comspec "/C" '"%INTEL_VARS_BAT%" > nul && pwsh -C "Get-ChildItem env: | Select-Object name,value | ConvertTo-Json"' | ConvertFrom-json | write-output | ForEach-Object {Set-Item "env:$($_.Name)" "$($_.Value)"}
+          $CGNS_SRC="$pwd"
+          mkdir ../CGNS_BUILD
+          cd ../CGNS_BUILD
+          $Env:HDF5_DIR="/Program Files/HDF_Group/HDF5/1.14.3/cmake"
+          $Env:HDF5_ROOT="/Program Files/HDF_Group/HDF5/1.14.3"
+          $Env:CC="icx"
+          $Env:FC="ifx"
+          $Env:CXX="icx"
+          & cmake -G "Ninja" `
+           -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON `
+           -D CMAKE_C_FLAGS:STRING="" `
+           -D CMAKE_BUILD_TYPE:STRING=Debug `
+           -D CMAKE_C_COMPILER=icx `
+           -D CMAKE_Fortran_COMPILER=ifx `
+           -D HDF5_NEED_ZLIB:BOOL=ON `
+           -D CMAKE_STATIC_LINKER_FLAGS:STRING="" `
+           -D CGNS_ENABLE_HDF5:BOOL=ON `
+           -D HDF5_DIR:PATH="C:\Program Files\HDF_Group\HDF5\1.14.3\cmake" `
+           -D CMAKE_PREFIX_PATH:PATH="C:\Program Files\HDF_Group\HDF5\1.14.3\cmake" `
+           -D CGNS_ENABLE_TESTS:BOOL=ON `
+           -D CGNS_ENABLE_LFS:BOOL=OFF `
+           -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF `
+           -D CGNS_ENABLE_SCOPING:BOOL=OFF `
+           -D CGNS_ENABLE_FORTRAN:BOOL=ON `
+           -D CGNS_ENABLE_PARALLEL:BOOL=OFF `
+           -D CMAKE_INSTALL_PREFIX:PATH='.' `
+           $CGNS_SRC
+          & cmake --build . --config Debug
+          & ctest
+          #.github/workflows/build_windows.bat fortran $VS_VER $SAMPLES_TAG
     #- name: build
     #  run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
     #- name: build fortran

@@ -4,6 +4,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-COMPONENTS=$(echo "$1" | sed "s/,/ /g")
+COMPONENTS="${1//,/ }"
 #shellcheck disable=SC2086
 sudo apt-get install -y $COMPONENTS

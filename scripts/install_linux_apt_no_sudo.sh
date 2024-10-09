@@ -4,5 +4,5 @@
 #
 # SPDX-License-Identifier: MIT
 
-COMPONENTS=$(echo "$1" | sed "s/,/ /g")
+COMPONENTS="${1//,/ }"
 apt-get install -y "$COMPONENTS"
