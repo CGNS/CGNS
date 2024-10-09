@@ -172,6 +172,11 @@ if (CGNS_ENABLE_TESTS)
     endif()
     add_test(NAME ${TARGETNAME} COMMAND ${TARGETNAME})
     set_property (TEST ${TARGETNAME} PROPERTY SKIP_RETURN_CODE 125)
+    # On windows help ctest to find the required dlls
+    if(CGNS_BUILD_SHARED)
+      set_tests_properties(${TARGETNAME} PROPERTIES ENVIRONMENT_MODIFICATION
+        "PATH=path_list_prepend:$<$<BOOL:${WIN32}>:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:${TARGETNAME}>,\;>>")
+    endif()
 
   endforeach()
 
@@ -179,6 +184,11 @@ if (CGNS_ENABLE_TESTS)
   if (CGNS_ENABLE_FORTRAN)
     foreach(TARGETNAME ${FORTRAN_TESTS_LIST})
       add_test(NAME ${TARGETNAME} COMMAND ${TARGETNAME})
+      # On windows help ctest to find the required dlls
+      if(CGNS_BUILD_SHARED)
+        set_tests_properties(${TARGETNAME} PROPERTIES ENVIRONMENT_MODIFICATION
+          "PATH=path_list_prepend:$<$<BOOL:${WIN32}>:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:${TARGETNAME}>,\;>>")
+      endif()
     endforeach()
   endif (CGNS_ENABLE_FORTRAN)
 endif (CGNS_ENABLE_TESTS)

@@ -956,13 +956,6 @@ typedef struct {
     double id;
 } cgns_posit;
 
-/* need some of these routines exported for CGNStools */
-
-#if defined(_WIN32) && defined(BUILD_DLL)
-# define CGNSDLL __declspec(dllexport)
-#else
-# define CGNSDLL
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -1255,7 +1248,7 @@ int cgi_zone_no(cgns_base *base, char *zonename, int *zone_no);
 
 /* miscellaneous */
 int cgi_sort_names(int n, double *ids);
-int size_of(const char_33 adf_type);
+size_t size_of(const char_33 adf_type);
 char *type_of(char_33 data_type);
 int cgi_check_strlen(char const * string);
 int cgi_check_strlen_x2(char const *string);
