@@ -1,4 +1,4 @@
-	program read_gravity
+        PROGRAM read_gravity
 	USE CGNS
 	implicit none
 
@@ -335,4 +335,4 @@
  500	format(3a/3a)
  600	format(3a)
 
- 9999	end
+        END PROGRAM read_gravity

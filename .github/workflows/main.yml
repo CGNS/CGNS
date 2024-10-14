@@ -87,12 +87,12 @@ jobs:
                  
     - name: install HDF5
       run: |
-        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5-${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
+        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
         export HOME_DIR=$(echo ~)
         cd hdf5_${{ env.hdf5_vers }}
         ./configure --without-zlib --without-szlib --disable-fortran --disable-hl \
         --disable-tests --disable-tools \
-        --prefix=$HOME_DIR/hdf5 \
+        --prefix=$HOME_DIR/hdf5 --disable-nonstandard-feature-float16 \
         --${{ matrix.parallel }}-parallel 
         make -j 8 install
       shell: bash

@@ -1,4 +1,4 @@
-	program write_links
+        PROGRAM write_links
 	USE CGNS
 
 !       author: Diane Poirier (diane@icemcfd.com)
@@ -311,5 +311,5 @@
 	call cg_close_f(cg2, ier)
  	if (ier .eq. ERROR) call cg_error_exit_f
 
-	end
+        END PROGRAM write_links
 

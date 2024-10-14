@@ -1,4 +1,4 @@
-	program write_chemistry
+        PROGRAM write_chemistry
 	USE CGNS
 
 !       author: Diane Poirier (diane@icemcfd.com)
@@ -445,5 +445,5 @@
 	call cg_close_f(cg, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-	end
+        END PROGRAM write_chemistry
 

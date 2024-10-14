@@ -1,4 +1,4 @@
-	program write_axisym
+        PROGRAM write_axisym
 	USE CGNS
 	implicit none
 
@@ -118,5 +118,5 @@
 ! *** close CGNS file
 	call cg_close_f(cg, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	end
+        END PROGRAM write_axisym
 
