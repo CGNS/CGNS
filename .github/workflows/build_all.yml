@@ -1,0 +1,153 @@
+# SPDX-FileCopyrightText: 2022 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
+name: build_all
+permissions: read-all
+
+on: 
+  push:
+    branches: [ develop, master ]
+  pull_request:
+    branches: [ develop, master ]
+
+env:
+#  1_8: &1_8 1.8.23
+#  1_10: &1_10 1.10.10
+#  1_14: &1_14 1.14.3
+  SHORTGEN: "vs17"
+  WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/e83a8e64-04fc-45df-85c6-c2208d03bdb5/w_BaseKit_p_2024.2.0.635_offline.exe
+  WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0d500705-397e-41b3-8b2b-2a3da1753fc2/w_HPCKit_p_2024.2.0.633_offline.exe
+  LINUX_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/9a98af19-1c68-46ce-9fdd-e249240c7c42/l_BaseKit_p_2024.2.0.634_offline.sh
+  LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/d4e49548-1492-45c9-b678-8268cb0f1b05/l_HPCKit_p_2024.2.0.635_offline.sh
+  LINUX_AIKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0414ef18-5b64-47f2-9b2e-ae94860272b9/l_AITools.2024.1.0.9.sh
+  MACOS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/c112cca6-12cf-4a0c-9e5e-d0d50d3b0f8b/m_RenderKit_p_2024.1.0.744_offline.dmg
+  WINDOWS_CPP_COMPONENTS: intel.oneapi.win.cpp-dpcpp-common
+  WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler
+  WINDOWS_DPCPP_COMPONENTS: intel.oneapi.win.cpp-dpcpp-common
+  LINUX_CPP_COMPONENTS: intel-oneapi-dpcpp-cpp-compiler
+  LINUX_FORTRAN_COMPONENTS: intel-oneapi-compiler-fortran
+  LINUX_DPCPP_COMPONENTS: intel-oneapi-compiler-dpcpp-cpp
+  LINUX_CPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler
+  LINUX_FORTRAN_COMPONENTS_WEB: intel.oneapi.lin.ifort-compiler
+  LINUX_DPCPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler
+  MACOS_CPP_COMPONENTS: intel.oneapi.mac.cpp-compiler
+  MACOS_FORTRAN_COMPONENTS: intel.oneapi.mac.ifort-compiler
+  CACHE_NUMBER: 5
+  SAMPLES_TAG: 2024.2.0
+  AI_SAMPLES_TAG: 2024.1.0
+  COMPILER_VERSION: 2024.2.0
+  TBB_VERSION: 2021.13.0
+  VS_VER: vs2022
+
+jobs:
+  build_windows_cpp_fortran:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Core Dependencies
+      run: |
+        choco install -y make
+        choco install -y ninja
+    - name: cache install
+      id: cache-install
+      uses: actions/cache@v4
+      with:
+        path: |
+            C:\Program Files (x86)\Intel\oneAPI\setvars-vcvarsall.bat
+            C:\Program Files (x86)\Intel\oneAPI\compiler
+        key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/scripts/cache_exclude_windows.sh') }}
+    - name: install Intel Kit
+      if: steps.cache-install.outputs.cache-hit != 'true'
+      run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS
+    - name: install HDF5
+      shell: pwsh
+      run: |
+        mkdir 1.14
+        cd 1.14
+        set HDF5_1_14=$HDF5_1_14_VER
+        #curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/bin/windows/hdf5-$HDF5_1_14_VER-Std-win10_64-$SHORTGEN.zip
+        curl -O  https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/bin/windows/hdf5-1.14.3-Std-win10_64-vs17.zip
+        #Expand-Archive hdf5-$HDF5_1_14_VER-Std-win10_64-$SHORTGEN.zip -DestinationPath .
+        Expand-Archive hdf5-1.14.3-Std-win10_64-vs17.zip .
+        cd hdf
+        msiexec /i HDF5-1.14.3-win64.msi /quiet /qn /norestart /log install.log
+        #type install.log
+        cd ..\..
+    - name: Configure with Intel Compiler
+      shell: pwsh
+      run: |
+          $intelPath = "C:\Program Files (x86)\Intel\oneAPI\compiler\"
+          $latestVersions = Get-ChildItem -Path $intelPath -Name | Where-Object { $_ -notmatch 'latest' } | Sort-Object
+          $INTEL_LATEST_VERSION = $latestVersions
+          $Env:INTEL_VARS_BAT="C:\Program Files (x86)\Intel\oneAPI\compiler\${INTEL_LATEST_VERSION}\env\vars.bat"
+          if(!(Test-Path "$Env:INTEL_VARS_BAT" -PathType Leaf)) { Write-Host "Intel env vars.bat doesn't exist in expected locations." }
+          & $Env:comspec "/C" '"%INTEL_VARS_BAT%" > nul && pwsh -C "Get-ChildItem env: | Select-Object name,value | ConvertTo-Json"' | ConvertFrom-json | write-output | ForEach-Object {Set-Item "env:$($_.Name)" "$($_.Value)"}
+          $CGNS_SRC="$pwd"
+          mkdir ../CGNS_BUILD
+          cd ../CGNS_BUILD
+          $Env:HDF5_DIR="/Program Files/HDF_Group/HDF5/1.14.3/cmake"
+          $Env:HDF5_ROOT="/Program Files/HDF_Group/HDF5/1.14.3"
+          $Env:CC="icx"
+          $Env:FC="ifx"
+          $Env:CXX="icx"
+          & cmake -G "Ninja" `
+           -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON `
+           -D CMAKE_C_FLAGS:STRING="" `
+           -D CMAKE_BUILD_TYPE:STRING=Debug `
+           -D CMAKE_C_COMPILER=icx `
+           -D CMAKE_Fortran_COMPILER=ifx `
+           -D HDF5_NEED_ZLIB:BOOL=ON `
+           -D CMAKE_STATIC_LINKER_FLAGS:STRING="" `
+           -D CGNS_ENABLE_HDF5:BOOL=ON `
+           -D HDF5_DIR:PATH="C:\Program Files\HDF_Group\HDF5\1.14.3\cmake" `
+           -D CMAKE_PREFIX_PATH:PATH="C:\Program Files\HDF_Group\HDF5\1.14.3\cmake" `
+           -D CGNS_ENABLE_TESTS:BOOL=ON `
+           -D CGNS_ENABLE_LFS:BOOL=OFF `
+           -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF `
+           -D CGNS_ENABLE_SCOPING:BOOL=OFF `
+           -D CGNS_ENABLE_FORTRAN:BOOL=ON `
+           -D CGNS_ENABLE_PARALLEL:BOOL=OFF `
+           -D CMAKE_INSTALL_PREFIX:PATH='.' `
+           $CGNS_SRC
+          & cmake --build . --config Debug
+          & ctest
+          #.github/workflows/build_windows.bat fortran $VS_VER $SAMPLES_TAG
+    #- name: build
+    #  run: scripts/build_windows.bat c++ $VS_VER $SAMPLES_TAG
+    #- name: build fortran
+    #  run: scripts/build_windows.bat fortran $VS_VER $SAMPLES_TAG
+    - name: exclude unused files from cache
+      if: steps.cache-install.outputs.cache-hit != 'true'
+      shell: bash
+      run: scripts/cache_exclude_windows.sh
+
+  build_linux_cpp_fortran:
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - uses: actions/checkout@v3
+    - name: cache install
+      id: cache-install
+      uses: actions/cache@v4
+      with:
+        path: |
+          /opt/intel/oneapi/compiler
+        key: install-${{ env.CACHE_NUMBER }}-${{ env.LINUX_HPCKIT_URL }}-${{ env.LINUX_CPP_COMPONENTS_WEB }}-${{ env.LINUX_FORTRAN_COMPONENTS_WEB }}-compiler-${{ hashFiles('**/scripts/cache_exclude_linux.sh') }}
+
+    - name: install
+      if: steps.cache-install.outputs.cache-hit != 'true'
+      run: scripts/install_linux.sh $LINUX_HPCKIT_URL
+    - name: build
+      run: scripts/build_linux.sh c++ $SAMPLES_TAG
+    - name: build fortran
+      run: scripts/build_linux.sh fortran $SAMPLES_TAG
+
+    - name: exclude unused files from cache
+      if: steps.cache-install.outputs.cache-hit != 'true'
+      run: scripts/cache_exclude_linux.sh
