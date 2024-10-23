@@ -1968,6 +1968,706 @@ int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
         dataset, CG_PAR_READ);
 }
 
+/*===== Particle IO Prototypes ================================*/
+/**
+ * \ingroup ParallelParticleCoordinate
+ *
+ * \brief Create a coordinate data node by multiple processes in a parallel fashion.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] type \PGRID_datatype
+ * \param[in] coordname \PGRID_coordname
+ * \param[out] C \PGRID_Coordinate
+ * \return \ier
+ * \details To write the data in parallel, first call /e cgp_coord_write to create an empty data node. This call is identical
+ * to /e cg_particle_coord_write with /p coord_array set to NULL (no data written). The actual data is then written to the node in parallel
+ * using either /e cgp_particle_coord_write_data or /e cgp_particle_coord_general_write_data where /p range_min and /p range_max specify the subset of coordinate data to be written by a given process.
+ */
+
+int cgp_particle_coord_write(int fn, int B, int P, CGNS_ENUMT(DataType_t) type,
+    const char *coordname, int *C)
+{
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    return cg_particle_coord_write(fn, B, P, type, coordname, NULL, C);
+}
+
+/*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelParticleCoordinate
+ *
+ * \brief Write particle coordinate data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] C \C_Coordinate
+ * \param[in] rmin \PGRID_range_min
+ * \param[in] rmax \PGRID_range_max
+ * \param[in] coords \PGRID_coord_array
+ * \return \ier
+ * \details Writes the actual data to the node in parallel, where /p rmin and /p rmax specify the subset
+ *  of coordinate data to be written by a given process. It is the
+ *  responsibility of the application to ensure that the data type for the coordinate data
+ *  matches that as defined in the file; no conversions are done.
+ */
+
+int cgp_particle_coord_write_data(int fn, int B, int P, int C,
+    const cgsize_t *rmin, const cgsize_t *rmax, const void *coords)
+{
+    cgns_pzone *pzone;
+    cgns_pcoor *pcoor;
+    cgsize_t dims[1];
+    hid_t hid;
+    CGNS_ENUMT(DataType_t) type;
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+        return CG_ERROR;
+
+    pzone = cgi_get_particle(cg, B, P);
+    if (pzone==0) return CG_ERROR;
+
+    pcoor = cgi_get_particle_pcoorPC(cg, B, P);
+    if (pcoor==0) return CG_ERROR;
+
+    if (C > pcoor->ncoords || C <= 0) {
+        cgi_error("Particle coord number %d invalid",C);
+        return CG_ERROR;
+    }
+
+    dims[0] = pzone->nparticles;
+
+       if(coords) {
+          if (rmin[0] > rmax[0] || rmin[0] < 1 || rmax[0] > dims[0]) {
+             printf("%d %d %d", rmin[0]> rmax[0], rmin[0] <1, rmax[0] >dims[0]);
+             cgi_error("Invalid index ranges. cgp_coord_write_data");
+             return CG_ERROR;
+          }
+       }
+
+    type = cgi_datatype(pcoor->coord[C-1].data_type);
+
+    to_HDF_ID(pcoor->coord[C-1].id,hid);
+
+    cg_rw_t Data;
+    Data.u.wbuf = coords;
+    return readwrite_data_parallel(hid, type, 1, rmin, rmax, &Data, CG_PAR_WRITE);
+}
+
+/*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelParticleCoordinate
+ *
+ * \brief Write shaped array to a subset of grid coordinates in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] C \PGRID_Coordinate
+ * \param[in] rmin \PGRID_range_min
+ * \param[in] rmax \PGRID_range_max
+ * \param[in] m_type \PGRID_mem_datatype
+ * \param[in] m_numdim \PGRID_mem_rank
+ * \param[in] m_arg_dimvals \PGRID_mem_dimensions
+ * \param[in] m_rmin \PGRID_mem_range_min
+ * \param[in] m_rmax \PGRID_mem_range_max
+ * \param[out] coords \PGRID_coord_array
+ * \return \ier
+ * \details The \e cgp_particle_coord_general_write_data perform data conversions if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning
+ *  this processor writes no data, then only \e fn, \e B, \e P, and \e C need be set.  In this case, \e P and \e C are "representative"
+ *  and can point to any valid zone.
+ */
+
+int cgp_particle_coord_general_write_data(int fn, int B, int P, int C,
+                                 const cgsize_t *rmin, const cgsize_t *rmax,
+                                 CGNS_ENUMT(DataType_t) m_type,
+                                 int m_numdim, const cgsize_t *m_arg_dimvals,
+                                 const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                                 const void *coords)
+{
+    int n, ier;
+    hid_t hid;
+    cgns_pzone *pzone;
+    cgns_pcoor *pcoor;
+
+     /* get memory addresses */
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    pzone = cgi_get_particle(cg, B, P);
+    if (pzone == 0) return CG_ERROR;
+
+     /* Get memory address for node "ParticleCoordinates" */
+    pcoor = cgi_get_particle_pcoorPC(cg, B, P);
+    if (pcoor == 0) return CG_ERROR;
+
+    if (C > pcoor->ncoords || C <= 0) {
+        cgi_error("particle coord number %d invalid",C);
+        return CG_ERROR;
+    }
+
+     /* get file-space rank.  Dimensions already set by previous null
+      * call to cgp_coord_write*/
+    const int s_numdim = 1;
+
+     /* we may modify m_arg_dimvals but do not want to change user assignments
+        so m_arg_dimvals will be copied */
+    cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
+    cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
+    if (coords) {
+       cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
+       s_dimvals[0] = pcoor->coord[C-1].dim_vals[0];
+       m_dimvals[0] = m_arg_dimvals[0];
+         /* verify the ranges provided and set s_rmin and s_rmax giving internal
+            file-space ranges */
+        int s_write_full_range; /* unused */
+        int m_read_full_range;  /* unused */
+        cgsize_t numpt;         /* unused */
+        ier = cgi_array_general_verify_range(
+            CGI_Write, cgns_rindindex, NULL,
+            s_numdim, s_dimvals, rmin, rmax,
+            m_numdim, m_dimvals, m_rmin, m_rmax,
+            s_rmin, s_rmax, stride,
+            &s_write_full_range, &m_read_full_range, &numpt);
+        if (ier != CG_OK) return ier;
+    }
+    else {
+         /* Note: all data unused except m_type, m_numdim and m_dimvals. */
+         /* If null data, set memory rank to same as file and memory dimensions
+            to 0 */
+        m_type = cgi_datatype(pcoor->coord[C-1].data_type);
+        m_numdim = s_numdim;
+        for (n=0; n<m_numdim; n++) {
+            m_dimvals[n] = 0;
+        }
+    }
+
+     /* fn, B, P, and C arguments are needed to get hid */
+    to_HDF_ID(pcoor->coord[C-1].id, hid);
+
+    void* dataset[1];
+    dataset[0] = (void*)coords;
+
+    return readwrite_shaped_data_parallel(
+        hid,
+        s_rmin, s_rmax, stride,
+        m_type, m_numdim, m_dimvals, m_rmin, m_rmax, stride,
+        dataset, CG_PAR_WRITE);
+}
+
+/*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelParticleCoordinate
+ *
+ * \brief Read coordinate data in parallel.
+ *
+ * \param[in]  fn \FILE_fn
+ * \param[in]  B \B_Base
+ * \param[in]  P \P_ParticleZone
+ * \param[in]  C \C_Coordinate
+ * \param[in]  rmin \PGRID_range_min
+ * \param[in]  rmax \PGRID_range_max
+ * \param[out] coords \PGRID_coord_array
+ * \return \ier
+ * \details Reads the actual data to the node in parallel, where /p rmin and /p rmax specify the subset
+ *  of coordinate data to be read by a given process. It is the
+ *  responsibility of the application to ensure that the data type for the coordinate data
+ *  matches that as defined in the file; no conversions are done.
+ */
+
+int cgp_particle_coord_read_data(int fn, int B, int P, int C,
+    const cgsize_t *rmin, const cgsize_t *rmax, void *coords)
+{
+    hid_t hid;
+    cgns_pzone *pzone;
+    cgns_pcoor *pcoor;
+    cgsize_t dims;
+    CGNS_ENUMT(DataType_t) type;
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
+        return CG_ERROR;
+
+    pzone = cgi_get_particle(cg, B, P);
+    if (pzone==0) return CG_ERROR;
+
+    pcoor = cgi_get_particle_pcoorPC(cg, B, P);
+    if (pcoor==0) return CG_ERROR;
+
+    if (C > pcoor->ncoords || C <= 0) {
+        cgi_error("particle coord number %d invalid",C);
+        return CG_ERROR;
+    }
+
+    dims = pzone->nparticles;
+
+    if(coords) {
+       if (rmin[0] > rmax[0] || rmin[0] < 1 || rmax[0] > dims) {
+          cgi_error("Invalid index ranges.");
+          return CG_ERROR;
+       }
+    }
+    type = cgi_datatype(pcoor->coord[C-1].data_type);
+
+    to_HDF_ID(pcoor->coord[C-1].id,hid);
+    cg_rw_t Data;
+    Data.u.rbuf = coords;
+    return readwrite_data_parallel(hid, type, 1, rmin, rmax, &Data, CG_PAR_READ);
+}
+
+/*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelParticleCoordinate
+ *
+ * \brief Read shaped array to a subset of grid coordinates in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] C \C_Coordinate
+ * \param[in] rmin \PGRID_range_min
+ * \param[in] rmax \PGRID_range_max
+ * \param[in] m_type \PGRID_mem_datatype
+ * \param[in] m_numdim \PGRID_mem_rank
+ * \param[in] m_arg_dimvals \PGRID_mem_dimensions
+ * \param[in] m_rmin \PGRID_mem_range_min
+ * \param[in] m_rmax \PGRID_mem_range_max
+ * \param[out] coords \PGRID_coord_array
+ * \return \ier
+ * \details The \e cgp_particle_coord_general_read_data perform data conversions if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning
+ *  this processor reads no data, then only \e fn, \e B, \e P, and \e C need be set.  In this case, \e P and \e C are "representative"
+ *  and can point to any valid zone.
+ */
+
+int cgp_particle_coord_general_read_data(int fn, int B, int P, int C,
+                                         const cgsize_t *rmin, const cgsize_t *rmax,
+                                         CGNS_ENUMT(DataType_t) m_type,
+                                         int m_numdim, const cgsize_t *m_arg_dimvals,
+                                         const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                                         void *coords)
+{
+    int ier;
+    hid_t hid;
+    cgns_pzone *pzone;
+    cgns_pcoor *pcoor;
+
+     /* get memory addresses */
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    pzone = cgi_get_particle(cg, B, P);
+    if (pzone == 0) return CG_ERROR;
+
+     /* Get memory address for node "ParticleCoordinates" */
+    pcoor = cgi_get_particle_pcoorPC(cg, B, P);
+    if (pcoor == 0) return CG_ERROR;
+
+    if (C > pcoor->ncoords || C <= 0) {
+        cgi_error("particle coord number %d invalid",C);
+        return CG_ERROR;
+    }
+
+     /* get file-space dimensions.  Dimensions already set by previous null
+      * call to cgp_particle_coord_write*/
+    const int s_numdim = 1;
+
+     /* we may modify m_arg_dimvals but do not want to change user assignments
+        so m_arg_dimvals will be copied */
+    cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
+    cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
+    if (coords) {
+       cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
+       s_dimvals[0] = pcoor->coord[C-1].dim_vals[0];
+       m_dimvals[0] = m_arg_dimvals[0];
+       /* verify the ranges provided and set s_rmin and s_rmax giving internal
+            file-space ranges */
+       int s_read_full_range;  /* unused */
+       int m_write_full_range; /* unused */
+       cgsize_t numpt;         /* unused */
+       ier = cgi_array_general_verify_range(
+                CGI_Read, cgns_rindindex, NULL,
+                s_numdim, s_dimvals, rmin, rmax,
+                m_numdim, m_dimvals, m_rmin, m_rmax,
+                s_rmin, s_rmax, stride,
+                &s_read_full_range, &m_write_full_range, &numpt);
+       if (ier != CG_OK) return ier;
+    }
+    else {
+         /* Note: all data unused except m_type, m_numdim and m_dimvals. */
+         /* If null data, set memory rank to same as file and memory dimensions
+            to 0 */
+        m_type = cgi_datatype(pcoor->coord[C-1].data_type);
+        m_numdim = s_numdim;
+        m_dimvals[0] = 0;
+    }
+
+     /* fn, B, P, and C arguments are needed to get hid */
+    to_HDF_ID(pcoor->coord[C-1].id, hid);
+
+    void* dataset[1];
+    dataset[0] = coords;
+
+    return readwrite_shaped_data_parallel(
+        hid,
+        s_rmin, s_rmax, stride,
+        m_type, m_numdim, m_dimvals, m_rmin, m_rmax, stride,
+        dataset, CG_PAR_READ);
+}
+
+/*===== Particle Solution IO Prototypes ============================*/
+/**
+ * \ingroup ParticleSolutionData
+ *
+ * \brief Create a particle solution field data node in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] S \PSOL_S
+ * \param[in] DataType \PSOL_datatype
+ * \param[in] fieldname \PSOL_fieldname
+ * \param[in] F \PSOL_F
+ * \return \ier
+ */
+int cgp_particle_field_write(int fn, int B, int P, int S,
+    CGNS_ENUMT(DataType_t) DataType, const char *fieldname, int *F)
+{
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    return cg_particle_field_write(fn, B, P, S, DataType, fieldname, NULL, F);
+}
+
+/*---------------------------------------------------------*/
+/**
+ * \ingroup ParticleSolutionData
+ *
+ * \brief Write field data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] S \PSOL_S
+ * \param[in] F \PSOL_F
+ * \param[in] rmin \PSOL_range_min
+ * \param[in] rmax \PSOL_range_max
+ * \param[in] data \PSOL_solution_array
+ * \return \ier
+ */
+int cgp_particle_field_write_data(int fn, int B, int P, int S, int F,
+    const cgsize_t *rmin, const cgsize_t *rmax, const void *data)
+{
+    int n;
+    hid_t hid;
+    cgns_array *field = NULL;
+    CGNS_ENUMT(DataType_t) type;
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+        return CG_ERROR;
+
+    field = cgi_get_particle_field(cg, B, P, S, F);
+    if (field==0) return CG_ERROR;
+
+     /* verify that range requested does not exceed range stored */
+    if (data) {
+      for (n = 0; n < field->data_dim; n++) {
+        if (rmin[n] > rmax[n] ||
+            rmax[n] > field->dim_vals[n] ||
+            rmin[n] < 1) {
+          cgi_error("Invalid range of data requested");
+          return CG_ERROR;
+        }
+      }
+    }
+    type = cgi_datatype(field->data_type);
+
+    to_HDF_ID(field->id,hid);
+
+    cg_rw_t Data;
+    Data.u.wbuf = data;
+    return readwrite_data_parallel(hid, type,
+                field->data_dim, rmin, rmax, &Data, CG_PAR_WRITE);
+}
+
+/*---------------------------------------------------------*/
+
+/**
+ * \ingroup ParticleSolutionData
+ *
+ * \brief Write shaped array to a subset of particle solution field in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] S \PSOL_S
+ * \param[in] F \PSOL_F
+ * \param[in] rmin \PSOL_range_min
+ * \param[in] rmax \PSOL_range_max
+ * \param[in] m_type \PSOL_mem_datatype
+ * \param[in] m_numdim \PSOL_mem_rank
+ * \param[in] m_arg_dimvals \PSOL_mem_dimensions
+ * \param[in] m_rmin \PSOL_mem_range_min
+ * \param[in] m_rmax \PSOL_mem_range_max
+ * \param[in] data \PSOL_solution_array
+ * \return \ier
+ * \details If \e data == NULL, meaning this processor reads no data, then
+ *  only \e fn,\e  B, \e P, \e S, and \e F need be set.  In this case, \e P, \e S, and \e F are
+ *  "representative" and can point to any valid zone.
+ */
+int cgp_particle_field_general_write_data(int fn, int B, int P, int S, int F,
+                                          const cgsize_t *rmin, const cgsize_t *rmax,
+                                          CGNS_ENUMT(DataType_t) m_type,
+                                          int m_numdim, const cgsize_t *m_arg_dimvals,
+                                          const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                                          const void *data)
+{
+    int n, ier;
+    hid_t hid;
+    cgns_psol *sol;
+    cgns_array *field = NULL;
+
+     /* get memory addresses */
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+     /* get memory address for solution */
+    sol = cgi_get_particle_sol(cg, B, P, S);
+    if (sol == 0) return CG_ERROR;
+
+     /* get memory address for field */
+    field = cgi_get_particle_field(cg, B, P, S, F);
+    if (field == 0) return CG_ERROR;
+
+     /* get file-space rank.  Dimensions already set by previous null
+        call to cgp_field_write */
+    const int s_numdim = field->data_dim;
+
+     /* we may modify m_arg_dimvals but do not want to change user assignments
+        so m_arg_dimvals will be copied */
+    cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
+    cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
+    if (data) {
+        cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
+        for (n=0; n<s_numdim; n++) {
+            s_dimvals[n] = field->dim_vals[n];
+        }
+        for (n=0; n<m_numdim; n++) {
+            m_dimvals[n] = m_arg_dimvals[n];
+        }
+         /* verify the ranges provided and set s_rmin and s_rmax giving internal
+            file-space ranges */
+        int s_write_full_range; /* unused */
+        int m_read_full_range;  /* unused */
+        cgsize_t numpt;         /* unused */
+        ier = cgi_array_general_verify_range(
+            CGI_Write, cgns_rindindex, NULL,
+            s_numdim, s_dimvals, rmin, rmax,
+            m_numdim, m_dimvals, m_rmin, m_rmax,
+            s_rmin, s_rmax, stride,
+            &s_write_full_range, &m_read_full_range, &numpt);
+        if (ier != CG_OK) return ier;
+    }
+    else {
+         /* Note: all data unused except m_type, m_numdim and m_dimvals. */
+         /* If null data, set memory rank to same as file and memory dimensions
+            to 0 */
+        m_type = cgi_datatype(field->data_type);
+        m_numdim = s_numdim;
+        for (n=0; n<m_numdim; n++) {
+            m_dimvals[n] = 0;
+        }
+    }
+
+     /* fn, B, Z, F, and S arguments are needed to get hid */
+    to_HDF_ID(field->id, hid);
+
+    void* dataset[1];
+    dataset[0] = (void*)data;
+
+    return readwrite_shaped_data_parallel(
+        hid,
+        s_rmin, s_rmax, stride,
+        m_type, m_numdim, m_dimvals, m_rmin, m_rmax, stride,
+        dataset, CG_PAR_WRITE);
+}
+
+/*---------------------------------------------------------*/
+/**
+ * \ingroup ParticleSolutionData
+ *
+ * \brief Read particle field data in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] S \PSOL_S
+ * \param[in] F \PSOL_F
+ * \param[in] rmin \PSOL_range_min
+ * \param[in] rmax \PSOL_range_max
+ * \param[in] data \PSOL_solution_array
+ * \return \ier
+ */
+int cgp_particle_field_read_data(int fn, int B, int P, int S, int F,
+    const cgsize_t *rmin, const cgsize_t *rmax, void *data)
+{
+    int n;
+    hid_t hid;
+    cgns_array *field = NULL;
+    CGNS_ENUMT(DataType_t) type;
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
+        return CG_ERROR;
+
+    field = cgi_get_particle_field(cg, B, P, S, F);
+    if (field==0) return CG_ERROR;
+
+     /* verify that range requested does not exceed range stored */
+    if (data) {
+      for (n = 0; n < field->data_dim; n++) {
+        if (rmin[n] > rmax[n] ||
+            rmax[n] > field->dim_vals[n] ||
+            rmin[n] < 1) {
+     cgi_error("Invalid range of data requested");
+     return CG_ERROR;
+        }
+      }
+    }
+    type = cgi_datatype(field->data_type);
+
+    to_HDF_ID(field->id, hid);
+    cg_rw_t Data;
+    Data.u.rbuf = data;
+    return readwrite_data_parallel(hid, type,
+               field->data_dim, rmin, rmax, &Data, CG_PAR_READ);
+}
+
+/*---------------------------------------------------------*/
+
+/**
+ * \ingroup ParticleSolutionData
+ *
+ * \brief Read subset of particle solution field to a shaped array in parallel.
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] S \PSOL_S
+ * \param[in] F \PSOL_F
+ * \param[in] rmin \PSOL_range_min
+ * \param[in] rmax \PSOL_range_max
+ * \param[in] m_type \PSOL_mem_datatype
+ * \param[in] m_numdim \PSOL_mem_rank
+ * \param[in] m_arg_dimvals \PSOL_mem_dimensions
+ * \param[in] m_rmin \PSOL_mem_range_min
+ * \param[in] m_rmax \PSOL_mem_range_max
+ * \param[out] data \PSOL_solution_array
+ * \return \ier
+ * \details If \e data == NULL, meaning this processor reads no data, then
+ *  only \e fn, \e B, \e P, \e S, and \e F need be set.  In this case, \e P, \e S, and \e F are
+ *  "representative" and can point to any valid zone.
+ */
+int cgp_particle_field_general_read_data(int fn, int B, int P, int S, int F,
+                                         const cgsize_t *rmin, const cgsize_t *rmax,
+                                         CGNS_ENUMT(DataType_t) m_type,
+                                         int m_numdim, const cgsize_t *m_arg_dimvals,
+                                         const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                                         void *data)
+{
+    int n, ier;
+    hid_t hid;
+    cgns_psol *sol;
+    cgns_array *field = NULL;
+
+     /* get memory addresses */
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+     /* get memory address for particle solution */
+    sol = cgi_get_particle_sol(cg, B, P, S);
+    if (sol == 0) return CG_ERROR;
+
+     /* get memory address for particle field */
+    field = cgi_get_particle_field(cg, B, P, S, F);
+    if (field == 0) return CG_ERROR;
+
+     /* get file-space rank */
+    const int s_numdim = field->data_dim;
+
+     /* we may modify m_arg_dimvals but do not want to change user assignments
+        m_arg_dimvals will be copied */
+    cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
+    cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
+    cgsize_t stride[CGIO_MAX_DIMENSIONS];
+    if (data) {
+        cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
+        for (n=0; n<s_numdim; n++) {
+            s_dimvals[n] = field->dim_vals[n];
+        }
+        for (n=0; n<m_numdim; n++) {
+            m_dimvals[n] = m_arg_dimvals[n];
+        }
+         /* verify the ranges provided and set s_rmin and s_rmax giving internal
+            file-space ranges */
+        int s_read_full_range;  /* unused */
+        int m_write_full_range; /* unused */
+        cgsize_t numpt;         /* unused */
+        ier = cgi_array_general_verify_range(
+            CGI_Read, cgns_rindindex, NULL,
+            s_numdim, s_dimvals, rmin, rmax,
+            m_numdim, m_dimvals, m_rmin, m_rmax,
+            s_rmin, s_rmax, stride,
+            &s_read_full_range, &m_write_full_range, &numpt);
+        if (ier != CG_OK) return ier;
+    }
+    else {
+         /* Note: all data unused except m_type, m_numdim and m_dimvals. */
+         /* If null data, set memory rank to same as file and memory dimensions
+            to 0 */
+        m_type = cgi_datatype(field->data_type);
+        m_numdim = s_numdim;
+        for (n=0; n<m_numdim; n++) {
+            m_dimvals[n] = 0;
+        }
+    }
+
+     /* fn, B, Z, F, and S arguments are needed to get hid */
+    to_HDF_ID(field->id, hid);
+
+    void* dataset[1];
+    dataset[0] = data;
+
+    return readwrite_shaped_data_parallel(
+        hid,
+        s_rmin, s_rmax, stride,
+        m_type, m_numdim, m_dimvals, m_rmin, m_rmax, stride,
+        dataset, CG_PAR_READ);
+}
+
 /*===== Array IO Prototypes ===============================*/
 /**
  * \ingroup ArrayData
@@ -2819,6 +3519,414 @@ int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
 	  rmin[m] < 1) {
 	cgi_error("Invalid range of data requested");
 	goto error;
+      }
+    }
+
+    mem_type_id[n] = cgi_datatype(field->data_type);
+    to_HDF_ID(field->id,hid);
+    dset_id[n] = hid;
+  }
+
+  cg_rw_ptr_t Data;
+  Data.u.rbuf = buf;
+  status = readwrite_multi_data_parallel(nsets, dset_id, mem_type_id, mem_space_id, file_space_id, &Data,
+					 field->data_dim, rmin, rmax, CG_PAR_READ);
+
+  free(dset_id);
+  free(mem_type_id);
+  free(mem_space_id);
+  free(file_space_id);
+
+  return status;
+
+ error:
+  if(dset_id)
+    free(dset_id);
+  if(mem_type_id)
+    free(mem_type_id);
+  if(mem_space_id)
+    free(mem_space_id);
+  if(file_space_id)
+      free(file_space_id);
+
+  return CG_ERROR;
+}
+
+/*---------------------------------------------------------*/
+ /**
+ * \ingroup ParallelParticleCoordinate
+ *
+ * \brief Read multiple sets of coordinate data in parallel.
+ *
+ * \param[in]  fn    \FILE_fn
+ * \param[in]  B     \B_Base
+ * \param[in]  P     \P_ParticleZone
+ * \param[in]  C     \C_Coordinate_multi
+ * \param[in]  rmin  \PGRID_range_min
+ * \param[in]  rmax  \PGRID_range_max
+ * \param[in]  nsets \PARR_nsets_multi
+ * \param[out] buf   \PGRID_coord_array
+ * \return \ier
+ *
+ * \details  Reads the actual particle coordinate data to the node in parallel, where
+ *           \c rmin and \c rmax specify the subset of coordinate data
+ *           to be read by a given process. The application is responsible
+ *           for ensuring that the coordinate data type matches what is
+ *           defined in the file; no conversions are made. \n
+ *           Uses HDF5's multidataset API `H5Dread_multi` to read \c nsets
+ *           of coordinate data, whose identifiers are listed in the
+ *           \c C array, from the CGNS file into multiple application memory
+ *           buffers listed in the \c buf array. All array parameters have
+ *           length \c nsets. The HDF5 library will combine the reads into
+ *           larger I/O requests, which usually results in better parallel
+ *           I/O performance.
+ *
+ */
+int cgp_particle_coord_multi_read_data(int fn, int B, int P, int *C, const cgsize_t *rmin, const cgsize_t *rmax,
+                                       int nsets, void *buf[])
+{
+    int n;
+    hid_t hid;
+    cgns_pzone *pzone = NULL;
+    cgns_pcoor *pcoor = NULL;
+    cgsize_t dims;
+
+    hid_t *dset_id = NULL;
+    hid_t *mem_type_id = NULL;
+    hid_t *mem_space_id = NULL;
+    hid_t *file_space_id = NULL;
+
+    int status;
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+      goto error;
+
+    dset_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    mem_type_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    mem_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    file_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+
+    pzone = cgi_get_particle(cg, B, P);
+    if (pzone==0) goto error;
+
+    pcoor = cgi_get_particle_pcoorPC(cg, B, P);
+    if (pcoor==0) goto error;
+
+    for (n = 0;  n < nsets; n++) {
+      if (C[n] > pcoor->ncoords || C[n] <= 0) {
+        cgi_error("particle coord number %d invalid",C[n]);
+        goto error;
+      }
+    }
+
+    dims = pzone->nparticles;
+
+    if (rmin[0] > rmax[0] || rmin[0] < 1 || rmax[0] > dims) {
+       cgi_error("Invalid index ranges.");
+       goto error;
+    }
+
+
+    for (n = 0; n < nsets; n++) {
+      mem_type_id[n] = cgi_datatype(pcoor->coord[C[n]-1].data_type);
+      to_HDF_ID(pcoor->coord[C[n]-1].id, hid);
+      dset_id[n] = hid;
+    }
+
+    cg_rw_ptr_t Data;
+    Data.u.rbuf = buf;
+    status = readwrite_multi_data_parallel(nsets, dset_id, mem_type_id, mem_space_id, file_space_id, &Data,
+                                           1, rmin, rmax, CG_PAR_READ);
+
+  return status;
+
+ error:
+  if(dset_id)
+    free(dset_id);
+  if(mem_type_id)
+    free(mem_type_id);
+  if(mem_space_id)
+    free(mem_space_id);
+  if(file_space_id)
+    free(file_space_id);
+
+  return CG_ERROR;
+}
+
+/*---------------------------------------------------------*/
+/**
+ * \ingroup ParallelParticleCoordinate
+ *
+ * \brief Writes multiple sets of coordinate data in parallel.
+ *
+ * \param[in]  fn    \FILE_fn
+ * \param[in]  B     \B_Base
+ * \param[in]  P     \P_ParticleZone
+ * \param[in]  C     \C_Coordinate_multi
+ * \param[in]  rmin  \PGRID_range_min
+ * \param[in]  rmax  \PGRID_range_max
+ * \param[in]  nsets \PARR_nsets_multi
+ * \param[in]  buf   \PGRID_coord_array
+ * \return \ier
+ *
+ * \details  Writes the actual particles coordinate data to the node in parallel, where
+ *           \c rmin and \c rmax specify the subset of coordinate data
+ *           to be written by a given process. The application is responsible
+ *           for ensuring that the coordinate data type matches what is
+ *           defined in the file; no conversions are made. \n
+ *           Uses HDF5's multidataset API `H5Dwrite_multi` to write \c nsets
+ *           of coordinate data, whose identifiers are listed in the
+ *           \c C array, to the CGNS file from the multiple application memory
+ *           buffers listed in the \c buf array. All array parameters have
+ *           length \c nsets. The HDF5 library will combine the writes into
+ *           larger I/O requests, which usually results in better parallel
+ *           I/O performance.
+ *
+ */
+int cgp_particle_coord_multi_write_data(int fn, int B, int P, int *C, const cgsize_t *rmin, const cgsize_t *rmax,
+                                        int nsets, const void *buf[])
+{
+    int n;
+    hid_t hid;
+    cgns_pzone *pzone = NULL;
+    cgns_pcoor *pcoor = NULL;
+    cgsize_t dims;
+
+    hid_t *dset_id = NULL;
+    hid_t *mem_type_id = NULL;
+    hid_t *mem_space_id = NULL;
+    hid_t *file_space_id = NULL;
+
+    int status;
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+        return CG_ERROR;
+
+    dset_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    mem_type_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    mem_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    file_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+
+    pzone = cgi_get_particle(cg, B, P);
+    if (pzone==0) goto error;
+
+    pcoor = cgi_get_particle_pcoorPC(cg, B, P);
+    if (pcoor==0) goto error;
+
+    for (n = 0;  n < nsets; n++) {
+      if (C[n] > pcoor->ncoords || C[n] <= 0) {
+        cgi_error("particle coord number %d invalid",C[n]);
+        goto error;
+      }
+    }
+
+    dims = pzone->nparticles;
+    if (rmin[0] > rmax[0] || rmin[0] < 1 || rmax[0] > dims) {
+       cgi_error("Invalid index ranges.");
+       goto error;
+    }
+
+    for (n = 0; n < nsets; n++) {
+      mem_type_id[n] = cgi_datatype(pcoor->coord[C[n]-1].data_type);
+      to_HDF_ID(pcoor->coord[C[n]-1].id, hid);
+      dset_id[n] = hid;
+    }
+
+    cg_rw_ptr_t Data;
+    Data.u.wbuf = buf;
+    status =  readwrite_multi_data_parallel(nsets, dset_id, mem_type_id, mem_space_id, file_space_id, &Data,
+                                            1, rmin, rmax, CG_PAR_WRITE);
+
+    return status;
+
+ error:
+    if(dset_id)
+      free(dset_id);
+    if(mem_type_id)
+      free(mem_type_id);
+    if(mem_space_id)
+      free(mem_space_id);
+    if(file_space_id)
+      free(file_space_id);
+
+    return CG_ERROR;
+
+}
+
+/*---------------------------------------------------------*/
+/**
+ * \ingroup ParticleSolutionData
+ *
+ * \brief Writes multiple sets of particle solution field data in parallel.
+ *
+ * \param[in]  fn    \FILE_fn
+ * \param[in]  B     \B_Base
+ * \param[in]  P     \P_ParticleZone
+ * \param[in]  S     \PSOL_S
+ * \param[in]  F     \PSOL_F_multi
+ * \param[in]  rmin  \PSOL_range_min
+ * \param[in]  rmax  \PSOL_range_max
+ * \param[in]  nsets \PARR_nsets_multi
+ * \param[in]  buf   \PARR_data_multi_write
+ * \return \ier
+ *
+ * \details  Writes the actual field data from the node in parallel, where
+ *           \c rmin and \c rmax specify the subset of field data
+ *           to be written by a given process. The application is responsible
+ *           for ensuring that the field data type matches what is
+ *           defined in the file; no conversions are made.\n
+ *           Uses HDF5's multidataset API `H5Dwrite_multi` to write \c nsets
+ *           of field data, whose identifiers are listed in the
+ *           \c F array, to the CGNS file from the multiple application memory
+ *           buffers listed in the \c buf array. All array parameters have
+ *           length \c nsets. The HDF5 library will combine the writes into
+ *           larger I/O requests, which usually results in better parallel
+ *           I/O performance.
+ */
+int cgp_particle_field_multi_write_data(int fn, int B, int P, int S, int *F,
+                                        const cgsize_t *rmin, const cgsize_t *rmax,
+                                        int nsets, const void *buf[])
+
+{
+    int n, m;
+    hid_t hid;
+    cgns_array *field = NULL;
+
+    hid_t *dset_id = NULL;
+    hid_t *mem_type_id = NULL;
+    hid_t *mem_space_id = NULL;
+    hid_t *file_space_id = NULL;
+
+    int status;
+
+    cg = cgi_get_file(fn);
+    if (check_parallel(cg)) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE))
+        return CG_ERROR;
+
+    dset_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    mem_type_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    mem_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+    file_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+
+    for (n = 0; n < nsets; n++) {
+      field = cgi_get_particle_field(cg, B, P, S, F[n]);
+      if (field==0) goto error;
+
+      /* verify that range requested does not exceed range stored */
+      for (m = 0; m < field->data_dim; m++) {
+        if (rmin[m] > rmax[m] ||
+            rmax[m] > field->dim_vals[m] ||
+            rmin[m] < 1) {
+     cgi_error("Invalid range of data requested");
+     goto error;
+        }
+      }
+
+      mem_type_id[n] = cgi_datatype(field->data_type);
+      to_HDF_ID(field->id,hid);
+      dset_id[n] = hid;
+    }
+
+    cg_rw_ptr_t Data;
+    Data.u.wbuf = buf;
+    status = readwrite_multi_data_parallel(nsets, dset_id, mem_type_id, mem_space_id, file_space_id, &Data,
+					   field->data_dim, rmin, rmax, CG_PAR_WRITE);
+
+    free(dset_id);
+    free(mem_type_id);
+    free(mem_space_id);
+    free(file_space_id);
+
+    return status;
+
+ error:
+    if(dset_id)
+      free(dset_id);
+    if(mem_type_id)
+      free(mem_type_id);
+    if(mem_space_id)
+      free(mem_space_id);
+    if(file_space_id)
+      free(file_space_id);
+
+    return CG_ERROR;
+}
+
+/*---------------------------------------------------------*/
+ /**
+ * \ingroup ParticleSolutionData
+ *
+ * \brief Reads multiple sets of particle solution field data in parallel.
+ *
+ * \param[in]  fn    \FILE_fn
+ * \param[in]  B     \B_Base
+ * \param[in]  P     \P_ParticleZone
+ * \param[in]  S     \PSOL_S
+ * \param[in]  F     \PSOL_F_multi
+ * \param[in]  rmin  \PSOL_range_min
+ * \param[in]  rmax  \PSOL_range_max
+ * \param[in]  nsets \PARR_nsets_multi
+ * \param[out] buf   \PARR_data_multi_read
+ * \return \ier
+ *
+ * \details  Reads the actual field data from the node in parallel, where
+ *           \c rmin and \c rmax specify the subset of field data
+ *           to be read by a given process. The application is responsible
+ *           for ensuring that the field data type matches what is
+ *           defined in the file; no conversions are made.\n
+ *           Uses HDF5's multidataset API `H5Dread_multi` to read \c nsets
+ *           of field data, whose identifiers are listed in the
+ *           \c F array, from the CGNS file into the multiple application memory
+ *           buffers listed in the \c buf array. All array parameters have
+ *           length \c nsets. The HDF5 library will combine the reads into
+ *           larger I/O requests, which usually results in better parallel
+ *           I/O performance.
+ */
+int cgp_particle_field_multi_read_data(int fn, int B, int P, int S, int *F,
+    const cgsize_t *rmin, const cgsize_t *rmax, int nsets, void *buf[])
+{
+  int n, m;
+  hid_t hid;
+  cgns_array *field = NULL;
+
+  hid_t *dset_id;
+  hid_t *mem_type_id;
+  hid_t *mem_space_id;
+  hid_t *file_space_id;
+
+  int status;
+
+  cg = cgi_get_file(fn);
+  if (check_parallel(cg)) return CG_ERROR;
+
+  if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ))
+    return CG_ERROR;
+
+  dset_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+  mem_type_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+  mem_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+  file_space_id = (hid_t *)malloc(nsets*sizeof(hid_t));
+
+  for (n = 0; n < nsets; n++) {
+
+    field = cgi_get_particle_field(cg, B, P, S, F[n]);
+    if (field==0) goto error;
+
+    /* verify that range requested does not exceed range stored */
+    for (m = 0; m < field->data_dim; m++) {
+      if (rmin[m] > rmax[m] ||
+     rmax[m] > field->dim_vals[m] ||
+     rmin[m] < 1) {
+   cgi_error("Invalid range of data requested");
+   goto error;
       }
     }
 

@@ -512,7 +512,8 @@ typedef enum {
   CGNS_ENUMV( NSLaminar ) =4,
   CGNS_ENUMV( NSTurbulent ) =5,
   CGNS_ENUMV( NSLaminarIncompressible ) =6,
-  CGNS_ENUMV( NSTurbulentIncompressible ) =7
+  CGNS_ENUMV( NSTurbulentIncompressible ) =7,
+  CGNS_ENUMV( LatticeBoltzmann ) =8
 } CGNS_ENUMT( GoverningEquationsType_t );
 
 /* Any model type will accept both ModelTypeNull and ModelTypeUserDefined.
@@ -584,11 +585,99 @@ typedef enum {
   CGNS_ENUMV( Chemistry_LinRessler ) =35
 } CGNS_ENUMT( ModelType_t );
 
-#define NofValidGoverningEquationsTypes 8
+typedef enum {
+  CGNS_ENUMV( ParticleGoverningEquationsNull ) =CG_Null,
+  CGNS_ENUMV( ParticleGoverningEquationsUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( DEM ) =2,
+  CGNS_ENUMV( DSMC ) =3,
+  CGNS_ENUMV( SPH ) =4,
+} CGNS_ENUMT( ParticleGoverningEquationsType_t );
+
+/* Any particle model type will accept both ParticleModelTypeNull and ParticleModelTypeUserDefined.
+** The following particle models will accept these values as valid...
+**
+** ParticleCollisionModelType_t: Linear, NonLinear, HardSphere, SoftSphere,
+**    LinearSpringDashpot, Pair, HertzMindlin, HertzKuwabaraKono, ORourke,
+**    Stochastic, NonStochastic, NTC
+**
+** ParticleBreakupModel_t: KelvinHelmholtz, KelvinHelmholtzACT, RayleighTaylor,
+**    KelvinHelmholtzRayleighTaylor, TAB, ETAB, LISA, SHF, PilchErdman, ReitzDiwakar
+**
+** ParticleForceModel_t: Sphere, NonShpere, Tracer, BeetstraVanDerHoefKuipers,
+**     Ergun, CliftGrace, Gidaspow, HaiderLevenspiel, PlessisMasliyah,
+**     SyamlalOBrien, SaffmanMei, TennetiGargSubramaniam, Tomiyama, Stokes,
+**     StokesCunningham, WenYu
+**
+** ParticleWallInteractionModel_t:  Linear, NonLinear, HardSphere, SoftSphere,
+**    LinearSpringDashpot, BaiGosman, Pair, HertzMindlin, HertzKuwabaraKono, Khunke,
+**    ORourke, Stochastic, NonStochastic, NTC
+**
+** ParticlePhaseChangeModel_t: Boil, Condense, Flash, Nucleate, Chiang, Frossling, uchsKnudsen
+*/
+
+typedef enum {
+  CGNS_ENUMV( ParticleModelTypeNull ) =CG_Null,
+  CGNS_ENUMV( ParticleModelTypeUserDefined ) =CG_UserDefined,
+  CGNS_ENUMV( Linear ) =2,
+  CGNS_ENUMV( NonLinear ) =3,
+  CGNS_ENUMV( HardSphere ) =4,
+  CGNS_ENUMV( SoftSphere ) =5,
+  CGNS_ENUMV( LinearSpringDashpot ) =6,
+  CGNS_ENUMV( Pair ) =7,
+  CGNS_ENUMV( HertzMindlin ) =8,
+  CGNS_ENUMV( HertzKuwabaraKono ) =9,
+  CGNS_ENUMV( ORourke ) =10,
+  CGNS_ENUMV( Stochastic ) =11,
+  CGNS_ENUMV( NonStochastic ) =12,
+  CGNS_ENUMV( NTC ) =13,
+  CGNS_ENUMV( KelvinHelmholtz ) =14,
+  CGNS_ENUMV( KelvinHelmholtzACT ) =15,
+  CGNS_ENUMV( RayleighTaylor ) =16,
+  CGNS_ENUMV( KelvinHelmholtzRayleighTaylor ) =17,
+  CGNS_ENUMV( ReitzKHRT ) = 18,
+  CGNS_ENUMV( TAB ) =19,
+  CGNS_ENUMV( ETAB ) =20,
+  CGNS_ENUMV( LISA ) =21,
+  CGNS_ENUMV( SHF ) =22,
+  CGNS_ENUMV( PilchErdman ) =23,
+  CGNS_ENUMV( ReitzDiwakar ) =24,
+  CGNS_ENUMV( Sphere ) =25,
+  CGNS_ENUMV( NonSphere ) =26,
+  CGNS_ENUMV( Tracer ) =27,
+  CGNS_ENUMV( BeetstraVanDerHoefKuipers ) =28,
+  CGNS_ENUMV( Ergun ) =29,
+  CGNS_ENUMV( CliftGrace ) =30,
+  CGNS_ENUMV( Gidaspow ) =31,
+  CGNS_ENUMV( HaiderLevenspiel ) =32,
+  CGNS_ENUMV( PlessisMasliyah ) =33,
+  CGNS_ENUMV( SyamlalOBrien ) =34,
+  CGNS_ENUMV( SaffmanMei ) =35,
+  CGNS_ENUMV( TennetiGargSubramaniam ) =36,
+  CGNS_ENUMV( Tomiyama ) =37,
+  CGNS_ENUMV( Stokes ) =38,
+  CGNS_ENUMV( StokesCunningham ) =39,
+  CGNS_ENUMV( WenYu ) =40,
+  CGNS_ENUMV( BaiGosman ) = 41,
+  CGNS_ENUMV( Khunke ) = 42,
+  CGNS_ENUMV( Boil ) =43,
+  CGNS_ENUMV( Condense ) =44,
+  CGNS_ENUMV( Flash ) =45,
+  CGNS_ENUMV( Nucleate ) =46,
+  CGNS_ENUMV( Chiang ) =47,
+  CGNS_ENUMV( Frossling ) =48,
+  CGNS_ENUMV( FuchsKnudsen ) =49,
+} CGNS_ENUMT( ParticleModelType_t);
+
+#define NofValidGoverningEquationsTypes 9
 #define NofValidModelTypes 36
+#define NofValidParticleGoverningEquationsTypes 5
+#define NofValidParticleModelTypes 50
 
 extern CGNSDLL const char * GoverningEquationsTypeName[NofValidGoverningEquationsTypes];
 extern CGNSDLL const char * ModelTypeName[NofValidModelTypes];
+extern CGNSDLL const char * ParticleGoverningEquationsTypeName[NofValidParticleGoverningEquationsTypes];
+extern CGNSDLL const char * ParticleModelTypeName[NofValidParticleModelTypes];
+
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  * 	Boundary Condition Types					 *
@@ -991,6 +1080,8 @@ CGNSDLL const char *cg_SimulationTypeName(CGNS_ENUMT( SimulationType_t ) type);
 CGNSDLL const char *cg_WallFunctionTypeName(CGNS_ENUMT( WallFunctionType_t ) type);
 CGNSDLL const char *cg_AreaTypeName(CGNS_ENUMT( AreaType_t ) type);
 CGNSDLL const char *cg_AverageInterfaceTypeName(CGNS_ENUMT( AverageInterfaceType_t ) type);
+CGNSDLL const char *cg_ParticleGoverningEquationsTypeName(CGNS_ENUMT( ParticleGoverningEquationsType_t ) type);
+CGNSDLL const char *cg_ParticleModelTypeName(CGNS_ENUMT( ParticleModelType_t ) type);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write CGNSBase_t Nodes					 *
@@ -1139,7 +1230,7 @@ CGNSDLL int cg_coord_general_write(int fn, int B, int Z,
 	const cgsize_t *rmin, const cgsize_t *rmax,
 	CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t *m_dims,
 	const cgsize_t *m_rmin, const cgsize_t *m_rmax,
-	const void *coord_ptr, int *C);
+   const void *coord_ptr, int *C);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write Elements_t Nodes                                  *
@@ -1481,6 +1572,13 @@ CGNSDLL int cg_ziter_read(int file_number, int B, int Z, char *zitername);
 CGNSDLL int cg_ziter_write(int file_number, int B, int Z, const char * zitername);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write ParticleIterativeData_t Node                      *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_piter_read(int file_number, int B, int P, char *pitername);
+CGNSDLL int cg_piter_write(int file_number, int B, int P, const char *pitername);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write Gravity_t Nodes                                   *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -1547,7 +1645,106 @@ CGNSDLL int cg_conn_average_write(int file_number, int B, int Z, int Ii,
 CGNSDLL int cg_1to1_average_write(int file_number, int B, int Z, int Ii,
 	CGNS_ENUMT(AverageInterfaceType_t) AverageInterfaceType);
 CGNSDLL int cg_1to1_average_read(int file_number, int B, int Z, int Ii,
-	CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType);
+   CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *   Read and write ParticleZone_t Nodes                                 *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_nparticle_zones(int file_number, int B, int *nparticlezones);
+CGNSDLL int cg_particle_id(int file_number, int B, int P, double *particle_id);
+CGNSDLL int cg_particle_read(int file_number, int B, int P, char *particlename, cgsize_t *size);
+CGNSDLL int cg_particle_write(int file_number, int B, const char* particlename,
+                              const cgsize_t size, int *P);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write ParticleCoordinates_t Nodes                       *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_particle_ncoord_nodes(int file_number, int B, int P, int *ncoord_nodes);
+CGNSDLL int cg_particle_coord_node_read(int file_number, int B, int P, int C, char *name);
+CGNSDLL int cg_particle_coord_node_write(int file_number, int B, int P, const char *name, int *C);
+CGNSDLL int cg_particle_bounding_box_read(int fn, int B, int P, int C,
+                                          CGNS_ENUMT(DataType_t) datatype, void* boundingbox);
+CGNSDLL int cg_particle_bounding_box_write(int fn, int B, int P, int C,
+                                           CGNS_ENUMT(DataType_t) datatype, void* boundingbox);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write ParticleCoordinates_t/DataArray_t Nodes           *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_particle_ncoords(int fn, int B, int P, int *ncoords);
+CGNSDLL int cg_particle_coord_info(int fn, int B, int P, int C,
+                                   CGNS_ENUMT(DataType_t) *type, char *coordname);
+CGNSDLL int cg_particle_coord_read(int fn, int B, int P, const char *coordname,
+                                   CGNS_ENUMT(DataType_t) type, const cgsize_t * rmin,
+                                   const cgsize_t * rmax, void *coord);
+CGNSDLL int cg_particle_coord_general_read(int fn, int B, int P,
+                                           const char *coordname, const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                                           CGNS_ENUMT(DataType_t) m_type, const cgsize_t *m_dimvals,
+                                           const cgsize_t *m_rmin, const cgsize_t *m_rmax, void *coord_ptr);
+CGNSDLL int cg_particle_coord_id(int fn, int B, int P, int C, double *coord_id);
+CGNSDLL int cg_particle_coord_write(int fn, int B, int P,
+                                    CGNS_ENUMT(DataType_t) type, const char *coordname,
+                                    const void *coord_ptr, int *C);
+
+CGNSDLL int cg_particle_coord_partial_write(int fn, int B, int P,
+                                            CGNS_ENUMT(DataType_t) type, const char *coordname,
+                                            const cgsize_t *rmin, const cgsize_t *rmax,
+                                            const void *coord_ptr, int *C);
+CGNSDLL int cg_particle_coord_general_write(int fn, int B, int P,
+                                            const char *coordname, CGNS_ENUMT(DataType_t) s_type,
+                                            const cgsize_t *rmin, const cgsize_t *rmax,
+                                            CGNS_ENUMT(DataType_t) m_type, const cgsize_t *m_dims,
+                                            const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                                            const void *coord_ptr, int *C);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write ParticleSolution_t Nodes                          *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_particle_nsols(int fn, int B, int P, int *nsols);
+CGNSDLL int cg_particle_sol_info(int fn, int B, int P, int S, char *solname);
+CGNSDLL int cg_particle_sol_id(int fn, int B, int P,int S, double *sol_id);
+CGNSDLL int cg_particle_sol_write(int fn, int B, int P, const char * solname, int *S);
+CGNSDLL int cg_particle_sol_size(int fn, int B, int P, int S, cgsize_t *size);
+
+CGNSDLL int cg_particle_sol_ptset_info(int fn, int B, int P, int S,
+                                       CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts);
+CGNSDLL int cg_particle_sol_ptset_read(int fn, int B, int P, int S, cgsize_t *pnts);
+CGNSDLL int cg_particle_sol_ptset_write(int fn, int B, int P, const char *solname,
+                                        CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
+                                        const cgsize_t *pnts, int *S);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write particle solution DataArray_t Nodes               *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_particle_nfields(int fn, int B, int P, int S, int *nfields);
+CGNSDLL int cg_particle_field_info(int fn,int B,int P,int S, int F,
+                                   CGNS_ENUMT(DataType_t) *type, char *fieldname);
+CGNSDLL int cg_particle_field_read(int fn, int B, int P, int S, const char *fieldname,
+                                   CGNS_ENUMT(DataType_t) type, const cgsize_t *rmin,
+                                   const cgsize_t *rmax, void *field_ptr);
+CGNSDLL int cg_particle_field_general_read(int fn, int B, int P, int S,
+                                           const char *fieldname, const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                                           CGNS_ENUMT(DataType_t) m_type, const cgsize_t *m_dimvals,
+                                           const cgsize_t *m_rmin, const cgsize_t *m_rmax, void *field_ptr);
+CGNSDLL int cg_particle_field_id(int fn, int B, int P,int S, int F, double *field_id);
+CGNSDLL int cg_particle_field_write(int fn,int B,int P,int S,
+                                    CGNS_ENUMT(DataType_t) type, const char * fieldname,
+                                    const void * field_ptr, int *F);
+
+CGNSDLL int cg_particle_field_partial_write(int fn, int B, int P, int S,
+                                            CGNS_ENUMT(DataType_t) type, const char * fieldname,
+                                            const cgsize_t *rmin, const cgsize_t *rmax,
+                                            const void * field_ptr, int *F);
+CGNSDLL int cg_particle_field_general_write(int fn, int B, int P, int S,
+                                            const char * fieldname, CGNS_ENUMT(DataType_t) s_type,
+                                            const cgsize_t *rmin, const cgsize_t *rmax,
+                                            CGNS_ENUMT(DataType_t) m_type, const cgsize_t *m_dims,
+                                            const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                                            const void *field_ptr, int *F);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Variable Argument List Functions                                 *
@@ -1592,6 +1789,16 @@ CGNSDLL int cg_equationset_elecmagn_read(int *ElecFldModelFlag,
 CGNSDLL int cg_equationset_write(int EquationDimension);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write ParticleEquationSet_t Nodes                       *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_particle_equationset_read(int *EquationDimension,
+        int *ParticleGoverningEquationsFlag, int *CollisionModelFlag,
+        int *BreakupModelFlag,               int *ForceModelFlag,
+        int *WallInteractionModelFlag,       int *PhaseChangeModelFlag);
+CGNSDLL int cg_particle_equationset_write(int EquationDimension);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write GoverningEquations_t Nodes                        *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -1615,6 +1822,23 @@ CGNSDLL int cg_diffusion_write(const int * diffusion_model);
 
 CGNSDLL int cg_model_read(const char *ModelLabel, CGNS_ENUMT(ModelType_t) *ModelType);
 CGNSDLL int cg_model_write(const char * ModelLabel, CGNS_ENUMT(ModelType_t) ModelType);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write ParticleGoverningEquations_t Nodes                *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_particle_governing_read(CGNS_ENUMT(ParticleGoverningEquationsType_t) *ParticleEquationsType);
+CGNSDLL int cg_particle_governing_write(CGNS_ENUMT(ParticleGoverningEquationsType_t) ParticleEquationstype);
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
+ *      Read and write ParticleCollisionModel_t,                         *
+ *      ParticleBreakupModel_t, ParticleForceModel_t,                    *
+ *      ParticleWallInteractionModel_t and                               *
+ *      ParticlePhaseChangeModel_t Nodes                                 *
+\* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+CGNSDLL int cg_particle_model_read(const char *ModelLabel, CGNS_ENUMT(ParticleModelType_t) *ModelType);
+CGNSDLL int cg_particle_model_write(const char * ModelLabel, CGNS_ENUMT(ParticleModelType_t) ModelType);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write DataArray_t Nodes                                 *

@@ -51,6 +51,7 @@ set(test_family_tree_FILES test_family_tree.c)
 set(test_complex_FILES test_complex.c)
 set(test_convert_elem_FILES test_convert_elem.c)
 set(test_back_comp_FILES test_back_comp.c)
+set(test_particle_FILES test_particle.c)
 #set(cgiof_FILES cgiof.F90)
 #set(cgwrite_FILES cgwrite.F90)
 #set(cgread_FILES cgread.F90)
@@ -91,6 +92,7 @@ add_executable( test_bbox            ${test_bbox_FILES}            )
 add_executable( test_complex         ${test_complex_FILES}         )
 add_executable( test_convert_elem    ${test_convert_elem_FILES}    )
 add_executable( test_back_comp       ${test_back_comp_FILES}       )
+add_executable( test_particle        ${test_particle_FILES}        )
 #
 set(C_TESTS_LIST
 	cgioc
@@ -116,7 +118,8 @@ set(C_TESTS_LIST
 	test_bbox            
 	test_complex         
         test_convert_elem
-        test_back_comp)
+        test_back_comp
+        test_particle)
 set(SKIP_TESTS
 	dbtest
 	open_cgns)

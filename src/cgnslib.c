@@ -242,7 +242,8 @@ const char * GoverningEquationsTypeName[NofValidGoverningEquationsTypes]=
     {"Null", "UserDefined",
      "FullPotential", "Euler", "NSLaminar",
      "NSTurbulent", "NSLaminarIncompressible",
-     "NSTurbulentIncompressible"
+     "NSTurbulentIncompressible",
+     "LatticeBoltzmann"
     };
 const char * ModelTypeName[NofValidModelTypes]=
     {"Null", "UserDefined",
@@ -259,6 +260,22 @@ const char * ModelTypeName[NofValidModelTypes]=
      "ChemicalNonequilib",
      "EMElectricField", "EMMagneticField", "EMConductivity",
      "Voltage", "Interpolated", "Equilibrium_LinRessler", "Chemistry_LinRessler"
+    };
+const char * ParticleGoverningEquationsTypeName[NofValidParticleGoverningEquationsTypes]=
+    {"Null", "UserDefined",
+     "DEM", "DSMC", "SPH"
+    };
+const char * ParticleModelTypeName[NofValidParticleModelTypes]=
+    {"Null", "UserDefined",
+     "Linear", "NonLinear", "HardSphere", "SoftSphere", "LinearSpringDashpot",
+     "Pair", "HertzMindlin", "HertzKuwabaraKono", "ORourke", "Stochastic",
+     "NonStochastic", "NTC", "KelvinHelmholtz", "KelvinHelmholtzACT",
+     "RayleighTaylor", "KelvinHelmholtzRayleighTaylor", "ReitzKHRT", "TAB", "ETAB",
+     "LISA", "SHF", "PilchErdman", "ReitzDiwakar", "Sphere", "NonSphere", "Tracer",
+     "BeetstraVanDerHoefKuipers", "Ergun", "CliftGrace", "Gidaspow", "HaiderLevenspiel",
+     "PlessisMasliyah", "SyamlalOBrien", "SaffmanMei", "TennetiGargSubramaniam",
+     "Tomiyama", "Stokes", "StokesCunningham", "WenYu", "BaiGosman", "Kunkhe",
+     "Boil", "Condense", "Flash", "Nucleate", "Chiang", "Frossling", "FuchsKnudsen"
     };
 const char * BCTypeName[NofValidBCTypes] =
     {"Null", "UserDefined",
@@ -1270,6 +1287,14 @@ const char *cg_AreaTypeName(CGNS_ENUMT( AreaType_t )  type)
 const char *cg_AverageInterfaceTypeName(CGNS_ENUMT( AverageInterfaceType_t )  type)
 {
     return cg_get_name(NofValidAverageInterfaceTypes,AverageInterfaceTypeName,(int)type);
+}
+const char *cg_ParticleGoverningEquationsTypeName(CGNS_ENUMT( ParticleGoverningEquationsType_t )  type)
+{
+    return cg_get_name(NofValidParticleGoverningEquationsTypes, ParticleGoverningEquationsTypeName,(int)type);
+}
+const char *cg_ParticleModelTypeName(CGNS_ENUMT( ParticleModelType_t )  type)
+{
+    return cg_get_name(NofValidParticleModelTypes,ParticleModelTypeName,(int)type);
 }
 
 /*****************************************************************************\
@@ -12226,6 +12251,97 @@ int cg_ziter_write(int fn, int B, int Z, const char * zitername)
 }
 
 /*****************************************************************************\
+ *      read and write ParticleIterativeData_t Node
+\*****************************************************************************/
+
+/**
+ * \ingroup ParticleIterativeData
+ *
+ * \brief  Read ParticleIterativeData_t node
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base
+ * \param[in] P  \P_ParticleZone
+ * \param[out] pitername  Name of the ParticleIterativeData_t node.
+ * \return \ier
+ *
+ */
+int cg_piter_read(int fn, int B, int P, char *pitername)
+{
+    cgns_ziter *piter;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    piter = cgi_get_piter(cg, B, P);
+    if (piter==0) return CG_NODE_NOT_FOUND;
+
+    strcpy(pitername, piter->name);
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup ParticleIterativeData
+ *
+ * \brief  Write ParticleIterativeData_t node
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base
+ * \param[in] P  \P_ParticleZone
+ * \param[in] pitername  Name of the ParticleIterativeData_t node.
+ * \return \ier
+ *
+ */
+int cg_piter_write(int fn, int B, int P, const char * pitername)
+{
+    cgns_pzone *pzone;
+    cgns_ziter *piter;
+
+     /* verify input */
+    if (cgi_check_strlen(pitername)) return CG_ERROR;
+
+     /* get memory address for ParticleIterativeData_t node */
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    pzone = cgi_get_particle(cg, B, P);
+    if (pzone==0) return CG_ERROR;
+
+     /* Overwrite the ParticleIterativeData_t Node: */
+    if (pzone->piter) {
+        if (cg->mode==CG_MODE_WRITE) {
+            cgi_error("Error:  ParticleIterativeData_t already defined");
+            return CG_ERROR;
+        }
+     /* overwrite an existing ParticleIterativeData_t Node */
+         /* delete the existing piter from file */
+        if (cgi_delete_node(pzone->id, pzone->piter->id))
+            return CG_ERROR;
+         /* save the old in-memory address to overwrite */
+        piter = pzone->piter;
+         /* free memory */
+        cgi_free_ziter(piter);
+    } else {
+        pzone->piter = CGNS_NEW(cgns_ziter, 1);
+        piter = pzone->piter;
+    }
+
+     /* save data for cgns_ziter *piter */
+    memset(piter, 0, sizeof(cgns_ziter));
+    strcpy(piter->name,pitername);
+
+     /* Create node ParticleIterativeData_t */
+    if (cgi_new_node(pzone->id, piter->name, "ParticleIterativeData_t", &piter->id,
+        "MT", 0, 0, 0)) return CG_ERROR;
+    return CG_OK;
+}
+
+/*****************************************************************************\
  *      read and write Gravity_t Node
 \*****************************************************************************/
 
@@ -13528,6 +13644,1598 @@ int cg_1to1_average_write(int fn, int B, int Z, int J,
 }
 
 /*****************************************************************************\
+ *           Particle Functions
+\*****************************************************************************/
+int cg_nparticle_zones(int file_number, int B, int *nparticlezones)
+{
+   cgns_base *base;
+
+   cg = cgi_get_file(file_number);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+   base = cgi_get_base(cg, B);
+   if (base==0) return CG_ERROR;
+
+   *nparticlezones = base->npzones;
+   return CG_OK;
+}
+
+int cg_particle_id(int file_number, int B, int P, double *particle_id)
+{
+   cgns_pzone *pzone;
+
+   cg = cgi_get_file(file_number);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+   pzone = cgi_get_particle(cg, B, P);
+   if (pzone==0) return CG_ERROR;
+
+   *particle_id = pzone->id;
+   return CG_OK;
+}
+
+int cg_particle_read(int fn, int B, int P, char *particlename, cgsize_t *size)
+{
+    cgns_pzone *pzone;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    pzone = cgi_get_particle(cg, B, P);
+    if (pzone==0) return CG_ERROR;
+
+    strcpy(particlename, pzone->name);
+
+    (*size) = pzone->nparticles;
+
+    return CG_OK;
+}
+
+int cg_particle_write(int fn, int B, const char *particlename, const cgsize_t size, int *P)
+{
+   cgns_base *base;
+   cgns_pzone *pzone = NULL;
+   int index;
+   cgsize_t dim_vals[1];
+
+   /* verify input */
+   if (cgi_check_strlen(particlename)) return CG_ERROR;
+
+   /* get memory address file */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   /* verify input */
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+   /* get memory address for base */
+   base = cgi_get_base(cg, B);
+   if (base==0) return CG_ERROR;
+
+   /* Verify the particle count - We allow 0 sized ParticleZone_t nodes but they cannot have and solution/coordinate arrays */
+   if (size < 0) {
+      cgi_error("Invalid particle size %d", size);
+      return CG_ERROR;
+   }
+
+   /* Overwrite a ParticleZone_t Node: */
+   if (base->pzonemap == 0) {
+      base->pzonemap = cgi_new_presized_hashmap(base->npzones);
+      if (base->pzonemap == NULL) {
+         cgi_error("Could not allocate particlemap");
+         return CG_ERROR;
+      }
+      for (index = 0; index < base->npzones; index++) {
+         if (cgi_map_set_item(base->pzonemap, base->pzone[index].name, index) != 0) {
+            cgi_error("Can not set particle %s into hashmap", base->pzone[index].name);
+            return CG_ERROR;
+         }
+      }
+   }
+
+   index = (int) cgi_map_get_item(base->pzonemap, particlename);
+   /* */
+   if (index != -1) {
+      pzone = &(base->pzone[index]);
+      /* in CG_MODE_WRITE, children names must be unique */
+      if (cg->mode == CG_MODE_WRITE) {
+         cgi_error("Duplicate child name found: %s", pzone->name);
+         return CG_ERROR;
+      }
+
+      /* overwrite an existing particle zone*/
+      /* delete the existing particle zone from file */
+      if (cgi_delete_node(base->id, pzone->id))
+         return CG_ERROR;
+      cgi_free_particle(pzone);
+   } else {
+      if (base->npzones == 0) {
+         base->pzone = CGNS_NEW(cgns_pzone, base->npzones + 1);
+      }
+      else {
+         base->pzone = CGNS_RENEW(cgns_pzone, base->npzones + 1, base->pzone);
+      }
+      pzone = &(base->pzone[base->npzones]);
+      index = base->npzones;
+
+      if (cgi_map_set_item(base->pzonemap, particlename, index) != 0) {
+         cgi_error("Error while adding particlename %s to particlemap hashtable", particlename);
+         return CG_ERROR;
+      }
+      base->npzones++;
+   }
+   (*P) = index + 1;
+
+   /* save data to particle */
+   memset(pzone, 0, sizeof(cgns_pzone));
+   strcpy(pzone->name, particlename);
+   pzone->nparticles = size;
+
+   /* save data in file */
+   dim_vals[0]=1;
+   if (cgi_new_node(base->id, pzone->name, "ParticleZone_t", &pzone->id,
+                    CG_SIZE_DATATYPE, 1, dim_vals, &pzone->nparticles)) return CG_ERROR;
+
+   return CG_OK;
+}
+
+/*****************************************************************************\
+*    Read and Write ParticleCoordinates_t Nodes                              *
+\*****************************************************************************/
+
+/**
+* \ingroup ParticleCoordinates
+*
+* \brief Get number of `ParticleCoordinates_t` nodes
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[out] ncoord_nodes Number of `ParticleCoordinates_t` nodes for ParticleZone P.
+* \return \ier
+*
+*/
+int cg_particle_ncoord_nodes(int fn, int B, int P, int *ncoord_nodes)
+{
+   cgns_pzone *pzone;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* Get memory address for particle zone*/
+   pzone = cgi_get_particle(cg, B, P);
+   if (pzone==0) return CG_ERROR;
+
+   (*ncoord_nodes) = pzone->npcoor;
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleCoordinates
+*
+* \brief Get Name of a `ParticleCoordinates_t` node
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] C  \C_Coordinate
+* \param[out] pcoord_name Name of the ParticleCoordinates_t node. Note that the name "ParticleCoordinates" is reserved for the original particle location and must be the first ParticleCoordinates_t node to be defined.
+* \return \ier
+*
+*/
+int cg_particle_coord_node_read(int fn, int B, int P, int C, char *pcoord_name)
+{
+   cgns_pcoor *pcoor;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* Get memory address for ParticleCoordinates_t node */
+   pcoor = cgi_get_particle_pcoor(cg, B, P, C);
+   if (pcoor==0) return CG_ERROR;
+
+    /* Return ADF name for the ParticleCoordinates_t node */
+   strcpy(pcoord_name,pcoor->name);
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleCoordinates
+*
+* \brief Create a `ParticleCoordinates_t` nodes
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] C  \C_Coordinate
+* \param[out] pcoord_name Name of the ParticleCoordinates_t node. Note that the name "ParticleCoordinates" is reserved for the original particle location and must be the first ParticleCoordinates_t node to be defined.
+* \return \ier
+*
+*/
+int cg_particle_coord_node_write(int fn, int B, int P, const char * pcoord_name, int *C)
+{
+   cgns_pzone *pzone;
+   cgns_pcoor *pcoor = NULL;
+   int index;
+
+    /* verify input */
+   if (cgi_check_strlen(pcoord_name)) return CG_ERROR;
+
+    /* get memory address */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+   pzone = cgi_get_particle(cg, B, P);
+   if (pzone==0) return CG_ERROR;
+
+    /* Overwrite a ParticleCoordinates_t Node: */
+   for (index=0; index<pzone->npcoor; index++) {
+       if (strcmp(pcoord_name, pzone->pcoor[index].name)==0) {
+
+            /* in CG_MODE_WRITE, children names must be unique */
+           if (cg->mode==CG_MODE_WRITE) {
+               cgi_error("Duplicate child name found: %s",pcoord_name);
+               return CG_ERROR;
+           }
+
+            /* overwrite an existing ParticleCoordinates_t node */
+            /* delete the existing ParticleCoordinates_t from file */
+           if (cgi_delete_node(pzone->id, pzone->pcoor[index].id))
+               return CG_ERROR;
+            /* save the old in-memory address to overwrite */
+           pcoor = &(pzone->pcoor[index]);
+            /* free memory */
+           cgi_free_pcoor(pcoor);
+           break;
+       }
+   }
+    /* ... or add a ParticleCoordinates_t Node: */
+   if (index==pzone->npcoor) {
+       if (pzone->npcoor == 0) {
+           pzone->pcoor = CGNS_NEW(cgns_pcoor, 1);
+       } else {
+           pzone->pcoor = CGNS_RENEW(cgns_pcoor, pzone->npcoor+1, pzone->pcoor);
+       }
+       pcoor = &(pzone->pcoor[pzone->npcoor]);
+       pzone->npcoor++;
+   }
+   (*C) = index+1;
+
+    /* save data in memory */
+   memset(pcoor, 0, sizeof(cgns_pcoor));
+   strcpy(pcoor->name,pcoord_name);
+
+    /* save data in file */
+   if (cgi_new_node(pzone->id, pcoor->name, "ParticleCoordinates_t", &pcoor->id,
+       "MT", 0, 0, 0)) return CG_ERROR;
+
+   return CG_OK;
+}
+
+/*****************************************************************************\
+ *    Read and Write ParticleCoordinates_t bounding box
+\*****************************************************************************/
+
+/**
+ * \ingroup ParticleCoordinates
+ *
+ * \brief Get bounding box associated with a `ParticleCoordinates_t` node
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base
+ * \param[in] P  \P_ParticleZone
+ * \param[in] C  \C_Coordinate
+ * \param[in] datatype 	Data type of the bounding box array written to the file or read. Admissible data types for a coordinate bounding box are RealSingle and RealDouble.
+ * \param[out] boundingbox Data Array with bounding box values.
+ * \return \ier
+ *
+ * \details When reading a bounding box, if the information is missing from the file, the boundingbox array will remain untouched, and the CG_NODE_NOT_FOUND status is returned. The CGNS MLL relies on the user to compute the bounding box and ensure that the bounding box being stored is coherent with the coordinates under GridCoordinates_t node.
+ *
+ */
+int cg_particle_bounding_box_read(int fn, int B, int P, int C, CGNS_ENUMT(DataType_t) datatype, void* boundingbox)
+{
+    cgns_pcoor *pcoor;
+    cgns_base *base;
+    char_33 name;
+    char_33 data_type;
+    int ndim;
+    void * vdata;
+    cgsize_t dim_vals[12];
+    cgsize_t num;
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+     /* Get memory address for ParticleCoordinates_t node */
+    pcoor = cgi_get_particle_pcoor(cg, B, P, C);
+    if (pcoor==0) return CG_ERROR;
+
+    /* Read Bounding box from ParticleCoordinates node data */
+    if (cgi_read_node(pcoor->id, name, data_type, &ndim, dim_vals, &vdata, READ_DATA)){
+        cgi_error("Error reading node ParticleCoordinates_t");
+        return CG_ERROR;
+    }
+
+    /* check bounding box is not an empty array*/
+    if (strcmp(data_type,"MT")==0) {
+        cgi_error("No bounding box found for reading");
+        return CG_NODE_NOT_FOUND;
+    }
+
+    if (strcmp(data_type,"R4") &&
+        strcmp(data_type,"R8")) {
+        cgi_error("Datatype %s not supported for coordinates bounding box", data_type);
+        return CG_ERROR;
+    }
+
+    if (ndim != 2) {
+        cgi_error("Particle coordinates bounding box is %d dimensional. It should be 2.", ndim);
+        return CG_ERROR;
+    }
+
+    base = cgi_get_base(cg, B);
+    if (base==0) return CG_ERROR;
+    num = 2*base->phys_dim;
+
+    if (dim_vals[0]*dim_vals[1] != num){
+        cgi_error("Particle coordinates bounding box is not coherent with physical dimension.");
+        return CG_ERROR;
+    }
+
+     /* verify input */
+    if (datatype != CGNS_ENUMV(RealSingle) && datatype != CGNS_ENUMV(RealDouble)) {
+        cgi_error("Invalid data type for bounding box array: %d", datatype);
+        return CG_ERROR;
+    }
+
+    /* transfer small bounding box data to user with correct data type */
+    cgi_convert_data(num, cgi_datatype(data_type), vdata, datatype, boundingbox);
+    CGNS_FREE(vdata);
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup ParticleCoordinates
+ *
+ * \brief Write bounding box associated with a `ParticleCoordinates_t` node
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B  \B_Base
+ * \param[in] P  \P_ParticleZone
+ * \param[in] C  \C_Coordinate
+ * \param[in] datatype 	Data type of the bounding box array written to the file or read. Admissible data types for a coordinate bounding box are RealSingle and RealDouble.
+ * \param[in] boundingbox Data Array with bounding box values.
+ * \return \ier
+ *
+ * \details  The CGNS MLL relies on the user to compute the bounding box and ensure that the bounding box being stored is coherent with the coordinates under ParticleCoordinates_t node.
+
+ */
+int cg_particle_bounding_box_write(int fn, int B, int P, int C, CGNS_ENUMT(DataType_t) datatype, void* boundingbox)
+{
+    cgns_base *base;
+    cgns_pcoor *pcoor;
+    cgsize_t dim_vals[2];
+
+    cg = cgi_get_file(fn);
+    if (cg == 0) return CG_ERROR;
+
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    /* Get memory address for ParticleCoordinates_t node */
+    pcoor = cgi_get_particle_pcoor(cg, B, P, C);
+    if (pcoor==0) return CG_ERROR;
+
+    if ((cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) && pcoor->id == 0) {
+       cgi_error("Impossible to write coordinates bounding box to unwritten node");
+       return CG_ERROR;
+    }
+#if CG_BUILD_HDF5
+    else if (cg->filetype == CGIO_FILE_HDF5) {
+        hid_t hid;
+        to_HDF_ID(pcoor->id, hid);
+        if (hid == 0) {
+           cgi_error("Impossible to write coordinates bounding box to unwritten node HDF5");
+           return CG_ERROR;
+        }
+    }
+#endif
+    base = cgi_get_base(cg, B);
+    if (base==0) return CG_ERROR;
+    dim_vals[0] = base->phys_dim;
+    dim_vals[1] = 2;
+
+    /* Check input */
+    if (boundingbox == NULL) return CG_OK;
+
+    if (datatype != CGNS_ENUMV(RealSingle) && datatype != CGNS_ENUMV(RealDouble)) {
+        cgi_error("Invalid data type for bounding box array: %d", datatype);
+        return CG_ERROR;
+    }
+
+    /* Write Bounding box into existing ParticleCoordinates_t node */
+    if (cgio_set_dimensions(cg->cgio, pcoor->id, cgi_adf_datatype(datatype), 2, dim_vals)) {
+       cg_io_error("cgio_set_dimensions");
+       return CG_ERROR;
+    }
+    if (cgio_write_all_data(cg->cgio, pcoor->id, boundingbox)){
+       cg_io_error("cgio_write_all_data");
+       return CG_ERROR;
+    }
+
+    return CG_OK;
+}
+
+/**
+* \ingroup ParticleCoordinates
+*
+* \brief  Get number of coordinate arrays
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[out] ncoords Number of coordinate arrays for particle zone P.
+* \return \ier
+*
+*/
+int cg_particle_ncoords(int fn, int B, int P, int *ncoords)
+{
+   cgns_pcoor *pcoor;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* Get memory address for node "ParticleCoordinates" */
+   pcoor = cgi_get_particle_pcoorPC(cg, B, P);
+   if (pcoor==0) *ncoords = 0;     /* if ParticleCoordinates_t is undefined */
+   else          *ncoords = pcoor->ncoords;
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleCoordinates
+*
+* \brief  Get info about a coordinate array
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] C  \C_Coordinate
+* \param[out] datatype   Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble.
+* \param[out] coordname   Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to ensure file compatibility.
+* \return \ier
+*
+*/
+int cg_particle_coord_info(int fn, int B, int P, int C, DataType_t  *datatype, char *coordname)
+{
+   cgns_pcoor *pcoor;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* Get memory address for node "ParticleCoordinates" */
+   pcoor = cgi_get_particle_pcoorPC(cg, B, P);
+   if (pcoor==0) return CG_ERROR;
+
+   if (C>pcoor->ncoords || C<=0) {
+       cgi_error("Particle coord number %d invalid",C);
+       return CG_ERROR;
+   }
+   *datatype = cgi_datatype(pcoor->coord[C-1].data_type);
+   strcpy(coordname, pcoor->coord[C-1].name);
+
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleCoordinates
+*
+* \brief  Read particle coordinate array
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to ensure file compatibility.
+* \param[in] mem_datatype  Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
+* \param[in] rmin  Lower range index in file
+* \param[in] rmax  Upper range index in file
+* \param[out] coord_array   Array of coordinate values.
+* \return \ier
+*
+*/
+int cg_particle_coord_read(int fn, int B, int P, const char *coordname,
+                          CGNS_ENUMT(DataType_t) mem_datatype, const cgsize_t *s_rmin,
+                          const cgsize_t *s_rmax, void *coord_array)
+{
+   cgns_pzone *pzone;
+
+    /* get memory addresses */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   pzone = cgi_get_particle(cg, B, P);
+   if (pzone == 0) return CG_ERROR;
+
+   /* verify that range requested is not NULL */
+   if (s_rmin == NULL || s_rmax == NULL) {
+       cgi_error("NULL range value.");
+       return CG_ERROR;
+   }
+
+   cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
+   cgsize_t m_rmin[CGIO_MAX_DIMENSIONS], m_rmax[CGIO_MAX_DIMENSIONS];
+
+   m_rmin[0] = 1;
+   m_rmax[0] = s_rmax[0] - s_rmin[0] + 1;
+   m_dimvals[0] = m_rmax[0];
+
+   return cg_particle_coord_general_read(fn, B, P, coordname,
+                                         s_rmin, s_rmax, mem_datatype,
+                                         m_dimvals, m_rmin, m_rmax,
+                                         coord_array);
+}
+
+/**
+* \ingroup ParticleCoordinates
+*
+* \brief  Read subset of  coordinates to a shaped array
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
+* \param[in] m_type   Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
+* \param[in] s_rmin   Lower range index in file
+* \param[in] s_rmax   Upper range index in file
+* \param[in] m_dimvals   Dimensions of array in memory.
+* \param[in] m_rmin   Lower range index in memory
+* \param[in] m_rmax   Upper range index in memory
+* \param[out] coord_ptr   Array of coordinate values.
+* \return \ier
+*
+*/
+int cg_particle_coord_general_read(int fn, int B, int P, const char *coordname,
+                                  const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                                  CGNS_ENUMT(DataType_t) m_type, const cgsize_t *m_dimvals,
+                                  const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                                  void *coord_ptr)
+{
+    /* s_ prefix is file space, m_ prefix is memory space */
+   cgns_pcoor *pcoor;
+   cgns_array *coord;
+   int c, s_numdim, m_numdim;
+
+    /* verify input */
+   if (m_type != CGNS_ENUMV(RealSingle) && m_type != CGNS_ENUMV(RealDouble)) {
+       cgi_error("Invalid data type for coord. array: %d", m_type);
+       return CG_ERROR;
+   }
+    /* find address */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* get memory address for node "ParticleCoordinates" */
+   pcoor = cgi_get_particle_pcoorPC(cg, B, P);
+   if (pcoor == 0) return CG_ERROR;
+
+    /* find the coord address in the database */
+   coord = 0;
+   for (c=0; c<pcoor->ncoords; c++) {
+       if (strcmp(pcoor->coord[c].name, coordname) == 0) {
+           coord = &pcoor->coord[c];
+           break;
+       }
+   }
+   if (coord==0) {
+       cgi_error("Particle coordinate %s not found.",coordname);
+       return CG_NODE_NOT_FOUND;
+   }
+
+   /* ParticleZone_t is analogous to Unstructured Zone_t*/
+   s_numdim = 1;
+   m_numdim = 1;
+
+   return cgi_array_general_read(coord, cgns_rindindex, NULL, s_numdim, s_rmin, s_rmax,
+                                 m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
+                                 coord_ptr);
+}
+
+int cg_particle_coord_id(int fn, int B, int P, int C, double *coord_id)
+{
+   cgns_pcoor *pcoor;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* Get memory address for node "ParticleCoordinates" */
+   pcoor = cgi_get_particle_pcoorPC(cg, B, P);
+   if (pcoor==0) return CG_ERROR;
+
+   if (C>pcoor->ncoords || C<=0) {
+       cgi_error("Particle coord number %d invalid",C);
+       return CG_ERROR;
+   }
+
+   *coord_id = pcoor->coord[C-1].id;
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleCoordinates
+*
+* \brief  Write particle coordinates
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] datatype Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble.
+* \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to ensure file compatibility.
+* \param[in] coord_ptr   Array of coordinate values.
+* \param[out] C    \C_Coordinate
+* \return \ier
+*
+*/
+int cg_particle_coord_write(int fn, int B, int P, CGNS_ENUMT(DataType_t) datatype,
+                           const char *coordname, const void *coord_ptr, int *C)
+{
+   cgns_pzone *pzone;
+   cgns_pcoor *pcoor;
+   int status;
+
+   HDF5storage_type = CG_CONTIGUOUS;
+
+    /* verify input */
+   if (cgi_check_strlen(coordname)) return CG_ERROR;
+   if (datatype!=CGNS_ENUMV( RealSingle ) && datatype!=CGNS_ENUMV( RealDouble )) {
+       cgi_error("Invalid datatype for particle coord. array:  %d", datatype);
+       return CG_ERROR;
+   }
+    /* get memory addresses */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   pzone = cgi_get_particle(cg, B, P);
+   if (pzone == 0) return CG_ERROR;
+
+    /* Get memory address for node "ParticleCoordinates" */
+   pcoor = cgi_get_particle_pcoorPC(cg, B, P);
+   if (pcoor == 0) return CG_ERROR;
+
+   cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
+   cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
+   cgsize_t m_rmin[CGIO_MAX_DIMENSIONS], m_rmax[CGIO_MAX_DIMENSIONS];
+
+   m_dimvals[0] = pzone->nparticles;
+   s_rmin[0] = 1;
+   s_rmax[0] = s_rmin[0] + m_dimvals[0] - 1;
+   m_rmin[0] = 1;
+   m_rmax[0] = m_dimvals[0];
+   status = cg_particle_coord_general_write(fn, B, P, coordname,
+                                            datatype, s_rmin, s_rmax,
+                                            datatype, m_dimvals, m_rmin, m_rmax,
+                                            coord_ptr, C);
+
+   HDF5storage_type = CG_COMPACT;
+   return status;
+}
+
+/**
+* \ingroup ParticleCoordinates
+*
+* \brief  Write subset of particle coordinates
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] datatype Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble.
+* \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to ensure file compatibility.
+* \param[in] s_rmin   Lower range index in file (eg., imin, jmin, kmin).
+* \param[in] s_rmax   Upper range index in file (eg., imax, jmax, kmax).
+* \param[in] coord_ptr   Array of coordinate values.
+* \param[out] C    \C_Coordinate
+* \return \ier
+*
+*/
+int cg_particle_coord_partial_write(int fn, int B, int P,
+                                   CGNS_ENUMT(DataType_t) datatype,
+                                   const char *coordname, const cgsize_t *s_rmin,
+                                   const cgsize_t *s_rmax, const void *coord_ptr,
+                                   int *C)
+{
+   cgns_pzone *pzone;
+   int status;
+
+    /* get memory addresses */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   pzone = cgi_get_particle(cg, B, P);
+   if (pzone == 0) return CG_ERROR;
+
+
+   if (s_rmin == NULL || s_rmax == NULL) {
+       cgi_error("NULL range value.");
+       return CG_ERROR;
+   }
+
+   cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
+   cgsize_t m_rmin[CGIO_MAX_DIMENSIONS], m_rmax[CGIO_MAX_DIMENSIONS];
+   m_rmin[0] = 1;
+   m_rmax[0] = s_rmax[0] - s_rmin[0] + 1;
+   m_dimvals[0] = m_rmax[0];
+
+
+   status = cg_particle_coord_general_write(fn, B, P, coordname,
+                                            datatype, s_rmin, s_rmax,
+                                            datatype, m_dimvals, m_rmin, m_rmax,
+                                            coord_ptr, C);
+   return status;
+}
+
+/**
+* \ingroup ParticleCoordinates
+*
+* \brief  Write shaped array to a subset of particle coordinates
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to ensure file compatibility.
+* \param[in] s_type   Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble.
+* \param[in] m_type   Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
+* \param[in] s_rmin   Lower range index in file (eg., imin, jmin, kmin).
+* \param[in] s_rmax   Upper range index in file (eg., imax, jmax, kmax).
+* \param[in] m_numdim   Number of dimensions of array in memory.
+* \param[in] m_dimvals   Dimensions of array in memory.
+* \param[in] m_rmin   Lower range index in memory (eg., imin, jmin, kmin).
+* \param[in] m_rmax   Upper range index in memory (eg., imax, jmax, kmax).
+* \param[in] coord_ptr   Array of coordinate values.
+* \param[out] C    \C_Coordinate
+* \return \ier
+*
+*/
+int cg_particle_coord_general_write(int fn, int B, int P, const char *coordname,
+                                   CGNS_ENUMT(DataType_t) s_type,
+                                   const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                                   CGNS_ENUMT(DataType_t) m_type,
+                                   const cgsize_t *m_dimvals,
+                                   const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                                   const void *coord_ptr, int *C)
+{
+    /* s_ prefix is file space, m_ prefix is memory space */
+   cgns_pzone *pzone;
+   cgns_pcoor *pcoor;
+   int n, s_numdim, m_numdim;
+   int status;
+
+   HDF5storage_type = CG_CONTIGUOUS;
+
+    /* verify input */
+   if (cgi_check_strlen(coordname)) return CG_ERROR;
+   if (s_type!=CGNS_ENUMV(RealSingle) && s_type!=CGNS_ENUMV(RealDouble)) {
+       cgi_error("Invalid file data type for coord. array: %d", s_type);
+       return CG_ERROR;
+   }
+   if (m_type != CGNS_ENUMV(RealSingle) && m_type != CGNS_ENUMV(RealDouble) &&
+       m_type != CGNS_ENUMV(Integer) && m_type != CGNS_ENUMV(LongInteger)) {
+       cgi_error("Invalid input data type for coord. array: %d", m_type);
+       return CG_ERROR;
+   }
+
+    /* get memory addresses */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+   pzone = cgi_get_particle(cg, B, P);
+   if (pzone == 0) return CG_ERROR;
+
+    /* Get memory address for node "ParticleCoordinates" */
+   pcoor = cgi_get_particle_pcoorPC(cg, B, P);
+   if (pcoor == 0) return CG_ERROR;
+
+   cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
+   s_numdim = 1;
+   m_numdim = 1;
+   s_dimvals[0] = pzone->nparticles;
+
+    /* Create ParticleCoordinates_t node if not already created */
+   if (cg->filetype == CGIO_FILE_ADF || cg->filetype == CGIO_FILE_ADF2) {
+       if (pcoor->id == 0) {
+           if (cgi_new_node(pzone->id, "ParticleCoordinates", "ParticleCoordinates_t",
+                            &pcoor->id, "MT", 0, 0, 0)) return CG_ERROR;
+       }
+   }
+#if CG_BUILD_HDF5
+   else if (cg->filetype == CGIO_FILE_HDF5) {
+       hid_t hid;
+       to_HDF_ID(pcoor->id, hid);
+       if (hid == 0) {
+           if (cgi_new_node(pzone->id, "ParticleCoordinates", "ParticleCoordinates_t",
+                            &pcoor->id, "MT", 0, 0, 0)) return CG_ERROR;
+       }
+   }
+#endif
+   else {
+       return CG_ERROR;
+   }
+
+   status = cgi_array_general_write(pcoor->id, &(pcoor->ncoords),
+                                  &(pcoor->coord), coordname,
+                                  cgns_rindindex, NULL,
+                                  s_type, s_numdim, s_dimvals, s_rmin, s_rmax,
+                                  m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
+                                  coord_ptr, C);
+   HDF5storage_type = CG_COMPACT;
+   return status;
+}
+
+/*****************************************************************************\
+*    Read and Write ParticleSolution_t Nodes
+\*****************************************************************************/
+
+/**
+* \ingroup ParticleSolution
+*
+* \brief  Get number of ParticleSolution_t nodes
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[out] nsols  Number of solutions for particle P.
+* \return \ier
+*
+*/
+int cg_particle_nsols(int fn, int B, int P, int *nsols)
+{
+   cgns_pzone *pzone;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+   pzone = cgi_get_particle(cg, B, P);
+   if (pzone==0) return CG_ERROR;
+
+   *nsols = pzone->nsols;
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleSolution
+*
+* \brief  Get information about a ParticleSolution_t node
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] S  \SOL_S
+* \param[out] solname  Name of the particle solution.
+* \return \ier
+*
+*/
+int cg_particle_sol_info(int fn, int B, int P, int S, char *solname)
+{
+   cgns_psol *sol;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+   sol = cgi_get_particle_sol(cg, B, P, S);
+   if (sol==0) return CG_ERROR;
+
+   strcpy(solname, sol->name);
+   return CG_OK;
+}
+
+int cg_particle_sol_id(int fn, int B, int P, int S, double *sol_id)
+{
+   cgns_psol *sol;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+   sol = cgi_get_particle_sol(cg, B, P, S);
+   if (sol==0) return CG_ERROR;
+
+   *sol_id = sol->id;
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleSolution
+*
+* \brief  Create and/or write to a ParticleSolution_t node
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] solname  Name of the particle solution.
+* \param[out] S  \SOL_S
+* \return \ier
+*
+*/
+int cg_particle_sol_write(int fn, int B, int P, const char * solname, int *S)
+{
+   cgns_pzone *pzone;
+   cgns_psol *sol = NULL;
+   int index;
+
+    /* verify input */
+   if (cgi_check_strlen(solname)) return CG_ERROR;
+
+    /* get memory address for ParticleSolution node */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+   pzone = cgi_get_particle(cg, B, P);
+   if (pzone==0) return CG_ERROR;
+
+
+    /* Overwrite a ParticleSolution_t Node: */
+   for (index=0; index<pzone->nsols; index++) {
+       if (strcmp(solname, pzone->sol[index].name)==0) {
+
+            /* in CG_MODE_WRITE, children names must be unique */
+           if (cg->mode==CG_MODE_WRITE) {
+               cgi_error("Duplicate child name found: %s",solname);
+               return CG_ERROR;
+           }
+
+            /* overwrite an existing solution */
+            /* delete the existing solution from file */
+           if (cgi_delete_node(pzone->id, pzone->sol[index].id))
+               return CG_ERROR;
+            /* save the old in-memory address to overwrite */
+           sol = &(pzone->sol[index]);
+            /* free memory */
+           cgi_free_psol(sol);
+           break;
+       }
+   }
+    /* ... or add a ParticleSolution_t Node: */
+   if (index==pzone->nsols) {
+       if (pzone->nsols == 0) {
+           pzone->sol = CGNS_NEW(cgns_psol, pzone->nsols+1);
+       } else {
+           pzone->sol = CGNS_RENEW(cgns_psol, pzone->nsols+1, pzone->sol);
+       }
+       sol = &(pzone->sol[pzone->nsols]);
+       pzone->nsols++;
+   }
+   (*S) = index+1;
+
+    /* save data in memory */
+   memset(sol, 0, sizeof(cgns_psol));
+   strcpy(sol->name,solname);
+
+    /* save data in file */
+   if (cgi_new_node(pzone->id, sol->name, "ParticleSolution_t", &sol->id,
+       "MT", 0, 0, 0)) return CG_ERROR;
+
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleSolution
+*
+* \brief  Get the dimensions of a ParticleSolution_t node
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] S  \SOL_S
+* \param[out] size Number of particles for which solutions are defined
+* \return \ier
+*
+*/
+int cg_particle_sol_size(int fn, int B, int P, int S, cgsize_t *size)
+{
+   cgns_psol *sol;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+   sol = cgi_get_particle_sol(cg, B, P, S);
+   if (sol==0) return CG_ERROR;
+
+   if (sol->ptset == NULL) {
+      cgns_pzone *pzone = cgi_get_particle(cg, B, P);
+       *size = pzone->nparticles;
+   } else {
+       *size = sol->ptset->size_of_patch;
+   }
+
+   return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+/**
+* \ingroup ParticleSolution
+*
+* \brief  Get info about a point set ParticleSolution_t node
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] S  \SOL_S
+* \param[out] ptset_type Type of point set defining the interface in the current solution; either PointRange or PointList.
+* \param[out] npnts Number of points defining the interface in the current solution. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList.
+* \return \ier
+*
+*/
+int cg_particle_sol_ptset_info(int fn, int B, int P, int S,
+   CGNS_ENUMT(PointSetType_t) *ptset_type, cgsize_t *npnts)
+{
+   cgns_psol *sol;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+   sol = cgi_get_particle_sol(cg, B, P, S);
+   if (sol==0) return CG_ERROR;
+
+   if (sol->ptset == NULL) {
+       *ptset_type = CGNS_ENUMV(PointSetTypeNull);
+       *npnts = 0;
+   } else {
+       *ptset_type = sol->ptset->type;
+       *npnts = sol->ptset->npts;
+   }
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleSolution
+*
+* \brief  Read a point set ParticleSolution_t node
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] S  \SOL_S
+* \param[out] pnts  Array of points defining the interface in the current solution.
+* \return \ier
+*
+*/
+int cg_particle_sol_ptset_read(int fn, int B, int P, int S, cgsize_t *pnts)
+{
+   cgns_psol *sol;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+   sol = cgi_get_particle_sol(cg, B, P, S);
+   if (sol==0) return CG_ERROR;
+
+   if (sol->ptset == 0 || sol->ptset->npts <= 0) {
+       cgi_error("PointSet not defined for ParticleSolution node %d\n", S);
+       return CG_ERROR;
+   }
+
+   if (cgi_read_int_data(sol->ptset->id, sol->ptset->data_type,
+           sol->ptset->npts, pnts)) return CG_ERROR;
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleSolution
+*
+* \brief  Create a point set ParticleSolution_t node
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] solname  Name of the particle solution.
+* \param[in] ptset_type  Type of point set defining the interface in the current solution; either PointRange or PointList.
+* \param[in] npnts  Number of points defining the interface in the current solution. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList.
+* \param[in] pnts  Array of points defining the interface in the current solution.
+* \param[out] S  \SOL_S
+* \return \ier
+*
+*/
+int cg_particle_sol_ptset_write(int fn, int B, int P, const char *solname,
+   CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
+   const cgsize_t *pnts, int *S)
+{
+   cgsize_t cnt;
+   cgns_psol *sol;
+   char_33 PointSetName;
+   double id;
+
+   /* verify input */
+   if (!((ptset_type == CGNS_ENUMV(PointList) && npnts > 0) ||
+         (ptset_type == CGNS_ENUMV(PointRange) && npnts == 2))) {
+       cgi_error("Invalid input:  npoint=%ld, point set type=%s",
+           (long)npnts, PointSetTypeName[ptset_type]);
+       return CG_ERROR;
+   }
+
+   if (cg_particle_sol_write(fn, B, P, solname, S))
+       return CG_ERROR;
+   sol = cgi_get_particle_sol(cg, B, P, *S);
+   if (sol == 0) return CG_ERROR;
+
+   sol->ptset = CGNS_NEW(cgns_ptset, 1);
+   sol->ptset->type = ptset_type;
+   strcpy(sol->ptset->data_type,CG_SIZE_DATATYPE);
+   sol->ptset->npts = npnts;
+
+   if (ptset_type == CGNS_ENUMV(PointList)) {
+       sol->ptset->size_of_patch = npnts;
+   }
+   else {
+      cnt = pnts[1] - pnts[0];
+      if (cnt < 0) cnt = -cnt;
+      sol->ptset->size_of_patch = (cnt + 1);
+   }
+
+   strcpy(PointSetName, PointSetTypeName[ptset_type]);
+   if (cgi_write_ptset(sol->id, PointSetName, sol->ptset, 1,
+           (void *)pnts)) return CG_ERROR;
+
+   return CG_OK;
+}
+
+/*****************************************************************************\
+*    Read and Write particle field  DataArray_t Nodes
+\*****************************************************************************/
+/**
+* \ingroup ParticleSolutionData
+*
+* \brief  Get number of particle solution arrays
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] S  \SOL_S
+* \param[out] nfields  Number of data arrays in particle solution S.
+* \return \ier
+*
+*/
+int cg_particle_nfields(int fn, int B, int P, int S, int *nfields)
+{
+   cgns_psol *sol;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+   sol = cgi_get_particle_sol(cg, B, P, S);
+   if (sol==0) return CG_ERROR;
+
+   *nfields = sol->nfields;
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleSolutionData
+*
+* \brief  Get info about a particle solution array
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] S  \SOL_S
+* \param[in] F  Solution array index number, where 1 ≤ F ≤ nfields.
+* \param[out] datatype  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
+* \param[out] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to ensure file compatibility.
+* \return \ier
+*
+*/
+int cg_particle_field_info(int fn, int B, int P, int S, int F,
+                 CGNS_ENUMT(DataType_t) *datatype, char *fieldname)
+{
+   cgns_array *field;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+   field = cgi_get_particle_field(cg, B, P, S, F);
+   if (field==0) return CG_ERROR;
+
+   strcpy(fieldname, field->name);
+   *datatype = cgi_datatype(field->data_type);
+
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleSolutionData
+*
+* \brief  Read particle solution
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] S  \SOL_S
+* \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to ensure file compatibility.
+* \param[in] mem_datatype  Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
+* \param[in] s_rmin  Lower range index in file
+* \param[in] s_rmax  Upper range index in file
+* \param[out] field_ptr  Array of solution values.
+* \return \ier
+*
+*/
+int cg_particle_field_read(int fn, int B, int P, int S, const char *fieldname,
+                          CGNS_ENUMT(DataType_t) mem_datatype, const cgsize_t *s_rmin,
+                          const cgsize_t *s_rmax, void *field_ptr)
+{
+   cgns_psol *sol;
+   int n, m_numdim;
+
+    /* get memory addresses */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+    /* get memory address for solution */
+   sol = cgi_get_particle_sol(cg, B, P, S);
+   if (sol == 0) return CG_ERROR;
+
+    /* verify that range requested does not exceed range stored */
+   if (s_rmin == NULL || s_rmax == NULL) {
+       cgi_error("NULL range value.");
+       return CG_ERROR;
+   }
+
+   cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
+   cgsize_t m_rmin[CGIO_MAX_DIMENSIONS], m_rmax[CGIO_MAX_DIMENSIONS];
+   m_rmin[0] = 1;
+   m_rmax[0] = s_rmax[0] - s_rmin[0] + 1;
+   m_dimvals[0] = m_rmax[0];
+
+   return cg_particle_field_general_read(fn, B, P, S, fieldname,
+                                         s_rmin, s_rmax, mem_datatype,
+                                         m_dimvals, m_rmin, m_rmax,
+                                         field_ptr);
+}
+
+/**
+* \ingroup ParticleSolutionData
+*
+* \brief  Read subset of particle solution to a shaped array
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] S  \SOL_S
+* \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to ensure file compatibility.
+* \param[in] s_rmin  Lower range index in file
+* \param[in] s_rmax  Upper range index in file
+* \param[in] m_type  Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
+* \param[in] m_rmin  Lower range index in memory
+* \param[in] m_rmax  Upper range index in memory
+* \param[out] field_ptr  Array of solution values.
+* \return \ier
+*
+*/
+int cg_particle_field_general_read(int fn, int B, int P, int S, const char *fieldname,
+                         const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                         CGNS_ENUMT(DataType_t) m_type,
+                         const cgsize_t *m_dimvals,
+                         const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                         void *field_ptr)
+{
+    /* s_ prefix is file space, m_ prefix is memory space */
+   cgns_psol *sol;
+   cgns_array *field;
+   int f, s_numdim, m_numdim = 1;
+
+    /* verify input */
+   if (INVALID_ENUM(m_type, NofValidDataTypes)) {
+       cgi_error("Invalid data type requested for flow solution: %d", m_type);
+       return CG_ERROR;
+   }
+
+    /* find address */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    /* get memory address for solution */
+   sol = cgi_get_particle_sol(cg, B, P, S);
+   if (sol == 0) return CG_ERROR;
+
+    /* find the field address in the database */
+   field = 0;
+   for (f=0; f<sol->nfields; f++) {
+       if (strcmp(sol->field[f].name, fieldname) == 0) {
+           field = cgi_get_particle_field(cg, B, P, S, f+1);
+           if (field == 0) return CG_ERROR;
+           break;
+       }
+   }
+   if (field == 0) {
+       cgi_error("Flow solution array %s not found",fieldname);
+       return CG_NODE_NOT_FOUND;
+   }
+
+   s_numdim = 1;
+
+   return cgi_array_general_read(field, cgns_rindindex, NULL,
+                                 s_numdim, s_rmin, s_rmax,
+                                 m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
+                                 field_ptr);
+}
+
+int cg_particle_field_id(int fn, int B, int P, int S, int F, double *field_id)
+{
+   cgns_array *field;
+
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+   field = cgi_get_particle_field(cg, B, P, S, F);
+   if (field==0) return CG_ERROR;
+
+   *field_id = field->id;
+   return CG_OK;
+}
+
+/**
+* \ingroup ParticleSolutionData
+*
+* \brief  Write Particle solution
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] S  \SOL_S
+* \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to ensure file compatibility.
+* \param[in] type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
+* \param[in] field_ptr  Array of solution values.
+* \param[out] F \SOL_F
+* \return \ier
+*
+*/
+int cg_particle_field_write(int fn, int B, int P, int S,
+                  CGNS_ENUMT(DataType_t) type, const char *fieldname,
+                  const void *field_ptr, int *F)
+{
+   cgns_pzone *pzone;
+   cgns_psol *sol;
+   int n, m_numdim;
+
+   HDF5storage_type = CG_CONTIGUOUS;
+
+    /* verify input */
+   if (cgi_check_strlen(fieldname)) return CG_ERROR;
+   if (type != CGNS_ENUMV(RealSingle) && type != CGNS_ENUMV(RealDouble) &&
+       type != CGNS_ENUMV(ComplexSingle) && type != CGNS_ENUMV(ComplexDouble) &&
+       type != CGNS_ENUMV(Integer) && type != CGNS_ENUMV(LongInteger)) {
+       cgi_error("Invalid datatype for solution array %s: %d",fieldname, type);
+       return CG_ERROR;
+   }
+
+    /* get memory addresses */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   pzone = cgi_get_particle(cg, B, P);
+   if (pzone == 0) return CG_ERROR;
+
+    /* get memory address for solution */
+   sol = cgi_get_particle_sol(cg, B, P, S);
+   if (sol == 0) return CG_ERROR;
+
+    /* dimension is dependent on multidim or ptset */
+   cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
+   if (sol->ptset == NULL) {
+       m_dimvals[0] = pzone->nparticles;
+   }
+   else {
+       m_dimvals[0] = sol->ptset->size_of_patch;
+   }
+
+   cgsize_t s_rmin[CGIO_MAX_DIMENSIONS], s_rmax[CGIO_MAX_DIMENSIONS];
+   cgsize_t m_rmin[CGIO_MAX_DIMENSIONS], m_rmax[CGIO_MAX_DIMENSIONS];
+
+   s_rmin[0] = 1 ;
+   s_rmax[0] = s_rmin[0] + m_dimvals[0] - 1;
+   m_rmin[0] = 1;
+   m_rmax[0] = m_dimvals[0];
+
+   return cg_particle_field_general_write(fn, B, P, S, fieldname,
+                                          type, s_rmin, s_rmax,
+                                          type, m_dimvals, m_rmin, m_rmax,
+                                          field_ptr, F);
+}
+
+/**
+* \ingroup ParticleSolutionData
+*
+* \brief  Write subset of particle solution
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] S  \SOL_S
+* \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to ensure file compatibility.
+* \param[in] type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
+* \param[in] s_rmin  Lower range index in file
+* \param[in] s_rmax  Upper range index in file
+* \param[in] field_ptr  Array of solution values.
+* \param[out] F \SOL_F
+* \return \ier
+*
+*/
+int cg_particle_field_partial_write(int fn, int B, int P, int S,
+                                   CGNS_ENUMT( DataType_t ) type, const char *fieldname,
+                                   const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                                   const void *field_ptr, int *F)
+{
+   cgns_pzone *pzone;
+   cgns_psol *sol;
+   int n, m_numdim;
+   int status;
+
+    /* get memory addresses */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   pzone = cgi_get_particle(cg, B, P);
+   if (pzone == 0) return CG_ERROR;
+
+    /* get memory address for solution */
+   sol = cgi_get_particle_sol(cg, B, P, S);
+   if (sol == 0) return CG_ERROR;
+
+   if (s_rmin == NULL || s_rmax == NULL) {
+       cgi_error("NULL range value.");
+       return CG_ERROR;
+   }
+
+   cgsize_t m_dimvals[CGIO_MAX_DIMENSIONS];
+   cgsize_t m_rmin[CGIO_MAX_DIMENSIONS], m_rmax[CGIO_MAX_DIMENSIONS];
+   m_rmin[0] = 1;
+   m_rmax[0] = s_rmax[0] - s_rmin[0] + 1;
+   m_dimvals[0] = m_rmax[0];
+
+
+   status = cg_particle_field_general_write(fn, B, P, S, fieldname,
+                                            type, s_rmin, s_rmax,
+                                            type, m_dimvals, m_rmin, m_rmax,
+                                            field_ptr, F);
+
+   HDF5storage_type = CG_COMPACT;
+   return status;
+
+}
+
+/**
+* \ingroup ParticleSolutionData
+*
+* \brief  Write shaped array to a subset of flow solution
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] S  \SOL_S
+* \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to ensure file compatibility.
+* \param[in] s_type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
+* \param[in] s_rmin  Lower range index in file
+* \param[in] s_rmax  Upper range index in file
+*
+* \param[in] m_type  Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
+* \param[in] m_dimvals Dimensions of array in memory.
+* \param[in] m_rmin  Lower range index in memory
+* \param[in] m_rmax  Upper range index in memory
+* \param[in] field_ptr  Array of solution values.
+* \param[out] F \SOL_F
+* \return \ier
+*
+*/
+int cg_particle_field_general_write(int fn, int B, int P, int S, const char *fieldname,
+                          CGNS_ENUMT(DataType_t) s_type,
+                          const cgsize_t *s_rmin, const cgsize_t *s_rmax,
+                          CGNS_ENUMT(DataType_t) m_type,
+                          const cgsize_t *m_dimvals,
+                          const cgsize_t *m_rmin, const cgsize_t *m_rmax,
+                          const void *field_ptr, int *F)
+{
+    /* s_ prefix is file space, m_ prefix is memory space */
+   cgns_pzone *pzone;
+   cgns_psol *sol;
+   int s_numdim;
+   int status;
+
+   HDF5storage_type = CG_CONTIGUOUS;
+
+    /* verify input */
+   if (cgi_check_strlen(fieldname)) return CG_ERROR;
+   if (s_type != CGNS_ENUMV(RealSingle) && s_type != CGNS_ENUMV(RealDouble) &&
+       s_type != CGNS_ENUMV(ComplexSingle) && s_type != CGNS_ENUMV(ComplexDouble) &&
+       s_type != CGNS_ENUMV(Integer) && s_type != CGNS_ENUMV(LongInteger)) {
+       cgi_error("Invalid file data type for solution array %s: %d",
+                 fieldname, s_type);
+       return CG_ERROR;
+   }
+   if (m_type != CGNS_ENUMV(RealSingle) && m_type != CGNS_ENUMV(RealDouble) &&
+       m_type != CGNS_ENUMV(ComplexSingle) && m_type != CGNS_ENUMV(ComplexDouble) &&
+       m_type != CGNS_ENUMV(Integer) && m_type != CGNS_ENUMV(LongInteger)) {
+       cgi_error("Invalid input data type for solution array %s: %d",
+                 fieldname, m_type);
+       return CG_ERROR;
+   }
+
+    /* get memory addresses */
+   cg = cgi_get_file(fn);
+   if (cg == 0) return CG_ERROR;
+
+   if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+   pzone = cgi_get_particle(cg, B, P);
+   if (pzone == 0) return CG_ERROR;
+
+    /* get memory address for solution */
+   sol = cgi_get_particle_sol(cg, B, P, S);
+   if (sol == 0) return CG_ERROR;
+
+    /* file dimension is dependent on multidim or ptset */
+   cgsize_t s_dimvals[CGIO_MAX_DIMENSIONS];
+   s_numdim = 1;
+   int m_numdim = 1;
+   if (sol->ptset == NULL) {
+      s_dimvals[0] = pzone->nparticles;
+   } else {
+       s_numdim = 1;
+       s_dimvals[0] = sol->ptset->size_of_patch;
+   }
+
+   status= cgi_array_general_write(sol->id, &(sol->nfields),
+                                  &(sol->field), fieldname,
+                                  cgns_rindindex, NULL,
+                                  s_type, s_numdim, s_dimvals, s_rmin, s_rmax,
+                                  m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
+                                  field_ptr, F);
+
+   HDF5storage_type = CG_COMPACT;
+   return status;
+}
+
+/*****************************************************************************\
  *           Go - To Function
 \*****************************************************************************/
 
@@ -14523,6 +16231,107 @@ int cg_equationset_write(int EquationDimension)
 }
 
 /*----------------------------------------------------------------------*/
+/**
+ * \ingroup ParticleEquationSet
+ *
+ * \brief  Read particle equation set info
+ *
+ * \param[out]  EquationDimension  Dimensionality of the governing equations; it is the number of spatial variables describing the flow.
+ * \param[out]  ParticleGoverningEquationsFlag    Flag indicating whether or not this ParticleEquationSet_t node includes the definition of the particle governing equations; 0 if it doesn't, 1 if it does.
+ * \param[out]  CollisionModelFlag                Flag indicating whether or not this ParticleEquationSet_t node includes the definition of a collision model; 0 if it doesn't, 1 if it does.
+ * \param[out]  BreakupModelFlag                  Flag indicating whether or not this ParticleEquationSet_t node includes the definition of a breakup model; 0 if it doesn't, 1 if it does.
+ * \param[out]  ForceModelFlag                    Flag indicating whether or not this ParticleEquationSet_t node includes the definition of a force model; 0 if it doesn't, 1 if it does.
+ * \param[out]  WallInteractionModelFlag          Flag indicating whether or not this ParticleEquationSet_t node includes the definition of a wall interaction model; 0 if it doesn't, 1 if it does.
+ * \param[out]  PhaseChangeModelFlag              Flag indicating whether or not this ParticleEquationSet_t node includes the definition of a phase change model; 0 if it doesn't, 1 if it does.
+ * \return \ier
+ *
+ */
+int cg_particle_equationset_read(int *EquationDimension,
+                                 int *ParticleGoverningEquationsFlag, int *CollisionModelFlag,
+                                 int *BreakupModelFlag, int *ForceModelFlag,
+                                 int *WallInteractionModelFlag, int *PhaseChangeModelFlag)
+{
+    cgns_pequations *eq;
+    int ier=0;
+
+    CHECK_FILE_OPEN
+
+     /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    eq = cgi_particle_equations_address(CG_MODE_READ, &ier);
+    if (eq==0) return ier;
+
+    (*EquationDimension) = eq->equation_dim;
+    if (eq->governing) (*ParticleGoverningEquationsFlag)=1;
+    else           (*ParticleGoverningEquationsFlag)=0;
+
+    if (eq->collision) (*CollisionModelFlag)=1;
+    else               (*CollisionModelFlag)=0;
+
+    if (eq->breakup) (*BreakupModelFlag)=1;
+    else             (*BreakupModelFlag)=0;
+
+    if (eq->force) (*ForceModelFlag)=1;
+    else           (*ForceModelFlag)=0;
+
+    if (eq->wallinteract) (*WallInteractionModelFlag)=1;
+    else                  (*WallInteractionModelFlag)=0;
+
+    if (eq->phasechange) (*PhaseChangeModelFlag)=1;
+    else                 (*PhaseChangeModelFlag)=0;
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup ParticleEquationSet
+ *
+ * \brief  Write dimensionality of particle equations
+ *
+ * \param[in]  EquationDimension  Dimensionality of the governing equations; it is the number of spatial variables describing the particle flow.
+ * \return \ier
+ *
+ */
+int cg_particle_equationset_write(int EquationDimension)
+{
+    cgns_pequations *equations;
+    int ier=0;
+    double posit_id;
+
+    CHECK_FILE_OPEN
+
+     /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    equations=cgi_particle_equations_address(CG_MODE_WRITE, &ier);
+    if (equations==0) return ier;
+
+     /* Save data */
+    equations->equation_dim=EquationDimension;
+
+     /* initialize other fields */
+    strcpy(equations->name, "ParticleEquationSet");
+    equations->id=0;
+    equations->link=0;
+    equations->ndescr=0;
+    equations->governing=0;
+    equations->collision=0;
+    equations->breakup=0;
+    equations->force=0;
+    equations->wallinteract=0;
+    equations->phasechange=0;
+    equations->data_class=CGNS_ENUMV( DataClassNull );
+    equations->units=0;
+    equations->nuser_data=0;
+
+     /* save data in file */
+    if (cgi_posit_id(&posit_id)) return CG_ERROR;
+    if (cgi_write_particle_equations(posit_id, equations)) return CG_ERROR;
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
 
 /**
  * \ingroup GoverningEquations
@@ -15003,6 +16812,256 @@ int cg_model_write(const char * ModelLabel, CGNS_ENUMT(ModelType_t) ModelType)
 }
 
 /*----------------------------------------------------------------------*/
+
+/**
+ * \ingroup ParticleGoverningEquations
+ *
+ * \brief  Read type of particle governing equation
+ *
+ * \param[out]  ParticleEquationsType  Type of particle governing equations. The admissible types are CG_Null, CG_UserDefined, DEM, DSMC and SPH.
+ * \return \ier
+ *
+ */
+int cg_particle_governing_read(CGNS_ENUMT(ParticleGoverningEquationsType_t) *ParticleEquationsType)
+{
+    cgns_pgoverning *governing;
+    int ier=0;
+
+    CHECK_FILE_OPEN
+
+     /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    governing = cgi_particle_governing_address(CG_MODE_READ, &ier);
+    if (governing==0) return ier;
+
+    (*ParticleEquationsType) = governing->type;
+    return CG_OK;
+}
+
+
+/**
+ * \ingroup ParticleGoverningEquations
+ *
+ * \brief  Write type of particle governing equation
+ *
+ * \param[in]  ParticleEquationstype  Type of particle governing equations. The admissible types are CG_Null, CG_UserDefined, DEM, DSMC and SPH.
+ * \return \ier
+ *
+ */
+int cg_particle_governing_write(CGNS_ENUMT(ParticleGoverningEquationsType_t) ParticleEquationstype)
+{
+    cgns_pgoverning *governing;
+    int ier=0, index_dim;
+    cgsize_t dim_vals;
+    double posit_id;
+
+    CHECK_FILE_OPEN
+
+     /* verify input */
+    if (INVALID_ENUM(ParticleEquationstype,NofValidParticleGoverningEquationsTypes)) {
+        cgi_error("Invalid Particle Governing Equations Type: %d",ParticleEquationstype);
+        return CG_ERROR;
+    }
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+
+    governing = cgi_particle_governing_address(CG_MODE_WRITE, &ier);
+    if (governing==0) return ier;
+
+     /* Save data */
+    governing->type=ParticleEquationstype;
+
+     /* initialize other fields */
+    strcpy(governing->name, "ParticleGoverningEquations");
+    governing->id=0;
+    governing->link=0;
+    governing->ndescr=0;
+    governing->nuser_data=0;
+
+     /* save data in file */
+    if (cgi_posit_id(&posit_id)) return CG_ERROR;
+    dim_vals = (cgsize_t)strlen(ParticleGoverningEquationsTypeName[governing->type]);
+    if (cgi_new_node(posit_id, "ParticleGoverningEquations",
+        "ParticleGoverningEquations_t", &governing->id, "C1", 1, &dim_vals,
+        ParticleGoverningEquationsTypeName[governing->type])) return CG_ERROR;
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
+
+/**
+ * \ingroup ParticleModel
+ *
+ * \brief  Read particle model types
+ *
+ * \param[out]  ModelLabel  The CGNS label for the particle model being defined. The particle models supported by CGNS are:
+ *   - ParticleCollisionModel_t
+ *   - ParticleBreakupModel_t
+ *   - ParticleForceModel_t
+ *   - ParticleWallInteractionModel_t
+ *   - ParticlePhaseChangeModel_t
+ *
+ * \param[out] 	ModelType  One of the particle model types (listed below) allowed for the ModelLabel selected.
+ *
+ * The types allowed for the various models are:
+ * ParticleCollisionModel_t  	     CG_Null, CG_UserDefined, Linear, NonLinear, HardSphere, SoftSphere, LinearSpringDashpot, Pair, HertzMindlin, HertzKuwabaraKono, ORourke, Stochastic, NonStochastic, NTC
+ *	ParticleBreakupModel_t		     CG_Null, CG_UserDefined, KelvinHelmholtz, KelvinHelmholtzACT, RayleighTaylor, KelvinHelmholtzRayleighTaylor, ReitzKHRT, TAB, ETAB, LISA, SHF, PilchErdman, ReitzDiwakar
+ *	ParticleForceModel_t		        CG_Null, CG_UserDefined, Sphere, NonShpere, Tracer, BeetstraVanDerHoefKuipers, Ergun, CliftGrace, Gidaspow, HaiderLevenspiel, PlessisMasliyah, SyamlalOBrien, SaffmanMei, TennetiGargSubramaniam, Tomiyama, Stokes, StokesCunningham, WenYu
+ *	ParticleWallInteractionModel_t  CG_Null, CG_UserDefined, Linear, NonLinear, HardSphere, SoftSphere, LinearSpringDashpot, BaiGosman, HertzMindlin, HertzKuwabaraKono, Khunke, ORourke, NTC
+ *	ParticlePhaseChangeModel_t		  CG_Null, CG_UserDefined, Boil, Chiang, Frossling, FuchsKnudsen
+ * \return \ier
+ */
+int cg_particle_model_read(const char *ModelLabel, CGNS_ENUMT(ParticleModelType_t) *ModelType)
+{
+    cgns_pmodel *model;
+    int ier=0;
+
+    CHECK_FILE_OPEN
+
+     /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
+
+    model = cgi_particle_model_address(CG_MODE_READ, ModelLabel, &ier);
+    if (model==0) return ier;
+
+    (*ModelType) = model->type;
+
+    return CG_OK;
+}
+
+/**
+ * \ingroup ParticleModel
+ *
+ * \brief  Write particle model types
+ *
+ * \param[in]  ModelLabel  The CGNS label for the particle model being defined. The particle models supported by CGNS are:
+ *   - ParticleCollisionModel_t
+ *   - ParticleBreakupModel_t
+ *   - ParticleForceModel_t
+ *   - ParticleWallInteractionModel_t
+ *   - ParticlePhaseChangeModel_t
+ *
+ * \param[in] 	ModelType  One of the particle model types (listed below) allowed for the ModelLabel selected.
+ *
+ * The types allowed for the various models are:
+ * ParticleCollisionModel_t  	     CG_Null, CG_UserDefined, Linear, NonLinear, HardSphere, SoftSphere, LinearSpringDashpot, Pair, HertzMindlin, HertzKuwabaraKono, ORourke, Stochastic, NonStochastic, NTC
+ *	ParticleBreakupModel_t		     CG_Null, CG_UserDefined, KelvinHelmholtz, KelvinHelmholtzACT, RayleighTaylor, KelvinHelmholtzRayleighTaylor, ReitzKHRT, TAB, ETAB, LISA, SHF, PilchErdman, ReitzDiwakar
+ *	ParticleForceModel_t		        CG_Null, CG_UserDefined, Sphere, NonShpere, Tracer, BeetstraVanDerHoefKuipers, Ergun, CliftGrace, Gidaspow, HaiderLevenspiel, PlessisMasliyah, SyamlalOBrien, SaffmanMei, TennetiGargSubramaniam, Tomiyama, Stokes, StokesCunningham, WenYu
+ *	ParticleWallInteractionModel_t  CG_Null, CG_UserDefined, Linear, NonLinear, HardSphere, SoftSphere, LinearSpringDashpot, BaiGosman, HertzMindlin, HertzKuwabaraKono, Khunke, ORourke, NTC
+ *	ParticlePhaseChangeModel_t		  CG_Null, CG_UserDefined, Boil, Chiang, Frossling, FuchsKnudsen
+ * \return \ier
+ */
+int cg_particle_model_write(const char * ModelLabel, CGNS_ENUMT(ParticleModelType_t) ModelType)
+{
+    cgns_pmodel *model;
+    char ModelName[33];
+    int ier=0, index_dim;
+    double posit_id;
+
+    CHECK_FILE_OPEN
+
+     /* verify input */
+    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_WRITE)) return CG_ERROR;
+    if (INVALID_ENUM(ModelType,NofValidParticleModelTypes)) {
+        cgi_error("Invalid %s Type: %d",ModelLabel,ModelType);
+        return CG_ERROR;
+    }
+
+     /* Validate enums for each model type. */
+    if (strcmp(ModelLabel, "ParticleCollisionModel_t")==0) {
+      if (ModelType!=CGNS_ENUMV( ModelTypeNull ) && ModelType!=CGNS_ENUMV( ModelTypeUserDefined ) &&
+      ModelType!=CGNS_ENUMV( Linear ) && ModelType!=CGNS_ENUMV( NonLinear ) &&
+      ModelType!=CGNS_ENUMV( SoftSphere ) && ModelType!=CGNS_ENUMV( HardSphere ) &&
+      ModelType!=CGNS_ENUMV( LinearSpringDashpot ) && ModelType!=CGNS_ENUMV( Pair ) &&
+      ModelType!=CGNS_ENUMV( HertzMindlin ) && ModelType!=CGNS_ENUMV( HertzKuwabaraKono ) &&
+      ModelType!=CGNS_ENUMV( ORourke ) && ModelType!=CGNS_ENUMV( Stochastic ) &&
+      ModelType!=CGNS_ENUMV( NonStochastic ) && ModelType!=CGNS_ENUMV( NTC )) {
+            cgi_error("Particle Model Type '%s' is not supported for %s",
+                ParticleModelTypeName[ModelType],ModelLabel);
+            return CG_ERROR;
+        }
+    } else if (strcmp(ModelLabel, "ParticleBreakupModel_t")==0) {
+      if (ModelType!=CGNS_ENUMV( ModelTypeNull ) && ModelType!=CGNS_ENUMV( ModelTypeUserDefined ) &&
+      ModelType!=CGNS_ENUMV( KelvinHelmholtz ) && ModelType!=CGNS_ENUMV( KelvinHelmholtzACT ) &&
+      ModelType!=CGNS_ENUMV( RayleighTaylor ) && ModelType!=CGNS_ENUMV( KelvinHelmholtzRayleighTaylor ) &&
+      ModelType!=CGNS_ENUMV( ReitzKHRT ) && ModelType!=CGNS_ENUMV( TAB ) && ModelType!= CGNS_ENUMV( ETAB ) &&
+      ModelType!=CGNS_ENUMV( LISA ) && ModelType!=CGNS_ENUMV( SHF ) && ModelType!= CGNS_ENUMV( PilchErdman ) &&
+      ModelType!=CGNS_ENUMV( ReitzDiwakar )) {
+            cgi_error("Particle Model Type '%s' is not supported for %s",
+                ParticleModelTypeName[ModelType],ModelLabel);
+            return CG_ERROR;
+        }
+    } else if (strcmp(ModelLabel, "ParticleForceModel_t")==0) {
+      if (ModelType!=CGNS_ENUMV( ModelTypeNull ) && ModelType!=CGNS_ENUMV( ModelTypeUserDefined ) &&
+          ModelType!=CGNS_ENUMV( Sphere ) && ModelType!=CGNS_ENUMV( NonSphere ) &&
+          ModelType!=CGNS_ENUMV( Tracer ) && ModelType!=CGNS_ENUMV( BeetstraVanDerHoefKuipers ) &&
+          ModelType!=CGNS_ENUMV( Ergun ) && ModelType!=CGNS_ENUMV( CliftGrace ) && ModelType!= CGNS_ENUMV( Gidaspow ) &&
+          ModelType!=CGNS_ENUMV( HaiderLevenspiel ) && ModelType!=CGNS_ENUMV( PlessisMasliyah ) &&
+          ModelType!=CGNS_ENUMV( SyamlalOBrien ) && ModelType!=CGNS_ENUMV( SaffmanMei ) &&
+          ModelType!=CGNS_ENUMV( TennetiGargSubramaniam ) && ModelType!=CGNS_ENUMV( Tomiyama ) &&
+          ModelType!=CGNS_ENUMV( Stokes ) && ModelType!=CGNS_ENUMV( StokesCunningham ) &&
+          ModelType!=CGNS_ENUMV( WenYu )) {
+            cgi_error("Particle Model Type '%s' is not supported for %s",
+                ParticleModelTypeName[ModelType],ModelLabel);
+            return CG_ERROR;
+        }
+    } else if (strcmp(ModelLabel, "ParticleWallInteractionModel_t")==0) {
+      if (ModelType!=CGNS_ENUMV( ModelTypeNull ) && ModelType!=CGNS_ENUMV( ModelTypeUserDefined ) &&
+          ModelType!=CGNS_ENUMV( Linear ) && ModelType!=CGNS_ENUMV( NonLinear ) &&
+          ModelType!=CGNS_ENUMV( SoftSphere ) && ModelType!=CGNS_ENUMV( HardSphere ) &&
+          ModelType!=CGNS_ENUMV( LinearSpringDashpot ) && ModelType!=CGNS_ENUMV( Pair ) &&
+          ModelType!=CGNS_ENUMV( HertzMindlin ) && ModelType!=CGNS_ENUMV( HertzKuwabaraKono ) &&
+          ModelType!=CGNS_ENUMV( ORourke ) && ModelType!=CGNS_ENUMV( Khunke ) &&
+          ModelType!=CGNS_ENUMV( BaiGosman ) && ModelType!=CGNS_ENUMV( NTC )) {
+            cgi_error("Particle Model Type '%s' is not supported for %s",
+                ParticleModelTypeName[ModelType],ModelLabel);
+            return CG_ERROR;
+        }
+    } else if (strcmp(ModelLabel, "ParticlePhaseChangeModel_t")==0) {
+      if (ModelType!=CGNS_ENUMV( ModelTypeNull ) && ModelType!=CGNS_ENUMV( ModelTypeUserDefined ) &&
+      ModelType!=CGNS_ENUMV( Boil )  && ModelType!=CGNS_ENUMV( Chiang ) &&
+      ModelType!=CGNS_ENUMV( Frossling ) && ModelType!=CGNS_ENUMV( FuchsKnudsen )) {
+            cgi_error("Particle Model Type '%s' is not supported for %s",
+                ParticleModelTypeName[ModelType],ModelLabel);
+            return CG_ERROR;
+        }
+    }
+
+    if (strcmp(ModelLabel, "ParticleCollisionModel_t") &&
+        strcmp(ModelLabel, "ParticleBreakupModel_t") &&
+        strcmp(ModelLabel, "ParticleForceModel_t") &&
+        strcmp(ModelLabel, "ParticleWallInteractionModel_t")) {
+        cgi_error("Invalid Particle Model Label: %s",ModelLabel);
+        return CG_ERROR;
+    }
+
+     /* get address */
+    model = cgi_particle_model_address(CG_MODE_WRITE, ModelLabel, &ier);
+    if (model==0) return ier;
+
+     /* Save data */
+    model->type = ModelType;
+    strcpy(ModelName,ModelLabel);
+    ModelName[strlen(ModelLabel)-2]='\0';
+    strcpy(model->name, ModelName);
+
+     /* initialize other fields */
+    model->id=0;
+    model->link=0;
+    model->ndescr=0;
+    model->narrays=0;
+    model->data_class=CGNS_ENUMV( DataClassNull );
+    model->units=0;
+    model->dim_vals=0;
+    model->nuser_data=0;
+
+    /* save data in file */
+    if (cgi_posit_id(&posit_id)) return CG_ERROR;
+    if (cgi_write_particle_model(posit_id, model)) return CG_ERROR;
+    return CG_OK;
+}
+
+/*----------------------------------------------------------------------*/
 /**
  * \ingroup DataArrays
  *
@@ -15023,7 +17082,8 @@ int cg_narrays(int *narrays)
  *  ConvergenceHistory_t, IntegralData_t, ReferenceState_t,
  *  RigidGridMotion_t, ArbitraryGridMotion_t, BaseIterativeData_t, ZoneIterativeData_t
  *  GridConnectivity_t, UserDefinedData_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t,
- *  Area_t, Periodic_t, ZoneSubRegion_t
+ *  Area_t, Periodic_t, ZoneSubRegion_t, ParticleCoordinates_t, ParticleSolution_t,
+ *  ParticleIterativeData_t
  */
 
     CHECK_FILE_OPEN
@@ -15041,9 +17101,17 @@ int cg_narrays(int *narrays)
         cgns_zcoor *zcoor= (cgns_zcoor *)posit->posit;
         (*narrays) = zcoor->ncoords;
 
+    } else if (strcmp(posit->label,"ParticleCoordinates_t")==0) {
+       cgns_pcoor *pcoor= (cgns_pcoor *)posit->posit;
+       (*narrays) = pcoor->ncoords;
+
     } else if (strcmp(posit->label,"FlowSolution_t")==0) {
         cgns_sol *sol = (cgns_sol *)posit->posit;
         (*narrays) = sol->nfields;
+
+    } else if (strcmp(posit->label,"ParticleSolution_t")==0) {
+       cgns_psol *sol = (cgns_psol *)posit->posit;
+       (*narrays) = sol->nfields;
 
     } else if (strcmp(posit->label,"DiscreteData_t")==0) {
         cgns_discrete *discrete = (cgns_discrete *)posit->posit;
@@ -15098,7 +17166,8 @@ int cg_narrays(int *narrays)
         cgns_biter *biter = (cgns_biter *)posit->posit;
         (*narrays) = biter->narrays;
 
-    } else if (strcmp(posit->label,"ZoneIterativeData_t")==0) {
+    } else if (strcmp(posit->label,"ZoneIterativeData_t")==0 ||
+               strcmp(posit->label,"ParticleIterativeData_t")==0) {
         cgns_ziter *ziter = (cgns_ziter *)posit->posit;
         (*narrays) = ziter->narrays;
 
@@ -15763,7 +17832,10 @@ int cg_ndescriptors(int *ndescriptors)
  *  UserDefinedData_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t,
  *  BCProperty_t, WallFunction_t, Area_t, ZoneSubRegion_t,
  *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t
- *  FamilyBCDataSet_t
+ *  FamilyBCDataSet_t,  ParticleZone_t, ParticleCoordinates_t, ParticleSolution_t,
+ *  ParticleIterativeData_t, ParticleEquationSet_t, ParticleGoverningEquations_t,
+ *  ParticleCollisionModel_t,  ParticleBreakupModel_t, ParticleForceModel_t,
+ *  ParticleWallInteractionModel_t,  ParticlePhaseChange_t, ParticleGoverningEquations_t
  */
 
     CHECK_FILE_OPEN
@@ -15784,10 +17856,14 @@ int cg_ndescriptors(int *ndescriptors)
         NDESCRIPTOR(cgns_zone)
     else if (strcmp(posit->label,"GridCoordinates_t")==0)
         NDESCRIPTOR(cgns_zcoor)
+    else if (strcmp(posit->label,"ParticleCoordinates_t")==0)
+        NDESCRIPTOR(cgns_pcoor)
     else if (strcmp(posit->label,"Elements_t")==0)
         NDESCRIPTOR(cgns_section)
     else if (strcmp(posit->label,"FlowSolution_t")==0)
         NDESCRIPTOR(cgns_sol)
+    else if (strcmp(posit->label,"ParticleSolution_t")==0)
+        NDESCRIPTOR(cgns_psol)
     else if (strcmp(posit->label,"DiscreteData_t")==0)
         NDESCRIPTOR(cgns_discrete)
     else if (strcmp(posit->label,"ZoneGridConnectivity_t")==0)
@@ -15840,7 +17916,8 @@ int cg_ndescriptors(int *ndescriptors)
         NDESCRIPTOR(cgns_amotion)
     else if (strcmp(posit->label,"BaseIterativeData_t")==0)
         NDESCRIPTOR(cgns_biter)
-    else if (strcmp(posit->label,"ZoneIterativeData_t")==0)
+    else if (strcmp(posit->label,"ZoneIterativeData_t")==0 ||
+             strcmp(posit->label,"ParticleIterativeData_t")==0)
         NDESCRIPTOR(cgns_ziter)
     else if (strcmp(posit->label,"UserDefinedData_t")==0)
         NDESCRIPTOR(cgns_user_data)
@@ -15864,6 +17941,18 @@ int cg_ndescriptors(int *ndescriptors)
         NDESCRIPTOR(cgns_caverage)
     else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
         NDESCRIPTOR(cgns_subreg)
+    else if (strcmp(posit->label,"ParticleZone_t")==0)
+        NDESCRIPTOR(cgns_pzone)
+    else if (strcmp(posit->label,"ParticleEquationSet_t")==0)
+        NDESCRIPTOR(cgns_pequations)
+    else if (strcmp(posit->label,"ParticleGoverningEquations_t")==0)
+        NDESCRIPTOR(cgns_pgoverning)
+    else if (strcmp(posit->label,"ParticleCollisionModel_t")==0 ||
+             strcmp(posit->label,"ParticleBreakupModel_t")==0 ||
+             strcmp(posit->label,"ParticleForceModel_t")==0 ||
+             strcmp(posit->label,"ParticleWallInteractionModel_t")==0 ||
+             strcmp(posit->label,"ParticlePhaseChangeModel_t")==0)
+        NDESCRIPTOR(cgns_pmodel)
     else {
         cgi_error("Descriptor_t node not supported under '%s' type node",posit->label);
         (*ndescriptors)=0;
@@ -17098,7 +19187,18 @@ int cg_link_write(const char * nodename, const char * filename, const char * nam
         strcmp(posit->label,"Area_t") &&
         strcmp(posit->label,"GridConnectivityProperty_t") &&
         strcmp(posit->label,"Periodic_t") &&
-        strcmp(posit->label,"AverageInterface_t")) {
+        strcmp(posit->label,"AverageInterface_t") &&
+        strcmp(posit->label,"ParticleZone_t") &&
+        strcmp(posit->label,"ParticleCoordinates_t") &&
+        strcmp(posit->label,"ParticleSolution_t") &&
+        strcmp(posit->label,"ParticleIterativeData_t") &&
+        strcmp(posit->label,"ParticleEquationSet_t") &&
+        strcmp(posit->label,"ParticleGoverningEquations_t") &&
+        strcmp(posit->label,"ParticleCollisionModel_t") &&
+        strcmp(posit->label,"ParticleBreakupModel_t") &&
+        strcmp(posit->label,"ParticleForceModel_t") &&
+        strcmp(posit->label,"ParticleWallInteractionModel_t") &&
+        strcmp(posit->label,"ParticlePhaseChangeModel_t")) {
         cgi_error("Links not supported under '%s' type node",posit->label);
         return CG_INCORRECT_PATH;
     }
@@ -17160,7 +19260,10 @@ int cg_nuser_data(int *nuser_data)
  *  Family_t, CGNSBase_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t,
  *  BCProperty_t, WallFunction_t, Area_t, UserDefinedData_t,
  *  GridConnectivityProperty_t, Periodic_t, AverageInterface_t
- *  FamilyBCDataSet_t
+ *  FamilyBCDataSet_t,  ParticleZone_t, ParticleCoordinates_t, ParticleSolution_t,
+ *  ParticleIterativeData_t, ParticleEquationSet_t, ParticleGoverningEquations_t,
+ *  ParticleCollisionModel_t,  ParticleBreakupModel_t, ParticleForceModel_t,
+ *  ParticleWallInteractionModel_t,  ParticlePhaseChange_t, ParticleGoverningEquations_t
  */
 
      /* This is valid and used during write as well as read mode. */
@@ -17218,13 +19321,18 @@ int cg_nuser_data(int *nuser_data)
         (*nuser_data) = ((cgns_zconn *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"FlowSolution_t")==0)
         (*nuser_data) = ((cgns_sol *)posit->posit)->nuser_data;
+    else if (strcmp(posit->label,"ParticleSolution_t")==0)
+       (*nuser_data) = ((cgns_psol *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"GridCoordinates_t")==0)
         (*nuser_data) = ((cgns_zcoor *)posit->posit)->nuser_data;
+    else if (strcmp(posit->label,"ParticleCoordinates_t")==0)
+       (*nuser_data) = ((cgns_pcoor *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"RigidGridMotion_t")==0)
         (*nuser_data) = ((cgns_rmotion *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"ArbitraryGridMotion_t")==0)
         (*nuser_data) = ((cgns_amotion *)posit->posit)->nuser_data;
-    else if (strcmp(posit->label,"ZoneIterativeData_t")==0)
+    else if (strcmp(posit->label,"ZoneIterativeData_t")==0 ||
+             strcmp(posit->label,"ParticleIterativeData_t")==0)
         (*nuser_data) = ((cgns_ziter *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"BaseIterativeData_t")==0)
         (*nuser_data) = ((cgns_biter *)posit->posit)->nuser_data;
@@ -17258,6 +19366,18 @@ int cg_nuser_data(int *nuser_data)
          (*nuser_data) = ((cgns_caverage *)posit->posit)->nuser_data;
     else if (strcmp(posit->label,"ZoneSubRegion_t")==0)
          (*nuser_data) = ((cgns_subreg *)posit->posit)->nuser_data;
+    else if (strcmp(posit->label,"ParticleZone_t")==0)
+         (*nuser_data) = ((cgns_pzone *)posit->posit)->nuser_data;
+    else if (strcmp(posit->label,"ParticleEquationSet_t")==0)
+         (*nuser_data) = ((cgns_pequations *)posit->posit)->nuser_data;
+    else if (strcmp(posit->label,"ParticleGoverningEquations_t")==0)
+         (*nuser_data) = ((cgns_pgoverning *)posit->posit)->nuser_data;
+    else if (strcmp(posit->label,"ParticleCollisionModel_t")==0 ||
+             strcmp(posit->label,"ParticleBreakupModel_t")==0 ||
+             strcmp(posit->label,"ParticleForceModel_t")==0 ||
+             strcmp(posit->label,"ParticleWallInteractionModel_t")==0 ||
+             strcmp(posit->label,"ParticlePhaseChangeModel_t")==0)
+         (*nuser_data) = ((cgns_pmodel *)posit->posit)->nuser_data;
 
     else {
         cgi_error("UserDefinedData_t node not supported under '%s' type node",posit->label);
@@ -18179,6 +20299,15 @@ int cg_delete_node(const char *node_name)
                 }
             }
         }
+        else if (strcmp(node_label, "ParticleZone_t") == 0) {
+           CGNS_DELETE_SHIFT(npzones, pzone, cgi_free_particle)
+           if (parent->pzonemap) {
+               /* It is costly since indexing is recomputed */
+               if (cgi_map_contains(parent->pzonemap, node_name) == 1) {
+                   cgi_map_del_shift_item(parent->pzonemap, node_name);
+               }
+           }
+       }
         else if (strcmp(node_label,"Family_t")==0)
             CGNS_DELETE_SHIFT(nfamilies, family, cgi_free_family)
         else if (strcmp(node_label,"IntegralData_t")==0)
@@ -18199,6 +20328,8 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_CHILD(converg, cgi_free_converg)
         else if (strcmp(node_name,"FlowEquationSet")==0)
             CGNS_DELETE_CHILD(equations, cgi_free_equations)
+        else if (strcmp(node_name,"ParticleEquationSet")==0)
+            CGNS_DELETE_CHILD(pequations, cgi_free_particle_equations)
         else if (strcmp(node_name,"DimensionalUnits")==0)
             CGNS_DELETE_CHILD(units, cgi_free_units)
         else if (strcmp(node_name,"ReferenceState")==0)
@@ -18261,8 +20392,37 @@ int cg_delete_node(const char *node_name)
             CGNS_DELETE_CHILD(rotating, cgi_free_rotating)
      /* ZoneType can not be deleted */
 
-/* Children of ZoneSubRegion_t */
-    } else if (strcmp(posit->label,"ZoneSubRegion_t")==0) {
+    }
+    else if(strcmp(posit->label,"ParticleZone_t")==0){
+       cgns_pzone *parent = (cgns_pzone *)posit->posit;
+       if (strcmp(node_label,"ParticleCoordinates_t")==0)
+           CGNS_DELETE_SHIFT(npcoor, pcoor, cgi_free_pcoor)
+       else if (strcmp(node_label,"ParticleSolution_t")==0)
+           CGNS_DELETE_SHIFT(nsols, sol, cgi_free_psol)
+       else if (strcmp(node_label,"IntegralData_t")==0)
+           CGNS_DELETE_SHIFT(nintegrals, integral, cgi_free_integral)
+       else if (strcmp(node_label,"UserDefinedData_t")==0)
+           CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+       else if (strcmp(node_label,"Descriptor_t")==0)
+           CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+       else if (strcmp(node_label,"AdditionalFamilyName_t")==0)
+           CGNS_DELETE_SHIFT(nfamname, famname, cgi_free_famname)
+       else if (strcmp(node_label,"ParticleIterativeData_t")==0)
+           CGNS_DELETE_CHILD(piter, cgi_free_ziter)
+       else if (strcmp(node_name,"ReferenceState")==0)
+           CGNS_DELETE_CHILD(state, cgi_free_state)
+       else if (strcmp(node_name,"DataClass")==0)
+           parent->data_class = CGNS_ENUMV( DataClassNull );
+       else if (strcmp(node_name,"FamilyName")==0)
+           parent->family_name[0]='\0';
+       else if (strcmp(node_name,"DimensionalUnits")==0)
+           CGNS_DELETE_CHILD(units, cgi_free_units)
+       else if (strcmp(node_name,"ParticleEquationSet")==0)
+           CGNS_DELETE_CHILD(equations, cgi_free_particle_equations)
+
+       /* Children of ZoneSubRegion_t */
+    }
+    else if (strcmp(posit->label,"ZoneSubRegion_t")==0) {
         cgns_subreg *parent = (cgns_subreg *)posit->posit;
         if (strcmp(node_label,"UserDefinedData_t")==0)
             CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
@@ -18313,8 +20473,22 @@ int cg_delete_node(const char *node_name)
         else if (strcmp(node_name,"DimensionalUnits")==0)
             CGNS_DELETE_CHILD(units, cgi_free_units)
 
+/* Children of ParticleCoordinates_t */
+    } else if (strcmp(posit->label,"ParticleCoordinates_t")==0) {
+       cgns_pcoor *parent = (cgns_pcoor *)posit->posit;
+       if (strcmp(node_label,"DataArray_t")==0)
+           CGNS_DELETE_SHIFT(ncoords, coord, cgi_free_array)
+       else if (strcmp(node_label,"Descriptor_t")==0)
+           CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+       else if (strcmp(node_label,"UserDefinedData_t")==0)
+           CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+       else if (strcmp(node_name,"DataClass")==0)
+           parent->data_class = CGNS_ENUMV( DataClassNull );
+       else if (strcmp(node_name,"DimensionalUnits")==0)
+           CGNS_DELETE_CHILD(units, cgi_free_units)
+
 /* Children of DataArray_t */
-    } else if (strcmp(posit->label,"DataArray_t")==0) {
+   } else if (strcmp(posit->label,"DataArray_t")==0) {
         cgns_array *parent = (cgns_array *)posit->posit;
         if (strcmp(node_label,"Descriptor_t")==0)
             CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
@@ -18355,8 +20529,25 @@ int cg_delete_node(const char *node_name)
             for (n=0; n<2*index_dim; n++) parent->rind_planes[n] = 0;
         }
 
+/* Children of ParticleSolution_t */
+    } else if (strcmp(posit->label,"ParticleSolution_t")==0) {
+        cgns_psol *parent = (cgns_psol *)posit->posit;
+        if (strcmp(node_label,"Descriptor_t")==0)
+            CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+        else if (strcmp(node_label,"UserDefinedData_t")==0)
+            CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+        else if (strcmp(node_label,"DataArray_t")==0)
+            CGNS_DELETE_SHIFT(nfields, field, cgi_free_array)
+        else if (strcmp(node_name,"PointList")==0 ||
+                 strcmp(node_name,"PointRange")==0)
+            CGNS_DELETE_CHILD(ptset, cgi_free_ptset)
+        else if (strcmp(node_name,"DataClass")==0)
+            parent->data_class = CGNS_ENUMV( DataClassNull );
+        else if (strcmp(node_name,"DimensionalUnits")==0)
+            CGNS_DELETE_CHILD(units, cgi_free_units)
+
 /* Children of ZoneGridConnectivity_t */
-    } else if (strcmp(posit->label,"ZoneGridConnectivity_t")==0) {
+   } else if (strcmp(posit->label,"ZoneGridConnectivity_t")==0) {
         cgns_zconn *parent = (cgns_zconn *)posit->posit;
         if (strcmp(node_label,"Descriptor_t")==0)
             CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
@@ -18637,8 +20828,60 @@ int cg_delete_node(const char *node_name)
             parent->diffusion_model=0;
         }
 
+/* Children of ParticleEquationSet_t */
+    } else if (strcmp(posit->label,"ParticleEquationSet_t")==0) {
+       cgns_pequations *parent = (cgns_pequations *)posit->posit;
+       if (strcmp(node_label,"Descriptor_t")==0)
+           CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+       else if (strcmp(node_label,"UserDefinedData_t")==0)
+           CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+       else if (strcmp(node_name,"DataClass")==0)
+           parent->data_class = CGNS_ENUMV( DataClassNull );
+       else if (strcmp(node_name,"DimensionalUnits")==0)
+           CGNS_DELETE_CHILD(units, cgi_free_units)
+       else if (strcmp(node_name,"ParticleGoverningEquations")==0)
+           CGNS_DELETE_CHILD(governing, cgi_free_particle_governing)
+       else if (strcmp(node_name,"ParticleCollisionModel")==0)
+           CGNS_DELETE_CHILD(collision, cgi_free_particle_model)
+       else if (strcmp(node_name,"ParticleBreakupModel")==0)
+           CGNS_DELETE_CHILD(breakup, cgi_free_particle_model)
+       else if (strcmp(node_name,"ParticleForceModel")==0)
+           CGNS_DELETE_CHILD(force, cgi_free_particle_model)
+       else if (strcmp(node_name,"ParticleWallInteractionModel")==0)
+           CGNS_DELETE_CHILD(wallinteract, cgi_free_particle_model)
+       else if (strcmp(node_name,"ParticlePhaseChangeModel")==0)
+           CGNS_DELETE_CHILD(phasechange, cgi_free_particle_model)
+       else if (strcmp(node_name,"EquationDimension")==0)
+           parent->equation_dim=0;
+
+/* Children of ParticleGoverningEquations_t */
+   } else if (strcmp(posit->label,"ParticleGoverningEquations_t")==0) {
+       cgns_pgoverning *parent = (cgns_pgoverning *)posit->posit;
+       if (strcmp(node_label,"Descriptor_t")==0)
+           CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+       else if (strcmp(node_label,"UserDefinedData_t")==0)
+           CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+
+/* Children of xxxParticleModel_t */
+   } else if (strcmp(posit->label,"ParticleCollisionModel_t")==0 ||
+          strcmp(posit->label,"ParticleBreakupModel_t")==0 ||
+          strcmp(posit->label,"ParticleForceModel_t")==0 ||
+          strcmp(posit->label,"ParticleWallInteractionModel_t")==0 ||
+          strcmp(posit->label,"ParticlePhaseChangeModel_t")==0) {
+            cgns_pmodel *parent = (cgns_pmodel *)posit->posit;
+            if (strcmp(node_label,"Descriptor_t")==0)
+                CGNS_DELETE_SHIFT(ndescr, descr, cgi_free_descr)
+            else if (strcmp(node_label,"UserDefinedData_t")==0)
+                CGNS_DELETE_SHIFT(nuser_data, user_data, cgi_free_user_data)
+            else if (strcmp(node_label,"DataArray_t")==0)
+                CGNS_DELETE_SHIFT(narrays, array, cgi_free_array)
+            else if (strcmp(node_name,"DataClass")==0)
+                parent->data_class = CGNS_ENUMV( DataClassNull );
+            else if (strcmp(node_name,"DimensionalUnits")==0)
+                CGNS_DELETE_CHILD(units, cgi_free_units)
+
 /* Children of ConvergenceHistory_t */
-    } else if (strcmp(posit->label,"ConvergenceHistory_t")==0) {
+   }else if (strcmp(posit->label,"ConvergenceHistory_t")==0) {
         cgns_converg *parent = (cgns_converg *)posit->posit;
         if (strcmp(node_name,"NormDefinitions")==0)
             CGNS_DELETE_CHILD(NormDefinitions, cgi_free_descr)
