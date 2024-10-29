@@ -6032,14 +6032,8 @@ static void check_particle_equation_set (int *flags, int parclass, int *parunits
         }
     }
 
-    if (LibraryVersion < 2000) {
-        dataclass = -1;
-        punits = NULL;
-    }
-    else {
-        dataclass = read_dataclass ();
-        punits = read_units (units);
-    }
+    dataclass = read_dataclass ();
+    punits = read_units (units);
     if (verbose) {
         if (dataclass >= 0) print_dataclass (dataclass, indent);
         if (punits) print_units (punits, indent);
