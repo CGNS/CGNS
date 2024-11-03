@@ -16,8 +16,10 @@
  *   cg_goto(filenum, basenum, "Zone1", 0, "User", 0, NULL);
  *   cg_gopath(filenum, "/Base/Zone1/User");
  * \endcode
- * Now, to change to the user-defined data node under zone 2, you may use the full path
- * specification as above, or else a relative path, using one of the following:
+ * To switch to the user-defined data node under Zone 2, you can use either the full
+ * path specification mentioned earlier or a relative path. Note that the relative
+ * cg_gorel() and cg_gopath() calls are only valid if you have previously used
+ * cg_goto() or cg_gopath with an absolute path, thus:
  * \code{C}
  *   cg_gorel(filenum, "..", 0, "..", 0, "Zone_t", 2, "UserDefinedData_t", 1, NULL);
  *   cg_gorel(filenum, "..", 0, "..", 0, "Zone2", 0, "UserDefinedData_t", 1, NULL);
