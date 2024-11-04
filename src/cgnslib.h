@@ -40,7 +40,7 @@
  *          
  * ------------------------------------------------------------------------- */
 /**
- * \defgroup CGNSInternals_CG_CONFIG Valid cg_configure() options.
+ * \defgroup CGNSInternals_FNC_CG_CONFIG Valid cg_configure() options.
  */
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
