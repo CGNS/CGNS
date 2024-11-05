@@ -1421,7 +1421,8 @@ EOF
     AC_MSG_CHECKING([for off64_t])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]],[[off64_t n = 0;]])],
 	[has_lfs=yes],[has_lfs=no])
-##    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[off64_t n = 0;]])],[##      has_lfs=yes],[has_lfs=no])
+##    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[off64_t n = 0;]])],[
+##      has_lfs=yes],[has_lfs=no])
     AC_MSG_RESULT($has_lfs)
     if test $has_lfs = yes; then
       AC_CHECK_FUNC(open64, LFS="-DHAS_OPEN64 $LFS")

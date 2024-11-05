@@ -7293,7 +7293,8 @@ esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
     conftest$ac_exeext conftest.$ac_ext
-##    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[off64_t n = 0;]])],[##      has_lfs=yes],[has_lfs=no])
+##    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[off64_t n = 0;]])],[
+##      has_lfs=yes],[has_lfs=no])
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $has_lfs" >&5
 printf "%s\n" "$has_lfs" >&6; }
     if test $has_lfs = yes; then
