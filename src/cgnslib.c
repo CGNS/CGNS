@@ -13657,11 +13657,11 @@ int cg_1to1_average_write(int fn, int B, int Z, int J,
  * \return \ier
  *
  */
-int cg_nparticle_zones(int file_number, int B, int *nparticlezones)
+int cg_nparticle_zones(int fn, int B, int *nparticlezones)
 {
    cgns_base *base;
 
-   cg = cgi_get_file(file_number);
+   cg = cgi_get_file(fn);
    if (cg == 0) return CG_ERROR;
 
    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -13673,11 +13673,23 @@ int cg_nparticle_zones(int file_number, int B, int *nparticlezones)
    return CG_OK;
 }
 
-int cg_particle_id(int file_number, int B, int P, double *particle_id)
+/**
+ * \ingroup CGNSParticleZoneInformation
+ *
+ * \brief Get the CGIO identifier of the CGNS Particle zone
+ *
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[out] particle_id CGIO node identifier for the particle zone
+ * \return \ier
+ *
+ */
+int cg_particle_id(int fn, int B, int P, double *particle_id)
 {
    cgns_pzone *pzone;
 
-   cg = cgi_get_file(file_number);
+   cg = cgi_get_file(fn);
    if (cg == 0) return CG_ERROR;
 
    if (cgi_check_mode(cg->filename, cg->mode, CG_MODE_READ)) return CG_ERROR;
@@ -13697,7 +13709,7 @@ int cg_particle_id(int file_number, int B, int P, double *particle_id)
  * \param[in] fn \FILE_fn
  * \param[in] B \B_Base
  * \param[in] P \P_ParticleZone
- * \param[out] zonename Name of the zone
+ * \param[out] particlename Name of the particle zone
  * \param[out] size Number of particles in this ParticleZone (i.e. ParticleSize)
  * \return \ier
  */
@@ -14190,8 +14202,8 @@ int cg_particle_coord_info(int fn, int B, int P, int C, DataType_t  *datatype, c
 * \param[in] P  \P_ParticleZone
 * \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to ensure file compatibility.
 * \param[in] mem_datatype  Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
-* \param[in] rmin  Lower range index in file
-* \param[in] rmax  Upper range index in file
+* \param[in] s_rmin  Lower range index in file
+* \param[in] s_rmax  Upper range index in file
 * \param[out] coord_array   Array of coordinate values.
 * \return \ier
 *
@@ -14442,7 +14454,6 @@ int cg_particle_coord_partial_write(int fn, int B, int P,
 * \param[in] m_type   Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
 * \param[in] s_rmin   Lower range index in file (eg., imin, jmin, kmin).
 * \param[in] s_rmax   Upper range index in file (eg., imax, jmax, kmax).
-* \param[in] m_numdim   Number of dimensions of array in memory.
 * \param[in] m_dimvals   Dimensions of array in memory.
 * \param[in] m_rmin   Lower range index in memory (eg., imin, jmin, kmin).
 * \param[in] m_rmax   Upper range index in memory (eg., imax, jmax, kmax).
@@ -14977,6 +14988,7 @@ int cg_particle_field_read(int fn, int B, int P, int S, const char *fieldname,
 * \param[in] s_rmin  Lower range index in file
 * \param[in] s_rmax  Upper range index in file
 * \param[in] m_type  Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
+* \param[in] m_dimvals  Dimensions of array in memory.
 * \param[in] m_rmin  Lower range index in memory
 * \param[in] m_rmax  Upper range index in memory
 * \param[out] field_ptr  Array of solution values.
