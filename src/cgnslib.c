@@ -1611,7 +1611,7 @@ int cg_zone_read(int fn, int B, int Z, char *zonename, cgsize_t *size)
 /**
  * \ingroup CGNSZoneInformation
  *
- * \brief Get the index dimension of the CGNS zone
+ * \brief Get the CGIO identifier of the CGNS zone
  *
  * \param[in]  fn      \FILE_fn
  * \param[in]  B       \B_Base
