@@ -1,5 +1,5 @@
 
-AC_PREREQ(2.69)
+AC_PREREQ([2.71])
 
 #--------------------------------------------------------------------------
 # Redefine the cache macros so that a cache file is not created.
@@ -9,7 +9,8 @@ AC_PREREQ(2.69)
 define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
 
-AC_INIT(cgnslib.c)
+AC_INIT
+AC_CONFIG_SRCDIR([cgnslib.c])
 
 #--------------------------------------------------------------------------
 # cleanup any previous build
@@ -88,7 +89,7 @@ CC_BASENAME="`echo $CC | cut -f1 -d' ' | xargs basename 2>/dev/null`"
 ##  AC_PROG_CC_GNU
 ##fi
 
-if test "$ac_cv_prog_gcc" = "yes"; then
+if test "$ac_cv_c_compiler_gnu" = "yes"; then
   test -z "$CFLAGS" && CFLAGS=-O2
   # probably don't need this
   # CFLAGS="$CFLAGS -fwritable-strings -ffloat-store"
@@ -150,7 +151,7 @@ else
    #
    AC_PROG_FC([PAC_FC_SEARCH_LIST],)
   ##  AC_PROG_F77_GNU
-    if test "$ac_cv_prog_g77" = "yes"; then
+    if test "$ac_cv_f77_compiler_gnu" = "yes"; then
       test -z "$FFLAGS" && FFLAGS=-O2
       test ! "$F77" = "f95" && FFLAGS="$FFLAGS -Wno-globals"
     fi
@@ -198,14 +199,6 @@ fi
 AROUT=
 
 #--------------------------------------------------------------------------
-# check for header files
-#--------------------------------------------------------------------------
-
-AC_HEADER_STDC
-test "$ac_cv_header_stdc" = "no" && \
-	AC_MSG_WARN(Standard C header files not found - may not compile)
-
-#--------------------------------------------------------------------------
 # check for typedefs and structures
 #--------------------------------------------------------------------------
 
@@ -219,10 +212,6 @@ AC_TYPE_SIZE_T
 test "$ac_cv_type_size_t" = "no" && \
   CFGFLAGS="$CFGFLAGS -Dsize_t=unsigned"
 
-AC_PROG_CC_C99
-AS_IF([test "$ac_cv_prog_cc_c99" = "no"],
-      [AC_MSG_WARN([libcgns requires a C99-compliant compiler])
-       AC_MSG_ERROR([Cannot continue])])
 AC_MSG_CHECKING([for Complex Gnu Extension])
 AC_LANG_PUSH(C)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -319,7 +308,7 @@ else
   fi
 fi
 
-if test "$ac_cv_prog_gcc" = "no"; then
+if test "$ac_cv_c_compiler_gnu" = "no"; then
   case $SYSTEM in
     CRAY)   AR="bld rz" ;;
     HPPA11) SYSCFLAGS="+DA2.0"
@@ -648,8 +637,8 @@ else
   fi
 
   if test $need_f2c = yes; then
-    if test "$ac_cv_prog_g77" = "yes"; then
-      if test "$ac_cv_prog_gcc" = "no"; then
+    if test "$ac_cv_f77_compiler_gnu" = "yes"; then
+      if test "$ac_cv_c_compiler_gnu" = "no"; then
         SYSFFLAGS=-fno-second-underscore
       else
         SYSFFLAGS="-fno-second-underscore $SYSCFLAGS"
@@ -657,7 +646,7 @@ else
       F2CFLAGS="-DLOWERCASE_"
       need_f2c=no
     else
-      if test "$ac_cv_prog_gcc" = "no"; then
+      if test "$ac_cv_c_compiler_gnu" = "no"; then
         case $SYSTEM in
           CRAY | VAX | WIN32) need_f2c=no ;;
         esac
@@ -726,7 +715,7 @@ else
   # check for catenization operator
 
   AC_MSG_CHECKING([for concatenation operator])
-  AC_LANG_C
+  AC_LANG([C])
 
   AC_EGREP_CPP(function,
   [#define CONCAT(a,b) a##b
@@ -737,10 +726,8 @@ else
   # while the following does
 
   if test $concat = no; then
-    AC_TRY_LINK(
-      [#define CONCAT(a,b) a##b
-       void function(){}],
-      [CONCAT(func,tion)()],concat=yes,concat=no)
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define CONCAT(a,b) a##b
+       void function(){}]], [[CONCAT(func,tion)()]])],[concat=yes],[concat=no])
   fi
 
   AC_MSG_RESULT($concat)
@@ -773,7 +760,7 @@ else
 fi
 if test $shared = yes; then
   cgnsdir=`pwd`
-  if test "$ac_cv_prog_gcc" = "no"; then
+  if test "$ac_cv_c_compiler_gnu" = "no"; then
     case $SYSTEM in
       HP*)   CFGFLAGS="+z $CFGFLAGS"
              AR_LIB="ld -b -E +s +b $LIBDIR:$cgnsdir/$BUILDDIR:. -o"
@@ -785,12 +772,12 @@ if test $shared = yes; then
       SUN*)  CFGFLAGS="-KPIC $CFGFLAGS"
              AR_LIB="\$(CC) -G $SYSCFLAGS -Wl,-R,$LIBDIR -Wl,-R,$cgnsdir/$BUILDDIR -o"
              EXT_LIB=so ;;
-      *) AC_WARN([don't know how to build shared lib for $SYSTEM])
+      *) AC_MSG_WARN(don't know how to build shared lib for $SYSTEM)
          shared=no ;;
     esac
   else
     if test "$ac_cv_cygwin" = "yes"; then
-      AC_WARN([can't yet build shared library under CYGWIN])
+      AC_MSG_WARN(can't yet build shared library under CYGWIN)
       shared=no
     else
       CFGFLAGS="-fPIC $CFGFLAGS"
@@ -900,16 +887,16 @@ else
   AC_MSG_RESULT(${H5_VERS_MAJOR}.${H5_VERS_MINOR}.${H5_VERS_RELEASE})
 
   AC_MSG_CHECKING([if HDF5 is 1.8 or greater])
-  if test ${H5_VERS_MAJOR} -ge 1 && test ${H5_VERS_MINOR} -ge 8; then
-    AC_MSG_RESULT(yes)
-  else
+  if test ${H5_VERS_MAJOR} -eq 1 && test ${H5_VERS_MINOR} -lt 8; then
     AC_MSG_ERROR(no)
+  else
+    AC_MSG_RESULT(yes)
   fi
 
   # Check if HDF5 library has multi-dataset read and write APIs
   ## --------------------------------------------------------------------
 
-  AC_LANG_C
+  AC_LANG([C])
   HDF5_HAVE_MULTI_DATASETS=0
   AC_MSG_CHECKING([if HDF5 library has multi-dataset read/write APIs])
 
@@ -1434,8 +1421,8 @@ EOF
     AC_MSG_CHECKING([for off64_t])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]],[[off64_t n = 0;]])],
 	[has_lfs=yes],[has_lfs=no])
-##    AC_TRY_COMPILE([#include <sys/types.h>], [off64_t n = 0;],
-##      has_lfs=yes, has_lfs=no)
+##    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[off64_t n = 0;]])],[
+##      has_lfs=yes],[has_lfs=no])
     AC_MSG_RESULT($has_lfs)
     if test $has_lfs = yes; then
       AC_CHECK_FUNC(open64, LFS="-DHAS_OPEN64 $LFS")
@@ -1798,11 +1785,6 @@ if test "$enableval" = "yes" ; then
     CALCOPTS="$CALCOPTS -DUSE_MATHERR"
   fi
 
-  AC_TYPE_SIGNAL
-  if test ! "$ac_cv_type_signal" = "void"; then
-    CALCOPTS="$CALCOPTS -DSIGNAL=$ac_cv_type_signal"
-  fi
-
 #--------------------------------------------------------------------------
 # cgnsplot options
 #--------------------------------------------------------------------------
@@ -2084,8 +2066,9 @@ SIZEOF_VOID_P="$ac_cv_sizeof_void_p"
 AC_SUBST(SIZEOF_LONG)
 AC_SUBST(SIZEOF_VOID_P)
 
-AC_OUTPUT(cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h \
+AC_CONFIG_FILES([cgnstypes.h cgnstypes_f.h cgnstypes_f03.h cgnsconfig.h \
   cg_hash_types.h Makefile make.defs cgnsBuild.defs tests/Makefile \
   tools/Makefile Test_UserGuideCode/C_code_parallel/Makefile ptests/Makefile cgnstools/Makefile cgnstools/make.defs \
-  cgnstools/cgconfig)
+  cgnstools/cgconfig])
+AC_OUTPUT
 
