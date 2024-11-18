@@ -459,7 +459,7 @@ static void test_particle_io_partial()
    cgsize_t rmin = 1, rmax = num_particles;
 
    /* Read all coordinate arrays and verify that they match the written values */
-   cg_particle_coord_read(fnum, bnum, pnum, "CoordinateX", CGNS_ENUMV(RealSingle), &rmin, &rmax, &coord_read);
+   cg_particle_coord_read(fnum, bnum, pnum, "CoordinateX", CGNS_ENUMV(RealSingle), &rmin, &rmax, coord_read);
    for(int i = 0; i < rmax - 1; ++i)
    {
       if(!compareValuesFloat(coord[i], coord_read[i]))
@@ -470,7 +470,7 @@ static void test_particle_io_partial()
    }
 
    memset(coord_read, -1, sizeof(float)*num_particles);
-   cg_particle_coord_read(fnum, bnum, pnum, "CoordinateY", CGNS_ENUMV(RealSingle), &rmin, &rmax, &coord_read);
+   cg_particle_coord_read(fnum, bnum, pnum, "CoordinateY", CGNS_ENUMV(RealSingle), &rmin, &rmax, coord_read);
    for(int i = 0; i < rmax - 1; ++i)
    {
       if(!compareValuesFloat(coord[i], coord_read[i]))
@@ -481,7 +481,7 @@ static void test_particle_io_partial()
    }
 
    memset(coord_read, -1, sizeof(float)*num_particles);
-   cg_particle_coord_read(fnum, bnum, pnum, "CoordinateZ", CGNS_ENUMV(RealSingle), &rmin, &rmax, &coord_read);
+   cg_particle_coord_read(fnum, bnum, pnum, "CoordinateZ", CGNS_ENUMV(RealSingle), &rmin, &rmax, coord_read);
    for(int i = 0; i < rmax - 1; ++i)
    {
       if(!compareValuesFloat(coord[i], coord_read[i]))
