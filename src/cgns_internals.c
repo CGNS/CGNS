@@ -7204,9 +7204,12 @@ int cgi_read_particle_model(int in_link, double parent_id, char *label,
 
 int cgi_read_particle_equations_node(int linked, cgns_pequations** equations)
 {
-    double* id;
-    int n, nnod;
-    char* string_data;
+   double* id;
+   int n, nnod, ndim;
+   char* string_data;
+   char_33 name, data_type;
+   cgsize_t dim_vals[12];
+   void* vdata;
 
     /* ParticleGoverningEquations_t */
     equations[0]->governing = 0;
@@ -7263,6 +7266,26 @@ int cgi_read_particle_equations_node(int linked, cgns_pequations** equations)
     /* ParticlePhaseChangeModel_t */
     if (cgi_read_particle_model(linked, equations[0]->id, "ParticlePhaseChangeModel_t",
         &equations[0]->phasechange)) return CG_ERROR;
+
+    /* EquationDimension */
+    equations[0]->equation_dim = 0;
+    if (cgi_get_nodes(equations[0]->id, "\"int\"", &nnod, &id)) return CG_ERROR;
+    if (nnod > 0) {
+        if (cgi_read_node(id[0], name, data_type, &ndim, dim_vals,
+            &vdata, READ_DATA)) {
+            cgi_error("Error reading base");
+            return CG_ERROR;
+        }
+        /* verify data */
+        if (strcmp(name, "EquationDimension") || strcmp(data_type, "I4") ||
+            ndim != 1 || dim_vals[0] != 1) {
+            cgi_error("Error reading equation dimension for Particle Equation Set");
+            return CG_ERROR;
+        }
+        equations[0]->equation_dim = *((int*)vdata);
+        CGNS_FREE(vdata);
+        CGNS_FREE(id);
+    }
 
     /* Descriptor_t, DataClass_t, DimensionalUnits_t */
     if (cgi_read_DDD(linked, equations[0]->id, &equations[0]->ndescr,
@@ -13020,13 +13043,13 @@ static int cgi_next_posit(char *label, int index, char *name)
     /* ParticleBreakupModel_t */
     /* ParticleForceModel_t */
     /* ParticleWallInteractionModel_t */
-    /* ParticlePhaseChange_t */
+    /* ParticlePhaseChangeModel_t */
 
     else if (0 == strcmp (posit->label, "ParticleCollisionModel_t") ||
              0 == strcmp (posit->label, "ParticleBreakupModel_t") ||
              0 == strcmp (posit->label, "ParticleForceModel_t") ||
              0 == strcmp (posit->label, "ParticleWallInteractionModel_t") ||
-             0 == strcmp (posit->label, "ParticlePhaseChange_t")) {
+             0 == strcmp (posit->label, "ParticlePhaseChangeModel_t")) {
         cgns_pmodel *m = (cgns_pmodel *)posit->posit;
         if (0 == strcmp (label, "DataArray_t")) {
             if (--index < 0) {
@@ -13980,7 +14003,7 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
  *  TurbulenceModel_t, ThermalRelaxationModel_t, ChemicalKineticsModel_t,
  *  EMElectricFieldModel_t, EMMagneticFieldModel_t, ParticleCollisionModel_t,
  *  ParticleBreakupModel_t, ParticleForceModel_t, ParticleWallInteractionModel_t,
- *  ParticlePhaseChange_t,  ConvergenceHistory_t, IntegralData_t, ReferenceState_t,
+ *  ParticlePhaseChangeModel_t,  ConvergenceHistory_t, IntegralData_t, ReferenceState_t,
  *  DataArray_t, Family_t, GeometryReference_t, RigidGridMotion_t,
  *  ArbitraryGridMotion_t, BaseIterativeData_t, ZoneIterativeData_t,
  *  UserDefinedData_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t,
@@ -14046,7 +14069,7 @@ cgns_descr *cgi_descr_address(int local_mode, int given_no,
          strcmp(posit->label,"ParticleBreakupModel_t")==0 ||
          strcmp(posit->label,"ParticleForceModel_t")==0 ||
          strcmp(posit->label,"ParticleWallInteractionModel_t")==0 ||
-         strcmp(posit->label,"ParticlePhaseChange_t")==0)
+         strcmp(posit->label,"ParticlePhaseChangeModel_t")==0)
         ADDRESS4MULTIPLE(cgns_pmodel, ndescr, descr, cgns_descr)
     else if (strcmp(posit->label,"ConvergenceHistory_t")==0)
         ADDRESS4MULTIPLE(cgns_converg, ndescr, descr, cgns_descr)
@@ -14250,7 +14273,7 @@ CGNS_ENUMV(DataClass_t) *cgi_dataclass_address(int local_mode, int *ier)
  *  TurbulenceModel_t, ThermalRelaxationModel_t, ChemicalKineticsModel_t,
  *  EMElectricFieldModel_t, EMMagneticFieldModel_t,  ParticleCollisionModel_t,
  *  ParticleBreakupModel_t, ParticleForceModel_t, ParticleWallInteractionModel_t,
- *  ParticlePhaseChange_t, ConvergenceHistory_t, IntegralData_t, ReferenceState_t,
+ *  ParticlePhaseChangeModel_t, ConvergenceHistory_t, IntegralData_t, ReferenceState_t,
  *  DataArray_t, RigidGridMotion_t, ArbitraryGridMotion_t, BaseIterativeData_t,
  *  ZoneIterativeData_t, UserDefinedData_t, Gravity_t, Axisymmetry_t
  *  RotatingCoordinates_t, Periodic_t, FamilyBCDataSet_t, ParticleZone_t,
@@ -14298,7 +14321,7 @@ CGNS_ENUMV(DataClass_t) *cgi_dataclass_address(int local_mode, int *ier)
          strcmp(posit->label,"ParticleBreakupModel_t")==0 ||
          strcmp(posit->label,"ParticleForceModel_t")==0 ||
          strcmp(posit->label,"ParticleWallInteractionModel_t")==0 ||
-         strcmp(posit->label,"ParticlePhaseChange_t")==0)
+         strcmp(posit->label,"ParticlePhaseChangeModel_t")==0)
         ADDRESS4SINGLE_ALLOC(cgns_pmodel, data_class)
     else if (strcmp(posit->label,"ConvergenceHistory_t")==0)
         ADDRESS4SINGLE_ALLOC(cgns_converg, data_class)
@@ -14369,7 +14392,7 @@ cgns_units *cgi_units_address(int local_mode, int *ier)
  *  TurbulenceModel_t, ThermalRelaxationModel_t, ChemicalKineticsModel_t,
  *  EMElectricFieldModel_t, EMMagneticFieldModel_t, ParticleEquationSet_t,
  *  ParticleCollisionModel_t, ParticleBreakupModel_t, ParticleForceModel_t,
- *  ParticleWallInteractionModel_t, ParticlePhaseChange_t,
+ *  ParticleWallInteractionModel_t, ParticlePhaseChangeModel_t,
  *  ConvergenceHistory_t, IntegralData_t, ReferenceState_t,
  *  DataArray_t, RigidGridMotion_t, ArbitraryGridMotion_t, BaseIterativeData_t,
  *  ZoneIterativeData_t, UserDefinedData_t, Gravity_t, Axisymmetry_t
@@ -14377,7 +14400,7 @@ cgns_units *cgi_units_address(int local_mode, int *ier)
  *  ParticleCoordinates_t, ParticleSolution_t, ParticleIterativeData_t,
  *  ParticleEquationSet_t, ParticleCollisionModel_t, ParticleBreakupModel_t,
  *  ParticleForceModel_t, ParticleWallInteractionModel_t, ParticleWallInteractionModel_t,
- *  ParticlePhaseChange_t
+ *  ParticlePhaseChangeModel_t
  */
     if (strcmp(posit->label,"CGNSBase_t")==0)
         ADDRESS4SINGLE(cgns_base, units, cgns_units, 1)
@@ -14421,7 +14444,7 @@ cgns_units *cgi_units_address(int local_mode, int *ier)
         strcmp(posit->label,"ParticleBreakupModel_t")==0 ||
         strcmp(posit->label,"ParticleForceModel_t")==0 ||
         strcmp(posit->label,"ParticleWallInteractionModel_t")==0 ||
-        strcmp(posit->label,"ParticlePhaseChange_t")==0)
+        strcmp(posit->label,"ParticlePhaseChangeModel_t")==0)
         ADDRESS4SINGLE(cgns_pmodel, units, cgns_units, 1)
     else if (strcmp(posit->label,"ConvergenceHistory_t")==0)
         ADDRESS4SINGLE(cgns_converg, units, cgns_units, 1)
@@ -15060,7 +15083,7 @@ cgns_array *cgi_array_address(int local_mode, int allow_dup, int given_no,
  *  TurbulenceModel_t, ThermalRelaxationModel_t, ChemicalKineticsModel_t,
  *  EMElectricFieldModel_t, EMMagneticFieldModel_t, ParticleCollisionModel_t,
  *  ParticleBreakupModel_t, ParticleForceModel_t, ParticleWallInteractionModel_t,
- *  ParticlePhaseChange_t, ConvergenceHistory_t, IntegralData_t, ReferenceState_t,
+ *  ParticlePhaseChangeModel_t, ConvergenceHistory_t, IntegralData_t, ReferenceState_t,
  *  RigidGridMotion_t, ArbitraryGridMotion_t, BaseIterativeData_t, ZoneIterativeData_t,
  *  UserDefinedData_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t
  *  Area_t, Periodic_t, ZoneSubRegion_t, ParticleSolution_t, ParticleCoordinates_t,
@@ -15178,7 +15201,7 @@ cgns_array *cgi_array_address(int local_mode, int allow_dup, int given_no,
                 strcmp(posit->label,"ParticleBreakupModel_t")==0 ||
                 strcmp(posit->label,"ParticleForceModel_t")==0 ||
                 strcmp(posit->label,"ParticleWallInteractionModel_t")==0 ||
-                strcmp(posit->label,"ParticlePhaseChange_t")==0) {
+                strcmp(posit->label,"ParticlePhaseChangeModel_t")==0) {
        ADDRESS4MULTIPLE(cgns_pmodel, narrays, array, cgns_array)
 
      /* 0,N DataArray_t under ConvergenceHistory_t <any name> */
@@ -15425,7 +15448,7 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
  *  ParticleZone_t, ParticleCoordinates_t, ParticleSolution_t, ParticleIterativeData_t,
  *  ParticleEquationSet_t, ParticleGoverningEquations_t, ParticleCollisionModel_t,
  *  ParticleBreakupModel_t, ParticleForceModel_t, ParticleWallInteractionModel_t,
- *  ParticlePhaseChange_t, ParticleGoverningEquations_t
+ *  ParticlePhaseChangeModel_t, ParticleGoverningEquations_t
  */
     if (strcmp(posit->label,"IntegralData_t")==0)
         ADDRESS4MULTIPLE(cgns_integral, nuser_data, user_data, cgns_user_data)
@@ -15450,7 +15473,7 @@ cgns_user_data *cgi_user_data_address(int local_mode, int given_no,
         || strcmp(posit->label,"ParticleBreakupModel_t")==0
         || strcmp(posit->label,"ParticleForceModel_t")==0
         || strcmp(posit->label,"ParticleWallInteractionModel_t")==0
-        || strcmp(posit->label,"ParticlePhaseChange_t")==0)
+        || strcmp(posit->label,"ParticlePhaseChangeModel_t")==0)
         ADDRESS4MULTIPLE(cgns_pmodel, nuser_data, user_data, cgns_user_data)
     else if (strcmp(posit->label,"GoverningEquations_t")==0)
         ADDRESS4MULTIPLE(cgns_governing, nuser_data, user_data, cgns_user_data)
@@ -15890,7 +15913,7 @@ cgns_pmodel *cgi_particle_model_address(int local_mode, char const *ModelLabel, 
             ADDRESS4SINGLE(cgns_pequations, force, cgns_pmodel, 1)
             model = force;
 
-        } else if (strcmp(ModelLabel, "ParticleWallInteraction_t")==0) {
+        } else if (strcmp(ModelLabel, "ParticleWallInteractionModel_t")==0) {
             cgns_pmodel *wallinteract;
             ADDRESS4SINGLE(cgns_pequations, wallinteract, cgns_pmodel, 1)
             model = wallinteract;

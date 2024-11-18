@@ -13765,7 +13765,7 @@ int cg_particle_write(int fn, int B, const char *particlename, const cgsize_t si
    base = cgi_get_base(cg, B);
    if (base==0) return CG_ERROR;
 
-   /* Verify the particle count - We allow 0 sized ParticleZone_t nodes but they cannot have and solution/coordinate arrays */
+   /* Verify the particle count - We allow 0-sized ParticleZone_t nodes, but they cannot have solution/coordinate arrays */
    if (size < 0) {
       cgi_error("Invalid particle size %d", size);
       return CG_ERROR;
@@ -14600,6 +14600,19 @@ int cg_particle_sol_info(int fn, int B, int P, int S, char *solname)
    return CG_OK;
 }
 
+/**
+* \ingroup ParticleSolution
+*
+* \brief  Get the CGIO node identifier for a ParticleSolution_t node
+*
+* \param[in] fn \FILE_fn
+* \param[in] B  \B_Base
+* \param[in] P  \P_ParticleZone
+* \param[in] S  \SOL_S
+* \param[out] solid CGIO node identifier of the particle solution node
+* \return \ier
+*
+*/
 int cg_particle_sol_id(int fn, int B, int P, int S, double *sol_id)
 {
    cgns_psol *sol;
@@ -14860,7 +14873,7 @@ int cg_particle_sol_ptset_write(int fn, int B, int P, const char *solname,
 }
 
 /*****************************************************************************\
-*    Read and Write particle field  DataArray_t Nodes
+*    Read and Write particle field DataArray_t Nodes
 \*****************************************************************************/
 /**
 * \ingroup ParticleSolutionData
@@ -17077,7 +17090,8 @@ int cg_particle_model_write(const char * ModelLabel, CGNS_ENUMT(ParticleModelTyp
     if (strcmp(ModelLabel, "ParticleCollisionModel_t") &&
         strcmp(ModelLabel, "ParticleBreakupModel_t") &&
         strcmp(ModelLabel, "ParticleForceModel_t") &&
-        strcmp(ModelLabel, "ParticleWallInteractionModel_t")) {
+        strcmp(ModelLabel, "ParticleWallInteractionModel_t") &&
+        strcmp(ModelLabel, "ParticlePhaseChangeModel_t")) {
         cgi_error("Invalid Particle Model Label: %s",ModelLabel);
         return CG_ERROR;
     }
@@ -17882,7 +17896,7 @@ int cg_ndescriptors(int *ndescriptors)
  *  FamilyBCDataSet_t,  ParticleZone_t, ParticleCoordinates_t, ParticleSolution_t,
  *  ParticleIterativeData_t, ParticleEquationSet_t, ParticleGoverningEquations_t,
  *  ParticleCollisionModel_t,  ParticleBreakupModel_t, ParticleForceModel_t,
- *  ParticleWallInteractionModel_t,  ParticlePhaseChange_t, ParticleGoverningEquations_t
+ *  ParticleWallInteractionModel_t,  ParticlePhaseChangeModel_t, ParticleGoverningEquations_t
  */
 
     CHECK_FILE_OPEN
@@ -19310,7 +19324,7 @@ int cg_nuser_data(int *nuser_data)
  *  FamilyBCDataSet_t,  ParticleZone_t, ParticleCoordinates_t, ParticleSolution_t,
  *  ParticleIterativeData_t, ParticleEquationSet_t, ParticleGoverningEquations_t,
  *  ParticleCollisionModel_t,  ParticleBreakupModel_t, ParticleForceModel_t,
- *  ParticleWallInteractionModel_t,  ParticlePhaseChange_t, ParticleGoverningEquations_t
+ *  ParticleWallInteractionModel_t,  ParticlePhaseChangeModel_t, ParticleGoverningEquations_t
  */
 
      /* This is valid and used during write as well as read mode. */

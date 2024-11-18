@@ -471,21 +471,21 @@ typedef struct {            /* xxx Model_t node                     */
     cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
 } cgns_model;
 
-typedef struct {            /* xxx ParticleModel_t node             */
+typedef struct {            /* xxx ParticleModel_t node             */  /* CPEX 0046 V4.5 */
     char_33 name;           /* name of ADF node                     */
     double id;              /* ADF ID number (address) of node      */
-    cgns_link *link;        /* link information         */  /* V2.1 */
+    cgns_link *link;        /* link information                     */
     int in_link;            /* set if child of a linked node        */
     CGNS_ENUMT(ParticleModelType_t) type;
     int ndescr;             /* no of Descriptor_t nodes             */
     cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
     int narrays;            /* No of DataArray_t nodes              */
     cgns_array *array;      /* ptrs to in-mem. copy of Data Arrays  */
-    CGNS_ENUMT(DataClass_t) data_class; /* Class of data                        */
+    CGNS_ENUMT(DataClass_t) data_class; /* Class of data            */
     cgns_units *units;      /* ptrs to in-memory copy of units      */
     int dim_vals;           /* dim. value for diffusion_model       */
-    int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
-    cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
+    int nuser_data;         /* number of user defined data nodes    */
+    cgns_user_data *user_data; /* User defined data.        */ 
 } cgns_pmodel;
 
 typedef struct {            /* GoverningEquations_t node            */
@@ -527,22 +527,22 @@ typedef struct {            /* FlowEquationSet_t Node               */
     cgns_model *emconduct;  /* ptrs to in-mem. copy of EMConductivityM. */
 } cgns_equations;
 
-typedef struct {            /* ParticleGoverningEquations_t node    */
+typedef struct {            /* ParticleGoverningEquations_t node    */  /* CPEX 0046 V4.5 */
     char_33 name;           /* name of ADF node                     */
     double id;              /* ADF ID number (address) of node      */
-    cgns_link *link;        /* link information         */  /* V2.1 */
+    cgns_link *link;        /* link information                     */
     int in_link;            /* set if child of a linked node        */
     CGNS_ENUMT(ParticleGoverningEquationsType_t) type;
     int ndescr;             /* no of Descriptor_t nodes             */
     cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
-    int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
-    cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
+    int nuser_data;         /* number of user defined data nodes    */
+    cgns_user_data *user_data; /* User defined data.                */
 } cgns_pgoverning;
 
-typedef struct {            /* ParticleEquationSet_t Node           */
+typedef struct {            /* ParticleEquationSet_t Node           */  /* CPEX 0046 V4.5 */
     char_33 name;           /* name of ADF node                     */
     double id;              /* ADF ID number (address) of node      */
-    cgns_link *link;        /* link information         */  /* V2.1 */
+    cgns_link *link;        /* link information                     */
     int in_link;            /* set if child of a linked node        */
     int ndescr;             /* no of Descriptor_t nodes             */
     cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
@@ -555,8 +555,8 @@ typedef struct {            /* ParticleEquationSet_t Node           */
     cgns_pmodel *phasechange;  /* ptrs to in-mem. copy of ParticlePhaseChnageM. */
     CGNS_ENUMT(DataClass_t) data_class; /* Class of data                        */
     cgns_units *units;      /* ptrs to in-memory copy of units      */
-    int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
-    cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
+    int nuser_data;         /* number of user defined data nodes    */
+    cgns_user_data *user_data; /* User defined data.        */
 } cgns_pequations;
 
 typedef struct {            /* BCData_t node            */
@@ -951,44 +951,44 @@ typedef struct cgns_family_s {            /* Family_t node            */
     struct cgns_family_s* family;
 } cgns_family;
 
-typedef struct {            /* ParticleCoordinates_t node       */
+typedef struct {            /* ParticleCoordinates_t node           */ /* CPEX 0046 V4.5*/
     char_33 name;           /* name of ADF node                     */
     double id;              /* ADF ID number (address) of node      */
-    cgns_link *link;        /* link information         */  /* V2.1 */
+    cgns_link *link;        /* link information                     */
     int in_link;            /* set if child of a linked node        */
     int ndescr;             /* no of Descriptor_t nodes             */
     cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
     int ncoords;            /* number of coordinates arrays         */
     cgns_array *coord;      /* ptrs to in-mem. copy of coord-arrays */
-    CGNS_ENUMT(DataClass_t) data_class; /* Class of data                        */
+    CGNS_ENUMT(DataClass_t) data_class; /* Class of data            */
     cgns_units *units;      /* Dimensional Units                    */
-    int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
-    cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
+    int nuser_data;         /* number of user defined data nodes    */
+    cgns_user_data *user_data; /* User defined data.                */
 } cgns_pcoor;
 
-typedef struct {            /* ParticleSolution_t node          */
+typedef struct {            /* ParticleSolution_t node              */ /* CPEX 0046 V4.5*/
     char_33 name;           /* name of ADF node                     */
     double id;              /* ADF ID number (address) of node      */
-    cgns_link *link;        /* link information         */  /* V2.1 */
+    cgns_link *link;        /* link information                     */
     int in_link;            /* set if child of a linked node        */
     int ndescr;             /* no of Descriptor_t nodes             */
     cgns_descr *descr;      /* ptrs to in-memory copy of descr      */
     cgns_ptset *ptset;      /* PointList, PointRange                */
     int nfields;            /* number of particle solution arrays   */
     cgns_array *field;      /* ptrs to in-memory copies of sol.field*/
-    CGNS_ENUMT(DataClass_t) data_class; /* Class of data                        */
+    CGNS_ENUMT(DataClass_t) data_class; /* Class of data            */
     cgns_units *units;      /* Dimensional Units                    */
-    int nuser_data;         /* number of user defined data nodes    */  /* V2.1 */
-    cgns_user_data *user_data; /* User defined data.        */  /* V2.1 */
+    int nuser_data;         /* number of user defined data nodes    */
+    cgns_user_data *user_data; /* User defined data.                */
 } cgns_psol;
 
-typedef struct {              /* ParticleZone_t node */
+typedef struct {              /* ParticleZone_t node */ /* CPEX 0046 V4.5*/
    char_33 name;              /* Particle zone name and name of ADF node */
    double id;                 /* ADF ID number (address) of node    */
    cgsize_t nparticles;       /* number of particles in this node */
    int npcoor;                /* number of ParticleCoordinate_t nodes */
    cgns_pcoor *pcoor;         /* ptrs to in-memory copies of pcoor */
-   cgns_link *link;           /* link information         */  /* V2.1 */
+   cgns_link *link;           /* link information                  */
    int in_link;               /* set if child of a linked node        */
    int nfamname;              /* number of AdditionalFamily_t nodes  */
    cgns_famname *famname;     /* ptrs to in-memory copies of famnames */ /* FAMILY TREE */
@@ -1024,7 +1024,7 @@ typedef struct {            /* CGNSBase_t Node          */
     CGNS_ENUMT(DataClass_t) data_class; /* Class of data                        */
     cgns_units *units;      /* Dimensional Units            */
     cgns_equations *equations; /* ptrs to in-mem. copy of FlowEqu.  */
-    cgns_pequations *pequations; /* ptr to in-mem. copy of ParticleEqu. */
+    cgns_pequations *pequations; /* ptr to in-mem. copy of ParticleEqu. */ /* V4.5*/
     cgns_converg *converg;  /* ptrs to in-mem. copy of Conv.Hist.   */
     int nintegrals;         /* no of IntegralData_t nodes       */
     cgns_integral *integral;/* ptrs to in-mem. copy of integral data*/
@@ -1036,9 +1036,9 @@ typedef struct {            /* CGNSBase_t Node          */
     cgns_gravity *gravity;  /* ptrs to in-memory copy of gravity    */      /* V2.2 */
     cgns_axisym *axisym;    /* ptrs to in-memory copy of Axisymmetry*/      /* V2.2 */
     cgns_rotating *rotating;/* ptrs to in-memory copy of Rot. Coord.*/      /* V2.2 */
-    int npzones;            /* number of ParticleZone_t nodes           */
-    cgns_pzone *pzone;      /* ptrs to in-memory copy of ParticleZone_t nodes */
-    cgns_hashmap_object *pzonemap; /* hashmap to check duplicate particle zone names */
+    int npzones;            /* number of ParticleZone_t nodes           */  /* V4.5 */
+    cgns_pzone *pzone;      /* ptrs to in-memory copy of ParticleZone_t nodes */ /* V4.5 */
+    cgns_hashmap_object *pzonemap; /* hashmap to check duplicate particle zone names */ /* V4.5 */
 } cgns_base;
 
 typedef struct {

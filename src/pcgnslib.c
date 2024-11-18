@@ -1981,9 +1981,9 @@ int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
  * \param[in] coordname \PGRID_coordname
  * \param[out] C \PGRID_Coordinate
  * \return \ier
- * \details To write the data in parallel, first call /e cgp_coord_write to create an empty data node. This call is identical
- * to /e cg_particle_coord_write with /p coord_array set to NULL (no data written). The actual data is then written to the node in parallel
- * using either /e cgp_particle_coord_write_data or /e cgp_particle_coord_general_write_data where /p range_min and /p range_max specify the subset of coordinate data to be written by a given process.
+ * \details To write the data in parallel, first call \e cgp_coord_write to create an empty data node. This call is identical
+ * to \e cg_particle_coord_write with \p coord_array set to NULL (no data written). The actual data is then written to the node in parallel
+ * using either \e cgp_particle_coord_write_data or \e cgp_particle_coord_general_write_data where \p range_min and \p range_max specify the subset of coordinate data to be written by a given process.
  */
 
 int cgp_particle_coord_write(int fn, int B, int P, CGNS_ENUMT(DataType_t) type,
@@ -2009,7 +2009,7 @@ int cgp_particle_coord_write(int fn, int B, int P, CGNS_ENUMT(DataType_t) type,
  * \param[in] rmax \PGRID_range_max
  * \param[in] coords \PGRID_coord_array
  * \return \ier
- * \details Writes the actual data to the node in parallel, where /p rmin and /p rmax specify the subset
+ * \details Writes the actual data to the node in parallel, where \p rmin and \p rmax specify the subset
  *  of coordinate data to be written by a given process. It is the
  *  responsibility of the application to ensure that the data type for the coordinate data
  *  matches that as defined in the file; no conversions are done.
@@ -2178,7 +2178,7 @@ int cgp_particle_coord_general_write_data(int fn, int B, int P, int C,
  * \param[in]  rmax \PGRID_range_max
  * \param[out] coords \PGRID_coord_array
  * \return \ier
- * \details Reads the actual data to the node in parallel, where /p rmin and /p rmax specify the subset
+ * \details Reads the actual data to the node in parallel, where \p rmin and \p rmax specify the subset
  *  of coordinate data to be read by a given process. It is the
  *  responsibility of the application to ensure that the data type for the coordinate data
  *  matches that as defined in the file; no conversions are done.

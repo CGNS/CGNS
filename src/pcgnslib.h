@@ -149,7 +149,7 @@ CGNSDLL int cgp_particle_coord_general_write_data(int fn, int B, int P, int C,
     const cgsize_t *m_rmin, const cgsize_t *m_rmax, const void *coords);
 CGNSDLL int cgp_particle_coord_read_data(int fn, int B, int P, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coord_array);
-CGNSDLL int cgp_coord_general_read_data(int fn, int B, int P, int C,
+CGNSDLL int cgp_particle_coord_general_read_data(int fn, int B, int P, int C,
     const cgsize_t *rmin, const cgsize_t *rmax,
     CGNS_ENUMT(DataType_t) m_type,
     int m_numdim, const cgsize_t *m_arg_dimvals,

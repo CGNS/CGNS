@@ -1230,7 +1230,7 @@ CGNSDLL int cg_coord_general_write(int fn, int B, int Z,
 	const cgsize_t *rmin, const cgsize_t *rmax,
 	CGNS_ENUMT(DataType_t) m_type, int m_numdim, const cgsize_t *m_dims,
 	const cgsize_t *m_rmin, const cgsize_t *m_rmax,
-   const void *coord_ptr, int *C);
+	const void *coord_ptr, int *C);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *      Read and write Elements_t Nodes                                  *
@@ -1645,7 +1645,7 @@ CGNSDLL int cg_conn_average_write(int file_number, int B, int Z, int Ii,
 CGNSDLL int cg_1to1_average_write(int file_number, int B, int Z, int Ii,
 	CGNS_ENUMT(AverageInterfaceType_t) AverageInterfaceType);
 CGNSDLL int cg_1to1_average_read(int file_number, int B, int Z, int Ii,
-   CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType);
+        CGNS_ENUMT(AverageInterfaceType_t) *AverageInterfaceType);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *   Read and write ParticleZone_t Nodes                                 *

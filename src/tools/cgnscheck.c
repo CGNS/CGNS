@@ -6005,7 +6005,7 @@ void read_particle(int nz)
 
    strcpy (p->name, name);
    p->nparticles = size[0];
-   // 0 sized ParticleZones are okay as they indicate that there are no parcels of this type in the Base at the current time
+   // 0-sized ParticleZones are okay as they indicate that there are no particles of this type in the base at the current time
    if(p->nparticles < 0)
       error_exit("invalid size for particle zone");
 }
@@ -6205,7 +6205,7 @@ static void check_particle_coordinates (int npc)
         if (verbose)
             printf("      Coordinate Range=%g -> %g (%g)\n",
                 cmin, cmax, cmax-cmin);
-        if (cmin == cmax)
+        if (cmin - cmax == 0)
             warning(1, "coordinate range is 0");
         if (0 == strcmp (name, "CoordinateX"))
             coordset[0] |= 1;
