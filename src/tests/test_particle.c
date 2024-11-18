@@ -383,7 +383,7 @@ static void test_particle_io_partial()
 
    cgsize_t num_particles = 100;
 
-   float coord[num_particles];
+   float* coord = (float*)malloc(sizeof(float)*num_particles);
    for (int n = 0; n < num_particles; n++)
        coord[n] = (float)n;
 
@@ -454,7 +454,7 @@ static void test_particle_io_partial()
 
    cg_open (fname, CG_MODE_READ, &fnum);
 
-   float coord_read[num_particles];
+   float* coord_read = (float*)malloc(sizeof(float)*num_particles);
    memset(coord_read, -1, sizeof(float)*num_particles);
    cgsize_t rmin = 1, rmax = num_particles;
 
@@ -491,13 +491,15 @@ static void test_particle_io_partial()
       }
    }
 
+   free(coord_read);
+
    /* Verify that the field matches the written value as well */
 
    CGNS_ENUMT(DataType_t) type;
    char field_name[32];
    cg_particle_field_info(fnum, bnum, pnum, 1, 1, &type, field_name);
 
-   float field[num_particles];
+   float* field = (float*)malloc(sizeof(float)*num_particles);
    cg_particle_field_read(fnum, bnum, pnum, 1, field_name, type, &rmin, &rmax, field);
 
    for(int i = 0; i < rmax - 1; ++i)
@@ -508,6 +510,9 @@ static void test_particle_io_partial()
          exit(1);
       }
    }
+
+   free(field);
+   free(coord);
 
    cg_close (fnum);
 }
@@ -521,7 +526,7 @@ static void test_particle_bbox()
 
     cgsize_t num_particles = 10;
 
-    float coord[num_particles];
+    float* coord = (float*)malloc(sizeof(float)*num_particles);
     for (int n = 0; n < (int)num_particles; n++)
         coord[n] = (float)n;
 
@@ -630,6 +635,8 @@ static void test_particle_bbox()
        exit(1);
     }
 
+    free(coord);
+
     puts ("closing file");
     cg_close (fnum);
 }
@@ -641,7 +648,7 @@ static void test_particle_coord_io_and_ptset()
 
    cgsize_t num_particles = 10;
 
-   float coord[num_particles];
+   float* coord = (float*)malloc(sizeof(float)*num_particles);
    for (int n = 0; n < (int)num_particles; n++)
        coord[n] = (float)n;
 
@@ -728,6 +735,9 @@ static void test_particle_coord_io_and_ptset()
    }
 
    free(data);
+   free(coord);
+
+   cg_close(fnum);
 }
 
 int main()
