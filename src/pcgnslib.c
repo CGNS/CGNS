@@ -2498,7 +2498,7 @@ int cgp_particle_field_general_write_data(int fn, int B, int P, int S, int F,
         }
     }
 
-     /* fn, B, Z, F, and S arguments are needed to get hid */
+     /* fn, B, P, F, and S arguments are needed to get hid */
     to_HDF_ID(field->id, hid);
 
     void* dataset[1];
@@ -2655,7 +2655,7 @@ int cgp_particle_field_general_read_data(int fn, int B, int P, int S, int F,
         }
     }
 
-     /* fn, B, Z, F, and S arguments are needed to get hid */
+     /* fn, B, P, F, and S arguments are needed to get hid */
     to_HDF_ID(field->id, hid);
 
     void* dataset[1];

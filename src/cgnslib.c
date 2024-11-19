@@ -17144,7 +17144,8 @@ int cg_narrays(int *narrays)
  *  RigidGridMotion_t, ArbitraryGridMotion_t, BaseIterativeData_t, ZoneIterativeData_t
  *  GridConnectivity_t, UserDefinedData_t, Gravity_t, Axisymmetry_t, RotatingCoordinates_t,
  *  Area_t, Periodic_t, ZoneSubRegion_t, ParticleCoordinates_t, ParticleSolution_t,
- *  ParticleIterativeData_t
+ *  ParticleIterativeData_t, ParticleCollisionModel_t, ParticleBreakupModel_t, ParticleWallInteractionModel_t,
+ *  ParticleForceModel_t, ParticlePhaseChangeModel_t
  */
 
     CHECK_FILE_OPEN
@@ -17260,7 +17261,15 @@ int cg_narrays(int *narrays)
         cgns_subreg *subreg = (cgns_subreg *)posit->posit;
         (*narrays) = subreg->narrays;
 
-    } else {
+    } else if (strcmp(posit->label,"ParticleCollisionModel_t")==0 ||
+               strcmp(posit->label,"ParticleBreakupModel_t")==0 ||
+               strcmp(posit->label,"ParticleWallInteractionModel_t")==0 ||
+               strcmp(posit->label,"ParticleForceModel_t")==0 ||
+               strcmp(posit->label,"ParticlePhaseChangeModel_t")==0) {
+               cgns_pmodel *model = (cgns_pmodel *)posit->posit;
+               (*narrays) = model->narrays;
+
+    }else {
         cgi_error("User defined DataArray_t node not supported under '%s' type node",posit->label);
         (*narrays) = 0;
         return CG_INCORRECT_PATH;

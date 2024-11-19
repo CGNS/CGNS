@@ -851,6 +851,17 @@ static FACE *new_face (int nnodes, cgsize_t *nodes)
 
 /*-------------------------------------------------------------------*/
 
+static int compareValuesFloat(float val1, float val2) {
+
+  int ret = 1;
+  if (fabs((double)val1 - (double)val2) > 1e-6) {
+    ret = 0;
+  }
+  return ret;
+}
+
+/*-------------------------------------------------------------------*/
+
 static int tetra_4[4][4] = {
     {3, 0, 2, 1},
     {3, 0, 1, 3},
@@ -6205,7 +6216,7 @@ static void check_particle_coordinates (int npc)
         if (verbose)
             printf("      Coordinate Range=%g -> %g (%g)\n",
                 cmin, cmax, cmax-cmin);
-        if (cmin - cmax == 0)
+        if (compareValuesFloat(cmin, cmax))
             warning(1, "coordinate range is 0");
         if (0 == strcmp (name, "CoordinateX"))
             coordset[0] |= 1;
@@ -6291,7 +6302,6 @@ static void check_particle_solution (int ns)
 
     /* get solution data size */
 
-
     CGNS_ENUMT(PointSetType_t) ptset_type;
     cgsize_t npnts;
     int ier = cg_particle_sol_ptset_info(cgnsfn, cgnsbase, cgnsparticle, ns, &ptset_type, &npnts);
@@ -6299,15 +6309,21 @@ static void check_particle_solution (int ns)
     {
        if(npnts > 0)
        {
-          datasize = npnts;
           cgsize_t *pnts = (cgsize_t*)malloc(npnts*sizeof(cgsize_t));
 
           if(cg_particle_sol_ptset_read(cgnsfn, cgnsbase, cgnsparticle, ns, pnts))
              error_exit("cg_particle_sol_ptset_read");
 
+          if(ptset_type == PointList) {
+             datasize = npnts;
+          }
+          else { // ptset_type == PointRange
+             datasize = pnts[1] - pnts[0] + 1;
+          }
+
           free(pnts);
        }
-       else
+       else // Not a point set
        {
           datasize = p->nparticles;
        }

@@ -364,7 +364,8 @@ static void test_particle_io_main()
              char fname[32];
              cg_particle_field_info(fnum, bnum, iparticle, isol, ifield, &type, fname);
 
-             cgsize_t rmin = 1, rmax = size;
+             rmin = 1;
+             rmax = size;
              double* field = (double*)malloc(size*sizeof(double));
              cg_particle_field_read(fnum, bnum, iparticle, isol, fname, type, &rmin, &rmax, field);
              free(field);
@@ -646,7 +647,7 @@ static void test_particle_coord_io_and_ptset()
    int fnum, bnum, pnum, cgcoord;
    static char *fname = "particle_coord_and_ptset_test.cgns";
 
-   cgsize_t num_particles = 10;
+   cgsize_t num_particles = 100;
 
    float* coord = (float*)malloc(sizeof(float)*num_particles);
    for (int n = 0; n < (int)num_particles; n++)
@@ -676,10 +677,20 @@ static void test_particle_coord_io_and_ptset()
 
    int snum;
    cgsize_t pnts[2] = {1, 10};
-   cg_particle_sol_ptset_write(fnum, bnum, pnum, "Solution", CGNS_ENUMV(PointRange), 2, pnts, &snum);
+   cg_particle_sol_ptset_write(fnum, bnum, pnum, "Solution 1", CGNS_ENUMV(PointRange), 2, pnts, &snum);
 
    int field;
    cg_particle_field_write(fnum, bnum, pnum, snum, CGNS_ENUMV( RealSingle ), "Field", coord, &field);
+
+
+   cgsize_t* pnts_list = (cgsize_t*)malloc(sizeof(cgsize_t)*num_particles);
+   for(cgsize_t n = 0; n < num_particles; ++n) {
+      pnts_list[n] = n+1;
+   }
+   cg_particle_sol_ptset_write(fnum, bnum, pnum, "Solution 2", CGNS_ENUMV(PointList), num_particles, pnts_list, &snum);
+   cg_particle_field_write(fnum, bnum, pnum, snum, CGNS_ENUMV( RealSingle ), "Field", coord, &field);
+
+   free(pnts_list);
 
    puts ("closing and reopening in read mode");
    cg_close(fnum);
@@ -702,39 +713,75 @@ static void test_particle_coord_io_and_ptset()
       }
    }
 
-   /* Read solution point set and verify that it checks out */
+   /* Read the PointRange solution and verify it too */
+   snum = 1;
    CGNS_ENUMT(PointSetType_t) ptset_type;
    cgsize_t npnts;
    cg_particle_sol_ptset_info(fnum, bnum, pnum, snum, &ptset_type, &npnts);
    CHECK("Particle solution point set type", ptset_type == CGNS_ENUMT(PointRange));
    CHECK("Particle solution point set size", npnts == 2);
 
-   cgsize_t pnts_read[2];
+   cgsize_t* pnts_read = (cgsize_t*)malloc(sizeof(cgsize_t)*npnts);
    cg_particle_sol_ptset_read(fnum, bnum, pnum, snum, pnts_read);
 
    cgsize_t sol_size;
    cg_particle_sol_size(fnum, bnum, pnum, snum, &sol_size);
    if(sol_size != pnts_read[1] - pnts_read[0] + 1)
    {
-      printf("Particle sol size mismatch");
+      printf("Particle sol size mismatch\n");
       exit(1);
    }
 
    /* Read the field for this ptset and verify it */
-   cgsize_t rmin = pnts_read[0], rmax = pnts_read[1];
+   cgsize_t rmin = 1, rmax = pnts_read[1] - pnts_read[0] + 1;
    float* data = (float*)malloc(sizeof(float)*sol_size);
    cg_particle_field_read(fnum, bnum, pnum, snum, "Field", CGNS_ENUMV(RealSingle), &rmin, &rmax, data);
 
-   for(cgsize_t i = rmin, j = 0; i <= rmax; ++i, ++j)
+   for(cgsize_t i = pnts_read[0], j = rmin; i <= pnts_read[1]; ++i, ++j)
    {
-      if(!compareValuesFloat(coord[i-1], data[j]))
+      if(!compareValuesFloat(coord[i-1], data[j-1]))
       {
-         printf("Particle field data mismatch");
+         printf("Particle field data mismatch\n");
          exit(1);
       }
    }
 
    free(data);
+   free(pnts_read);
+
+   /* Read the PointList solution and verify it too */
+   snum = 2;
+   cg_particle_sol_ptset_info(fnum, bnum, pnum, snum, &ptset_type, &npnts);
+
+   CHECK("Particle solution point set type", ptset_type == CGNS_ENUMT(PointList));
+   CHECK("Particle solution point set size", npnts == num_particles);
+
+   pnts_read = (cgsize_t*)malloc(sizeof(cgsize_t)*npnts);
+   cg_particle_sol_ptset_read(fnum, bnum, pnum, snum, pnts_read);
+   cg_particle_sol_size(fnum, bnum, pnum, snum, &sol_size);
+   if(sol_size != npnts)
+   {
+      printf("Particle sol size mismatch\n");
+      exit(1);
+   }
+
+   /* Read the field for this ptset and verify it */
+   rmin = 1;
+   rmax = npnts;
+   data = (float*)malloc(sizeof(float)*sol_size);
+   cg_particle_field_read(fnum, bnum, pnum, snum, "Field", CGNS_ENUMV(RealSingle), &rmin, &rmax, data);
+
+   for(cgsize_t i = 0; i < npnts; ++i)
+   {
+      if(!compareValuesFloat(coord[pnts_read[i]-1], data[i]))
+      {
+         printf("Particle field data mismatch\n");
+         exit(1);
+      }
+   }
+
+   free(data);
+   free(pnts_read);
    free(coord);
 
    cg_close(fnum);

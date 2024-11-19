@@ -6817,6 +6817,9 @@ int cgi_read_particle(cgns_pzone *pzone)
        cgi_error("Wrong number of dimension for a ParticleZone_t node");
        return CG_ERROR;
    }
+   
+   /* Reset Idim so that cgi_* routines work properly with particles */ 
+   Idim = 1;
 
    if (0 == strcmp(data_type, "I8")) {
        cglong_t *particle_dim = (cglong_t *)vdata;
