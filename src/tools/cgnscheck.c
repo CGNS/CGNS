@@ -6314,7 +6314,7 @@ static void check_particle_solution (int ns)
           if(cg_particle_sol_ptset_read(cgnsfn, cgnsbase, cgnsparticle, ns, pnts))
              error_exit("cg_particle_sol_ptset_read");
 
-          if(ptset_type == PointList) {
+          if(ptset_type == CGNS_ENUMV(PointList)) {
              datasize = npnts;
           }
           else { // ptset_type == PointRange
