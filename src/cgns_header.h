@@ -998,7 +998,7 @@ typedef struct {              /* ParticleZone_t node */ /* CPEX 0046 V4.5*/
    cgns_psol *sol;            /* ptrs to in-memory copies of sols */
    int ndescr;                /* number of Descriptor_t nodes   */
    cgns_descr *descr;         /* ptrs to in-memory copy of descr   */
-   DataClass_t data_class;    /* Class of data                        */
+   CGNS_ENUMT(DataClass_t) data_class; /* Class of data        */
    cgns_pequations *equations;/* ptrs to in-mem. copy of ParticleEqu.   */
    cgns_units *units;         /* Dimensional Units */
    int nintegrals;            /* number of IntegralData_t nodes   */
