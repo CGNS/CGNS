@@ -14169,7 +14169,7 @@ int cg_particle_ncoords(int fn, int B, int P, int *ncoords)
 * \return \ier
 *
 */
-int cg_particle_coord_info(int fn, int B, int P, int C, DataType_t  *datatype, char *coordname)
+int cg_particle_coord_info(int fn, int B, int P, int C, CGNS_ENUMT(DataType_t)  *datatype, char *coordname)
 {
    cgns_pcoor *pcoor;
 
