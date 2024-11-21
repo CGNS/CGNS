@@ -47,6 +47,7 @@ freely, subject to the following restrictions:
  * \defgroup ArrayData Parallel Array Data
  * \defgroup PointListData Parallel Point List Data
  * \defgroup ParallelParticleCoordinate Parallel Particle Coordinates
+ * \defgroup ParallelParticleSolutionData Parallel Particle Solution Data
  **/
 
 #include <stdio.h>
@@ -2341,7 +2342,7 @@ int cgp_particle_coord_general_read_data(int fn, int B, int P, int C,
 
 /*===== Particle Solution IO Prototypes ============================*/
 /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Create a particle solution field data node in parallel.
  *
@@ -2365,7 +2366,7 @@ int cgp_particle_field_write(int fn, int B, int P, int S,
 
 /*---------------------------------------------------------*/
 /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Write field data in parallel.
  *
@@ -2420,7 +2421,7 @@ int cgp_particle_field_write_data(int fn, int B, int P, int S, int F,
 /*---------------------------------------------------------*/
 
 /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Write shaped array to a subset of particle solution field in parallel.
  *
@@ -2525,7 +2526,7 @@ int cgp_particle_field_general_write_data(int fn, int B, int P, int S, int F,
 
 /*---------------------------------------------------------*/
 /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Read particle field data in parallel.
  *
@@ -2579,7 +2580,7 @@ int cgp_particle_field_read_data(int fn, int B, int P, int S, int F,
 /*---------------------------------------------------------*/
 
 /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Read subset of particle solution field to a shaped array in parallel.
  *
@@ -3776,7 +3777,7 @@ int cgp_particle_coord_multi_write_data(int fn, int B, int P, int *C, const cgsi
 
 /*---------------------------------------------------------*/
 /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Writes multiple sets of particle solution field data in parallel.
  *
@@ -3877,7 +3878,7 @@ int cgp_particle_field_multi_write_data(int fn, int B, int P, int S, int *F,
 
 /*---------------------------------------------------------*/
  /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Reads multiple sets of particle solution field data in parallel.
  *
