@@ -40,7 +40,7 @@
  *          
  * ------------------------------------------------------------------------- */
 /**
- * \defgroup CGNSInternals_FNC_CG_CONFIG Valid cg_configure() options.
+ * \defgroup CGNSInternals_FNC_CG_CONFIG Configuring CGNS Internals; valid cg_configure() options.
  */
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
@@ -139,7 +139,7 @@
  */
 
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief This allows the  user to define an error call-back function. The value should be a pointer
  * to a function that receives the error.  The  function is defined as
  * `void err_callback(int is_error, char *errmsg)`
@@ -152,7 +152,7 @@
 */
 #define CG_CONFIG_ERROR      1
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief This is the rewrite-upon-close setting. **Note**:  Prior  library   versions would
  * automatically rewrite the  CGNS file when it  was closed after being opened in modify mode
  * if there was unused space. This is no longer  done due to possible parallel I/O conflicts.
@@ -163,7 +163,7 @@
  */
 #define CG_CONFIG_COMPRESS   2
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Sets the search path for locating linked-to files. The argument `value` should be a
  * character string containing one or more  directories, formatted the same as   for the PATH
  * environment variable. This will replace any current settings. Setting `value` to NULL will
@@ -172,21 +172,21 @@
 */
 #define CG_CONFIG_SET_PATH   3
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Adds a directory, or list of directories, to the linked-to file search path. This
  * is  the same  as `CG_CONFIG_SET_PATH`, but adds to the path  instead of replacing it. In
  * Fortran, the path must terminate with a `NULL` character, `CHAR(0)` or `C_NULL_CHAR`.
 */
 #define CG_CONFIG_ADD_PATH   4
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Sets the default file type for newly created CGNS files. The argument `value` should be
  * set to one of `CG_FILE_NONE`, `CG_FILE_ADF`, `CG_FILE_HDF5`, or `CG_FILE_ADF2`. See the
  * discussion above for cg_set_file_type().
 */
 #define CG_CONFIG_FILE_TYPE  5
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief This  option  affects index  bounds   on  structured   arrays  with rind   planes.  The
  * <a href="\CGNS_ORG/\SIDS_REF/grid.html#grid-coordinates-structure-definition-gridcoordinates-t">SIDS</a>
  * specifies that core array locations begin at index 1. Lower rind planes, if present, would
@@ -208,7 +208,7 @@
 #define CG_CONFIG_RIND_INDEX 6
 
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Sets the  compression level for data written from HDF5. The default is no compression.
  * Setting `value` to -1 will use the   default  compression  level of  6. The acceptable
  * values are 0 to 9, corresponding to gzip compression levels. **This option currently
@@ -216,14 +216,14 @@
 */
 #define CG_CONFIG_HDF5_COMPRESS         201
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Sets the MPI communicator for parallel I/O. The default is `MPI_COMM_WORLD`. The
  * new communicator is  given by typecasting it  to   a `void  *`. This  is generally used
  * internally - see cgp_mpi_comm() instead.
 */
 #define CG_CONFIG_HDF5_MPI_COMM         202
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Performs I/O directly to memory and can create temporary CGNS files that never
  * exist on permanent  storage. The memory is  written to disk depending on the state of
  * \ref CG_CONFIG_HDF5_DISKLESS_WRITE.  CGNS will use the \p  core  file  driver in  HDF5 via
@@ -235,7 +235,7 @@
 */
 #define CG_CONFIG_HDF5_DISKLESS         203
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief `Value`  specifies the increment by  which  allocated memory is to  be increased
  * each  time more memory is required, in  bytes. The  default is  10MiB. Ideally, `value`
  * should  be  set large enough  to   minimize repeated increases. The type  of `value` is
@@ -244,13 +244,13 @@
 */
 #define CG_CONFIG_HDF5_DISKLESS_INCR    204
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief `Value` indicates whether to write (`value`=1) the memory contents to disk when
  * the file is closed. Otherwise, `value`=0 does not persist the memory to disk.
 */
 #define CG_CONFIG_HDF5_DISKLESS_WRITE   205
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief   Configures  HDF5's `H5Pset_alignment`  and   sets  the  alignment, `value[1]`,
  * properties of a file access property list so that any file object greater than or equal
  * in size to a threshold,  `value[0]`,  bytes  will be aligned on an  address  which is a
@@ -258,31 +258,31 @@
 */
 #define CG_CONFIG_HDF5_ALIGNMENT        206
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Configures HDF5's `H5Pset_meta_block_size` and sets the minimum size, `value (in
  * bytes)`, of metadata block allocations.
 */
 #define CG_CONFIG_HDF5_MD_BLOCK_SIZE    207
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Configures HDF5's `H5Pset_buffer` and sets the maximum size, `value (in bytes)`,
  * for the type conversion buffer and background buffer.
 */
 #define CG_CONFIG_HDF5_BUFFER           208
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Configures HDF5's `H5Pset_sieve_buf_size` and sets the maximum size, `value (in
  * bytes)`, of the data sieve buffer.
 */
 #define CG_CONFIG_HDF5_SIEVE_BUF_SIZE   209
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Configures HDF5's `H5Pset_elink_file_cache_size` and sets the number of files,
  * `value`, that can be held open in an external link open file cache.
 */
 #define CG_CONFIG_HDF5_ELINK_CACHE_SIZE 210
 /**
- * \ingroup CGNSInternals_CG_CONFIG
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief `Value` indicates the configuration values to reset to their default values.
  * Currently, only  `CG_CONFIG_RESET_HDF5` is a valid  `value`  and will reset all the
  * `CG_CONFIG_HDF5_*`    parameters,     excluding    `CG_CONFIG_HDF5_MPI_COMM`    and
