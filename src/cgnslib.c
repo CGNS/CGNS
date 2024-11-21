@@ -102,7 +102,6 @@ freely, subject to the following restrictions:
  * \defgroup ParticleEquationSet Particle Equation Set
  * \defgroup ParticleGoverningEquations Particle Governing Equations
  * \defgroup ParticleModel Particle Model
- * \defgroup ParallelParticleCoordinate Parallel Particle Coordinates
  *
  */
 

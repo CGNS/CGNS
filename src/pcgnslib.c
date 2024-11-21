@@ -46,6 +46,7 @@ freely, subject to the following restrictions:
  * \defgroup SolutionData Parallel Solution Data
  * \defgroup ArrayData Parallel Array Data
  * \defgroup PointListData Parallel Point List Data
+ * \defgroup ParallelParticleCoordinate Parallel Particle Coordinates
  **/
 
 #include <stdio.h>
