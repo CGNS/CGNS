@@ -122,8 +122,8 @@ static void test_particle_io_main()
     cg_goto(fnum, bnum, "end");
     cg_biter_write(fnum, bnum, "BaseIterativeData", 1);
     cg_gopath(fnum, "./BaseIterativeData");
-    cg_array_write("TimeValues", RealDouble, 1, &length, output_time);
-    cg_array_write("IterationValues", Integer, 1, &length, iteration);
+    cg_array_write("TimeValues", CGNS_ENUMV(RealDouble), 1, &length, output_time);
+    cg_array_write("IterationValues", CGNS_ENUMV(Integer), 1, &length, iteration);
 
     float exp[5];
     for (int n = 0; n < 5; n++)
@@ -135,8 +135,8 @@ static void test_particle_io_main()
     zone_size[1] = 4;
     zone_size[2] = 0;
 
-    cg_zone_write (fnum, bnum, "Cells", zone_size, Unstructured, &znum);
-    cg_coord_write (fnum, bnum, znum, RealDouble, "CoordinateX", xc, &cnum);
+    cg_zone_write (fnum, bnum, "Cells", zone_size, CGNS_ENUMV(Unstructured), &znum);
+    cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble), "CoordinateX", xc, &cnum);
     cg_goto(fnum, bnum, "Zone_t", znum, "GridCoordinates", 0, "CoordinateX", 0, NULL);
     cg_exponents_write(CGNS_ENUMV(RealSingle), exp);
     cg_coord_write (fnum, bnum, znum, CGNS_ENUMV(RealDouble), "CoordinateY", yc, &cnum);
