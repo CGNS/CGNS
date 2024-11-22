@@ -46,6 +46,8 @@ freely, subject to the following restrictions:
  * \defgroup SolutionData Parallel Solution Data
  * \defgroup ArrayData Parallel Array Data
  * \defgroup PointListData Parallel Point List Data
+ * \defgroup ParallelParticleCoordinate Parallel Particle Coordinates
+ * \defgroup ParallelParticleSolutionData Parallel Particle Solution Data
  **/
 
 #include <stdio.h>
@@ -1885,9 +1887,10 @@ int cgp_field_read_data(int fn, int B, int Z, int S, int F,
  * \param[in]  m_rmax        \PSOL_mem_range_max
  * \param[out] data          \PSOL_solution_array
  * \return \ier
+ *
  * \details If \e data == NULL, meaning this processor reads no data, then
- *  only \e fn, \e B, \e Z, \e S, and \e F need be set.  In this case, \e Z, \e S, and \e F are
- *  "representative" and can point to any valid zone.
+ *          only \e fn, \e B, \e Z, \e S, and \e F need be set.  In this case, \e Z, \e S, and \e F are
+ *          "representative" and can point to any valid zone.
  */
 int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
                                 const cgsize_t *rmin, const cgsize_t *rmax,
@@ -1981,9 +1984,12 @@ int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
  * \param[in] coordname \PGRID_coordname
  * \param[out] C \PGRID_Coordinate
  * \return \ier
- * \details To write the data in parallel, first call \e cgp_coord_write to create an empty data node. This call is identical
- * to \e cg_particle_coord_write with \p coord_array set to NULL (no data written). The actual data is then written to the node in parallel
- * using either \e cgp_particle_coord_write_data or \e cgp_particle_coord_general_write_data where \p range_min and \p range_max specify the subset of coordinate data to be written by a given process.
+ * \details To write the data in parallel, first call \e cgp_coord_write to create an
+ *          empty data node. This call is identical to \e cg_particle_coord_write with
+ *          \p coord_array set to NULL (no data written). The actual data is then written
+ *          to the node in parallel using either \e cgp_particle_coord_write_data or
+ *          \e cgp_particle_coord_general_write_data where \p range_min and \p range_max
+ *          specify the subset of coordinate data to be written by a given process.
  */
 
 int cgp_particle_coord_write(int fn, int B, int P, CGNS_ENUMT(DataType_t) type,
@@ -2009,10 +2015,11 @@ int cgp_particle_coord_write(int fn, int B, int P, CGNS_ENUMT(DataType_t) type,
  * \param[in] rmax \PGRID_range_max
  * \param[in] coords \PGRID_coord_array
  * \return \ier
+ *
  * \details Writes the actual data to the node in parallel, where \p rmin and \p rmax specify the subset
- *  of coordinate data to be written by a given process. It is the
- *  responsibility of the application to ensure that the data type for the coordinate data
- *  matches that as defined in the file; no conversions are done.
+ *          of coordinate data to be written by a given process. It is the
+ *          responsibility of the application to ensure that the data type for the coordinate data
+ *          matches that as defined in the file; no conversions are done.
  */
 
 int cgp_particle_coord_write_data(int fn, int B, int P, int C,
@@ -2079,9 +2086,11 @@ int cgp_particle_coord_write_data(int fn, int B, int P, int C,
  * \param[in] m_rmax \PGRID_mem_range_max
  * \param[out] coords \PGRID_coord_array
  * \return \ier
- * \details The \e cgp_particle_coord_general_write_data perform data conversions if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning
- *  this processor writes no data, then only \e fn, \e B, \e P, and \e C need be set.  In this case, \e P and \e C are "representative"
- *  and can point to any valid zone.
+ *
+ * \details The \e cgp_particle_coord_general_write_data perform data conversions
+ *          if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning
+ *          this processor writes no data, then only \e fn, \e B, \e P, and \e C need be set.
+ *          In this case, \e P and \e C are "representative" and can point to any valid zone.
  */
 
 int cgp_particle_coord_general_write_data(int fn, int B, int P, int C,
@@ -2178,10 +2187,11 @@ int cgp_particle_coord_general_write_data(int fn, int B, int P, int C,
  * \param[in]  rmax \PGRID_range_max
  * \param[out] coords \PGRID_coord_array
  * \return \ier
+ *
  * \details Reads the actual data to the node in parallel, where \p rmin and \p rmax specify the subset
- *  of coordinate data to be read by a given process. It is the
- *  responsibility of the application to ensure that the data type for the coordinate data
- *  matches that as defined in the file; no conversions are done.
+ *          of coordinate data to be read by a given process. It is the
+ *          responsibility of the application to ensure that the data type for the coordinate data
+ *          matches that as defined in the file; no conversions are done.
  */
 
 int cgp_particle_coord_read_data(int fn, int B, int P, int C,
@@ -2245,9 +2255,11 @@ int cgp_particle_coord_read_data(int fn, int B, int P, int C,
  * \param[in] m_rmax \PGRID_mem_range_max
  * \param[out] coords \PGRID_coord_array
  * \return \ier
- * \details The \e cgp_particle_coord_general_read_data perform data conversions if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning
- *  this processor reads no data, then only \e fn, \e B, \e P, and \e C need be set.  In this case, \e P and \e C are "representative"
- *  and can point to any valid zone.
+ *
+ * \details The \e cgp_particle_coord_general_read_data perform data conversions if \e datatype
+ *          is different from \e mem_datatype. If \e coords == NULL, meaning
+ *          this processor reads no data, then only \e fn, \e B, \e P, and \e C need be set.
+ *          In this case, \e P and \e C are "representative" and can point to any valid zone.
  */
 
 int cgp_particle_coord_general_read_data(int fn, int B, int P, int C,
@@ -2330,7 +2342,7 @@ int cgp_particle_coord_general_read_data(int fn, int B, int P, int C,
 
 /*===== Particle Solution IO Prototypes ============================*/
 /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Create a particle solution field data node in parallel.
  *
@@ -2354,7 +2366,7 @@ int cgp_particle_field_write(int fn, int B, int P, int S,
 
 /*---------------------------------------------------------*/
 /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Write field data in parallel.
  *
@@ -2409,7 +2421,7 @@ int cgp_particle_field_write_data(int fn, int B, int P, int S, int F,
 /*---------------------------------------------------------*/
 
 /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Write shaped array to a subset of particle solution field in parallel.
  *
@@ -2427,9 +2439,10 @@ int cgp_particle_field_write_data(int fn, int B, int P, int S, int F,
  * \param[in] m_rmax \PSOL_mem_range_max
  * \param[in] data \PSOL_solution_array
  * \return \ier
+ *
  * \details If \e data == NULL, meaning this processor reads no data, then
- *  only \e fn,\e  B, \e P, \e S, and \e F need be set.  In this case, \e P, \e S, and \e F are
- *  "representative" and can point to any valid zone.
+ *          only \e fn,\e  B, \e P, \e S, and \e F need be set.  In this case, \e P, \e S, and \e F are
+ *          "representative" and can point to any valid zone.
  */
 int cgp_particle_field_general_write_data(int fn, int B, int P, int S, int F,
                                           const cgsize_t *rmin, const cgsize_t *rmax,
@@ -2513,7 +2526,7 @@ int cgp_particle_field_general_write_data(int fn, int B, int P, int S, int F,
 
 /*---------------------------------------------------------*/
 /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Read particle field data in parallel.
  *
@@ -2567,7 +2580,7 @@ int cgp_particle_field_read_data(int fn, int B, int P, int S, int F,
 /*---------------------------------------------------------*/
 
 /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Read subset of particle solution field to a shaped array in parallel.
  *
@@ -2585,9 +2598,10 @@ int cgp_particle_field_read_data(int fn, int B, int P, int S, int F,
  * \param[in] m_rmax \PSOL_mem_range_max
  * \param[out] data \PSOL_solution_array
  * \return \ier
+ *
  * \details If \e data == NULL, meaning this processor reads no data, then
- *  only \e fn, \e B, \e P, \e S, and \e F need be set.  In this case, \e P, \e S, and \e F are
- *  "representative" and can point to any valid zone.
+ *          only \e fn, \e B, \e P, \e S, and \e F need be set.  In this case, \e P, \e S, and \e F are
+ *          "representative" and can point to any valid zone.
  */
 int cgp_particle_field_general_read_data(int fn, int B, int P, int S, int F,
                                          const cgsize_t *rmin, const cgsize_t *rmax,
@@ -2774,9 +2788,10 @@ int cgp_array_write_data(int A, const cgsize_t *rmin,
  * \param[in]  m_rmax        \PARR_mem_range_max
  * \param[out] data          \PARR_data
  * \return \ier
+ *
  * \details If \e data == NULL, meaning this processor reads no data, then
- *  only \e A need be set.  In this case, \e A is "representative" and can point to
- *  any valid array being written by another processor
+ *          only \e A need be set.  In this case, \e A is "representative" and can point to
+ *          any valid array being written by another processor
  *
  */
 int cgp_array_general_write_data(int A,
@@ -2913,6 +2928,7 @@ int cgp_array_read_data(int A, const cgsize_t *rmin,
  * \param[in]  m_rmax        \PARR_mem_range_max
  * \param[out] data          \PARR_data
  * \return \ier
+ *
  * \details If \e data == NULL, meaning this processor reads no data, then
  *          only \e A need be set.  In this case, \e A is "representative" and can point to
  *          any valid array being written by another processor.
@@ -3761,7 +3777,7 @@ int cgp_particle_coord_multi_write_data(int fn, int B, int P, int *C, const cgsi
 
 /*---------------------------------------------------------*/
 /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Writes multiple sets of particle solution field data in parallel.
  *
@@ -3862,7 +3878,7 @@ int cgp_particle_field_multi_write_data(int fn, int B, int P, int S, int *F,
 
 /*---------------------------------------------------------*/
  /**
- * \ingroup ParticleSolutionData
+ * \ingroup ParallelParticleSolutionData
  *
  * \brief Reads multiple sets of particle solution field data in parallel.
  *

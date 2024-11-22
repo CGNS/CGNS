@@ -86,14 +86,22 @@ freely, subject to the following restrictions:
  * \defgroup RindLayers Rind Layers
  * \defgroup RotatingCoordinates Rotating Coordinates
  * \defgroup SimulationType Simulation Type
- * \defgroup SpecialBoundaryConditionProperty  Special Boundary Condition Property
- * \defgroup SpecialGridConnectivityProperty  Special Grid Connectivity Property
+ * \defgroup SpecialBoundaryConditionProperty Special Boundary Condition Property
+ * \defgroup SpecialGridConnectivityProperty Special Grid Connectivity Property
  * \defgroup UserDefinedData User Defined Data
  * \defgroup ZoneGridConnectivity  Zone Grid Connectivity
  * \defgroup ZoneGridCoordinates  Zone Grid Coordinates
  * \defgroup ZoneIterativeData Zone Iterative Data
  * \defgroup ZoneSubregions  Zone Subregions
  * \defgroup CGNS_Navigation Explanation of Navigation of a CGNS File
+ * \defgroup ParticleIterativeData Particle Iterative Data
+ * \defgroup ParticleZoneInformation Particle Zone Information
+ * \defgroup ParticleCoordinates Particle Coordinates
+ * \defgroup ParticleSolution Particle Solution
+ * \defgroup ParticleSolutionData Particle Solution Data
+ * \defgroup ParticleEquationSet Particle Equation Set
+ * \defgroup ParticleGoverningEquations Particle Governing Equations
+ * \defgroup ParticleModel Particle Model
  *
  */
 
@@ -1821,11 +1829,11 @@ int cg_zone_write(int fn, int B, const char *zonename, const cgsize_t * size,
 /**
  * \ingroup CGNSFamilyDefinition
  *
- * \brief Get number of Family_t node at CGNSBase_t level
+ * \brief Get number of \e Family_t node at \e CGNSBase_t level
  *
  * \param[in]  fn        \FILE_fn
  * \param[in]  B         \B_Base
- * \param[out] nfamilies Number of families in base B
+ * \param[out] nfamilies Number of families in base \p B
  * \return \ier
  *
  */
@@ -2046,12 +2054,12 @@ int cg_family_write(int fn, int B, const char * family_name, int *Fam)
 /**
  * \ingroup CGNSFamilyDefinition
  *
- * \brief Get number of family names under Family_t (CGNSBase_t level)
+ * \brief Get number of family names under \e Family_t (CGNSBase_t level)
  *
  * \param[in]  fn     \FILE_fn
  * \param[in]  B      \B_Base
  * \param[in]  Fam    \Fam
- * \param[out] nnames Number of FamilyName_t nodes for this family.
+ * \param[out] nnames Number of \e FamilyName_t nodes for this family.
  * \return \ier
  *
  */
@@ -2074,14 +2082,14 @@ int cg_nfamily_names(int fn, int B, int Fam, int *nnames)
 /**
  * \ingroup CGNSFamilyDefinition
  *
- * \brief Read multiple family names under Family_t (CGNSBase_t level)
+ * \brief Read multiple family names under \e Family_t (CGNSBase_t level)
  *
  * \param[in]  fn          \FILE_fn
  * \param[in]  B           \B_Base
  * \param[in]  Fam         \Fam
  * \param[in]  N           Family name index number, where 1 ≤ N ≤ nNames.
- * \param[out] node_name   Name of the FamilyName_t node. FamilyParent is used to refer to the parent
- *                         family of the Family_t node.
+ * \param[out] node_name   Name of the \e FamilyName_t node. FamilyParent is used to refer to the parent
+ *                         family of the \e Family_t node.
  * \param[out] family_name \family_name
  * \return \ier
  *
@@ -2112,13 +2120,13 @@ int cg_family_name_read(int fn, int B, int Fam, int N, char *node_name, char *fa
 /**
  * \ingroup CGNSFamilyDefinition
  *
- * \brief Write multiple family names under Family_t (CGNSBase_t level)
+ * \brief Write multiple family names under \e Family_t (CGNSBase_t level)
  *
  * \param[in]  fn          \FILE_fn
  * \param[in]  B           \B_Base
  * \param[in]  Fam         \Fam
- * \param[out] node_name   Name of the FamilyName_t node. FamilyParent is used to refer to the parent
- *                         family of the Family_t node.
+ * \param[out] node_name   Name of the \e FamilyName_t node. FamilyParent is used to refer to the parent
+ *                         family of the \e Family_t node.
  * \param[out] family_name \family_name
  * \return \ier
  *
@@ -2183,7 +2191,7 @@ int cg_family_name_write(int fn, int B, int Fam,
 /**
  * \ingroup CGNSFamilyHierarchyTreeDefinition
  *
- * \brief Create a Family_t node (Family_t level)
+ * \brief Create a \e Family_t node (\e Family_t level)
  *
  * \param[in]  family_name \family_name
  * \param[out] Fam         \Fam
@@ -2264,7 +2272,7 @@ int cg_node_family_write( const char* family_name, int* Fam)
  *
  * \brief Get number of families (Family_t level)
  *
- * \param[out] nfamilies Number of families in current node (CGNSBase_t or Family_t).
+ * \param[out] nfamilies Number of families in current node (\e CGNSBase_t or \e Family_t).
  * \return \ier
  *
  */
@@ -2330,10 +2338,10 @@ int cg_node_family_read( int Fam, char* family_name, int* nFamBC, int *nGeo )
 /**
  * \ingroup CGNSFamilyHierarchyTreeDefinition
  *
- * \brief Write multiple family names under Family_t (Family_t level)
+ * \brief Write multiple family names under \e Family_t (\e Family_t level)
  *
- * \param[in]  node_name   Name of the FamilyName_t node. FamilyParent is used to refer to the parent
- *                         family of the Family_t node.
+ * \param[in]  node_name   Name of the \e FamilyName_t node. FamilyParent is used to refer to the parent
+ *                         family of the \e Family_t node.
  * \param[in]  family_name \family_name.
  * \return \ier
  *
@@ -2404,9 +2412,9 @@ int cg_node_family_name_write( const char* node_name, const char* family_name )
 /**
  * \ingroup CGNSFamilyHierarchyTreeDefinition
  *
- * \brief Get number of family names under Family_t (Family_t level)
+ * \brief Get number of family names under \e Family_t (\e Family_t level)
  *
- * \param[out] nnames Number of FamilyName_t nodes for this family.
+ * \param[out] nnames Number of \e FamilyName_t nodes for this family.
  * \return \ier
  *
  */
@@ -2437,11 +2445,11 @@ int cg_node_nfamily_names( int* nnames )
 /**
  * \ingroup CGNSFamilyHierarchyTreeDefinition
  *
- * \brief Read family info (Family_t level)
+ * \brief Read family info (\e Family_t level)
  *
  * \param[in]  N           Family name index number, where 1 ≤ N ≤ nNames.
- * \param[out] node_name   Name of the FamilyName_t node. FamilyParent is used to refer to the parent
- *                         family of the Family_t node.
+ * \param[out] node_name   Name of the \e FamilyName_t node. FamilyParent is used to refer to the parent
+ *                         family of the \e Family_t node.
  * \param[out] family_name \family_name.
  * \return \ier
  *
@@ -2477,8 +2485,8 @@ int cg_node_family_name_read(int N, char* node_name, char* family_name )
  * \param[in]  B          \B_Base
  * \param[in]  Fam        \Fam
  * \param[in]  BC_idx     \BC_idx
- * \param[out] fambc_name Name of the FamilyBC_t node.
- * \param[out] bocotype   Boundary condition type for the family. See the eligible types for BCType_t
+ * \param[out] fambc_name Name of the \e FamilyBC_t node.
+ * \param[out] bocotype   Boundary condition type for the family. See the eligible types for \e BCType_t
  *                        in the Typedefs section.
  * \return \ier
  */
@@ -2513,8 +2521,8 @@ int cg_fambc_read(int fn, int B, int Fam, int BC_idx,
  * \param[in]  fn         \FILE_fn
  * \param[in]  B          \B_Base
  * \param[in]  Fam        \Fam
- * \param[in]  fambc_name Name of the FamilyBC_t node.
- * \param[in]  bocotype   Boundary condition type for the family. See the eligible types for BCType_t
+ * \param[in]  fambc_name Name of the \e FamilyBC_t node.
+ * \param[in]  bocotype   Boundary condition type for the family. See the eligible types for \e BCType_t
  *                        in the Typedefs section.
  * \param[out] BC_idx     \BC_idx
  * \return \ier
@@ -2593,11 +2601,11 @@ int cg_fambc_write(int fn, int B, int Fam, const char * fambc_name,
 /**
  * \ingroup CGNSFamilyBoundaryCondition
  *
- * \brief Read boundary condition information (Family_t level)
+ * \brief Read boundary condition information (\e Family_t level)
  *
  * \param[in]  BC_idx     \BC_idx
- * \param[out] fambc_name Name of the FamilyBC_t node.
- * \param[out] bocotype   Boundary condition type for the family. See the eligible types for BCType_t
+ * \param[out] fambc_name Name of the \e FamilyBC_t node.
+ * \param[out] bocotype   Boundary condition type for the family. See the eligible types for \e BCType_t
  *                        in the Typedefs section.
  * \return \ier
  *
@@ -2642,10 +2650,10 @@ int cg_node_fambc_read( int BC_idx, char* fambc_name,
 /**
  * \ingroup CGNSFamilyBoundaryCondition
  *
- * \brief Write boundary condition information (Family_t level)
+ * \brief Write boundary condition information (\e Family_t level)
  *
- * \param[in]  fambc_name Name of the FamilyBC_t node.
- * \param[in]  bocotype   Boundary condition type for the family. See the eligible types for BCType_t
+ * \param[in]  fambc_name Name of the \e FamilyBC_t node.
+ * \param[in]  bocotype   Boundary condition type for the family. See the eligible types for \e BCType_t
  *                        in the Typedefs section.
  * \param[out] BC_idx     \BC_idx
  * \return \ier
@@ -2744,7 +2752,7 @@ int cg_node_fambc_write( const char* fambc_name,
  * \param[in]  B        \B_Base
  * \param[in]  Fam      \Fam
  * \param[in]  G        Geometry reference index number, where 1 ≤ G ≤ nGeo.
- * \param[out] geo_name Name of GeometryReference_t node.
+ * \param[out] geo_name Name of \e GeometryReference_t node.
  * \param[out] geo_file Name of geometry file
  * \param[out] CAD_name Geometry format
  * \param[out] npart    Number of geometry entities
@@ -2784,12 +2792,12 @@ int cg_geo_read(int fn, int B, int Fam, int G, char *geo_name,
 /**
  * \ingroup CGNSGeometryReference
  *
- * \brief Create a GeometryReference_t node
+ * \brief Create a \e GeometryReference_t node
  *
  * \param[in]  fn       \FILE_fn
  * \param[in]  B        \B_Base
  * \param[in]  Fam      \Fam
- * \param[in]  geo_name Name of GeometryReference_t node.
+ * \param[in]  geo_name Name of \e GeometryReference_t node.
  * \param[in]  geo_file Name of geometry file
  * \param[in]  CAD_name Geometry format
  * \param[out] G        Geometry reference index number, where 1 ≤ G ≤ nGeo.
@@ -2889,7 +2897,7 @@ int cg_geo_write(int fn, int B, int Fam, const char * geo_name,
  * \brief Read geometry reference information (Family_t level)
  *
  * \param[in]  G        Geometry reference index number, where 1 ≤ G ≤ nGeo.
- * \param[out] geo_name Name of GeometryReference_t node.
+ * \param[out] geo_name Name of \e GeometryReference_t node.
  * \param[out] geo_file Name of geometry file
  * \param[out] CAD_name Geometry format
  * \param[out] npart    Number of geometry entities
@@ -13647,7 +13655,7 @@ int cg_1to1_average_write(int fn, int B, int Z, int J,
  *           Particle Functions
 \*****************************************************************************/
 /**
- * \ingroup CGNSParticleZoneInformation
+ * \ingroup ParticleZoneInformation
  *
  * \brief Get number of a particle zone in base
  *
@@ -13674,7 +13682,7 @@ int cg_nparticle_zones(int fn, int B, int *nparticlezones)
 }
 
 /**
- * \ingroup CGNSParticleZoneInformation
+ * \ingroup ParticleZoneInformation
  *
  * \brief Get the CGIO identifier of the CGNS Particle zone
  *
@@ -13702,7 +13710,7 @@ int cg_particle_id(int fn, int B, int P, double *particle_id)
 }
 
 /**
- * \ingroup CGNSParticleZoneInformation
+ * \ingroup ParticleZoneInformation
  *
  * \brief Read particle zone information
  *
@@ -13733,7 +13741,7 @@ int cg_particle_read(int fn, int B, int P, char *particlename, cgsize_t *size)
 }
 
 /**
- * \ingroup CGNSParticleZoneInformation
+ * \ingroup ParticleZoneInformation
  *
  * \brief Create and/or write to a CGNS particle zone
  *
@@ -13839,12 +13847,12 @@ int cg_particle_write(int fn, int B, const char *particlename, const cgsize_t si
 /**
 * \ingroup ParticleCoordinates
 *
-* \brief Get number of `ParticleCoordinates_t` nodes
+* \brief Get number of \e ParticleCoordinates_t nodes
 *
 * \param[in] fn \FILE_fn
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
-* \param[out] ncoord_nodes Number of `ParticleCoordinates_t` nodes for ParticleZone P.
+* \param[out] ncoord_nodes Number of \e ParticleCoordinates_t nodes for ParticleZone \p P.
 * \return \ier
 *
 */
@@ -13868,13 +13876,16 @@ int cg_particle_ncoord_nodes(int fn, int B, int P, int *ncoord_nodes)
 /**
 * \ingroup ParticleCoordinates
 *
-* \brief Get Name of a `ParticleCoordinates_t` node
+* \brief Get Name of a \e ParticleCoordinates_t node
 *
 * \param[in] fn \FILE_fn
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
 * \param[in] C  \C_Coordinate
-* \param[out] pcoord_name Name of the ParticleCoordinates_t node. Note that the name "ParticleCoordinates" is reserved for the original particle location and must be the first ParticleCoordinates_t node to be defined.
+* \param[out] pcoord_name Name of the \e ParticleCoordinates_t node. Note that
+*                         the name "ParticleCoordinates" is reserved for the
+*                         original particle location and must be the first
+*                         \e ParticleCoordinates_t node to be defined.
 * \return \ier
 *
 */
@@ -13905,7 +13916,10 @@ int cg_particle_coord_node_read(int fn, int B, int P, int C, char *pcoord_name)
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
 * \param[in] C  \C_Coordinate
-* \param[out] pcoord_name Name of the ParticleCoordinates_t node. Note that the name "ParticleCoordinates" is reserved for the original particle location and must be the first ParticleCoordinates_t node to be defined.
+* \param[out] pcoord_name Name of the \e ParticleCoordinates_t node.
+*                         Note that the name "ParticleCoordinates" is reserved
+*                         for the original particle location and must be the first
+*                         \e ParticleCoordinates_t node to be defined.
 * \return \ier
 *
 */
@@ -13978,17 +13992,23 @@ int cg_particle_coord_node_write(int fn, int B, int P, const char * pcoord_name,
 /**
  * \ingroup ParticleCoordinates
  *
- * \brief Get bounding box associated with a `ParticleCoordinates_t` node
+ * \brief Get bounding box associated with a \e ParticleCoordinates_t node
  *
  * \param[in] fn \FILE_fn
  * \param[in] B  \B_Base
  * \param[in] P  \P_ParticleZone
  * \param[in] C  \C_Coordinate
- * \param[in] datatype 	Data type of the bounding box array written to the file or read. Admissible data types for a coordinate bounding box are RealSingle and RealDouble.
+ * \param[in] datatype Data type of the bounding box array written to the file
+ *                     or read. Admissible data types for a coordinate bounding
+ *                     box are RealSingle and RealDouble.
  * \param[out] boundingbox Data Array with bounding box values.
  * \return \ier
  *
- * \details When reading a bounding box, if the information is missing from the file, the boundingbox array will remain untouched, and the CG_NODE_NOT_FOUND status is returned. The CGNS MLL relies on the user to compute the bounding box and ensure that the bounding box being stored is coherent with the coordinates under GridCoordinates_t node.
+ * \details When reading a bounding box, if the information is missing from the
+ *          file, the boundingbox array will remain untouched, and the CG_NODE_NOT_FOUND
+ *          status is returned. The CGNS MLL relies on the user to compute the bounding
+ *          box and ensure that the bounding box being stored is coherent with the
+ *          coordinates under \e GridCoordinates_t node.
  *
  */
 int cg_particle_bounding_box_read(int fn, int B, int P, int C, CGNS_ENUMT(DataType_t) datatype, void* boundingbox)
@@ -14065,12 +14085,15 @@ int cg_particle_bounding_box_read(int fn, int B, int P, int C, CGNS_ENUMT(DataTy
  * \param[in] B  \B_Base
  * \param[in] P  \P_ParticleZone
  * \param[in] C  \C_Coordinate
- * \param[in] datatype 	Data type of the bounding box array written to the file or read. Admissible data types for a coordinate bounding box are RealSingle and RealDouble.
+ * \param[in] datatype Data type of the bounding box array written to the file
+ *                     or read. Admissible data types for a coordinate bounding
+ *                     box are RealSingle and RealDouble.
  * \param[in] boundingbox Data Array with bounding box values.
  * \return \ier
  *
- * \details  The CGNS MLL relies on the user to compute the bounding box and ensure that the bounding box being stored is coherent with the coordinates under ParticleCoordinates_t node.
-
+ * \details  The CGNS MLL relies on the user to compute the bounding box and ensure
+ *           that the bounding box being stored is coherent with the coordinates under
+ *           \e ParticleCoordinates_t node.
  */
 int cg_particle_bounding_box_write(int fn, int B, int P, int C, CGNS_ENUMT(DataType_t) datatype, void* boundingbox)
 {
@@ -14135,7 +14158,7 @@ int cg_particle_bounding_box_write(int fn, int B, int P, int C, CGNS_ENUMT(DataT
 * \param[in] fn \FILE_fn
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
-* \param[out] ncoords Number of coordinate arrays for particle zone P.
+* \param[out] ncoords Number of coordinate arrays for particle zone \p P.
 * \return \ier
 *
 */
@@ -14164,8 +14187,11 @@ int cg_particle_ncoords(int fn, int B, int P, int *ncoords)
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
 * \param[in] C  \C_Coordinate
-* \param[out] datatype   Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble.
-* \param[out] coordname   Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to ensure file compatibility.
+* \param[out] datatype  Data type of the coordinate array written to the file.
+*                       Admissible data types for a coordinate array are RealSingle and RealDouble.
+* \param[out] coordname Name of the coordinate array. It is strongly advised to use the
+*                       SIDS nomenclature conventions when naming the coordinate arrays
+*                       to ensure file compatibility.
 * \return \ier
 *
 */
@@ -14200,8 +14226,11 @@ int cg_particle_coord_info(int fn, int B, int P, int C, CGNS_ENUMT(DataType_t)  
 * \param[in] fn \FILE_fn
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
-* \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to ensure file compatibility.
-* \param[in] mem_datatype  Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
+* \param[in] coordname  Name of the coordinate array. It is strongly advised to use the
+*                       SIDS nomenclature conventions when naming the coordinate arrays
+*                       to ensure file compatibility.
+* \param[in] mem_datatype  Data type of an array in memory. Admissible data types for a
+*                          coordinate array are RealSingle and RealDouble.
 * \param[in] s_rmin  Lower range index in file
 * \param[in] s_rmax  Upper range index in file
 * \param[out] coord_array   Array of coordinate values.
@@ -14248,8 +14277,11 @@ int cg_particle_coord_read(int fn, int B, int P, const char *coordname,
 * \param[in] fn \FILE_fn
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
-* \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to insure file compatibility.
-* \param[in] m_type   Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
+* \param[in] coordname  Name of the coordinate array. It is strongly advised to use
+*                       the SIDS nomenclature conventions when naming the coordinate
+*                       arrays to insure file compatibility.
+* \param[in] m_type   Data type of an array in memory. Admissible data types for a
+*                     coordinate array are RealSingle and RealDouble.
 * \param[in] s_rmin   Lower range index in file
 * \param[in] s_rmax   Upper range index in file
 * \param[in] m_dimvals   Dimensions of array in memory.
@@ -14337,10 +14369,14 @@ int cg_particle_coord_id(int fn, int B, int P, int C, double *coord_id)
 * \param[in] fn \FILE_fn
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
-* \param[in] datatype Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble.
-* \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to ensure file compatibility.
-* \param[in] coord_ptr   Array of coordinate values.
-* \param[out] C    \C_Coordinate
+* \param[in] datatype   Data type of the coordinate array written to the file.
+*                       Admissible data types for a coordinate array are
+*                       RealSingle and RealDouble.
+* \param[in] coordname  Name of the coordinate array. It is strongly advised to
+*                       use the SIDS nomenclature conventions when naming the
+*                       coordinate arrays to ensure file compatibility.
+* \param[in] coord_ptr  Array of coordinate values.
+* \param[out] C         \C_Coordinate
 * \return \ier
 *
 */
@@ -14396,12 +14432,16 @@ int cg_particle_coord_write(int fn, int B, int P, CGNS_ENUMT(DataType_t) datatyp
 * \param[in] fn \FILE_fn
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
-* \param[in] datatype Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble.
-* \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to ensure file compatibility.
-* \param[in] s_rmin   Lower range index in file (eg., imin, jmin, kmin).
-* \param[in] s_rmax   Upper range index in file (eg., imax, jmax, kmax).
-* \param[in] coord_ptr   Array of coordinate values.
-* \param[out] C    \C_Coordinate
+* \param[in] datatype  Data type of the coordinate array written to the file.
+*                      Admissible data types for a coordinate array are
+*                      RealSingle and RealDouble.
+* \param[in] coordname Name of the coordinate array. It is strongly advised
+*                      to use the SIDS nomenclature conventions when naming
+*                      the coordinate arrays to ensure file compatibility.
+* \param[in] s_rmin    Lower range index in file (eg., imin, jmin, kmin).
+* \param[in] s_rmax    Upper range index in file (eg., imax, jmax, kmax).
+* \param[in] coord_ptr Array of coordinate values.
+* \param[out] C        \C_Coordinate
 * \return \ier
 *
 */
@@ -14449,16 +14489,21 @@ int cg_particle_coord_partial_write(int fn, int B, int P,
 * \param[in] fn \FILE_fn
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
-* \param[in] coordname  Name of the coordinate array. It is strongly advised to use the SIDS nomenclature conventions when naming the coordinate arrays to ensure file compatibility.
-* \param[in] s_type   Data type of the coordinate array written to the file. Admissible data types for a coordinate array are RealSingle and RealDouble.
-* \param[in] m_type   Data type of an array in memory. Admissible data types for a coordinate array are RealSingle and RealDouble.
-* \param[in] s_rmin   Lower range index in file (eg., imin, jmin, kmin).
-* \param[in] s_rmax   Upper range index in file (eg., imax, jmax, kmax).
-* \param[in] m_dimvals   Dimensions of array in memory.
-* \param[in] m_rmin   Lower range index in memory (eg., imin, jmin, kmin).
-* \param[in] m_rmax   Upper range index in memory (eg., imax, jmax, kmax).
-* \param[in] coord_ptr   Array of coordinate values.
-* \param[out] C    \C_Coordinate
+* \param[in] coordname  Name of the coordinate array. It is strongly advised to
+*                       use the SIDS nomenclature conventions when naming the
+*                       coordinate arrays to ensure file compatibility.
+* \param[in] s_type     Data type of the coordinate array written to the file.
+*                       Admissible data types for a coordinate array are
+*                       RealSingle and RealDouble.
+* \param[in] m_type     Data type of an array in memory. Admissible data types for
+*                       a coordinate array are RealSingle and RealDouble.
+* \param[in] s_rmin     Lower range index in file (eg., imin, jmin, kmin).
+* \param[in] s_rmax     Upper range index in file (eg., imax, jmax, kmax).
+* \param[in] m_dimvals  Dimensions of array in memory.
+* \param[in] m_rmin     Lower range index in memory (eg., imin, jmin, kmin).
+* \param[in] m_rmax     Upper range index in memory (eg., imax, jmax, kmax).
+* \param[in] coord_ptr  Array of coordinate values.
+* \param[out] C         \C_Coordinate
 * \return \ier
 *
 */
@@ -14551,7 +14596,7 @@ int cg_particle_coord_general_write(int fn, int B, int P, const char *coordname,
 * \param[in] fn \FILE_fn
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
-* \param[out] nsols  Number of solutions for particle P.
+* \param[out] nsols  Number of solutions for particle \p P.
 * \return \ier
 *
 */
@@ -14609,7 +14654,7 @@ int cg_particle_sol_info(int fn, int B, int P, int S, char *solname)
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
 * \param[in] S  \SOL_S
-* \param[out] solid CGIO node identifier of the particle solution node
+* \param[out] sol_id CGIO node identifier of the particle solution node
 * \return \ier
 *
 */
@@ -14750,8 +14795,12 @@ int cg_particle_sol_size(int fn, int B, int P, int S, cgsize_t *size)
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
 * \param[in] S  \SOL_S
-* \param[out] ptset_type Type of point set defining the interface in the current solution; either PointRange or PointList.
-* \param[out] npnts Number of points defining the interface in the current solution. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList.
+* \param[out] ptset_type Type of point set defining the interface in the
+*                        current solution; either PointRange or PointList.
+* \param[out] npnts      Number of points defining the interface in the
+*                        current solution. For a ptset_type of PointRange,
+*                        npnts is always two. For a ptset_type of PointList,
+*                        npnts is the number of points in the PointList.
 * \return \ier
 *
 */
@@ -14787,7 +14836,7 @@ int cg_particle_sol_ptset_info(int fn, int B, int P, int S,
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
 * \param[in] S  \SOL_S
-* \param[out] pnts  Array of points defining the interface in the current solution.
+* \param[out] pnts Array of points defining the interface in the current solution.
 * \return \ier
 *
 */
@@ -14822,8 +14871,11 @@ int cg_particle_sol_ptset_read(int fn, int B, int P, int S, cgsize_t *pnts)
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
 * \param[in] solname  Name of the particle solution.
-* \param[in] ptset_type  Type of point set defining the interface in the current solution; either PointRange or PointList.
-* \param[in] npnts  Number of points defining the interface in the current solution. For a ptset_type of PointRange, npnts is always two. For a ptset_type of PointList, npnts is the number of points in the PointList.
+* \param[in] ptset_type Type of point set defining the interface in the current
+*                       solution; either PointRange or PointList.
+* \param[in] npnts Number of points defining the interface in the current solution.
+*                  For a ptset_type of PointRange, npnts is always two. For a
+*                  ptset_type of PointList, npnts is the number of points in the PointList.
 * \param[in] pnts  Array of points defining the interface in the current solution.
 * \param[out] S  \SOL_S
 * \return \ier
@@ -14914,8 +14966,12 @@ int cg_particle_nfields(int fn, int B, int P, int S, int *nfields)
 * \param[in] P  \P_ParticleZone
 * \param[in] S  \SOL_S
 * \param[in] F  Solution array index number, where 1 ≤ F ≤ nfields.
-* \param[out] datatype  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
-* \param[out] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to ensure file compatibility.
+* \param[out] datatype  Data type of the solution array written to the file.
+*                       Admissible data types for a solution array are Integer,
+*                       LongInteger, RealSingle, and RealDouble.
+* \param[out] fieldname Name of the solution array. It is strongly advised to use
+*                       the SIDS nomenclature conventions when naming the solution
+*                       arrays to ensure file compatibility.
 * \return \ier
 *
 */
@@ -14947,8 +15003,12 @@ int cg_particle_field_info(int fn, int B, int P, int S, int F,
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
 * \param[in] S  \SOL_S
-* \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to ensure file compatibility.
-* \param[in] mem_datatype  Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
+* \param[in] fieldname  Name of the solution array. It is strongly advised to use the
+*                       SIDS nomenclature conventions when naming the solution arrays
+*                       to ensure file compatibility.
+* \param[in] mem_datatype  Data type of an array in memory. Admissible data types for
+*                          a solution array are Integer, LongInteger, RealSingle,
+*                          and RealDouble.
 * \param[in] s_rmin  Lower range index in file
 * \param[in] s_rmax  Upper range index in file
 * \param[out] field_ptr  Array of solution values.
@@ -14997,10 +15057,13 @@ int cg_particle_field_read(int fn, int B, int P, int S, const char *fieldname,
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
 * \param[in] S  \SOL_S
-* \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to ensure file compatibility.
+* \param[in] fieldname  Name of the solution array. It is strongly advised to use the
+*                       SIDS nomenclature conventions when naming the solution arrays
+*                       to ensure file compatibility.
 * \param[in] s_rmin  Lower range index in file
 * \param[in] s_rmax  Upper range index in file
-* \param[in] m_type  Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
+* \param[in] m_type  Data type of an array in memory. Admissible data types for a solution
+*                    array are Integer, LongInteger, RealSingle, and RealDouble.
 * \param[in] m_dimvals  Dimensions of array in memory.
 * \param[in] m_rmin  Lower range index in memory
 * \param[in] m_rmax  Upper range index in memory
@@ -15083,9 +15146,13 @@ int cg_particle_field_id(int fn, int B, int P, int S, int F, double *field_id)
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
 * \param[in] S  \SOL_S
-* \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to ensure file compatibility.
-* \param[in] type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
-* \param[in] field_ptr  Array of solution values.
+* \param[in] fieldname  Name of the solution array. It is strongly advised to use
+*                       the SIDS nomenclature conventions when naming the solution
+*                       arrays to ensure file compatibility.
+* \param[in] type  Data type of the solution array written to the file. Admissible
+*                  data types for a solution array are Integer, LongInteger,
+*                  RealSingle, and RealDouble.
+* \param[in] field_ptr Array of solution values.
 * \param[out] F \SOL_F
 * \return \ier
 *
@@ -15152,8 +15219,12 @@ int cg_particle_field_write(int fn, int B, int P, int S,
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
 * \param[in] S  \SOL_S
-* \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to ensure file compatibility.
-* \param[in] type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
+* \param[in] fieldname Name of the solution array. It is strongly advised to use the
+*                      SIDS nomenclature conventions when naming the solution arrays
+*                      to ensure file compatibility.
+* \param[in] type Data type of the solution array written to the file. Admissible data
+*                 types for a solution array are Integer, LongInteger, RealSingle,
+*                 and RealDouble.
 * \param[in] s_rmin  Lower range index in file
 * \param[in] s_rmax  Upper range index in file
 * \param[in] field_ptr  Array of solution values.
@@ -15213,15 +15284,20 @@ int cg_particle_field_partial_write(int fn, int B, int P, int S,
 * \param[in] B  \B_Base
 * \param[in] P  \P_ParticleZone
 * \param[in] S  \SOL_S
-* \param[in] fieldname  Name of the solution array. It is strongly advised to use the SIDS nomenclature conventions when naming the solution arrays to ensure file compatibility.
-* \param[in] s_type  Data type of the solution array written to the file. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
-* \param[in] s_rmin  Lower range index in file
-* \param[in] s_rmax  Upper range index in file
+* \param[in] fieldname  Name of the solution array. It is strongly advised to use the
+*                       SIDS nomenclature conventions when naming the solution arrays
+*                       to ensure file compatibility.
+* \param[in] s_type     Data type of the solution array written to the file. Admissible
+*                       data types for a solution array are Integer, LongInteger,
+*                       RealSingle, and RealDouble.
+* \param[in] s_rmin     Lower range index in file
+* \param[in] s_rmax     Upper range index in file
 *
-* \param[in] m_type  Data type of an array in memory. Admissible data types for a solution array are Integer, LongInteger, RealSingle, and RealDouble.
-* \param[in] m_dimvals Dimensions of array in memory.
-* \param[in] m_rmin  Lower range index in memory
-* \param[in] m_rmax  Upper range index in memory
+* \param[in] m_type     Data type of an array in memory. Admissible data types for a solution
+*                       array are Integer, LongInteger, RealSingle, and RealDouble.
+* \param[in] m_dimvals  Dimensions of array in memory.
+* \param[in] m_rmin     Lower range index in memory
+* \param[in] m_rmax     Upper range index in memory
 * \param[in] field_ptr  Array of solution values.
 * \param[out] F \SOL_F
 * \return \ier
