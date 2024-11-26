@@ -1211,13 +1211,6 @@ END ENUM
   !      Read and write CGNSBase_t Nodes
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-     SUBROUTINE cg_nbases_f(fn, nbases, ier) BIND(C, NAME="cg_nbases_f")
-       IMPLICIT NONE
-       INTEGER :: fn
-       INTEGER :: nbases
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_nbases_f
-
      SUBROUTINE cg_base_read_f(fn, B, basename, cell_dim, phys_dim, ier) !BIND(C, NAME="cg_base_read_f")
        USE ISO_C_BINDING
        IMPLICIT NONE
@@ -5310,6 +5303,35 @@ CONTAINS
   END SUBROUTINE cgp_poly_elements_write_data_f
 
 #endif
+
+  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  !      Read and write CGNSBase_t Nodes
+  ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_nbases_f
+!DEC$endif
+  SUBROUTINE cg_nbases_f(fn, nbases, ier)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN)  :: fn
+    INTEGER, INTENT(OUT) :: nbases
+    INTEGER, INTENT(OUT) :: ier
+
+    INTEGER(C_INT) :: c_nbases
+
+    INTERFACE
+       INTEGER(C_INT) FUNCTION cg_nbases(fn, nbases) BIND(C, name="cg_nbases")
+         IMPORT ::C_INT
+         IMPLICIT NONE
+         INTEGER(C_INT), VALUE :: fn
+         INTEGER(C_INT) :: nbases
+       END FUNCTION cg_nbases
+    END INTERFACE
+
+    ier = INT(cg_nbases(INT(fn, C_INT), c_nbases))
+    nbases = INT(c_nbases)
+
+  END SUBROUTINE cg_nbases_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_goto_f
