@@ -3452,240 +3452,75 @@ CGNSDLL void FMNAME(cg_ptset_write_f, CG_PTSET_WRITE_F) (
  *      Go - To Function                                                 *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#ifdef WIN32_FORTRAN
-CGNSDLL void __stdcall cg_goto_f(cgint_f *fn, cgint_f *B, cgint_f *ier, ...)
-#else
-CGNSDLL void FMNAME(cg_goto_f, CG_GOTO_F)(cgint_f *fn, cgint_f *B, cgint_f *ier, ...)
-#endif
+CGNSDLL int cg_goto_fc1(cgint_f fn, cgint_f B, char *c_name, cgint_f index)
 {
-#ifndef _fcd
-#define _fcd char*
-#endif
-    char *f_label[CG_MAX_GOTO_DEPTH], *label[CG_MAX_GOTO_DEPTH];
-    int index[CG_MAX_GOTO_DEPTH], n, i, len[CG_MAX_GOTO_DEPTH];
-    va_list ap;
-
-     /* initialize ap to the last parameter before the variable argument list */
-     /* Note:  On HP, print statements btw va_start and va_end create major problems */
-
-    va_start(ap, ier);
-
-     /* read arguments */
-    for (n = 0; n < CG_MAX_GOTO_DEPTH; n++)  {
-        f_label[n] = STR_PTR(va_arg(ap, _fcd));
-#ifdef _CRAY
-        len[n] = _fcdlen(cray_string);
-#endif
-# ifdef WIN32_FORTRAN
-     /* In Windows, the arguments appear in order: char*, len, index,...*/
-        len[n] = (int)va_arg(ap, int);
-# endif
-        if (f_label[n][0] == ' ' || 0 == strncmp(f_label[n],"end",3) ||
-            0 == strncmp(f_label[n],"END",3)) break;
-
-        index[n] = (int)*(va_arg(ap, cgint_f *));
-        if (index[n] < 0) {
-            cgi_error("Incorrect input to function cg_goto_f");
-            *ier = 1;
-            return;
-        }
-    }
-#if !defined(_CRAY) && !defined(WIN32_FORTRAN)
-    for (i=0; i<n; i++) {
-      len[i] = va_arg(ap, int);
-    }
-#endif
-    va_end(ap);
-
-     /* convert strings to C-strings */
-    for (i=0; i < n; i++) {
-        label[i] = CGNS_NEW(char,len[i]+1);
-        string_2_C_string(f_label[i], len[i], label[i], len[i], ier);
-    }
-
-#if DEBUG_GOTO
-    printf("\nIn cg_ftoc.c: narguments=%d\n",n);
-    for (i=0; i<n; i++) printf("\targ %d: '%s' #%d\n",i,label[i], index[i]);
-#endif
-
-    *ier = (cgint_f)cgi_set_posit((int)*fn, (int)*B, n, index, label);
-
-    for (i=0; i<n; i++) CGNS_FREE(label[i]);
-    return;
-}
-
-/*-----------------------------------------------------------------------*/
-
-#ifdef WIN32_FORTRAN
-CGNSDLL void __stdcall cg_gorel_f(cgint_f *fn, cgint_f *ier, ...)
-#else
-CGNSDLL void FMNAME(cg_gorel_f, CG_GOREL_F)(cgint_f *fn, cgint_f *ier, ...)
-#endif
-{
-#ifdef _CRAY
-    _fcd cray_string;
-#endif
-    char *f_label[CG_MAX_GOTO_DEPTH], *label[CG_MAX_GOTO_DEPTH];
-    int index[CG_MAX_GOTO_DEPTH], n, i, len[CG_MAX_GOTO_DEPTH];
-
-    va_list ap;
-
-    if (posit == 0) {
-        cgi_error ("position not set with cg_goto");
-        *ier = (cgint_f)CG_ERROR;
-        return;
-    }
-    if ((int)*fn != posit_file) {
-        cgi_error("current position is in the wrong file");
-        *ier = (cgint_f)CG_ERROR;
-        return;
-    }
-
-     /* initialize ap to the last parameter before the variable argument list */
-     /* Note:  On HP, print statements btw va_start and va_end create major problems */
-
-    va_start(ap, ier);
-
-     /* read arguments */
-    for (n = 0; n < CG_MAX_GOTO_DEPTH; n++)  {
-#ifdef _CRAY
-        cray_string = va_arg(ap, _fcd);
-        f_label[n] = _fcdtocp(cray_string);
-        len[n] = _fcdlen(cray_string);
-#else
-        f_label[n] = va_arg(ap, char *);
-# ifdef WIN32_FORTRAN
-     /* In Windows, the arguments appear in a different order: char*, len, index,...*/
-        len[n] = va_arg(ap, int);
-# endif
-#endif
-        if (f_label[n][0] == ' ' || 0 == strncmp(f_label[n],"end",3) ||
-            0 == strncmp(f_label[n],"END",3)) break;
-
-        index[n] = (int)*(va_arg(ap, cgint_f *));
-        if (index[n] < 0) {
-            cgi_error("Incorrect input to function cg_goto_f");
-            *ier = 1;
-            return;
-        }
-    }
-#if !defined(_CRAY) && !defined(WIN32_FORTRAN)
-    for (i=0; i<n; i++) {
-        len[i] = va_arg(ap, int);
-    }
-#endif
-    va_end(ap);
-
-     /* convert strings to C-strings */
-    for (i=0; i < n; i++) {
-        label[i] = CGNS_NEW(char,len[i]+1);
-        string_2_C_string(f_label[i], len[i], label[i], len[i], ier);
-    }
-
-#if DEBUG_GOTO
-    printf("\nIn cg_ftoc.c: narguments=%d\n",n);
-    for (i=0; i<n; i++) printf("\targ %d: '%s' #%d\n",i,label[i], index[i]);
-#endif
-
-    *ier = (cgint_f)cgi_update_posit(n, index, label);
-
-    for (i=0; i<n; i++) CGNS_FREE(label[i]);
-    return;
-}
-
-CGNSDLL void FMNAME(cg_goto_f1, CG_GOTO_F1)(cgint_f *fn, cgint_f *B, cgint_f *ier, STR_PSTR(name), cgint_f *index STR_PLEN(name))
-{
-    int length;
     char *c_label[2];
     int c_index[2], n;
+    cgint_f ier = 0;
 
-    if (*index < 0) {
+    if (index < 0) {
         cgi_error("Incorrect input to function cg_goto_f");
-        *ier = 1;
-        return;
+        ier = 1;
+        return ier;
     }
 
-    length = (int) STR_LEN(name);
-    c_label[0] = CGNS_NEW(char, length+1);
+    c_label[0] = c_name;
     c_label[1] = "end";
-    c_index[0] = (int)*index;
+    c_index[0] = (int)index;
     c_index[1] = 0;
 
-    string_2_C_string(STR_PTR(name), STR_LEN(name), c_label[0], length, ier);
-
-    if (*ier == 0) {
+    if (ier == 0) {
       if (c_label[0][0] == ' ' || 0 == strncmp(c_label[0],"end",3) ||
           0 == strncmp(c_label[0],"END",3)) {
         n=0;
       } else {
         n=1;
       }
-      *ier = (cgint_f)cgi_set_posit((int)*fn, (int)*B, n, c_index, c_label);
+      ier = (cgint_f)cgi_set_posit((int)fn, (int)B, n, c_index, c_label);
     }
-
-    CGNS_FREE(c_label[0]);
+    return ier;
 }
 
-CGNSDLL void FMNAME(cg_gorel_f1, CG_GOREL_F1)(cgint_f *fn, cgint_f *ier, STR_PSTR(name), cgint_f *index STR_PLEN(name))
+CGNSDLL int cg_gorel_fc1(cgint_f fn, char* c_name, cgint_f index)
 {
     int length;
     char *c_label[2];
     int c_index[2], n;
+    cgint_f ier = 0;
 
     if (posit == 0) {
         cgi_error ("position not set with cg_goto");
-        *ier = (cgint_f)CG_ERROR;
-        return;
+        ier = (cgint_f)CG_ERROR;
+        return ier;
     }
-    if ((int)*fn != posit_file) {
+    if ((int)fn != posit_file) {
         cgi_error("current position is in the wrong file");
-        *ier = (cgint_f)CG_ERROR;
-        return;
+        ier = (cgint_f)CG_ERROR;
+        return ier;
     }
-    if (*index < 0) {
+    if (index < 0) {
         cgi_error("Incorrect input to function cg_gorel_f1");
-        *ier = 1;
-        return;
+        ier = 1;
+        return ier;
     }
 
-    length = (int) STR_LEN(name);
-    c_label[0] = CGNS_NEW(char, length+1);
+    c_label[0] = c_name;
     c_label[1] = "end";
-    c_index[0] = (int)*index;
+    c_index[0] = (int)index;
     c_index[1] = 0;
 
-    string_2_C_string(STR_PTR(name), STR_LEN(name), c_label[0], length, ier);
-
-    if (*ier == 0) {
+    if (ier == 0) {
       if (c_label[0][0] == ' ' || 0 == strncmp(c_label[0],"end",3) ||
           0 == strncmp(c_label[0],"END",3)) {
         n=0;
       } else {
         n=1;
       }
-      *ier = (cgint_f)cgi_update_posit(n, c_index, c_label);
+      ier = (cgint_f)cgi_update_posit(n, c_index, c_label);
     }
 
-    CGNS_FREE(c_label[0]);
+    return ier;
 }
-
-/*-----------------------------------------------------------------------*/
-
-CGNSDLL void FMNAME(cg_gopath_f, CG_GOPATH_F) (cgint_f *fn,
-	STR_PSTR(path), cgint_f *ier STR_PLEN(path))
-{
-    int length;
-    char *c_path;
-
-    length = (int) STR_LEN(path);
-    c_path = CGNS_NEW(char, length+1);
-
-    string_2_C_string(STR_PTR(path), STR_LEN(path), c_path, length, ier);
-    if (*ier == 0)
-        *ier = (cgint_f)cg_gopath((int)*fn, c_path);
-    CGNS_FREE(c_path);
-}
-
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
  *              Read Multiple path nodes                                 *

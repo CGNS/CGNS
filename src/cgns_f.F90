@@ -3557,43 +3557,7 @@ END ENUM
   !      Go - To Function                                                 *
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-     SUBROUTINE cg_goto_f1(fn, B, ier, name1, index1)
-       IMPORT :: c_char
-       IMPLICIT NONE
-       INTEGER :: fn
-       INTEGER :: B
-       INTEGER, INTENT(OUT) :: ier
-       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name1
-       INTEGER :: index1
-     END SUBROUTINE
 
-     SUBROUTINE cg_gorel_f1(fn, ier, name1, index1)
-       IMPORT :: c_char
-       IMPLICIT NONE
-       INTEGER :: fn
-       INTEGER, INTENT(OUT) :: ier
-       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name1
-       INTEGER :: index1
-     END SUBROUTINE
-
-!!$  SUBROUTINE cg_goto_f, CG_GOTO_F)(cgint_f *fn, cgint_f *B, ier, ...)
-!!$    cgint_f *fn, cgint_f *B, ier, ...)
-!!$
-!!$    INTEGER, INTENT(OUT) :: ier
-!!$  END SUBROUTINE
-!!$
-!!$  SUBROUTINE cg_gorel_f, CG_GOREL_F)(cgint_f *fn, ier, ...)
-!!$    cgint_f *fn, ier, ...)
-!!$    INTEGER, INTENT(OUT) :: ier
-!!$  END SUBROUTINE
-!!$
-     SUBROUTINE cg_gopath_f(fn,path, ier) !BIND(C, NAME="cg_gopath_f")
-       IMPORT :: C_CHAR
-       IMPLICIT NONE
-       INTEGER :: fn
-       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: path
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_gopath_f
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\
   !              Read Multiple path nodes                                 *
@@ -5364,95 +5328,114 @@ CONTAINS
           UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20,end
      INTEGER, INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16,i17,i18,i19,i20
 
+     INTERFACE
+       INTEGER(c_int) FUNCTION cg_goto_fc1(fn, B, name1, index1) BIND(C, name="cg_goto_fc1")
+       IMPORT :: c_int, c_ptr, c_char
+       IMPLICIT NONE
+       INTEGER(c_int), VALUE :: fn
+       INTEGER(c_int), VALUE :: B
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name1
+       INTEGER(c_int), VALUE :: index1
+       END FUNCTION cg_goto_fc1
+
+       INTEGER(c_int) FUNCTION cg_gorel_fc1(fn, name1, index1) BIND(C, name="cg_gorel_fc1")
+       IMPORT :: c_int, c_char
+       IMPLICIT NONE
+       INTEGER(c_int), VALUE :: fn
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name1
+       INTEGER(c_int), VALUE :: index1
+       END FUNCTION cg_gorel_fc1
+     END INTERFACE
+
      IF (.NOT. PRESENT(i1)) THEN
 #if HAVE_FORTRAN_2008TS
         ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1)//CHAR(0), 0_C_INT))
 #else
-        CALL cg_goto_f1(fn, B, ier, UserDataName1, 0)
+        ier = INT(cg_goto_fc1(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1)//C_NULL_CHAR, 0_C_INT))
 #endif
         RETURN
      ELSE
 #if HAVE_FORTRAN_2008TS
         ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1)//CHAR(0), INT(i1,C_INT)))
 #else
-        CALL cg_goto_f1(fn, B, ier, UserDataName1, i1)
+        ier = INT(cg_goto_fc1(fn, B, TRIM(UserDataName1)//C_NULL_CHAR, INT(i1,C_INT)))
 #endif
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i2)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName2, i2)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName2)//C_NULL_CHAR, INT(i2,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i3)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName3, i3)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName3)//C_NULL_CHAR, INT(i3,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i4)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName4, i4)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName4)//C_NULL_CHAR, INT(i4,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i5)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName5, i5)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName5)//C_NULL_CHAR, INT(i5,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i6)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName6, i6)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName6)//C_NULL_CHAR, INT(i6,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i7)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName7, i7)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName7)//C_NULL_CHAR, INT(i7,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i8)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName8, i8)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName8)//C_NULL_CHAR, INT(i8,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i9)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName9, i9)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName9)//C_NULL_CHAR, INT(i9,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i10)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName10, i10)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName10)//C_NULL_CHAR, INT(i10,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i11)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName11, i11)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName11)//C_NULL_CHAR, INT(i11,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i12)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName12, i12)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName12)//C_NULL_CHAR, INT(i12,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i13)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName13, i13)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName13)//C_NULL_CHAR, INT(i13,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i14)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName14, i14)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName14)//C_NULL_CHAR, INT(i14,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i15)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName15, i15)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName15)//C_NULL_CHAR, INT(i15,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i16)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName16, i16)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName16)//C_NULL_CHAR, INT(i16,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i17)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName17, i17)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName17)//C_NULL_CHAR, INT(i17,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i18)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName18, i18)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName18)//C_NULL_CHAR, INT(i18,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i19)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName19, i19)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName19)//C_NULL_CHAR, INT(i19,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i20)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName20, i20)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName20)//C_NULL_CHAR, INT(i20,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
   END SUBROUTINE cg_goto_f
@@ -5486,90 +5469,127 @@ CONTAINS
           UserDataName15,UserDataName16,UserDataName17,UserDataName18,UserDataName19,UserDataName20
 #endif
      INTEGER, INTENT(IN), OPTIONAL :: i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16,i17,i18,i19,i20
-  
+
+     INTERFACE
+       INTEGER(c_int) FUNCTION cg_gorel_fc1(fn, name1, index1) BIND(C, name="cg_gorel_fc1")
+       IMPORT :: c_int, c_char
+       IMPLICIT NONE
+       INTEGER(c_int), VALUE :: fn
+       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: name1
+       INTEGER(c_int), VALUE :: index1
+       END FUNCTION cg_gorel_fc1
+     END INTERFACE
+
      IF (PRESENT(i1)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName1, i1)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName1)//C_NULL_CHAR, INT(i1,C_INT)))
+        IF(ier .NE. 0) RETURN
      ELSE
-        CALL cg_gorel_f1(fn, ier, UserDataName1, 0)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName1)//C_NULL_CHAR, 0_C_INT))
         RETURN
      END IF
      IF (PRESENT(i2)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName2, i2)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName2)//C_NULL_CHAR, INT(i2,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i3)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName3, i3)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName3)//C_NULL_CHAR, INT(i3,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i4)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName4, i4)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName4)//C_NULL_CHAR, INT(i4,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i5)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName5, i5)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName5)//C_NULL_CHAR, INT(i5,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i6)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName6, i6)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName6)//C_NULL_CHAR, INT(i6,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i7)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName7, i7)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName7)//C_NULL_CHAR, INT(i7,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i8)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName8, i8)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName8)//C_NULL_CHAR, INT(i8,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i9)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName9, i9)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName9)//C_NULL_CHAR, INT(i9,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i10)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName10, i10)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName10)//C_NULL_CHAR, INT(i10,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i11)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName11, i11)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName11)//C_NULL_CHAR, INT(i11,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i12)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName12, i12)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName12)//C_NULL_CHAR, INT(i12,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i13)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName13, i13)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName13)//C_NULL_CHAR, INT(i13,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i14)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName14, i14)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName14)//C_NULL_CHAR, INT(i14,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i15)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName15, i15)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName15)//C_NULL_CHAR, INT(i15,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i16)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName16, i16)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName16)//C_NULL_CHAR, INT(i16,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i17)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName17, i17)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName17)//C_NULL_CHAR, INT(i17,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i18)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName18, i18)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName18)//C_NULL_CHAR, INT(i18,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i19)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName19, i19)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName19)//C_NULL_CHAR, INT(i19,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
      IF (PRESENT(i20)) THEN
-        CALL cg_gorel_f1(fn, ier, UserDataName20, i20)
+        ier = INT(cg_gorel_fc1(fn, TRIM(UserDataName20)//C_NULL_CHAR, INT(i20,C_INT)))
         IF(ier .NE. 0) RETURN
      END IF
   END SUBROUTINE cg_gorel_f
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_gopath_f
+!DEC$endif
+  SUBROUTINE cg_gopath_f(fn, path, ier)
+       IMPLICIT NONE
+       INTEGER, INTENT(IN) :: fn
+       CHARACTER(LEN=*), INTENT(IN) :: path
+       INTEGER, INTENT(OUT) :: ier
+
+       CHARACTER(LEN=LEN_TRIM(path)+1,KIND=C_CHAR) :: c_path
+
+       INTERFACE
+         INTEGER(c_int) FUNCTION cg_gopath(fn, path) BIND(C, name="cg_gopath")
+         IMPORT :: c_int, c_char
+         IMPLICIT NONE
+         INTEGER(c_int), VALUE :: fn
+         CHARACTER(KIND=C_CHAR), DIMENSION(*) :: path
+         END FUNCTION cg_gopath
+       END INTERFACE
+
+       c_path = TRIM(path)//C_NULL_CHAR
+
+       ier  = INT(cg_gopath(INT(fn, c_int), c_path))
+
+  END SUBROUTINE cg_gopath_f
 
 !DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_get_type_c_int
