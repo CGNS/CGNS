@@ -4760,24 +4760,6 @@ END ENUM
      END FUNCTION cg_golist
 
 #endif
-!> @ingroup CGNSFile
-     SUBROUTINE cg_open_f(filename, mode, fn, ier)
-       IMPORT :: C_CHAR, C_INT
-       IMPLICIT NONE
-       CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
-       INTEGER(C_INT), INTENT(IN) :: mode
-       INTEGER, INTENT(OUT) :: fn
-       INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_open_f
-
-!> @ingroup CGNSFile
-     SUBROUTINE cg_is_cgns_f(filename, file_type, ier)
-        IMPORT :: C_CHAR
-        IMPLICIT NONE
-        CHARACTER(KIND=C_CHAR), DIMENSION(*), INTENT(IN) :: filename
-        INTEGER, INTENT(OUT) :: file_type
-        INTEGER, INTENT(OUT) :: ier
-     END SUBROUTINE cg_is_cgns_f
   END INTERFACE
 
   INTERFACE cg_get_type
@@ -5267,6 +5249,33 @@ CONTAINS
   END SUBROUTINE cgp_poly_elements_write_data_f
 
 #endif
+
+!> @ingroup CGNSFile
+SUBROUTINE cg_open_f(filename, mode, fn, ier)
+  IMPLICIT NONE
+  CHARACTER(*), INTENT(IN) :: filename
+  INTEGER, INTENT(IN) :: mode
+  INTEGER, INTENT(OUT) :: fn
+  INTEGER, INTENT(OUT) :: ier
+  INTEGER(C_INT) :: i_fn
+
+  ier = INT(cg_open(TRIM(filename)//C_NULL_CHAR, INT(mode, C_INT), i_fn))
+  fn = INT(i_fn)
+
+END SUBROUTINE cg_open_f
+
+!> @ingroup CGNSFile
+SUBROUTINE cg_is_cgns_f(filename, file_type, ier)
+   IMPLICIT NONE
+   CHARACTER(*), INTENT(IN) :: filename
+   INTEGER, INTENT(OUT) :: file_type
+   INTEGER, INTENT(OUT) :: ier
+   INTEGER(C_INT) :: i_file_type
+
+   ier = INT(cg_is_cgns(TRIM(filename)//C_NULL_CHAR, i_file_type))
+   file_type = INT(i_file_type)
+
+END SUBROUTINE cg_is_cgns_f
 
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   !      Read and write CGNSBase_t Nodes
