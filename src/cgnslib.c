@@ -17909,8 +17909,8 @@ int cg_rind_read(int *RindData)
  *
  * \return \ier
  *
- * \details When writing rind data for elements, cg_section_write must be called first, followed
- *          by cg_goto to access the Elements_t node, and then cg_rind_write.
+ * \details When writing rind data for elements, cg_section_write() must be called first, followed
+ *          by cg_goto() to access the Elements_t node, and then cg_rind_write().
  */
 int cg_rind_write(const int * RindData)
 {
@@ -19216,11 +19216,11 @@ int cg_is_link(int *path_length)
  *
  * \return \ier
  *
- * \details Use cg_goto(_f) to position to a location in the file prior
+ * \details Use cg_goto() to position to a location in the file prior
  *          to calling these routines. Memory is allocated by the library
  *          for the return values of the C function cg_link_read().
  *          This memory should be freed by the user when no longer needed
- *          by calling cg_free(filename) and cg_free(link_path).
+ *          by calling \p cg_free(filename) and \p cg_free(link_path).
  *
  */
 int cg_link_read(char **filename, char **link_path)
@@ -19265,14 +19265,14 @@ int cg_link_read(char **filename, char **link_path)
  *
  * \return \ier
  *
- * \details Use cg_goto(_f) to position to a location in the file prior to calling these routines.
- *          When using cg_link_write, the node being linked to does not have to exist when the link
+ * \details Use cg_goto() to position to a location in the file prior to calling these routines.
+ *          When using cg_link_write(), the node being linked to does not have to exist when the link
  *          is created. However, when the link is used, an error will occur if the linked-to node does not exist.
  *
  *          Only nodes that support child nodes will support links.
  *
  *          It is assumed that the CGNS version for the file containing the link, as determined by the
- *          CGNSLibraryVersion_t node, is also applicable to filename, the file containing the linked node.
+ *          CGNSLibraryVersion_t node, is also applicable to /p filename, the file containing the linked node.
  *
  */
 int cg_link_write(const char * nodename, const char * filename, const char * name_in_file)
@@ -19380,13 +19380,13 @@ int cg_link_write(const char * nodename, const char * filename, const char * nam
  *
  * \return \ier
  *
- * \details After accessing a particular UserDefinedData_t node using cg_goto,
+ * \details After accessing a particular UserDefinedData_t node using cg_goto(),
  *             the Point Set functions may be used to read or write point set information for the node.
  *             The function cg_gridlocation_write() may also be used to specify the location of the data
  *             with respect to the grid (e.g., Vertex or FaceCenter).
  *
  *             Multiple levels of UserDefinedData_t nodes may be written and retrieved by positioning
- *             via cg_goto. E.g.,
+ *             via cg_goto(). E.g.,
  *  \code{C}
  *  ier = cg_goto(fn, B, "Zone_t", Z, "UserDefinedData_t", ud1,
  *                "UserDefinedData_t", ud2, "UserDefinedData_t", ud3, "end");
@@ -19926,7 +19926,7 @@ int cg_ptset_write(CGNS_ENUMT(PointSetType_t) ptset_type, cgsize_t npnts,
  *
  * \details The above functions are applicable to BCDataSet_t nodes that are used to
  *          define boundary conditions for a CFD family, and thus are children of a
- *          FamilyBC_t node. The FamilyBC_t node must first be accessed using cg_goto.
+ *          FamilyBC_t node. The FamilyBC_t node must first be accessed using cg_goto().
  */
 int cg_bcdataset_info(int *n_dataset)
 {
@@ -19969,7 +19969,7 @@ int cg_bcdataset_info(int *n_dataset)
  *
  * \details The above functions are applicable to BCDataSet_t nodes that are used to define boundary
  *          conditions for a CFD family, and thus are children of a FamilyBC_t node. The FamilyBC_t
- *          node must first be accessed using cg_goto.
+ *          node must first be accessed using cg_goto().
  */
 int cg_bcdataset_read(int index, char *name, CGNS_ENUMT(BCType_t) *BCType,
               int *DirichletFlag, int *NeumannFlag)
@@ -20011,7 +20011,7 @@ int cg_bcdataset_read(int index, char *name, CGNS_ENUMT(BCType_t) *BCType,
  *
  * \details The above functions are applicable to BCDataSet_t nodes that are used to define
  *          boundary conditions for a CFD family, and thus are children of a FamilyBC_t node.
- *          The FamilyBC_t node must first be accessed using cg_goto. The first time cg_bcdataset_write()
+ *          The FamilyBC_t node must first be accessed using cg_goto(). The first time cg_bcdataset_write()
  *          is called with a particular DatasetName, BCType, and BCDataType, a new BCDataSet_t node is
  *          created, with a child BCData_t node. Subsequent calls with the same DatasetName and BCType
  *          may be made to add additional BCData_t nodes, of type BCDataType, to the existing BCDataSet_t node.
