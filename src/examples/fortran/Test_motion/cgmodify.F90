@@ -14,7 +14,7 @@
 	integer index_dim, cell_dim, phys_dim, pos
 	integer base_no, zone_no, coord_no, sol_no, field_no
 	integer num
-        integer(cgsize_t) data_size(2)
+	integer(cgsize_t) data_size(2)
 	integer(cgsize_t) size(Ndim*3)
 	integer cg, ier, coord, i, sol, field
 	double precision Dxyz(Nnodes), values(Nnodes)
@@ -40,7 +40,8 @@
 !	real*4 time(2)
 	double precision time(2)
 	integer nsteps, step, iteration(NumberOfSteps)
-	integer nzones(NumberOfSteps), dimval(3)
+	integer nzones(NumberOfSteps)
+	integer(cgsize_t) dimval(3)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	character*32 bitername, zitername, zone_ptrs(2,NumberOfSteps)
 	character*32 grid_ptrs(NumberOfSteps), sol_ptrs(NumberOfSteps)
@@ -104,7 +105,7 @@
 	dimval(2)=2 		! *** MaxNumberOfZones in a step1
 	dimval(3)=nsteps
         call cg_array_write_f('ZonePointers', CGNS_ENUMV(Character), 3, dimval, &
-                               zone_ptrs(1,1), ier)
+                               zone_ptrs(1,:), ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 
@@ -142,7 +143,7 @@
 	dimval(2)=nsteps
 
 	call cg_array_write_f('GridCoordinatesPointers', CGNS_ENUMV(Character), 2, &
-                               dimval, grid_ptrs(1), ier)
+                               dimval, grid_ptrs, ier)
         if (ier .ne. ALL_OK) call cg_error_exit_f
 	call cg_array_write_f('FlowSolutionPointers', CGNS_ENUMV(Character), 2, &
                                dimval, sol_ptrs, ier)
