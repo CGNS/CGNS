@@ -34,7 +34,7 @@
 	real *4 RotationCenter(Ndim), RotationAngle(Ndim)
 	real *4 Translation(Ndim)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
-	integer dim_vals(2)
+	integer(cgsize_t) dim_vals(2)
 	
 
 ! *** initialize

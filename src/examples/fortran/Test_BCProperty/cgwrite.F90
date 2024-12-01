@@ -36,7 +36,7 @@
 	character*10 RegionName10
 	character*100 RegionName100
 	real *4 SurfaceArea
-	integer dim_vals(2)
+	integer(cgsize_t) dim_vals(2)
 	
 
 ! *** initialize

@@ -25,7 +25,7 @@
 	integer WallFunctionType, AreaType, pnts(Ndim,2), nbases
 	character*32 RegionName32, basename, dummy
 	real *4 SurfaceArea, version
-	integer dim_vals(2)
+	integer(cgsize_t) dim_vals(2)
 	
 
 ! *** initialize

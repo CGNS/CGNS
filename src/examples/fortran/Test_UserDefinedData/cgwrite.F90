@@ -282,7 +282,7 @@
 		data(i) = i
 	    enddo
 	    call cg_array_write_f('dataset_arrayname', CGNS_ENUMV(RealSingle), &
-                 1, npnts, data, ier)
+                 1, [npnts], data, ier)
  	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ** boundary condition data attributes:

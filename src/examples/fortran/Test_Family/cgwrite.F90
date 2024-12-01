@@ -194,7 +194,7 @@
 		dim_vals(1)=cell_dim
 		dim_vals(2)=9
 		call cg_array_write_f('InterpolantsDonor', CGNS_ENUMV(RealDouble), &
-                    2, dim_vals, interpolants, ier)
+                    2, dim_vals, interpolants(1,1), ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 		
 	    endif

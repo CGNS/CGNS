@@ -151,7 +151,7 @@
 
             else if (datatype .eq. CGNS_ENUMV(RealSingle)) then
 	 	if (arrayname.eq.'AxisymmetryAngle') then
-		    call cg_array_read_f(iarray, angle, ier)
+		    call cg_array_read_f(iarray, [angle], ier)
 		    if (ier .ne. ALL_OK) call cg_error_exit_f
 		else if (arrayname.eq.'AxisymmetryReferencePoint') then
 		    call cg_array_read_f(iarray, ref_point, ier)

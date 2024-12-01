@@ -14,7 +14,8 @@
 	integer Ndim
 	parameter (Ndim = 2)
 	integer index_dim, cell_dim, phys_dim, i
-	integer cg, base_no, ier, dimval(2), nbases
+	integer cg, base_no, ier, nbases
+        integer(cgsize_t) dimval(2)
 	real*4 ref_point(Ndim), axis(Ndim), angle
 	character*100 linkpath, DescriptorText
 	character*32 CoordinateNames(2), DescriptorName, basename
@@ -75,7 +76,7 @@
 	angle = 360
 	dimval(1)=1
 	call cg_array_write_f('AxisymmetryAngle', CGNS_ENUMV(RealSingle), 1, &
-             1, angle, ier)
+             [INT(1,CGSIZE_T)], [angle], ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataArray_t CoordinateNames

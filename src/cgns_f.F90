@@ -4927,6 +4927,9 @@ MODULE cgns
   INTERFACE cg_array_read_f
     MODULE PROCEDURE cg_array_read_c_double
     MODULE PROCEDURE cg_array_read_c_float
+    MODULE PROCEDURE cg_array_read_c_longlong
+    MODULE PROCEDURE cg_array_read_c_int
+    MODULE PROCEDURE cg_array_read_c_string
   END INTERFACE
 
   INTERFACE cg_array_read_as_f
@@ -5673,18 +5676,18 @@ CONTAINS
     END INTERFACE
 
     IF (.NOT. PRESENT(i1)) THEN
-#if HAVE_FORTRAN_2008TS
-      ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1)//CHAR(0), 0_C_INT))
-#else
+!#if HAVE_FORTRAN_2008TS
+!      ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1)//CHAR(0), 0_C_INT))
+!#else
       ier = INT(cg_goto_fc1(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1)//C_NULL_CHAR, 0_C_INT))
-#endif
+!#endif
       RETURN
     ELSE
-#if HAVE_FORTRAN_2008TS
-      ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1)//CHAR(0), INT(i1,C_INT)))
-#else
+!#if HAVE_FORTRAN_2008TS
+!      ier = INT(cg_goto(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1)//CHAR(0), INT(i1,C_INT)))
+!#else
       ier = INT(cg_goto_fc1(INT(fn,C_INT), INT(B,C_INT), TRIM(UserDataName1)//C_NULL_CHAR, INT(i1,C_INT)))
-#endif
+!#endif
       IF(ier .NE. 0) RETURN
     END IF
     IF (PRESENT(i2)) THEN
@@ -6069,6 +6072,63 @@ CONTAINS
   END SUBROUTINE cg_array_read_c_float
 
 !DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_c_longlong
+!DEC$endif
+  SUBROUTINE cg_array_read_c_longlong (A, DATA, ier)
+    IMPLICIT NONE
+    INTEGER :: A
+    INTEGER(KIND=C_LONG_LONG), DIMENSION(*), TARGET :: DATA
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_array_read(A, data) BIND(C, name="cg_array_read")
+        IMPORT ::C_INT, C_PTR
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: A
+        TYPE(C_PTR), VALUE :: data
+      END FUNCTION cg_array_read
+    END INTERFACE
+    ier = INT(cg_array_read(INT(A, C_INT), C_LOC(data)))
+  END SUBROUTINE cg_array_read_c_longlong
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_c_int
+!DEC$endif
+  SUBROUTINE cg_array_read_c_int (A, DATA, ier)
+    IMPLICIT NONE
+    INTEGER :: A
+    INTEGER(KIND=C_INT), DIMENSION(*), TARGET :: DATA
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+    INTEGER(C_INT) FUNCTION cg_array_read(A, data) BIND(C, name="cg_array_read")
+      IMPORT ::C_INT, C_PTR
+      IMPLICIT NONE
+      INTEGER(C_INT), VALUE, INTENT(IN) :: A
+      TYPE(C_PTR), VALUE :: data
+    END FUNCTION cg_array_read
+  END INTERFACE
+    ier = INT(cg_array_read(INT(A, C_INT), C_LOC(data)))
+  END SUBROUTINE cg_array_read_c_int
+
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_c_string
+!DEC$endif
+  SUBROUTINE cg_array_read_c_string (A, DATA, ier)
+    IMPLICIT NONE
+    INTEGER :: A
+    CHARACTER(KIND=C_CHAR), DIMENSION(*), TARGET :: DATA
+    INTEGER, INTENT(OUT) :: ier
+    INTERFACE
+      INTEGER(C_INT) FUNCTION cg_array_read(A, data) BIND(C, name="cg_array_read")
+        IMPORT ::C_INT, C_PTR
+        IMPLICIT NONE
+        INTEGER(C_INT), VALUE, INTENT(IN) :: A
+        TYPE(C_PTR), VALUE :: data
+      END FUNCTION cg_array_read
+    END INTERFACE
+    ier = INT(cg_array_read(INT(A, C_INT), C_LOC(data)))
+  END SUBROUTINE cg_array_read_c_string
+
+!DEC$if defined(BUILD_CGNS_DLL)
 !DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_as_c_double
 !DEC$endif
   SUBROUTINE cg_array_read_as_c_double (A, TYPE, DATA, ier)
@@ -6227,7 +6287,8 @@ CONTAINS
     INTEGER, INTENT(OUT) :: ier
     CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
     INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, DimensionVector, Data) BIND(C, name="cg_array_write")
+      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
+                      DimensionVector, Data) BIND(C, name="cg_array_write")
         IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
         IMPLICIT NONE
         CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
@@ -6253,7 +6314,8 @@ CONTAINS
     INTEGER, INTENT(OUT) :: ier
     CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
     INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, DimensionVector, Data) BIND(C, name="cg_array_write")
+      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
+                      DimensionVector, Data) BIND(C, name="cg_array_write")
         IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
         IMPLICIT NONE
         CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
@@ -6279,7 +6341,8 @@ CONTAINS
     INTEGER, INTENT(OUT) :: ier
     CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
     INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, DimensionVector, Data) BIND(C, name="cg_array_write")
+      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
+                      DimensionVector, Data) BIND(C, name="cg_array_write")
         IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
         IMPLICIT NONE
         CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
@@ -6305,7 +6368,8 @@ CONTAINS
     INTEGER, INTENT(OUT) :: ier
     CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
     INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, DimensionVector, Data) BIND(C, name="cg_array_write")
+      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
+                      DimensionVector, Data) BIND(C, name="cg_array_write")
         IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
         IMPLICIT NONE
         CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
@@ -6327,11 +6391,12 @@ CONTAINS
     INTEGER(cgenum_t) :: DataType
     INTEGER :: DataDimension
     INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-    CHARACTER(KIND=C_CHAR), DIMENSION(*), TARGET :: Data
+    CHARACTER(KIND=C_CHAR, LEN=*), DIMENSION(*), TARGET :: Data
     INTEGER, INTENT(OUT) :: ier
     CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
     INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, DimensionVector, Data) BIND(C, name="cg_array_write")
+      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
+                      DimensionVector, Data) BIND(C, name="cg_array_write")
         IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
         IMPLICIT NONE
         CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
@@ -6357,7 +6422,8 @@ CONTAINS
     INTEGER, INTENT(OUT) :: ier
     CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
     INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, DimensionVector, Data) BIND(C, name="cg_array_write")
+      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
+                      DimensionVector, Data) BIND(C, name="cg_array_write")
         IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
         IMPLICIT NONE
         CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
@@ -6383,7 +6449,8 @@ CONTAINS
     INTEGER, INTENT(OUT) :: ier
     CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
     INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, DimensionVector, Data) BIND(C, name="cg_array_write")
+      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
+                      DimensionVector, Data) BIND(C, name="cg_array_write")
         IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
         IMPLICIT NONE
         CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
