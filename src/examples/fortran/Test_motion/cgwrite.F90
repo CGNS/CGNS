@@ -106,7 +106,7 @@
 	dimval(2)=2 		! *** MaxNumberOfZones in a step1
 	dimval(3)=nsteps
         call cg_array_write_f('ZonePointers', CGNS_ENUMV(Character), 3, dimval, &
-                               zone_ptrs(1,:), ier)
+                               zone_ptrs(:,1), ier)
 
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012

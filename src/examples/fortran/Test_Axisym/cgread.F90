@@ -19,7 +19,7 @@
 	integer mass, length, time, temp, deg, i
         integer narrays, iarray, datatype, nndim, num
 	integer(cgsize_t) dim_vals(12)
-	real*4 version, ref_point(Ndim), axis(Ndim), angle
+	real*4 version, ref_point(Ndim), axis(Ndim), angle(1)
 	character*32 name, filename, basename, user_data_name
 	character*100 text
         character*32 arrayname, CoordinateNames(2)
@@ -151,7 +151,7 @@
 
             else if (datatype .eq. CGNS_ENUMV(RealSingle)) then
 	 	if (arrayname.eq.'AxisymmetryAngle') then
-		    call cg_array_read_f(iarray, [angle], ier)
+		    call cg_array_read_f(iarray, angle, ier)
 		    if (ier .ne. ALL_OK) call cg_error_exit_f
 		else if (arrayname.eq.'AxisymmetryReferencePoint') then
 		    call cg_array_read_f(iarray, ref_point, ier)
