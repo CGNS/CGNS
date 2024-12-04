@@ -9270,12 +9270,14 @@ int cg_subreg_gcname_write(int fn, int B, int Z, const char *regname, int dimens
 
     subreg->gcname = CGNS_NEW(cgns_descr, 1);
     strcpy(subreg->gcname->name, "GridConnectivityRegionName");
-    subreg->gcname->text = (char *)malloc(strlen(gcname)+1);
+    int gcname_length = strlen(gcname)+1;
+    subreg->gcname->text = (char *)malloc(gcname_length);
     if (subreg->gcname->text == NULL) {
         cgi_error("malloc failed for GridConnectivityRegionName name");
         return CG_ERROR;
     }
-    snprintf(subreg->gcname->text, sizeof(subreg->gcname->text), "%s", gcname);
+    snprintf(subreg->gcname->text, gcname_length, "%s", gcname);
+
     /* save data in file */
 
     zone = cgi_get_zone(cg, B, Z);
