@@ -121,8 +121,7 @@ set(C_TESTS_LIST
         test_back_comp
         test_particle)
 set(SKIP_TESTS
-	dbtest
-	open_cgns)
+        dbtest)
 # Modern Linking
 foreach(TGTNAME ${C_TESTS_LIST})
   target_link_libraries(${TGTNAME} PRIVATE ${TESTS_LK_LIBS})
