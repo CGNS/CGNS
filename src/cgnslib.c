@@ -868,7 +868,7 @@ int cg_close(int fn)
  * \return \ier
  *
  * \details The CGNS file identified by \c fn may be saved to a different filename and type
- *          using cg_save_as().To save as an HDF5 file, the library must have been
+ *          using cg_save_as(). To save as an HDF5 file, the library must have been
  *          built with HDF5 support. ADF support is always built. The function cg_set_file_type()
  *          sets the default file type for newly created CGNS files. The function
  *          cg_get_file_type() returns the file type for the CGNS file identified by \c fn.
