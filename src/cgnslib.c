@@ -544,7 +544,7 @@ int cg_open(const char *filename, int mode, int *fn)
 
     /* Keep in-memory copy of cgns file 'header' information */
     cg->mode = mode;
-    int filename_length = strlen(filename) + 1
+    int filename_length = strlen(filename) + 1;
     cg->filename = CGNS_NEW(char,filename_length);
     snprintf(cg->filename, filename_length, "%s", filename);
     cg->filetype = filetype;
