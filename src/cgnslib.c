@@ -15969,7 +15969,7 @@ int cg_multifam_write(const char *name, const char *family)
  * \param[out] NormDefinitions Description of the convergence information recorded in the data arrays.
  * \return \ier
  *
- * \details The function cg_convergence_read reads a ConvergenceHistory_t node. If NormDefinitions
+ * \details The function cg_convergence_read() reads a ConvergenceHistory_t node. If NormDefinitions
  *          is not defined in the CGNS database, this function returns a null string. If
  *          NormDefinitions exists, the library will allocate the space to store the description
  *          string, and return the description string to the application. It is the responsibility
@@ -20324,7 +20324,7 @@ int cg_npe(CGNS_ENUMT( ElementType_t )  type, int *npe)
  *          For example, if the number of zones below a CGNSBase_t node is nzones, a zone should never
  *          be deleted from within a zone loop! By deleting a zone, the total number of zones (nzones)
  *          changes, as well as the zone indexing. Suppose for example that nzones is 5, and that the
- *          third zone is deleted. After calling cg_delete_node, nzones is changed to 4, and the zones
+ *          third zone is deleted. After calling cg_delete_node(), nzones is changed to 4, and the zones
  *          originally indexed 4 and 5 are now indexed 3 and 4.
  *
  */
@@ -21356,10 +21356,10 @@ int cg_delete_node(const char *node_name)
  *          This isn't necessary in Fortran, and thus an equivalent Fortran function is not provided.
  *
  *          The functions that are used to allocate memory for return values are
- *          cg_descriptor_read, cg_convergence_read, cg_geo_read, cg_link_read, and cg_state_read.
+ *          cg_descriptor_read(), cg_convergence_read(), cg_geo_read(), cg_link_read(), and cg_state_read().
  *          Each of these may allocate space to contain the data returned to the application. It is
  *          the responsibility of the application to free this data when it is no longer needed.
- *          Calling cg_free is identical to calling the standard C function free, however it is
+ *          Calling cg_free() is identical to calling the standard C function free, however it is
  *          probably safer in that the memory is freed in the same module in which it is created,
  *          particularly when the Mid-Level Library is a shared library or DLL. The routine checks
  *          for NULL data and will return CG_ERROR in this case, otherwise it returns CG_OK.
