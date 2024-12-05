@@ -611,7 +611,7 @@ int main (int argc, char *argv[])
 
     if (rename(tempfile, outfile)) {
         char msg[512];
-        snprintf(msg, sizeof(msg), "rename %s -> %s failed", tempfile, outfile);
+        sprintf(msg, "rename %s -> %s failed", tempfile, outfile);
         FATAL(NULL, msg);
         exit(1);
     }
