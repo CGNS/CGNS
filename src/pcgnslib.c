@@ -925,9 +925,6 @@ int cgp_coord_general_read_data(int fn, int B, int Z, int C,
 }
 
 /*===== Elements IO Prototypes ============================*/
-/* TODO: ref. cg_section_write
-   Add somewhere: (Note that for Fortran calls, all integer arguments are integer*4 in 32-bit mode and integer*8 in 64-bit mode. See 64-bit Fortran Portability and Issues.)
-*/
 /**
  * \ingroup ElementConnectivityData
  *
@@ -1977,18 +1974,18 @@ int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
  *
  * \brief Create a coordinate data node by multiple processes in a parallel fashion.
  *
- * \param[in] fn        \FILE_fn
- * \param[in] B         \B_Base
- * \param[in] P         \P_ParticleZone
- * \param[in] type      \PGRID_datatype
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] type \PGRID_datatype
  * \param[in] coordname \PGRID_coordname
- * \param[out] C        \PGRID_Coordinate
+ * \param[out] C \PGRID_Coordinate
  * \return \ier
- * \details To write the data in parallel, first call cgp_coord_write() to create an
- *          empty data node. This call is identical to cg_particle_coord_write() with
+ * \details To write the data in parallel, first call \e cgp_coord_write to create an
+ *          empty data node. This call is identical to \e cg_particle_coord_write with
  *          \p coord_array set to NULL (no data written). The actual data is then written
- *          to the node in parallel using either cgp_particle_coord_write_data() or
- *          cgp_particle_coord_general_write_data() where \p range_min and \p range_max
+ *          to the node in parallel using either \e cgp_particle_coord_write_data or
+ *          \e cgp_particle_coord_general_write_data where \p range_min and \p range_max
  *          specify the subset of coordinate data to be written by a given process.
  */
 
@@ -2007,12 +2004,12 @@ int cgp_particle_coord_write(int fn, int B, int P, CGNS_ENUMT(DataType_t) type,
  *
  * \brief Write particle coordinate data in parallel.
  *
- * \param[in] fn     \FILE_fn
- * \param[in] B      \B_Base
- * \param[in] P      \P_ParticleZone
- * \param[in] C      \C_Coordinate
- * \param[in] rmin   \PGRID_range_min
- * \param[in] rmax   \PGRID_range_max
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] C \C_Coordinate
+ * \param[in] rmin \PGRID_range_min
+ * \param[in] rmax \PGRID_range_max
  * \param[in] coords \PGRID_coord_array
  * \return \ier
  *
@@ -2073,21 +2070,21 @@ int cgp_particle_coord_write_data(int fn, int B, int P, int C,
  *
  * \brief Write shaped array to a subset of grid coordinates in parallel.
  *
- * \param[in] fn            \FILE_fn
- * \param[in] B             \B_Base
- * \param[in] P             \P_ParticleZone
- * \param[in] C             \PGRID_Coordinate
- * \param[in] rmin          \PGRID_range_min
- * \param[in] rmax          \PGRID_range_max
- * \param[in] m_type        \PGRID_mem_datatype
- * \param[in] m_numdim      \PGRID_mem_rank
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] C \PGRID_Coordinate
+ * \param[in] rmin \PGRID_range_min
+ * \param[in] rmax \PGRID_range_max
+ * \param[in] m_type \PGRID_mem_datatype
+ * \param[in] m_numdim \PGRID_mem_rank
  * \param[in] m_arg_dimvals \PGRID_mem_dimensions
- * \param[in] m_rmin        \PGRID_mem_range_min
- * \param[in] m_rmax        \PGRID_mem_range_max
- * \param[out] coords       \PGRID_coord_array
+ * \param[in] m_rmin \PGRID_mem_range_min
+ * \param[in] m_rmax \PGRID_mem_range_max
+ * \param[out] coords \PGRID_coord_array
  * \return \ier
  *
- * \details The cgp_particle_coord_general_write_data() perform data conversions
+ * \details The \e cgp_particle_coord_general_write_data perform data conversions
  *          if \e datatype is different from \e mem_datatype. If \e coords == NULL, meaning
  *          this processor writes no data, then only \e fn, \e B, \e P, and \e C need be set.
  *          In this case, \e P and \e C are "representative" and can point to any valid zone.
@@ -2179,12 +2176,12 @@ int cgp_particle_coord_general_write_data(int fn, int B, int P, int C,
  *
  * \brief Read coordinate data in parallel.
  *
- * \param[in]  fn     \FILE_fn
- * \param[in]  B      \B_Base
- * \param[in]  P      \P_ParticleZone
- * \param[in]  C      \C_Coordinate
- * \param[in]  rmin   \PGRID_range_min
- * \param[in]  rmax   \PGRID_range_max
+ * \param[in]  fn \FILE_fn
+ * \param[in]  B \B_Base
+ * \param[in]  P \P_ParticleZone
+ * \param[in]  C \C_Coordinate
+ * \param[in]  rmin \PGRID_range_min
+ * \param[in]  rmax \PGRID_range_max
  * \param[out] coords \PGRID_coord_array
  * \return \ier
  *
@@ -2242,21 +2239,21 @@ int cgp_particle_coord_read_data(int fn, int B, int P, int C,
  *
  * \brief Read shaped array to a subset of grid coordinates in parallel.
  *
- * \param[in] fn            \FILE_fn
- * \param[in] B             \B_Base
- * \param[in] P             \P_ParticleZone
- * \param[in] C             \C_Coordinate
- * \param[in] rmin          \PGRID_range_min
- * \param[in] rmax          \PGRID_range_max
- * \param[in] m_type        \PGRID_mem_datatype
- * \param[in] m_numdim      \PGRID_mem_rank
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] C \C_Coordinate
+ * \param[in] rmin \PGRID_range_min
+ * \param[in] rmax \PGRID_range_max
+ * \param[in] m_type \PGRID_mem_datatype
+ * \param[in] m_numdim \PGRID_mem_rank
  * \param[in] m_arg_dimvals \PGRID_mem_dimensions
- * \param[in] m_rmin        \PGRID_mem_range_min
- * \param[in] m_rmax        \PGRID_mem_range_max
- * \param[out] coords       \PGRID_coord_array
+ * \param[in] m_rmin \PGRID_mem_range_min
+ * \param[in] m_rmax \PGRID_mem_range_max
+ * \param[out] coords \PGRID_coord_array
  * \return \ier
  *
- * \details The cgp_particle_coord_general_read_data() perform data conversions if \e datatype
+ * \details The \e cgp_particle_coord_general_read_data perform data conversions if \e datatype
  *          is different from \e mem_datatype. If \e coords == NULL, meaning
  *          this processor reads no data, then only \e fn, \e B, \e P, and \e C need be set.
  *          In this case, \e P and \e C are "representative" and can point to any valid zone.
@@ -2346,13 +2343,13 @@ int cgp_particle_coord_general_read_data(int fn, int B, int P, int C,
  *
  * \brief Create a particle solution field data node in parallel.
  *
- * \param[in] fn        \FILE_fn
- * \param[in] B         \B_Base
- * \param[in] P         \P_ParticleZone
- * \param[in] S         \PSOL_S
- * \param[in] DataType  \PSOL_datatype
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] S \PSOL_S
+ * \param[in] DataType \PSOL_datatype
  * \param[in] fieldname \PSOL_fieldname
- * \param[in] F         \PSOL_F
+ * \param[in] F \PSOL_F
  * \return \ier
  */
 int cgp_particle_field_write(int fn, int B, int P, int S,
@@ -2370,11 +2367,11 @@ int cgp_particle_field_write(int fn, int B, int P, int S,
  *
  * \brief Write field data in parallel.
  *
- * \param[in] fn   \FILE_fn
- * \param[in] B    \B_Base
- * \param[in] P    \P_ParticleZone
- * \param[in] S    \PSOL_S
- * \param[in] F    \PSOL_F
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] S \PSOL_S
+ * \param[in] F \PSOL_F
  * \param[in] rmin \PSOL_range_min
  * \param[in] rmax \PSOL_range_max
  * \param[in] data \PSOL_solution_array
@@ -2425,19 +2422,19 @@ int cgp_particle_field_write_data(int fn, int B, int P, int S, int F,
  *
  * \brief Write shaped array to a subset of particle solution field in parallel.
  *
- * \param[in] fn            \FILE_fn
- * \param[in] B             \B_Base
- * \param[in] P             \P_ParticleZone
- * \param[in] S             \PSOL_S
- * \param[in] F             \PSOL_F
- * \param[in] rmin          \PSOL_range_min
- * \param[in] rmax          \PSOL_range_max
- * \param[in] m_type        \PSOL_mem_datatype
- * \param[in] m_numdim      \PSOL_mem_rank
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] S \PSOL_S
+ * \param[in] F \PSOL_F
+ * \param[in] rmin \PSOL_range_min
+ * \param[in] rmax \PSOL_range_max
+ * \param[in] m_type \PSOL_mem_datatype
+ * \param[in] m_numdim \PSOL_mem_rank
  * \param[in] m_arg_dimvals \PSOL_mem_dimensions
- * \param[in] m_rmin        \PSOL_mem_range_min
- * \param[in] m_rmax        \PSOL_mem_range_max
- * \param[in] data          \PSOL_solution_array
+ * \param[in] m_rmin \PSOL_mem_range_min
+ * \param[in] m_rmax \PSOL_mem_range_max
+ * \param[in] data \PSOL_solution_array
  * \return \ier
  *
  * \details If \e data == NULL, meaning this processor reads no data, then
@@ -2530,11 +2527,11 @@ int cgp_particle_field_general_write_data(int fn, int B, int P, int S, int F,
  *
  * \brief Read particle field data in parallel.
  *
- * \param[in] fn   \FILE_fn
- * \param[in] B    \B_Base
- * \param[in] P    \P_ParticleZone
- * \param[in] S    \PSOL_S
- * \param[in] F    \PSOL_F
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] S \PSOL_S
+ * \param[in] F \PSOL_F
  * \param[in] rmin \PSOL_range_min
  * \param[in] rmax \PSOL_range_max
  * \param[in] data \PSOL_solution_array
@@ -2584,24 +2581,24 @@ int cgp_particle_field_read_data(int fn, int B, int P, int S, int F,
  *
  * \brief Read subset of particle solution field to a shaped array in parallel.
  *
- * \param[in] fn            \FILE_fn
- * \param[in] B             \B_Base
- * \param[in] P             \P_ParticleZone
- * \param[in] S             \PSOL_S
- * \param[in] F             \PSOL_F
- * \param[in] rmin          \PSOL_range_min
- * \param[in] rmax          \PSOL_range_max
- * \param[in] m_type        \PSOL_mem_datatype
- * \param[in] m_numdim      \PSOL_mem_rank
+ * \param[in] fn \FILE_fn
+ * \param[in] B \B_Base
+ * \param[in] P \P_ParticleZone
+ * \param[in] S \PSOL_S
+ * \param[in] F \PSOL_F
+ * \param[in] rmin \PSOL_range_min
+ * \param[in] rmax \PSOL_range_max
+ * \param[in] m_type \PSOL_mem_datatype
+ * \param[in] m_numdim \PSOL_mem_rank
  * \param[in] m_arg_dimvals \PSOL_mem_dimensions
- * \param[in] m_rmin        \PSOL_mem_range_min
- * \param[in] m_rmax        \PSOL_mem_range_max
- * \param[out] data         \PSOL_solution_array
+ * \param[in] m_rmin \PSOL_mem_range_min
+ * \param[in] m_rmax \PSOL_mem_range_max
+ * \param[out] data \PSOL_solution_array
  * \return \ier
  *
  * \details If \e data == NULL, meaning this processor reads no data, then
- *          only \e fn, \e B, \e P, \e S, and \e F need be set.  In this case,
- *          \e P, \e S, and \e F are "representative" and can point to any valid zone.
+ *          only \e fn, \e B, \e P, \e S, and \e F need be set.  In this case, \e P, \e S, and \e F are
+ *          "representative" and can point to any valid zone.
  */
 int cgp_particle_field_general_read_data(int fn, int B, int P, int S, int F,
                                          const cgsize_t *rmin, const cgsize_t *rmax,
@@ -3178,7 +3175,8 @@ static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *me
  *           \c rmin and \c rmax specify the subset of coordinate data
  *           to be read by a given process. The application is responsible
  *           for ensuring that the coordinate data type matches what is
- *           defined in the file; no conversions are made. \n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dread_multi` to read \c nsets
  *           of coordinate data, whose identifiers are listed in the
  *           \c C array, from the CGNS file into multiple application memory
@@ -3283,7 +3281,8 @@ int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin
  *           \c rmin and \c rmax specify the subset of coordinate data
  *           to be written by a given process. The application is responsible
  *           for ensuring that the coordinate data type matches what is
- *           defined in the file; no conversions are made. \n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dwrite_multi` to write \c nsets
  *           of coordinate data, whose identifiers are listed in the
  *           \c C array, to the CGNS file from the multiple application memory
@@ -3390,7 +3389,8 @@ int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmi
  *           \c rmin and \c rmax specify the subset of field data
  *           to be written by a given process. The application is responsible
  *           for ensuring that the field data type matches what is
- *           defined in the file; no conversions are made.\n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dwrite_multi` to write \c nsets
  *           of field data, whose identifiers are listed in the
  *           \c F array, to the CGNS file from the multiple application memory
@@ -3490,7 +3490,8 @@ int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
  *           \c rmin and \c rmax specify the subset of field data
  *           to be read by a given process. The application is responsible
  *           for ensuring that the field data type matches what is
- *           defined in the file; no conversions are made.\n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dread_multi` to read \c nsets
  *           of field data, whose identifiers are listed in the
  *           \c F array, from the CGNS file into the multiple application memory
@@ -3589,7 +3590,8 @@ int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
  *           \c rmin and \c rmax specify the subset of coordinate data
  *           to be read by a given process. The application is responsible
  *           for ensuring that the coordinate data type matches what is
- *           defined in the file; no conversions are made. \n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dread_multi` to read \c nsets
  *           of coordinate data, whose identifiers are listed in the
  *           \c C array, from the CGNS file into multiple application memory
@@ -3693,7 +3695,8 @@ int cgp_particle_coord_multi_read_data(int fn, int B, int P, int *C, const cgsiz
  *           \c rmin and \c rmax specify the subset of coordinate data
  *           to be written by a given process. The application is responsible
  *           for ensuring that the coordinate data type matches what is
- *           defined in the file; no conversions are made. \n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dwrite_multi` to write \c nsets
  *           of coordinate data, whose identifiers are listed in the
  *           \c C array, to the CGNS file from the multiple application memory
@@ -3797,7 +3800,8 @@ int cgp_particle_coord_multi_write_data(int fn, int B, int P, int *C, const cgsi
  *           \c rmin and \c rmax specify the subset of field data
  *           to be written by a given process. The application is responsible
  *           for ensuring that the field data type matches what is
- *           defined in the file; no conversions are made.\n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dwrite_multi` to write \c nsets
  *           of field data, whose identifiers are listed in the
  *           \c F array, to the CGNS file from the multiple application memory
@@ -3898,7 +3902,8 @@ int cgp_particle_field_multi_write_data(int fn, int B, int P, int S, int *F,
  *           \c rmin and \c rmax specify the subset of field data
  *           to be read by a given process. The application is responsible
  *           for ensuring that the field data type matches what is
- *           defined in the file; no conversions are made.\n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dread_multi` to read \c nsets
  *           of field data, whose identifiers are listed in the
  *           \c F array, from the CGNS file into the multiple application memory
@@ -3995,7 +4000,8 @@ int cgp_particle_field_multi_read_data(int fn, int B, int P, int S, int *F,
  *           \c rmin and \c rmax specify the subset of array data
  *           to be written by a given process. The application is responsible
  *           for ensuring that the array data type matches what is
- *           defined in the file; no conversions are made.\n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dwrite_multi` to write \c nsets
  *           of array data, whose identifiers are listed in the
  *           \c F array, to the CGNS file from the multiple application memory
@@ -4090,7 +4096,8 @@ int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
  *           \c rmin and \c rmax specify the subset of array data
  *           to be read by a given process. The application is responsible
  *           for ensuring that the array data type matches what is
- *           defined in the file; no conversions are made.\n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dread_multi` to read \c nsets
  *           of array data, whose identifiers are listed in the
  *           \c F array, from the CGNS file into the multiple application memory
@@ -4180,7 +4187,8 @@ int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
  * \param[in]  points      Array of points
  * \return \ier
  *
- * \details Must use functions in \ref AccessingANode TODO:MSM:BROKENLINK to point to a PointSet to read from
+ * \details Functions in <a href="./c_api.html#accessing-a-node">Accessing a Node</a>
+ *          must be used to point to a PointSet for writing.
  *
  */
 int cgp_ptlist_write_data(int file_number, cgsize_t rmin,
@@ -4243,7 +4251,8 @@ int cgp_ptlist_write_data(int file_number, cgsize_t rmin,
  * \param[in]  points      Array of points
  * \return \ier
  *
- * \details Must use functions in \ref AccessingANode TODO:MSM:BROKENLINK to point to a PointSet to read from
+ * \details Functions in <a href="./c_api.html#accessing-a-node">Accessing a Node</a>
+ *          must be used to point to a PointSet for reading.
  */
 int cgp_ptlist_read_data(int file_number, cgsize_t rmin, cgsize_t rmax, cgsize_t *points)
 {
