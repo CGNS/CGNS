@@ -19,6 +19,7 @@ CALL = \
 	cgioc$(EXE) \
 	cgioc_hdf$(EXE) \
 	elemtest$(EXE) \
+	open_cgns$(EXE) \
 	ser_benchmark_hdf5$(EXE) \
 	test_core_vfd$(EXE) \
 	test_exts$(EXE) \
@@ -56,7 +57,7 @@ FALL = $(F_TESTS)
 CALL64 = test64c$(EXE)
 FALL64 = test64f$(EXE) test64f_F03$(EXE)
 
-ALL = dbtest$(EXE) open_cgns$(EXE) $(CALL) @FALL@
+ALL = dbtest$(EXE) $(CALL) @FALL@
 ALL64 = $(CALL64) @FALL64@
 
 TESTS = $(CALL) @FALL@

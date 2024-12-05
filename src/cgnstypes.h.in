@@ -70,6 +70,7 @@
 #define  CG_HAVE_STAT64_STRUCT @HAVE_STAT64_STRUCT@
 
 #if CG_BUILD_LEGACY
+#include <limits.h>
 # define CG_SIZEOF_SIZE    32
 # define CG_SIZE_DATATYPE "I4"
 # define cgerr_t  int
@@ -77,17 +78,20 @@
 # define cgsize_t int
 # define cgid_t   double
 # define PRIdCGSIZE "d"
+# define CG_SIZE_MAX INT_MAX
 #else
 # if CG_BUILD_64BIT
 #  define CG_SIZEOF_SIZE    64
 #  define CG_SIZE_DATATYPE "I8"
 #  define PRIdCGSIZE PRId64
    typedef int64_t cgsize_t;
+#  define CG_SIZE_MAX INT64_MAX
 # else
 #  define CG_SIZEOF_SIZE    32
 #  define CG_SIZE_DATATYPE "I4"
 #  define PRIdCGSIZE PRId32
    typedef int32_t cgsize_t;
+#  define CG_SIZE_MAX INT32_MAX
 # endif
   typedef int cgerr_t;
   typedef int cgint_t;
