@@ -27,7 +27,7 @@ freely, subject to the following restrictions:
  *  \_____\_____|_| \_|_____/
  *
  *  PURPOSE:
- *    Provides Parallal Mid-Level Library (MLL) CGNS interfaces and
+ *    Provides Parallel Mid-Level Library (MLL) CGNS interfaces and
  *    various supporting APIs.
  *
  *  DOCUMENTATION DESIGN
@@ -478,7 +478,7 @@ int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
  * \brief Exit with error message.
  *
  * \details Is similar to cg_error_exit() in that the process will exit with
- *          an error message. However, it will also print the process rank, and
+ *          an error message. However, it will also print the process rank and
  *          call \p MPI_Abort with an exit code of 1.
  */
 void cgp_error_exit(void)
@@ -590,7 +590,7 @@ int cgp_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) type,
  *          \p rmin and \p rmax specify the subset of coordinate data
  *          to be written by a given process. It is the responsibility of
  *          the application to ensure that the data type for the coordinate
- *          data matches that as defined in the file; no conversions are done.
+ *          data matches that defined in the file; no conversions are done.
  */
 int cgp_coord_write_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *coords)
@@ -766,7 +766,7 @@ int cgp_coord_general_write_data(int fn, int B, int Z, int C,
  *          and \p rmax specify the subset of coordinate data to be read
  *          by a given process. It is the responsibility of the application
  *          to ensure that the data type for the coordinate data matches that
- *          as defined in the file; no conversions are done.
+ *          defined in the file; no conversions are done.
  */
 int cgp_coord_read_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coords)
@@ -837,7 +837,7 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
  * \details The cgp_coord_general_read_data() perform data conversions if
  *          \e datatype is different from \e mem_datatype. If \e coords == NULL,
  *          meaning this processor reads no data, then only \e fn, \e B, \e Z,
- *          and \e C need be set.  In this case, \e Z and \e C are "representative"
+ *          and \e C need to be set.  In this case, \e Z and \e C are "representative"
  *          and can point to any valid zone.
  */
 int cgp_coord_general_read_data(int fn, int B, int Z, int C,
@@ -925,9 +925,6 @@ int cgp_coord_general_read_data(int fn, int B, int Z, int C,
 }
 
 /*===== Elements IO Prototypes ============================*/
-/* TODO: ref. cg_section_write
-   Add somewhere: (Note that for Fortran calls, all integer arguments are integer*4 in 32-bit mode and integer*8 in 64-bit mode. See 64-bit Fortran Portability and Issues.)
-*/
 /**
  * \ingroup ElementConnectivityData
  *
@@ -950,11 +947,11 @@ int cgp_coord_general_read_data(int fn, int B, int Z, int C,
  *          actual element data is then written to the node in parallel using
  *          cgp_elements_write_data() where \e start and \e end specify the range of the
  *          elements to be written by a given process.
- * \note  Routine only works for constant sized elements, since it is not possible to
- *        compute file offsets for variable sized elements without knowledge of the entire
+ * \note  Routine only works for constant-sized elements, since it is not possible to
+ *        compute file offsets for variable-sized elements without knowledge of the entire
  *        element connectivity data.
  * \note  It is the responsibility of the application to ensure that \e cgsize_t in the
- *        application is the same size as that defined in the file; no conversions are done.
+ *        application is the same size as defined in the file; no conversions are done.
  */
 int cgp_section_write(int fn, int B, int Z, const char *sectionname,
     CGNS_ENUMT(ElementType_t) type, cgsize_t start, cgsize_t end,
@@ -993,7 +990,7 @@ int cgp_section_write(int fn, int B, int Z, const char *sectionname,
  *          element data is then written to the node in parallel using cgp_elements_write_data()
  *          where \e start and \e end specify the range of the elements to be written by a given process.
  * \note Routine only works for constant sized elements, since it is not possible to compute file
- *       offsets for variable sized elements without knowledge of the entire element connectivity data.
+ *       offsets for variable sized elements without knowing the entire element connectivity data.
  * \note It is the responsibility of the application to ensure that \e cgsize_t in the application is
  *       the same size as that defined in the file; no conversions are done.
  */
@@ -1036,7 +1033,7 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
  *          set to \e NULL (no data written). The actual element data is then written to the node in
  *          parallel using cgp_elements_write_data() where \e start and \e end specify the range of the
  *          elements to be written by a given process.
- * \note Routine only works for constant sized elements, since it is not possible to compute file offsets
+ * \note Routine only works for constant-sized elements since it is not possible to compute file offsets
  *       for variable sized elements without knowledge of the entire element connectivity data.
  * \note It is the responsibility of the application to ensure that \e cgsize_t in the application is the
  *       same size as that defined in the file; no conversions are done.
@@ -3011,9 +3008,10 @@ int cgp_array_general_read_data(int A,
   Multidataset APIs
 *********************************/
 
-static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *mem_type_id, hid_t *mem_space_id, hid_t *file_space_id,
-                                         cg_rw_ptr_t *data,
-					 int ndims, const cgsize_t *rmin, const cgsize_t *rmax, enum cg_par_rw rw_mode)
+static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *mem_type_id,
+                                         hid_t *mem_space_id, hid_t *file_space_id,
+                                         cg_rw_ptr_t *data, int ndims, const cgsize_t *rmin,
+                                         const cgsize_t *rmax, enum cg_par_rw rw_mode)
 {
   /*
    *  Needs to handle a NULL dataset. MSB
@@ -3177,7 +3175,8 @@ static int readwrite_multi_data_parallel(size_t count, hid_t *dset_id, hid_t *me
  *           \c rmin and \c rmax specify the subset of coordinate data
  *           to be read by a given process. The application is responsible
  *           for ensuring that the coordinate data type matches what is
- *           defined in the file; no conversions are made. \n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dread_multi` to read \c nsets
  *           of coordinate data, whose identifiers are listed in the
  *           \c C array, from the CGNS file into multiple application memory
@@ -3282,7 +3281,8 @@ int cgp_coord_multi_read_data(int fn, int B, int Z, int *C, const cgsize_t *rmin
  *           \c rmin and \c rmax specify the subset of coordinate data
  *           to be written by a given process. The application is responsible
  *           for ensuring that the coordinate data type matches what is
- *           defined in the file; no conversions are made. \n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dwrite_multi` to write \c nsets
  *           of coordinate data, whose identifiers are listed in the
  *           \c C array, to the CGNS file from the multiple application memory
@@ -3389,7 +3389,8 @@ int cgp_coord_multi_write_data(int fn, int B, int Z, int *C, const cgsize_t *rmi
  *           \c rmin and \c rmax specify the subset of field data
  *           to be written by a given process. The application is responsible
  *           for ensuring that the field data type matches what is
- *           defined in the file; no conversions are made.\n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dwrite_multi` to write \c nsets
  *           of field data, whose identifiers are listed in the
  *           \c F array, to the CGNS file from the multiple application memory
@@ -3489,7 +3490,8 @@ int cgp_field_multi_write_data(int fn, int B, int Z, int S, int *F,
  *           \c rmin and \c rmax specify the subset of field data
  *           to be read by a given process. The application is responsible
  *           for ensuring that the field data type matches what is
- *           defined in the file; no conversions are made.\n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dread_multi` to read \c nsets
  *           of field data, whose identifiers are listed in the
  *           \c F array, from the CGNS file into the multiple application memory
@@ -3588,7 +3590,8 @@ int cgp_field_multi_read_data(int fn, int B, int Z, int S, int *F,
  *           \c rmin and \c rmax specify the subset of coordinate data
  *           to be read by a given process. The application is responsible
  *           for ensuring that the coordinate data type matches what is
- *           defined in the file; no conversions are made. \n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dread_multi` to read \c nsets
  *           of coordinate data, whose identifiers are listed in the
  *           \c C array, from the CGNS file into multiple application memory
@@ -3692,7 +3695,8 @@ int cgp_particle_coord_multi_read_data(int fn, int B, int P, int *C, const cgsiz
  *           \c rmin and \c rmax specify the subset of coordinate data
  *           to be written by a given process. The application is responsible
  *           for ensuring that the coordinate data type matches what is
- *           defined in the file; no conversions are made. \n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dwrite_multi` to write \c nsets
  *           of coordinate data, whose identifiers are listed in the
  *           \c C array, to the CGNS file from the multiple application memory
@@ -3796,7 +3800,8 @@ int cgp_particle_coord_multi_write_data(int fn, int B, int P, int *C, const cgsi
  *           \c rmin and \c rmax specify the subset of field data
  *           to be written by a given process. The application is responsible
  *           for ensuring that the field data type matches what is
- *           defined in the file; no conversions are made.\n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dwrite_multi` to write \c nsets
  *           of field data, whose identifiers are listed in the
  *           \c F array, to the CGNS file from the multiple application memory
@@ -3897,7 +3902,8 @@ int cgp_particle_field_multi_write_data(int fn, int B, int P, int S, int *F,
  *           \c rmin and \c rmax specify the subset of field data
  *           to be read by a given process. The application is responsible
  *           for ensuring that the field data type matches what is
- *           defined in the file; no conversions are made.\n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dread_multi` to read \c nsets
  *           of field data, whose identifiers are listed in the
  *           \c F array, from the CGNS file into the multiple application memory
@@ -3994,7 +4000,8 @@ int cgp_particle_field_multi_read_data(int fn, int B, int P, int S, int *F,
  *           \c rmin and \c rmax specify the subset of array data
  *           to be written by a given process. The application is responsible
  *           for ensuring that the array data type matches what is
- *           defined in the file; no conversions are made.\n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dwrite_multi` to write \c nsets
  *           of array data, whose identifiers are listed in the
  *           \c F array, to the CGNS file from the multiple application memory
@@ -4089,7 +4096,8 @@ int cgp_array_multi_write_data(int fn, int *A, const cgsize_t *rmin,
  *           \c rmin and \c rmax specify the subset of array data
  *           to be read by a given process. The application is responsible
  *           for ensuring that the array data type matches what is
- *           defined in the file; no conversions are made.\n
+ *           defined in the file; no conversions are made.
+ *
  *           Uses HDF5's multidataset API `H5Dread_multi` to read \c nsets
  *           of array data, whose identifiers are listed in the
  *           \c F array, from the CGNS file into the multiple application memory
@@ -4179,7 +4187,8 @@ int cgp_array_multi_read_data(int fn, int *A, const cgsize_t *rmin,
  * \param[in]  points      Array of points
  * \return \ier
  *
- * \details Must use functions in \ref AccessingANode TODO:MSM:BROKENLINK to point to a PointSet to read from
+ * \details Functions in <a href="./c_api.html#accessing-a-node">Accessing a Node</a>
+ *          must be used to point to a PointSet for writing.
  *
  */
 int cgp_ptlist_write_data(int file_number, cgsize_t rmin,
@@ -4242,7 +4251,8 @@ int cgp_ptlist_write_data(int file_number, cgsize_t rmin,
  * \param[in]  points      Array of points
  * \return \ier
  *
- * \details Must use functions in \ref AccessingANode TODO:MSM:BROKENLINK to point to a PointSet to read from
+ * \details Functions in <a href="./c_api.html#accessing-a-node">Accessing a Node</a>
+ *          must be used to point to a PointSet for reading.
  */
 int cgp_ptlist_read_data(int file_number, cgsize_t rmin, cgsize_t rmax, cgsize_t *points)
 {
