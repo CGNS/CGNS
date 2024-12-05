@@ -7021,8 +7021,7 @@ int cg_elements_general_write(int fn, int B, int Z, int S,
 
         if (read_parent_data(section)) return CG_ERROR;
 
-        if(cnt > CG_SIZE_MAX/newsize ||
-           (cnt*newsize) > CG_SIZE_MAX/sizeof(cgsize_t) ) {
+        if((cnt*newsize) > CG_SIZE_MAX/sizeof(cgsize_t) ) {
             cgi_error("Error in allocation size for new ParentElements data");
             return CG_ERROR;
         }
