@@ -544,8 +544,9 @@ int cg_open(const char *filename, int mode, int *fn)
 
     /* Keep in-memory copy of cgns file 'header' information */
     cg->mode = mode;
-    cg->filename = CGNS_NEW(char,strlen(filename) + 1);
-    strcpy(cg->filename, filename);
+    int filename_length = strlen(filename) + 1;
+    cg->filename = CGNS_NEW(char,filename_length);
+    snprintf(cg->filename, filename_length, "%s", filename);
     cg->filetype = filetype;
     cg->cgio = cgio;
     cgio_get_root_id(cgio, &cg->rootid);
@@ -1486,7 +1487,7 @@ int cg_base_write(int fn, const char * basename, int cell_dim,
 
      /* save data in memory and initialize base data structure */
     memset(base, 0, sizeof(cgns_base));
-    strcpy(base->name, basename);
+    snprintf(base->name, sizeof(base->name), "%s", basename);
     base->cell_dim = cell_dim;
     base->phys_dim = phys_dim;
 
@@ -1738,11 +1739,11 @@ int cg_zone_write(int fn, int B, const char *zonename, const cgsize_t * size,
 
     for (i=0; i<index_dim; i++) {
         if (size[i]<=0) {
-            cgi_error("Invalid input:  nijk[%d]=%ld", i, size[i]);
+            cgi_error("Invalid input:  nijk[%d]=%" PRIdCGSIZE, i, size[i]);
             return CG_ERROR;
         }
         if (zonetype == CGNS_ENUMV( Structured ) && size[i]!=size[i+index_dim]+1) {
-            cgi_error("Invalid input:  VertexSize[%d]=%ld and CellSize[%d]=%ld",
+            cgi_error("Invalid input:  VertexSize[%d]=%" PRIdCGSIZE " and CellSize[%d]=%" PRIdCGSIZE,
                    i, size[i], i, size[i+index_dim]);
             return CG_ERROR;
         }
@@ -1800,7 +1801,7 @@ int cg_zone_write(int fn, int B, const char *zonename, const cgsize_t * size,
 
     /* save data to zone */
     memset(zone, 0, sizeof(cgns_zone));
-    strcpy(zone->name, zonename);
+    snprintf(zone->name, sizeof(zone->name), "%s", zonename);
     if ((zone->nijk = (cgsize_t *)malloc((size_t)(index_dim*3*sizeof(cgsize_t))))==NULL) {
         cgi_error("Error allocating zone->nijk");
         return CG_ERROR;
@@ -4960,7 +4961,7 @@ int cg_section_general_write(int fn, int B, int Z, const char * SectionName,
     (*S) = index+1;
 
     /* initialize ... */
-    strcpy(section->name, SectionName);
+    snprintf(section->name, sizeof(section->name), "%s", SectionName);
     section->el_type = type;
     section->range[0] = start;
     section->range[1] = end;
@@ -6902,6 +6903,10 @@ int cg_elements_general_write(int fn, int B, int Z, int S,
 
         /* create new element connectivity array */
 
+        if (newsize > CG_SIZE_MAX / sizeof(cgsize_t)) {
+            cgi_error("Error in allocation size for new connectivity data");
+            return CG_ERROR;
+        }
         newelems = (cgsize_t *) malloc ((size_t)(newsize * sizeof(cgsize_t)));
         if (NULL == newelems) {
             cgi_error("Error allocating new connectivity data");
@@ -7016,6 +7021,10 @@ int cg_elements_general_write(int fn, int B, int Z, int S,
 
         if (read_parent_data(section)) return CG_ERROR;
 
+        if((cnt*newsize) > CG_SIZE_MAX/sizeof(cgsize_t) ) {
+            cgi_error("Error in allocation size for new ParentElements data");
+            return CG_ERROR;
+        }
         newelems = (cgsize_t *)malloc((size_t)(cnt * newsize * sizeof(cgsize_t)));
         if (NULL == newelems) {
             cgi_error("Error allocating new ParentElements data");
@@ -7295,6 +7304,10 @@ int cg_poly_elements_general_write(int fn, int B, int Z, int S,
 
             if (m_trail_size > 0){
                 /* partial load trailing elements that will be relocated */
+                if (m_trail_size > CG_SIZE_MAX / sizeof(cgsize_t)) {
+                  cgi_error("Error in allocation size for trail_elements");
+                  return CG_ERROR;
+                }
                 trail_elements = (cgsize_t *) malloc((size_t)m_trail_size * sizeof(cgsize_t));
                 if (trail_elements == NULL) {
                     if (alloc_offset) free(alloc_offset);
@@ -7454,7 +7467,10 @@ int cg_poly_elements_general_write(int fn, int B, int Z, int S,
             }
         }
         /* create new element connectivity array and offsets*/
-
+        if (newsize > CG_SIZE_MAX / sizeof(cgsize_t)) {
+            cgi_error("Error in allocation size for new connectivity data");
+            return CG_ERROR;
+        }
         newelems = (cgsize_t *) malloc (((size_t)newsize) * sizeof(cgsize_t));
         if (NULL == newelems) {
             if (alloc_offset) free(alloc_offset);
@@ -9151,6 +9167,8 @@ int cg_subreg_ptset_write(int fn, int B, int Z, const char *regname,
     /* save data in file */
 
     zone = cgi_get_zone(cg, B, Z);
+    if (zone == NULL) return CG_ERROR;
+
     if (cgi_new_node(zone->id, subreg->name, "ZoneSubRegion_t",
             &subreg->id, "I4", 1, &dim_vals, &subreg->reg_dim))
         return CG_ERROR;
@@ -9209,6 +9227,8 @@ int cg_subreg_bcname_write(int fn, int B, int Z, const char *regname, int dimens
     /* save data in file */
 
     zone = cgi_get_zone(cg, B, Z);
+    if (zone == NULL) return CG_ERROR;
+
     if (cgi_new_node(zone->id, subreg->name, "ZoneSubRegion_t",
             &subreg->id, "I4", 1, &dim_vals, &subreg->reg_dim))
         return CG_ERROR;
@@ -9250,12 +9270,13 @@ int cg_subreg_gcname_write(int fn, int B, int Z, const char *regname, int dimens
 
     subreg->gcname = CGNS_NEW(cgns_descr, 1);
     strcpy(subreg->gcname->name, "GridConnectivityRegionName");
-    subreg->gcname->text = (char *)malloc(strlen(gcname)+1);
+    int gcname_length = strlen(gcname)+1;
+    subreg->gcname->text = (char *)malloc(gcname_length);
     if (subreg->gcname->text == NULL) {
         cgi_error("malloc failed for GridConnectivityRegionName name");
         return CG_ERROR;
     }
-    strcpy(subreg->gcname->text, gcname);
+    snprintf(subreg->gcname->text, gcname_length, "%s", gcname);
 
     /* save data in file */
 
@@ -9681,7 +9702,7 @@ int cg_hole_write(int fn, int B, int Z, const char * holename,
           npnts == 2*nptsets && nptsets > 0) &&
         !(ptset_type == CGNS_ENUMV(PointList) &&
           npnts >= 0 && nptsets == 1)) {
-        cgi_error("Invalid input:  nptsets=%d, npoint=%ld, point set type=%s",
+        cgi_error("Invalid input:  nptsets=%d, npoint=%" PRIdCGSIZE ", point set type=%s",
                nptsets, npnts, PointSetTypeName[ptset_type]);
         return CG_ERROR;
     }
