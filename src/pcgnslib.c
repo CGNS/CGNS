@@ -27,7 +27,7 @@ freely, subject to the following restrictions:
  *  \_____\_____|_| \_|_____/
  *
  *  PURPOSE:
- *    Provides Parallal Mid-Level Library (MLL) CGNS interfaces and
+ *    Provides Parallel Mid-Level Library (MLL) CGNS interfaces and
  *    various supporting APIs.
  *
  *  DOCUMENTATION DESIGN
@@ -478,7 +478,7 @@ int cgp_pio_mode(CGNS_ENUMT(PIOmode_t) mode)
  * \brief Exit with error message.
  *
  * \details Is similar to cg_error_exit() in that the process will exit with
- *          an error message. However, it will also print the process rank, and
+ *          an error message. However, it will also print the process rank and
  *          call \p MPI_Abort with an exit code of 1.
  */
 void cgp_error_exit(void)
@@ -590,7 +590,7 @@ int cgp_coord_write(int fn, int B, int Z, CGNS_ENUMT(DataType_t) type,
  *          \p rmin and \p rmax specify the subset of coordinate data
  *          to be written by a given process. It is the responsibility of
  *          the application to ensure that the data type for the coordinate
- *          data matches that as defined in the file; no conversions are done.
+ *          data matches that defined in the file; no conversions are done.
  */
 int cgp_coord_write_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, const void *coords)
@@ -766,7 +766,7 @@ int cgp_coord_general_write_data(int fn, int B, int Z, int C,
  *          and \p rmax specify the subset of coordinate data to be read
  *          by a given process. It is the responsibility of the application
  *          to ensure that the data type for the coordinate data matches that
- *          as defined in the file; no conversions are done.
+ *          defined in the file; no conversions are done.
  */
 int cgp_coord_read_data(int fn, int B, int Z, int C,
     const cgsize_t *rmin, const cgsize_t *rmax, void *coords)
@@ -837,7 +837,7 @@ int cgp_coord_read_data(int fn, int B, int Z, int C,
  * \details The cgp_coord_general_read_data() perform data conversions if
  *          \e datatype is different from \e mem_datatype. If \e coords == NULL,
  *          meaning this processor reads no data, then only \e fn, \e B, \e Z,
- *          and \e C need be set.  In this case, \e Z and \e C are "representative"
+ *          and \e C need to be set.  In this case, \e Z and \e C are "representative"
  *          and can point to any valid zone.
  */
 int cgp_coord_general_read_data(int fn, int B, int Z, int C,
@@ -950,11 +950,11 @@ int cgp_coord_general_read_data(int fn, int B, int Z, int C,
  *          actual element data is then written to the node in parallel using
  *          cgp_elements_write_data() where \e start and \e end specify the range of the
  *          elements to be written by a given process.
- * \note  Routine only works for constant sized elements, since it is not possible to
- *        compute file offsets for variable sized elements without knowledge of the entire
+ * \note  Routine only works for constant-sized elements, since it is not possible to
+ *        compute file offsets for variable-sized elements without knowledge of the entire
  *        element connectivity data.
  * \note  It is the responsibility of the application to ensure that \e cgsize_t in the
- *        application is the same size as that defined in the file; no conversions are done.
+ *        application is the same size as defined in the file; no conversions are done.
  */
 int cgp_section_write(int fn, int B, int Z, const char *sectionname,
     CGNS_ENUMT(ElementType_t) type, cgsize_t start, cgsize_t end,
@@ -993,7 +993,7 @@ int cgp_section_write(int fn, int B, int Z, const char *sectionname,
  *          element data is then written to the node in parallel using cgp_elements_write_data()
  *          where \e start and \e end specify the range of the elements to be written by a given process.
  * \note Routine only works for constant sized elements, since it is not possible to compute file
- *       offsets for variable sized elements without knowledge of the entire element connectivity data.
+ *       offsets for variable sized elements without knowing the entire element connectivity data.
  * \note It is the responsibility of the application to ensure that \e cgsize_t in the application is
  *       the same size as that defined in the file; no conversions are done.
  */
@@ -1036,7 +1036,7 @@ int cgp_poly_section_write(int fn, int B, int Z, const char *sectionname,
  *          set to \e NULL (no data written). The actual element data is then written to the node in
  *          parallel using cgp_elements_write_data() where \e start and \e end specify the range of the
  *          elements to be written by a given process.
- * \note Routine only works for constant sized elements, since it is not possible to compute file offsets
+ * \note Routine only works for constant-sized elements since it is not possible to compute file offsets
  *       for variable sized elements without knowledge of the entire element connectivity data.
  * \note It is the responsibility of the application to ensure that \e cgsize_t in the application is the
  *       same size as that defined in the file; no conversions are done.
