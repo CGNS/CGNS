@@ -16,6 +16,33 @@ freely, subject to the following restrictions:
    be misrepresented as being the original software.
 
 3. This notice may not be removed or altered from any source distribution.
+
+                  _____ _______ ____  _____  _
+                 / ____|__   __/ __ \|  __ \| |
+                | (___    | | | |  | | |__) | |
+                 \___ \   | | | |  | |  ___/| |
+                 ____) |  | | | |__| | |    |_|
+                |_____/   |_|  \____/|_|    (_)
+
+  _____  ______ _____  _____  ______ _____       _______ ______ _____
+ |  __ \|  ____|  __ \|  __ \|  ____/ ____|   /\|__   __|  ____|  __ \
+ | |  | | |__  | |__) | |__) | |__ | |       /  \  | |  | |__  | |  | |
+ | |  | |  __| |  ___/|  _  /|  __|| |      / /\ \ | |  |  __| | |  | |
+ | |__| | |____| |    | | \ \| |___| |____ / ____ \| |  | |____| |__| |
+ |_____/|______|_|    |_|  \_\______\_____/_/    \_\_|  |______|_____/
+
+  Developer Notes:
+
+  (1) The approach of invoking a C function wrapper from Fortran, as used here,
+      which subsequently calls the C CGNS function, is being discontinued.
+  (2) If the C wrapper functions here encounter an issue, they should be
+      reimplemented in Fortran within the cgns_f.F90 file, and the problem
+      should be addressed in Fortran.
+  (3) All new Fortran CGNS functions should be added to the cgns_f.F90 file
+      and should directly call the CGNS C APIs.
+  (4) Pull requests that alter this file will likely be rejected to
+      uphold the principles of (1)-(3).
+
 -------------------------------------------------------------------------*/
 
 #include <stdlib.h>
