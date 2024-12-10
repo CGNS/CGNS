@@ -6958,7 +6958,7 @@ CONTAINS
       END FUNCTION cg_array_write
     END INTERFACE
     c_name = TRIM(ArrayName)//C_NULL_CHAR
-    ier = INT(cg_array_write(c_name, DataType, INT(DataDimension, C_INT), DimensionVector, C_LOC(Data)))
+    ier = INT(cg_array_write(c_name, DataType, INT(DataDimension, C_INT), DimensionVector, C_LOC(Data(1)(1:1))))
   END SUBROUTINE cg_array_write_c_string
 
 !DEC$if defined(BUILD_CGNS_DLL)
