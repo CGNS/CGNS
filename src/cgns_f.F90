@@ -91,6 +91,15 @@ MODULE cgns
   PRIVATE :: C_F_string_chars
   PRIVATE :: C_F_string_ptr
 
+  PRIVATE cg_configure_ptr
+
+  PRIVATE cg_array_read_c_double, cg_array_read_c_float, cg_array_read_c_longlong
+  PRIVATE cg_array_read_c_int, cg_array_read_c_string
+  PRIVATE cg_array_read_as_c_double, cg_array_read_as_c_float, cg_array_read_as_c_longlong
+  PRIVATE cg_array_read_as_c_int, cg_array_read_as_c_string, cg_array_read_as_c_double_sv, cg_array_read_as_c_float_sv
+  PRIVATE cg_array_write_c_double, cg_array_write_c_float, cg_array_write_c_longlong, cg_array_write_c_int
+  PRIVATE cg_array_write_c_string, cg_array_write_c_double_sv, cg_array_write_c_float_sv
+
   INTERFACE cgio_set_dimensions_f
 
     SUBROUTINE cgio_set_dimensions_f_0(cgio_num, id, data_type, ndims, dims, ier) ! BIND(C, NAME="cgio_set_dimensions_f_0")
@@ -4550,8 +4559,6 @@ MODULE cgns
     MODULE PROCEDURE cg_array_write_c_double_sv
     MODULE PROCEDURE cg_array_write_c_float_sv
   END INTERFACE
-
-  PRIVATE cg_configure_ptr
 
 CONTAINS
 
