@@ -27,7 +27,7 @@
 	character*32 RegionName32, basename, dummy
 	real *4 version, Translation(Ndim)
 	real *4 RotationCenter(Ndim), RotationAngle(Ndim)
-	integer dim_vals(2)
+	integer(cgsize_t) dim_vals(2)
 	
 
 ! *** initialize

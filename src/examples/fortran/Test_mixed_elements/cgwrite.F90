@@ -1,5 +1,4 @@
-
-        program write_mixed_elements
+        PROGRAM write_mixed_elements
         USE CGNS
 
 !	author: Diane Poirier
@@ -146,5 +145,5 @@
 	call cg_close_f(cg, ier)
 	if (ier.eq. ERROR) call cg_error_exit_f()
 
-	end
+        END PROGRAM write_mixed_elements
 
