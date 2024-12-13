@@ -600,28 +600,14 @@ set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
 target_link_libraries(cgns_static PRIVATE $<$<BOOL:${CGNS_ENABLE_HDF5}>:hdf5-${CG_HDF5_LINK_TYPE}>)
 
 # Build a shared version of the library
-set(DLLDEF "")
 if(CGNS_BUILD_SHARED)
   mark_as_advanced(CLEAR CGNS_USE_SHARED)
+  add_library(cgns_shared SHARED ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
+  add_library(CGNS::cgns-shared ALIAS cgns_shared)
 
   if (MSVC AND CGNS_ENABLE_FORTRAN)
     target_compile_definitions(cgns_f2c PRIVATE BUILD_CGNS_DLL)
-
-    # configure def file for shared libs on windows
-    if (NOT CGNS_ENABLE_PARALLEL)
-      set (CGNS_NOPAREXP ";")
-    endif ()
-    configure_file (${CMAKE_CURRENT_SOURCE_DIR}/cgns_fortrandll.def.in ${CMAKE_CURRENT_BINARY_DIR}/cgns_fortrandll.def @ONLY)
-
-    set(DLLDEF ${CMAKE_CURRENT_BINARY_DIR}/cgns_fortrandll.def)
-
-    add_library(cgns_shared SHARED ${cgns_FILES} ${DLLDEF} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
-
-  else ()
-    add_library(cgns_shared SHARED ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
-  endif ()
-
-  add_library(CGNS::cgns-shared ALIAS cgns_shared)
+  endif()
 
   if (WIN32 OR CYGWIN)
     target_compile_definitions(cgns_shared PRIVATE -DBUILD_DLL)
