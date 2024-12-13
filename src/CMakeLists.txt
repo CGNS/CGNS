@@ -613,13 +613,14 @@ if(CGNS_BUILD_SHARED)
     endif ()
     configure_file (${CMAKE_CURRENT_SOURCE_DIR}/cgns_fortrandll.def.in ${CMAKE_CURRENT_BINARY_DIR}/cgns_fortrandll.def @ONLY)
 
-    set(DLLDEF ${HDF5_F90_SRC_BINARY_DIR}/hdf5_fortrandll.def)
+    set(DLLDEF ${CMAKE_CURRENT_BINARY_DIR}/cgns_fortrandll.def)
 
     add_library(cgns_shared SHARED ${cgns_FILES} ${DLLDEF} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
 
   else ()
-      add_library(cgns_shared SHARED ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
+    add_library(cgns_shared SHARED ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<TARGET_OBJECTS:cgns_f2c>>)
   endif ()
+
   add_library(CGNS::cgns-shared ALIAS cgns_shared)
 
   if (WIN32 OR CYGWIN)
