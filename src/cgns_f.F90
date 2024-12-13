@@ -4903,9 +4903,6 @@ CONTAINS
   !      Read and write CGNSBase_t Nodes
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_nbases_f
-!DEC$endif
   SUBROUTINE cg_nbases_f(fn, nbases, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN)  :: fn
@@ -4960,9 +4957,6 @@ CONTAINS
     if (i<len(F_string)) F_string(i:) = ' '
   end subroutine C_F_string_chars
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_base_read_f
-!DEC$endif
   SUBROUTINE cg_base_read_f(fn, B, basename, cell_dim, phys_dim, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN)  :: fn
@@ -4995,9 +4989,6 @@ CONTAINS
 
   END SUBROUTINE cg_base_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_base_id_f
-!DEC$endif
   SUBROUTINE cg_base_id_f(fn, B, base_id, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN)  :: fn
@@ -5017,9 +5008,6 @@ CONTAINS
     ier = INT(cg_base_id(INT(fn, C_INT), INT(B, C_INT), base_id))
   END SUBROUTINE cg_base_id_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_base_write_f
-!DEC$endif
   SUBROUTINE cg_base_write_f(fn, basename, cell_dim, phys_dim, B, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -5050,9 +5038,6 @@ CONTAINS
 
   END SUBROUTINE cg_base_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_cell_dim_f
-!DEC$endif
   SUBROUTINE cg_cell_dim_f(fn, B, dim, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5081,9 +5066,6 @@ CONTAINS
   !      Read and write Zone_t Nodes
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_nzones_f
-!DEC$endif
   SUBROUTINE cg_nzones_f(fn, B, nzones, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN)  :: fn
@@ -5108,9 +5090,6 @@ CONTAINS
 
   END SUBROUTINE cg_nzones_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_zone_type_f
-!DEC$endif
   SUBROUTINE cg_zone_type_f(fn, B, Z, type, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN)  :: fn
@@ -5134,9 +5113,6 @@ CONTAINS
 
   END SUBROUTINE cg_zone_type_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_zone_read_f
-!DEC$endif
   SUBROUTINE cg_zone_read_f(fn, B, Z, zonename, size, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -5165,9 +5141,6 @@ CONTAINS
 
   END SUBROUTINE cg_zone_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_zone_id_f
-!DEC$endif
   SUBROUTINE cg_zone_id_f(fn, B, Z, zone_id, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5190,10 +5163,6 @@ CONTAINS
     ier = INT(cg_zone_id(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), zone_id))
   END SUBROUTINE cg_zone_id_f
 
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_zone_write_f
-!DEC$endif
   SUBROUTINE cg_zone_write_f(fn, B, zonename, size, TYPE, Z, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -5226,9 +5195,6 @@ CONTAINS
 
   END SUBROUTINE cg_zone_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_index_dim_f
-!DEC$endif
   SUBROUTINE cg_index_dim_f(fn, B, Z, dim, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5257,9 +5223,6 @@ CONTAINS
 !      Read and write Family_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_nfamilies_f
-!DEC$endif
   SUBROUTINE cg_nfamilies_f(fn, B, nfamilies, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5280,9 +5243,6 @@ CONTAINS
     nfamilies = INT(i_nfamilies)
   END SUBROUTINE cg_nfamilies_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_family_read_f
-!DEC$endif
   SUBROUTINE cg_family_read_f(fn, B, F, family_name, nboco, ngeos, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5314,9 +5274,6 @@ CONTAINS
     ngeos = INT(i_ngeos)
   END SUBROUTINE cg_family_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_family_write_f
-!DEC$endif
   SUBROUTINE cg_family_write_f(fn, B, family_name, F, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5341,9 +5298,6 @@ CONTAINS
     F = INT(i_F)
   END SUBROUTINE cg_family_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_nfamily_names_f
-!DEC$endif
   SUBROUTINE cg_nfamily_names_f(fn, B, F, nnames, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5366,9 +5320,6 @@ CONTAINS
     nnames = INT(i_nnames)
   END SUBROUTINE cg_nfamily_names_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_family_name_read_f
-!DEC$endif
   SUBROUTINE cg_family_name_read_f(fn, B, F, N, name, family, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5398,9 +5349,6 @@ CONTAINS
     CALL C_F_string_chars(c_family, family)
   END SUBROUTINE cg_family_name_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_family_name_write_f
-!DEC$endif
   SUBROUTINE cg_family_name_write_f(fn, B, F, name, family, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5657,9 +5605,6 @@ CONTAINS
 !      Read and write GeometryReference_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_geo_read_f
-!DEC$endif
   SUBROUTINE cg_geo_read_f(fn, B, F, G, geo_name, geo_file, CAD_name, npart, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5699,9 +5644,6 @@ CONTAINS
     call C_F_string_chars(c_CAD_name, CAD_name)
   end subroutine cg_geo_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_geo_write_f
-!DEC$endif
   SUBROUTINE cg_geo_write_f(fn, B, F, geo_name, geo_file, CAD_name, G, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -5735,9 +5677,6 @@ CONTAINS
     G = INT(i_G)
   end subroutine cg_geo_write_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_geo_read_f
-!DEC$endif
   SUBROUTINE cg_node_geo_read_f(G, geo_name, geo_file, CAD_name, npart, ier)
     IMPLICIT NONE
     INTEGER :: G
@@ -5770,9 +5709,6 @@ CONTAINS
     call C_F_string_chars(c_CAD_name, CAD_name)
   end subroutine cg_node_geo_read_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_node_geo_write_f
-!DEC$endif
   SUBROUTINE cg_node_geo_write_f(geo_name, geo_file, CAD_name, G, ier)
     IMPLICIT NONE
     CHARACTER(*) :: geo_name
@@ -6082,9 +6018,6 @@ CONTAINS
 !      Read and write GridCoordinates_t/DataArray_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_ncoords_f
-!DEC$endif
   SUBROUTINE cg_ncoords_f(fn, B, Z, ncoords, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6157,9 +6090,6 @@ CONTAINS
 !      Read and write Elements_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_nsections_f
-!DEC$endif
   SUBROUTINE cg_nsections_f(fn, B, Z, nsections, ier) BIND(C, NAME="cg_nsections_f")
     IMPLICIT NONE
     INTEGER :: fn
@@ -6182,9 +6112,7 @@ CONTAINS
   END SUBROUTINE cg_nsections_f
 
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_goto_f
-!DEC$endif
+
   SUBROUTINE cg_goto_f(fn, B, ier, &
     UserDataName1, i1, UserDataName2, i2, &
     UserDataName3, i3, UserDataName4, i4, &
@@ -6319,9 +6247,6 @@ CONTAINS
     END IF
   END SUBROUTINE cg_goto_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_gorel_f
-!DEC$endif
   SUBROUTINE cg_gorel_f(fn, ier, &
     UserDataName1, i1, UserDataName2, i2, &
     UserDataName3, i3, UserDataName4, i4, &
@@ -6444,9 +6369,6 @@ CONTAINS
     END IF
   END SUBROUTINE cg_gorel_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_gopath_f
-!DEC$endif
   SUBROUTINE cg_gopath_f(fn, path, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -6530,9 +6452,6 @@ CONTAINS
     cg_get_type_c_complex_double = CGNS_ENUMV(ComplexDouble)
   END FUNCTION cg_get_type_c_complex_double
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_narrays_f
-!DEC$endif
   SUBROUTINE cg_narrays_f(narrays, ier)
     IMPLICIT NONE
     INTEGER, INTENT(OUT) :: narrays
@@ -6551,9 +6470,6 @@ CONTAINS
 
   END SUBROUTINE cg_narrays_f
 
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_info_f
-!DEC$endif
   SUBROUTINE cg_array_info_f(A, ArrayName, DataType, DataDimension, DimensionVector, ier)
     IMPLICIT NONE
     INTEGER :: A
