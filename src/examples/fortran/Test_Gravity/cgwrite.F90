@@ -1,4 +1,4 @@
-	program write_gravity
+        PROGRAM write_gravity
 	USE CGNS
 	implicit none
 
@@ -79,5 +79,5 @@
 	call cg_close_f(cg, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
-	end
+        END PROGRAM write_gravity
 

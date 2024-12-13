@@ -19305,7 +19305,7 @@ int cg_link_read(char **filename, char **link_path)
  *          Only nodes that support child nodes will support links.
  *
  *          It is assumed that the CGNS version for the file containing the link, as determined by the
- *          CGNSLibraryVersion_t node, is also applicable to /p filename, the file containing the linked node.
+ *          CGNSLibraryVersion_t node, is also applicable to \p filename, the file containing the linked node.
  *
  */
 int cg_link_write(const char * nodename, const char * filename, const char * name_in_file)

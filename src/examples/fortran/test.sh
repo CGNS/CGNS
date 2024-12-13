@@ -11,8 +11,8 @@ echoresults() {
     printf ' %*.*s' 0 $((padlength - ${#x} )) "$pad"
     if test $status -ne 0
     then
-	printf " [$(ERROR_COLOR)FAILED$(NO_COLOR)]\n"
-        status = 1
+        printf " [${ERROR_COLOR}FAILED${NO_COLOR}]\n"
+        status=1
     else
 	printf " [${OK_COLOR}PASSED${NO_COLOR}]"
         printf "%+12s\n" "$itime"

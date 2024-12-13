@@ -1,5 +1,4 @@
-
-	program read_axisym
+        PROGRAM read_axisym
 	USE CGNS
 	implicit none
 
@@ -20,7 +19,7 @@
 	integer mass, length, time, temp, deg, i
         integer narrays, iarray, datatype, nndim, num
 	integer(cgsize_t) dim_vals(12)
-	real*4 version, ref_point(Ndim), axis(Ndim), angle
+	real*4 version, ref_point(Ndim), axis(Ndim), angle(1)
 	character*32 name, filename, basename, user_data_name
 	character*100 text
         character*32 arrayname, CoordinateNames(2)
@@ -222,4 +221,4 @@
  500	format(3a/3a)
  600	format(3a)
 
- 9999	end
+        END PROGRAM read_axisym
