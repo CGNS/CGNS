@@ -2945,6 +2945,54 @@ CGNSDLL void FMNAME(cg_particle_model_read_f, CG_PARTICLE_MODEL_READ_F) (STR_PST
 
 /*-----------------------------------------------------------------------*/
 
+#ifdef WIN32_FORTRAN
+CGNSDLL void __stdcall cg_array_read_f(cgint_f *A, void *Data, ...)
+{
+    va_list ap;
+    cgint_f *ier;
+    int DataDimension;
+    cgsize_t DimensionVector[CGIO_MAX_DIMENSIONS];
+    char ArrayName[CGIO_MAX_NAME_LENGTH+1];
+    CGNS_ENUMT(DataType_t) DataType;
+
+    cg_array_info((int)*A, ArrayName, &DataType, &DataDimension, DimensionVector);
+
+    va_start(ap, Data);
+    if (DataType == CGNS_ENUMV(Character)) (void) va_arg(ap, int);
+    ier = va_arg(ap, cgsize_t *);
+    va_end(ap);
+#else
+CGNSDLL void FMNAME(cg_array_read_f, CG_ARRAY_READ_F) (cgint_f *A,
+	void *Data, cgint_f *ier)
+{
+#endif
+    *ier = (cgint_f)cg_array_read((int)*A, Data);
+}
+
+/*-----------------------------------------------------------------------*/
+
+#ifdef WIN32_FORTRAN
+CGNSDLL void __stdcall cg_array_read_as_f(cgint_f *A, CGNS_ENUMT(DataType_t) *type,
+	void *Data, ...)
+{
+    va_list ap;
+    cgint_f *ier;
+    va_start(ap, Data);
+    if (*type == CGNS_ENUMV(Character))
+        (void) va_arg(ap, int);
+    ier = va_arg(ap, cgsize_t *);
+    va_end(ap);
+#else
+    CGNSDLL void FMNAME(cg_array_read_as_f, CG_ARRAY_READ_AS_F) (cgint_f *A,
+	CGNS_ENUMT(DataType_t) *type, void *Data, cgint_f *ier)
+{
+#endif
+    *ier = (cgint_f)cg_array_read_as((int)*A, *type, Data);
+}
+
+
+/*-----------------------------------------------------------------------*/
+
 CGNSDLL void FMNAME(cg_array_general_read_f, CG_ARRAY_GENERAL_READ_F) (
         cgint_f *A,
         cgsize_t *s_rmin, cgsize_t *s_rmax, CGNS_ENUMT(DataType_t) *m_type,
@@ -3405,6 +3453,39 @@ CGNSDLL void FMNAME(cg_particle_model_write_f, CG_PARTICLE_MODEL_WRITE_F) (STR_P
         c_name, CGIO_MAX_NAME_LENGTH, ier);
     if (*ier == 0)
         *ier = (cgint_f)cg_particle_model_write(c_name, *ModelType);
+}
+
+
+/*-----------------------------------------------------------------------*/
+
+#ifdef WIN32_FORTRAN
+CGNSDLL void __stdcall cg_array_write_f(STR_PSTR(ArrayName),
+	CGNS_ENUMT(DataType_t) *DataType, cgint_f *DataDimension,
+	cgsize_t *DimensionVector, void *Data, ...)
+{
+    va_list ap;
+    cgint_f *ier;
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+
+    va_start(ap, Data);
+    if ((CGNS_ENUMT(DataType_t))*DataType == CGNS_ENUMV(Character))
+        (void) va_arg(ap, int);
+    ier = va_arg(ap, cgsize_t *);
+    va_end(ap);
+#else
+CGNSDLL void FMNAME(cg_array_write_f, CG_ARRAY_WRITE_F) (STR_PSTR(ArrayName),
+	CGNS_ENUMT(DataType_t) *DataType, cgint_f *DataDimension, cgsize_t *DimensionVector,
+	void *Data, cgint_f *ier STR_PLEN(ArrayName))
+{
+    char c_name[CGIO_MAX_NAME_LENGTH+1];
+#endif
+
+     /* convert Fortran-text-string to a C-string */
+    string_2_C_string(STR_PTR(ArrayName), STR_LEN(ArrayName),
+        c_name, CGIO_MAX_NAME_LENGTH, ier);
+    if (*ier == 0)
+        *ier = (cgint_f)cg_array_write(c_name, *DataType,
+                              (int)*DataDimension, DimensionVector, Data);
 }
 
 /* CGNSDLL void cg_array_write_f03 (ArrayName, */
