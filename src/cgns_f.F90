@@ -4523,34 +4523,6 @@ MODULE cgns
 !!$
   END INTERFACE
 
-  INTERFACE cg_array_read_f
-    MODULE PROCEDURE cg_array_read_c_double
-    MODULE PROCEDURE cg_array_read_c_float
-    MODULE PROCEDURE cg_array_read_c_longlong
-    MODULE PROCEDURE cg_array_read_c_int
-    MODULE PROCEDURE cg_array_read_c_string
-  END INTERFACE
-
-  INTERFACE cg_array_read_as_f
-    MODULE PROCEDURE cg_array_read_as_c_double
-    MODULE PROCEDURE cg_array_read_as_c_float
-    MODULE PROCEDURE cg_array_read_as_c_longlong
-    MODULE PROCEDURE cg_array_read_as_c_int
-    MODULE PROCEDURE cg_array_read_as_c_string
-    MODULE PROCEDURE cg_array_read_as_c_double_sv
-    MODULE PROCEDURE cg_array_read_as_c_float_sv
-  END INTERFACE
-
-  INTERFACE cg_array_write_f
-    MODULE PROCEDURE cg_array_write_c_double
-    MODULE PROCEDURE cg_array_write_c_float
-    MODULE PROCEDURE cg_array_write_c_longlong
-    MODULE PROCEDURE cg_array_write_c_int
-    MODULE PROCEDURE cg_array_write_c_string
-    MODULE PROCEDURE cg_array_write_c_double_sv
-    MODULE PROCEDURE cg_array_write_c_float_sv
-  END INTERFACE
-
   PRIVATE cg_configure_ptr
 
 CONTAINS
@@ -4646,6 +4618,9 @@ CONTAINS
 #endif
 
 !> @ingroup CGNSFile
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_open_f
+!DEC$endif
   SUBROUTINE cg_open_f(filename, mode, fn, ier)
     IMPLICIT NONE
     CHARACTER(*), INTENT(IN) :: filename
@@ -4660,6 +4635,9 @@ CONTAINS
   END SUBROUTINE cg_open_f
 
 !> @ingroup CGNSFile
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_is_cgns_f
+!DEC$endif
   SUBROUTINE cg_is_cgns_f(filename, file_type, ier)
     IMPLICIT NONE
     CHARACTER(*), INTENT(IN) :: filename
@@ -4673,6 +4651,9 @@ CONTAINS
   END SUBROUTINE cg_is_cgns_f
 
 !> @ingroup CGNSFile
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_version_f
+!DEC$endif
   SUBROUTINE cg_version_f(fn, FileVersion, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4692,6 +4673,9 @@ CONTAINS
   END SUBROUTINE cg_version_f
 
 !> @ingroup CGNSFile
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_precision_f
+!DEC$endif
   SUBROUTINE cg_precision_f(fn, PRECISION, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4712,6 +4696,9 @@ CONTAINS
   END SUBROUTINE cg_precision_f
 
 !> @ingroup CGNSFile
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_close_f
+!DEC$endif
   SUBROUTINE cg_close_f(fn, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4727,6 +4714,9 @@ CONTAINS
   END SUBROUTINE cg_close_f
 
 !> @ingroup CGNSFile
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_save_as_f
+!DEC$endif
   SUBROUTINE cg_save_as_f(fn, filename, file_type, follow_links, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4752,6 +4742,9 @@ CONTAINS
   END SUBROUTINE cg_save_as_f
 
 !> @ingroup CGNSFile
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_set_file_type_f
+!DEC$endif
   SUBROUTINE cg_set_file_type_f(ft, ier)
     IMPLICIT NONE
     INTEGER :: ft
@@ -4767,6 +4760,9 @@ CONTAINS
   END SUBROUTINE cg_set_file_type_f
 
 !> @ingroup CGNSFile
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_get_file_type_f
+!DEC$endif
   SUBROUTINE cg_get_file_type_f(fn, ft, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4785,6 +4781,9 @@ CONTAINS
     ft = INT(i_ft)
   END SUBROUTINE cg_get_file_type_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_set_compress_f
+!DEC$endif
   SUBROUTINE cg_set_compress_f(cmpr, ier)
     IMPLICIT NONE
     INTEGER :: cmpr
@@ -4799,6 +4798,9 @@ CONTAINS
     ier = INT(cg_set_compress(INT(cmpr)))
   END SUBROUTINE cg_set_compress_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_get_compress_f
+!DEC$endif
   SUBROUTINE cg_get_compress_f(cmpr, ier)
     INTEGER :: cmpr
     INTEGER(C_INT) :: i_cmpr
@@ -4814,6 +4816,9 @@ CONTAINS
     cmpr = INT(i_cmpr)
   END SUBROUTINE cg_get_compress_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_set_path_f
+!DEC$endif
   SUBROUTINE cg_set_path_f(pathname, ier)
     USE ISO_C_BINDING
     IMPLICIT NONE
@@ -4831,6 +4836,9 @@ CONTAINS
     ier = INT(cg_set_path(c_name))
   END SUBROUTINE cg_set_path_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_add_path_f
+!DEC$endif
   SUBROUTINE cg_add_path_f(pathname, ier)
     USE ISO_C_BINDING
     IMPLICIT NONE
@@ -4848,6 +4856,9 @@ CONTAINS
     ier = INT(cg_add_path(c_name))
   END SUBROUTINE cg_add_path_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_get_cgio_f
+!DEC$endif
   SUBROUTINE cg_get_cgio_f(fn, cgio_num, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4866,6 +4877,9 @@ CONTAINS
     cgio_num = INT(i_cgio_num)
   END SUBROUTINE cg_get_cgio_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_root_id_f
+!DEC$endif
   SUBROUTINE cg_root_id_f(fn, rootid, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -4882,6 +4896,9 @@ CONTAINS
     ier = INT(cg_root_id(INT(fn, C_INT), rootid))
   END SUBROUTINE cg_root_id_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_set_rind_zero_f
+!DEC$endif
   SUBROUTINE cg_set_rind_zero_f(ier)
     IMPLICIT NONE
     INTEGER, INTENT(OUT) :: ier
@@ -4890,6 +4907,9 @@ CONTAINS
     call cg_configure_f(CG_CONFIG_RIND_INDEX, C_LOC(value), ier)
   END SUBROUTINE cg_set_rind_zero_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_set_rind_core_f
+!DEC$endif
   SUBROUTINE cg_set_rind_core_f(ier)
     IMPLICIT NONE
     INTEGER, INTENT(OUT) :: ier
@@ -5426,7 +5446,10 @@ CONTAINS
     c_family = TRIM(family)//C_NULL_CHAR
     ier = INT(cg_family_name_write(INT(fn, C_INT), INT(B, C_INT),  INT(F, C_INT), c_name, c_family))
   END SUBROUTINE cg_family_name_write_f
-
+  
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_node_nfamilies_f
+!DEC$endif
   SUBROUTINE cg_node_nfamilies_f(nfamilies, ier)
     IMPLICIT NONE
     INTEGER :: nfamilies
@@ -5443,6 +5466,9 @@ CONTAINS
     nfamilies = INT(i_nfamilies)
   END SUBROUTINE cg_node_nfamilies_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_node_family_read_f
+!DEC$endif
   SUBROUTINE cg_node_family_read_f(F, family_name, nboco, ngeos, ier)
     IMPLICIT NONE
     INTEGER :: F
@@ -5470,6 +5496,9 @@ CONTAINS
     ngeos = INT(i_ngeos)
   END SUBROUTINE cg_node_family_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_node_family_write_f
+!DEC$endif
   SUBROUTINE cg_node_family_write_f(family_name, F, ier)
     IMPLICIT NONE
     CHARACTER(*) :: family_name
@@ -5490,6 +5519,9 @@ CONTAINS
     F = INT(i_F)
   END SUBROUTINE cg_node_family_write_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_node_nfamily_names_f
+!DEC$endif
   SUBROUTINE cg_node_nfamily_names_f(nnames, ier)
     IMPLICIT NONE
     INTEGER :: nnames
@@ -5507,6 +5539,9 @@ CONTAINS
     nnames = INT(i_nnames)
   END SUBROUTINE cg_node_nfamily_names_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_node_family_name_read_f
+!DEC$endif
   SUBROUTINE cg_node_family_name_read_f(N, name, family, ier)
     IMPLICIT NONE
     INTEGER :: N
@@ -5529,7 +5564,10 @@ CONTAINS
     CALL C_F_string_chars(c_name, name)
     CALL C_F_string_chars(c_family, family)
   END SUBROUTINE cg_node_family_name_read_f
-
+  
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_node_family_name_write_f
+!DEC$endif
   SUBROUTINE cg_node_family_name_write_f(name, family, ier)
     IMPLICIT NONE
     CHARACTER(*), INTENT(IN) :: name
@@ -5554,6 +5592,9 @@ CONTAINS
 !      Read and write FamBC_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_fambc_read_f
+!DEC$endif
   SUBROUTINE cg_fambc_read_f(fn, B, F, BC, fambc_name, bocotype, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5581,6 +5622,9 @@ CONTAINS
     CALL C_F_string_chars(c_name, fambc_name)
   END SUBROUTINE cg_fambc_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_fambc_write_f
+!DEC$endif
   SUBROUTINE cg_fambc_write_f(fn, B, F, fambc_name, bocotype, BC, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5609,6 +5653,9 @@ CONTAINS
     BC = INT(i_BC)
   END SUBROUTINE cg_fambc_write_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_node_fambc_read_f
+!DEC$endif
   SUBROUTINE cg_node_fambc_read_f(BC, fambc_name, bocotype, ier)
     IMPLICIT NONE
     INTEGER :: BC
@@ -5631,6 +5678,9 @@ CONTAINS
     CALL C_F_string_chars(c_name, fambc_name)
   END SUBROUTINE cg_node_fambc_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_node_fambc_write_f
+!DEC$endif
   SUBROUTINE cg_node_fambc_write_f(fambc_name, bocotype, BC, ier)
     IMPLICIT NONE
     CHARACTER(*) :: fambc_name
@@ -5805,6 +5855,9 @@ CONTAINS
 !      Read and write GeometryEntity_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_part_read_f
+!DEC$endif
   SUBROUTINE cg_part_read_f(fn, B, F, G, P, part_name, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -5832,6 +5885,9 @@ CONTAINS
     call C_F_string_chars(c_part_name, part_name)
   end subroutine cg_part_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_part_write_f
+!DEC$endif
   SUBROUTINE cg_part_write_f(fn, B, F, G, part_name, P, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5859,6 +5915,9 @@ CONTAINS
     P = INT(i_P)
   end subroutine cg_part_write_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_node_part_read_f
+!DEC$endif
   SUBROUTINE cg_node_part_read_f(G, P, part_name, ier)
     IMPLICIT NONE
     INTEGER :: G
@@ -5879,6 +5938,9 @@ CONTAINS
     call C_F_string_chars(c_part_name, part_name)
   end subroutine cg_node_part_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_node_part_write_f
+!DEC$endif
   SUBROUTINE cg_node_part_write_f(G, part_name, P, ier)
     IMPLICIT NONE
     INTEGER :: G
@@ -5904,6 +5966,9 @@ CONTAINS
 !      Read and write DiscreteData_t Nodes
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_ndiscrete_f
+!DEC$endif
   SUBROUTINE cg_ndiscrete_f(fn, B, Z, ndiscrete, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5925,6 +5990,9 @@ CONTAINS
     ndiscrete = INT(i_ndiscrete)
   end subroutine cg_ndiscrete_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_discrete_read_f
+!DEC$endif
   SUBROUTINE cg_discrete_read_f(fn, B, Z, D, discrete_name, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5949,6 +6017,9 @@ CONTAINS
     call C_F_string_chars(c_name, discrete_name)
   end subroutine cg_discrete_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_discrete_write_f
+!DEC$endif
   SUBROUTINE cg_discrete_write_f(fn, B, Z, discrete_name, D, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5974,6 +6045,9 @@ CONTAINS
     D = INT(i_D)
   end subroutine cg_discrete_write_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_discrete_size_f
+!DEC$endif
   SUBROUTINE cg_discrete_size_f(fn, B, Z, D, ndim, dims, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -5999,6 +6073,9 @@ CONTAINS
     ndim  = INT(i_ndim)
   end subroutine cg_discrete_size_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_discrete_ptset_info_f
+!DEC$endif
   SUBROUTINE cg_discrete_ptset_info_f(fn, B, Z, S, ptype, npnts, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6022,7 +6099,9 @@ CONTAINS
     ier = INT(cg_discrete_ptset_info(INT(fn, C_INT),INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), ptype, npnts))
   end subroutine cg_discrete_ptset_info_f
 
-
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_discrete_ptset_read_f
+!DEC$endif
   SUBROUTINE cg_discrete_ptset_read_f(fn, B, Z, S, pnts, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6044,6 +6123,9 @@ CONTAINS
     ier = INT(cg_discrete_ptset_read(INT(fn, C_INT),INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), pnts))
   end subroutine cg_discrete_ptset_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_discrete_ptset_write_f
+!DEC$endif
   SUBROUTINE cg_discrete_ptset_write_f(fn, B, Z, name, location, ptype, npnts, pnts, D, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6106,6 +6188,9 @@ CONTAINS
     ncoords = INT(i_ncoords)
   end subroutine cg_ncoords_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_coord_info_f
+!DEC$endif
   SUBROUTINE cg_coord_info_f(fn, B, Z, C, TYPE, coordname, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6132,6 +6217,9 @@ CONTAINS
     call C_F_string_chars(c_name, coordname)
   end subroutine cg_coord_info_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_coord_id_f
+!DEC$endif
   SUBROUTINE cg_coord_id_f(fn, B, Z, C, ier)
     IMPLICIT NONE
     INTEGER :: fn
@@ -6583,437 +6671,6 @@ CONTAINS
     DataDimension = INT(i_DataDimension)
 
   END SUBROUTINE cg_array_info_f
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_c_double
-!DEC$endif
-  SUBROUTINE cg_array_read_c_double (A, DATA, ier)
-    IMPLICIT NONE
-    INTEGER :: A
-    REAL(KIND=C_DOUBLE), DIMENSION(*), TARGET :: DATA
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_read(A, data) BIND(C, name="cg_array_read")
-        IMPORT ::C_INT, C_PTR
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: A
-        TYPE(C_PTR), VALUE :: data
-      END FUNCTION cg_array_read
-    END INTERFACE
-    ier = INT(cg_array_read(INT(A, C_INT), C_LOC(data)))
-  END SUBROUTINE cg_array_read_c_double
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_c_float
-!DEC$endif
-  SUBROUTINE cg_array_read_c_float (A, DATA, ier)
-    IMPLICIT NONE
-    INTEGER :: A
-    REAL(KIND=C_FLOAT), DIMENSION(*),  TARGET :: DATA
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_read(A, data) BIND(C, name="cg_array_read")
-        IMPORT ::C_INT, C_PTR
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: A
-        TYPE(C_PTR), VALUE :: data
-      END FUNCTION cg_array_read
-    END INTERFACE
-    ier = INT(cg_array_read(INT(A, C_INT), C_LOC(data)))
-  END SUBROUTINE cg_array_read_c_float
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_c_longlong
-!DEC$endif
-  SUBROUTINE cg_array_read_c_longlong (A, DATA, ier)
-    IMPLICIT NONE
-    INTEGER :: A
-    INTEGER(KIND=C_LONG_LONG), DIMENSION(*), TARGET :: DATA
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_read(A, data) BIND(C, name="cg_array_read")
-        IMPORT ::C_INT, C_PTR
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: A
-        TYPE(C_PTR), VALUE :: data
-      END FUNCTION cg_array_read
-    END INTERFACE
-    ier = INT(cg_array_read(INT(A, C_INT), C_LOC(data)))
-  END SUBROUTINE cg_array_read_c_longlong
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_c_int
-!DEC$endif
-  SUBROUTINE cg_array_read_c_int (A, DATA, ier)
-    IMPLICIT NONE
-    INTEGER :: A
-    INTEGER(KIND=C_INT), DIMENSION(*), TARGET :: DATA
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_read(A, data) BIND(C, name="cg_array_read")
-        IMPORT ::C_INT, C_PTR
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: A
-        TYPE(C_PTR), VALUE :: data
-      END FUNCTION cg_array_read
-    END INTERFACE
-    ier = INT(cg_array_read(INT(A, C_INT), C_LOC(data)))
-  END SUBROUTINE cg_array_read_c_int
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_c_string
-!DEC$endif
-  SUBROUTINE cg_array_read_c_string (A, DATA, ier)
-    IMPLICIT NONE
-    INTEGER :: A
-    CHARACTER(KIND=C_CHAR), DIMENSION(*), TARGET :: DATA
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_read(A, data) BIND(C, name="cg_array_read")
-        IMPORT ::C_INT, C_PTR
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: A
-        TYPE(C_PTR), VALUE :: data
-      END FUNCTION cg_array_read
-    END INTERFACE
-    ier = INT(cg_array_read(INT(A, C_INT), C_LOC(data)))
-  END SUBROUTINE cg_array_read_c_string
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_as_c_double
-!DEC$endif
-  SUBROUTINE cg_array_read_as_c_double (A, TYPE, DATA, ier)
-    IMPLICIT NONE
-    INTEGER :: A
-    INTEGER(cgenum_t) :: TYPE
-    REAL(KIND=C_DOUBLE), DIMENSION(*), TARGET :: DATA
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_read_as(A, type, data) BIND(C, name="cg_array_read_as")
-        IMPORT ::C_INT, C_PTR, CGENUM_T
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: A
-        INTEGER(CGENUM_T), VALUE, INTENT(IN) :: type
-        TYPE(C_PTR), VALUE :: data
-      END FUNCTION cg_array_read_as
-    END INTERFACE
-    ier = INT(cg_array_read_as(INT(A, C_INT), TYPE, C_LOC(data)))
-  END SUBROUTINE cg_array_read_as_c_double
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_as_c_float
-!DEC$endif
-  SUBROUTINE cg_array_read_as_c_float (A, TYPE, DATA, ier)
-    IMPLICIT NONE
-    INTEGER :: A
-    INTEGER(cgenum_t) :: TYPE
-    REAL(KIND=C_FLOAT), DIMENSION(*), TARGET :: DATA
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_read_as(A, type, data) BIND(C, name="cg_array_read_as")
-        IMPORT ::C_INT, C_PTR, CGENUM_T
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: A
-        INTEGER(CGENUM_T), VALUE, INTENT(IN) :: type
-        TYPE(C_PTR), VALUE :: data
-      END FUNCTION cg_array_read_as
-    END INTERFACE
-    ier = INT(cg_array_read_as(INT(A, C_INT), TYPE, C_LOC(data)))
-  END SUBROUTINE cg_array_read_as_c_float
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_as_c_longlong
-!DEC$endif
-  SUBROUTINE cg_array_read_as_c_longlong (A, TYPE, DATA, ier)
-    IMPLICIT NONE
-    INTEGER :: A
-    INTEGER(cgenum_t) :: TYPE
-    INTEGER(KIND=C_LONG_LONG), DIMENSION(*), TARGET :: DATA
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_read_as(A, type, data) BIND(C, name="cg_array_read_as")
-        IMPORT ::C_INT, C_PTR, CGENUM_T
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: A
-        INTEGER(CGENUM_T), VALUE, INTENT(IN) :: type
-        TYPE(C_PTR), VALUE :: data
-      END FUNCTION cg_array_read_as
-    END INTERFACE
-    ier = INT(cg_array_read_as(INT(A, C_INT), TYPE, C_LOC(data)))
-  END SUBROUTINE cg_array_read_as_c_longlong
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_as_c_int
-!DEC$endif
-  SUBROUTINE cg_array_read_as_c_int (A, TYPE, DATA, ier)
-    IMPLICIT NONE
-    INTEGER :: A
-    INTEGER(cgenum_t) :: TYPE
-    INTEGER(KIND=C_INT), DIMENSION(*), TARGET :: DATA
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_read_as(A, type, data) BIND(C, name="cg_array_read_as")
-        IMPORT ::C_INT, C_PTR, CGENUM_T
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: A
-        INTEGER(CGENUM_T), VALUE, INTENT(IN) :: type
-        TYPE(C_PTR), VALUE :: data
-      END FUNCTION cg_array_read_as
-    END INTERFACE
-    ier = INT(cg_array_read_as(INT(A, C_INT), TYPE, C_LOC(data)))
-  END SUBROUTINE cg_array_read_as_c_int
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_as_c_string
-!DEC$endif
-  SUBROUTINE cg_array_read_as_c_string (A, TYPE, DATA, ier)
-    IMPLICIT NONE
-    INTEGER :: A
-    INTEGER(cgenum_t) :: TYPE
-    CHARACTER(KIND=C_CHAR), DIMENSION(*), TARGET :: DATA
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_read_as(A, type, data) BIND(C, name="cg_array_read_as")
-        IMPORT ::C_INT, C_PTR, CGENUM_T
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: A
-        INTEGER(CGENUM_T), VALUE, INTENT(IN) :: type
-        TYPE(C_PTR), VALUE :: data
-      END FUNCTION cg_array_read_as
-    END INTERFACE
-    ier = INT(cg_array_read_as(INT(A, C_INT), TYPE, C_LOC(data)))
-  END SUBROUTINE cg_array_read_as_c_string
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_as_c_double_sv
-!DEC$endif
-  SUBROUTINE cg_array_read_as_c_double_sv (A, TYPE, DATA, ier)
-    IMPLICIT NONE
-    INTEGER :: A
-    INTEGER(cgenum_t) :: TYPE
-    REAL(KIND=C_DOUBLE), INTENT(OUT), TARGET :: DATA
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_read_as(A, type, data) BIND(C, name="cg_array_read_as")
-        IMPORT ::C_INT, C_PTR, CGENUM_T
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: A
-        INTEGER(CGENUM_T), VALUE, INTENT(IN) :: type
-        TYPE(C_PTR), VALUE :: data
-      END FUNCTION cg_array_read_as
-    END INTERFACE
-    ier = INT(cg_array_read_as(INT(A, C_INT), TYPE, C_LOC(data)))
-  END SUBROUTINE cg_array_read_as_c_double_sv
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_read_as_c_float_sv
-!DEC$endif
-  SUBROUTINE cg_array_read_as_c_float_sv (A, TYPE, DATA, ier)
-    IMPLICIT NONE
-    INTEGER :: A
-    INTEGER(cgenum_t) :: TYPE
-    REAL(KIND=C_FLOAT), INTENT(OUT), TARGET :: DATA
-    INTEGER, INTENT(OUT) :: ier
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_read_as(A, type, data) BIND(C, name="cg_array_read_as")
-        IMPORT ::C_INT, C_PTR, CGENUM_T
-        IMPLICIT NONE
-        INTEGER(C_INT), VALUE, INTENT(IN) :: A
-        INTEGER(CGENUM_T), VALUE, INTENT(IN) :: type
-        TYPE(C_PTR), VALUE :: data
-      END FUNCTION cg_array_read_as
-    END INTERFACE
-    ier = INT(cg_array_read_as(INT(A, C_INT), TYPE, C_LOC(data)))
-  END SUBROUTINE cg_array_read_as_c_float_sv
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_write_c_double
-!DEC$endif
-  SUBROUTINE cg_array_write_c_double(ArrayName, DataType, DataDimension, DimensionVector, Data, ier)
-    CHARACTER(LEN=*), INTENT(IN) :: ArrayName
-    INTEGER(cgenum_t) :: DataType
-    INTEGER :: DataDimension
-    INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-    REAL(KIND=C_DOUBLE), DIMENSION(*), TARGET, INTENT(IN) :: Data
-    INTEGER, INTENT(OUT) :: ier
-    CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
-        DimensionVector, Data) BIND(C, name="cg_array_write")
-        IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
-        IMPLICIT NONE
-        CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
-        INTEGER(cgenum_t), VALUE :: DataType
-        INTEGER(C_INT), VALUE :: DataDimension
-        INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-        TYPE(C_PTR), VALUE :: Data
-      END FUNCTION cg_array_write
-    END INTERFACE
-    c_name = TRIM(ArrayName)//C_NULL_CHAR
-    ier = INT(cg_array_write(c_name, DataType, INT(DataDimension, C_INT), DimensionVector, C_LOC(Data)))
-  END SUBROUTINE cg_array_write_c_double
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_write_c_float
-!DEC$endif
-  SUBROUTINE cg_array_write_c_float(ArrayName, DataType, DataDimension, DimensionVector, Data, ier)
-    CHARACTER(LEN=*), INTENT(IN) :: ArrayName
-    INTEGER(cgenum_t) :: DataType
-    INTEGER :: DataDimension
-    INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-    REAL(KIND=C_FLOAT), DIMENSION(*), TARGET, INTENT(IN) :: Data
-    INTEGER, INTENT(OUT) :: ier
-    CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
-        DimensionVector, Data) BIND(C, name="cg_array_write")
-        IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
-        IMPLICIT NONE
-        CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
-        INTEGER(cgenum_t), VALUE :: DataType
-        INTEGER(C_INT), VALUE :: DataDimension
-        INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-        TYPE(C_PTR), VALUE :: Data
-      END FUNCTION cg_array_write
-    END INTERFACE
-    c_name = TRIM(ArrayName)//C_NULL_CHAR
-    ier = INT(cg_array_write(c_name, DataType, INT(DataDimension, C_INT), DimensionVector, C_LOC(Data)))
-  END SUBROUTINE cg_array_write_c_float
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_write_c_longlong
-!DEC$endif
-  SUBROUTINE cg_array_write_c_longlong(ArrayName, DataType, DataDimension, DimensionVector, Data, ier)
-    CHARACTER(LEN=*), INTENT(IN) :: ArrayName
-    INTEGER(cgenum_t) :: DataType
-    INTEGER :: DataDimension
-    INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-    INTEGER(KIND=C_LONG_LONG), DIMENSION(*), TARGET, INTENT(IN) :: Data
-    INTEGER, INTENT(OUT) :: ier
-    CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
-        DimensionVector, Data) BIND(C, name="cg_array_write")
-        IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
-        IMPLICIT NONE
-        CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
-        INTEGER(cgenum_t), VALUE :: DataType
-        INTEGER(C_INT), VALUE :: DataDimension
-        INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-        TYPE(C_PTR), VALUE :: Data
-      END FUNCTION cg_array_write
-    END INTERFACE
-    c_name = TRIM(ArrayName)//C_NULL_CHAR
-    ier = INT(cg_array_write(c_name, DataType, INT(DataDimension, C_INT), DimensionVector, C_LOC(Data)))
-  END SUBROUTINE cg_array_write_c_longlong
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_write_c_int
-!DEC$endif
-  SUBROUTINE cg_array_write_c_int(ArrayName, DataType, DataDimension, DimensionVector, Data, ier)
-    CHARACTER(LEN=*), INTENT(IN) :: ArrayName
-    INTEGER(cgenum_t) :: DataType
-    INTEGER :: DataDimension
-    INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-    INTEGER(KIND=C_INT), DIMENSION(*), TARGET, INTENT(IN) :: Data
-    INTEGER, INTENT(OUT) :: ier
-    CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
-        DimensionVector, Data) BIND(C, name="cg_array_write")
-        IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
-        IMPLICIT NONE
-        CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
-        INTEGER(cgenum_t), VALUE :: DataType
-        INTEGER(C_INT), VALUE :: DataDimension
-        INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-        TYPE(C_PTR), VALUE :: Data
-      END FUNCTION cg_array_write
-    END INTERFACE
-    c_name = TRIM(ArrayName)//C_NULL_CHAR
-    ier = INT(cg_array_write(c_name, DataType, INT(DataDimension, C_INT), DimensionVector, C_LOC(Data)))
-  END SUBROUTINE cg_array_write_c_int
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_write_c_string
-!DEC$endif
-  SUBROUTINE cg_array_write_c_string(ArrayName, DataType, DataDimension, DimensionVector, Data, ier)
-    CHARACTER(LEN=*), INTENT(IN) :: ArrayName
-    INTEGER(cgenum_t) :: DataType
-    INTEGER :: DataDimension
-    INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-    CHARACTER(KIND=C_CHAR, LEN=*), DIMENSION(*), TARGET :: Data
-    INTEGER, INTENT(OUT) :: ier
-    CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
-        DimensionVector, Data) BIND(C, name="cg_array_write")
-        IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
-        IMPLICIT NONE
-        CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
-        INTEGER(cgenum_t), VALUE :: DataType
-        INTEGER(C_INT), VALUE :: DataDimension
-        INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-        TYPE(C_PTR), VALUE :: Data
-      END FUNCTION cg_array_write
-    END INTERFACE
-    c_name = TRIM(ArrayName)//C_NULL_CHAR
-    ier = INT(cg_array_write(c_name, DataType, INT(DataDimension, C_INT), DimensionVector, C_LOC(Data(1)(1:1))))
-  END SUBROUTINE cg_array_write_c_string
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_write_c_double_sv
-!DEC$endif
-  SUBROUTINE cg_array_write_c_double_sv(ArrayName, DataType, DataDimension, DimensionVector, Data, ier)
-    CHARACTER(LEN=*), INTENT(IN) :: ArrayName
-    INTEGER(cgenum_t) :: DataType
-    INTEGER :: DataDimension
-    INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-    REAL(KIND=C_DOUBLE), TARGET, INTENT(IN) :: Data
-    INTEGER, INTENT(OUT) :: ier
-    CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
-        DimensionVector, Data) BIND(C, name="cg_array_write")
-        IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
-        IMPLICIT NONE
-        CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
-        INTEGER(cgenum_t), VALUE :: DataType
-        INTEGER(C_INT), VALUE :: DataDimension
-        INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-        TYPE(C_PTR), VALUE :: Data
-      END FUNCTION cg_array_write
-    END INTERFACE
-    c_name = TRIM(ArrayName)//C_NULL_CHAR
-    ier = INT(cg_array_write(c_name, DataType, INT(DataDimension, C_INT), DimensionVector, C_LOC(Data)))
-  END SUBROUTINE cg_array_write_c_double_sv
-
-!DEC$if defined(BUILD_CGNS_DLL)
-!DEC$ATTRIBUTES DLLEXPORT :: cg_array_write_c_float_sv
-!DEC$endif
-  SUBROUTINE cg_array_write_c_float_sv(ArrayName, DataType, DataDimension, DimensionVector, Data, ier)
-    CHARACTER(LEN=*), INTENT(IN) :: ArrayName
-    INTEGER(cgenum_t) :: DataType
-    INTEGER :: DataDimension
-    INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-    REAL(KIND=C_FLOAT), TARGET, INTENT(IN) :: Data
-    INTEGER, INTENT(OUT) :: ier
-    CHARACTER(LEN=LEN_TRIM(ArrayName)+1, kind=C_CHAR) :: c_name
-    INTERFACE
-      INTEGER(C_INT) FUNCTION cg_array_write(ArrayName, DataType, DataDimension, &
-        DimensionVector, Data) BIND(C, name="cg_array_write")
-        IMPORT ::C_INT, C_PTR, CGENUM_T, C_CHAR, CGSIZE_T
-        IMPLICIT NONE
-        CHARACTER(LEN=1, kind=C_CHAR), DIMENSION(*), INTENT(IN) :: ArrayName
-        INTEGER(cgenum_t), VALUE :: DataType
-        INTEGER(C_INT), VALUE :: DataDimension
-        INTEGER(CGSIZE_T), DIMENSION(*) :: DimensionVector
-        TYPE(C_PTR), VALUE :: Data
-      END FUNCTION cg_array_write
-    END INTERFACE
-    c_name = TRIM(ArrayName)//C_NULL_CHAR
-    ier = INT(cg_array_write(c_name, DataType, INT(DataDimension, C_INT), DimensionVector, C_LOC(Data)))
-  END SUBROUTINE cg_array_write_c_float_sv
 
 !  These have issues when using xlf and the calling
 !  program does not use the modules, CGNS-25

@@ -17138,7 +17138,7 @@ int cg_particle_model_write(const char * ModelLabel, CGNS_ENUMT(ParticleModelTyp
 
      /* Validate enums for each model type. */
     if (strcmp(ModelLabel, "ParticleCollisionModel_t")==0) {
-      if (ModelType!=CGNS_ENUMV( ModelTypeNull ) && ModelType!=CGNS_ENUMV( ModelTypeUserDefined ) &&
+      if (ModelType!=CGNS_ENUMV( ParticleModelTypeNull ) && ModelType!=CGNS_ENUMV( ParticleModelTypeUserDefined ) &&
       ModelType!=CGNS_ENUMV( Linear ) && ModelType!=CGNS_ENUMV( NonLinear ) &&
       ModelType!=CGNS_ENUMV( SoftSphere ) && ModelType!=CGNS_ENUMV( HardSphere ) &&
       ModelType!=CGNS_ENUMV( LinearSpringDashpot ) && ModelType!=CGNS_ENUMV( Pair ) &&
@@ -17150,7 +17150,7 @@ int cg_particle_model_write(const char * ModelLabel, CGNS_ENUMT(ParticleModelTyp
             return CG_ERROR;
         }
     } else if (strcmp(ModelLabel, "ParticleBreakupModel_t")==0) {
-      if (ModelType!=CGNS_ENUMV( ModelTypeNull ) && ModelType!=CGNS_ENUMV( ModelTypeUserDefined ) &&
+      if (ModelType!=CGNS_ENUMV( ParticleModelTypeNull ) && ModelType!=CGNS_ENUMV( ParticleModelTypeUserDefined ) &&
       ModelType!=CGNS_ENUMV( KelvinHelmholtz ) && ModelType!=CGNS_ENUMV( KelvinHelmholtzACT ) &&
       ModelType!=CGNS_ENUMV( RayleighTaylor ) && ModelType!=CGNS_ENUMV( KelvinHelmholtzRayleighTaylor ) &&
       ModelType!=CGNS_ENUMV( ReitzKHRT ) && ModelType!=CGNS_ENUMV( TAB ) && ModelType!= CGNS_ENUMV( ETAB ) &&
@@ -17175,7 +17175,7 @@ int cg_particle_model_write(const char * ModelLabel, CGNS_ENUMT(ParticleModelTyp
             return CG_ERROR;
         }
     } else if (strcmp(ModelLabel, "ParticleWallInteractionModel_t")==0) {
-      if (ModelType!=CGNS_ENUMV( ModelTypeNull ) && ModelType!=CGNS_ENUMV( ModelTypeUserDefined ) &&
+      if (ModelType!=CGNS_ENUMV( ParticleModelTypeNull ) && ModelType!=CGNS_ENUMV( ParticleModelTypeUserDefined ) &&
           ModelType!=CGNS_ENUMV( Linear ) && ModelType!=CGNS_ENUMV( NonLinear ) &&
           ModelType!=CGNS_ENUMV( SoftSphere ) && ModelType!=CGNS_ENUMV( HardSphere ) &&
           ModelType!=CGNS_ENUMV( LinearSpringDashpot ) && ModelType!=CGNS_ENUMV( Pair ) &&
@@ -17187,7 +17187,7 @@ int cg_particle_model_write(const char * ModelLabel, CGNS_ENUMT(ParticleModelTyp
             return CG_ERROR;
         }
     } else if (strcmp(ModelLabel, "ParticlePhaseChangeModel_t")==0) {
-      if (ModelType!=CGNS_ENUMV( ModelTypeNull ) && ModelType!=CGNS_ENUMV( ModelTypeUserDefined ) &&
+      if (ModelType!=CGNS_ENUMV( ParticleModelTypeNull ) && ModelType!=CGNS_ENUMV( ParticleModelTypeUserDefined ) &&
       ModelType!=CGNS_ENUMV( Boil )  && ModelType!=CGNS_ENUMV( Chiang ) &&
       ModelType!=CGNS_ENUMV( Frossling ) && ModelType!=CGNS_ENUMV( FuchsKnudsen )) {
             cgi_error("Particle Model Type '%s' is not supported for %s",

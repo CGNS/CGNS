@@ -31,7 +31,7 @@
 #if CG_SIZEOF_SIZE == 32
 #define CG_ABS abs
 #else
-#define CG_ABS labs
+#define CG_ABS llabs
 #endif
 
 static int FileVersion;
