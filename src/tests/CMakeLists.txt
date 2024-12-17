@@ -66,6 +66,7 @@ set(test_general_rindf_FILES test_general_rindf.F90)
 set(test_family_treef_FILES test_family_treef.F90)
 set(test_bboxf_FILES test_bboxf.F90)
 set(test_complexf_FILES test_complexf.F90)
+set(test_particlef_FILES test_particlef.F90)
 
 # Build each test
 add_executable( cgioc                ${cgioc_FILES}                )
@@ -138,7 +139,8 @@ if (CGNS_ENABLE_FORTRAN)
 	add_executable( test_general_rindf ${test_general_rindf_FILES} )
 	add_executable( test_family_treef  ${test_family_treef_FILES}  )
 	add_executable( test_bboxf         ${test_bboxf_FILES}         )
-	add_executable( test_complexf      ${test_complexf_FILES}      )
+        add_executable( test_complexf      ${test_complexf_FILES}      )
+        add_executable( test_particlef     ${test_particlef_FILES}     )
 #	if (NOT CGNS_ENABLE_64BIT)
 # Don't build the F77 source because they will fail if ENABLE_64BIT is used
 #	  add_executable( cgiof       ${cgiof_FILES}  )
@@ -156,7 +158,9 @@ if (CGNS_ENABLE_FORTRAN)
 	test_general_rindf 
 	test_family_treef  
 	test_bboxf         
-	test_complexf)
+        test_complexf
+        test_particlef
+        )
 	# Modern Linking
 	foreach(TGTNAME ${FORTRAN_TESTS_LIST})
 	  target_link_libraries(${TGTNAME} PRIVATE ${TESTS_LK_LIBS})

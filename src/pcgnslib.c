@@ -1977,7 +1977,7 @@ int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
  * \param[in] fn \FILE_fn
  * \param[in] B \B_Base
  * \param[in] P \P_ParticleZone
- * \param[in] type \PGRID_datatype
+ * \param[in] datatype \PGRID_datatype
  * \param[in] coordname \PGRID_coordname
  * \param[out] C \PGRID_Coordinate
  * \return \ier
@@ -1989,13 +1989,13 @@ int cgp_field_general_read_data(int fn, int B, int Z, int S, int F,
  *          specify the subset of coordinate data to be written by a given process.
  */
 
-int cgp_particle_coord_write(int fn, int B, int P, CGNS_ENUMT(DataType_t) type,
+int cgp_particle_coord_write(int fn, int B, int P, CGNS_ENUMT(DataType_t) datatype,
     const char *coordname, int *C)
 {
     cg = cgi_get_file(fn);
     if (check_parallel(cg)) return CG_ERROR;
 
-    return cg_particle_coord_write(fn, B, P, type, coordname, NULL, C);
+    return cg_particle_coord_write(fn, B, P, datatype, coordname, NULL, C);
 }
 
 /*---------------------------------------------------------*/
@@ -2347,18 +2347,18 @@ int cgp_particle_coord_general_read_data(int fn, int B, int P, int C,
  * \param[in] B \B_Base
  * \param[in] P \P_ParticleZone
  * \param[in] S \PSOL_S
- * \param[in] DataType \PSOL_datatype
+ * \param[in] datatype \PSOL_datatype
  * \param[in] fieldname \PSOL_fieldname
  * \param[in] F \PSOL_F
  * \return \ier
  */
 int cgp_particle_field_write(int fn, int B, int P, int S,
-    CGNS_ENUMT(DataType_t) DataType, const char *fieldname, int *F)
+    CGNS_ENUMT(DataType_t) datatype, const char *fieldname, int *F)
 {
     cg = cgi_get_file(fn);
     if (check_parallel(cg)) return CG_ERROR;
 
-    return cg_particle_field_write(fn, B, P, S, DataType, fieldname, NULL, F);
+    return cg_particle_field_write(fn, B, P, S, datatype, fieldname, NULL, F);
 }
 
 /*---------------------------------------------------------*/

@@ -4164,6 +4164,20 @@ int cg_coord_general_read(int fn, int B, int Z, const char *coordname,
                                   coord_ptr);
 }
 
+/**
+* \ingroup ZoneGridCoordinates
+*
+* \brief Get coordinate id
+*
+* \param[in]  fn       \FILE_fn
+* \param[in]  B        \B_Base
+* \param[in]  Z        \Z_Zone
+* \param[in]  C        \C_Coordinate
+* \param[out] coord_id Coordinate id.
+* \return \ier
+*
+*/
+
 int cg_coord_id(int fn, int B, int Z, int C, double *coord_id)
 {
     cgns_zcoor *zcoor;
@@ -14360,6 +14374,20 @@ int cg_particle_coord_general_read(int fn, int B, int P, const char *coordname,
                                  coord_ptr);
 }
 
+/**
+* \ingroup ZoneGridCoordinates
+*
+* \brief  Get particle coordinate ids
+*
+* \param[in]  fn       \FILE_fn
+* \param[in]  B        \B_Base
+* \param[in]  P        \P_ParticleZone
+* \param[in]  C        \C_Coordinate
+* \param[out] coord_id Particle coordinate id.
+* \return \ier
+*
+*/
+
 int cg_particle_coord_id(int fn, int B, int P, int C, double *coord_id)
 {
    cgns_pcoor *pcoor;
@@ -15020,10 +15048,10 @@ int cg_particle_field_info(int fn, int B, int P, int S, int F,
 *
 * \brief  Read particle solution
 *
-* \param[in] fn           \FILE_fn
-* \param[in] B            \B_Base
-* \param[in] P            \P_ParticleZone
-* \param[in] S            \SOL_S
+* \param[in] fn            \FILE_fn
+* \param[in] B             \B_Base
+* \param[in] P             \P_ParticleZone
+* \param[in] S             \SOL_S
 * \param[in] fieldname     Name of the solution array. It is strongly advised to use the
 *                          SIDS nomenclature conventions when naming the solution arrays
 *                          to ensure file compatibility.
@@ -15032,7 +15060,7 @@ int cg_particle_field_info(int fn, int B, int P, int S, int F,
 *                          and RealDouble.
 * \param[in] s_rmin  Lower range index in file
 * \param[in] s_rmax  Upper range index in file
-* \param[out] field_ptr  Array of solution values.
+* \param[out] field_ptr    Array of solution values.
 * \return \ier
 *
 */
@@ -15141,7 +15169,7 @@ int cg_particle_field_general_read(int fn, int B, int P, int S, const char *fiel
                                  m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                  field_ptr);
 }
-
+/* MISSING MSB TODO */
 int cg_particle_field_id(int fn, int B, int P, int S, int F, double *field_id)
 {
    cgns_array *field;
