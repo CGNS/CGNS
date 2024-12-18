@@ -107,7 +107,7 @@ SUBROUTINE test_particle_io_main()
 
   INTEGER(CGSIZE_T), DIMENSION(1:2) :: dim = (/32,1/)
 
-  INTEGER(CGSIZE_T) :: rmin, rmax
+  INTEGER(CGSIZE_T), DIMENSION(1:3) :: rmin, rmax
   TYPE(C_PTR) :: f_ptr
 
   DOUBLE PRECISION, DIMENSION(:), ALLOCATABLE, TARGET :: coord_x, coord_y, coord_z
@@ -402,151 +402,181 @@ SUBROUTINE test_particle_io_main()
 
 END SUBROUTINE test_particle_io_main
 
+SUBROUTINE test_particle_io_partial()
+
+    IMPLICIT NONE
+
+    INTEGER :: fnum, bnum, pnum, cgcoord, cgsol
+    CHARACTER(LEN=27) :: fname = "particle_partial_testf.cgns"
+    INTEGER(cgsize_t) :: num_particles = 100
+    INTEGER :: n, k, i
+    INTEGER :: ier
+    REAL, DIMENSION(:), ALLOCATABLE, TARGET :: coord, coord_read
+    INTEGER(cgsize_t), DIMENSION(1:3) :: rmin, rmax
+    INTEGER :: cgfld
+    CHARACTER(LEN=32) :: field_name
+    INTEGER(cgenum_t) :: type
+    REAL, DIMENSION(:), ALLOCATABLE, TARGET :: field
+    TYPE(C_PTR) :: f_ptr
+
+    ! Allocate arrays
+    ALLOCATE(coord(1:num_particles))
+    DO n = 1, num_particles
+        coord(n) = REAL(n)
+    END DO
+
+    ! Delete existing file if present
+    OPEN(10, FILE=fname, STATUS='OLD', IOSTAT=ier)
+    IF(ier == 0) THEN
+       CLOSE(10, STATUS='DELETE')
+    END IF
+
+    WRITE(*,'(A)') "creating CGNS file "//TRIM(fname)
+
+    ! Configure error handler
+    CALL cg_configure_f(CG_CONFIG_ERROR, C_FUNLOC(print_error), ier)
+
+    ! Create file and write base
+    CALL cg_open_f(fname, CG_MODE_WRITE, fnum, ier)
+    CALL cg_base_write_f(fnum, "Base", 3, 3, bnum, ier)
+
+    WRITE(*,*) "writing particle zone"
+    CALL cg_particle_write_f(fnum, bnum, "ParticleZone", num_particles, pnum, ier)
+
+    ! Write coordinates for odd numbered particles
+    WRITE(*,*) "coordinates -> 1,3,5,7 ..."
+    DO k = 1, num_particles, 2
+       rmin = k
+       rmax = k
+       f_ptr = C_LOC(coord(k))
+       CALL cg_particle_coord_partial_write_f(fnum, bnum, pnum, CGNS_ENUMV(RealSingle), &
+            "CoordinateX", rmin, rmax, f_ptr, cgcoord, ier)
+       f_ptr = C_LOC(coord(k))
+       CALL cg_particle_coord_partial_write_f(fnum, bnum, pnum, CGNS_ENUMV(RealSingle), &
+            "CoordinateY", rmin, rmax, f_ptr, cgcoord, ier)
+       f_ptr = C_LOC(coord(k))
+       CALL cg_particle_coord_partial_write_f(fnum, bnum, pnum, CGNS_ENUMV(RealSingle), &
+            "CoordinateZ", rmin, rmax, f_ptr, cgcoord, ier)
+    END DO
+
+    ! Write solution
+    CALL cg_particle_sol_write_f(fnum, bnum, pnum, "Solution", cgsol, ier)
+    IF(ier .NE. 0) CALL cg_error_exit_f()
+
+    ! Write field data for odd numbered particles
+    WRITE(*,'(A)') "field -> 1,3,5,7 ..."
+    DO n = 1, num_particles, 2
+        rmin = n
+        rmax = n
+        f_ptr = C_LOC(coord(n))
+        CALL cg_particle_field_partial_write_f(fnum, bnum, pnum, cgsol, CGNS_ENUMV(RealSingle), &
+             "Field", rmin, rmax, f_ptr, cgfld, ier)
+     END DO
+
+    ! Close and reopen in modify mode
+    WRITE(*,*) "closing and reopening in modify mode"
+    CALL cg_close_f(fnum, ier)
+    CALL cg_open_f(fname, CG_MODE_MODIFY, fnum, ier)
+    pnum = 1
+
+    ! Fill in even numbered particles
+    WRITE(*,*) "coordinates -> 2,4,6,8 ..."
+    DO k = 1, num_particles-1, 2
+        rmin = k + 1
+        rmax = k + 1
+        f_ptr = C_LOC(coord(k+1))
+        CALL cg_particle_coord_partial_write_f(fnum, bnum, pnum, CGNS_ENUMV(RealSingle), &
+             "CoordinateX", rmin, rmax, f_ptr, cgcoord, ier)
+        f_ptr = C_LOC(coord(k+1))
+        CALL cg_particle_coord_partial_write_f(fnum, bnum, pnum, CGNS_ENUMV(RealSingle), &
+             "CoordinateY", rmin, rmax, f_ptr, cgcoord, ier)
+        f_ptr = C_LOC(coord(k+1))
+        CALL cg_particle_coord_partial_write_f(fnum, bnum, pnum, CGNS_ENUMV(RealSingle), &
+             "CoordinateZ", rmin, rmax, f_ptr, cgcoord, ier)
+    END DO
+
+    ! Fill in field data for even numbered particles
+    WRITE(*,*) "field -> 2,4,6,8 ..."
+    DO n = 1, num_particles-1, 2
+        rmin = n + 1
+        rmax = n + 1
+        f_ptr = C_LOC(coord(n+1))
+        CALL cg_particle_field_partial_write_f(fnum, bnum, pnum, cgsol, CGNS_ENUMV(RealSingle), &
+             "Field", rmin, rmax, f_ptr, cgfld, ier)
+    END DO
+
+    ! Close and reopen in read mode
+    WRITE(*,*) "closing and reopening in read mode" 
+    CALL cg_close_f(fnum, ier)
+
+    CALL cg_open_f(fname, CG_MODE_READ, fnum, ier)
+
+    ! Verify data
+    ALLOCATE(coord_read(num_particles))
+    coord_read = -1.0
+    rmin = 1
+    rmax = num_particles
+
+    ! Read and verify coordinates
+    f_ptr = C_LOC(coord_read(1))
+    CALL cg_particle_coord_read_f(fnum, bnum, pnum, "CoordinateX", CGNS_ENUMV(RealSingle), &
+         rmin, rmax, f_ptr, ier)
+
+    DO i = 1, rmax(1)-1
+        IF(.NOT. check_eq(coord(i), coord_read(i))) THEN
+            WRITE(*,*) "Particle partial coordinate write (CoordinateX) failed"
+            CALL cg_error_exit_f()
+        END IF
+    END DO
+
+    coord_read = -1.0
+    f_ptr = C_LOC(coord_read(1))
+    CALL cg_particle_coord_read_f(fnum, bnum, pnum, "CoordinateY", CGNS_ENUMV(RealSingle), &
+         rmin, rmax, f_ptr, ier)
+    DO i = 1, rmax(1)-1
+        IF(.NOT. check_eq(coord(i), coord_read(i))) THEN
+            WRITE(*,*) "Particle partial coordinate write (CoordinateY) failed"
+            CALL cg_error_exit_f()
+        END IF
+    END DO
+
+    coord_read = -1.0
+    f_ptr = C_LOC(coord_read(1))
+    CALL cg_particle_coord_read_f(fnum, bnum, pnum, "CoordinateZ", CGNS_ENUMV(RealSingle), &
+         rmin, rmax, f_ptr, ier)
+    DO i = 1, rmax(1)-1
+        IF(.NOT. check_eq(coord(i), coord_read(i))) THEN
+            WRITE(*,*) "Particle partial coordinate write (CoordinateZ) failed"
+            CALL cg_error_exit_f()
+        END IF
+    END DO
+
+    DEALLOCATE(coord_read)
+
+    ! Verify field data
+    CALL cg_particle_field_info_f(fnum, bnum, pnum, 1, 1, type, field_name, ier)
+
+    ALLOCATE(field(num_particles))
+    f_ptr = C_LOC(field(1))
+    CALL cg_particle_field_read_f(fnum, bnum, pnum, 1, field_name, type, rmin, rmax, f_ptr, ier)
+
+    DO i = 1, rmax(1)-1
+        IF(.NOT. check_eq(coord(i), field(i))) THEN
+            WRITE(*,*) "Particle partial field write failed"
+            CALL cg_error_exit_f()
+        END IF
+    END DO
+
+    DEALLOCATE(field)
+    DEALLOCATE(coord)
+
+    CALL cg_close_f(fnum, ier)
+
+END SUBROUTINE test_particle_io_partial
 
 END MODULE cgns_particle_test
 
 #if 0
-// Test partial write routines
-static void test_particle_io_partial()
-{
-   int fnum, bnum, pnum, cgcoord, cgsol
-   static char *fname = "particle_partial_test.cgns"
-
-   cgsize_t num_particles = 100
-
-   float* coord = (float*)malloc(sizeof(float)*num_particles)
-   for (int n = 0 n < num_particles n++)
-       coord[n] = (float)n
-
-   unlink (fname)
-   printf ("creating CGNS file %s\n", fname)
-
-   cg_configure(CG_CONFIG_ERROR, (void*) print_error)
-
-   cg_open (fname, CG_MODE_WRITE, &fnum)
-   cg_base_write (fnum, "Base", 3, 3, &bnum)
-
-   /* write particle zone */
-
-   puts ("writing particle zone")
-
-   cg_particle_write (fnum, bnum, "ParticleZone", num_particles, &pnum)
-
-   /* write the coordinates of every other particle */
-   puts("coordinates -> 1,3,5,7 ...")
-   for (int k = 0 k < (int)num_particles k += 2) {
-      cgsize_t rmin = k + 1
-      cgsize_t rmax = k + 1
-      cg_particle_coord_partial_write(fnum, bnum, pnum, CGNS_ENUMV(RealSingle), "CoordinateX", &rmin, &rmax, &coord[k], &cgcoord)
-      cg_particle_coord_partial_write(fnum, bnum, pnum, CGNS_ENUMV(RealSingle), "CoordinateY", &rmin, &rmax, &coord[k], &cgcoord)
-      cg_particle_coord_partial_write(fnum, bnum, pnum, CGNS_ENUMV(RealSingle), "CoordinateZ", &rmin, &rmax, &coord[k], &cgcoord)
-   }
-
-   /* write every other solution value */
-
-   if (cg_particle_sol_write(fnum, bnum, pnum, "Solution", &cgsol))
-       cg_error_exit()
-
-   puts("field -> 1,3,5,7 ...")
-   for (int n = 0 n < (int)num_particles n += 2) {
-       cgsize_t rmin = n + 1
-       cgsize_t rmax = n + 1
-       int cgfld
-       cg_particle_field_partial_write(fnum, bnum, pnum, cgsol, CGNS_ENUMV(RealSingle), "Field", &rmin, &rmax, &coord[n], &cgfld)
-   }
-
-   puts ("closing and reopening in modify mode")
-   cg_close (fnum)
-
-   cg_open (fname, CG_MODE_MODIFY, &fnum)
-   pnum = 1
-
-   /* Fill in missing coordinate data */
-   puts("coordinates -> 2,4,6,8 ...")
-   for (int k = 1 k < (int)num_particles k += 2) {
-      cgsize_t rmin = k + 1
-      cgsize_t rmax = k + 1
-      cg_particle_coord_partial_write(fnum, bnum, pnum, CGNS_ENUMV(RealSingle), "CoordinateX", &rmin, &rmax, &coord[k], &cgcoord)
-      cg_particle_coord_partial_write(fnum, bnum, pnum, CGNS_ENUMV(RealSingle), "CoordinateY", &rmin, &rmax, &coord[k], &cgcoord)
-      cg_particle_coord_partial_write(fnum, bnum, pnum, CGNS_ENUMV(RealSingle), "CoordinateZ", &rmin, &rmax, &coord[k], &cgcoord)
-   }
-
-   /* Fill in missing particle field data */
-   puts("field -> 2,4,6,8 ...")
-   for (int n = 1 n < num_particles n += 2) {
-       cgsize_t rmin = n + 1
-       cgsize_t rmax = n + 1
-       int cgfld
-       cg_particle_field_partial_write(fnum, bnum, pnum, cgsol, CGNS_ENUMV(RealSingle), "Field", &rmin, &rmax, &coord[n], &cgfld)
-   }
-
-   puts ("closing and reopening in read mode")
-   cg_close (fnum)
-
-   cg_open (fname, CG_MODE_READ, &fnum)
-
-   float* coord_read = (float*)malloc(sizeof(float)*num_particles)
-   memset(coord_read, -1, sizeof(float)*num_particles)
-   cgsize_t rmin = 1, rmax = num_particles
-
-   /* Read all coordinate arrays and verify that they match the written values */
-   cg_particle_coord_read(fnum, bnum, pnum, "CoordinateX", CGNS_ENUMV(RealSingle), &rmin, &rmax, coord_read)
-   for(int i = 0 i < rmax - 1 ++i)
-   {
-      if(!compareValuesFloat(coord[i], coord_read[i]))
-      {
-         printf("Particle partial coordinate write (CoordinateX) failed\n")
-         exit(1)
-      }
-   }
-
-   memset(coord_read, -1, sizeof(float)*num_particles)
-   cg_particle_coord_read(fnum, bnum, pnum, "CoordinateY", CGNS_ENUMV(RealSingle), &rmin, &rmax, coord_read)
-   for(int i = 0 i < rmax - 1 ++i)
-   {
-      if(!compareValuesFloat(coord[i], coord_read[i]))
-      {
-         printf("Particle partial coordinate write (CoordinateY) failed\n")
-         exit(1)
-      }
-   }
-
-   memset(coord_read, -1, sizeof(float)*num_particles)
-   cg_particle_coord_read(fnum, bnum, pnum, "CoordinateZ", CGNS_ENUMV(RealSingle), &rmin, &rmax, coord_read)
-   for(int i = 0 i < rmax - 1 ++i)
-   {
-      if(!compareValuesFloat(coord[i], coord_read[i]))
-      {
-         printf("Particle partial coordinate write (CoordinateZ) failed\n")
-         exit(1)
-      }
-   }
-
-   free(coord_read)
-
-   /* Verify that the field matches the written value as well */
-
-   CGNS_ENUMT(DataType_t) type
-   char field_name[32]
-   cg_particle_field_info(fnum, bnum, pnum, 1, 1, &type, field_name)
-
-   float* field = (float*)malloc(sizeof(float)*num_particles)
-   cg_particle_field_read(fnum, bnum, pnum, 1, field_name, type, &rmin, &rmax, field)
-
-   for(int i = 0 i < rmax - 1 ++i)
-   {
-      if(!compareValuesFloat(coord[i], field[i]))
-      {
-         printf("Particle partial field write failed\n")
-         exit(1)
-      }
-   }
-
-   free(field)
-   free(coord)
-
-   cg_close (fnum)
-}
 
 static void test_particle_bbox()
 {
@@ -827,7 +857,7 @@ PROGRAM main
   ! that were added as a part of CPEX 0046 (V4.5)
 
    CALL test_particle_io_main()
- !  CALL test_particle_io_partial()
+   CALL test_particle_io_partial()
  !  CALL test_particle_bbox()
  !  CALL test_particle_coord_io_and_ptset()
 

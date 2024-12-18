@@ -6561,8 +6561,8 @@ CONTAINS
         INTEGER, INTENT(IN) :: P
         CHARACTER(LEN=*)    :: coordname
         INTEGER(CGENUM_T), INTENT(IN) :: mem_datatype
-        INTEGER(CGSIZE_T), INTENT(OUT) :: s_rmin
-        INTEGER(CGSIZE_T), INTENT(OUT) :: s_rmax
+        INTEGER(CGSIZE_T), DIMENSION(*), INTENT(OUT) :: s_rmin
+        INTEGER(CGSIZE_T), DIMENSION(*), INTENT(OUT) :: s_rmax
         TYPE(C_PTR)         :: coord_array
         INTEGER, INTENT(OUT):: ier
 
@@ -6579,8 +6579,8 @@ CONTAINS
             INTEGER(C_INT), VALUE :: P
             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
             INTEGER(CGENUM_T), VALUE   :: mem_datatype
-            INTEGER(CGSIZE_T)   :: s_rmin
-            INTEGER(CGSIZE_T)   :: s_rmax
+            INTEGER(CGSIZE_T), DIMENSION(*) :: s_rmin
+            INTEGER(CGSIZE_T), DIMENSION(*) :: s_rmax
             TYPE(C_PTR), VALUE  :: coord_array
 
           END FUNCTION cg_particle_coord_read
@@ -6665,9 +6665,9 @@ CONTAINS
        INTEGER, INTENT(IN) :: B
        INTEGER, INTENT(IN) :: P
        INTEGER(CGENUM_T), INTENT(IN) :: datatype
-       CHARACTER(LEN=*),  INTENT(IN) :: coordname
-       INTEGER(CGSIZE_T),  INTENT(IN) :: s_rmin
-       INTEGER(CGSIZE_T),  INTENT(IN) :: s_rmax
+       CHARACTER(LEN=*) , INTENT(IN) :: coordname
+       INTEGER(CGSIZE_T), DIMENSION(*), INTENT(IN) :: s_rmin
+       INTEGER(CGSIZE_T), DIMENSION(*), INTENT(IN) :: s_rmax
        TYPE(C_PTR) :: coord_ptr
        INTEGER, INTENT(OUT) :: C
        INTEGER, INTENT(OUT) :: ier
@@ -6685,8 +6685,8 @@ CONTAINS
             INTEGER(C_INT), VALUE :: P
             INTEGER(CGENUM_T), VALUE:: datatype
             CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
-            INTEGER(CGSIZE_T), VALUE :: s_rmin
-            INTEGER(CGSIZE_T), VALUE :: s_rmax
+            INTEGER(CGSIZE_T), DIMENSION(*) :: s_rmin
+            INTEGER(CGSIZE_T), DIMENSION(*) :: s_rmax
             TYPE(C_PTR), VALUE :: coord_ptr
             INTEGER(C_INT) :: C
 
@@ -7016,8 +7016,8 @@ CONTAINS
       INTEGER, INTENT(IN)  :: S
       CHARACTER(LEN=*),  INTENT(IN) :: fieldname
       INTEGER(cgenum_t), INTENT(IN) :: mem_datatype
-      INTEGER(CGSIZE_T), INTENT(OUT) :: s_rmin
-      INTEGER(CGSIZE_T), INTENT(OUT) :: s_rmax
+      INTEGER(CGSIZE_T), DIMENSION(*), INTENT(OUT) :: s_rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), INTENT(OUT) :: s_rmax
       TYPE(C_PTR) :: field_ptr
       INTEGER, INTENT(OUT) :: ier
 
@@ -7034,8 +7034,8 @@ CONTAINS
            INTEGER, VALUE :: S
            CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fieldname
            INTEGER(CGENUM_T), VALUE :: mem_datatype
-           INTEGER(CGSIZE_T) :: s_rmin
-           INTEGER(CGSIZE_T) :: s_rmax
+           INTEGER(CGSIZE_T), DIMENSION(*) :: s_rmin
+           INTEGER(CGSIZE_T), DIMENSION(*) :: s_rmax
            TYPE(C_PTR), VALUE :: field_ptr
          END FUNCTION cg_particle_field_read
       END INTERFACE
@@ -7148,15 +7148,16 @@ CONTAINS
 
     END SUBROUTINE cg_piter_write_f
 
-    SUBROUTINE cg_particle_field_partial_write_f(fn, B, P, datatype, fieldname, s_rmin, s_rmax, field_ptr, F, ier)
+    SUBROUTINE cg_particle_field_partial_write_f(fn, B, P, S, datatype, fieldname, s_rmin, s_rmax, field_ptr, F, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: S
       INTEGER(CGENUM_T), INTENT(IN) :: datatype
       CHARACTER(LEN=*),  INTENT(IN) :: fieldname
-      INTEGER(CGSIZE_T),  INTENT(IN) :: s_rmin
-      INTEGER(CGSIZE_T),  INTENT(IN) :: s_rmax
+      INTEGER(CGSIZE_T), DIMENSION(*),  INTENT(IN) :: s_rmin
+      INTEGER(CGSIZE_T), DIMENSION(*),  INTENT(IN) :: s_rmax
       TYPE(C_PTR) :: field_ptr
       INTEGER, INTENT(OUT) :: F
       INTEGER, INTENT(OUT) :: ier
@@ -7165,17 +7166,18 @@ CONTAINS
       CHARACTER(LEN=LEN_TRIM(fieldname)+1, KIND=C_CHAR) :: c_fieldname
 
       INTERFACE
-         INTEGER(C_INT) FUNCTION cg_particle_field_partial_write(fn, B, P, datatype, fieldname, s_rmin, s_rmax, field_ptr, F) &
+         INTEGER(C_INT) FUNCTION cg_particle_field_partial_write(fn, B, P, S, datatype, fieldname, s_rmin, s_rmax, field_ptr, F) &
               BIND(C, NAME="cg_particle_field_partial_write")
            IMPORT :: C_INT, C_CHAR, CGENUM_T, C_PTR, CGSIZE_T
            IMPLICIT NONE
            INTEGER(C_INT), VALUE :: fn
            INTEGER(C_INT), VALUE :: B
            INTEGER(C_INT), VALUE :: P
+           INTEGER(C_INT), VALUE :: S
            INTEGER(CGENUM_T), VALUE:: datatype
            CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fieldname
-           INTEGER(CGSIZE_T), VALUE :: s_rmin
-           INTEGER(CGSIZE_T), VALUE :: s_rmax
+           INTEGER(CGSIZE_T), DIMENSION(*) :: s_rmin
+           INTEGER(CGSIZE_T), DIMENSION(*) :: s_rmax
            TYPE(C_PTR), VALUE :: field_ptr
            INTEGER(C_INT) :: F
 
@@ -7185,7 +7187,7 @@ CONTAINS
 
       c_fieldname = TRIM(fieldname)//C_NULL_CHAR
 
-      ier = INT(cg_particle_field_partial_write(INT(fn,C_INT), INT(B,C_INT), INT(P,C_INT), &
+      ier = INT(cg_particle_field_partial_write(INT(fn,C_INT), INT(B,C_INT), INT(P,C_INT), INT(S,C_INT), &
            datatype, c_fieldname, s_rmin, s_rmax, field_ptr, c_F))
 
       F = INT(c_F)
