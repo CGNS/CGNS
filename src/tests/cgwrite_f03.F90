@@ -1,33 +1,33 @@
 MODULE cgns_write_test
-     USE CGNS
-     USE ISO_C_BINDING
-     IMPLICIT NONE
+  USE CGNS
+  USE ISO_C_BINDING
+  IMPLICIT NONE
 
-     CONTAINS
-     ! Callback to print errors
-          SUBROUTINE print_error(error_code, error_msg) BIND(C)
+CONTAINS
+  ! Callback checks
+  SUBROUTINE print_error(error_code, error_msg) BIND(C)
 
-          IMPLICIT NONE
+    IMPLICIT NONE
 
-          INTEGER :: i
-          INTEGER(C_INT), VALUE :: error_code
-          CHARACTER(LEN=1), DIMENSION(*) :: error_msg
-          INTEGER :: eol
-          INTEGER :: check
+    INTEGER :: i
+    INTEGER(C_INT), VALUE :: error_code
+    CHARACTER(LEN=1), DIMENSION(*) :: error_msg
+    INTEGER :: eol
+    INTEGER :: check
 
-          eol = 0
-          DO i = 1, 80 !CGIO_MAX_ERROR_LENGTH
-               IF(error_msg(i)(1:1).EQ.C_NULL_CHAR) EXIT
-          eol = eol + 1
-          END DO
+    eol = 0
+    DO i = 1, 80 !CGIO_MAX_ERROR_LENGTH
+       IF(error_msg(i)(1:1).EQ.C_NULL_CHAR) EXIT
+       eol = eol + 1
+    END DO
 
-          ! error_msg should be "cgio_open_file:invalid configuration option"
-          IF(error_code.NE.1 .OR. eol .NE. 43 .OR. &
-                error_msg(1)(1:1) .NE. "c" .OR. error_msg(4)(1:1) .NE. "o") THEN
-               STOP 1
-          END IF
+    ! error_msg should be "cgio_open_file:invalid configuration option"
+    IF(error_code.NE.1 .OR. eol .NE. 43 .OR. &
+         error_msg(1)(1:1) .NE. "c" .OR. error_msg(4)(1:1) .NE. "o") THEN
+       STOP 1
+    END IF
 
-   END SUBROUTINE print_error
+  END SUBROUTINE print_error
 
 END MODULE cgns_write_test
 

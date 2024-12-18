@@ -389,11 +389,14 @@ test_complexf$(EXE) : test_complexf.F90 $(CGNSLIB)
 
 #----------
 
-test_particlef$(EXE) : test_particlef.F90 $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ test_particlef.F90 $(LDLIBS) $(FLIBS)
+test_particlef$(EXE) : test_particlef.F90 $(CGNSLIB) utilsf.$(O)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_particlef.F90 utilsf.$(O) $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
+
+utilsf.$(O) : utilsf.F90
+	$(F77) $(FOPTS) -c utilsf.F90
 
 utils.$(O) : utils.c utils.h
 	$(CC) $(COPTS) -c utils.c

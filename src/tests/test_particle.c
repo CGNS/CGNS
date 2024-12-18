@@ -86,14 +86,12 @@ static void print_error(int error_code, char *error_msg)
    case -1: // Fatal Error
    {
       printf("Fatal Error: %s\n", error_msg);
-      cgio_cleanup();
-      exit(1);
+      cg_error_exit();
    }
    default: // Shouldn't be possible as -1, 0, and 1 are the only error codes at the moment
    {
       printf("Unknown error code %d encountered. Aborting...\n", error_code);
-      cgio_cleanup();
-      exit(1);
+      cg_error_exit();
    }
    }
 }
@@ -236,8 +234,7 @@ static void test_particle_io_main()
     if(nparticles != 3)
     {
        printf("Expected 3 ParticleZone_t nodes but found %d ParticleZone_t nodes instead\n", nparticles);
-       cgio_cleanup();
-       exit(1);
+       cg_error_exit();
     }
 
     for(int iparticle = 1; iparticle <= nparticles; ++iparticle)
@@ -252,15 +249,13 @@ static void test_particle_io_main()
        if(strcmp(particle_names[iparticle - 1], pname) != 0)
        {
           printf("Expected %s as the ParticleZone_t node name but found %s instead\n", particle_names[iparticle-1], pname);
-          cgio_cleanup();
-          exit(1);
+          cg_error_exit();
        }
 
        if(size != particle_sizes[iparticle-1])
        {
           printf("Expected %d as the ParticleZone_t node size but found %d instead\n", (int)particle_sizes[iparticle-1], (int)size);
-          cgio_cleanup();
-          exit(1);
+          cg_error_exit();
        }
 
        /* Check to see if we have coordinates */
@@ -295,8 +290,7 @@ static void test_particle_io_main()
                 compareValuesFloat(coord_z[kk], water_zc[kk]) == 0)
           {
              printf("Invalid particle coordinate data - written value doesn't match the read value\n");
-             cgio_cleanup();
-             exit(1);
+             cg_error_exit();
           }
        }
 
@@ -318,6 +312,7 @@ static void test_particle_io_main()
        if(gov_flag != 1)
        {
           printf("Particle governing equations cannot be found\n");
+          exit(1);
        }
        else
        {
@@ -337,8 +332,7 @@ static void test_particle_io_main()
        if(npsols != psolnum)
        {
           printf("For ParticleZone_t %d, expected %d ParticleSolution_t node(s) but found %d instead\n", iparticle, psolnum, npsols);
-          cgio_cleanup();
-          exit(1);
+          cg_error_exit();
        }
 
        for(int isol = 1; isol <= npsols; ++isol)
@@ -351,8 +345,7 @@ static void test_particle_io_main()
           if(nfields != fieldnum)
           {
              printf("For ParticleZone_t %d > ParticleSolution_t %d, expected %d DataArray_t node(s) but found %d instead\n", iparticle, psolnum, fieldnum, nfields);
-             cgio_cleanup();
-             exit(1);
+             cg_error_exit();
           }
 
           for(int ifield = 1; ifield <= nfields; ++ifield)
@@ -366,13 +359,23 @@ static void test_particle_io_main()
 
              rmin = 1;
              rmax = size;
-             double* field = (double*)malloc(size*sizeof(double));
+             float* field = (float*)malloc(size*sizeof(float));
              cg_particle_field_read(fnum, bnum, iparticle, isol, fname, type, &rmin, &rmax, field);
+             if(ifield == 1) {
+               if(field[0] != radius[0]) {
+                  printf("Invalid particle field radius data - written value doesn't match the read value\n");
+                  cg_error_exit();
+               }
+             } else {
+               if(field[0] != temperature[0]) {
+                 printf("Invalid particle field temperature data - written value doesn't match the read value\n");
+                 cg_error_exit();
+               }
+             }
              free(field);
           }
        }
     }
-
     cg_close(fnum);
 }
 

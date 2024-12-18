@@ -66,7 +66,7 @@ set(test_general_rindf_FILES test_general_rindf.F90)
 set(test_family_treef_FILES test_family_treef.F90)
 set(test_bboxf_FILES test_bboxf.F90)
 set(test_complexf_FILES test_complexf.F90)
-set(test_particlef_FILES test_particlef.F90)
+set(test_particlef_FILES test_particlef.F90 utilsf.F90)
 
 # Build each test
 add_executable( cgioc                ${cgioc_FILES}                )
