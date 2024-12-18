@@ -126,7 +126,7 @@ CGNSDLL void cg_configure_c_ptr(cgint_f *what, void *value, cgint_f *ier)
       (int)*what == CG_CONFIG_ADD_PATH) {
     *ier = (cgint_f)cg_configure((int)*what, value);
   } else if( (int)*what == CG_CONFIG_ERROR) {
-    *ier = (cgint_f)cg_configure((int)*what, value);
+    *ier = (cgint_f)CG_ERROR;
 
   /* MPI COMMUNICATOR */
 #if CG_BUILD_PARALLEL
@@ -155,12 +155,12 @@ CGNSDLL void cg_configure_c_ptr(cgint_f *what, void *value, cgint_f *ier)
 
 CGNSDLL void cg_configure_c_funptr(cgint_f *what, void *value, cgint_f *ier)
 {
-  if( (int)*what == CG_CONFIG_ERROR) {
-    *ier = (cgint_f)cg_configure((int)*what, value);
+  if ( (int)*what == CG_CONFIG_ERROR ) {
+      *ier = (cgint_f)cg_configure((int)*what, value);
   } else {
-    *ier = (cgint_f)CG_ERROR;
-    return;
+      *ier = (cgint_f)CG_ERROR;
   }
+  return;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *\

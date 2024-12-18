@@ -3625,8 +3625,10 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE cg_configure_f
-    MODULE PROCEDURE cg_configure_ptr
+  ! DO NOT CHANGE THE ORDER OF THE FOLLOWING INTERFACES, AS IT RESULTS IN
+  ! THE WRONG INTERFACE BEING CALLED WITH GNU FORTRAN ON macOS.
     MODULE PROCEDURE cg_configure_funptr
+    MODULE PROCEDURE cg_configure_ptr
   END INTERFACE
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
