@@ -101,7 +101,7 @@ if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
     test_unstruc_quad_f90
     test_poly_unstructured_f90
   )
-  set(pcgns_ftest_FILES pcgns_ftest.F90)
+  set(pcgns_ftest_FILES pcgns_ftest.F90 ${CMAKE_SOURCE_DIR}/src/tests/utilsf.F90)
   add_executable(pcgns_ftest ${pcgns_ftest_FILES})
   set(fexample_FILES fexample.F90)
   add_executable(fexample ${fexample_FILES})

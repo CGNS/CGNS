@@ -12302,9 +12302,9 @@ int cg_ziter_write(int fn, int B, int Z, const char * zitername)
  *
  * \brief  Read ParticleIterativeData_t node
  *
- * \param[in] fn \FILE_fn
- * \param[in] B  \B_Base
- * \param[in] P  \P_ParticleZone
+ * \param[in]  fn         \FILE_fn
+ * \param[in]  B          \B_Base
+ * \param[in]  P          \P_ParticleZone
  * \param[out] pitername  Name of the ParticleIterativeData_t node.
  * \return \ier
  *
@@ -12331,9 +12331,9 @@ int cg_piter_read(int fn, int B, int P, char *pitername)
  *
  * \brief  Write ParticleIterativeData_t node
  *
- * \param[in] fn \FILE_fn
- * \param[in] B  \B_Base
- * \param[in] P  \P_ParticleZone
+ * \param[in] fn         \FILE_fn
+ * \param[in] B          \B_Base
+ * \param[in] P          \P_ParticleZone
  * \param[in] pitername  Name of the ParticleIterativeData_t node.
  * \return \ier
  *
@@ -13950,11 +13950,11 @@ int cg_particle_coord_node_read(int fn, int B, int P, int C, char *pcoord_name)
 * \param[in] fn           \FILE_fn
 * \param[in] B            \B_Base
 * \param[in] P            \P_ParticleZone
-* \param[in] C            \C_Coordinate
-* \param[out] pcoord_name Name of the \e ParticleCoordinates_t node.
+* \param[in] pcoord_name  Name of the \e ParticleCoordinates_t node.
 *                         Note that the name "ParticleCoordinates" is reserved
 *                         for the original particle location and must be the first
 *                         \e ParticleCoordinates_t node to be defined.
+* \param[out] C           \C_Coordinate
 * \return \ier
 *
 */
@@ -15169,7 +15169,7 @@ int cg_particle_field_general_read(int fn, int B, int P, int S, const char *fiel
                                  m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                  field_ptr);
 }
-/* MISSING MSB TODO */
+/* MISSING DOCS MSB TODO */
 int cg_particle_field_id(int fn, int B, int P, int S, int F, double *field_id)
 {
    cgns_array *field;
@@ -15348,7 +15348,7 @@ int cg_particle_field_partial_write(int fn, int B, int P, int S,
 * \param[in] m_rmin     Lower range index in memory
 * \param[in] m_rmax     Upper range index in memory
 * \param[in] field_ptr  Array of solution values.
-* \param[out] F \SOL_F
+* \param[out] F         \SOL_F
 * \return \ier
 *
 */

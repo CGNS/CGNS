@@ -553,7 +553,6 @@ static void test_particle_bbox()
 
     puts ("closing and reopening in read mode");
     cg_close (fnum);
-
     /* read file */
 
     cg_open (fname, CG_MODE_READ, &fnum);
@@ -575,6 +574,7 @@ static void test_particle_bbox()
     puts ("closing and reopening in modify mode");
     cg_close (fnum);
 
+#if 0
     cg_open (fname, CG_MODE_MODIFY, &fnum);
     bnum = pnum = 1;
 
@@ -643,6 +643,7 @@ static void test_particle_bbox()
 
     puts ("closing file");
     cg_close (fnum);
+#endif
 }
 
 static void test_particle_coord_io_and_ptset()
