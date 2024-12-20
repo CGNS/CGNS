@@ -362,12 +362,12 @@ static void test_particle_io_main()
              float* field = (float*)malloc(size*sizeof(float));
              cg_particle_field_read(fnum, bnum, iparticle, isol, fname, type, &rmin, &rmax, field);
              if(ifield == 1) {
-               if(field[0] != radius[0]) {
+               if( compareValuesFloat(field[0], radius[0]) == 0 ) {
                   printf("Invalid particle field radius data - written value doesn't match the read value\n");
                   cg_error_exit();
                }
              } else {
-               if(field[0] != temperature[0]) {
+               if( compareValuesFloat(field[0], temperature[0]) == 0 ) {
                  printf("Invalid particle field temperature data - written value doesn't match the read value\n");
                  cg_error_exit();
                }
@@ -574,7 +574,6 @@ static void test_particle_bbox()
     puts ("closing and reopening in modify mode");
     cg_close (fnum);
 
-#if 0
     cg_open (fname, CG_MODE_MODIFY, &fnum);
     bnum = pnum = 1;
 
@@ -643,7 +642,6 @@ static void test_particle_bbox()
 
     puts ("closing file");
     cg_close (fnum);
-#endif
 }
 
 static void test_particle_coord_io_and_ptset()
