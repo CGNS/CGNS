@@ -48,16 +48,20 @@ jobs:
     - name: Install Dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        sudo add-apt-repository ppa:kisak/kisak-mesa
         sudo apt update
         sudo apt upgrade
         sudo apt install mpich
-        sudo apt-get install -y libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
+        #sudo apt-get install -y libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
+        sudo apt-get install -y libxmu-dev tk-dev tcl-dev
         # Set env vars
         echo "OS_NAME=linux" >> $GITHUB_ENV
         echo "CC=mpicc" >> $GITHUB_ENV
         echo "FC=mpif90" >> $GITHUB_ENV
         echo "F77=mpif90" >> $GITHUB_ENV
+        wget https://github.com/PetrusNoleto/Error-in-install-cisco-packet-tracer-in-ubuntu-23.10-unmet-dependencies/releases/download/CiscoPacketTracerFixUnmetDependenciesUbuntu23.10/libegl1-mesa_23.0.4-0ubuntu1.22.04.1_amd64.deb
+        wget https://github.com/PetrusNoleto/Error-in-install-cisco-packet-tracer-in-ubuntu-23.10-unmet-dependencies/releases/download/CiscoPacketTracerFixUnmetDependenciesUbuntu23.10/libgl1-mesa-glx_23.0.4-0ubuntu1.22.04.1_amd64.deb
+        sudo dpkg -i libegl1-mesa_23.0.4-0ubuntu1.22.04.1_amd64.deb
+        sudo dpkg -i libgl1-mesa-glx_23.0.4-0ubuntu1.22.04.1_amd64.deb
 
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
