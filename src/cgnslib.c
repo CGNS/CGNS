@@ -8431,7 +8431,7 @@ int cg_nfields(int fn, int B, int Z, int S, int *nfields)
  * \param[in]  B         \B_Base
  * \param[in]  Z         \Z_Zone
  * \param[in]  S         \SOL_S
- * \param[in]  F         Solution array index number, where 1 ≤ F ≤ nfields.
+ * \param[in]  F         \PSOL_F
  * \param[out] datatype  Data type of the solution array written to the file. Admissible data types
  *                       for a solution array are \e Integer, \e LongInteger, \e RealSingle, and \e RealDouble.
  * \param[out] fieldname Name of the solution array. It is strongly advised to use the SIDS
@@ -8596,6 +8596,21 @@ int cg_field_general_read(int fn, int B, int Z, int S, const char *fieldname,
                                   m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   field_ptr);
 }
+
+/**
+ * \ingroup FlowSolutionData
+ *
+ * \brief Get the field solution ADF ID number (address) of node
+ *
+ * \param[in]  fn        \FILE_fn
+ * \param[in]  B         \B_Base
+ * \param[in]  Z         \Z_Zone
+ * \param[in]  S         \SOL_S
+ * \param[in]  F         \PSOL_F
+ * \param[out] field_id  Field solution ADF ID number (address) of node
+ * \return \ier
+ *
+ */
 
 int cg_field_id(int fn, int B, int Z, int S, int F, double *field_id)
 {
@@ -15014,7 +15029,7 @@ int cg_particle_nfields(int fn, int B, int P, int S, int *nfields)
 * \param[in] B          \B_Base
 * \param[in] P          \P_ParticleZone
 * \param[in] S          \SOL_S
-* \param[in] F          Solution array index number, where 1 ≤ F ≤ nfields.
+* \param[in] F          \PSOL_F
 * \param[out] datatype  Data type of the solution array written to the file.
 *                       Admissible data types for a solution array are \e Integer,
 *                       \e LongInteger, \e RealSingle, and \e RealDouble.
@@ -15169,7 +15184,21 @@ int cg_particle_field_general_read(int fn, int B, int P, int S, const char *fiel
                                  m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                  field_ptr);
 }
-/* MISSING DOCS MSB TODO */
+
+/**
+ * \ingroup FlowSolutionData
+ *
+ * \brief Get the particle field solution ADF ID number (address) of node
+ *
+ * \param[in]  fn        \FILE_fn
+ * \param[in]  B         \B_Base
+ * \param[in]  Z         \Z_Zone
+ * \param[in]  S         \SOL_S
+ * \param[in]  F         \PSOL_F
+ * \param[out] field_id  Field particle solution ADF ID number (address) of node
+ * \return \ier
+ *
+ */
 int cg_particle_field_id(int fn, int B, int P, int S, int F, double *field_id)
 {
    cgns_array *field;
@@ -15191,18 +15220,18 @@ int cg_particle_field_id(int fn, int B, int P, int S, int F, double *field_id)
 *
 * \brief  Write Particle solution
 *
-* \param[in] fn         \FILE_fn
-* \param[in] B          \B_Base
-* \param[in] P          \P_ParticleZone
-* \param[in] S          \SOL_S
-* \param[in] fieldname  Name of the solution array. It is strongly advised to use
-*                       the SIDS nomenclature conventions when naming the solution
-*                       arrays to ensure file compatibility.
-* \param[in] type       Data type of the solution array written to the file. Admissible
-*                       data types for a solution array are Integer, LongInteger,
-*                       RealSingle, and RealDouble.
-* \param[in] field_ptr Array of solution values.
-* \param[out] F \SOL_F
+* \param[in]  fn         \FILE_fn
+* \param[in]  B          \B_Base
+* \param[in]  P          \P_ParticleZone
+* \param[in]  S          \SOL_S
+* \param[in]  fieldname  Name of the solution array. It is strongly advised to use
+*                        the SIDS nomenclature conventions when naming the solution
+*                        arrays to ensure file compatibility.
+* \param[in]  type       Data type of the solution array written to the file. Admissible
+*                        data types for a solution array are Integer, LongInteger,
+*                        RealSingle, and RealDouble.
+* \param[in]  field_ptr  Array of solution values.
+* \param[out] F          \SOL_F
 * \return \ier
 *
 */
