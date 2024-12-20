@@ -146,3 +146,7 @@ jobs:
         make -j 8
         make test
       shell: bash
+
+    - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
