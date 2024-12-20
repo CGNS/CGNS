@@ -53,7 +53,6 @@ jobs:
         sudo apt install mpich
         sudo apt-get install -y libxmu-dev tk-dev tcl-dev
         sudo apt install libgl1-mesa-dri mesa-utils libgl1-mesa-dev libglu1-mesa-dev
-        #sudo apt-get install -y libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
         # Set env vars
         echo "OS_NAME=linux" >> $GITHUB_ENV
         echo "CC=mpicc" >> $GITHUB_ENV
