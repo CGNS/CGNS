@@ -61,7 +61,7 @@ jobs:
         echo "FC=mpif90" >> $GITHUB_ENV
         echo "F77=mpif90" >> $GITHUB_ENV
         mpiexec_cmd="mpiexec --use-hwthread-cpus -n 4"
-        echo "MPIEXEC="$mpiexec_cmd" >> $GITHUB_ENV
+        echo "MPIEXEC=$mpiexec_cmd" >> $GITHUB_ENV
 
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
