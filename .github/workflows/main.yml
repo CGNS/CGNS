@@ -48,10 +48,11 @@ jobs:
     - name: Install Dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
+        sudo add-apt-repository ppa:kisak/kisak-mesa
         sudo apt update
+        sudo apt upgrade
         sudo apt install mpich
-        #sudo apt-get install -y libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
-        sudo apt-get install -y libgl1 libglx-mesa0 libxmu-dev tk-dev tcl-dev
+        sudo apt-get install -y libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
         # Set env vars
         echo "OS_NAME=linux" >> $GITHUB_ENV
         echo "CC=mpicc" >> $GITHUB_ENV
