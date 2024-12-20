@@ -60,6 +60,7 @@ jobs:
         echo "CC=mpicc" >> $GITHUB_ENV
         echo "FC=mpif90" >> $GITHUB_ENV
         echo "F77=mpif90" >> $GITHUB_ENV
+        echo 'MPIEXEC="mpiexec --use-hwthread-cpus -n 4"' >> $GITHUB_ENV
 
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
@@ -149,6 +150,6 @@ jobs:
         make test
       shell: bash
 
-    - name: Setup tmate session
-      if: ${{ failure() }}
-      uses: mxschmitt/action-tmate@v3
+#    - name: Setup tmate session
+#      if: ${{ failure() }}
+#      uses: mxschmitt/action-tmate@v3
