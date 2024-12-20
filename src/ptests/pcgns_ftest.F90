@@ -819,9 +819,9 @@ SUBROUTINE multisets()
 
   ! Check if read the data back correctly
   DO k = 1, count
-     IF(.NOT.check_eq(Coor_x(k), REAL(commrank*count + k, KIND=DP) + 0.1_DP).OR. &
-          .NOT.check_eq(Coor_y(k), REAL(commrank*count + k, KIND=DP) + 0.2_DP).OR. &
-          .NOT.check_eq(Coor_z(k), REAL(commrank*count + k, KIND=DP) + 0.3_DP)) THEN
+     IF(.NOT.check_eq(Coor_x(k), REAL(commrank*count + k, KIND=DP) + 0.1_DP, 2).OR. &
+          .NOT.check_eq(Coor_y(k), REAL(commrank*count + k, KIND=DP) + 0.2_DP, 2).OR. &
+          .NOT.check_eq(Coor_z(k), REAL(commrank*count + k, KIND=DP) + 0.3_DP, 2)) THEN
         IF (commrank .EQ. 0) CALL write_test_status(failed, "Check cgp_coord_multi_read_data_f values", &
              "ERR: values are incorrect")
         CALL cgp_error_exit_f()
