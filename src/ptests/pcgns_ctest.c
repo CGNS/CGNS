@@ -915,8 +915,8 @@ int particle_test()
    }
 
    int m_numdim = 1;
-   cgsize_t s_rmin[m_numdim], s_rmax[m_numdim]; // Indices in the file
-   cgsize_t m_rmin[m_numdim], m_rmax[m_numdim]; // Indices in memory corresponding to Coor_z
+   cgsize_t s_rmin[1], s_rmax[1]; // Indices in the file; dim = m_numdim
+   cgsize_t m_rmin[1], m_rmax[1]; // Indices in memory corresponding to Coor_z; dim = m_numdim
    cgsize_t m_arg_dimvals = count;
 
    s_rmin[0] = min ;
