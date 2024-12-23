@@ -42,6 +42,8 @@ jobs:
           echo "CC=mpicc" >> $GITHUB_ENV
           echo "FC=mpif90" >> $GITHUB_ENV
           echo "F77=mpif90" >> $GITHUB_ENV
+          mpiexec_cmd="mpiexec --use-hwthread-cpus -n 4"
+          echo "MPIEXEC=$mpiexec_cmd" >> $GITHUB_ENV
 
       - name: Checkout
         uses: actions/checkout@v3
