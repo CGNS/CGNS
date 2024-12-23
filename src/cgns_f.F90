@@ -3625,8 +3625,8 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE cg_configure_f
-  ! DO NOT CHANGE THE ORDER OF THE FOLLOWING INTERFACES, AS IT RESULTS IN
-  ! THE WRONG INTERFACE BEING CALLED WITH GNU FORTRAN ON macOS.
+    ! DO NOT CHANGE THE ORDER OF THE FOLLOWING INTERFACES, AS IT RESULTS IN
+    ! THE WRONG INTERFACE BEING CALLED WITH GNU FORTRAN ON macOS.
     MODULE PROCEDURE cg_configure_funptr
     MODULE PROCEDURE cg_configure_ptr
   END INTERFACE
@@ -3638,6 +3638,13 @@ MODULE cgns
   END INTERFACE
 
   PRIVATE cgp_particle_coord_write_data_f0, cgp_particle_coord_write_data_f1
+
+  INTERFACE cgp_particle_coord_read_data_f
+     MODULE PROCEDURE cgp_particle_coord_read_data_f0
+     MODULE PROCEDURE cgp_particle_coord_read_data_f1
+  END INTERFACE
+
+  PRIVATE cgp_particle_coord_read_data_f0, cgp_particle_coord_read_data_f1
 #endif
 
 !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -4038,6 +4045,22 @@ MODULE cgns
        TYPE(C_PTR), VALUE :: coords
      END FUNCTION cgp_particle_coord_write_data
   END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_particle_coord_read_data(fn, B, P, C, rmin, rmax, coords) &
+          BIND(C, name="cgp_particle_coord_read_data")
+       IMPORT :: C_INT, C_PTR
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: P
+       INTEGER(C_INT), VALUE :: C
+       TYPE(C_PTR), VALUE :: rmin
+       TYPE(C_PTR), VALUE :: rmax
+       TYPE(C_PTR), VALUE :: coords
+     END FUNCTION cgp_particle_coord_read_data
+  END INTERFACE
+
 #endif
 
   PRIVATE cg_configure_ptr, cg_configure_funptr
@@ -7764,7 +7787,28 @@ CONTAINS
 
      END SUBROUTINE cgp_particle_field_general_read_data_f
 
-     SUBROUTINE cgp_particle_coord_read_data_f(fn, B, P, C, rmin, rmax, coords, ier)
+     SUBROUTINE cgp_particle_coord_read_data_f0(fn, B, P, C, rmin, rmax, coords, ier)
+       IMPLICIT NONE
+       INTEGER, INTENT(IN) :: fn
+       INTEGER, INTENT(IN) :: B
+       INTEGER, INTENT(IN) :: P
+       INTEGER, INTENT(IN) :: C
+       INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
+       INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
+       TYPE(C_PTR) ::  coords
+       INTEGER, INTENT(OUT) :: ier
+
+       TYPE(C_PTR) :: rmin_ptr, rmax_ptr
+
+       rmin_ptr = C_LOC(rmin)
+       rmax_ptr = C_LOC(rmax)
+
+       ier = INT(cgp_particle_coord_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(C, c_int), &
+            rmin_ptr, rmax_ptr, coords))
+
+     END SUBROUTINE cgp_particle_coord_read_data_f0
+
+     SUBROUTINE cgp_particle_coord_read_data_f1(fn, B, P, C, rmin, rmax, coords, ier)
        IMPLICIT NONE
        INTEGER, INTENT(IN) :: fn
        INTEGER, INTENT(IN) :: B
@@ -7777,28 +7821,13 @@ CONTAINS
 
        TYPE(C_PTR) :: rmin_ptr, rmax_ptr
 
-       INTERFACE
-          INTEGER(C_INT) FUNCTION cgp_particle_coord_read_data(fn, B, P, C, rmin, rmax, coords) &
-               BIND(C, name="cgp_particle_coord_read_data")
-            IMPORT :: C_INT, C_PTR
-            IMPLICIT NONE
-            INTEGER(C_INT), VALUE :: fn
-            INTEGER(C_INT), VALUE :: B
-            INTEGER(C_INT), VALUE :: P
-            INTEGER(C_INT), VALUE :: C
-            TYPE(C_PTR), VALUE :: rmin
-            TYPE(C_PTR), VALUE :: rmax
-            TYPE(C_PTR), VALUE :: coords
-          END FUNCTION cgp_particle_coord_read_data
-       END INTERFACE
-
        rmin_ptr = C_LOC(rmin(1))
        rmax_ptr = C_LOC(rmax(1))
 
        ier = INT(cgp_particle_coord_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(C, c_int), &
             rmin_ptr, rmax_ptr, coords))
 
-     END SUBROUTINE cgp_particle_coord_read_data_f
+     END SUBROUTINE cgp_particle_coord_read_data_f1
 
      SUBROUTINE cgp_particle_coord_general_read_data_f(fn, B, P, C, rmin, rmax, &
           m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
