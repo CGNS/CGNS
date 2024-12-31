@@ -51,7 +51,6 @@ jobs:
         sudo apt update
         sudo apt upgrade
         sudo apt-get install openmpi-bin openmpi-common mpi-default-dev
-        # sudo apt-get purge mpich
         # sudo apt-get install mpich
         sudo apt-get install -y libxmu-dev tk-dev tcl-dev
         sudo apt install libgl1-mesa-dri mesa-utils libgl1-mesa-dev libglu1-mesa-dev

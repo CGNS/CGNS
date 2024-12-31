@@ -7682,188 +7682,188 @@ CONTAINS
 
 #if CG_BUILD_PARALLEL_F
 
-     SUBROUTINE cgp_particle_coord_write_f(fn, B, P, datatype, coordname, C, ier)
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER(CGENUM_T), INTENT(IN) :: datatype
-       CHARACTER(LEN=*),  INTENT(IN) :: coordname
-       INTEGER, INTENT(OUT) :: C
-       INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_coord_write_f(fn, B, P, datatype, coordname, C, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER(CGENUM_T), INTENT(IN) :: datatype
+      CHARACTER(LEN=*),  INTENT(IN) :: coordname
+      INTEGER, INTENT(OUT) :: C
+      INTEGER, INTENT(OUT) :: ier
 
-       INTEGER(C_INT) :: c_C
-       CHARACTER(LEN=LEN_TRIM(coordname)+1, KIND=C_CHAR) :: c_coordname
+      INTEGER(C_INT) :: c_C
+      CHARACTER(LEN=LEN_TRIM(coordname)+1, KIND=C_CHAR) :: c_coordname
 
-       INTERFACE
-          INTEGER(C_INT) FUNCTION cgp_particle_coord_write(fn, B, P, datatype, coordname, C) &
-                                                          BIND(C, NAME="cgp_particle_coord_write")
-            IMPORT :: C_INT, C_CHAR, CGENUM_T, C_PTR
-            IMPLICIT NONE
-            INTEGER(C_INT), VALUE :: fn
-            INTEGER(C_INT), VALUE :: B
-            INTEGER(C_INT), VALUE :: P
-            INTEGER(CGENUM_T), VALUE:: datatype
-            CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
-            INTEGER(C_INT) :: C
+      INTERFACE
+         INTEGER(C_INT) FUNCTION cgp_particle_coord_write(fn, B, P, datatype, coordname, C) &
+              BIND(C, NAME="cgp_particle_coord_write")
+           IMPORT :: C_INT, C_CHAR, CGENUM_T, C_PTR
+           IMPLICIT NONE
+           INTEGER(C_INT), VALUE :: fn
+           INTEGER(C_INT), VALUE :: B
+           INTEGER(C_INT), VALUE :: P
+           INTEGER(CGENUM_T), VALUE:: datatype
+           CHARACTER(KIND=C_CHAR), DIMENSION(*) :: coordname
+           INTEGER(C_INT) :: C
 
-          END FUNCTION cgp_particle_coord_write
+         END FUNCTION cgp_particle_coord_write
 
-       END INTERFACE
+      END INTERFACE
 
-       c_coordname = TRIM(coordname)//C_NULL_CHAR
+      c_coordname = TRIM(coordname)//C_NULL_CHAR
 
-       ier = INT(cgp_particle_coord_write(INT(fn,C_INT), INT(B,C_INT), INT(P,C_INT), datatype, c_coordname, c_C))
+      ier = INT(cgp_particle_coord_write(INT(fn,C_INT), INT(B,C_INT), INT(P,C_INT), datatype, c_coordname, c_C))
 
-       C = INT(c_C)
+      C = INT(c_C)
 
-     END SUBROUTINE cgp_particle_coord_write_f
+    END SUBROUTINE cgp_particle_coord_write_f
 
-     SUBROUTINE cgp_particle_coord_write_data_f0(fn, B, P, C, rmin, rmax, coords, ier)
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER, INTENT(IN) :: C
-       INTEGER(CGSIZE_T), INTENT(IN), TARGET :: rmin
-       INTEGER(CGSIZE_T), INTENT(IN), TARGET :: rmax
-       TYPE(C_PTR) :: coords
-       INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_coord_write_data_f0(fn, B, P, C, rmin, rmax, coords, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: C
+      INTEGER(CGSIZE_T), INTENT(IN), TARGET :: rmin
+      INTEGER(CGSIZE_T), INTENT(IN), TARGET :: rmax
+      TYPE(C_PTR) :: coords
+      INTEGER, INTENT(OUT) :: ier
 
-       TYPE(C_PTR) :: rmin_ptr, rmax_ptr
+      TYPE(C_PTR) :: rmin_ptr, rmax_ptr
 
-       rmin_ptr = C_LOC(rmin)
-       rmax_ptr = C_LOC(rmax)
+      rmin_ptr = C_LOC(rmin)
+      rmax_ptr = C_LOC(rmax)
 
-       ier = INT(cgp_particle_coord_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(C, c_int), &
-            rmin_ptr, rmax_ptr, coords))
+      ier = INT(cgp_particle_coord_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(C, c_int), &
+           rmin_ptr, rmax_ptr, coords))
 
-     END SUBROUTINE cgp_particle_coord_write_data_f0
+    END SUBROUTINE cgp_particle_coord_write_data_f0
 
-     SUBROUTINE cgp_particle_coord_write_data_f1(fn, B, P, C, rmin, rmax, coords, ier)
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER, INTENT(IN) :: C
-       INTEGER(CGSIZE_T), DIMENSION(*), INTENT(IN), TARGET :: rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), INTENT(IN), TARGET :: rmax
-       TYPE(C_PTR) :: coords
-       INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_coord_write_data_f1(fn, B, P, C, rmin, rmax, coords, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: C
+      INTEGER(CGSIZE_T), DIMENSION(*), INTENT(IN), TARGET :: rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), INTENT(IN), TARGET :: rmax
+      TYPE(C_PTR) :: coords
+      INTEGER, INTENT(OUT) :: ier
 
-       TYPE(C_PTR) :: rmin_ptr, rmax_ptr
+      TYPE(C_PTR) :: rmin_ptr, rmax_ptr
 
-       rmin_ptr = C_LOC(rmin(1))
-       rmax_ptr = C_LOC(rmax(1))
+      rmin_ptr = C_LOC(rmin(1))
+      rmax_ptr = C_LOC(rmax(1))
 
-       ier = INT(cgp_particle_coord_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(C, c_int), &
-            rmin_ptr, rmax_ptr, coords))
+      ier = INT(cgp_particle_coord_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(C, c_int), &
+           rmin_ptr, rmax_ptr, coords))
 
-     END SUBROUTINE cgp_particle_coord_write_data_f1
+    END SUBROUTINE cgp_particle_coord_write_data_f1
 
-     SUBROUTINE cgp_particle_coord_general_write_data_f0(fn, B, P, C, rmin, rmax, &
-      m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
-      coords, ier)
-   IMPLICIT NONE
-   INTEGER, INTENT(IN) :: fn
-   INTEGER, INTENT(IN) :: B
-   INTEGER, INTENT(IN) :: P
-   INTEGER, INTENT(IN) :: C
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
-   INTEGER(CGENUM_T), INTENT(IN) :: m_type
-   INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_arg_dimvals
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmin
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmax
-   TYPE(C_PTR) :: coords
-   INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_coord_general_write_data_f0(fn, B, P, C, rmin, rmax, &
+         m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
+         coords, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: C
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
+      INTEGER(CGENUM_T), INTENT(IN) :: m_type
+      INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_arg_dimvals
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmin
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmax
+      TYPE(C_PTR) :: coords
+      INTEGER, INTENT(OUT) :: ier
 
-   TYPE(C_PTR) :: rmin_ptr, rmax_ptr, m_rmin_ptr, m_rmax_ptr, m_arg_dimvals_ptr
+      TYPE(C_PTR) :: rmin_ptr, rmax_ptr, m_rmin_ptr, m_rmax_ptr, m_arg_dimvals_ptr
 
-   rmin_ptr = C_LOC(rmin)
-   rmax_ptr = C_LOC(rmax)
-   m_rmin_ptr = C_LOC(m_rmin)
-   m_rmax_ptr = C_LOC(m_rmax)
-   m_arg_dimvals_ptr = C_LOC(m_arg_dimvals)
+      rmin_ptr = C_LOC(rmin)
+      rmax_ptr = C_LOC(rmax)
+      m_rmin_ptr = C_LOC(m_rmin)
+      m_rmax_ptr = C_LOC(m_rmax)
+      m_arg_dimvals_ptr = C_LOC(m_arg_dimvals)
 
-   ier = INT(cgp_particle_coord_general_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), &
-        INT(C, c_int), rmin_ptr, rmax_ptr, m_type, m_numdim, m_arg_dimvals_ptr, m_rmin_ptr, m_rmax_ptr, coords))
+      ier = INT(cgp_particle_coord_general_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), &
+           INT(C, c_int), rmin_ptr, rmax_ptr, m_type, m_numdim, m_arg_dimvals_ptr, m_rmin_ptr, m_rmax_ptr, coords))
 
- END SUBROUTINE cgp_particle_coord_general_write_data_f0
+    END SUBROUTINE cgp_particle_coord_general_write_data_f0
 
-     SUBROUTINE cgp_particle_coord_general_write_data_f1(fn, B, P, C, rmin, rmax, &
-          m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
-          coords, ier)
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER, INTENT(IN) :: C
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
-       INTEGER(CGENUM_T), INTENT(IN) :: m_type
-       INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_arg_dimvals
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmax
-       TYPE(C_PTR) :: coords
-       INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_coord_general_write_data_f1(fn, B, P, C, rmin, rmax, &
+         m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
+         coords, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: C
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
+      INTEGER(CGENUM_T), INTENT(IN) :: m_type
+      INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_arg_dimvals
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmax
+      TYPE(C_PTR) :: coords
+      INTEGER, INTENT(OUT) :: ier
 
-       TYPE(C_PTR) :: rmin_ptr, rmax_ptr, m_rmin_ptr, m_rmax_ptr, m_arg_dimvals_ptr
+      TYPE(C_PTR) :: rmin_ptr, rmax_ptr, m_rmin_ptr, m_rmax_ptr, m_arg_dimvals_ptr
 
-       rmin_ptr = C_LOC(rmin)
-       rmax_ptr = C_LOC(rmax)
-       m_rmin_ptr = C_LOC(m_rmin)
-       m_rmax_ptr = C_LOC(m_rmax)
-       m_arg_dimvals_ptr = C_LOC(m_arg_dimvals)
+      rmin_ptr = C_LOC(rmin)
+      rmax_ptr = C_LOC(rmax)
+      m_rmin_ptr = C_LOC(m_rmin)
+      m_rmax_ptr = C_LOC(m_rmax)
+      m_arg_dimvals_ptr = C_LOC(m_arg_dimvals)
 
-       ier = INT(cgp_particle_coord_general_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), &
-            INT(C, c_int), rmin_ptr, rmax_ptr, m_type, m_numdim, m_arg_dimvals_ptr, m_rmin_ptr, m_rmax_ptr, coords))
+      ier = INT(cgp_particle_coord_general_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), &
+           INT(C, c_int), rmin_ptr, rmax_ptr, m_type, m_numdim, m_arg_dimvals_ptr, m_rmin_ptr, m_rmax_ptr, coords))
 
-     END SUBROUTINE cgp_particle_coord_general_write_data_f1
+    END SUBROUTINE cgp_particle_coord_general_write_data_f1
 
-     SUBROUTINE cgp_particle_field_write_f(fn, B, P, S, datatype, fieldname, F, ier)
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER, INTENT(IN) :: S
-       INTEGER(CGENUM_T), INTENT(IN) :: datatype
-       CHARACTER(LEN=*),  INTENT(IN) :: fieldname
-       INTEGER, INTENT(OUT) :: F
-       INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_field_write_f(fn, B, P, S, datatype, fieldname, F, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: S
+      INTEGER(CGENUM_T), INTENT(IN) :: datatype
+      CHARACTER(LEN=*),  INTENT(IN) :: fieldname
+      INTEGER, INTENT(OUT) :: F
+      INTEGER, INTENT(OUT) :: ier
 
-       INTEGER(C_INT) :: c_F
-       CHARACTER(LEN=LEN_TRIM(fieldname)+1, KIND=C_CHAR) :: c_fieldname
+      INTEGER(C_INT) :: c_F
+      CHARACTER(LEN=LEN_TRIM(fieldname)+1, KIND=C_CHAR) :: c_fieldname
 
-       INTERFACE
-          INTEGER(C_INT) FUNCTION cgp_particle_field_write(fn, B, P, S, datatype, fieldname, F) &
-                                                           BIND(C, NAME="cgp_particle_field_write")
-            IMPORT :: C_INT, C_CHAR, CGENUM_T, C_PTR
-            IMPLICIT NONE
-            INTEGER(C_INT), VALUE :: fn
-            INTEGER(C_INT), VALUE :: B
-            INTEGER(C_INT), VALUE :: P
-            INTEGER(C_INT), VALUE :: S
-            INTEGER(CGENUM_T), VALUE:: datatype
-            CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fieldname
-            INTEGER(C_INT) :: F
+      INTERFACE
+         INTEGER(C_INT) FUNCTION cgp_particle_field_write(fn, B, P, S, datatype, fieldname, F) &
+              BIND(C, NAME="cgp_particle_field_write")
+           IMPORT :: C_INT, C_CHAR, CGENUM_T, C_PTR
+           IMPLICIT NONE
+           INTEGER(C_INT), VALUE :: fn
+           INTEGER(C_INT), VALUE :: B
+           INTEGER(C_INT), VALUE :: P
+           INTEGER(C_INT), VALUE :: S
+           INTEGER(CGENUM_T), VALUE:: datatype
+           CHARACTER(KIND=C_CHAR), DIMENSION(*) :: fieldname
+           INTEGER(C_INT) :: F
 
-          END FUNCTION cgp_particle_field_write
+         END FUNCTION cgp_particle_field_write
 
-       END INTERFACE
+      END INTERFACE
 
-       c_fieldname = TRIM(fieldname)//C_NULL_CHAR
+      c_fieldname = TRIM(fieldname)//C_NULL_CHAR
 
-       ier = INT(cgp_particle_field_write(INT(fn,C_INT), INT(B,C_INT), INT(P,C_INT), INT(S,C_INT), &
-            datatype, c_fieldname, c_F))
+      ier = INT(cgp_particle_field_write(INT(fn,C_INT), INT(B,C_INT), INT(P,C_INT), INT(S,C_INT), &
+           datatype, c_fieldname, c_F))
 
-       F = INT(c_F)
+      F = INT(c_F)
 
-     END SUBROUTINE cgp_particle_field_write_f
+    END SUBROUTINE cgp_particle_field_write_f
 
-     SUBROUTINE cgp_particle_field_write_data_f0(fn, B, P, S, F, rmin, rmax, DATA, ier)
+    SUBROUTINE cgp_particle_field_write_data_f0(fn, B, P, S, F, rmin, rmax, DATA, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
@@ -7885,95 +7885,95 @@ CONTAINS
 
     END SUBROUTINE cgp_particle_field_write_data_f0
 
-     SUBROUTINE cgp_particle_field_write_data_f1(fn, B, P, S, F, rmin, rmax, DATA, ier)
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER, INTENT(IN) :: S
-       INTEGER, INTENT(IN) :: F
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
-       TYPE(C_PTR) :: data
-       INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_field_write_data_f1(fn, B, P, S, F, rmin, rmax, DATA, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: S
+      INTEGER, INTENT(IN) :: F
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
+      TYPE(C_PTR) :: data
+      INTEGER, INTENT(OUT) :: ier
 
-       TYPE(C_PTR) :: rmin_ptr, rmax_ptr
+      TYPE(C_PTR) :: rmin_ptr, rmax_ptr
 
-       rmin_ptr = C_LOC(rmin(1))
-       rmax_ptr = C_LOC(rmax(1))
+      rmin_ptr = C_LOC(rmin(1))
+      rmax_ptr = C_LOC(rmax(1))
 
-       ier = INT(cgp_particle_field_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(S, c_int), INT(F, c_int),&
-            rmin_ptr, rmax_ptr, DATA))
+      ier = INT(cgp_particle_field_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(S, c_int), INT(F, c_int),&
+           rmin_ptr, rmax_ptr, DATA))
 
-     END SUBROUTINE cgp_particle_field_write_data_f1
+    END SUBROUTINE cgp_particle_field_write_data_f1
 
-     SUBROUTINE cgp_particle_field_general_write_data_f0(fn, B, P, S, F, rmin, rmax, &
-      m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
-      field, ier)
-   IMPLICIT NONE
-   INTEGER, INTENT(IN) :: fn
-   INTEGER, INTENT(IN) :: B
-   INTEGER, INTENT(IN) :: P
-   INTEGER, INTENT(IN) :: S
-   INTEGER, INTENT(IN) :: F
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
-   INTEGER(CGENUM_T), INTENT(IN) :: m_type
-   INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_arg_dimvals
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmin
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmax
-   TYPE(C_PTR) :: field
-   INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_field_general_write_data_f0(fn, B, P, S, F, rmin, rmax, &
+         m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
+         field, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: S
+      INTEGER, INTENT(IN) :: F
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
+      INTEGER(CGENUM_T), INTENT(IN) :: m_type
+      INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_arg_dimvals
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmin
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmax
+      TYPE(C_PTR) :: field
+      INTEGER, INTENT(OUT) :: ier
 
-   TYPE(C_PTR) :: rmin_ptr, rmax_ptr, m_rmin_ptr, m_rmax_ptr, m_arg_dimvals_ptr
+      TYPE(C_PTR) :: rmin_ptr, rmax_ptr, m_rmin_ptr, m_rmax_ptr, m_arg_dimvals_ptr
 
-    rmin_ptr = C_LOC(rmin)
-    rmax_ptr = C_LOC(rmax)
-    m_rmin_ptr = C_LOC(m_rmin)
-    m_rmax_ptr = C_LOC(m_rmax)
-    m_arg_dimvals_ptr = C_LOC(m_arg_dimvals)
+      rmin_ptr = C_LOC(rmin)
+      rmax_ptr = C_LOC(rmax)
+      m_rmin_ptr = C_LOC(m_rmin)
+      m_rmax_ptr = C_LOC(m_rmax)
+      m_arg_dimvals_ptr = C_LOC(m_arg_dimvals)
 
-   ier = INT(cgp_particle_field_general_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), &
-        INT(S, c_int), INT(F, c_int), &
-        rmin_ptr, rmax_ptr, m_type, m_numdim, m_arg_dimvals_ptr, m_rmin_ptr, m_rmax_ptr, field))
+      ier = INT(cgp_particle_field_general_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), &
+           INT(S, c_int), INT(F, c_int), &
+           rmin_ptr, rmax_ptr, m_type, m_numdim, m_arg_dimvals_ptr, m_rmin_ptr, m_rmax_ptr, field))
 
- END SUBROUTINE cgp_particle_field_general_write_data_f0
+    END SUBROUTINE cgp_particle_field_general_write_data_f0
 
-     SUBROUTINE cgp_particle_field_general_write_data_f1(fn, B, P, S, F, rmin, rmax, &
-          m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
-          field, ier)
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER, INTENT(IN) :: S
-       INTEGER, INTENT(IN) :: F
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
-       INTEGER(CGENUM_T), INTENT(IN) :: m_type
-       INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_arg_dimvals
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmax
-       TYPE(C_PTR) :: field
-       INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_field_general_write_data_f1(fn, B, P, S, F, rmin, rmax, &
+         m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
+         field, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: S
+      INTEGER, INTENT(IN) :: F
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
+      INTEGER(CGENUM_T), INTENT(IN) :: m_type
+      INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_arg_dimvals
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmax
+      TYPE(C_PTR) :: field
+      INTEGER, INTENT(OUT) :: ier
 
-       TYPE(C_PTR) :: rmin_ptr, rmax_ptr, m_rmin_ptr, m_rmax_ptr, m_arg_dimvals_ptr
+      TYPE(C_PTR) :: rmin_ptr, rmax_ptr, m_rmin_ptr, m_rmax_ptr, m_arg_dimvals_ptr
 
-        rmin_ptr = C_LOC(rmin)
-        rmax_ptr = C_LOC(rmax)
-        m_rmin_ptr = C_LOC(m_rmin)
-        m_rmax_ptr = C_LOC(m_rmax)
-        m_arg_dimvals_ptr = C_LOC(m_arg_dimvals)
+      rmin_ptr = C_LOC(rmin)
+      rmax_ptr = C_LOC(rmax)
+      m_rmin_ptr = C_LOC(m_rmin)
+      m_rmax_ptr = C_LOC(m_rmax)
+      m_arg_dimvals_ptr = C_LOC(m_arg_dimvals)
 
-       ier = INT(cgp_particle_field_general_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), &
-            INT(S, c_int), INT(F, c_int), &
-            rmin_ptr, rmax_ptr, m_type, m_numdim, m_arg_dimvals_ptr, m_rmin_ptr, m_rmax_ptr, field))
+      ier = INT(cgp_particle_field_general_write_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), &
+           INT(S, c_int), INT(F, c_int), &
+           rmin_ptr, rmax_ptr, m_type, m_numdim, m_arg_dimvals_ptr, m_rmin_ptr, m_rmax_ptr, field))
 
-     END SUBROUTINE cgp_particle_field_general_write_data_f1
+    END SUBROUTINE cgp_particle_field_general_write_data_f1
 
-     SUBROUTINE cgp_particle_field_read_data_f0(fn, B, P, S, F, rmin, rmax, DATA, ier)
+    SUBROUTINE cgp_particle_field_read_data_f0(fn, B, P, S, F, rmin, rmax, DATA, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
@@ -7990,111 +7990,111 @@ CONTAINS
 
     END SUBROUTINE cgp_particle_field_read_data_f0
 
-     SUBROUTINE cgp_particle_field_read_data_f1(fn, B, P, S, F, rmin, rmax, DATA, ier)
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER, INTENT(IN) :: S
-       INTEGER, INTENT(IN) :: F
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
-       TYPE(C_PTR) :: data
-       INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_field_read_data_f1(fn, B, P, S, F, rmin, rmax, DATA, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: S
+      INTEGER, INTENT(IN) :: F
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
+      TYPE(C_PTR) :: data
+      INTEGER, INTENT(OUT) :: ier
 
-       ier = INT(cgp_particle_field_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(S, c_int), INT(F, c_int), &
-            C_LOC(rmin(1)), C_LOC(rmax(1)), data))
+      ier = INT(cgp_particle_field_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(S, c_int), INT(F, c_int), &
+           C_LOC(rmin(1)), C_LOC(rmax(1)), data))
 
-     END SUBROUTINE cgp_particle_field_read_data_f1
+    END SUBROUTINE cgp_particle_field_read_data_f1
 
-     SUBROUTINE cgp_particle_field_general_read_data_f0(fn, B, P, S, F, rmin, rmax, &
-      m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
-      field, ier)
-   IMPLICIT NONE
-   INTEGER, INTENT(IN) :: fn
-   INTEGER, INTENT(IN) :: B
-   INTEGER, INTENT(IN) :: P
-   INTEGER, INTENT(IN) :: S
-   INTEGER, INTENT(IN) :: F
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
-   INTEGER(CGENUM_T), INTENT(IN) :: m_type
-   INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_arg_dimvals
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmin
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmax
-   TYPE(C_PTR) :: field
-   INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_field_general_read_data_f0(fn, B, P, S, F, rmin, rmax, &
+         m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
+         field, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: S
+      INTEGER, INTENT(IN) :: F
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
+      INTEGER(CGENUM_T), INTENT(IN) :: m_type
+      INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_arg_dimvals
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmin
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmax
+      TYPE(C_PTR) :: field
+      INTEGER, INTENT(OUT) :: ier
 
-   TYPE(C_PTR) :: rmin_ptr, rmax_ptr, m_rmin_ptr, m_rmax_ptr, m_arg_dimvals_ptr
+      TYPE(C_PTR) :: rmin_ptr, rmax_ptr, m_rmin_ptr, m_rmax_ptr, m_arg_dimvals_ptr
 
-    rmin_ptr = C_LOC(rmin)
-    rmax_ptr = C_LOC(rmax)
-    m_rmin_ptr = C_LOC(m_rmin)
-    m_rmax_ptr = C_LOC(m_rmax)
-    m_arg_dimvals_ptr = C_LOC(m_arg_dimvals)
+      rmin_ptr = C_LOC(rmin)
+      rmax_ptr = C_LOC(rmax)
+      m_rmin_ptr = C_LOC(m_rmin)
+      m_rmax_ptr = C_LOC(m_rmax)
+      m_arg_dimvals_ptr = C_LOC(m_arg_dimvals)
 
-   ier = INT(cgp_particle_field_general_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), &
-        INT(S, c_int), INT(F, c_int), &
-        rmin_ptr, rmax_ptr, m_type, m_numdim, m_arg_dimvals_ptr, m_rmin_ptr, m_rmax_ptr, field))
+      ier = INT(cgp_particle_field_general_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), &
+           INT(S, c_int), INT(F, c_int), &
+           rmin_ptr, rmax_ptr, m_type, m_numdim, m_arg_dimvals_ptr, m_rmin_ptr, m_rmax_ptr, field))
 
- END SUBROUTINE cgp_particle_field_general_read_data_f0
+    END SUBROUTINE cgp_particle_field_general_read_data_f0
 
-     SUBROUTINE cgp_particle_field_general_read_data_f1(fn, B, P, S, F, rmin, rmax, &
-          m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
-          field, ier)
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER, INTENT(IN) :: S
-       INTEGER, INTENT(IN) :: F
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
-       INTEGER(CGENUM_T), INTENT(IN) :: m_type
-       INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_arg_dimvals
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmax
-       TYPE(C_PTR) :: field
-       INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_field_general_read_data_f1(fn, B, P, S, F, rmin, rmax, &
+         m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
+         field, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: S
+      INTEGER, INTENT(IN) :: F
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
+      INTEGER(CGENUM_T), INTENT(IN) :: m_type
+      INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_arg_dimvals
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmax
+      TYPE(C_PTR) :: field
+      INTEGER, INTENT(OUT) :: ier
 
-       TYPE(C_PTR) :: rmin_ptr, rmax_ptr, m_rmin_ptr, m_rmax_ptr, m_arg_dimvals_ptr
+      TYPE(C_PTR) :: rmin_ptr, rmax_ptr, m_rmin_ptr, m_rmax_ptr, m_arg_dimvals_ptr
 
-        rmin_ptr = C_LOC(rmin)
-        rmax_ptr = C_LOC(rmax)
-        m_rmin_ptr = C_LOC(m_rmin)
-        m_rmax_ptr = C_LOC(m_rmax)
-        m_arg_dimvals_ptr = C_LOC(m_arg_dimvals)
+      rmin_ptr = C_LOC(rmin)
+      rmax_ptr = C_LOC(rmax)
+      m_rmin_ptr = C_LOC(m_rmin)
+      m_rmax_ptr = C_LOC(m_rmax)
+      m_arg_dimvals_ptr = C_LOC(m_arg_dimvals)
 
-       ier = INT(cgp_particle_field_general_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), &
-            INT(S, c_int), INT(F, c_int), &
-            rmin_ptr, rmax_ptr, m_type, m_numdim, m_arg_dimvals_ptr, m_rmin_ptr, m_rmax_ptr, field))
+      ier = INT(cgp_particle_field_general_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), &
+           INT(S, c_int), INT(F, c_int), &
+           rmin_ptr, rmax_ptr, m_type, m_numdim, m_arg_dimvals_ptr, m_rmin_ptr, m_rmax_ptr, field))
 
-     END SUBROUTINE cgp_particle_field_general_read_data_f1
+    END SUBROUTINE cgp_particle_field_general_read_data_f1
 
-     SUBROUTINE cgp_particle_coord_read_data_f0(fn, B, P, C, rmin, rmax, coords, ier)
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER, INTENT(IN) :: C
-       INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
-       TYPE(C_PTR) ::  coords
-       INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_coord_read_data_f0(fn, B, P, C, rmin, rmax, coords, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: C
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
+      TYPE(C_PTR) ::  coords
+      INTEGER, INTENT(OUT) :: ier
 
-       TYPE(C_PTR) :: rmin_ptr, rmax_ptr
+      TYPE(C_PTR) :: rmin_ptr, rmax_ptr
 
-       rmin_ptr = C_LOC(rmin)
-       rmax_ptr = C_LOC(rmax)
+      rmin_ptr = C_LOC(rmin)
+      rmax_ptr = C_LOC(rmax)
 
-       ier = INT(cgp_particle_coord_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(C, c_int), &
-            rmin_ptr, rmax_ptr, coords))
+      ier = INT(cgp_particle_coord_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(C, c_int), &
+           rmin_ptr, rmax_ptr, coords))
 
-     END SUBROUTINE cgp_particle_coord_read_data_f0
+    END SUBROUTINE cgp_particle_coord_read_data_f0
 
-     SUBROUTINE cgp_particle_coord_read_data_f1(fn, B, P, C, rmin, rmax, coords, ier)
+    SUBROUTINE cgp_particle_coord_read_data_f1(fn, B, P, C, rmin, rmax, coords, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
@@ -8115,53 +8115,53 @@ CONTAINS
 
     END SUBROUTINE cgp_particle_coord_read_data_f1
 
-     SUBROUTINE cgp_particle_coord_general_read_data_f0(fn, B, P, C, rmin, rmax, &
-      m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
-      coords, ier)
-   IMPLICIT NONE
-   INTEGER, INTENT(IN) :: fn
-   INTEGER, INTENT(IN) :: B
-   INTEGER, INTENT(IN) :: P
-   INTEGER, INTENT(IN) :: C
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
-   INTEGER(CGENUM_T), INTENT(IN) :: m_type
-   INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_arg_dimvals
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmin
-   INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmax
-   TYPE(C_PTR) ::  coords
-   INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_coord_general_read_data_f0(fn, B, P, C, rmin, rmax, &
+         m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
+         coords, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: C
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
+      INTEGER(CGENUM_T), INTENT(IN) :: m_type
+      INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_arg_dimvals
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmin
+      INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: m_rmax
+      TYPE(C_PTR) ::  coords
+      INTEGER, INTENT(OUT) :: ier
 
-   ier = INT(cgp_particle_coord_general_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(C, c_int), &
-        C_LOC(rmin), C_LOC(rmax), m_type, m_numdim, C_LOC(m_arg_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), coords))
+      ier = INT(cgp_particle_coord_general_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(C, c_int), &
+           C_LOC(rmin), C_LOC(rmax), m_type, m_numdim, C_LOC(m_arg_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), coords))
 
- END SUBROUTINE cgp_particle_coord_general_read_data_f0
+    END SUBROUTINE cgp_particle_coord_general_read_data_f0
 
-     SUBROUTINE cgp_particle_coord_general_read_data_f1(fn, B, P, C, rmin, rmax, &
-          m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
-          coords, ier)
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER, INTENT(IN) :: C
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
-       INTEGER(CGENUM_T), INTENT(IN) :: m_type
-       INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_arg_dimvals
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmax
-       TYPE(C_PTR) ::  coords
-       INTEGER, INTENT(OUT) :: ier
+    SUBROUTINE cgp_particle_coord_general_read_data_f1(fn, B, P, C, rmin, rmax, &
+         m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
+         coords, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: C
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
+      INTEGER(CGENUM_T), INTENT(IN) :: m_type
+      INTEGER(CGSIZE_T), INTENT(IN) :: m_numdim
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_arg_dimvals
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: m_rmax
+      TYPE(C_PTR) ::  coords
+      INTEGER, INTENT(OUT) :: ier
 
-       ier = INT(cgp_particle_coord_general_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(C, c_int), &
-            C_LOC(rmin), C_LOC(rmax), m_type, m_numdim, C_LOC(m_arg_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), coords))
+      ier = INT(cgp_particle_coord_general_read_data(INT(fn, c_int), INT(B, c_int), INT(P, c_int), INT(C, c_int), &
+           C_LOC(rmin), C_LOC(rmax), m_type, m_numdim, C_LOC(m_arg_dimvals), C_LOC(m_rmin), C_LOC(m_rmax), coords))
 
-     END SUBROUTINE cgp_particle_coord_general_read_data_f1
+    END SUBROUTINE cgp_particle_coord_general_read_data_f1
 
-     SUBROUTINE cgp_particle_coord_multi_write_data_f0(fn, B, P, C, rmin, rmax, nsets, buf, ier)
+    SUBROUTINE cgp_particle_coord_multi_write_data_f0(fn, B, P, C, rmin, rmax, nsets, buf, ier)
 
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -8175,28 +8175,28 @@ CONTAINS
       INTEGER, INTENT(OUT) :: ier
 
       ier = INT(cgp_particle_coord_multi_write_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), &
-            C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+           C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
 
     END SUBROUTINE cgp_particle_coord_multi_write_data_f0
 
-     SUBROUTINE cgp_particle_coord_multi_write_data_f1(fn, B, P, C, rmin, rmax, nsets, buf, ier)
+    SUBROUTINE cgp_particle_coord_multi_write_data_f1(fn, B, P, C, rmin, rmax, nsets, buf, ier)
 
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: C
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
-       INTEGER, INTENT(IN) :: nsets
-       TYPE(C_PTR), DIMENSION(*) :: buf
-       INTEGER, INTENT(OUT) :: ier
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: C
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
+      INTEGER, INTENT(IN) :: nsets
+      TYPE(C_PTR), DIMENSION(*) :: buf
+      INTEGER, INTENT(OUT) :: ier
 
-       ier = INT(cgp_particle_coord_multi_write_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), &
-             C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+      ier = INT(cgp_particle_coord_multi_write_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), &
+           C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
 
-     END SUBROUTINE cgp_particle_coord_multi_write_data_f1
-     SUBROUTINE cgp_particle_coord_multi_read_data_f0(fn, B, P, C, rmin, rmax, nsets, buf, ier)
+    END SUBROUTINE cgp_particle_coord_multi_write_data_f1
+    SUBROUTINE cgp_particle_coord_multi_read_data_f0(fn, B, P, C, rmin, rmax, nsets, buf, ier)
 
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -8210,29 +8210,29 @@ CONTAINS
       INTEGER, INTENT(OUT) :: ier
 
       ier = INT(cgp_particle_coord_multi_read_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), &
-            C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+           C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
 
     END SUBROUTINE cgp_particle_coord_multi_read_data_f0
 
-     SUBROUTINE cgp_particle_coord_multi_read_data_f1(fn, B, P, C, rmin, rmax, nsets, buf, ier)
+    SUBROUTINE cgp_particle_coord_multi_read_data_f1(fn, B, P, C, rmin, rmax, nsets, buf, ier)
 
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: C
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
-       INTEGER, INTENT(IN) :: nsets
-       TYPE(C_PTR), DIMENSION(*) :: buf
-       INTEGER, INTENT(OUT) :: ier
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: C
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
+      INTEGER, INTENT(IN) :: nsets
+      TYPE(C_PTR), DIMENSION(*) :: buf
+      INTEGER, INTENT(OUT) :: ier
 
-       ier = INT(cgp_particle_coord_multi_read_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), &
-             C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+      ier = INT(cgp_particle_coord_multi_read_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), &
+           C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
 
-     END SUBROUTINE cgp_particle_coord_multi_read_data_f1
+    END SUBROUTINE cgp_particle_coord_multi_read_data_f1
 
-     SUBROUTINE cgp_particle_field_multi_write_data_f0(fn, B, P, S, F, rmin, rmax, nsets, buf, ier)
+    SUBROUTINE cgp_particle_field_multi_write_data_f0(fn, B, P, S, F, rmin, rmax, nsets, buf, ier)
 
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -8247,29 +8247,29 @@ CONTAINS
       INTEGER, INTENT(OUT) :: ier
 
       ier = INT(cgp_particle_field_multi_write_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), INT(S, C_INT), &
-            F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+           F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
 
     END SUBROUTINE cgp_particle_field_multi_write_data_f0
 
-     SUBROUTINE cgp_particle_field_multi_write_data_f1(fn, B, P, S, F, rmin, rmax, nsets, buf, ier)
+    SUBROUTINE cgp_particle_field_multi_write_data_f1(fn, B, P, S, F, rmin, rmax, nsets, buf, ier)
 
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER, INTENT(IN) :: S
-       INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: F
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
-       INTEGER, INTENT(IN) :: nsets
-       TYPE(C_PTR), DIMENSION(*) :: buf
-       INTEGER, INTENT(OUT) :: ier
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: S
+      INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: F
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
+      INTEGER, INTENT(IN) :: nsets
+      TYPE(C_PTR), DIMENSION(*) :: buf
+      INTEGER, INTENT(OUT) :: ier
 
-       ier = INT(cgp_particle_field_multi_write_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), INT(S, C_INT), &
-             F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+      ier = INT(cgp_particle_field_multi_write_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), INT(S, C_INT), &
+           F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
 
-     END SUBROUTINE cgp_particle_field_multi_write_data_f1
-     SUBROUTINE cgp_particle_field_multi_read_data_f0(fn, B, P, S, F, rmin, rmax, nsets, buf, ier)
+    END SUBROUTINE cgp_particle_field_multi_write_data_f1
+    SUBROUTINE cgp_particle_field_multi_read_data_f0(fn, B, P, S, F, rmin, rmax, nsets, buf, ier)
 
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -8282,29 +8282,29 @@ CONTAINS
       INTEGER, INTENT(IN) :: nsets
       TYPE(C_PTR), DIMENSION(*) :: buf
       INTEGER, INTENT(OUT) :: ier
-      
+
       ier = INT(cgp_particle_field_multi_read_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), INT(S, C_INT), &
-            F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+           F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
 
     END SUBROUTINE cgp_particle_field_multi_read_data_f0
-     SUBROUTINE cgp_particle_field_multi_read_data_f1(fn, B, P, S, F, rmin, rmax, nsets, buf, ier)
+    SUBROUTINE cgp_particle_field_multi_read_data_f1(fn, B, P, S, F, rmin, rmax, nsets, buf, ier)
 
-       IMPLICIT NONE
-       INTEGER, INTENT(IN) :: fn
-       INTEGER, INTENT(IN) :: B
-       INTEGER, INTENT(IN) :: P
-       INTEGER, INTENT(IN) :: S
-       INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: F
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
-       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
-       INTEGER, INTENT(IN) :: nsets
-       TYPE(C_PTR), DIMENSION(*) :: buf
-       INTEGER, INTENT(OUT) :: ier
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: P
+      INTEGER, INTENT(IN) :: S
+      INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: F
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
+      INTEGER, INTENT(IN) :: nsets
+      TYPE(C_PTR), DIMENSION(*) :: buf
+      INTEGER, INTENT(OUT) :: ier
 
-       ier = INT(cgp_particle_field_multi_read_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), INT(S, C_INT), &
-             F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+      ier = INT(cgp_particle_field_multi_read_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), INT(S, C_INT), &
+           F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
 
-     END SUBROUTINE cgp_particle_field_multi_read_data_f1
+    END SUBROUTINE cgp_particle_field_multi_read_data_f1
 
 #endif
 

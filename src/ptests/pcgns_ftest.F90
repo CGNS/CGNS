@@ -1286,7 +1286,7 @@ SUBROUTINE particle()
   m_rmax_s = m_rmax(1)
 
   CALL cgp_particle_coord_general_read_data_f(fn, B, P, Cz, s_rmin_s, s_rmax_s, &
-       CGNS_ENUMV(RealSingle), m_numdim, m_arg_dimvals, m_rmin_s, m_rmax_s, C_LOC(Coor_z_float), ier)
+       CGNS_ENUMV(RealSingle), m_numdim, m_arg_dimvals(1), m_rmin_s, m_rmax_s, C_LOC(Coor_z_float), ier)
   IF(ier .NE. CG_OK) THEN
      IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_coord_general_read_data (Coor_z_float)")
      CALL cgp_error_exit_f()
@@ -1725,7 +1725,6 @@ SUBROUTINE particle_multisets()
   END IF
 
 END SUBROUTINE particle_multisets
-
 
 END MODULE ftests
 
