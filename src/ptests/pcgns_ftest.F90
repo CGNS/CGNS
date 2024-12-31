@@ -1388,6 +1388,7 @@ SUBROUTINE particle_multisets()
   INTEGER :: r_cell_dim = 0, r_phys_dim = 0
   INTEGER(cgsize_t) :: num_particles = 1024, size
   INTEGER(cgsize_t), DIMENSION(1) :: min_v, max_v
+  INTEGER(cgsize_t) :: min_s, max_s
   INTEGER(cgsize_t) :: count, k
   REAL(KIND=8), DIMENSION(:), ALLOCATABLE, TARGET :: Coor_x, Coor_y, Coor_z
   REAL(KIND=8), DIMENSION(:), ALLOCATABLE, TARGET :: Data_Fx, Data_Fy, Data_Fz
