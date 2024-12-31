@@ -992,6 +992,7 @@ SUBROUTINE particle()
   INTEGER :: ier
   INTEGER(cgsize_t) :: m_numdim = 1
   INTEGER(cgsize_t), DIMENSION(1) :: s_rmin, s_rmax, m_rmin, m_rmax
+  INTEGER(cgsize_t) :: s_rmin_s, s_rmax_s, m_rmin_s, m_rmax_s
   INTEGER(cgsize_t), DIMENSION(1) :: m_arg_dimvals
   REAL, DIMENSION(:), ALLOCATABLE, TARGET :: Coor_z_float, Data_Fz_float
 
@@ -1173,7 +1174,10 @@ SUBROUTINE particle()
      CALL cgp_error_exit_f()
   END IF
 
-  CALL cgp_particle_field_write_data_f(fn, B, P, S, Fy, min_v, max_v, C_LOC(Data_Fy), ier)
+  min_s = min_v(1)
+  max_s = max_v(1)
+
+  CALL cgp_particle_field_write_data_f(fn, B, P, S, Fy, min_s, max_s, C_LOC(Data_Fy), ier)
   IF(ier .NE. CG_OK) THEN
      WRITE(*,*) "*FAILED* cgp_particle_field_write_data (VelocityY)"
      CALL cgp_error_exit_f()
@@ -1265,7 +1269,10 @@ SUBROUTINE particle()
      IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_coord_read_data (Coor_x)")
   END IF
 
-  CALL cgp_particle_coord_read_data_f(fn, B, P, Cy, min_v, max_v, C_LOC(Coor_y), ier)
+  min_s = min_v(1)
+  max_s = max_v(1)
+
+  CALL cgp_particle_coord_read_data_f(fn, B, P, Cy, min_s, max_s, C_LOC(Coor_y), ier)
   IF(ier .NE. CG_OK) THEN
      IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_coord_read_data (Coor_y)")
      CALL cgp_error_exit_f()
@@ -1273,8 +1280,13 @@ SUBROUTINE particle()
      IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_coord_read_data (Coor_y)")
   END IF
 
-  CALL cgp_particle_coord_general_read_data_f(fn, B, P, Cz, s_rmin, s_rmax, &
-       CGNS_ENUMV(RealSingle), m_numdim, m_arg_dimvals, m_rmin, m_rmax, C_LOC(Coor_z_float), ier)
+  s_rmin_s = s_rmin(1)
+  s_rmax_s = s_rmax(1)
+  m_rmin_s = m_rmin(1)
+  m_rmax_s = m_rmax(1)
+
+  CALL cgp_particle_coord_general_read_data_f(fn, B, P, Cz, s_rmin_s, s_rmax_s, &
+       CGNS_ENUMV(RealSingle), m_numdim, m_arg_dimvals, m_rmin_s, m_rmax_s, C_LOC(Coor_z_float), ier)
   IF(ier .NE. CG_OK) THEN
      IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_coord_general_read_data (Coor_z_float)")
      CALL cgp_error_exit_f()
@@ -1324,7 +1336,10 @@ SUBROUTINE particle()
      IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_field_read_data (Data_Fx)")
   END IF
 
-  CALL cgp_particle_field_read_data_f(fn, B, P, S, Fy, min_v, max_v, C_LOC(Data_Fy), ier)
+  min_s = min_v(1)
+  max_s = max_v(1)
+
+  CALL cgp_particle_field_read_data_f(fn, B, P, S, Fy, min_s, max_s, C_LOC(Data_Fy), ier)
   IF(ier .NE. CG_OK) THEN
      IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_field_read_data (Data_Fy)")
      CALL cgp_error_exit_f()
@@ -1541,7 +1556,10 @@ SUBROUTINE particle_multisets()
   buf(2) = C_LOC(Data_Fy)
   buf(3) = C_LOC(Data_Fz)
 
-  CALL cgp_particle_field_multi_write_data_f(fn, B, P, S, Fvec, min_v, max_v, 3, buf, ier)
+  min_s = min_v(1)
+  max_s = max_v(1)
+
+  CALL cgp_particle_field_multi_write_data_f(fn, B, P, S, Fvec, min_s, max_s, 3, buf, ier)
   IF(ier .NE. CG_OK) THEN
      IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_field_multi_write_data")
      CALL cgp_error_exit_f()
@@ -1551,7 +1569,6 @@ SUBROUTINE particle_multisets()
 
   DEALLOCATE(buf)
   DEALLOCATE(Data_Fx, Data_Fy, Data_Fz)
-
 
   CALL cgp_close_f(fn, ier)
   IF(ier .NE. CG_OK) THEN
@@ -1629,7 +1646,10 @@ SUBROUTINE particle_multisets()
   buf(2) = C_LOC(Coor_y)
   buf(3) = C_LOC(Coor_z)
 
-  CALL cgp_particle_coord_multi_read_data_f(fn, B, P, Cvec, min_v, max_v, 3, buf, ier)
+  min_s = min_v(1)
+  max_s = max_v(1)
+
+  CALL cgp_particle_coord_multi_read_data_f(fn, B, P, Cvec, min_s, max_s, 3, buf, ier)
   IF(ier .NE. CG_OK) THEN
      IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_coord_multi_read_data")
      CALL cgp_error_exit_f()
