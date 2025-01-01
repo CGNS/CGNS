@@ -3462,31 +3462,6 @@ CGNSDLL void FMNAME(cgp_array_read_data_f, CGP_ARRAY_READ_DATA_F) (
 
 /*-----------------------------------------------------------------------*/
 
-CGNSDLL void cgp_ptlist_write_data_f(
-	cgint_f *fn, cgsize_t *rmin, cgsize_t *rmax, cgsize_t *points, cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_ptlist_write_data((int)*fn, *rmin, *rmax, points);
-}
-
-/*-----------------------------------------------------------------------*/
-
-CGNSDLL void cgp_ptlist_read_data_f(
-	cgint_f *fn, cgsize_t *rmin, cgsize_t *rmax, cgsize_t *points, cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_ptlist_read_data((int)*fn, *rmin, *rmax, points);
-}
-
-
-/*-----------------------------------------------------------------------*/
-CGNSDLL void  cgp_parent_data_write_f(cgint_f *fn,
-	             cgint_f *B, cgint_f *Z, cgint_f *S,
-                     cgsize_t *rmin, cgsize_t *rmax, cgsize_t *parent_data, cgint_f *ier)
-{
-    *ier = (cgint_f)cgp_parent_data_write((int)*fn, (int)*B, (int)*Z, (int)*S, (int) *rmin, (int)*rmax, parent_data);
-}
-
-/*-----------------------------------------------------------------------*/
-
 CGNSDLL void cgp_error_exit_f()
 {
     cgp_error_exit();

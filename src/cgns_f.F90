@@ -3285,39 +3285,6 @@ MODULE cgns
       INTEGER :: ier
     END SUBROUTINE cgp_array_multi_write_data_f
 
-    SUBROUTINE cgp_ptlist_write_data_f(file_number, rmin, rmax, points, ier) BIND(C, NAME="cgp_ptlist_write_data_f")
-      IMPORT :: C_INT, C_PTR, CGSIZE_T
-      IMPLICIT NONE
-      INTEGER(C_INT) :: file_number
-      INTEGER(CGSIZE_T), DIMENSION(*) :: rmin
-      INTEGER(CGSIZE_T), DIMENSION(*) :: rmax
-      INTEGER(CGSIZE_T), DIMENSION(*) :: points
-      INTEGER :: ier
-    END SUBROUTINE cgp_ptlist_write_data_f
-
-    SUBROUTINE cgp_ptlist_read_data_f(file_number, rmin, rmax, points, ier) BIND(C, NAME="cgp_ptlist_read_data_f")
-      IMPORT :: C_INT, C_PTR, CGSIZE_T
-      IMPLICIT NONE
-      INTEGER(C_INT) :: file_number
-      INTEGER(CGSIZE_T), DIMENSION(*) :: rmin
-      INTEGER(CGSIZE_T), DIMENSION(*) :: rmax
-      INTEGER(CGSIZE_T), DIMENSION(*) :: points
-      INTEGER :: ier
-    END SUBROUTINE cgp_ptlist_read_data_f
-
-    SUBROUTINE cgp_parent_data_write_f(file_number, B, Z, S, rmin, rmax, parents, ier) BIND(C, NAME="cgp_parent_data_write_f")
-      IMPORT :: C_INT, C_PTR, CGSIZE_T
-      IMPLICIT NONE
-      INTEGER(C_INT) :: file_number
-      INTEGER(C_INT) :: B
-      INTEGER(C_INT) :: Z
-      INTEGER(C_INT) :: S
-      INTEGER(CGSIZE_T), DIMENSION(*) :: rmin
-      INTEGER(CGSIZE_T), DIMENSION(*) :: rmax
-      INTEGER(CGSIZE_T), DIMENSION(*) :: parents
-      INTEGER :: ier
-    END SUBROUTINE cgp_parent_data_write_f
-
 #endif
 
     !* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *
@@ -3658,60 +3625,57 @@ MODULE cgns
      MODULE PROCEDURE cgp_particle_coord_general_read_data_f1
   END INTERFACE
 
-  private cgp_particle_coord_general_read_data_f0, cgp_particle_coord_general_read_data_f1
+  PRIVATE cgp_particle_coord_general_read_data_f0, cgp_particle_coord_general_read_data_f1
 
   INTERFACE cgp_particle_field_write_data_f
      MODULE PROCEDURE cgp_particle_field_write_data_f0
      MODULE PROCEDURE cgp_particle_field_write_data_f1
   END INTERFACE
 
-  private cgp_particle_field_write_data_f0, cgp_particle_field_write_data_f1
+  PRIVATE cgp_particle_field_write_data_f0, cgp_particle_field_write_data_f1
 
   INTERFACE cgp_particle_field_read_data_f
      MODULE PROCEDURE cgp_particle_field_read_data_f0
      MODULE PROCEDURE cgp_particle_field_read_data_f1
   END INTERFACE
 
-  private cgp_particle_field_read_data_f0, cgp_particle_field_read_data_f1
+  PRIVATE cgp_particle_field_read_data_f0, cgp_particle_field_read_data_f1
 
   INTERFACE cgp_particle_field_general_write_data_f
      MODULE PROCEDURE cgp_particle_field_general_write_data_f0
      MODULE PROCEDURE cgp_particle_field_general_write_data_f1
   END INTERFACE
-
-  private cgp_particle_field_general_write_data_f0, cgp_particle_field_general_write_data_f1
+  PRIVATE cgp_particle_field_general_write_data_f0, cgp_particle_field_general_write_data_f1
 
   INTERFACE cgp_particle_field_general_read_data_f
      MODULE PROCEDURE cgp_particle_field_general_read_data_f0
      MODULE PROCEDURE cgp_particle_field_general_read_data_f1
   END INTERFACE
-
-  private cgp_particle_field_general_read_data_f0, cgp_particle_field_general_read_data_f1
+  PRIVATE cgp_particle_field_general_read_data_f0, cgp_particle_field_general_read_data_f1
 
   INTERFACE cgp_particle_coord_multi_write_data_f
-  MODULE PROCEDURE cgp_particle_coord_multi_write_data_f0
-    MODULE PROCEDURE cgp_particle_coord_multi_write_data_f1
-      END INTERFACE
-      private cgp_particle_coord_multi_write_data_f0, cgp_particle_coord_multi_write_data_f1
+     MODULE PROCEDURE cgp_particle_coord_multi_write_data_f0
+     MODULE PROCEDURE cgp_particle_coord_multi_write_data_f1
+  END INTERFACE
+  PRIVATE cgp_particle_coord_multi_write_data_f0, cgp_particle_coord_multi_write_data_f1
 
   INTERFACE cgp_particle_coord_multi_read_data_f
-  MODULE PROCEDURE cgp_particle_coord_multi_read_data_f0
-    MODULE PROCEDURE cgp_particle_coord_multi_read_data_f1
-      END INTERFACE
-      private cgp_particle_coord_multi_read_data_f0, cgp_particle_coord_multi_read_data_f1
-  
-      INTERFACE cgp_particle_field_multi_write_data_f
-        MODULE PROCEDURE cgp_particle_field_multi_write_data_f0
-        MODULE PROCEDURE cgp_particle_field_multi_write_data_f1
-      end INTERFACE
-          
-      private cgp_particle_field_multi_write_data_f0, cgp_particle_field_multi_write_data_f1
+     MODULE PROCEDURE cgp_particle_coord_multi_read_data_f0
+     MODULE PROCEDURE cgp_particle_coord_multi_read_data_f1
+  END INTERFACE
+  PRIVATE cgp_particle_coord_multi_read_data_f0, cgp_particle_coord_multi_read_data_f1
 
-    INTERFACE cgp_particle_field_multi_read_data_f
-        MODULE PROCEDURE cgp_particle_field_multi_read_data_f0
-        MODULE PROCEDURE cgp_particle_field_multi_read_data_f1
-    end INTERFACE
-    private cgp_particle_field_multi_read_data_f0, cgp_particle_field_multi_read_data_f1
+  INTERFACE cgp_particle_field_multi_write_data_f
+     MODULE PROCEDURE cgp_particle_field_multi_write_data_f0
+     MODULE PROCEDURE cgp_particle_field_multi_write_data_f1
+  END INTERFACE
+  PRIVATE cgp_particle_field_multi_write_data_f0, cgp_particle_field_multi_write_data_f1
+
+  INTERFACE cgp_particle_field_multi_read_data_f
+     MODULE PROCEDURE cgp_particle_field_multi_read_data_f0
+     MODULE PROCEDURE cgp_particle_field_multi_read_data_f1
+  END INTERFACE
+  PRIVATE cgp_particle_field_multi_read_data_f0, cgp_particle_field_multi_read_data_f1
 
 #endif
 
@@ -4130,185 +4094,224 @@ MODULE cgns
   END INTERFACE
 
   INTERFACE
-  INTEGER(C_INT) FUNCTION cgp_particle_coord_general_write_data(fn, B, P, C, rmin, rmax, &
-       m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
-       coords) BIND(C, name="cgp_particle_coord_general_write_data")
-    IMPORT :: C_INT, C_PTR, CGSIZE_T, CGENUM_T
-    IMPLICIT NONE
-    INTEGER(C_INT), VALUE :: fn
-    INTEGER(C_INT), VALUE :: B
-    INTEGER(C_INT), VALUE :: P
-    INTEGER(C_INT), VALUE :: C
-    TYPE(C_PTR), VALUE :: rmin
-    TYPE(C_PTR), VALUE :: rmax
-    INTEGER(CGENUM_T), VALUE :: m_type
-    INTEGER(CGSIZE_T), VALUE :: m_numdim
-    TYPE(C_PTR), VALUE :: m_arg_dimvals
-    TYPE(C_PTR), VALUE :: m_rmin
-    TYPE(C_PTR), VALUE :: m_rmax
-    TYPE(C_PTR), VALUE :: coords
-  END FUNCTION cgp_particle_coord_general_write_data
-END INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_particle_coord_general_write_data(fn, B, P, C, rmin, rmax, &
+          m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
+          coords) BIND(C, name="cgp_particle_coord_general_write_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T, CGENUM_T
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: P
+       INTEGER(C_INT), VALUE :: C
+       TYPE(C_PTR), VALUE :: rmin
+       TYPE(C_PTR), VALUE :: rmax
+       INTEGER(CGENUM_T), VALUE :: m_type
+       INTEGER(CGSIZE_T), VALUE :: m_numdim
+       TYPE(C_PTR), VALUE :: m_arg_dimvals
+       TYPE(C_PTR), VALUE :: m_rmin
+       TYPE(C_PTR), VALUE :: m_rmax
+       TYPE(C_PTR), VALUE :: coords
+     END FUNCTION cgp_particle_coord_general_write_data
+  END INTERFACE
 
-INTERFACE
-INTEGER(C_INT) FUNCTION cgp_particle_field_write_data(fn, B, P, S, F, rmin, rmax, DATA) &
-     BIND(C, name="cgp_particle_field_write_data")
-  IMPORT :: C_INT, C_PTR
-  IMPLICIT NONE
-  INTEGER(C_INT), VALUE :: fn
-  INTEGER(C_INT), VALUE :: B
-  INTEGER(C_INT), VALUE :: P
-  INTEGER(C_INT), VALUE :: S
-  INTEGER(C_INT), VALUE :: F
-  TYPE(C_PTR), VALUE :: rmin
-  TYPE(C_PTR), VALUE :: rmax
-  TYPE(C_PTR), VALUE :: data
-END FUNCTION cgp_particle_field_write_data
-END INTERFACE
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_particle_field_write_data(fn, B, P, S, F, rmin, rmax, DATA) &
+          BIND(C, name="cgp_particle_field_write_data")
+       IMPORT :: C_INT, C_PTR
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: P
+       INTEGER(C_INT), VALUE :: S
+       INTEGER(C_INT), VALUE :: F
+       TYPE(C_PTR), VALUE :: rmin
+       TYPE(C_PTR), VALUE :: rmax
+       TYPE(C_PTR), VALUE :: data
+     END FUNCTION cgp_particle_field_write_data
+  END INTERFACE
 
-INTERFACE
-INTEGER(C_INT) FUNCTION cgp_particle_field_general_write_data(fn, B, P, S, F, rmin, rmax, &
-     m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
-     field) BIND(C, name="cgp_particle_field_general_write_data")
-  IMPORT :: C_INT, C_PTR, CGSIZE_T, CGENUM_T
-  IMPLICIT NONE
-  INTEGER(C_INT), VALUE :: fn
-  INTEGER(C_INT), VALUE :: B
-  INTEGER(C_INT), VALUE :: P
-  INTEGER(C_INT), VALUE :: S
-  INTEGER(C_INT), VALUE :: F
-  TYPE(C_PTR), VALUE :: rmin
-  TYPE(C_PTR), VALUE :: rmax
-  INTEGER(CGENUM_T), VALUE :: m_type
-  INTEGER(CGSIZE_T), VALUE :: m_numdim
-  TYPE(C_PTR), VALUE ::  m_arg_dimvals
-  TYPE(C_PTR), VALUE ::  m_rmin
-  TYPE(C_PTR), VALUE ::  m_rmax
-  TYPE(C_PTR), VALUE :: field
-END FUNCTION cgp_particle_field_general_write_data
-END INTERFACE
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_particle_field_general_write_data(fn, B, P, S, F, rmin, rmax, &
+          m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
+          field) BIND(C, name="cgp_particle_field_general_write_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T, CGENUM_T
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: P
+       INTEGER(C_INT), VALUE :: S
+       INTEGER(C_INT), VALUE :: F
+       TYPE(C_PTR), VALUE :: rmin
+       TYPE(C_PTR), VALUE :: rmax
+       INTEGER(CGENUM_T), VALUE :: m_type
+       INTEGER(CGSIZE_T), VALUE :: m_numdim
+       TYPE(C_PTR), VALUE ::  m_arg_dimvals
+       TYPE(C_PTR), VALUE ::  m_rmin
+       TYPE(C_PTR), VALUE ::  m_rmax
+       TYPE(C_PTR), VALUE :: field
+     END FUNCTION cgp_particle_field_general_write_data
+  END INTERFACE
 
-INTERFACE
-INTEGER(C_INT) FUNCTION cgp_particle_field_read_data(fn, B, P, S, F, rmin, rmax, data) &
-     BIND(C, name="cgp_particle_field_read_data")
-  IMPORT :: C_INT, C_PTR
-  IMPLICIT NONE
-  INTEGER(C_INT), VALUE :: fn
-  INTEGER(C_INT), VALUE :: B
-  INTEGER(C_INT), VALUE :: P
-  INTEGER(C_INT), VALUE :: S
-  INTEGER(C_INT), VALUE :: F
-  TYPE(C_PTR), VALUE :: rmin
-  TYPE(C_PTR), VALUE :: rmax
-  TYPE(C_PTR), VALUE :: data
-END FUNCTION cgp_particle_field_read_data
-END INTERFACE
-INTERFACE
-INTEGER(C_INT) FUNCTION cgp_particle_field_general_read_data(fn, B, P, S, F, rmin, rmax, &
-     m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
-     field) BIND(C, name="cgp_particle_field_general_read_data")
-  IMPORT :: C_INT, C_PTR, CGSIZE_T, CGENUM_T
-  IMPLICIT NONE
-  INTEGER(C_INT), VALUE :: fn
-  INTEGER(C_INT), VALUE :: B
-  INTEGER(C_INT), VALUE :: P
-  INTEGER(C_INT), VALUE :: S
-  INTEGER(C_INT), VALUE :: F
-  TYPE(C_PTR), VALUE :: rmin
-  TYPE(C_PTR), VALUE :: rmax
-  INTEGER(CGENUM_T), VALUE :: m_type
-  INTEGER(CGSIZE_T), VALUE :: m_numdim
-  TYPE(C_PTR), VALUE ::  m_arg_dimvals
-  TYPE(C_PTR), VALUE ::  m_rmin
-  TYPE(C_PTR), VALUE ::  m_rmax
-  TYPE(C_PTR), VALUE :: field
-END FUNCTION cgp_particle_field_general_read_data
-END INTERFACE
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_particle_field_read_data(fn, B, P, S, F, rmin, rmax, data) &
+          BIND(C, name="cgp_particle_field_read_data")
+       IMPORT :: C_INT, C_PTR
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: P
+       INTEGER(C_INT), VALUE :: S
+       INTEGER(C_INT), VALUE :: F
+       TYPE(C_PTR), VALUE :: rmin
+       TYPE(C_PTR), VALUE :: rmax
+       TYPE(C_PTR), VALUE :: data
+     END FUNCTION cgp_particle_field_read_data
+  END INTERFACE
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_particle_field_general_read_data(fn, B, P, S, F, rmin, rmax, &
+          m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
+          field) BIND(C, name="cgp_particle_field_general_read_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T, CGENUM_T
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: P
+       INTEGER(C_INT), VALUE :: S
+       INTEGER(C_INT), VALUE :: F
+       TYPE(C_PTR), VALUE :: rmin
+       TYPE(C_PTR), VALUE :: rmax
+       INTEGER(CGENUM_T), VALUE :: m_type
+       INTEGER(CGSIZE_T), VALUE :: m_numdim
+       TYPE(C_PTR), VALUE ::  m_arg_dimvals
+       TYPE(C_PTR), VALUE ::  m_rmin
+       TYPE(C_PTR), VALUE ::  m_rmax
+       TYPE(C_PTR), VALUE :: field
+     END FUNCTION cgp_particle_field_general_read_data
+  END INTERFACE
 
-INTERFACE
-INTEGER(C_INT) FUNCTION cgp_particle_coord_general_read_data(fn, B, P, C, rmin, rmax, &
-     m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
-     coords) BIND(C, name="cgp_particle_coord_general_read_data")
-  IMPORT :: C_INT, C_PTR, CGSIZE_T, CGENUM_T
-  IMPLICIT NONE
-  INTEGER(C_INT), VALUE :: fn
-  INTEGER(C_INT), VALUE :: B
-  INTEGER(C_INT), VALUE :: P
-  INTEGER(C_INT), VALUE :: C
-  TYPE(C_PTR), VALUE :: rmin
-  TYPE(C_PTR), VALUE :: rmax
-  INTEGER(CGENUM_T), VALUE :: m_type
-  INTEGER(CGSIZE_T), VALUE :: m_numdim
-  TYPE(C_PTR), VALUE :: m_arg_dimvals
-  TYPE(C_PTR), VALUE :: m_rmin
-  TYPE(C_PTR), VALUE :: m_rmax
-  TYPE(C_PTR), VALUE :: coords
-END FUNCTION cgp_particle_coord_general_read_data
-END INTERFACE
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_particle_coord_general_read_data(fn, B, P, C, rmin, rmax, &
+          m_type, m_numdim, m_arg_dimvals, m_rmin, m_rmax, &
+          coords) BIND(C, name="cgp_particle_coord_general_read_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T, CGENUM_T
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: P
+       INTEGER(C_INT), VALUE :: C
+       TYPE(C_PTR), VALUE :: rmin
+       TYPE(C_PTR), VALUE :: rmax
+       INTEGER(CGENUM_T), VALUE :: m_type
+       INTEGER(CGSIZE_T), VALUE :: m_numdim
+       TYPE(C_PTR), VALUE :: m_arg_dimvals
+       TYPE(C_PTR), VALUE :: m_rmin
+       TYPE(C_PTR), VALUE :: m_rmax
+       TYPE(C_PTR), VALUE :: coords
+     END FUNCTION cgp_particle_coord_general_read_data
+  END INTERFACE
 
-INTERFACE
-INTEGER(C_INT) FUNCTION cgp_particle_coord_multi_write_data(fn, B, P, C, rmin, rmax, &
-     nsets, buf) BIND(C, NAME="cgp_particle_coord_multi_write_data")
-  IMPORT :: C_INT, C_PTR
-  IMPLICIT NONE
-  INTEGER(C_INT), VALUE :: fn
-  INTEGER(C_INT), VALUE :: B
-  INTEGER(C_INT), VALUE :: P
-  INTEGER(C_INT), DIMENSION(*) :: C
-  TYPE(C_PTR)   , VALUE :: rmin
-  TYPE(C_PTR)   , VALUE :: rmax
-  INTEGER(C_INT), VALUE :: nsets
-  TYPE(C_PTR), DIMENSION(*) :: buf
-END FUNCTION cgp_particle_coord_multi_write_data
-END INTERFACE
-INTERFACE
-INTEGER(C_INT) FUNCTION cgp_particle_coord_multi_read_data(fn, B, P, C, rmin, rmax, &
-     nsets, buf) BIND(C, NAME="cgp_particle_coord_multi_read_data")
-  IMPORT :: C_INT, C_PTR
-  IMPLICIT NONE
-  INTEGER(C_INT), VALUE :: fn
-  INTEGER(C_INT), VALUE :: B
-  INTEGER(C_INT), VALUE :: P
-  INTEGER(C_INT), DIMENSION(*) :: C
-  TYPE(C_PTR)   , VALUE :: rmin
-  TYPE(C_PTR)   , VALUE :: rmax
-  INTEGER(C_INT), VALUE :: nsets
-  TYPE(C_PTR), DIMENSION(*) :: buf
-END FUNCTION cgp_particle_coord_multi_read_data
-END INTERFACE
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_particle_coord_multi_write_data(fn, B, P, C, rmin, rmax, &
+          nsets, buf) BIND(C, NAME="cgp_particle_coord_multi_write_data")
+       IMPORT :: C_INT, C_PTR
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: P
+       INTEGER(C_INT), DIMENSION(*) :: C
+       TYPE(C_PTR)   , VALUE :: rmin
+       TYPE(C_PTR)   , VALUE :: rmax
+       INTEGER(C_INT), VALUE :: nsets
+       TYPE(C_PTR), DIMENSION(*) :: buf
+     END FUNCTION cgp_particle_coord_multi_write_data
+  END INTERFACE
 
-INTERFACE
-INTEGER(C_INT) FUNCTION cgp_particle_field_multi_write_data(fn, B, P, S, F, rmin, rmax, &
-     nsets, buf) BIND(C, NAME="cgp_particle_field_multi_write_data")
-  IMPORT :: C_INT, C_PTR
-  IMPLICIT NONE
-  INTEGER(C_INT), VALUE :: fn
-  INTEGER(C_INT), VALUE :: B
-  INTEGER(C_INT), VALUE :: P
-  INTEGER(C_INT), VALUE :: S
-  INTEGER(C_INT), DIMENSION(*) :: F
-  TYPE(C_PTR)   , VALUE :: rmin
-  TYPE(C_PTR)   , VALUE :: rmax
-  INTEGER(C_INT), VALUE :: nsets
-  TYPE(C_PTR), DIMENSION(*) :: buf
-END FUNCTION cgp_particle_field_multi_write_data
-END INTERFACE
-INTERFACE
-INTEGER(C_INT) FUNCTION cgp_particle_field_multi_read_data(fn, B, P, S, F, rmin, rmax, &
-     nsets, buf) BIND(C, NAME="cgp_particle_field_multi_read_data")
-  IMPORT :: C_INT, C_PTR
-  IMPLICIT NONE
-  INTEGER(C_INT), VALUE :: fn
-  INTEGER(C_INT), VALUE :: B
-  INTEGER(C_INT), VALUE :: P
-  INTEGER(C_INT), VALUE :: S
-  INTEGER(C_INT), DIMENSION(*) :: F
-  TYPE(C_PTR)   , VALUE :: rmin
-  TYPE(C_PTR)   , VALUE :: rmax
-  INTEGER(C_INT), VALUE :: nsets
-  TYPE(C_PTR), DIMENSION(*) :: buf
-END FUNCTION cgp_particle_field_multi_read_data
-END INTERFACE
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_particle_coord_multi_read_data(fn, B, P, C, rmin, rmax, &
+          nsets, buf) BIND(C, NAME="cgp_particle_coord_multi_read_data")
+       IMPORT :: C_INT, C_PTR
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: P
+       INTEGER(C_INT), DIMENSION(*) :: C
+       TYPE(C_PTR)   , VALUE :: rmin
+       TYPE(C_PTR)   , VALUE :: rmax
+       INTEGER(C_INT), VALUE :: nsets
+       TYPE(C_PTR), DIMENSION(*) :: buf
+     END FUNCTION cgp_particle_coord_multi_read_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_particle_field_multi_write_data(fn, B, P, S, F, rmin, rmax, &
+          nsets, buf) BIND(C, NAME="cgp_particle_field_multi_write_data")
+       IMPORT :: C_INT, C_PTR
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: P
+       INTEGER(C_INT), VALUE :: S
+       INTEGER(C_INT), DIMENSION(*) :: F
+       TYPE(C_PTR)   , VALUE :: rmin
+       TYPE(C_PTR)   , VALUE :: rmax
+       INTEGER(C_INT), VALUE :: nsets
+       TYPE(C_PTR), DIMENSION(*) :: buf
+     END FUNCTION cgp_particle_field_multi_write_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION cgp_particle_field_multi_read_data(fn, B, P, S, F, rmin, rmax, &
+          nsets, buf) BIND(C, NAME="cgp_particle_field_multi_read_data")
+       IMPORT :: C_INT, C_PTR
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: fn
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: P
+       INTEGER(C_INT), VALUE :: S
+       INTEGER(C_INT), DIMENSION(*) :: F
+       TYPE(C_PTR)   , VALUE :: rmin
+       TYPE(C_PTR)   , VALUE :: rmax
+       INTEGER(C_INT), VALUE :: nsets
+       TYPE(C_PTR), DIMENSION(*) :: buf
+     END FUNCTION cgp_particle_field_multi_read_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION  cgp_ptlist_write_data(file_number, rmin, rmax, points) BIND(C, NAME="cgp_ptlist_write_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT)   , VALUE :: file_number
+       INTEGER(CGSIZE_T), VALUE :: rmin
+       INTEGER(CGSIZE_T), VALUE :: rmax
+       TYPE(C_PTR)      , VALUE :: points
+     END FUNCTION cgp_ptlist_write_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION  cgp_ptlist_read_data(file_number, rmin, rmax, points) BIND(C, NAME="cgp_ptlist_read_data")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT)   , VALUE :: file_number
+       INTEGER(CGSIZE_T), VALUE :: rmin
+       INTEGER(CGSIZE_T), VALUE :: rmax
+       TYPE(C_PTR)      , VALUE :: points
+     END FUNCTION cgp_ptlist_read_data
+  END INTERFACE
+
+  INTERFACE
+     INTEGER(C_INT) FUNCTION  cgp_parent_data_write(file_number, B, Z, S, rmin, rmax, parents) BIND(C, NAME="cgp_parent_data_write")
+       IMPORT :: C_INT, C_PTR, CGSIZE_T
+       IMPLICIT NONE
+       INTEGER(C_INT), VALUE :: file_number
+       INTEGER(C_INT), VALUE :: B
+       INTEGER(C_INT), VALUE :: Z
+       INTEGER(C_INT), VALUE :: S
+       INTEGER(CGSIZE_T), VALUE :: rmin
+       INTEGER(CGSIZE_T), VALUE :: rmax
+       TYPE(C_PTR)      , VALUE :: parents
+     END FUNCTION cgp_parent_data_write
+  END INTERFACE
+
 #endif
 
   PRIVATE cg_configure_ptr, cg_configure_funptr
@@ -8287,6 +8290,7 @@ CONTAINS
            F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
 
     END SUBROUTINE cgp_particle_field_multi_read_data_f0
+
     SUBROUTINE cgp_particle_field_multi_read_data_f1(fn, B, P, S, F, rmin, rmax, nsets, buf, ier)
 
       IMPLICIT NONE
@@ -8305,6 +8309,47 @@ CONTAINS
            F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
 
     END SUBROUTINE cgp_particle_field_multi_read_data_f1
+
+    SUBROUTINE cgp_ptlist_write_data_f(file_number, rmin, rmax, points, ier)
+
+      IMPLICIT NONE
+      INTEGER          , INTENT(IN) :: file_number
+      INTEGER(CGSIZE_T), INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), INTENT(IN) :: rmax
+      INTEGER(CGSIZE_T), TARGET, DIMENSION(*), INTENT(IN) :: points
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_ptlist_write_data(INT(file_number, C_INT), rmin, rmax, C_LOC(points)))
+
+    END SUBROUTINE cgp_ptlist_write_data_f
+
+    SUBROUTINE cgp_ptlist_read_data_f(file_number, rmin, rmax, points, ier)
+      IMPLICIT NONE
+      INTEGER          , INTENT(IN) :: file_number
+      INTEGER(CGSIZE_T), INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), INTENT(IN) :: rmax
+      INTEGER(CGSIZE_T), TARGET, DIMENSION(*), INTENT(OUT) :: points
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_ptlist_read_data(INT(file_number, C_INT), rmin, rmax, C_LOC(points)))
+
+    END SUBROUTINE cgp_ptlist_read_data_f
+
+    SUBROUTINE cgp_parent_data_write_f(file_number, B, Z, S, rmin, rmax, parents, ier)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: file_number
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER, INTENT(IN) :: S
+      INTEGER(CGSIZE_T), INTENT(IN) :: rmin
+      INTEGER(CGSIZE_T), INTENT(IN) :: rmax
+      INTEGER(CGSIZE_T), TARGET, DIMENSION(*), INTENT(IN) :: parents
+      INTEGER, INTENT(OUT) :: ier
+
+      ier = INT(cgp_parent_data_write(INT(file_number, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
+           rmin, rmax, C_LOC(parents)))
+
+    END SUBROUTINE cgp_parent_data_write_f
 
 #endif
 

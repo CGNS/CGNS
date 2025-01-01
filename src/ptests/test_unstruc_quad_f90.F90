@@ -181,7 +181,7 @@ PROGRAM test_unstruc_quad_f
   emax(1) = emin(1)+2
   PRINT *, comm_rank, ':', emin(1), ' ', emax(1) 
   
-  CALL cgp_parent_data_write_f(F, B, Z, S, emin, emax, elements, ierr)
+  CALL cgp_parent_data_write_f(F, B, Z, S, emin(1), emax(1), elements, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
 ! side connectivity
@@ -215,7 +215,7 @@ PROGRAM test_unstruc_quad_f
   ierr = cg_golist(F, B, depth, pt_labels, indices)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
   PRINT *, elements(1), elements(2), start_local(1), end_local(1)
-  CALL cgp_ptlist_write_data_f(F, start_local, end_local, elements, ierr)
+  CALL cgp_ptlist_write_data_f(F, start_local(1), end_local(1), elements, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   CALL cg_boco_gridlocation_write_f(F, B, Z, BC, CGNS_ENUMV(EdgeCenter), ierr)
@@ -252,7 +252,7 @@ PROGRAM test_unstruc_quad_f
   ENDIF
   PRINT *, comm_rank, ":", emin(1), " ", emax(1)
 
-  CALL cgp_parent_data_write_f(F, B, Z, S, emin, emax, el_ptr, ierr)
+  CALL cgp_parent_data_write_f(F, B, Z, S, emin(1), emax(1), el_ptr, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   IF (comm_rank .EQ. 0) THEN
@@ -284,7 +284,7 @@ PROGRAM test_unstruc_quad_f
   ierr = cg_golist(F, B, depth, pt_labels, indices)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
-  CALL cgp_ptlist_write_data_f(F, start_local, end_local, el_ptr, ierr)
+  CALL cgp_ptlist_write_data_f(F, start_local(1), end_local(1), el_ptr, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   CALL cg_boco_gridlocation_write_f(F, B, Z, BC, CGNS_ENUMV(EdgeCenter), ierr)
@@ -323,7 +323,7 @@ PROGRAM test_unstruc_quad_f
   ierr = cg_golist(F, B, depth, pt_labels, indices)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
-  CALL cgp_ptlist_read_data_f(F, start_local, end_local, elements, ierr)
+  CALL cgp_ptlist_read_data_f(F, start_local(1), end_local(1), elements, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   PRINT *, comm_rank, ": ", elements(1), " ", elements(2), " ", elements(3)
