@@ -1,135 +1,9 @@
-MODULE testing_functions
-
-  ! *********************************
-  ! Useful testing helper functions
-  ! *********************************
-
-  USE ISO_C_BINDING
-  USE testing_utils
-  IMPLICIT NONE
-
-  INTEGER, PARAMETER :: TAB_SPACE = 90 ! Tab spacing for printing results
-
-  INTEGER, PARAMETER :: skip   = -1
-  INTEGER, PARAMETER :: passed =  0
-  INTEGER, PARAMETER :: failed =  1
-
-CONTAINS
-
-  SUBROUTINE write_test_header(title_header)
-
-    ! Writes the test header
-
-    IMPLICIT NONE
-
-    CHARACTER(LEN=*), INTENT(IN) :: title_header ! test name
-    INTEGER, PARAMETER :: width = TAB_SPACE+10
-    CHARACTER(LEN=2*width) :: title_centered
-    INTEGER :: len, i
-
-    title_centered(:) = " "
-
-    len=LEN_TRIM(title_header)
-    title_centered(1:3) ="| |"
-    title_centered((width-len)/2:(width-len)/2+len) = TRIM(title_header)
-    title_centered(width-1:width+2) ="| |"
-
-    WRITE(*,'(1X)', ADVANCE="NO")
-    DO i = 1, width-1
-       WRITE(*,'("_")', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'()')
-    WRITE(*,'("|  ")', ADVANCE="NO")
-    DO i = 1, width-5
-       WRITE(*,'("_")', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'("  |")')
-
-    WRITE(*,'("| |")', ADVANCE="NO")
-    DO i = 1, width-5
-       WRITE(*,'(1X)', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'("| |")')
-
-    WRITE(*,'(A)') TRIM(title_centered)
-
-    WRITE(*,'("| |")', ADVANCE="NO")
-    DO i = 1, width-5
-       WRITE(*,'(1X)', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'("| |")')
-
-    WRITE(*,'("| |")', ADVANCE="NO")
-    DO i = 1, width-5
-       WRITE(*,'("_")', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'("| |")')
-
-    WRITE(*,'("|")', ADVANCE="NO")
-    DO i = 1, width-1
-       WRITE(*,'("_")', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'("|",/)')
-
-  END SUBROUTINE write_test_header
-
-  SUBROUTINE write_test_status( test_result, test_title, cause)
-
-    ! Writes the results of the tests
-
-    IMPLICIT NONE
-
-    INTEGER, INTENT(IN) :: test_result  ! negative,  --skip --
-                                        ! 0       ,   passed
-                                        ! positive,   failed
-
-    CHARACTER(LEN=*), INTENT(IN) :: test_title ! Short description of test
-    CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: cause ! Print error cause
-
-    ! Controls the output style for reporting test results
-
-    CHARACTER(LEN=8) :: error_string
-    CHARACTER(LEN=8), PARAMETER :: passed = ' PASSED '
-    CHARACTER(LEN=8), PARAMETER :: failed = '*FAILED*'
-    CHARACTER(LEN=8), PARAMETER :: skip    = '--SKIP--'
-    CHARACTER(LEN=10) :: FMT
-
-    error_string = failed
-    IF (test_result ==  0) THEN
-       error_string = passed
-    ELSE IF (test_result == -1) THEN
-       error_string = skip
-    ENDIF
-    WRITE(FMT,'("(A,T",I0,",A)")') TAB_SPACE
-    WRITE(*, fmt = FMT) test_title, error_string
-
-    IF(PRESENT(cause)) WRITE(*,'(3X,"FAILURE REPORTED --", A)') cause
-
-  END SUBROUTINE write_test_status
-
-  SUBROUTINE write_test_footer()
-
-    ! Writes the test footer
-
-    IMPLICIT NONE
-    INTEGER, PARAMETER :: width = TAB_SPACE+10
-    INTEGER :: i
-
-    DO i = 1, width
-       WRITE(*,'("_")', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'(/)')
-
-  END SUBROUTINE write_test_footer
-
-END MODULE testing_functions
-
 MODULE ftests
 
   USE mpi
   USE ISO_C_BINDING
   USE CGNS
-  USE testing_functions
+  USE testing_utils
   IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
@@ -1751,6 +1625,8 @@ PROGRAM pcgns_ftest
   CALL MPI_Barrier(MPI_COMM_WORLD, mpi_err)
   IF(commrank.EQ.0) CALL write_test_header("Particle Multi-sets API Testing")
   CALL particle_multisets()
+
+  IF(commrank.EQ.0) CALL write_test_footer()
 
   CALL MPI_FINALIZE(mpi_err)
 

@@ -229,8 +229,8 @@ test_unstruc_quad_f90$(EXE) : test_unstruc_quad_f90.F90 $(CGNSLIB)
 
 #----------
 
-test_poly_unstructured_f90$(EXE) : test_poly_unstructured_f90.F90 $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ test_poly_unstructured_f90.F90 $(LDLIBS) $(FLIBS)
+test_poly_unstructured_f90$(EXE) : test_poly_unstructured_f90.F90 utilsf.$(O) $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_poly_unstructured_f90.F90 utilsf.$(O) $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------

@@ -8351,6 +8351,112 @@ CONTAINS
 
     END SUBROUTINE cgp_parent_data_write_f
 
+    SUBROUTINE cgp_parentelements_read_data_f(fn, B, Z, S, start, end, parentelements, ier)
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER, INTENT(IN) :: S
+      INTEGER(CGSIZE_T), INTENT(IN) :: start
+      INTEGER(CGSIZE_T), INTENT(IN) :: end
+      INTEGER(CGSIZE_T), TARGET, DIMENSION(*), INTENT(OUT) :: parentelements
+      INTEGER, INTENT(OUT) :: ier
+
+      TYPE(C_PTR) :: c_parentelements
+
+      INTERFACE
+         INTEGER(C_INT) FUNCTION cgp_parentelements_read_data(fn, B, Z, S, start, end, parentelements) &
+              BIND(C, NAME="cgp_parentelements_read_data")
+           IMPORT :: C_INT, C_PTR, CGSIZE_T
+           IMPLICIT NONE
+           INTEGER(C_INT), VALUE :: fn
+           INTEGER(C_INT), VALUE :: B
+           INTEGER(C_INT), VALUE :: Z
+           INTEGER(C_INT), VALUE :: S
+           INTEGER(CGSIZE_T), VALUE :: start
+           INTEGER(CGSIZE_T), VALUE :: end
+           TYPE(C_PTR)      , VALUE :: parentelements
+         END FUNCTION cgp_parentelements_read_data
+      END INTERFACE
+
+      c_parentelements = C_LOC(parentelements)
+
+      ier = INT(cgp_parentelements_read_data(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
+           start, end, c_parentelements))
+
+    END SUBROUTINE cgp_parentelements_read_data_f
+
+    SUBROUTINE cgp_poly_elements_read_data_offsets_f(fn, B, Z, S, start, end, offsets, ier)
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER, INTENT(IN) :: S
+      INTEGER(CGSIZE_T), INTENT(IN) :: start
+      INTEGER(CGSIZE_T), INTENT(IN) :: end
+      INTEGER(CGSIZE_T), TARGET, DIMENSION(*), INTENT(OUT) :: offsets
+      INTEGER, INTENT(OUT) :: ier
+
+      TYPE(C_PTR) :: c_offsets
+
+      INTERFACE
+         INTEGER(C_INT) FUNCTION cgp_poly_elements_read_data_offsets(fn, B, Z, S, start, END, offsets) &
+              BIND(C, NAME="cgp_poly_elements_read_data_offsets")
+           IMPORT :: C_INT, C_PTR, CGSIZE_T
+           IMPLICIT NONE
+           INTEGER(C_INT), VALUE :: fn
+           INTEGER(C_INT), VALUE :: B
+           INTEGER(C_INT), VALUE :: Z
+           INTEGER(C_INT), VALUE :: S
+           INTEGER(CGSIZE_T), VALUE :: start
+           INTEGER(CGSIZE_T), VALUE :: end
+           TYPE(C_PTR)      , VALUE :: offsets
+         END FUNCTION cgp_poly_elements_read_data_offsets
+      END INTERFACE
+
+      c_offsets = C_LOC(offsets)
+
+      ier = INT(cgp_poly_elements_read_data_offsets(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
+           start, end, c_offsets))
+
+    END SUBROUTINE cgp_poly_elements_read_data_offsets_f
+
+    SUBROUTINE cgp_poly_elements_read_data_elements_f(fn, B, Z, S, start, end, offsets, elements, ier)
+      INTEGER, INTENT(IN) :: fn
+      INTEGER, INTENT(IN) :: B
+      INTEGER, INTENT(IN) :: Z
+      INTEGER, INTENT(IN) :: S
+      INTEGER(CGSIZE_T), INTENT(IN) :: start
+      INTEGER(CGSIZE_T), INTENT(IN) :: end
+      INTEGER(CGSIZE_T), TARGET, DIMENSION(*), INTENT(IN) :: offsets
+      INTEGER(CGSIZE_T), TARGET, DIMENSION(*), INTENT(OUT) :: elements
+      INTEGER, INTENT(OUT) :: ier
+
+      TYPE(C_PTR) :: c_offsets
+      TYPE(C_PTR) :: c_elements
+
+      INTERFACE
+         INTEGER(C_INT) FUNCTION cgp_poly_elements_read_data_elements(fn, B, Z, S, start, end, offsets, elements) &
+              BIND(C, NAME="cgp_poly_elements_read_data_elements")
+           IMPORT :: C_INT, C_PTR, CGSIZE_T
+           IMPLICIT NONE
+           INTEGER(C_INT), VALUE :: fn
+           INTEGER(C_INT), VALUE :: B
+           INTEGER(C_INT), VALUE :: Z
+           INTEGER(C_INT), VALUE :: S
+           INTEGER(CGSIZE_T), VALUE :: start
+           INTEGER(CGSIZE_T), VALUE :: end
+           TYPE(C_PTR)      , VALUE :: offsets
+           TYPE(C_PTR)      , VALUE :: elements
+         END FUNCTION cgp_poly_elements_read_data_elements
+      END INTERFACE
+
+      c_offsets = C_LOC(offsets)
+      c_elements = C_LOC(elements)
+
+      ier = INT(cgp_poly_elements_read_data_elements(INT(fn, C_INT), INT(B, C_INT), INT(Z, C_INT), INT(S, C_INT), &
+           start, end, c_offsets, c_elements))
+
+    END SUBROUTINE cgp_poly_elements_read_data_elements_f
+
 #endif
 
 
