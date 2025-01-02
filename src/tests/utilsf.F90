@@ -21,7 +21,7 @@ MODULE testing_utils
 
 CONTAINS
   !
-  ! Formating routines for presenting testing results
+  ! Formatting routines for presenting testing results
   !
   SUBROUTINE write_test_header(title_header)
 
