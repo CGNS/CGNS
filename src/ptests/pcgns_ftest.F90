@@ -1256,7 +1256,7 @@ SUBROUTINE particle_multisets()
 
   CHARACTER(LEN=32) :: fname
   INTEGER :: fn, B, P, S
-  INTEGER(C_INT) :: Cvec(3), Fvec(3)
+  INTEGER :: Cvec(3), Fvec(3)
   INTEGER :: Cx, Cy, Cz, Fx, Fy, Fz
   INTEGER :: cell_dim = 3, phys_dim = 3
   INTEGER :: r_cell_dim = 0, r_phys_dim = 0

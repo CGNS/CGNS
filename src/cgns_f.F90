@@ -6561,7 +6561,7 @@ CONTAINS
 
     ier = INT(cg_nparticle_zones(INT(fn, C_INT), INT(B, C_INT), c_nparticlezones))
 
-    nparticlezones = INT(c_nparticlezones);
+    nparticlezones = INT(c_nparticlezones)
 
   END SUBROUTINE cg_nparticle_zones_f
 
