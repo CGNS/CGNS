@@ -142,13 +142,19 @@
  * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief This allows the  user to define an error call-back function. The value should be a pointer
  * to a function that receives the error.  The  function is defined as
- * `void err_callback(int is_error, char *errmsg)`
- * and will be called  for errors and warnings.  The first argument,
- * `is_error`, will be 0 for warning messages, 1 for error messages, and -1 if the program is
- * going to terminate (i.e., a call to cg_error_exit()). The second  argument is the error or
- * warning  message. If this is defined,  warning and error messages will go  to the function
- * rather  than  the terminal.  A  `value`  of  NULL (Fortran, `C_NULL_PTR`)  will remove the
- * call-back function.
+ * `void err_callback(int is_error, char *errmsg)`, or, in Fortran,
+ * \code{.F90}
+     SUBROUTINE err_callback(is_error, errmsg) BIND(C)
+        INTEGER(C_INT), VALUE ::is_error
+        CHARACTER(LEN=1), DIMENSION(*) :: errmsg
+   \endcode
+ * and will be called for errors and warnings.
+ *
+ * The first argument, `is_error`, will be 0 for warning messages, 1 for error messages, and
+ * -1 if the program is going to terminate (i.e., a call to cg_error_exit()). The second
+ * argument is the error or warning  message. If this is defined,  warning and error messages
+ * will go  to the function rather  than  the terminal.  A  `value`  of  NULL (Fortran,
+ * `C_NULL_PTR` or `C_NULL_FUNPTR`)  will remove the call-back function.
 */
 #define CG_CONFIG_ERROR      1
 /**

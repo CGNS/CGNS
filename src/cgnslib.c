@@ -1039,7 +1039,8 @@ int cg_get_cgio(int fn, int *cgio_num)
  *
  * \param[in]  option The configuration options are defined in \e cgnslib.h. For the list, please refer to
  *                    the list below.
- * \param[in]  value  The value to set, type cast as \e void * . In Fortran, the type is \e TYPE(C_PTR).
+ * \param[in]  value  The value to set, type cast as \e void * . In Fortran, the type is \e TYPE(C_PTR), or
+ *                    \e TYPE(C_FUNPTR) for \e CG_CONFIG_ERROR.
  * \return \ier
  *
  * \details The function cg_configure() allows particular CGNS library internal options to be

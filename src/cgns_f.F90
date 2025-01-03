@@ -8170,15 +8170,30 @@ CONTAINS
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
-      INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: C
+      INTEGER, DIMENSION(:), INTENT(IN) :: C
       INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
       INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
       INTEGER, INTENT(IN) :: nsets
       TYPE(C_PTR), DIMENSION(*) :: buf
       INTEGER, INTENT(OUT) :: ier
+      INTEGER :: c_size
+      INTEGER(C_INT), DIMENSION(:), ALLOCATABLE :: c_C
+      INTEGER :: i, ierr
+
+      c_size = SIZE(C)
+      ALLOCATE(c_C(1:c_size), STAT=ierr)
+      IF(ierr.NE.0)THEN
+         ier = CG_ERROR
+         RETURN
+      ENDIF
+      DO i = 1, c_size
+         c_C(i) = INT(C(i), C_INT)
+      ENDDO
 
       ier = INT(cgp_particle_coord_multi_write_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), &
-           C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+           c_C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+
+      DEALLOCATE(c_C)
 
     END SUBROUTINE cgp_particle_coord_multi_write_data_f0
 
@@ -8188,15 +8203,31 @@ CONTAINS
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
-      INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: C
+      INTEGER, DIMENSION(:), INTENT(IN) :: C
       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
       INTEGER, INTENT(IN) :: nsets
       TYPE(C_PTR), DIMENSION(*) :: buf
       INTEGER, INTENT(OUT) :: ier
 
+      INTEGER :: c_size
+      INTEGER(C_INT), DIMENSION(:), ALLOCATABLE :: c_C
+      INTEGER :: i, ierr
+
+      c_size = SIZE(C)
+      ALLOCATE(c_C(1:c_size), STAT=ierr)
+      IF(ierr.NE.0)THEN
+         ier = CG_ERROR
+         RETURN
+      ENDIF
+      DO i = 1, c_size
+         c_C(i) = INT(C(i), C_INT)
+      ENDDO
+
       ier = INT(cgp_particle_coord_multi_write_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), &
-           C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+           c_C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+
+      DEALLOCATE(c_C)
 
     END SUBROUTINE cgp_particle_coord_multi_write_data_f1
     SUBROUTINE cgp_particle_coord_multi_read_data_f0(fn, B, P, C, rmin, rmax, nsets, buf, ier)
@@ -8205,15 +8236,31 @@ CONTAINS
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
-      INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: C
+      INTEGER, DIMENSION(:), INTENT(IN) :: C
       INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
       INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
       INTEGER, INTENT(IN) :: nsets
       TYPE(C_PTR), DIMENSION(*) :: buf
       INTEGER, INTENT(OUT) :: ier
 
+      INTEGER :: c_size
+      INTEGER(C_INT), DIMENSION(:), ALLOCATABLE :: c_C
+      INTEGER :: i, ierr
+
+      c_size = SIZE(C)
+      ALLOCATE(c_C(1:c_size), STAT=ierr)
+      IF(ierr.NE.0)THEN
+         ier = CG_ERROR
+         RETURN
+      ENDIF
+      DO i = 1, c_size
+         c_C(i) = INT(C(i), C_INT)
+      ENDDO
+
       ier = INT(cgp_particle_coord_multi_read_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), &
-           C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+           c_C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+
+      DEALLOCATE(c_C)
 
     END SUBROUTINE cgp_particle_coord_multi_read_data_f0
 
@@ -8223,15 +8270,31 @@ CONTAINS
       INTEGER, INTENT(IN) :: fn
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
-      INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: C
+      INTEGER, DIMENSION(:), INTENT(IN) :: C
       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
       INTEGER, INTENT(IN) :: nsets
       TYPE(C_PTR), DIMENSION(*) :: buf
       INTEGER, INTENT(OUT) :: ier
 
+      INTEGER :: c_size
+      INTEGER(C_INT), DIMENSION(:), ALLOCATABLE :: c_C
+      INTEGER :: i, ierr
+
+      c_size = SIZE(C)
+      ALLOCATE(c_C(1:c_size), STAT=ierr)
+      IF(ierr.NE.0)THEN
+         ier = CG_ERROR
+         RETURN
+      ENDIF
+      DO i = 1, c_size
+         c_C(i) = INT(C(i), C_INT)
+      ENDDO
+
       ier = INT(cgp_particle_coord_multi_read_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), &
-           C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+           c_C, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+
+      DEALLOCATE(c_C)
 
     END SUBROUTINE cgp_particle_coord_multi_read_data_f1
 
@@ -8242,15 +8305,31 @@ CONTAINS
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
       INTEGER, INTENT(IN) :: S
-      INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: F
+      INTEGER, DIMENSION(:), INTENT(IN) :: F
       INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
       INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
       INTEGER, INTENT(IN) :: nsets
       TYPE(C_PTR), DIMENSION(*) :: buf
       INTEGER, INTENT(OUT) :: ier
 
+      INTEGER :: f_size
+      INTEGER(C_INT), DIMENSION(:), ALLOCATABLE :: c_F
+      INTEGER :: i, ierr
+
+      f_size = SIZE(F)
+      ALLOCATE(c_F(1:f_size), STAT=ierr)
+      IF(ierr.NE.0)THEN
+         ier = CG_ERROR
+         RETURN
+      ENDIF
+      DO i = 1, f_size
+         c_F(i) = INT(F(i), C_INT)
+      ENDDO
+
       ier = INT(cgp_particle_field_multi_write_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), INT(S, C_INT), &
-           F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+           c_F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+
+      DEALLOCATE(c_F)
 
     END SUBROUTINE cgp_particle_field_multi_write_data_f0
 
@@ -8261,15 +8340,31 @@ CONTAINS
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
       INTEGER, INTENT(IN) :: S
-      INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: F
+      INTEGER, DIMENSION(:), INTENT(IN) :: F
       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
       INTEGER, INTENT(IN) :: nsets
       TYPE(C_PTR), DIMENSION(*) :: buf
       INTEGER, INTENT(OUT) :: ier
 
+      INTEGER :: f_size
+      INTEGER(C_INT), DIMENSION(:), ALLOCATABLE :: c_F
+      INTEGER :: i, ierr
+
+      f_size = SIZE(F)
+      ALLOCATE(c_F(1:f_size), STAT=ierr)
+      IF(ierr.NE.0)THEN
+         ier = CG_ERROR
+         RETURN
+      ENDIF
+      DO i = 1, f_size
+         c_F(i) = INT(F(i), C_INT)
+      ENDDO
+
       ier = INT(cgp_particle_field_multi_write_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), INT(S, C_INT), &
-           F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+           c_F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+
+      DEALLOCATE(c_F)
 
     END SUBROUTINE cgp_particle_field_multi_write_data_f1
     SUBROUTINE cgp_particle_field_multi_read_data_f0(fn, B, P, S, F, rmin, rmax, nsets, buf, ier)
@@ -8279,15 +8374,31 @@ CONTAINS
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
       INTEGER, INTENT(IN) :: S
-      INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: F
+      INTEGER, DIMENSION(:), INTENT(IN) :: F
       INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmin
       INTEGER(CGSIZE_T), TARGET, INTENT(IN) :: rmax
       INTEGER, INTENT(IN) :: nsets
       TYPE(C_PTR), DIMENSION(*) :: buf
       INTEGER, INTENT(OUT) :: ier
 
+      INTEGER :: f_size
+      INTEGER(C_INT), DIMENSION(:), ALLOCATABLE :: c_F
+      INTEGER :: i, ierr
+
+      f_size = SIZE(F)
+      ALLOCATE(c_F(1:f_size), STAT=ierr)
+      IF(ierr.NE.0)THEN
+         ier = CG_ERROR
+         RETURN
+      ENDIF
+      DO i = 1, f_size
+         c_F(i) = INT(F(i), C_INT)
+      ENDDO
+
       ier = INT(cgp_particle_field_multi_read_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), INT(S, C_INT), &
-           F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+           c_F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+
+      DEALLOCATE(c_F)
 
     END SUBROUTINE cgp_particle_field_multi_read_data_f0
 
@@ -8298,15 +8409,31 @@ CONTAINS
       INTEGER, INTENT(IN) :: B
       INTEGER, INTENT(IN) :: P
       INTEGER, INTENT(IN) :: S
-      INTEGER(C_INT)   , DIMENSION(*), INTENT(IN) :: F
+      INTEGER, DIMENSION(:), INTENT(IN) :: F
       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmin
       INTEGER(CGSIZE_T), DIMENSION(*), TARGET, INTENT(IN) :: rmax
       INTEGER, INTENT(IN) :: nsets
       TYPE(C_PTR), DIMENSION(*) :: buf
       INTEGER, INTENT(OUT) :: ier
 
+      INTEGER :: f_size
+      INTEGER(C_INT), DIMENSION(:), ALLOCATABLE :: c_F
+      INTEGER :: i, ierr
+
+      f_size = SIZE(F)
+      ALLOCATE(c_F(1:f_size), STAT=ierr)
+      IF(ierr.NE.0)THEN
+         ier = CG_ERROR
+         RETURN
+      ENDIF
+      DO i = 1, f_size
+         c_F(i) = INT(F(i), C_INT)
+      ENDDO
+
       ier = INT(cgp_particle_field_multi_read_data(INT(fn,C_INT), INT(B,C_INT), INT(P, C_INT), INT(S, C_INT), &
-           F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+           c_F, C_LOC(rmin), C_LOC(rmax), INT(nsets, C_INT), buf))
+
+      DEALLOCATE(c_F)
 
     END SUBROUTINE cgp_particle_field_multi_read_data_f1
 
