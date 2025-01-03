@@ -23,6 +23,9 @@ freely, subject to the following restrictions:
 #define _XOPEN_SOURCE 600
 #endif
 #endif
+#ifndef _WIN32
+  #define _POSIX_SOURCE
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

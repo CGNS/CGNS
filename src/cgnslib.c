@@ -104,7 +104,9 @@ freely, subject to the following restrictions:
  * \defgroup ParticleModel Particle Model
  *
  */
-
+#ifndef _WIN32
+  #define _POSIX_SOURCE
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
