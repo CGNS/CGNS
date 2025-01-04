@@ -1039,7 +1039,8 @@ int cg_get_cgio(int fn, int *cgio_num)
  *
  * \param[in]  option The configuration options are defined in \e cgnslib.h. For the list, please refer to
  *                    the list below.
- * \param[in]  value  The value to set, type cast as \e void * . In Fortran, the type is \e TYPE(C_PTR).
+ * \param[in]  value  The value to set, type cast as \e void * . In Fortran, the type is \e TYPE(C_PTR), or
+ *                    \e TYPE(C_FUNPTR) for \e CG_CONFIG_ERROR.
  * \return \ier
  *
  * \details The function cg_configure() allows particular CGNS library internal options to be
@@ -4163,6 +4164,20 @@ int cg_coord_general_read(int fn, int B, int Z, const char *coordname,
                                   m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   coord_ptr);
 }
+
+/**
+* \ingroup ZoneGridCoordinates
+*
+* \brief Get coordinate id
+*
+* \param[in]  fn       \FILE_fn
+* \param[in]  B        \B_Base
+* \param[in]  Z        \Z_Zone
+* \param[in]  C        \C_Coordinate
+* \param[out] coord_id Coordinate id.
+* \return \ier
+*
+*/
 
 int cg_coord_id(int fn, int B, int Z, int C, double *coord_id)
 {
@@ -8417,7 +8432,7 @@ int cg_nfields(int fn, int B, int Z, int S, int *nfields)
  * \param[in]  B         \B_Base
  * \param[in]  Z         \Z_Zone
  * \param[in]  S         \SOL_S
- * \param[in]  F         Solution array index number, where 1 ≤ F ≤ nfields.
+ * \param[in]  F         \PSOL_F
  * \param[out] datatype  Data type of the solution array written to the file. Admissible data types
  *                       for a solution array are \e Integer, \e LongInteger, \e RealSingle, and \e RealDouble.
  * \param[out] fieldname Name of the solution array. It is strongly advised to use the SIDS
@@ -8582,6 +8597,21 @@ int cg_field_general_read(int fn, int B, int Z, int S, const char *fieldname,
                                   m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                   field_ptr);
 }
+
+/**
+ * \ingroup FlowSolutionData
+ *
+ * \brief Get the field solution ADF ID number (address) of node
+ *
+ * \param[in]  fn        \FILE_fn
+ * \param[in]  B         \B_Base
+ * \param[in]  Z         \Z_Zone
+ * \param[in]  S         \SOL_S
+ * \param[in]  F         \PSOL_F
+ * \param[out] field_id  Field solution ADF ID number (address) of node
+ * \return \ier
+ *
+ */
 
 int cg_field_id(int fn, int B, int Z, int S, int F, double *field_id)
 {
@@ -12288,9 +12318,9 @@ int cg_ziter_write(int fn, int B, int Z, const char * zitername)
  *
  * \brief  Read ParticleIterativeData_t node
  *
- * \param[in] fn \FILE_fn
- * \param[in] B  \B_Base
- * \param[in] P  \P_ParticleZone
+ * \param[in]  fn         \FILE_fn
+ * \param[in]  B          \B_Base
+ * \param[in]  P          \P_ParticleZone
  * \param[out] pitername  Name of the ParticleIterativeData_t node.
  * \return \ier
  *
@@ -12317,9 +12347,9 @@ int cg_piter_read(int fn, int B, int P, char *pitername)
  *
  * \brief  Write ParticleIterativeData_t node
  *
- * \param[in] fn \FILE_fn
- * \param[in] B  \B_Base
- * \param[in] P  \P_ParticleZone
+ * \param[in] fn         \FILE_fn
+ * \param[in] B          \B_Base
+ * \param[in] P          \P_ParticleZone
  * \param[in] pitername  Name of the ParticleIterativeData_t node.
  * \return \ier
  *
@@ -13936,11 +13966,11 @@ int cg_particle_coord_node_read(int fn, int B, int P, int C, char *pcoord_name)
 * \param[in] fn           \FILE_fn
 * \param[in] B            \B_Base
 * \param[in] P            \P_ParticleZone
-* \param[in] C            \C_Coordinate
-* \param[out] pcoord_name Name of the \e ParticleCoordinates_t node.
+* \param[in] pcoord_name  Name of the \e ParticleCoordinates_t node.
 *                         Note that the name "ParticleCoordinates" is reserved
 *                         for the original particle location and must be the first
 *                         \e ParticleCoordinates_t node to be defined.
+* \param[out] C           \C_Coordinate
 * \return \ier
 *
 */
@@ -14359,6 +14389,20 @@ int cg_particle_coord_general_read(int fn, int B, int P, const char *coordname,
                                  m_type, m_numdim, m_dimvals, m_rmin, m_rmax,
                                  coord_ptr);
 }
+
+/**
+* \ingroup ZoneGridCoordinates
+*
+* \brief  Get particle coordinate ids
+*
+* \param[in]  fn       \FILE_fn
+* \param[in]  B        \B_Base
+* \param[in]  P        \P_ParticleZone
+* \param[in]  C        \C_Coordinate
+* \param[out] coord_id Particle coordinate id.
+* \return \ier
+*
+*/
 
 int cg_particle_coord_id(int fn, int B, int P, int C, double *coord_id)
 {
@@ -14986,7 +15030,7 @@ int cg_particle_nfields(int fn, int B, int P, int S, int *nfields)
 * \param[in] B          \B_Base
 * \param[in] P          \P_ParticleZone
 * \param[in] S          \SOL_S
-* \param[in] F          Solution array index number, where 1 ≤ F ≤ nfields.
+* \param[in] F          \PSOL_F
 * \param[out] datatype  Data type of the solution array written to the file.
 *                       Admissible data types for a solution array are \e Integer,
 *                       \e LongInteger, \e RealSingle, and \e RealDouble.
@@ -15020,10 +15064,10 @@ int cg_particle_field_info(int fn, int B, int P, int S, int F,
 *
 * \brief  Read particle solution
 *
-* \param[in] fn           \FILE_fn
-* \param[in] B            \B_Base
-* \param[in] P            \P_ParticleZone
-* \param[in] S            \SOL_S
+* \param[in] fn            \FILE_fn
+* \param[in] B             \B_Base
+* \param[in] P             \P_ParticleZone
+* \param[in] S             \SOL_S
 * \param[in] fieldname     Name of the solution array. It is strongly advised to use the
 *                          SIDS nomenclature conventions when naming the solution arrays
 *                          to ensure file compatibility.
@@ -15032,7 +15076,7 @@ int cg_particle_field_info(int fn, int B, int P, int S, int F,
 *                          and RealDouble.
 * \param[in] s_rmin  Lower range index in file
 * \param[in] s_rmax  Upper range index in file
-* \param[out] field_ptr  Array of solution values.
+* \param[out] field_ptr    Array of solution values.
 * \return \ier
 *
 */
@@ -15142,6 +15186,20 @@ int cg_particle_field_general_read(int fn, int B, int P, int S, const char *fiel
                                  field_ptr);
 }
 
+/**
+ * \ingroup FlowSolutionData
+ *
+ * \brief Get the particle field solution ADF ID number (address) of node
+ *
+ * \param[in]  fn        \FILE_fn
+ * \param[in]  B         \B_Base
+ * \param[in]  Z         \Z_Zone
+ * \param[in]  S         \SOL_S
+ * \param[in]  F         \PSOL_F
+ * \param[out] field_id  Field particle solution ADF ID number (address) of node
+ * \return \ier
+ *
+ */
 int cg_particle_field_id(int fn, int B, int P, int S, int F, double *field_id)
 {
    cgns_array *field;
@@ -15163,18 +15221,18 @@ int cg_particle_field_id(int fn, int B, int P, int S, int F, double *field_id)
 *
 * \brief  Write Particle solution
 *
-* \param[in] fn         \FILE_fn
-* \param[in] B          \B_Base
-* \param[in] P          \P_ParticleZone
-* \param[in] S          \SOL_S
-* \param[in] fieldname  Name of the solution array. It is strongly advised to use
-*                       the SIDS nomenclature conventions when naming the solution
-*                       arrays to ensure file compatibility.
-* \param[in] type       Data type of the solution array written to the file. Admissible
-*                       data types for a solution array are Integer, LongInteger,
-*                       RealSingle, and RealDouble.
-* \param[in] field_ptr Array of solution values.
-* \param[out] F \SOL_F
+* \param[in]  fn         \FILE_fn
+* \param[in]  B          \B_Base
+* \param[in]  P          \P_ParticleZone
+* \param[in]  S          \SOL_S
+* \param[in]  fieldname  Name of the solution array. It is strongly advised to use
+*                        the SIDS nomenclature conventions when naming the solution
+*                        arrays to ensure file compatibility.
+* \param[in]  type       Data type of the solution array written to the file. Admissible
+*                        data types for a solution array are Integer, LongInteger,
+*                        RealSingle, and RealDouble.
+* \param[in]  field_ptr  Array of solution values.
+* \param[out] F          \SOL_F
 * \return \ier
 *
 */
@@ -15320,7 +15378,7 @@ int cg_particle_field_partial_write(int fn, int B, int P, int S,
 * \param[in] m_rmin     Lower range index in memory
 * \param[in] m_rmax     Upper range index in memory
 * \param[in] field_ptr  Array of solution values.
-* \param[out] F \SOL_F
+* \param[out] F         \SOL_F
 * \return \ier
 *
 */

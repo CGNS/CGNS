@@ -49,6 +49,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt update
+        sudo apt upgrade
         sudo apt-get install openmpi-bin openmpi-common mpi-default-dev
         # sudo apt-get install mpich
         sudo apt-get install -y libxmu-dev tk-dev tcl-dev
@@ -148,3 +149,7 @@ jobs:
         make -j 8
         make test
       shell: bash
+
+#    - name: Setup tmate session
+#      if: ${{ failure() }}
+#      uses: mxschmitt/action-tmate@v3

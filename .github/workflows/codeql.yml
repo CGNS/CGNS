@@ -31,6 +31,7 @@ jobs:
           sudo gem install apt-spy2
           sudo apt-spy2 check
           sudo apt-spy2 fix --commit
+          sudo apt update
           sudo apt upgrade
           sudo apt-get install openmpi-bin openmpi-common mpi-default-dev
           #sudo apt install mpich
