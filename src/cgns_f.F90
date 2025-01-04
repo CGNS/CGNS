@@ -6540,6 +6540,9 @@ CONTAINS
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
   !       Read and write ParticleZone_t Nodes                            !
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_nparticle_zones_f
+!DEC$endif
   SUBROUTINE cg_nparticle_zones_f(fn, B, nparticlezones, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -6565,6 +6568,9 @@ CONTAINS
 
   END SUBROUTINE cg_nparticle_zones_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_read_f
+!DEC$endif
   SUBROUTINE cg_particle_read_f(fn, B, P, particlename, nsize, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -6595,6 +6601,9 @@ CONTAINS
 
   END SUBROUTINE cg_particle_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_id_f
+!DEC$endif
   SUBROUTINE cg_particle_id_f(fn, B, P, particle_id, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -6618,6 +6627,9 @@ CONTAINS
 
   END SUBROUTINE cg_particle_id_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_write_f
+!DEC$endif
   SUBROUTINE cg_particle_write_f(fn, B, particlename, nsize, P, ier)
     IMPLICIT NONE
     INTEGER, INTENT(IN) :: fn
@@ -6651,6 +6663,9 @@ CONTAINS
   !       Read and write ParticleCoordinates_t Nodes                     !
   ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_ncoord_nodes_f
+!DEC$endif
   SUBROUTINE cg_particle_ncoord_nodes_f(fn, B, P, ncoord_nodes, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: fn
@@ -6677,6 +6692,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_ncoord_nodes_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_node_read_f
+!DEC$endif
     SUBROUTINE cg_particle_coord_node_read_f(fn, B, P, C, pcoord_name, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -6706,6 +6724,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_coord_node_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_node_write_f
+!DEC$endif
     SUBROUTINE cg_particle_coord_node_write_f(fn, B, P, name, C, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -6736,6 +6757,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_coord_node_write_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_bounding_box_read_f
+!DEC$endif
     SUBROUTINE cg_particle_bounding_box_read_f(fn, B, P, C, datatype, boundingbox, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -6764,6 +6788,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_bounding_box_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_bounding_box_write_f
+!DEC$endif
     SUBROUTINE cg_particle_bounding_box_write_f(fn, B, P, C, datatype, boundingbox, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -6795,6 +6822,9 @@ CONTAINS
     !       Read and write ParticleCoordinates_t/DataArray_t Nodes         !
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -!
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_ncoords_f
+!DEC$endif
      SUBROUTINE cg_particle_ncoords_f(fn, B, P, ncoords, ier)
        IMPLICIT NONE
        INTEGER, INTENT(IN)  :: fn
@@ -6822,6 +6852,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_ncoords_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_info_f
+!DEC$endif
     SUBROUTINE cg_particle_coord_info_f(fn, B, P, C, datatype, coordname, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -6856,6 +6889,9 @@ CONTAINS
 
      END SUBROUTINE cg_particle_coord_info_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_read_f
+!DEC$endif
      SUBROUTINE cg_particle_coord_read_f(fn, B, P, coordname, mem_datatype, s_rmin, s_rmax, coord_array, ier)
         IMPLICIT NONE
         INTEGER, INTENT(IN) :: fn
@@ -6895,6 +6931,9 @@ CONTAINS
 
      END SUBROUTINE cg_particle_coord_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_id_f
+!DEC$endif
      SUBROUTINE cg_particle_coord_id_f(fn, B, P, C, coord_id, ier)
         IMPLICIT NONE
         INTEGER, INTENT(IN) :: fn
@@ -6922,6 +6961,9 @@ CONTAINS
 
      END SUBROUTINE cg_particle_coord_id_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_write_f
+!DEC$endif
      SUBROUTINE cg_particle_coord_write_f(fn, B, P, datatype, coordname, coord_ptr, C, ier)
        IMPLICIT NONE
        INTEGER, INTENT(IN) :: fn
@@ -6961,6 +7003,9 @@ CONTAINS
 
      END SUBROUTINE cg_particle_coord_write_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_coord_partial_write_f
+!DEC$endif
      SUBROUTINE cg_particle_coord_partial_write_f(fn, B, P, datatype, coordname, s_rmin, s_rmax, coord_ptr, C, ier)
        IMPLICIT NONE
        INTEGER, INTENT(IN) :: fn
@@ -7009,6 +7054,9 @@ CONTAINS
     !      Read and write ParticleSolution_t Nodes                          *
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_nsols_f
+!DEC$endif
     SUBROUTINE cg_particle_nsols_f(fn, B, P, nsols, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7036,6 +7084,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_nsols_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_info_f
+!DEC$endif
     SUBROUTINE cg_particle_sol_info_f(fn, B, P, S, solname, ier)
       IMPLICIT NONE
 
@@ -7067,7 +7118,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_sol_info_f
 
-
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_id_f
+!DEC$endif
     SUBROUTINE cg_particle_sol_id_f(fn, B, P, S, sol_id, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7093,6 +7146,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_sol_id_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_write_f
+!DEC$endif
     SUBROUTINE cg_particle_sol_write_f(fn, B, P, solname, S, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7125,7 +7181,9 @@ CONTAINS
 
      END SUBROUTINE cg_particle_sol_write_f
 
-
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_size_f
+!DEC$endif
     SUBROUTINE cg_particle_sol_size_f(fn, B, P, S, nsize, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: fn
@@ -7151,6 +7209,9 @@ CONTAINS
 
      END SUBROUTINE cg_particle_sol_size_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_ptset_info_f
+!DEC$endif
     SUBROUTINE cg_particle_sol_ptset_info_f(fn, B, P, S, ptype, npnts, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7178,6 +7239,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_sol_ptset_info_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_ptset_read_f
+!DEC$endif
     SUBROUTINE cg_particle_sol_ptset_read_f(fn, B, P, S, pnts, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7203,6 +7267,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_sol_ptset_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_sol_ptset_write_f
+!DEC$endif
     SUBROUTINE cg_particle_sol_ptset_write_f(fn, B, P, solname, ptset_type, npnts, pnts, S, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7247,6 +7314,9 @@ CONTAINS
     !      Read and write particle solution DataArray_t Nodes               !
     ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - !
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_nfields_f
+!DEC$endif
     SUBROUTINE cg_particle_nfields_f(fn, B, P, S, nfields, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: fn
@@ -7275,6 +7345,9 @@ CONTAINS
 
    END SUBROUTINE cg_particle_nfields_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_field_info_f
+!DEC$endif
    SUBROUTINE cg_particle_field_info_f(fn, B, P, S, F, datatype, fieldname, ier)
      IMPLICIT NONE
       INTEGER, INTENT(IN)  :: fn
@@ -7310,6 +7383,9 @@ CONTAINS
 
      END SUBROUTINE cg_particle_field_info_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_field_read_f
+!DEC$endif
    SUBROUTINE cg_particle_field_read_f(fn, B, P, S, fieldname, mem_datatype, s_rmin, s_rmax, field_ptr, ier)
      IMPLICIT NONE
       INTEGER, INTENT(IN)  :: fn
@@ -7349,6 +7425,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_field_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_field_id_f
+!DEC$endif
     SUBROUTINE cg_particle_field_id_f(fn, B, P, S, F, field_id, ier)
       IMPLICIT NONE
         INTEGER, INTENT(IN) :: fn
@@ -7377,6 +7456,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_field_id_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_field_write_f
+!DEC$endif
     SUBROUTINE cg_particle_field_write_f(fn, B, P, S, datatype, fieldname, field_ptr, F, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7420,6 +7502,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_field_write_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_piter_read_f
+!DEC$endif
     SUBROUTINE cg_piter_read_f(fn, B, P, pitername, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7451,6 +7536,9 @@ CONTAINS
 
     END SUBROUTINE cg_piter_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_piter_write_f
+!DEC$endif
     SUBROUTINE cg_piter_write_f(fn, B, P, pitername, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7481,6 +7569,9 @@ CONTAINS
 
     END SUBROUTINE cg_piter_write_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_field_partial_write_f
+!DEC$endif
     SUBROUTINE cg_particle_field_partial_write_f(fn, B, P, S, datatype, fieldname, s_rmin, s_rmax, field_ptr, F, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
@@ -7527,6 +7618,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_field_partial_write_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_equationset_read_f
+!DEC$endif
     SUBROUTINE cg_particle_equationset_read_f(EquationDimension, ParticleGoverningEquationsFlag, &
          CollisionModelFlag, BreakupModelFlag, ForceModelFlag, WallInteractionModelFlag, &
          PhaseChangeModelFlag, ier)
@@ -7579,6 +7673,9 @@ CONTAINS
 
      END SUBROUTINE cg_particle_equationset_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_governing_read_f
+!DEC$endif
     SUBROUTINE cg_particle_governing_read_f(ParticleEquationsType, ier)
       IMPLICIT NONE
       INTEGER(cgenum_t), INTENT(OUT) :: ParticleEquationsType
@@ -7597,6 +7694,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_governing_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_model_read_f
+!DEC$endif
     SUBROUTINE cg_particle_model_read_f(ModelLabel, ModelType, ier)
       IMPLICIT NONE
       CHARACTER(LEN=*) , INTENT(INOUT) :: ModelLabel
@@ -7622,6 +7722,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_model_read_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_equationset_write_f
+!DEC$endif
     SUBROUTINE cg_particle_equationset_write_f(EquationDimension, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: EquationDimension
@@ -7640,6 +7743,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_equationset_write_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_governing_write_f
+!DEC$endif
     SUBROUTINE cg_particle_governing_write_f(ParticleEquationstype, ier)
       IMPLICIT NONE
       INTEGER(CGENUM_T), INTENT(IN) :: ParticleEquationstype
@@ -7658,6 +7764,9 @@ CONTAINS
 
     END SUBROUTINE cg_particle_governing_write_f
 
+!DEC$if defined(BUILD_CGNS_DLL)
+!DEC$ATTRIBUTES DLLEXPORT :: cg_particle_model_write_f
+!DEC$endif
     SUBROUTINE cg_particle_model_write_f(ModelLabel, ModelType, ier)
       IMPLICIT NONE
       CHARACTER(LEN=*), INTENT(IN) :: ModelLabel
@@ -7684,7 +7793,6 @@ CONTAINS
 
 
 #if CG_BUILD_PARALLEL_F
-
     SUBROUTINE cgp_particle_coord_write_f(fn, B, P, datatype, coordname, C, ier)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: fn
