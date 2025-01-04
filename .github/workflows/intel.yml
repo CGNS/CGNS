@@ -58,7 +58,7 @@ jobs:
         key: install-${{ env.CACHE_NUMBER }}-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/.github/workflows/scripts/cache_exclude_windows.sh') }}
     - name: install Intel Kit
       if: steps.cache-install.outputs.cache-hit != 'true'
-      run: scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS
+      run: .github/workflows/scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS
     - name: install HDF5
       shell: pwsh
       run: |
