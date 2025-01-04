@@ -1,4 +1,4 @@
-## Intel OneAPI build scripts
+# Intel OneAPI build scripts
 
 The scripts in this directory can be updated from:
 
