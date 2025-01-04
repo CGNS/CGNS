@@ -166,6 +166,9 @@ bytes   start   end   description      range / format
 /***********************************************************************
  	Includes
 ***********************************************************************/
+#ifndef _WIN32
+  #define _POSIX_SOURCE
+#endif
 #include <sys/types.h>
 #include <time.h>
 #include <stdio.h>

@@ -21,7 +21,9 @@ freely, subject to the following restrictions:
 /*-------------------------------------------------------------------
  * HDF5 interface to ADF
  *-------------------------------------------------------------------*/
-
+#ifndef _WIN32
+  #define _POSIX_SOURCE
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
