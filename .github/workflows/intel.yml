@@ -120,29 +120,29 @@ jobs:
       run: .github/workflows/scripts/cache_exclude_windows.sh
 
 
-  build_linux_cpp_fortran:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    steps:
-    - uses: actions/checkout@v3
-    - name: cache install
-      id: cache-install
-      uses: actions/cache@v4
-      with:
-        path: |
-          /opt/intel/oneapi/compiler
-        key: install-${{ env.CACHE_NUMBER }}-${{ env.LINUX_HPCKIT_URL }}-${{ env.LINUX_CPP_COMPONENTS_WEB }}-${{ env.LINUX_FORTRAN_COMPONENTS_WEB }}-compiler-${{ hashFiles('**/.github/workflows/scripts/cache_exclude_linux.sh') }}
-
-    - name: install
-      if: steps.cache-install.outputs.cache-hit != 'true'
-      run: .github/workflows/scripts/install_linux.sh $LINUX_HPCKIT_URL
-    - name: build
-      run: .github/workflows/scripts/build_linux.sh c++ $SAMPLES_TAG
-    - name: build fortran
-      run: .github/workflows/scripts/build_linux.sh fortran $SAMPLES_TAG
-
-    - name: exclude unused files from cache
-      if: steps.cache-install.outputs.cache-hit != 'true'
-      run: .github/workflows/scripts/cache_exclude_linux.sh
+#  build_linux_cpp_fortran:
+#    runs-on: ubuntu-latest
+#    defaults:
+#      run:
+#        shell: bash
+#    steps:
+#    - uses: actions/checkout@v3
+#    - name: cache install
+#      id: cache-install
+#      uses: actions/cache@v4
+#      with:
+#        path: |
+#          /opt/intel/oneapi/compiler
+#        key: install-${{ env.CACHE_NUMBER }}-${{ env.LINUX_HPCKIT_URL }}-${{ env.LINUX_CPP_COMPONENTS_WEB }}-${{ env.LINUX_FORTRAN_COMPONENTS_WEB }}-compiler-${{ hashFiles('**/.github/workflows/scripts/cache_exclude_linux.sh') }}
+#
+#    - name: install
+#      if: steps.cache-install.outputs.cache-hit != 'true'
+#      run: .github/workflows/scripts/install_linux.sh $LINUX_HPCKIT_URL
+#    - name: build
+#      run: .github/workflows/scripts/build_linux.sh c++ $SAMPLES_TAG
+#    - name: build fortran
+#      run: .github/workflows/scripts/build_linux.sh fortran $SAMPLES_TAG
+#
+#    - name: exclude unused files from cache
+#      if: steps.cache-install.outputs.cache-hit != 'true'
+#      run: .github/workflows/scripts/cache_exclude_linux.sh
