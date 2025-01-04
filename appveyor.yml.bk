@@ -31,24 +31,35 @@ skip_tags: true
 #---------------------------------#
 #    environment configuration    #
 #---------------------------------#
+# https://github.com/oneapi-src/oneapi-ci/blob/master/.appveyor.yml
 environment:
   global:
     1_8: &1_8 1.8.23
     1_10: &1_10 1.10.11
-    1_12: &1_14 1.14.3
+    1_14: &1_14 1.14.3
     HDF5_1_8_VER: *1_8   
     HDF5_1_10_VER: *1_10
     HDF5_1_14_VER: *1_14
+    WINDOWS_BASEKIT_URL: https:/registrationcenter-download.intel.com/akdlm/IRC_NAS/c961e083-5685-4f0b-ada5-c6cf16f561dd/w_BaseKit_p_2023.1.0.47256_offline.exe
+    WINDOWS_HPCKIT_URL: https:/registrationcenter-download.intel.com/akdlm/IRC_NAS/2a13d966-fcc5-4a66-9fcc-50603820e0c9/w_HPCKit_p_2023.1.0.46357_offline.exe
+    LINUX_BASEKIT_URL: https:/registrationcenter-download.intel.com/akdlm/IRC_NAS/7deeaac4-f605-4bcf-a81b-ea7531577c61/l_BaseKit_p_2023.1.0.46401_offline.sh
+    LINUX_HPCKIT_URL: https:/registrationcenter-download.intel.com/akdlm/IRC_NAS/1ff1b38a-8218-4c53-9956-f0b264de35a4/l_HPCKit_p_2023.1.0.46346_offline.sh
+    MACOS_HPCKIT_URL: https:/registrationcenter-download.intel.com/akdlm/IRC_NAS/a99cb1c5-5af6-4824-9811-ae172d24e594/m_HPCKit_p_2023.1.0.44543_offline.dmg
+    WINDOWS_CPP_COMPONENTS: intel.oneapi.win.cpp-compiler
+    WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler
+    WINDOWS_DPCPP_COMPONENTS: intel.oneapi.win.dpcpp-compiler
+    LINUX_CPP_COMPONENTS: intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic
+    LINUX_FORTRAN_COMPONENTS: intel-oneapi-compiler-fortran
+    LINUX_DPCPP_COMPONENTS: intel-oneapi-compiler-dpcpp-cpp
+    LINUX_CPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler-pro
+    LINUX_FORTRAN_COMPONENTS_WEB: intel.oneapi.lin.ifort-compiler
+    LINUX_DPCPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler
+    MACOS_CPP_COMPONENTS: intel.oneapi.mac.cpp-compiler
+    MACOS_FORTRAN_COMPONENTS: intel.oneapi.mac.ifort-compiler
+    SAMPLES_TAG: 2023.1.0
+    VS_VER: vs2019
+
   matrix:
-  - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=OFF
-    HDF5_VER: *1_8
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
-  - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
-    HDF5_VER: *1_10
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
-  - build_opt: -D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON -D CGNS_ENABLE_64BIT:BOOL=ON
-    HDF5_VER: *1_10
-    HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
   - build_opt: -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF -D CGNS_ENABLE_64BIT:BOOL=ON
     HDF5_VER: *1_14
     HDF_DIR: "/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake"
@@ -91,6 +102,15 @@ clone_folder: c:\projects\CGNS
 
 # scripts that run after cloning repository
 install:
+  - cmd: scripts/install_windows.bat  %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%:%WINDOWS_FORTRAN_COMPONENTS%
+  #- cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_CPP_COMPONENTS%
+  #- cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%
+  #- cmd: curl -L --output basekit.exe --url %WINDOWS_BASEKIT_URL%
+  #- cmd: start /b /wait basekit.exe -s -x -f basekit-extracted --log extract-basekit.log
+  #- cmd: curl -L --output hpckit.exe --url %WINDOWS_HPCKIT_URL%
+  #- cmd: start /b /wait hpckit.exe -s -x -f hpckit-extracted --log extract-hpckit.log
+  #- cmd: hpckit-extracted\bootstrapper.exe -s --action install --components=%WINDOWS_CPP_COMPONENTS%:%WINDOWS_MPI_COMPONENTS%:%WINDOWS_FORTRAN_COMPONENTS% --eula=accept -p=NEED_VS2017_INTEGRATION=0 -p=NEED_VS2019_INTEGRATION=1 --log-dir=.
+  #cmd: scripts/install_windows.bat %WINDOWS_HPCKIT_URL% %WINDOWS_FORTRAN_COMPONENTS%  
   # by default, all script lines are interpreted as batch
   #- echo This is batch
   # to run script as a PowerShell command prepend it with ps:
@@ -98,7 +118,6 @@ install:
   # batch commands start from cmd:
   #- cmd: echo This is batch again
   #- cmd: set MY_VAR=12345
-
 # install hdf5
   - set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
   - mkdir 1.8
@@ -128,6 +147,15 @@ install:
   - msiexec /i HDF5-%HDF5_1_14_VER%-win64.msi /quiet /qn /norestart /log install.log
   - type install.log
   - cd ..\..
+  #- mkdir 1.12
+  #- cd 1.12
+  #- set HDF5_1_12=%HDF5_1_12_VER%
+  #- curl -O https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.0/bin/hdf5-%HDF5_1_12_VER%-Std-win10_64-vs16-Intel.zip
+  #- ps: Expand-Archive hdf5-$($env:HDF5_1_12_VER)-Std-win10_64-vs16-Intel.zip -DestinationPath .
+  #- cd hdf
+  #- msiexec /i HDF5-%HDF5_1_12_VER%-win64.msi /quiet /qn /norestart /log install.log
+  #- type install.log
+  #- cd ..\..
 
 #---------------------------------#
 #       build configuration       #
@@ -147,33 +175,61 @@ configuration:
 
 # scripts to run before build
 before_build:
-  - echo Running cmake...
   - mkdir c:\projects\CGNS_BUILD
+  - cd c:\projects\CGNS_BUILD
+  - cmd: call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat" intel64
+  - cmd: where icl
+  - cmd: where icx
+  - cmd: where ifx
+  - cmd: where ifort
+#  - cmd: icl /help
+#  - cmd: icx /help
+#  - cmd: ifort /help
+  - echo Running cmake...
   - cd c:\projects\CGNS_BUILD
   - cmake --version
   - SET HDF5_DIR=/Program Files/HDF_Group/HDF5/%HDF5_VER%/cmake
-  - cmake -G "%GENERATOR%" -A "%ARCH%" ^
+  - SET HDF5_ROOT=/Program Files/HDF_Group/HDF5/%HDF5_VER%
+#  - cmake -GNinja ^
+  - cmake -G "Visual Studio 16 2019" ^
      %build_opt% ^
+     -D CMAKE_C_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\icx.exe" ^
      -D CMAKE_C_FLAGS:STRING="" ^
-     -D CMAKE_BUILD_TYPE:STRING=Release ^
+     -D CMAKE_Fortran_COMPILER:PATH="C:\Program Files (x86)\Intel\oneAPI\compiler\latest\windows\bin\ifx.exe" ^
+     -D CMAKE_BUILD_TYPE:STRING=%configuration% ^
      -D HDF5_NEED_ZLIB:BOOL=ON ^
      -D CMAKE_STATIC_LINKER_FLAGS:STRING="" ^
      -D CGNS_ENABLE_HDF5:BOOL=ON ^
+     -D HDF5_DIR:PATH="C:\Program Files\HDF_Group\HDF5\1.14.0\cmake" ^
+     -D CMAKE_PREFIX_PATH:PATH="C:\Program Files\HDF_Group\HDF5\/%HDF5_VER%\cmake" ^
      -D CGNS_ENABLE_TESTS:BOOL=ON ^
      -D CGNS_ENABLE_LFS:BOOL=OFF ^
      -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF ^
      -D CGNS_ENABLE_SCOPING:BOOL=OFF ^
-     -D CGNS_ENABLE_FORTRAN:BOOL=OFF ^
+     -D CGNS_ENABLE_FORTRAN:BOOL=ON ^
      -D CGNS_ENABLE_PARALLEL:BOOL=OFF ^
      -D CMAKE_INSTALL_PREFIX:PATH="." c:\projects\CGNS
 
 build_script:
-  - cmd: cmake --build . --config "%configuration%"
+      - cd c:\projects\CGNS
+      - dir
+      - cd  C:\Program Files\HDF_Group\HDF5\1.14.0\bin
+      - dir
+#      - cmd: scripts/build_windows.bat fortran "" %SAMPLES_TAG%
+      - cd c:\projects\CGNS_BUILD
+      - cmd: cmake --build . --config "%configuration%"
 
 test_script:
+  - cmd: set PATH=C:\projects\CGNS_BUILD\src;%PATH%
   - cmd: set PATH=C:\projects\CGNS_BUILD\src\%configuration%;%PATH%
   - cmd: set PATH=C:\Program Files\HDF_Group\HDF5\%HDF5_VER%\bin;%PATH%
+  - cmd: echo %PATH%
   - cmd: ctest -C %configuration%
+
+
+on_failure:
+  - appveyor PushArtifact "C:/projects/CGNS_BUILD/Testing/Temporary/LastTest.log"
+      
 
 after_test:
   - cmd: cmake --install . --config "%configuration%"
