@@ -32,13 +32,18 @@ jobs:
           sudo apt-spy2 check
           sudo apt-spy2 fix --commit
           sudo apt update
-          sudo apt install mpich
-          sudo apt-get install -y libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
+          sudo apt upgrade
+          sudo apt-get install openmpi-bin openmpi-common mpi-default-dev
+          #sudo apt install mpich
+          sudo apt-get install -y libxmu-dev tk-dev tcl-dev
+          sudo apt install libgl1-mesa-dri mesa-utils libgl1-mesa-dev libglu1-mesa-dev
           # Set env vars
           echo "OS_NAME=linux" >> $GITHUB_ENV
           echo "CC=mpicc" >> $GITHUB_ENV
           echo "FC=mpif90" >> $GITHUB_ENV
           echo "F77=mpif90" >> $GITHUB_ENV
+          mpiexec_cmd="mpiexec --use-hwthread-cpus -n 4"
+          echo "MPIEXEC=$mpiexec_cmd" >> $GITHUB_ENV
 
       - name: Checkout
         uses: actions/checkout@v3

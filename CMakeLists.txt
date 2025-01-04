@@ -460,9 +460,9 @@ endif()
 #-----------------------------------------------------------------------------
 option (CGNS_BUILD_TESTING "Build CGNS Testing" OFF)
 if (CGNS_BUILD_TESTING)
-  set (DART_TESTING_TIMEOUT "1200"
+  set (DART_TESTING_TIMEOUT "600"
       CACHE STRING
-      "Timeout in seconds for each test (default 1200=20minutes)"
+      "Timeout in seconds for each test (default 600=10minutes)"
   )
   enable_testing ()
   include (CTest)

@@ -193,8 +193,8 @@ thesis_benchmark$(EXE) : thesis_benchmark.c $(CGNSLIB)
 
 #----------
 
-pcgns_ftest$(EXE) : pcgns_ftest.F90 $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ pcgns_ftest.F90 $(LDLIBS) $(FLIBS)
+pcgns_ftest$(EXE) : pcgns_ftest.F90 utilsf.$(O) $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ pcgns_ftest.F90 utilsf.$(O) $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
@@ -229,8 +229,8 @@ test_unstruc_quad_f90$(EXE) : test_unstruc_quad_f90.F90 $(CGNSLIB)
 
 #----------
 
-test_poly_unstructured_f90$(EXE) : test_poly_unstructured_f90.F90 $(CGNSLIB)
-	$(F77) $(FOPTS) $(FEOUT)$@ test_poly_unstructured_f90.F90 $(LDLIBS) $(FLIBS)
+test_poly_unstructured_f90$(EXE) : test_poly_unstructured_f90.F90 utilsf.$(O) $(CGNSLIB)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_poly_unstructured_f90.F90 utilsf.$(O) $(LDLIBS) $(FLIBS)
 	$(STRIP) $@
 
 #----------
@@ -240,6 +240,9 @@ Metadata_Stressing$(EXE) : Metadata_Stressing.c $(CGNSLIB)
 	$(STRIP) $@
 
 #----------
+
+utilsf.$(O) : $(CGNSDIR)/tests/utilsf.F90
+	$(F77) $(FOPTS) -c $(CGNSDIR)/tests/utilsf.F90
 
 clean :
 	-$(RM) *.$(O) *.mod *.MOD
