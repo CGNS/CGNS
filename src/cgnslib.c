@@ -17221,7 +17221,7 @@ int cg_particle_model_write(const char * ModelLabel, CGNS_ENUMT(ParticleModelTyp
             return CG_ERROR;
         }
     } else if (strcmp(ModelLabel, "ParticleForceModel_t")==0) {
-      if (ModelType!=CGNS_ENUMV( ModelTypeNull ) && ModelType!=CGNS_ENUMV( ModelTypeUserDefined ) &&
+      if (ModelType!=CGNS_ENUMV( ParticleModelTypeNull ) && ModelType!=CGNS_ENUMV( ParticleModelTypeUserDefined ) &&
           ModelType!=CGNS_ENUMV( Sphere ) && ModelType!=CGNS_ENUMV( NonSphere ) &&
           ModelType!=CGNS_ENUMV( Tracer ) && ModelType!=CGNS_ENUMV( BeetstraVanDerHoefKuipers ) &&
           ModelType!=CGNS_ENUMV( Ergun ) && ModelType!=CGNS_ENUMV( CliftGrace ) && ModelType!= CGNS_ENUMV( Gidaspow ) &&
