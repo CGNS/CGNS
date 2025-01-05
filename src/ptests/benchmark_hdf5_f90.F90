@@ -68,8 +68,6 @@ CONTAINS
        END DO
     ENDIF
 
-   ! IF(
-
     CALL MPI_Bcast(nelem, 1, MPI_INTEGER8, 0, MPI_COMM_WORLD, err)
     CALL MPI_Bcast(buffer, 3, MPI_LOGICAL, 0, MPI_COMM_WORLD, err)
 

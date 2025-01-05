@@ -96,6 +96,9 @@ static char ADF_A_identification[] = "\300\250\243\251ADF Database Version A0201
 /***********************************************************************
     Includes
 ***********************************************************************/
+#ifndef _WIN32
+  #define _POSIX_C_SOURCE 200112L
+#endif
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -1209,7 +1212,7 @@ else {  /** this node is NOT a link **/
    CHECK_ADF_ABORT( *error_return ) ;
 
    for( i=0; i<num_ids; i++ ) {
-      ADF_Delete( ID, ids[i], error_return ) ;  /* resursion */
+      ADF_Delete( ID, ids[i], error_return ) ;  /* recursion */
       CHECK_ADF_ABORT( *error_return ) ;
       } /* end for */
 

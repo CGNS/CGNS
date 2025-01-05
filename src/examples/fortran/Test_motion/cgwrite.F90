@@ -1,4 +1,4 @@
-	program write_cgns_motion
+        PROGRAM write_cgns_motion
 	USE CGNS
         implicit none
 
@@ -94,19 +94,19 @@
 	enddo
 	!call cg_array_write_f('TimeValues', CGNS_ENUMV(RealSingle), 1, nsteps,
 	call cg_array_write_f('TimeValues', CGNS_ENUMV(RealDouble), 1, &
-                               INT(nsteps,cgsize_t), time, ier)
+                               [INT(nsteps,cgsize_t)], time, ier)
         if (ier .ne. ALL_OK) call cg_error_exit_f
 	call cg_array_write_f('IterationValues', CGNS_ENUMV(Integer), 1, &
-                               INT(nsteps,cgsize_t),iteration, ier)
+                               [INT(nsteps,cgsize_t)],iteration, ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 	call cg_array_write_f('NumberOfZones', CGNS_ENUMV(Integer), 1, &
-                               INT(nsteps,cgsize_t),nzones, ier)
+                               [INT(nsteps,cgsize_t)],nzones, ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 	dimval(1)=32
 	dimval(2)=2 		! *** MaxNumberOfZones in a step1
 	dimval(3)=nsteps
         call cg_array_write_f('ZonePointers', CGNS_ENUMV(Character), 3, dimval, &
-                               zone_ptrs, ier)
+                               zone_ptrs(:,1), ier)
 
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
@@ -257,17 +257,17 @@
 	    data_size(2)=2
             !call cg_array_write_f('OriginLocation', CGNS_ENUMV(RealSingle), 2,
             call cg_array_write_f('OriginLocation', CGNS_ENUMV(RealDouble), 2, &
-                                   data_size, origin, ier)
+                                   data_size, origin(1,1), ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
             !call cg_array_write_f('RigidRotationAngle', CGNS_ENUMV(RealSingle), 1,
             call cg_array_write_f('RigidRotationAngle', CGNS_ENUMV(RealDouble), 1, &
-                                  INT(phys_dim,cgsize_t), angle, ier)
+                                  [INT(phys_dim,cgsize_t)], angle, ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
 	    !call cg_array_write_f('RigidVelocity', CGNS_ENUMV(RealSingle), 1,
 	    call cg_array_write_f('RigidVelocity', CGNS_ENUMV(RealDouble), 1, &
-                                  INT(phys_dim,cgsize_t), velocity, ier)
+                                  [INT(phys_dim,cgsize_t)], velocity, ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
 ! *** Add an attribute for this data array: GOTO DataArray node
@@ -336,5 +336,5 @@
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 
  100	format(a,i1)
-	end
+        END PROGRAM write_cgns_motion
 

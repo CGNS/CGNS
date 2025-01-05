@@ -79,7 +79,7 @@ plot3d_to_cgns.$(O) : plot3d_to_cgns.c cgnsutil.h binaryio.h
 #--------------------------------------------------
 
 cgns_to_plot3d$(EXE) : cgns_to_plot3d.$(O) cgnsutil.$(O) getargs.$(O) \
-		       p3dfout.$(O)
+		       binaryio.$(O) p3dfout.$(O)
 	$(CC) $(LDFLAGS) -o $@ cgns_to_plot3d.$(O) cgnsutil.$(O) \
 	getargs.$(O) p3dfout.$(O) $(LDLIST)
 	$(STRIP) $@

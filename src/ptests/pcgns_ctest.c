@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "pcgnslib.h"
+#include "utils.h"
 #include "mpi.h"
 
 #define MIN_COUNT 40320 /* 8! */
@@ -14,101 +15,10 @@
 # define DEBUG_PRINT(A)
 #endif
 
-#define false 0
-#define true 1
-#define TAB_SPACE 90
-
-#define SKIP  -1
-#define PASSED 0
-#define FAILED 1
-
 MPI_Comm comm = MPI_COMM_WORLD;
 int comm_size, comm_rank;
 /*    int scale_factor = 10; */
 int scale_factor = 400;
-
-static int write_test_header(char *title_header, int len)
-{
-
-  /* Writes the test header */
-
-  int width;
-  int i;
-
-  width = TAB_SPACE+10;
-
-  char title_centered[4*width+1];
-  char str[2*width+2];
-
-  memcpy(str,title_header,len);
-  str[len] = '\0';
-  unsigned short lpad = (width-len)/2-3;
-  unsigned short rpad = width-5 - (lpad + len);
-  sprintf(title_centered,"%s%*s%s%*s%s", "| |",lpad, " ", str, rpad, " ","| |");
-
-  printf(" ");
-  for( i = 0; i < width-1; i++)
-    printf("_");
-  printf("\n");
-
-  printf("|  ");
-  for( i = 0; i < width-5; i++)
-    printf("_");
-  printf("  |\n");
-
-  printf("| |");
-  for( i = 0; i < width-5; i++)
-    printf(" ");
-  printf("| |\n");
-
-  printf("%s\n",title_centered);
-
-  printf("| |");
-  for( i = 0; i < width-5; i++)
-    printf(" ");
-  printf("| |\n");
-
-  printf("| |");
-  for( i = 0; i < width-5; i++)
-    printf("_");
-  printf("| |\n");
-
-  printf("|");
-  for( i = 0; i < width-1; i++)
-    printf("_");
-  printf("|\n\n");
-
-  return 0;
-}
-
-static int write_test_status( int test_result, char *test_title, char *cause)
-{
-
-  /* Writes the results of the tests
-
-  test_result: negative,  --skip --
-               0       ,   passed
-               positive,   failed
-  */
-
-  char error_string[9];
-  char passed[] = " PASSED ";
-  char failed[] = "*FAILED*";
-  char skip[]   = "--SKIP--";
-
-  strcpy(error_string,failed);
-  if(test_result == PASSED) {
-    strcpy(error_string, passed);
-  } else if (test_result == SKIP) {
-    strcpy(error_string,skip);
-  }
-  printf("%s %*s\n",test_title,(int)(TAB_SPACE-strlen(test_title)),error_string);
-
-  if(cause)
-    printf("  FAILURE REPORTED -- %s\n", cause);
-
-  return 0;
-}
 
 static int pcgns_ctest()
 {
@@ -121,7 +31,6 @@ static int pcgns_ctest()
     double ts, tt, data_size;
     int total_count;
     static char *piomode[2] = {"independent", "collective"};
-
 
     total_count = scale_factor * MIN_COUNT;
     n_per_proc = total_count / comm_size;
@@ -330,16 +239,6 @@ static int pcgns_ctest()
 
     return 0;
 
-}
-
-int c_double_eq(double a, double b) {
-
-  double eps = 1.e-8;
-
-  if(fabs(a-b) < eps) {
-    return true;
-  }
-  return false;
 }
 
 static int multisets()
@@ -691,7 +590,7 @@ static int multisets()
   }
   /* Read the zone information */
   if(cg_zone_read(fn, B, Z, name, sizes) != CG_OK) {
-    printf("*FAILED* cg_zoneread\n");
+    printf("*FAILED* cg_zone_read\n");
     cgp_error_exit();
   }
 
@@ -748,23 +647,23 @@ static int multisets()
   buf[2] = &Coor_z[0];
 
   if (cgp_coord_multi_read_data(fn, B, Z, Cvec, &min,&max, 3, buf)!= CG_OK) {
-    if(comm_rank == 0) write_test_status(FAILED, "Test cgp_coords_mulit_read_data", NULL);
+    if(comm_rank == 0) write_test_status(FAILED, "Test cgp_coord_multi_read_data", NULL);
     cgp_error_exit();
   } else {
-    if(comm_rank == 0) write_test_status(PASSED, "Test cgp_coords_mulit_read_data", NULL);
+    if(comm_rank == 0) write_test_status(PASSED, "Test cgp_coord_multi_read_data", NULL);
   }
   free(buf);
 
   /* Check if read the data back correctly */
   for ( k = 0; k < count; k++) {
-    if( !c_double_eq(Coor_x[k], comm_rank*count + k + 1.1) ||
-        !c_double_eq(Coor_y[k], Coor_x[k] + 0.1) ||
-        !c_double_eq(Coor_z[k], Coor_y[k] + 0.1) ) {
-      if(comm_rank == 0) write_test_status(FAILED, "Check cgp_coords_mulit_read_data values", NULL);
+    if( !compareValuesDouble(Coor_x[k], comm_rank*count + k + 1.1) ||
+        !compareValuesDouble(Coor_y[k], Coor_x[k] + 0.1) ||
+        !compareValuesDouble(Coor_z[k], Coor_y[k] + 0.1) ) {
+      if(comm_rank == 0) write_test_status(FAILED, "Check cgp_coord_multi_read_data values", NULL);
       cgp_error_exit();
     }
   }
-  if(comm_rank == 0) write_test_status(PASSED, "Check cgp_coords_mulit_read_data values", NULL);
+  if(comm_rank == 0) write_test_status(PASSED, "Check cgp_coord_multi_read_data values", NULL);
 
   free(Coor_x);
   free(Coor_y);
@@ -837,9 +736,9 @@ static int multisets()
 
   /* Check if read the data back correctly */
   for ( k = 0; k < count; k++) {
-    if(!c_double_eq(Data_Fx[k], comm_rank*count + k + 1.01) ||
-       !c_double_eq(Data_Fy[k], comm_rank*count + k + 1.02) ||
-       !c_double_eq(Data_Fz[k], comm_rank*count + k + 1.03) ) {
+    if(!compareValuesDouble(Data_Fx[k], comm_rank*count + k + 1.01) ||
+       !compareValuesDouble(Data_Fy[k], comm_rank*count + k + 1.02) ||
+       !compareValuesDouble(Data_Fz[k], comm_rank*count + k + 1.03) ) {
       if(comm_rank == 0) write_test_status(FAILED, "Check cgp_field_multi_read_data values", NULL);
       cgp_error_exit();
     }
@@ -891,7 +790,7 @@ static int multisets()
 
   /* Check if read the data back correctly */
   for ( k = 0; k < count; k++) {
-    if(!c_double_eq(Array_r[k], comm_rank*count + k + 1.001) ||
+    if(!compareValuesDouble(Array_r[k], comm_rank*count + k + 1.001) ||
        Array_i[k] != comm_rank*count + k +1) {
       if(comm_rank == 0) write_test_status(FAILED, "Check cgp_array_multi_read_data values", NULL);
       cgp_error_exit();
@@ -909,6 +808,716 @@ static int multisets()
 
   return 0;
 
+}
+
+int particle_test()
+{
+   char fname[32];
+   int fn;
+   int B;
+   int P;
+   int S;
+   int Cx,Cy,Cz, Fx, Fy, Fz;
+   int cell_dim = 3;
+   int phys_dim = 3;
+   int r_cell_dim = 0;
+   int r_phys_dim = 0;
+   cgsize_t num_particles = 1024, size;
+   cgsize_t min, max;
+   cgsize_t k, count;
+   /* For writing and reading data*/
+   double* Coor_x;
+   double* Coor_y;
+   double* Coor_z;
+   double* Data_Fx;
+   double* Data_Fy;
+   double* Data_Fz;
+   char name[33];
+   int piomode = CGP_COLLECTIVE; /* DEFAULT */
+   int err;
+
+   err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode);
+   if(err != CG_OK) {
+     printf("*FAILED* cgp_pio_mode \n");
+     cgp_error_exit();
+   }
+
+   /* ====================================== */
+   /* ==    **WRITE THE CGNS FILE **      == */
+   /* ====================================== */
+
+   sprintf(fname, "particle_test_%06d.cgns", comm_size);
+
+   if(cgp_open(fname, CG_MODE_WRITE, &fn) != CG_OK) {
+     printf("*FAILED* cgp_open \n");
+     cgp_error_exit();
+   }
+
+   if(cg_base_write(fn, "Base 1", cell_dim, phys_dim, &B) != CG_OK) {
+     printf("*FAILED* cg_base_write \n");
+     cgp_error_exit();
+   }
+   if(cg_particle_write(fn, B, "Particle 1", num_particles, &P) != CG_OK) {
+     printf("*FAILED* cg_particle_write \n");
+     cgp_error_exit();
+   }
+
+   /* ======================================== */
+   /* == (A) WRITE THE PARTICLE COORDINATES == */
+   /* ======================================== */
+
+   count = num_particles/comm_size;
+
+   if( !(Coor_x = (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of particle Coor_x \n");
+     cgp_error_exit();
+   }
+
+   if( !(Coor_y= (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of particle Coor_y \n");
+     cgp_error_exit();
+   }
+
+   if( !(Coor_z= (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of particle Coor_z \n");
+     cgp_error_exit();
+   }
+
+   min = count*comm_rank+1;
+   max = count*(comm_rank+1);
+
+   for (k=0; k < count; k++) {
+     Coor_x[k] = comm_rank*count + k + 1.1;
+     Coor_y[k] = Coor_x[k] + 0.1;
+     Coor_z[k] = Coor_y[k] + 0.1;
+   }
+
+   if(cgp_particle_coord_write(fn,B,P,CGNS_ENUMV(RealDouble),"CoordinateX",&Cx) != CG_OK) {
+     printf("*FAILED* cgp_particle_coord_write (Coor_x) \n");
+     cgp_error_exit();
+   }
+   if(cgp_particle_coord_write(fn,B,P,CGNS_ENUMV(RealDouble),"CoordinateY",&Cy) != CG_OK) {
+     printf("*FAILED* cgp_particle_coord_write (Coor_y) \n");
+     cgp_error_exit();
+   }
+   if(cgp_particle_coord_write(fn,B,P,CGNS_ENUMV(RealDouble),"CoordinateZ",&Cz) != CG_OK) {
+     printf("*FAILED* cgp_particle_coord_write (Coor_z) \n");
+     cgp_error_exit();
+   }
+
+   if(cgp_particle_coord_write_data(fn, B, P, Cx, &min, &max, Coor_x) != CG_OK) {
+      printf("*FAILED* cgp_particle_coord_write_data (Coor_x) \n");
+      cgp_error_exit();
+   }
+   if(cgp_particle_coord_write_data(fn, B, P, Cy, &min, &max, Coor_y) != CG_OK) {
+      printf("*FAILED* cgp_particle_coord_write_data (Coor_y) \n");
+      cgp_error_exit();
+   }
+
+   int m_numdim = 1;
+   cgsize_t s_rmin[1], s_rmax[1]; // Indices in the file; dim = m_numdim
+   cgsize_t m_rmin[1], m_rmax[1]; // Indices in memory corresponding to Coor_z; dim = m_numdim
+   cgsize_t m_arg_dimvals = count;
+
+   s_rmin[0] = min ;
+   s_rmax[0] = max;
+   m_rmin[0] = 1;
+   m_rmax[0] = count;
+
+   if(cgp_particle_coord_general_write_data(fn, B, P, Cz, s_rmin, s_rmax, CGNS_ENUMV(RealDouble),
+                                            m_numdim, &m_arg_dimvals, m_rmin, m_rmax, Coor_z) != CG_OK) {
+      printf("*FAILED* cgp_particle_coord_general_write_data (Coor_z) \n");
+      cgp_error_exit();
+   }
+
+   free(Coor_x);
+   free(Coor_y);
+   free(Coor_z);
+
+   /* ======================================= */
+   /* == (B) WRITE THE PARTICLE FIELD DATA == */
+   /* ======================================= */
+
+   count = num_particles/comm_size;
+
+   if( !(Data_Fx = (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of Data_Fx \n");
+     cgp_error_exit();
+   }
+
+   if( !(Data_Fy= (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of Data_Fy \n");
+     cgp_error_exit();
+   }
+
+   if( !(Data_Fz= (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of Data_Fz \n");
+     cgp_error_exit();
+   }
+
+   for ( k = 0; k < count; k++) {
+      Data_Fx[k] = comm_rank*count+k + 1.01;
+      Data_Fy[k] = comm_rank*count+k + 1.02;
+      Data_Fz[k] = comm_rank*count+k + 1.03;
+   }
+
+   if(cg_particle_sol_write(fn, B, P, "Solution", &S) != CG_OK) {
+     printf("*FAILED* cg_particle_sol_write \n");
+     cgp_error_exit();
+   }
+
+   if(cgp_particle_field_write(fn,B,P,S,CGNS_ENUMV(RealDouble),"VelocityX",&Fx) != CG_OK) {
+     printf("*FAILED* cgp_particle_field_write (VelocityX) \n");
+     cgp_error_exit();
+   }
+   if(cgp_particle_field_write(fn,B,P,S,CGNS_ENUMV(RealDouble),"VelocityY",&Fy) != CG_OK) {
+     printf("*FAILED* cgp_particle_field_write (VelocityY) \n");
+     cgp_error_exit();
+   }
+   if(cgp_particle_field_write(fn,B,P,S,CGNS_ENUMV(RealDouble),"VelocityZ",&Fz) != CG_OK) {
+     printf("*FAILED* cgp_particle_field_write (VelocityZ) \n");
+     cgp_error_exit();
+   }
+
+   if(cgp_particle_field_write_data(fn, B, P, S, Fx, &min, &max, Data_Fx) != CG_OK) {
+      printf("*FAILED* cgp_particle_field_write_data (VelocityX) \n");
+      cgp_error_exit();
+   }
+   if(cgp_particle_field_write_data(fn, B, P, S, Fy, &min, &max, Data_Fy) != CG_OK) {
+      printf("*FAILED* cgp_particle_field_write_data (VelocityY) \n");
+      cgp_error_exit();
+   }
+
+   if(cgp_particle_field_general_write_data(fn, B, P, S, Fz, s_rmin, s_rmax, CGNS_ENUMV(RealDouble), m_numdim, &m_arg_dimvals, m_rmin, m_rmax, Data_Fz) != CG_OK) {
+      printf("*FAILED* cgp_particle_field_general_write_data (VelocityZ) \n");
+      cgp_error_exit();
+   }
+
+   free(Data_Fx);
+   free(Data_Fy);
+   free(Data_Fz);
+
+   if(cgp_close(fn) !=CG_OK) {
+      printf("*FAILED* cgp_close\n");
+      cgp_error_exit();
+   }
+
+   /* ====================================== */
+   /* ==    **  READ THE CGNS FILE **     == */
+   /* ====================================== */
+   MPI_Barrier(MPI_COMM_WORLD);
+
+   /* Open the cgns file for reading */
+   if(cgp_open(fname, CG_MODE_MODIFY, &fn) != CG_OK) {
+     printf("*FAILED* cgp_open \n");
+     cgp_error_exit();
+   }
+
+   /* Read the base information */
+   if(cg_base_read(fn, B, name, &r_cell_dim, &r_phys_dim) != CG_OK) {
+     printf("*FAILED* cg_base_read\n");
+     cgp_error_exit();
+   }
+
+   if(r_cell_dim != cell_dim || r_phys_dim != phys_dim) {
+     printf("*FAILED* bad cell dim=%d or phy dim=%d\n", r_cell_dim, r_phys_dim);
+     cgp_error_exit();
+   }
+
+   if (strcmp (name, "Base 1")) {
+     printf("*FAILED* bad base name=%s\n", name);
+     cgp_error_exit();
+   }
+   /* Read the particle zone information */
+   if(cg_particle_read(fn, B, P, name, &size) != CG_OK) {
+     printf("*FAILED* cg_particle_read\n");
+     cgp_error_exit();
+   }
+
+   /* Check the read zone information is correct */
+   if(size != num_particles) {
+     printf("bad num points=%ld\n", (long)size);
+     cgp_error_exit();
+   }
+
+   if (strcmp (name, "Particle 1")) {
+     printf("bad zone name=%s\n", name);
+     cgp_error_exit();
+   }
+   /* ========================================= */
+   /* ==  (A) READ THE PARTICLE COORDINATES  == */
+   /* ========================================= */
+
+   count = num_particles/comm_size;
+
+   if( !(Coor_x = (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of particle Coor_x \n");
+     cgp_error_exit();
+   }
+
+   if( !(Coor_y= (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of particle Coor_y \n");
+     cgp_error_exit();
+   }
+
+   float* Coor_z_float;
+   if( !(Coor_z_float= (float*) malloc(count*sizeof(float))) ) {
+     printf("*FAILED* allocation of particle Coor_z_float \n");
+     cgp_error_exit();
+   }
+   min = count*comm_rank+1;
+   max = count*(comm_rank+1);
+
+   if (cgp_particle_coord_read_data(fn, B, P, Cx, &min, &max, Coor_x)!= CG_OK) {
+     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_particle_coord_read_data (Coor_x)", NULL);
+     cgp_error_exit();
+   } else {
+     if(comm_rank == 0) write_test_status(PASSED, "Test cgp_particle_coord_read_data (Coor_x)", NULL);
+   }
+
+   if (cgp_particle_coord_read_data(fn, B, P, Cy, &min, &max, Coor_y)!= CG_OK) {
+     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_particle_coord_read_data (Coor_y)", NULL);
+     cgp_error_exit();
+   } else {
+     if(comm_rank == 0) write_test_status(PASSED, "Test cgp_particle_coord_read_data (Coor_y)", NULL);
+   }
+
+   /* Have the MLL convert the data to float while reading */
+   if (cgp_particle_coord_general_read_data(fn, B, P, Cz, s_rmin, s_rmax, CGNS_ENUMV(RealSingle), m_numdim, &m_arg_dimvals, m_rmin, m_rmax, Coor_z_float)!= CG_OK) {
+     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_particle_coord_general_read_data (Coor_z_float)", NULL);
+     cgp_error_exit();
+   } else {
+     if(comm_rank == 0) write_test_status(PASSED, "Test cgp_particle_coord_general_read_data (Coor_z_float)", NULL);
+   }
+
+   /* Check if read the data back correctly */
+   for ( k = 0; k < count; k++) {
+     if( !compareValuesDouble(Coor_x[k], comm_rank*count + k + 1.1) ||
+         !compareValuesDouble(Coor_y[k], Coor_x[k] + 0.1) ||
+         !compareValuesFloat(Coor_z_float[k], (float)(Coor_y[k] + 0.1)) ) {
+       if(comm_rank == 0) write_test_status(FAILED, "Check cgp_particle_coord_read_data values", NULL);
+       cgp_error_exit();
+     }
+   }
+   if(comm_rank == 0) write_test_status(PASSED, "Check cgp_particle_coord_read_data values", NULL);
+
+   free(Coor_x);
+   free(Coor_y);
+   free(Coor_z_float);
+
+   /* ====================================== */
+   /* == (B) READ THE PARTICLE FIELD DATA == */
+   /* ====================================== */
+   count = num_particles/comm_size;
+
+   if( !(Data_Fx = (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of Reading Data_Fx \n");
+     cgp_error_exit();
+   }
+
+   if( !(Data_Fy = (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of Reading Data_Fy \n");
+     cgp_error_exit();
+   }
+
+   float* Data_Fz_float;
+   if( !(Data_Fz_float = (float*) malloc(count*sizeof(float))) ) {
+     printf("*FAILED* allocation of Reading Data_Fz_float \n");
+     cgp_error_exit();
+   }
+
+   if(cgp_particle_field_read_data(fn,B,P,S,Fx,&min,&max,Data_Fx) != CG_OK) {
+     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_particle_field_read_data (Data_Fx)", NULL);
+     cgp_error_exit();
+   } else {
+     if(comm_rank == 0) write_test_status(PASSED, "Test cgp_particle_field_read_data (Data_Fx)", NULL);
+   }
+
+   if(cgp_particle_field_read_data(fn,B,P,S,Fy,&min,&max,Data_Fy) != CG_OK) {
+     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_particle_field_read_data (Data_Fy)", NULL);
+     cgp_error_exit();
+   } else {
+     if(comm_rank == 0) write_test_status(PASSED, "Test cgp_particle_field_read_data (Data_Fy)", NULL);
+   }
+
+   if(cgp_particle_field_general_read_data(fn,B,P,S,Fz, s_rmin, s_rmax, CGNS_ENUMV(RealSingle), m_numdim, &m_arg_dimvals, m_rmin, m_rmax, Data_Fz_float) != CG_OK) {
+     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_particle_field_general_read_data (Data_Fz_float)", NULL);
+     cgp_error_exit();
+   } else {
+     if(comm_rank == 0) write_test_status(PASSED, "Test cgp_particle_field_general_read_data (Data_Fz_float)", NULL);
+   }
+
+   /* Check if read the data back correctly */
+   for ( k = 0; k < count; k++) {
+     if(!compareValuesDouble(Data_Fx[k], comm_rank*count + k + 1.01) ||
+        !compareValuesDouble(Data_Fy[k], comm_rank*count + k + 1.02) ||
+        !compareValuesFloat(Data_Fz_float[k], (float)(comm_rank*count + k + 1.03)) ) {
+       if(comm_rank == 0) write_test_status(FAILED, "Check cgp_particle_field_read_data values", NULL);
+       cgp_error_exit();
+     }
+   }
+   if(comm_rank == 0) write_test_status(PASSED, "Check cgp_particle_field_read_data values", NULL);
+
+   free(Data_Fx);
+   free(Data_Fy);
+   free(Data_Fz_float);
+
+   if(cgp_close(fn) !=CG_OK) {
+      printf("*FAILED* cgp_close\n");
+      cgp_error_exit();
+   }
+
+   return 0;
+}
+
+int particle_multisets()
+{
+   char fname[32];
+
+   void **buf;
+   int Cvec[3];
+   int Fvec[3];
+   int fn;
+   int B;
+   int P;
+   int S;
+   int Cx,Cy,Cz, Fx, Fy, Fz;
+   int cell_dim = 3;
+   int phys_dim = 3;
+   int r_cell_dim = 0;
+   int r_phys_dim = 0;
+   cgsize_t num_particles = 1024, size;
+   cgsize_t min, max;
+   cgsize_t k, count;
+   /* For writing and reading data*/
+   double* Coor_x;
+   double* Coor_y;
+   double* Coor_z;
+   double* Data_Fx;
+   double* Data_Fy;
+   double* Data_Fz;
+   char name[33];
+   int piomode = CGP_COLLECTIVE; /* DEFAULT */
+   int err;
+
+   err = (int)cgp_pio_mode((CGNS_ENUMT(PIOmode_t))piomode);
+   if(err != CG_OK) {
+     printf("*FAILED* cgp_pio_mode \n");
+     cgp_error_exit();
+   }
+
+   /* ====================================== */
+   /* ==    **WRITE THE CGNS FILE **      == */
+   /* ====================================== */
+
+   sprintf(fname, "particle_multiset_%06d.cgns", comm_size);
+
+   if(cgp_open(fname, CG_MODE_WRITE, &fn) != CG_OK) {
+     printf("*FAILED* cgp_open \n");
+     cgp_error_exit();
+   }
+
+   if(cg_base_write(fn, "Base 1", cell_dim, phys_dim, &B) != CG_OK) {
+     printf("*FAILED* cg_base_write \n");
+     cgp_error_exit();
+   }
+   if(cg_particle_write(fn, B, "Particle 1", num_particles, &P) != CG_OK) {
+     printf("*FAILED* cg_particle_write \n");
+     cgp_error_exit();
+   }
+
+   /* ======================================== */
+   /* == (A) WRITE THE PARTICLE COORDINATES == */
+   /* ======================================== */
+
+   count = num_particles/comm_size;
+
+   if( !(Coor_x = (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of particle Coor_x \n");
+     cgp_error_exit();
+   }
+
+   if( !(Coor_y= (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of particle Coor_y \n");
+     cgp_error_exit();
+   }
+
+   if( !(Coor_z= (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of particle Coor_z \n");
+     cgp_error_exit();
+   }
+
+   min = count*comm_rank+1;
+   max = count*(comm_rank+1);
+
+   for (k=0; k < count; k++) {
+     Coor_x[k] = comm_rank*count + k + 1.1;
+     Coor_y[k] = Coor_x[k] + 0.1;
+     Coor_z[k] = Coor_y[k] + 0.1;
+   }
+
+   if(cgp_particle_coord_write(fn,B,P,CGNS_ENUMV(RealDouble),"CoordinateX",&Cx) != CG_OK) {
+     printf("*FAILED* cgp_particle_coord_write (Coor_x) \n");
+     cgp_error_exit();
+   }
+   if(cgp_particle_coord_write(fn,B,P,CGNS_ENUMV(RealDouble),"CoordinateY",&Cy) != CG_OK) {
+     printf("*FAILED* cgp_particle_coord_write (Coor_y) \n");
+     cgp_error_exit();
+   }
+   if(cgp_particle_coord_write(fn,B,P,CGNS_ENUMV(RealDouble),"CoordinateZ",&Cz) != CG_OK) {
+     printf("*FAILED* cgp_particle_coord_write (Coor_z) \n");
+     cgp_error_exit();
+   }
+
+   Cvec[0] = Cx;
+   Cvec[1] = Cy;
+   Cvec[2] = Cz;
+
+   buf = (void *)malloc(3*sizeof(void *));
+
+   buf[0] =&Coor_x[0];
+   buf[1] =&Coor_y[0];
+   buf[2] =&Coor_z[0];
+
+   if(cgp_particle_coord_multi_write_data(fn, B, P, Cvec, &min,&max,3,(const void **)buf)!= CG_OK) {
+     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_particle_coord_multi_write_data", NULL);
+     cgp_error_exit();
+   } else {
+     if(comm_rank == 0) write_test_status(PASSED, "Test cgp_particle_coord_multi_write_data", NULL);
+   }
+
+   free(buf);
+
+   free(Coor_x);
+   free(Coor_y);
+   free(Coor_z);
+
+   /* ======================================= */
+   /* == (B) WRITE THE PARTICLE FIELD DATA == */
+   /* ======================================= */
+
+   count = num_particles/comm_size;
+
+   if( !(Data_Fx = (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of Data_Fx \n");
+     cgp_error_exit();
+   }
+
+   if( !(Data_Fy= (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of Data_Fy \n");
+     cgp_error_exit();
+   }
+
+   if( !(Data_Fz= (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of Data_Fz \n");
+     cgp_error_exit();
+   }
+
+   for ( k = 0; k < count; k++) {
+      Data_Fx[k] = comm_rank*count+k + 1.01;
+      Data_Fy[k] = comm_rank*count+k + 1.02;
+      Data_Fz[k] = comm_rank*count+k + 1.03;
+   }
+
+   if(cg_particle_sol_write(fn, B, P, "Solution", &S) != CG_OK) {
+     printf("*FAILED* cg_particle_sol_write \n");
+     cgp_error_exit();
+   }
+
+   if(cgp_particle_field_write(fn,B,P,S,CGNS_ENUMV(RealDouble),"VelocityX",&Fx) != CG_OK) {
+     printf("*FAILED* cgp_particle_field_write (VelocityX) \n");
+     cgp_error_exit();
+   }
+   if(cgp_particle_field_write(fn,B,P,S,CGNS_ENUMV(RealDouble),"VelocityY",&Fy) != CG_OK) {
+     printf("*FAILED* cgp_particle_field_write (VelocityY) \n");
+     cgp_error_exit();
+   }
+   if(cgp_particle_field_write(fn,B,P,S,CGNS_ENUMV(RealDouble),"VelocityZ",&Fz) != CG_OK) {
+     printf("*FAILED* cgp_particle_field_write (VelocityZ) \n");
+     cgp_error_exit();
+   }
+
+   Fvec[0] = Fx;
+   Fvec[1] = Fy;
+   Fvec[2] = Fz;
+
+   buf = (void *)malloc(3*sizeof(void *));
+   buf[0] = &Data_Fx[0];
+   buf[1] = &Data_Fy[0];
+   buf[2] = &Data_Fz[0];
+
+   if(cgp_particle_field_multi_write_data(fn,B,P,S,Fvec,&min,&max,3,(const void **)buf) != CG_OK) {
+     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_particle_field_multi_write_data", NULL);
+     cgp_error_exit();
+   } else {
+     if(comm_rank == 0) write_test_status(PASSED, "Test cgp_particle_field_multi_write_data", NULL);
+   }
+   free(buf);
+
+   free(Data_Fx);
+   free(Data_Fy);
+   free(Data_Fz);
+
+   if(cgp_close(fn) !=CG_OK) {
+      printf("*FAILED* cgp_close\n");
+      cgp_error_exit();
+   }
+
+   /* ====================================== */
+   /* ==    **  READ THE CGNS FILE **     == */
+   /* ====================================== */
+   MPI_Barrier(MPI_COMM_WORLD);
+
+   /* Open the cgns file for reading */
+   if(cgp_open(fname, CG_MODE_MODIFY, &fn) != CG_OK) {
+     printf("*FAILED* cgp_open \n");
+     cgp_error_exit();
+   }
+
+   /* Read the base information */
+   if(cg_base_read(fn, B, name, &r_cell_dim, &r_phys_dim) != CG_OK) {
+     printf("*FAILED* cg_base_read\n");
+     cgp_error_exit();
+   }
+
+   if(r_cell_dim != cell_dim || r_phys_dim != phys_dim) {
+     printf("*FAILED* bad cell dim=%d or phy dim=%d\n", r_cell_dim, r_phys_dim);
+     cgp_error_exit();
+   }
+
+   if (strcmp (name, "Base 1")) {
+     printf("*FAILED* bad base name=%s\n", name);
+     cgp_error_exit();
+   }
+   /* Read the particle zone information */
+   if(cg_particle_read(fn, B, P, name, &size) != CG_OK) {
+     printf("*FAILED* cg_particle_read\n");
+     cgp_error_exit();
+   }
+
+   /* Check the read zone information is correct */
+   if(size != num_particles) {
+     printf("bad num points=%ld\n", (long)size);
+     cgp_error_exit();
+   }
+
+   if (strcmp (name, "Particle 1")) {
+     printf("bad zone name=%s\n", name);
+     cgp_error_exit();
+   }
+   /* ========================================= */
+   /* ==  (A) READ THE PARTICLE COORDINATES  == */
+   /* ========================================= */
+
+   count = num_particles/comm_size;
+
+   if( !(Coor_x = (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of particle Coor_x \n");
+     cgp_error_exit();
+   }
+
+   if( !(Coor_y= (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of particle Coor_y \n");
+     cgp_error_exit();
+   }
+
+   if( !(Coor_z= (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of particle Coor_z \n");
+     cgp_error_exit();
+   }
+   min = count*comm_rank+1;
+   max = count*(comm_rank+1);
+
+   Cvec[0] = Cx;
+   Cvec[1] = Cy;
+   Cvec[2] = Cz;
+
+   buf = (void *)malloc(3*sizeof(void *));
+   buf[0] = &Coor_x[0];
+   buf[1] = &Coor_y[0];
+   buf[2] = &Coor_z[0];
+
+   if (cgp_particle_coord_multi_read_data(fn, B, P, Cvec, &min,&max, 3, buf)!= CG_OK) {
+     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_particle_coord_multi_read_data", NULL);
+     cgp_error_exit();
+   } else {
+     if(comm_rank == 0) write_test_status(PASSED, "Test cgp_particle_coord_multi_read_data", NULL);
+   }
+   free(buf);
+
+   /* Check if read the data back correctly */
+   for ( k = 0; k < count; k++) {
+     if( !compareValuesDouble(Coor_x[k], comm_rank*count + k + 1.1) ||
+         !compareValuesDouble(Coor_y[k], Coor_x[k] + 0.1) ||
+         !compareValuesDouble(Coor_z[k], Coor_y[k] + 0.1) ) {
+       if(comm_rank == 0) write_test_status(FAILED, "Check cgp_particle_coord_multi_read_data values", NULL);
+       cgp_error_exit();
+     }
+   }
+   if(comm_rank == 0) write_test_status(PASSED, "Check cgp_particle_coord_multi_read_data values", NULL);
+
+   free(Coor_x);
+   free(Coor_y);
+   free(Coor_z);
+
+   /* ====================================== */
+   /* == (B) READ THE PARTICLE FIELD DATA == */
+   /* ====================================== */
+   count = num_particles/comm_size;
+
+   if( !(Data_Fx = (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of Reading Data_Fx \n");
+     cgp_error_exit();
+   }
+
+   if( !(Data_Fy = (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of Reading Data_Fy \n");
+     cgp_error_exit();
+   }
+
+   if( !(Data_Fz = (double*) malloc(count*sizeof(double))) ) {
+     printf("*FAILED* allocation of Reading Data_Fz \n");
+     cgp_error_exit();
+   }
+
+   Fvec[0] = Fx;
+   Fvec[1] = Fy;
+   Fvec[2] = Fz;
+
+   buf = (void *)malloc(3*sizeof(void *));
+   buf[0] = &Data_Fx[0];
+   buf[1] = &Data_Fy[0];
+   buf[2] = &Data_Fz[0];
+
+   if(cgp_particle_field_multi_read_data(fn,B,P,S,Fvec,&min,&max,3,buf) != CG_OK) {
+     if(comm_rank == 0) write_test_status(FAILED, "Test cgp_particle_field_multi_read_data", NULL);
+     cgp_error_exit();
+   } else {
+     if(comm_rank == 0) write_test_status(PASSED, "Test cgp_particle_field_multi_read_data", NULL);
+   }
+   free(buf);
+
+   /* Check if read the data back correctly */
+   for ( k = 0; k < count; k++) {
+     if(!compareValuesDouble(Data_Fx[k], comm_rank*count + k + 1.01) ||
+        !compareValuesDouble(Data_Fy[k], comm_rank*count + k + 1.02) ||
+        !compareValuesDouble(Data_Fz[k], comm_rank*count + k + 1.03) ) {
+       if(comm_rank == 0) write_test_status(FAILED, "Check cgp_particle_field_multi_read_data values", NULL);
+       cgp_error_exit();
+     }
+   }
+   if(comm_rank == 0) write_test_status(PASSED, "Check cgp_particle_field_multi_read_data values", NULL);
+
+   free(Data_Fx);
+   free(Data_Fy);
+   free(Data_Fz);
+
+   if(cgp_close(fn) !=CG_OK) {
+      printf("*FAILED* cgp_close\n");
+      cgp_error_exit();
+   }
+
+   return 0;
 }
 
 int main (int argc, char *argv[])
@@ -941,6 +1550,14 @@ int main (int argc, char *argv[])
   strcpy(test_str,"Multi-sets API Testing");
   if ( comm_rank == 0) write_test_header(test_str, strlen(test_str));
   multisets();
+
+  strcpy(test_str,"Particle Parallel I/O Testing");
+  if ( comm_rank == 0) write_test_header(test_str, strlen(test_str));
+  particle_test();
+
+  strcpy(test_str,"Particle Multi-sets Testing");
+  if ( comm_rank == 0) write_test_header(test_str, strlen(test_str));
+  particle_multisets();
 
   MPI_Finalize();
   return 0;

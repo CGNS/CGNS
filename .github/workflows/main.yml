@@ -11,7 +11,7 @@ on:
 #  push:
 #  pull_request:
 env:
-  hdf5_vers: 1_10_8
+  hdf5_vers: 1_14_4
 
 # A workflow run is made up of one or more jobs that
 # can run sequentially or in parallel
@@ -34,7 +34,7 @@ jobs:
             os: macos-latest
             parallel: disable
             fortran: with
-            hdf5: without
+            hdf5: with
             tools: disable
 
     name: ${{ matrix.name }}
@@ -49,27 +49,38 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt update
-        sudo apt install mpich
-        sudo apt-get install -y libgl1-mesa-glx libglu1-mesa-dev libxmu-dev tk-dev tcl-dev
+        sudo apt upgrade
+        sudo apt-get install openmpi-bin openmpi-common mpi-default-dev
+        # sudo apt-get install mpich
+        sudo apt-get install -y libxmu-dev tk-dev tcl-dev
+        sudo apt install libgl1-mesa-dri mesa-utils libgl1-mesa-dev libglu1-mesa-dev
         # Set env vars
         echo "OS_NAME=linux" >> $GITHUB_ENV
         echo "CC=mpicc" >> $GITHUB_ENV
         echo "FC=mpif90" >> $GITHUB_ENV
         echo "F77=mpif90" >> $GITHUB_ENV
+        mpiexec_cmd="mpiexec --use-hwthread-cpus -n 4"
+        echo "MPIEXEC=$mpiexec_cmd" >> $GITHUB_ENV
 
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
         # Set env vars
+        unset HOMEBREW_NO_INSTALL_FROM_API
+        unset HOMEBREW_NO_AUTO_UPDATE
         echo "OS_NAME=macOS" >> $GITHUB_ENV
-        echo "CC=gcc" >> $GITHUB_ENV
         # Use the newest stable gcc compiler
-        brew update
-        brew upgrade gcc
+        brew update-reset
+        brew cleanup
+        #brew upgrade gcc
         brew install gcc
         brew unlink gcc && brew link gcc
         echo "FC=gfortran" >> $GITHUB_ENV
         echo "F77=gfortran" >> $GITHUB_ENV
+        # Set CC version to latest gcc based on gfortran main version
+        #gfortranversion=$( echo "__GNUC__" | gfortran -E -P - | sed 's/ //g' )
+        #echo "CC=gcc-$gfortranversion" >> $GITHUB_ENV
+        echo "CC=gcc" >> $GITHUB_ENV
 
  # Checks-out the repository under $GITHUB_WORKSPACE so the job can access it.
     - name: Get Sources
@@ -81,12 +92,12 @@ jobs:
                  
     - name: install HDF5
       run: |
-        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5-${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
+        git clone https://github.com/HDFGroup/hdf5.git --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
         export HOME_DIR=$(echo ~)
         cd hdf5_${{ env.hdf5_vers }}
         ./configure --without-zlib --without-szlib --disable-fortran --disable-hl \
         --disable-tests --disable-tools \
-        --prefix=$HOME_DIR/hdf5 \
+        --prefix=$HOME_DIR/hdf5 --disable-nonstandard-feature-float16 \
         --${{ matrix.parallel }}-parallel 
         make -j 8 install
       shell: bash
@@ -114,8 +125,8 @@ jobs:
     - name: CMake test CGNS
       run: |
         cd cbuild
-        make -j 8
-        make test
+        cmake --build . --config "Debug" --parallel 8
+        ctest -C "Debug" -VV --output-on-failure
       shell: bash
 
 ##################################
@@ -138,3 +149,7 @@ jobs:
         make -j 8
         make test
       shell: bash
+
+#    - name: Setup tmate session
+#      if: ${{ failure() }}
+#      uses: mxschmitt/action-tmate@v3

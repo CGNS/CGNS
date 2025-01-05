@@ -1,4 +1,4 @@
-        program write_mixed_grid
+        PROGRAM write_mixed_grid
 	USE CGNS
 
 !	author: Diane Poirier
@@ -174,7 +174,7 @@
 	        call cg_conn_write_f(cg, base, zone, 'str_to_unstr', &
        	            CGNS_ENUMV(Vertex), CGNS_ENUMV(Abutting1to1), CGNS_ENUMV(PointRange), 2_cgsize_t, pnts, &
                     'UnstructuredZone#1', CGNS_ENUMV(Unstructured), &
-                    CGNS_ENUMV(CellListDonor), CGNS_ENUMV(Integer), 9_cgsize_t, uns_pnts, index, &
+                    CGNS_ENUMV(PointListDonor), CGNS_ENUMV(Integer), 9_cgsize_t, uns_pnts, index, &
                     ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
@@ -194,7 +194,7 @@
 		dim_vals(1)=cell_dim
 		dim_vals(2)=9
 		call cg_array_write_f('InterpolantsDonor', CGNS_ENUMV(RealDouble), &
-                    2, dim_vals, interpolants, ier)
+                    2, dim_vals, interpolants(1,1), ier)
                 if (ier .eq. ERROR) call cg_error_exit_f
 		
 	    endif
@@ -267,7 +267,7 @@
 		  FaceNormals(3,n)=0
 		enddo
 		call cg_boco_write_f(cg, base, zone, 'shell_patch', &
-                  CGNS_ENUMV(BCOutflow), CGNS_ENUMV(PointList), 4_cgsize_t, elist, index, ier)
+                  CGNS_ENUMV(FamilySpecified), CGNS_ENUMV(PointList), 4_cgsize_t, elist, index, ier)
 		if (ier .eq. ERROR) call cg_error_exit_f
 
 	     ! Specify that the GridLocation is FaceCenter
@@ -395,19 +395,27 @@
 		if (ier .eq. ERROR) call cg_error_exit_f
 	    enddo
 
-	  ! A family may have several FamilyBC_t node
-! NOT ACCORDING TO THE SIDS
-	    do bc=1,2
-		write(fambcname,'(a,i1)')'FamBC#',bc
-	 	call cg_fambc_write_f(cg, base, fam, fambcname, &
-                  CGNS_ENUMV(BCGeneral), index, ier)
-		if (ier .eq. ERROR) call cg_error_exit_f
-	    enddo
-
+            if (fam .eq. 3) then
+                call cg_fambc_write_f(cg, base, fam, "FamBC", &
+                     CGNS_ENUMV(BCOutflow), index, ier)
+                if (ier .eq. ERROR) call cg_error_exit_f
+            else
+	  ! A family may have only one FamilyBC_t node ACCORDING TO THE SIDS
+                do bc=1,2
+! Only write one FamilyBC_t node
+                   if (bc .ne. fam) then 
+                       cycle
+                   endif
+                   write(fambcname,'(a,i1)')'FamBC#',bc
+                   call cg_fambc_write_f(cg, base, fam, fambcname, &
+                       CGNS_ENUMV(BCGeneral), index, ier)
+                   if (ier .eq. ERROR) call cg_error_exit_f
+                enddo
+            endif
 
 ! ** begin KMW Family Functionality Extension
-          ! add to the first FamilyBC_t only
-
+            if (fam .ne. 3) then
+          ! add to the first and only FamilyBC_t
 	    call cg_goto_f(cg, base, ier, 'Family_t', fam, &
                            'FamilyBC_t', 1,'end')
 	    if (ier .eq. ERROR) call cg_error_exit_f
@@ -434,7 +442,7 @@
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
 ! ** end KMW Family Functionality Extension
-
+            endif
 
 	 !  Family Descriptor and Ordinal
 	    call cg_goto_f(cg, base, ier, 'Family_t', fam, 'end')
@@ -470,5 +478,5 @@
  100	format(a)
  200	format(a,i1,a,i1)
 
-	end
+        END PROGRAM write_mixed_grid
 

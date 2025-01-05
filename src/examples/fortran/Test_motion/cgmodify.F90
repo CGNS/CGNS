@@ -13,7 +13,8 @@
 	parameter (Nnodes = 120)
 	integer index_dim, cell_dim, phys_dim, pos
 	integer base_no, zone_no, coord_no, sol_no, field_no
-	integer num, data_size(2)
+	integer num
+	integer(cgsize_t) data_size(2)
 	integer(cgsize_t) size(Ndim*3)
 	integer cg, ier, coord, i, sol, field
 	double precision Dxyz(Nnodes), values(Nnodes)
@@ -39,7 +40,8 @@
 !	real*4 time(2)
 	double precision time(2)
 	integer nsteps, step, iteration(NumberOfSteps)
-	integer nzones(NumberOfSteps), dimval(3)
+	integer nzones(NumberOfSteps)
+	integer(cgsize_t) dimval(3)
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 	character*32 bitername, zitername, zone_ptrs(2,NumberOfSteps)
 	character*32 grid_ptrs(NumberOfSteps), sol_ptrs(NumberOfSteps)
@@ -90,20 +92,20 @@
 	    if (step.eq.2) write(zone_ptrs(2,step),100) 'Zone#',2
 	enddo
 	!call cg_array_write_f('TimeValues', CGNS_ENUMV(RealSingle), 1, nsteps,
-	call cg_array_write_f('TimeValues', CGNS_ENUMV(RealDouble), 1, nsteps, &
-                               time, ier)
+	call cg_array_write_f('TimeValues', CGNS_ENUMV(RealDouble), 1, &
+                [INT(nsteps, cgsize_t)], time, ier)
         if (ier .ne. ALL_OK) call cg_error_exit_f
-	call cg_array_write_f('IterationValues', CGNS_ENUMV(Integer), 1, nsteps, &
-                               iteration, ier)
+	call cg_array_write_f('IterationValues', CGNS_ENUMV(Integer), 1, &
+                [INT(nsteps, cgsize_t)], iteration, ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
-	call cg_array_write_f('NumberOfZones', CGNS_ENUMV(Integer), 1, nsteps, &
-                               nzones, ier)
+	call cg_array_write_f('NumberOfZones', CGNS_ENUMV(Integer), 1, &
+                [INT(nsteps, cgsize_t)], nzones, ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 	dimval(1)=32
 	dimval(2)=2 		! *** MaxNumberOfZones in a step1
 	dimval(3)=nsteps
         call cg_array_write_f('ZonePointers', CGNS_ENUMV(Character), 3, dimval, &
-                               zone_ptrs, ier)
+                               zone_ptrs(1,:), ier)
 	if (ier .ne. ALL_OK) call cg_error_exit_f
 !234567890!234567890!234567890!234567890!234567890!234567890!23456789012
 
@@ -253,17 +255,17 @@
 	    data_size(2)=2
             !call cg_array_write_f('OriginLocation', CGNS_ENUMV(RealSingle), 2,
             call cg_array_write_f('OriginLocation', CGNS_ENUMV(RealDouble), 2, &
-                                   data_size, origin, ier)
+                                   data_size, origin(1,1), ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
             !call cg_array_write_f('RigidRotationAngle', CGNS_ENUMV(RealSingle), 1,
             call cg_array_write_f('RigidRotationAngle', CGNS_ENUMV(RealDouble), 1, &
-                                   phys_dim, angle, ier)
+                                   [INT(phys_dim,cgsize_t)], angle, ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
 	    !call cg_array_write_f('RigidVelocity', CGNS_ENUMV(RealSingle), 1,
 	    call cg_array_write_f('RigidVelocity', CGNS_ENUMV(RealDouble), 1, &
-                                   phys_dim, velocity, ier)
+                                   [INT(phys_dim, cgsize_t)], velocity, ier)
             if (ier .ne. ALL_OK) call cg_error_exit_f
 
 ! *** Add an attribute for this data array: GOTO DataArray node
