@@ -36,7 +36,7 @@ Library:
     at cgns.org for more details.
 
 > [!NOTE]
-> We appreciate Convergent Science for their contributions to CPEX 0046 and for implementing the particle feature.
+> We appreciate Convergent Science's contributions to CPEX 0046 and its implementation.
 
 * Added Fortran support for `cg_configure_f` to allow a callback function, such as in the case of CG_CONFIG_ERROR.
 
@@ -173,25 +173,26 @@ They are built with autotools unless specified otherwise.
 
 |Platform | Configuration |
 |-- | -- |
-|Linux 3.10.0-1160.80.1.el7 <br> #1 SMP x86_64 GNU/Linux<br> Cettos7 |   GNU C (gcc), Fortran (gfortran), C++ (g++) <br>compilers: <br> Version 4.8.5 20150623 (Red Hat 4.8.5-4) <br> Version 4.9.3, Version 7.2.0, Version 8.3.0, <br> Version 9.1.0, Version 10.2.0 <br> |
-|                                                   |    Intel(R) C (icc), C++ (icpc), Fortran (icc) <br> compilers: <br>   Version 17.0.0.098 Build 20160721 |
-|                                                   |    GNU C (gcc) and C++ (g++) 4.8.5 compilers<br>&nbsp;&nbsp;&nbsp;with NAG Fortran Compiler Release 7.1(Hanzomon)|
-|                                                   | Intel(R) C (icc) and C++ (icpc) 17.0.0.098|
-|                                                   | GNU C (gcc) and C++ (g++) 4.8.5 compilers with NAG Fortran Compiler Release 7.1(Hanzomon) |
-|                                                   | Intel(R) C (icc) and C++ (icpc) 17.0.0.098 compilers with NAG Fortran Compiler Release 7.1(Hanzomon)|
-|                                                   | MPICH 3.1.4 compiled with GCC 4.9.3 |
-|                                                   | MPICH 3.3 compiled with GCC 7.2.0 |
-|                                                   | OpenMPI 3.1.3 compiled with GCC 7.2.0, and 4.1.2 compiled with GCC 9.1.0 |
-|                                                   | NVIDIA nvc, nvfortran and nvc++ version 22.5-0 (autotools and cmake) |
+| Centos7 <br> #1 SMP x86_64 GNU/Linux<br>      | GNU C (gcc), Fortran (gfortran), C++ (g++) <br>compilers: <br> Version 4.8.5 20150623 (Red Hat 4.8.5-4) <br> Version 4.9.3, Version 7.2.0, Version 8.3.0, <br> Version 9.1.0, Version 10.2.0 <br> |
+|                                               |  Intel(R) C (icc), C++ (icpc), Fortran (icc) <br> compilers: <br>   Version 17.0.0.098 Build 20160721 |
+|                                               |  GNU C (gcc) and C++ (g++) 4.8.5 compilers<br>&nbsp;&nbsp;&nbsp;with NAG Fortran Compiler Release 7.1(Hanzomon)|
+|                                               | Intel(R) C (icc) and C++ (icpc) 17.0.0.098|
+|                                               | GNU C (gcc) and C++ (g++) 4.8.5 compilers with NAG Fortran Compiler Release 7.1(Hanzomon) |
+|                                               | Intel(R) C (icc) and C++ (icpc) 17.0.0.098 compilers with NAG Fortran Compiler Release 7.1(Hanzomon)|
+|                                               | MPICH 3.1.4 compiled with GCC 4.9.3 |
+|                                               | MPICH 3.3 compiled with GCC 7.2.0 |
+|                                               | OpenMPI 3.1.3 compiled with GCC 7.2.0, and 4.1.2 compiled with GCC 9.1.0 |
+|                                               | NVIDIA nvc, nvfortran and nvc++ version 22.5-0 (autotools and cmake) |
+| Ubuntu 24.04 <br> #1 SMP x86_64 GNU/Linux<br> | GNU C (gcc), Fortran (gfortran), C++ (g++) <br>compilers: 13.2 |
+|                                               | OpenMPI 4.1.6 |
 
 > [!NOTE]
 > CGNS is not testing on any 32-bit Windows systems
 
 |Platform         | Configuration                                   |
 |---------------- | ----------------------------------------------- |
-|  Windows 10 x64 |  Visual Studio 2017 w/ Intel Fortran 19 (CMake) |  
-|                 |  Visual Studio 2019 w/ Intel Fortran 19 (CMake) |
-|                 |  Visual Studio 2019 w/ MSMPI 10.1 (CMake)       |
+|  Windows 11 x64 | Visual Studio 2019 w/ Intel OneAPI 2025 (CMake) |
+|                 | Visual Studio 2019 w/ MSMPI 10.1 (CMake)        |
 
 > [!NOTE]
 > CGNS is tested with the two latest macOS versions that are available
