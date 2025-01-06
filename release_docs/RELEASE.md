@@ -35,6 +35,9 @@ Library:
   - Numerous new MLL APIs, both parallel and serial, were added. See the MLL documentation 
     at cgns.org for more details.
 
+> [!NOTE]
+> We appreciate Convergent Science for their contributions to CPEX 0046 and for implementing the particle feature.
+
 * Added Fortran support for `cg_configure_f` to allow a callback function, such as in the case of CG_CONFIG_ERROR.
 
 Parallel Library:
@@ -223,3 +226,9 @@ CentOS 7.2 Linux 3.10.0 x86_64 Intel | y | y | y | y
 Linux 2.6.32-573.18.1.el6.ppc64 | y | n | y | n
 
 <p>[1] Parallel
+
+# Acknowledgements
+ * Thank you, Mickael Philit, for contributing to updating the documentation and resolving various issues in the CGNS library for this release. 
+ * We appreciate all the CGNS users who reported issues and submitted pull requests.
+ * A special thanks to Sandia National Laboratories for their support of the work done by The HDF Group for this release.
+
