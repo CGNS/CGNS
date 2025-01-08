@@ -83,8 +83,12 @@ endif ()
 
 include(CheckIncludeFile)
 check_include_file(stdint.h HAVE_STDINT_H)
+check_include_file(inttypes.h HAVE_INTTYPES_H)
 if (NOT HAVE_STDINT_H)
   message(FATAL_ERROR "stdint.h is not found")
+endif ()
+if (NOT HAVE_INTTYPES_H)
+  message(FATAL_ERROR "inttypes.h is not found")
 endif ()
 
 # get some type sizes
