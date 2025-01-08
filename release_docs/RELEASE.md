@@ -1,7 +1,7 @@
 # INTRODUCTION
 
 This document describes the difference between CGNS 4.4.0 and 
-CGNS 4.5.0 and contains information on known problems in
+CGNS 4.5.0, and contains information on known problems in
 CGNS 4.5.0.
 
 Links to the CGNS current released source code can be found at:
@@ -22,7 +22,8 @@ For more general information, see the CGNS home page:
 > This release includes new Doxygen descriptions of the MLL APIs, which are now utilized in the updated documentation at cgns.org.
 
 > [!IMPORTANT]
-> All new Fortran APIs introduced in this release that expect a character string are required to pass a scalar character string (i.e.,` CHARACTER(LEN=*) `) and not an array of character strings (i.e., `CHARACTER(LEN=*), DIMENSION(*)`).
+> All new Fortran APIs introduced in this release that expect a character string are required to pass a scalar 
+> character string (i.e.,` CHARACTER(LEN=*) `) and not an array of character strings (i.e., `CHARACTER(LEN=*), DIMENSION(*)`).
 
 Configuration:
 --------------------
@@ -87,7 +88,7 @@ Configuration:
    - Handle F2C string on ARM64
    - Hidden parameters should be handled through a size_t according to  https://gcc.gnu.org/onlinedocs/gcc-8.2.0/gfortran/Argument-passing-conventions.html
 
-* Remove the deprecated build system on Windows (i.e., .bat); CMake is the current development focus.
+* Remove the deprecated build system on Windows (i.e., .bat); CMake is the current focus of development.
 
 * Bumped the Autotools prerequisite to 2.71, and fixed the check to allow for HDF5 version 2.0.0
 
@@ -115,7 +116,7 @@ Library:
 * Misc windows fixes 
    - Make cmakelist more robust to Multi-configuration generators
    - Improve Win32 ctest support
-   - Remove redefinition of MACRO,  the MACRO is already defined in cgnslib.h
+   - Remove the redefinition of MACRO; the MACRO is already defined in glib.h
 
 * use size_t casting to prevent allocation failure
   - the cast to size_t is done before multiplying with size_of
@@ -160,7 +161,7 @@ Tools:
 
 ************ CGNSVIEW END ********
 
-* For other issues, see https://github.com/CGNS/CGNS/issues
+* For details on these and other issues, see https://github.com/CGNS/CGNS/issues
 </code></pre></div>
 
 # Supported Platforms
@@ -196,9 +197,9 @@ They are built with autotools unless specified otherwise.
 
 > [!NOTE]
 > CGNS is tested with the two latest macOS versions that are available
-> on github runners. As new major macOS versions become available, CGNS
-> will discontinue support for the older version and add the new latest
-> version to its list of compatible systems, along with the previous version.
+> on GitHub runners. As new major macOS versions become available, CGNS
+> will discontinue support for the older version and add the latest
+> version to its list of compatible systems and the previous version.
 
 
 |Platform                   | Configuration                             |
@@ -216,9 +217,9 @@ They are built with autotools unless specified otherwise.
 
 Platform | C | C[1] | Fortran | Fortran [1]
 -- | -- | -- | -- | --
-Windows 10 | n | n | n | n
-Windows 10 x64 | y | n | n | n
-Windows 10 Cygwin | n | n | x | n
+Windows 11 | n | n | n | n
+Windows 11 x64 | y | n | n | n
+Windows 11 Cygwin | n | n | x | n
 Mac OS X  Sonoma 64-bit | y | n | y | n
 Mac OS X Sequoia 64-bit | y | n | y | n
 CentOS 7.2 Linux 3.10.0 x86_64 PGI | y | n | y | n
@@ -229,7 +230,7 @@ Linux 2.6.32-573.18.1.el6.ppc64 | y | n | y | n
 <p>[1] Parallel
 
 # Acknowledgements
- * Thank you, Mickael Philit, for contributing to updating the documentation and resolving various issues in the CGNS library for this release. 
+ * Thank you, Mickael Philit, for contributing to updating the documentation and resolving various issues 
+   in the CGNS library for this release. 
  * We appreciate all the CGNS users who reported issues and submitted pull requests.
- * A special thanks to Sandia National Laboratories for their support of the work done by The HDF Group for this release.
-
+ * Special thanks to Sandia National Laboratories for supporting the work done by The HDF Group on this release.
