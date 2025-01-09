@@ -233,4 +233,3 @@ Linux 2.6.32-573.18.1.el6.ppc64 | y | n | y | n
  * Thank you, Mickael Philit, for contributing to updating the documentation and resolving various issues 
    in the CGNS library for this release. 
  * We appreciate all the CGNS users who reported issues and submitted pull requests.
- * Special thanks to Sandia National Laboratories for supporting the work done by The HDF Group on this release.
