@@ -9,7 +9,7 @@ on:
     - cron: "16 7 * * 0"
 
 env:
-  hdf5_vers: 1.14.5
+  hdf5_vers: 1_14_5
 
 jobs:
   analyze:
@@ -52,7 +52,7 @@ jobs:
                  
       - name: install HDF5
         run: |
-          git clone https://github.com/HDFGroup/hdf5.git --branch hdf5-${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
+          git clone https://github.com/HDFGroup/hdf5.git --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
           export HOME_DIR=$(echo ~)
           cd hdf5_${{ env.hdf5_vers }}
           ./configure --without-zlib --without-szlib --disable-fortran --disable-hl \
@@ -71,7 +71,11 @@ jobs:
           bash .github/workflows/config-cgns.sh cmake \
               "--enable-parallel --without-fortran --with-hdf5 --enable-cgnstools"
         shell: bash
-        
+
+##################################
+# CONFIGURE CodeQL
+##################################
+      
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
