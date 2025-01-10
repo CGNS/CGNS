@@ -13,7 +13,7 @@ The CFD General Notation System (CGNS) provides a standard for recording and rec
 
 ## Bugs/Feature and issue tracking
 
-https://cgnsorg.atlassian.net
+https://github.com/CGNS/CGNS/issues
 
 ## Installation
 
@@ -86,7 +86,7 @@ freely, subject to the following restrictions:
 
 This license is borrowed from the zlib/libpng License:
 
-    http://www.opensource.org/licenses/zlib-license.php
+    https://opensource.org/license/zlib
 
 and supersedes the GNU Lesser General Public License (LGPL) which
 previously governed the use and distribution of the software.
@@ -94,12 +94,13 @@ previously governed the use and distribution of the software.
 For details on the policy governing the distribution of the CGNS
 standard and software see:
 
-    http://www.grc.nasa.gov/www/cgns/charter/principles.html
+    https://cgns.github.io/governance/committee.html#distribution
 
 ## Development
-CGNS uses the branching/release model as summarized at:
 
-http://nvie.com/posts/a-successful-git-branching-model/
+CGNS employs a gitflow branching model, which is summarized as follows [^1]:
+
+![image](https://github.com/CGNS/cgns.github.io/blob/master/.github/images/git-model.png)
+
+[^1]: http://nvie.com/posts/a-successful-git-branching-model
   
-
-![image](https://github.com/CGNS/cgns.github.io/blob/master/git-model.png)
