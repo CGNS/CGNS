@@ -2,14 +2,14 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "develop", "master" ]
+    branches: [ "develop" ]
   pull_request:
     branches: [ "develop" ]
   schedule:
     - cron: "16 7 * * 0"
 
 env:
-  hdf5_vers: 1_10_8
+  hdf5_vers: 1_14_5
 
 jobs:
   analyze:
@@ -22,8 +22,6 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        language: [ cpp ]
 
     steps:
       - name: Install Dependencies (Linux)
@@ -54,7 +52,7 @@ jobs:
                  
       - name: install HDF5
         run: |
-          git clone https://github.com/HDFGroup/hdf5.git --branch hdf5-${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
+          git clone https://github.com/HDFGroup/hdf5.git --branch hdf5_${{ env.hdf5_vers }} --single-branch hdf5_${{ env.hdf5_vers }}
           export HOME_DIR=$(echo ~)
           cd hdf5_${{ env.hdf5_vers }}
           ./configure --without-zlib --without-szlib --disable-fortran --disable-hl \
@@ -73,12 +71,24 @@ jobs:
           bash .github/workflows/config-cgns.sh cmake \
               "--enable-parallel --without-fortran --with-hdf5 --enable-cgnstools"
         shell: bash
-        
+
+##################################
+# CONFIGURE CodeQL
+##################################
+      
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: ${{ matrix.language }}
-          config-file: ./.github/codeql.yml
+          languages: c-cpp
+          build-mode: manual
+
+          config: |
+             query-filters:
+               - exclude:
+                   id: cpp/toctou-race-condition
+               - exclude:
+                   id: cpp/short-global-name
+
           queries: +security-and-quality
 
       - name: Build
@@ -88,7 +98,38 @@ jobs:
           ctest -C Release
         shell: bash
 
+# NOTE: C/C++ does not support path-based filtering when using the manual build mode.
+# The "paths" and "paths-ignore" configuration properties will have no effect for this
+# language. If desired, you can use the advanced-security/filter-sarif Action to rewrite
+# the SARIF file to exclude alerts from these paths. For more information,
+# see https://github.com/advanced-security/filter-sarif
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:${{ matrix.language }}"
+          category: "/language:c-cpp"
+          output: sarif-results
+          upload: failure-only
+
+      - name: filter-sarif
+        uses: advanced-security/filter-sarif@main
+        with:
+          # filter out all test files
+          # filter out all ptest files
+          patterns: |
+            -**/tests/**
+            -**/ptests/**
+          input: sarif-results/cpp.sarif
+          output: sarif-results/cpp.sarif
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sarif-results/cpp.sarif
+
+      - name: Upload loc as a Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sarif-results
+          path: sarif-results
+          retention-days: 1
