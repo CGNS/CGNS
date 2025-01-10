@@ -17615,7 +17615,7 @@ int cg_array_read_as(int A, CGNS_ENUMT(DataType_t) type, void *Data)
  *
  * \return \ier
  *
- * \details The functions cg_array_general_read allow for type conversion when reading from the file.
+ * \details The function cg_array_general_read allows for type conversion when reading from the file.
  *          When using cg_array_general_read, the lower core elements in the file have index 1 for
  *          defining range_min and range_max; whereas for the array in memory, defined by mem_rank
  *          and mem_dimensions, the lower array elements in memory have index 1 for defining
@@ -17771,7 +17771,7 @@ int cg_array_write(const char * ArrayName, CGNS_ENUMT(DataType_t) DataType,
  * \details The function cg_array_general_write may be used to write from a subset of the array in memory to a
  *          subset of the array in the file. When using the partial write, the new values will overwrite any
  *          existing data from \p range_min to \p range_max. All other values will not be affected.
- *          The functions cg_array_general_write allow for type conversion when reading to the file.
+ *          The function cg_array_general_write allows for type conversion when reading to the file.
  *          When using cg_array_general_write, the lower core elements in the file have index 1 for
  *          defining range_min and range_max; whereas for the array in memory, defined by mem_rank
  *          and mem_dimensions, the lower array elements in memory have index 1 for defining mem_range_min
