@@ -1,15 +1,13 @@
 # CGNS
+
+> The CFD General Notation System (CGNS) provides a standard for recording and recovering computer data associated with the numerical solution of fluid dynamics equations.
+
 [![Actions Status](https://github.com/CGNS/CGNS/workflows/cgns/badge.svg)](https://github.com/CGNS/CGNS/actions)
 [![Build Status: Windows](https://ci.appveyor.com/api/projects/status/jux83kxj0r234oy6?svg=true)](https://ci.appveyor.com/project/brtnfld/cgns)
-
 <a href="https://scan.coverity.com/projects/cgns-cgns">
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/7923/badge.svg"/>
 </a>
-
-## About
-
-The CFD General Notation System (CGNS) provides a standard for recording and recovering computer data associated with the numerical solution of fluid dynamics equations.
 
 ## Bugs/Feature and issue tracking
 
@@ -60,8 +58,6 @@ The CFD General Notation System (CGNS) provides a standard for recording and rec
 2. Typically the standard `./configure`, `make`, `make install` will suffice.  
 3. Sample scripts for building parallel CGNS can be found in `src/SampleScripts`.
 
-## Usage
-
 ## License
 
 The distribution and use of the CGNS software is covered by the
@@ -100,6 +96,7 @@ standard and software see:
 
 ## Development
 
+CGNS exists thanks to the contribution of many people.
 CGNS employs a gitflow branching model, which is summarized as follows [^1]:
 
 ![image](https://github.com/CGNS/cgns.github.io/blob/master/.github/images/git-model.png)
