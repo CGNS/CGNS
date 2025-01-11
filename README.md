@@ -13,7 +13,7 @@ The CFD General Notation System (CGNS) provides a standard for recording and rec
 
 ## Bugs/Feature and issue tracking
 
-https://github.com/CGNS/CGNS/issues
+<https://github.com/CGNS/CGNS/issues>
 
 ## Installation
 
@@ -102,5 +102,5 @@ CGNS employs a gitflow branching model, which is summarized as follows [^1]:
 
 ![image](https://github.com/CGNS/cgns.github.io/blob/master/.github/images/git-model.png)
 
-[^1]: http://nvie.com/posts/a-successful-git-branching-model
+[^1]: <http://nvie.com/posts/a-successful-git-branching-model>
   
