@@ -60,9 +60,11 @@ CGNSDLL void cgi_warning(const char *format, ...) {
 /**
  * \ingroup ErrorHandling
  *
- * \brief If an error occurs during the execution of a CGNS library function,
- * signified by a non-zero value of the error status variable \p ier, an error
- * message may be retrieved using the function cg_get_error().
+ * \brief Get the error message after a function fails
+ *
+ * \details Suppose an error occurs during the execution of a CGNS library function, signified
+ *          by a non-zero value of the error status variable \p ier. In that case, an error
+ *          message may be retrieved using the function cg_get_error().
  *
  * \return The error message
  */
@@ -82,6 +84,10 @@ const char *cg_get_error() {
  *       or warning occurs. The first argument, \p is_error, will be 0 for warning messages,
  *       1 for error messages, and -1 if the program is going to terminate
  *       (i.e., a call to cg_error_exit()). The second argument is the error or warning message.
+ * \note In Fortran, the function defined in cg_configure() is of the form
+ *       \code SUBROUTINE err_func(is_error, errmsg) \endcode, where `INTEGER(C_INT),VALUE :: is_error`
+ *       and `CHARACTER(KIND=C_CHAR,LEN=1),DIMENSION(*) :: errmsg` or
+ *       `CHARACTER(KIND=C_CHAR),POINTER :: errmsg(:)`.
  *
  */
 
@@ -105,6 +111,10 @@ void cg_error_exit() {
  *       or warning occurs. The first argument, \p is_error, will be 0 for warning messages,
  *       1 for error messages, and -1 if the program is going to terminate
  *       (i.e., a call to cg_error_exit()). The second argument is the error or warning message.
+ * \note In Fortran, the function defined in cg_configure() is of the form
+ *       \code SUBROUTINE err_func(is_error, errmsg) \endcode, where `INTEGER(C_INT),VALUE :: is_error`
+ *       and `CHARACTER(KIND=C_CHAR,LEN=1),DIMENSION(*) :: errmsg` or
+ *       `CHARACTER(KIND=C_CHAR),POINTER :: errmsg(:)`.
  *
  */
 

@@ -9,21 +9,27 @@ CONTAINS
 
     IMPLICIT NONE
 
-    INTEGER :: i
     INTEGER(C_INT), VALUE :: error_code
-    CHARACTER(LEN=1), DIMENSION(*) :: error_msg
+    TYPE(C_PTR), VALUE :: error_msg
+
     INTEGER :: eol
     INTEGER :: check
+    INTEGER :: i
+    CHARACTER(KIND=C_CHAR), POINTER :: f_error_msg(:)
+!   ALTERNATIVE
+!   CHARACTER(LEN=1), DIMENSION(*) :: error_msg
+
+    CALL C_F_POINTER(error_msg, f_error_msg, [80])
 
     eol = 0
     DO i = 1, 80 !CGIO_MAX_ERROR_LENGTH
-       IF(error_msg(i)(1:1).EQ.C_NULL_CHAR) EXIT
+       IF(f_error_msg(i)(1:1).EQ.C_NULL_CHAR) EXIT
        eol = eol + 1
     END DO
 
     ! error_msg should be "cgio_open_file:invalid configuration option"
     IF(error_code.NE.1 .OR. eol .NE. 43 .OR. &
-         error_msg(1)(1:1) .NE. "c" .OR. error_msg(4)(1:1) .NE. "o") THEN
+         f_error_msg(1) .NE. "c" .OR. f_error_msg(4) .NE. "o") THEN
        STOP 1
     END IF
 
