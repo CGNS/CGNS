@@ -15,8 +15,11 @@ MODULE testing_functions
   USE cgns
   IMPLICIT NONE
 
+  INTEGER :: piomode = CGP_COLLECTIVE
   LOGICAL :: enable_md = .FALSE.
   LOGICAL :: checkRead = .FALSE.
+  ! Use powers of 2
+  INTEGER(cgsize_t) :: nelem = 65536
 
   !
   ! Contains functions to verify values
@@ -26,6 +29,73 @@ MODULE testing_functions
   END INTERFACE
 
 CONTAINS
+
+  SUBROUTINE read_inputs(comm_rank)
+
+    IMPLICIT NONE
+    INTEGER(C_INT) :: comm_rank
+
+
+    CHARACTER(len=64) :: arg
+    INTEGER :: i, icnt
+    LOGICAL, DIMENSION(1:3) :: buffer
+
+    INTEGER :: err
+    CHARACTER(LEN=5), DIMENSION(0:1), PARAMETER :: state= (/ "FALSE", "TRUE "/)
+
+    IF(comm_rank.EQ.0)THEN
+
+       buffer(1) = .FALSE.
+       buffer(2) = enable_md
+       buffer(3) = checkRead
+
+       icnt = 1
+       DO i = 1, command_argument_count()
+          CALL get_command_argument(icnt, arg)
+
+          SELECT CASE (arg)
+          CASE ('-ind')
+             buffer(1)=.TRUE.;
+          CASE ('-md')
+             buffer(2)=.TRUE.;
+          CASE ('-R')
+             buffer(3)=.TRUE.;
+          CASE ('-nelem')
+             icnt = icnt + 1
+             CALL get_command_argument(icnt, arg)
+             READ(arg,*) nelem
+          END SELECT
+          icnt = icnt + 1
+       END DO
+    ENDIF
+
+    CALL MPI_Bcast(nelem, 1, MPI_INTEGER8, 0, MPI_COMM_WORLD, err)
+    CALL MPI_Bcast(buffer, 3, MPI_LOGICAL, 0, MPI_COMM_WORLD, err)
+
+    IF(buffer(1) .EQV. .FALSE.)THEN
+       piomode = CGP_COLLECTIVE
+    ELSE
+       piomode = CGP_INDEPENDENT
+    ENDIF
+    enable_md = buffer(2)
+    checkRead = buffer(3)
+
+    IF(comm_rank.EQ.0)THEN
+       WRITE(*,'(A)') REPEAT("-",32)
+       WRITE(*,'(A)') "Summary"
+       WRITE(*,'(A)') REPEAT("-",32)
+       IF(piomode.EQ.CGP_COLLECTIVE)THEN
+          WRITE(*,'(A)') "I/O mode: CGP_COLLECTIVE"
+       ELSE
+          WRITE(*,'(A)') "I/O mode: CGP_INDEPENDENT"
+       ENDIF
+       WRITE(*,'(A,L1)') "Enable multidataset APIs: ", enable_md
+       WRITE(*,'(A,L1)') "Check read after read: ", checkRead
+       WRITE(*,'(A,I0)') "Number of elements: ", nelem
+       WRITE(*,'(A)') REPEAT("-",32)
+    ENDIF
+
+  END SUBROUTINE read_inputs
 
   LOGICAL FUNCTION c_float_eq(a,b)
     IMPLICIT NONE
@@ -64,6 +134,7 @@ MODULE command_args
   USE ISO_C_BINDING
   USE CGNS
   USE MPI
+  USE testing_functions
 
   IMPLICIT NONE
 
@@ -115,7 +186,7 @@ CONTAINS
     IF(comm_rank.EQ.0)THEN
 
        ! Defaults
-       options%nelem = 65536_CGSIZE_T
+       options%nelem = nelem
        options%io_mode = CGP_COLLECTIVE
        options%enable_md = .FALSE.
        options%checkRead = .FALSE.
@@ -184,8 +255,6 @@ PROGRAM benchmark_hdf5_f90
 #endif
 
   INTEGER, PARAMETER :: dp = KIND(1.d0)
-  ! Use powers of 2
-  INTEGER(CGSIZE_T) :: Nelem
   INTEGER(CGSIZE_T), PARAMETER :: NodePerElem = 6
 
   INTEGER(CGSIZE_T) :: Nnodes

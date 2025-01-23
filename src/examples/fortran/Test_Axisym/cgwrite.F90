@@ -1,4 +1,4 @@
-	program write_axisym
+        PROGRAM write_axisym
 	USE CGNS
 	implicit none
 
@@ -62,7 +62,7 @@
 	angle = 360
 	dimval(1)=1
 	call cg_array_write_f('AxisymmetryAngle', CGNS_ENUMV(RealSingle), 1, &
-             1_cgsize_t, angle, ier)
+             [1_cgsize_t], [angle], ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
 
 ! * DataArray_t CoordinateNames
@@ -118,5 +118,5 @@
 ! *** close CGNS file
 	call cg_close_f(cg, ier)
 	if (ier .eq. ERROR) call cg_error_exit_f
-	end
+        END PROGRAM write_axisym
 

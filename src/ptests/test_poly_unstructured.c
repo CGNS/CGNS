@@ -173,13 +173,8 @@ int main(int argc, char **argv) {
   offsets_sizes = (long *)malloc(sizeof(long) * comm_size);
   local_size = offsets[cellOnProcEnd - cellOnProcStart];
 
-#if CG_BUILD_64BIT
-  MPI_Allgather(&local_size, 1, MPI_INT64_T, offsets_sizes, 1, MPI_INT64_T,
+  MPI_Allgather(&local_size, 1, MPI_LONG, offsets_sizes, 1, MPI_LONG,
                 comm_parallel);
-#else
-  MPI_Allgather(&local_size, 1, MPI_INT32_T, offsets_sizes, 1, MPI_INT32_T,
-                comm_parallel);
-#endif
 
   for (int iProc = 0; iProc < comm_size; iProc++) {
     if (iProc < comm_rank) {

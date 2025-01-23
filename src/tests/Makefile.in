@@ -19,6 +19,7 @@ CALL = \
 	cgioc$(EXE) \
 	cgioc_hdf$(EXE) \
 	elemtest$(EXE) \
+	open_cgns$(EXE) \
 	ser_benchmark_hdf5$(EXE) \
 	test_core_vfd$(EXE) \
 	test_exts$(EXE) \
@@ -26,6 +27,7 @@ CALL = \
 	test_family_tree$(EXE) \
 	test_multifam$(EXE) \
 	test_partial$(EXE) \
+	test_particle$(EXE) \
 	test_general_reshape$(EXE) \
 	test_general_rind$(EXE) \
 	test_ver31$(EXE) \
@@ -49,6 +51,7 @@ F_TESTS = \
 	test_general_rindf$(EXE)\
 	test_family_treef$(EXE) \
 	test_bboxf$(EXE) \
+	test_particlef$(EXE) \
 	test_complexf$(EXE)
 
 FALL = $(F_TESTS)
@@ -56,7 +59,7 @@ FALL = $(F_TESTS)
 CALL64 = test64c$(EXE)
 FALL64 = test64f$(EXE) test64f_F03$(EXE)
 
-ALL = dbtest$(EXE) open_cgns$(EXE) $(CALL) @FALL@
+ALL = dbtest$(EXE) $(CALL) @FALL@
 ALL64 = $(CALL64) @FALL64@
 
 TESTS = $(CALL) @FALL@
@@ -171,6 +174,12 @@ test_exts$(EXE) : test_exts.c $(CGNSLIB)
 
 test_partial$(EXE) : test_partial.c $(CGNSLIB)
 	$(CC) $(COPTS) $(CEOUT)$@ test_partial.c $(LDLIBS) $(CLIBS)
+	$(STRIP) $@
+
+#----------
+
+test_particle$(EXE) : test_particle.c $(CGNSLIB)
+	$(CC) $(COPTS) $(CEOUT)$@ test_particle.c $(LDLIBS) $(CLIBS)
 	$(STRIP) $@
 
 #----------
@@ -379,6 +388,15 @@ test_complexf$(EXE) : test_complexf.F90 $(CGNSLIB)
 	$(STRIP) $@
 
 #----------
+
+test_particlef$(EXE) : test_particlef.F90 $(CGNSLIB) utilsf.$(O)
+	$(F77) $(FOPTS) $(FEOUT)$@ test_particlef.F90 utilsf.$(O) $(LDLIBS) $(FLIBS)
+	$(STRIP) $@
+
+#----------
+
+utilsf.$(O) : utilsf.F90
+	$(F77) $(FOPTS) -c utilsf.F90
 
 utils.$(O) : utils.c utils.h
 	$(CC) $(COPTS) -c utils.c

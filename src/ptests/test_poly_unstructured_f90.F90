@@ -1,4 +1,4 @@
-/*
+!
 ! @file test_poly_unstructured_f90.F90
 ! @version 0.1
 !
@@ -11,13 +11,16 @@
 ! Launch with:
 !    mpirun -np <#> test_unstructured
 !
-*/
+! where number of ranks should be 2.
+!
+!
 
 PROGRAM test_poly_unstructured_f
 
   USE mpi
   USE ISO_C_BINDING
   USE CGNS
+  USE testing_utils
   IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
@@ -53,16 +56,20 @@ PROGRAM test_poly_unstructured_f
   INTEGER(cgsize_t) :: nbCellWrite
   INTEGER(cgsize_t) :: nbNodeWrite
   INTEGER(cgsize_t) :: start, end
+  INTEGER(C_INT64_T) :: start_l, end_l, nb_read
   INTEGER(cgsize_t) :: iNode, jNode, iCell, jCell, i, j, k
   INTEGER(cgsize_t) :: local_size(1)
   INTEGER(cgsize_t) :: sizes(3)
   INTEGER(cgsize_t), ALLOCATABLE :: offsets_sizes(:)
   INTEGER(cgsize_t), ALLOCATABLE :: cells(:), offsets(:)
+  INTEGER(cgsize_t) :: size_read
+  INTEGER(cgsize_t), ALLOCATABLE, TARGET :: cells_read(:), offsets_read(:)
 
   REAL(dp), ALLOCATABLE :: nodeX(:), nodeY(:), nodeZ(:)
   REAL(dp) :: spacing
 
   CHARACTER(len=10) :: cZone
+  CHARACTER(len=1) :: ichr1
 !
 !---- initialize MPI
   CALL MPI_INIT(mpi_err)
@@ -71,7 +78,7 @@ PROGRAM test_poly_unstructured_f
   CALL MPI_INFO_CREATE(info, mpi_err)
 
   IF (comm_size /= 2 .AND. comm_rank == 0) THEN
-    PRINT*, "WARNING: you are supposed to run this test with two processes\n"
+    PRINT*, "WARNING: test is supposed to be run with two processes"
   END IF
 
   ! default test values
@@ -173,6 +180,8 @@ PROGRAM test_poly_unstructured_f
     offsets(iCell) = offsets(iCell) + startOffset
   END DO
 
+  IF(comm_rank.EQ.0) CALL write_test_header("Testing writing a data node selection")
+
   ! write file
   CALL cgp_mpi_comm_f(MPI_COMM_WORLD, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
@@ -182,6 +191,7 @@ PROGRAM test_poly_unstructured_f
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
 
   DO iZone = 1,nb_zones
+     WRITE(ichr1,'(I1.1)') iZone
 
     ! offset the nodes for each zone
     IF (iZone > 1) THEN
@@ -218,16 +228,236 @@ PROGRAM test_poly_unstructured_f
     start = 1
     end = nbCellTotal
     CALL cgp_poly_section_write_f(F, B, Z, "Elements 3D", CGNS_ENUMV(MIXED), start, end, offsetsTotalSize, 0, S, ierr)
-    IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+    IF(ierr.NE.CG_OK)THEN
+       IF (comm_rank .EQ. 0) CALL write_test_status(failed, "Test cgp_poly_section_write_f, Zone "//ichr1)
+       CALL cgp_error_exit_f()
+    ELSE
+       IF (comm_rank .EQ. 0) CALL write_test_status(passed, "Test cgp_poly_section_write_f, Zone "//ichr1)
+    ENDIF
+
     start = cellOnProcStart + 1
     end = cellOnProcEnd
     CALL cgp_poly_elements_write_data_f(F, B, Z, S, start, end, cells, offsets, ierr)
-    IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+    IF(ierr.NE.CG_OK)THEN
+       WRITE(ichr1,'(I1.1)') iZone
+       IF (comm_rank .EQ. 0) CALL write_test_status(failed, "Test cgp_poly_elements_write_data_f, Zone "//ichr1)
+       CALL cgp_error_exit_f()
+    ELSE
+       IF (comm_rank .EQ. 0) CALL write_test_status(passed, "Test cgp_poly_elements_write_data_f, Zone "//ichr1)
+    ENDIF
 
   END DO
 
   CALL cgp_close_f(F, ierr)
   IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+  CALL MPI_Barrier(MPI_COMM_WORLD, ierr)
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! Read and compare data with expected values
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  IF(comm_rank.EQ.0) CALL write_test_header("Testing reading a data node selection")
+
+  DO iZone = 1, nb_zones
+
+     WRITE(ichr1,'(I1.1)') iZone
+
+     ! Zero out node coordinates
+     nodeX = 0.0_dp
+     nodeY = 0.0_dp
+     nodeZ = 0.0_dp
+
+     ! Open file in parallel
+     CALL cgp_mpi_comm_f(MPI_COMM_WORLD, ierr)
+     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+     CALL cgp_open_f('test_poly_unstructured_f90.cgns', CG_MODE_READ, F, ierr)
+     IF (ierr .NE. CG_OK) CALL cgp_error_exit_f
+
+     ! Read nodes and compare
+     start = nodeOnProcStart + 1
+     end   = nodeOnProcEnd
+  
+     CALL cgp_coord_read_data_f(F, B, iZone, Cx, start, end, nodeX, ierr)
+     IF (ierr /= CG_OK) CALL cgp_error_exit_f
+     CALL cgp_coord_read_data_f(F, B, iZone, Cy, start, end, nodeY, ierr)
+     IF (ierr /= CG_OK) CALL cgp_error_exit_f
+     CALL cgp_coord_read_data_f(F, B, iZone, Cz, start, end, nodeZ, ierr)
+     IF (ierr /= CG_OK) CALL cgp_error_exit_f
+
+     count = 1
+     DO iNode = nodeOnProcStart+1, nodeOnProcEnd
+        jNode = iNode - 1
+        i = FLOOR(jNode / REAL(nbNodeSlice, dp))
+        j = FLOOR((jNode - i * nbNodeSlice) / REAL(nbNodeSide, dp))
+        k = jNode - i * nbNodeSlice - j * nbNodeSide
+
+        ! Compare values
+        IF (.NOT. check_eq(nodeX(count), i * spacing + (iZone-1) * 1.0_dp)) THEN
+           IF (comm_rank .EQ. 0) CALL write_test_status(failed, "Test cgp_coord_read_data_f", "Mismatch in nodeX")
+           CALL cgp_error_exit_f()
+        ENDIF
+        IF (.NOT. check_eq(nodeY(count) , j * spacing)) THEN
+           IF (comm_rank .EQ. 0) CALL write_test_status(failed, "Test cgp_coord_read_data_f", "Mismatch in nodeY")
+           CALL cgp_error_exit_f()
+        ENDIF
+        IF (.NOT. check_eq(nodeZ(count), k * spacing)) THEN
+           IF (comm_rank .EQ. 0) CALL write_test_status(failed, "Test cgp_coord_read_data_f", "Mismatch in nodeZ")
+           CALL cgp_error_exit_f()
+        ENDIF
+        count = count + 1
+     END DO
+
+     CALL cgp_close_f(F, ierr)
+     IF (ierr /= CG_OK) CALL cgp_error_exit_f
+  END DO
+
+  IF (comm_rank .EQ. 0) CALL write_test_status(passed, "Test cgp_coord_read_data_f")
+
+  ! Read elements in serial mode
+
+  IF(comm_rank.EQ.0) CALL write_test_header("Testing reading mixed element data in serial")
+
+  DO iZone = 1, nb_zones
+
+     WRITE(ichr1,'(I1.1)') iZone
+
+     ! Compare on rank 0 only, read for all procs
+     IF (comm_rank == 0) THEN
+        CALL cgp_mpi_comm_f(MPI_COMM_SELF, ierr)
+        IF (ierr /= CG_OK) CALL cgp_error_exit_f
+        CALL cgp_open_f('test_poly_unstructured_f90.cgns', CG_MODE_READ, F, ierr)
+        IF (ierr /= CG_OK) CALL cgp_error_exit_f
+
+        start_l = INT(cellOnProcStart + 1, KIND=C_INT64_T)
+        end_l   = INT(cellOnProcEnd, KIND=C_INT64_T)
+        nb_read = INT(cellOnProcEnd - cellOnProcStart, KIND=C_INT64_T)
+
+        DO iProc = 1, comm_size
+           IF (iProc-1 /= comm_rank) THEN
+              CALL MPI_Recv(nb_read, 1, MPI_INT64_T, iProc-1, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE, mpi_err)
+              CALL MPI_Recv(start_l, 1, MPI_INT64_T, iProc-1, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE, mpi_err)
+              CALL MPI_Recv(end_l  , 1, MPI_INT64_T, iProc-1, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE, mpi_err)
+           END IF
+
+           CALL cg_ElementPartialSize_f(F, B, iZone, S, INT(start_l, cgsize_t), INT(end_l, cgsize_t), size_read, ierr)
+           IF (ierr /= CG_OK) CALL cgp_error_exit_f
+
+           ALLOCATE(cells_read(size_read))
+           ALLOCATE(offsets_read(nb_read + 1))
+
+           CALL cg_poly_elements_partial_read_f(F, B, iZone, S, start_l, end_l, &
+                cells_read, offsets_read, C_NULL_PTR, ierr)
+           IF (ierr /= CG_OK) CALL cgp_error_exit_f
+
+           ! Compare element connectivity
+           count = 1
+           DO iCell = start_l, end_l
+              jCell = iCell - 1
+              i = FLOOR(jCell / REAL(nbCellSlice, dp))
+              j = FLOOR((jCell - i * nbCellSlice) / REAL(nbCellSide, dp))
+              k = jCell - i * nbCellSlice - j * nbCellSide
+
+              IF( .NOT.check_eq(cells_Read(count + 0), INT(CGNS_ENUMV(HEXA_8), CGSIZE_T)) .OR. &
+                  .NOT.check_eq(cells_Read(count + 1), (i + 0) * nbNodeSlice + (j + 0) * nbNodeSide + (k + 0) + 1) .OR. &
+                  .NOT.check_eq(cells_Read(count + 2), (i + 1) * nbNodeSlice + (j + 0) * nbNodeSide + (k + 0) + 1) .OR. &
+                  .NOT.check_eq(cells_Read(count + 3), (i + 1) * nbNodeSlice + (j + 1) * nbNodeSide + (k + 0) + 1) .OR. &
+                  .NOT.check_eq(cells_Read(count + 4), (i + 0) * nbNodeSlice + (j + 1) * nbNodeSide + (k + 0) + 1) .OR. &
+                  .NOT.check_eq(cells_Read(count + 5), (i + 0) * nbNodeSlice + (j + 0) * nbNodeSide + (k + 1) + 1) .OR. &
+                  .NOT.check_eq(cells_Read(count + 6), (i + 1) * nbNodeSlice + (j + 0) * nbNodeSide + (k + 1) + 1) .OR. &
+                  .NOT.check_eq(cells_Read(count + 7), (i + 1) * nbNodeSlice + (j + 1) * nbNodeSide + (k + 1) + 1) .OR. &
+                  .NOT.check_eq(cells_Read(count + 8), (i + 0) * nbNodeSlice + (j + 1) * nbNodeSide + (k + 1) + 1)) THEN
+
+                 IF (comm_rank .EQ. 0) CALL write_test_status(failed, "read cg_poly_elements_partial_read_f values, Zone "//ichr1)
+                 CALL cgp_error_exit_f()
+              ENDIF
+              count = count + 9
+           END DO
+
+           DEALLOCATE(cells_read)
+           DEALLOCATE(offsets_read)
+        END DO
+
+        CALL cgp_close_f(F, ierr)
+        IF (ierr /= CG_OK) CALL cgp_error_exit_f
+
+     ELSE
+        start_l = INT(cellOnProcStart + 1, KIND=C_INT64_T)
+        end_l = INT(cellOnProcEnd, KIND=C_INT64_T)
+        nb_read = INT(cellOnProcEnd - cellOnProcStart, KIND=C_INT64_T)
+    
+        CALL MPI_Send(nb_read, 1, MPI_INT64_T, 0, 1, MPI_COMM_WORLD, ierr)
+        CALL MPI_Send(start_l, 1, MPI_INT64_T, 0, 2, MPI_COMM_WORLD, ierr)
+        CALL MPI_Send(end_l  , 1, MPI_INT64_T, 0, 3, MPI_COMM_WORLD, ierr)
+     END IF
+
+     IF (comm_rank .EQ. 0) CALL write_test_status(passed, "read cg_poly_elements_partial_read_f values, Zone "//ichr1)
+
+  END DO
+
+
+  ! Read elements in parallel mode
+
+  IF(comm_rank.EQ.0) CALL write_test_header("Testing reading mixed element data in parallel")
+
+  DO iZone = 1, nb_zones
+
+     WRITE(ichr1,'(I1.1)') iZone
+
+     ! Open file in parallel
+     CALL cgp_mpi_comm_f(MPI_COMM_WORLD, ierr)
+     IF (ierr /= CG_OK) CALL cgp_error_exit_f
+     CALL cgp_open_f('test_poly_unstructured_f90.cgns', CG_MODE_READ, F, ierr)
+     IF (ierr /= CG_OK) CALL cgp_error_exit_f
+
+     start_l = cellOnProcStart + 1
+     end_l = cellOnProcEnd
+     nb_read = cellOnProcEnd - cellOnProcStart
+
+     ALLOCATE(offsets_read(nb_read + 1))
+  
+     CALL cgp_poly_elements_read_data_offsets_f(F, B, iZone, S, start_l, end_l, offsets_read, ierr)
+     IF (ierr /= CG_OK) CALL cgp_error_exit_f
+
+     size_read = offsets_read(nb_read + 1)
+     ALLOCATE(cells_read(size_read))
+
+     CALL cgp_poly_elements_read_data_elements_f(F, B, iZone, S, start_l, end_l, offsets_read, cells_read, ierr)
+     IF (ierr /= CG_OK) CALL cgp_error_exit_f
+
+     count = 1
+     DO iCell = start_l, end_l
+        jCell = iCell - 1
+        i = FLOOR(jCell / REAL(nbCellSlice, dp))
+        j = FLOOR((jCell - i * nbCellSlice) / REAL(nbCellSide, dp))
+        k = jCell - i * nbCellSlice - j * nbCellSide
+
+        IF( .NOT.check_eq(cells_Read(count + 0), INT(CGNS_ENUMV(HEXA_8), CGSIZE_T)) .OR. &
+             .NOT.check_eq(cells_Read(count + 1), (i + 0) * nbNodeSlice + (j + 0) * nbNodeSide + (k + 0) + 1) .OR. &
+             .NOT.check_eq(cells_Read(count + 2), (i + 1) * nbNodeSlice + (j + 0) * nbNodeSide + (k + 0) + 1) .OR. &
+             .NOT.check_eq(cells_Read(count + 3), (i + 1) * nbNodeSlice + (j + 1) * nbNodeSide + (k + 0) + 1) .OR. &
+             .NOT.check_eq(cells_Read(count + 4), (i + 0) * nbNodeSlice + (j + 1) * nbNodeSide + (k + 0) + 1) .OR. &
+             .NOT.check_eq(cells_Read(count + 5), (i + 0) * nbNodeSlice + (j + 0) * nbNodeSide + (k + 1) + 1) .OR. &
+             .NOT.check_eq(cells_Read(count + 6), (i + 1) * nbNodeSlice + (j + 0) * nbNodeSide + (k + 1) + 1) .OR. &
+             .NOT.check_eq(cells_Read(count + 7), (i + 1) * nbNodeSlice + (j + 1) * nbNodeSide + (k + 1) + 1) .OR. &
+             .NOT.check_eq(cells_Read(count + 8), (i + 0) * nbNodeSlice + (j + 1) * nbNodeSide + (k + 1) + 1)) THEN
+
+           CALL write_test_status(failed, "read cg_poly_elements_partial_read_f values, Zone "//ichr1)
+           CALL cgp_error_exit_f()
+
+        ENDIF
+        count = count + 9
+     END DO
+
+     IF(comm_rank.EQ.0) CALL write_test_status(passed, "read cg_poly_elements_partial_read_f values, Zone "//ichr1)
+
+     DEALLOCATE(cells_read)
+     DEALLOCATE(offsets_read)
+  
+     CALL cgp_close_f(F, ierr)
+     IF (ierr /= CG_OK) CALL cgp_error_exit_f
+  END DO
 
   ! free memory
   DEALLOCATE(nodeX)
@@ -237,5 +467,8 @@ PROGRAM test_poly_unstructured_f
   DEALLOCATE(offsets)
   DEALLOCATE(offsets_sizes)
 
+  IF(comm_rank.EQ.0) CALL write_test_footer()
+
+  CALL MPI_BARRIER(MPI_COMM_WORLD, mpi_err)
   CALL MPI_FINALIZE(mpi_err)
 END PROGRAM test_poly_unstructured_f

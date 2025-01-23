@@ -184,8 +184,7 @@
       PRINT *,' ADF_FILE_TWO.ADF ORIGINAL ROOT ID = ',RIDF2
       PRINT *,' ADF_FILE_TWO.ADF NEW ROOT ID      = ',RID
 !
-      STOP
-      END
+      END PROGRAM TEST
 !
 ! ************* SUBROUTINES ****************
 !
@@ -217,6 +216,6 @@
          ISTART = ISTART + MAXCLD
       IF (NLEFT .GT. 0) GO TO 130
       RETURN
-      END
+      END SUBROUTINE PRTCLD
 
 

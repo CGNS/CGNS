@@ -88,7 +88,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_array_write_f('HeatOfFormationCO', CGNS_ENUMV(RealSingle),1, &
-          1_cgsize_t,hofCO,ier)
+          [1_cgsize_t],[hofCO],ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier, &
@@ -113,7 +113,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_array_write_f('HeatOfFormationO2',CGNS_ENUMV(RealSingle),1, &
-          1_cgsize_t,hofO2,ier)
+          [1_cgsize_t],[hofO2],ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier, &
@@ -138,7 +138,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_array_write_f('HeatOfFormationCO2',CGNS_ENUMV(RealSingle),1, &
-          1_cgsize_t,hofCO2,ier)
+          [1_cgsize_t],[hofCO2],ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier, &
@@ -163,7 +163,7 @@
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_array_write_f('ReferenceTemperatureHOF',CGNS_ENUMV(RealSingle),1, &
-          1_cgsize_t,RThof,ier)
+          [1_cgsize_t],[RThof],ier)
         if (ier .eq. ERROR) call cg_error_exit_f
 
         call cg_goto_f(cg, base_no, ier, &
@@ -390,7 +390,7 @@
 		data(i) = i
 	    enddo
 	    call cg_array_write_f('dataset_arrayname', CGNS_ENUMV(RealSingle), &
-                 1, npnts, data, ier)
+                 1, [npnts], data, ier)
 	    if (ier .eq. ERROR) call cg_error_exit_f
 
  	enddo					! zone loop

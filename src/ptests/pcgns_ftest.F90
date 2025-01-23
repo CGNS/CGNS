@@ -1,171 +1,9 @@
-MODULE testing_functions
-
-  ! *********************************
-  ! Useful testing helper functions
-  ! *********************************
-
-  USE ISO_C_BINDING
-  IMPLICIT NONE
-
-  INTEGER, PARAMETER :: TAB_SPACE = 90 ! Tab spacing for printing results
-
-  INTEGER, PARAMETER :: skip   = -1
-  INTEGER, PARAMETER :: passed =  0
-  INTEGER, PARAMETER :: failed =  1
-
-  !
-  ! Contains functions to verify values
-  !
-  INTERFACE check_eq
-     MODULE PROCEDURE c_float_eq, c_double_eq, c_long_eq, c_long_long_eq
-  END INTERFACE
-
-CONTAINS
-
-  LOGICAL FUNCTION c_float_eq(a,b)
-    IMPLICIT NONE
-    ! Check if two C_FLOAT reals are equivalent
-    REAL*4, INTENT(IN):: a,b
-    REAL*4, PARAMETER :: eps = 1.e-8
-    c_float_eq = ABS(a-b) .LT. eps
-  END FUNCTION c_float_eq
-
-  LOGICAL FUNCTION c_double_eq(a,b)
-    IMPLICIT NONE
-    ! Check if two C_DOUBLE reals are equivalent
-    REAL*8, INTENT(IN):: a,b
-    REAL*8, PARAMETER :: eps = 1.e-8
-    c_double_eq = ABS(a-b) .LT. eps
-  END FUNCTION c_double_eq
-
-  LOGICAL FUNCTION c_long_eq(a,b)
-    IMPLICIT NONE
-    ! Check if two C_LONG integers are equivalent
-    INTEGER*4, INTENT(IN):: a,b
-    c_long_eq = a-b .EQ. 0
-  END FUNCTION c_long_eq
-
-  LOGICAL FUNCTION c_long_long_eq(a,b)
-    IMPLICIT NONE
-    ! Check if two C_LONG_LONG integers are equivalent
-    INTEGER*8, INTENT(IN):: a,b
-    c_long_long_eq = a-b .EQ. 0
-  END FUNCTION c_long_long_eq
-
-  SUBROUTINE write_test_header(title_header)
-
-    ! Writes the test header
-
-    IMPLICIT NONE
-
-    CHARACTER(LEN=*), INTENT(IN) :: title_header ! test name
-    INTEGER, PARAMETER :: width = TAB_SPACE+10
-    CHARACTER(LEN=2*width) :: title_centered
-    INTEGER :: len, i
-
-    title_centered(:) = " "
-
-    len=LEN_TRIM(title_header)
-    title_centered(1:3) ="| |"
-    title_centered((width-len)/2:(width-len)/2+len) = TRIM(title_header)
-    title_centered(width-1:width+2) ="| |"
-
-    WRITE(*,'(1X)', ADVANCE="NO")
-    DO i = 1, width-1
-       WRITE(*,'("_")', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'()')
-    WRITE(*,'("|  ")', ADVANCE="NO")
-    DO i = 1, width-5
-       WRITE(*,'("_")', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'("  |")')
-
-    WRITE(*,'("| |")', ADVANCE="NO")
-    DO i = 1, width-5
-       WRITE(*,'(1X)', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'("| |")')
-
-    WRITE(*,'(A)') TRIM(title_centered)
-
-    WRITE(*,'("| |")', ADVANCE="NO")
-    DO i = 1, width-5
-       WRITE(*,'(1X)', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'("| |")')
-
-    WRITE(*,'("| |")', ADVANCE="NO")
-    DO i = 1, width-5
-       WRITE(*,'("_")', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'("| |")')
-
-    WRITE(*,'("|")', ADVANCE="NO")
-    DO i = 1, width-1
-       WRITE(*,'("_")', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'("|",/)')
-
-  END SUBROUTINE write_test_header
-
-  SUBROUTINE write_test_status( test_result, test_title, cause)
-
-    ! Writes the results of the tests
-
-    IMPLICIT NONE
-
-    INTEGER, INTENT(IN) :: test_result  ! negative,  --skip --
-                                        ! 0       ,   passed
-                                        ! positive,   failed
-
-    CHARACTER(LEN=*), INTENT(IN) :: test_title ! Short description of test
-    CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: cause ! Print error cause
-
-    ! Controls the output style for reporting test results
-
-    CHARACTER(LEN=8) :: error_string
-    CHARACTER(LEN=8), PARAMETER :: passed = ' PASSED '
-    CHARACTER(LEN=8), PARAMETER :: failed = '*FAILED*'
-    CHARACTER(LEN=8), PARAMETER :: skip    = '--SKIP--'
-    CHARACTER(LEN=10) :: FMT
-
-    error_string = failed
-    IF (test_result ==  0) THEN
-       error_string = passed
-    ELSE IF (test_result == -1) THEN
-       error_string = skip
-    ENDIF
-    WRITE(FMT,'("(A,T",I0,",A)")') TAB_SPACE
-    WRITE(*, fmt = FMT) test_title, error_string
-
-    IF(PRESENT(cause)) WRITE(*,'(3X,"FAILURE REPORTED --", A)') cause
-
-  END SUBROUTINE write_test_status
-
-  SUBROUTINE write_test_footer()
-
-    ! Writes the test footer
-
-    IMPLICIT NONE
-    INTEGER, PARAMETER :: width = TAB_SPACE+10
-    INTEGER :: i
-
-    DO i = 1, width
-       WRITE(*,'("_")', ADVANCE="NO")
-    ENDDO
-    WRITE(*,'(/)')
-
-  END SUBROUTINE write_test_footer
-
-END MODULE testing_functions
-
 MODULE ftests
 
   USE mpi
   USE ISO_C_BINDING
   USE CGNS
-  USE testing_functions
+  USE testing_utils
   IMPLICIT NONE
 
 #include "cgnstypes_f03.h"
@@ -855,9 +693,9 @@ SUBROUTINE multisets()
 
   ! Check if read the data back correctly
   DO k = 1, count
-     IF(.NOT.check_eq(Coor_x(k), REAL(commrank*count + k, KIND=DP) + 0.1_DP).OR. &
-          .NOT.check_eq(Coor_y(k), REAL(commrank*count + k, KIND=DP) + 0.2_DP).OR. &
-          .NOT.check_eq(Coor_z(k), REAL(commrank*count + k, KIND=DP) + 0.3_DP)) THEN
+     IF(.NOT.check_eq(Coor_x(k), REAL(commrank*count + k, KIND=DP) + 0.1_DP, 2).OR. &
+          .NOT.check_eq(Coor_y(k), REAL(commrank*count + k, KIND=DP) + 0.2_DP, 2).OR. &
+          .NOT.check_eq(Coor_z(k), REAL(commrank*count + k, KIND=DP) + 0.3_DP, 2)) THEN
         IF (commrank .EQ. 0) CALL write_test_status(failed, "Check cgp_coord_multi_read_data_f values", &
              "ERR: values are incorrect")
         CALL cgp_error_exit_f()
@@ -1007,6 +845,761 @@ SUBROUTINE multisets()
 
 END SUBROUTINE multisets
 
+
+SUBROUTINE particle()
+
+  IMPLICIT NONE
+
+  CHARACTER(LEN=32) :: fname
+  INTEGER :: fn, B, P, S
+  INTEGER :: Cx, Cy, Cz, Fx, Fy, Fz
+  INTEGER :: cell_dim = 3, phys_dim = 3
+  INTEGER :: r_cell_dim = 0, r_phys_dim = 0
+  INTEGER(cgsize_t) :: num_particles = 1024, size
+  INTEGER(cgsize_t), DIMENSION(1) :: min_v, max_v
+  INTEGER(cgsize_t) :: min_s, max_s
+  INTEGER(cgsize_t) :: count, k
+  REAL(KIND=8), DIMENSION(:), ALLOCATABLE, TARGET :: Coor_x, Coor_y, Coor_z
+  REAL(KIND=8), DIMENSION(:), ALLOCATABLE, TARGET :: Data_Fx, Data_Fy, Data_Fz
+  CHARACTER(LEN=32) :: name
+  INTEGER :: piomode = CGP_COLLECTIVE
+  INTEGER :: ier
+  INTEGER(cgsize_t) :: m_numdim = 1
+  INTEGER(cgsize_t), DIMENSION(1) :: s_rmin, s_rmax, m_rmin, m_rmax
+  INTEGER(cgsize_t) :: s_rmin_s, s_rmax_s, m_rmin_s, m_rmax_s
+  INTEGER(cgsize_t), DIMENSION(1) :: m_arg_dimvals
+  REAL, DIMENSION(:), ALLOCATABLE, TARGET :: Coor_z_float, Data_Fz_float
+
+  TYPE(C_PTR) :: f_ptr
+
+  ! Set PIO mode
+  call cgp_pio_mode_f(piomode, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_pio_mode"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ! ======================================
+  ! ==    **WRITE THE CGNS FILE **      ==
+  ! ======================================
+
+  ! Create filename
+  WRITE(fname,'(A,I6.6,A)') "particle_test_", commsize, ".cgns"
+
+  ! Open file and write base
+  CALL cgp_open_f(fname, CG_MODE_WRITE, fn, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_open_f"
+     CALL cgp_error_exit_f()
+  END IF
+  CALL cg_base_write_f(fn, "Base 1", cell_dim, phys_dim, B, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cg_base_write"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cg_particle_write_f(fn, B, "Particle 1", num_particles, P, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cg_particle_write"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ! ========================================
+  ! == (A) WRITE THE PARTICLE COORDINATES ==
+  ! ========================================
+
+  count = num_particles/commsize
+  ALLOCATE(Coor_x(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of particle Coor_x"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Coor_y(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of particle Coor_y"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Coor_z(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of particle Coor_z"
+     CALL cgp_error_exit_f()
+  END IF
+
+  min_v(1) = count*commrank + 1
+  max_v(1) = count*(commrank + 1)
+
+  min_s = min_v(1)
+  max_s = max_v(1)
+
+  DO k = 1, count
+     Coor_x(k) = commrank*count + k + 1.1d0
+     Coor_y(k) = Coor_x(k) + 0.1d0
+     Coor_z(k) = Coor_y(k) + 0.1d0
+  END DO
+
+  ! Write coordinate data
+
+
+  CALL cgp_particle_coord_write_f(fn, B, P, CGNS_ENUMV(RealDouble), "CoordinateX", Cx, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_coord_write (Coor_x)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_coord_write_f(fn, B, P, CGNS_ENUMV(RealDouble), "CoordinateY", Cy, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_coord_write (Coor_y)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_coord_write_f(fn, B, P, CGNS_ENUMV(RealDouble), "CoordinateZ", Cz, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_coord_write (Coor_z)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  f_ptr = C_LOC(Coor_x(1))
+  CALL cgp_particle_coord_write_data_f(fn, B, P, Cx, min_v, max_v, f_ptr, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_coord_write_data (Coor_x)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  f_ptr = C_LOC(Coor_y)
+  CALL cgp_particle_coord_write_data_f(fn, B, P, Cy, min_s, max_s, f_ptr, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_coord_write_data (Coor_y)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ! Set up general write parameters
+  s_rmin(1) = min_s
+  s_rmax(1) = max_s
+  m_rmin(1) = 1
+  m_rmax(1) = count
+  m_arg_dimvals(1) = count
+
+  f_ptr = C_LOC(Coor_z(1))
+  CALL cgp_particle_coord_general_write_data_f(fn, B, P, Cz, s_rmin, s_rmax, &
+       CGNS_ENUMV(RealDouble), m_numdim, m_arg_dimvals, m_rmin, m_rmax, f_ptr, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_coord_general_write_data (Coor_z)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  DEALLOCATE(Coor_x, Coor_y, Coor_z)
+
+  ! Write particle field data
+  count = num_particles/commsize
+
+  ALLOCATE(Data_Fx(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of Data_Fx"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Data_Fy(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of Data_Fy"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Data_Fz(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of Data_Fz"
+     CALL cgp_error_exit_f()
+  END IF
+
+  DO k = 1, count
+     Data_Fx(k) = commrank*count + k + 1.01d0
+     Data_Fy(k) = commrank*count + k + 1.02d0
+     Data_Fz(k) = commrank*count + k + 1.03d0
+  END DO
+
+  CALL cg_particle_sol_write_f(fn, B, P, "Solution", S, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cg_particle_sol_write"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_field_write_f(fn, B, P, S, CGNS_ENUMV(RealDouble), "VelocityX", Fx, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_field_write (VelocityX)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_field_write_f(fn, B, P, S, CGNS_ENUMV(RealDouble), "VelocityY", Fy, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_field_write (VelocityY)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_field_write_f(fn, B, P, S, CGNS_ENUMV(RealDouble), "VelocityZ", Fz, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_field_write (VelocityZ)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_field_write_data_f(fn, B, P, S, Fx, min_v, max_v, C_LOC(Data_Fx), ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_field_write_data (VelocityX)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  min_s = min_v(1)
+  max_s = max_v(1)
+
+  CALL cgp_particle_field_write_data_f(fn, B, P, S, Fy, min_s, max_s, C_LOC(Data_Fy), ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_field_write_data (VelocityY)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_field_general_write_data_f(fn, B, P, S, Fz, s_rmin, s_rmax, &
+       CGNS_ENUMV(RealDouble), m_numdim, m_arg_dimvals, m_rmin, m_rmax,  C_LOC(Data_Fz), ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_field_general_write_data (VelocityZ)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  DEALLOCATE(Data_Fx, Data_Fy, Data_Fz)
+
+  CALL cgp_close_f(fn, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_close"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ! Read verification section
+  CALL MPI_Barrier(MPI_COMM_WORLD, ier)
+
+  ! Open file for reading
+  CALL cgp_open_f(fname, CG_MODE_MODIFY, fn, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_open"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ! Read base information
+  CALL cg_base_read_f(fn, B, name, r_cell_dim, r_phys_dim, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cg_base_read"
+     CALL cgp_error_exit_f()
+  END IF
+
+  IF(r_cell_dim .NE. cell_dim .OR. r_phys_dim .NE. phys_dim) THEN
+     WRITE(*,*) "*FAILED* bad cell dim=", r_cell_dim, " or phy dim=", r_phys_dim
+     CALL cgp_error_exit_f()
+  END IF
+
+  IF(name .NE. "Base 1") THEN
+     WRITE(*,*) "*FAILED* bad base name=", TRIM(name)
+     CALL cgp_error_exit_f()
+  END IF
+
+  ! Read particle zone information
+  CALL cg_particle_read_f(fn, B, P, name, size, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cg_particle_read"
+     CALL cgp_error_exit_f()
+  END IF
+
+  IF(size .NE. num_particles) THEN
+     WRITE(*,*) "bad num points=", size
+     CALL cgp_error_exit_f()
+  END IF
+
+  IF(name .NE. "Particle 1") THEN
+     WRITE(*,*) "bad zone name=", TRIM(name)
+     CALL cgp_error_exit_f()
+  END IF
+
+  ! Read particle coordinates
+  count = num_particles/commsize
+
+  ALLOCATE(Coor_x(count), Coor_y(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of particle coordinates"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Coor_z_float(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of particle Coor_z_float"
+     CALL cgp_error_exit_f()
+  END IF
+
+  min_v(1) = count*commrank + 1
+  max_v(1) = count*(commrank + 1)
+
+  ! Read and verify coordinates
+  CALL cgp_particle_coord_read_data_f(fn, B, P, Cx, min_v, max_v, C_LOC(Coor_x), ier)
+  IF(ier .NE. CG_OK) THEN
+     IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_coord_read_data (Coor_x)")
+     CALL cgp_error_exit_f()
+  ELSE
+     IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_coord_read_data (Coor_x)")
+  END IF
+
+  min_s = min_v(1)
+  max_s = max_v(1)
+
+  CALL cgp_particle_coord_read_data_f(fn, B, P, Cy, min_s, max_s, C_LOC(Coor_y), ier)
+  IF(ier .NE. CG_OK) THEN
+     IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_coord_read_data (Coor_y)")
+     CALL cgp_error_exit_f()
+  ELSE
+     IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_coord_read_data (Coor_y)")
+  END IF
+
+  s_rmin_s = s_rmin(1)
+  s_rmax_s = s_rmax(1)
+  m_rmin_s = m_rmin(1)
+  m_rmax_s = m_rmax(1)
+
+  CALL cgp_particle_coord_general_read_data_f(fn, B, P, Cz, s_rmin_s, s_rmax_s, &
+       CGNS_ENUMV(RealSingle), m_numdim, m_arg_dimvals(1), m_rmin_s, m_rmax_s, C_LOC(Coor_z_float), ier)
+  IF(ier .NE. CG_OK) THEN
+     IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_coord_general_read_data (Coor_z_float)")
+     CALL cgp_error_exit_f()
+  ELSE
+     IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_coord_general_read_data (Coor_z_float)")
+  END IF
+
+  ! Verify coordinate values
+  DO k = 1, count
+     IF(.NOT. check_eq(Coor_x(k), commrank*count + k + 1.1d0) .OR. &
+          .NOT. check_eq(Coor_y(k), Coor_x(k) + 0.1d0) .OR. &
+          .NOT. check_eq(Coor_z_float(k), REAL(Coor_y(k) + 0.1))) THEN
+        IF(commrank == 0) CALL write_test_status(FAILED, "Check cgp_particle_coord_read_data values")
+        CALL cgp_error_exit_f()
+     END IF
+  END DO
+  IF(commrank == 0) CALL write_test_status(PASSED, "Check cgp_particle_coord_read_data values")
+
+  DEALLOCATE(Coor_x, Coor_y, Coor_z_float)
+
+  ! Read particle field data
+  count = num_particles/commsize
+
+  ALLOCATE(Data_Fx(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of Reading Data_Fx"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Data_Fy(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of Reading Data_Fy"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Data_Fz_float(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of Reading Data_Fz_float"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_field_read_data_f(fn, B, P, S, Fx, min_v, max_v, C_LOC(Data_Fx), ier)
+  IF(ier .NE. CG_OK) THEN
+     IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_field_read_data (Data_Fx)")
+     CALL cgp_error_exit_f()
+  ELSE
+     IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_field_read_data (Data_Fx)")
+  END IF
+
+  min_s = min_v(1)
+  max_s = max_v(1)
+
+  CALL cgp_particle_field_read_data_f(fn, B, P, S, Fy, min_s, max_s, C_LOC(Data_Fy), ier)
+  IF(ier .NE. CG_OK) THEN
+     IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_field_read_data (Data_Fy)")
+     CALL cgp_error_exit_f()
+  ELSE
+     IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_field_read_data (Data_Fy)")
+  END IF
+
+  CALL cgp_particle_field_general_read_data_f(fn, B, P, S, Fz, s_rmin, s_rmax, &
+       CGNS_ENUMV(RealSingle), m_numdim, m_arg_dimvals, m_rmin, m_rmax, C_LOC(Data_Fz_float), ier)
+  IF(ier .NE. CG_OK) THEN
+     IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_field_general_read_data (Data_Fz_float)")
+     CALL cgp_error_exit_f()
+  ELSE
+     IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_field_general_read_data (Data_Fz_float)")
+  END IF
+
+  ! Verify field values
+  DO k = 1, count
+     IF(.NOT. check_eq(Data_Fx(k), commrank*count + k + 1.01d0) .OR. &
+          .NOT. check_eq(Data_Fy(k), commrank*count + k + 1.02d0) .OR. &
+          .NOT. check_eq(Data_Fz_float(k), REAL(commrank*count + k + 1.03), 2) ) THEN
+        IF(commrank == 0) CALL write_test_status(FAILED, "Check cgp_particle_field_read_data values")
+        CALL cgp_error_exit_f()
+     END IF
+  END DO
+
+  IF(commrank == 0) CALL write_test_status(PASSED, "Check cgp_particle_field_read_data values")
+
+  DEALLOCATE(Data_Fx, Data_Fy, Data_Fz_float)
+
+  CALL cgp_close_f(fn, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_close"
+     CALL cgp_error_exit_f()
+  END IF
+
+END SUBROUTINE particle
+
+SUBROUTINE particle_multisets()
+
+  CHARACTER(LEN=32) :: fname
+  INTEGER :: fn, B, P, S
+  INTEGER :: Cvec(3), Fvec(3)
+  INTEGER :: Cx, Cy, Cz, Fx, Fy, Fz
+  INTEGER :: cell_dim = 3, phys_dim = 3
+  INTEGER :: r_cell_dim = 0, r_phys_dim = 0
+  INTEGER(cgsize_t) :: num_particles = 1024, size
+  INTEGER(cgsize_t), DIMENSION(1) :: min_v, max_v
+  INTEGER(cgsize_t) :: min_s, max_s
+  INTEGER(cgsize_t) :: count, k
+  REAL(KIND=8), DIMENSION(:), ALLOCATABLE, TARGET :: Coor_x, Coor_y, Coor_z
+  REAL(KIND=8), DIMENSION(:), ALLOCATABLE, TARGET :: Data_Fx, Data_Fy, Data_Fz
+  CHARACTER(LEN=32) :: name
+  INTEGER :: piomode = CGP_COLLECTIVE
+  INTEGER :: ier
+  INTEGER :: m_numdim = 1
+  INTEGER(cgsize_t), DIMENSION(1) :: s_rmin, s_rmax, m_rmin, m_rmax
+  INTEGER(cgsize_t) :: m_arg_dimvals
+  TYPE(C_PTR), DIMENSION(:), ALLOCATABLE :: buf
+
+  ! Set PIO mode
+  CALL cgp_pio_mode_f(piomode, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_pio_mode"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ! Create filename
+  WRITE(fname,'(A,I6.6,A)') "particle_multiset_", commsize, ".cgns"
+  ! Open file and write base
+  CALL cgp_open_f(fname, CG_MODE_WRITE, fn, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_open"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cg_base_write_f(fn, "Base 1", cell_dim, phys_dim, B, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cg_base_write"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cg_particle_write_f(fn, B, "Particle 1", num_particles, P, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cg_particle_write"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ! Write particle coordinates
+  count = num_particles/commsize
+
+  ALLOCATE(Coor_x(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of particle Coor_x"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Coor_y(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of particle Coor_y"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Coor_z(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of particle Coor_z"
+     CALL cgp_error_exit_f()
+  END IF
+
+  min_v(1) = count*commrank + 1
+  max_v(1) = count*(commrank + 1)
+
+  DO k = 1, count
+     Coor_x(k) = commrank*count + k + 1.1d0
+     Coor_y(k) = Coor_x(k) + 0.1d0
+     Coor_z(k) = Coor_y(k) + 0.1d0
+  END DO
+
+  CALL cgp_particle_coord_write_f(fn, B, P, CGNS_ENUMV(RealDouble), "CoordinateX", Cx, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_coord_write (Coor_x)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_coord_write_f(fn, B, P, CGNS_ENUMV(RealDouble), "CoordinateY", Cy, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_coord_write (Coor_y)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_coord_write_f(fn, B, P, CGNS_ENUMV(RealDouble), "CoordinateZ", Cz, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_coord_write (Coor_z)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  Cvec(1) = Cx
+  Cvec(2) = Cy
+  Cvec(3) = Cz
+
+  ALLOCATE(buf(3))
+  buf(1) = C_LOC(Coor_x)
+  buf(2) = C_LOC(Coor_y)
+  buf(3) = C_LOC(Coor_z)
+
+  CALL cgp_particle_coord_multi_write_data_f(fn, B, P, Cvec, min_v, max_v, 3, buf, ier)
+
+  IF(ier .NE. CG_OK) THEN
+     IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_coord_multi_write_data")
+     CALL cgp_error_exit_f()
+  ELSE
+     IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_coord_multi_write_data")
+  END IF
+
+  DEALLOCATE(buf)
+  DEALLOCATE(Coor_x, Coor_y, Coor_z)
+
+  ! Write particle field data
+  count = num_particles/commsize
+
+  ALLOCATE(Data_Fx(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of Data_Fx"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Data_Fy(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of Data_Fy"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Data_Fz(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of Data_Fz"
+     CALL cgp_error_exit_f()
+  END IF
+
+  DO k = 1, count
+     Data_Fx(k) = commrank*count + k + 1.01d0
+     Data_Fy(k) = commrank*count + k + 1.02d0
+     Data_Fz(k) = commrank*count + k + 1.03d0
+  END DO
+
+  CALL cg_particle_sol_write_f(fn, B, P, "Solution", S, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cg_particle_sol_write"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_field_write_f(fn, B, P, S, CGNS_ENUMV(RealDouble), "VelocityX", Fx, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_field_write (VelocityX)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_field_write_f(fn, B, P, S, CGNS_ENUMV(RealDouble), "VelocityY", Fy, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_field_write (VelocityY)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cgp_particle_field_write_f(fn, B, P, S, CGNS_ENUMV(RealDouble), "VelocityZ", Fz, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_particle_field_write (VelocityZ)"
+     CALL cgp_error_exit_f()
+  END IF
+
+  Fvec(1) = Fx
+  Fvec(2) = Fy
+  Fvec(3) = Fz
+
+  ALLOCATE(buf(3))
+  buf(1) = C_LOC(Data_Fx)
+  buf(2) = C_LOC(Data_Fy)
+  buf(3) = C_LOC(Data_Fz)
+
+  min_s = min_v(1)
+  max_s = max_v(1)
+
+  CALL cgp_particle_field_multi_write_data_f(fn, B, P, S, Fvec, min_s, max_s, 3, buf, ier)
+  IF(ier .NE. CG_OK) THEN
+     IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_field_multi_write_data")
+     CALL cgp_error_exit_f()
+  ELSE
+     IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_field_multi_write_data")
+  END IF
+
+  DEALLOCATE(buf)
+  DEALLOCATE(Data_Fx, Data_Fy, Data_Fz)
+
+  CALL cgp_close_f(fn, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_close"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ! Read verification section
+  CALL MPI_Barrier(MPI_COMM_WORLD, ier)
+
+  CALL cgp_open_f(fname, CG_MODE_MODIFY, fn, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_open"
+     CALL cgp_error_exit_f()
+  END IF
+  ! Read base information
+  CALL cg_base_read_f(fn, B, name, r_cell_dim, r_phys_dim, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cg_base_read"
+     CALL cgp_error_exit_f()
+  END IF
+
+  IF(r_cell_dim .NE. cell_dim .OR. r_phys_dim .NE. phys_dim) THEN
+     WRITE(*,*) "*FAILED* bad cell dim=", r_cell_dim, " or phy dim=", r_phys_dim
+     CALL cgp_error_exit_f()
+  END IF
+
+  IF(name .NE. "Base 1") THEN
+     WRITE(*,*) "*FAILED* bad base name=", TRIM(name)
+     CALL cgp_error_exit_f()
+  END IF
+
+  CALL cg_particle_read_f(fn, B, P, name, size, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cg_particle_read"
+     CALL cgp_error_exit_f()
+  END IF
+
+  IF(size .NE. num_particles) THEN
+     WRITE(*,*) "bad num points=", size
+     CALL cgp_error_exit_f()
+  END IF
+
+  IF(name .NE. "Particle 1") THEN
+     WRITE(*,*) "bad zone name=", TRIM(name)
+     CALL cgp_error_exit_f()
+  END IF
+
+  ! Read particle coordinates
+  count = num_particles/commsize
+
+  ALLOCATE(Coor_x(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of particle Coor_x"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Coor_y(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of particle Coor_y"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Coor_z(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of particle Coor_z"
+     CALL cgp_error_exit_f()
+  END IF
+
+  min_v(1) = count*commrank + 1
+  max_v(1) = count*(commrank + 1)
+
+  ALLOCATE(buf(3))
+  buf(1) = C_LOC(Coor_x)
+  buf(2) = C_LOC(Coor_y)
+  buf(3) = C_LOC(Coor_z)
+
+  min_s = min_v(1)
+  max_s = max_v(1)
+
+  CALL cgp_particle_coord_multi_read_data_f(fn, B, P, Cvec, min_s, max_s, 3, buf, ier)
+  IF(ier .NE. CG_OK) THEN
+     IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_coord_multi_read_data")
+     CALL cgp_error_exit_f()
+  ELSE
+     IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_coord_multi_read_data")
+  END IF
+
+  DO k = 1, count
+     IF(.NOT. check_eq(Coor_x(k), commrank*count + k + 1.1d0) .OR. &
+          .NOT. check_eq(Coor_y(k), Coor_x(k) + 0.1d0) .OR. &
+          .NOT. check_eq(Coor_z(k), Coor_y(k) + 0.1d0)) THEN
+        IF(commrank == 0) CALL write_test_status(FAILED, "Check cgp_particle_coord_multi_read_data values")
+        CALL cgp_error_exit_f()
+     END IF
+  END DO
+  IF(commrank == 0) CALL write_test_status(PASSED, "Check cgp_particle_coord_multi_read_data values")
+
+  DEALLOCATE(buf)
+  DEALLOCATE(Coor_x, Coor_y, Coor_z)
+
+  ! Read particle field data
+  count = num_particles/commsize
+
+  ALLOCATE(Data_Fx(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of Reading Data_Fx"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Data_Fy(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of Reading Data_Fy"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(Data_Fz(count), STAT=ier)
+  IF(ier .NE. 0) THEN
+     WRITE(*,*) "*FAILED* allocation of Reading Data_Fz"
+     CALL cgp_error_exit_f()
+  END IF
+
+  ALLOCATE(buf(3))
+  buf(1) = C_LOC(Data_Fx)
+  buf(2) = C_LOC(Data_Fy)
+  buf(3) = C_LOC(Data_Fz)
+
+  CALL cgp_particle_field_multi_read_data_f(fn, B, P, S, Fvec, min_v, max_v, 3, buf, ier)
+  IF(ier .NE. CG_OK) THEN
+     IF(commrank == 0) CALL write_test_status(FAILED, "Test cgp_particle_field_multi_read_data")
+     CALL cgp_error_exit_f()
+  ELSE
+     IF(commrank == 0) CALL write_test_status(PASSED, "Test cgp_particle_field_multi_read_data")
+  END IF
+
+  DO k = 1, count
+     IF(.NOT. check_eq(Data_Fx(k), commrank*count + k + 1.01d0) .OR. &
+          .NOT. check_eq(Data_Fy(k), commrank*count + k + 1.02d0) .OR. &
+          .NOT. check_eq(Data_Fz(k), commrank*count + k + 1.03d0)) THEN
+        IF(commrank == 0) CALL write_test_status(FAILED, "Check cgp_particle_field_multi_read_data values")
+        CALL cgp_error_exit_f()
+     END IF
+  END DO
+  IF(commrank == 0) CALL write_test_status(PASSED, "Check cgp_particle_field_multi_read_data values")
+
+  DEALLOCATE(buf)
+  DEALLOCATE(Data_Fx, Data_Fy, Data_Fz)
+
+  CALL cgp_close_f(fn, ier)
+  IF(ier .NE. CG_OK) THEN
+     WRITE(*,*) "*FAILED* cgp_close"
+     CALL cgp_error_exit_f()
+  END IF
+
+END SUBROUTINE particle_multisets
+
 END MODULE ftests
 
 PROGRAM pcgns_ftest
@@ -1024,6 +1617,16 @@ PROGRAM pcgns_ftest
   CALL MPI_Barrier(MPI_COMM_WORLD, mpi_err)
   IF(commrank.EQ.0) CALL write_test_header("Multi-sets API Testing")
   CALL multisets()
+
+  CALL MPI_Barrier(MPI_COMM_WORLD, mpi_err)
+  IF(commrank.EQ.0) CALL write_test_header("Particle API Testing")
+  CALL particle()
+
+  CALL MPI_Barrier(MPI_COMM_WORLD, mpi_err)
+  IF(commrank.EQ.0) CALL write_test_header("Particle Multi-sets API Testing")
+  CALL particle_multisets()
+
+  IF(commrank.EQ.0) CALL write_test_footer()
 
   CALL MPI_FINALIZE(mpi_err)
 

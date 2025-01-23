@@ -116,7 +116,7 @@
 !   go to BaseIterativeData level and write time values
       call cg_goto_f(index_file,index_base,ier,'BaseIterativeData_t',1,'end')
       nuse=3
-      call cg_array_write_f('TimeValues',CGNS_ENUMV(RealDouble),1,nuse,time,ier)
+      call cg_array_write_f('TimeValues',CGNS_ENUMV(RealDouble),1,[nuse],time,ier)
 !   create ZoneIterativeData
       call cg_ziter_write_f(index_file,index_base,index_zone,                  &
            'ZoneIterativeData',ier)

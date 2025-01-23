@@ -1,3 +1,42 @@
+MODULE cgns_write_test
+  USE CGNS
+  USE ISO_C_BINDING
+  IMPLICIT NONE
+
+CONTAINS
+  ! Callback checks
+  SUBROUTINE print_error(error_code, error_msg) BIND(C)
+
+    IMPLICIT NONE
+
+    INTEGER(C_INT), VALUE :: error_code
+    TYPE(C_PTR), VALUE :: error_msg
+
+    INTEGER :: eol
+    INTEGER :: check
+    INTEGER :: i
+    CHARACTER(KIND=C_CHAR), POINTER :: f_error_msg(:)
+!   ALTERNATIVE
+!   CHARACTER(LEN=1), DIMENSION(*) :: error_msg
+
+    CALL C_F_POINTER(error_msg, f_error_msg, [80])
+
+    eol = 0
+    DO i = 1, 80 !CGIO_MAX_ERROR_LENGTH
+       IF(f_error_msg(i)(1:1).EQ.C_NULL_CHAR) EXIT
+       eol = eol + 1
+    END DO
+
+    ! error_msg should be "cgio_open_file:invalid configuration option"
+    IF(error_code.NE.1 .OR. eol .NE. 43 .OR. &
+         f_error_msg(1) .NE. "c" .OR. f_error_msg(4) .NE. "o") THEN
+       STOP 1
+    END IF
+
+  END SUBROUTINE print_error
+
+END MODULE cgns_write_test
+
 
 PROGRAM write_cgns_1
 #include "cgnstypes_f03.h"
@@ -6,6 +45,7 @@ PROGRAM write_cgns_1
 #endif
   USE CGNS
   USE ISO_C_BINDING
+  USE cgns_write_test
   IMPLICIT NONE
 
   ! author: Diane Poirier (diane@icemcfd.com)
@@ -41,6 +81,9 @@ PROGRAM write_cgns_1
   INTEGER, TARGET :: value_f
   INTEGER(C_SIZE_T), TARGET :: value_size_t_f
   CHARACTER(LEN=32), TARGET :: path
+
+  TYPE(C_FUNPTR) :: f_funptr
+  TYPE(C_PTR) :: f_ptr
 
   coordname(1) = 'CoordinateX'
   coordname(2) = 'CoordinateY'
@@ -304,7 +347,8 @@ PROGRAM write_cgns_1
 
   value_f = CG_FILE_ADF2
   value_f = CG_FILE_ADF
-  CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_f), ier)
+  f_ptr = C_LOC(value_f)
+  CALL cg_configure_f(CG_CONFIG_FILE_TYPE, f_ptr, ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
   value_f = CG_FILE_HDF5
   CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_f), ier)
@@ -337,6 +381,16 @@ PROGRAM write_cgns_1
   value_f = 100 ! Trigger an error
   CALL cg_configure_f(CG_CONFIG_FILE_TYPE, C_LOC(value_f), ier)
   IF (ier .NE. ERROR) CALL cg_error_exit_f
+
+! testing using callbacks with CG_CONFIGURE
+  f_funptr = C_FUNLOC(print_error)
+
+  CALL cg_configure_f(CG_CONFIG_ERROR, f_funptr, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+
+  CALL cg_open_f('nonexists.cgns', CG_MODE_READ, cg, ier)
+  IF (ier .NE. ERROR) CALL cg_error_exit_f
+
 #endif
 
 END PROGRAM write_cgns_1

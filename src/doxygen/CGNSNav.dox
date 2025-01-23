@@ -1,0 +1,46 @@
+/**
+ *
+ * \page CGNS_Navigation_Ill
+ * \section CGNS_Navigation_Ill CGNS File Navigation Illustration
+ * 
+ * To illustrate the use of the accessing a node routines, assume you have a file with CGNS
+ * index number \e filenum, a base node named \e Base with index number \e basenum, 2 zones
+ * (named \e Zone1 and \e Zone2, with indices 1 and 2), and user-defined data
+ * (\e User, index 1) below each zone. To move to the user-defined data node under zone 1,
+ * you may use any of the following:
+ *       
+ * \code{C}
+ *   cg_goto(filenum, basenum, "Zone_t", 1, "UserDefinedData_t", 1, NULL);
+ *   cg_goto(filenum, basenum "Zone1", 0, "UserDefinedData_t", 1, NULL);
+ *   cg_goto(filenum, basenum, "Zone_t", 1, "User", 0, NULL);
+ *   cg_goto(filenum, basenum, "Zone1", 0, "User", 0, NULL);
+ *   cg_gopath(filenum, "/Base/Zone1/User");
+ * \endcode
+ * To switch to the user-defined data node under Zone 2, you can use either the full
+ * path specification mentioned earlier or a relative path. Note that the relative
+ * cg_gorel() and cg_gopath() calls are only valid if you have previously used
+ * cg_goto() or cg_gopath with an absolute path, thus:
+ * \code{C}
+ *   cg_gorel(filenum, "..", 0, "..", 0, "Zone_t", 2, "UserDefinedData_t", 1, NULL);
+ *   cg_gorel(filenum, "..", 0, "..", 0, "Zone2", 0, "UserDefinedData_t", 1, NULL);
+ *   cg_gorel(filenum, "..", 0, "..", 0, "Zone_t", 2, "User", 0, NULL);
+ *   cg_gorel(filenum, "..", 0, "..", 0, "Zone2", 0, "User", 0, NULL);
+ *   cg_gopath(filenum, "../../Zone2/User");
+ * \endcode
+ * Shown below are some additional examples of various uses of these routines,
+ * in both C and Fortran, where fn, B, Z, etc., are index numbers.
+ * \code{C}
+ *  ier = cg_goto(fn, B, "Zone_t", Z, "FlowSolution_t", F, "..", 0, "MySolution", 0, "end");
+ *  ier = cg_gorel(fn, "..", 0, "FlowSolution_t", F, NULL);
+ *  ier = cg_gopath(fn, "/MyBase/MyZone/MySolution");
+ *  ier = cg_gopath(fn, "../../MyZoneBC");
+ * \endcode
+ * \code{.F90}
+ *   CALL cg_goto_f(fn, B, ier, 'Zone_t', Z, 'GasModel_t', 1, 'DataArray_t', A, 'end')
+ *   CALL cg_goto_f(fn, B, ier, 'Zone_t', Z, 'ZoneBC_t', 1, 'BC_t', &
+ *                  BC, 'BCDataSet_t', S, 'BCData_t', Dirichlet, 'end')
+ *   CALL cg_gorel_f(fn, ier, '..', 0, 'Neumann', 0, '')
+ *   CALL cg_gopath_f(fn, '../../MyZoneBC', ier)
+ * \endcode
+ */
+
