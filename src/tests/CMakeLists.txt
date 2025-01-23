@@ -52,6 +52,7 @@ set(test_complex_FILES test_complex.c)
 set(test_convert_elem_FILES test_convert_elem.c)
 set(test_chunked_compression_FILES test_chunked_compression.c)
 set(test_back_comp_FILES test_back_comp.c)
+set(test_particle_FILES test_particle.c)
 #set(cgiof_FILES cgiof.F90)
 #set(cgwrite_FILES cgwrite.F90)
 #set(cgread_FILES cgread.F90)
@@ -66,32 +67,34 @@ set(test_general_rindf_FILES test_general_rindf.F90)
 set(test_family_treef_FILES test_family_treef.F90)
 set(test_bboxf_FILES test_bboxf.F90)
 set(test_complexf_FILES test_complexf.F90)
+set(test_particlef_FILES test_particlef.F90 utilsf.F90)
 
 # Build each test
-add_executable( cgioc                    ${cgioc_FILES}                    )
-add_executable( dbtest                   ${dbtest_FILES}                   )
-add_executable( elemtest                 ${elemtest_FILES}                 )
-add_executable( open_cgns                ${open_cgns_FILES}                )
-add_executable( ser_benchmark_hdf5       ${ser_benchmark_hdf5_FILES}       )
-add_executable( test_core_vfd            ${test_core_vfd_FILES}            )
-add_executable( test_exts                ${test_exts_FILES}                )
-add_executable( test_goto                ${test_goto_FILES}                )
-add_executable( test_partial             ${test_partial_FILES}             )
-add_executable( test_ver31               ${test_ver31_FILES}               )
-add_executable( test_multifam            ${test_multifam_FILES}            )
-add_executable( test_general_rind        ${test_general_rind_FILES}        )
-add_executable( test_general_reshape     ${test_general_reshape_FILES}     )
-add_executable( write_array              ${write_array_FILES}              )
-add_executable( write_bcdata             ${write_bcdata_FILES}             )
-add_executable( write_links              ${write_links_FILES}              )
-add_executable( write_rind               ${write_rind_FILES}               )
-add_executable( write_test               ${write_test_FILES}               )
-add_executable( write_zones              ${write_zones_FILES}              )
-add_executable( test_family_tree         ${test_family_tree_FILES}         )
-add_executable( test_bbox                ${test_bbox_FILES}                )
-add_executable( test_complex             ${test_complex_FILES}             )
-add_executable( test_convert_elem        ${test_convert_elem_FILES}        )
-add_executable( test_back_comp           ${test_back_comp_FILES}           )
+add_executable( cgioc                ${cgioc_FILES}                )
+add_executable( dbtest               ${dbtest_FILES}               )
+add_executable( elemtest             ${elemtest_FILES}             )
+add_executable( open_cgns            ${open_cgns_FILES}            )
+add_executable( ser_benchmark_hdf5   ${ser_benchmark_hdf5_FILES}   )
+add_executable( test_core_vfd        ${test_core_vfd_FILES}        )
+add_executable( test_exts            ${test_exts_FILES}            )
+add_executable( test_goto            ${test_goto_FILES}            )
+add_executable( test_partial         ${test_partial_FILES}         )
+add_executable( test_ver31           ${test_ver31_FILES}           )
+add_executable( test_multifam        ${test_multifam_FILES}        )
+add_executable( test_general_rind    ${test_general_rind_FILES}    )
+add_executable( test_general_reshape ${test_general_reshape_FILES} )
+add_executable( write_array          ${write_array_FILES}          )
+add_executable( write_bcdata         ${write_bcdata_FILES}         )
+add_executable( write_links          ${write_links_FILES}          )
+add_executable( write_rind           ${write_rind_FILES}           )
+add_executable( write_test           ${write_test_FILES}           )
+add_executable( write_zones          ${write_zones_FILES}          )
+add_executable( test_family_tree     ${test_family_tree_FILES}     )
+add_executable( test_bbox            ${test_bbox_FILES}            )
+add_executable( test_complex         ${test_complex_FILES}         )
+add_executable( test_convert_elem    ${test_convert_elem_FILES}    )
+add_executable( test_back_comp       ${test_back_comp_FILES}       )
+add_executable( test_particle        ${test_particle_FILES}        )
 add_executable( test_chunked_compression ${test_chunked_compression_FILES} )
 #
 set(C_TESTS_LIST
@@ -119,10 +122,11 @@ set(C_TESTS_LIST
         test_complex
         test_convert_elem
         test_back_comp
+        test_particle
         test_chunked_compression)
+
 set(SKIP_TESTS
-	dbtest
-	open_cgns)
+        dbtest)
 # Modern Linking
 foreach(TGTNAME ${C_TESTS_LIST})
   target_link_libraries(${TGTNAME} PRIVATE ${TESTS_LK_LIBS})
@@ -139,7 +143,8 @@ if (CGNS_ENABLE_FORTRAN)
 	add_executable( test_general_rindf ${test_general_rindf_FILES} )
 	add_executable( test_family_treef  ${test_family_treef_FILES}  )
 	add_executable( test_bboxf         ${test_bboxf_FILES}         )
-	add_executable( test_complexf      ${test_complexf_FILES}      )
+        add_executable( test_complexf      ${test_complexf_FILES}      )
+        add_executable( test_particlef     ${test_particlef_FILES}     )
 #	if (NOT CGNS_ENABLE_64BIT)
 # Don't build the F77 source because they will fail if ENABLE_64BIT is used
 #	  add_executable( cgiof       ${cgiof_FILES}  )
@@ -157,7 +162,9 @@ if (CGNS_ENABLE_FORTRAN)
 	test_general_rindf 
 	test_family_treef  
 	test_bboxf         
-	test_complexf)
+        test_complexf
+        test_particlef
+        )
 	# Modern Linking
 	foreach(TGTNAME ${FORTRAN_TESTS_LIST})
 	  target_link_libraries(${TGTNAME} PRIVATE ${TESTS_LK_LIBS})
@@ -175,6 +182,11 @@ if (CGNS_ENABLE_TESTS)
     endif()
     add_test(NAME ${TARGETNAME} COMMAND ${TARGETNAME})
     set_property (TEST ${TARGETNAME} PROPERTY SKIP_RETURN_CODE 125)
+    # On windows help ctest to find the required dlls
+    if(CGNS_BUILD_SHARED)
+      set_tests_properties(${TARGETNAME} PROPERTIES ENVIRONMENT_MODIFICATION
+        "PATH=path_list_prepend:$<$<BOOL:${WIN32}>:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:${TARGETNAME}>,\;>>")
+    endif()
 
   endforeach()
 
@@ -182,6 +194,11 @@ if (CGNS_ENABLE_TESTS)
   if (CGNS_ENABLE_FORTRAN)
     foreach(TARGETNAME ${FORTRAN_TESTS_LIST})
       add_test(NAME ${TARGETNAME} COMMAND ${TARGETNAME})
+      # On windows help ctest to find the required dlls
+      if(CGNS_BUILD_SHARED)
+        set_tests_properties(${TARGETNAME} PROPERTIES ENVIRONMENT_MODIFICATION
+          "PATH=path_list_prepend:$<$<BOOL:${WIN32}>:$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:${TARGETNAME}>,\;>>")
+      endif()
     endforeach()
   endif (CGNS_ENABLE_FORTRAN)
 endif (CGNS_ENABLE_TESTS)

@@ -11,11 +11,19 @@ endif (WIN32)
 # create configured header files #
 ################################
 
-if ("${SIZEOF_LONG}" GREATER 4)
-  set(CGLONGT long)
-else ()
+if("${SIZEOF_INT64_T}" EQUAL "8")
+  set(CGLONGT "int64_t")
+  set(CGULONGT "uint64_t")
+elseif("${SIZEOF_LONG}" EQUAL "8")
+  set(CGLONGT "long")
+  set(CGULONGT "unsigned long")
+elseif("${SIZEOF_LONG_LONG}" EQUAL "8")
   set(CGLONGT "long long")
-endif ()
+  set(CGULONGT "unsigned long long")
+else()
+  message(FATAL_ERROR "Can't find suitable int64_t")
+endif()
+message(STATUS "Found int64_t: ${CGLONGT}")
 
 set(BUILDLEGACY 0)
 set(BUILD64BIT 0)
@@ -75,15 +83,24 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "Sun")
   check_and_add_compiler_option("-xc99")
 endif()
 
-string(COMPARE EQUAL ${CMAKE_BUILD_TYPE} Debug IS_DEBUG)
-if (IS_DEBUG)
-  set(BUILDDEBUG 1)
-  set(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
-  set(LDFLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+if (NOT DEFINED CMAKE_CONFIGURATION_TYPES)
+  # Buggy section used for generating buildConfig.def
+  # A CMake generator with conditional could be used
+  # as using CMAKE_BUILD_TYPE is not good practise
+  string(COMPARE EQUAL ${CMAKE_BUILD_TYPE} Debug IS_DEBUG)
+  if (IS_DEBUG)
+    set(BUILDDEBUG 1)
+    set(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
+    set(LDFLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+  else ()
+    set(BUILDDEBUG 0)
+    set(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_RELEASE}")
+    set(LDFLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
+  endif ()
 else ()
   set(BUILDDEBUG 0)
-  set(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_RELEASE}")
-  set(LDFLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
+  set(CFLAGS "")
+  set(LDFLAGS "")
 endif ()
 
 set(BUILDHDF5 0)
@@ -108,7 +125,6 @@ set(FORTRAN_DEFAULT_INTEGER_C_INT64_T 0)
 set(HAVE_STAT64_STRUCT 0)
 set(HAVE_COMPLEX_C99_EXT 0)
 
-include(CheckIncludeFile)
 #For cg_hash_types.h.in
 CHECK_INCLUDE_FILE(stdint.h HAVE_STDINT_H)
 set(SIZEOF_VOID_P ${CMAKE_SIZEOF_VOID_P})
@@ -522,10 +538,11 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnstypes_f03.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnstypes_f03.h )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsconfig.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cgnsconfig.h )
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
-		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cg_hash_types.h.in
 		${CMAKE_CURRENT_BINARY_DIR}/cg_hash_types.h )
+# The following is only useful with Unix Makefile Generator
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/cgnsBuild.defs.in
+		${CMAKE_CURRENT_BINARY_DIR}/cgnsBuild.defs )
 
 ###########
 # Library #

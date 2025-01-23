@@ -8,7 +8,7 @@ File Opened and Read
  
       *** Family_t nodes ***
         Name= "Family#1"
-        no.of FamilyBC_t=  2
+        no.of FamilyBC_t=  1
         no.of GEO=  2
  
         *** GeometryReference_t nodes ***
@@ -54,15 +54,6 @@ File Opened and Read
               Time units: Second                          
               Angle units:Degree                          
 
-        *** FamilyBC_t nodes ***
-          Name= "FamBC#2"
-          BCType= BCGeneral                       
- 
-         V2.4 Family functionality extensions
-         look for DataSet info under FamilyBC
- 
-           none found
- 
          V2.4 Family functionality extensions
          look for Rotating Coord info under Family
  
@@ -76,7 +67,7 @@ File Opened and Read
  
       *** Family_t nodes ***
         Name= "Family#2"
-        no.of FamilyBC_t=  2
+        no.of FamilyBC_t=  1
         no.of GEO=  2
  
         *** GeometryReference_t nodes ***
@@ -106,7 +97,7 @@ File Opened and Read
             Descriptor_t: "Descriptor" is "Geo#2_of_fam#2"
 
         *** FamilyBC_t nodes ***
-          Name= "FamBC#1"
+          Name= "FamBC#2"
           BCType= BCGeneral                       
  
          V2.4 Family functionality extensions
@@ -122,15 +113,6 @@ File Opened and Read
               Time units: Second                          
               Angle units:Degree                          
 
-        *** FamilyBC_t nodes ***
-          Name= "FamBC#2"
-          BCType= BCGeneral                       
- 
-         V2.4 Family functionality extensions
-         look for DataSet info under FamilyBC
- 
-           none found
- 
          V2.4 Family functionality extensions
          look for Rotating Coord info under Family
  
@@ -144,7 +126,7 @@ File Opened and Read
  
       *** Family_t nodes ***
         Name= "Outflow"
-        no.of FamilyBC_t=  2
+        no.of FamilyBC_t=  1
         no.of GEO=  2
  
         *** GeometryReference_t nodes ***
@@ -174,25 +156,8 @@ File Opened and Read
             Descriptor_t: "Descriptor" is "Geo#2_of_fam#3"
 
         *** FamilyBC_t nodes ***
-          Name= "FamBC#1"
-          BCType= BCGeneral                       
- 
-         V2.4 Family functionality extensions
-         look for DataSet info under FamilyBC
- 
-           Dataset #  1
-              Name=FamBCDataSet                    
-              BCType=BCWall                          
-        Dirichlet data Dimensional Units:
-              Mass units: Kilogram                        
-              Length units: Meter                           
-              Temperature units: Celsius                         
-              Time units: Second                          
-              Angle units:Degree                          
-
-        *** FamilyBC_t nodes ***
-          Name= "FamBC#2"
-          BCType= BCGeneral                       
+          Name= "FamBC"
+          BCType= BCOutflow                       
  
          V2.4 Family functionality extensions
          look for DataSet info under FamilyBC
@@ -231,8 +196,8 @@ File Opened and Read
       npnts=  2
       DonorName="UnstructuredZone#1"
       DonorZonetype=Unstructured                    
-      DonorDatatype=Integer                         
-      DonorPtsetType=CellListDonor                   
+      DonorDatatype=LongInteger                     
+      DonorPtsetType=PointListDonor                  
       ndata_donor=  9
       pnts receiver:
               3  1  1
@@ -240,39 +205,6 @@ File Opened and Read
       pnts donor:
               1
          to  25
-      narrays under GridConnectivity_t=  1
-      nodename=InterpolantsDonor               
-      ndim=  2
-      dim_vals=  3
-      dim_vals=  9
-      Interpolants Datatype=RealDouble                      
-Interpolants(1,  1)= 0.500000E+00
-Interpolants(2,  1)= 0.333333E+00
-Interpolants(3,  1)= 0.250000E+00
-Interpolants(1,  2)= 0.333333E+00
-Interpolants(2,  2)= 0.250000E+00
-Interpolants(3,  2)= 0.200000E+00
-Interpolants(1,  3)= 0.250000E+00
-Interpolants(2,  3)= 0.200000E+00
-Interpolants(3,  3)= 0.166667E+00
-Interpolants(1,  4)= 0.200000E+00
-Interpolants(2,  4)= 0.166667E+00
-Interpolants(3,  4)= 0.142857E+00
-Interpolants(1,  5)= 0.166667E+00
-Interpolants(2,  5)= 0.142857E+00
-Interpolants(3,  5)= 0.125000E+00
-Interpolants(1,  6)= 0.142857E+00
-Interpolants(2,  6)= 0.125000E+00
-Interpolants(3,  6)= 0.111111E+00
-Interpolants(1,  7)= 0.125000E+00
-Interpolants(2,  7)= 0.111111E+00
-Interpolants(3,  7)= 0.100000E+00
-Interpolants(1,  8)= 0.111111E+00
-Interpolants(2,  8)= 0.100000E+00
-Interpolants(3,  8)= 0.909091E-01
-Interpolants(1,  9)= 0.100000E+00
-Interpolants(2,  9)= 0.909091E-01
-Interpolants(3,  9)= 0.833333E-01
 *** ZoneBC_t node ***
       nbocos=  1
 *** BC_t node ***
@@ -311,7 +243,7 @@ Interpolants(3,  9)= 0.833333E-01
       npnts=  9
       DonorName="StructuredZone#1"
       DonorZonetype=Structured                      
-      DonorDatatype=Integer                         
+      DonorDatatype=LongInteger                     
       DonorPtsetType=PointListDonor                  
       ndata_donor=  9
       pnts receiver:
@@ -339,7 +271,7 @@ Interpolants(3,  9)= 0.833333E-01
              0.100000E+01 0.000000E+00 0.000000E+00
 *** BC_t node ***
       Name= "shell_patch"
-      BCType= BCOutflow                       
+      BCType= FamilySpecified                 
       PtsetType= PointList                       
       npnts=    4
       NormalListFlag=   12

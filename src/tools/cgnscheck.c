@@ -31,7 +31,7 @@
 #if CG_SIZEOF_SIZE == 32
 #define CG_ABS abs
 #else
-#define CG_ABS labs
+#define CG_ABS llabs
 #endif
 
 static int FileVersion;
@@ -40,7 +40,7 @@ static int LibraryVersion = CGNS_VERSION;
 static int verbose = 0;
 static int nwarn = 0, nerr = 0, totwarn = 0;
 static int dowarn = 3, doerr = 1;
-static int cgnsfn, cgnsbase, cgnszone;
+static int cgnsfn, cgnsbase, cgnszone, cgnsparticle;
 
 static int CellDim, PhyDim;
 static int BaseClass;
@@ -123,6 +123,25 @@ static CGNSNAME *ZoneConn;
 static int MaxZoneSubReg = 0;
 static int NumZoneSubReg = 0;
 static CGNSNAME *ZoneSubReg;
+
+typedef struct {
+    char name[33];
+    cgsize_t nparticles;
+    int dataclass;
+    int *punits, units[9];
+} PARTICLE_ZONE;
+
+static int MaxParticleZone = 0;
+static int NumParticleZone = 0;
+static PARTICLE_ZONE *ParticleZone;
+
+static int MaxParticleSolution = 0;
+static int NumParticleSolution = 0;
+static CGNSNAME *ParticleSolution;
+
+static int MaxParticleCoordinate = 0;
+static int NumParticleCoordinate = 0;
+static CGNSNAME *ParticleCoordinate;
 
 /* command line options */
 
@@ -832,6 +851,17 @@ static FACE *new_face (int nnodes, cgsize_t *nodes)
 
 /*-------------------------------------------------------------------*/
 
+static int compareValuesFloat(float val1, float val2) {
+
+  int ret = 1;
+  if (fabs((double)val1 - (double)val2) > 1e-6) {
+    ret = 0;
+  }
+  return ret;
+}
+
+/*-------------------------------------------------------------------*/
+
 static int tetra_4[4][4] = {
     {3, 0, 2, 1},
     {3, 0, 1, 3},
@@ -1262,12 +1292,12 @@ static void read_zone (int nz)
         if (cg_ElementDataSize (cgnsfn, cgnsbase, nz, ns, &se))
             error_exit ("cg_ElementDataSize");
         if (se == 0) continue;
-        es->elements = (cgsize_t *) malloc ((size_t)(se * sizeof(cgsize_t)));
+        es->elements = (cgsize_t *) malloc (((size_t)se) * sizeof(cgsize_t));
         if (NULL == es->elements)
             fatal_error("malloc failed for elements\n");
         es->parent = NULL;
         if (hasparent) {
-            es->parent = (cgsize_t *) malloc ((size_t)(4 * nelem * sizeof(cgsize_t)));
+            es->parent = (cgsize_t *) malloc (((size_t)(4 * nelem)) * sizeof(cgsize_t));
             if (NULL == es->parent)
                 fatal_error("malloc failed for elemset parent data\n");
         }
@@ -1275,7 +1305,7 @@ static void read_zone (int nz)
         if (es->type == CGNS_ENUMV(MIXED) ||
             es->type == CGNS_ENUMV(NFACE_n) ||
             es->type == CGNS_ENUMV(NGON_n)) {
-            es->offsets = (cgsize_t *) malloc ((size_t)((nelem+1) * sizeof(cgsize_t)));
+            es->offsets = (cgsize_t *) malloc (((size_t)(nelem+1)) * sizeof(cgsize_t));
             if (NULL == es->offsets)
                 fatal_error("malloc failed for offsets\n");
             if (cg_poly_elements_read (cgnsfn, cgnsbase, nz, ns, es->elements, es->offsets,
@@ -1467,7 +1497,7 @@ static void read_zone (int nz)
                 if (tmp < idx_min) idx_min = tmp;
             }
             arr_size = idx_max - idx_min + 1;
-            face_tags = (unsigned char *) malloc((size_t)(arr_size *sizeof(unsigned char)));
+            face_tags = (unsigned char *) malloc(((size_t)arr_size) *sizeof(unsigned char));
             if (face_tags == NULL) {
                 fatal_error("malloc failed for face tags\n");
 	    }
@@ -1640,7 +1670,7 @@ static void read_zone (int nz)
         if (nodes[k]) ne++;
     }
     z->nextnodes = ne;
-    z->extnodes = (cgsize_t *) malloc ((size_t)(ne * sizeof(cgsize_t)));
+    z->extnodes = (cgsize_t *) malloc (((size_t)ne) * sizeof(cgsize_t));
     if (z->extnodes == NULL)
         fatal_error("malloc failed for zone exterior nodes\n");
     for (ne = 0, k = 0; k < maxnode; k++) {
@@ -1993,9 +2023,9 @@ static void check_arrays (int parclass, int *parunits, int isref,
         if (ndim < 1 || size < 1)
             error ("invalid dimensions");
         if (length < 0 && size != 1 && size != -length)
-            error ("array size not 1 or %ld", -length);
+            error ("array size not 1 or %" PRIdCGSIZE, -length);
         if (length > 0 && size != length)
-            error ("array size not %ld", length);
+            error ("array size not %" PRIdCGSIZE, length);
         check_quantity (na, name, dataclass, punits, isref, indent+2);
     }
 }
@@ -2057,7 +2087,7 @@ static void check_user_data (int parclass, int *parunits, int indent)
                 print_indent (indent+2);
                 printf ("Point Set Type=%s\n", cg_PointSetTypeName(ptype));
                 print_indent (indent+2);
-                printf ("Number Points=%ld\n", (long)npnts);
+                printf ("Number Points=%" PRIdCGSIZE "\n", npnts);
             }
         }
         if (hasf == CG_OK) {
@@ -2561,8 +2591,8 @@ static void check_coordinates (int ng)
 {
     char name[33];
     int ierr, n, rind[6];
-    cgsize_t np, rmin[3], rmax[3];
-    int nc, ncoords, mask, coordset[4];
+    cgsize_t np, dimensions, rmin[3], rmax[3];
+    int nc, ncoords, mask, rank, coordset[4];
     int *punits, units[9], dataclass;
     float *coord, cmin, cmax;
     CGNS_ENUMT(DataType_t) datatype;
@@ -2621,23 +2651,24 @@ static void check_coordinates (int ng)
         rmax[n] = z->dims[0][n] + rind[2*n] + rind[2*n+1];
         np *= rmax[n];
     }
-    if (NULL == (coord = (float *) malloc ((size_t)(np * sizeof(float)))))
-        fatal_error("malloc failed for %ld coordinate values\n", (long)np);
+    if (NULL == (coord = (float *) malloc (((size_t)np) * sizeof(float))))
+        fatal_error("malloc failed for %" PRIdCGSIZE " coordinate values\n", np);
     if (z->maxnode < np) z->maxnode = np;
 
-    if (cg_ncoords (cgnsfn, cgnsbase, cgnszone, &ncoords))
-        error_exit("cg_ncoords");
+    go_absolute ("Zone_t", cgnszone, "GridCoordinates_t", ng, NULL);
+
+    if (cg_narrays (&ncoords))
+        error_exit("cg_narrays");
     if (ncoords < PhyDim)
         error ("number coordinates < physical dimensions");
     for (n = 0; n < 4; n++)
         coordset[n] = 0;
 
     for (nc = 1; nc <= ncoords; nc++) {
-        if (cg_coord_info (cgnsfn, cgnsbase, cgnszone, nc, &datatype, name))
-            error_exit("cg_coord_info");
-        if (cg_coord_read (cgnsfn, cgnsbase, cgnszone, name, CGNS_ENUMV(RealSingle),
-                rmin, rmax, coord))
-            error_exit("cg_coord_read");
+        if (cg_array_info (nc, name, &datatype, &rank, &dimensions))
+            error_exit("cg_array_info");
+        if (cg_array_read_as (nc, CGNS_ENUMV(RealSingle), coord))
+            error_exit("cg_array_read");
         printf ("    checking coordinate \"%s\"\n", name);
         fflush (stdout);
         cmin = cmax = coord[0];
@@ -2700,10 +2731,10 @@ static void check_elements (void)
     puts ("  checking elements");
     if (verbose) {
         printf ("    Number Element Sets=%d\n", z->nsets);
-        printf ("    [0D,1D,2D,3D] Elements=[%ld,%ld,%ld,%ld]\n",
-            (long)z->nn, (long)z->ne, (long)z->ns, (long)z->nv);
+        printf ("    [0D,1D,2D,3D] Elements=[%" PRIdCGSIZE ",%" PRIdCGSIZE ",%" PRIdCGSIZE ",%" PRIdCGSIZE "]\n",
+            z->nn, z->ne, z->ns, z->nv);
         if (z->faces)
-            printf ("    Number Volume Faces=%ld\n", (long)HashSize(z->faces));
+            printf ("    Number Volume Faces=%" PRIdCGSIZE "\n", (cgsize_t)HashSize(z->faces));
     }
     fflush (stdout);
 
@@ -2733,12 +2764,12 @@ static void check_elements (void)
         if (verbose) {
             printf ("    Element Set Type=%s\n",
                 cg_ElementTypeName(es->type));
-            printf ("    Element Range=[%ld,%ld]\n", (long)es->is, (long)es->ie);
+            printf ("    Element Range=[%" PRIdCGSIZE ",%" PRIdCGSIZE "]\n", es->is, es->ie);
             if (es->rind[0] || es->rind[1])
                 printf ("    Rind Elements=[%d,%d]\n",
                     es->rind[0], es->rind[1]);
-            printf ("    [0D,1D,2D,3D] Elements=[%ld,%ld,%ld,%ld]\n",
-                (long)es->nn, (long)es->ne, (long)es->ns, (long)es->nv);
+            printf ("    [0D,1D,2D,3D] Elements=[%" PRIdCGSIZE ",%" PRIdCGSIZE ",%" PRIdCGSIZE ",%" PRIdCGSIZE "]\n",
+                es->nn, es->ne, es->ns, es->nv);
         }
         if (ns && z->sets[ns].is != is)
             warning (1, "element numbers are not consecutative with \"%s\"",
@@ -3052,7 +3083,7 @@ static cgsize_t check_interface (ZONE *z, CGNS_ENUMT(PointSetType_t) ptype,
             }
             np *= (pmax[n] - pmin[n] + 1);
         }
-        p = (cgsize_t *) malloc ((size_t)(np * z->idim * sizeof(cgsize_t)));
+        p = (cgsize_t *) malloc (((size_t)(np * z->idim)) * sizeof(cgsize_t));
         if (p == NULL)
             fatal_error("malloc failed for point/element list\n");
         n = 0;
@@ -3212,7 +3243,7 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
             print_indent (indent);
             printf ("Point Set Type=%s\n", cg_PointSetTypeName(ptype));
             print_indent (indent);
-            printf ("Number Points=%ld\n", (long)npnts);
+            printf ("Number Points=%" PRIdCGSIZE "\n", npnts);
         }
         if (verbose > 1) {
             if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
@@ -3276,7 +3307,7 @@ static void check_BCdata (CGNS_ENUMT(BCType_t) bctype, int dirichlet, int neuman
             size = 0;
         }
         else {
-            pts = (cgsize_t *) malloc ((size_t)(z->idim * npnts * sizeof(cgsize_t)));
+            pts = (cgsize_t *) malloc (((size_t)(z->idim * npnts)) * sizeof(cgsize_t));
             if (NULL == pts)
                 fatal_error("malloc failed for BCDataSet points\n");
             if (cg_ptset_read (pts)) error_exit("cg_ptset_read");
@@ -3363,7 +3394,7 @@ static void check_BC (int nb, int parclass, int *parunits)
     if (verbose) {
         printf ("    BC Type=%s\n", cg_BCTypeName(bctype));
         printf ("    Point Set Type=%s\n", cg_PointSetTypeName(ptype));
-        printf ("    Number Points=%ld\n", (long)npts);
+        printf ("    Number Points=%" PRIdCGSIZE "\n", npts);
     }
     fflush (stdout);
 
@@ -3421,7 +3452,7 @@ static void check_BC (int nb, int parclass, int *parunits)
         }
         if (nrmlflag) {
             puts ("    Normals Defined=yes");
-            printf ("    Number Normals=%ld\n", (long)(nrmlflag / PhyDim));
+            printf ("    Number Normals=%" PRIdCGSIZE "\n", (cgsize_t)(nrmlflag / PhyDim));
         }
         else
             puts ("    Normals Defined=no");
@@ -3438,7 +3469,7 @@ static void check_BC (int nb, int parclass, int *parunits)
         }
     }
 
-    pts = (cgsize_t *) malloc ((size_t)(z->idim * npts * sizeof(cgsize_t)));
+    pts = (cgsize_t *) malloc (((size_t)(z->idim * npts)) * sizeof(cgsize_t));
     if (NULL == pts)
         fatal_error("malloc failed for BC points\n");
     nrmllist = NULL;
@@ -3454,9 +3485,9 @@ static void check_BC (int nb, int parclass, int *parunits)
 
     if (verbose && (ptype == CGNS_ENUMV(PointRange) ||
                     ptype == CGNS_ENUMV(ElementRange))) {
-        printf ("    Range=[%ld:%ld", (long)pts[0], (long)pts[z->idim]);
+        printf ("    Range=[%" PRIdCGSIZE ":%" PRIdCGSIZE, pts[0], pts[z->idim]);
         for (n = 1; n < z->idim; n++)
-            printf (",%ld:%ld", (long)pts[n], (long)pts[n+z->idim]);
+            printf (",%" PRIdCGSIZE ":%" PRIdCGSIZE, pts[n], pts[n+z->idim]);
         puts ("]");
     }
 
@@ -3702,9 +3733,9 @@ static void check_1to1 (int nzc, int nc)
         dname, range, drange, trans)) error_exit("cg_1to1_read");
     printf ("  checking 1to1 connectivity \"%s\"\n", name);
     if (verbose) {
-        printf ("    Range=[%ld:%ld", (long)range[0], (long)range[z->idim]);
+        printf ("    Range=[%" PRIdCGSIZE ":%" PRIdCGSIZE, range[0], range[z->idim]);
         for (n = 1; n < z->idim; n++)
-            printf (",%ld:%ld", (long)range[n], (long)range[n+z->idim]);
+            printf (",%" PRIdCGSIZE ":%" PRIdCGSIZE, range[n], range[n+z->idim]);
         puts ("]");
     }
 
@@ -3733,9 +3764,9 @@ static void check_1to1 (int nzc, int nc)
     }
     else {
         if (verbose) {
-            printf ("    Donor Range=[%ld:%ld", (long)drange[0], (long)drange[dz->idim]);
+            printf ("    Donor Range=[%" PRIdCGSIZE ":%" PRIdCGSIZE, drange[0], drange[dz->idim]);
             for (n = 1; n < dz->idim; n++)
-                printf (",%ld:%ld", (long)drange[n], (long)drange[n+dz->idim]);
+                printf (",%" PRIdCGSIZE ":%" PRIdCGSIZE, drange[n], drange[n+dz->idim]);
             puts ("]");
         }
         puts ("    checking donor interface");
@@ -3930,12 +3961,12 @@ static void check_conn (int nzc, int nc)
             cg_GridLocationName(location));
         printf ("    Point Set Type=%s\n",
             cg_PointSetTypeName(ptype));
-        printf ("    Number Points=%ld\n", (long)npts);
+        printf ("    Number Points=%" PRIdCGSIZE "\n", npts);
         printf ("    Donor Zone=\"%s\"\n", dname);
         printf ("    Donor Zone Type=%s\n", cg_ZoneTypeName(dztype));
         printf ("    Donor Point Set Type=%s\n",
             cg_PointSetTypeName(dptype));
-        printf ("    Donor Number Points=%ld\n", (long)dnpts);
+        printf ("    Donor Number Points=%" PRIdCGSIZE "\n", dnpts);
     }
     fflush (stdout);
 
@@ -4086,14 +4117,14 @@ static void check_conn (int nzc, int nc)
     check_user_data (z->dataclass, z->punits, 4);
 
     if (npts && dnpts) {
-        pts = (cgsize_t *) malloc ((size_t)(npts * z->idim * sizeof(cgsize_t)));
+        pts = (cgsize_t *) malloc (((size_t)(npts * z->idim)) * sizeof(cgsize_t));
         if (LibraryVersion < 2200) {
             /* a bug in version prior to 2.2 causes the base cell dimension */
             /* to be used here, instead of the donor zone index dimension */
-            dpts = (cgsize_t *) malloc ((size_t)(dnpts * CellDim * sizeof(cgsize_t)));
+            dpts = (cgsize_t *) malloc (((size_t)(dnpts * CellDim)) * sizeof(cgsize_t));
         }
         else
-            dpts = (cgsize_t *) malloc ((size_t)(dnpts * dz->idim * sizeof(cgsize_t)));
+            dpts = (cgsize_t *) malloc (((size_t)(dnpts * dz->idim)) * sizeof(cgsize_t));
         if (NULL == pts || NULL == dpts)
             fatal_error("malloc failed for connectivity points\n");
         if (cg_conn_read (cgnsfn, cgnsbase, cgnszone, nc, pts,
@@ -4255,7 +4286,7 @@ static void check_hole (int nzc, int nh)
     }
 
     if (!ierr && np > 0) {
-        cgsize_t *pnts = (cgsize_t *) malloc ((size_t)(np * z->idim * sizeof(cgsize_t)));
+        cgsize_t *pnts = (cgsize_t *) malloc (((size_t)(np * z->idim)) * sizeof(cgsize_t));
         if (pnts == NULL)
             fatal_error("malloc failed for hole data\n");
         if (cg_hole_read (cgnsfn, cgnsbase, cgnszone, nh, pnts))
@@ -4991,7 +5022,7 @@ static void check_subreg (int ns)
              ptype == CGNS_ENUMV(PointList)) {
         if (verbose) {
             printf ("    Point Set Type=%s\n", cg_PointSetTypeName(ptype));
-            printf ("    Number Points=%ld\n", (long)npnts);
+            printf ("    Number Points=%" PRIdCGSIZE "\n", npnts);
         }
         if (bclen || gclen)
             error("both PointSetType and BCRegionName or GridConnectivityName specified");
@@ -5009,15 +5040,15 @@ static void check_subreg (int ns)
             }
         }
         if (!ierr) {
-            cgsize_t *pnts = (cgsize_t *)malloc(npnts * z->idim * sizeof(cgsize_t));
+            cgsize_t *pnts = (cgsize_t *)malloc(((size_t)(npnts * z->idim)) * sizeof(cgsize_t));
             if (pnts == NULL)
                 fatal_error("check_subreg:malloc failed for points\n");
             if (cg_subreg_ptset_read(cgnsfn, cgnsbase, cgnszone, ns, pnts))
                 error_exit("cg_subreg_ptset_read");
             if (verbose && ptype == CGNS_ENUMV(PointRange)) {
-                printf ("    Range=[%ld:%ld", (long)pnts[0], (long)pnts[z->idim]);
+                printf ("    Range=[%" PRIdCGSIZE ":%" PRIdCGSIZE, pnts[0], pnts[z->idim]);
                 for (n = 1; n < z->idim; n++)
-                    printf (",%ld:%ld", (long)pnts[n], (long)pnts[n+z->idim]);
+                    printf (",%" PRIdCGSIZE ":%" PRIdCGSIZE, pnts[n], pnts[n+z->idim]);
                 puts ("]");
             }
             datasize = check_interface (z, ptype, location, npnts, pnts, 0);
@@ -5094,7 +5125,7 @@ static void check_subreg (int ns)
     /* check data arrays */
 
     if (datasize) {
-        if (verbose) printf("    Data Size=%ld\n", (long)datasize);
+        if (verbose) printf("    Data Size=%" PRIdCGSIZE "\n", datasize);
         if (cg_narrays (&nd)) error_exit("cg_narrays");
         if (nd) check_arrays (dataclass, punits, 0, datasize, 4);
     }
@@ -5168,7 +5199,7 @@ static void check_zone_iter (void)
                         for (nn = 0; nn < NumArbitraryGrid; nn++) {
                             if (0 == strcmp (buff, ArbitraryGrid[nn])) break;
                         }
-                        if (nn == NumArbitraryGrid) ierr++;
+                        if ((nn == NumArbitraryGrid) && (0 != strcmp (buff, "Null"))) ierr++;
                     }
                 }
                 else if (0 == strcmp (name, "FlowSolutionPointers")) {
@@ -5182,7 +5213,7 @@ static void check_zone_iter (void)
                         for (nn = 0; nn < NumFlowSolution; nn++) {
                             if (0 == strcmp (buff, FlowSolution[nn])) break;
                         }
-                        if (nn == NumFlowSolution) ierr++;
+                        if ((nn == NumFlowSolution) && (0 != strcmp (buff, "Null"))) ierr++;
                     }
                 }
                 else if (0 == strcmp (name, "GridCoordinatesPointers")) {
@@ -5196,7 +5227,7 @@ static void check_zone_iter (void)
                         for (nn = 0; nn < NumGridCoordinate; nn++) {
                             if (0 == strcmp (buff, GridCoordinate[nn])) break;
                         }
-                        if (nn == NumGridCoordinate) ierr++;
+                        if ((nn == NumGridCoordinate) && (0 != strcmp (buff, "Null"))) ierr++;
                     }
                 }
                 else if (0 == strcmp (name, "RigidGridMotionPointers")) {
@@ -5210,7 +5241,7 @@ static void check_zone_iter (void)
                         for (nn = 0; nn < NumRigidGrid; nn++) {
                             if (0 == strcmp (buff, RigidGrid[nn])) break;
                         }
-                        if (nn == NumRigidGrid) ierr++;
+                        if ((nn == NumRigidGrid) && (0 != strcmp (buff, "Null"))) ierr++;
                     }
                 }
                 else if (0 == strcmp (name, "ZoneGridConnectivityPointers")) {
@@ -5224,7 +5255,7 @@ static void check_zone_iter (void)
                         for (nn = 0; nn < NumZoneConn; nn++) {
                             if (0 == strcmp (buff, ZoneConn[nn])) break;
                         }
-                        if (nn == NumZoneConn) ierr++;
+                        if ((nn == NumZoneConn) && (0 != strcmp (buff, "Null"))) ierr++;
                     }
                 }
                 else {
@@ -5238,7 +5269,7 @@ static void check_zone_iter (void)
                         for (nn = 0; nn < NumZoneSubReg; nn++) {
                             if (0 == strcmp (buff, ZoneSubReg[nn])) break;
                         }
-                        if (nn == NumZoneSubReg) ierr++;
+                        if ((nn == NumZoneSubReg) && (0 != strcmp (buff, "Null"))) ierr++;
                     }
                 }
                 free (desc);
@@ -5276,7 +5307,7 @@ static void check_zone (void)
                 z->idim = 0;
             }
             if (z->dims[1][n] != z->dims[0][n] - 1) {
-                error ("number of cells in %c-direction is %ld instead of %ld",
+                error ("number of cells in %c-direction is %" PRIdCGSIZE " instead of %" PRIdCGSIZE,
                     indexname[n], z->dims[1][n], z->dims[0][n] - 1);
                 z->dims[1][n] = z->dims[0][n] - 1;
             }
@@ -5322,13 +5353,13 @@ static void check_zone (void)
     z->punits = read_units (z->units);
     if (verbose) {
         printf ("  Zone Type=%s\n", cg_ZoneTypeName(z->type));
-        printf ("  Vertex Size=[%ld", (long)z->dims[0][0]);
+        printf ("  Vertex Size=[%" PRIdCGSIZE, z->dims[0][0]);
         for (n = 1; n < z->idim; n++)
-            printf (",%ld", (long)z->dims[0][n]);
+            printf (",%" PRIdCGSIZE, z->dims[0][n]);
         puts ("]");
-        printf ("  Cell Size=[%ld", (long)z->dims[1][0]);
+        printf ("  Cell Size=[%" PRIdCGSIZE, z->dims[1][0]);
         for (n = 1; n < z->idim; n++)
-            printf (",%ld", (long)z->dims[1][n]);
+            printf (",%" PRIdCGSIZE, z->dims[1][n]);
         puts ("]");
         if (z->dataclass >= 0) print_dataclass (z->dataclass, 2);
         if (z->punits) print_units (z->punits, 2);
@@ -5971,10 +6002,576 @@ static void check_base_iter (void)
 
 /*=======================================================================*/
 
+void read_particle(int nz)
+{
+   char name[33];
+   cgsize_t size[9];
+   PARTICLE_ZONE *p = &ParticleZone[nz++];
+
+   if (cg_particle_read (cgnsfn, cgnsbase, nz, name, size))
+       error_exit("cg_particle_zone_read");
+
+   printf ("reading particle zone \"%s\"\n", name);
+   fflush (stdout);
+
+   strcpy (p->name, name);
+   p->nparticles = size[0];
+   // 0-sized ParticleZones are okay as they indicate that there are no particles of this type in the base at the current time
+   if(p->nparticles < 0)
+      error_exit("invalid size for particle zone");
+}
+
+static void check_particle_equation_set (int *flags, int parclass, int *parunits, int indent)
+{
+    char *desc, name[33];
+    int n, nd, dataclass, *punits, units[9];
+    CGNS_ENUMT(ParticleGoverningEquationsType_t) governing;
+    CGNS_ENUMT(ParticleModelType_t) model;
+
+    go_relative ("ParticleEquationSet_t", 1, NULL);
+
+    if (verbose > 1) {
+        if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
+        for (n = 1; n <= nd; n++) {
+            if (cg_descriptor_read (n, name, &desc))
+                error_exit("cg_descriptor_read");
+            if (desc != NULL) {
+                print_indent (indent);
+                printf ("Descriptor %s:\n%s\n", name, desc);
+                cg_free (desc);
+            }
+        }
+    }
+
+    dataclass = read_dataclass ();
+    punits = read_units (units);
+    if (verbose) {
+        if (dataclass >= 0) print_dataclass (dataclass, indent);
+        if (punits) print_units (punits, indent);
+        print_indent (indent);
+        printf ("Equation Dimension=%d\n", flags[0]);
+    }
+    if (dataclass < 0) dataclass = parclass;
+    if (!punits) punits = parunits;
+
+    if (flags[0] < 1)
+        error ("equation dimension < 1");
+
+    /* particle governing equations */
+
+    if (flags[1]) {
+        if (cg_particle_governing_read (&governing))
+            error_exit("cg_particle_governing_read");
+        go_relative ("ParticleGoverningEquations_t", 1, NULL);
+        print_indent (indent);
+        printf ("Particle Governing Equation=%s\n",
+            cg_ParticleGoverningEquationsTypeName(governing));
+        check_user_data (dataclass, punits, indent + 2);
+        go_relative ("..", 1, NULL);
+    }
+
+    /* collision model */
+
+    if (flags[2]) {
+        if (cg_particle_model_read ("ParticleCollisionModel_t", &model))
+            error_exit("cg_particle_model_read");
+        print_indent (indent);
+        printf ("Particle Collision Model=%s\n", cg_ParticleModelTypeName(model));
+        go_relative ("ParticleCollisionModel_t", 1, NULL);
+        check_arrays (dataclass, punits, 1, 0, indent + 2);
+        check_user_data (dataclass, punits, indent + 2);
+        go_relative ("..", 1, NULL);
+    }
+
+    /* breakup model */
+
+    if (flags[3]) {
+        if (cg_particle_model_read ("ParticleBreakupModel_t", &model))
+            error_exit("cg_particle_model_read");
+        print_indent (indent);
+        printf ("Particle Breakup Model=%s\n", cg_ParticleModelTypeName(model));
+        go_relative ("ParticleBreakupModel_t", 1, NULL);
+        check_arrays (dataclass, punits, 1, 0, indent + 2);
+        check_user_data (dataclass, punits, indent + 2);
+        go_relative ("..", 1, NULL);
+    }
+
+    /* force model */
+
+    if (flags[4]) {
+       if (cg_particle_model_read ("ParticleForceModel_t", &model))
+           error_exit("cg_particle_model_read");
+       print_indent (indent);
+       printf ("Particle Force Model=%s\n", cg_ParticleModelTypeName(model));
+       go_relative ("ParticleForceModel_t", 1, NULL);
+       check_arrays (dataclass, punits, 1, 0, indent + 2);
+       check_user_data (dataclass, punits, indent + 2);
+       go_relative ("..", 1, NULL);
+    }
+
+    /* wall interaction model */
+
+    if (flags[5]) {
+       if (cg_particle_model_read ("ParticleWallInteractionModel_t", &model))
+           error_exit("cg_particle_model_read");
+       print_indent (indent);
+       printf ("Particle Wall Interaction Model=%s\n", cg_ParticleModelTypeName(model));
+       go_relative ("ParticleWallInteractionModel_t", 1, NULL);
+       check_arrays (dataclass, punits, 1, 0, indent + 2);
+       check_user_data (dataclass, punits, indent + 2);
+       go_relative ("..", 1, NULL);
+    }
+
+    /* phase change model */
+
+    if (flags[6]) {
+       if (cg_particle_model_read ("ParticlePhaseChangeModel_t", &model))
+           error_exit("cg_particle_model_read");
+       print_indent (indent);
+       printf ("Particle Phase Change Model=%s\n", cg_ParticleModelTypeName(model));
+       go_relative ("ParticlePhaseChangeModel_t", 1, NULL);
+       check_arrays (dataclass, punits, 1, 0, indent + 2);
+       check_user_data (dataclass, punits, indent + 2);
+       go_relative ("..", 1, NULL);
+    }
+
+    go_relative ("..", 1, NULL);
+}
+
+/*-----------------------------------------------------------------------*/
+
+static void check_particle_coordinates (int npc)
+{
+    char name[33];
+    int n;
+    cgsize_t np, dimensions, rmin, rmax;
+    int nc, ncoords, mask, rank, coordset[4];
+    int *punits, units[9], dataclass;
+    float *coord, cmin, cmax;
+    CGNS_ENUMT(DataType_t) datatype;
+    PARTICLE_ZONE *p = &ParticleZone[cgnsparticle-1];
+
+    /* Get number of coordinate nodes */
+    if (cg_particle_coord_node_read (cgnsfn, cgnsbase, cgnsparticle, npc, name))
+        error_exit("cg_particle_coord_node_read");
+    strcpy (ParticleCoordinate[npc-1], name);
+    printf ("  checking particle coordinates \"%s\"\n", name);
+    fflush (stdout);
+
+    go_absolute ("ParticleZone_t", cgnsparticle, "ParticleCoordinates_t", npc, NULL);
+
+    /* Check Descriptor_t nodes if any */
+    if (verbose > 1) {
+        int nd;
+        char *desc;
+        if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
+        for (n = 1; n <= nd; n++) {
+            if (cg_descriptor_read (n, name, &desc))
+                error_exit("cg_descriptor_read");
+            if (desc != NULL) {
+                printf ("    Descriptor %s:\n%s\n", name, desc);
+                cg_free (desc);
+            }
+        }
+    }
+
+    dataclass = read_dataclass ();
+    punits = read_units (units);
+    if (verbose) {
+        if (dataclass >= 0) print_dataclass (dataclass, 4);
+        if (punits) print_units (punits, 4);
+    }
+    if (dataclass < 0) dataclass = p->dataclass;
+    if (!punits) punits = p->punits;
+
+    rmin = 1;
+    rmax = p->nparticles;
+    np = rmax;
+
+    if (NULL == (coord = (float *) malloc ((size_t)(np * sizeof(float)))))
+        fatal_error("malloc failed for %" PRIdCGSIZE " coordinate values\n", np);
+
+    go_absolute ("ParticleZone_t", cgnsparticle, "ParticleCoordinates_t", npc, NULL);
+
+    if (cg_narrays (&ncoords))
+        error_exit("cg_narrays");
+    if (ncoords < PhyDim)
+        error ("number coordinates < physical dimensions");
+    for (n = 0; n < 4; n++)
+        coordset[n] = 0;
+
+    /* Check each particle coordinate node */
+    for (nc = 1; nc <= ncoords; nc++) {
+       if (cg_array_info (nc, name, &datatype, &rank, &dimensions))
+           error_exit("cg_array_info");
+       if (cg_array_read_as (nc, CGNS_ENUMV(RealSingle), coord))
+           error_exit("cg_array_read");
+        printf ("    checking particle coordinate \"%s\"\n", name);
+        fflush (stdout);
+        cmin = cmax = coord[0];
+        for (n = 1; n < np; n++) {
+            if (cmin > coord[n]) cmin = coord[n];
+            if (cmax < coord[n]) cmax = coord[n];
+        }
+        if (verbose)
+            printf("      Coordinate Range=%g -> %g (%g)\n",
+                cmin, cmax, cmax-cmin);
+        if (compareValuesFloat(cmin, cmax))
+            warning(1, "coordinate range is 0");
+        if (0 == strcmp (name, "CoordinateX"))
+            coordset[0] |= 1;
+        else if (0 == strcmp (name, "CoordinateY"))
+            coordset[0] |= 2;
+        else if (0 == strcmp (name, "CoordinateZ")) {
+            coordset[0] |= 4;
+            coordset[1] |= 4;
+        }
+        else if (0 == strcmp (name, "CoordinateR"))
+            coordset[1] |= 1;
+        else if (0 == strcmp (name, "CoordinateTheta")) {
+            coordset[1] |= 2;
+            coordset[2] |= 2;
+        }
+        else if (0 == strcmp (name, "CoordinatePhi"))
+            coordset[2] |= 4;
+        else if (0 == strcmp (name, "CoordinateXi"))
+            coordset[3] |= 1;
+        else if (0 == strcmp (name, "CoordinateEta"))
+            coordset[3] |= 2;
+        else if (0 == strcmp (name, "CoordinateZeta"))
+            coordset[3] |= 4;
+        check_quantity (nc, name, dataclass, punits, 1, 6);
+    }
+    free (coord);
+
+    for (mask = 0, n = 0; n < PhyDim; n++)
+        mask |= (1 << n);
+    for (n = 0; n < 4; n++) {
+        if ((coordset[n] & mask) == mask) break;
+    }
+    if (n == 4)
+        error ("a complete coordinate system was not found");
+}
+
+/*-----------------------------------------------------------------------*/
+
+static void check_particle_solution (int ns)
+{
+    char name[33];
+    int n, nf;
+    int ndim;
+    cgsize_t datasize, size;
+    int *punits, units[9], dataclass;
+    CGNS_ENUMT(DataType_t) datatype;
+    PARTICLE_ZONE *p= &ParticleZone[cgnsparticle-1];
+
+    if (cg_particle_sol_info (cgnsfn, cgnsbase, cgnsparticle, ns, name))
+        error_exit("cg_particle_sol_info");
+    strcpy (ParticleSolution[ns-1], name);
+    printf ("  checking particle solution \"%s\"\n", name);
+    fflush (stdout);
+
+    go_absolute ("ParticleZone_t", cgnsparticle, "ParticleSolution_t", ns, NULL);
+
+    /* descriptors */
+
+    if (verbose > 1) {
+        char *desc;
+        int nd;
+        if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
+        for (n = 1; n <= nd; n++) {
+            if (cg_descriptor_read (n, name, &desc))
+                error_exit("cg_descriptor_read");
+            if (desc != NULL) {
+                printf ("    Descriptor %s:\n%s\n", name, desc);
+                cg_free (desc);
+            }
+        }
+    }
+
+    /* dataclass and dimensional units */
+
+    dataclass = read_dataclass ();
+    punits = read_units (units);
+    if (verbose) {
+        if (dataclass >= 0) print_dataclass (dataclass, 4);
+        if (punits) print_units (punits, 4);
+    }
+    if (dataclass < 0) dataclass = p->dataclass;
+    if (punits == NULL) punits = p->punits;
+
+    /* get solution data size */
+
+    CGNS_ENUMT(PointSetType_t) ptset_type;
+    cgsize_t npnts;
+    int ier = cg_particle_sol_ptset_info(cgnsfn, cgnsbase, cgnsparticle, ns, &ptset_type, &npnts);
+    if(ier == CG_OK)
+    {
+       if(npnts > 0)
+       {
+          cgsize_t *pnts = (cgsize_t*)malloc(npnts*sizeof(cgsize_t));
+
+          if(cg_particle_sol_ptset_read(cgnsfn, cgnsbase, cgnsparticle, ns, pnts))
+             error_exit("cg_particle_sol_ptset_read");
+
+          if(ptset_type == CGNS_ENUMV(PointList)) {
+             datasize = npnts;
+          }
+          else { // ptset_type == PointRange
+             datasize = pnts[1] - pnts[0] + 1;
+          }
+
+          free(pnts);
+       }
+       else // Not a point set
+       {
+          datasize = p->nparticles;
+       }
+    }
+    else
+    {
+       error_exit("cg_particle_sol_info");
+    }
+
+    /* read solution data as arrays to get size */
+
+    if (cg_particle_nfields (cgnsfn, cgnsbase, cgnsparticle, ns, &nf))
+        error_exit("cg_nfields");
+    if (nf == 0)
+        warning (2, "no solution data arrays defined");
+
+    for (n = 1; n <= nf; n++) {
+        if (cg_array_info (n, name, &datatype, &ndim, &size))
+            error_exit("cg_array_info");
+        printf ("    checking solution field \"%s\"\n", name);
+        fflush (stdout);
+
+        if (ndim > 1 || size < 1 || (datasize && size != datasize))
+            error ("bad dimension values");
+        check_quantity (n, name, dataclass, punits, 1, 6);
+    }
+
+    /* user data */
+
+    check_user_data (dataclass, punits, 4);
+}
+
+/*-----------------------------------------------------------------------*/
+
+static void check_particle_iter (void)
+{
+    char *p, *desc, name[33], buff[33];
+    int ierr, n, na, nd, nn, ndim;
+    cgsize_t dims[12], size;
+    int dataclass, *punits, units[9];
+    CGNS_ENUMT(DataType_t) datatype;
+    PARTICLE_ZONE *pz = &ParticleZone[cgnsparticle-1];
+
+    go_absolute ("ParticleZone_t", cgnsparticle, "ParticleIterativeData_t", 1, NULL);
+
+    if (verbose > 1) {
+        if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
+        for (n = 1; n <= nd; n++) {
+            if (cg_descriptor_read (n, name, &desc))
+                error_exit("cg_descriptor_read");
+            if (desc != NULL) {
+                printf ("    Descriptor %s:\n%s\n", name, desc);
+                cg_free (desc);
+            }
+        }
+    }
+
+    dataclass = read_dataclass ();
+    punits = read_units (units);
+    if (verbose) {
+        if (dataclass >= 0) print_dataclass (dataclass, 4);
+        if (punits) print_units (punits, 4);
+    }
+    if (dataclass < 0) dataclass = pz->dataclass;
+    if (!punits) punits = pz->punits;
+
+    if (cg_narrays (&na)) error_exit("cg_narrays");
+    for (n = 1; n <= na; n++) {
+        if (cg_array_info (n, name, &datatype, &ndim, dims))
+            error_exit("cg_array_info");
+        printf ("    checking particle zone iterative data \"%s\"\n", name);
+        fflush (stdout);
+        for (size = 1, nd = 0; nd < ndim; nd++)
+            size *= dims[nd];
+        if (0 == strcmp (name, "ParticleSolutionPointers")) {
+            if (ndim != 2 || dims[0] != 32 || size < 1 ||
+               (NumSteps && dims[1] != NumSteps))
+                error ("invalid dimension values");
+            else {
+                desc = (char *) malloc ((size_t)size);
+                if (desc == NULL)
+                    fatal_error("malloc failed for particle iter data\n");
+                if (cg_array_read (n, desc)) error_exit("cg_array_read");
+                ierr = 0;
+                if (0 == strcmp (name, "ParticleSolutionPointers")) {
+                    for (nd = 0; nd < dims[1]; nd++) {
+                        strncpy (buff, &desc[nd<<5], 32);
+                        buff[32] = 0;
+                        p = buff + strlen(buff);
+                        while (--p >= buff && isspace(*p))
+                            ;
+                        *++p = 0;
+                        for (nn = 0; nn < NumParticleSolution; nn++) {
+                            if (0 == strcmp (buff, ParticleSolution[nn])) break;
+                        }
+                        if ((nn == NumParticleSolution) && 0 != strcmp (buff, "Null")) ierr++;
+                    }
+                }
+
+                free (desc);
+                if (ierr)
+                    error ("%d %s are invalid", ierr, name);
+            }
+        }
+        else {
+            if (ndim < 1 || size < 1)
+                error ("invalid dimension values");
+            check_quantity (n, name, dataclass, punits, 0, 6);
+        }
+    }
+
+    check_user_data (dataclass, punits, 4);
+}
+
+/*-----------------------------------------------------------------------*/
+
+static void check_particle (void)
+{
+    char name[33], *desc;
+    int n, nd, ierr, eqset[7];
+    PARTICLE_ZONE *p = &ParticleZone[cgnsparticle-1];
+
+    printf ("\nchecking particle zone \"%s\"\n", p->name);
+    fflush (stdout);
+
+    /*----- descriptors -----*/
+
+    go_absolute ("ParticleZone_t", cgnsparticle, NULL);
+    if (verbose > 1) {
+        if (cg_ndescriptors (&nd)) error_exit("cg_ndescriptors");
+        for (n = 1; n <= nd; n++) {
+            if (cg_descriptor_read (n, name, &desc))
+                error_exit("cg_descriptor_read");
+            if (desc != NULL) {
+                printf ("  Descriptor %s:\n%s\n", name, desc);
+                cg_free (desc);
+            }
+        }
+    }
+
+    /*----- DataClass and DimensionalUnits -----*/
+
+    p->dataclass = read_dataclass ();
+    p->punits = read_units (p->units);
+    if (verbose) {
+        printf ("  Number of particles = %" PRIdCGSIZE, p->nparticles);
+        if (p->dataclass >= 0) print_dataclass (p->dataclass, 2);
+        if (p->punits) print_units (p->punits, 2);
+    }
+    if (p->dataclass < 0) p->dataclass = BaseClass;
+    if (!p->punits) p->punits = pBaseUnits;
+
+    /*----- FamilyName -----*/
+
+    ierr = cg_famname_read (name);
+    if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_famname_read");
+    if (ierr == CG_OK) {
+        if (verbose) printf ("  Family=%s\n", name);
+        for (n = 0; n < NumFamily; n++) {
+            if (0 == strcmp (name, Family[n])) break;
+        }
+        if (n >= NumFamily &&
+            (FileVersion >= 1200 || strcmp(name, "ORPHAN")))
+            warning (2, "particle zone family name \"%s\" not found", name);
+    }
+    else if (ierr == CG_NODE_NOT_FOUND) {
+        warning(2, "No family name declared for particle zone \"%s\"."
+            "It is a recommended practice to associate one.", p->name);
+    }
+
+    /*----- ReferenceState -----*/
+
+    ierr = cg_state_read (&desc);
+    if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_state_read");
+    if (ierr == CG_OK) {
+        puts ("  checking reference state");
+        if (desc != NULL) {
+            if (verbose > 1)
+                printf ("    Descriptor:%s\n", desc);
+            cg_free (desc);
+        }
+        fflush (stdout);
+        go_relative ("ReferenceState_t", 1, NULL);
+        check_arrays (BaseClass, pBaseUnits, 1, 0, 4);
+    }
+
+    /*----- ParticleEquationSet -----*/
+
+    go_absolute ("ParticleZone_t", cgnsparticle, NULL);
+    ierr = cg_particle_equationset_read (&eqset[0], &eqset[1], &eqset[2],
+        &eqset[3], &eqset[4], &eqset[5], &eqset[6]);
+    if (ierr && ierr != CG_NODE_NOT_FOUND)
+        error_exit("cg_particle_equationset_read");
+    if (ierr == CG_OK) {
+        puts ("  checking particle equation set");
+        fflush (stdout);
+        check_particle_equation_set (eqset, p->dataclass, p->punits, 4);
+    }
+
+    /*----- ParticleCoordinates -----*/
+
+    if (cg_particle_ncoord_nodes (cgnsfn, cgnsbase, cgnsparticle,
+        &NumParticleCoordinate)) error_exit("cg_particle_ncoord_nodes");
+    if(p->nparticles > 0)
+    {
+       if (!NumParticleCoordinate)
+          error ("no particle coordinates defined");
+       else {
+          create_names (NumParticleCoordinate, &MaxParticleCoordinate, &ParticleCoordinate);
+          for (n = 1; n <= NumParticleCoordinate; n++)
+             check_particle_coordinates (n);
+       }
+    }
+
+    /*----- ParticleSolution -----*/
+
+    if (cg_particle_nsols (cgnsfn, cgnsbase, cgnsparticle, &NumParticleSolution))
+        error_exit("cg_particle_nsols");
+    create_names (NumParticleSolution, &MaxParticleSolution, &ParticleSolution);
+    for (n = 1; n <= NumParticleSolution; n++)
+        check_particle_solution (n);
+
+    /*----- ParticleIterativeData -----*/
+
+    ierr = cg_piter_read (cgnsfn, cgnsbase, cgnsparticle, name);
+    /* prior to 2.3 returned ERROR instead of NODE_NOT_FOUND */
+    if (ierr && ierr != CG_NODE_NOT_FOUND && LibraryVersion >= 2300)
+        error_exit("cg_piter_read");
+    if (ierr == CG_OK) {
+        printf ("  checking particle iterative data \"%s\"\n", name);
+        fflush (stdout);
+        if (BaseIter)
+            error ("ParticleIterativeData requires BaseIterativeData");
+        check_particle_iter();
+    }
+
+    /*----- UserDefinedData -----*/
+
+    go_absolute ("ParticleZone_t", cgnsparticle, NULL);
+    check_user_data (p->dataclass, p->punits, 2);
+}
+
+/*=======================================================================*/
+
 static void check_base (void)
 {
     char basename[33], name[33], *desc1, *desc2, *desc3;
-    int n, nz, ierr, nd, nf, eqset[7];
+    int n, nz, np, ierr, nd, nf, eqset[7], particle_eqset[7];
     float point[3], vector[3];
     CGNS_ENUMT(SimulationType_t) simulation;
 
@@ -6030,6 +6627,24 @@ static void check_base (void)
     for (nz = 0; nz < NumZones; nz++)
         read_zone (nz);
     cgnszone = 0;
+
+    /*----- read particle zones -----*/
+    if (cg_nparticle_zones(cgnsfn, cgnsbase, &NumParticleZone)) error_exit("cg_nparticle_zones");
+
+
+    if (NumParticleZone > MaxParticleZone) {
+        if (MaxParticleZone)
+            ParticleZone = (PARTICLE_ZONE *) realloc (ParticleZone, NumParticleZone * sizeof(PARTICLE_ZONE));
+        else
+            ParticleZone = (PARTICLE_ZONE *) malloc (NumParticleZone * sizeof(PARTICLE_ZONE));
+        if (NULL == ParticleZone)
+            fatal_error("malloc failed for particle zones\n");
+        MaxParticleZone = NumParticleZone;
+    }
+
+    for (np = 0; np < NumParticleZone; np++)
+        read_particle(np);
+    cgnsparticle = 0;
 
     /*----- read families -----*/
 
@@ -6115,6 +6730,18 @@ static void check_base (void)
         check_equation_set (eqset, BaseClass, pBaseUnits, 2);
     }
 
+    /*----- ParticleEquationSet -----*/
+
+    go_absolute (NULL);
+    ierr = cg_particle_equationset_read (&particle_eqset[0], &particle_eqset[1], &particle_eqset[2],
+        &particle_eqset[3], &particle_eqset[4], &particle_eqset[5], &particle_eqset[6]);
+    if (ierr && ierr != CG_NODE_NOT_FOUND) error_exit("cg_particle_equationset_read");
+    if (ierr == CG_OK) {
+        puts ("checking particle equation set");
+        fflush (stdout);
+        check_particle_equation_set (particle_eqset, BaseClass, pBaseUnits, 2);
+    }
+
     /*----- Families -----*/
 
     for (nf = 1; nf <= NumFamily; nf++)
@@ -6197,13 +6824,17 @@ static void check_base (void)
 
     /*----- Zones -----*/
 
-    if (NumZones == 0) {
-        warning (1, "no zones defined");
+    if (NumZones == 0 && NumParticleZone == 0) {
+        warning (1, "no zones or particle zones defined");
         return;
     }
 
     for (cgnszone = 1; cgnszone <= NumZones; cgnszone++)
         check_zone ();
+
+    /*------ ParticleZones -----*/
+    for (cgnsparticle = 1; cgnsparticle <= NumParticleZone; cgnsparticle++)
+        check_particle ();
 }
 
 /*=======================================================================*/
@@ -6358,4 +6989,3 @@ int main (int argc, char *argv[])
     if (nerr) printf ("%d errors\n", nerr);
     return 0;
 }
-

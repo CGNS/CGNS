@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.20)
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif()
@@ -81,10 +81,22 @@ endif ()
 # build mode #
 ##############
 
+include(CheckIncludeFile)
+check_include_file(stdint.h HAVE_STDINT_H)
+check_include_file(inttypes.h HAVE_INTTYPES_H)
+if (NOT HAVE_STDINT_H)
+  message(FATAL_ERROR "stdint.h is not found")
+endif ()
+if (NOT HAVE_INTTYPES_H)
+  message(FATAL_ERROR "inttypes.h is not found")
+endif ()
+
 # get some type sizes
 include(CheckTypeSize)
 CHECK_TYPE_SIZE(long SIZEOF_LONG)
 CHECK_TYPE_SIZE(off_t SIZEOF_OFF_T)
+CHECK_TYPE_SIZE("int64_t" SIZEOF_INT64_T)
+CHECK_TYPE_SIZE("long long" SIZEOF_LONG_LONG)
 
 if ("${SIZEOF_OFF_T}" LESS 8)
   option(CGNS_ENABLE_LFS "Enable or disable large file support" "OFF")
@@ -452,9 +464,9 @@ endif()
 #-----------------------------------------------------------------------------
 option (CGNS_BUILD_TESTING "Build CGNS Testing" OFF)
 if (CGNS_BUILD_TESTING)
-  set (DART_TESTING_TIMEOUT "1200"
+  set (DART_TESTING_TIMEOUT "600"
       CACHE STRING
-      "Timeout in seconds for each test (default 1200=20minutes)"
+      "Timeout in seconds for each test (default 600=10minutes)"
   )
   enable_testing ()
   include (CTest)

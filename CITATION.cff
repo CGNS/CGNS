@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+title: CGNS Library
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - name: CGNS Steering Committee and Contributors
+repository-code: 'https://github.com/CGNS/CGNS'
+url: 'https://www.cgns.org'
+repository-artifact: 'https://github.com/CGNS/CGNS/releases'
+abstract: CFD General Notation System main C implementation
+keywords:
+  - CFD
+  - AIAA standard
+license: Zlib

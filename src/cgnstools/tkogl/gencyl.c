@@ -682,8 +682,8 @@ RenderModel (Model* model)
       Vector normal;
       GLdouble v [3];
       obj = gluNewTess();
-      gluTessCallback(obj, GLU_BEGIN, glBegin);
-      gluTessCallback(obj, GLU_VERTEX, glVertex3fv);
+      gluTessCallback(obj, GLU_BEGIN, (_GLUfuncptr)glBegin);
+      gluTessCallback(obj, GLU_VERTEX, (_GLUfuncptr)glVertex3fv);
       gluTessCallback(obj, GLU_END, glEnd);
       if (flags&CLOSE_FIRST) {
          CrossSection *a = model->cross [0];
