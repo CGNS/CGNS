@@ -7753,7 +7753,7 @@ CONTAINS
 
      INTERFACE
          INTEGER(C_INT) FUNCTION  cg_particle_governing_write(ParticleEquationstype) &
-               BIND(C, NAME=" cg_particle_governing_write")
+               BIND(C, NAME="cg_particle_governing_write")
            IMPORT :: C_INT, CGENUM_T
            IMPLICIT NONE
            INTEGER(CGENUM_T), VALUE :: ParticleEquationstype
