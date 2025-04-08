@@ -345,6 +345,7 @@ if (CGNS_ENABLE_HDF5)
 
   set(HDF5_NEED_ZLIB "OFF" CACHE BOOL "Does the HDF5 library require linking to zlib?")
   if(HDF5_NEED_ZLIB)
+    find_package(ZLIB)   # more recent versions of HDF5 require ZLIB::ZLIB
     find_library(ZLIB_LIBRARY z)
     mark_as_advanced(CLEAR ZLIB_LIBRARY)
   else ()
