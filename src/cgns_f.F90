@@ -1842,7 +1842,7 @@ MODULE cgns
       INTEGER(cgenum_t) :: TYPE
       INTEGER(cgenum_t) :: ptset_type
       INTEGER(CGSIZE_T) :: npnts
-      INTEGER(CGSIZE_T) :: pnts
+      INTEGER(CGSIZE_T), DIMENSION(*) :: pnts
       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: donorname
       INTEGER :: I
       INTEGER, INTENT(OUT) :: ier
