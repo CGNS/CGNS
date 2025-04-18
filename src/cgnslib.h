@@ -221,6 +221,9 @@
  * does nothing, as compression has not yet been implemented.**
 */
 #define CG_CONFIG_HDF5_COMPRESS         201
+
+#define CG_CONFIG_GET_MAXIMUM_FILES     401
+
 /**
  * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Sets the MPI communicator for parallel I/O. The default is `MPI_COMM_WORLD`. The
