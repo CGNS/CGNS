@@ -26,7 +26,7 @@ int main (int argc, char **argv)
 
     int maxnum_files = 99;
     if (cg_configure(CG_CONFIG_GET_MAXIMUM_FILES,  &maxnum_files)) cg_error_exit();
-    if (maxnum_files < 1024 | maxnum_files > 65536) cg_error_exit();
+    if (maxnum_files != 1024) cg_error_exit();
 
     printf ("opening cgns file <%s> ...", filename);
     fflush (stdout);
