@@ -1522,8 +1522,11 @@ void ADFH_Configure(const int option, void *value, int *err)
       set_error(NO_ERROR, err);
     }
     else if (option == ADFH_CONFIG_GET_MAXIMUM_FILES) {
-      int *int_ptr = (int *)value;
-      *int_ptr = ADFH_MAXIMUM_FILES;
+      if ( value == NULL) {
+        set_error(NULL_POINTER, err);
+        return;
+      }
+      *(int *)value = ADFH_MAXIMUM_FILES;
       set_error(NO_ERROR, err);
     }
 #if CG_BUILD_PARALLEL
