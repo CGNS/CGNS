@@ -1,14 +1,4 @@
 cmake_minimum_required(VERSION 3.20)
-if(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-endif()
-
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.10")
-  cmake_policy(SET CMP0015 NEW)
-endif()
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
-  cmake_policy(SET CMP0081 NEW)
-endif()
 
 # Macro to handle muticonfig generator
 macro (SET_CGNS_BUILD_TYPE)
@@ -268,15 +258,6 @@ if (CGNS_ENABLE_HDF5)
   message (STATUS "HDF5 find comps: ${FIND_HDF_COMPONENTS}")
 
   set (SEARCH_PACKAGE_NAME "hdf5")
-  
-  # If the first `find_package` below does not succeed, then the legacy `find_package`
-  # is tried (the `else` below).  The legacy find_package uses `HDF5_ROOT`.  But if 
-  # this is set, then CMake will issue warning and mistakenly say that `HDF5_ROOT` is
-  # not used even though it might be.  This can confuse user, so set policy to not
-  # issue that warning.
-  if (${CMAKE_VERSION} VERSION_GREATER "3.13")
-     cmake_policy(SET CMP0074 NEW)
-  endif()
 
   find_package (HDF5 NAMES ${SEARCH_PACKAGE_NAME} COMPONENTS ${FIND_HDF_COMPONENTS})
   message (STATUS "HDF5 C libs:${HDF5_FOUND} static:${HDF5_static_C_FOUND} and shared:${HDF5_shared_C_FOUND}")
