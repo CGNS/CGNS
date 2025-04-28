@@ -21,15 +21,7 @@ set_cgns_build_type()
 
 project("cgns" C)
 
-if (WIN32)
-  set(${CMAKE_INSTALL_LIBDIR} "lib")
-  set(${CMAKE_INSTALL_DATADIR} "share")
-  set(${CMAKE_INSTALL_INCLUDEDIR} "include")
-  set(${CMAKE_INSTALL_BINDIR} "bin")
-  message(STATUS "Setting installation destination on Windows to: ${CMAKE_INSTALL_PREFIX}")
-else()
-  include(GNUInstallDirs)
-endif()
+include(GNUInstallDirs)
 
 # Determine CGNS_VERSION from src/cgnslib.h for 
 file (READ ${PROJECT_SOURCE_DIR}/src/cgnslib.h _cgnslib_h_contents)
@@ -86,6 +78,16 @@ option(CGNS_ENABLE_LEGACY "Enable or disable building legacy code (3.0 compatibl
 option(CGNS_ENABLE_SCOPING "Enable or disable scoping of enumeration values" "OFF")
 option(CGNS_ENABLE_BASE_SCOPE "Enable or disable base scoped families or connectivities" "OFF")
 option(CGNS_ENABLE_MEM_DEBUG "Enable or disable memory debugging" "OFF")
+
+set(tools_install_suffix "/cgnstools")
+if(WIN32)
+  set(tools_install_suffix "")
+endif()
+
+set(CGNS_INSTALL_TOOLS_BINDIR "${CMAKE_INSTALL_BINDIR}${install_suffix}" CACHE PATH
+    "CGNS: tools binary install location")
+set(CGNS_INSTALL_TOOLS_DATADIR "${CMAKE_INSTALL_DATADIR}${install_suffix}" CACHE PATH
+    "CGNS: arch independent tools data install location")
 
 set(CGNS_BUILD_SHARED "ON" CACHE BOOL "Build a shared version of the library")
 

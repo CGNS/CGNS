@@ -702,11 +702,7 @@ endif ()
 # Set the install path of the static and shared library
 # for windows, need to install both cgnsdll.dll and cgnsdll.lib
 install (TARGETS ${install_targets}
-         EXPORT cgns-targets
-         LIBRARY DESTINATION lib COMPONENT libraries
-         ARCHIVE DESTINATION lib COMPONENT libraries
-         RUNTIME DESTINATION bin COMPONENT libraries
-         INCLUDES DESTINATION include)
+         EXPORT cgns-targets)
 
 # Set the install path of the header files
 set(headers
@@ -745,7 +741,7 @@ endif ()
 
 # Set the install path of the header files
 install(FILES ${headers}
-	DESTINATION include)
+	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #if (NOT CGNS_EXTERNALLY_CONFIGURE)
 include(CMakePackageConfigHelpers)
@@ -756,14 +752,14 @@ write_basic_package_version_file(
 configure_package_config_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/cgns-config.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/cgns-config.cmake
-  INSTALL_DESTINATION lib/cmake/cgns )
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cgns )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cgns-config-version.cmake
               ${CMAKE_CURRENT_BINARY_DIR}/cgns-config.cmake
-	DESTINATION lib/cmake/cgns)
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cgns)
 install(EXPORT cgns-targets
 	FILE cgns-targets.cmake
 	NAMESPACE CGNS::
-	DESTINATION lib/cmake/cgns
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cgns
 	)
 #endif()
 

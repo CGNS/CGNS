@@ -43,7 +43,7 @@ target_link_libraries(cgns_info PRIVATE ${UTILITIES_LK_LIBS})
 #----------
 
 # plot3d_to_cgns
-set(plot3d_to_cgns_FILES 
+set(plot3d_to_cgns_FILES
 	plot3d_to_cgns.c
 	cgnsutil.c
 	binaryio.c
@@ -53,7 +53,7 @@ add_executable(plot3d_to_cgns ${plot3d_to_cgns_FILES})
 target_link_libraries(plot3d_to_cgns PRIVATE ${UTILITIES_LK_LIBS})
 
 # cgns_to_plot3d
-set(cgns_to_plot3d_FILES 
+set(cgns_to_plot3d_FILES
 	cgns_to_plot3d.c
 	cgnsutil.c
 	binaryio.c
@@ -66,7 +66,7 @@ target_link_libraries(cgns_to_plot3d PRIVATE ${UTILITIES_LK_LIBS})
 #----------
 
 # patran_to_cgns
-set(patran_to_cgns_FILES 
+set(patran_to_cgns_FILES
 	patran_to_cgns.c
 	cgnsImport.c
 	../common/getargs.c
@@ -222,81 +222,40 @@ set(update_ngon_FILES
 add_executable(update_ngon ${update_ngon_FILES})
 target_link_libraries(update_ngon PRIVATE ${UTILITIES_LK_LIBS})
 
-if (WIN32)
-  install(TARGETS
-        plot3d_to_cgns
-	cgns_to_plot3d
-	patran_to_cgns
-	tecplot_to_cgns
-	cgns_to_tecplot
-	tetgen_to_cgns
-	vgrid_to_cgns
-	aflr3_to_cgns
-	cgns_to_aflr3
-	fast_to_cgns
-	cgns_to_fast
-	cgns_to_vtk
-	convert_location
-	convert_variables
-	convert_dataclass
-	extract_subset
-	interpolate_cgns
-	update_ngon
-        cgns_info
-	RUNTIME DESTINATION bin)
-  install(FILES
-	conserved.cnv
-	convert.tcl
-	dimensional.cnv
-	patran.tcl
-	plot3d.tcl
-	primitive.cnv
-	tecplot.tcl
-	tetgen.tcl
-	vgrid.tcl
-	aflr3.tcl
-	fast.tcl
-	util.tcl
-	utilities.mnu
-	vtk.tcl
-	DESTINATION share)
-else ()
-  install(TARGETS
-        plot3d_to_cgns
-	cgns_to_plot3d
-	patran_to_cgns
-	tecplot_to_cgns
-	cgns_to_tecplot
-	tetgen_to_cgns
-	vgrid_to_cgns
-	aflr3_to_cgns
-	cgns_to_aflr3
-	fast_to_cgns
-	cgns_to_fast
-	cgns_to_vtk
-	convert_location
-	convert_variables
-	convert_dataclass
-	extract_subset
-	interpolate_cgns
-	update_ngon
-        cgns_info
-	RUNTIME DESTINATION bin/cgnstools)
-  install(FILES
-	conserved.cnv
-	convert.tcl
-	dimensional.cnv
-	patran.tcl
-	plot3d.tcl
-	primitive.cnv
-	tecplot.tcl
-	tetgen.tcl
-	vgrid.tcl
-	aflr3.tcl
-	fast.tcl
-	util.tcl
-	utilities.mnu
-	vtk.tcl
-	DESTINATION share/cgnstools)
-endif ()
-
+install(TARGETS
+			plot3d_to_cgns
+cgns_to_plot3d
+patran_to_cgns
+tecplot_to_cgns
+cgns_to_tecplot
+tetgen_to_cgns
+vgrid_to_cgns
+aflr3_to_cgns
+cgns_to_aflr3
+fast_to_cgns
+cgns_to_fast
+cgns_to_vtk
+convert_location
+convert_variables
+convert_dataclass
+extract_subset
+interpolate_cgns
+update_ngon
+			cgns_info
+RUNTIME DESTINATION ${CGNS_INSTALL_TOOLS_BINDIR})
+install(FILES
+conserved.cnv
+convert.tcl
+dimensional.cnv
+patran.tcl
+plot3d.tcl
+primitive.cnv
+tecplot.tcl
+tetgen.tcl
+vgrid.tcl
+aflr3.tcl
+fast.tcl
+util.tcl
+utilities.mnu
+vtk.tcl
+DESTINATION ${CGNS_INSTALL_TOOLS_DATADIR})
