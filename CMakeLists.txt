@@ -1,34 +1,23 @@
 cmake_minimum_required(VERSION 3.20...3.20)
 
-# Macro to handle muticonfig generator
-macro (SET_CGNS_BUILD_TYPE)
+# Function to handle muticonfig generator
+function(set_cgns_build_type)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build.")
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+      "MinSizeRel" "RelWithDebInfo")
   get_property(_isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
   if(_isMultiConfig)
-    set(CGNS_CFG_NAME ${CMAKE_BUILD_TYPE})
-    set(CGNS_BUILD_TYPE ${CMAKE_CFG_INTDIR})
-    set(CGNS_CFG_BUILD_TYPE \${CMAKE_INSTALL_CONFIG_NAME})
+    set(CGNS_BUILD_TYPE ${CMAKE_CFG_INTDIR} PARENT_SCOPE)
+    set(CGNS_CFG_BUILD_TYPE \${CMAKE_INSTALL_CONFIG_NAME} PARENT_SCOPE)
   else()
-    set(CGNS_CFG_BUILD_TYPE ".")
-    if(CMAKE_BUILD_TYPE)
-      set(CGNS_CFG_NAME ${CMAKE_BUILD_TYPE})
-      set(CGNS_BUILD_TYPE ${CMAKE_BUILD_TYPE})
-    else()
-      set(CGNS_CFG_NAME "Release")
-      set(CGNS_BUILD_TYPE "Release")
-    endif()
+    set(CGNS_CFG_BUILD_TYPE "." PARENT_SCOPE)
+    set(CGNS_BUILD_TYPE ${CMAKE_BUILD_TYPE} PARENT_SCOPE)
   endif()
-  if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-    if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.15.0")
-      message (VERBOSE "Setting build type to 'Release' as none was specified.")
-    endif()
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
-    # Set the possible values of build type for cmake-gui
-    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
-      "MinSizeRel" "RelWithDebInfo")
-  endif()
-endmacro ()
+  set(CGNS_CFG_NAME ${CMAKE_BUILD_TYPE} PARENT_SCOPE)
+endfunction()
 
-SET_CGNS_BUILD_TYPE()
+set_cgns_build_type()
 
 project("cgns" C)
 
