@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.20...3.20)
 
 # Macro to handle muticonfig generator
 macro (SET_CGNS_BUILD_TYPE)
