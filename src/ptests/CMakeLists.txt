@@ -69,8 +69,7 @@ if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
 
   macro (ADD_FORTRAN_TEST_EXE file)
     add_executable (${file} ${file}.F90)
-    target_link_libraries (${file} PRIVATE ${PTESTS_LK_LIBS})
-    target_link_libraries (${file} PRIVATE test_utilsf)
+    target_link_libraries (${file} PRIVATE ${PTESTS_LK_LIBS} test_utilsf)
   endmacro ()
 
   foreach(TGTNAME ${FORTRAN_PTESTS_LIST})
