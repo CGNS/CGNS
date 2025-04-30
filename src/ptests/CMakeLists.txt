@@ -46,14 +46,14 @@ set(C_PTESTS_LIST
 	thesis_benchmark)
 
 #
-macro (ADD_TEST_EXE file)
+function(add_test_exe file)
   add_executable (${file} ${file}.c)
   target_link_libraries (${file} PRIVATE ${PTESTS_LK_LIBS})
-endmacro ()
+endfunction ()
 
 # Define C tests
 foreach(TGTNAME ${C_PTESTS_LIST})
-  ADD_TEST_EXE(${TGTNAME})
+  add_test_exe(${TGTNAME})
 endforeach()
 
 if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
@@ -67,13 +67,13 @@ if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
   )
   add_library(test_utilsf OBJECT ${CMAKE_SOURCE_DIR}/src/tests/utilsf.F90)
 
-  macro (ADD_FORTRAN_TEST_EXE file)
+  function (add_fortran_exe file)
     add_executable (${file} ${file}.F90)
     target_link_libraries (${file} PRIVATE ${PTESTS_LK_LIBS} test_utilsf)
-  endmacro ()
+  endfunction ()
 
   foreach(TGTNAME ${FORTRAN_PTESTS_LIST})
-    ADD_FORTRAN_TEST_EXE(${TGTNAME})
+    add_fortran_exe(${TGTNAME})
   endforeach()
 endif ()
 
