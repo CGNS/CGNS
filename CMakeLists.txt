@@ -388,6 +388,14 @@ if (CGNS_ENABLE_HDF5)
      endif()
   endif()
 
+  # If HDF5 needs SZIP, a libaec::sz target interface can pop up for hdf5
+  get_target_property(check_hdf5_link_defs hdf5-${CG_HDF5_LINK_TYPE} INTERFACE_LINK_LIBRARIES)
+  if (check_hdf5_link_defs)
+     if ("$<LINK_ONLY:libaec::sz>" IN_LIST check_hdf5_link_defs)
+        find_package(libaec)
+     endif()
+  endif()
+
 else ()
   mark_as_advanced(FORCE HDF5_NEED_ZLIB HDF5_NEED_SZIP HDF5_NEED_MPI)
   mark_as_advanced(FORCE ZLIB_LIBRARY SZIP_LIBRARY)
