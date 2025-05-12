@@ -390,7 +390,7 @@ if (CGNS_ENABLE_HDF5)
     endif()
   endif ()
 
-  # If HDF5 needs ZLIB, but ZLIB is an external pakage not provided by hdf5
+  # If HDF5 needs ZLIB, but ZLIB is an external package not provided by hdf5
   # a ZLIB dependency should be added.
   if (TARGET hdf5-static)
     if (HDF5_ENABLE_ZLIB_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
