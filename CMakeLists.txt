@@ -376,16 +376,31 @@ if (CGNS_ENABLE_HDF5)
       set_target_properties(hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
 			    INTERFACE_COMPILE_DEFINITIONS H5_BUILT_AS_STATIC_LIB)
     endif()
+    # User provided information about HDF5 requirements.
+    if (HDF5_NEED_ZLIB)
+      set(HDF5_ENABLE_ZLIB_SUPPORT ON)
+      # Next line is ON just not to enter the following find_package(ZLIB)
+      # It is assumed that since we are faking a modern cmake
+      # The package search for ZLIB was done earlier.
+      set(HDF5_PACKAGE_EXTLIBS ON)
+    endif()
+    if (HDF5_NEED_SZIP)
+      set(HDF5_ENABLE_SZIP_SUPPORT ON)
+      set(HDF5_PACKAGE_EXTLIBS ON)
+    endif()
   endif ()
 
-  # If HDF5 needs ZLIB, a ZLIB:ZLIB target interface can pop up for hdf5
-  get_target_property(check_hdf5_link_defs hdf5-${CG_HDF5_LINK_TYPE} INTERFACE_LINK_LIBRARIES)
-  if (check_hdf5_link_defs)
-     if ("$<LINK_ONLY:ZLIB::ZLIB>" IN_LIST check_hdf5_link_defs)
-        # ZLIB_ROOT could be set outside
-        # ZLIB_USE_STATIC_LIBS could be set outside
-        find_package(ZLIB)
-     endif()
+  # If HDF5 needs ZLIB, but ZLIB is an external pakage not provided by hdf5
+  # a ZLIB dependency should be added.
+  if (TARGET hdf5-static)
+    if (HDF5_ENABLE_ZLIB_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
+      message(STATUS "hdf5-static target needs ZLIB through an external library")
+      find_package(ZLIB)
+    endif ()
+    if (HDF5_ENABLE_SZIP_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
+      message(STATUS "hdf5-static target needs SZIP through external libraries")
+      find_package(libaec)
+    endif()
   endif()
 
 else ()
