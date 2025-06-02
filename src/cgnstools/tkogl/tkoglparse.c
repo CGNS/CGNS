@@ -675,7 +675,7 @@ ArgVarFloat (minArgs, maxArgs, def0, def1, def2, next)
  *
  *---------------------------------------------------------------------------*/
 
-typedef int TkOGLFunc _ANSI_ARGS_((Tcl_Interp* interp, void** args, int nargs));
+typedef int TkOGLFunc (Tcl_Interp* interp, void** args, int nargs);
 
 static TkOGLFunc
     TkAccum,

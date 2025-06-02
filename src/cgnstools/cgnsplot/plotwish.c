@@ -15,9 +15,10 @@
 #include "tk.h"
 #include "locale.h"
 
-extern int Cgnstcl_Init _ANSI_ARGS_((Tcl_Interp *interp));
-extern int Tkogl_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int Cgnstcl_Init (Tcl_Interp *interp);
+extern int Tkogl_Init (Tcl_Interp *interp);
 
+int Tcl_AppInit(Tcl_Interp *  interp);
 /*
  *----------------------------------------------------------------------
  *
@@ -36,9 +37,7 @@ extern int Tkogl_Init _ANSI_ARGS_((Tcl_Interp *interp));
  */
 
 int
-main(argc, argv)
-    int argc;			/* Number of command-line arguments. */
-    char **argv;		/* Values of command-line arguments. */
+main(int argc, char **argv)
 {
     Tk_Main(argc, argv, Tcl_AppInit);
     return 0;			/* Needed only to prevent compiler warning. */
@@ -64,9 +63,9 @@ main(argc, argv)
  */
 
 int
-Tcl_AppInit(interp)
-    Tcl_Interp *interp;		/* Interpreter for application. */
+Tcl_AppInit(Tcl_Interp *  interp)
 {
+    /* interp: Interpreter for application. */
     if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }

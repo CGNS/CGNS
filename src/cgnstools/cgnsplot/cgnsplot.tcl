@@ -8,7 +8,7 @@ proc error_exit {msg} {
   exit 1
 }
 
-if {[catch {package require Tk 8.0} msg]} {
+if {[catch {package vsatisfies [package provide Tcl] 8.6 9} msg]} {
   error_exit $msg
 }
 
@@ -2100,7 +2100,7 @@ proc cutplane_control {} {
   center_cutplane
   reset_cutplane
   foreach i {x y z d} {
-    trace variable ProgData(cut$i) w update_cutplane
+    trace add variable ProgData(cut$i) write update_cutplane
   }
   set ProgData(dotrace) 1
 }
@@ -2110,7 +2110,7 @@ proc close_cutplane {} {
   if {[winfo exists .cutplane]} {
     set ProgData(dotrace) 1
     foreach i {x y z d} {
-      trace vdelete ProgData(cut$i) w update_cutplane
+      trace remove variable ProgData(cut$i) write update_cutplane
     }
     OGLcutplane 0
     OGLdrawplane

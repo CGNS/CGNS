@@ -19,20 +19,20 @@
 #include <malloc.h>
 #include <locale.h>
 
-extern int Cgnstcl_Init _ANSI_ARGS_((Tcl_Interp *interp));
-extern int Tkogl_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int Cgnstcl_Init (Tcl_Interp *interp);
+extern int Tkogl_Init (Tcl_Interp *interp);
 #ifdef USE_HTMLHELP
-extern int WinHtml_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int WinHtml_Init (Tcl_Interp *interp);
 #endif
 
 /*
  * Forward declarations for procedures defined later in this file:
  */
 
-static void setargv _ANSI_ARGS_((int *argcPtr, char ***argvPtr));
-static void WishPanic _ANSI_ARGS_(TCL_VARARGS(char *,format));
-static int Proc_LoadIcon _ANSI_ARGS_((ClientData data,
-    Tcl_Interp *interp, int argc, char **argv));
+static void setargv (int *argcPtr, char ***argvPtr);
+static void WishPanic TCL_VARARGS(char *,format);
+static int Proc_LoadIcon (ClientData data,
+    Tcl_Interp *interp, int argc, char **argv);
 
 static HINSTANCE myInstance;
 
