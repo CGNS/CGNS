@@ -1,5 +1,90 @@
 @PACKAGE_INIT@
 
-include("${CMAKE_CURRENT_LIST_DIR}/cgns-targets.cmake")
+include(CMakeFindDependencyMacro)
 
-check_required_components(cgns)
+string(TOUPPER @CGNS_PACKAGE@ CGNS_PACKAGE_NAME)
+
+set (${CGNS_PACKAGE_NAME}_VALID_COMPONENTS
+    static
+    shared
+)
+
+#-----------------------------------------------------------------------------
+# User Options
+#-----------------------------------------------------------------------------
+# Languages:
+#-----------------------------------------------------------------------------
+set (${CGNS_PACKAGE_NAME}_BUILD_FORTRAN        @CGNS_ENABLE_FORTRAN@)
+#-----------------------------------------------------------------------------
+# Features:
+#-----------------------------------------------------------------------------
+set (${CGNS_PACKAGE_NAME}_BUILD_SHARED_LIBS     @CGNS_ENABLE_SHARED_LIB@)
+set (${CGNS_PACKAGE_NAME}_BUILD_STATIC_LIBS     @CGNS_ENABLE_STATIC_LIB@)
+set (${CGNS_PACKAGE_NAME}_BUILD_64BIT           @CGNS_ENABLE_64BIT@)
+#-----------------------------------------------------------------------------
+set (${CGNS_PACKAGE_NAME}_ENABLE_HDF5_SUPPORT   @CGNS_ENABLE_HDF5@)
+set (${CGNS_PACKAGE_NAME}_HDF5_LINK_TYPE        @CG_HDF5_LINK_TYPE@)
+#-----------------------------------------------------------------------------
+set (${CGNS_PACKAGE_NAME}_ARCHITECTURE         "@CMAKE_GENERATOR_ARCHITECTURE@")
+set (${CGNS_PACKAGE_NAME}_TOOLSET              "@CMAKE_GENERATOR_TOOLSET@")
+
+#-----------------------------------------------------------------------------
+# Dependencies
+#-----------------------------------------------------------------------------
+if (${CGNS_PACKAGE_NAME}_ENABLE_PARALLEL)
+  set (${CGNS_PACKAGE_NAME}_MPI_C_INCLUDE_PATH "@MPI_INC@")
+  set (${CGNS_PACKAGE_NAME}_MPI_C_LIBRARIES    "@MPI_LIBS@")
+
+  enable_language(C) # for MPI::MPI_C
+  find_package(MPI QUIET REQUIRED)
+endif ()
+#-----------------------------------------------------------------------------
+
+# Handle default component(static) :
+if (NOT ${CGNS_PACKAGE_NAME}_FIND_COMPONENTS)
+  if (${CGNS_PACKAGE_NAME}_BUILD_STATIC_LIBS)
+    set (${CGNS_PACKAGE_NAME}_LIB_TYPE)
+    set (${CGNS_PACKAGE_NAME}_FIND_COMPONENTS C static)
+    set (${CGNS_PACKAGE_NAME}_FIND_REQUIRED_static_C true)
+  else ()
+    set (${CGNS_PACKAGE_NAME}_LIB_TYPE)
+    set (${CGNS_PACKAGE_NAME}_FIND_COMPONENTS C shared)
+    set (${CGNS_PACKAGE_NAME}_FIND_REQUIRED_shared_C true)
+  endif ()
+endif ()
+
+# Handle requested components:
+list (REMOVE_DUPLICATES ${CGNS_PACKAGE_NAME}_FIND_COMPONENTS)
+foreach (comp IN LISTS ${CGNS_PACKAGE_NAME}_FIND_COMPONENTS)
+  if (comp STREQUAL "shared")
+    list (REMOVE_ITEM ${CGNS_PACKAGE_NAME}_FIND_COMPONENTS ${comp})
+    set (${CGNS_PACKAGE_NAME}_LIB_TYPE ${${CGNS_PACKAGE_NAME}_LIB_TYPE} ${comp})
+  elseif (comp STREQUAL "static")
+    list (REMOVE_ITEM ${CGNS_PACKAGE_NAME}_FIND_COMPONENTS ${comp})
+    set (${CGNS_PACKAGE_NAME}_LIB_TYPE ${${CGNS_PACKAGE_NAME}_LIB_TYPE} ${comp})
+  endif ()
+endforeach ()
+
+# Propagate HDF5 dependency
+set(HAVE_LK_HDF5_SHARED 0)
+if (${CGNS_PACKAGE_NAME}_ENABLE_HDF5_SUPPORT AND ${CGNS_PACKAGE_NAME}_HDF5_LINK_TYPE STREQUAL "shared")
+  set(HAVE_LK_HDF5_SHARED 1)
+endif()
+if (HAVE_LK_HDF5_SHARED)
+  find_dependency(HDF5)
+endif()
+# In case of static CGNS with static HDF5
+# How to propagate the dependency as it will be build environment dependent ?
+# Lets the user manage for now.
+
+#-----------------------------------------------------------------------------
+# Don't include targets if this file is being picked up by another
+# project which has already built CGNS as a subproject
+#-----------------------------------------------------------------------------
+#if (NOT TARGET "@CGNS_PACKAGE@")
+  include("${CMAKE_CURRENT_LIST_DIR}/cgns-targets.cmake")
+#endif ()
+
+foreach (libtype IN LISTS ${CGNS_PACKAGE_NAME}_LIB_TYPE)
+  check_required_components(${CGNS_PACKAGE_NAME}_${libtype})
+endforeach ()

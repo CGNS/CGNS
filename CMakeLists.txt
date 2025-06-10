@@ -28,7 +28,11 @@ file (READ ${PROJECT_SOURCE_DIR}/src/cgnslib.h _cgnslib_h_contents)
 string (REGEX REPLACE ".*#define[ \t]+CGNS_DOTVERS[ \t]+([0-9]*)\\.([0-9])[0-9]*.*$"
     "\\1.\\2" CGNS_VERSION ${_cgnslib_h_contents})
 
+set(CGNS_PACKAGE "cgns")
+set(CGNS_PACKAGE_NAME "CGNS")
+
 # Allow for building a package
+set(CPACK_PACKAGE_NAME "${CGNS_PACKAGE_NAME}")
 set(CPACK_PACKAGE_VERSION "${CGNS_VERSION}")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "cgns-${CGNS_VERSION}")
 set(CPACK_GENERATOR "STGZ;TGZ;ZIP")
@@ -90,6 +94,12 @@ set(CGNS_INSTALL_TOOLS_DATADIR "${CMAKE_INSTALL_DATADIR}${install_suffix}" CACHE
     "CGNS: arch independent tools data install location")
 
 set(CGNS_BUILD_SHARED "ON" CACHE BOOL "Build a shared version of the library")
+# useful to write cmake config.
+set(CGNS_ENABLE_SHARED_LIB NO)
+set(CGNS_ENABLE_STATIC_LIB YES)
+if (CGNS_BUILD_SHARED)
+  set(CGNS_ENABLE_SHARED_LIB YES)
+endif()
 
 if (CGNS_ENABLE_LEGACY)
   set(CGNS_ENABLE_64BIT "OFF")
