@@ -1,0 +1,79 @@
+{
+    "version": "v1.0.0",
+
+    // Required. The entity associated with the project, soliciting funds.
+    // This can be an individual, organisation, community etc.
+    "entity": {
+        "type": "Organisation",                  // Required. [individual, group, organisation, other]. Use the closest approximation.
+        "role": "Contributor",                   // Required. [owner, steward, maintainer, contributor, other]. Use the closest approximation.
+        "name": "The HDF Group",                 // Required. Name of the entity. Max len 250.
+        "email": "bizoffice@hdfgroup.org",       // Required. Max len 250.
+        "phone": "217-531-6100",                 // Optional. Generally suitable for organisations. Max len 32.
+        "description": "The HDF Group is a non-profit organization with the mission of advancing state-of-the-art open-source data management technologies, ensuring long-term access to the data, and supporting our dedicated and diverse user community.",              // Required. Information about the entity. Max len 2000.
+        "webpageUrl": {
+            "url": "https://www.hdfgroup.org/", // Required. Webpage with information about the entity. Starts with https:// or http://. Max len 250.
+            "wellKnown": "https://github.com/CGNS/CGNS"   // Optional. Required if the above url and the URL of the funding.json manifest do not have the same hostname. Starts with https:// or http://. Max len 250.
+        }
+    },
+
+    // Optional. One or more projects for which the funding is solicited.
+    "projects": [{
+        "guid": "cgns",                     // Required. A short unique ID for the project. Lowercase-alphanumeric-dashes only. eg: my-cool-project. Max len 32.
+        "name": "cgns",                     // Required. Name of the project. Max len 250.
+        "description": "The Computational Fluid Dynamics (CFD) General Notation System (CGNS) is used worldwide to store and exchange CFD input and output data, facilitating interdisciplinary collaboration and enriching the archival quality of scientific data. CGNS is a CFD community standard that describes the intellectual content required for CFD analysis, as well as open-source software that implements the standard. Having a standardized, well-maintained, well-tested and well-performing CGNS software package encourages its use and popularity in the CFD community.\n Since its inception in the 1990s, the CGNS Steering Committee has operated as a self-sustaining and largely unfunded group of volunteers from various contributing organizations worldwide. The primary scientific objective of this project is to enhance the high-performance computing (HPC) capabilities of CGNS by examining how it can leverage the recent HPC features of the software stack it relies on, specifically the HDF5 and MPI I/O libraries. We plan to implement the changes made to both CGNS and HDF5 and make these enhancements available in open-source distributions\n. Furthermore, the project is committed to supporting accepted and essential CGNS Proposals for Extension (CPEX) to advance the next generation of CFD simulations.\n Lastly, we aim to broaden continuous integration (CI) testing to include a wider variety of operating systems and compilers while also addressing some of the technical debt that has accumulated over the years", // Required. Description of the project. Max len 2000.
+        "webpageUrl": {
+            "url": "https://cgns.org",   // Required. Webpage with information about the project. Starts with https:// or http://. Max len 250.
+            "wellKnown": ""              // Optional. Required if the above url and the URL of the funding.json manifest do not have the same hostname. Starts with https:// or http://. Max len 250.
+        },
+        "repositoryUrl": {
+            "url": "https://github.com/CGNS/CGNS", // Required. URL of the repository where the project's source code and other assets are available. Starts with https:// or http://. Max len 250.
+            "wellKnown": ""             // Optional. Required if the above url and the URL of the funding.json manifest do not have the same hostname. Starts with https:// or http://. Max len 250.
+        },
+        "licenses": [spdx:zlib/libpng],   // Required. The project's licenses (up to 5). For standard licenses, use the license ID from the SDPX index prefixed by "spdx:". eg: "spdx:GPL-3.0", "spdx:CC-BY-SA-4.0"
+        "tags": ["library", "standard", "computational fluid dynamics", "data format", "aerospace", "grids", "flow solutions", "hdf5", "notation"]                      // Required. Up to 10 general tags describing the project. Lowercase-alphanumeric-dashes (max 32 chars). eg: ["programming", "developer-tools"]. For reference, see tags.txt
+    }],
+
+    // Required.
+    "funding": {
+        // Required. This describes one or more channels via which the entity can receive funds.
+        "channels": [{
+            "guid": "mybank", // Required. A short unique ID for the channel. Lowercase-alphanumeric-dashes only. eg: mybank, my-paypal. Max len 32.
+            "type": "bank",   // Required. [bank, payment-provider, cheque, cash, other].
+            "address": "Will accept direct bank transfers. Please e-mail me for details.",    // Optional. A short unstructured textual representation of the payment address for the channel. eg: "Account: 12345 (branch: ABCX)", "mypaypal@domain.com", "https://payment-url.com", or a physical address for cheques. Max len 250.
+            "description": "" // Optional. Any additional description or instructions for the payment channel. Max len 500.
+        }],
+
+        // Required. One or more funding and payment plans.
+        "plans": [{
+            "guid": "developer-compensation", // Required. A short unique ID for the plan. Lowercase-alphanumeric-dashes only. eg: mybank, paypal. Max len 32.
+            "status": "active",               // Required. [active, inactive]. Indicates whether this plan is currently active or inactive.
+            "name": "Developer Compensation", // Required. Name of the funding plan. eg: "Starter support plan", "Infra hosting", "Monthly funding plan".
+            "description": "This will cover the cost of part-time developers working on the project.", // Optional. Any additional description or instructions for the funding plan.
+            "amount": 50000,        // Required. The solicited amount for this plan. 0 is a wildcard that indicates "any amount".
+            "currency": "USD",      // Required. Three letter ISO 4217 currency code. eg: USD
+            "frequency": "yearly",  // Required. [one-time, weekly, fortnightly, monthly, yearly, other]
+            "channels": [mybank]    // Required. One or more channel IDs defined in channels[] via which this plan can accept payments.
+        }],
+
+        "plans": [{
+            "guid": "flexible-giving",  // Required. A short unique ID for the plan. Lowercase-alphanumeric-dashes only. eg: mybank, paypal. Max len 32.
+            "status": "active",         // Required. [active, inactive]. Indicates whether this plan is currently active or inactive.
+            "name": "Flexible Giving",  // Required. Name of the funding plan. eg: "Starter support plan", "Infra hosting", "Monthly funding plan".
+            "description": "Support our project with a goodwill contribution of any size you deem fit.",   // Optional. Any additional description or instructions for the funding plan.
+            "amount": 0,                // Required. The solicited amount for this plan. 0 is a wildcard that indicates "any amount".
+            "currency": "USD",          // Required. Three letter ISO 4217 currency code. eg: USD
+            "frequency": "one-time",    // Required. [one-time, weekly, fortnightly, monthly, yearly, other]
+            "channels": [mybank]        // Required. One or more channel IDs defined in channels[] via which this plan can accept payments.
+        }],
+
+        // Optional. A simple summary of funding history. Only include if at least one, either income or expenses, have to be communicated.
+        //"history": [{
+        //    "year": 2024,               // Required. Year (fiscal, preferably).
+        //    "income": 0,                // Optional.
+        //    "expenses": 0,              // Optional.
+        //    "taxes": 0,                 // Optional.
+        //    "currency": "",             // Required. Three letter ISO 4217 currency code. eg: USD
+        //    "description": ""           // Optional. Any additional description. Max length 500.
+        //}]
+    }
+}
