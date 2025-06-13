@@ -15195,7 +15195,7 @@ int cg_particle_field_general_read(int fn, int B, int P, int S, const char *fiel
  *
  * \param[in]  fn        \FILE_fn
  * \param[in]  B         \B_Base
- * \param[in]  Z         \Z_Zone
+ * \param[in]  P         \P_ParticleZone
  * \param[in]  S         \SOL_S
  * \param[in]  F         \PSOL_F
  * \param[out] field_id  Field particle solution ADF ID number (address) of node
