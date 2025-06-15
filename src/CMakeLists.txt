@@ -597,7 +597,13 @@ add_library(cgns_static STATIC ${cgns_FILES} $<$<BOOL:${CGNS_ENABLE_FORTRAN}>:$<
 add_library(CGNS::cgns-static ALIAS cgns_static)
 # Needed to work around a CMake > 3.8 bug on Windows with MSVS and Intel Fortran
 set_property(TARGET cgns_static PROPERTY LINKER_LANGUAGE C)
-target_link_libraries(cgns_static PRIVATE $<$<BOOL:${CGNS_ENABLE_HDF5}>:hdf5-${CG_HDF5_LINK_TYPE}>)
+if (CGNS_ENABLE_HDF5)
+  if (CG_HDF5_LINK_TYPE STREQUAL "static")
+    target_link_libraries(cgns_static PRIVATE hdf5-${CG_HDF5_LINK_TYPE})
+  else()
+    target_link_libraries(cgns_static PUBLIC hdf5-${CG_HDF5_LINK_TYPE})
+  endif()
+endif()
 
 # Build a shared version of the library
 if(CGNS_BUILD_SHARED)
@@ -614,7 +620,12 @@ if(CGNS_BUILD_SHARED)
     target_compile_definitions(cgns_shared INTERFACE -DUSE_DLL)
   endif ()
   if (CGNS_ENABLE_HDF5 AND HDF5_LIBRARY)
-    target_link_libraries(cgns_shared PUBLIC hdf5-${CG_HDF5_LINK_TYPE} $<$<NOT:$<PLATFORM_ID:Windows>>:${CMAKE_DL_LIBS}>)
+    if (CG_HDF5_LINK_TYPE STREQUAL "shared")
+      target_link_libraries(cgns_shared PUBLIC hdf5-${CG_HDF5_LINK_TYPE} $<$<NOT:$<PLATFORM_ID:Windows>>:${CMAKE_DL_LIBS}>)
+    else()
+      target_link_libraries(cgns_shared PRIVATE hdf5-${CG_HDF5_LINK_TYPE})
+      target_link_libraries(cgns_shared PUBLIC $<$<NOT:$<PLATFORM_ID:Windows>>:${CMAKE_DL_LIBS}>)
+    endif()
     if(HDF5_NEED_ZLIB AND ZLIB_LIBRARY)
       target_link_libraries(cgns_shared PUBLIC ${ZLIB_LIBRARY})
     endif()
@@ -739,6 +750,8 @@ if (CGNS_ENABLE_LEGACY)
   endif ()
 endif ()
 
+# Set the CMake namespace
+set (CGNS_PACKAGE_NAMESPACE "CGNS::" CACHE STRING "Name for CGNS package namespace (can be empty)" FORCE)
 # Set the install path of the header files
 install(FILES ${headers}
 	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
@@ -758,7 +771,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cgns-config-version.cmake
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cgns)
 install(EXPORT cgns-targets
 	FILE cgns-targets.cmake
-	NAMESPACE CGNS::
+	NAMESPACE ${CGNS_PACKAGE_NAMESPACE}
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cgns
 	)
 #endif()
