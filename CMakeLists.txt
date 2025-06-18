@@ -436,6 +436,21 @@ else ()
   mark_as_advanced(FORCE CGNS_ENABLE_PARALLEL)
 endif ()
 
+####################################
+# Display CMake HDF5 configuration #
+####################################
+if ((NOT CGNS_BUILD_SHARED) AND CGNS_ENABLE_HDF5 AND (CG_HDF5_LINK_TYPE STREQUAL "shared"))
+  message(STATUS "")
+  message(STATUS "=== CGNS Build Configuration Notice ===")
+  message(STATUS "CGNS: Building static CGNS  library with shared HDF5")
+  message(STATUS "Applications using CGNS will need:")
+  message(STATUS "  1. HDF5 shared libraries available at runtime")
+  message(STATUS "  2. Proper RPATH/LD_LIBRARY_PATH configuration")
+  message(STATUS "  3. find_package(CGNS::cgns_static) in the application's CMakeLists.txt")
+  message(STATUS "=====================================")
+  message(STATUS "")
+endif()
+
 ####################
 # RPATH Management #
 ####################
