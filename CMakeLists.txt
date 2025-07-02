@@ -1,63 +1,38 @@
-cmake_minimum_required(VERSION 3.20)
-if(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-endif()
+cmake_minimum_required(VERSION 3.20...3.20)
 
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.10")
-  cmake_policy(SET CMP0015 NEW)
-endif()
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13")
-  cmake_policy(SET CMP0081 NEW)
-endif()
-
-# Macro to handle muticonfig generator
-macro (SET_CGNS_BUILD_TYPE)
+# Function to handle muticonfig generator
+function(set_cgns_build_type)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build.")
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
+      "MinSizeRel" "RelWithDebInfo")
   get_property(_isMultiConfig GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
   if(_isMultiConfig)
-    set(CGNS_CFG_NAME ${CMAKE_BUILD_TYPE})
-    set(CGNS_BUILD_TYPE ${CMAKE_CFG_INTDIR})
-    set(CGNS_CFG_BUILD_TYPE \${CMAKE_INSTALL_CONFIG_NAME})
+    set(CGNS_BUILD_TYPE ${CMAKE_CFG_INTDIR} PARENT_SCOPE)
+    set(CGNS_CFG_BUILD_TYPE \${CMAKE_INSTALL_CONFIG_NAME} PARENT_SCOPE)
   else()
-    set(CGNS_CFG_BUILD_TYPE ".")
-    if(CMAKE_BUILD_TYPE)
-      set(CGNS_CFG_NAME ${CMAKE_BUILD_TYPE})
-      set(CGNS_BUILD_TYPE ${CMAKE_BUILD_TYPE})
-    else()
-      set(CGNS_CFG_NAME "Release")
-      set(CGNS_BUILD_TYPE "Release")
-    endif()
+    set(CGNS_CFG_BUILD_TYPE "." PARENT_SCOPE)
+    set(CGNS_BUILD_TYPE ${CMAKE_BUILD_TYPE} PARENT_SCOPE)
   endif()
-  if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-    if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.15.0")
-      message (VERBOSE "Setting build type to 'Release' as none was specified.")
-    endif()
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
-    # Set the possible values of build type for cmake-gui
-    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release"
-      "MinSizeRel" "RelWithDebInfo")
-  endif()
-endmacro ()
+  set(CGNS_CFG_NAME ${CMAKE_BUILD_TYPE} PARENT_SCOPE)
+endfunction()
 
-SET_CGNS_BUILD_TYPE()
+set_cgns_build_type()
 
 project("cgns" C)
 
-if (WIN32)
-  set(${CMAKE_INSTALL_LIBDIR} "lib")
-  set(${CMAKE_INSTALL_DATADIR} "share")
-  set(${CMAKE_INSTALL_INCLUDEDIR} "include")
-  set(${CMAKE_INSTALL_BINDIR} "bin")
-  message(STATUS "Setting installation destination on Windows to: ${CMAKE_INSTALL_PREFIX}")
-else()
-  include(GNUInstallDirs)
-endif()
+include(GNUInstallDirs)
 
 # Determine CGNS_VERSION from src/cgnslib.h for 
 file (READ ${PROJECT_SOURCE_DIR}/src/cgnslib.h _cgnslib_h_contents)
 string (REGEX REPLACE ".*#define[ \t]+CGNS_DOTVERS[ \t]+([0-9]*)\\.([0-9])[0-9]*.*$"
     "\\1.\\2" CGNS_VERSION ${_cgnslib_h_contents})
 
+set(CGNS_PACKAGE "cgns")
+set(CGNS_PACKAGE_NAME "CGNS")
+
 # Allow for building a package
+set(CPACK_PACKAGE_NAME "${CGNS_PACKAGE_NAME}")
 set(CPACK_PACKAGE_VERSION "${CGNS_VERSION}")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "cgns-${CGNS_VERSION}")
 set(CPACK_GENERATOR "STGZ;TGZ;ZIP")
@@ -71,11 +46,6 @@ CONFIGURE_FILE(
 
 ADD_CUSTOM_TARGET(uninstall
 	"${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
-
-# if this is cygwin, turn off win32 flag
-if (CYGWIN)
-  set(WIN32 "NO")
-endif ()
 
 ##############
 # build mode #
@@ -113,7 +83,23 @@ option(CGNS_ENABLE_SCOPING "Enable or disable scoping of enumeration values" "OF
 option(CGNS_ENABLE_BASE_SCOPE "Enable or disable base scoped families or connectivities" "OFF")
 option(CGNS_ENABLE_MEM_DEBUG "Enable or disable memory debugging" "OFF")
 
+set(tools_install_suffix "/cgnstools")
+if(WIN32)
+  set(tools_install_suffix "")
+endif()
+
+set(CGNS_INSTALL_TOOLS_BINDIR "${CMAKE_INSTALL_BINDIR}${install_suffix}" CACHE PATH
+    "CGNS: tools binary install location")
+set(CGNS_INSTALL_TOOLS_DATADIR "${CMAKE_INSTALL_DATADIR}${install_suffix}" CACHE PATH
+    "CGNS: arch independent tools data install location")
+
 set(CGNS_BUILD_SHARED "ON" CACHE BOOL "Build a shared version of the library")
+# useful to write cmake config.
+set(CGNS_ENABLE_SHARED_LIB NO)
+set(CGNS_ENABLE_STATIC_LIB YES)
+if (CGNS_BUILD_SHARED)
+  set(CGNS_ENABLE_SHARED_LIB YES)
+endif()
 
 if (CGNS_ENABLE_LEGACY)
   set(CGNS_ENABLE_64BIT "OFF")
@@ -273,15 +259,6 @@ if (CGNS_ENABLE_HDF5)
   message (STATUS "HDF5 find comps: ${FIND_HDF_COMPONENTS}")
 
   set (SEARCH_PACKAGE_NAME "hdf5")
-  
-  # If the first `find_package` below does not succeed, then the legacy `find_package`
-  # is tried (the `else` below).  The legacy find_package uses `HDF5_ROOT`.  But if 
-  # this is set, then CMake will issue warning and mistakenly say that `HDF5_ROOT` is
-  # not used even though it might be.  This can confuse user, so set policy to not
-  # issue that warning.
-  if (${CMAKE_VERSION} VERSION_GREATER "3.13")
-     cmake_policy(SET CMP0074 NEW)
-  endif()
 
   find_package (HDF5 NAMES ${SEARCH_PACKAGE_NAME} COMPONENTS ${FIND_HDF_COMPONENTS})
   message (STATUS "HDF5 C libs:${HDF5_FOUND} static:${HDF5_static_C_FOUND} and shared:${HDF5_shared_C_FOUND}")
@@ -409,7 +386,33 @@ if (CGNS_ENABLE_HDF5)
       set_target_properties(hdf5-${CG_HDF5_LINK_TYPE} PROPERTIES
 			    INTERFACE_COMPILE_DEFINITIONS H5_BUILT_AS_STATIC_LIB)
     endif()
+    # User provided information about HDF5 requirements.
+    if (HDF5_NEED_ZLIB)
+      set(HDF5_ENABLE_ZLIB_SUPPORT ON)
+      # Next line is ON just not to enter the following find_package(ZLIB)
+      # It is assumed that since we are faking a modern cmake
+      # The package search for ZLIB was done earlier.
+      set(HDF5_PACKAGE_EXTLIBS ON)
+    endif()
+    if (HDF5_NEED_SZIP)
+      set(HDF5_ENABLE_SZIP_SUPPORT ON)
+      set(HDF5_PACKAGE_EXTLIBS ON)
+    endif()
   endif ()
+
+  # If HDF5 needs ZLIB, but ZLIB is an external package not provided by hdf5
+  # a ZLIB dependency should be added.
+  if (TARGET hdf5-static)
+    if (HDF5_ENABLE_ZLIB_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
+      message(STATUS "hdf5-static target needs ZLIB through an external library")
+      find_package(ZLIB)
+    endif ()
+    if (HDF5_ENABLE_SZIP_SUPPORT AND NOT HDF5_PACKAGE_EXTLIBS)
+      message(STATUS "hdf5-static target needs SZIP through external libraries")
+      find_package(libaec)
+    endif()
+  endif()
+
 else ()
   mark_as_advanced(FORCE HDF5_NEED_ZLIB HDF5_NEED_SZIP HDF5_NEED_MPI)
   mark_as_advanced(FORCE ZLIB_LIBRARY SZIP_LIBRARY)
@@ -432,6 +435,21 @@ else ()
   set(CGNS_ENABLE_PARALLEL "OFF")
   mark_as_advanced(FORCE CGNS_ENABLE_PARALLEL)
 endif ()
+
+####################################
+# Display CMake HDF5 configuration #
+####################################
+if ((NOT CGNS_BUILD_SHARED) AND CGNS_ENABLE_HDF5 AND (CG_HDF5_LINK_TYPE STREQUAL "shared"))
+  message(STATUS "")
+  message(STATUS "=== CGNS Build Configuration Notice ===")
+  message(STATUS "CGNS: Building static CGNS  library with shared HDF5")
+  message(STATUS "Applications using CGNS will need:")
+  message(STATUS "  1. HDF5 shared libraries available at runtime")
+  message(STATUS "  2. Proper RPATH/LD_LIBRARY_PATH configuration")
+  message(STATUS "  3. find_package(CGNS::cgns_static) in the application's CMakeLists.txt")
+  message(STATUS "=====================================")
+  message(STATUS "")
+endif()
 
 ####################
 # RPATH Management #

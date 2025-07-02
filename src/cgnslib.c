@@ -360,7 +360,7 @@ const char * AverageInterfaceTypeName[NofValidAverageInterfaceTypes] =
 int n_open = 0;
 int cgns_file_size = 0;
 int file_number_offset = 0;
-int VersionList[] = {4600, 4500, 4400, 4300, 4200,
+int VersionList[] = {5000, 4500, 4400, 4300, 4200,
                      4110, 4100, 4000,
                      3210, 3200,
                      3140, 3130, 3110, 3100,
@@ -15207,7 +15207,7 @@ int cg_particle_field_general_read(int fn, int B, int P, int S, const char *fiel
  *
  * \param[in]  fn        \FILE_fn
  * \param[in]  B         \B_Base
- * \param[in]  Z         \Z_Zone
+ * \param[in]  P         \P_ParticleZone
  * \param[in]  S         \SOL_S
  * \param[in]  F         \PSOL_F
  * \param[out] field_id  Field particle solution ADF ID number (address) of node

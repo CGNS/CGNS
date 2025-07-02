@@ -8,8 +8,8 @@
 #include "calc.h"
 #include "cgnslib.h"
 
-#ifndef CONST
-# define CONST
+#ifndef Tcl_Size
+# define Tcl_Size int
 #endif
 
 static Tcl_Interp *global_interp;
@@ -704,8 +704,9 @@ static int CalcCommand (ClientData data, Tcl_Interp *interp,
 static int CalcDelete (ClientData data, Tcl_Interp *interp,
                        int argc, char **argv)
 {
-    int i, n, nargs;
-    CONST char **args;
+    int i, n;
+    Tcl_Size nargs;
+    const char **args;
 
     for (n = 1; n < argc; n++) {
         if (TCL_OK == Tcl_SplitList (interp, argv[n], &nargs, &args)) {

@@ -531,7 +531,7 @@ proc TreeEdit {w v} {
   bind $ent <Return> "set _Tree($w:done) 1"
   set id [$w create window $x $y -window $frame -anchor w]
 
-  trace variable _Tree($w:edit) w "Tree:edit_size $w $ent $id $wmax"
+  trace add variable _Tree($w:edit) write "Tree:edit_size $w $ent $id $wmax"
   set oldFocus [focus]
   set oldGrab [grab current $w]
   if {$oldGrab != ""} {
@@ -544,7 +544,7 @@ proc TreeEdit {w v} {
   $ent icursor end
   $ent xview end
   tkwait variable _Tree($w:done)
-  trace vdelete _Tree($w:edit) w "Tree:edit_size $w $ent $id $wmax"
+  trace remove variable _Tree($w:edit) write "Tree:edit_size $w $ent $id $wmax"
 
   catch {focus $oldFocus}
   if {$oldGrab != ""} {

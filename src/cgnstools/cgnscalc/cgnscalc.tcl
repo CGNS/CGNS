@@ -8,7 +8,7 @@ proc error_exit {msg} {
   exit 1
 }
 
-if {[catch {package require Tk 8.0} msg]} {
+if {[catch {package vsatisfies [package provide Tcl] 8.6 9} msg]} {
   error_exit $msg
 }
 

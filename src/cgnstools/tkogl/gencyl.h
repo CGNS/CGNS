@@ -1,3 +1,3 @@
-int GenericCylinder _ANSI_ARGS_((Tcl_Interp *interp, int argc, char* argv []));
+int GenericCylinder (Tcl_Interp *interp, int argc, char* argv []);
 
 

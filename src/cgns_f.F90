@@ -1843,7 +1843,7 @@ MODULE cgns
       INTEGER(cgenum_t) :: TYPE
       INTEGER(cgenum_t) :: ptset_type
       INTEGER(CGSIZE_T) :: npnts
-      INTEGER(CGSIZE_T) :: pnts
+      INTEGER(CGSIZE_T), DIMENSION(*) :: pnts
       CHARACTER(KIND=C_CHAR), DIMENSION(*) :: donorname
       INTEGER :: I
       INTEGER, INTENT(OUT) :: ier
@@ -7754,7 +7754,7 @@ CONTAINS
 
      INTERFACE
          INTEGER(C_INT) FUNCTION  cg_particle_governing_write(ParticleEquationstype) &
-               BIND(C, NAME=" cg_particle_governing_write")
+               BIND(C, NAME="cg_particle_governing_write")
            IMPORT :: C_INT, CGENUM_T
            IMPLICIT NONE
            INTEGER(CGENUM_T), VALUE :: ParticleEquationstype

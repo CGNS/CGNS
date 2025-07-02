@@ -9,7 +9,7 @@
 #---------------------------------#
 
 # version format
-version: 4.6.{build}
+version: 5.0.{build}
 
 image:
   - Visual Studio 2022
