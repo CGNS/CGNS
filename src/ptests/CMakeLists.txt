@@ -71,6 +71,9 @@ if (CGNS_ENABLE_FORTRAN AND HAVE_FORTRAN_2003)
 
   function (add_fortran_exe file)
     add_executable (${file} ${file}.F90)
+    if ("${file}" STREQUAL "fopen_close")
+      add_dependencies(${file} benchmark_hdf5_f90)
+    endif ()
     target_link_libraries (${file} PRIVATE ${PTESTS_LK_LIBS} test_utilsf)
   endfunction ()
 
