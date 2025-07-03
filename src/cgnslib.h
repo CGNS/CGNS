@@ -221,6 +221,7 @@
  * does nothing, as compression has not yet been implemented.**
 */
 #define CG_CONFIG_HDF5_COMPRESS         201
+
 /**
  * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Sets the MPI communicator for parallel I/O. The default is `MPI_COMM_WORLD`. The
@@ -288,8 +289,14 @@
 */
 #define CG_CONFIG_HDF5_ELINK_CACHE_SIZE 210
 /* MSB: TODO */
-#define CG_CONFIG_HDF5_SUBFILING        213
-#define CG_CONFIG_HDF5_SUBFILING_CONFIG 214
+#define CG_CONFIG_HDF5_SUBFILING        211
+#define CG_CONFIG_HDF5_SUBFILING_CONFIG 212
+/**
+ * \ingroup CGNSInternals_FNC_CG_CONFIG
+ * \brief `Value` returns an `int` (Fortran:`C_INT`) indicating the maximum number of
+ * allowed open and mounted files.
+*/
+#define CG_CONFIG_GET_MAXIMUM_FILES     401
 /**
  * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief `Value` indicates the configuration values to reset to their default values.

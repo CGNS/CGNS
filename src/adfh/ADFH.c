@@ -1488,7 +1488,7 @@ static herr_t fix_dimensions(hid_t id, const char *name, const H5L_info_t* linfo
 /* 1 to 1 mapping of ADF functions to HDF mimic functions            */
 /* ================================================================= */
 
-void ADFH_Configure(const int option, const void *value, int *err)
+void ADFH_Configure(const int option, void *value, int *err)
 {
     if (option == ADFH_CONFIG_RESET) {
       if ( (int)((size_t)value) == ADFH_CONFIG_RESET_HDF5 ) {
@@ -1586,6 +1586,14 @@ void ADFH_Configure(const int option, const void *value, int *err)
     }
     else if (option == ADFH_CONFIG_ELINK_FILE_CACHE_SIZE) {
       h5pset_elink_file_cache_size_size = (unsigned)((size_t)value);
+      set_error(NO_ERROR, err);
+    }
+    else if (option == ADFH_CONFIG_GET_MAXIMUM_FILES) {
+      if ( value == NULL) {
+        set_error(NULL_POINTER, err);
+        return;
+      }
+      *(int *)value = ADFH_MAXIMUM_FILES;
       set_error(NO_ERROR, err);
     }
 #if CG_BUILD_PARALLEL
