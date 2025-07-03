@@ -464,7 +464,7 @@ if (CGNS_ENABLE_HDF5)
     set(HDF5_HAVE_SUBFILING_VFD 1)
     message (STATUS "Testing HDF5 Subfiling VFD - OK")
 
-    set(CMAKE_REQUIRED_LIBRARIES HDF5::HDF5)
+    set(CMAKE_REQUIRED_LIBRARIES hdf5::hdf5-${CG_HDF5_LINK_TYPE})
     include(CheckSymbolExists)
     check_symbol_exists(H5FDsubfiling_get_file_mapping "hdf5.h" CHECK_HDF5_HAVE_SUBFILING_FILE_MAPPING)
     if(CHECK_HDF5_HAVE_SUBFILING_FILE_MAPPING)
