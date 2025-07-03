@@ -1048,6 +1048,9 @@ int cg_get_cgio(int fn, int *cgio_num)
  * \details The function cg_configure() allows particular CGNS library internal options to be
  *          configured or retrieved. The currently supported options and expected values are listed below.
  *
+ * \note Most \p options are designed explicitly with the singular functionality of setting configuration
+ *       parameters. Only those that include \b "_GET_" are capable of retrieving configuration settings.
+ *
  */
 int cg_configure(int option, void *value)
 {
