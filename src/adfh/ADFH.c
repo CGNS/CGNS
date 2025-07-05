@@ -2514,9 +2514,15 @@ void ADFH_Database_Valid(const char   *name,
         *err = NULL_STRING_POINTER;
     else
 #if ADFH_HDF5_HAVE_112_API
-        *err = H5Fis_accessible(name, H5P_DEFAULT);
+	if (H5Fis_accessible(name, H5P_DEFAULT) <=0)
+	  *err = ADFH_ERR_NOT_HDF5_FILE;
+	else
+	  *err = NO_ERROR;
 #else
-        *err = H5Fis_hdf5(name);
+        if (H5Fis_hdf5(name) <= 0)
+	  *err = ADFH_ERR_NOT_HDF5_FILE;
+	else
+	  *err = NO_ERROR;
 #endif
 }
 
