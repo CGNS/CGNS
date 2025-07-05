@@ -616,11 +616,7 @@ int cgio_check_file (const char *filename, int *file_type)
 #endif
 #if CG_BUILD_HDF5
       ADFH_Database_Valid(filename, &err);
-      /* First try to open with HDF5 */
-      /* ADFH_Database_Open(filename, "READ_ONLY", ctx_cgio.hdf5_access, &rootid, &err);*/
       if (err == 0) {
-        /* ADFH_Database_Close(rootid, &err); */
-        /* if (err > 0) return set_error(err); */
         *file_type = CGIO_FILE_HDF5;
       }
       else {
