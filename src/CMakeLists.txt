@@ -23,7 +23,6 @@ elseif("${SIZEOF_LONG_LONG}" EQUAL "8")
 else()
   message(FATAL_ERROR "Can't find suitable int64_t")
 endif()
-message(STATUS "Found int64_t: ${CGLONGT}")
 
 set(BUILDLEGACY 0)
 set(BUILD64BIT 0)
