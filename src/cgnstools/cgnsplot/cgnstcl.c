@@ -13,6 +13,10 @@
 #include "cgnslib.h"
 #include "hash.h"
 
+#ifndef Tcl_Size
+# define Tcl_Size int
+#endif
+
 #ifdef CG_BUILD_BASESCOPE
 typedef char char_66[66]; /* 32 + '/' + 32 + '\0' */
 #else
@@ -3812,8 +3816,9 @@ static void transform_bounds (float m[16], float bb[3][2])
 static int CGNSbounds (ClientData data, Tcl_Interp *interp, int argc, char **argv)
 {
     float bbox[3][2], matrix[16];
-    int n, all = 0;
-    CONST char **args;
+    int all = 0;
+    Tcl_Size n = 0;
+    const char **args;
     char sbb[65];
 
     if (argc > 1) all = atoi(argv[1]);
@@ -3840,8 +3845,9 @@ static int CGNSbounds (ClientData data, Tcl_Interp *interp, int argc, char **arg
 
 static int OGLregion (ClientData data, Tcl_Interp *interp, int argc, char **argv)
 {
-    int zone, regn, nc;
-    CONST char **args;
+    int zone, regn;
+    Tcl_Size nc;
+    const char **args;
     Zone *z;
     Regn *r;
     static char slist[17];
@@ -3951,8 +3957,9 @@ static int OGLaxis (ClientData data, Tcl_Interp *interp, int argc, char **argv)
     glNewList (AxisDL, GL_COMPILE);
     if (vis) {
         if (argc == 3) {
-            int nb, n = 0;
-            CONST char **args;
+            int n = 0;
+	    Tcl_Size nb = 0;
+            const char **args;
             if (TCL_OK != Tcl_SplitList (interp, argv[2], &nb, &args))
                 return TCL_ERROR;
             if (nb == 3) {
@@ -5222,8 +5229,8 @@ static int OGLcutplane (ClientData data, Tcl_Interp *interp, int argc, char **ar
     mode = atoi(argv[1]);
 
     if (argc == 3) {
-        int np;
-        CONST char **args;
+        Tcl_Size np;
+        const char **args;
         if (TCL_OK != Tcl_SplitList (interp, argv[2], &np, &args))
             return TCL_ERROR;
         if (np != 4) {
@@ -5264,8 +5271,9 @@ static int OGLcutplane (ClientData data, Tcl_Interp *interp, int argc, char **ar
 
 static int OGLdrawplane (ClientData data, Tcl_Interp *interp, int argc, char **argv)
 {
-    int n, np, i, j, k, index, n0, n1;
-    CONST char **args;
+    int n, i, j, k, index, n0, n1;
+    Tcl_Size np;
+    const char **args;
     float plane[4], bbox[3][2], s[8], ds;
     float node[8][3], pnode[6][3];
     static char slist[17];
@@ -5362,8 +5370,9 @@ static int OGLdrawplane (ClientData data, Tcl_Interp *interp, int argc, char **a
 
 static int OGLcutconfig (ClientData data, Tcl_Interp *interp, int argc, char **argv)
 {
-    int n, np;
-    CONST char **args;
+    int n;
+    Tcl_Size np;
+    const char **args;
 
     if (argc < 2 || argc > 4) {
         Tcl_SetResult (interp, "usage: OGLcutconfig color [usecutclr] [ignorevis]",

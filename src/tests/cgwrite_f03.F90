@@ -79,6 +79,7 @@ PROGRAM write_cgns_1
   CHARACTER(LEN=32) donorname
 
   INTEGER, TARGET :: value_f
+  INTEGER(C_INT), TARGET :: maxnum_files
   INTEGER(C_SIZE_T), TARGET :: value_size_t_f
   CHARACTER(LEN=32), TARGET :: path
 
@@ -322,6 +323,12 @@ PROGRAM write_cgns_1
   value_f = 1
   CALL cg_configure_f(CG_CONFIG_HDF5_DISKLESS, C_LOC(value_f), ier)
   IF (ier .EQ. ERROR) CALL cg_error_exit_f
+
+  maxnum_files = 1
+  f_ptr = C_LOC(maxnum_files)
+  CALL cg_configure_f(CG_CONFIG_GET_MAXIMUM_FILES, f_ptr, ier)
+  IF (ier .EQ. ERROR) CALL cg_error_exit_f
+  IF (maxnum_files .NE. 1024) CALL cg_error_exit_f
 
   ! enable committing memory to disk
   value_f = 1

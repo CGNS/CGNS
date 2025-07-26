@@ -28,9 +28,6 @@
 #include <tk-private/generic/tkInt.h>
 #endif
 
-#ifndef CONST
-# define CONST
-#endif
 
 /*
  * A data structure of the following type is kept for each glxwin
@@ -97,35 +94,35 @@ typedef struct {
 
 static Tk_ConfigSpec configSpecs[] = {
     {TK_CONFIG_PIXELS, "-height", "height", "Height",
-       "300" , Tk_Offset(OGLwin, height), 0},
+       "300" , offsetof(OGLwin, height), 0},
 
     {TK_CONFIG_PIXELS, "-width", "width", "Width",
-       "300" , Tk_Offset(OGLwin, width), 0},
+       "300" , offsetof(OGLwin, width), 0},
 
     {TK_CONFIG_STRING, "-context", "context", "Context",
-	NULL, Tk_Offset (OGLwin, context), TK_CONFIG_NULL_OK},
+	NULL, offsetof (OGLwin, context), TK_CONFIG_NULL_OK},
 
     {TK_CONFIG_BOOLEAN, "-doublebuffer", "doublebuffer", "DoubleBuffer",
-	"1", Tk_Offset (OGLwin, doubleBuffer), 0},
+	"1", offsetof (OGLwin, doubleBuffer), 0},
 
     {TK_CONFIG_INT, "-depthsize", "depthsize", "DepthSize",
-	"16", Tk_Offset (OGLwin, depthSize), 0},
+	"16", offsetof (OGLwin, depthSize), 0},
 
     {TK_CONFIG_INT, "-stencilsize", "stencilsize", "StencilSize",
-	"0", Tk_Offset (OGLwin, stencilSize), 0},
+	"0", offsetof (OGLwin, stencilSize), 0},
 
     {TK_CONFIG_INT, "-alphasize", "alphasize", "AlphaSize",
-	"0", Tk_Offset (OGLwin, alphaSize), 0},
+	"0", offsetof (OGLwin, alphaSize), 0},
 
     {TK_CONFIG_INT, "-accumsize", "accumsize", "AccumSize",
-	"0", Tk_Offset (OGLwin, accumSize), 0},
+	"0", offsetof (OGLwin, accumSize), 0},
 
     {TK_CONFIG_DOUBLE, "-aspectratio", "aspectratio", "AspectRatio",
-	"0", Tk_Offset (OGLwin, aspectRatio), 0},
+	"0", offsetof (OGLwin, aspectRatio), 0},
 
 
     {TK_CONFIG_BORDER, "-background", "background", "Background",
-	"#d9d9d9", Tk_Offset(OGLwin, bgBorder), 0},
+	"#d9d9d9", offsetof(OGLwin, bgBorder), 0},
 
 
     {TK_CONFIG_END, (char *) NULL, (char *) NULL, (char *) NULL,
@@ -136,19 +133,19 @@ static Tk_ConfigSpec configSpecs[] = {
  * Forward declarations for procedures defined later in this file:
  */
 
-static int	OGLwinConfigure _ANSI_ARGS_((Tcl_Interp *interp,
+static int	OGLwinConfigure (Tcl_Interp *interp,
 			    OGLwin *glxwinPtr, int argc, char **argv,
-			    int flags));
-static void	OGLwinDestroy _ANSI_ARGS_((char* clientData));
+			    int flags);
+static void	OGLwinDestroy (void* clientData);
 
-static void	OGLwinEventProc _ANSI_ARGS_((ClientData clientData,
-			    XEvent *eventPtr));
+static void	OGLwinEventProc (ClientData clientData,
+			    XEvent *eventPtr);
 
-static int	OGLwinWidgetCmd _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *, int argc, char **argv));
+static int	OGLwinWidgetCmd (ClientData clientData,
+			    Tcl_Interp *, int argc, char **argv);
 
 
-static void 	OGLwinRedraw _ANSI_ARGS_ ((ClientData clientData));
+static void 	OGLwinRedraw (ClientData clientData);
 
 int             OGLwinCmd(ClientData, Tcl_Interp*, int, char**);
 
@@ -167,8 +164,7 @@ static void     MakeCurrent (OGLwin* oglwinPtr);
     static void SetDCPixelFormat (OGLwin*);
 
 #else
-    static Colormap getColormap _ANSI_ARGS_((Display *dpy,
-						 XVisualInfo *vi));
+    static Colormap getColormap (Display *dpy, XVisualInfo *vi);
 #endif
 
 #define ERRMSG(msg) {\
@@ -1167,7 +1163,7 @@ OGLwinConfigure(interp, glxwinPtr, argc, argv, flags)
 					 * Tk_ConfigureWidget. */
 {
     if (Tk_ConfigureWidget(interp, glxwinPtr->tkwin, configSpecs,
-	    argc, (CONST char **)argv, (char *) glxwinPtr, flags) != TCL_OK) {
+	    argc, (void *)argv, (char *) glxwinPtr, flags|TK_CONFIG_OBJS) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1251,7 +1247,7 @@ OGLwinEventProc(clientData, eventPtr)
 	    if (glxwinPtr->updatePending) {
     	   Tcl_CancelIdleCall(OGLwinRedraw, (ClientData) glxwinPtr);
         }
-	    Tcl_EventuallyFree((ClientData) glxwinPtr, OGLwinDestroy);
+	    Tcl_EventuallyFree((ClientData) glxwinPtr, (Tcl_FreeProc *)(void *)OGLwinDestroy);
     }
 
 }
@@ -1276,7 +1272,7 @@ OGLwinEventProc(clientData, eventPtr)
  */
 
 static void
-OGLwinDestroy(char* clientData)
+OGLwinDestroy(void* clientData)
 {
     OGLwin *glxwinPtr = (OGLwin *) clientData;
 

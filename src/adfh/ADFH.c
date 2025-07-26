@@ -1472,7 +1472,7 @@ static herr_t fix_dimensions(hid_t id, const char *name, const H5L_info_t* linfo
 /* 1 to 1 mapping of ADF functions to HDF mimic functions            */
 /* ================================================================= */
 
-void ADFH_Configure(const int option, const void *value, int *err)
+void ADFH_Configure(const int option, void *value, int *err)
 {
 
     hsize_t i;
@@ -1569,6 +1569,14 @@ void ADFH_Configure(const int option, const void *value, int *err)
     }
     else if (option == ADFH_CONFIG_ELINK_FILE_CACHE_SIZE) {
       h5pset_elink_file_cache_size_size = (unsigned)((size_t)value);
+      set_error(NO_ERROR, err);
+    }
+    else if (option == ADFH_CONFIG_GET_MAXIMUM_FILES) {
+      if ( value == NULL) {
+        set_error(NULL_POINTER, err);
+        return;
+      }
+      *(int *)value = ADFH_MAXIMUM_FILES;
       set_error(NO_ERROR, err);
     }
 #if CG_BUILD_PARALLEL
@@ -2556,9 +2564,15 @@ void ADFH_Database_Valid(const char   *name,
         *err = NULL_STRING_POINTER;
     else
 #if ADFH_HDF5_HAVE_112_API
-        *err = H5Fis_accessible(name, H5P_DEFAULT);
+	if (H5Fis_accessible(name, H5P_DEFAULT) <=0)
+	  *err = ADFH_ERR_NOT_HDF5_FILE;
+	else
+	  *err = NO_ERROR;
 #else
-        *err = H5Fis_hdf5(name);
+        if (H5Fis_hdf5(name) <= 0)
+	  *err = ADFH_ERR_NOT_HDF5_FILE;
+	else
+	  *err = NO_ERROR;
 #endif
 }
 

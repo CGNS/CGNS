@@ -72,27 +72,27 @@ install(TARGETS
 	cgnslist
 	cgnsnames
 	cgnscompress
-	RUNTIME DESTINATION bin)
+)
 
 if (WIN32)
   install(PROGRAMS
         cgnsupdate.bat
-	DESTINATION bin)
+	TYPE BIN)
   if (CGNS_ENABLE_HDF5)
     install(PROGRAMS
         adf2hdf.bat
         hdf2adf.bat
-	DESTINATION bin)
+	TYPE BIN)
   endif ()
 else ()
   install(PROGRAMS
         cgnsupdate
-	DESTINATION bin)
+	TYPE BIN)
   if (CGNS_ENABLE_HDF5)
     install(PROGRAMS
         adf2hdf
         hdf2adf
-	DESTINATION bin)
+	TYPE BIN)
   endif ()
 endif ()
 

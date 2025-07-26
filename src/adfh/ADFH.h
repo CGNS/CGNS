@@ -184,6 +184,9 @@
 #define ADFH_CONFIG_HDF5_CHUNK            11
 #define ADFH_CONFIG_HDF5_FILTER           12
 
+/* get configuration options */
+#define ADFH_CONFIG_GET_MAXIMUM_FILES 201
+
 #define ADFH_CONFIG_RESET 800
 #define ADFH_CONFIG_RESET_HDF5 1
 
@@ -205,7 +208,7 @@
 
 EXTERN	void	ADFH_Configure(
 			const int option,
-			const void *value,
+                        void *value,
 			int *error_return ) ;
 
 EXTERN	void	ADFH_Children_Names(

@@ -63,8 +63,8 @@ freely, subject to the following restrictions:
  *      VERSION NUMBER                                                   *
 \* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define CGNS_VERSION 4600
-#define CGNS_DOTVERS 4.60
+#define CGNS_VERSION 5000
+#define CGNS_DOTVERS 5.00
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
 

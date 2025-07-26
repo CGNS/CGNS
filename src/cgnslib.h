@@ -45,8 +45,8 @@
 #ifndef CGNSLIB_H
 #define CGNSLIB_H
 
-#define CGNS_VERSION 4600
-#define CGNS_DOTVERS 4.60
+#define CGNS_VERSION 5000
+#define CGNS_DOTVERS 5.00
 
 #define CGNS_COMPATVERSION 2540
 #define CGNS_COMPATDOTVERS 2.54
@@ -221,6 +221,7 @@
  * does nothing, as compression has not yet been implemented.**
 */
 #define CG_CONFIG_HDF5_COMPRESS         201
+
 /**
  * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief Sets the MPI communicator for parallel I/O. The default is `MPI_COMM_WORLD`. The
@@ -297,6 +298,10 @@
  * \brief `Value` indicates filtering is enabled. TODO: MSB
 */
 #define CG_CONFIG_HDF5_FILTER           212
+ * \brief `Value` returns an `int` (Fortran:`C_INT`) indicating the maximum number of
+ * allowed open and mounted files.
+*/
+#define CG_CONFIG_GET_MAXIMUM_FILES     401
 /**
  * \ingroup CGNSInternals_FNC_CG_CONFIG
  * \brief `Value` indicates the configuration values to reset to their default values.

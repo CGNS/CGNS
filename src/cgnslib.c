@@ -360,7 +360,7 @@ const char * AverageInterfaceTypeName[NofValidAverageInterfaceTypes] =
 int n_open = 0;
 int cgns_file_size = 0;
 int file_number_offset = 0;
-int VersionList[] = {4600, 4500, 4400, 4300, 4200,
+int VersionList[] = {5000, 4500, 4400, 4300, 4200,
                      4110, 4100, 4000,
                      3210, 3200,
                      3140, 3130, 3110, 3100,
@@ -1037,7 +1037,7 @@ int cg_get_cgio(int fn, int *cgio_num)
 /**
  * \ingroup CGNSInternals_FNC_CG_CONFIG
  *
- * \brief Configure CGNS library internal options.
+ * \brief Configure or retrieve CGNS library internal options or information.
  *
  * \param[in]  option The configuration options are defined in \e cgnslib.h. For the list, please refer to
  *                    the list below.
@@ -1046,7 +1046,10 @@ int cg_get_cgio(int fn, int *cgio_num)
  * \return \ier
  *
  * \details The function cg_configure() allows particular CGNS library internal options to be
- *          configured. The currently supported options and expected values are listed below.
+ *          configured or retrieved. The currently supported options and expected values are listed below.
+ *
+ * \note Most \p options are designed explicitly with the singular functionality of setting configuration
+ *       parameters. Only those that include \b "_GET_" are capable of retrieving configuration settings.
  *
  */
 int cg_configure(int option, void *value)
@@ -15231,7 +15234,7 @@ int cg_particle_field_general_read(int fn, int B, int P, int S, const char *fiel
  *
  * \param[in]  fn        \FILE_fn
  * \param[in]  B         \B_Base
- * \param[in]  Z         \Z_Zone
+ * \param[in]  P         \P_ParticleZone
  * \param[in]  S         \SOL_S
  * \param[in]  F         \PSOL_F
  * \param[out] field_id  Field particle solution ADF ID number (address) of node

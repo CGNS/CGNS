@@ -615,23 +615,20 @@ int cgio_check_file (const char *filename, int *file_type)
     if(ctx_cgio.pcg_mpi_comm_rank == 0) {
 #endif
 #if CG_BUILD_HDF5
-      /* First try to open with HDF5 */
-      ADFH_Database_Open(filename, "READ_ONLY", ctx_cgio.hdf5_access, &rootid, &err);
+      ADFH_Database_Valid(filename, &err);
       if (err == 0) {
-        ADFH_Database_Close(rootid, &err);
-	if (err > 0) return set_error(err);
-	*file_type = CGIO_FILE_HDF5;
+        *file_type = CGIO_FILE_HDF5;
       }
       else {
       /* HDF5 did not work now try other cases */
 #endif
         fp = fopen(filename, "rb");
         if (NULL == fp) {
-	  if (errno == EMFILE) {
-	    err = set_error(CGIO_ERR_TOO_MANY);
-	  } else {
-	    err = set_error(CGIO_ERR_FILE_OPEN);
-	  }
+          if (errno == EMFILE) {
+            err = set_error(CGIO_ERR_TOO_MANY);
+          } else {
+            err = set_error(CGIO_ERR_FILE_OPEN);
+          }
           return err;
         }
         if (sizeof(buf) != fread (buf, 1, sizeof(buf), fp)) {
@@ -774,9 +771,9 @@ int cgio_open_file (const char *filename, int file_mode,
         case CGIO_MODE_MODIFY:
         case 'm':
         case 'M':
-	    fmode = "OLD";
-	    file_mode = CGIO_MODE_MODIFY;
-	    /* skip file checking if HDF5 requested */
+            fmode = "OLD";
+            file_mode = CGIO_MODE_MODIFY;
+            /* skip file checking if HDF5 requested */
             if (file_type == CGIO_FILE_HDF5)
                 break;
             if (cgio_check_file(filename, &type))

@@ -60,47 +60,33 @@ if (WIN32)
   	LINK_FLAGS /subsystem:windows)
 endif ()
 
+install(TARGETS
+  cgiowish
+  RUNTIME DESTINATION ${CGNS_INSTALL_TOOLS_BINDIR})
 if (WIN32)
-  install(TARGETS
-	cgiowish
-	RUNTIME DESTINATION bin)
   install(PROGRAMS
 	cgnsview.bat
 	cgnsnodes.bat
-	DESTINATION bin)
-  install(FILES
-	cgnsview.tcl
-	cgns.tcl
-	cgnsnodes.tcl
-	export.tcl
-	import.tcl
-	tools.tcl
-	DESTINATION share)
+	TYPE BIN)
 else ()
-  install(TARGETS
-	cgiowish
-	RUNTIME DESTINATION bin/cgnstools)
   install(PROGRAMS
 	cgnsview.sh
-	DESTINATION bin
+	TYPE BIN
 	RENAME cgnsview)
   install(PROGRAMS
+    cgnsnodes.sh
+    TYPE BIN
+    RENAME cgnsnodes)
+  install(PROGRAMS
 	cgnsview.desktop
-	DESTINATION bin)
-  install(PROGRAMS
-	cgnsnodes.sh
-	DESTINATION bin
-	RENAME cgnsnodes)
-  install(PROGRAMS
-	cgnsnodes.desktop
-	DESTINATION bin)
-  install(FILES
-	cgnsview.tcl
-	cgns.tcl
-	cgnsnodes.tcl
-	export.tcl
-	import.tcl
-	tools.tcl
-	DESTINATION share/cgnstools)
-endif () 
-
+    cgnsnodes.desktop
+	TYPE BIN)
+endif ()
+install(FILES
+  cgnsview.tcl
+  cgns.tcl
+  cgnsnodes.tcl
+  export.tcl
+  import.tcl
+  tools.tcl
+  DESTINATION ${CGNS_INSTALL_TOOLS_DATADIR})
