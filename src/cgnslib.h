@@ -298,6 +298,7 @@
  * \brief `Value` indicates filtering is enabled. TODO: MSB
 */
 #define CG_CONFIG_HDF5_FILTER           212
+/**
  * \brief `Value` returns an `int` (Fortran:`C_INT`) indicating the maximum number of
  * allowed open and mounted files.
 */
